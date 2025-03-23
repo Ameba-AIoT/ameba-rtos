@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
-CURRENT_DIR	:= $(shell pwd)
+CURRENT_DIR	:= $(CURDIR)
 SOC_DIR := $(CURRENT_DIR)/../fwlib/include
 
 ifeq (${CONFIG_SOC_CPU_ARMv8_2}, y)
@@ -19,14 +19,14 @@ endif
 
 include lib/libfdt/libfdt.mk
 
-DIR_ATF		:= $(shell pwd)
+DIR_ATF		:= $(CURDIR)
 
 SHEIPA_CPU_LIBS		:=	lib/cpus/$(ARCH)/aem_generic.S
 ifeq (${HW_ASSISTED_COHERENCY}, 0)
 SHEIPA_CPU_LIBS		+=	lib/cpus/$(ARCH)/cortex_a7.S	\
 				lib/cpus/$(ARCH)/cortex_a32.S
 
-#lib/cpus/$(ARCH)/cortex_a53.S		
+#lib/cpus/$(ARCH)/cortex_a53.S
 #lib/cpus/$(ARCH)/cortex_a57.S
 
 else

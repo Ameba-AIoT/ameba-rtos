@@ -94,6 +94,7 @@
 #include "whc_fullmac_ipc_host_mem.h"
 #elif defined(CONFIG_FULLMAC_HCI_SDIO)
 #include <linux/mmc/sdio_func.h>
+#include <linux/mmc/sdio_ids.h>
 #include "whc_dev.h"
 #include "whc_sdio_host.h"
 #ifdef CONFIG_BT_INIC

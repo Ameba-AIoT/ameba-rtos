@@ -31,9 +31,9 @@ int rtos_sema_create_static(rtos_sema_t *pp_handle, uint32_t init_count, uint32_
 		*pp_handle = xSemaphoreCreateCountingStatic(max_count, init_count, sema);
 
 		if (*pp_handle != NULL) {
-			return SUCCESS;
+			return RTK_SUCCESS;
 		} else {
-			return FAIL;
+			return RTK_FAIL;
 		}
 	}
 #else
@@ -54,9 +54,9 @@ int rtos_sema_create_binary_static(rtos_sema_t *pp_handle)
 		*pp_handle = xSemaphoreCreateBinaryStatic(sema);
 
 		if (*pp_handle != NULL) {
-			return SUCCESS;
+			return RTK_SUCCESS;
 		} else {
-			return FAIL;
+			return RTK_FAIL;
 		}
 	}
 #else
@@ -69,7 +69,7 @@ int rtos_sema_delete_static(rtos_sema_t p_handle)
 #if( configSUPPORT_STATIC_ALLOCATION == 1 )
 	rtos_sema_delete(p_handle);
 	__reserved_release_sema_to_poll(p_handle);
-	return SUCCESS;
+	return RTK_SUCCESS;
 #else
 	return rtos_sema_delete(p_handle);
 #endif
@@ -79,42 +79,42 @@ int rtos_sema_delete_static(rtos_sema_t p_handle)
 int rtos_sema_create(rtos_sema_t *pp_handle, uint32_t init_count, uint32_t max_count)
 {
 	if (pp_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	*pp_handle = (rtos_sema_t)xSemaphoreCreateCounting(max_count, init_count);
 
 	if (*pp_handle != NULL) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 
 int rtos_sema_create_binary(rtos_sema_t *pp_handle)
 {
 	if (pp_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	*pp_handle = (rtos_sema_t)xSemaphoreCreateBinary();
 
 	if (*pp_handle != NULL) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 
 int rtos_sema_delete(rtos_sema_t p_handle)
 {
 	if (p_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	vSemaphoreDelete((QueueHandle_t)p_handle);
 
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 int rtos_sema_take(rtos_sema_t p_handle, uint32_t wait_ms)
@@ -125,7 +125,7 @@ int rtos_sema_take(rtos_sema_t p_handle, uint32_t wait_ms)
 	if (rtos_critical_is_in_interrupt()) {
 		ret = xSemaphoreTakeFromISR((QueueHandle_t)p_handle, &task_woken);
 		if (ret != pdTRUE) {
-			return FAIL;
+			return RTK_FAIL;
 		}
 		portEND_SWITCHING_ISR(task_woken);
 	} else {
@@ -137,14 +137,14 @@ int rtos_sema_take(rtos_sema_t p_handle, uint32_t wait_ms)
 		ret = xSemaphoreTake((QueueHandle_t)p_handle, RTOS_CONVERT_MS_TO_TICKS(wait_ms));
 
 		if (ret != pdTRUE) {
-			return FAIL;
+			return RTK_FAIL;
 		}
 	}
 
 	if (ret == pdTRUE) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 
@@ -161,16 +161,16 @@ int rtos_sema_give(rtos_sema_t p_handle)
 	}
 
 	if (ret == pdTRUE) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 
 uint32_t rtos_sema_get_count(rtos_sema_t p_handle)
 {
 	if (p_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	return (uint32_t)uxSemaphoreGetCount((QueueHandle_t)p_handle);

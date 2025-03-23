@@ -157,16 +157,18 @@ void rtw_reconn_new_conn(struct _rtw_network_info_t *connect_param)
 		rtw_reconn.cnt = 0;
 	}
 }
+#endif
 
-int wifi_config_autoreconnect(u8 mode)
+int wifi_set_autoreconnect(u8 enable)
 {
-	if ((mode == RTW_AUTORECONNECT_DISABLE) && rtw_reconn.b_enable) {
+#if CONFIG_AUTO_RECONNECT
+	if ((enable == 0) && rtw_reconn.b_enable) {
 		rtos_timer_stop(rtw_reconn.timer, 1000);
 		rtos_timer_delete(rtw_reconn.timer, 1000);
 		rtw_reconn.timer = NULL;
 		rtw_reconn.b_waiting = 0;
 		rtw_reconn.b_enable = 0;
-	} else if ((mode != RTW_AUTORECONNECT_DISABLE) && (rtw_reconn.b_enable == 0))  {
+	} else if ((enable != 0) && (rtw_reconn.b_enable == 0)) {
 		if (rtos_timer_create(&(rtw_reconn.timer), "rtw_reconn_timer", NULL, wifi_user_config.auto_reconnect_interval * 1000, FALSE,
 							  rtw_reconn_timer_hdl) != SUCCESS) {
 			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "rtw_reconn_timer create fail\n");
@@ -176,21 +178,26 @@ int wifi_config_autoreconnect(u8 mode)
 		rtw_reconn.cnt = 0;
 	}
 
-	if (mode == RTW_AUTORECONNECT_INFINITE) {
-		rtw_reconn.b_infinite = 1;
-	}
+	rtw_reconn.b_infinite = 0;/*Set wifi_user_config.auto_reconnect_count to a high number is equivalent to having infinite auto-reconnects.*/
 
 	return RTW_SUCCESS;
+#else
+	UNUSED(enable);
+	return RTW_ERROR;
+#endif
 }
 
-int wifi_get_autoreconnect(u8 *mode)
+int wifi_get_autoreconnect(u8 *enable)
 {
-	if (mode == NULL) {
+#if CONFIG_AUTO_RECONNECT
+	if (enable == NULL) {
 		return RTW_ERROR;
 	} else {
-		*mode = rtw_reconn.b_enable;
+		*enable = rtw_reconn.b_enable;
 		return RTW_SUCCESS;
 	}
-}
-
+#else
+	*enable = 0;
+	return RTW_ERROR;
 #endif
+}

@@ -136,7 +136,7 @@ static void example_coap_thread(void *para)
 
 void example_coap(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_coap_thread"), example_coap_thread, NULL, 2048 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_coap_thread"), example_coap_thread, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
 	}
 }

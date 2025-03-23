@@ -175,7 +175,7 @@ static uint8_t hci_platform_read_efuse(void)
 	uint8_t i;
 
 	/* Read Logic Efuse */
-	if (FAIL == OTP_LogicalMap_Read(hci_lgc_efuse, HCI_LGC_EFUSE_OFFSET, HCI_LGC_EFUSE_LEN)) {
+	if (RTK_FAIL == OTP_LogicalMap_Read(hci_lgc_efuse, HCI_LGC_EFUSE_OFFSET, HCI_LGC_EFUSE_LEN)) {
 		BT_LOGE("OTP_LogicalMap_Read failed\r\n");
 		return HCI_FAIL;
 	}

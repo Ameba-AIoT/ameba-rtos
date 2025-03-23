@@ -62,7 +62,7 @@ void raw_rtc_alarm_demo(void)
 
 int example_raw_rtc_alarm(void)
 {
-	if (rtos_task_create(NULL, "RAW_RTC_ALARM_TASK", (rtos_task_t)raw_rtc_alarm_demo, NULL, 2048, (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "RAW_RTC_ALARM_TASK", (rtos_task_t)raw_rtc_alarm_demo, NULL, 2048, (1)) != RTK_SUCCESS) {
 		printf("Create RAW_RTC_ALARM_TASK Err!!\n\r");
 	}
 

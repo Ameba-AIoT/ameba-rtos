@@ -173,7 +173,7 @@ static void qspi_display_sh8601a(void *param)
 
 int example_raw_qspi_display_sh8601a(void)
 {
-	if (rtos_task_create(NULL, "qspi_display_sh8601a", (rtos_task_t)qspi_display_sh8601a, NULL, (3072), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "qspi_display_sh8601a", (rtos_task_t)qspi_display_sh8601a, NULL, (3072), (1)) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Cannot create qspi_display_sh8601a demo task\n\r");
 	}
 

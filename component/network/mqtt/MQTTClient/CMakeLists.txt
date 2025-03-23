@@ -15,29 +15,12 @@ ameba_list_append(public_includes
     ${c_CMPT_NETWORK_DIR}/mqtt/MQTTClient
 )
 
-ameba_list_append(public_libraries
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_httpc.a
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_httpd.a
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_websocket.a
-)
-
-if(CONFIG_AMEBAD OR CONFIG_AMEBADPLUS)
-    ameba_list_append(public_libraries
-        ${c_SDK_LIB_APPLICATION_DIR}/lib_ipdnrd.a
-    )
-endif()
-
-if("${c_MCU_PROJECT_NAME}" STREQUAL "ap")
-    ameba_list_append(public_libraries
-        ${c_SDK_LIB_APPLICATION_DIR}/lib_ipdnrd.a
-    )
-endif()
 # Component public part, user config end
 #----------------------------------------#
 
 #WARNING: Fixed section, DO NOT change!
 ameba_global_include(${public_includes})
-ameba_global_define(${public_defines})
+ameba_global_define(${public_definitions})
 ameba_global_library(${public_libraries}) #default: whole-archived
 
 ##########################################################################################

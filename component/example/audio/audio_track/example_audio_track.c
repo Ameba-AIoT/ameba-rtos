@@ -531,12 +531,12 @@ void example_audio_track(char **argv)
 		}
 	}
 
-	if (rtos_task_create(NULL, ((const char *)"example_audio_track_thread"), example_audio_track_thread, NULL, 8192 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_audio_track_thread"), example_audio_track_thread, NULL, 8192 * 4, 1) != RTK_SUCCESS) {
 		EXAMPLE_AUDIO_ERROR("error: rtos_task_create(example_audio_track_thread) failed");
 	}
 
 #if TEST_TIMESTAMP
-	if (rtos_task_create(NULL, ((const char *)"example_audio_counter_time"), example_audio_counter_time, NULL, 8192 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_audio_counter_time"), example_audio_counter_time, NULL, 8192 * 4, 1) != RTK_SUCCESS) {
 		EXAMPLE_AUDIO_ERROR("error: rtos_task_create(example_audio_counter_time) failed");
 	}
 #endif

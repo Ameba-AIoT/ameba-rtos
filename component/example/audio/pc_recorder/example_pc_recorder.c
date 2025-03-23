@@ -614,7 +614,7 @@ void pc_msg_process(msg_attrib_t *pattrib)
 			} else {
 				pr_adapter.record_stop = 0; // add for play before start record
 				if (rtos_task_create(&playback_task, ((const char *)"playback_task"), pc_playback_task,
-									 pattrib, 8192 * 4, 2) != SUCCESS) {
+									 pattrib, 8192 * 4, 2) != RTK_SUCCESS) {
 					printf("\n\r%s rtos_task_create(playback_task) failed", __FUNCTION__);
 				}
 			}
@@ -1053,12 +1053,12 @@ void pc_recorder_start(msg_attrib_t *pattrib)
 
 
 	if (rtos_task_create(&record_task, ((const char *)"pc_recorder_task"), pc_recorder_task,
-						 NULL, 1024 * 4, 9) != SUCCESS) {
+						 NULL, 1024 * 4, 9) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(pc_recorder_task) failed", __FUNCTION__);
 	}
 #if PR_UART_USE_DMA_TX == 0
 	if (rtos_task_create(&tx_task, ((const char *)"pc_tx_task"), pc_tx_task,
-						 NULL, 1024 * 4, 3) != SUCCESS) {
+						 NULL, 1024 * 4, 3) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(pc_tx_task) failed", __FUNCTION__);
 	}
 #endif
@@ -1099,7 +1099,7 @@ void pc_recorder_main(void *param)
 	RTAudioControl_SetAmplifierEnPin(PA_12);
 	RTAudioControl_SetHardwareVolume(0.6, 0.6);
 #endif
-	if (rtos_task_create(NULL, (char const *)"pc_rx_task", pc_rx_task, NULL, 2048 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, (char const *)"pc_rx_task", pc_rx_task, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
 		printf("\n\r[%s] Create pc_rx_task failed", __FUNCTION__);
 	}
 
@@ -1108,7 +1108,7 @@ void pc_recorder_main(void *param)
 
 void example_pc_recorder(void)
 {
-	if (rtos_task_create(NULL, (char const *)"pr_main", pc_recorder_main, NULL, 2048 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, (char const *)"pr_main", pc_recorder_main, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
 		printf("\n\r[%s] Create pr_main failed", __FUNCTION__);
 	}
 }

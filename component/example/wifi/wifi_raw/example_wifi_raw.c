@@ -100,12 +100,12 @@ void wifi_raw_task(void *param)
 
 	wifi_set_channel(STA_WLAN_INDEX, WIFI_RAW_CH);
 
-	if (rtos_task_create(NULL, ((const char *)"wifi_raw_tx_task"), wifi_raw_tx, NULL, 1024 * 4, 4) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"wifi_raw_tx_task"), wifi_raw_tx, NULL, 1024 * 4, 4) != RTK_SUCCESS) {
 		printf("\n\r[%s] Create wifi raw tx task failed", __FUNCTION__);
 		goto exit;
 	}
 
-	if (rtos_task_create(NULL, ((const char *)"wifi_raw_rx_task"), wifi_raw_rx, NULL, 1024 * 4, 4) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"wifi_raw_rx_task"), wifi_raw_rx, NULL, 1024 * 4, 4) != RTK_SUCCESS) {
 		printf("\n\r[%s] Create wifi raw rx task failed", __FUNCTION__);
 		goto exit;
 	}
@@ -117,7 +117,7 @@ exit:
 
 void example_wifi_raw(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"wifi_raw_task"), wifi_raw_task, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"wifi_raw_task"), wifi_raw_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		printf("\n\r[%s] Create wifi raw task failed", __FUNCTION__);
 	}
 }

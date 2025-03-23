@@ -106,6 +106,7 @@ void wifi_roaming_thread(void *param)
 	memset(&setting, 0, sizeof(struct _rtw_wifi_setting_t));
 	memset(&roaming_ap, 0, sizeof(wifi_roaming_ap_t));
 	roaming_ap.rssi = -100;
+	u8 autoreconn_en = 0;
 #ifdef CONFIG_LWIP_LAYER
 	uint8_t *IP = LwIP_GetIP(0);
 #endif
@@ -135,9 +136,9 @@ void wifi_roaming_thread(void *param)
 						wifi_roaming_find_ap_from_scan_buf(roaming_ap.ssid, (void *)&roaming_ap, scanned_ap_num);
 					}
 
-#if CONFIG_AUTO_RECONNECT
-					wifi_config_autoreconnect(0);
-#endif
+					if ((wifi_get_autoreconnect(&autoreconn_en) == RTW_SUCCESS) && autoreconn_en) {
+						wifi_set_autoreconnect(0);
+					}
 
 					i = 0;
 connect_ap:
@@ -179,9 +180,11 @@ connect_ap:
 					memset(ap_list, 0, sizeof(ap_list));
 
 					polling_count = 0;
-#if CONFIG_AUTO_RECONNECT
-					wifi_config_autoreconnect(1);
-#endif
+
+					if (autoreconn_en) {
+						wifi_set_autoreconnect(1);
+					}
+
 				} else {
 					polling_count++;
 				}
@@ -197,7 +200,7 @@ connect_ap:
 void example_wifi_roaming(void)
 {
 
-	if (rtos_task_create(NULL, ((const char *)"wifi_roaming_thread"), wifi_roaming_thread, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"wifi_roaming_thread"), wifi_roaming_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(wifi_roaming_thread) failed", __FUNCTION__);
 	}
 

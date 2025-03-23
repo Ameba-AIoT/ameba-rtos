@@ -197,7 +197,7 @@ void ctc_press_release_task(void) {
 }
 
 int example_raw_ctc_press_release(void) {
-	if (rtos_task_create(NULL, "CTC_TOUCH_RELEASE_DEMO", (rtos_task_t)ctc_press_release_task, NULL, 3072, (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "CTC_TOUCH_RELEASE_DEMO", (rtos_task_t)ctc_press_release_task, NULL, 3072, (1)) != RTK_SUCCESS) {
 		RTK_LOGE(NOTAG, "Cannot create CTC_TOUCH_RELEASE_DEMO\n");
 	}
 

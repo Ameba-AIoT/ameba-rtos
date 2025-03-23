@@ -324,7 +324,7 @@ static void ppe_as_dma(void *para)
 
 int example_raw_ppe_as_dma(void)
 {
-	if (rtos_task_create(NULL, "ppe_as_dma", (rtos_task_t)ppe_as_dma, NULL, (3072), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "ppe_as_dma", (rtos_task_t)ppe_as_dma, NULL, (3072), (1)) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Cannot create ppe_as_dma demo task\n\r");
 	}
 

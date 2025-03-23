@@ -360,19 +360,6 @@ void rtk_coex_btc_set_pta(u8 type, u8 role, u8 process);
 ///////// for EXT Function Declare
 //////////////////////////////////////////////////////////
 /**
- * @brief      ext chip pta parameter get.
- * @return
- *             - A pointer to Internal struct extchip_para_t.
- */
-struct extchip_para_t *rtk_coex_extc_para_get(void);
-/**
- * @brief      ext chip pta parameter set.
- * @param[in]  para_t	A pointer to struct extchip_para_t.
- * @return
- *             - None.
- */
-void rtk_coex_extc_para_set(struct extchip_para_t *para_t);
-/**
  * @brief      ext chip init notification.
  * @param[in]  p_extchip_para	A pointer to struct extchip_para_t.
  * @param[in]  length	size of struct extchip_para_t.

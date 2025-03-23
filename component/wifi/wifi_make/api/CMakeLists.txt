@@ -1,5 +1,5 @@
 set(DIR ${BASEDIR}/component/wifi)
-set(USRCFG_DIR ${TARGETDIR}/usrcfg)
+set(USRCFG_DIR ${BASEDIR}/component/soc/usrcfg/${c_SOC_TYPE})
 
 if(CONFIG_ZEPHYR_SDK AND CONFIG_SINGLE_CORE_WIFI)
 set(TARGET_LIB wifi_api)

@@ -14,7 +14,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 #WARNING: Fixed section, DO NOT change!
 ameba_global_include(${public_includes})
-ameba_global_define(${public_defines})
+ameba_global_define(${public_definitions})
 ameba_global_library(${public_libraries}) #default: whole-archived
 
 ##########################################################################################
@@ -36,13 +36,13 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources
-	rtk_bas.c 
-	rtk_dis.c 
-	rtk_gls.c 
-	rtk_hids_kb.c 
-	rtk_hrs.c 
-	rtk_ias.c 
-	rtk_long_uuid_service.c 
+	rtk_bas.c
+	rtk_dis.c
+	rtk_gls.c
+	rtk_hids_kb.c
+	rtk_hrs.c
+	rtk_ias.c
+	rtk_long_uuid_service.c
 	rtk_simple_ble_service.c
 	rtk_cte_service.c
 )

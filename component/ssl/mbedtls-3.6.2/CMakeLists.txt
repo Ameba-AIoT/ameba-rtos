@@ -17,12 +17,16 @@ ameba_list_append(public_includes
     library
     ../mbedtls_ram_map/rom
 )
+
+ameba_list_append(public_definitions
+    MBEDTLS_CONFIG_FILE="mbedtls/config.h"
+)
 # Component public part, user config end
 #----------------------------------------#
 
 #WARNING: Fixed section, DO NOT change!
 ameba_global_include(${public_includes})
-ameba_global_define(${public_defines})
+ameba_global_define(${public_definitions})
 ameba_global_library(${public_libraries}) #default: whole-archived
 
 ##########################################################################################

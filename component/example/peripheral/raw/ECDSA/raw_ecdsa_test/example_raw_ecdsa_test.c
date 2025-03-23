@@ -60,7 +60,7 @@ void ecdsa_test(void)
 
 int example_raw_ecdsa_test(void)
 {
-	if (rtos_task_create(NULL, "ecdsa_test", (rtos_task_t)ecdsa_test, NULL, (3072), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "ecdsa_test", (rtos_task_t)ecdsa_test, NULL, (3072), (1)) != RTK_SUCCESS) {
 		RTK_LOGI(TAG, "Cannot create ecdsa_test demo task\n\r");
 	}
 

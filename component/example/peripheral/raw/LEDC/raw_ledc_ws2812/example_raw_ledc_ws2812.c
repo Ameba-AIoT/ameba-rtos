@@ -313,8 +313,8 @@ int example_raw_ledc_ws2812(void)
 	ws2812_init();
 	printf("LEDC ws2812 demo start... \n");
 
-	if (SUCCESS != rtos_task_create(NULL, (const char *const)"LEDC_WS2812_DEMO", (rtos_task_t)ws2812_light, NULL, 1024 * 4,
-									1)) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"LEDC_WS2812_DEMO", (rtos_task_t)ws2812_light, NULL, 1024 * 4,
+										1)) {
 		printf("Create LEDC_WS2812_DEMO error!!\n");
 	}
 

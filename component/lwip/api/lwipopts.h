@@ -138,7 +138,7 @@ extern unsigned int sys_now(void);
 #endif
 #endif
 
-#ifdef CONFIG_802154_THREAD_BORDER_ROUTER_EN
+#if defined(CONFIG_WPAN_THREAD_BORDER_ROUTER_EN) && CONFIG_WPAN_THREAD_BORDER_ROUTER_EN
 #undef LWIP_IPV6
 #define LWIP_IPV6                       1
 #define LWIP_IPV6_FORWARD               1
@@ -154,7 +154,7 @@ extern unsigned int sys_now(void);
 #define LWIP_HOOK_IP6_INPUT             rtk_otbr_lwip_hook_ip6_input
 #define LWIP_HOOK_IP4_INPUT             rtk_otbr_lwip_hook_ip4_input
 #define LWIP_NETIF_EXT_STATUS_CALLBACK  1
-#define LWIP_HOOK_FILENAME              "rtk_otbr_tcpip_hook.h"
+#define LWIP_HOOK_FILENAME              "rtk_otbr_lwip_hook.h"
 #endif
 
 #if defined(CONFIG_LWIP_NETCONN_SEM_PER_THREAD) && CONFIG_LWIP_NETCONN_SEM_PER_THREAD

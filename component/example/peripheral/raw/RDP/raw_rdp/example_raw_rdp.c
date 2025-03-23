@@ -57,7 +57,7 @@ void example_raw_rdp(void)
 	printf("RDP demo main \n");
 
 	// create demo Task
-	if (rtos_task_create(NULL, "RDP DEMO", (rtos_task_t)rdp_demo, NULL, 4096, (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "RDP DEMO", (rtos_task_t)rdp_demo, NULL, 4096, (1)) != RTK_SUCCESS) {
 		printf("Cannot create demo task\n");
 		while (1);
 	}

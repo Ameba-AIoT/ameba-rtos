@@ -8,6 +8,7 @@ ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
 ameba_add_subdirectory(${c_CMPT_MONITOR_DIR})
 ameba_add_subdirectory(${c_CMPT_SOC_DIR})
 ameba_add_subdirectory(${c_CMPT_FWLIB_DIR})
+ameba_add_subdirectory(${c_CMPT_USRCFG_DIR} usrcfg)
 ameba_add_subdirectory(${c_CMPT_HAL_DIR})
 ameba_add_subdirectory(${c_CMPT_MISC_DIR})
 ameba_add_subdirectory(${c_CMPT_AUDIO_DIR})
@@ -119,7 +120,6 @@ add_custom_command(
 
         -P ${CMAKE_CURRENT_SOURCE_DIR}/postbuild.cmake
 
-    DEPENDS ${c_CURRENT_IMAGE}
     COMMENT "${c_CURRENT_IMAGE} post build"
 )
 

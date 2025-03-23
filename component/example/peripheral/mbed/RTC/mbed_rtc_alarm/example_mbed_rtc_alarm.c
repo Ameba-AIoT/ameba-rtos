@@ -53,7 +53,7 @@ void mbed_rtc_alarm_demo(void)
 
 int example_mbed_rtc_alarm(void)
 {
-	if (rtos_task_create(NULL, "MBED_RTC_ALARM_TASK", (rtos_task_t)mbed_rtc_alarm_demo, NULL, 3072, (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "MBED_RTC_ALARM_TASK", (rtos_task_t)mbed_rtc_alarm_demo, NULL, 3072, (1)) != RTK_SUCCESS) {
 		printf("Create MBED_RTC_ALARM_TASK Err!!\n\r");
 	}
 

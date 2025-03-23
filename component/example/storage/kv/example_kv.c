@@ -49,7 +49,7 @@ void example_kv_thread(void *param)
 
 void example_kv(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_kv_thread"), example_kv_thread, NULL, 2048 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_kv_thread"), example_kv_thread, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(example_kv_thread) failed", __FUNCTION__);
 	}
 }

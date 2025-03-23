@@ -289,7 +289,7 @@ static void qspi_display_ili9341_ppe(void *para)
 
 int example_raw_spi_display_with_ppe_ili9341(void)
 {
-	if (rtos_task_create(NULL, "qspi_display_ili9341_ppe", (rtos_task_t)qspi_display_ili9341_ppe, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "qspi_display_ili9341_ppe", (rtos_task_t)qspi_display_ili9341_ppe, NULL, (2048), (1)) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Cannot create qspi_display_ili9341_ppe demo task\n\r");
 	}
 

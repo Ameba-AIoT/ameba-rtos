@@ -19,6 +19,7 @@
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
 #include <rtk_stack_internal.h>
+#include <rtk_stack_vendor.h>
 #include <rtk_stack_mesh_internal.h>
 #include <rtk_bt_mesh_common.h>
 #include <rtk_bt_mesh_generic_onoff_model.h>
@@ -246,6 +247,32 @@ static bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
 		pb_adv_link_state = (prov_generic_cb_type_t *)p_evt->data;
 		*pb_adv_link_state = cb_data.pb_generic_cb_type;
 		rtk_bt_evt_indicate(p_evt, NULL);
+
+#if defined(VENDOR_CMD_SET_MESH_INFO_SUPPORT) && VENDOR_CMD_SET_MESH_INFO_SUPPORT
+		T_GAP_LE_MESH_PACKET_PRIORITY mesh_prio;
+		switch (*pb_adv_link_state) {
+		case PB_GENERIC_CB_LINK_OPENED: {
+#if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
+			mesh_prio = GAP_LE_MESH_PACKET_PRIORITY_HIGH;
+			le_vendor_set_mesh_packet_priority(mesh_prio);
+#endif
+			break;
+		}
+		case PB_GENERIC_CB_LINK_OPEN_FAILED: {
+			mesh_prio = GAP_LE_MESH_PACKET_PRIORITY_LOW;
+			le_vendor_set_mesh_packet_priority(mesh_prio);
+			break;
+		}
+		case PB_GENERIC_CB_LINK_CLOSED: {
+			mesh_prio = GAP_LE_MESH_PACKET_PRIORITY_LOW;
+			le_vendor_set_mesh_packet_priority(mesh_prio);
+			break;
+		}
+		default: {
+			break;
+		}
+		}
+#endif
 		break;
 	}
 	case PROV_CB_TYPE_COMPLETE: {
@@ -1496,6 +1523,10 @@ static bool rtk_stack_retrans_param_set(rtk_bt_mesh_stack_set_retrans_param_t *p
 static uint16_t rtk_stack_pb_adv_con(rtk_bt_mesh_stack_act_pb_adv_con_t *pbadvcon)
 {
 	uint16_t ret;
+#if defined(VENDOR_CMD_SET_MESH_INFO_SUPPORT) && VENDOR_CMD_SET_MESH_INFO_SUPPORT
+	T_GAP_LE_MESH_PACKET_PRIORITY mesh_prio = GAP_LE_MESH_PACKET_PRIORITY_HIGH;
+	le_vendor_set_mesh_packet_priority(mesh_prio);
+#endif
 	if (pb_adv_link_open(0, pbadvcon->uuid)) {
 		ret = RTK_BT_MESH_STACK_API_SUCCESS;
 	} else {
@@ -1554,6 +1585,10 @@ static uint16_t rtk_stack_pb_gatt_con(rtk_bt_mesh_stack_act_pb_gatt_con_t *pgatt
 	init_phys = GAP_PHYS_CONN_INIT_1M_BIT;
 #else
 	init_phys = 0;
+#endif
+#if defined(VENDOR_CMD_SET_MESH_INFO_SUPPORT) && VENDOR_CMD_SET_MESH_INFO_SUPPORT
+	T_GAP_LE_MESH_PACKET_PRIORITY mesh_prio = GAP_LE_MESH_PACKET_PRIORITY_HIGH;
+	le_vendor_set_mesh_packet_priority(mesh_prio);
 #endif
 	cause = le_connect(init_phys, peer_addr_val,
 					   (T_GAP_REMOTE_ADDR_TYPE)(p_conn_param->peer_addr.type),

@@ -51,6 +51,7 @@ class Manager(object):
 
         self.default_conf = os.path.join(os.path.dirname(top_kconfig), 'default.conf')
         self.prj_conf = os.path.join(self.config_root_dir, 'prj.conf')
+        self.prj_conf_external = os.path.join(out_dir, 'prj.conf') #for user external project
 
         self.general_configs = []
 
@@ -120,8 +121,11 @@ class Manager(object):
         if os.path.exists(self.config_in):
             os.remove(self.config_in)
         file_list = []
-        # if os.path.exists(self.config_prj):
-        #     file_list.append(self.config_prj)
+        if os.path.exists(self.prj_conf):
+            file_list.append(self.prj_conf)
+        elif os.path.exists(self.prj_conf_external):
+            file_list.append(self.prj_conf_external)
+
         return self.apply_files_config(file_list)
 
     def apply_check_config(self) ->int:

@@ -4,6 +4,8 @@
 #include "os_wrapper.h"
 #include "rtw_skbuff.h"
 #include "rtw_timer.h"
+#include "rtw_wifi_constants.h"
+
 union recv_frame;
 struct xmit_frame;
 struct cmd_obj;

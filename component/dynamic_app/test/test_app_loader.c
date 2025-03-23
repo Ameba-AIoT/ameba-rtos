@@ -81,7 +81,7 @@ static void example_main_task(void *param)
 
 void test_app_example(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_main_task"), example_main_task, NULL, 4096 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_main_task"), example_main_task, NULL, 4096 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "Failed to create example_main_task\n\r");
 	}
 }

@@ -305,7 +305,7 @@ static void hid_hotplug_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		if (rtos_sema_take(hid_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
+		if (rtos_sema_take(hid_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (hid_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 				usbd_hid_deinit();
@@ -369,7 +369,7 @@ static void example_usbd_hid_thread(void *param)
 
 #if CONFIG_USBD_HID_HOTPLUG
 	ret = rtos_task_create(&task, "hid_hotplug_thread", hid_hotplug_thread, NULL, 1024U, CONFIG_USBD_HID_HOTPLUG_THREAD_PRIORITY);
-	if (ret != SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		usbd_hid_deinit();
 		usbd_deinit();
 		goto example_usbd_hid_device_thread_fail;
@@ -427,7 +427,7 @@ void example_usbd_hid(void)
 	rtos_task_t task;
 
 	ret = rtos_task_create(&task, "example_usbd_hid_thread", example_usbd_hid_thread, NULL, 1024, CONFIG_USBD_HID_INIT_THREAD_PRIORITY);
-	if (ret != SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD HID thread fail\n");
 	}
 }

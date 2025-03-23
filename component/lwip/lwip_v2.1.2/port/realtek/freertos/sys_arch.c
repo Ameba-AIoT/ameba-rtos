@@ -100,7 +100,7 @@ void sys_mbox_free(sys_mbox_t *mbox)
 //   Posts the "msg" to the mailbox.
 void sys_mbox_post(sys_mbox_t *mbox, void *data)
 {
-    while ( rtos_queue_send(*mbox, &data, RTOS_MAX_TIMEOUT ) != SUCCESS ){}
+    while ( rtos_queue_send(*mbox, &data, RTOS_MAX_TIMEOUT ) != RTK_SUCCESS ){}
 }
 
 
@@ -110,7 +110,7 @@ err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 {
     err_t result;
 
-    if ( rtos_queue_send( *mbox, &msg, 0 ) == SUCCESS ){
+    if ( rtos_queue_send( *mbox, &msg, 0 ) == RTK_SUCCESS ){
         result = ERR_OK;
     }
     else {
@@ -161,7 +161,7 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 
     if ( timeout != 0 )
     {
-        if ( SUCCESS == rtos_queue_receive( *mbox, &(*msg), timeout) )
+        if ( RTK_SUCCESS == rtos_queue_receive( *mbox, &(*msg), timeout) )
         {
             EndTime = rtos_time_get_current_system_time_ms();
             Elapsed = EndTime - StartTime;
@@ -177,7 +177,7 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
     }
     else // block forever for a message.
     {
-        while( SUCCESS != rtos_queue_receive( *mbox, &(*msg), RTOS_MAX_TIMEOUT ) ){} // time is arbitrary
+        while( RTK_SUCCESS != rtos_queue_receive( *mbox, &(*msg), RTOS_MAX_TIMEOUT ) ){} // time is arbitrary
         EndTime = rtos_time_get_current_system_time_ms();
         Elapsed = EndTime - StartTime;
 
@@ -199,7 +199,7 @@ void *dummyptr;
         msg = &dummyptr;
     }
 
-   if ( SUCCESS == rtos_queue_receive( *mbox, &(*msg), 0 ) )
+   if ( RTK_SUCCESS == rtos_queue_receive( *mbox, &(*msg), 0 ) )
    {
       return ERR_OK;
    }
@@ -275,7 +275,7 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 
     if(timeout != 0)
     {
-        if(rtos_sema_take(*sem, timeout) == SUCCESS)
+        if(rtos_sema_take(*sem, timeout) == RTK_SUCCESS)
         {
             EndTime = rtos_time_get_current_system_time_ms();
             Elapsed = EndTime - StartTime;
@@ -289,7 +289,7 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
     }
     else // must block without a timeout
     {
-        while(rtos_sema_take(*sem, RTOS_MAX_TIMEOUT) != SUCCESS){}
+        while(rtos_sema_take(*sem, RTOS_MAX_TIMEOUT) != RTK_SUCCESS){}
         EndTime = rtos_time_get_current_system_time_ms();
         Elapsed = EndTime - StartTime;
 
@@ -451,7 +451,7 @@ sys_thread_t sys_thread_new(const char *name, lwip_thread_fn thread , void *arg,
        s_timeoutlist[s_nextthread++].pid = CreatedTask;
        rtos_critical_exit(RTOS_CRITICAL_LWIP);
 
-       if(result == SUCCESS)
+       if(result == RTK_SUCCESS)
        {
            return CreatedTask;
        }

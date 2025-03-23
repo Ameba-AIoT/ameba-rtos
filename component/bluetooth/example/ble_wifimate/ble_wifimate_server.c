@@ -71,7 +71,7 @@ static rtk_bt_gatt_attr_t ble_wifimate_attrs[] = {
 	/* Primary Service: BLE WIFIMATE */
 	RTK_BT_GATT_PRIMARY_SERVICE(RTK_BT_UUID_BLE_WIFIMATE_SRV),
 
-	/* Characteristic: WI-FI Key Nehotiate */
+	/* Characteristic: WI-FI Key Negotiate */
 	RTK_BT_GATT_CHARACTERISTIC(RTK_BT_UUID_BLE_WIFIMATE_KEY_NEGOTIATE,
 							   RTK_BT_GATT_CHRC_WRITE,
 							   RTK_BT_GATT_PERM_WRITE),
@@ -640,7 +640,6 @@ static uint16_t ble_wifimate_server_indicate_wifi_conn_state(uint16_t conn_handl
 static uint16_t ble_wifimate_wifi_connect(uint16_t conn_handle, struct wifi_conn_config_t *conn_config)
 {
 	int ret = 0;
-	uint32_t tick1, tick2;
 	struct _rtw_network_info_t wifi;
 	struct _rtw_wifi_setting_t setting = {0};
 
@@ -659,8 +658,6 @@ static uint16_t ble_wifimate_wifi_connect(uint16_t conn_handle, struct wifi_conn
 	BT_LOGD("%s:Wifi Connect ssid_len=%d ssid=%s wifi.password_len=%d wifi.password=%s\r\n",
 			__func__, wifi.ssid.len, wifi.ssid.val, wifi.password_len, wifi.password);
 
-	tick1 = osif_sys_time_get();
-
 	if (wifi.ssid.len == 0) {
 		BT_LOGE("[APP] BLE WiFiMate server error: SSID can't be empty\r\n");
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -672,15 +669,14 @@ static uint16_t ble_wifimate_wifi_connect(uint16_t conn_handle, struct wifi_conn
 	ret = wifi_connect(&wifi, 1);
 	if (ret != RTW_SUCCESS) {
 		uint8_t err_code = ble_wifimate_wifi_conn_result_to_bwm_errcode(ret);
-		BT_LOGA("[APP] BLE WiFiMate server can't connect to AP, err_code=%d\r\n", err_code);
+		BT_LOGA("[APP] BLE WiFiMate server can't connect to AP, ret=%d err_code=%d\r\n", ret, err_code);
 		return ble_wifimate_server_indicate_wifi_conn_state(conn_handle, BWM_WIFI_STATE_IDLE, err_code);
 	}
-	tick2 = osif_sys_time_get();
-	BT_LOGA("[APP] BLE WiFiMate server wifi connected after %dms.\r\n", (tick2 - tick1));
+
+	BT_LOGA("[APP] BLE WiFiMate server wifi connected.\r\n");
 
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 	uint8_t DCHP_state;
-	uint32_t tick3;
 	/* Start DHCPClient */
 	DCHP_state = LwIP_DHCP(0, DHCP_START);
 
@@ -688,8 +684,7 @@ static uint16_t ble_wifimate_wifi_connect(uint16_t conn_handle, struct wifi_conn
 		BT_LOGA("[APP] BLE WiFiMate server DHCP fail, DHCP_state=%d\r\n", DCHP_state);
 		return ble_wifimate_server_indicate_wifi_conn_state(conn_handle, BWM_WIFI_STATE_IDLE, BWM_ERR_DHCP_ADDRESS_ASSIGN_FAIL);
 	}
-	tick3 = osif_sys_time_get();
-	BT_LOGA("[APP] BLE WiFiMate server wifi got IP after %dms.\r\n", (tick3 - tick1));
+	BT_LOGA("[APP] BLE WiFiMate server wifi got IP.\r\n");
 #endif
 	return ble_wifimate_server_indicate_wifi_conn_state(conn_handle, BWM_WIFI_STATE_CONNECTED, BWM_OK);
 }
@@ -701,6 +696,7 @@ static void ble_wifimate_password_decode(uint8_t *pw, uint8_t *decode_pw)
 	(void)decode_pw;
 	return;
 }
+
 static uint16_t ble_wifimate_parse_wifi_connect_config(
 	uint16_t len, uint8_t *data, struct wifi_conn_config_t *conn_config)
 {
@@ -956,6 +952,8 @@ static void ble_wifimate_server_indicate_complete_hdl(void *data)
 
 	if (p_ind_ind->index == BLE_WIFIMATE_WIFI_SCAN_INFO_VAL_INDEX) {
 		ble_wifimate_server_send_wifi_scan_info_segment(p_ind_ind->conn_handle);
+	} else if (p_ind_ind->index == BLE_WIFIMATE_WIFI_CONNECT_STATE_VAL_INDEX) {
+		rtk_bt_le_gap_disconnect(p_ind_ind->conn_handle);
 	}
 }
 
@@ -998,11 +996,6 @@ rtk_bt_evt_cb_ret_t ble_wifimate_gatts_app_callback(uint8_t event, void *data, u
 
 uint16_t ble_wifimate_server_add(void)
 {
-	if (s_ble_wifimate_state != BLE_WIFIMATE_SERVER_STATE_IDLE) {
-		BT_LOGA("[APP] ble wifimate has already connected.\r\n");
-	}
-	s_ble_wifimate_state = BLE_WIFIMATE_SERVER_STATE_CONNECT;
-
 	s_ble_wifimate_srv.type = GATT_SERVICE_OVER_BLE;
 	s_ble_wifimate_srv.server_info = 0;
 	s_ble_wifimate_srv.user_data = NULL;
@@ -1015,6 +1008,11 @@ uint16_t ble_wifimate_server_connect(uint16_t conn_hdl)
 {
 	(void)conn_hdl;
 
+	if (s_ble_wifimate_state != BLE_WIFIMATE_SERVER_STATE_IDLE) {
+		BT_LOGA("[APP] ble wifimate has already connected.\r\n");
+	}
+	s_ble_wifimate_state = BLE_WIFIMATE_SERVER_STATE_CONNECT;
+
 	return RTK_BT_OK;
 }
 
@@ -1023,7 +1021,7 @@ void ble_wifimate_server_disconnect(uint16_t conn_hdl)
 	(void)conn_hdl;
 	s_cccd_ind_en_wifi_scan = 0;
 	s_cccd_ind_en_wifi_conn = 0;
-	s_ble_wifimate_state = 0;
+	s_ble_wifimate_state = BLE_WIFIMATE_SERVER_STATE_IDLE;
 	memset(&s_pw_decode, 0, sizeof(s_pw_decode));
 
 	ble_wifimate_char_multi_indicate_data_deinit();
@@ -1034,7 +1032,7 @@ void ble_wifimate_server_deinit(void)
 {
 	s_cccd_ind_en_wifi_scan = 0;
 	s_cccd_ind_en_wifi_conn = 0;
-	s_ble_wifimate_state = 0;
+	s_ble_wifimate_state = BLE_WIFIMATE_SERVER_STATE_IDLE;
 	memset(&s_pw_decode, 0, sizeof(s_pw_decode));
 
 	ble_wifimate_char_multi_indicate_data_deinit();

@@ -170,11 +170,11 @@ void gdma_dest_scatter_task(void)
 
 int example_raw_gdma_gather_scatter(void)
 {
-	if (rtos_task_create(NULL, "GDMA SRC_GATHER TRANSFER DEMO", (rtos_task_t)gdma_source_gather_task, NULL, (3072), (3)) != SUCCESS) {
+	if (rtos_task_create(NULL, "GDMA SRC_GATHER TRANSFER DEMO", (rtos_task_t)gdma_source_gather_task, NULL, (3072), (3)) != RTK_SUCCESS) {
 		printf("Cannot create dma_multiblock_transfer_task demo task\n\r");
 	}
 
-	if (rtos_task_create(NULL, "GDMA DST_SCATTER TRANSFER DEMO", (rtos_task_t)gdma_dest_scatter_task, NULL, (3072), (2)) != SUCCESS) {
+	if (rtos_task_create(NULL, "GDMA DST_SCATTER TRANSFER DEMO", (rtos_task_t)gdma_dest_scatter_task, NULL, (3072), (2)) != RTK_SUCCESS) {
 		printf("Cannot create dma_multiblock_transfer_task demo task\n\r");
 	}
 

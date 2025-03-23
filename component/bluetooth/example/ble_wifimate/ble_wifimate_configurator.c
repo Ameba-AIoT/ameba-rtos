@@ -1,6 +1,6 @@
 /*
  *******************************************************************************
- * Copyright(c) 2022, Realtek Semiconductor Corporation. All rights reserved.
+ * Copyright(c) 2025, Realtek Semiconductor Corporation. All rights reserved.
  *******************************************************************************
  */
 
@@ -52,22 +52,6 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_gap_app_callback(uint8_t evt_code, void 
 					scan_res_ind->adv_report.len);
 		break;
 	}
-
-#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
-	case RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND: {
-		rtk_bt_le_ext_scan_res_ind_t *scan_res_ind = (rtk_bt_le_ext_scan_res_ind_t *)param;
-		rtk_bt_le_addr_to_str(&(scan_res_ind->addr), le_addr, sizeof(le_addr));
-		BT_LOGA("[APP] Ext Scan info, [Device]: %s, AD evt type: 0x%x, RSSI: %d, PHY: 0x%x, TxPower: %d, Len: %d\r\n",
-				le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
-				(scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
-				scan_res_ind->tx_power, scan_res_ind->len);
-		BT_AT_PRINT("+BLEGAP:escan,%s,0x%x,%d,0x%x,%d,%d\r\n",
-					le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
-					(scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
-					scan_res_ind->tx_power, scan_res_ind->len);
-		break;
-	}
-#endif
 
 	case RTK_BT_LE_GAP_EVT_SCAN_STOP_IND: {
 		rtk_bt_le_scan_stop_ind_t *scan_stop_ind = (rtk_bt_le_scan_stop_ind_t *)param;
@@ -291,52 +275,6 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_gap_app_callback(uint8_t evt_code, void 
 		break;
 	}
 
-#if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
-	case RTK_BT_LE_GAP_EVT_RESOLV_LIST_MODIFY_IND: {
-		rtk_bt_le_modify_resolv_list_ind_t *p_ind = (rtk_bt_le_modify_resolv_list_ind_t *)param;
-		rtk_bt_le_addr_t addr;
-
-		if (p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_ADD || p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_REMOVE) {
-			addr.type = (rtk_bt_le_addr_type_t)p_ind->entry.addr_type;
-			memcpy(addr.addr_val, p_ind->entry.addr, RTK_BD_ADDR_LEN);
-			rtk_bt_le_addr_to_str(&addr, le_addr, sizeof(le_addr));
-			if (p_ind->err) {
-				BT_LOGE("[APP] Resolving list %s %s fail, cause:%x.\r\n",
-						(p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_ADD) ? "add" : "remove",
-						le_addr, p_ind->err);
-				BT_AT_PRINT("+BLEGAP:resolv_list_modify,%d,-1\r\n", p_ind->op);
-			} else {
-				BT_LOGA("[APP] Resolving list %s %s success, %s privacy mode.\r\n",
-						(p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_ADD) ? "add" : "remove",
-						le_addr, p_ind->entry.device_mode ? "device" : "network");
-				BT_AT_PRINT("+BLEGAP:resolv_list_modify,%d,0,%s,%s\r\n",
-							p_ind->op, le_addr, p_ind->entry.device_mode ? "device" : "network");
-			}
-		} else if (p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_CLEAR) {
-			if (p_ind->err) {
-				BT_LOGE("[APP] Resolving list clear fail, cause:%x.\r\n", p_ind->err);
-			} else {
-				BT_LOGA("[APP] Resolving list clear success.\r\n");
-			}
-			BT_AT_PRINT("+BLEGAP:resolv_list_modify,%d,%d\r\n", p_ind->op, (p_ind->err == 0) ? 0 : -1);
-		}
-		break;
-	}
-
-	case RTK_BT_LE_GAP_EVT_RESOLV_LIST_PENDING_IND: {
-		rtk_bt_le_resolv_list_pending_ind_t *p_ind = (rtk_bt_le_resolv_list_pending_ind_t *)param;
-		BT_LOGA("[APP] WARN: Resolving list modification is pending because of adv(%d) scan(%d) connect(%d)!!!\r\n",
-				(p_ind->reason & RTK_BT_LE_RESOLV_LIST_PEND_BY_ADV) ? 1 : 0,
-				(p_ind->reason & RTK_BT_LE_RESOLV_LIST_PEND_BY_SCAN) ? 1 : 0,
-				(p_ind->reason & RTK_BT_LE_RESOLV_LIST_PEND_BY_CONNECT) ? 1 : 0);
-		BT_AT_PRINT("+BLEGAP:resolv_list_pending,%d,%d,%d\r\n",
-					(p_ind->reason & RTK_BT_LE_RESOLV_LIST_PEND_BY_ADV) ? 1 : 0,
-					(p_ind->reason & RTK_BT_LE_RESOLV_LIST_PEND_BY_SCAN) ? 1 : 0,
-					(p_ind->reason & RTK_BT_LE_RESOLV_LIST_PEND_BY_CONNECT) ? 1 : 0);
-		break;
-	}
-#endif
-
 	default:
 		BT_LOGE("[APP] Unkown gap cb evt type: %d\r\n", evt_code);
 		break;
@@ -364,11 +302,6 @@ static rtk_bt_le_security_param_t sec_param = {
 	.fixed_key = 000000,
 };
 
-#if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
-static bool privacy_enable = false;
-static bool privacy_whitelist = true;
-#endif
-
 int ble_wifimate_configurator_main(uint8_t enable)
 {
 	rtk_bt_app_conf_t bt_app_conf = {0};
@@ -378,9 +311,9 @@ int ble_wifimate_configurator_main(uint8_t enable)
 	if (1 == enable) {
 		//set GAP configuration
 		bt_app_conf.app_profile_support = RTK_BT_PROFILE_GATTC;
-		bt_app_conf.mtu_size = 180;
-		bt_app_conf.master_init_mtu_req = false;
-		bt_app_conf.slave_init_mtu_req = true;
+		bt_app_conf.mtu_size = 512;
+		bt_app_conf.master_init_mtu_req = true;
+		bt_app_conf.slave_init_mtu_req = false;
 		bt_app_conf.prefer_all_phy = 0;
 		bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
 		bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
@@ -401,11 +334,6 @@ int ble_wifimate_configurator_main(uint8_t enable)
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GAP, ble_wifimate_gap_app_callback));
 
 		BT_APP_PROCESS(rtk_bt_le_sm_set_security_param(&sec_param));
-#if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
-		if (privacy_enable) {
-			BT_APP_PROCESS(rtk_bt_le_gap_privacy_init(privacy_whitelist));
-		}
-#endif
 
 		/* Initilize GATT (client) part */
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GATTC, ble_wifimate_gattc_app_callback));
