@@ -104,7 +104,7 @@ void uart_stream_dma(void)
 
 int example_mbed_uart_dma_stream(void)
 {
-	if (SUCCESS != rtos_task_create(NULL, "uart_stream_dma", (rtos_task_t)uart_stream_dma, (void *)NULL, 3072, (1))) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, "uart_stream_dma", (rtos_task_t)uart_stream_dma, (void *)NULL, 3072, (1))) {
 		RTK_LOGE(NOTAG, "Create uart_stream_dma Err!!!\n");
 	}
 

@@ -68,7 +68,7 @@ void raw_adc_vbat_demo(void)
 
 int example_raw_adc_tim_trig_vbat(void)
 {
-	if (rtos_task_create(NULL, "RAW_ADC_VBAT_TASK", (rtos_task_t)raw_adc_vbat_demo, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "RAW_ADC_VBAT_TASK", (rtos_task_t)raw_adc_vbat_demo, NULL, (2048), (1)) != RTK_SUCCESS) {
 		RTK_LOGI(NOTAG, "Cannot create RAW_ADC_VBAT_TASK\n");
 	}
 

@@ -49,7 +49,7 @@ exit:
 
 void example_lwip_mdns(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_lwip_mdns_thread"), example_lwip_mdns_thread, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_lwip_mdns_thread"), example_lwip_mdns_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(example_lwip_mdns_thread) failed", __FUNCTION__);
 	}
 }

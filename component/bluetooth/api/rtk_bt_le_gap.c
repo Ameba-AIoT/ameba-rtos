@@ -1213,6 +1213,34 @@ uint16_t rtk_bt_le_sm_set_oob_tk(rtk_bt_le_set_oob_key_t *p_set_oob_key)
 
 	return ret;
 }
+
+uint16_t rtk_bt_le_sm_get_sc_local_oob(rtk_bt_le_sc_local_oob_data_t *local_oob)
+{
+	uint16_t ret = 0;
+
+	if (!local_oob) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_GET_SC_LOCAL_OOB,
+						  local_oob, sizeof(rtk_bt_le_sc_local_oob_data_t));
+
+	return ret;
+}
+
+uint16_t rtk_bt_le_sm_input_sc_peer_oob(rtk_bt_le_sc_peer_oob_data_t *peer_oob)
+{
+	uint16_t ret = 0;
+
+	if (!peer_oob) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_INPUT_SC_PEER_OOB,
+						  peer_oob, sizeof(rtk_bt_le_sc_peer_oob_data_t));
+
+	return ret;
+}
 #endif  /* RTK_BLE_SMP_OOB_SUPPORT */
 
 uint16_t rtk_bt_le_sm_get_bond_num(uint8_t *bond_num)

@@ -57,6 +57,7 @@
 #include <trace_app.h>
 #include <mesh_api.h>
 #include <rtk_bt_device.h>
+#include <rtk_stack_vendor.h>
 #include <rtk_stack_mesh_internal.h>
 bool rtk_ble_mesh_scan_enable_flag = false;
 #endif
@@ -2213,6 +2214,12 @@ static void bt_stack_le_gap_handle_conn_state_evt(T_LE_GAP_MSG *p_gap_msg)
 			}
 			rtk_bt_evt_indicate(p_evt, NULL);
 		}
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && defined(VENDOR_CMD_SET_MESH_INFO_SUPPORT) && VENDOR_CMD_SET_MESH_INFO_SUPPORT
+		if (rtk_bt_mesh_is_enable()) {
+			T_GAP_LE_MESH_PACKET_PRIORITY mesh_prio = GAP_LE_MESH_PACKET_PRIORITY_LOW;
+			le_vendor_set_mesh_packet_priority(mesh_prio);
+		}
+#endif
 		break;
 
 	case GAP_CONN_STATE_CONNECTED:
@@ -2262,6 +2269,12 @@ static void bt_stack_le_gap_handle_conn_state_evt(T_LE_GAP_MSG *p_gap_msg)
 #endif
 
 		rtk_bt_evt_indicate(p_evt, NULL);
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && defined(VENDOR_CMD_SET_MESH_INFO_SUPPORT) && VENDOR_CMD_SET_MESH_INFO_SUPPORT
+		if (rtk_bt_mesh_is_enable() && GAP_LINK_ROLE_SLAVE == conn_info.role) {
+			T_GAP_LE_MESH_PACKET_PRIORITY mesh_prio = GAP_LE_MESH_PACKET_PRIORITY_HIGH;
+			le_vendor_set_mesh_packet_priority(mesh_prio);
+		}
+#endif
 		break;
 
 	case GAP_CONN_STATE_CONNECTING:
@@ -4443,6 +4456,7 @@ static uint16_t bt_stack_le_gap_set_data_len(void *param)
 
 	return 0;
 #else
+	(void)param;
 	return RTK_BT_ERR_UNSUPPORTED;
 #endif
 }
@@ -4466,6 +4480,7 @@ static uint16_t bt_stack_le_gap_set_phy(void *param)
 
 	return 0;
 #else
+	(void)param;
 	return RTK_BT_ERR_UNSUPPORTED;
 #endif
 }
@@ -5211,6 +5226,59 @@ static uint16_t bt_stack_le_sm_set_oob_tk(void *param)
 
 	return 0;
 #else
+	(void)param;
+	return RTK_BT_ERR_UNSUPPORTED;
+#endif
+}
+
+static uint16_t bt_stack_le_sm_get_sc_local_oob(void *param)
+{
+#if defined(F_BT_LE_4_2_SC_OOB_SUPPORT) && F_BT_LE_4_2_SC_OOB_SUPPORT
+	T_GAP_CAUSE cause;
+	rtk_bt_le_sc_local_oob_data_t *oob_data = (rtk_bt_le_sc_local_oob_data_t *)param;
+	uint8_t rand[16] = {0};
+	T_GAP_LE_LOCAL_OOB_DATA local_oob = {0};
+
+	osif_rand(rand, 16);
+	cause = le_bond_sc_local_oob_init(NULL, rand, &local_oob);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+	memcpy(oob_data->rand, local_oob.rand, sizeof(oob_data->rand));
+	memcpy(oob_data->confirm, local_oob.confirm, sizeof(oob_data->confirm));
+
+	return 0;
+#else
+	(void)param;
+	return RTK_BT_ERR_UNSUPPORTED;
+#endif
+}
+
+static uint16_t bt_stack_le_sm_input_sc_peer_oob(void *param)
+{
+#if defined(F_BT_LE_4_2_SC_OOB_SUPPORT) && F_BT_LE_4_2_SC_OOB_SUPPORT
+	T_GAP_CAUSE cause;
+	uint8_t conn_id = 0xFF;
+	rtk_bt_le_sc_peer_oob_data_t *oob_data = (rtk_bt_le_sc_peer_oob_data_t *)param;
+	T_GAP_LE_PEER_OOB_DATA peer_oob = {0};
+
+	if (!le_get_conn_id(oob_data->addr, GAP_REMOTE_ADDR_LE_PUBLIC, &conn_id) &&
+		!le_get_conn_id(oob_data->addr, GAP_REMOTE_ADDR_LE_RANDOM, &conn_id)) {
+		return RTK_BT_ERR_NO_CONNECTION;
+	}
+
+	peer_oob.present = 1;
+	memcpy(peer_oob.bd_addr_from, oob_data->addr, 6);
+	memcpy(peer_oob.rand, oob_data->rand, sizeof(peer_oob.rand));
+	memcpy(peer_oob.confirm, oob_data->confirm, sizeof(peer_oob.confirm));
+	cause = le_bond_sc_peer_oob_init(&peer_oob);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return 0;
+#else
+	(void)param;
 	return RTK_BT_ERR_UNSUPPORTED;
 #endif
 }
@@ -6175,6 +6243,16 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_LE_GAP_ACT_OOB_KEY_INPUT:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_OOB_KEY_INPUT \r\n");
 		ret = bt_stack_le_sm_set_oob_tk(p_cmd->param);
+		break;
+
+	case RTK_BT_LE_GAP_ACT_GET_SC_LOCAL_OOB:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_GET_SC_LOCAL_OOB \r\n");
+		ret = bt_stack_le_sm_get_sc_local_oob(p_cmd->param);
+		break;
+
+	case RTK_BT_LE_GAP_ACT_INPUT_SC_PEER_OOB:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_INPUT_SC_PEER_OOB \r\n");
+		ret = bt_stack_le_sm_input_sc_peer_oob(p_cmd->param);
 		break;
 
 	case RTK_BT_LE_GAP_ACT_GET_BOND_NUM:

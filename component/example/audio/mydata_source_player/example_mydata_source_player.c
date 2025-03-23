@@ -249,7 +249,7 @@ void example_mydata_source_player_thread(void *param)
 void example_mydata_source_player(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_mydata_source_player_thread"), example_mydata_source_player_thread, NULL, 10 * 1024,
-						 1) != SUCCESS) {
+						 1) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(example_mydata_source_player_thread) failed", __FUNCTION__);
 	}
 }

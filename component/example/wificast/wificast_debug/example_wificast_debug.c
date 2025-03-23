@@ -121,7 +121,7 @@ static void example_debug_scan_response_cb(u8 *mac)
 	RTK_LOGD(TAG, "%s, recv response from"MAC_FMT"\n", __func__, MAC_ARG(mac));
 
 	if (g_scan_report_q) {
-		if (SUCCESS != rtos_queue_send(g_scan_report_q, &info, 0)) {
+		if (RTK_SUCCESS != rtos_queue_send(g_scan_report_q, &info, 0)) {
 			RTK_LOGW(TAG, "%s, send queue failed\n", __func__);
 			return;
 		}
@@ -134,7 +134,7 @@ static void example_recv_cb_task(void *param)
 	struct example_cb_recv_data *recv_data = NULL;
 
 	while (1) {
-		if (SUCCESS == rtos_queue_receive(g_recv_cb_q, &recv_data, 10)) {
+		if (RTK_SUCCESS == rtos_queue_receive(g_recv_cb_q, &recv_data, 10)) {
 			struct example_frame_head *hdr = (struct example_frame_head *)recv_data->data;
 			RTK_LOGD(TAG, MAC_FMT", len: %d, type: %x\n", MAC_ARG(recv_data->mac), recv_data->data_len, hdr->type);
 			if (hdr->type & WIFI_CAST_DEBUG_COMMAND) {
@@ -176,7 +176,7 @@ static void example_recv_callback(wifi_cast_node_t *pnode, unsigned char *buf, u
 	memcpy(recv_data->mac, pnode->mac, ETH_ALEN);
 	memcpy(recv_data->data, buf, len);
 	if (g_recv_cb_q) {
-		if (SUCCESS != rtos_queue_send(g_recv_cb_q, &recv_data, 0)) {
+		if (RTK_SUCCESS != rtos_queue_send(g_recv_cb_q, &recv_data, 0)) {
 			RTK_LOGD(TAG, "%s, send queue failed\n", __func__);
 			rtos_mem_free(recv_data->data);
 			rtos_mem_free(recv_data);
@@ -207,7 +207,7 @@ void wifi_cast_send_log(const char *fmt, va_list ap)
 	log_info->data = buf;
 
 	if (g_log_q) {
-		if (SUCCESS != rtos_queue_send(g_log_q, &log_info, 0)) {
+		if (RTK_SUCCESS != rtos_queue_send(g_log_q, &log_info, 0)) {
 			RTK_LOGD(TAG, "%s, send queue failed\n", __func__);
 			rtos_mem_free(buf);
 			rtos_mem_free(log_info);
@@ -226,7 +226,7 @@ static void example_log_send_task(void *param)
 	struct log_info_s *log_info = NULL;
 
 	while (1) {
-		if (SUCCESS == rtos_queue_receive(g_log_q, &log_info, 10)) {
+		if (RTK_SUCCESS == rtos_queue_receive(g_log_q, &log_info, 10)) {
 			if (WIFI_CAST_OK != example_send(WIFI_CAST_DEBUG_LOG, WIFI_CAST_BROADCAST_MAC, (u8 *)log_info->data, log_info->size)) {
 				RTK_LOGE(TAG, "%s, send fail\n", __func__);
 			}
@@ -245,7 +245,7 @@ static void example_debug_initial_scan(struct example_scan_info **info_list, int
 
 	do {
 		example_send(WIFI_CAST_SCAN_REQUEST, WIFI_CAST_BROADCAST_MAC, NULL, 0);
-		if (SUCCESS == rtos_queue_receive(g_scan_report_q, &info, 50)) {
+		if (RTK_SUCCESS == rtos_queue_receive(g_scan_report_q, &info, 50)) {
 			u8 exist = 0;
 			if (g_info_list) {
 				for (int i = 0; i < info_num; i++) {
@@ -305,7 +305,7 @@ exit:
 
 static void scan_handle(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"scan_task"), scan_task, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"scan_task"), scan_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "Failed to create scan_task\n\r");
 	}
 }
@@ -368,13 +368,13 @@ static void example_main_task(void *param)
 	rtos_queue_create(&g_recv_cb_q, 32, sizeof(struct example_cb_recv_data *));
 	rtos_queue_create(&g_scan_report_q, 16, sizeof(struct example_scan_info));
 
-	if (rtos_task_create(NULL, ((const char *)"example_recv_cb_task"), example_recv_cb_task, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_recv_cb_task"), example_recv_cb_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "Failed to create example_recv_cb_task\n\r");
 	}
 
 #if WIFI_CAST_MONITORED
 	rtos_queue_create(&g_log_q, 16, sizeof(struct log_info_s *));
-	if (rtos_task_create(NULL, ((const char *)"example_log_send_task"), example_log_send_task, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_log_send_task"), example_log_send_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "Failed to create example_log_send_task\n\r");
 	}
 #endif
@@ -383,7 +383,7 @@ static void example_main_task(void *param)
 
 void app_example(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_main_task"), example_main_task, NULL, 512 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_main_task"), example_main_task, NULL, 512 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "Failed to create example_main_task\n\r");
 	}
 }

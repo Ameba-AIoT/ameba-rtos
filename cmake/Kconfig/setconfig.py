@@ -79,7 +79,7 @@ def main():
     elif args.config_in == '__empty__':
         pass
     else:
-        print(kconf.load_config(args.config_in))
+        kconf.load_config(args.config_in)
 
     for arg in args.assignments:
         if "=" not in arg:
@@ -107,7 +107,7 @@ def main():
     if args.config_out is None:
         print(kconf.write_config())
     else:
-        print(kconf.write_config(args.config_out))
+        kconf.write_config(args.config_out)
 
 
 if __name__ == "__main__":

@@ -115,7 +115,7 @@ void ctc_filter_task(void)
 
 int  example_raw_ctc_sw_filter(void)
 {
-	if (rtos_task_create(NULL, "CTC_FILTER_DEMO", (rtos_task_t)ctc_filter_task, NULL, 2048, (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "CTC_FILTER_DEMO", (rtos_task_t)ctc_filter_task, NULL, 2048, (1)) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Cannot create CTC_FILTER_DEMO\r\n");
 	}
 

@@ -576,6 +576,8 @@ Stream *ameba_audio_stream_tx_init(uint32_t device, StreamConfig config)
 	}
 	rstream->stream.gdma_struct->stream = (Stream *)rstream;
 	rstream->stream.gdma_struct->gdma_id = 0;
+	rstream->stream.gdma_struct->u.SpTxGdmaInitStruct.GDMA_Index = 0xff;
+	rstream->stream.gdma_struct->u.SpTxGdmaInitStruct.GDMA_ChNum = 0xff;
 	rtos_sema_create(&rstream->stream.sem, 0, RTOS_SEMA_MAX_COUNT);
 	rtos_sema_create(&rstream->stream.sem_gdma_end, 0, RTOS_SEMA_MAX_COUNT);
 
@@ -596,6 +598,9 @@ Stream *ameba_audio_stream_tx_init(uint32_t device, StreamConfig config)
 		}
 		rstream->stream.extra_gdma_struct->stream = (Stream *)rstream;
 		rstream->stream.extra_gdma_struct->gdma_id = 1;
+
+		rstream->stream.extra_gdma_struct->u.SpTxGdmaInitStruct.GDMA_Index = 0xff;
+		rstream->stream.extra_gdma_struct->u.SpTxGdmaInitStruct.GDMA_ChNum = 0xff;
 
 		rtos_sema_create(&rstream->stream.extra_sem, 0, RTOS_SEMA_MAX_COUNT);
 		rtos_sema_create(&rstream->stream.extra_sem_gdma_end, 0, RTOS_SEMA_MAX_COUNT);
@@ -806,10 +811,17 @@ void ameba_audio_stream_tx_standby(Stream *stream)
 		// please mask interrupt in the handling.
 		rstream->stream.sem_gdma_end_need_post = true;
 		GDMA_INTConfig(sp_txgdma_initstruct->GDMA_Index, sp_txgdma_initstruct->GDMA_ChNum, sp_txgdma_initstruct->GDMA_IsrType, ENABLE);
+
 		// sometimes user start gdma, but never start sport, irq will never come.
+		if(!ameba_audio_sport_started(rstream->stream.sport_dev_num)) {
+			AUDIO_SP_TXStart(rstream->stream.sport_dev_num, ENABLE);
+		}
+
 		int32_t sem_ret = rtos_sema_take(rstream->stream.sem_gdma_end, sem_timeout);
 		if (sem_ret < 0) {
-			GDMA_Abort(sp_txgdma_initstruct->GDMA_Index, sp_txgdma_initstruct->GDMA_ChNum);
+			// should never come here, fix this issue.
+			// GMA hardware can't be correctly aborted during transfer.
+			HAL_AUDIO_ERROR("wait irq timeout");
 		}
 		rstream->stream.sem_gdma_end_need_post = false;
 	}
@@ -822,9 +834,15 @@ void ameba_audio_stream_tx_standby(Stream *stream)
 			GDMA_INTConfig(extra_sp_txgdma_initstruct->GDMA_Index, extra_sp_txgdma_initstruct->GDMA_ChNum, extra_sp_txgdma_initstruct->GDMA_IsrType, ENABLE);
 		}
 		// sometimes user start gdma, but never start sport, irq will never come.
+		if(!ameba_audio_sport_started(rstream->stream.sport_dev_num)) {
+			AUDIO_SP_TXStart(rstream->stream.sport_dev_num, ENABLE);
+		}
+
 		int32_t sem_ret = rtos_sema_take(rstream->stream.extra_sem_gdma_end, sem_timeout);
 		if (sem_ret < 0) {
-			GDMA_Abort(extra_sp_txgdma_initstruct->GDMA_Index, extra_sp_txgdma_initstruct->GDMA_ChNum);
+			// should never come here, fix this issue.
+			// GMA hardware can't be correctly aborted during transfer.
+			HAL_AUDIO_ERROR("extra wait irq timeout");
 		}
 		rstream->stream.extra_sem_gdma_end_need_post = false;
 	}
@@ -1170,15 +1188,20 @@ void ameba_audio_stream_tx_close(Stream *stream)
 		GDMA_InitTypeDef sp_txgdma_initstruct = rstream->stream.gdma_struct->u.SpTxGdmaInitStruct;
 		HAL_AUDIO_INFO("dma clear: index:%d, chNum:%d", sp_txgdma_initstruct.GDMA_Index, sp_txgdma_initstruct.GDMA_ChNum);
 
-		GDMA_ClearINT(sp_txgdma_initstruct.GDMA_Index, sp_txgdma_initstruct.GDMA_ChNum);
-		GDMA_Cmd(sp_txgdma_initstruct.GDMA_Index, sp_txgdma_initstruct.GDMA_ChNum, DISABLE);
-		GDMA_ChnlFree(sp_txgdma_initstruct.GDMA_Index, sp_txgdma_initstruct.GDMA_ChNum);
+		// if user never write data, GDMA_Index and GDMA_ChNum will be -1.
+		if (sp_txgdma_initstruct.GDMA_Index != 0xff && sp_txgdma_initstruct.GDMA_ChNum != 0xff) {
+			GDMA_ClearINT(sp_txgdma_initstruct.GDMA_Index, sp_txgdma_initstruct.GDMA_ChNum);
+			GDMA_Cmd(sp_txgdma_initstruct.GDMA_Index, sp_txgdma_initstruct.GDMA_ChNum, DISABLE);
+			GDMA_ChnlFree(sp_txgdma_initstruct.GDMA_Index, sp_txgdma_initstruct.GDMA_ChNum);
+		}
 
 		if (rstream->stream.extra_channel) {
 			GDMA_InitTypeDef extra_sp_txgdma_initstruct = rstream->stream.extra_gdma_struct->u.SpTxGdmaInitStruct;
-			GDMA_ClearINT(extra_sp_txgdma_initstruct.GDMA_Index, extra_sp_txgdma_initstruct.GDMA_ChNum);
-			GDMA_Cmd(extra_sp_txgdma_initstruct.GDMA_Index, extra_sp_txgdma_initstruct.GDMA_ChNum, DISABLE);
-			GDMA_ChnlFree(extra_sp_txgdma_initstruct.GDMA_Index, extra_sp_txgdma_initstruct.GDMA_ChNum);
+			if (extra_sp_txgdma_initstruct.GDMA_Index != 0xff && extra_sp_txgdma_initstruct.GDMA_ChNum != 0xff) {
+				GDMA_ClearINT(extra_sp_txgdma_initstruct.GDMA_Index, extra_sp_txgdma_initstruct.GDMA_ChNum);
+				GDMA_Cmd(extra_sp_txgdma_initstruct.GDMA_Index, extra_sp_txgdma_initstruct.GDMA_ChNum, DISABLE);
+				GDMA_ChnlFree(extra_sp_txgdma_initstruct.GDMA_Index, extra_sp_txgdma_initstruct.GDMA_ChNum);
+			}
 		}
 		rstream->stream.trigger_tstamp = ameba_audio_get_now_ns();
 

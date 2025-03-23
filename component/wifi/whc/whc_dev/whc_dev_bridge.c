@@ -41,7 +41,7 @@ void whc_bridge_dev_packet_attrib_parse(struct sk_buff *skb, struct bridge_pkt_a
 	src_addr = (struct eth_addr *)(skb->data + ETH_ALEN);
 	protocol = *((unsigned short *)(skb->data + 2 * ETH_ALEN));
 
-	if (protocol == lwip_htons(ETH_P_IP)) {
+	if (protocol == lwip_htons(ETHTYPE_IP)) {
 		/* update src ip/mac mapping */
 		iph = (struct ip_hdr *)(skb->data + ETH_HLEN);
 		src_ip = (u8_t *) & (iph->src.addr);
@@ -68,7 +68,7 @@ void whc_bridge_dev_packet_attrib_parse(struct sk_buff *skb, struct bridge_pkt_a
 			src_port = 0;
 			dst_port = 0;
 		}
-	} else if (protocol == lwip_htons(ETH_P_ARP)) {
+	} else if (protocol == lwip_htons(ETHTYPE_ARP)) {
 		arph = (struct etharp_hdr *)(skb->data + ETH_HLEN);
 		src_ip = (u8 *) & (arph->sipaddr);
 		dst_ip = (u8 *) & (arph->dipaddr);
@@ -165,7 +165,7 @@ u8 whc_bridge_dev_rcvpkt_redirect(struct sk_buff *skb, struct bridge_pkt_attrib 
 	}
 #endif
 
-	if (pattrib->protocol == lwip_htons(ETH_P_ARP)) {
+	if (pattrib->protocol == lwip_htons(ETHTYPE_ARP)) {
 		return PORT_TO_BOTH;
 	}
 
@@ -217,7 +217,7 @@ u8 whc_bridge_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send)
 	whc_bridge_dev_packet_attrib_parse(skb, pattrib);
 
 
-	if (pattrib->protocol == lwip_htons(ETH_P_IPV6)) {
+	if (pattrib->protocol == lwip_htons(ETHTYPE_IPV6)) {
 		dev_kfree_skb_any(skb);
 		rtos_mem_free(pattrib);
 		return 0;

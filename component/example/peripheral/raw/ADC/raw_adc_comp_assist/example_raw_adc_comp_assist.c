@@ -109,7 +109,7 @@ void adc_comp_demo(void)
 
 int example_raw_adc_comp_assist(void)
 {
-	if (rtos_task_create(NULL, "RAW_ADC_COMP_TASK", (rtos_task_t)adc_comp_demo, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "RAW_ADC_COMP_TASK", (rtos_task_t)adc_comp_demo, NULL, (2048), (1)) != RTK_SUCCESS) {
 		RTK_LOGE(NOTAG, "Cannot create RAW_ADC_COMP_TASK\n");
 	}
 

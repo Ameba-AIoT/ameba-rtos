@@ -260,7 +260,7 @@ static void vendor_intr_xfer_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		if (rtos_sema_take(vendor_intr_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
+		if (rtos_sema_take(vendor_intr_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if ((vendor_intr_tx_buf != NULL) && (vendor_intr_tx_len != 0)) {
 				usbd_vendor_transmit_intr_data(vendor_intr_tx_buf, vendor_intr_tx_len);
 			}
@@ -296,7 +296,7 @@ static void vendor_isoc_xfer_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		if (rtos_sema_take(vendor_isoc_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
+		if (rtos_sema_take(vendor_isoc_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if ((vendor_isoc_tx_buf != NULL) && (vendor_isoc_tx_len != 0)) {
 				usbd_vendor_transmit_isoc_data(vendor_isoc_tx_buf, vendor_isoc_tx_len);
 			}
@@ -333,7 +333,7 @@ static void vendor_bulk_xfer_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		if (rtos_sema_take(vendor_bulk_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
+		if (rtos_sema_take(vendor_bulk_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if ((vendor_bulk_tx_buf != NULL) && (vendor_bulk_tx_len != 0)) {
 				usbd_vendor_transmit_bulk_data(vendor_bulk_tx_buf, vendor_bulk_tx_len);
 			}
@@ -361,7 +361,7 @@ static void vendor_hotplug_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		if (rtos_sema_take(vendor_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
+		if (rtos_sema_take(vendor_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (vendor_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 				usbd_vendor_deinit();
@@ -425,28 +425,28 @@ static void example_usbd_vendor_thread(void *param)
 
 #if CONFIG_USBD_VENDOR_HOTPLUG
 	ret = rtos_task_create(&check_status_task, "vendor_hotplug_thread", vendor_hotplug_thread, NULL, 1024U, CONFIG_USBD_VENDOR_HOTPLUG_THREAD_PRIORITY);
-	if (ret != SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		goto clear_usb_class_exit;
 	}
 #endif // CONFIG_USBD_VENDOR_HOTPLUG
 #if CONFIG_USBD_VENDOR_INTR_ASYNC_XFER
 	// The priority of transfer thread shall be lower than USB isr priority
 	ret = rtos_task_create(&intr_async_xfer_task, "vendor_intr_xfer_thread", vendor_intr_xfer_thread, NULL, 1024U, CONFIG_USBD_VENDOR_XFER_THREAD_PRIORITY);
-	if (ret != SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		goto clear_check_status_task;
 	}
 #endif // CONFIG_USBD_VENDOR_INTR_ASYNC_XFER
 #if CONFIG_USBD_VENDOR_ISOC_ASYNC_XFER
 	// The priority of transfer thread shall be lower than USB isr priority
 	ret = rtos_task_create(&isoc_async_xfer_task, "vendor_isoc_xfer_thread", vendor_isoc_xfer_thread, NULL, 1024U, CONFIG_USBD_VENDOR_XFER_THREAD_PRIORITY);
-	if (ret != SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		goto clear_intr_async_task;
 	}
 #endif // CONFIG_USBD_VENDOR_ISOC_ASYNC_XFER
 #if CONFIG_USBD_VENDOR_BULK_ASYNC_XFER
 	// The priority of transfer thread shall be lower than USB isr priority
 	ret = rtos_task_create(&bulk_async_xfer_task, "vendor_bulk_xfer_thread", vendor_bulk_xfer_thread, NULL, 1024U, CONFIG_USBD_VENDOR_XFER_THREAD_PRIORITY);
-	if (ret != SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		goto clear_isoc_async_task;
 	}
 #endif // CONFIG_USBD_VENDOR_BULK_ASYNC_XFER
@@ -499,7 +499,7 @@ void example_usbd_vendor(void)
 	rtos_task_t task;
 
 	status = rtos_task_create(&task, "example_usbd_vendor_thread", example_usbd_vendor_thread, NULL, 1024U, CONFIG_USBD_VENDOR_INIT_THREAD_PRIORITY);
-	if (status != SUCCESS) {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD vendor thread fail\n");
 	}
 }

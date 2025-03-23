@@ -152,7 +152,7 @@ void aes_test(void)
 
 int example_raw_crypto_aes(void)
 {
-	if (rtos_task_create(NULL, "aes_test", (rtos_task_t)aes_test, NULL, (3072), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "aes_test", (rtos_task_t)aes_test, NULL, (3072), (1)) != RTK_SUCCESS) {
 		printf("Cannot create aes_md5_test demo task\n\r");
 	}
 

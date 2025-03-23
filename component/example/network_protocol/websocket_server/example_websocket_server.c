@@ -133,7 +133,7 @@ exit:
 
 void example_wsserver(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_wsserver_thread"), example_wsserver_thread, NULL, 2048 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_wsserver_thread"), example_wsserver_thread, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\r\n%s rtos_task_create(example_wsserver_thread) failed\r\n", __FUNCTION__);
 	}
 }

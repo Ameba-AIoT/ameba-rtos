@@ -1,6 +1,6 @@
 set(DIR ${TARGETDIR}/verification)
 set(MODULE_IFLAGS ${DIR}./  ${BASEDIR}/component/application/ir)
-set(CFGDIR ${TARGETDIR}/usrcfg)
+set(CFGDIR ${BASEDIR}/component/soc/usrcfg/${c_SOC_TYPE})
 
 set(CSRC)
 

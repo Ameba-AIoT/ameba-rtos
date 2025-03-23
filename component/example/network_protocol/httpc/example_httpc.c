@@ -150,7 +150,7 @@ static void example_httpc_thread(void *param)
 
 void example_httpc(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_httpc_thread"), example_httpc_thread, NULL, 2048 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_httpc_thread"), example_httpc_thread, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(example_httpc_thread) failed", __FUNCTION__);
 	}
 }

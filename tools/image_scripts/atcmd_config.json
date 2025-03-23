@@ -1,0 +1,32 @@
+{
+	"interface":"spi",
+	
+	"spi":
+	{
+		"mosi":"PB19",
+		"miso":"PB20",
+		"clk":"PB18",
+		"cs":"PB17",
+		"master_sync_pin":"PB30",
+		"slave_sync_pin":"PB31"
+	},
+	
+	"uart":
+	{
+		"baudrate":115200,
+		"tx":"PB30",
+		"rx":"PB31"
+	},
+	
+	"sdio":
+	{
+		"clk":"PB26",
+		"cmd":"PB25",
+		"d0":"PB27",
+		"d1":"PB28",
+		"d2":"PB23",
+		"d3":"PB24",
+		"bit-mode":4
+	}
+}
+

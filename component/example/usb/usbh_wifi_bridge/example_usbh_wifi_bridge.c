@@ -83,7 +83,7 @@ static void get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 	src_addr = (struct eth_addr *)(((u8_t *)p->payload) + sizeof(struct eth_addr));
 	protocol = *((unsigned short *)((u8 *)p->payload + 2 * ETH_ALEN));
 
-	if (protocol == lwip_htons(ETH_P_IP)) {
+	if (protocol == lwip_htons(ETHTYPE_IP)) {
 		/* update src ip/mac mapping */
 		iph = (struct ip_hdr *)((u8 *)p->payload + ETH_HLEN);
 		src_ip = (u8_t *) & (iph->src.addr);
@@ -111,7 +111,7 @@ static void get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 			dst_port = 0;
 			break;
 		}
-	} else if (protocol == lwip_htons(ETH_P_ARP)) {
+	} else if (protocol == lwip_htons(ETHTYPE_ARP)) {
 		arph = (struct etharp_hdr *)((u8 *)p->payload + ETH_HLEN);
 		src_ip = (u8 *) & (arph->sipaddr);
 		dst_ip = (u8 *) & (arph->dipaddr);
@@ -140,7 +140,7 @@ static void get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 
 static u32_t send_to_wifi(pkt_attrib_t *pattrib, struct pbuf *p)
 {
-	if (pattrib->protocol == lwip_htons(ETH_P_ARP)) {
+	if (pattrib->protocol == lwip_htons(ETHTYPE_ARP)) {
 		memcpy(&host_mac, (u8 *)p->payload + ETH_ALEN, ETH_ALEN);
 	}
 
@@ -155,8 +155,8 @@ static u32_t send_to_wifi(pkt_attrib_t *pattrib, struct pbuf *p)
 #endif
 
 	/* send to etharp_output */
-	if (pattrib->protocol == lwip_htons(ETH_P_IP)) {
-	} else if (pattrib->protocol == lwip_htons(ETH_P_ARP)) {
+	if (pattrib->protocol == lwip_htons(ETHTYPE_IP)) {
+	} else if (pattrib->protocol == lwip_htons(ETHTYPE_ARP)) {
 		memcpy((u8 *)p->payload + ETH_ALEN + 16, xnetif[0].hwaddr, ETH_ALEN);
 	}
 
@@ -188,7 +188,7 @@ static err_t usb_in_wifi_out(struct pbuf *p, struct netif *netif)
 
 	//RTK_LOGS(TAG, RTK_LOG_INFO, "%s(%d) portnum=%d, protocol=0x%x\n", __FUNCTION__, __LINE__, netif->num, lwip_ntohs(pattrib->protocol));
 
-	if (pattrib->protocol == lwip_htons(ETH_P_IPV6)) {
+	if (pattrib->protocol == lwip_htons(ETHTYPE_IPV6)) {
 		pbuf_free(p);
 		free(pattrib);
 		return ERR_OK;
@@ -220,7 +220,7 @@ static err_t wifi_in_usb_out(struct pbuf *p, struct netif *netif)
 	get_packet_attrib(p, pattrib);
 	//RTK_LOGS(TAG, RTK_LOG_INFO, "%s(%d) portnum=%d, protocol=0x%x\n", __FUNCTION__, __LINE__, netif->num, lwip_ntohs(pattrib->protocol));
 
-	if (pattrib->protocol == lwip_htons(ETH_P_IPV6)) {
+	if (pattrib->protocol == lwip_htons(ETHTYPE_IPV6)) {
 		pbuf_free(p);
 		free(pattrib);
 		return ERR_OK;
@@ -239,7 +239,7 @@ static err_t wifi_in_usb_out(struct pbuf *p, struct netif *netif)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
 #endif
 
-	if (pattrib->protocol == lwip_htons(ETH_P_ARP)) {
+	if (pattrib->protocol == lwip_htons(ETHTYPE_ARP)) {
 		memcpy((u8 *)p->payload + ETH_HLEN + 18, &host_mac, ETH_ALEN);
 	}
 
@@ -310,12 +310,12 @@ void example_usbh_wifi_bridge(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USB host usbh_wifi_bridge demo started\n");
 
 	status = rtos_task_create(&monitor_task, "ecm_example_link_change_thread", ecm_example_monitor_link_change_thread, NULL, 1024U * 2, 3U);
-	if (status != SUCCESS) {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create USB host monitor_link_change thread: %d\n", status);
 	}
 
 	status = rtos_task_create(&bridge_task, "cdc_ecm_bridge_task", ecm_example_bridge_thread, NULL, 1024U * 2, 2U);
-	if (status != SUCCESS) {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create USBH cdc_ecm_bridge_task thread\n");
 	}
 }

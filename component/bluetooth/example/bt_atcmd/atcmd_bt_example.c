@@ -982,19 +982,30 @@ int atcmd_bt_transfer_module(int argc, char *argv[])
 	return ret;
 }
 
-int ble_wifimate_device_main(uint8_t enable);
+int ble_wifimate_device_main(uint8_t enable, uint16_t timeout);
 int atcmd_bt_wifimate_device(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
 	char *action[] = {"disable", "enable"};
+	uint16_t timeout = 60;
+
+	if (argc < 1 || argc > 2) {
+		BT_LOGE("Error: wrong parameter number\r\n");
+		return BT_AT_ERR_PARAM_INVALID;
+	}
 
 	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
 		BT_LOGE("Error: wrong value (%d) for ble wifimate device example!\r\n", op);
 		return BT_AT_ERR_PARAM_INVALID;
 	}
 
-	if (ble_wifimate_device_main(op)) {
+	if (argc > 1) {
+		timeout = (uint16_t)str_to_int(argv[1]);
+		BT_LOGA("Ble wifimate timeout=%d\r\n", timeout);
+	}
+
+	if (ble_wifimate_device_main(op, timeout)) {
 		BT_LOGE("Error: ble wifimate device example %s failed!\r\n", action[op]);
 		return BT_AT_FAIL;
 	}

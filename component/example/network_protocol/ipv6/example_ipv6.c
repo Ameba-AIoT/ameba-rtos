@@ -543,23 +543,23 @@ static void example_ipv6_thread(void *param)
 	}
 
 	/***---open a example service once!!---***/
-	if (rtos_task_create(NULL, ((const char *)"example_ipv6_udp_server_thread"), example_ipv6_udp_server_thread, NULL, 1024 * 4, 1 + 4) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_ipv6_udp_server_thread"), example_ipv6_udp_server_thread, NULL, 1024 * 4, 1 + 4) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(example_ipv6_udp_server_thread) failed", __FUNCTION__);
 	}
-	if (rtos_task_create(NULL, ((const char *)"example_ipv6_tcp_server_thread"), example_ipv6_tcp_server_thread, NULL, 1024 * 4, 1 + 4) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_ipv6_tcp_server_thread"), example_ipv6_tcp_server_thread, NULL, 1024 * 4, 1 + 4) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(example_ipv6_tcp_server_thread) failed", __FUNCTION__);
 	}
-	if (rtos_task_create(NULL, ((const char *)"example_ipv6_mcast_server_thread"), example_ipv6_mcast_server_thread, NULL, 1024 * 4, 1 + 4) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_ipv6_mcast_server_thread"), example_ipv6_mcast_server_thread, NULL, 1024 * 4, 1 + 4) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(example_ipv6_mcast_server_thread) failed", __FUNCTION__);
 	}
 
-	if (rtos_task_create(NULL, ((const char *)"example_ipv6_udp_client_thread"), example_ipv6_udp_client_thread, NULL, 1024 * 4, 1 + 4) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_ipv6_udp_client_thread"), example_ipv6_udp_client_thread, NULL, 1024 * 4, 1 + 4) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(example_ipv6_udp_client_thread) failed", __FUNCTION__);
 	}
-	if (rtos_task_create(NULL, ((const char *)"example_ipv6_tcp_client_thread"), example_ipv6_tcp_client_thread, NULL, 1024 * 4, 1 + 4) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_ipv6_tcp_client_thread"), example_ipv6_tcp_client_thread, NULL, 1024 * 4, 1 + 4) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(example_ipv6_tcp_client_thread) failed", __FUNCTION__);
 	}
-	if (rtos_task_create(NULL, ((const char *)"example_ipv6_mcast_client_thread"), example_ipv6_mcast_client_thread, NULL, 1024 * 4, 1 + 4) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_ipv6_mcast_client_thread"), example_ipv6_mcast_client_thread, NULL, 1024 * 4, 1 + 4) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(example_ipv6_mcast_client_thread) failed", __FUNCTION__);
 	}
 
@@ -568,7 +568,7 @@ static void example_ipv6_thread(void *param)
 
 void example_ipv6(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_ipv6_thread"), example_ipv6_thread, NULL, 1024 * 4, 1 + 4) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_ipv6_thread"), example_ipv6_thread, NULL, 1024 * 4, 1 + 4) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(example_ipv6_thread) failed", __FUNCTION__);
 	}
 }

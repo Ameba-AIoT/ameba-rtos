@@ -146,7 +146,7 @@ void gdma_loop_link_list_task(void)
 
 int example_raw_gdma_circle_link_list(void)
 {
-	if (rtos_task_create(NULL, "GDMA LINK LIST TRANSFER DEMO", (rtos_task_t)gdma_loop_link_list_task, NULL, (3072), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "GDMA LINK LIST TRANSFER DEMO", (rtos_task_t)gdma_loop_link_list_task, NULL, (3072), (1)) != RTK_SUCCESS) {
 		printf("Cannot create dma_multiblock_transfer_task demo task\n\r");
 	}
 

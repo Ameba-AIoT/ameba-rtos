@@ -106,7 +106,7 @@ static void example_cJSON_thread(void *param)
 
 void example_cJSON(void)
 {
-	if (rtos_task_create(NULL, "example_cJSON_thread", example_cJSON_thread, NULL, 2048 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, "example_cJSON_thread", example_cJSON_thread, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create example_cJSON_thread failed", __FUNCTION__);
 	}
 }

@@ -26,14 +26,8 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD
-#include "user_heap.h"
-#define ameba_audio_gdma_calloc User_Heap_calloc
-#define ameba_audio_gdma_free User_free
-#else
 #define ameba_audio_gdma_calloc calloc
 #define ameba_audio_gdma_free free
-#endif
 
 #define HAL_AUDIO_WEAK __attribute__((weak))
 
@@ -53,6 +47,7 @@ int32_t ameba_audio_get_codec_rate(uint32_t rate);
 AUDIO_SPORT_TypeDef *ameba_audio_get_sport_addr(uint32_t index);
 int32_t ameba_audio_get_i2s_pin_func(uint32_t index);
 int32_t ameba_audio_get_sport_irq(uint32_t index);
+bool ameba_audio_sport_started(uint32_t index);
 
 void ameba_audio_dump_gdma_regs(u8 GDMA_ChNum);
 void ameba_audio_dump_sport_regs(uint32_t SPORTx);

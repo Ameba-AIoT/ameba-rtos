@@ -3,7 +3,7 @@ set(RAM_COM_DIR ${TARGETDIR}/fwlib/ram_common)
 set(RAM_HP_DIR ${TARGETDIR}/fwlib/ram_km4)
 set(FTL_DIR ${BASEDIR}/component/soc/common/flash_wrapper/src)
 set(SWLIB_DIR ${TARGETDIR}/swlib)
-set(CFGDIR ${TARGETDIR}/usrcfg)
+set(CFGDIR ${BASEDIR}/component/soc/usrcfg/${c_SOC_TYPE})
 
 set(
     MODULE_IFLAGS

@@ -105,7 +105,7 @@ static void example_mcast_thread(void *param)
 
 void example_mcast(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_mcast_thread"), example_mcast_thread, NULL, 2048 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_mcast_thread"), example_mcast_thread, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
 	}
 }

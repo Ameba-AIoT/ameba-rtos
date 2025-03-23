@@ -48,6 +48,7 @@ void ameba_audio_set_sp_data_in(uint32_t index);
 void ameba_audio_dump_gdma_regs(u8 GDMA_ChNum);
 void ameba_audio_dump_sport_regs(uint32_t SPORTx);
 void ameba_audio_dump_codec_regs(void);
+bool ameba_audio_sport_started(uint32_t index);
 
 #ifdef __cplusplus
 }

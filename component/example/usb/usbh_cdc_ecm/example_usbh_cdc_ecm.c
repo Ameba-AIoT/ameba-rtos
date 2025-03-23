@@ -312,12 +312,12 @@ void example_usbh_cdc_ecm(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH ECM demo start\n");
 
 	status = rtos_task_create(&monitor_task, "ecm_link_thread", ecm_link_change_thread, NULL, 1024U * 2, 3U);
-	if (status != SUCCESS) {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
 	}
 #if ENABLE_REMOTE_FILE_DOWNLOAD
 	status = rtos_task_create(&download_task, "ecm_download_thread", ecm_download_thread, NULL, 10 * 512U, 2U);
-	if (status != SUCCESS) {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create download thread fail\n");
 	}
 #endif

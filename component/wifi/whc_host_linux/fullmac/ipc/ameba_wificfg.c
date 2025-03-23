@@ -20,6 +20,8 @@ _WEAK void wifi_set_user_config(void)
 	/* below items for user config, for details, see wifi_user_conf in wifi_intf_drv_to_app_basic.h */
 	wifi_user_config.concurrent_enabled = 1;
 	wifi_user_config.softap_addr_offset_idx = 1;
+	wifi_user_config.fast_reconnect_en = 0;
+	wifi_user_config.auto_reconnect_en = 0;
 	wifi_user_config.auto_reconnect_count = 10;
 	wifi_user_config.auto_reconnect_interval = 5;
 	wifi_user_config.no_beacon_disconnect_time = 9; /* unit 2s, default 18s */

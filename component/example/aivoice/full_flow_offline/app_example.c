@@ -16,7 +16,7 @@ static void aivoice_thread(void *param)
 
 void example_aivoice(void)
 {
-	if (rtos_task_create(NULL, "example_aivoice_thread", aivoice_thread, NULL, 1024 * 16, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, "example_aivoice_thread", aivoice_thread, NULL, 1024 * 16, 1) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create example_aivoice_thread failed", __FUNCTION__);
 	}
 }

@@ -174,7 +174,7 @@ void spi_singleblock_task(void)
   */
 int example_raw_spi_single_dma_rx_slave(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"spi_singleblock_task"), (rtos_task_t)spi_singleblock_task, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"spi_singleblock_task"), (rtos_task_t)spi_singleblock_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		printf("\r\n%s rtos_task_create(spi_singleblock_task) failed\r\n", __FUNCTION__);
 	}
 

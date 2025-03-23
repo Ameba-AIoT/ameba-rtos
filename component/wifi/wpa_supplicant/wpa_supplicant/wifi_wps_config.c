@@ -833,7 +833,7 @@ int wps_start(u16 wps_config, char *pin, u8 channel, char *ssid)
 	int cred_cnt = 0;
 	int select_index = 0;
 	u32 select_security = 0;
-	uint8_t auto_reconnect_status = 0;
+	uint8_t autoreconn_en = 0;
 
 	if (wps_max_cred_count < 1 || wps_max_cred_count > 10) {
 		DiagPrintf("\n\rWPS: wps_max_cred_count should be in range 1~10\n");
@@ -863,9 +863,8 @@ int wps_start(u16 wps_config, char *pin, u8 channel, char *ssid)
 	}
 
 #if CONFIG_AUTO_RECONNECT
-	wifi_get_autoreconnect(&auto_reconnect_status);
-	if (auto_reconnect_status != 0) {
-		wifi_config_autoreconnect(0);
+	if ((wifi_get_autoreconnect(&autoreconn_en) == RTW_SUCCESS) && autoreconn_en) {
+		wifi_set_autoreconnect(0);
 	}
 #endif
 
@@ -1009,10 +1008,9 @@ int wps_start(u16 wps_config, char *pin, u8 channel, char *ssid)
 	if (dev_cred[select_index].ssid[0] != 0 && dev_cred[select_index].ssid_len <= 32) {
 		wps_config_wifi_setting(&wifi, &dev_cred[select_index]);
 		wifi_set_wps_phase(DISABLE);
-#if CONFIG_AUTO_RECONNECT
-		// reset autoreconnect status; Otherwise, if status == enable, the connection info is not stored for reconnect
-		wifi_config_autoreconnect(auto_reconnect_status);
-#endif
+		if (autoreconn_en) {
+			wifi_set_autoreconnect(1);
+		}
 		ret = wps_connect_to_AP_by_certificate(&wifi);
 		os_free(dev_cred, 0);
 		goto exit1;
@@ -1037,9 +1035,9 @@ exit1:
 	wpas_wps_deinit();
 
 exit2:
-#if CONFIG_AUTO_RECONNECT
-	wifi_config_autoreconnect(auto_reconnect_status);
-#endif
+	if (autoreconn_en) {
+		wifi_set_autoreconnect(1);
+	}
 	return ret;
 }
 

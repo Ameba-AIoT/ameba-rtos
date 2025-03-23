@@ -558,3 +558,11 @@ void ameba_audio_set_sp_data_in(uint32_t index)
 	}
 	HAL_WRITE32(PINMUX_REG_BASE, REG_I2S_CTRL, tmp);
 }
+
+bool ameba_audio_sport_started(uint32_t index)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = ameba_audio_get_sport_addr(index);
+
+	return (((SPORTx->SP_CTRL0 & SP_BIT_TX_DISABLE) == 0)
+		&& ((SPORTx->SP_CTRL0 & SP_BIT_START_TX) != 0)) ? true : false;
+}

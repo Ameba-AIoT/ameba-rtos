@@ -49,7 +49,7 @@ uint32_t my_watchdog_irq_handler(void *id)
 	printf("watchdog barks!!!\r\n");
 	//watchdog_stop();
 	while (1);
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 void watchdog_task(void)
@@ -76,12 +76,12 @@ int example_mbed_watchdog(void)
 		while (1);
 	}
 
-	if (SUCCESS != rtos_task_create(NULL, "watchdog_task", (rtos_task_t)watchdog_task, (void *)NULL, (512 * 6), (1))) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, "watchdog_task", (rtos_task_t)watchdog_task, (void *)NULL, (512 * 6), (1))) {
 		printf("Create watchdog_task Err!!\r\n");
 	}
 
 	// rtos_sched_start();
 
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 

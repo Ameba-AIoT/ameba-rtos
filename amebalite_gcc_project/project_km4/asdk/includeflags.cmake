@@ -18,7 +18,7 @@ list(
     ${TARGETDIR}/misc
     ${TARGETDIR}/hal/include
     ${TARGETDIR}/hal/src
-    ${TARGETDIR}/usrcfg/include
+    ${BASEDIR}/component/soc/usrcfg/${c_SOC_TYPE}/include
     ${BASEDIR}/component/soc/common/include
 
     ${MENUCONFIGDIR}/project_${PROJECT_NAME}

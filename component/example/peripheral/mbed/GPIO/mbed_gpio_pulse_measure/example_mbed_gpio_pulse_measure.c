@@ -67,8 +67,8 @@ void mbed_gpio_pulse_measure_demo(void)
 
 int example_mbed_gpio_pulse_measure(void)
 {
-	if (SUCCESS != rtos_task_create(NULL, "MBED_GPIO_PULSE_MEASURE_TASK", (rtos_task_t)mbed_gpio_pulse_measure_demo, (void *)NULL, 128 * 4,
-									(1))) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, "MBED_GPIO_PULSE_MEASURE_TASK", (rtos_task_t)mbed_gpio_pulse_measure_demo, (void *)NULL, 128 * 4,
+										(1))) {
 		printf("Create MBED_GPIO_PULSE_MEASURE_TASK Err!!!\n");
 	}
 

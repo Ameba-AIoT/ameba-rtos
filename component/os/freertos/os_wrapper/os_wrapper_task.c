@@ -17,30 +17,30 @@ static_assert(sizeof(rtos_time_out_t) == sizeof(TimeOut_t), "sizeof(rtos_time_ou
 int rtos_sched_start(void)
 {
 	vTaskStartScheduler();
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 int rtos_sched_stop(void)
 {
 	vTaskEndScheduler();
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 int rtos_sched_suspend(void)
 {
 	vTaskSuspendAll();
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 int rtos_sched_resume(void)
 {
 	xTaskResumeAll();
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 int rtos_sched_get_state(void)
 {
-	int status = FAIL;
+	int status = RTK_FAIL;
 
 	if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
 		status = RTOS_SCHED_NOT_STARTED;
@@ -64,34 +64,34 @@ int rtos_task_create(rtos_task_t *pp_handle, const char *p_name, void (*p_routin
 	ret = xTaskCreate(p_routine, (const char *)p_name, stack_size_in_byte / sizeof(portSTACK_TYPE),
 					  p_param, priority, (TaskHandle_t *)pp_handle);
 	if (ret == pdPASS) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 
 int rtos_task_delete(rtos_task_t p_handle)
 {
 	vTaskDelete((TaskHandle_t)p_handle);
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 int rtos_task_suspend(rtos_task_t p_handle)
 {
 	vTaskSuspend((TaskHandle_t)p_handle);
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 int rtos_task_resume(rtos_task_t p_handle)
 {
 	vTaskResume((TaskHandle_t)p_handle);
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 int rtos_task_yield(void)
 {
 	taskYIELD();
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 rtos_task_t rtos_task_handle_get(void)
@@ -108,7 +108,7 @@ int rtos_task_priority_set(rtos_task_t p_handle, uint16_t priority)
 {
 	vTaskPrioritySet((TaskHandle_t)p_handle, priority);
 
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 void rtos_task_set_time_out_state(rtos_time_out_t *const p_rtos_time_out)

@@ -182,7 +182,7 @@ void cpu_stat_thread(void *dummy)
 	}
 	memcpy(ppara, dummy, sizeof(status_cmd_para_t));
 	last_tick = portGET_RUN_TIME_COUNTER_VALUE();
-	while ((rtos_sema_take((rtos_sema_t)top_exit_sema, ppara->time * 1000) == FAIL)) {
+	while ((rtos_sema_take((rtos_sema_t)top_exit_sema, ppara->time * 1000) == RTK_FAIL)) {
 		if (update_status()) {
 			continue;
 		}
@@ -628,7 +628,7 @@ void at_log(void *arg)
 		}
 		log_level = (rtk_log_level_t)atoi(argv[3]);
 		ret = rtk_log_level_set(argv[2], log_level);
-		if (ret != SUCCESS) {
+		if (ret != RTK_SUCCESS) {
 			RTK_LOGA(NOTAG, "[LOG] Failed when set.\r\n");
 			error_no = 2;
 			goto end;

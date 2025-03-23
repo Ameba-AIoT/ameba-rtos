@@ -37,7 +37,7 @@ void at_otp(void *arg)
 			Len = _strtoul((const char *)(argv[3]), (char **)NULL, 16);
 		}
 
-		if (OTP_LogicalMap_Read(EfuseBuf, Addr, Len) == FAIL) {
+		if (OTP_LogicalMap_Read(EfuseBuf, Addr, Len) == RTK_FAIL) {
 			RTK_LOGE(TAG, "EFUSE_LogicalMap_Read fail \n");
 			goto exit;
 		}
@@ -81,7 +81,7 @@ void at_otp(void *arg)
 			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
 		}
 
-		if (OTP_LogicalMap_Write(Addr, Len, (u8 *)EfuseBuf) == FAIL) {
+		if (OTP_LogicalMap_Write(Addr, Len, (u8 *)EfuseBuf) == RTK_FAIL) {
 			RTK_LOGE(TAG, "EFUSE_LogicalMap_Read fail \n");
 			goto exit;
 		}
@@ -98,7 +98,7 @@ void at_otp(void *arg)
 		}
 
 		for (index = Addr; index < Addr + Len; index++) {
-			if (OTP_Read8(index, EfuseBuf + index) == FAIL) {
+			if (OTP_Read8(index, EfuseBuf + index) == RTK_FAIL) {
 				RTK_LOGE(TAG, "OTP_Read8 fail \n");
 				goto exit;
 			}
@@ -146,7 +146,7 @@ void at_otp(void *arg)
 
 		for (index = 0; index < Len; index++) {
 			RTK_LOGI(NOTAG, "wraw: %lx %x \n", Addr + index, EfuseBuf[index]);
-			if (OTP_Write8((Addr + index), EfuseBuf[index]) == FAIL) {
+			if (OTP_Write8((Addr + index), EfuseBuf[index]) == RTK_FAIL) {
 				RTK_LOGE(TAG, "OTP_Write8 fail \n");
 				goto exit;
 			}

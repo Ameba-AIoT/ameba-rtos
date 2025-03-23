@@ -122,7 +122,7 @@ void raw_gtimer_demo(void)
   */
 int example_raw_gtimer(void)
 {
-	if (SUCCESS != rtos_task_create(NULL, "RAW_GTIMER_DEMO_TASK", (rtos_task_t)raw_gtimer_demo, (void *)NULL, 2048, (1))) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, "RAW_GTIMER_DEMO_TASK", (rtos_task_t)raw_gtimer_demo, (void *)NULL, 2048, (1))) {
 		printf("Create RAW_GTIMER_DEMO_TASK Err!!\n");
 	}
 

@@ -95,7 +95,7 @@ static void vendor_hotplug_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		if (rtos_sema_take(vendor_detach_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
+		if (rtos_sema_take(vendor_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			rtos_time_delay_ms(100);//make sure disconnect handle finish before deinit.
 			usbh_vendor_deinit();
 			usbh_deinit();
@@ -146,7 +146,7 @@ void example_usbh_vendor_thread(void *param)
 
 #if CONFIG_USBH_VENDOR_HOT_PLUG_TEST
 	status = rtos_task_create(&task, "vendor_hotplug_thread", vendor_hotplug_thread, NULL, 1024U * 2, 2U);
-	if (status != SUCCESS) {
+	if (status != RTK_SUCCESS) {
 		usbh_vendor_deinit();
 		usbh_deinit();
 		goto error_exit;
@@ -171,7 +171,7 @@ void example_usbh_vendor(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH vendor demo start\n");
 	status = rtos_task_create(&task, "example_usbh_vendor_thread", example_usbh_vendor_thread, NULL, 1024U * 2, 2U);
-	if (status != SUCCESS) {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}
 }

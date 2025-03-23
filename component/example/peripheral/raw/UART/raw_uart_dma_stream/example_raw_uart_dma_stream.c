@@ -197,7 +197,7 @@ void uart_dma_demo(void)
 
 int example_raw_uart_dma_stream(void)
 {
-	if (SUCCESS != rtos_task_create(NULL, "uart_dma_demo", (rtos_task_t)uart_dma_demo, (void *)NULL, (512 * 6), (1))) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, "uart_dma_demo", (rtos_task_t)uart_dma_demo, (void *)NULL, (512 * 6), (1))) {
 		RTK_LOGE(NOTAG, "Create uart_dma_demo Err!!\n");
 	}
 
