@@ -59,9 +59,9 @@ void at_httpconf(void *arg)
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\nOK\r\n");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\nERROR:%d\r\n", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 
 	return;
@@ -88,7 +88,7 @@ void at_httpheader(void *arg)
 		goto end;
 	}
 	req_header_len = atoi(argv[1]);
-	if (req_header_len < 0) {
+	if ((req_header_len < 0) || (req_header_len >= MAX_TT_BUF_LEN)) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httpheader] HTTP request header length is incorrect\r\n");
 		error_no = 1;
 		goto end;
@@ -128,13 +128,13 @@ void at_httpheader(void *arg)
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\nOK\r\n");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
 		if ((g_http_req_header_cnt < HTTP_GLOBAL_REQ_HEADER_NUM) && (g_http_req_header[g_http_req_header_cnt] != NULL)) {
 			rtos_mem_free(g_http_req_header[g_http_req_header_cnt]);
 			g_http_req_header[g_http_req_header_cnt] = NULL;
 		}
-		at_printf("\r\nERROR:%d\r\n", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 
 	return;
@@ -147,14 +147,10 @@ void print_global_http_config(void)
 	at_printf("\r\n");
 	at_printf("Global HTTP configuration:\r\n");
 	at_printf("http_timeout: %d\r\n", http_timeout);
-	if (http_server_port) {
-		at_printf("http_server_port: %d\r\n", http_server_port);
-	} else {
-		at_printf("http_server_port: 80 for HTTP, 443 for HTTPS\r\n");
-	}
+	at_printf("http_server_port: %d\r\n", http_server_port);
 	at_printf("http_req_header_cnt: %d\r\n", g_http_req_header_cnt);
 	if (g_http_req_header_cnt) {
-		at_printf("http_req_header list:\r\n");
+		at_printf("http_req_header_list:\r\n");
 	}
 	for (i = 0; i < g_http_req_header_cnt; i++) {
 		at_printf("%s\r\n", g_http_req_header[i]);
@@ -176,9 +172,9 @@ void at_httpquery(void *arg)
 end:
 	if (error_no == 0) {
 		print_global_http_config();
-		at_printf("\r\nOK\r\n");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\nERROR:%d\r\n", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 
 	return;
@@ -219,6 +215,11 @@ void at_httpget(void *arg)
 		error_no = 1;
 		goto end;
 	}
+	if (strlen(argv[1]) > DNS_MAX_NAME_LENGTH) {
+		RTK_LOGE(AT_HTTP_TAG, "[at_httpget] Input <host> length should not exceed DNS_MAX_NAME_LENGTH\r\n");
+		error_no = 1;
+		goto end;
+	}
 	if (strlen(argv[2]) == 0) {
 		argv[2] = "/";
 	}
@@ -236,7 +237,7 @@ void at_httpget(void *arg)
 			goto end;
 		}
 		cert_index = atoi(argv[4]);
-		if (cert_index < 0) {
+		if (cert_index <= 0) {
 			RTK_LOGE(AT_HTTP_TAG, "[at_httpget] Certificate index is incorrect\r\n");
 			error_no = 1;
 			goto end;
@@ -277,7 +278,7 @@ void at_httpget(void *arg)
 			RTK_LOGW(AT_HTTP_TAG, "[at_httpget] NO CLIENT_CA_%d!\r\n", cert_index);
 			error_no = 3;
 			goto end;
-		} else {
+		} else if (ret < 0) {
 			RTK_LOGW(AT_HTTP_TAG, "[at_httpget] CLIENT_CA_%d read failed\r\n", cert_index);
 			error_no = 3;
 			goto end;
@@ -401,9 +402,11 @@ void at_httpget(void *arg)
 	}
 
 	at_printf("+HTTPGET: HEADER LEN = %d\r\n", conn_ptr->response.header_len);
+	at_printf_lock();
 	at_printf("+HTTPGET: HEADER DUMP START\r\n");
-	at_printf("%s", conn_ptr->response.header);
+	at_printf_data(conn_ptr->response.header, conn_ptr->response.header_len);
 	at_printf("+HTTPGET: HEADER DUMP END\r\n");
+	at_printf_unlock();
 
 	response_data = rtos_mem_zmalloc(HTTP_READ_RESPONSE_DATA);
 	if (response_data == NULL) {
@@ -420,7 +423,7 @@ void at_httpget(void *arg)
 			if (read_size > 0) {
 				RTK_LOGI(AT_HTTP_TAG, "[at_httpget] httpc_response_read_data() read_size=%d\r\n", read_size);
 				total_resp_body_size += read_size;
-				at_printf("%s", response_data);
+				at_printf_data((char *)response_data, read_size);
 			} else {
 				break;
 			}
@@ -438,7 +441,7 @@ void at_httpget(void *arg)
 			if (read_size > 0) {
 				RTK_LOGI(AT_HTTP_TAG, "[at_httpget] httpc_response_read_data() read_size=%d\r\n", read_size);
 				total_resp_body_size += read_size;
-				at_printf("%s", response_data);
+				at_printf_data((char *)response_data, read_size);
 			} else {
 				break;
 			}
@@ -465,9 +468,9 @@ end:
 	response_data = NULL;
 
 	if (error_no == 0) {
-		at_printf("\r\nOK\r\n");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\nERROR:%d\r\n", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 
 	return;
@@ -487,7 +490,7 @@ void at_httppost(void *arg)
 	char *http_client_cert_pem = NULL;   // read client cert
 	char *http_client_pkey_pem = NULL;   // read client private key
 	int total_post_body_size = 0, single_post_size = 0;
-	u8 *single_post_data = NULL;
+	u8 *post_data_buffer = NULL;
 	uint8_t *response_data = NULL;
 	int read_size = 0;
 	uint32_t total_resp_body_size = 0;
@@ -510,6 +513,11 @@ void at_httppost(void *arg)
 		error_no = 1;
 		goto end;
 	}
+	if (strlen(argv[1]) > DNS_MAX_NAME_LENGTH) {
+		RTK_LOGE(AT_HTTP_TAG, "[at_httppost] Input <host> length should not exceed DNS_MAX_NAME_LENGTH\r\n");
+		error_no = 1;
+		goto end;
+	}
 	if (strlen(argv[2]) == 0) {
 		argv[2] = "/";
 	}
@@ -521,20 +529,20 @@ void at_httppost(void *arg)
 		goto end;
 	}
 	if ((conn_type >= HTTP_OVER_TLS_VERIFY_SERVER) && (conn_type <= HTTP_OVER_TLS_VERIFY_BOTH)) {
-		if (argv[5] == NULL)  {
+		if (argv[4] == NULL)  {
 			RTK_LOGE(AT_HTTP_TAG, "[at_httppost] Certificate index is NULL\r\n");
 			error_no = 1;
 			goto end;
 		}
-		cert_index = atoi(argv[5]);
-		if (cert_index < 0) {
+		cert_index = atoi(argv[4]);
+		if (cert_index <= 0) {
 			RTK_LOGE(AT_HTTP_TAG, "[at_httppost] Certificate index is incorrect\r\n");
 			error_no = 1;
 			goto end;
 		}
 	}
 
-	total_post_body_size = atoi(argv[4]);
+	total_post_body_size = atoi(argv[5]);
 	if (total_post_body_size < 0) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httppost] Total length of POST is incorrect\r\n");
 		error_no = 1;
@@ -575,7 +583,7 @@ void at_httppost(void *arg)
 			RTK_LOGW(AT_HTTP_TAG, "[at_httppost] NO CLIENT_CA_%d!\r\n", cert_index);
 			error_no = 3;
 			goto end;
-		} else {
+		} else if (ret < 0) {
 			RTK_LOGW(AT_HTTP_TAG, "[at_httppost] CLIENT_CA_%d read failed\r\n", cert_index);
 			error_no = 3;
 			goto end;
@@ -693,57 +701,48 @@ void at_httppost(void *arg)
 	}
 
 	if (total_post_body_size > 0)  {
+		post_data_buffer = rtos_mem_zmalloc((total_post_body_size <= MAX_TT_BUF_LEN ? total_post_body_size : MAX_TT_BUF_LEN) + 1);
+		if (post_data_buffer == NULL) {
+			RTK_LOGW(AT_HTTP_TAG, "[at_httppost] post_data_buffer malloc fail\r\n");
+			error_no = 2;
+			goto end;
+		}
 		if (atcmd_tt_mode_start((u32)total_post_body_size) < 0)  {
 			RTK_LOGI(AT_HTTP_TAG, "[at_httppost] Enter TT mode failed\r\n");
 			error_no = 5;
 			goto end;
 		}
-		if (total_post_body_size <= HTTP_SINGLE_POST_DATA_MAX_LEN)  {
-			single_post_data = rtos_mem_zmalloc(total_post_body_size);
-			if (single_post_data == NULL) {
-				RTK_LOGW(AT_HTTP_TAG, "[at_httppost] single_post_data malloc fail\r\n");
-				error_no = 2;
-				goto end;
-			}
-			if (atcmd_tt_mode_get(single_post_data, (u32)total_post_body_size) != (u32)total_post_body_size)  {
+		if (total_post_body_size <= MAX_TT_BUF_LEN)  {
+			if (atcmd_tt_mode_get(post_data_buffer, (u32)total_post_body_size) != (u32)total_post_body_size)  {
 				RTK_LOGI(AT_HTTP_TAG, "[at_httppost] Get data failed in TT mode\r\n");
 				error_no = 5;
 				goto end;
 			}
-			if (httpc_request_write_data(conn_ptr, (uint8_t *)single_post_data, (size_t)total_post_body_size) != total_post_body_size)  {
+			if (httpc_request_write_data(conn_ptr, (uint8_t *)post_data_buffer, (size_t)total_post_body_size) != total_post_body_size)  {
 				RTK_LOGI(AT_HTTP_TAG, "[at_httppost] httpc_request_write_data failed\r\n");
 				error_no = 6;
 				goto end;
 			}
 		} else  {
-			single_post_data = rtos_mem_zmalloc(HTTP_SINGLE_POST_DATA_MAX_LEN);
-			if (single_post_data == NULL) {
-				RTK_LOGW(AT_HTTP_TAG, "[at_httppost] single_post_data malloc fail\r\n");
-				error_no = 2;
-				goto end;
-			}
-			single_post_size = HTTP_SINGLE_POST_DATA_MAX_LEN;
 			while (total_post_body_size > 0)  {
-				if (atcmd_tt_mode_get(single_post_data, (u32)single_post_size) != (u32)single_post_size)  {
+				single_post_size = (total_post_body_size <= MAX_TT_BUF_LEN) ? total_post_body_size : MAX_TT_BUF_LEN;
+				if (atcmd_tt_mode_get(post_data_buffer, (u32)single_post_size) != (u32)single_post_size)  {
 					RTK_LOGI(AT_HTTP_TAG, "[at_httppost] Get data failed in TT mode\r\n");
 					error_no = 5;
 					goto end;
 				}
-				if (httpc_request_write_data(conn_ptr, (uint8_t *)single_post_data, (size_t)single_post_size) != single_post_size)  {
+				if (httpc_request_write_data(conn_ptr, (uint8_t *)post_data_buffer, (size_t)single_post_size) != single_post_size)  {
 					RTK_LOGI(AT_HTTP_TAG, "[at_httppost] httpc_request_write_data failed\r\n");
 					error_no = 6;
 					goto end;
 				}
-				total_post_body_size -= HTTP_SINGLE_POST_DATA_MAX_LEN;
-				if (total_post_body_size < HTTP_SINGLE_POST_DATA_MAX_LEN)  {
-					single_post_size = total_post_body_size;
-				}
+				total_post_body_size -= single_post_size;
 			}
 		}
 		atcmd_tt_mode_end();
 
-		rtos_mem_free(single_post_data);
-		single_post_data = NULL;
+		rtos_mem_free(post_data_buffer);
+		post_data_buffer = NULL;
 	}
 
 	if (httpc_response_read_header(conn_ptr) != 0) {
@@ -753,9 +752,11 @@ void at_httppost(void *arg)
 	}
 
 	at_printf("+HTTPPOST: HEADER LEN = %d\r\n", conn_ptr->response.header_len);
+	at_printf_lock();
 	at_printf("+HTTPPOST: HEADER DUMP START\r\n");
-	at_printf("%s", conn_ptr->response.header);
+	at_printf_data(conn_ptr->response.header, conn_ptr->response.header_len);
 	at_printf("+HTTPPOST: HEADER DUMP END\r\n");
+	at_printf_unlock();
 
 	response_data = rtos_mem_zmalloc(HTTP_READ_RESPONSE_DATA);
 	if (response_data == NULL) {
@@ -772,7 +773,7 @@ void at_httppost(void *arg)
 			if (read_size > 0) {
 				RTK_LOGI(AT_HTTP_TAG, "[at_httppost] httpc_response_read_data() read_size=%d\r\n", read_size);
 				total_resp_body_size += read_size;
-				at_printf("%s", response_data);
+				at_printf_data((char *)response_data, read_size);
 			} else {
 				break;
 			}
@@ -790,7 +791,7 @@ void at_httppost(void *arg)
 			if (read_size > 0) {
 				RTK_LOGI(AT_HTTP_TAG, "[at_httppost] httpc_response_read_data() read_size=%d\r\n", read_size);
 				total_resp_body_size += read_size;
-				at_printf("%s", response_data);
+				at_printf_data((char *)response_data, read_size);
 			} else {
 				break;
 			}
@@ -815,13 +816,13 @@ end:
 
 	rtos_mem_free(response_data);
 	response_data = NULL;
-	rtos_mem_free(single_post_data);
-	single_post_data = NULL;
+	rtos_mem_free(post_data_buffer);
+	post_data_buffer = NULL;
 
 	if (error_no == 0) {
-		at_printf("\r\nOK\r\n");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\nERROR:%d\r\n", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 
 	return;
@@ -841,7 +842,7 @@ void at_httpput(void *arg)
 	char *http_client_cert_pem = NULL;   // read client cert
 	char *http_client_pkey_pem = NULL;   // read client private key
 	int total_post_body_size = 0, single_post_size = 0;
-	u8 *single_post_data = NULL;
+	u8 *post_data_buffer = NULL;
 	uint8_t *response_data = NULL;
 	int read_size = 0;
 	uint32_t total_resp_body_size = 0;
@@ -864,6 +865,11 @@ void at_httpput(void *arg)
 		error_no = 1;
 		goto end;
 	}
+	if (strlen(argv[1]) > DNS_MAX_NAME_LENGTH) {
+		RTK_LOGE(AT_HTTP_TAG, "[at_httpput] Input <host> length should not exceed DNS_MAX_NAME_LENGTH\r\n");
+		error_no = 1;
+		goto end;
+	}
 	if (strlen(argv[2]) == 0) {
 		argv[2] = "/";
 	}
@@ -875,20 +881,20 @@ void at_httpput(void *arg)
 		goto end;
 	}
 	if ((conn_type >= HTTP_OVER_TLS_VERIFY_SERVER) && (conn_type <= HTTP_OVER_TLS_VERIFY_BOTH)) {
-		if (argv[5] == NULL)  {
+		if (argv[4] == NULL)  {
 			RTK_LOGE(AT_HTTP_TAG, "[at_httpput] Certificate index is NULL\r\n");
 			error_no = 1;
 			goto end;
 		}
-		cert_index = atoi(argv[5]);
-		if (cert_index < 0) {
+		cert_index = atoi(argv[4]);
+		if (cert_index <= 0) {
 			RTK_LOGE(AT_HTTP_TAG, "[at_httpput] Certificate index is incorrect\r\n");
 			error_no = 1;
 			goto end;
 		}
 	}
 
-	total_post_body_size = atoi(argv[4]);
+	total_post_body_size = atoi(argv[5]);
 	if (total_post_body_size < 0) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httpput] Total length of POST is incorrect\r\n");
 		error_no = 1;
@@ -929,7 +935,7 @@ void at_httpput(void *arg)
 			RTK_LOGW(AT_HTTP_TAG, "[at_httpput] NO CLIENT_CA_%d!\r\n", cert_index);
 			error_no = 3;
 			goto end;
-		} else {
+		} else if (ret < 0) {
 			RTK_LOGW(AT_HTTP_TAG, "[at_httpput] CLIENT_CA_%d read failed\r\n", cert_index);
 			error_no = 3;
 			goto end;
@@ -1047,57 +1053,48 @@ void at_httpput(void *arg)
 	}
 
 	if (total_post_body_size > 0)  {
+		post_data_buffer = rtos_mem_zmalloc((total_post_body_size <= MAX_TT_BUF_LEN ? total_post_body_size : MAX_TT_BUF_LEN) + 1);
+		if (post_data_buffer == NULL) {
+			RTK_LOGW(AT_HTTP_TAG, "[at_httpput] post_data_buffer malloc fail\r\n");
+			error_no = 2;
+			goto end;
+		}
 		if (atcmd_tt_mode_start((u32)total_post_body_size) < 0)  {
 			RTK_LOGI(AT_HTTP_TAG, "[at_httpput] Enter TT mode failed\r\n");
 			error_no = 5;
 			goto end;
 		}
-		if (total_post_body_size <= HTTP_SINGLE_POST_DATA_MAX_LEN)  {
-			single_post_data = rtos_mem_zmalloc(total_post_body_size);
-			if (single_post_data == NULL) {
-				RTK_LOGW(AT_HTTP_TAG, "[at_httpput] single_post_data malloc fail\r\n");
-				error_no = 2;
-				goto end;
-			}
-			if (atcmd_tt_mode_get(single_post_data, (u32)total_post_body_size) != (u32)total_post_body_size)  {
+		if (total_post_body_size <= MAX_TT_BUF_LEN)  {
+			if (atcmd_tt_mode_get(post_data_buffer, (u32)total_post_body_size) != (u32)total_post_body_size)  {
 				RTK_LOGI(AT_HTTP_TAG, "[at_httpput] Get data failed in TT mode\r\n");
 				error_no = 5;
 				goto end;
 			}
-			if (httpc_request_write_data(conn_ptr, (uint8_t *)single_post_data, (size_t)total_post_body_size) != total_post_body_size)  {
+			if (httpc_request_write_data(conn_ptr, (uint8_t *)post_data_buffer, (size_t)total_post_body_size) != total_post_body_size)  {
 				RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_request_write_data failed\r\n");
 				error_no = 6;
 				goto end;
 			}
 		} else  {
-			single_post_data = rtos_mem_zmalloc(HTTP_SINGLE_POST_DATA_MAX_LEN);
-			if (single_post_data == NULL) {
-				RTK_LOGW(AT_HTTP_TAG, "[at_httpput] single_post_data malloc fail\r\n");
-				error_no = 2;
-				goto end;
-			}
-			single_post_size = HTTP_SINGLE_POST_DATA_MAX_LEN;
 			while (total_post_body_size > 0)  {
-				if (atcmd_tt_mode_get(single_post_data, (u32)single_post_size) != (u32)single_post_size)  {
+				single_post_size = (total_post_body_size <= MAX_TT_BUF_LEN) ? total_post_body_size : MAX_TT_BUF_LEN;
+				if (atcmd_tt_mode_get(post_data_buffer, (u32)single_post_size) != (u32)single_post_size)  {
 					RTK_LOGI(AT_HTTP_TAG, "[at_httpput] Get data failed in TT mode\r\n");
 					error_no = 5;
 					goto end;
 				}
-				if (httpc_request_write_data(conn_ptr, (uint8_t *)single_post_data, (size_t)single_post_size) != single_post_size)  {
+				if (httpc_request_write_data(conn_ptr, (uint8_t *)post_data_buffer, (size_t)single_post_size) != single_post_size)  {
 					RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_request_write_data failed\r\n");
 					error_no = 6;
 					goto end;
 				}
-				total_post_body_size -= HTTP_SINGLE_POST_DATA_MAX_LEN;
-				if (total_post_body_size < HTTP_SINGLE_POST_DATA_MAX_LEN)  {
-					single_post_size = total_post_body_size;
-				}
+				total_post_body_size -= single_post_size;
 			}
 		}
 		atcmd_tt_mode_end();
 
-		rtos_mem_free(single_post_data);
-		single_post_data = NULL;
+		rtos_mem_free(post_data_buffer);
+		post_data_buffer = NULL;
 	}
 
 	if (httpc_response_read_header(conn_ptr) != 0) {
@@ -1107,9 +1104,11 @@ void at_httpput(void *arg)
 	}
 
 	at_printf("+HTTPPUT: HEADER LEN = %d\r\n", conn_ptr->response.header_len);
+	at_printf_lock();
 	at_printf("+HTTPPUT: HEADER DUMP START\r\n");
-	at_printf("%s", conn_ptr->response.header);
+	at_printf_data(conn_ptr->response.header, conn_ptr->response.header_len);
 	at_printf("+HTTPPUT: HEADER DUMP END\r\n");
+	at_printf_unlock();
 
 	response_data = rtos_mem_zmalloc(HTTP_READ_RESPONSE_DATA);
 	if (response_data == NULL) {
@@ -1126,7 +1125,7 @@ void at_httpput(void *arg)
 			if (read_size > 0) {
 				RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_response_read_data() read_size=%d\r\n", read_size);
 				total_resp_body_size += read_size;
-				at_printf("%s", response_data);
+				at_printf_data((char *)response_data, read_size);
 			} else {
 				break;
 			}
@@ -1144,7 +1143,7 @@ void at_httpput(void *arg)
 			if (read_size > 0) {
 				RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_response_read_data() read_size=%d\r\n", read_size);
 				total_resp_body_size += read_size;
-				at_printf("%s", response_data);
+				at_printf_data((char *)response_data, read_size);
 			} else {
 				break;
 			}
@@ -1169,13 +1168,13 @@ end:
 
 	rtos_mem_free(response_data);
 	response_data = NULL;
-	rtos_mem_free(single_post_data);
-	single_post_data = NULL;
+	rtos_mem_free(post_data_buffer);
+	post_data_buffer = NULL;
 
 	if (error_no == 0) {
-		at_printf("\r\nOK\r\n");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\nERROR:%d\r\n", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 
 	return;
@@ -1217,6 +1216,11 @@ void at_httpdel(void *arg)
 		error_no = 1;
 		goto end;
 	}
+	if (strlen(argv[1]) > DNS_MAX_NAME_LENGTH) {
+		RTK_LOGE(AT_HTTP_TAG, "[at_httpdel] Input <host> length should not exceed DNS_MAX_NAME_LENGTH\r\n");
+		error_no = 1;
+		goto end;
+	}
 	if (strlen(argv[2]) == 0) {
 		argv[2] = "/";
 	}
@@ -1234,7 +1238,7 @@ void at_httpdel(void *arg)
 			goto end;
 		}
 		cert_index = atoi(argv[4]);
-		if (cert_index < 0) {
+		if (cert_index <= 0) {
 			RTK_LOGE(AT_HTTP_TAG, "[at_httpdel] Certificate index is incorrect\r\n");
 			error_no = 1;
 			goto end;
@@ -1275,7 +1279,7 @@ void at_httpdel(void *arg)
 			RTK_LOGW(AT_HTTP_TAG, "[at_httpdel] NO CLIENT_CA_%d!\r\n", cert_index);
 			error_no = 3;
 			goto end;
-		} else {
+		} else if (ret < 0) {
 			RTK_LOGW(AT_HTTP_TAG, "[at_httpdel] CLIENT_CA_%d read failed\r\n", cert_index);
 			error_no = 3;
 			goto end;
@@ -1399,9 +1403,11 @@ void at_httpdel(void *arg)
 	}
 
 	at_printf("+HTTPDEL: HEADER LEN = %d\r\n", conn_ptr->response.header_len);
+	at_printf_lock();
 	at_printf("+HTTPDEL: HEADER DUMP START\r\n");
-	at_printf("%s", conn_ptr->response.header);
+	at_printf_data(conn_ptr->response.header, conn_ptr->response.header_len);
 	at_printf("+HTTPDEL: HEADER DUMP END\r\n");
+	at_printf_unlock();
 
 	response_data = rtos_mem_zmalloc(HTTP_READ_RESPONSE_DATA);
 	if (response_data == NULL) {
@@ -1418,7 +1424,7 @@ void at_httpdel(void *arg)
 			if (read_size > 0) {
 				RTK_LOGI(AT_HTTP_TAG, "[at_httpdel] httpc_response_read_data() read_size=%d\r\n", read_size);
 				total_resp_body_size += read_size;
-				at_printf("%s", response_data);
+				at_printf_data((char *)response_data, read_size);
 			} else {
 				break;
 			}
@@ -1436,7 +1442,7 @@ void at_httpdel(void *arg)
 			if (read_size > 0) {
 				RTK_LOGI(AT_HTTP_TAG, "[at_httpdel] httpc_response_read_data() read_size=%d\r\n", read_size);
 				total_resp_body_size += read_size;
-				at_printf("%s", response_data);
+				at_printf_data((char *)response_data, read_size);
 			} else {
 				break;
 			}
@@ -1463,9 +1469,9 @@ end:
 	response_data = NULL;
 
 	if (error_no == 0) {
-		at_printf("\r\nOK\r\n");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\nERROR:%d\r\n", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 
 	return;
