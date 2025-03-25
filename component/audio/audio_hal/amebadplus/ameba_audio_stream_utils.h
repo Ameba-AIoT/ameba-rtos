@@ -26,14 +26,8 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD
-#include "user_heap.h"
-#define ameba_audio_gdma_calloc User_Heap_calloc
-#define ameba_audio_gdma_free User_free
-#else
 #define ameba_audio_gdma_calloc calloc
 #define ameba_audio_gdma_free free
-#endif
 
 #define HAL_AUDIO_WEAK __attribute__((weak))
 

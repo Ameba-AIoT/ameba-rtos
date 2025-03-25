@@ -907,17 +907,73 @@ int atcmd_bt_transfer_module(int argc, char *argv[])
 		uint8_t op = (uint8_t)str_to_int(argv[0]);
 		if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
 			BT_LOGE("Error: wrong parameter (%d) for transfer module example!\r\n", op);
-			return -1;
+			return BT_AT_ERR_PARAM_INVALID;
 		}
 
 		if (ble_transfer_module_main(op)) {
 			BT_LOGE("Error: transfer module example %s failed!\r\n", (op == 1) ? "enable" : "disable");
-			return -1;
+			return BT_AT_FAIL;
 		}
 
 		BT_LOGA("transfer module example %s OK!\r\n", (op == 1) ? "enable" : "disable");
 	} else {
 		ret = atcmd_bt_transfer_module_cmd(argc, argv);
+	}
+	return ret;
+}
+
+
+int ble_wifimate_device_main(uint8_t enable, uint16_t timeout);
+int atcmd_bt_wifimate_device(int argc, char *argv[])
+{
+	(void)argc;
+	uint8_t op;
+	char *action[] = {"disable", "enable"};
+	uint16_t timeout = 60;
+
+	if (argc < 1 || argc > 2) {
+		BT_LOGE("Error: wrong parameter number\r\n");
+		return BT_AT_ERR_PARAM_INVALID;
+	}
+
+	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
+		BT_LOGE("Error: wrong value (%d) for ble wifimate device example!\r\n", op);
+		return BT_AT_ERR_PARAM_INVALID;
+	}
+
+	if (argc > 1) {
+		timeout = (uint16_t)str_to_int(argv[1]);
+		BT_LOGA("Ble wifimate timeout=%d\r\n", timeout);
+	}
+
+	if (ble_wifimate_device_main(op, timeout)) {
+		BT_LOGE("Error: ble wifimate device example %s failed!\r\n", action[op]);
+		return BT_AT_FAIL;
+	}
+
+	BT_LOGA("Ble wifimate device example %s OK!\r\n", action[op]);
+	return 0;
+}
+
+int ble_wifimate_configurator_main(uint8_t enable);
+int atcmd_bt_wifimate_configurator(int argc, char *argv[])
+{
+	int ret = 0;
+	if ((strcmp("0", argv[0]) == 0) || (strcmp("1", argv[0]) == 0)) {
+		uint8_t op = (uint8_t)str_to_int(argv[0]);
+		if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
+			BT_LOGE("Error: wrong parameter (%d) for ble wifimate configurator example!\r\n", op);
+			return BT_AT_ERR_PARAM_INVALID;
+		}
+
+		if (ble_wifimate_configurator_main(op)) {
+			BT_LOGE("Error: ble wifimate configurator example %s failed!\r\n", (op == 1) ? "enable" : "disable");
+			return BT_AT_FAIL;
+		}
+
+		BT_LOGA("ble wifimate configurator example %s OK!\r\n", (op == 1) ? "enable" : "disable");
+	} else {
+		ret = atcmd_bt_wifimate_configurator_cmd(argc, argv);
 	}
 	return ret;
 }

@@ -219,7 +219,7 @@ static int cfg80211_rtw_scan(struct wiphy *wiphy, struct cfg80211_scan_request *
 	u32 ssid_len = 0;
 	u32 channel_num = 0;
 
-	if (global_idev.mp_fw) {
+	if (llhw_wifi_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -517,7 +517,7 @@ static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, st
 	struct rtw_owe_param_t owe_info;
 	struct cfg80211_external_auth_params *auth_ext_para = &global_idev.mlme_priv.auth_ext_para;
 
-	if (global_idev.mp_fw) {
+	if (llhw_wifi_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -726,7 +726,7 @@ static int cfg80211_rtw_disconnect(struct wiphy *wiphy, struct net_device *ndev,
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac] --- %s ---", __func__);
 
-	if (global_idev.mp_fw) {
+	if (llhw_wifi_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -769,7 +769,7 @@ static int cfg80211_rtw_set_power_mgmt(struct wiphy *wiphy, struct net_device *n
 {
 	dev_dbg(global_idev.fullmac_dev, "%s: enable = %d, timeout = %d", __func__, enabled, timeout);
 
-	if (global_idev.mp_fw) {
+	if (llhw_wifi_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -800,7 +800,7 @@ static int cfg80211_rtw_get_channel(struct wiphy *wiphy,
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
-	if (global_idev.mp_fw) {
+	if (llhw_wifi_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -842,7 +842,7 @@ static int cfg80211_rtw_get_channel(struct wiphy *wiphy,
 
 static int cfg80211_rtw_external_auth_status(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_external_auth_params *params)
 {
-	if (global_idev.mp_fw) {
+	if (llhw_wifi_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -996,7 +996,7 @@ static int cfg80211_rtw_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev, 
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
-	if (global_idev.mp_fw) {
+	if (llhw_wifi_driver_is_mp()) {
 		return -EPERM;
 	}
 

@@ -1408,9 +1408,7 @@ void pmu_post_sleep_processing(uint32_t *tick_before_sleep)
 
 	sysactive_timeout_flag = 0;
 
-#ifndef CONFIG_CLINTWOOD
 	pmu_set_sysactive_time(2);
-#endif
 
 	RTK_LOGD(NOTAG, "sleeped:[%d] ms\n", ms_passed);
 

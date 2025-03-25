@@ -31,6 +31,8 @@
 
 #define INIC_API_PROCESS_DONE				0
 
+#define INIC_MP_MSG_BUF_SIZE 4096
+
 enum INIC_WIFI_C2H_API_ID {
 	/* 0x0001~0x1000 reserved for basic API */
 	INIC_API_SCAN_USER_CALLBACK					= BASIC_API_BASE + 1,

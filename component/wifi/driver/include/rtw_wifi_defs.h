@@ -793,10 +793,6 @@ enum rtw_event_indicate {
 
 	/* flash event */
 	WIFI_EVENT_DEAUTH_INFO_FLASH,
-#if defined (CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD
-	WIFI_EVENT_RFK_NOTIFY,
-	WIFI_EVENT_CHANNEL_NOT_SUPPORTED,
-#endif
 	WIFI_EVENT_MAX,
 };
 
