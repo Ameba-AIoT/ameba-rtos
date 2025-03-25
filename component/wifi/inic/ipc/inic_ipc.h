@@ -42,8 +42,6 @@
 #define DEV_MSG_PARAM_NUM		(8)
 #define DEV_MSG_DUMY_NUM		(64 - (DEV_MSG_PARAM_NUM + 2) * 4)
 
-#define INIC_MP_MSG_BUF_SIZE 4096
-
 /* ------------------------------- Data Types ------------------------------- */
 enum IPC_WIFI_CTRL_TYPE {
 	IPC_WIFI_MSG_READ_DONE = 0,

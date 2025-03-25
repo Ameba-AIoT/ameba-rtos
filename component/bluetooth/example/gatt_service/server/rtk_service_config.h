@@ -24,7 +24,7 @@ extern "C"  {
 #define PTS_VENDOR_SRV_ID                   10
 #define THROUGHPUT_SRV_ID                   11
 #define TRANSFER_MODULE_SRV_ID              12
-
+#define BLE_WIFIMATE_SRV_ID                 14
 
 #ifdef __cplusplus
 }

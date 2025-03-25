@@ -244,7 +244,8 @@ int wifi_set_network_mode(enum wlan_mode mode);
 void wifi_promisc_enable(u32 enable, promisc_para_t *para);
 
 /**
- * @brief  check whether current wifi driver is mp or not.
+ * @brief  check whether current wifi driver is mp or not. If the MP mode is shrink mode,
+ *         It will return 1 always.
  * @param  None
  * @return  1: drv_mode is RTW_DRV_MODE_MP
  * 	0: drv_mode is not RTW_DRV_MODE_MP

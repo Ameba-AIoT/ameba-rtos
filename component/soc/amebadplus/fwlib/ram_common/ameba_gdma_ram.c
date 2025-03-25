@@ -132,14 +132,17 @@ void GDMA_Init(u8 GDMA_Index, u8 GDMA_ChNum, PGDMA_InitTypeDef GDMA_InitStruct)
 			  (GDMA_InitStruct->GDMA_ReloadDst << 31);
 
 	CfgxUp = GDMA->CH[GDMA_ChNum].CFG_HIGH;
-	CfgxUp &= ~(BIT_CFGX_UP_SRC_PER | BIT_CFGX_UP_DEST_PER);
+	/*Handshake set*/
+	CfgxUp &= ~(BIT_CFGX_UP_SRC_PER | BIT_CFGX_UP_DEST_PER |
+				GDMA_BIT_ExtendedSRC_PER1 | GDMA_BIT_ExtendedDEST_PER1);
+	/* Src Handshake*/
 	if (GDMA_InitStruct->GDMA_SrcHandshakeInterface >= 16) {
 		GDMA_InitStruct->GDMA_SrcHandshakeInterface = (GDMA_InitStruct->GDMA_SrcHandshakeInterface & 0xf);
 		CfgxUp |= (GDMA_InitStruct->GDMA_SrcHandshakeInterface << 7) | GDMA_BIT_ExtendedSRC_PER1;
 	} else {
 		CfgxUp |= (GDMA_InitStruct->GDMA_SrcHandshakeInterface << 7);
 	}
-
+	/* Dst Handshake*/
 	if (GDMA_InitStruct->GDMA_DstHandshakeInterface >= 16) {
 		GDMA_InitStruct->GDMA_DstHandshakeInterface = (GDMA_InitStruct->GDMA_DstHandshakeInterface & 0xf);
 		CfgxUp |= (GDMA_InitStruct->GDMA_DstHandshakeInterface << 11) | GDMA_BIT_ExtendedDEST_PER1;

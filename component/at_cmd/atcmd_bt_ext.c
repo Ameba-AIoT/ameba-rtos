@@ -714,6 +714,12 @@ static const cmd_table_t example_table[] = {
 #if defined(CONFIG_BT_TRANSFER_MODULE) && CONFIG_BT_TRANSFER_MODULE
 	{"transfer_module",  atcmd_bt_transfer_module,  2, 4},
 #endif
+#if defined(CONFIG_BT_WIFIMATE_DEVICE) && CONFIG_BT_WIFIMATE_DEVICE
+	{"ble_wifimate_device", atcmd_bt_wifimate_device, 2, 3},
+#endif
+#if defined(CONFIG_BT_WIFIMATE_CONFIGURATOR) && CONFIG_BT_WIFIMATE_CONFIGURATOR
+	{"ble_wifimate_configurator", atcmd_bt_wifimate_configurator, 2, 6},
+#endif
 	{NULL,},
 };
 
@@ -756,13 +762,13 @@ static void atcmd_bt_cmd(void *arg, char *cmd_name, char *tag)
 	if (ret == 0) {
 		BT_AT_PRINTOK();
 	} else {
-		BT_AT_PRINTERROR();
+		BT_AT_PRINTERROR(ret);
 	}
 	return;
 
 exit:
 	BT_LOGA("%s Info: Use '%s' to help\r\n", tag, "AT+BTCMDHELP");
-	BT_AT_PRINTERROR();
+	BT_AT_PRINTERROR(BT_AT_ERR_PARAM_INVALID);
 }
 
 static inline int atcmd_bt_example(int argc, char *argv[])
@@ -796,13 +802,13 @@ static void fBTDEMO(void *arg)
 	if (ret == 0) {
 		BT_AT_PRINTOK();
 	} else {
-		BT_AT_PRINTERROR();
+		BT_AT_PRINTERROR(ret);
 	}
 	return;
 
 exit:
 	BT_LOGA("[AT+BTDEMO] Info: Use 'AT+BTDEMO=help' to help\r\n");
-	BT_AT_PRINTERROR();
+	BT_AT_PRINTERROR(BT_AT_ERR_PARAM_INVALID);
 }
 
 static inline void fBLEGAP(void *arg)
@@ -1064,7 +1070,7 @@ static inline void fBTCMDHELP(void *arg)
 		argc = parse_param(arg, argv);
 		if (argc < 1 || argc > 3) {
 			BT_LOGE("[AT+BTCMDHELP] Error: Wrong input args number!\r\n");
-			BT_AT_PRINTERROR();
+			BT_AT_PRINTERROR(BT_AT_ERR_PARAM_INVALID);
 			return;
 		}
 
@@ -1074,7 +1080,7 @@ static inline void fBTCMDHELP(void *arg)
 	if (ret == 0) {
 		BT_AT_PRINTOK();
 	} else {
-		BT_AT_PRINTERROR();
+		BT_AT_PRINTERROR(ret);
 	}
 	return;
 }
@@ -1101,13 +1107,13 @@ static void fBTVENDOR(void *arg)
 	if (ret == 0) {
 		BT_AT_PRINTOK();
 	} else {
-		BT_AT_PRINTERROR();
+		BT_AT_PRINTERROR(ret);
 	}
 	return;
 
 exit:
 	BT_LOGA("[AT+BTVENDOR] Info: Use 'AT+BTVENDOR=help' to help\r\n");
-	BT_AT_PRINTERROR();
+	BT_AT_PRINTERROR(BT_AT_ERR_PARAM_INVALID);
 }
 
 static log_item_t at_bt_items[] = {
