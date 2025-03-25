@@ -22,6 +22,11 @@
 #include <bt_utils.h>
 #include <transfer_module_common.h>
 
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+#include <atcmd_bt_cmd_sync.h>
+#include <bt_types.h>
+#endif
+
 #define RTK_BT_DEFAULT_DEV_NAME         "RTK_BT_TRANSFER_MODULE"
 
 static char s_dev_name[TRANSFER_MODULE_DEV_NAME_MAX_LEN] = RTK_BT_DEFAULT_DEV_NAME;
@@ -158,6 +163,8 @@ uint16_t ble_transfer_module_set_dev_name(char *name)
 
 	if (rtk_bt_is_enable()) {
 		ret = rtk_bt_le_gap_set_device_name((uint8_t *)s_dev_name);
+	} else {
+		ret = RTK_BT_ERR_NOT_READY;
 	}
 
 	return ret;
@@ -185,7 +192,12 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 		} else {
 			BT_LOGE("[APP] ADV start failed, err 0x%x \r\n", adv_start_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP:adv,start,%d,%d\r\n", (adv_start_ind->err == 0) ? 0 : -1, adv_start_ind->adv_type);
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		if (bt_at_sync_event_match_check(evt_code)) {
+			bt_at_sync_set_result(adv_start_ind->err);
+			bt_at_sync_sem_give();
+		}
+#endif
 		break;
 	}
 
@@ -196,7 +208,14 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 		} else {
 			BT_LOGE("[APP] ADV stop failed, err 0x%x \r\n", adv_stop_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP:adv,stop,%d,0x%x\r\n", (adv_stop_ind->err == 0) ? 0 : -1, adv_stop_ind->stop_reason);
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		if (adv_stop_ind->stop_reason == RTK_BT_LE_ADV_STOP_BY_HOST) {
+			if (bt_at_sync_event_match_check(evt_code)) {
+				bt_at_sync_set_result(adv_stop_ind->err);
+				bt_at_sync_sem_give();
+			}
+		}
+#endif
 		break;
 	}
 
@@ -231,19 +250,27 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 		} else {
 			BT_LOGE("[APP] Scan start failed(err: 0x%x)\r\n", scan_start_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP:scan,start,%d,%d\r\n", (scan_start_ind->err == 0) ? 0 : -1, scan_start_ind->scan_type);
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		if (bt_at_sync_event_match_check(evt_code)) {
+			bt_at_sync_set_result(scan_start_ind->err);
+			bt_at_sync_sem_give();
+		}
+#endif
 		break;
 	}
 
 	case RTK_BT_LE_GAP_EVT_SCAN_RES_IND: {
 		rtk_bt_le_scan_res_ind_t *scan_res_ind = (rtk_bt_le_scan_res_ind_t *)param;
 		rtk_bt_le_addr_to_str(&(scan_res_ind->adv_report.addr), le_addr, sizeof(le_addr));
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		BT_AT_PRINT("+BLEGAP:scan,%s,%d,%d,%d\r\n",
+					le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
+					scan_res_ind->adv_report.len);
+#else
 		BT_LOGA("[APP] Scan info, [Device]: %s, AD evt type: %d, RSSI: %d, len: %d \r\n",
 				le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
 				scan_res_ind->adv_report.len);
-		BT_AT_PRINT("+BLEGAP:scan,info,%s,%d,%d,%d\r\n",
-					le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
-					scan_res_ind->adv_report.len);
+#endif
 		break;
 	}
 
@@ -270,7 +297,14 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 		} else {
 			BT_LOGE("[APP] Scan stop failed(err: 0x%x)\r\n", scan_stop_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP:scan,stop,%d,0x%x\r\n", (scan_stop_ind->err == 0) ? 0 : -1, scan_stop_ind->stop_reason);
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		if (scan_stop_ind->stop_reason == RTK_BT_LE_SCAN_STOP_BY_HOST) {
+			if (bt_at_sync_event_match_check(evt_code)) {
+				bt_at_sync_set_result(scan_stop_ind->err);
+				bt_at_sync_sem_give();
+			}
+		}
+#endif
 		break;
 	}
 
@@ -281,18 +315,26 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 			role = conn_ind->role ? "slave" : "master";
 			BT_LOGA("[APP] Connected, handle: %d, role: %s, remote device: %s\r\n",
 					conn_ind->conn_handle, role, le_addr);
-			/* central action */
-			if (RTK_BT_LE_ROLE_MASTER == conn_ind->role &&
-				rtk_bt_le_sm_is_device_bonded(&conn_ind->peer_addr)) {
-				BT_LOGA("[APP] Bonded device, start link encryption procedure\r\n");
-				rtk_bt_le_sm_start_security(conn_ind->conn_handle);
-			}
 
 		} else {
 			BT_LOGE("[APP] Connection establish failed(err: 0x%x), remote device: %s\r\n",
 					conn_ind->err, le_addr);
 		}
-		BT_AT_PRINT("+BLEGAP:conn,%d,%d,%s\r\n", (conn_ind->err == 0) ? 0 : -1, (int)conn_ind->conn_handle, le_addr);
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		if (!conn_ind->err) {
+			if (conn_ind->role == RTK_BT_LE_ROLE_MASTER) {
+				BT_AT_PRINT("+BLEGAP:conn,%d,%s\r\n", conn_ind->conn_handle, le_addr);
+			} else if (conn_ind->role == RTK_BT_LE_ROLE_SLAVE) {
+				BT_AT_PRINT_INDICATE("+BLEGAP:conn,%d,%s\r\n", conn_ind->conn_handle, le_addr);
+			}
+		}
+		if (conn_ind->role == RTK_BT_LE_ROLE_MASTER) {
+			if (bt_at_sync_event_match_check(evt_code)) {
+				bt_at_sync_set_result(conn_ind->err);
+				bt_at_sync_sem_give();
+			}
+		}
+#endif
 		break;
 	}
 
@@ -302,8 +344,6 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 		role = disconn_ind->role ? "slave" : "master";
 		BT_LOGA("[APP] Disconnected, reason: 0x%x, handle: %d, role: %s, remote device: %s\r\n",
 				disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
-		BT_AT_PRINT("+BLEGAP:disconn,0x%x,%d,%s,%s\r\n",
-					disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
 
 		if (RTK_BT_LE_ROLE_SLAVE == disconn_ind->role) {
 			/* gap action */
@@ -336,9 +376,6 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 					}
 				}
 #endif /* RTK_BLE_PRIVACY_SUPPORT */
-				BT_LOGA("[APP] Reconnect ADV starting, adv type:%d,  own_addr_type: %d, filter_policy: %d\r\n"
-						, adv_param.type,  adv_param.own_addr_type, adv_param.filter_policy);
-				BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&adv_param));
 			}
 #endif /* RTK_BLE_5_0_USE_EXTENDED_ADV */
 			/* gatts action */
@@ -348,6 +385,14 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 			}
 
 		}
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		if (disconn_ind->reason != (HCI_ERR | HCI_ERR_LOCAL_HOST_TERMINATE)) {
+			BT_AT_PRINT_INDICATE("+BLEGAP:disconn,%d,%s\r\n",
+								 disconn_ind->conn_handle, le_addr);
+		}
+
+		bt_at_sync_disconnect_hdl(disconn_ind->conn_handle);
+#endif
 		break;
 	}
 
@@ -357,7 +402,6 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 		if (conn_update_ind->err) {
 			BT_LOGE("[APP] Update conn param failed, conn_handle: %d, err: 0x%x\r\n",
 					conn_update_ind->conn_handle, conn_update_ind->err);
-			BT_AT_PRINT("+BLEGAP:conn_update,%d,-1\r\n", conn_update_ind->conn_handle);
 		} else {
 			BT_LOGA("[APP] Conn param is updated, conn_handle: %d, conn_interval: 0x%x, "       \
 					"conn_latency: 0x%x, supervision_timeout: 0x%x\r\n",
@@ -365,12 +409,13 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 					conn_update_ind->conn_interval,
 					conn_update_ind->conn_latency,
 					conn_update_ind->supv_timeout);
-			BT_AT_PRINT("+BLEGAP:conn_update,%d,0,0x%x,0x%x,0x%x\r\n",
-						conn_update_ind->conn_handle,
-						conn_update_ind->conn_interval,
-						conn_update_ind->conn_latency,
-						conn_update_ind->supv_timeout);
 		}
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		if (bt_at_sync_event_match_check(evt_code)) {
+			bt_at_sync_set_result(conn_update_ind->err);
+			bt_at_sync_sem_give();
+		}
+#endif
 		break;
 	}
 
@@ -400,12 +445,6 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 				data_len_change->max_tx_time,
 				data_len_change->max_rx_octets,
 				data_len_change->max_rx_time);
-		BT_AT_PRINT("+BLEGAP:conn_datalen,%d,0x%x,0x%x,0x%x,0x%x\r\n",
-					data_len_change->conn_handle,
-					data_len_change->max_tx_octets,
-					data_len_change->max_tx_time,
-					data_len_change->max_rx_octets,
-					data_len_change->max_rx_time);
 		break;
 	}
 
@@ -416,16 +455,11 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 			BT_LOGE("[APP] Update PHY failed, conn_handle: %d, err: 0x%x\r\n",
 					phy_update_ind->conn_handle,
 					phy_update_ind->err);
-			BT_AT_PRINT("+BLEGAP:conn_phy,%d,-1\r\n", phy_update_ind->conn_handle);
 		} else {
 			BT_LOGA("[APP] PHY is updated, conn_handle: %d, tx_phy: %d, rx_phy: %d\r\n",
 					phy_update_ind->conn_handle,
 					phy_update_ind->tx_phy,
 					phy_update_ind->rx_phy);
-			BT_AT_PRINT("+BLEGAP:conn_phy,%d,0,%d,%d\r\n",
-						phy_update_ind->conn_handle,
-						phy_update_ind->tx_phy,
-						phy_update_ind->rx_phy);
 		}
 		break;
 	}
@@ -435,15 +469,7 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 			(rtk_bt_le_auth_pair_cfm_ind_t *)param;
 		BT_LOGA("[APP] Just work pairing need user to confirm, conn_handle: %d!\r\n",
 				pair_cfm_ind->conn_handle);
-		BT_AT_PRINT("+BLEGAP:pair_cfm,%d\r\n", pair_cfm_ind->conn_handle);
-		rtk_bt_le_pair_cfm_t pair_cfm_param = {0};
-		uint16_t ret = 0;
-		pair_cfm_param.conn_handle = pair_cfm_ind->conn_handle;
-		pair_cfm_param.confirm = 1;
-		ret = rtk_bt_le_sm_pairing_confirm(&pair_cfm_param);
-		if (RTK_BT_OK == ret) {
-			BT_LOGA("[APP] Just work pairing auto confirm succcess\r\n");
-		}
+		BT_AT_PRINT_INDICATE("+BLEGAP:pair_cfm,%d\r\n", pair_cfm_ind->conn_handle);
 		break;
 	}
 
@@ -453,9 +479,9 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 		BT_LOGA("[APP] Auth passkey display: %d, conn_handle:%d\r\n",
 				key_dis_ind->passkey,
 				key_dis_ind->conn_handle);
-		BT_AT_PRINT("+BLEGAP:passkey_display,%d,%d\r\n",
-					(int)key_dis_ind->conn_handle,
-					(int)key_dis_ind->passkey);
+		BT_AT_PRINT_INDICATE("+BLEGAP:passkey_display,%d,%d\r\n",
+							 (int)key_dis_ind->conn_handle,
+							 (int)key_dis_ind->passkey);
 		break;
 	}
 
@@ -464,7 +490,7 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 			(rtk_bt_le_auth_key_input_ind_t *)param;
 		BT_LOGA("[APP] Please input the auth passkey get from remote, conn_handle: %d\r\n",
 				key_input_ind->conn_handle);
-		BT_AT_PRINT("+BLEGAP:passkey_input,%d\r\n", key_input_ind->conn_handle);
+		BT_AT_PRINT_INDICATE("+BLEGAP:passkey_input,%d\r\n", key_input_ind->conn_handle);
 		break;
 	}
 
@@ -475,9 +501,9 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 				"Please comfirm if the passkeys are equal!\r\n",
 				key_cfm_ind->passkey,
 				key_cfm_ind->conn_handle);
-		BT_AT_PRINT("+BLEGAP:passkey_cfm,%d,%d\r\n",
-					(int)key_cfm_ind->conn_handle,
-					(int)key_cfm_ind->passkey);
+		BT_AT_PRINT_INDICATE("+BLEGAP:passkey_cfm,%d,%d\r\n",
+							 (int)key_cfm_ind->conn_handle,
+							 (int)key_cfm_ind->passkey);
 		break;
 	}
 
@@ -486,16 +512,16 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 			(rtk_bt_le_auth_oob_input_ind_t *)param;
 		BT_LOGA("[APP] Bond use oob key, conn_handle: %d. Please input the oob tk \r\n",
 				oob_input_ind->conn_handle);
-		BT_AT_PRINT("+BLEGAP:oobkey_input,%d\r\n", oob_input_ind->conn_handle);
+		BT_AT_PRINT_INDICATE("+BLEGAP:oobkey_input,%d\r\n", oob_input_ind->conn_handle);
 		break;
 	}
 
 	case RTK_BT_LE_GAP_EVT_AUTH_COMPLETE_IND: {
 		rtk_bt_le_auth_complete_ind_t *auth_cplt_ind =
 			(rtk_bt_le_auth_complete_ind_t *)param;
-		BT_AT_PRINT("+BLEGAP:sec,%d,%d\r\n",
-					auth_cplt_ind->conn_handle,
-					(auth_cplt_ind->err == 0) ? 0 : -1);
+		BT_AT_PRINT_INDICATE("+BLEGAP:authcmpl,%d,%d\r\n",
+							 auth_cplt_ind->conn_handle,
+							 (auth_cplt_ind->err == 0) ? 0 : 1);
 		if (auth_cplt_ind->err) {
 			BT_LOGE("[APP] Pairing failed(err: 0x%x), conn_handle: %d\r\n",
 					auth_cplt_ind->err, auth_cplt_ind->conn_handle);
@@ -514,8 +540,16 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 		rtk_bt_le_addr_to_str(&(bond_mdf_ind->ident_addr), ident_addr, sizeof(ident_addr));
 		BT_LOGA("[APP] Bond info modified, op: %d, addr: %s, ident_addr: %s\r\n",
 				bond_mdf_ind->op, le_addr, ident_addr);
-		BT_AT_PRINT("+BLEGAP:bond_modify,%d,%s,%s\r\n", bond_mdf_ind->op, le_addr, ident_addr);
 
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		if ((bond_mdf_ind->op == RTK_BT_LE_BOND_DELETE) ||
+			(bond_mdf_ind->op == RTK_BT_LE_BOND_CLEAR)) {
+			if (bt_at_sync_event_match_check(evt_code)) {
+				bt_at_sync_set_result(BT_AT_EVT_RESULT_SUCCESS);
+				bt_at_sync_sem_give();
+			}
+		}
+#endif
 		break;
 	}
 
@@ -588,6 +622,10 @@ int ble_transfer_module_main(uint8_t enable)
 #endif
 #if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
 	uint8_t bond_size = 0;
+#endif
+
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+	bt_at_sync_enable(enable);
 #endif
 
 	if (1 == enable) {
@@ -672,7 +710,7 @@ int ble_transfer_module_main(uint8_t enable)
 		if (adv_filter_whitelist) {
 			adv_param.filter_policy = RTK_BT_LE_ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST;
 		}
-		BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&adv_param));
+		//BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&adv_param));
 #endif
 
 	} else if (0 == enable) {

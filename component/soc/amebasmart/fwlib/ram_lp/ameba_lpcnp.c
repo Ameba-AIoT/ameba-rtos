@@ -747,11 +747,7 @@ void np_clk_gate_ctrl(void)
 
 	/* Disable KM4/HPlatform clock */
 	Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP0);
-#if defined(CONFIG_CLINTWOOD ) && CONFIG_CLINTWOOD
-	Rtemp &= (~(APBPeriph_NP_CLOCK));
-#else
 	Rtemp &= (~(APBPeriph_NP_CLOCK | APBPeriph_HPLFM_CLOCK));
-#endif
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP0, Rtemp);
 
 	if (ps_config.km0_audio_vad_on == TRUE) {
@@ -772,13 +768,11 @@ void np_clk_gate_ctrl(void)
 		PLL->PLL_AUX_BG |= PLL_BIT_POW_I;
 	}
 
-#ifndef CONFIG_CLINTWOOD
 	if (!SWR_In_BST_MODE()) {
 		/* sys req pfm mode when only km0 an in normal mode*/
 		SWR_PFM_MODE_Set(ENABLE);
 
 	}
-#endif
 }
 
 void np_clk_wake_ctrl(void)
@@ -1058,11 +1052,6 @@ u32 np_suspend(u32 type)
 	NVIC_ClearPendingIRQ(NP_WAKE_IRQ);
 	InterruptEn(NP_WAKE_IRQ, 10);
 
-#if defined (CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD
-	NVIC_ClearPendingIRQ(WL_PROTOCOL_IRQ);
-	irq_enable(WL_PROTOCOL_IRQ);
-#endif
-
 	return ret;
 }
 
@@ -1071,9 +1060,7 @@ void np_resume(void)
 	if (np_status_on()) {
 		return;
 	}
-#if defined (CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD
-	irq_disable(WL_PROTOCOL_IRQ);
-#endif
+
 	pmu_acquire_wakelock(PMU_KM4_RUN);
 	pmu_acquire_deepwakelock(PMU_KM4_RUN);
 
@@ -1145,14 +1132,6 @@ void np_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqStat
 			return;
 		}
 	}
-
-#if defined(CONFIG_CLINTWOOD ) && CONFIG_CLINTWOOD
-	/* pfm req immediately when KM4 enter wfe */
-	if (!SWR_In_BST_MODE()) {
-		SWR_PFM_MODE_Set(ENABLE);
-
-	}
-#endif
 
 	switch (psleep_param->sleep_type) {
 	case SLEEP_PG:

@@ -29,10 +29,10 @@ int atcmd_bt_excute(int argc, char *argv[], const cmd_table_t *cmd_table, const 
 	for (j = 0; j < argc; j++) {
 		if (NULL == argv[j]) {
 			BT_LOGE("[%s]Error: Atcmd has NULL param!!!\r\n", __func__);
-			return -1;
+			return BT_AT_ERR_PARAM_INVALID;
 		}
 		if (check_str_whitespace(argv[j])) {
-			return -1;
+			return BT_AT_ERR_PARAM_INVALID;
 		}
 	}
 
@@ -41,7 +41,7 @@ int atcmd_bt_excute(int argc, char *argv[], const cmd_table_t *cmd_table, const 
 			if (argc < cmd_table[i].argc_min || argc > cmd_table[i].argc_max) {
 				BT_LOGE("%s %s failed: wrong args number: %d, right range: [%d-%d]!\r\n",
 						tag, cmd_str, argc, cmd_table[i].argc_min, cmd_table[i].argc_max);
-				return -1;
+				return BT_AT_ERR_PARAM_INVALID;
 			}
 
 			return cmd_table[i].cmd_func(argc - 1, &argv[1]);
@@ -50,5 +50,5 @@ int atcmd_bt_excute(int argc, char *argv[], const cmd_table_t *cmd_table, const 
 	}
 
 	BT_LOGE("%s Error: Cant find this cmd %s\r\n", tag, cmd_str);
-	return -1;
+	return BT_AT_ERR_CMD_INVALID;
 }

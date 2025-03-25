@@ -132,7 +132,7 @@ static int proc_read_curr_ant(struct seq_file *m, void *v)
 
 static int proc_read_mp_fw(struct seq_file *m, void *v)
 {
-	seq_printf(m, "%d\n", global_idev.mp_fw);
+	seq_printf(m, "%d\n", llhw_wifi_driver_is_mp());
 
 	return 0;
 }

@@ -20,7 +20,7 @@ static int atcmd_bt_transfer_module_get_uuid(int argc, char **argv)
 	ret = ble_transfer_module_get_uuid(attr, &uuid);
 	if (ret) {
 		BT_LOGE("[AT+BTDEMO] Transfer module get uuid failed, err: 0x%x\r\n", ret);
-		return -1;
+		return bt_at_rtk_err_to_at_err(ret);
 	}
 	BT_LOGA("[AT+BTDEMO] Transfer module get uuid attr=%d uuid=0x%04x\r\n", attr, uuid);
 	BT_AT_PRINT("+BTDEMO:transfer_module,get_uuid,%d,0x%04x\r\n", attr, uuid);
@@ -39,7 +39,7 @@ static int atcmd_bt_transfer_module_set_uuid(int argc, char **argv)
 	ret = ble_transfer_module_set_uuid(attr, uuid);
 	if (ret) {
 		BT_LOGE("[AT+BTDEMO] Transfer module set uuid failed, err: 0x%x\r\n", ret);
-		return -1;
+		return bt_at_rtk_err_to_at_err(ret);
 	}
 	return 0;
 }
@@ -55,17 +55,17 @@ static int atcmd_bt_transfer_module_read_val(int argc, char **argv)
 
 	if (len > TRANSFER_MODULE_READ_VAL_MAX_LEN) {
 		BT_LOGE("[AT+BTDEMO] Transfer module set read value failed: wrong arg length!\r\n");
-		return -1;
+		return BT_AT_ERR_PARAM_INVALID;
 	}
 
 	if (len != strlen(argv[1]) / 2) {
 		BT_LOGE("[AT+BTDEMO] Transfer module set read value failed: length unmatch with data!\r\n");
-		return -1;
+		return BT_AT_ERR_PARAM_INVALID;
 	}
 	data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, len);
 	if (!data) {
 		BT_LOGE("[AT+BTDEMO] Transfer module set read value failed: cant alloc memory\r\n");
-		return -1;
+		return BT_AT_ERR_NO_MEMORY;
 	}
 
 	hexdata_str_to_array(argv[1], (uint8_t *)data, len);
@@ -74,7 +74,7 @@ static int atcmd_bt_transfer_module_read_val(int argc, char **argv)
 	if (ret) {
 		osif_mem_free((void *)data);
 		BT_LOGE("[AT+BTDEMO] Transfer module set read value failed! err: 0x%x\r\n", ret);
-		return -1;
+		return bt_at_rtk_err_to_at_err(ret);
 	}
 
 	osif_mem_free((void *)data);
@@ -92,7 +92,7 @@ static int atcmd_bt_transfer_module_get_name(int argc, char **argv)
 	ret = ble_transfer_module_get_dev_name(buf_len, buf);
 	if (ret) {
 		BT_LOGE("[AT+BTDEMO] Transfer module get device name failed! err: 0x%x\r\n", ret);
-		return -1;
+		return bt_at_rtk_err_to_at_err(ret);
 	}
 
 	BT_LOGA("[AT+BTDEMO] Transfer module get device name: %s\r\n", buf);
@@ -107,13 +107,13 @@ static int atcmd_bt_transfer_module_set_name(int argc, char **argv)
 
 	if (strlen(argv[0]) >= TRANSFER_MODULE_DEV_NAME_MAX_LEN) {
 		BT_LOGE("[AT+BTDEMO] Transfer module set device name string too long\r\n");
-		return -1;
+		return BT_AT_ERR_PARAM_INVALID;
 	}
 
 	ret = ble_transfer_module_set_dev_name(argv[0]);
 	if (ret) {
 		BT_LOGE("[AT+BTDEMO] Transfer module set device name failed! err: 0x%x\r\n", ret);
-		return -1;
+		return bt_at_rtk_err_to_at_err(ret);
 	}
 
 	return 0;

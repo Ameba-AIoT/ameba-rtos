@@ -256,7 +256,7 @@ static int rtw_ndev_close(struct net_device *pnetdev)
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 
-	if (!global_idev.mp_fw) {
+	if (!llhw_wifi_driver_is_mp()) {
 		ret = llhw_wifi_scan_abort(0);
 		if (ret) {
 			dev_err(global_idev.fullmac_dev, "[fullmac]: %s abort wifi scan failed!\n", __func__);
@@ -292,7 +292,7 @@ int rtw_ndev_open_ap(struct net_device *pnetdev)
 
 	rtw_netdev_priv_is_on(pnetdev) = true;
 
-	if (!global_idev.mp_fw) {
+	if (!llhw_wifi_driver_is_mp()) {
 		/* if2 init(SW + part of HW) */
 		llhw_wifi_init_ap();
 	}
@@ -310,7 +310,7 @@ static int rtw_ndev_close_ap(struct net_device *pnetdev)
 	netif_tx_stop_all_queues(pnetdev);
 	netif_carrier_off(pnetdev);
 
-	if (!global_idev.mp_fw) {
+	if (!llhw_wifi_driver_is_mp()) {
 		/* if2 deinit (SW) */
 		llhw_wifi_deinit_ap();
 	}
