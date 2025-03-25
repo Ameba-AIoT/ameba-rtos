@@ -292,7 +292,7 @@ static int cfg80211_rtw_start_ap(struct wiphy *wiphy, struct net_device *ndev, s
 #endif
 	dev_dbg(global_idev.fullmac_dev, "=>"FUNC_NDEV_FMT" - Start Softap\n", FUNC_NDEV_ARG(ndev));
 
-	if (global_idev.mp_fw) {
+	if (llhw_wifi_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -420,7 +420,7 @@ static int cfg80211_rtw_stop_ap(struct wiphy *wiphy, struct net_device *ndev
 	int ret = 0;
 	dev_dbg(global_idev.fullmac_dev, "=>"FUNC_NDEV_FMT" - Stop Softap\n", FUNC_NDEV_ARG(ndev));
 
-	if (global_idev.mp_fw) {
+	if (llhw_wifi_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -442,7 +442,7 @@ int cfg80211_rtw_ap_scan(struct wiphy *wiphy, struct cfg80211_scan_request *requ
 
 	dev_dbg(global_idev.fullmac_dev, "cfg80211_rtw_scan enter\n");
 
-	if (global_idev.mp_fw) {
+	if (llhw_wifi_driver_is_mp()) {
 		return -EPERM;
 	}
 

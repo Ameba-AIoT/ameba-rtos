@@ -5,48 +5,41 @@ include $(MAKE_INCLUDE_GEN)
 #*****************************************************************************#
 #                               VARIABLES	                                  #
 #*****************************************************************************#
-DIR = $(BASEDIR)/component/bluetooth/example
+BT_DIR = $(BASEDIR)/component/bluetooth
 MODULE_IFLAGS += -I$(BASEDIR)/component/at_cmd
 
-vpath %.c $(DIR)/bt_atcmd
+vpath %.c $(BT_DIR)/example/ble_wifimate \
+		  $(BT_DIR)/example/bt_atcmd \
+		  $(BT_DIR)/example/gatt_service/client
 
 MODULE_IFLAGS += \
-	-I$(BASEDIR)/component/at_cmd
+	-I$(BT_DIR)/example/ble_wifimate
+
+#*****************************************************************************#
+#                        DEVICE APP FILES                                     #
+#*****************************************************************************#
+
+ifeq ($(CONFIG_BT_WIFIMATE_DEVICE), y)
+CSRC += \
+	$(BT_DIR)/example/ble_wifimate/ble_wifimate_device.c \
+	$(BT_DIR)/example/ble_wifimate/ble_wifimate_server.c
+endif
+
+ifeq ($(CONFIG_BT_WIFIMATE_CONFIGURATOR), y)
+	CSRC += \
+	$(BT_DIR)/example/ble_wifimate/ble_wifimate_configurator.c \
+	$(BT_DIR)/example/ble_wifimate/ble_wifimate_client.c \
+	$(BT_DIR)/example/bt_atcmd/atcmd_bt_wifimate_configurator.c
+endif
 
 CSRC += \
-	$(DIR)/bt_atcmd/bt_utils.c \
-	$(DIR)/bt_atcmd/atcmd_bt_common.c \
-	$(DIR)/bt_atcmd/atcmd_bt_example.c \
-	$(DIR)/bt_atcmd/atcmd_bt_gap.c \
-	$(DIR)/bt_atcmd/atcmd_bt_le_gap.c \
-	$(DIR)/bt_atcmd/atcmd_bt_gatts.c \
-	$(DIR)/bt_atcmd/atcmd_bt_gattc.c \
-	$(DIR)/bt_atcmd/atcmd_bt_vendor.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_common.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_config_model.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_datatrans_model.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_device_firmware_update_model.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_goo_model.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_remote_prov_model.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_light_model.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_time_model.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_scheduler_model.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_scene_model.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_generic_default_transition_time.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_generic_model.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_sensor_model.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_health_model.c \
-	${DIR}/bt_atcmd/atcmd_bt_mesh_directed_forwarding.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_subnet_bridge_model.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_private_beacon_model.c \
-	$(DIR)/bt_atcmd/atcmd_bt_cmd_sync.c
+	$(BT_DIR)/example/gatt_service/client/rtk_gcs_client.c
 
 OBJS = $(notdir $(CSRC:.c=.o))
 
 #*****************************************************************************#
 #                        RULES TO GENERATE TARGETS                            #
 #*****************************************************************************#
-
 # LIBBLUETOOTH_OBJS_PATH = $(shell pwd)/objs
 # Define the Rules to build the core targets
 all: CORE_TARGETS COPY_RAM_OBJS

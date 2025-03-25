@@ -65,6 +65,9 @@ endif
 ifeq ($(CONFIG_BT_TRANSFER_MODULE), y)
 	make -C ble_transfer_module all
 endif
+ifeq ($(findstring y, $(CONFIG_BT_WIFIMATE_DEVICE) $(CONFIG_BT_WIFIMATE_CONFIGURATOR)), y)
+	make -C ble_wifimate all
+endif
 ifeq ($(CONFIG_BLE_MATTER_ADAPTER),y)
 	make -C ble_matter_adapter all
 endif
@@ -119,6 +122,9 @@ ifeq ($(CONFIG_BT_MESH_DEVICE_SCATTERNET), y)
 endif
 ifeq ($(CONFIG_BT_TRANSFER_MODULE), y)
 	make -C ble_transfer_module clean
+endif
+ifeq ($(findstring y, $(CONFIG_BT_WIFIMATE_DEVICE) $(CONFIG_BT_WIFIMATE_CONFIGURATOR)), y)
+	make -C ble_wifimate clean
 endif
 ifeq ($(CONFIG_BLE_MATTER_ADAPTER),y)
 	make -C ble_matter_adapter clean

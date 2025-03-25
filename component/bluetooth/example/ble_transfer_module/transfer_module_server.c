@@ -15,6 +15,9 @@
 #include <rtk_bt_device.h>
 #include <bt_utils.h>
 #include <transfer_module_common.h>
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+#include <atcmd_bt_cmd_sync.h>
+#endif
 
 
 /*****************************Transfer Module Service and Characteristic UUID******************/
@@ -165,10 +168,11 @@ static void transfer_module_server_read_hdl(void *data)
 	} else {
 		BT_LOGE("[APP] Transfer module respond for client read failed, err: 0x%x\r\n", ret);
 	}
-	BT_AT_PRINT("+BLEGATTS:read_rsp,%d,%u,%u,%u,%d\r\n",
-				(RTK_BT_OK == ret) ? 0 : -1, read_resp.app_id,
-				read_resp.conn_handle, read_resp.index,
-				read_resp.err_code);
+
+	if ((!read_resp.err_code) && (RTK_BT_OK == ret)) {
+		BT_AT_PRINT_INDICATE("+BLEGATTS:read,%u,%u,%u\r\n",
+							 read_resp.app_id, read_resp.conn_handle, read_resp.index);
+	}
 }
 
 static void transfer_module_server_write_hdl(void *data)
@@ -197,9 +201,9 @@ static void transfer_module_server_write_hdl(void *data)
 		BT_LOGA("[APP] Transfer module server write event, len: %d, type: %d, data:\r\n",
 				p_write_ind->len, p_write_ind->type);
 		BT_DUMPA("", p_write_ind->value, p_write_ind->len);
-		BT_AT_PRINT("+BLEGATTS:write,%u,%u,%u,%u,%u",
-					p_write_ind->app_id, p_write_ind->conn_handle, p_write_ind->index,
-					p_write_ind->type, p_write_ind->len);
+		BT_AT_PRINT_INDICATE("+BLEGATTS:write,%u,%u,%u,%u,%u",
+							 p_write_ind->app_id, p_write_ind->conn_handle, p_write_ind->index,
+							 p_write_ind->type, p_write_ind->len);
 		BT_AT_DUMP("", p_write_ind->value, p_write_ind->len);
 	} else {
 		BT_LOGE("[APP] Transfer module server write event unknown index: %d\r\n", p_write_ind->index);
@@ -212,13 +216,6 @@ send_write_rsp:
 		BT_LOGA("[APP] Transfer module server response for client write success!\r\n");
 	} else {
 		BT_LOGE("[APP] Transfer module server response for client write failed, err: 0x%x\r\n", ret);
-	}
-	if ((write_resp.type == RTK_BT_GATTS_WRITE_REQ) ||
-		(write_resp.type == RTK_BT_GATTS_WRITE_LONG)) {
-		BT_AT_PRINT("+BLEGATTS:write_rsp,%d,%u,%u,%u,%d,%d\r\n",
-					(RTK_BT_OK == ret) ? 0 : -1, write_resp.app_id,
-					write_resp.conn_handle, write_resp.index,
-					write_resp.type, write_resp.err_code);
 	}
 }
 
@@ -244,9 +241,9 @@ static void transfer_module_server_cccd_hdl(void *data)
 			transfer_module_cccd_ntf_en_map[conn_id] = 0;
 			BT_LOGA("[APP] Transfer module notify cccd, notify bit disable\r\n");
 		}
-		BT_AT_PRINT("+BLEGATTS:cccd,notify,%d,%u,%u,%u\r\n",
-					transfer_module_cccd_ntf_en_map[conn_id], p_cccd_ind->app_id,
-					p_cccd_ind->conn_handle, p_cccd_ind->index);
+		BT_AT_PRINT_INDICATE("+BLEGATTS:cccd,notify,%d,%u,%u,%u\r\n",
+							 transfer_module_cccd_ntf_en_map[conn_id], p_cccd_ind->app_id,
+							 p_cccd_ind->conn_handle, p_cccd_ind->index);
 		break;
 	case TRANSFER_MODULE_INDICATE_CCCD_INDEX:
 		if (p_cccd_ind->value & RTK_BT_GATT_CCC_INDICATE) {
@@ -256,9 +253,9 @@ static void transfer_module_server_cccd_hdl(void *data)
 			transfer_module_cccd_ind_en_map[conn_id] = 0;
 			BT_LOGA("[APP] Transfer module indicate cccd, indicate bit disable\r\n");
 		}
-		BT_AT_PRINT("+BLEGATTS:cccd,indicate,%d,%u,%u,%u\r\n",
-					transfer_module_cccd_ind_en_map[conn_id], p_cccd_ind->app_id,
-					p_cccd_ind->conn_handle, p_cccd_ind->index);
+		BT_AT_PRINT_INDICATE("+BLEGATTS:cccd,indicate,%d,%u,%u,%u\r\n",
+							 transfer_module_cccd_ind_en_map[conn_id], p_cccd_ind->app_id,
+							 p_cccd_ind->conn_handle, p_cccd_ind->index);
 		break;
 	default:
 		break;
@@ -278,9 +275,12 @@ static void transfer_module_server_notify_complete_hdl(void *data)
 	} else {
 		BT_LOGE("[APP] Transfer module server notify failed, err: 0x%x\r\n", p_ntf_ind->err_code);
 	}
-	BT_AT_PRINT("+BLEGATTS:notify,%d,%u,%u,%u\r\n",
-				(RTK_BT_OK == p_ntf_ind->err_code) ? 0 : -1, p_ntf_ind->app_id,
-				p_ntf_ind->conn_handle, p_ntf_ind->index);
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+	if (bt_at_sync_event_match_check(RTK_BT_GATTS_EVT_NOTIFY_COMPLETE_IND)) {
+		bt_at_sync_set_result(p_ntf_ind->err_code);
+		bt_at_sync_sem_give();
+	}
+#endif
 }
 
 static void transfer_module_server_indicate_complete_hdl(void *data)
@@ -296,9 +296,12 @@ static void transfer_module_server_indicate_complete_hdl(void *data)
 	} else {
 		BT_LOGE("[APP] Transfer module server indicate failed, err: 0x%x\r\n", p_ind_ind->err_code);
 	}
-	BT_AT_PRINT("+BLEGATTS:indicate,%d,%u,%u,%u\r\n",
-				(RTK_BT_OK == p_ind_ind->err_code) ? 0 : -1, p_ind_ind->app_id,
-				p_ind_ind->conn_handle, p_ind_ind->index);
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+	if (bt_at_sync_event_match_check(RTK_BT_GATTS_EVT_INDICATE_COMPLETE_IND)) {
+		bt_at_sync_set_result(p_ind_ind->err_code);
+		bt_at_sync_sem_give();
+	}
+#endif
 }
 
 rtk_bt_evt_cb_ret_t ble_transfer_module_gatts_app_callback(uint8_t event, void *data, uint32_t len)
