@@ -1,4 +1,5 @@
-set(IMAGESCRIPTDIR  ${BASEDIR}/tools/image_scripts)
+set(IMAGESCRIPTDIR  ${CMAKE_CURRENT_LIST_DIR}/../tools/image_scripts)
+
 set(PREPENDTOOL python ${IMAGESCRIPTDIR}/axf2bin.py prepend_header)
 set(OTAPREPENDTOOL python ${IMAGESCRIPTDIR}/axf2bin.py ota_prepend_header )
 set(PADTOOL python ${IMAGESCRIPTDIR}/axf2bin.py pad)

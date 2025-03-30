@@ -10,12 +10,11 @@
 
 #include "lwip/sockets.h"
 #include "lwip/netdb.h"
-#include "wifi_intf_drv_to_app_types.h"
-#include "wifi_ind.h"
+#include "wifi_api.h"
 
 #include <dlist.h>
 
-extern int wifi_get_join_status(void);
+extern int wifi_get_join_status(u8 *join_status);
 
 #define PR_UART_TX			PA_25
 #define PR_UART_RX			PA_24
@@ -1067,10 +1066,11 @@ void pc_recorder_start(msg_attrib_t *pattrib)
 void pc_recorder_main(void *param)
 {
 	(void)param;
+	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 
 	rtos_time_delay_ms(1000);
 
-	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS))) {
+	while (!((wifi_get_join_status(&join_status) == RTK_SUCCESS)  && (join_status == RTW_JOINSTATUS_SUCCESS))) {
 		printf("Please connect to WIFI\n");
 		rtos_time_delay_ms(1000);
 	}

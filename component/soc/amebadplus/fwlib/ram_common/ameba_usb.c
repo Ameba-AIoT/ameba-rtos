@@ -34,6 +34,20 @@ static const char *const TAG = "USB";
 /* Exported functions --------------------------------------------------------*/
 
 /**
+  * @brief  Get USB chip specific calibration data
+  * @param  mode: 0 - device; 1 - host
+  * @retval Pointer to calibration data buffer
+  */
+usb_cal_data_t *usb_chip_get_cal_data(u8 mode)
+{
+	UNUSED(mode);
+
+	/* No need to calibrate */
+
+	return (usb_cal_data_t *)NULL;
+}
+
+/**
   * @brief  USB chip specific initialization
   * @param  void
   * @retval HAL status
@@ -102,4 +116,3 @@ int usb_chip_deinit(void)
 
 	return HAL_OK;
 }
-

@@ -1,2 +1,0 @@
-ameba_add_subdirectories_if(CONFIG_802154_ZIGBEE_ZCP_DEFAULT_EN default)
-ameba_add_subdirectories_if(CONFIG_802154_ZIGBEE_ZCP_GPPB_EN gppb)

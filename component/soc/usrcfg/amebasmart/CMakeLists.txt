@@ -11,6 +11,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # You may use if-else condition to set or update predefined variable above
 
 ameba_list_append(public_includes include)
+ameba_list_append(public_includes ../common)
 
 # Component public part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#

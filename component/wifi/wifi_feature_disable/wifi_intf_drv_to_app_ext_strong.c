@@ -1,10 +1,10 @@
-#include <wifi_conf.h>
+#include <wifi_api.h>
 u16 call_noused = 0;
 
-int wifi_get_scan_records(unsigned int *AP_num, char *scan_buf)
+int wifi_get_scan_records(unsigned int *ap_num, struct rtw_scan_result *ap_list)
 {
-	UNUSED(AP_num);
-	UNUSED(scan_buf);
+	UNUSED(ap_num);
+	UNUSED(ap_list);
 	call_noused = __LINE__;
 	return -1;
 }
@@ -26,50 +26,53 @@ int wifi_get_ccmp_key(u8 wlan_idx, u8 *mac_addr, unsigned char *uncst_key, unsig
 	return -1;
 }
 
-int wifi_get_network_mode(void)
+int wifi_get_wireless_mode(u8 *wmode)
 {
+	UNUSED(wmode);
 	call_noused = __LINE__;
-	return 0;//unconnected
+	return RTK_FAIL;
 }
 
 
-int wifi_set_network_mode(u32 mode)
+int wifi_set_wireless_mode(u32 wmode)
 {
-	UNUSED(mode);
+	UNUSED(wmode);
 	call_noused = __LINE__;
-	return RTW_ERROR;
+	return RTK_FAIL;
 }
 
-u64 wifi_get_tsf(unsigned char port_id)
+int wifi_get_tsf(unsigned char wlan_idx, u64 *tsf)
 {
-	UNUSED(port_id);
+	UNUSED(wlan_idx);
+	UNUSED(tsf);
 	call_noused = __LINE__;
 	return 0;
 }
 
-int wifi_get_txbuf_pkt_num(void)
+int wifi_get_txbuf_pkt_num(int *pkt_num)
 {
+	UNUSED(pkt_num);
 	call_noused = __LINE__;
 	return -1;
 }
 
-int wifi_set_tx_rate_by_ToS(unsigned char enable, unsigned char ToS_precedence, unsigned char tx_rate)
+int wifi_set_tx_rate_by_tos(unsigned char enable, unsigned char tos_precedence, unsigned char tx_rate)
 {
 	UNUSED(enable);
-	UNUSED(ToS_precedence);
+	UNUSED(tos_precedence);
 	UNUSED(tx_rate);
 	call_noused = __LINE__;
 	return -1;
 }
 
-int wifi_set_EDCA_param(unsigned int AC_param)
+int wifi_set_edca_param(unsigned int ac_param)
 {
-	UNUSED(AC_param);
+	UNUSED(ac_param);
 	call_noused = __LINE__;
 	return -1;
 }
 
-int wifi_set_TX_CCA(unsigned char enable)
+int wifi_set_tx_cca_enable(unsigned char enable)
 {
 	UNUSED(enable);
 	call_noused = __LINE__;
@@ -87,28 +90,28 @@ int wifi_set_countrycode(char *cntcode)
 {
 	UNUSED(cntcode);
 	call_noused = __LINE__;
-	return RTW_ERROR;
+	return RTK_FAIL;
 }
 
 int wifi_get_countrycode(struct country_code_table_t *table)
 {
 	UNUSED(table);
 	call_noused = __LINE__;
-	return RTW_ERROR;
+	return RTK_FAIL;
 }
 
 int wifi_set_chplan(u8 chplan)
 {
 	UNUSED(chplan);
 	call_noused = __LINE__;
-	return RTW_ERROR;
+	return RTK_FAIL;
 }
 
 int wifi_get_chplan(u8 *chplan)
 {
 	UNUSED(chplan);
 	call_noused = __LINE__;
-	return RTW_ERROR;
+	return RTK_FAIL;
 }
 
 
@@ -176,14 +179,6 @@ int wifi_set_eap_phase(unsigned char is_trigger_eap)
 int wifi_set_eap_method(unsigned char eap_method)
 {
 	UNUSED(eap_method);
-	call_noused = __LINE__;
-	return -1;
-}
-
-int wifi_get_sw_statistic(unsigned char idx, struct _rtw_sw_statistics_t *sw_statistics)
-{
-	UNUSED(idx);
-	UNUSED(sw_statistics);
 	call_noused = __LINE__;
 	return -1;
 }
@@ -320,10 +315,11 @@ int wifi_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags)
 	return -1;
 }
 
-u8 wifi_get_band_type(void)
+int wifi_get_band_type(u8 *band_type)
 {
+	UNUSED(band_type);
 	call_noused = __LINE__;
-	return WL_BAND_2_4G;
+	return -1;
 }
 
 int wifi_set_pmf_mode(u8 pmf_mode)

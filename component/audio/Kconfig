@@ -1,12 +1,10 @@
 menu "Audio Config"
     config AUDIO_FWK_MENU
         bool "Enable Audio Framework"
-        default y if WIFI_AUDIO_MENU||WFA_SRC_MENU||MEDIA_PLAYER_MENU
         select AUDIO_FWK if CORE_AS_AP
     if AUDIO_FWK_MENU
         choice
             prompt "Select Audio Interfaces"
-            default AUDIO_PASSTHROUGH_MENU if (WIFI_AUDIO_MENU||WFA_SRC_MENU)
             config AUDIO_MIXER_MENU
                 bool "Mixer"
                 select AUDIO_MIXER if CORE_AS_AP
@@ -20,6 +18,7 @@ menu "Audio Config"
     if AMEBALITE||AMEBASMART||AMEBASMARTPLUS  #amebalite amebasmart smart+
         config MEDIA_PLAYER_MENU
             bool "Enable Media Framework"
+            select AUDIO_FWK_MENU
             select MEDIA_PLAYER if CORE_AS_AP
 
         if MEDIA_PLAYER_MENU
@@ -107,31 +106,6 @@ menu "Audio Config"
     endmenu
 
 endmenu
-
-if AMEBADPLUS||AMEBAD           #amebadplus amebaD
-
-    menu "Wifi Audio Config"
-        config WIFI_AUDIO_MENU
-            bool "Enable WIFI AUDIO"
-            default n
-            select WIFI_AUDIO if CORE_AS_AP
-        config WFA_SRC_MENU
-            bool "Enable WFA SRC"
-            default n
-            select WFA_SRC if CORE_AS_AP
-        if WIFI_AUDIO_MENU||WFA_SRC_MENU
-            # config AUDIO_PASSTHROUGH_MENU
-            #     bool
-            #     default y
-            config WFA_FEC_USE_SRAM_MENU
-                bool "Enable FEC USE SRAM"
-                default n
-                select WFA_FEC_USE_SRAM if CORE_AS_AP
-        endif
-
-    endmenu
-
-endif
 
 
 config AUDIO_FWK

@@ -292,7 +292,7 @@ static int whc_fullmac_host_start_ap_ops(struct wiphy *wiphy, struct net_device 
 #endif
 	dev_dbg(global_idev.fullmac_dev, "=>"FUNC_NDEV_FMT" - Start Softap\n", FUNC_NDEV_ARG(ndev));
 
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -426,7 +426,7 @@ static int whc_fullmac_host_stop_ap_ops(struct wiphy *wiphy, struct net_device *
 	int ret = 0;
 	dev_dbg(global_idev.fullmac_dev, "=>"FUNC_NDEV_FMT" - Stop Softap\n", FUNC_NDEV_ARG(ndev));
 
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -448,7 +448,7 @@ int whc_fullmac_host_ap_scan(struct wiphy *wiphy, struct cfg80211_scan_request *
 
 	dev_dbg(global_idev.fullmac_dev, "whc_fullmac_host_scan enter\n");
 
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 

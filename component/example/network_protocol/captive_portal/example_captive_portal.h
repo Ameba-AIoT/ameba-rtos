@@ -15,7 +15,7 @@
 #include "main.h"
 #include <lwip_netconf.h>
 
-#include "wifi_intf_drv_to_app_basic.h"
+#include "wifi_api.h"
 
 void example_captive_portal(void);
 

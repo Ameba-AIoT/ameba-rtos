@@ -1,5 +1,0 @@
-if(CONFIG_MEDIA_CODEC_MP3 OR CONFIG_MEDIA_LITE_CODEC_MP3)
-    ameba_add_subdirectories(pvmp3)
-    ameba_add_subdirectories(amrnb)
-    ameba_add_subdirectories(amrwb)
-endif()

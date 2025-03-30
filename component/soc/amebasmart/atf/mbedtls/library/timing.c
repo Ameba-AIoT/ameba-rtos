@@ -394,7 +394,7 @@ static void busy_msleep( unsigned long msec )
     (void) j;
 }
 
-#define FAIL    do                                                      \
+#define RTK_FAIL    do                                                      \
     {                                                                   \
         if( verbose != 0 )                                              \
         {                                                               \
@@ -445,7 +445,7 @@ int mbedtls_timing_self_test( int verbose )
         /* For some reason on Windows it looks like alarm has an extra delay
          * (maybe related to creating a new thread). Allow some room here. */
         if( millisecs < 800 * secs || millisecs > 1200 * secs + 300 )
-            FAIL;
+            RTK_FAIL;
     }
 
     if( verbose != 0 )
@@ -461,21 +461,21 @@ int mbedtls_timing_self_test( int verbose )
 
         busy_msleep( a - a / 4 );                      /* T = a - a/4 */
         if( mbedtls_timing_get_delay( &ctx ) != 0 )
-            FAIL;
+            RTK_FAIL;
 
         busy_msleep( a / 4 + b / 4 );                  /* T = a + b/4 */
         if( mbedtls_timing_get_delay( &ctx ) != 1 )
-            FAIL;
+            RTK_FAIL;
 
         busy_msleep( b );                          /* T = a + b + b/4 */
         if( mbedtls_timing_get_delay( &ctx ) != 2 )
-            FAIL;
+            RTK_FAIL;
     }
 
     mbedtls_timing_set_delay( &ctx, 0, 0 );
     busy_msleep( 200 );
     if( mbedtls_timing_get_delay( &ctx ) != -1 )
-        FAIL;
+        RTK_FAIL;
 
     if( verbose != 0 )
         mbedtls_printf( "passed\n" );

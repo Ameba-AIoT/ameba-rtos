@@ -10,7 +10,7 @@
 #include "hci_platform.h"
 #include "bt_debug.h"
 #include "ameba.h"
-#include "wifi_conf.h"
+#include "wifi_api.h"
 #include "platform_autoconf.h"
 #include "rtw_coex_host_api.h"
 
@@ -31,7 +31,6 @@
 #define DBG_BT_VENDOR              0
 #define DBG_BT_ON                  1
 
-uint32_t hci_cfg_sw_val = 0xFF;                  /* Open BT Trace log & FW log use 0xDD */
 bt_voltage_t bt_voltage_switch = VOLTAGE_3V3;    /* Select BT voltage */
 
 static uint8_t hci_phy_efuse[HCI_PHY_EFUSE_LEN]  = {0};

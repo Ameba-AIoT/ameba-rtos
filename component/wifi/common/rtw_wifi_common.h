@@ -37,11 +37,11 @@
 #define RSNXE_MAX_LEN (18)/*Draft P802.11REVmd_D5.0 p1464*/
 #endif
 
-#define MAX_WPA_IE_LEN (257)
-#define MAX_WPS_IE_LEN (512)
-#define MAX_P2P_IE_LEN (256)
-#define MAX_WFD_IE_LEN (128)
-#define MAX_FT_IE_LEN (256)
+#define INFO_ELEMENT_SIZE       128 /*TODO: rom should check because moved from rom_rtw_defs.h*/
+
+#define netdev_priv(dev)		dev->priv
+#define rtw_is_netdev_enable(idx)	(rltk_wlan_info[idx].enable)
+#define rtw_get_netdev(idx)		(&(rltk_wlan_info[idx].dev))
 
 enum _IFACE_TYPE {
 	IFACE_PORT0, //mapping to port0 for C/D series chips
@@ -50,11 +50,18 @@ enum _IFACE_TYPE {
 	MAX_IFACE_PORT,
 };
 
+/**
+  * The enumeration lists the flash operation status.
+  */
+enum flash_operation_type {
+	FLASH_READ = 0,   /**< read  flash                       */
+	FLASH_WRITE,       /**< write  flash                       */
+};
+
 struct eth_drv_sg {
 	unsigned int    buf;
 	unsigned int     len;
 };
-
 
 /*
  *	This is an Ethernet frame header.

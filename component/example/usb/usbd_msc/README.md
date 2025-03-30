@@ -6,7 +6,7 @@ USB host (e.g. PC or Ameba as USB MSC host) will recognize Ameba as a MSC device
 
 # HW Configuration
 
-None
+Attach SD card to the SDIOH slot on the board.
 
 # SW configuration
 
@@ -38,7 +38,7 @@ None
 
 # Note
 
-For other chips, refer to the AN for setup guide.
+None
 
 # Supported IC
 

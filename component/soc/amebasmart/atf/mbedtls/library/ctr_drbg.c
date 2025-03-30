@@ -442,7 +442,7 @@ exit:
  *   additional[:add_len] = additional_input
  * and entropy_input comes from calling ctx->f_entropy
  * and with outputs
- *   status = SUCCESS (this function does the reseed internally)
+ *   status = RTK_SUCCESS (this function does the reseed internally)
  *   returned_bits = output[:output_len]
  *   ctx contains new_working_state
  */

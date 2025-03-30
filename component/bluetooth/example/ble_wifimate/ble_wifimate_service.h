@@ -20,11 +20,11 @@ extern "C" {
 #define BLE_WIFIMATE_UUID_CHAR_WIFI_CONNECT_ENABLE      0xD023
 #define BLE_WIFIMATE_UUID_CHAR_WIFI_CONNECT_STATE       0xD024
 
-#define BLE_WIFIMATE_KEY_LEN                            (5)
+#define BLE_WIFIMATE_KEY_LEN                            (13)
 
-#define BLE_WIFIMATE_CHAR_NOGOTIATE_KEY_LEN             (6)
+#define BLE_WIFIMATE_CHAR_NOGOTIATE_KEY_LEN             (14)
 #define CHAR_NEGOTIATE_KEY_FIRST_ELE_LEN                (1)
-#define CHAR_NEGOTIATE_KEY_SECOND_ELE_LEN               (5)
+#define CHAR_NEGOTIATE_KEY_SECOND_ELE_LEN               (13)
 
 #define CHAR_WIFI_CONN_ENABLE_INITIAL_FIRST_ELE_LEN     (2)
 #define CHAR_WIFI_CONN_ENABLE_INITIAL_SECOND_ELE_LEN    (1)
@@ -61,7 +61,7 @@ enum key_algorithm_e {
 
 struct key_negotiate_config_t {
 	uint8_t         algorithm;
-	int8_t          key[BLE_WIFIMATE_KEY_LEN];
+	uint8_t         key[BLE_WIFIMATE_KEY_LEN];
 };
 
 struct ble_wifimate_char_send_data_t {

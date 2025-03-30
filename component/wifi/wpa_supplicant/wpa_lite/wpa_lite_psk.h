@@ -140,7 +140,7 @@ struct wpa_sta_info {
 
 struct key_joininfo {
 	u8	wappriv_psk_ssid_cfg[RTW_ESSID_MAX_SIZE + 1];
-	u8	wappriv_passphrase_cfg[RTW_PASSPHRASE_MAX_SIZE + 1];
+	u8	wappriv_passphrase_cfg[RTW_MAX_PSK_LEN + 1];
 	u8	wappriv_global_psk_cfg[A_SHA_DIGEST_LEN * 2];
 };
 

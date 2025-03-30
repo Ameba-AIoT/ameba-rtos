@@ -64,6 +64,12 @@
   * @{
   */
 
+typedef struct {
+	u8 page; /*!< Page number */
+	u8 addr; /*!< Register address */
+	u8 val;  /*!< Register value */
+} usb_cal_data_t;
+
 typedef IRQ_FUN usb_irq_fun_t;
 
 /** @} */
@@ -80,6 +86,7 @@ typedef IRQ_FUN usb_irq_fun_t;
 
 int usb_chip_init(u8 mode);
 int usb_chip_deinit(void);
+usb_cal_data_t *usb_chip_get_cal_data(u8 mode);
 
 /** @} */
 

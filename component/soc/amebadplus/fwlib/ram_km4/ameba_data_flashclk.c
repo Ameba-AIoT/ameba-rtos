@@ -440,7 +440,7 @@ bool _data_flash_calibration_highspeed(u8 SpicBitMode, FlashDivInt_E Div)
 
 int data_flash_calibration_highspeed(FlashDivInt_E div)
 {
-	int Ret = SUCCESS;
+	int Ret = RTK_SUCCESS;
 	FLASH_InitTypeDef *FLASH_InitStruct = &data_flash_init_para;
 	u8 spic_mode = FLASH_InitStruct->FLASH_cur_bitmode;
 
@@ -462,7 +462,7 @@ int data_flash_calibration_highspeed(FlashDivInt_E div)
 		SPIC_COMBO->TPR1 = (SPIC_COMBO->TPR1 & ~MASK_CR_ACTIVE_SETUP) | CR_ACTIVE_SETUP(1);
 
 		RTK_LOGE(TAG, "DATA FLASH CALIB[0x%x FAIL]\n", div);
-		Ret = FAIL;
+		Ret = RTK_FAIL;
 	}
 
 	return Ret;
@@ -471,7 +471,7 @@ int data_flash_calibration_highspeed(FlashDivInt_E div)
 int data_flash_handshake_highspeed(FlashDivInt_E div)
 {
 	u8 Dphy_Dly_Cnt = 3; /* DD recommend this value */
-	int Ret = SUCCESS;
+	int Ret = RTK_SUCCESS;
 
 	/* SPIC clock switch to PLL */
 	DATA_FLASH_PLLInit_ClockDiv(div);
@@ -484,7 +484,7 @@ int data_flash_handshake_highspeed(FlashDivInt_E div)
 		DATA_FLASH_Read_HandShake_Cmd(Dphy_Dly_Cnt, DISABLE);
 		RCC_PeriphClockSource_PSRAM(BIT_LSYS_CKSL_PSRAM_LBUS);
 		SPIC_COMBO->TPR1 = (SPIC_COMBO->TPR1 & ~MASK_CR_ACTIVE_SETUP) | CR_ACTIVE_SETUP(1);
-		Ret = FAIL;
+		Ret = RTK_FAIL;
 	}
 
 	RTK_LOGI(TAG, "DATA FLASH HandShake[0x%x %s]\n", div, Ret ? "OK" : "FAIL");
@@ -586,7 +586,7 @@ static void data_flash_set_status_register(void)
 
 int data_flash_rx_mode_switch(u32 spic_mode)
 {
-	int Ret = SUCCESS;
+	int Ret = RTK_SUCCESS;
 	u8 status = 0;
 	char *str[] = {"1IO", "2O", "2IO", "4O", "4IO"};
 	FLASH_InitTypeDef *FLASH_InitStruct = &data_flash_init_para;
@@ -611,7 +611,7 @@ int data_flash_rx_mode_switch(u32 spic_mode)
 
 		if (spic_mode == Spic1IOBitMode) {
 			RTK_LOGE(TAG, "DATA Flash Switch Read Mode FAIL\n");
-			Ret = FAIL;
+			Ret = RTK_FAIL;
 			break;
 		}
 

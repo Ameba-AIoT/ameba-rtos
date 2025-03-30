@@ -1,2 +1,0 @@
-add_subdirectory(osal_c)
-add_subdirectory(osal_cxx)

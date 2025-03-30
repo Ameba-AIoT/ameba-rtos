@@ -249,7 +249,7 @@ class RomHandler(object):
         return self.send_request(EOT.to_bytes(1, byteorder="little"), 1, DEFAULT_TIMEOUT)
 
     def abort(self):
-        self.logger.info(f"ESC")
+        self.logger.debug(f"ESC")
         self.send_request(ESC.to_bytes(1, byteorder="little"), 1, DEFAULT_TIMEOUT)
 
     def get_page_aligned_size(self, size, page_size):

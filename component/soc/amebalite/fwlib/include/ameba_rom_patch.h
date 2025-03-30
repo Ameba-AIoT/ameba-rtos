@@ -59,7 +59,9 @@ _LONG_CALL_ int rtl_crypto_aes_gcm_decrypt(IN const u8 *message, IN const u32 ms
 		OUT u8 *pTag);
 _LONG_CALL_ int TRNG_get_random_bytes(void *dst, u32 size);
 _LONG_CALL_ int TRNG_get_random_bytes_f_rng(void *p_rng, unsigned char *output, size_t output_size);
-
+char *__real_strncpy(char *dst0, const char *src0, int count);
+char *__real_strcpy(char *s1, const char *s2);
+long __real_strtol(const char *nptr, char **endptr, int base);
 /**
   * @}
   */

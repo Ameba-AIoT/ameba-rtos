@@ -237,7 +237,7 @@ static int whc_fullmac_host_scan_ops(struct wiphy *wiphy, struct cfg80211_scan_r
 	u32 ssid_len = 0;
 	u32 channel_num = 0;
 
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -533,7 +533,7 @@ static int whc_fullmac_host_connect_ops(struct wiphy *wiphy, struct net_device *
 	struct rtw_owe_param_t owe_info;
 	struct cfg80211_external_auth_params *auth_ext_para = &global_idev.mlme_priv.auth_ext_para;
 
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -745,7 +745,7 @@ static int whc_fullmac_host_disconnect_ops(struct wiphy *wiphy, struct net_devic
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac] --- %s ---", __func__);
 
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -788,7 +788,7 @@ static int whc_fullmac_host_set_power_mgmt(struct wiphy *wiphy, struct net_devic
 {
 	dev_dbg(global_idev.fullmac_dev, "%s: enable = %d, timeout = %d", __func__, enabled, timeout);
 
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -804,7 +804,7 @@ static int whc_fullmac_host_set_monitor_channel(struct wiphy *wiphy, struct cfg8
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s, channel %d", __func__, chandef->center_freq1);
 
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -835,7 +835,7 @@ static int whc_fullmac_host_get_channel_ops(struct wiphy *wiphy,
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -883,7 +883,7 @@ static int whc_fullmac_host_get_channel_ops(struct wiphy *wiphy,
 
 static int whc_fullmac_host_external_auth_status(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_external_auth_params *params)
 {
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -1038,7 +1038,7 @@ static int whc_fullmac_host_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wd
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 

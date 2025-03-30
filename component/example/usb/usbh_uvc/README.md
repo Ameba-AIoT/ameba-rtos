@@ -8,47 +8,32 @@ Attach an USB camera to the USB port of the Ameba board.
 
 # SW configuration
 
-Taking AmebaSmart in GCC environmnet for example.
+1. Configure test scenarios
+	Configure `CONFIG_USBH_UVC_APP` in `example_usbh_uvc.c` for different test scenarios:
+	- `USBH_UVC_APP_SIMPLE`: Capture the frame and abandon it
+	- `USBH_UVC_APP_VFS`: Capture the frame and save it to filesystem. User need to configure VFS correctly refer to VFS example or document.
+	- `USBH_UVC_APP_HTTPC`: Capture the frame and save it to http server.
 
-Firstly, please make sure USB host mode is supported by the Ameba board hardware, specially for RTL8730EA/QFN100 boards, the register R20 shall be parted on with 0Ohm register or just shorted to provide power for USB device via VBUS. Please refer to USB AN for details.
-
-To run USB UVC host application on AP:
-1. Configure `CONFIG_USBH_UVC_APP` in `example_usbh_uvc.c` for different test scenarios:
-   - `USBH_UVC_APP_SIMPLE`: Capture the frame and abandon it
-   - `USBH_UVC_APP_VFS`: Capture the frame and save it to filesystem. User need to configure VFS correctly refer to VFS example or document.
-   - `USBH_UVC_APP_HTTPC`: Capture the frame and save it to http server.
-
-2. Type command `./menuconfig.py` under `amebasmart_gcc_project/` and choose `MENUCONFIG FOR CA32 CONFIG` -> `CONFIG USB`:
+2. Menuconfig
+	Type command `./menuconfig.py` under the project directory and choose `CONFIG USB`:
 	```
 	[*] Enable USB
 			USB Mode (Host)  --->
-			*** USB Host Class ***
-	[*] 	UVC
+	[*] UVC
 	```
 	Save and exit.
 
 3. How to use:
-   - Run `./build.py -a usbh_uvc` under `amebasmart_gcc_project/` to generate images.
-   - `Download` images to board by Ameba Image Tool.
+   - Run `./build.py -a usbh_uvc` under the project directory to build images.
 
-To run USB UVC host application on HP:
-1. Type command `./menuconfig.py` under `amebasmart_gcc_project/` and choose `MENUCONFIG FOR KM4 CONFIG` -> `CONFIG USB`:
-	```
-	[*] Enable USB
-			USB Mode (Host)  --->
-	[*] 	UVC
-	```
-	Save and exit.
-
-3. How to use:
-   - Run `./build.py --app-for-km4 usbh_uvc` under `amebasmart_gcc_project/` to generate images.
-   - `Download` images to board by Ameba Image Tool.
+4. Download
+	Download images to board by Ameba Image Tool.
 
 # Expect result
 
-1. Plugin Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
+1. Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
 	```
-	[UVC] USBH UVC demo start
+	[UVC-I] USBH UVC demo start
 	```
 
 2. Ameba board will recoganize the USB camera and start to capture MJPEG frames at the rate of one frame per second.
@@ -58,13 +43,11 @@ To run USB UVC host application on HP:
 	[UVC] USB host uvc demo started...
 	[MAIN-I] KM4 START SCHEDULER 
 	[USB-I] USB configurations:
-	[USB-I] * pipes: 5
 	[USB-I] * speed: 0
 	[USB-I] * dma_enable: 1
 	[USB-I] * main_task_priority: 3
 	[USB-I] * isr_task_priority: 4
 	[USB-I] * alt_max: 25
-	[USB-I] * ptx_fifo_first: 1
 	[USB-I] GSNPSID = 0x4F54310A
 	UVC init
 	[USB-I] USB Device Attached
@@ -112,4 +95,5 @@ For other chips, refer to the AN for setup guide.
 
 # Supported IC
 
-- AmebaSmart
+- RTL8721F
+- RTL8730E

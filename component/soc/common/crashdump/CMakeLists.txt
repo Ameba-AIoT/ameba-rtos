@@ -56,10 +56,9 @@ else()
     ameba_fatal("crashdump's CMakeLists.txt is not ready for current isa type: ${c_ISA_TYPE}")
 endif()
 
-file(RELATIVE_PATH IMAGE_DIR ${FINAL_IMAGE_DIR} ${c_SDK_IMAGE_TARGET_DIR})
 ameba_list_append(private_definitions
     SDK_TOOLCHAIN="${SDK_TOOLCHAIN}"
-    IMAGE_DIR="${IMAGE_DIR}"
+    IMAGE_DIR="${c_SDK_IMAGE_TARGET_DIR}"
 )
 # Component private part, user config end
 #------------------------------#

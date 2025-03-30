@@ -19,7 +19,7 @@
 #define WIFI_CONF_CAST_H
 
 #include "rtw_wifi_constants.h"
-#include "wifi_ind.h"
+#include "wifi_api.h"
 #include "os_wrapper.h"
 #include <rtw_timer.h>
 #include "lwip/err.h"

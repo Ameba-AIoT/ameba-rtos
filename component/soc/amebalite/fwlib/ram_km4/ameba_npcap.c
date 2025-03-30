@@ -148,7 +148,7 @@ u32 aontimer_int_wakeup_ap(UNUSED_WARN_DIS void *Data)
 
 int kr4_suspend(u32 type)
 {
-	int ret = SUCCESS;
+	int ret = RTK_SUCCESS;
 	SLEEP_ParamDef *sleep_param;
 	u32 duration = 0;
 	RRAM_TypeDef *rram = RRAM_DEV;

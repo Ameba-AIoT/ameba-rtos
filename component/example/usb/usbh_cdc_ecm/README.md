@@ -8,37 +8,14 @@ None
 
 # SW configuration
 
-Taking AmebaSmart in GCC environmnet for example.
-
 Firstly, please make sure USB host mode is supported by the Ameba board hardware, specially for RTL8730EA/QFN100 boards, the register R20 shall be parted on with 0Ohm register or just shorted to provide power for USB device via VBUS. Please refer to USB AN for details.
 
-To run USB CDC ECM host application on AP:
 1. Set up the test environment, the TOP is as below:
 	```
 	[Ameba] ---USB Cable--- [USB CDC ECM device] ---RJ45--- [Router]
 	```
 
-2. Type command `./menuconfig.py` under `amebasmart_gcc_project/` and choose `MENUCONFIG FOR CA32 CONFIG` -> `CONFIG USB`:
-	```
-	[*] Enable USB
-			USB Mode (Host)  --->
-			*** USB Host Class ***
-	[*] 	CDC ECM
-				Select USB Ethernet (USB Ethernet)  --->
-	```
-	Save and exit.
-
-3. How to use:
-   - Run `./build.py -a usbh_cdc_ecm` under `amebasmart_gcc_project/` to generate images.
-   - `Download` images to board by Ameba Image Tool.
-
-To run USB CDC ECM host application on HP:
-1. Set up the test environment, the TOP is as below:
-	```
-	[Ameba] ---USB Cable--- [USB CDC ECM device] ---RJ45--- [Router]
-	```
-
-2. Type command `./menuconfig.py` under `amebasmart_gcc_project/` and choose `MENUCONFIG FOR KM4 CONFIG` -> `CONFIG USB`:
+2. Type command `./menuconfig.py` under the project directory and choose `CONFIG USB`:
 	```
 	[*] Enable USB
 			USB Mode (Host)  --->
@@ -48,7 +25,7 @@ To run USB CDC ECM host application on HP:
 	Save and exit.
 
 3. How to use:
-   - Run `./build.py --app-for-km4 usbh_cdc_ecm` under `amebasmart_gcc_project/` to generate images.
+   - Run `./build.py -a usbh_cdc_ecm` under the project directory to generate images.
    - `Download` images to board by Ameba Image Tool.
 
 # Expect result
@@ -60,11 +37,12 @@ To run USB CDC ECM host application on HP:
 
 2. If the test run success, the console will show:
 	```
-	IP address : xx.xx.xx.xx
+	got ip : xx.xx.xx.xx
 	Switch to link !!
 	```
 
-3. After get the ip address,  type command "AT+PING=XX", XX is the Router Ip Address, make sure the ping success and no packet losted
+3. After get the ip address, type command "AT+PING=XX", XX is the Router Ip Address, make sure the ping success and no packet losted
+4. The example also support iperf test, type "AT+IPERF=-s" to act as a TCP iperf server, type "AT+IPERF=-c,xx.xx.xx.x,-i,1,-t,10" to act as a TCP client. of course it also support UDP test, type "AT+IPERF" to get more information about the iperf
 
 # Note
 
@@ -72,4 +50,5 @@ For other chips, refer to the AN for setup guide.
 
 # Supported IC
 
-- AmebaSmart
+- RTL8730E
+- RTL872XD

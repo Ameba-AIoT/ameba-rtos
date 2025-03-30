@@ -1,6 +1,5 @@
 #include "example_wifi_user_reconnect.h"
-#include "wifi_conf.h"
-#include "wifi_ind.h"
+#include "wifi_api.h"
 #include "lwip_netconf.h"
 #include "os_wrapper.h"
 
@@ -9,7 +8,6 @@
 #define RECONNECT_INTERVAL		5000/*ms*/
 char *test_ssid = "xiaomi3000";
 char *test_password = "123456789";
-u32 secure_type = RTW_SECURITY_WPA2_AES_PSK;/*Just distinguish between WEP, TKIP/WPA/WPA2/WPA3 can use the same secure_type*/
 /***********************************End**********************************/
 static const char *const TAG = "WIFI_RECONN_EXAMPLE";
 u8 reconnect_cnt = 0;
@@ -24,13 +22,12 @@ int user_wifi_connect(void)
 	connect_param.ssid.len = strlen(test_ssid);
 	connect_param.password = (unsigned char *)test_password;
 	connect_param.password_len = strlen(test_password);
-	connect_param.security_type = secure_type;
 
 WIFI_CONNECT:
 	/*Connect*/
 	RTK_LOGI(TAG, "Wifi connect start, retry cnt = %d\n", reconnect_cnt);
 	ret = wifi_connect(&connect_param, 1);
-	if (ret != RTW_SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGI(TAG, "Reconnect Fail:%d", ret);
 		if ((ret == RTW_CONNECT_INVALID_KEY)) {
 			RTK_LOGI(TAG, "(password format wrong)\r\n");
@@ -44,13 +41,13 @@ WIFI_CONNECT:
 	}
 
 	/*DHCP*/
-	if (ret == RTW_SUCCESS) {
+	if (ret == RTK_SUCCESS) {
 		RTK_LOGI(TAG, "Wifi connect success, Start DHCP\n");
 		ret = LwIP_DHCP(0, DHCP_START);
 		if (ret == DHCP_ADDRESS_ASSIGNED) {
 			RTK_LOGI(TAG, "DHCP Success\n");
 			reconnect_cnt = 0;
-			return RTW_SUCCESS;
+			return RTK_SUCCESS;
 		} else {
 			RTK_LOGI(TAG, "DHCP Fail\n");
 			wifi_disconnect();
@@ -61,7 +58,7 @@ WIFI_CONNECT:
 	reconnect_cnt++;
 	if (reconnect_cnt >= RECONNECT_LIMIT) {
 		RTK_LOGI(TAG, "Reconnect limit reach, Wifi connect fail\n");
-		return RTW_ERROR;
+		return RTK_FAIL;
 	} else {
 		rtos_time_delay_ms(RECONNECT_INTERVAL);
 		goto WIFI_CONNECT;

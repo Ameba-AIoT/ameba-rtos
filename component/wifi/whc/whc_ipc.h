@@ -27,7 +27,8 @@
 #ifndef CONFIG_FULLMAC
 #include "ameba_soc.h"
 #include "os_wrapper.h"
-#include "wifi_conf.h"
+#include "wifi_api.h"
+#include "wifi_intf_drv_to_app_internal.h"
 #endif
 /* -------------------------------- Defines --------------------------------- */
 /*msg q task*/
@@ -89,8 +90,6 @@
 #define HOST_MSG_DUMY_NUM		(64 - (HOST_MSG_PARAM_NUM + 2) * 4)
 #define DEV_MSG_PARAM_NUM		(8)
 #define DEV_MSG_DUMY_NUM		(64 - (DEV_MSG_PARAM_NUM + 2) * 4)
-
-#define WHC_MP_MSG_BUF_SIZE 4096
 
 /* ------------------------------- Data Types ------------------------------- */
 enum IPC_WIFI_CTRL_TYPE {
@@ -158,6 +157,7 @@ struct ipc_host_unblk_api_func_t {
 /*for ipc host*/
 void whc_ipc_host_init(void);
 void whc_ipc_host_trx_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum);
+void whc_ipc_host_heap_statistics(u8 start);
 
 /*for ipc host api*/
 void whc_ipc_host_api_init(void);

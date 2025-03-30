@@ -8,7 +8,7 @@ None
 
 # SW configuration
 
-1. set `wifi_fast_connect_enable(1)` in `wlan_initialize()`
+1. set `wifi_fast_connect_enable(1)` in `wifi_init()`
 
 2. Set the `RSSI_THRESHOLD` in `example_wifi_roaming.c` according to the WLAN envrionment.
 

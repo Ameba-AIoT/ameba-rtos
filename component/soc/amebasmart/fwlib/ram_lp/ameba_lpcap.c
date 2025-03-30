@@ -253,7 +253,7 @@ int ap_suspend(u32 type)
 {
 	UNUSED(type);
 
-	int ret = SUCCESS;
+	int ret = RTK_SUCCESS;
 	SLEEP_ParamDef *sleep_param;
 	u32 duration = 0;
 
@@ -313,13 +313,13 @@ void ap_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqStat
 
 	switch (psleep_param->sleep_type) {
 	case SLEEP_PG:
-		if (SUCCESS == ap_suspend(SLEEP_PG)) {
+		if (RTK_SUCCESS == ap_suspend(SLEEP_PG)) {
 			pmu_set_sysactive_time(2);
 			pmu_set_sleep_type(SLEEP_PG);
 		}
 		break;
 	case SLEEP_CG:
-		if (SUCCESS == ap_suspend(SLEEP_CG)) {
+		if (RTK_SUCCESS == ap_suspend(SLEEP_CG)) {
 			pmu_set_sysactive_time(2);
 			pmu_set_sleep_type(SLEEP_CG);
 		}

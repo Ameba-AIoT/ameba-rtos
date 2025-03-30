@@ -111,7 +111,7 @@ units_thread(void *param)
 
 void example_units(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"units_thread"), units_thread, NULL, 524 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"units_thread"), units_thread, NULL, 524 * 4, 1) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(units_thread) failed", __FUNCTION__);
 	}
 	return;

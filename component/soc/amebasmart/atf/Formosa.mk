@@ -4,8 +4,8 @@
 # Tony Wu (tonywu@realtek.com)
 # Aug. 15, 2015
 #
-DIR_ATF		:= $(shell pwd)
-DIR_OPTEE	:= $(shell pwd)/boot/optee
+DIR_ATF		:= $(CURDIR)
+DIR_OPTEE	:= $(CURDIR)/boot/optee
 DIR_UBOOT	:= $(DIR_ROOT)/package/boot/uboot
 DIR_FREERTOS	:= $(DIR_ROOT)/package/boot/freertos
 DIR_ATF_BUILD	:= $(DIR_ATF)/build/sheipa/debug
@@ -40,9 +40,9 @@ SPD		:= none
 endif
 
 ifeq ($(CONFIG_BOOT_BL33_UBOOT),y)
-UBOOT_OF_CTRL	:= $(shell \
-		     grep "^CONFIG_OF_CONTROL=*" $(UBOOT_CONFIG) | \
-		     sed 's/.*=//g')
+# UBOOT_OF_CTRL	:= $(shell \
+# 		     grep "^CONFIG_OF_CONTROL=*" $(UBOOT_CONFIG) | \
+# 		     sed 's/.*=//g')
 
 ifeq ($(UBOOT_OF_CTRL),y)
 BL33		:= $(DIR_UBOOT)/u-boot-dtb.bin

@@ -55,12 +55,12 @@ void linux_ipc_otp_instruction(void *Data, u32 IrqStatus, u32 ChanNum)
 	case LINUX_IPC_OTP_PHY_READ8:
 		DCache_Invalidate((u32)recv_req->param_buf, OPT_REQ_MSG_PARAM_NUM);
 		for (i = 0 ; i < (int)recv_req->len; i++) {
-			if (OTP_Read8((recv_req->addr + i), (u8 *)&recv_req->param_buf[i]) != SUCCESS) {
+			if (OTP_Read8((recv_req->addr + i), (u8 *)&recv_req->param_buf[i]) != RTK_SUCCESS) {
 				otp_data[0] = -1;
 				break;
 			} else {
 				otp_data[1] = i + 1;
-				otp_data[0] = SUCCESS;
+				otp_data[0] = RTK_SUCCESS;
 			}
 		}
 		DCache_CleanInvalidate((u32)recv_req->param_buf, OPT_REQ_MSG_PARAM_NUM);

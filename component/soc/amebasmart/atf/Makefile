@@ -39,7 +39,7 @@ include Formosa.mk
 # endif
 
 
-COMPILEOS = $(shell uname -o)
+# COMPILEOS = $(shell uname -o)
 # LINUX_OS = GNU/Linux
 
 # ifeq ($(COMPILEOS),$(LINUX_OS))
@@ -49,7 +49,7 @@ COMPILEOS = $(shell uname -o)
 # endif
 
 
-OSTYPE = $(shell echo $(COMPILEOS) | tr A-Z a-z)
+# OSTYPE = $(shell echo $(COMPILEOS) | tr A-Z a-z)
 
 #
 # Trusted Firmware Version
@@ -1390,13 +1390,13 @@ cscope:
 
 image: fiptool fip
 ifeq ($(CONFIG_MP_INCLUDED),y)
-	@cp ${BUILD_PLAT}/${FIP_NAME} ${BUILD_PLAT}/../../image_mp
-	@cp ${BUILD_PLAT}/bl1*.bin ${BUILD_PLAT}/../../image_mp
+	$(call SHELL_COPY,${BUILD_PLAT}/${FIP_NAME},${BUILD_PLAT}/../../image_mp)
+	$(call SHELL_COPY,${BUILD_PLAT}/bl1*.bin,${BUILD_PLAT}/../../image_mp)
 else
-	@cp ${BUILD_PLAT}/${FIP_NAME} ${BUILD_PLAT}/../../image
-	@cp ${BUILD_PLAT}/bl1*.bin ${BUILD_PLAT}/../../image
+	$(call SHELL_COPY,${BUILD_PLAT}/${FIP_NAME},${BUILD_PLAT}/../../image)
+	$(call SHELL_COPY,${BUILD_PLAT}/bl1*.bin,${BUILD_PLAT}/../../image)
 endif
-	@#$(call boot/atf/image)
+#	@#$(call boot/atf/image)
 
 help:
 	@echo "usage: ${MAKE} [PLAT=<platform>] [OPTIONS] [TARGET]"

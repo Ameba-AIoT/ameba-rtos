@@ -24,9 +24,9 @@ u16 rtw_ndev_select_queue(struct net_device *pnetdev, struct sk_buff *skb, struc
 int rtw_ndev_set_mac_address(struct net_device *pnetdev, void *p);
 struct net_device_stats *rtw_ndev_get_stats(struct net_device *pnetdev);
 #if (KERNEL_VERSION(5, 15, 0) > LINUX_VERSION_CODE)
-int rtw_ndev_ioctl(struct net_device *ndev, struct ifreq *rq, int cmd_id)
+int rtw_ndev_ioctl(struct net_device *ndev, struct ifreq *rq, int cmd_id);
 #else
-int rtw_ndev_ioctl(struct net_device *ndev, struct ifreq *rq, void __user *data, int cmd_id)
+int rtw_ndev_ioctl(struct net_device *ndev, struct ifreq *rq, void __user *data, int cmd_id);
 #endif
 #endif
 #endif //__RTW_NETDEV_OPS_H__

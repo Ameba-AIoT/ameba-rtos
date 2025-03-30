@@ -54,7 +54,7 @@ void flash_clksrc_sel(FlashDivInt_E div, u8 isCPUPLL, u8 is_handshake)
 SRAMDRAM_ONLY_TEXT_SECTION
 int flash_handshake_highspeed(FlashDivInt_E div)
 {
-	int Ret = SUCCESS;
+	int Ret = RTK_SUCCESS;
 	u8 spic_mode = flash_init_para.FLASH_cur_bitmode;
 	u8 Dphy_Dly_Cnt = 3; /* DD recommend this value */
 
@@ -76,7 +76,7 @@ int flash_handshake_highspeed(FlashDivInt_E div)
 		RCC_PeriphClockSource_SPIC(BIT_LSYS_CKSL_SPIC_LBUS);
 
 		RTK_LOGE(TAG, "FLASH HandShake[0x%lx FAIL]\n", div);
-		Ret = FAIL;
+		Ret = RTK_FAIL;
 	}
 
 #if FLASH_CALIBRATION_DEBUG
@@ -235,7 +235,7 @@ static void flash_set_status_register(void)
 SRAMDRAM_ONLY_TEXT_SECTION
 int flash_rx_mode_switch(u8 read_mode)
 {
-	int Ret = SUCCESS;
+	int Ret = RTK_SUCCESS;
 	u8 status = 0, spic_mode = 0, i;
 	u32 pdata[2];
 	char *str[] = {"1IO", "2O", "2IO", "4O", "4IO"};
@@ -276,7 +276,7 @@ int flash_rx_mode_switch(u8 read_mode)
 
 	if (i == 5) {
 		RTK_LOGE(TAG, "Flash Switch Read Mode FAIL\n");
-		Ret = FAIL;
+		Ret = RTK_FAIL;
 	}
 
 	return Ret;

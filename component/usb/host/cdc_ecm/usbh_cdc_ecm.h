@@ -10,12 +10,13 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbh.h"
+#include "usbh_cdc_ecm_hal.h"
 
 /* Macro defines -----------------------------------------------------------*/
 #define ECM_ENABLE_PACKETFILTER                                 0
 
 /* for RTL8156BG, use this to allow ping/UDP data transfer */
-#define ECM_ENABLE_RCR_CONFIGURATION                            0
+#define ECM_ENABLE_RCR_CONFIGURATION                            1
 
 /* for RTL8152, config the fifo flow control for data transfer */
 #define ECM_ENABLE_FIFO_FLOW_CTRL                               1
@@ -258,9 +259,19 @@ typedef struct {
 	u32                                 eth_statistic_count;  /* feature select params */
 	u32                                 intr_in_busy_tick;    /* intr in busy tick */
 	u32                                 intr_in_idle_tick;    /* intr in idle tick*/
+
 	u32                                 bulk_data_out_len;    /* bluk out data length */
 	u32                                 bulk_out_idle_tick;   /* bulk out idle tick */
+
+	u32                                 bulk_in_busy_tick;    /* bulk in busy tick */
 	u32                                 bulk_in_idle_tick;    /* bulk in idle tick */
+
+#if ECM_STATE_DEBUG_ENABLE
+	volatile u32                        loop_cnt;
+	volatile u32                        bulk_in;
+	volatile u32                        bulk_out;
+	volatile u32                        intr_in;
+#endif
 
 	/* u16 */
 	u16                                 vid;
@@ -293,7 +304,6 @@ int usbh_cdc_ecm_init(usbh_cdc_ecm_state_cb_t *cb);
 int usbh_cdc_ecm_deinit(void);
 
 int usbh_cdc_ecm_choose_config(usb_host_t *host);
-int usbh_cdc_ecm_pre_ctrl_set(void);
 
 int usbh_cdc_ecm_bulk_send(u8 *buf, u32 len);
 int usbh_cdc_ecm_bulk_receive(void);

@@ -313,7 +313,7 @@ void cmd_ping(int argc, char **argv)
 
 	if (g_ping_task == NULL) {
 		if (rtos_task_create(&g_ping_task, (char const *)((const signed char *)"ping_test"), ping_test, host, STACKSIZE * 4,
-							 1 + PRIORITIE_OFFSET) != SUCCESS) {
+							 1 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
 			printf("\n\r Ping ERROR: Create ping task failed.");
 		}
 	}
@@ -363,7 +363,7 @@ void do_ping_test(char *ip, int size, int count, int interval)
 		ping_count = count;
 	}
 
-	if (rtos_task_create(NULL, (char const *)((const signed char *)"ping_test"), ping_test, host, STACKSIZE * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, (char const *)((const signed char *)"ping_test"), ping_test, host, STACKSIZE * 4, 1) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create failed", __FUNCTION__);
 	}
 }

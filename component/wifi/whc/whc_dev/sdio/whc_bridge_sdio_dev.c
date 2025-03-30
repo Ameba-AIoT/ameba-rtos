@@ -15,7 +15,7 @@ void whc_bridge_sdio_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb, u16 size)
 	switch (event) {
 	case WHC_WIFI_EVT_XIMT_PKTS:
 		/* put the inic message to the queue */
-		if (whc_msg_enqueue(skb, &dev_xmit_priv.xmit_queue) == FAIL) {
+		if (whc_msg_enqueue(skb, &dev_xmit_priv.xmit_queue) == RTK_FAIL) {
 			break;
 		}
 		/* wakeup task */

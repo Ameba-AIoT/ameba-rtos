@@ -141,7 +141,7 @@ static s8 spdio_rx_done_cb(void *padapter, void *data, u16 offset, u16 pktsize, 
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "spdio rx done callback function is null!");
 	}
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 static s8 spdio_tx_done_cb(void *padapter, IN u8 *data)
@@ -153,7 +153,7 @@ static s8 spdio_tx_done_cb(void *padapter, IN u8 *data)
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "spdio tx done callback function is null!");
 	}
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 static s8 spdio_rpwm_cb(void *padapter)
@@ -167,14 +167,14 @@ static s8 spdio_rpwm_cb(void *padapter)
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "spdio rpwm callback function is null!");
 	}
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 /**
  * @brief Spdio write function.
  * @param obj Pointer to a initialized spdio_t structure.
  * @param pbuf Pointer to a spdio_buf_t structure which carries the payload.
- * @retval SUCCESS or FAIL.
+ * @retval RTK_SUCCESS or RTK_FAIL.
  */
 s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 {
@@ -343,7 +343,7 @@ void SPDIO_TX_FIFO_DataReady(IN PHAL_SPDIO_ADAPTER pSPDIODev)
 	u16 TxBDWPtr = 0;
 	u16 TxBDRPtr = 0;
 	u8 isForceBreak = 0;
-	s8 ret = FAIL;
+	s8 ret = RTK_FAIL;
 	u32 reg;
 	SPDIO_TX_BD *pTXBD = NULL;
 	struct spdio_t *obj = (struct spdio_t *)pSPDIODev->spdio_priv;
@@ -378,7 +378,7 @@ void SPDIO_TX_FIFO_DataReady(IN PHAL_SPDIO_ADAPTER pSPDIODev)
 		if ((pTxDesc->txpktsize + pTxDesc->offset) <= obj->rx_bd_bufsz) {
 			// use the callback function to fordward this packet to target(WLan) driver
 			ret = spdio_rx_done_cb(obj, (u8 *)pTxBdHdl->priv, pTxDesc->offset, pTxDesc->txpktsize, pTxDesc->type);
-			if (ret == FAIL) {
+			if (ret == RTK_FAIL) {
 				pSPDIODev->WaitForTxbuf = TRUE;
 				RTK_LOGS(TAG, RTK_LOG_DEBUG, "spdio_rx_done_cb return fail!\n");
 			} else {
@@ -389,10 +389,10 @@ void SPDIO_TX_FIFO_DataReady(IN PHAL_SPDIO_ADAPTER pSPDIODev)
 			DCache_Clean((u32)pTXBD, sizeof(SPDIO_TX_BD));
 		} else {
 			// Invalid packet, Just drop it
-			ret = SUCCESS; // pretend we call the TX callback OK
+			ret = RTK_SUCCESS; // pretend we call the TX callback OK
 		}
 
-		if (SUCCESS != ret) {
+		if (RTK_SUCCESS != ret) {
 			// may be is caused by TX queue is full, so we skip it and try again later
 			isForceBreak = 1;
 			break; // break the while loop
@@ -544,7 +544,7 @@ static void SPDIO_Board_Init(void)
  * 		- Allocate SDIO RX Buffer Descriptor and RX Buffer. Initialize RX related registers.
  * 		- Register the Interrupt function.
  * @param obj Pointer to a spdio_t structure.
- * @return Initialization result, which can be SUCCESS(0) or FAIL(-1).
+ * @return Initialization result, which can be RTK_SUCCESS(0) or RTK_FAIL(-1).
  */
 bool SPDIO_Device_Init(struct spdio_t *obj)
 {
@@ -557,7 +557,7 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 
 	if (obj == NULL) {
 		RTK_LOGE(TAG, "struct spdio_t must be inited\n");
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	RTK_LOGI(TAG, "SDIO_Device_Init==>\n");
@@ -658,7 +658,7 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 
 	ret = rtos_task_create((rtos_task_t *)&pgSPDIODev->xSDIOIrqTaskHandle, "SPDIO_IRQ_TASK", SPDIO_IRQ_Handler_BH, (void *)pgSPDIODev,
 						   1024 * 4, 1);
-	if (SUCCESS != ret) {
+	if (RTK_SUCCESS != ret) {
 		RTK_LOGE(TAG, "SDIO_Device_Init: Create IRQ Task Err(%d)!!\n", ret);
 		goto SDIO_INIT_ERR;
 	}
@@ -684,7 +684,7 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 
 	RTK_LOGI(TAG, "<==SDIO_Device_Init\n");
 
-	return SUCCESS;
+	return RTK_SUCCESS;
 
 SDIO_INIT_ERR:
 
@@ -720,7 +720,7 @@ SDIO_INIT_ERR:
 		pgSPDIODev->pRXDESCAddr = NULL;
 		pgSPDIODev->pRXDESCAddrAligned = NULL;
 	}
-	return FAIL;
+	return RTK_FAIL;
 }
 
 /**

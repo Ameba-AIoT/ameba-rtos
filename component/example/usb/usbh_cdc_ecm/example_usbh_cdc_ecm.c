@@ -18,6 +18,11 @@
 static const char *const TAG = "ECM";
 
 extern void rltk_mii_init(void);
+extern void rltk_mii_deinit(void);
+
+
+/*enable this used to check ecm init/deinit memory leakage*/
+#define ENABLE_ECM_MEM_CHECK                    0
 
 #define ENABLE_DUMP_FILE                        0
 #define ENABLE_REMOTE_FILE_DOWNLOAD             0
@@ -301,7 +306,39 @@ exit:
 }
 #endif
 
+#if ENABLE_ECM_MEM_CHECK
+static void usbh_ecm_mem_check_thread(void *param)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "[test]ecm_link_toggle_thread \n");
+	rtos_task_t monitor_task;
+	int loop = 0;
+	int status;
+
+	UNUSED(param);
+
+	while (1) {
+		status = rtos_task_create(&monitor_task, "usbh_ecm_link_thread", ecm_link_change_thread, NULL, 1024U * 2, 3U);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Loop create %d: all_free:0x%08x\r\n", loop, usb_os_get_free_heap_size());
+		rtos_time_delay_ms(5000);
+
+		if (status != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Fail to create ECM monitor_link_change thread: %d\n", status);
+		} else {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Del monitor_task\n");
+			rtos_task_delete(monitor_task);
+			rltk_mii_deinit();
+
+			usbh_cdc_ecm_do_deinit();
+			rtos_time_delay_ms(3000);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Loop delete %d: all_free:0x%08x\r\n", loop, usb_os_get_free_heap_size());
+			loop++;
+		}
+	}
+}
+#endif
+
 /* Exported functions --------------------------------------------------------*/
+#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
 void example_usbh_cdc_ecm(void)
 {
 	int status;
@@ -311,14 +348,34 @@ void example_usbh_cdc_ecm(void)
 #endif
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH ECM demo start\n");
 
-	status = rtos_task_create(&monitor_task, "ecm_link_thread", ecm_link_change_thread, NULL, 1024U * 2, 3U);
+#if ENABLE_ECM_MEM_CHECK
+	status = rtos_task_create(&monitor_task, "usbh_ecm_mem_check_thread", usbh_ecm_mem_check_thread, NULL, 1024U * 2, 3U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
 	}
+#else
+	status = rtos_task_create(&monitor_task, "usbh_ecm_link_thread", ecm_link_change_thread, NULL, 1024U * 2, 3U);
+	if (status != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
+	}
+#endif
+
 #if ENABLE_REMOTE_FILE_DOWNLOAD
-	status = rtos_task_create(&download_task, "ecm_download_thread", ecm_download_thread, NULL, 10 * 512U, 2U);
+	status = rtos_task_create(&download_task, "usbh_ecm_download_thread", ecm_download_thread, NULL, 10 * 512U, 2U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create download thread fail\n");
 	}
 #endif
+
+#if ECM_STATE_DEBUG_ENABLE
+	extern void ecm_debug_thread(void *param);
+	rtos_task_t ecm_debug_task;
+	status = rtos_task_create(&ecm_debug_task, "usbh_ecm_debug_task", ecm_debug_thread, NULL, 1024U * 2, 3U);
+	if (status != SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[ECM] Create monitor_link thread fail\n");
+	}
+#endif
 }
+#else
+#error "No Lwip USB Ethernet Configuration"
+#endif

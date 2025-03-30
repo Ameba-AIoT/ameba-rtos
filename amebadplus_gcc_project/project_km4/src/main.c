@@ -7,7 +7,9 @@
 #endif
 #include "ameba_rtos_version.h"
 //#include "wifi_fast_connect.h"
+#if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_ipc.h"
+#endif
 
 static const char *const TAG = "MAIN";
 
@@ -215,11 +217,14 @@ int main(void)
 #if defined(CONFIG_WIFI_FW_EN) && CONFIG_WIFI_FW_EN
 	wififw_task_create();
 #endif
+
+#if defined(CONFIG_BT_COEXIST)
 	/* init coex ipc */
 	coex_ipc_entry();
+#endif
 
 #if defined(CONFIG_WLAN)
-	wlan_initialize();
+	wifi_init();
 #endif
 
 	/* initialize BT iNIC */

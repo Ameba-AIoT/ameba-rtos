@@ -16,7 +16,9 @@
 #include "vfs.h"
 #endif
 #include "os_wrapper.h"
+#if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_ipc.h"
+#endif
 
 static const char *const TAG = "MAIN";
 
@@ -78,7 +80,7 @@ _WEAK void app_example(void)
 }
 
 #ifdef CONFIG_WLAN
-extern void wlan_initialize(void);
+extern void wifi_init(void);
 #endif
 
 extern int rt_kv_init(void);
@@ -110,10 +112,42 @@ void app_filesystem_init(void)
 #endif
 }
 
+u32 app_uart_rx_pin_wake_int_handler(void *data)
+{
+	GPIO_InitTypeDef *GPIO_InitStruct = (GPIO_InitTypeDef *)data;
+	/*clear edge interrupt*/
+	GPIO_INTConfig(GPIO_InitStruct->GPIO_Pin, DISABLE);
+	/*Keep the AP active for 5 seconds */
+	pmu_set_sysactive_time(5000);
+
+	return 0;
+}
+void app_uart_rx_pin_wake_init(void)
+{
+	GPIO_InitTypeDef GPIO_InitStruct = {
+		.GPIO_Pin = UART_LOG_RXD,	/*PB_23*/
+		.GPIO_PuPd = GPIO_PuPd_UP,
+		.GPIO_Mode = GPIO_Mode_INT,
+		.GPIO_ITTrigger = GPIO_INT_Trigger_EDGE,
+		.GPIO_ITPolarity = GPIO_INT_POLARITY_ACTIVE_LOW,
+	};
+	GPIO_INTConfig(UART_LOG_RXD, DISABLE);
+	GPIO_Direction(GPIO_InitStruct.GPIO_Pin, GPIO_Mode_IN);
+	PAD_PullCtrl(GPIO_InitStruct.GPIO_Pin, GPIO_InitStruct.GPIO_PuPd);
+
+	GPIO_INTMode(GPIO_InitStruct.GPIO_Pin, ENABLE, GPIO_InitStruct.GPIO_ITTrigger,
+				 GPIO_InitStruct.GPIO_ITPolarity, GPIO_InitStruct.GPIO_ITDebounce);
+	InterruptRegister(GPIO_INTHandler, GPIOB_IRQ, (u32)GPIOB_BASE, 3);
+	InterruptEn(GPIOB_IRQ, 3);
+	GPIO_UserRegIrq(UART_LOG_RXD, app_uart_rx_pin_wake_int_handler, &GPIO_InitStruct);
+}
+
 void app_pmu_init(void)
 {
 	pmu_set_sleep_type(SLEEP_PG);
 	pmu_acquire_deepwakelock(PMU_OS);
+	/*Init logUart rx pin for gpio wakeup*/
+	app_uart_rx_pin_wake_init();
 }
 
 /*
@@ -151,12 +185,14 @@ int main(void)
 	/* pre-processor of application example */
 	app_pre_example();
 
+#if defined(CONFIG_BT_COEXIST)
 	/* init coex ipc */
 	coex_ipc_entry();
+#endif
 
 	/* wifi init*/
 #ifdef CONFIG_WLAN
-	wlan_initialize();
+	wifi_init();
 #endif
 
 	/* init console */

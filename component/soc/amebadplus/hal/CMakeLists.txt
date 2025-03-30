@@ -67,6 +67,9 @@ ameba_list_append(private_sources
     src/spdio_api.c
 )
 
+ameba_list_append(private_includes
+    ${c_MBEDTLS_DIR}/include
+)
 # Component private part, user config end
 #------------------------------#
 

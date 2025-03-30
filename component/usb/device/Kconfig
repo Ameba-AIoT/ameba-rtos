@@ -11,14 +11,18 @@ if USBD_COMPOSITE_MENU
         config USBD_COMPOSITE_CDC_ACM_HID_MENU
             bool "CDC ACM + HID"
             select USBD_COMPOSITE_CDC_ACM_HID if CORE_AS_AP
+        config USBD_COMPOSITE_CDC_ACM_MSC_MENU
+            bool "CDC ACM + MSC"
+            depends on AMEBASMARTPLUS
+            select USBD_COMPOSITE_CDC_ACM_MSC if CORE_AS_AP
         config USBD_COMPOSITE_CDC_ACM_UAC_MENU
             bool "CDC ACM + UAC"
-            depends on AMEBASMART||AMEBASMARTPLUS
+            depends on AMEBASMART||AMEBASMARTPLUS||AMEBADPLUS
             select USBD_COMPOSITE_CDC_ACM_UAC if CORE_AS_AP
-        config USBD_COMPOSITE_CDC_ACM_UAC_HID_MENU
-            bool "CDC ACM + HID + UAC"
-            depends on AMEBASMART||AMEBASMARTPLUS
-            select USBD_COMPOSITE_CDC_ACM_UAC_HID if CORE_AS_AP
+        config USBD_COMPOSITE_HID_UAC_MENU
+            bool "HID + UAC"
+            depends on AMEBASMART||AMEBADPLUS
+            select USBD_COMPOSITE_HID_UAC if CORE_AS_AP
     endchoice
 endif
 
@@ -38,5 +42,5 @@ config USBD_MSC_MENU
 
 config USBD_UAC_MENU
     bool "UAC"
-    depends on AMEBASMART
+    depends on AMEBASMART||AMEBASMARTPLUS||AMEBADPLUS
     select USBD_UAC if CORE_AS_AP

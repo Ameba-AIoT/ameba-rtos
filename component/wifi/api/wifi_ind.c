@@ -15,11 +15,11 @@
   ******************************************************************************
   */
 #include "rtw_inic_common.h"
-#include "atcmd_service.h"
 #if !defined (CONFIG_FULLMAC) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP))
-#include "wifi_conf.h"
+#include "wifi_api.h"
 #include "platform_stdlib.h"
 #if !defined(CONFIG_AS_INIC_NP) || defined CONFIG_ZEPHYR_SDK || defined(CONFIG_WPA_LOCATION_DEV)
+#include "atcmd_service.h"
 #include "wpa_lite_intf.h"
 #include <wifi_auto_reconnect.h>
 #endif
@@ -66,7 +66,7 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
 	/* step 1: internal process for different status*/
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
 		at_printf_indicate("wifi connected\r\n");
-#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER && !defined(CONFIG_WIFI_HOST_BRIDGE)
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 		LwIP_netif_set_link_up(0);
 #endif
 
@@ -99,7 +99,7 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
 
 	if (join_status == RTW_JOINSTATUS_DISCONNECT) {
 		at_printf_indicate("wifi disconnected\r\n");
-#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER && !defined(CONFIG_WIFI_HOST_BRIDGE)
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 		LwIP_DHCP_stop(0);
 		LwIP_netif_set_link_down(0);
 #endif
@@ -175,7 +175,7 @@ void wifi_event_handle_internal(unsigned int event_cmd, char *buf, int buf_len, 
 	u8 *mac_addr = NULL;
 	/*internal only events*/
 	if (event_cmd > WIFI_EVENT_INTERNAL_BASE) {
-#if !defined(CONFIG_MP_SHRINK) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP)) && !defined(CONFIG_WIFI_HOST_BRIDGE)
+#if !defined(CONFIG_MP_SHRINK) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP))
 		event_internal_hdl[event_cmd - WIFI_EVENT_INTERNAL_BASE - 1](buf, buf_len, flags, NULL);
 #else
 		UNUSED(buf_len);
@@ -188,7 +188,7 @@ void wifi_event_handle_internal(unsigned int event_cmd, char *buf, int buf_len, 
 		wifi_event_join_status_internal_hdl(buf, flags);
 	} else if (event_cmd == WIFI_EVENT_STA_ASSOC) {
 		/* softap add sta */
-		mac_addr = GetAddr2Ptr(buf);
+		mac_addr = ((unsigned char *)((SIZE_PTR)(buf) + 10)); // GetAddr2Ptr
 		at_printf_indicate("client connected:\""MAC_FMT"\"\r\n", MAC_ARG(mac_addr));
 	} else if (event_cmd == WIFI_EVENT_STA_DISASSOC) {
 		/* softap dis sta */
@@ -221,7 +221,7 @@ int wifi_event_handle(unsigned int event_cmd, char *buf, int buf_len, int flags)
 			handle(buf, buf_len, flags, event_callback_list[event_cmd][i].handler_user_data);
 		}
 	}
-	return RTW_SUCCESS;
+	return RTK_SUCCESS;
 }
 
 void wifi_reg_event_handler(unsigned int event_cmds, void (*handler_func)(char *buf, int len, int flags, void *user_data), void *handler_user_data)

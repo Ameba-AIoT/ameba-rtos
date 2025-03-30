@@ -21,13 +21,17 @@
 #define PHYSTATUS_WITH_PKT 1
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
-//#define CONFIG_WIFI_TUNNEL
-//#define CONFIG_WTN_SOCKET_APP
+#define CONFIG_WIFI_TUNNEL
+#define CONFIG_WTN_SOCKET_APP
 //#define CONFIG_WTN_JUST_LINKAP
 #ifndef CONFIG_WIFI_TUNNEL
 //#define CONFIG_NAN
 #endif
 
+#ifdef CONFIG_WIFI_HOST_CONTROL
+#undef CONFIG_WIFI_TUNNEL
+#undef CONFIG_WTN_SOCKET_APP
+#endif
 #define CONFIG_MCC_MODE
 
 #ifdef CONFIG_NAN
@@ -66,7 +70,7 @@
 
 #undef RFDBG
 #define RFDBG 0 /* for rf dbg */
-#define CONFIG_BT_COEXIST
+//#define CONFIG_BT_COEXIST
 #define RX_SHORTCUT
 #define TX_SHORTCUT
 //#define SW_WEP_TKIP
@@ -148,6 +152,8 @@
 #undef RA_RX_ACK_RSSI
 #undef CONFIG_FW_C2H_PKT
 #undef CONFIG_CSI
+#undef CONFIG_WIFI_TUNNEL
+#undef CONFIG_WTN_SOCKET_APP
 #define DISABLE_FW
 #endif
 

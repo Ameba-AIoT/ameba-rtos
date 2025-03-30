@@ -1,2 +1,0 @@
-ameba_add_subdirectories_if(CONFIG_EMWIN_EN emWin)
-

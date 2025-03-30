@@ -67,6 +67,8 @@ void at_printf_unlock(void);
 #define ATCMD_EXIT_TT_MODE_STR	"<<<\r\n"
 #define ATCMD_TT_MODE_HIGH_WATERMARK_STR	"[$][TT]:High Watermark\r\n"
 #define ATCMD_TT_MODE_LOW_WATERMARK_STR	"[$][TT]:Low Watermark\r\n"
+#define ATCMD_DOWNSTREAM_TEST_START_STR "Downstream Test Start\r\n"
+#define ATCMD_DOWNSTREAM_TEST_END_STR "Downstream Test End\r\n"
 #define C_NUM_AT_CMD			4 //"ATxx", 4 characters
 #define C_NUM_AT_CMD_DLT		1 //"=", 1 charater
 #define STR_END_OF_ATCMD_RET	"\r\n\n# " //each AT command response will end with this string
@@ -130,7 +132,7 @@ extern int wext_private_command(char *cmd, int show_msg, char *user_buf);
 #if defined(CONFIG_BT) && CONFIG_BT
 extern void at_bt_init(void);
 #endif
-#if defined(CONFIG_CORE_AS_AP) || (!defined(CONFIG_CORE_AS_NP) && defined(CONFIG_FULLMAC_DEV))
+#if defined(CONFIG_BT_COEXIST)
 extern void at_coex_init(void);
 #endif
 

@@ -5,16 +5,7 @@
  */
 
 #include "platform_autoconf.h"
-#include "os_wrapper.h"
-#include "atcmd_service.h"
 #include "atcmd_mqtt.h"
-#ifdef CONFIG_LWIP_LAYER
-#include <lwip_netconf.h>
-#endif
-#include <dhcp/dhcps.h>
-#ifdef CONFIG_WLAN
-#include "wifi_conf.h"
-#endif
 
 #if defined(CONFIG_ATCMD_MQTT) && (CONFIG_ATCMD_MQTT == 1)
 
@@ -29,141 +20,114 @@ MQTTPacket_connectData mqtt_default_conn_data = MQTTPacket_connectData_initializ
 /* Process the received data.
  The res has different meaning with resultNo.
  The resultNo is used for AT command output. The res is used for set mqtt status. */
-static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set *read_fds, u8 *needAtOutpput)
+static void mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set *read_fds)
 {
-	s16 packet_type = 0;
-	s32 res = 0, mqttStatus = 0, mqttRxEvent = 0, tmp = 0;
+	int packet_type = 0;
+	int rc = 0, mqttStatus = 0, mqttRxEvent = 0;
 	Timer timer;
 	MQTT_RESULT_ENUM resultNo = MQTT_OK;
 
 	if (NULL == mqttCb || NULL == read_fds) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Invalid params\r\n");
-		*needAtOutpput = 1;
+		RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] Invalid params\n", __func__);
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
 
-	*needAtOutpput = 0;
 	mqttStatus = mqttCb->client.mqttstatus;
 	mqttRxEvent = (0 <= mqttCb->client.ipstack->my_socket) ? FD_ISSET(mqttCb->client.ipstack->my_socket, read_fds) : 0;
-
-	if (MQTT_START == mqttStatus) {
-		if (mqttCb->client.isconnected) {
-			mqttCb->client.isconnected = 0;
-			if (0 == mqttCb->initialConnect) {
-				at_printf_indicate("+MQTTUNREACH:OK\r\n");
-			} else {
-				/* Do not use at_printf here. */
-				RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Lost connection\r\n");
-			}
-		}
-		goto end;
-	}
 
 	if (mqttRxEvent) {
 		mqttCb->client.ipstack->m2m_rxevent = 0;
 		TimerInit(&timer);
 		TimerCountdownMS(&timer, 1000);
 		packet_type = readPacket(&mqttCb->client, &timer);
-		if (CONNECT > packet_type || DISCONNECT < packet_type) {
+		if (packet_type < CONNECT || packet_type > DISCONNECT) {
+			resultNo = MQTT_ARGS_ERROR;
 			goto end;
 		}
-		RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Read packet %d\r\n", packet_type);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, Read packet %d\n", __func__, mqttCb->linkId, packet_type);
 	}
 
 	switch (mqttStatus) {
 	/* MQTT_CONNECT status. */
 	case MQTT_CONNECT:
-		if (CONNACK == packet_type) {
+		if (packet_type == CONNACK) {
 			u8 connack_rc = 255, sessionPresent = 0;
-			tmp = MQTTDeserialize_connack(&sessionPresent, &connack_rc, mqttCb->client.readbuf, mqttCb->client.readbuf_size);
-			if (1 == tmp) {
-				res = connack_rc;
-				RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] MQTT connected OK\r\n");
-				mqttCb->client.mqttstatus = MQTT_RUNNING;
+			if (MQTTDeserialize_connack(&sessionPresent, &connack_rc, mqttCb->client.readbuf, mqttCb->client.readbuf_size) == 1) {
+				rc = connack_rc;
+				at_printf_indicate("[MQTT][EVENT]:linkid:%d, connected\r\n", mqttCb->linkId);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, connected\n", __func__, mqttCb->linkId);
+				MQTTSetStatus(&mqttCb->client, MQTT_RUNNING);
 			} else {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] MQTT can not connect\r\n");
-				res = FAILURE;
+				RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, connect fail\n", __func__, mqttCb->linkId);
+				resultNo = MQTT_CONNECTION_ERROR;
+				MQTTSetStatus(&mqttCb->client, MQTT_START);
 			}
-			mqttCb->initialConnect = 0;
-			*needAtOutpput = 1;
-		} else if (PINGRESP == packet_type) {
+		} else if (packet_type == PINGRESP) {
 			mqttCb->client.ping_outstanding = 0;
 		} else if (TimerIsExpired(&mqttCb->client.cmd_timer)) {
 			keepalive(&mqttCb->client);
-		}
-		if (FAILURE == res) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] MQTT connected ERROR (%d)\r\n", mqttCb->client.isconnected);
-			mqttCb->client.mqttstatus = MQTT_START;
 		}
 		break;
 
 	/* MQTT_SUBTOPIC status. */
 	case MQTT_SUBTOPIC:
-		if (SUBACK == packet_type) {
+		if (packet_type == SUBACK) {
 			int count = 0, grantedQoS = -1;
-			int i = 0;
 			unsigned short mypacketid = 0;
-			tmp = MQTTDeserialize_suback(&mypacketid, 1, &count, &grantedQoS, mqttCb->client.readbuf, mqttCb->client.readbuf_size);
-			if (1 == tmp) {
+			if (MQTTDeserialize_suback(&mypacketid, 1, &count, &grantedQoS, mqttCb->client.readbuf, mqttCb->client.readbuf_size) == 1) {
 				/* It may be 0, 1, 2 or 0x80. */
-				res = grantedQoS;
-				RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] grantedQoS = %d\r\n", res);
+				rc = grantedQoS;
+				RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, grantedQoS = %d\n", __func__, mqttCb->linkId, rc);
 			}
-			if (0x80 != res) {
-				for (i = 0; MAX_MESSAGE_HANDLERS > i; i++) {
+			if (rc != 0x80) {
+				int i = 0;
+				for (i = 0; i < MAX_MESSAGE_HANDLERS; i++) {
 					if (NULL != mqttCb->subData[i].topic && mqttCb->client.messageHandlers[i].topicFilter != mqttCb->subData[i].topic) {
 						mqttCb->client.messageHandlers[i].topicFilter = mqttCb->subData[i].topic;
 						mqttCb->client.messageHandlers[i].fp = mqtt_message_arrived;
 					}
 				}
-				res = 0;
-				*needAtOutpput = 1;
-				mqttCb->client.mqttstatus = MQTT_RUNNING;
+				at_printf_indicate("[MQTT][EVENT]:linkid:%d, subscribed\r\n", mqttCb->linkId);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, subscribed\n", __func__, mqttCb->linkId);
+				MQTTSetStatus(&mqttCb->client, MQTT_RUNNING);
 			}
-		} else if (UNSUBACK == packet_type) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Unsubscribe_end OK\r\n");
-			mqttCb->client.mqttstatus = MQTT_CONNECT;
-			*needAtOutpput = 1;
+		} else if (packet_type == UNSUBACK) {
+			MQTTSetStatus(&mqttCb->client, MQTT_CONNECT);
+			at_printf_indicate("[MQTT][EVENT]:linkid:%d, unsubscribed\r\n", mqttCb->linkId);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, unsubscribed\n", __func__, mqttCb->linkId);
 		} else if (TimerIsExpired(&mqttCb->client.cmd_timer)) {
-			*needAtOutpput = 1;
-			RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] MQTT subscribe timeout\r\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, subscribe timeout\n", __func__, mqttCb->linkId);
 			resultNo = MQTT_WAITACK_TIMEOUT_ERROR;
-			res = FAILURE;
-		}
-		if (FAILURE == res) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "[mqtt_clent_data_proc] MQTT subscribe ERROR\r\n");
-			mqttCb->client.mqttstatus = MQTT_START;
+			MQTTSetStatus(&mqttCb->client, MQTT_START);
 		}
 		break;
 
 	/* MQTT_RUNNING status. */
 	case MQTT_RUNNING:
-		if (CONNECT <= packet_type) {
-			s32 len = 0;
+		if (packet_type >= CONNECT) {
+			int len = 0;
 			TimerInit(&timer);
 			TimerCountdownMS(&timer, 10000);
 			switch (packet_type) {
 			case SUBACK: {
 				int count = 0, grantedQoS = -1;
-				int i = 0;
 				unsigned short mypacketid = 0;
-				tmp = MQTTDeserialize_suback(&mypacketid, 1, &count, &grantedQoS, mqttCb->client.readbuf, mqttCb->client.readbuf_size);
-				if (1 == tmp) {
+				if (MQTTDeserialize_suback(&mypacketid, 1, &count, &grantedQoS, mqttCb->client.readbuf, mqttCb->client.readbuf_size) == 1) {
 					/* It may be 0, 1, 2 or 0x80. */
-					res = grantedQoS;
-					RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] grantedQoS = %d\r\n", res);
+					rc = grantedQoS;
+					RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, grantedQoS = %d\n", __func__, mqttCb->linkId, rc);
 				}
-				if (0x80 != res) {
+				if (rc != 0x80) {
+					int i = 0;
 					for (i = 0; MAX_MESSAGE_HANDLERS > i; i++) {
 						if (NULL != mqttCb->subData[i].topic && mqttCb->client.messageHandlers[i].topicFilter != mqttCb->subData[i].topic) {
 							mqttCb->client.messageHandlers[i].topicFilter = mqttCb->subData[i].topic;
 							mqttCb->client.messageHandlers[i].fp = mqtt_message_arrived;
 						}
 					}
-					res = 0;
-					*needAtOutpput = 1;
-					// mqttCb->client.mqttstatus = MQTT_RUNNING;
+					at_printf_indicate("[MQTT][EVENT]:linkid:%d, subscribed\r\n", mqttCb->linkId);
+					RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, subscribed\n", __func__, mqttCb->linkId);
 				}
 			}
 			break;
@@ -171,55 +135,58 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 			case PUBACK: {
 				u16 mypacketid = 0;
 				u8 dup = 0, type = 0;
-				tmp = MQTTDeserialize_ack(&type, &dup, &mypacketid, mqttCb->client.readbuf, mqttCb->client.readbuf_size);
-				if (1 != tmp) {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "[mqtt_clent_data_proc] Deserialize_ack failed\r\n");
-					res = FAILURE;
+				if (MQTTDeserialize_ack(&type, &dup, &mypacketid, mqttCb->client.readbuf, mqttCb->client.readbuf_size) == 1) {
+					at_printf_indicate("[MQTT][EVENT]:linkid:%d, published\r\n", mqttCb->linkId);
+					RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, published\n", __func__, mqttCb->linkId);
+				} else {
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "[%s] linkid:%d, Deserialize_ack failed\n", __func__, mqttCb->linkId);
 					resultNo = MQTT_PUBLISH_ERROR;
 				}
-				*needAtOutpput = 1;
 			}
 			break;
 
 			case UNSUBACK:
-				RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Unsubscribe OK\r\n");
-				*needAtOutpput = 1;
+				at_printf_indicate("[MQTT][EVENT]:linkid:%d, unsubscribed\r\n", mqttCb->linkId);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, unsubscribed\n", __func__, mqttCb->linkId);
 				break;
 
 			case PUBLISH: {
 				MQTTString topicName;
 				MQTTMessage msg;
 				int intQoS = 0;
-				tmp = MQTTDeserialize_publish(&msg.dup, &intQoS, &msg.retained, &msg.id, &topicName,
-											  (unsigned char **)&msg.payload, (int *)&msg.payloadlen, mqttCb->client.readbuf, mqttCb->client.readbuf_size);
-				if (1 != tmp) {
-					RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Deserialize PUBLISH failed\r\n");
+				rc = MQTTDeserialize_publish(&msg.dup, &intQoS, &msg.retained, &msg.id, &topicName,
+											 (unsigned char **)&msg.payload, (int *)&msg.payloadlen, mqttCb->client.readbuf, mqttCb->client.readbuf_size);
+				if (rc != 1) {
+					RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, Deserialize PUBLISH failed\n", __func__, mqttCb->linkId);
+					resultNo = MQTT_PUBLISH_ERROR;
 					goto end;
 				}
 				msg.qos = intQoS;
 				deliverMessage(&mqttCb->client, &topicName, &msg);
 				/* QOS0 has no ack. */
-				if (QOS0 != msg.qos) {
-					if (QOS1 == msg.qos) {
+				if (msg.qos != QOS0) {
+					if (msg.qos == QOS1) {
 						len = MQTTSerialize_ack(mqttCb->client.buf, mqttCb->client.buf_size, PUBACK, 0, msg.id);
-						RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Send PUBACK\r\n");
-					} else if (QOS2 == msg.qos) {
+						RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, Send PUBACK\n", __func__, mqttCb->linkId);
+					} else if (msg.qos == QOS2) {
 						len = MQTTSerialize_ack(mqttCb->client.buf, mqttCb->client.buf_size, PUBREC, 0, msg.id);
-						RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Send PUBREC\r\n");
+						RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, Send PUBREC\n", __func__, mqttCb->linkId);
 					} else {
-						RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Invalid QoS %d\r\n", msg.qos);
+						RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, Invalid QoS %d\n", __func__, mqttCb->linkId, msg.qos);
+						resultNo = MQTT_PUBLISH_ERROR;
 						goto end;
 					}
 					/* Send failed. */
-					if (0 >= len) {
-						RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Serialize_ack failed\r\n");
+					if (len <= 0) {
+						RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, Serialize_ack failed\n", __func__, mqttCb->linkId);
 						goto end;
-					}
-					tmp = sendPacket(&mqttCb->client, len, &timer);
-					if (FAILURE == tmp) {
-						RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] send packet failed, set to start\r\n");
-						mqttCb->client.mqttstatus = MQTT_START;
-						goto end;
+					} else {
+						rc = sendPacket(&mqttCb->client, len, &timer);
+						if (rc == FAILURE) {
+							RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, send packet failed, set to start\n", __func__, mqttCb->linkId);
+							resultNo = MQTT_PUBLISH_ERROR;
+							MQTTSetStatus(&mqttCb->client, MQTT_START);
+						}
 					}
 				}
 			}
@@ -228,22 +195,20 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 			case PUBREC: {
 				u16 mypacketid = 0;
 				u8 dup = 0, type = 0;
-				*needAtOutpput = 1;
-				tmp = MQTTDeserialize_ack(&type, &dup, &mypacketid, mqttCb->client.readbuf, mqttCb->client.readbuf_size);
-				if (1 != tmp) {
-					RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Deserialize PUBREC failed\r\n");
+				if (MQTTDeserialize_ack(&type, &dup, &mypacketid, mqttCb->client.readbuf, mqttCb->client.readbuf_size) != 1) {
+					RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, Deserialize PUBREC failed\n", __func__, mqttCb->linkId);
 					resultNo = MQTT_PUBLISH_ERROR;
 				} else {
 					len = MQTTSerialize_ack(mqttCb->client.buf, mqttCb->client.buf_size, PUBREL, 0, mypacketid);
-					if (0 >= len) {
-						RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Serialize PUBREL failed\r\n");
+					if (len <= 0) {
+						RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, Serialize PUBREL failed\n", __func__, mqttCb->linkId);
 						resultNo = MQTT_PUBLISH_ERROR;
 					} else {
-						tmp = sendPacket(&mqttCb->client, len, &timer);
-						if (FAILURE == tmp) {
-							RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] send packet failed\r\n");
+						rc = sendPacket(&mqttCb->client, len, &timer);
+						if (rc == FAILURE) {
+							RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, send packet failed\n", __func__, mqttCb->linkId);
 							resultNo = MQTT_PUBLISH_ERROR;
-							mqttCb->client.mqttstatus = MQTT_START;
+							MQTTSetStatus(&mqttCb->client, MQTT_START);
 						}
 					}
 				}
@@ -253,26 +218,29 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 			case PUBREL: {
 				u16 mypacketid = 0;
 				u8 dup = 0, type = 0;
-				tmp = MQTTDeserialize_ack(&type, &dup, &mypacketid, mqttCb->client.readbuf, mqttCb->client.readbuf_size);
-				if (1 != tmp) {
-					RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Deserialize PUBREL failed\r\n");
-					res = FAILURE;
+				if (MQTTDeserialize_ack(&type, &dup, &mypacketid, mqttCb->client.readbuf, mqttCb->client.readbuf_size) != 1) {
+					RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, Deserialize PUBREL failed\n", __func__, mqttCb->linkId);
+					resultNo = MQTT_PUBLISH_ERROR;
 				} else {
 					len = MQTTSerialize_ack(mqttCb->client.buf, mqttCb->client.buf_size, PUBCOMP, 0, mypacketid);
-					if (0 >= len) {
-						RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Serialize PUBCOMP failed\r\n");
-						res = FAILURE;
+					if (len <= 0) {
+						RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, Serialize PUBCOMP failed\n", __func__, mqttCb->linkId);
+						resultNo = MQTT_PUBLISH_ERROR;
 					} else {
-						tmp = sendPacket(&mqttCb->client, len, &timer);
-						if (FAILURE == tmp) {
-							RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] sent packet ERROR\r\n");
-							res = FAILURE;
-							mqttCb->client.mqttstatus = MQTT_START;
+						rc = sendPacket(&mqttCb->client, len, &timer);
+						if (rc == FAILURE) {
+							RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, sent packet ERROR\n", __func__, mqttCb->linkId);
+							resultNo = MQTT_PUBLISH_ERROR;
+							MQTTSetStatus(&mqttCb->client, MQTT_START);
 						}
 					}
 				}
 			}
 			break;
+			case PUBCOMP:
+				at_printf_indicate("[MQTT][EVENT]:linkid:%d, published\r\n", mqttCb->linkId);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, published\n", __func__, mqttCb->linkId);
+				break;
 
 			case PINGRESP:
 				mqttCb->client.ping_outstanding = 0;
@@ -292,7 +260,9 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 	}
 
 end:
-	return resultNo;
+	if (resultNo != MQTT_OK) {
+		at_printf_indicate("[MQTT][EVENT]:linkid:%d, ERROR:%d\r\n", mqttCb->linkId, resultNo);
+	}
 }
 
 /****************************************************************
@@ -303,7 +273,6 @@ void mqtt_main(void *param)
 {
 	int resultNo = 0;
 	MQTT_CONTROL_BLOCK *mqttCb = (MQTT_CONTROL_BLOCK *)param;
-	u8 needAtOutpput = 0;
 	fd_set read_fds;
 	fd_set except_fds;
 	struct timeval timeout;
@@ -330,7 +299,7 @@ void mqtt_main(void *param)
 			resultNo = FreeRTOS_Select(mqttCb->network.my_socket + 1, &read_fds, NULL, &except_fds, &timeout);
 			/* The my_socket may be close, then will try reopen in mqtt_clent_data_proc if STATUS set to MQTT_START */
 			if (FD_ISSET(mqttCb->network.my_socket, &except_fds)) {
-				mqttCb->client.mqttstatus = MQTT_START;
+				MQTTSetStatus(&mqttCb->client, MQTT_START);
 			} else if (0 == resultNo) { /* Select timeout. */
 				if (mqttCb->client.isconnected) {
 					keepalive(&mqttCb->client);
@@ -338,14 +307,7 @@ void mqtt_main(void *param)
 			}
 		}
 		/* Process the received data. */
-		resultNo = mqtt_clent_data_proc(mqttCb, &read_fds, &needAtOutpput);
-		if (1 == needAtOutpput) {
-			if (MQTT_OK == resultNo) {
-				at_printf_indicate("ACK\r\n");
-			} else {
-				at_printf_indicate(ATCMD_ERROR_END_STR, resultNo);
-			}
-		}
+		mqtt_clent_data_proc(mqttCb, &read_fds);
 	}
 
 end:
@@ -446,59 +408,24 @@ static void mqtt_release_resource(MQTT_CONTROL_BLOCK *pMqttCb)
 static void mqtt_message_arrived(MessageData *data, void *param)
 {
 	MQTT_CONTROL_BLOCK *mqttCb = (MQTT_CONTROL_BLOCK *)param;
-	char *uns_buff = NULL;
-	int len_out = 0, data_shift = 0, total_data_len = 0;
-	char num_buf[8];
-	unsigned short id = 0;
-	u8 link_id = 0;
-	char *topicdest = NULL, *topicsrc = NULL;
-	int topiclen = 0;
+	char *topicsrc = NULL;
 
 	if (mqttCb == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mqtt_message_arrived] Nothing to do\r\n");
-		goto end;
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[%s] mqttCb is null\r\n", __func__);
+		return;
 	}
-
-	id = data->message->id;
-	link_id = mqttCb->linkId;
 
 	if (data->topicName->cstring != NULL) {
 		topicsrc = data->topicName->cstring;
-		topiclen = strlen(topicsrc);
 	} else {
 		topicsrc = data->topicName->lenstring.data;
-		topiclen = data->topicName->lenstring.len;
 	}
 
-	topicdest = (char *)rtos_mem_zmalloc(topiclen + 1);
-	if (topicdest == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mqtt_message_arrived] Memory Failure for topicdest\r\n");
-		goto end;
-	}
-	strncpy(topicdest, topicsrc, topiclen);
-
-	data_shift = strlen("%s:%d,%d,%s,") + strlen("+MQTTSUBRECV") - 2 + sprintf(num_buf, "%d", link_id) - 2
-				 + sprintf(num_buf, "%d", id) - 2 + strlen(topicdest) - 2;
-	len_out = data_shift + data->message->payloadlen + 1;
-	total_data_len = strlen(",%d,%d,%d,%d") + sprintf(num_buf, "%d", data->message->payloadlen) - 2 + sprintf(num_buf, "%d", data->message->qos) - 2
-					 + sprintf(num_buf, "%d", data->message->dup) - 2 + sprintf(num_buf, "%d", data->message->retained) - 2 + len_out;
-
-	uns_buff = (char *)rtos_mem_zmalloc(total_data_len);
-	if (uns_buff == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mqtt_message_arrived] Memory Failure for uns_buff\r\n");
-		goto end;
-	}
-
-	DiagSnPrintf(uns_buff, len_out, "%s:%d,%d,%s,", "+MQTTSUBRECV", link_id, id, topicdest);
-	_memcpy((uns_buff + data_shift), (char *)data->message->payload, (int16_t)(data->message->payloadlen));
-	DiagSnPrintf(uns_buff + strlen(uns_buff), total_data_len - strlen(uns_buff), ",%d,%d,%d,%d", data->message->payloadlen, data->message->qos, data->message->dup,
-				 data->message->retained);
-
-	at_printf_indicate("%s\r\n", uns_buff);
-
-end:
-	rtos_mem_free(topicdest);
-	rtos_mem_free(uns_buff);
+	at_printf_lock();
+	at_printf_indicate("[MQTT][DATA][%d][%s][%d][%d]:", mqttCb->linkId, topicsrc, data->message->id, data->message->payloadlen);
+	at_printf_data((char *)data->message->payload, (u32)data->message->payloadlen);
+	at_printf("\r\n");
+	at_printf_unlock();
 }
 
 static MQTT_RESULT_ENUM mqtt_string_copy(char **dest, char *src, size_t sz)
@@ -625,10 +552,11 @@ void at_mqttsub(void *arg)
 	}
 
 	for (topic_index = 0; MAX_MESSAGE_HANDLERS > topic_index; topic_index++) {
-		if (NULL == mqttCb->subData[topic_index].topic) {
+		if (mqttCb->subData[topic_index].topic == NULL) {
 			added = 1;
 			break;
-		} else if (0 == strcmp(mqttCb->subData[topic_index].topic, argv[2])) {
+		} else if (strcmp(mqttCb->subData[topic_index].topic, argv[2]) == 0 &&
+				   mqttCb->client.messageHandlers[topic_index].topicFilter != NULL) {
 			resultNo = MQTT_ALREADY_SUBSCRIBED;
 			goto end;
 		}
@@ -665,7 +593,7 @@ void at_mqttsub(void *arg)
 		resultNo = MQTT_SUBSCRIBE_ERROR;
 		goto end;
 	}
-	mqttCb->client.mqttstatus = MQTT_SUBTOPIC;
+	MQTTSetStatus(&mqttCb->client, MQTT_SUBTOPIC);
 
 end:
 	if (MQTT_OK != resultNo) {
@@ -881,16 +809,8 @@ void at_mqttpub(void *arg)
 		goto end;
 	}
 
-	/* topic. */
-	resultNo = mqtt_string_copy(&mqttCb->pubData.topic, argv[3], strlen(argv[3]));
-	if (MQTT_OK != resultNo) {
-		goto end;
-	}
-	/* msg. */
-	resultNo = mqtt_string_copy(&mqttCb->pubData.msg, argv[4], strlen(argv[4]));
-	if (MQTT_OK != resultNo) {
-		goto end;
-	}
+	mqttCb->pubData.topic = argv[3];
+	mqttCb->pubData.msg = argv[4];
 	mqttCb->pubData.qos = (u8)qos;
 	mqttCb->pubData.retain = (u8)retain;
 
@@ -915,13 +835,6 @@ void at_mqttpub(void *arg)
 	}
 
 end:
-	/* After sent, clean the msg and topic. */
-	if (NULL != mqttCb) {
-		rtos_mem_free(mqttCb->pubData.topic);
-		mqttCb->pubData.topic = NULL;
-		rtos_mem_free(mqttCb->pubData.msg);
-		mqttCb->pubData.msg = NULL;
-	}
 	if (MQTT_OK != resultNo) {
 		at_printf(ATCMD_ERROR_END_STR, resultNo);
 	} else {
@@ -954,7 +867,6 @@ void at_mqttpubraw(void *arg)
 	MQTT_CONTROL_BLOCK *mqttCb = NULL;
 	int link_id = MQTT_MAX_CLIENT_NUM;
 	int msg_id = 0, length = 0, qos = 0, retain = 0;
-	int frag_len = 0;
 	u8 *msg = NULL;
 
 	/* Get the parameters of AT command. */
@@ -1002,7 +914,7 @@ void at_mqttpubraw(void *arg)
 
 	/* msg length. */
 	length = atoi(argv[4]);
-	if (length <= 0) {
+	if (length <= 0 && length > MAX_TT_BUF_LEN) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUBRAW] Invalid length\r\n");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
@@ -1039,28 +951,11 @@ void at_mqttpubraw(void *arg)
 		goto end;
 	}
 
-	if (length <= MAX_TT_BUF_LEN) {
-		atcmd_tt_mode_get(msg, length);
-	} else {
-		while (length > 0) {
-			frag_len = (length <= MAX_TT_BUF_LEN) ? length : MAX_TT_BUF_LEN;
-			atcmd_tt_mode_get(msg, frag_len);
-			length -= frag_len;
-			msg += frag_len;
-		}
-	}
+	atcmd_tt_mode_get(msg, length);
 	atcmd_tt_mode_end();
 
-	/* topic. */
-	resultNo = mqtt_string_copy(&mqttCb->pubData.topic, argv[3], strlen(argv[3]));
-	if (MQTT_OK != resultNo) {
-		goto end;
-	}
-	/* msg. */
-	resultNo = mqtt_string_copy(&mqttCb->pubData.msg, (char *)msg, length);
-	if (MQTT_OK != resultNo) {
-		goto end;
-	}
+	mqttCb->pubData.topic = argv[3];
+	mqttCb->pubData.msg = (char *)msg;
 	mqttCb->pubData.qos = (u8)qos;
 	mqttCb->pubData.retain = (u8)retain;
 
@@ -1075,7 +970,7 @@ void at_mqttpubraw(void *arg)
 						   .dup = 0,
 						   .id = msg_id,
 						   .payload = mqttCb->pubData.msg,
-						   .payloadlen = strlen(mqttCb->pubData.msg)
+						   .payloadlen = length
 						  };
 	res = MQTTPublish(&mqttCb->client, mqttCb->pubData.topic, &mqttMsg);
 	if (0 != res) {
@@ -1085,13 +980,7 @@ void at_mqttpubraw(void *arg)
 	}
 
 end:
-	/* After sent, clean the msg and topic. */
-	if (NULL != mqttCb) {
-		rtos_mem_free(mqttCb->pubData.topic);
-		mqttCb->pubData.topic = NULL;
-		rtos_mem_free(mqttCb->pubData.msg);
-		mqttCb->pubData.msg = NULL;
-	}
+	/* After sent, clean the msg. */
 	if (msg) {
 		rtos_mem_free(msg);
 	}
@@ -1309,7 +1198,7 @@ void at_mqttconn(void *arg)
 		res = NetworkConnect(&mqttCb->network, mqttCb->host, mqttCb->port);
 		if (res != 0) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCONN] Can not connect %s\r\n", mqttCb->host);
-			mqttCb->client.mqttstatus = MQTT_START;
+			MQTTSetStatus(&mqttCb->client, MQTT_START);
 			resultNo = MQTT_CONNECTION_ERROR;
 			goto end;
 		}
@@ -1347,8 +1236,7 @@ void at_mqttconn(void *arg)
 	} else {
 		/* AT output when receiving CONNACK. */
 		RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTCONN] Sent connection request, waiting for ACK\r\n");
-		mqttCb->client.mqttstatus = MQTT_CONNECT;
-		mqttCb->initialConnect = 1;
+		MQTTSetStatus(&mqttCb->client, MQTT_CONNECT);
 	}
 
 end:
@@ -1449,7 +1337,7 @@ static void at_mqttcfg_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+MQTTCFG=<link_id>,<keepalive>,<timeout>,<disable_clean_session>[,<lwt_topic>,<lwt_msg>,<lwt_qos>,<lwt_retain>]\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>:\t0~3. link ID.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<keepalive>:\ttimeout of MQTT ping. Unit: second.\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<timeout>:\tsocket send/recv timeout. Unit: millisecond.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<timeout>:\tsocket send/recv timeout. Unit: second.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<disable_clean_session>:\tset MQTT clean session.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t0:\tenable clean session.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t1:\tdisable clean session.\r\n");
@@ -1539,7 +1427,7 @@ void at_mqttcfg(void *arg)
 	}
 
 	mqttCb->connectData.keepAliveInterval = (u16)keepalive;
-	mqttCb->client.command_timeout_ms = (u32)timeout;
+	mqttCb->client.command_timeout_ms = (u32)(timeout * 1000);
 	mqttCb->connectData.cleansession = (u8)disable_clean_session;
 
 	/* Last Will and Testament. (Optional) */
@@ -1682,19 +1570,19 @@ void at_mqttquery(void *arg)
 	}
 	at_printf("host: %s\r\n", mqttCb->host ? mqttCb->host : "NULL");
 	at_printf("port: %d\r\n", mqttCb->port);
-	at_printf("clientId: %s\r\n", mqttCb->clientId ? mqttCb->clientId : "NULL");
-	at_printf("userName: %s\r\n", mqttCb->userName ? mqttCb->userName : "NULL");
+	at_printf("client_id: %s\r\n", mqttCb->clientId ? mqttCb->clientId : "NULL");
+	at_printf("username: %s\r\n", mqttCb->userName ? mqttCb->userName : "NULL");
 	at_printf("password: %s\r\n", mqttCb->password ? mqttCb->password : "NULL");
-	at_printf("command_timeout_ms: %d\r\n", mqttCb->client.command_timeout_ms);
-	at_printf("keepAliveInterval: %d\r\n", mqttCb->connectData.keepAliveInterval);
-	at_printf("cleansession: %d\r\n", mqttCb->connectData.cleansession);
+	at_printf("timeout: %d\r\n", mqttCb->client.command_timeout_ms / 1000);
+	at_printf("keepalive: %d\r\n", mqttCb->connectData.keepAliveInterval);
+	at_printf("disable_clean_session: %d\r\n", mqttCb->connectData.cleansession);
 	at_printf("LWT: %d\r\n", mqttCb->connectData.willFlag);
 	if (mqttCb->connectData.willFlag) {
 		MQTTPacket_willOptions *will = &mqttCb->connectData.will;
-		at_printf("qos: %d\r\n", will->qos);
-		at_printf("retain: %d\r\n", will->retained);
-		at_printf("topic: %s\r\n", will->topicName.cstring);
-		at_printf("message: %s\r\n", will->message.cstring);
+		at_printf("lwt_qos: %d\r\n", will->qos);
+		at_printf("lwt_retain: %d\r\n", will->retained);
+		at_printf("lwt_topic: %s\r\n", will->topicName.cstring);
+		at_printf("lwt_msg: %s\r\n", will->message.cstring);
 	}
 end:
 	if (MQTT_OK == resultNo) {

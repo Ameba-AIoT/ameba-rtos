@@ -5,8 +5,8 @@
 #ifdef CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
 #endif
-#include "wifi_conf.h"
-#include "wifi_ind.h"
+#include "wifi_api.h"
+#include "wifi_intf_drv_to_app_internal.h"
 #include "wps/wps_defs.h"
 #include "wps/wps_i.h"
 #include "platform_stdlib.h"
@@ -228,7 +228,7 @@ void wps_check_and_show_connection_info(void)
 #endif
 	wifi_get_setting(STA_WLAN_INDEX, &setting);
 	/*show setting*/
-	DiagPrintf("\n\r\nWIFI  %s Setting:", WLAN0_NAME);
+	DiagPrintf("\n\r\nWIFI wlan0 Setting:");
 	DiagPrintf("\n\r==============================");
 
 	switch (setting.mode) {
@@ -354,6 +354,7 @@ static void wps_config_wifi_setting(struct _rtw_network_info_t *wifi, struct dev
 
 static int wps_connect_to_AP_by_certificate(struct _rtw_network_info_t *wifi)
 {
+	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 	int retry_count = wifi_user_config.wps_retry_count, ret;
 
 	DiagPrintf("\r\n=============== wifi_certificate_info ===============\n");
@@ -365,11 +366,11 @@ static int wps_connect_to_AP_by_certificate(struct _rtw_network_info_t *wifi)
 	DiagPrintf("\r\nis_wps_trigger = %d\n", wifi->is_wps_trigger);
 	while (1) {
 		ret = wifi_connect(wifi, 1);
-		if (ret == RTW_SUCCESS) {
+		if (ret == RTK_SUCCESS) {
 			if (retry_count == wifi_user_config.wps_retry_count) {
 				rtos_time_delay_ms(1000);    //When start wps with OPEN AP, AP will send a disassociate frame after STA connected, need reconnect here.
 			}
-			if (wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) {
+			if (wifi_get_join_status(&join_status) == RTK_SUCCESS && join_status == RTW_JOINSTATUS_SUCCESS) {
 				wps_check_and_show_connection_info();
 				break;
 			}
@@ -401,7 +402,7 @@ static int wps_connect_to_AP_by_open_system(char *target_ssid, u8 channel)
 		rtos_time_delay_ms(500);	//wait scan complete.
 		while (1) {
 			ret = wifi_connect(&connect_param, 1);
-			if (ret == RTW_SUCCESS) {
+			if (ret == RTK_SUCCESS) {
 				//wps_check_and_show_connection_info();
 				break;
 			}
@@ -435,7 +436,7 @@ static int wps_connect_to_AP_by_open_system_with_bssid(char *target_ssid, unsign
 			connect_param.security_type = RTW_SECURITY_OPEN;
 
 			ret = wifi_connect(&connect_param, 1);
-			if (ret == RTW_SUCCESS) {
+			if (ret == RTK_SUCCESS) {
 				//wps_check_and_show_connection_info();
 				break;
 			}
@@ -657,29 +658,29 @@ static int wps_scan_result_handler(unsigned int scanned_AP_num, void *user_data)
 {
 	struct _internal_wps_scan_handler_arg *wps_arg = (struct _internal_wps_scan_handler_arg *)user_data;
 	struct rtw_scan_result *scaned_ap_info;
-	char *scan_buf = NULL;
-	int ret = RTW_SUCCESS;
+	struct rtw_scan_result *scanned_ap_list = NULL;
+	int ret = RTK_SUCCESS;
 	unsigned int i = 0;
 
 	if (scanned_AP_num == 0) {
-		ret = RTW_ERROR;
+		ret = RTK_FAIL;
 		goto EXIT;
 	}
 
-	scan_buf = (char *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
-	if (scan_buf == NULL) {
+	scanned_ap_list = (struct rtw_scan_result *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
+	if (scanned_ap_list == NULL) {
 		DiagPrintf("malloc scan buf fail for wps\n");
-		ret = RTW_ERROR;
+		ret = RTK_FAIL;
 		goto EXIT;
 	}
 
-	if (wifi_get_scan_records(&scanned_AP_num, scan_buf) < 0) {
-		ret = RTW_ERROR;
+	if (wifi_get_scan_records(&scanned_AP_num, scanned_ap_list) < 0) {
+		ret = RTK_FAIL;
 		goto EXIT;
 	}
 
 	for (i = 0; i < scanned_AP_num; i++) {
-		scaned_ap_info = (struct rtw_scan_result *)(scan_buf + i * sizeof(struct rtw_scan_result));
+		scaned_ap_info = &scanned_ap_list[i];
 		scaned_ap_info->SSID.val[scaned_ap_info->SSID.len] = 0; /* Ensure the SSID is null terminated */
 
 		process_wps_scan_result(scaned_ap_info, (void *)wps_arg);
@@ -693,8 +694,8 @@ static int wps_scan_result_handler(unsigned int scanned_AP_num, void *user_data)
 #endif
 	}
 EXIT:
-	if (scan_buf) {
-		rtos_mem_free((u8 *)scan_buf);
+	if (scanned_ap_list) {
+		rtos_mem_free((u8 *)scanned_ap_list);
 	}
 	DiagPrintf("\r\nWPS scan done!\r\n");
 	rtos_sema_give(wps_arg->scan_sema);
@@ -717,18 +718,18 @@ static int wps_find_out_triger_wps_AP(char *target_ssid, unsigned char *target_b
 
 	rtos_sema_create_static(&wps_arg.scan_sema, 0, 0xFFFFFFFF);
 	if (wps_arg.scan_sema == NULL) {
-		return RTW_ERROR;
+		return RTK_FAIL;
 	}
 
 	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
 	scan_param.scan_user_data = &wps_arg;
 	scan_param.scan_user_callback = wps_scan_result_handler;
 
-	if (wifi_scan_networks(&scan_param, 0) != RTW_SUCCESS) {
+	if (wifi_scan_networks(&scan_param, 0) != RTK_SUCCESS) {
 		DiagPrintf("\n\rERROR: wifi scan failed");
 		goto exit;
 	}
-	if (rtos_sema_take(wps_arg.scan_sema, SCAN_LONGEST_WAIT_TIME) != SUCCESS) {
+	if (rtos_sema_take(wps_arg.scan_sema, SCAN_LONGEST_WAIT_TIME) != RTK_SUCCESS) {
 		DiagPrintf("\r\nWPS scan done early!\r\n");
 	}
 
@@ -749,7 +750,7 @@ exit:
 static u8 wps_scan_cred_ssid(struct dev_credential *dev_cred)
 {
 	u8 ssid_found = 0;
-	char *scan_buf = NULL;
+	struct rtw_scan_result *scanned_ap_list = NULL;
 	struct _rtw_scan_param_t scan_param;
 	struct rtw_scan_result *scanned_ap_info;
 	int scanned_ap_num, i = 0;
@@ -761,26 +762,26 @@ static u8 wps_scan_cred_ssid(struct dev_credential *dev_cred)
 	if ((scanned_ap_num = wifi_scan_networks(&scan_param, 1)) <= 0) {
 		DiagPrintf("\n\rERROR: wifi scan failed");
 	} else {
-		scan_buf = (char *)rtos_mem_zmalloc(scanned_ap_num * sizeof(struct rtw_scan_result));
-		if (scan_buf == NULL) {
+		scanned_ap_list = (struct rtw_scan_result *)rtos_mem_zmalloc(scanned_ap_num * sizeof(struct rtw_scan_result));
+		if (scanned_ap_list == NULL) {
 			// if cannot scan, suppose it can be found
 			ssid_found = 1;
 			return ssid_found;
 		}
-		if (wifi_get_scan_records((unsigned int *)(&scanned_ap_num), scan_buf) < 0) {
-			rtos_mem_free((u8 *)scan_buf);
+		if (wifi_get_scan_records((unsigned int *)(&scanned_ap_num), scanned_ap_list) < 0) {
+			rtos_mem_free((u8 *)scanned_ap_list);
 			return ssid_found;
 		}
 
 		for (i = 0; i < scanned_ap_num; i++) {
-			scanned_ap_info = (struct rtw_scan_result *)(scan_buf + i * sizeof(struct rtw_scan_result));
+			scanned_ap_info = &scanned_ap_list[i];
 			if ((scanned_ap_info->SSID.len == dev_cred->ssid_len) && (memcmp(scanned_ap_info->SSID.val, dev_cred->ssid, dev_cred->ssid_len) == 0)) {
 				ssid_found = 1;
 				break;
 			}
 		}
 
-		rtos_mem_free((u8 *)scan_buf);
+		rtos_mem_free((u8 *)scanned_ap_list);
 	}
 
 	return ssid_found;
@@ -834,6 +835,7 @@ int wps_start(u16 wps_config, char *pin, u8 channel, char *ssid)
 	int select_index = 0;
 	u32 select_security = 0;
 	uint8_t autoreconn_en = 0;
+	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 
 	if (wps_max_cred_count < 1 || wps_max_cred_count > 10) {
 		DiagPrintf("\n\rWPS: wps_max_cred_count should be in range 1~10\n");
@@ -863,13 +865,14 @@ int wps_start(u16 wps_config, char *pin, u8 channel, char *ssid)
 	}
 
 #if CONFIG_AUTO_RECONNECT
-	if ((wifi_get_autoreconnect(&autoreconn_en) == RTW_SUCCESS) && autoreconn_en) {
+	if ((wifi_get_autoreconnect(&autoreconn_en) == RTK_SUCCESS) && autoreconn_en) {
 		wifi_set_autoreconnect(0);
 	}
 #endif
 
 	/* check if STA is conencting */
-	while ((wifi_get_join_status() > RTW_JOINSTATUS_UNKNOWN) && (wifi_get_join_status() < RTW_JOINSTATUS_SUCCESS)) {
+	while (wifi_get_join_status(&join_status) == RTK_SUCCESS
+		   && (join_status > RTW_JOINSTATUS_UNKNOWN) && (join_status < RTW_JOINSTATUS_SUCCESS)) {
 		rtos_time_delay_ms(500);
 	}
 
@@ -1065,6 +1068,7 @@ int wps_judge_staion_disconnect(void)
 void cmd_wps(int argc, char **argv)
 {
 	int ret = -1;
+	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 	(void) ret;
 
 	if (wps_judge_staion_disconnect() != 0) {
@@ -1072,7 +1076,8 @@ void cmd_wps(int argc, char **argv)
 	}
 
 	// check if STA is conencting
-	if ((wifi_get_join_status() > RTW_JOINSTATUS_UNKNOWN) && (wifi_get_join_status() < RTW_JOINSTATUS_SUCCESS)) {
+	if (wifi_get_join_status(&join_status) == RTK_SUCCESS
+		&& (join_status > RTW_JOINSTATUS_UNKNOWN) && (join_status < RTW_JOINSTATUS_SUCCESS)) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\nthere is ongoing wifi connect!");
 		return;
 	}

@@ -1034,7 +1034,7 @@ u32 ap_status_on(void)
 int np_suspend(u32 type)
 {
 	u32 Rtemp;
-	int ret = SUCCESS;
+	int ret = RTK_SUCCESS;
 
 	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_NP_STATUS_SW,
 			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_NP_STATUS_SW) & (~LSYS_BIT_NP_RUNNING));
@@ -1136,12 +1136,12 @@ void np_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqStat
 
 	switch (psleep_param->sleep_type) {
 	case SLEEP_PG:
-		if (SUCCESS == np_suspend(SLEEP_PG)) {
+		if (RTK_SUCCESS == np_suspend(SLEEP_PG)) {
 			pmu_set_sleep_type(SLEEP_PG);
 		}
 		break;
 	case SLEEP_CG:
-		if (SUCCESS == np_suspend(SLEEP_CG)) {
+		if (RTK_SUCCESS == np_suspend(SLEEP_CG)) {
 			pmu_set_sleep_type(SLEEP_CG);
 			//pmu_set_sysactive_time(2);
 		}

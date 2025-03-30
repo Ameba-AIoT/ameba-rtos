@@ -16,8 +16,7 @@
   */
 #include <platform_autoconf.h>
 #include "atcmd_service.h"
-#include "wifi_conf.h"
-#include "wifi_ind.h"
+#include "wifi_api.h"
 #include <wifi_auto_reconnect.h>
 #include "os_wrapper.h"
 #include <rtw_wakelock.h>
@@ -39,7 +38,7 @@ void rtw_reconn_join_status_hdl(char *buf, int flags)
 {
 	u8 join_status = (u8)flags;
 	static u8 join_status_last = RTW_JOINSTATUS_SUCCESS;
-	u16 disconn_reason = 0;
+	int disconn_reason = -1;
 	u8 need_reconn = 0;
 
 	if ((join_status_last == join_status) && (join_status_last > RTW_JOINSTATUS_4WAY_HANDSHAKING)) {
@@ -57,14 +56,13 @@ void rtw_reconn_join_status_hdl(char *buf, int flags)
 	}
 
 	if (join_status == RTW_JOINSTATUS_FAIL) {
-		need_reconn = 1;
+		disconn_reason = ((struct rtw_event_join_fail_info_t *)buf)->reason_or_status_code;
+	} else if (join_status == RTW_JOINSTATUS_DISCONNECT) {
+		disconn_reason = ((struct rtw_event_disconn_info_t *)buf)->disconn_reason;
 	}
 
-	if (join_status == RTW_JOINSTATUS_DISCONNECT) {
-		disconn_reason = ((struct rtw_event_disconn_info_t *)buf)->disconn_reason;
-		if (!(disconn_reason > WLAN_REASON_APP_BASE && disconn_reason < WLAN_REASON_APP_BASE_END)) {/*disconnect by APP no need do reconnect*/
-			need_reconn = 1;
-		}
+	if (disconn_reason >= 0 && !(disconn_reason > WLAN_REASON_APP_BASE && disconn_reason < WLAN_REASON_APP_BASE_END)) {/*disconnect by APP no need do reconnect*/
+		need_reconn = 1;
 	}
 
 	if (need_reconn == 0) {
@@ -99,10 +97,10 @@ void rtw_reconn_join_status_hdl(char *buf, int flags)
 void rtw_reconn_task_hdl(void *param)
 {
 	(void) param;
-	int ret = RTW_ERROR;
+	int ret = RTK_FAIL;
 
 	ret = wifi_connect(&rtw_reconn.conn_param, 1);
-	if (ret != RTW_SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "reconn fail:%d", ret);
 		if ((ret == RTW_CONNECT_INVALID_KEY)) {
 			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "(password format wrong)");
@@ -115,7 +113,7 @@ void rtw_reconn_task_hdl(void *param)
 	}
 
 #ifdef CONFIG_LWIP_LAYER
-	if (ret == RTW_SUCCESS) {
+	if (ret == RTK_SUCCESS) {
 		LwIP_DHCP(0, DHCP_START);
 	}
 #endif
@@ -128,7 +126,7 @@ void rtw_reconn_timer_hdl(rtos_timer_t timer_hdl)
 
 	rtw_reconn.b_waiting = 0;
 	/*Creat a task to do wifi reconnect because call WIFI API in WIFI event is not safe*/
-	if (rtos_task_create(NULL, ((const char *)"rtw_reconn_task_hdl"), rtw_reconn_task_hdl, NULL, WIFI_STACK_SIZE_AUTO_RECONN_TASKLET, 6) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"rtw_reconn_task_hdl"), rtw_reconn_task_hdl, NULL, WIFI_STACK_SIZE_AUTO_RECONN_TASKLET, 6) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Create reconn task failed\n");
 	} else {
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "auto reconn %d\n", rtw_reconn.cnt);
@@ -157,6 +155,17 @@ void rtw_reconn_new_conn(struct _rtw_network_info_t *connect_param)
 		rtw_reconn.cnt = 0;
 	}
 }
+
+int wifi_stop_autoreconnect(void)
+{
+	if (rtw_reconn.b_enable) {
+		rtos_timer_stop(rtw_reconn.timer, 1000);
+		rtw_reconn.b_waiting = 0;
+		rtw_reconn.cnt = 0;
+	}
+	return RTK_SUCCESS;
+}
+
 #endif
 
 int wifi_set_autoreconnect(u8 enable)
@@ -170,9 +179,9 @@ int wifi_set_autoreconnect(u8 enable)
 		rtw_reconn.b_enable = 0;
 	} else if ((enable != 0) && (rtw_reconn.b_enable == 0)) {
 		if (rtos_timer_create(&(rtw_reconn.timer), "rtw_reconn_timer", NULL, wifi_user_config.auto_reconnect_interval * 1000, FALSE,
-							  rtw_reconn_timer_hdl) != SUCCESS) {
+							  rtw_reconn_timer_hdl) != RTK_SUCCESS) {
 			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "rtw_reconn_timer create fail\n");
-			return RTW_ERROR;
+			return RTK_FAIL;
 		}
 		rtw_reconn.b_enable = 1;
 		rtw_reconn.cnt = 0;
@@ -180,10 +189,10 @@ int wifi_set_autoreconnect(u8 enable)
 
 	rtw_reconn.b_infinite = 0;/*Set wifi_user_config.auto_reconnect_count to a high number is equivalent to having infinite auto-reconnects.*/
 
-	return RTW_SUCCESS;
+	return RTK_SUCCESS;
 #else
 	UNUSED(enable);
-	return RTW_ERROR;
+	return RTK_FAIL;
 #endif
 }
 
@@ -191,13 +200,13 @@ int wifi_get_autoreconnect(u8 *enable)
 {
 #if CONFIG_AUTO_RECONNECT
 	if (enable == NULL) {
-		return RTW_ERROR;
+		return RTK_FAIL;
 	} else {
 		*enable = rtw_reconn.b_enable;
-		return RTW_SUCCESS;
+		return RTK_SUCCESS;
 	}
 #else
 	*enable = 0;
-	return RTW_ERROR;
+	return RTK_FAIL;
 #endif
 }

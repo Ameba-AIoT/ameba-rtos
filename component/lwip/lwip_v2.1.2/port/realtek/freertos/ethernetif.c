@@ -58,7 +58,7 @@
 
 #include "lwip/ethip6.h" //Add for ipv6
 
-#include "wifi_conf.h"
+#include "wifi_api.h"
 #include "platform_stdlib.h"
 #include "basic_types.h"
 
@@ -378,6 +378,14 @@ void rltk_mii_init(void)
 {
 #if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
 	rtos_mutex_create(&mii_tx_mutex);
+#endif
+}
+
+void rltk_mii_deinit(void)
+{
+#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
+	rtos_mutex_delete(mii_tx_mutex);
+	mii_tx_mutex = NULL;
 #endif
 }
 

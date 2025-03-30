@@ -1,6 +1,6 @@
 #include "lwip_netconf.h"
 #include "os_wrapper.h"
-#include "wifi_conf.h"
+#include "wifi_api.h"
 
 #include "mbedtls/config.h"
 #include "mbedtls/platform.h"

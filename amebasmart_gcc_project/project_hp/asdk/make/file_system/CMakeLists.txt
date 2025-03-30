@@ -1,2 +1,0 @@
-ameba_add_subdirectories(fatfs littlefs kv vfs)
-ameba_add_subdirectories_if(CONFIG_BT ftl)

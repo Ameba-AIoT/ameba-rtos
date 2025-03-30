@@ -163,7 +163,7 @@ void cmd_iperf3(int argc, char **argv)
 	iperf_defaults(test);	/* sets defaults */
 	if (iperf_parse_arguments(test, argc, argv) < 0) {
 		iperf_err(test, "parameter error - %s", iperf_strerror(i_errno));
-		fprintf(stderr, "\n");
+		printf("\n");
 		usage_long(stdout);
 		iperf_free_test(test);
 		goto Exit;
@@ -171,13 +171,13 @@ void cmd_iperf3(int argc, char **argv)
 
 	switch (test->role) {
 	case 's':
-		if (rtos_task_create(&g_server_task.task, ((const char *)"server_thread"), server_thread, NULL, 4096, 2 + PRIORITIE_OFFSET) != SUCCESS) {
+		if (rtos_task_create(&g_server_task.task, ((const char *)"server_thread"), server_thread, NULL, 4096, 2 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
 			printf("\n\r%s rtos_task_create(server_thread) failed", __FUNCTION__);
 			iperf_free_test(test);
 		}
 		break;
 	case 'c':
-		if (rtos_task_create(&g_client_task.task, ((const char *)"client_thread"), client_thread, NULL, 4096, 1 + PRIORITIE_OFFSET) != SUCCESS) {
+		if (rtos_task_create(&g_client_task.task, ((const char *)"client_thread"), client_thread, NULL, 4096, 1 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
 			printf("\n\r%s rtos_task_create(client_thread) failed", __FUNCTION__);
 			iperf_free_test(test);
 		}

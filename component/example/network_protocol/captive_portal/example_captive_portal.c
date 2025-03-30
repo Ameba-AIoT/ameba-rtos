@@ -1,5 +1,5 @@
 #include "example_captive_portal.h"
-#include "wifi_intf_drv_to_app_basic.h"
+#include "wifi_api.h"
 
 /* ------------------------ Defines --------------------------------------- */
 /* The size of the buffer in which the dynamic WEB page is created. */
@@ -535,7 +535,7 @@ int wifi_restart_ap(struct _rtw_softap_info_t *softAP_config)
 		connect_param.key_id = setting.key_idx;
 		ret = wifi_connect(&connect_param, 1);
 #if defined(CONFIG_DHCP_CLIENT) && CONFIG_DHCP_CLIENT
-		if (ret == RTW_SUCCESS) {
+		if (ret == RTK_SUCCESS) {
 			/* Start DHCPClient */
 			LwIP_DHCP(0, DHCP_START);
 		}
@@ -813,8 +813,8 @@ static void CreateTargetAPTableItem(char *pbuf)
 
 static void CreateConnStatusTableItem(char *pbuf)
 {
-	u8 connect_status;
-	connect_status = wifi_get_join_status();
+	u8 connect_status = RTW_JOINSTATUS_UNKNOWN;
+	wifi_get_join_status(&connect_status);
 
 #if USE_DIV_CSS
 	sprintf(pbuf, "<div class=\"oneline\" id=\"sconn\"><div class=\"left\">CONNECTION STATUS: </div>"\
@@ -1038,33 +1038,33 @@ static void GenerateWaitHtmlPage(char *cDynamicPage)
 	rtos_sema_give(webs_wpage_sema);
 }
 
-extern int wifi_get_scan_records(unsigned int *AP_num, char *scan_buf);
+extern int wifi_get_scan_records(unsigned int *ap_num, struct rtw_scan_result *ap_list);
 static int scan_result_handler(unsigned int scanned_AP_num, void *user_data)
 {
 	/* To avoid gcc warnings */
 	(void) user_data;
 
 	struct rtw_scan_result *scanned_AP_info;
-	char *scan_buf = NULL;
+	struct rtw_scan_result *scanned_AP_list = NULL;
 	unsigned int i = 0;
 	int ApNum = 0;
 
 	if (scanned_AP_num == 0) {/* scanned no AP*/
-		return RTW_ERROR;
+		return RTK_FAIL;
 	}
 
-	scan_buf = (char *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
-	if (scan_buf == NULL) {
-		return RTW_ERROR;
+	scanned_AP_list = (struct rtw_scan_result *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
+	if (scanned_AP_list == NULL) {
+		return RTK_FAIL;
 	}
 
-	if (wifi_get_scan_records(&scanned_AP_num, scan_buf) < 0) {
-		rtos_mem_free((u8 *)scan_buf);
-		return RTW_ERROR;
+	if (wifi_get_scan_records(&scanned_AP_num, scanned_AP_list) < 0) {
+		rtos_mem_free((u8 *)scanned_AP_list);
+		return RTK_FAIL;
 	}
 
 	for (i = 0; i < scanned_AP_num; i++) {
-		scanned_AP_info = (struct rtw_scan_result *)(scan_buf + i * sizeof(struct rtw_scan_result));
+		scanned_AP_info = &scanned_AP_list[i];
 		scanned_AP_info->SSID.val[scanned_AP_info->SSID.len] = 0; /* Ensure the SSID is null terminated */
 
 		if (!strcmp((char *)scanned_AP_info->SSID.val, "")) {
@@ -1107,30 +1107,30 @@ static int scan_result_handler(unsigned int scanned_AP_num, void *user_data)
 	scan_result.ap_num = ApNum;
 
 	ApNum = 0;
-	rtos_mem_free((u8 *)scan_buf);
+	rtos_mem_free((u8 *)scanned_AP_list);
 	rtos_sema_give(scan_done_sema);
-	return RTW_SUCCESS;
+	return RTK_SUCCESS;
 }
 
 static int wifi_start_scan(void)
 {
 	RTK_LOGI(NOTAG, "%s\n", __func__);
 	struct _rtw_scan_param_t scan_param;
-	char *scan_buf;
+	char *scanned_AP_list;
 
-	scan_buf = rtos_mem_malloc(2 * SCAN_AP_LIST_MAX * sizeof(struct rtw_scan_result));
-	if (!scan_buf) {
+	scanned_AP_list = rtos_mem_malloc(2 * SCAN_AP_LIST_MAX * sizeof(struct rtw_scan_result));
+	if (!scanned_AP_list) {
 		RTK_LOGE(NOTAG, "ERROR: malloc failed!\n");
 		return -1;
 	}
-	memset(scan_buf, 0, 2 * SCAN_AP_LIST_MAX * sizeof(struct rtw_scan_result));
+	memset(scanned_AP_list, 0, 2 * SCAN_AP_LIST_MAX * sizeof(struct rtw_scan_result));
 	memset(scan_result.ap_list, 0, 2 * SCAN_AP_LIST_MAX * sizeof(ap_list_t));
 	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
 
 	scan_param.scan_user_callback = scan_result_handler;
 	scan_param.max_ap_record_num = 2 * SCAN_AP_LIST_MAX;
 
-	if (wifi_scan_networks(&scan_param, 0) != RTW_SUCCESS) {
+	if (wifi_scan_networks(&scan_param, 0) != RTK_SUCCESS) {
 		RTK_LOGE(NOTAG, "ERROR: wifi scan failed!\n");
 		return -1;
 	}
@@ -1152,7 +1152,7 @@ static int _get_ap_security_mode(IN char *ssid, OUT u32 *security_mode, OUT u8 *
 	struct _rtw_scan_param_t scan_param;
 	struct rtw_scan_result *scanned_ap_info;
 	int scan_cnt = 0;
-	char *scan_buf;
+	struct rtw_scan_result *scanned_AP_list;
 	int i = 0;
 
 	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
@@ -1161,28 +1161,28 @@ static int _get_ap_security_mode(IN char *ssid, OUT u32 *security_mode, OUT u8 *
 	if ((scan_cnt = wifi_scan_networks(&scan_param, 1)) <= 0) {
 		RTK_LOGE(NOTAG, "error %s, wifi scan failed\n", __func__);
 	} else {
-		scan_buf = (char *)rtos_mem_zmalloc(scan_cnt * sizeof(struct rtw_scan_result));
-		if (scan_buf == NULL) {
+		scanned_AP_list = (struct rtw_scan_result *)rtos_mem_zmalloc(scan_cnt * sizeof(struct rtw_scan_result));
+		if (scanned_AP_list == NULL) {
 			RTK_LOGE(NOTAG, "error %s, malloc scan_buf failed\n", __func__);
 			return -1;
 		}
-		if (wifi_get_scan_records((unsigned int *)&scan_cnt, scan_buf) < 0) {
-			rtos_mem_free((unsigned char *)scan_buf);
+		if (wifi_get_scan_records((unsigned int *)&scan_cnt, scanned_AP_list) < 0) {
+			rtos_mem_free((unsigned char *)scanned_AP_list);
 			return -1;
 		}
 		for (i = 0; i < scan_cnt; i++) {
-			scanned_ap_info = (struct rtw_scan_result *)(scan_buf + i * sizeof(struct rtw_scan_result));
+			scanned_ap_info = &scanned_AP_list[i];
 			scanned_ap_info->SSID.val[scanned_ap_info->SSID.len] = 0; /* Ensure the SSID is null terminated */
 			//RTK_LOGI(NOTAG, "info %s, ssid: %s\n", __func__, scanned_ap_info->SSID.val);
 			if (strcmp(ssid, (char *)scanned_ap_info->SSID.val) == 0) {
 				*security_mode = scanned_ap_info->security;
 				*channel = scanned_ap_info->channel;
 				RTK_LOGI(NOTAG, "info %s, channel: %d\n", __func__, *channel);
-				rtos_mem_free((unsigned char *)scan_buf);
+				rtos_mem_free((unsigned char *)scanned_AP_list);
 				return 0;
 			}
 		}
-		rtos_mem_free((unsigned char *)scan_buf);
+		rtos_mem_free((unsigned char *)scanned_AP_list);
 	}
 	return -1;
 }
@@ -1217,14 +1217,14 @@ static void ConnectTargetAP(void)
 
 	RTK_LOGI(NOTAG, "Joining BSS by SSID %s [%s]...\n\r", connect_param.ssid.val, connect_param.password);
 
-	connect_status = wifi_get_join_status();
+	wifi_get_join_status(&connect_status);
 	if (connect_status == RTW_JOINSTATUS_SUCCESS) {
 		wifi_disconnect();
 	}
 
 	ret = wifi_connect(&connect_param, 0);
 
-	if (ret != RTW_SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		if (ret == RTW_CONNECT_INVALID_KEY) {
 			RTK_LOGE(NOTAG, "ERROR:Invalid Key\n");
 		}

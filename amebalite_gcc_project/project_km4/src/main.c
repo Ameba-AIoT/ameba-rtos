@@ -5,7 +5,9 @@
 #include <mbedtls/platform.h>
 #endif
 #include "ameba_rtos_version.h"
+#if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_ipc.h"
+#endif
 
 static const char *const TAG = "MAIN";
 
@@ -171,8 +173,10 @@ int main(void)
 	/* pre-processor of application example */
 	app_pre_example();
 
+#if defined(CONFIG_BT_COEXIST)
 	/* init coex ipc */
 	coex_ipc_entry();
+#endif
 
 //only NP can init FW
 #if defined(CONFIG_WLAN)
@@ -180,7 +184,7 @@ int main(void)
 	wififw_task_create();
 #endif
 
-	wlan_initialize();
+	wifi_init();
 #endif
 
 	/* init console */

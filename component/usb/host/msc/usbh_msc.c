@@ -21,7 +21,7 @@
 
 static int usbh_msc_attach(usb_host_t *host);
 static int usbh_msc_detach(usb_host_t *host);
-static int usbh_msc_process(usb_host_t *host);
+static int usbh_msc_process(usb_host_t *host, u32 msg);
 static int usbh_msc_setup(usb_host_t *host);
 static int usbh_msc_process_rw(usb_host_t *host, u8 lun);
 /* Private variables ---------------------------------------------------------*/
@@ -235,11 +235,12 @@ static int usbh_msc_setup(usb_host_t *host)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_msc_process(usb_host_t *host)
+static int usbh_msc_process(usb_host_t *host, u32 msg)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	int status = HAL_BUSY;
 	int scsi_status = HAL_BUSY;
+	UNUSED(msg);
 
 	switch (msc->state) {
 	case MSC_INIT:
@@ -250,7 +251,7 @@ static int usbh_msc_process(usb_host_t *host)
 			case MSC_INIT:
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Lun %d\n", msc->current_lun);
 				msc->unit[msc->current_lun].state = MSC_READ_INQUIRY;
-				msc->tick = host->tick;
+				msc->tick = usbh_get_current_tick(host);
 				break;
 
 			case MSC_READ_INQUIRY:
@@ -339,7 +340,7 @@ static int usbh_msc_process(usb_host_t *host)
 					if ((msc->unit[msc->current_lun].sense.key == SCSI_SENSE_KEY_UNIT_ATTENTION) ||
 						(msc->unit[msc->current_lun].sense.key == SCSI_SENSE_KEY_NOT_READY)) {
 
-						if ((host->tick - msc->tick) < 10000U) {
+						if (usbh_get_elapsed_ticks(host, msc->tick) < 10000U) {
 							msc->unit[msc->current_lun].state = MSC_TEST_UNIT_READY;
 							break;
 						}
@@ -372,12 +373,12 @@ static int usbh_msc_process(usb_host_t *host)
 				break;
 			}
 
-			usbh_notify_class_state_change(host);
+			usbh_notify_class_state_change(host, 0);
 		} else {
 			msc->current_lun = 0U;
 			msc->state = MSC_IDLE;
 
-			usbh_notify_class_state_change(host);
+			usbh_notify_class_state_change(host, 0);
 			if ((msc->cb != NULL) && (msc->cb->setup != NULL)) {
 				msc->cb->setup();
 			}
@@ -425,7 +426,7 @@ static int usbh_msc_process_rw(usb_host_t *host, u8 lun)
 			}
 		}
 
-		usbh_notify_class_state_change(host);
+		usbh_notify_class_state_change(host, 0);
 		break;
 
 	case MSC_WRITE:
@@ -443,7 +444,7 @@ static int usbh_msc_process_rw(usb_host_t *host, u8 lun)
 			}
 		}
 
-		usbh_notify_class_state_change(host);
+		usbh_notify_class_state_change(host, 0);
 		break;
 
 	case MSC_REQUEST_SENSE:
@@ -469,7 +470,7 @@ static int usbh_msc_process_rw(usb_host_t *host, u8 lun)
 			}
 		}
 
-		usbh_notify_class_state_change(host);
+		usbh_notify_class_state_change(host, 0);
 		break;
 
 	default:
@@ -629,17 +630,17 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 				msc->hbot.state = BOT_RECEIVE_CSW;
 			}
 
-			usbh_notify_urb_state_change(host);
+			usbh_notify_urb_state_change(host, 0);
 		} else if (urb_state == USBH_URB_BUSY) {
 			/* Re-send CBW */
 			msc->hbot.state = BOT_SEND_CBW;
 
-			usbh_notify_urb_state_change(host);
+			usbh_notify_urb_state_change(host, 0);
 		} else {
 			if (urb_state == USBH_URB_STALL) {
 				msc->hbot.state  = BOT_ERROR_OUT;
 
-				usbh_notify_urb_state_change(host);
+				usbh_notify_urb_state_change(host, 0);
 			}
 		}
 		break;
@@ -673,7 +674,7 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 				/* If value was 0, and successful transfer, then change the state */
 				msc->hbot.state  = BOT_RECEIVE_CSW;
 
-				usbh_notify_urb_state_change(host);
+				usbh_notify_urb_state_change(host, 0);
 			}
 		} else if (urb_state == USBH_URB_STALL) {
 			/* This is Data IN Stage STALL Condition */
@@ -686,7 +687,7 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 			The host shall clear the Bulk-In pipe.
 			4. The host shall attempt to receive a CSW.*/
 
-			usbh_notify_urb_state_change(host);
+			usbh_notify_urb_state_change(host, 0);
 		} else {
 		}
 		break;
@@ -718,14 +719,14 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 				msc->hbot.state  = BOT_RECEIVE_CSW;
 			}
 
-			usbh_notify_urb_state_change(host);
+			usbh_notify_urb_state_change(host, 0);
 		}
 
 		else if (urb_state == USBH_URB_BUSY) {
 			/* Resend same data */
 			msc->hbot.state  = BOT_DATA_OUT;
 
-			usbh_notify_urb_state_change(host);
+			usbh_notify_urb_state_change(host, 0);
 		}
 
 		else if (urb_state == USBH_URB_STALL) {
@@ -738,7 +739,7 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 			4. The host shall attempt to receive a CSW.
 			*/
 
-			usbh_notify_urb_state_change(host);
+			usbh_notify_urb_state_change(host, 0);
 		} else {
 		}
 		break;
@@ -766,11 +767,11 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 				status = HAL_ERR_UNKNOWN;
 			}
 
-			usbh_notify_urb_state_change(host);
+			usbh_notify_urb_state_change(host, 0);
 		} else if (urb_state == USBH_URB_STALL) {
 			msc->hbot.state  = BOT_ERROR_IN;
 
-			usbh_notify_urb_state_change(host);
+			usbh_notify_urb_state_change(host, 0);
 		} else {
 		}
 		break;
@@ -920,14 +921,14 @@ int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length)
 
 	usbh_scsi_read(msc, lun, address, pbuf, length);
 
-	timeout = msc->host->tick;
+	timeout = usbh_get_current_tick(msc->host);
 
 	while (usbh_msc_process_rw(msc->host, lun) == HAL_BUSY) {
-#if defined (CONFIG_ARM_CORE_CA32)
+#if defined(CONFIG_ARM_CORE_CA32) && CONFIG_ARM_CORE_CA32
 		//FIXME, remove this in AP
 		usb_os_delay_us(200);
 #endif
-		if (((msc->host->tick - timeout) > (10000U * length)) || (is_device_connected == 0U)) {
+		if ((usbh_get_elapsed_ticks(msc->host, timeout) > (10000U * length)) || (is_device_connected == 0U)) {
 			msc->state = MSC_IDLE;
 			return HAL_ERR_UNKNOWN;
 		}
@@ -965,13 +966,13 @@ int usbh_msc_write(u8 lun, u32 address, u8 *pbuf, u32 length)
 
 	usbh_scsi_write(msc, lun, address, pbuf, length);
 
-	timeout = msc->host->tick;
+	timeout = usbh_get_current_tick(msc->host);
 	while (usbh_msc_process_rw(msc->host, lun) == HAL_BUSY) {
-#if defined (CONFIG_ARM_CORE_CA32)
+#if defined(CONFIG_ARM_CORE_CA32) && CONFIG_ARM_CORE_CA32
 		//FIXME, remove this in AP
 		usb_os_delay_us(200);
 #endif
-		if (((msc->host->tick - timeout) > (10000U * length)) || (is_device_connected == 0U)) {
+		if ((usbh_get_elapsed_ticks(msc->host, timeout) > (10000U * length)) || (is_device_connected == 0U)) {
 			msc->state = MSC_IDLE;
 			return HAL_ERR_UNKNOWN;
 		}

@@ -10,7 +10,7 @@ import ctypes
 from .sense_status import *
 from .device_info import *
 from .next_op import *
-from .device_profile import *
+from .flash_utils import *
 
 BAUDSET = 0x81
 QUERY = 0x02
@@ -60,6 +60,10 @@ QUERY_DATA_OFFSET_FLASH_REQ_HOST_ECC_LEVEL = 59
 QUERY_DATA_OFFSET_FLASH_TARGETS = 60
 QUERY_DATA_OFFSET_FLASH_CAPACITY = 61
 QUERY_DATA_OFFSET_WIFI_MAC = 65
+
+# Read otp logical map time:26ms, physical map time: 170ms
+# Program otp logical map time: 7ms
+OTP_READ_TIMEOUT_IN_SECONDS = 10
 
 
 class FloaderHandler(object):
@@ -175,10 +179,9 @@ class FloaderHandler(object):
 
         return ret, response_bytes
 
-    def sense(self, op_code=None, data=None):
+    def sense(self, timeout, op_code=None, data=None):
         self.logger.debug(f"Sense...")
-        ret, sense_ack = self.send_request(SENSE.to_bytes(1, byteorder="little"), length=1,
-                                           timeout=self.setting.sync_response_timeout_in_second)
+        ret, sense_ack = self.send_request(SENSE.to_bytes(1, byteorder="little"), length=1, timeout=timeout)
         if ret == ErrType.OK:
             sense_status = SenseStatus()
             self.logger.debug(f"Sense response raw data: {sense_ack.hex()}")
@@ -237,7 +240,7 @@ class FloaderHandler(object):
                 else:
                     self.logger.debug("Sense")
 
-                ret, resp = self.sense()
+                ret, resp = self.sense(self.setting.sync_response_timeout_in_second)
                 if ret == ErrType.OK:
                     break
                 else:
@@ -348,7 +351,7 @@ class FloaderHandler(object):
         self.logger.debug(f"Reset in download mode")
         return self.next_operation(NextOpType.REBURN, 0)
 
-    def write(self, mem_type, src, size, addr, need_sense=False):
+    def write(self, mem_type, src, size, addr, timeout, need_sense=False):
         sense_status = SenseStatus()
 
         write_data = [WRITE]
@@ -362,13 +365,13 @@ class FloaderHandler(object):
         ret, _ = self.send_request(write_array, len(write_array), self.setting.write_response_timeout_in_second, is_sync=False)
         if ret == ErrType.OK:
             if need_sense:
-                ret, sense_ack = self.sense(op_code=WRITE, data=addr)
+                ret, sense_ack = self.sense(timeout, op_code=WRITE, data=addr)
                 if ret != ErrType.OK:
                     self.logger.error(f"WRITE addr={hex(addr)} fail: {ret}")
 
         return ret
 
-    def read(self, mem_type, addr, size):
+    def read(self, mem_type, addr, size, timeout):
         resp = None
 
         read_data = [READ]
@@ -378,7 +381,7 @@ class FloaderHandler(object):
 
         self.logger.debug(f"READ: addr={hex(addr)}, size={size}, mem_type={mem_type}")
         read_bytes = bytearray(read_data)
-        ret, resp_ack = self.send_request(read_bytes, len(read_bytes), self.setting.sync_response_timeout_in_second)
+        ret, resp_ack = self.send_request(read_bytes, len(read_bytes), timeout)
         if ret == ErrType.OK:
             if resp_ack[0] == READ:
                 resp = resp_ack[1:]
@@ -390,7 +393,7 @@ class FloaderHandler(object):
 
         return ret
 
-    def checksum(self, mem_type,  start_addr, end_addr, size):
+    def checksum(self, mem_type,  start_addr, end_addr, size, timeout):
         chk_rest = 0
         request_data = [CHKSM]
         request_data.append((mem_type & 0xFF))
@@ -402,7 +405,7 @@ class FloaderHandler(object):
 
         self.logger.debug(f"CHKSM: start={hex(start_addr)}, end={hex(end_addr)}, size={size}, mem_type={mem_type}")
         request_bytes = bytearray(request_data)
-        ret, resp = self.send_request(request_bytes, len(request_bytes), self.setting.sync_response_timeout_in_second)
+        ret, resp = self.send_request(request_bytes, len(request_bytes), timeout)
         if ret == ErrType.OK:
             if resp[0] == int(CHKSM):
                 chk_rest = resp[1] + (resp[2] << 8) + (resp[3] << 16) + (resp[4] << 24)
@@ -415,7 +418,7 @@ class FloaderHandler(object):
 
         return ret, chk_rest
 
-    def erase_flash(self, mem_type, start_addr, end_addr, size, sense=False, force=False):
+    def erase_flash(self, mem_type, start_addr, end_addr, size, timeout, sense=False, force=False):
         self.logger.debug(f"Erase flash: start_addr={hex(start_addr)}, end_addr={hex(end_addr)} size={size}")
         request_data = [FS_ERASE]
         request_data.append((mem_type & 0xFF))
@@ -424,7 +427,7 @@ class FloaderHandler(object):
         request_data.extend(list(start_addr.to_bytes(4, byteorder="little")))
         request_data.extend(list(end_addr.to_bytes(4, byteorder="little")))
 
-        request_data.extend(list(size.to_bytes(4, byteorder="little")))
+        request_data.extend(list((size & 0xFFFFFFFF).to_bytes(4, byteorder="little")))
 
         if force:
             self.logger.warning(f"FS_ERASE: start_addr={hex(start_addr)}, end_addr={hex(end_addr)}, size={size}, mem_type={mem_type} force")
@@ -438,7 +441,7 @@ class FloaderHandler(object):
             return ret
 
         if sense:
-            ret, sense_status = self.sense(FS_ERASE, start_addr)
+            ret, sense_status = self.sense(timeout, op_code=FS_ERASE, data=start_addr)
             if ret != ErrType.OK:
                 self.logger.error(f"FS_ERASE start_addr={hex(start_addr)}, size={size} force={force} fail: {ret}")
 
@@ -451,7 +454,7 @@ class FloaderHandler(object):
         request_data.append(cmd)
         request_data.append(address)
 
-        self.logger.info(f"FS_RDSTS: cmd={cmd}, address={address}")
+        self.logger.debug(f"FS_RDSTS: cmd={cmd}, address={address}")
 
         request_bytes = bytearray(request_data)
         ret, resp = self.send_request(request_bytes, len(request_bytes), self.setting.sync_response_timeout_in_second)
@@ -473,7 +476,7 @@ class FloaderHandler(object):
         request_data.append(addr)
         request_data.append(value)
 
-        self.logger.info(f"FS_WTSTS: cmd={hex(cmd)}, addr={hex(addr)}, value={hex(value)}")
+        self.logger.debug(f"FS_WTSTS: cmd={hex(cmd)}, addr={hex(addr)}, value={hex(value)}")
 
         request_bytes = bytearray(request_data)
         ret, _ = self.send_request(request_bytes, len(request_bytes), self.setting.async_response_timeout_in_second, is_sync=False)
@@ -567,7 +570,7 @@ class FloaderHandler(object):
 
         request_bytes = bytearray(request_data)
 
-        ret, buf = self.send_request(request_bytes, len(request_bytes), self.setting.sync_response_timeout_in_second)
+        ret, buf = self.send_request(request_bytes, len(request_bytes), OTP_READ_TIMEOUT_IN_SECONDS)
         if ret == ErrType.OK:
             if buf[0] == cmd:
                 self.logger.debug(f"Otp read: {buf[0]}")

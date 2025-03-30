@@ -159,12 +159,6 @@ static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
 	case USB_REQ_TYPE_STANDARD:
 		switch (req->bRequest) {
-		case USB_REQ_SET_INTERFACE:
-			if (dev->dev_state != USBD_STATE_CONFIGURED) {
-				ret = HAL_ERR_PARA;
-			}
-			break;
-
 		case USB_REQ_GET_INTERFACE:
 			if (dev->dev_state == USBD_STATE_CONFIGURED) {
 				cdev->ctrl_buf[0] = 0U;

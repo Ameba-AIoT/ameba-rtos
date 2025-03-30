@@ -43,7 +43,9 @@ ameba_list_append(private_sources
 )
 
 ameba_list_append(private_includes
+	./
 	../gatt_service/client
+	../gatt_service/server
 )
 
 # Component private part, user config end

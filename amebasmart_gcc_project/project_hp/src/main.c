@@ -7,7 +7,9 @@
 #include "os_wrapper.h"
 #include "ameba_rtos_version.h"
 //#include "wifi_fast_connect.h"
+#if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_ipc.h"
+#endif
 
 static const char *const TAG = "MAIN";
 u32 g_Boot_Status;
@@ -195,11 +197,13 @@ int main(void)
 	/* pre-processor of application example */
 	app_pre_example();
 
+#if defined(CONFIG_BT_COEXIST)
 	/* init coex ipc */
 	coex_ipc_entry();
+#endif
 
 #ifdef CONFIG_WLAN
-	wlan_initialize();
+	wifi_init();
 #endif
 
 	/* init console */

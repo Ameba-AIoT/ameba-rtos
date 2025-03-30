@@ -8,25 +8,26 @@
 #include <whc_host_linux.h>
 #else
 #include "platform_autoconf.h"
-#include <wifi_conf.h>
+#include <wifi_api.h>
 #endif
 
 struct wifi_user_conf wifi_user_config __attribute__((aligned(64)));
 
 _WEAK void wifi_set_user_config(void)
 {
+	int skb_num_np_rsvd = 6; /* 4 for rx_ring_buffer + 2 for mgnt trx */
 	_memset(&wifi_user_config, 0, sizeof(struct wifi_user_conf));
 
-	/* below items for user config, for details, see wifi_user_conf in wifi_intf_drv_to_app_basic.h */
+	/* below items for user config, for details, see wifi_user_conf in ameba_wificfg_common.h */
 	wifi_user_config.concurrent_enabled = 1;
 	wifi_user_config.softap_addr_offset_idx = 1;
-	wifi_user_config.fast_reconnect_en = 0;
-	wifi_user_config.auto_reconnect_en = 0;
+	wifi_user_config.fast_reconnect_en = 1;
+	wifi_user_config.auto_reconnect_en = 1;
 	wifi_user_config.auto_reconnect_count = 10;
 	wifi_user_config.auto_reconnect_interval = 5;
 	wifi_user_config.no_beacon_disconnect_time = 9; /* unit 2s, default 18s */
 #ifdef CONFIG_HIGH_TP_TEST /*enable high tp in make menuconfig*/
-	wifi_user_config.skb_num_np = 22;
+	wifi_user_config.skb_num_np = 22; /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 	wifi_user_config.skb_num_ap = 8;
 #else
 #ifdef CONFIG_FULLMAC
@@ -34,7 +35,7 @@ _WEAK void wifi_set_user_config(void)
 #else
 	wifi_user_config.skb_num_ap = 8;	/*adjust to 8 for ping 10k*/
 #endif
-	wifi_user_config.skb_num_np = 22;  /*4 for rx_ring_buffer + 16 for rx_ampdu + 2 for mgnt trx*/
+	wifi_user_config.skb_num_np = 22;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 #endif
 	wifi_user_config.rx_ampdu_num = 16;
 
@@ -102,10 +103,20 @@ _WEAK void wifi_set_user_config(void)
 	/*Automatic channel selection*/
 	wifi_user_config.acs_en = 0;
 
+	/* ensure skb_num_np >= rx_ampdu_num + skb_num_np_rsvd */
+	if (wifi_user_config.skb_num_np < wifi_user_config.rx_ampdu_num + skb_num_np_rsvd) {
+		wifi_user_config.skb_num_np = wifi_user_config.rx_ampdu_num + skb_num_np_rsvd;
+#ifndef CONFIG_FULLMAC
+		RTK_LOGW(TAG_WLAN_DRV, "change skb_num_np to %d\n", wifi_user_config.skb_num_np);
+#endif
+	}
+
 	/* ensure ap_sta_num not exceed 12*/
 	if (wifi_user_config.ap_sta_num > 12) {
 		wifi_user_config.ap_sta_num = 12;
-		dev_err(global_idev.fullmac_dev, "change ap_sta_num to 12\n");
+#ifndef CONFIG_FULLMAC
+		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to 12\n");
+#endif
 	}
 }
 

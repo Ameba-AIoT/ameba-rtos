@@ -10,14 +10,14 @@ extern int rtos_critical_is_in_interrupt(void);
 
 void RPC_MutexLock(RPC_Mutex *mutex)
 {
-	if (rtos_sema_take(mutex->sema, RTOS_MAX_DELAY) != SUCCESS) {
+	if (rtos_sema_take(mutex->sema, RTOS_MAX_DELAY) != RTK_SUCCESS) {
 		RPC_LOGE("%s: %d rtos_sema_take failed", __func__, __LINE__);
 	}
 }
 
 void RPC_MutexUnlock(RPC_Mutex *mutex)
 {
-	if (rtos_sema_give(mutex->sema) != SUCCESS) {
+	if (rtos_sema_give(mutex->sema) != RTK_SUCCESS) {
 		RPC_LOGE("%s: %d rtos_sema_give failed", __func__, __LINE__);
 	}
 }
@@ -50,13 +50,13 @@ int32_t RPC_SemWait(RPC_Sem *sem, uint32_t ms)
 		return 0;
 	}
 
-	int status = FAIL;
+	int status = RTK_FAIL;
 	if (rtos_critical_is_in_interrupt()) {
 		status = rtos_sema_take(sem->semaphore, NULL);
 	} else {
 		status = rtos_sema_take(sem->semaphore, ms);
 	}
-	if (status != SUCCESS) {
+	if (status != RTK_SUCCESS) {
 		RPC_LOGE("%s: rtos_sema_take fail.", __func__);
 		return -1;
 	}

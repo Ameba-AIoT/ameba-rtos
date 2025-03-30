@@ -8,7 +8,7 @@
 #include <rtw_cfg80211_fullmac.h>
 #else
 #include "platform_autoconf.h"
-#include <wifi_conf.h>
+#include <wifi_api.h>
 #endif
 
 struct wifi_user_conf wifi_user_config __attribute__((aligned(64)));
@@ -18,7 +18,7 @@ _WEAK void wifi_set_user_config(void)
 	int skb_num_np_rsvd;
 	_memset(&wifi_user_config, 0, sizeof(struct wifi_user_conf));
 
-	/* below items for user config, for details, see wifi_user_conf in wifi_intf_drv_to_app_basic.h */
+	/* below items for user config, for details, see wifi_user_conf in ameba_wificfg_common.h */
 	wifi_user_config.concurrent_enabled = 1;
 	wifi_user_config.softap_addr_offset_idx = 1;
 	wifi_user_config.fast_reconnect_en = 1;
@@ -45,10 +45,6 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.rx_ampdu_num = 8;
 #else
 	wifi_user_config.skb_num_np = 10; /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
-#ifdef CONFIG_WIFI_TUNNEL
-	skb_num_np_rsvd = 16; /*4 for rx_ring_buffer + 2 for mgnt trx + 10 for tunnel tx */
-	wifi_user_config.skb_num_np = 20; /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
-#endif
 	wifi_user_config.skb_num_ap = 4;
 	wifi_user_config.rx_ampdu_num = 4;
 #endif
@@ -118,11 +114,16 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.acs_en = 0;
 
 	/*R-mesh*/
+	wifi_user_config.wtn_en = 0;
 	wifi_user_config.wtn_strong_rssi_thresh = -50;
 	wifi_user_config.wtn_father_refresh_timeout = 3000;
 	wifi_user_config.wtn_child_refresh_timeout = 4000;
 	wifi_user_config.wtn_rnat_en = 0;
 	wifi_user_config.wtn_max_node_num = 15;
+	if (wifi_user_config.wtn_en) {
+		skb_num_np_rsvd = 16; /*4 for rx_ring_buffer + 2 for mgnt trx + 10 for tunnel tx */
+		wifi_user_config.skb_num_np = 20; /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
+	}
 
 	/* ensure skb_num_np >= rx_ampdu_num + skb_num_np_rsvd */
 	if (wifi_user_config.skb_num_np < wifi_user_config.rx_ampdu_num + skb_num_np_rsvd) {

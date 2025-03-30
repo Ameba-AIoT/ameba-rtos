@@ -79,11 +79,11 @@
 #include <linux/of_gpio.h>
 
 /* fullmac headers. */
-#include "rom_rtw_defs.h"
-#include "rtw_wifi_defs.h"
 #include "whc_host_wiphy.h"
-#include "wifi_intf_drv_to_app_basic.h"
+#include "wifi_api_types.h"
+#include "wifi_api_event.h"
 #include "whc_host_trx.h"
+#include "ameba_wificfg_common.h"
 
 #ifdef CONFIG_FULLMAC_HCI_IPC
 /* ipc driver. */
@@ -186,7 +186,7 @@ struct wps_str {
 
 #define MFPR_BIT BIT(0)
 #define MFPC_BIT BIT(1)
-
+#define _WEAK           __attribute__ ((weak))
 /******************************************************************/
 /***************** inline functions for fullmac. *****************/
 /******************************************************************/

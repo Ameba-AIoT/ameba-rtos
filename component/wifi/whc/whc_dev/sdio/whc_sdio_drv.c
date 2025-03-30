@@ -7,6 +7,30 @@ void rtw_pending_q_resume(void);
 void (*bt_inic_sdio_recv_ptr)(uint8_t *buffer, uint16_t len);
 #endif
 
+static u32 whc_sdio_dev_suspend(u32 expected_idle_time, void *param)
+{
+	UNUSED(expected_idle_time);
+	UNUSED(param);
+
+	if (pmu_get_sleep_type() == SLEEP_PG) {
+		struct spdio_t *dev = &sdio_priv.dev;
+		spdio_deinit(dev);
+	}
+
+	return TRUE;
+}
+
+static u32 whc_sdio_dev_resume(u32 expected_idle_time, void *param)
+{
+	UNUSED(expected_idle_time);
+	UNUSED(param);
+	if (pmu_get_sleep_type() == SLEEP_PG) {
+		struct spdio_t *dev = &sdio_priv.dev;
+		spdio_init(dev);
+	}
+	return TRUE;
+}
+
 static char whc_sdio_dev_rpwm_cb(void *priv, u16 value)
 {
 	UNUSED(priv);
@@ -42,7 +66,7 @@ static char whc_sdio_dev_tx_done_cb(void *priv, void *pbuf)
 
 	rtos_sema_give(sdio_priv.rxbd_release_sema);
 
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 /*spdio rx done callback (HOST->Device), manage your package and buffer*/
@@ -67,7 +91,7 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 			/* resume pending queue to release skb */
 			rtw_pending_q_resume();
 #endif
-			return FAIL;
+			return RTK_FAIL;
 		}
 
 		/* assign new buffer for SPDIO RX ring */
@@ -102,7 +126,7 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 
 		if (buf == NULL) {
 			RTK_LOGE(TAG_WLAN_INIC, "%s, can't alloc buffer!!\n", __func__);
-			return FAIL;
+			return RTK_FAIL;
 		}
 
 		memcpy(buf, pdata, size);
@@ -112,7 +136,7 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 		/* free buf later, sdio ring buffer no need to modify. */
 	}
 
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 void whc_sdio_dev_init(void)
@@ -155,6 +179,8 @@ void whc_sdio_dev_init(void)
 	rtos_sema_create_static(&sdio_priv.rxbd_release_sema, 0, 0xFFFFFFFF);
 
 	spdio_init(dev);
+
+	pmu_register_sleep_callback(PMU_FULLMAC_WIFI, (PSM_HOOK_FUN)whc_sdio_dev_suspend, NULL, (PSM_HOOK_FUN)whc_sdio_dev_resume, NULL);
 
 	RTK_LOGI(TAG_WLAN_INIC, "SDIO device init done!\n");
 

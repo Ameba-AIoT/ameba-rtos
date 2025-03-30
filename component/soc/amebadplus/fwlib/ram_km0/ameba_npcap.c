@@ -101,7 +101,7 @@ int km4_suspend(u32 type)
 {
 	UNUSED(type);
 
-	int ret = SUCCESS;
+	int ret = RTK_SUCCESS;
 
 	if (HAL_READ32(PMC_BASE, WAK_MASK0_AP)) {
 		RTK_LOGD(TAG, "register KM4_wake_irq\n");
@@ -169,7 +169,7 @@ void km4_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqSta
 	case SLEEP_PG:
 	case SLEEP_CG:
 		/* KM4 & KM0 share platform, KM4 enter CG first*/
-		if (SUCCESS == km4_suspend(SLEEP_CG)) {
+		if (RTK_SUCCESS == km4_suspend(SLEEP_CG)) {
 			//pmu_set_sysactive_time(2);
 		}
 		break;

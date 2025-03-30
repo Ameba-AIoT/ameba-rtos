@@ -284,6 +284,9 @@ _LONG_CALL_ void Pinmux_Swdoff(void);
 #define APAD_OUT_PAD_START			_PB_16
 #define APAD_OUT_PAD_END			_PB_17
 
+#define UART_LOG_RXD        _PA_19
+#define UART_LOG_TXD        _PA_20
+
 #define SWD_DATA					_PB_0
 #define	SWD_CLK						_PB_1
 /** @} */

@@ -5,10 +5,10 @@
 */
 
 #ifdef CONFIG_FULLMAC
-#include <rtw_cfg80211_fullmac.h>
+#include <whc_host_linux.h>
 #else
 #include "platform_autoconf.h"
-#include <wifi_conf.h>
+#include <wifi_api.h>
 #endif
 
 struct wifi_user_conf wifi_user_config __attribute__((aligned(64)));
@@ -18,7 +18,7 @@ _WEAK void wifi_set_user_config(void)
 	int skb_num_np_rsvd = 6; /* 4 for rx_ring_buffer + 2 for mgnt trx */
 	_memset(&wifi_user_config, 0, sizeof(struct wifi_user_conf));
 
-	/* below items for user config, for details, see wifi_user_conf in wifi_intf_drv_to_app_basic.h */
+	/* below items for user config, for details, see wifi_user_conf in ameba_wificfg_common.h */
 	wifi_user_config.concurrent_enabled = 1;
 	wifi_user_config.softap_addr_offset_idx = 1;
 	wifi_user_config.fast_reconnect_en = 1;
@@ -106,13 +106,17 @@ _WEAK void wifi_set_user_config(void)
 	/* ensure skb_num_np >= rx_ampdu_num + skb_num_np_rsvd */
 	if (wifi_user_config.skb_num_np < wifi_user_config.rx_ampdu_num + skb_num_np_rsvd) {
 		wifi_user_config.skb_num_np = wifi_user_config.rx_ampdu_num + skb_num_np_rsvd;
+#ifndef CONFIG_FULLMAC
 		RTK_LOGW(TAG_WLAN_DRV, "change skb_num_np to %d\n", wifi_user_config.skb_num_np);
+#endif
 	}
 
 	/* ensure ap_sta_num not exceed 12*/
 	if (wifi_user_config.ap_sta_num > 12) {
 		wifi_user_config.ap_sta_num = 12;
+#ifndef CONFIG_FULLMAC
 		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to 12\n");
+#endif
 	}
 }
 

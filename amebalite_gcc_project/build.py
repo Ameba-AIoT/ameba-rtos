@@ -10,7 +10,6 @@ import shutil
 import sys
 
 DEFAULT_BUILD_DIR = 'build'
-AMEBA_RLS = True
 
 project_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -70,15 +69,6 @@ def main(argc, argv):
 
     if os.path.exists(build_dir):
         if args.pristine:
-            cmd = 'cd ' + build_dir + ' && ninja clean'
-            try:
-                rc = os.system(cmd)
-            except:
-                rc = 1
-            if rc != 0:
-                print('Warning: Fail to clean project')
-            else:
-                pass
             shutil.rmtree(build_dir)
             os.makedirs(build_dir)
         else:
@@ -108,13 +98,12 @@ def main(argc, argv):
         for defs in args.Defined:
             cmd += ' -D' + defs
 
-    #TODO: For temporary compatibility, remove when use new cmake
-    if not AMEBA_RLS:
-        if args.Defined:
-            if not any(s.startswith("CMAKE_REFACTOR=") for s in args.Defined):
-                cmd += f' -D CMAKE_REFACTOR="TRUE"'
-        else:
+    #TODO: For temporary compatibility, remove when wifi fully support new cmake
+    if args.Defined:
+        if not any(s.startswith("CMAKE_REFACTOR=") for s in args.Defined):
             cmd += f' -D CMAKE_REFACTOR="TRUE"'
+    else:
+        cmd += f' -D CMAKE_REFACTOR="TRUE"'
 
     cmd += ' -G Ninja && ninja'
 

@@ -12,9 +12,11 @@
 #include "dlist.h"
 
 /* Exported defines ----------------------------------------------------------*/
-
-#define UVC_USE_HW						0	/* use uvc hw decoder */
-
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAL2)
+#define UVC_USE_HW						1	/* use uvc hw decoder */
+#else
+#define UVC_USE_HW						0
+#endif
 #define UVC_GET_FRAME_TIMEOUT			2000   /* unit:ms */
 
 /*Supported type*/

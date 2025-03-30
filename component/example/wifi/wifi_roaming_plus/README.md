@@ -14,7 +14,7 @@ None
 
 # SW configuration
 
-1. Comment out the following line of code in `wlan_initialize()`
+1. Comment out the following line of code in `wifi_init()`
 	```C
 	wifi_fast_connect_enable(1);
 	```

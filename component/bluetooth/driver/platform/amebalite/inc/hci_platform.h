@@ -7,7 +7,7 @@
 #ifndef _HCI_PLATFORM_H_
 #define _HCI_PLATFORM_H_
 
-#include "./hci_uart.h"
+#include "hci_uart.h"
 #include "ameba_soc.h"
 #include "platform_stdlib.h"
 

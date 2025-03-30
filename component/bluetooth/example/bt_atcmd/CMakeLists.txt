@@ -45,41 +45,62 @@ ameba_list_append(private_sources
 	atcmd_bt_example.c
 	atcmd_bt_gap.c
 	atcmd_bt_le_gap.c
-	atcmd_bt_br_gap.c
 	atcmd_bt_gatts.c
 	atcmd_bt_gattc.c
 	atcmd_bt_vendor.c
-	atcmd_bt_sdp.c
-	atcmd_bt_a2dp.c
-	atcmd_bt_avrcp.c
-	atcmd_bt_spp.c
-	atcmd_bt_rfc.c
-	atcmd_bt_hid.c
-	atcmd_bt_hfp.c
-	atcmd_bt_iso.c
-	atcmd_bt_pbap.c
-	atcmd_bt_bap.c
-	atcmd_bt_cap.c
-	atcmd_bt_tmap.c
-	atcmd_bt_gmap.c
-	atcmd_bt_mesh_common.c
-	atcmd_bt_mesh_config_model.c
-	atcmd_bt_mesh_datatrans_model.c
-	atcmd_bt_mesh_device_firmware_update_model.c
-	atcmd_bt_mesh_goo_model.c
-	atcmd_bt_mesh_remote_prov_model.c
-	atcmd_bt_mesh_light_model.c
-	atcmd_bt_mesh_time_model.c
-	atcmd_bt_mesh_scheduler_model.c
-	atcmd_bt_mesh_scene_model.c
-	atcmd_bt_mesh_generic_default_transition_time.c
-	atcmd_bt_mesh_generic_model.c
-	atcmd_bt_mesh_sensor_model.c
-	atcmd_bt_mesh_health_model.c
-	atcmd_bt_mesh_directed_forwarding.c
-	atcmd_bt_mesh_subnet_bridge_model.c
-	atcmd_bt_mesh_private_beacon_model.c
 )
+
+if(CONFIG_BT_HAS_BREDR)
+	ameba_list_append(private_sources
+		atcmd_bt_br_gap.c
+		atcmd_bt_sdp.c
+		atcmd_bt_a2dp.c
+		atcmd_bt_avrcp.c
+		atcmd_bt_spp.c
+		atcmd_bt_rfc.c
+		atcmd_bt_hid.c
+		atcmd_bt_hfp.c
+	)
+endif()
+
+if(CONFIG_BT_HAS_MESH)
+	ameba_list_append(private_sources
+		atcmd_bt_mesh_common.c
+		atcmd_bt_mesh_config_model.c
+		atcmd_bt_mesh_datatrans_model.c
+		atcmd_bt_mesh_device_firmware_update_model.c
+		atcmd_bt_mesh_goo_model.c
+		atcmd_bt_mesh_remote_prov_model.c
+		atcmd_bt_mesh_light_model.c
+		atcmd_bt_mesh_time_model.c
+		atcmd_bt_mesh_scheduler_model.c
+		atcmd_bt_mesh_scene_model.c
+		atcmd_bt_mesh_generic_default_transition_time.c
+		atcmd_bt_mesh_generic_model.c
+		atcmd_bt_mesh_sensor_model.c
+		atcmd_bt_mesh_health_model.c
+		atcmd_bt_mesh_directed_forwarding.c
+		atcmd_bt_mesh_subnet_bridge_model.c
+		atcmd_bt_mesh_private_beacon_model.c
+	)
+endif()
+
+if(CONFIG_BT_HAS_LEAUDIO)
+	ameba_list_append(private_sources
+		atcmd_bt_iso.c
+		atcmd_bt_pbap.c
+		atcmd_bt_bap.c
+		atcmd_bt_cap.c
+		atcmd_bt_tmap.c
+		atcmd_bt_gmap.c
+	)
+endif()
+
+if(CONFIG_AMEBADPLUS)
+	ameba_list_append(private_sources
+		atcmd_bt_cmd_sync.c
+	)
+endif()
 
 ameba_list_append(private_includes
     ../gatt_service/client

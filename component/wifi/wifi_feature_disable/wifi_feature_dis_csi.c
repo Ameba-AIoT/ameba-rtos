@@ -14,7 +14,7 @@
  *****************************************************************************/
 #define __WIFI_FEATURE_DIS_CSI_C__
 
-#include "wifi_intf_drv_to_app_types.h"
+#include "wifi_api_types.h"
 
 #ifdef CONFIG_CSI
 void wifi_hal_csi_deinit(void *a)

@@ -72,24 +72,6 @@ struct task_struct wifi_autoreconnect_task = {0};
  ******************************************************/
 #if CONFIG_WLAN
 //----------------------------------------------------------------------------//
-#ifdef CONFIG_WIFI_HOST_BRIDGE
-int wifi_bridge_get_ip(uint8_t *ip)
-{
-	memset(ip, 0, 4);
-	whc_host_api_message_send(WHC_API_BRIDGE_GET_IP, NULL, 0, (uint8_t *)ip, 4);
-	return RTW_SUCCESS;
-
-}
-
-int wifi_bridge_dhcp(void)
-{
-	int ret = RTW_SUCCESS;
-	whc_host_api_message_send(WHC_API_BRIDGE_DHCP, NULL, 0, (uint8_t *)&ret, sizeof(int));
-	return ret;
-
-}
-#endif
-
 //----------------------------------------------------------------------------//
 int wifi_set_channel(unsigned char wlan_idx, u8 channel)
 {
@@ -127,20 +109,20 @@ int wifi_set_chplan(u8 chplan)
 //----------------------------------------------------------------------------//
 
 _OPTIMIZE_NONE_
-int wifi_get_scan_records(unsigned int *AP_num, char *scan_buf)
+int wifi_get_scan_records(unsigned int *ap_num, struct rtw_scan_result *ap_list)
 {
 	int ret = 0;
 	u32 param_buf[2];
 
 	/* SPI bufsize can only 24 */
-	if (*AP_num >= 20) {
-		*AP_num = 20;
+	if (*ap_num >= 20) {
+		*ap_num = 20;
 	}
 
-	param_buf[0] = (u32)(*AP_num);
-	param_buf[1] = (u32)scan_buf;
+	param_buf[0] = (u32)(*ap_num);
+	param_buf[1] = (u32)ap_list;
 
-	whc_host_api_message_send(WHC_API_WIFI_GET_SCANNED_AP_INFO, (u8 *)param_buf, 8, (u8 *)scan_buf, (*AP_num)*sizeof(struct rtw_scan_result));
+	whc_host_api_message_send(WHC_API_WIFI_GET_SCANNED_AP_INFO, (u8 *)param_buf, 8, (u8 *)ap_list, (*ap_num)*sizeof(struct rtw_scan_result));
 
 	return ret;
 }
@@ -261,7 +243,7 @@ int wifi_set_group_id(unsigned char value)
 {
 	rtw_sae_set_user_group_id(value);
 
-	return RTW_SUCCESS;
+	return RTK_SUCCESS;
 }
 
 int wifi_set_pmk_cache_enable(unsigned char value)
@@ -274,19 +256,6 @@ int wifi_set_pmk_cache_enable(unsigned char value)
 	return ret;
 }
 
-//----------------------------------------------------------------------------//
-int wifi_get_sw_statistic(unsigned char idx, struct _rtw_sw_statistics_t *statistic)
-{
-	u32 param_buf[2];
-	int ret = 0;
-
-	param_buf[0] = (u32)idx;
-
-	whc_host_api_message_send(WHC_API_WIFI_GET_SW_STATISTIC, (u8 *)param_buf, 4, (u8 *)statistic, sizeof(struct _rtw_sw_statistics_t));
-
-	return ret;
-}
-
 int wifi_get_phy_statistic(struct _rtw_phy_statistics_t *phy_statistic)
 {
 	int ret = 0;
@@ -295,20 +264,20 @@ int wifi_get_phy_statistic(struct _rtw_phy_statistics_t *phy_statistic)
 	return ret;
 }
 
-int wifi_get_network_mode(void)
+int wifi_get_wireless_mode(u8 *wmode)
 {
 	int ret = 0;
-	whc_host_api_message_send(WHC_API_WIFI_GET_NETWORK_MODE, NULL, 0, (u8 *)ret, sizeof(ret));
+	whc_host_api_message_send(WHC_API_WIFI_GET_WIRELESS_MODE, NULL, 0, (u8 *)wmode, sizeof(u8));
 	return ret;
 }
 
-int wifi_set_network_mode(u32 mode)
+int wifi_set_wireless_mode(u32 wmode)
 {
 	int ret = 0;
 	u32 param_buf[1];
 
-	param_buf[0] = (u32)mode;
-	whc_host_api_message_send(WHC_API_WIFI_SET_NETWORK_MODE, (u8 *)param_buf, 4, (u8 *)&ret, sizeof(ret));
+	param_buf[0] = (u32)wmode;
+	whc_host_api_message_send(WHC_API_WIFI_SET_WIRELESS_MODE, (u8 *)param_buf, 4, (u8 *)&ret, sizeof(ret));
 	return ret;
 }
 
@@ -542,35 +511,35 @@ int wifi_send_mgnt(struct _raw_data_desc_t *raw_data_desc)
 	return ret;
 }
 
-int wifi_set_tx_rate_by_ToS(unsigned char enable, unsigned char ToS_precedence, unsigned char tx_rate)
+int wifi_set_tx_rate_by_tos(unsigned char enable, unsigned char tos_precedence, unsigned char tx_rate)
 {
 	int ret = 0;
 	u32 param_buf[3];
 
 	param_buf[0] = (u32)enable;
-	param_buf[1] = (u32)ToS_precedence;
+	param_buf[1] = (u32)tos_precedence;
 	param_buf[2] = (u32)tx_rate;
 	whc_host_api_message_send(WHC_API_WIFI_SET_TXRATE_BY_TOS, (u8 *)param_buf, 12, (u8 *)&ret, sizeof(ret));
 	return ret;
 }
 
-int wifi_set_EDCA_param(unsigned int AC_param)
+int wifi_set_edca_param(unsigned int ac_param)
 {
 	int ret = 0;
 	u32 param_buf[1];
 
-	param_buf[0] = AC_param;
+	param_buf[0] = ac_param;
 	whc_host_api_message_send(WHC_API_WIFI_SET_EDCA_PARAM, (u8 *)param_buf, 4, (u8 *)&ret, sizeof(ret));
 	return ret;
 }
 
-int wifi_set_TX_CCA(unsigned char enable)
+int wifi_set_tx_cca_enable(unsigned char enable)
 {
 	int ret = 0;
 	u32 param_buf[1];
 
 	param_buf[0] = enable;
-	whc_host_api_message_send(WHC_API_WIFI_SET_TX_CCA, (u8 *)param_buf, 4, (u8 *)&ret, sizeof(ret));
+	whc_host_api_message_send(WHC_API_WIFI_SET_TX_CCA_EN, (u8 *)param_buf, 4, (u8 *)&ret, sizeof(ret));
 	return ret;
 }
 
@@ -609,19 +578,10 @@ int wifi_get_antdiv_info(unsigned char *antdiv_mode, unsigned char *curr_ant)
  *	WL_BAND_5G: only support 5G
  *      WL_BAND_2_4G_5G_BOTH: support both 2.4G and 5G
  */
-u8 wifi_get_band_type(void)
+int wifi_get_band_type(u8 *band_type)
 {
-	u8 ret;
-
-	whc_host_api_message_send(WHC_API_WIFI_GET_BAND_TYPE, NULL, 0, (u8 *)&ret, sizeof(ret));
-
-	if (ret == 0) {
-		return WL_BAND_2_4G;
-	} else if (ret == 1) {
-		return WL_BAND_5G;
-	} else {
-		return WL_BAND_2_4G_5G_BOTH;
-	}
+	whc_host_api_message_send(WHC_API_WIFI_GET_BAND_TYPE, NULL, 0, (u8 *)band_type, sizeof(band_type));
+	return RTK_SUCCESS;
 }
 
 int wifi_del_station(unsigned char *hwaddr)

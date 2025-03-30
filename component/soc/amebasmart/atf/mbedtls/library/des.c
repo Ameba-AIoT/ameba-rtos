@@ -355,7 +355,7 @@ void mbedtls_des_key_set_parity( unsigned char key[MBEDTLS_DES_KEY_SIZE] )
 }
 
 /*
- * Check the given key's parity, returns 1 on failure, 0 on SUCCESS
+ * Check the given key's parity, returns 1 on failure, 0 on RTK_SUCCESS
  */
 int mbedtls_des_key_check_key_parity( const unsigned char key[MBEDTLS_DES_KEY_SIZE] )
 {

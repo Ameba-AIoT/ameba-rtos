@@ -277,7 +277,14 @@ menu "CONFIG BT"
     config BT_MENU
         bool "Enable BT"
     if BT_MENU
-
+        # IC BT capability
+        config BT_HAS_BREDR
+            def_bool y
+        config BT_HAS_MESH
+            def_bool y
+        config BT_HAS_LEAUDIO
+            def_bool y
+    
         choice
             prompt "BT Mode Selection"
             default BT_BLE_ONLY
@@ -308,6 +315,7 @@ rsource "../component/ssl/Kconfig"
 
 #orsource "../component/wpan/Kconfig"
 
+rsource "../component/rtk_coex/Kconfig.coex"
 
 if !AMEBA_RLS
 comment "---------Test Config---------"

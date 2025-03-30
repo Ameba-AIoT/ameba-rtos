@@ -315,6 +315,8 @@ _LONG_CALL_ void PAD_InputCtrl(u8 PinName, u32 NewState);
 
 /** @} */
 
+#define UART_LOG_RXD        _PB_4
+#define UART_LOG_TXD        _PB_5
 #define SWD_CLK							_PA_30
 #define SWD_DAT							_PA_31
 

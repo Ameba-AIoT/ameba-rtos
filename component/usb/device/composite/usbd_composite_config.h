@@ -118,16 +118,13 @@
 #define USBD_COMP_MSC_HS_ITF_STRING            "Realtek HS MSC Device"
 #define USBD_COMP_MSC_FS_ITF_STRING            "Realtek FS MSC Device"
 
-#elif defined(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC_HID)  //hid+uac+acm
+#elif defined(CONFIG_USBD_COMPOSITE_HID_UAC)  //hid+uac
 
 #define USBD_COMP_UAC_PID                      (USBD_COMP_PID)
-#define USBD_COMP_OTA_PID                      (USBD_COMP_PID+1)
 
 /* Interfaces */
 #define USBD_COMP_UAC_AC_HEADSET               0x00
 #define USBD_COMP_UAC_AS_HEADSET_HEADPHONES    0x01
-#define USBD_COMP_CDC_COM_ITF                  0x00
-#define USBD_COMP_CDC_DAT_ITF                  0x01
 #define USBD_COMP_HID_ITF                      0x02
 #define USBD_COMP_HID_CONSUMER_ITF             0x03
 
@@ -139,12 +136,8 @@
 #define USBD_COMP_UAC_ISOC_IN_EP               0x83U
 #define USBD_COMP_UAC_ISOC_OUT_EP              0x04U
 
-#define USBD_COMP_CDC_BULK_IN_EP               0x83U
-#define USBD_COMP_CDC_BULK_OUT_EP              0x04U
-
 /* String indices */
 #define USBD_IDX_UAC_ITF_STR                   ((USBD_IDX_SERIAL_STR) + 1)
-#define USBD_IDX_CDC_ITF_STR                   ((USBD_IDX_SERIAL_STR) + 1)
 #define USBD_IDX_HID_ITF_STR                   ((USBD_IDX_SERIAL_STR) + 2)
 #define USBD_IDX_HID_CONSUMER_ITF_STR          ((USBD_IDX_SERIAL_STR) + 3)
 
@@ -155,15 +148,13 @@
 #define USBD_COMP_HID_CONSUMER_FS_ITF_STRING   "Realtek FS HID Consumer Device"
 #define USBD_COMP_UAC_HS_ITF_STRING            "Realtek HS UAC Device"
 #define USBD_COMP_UAC_FS_ITF_STRING            "Realtek FS UAC Device"
-#define USBD_COMP_CDC_HS_ITF_STRING            "Realtek HS CDC ACM Device"
-#define USBD_COMP_CDC_FS_ITF_STRING            "Realtek FS CDC ACM Device"
 
 #define USBD_COMP_HID_MAX_BUF_SIZE             64U
 
 #define USBD_COMP_HID_REPORT_ID                0x1F
-#define USBD_COMP_HID_VOLUME_REPORT_ID         (USBD_COMP_HID_REPORT_ID) + 1
-#define USBD_COMP_HID_TX_PKT_SIZE              (USBD_COMP_HID_MAX_BUF_SIZE)-4
-#define USBD_COMP_HID_RX_PKT_SIZE              (USBD_COMP_HID_MAX_BUF_SIZE)-1
+#define USBD_COMP_HID_VOLUME_REPORT_ID         ((USBD_COMP_HID_REPORT_ID) + 1)
+#define USBD_COMP_HID_TX_PKT_SIZE              ((USBD_COMP_HID_MAX_BUF_SIZE)-4)
+#define USBD_COMP_HID_RX_PKT_SIZE              ((USBD_COMP_HID_MAX_BUF_SIZE)-1)
 
 #else
 #error "No composite class configured"
@@ -188,11 +179,9 @@ typedef struct {
 #elif defined(CONFIG_USBD_COMPOSITE_CDC_ACM_MSC)
 	usbd_class_driver_t *cdc;
 	usbd_class_driver_t *msc;
-#elif defined(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC_HID)
+#elif defined(CONFIG_USBD_COMPOSITE_HID_UAC)
 	usbd_class_driver_t *hid;  /* used for hid private command */
 	usbd_class_driver_t *uac;
-	usbd_class_driver_t *cdc_acm;
-	u8 usbd_comp_type;
 #endif
 
 	usbd_composite_cb_t *cb;

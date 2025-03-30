@@ -16,7 +16,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 #WARNING: Fixed section, DO NOT change!
 ameba_global_include(${public_includes})
-ameba_global_define(${public_defines})
+ameba_global_define(${public_definitions})
 ameba_global_library(${public_libraries})
 
 ##########################################################################################
@@ -38,10 +38,10 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources
-    ameba_audio_mixer_usrcfg.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/configs/ameba_audio_mixer_usrcfg.cpp
 )
 ameba_list_append(private_includes
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/configs/include
     ${c_CMPT_AUDIO_DIR}/interfaces
 )
 ameba_list_append(private_definitions
@@ -60,7 +60,7 @@ ameba_list_append(private_compile_options
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
-ameba_add_internal_library(audio_configs
+ameba_add_external_tmp_library(audio_configs
     p_SOURCES
         ${private_sources}
     p_INCLUDES

@@ -75,8 +75,8 @@ void whc_dev_init_priv(void)
 
 	/* Initialize the TX task */
 	/*modify single thread task's priority lower than INIC XMIT, https://jira.realtek.com/browse/AMEBALITE-434*/
-	if (SUCCESS != rtos_task_create(NULL, (const char *const)"inic_xmit_tasklet", (rtos_task_function_t)whc_dev_xmit_tasklet, NULL, 1024 * 4,
-									2)) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"inic_xmit_tasklet", (rtos_task_function_t)whc_dev_xmit_tasklet, NULL, 1024 * 4,
+										2)) {
 		RTK_LOGI(NOTAG, "Create inic_xmit_tasklet Err!!\n");
 	}
 }

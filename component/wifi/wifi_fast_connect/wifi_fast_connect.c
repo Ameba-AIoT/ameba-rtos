@@ -58,7 +58,7 @@ int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int server_
 	/* STEP1: get current connect info from wifi driver*/
 	if (wifi_get_setting(STA_WLAN_INDEX, &setting) || setting.mode == RTW_MODE_AP) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\r\n %s():wifi_get_setting fail or ap mode", __func__);
-		return RTW_ERROR;
+		return RTK_FAIL;
 	}
 
 	memset(&wifi_data_to_flash, 0, sizeof(struct wlan_fast_reconnect));
@@ -122,7 +122,7 @@ int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int server_
 		rt_kv_set("wlan_data", (uint8_t *)&wifi_data_to_flash, sizeof(struct wlan_fast_reconnect));
 	}
 
-	return RTW_SUCCESS;
+	return RTK_SUCCESS;
 }
 
 /*
@@ -242,7 +242,7 @@ WIFI_RETRY_LOOP:
 #endif
 
 		ret = wifi_connect(&wifi, 1);
-		if (ret != RTW_SUCCESS) {
+		if (ret != RTK_SUCCESS) {
 			wifi_retry_connect--;
 			if (wifi_retry_connect > 0) {
 				/* Add the delay to wait for the _rtw_join_timeout_handler
@@ -258,7 +258,7 @@ WIFI_RETRY_LOOP:
 			}
 		}
 #ifdef CONFIG_LWIP_LAYER
-		if (ret == RTW_SUCCESS) {
+		if (ret == RTK_SUCCESS) {
 			LwIP_DHCP(0, DHCP_START);
 		}
 #endif

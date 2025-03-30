@@ -134,7 +134,7 @@ static int pke_rsa_prime_generate(size_t nbits, uint8_t *num_buf, int flags)
 			}
 
 			/* witness(a, n) */
-			if (pke_rsa_witness(a_buf, nbits, num_buf, nbits) != SUCCESS) {
+			if (pke_rsa_witness(a_buf, nbits, num_buf, nbits) != RTK_SUCCESS) {
 				break;
 			}
 			round_t -= 1;
@@ -151,9 +151,9 @@ static int pke_rsa_prime_generate(size_t nbits, uint8_t *num_buf, int flags)
 	// printf("[%s] try loop: %d\n", __func__, max_loop - loops);
 
 	if (loops > 0) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 
@@ -178,8 +178,8 @@ static int mbedtls_mpi_gen_prime_pke(mbedtls_mpi *X, size_t nbits, int flags,
 	}
 
 	uint8_t *num_buf = malloc(nbits / 8);
-	if (SUCCESS != pke_rsa_prime_generate(nbits, num_buf, flags)) {
-		ret = FAIL;
+	if (RTK_SUCCESS != pke_rsa_prime_generate(nbits, num_buf, flags)) {
+		ret = RTK_FAIL;
 		goto cleanup;
 	}
 	mbedtls_mpi_read_binary_le(X, num_buf, nbits / 8);
@@ -318,7 +318,7 @@ static int mbedtls_mpi_exp_mod_prime_n(mbedtls_mpi *X, const mbedtls_mpi *A,
 	mbedtls_mpi_read_binary_le(X, X_mpi_le, N_size);
 
 	free(X_mpi_le);
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 int mbedtls_rsa_public(mbedtls_rsa_context *ctx, const unsigned char *input, unsigned char *output)
