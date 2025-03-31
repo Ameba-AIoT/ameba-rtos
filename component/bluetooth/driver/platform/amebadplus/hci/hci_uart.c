@@ -12,7 +12,7 @@
 #include "hal_platform.h"
 #include "hci_platform.h"
 #include "hci/hci_common.h"
-#include "wifi_conf.h"
+#include "wifi_intf_drv_to_app_internal.h"
 
 #define HCI_UART_DEV             (UART2_DEV)
 #define HCI_UART_IRQ             (UART2_BT_IRQ)
@@ -110,7 +110,7 @@ static uint32_t _uart_irq(void *data)
 {
 	(void)data;
 	uint32_t reg_lsr = UART_LineStatusGet(HCI_UART_DEV);
-	uint32_t reg_ier = HAL_READ32(UART2_REG_BASE, 0x4);
+	uint32_t reg_ier = HCI_UART_DEV->IER;
 
 	if (reg_lsr & RUART_BIT_RXND_INT) {
 		UART_INT_Clear(HCI_UART_DEV, RUART_BIT_RXNDICF);

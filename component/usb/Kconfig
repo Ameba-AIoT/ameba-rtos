@@ -83,9 +83,11 @@ menu "CONFIG USB"
         bool
     config USBD_COMPOSITE_CDC_ACM_HID
         bool
+    config USBD_COMPOSITE_CDC_ACM_MSC
+        bool
     config USBD_COMPOSITE_CDC_ACM_UAC
         bool
-    config USBD_COMPOSITE_CDC_ACM_UAC_HID
+    config USBD_COMPOSITE_HID_UAC
         bool
     config USBD_HID
         bool

@@ -675,8 +675,8 @@ int atcmd_ble_iso(int argc, char **argv)
 	return 0;
 }
 
-int bt_cap_main(uint8_t role, uint8_t enable, uint32_t sound_channel);
-int atcmd_bt_cap(int argc, char *argv[])
+int bt_generic_le_audio_demo_main(uint8_t role, uint8_t enable, uint32_t sound_channel);
+int atcmd_bt_generic_le_audio_demo(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t role;
@@ -722,7 +722,7 @@ int atcmd_bt_cap(int argc, char *argv[])
 			return -1;
 		}
 	}
-	if (bt_cap_main(role, op, channel)) {
+	if (bt_generic_le_audio_demo_main(role, op, channel)) {
 		BT_LOGE("Error: cap example %s failed!\r\n", action[op]);
 		return -1;
 	}

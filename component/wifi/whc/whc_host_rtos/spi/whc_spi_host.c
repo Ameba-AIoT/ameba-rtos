@@ -125,12 +125,19 @@ void whc_spi_host_rx_handler(u8 *buf)
 
 int whc_spi_host_recv_process(void)
 {
-	int ret = 0, counter = 0;
+	int ret = 0;
 	u32 event = *(u32 *)(spi_host_priv.rx_buf + SIZE_RX_DESC);
-	struct whc_api_info *ret_msg;
 	GDMA_InitTypeDef *GDMA_InitStruct = &(spi_host_priv.SSIRxGdmaInitStruct);
-	u8 *buf = NULL;
 	u8 *recv_msg = spi_host_priv.rx_buf;
+
+#ifdef CONFIG_WHC_BRIDGE_HOST
+	struct whc_bridge_hdr *hdr = NULL;
+#else
+	struct whc_api_info *ret_msg;
+	u8 *buf = NULL;
+	int counter = 0;
+#endif
+
 	/* disable gdma channel */
 	spi_host_priv.rx_buf = rtos_mem_zmalloc(SPI_BUFSZ);
 	DCache_CleanInvalidate((u32)spi_host_priv.rx_buf, SPI_BUFSZ);
@@ -142,6 +149,7 @@ int whc_spi_host_recv_process(void)
 	case WHC_WIFI_EVT_RECV_PKTS:
 		whc_spi_host_rx_handler(recv_msg);
 		break;
+#ifndef CONFIG_WHC_BRIDGE_HOST
 	case WHC_WIFI_EVT_API_CALL:
 		buf = rtos_mem_zmalloc(SPI_BUFSZ);
 		memcpy(buf, recv_msg, SPI_BUFSZ);
@@ -189,7 +197,13 @@ int whc_spi_host_recv_process(void)
 			}
 		}
 		RTK_LOGD(TAG_WLAN_INIC,  "%s: unknown event:%x\n", __func__, event);
+#else
+	case WHC_WIFI_EVT_BRIDGE:
+		hdr = (struct whc_bridge_hdr *)recv_msg;
+		whc_bridge_host_pkt_rx_to_user((u8 *)(hdr + 1), hdr->len);
+#endif
 	}
+
 	rtos_mem_free(recv_msg);
 	return ret;
 }
@@ -254,7 +268,7 @@ void whc_spi_host_rx_req_task(void)
 retry:
 		while (GPIO_ReadDataBit(DEV_READY_PIN) == DEV_BUSY) {
 			/* wait for sema*/
-			if (rtos_sema_take(spi_host_priv.dev_rdy_sema, 1000) == SUCCESS) {
+			if (rtos_sema_take(spi_host_priv.dev_rdy_sema, 1000) == RTK_SUCCESS) {
 				if (spi_host_priv.dev_state == DEV_BUSY) {
 					//RTK_LOGE(TAG_WLAN_INIC, "%s: wait dev busy timeout, can't recv data %x, %d \n\r", __func__, __builtin_return_address(0), spi_host_priv.dev_state);
 				}
@@ -488,12 +502,14 @@ static void whc_spi_host_spi_init(void)
 	spi_host_priv.dummy_tx_buf = rtos_mem_zmalloc(SPI_BUFSZ);
 	DCache_CleanInvalidate((u32)spi_host_priv.dummy_tx_buf, SPI_BUFSZ);
 
-	if (rtos_task_create(NULL, "SPI_RXDMA_IRQ_TASK", whc_spi_host_rxdma_irq_task, (void *)&spi_host_priv, WIFI_STACK_WHC_SPI_HOST_RXDMA_IRQ_TASK, 7) != SUCCESS) {
+	if (rtos_task_create(NULL, "SPI_RXDMA_IRQ_TASK", whc_spi_host_rxdma_irq_task, (void *)&spi_host_priv, WIFI_STACK_WHC_SPI_HOST_RXDMA_IRQ_TASK,
+						 7) != RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, "Create SPI_RXDMA_IRQ_TASK Err!!\n");
 		return;
 	}
 
-	if (rtos_task_create(NULL, "SPI_TXDMA_IRQ_TASK", whc_spi_host_txdma_irq_task, (void *)&spi_host_priv, WIFI_STACK_WHC_SPI_HOST_TXDMA_IRQ_TASK, 7) != SUCCESS) {
+	if (rtos_task_create(NULL, "SPI_TXDMA_IRQ_TASK", whc_spi_host_txdma_irq_task, (void *)&spi_host_priv, WIFI_STACK_WHC_SPI_HOST_TXDMA_IRQ_TASK,
+						 7) != RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, "Create SPI_TXDMA_IRQ_TASK Err!!\n");
 		return;
 	}
@@ -618,7 +634,7 @@ void whc_spi_host_send_data(struct whc_buf_info *pbuf)
 retry:
 	while (GPIO_ReadDataBit(DEV_READY_PIN) == DEV_BUSY) {
 		/* wait for sema*/
-		if (rtos_sema_take(spi_host_priv.dev_rdy_sema, 1000) == SUCCESS) {
+		if (rtos_sema_take(spi_host_priv.dev_rdy_sema, 1000) == RTK_SUCCESS) {
 			if (spi_host_priv.dev_state == DEV_BUSY) {
 				RTK_LOGD(TAG_WLAN_INIC, "%s: wait dev busy timeout, can't send data %x, %d \n\r", __func__, __builtin_return_address(0), spi_host_priv.dev_state);
 			}
@@ -687,22 +703,11 @@ static void whc_spi_host_drv_init(void)
 	spi_host_priv.rx_buf = NULL;
 
 	rtos_sema_give(spi_host_priv.host_send);
-	/* init event priv */
-	rtos_sema_create(&(event_priv.task_wake_sema), 0, 0xFFFFFFFF);
-	rtos_sema_create(&(event_priv.api_ret_sema), 0, 0xFFFFFFFF);
-	rtos_sema_create(&(event_priv.send_mutex), 1, 1);
-	rtos_sema_give(event_priv.send_mutex);
 
 	if (rtos_task_create(NULL, (const char *const)"SPI_RX_REQ_TASK", (rtos_task_function_t)whc_spi_host_rx_req_task, NULL, WIFI_STACK_SIZE_INIC_RX_REQ_TASK,
-						 6) != SUCCESS) {
+						 6) != RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, "Create SPI_RXDMA_IRQ_TASK Err!!\n");
 		return;
-	}
-
-	/* Initialize the event task */
-	if (SUCCESS != rtos_task_create(NULL, (const char *const)"whc_host_api_task", (rtos_task_function_t)whc_host_api_task, NULL,
-									WIFI_STACK_SIZE_INIC_IPC_HST_API, 3)) {
-		RTK_LOGE(TAG_WLAN_INIC, "Create api_host_task Err\n");
 	}
 
 	if (GPIO_ReadDataBit(DEV_READY_PIN)) {
@@ -712,6 +717,20 @@ static void whc_spi_host_drv_init(void)
 		spi_host_priv.dev_state = DEV_BUSY;
 		RTK_LOGE(TAG_WLAN_INIC, "!!!dev busy\n");
 	}
+
+#ifndef CONFIG_WHC_BRIDGE_HOST
+	/* init event priv */
+	rtos_sema_create(&(event_priv.task_wake_sema), 0, 0xFFFFFFFF);
+	rtos_sema_create(&(event_priv.api_ret_sema), 0, 0xFFFFFFFF);
+	rtos_sema_create(&(event_priv.send_mutex), 1, 1);
+	rtos_sema_give(event_priv.send_mutex);
+
+	/* Initialize the event task */
+	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"whc_host_api_task", (rtos_task_function_t)whc_host_api_task, NULL,
+										WIFI_STACK_SIZE_INIC_IPC_HST_API, 3)) {
+		RTK_LOGE(TAG_WLAN_INIC, "Create api_host_task Err\n");
+	}
+#endif
 
 }
 

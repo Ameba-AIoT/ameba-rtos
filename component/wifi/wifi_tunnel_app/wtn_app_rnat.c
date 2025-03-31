@@ -21,9 +21,9 @@
 /* -------------------------------- Includes -------------------------------- */
 #include "rtw_autoconf.h"
 #ifdef CONFIG_WIFI_TUNNEL
-#include "wifi_intf_drv_to_app_basic.h"
+#include "wifi_api.h"
 #include "lwip_netconf.h"
-#include "wifi_conf.h"
+#include "wifi_api.h"
 #include "dhcp/dhcps.h"
 #include "wtn_app_rnat.h"
 
@@ -189,11 +189,13 @@ static void rnat_ap_start_thread(void *param)
 	u32 gw;
 	struct _rtw_wifi_setting_t wifi_setting = {0};
 	struct _rtw_softap_info_t softap_config = {0};
+	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 	u8 timeout = 20;
 
 	/*step1: check if STA port connected to AP successfully*/
 	while (1) {
-		if ((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID)) {
+		if (wifi_get_join_status(&join_status) == RTK_SUCCESS
+			&& (join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID)) {
 			break;
 		}
 		rtos_time_delay_ms(200);
@@ -217,7 +219,7 @@ static void rnat_ap_start_thread(void *param)
 	memcpy(softap_config.ssid.val, wifi_setting.ssid, softap_config.ssid.len);
 	memcpy(rptssid, wifi_setting.ssid, softap_config.ssid.len);
 	if (rptssid == NULL) {
-		rptssid = (char *)rtos_mem_zmalloc(WHC_MAX_SSID_LENGTH);
+		rptssid = (char *)rtos_mem_zmalloc(RTW_ESSID_MAX_SIZE + 1);
 	}
 	memcpy(rptssid, wifi_setting.ssid, softap_config.ssid.len);
 	if (wifi_start_ap(&softap_config) < 0) {
@@ -261,12 +263,12 @@ void wtn_rnat_ap_init(u8 enable)
 		wifi_repeater_ap_config_complete = 0;
 
 		if (rnat_ap_start_task_hdl == NULL) {
-			if (rtos_task_create(&rnat_ap_start_task_hdl, ((const char *)"rnat_start_thread"), rnat_ap_start_thread, NULL, 1024 * 4, 1) != SUCCESS) {
+			if (rtos_task_create(&rnat_ap_start_task_hdl, ((const char *)"rnat_start_thread"), rnat_ap_start_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS,  "\n\r%s rtos_task_create failed\n", __FUNCTION__);
 			}
 		}
 		if (rnat_poll_ip_task_hdl == NULL) {
-			if (rtos_task_create(&rnat_poll_ip_task_hdl, ((const char *)"rnat_poll_ip_changed_thread"), rnat_poll_ip_changed_thread, NULL, 1024 * 4, 1) != SUCCESS) {
+			if (rtos_task_create(&rnat_poll_ip_task_hdl, ((const char *)"rnat_poll_ip_changed_thread"), rnat_poll_ip_changed_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s rtos_task_create failed\n", __FUNCTION__);
 			}
 			dns_relay_service_init();

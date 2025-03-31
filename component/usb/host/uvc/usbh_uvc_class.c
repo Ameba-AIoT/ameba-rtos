@@ -22,7 +22,7 @@ extern usbh_uvc_host_t uvc_host;
 
 static int usbh_uvc_attach(usb_host_t *host);
 static int usbh_uvc_detach(usb_host_t *host);
-static int usbh_uvc_process(usb_host_t *host);
+static int usbh_uvc_process(usb_host_t *host, u32 msg);
 static int usbh_uvc_sof(usb_host_t *host);
 static int usbh_uvc_setup(usb_host_t *host);
 
@@ -166,12 +166,13 @@ static int usbh_uvc_setup(usb_host_t *host)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_uvc_process(usb_host_t *host)
+static int usbh_uvc_process(usb_host_t *host, u32 msg)
 {
 	int status = HAL_BUSY;
 	usbh_uvc_host_t *uvc = &uvc_host;
 	int i;
 	UNUSED(host);
+	UNUSED(msg);
 
 	for (i = 0; i < uvc->uvc_desc.vs_num; i ++) {
 		if (uvc->stream[i].stream_data_state == STREAM_DATA_IN) {

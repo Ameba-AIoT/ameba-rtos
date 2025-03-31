@@ -1,0 +1,36 @@
+if WLAN_MENU && !FULLMAC_HOST
+    menu "CONFIG COEX"
+        config COEX_MENU
+            bool "Enable Coex"
+            default y if !AMEBAL2 && !AMEBASMARTPLUS && !AMEBAGREEN2
+
+        if COEX_MENU
+            config BT_COEXIST
+                bool
+                # AP core, Follow different scenario
+                default y if ((AS_INIC_AP && !SPI_FULLMAC_HOST) || (FULLMAC_DEV && CONFIG_BT)) && !SINGLE_CORE_WIFI
+                # NP core, Follow WLAN
+                default y if (AS_INIC_NP || SINGLE_CORE_WIFI)
+            
+                select COEXIST_HOST if ((AS_INIC_AP && !SPI_FULLMAC_HOST) || (FULLMAC_DEV && CONFIG_BT)) && !SINGLE_CORE_WIFI
+                select COEXIST_DEV if (AS_INIC_NP || SINGLE_CORE_WIFI)
+
+            config COEXIST_HOST
+                bool            
+            config COEXIST_DEV
+                bool
+
+            # menu "CONFIG PTA MODE"
+            #     config EXT_ZB
+            #         bool "Enable PTA SIMPLE"
+            #         default y
+            #     if !BT
+            #         config EXT_BT
+            #             bool "Enable PTA MULTIPLE"
+            #             default n
+            #     endif
+            # endmenu
+        endif
+    endmenu
+
+endif

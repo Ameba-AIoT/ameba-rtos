@@ -70,8 +70,8 @@ enum mqtt_status {
 enum QoS { QOS0, QOS1, QOS2 };
 
 /* all failure return codes must be negative */
-#undef SUCCESS
-enum returnCode { BUFFER_OVERFLOW = -2, FAILURE = -1, SUCCESS = 0};//,
+#undef RTK_SUCCESS
+enum returnCode { BUFFER_OVERFLOW = -2, FAILURE = -1, RTK_SUCCESS = 0};//,
 
 /* The Platform specific header must define the Network and Timer structures and functions
  * which operate on them.

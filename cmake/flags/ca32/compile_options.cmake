@@ -1,11 +1,11 @@
-set(d_GLOBAL_MCU_COMPILE_DEFINES)
-set(d_GLOBAL_MCU_COMPILE_C_OPTIONS)
-set(d_GLOBAL_MCU_COMPILE_CPP_OPTIONS)
-set(d_GLOBAL_MCU_COMPILE_ASM_OPTIONS)
+set(c_GLOBAL_MCU_COMPILE_DEFINES)
+set(c_GLOBAL_MCU_COMPILE_ASM_OPTIONS)
+set(c_GLOBAL_MCU_COMPILE_C_OPTIONS)
+set(c_GLOBAL_MCU_COMPILE_CPP_OPTIONS)
 
-# +++++++++++++++++ d_GLOBAL_MCU_COMPILE_DEFINES ++++++++++++++++ #
-list(APPEND d_GLOBAL_MCU_COMPILE_DEFINES
-    #TODO: add global mcu define config here
+# +++++++++++++++++ c_GLOBAL_MCU_COMPILE_DEFINES ++++++++++++++++ #
+ameba_list_append(c_GLOBAL_MCU_COMPILE_DEFINES
+    #TODO: why global mcu define config here?
     CONFIG_GIC_VER=${v_GIC_VER}
     configINTERRUPT_CONTROLLER_VERSION=${v_GIC_VER}
     CONFIG_CPUS_NUM=${CONFIG_CORE_NUM}
@@ -20,45 +20,30 @@ list(APPEND d_GLOBAL_MCU_COMPILE_DEFINES
     HW_ASSISTED_COHERENCY=0
     ENABLE_ASSERTIONS=1
     WARMBOOT_ENABLE_DCACHE_EARLY=0
-
-
 )
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
-# ++++++++++++++++ d_GLOBAL_MCU_COMPILE_C_OPTIONS +++++++++++++++ #
-list(APPEND d_GLOBAL_MCU_COMPILE_C_OPTIONS
+# +++++++++++++++ c_GLOBAL_MCU_COMPILE_ASM_OPTIONS ++++++++++++++ #
+ameba_list_append(c_GLOBAL_MCU_COMPILE_ASM_OPTIONS
     -mcpu=cortex-a32
     -mfpu=neon
     -mfloat-abi=hard
+)
+
+ameba_list_append_if(CONFIG_DYNAMIC_APP_LOAD_EN c_GLOBAL_MCU_COMPILE_ASM_OPTIONS
+    -ffixed-r9
+)
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
+
+# ++++++++++++++++ c_GLOBAL_MCU_COMPILE_C_OPTIONS +++++++++++++++ #
+ameba_list_append(c_GLOBAL_MCU_COMPILE_C_OPTIONS
+    ${c_GLOBAL_MCU_COMPILE_ASM_OPTIONS}
     -marm
-    -fno-jump-tables #For link _thumb1_case_uqi issue
 )
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
-# +++++++++++++++ d_GLOBAL_MCU_COMPILE_CPP_OPTIONS ++++++++++++++ #
-list(APPEND d_GLOBAL_MCU_COMPILE_CPP_OPTIONS
-    #TODO: add global mcu compile option for cpp here
-    ${d_GLOBAL_MCU_COMPILE_C_OPTIONS}
+# +++++++++++++++ c_GLOBAL_MCU_COMPILE_CPP_OPTIONS ++++++++++++++ #
+ameba_list_append(c_GLOBAL_MCU_COMPILE_CPP_OPTIONS
+    ${c_GLOBAL_MCU_COMPILE_C_OPTIONS}
 )
-list(REMOVE_ITEM d_GLOBAL_MCU_COMPILE_CPP_OPTIONS  -Wstrict-prototypes)
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
-
-# +++++++++++++++ d_GLOBAL_MCU_COMPILE_ASM_OPTIONS ++++++++++++++ #
-list(APPEND d_GLOBAL_MCU_COMPILE_ASM_OPTIONS
-    #TODO: add global mcu compile option for asm here
-    -mcpu=cortex-a32
-    -mfpu=vfpv4
-    -mfloat-abi=hard
-)
-
-if(CONFIG_DYNAMIC_APP_LOAD_EN)
-    list(APPEND d_GLOBAL_MCU_COMPILE_C_OPTIONS
-        -ffixed-r9
-    )
-    list(APPEND d_GLOBAL_MCU_COMPILE_ASM_OPTIONS
-        -ffixed-r9
-    )
-endif()
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
-
-

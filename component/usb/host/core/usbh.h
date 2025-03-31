@@ -20,7 +20,6 @@
 /* USB Host interrupt enable flag*/
 /* GINTSTS */
 #define USBH_SOF_INTR                 (BIT0) /* Start of (micro)Frame GINTSTS.bit3 */
-#define USBH_ICOP_INTR                (BIT1) /* Incomplete period transfer GINTSTS.bit21 */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -126,27 +125,23 @@ typedef union {
 /* USB user configuration */
 typedef struct {
 	u32 ext_intr_en;                                    /* allow class to enable some interrupts*/
+
+	u16 rx_fifo_depth;                                  /* RxFIFO depth in size of dword*/
+	u16 nptx_fifo_depth;                                /* npTxFIFO depth in size of dword*/
+	u16 ptx_fifo_depth;                                 /* pTxFIFO depth in size of dword*/
+
 	u8 main_task_priority;								/* USB main thread priority */
 	u8 isr_task_priority;								/* USB ISR thread priority */
 	u8 alt_max;											/* USB support max alt setting num */
 
-	u8 pipes : 4;										/* Max host pipes used, ch max 15 */
 	u8 speed : 2;										/* USB speed, USB_SPEED_HIGH, USB_SPEED_HIGH_IN_FULL or USB_SPEED_LOW 0~3*/
 	u8 dma_enable : 1;									/* Enable USB internal DMA mode, 0-Disable, 1-Enable */
-	/* 	For shared FIFO mode, e.g. AmabeD, AmebaSmart and AmebaDplus, the total DFIFO depth is 1016,
-		and it is shared by RxFIFO, NPTxFIFO and PTxFIFO.
-		This parameter specifies whether to assign a full PTxFIFO depth to support 1024 byte periodic transfer package size:
-			ptx_fifo_first = 0:
-				RxFIFO = 512
-				NPTxFIFO = 256
-				PTxFIFO = 248
 
-			ptx_fifo_first = 1:
-				RxFIFO = 504
-				NPTxFIFO = 256
-				PTxFIFO = 256  // Total DFIFO - RxFIFO - NPTxFIFO
+	/* 	used for get the usb host tick
+		if sof_tick_en = 1, usbh_get_current_tick will return the tick which support by sof interrupt(should enable sof interrupt)
+		if sof_tick_en = 0, usbh_get_current_tick will return the tick which got from the timestamp
 	*/
-	u8 ptx_fifo_first : 1;
+	u8 sof_tick_en : 1;
 } usbh_config_t;
 
 struct _usb_host_t;
@@ -157,7 +152,7 @@ typedef struct {
 	int(*attach)(struct _usb_host_t *host);				/* Called after set configuration */
 	int(*detach)(struct _usb_host_t *host);				/* Called when device disconnected */
 	int(*setup)(struct _usb_host_t *host);				/* Called after class attached to process class standard control requests */
-	int(*process)(struct _usb_host_t *host);				/* Called after class setup to process class specific transfers */
+	int(*process)(struct _usb_host_t *host, u32 msg);		/* Called after class setup to process class specific transfers */
 	int(*sof)(struct _usb_host_t *host);					/* Called at SOF interrupt */
 	int(*nak)(struct _usb_host_t *host, u8 pipe_num);		/* Called at NAK interrupt of specific pipe */
 } usbh_class_driver_t;
@@ -231,8 +226,13 @@ usbh_if_desc_t *usbh_get_interface_descriptor(usb_host_t *host, u8 if_num, u8 al
 
 /* Get the interval value */
 u32 usbh_get_interval(usb_host_t *host, u8 ep_type, u8 binterval);
+
 /* Get the tick difference */
-u32 usbh_get_elapsed_ticks(usb_host_t *host, u32 tick);
+u32 usbh_get_elapsed_ticks(usb_host_t *host, u32 start_tick);
+
+/* Get Current time tick*/
+u32 usbh_get_current_tick(usb_host_t *host);
+
 /* Get raw configuration descriptor data */
 u8 *usbh_get_raw_configuration_descriptor(usb_host_t *host);
 
@@ -253,9 +253,9 @@ u8 usbh_get_toggle(usb_host_t *host, u8 pipe_num);
 usbh_urb_state_t usbh_get_urb_state(usb_host_t *host, u8 pipe_num);
 
 /* Notify host core that class state has been changed */
-void usbh_notify_class_state_change(usb_host_t *host);
+void usbh_notify_class_state_change(usb_host_t *host, u32 param);
 /* Notify host core that URB state has been changed */
-void usbh_notify_urb_state_change(usb_host_t *host);
+void usbh_notify_urb_state_change(usb_host_t *host, u32 param);
 
 /* Transfer operations */
 int usbh_ctrl_set_interface(usb_host_t *host, u8 if_num, u8 if_alt);

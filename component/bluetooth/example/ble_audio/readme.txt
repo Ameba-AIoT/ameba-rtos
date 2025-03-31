@@ -1,6 +1,6 @@
-##################################################################################
+﻿##################################################################################
 #                                                                                #
-#                           CAP demo                                             #
+#                      Generic LE Audio demo                   #
 #                                                                                #
 ##################################################################################
 
@@ -19,7 +19,7 @@ Configure the following Macros in bt_api_config.h
 GCC menuconfig 
 ~~~~~~~~~~~
 1. BT Related:
-    ./menuconfig.py --> CONFIG BT --> BT Example Demo --> BLE Audio
+    ./menuconfig.py --> CONFIG BT --> BT Example Demo --> BLE Audio --> BLE Audio Generic Demo
 2. Audio Related:
     ./menuconfig.py --> MENUCONFIG FOR CA32 CONFIG --> Audio Config --> Select Audio Interfaces (Mixer)
     or
@@ -34,11 +34,11 @@ GCC menuconfig
      4.5 Config RTK_BT_LE_MEDIA_AUDIO_CFG_PREFER to change le audio config type(Default is RTK_BT_LE_UNICAST_AUDIO_CFG_4_BIT for single channel and RTK_BT_LE_UNICAST_AUDIO_CFG_6_II_BIT for two channels)
      ** default is 16k birdsthing audio source for 10ms duration (------->>), two channels example.
 
-CAP demo ATCMD:
+Generic LE Audio demo ATCMD:
 ~~~~~~~~~~~
-1.CAP Initiator
-    1.1 enable                                      AT+BTDEMO=cap,initiator,1
-    1.2 disable                                     AT+BTDEMO=cap,initiator,0
+1.CAP Initiator role
+    1.1 enable                                      AT+BTDEMO=generic_le_audio_demo,initiator,1
+    1.2 disable                                      AT+BTDEMO=generic_le_audio_demo,initiator,0
     1.3 scan start                                  AT+BLEBAP=escan,1
     1.4 scan stop                                   AT+BLEBAP=escan,0
     1.5 connect                                     AT+BLEGAP=conn,<peer_addr_type>,<peer_addr>
@@ -48,9 +48,9 @@ CAP demo ATCMD:
     1.9 start broadcast stream                      AT+BLEBAP=broadcast_start
     1.10 stop broadcast stream                      AT+BLEBAP=broadcast_stop
 
-2.CAP Acceptor
-    2.1 enable                                          AT+BTDEMO=cap,acceptor,1,<sound channel> sound_channel:{left, right, stereo}
-    2.2 disable                                         AT+BTDEMO=cap,acceptor,0
+2.CAP Acceptor role
+    2.1 enable                                          AT+BTDEMO=generic_le_audio_demo,acceptor,1,<sound channel> sound_channel:{left, right, stereo}
+    2.2 disable                                         AT+BTDEMO=generic_le_audio_demo,acceptor,0
     2.3 stop ext adv before ext scan                    AT+BLEGAP=eadv,0,0
     2.4 scan start                                      AT+BLEBAP=escan,1
     2.5 create pa sync with broadcast source            AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id>
@@ -58,9 +58,9 @@ CAP demo ATCMD:
     2.7 create big sync with broadcast source           AT+BLEBAP=big_sync_create,<bd_addr type>,<bd_addr>
     2.8 terminate big sync with broadcast source        AT+BLEBAP=big_sync_remove,<bd_addr type>,<bd_addr>
 
-3.CAP Commander
-    3.1 enable                                             AT+BTDEMO=cap,commander,1
-    3.2 disable                                            AT+BTDEMO=cap,commander,0
+3.CAP Commander role
+    3.1 enable                                             AT+BTDEMO=generic_le_audio_demo,commander,1
+    3.2 disable                                            AT+BTDEMO=generic_le_audio_demo,commander,0
     3.3 scan start                                         AT+BLEBAP=escan,1
     3.4 scan stop                                          AT+BLEBAP=escan,0
     3.5 connect                                            AT+BLEGAP=conn,<peer_addr_type>,<peer_addr>

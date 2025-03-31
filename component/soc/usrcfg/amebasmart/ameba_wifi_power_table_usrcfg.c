@@ -4,7 +4,7 @@
 * SPDX-License-Identifier: Apache-2.0
 */
 
-#include "wifi_conf.h"
+#include "wifi_api.h"
 
 #define CH_NULL 1
 

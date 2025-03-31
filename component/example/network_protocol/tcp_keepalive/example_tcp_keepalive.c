@@ -2,8 +2,7 @@
 #include "basic_types.h"
 #include "lwip_netconf.h"
 #include "lwip/netif.h"
-#include "rtw_wifi_defs.h"
-#include "wifi_conf.h"
+#include "wifi_api.h"
 
 
 #define TEST_MODE       0	// 0 to test client keepalive, 1 to test server keepalive

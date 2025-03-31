@@ -1,2 +1,0 @@
-add_subdirectory(freertos)
-add_subdirectory(stdlib_wrap)

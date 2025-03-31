@@ -19,15 +19,6 @@ ameba_list_append(public_includes
     ${c_CMPT_TFLITE_DIR}/third_party/flatbuffers/include
 )
 
-ameba_list_append(public_libraries
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_tflite_micro.a
-)
-if(CONFIG_AMEBALITE OR CONFIG_AMEBADPLUS)
-    ameba_list_append(public_libraries
-        ${c_SDK_LIB_APPLICATION_DIR}/lib_cmsis_nn.a
-    )
-endif()
-
 # Component public part, user config end
 #----------------------------------------#
 
@@ -71,13 +62,11 @@ endif()
 ameba_add_subdirectory(${c_CMPT_TFLITE_DIR})
 
 ###NOTE: For closed-source and with standalone build scripts component, process and copy library to lib/application
-ameba_add_standalone_app_library(
+ameba_port_standalone_internal_library(
     tensorflow-microlite    # The name of target in origin tflite who generates the library directly
-    tflite_micro            # The output name body with which the full name will be: lib_tflite_micro.a
 )
 if(CONFIG_AMEBALITE OR CONFIG_AMEBADPLUS)
-    ameba_add_standalone_app_library(
+    ameba_port_standalone_internal_library(
         cmsis-nn            # The name of target in origin tflite who generates the library directly
-        cmsis_nn            # The output name body with which the full name will be: lib_cmsis_nn.a
     )
 endif()

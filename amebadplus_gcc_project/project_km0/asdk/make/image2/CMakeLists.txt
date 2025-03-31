@@ -2,11 +2,12 @@ ameba_add_image(target_img2)
 # variable c_CURRENT_IMAGE value is ${c_CURRENT_IMAGE}
 ###############################  ADD COMPONENT  ###################################
 
-ameba_add_subdirectory(${c_CMPT_APP_DIR}/benchmark)
+ameba_add_subdirectory_if_exist(${c_CMPT_APP_DIR}/benchmark)
 ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
 ameba_add_subdirectory(${c_CMPT_BLUETOOTH_DIR})
 ameba_add_subdirectory(${c_CMPT_BOOTLOADER_DIR})
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
+ameba_add_subdirectory(${c_CMPT_CMSIS_DIR})
 ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})
 ameba_add_subdirectory(${c_CMPT_FWLIB_DIR})
 
@@ -17,11 +18,11 @@ ameba_add_subdirectory(${c_CMPT_OS_DIR})
 ameba_add_subdirectory(${c_CMPT_PMC_DIR})
 ameba_add_subdirectory(${c_CMPT_RTK_COEX_DIR})
 ameba_add_subdirectory(${c_CMPT_LWIP_DIR})
-ameba_add_subdirectory(${c_CMPT_SOC_DIR}/verification)
+ameba_add_subdirectory_if_exist(${c_CMPT_SOC_DIR}/verification)
 ameba_add_subdirectory(${c_CMPT_SWLIB_DIR})
 ameba_add_subdirectory(${c_CMPT_USRCFG_DIR})
 
-ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_make)
+ameba_add_subdirectory(${c_CMPT_WIFI_DIR})
 ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_fw)
 
 ameba_add_subdirectory(${c_MCU_PROJECT_DIR}/src)

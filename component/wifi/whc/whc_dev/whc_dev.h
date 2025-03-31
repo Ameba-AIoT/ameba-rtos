@@ -23,7 +23,7 @@
 #include "os_wrapper.h"
 #include "rtw_skbuff.h"
 #include "rtw_queue.h"
-#include "wifi_conf.h"
+#include "wifi_api.h"
 #include "wifi_intf_drv_to_lwip.h"
 #include "wifi_intf_drv_to_upper.h"
 

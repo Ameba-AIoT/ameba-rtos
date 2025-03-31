@@ -11,6 +11,7 @@
 #ifndef __WHC_SDIO_DEV_BRIDGE_H__
 #define __WHC_SDIO_DEV_BRIDGE_H__
 
+#include "lwip/opt.h"
 #include "lwip/prot/ethernet.h"
 
 #define PORT_TO_BOTH	0x0

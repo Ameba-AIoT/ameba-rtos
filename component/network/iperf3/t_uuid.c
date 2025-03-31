@@ -50,7 +50,7 @@ void uuid_thread(void *param)
 
 void example_uuid(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"uuid_thread"), uuid_thread, NULL, 524 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"uuid_thread"), uuid_thread, NULL, 524 * 4, 1) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(uuid_thread) failed", __FUNCTION__);
 	}
 	return;

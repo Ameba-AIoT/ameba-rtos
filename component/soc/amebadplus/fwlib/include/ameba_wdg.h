@@ -187,7 +187,7 @@ typedef struct {
 
 /** @} */
 
-
+_LONG_CALL_ void WDG_Wait_Busy(WDG_TypeDef *WDG);
 _LONG_CALL_ void WDG_StructInit(WDG_InitTypeDef *WDG_InitStruct);
 _LONG_CALL_ void WDG_Init(WDG_TypeDef *WDG, WDG_InitTypeDef *WDG_InitStruct);
 _LONG_CALL_ void WDG_Enable(WDG_TypeDef *WDG);
@@ -196,6 +196,8 @@ _LONG_CALL_ void WDG_Refresh(WDG_TypeDef *WDG);
 _LONG_CALL_ void WDG_INTConfig(WDG_TypeDef *WDG, u32 WDG_IT, u32 NewState);
 _LONG_CALL_ void WDG_ClearINT(WDG_TypeDef *WDG, u32 INTrBit);
 _LONG_CALL_ void IWDG_LP_Enable(WDG_TypeDef *WDG, u32 NewState);
+_LONG_CALL_ void WDG_StructMemValueSet(WDG_InitTypeDef *WDG_InitStruct, u32 window, u32 timeout, u32 eicnt);
+_LONG_CALL_ void WDG_Cmd(WDG_TypeDef *WDG, u32 NewState);
 
 /* MANUAL_GEN_END */
 

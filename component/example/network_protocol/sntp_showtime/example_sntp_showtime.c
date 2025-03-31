@@ -1,8 +1,7 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "sntp/sntp.h"
-#include "rtw_wifi_defs.h"
-#include "wifi_conf.h"
+#include "wifi_api.h"
 #include "lwip_netconf.h"
 #include "os_wrapper.h"
 

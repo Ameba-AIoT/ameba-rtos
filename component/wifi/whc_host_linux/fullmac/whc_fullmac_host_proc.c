@@ -109,12 +109,12 @@ static int proc_read_beacon_rssi(struct seq_file *m, void *v)
 {
 	signed char	beacon_rssi;
 	int ret = 0;
-	struct _rtw_phy_statistics_t *statistic_vir = NULL;
+	union _rtw_phy_statistics_t *statistic_vir = NULL;
 	dma_addr_t statistic_phy;
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
-	statistic_vir = rtw_malloc(sizeof(struct _rtw_phy_statistics_t), &statistic_phy);
+	statistic_vir = rtw_malloc(sizeof(union _rtw_phy_statistics_t), &statistic_phy);
 	if (!statistic_vir) {
 		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
@@ -122,10 +122,10 @@ static int proc_read_beacon_rssi(struct seq_file *m, void *v)
 
 	ret = whc_fullmac_host_get_statistics(statistic_phy);
 
-	beacon_rssi = statistic_vir->beacon_rssi;
+	beacon_rssi = statistic_vir->sta_phy_stats.beacon_rssi;
 	seq_printf(m, "%d\n", beacon_rssi);
 
-	rtw_mfree(sizeof(struct _rtw_phy_statistics_t), statistic_vir, statistic_phy);
+	rtw_mfree(sizeof(union _rtw_phy_statistics_t), statistic_vir, statistic_phy);
 
 	return ret;
 }
@@ -135,12 +135,12 @@ static int proc_read_data_rssi(struct seq_file *m, void *v)
 {
 	signed char	data_rssi;
 	int ret = 0;
-	struct _rtw_phy_statistics_t *statistic_vir = NULL;
+	union _rtw_phy_statistics_t *statistic_vir = NULL;
 	dma_addr_t statistic_phy;
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
-	statistic_vir = rtw_malloc(sizeof(struct _rtw_phy_statistics_t), &statistic_phy);
+	statistic_vir = rtw_malloc(sizeof(union _rtw_phy_statistics_t), &statistic_phy);
 	if (!statistic_vir) {
 		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
@@ -148,10 +148,10 @@ static int proc_read_data_rssi(struct seq_file *m, void *v)
 
 	ret = whc_fullmac_host_get_statistics(statistic_phy);
 
-	data_rssi = statistic_vir->data_rssi;
+	data_rssi = statistic_vir->sta_phy_stats.data_rssi;
 	seq_printf(m, "%d\n", data_rssi);
 
-	rtw_mfree(sizeof(struct _rtw_phy_statistics_t), statistic_vir, statistic_phy);
+	rtw_mfree(sizeof(union _rtw_phy_statistics_t), statistic_vir, statistic_phy);
 
 	return ret;
 }
@@ -184,7 +184,7 @@ static int proc_read_curr_ant(struct seq_file *m, void *v)
 
 static int proc_read_mp_fw(struct seq_file *m, void *v)
 {
-	seq_printf(m, "%d\n", global_idev.mp_fw);
+	seq_printf(m, "%d\n", whc_fullmac_host_dev_driver_is_mp());
 
 	return 0;
 }

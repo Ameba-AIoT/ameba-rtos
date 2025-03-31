@@ -21,18 +21,18 @@ ifndef UNIX_MK
     # ${1} is the file to be copied.
     # ${2} is the destination file name.
     define SHELL_COPY
-	${Q}cp -f  "${1}"  "${2}"
+	${Q}cp -f  ${1}  ${2}
     endef
 
     # ${1} is the directory to be copied.
     # ${2} is the destination directory path.
     define SHELL_COPY_TREE
-	${Q}cp -rf  "${1}"  "${2}"
+	${Q}cp -rf  ${1}  ${2}
     endef
 
     # ${1} is the file to be deleted.
     define SHELL_DELETE
-	-${Q}rm -f  "${1}"
+	-${Q}rm -f  ${1}
     endef
 
     # ${1} is a space delimited list of files to be deleted.

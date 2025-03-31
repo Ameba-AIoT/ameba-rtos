@@ -24,6 +24,20 @@ if AIVOICE_EN_MENU
             select AFE_RES_2MIC70MM if CORE_AS_AP
 
     endchoice
+
+    choice
+        prompt "Select KWS Resource"
+        default KWS_RES_XQXQ_MENU
+
+        config KWS_RES_XQXQ_MENU
+            bool "kws_res_xqxq"
+            select KWS_RES_XQXQ if CORE_AS_AP
+
+        config KWS_RES_CUSTOM_MENU
+            bool "kws_res_custom"
+            select KWS_RES_CUSTOM if CORE_AS_AP
+
+    endchoice
 endif
 
 config AIVOICE_EN
@@ -39,4 +53,10 @@ config AFE_RES_2MIC50MM
     bool
 
 config AFE_RES_2MIC70MM
+    bool
+
+config KWS_RES_XQXQ
+    bool
+
+config KWS_RES_CUSTOM
     bool

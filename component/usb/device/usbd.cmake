@@ -96,16 +96,22 @@ ameba_list_append_if(CONFIG_USBD_COMPOSITE_CDC_ACM_HID private_sources
     composite/usbd_composite_hid.c
 )
 
+ameba_list_append_if(CONFIG_USBD_COMPOSITE_CDC_ACM_MSC private_sources
+    composite/usbd_composite_cdc_acm_msc.c
+    composite/usbd_composite_cdc_acm.c
+    composite/usbd_composite_msc.c
+    composite/usbd_composite_scsi.c
+)
+
 ameba_list_append_if(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC private_sources
     composite/usbd_composite_cdc_acm_uac.c
     composite/usbd_composite_cdc_acm.c
     composite/usbd_composite_uac.c
 )
 
-ameba_list_append_if(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC_HID private_sources
-    composite/usbd_composite_cdc_acm_uac_hid.c
+ameba_list_append_if(CONFIG_USBD_COMPOSITE_HID_UAC private_sources
+    composite/usbd_composite_uac_hid.c
     composite/usbd_composite_hid_bi_dir.c
-    composite/usbd_composite_cdc_acm.c
     composite/usbd_composite_uac.c
 )
 

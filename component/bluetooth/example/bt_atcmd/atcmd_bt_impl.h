@@ -83,7 +83,7 @@ int atcmd_bt_a2dp_hfp(int argc, char *argv[]);
 
 int atcmd_ble_iso(int argc, char *argv[]);
 
-int atcmd_bt_cap(int argc, char *argv[]);
+int atcmd_bt_generic_le_audio_demo(int argc, char *argv[]);
 
 int atcmd_bt_pbp(int argc, char *argv[]);
 

@@ -454,7 +454,7 @@ bool _flash_calibration_highspeed(u8 SpicBitMode, u8 div)
 BOOT_RAM_TEXT_SECTION
 int flash_calibration_highspeed(u8 div)
 {
-	int Ret = SUCCESS;
+	int Ret = RTK_SUCCESS;
 	u8 spic_mode = flash_init_para.FLASH_cur_bitmode;
 
 
@@ -482,7 +482,7 @@ int flash_calibration_highspeed(u8 div)
 
 		RTK_LOGE(TAG, "FLASH CALIB[0x%x FAIL]\n", div);
 
-		Ret = FAIL;
+		Ret = RTK_FAIL;
 	}
 
 
@@ -680,7 +680,7 @@ static void flash_set_status_register(void)
 BOOT_RAM_TEXT_SECTION
 int flash_rx_mode_switch(u8 read_mode)
 {
-	int Ret = SUCCESS;
+	int Ret = RTK_SUCCESS;
 	u8 status = 0, spic_mode = 0, i;
 	u32 pdata[2];
 	char *str[] = {"1IO", "2O", "2IO", "4O", "4IO"};
@@ -726,7 +726,7 @@ int flash_rx_mode_switch(u8 read_mode)
 
 	if (i == 5) {
 		RTK_LOGE(TAG, "Flash Switch Read Mode FAIL\n");
-		Ret = FAIL;
+		Ret = RTK_FAIL;
 	}
 
 	return Ret;

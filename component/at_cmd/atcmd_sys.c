@@ -15,6 +15,7 @@
 #include "atcmd_http.h"
 #include "atcmd_websocket.h"
 #include "atcmd_network.h"
+#include "at_intf_spi.h"
 #ifndef CONFIG_MP_SHRINK
 #include "atcmd_wifi.h"
 #endif
@@ -408,8 +409,21 @@ void at_test(void *arg)
 		end_time = rtos_time_get_current_system_time_ms();
 		atcmd_tt_mode_end();
 
-		at_printf("tt mode test: Send %d KBytes in %d ms, %d Kbits/sec\n\r", (int)(tt_len / 1024), (int)(end_time - start_time),
+		at_printf("upstream test(tt mode): Send %d KBytes in %d ms, %d Kbits/sec\n\r", (int)(tt_len / 1024), (int)(end_time - start_time),
 				  (int)((tt_len * 8) / (end_time - start_time)));
+	} else if (mode == 2) {
+		u32 at_len = (u32)atoi(argv[2]);
+		u32 send_len = 0;
+		u32 malloc_size = at_len > ATCMD_SPI_DMA_SIZE ? ATCMD_SPI_DMA_SIZE : at_len;
+		buffer = (u8 *)rtos_mem_malloc(malloc_size);
+		memset(buffer, 1, malloc_size);
+		at_printf(ATCMD_DOWNSTREAM_TEST_START_STR);
+		while (at_len > 0) {
+			send_len = at_len > (ATCMD_SPI_DMA_SIZE - 8) ? (ATCMD_SPI_DMA_SIZE - 8) : at_len;
+			at_printf_data((char *)buffer, send_len);
+			at_len -= send_len;
+		}
+		at_printf(ATCMD_DOWNSTREAM_TEST_END_STR);
 	} else {
 		error_no = 1;
 		goto end;
@@ -736,7 +750,7 @@ void at_wreg(void *arg)
 		goto end;
 	}
 
-	cmd_write_word((u16)(argc - 1), (u8 **)argv[1]);
+	cmd_write_word((u16)(argc - 1), (u8 **)&argv[1]);
 
 end:
 	if (error_no == 0) {
@@ -792,8 +806,8 @@ void at_tickps(void *arg)
 	}
 
 	if (_strcmp((const char *)argv[1], "GET") == 0) {
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "lockbit:%lx \n", pmu_get_wakelock_status());
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "dslp_lockbit:%lx\n", pmu_get_deepwakelock_status());
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "lockbit:%x \r\n", pmu_get_wakelock_status());
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "dslp_lockbit:%x \r\n", pmu_get_deepwakelock_status());
 	}
 }
 

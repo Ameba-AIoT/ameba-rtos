@@ -13,16 +13,21 @@
 /* -------------------------------- Includes -------------------------------- */
 #include "rtw_inic_common.h"
 #include "whc_host_api.h"
+#include "whc_host_cust_evt.h"
 
 #ifdef CONFIG_WHC_INTF_SPI
 #include "whc_spi_host.h"
 #include "whc_spi_host_trx.h"
-#include "whc_host_cust_evt.h"
 #endif
 #ifdef CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
 #include <dhcp/dhcps.h>
 #endif
+
+#ifdef CONFIG_WHC_BRIDGE_HOST
+#include "whc_bridge_host_app.h"
+#endif
+
 #include "bt_inic_defs.h"
 #define DEV_REQ_NETWORK_INFO_MAX_LEN	6
 
@@ -31,10 +36,12 @@ enum WHC_WIFI_CTRL_TYPE {
 	WHC_WIFI_EVT_RECV_PKTS,
 	WHC_WIFI_EVT_API_CALL,
 	WHC_WIFI_EVT_API_RETURN,
+	WHC_WIFI_EVT_BRIDGE,
 	WHC_WIFI_EVT_MAX,
 	WHC_CUST_EVT, /* the ID to transmit data for the customer. */
-	//TODO host need BT confirm file
+
 	WHC_BT_EVT_BASE = WHC_BT_ID_BASE,
+	WHC_BT_EVT_MAX = WHC_BT_ID_BASE + 0x1000000
 };
 
 struct whc_api_info {
@@ -54,6 +61,13 @@ struct whc_msg_info {
 	u32	data_len;
 	u32	pad_len;
 };
+
+#if defined(CONFIG_WHC_BRIDGE_HOST)
+struct whc_bridge_hdr {
+	u32	event;
+	u32	len;
+};
+#endif
 
 struct event_func_t {
 	u32 api_id;

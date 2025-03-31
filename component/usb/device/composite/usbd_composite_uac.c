@@ -10,7 +10,7 @@
 #include "os_wrapper.h"
 
 #if USBD_UAC_ISOC_XFER_DEBUG
-#ifdef ARM_CORE_CA32
+#if defined(CONFIG_ARM_CORE_CA32) && CONFIG_ARM_CORE_CA32
 #include "arch_timer.h"
 #endif
 #endif
@@ -978,7 +978,7 @@ static s16 usbd_composite_uac_drv_vol[] = {-15180, -8952, -6259, -3374, -1859, -
 #if USBD_UAC_ISOC_XFER_DEBUG
 u32 usbd_composite_uac_get_timetick(void) //ms
 {
-#ifdef ARM_CORE_CA32
+#if defined(CONFIG_ARM_CORE_CA32) && CONFIG_ARM_CORE_CA32
 	return (u32)((arm_arch_timer_count() / 50) & (0xFFFFFFFF));
 #else
 	return DTimestamp_Get();
@@ -2092,35 +2092,35 @@ static void usbd_composite_uac_status_dump_thread(void *param)
 
 	uac->uac_dump_task_alive = 1;
 
-	DiagPrintf("UAC dump thread\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC dump thread\n");
 
 	while (1) {
 
 #if USBD_ISR_TASK_TIME_DEBUG
 		if (uac && uac->cdev && uac->cdev->dev) {
 			usb_dev_t *dev = uac->cdev->dev;
-			DiagPrintf("USB RX %d-%d-%d/TO %d-%d/zp %d-%d-%d/OW %d/Pkt %d/len %d-%d/%d/IsrC %d-%d/isrT %d-%d\n",
-					   uac->isoc_rx_valid_cnt, uac->isoc_rx_cnt, uac->isoc_rx_zlp_cnt,
-					   uac->isoc_timeout_cnt, uac->isoc_timeout_max_value,
-					   uac->isoc_zlp_cnt, (u32)(uac->uac_isoc_out.sof_idx), (u32)(uac->uac_isoc_out.data_idx),
-					   uac->isoc_overwrite_cnt,
-					   usbd_composite_uac_get_read_buf_cnt(),
-					   uac->copy_data_len, uac->isoc_rx_len,
-					   uac->uac_isoc_out.transfer_continue,
-					   dev->isr_func_time_cost_max, dev->isr_func_time_cost,
-					   dev->isr_trigger_time_diff_max, dev->isr_trigger_time_diff
-					  );
+			RTK_LOGS(TAG, RTK_LOG_INFO, "USB RX %d-%d-%d/TO %d-%d/zp %d-%d-%d/OW %d/Pkt %d/len %d-%d/%d/IsrC %d-%d/isrT %d-%d\n",
+					 uac->isoc_rx_valid_cnt, uac->isoc_rx_cnt, uac->isoc_rx_zlp_cnt,
+					 uac->isoc_timeout_cnt, uac->isoc_timeout_max_value,
+					 uac->isoc_zlp_cnt, (u32)(uac->uac_isoc_out.sof_idx), (u32)(uac->uac_isoc_out.data_idx),
+					 uac->isoc_overwrite_cnt,
+					 usbd_composite_uac_get_read_buf_cnt(),
+					 uac->copy_data_len, uac->isoc_rx_len,
+					 uac->uac_isoc_out.transfer_continue,
+					 dev->isr_func_time_cost_max, dev->isr_func_time_cost,
+					 dev->isr_trigger_time_diff_max, dev->isr_trigger_time_diff
+					);
 		}
 #else
-		DiagPrintf("USB Dump RX %d-%d-%d/TO %d-%d/zp %d-%d-%d/OW %d/Pkt %d/len %d-%d/%d\n",
-				   uac->isoc_rx_valid_cnt, uac->isoc_rx_cnt, uac->isoc_rx_zlp_cnt,
-				   uac->isoc_timeout_cnt, uac->isoc_timeout_max_value,
-				   uac->isoc_zlp_cnt, (u32)(uac->uac_isoc_out.sof_idx), (u32)(uac->uac_isoc_out.data_idx),
-				   uac->isoc_overwrite_cnt,
-				   usbd_composite_uac_get_read_buf_cnt(),
-				   uac->copy_data_len, uac->isoc_rx_len,
-				   uac->uac_isoc_out.transfer_continue
-				  );
+		RTK_LOGS(TAG, RTK_LOG_INFO, "USB Dump RX %d-%d-%d/TO %d-%d/zp %d-%d-%d/OW %d/Pkt %d/len %d-%d/%d\n",
+				 uac->isoc_rx_valid_cnt, uac->isoc_rx_cnt, uac->isoc_rx_zlp_cnt,
+				 uac->isoc_timeout_cnt, uac->isoc_timeout_max_value,
+				 uac->isoc_zlp_cnt, (u32)(uac->uac_isoc_out.sof_idx), (u32)(uac->uac_isoc_out.data_idx),
+				 uac->isoc_overwrite_cnt,
+				 usbd_composite_uac_get_read_buf_cnt(),
+				 uac->copy_data_len, uac->isoc_rx_len,
+				 uac->uac_isoc_out.transfer_continue
+				);
 #endif
 
 		rtos_time_delay_ms(USBD_UAC_DEBUG_LOOP_TIME);
@@ -2297,7 +2297,7 @@ int usbd_composite_uac_init(usbd_composite_dev_t *cdev, usbd_composite_uac_usr_c
 
 #if USBD_UAC_ISOC_XFER_DEBUG
 	if (rtos_task_create(&(uac->uac_dump_task), ((const char *)"usbd_composite_uac_status_dump_thread"), usbd_composite_uac_status_dump_thread, NULL, 1024U,
-						 1) != SUCCESS) {
+						 1) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create usb status dump task fail\n");
 	}
 #endif
@@ -2501,7 +2501,7 @@ u32 usbd_composite_uac_read(u8 *buffer, u32 size, u32 time_out_ms, u32 *zero_pkt
 			if (pdata_ctrl->data_list.count < USBD_UAC_HS_SOF_COUNT_PER_MS) {
 				//wait sema
 				pdata_ctrl->read_wait_sema = 1;
-				if (rtos_sema_take(pdata_ctrl->uac_isoc_sema, time_out_ms) != SUCCESS) {
+				if (rtos_sema_take(pdata_ctrl->uac_isoc_sema, time_out_ms) != RTK_SUCCESS) {
 					pdata_ctrl->read_wait_sema = 0;
 					break;
 				}

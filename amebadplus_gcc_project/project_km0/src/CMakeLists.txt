@@ -1,16 +1,3 @@
-if(NOT CMAKE_REFACTOR) # For temporary compatibility.
-
-set(DIR ${SRCDIR})
-
-set(MODULE_IFLAGS ${DIR})
-
-set(CSRC ${DIR}/main.c)
-
-ameba_internal_library(project_src)
-target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
-target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
-
-else() # For temporary compatibility.NOTE:  script below is new version cmake
 ##########################################################################################
 ## * This part defines public part of the component
 ## * Public part will be used as global build configures for all component
@@ -69,4 +56,3 @@ ameba_add_internal_library(project_src
         ${private_compile_options}
 )
 ##########################################################################################
-endif()# For temporary compatibility.

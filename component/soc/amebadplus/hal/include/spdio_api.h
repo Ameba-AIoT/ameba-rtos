@@ -102,7 +102,7 @@ struct spdio_t {
 	 * @param pdata Actual received packet payload.
 	 * @param size Actual payload length.
 	 * @param type Received packet type, which should be a value of @ref spdio_rx_data_t.
-	 * @retval SUCCESS or FAIL.
+	 * @retval RTK_SUCCESS or RTK_FAIL.
 	 */
 	char (*rx_done_cb)(void *priv, void *pbuf, u8 *pdata, u16 size, u8 type);
 
@@ -110,7 +110,7 @@ struct spdio_t {
 	 * @brief Callback function defined by user, called by spdio when one packet is sent.
 	 * @param priv Pointer to spdio_t structure which is used to initialize spdio interface.
 	 * @param pbuf Pointer to spdio_buf_t structure which carries the transmit packet.
-	 * @retval SUCCESS or FAIL.
+	 * @retval RTK_SUCCESS or RTK_FAIL.
 	 */
 	char (*tx_done_cb)(void *priv, void *pbuf);
 
@@ -118,7 +118,7 @@ struct spdio_t {
 	 * @brief Callback function defined by user.
 	 * @param priv Pointer to spdio_t structure which is used to initialize spdio interface.
 	 * @param value RPWM2 value.
-	 * @retval SUCCESS or FAIL.
+	 * @retval RTK_SUCCESS or RTK_FAIL.
 	 */
 	char (*rpwm_cb)(void *priv, u16 value);
 };

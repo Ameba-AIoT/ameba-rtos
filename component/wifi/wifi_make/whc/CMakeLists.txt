@@ -170,13 +170,24 @@ elseif(CONFIG_AS_INIC_AP)
     if(CONFIG_WHC_INTF_SPI)
         list(
             APPEND CSRC
+            ${HOSTDIR}/whc_host_init.c
             ${HOSTDIR}/spi/whc_spi_host.c
             ${HOSTDIR}/spi/whc_spi_host_trx.c
-            ${HOSTDIR}/whc_host_api.c
-            ${HOSTDIR}/whc_host_api_ext.c
-            ${HOSTDIR}/whc_host_api_basic.c
-            ${HOSTDIR}/whc_host_cust_evt.c
         )
+        if(CONFIG_WHC_BRIDGE_HOST)
+            list(
+                APPEND CSRC
+                ${HOSTDIR}/whc_bridge_host_app.c
+            )
+        else()
+            list(
+                APPEND CSRC
+                ${HOSTDIR}/whc_host_api.c
+                ${HOSTDIR}/whc_host_api_basic.c
+                ${HOSTDIR}/whc_host_api_ext.c
+                ${HOSTDIR}/whc_host_cust_evt.c
+            )
+        endif()
         ameba_internal_library(wifi_whc_spi_host)
         target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
         target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})

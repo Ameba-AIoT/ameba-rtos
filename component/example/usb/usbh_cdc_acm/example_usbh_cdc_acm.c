@@ -67,12 +67,29 @@ static __IO int cdc_acm_total_rx_len = 0;
 static __IO int cdc_acm_is_ready = 0;
 
 static usbh_config_t usbh_cfg = {
-	.pipes = 5U,
 	.speed = USB_SPEED_HIGH,
 	.dma_enable = 1U,
 	.ext_intr_en = USBH_SOF_INTR,
 	.main_task_priority = 4U,
 	.isr_task_priority  = 5U,
+	.sof_tick_en = 1U,
+
+#if defined (CONFIG_AMEBAGREEN2)
+	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined (CONFIG_AMEBASMARTPLUS)
+	/*FIFO total depth is 1280 DWORD, reserve 14 DWORD for DMA addr*/
+	.rx_fifo_depth = 754,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined (CONFIG_AMEBAL2)
+	/*FIFO total depth is 1024 DWORD, reserve 11 DWORD for DMA addr*/
+	.rx_fifo_depth = 501,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#endif
 };
 
 static usbh_cdc_acm_cb_t cdc_acm_usr_cb = {

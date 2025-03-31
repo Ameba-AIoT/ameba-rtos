@@ -2,7 +2,7 @@
 #include "basic_types.h"
 #include "rtsp/rtsp_api.h"
 
-#include "wifi_conf.h"// for _htons
+#include "wifi_api.h"// for _htons
 #include "lwip_netconf.h"	// for LwIP_GetMAC
 
 #define RTSP_CTX_ID_BASE	0
@@ -1275,7 +1275,7 @@ void proxy_connect_thread(void *param)
 	int ok = 0;
 
 	while (rtsp_is_service_enabled(rtsp_ctx)) {
-		if (rtos_sema_take(rtsp_ctx->start_proxy_connect_sema, 1000) == SUCCESS) {
+		if (rtos_sema_take(rtsp_ctx->start_proxy_connect_sema, 1000) == RTK_SUCCESS) {
 			printf("proxy_connect_thread_running\n\r");
 			connecting_proxy = 1;
 			do {
@@ -1315,6 +1315,7 @@ void rtsp_start_service(struct rtsp_context *rtsp_ctx)
 {
 	char *request, *request_concat_buf;
 	int mode = 0;
+	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 	struct _rtw_wifi_setting_t setting = {0};
 	struct sockaddr_in server_addr, client_addr;
 	socklen_t client_addr_len = sizeof(struct sockaddr_in);
@@ -1344,8 +1345,9 @@ Redo:
 		if (rtsp_ctx->interface <= 1) {
 			if (wifi_is_running(0) > 0) {
 				wifi_get_setting(WLAN0_IDX, &setting);
+				wifi_get_join_status(&join_status);
 				mode = setting.mode;
-				if (((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID)) && (mode == RTW_MODE_STA)) {
+				if (((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID)) && (mode == RTW_MODE_STA)) {
 					printf("connect successful sta mode\r\n");
 					break;
 				}
@@ -1390,7 +1392,7 @@ Redo:
 	proxy_addr.sin_port = htons(rtsp_ctx->proxy_port);
 	proxy_addr.sin_addr.s_addr = inet_addr(PROXY_SERVER_IP);
 
-	if (rtos_task_create(NULL, ((const signed char *)"rtsp_proxy"), proxy_connect_thread, (void *)rtsp_ctx, 512 * 4, RTSP_SERVICE_PRIORITY) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const signed char *)"rtsp_proxy"), proxy_connect_thread, (void *)rtsp_ctx, 512 * 4, RTSP_SERVICE_PRIORITY) != RTK_SUCCESS) {
 		RTSP_DBG_ERROR("rtp_start_service: Create Task Error\n");
 		goto error;
 	}
@@ -1747,7 +1749,8 @@ Redo:
 				}
 				if (rtsp_ctx->interface <= 1) {
 					if (mode == RTW_MODE_STA) {
-						if (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
+						wifi_get_join_status(&join_status);
+						if (!((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
 							goto out;
 						}
 					} else if (mode == RTW_MODE_AP) {
@@ -1783,7 +1786,8 @@ out:
 
 		if (rtsp_ctx->interface <= 1) {
 			if (mode == RTW_MODE_STA) {
-				if (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
+				wifi_get_join_status(&join_status);
+				if (!((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
 					RTSP_DBG_ERROR("wifi Tx/Rx broke! rtsp service cannot stream");
 					close(rtsp_ctx->connect_ctx.socket_id);
 					RTSP_DBG_ERROR("RTSP Reconnect!");
@@ -1847,7 +1851,7 @@ static void rtp_service_unicast(struct rtsp_context *rtsp_ctx)
 	printf("\n\rrtp started (%s)\n\r", (cast_mode == UNICAST_TCP_MODE) ? "TCP" : "UDP");
 restart:
 	while ((rtsp_ctx->state == RTSP_PLAYING) && (rtsp_is_stream_enabled(rtsp_ctx))) {
-		if (rtos_sema_take(rtsp_ctx->rtp_input_sema, 33) == SUCCESS) {
+		if (rtos_sema_take(rtsp_ctx->rtp_input_sema, 33) == RTK_SUCCESS) {
 			for (i = 0; i < rtsp_ctx->nb_streams; i++) {
 				stream = &rtsp_ctx->stream_ctx[i];
 				if (!list_empty(&stream->input_queue)) {
@@ -1917,7 +1921,7 @@ void rtp_service_init(void *param)
 	int i;
 	struct stream_context *stream;
 	while (rtsp_is_service_enabled(rtsp_ctx)) {
-		if (rtos_sema_take(rtsp_ctx->start_rtp_sema, 100) == SUCCESS) {
+		if (rtos_sema_take(rtsp_ctx->start_rtp_sema, 100) == RTK_SUCCESS) {
 			for (i = 0; i < rtsp_ctx->nb_streams; i++) {
 				stream = &rtsp_ctx->stream_ctx[i];
 				if (stream->setup_done) {
@@ -1949,7 +1953,7 @@ void rtcp_service_init(void *param)
 	struct rtsp_context *rtsp_ctx = (struct rtsp_context *) param;
 	rtsp_ctx->is_rtcp_start = 1;
 	while (rtsp_is_service_enabled(rtsp_ctx)) {
-		if (rtos_sema_take(rtsp_ctx->start_rtcp_sema, 10) == SUCCESS) {
+		if (rtos_sema_take(rtsp_ctx->start_rtcp_sema, 10) == RTK_SUCCESS) {
 			//to do
 		}
 	}
@@ -1962,7 +1966,7 @@ void rtsp_service_init(void *param)
 	struct rtsp_context *rtsp_ctx = (struct rtsp_context *) param;
 	rtsp_enable_service(rtsp_ctx);
 	while (rtsp_is_service_enabled(rtsp_ctx)) {
-		if (rtos_sema_take(rtsp_ctx->start_rtsp_sema, 100) == SUCCESS) {
+		if (rtos_sema_take(rtsp_ctx->start_rtsp_sema, 100) == RTK_SUCCESS) {
 			//rtsp start stream
 			rtsp_start_service(rtsp_ctx);
 		}
@@ -1974,18 +1978,18 @@ void rtsp_service_init(void *param)
 /* ----------------------------------------------- user space interface ---------------------------------------------------------*/
 int rtsp_open(struct rtsp_context *rtsp_ctx)
 {
-	if (rtos_task_create(NULL, ((const char *)"rtsp_service_init"), rtsp_service_init, (void *)rtsp_ctx, 2048 * 4, RTSP_SERVICE_PRIORITY) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"rtsp_service_init"), rtsp_service_init, (void *)rtsp_ctx, 2048 * 4, RTSP_SERVICE_PRIORITY) != RTK_SUCCESS) {
 		RTSP_DBG_ERROR("rtp_start_service: Create Task Error\n");
 		goto error;
 	}
 
 	//rtsp_service_priority = rtos_task_priority_get(NULL);
-	if (rtos_task_create(NULL, ((const char *)"rtp_service_init"), rtp_service_init, (void *)rtsp_ctx, 1024 * 4, RTSP_SERVICE_PRIORITY) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"rtp_service_init"), rtp_service_init, (void *)rtsp_ctx, 1024 * 4, RTSP_SERVICE_PRIORITY) != RTK_SUCCESS) {
 		RTSP_DBG_ERROR("rtp_start_service: Create Task Error\n");
 		goto error;
 	}
 #ifdef SUPPORT_RTCP
-	if (rtos_task_create(NULL, ((const char *)"rtcp_service_init"), rtcp_service_init, (void *)rtsp_ctx, 512 * 4, RTSP_SERVICE_PRIORITY) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"rtcp_service_init"), rtcp_service_init, (void *)rtsp_ctx, 512 * 4, RTSP_SERVICE_PRIORITY) != RTK_SUCCESS) {
 		RTSP_DBG_ERROR("rtp_start_service: Create Task Error\n");
 		goto error;
 	}

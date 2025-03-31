@@ -116,7 +116,7 @@ u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 
 		IPC_INTConfig(IPCx, IPC_ChNum + IPC_TX_CHANNEL_SHIFT, ENABLE);
 
-		if (rtos_sema_take(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != SUCCESS) {
+		if (rtos_sema_take(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, " IPC Get Semaphore Timeout\r\n");
 			IPC_INTConfig(IPCx, IPC_ChNum + IPC_TX_CHANNEL_SHIFT, DISABLE);
 			return IPC_SEMA_TIMEOUT;

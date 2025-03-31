@@ -12,6 +12,8 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
+#define ECM_STATE_DEBUG_ENABLE                                   0
+
 /*  */
 typedef struct {
 	u8                                  *mac_value;    /* mac value */
@@ -34,6 +36,10 @@ const u8 *usbh_cdc_ecm_process_mac_str(void);
 int usbh_cdc_ecm_send_data(u8 *buf, u32 len);
 int usbh_cdc_ecm_get_connect_status(void);
 u16 usbh_cdc_ecm_get_receive_mps(void);
+
+#if ECM_STATE_DEBUG_ENABLE
+int usbh_cdc_ecm_get_hw_statue(void);
+#endif
 
 #endif  /* USBH_CDC_ECM_HAL_H */
 

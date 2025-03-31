@@ -123,7 +123,7 @@ u32 IPC_wait_idle_NonOS(IPC_TypeDef *IPCx, u32 IPC_ChNum)
   * @brief  Processing functions when the IPC channel is occupied
   * @param  IPCx: where IPCx can be IPCKM0_DEV for KM0, IPCKM4_DEV for CM4.
   * @param  IPC_ChNum: IPC_ChNum
-  * @retval IPC_REQ_TIMEOUT or IPC_SEMA_TIMEOUT or SUCCESS
+  * @retval IPC_REQ_TIMEOUT or IPC_SEMA_TIMEOUT or RTK_SUCCESS
   */
 u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 {
@@ -136,7 +136,7 @@ u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 		}
 
 		IPC_INTConfig(IPCx, IPC_ChNum, ENABLE);
-		if (rtos_sema_take(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != SUCCESS) {
+		if (rtos_sema_take(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, " IPC Get Semaphore Timeout\r\n");
 			IPC_INTConfig(IPCx, IPC_ChNum, DISABLE);
 			return IPC_SEMA_TIMEOUT;

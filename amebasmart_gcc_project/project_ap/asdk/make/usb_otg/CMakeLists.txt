@@ -1,3 +1,0 @@
-ameba_add_subdirectories_if(CONFIG_USB_DEVICE_EN device)
-ameba_add_subdirectories_if(CONFIG_USB_HOST_EN host)
-ameba_add_subdirectories_if(CONFIG_USB_DRD_EN drd)

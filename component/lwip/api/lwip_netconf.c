@@ -3,8 +3,7 @@
 #include "main.h"
 #include "atcmd_service.h"
 #if CONFIG_WLAN
-#include "wifi_conf.h"
-#include "wifi_ind.h"
+#include "wifi_api.h"
 #endif
 
 #include "platform_stdlib.h"
@@ -75,6 +74,7 @@ void LwIP_Init(void)
 	struct ip_addr netmask;
 	struct ip_addr gw;
 	int8_t idx = 0;
+	u32 heap = rtos_mem_get_free_heap_size();
 
 	/* Create tcp_ip stack thread */
 	tcpip_init(NULL, NULL);
@@ -140,6 +140,7 @@ void LwIP_Init(void)
 #endif
 
 	lwip_init_done = 1;
+	RTK_LOGS(TAG_WLAN_DRV, RTK_LOG_INFO, "LWIP consume heap %d\n", heap - rtos_mem_get_free_heap_size() - 4 * TCPIP_THREAD_STACKSIZE);
 }
 
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
@@ -170,7 +171,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 	return 0;
 #endif
 
-#if !(defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (!(defined(CONFIG_ETHERNET) && CONFIG_ETHERNET))
+#if !((defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET))
 	if (idx > 1) {
 		idx = 1;
 	}
@@ -654,8 +655,10 @@ uint32_t LwIP_GetRENEWTIME(uint8_t idx)
 //To check successful WiFi connection and obtain of an IP address
 void LwIP_Check_Connectivity(void)
 {
+	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 	rtos_time_delay_ms(2000);
-	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
+	while (!((wifi_get_join_status(&join_status) == RTK_SUCCESS)
+			 && (join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Wait for WiFi and DHCP Connect Success...\n");
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Please use AT+WLCONN to connect AP first time\n");
 		rtos_time_delay_ms(2000);

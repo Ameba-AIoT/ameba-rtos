@@ -54,7 +54,7 @@
 /* enable 1X code in lib_wlan as default (increase 380 bytes) */
 #define CONFIG_EAP
 
-#define CONFIG_BT_COEXIST
+//#define CONFIG_BT_COEXIST
 
 #if WIFI_LOGO_CERTIFICATION == 0
 #define RX_SHORTCUT /*there's no reoder in rx short right now, wifi logo need ping 10k which needs reorder*/

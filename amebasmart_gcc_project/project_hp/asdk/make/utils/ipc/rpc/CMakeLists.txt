@@ -1,2 +1,0 @@
-ameba_add_subdirectories(hal framework)
-ameba_add_subdirectories_if(CONFIG_RPC_TEST tests)

@@ -1,3 +1,8 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# Copyright (c) 2024 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
 import os
 import subprocess
 import re
@@ -132,9 +137,7 @@ class Manager(object):
 
         if not os.path.exists(self.config_in):  # a pristine project, empty menuconfig floder, need generate .config
             # print("INFO: no .config exists, create with default configurations")
-            file_list = []
-            if os.path.exists(self.prj_conf): file_list.append(self.prj_conf)
-            if self.apply_files_config(file_list): return 1
+            if self.apply_default_config(): return 1
 
         if self.apply_files_config(files = [], output_config_default = True): return 2 #generate .config_default each time
 
@@ -161,16 +164,6 @@ class Manager(object):
             return 0
 
     def apply_files_config(self, files:List[str], output_config_default = False) -> int:
-        if output_config_default:
-            config_in  = "__empty__"
-            config_out = self.config_default
-        else:
-            config_in = None
-            config_out = None
-            if os.path.exists(self.config_root_dir):
-                shutil.rmtree(self.config_root_dir)
-                os.makedirs(self.config_root_dir)
-
 
         file_list = []
         confs = []
@@ -192,7 +185,19 @@ class Manager(object):
                     stripped_line = line.strip()
                     if stripped_line.startswith("CONFIG_"):
                         stripped_line = stripped_line[len("CONFIG_"):]
-                    confs.append(stripped_line)
+                    if stripped_line and not stripped_line.startswith("#"):
+                        confs.append(stripped_line)
+
+        if output_config_default:
+            config_in  = "__empty__"
+            config_out = self.config_default
+        else:
+            config_in = None
+            config_out = None
+            if os.path.exists(self.config_root_dir):
+                shutil.rmtree(self.config_root_dir)
+                os.makedirs(self.config_root_dir)
+
         return self.run_set_config(config_in = config_in, config_out=config_out, content = confs)
 
     def clean_all(self, script_dir:str):
@@ -214,7 +219,16 @@ class Manager(object):
             shutil.rmtree(self.config_root_dir)
 
     def save_confs(self, file:str) -> int:
-        return self.run_command('saveconfig.py --kconfig ', self.top_kconfig, ' --out ', file)
+        if os.path.isabs(file):
+            path = file
+        else:
+            path = os.path.join(self.out_dir, file)
+
+        if os.path.realpath(path) == os.path.realpath(self.default_conf):
+            print("WARNING: You are touching default.conf")
+            return self.run_command('saveconfig.py --kconfig ', self.top_kconfig, ' --out ', path)
+        else:
+            return self.run_command('saveconfig.py --kconfig ', self.top_kconfig, ' --out ', path, ' --default ', self.default_conf)
 
     def extract_core_role(self, core:str, lines:List[str] = []) -> List[str]:
         pattern = rf'^CONFIG_CORE_AS_(.*)(_FOR_{core.upper()})=(.*)$'

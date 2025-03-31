@@ -103,6 +103,25 @@ elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
             ram_common/ameba_sram_swap.c
         )
     endif()
+elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image3")
+    ameba_list_append(private_sources
+        ram_km4/ameba_trustzone.c
+        ram_common/ameba_gdma_ram.c
+        ram_common/ameba_codec.c
+        ram_common/ameba_sport.c
+        ram_common/ameba_vad.c
+        ram_common/ameba_ledc.c
+        ram_common/ameba_uart.c
+        ram_common/ameba_spi.c
+        ram_common/ameba_i2c.c
+        ram_common/ameba_tim.c
+        ram_common/ameba_rtc.c
+        ram_common/ameba_adc.c
+        ram_common/ameba_comparator.c
+        ram_common/ameba_thermal.c
+        ram_common/ameba_otp.c
+        ram_common/ameba_swr_calib.c
+    )
 endif()
 
 # Component private part, user config end(DO NOT remove this line)

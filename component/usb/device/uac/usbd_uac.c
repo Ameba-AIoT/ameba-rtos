@@ -2115,7 +2115,7 @@ int usbd_uac_init(usbd_uac_cb_t *cb)
 
 #if USBD_UAC_ISOC_XFER_DEBUG
 	rtos_task_t task_dump;
-	if (rtos_task_create(&task_dump, ((const char *)"usbd_uac_status_dump_thread"), usbd_uac_status_dump_thread, NULL, 1024U, 1) != SUCCESS) {
+	if (rtos_task_create(&task_dump, ((const char *)"usbd_uac_status_dump_thread"), usbd_uac_status_dump_thread, NULL, 1024U, 1) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create usb status dump task fail\n");
 	}
 #endif
@@ -2317,7 +2317,7 @@ u32 usbd_uac_read(u8 *buffer, u32 size, u32 time_out_ms)
 			if (pdata_ctrl->isoc_read_idx == pdata_ctrl->isoc_write_idx) {
 				//wait sema
 				pdata_ctrl->read_wait_sema = 1;
-				if (rtos_sema_take(pdata_ctrl->uac_isoc_sema, time_out_ms) != SUCCESS) {
+				if (rtos_sema_take(pdata_ctrl->uac_isoc_sema, time_out_ms) != RTK_SUCCESS) {
 					//if timeout, return
 					pdata_ctrl->read_wait_sema = 0;
 					break;

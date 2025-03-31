@@ -420,7 +420,7 @@ SECTIONS
     PROVIDE(rtw_get_bit_value_from_ieee_value = 0x14397);
     PROVIDE(rtw_is_cckrates_included = 0x143b5);
     PROVIDE(rtw_is_cckratesonly_included = 0x143e5);
-    PROVIDE(rtw_check_network_type = 0x14415);
+    PROVIDE(rtw_check_wireless_mode = 0x14415);
     PROVIDE(rtw_set_fixed_ie = 0x14443);
     PROVIDE(rtw_set_ie = 0x14461);
     PROVIDE(rtw_get_ie = 0x1448d);

@@ -39,12 +39,29 @@ static __IO int msc_is_ready = 0;
 static u32 filenum = 0;
 
 static usbh_config_t usbh_cfg = {
-	.pipes = 5U,
 	.speed = USB_SPEED_HIGH,
 	.dma_enable = FALSE,
 	.ext_intr_en = USBH_SOF_INTR,
 	.main_task_priority = 3U,
 	.isr_task_priority  = 4U,
+	.sof_tick_en = 1U,
+
+#if defined (CONFIG_AMEBAGREEN2)
+	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined (CONFIG_AMEBASMARTPLUS)
+	/*FIFO total depth is 1280 DWORD, reserve 14 DWORD for DMA addr*/
+	.rx_fifo_depth = 754,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined (CONFIG_AMEBAL2)
+	/*FIFO total depth is 1024 DWORD, reserve 11 DWORD for DMA addr*/
+	.rx_fifo_depth = 501,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#endif
 };
 
 static usbh_msc_cb_t msc_usr_cb = {

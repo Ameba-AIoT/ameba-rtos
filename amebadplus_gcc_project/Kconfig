@@ -99,7 +99,7 @@ comment "-----Connectivity config-----"
 menu "CONFIG WHC INTF"
     choice
         prompt "WHC MODE"
-        # FULLMAC_MENU only run NP, FULLMAC_HOST only run AP, other mode run both AP and NP.
+        # FULLMAC_MENU only run NP, WHC_HOST only run AP, other mode run both AP and NP.
         default WHC_INTF_IPC_MENU
             config WHC_INTF_IPC_MENU
                 bool "WHC_IPC"
@@ -115,8 +115,8 @@ menu "CONFIG WHC INTF"
                 bool "WHC_BRIDGE"
                 select CORE_AS_AP_FOR_KM4
                 select CORE_AS_NP_FOR_KM4
-            config FULLMAC_HOST
-                bool "FULLMAC_HOST"
+            config WHC_HOST
+                bool "WHC_HOST"
                 select CORE_AS_AP_FOR_KM4
 
             # config WIFI_SINGLE_CORE_MENU
@@ -175,6 +175,17 @@ menu "CONFIG WHC INTF"
         endchoice
 
         endmenu
+    endif
+
+    if WHC_HOST
+        choice
+            prompt "WHC HOST MDOE"
+            default WHC_FULLMAC_HOST
+            config WHC_FULLMAC_HOST
+                bool "FULLMAC"
+            config WHC_BRIDGE_HOST
+                bool "BRIDGE"
+        endchoice
     endif
 
     config CORE_AS_AP_FOR_KM4
@@ -242,7 +253,7 @@ menu "CONFIG WIFI"
             select LWIP_LAYER
             select WIFI_HOST_CONTROL
 
-        config FULLMAC_HOST
+        config WHC_HOST
             bool
             depends on CORE_AS_AP
             select WLAN
@@ -313,6 +324,11 @@ menu "CONFIG BT"
         bool "Enable BT"
 
     if BT_MENU
+        # IC BT capability
+        config BT_HAS_MESH
+            def_bool y
+        config BT_HAS_ATSYNC
+            def_bool y
 
         choice
             depends on FULLMAC_DEV
@@ -383,6 +399,8 @@ rsource "../component/lwip/Kconfig"
 rsource "../component/ssl/Kconfig"
 
 orsource "../component/wpan/Kconfig"
+
+rsource "../component/rtk_coex/Kconfig.coex"
 
 if !AMEBA_RLS
 comment "---------Test Config---------"

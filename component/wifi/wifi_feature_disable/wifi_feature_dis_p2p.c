@@ -15,7 +15,7 @@
 #ifndef __WIFI_FEATURE_DIS_P2P_C__
 #define __WIFI_FEATURE_DIS_P2P_C__
 
-#include "wifi_intf_drv_to_app_types.h"
+#include "wifi_api_types.h"
 
 #ifndef CONFIG_WIFI_P2P_ENABLE
 void wifi_hal_p2p_addr_cam_init(void)
@@ -61,14 +61,14 @@ int  rtw_p2p_on_action(u8 iface_type, void *precv_frame)
 {
 	UNUSED(iface_type);
 	UNUSED(precv_frame);
-	return FAIL;
+	return RTK_FAIL;
 }
 
 int rtw_p2p_check_probersp_ess_bit(void *scan_network, u8 *pframe)
 {
 	UNUSED(scan_network);
 	UNUSED(pframe);
-	return FAIL;
+	return RTK_FAIL;
 }
 
 void rtw_p2p_set_mgnt_tx_rate(void)
@@ -86,7 +86,7 @@ int rtw_p2p_probereq_indicate(u8 *pframe, u32 len, u8 iface_type)
 	UNUSED(pframe);
 	UNUSED(len);
 	UNUSED(iface_type);
-	return FAIL;
+	return RTK_FAIL;
 }
 
 void rtw_p2p_check_wildcast_ssid(u32 scan_ssidlen, u8 *be_p2p_wildcast_ssid)

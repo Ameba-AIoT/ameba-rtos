@@ -109,7 +109,7 @@ static uint32_t _uart_irq(void *data)
 {
 	(void)data;
 	uint32_t reg_lsr = UART_LineStatusGet(HCI_UART_DEV);
-	uint32_t reg_ier = HAL_READ32(UART3_REG_BASE, 0x4);
+	uint32_t reg_ier = HCI_UART_DEV->IER;
 
 	if (reg_lsr & RUART_BIT_RXND_INT) {
 		UART_INT_Clear(HCI_UART_DEV, RUART_BIT_RXNDICF);

@@ -16,7 +16,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 #WARNING: Fixed section, DO NOT change!
 ameba_global_include(${public_includes})
-ameba_global_define(${public_defines})
+ameba_global_define(${public_definitions})
 ameba_global_library(${public_libraries})
 
 ##########################################################################################
@@ -38,13 +38,123 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources
-    ameba_media_extractor_usrcfg.cpp
-    ameba_media_decoder_usrcfg.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/configs/ameba_media_extractor_usrcfg.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/configs/ameba_media_decoder_usrcfg.cpp
 )
 ameba_list_append(private_includes
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/configs/include
     ${c_CMPT_AUDIO_DIR}/interfaces
 )
+
+if(CONFIG_MEDIA_PLAYER)
+    ameba_list_append(private_definitions
+        MEDIA_PLAYER
+    )
+endif()
+
+if(CONFIG_MEDIA_CODEC_HAAC)
+    ameba_list_append(private_definitions
+        MEDIA_DEMUX_AAC_DELIVER_ADTS_HEADER
+    )
+endif()
+
+if(CONFIG_MEDIA_DEMUX_AAC)
+    ameba_list_append(private_definitions
+        MEDIA_DEMUX_AAC
+    )
+endif()
+
+if(CONFIG_MEDIA_DEMUX_WAV)
+    ameba_list_append(private_definitions
+        MEDIA_DEMUX_WAV
+    )
+endif()
+
+if(CONFIG_MEDIA_DEMUX_MP3)
+    ameba_list_append(private_definitions
+        MEDIA_DEMUX_MP3
+    )
+endif()
+
+if(CONFIG_MEDIA_DEMUX_AMR)
+    ameba_list_append(private_definitions
+        MEDIA_DEMUX_AMR
+    )
+endif()
+
+if(CONFIG_MEDIA_DEMUX_OGG)
+    ameba_list_append(private_definitions
+        MEDIA_DEMUX_OGG
+    )
+endif()
+
+if(CONFIG_MEDIA_DEMUX_FLAC)
+    ameba_list_append(private_definitions
+        MEDIA_DEMUX_FLAC
+    )
+endif()
+
+if(CONFIG_MEDIA_DEMUX_MP4)
+    ameba_list_append(private_definitions
+        MEDIA_DEMUX_MP4
+    )
+endif()
+
+
+if(CONFIG_MEDIA_CODEC_PCM)
+    ameba_list_append(private_definitions
+        MEDIA_CODEC_PCM
+    )
+endif()
+
+if(CONFIG_MEDIA_CODEC_AAC)
+    ameba_list_append(private_definitions
+        MEDIA_CODEC_AAC
+    )
+endif()
+
+if(CONFIG_MEDIA_CODEC_HAAC)
+    ameba_list_append(private_definitions
+        MEDIA_CODEC_HAAC
+    )
+endif()
+
+if(CONFIG_MEDIA_CODEC_MP3)
+    ameba_list_append(private_definitions
+        MEDIA_CODEC_MP3
+    )
+endif()
+
+if(CONFIG_MEDIA_CODEC_VORBIS)
+    ameba_list_append(private_definitions
+        MEDIA_CODEC_VORBIS
+    )
+endif()
+
+if(CONFIG_MEDIA_CODEC_OPUS)
+    ameba_list_append(private_definitions
+       MEDIA_CODEC_OPUS
+    )
+endif()
+
+if(CONFIG_MEDIA_CODEC_AMR)
+    ameba_list_append(private_definitions
+        MEDIA_CODEC_AMR
+    )
+endif()
+
+if(CONFIG_MEDIA_CODEC_G711)
+    ameba_list_append(private_definitions
+        MEDIA_CODEC_G711
+    )
+endif()
+
+if(CONFIG_MEDIA_CODEC_GSM)
+    ameba_list_append(private_definitions
+        MEDIA_CODEC_GSM
+    )
+endif()
+
 ameba_list_append(private_definitions
     __RTOS__
 )
@@ -62,7 +172,7 @@ ameba_list_append(private_compile_options
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
-ameba_add_internal_library(media_configs
+ameba_add_external_tmp_library(media_configs
     p_SOURCES
         ${private_sources}
     p_INCLUDES

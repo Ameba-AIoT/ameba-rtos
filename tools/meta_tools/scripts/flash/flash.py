@@ -17,6 +17,22 @@ MinSupportedDeviceProfileMinorVersion = 1
 setting_file = "Setting.json"
 
 
+def sys_exit(logger, port, status, ret):
+    if port.is_open:
+        port.close()
+    while port.is_open:
+        pass
+    if not port.is_open:
+        logger.info(f"{port.port} closed.")
+
+    if status:
+        logger.info(f"Finished PASS")  # customized, do not modify
+        sys.exit(0)
+    else:
+        logger.error(f"Finished FAIL: {ret}")  # customized, do not modify
+        sys.exit(-1)
+
+
 def parse_string_as_dict_list(value):
     dict_list = []
     try:
@@ -172,7 +188,7 @@ def main(argc, argv):
             else:
                 end_address = start_address + os.path.getsize(image)
 
-            download_img_info.end_address = start_address + os.path.getsize(image)
+            download_img_info.end_address = end_address
             download_img_info.memory_type = memory_type
             images_info = [download_img_info]
 
@@ -223,6 +239,10 @@ def main(argc, argv):
             if end_addr is None:
                 logger.error(f"End address is required for nand flash download")
                 sys.exit(1)
+        else:
+            if size is None:
+                logger.error(f"Erase size is required")
+                sys.exit(-1)
 
         if end_addr:
             try:
@@ -233,9 +253,6 @@ def main(argc, argv):
         else:
             end_address = 0
 
-        if size is None:
-            logger.error(f"Erase size is required")
-            sys.exit(-1)
         memory_info.size_in_Kbyte = size
 
         if end_address == 0:
@@ -303,75 +320,77 @@ def main(argc, argv):
     if download:
         # download
         if not ameba.check_protocol_for_download():
-            if port.is_open:
-                port.close()
-                logger.info(f"{port.port} closed.")
-            sys.exit(-1)
+            ret = ErrType.SYS_PROTO
+            sys_exit(logger, port, False, ret)
 
         logger.info(f"Image download start...")
         ret = ameba.prepare()
         if ret != ErrType.OK:
             logger.error("Download prepare fail")
-            if port.is_open:
-                port.close()
-                logger.info(f"{port.port} closed.")
-            logger.error(f"Finished FAIL: {ret}")  # customized, do not modify
-            sys.exit(-1)
+            sys_exit(logger, port, False, ret)
 
-        ret = ameba.post_verify_images()
+        ret = ameba.verify_images()
         if ret != ErrType.OK:
-            if port.is_open:
-                port.close()
-                logger.info(f"{port.port} closed.")
-            logger.error(f"Finished FAIL: {ret}")  # customized, do not modify
-            sys.exit(-1)
+            sys_exit(logger, port, False, ret)
+
+        if not ameba.is_all_ram:
+            ret = ameba.post_verify_images()
+            if ret != ErrType.OK:
+                sys_exit(logger, port, False, ret)
+
+        if not ameba.is_all_ram:
+            flash_status = FlashBPS()
+            ret = ameba.check_and_process_flash_lock(flash_status)
+            if ret != ErrType.OK:
+                logger.error("Download image fail")
+                sys_exit(logger, port, False, ret)
 
         ret = ameba.download_images()
         if ret != ErrType.OK:
             logger.error("Download image fail")
-            if port.is_open:
-                port.close()
-                logger.info(f"{port.port} closed.")
-            logger.error(f"Finished FAIL: {ret}")  # customized, do not modify
-            sys.exit(-1)
+            sys_exit(logger, port, False, ret)
+
+        if (not ameba.is_all_ram) and flash_status.need_unlock:
+            logger.info("Restore the flash block protection...")
+            ret = ameba.lock_flash(flash_status.protection)
+            if ret != ErrType.OK:
+                logger.error(f"Fail to restore the flash block protection")
+                sys_exit(logger, port, False, ret)
     else:
         # erase
-        logger.info(f"Erase {mem_t} start...")
         ret = ameba.prepare()
         if ret != ErrType.OK:
             logger.error("Erase prepare fail")
-            if port.is_open:
-                port.close()
-                logger.info(f"{port.port} closed.")
-            logger.error(f"Finished FAIL: {ret}")  # customized, do not modify
-            sys.exit(-1)
+            sys_exit(logger, port, False, ret)
+
+        ret = ameba.validate_config_for_erase()
+        if ret != ErrType.OK:
+            sys_exit(logger, port, False, ret)
 
         ret = ameba.post_validate_config_for_erase()
         if ret != ErrType.OK:
-            if port.is_open:
-                port.close()
-                logger.info(f"{port.port} closed.")
-            logger.error(f"Finished FAIL: {ret}")  # customized, do not modify
-            sys.exit(-1)
+            sys_exit(logger, port, False, ret)
+
+        if (not profile_info.is_ram_address(memory_info.start_address)):
+            flash_status = FlashBPS()
+            ret = ameba.check_and_process_flash_lock(flash_status)
+            if ret != ErrType.OK:
+                logger.error("Erase fail")
+                sys_exit(logger, port, False, ret)
 
         ret = ameba.erase_flash()
         if ret != ErrType.OK:
-            if port.is_open:
-                port.close()
-                logger.info(f"{port.port} closed.")
             logger.error(f"Erase {mem_t} failed")
-            logger.error(f"Finished FAIL: {ret}")  # customized, do not modify
-            sys.exit(-1)
+            sys_exit(logger, port, False, ret)
 
-    if port.is_open:
-        port.close()
-    while port.is_open:
-        pass
-    if not port.is_open:
-        logger.info(f"{port.port} closed.")
+        if (not profile_info.is_ram_address(memory_info.start_address)) and flash_status.need_unlock:
+            logger.info("Restore the flash block protection...")
+            ret = ameba.lock_flash(flash_status.protection)
+            if ret != ErrType.OK:
+                logger.error(f"Fail to restore the flash block protection")
+                sys_exit(logger, port, False, ret)
 
-    logger.info(f"Finished PASS")  # customized, do not modify
-    sys.exit(0)
+    sys_exit(logger, port, True, ret)
 
 
 if __name__ == "__main__":

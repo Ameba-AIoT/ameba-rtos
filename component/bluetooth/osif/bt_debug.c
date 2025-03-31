@@ -14,6 +14,9 @@
         (((uint16_t)(*((uint8_t *)(_a) + 0)) << 0)  |   \
          ((uint16_t)(*((uint8_t *)(_a) + 1)) << 8))
 
+uint32_t hci_cfg_sw_val = 0xFF;    /* Open BT trace log & FW log use 0xDD
+                                      Open BT trace log only use 0xDF
+                                      Open BT FW log only use 0xFD */
 
 #if defined(BT_LOG_USE_MUTEX) && BT_LOG_USE_MUTEX
 void *bt_log_mtx = NULL;

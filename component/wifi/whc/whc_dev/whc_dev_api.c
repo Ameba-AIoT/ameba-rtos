@@ -84,7 +84,6 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_SEND_EAPOL, whc_event_send_eapol},
 	{WHC_API_WIFI_GET_ASSOCIATED_CLIENT_LIST, whc_event_get_assoc_client_list},
 	{WHC_API_WPA_4WAY_REPORT, whc_event_wpa_4way_rpt},
-	{WHC_API_WIFI_GET_SW_STATISTIC, whc_event_get_sw_statistic},
 #endif
 };
 
@@ -181,7 +180,7 @@ exit:
 void whc_event_get_scan_res(u32 api_id, u32 *param_buf)
 {
 	(void)param_buf;
-	char *scan_buf = NULL;
+	struct rtw_scan_result *scanned_AP_list = NULL;
 	unsigned int scanned_AP_num = 0;
 	int ret = 0;
 
@@ -189,17 +188,17 @@ void whc_event_get_scan_res(u32 api_id, u32 *param_buf)
 	if (scanned_AP_num == 0) {/* scanned no AP*/
 		goto error_exit;
 	}
-	scan_buf = (char *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
-	if (scan_buf == NULL) {
+	scanned_AP_list = (struct rtw_scan_result *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
+	if (scanned_AP_list == NULL) {
 		goto error_exit;
 	}
-	if (wifi_get_scan_records(&scanned_AP_num, scan_buf) < 0) {
+	if (wifi_get_scan_records(&scanned_AP_num, scanned_AP_list) < 0) {
 		ret = -1;
-		rtos_mem_free((void *)scan_buf);
+		rtos_mem_free((void *)scanned_AP_list);
 		goto error_exit;
 	} else {
-		whc_send_api_ret_value(api_id, (u8 *)scan_buf, scanned_AP_num * sizeof(struct rtw_scan_result));
-		rtos_mem_free(scan_buf);
+		whc_send_api_ret_value(api_id, (u8 *)scanned_AP_list, scanned_AP_num * sizeof(struct rtw_scan_result));
+		rtos_mem_free(scanned_AP_list);
 		return;
 	}
 
@@ -277,16 +276,6 @@ void whc_event_wpa_4way_rpt(u32 api_id, u32 *param_buf)
 	int ret = 0;
 	wifi_wpa_4way_status_indicate((struct rtw_wpa_4way_status *)param_buf);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
-}
-
-void whc_event_get_sw_statistic(u32 api_id, u32 *param_buf)
-{
-	unsigned char wlan_idx = (unsigned char)param_buf[0];
-
-	struct _rtw_sw_statistics_t *statistic = (struct _rtw_sw_statistics_t *)rtos_mem_zmalloc(sizeof(struct _rtw_sw_statistics_t));
-	wifi_get_sw_statistic(wlan_idx, statistic);
-	whc_send_api_ret_value(api_id, (u8 *)statistic, sizeof(struct _rtw_sw_statistics_t));
-	rtos_mem_free(statistic);
 }
 
 #endif
@@ -566,9 +555,9 @@ void whc_event_wifi_fetch_phy_statistic(u32 api_id, u32 *param_buf)
 {
 	(void)param_buf;
 
-	struct _rtw_phy_statistics_t statistic;
+	union _rtw_phy_statistics_t statistic;
 	wifi_get_phy_statistic(&statistic);
-	whc_send_api_ret_value(api_id, (u8 *)&statistic, sizeof(struct _rtw_phy_statistics_t));
+	whc_send_api_ret_value(api_id, (u8 *)&statistic, sizeof(union _rtw_phy_statistics_t));
 }
 
 void whc_event_wifi_send_mgnt(u32 api_id, u32 *param_buf)
@@ -589,7 +578,7 @@ void whc_event_wifi_set_EDCA_param(u32 api_id, u32 *param_buf)
 	int ret;
 	unsigned int ac_param = param_buf[0];
 
-	ret = wifi_set_EDCA_param(ac_param);
+	ret = wifi_set_edca_param(ac_param);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
@@ -717,7 +706,18 @@ void whc_event_wtn_cmd(u32 api_id, u32 *param_buf)
 #ifdef CONFIG_MP_INCLUDED
 void whc_event_mp_cmd(u32 api_id, u32 *param_buf)
 {
-	rtw_sdio_mp_cmd_dispatch(api_id, param_buf);
+	char *outbuf;
+	int show_msg = (int)param_buf[0], buf_size = WHC_MP_MSG_BUF_SIZE;
+	char *cmd = (char *)(param_buf + 2);
+
+	outbuf = (char *)rtos_mem_malloc(buf_size);
+	if (outbuf == NULL) {
+		RTK_LOGE(TAG_WLAN_INIC, "Fail to allocate outbuf!\n\r");
+	}
+
+	wext_private_command(cmd, show_msg, outbuf);
+	whc_send_api_ret_value(api_id, (u8 *)outbuf, buf_size);
+	rtos_mem_free(outbuf);
 }
 #endif
 
@@ -1200,8 +1200,8 @@ void whc_dev_api_init(void)
 	event_priv.b_waiting_for_ret = 0;
 
 	/* Initialize the event task */
-	if (SUCCESS != rtos_task_create(&event_priv.api_dev_task, (const char *const)"whc_dev_api_task", (rtos_task_function_t)whc_dev_api_task, NULL,
-									WHC_API_STACK * 4, CONFIG_WHC_DEV_API_PRIO)) {
+	if (RTK_SUCCESS != rtos_task_create(&event_priv.api_dev_task, (const char *const)"whc_dev_api_task", (rtos_task_function_t)whc_dev_api_task, NULL,
+										WHC_API_STACK * 4, CONFIG_WHC_DEV_API_PRIO)) {
 		RTK_LOGE(TAG_WLAN_INIC, "Create whc_dev_api_task Err!!\n");
 	}
 }
@@ -1342,7 +1342,7 @@ void whc_event_bridge_get_ip(u32 api_id, u32 *param_buf)
 void whc_event_bridge_get_scan_res(u32 api_id, u32 *param_buf)
 {
 	(void)param_buf;
-	char *scan_buf = NULL;
+	struct rtw_scan_result *scanned_AP_list = NULL;
 	unsigned int scanned_AP_num = 0;
 	int ret = 0;
 
@@ -1351,16 +1351,16 @@ void whc_event_bridge_get_scan_res(u32 api_id, u32 *param_buf)
 		goto error_exit;
 	}
 
-	scan_buf = (char *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
-	if (scan_buf == NULL) {
+	scanned_AP_list = (struct rtw_scan_result *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
+	if (scanned_AP_list == NULL) {
 		goto error_exit;
 	}
-	if (wifi_get_scan_records(&scanned_AP_num, scan_buf) < 0) {
-		rtos_mem_free((void *)scan_buf);
+	if (wifi_get_scan_records(&scanned_AP_num, scanned_AP_list) < 0) {
+		rtos_mem_free((void *)scanned_AP_list);
 		goto error_exit;
 	} else {
-		whc_send_api_ret_value(api_id, (u8 *)scan_buf, scanned_AP_num * sizeof(struct rtw_scan_result));
-		rtos_mem_free(scan_buf);
+		whc_send_api_ret_value(api_id, (u8 *)scanned_AP_list, scanned_AP_num * sizeof(struct rtw_scan_result));
+		rtos_mem_free(scanned_AP_list);
 		return;
 	}
 

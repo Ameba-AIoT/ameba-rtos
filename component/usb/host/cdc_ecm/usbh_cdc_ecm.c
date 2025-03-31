@@ -14,13 +14,15 @@
 #define USBH_CDC_BUFFER_SIZE             1024
 #define ECM_ENABLE_DUMP_DESCRIPYOT_PARSE 0
 
-#define ECM_DMA_LARGE_BUFFER             0
+#define ECM_RX_IN_HIGH_TP                1
+#define ECM_DMA_LARGE_BUFFER             1
 
 /* conventional codes for class-specific descriptors */
 #define USB_DT_CS_INTERFACE              0x24
 
-#define USB_BULK_OUT_IDLE_MAX_CNT        8000U
+#define USB_BULK_OUT_IDLE_MAX_CNT        80U
 #define USB_BULK_IN_IDLE_MAX_CNT         40U
+#define USB_BULK_IN_BUSY_MAX_CNT         10U
 
 #define  USBH_ECM_FREE_MEM(x)  if(x){ usb_os_mfree(x); x = NULL;}
 
@@ -35,10 +37,8 @@ typedef struct {
 /* Private function prototypes -----------------------------------------------*/
 static int usbh_cdc_ecm_attach(usb_host_t *host);
 static int usbh_cdc_ecm_detach(usb_host_t *host);
-static int usbh_cdc_ecm_process(usb_host_t *host);
+static int usbh_cdc_ecm_process(usb_host_t *host, u32 msg);
 static int usbh_cdc_ecm_setup(usb_host_t *host);
-static int usbh_cdc_ecm_sof(usb_host_t *host);
-static int usbh_cdc_ecm_nak(usb_host_t *host, u8 pipe_num);
 static void usbh_cdc_ecm_process_bulk_out(usb_host_t *host);
 static void usbh_cdc_ecm_process_bulk_in(usb_host_t *host);
 static void usbh_cdc_ecm_process_intr_in(usb_host_t *host);
@@ -78,8 +78,6 @@ static usbh_class_driver_t usbh_cdc_ecm_driver = {
 	.detach  = usbh_cdc_ecm_detach,
 	.setup   = usbh_cdc_ecm_setup,
 	.process = usbh_cdc_ecm_process,
-	.sof = usbh_cdc_ecm_sof,
-	.nak = usbh_cdc_ecm_nak,
 };
 
 static usbh_cdc_ecm_host_t usbh_cdc_ecm_host;
@@ -571,6 +569,12 @@ static int usbh_cdc_ecm_setup(usb_host_t *host)
 		}
 
 		cdc->usbh_state = USBH_CDC_ECM_SETUP;
+
+		/* post to loop main process */
+		cdc->state = CDC_ECM_STATE_PRE_SETTING;
+		cdc->sub_state = CDC_ECM_STATE_CTRL_ALT_SETTING;
+		usbh_notify_class_state_change(host, 0);
+
 		if ((cdc->cb != NULL) && (cdc->cb->setup != NULL)) {
 			cdc->cb->setup();
 		}
@@ -578,62 +582,14 @@ static int usbh_cdc_ecm_setup(usb_host_t *host)
 
 	return status;
 }
-/**
-  * @brief  Usb Sof callback function.
-  * @param  host: Host handle
-  * @retval HAL_OK
-  */
-static int usbh_cdc_ecm_sof(usb_host_t *host)
-{
-	u8 i = 0;
-	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 
-	for (i = 0U; i < host->config.pipes; i++) {
-		if (cdc->host_pipe[i]) {
-			cdc->host_pipe[i] = 0;
-			usbh_reactivate_pipe(host, i);
-		}
-	}
-
-	return HAL_OK;
-}
-/**
-  * @brief  Usb nak callback function.
-  * @param  host: Host handle
-  * @param  pipe_num: Pipe number
-  * @retval return OK while success, else return HAL_ERR_UNKNOWN
-  */
-static int usbh_cdc_ecm_nak(usb_host_t *host, u8 pipe_num)
-{
-	u8 ep_type;
-	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-	if (pipe_num >= USB_MAX_PIPES) {
-		return HAL_ERR_PARA;
-	}
-
-	ep_type = usbh_get_ep_type(host, pipe_num);
-	if (ep_type == USB_CH_EP_TYPE_BULK) {
-		//do not retransmit in this loop, it will do in next SOF
-		cdc->host_pipe[pipe_num] = 1;
-		return HAL_OK;
-	} else if (ep_type == USB_CH_EP_TYPE_INTR) {
-		cdc->intr_in_busy_tick = host->tick;
-		cdc->intr_in_idle_tick = host->tick;
-		//INTR did not retrigger the EP, but wait intr_in_busy_tick to retrigger
-		cdc->host_pipe[pipe_num] = 0;
-		//finish the ep
-		return HAL_OK;
-	}
-
-	return HAL_ERR_UNKNOWN;
-}
 
 /**
   * @brief  Usb State Machine handling callback
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_cdc_ecm_process(usb_host_t *host)
+static int usbh_cdc_ecm_process(usb_host_t *host, u32 msg)
 {
 	u8 req_status = HAL_OK;
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
@@ -646,16 +602,44 @@ static int usbh_cdc_ecm_process(usb_host_t *host)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "ECM alt setting finish\n");
 			cdc->state = CDC_ECM_STATE_TRANSFER;
 		}
-		usbh_notify_class_state_change(host);
+		usbh_notify_class_state_change(host, cdc->comm_if.intr_in_pipe);
 		break;
 
 	case CDC_ECM_STATE_TRANSFER:
-		usbh_cdc_ecm_process_bulk_in(host);
-		usbh_cdc_ecm_process_bulk_out(host);
-		usbh_cdc_ecm_process_intr_in(host);
-		if (cdc->next_transfor) {
+#if ECM_STATE_DEBUG_ENABLE
+		cdc->loop_cnt++;
+#endif
+		if (msg == cdc->data_if.bulk_in_pipe) {
+#if ECM_STATE_DEBUG_ENABLE
+			cdc->bulk_in++;
+#endif
 			cdc->next_transfor = 0;
-			usbh_notify_class_state_change(host);
+			usbh_cdc_ecm_process_bulk_in(host);
+			if (cdc->next_transfor) {
+				usbh_notify_class_state_change(host, cdc->data_if.bulk_in_pipe);
+			}
+		}
+
+		if (msg == cdc->data_if.bulk_out_pipe) {
+#if ECM_STATE_DEBUG_ENABLE
+			cdc->bulk_out++;
+#endif
+			cdc->next_transfor = 0;
+			usbh_cdc_ecm_process_bulk_out(host);
+			if (cdc->next_transfor) {
+				usbh_notify_class_state_change(host, cdc->data_if.bulk_out_pipe);
+			}
+		}
+
+		if (msg == cdc->comm_if.intr_in_pipe) {
+#if ECM_STATE_DEBUG_ENABLE
+			cdc->intr_in++;
+#endif
+			cdc->next_transfor = 0;
+			usbh_cdc_ecm_process_intr_in(host);
+			if (cdc->next_transfor) {
+				usbh_notify_class_state_change(host, cdc->comm_if.intr_in_pipe);
+			}
 		}
 		break;
 
@@ -887,7 +871,7 @@ static void usbh_cdc_ecm_process_bulk_out(usb_host_t *host)
 		}
 #endif
 		cdc->bulk_data_out_state = CDC_ECM_TRANSFER_STATE_BUSY;
-		cdc->bulk_out_idle_tick = host->tick;
+		cdc->bulk_out_idle_tick = usbh_get_current_tick(host);
 		cdc->next_transfor = 1;
 		break;
 
@@ -900,6 +884,7 @@ static void usbh_cdc_ecm_process_bulk_out(usb_host_t *host)
 				cdc->bulk_data_out_len = 0U;
 				cdc->bulk_data_out_buf = NULL;
 				cdc->bulk_data_out_state = CDC_ECM_TRANSFER_STATE_XFER;
+				cdc->next_transfor = 1;
 			} else {
 				cdc->bulk_data_out_state = CDC_ECM_TRANSFER_STATE_IDLE;
 				if ((cdc->cb != NULL) && (cdc->cb->bulk_send != NULL)) {
@@ -911,6 +896,7 @@ static void usbh_cdc_ecm_process_bulk_out(usb_host_t *host)
 				cdc->bulk_data_out_len -= cdc->data_if.bulk_out_packet_size;
 				cdc->bulk_data_out_buf += cdc->data_if.bulk_out_packet_size;
 				cdc->bulk_data_out_state = CDC_ECM_TRANSFER_STATE_XFER;
+				cdc->next_transfor = 1;
 			} else {
 				cdc->bulk_data_out_len = 0U;
 				cdc->bulk_data_out_state = CDC_ECM_TRANSFER_STATE_IDLE;
@@ -919,9 +905,8 @@ static void usbh_cdc_ecm_process_bulk_out(usb_host_t *host)
 				}
 			}
 #endif
-			cdc->next_transfor = 1;
 		} else if (urb_state == USBH_URB_BUSY) { //retransmit
-			cdc->bulk_data_out_state = CDC_ECM_TRANSFER_STATE_XFER;
+			// cdc->bulk_data_out_state = CDC_ECM_TRANSFER_STATE_XFER;
 			cdc->next_transfor = 1;
 		} else if ((urb_state == USBH_URB_ERROR) || (urb_state == USBH_URB_STALL)) {
 			cdc->bulk_data_out_state = CDC_ECM_TRANSFER_STATE_IDLE;
@@ -930,10 +915,9 @@ static void usbh_cdc_ecm_process_bulk_out(usb_host_t *host)
 			}
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK out failed %d\n", urb_state);
 		} else if (urb_state == USBH_URB_IDLE) {
-			cdc->next_transfor = 1;
-			if (usbh_get_elapsed_ticks(host, cdc->bulk_out_idle_tick) >= (USB_BULK_OUT_IDLE_MAX_CNT)) { // 1s
-				//RTK_LOGS(TAG, RTK_LOG_DEBUG, "BULK out idle to long(%d-%d)\n", host->tick, cdc->bulk_out_idle_tick);
+			if (usbh_get_elapsed_ticks(host, cdc->bulk_out_idle_tick) >= (USB_BULK_OUT_IDLE_MAX_CNT)) {
 				cdc->bulk_data_out_state = CDC_ECM_TRANSFER_STATE_XFER;
+				cdc->next_transfor = 1;
 			}
 		}
 		break;
@@ -963,7 +947,8 @@ static void usbh_cdc_ecm_process_bulk_in(usb_host_t *host)
 							   cdc->data_if.bulk_in_pipe);
 		cdc->bulk_data_in_state = CDC_ECM_TRANSFER_STATE_BUSY;
 		cdc->next_transfor = 1;
-		cdc->bulk_in_idle_tick = host->tick;
+		cdc->bulk_in_idle_tick = usbh_get_current_tick(host);
+		cdc->bulk_in_busy_tick = usbh_get_current_tick(host);
 		break;
 
 	case CDC_ECM_TRANSFER_STATE_BUSY:
@@ -974,27 +959,40 @@ static void usbh_cdc_ecm_process_bulk_in(usb_host_t *host)
 				cdc->cb->bulk_received(cdc->bulk_data_in_buf, len);
 			}
 
+#if ECM_RX_IN_HIGH_TP
 			usbh_bulk_receive_data(host,
 								   cdc->bulk_data_in_buf,
 								   USBH_CDC_ECM_BULK_BUF_MAX_SIZE,
 								   cdc->data_if.bulk_in_pipe);
-
-			cdc->bulk_in_idle_tick = host->tick;
+			cdc->bulk_in_idle_tick = usbh_get_current_tick(host);
+			cdc->bulk_in_busy_tick = usbh_get_current_tick(host);
 			cdc->next_transfor = 1;
+#else
+			cdc->bulk_data_in_state = CDC_ECM_TRANSFER_STATE_IDLE;
+#endif
 		} else if (urb_state == USBH_URB_BUSY) {
+			if (usbh_get_elapsed_ticks(host, cdc->bulk_in_busy_tick) >= USB_BULK_IN_BUSY_MAX_CNT) {
+				cdc->bulk_data_in_state = CDC_ECM_TRANSFER_STATE_IDLE;
+				cdc->next_transfor = 1;
+			}
 		} else if ((urb_state == USBH_URB_ERROR) || (urb_state == USBH_URB_STALL)) {
+#if ECM_RX_IN_HIGH_TP
 			cdc->bulk_data_in_state = CDC_ECM_TRANSFER_STATE_XFER;
+			cdc->next_transfor = 1;
+#else
+			cdc->bulk_data_in_state = CDC_ECM_TRANSFER_STATE_IDLE;
+#endif
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK in failed %d\n", urb_state);
 		} else if (urb_state == USBH_URB_IDLE) {
-			cdc->next_transfor = 1;
-			if (usbh_get_elapsed_ticks(host, cdc->bulk_in_idle_tick) >= (USB_BULK_IN_IDLE_MAX_CNT)) { // some tick
-				//RTK_LOGS(TAG, RTK_LOG_DEBUG, "BULK in idle to long(%d-%d)\n", host->tick, cdc->bulk_in_idle_tick);
+			if (usbh_get_elapsed_ticks(host, cdc->bulk_in_idle_tick) >= (USB_BULK_IN_IDLE_MAX_CNT)) {
 				cdc->bulk_data_in_state = CDC_ECM_TRANSFER_STATE_XFER;
+				cdc->next_transfor = 1;
 			}
 		}
 		break;
 
 	default:
+		cdc->bulk_data_in_state = CDC_ECM_TRANSFER_STATE_XFER;
 		break;
 	}
 }
@@ -1016,8 +1014,8 @@ static void usbh_cdc_ecm_process_intr_in(usb_host_t *host)
 							   cdc->comm_if.intr_in_packet_size,
 							   cdc->comm_if.intr_in_pipe);
 
-		cdc->intr_in_idle_tick = host->tick;
-		cdc->intr_in_busy_tick = host->tick;
+		cdc->intr_in_idle_tick = usbh_get_current_tick(host);
+		cdc->intr_in_busy_tick = usbh_get_current_tick(host);
 		cdc->intr_in_state = CDC_ECM_TRANSFER_STATE_BUSY;
 		cdc->next_transfor = 1;
 		break;
@@ -1031,27 +1029,25 @@ static void usbh_cdc_ecm_process_intr_in(usb_host_t *host)
 			}
 			if (len > cdc->comm_if.intr_in_packet_size) {
 				cdc->intr_in_state = CDC_ECM_TRANSFER_STATE_XFER;
+				cdc->next_transfor = 1;
 			} else {
 				cdc->intr_in_state = CDC_ECM_TRANSFER_STATE_IDLE;
 			}
-			cdc->next_transfor = 1;
 		} else if (urb_state == USBH_URB_BUSY) {
 			cdc->next_transfor = 1;
 			if (usbh_get_elapsed_ticks(host, cdc->intr_in_busy_tick) >= cdc->comm_if.intr_ep_interval) {
-				//RTK_LOGS(TAG, RTK_LOG_DEBUG, "INTR in busy too long %d-%d\n", host->tick, cdc->intr_in_busy_tick);
-				cdc->intr_in_state = CDC_ECM_TRANSFER_STATE_XFER;
-				cdc->intr_in_busy_tick = host->tick;
+				//RTK_LOGS(TAG, RTK_LOG_DEBUG, "INTR in busy too long %d-%d\n", usbh_get_current_tick(host), cdc->intr_in_busy_tick);
+				cdc->intr_in_state = CDC_ECM_TRANSFER_STATE_IDLE;
+				cdc->next_transfor = 1;
 			}
 		} else if ((urb_state == USBH_URB_ERROR) || (urb_state == USBH_URB_STALL)) {
 			cdc->intr_in_state = CDC_ECM_TRANSFER_STATE_IDLE;
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR in failed %d\n", urb_state);
-			cdc->next_transfor = 1;
 		} else if (urb_state == USBH_URB_IDLE) {
-			//while run usbh_intr_receive_data, but the interrupt not happen
-			cdc->next_transfor = 1;
+			cdc->next_transfor = 1; //maybe long time in this issue
 			if (usbh_get_elapsed_ticks(host, cdc->intr_in_idle_tick) >= cdc->comm_if.intr_ep_interval) { // 1s
-				//RTK_LOGS(TAG, RTK_LOG_DEBUG, "INTR in idle too long %d-%d\n", host->tick, cdc->intr_in_idle_tick);
-				cdc->intr_in_state = CDC_ECM_TRANSFER_STATE_XFER;
+				cdc->intr_in_state = CDC_ECM_TRANSFER_STATE_IDLE;
+				cdc->next_transfor = 1;
 			}
 		}
 		break;
@@ -1306,6 +1302,32 @@ static int usbh_cdc_ecm_process_led_set_ctrl(usb_host_t *host)
 	setup.b.wLength = 4;
 	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
 }
+
+/**
+  * @brief Check ecm bulk rx status, whether should trigger
+  * @retval Status
+  */
+static int usbh_cdc_ecm_bulk_rx_time_check(void)
+{
+	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
+	usb_host_t *host = cdc->host;
+	usbh_urb_state_t urb_state = usbh_get_urb_state(host, cdc->data_if.bulk_in_pipe);
+
+	if (usbh_get_elapsed_ticks(host, cdc->bulk_in_idle_tick) >= (USB_BULK_IN_IDLE_MAX_CNT)) {
+		return HAL_OK;
+	}
+
+	if (usbh_get_elapsed_ticks(host, cdc->bulk_in_busy_tick) >= (USB_BULK_IN_BUSY_MAX_CNT)) {
+		return HAL_OK;
+	}
+
+	if ((urb_state == USBH_URB_ERROR) || (urb_state == USBH_URB_STALL)) {
+		return HAL_OK;
+	}
+
+	return HAL_BUSY;
+}
+
 /* Exported functions --------------------------------------------------------*/
 /*
 	below is the private apis that called by ecm_hal
@@ -1374,6 +1396,8 @@ int usbh_cdc_ecm_deinit(void)
 	}
 
 	USBH_ECM_FREE_MEM(cdc->dongle_ctrl_buf);
+	USBH_ECM_FREE_MEM(cdc->bulk_data_in_buf);
+	USBH_ECM_FREE_MEM(cdc->led_array);
 
 	usbh_unregister_class(&usbh_cdc_ecm_driver);
 
@@ -1400,14 +1424,14 @@ int usbh_cdc_ecm_bulk_send(u8 *buf, u32 len)
 		if (cdc->bulk_data_out_state == CDC_ECM_TRANSFER_STATE_IDLE) {
 			cdc->bulk_data_out_buf = buf;
 			cdc->bulk_data_out_len = len;
-			if (len % cdc->data_if.bulk_out_packet_size == 0) { //ZLP
+			if ((len % cdc->data_if.bulk_out_packet_size) == 0) { //ZLP
 				cdc->bulk_out_zlp = 1;
 			} else {
 				cdc->bulk_out_zlp = 0;
 			}
 			cdc->bulk_data_out_state = CDC_ECM_TRANSFER_STATE_XFER;
 			cdc->state = CDC_ECM_STATE_TRANSFER;
-			usbh_notify_class_state_change(host);
+			usbh_notify_class_state_change(host, cdc->data_if.bulk_out_pipe);
 			ret = HAL_OK;
 		}
 	}
@@ -1430,10 +1454,12 @@ int usbh_cdc_ecm_bulk_receive(void)
 		return ret;
 	}
 	if (cdc->state == CDC_ECM_STATE_TRANSFER) {
-		if (cdc->bulk_data_in_state == CDC_ECM_TRANSFER_STATE_IDLE) {
-			cdc->bulk_data_in_state = CDC_ECM_TRANSFER_STATE_XFER;
-			cdc->state = CDC_ECM_STATE_TRANSFER;
-			usbh_notify_class_state_change(host);
+		if (cdc->bulk_data_in_state == CDC_ECM_TRANSFER_STATE_IDLE || (usbh_cdc_ecm_bulk_rx_time_check() == HAL_OK)) {
+			if (cdc->bulk_data_in_state == CDC_ECM_TRANSFER_STATE_IDLE) {
+				cdc->bulk_data_in_state = CDC_ECM_TRANSFER_STATE_XFER;
+			}
+			// cdc->state = CDC_ECM_STATE_TRANSFER;
+			usbh_notify_class_state_change(host, cdc->data_if.bulk_in_pipe);
 			ret = HAL_OK;
 		}
 	}
@@ -1467,7 +1493,7 @@ int usbh_cdc_ecm_intr_receive(u8 *buf, u32 len)
 						 pcomm_if->intr_in_packet_size, len);
 				pcomm_if->intr_in_packet_size = len;
 			}
-			usbh_notify_class_state_change(host);
+			usbh_notify_class_state_change(host, cdc->comm_if.intr_in_pipe);
 			ret = HAL_OK;
 		}
 	}
@@ -1487,31 +1513,6 @@ int usbh_cdc_ecm_choose_config(usb_host_t *host)
 	//choose ecm cfg_num
 	u8 cfg_id = usbh_get_configuration(host, CDC_ETHERNET_NETWORK_CONTROL_MODEL);
 	return usbh_set_configuration(host, cfg_id);
-}
-
-/**
-  * @brief  set the alternate setting
-  * @param  NONE
-  * @retval Status
-  */
-int usbh_cdc_ecm_pre_ctrl_set(void)
-{
-	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-	usb_host_t *host = cdc->host;
-	int ret = HAL_ERR_UNKNOWN;
-
-	if (usbh_cdc_ecm_usb_status_check() != HAL_OK) {
-		return ret;
-	}
-
-	if ((host->state == USBH_CLASS_REQUEST) || (host->state == USBH_CLASS_READY)) {
-		cdc->state = CDC_ECM_STATE_PRE_SETTING;
-		cdc->sub_state = CDC_ECM_STATE_CTRL_ALT_SETTING;
-		usbh_notify_class_state_change(host);
-		ret = HAL_OK;
-	}
-
-	return ret;
 }
 
 /**
@@ -1601,3 +1602,24 @@ void usbh_cdc_ecm_set_dongle_led_array(u16 *led, u8 len)
 
 	cdc->led_cnt = len;
 }
+
+#if ECM_STATE_DEBUG_ENABLE
+void ecm_debug_thread(void *param)
+{
+	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
+	UNUSED(param);
+
+	while (1) {
+		if (cdc->host) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "USB Dump %d-%d-%d-%d/out %d-%d/in %d-%d/intr %d-%d/%d-%d-%d-%d\n",
+					 cdc->next_transfor, cdc->state, usbh_cdc_ecm_get_hw_statue(), usbh_cdc_ecm_get_connect_status(),
+					 cdc->bulk_data_out_state, usbh_get_urb_state(cdc->host, cdc->data_if.bulk_out_pipe),
+					 cdc->bulk_data_in_state, usbh_get_urb_state(cdc->host, cdc->data_if.bulk_in_pipe),
+					 cdc->intr_in_state, usbh_get_urb_state(cdc->host, cdc->comm_if.intr_in_pipe),
+					 cdc->loop_cnt, cdc->bulk_in, cdc->bulk_out, cdc->intr_in
+					);
+		}
+		usb_os_sleep_ms(1000);
+	}
+}
+#endif

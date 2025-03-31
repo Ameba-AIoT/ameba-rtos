@@ -1484,9 +1484,13 @@ class IMAGETOOL():
 
             self.image2_posthandle(KM4TZ_IMG_DIR, app, app_ns)
 
-        if self.IMAGE_FILENAME == 'ram_all_prepend.bin':
-            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, os.path.join(KM4TZ_IMG_DIR, 'ram_all_prepend.bin'), self.manifest, 'boot')
-            CATFILE('', os.path.join(KM4TZ_IMG_DIR, 'ap_fullmac.bin'), os.path.join(KM4TZ_IMG_DIR, 'ram_all_prepend.bin'), self.manifest)
+        if self.IMAGE_FILENAME == 'fullmac_ram_1_prepend.bin':
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, os.path.join(KM4TZ_IMG_DIR, 'fullmac_ram_1_prepend.bin'), self.manifest, 'boot')
+            CATFILE('', os.path.join(KM4TZ_IMG_DIR, 'km4tz_fullmac_img_1.bin'), os.path.join(KM4TZ_IMG_DIR, 'fullmac_ram_1_prepend.bin'), self.manifest)
+
+        if self.IMAGE_FILENAME == 'fullmac_sram_2_prepend.bin':
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, os.path.join(KM4TZ_IMG_DIR, 'fullmac_sram_2_prepend.bin'), self.manifest, 'app')
+            CATFILE('', os.path.join(KM4TZ_IMG_DIR, 'km4tz_fullmac_img_2.bin'), os.path.join(KM4TZ_IMG_DIR, 'fullmac_sram_2_prepend.bin'), self.manifest)
 
         IMAGE_NAME = self.IMAGE_FULLNAME
         IMAGE_NAME_EN = os.path.splitext(IMAGE_NAME)[0] + '_en.bin'

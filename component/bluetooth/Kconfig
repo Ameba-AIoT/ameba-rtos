@@ -39,62 +39,63 @@ if BT_EXAMPLE_DEMO_MENU
     #     bool "BLE Throughput"
     #     default n
 
-    config BT_TRANSFER_MODULE_MENU
-        bool "BLE Transfer Module"
-        depends on AMEBADPLUS           #amebadplus
-        default n
+    if BT_HAS_ATSYNC
+        config BT_TRANSFER_MODULE_MENU
+            bool "BLE Transfer Module"
+            default n
+    endif
 
-    config BT_WIFIMATE_DEVICE_MENU
-        bool "BLE WiFiMate Device"
-        depends on AMEBADPLUS           #amebadplus
-        default n
+    if AMEBADPLUS
+        config BT_WIFIMATE_DEVICE_MENU
+            bool "BLE WiFiMate Device"
+            default n
 
-    config BT_WIFIMATE_CONFIGURATOR_MENU
-        bool "BLE WiFiMate Configurator"
-        depends on AMEBADPLUS           #amebadplus
-        default n
+        config BT_WIFIMATE_CONFIGURATOR_MENU
+            bool "BLE WiFiMate Configurator"
+            default n
+    endif
 
-    config BT_MESH_PROVISIONER_MENU
-        bool "BLE Mesh Provisioner"
-        depends on AMEBADPLUS||AMEBAD||AMEBASMART||AMEBASMARTPLUS||AMEBALITE        #amebadplus amebaD amebasmart smart+ amebalite
-        default n
+    if BT_HAS_MESH
+        config BT_MESH_PROVISIONER_MENU
+            bool "BLE Mesh Provisioner"
+            default n
 
-    config BT_MESH_DEVICE_MENU
-        bool "BLE Mesh Device"
-        depends on AMEBADPLUS||AMEBAD||AMEBASMART||AMEBASMARTPLUS||AMEBALITE        #amebadplus amebaD amebasmart smart+ amebalite
-        default n
+        config BT_MESH_DEVICE_MENU
+            bool "BLE Mesh Device"
+            default n
 
-    config BT_MESH_PROVISIONER_SCATTERNET_MENU
-        bool "BLE Mesh Provisioner and BLE Scatternet"
-        depends on AMEBADPLUS||AMEBAD||AMEBASMART||AMEBASMARTPLUS||AMEBALITE        #amebadplus amebaD amebasmart smart+ amebalite
-        default n
+        config BT_MESH_PROVISIONER_SCATTERNET_MENU
+            bool "BLE Mesh Provisioner and BLE Scatternet"
+            default n
 
-    config BT_MESH_DEVICE_SCATTERNET_MENU
-        bool "BLE Mesh Device and BLE Scatternet"
-        depends on AMEBADPLUS||AMEBAD||AMEBASMART||AMEBASMARTPLUS||AMEBALITE        #amebadplus amebaD amebasmart smart+ amebalite
-        default n
+        config BT_MESH_DEVICE_SCATTERNET_MENU
+            bool "BLE Mesh Device and BLE Scatternet"
+            default n
 
-    #config BT_MESH_PROVISIONER_TEST_MENU
-    #    bool "BLE Mesh Provisioner Test"
-    #    default n
+        #config BT_MESH_PROVISIONER_TEST_MENU
+        #    bool "BLE Mesh Provisioner Test"
+        #    default n
 
-    #config BT_MESH_DEVICE_TEST_MENU
-    #    bool "BLE Mesh Device Test"
-    #    default n
+        #config BT_MESH_DEVICE_TEST_MENU
+        #    bool "BLE Mesh Device Test"
+        #    default n
+    endif
 
-    config BT_ISO_TEST
-        bool "BLE ISO Test"
-        depends on AMEBASMART||AMEBASMARTPLUS   #amebasmart
-        default n
-
-
-    if AMEBASMART || AMEBASMARTPLUS || AMEBALITE  # amebalite amebasmart
+    if BT_HAS_LEAUDIO
+        config BT_ISO_TEST
+            bool "BLE ISO Test"
+            default n
 
         config BT_LE_AUDIO_MENU
             bool "BLE Audio"
             default n
 
         if BT_LE_AUDIO_MENU
+
+            config BT_GENERIC_LE_AUDIO_DEMO_MENU
+                bool "BLE Audio Generic Demo"
+                default n
+
             config BT_PBP_MENU
                 bool "BLE Audio Public Broadcast Profile"
                 default n
@@ -108,21 +109,20 @@ if BT_EXAMPLE_DEMO_MENU
                 default n
 
         endif
+    endif
 
+    if BT_HAS_BREDR
         config BT_A2DP_MENU
             bool "BT A2DP"
             default n
-
 
         config BT_HFP_MENU
             bool "BT HFP"
             default n
 
-
         config BT_A2DP_HFP_MENU
             bool "BT A2DP and BT HFP"
             default n
-
 
         config BT_SPP_MENU
             bool "BT SPP"
@@ -136,21 +136,9 @@ if BT_EXAMPLE_DEMO_MENU
             bool "BT Audio MP Test"
             default n
 
-
         config BT_A2DP_SCATTERNET_MENU
             bool "BT A2DP and BLE Scatternet"
             default n
-
-
-        config BT_A2DP_LE_AUDIO_PBP_MENU
-            bool "BT A2DP and BLE Audio PBP"
-            default n
-
-
-        config BT_A2DP_LE_AUDIO_TMAP_MENU
-            bool "BT A2DP and BLE Audio TMAP"
-            default n
-
     endif
 
 endif
@@ -221,6 +209,11 @@ if BT
         select BT_AUDIO_CODEC_SUPPORT
         select BT_AUDIO_CODEC_LC3
 
+    config BT_GENERIC_LE_AUDIO_DEMO_MENU
+        bool
+        select BT_GENERIC_LE_AUDIO_DEMO
+        select BT_GENERIC_LE_AUDIO_DEMO_SUPPORT
+
     config BT_PBP_MENU
         bool
         select BT_PBP
@@ -282,25 +275,6 @@ if BT
         select BT_AUDIO_CODEC_SUPPORT
         select BT_AUDIO_CODEC_SBC
 
-    config BT_A2DP_LE_AUDIO_PBP_MENU
-        bool
-        select BT_LE_AUDIO
-        select BT_A2DP_LE_AUDIO_PBP
-        select BT_APP_AUDIO_DATA
-        select BT_PBP_SUPPORT
-        select BT_AUDIO_CODEC_SUPPORT
-        select BT_AUDIO_CODEC_SBC
-        select BT_AUDIO_CODEC_LC3
-
-    config BT_A2DP_LE_AUDIO_TMAP_MENU
-        bool
-        select BT_LE_AUDIO
-        select BT_A2DP_LE_AUDIO_TMAP
-        select BT_APP_AUDIO_DATA
-        select BT_TMAP_SUPPORT
-        select BT_AUDIO_CODEC_SUPPORT
-        select BT_AUDIO_CODEC_SBC
-        select BT_AUDIO_CODEC_LC3
 endif
 
 
@@ -345,7 +319,10 @@ config BT_MESH_DEVICE_TEST
 
 config BT_ISO_TEST
     bool
-
+config BT_GENERIC_LE_AUDIO_DEMO
+    bool
+config BT_GENERIC_LE_AUDIO_DEMO_SUPPORT
+    bool
 config BT_PBP
     bool
 config BT_PBP_SUPPORT
@@ -367,10 +344,6 @@ config BT_A2DP_HFP
 config BT_A2DP_SCATTERNET
     bool
 config BT_LE_AUDIO
-    bool
-config BT_A2DP_LE_AUDIO_PBP
-    bool
-config BT_A2DP_LE_AUDIO_TMAP
     bool
 config BT_AUDIO_MP_TEST
     bool

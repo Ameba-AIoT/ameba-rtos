@@ -213,7 +213,7 @@ int32_t RPC_InitProxy(struct REG_STRUCT *reg, int32_t channel_id, RPC_INIT_STRUC
 			priority = init_param->priority;
 		}
 		if (rtos_task_create(&g_receiver_threads[g_thread_count], ((const char *)"ReceiverLoop"), ReceiverLoop, (void *)serverStruct, task_size,
-							 priority) != SUCCESS) {
+							 priority) != RTK_SUCCESS) {
 			RPC_LOGE("\n\r%s rtos_task_create(ReceiverLoop) failed", __FUNCTION__);
 		}
 		g_thread_count++;

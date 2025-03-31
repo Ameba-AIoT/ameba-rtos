@@ -140,7 +140,7 @@ int dsp_suspend(u32 type)
 {
 	UNUSED(type);
 
-	int ret = SUCCESS;
+	int ret = RTK_SUCCESS;
 	u32 sleep_wevent_config_val[2] = {0};
 
 	SLEEP_ParamDef *sleep_param;
@@ -209,11 +209,11 @@ void dsp_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqSta
 
 	switch (psleep_param->sleep_type) {
 	case SLEEP_PG:
-		if (SUCCESS == dsp_suspend(SLEEP_PG)) {
+		if (RTK_SUCCESS == dsp_suspend(SLEEP_PG)) {
 		}
 		break;
 	case SLEEP_CG:
-		if (SUCCESS == dsp_suspend(SLEEP_CG)) {
+		if (RTK_SUCCESS == dsp_suspend(SLEEP_CG)) {
 			pmu_set_sysactive_time(2);
 		}
 		break;

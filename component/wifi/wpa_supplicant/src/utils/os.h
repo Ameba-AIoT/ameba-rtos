@@ -10,7 +10,7 @@
 #define OS_H
 
 //#include "basic_types.h"
-#include "wifi_intf_drv_to_app_types.h"
+#include "wifi_api_types.h"
 #include "os_wrapper.h"
 #include "rtw_timer.h"
 #include "rtw_misc.h" //for _ntohs

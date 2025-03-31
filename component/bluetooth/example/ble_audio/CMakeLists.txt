@@ -36,7 +36,7 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources
-    cap.c
+    generic_le_audio_demo.c
     pbp.c
     tmap.c
     gmap.c

@@ -16,11 +16,10 @@
 #include <rtk_bt_device.h>
 #include <bt_utils.h>
 #include <ble_wifimate_service.h>
-#include <wifi_conf.h>
-#include <wifi_ind.h>
+#include <wifi_api.h>
 #include <lwip_netconf.h>
 
-#define BLE_WIFIMATE_DECODE_KEY_LEN                             (8)
+#define BLE_WIFIMATE_DECODE_KEY_LEN                             (16)
 
 #define RTK_BT_UUID_BLE_WIFIMATE_SRV                            BT_UUID_DECLARE_16(BLE_WIFIMATE_UUID_SRV)
 #define RTK_BT_UUID_BLE_WIFIMATE_KEY_NEGOTIATE                  BT_UUID_DECLARE_16(BLE_WIFIMATE_UUID_CHAR_KEY_NEGOTIATE)
@@ -59,7 +58,7 @@ enum ble_wifimate_server_state_e {
 
 struct password_decode_t {
 	uint8_t         algorithm;
-	int8_t          key[BLE_WIFIMATE_DECODE_KEY_LEN];
+	uint8_t         key[BLE_WIFIMATE_DECODE_KEY_LEN];
 };
 
 struct ble_wifimate_wifi_scan_result_t {
@@ -278,15 +277,18 @@ static uint16_t ble_wifimate_server_key_negotiate_hdl(uint16_t len, uint8_t *dat
 			return ret;
 		}
 
-		s_pw_decode.key[5] = bd_addr.addr_val[2];
-		s_pw_decode.key[6] = bd_addr.addr_val[1];
-		s_pw_decode.key[7] = bd_addr.addr_val[0];
+		s_pw_decode.key[BLE_WIFIMATE_DECODE_KEY_LEN - 3] = bd_addr.addr_val[2];
+		s_pw_decode.key[BLE_WIFIMATE_DECODE_KEY_LEN - 2] = bd_addr.addr_val[1];
+		s_pw_decode.key[BLE_WIFIMATE_DECODE_KEY_LEN - 1] = bd_addr.addr_val[0];
 	}
 
-	BT_LOGA("[APP] BLE WiFiMate server negotiate key procedure: algorithm=%d, key=%x%x%x%x%x%x%x%x\r\n",
+	BT_LOGA("[APP] BLE WiFiMate server negotiate key procedure: algorithm=%d, \
+			key=%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\r\n",
 			s_pw_decode.algorithm,
 			s_pw_decode.key[0], s_pw_decode.key[1], s_pw_decode.key[2], s_pw_decode.key[3],
-			s_pw_decode.key[4], s_pw_decode.key[5], s_pw_decode.key[6], s_pw_decode.key[7]);
+			s_pw_decode.key[4], s_pw_decode.key[5], s_pw_decode.key[6], s_pw_decode.key[7],
+			s_pw_decode.key[8], s_pw_decode.key[9], s_pw_decode.key[10], s_pw_decode.key[11],
+			s_pw_decode.key[12], s_pw_decode.key[13], s_pw_decode.key[14], s_pw_decode.key[15]);
 
 	return RTK_BT_OK;
 }
@@ -459,7 +461,7 @@ static uint16_t ble_wifimate_server_write_wifi_scan_hdl(uint16_t conn_handle, ui
 {
 	uint16_t ret = RTK_BT_OK;
 	uint8_t enable = 0;
-	char *scan_buf = NULL;
+	struct rtw_scan_result *scanned_AP_list = NULL;
 	int join_status = RTW_JOINSTATUS_UNKNOWN;
 	int scan_network = 0;
 	unsigned int scanned_AP_num = 0;
@@ -486,7 +488,7 @@ static uint16_t ble_wifimate_server_write_wifi_scan_hdl(uint16_t conn_handle, ui
 	memset(wifi_scan_result, 0, sizeof(struct ble_wifimate_wifi_scan_result_t));
 	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
 
-	join_status = wifi_get_join_status();
+	wifi_get_join_status(&join_status);
 	BT_LOGD("%s join_status=%d\r\n", __func__, join_status);
 	if ((join_status > RTW_JOINSTATUS_UNKNOWN) && (join_status < RTW_JOINSTATUS_SUCCESS)) {
 		BT_LOGE("[APP] WiFi Connecting now, forbid scanning, exit\r\n");
@@ -496,7 +498,7 @@ static uint16_t ble_wifimate_server_write_wifi_scan_hdl(uint16_t conn_handle, ui
 
 	scan_network = wifi_scan_networks(&scan_param, 1);
 	BT_LOGD("%s scan_network=%d\r\n", __func__, scan_network);
-	if (scan_network < RTW_SUCCESS) {
+	if (scan_network < RTK_SUCCESS) {
 		BT_LOGE("[APP] wifi_scan_networks ERROR\r\n");
 		ret = RTK_BT_FAIL;
 		goto end;
@@ -506,23 +508,22 @@ static uint16_t ble_wifimate_server_write_wifi_scan_hdl(uint16_t conn_handle, ui
 		scanned_AP_num = (scan_network <= BLE_WIFIMATE_MAX_WIFI_SCAN_AP_NUM) ? \
 						 scan_network : BLE_WIFIMATE_MAX_WIFI_SCAN_AP_NUM;
 
-		scan_buf = (char *)osif_mem_alloc(RAM_TYPE_DATA_ON, scanned_AP_num * sizeof(struct rtw_scan_result));
-		if (scan_buf == NULL) {
+		scanned_AP_list = (struct rtw_scan_result *)osif_mem_alloc(RAM_TYPE_DATA_ON, scanned_AP_num * sizeof(struct rtw_scan_result));
+		if (scanned_AP_list == NULL) {
 			BT_LOGE(NOTAG, "[+WLSCAN]ERROR: Can not malloc memory for scan result\r\n");
 			ret = RTK_BT_ERR_NO_MEMORY;
 			goto end;
 		}
-		memset(scan_buf, 0, sizeof(scanned_AP_num * sizeof(struct rtw_scan_result)));
+		memset(scanned_AP_list, 0, sizeof(scanned_AP_num * sizeof(struct rtw_scan_result)));
 
-		if (wifi_get_scan_records(&scanned_AP_num, scan_buf) < 0) {
+		if (wifi_get_scan_records(&scanned_AP_num, scanned_AP_list) < 0) {
 			BT_LOGE(NOTAG, "[+WLSCAN] Get result failed\r\n");
 			ret = RTK_BT_FAIL;
 			goto end;
 		}
 
 		for (uint32_t i = 0; (i < scanned_AP_num) && (i < BLE_WIFIMATE_MAX_WIFI_SCAN_AP_NUM); i++) {
-			struct rtw_scan_result *scanned_ap_info =
-				(struct rtw_scan_result *)(scan_buf + i * sizeof(struct rtw_scan_result));
+			struct rtw_scan_result *scanned_ap_info = &scanned_AP_list[i];
 			/* Ensure the SSID is null terminated */
 			scanned_ap_info->SSID.val[scanned_ap_info->SSID.len] = 0;
 			/* security */
@@ -541,8 +542,8 @@ static uint16_t ble_wifimate_server_write_wifi_scan_hdl(uint16_t conn_handle, ui
 		BT_LOGD("Wifi scan result: ap_nums=%d\r\n", scanned_AP_num);
 	}
 end:
-	if (scan_buf) {
-		osif_mem_free(scan_buf);
+	if (scanned_AP_list) {
+		osif_mem_free(scanned_AP_list);
 	}
 
 	if (ret == RTK_BT_OK) {
@@ -564,7 +565,7 @@ static uint8_t ble_wifimate_wifi_conn_result_to_bwm_errcode(int wifi_res)
 	uint8_t err_code = 0;
 
 	switch (wifi_res) {
-	case RTW_SUCCESS:
+	case RTK_SUCCESS:
 		err_code = BWM_OK;
 		break;
 	case RTW_BADARG:
@@ -667,7 +668,7 @@ static uint16_t ble_wifimate_wifi_connect(uint16_t conn_handle, struct wifi_conn
 	wifi_get_setting(WLAN0_IDX, &setting);
 
 	ret = wifi_connect(&wifi, 1);
-	if (ret != RTW_SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		uint8_t err_code = ble_wifimate_wifi_conn_result_to_bwm_errcode(ret);
 		BT_LOGA("[APP] BLE WiFiMate server can't connect to AP, ret=%d err_code=%d\r\n", ret, err_code);
 		return ble_wifimate_server_indicate_wifi_conn_state(conn_handle, BWM_WIFI_STATE_IDLE, err_code);

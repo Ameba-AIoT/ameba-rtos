@@ -61,7 +61,7 @@ extern void ipc_app_init(void);
 extern void ipc2_app_init(void);
 #endif
 #ifdef CONFIG_WLAN
-extern void wlan_initialize(void);
+extern void wifi_init(void);
 #endif
 
 extern int rt_kv_init(void);
@@ -151,7 +151,7 @@ int main(void)
 
 	/* TODO: wifi init*/
 #ifdef CONFIG_WLAN
-	wlan_initialize();
+	wifi_init();
 #endif
 
 #if defined(CONFIG_IMQ_EN) && CONFIG_IMQ_EN

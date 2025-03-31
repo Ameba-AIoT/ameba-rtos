@@ -99,7 +99,7 @@ int _RandBytes_Get(void *buf, u32 len)
 	level = TRNG_GetFIFOLevel();
 
 	if (level == TRNG_FIFO_LEVEL_INVALID) {
-		// _SUCCESS(1)/ _FAIL(0) removed from SDK, change return value to SUCCESS(0) / FAIL(-1) in the future
+		// _SUCCESS(1)/ _FAIL(0) removed from SDK, change return value to RTK_SUCCESS(0) / RTK_FAIL(-1) in the future
 		return 0;
 	}
 

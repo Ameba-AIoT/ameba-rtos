@@ -81,9 +81,7 @@ log_init_t log_init_table[] = {
 
 #ifndef CONFIG_MP_INCLUDED
 #if defined(CONFIG_BT_COEXIST)
-#if defined(CONFIG_CORE_AS_AP) || (!defined(CONFIG_CORE_AS_NP) && defined(CONFIG_FULLMAC_DEV))
 	at_coex_init,
-#endif
 #endif
 #endif
 	at_sys_init,

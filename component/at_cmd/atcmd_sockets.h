@@ -54,9 +54,19 @@
 #define NODE_MODE_SSL                     2
 #define NODE_MODE_INVALID                 -1
 
+#define SOCKET_CLIENT_OVER_UDP                   0
+#define SOCKET_CLIENT_OVER_TCP                   1
+#define SOCKET_CLIENT_OVER_TLS_NO_VERIFY         2
+#define SOCKET_CLIENT_OVER_TLS_VERIFY_SERVER     3
+#define SOCKET_CLIENT_OVER_TLS_VERIFY_CLIENT     4
+#define SOCKET_CLIENT_OVER_TLS_VERIFY_BOTH       5
+
+#define SOCKET_PROTOCOL_INVALID                  -1
+
 #define NODE_ROLE_SERVER                  0
 #define NODE_ROLE_CLIENT                  1
 #define NODE_ROLE_SEED                    2
+#define NODE_ROLE_INVALID                 -1
 
 #define ATCMD_LWIP_TASK_PRIORITY          1
 
@@ -69,14 +79,21 @@
 
 
 typedef struct _node {
-	int con_id;
+	s8_t con_id;
+	s8_t role;	// 0:server, 1:client, 2:seed
+	s8_t cert_index;	//Security certificate suite index
+	s8_t auto_rcv;	//auto receive flag
 	int sockfd;
-	s8_t role;
-	int protocol;
+	int protocol;	// 0:UDP, 1:TCP, 2-5:TLS
+	u32_t dst_ip;
+	u16_t dst_port;
+	u16_t src_port;
+	u32_t src_ip;
+	rtos_task_t auto_rcv_task;
 	u32_t addr;
-	u16_t  port;
-	u32_t local_addr;
+	u16_t port;
 	u16_t local_port;
+	u32_t local_addr;
 	rtos_task_t handletask;
 	struct _node *next;
 	struct _node *nextseed;

@@ -8,7 +8,9 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 
+#if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_host_api.h"
+#endif
 
 #if defined(CONFIG_BT) && CONFIG_BT
 #if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED

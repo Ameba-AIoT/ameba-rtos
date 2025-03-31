@@ -5,7 +5,7 @@ ameba_add_image(target_img2)
 
 ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
 ameba_add_subdirectory(${c_CMPT_AUDIO_DIR})
-ameba_add_subdirectory(${c_CMPT_APP_DIR}/benchmark)
+ameba_add_subdirectory_if_exist(${c_CMPT_APP_DIR}/benchmark)
 ameba_add_subdirectory(${c_CMPT_BLUETOOTH_DIR})
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
 ameba_add_subdirectory(${c_CMPT_CMSIS_DIR})
@@ -24,17 +24,16 @@ ameba_add_subdirectory(${c_CMPT_PMC_DIR})
 ameba_add_subdirectory(${c_CMPT_RTK_COEX_DIR})
 ameba_add_subdirectory(${c_CMPT_SSL_DIR})
 ameba_add_subdirectory(${c_CMPT_SWLIB_DIR})
-ameba_add_subdirectory(${c_CMPT_TFLITE_DIR}/cmake)
+ameba_add_subdirectory_if_exist(${c_CMPT_TFLITE_DIR}/cmake)
 ameba_add_subdirectory(${c_CMPT_UI_DIR})
 ameba_add_subdirectory(${c_CMPT_USRCFG_DIR})
 ameba_add_subdirectory(${c_CMPT_UTILS_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_WPAN_DIR})
-ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_make)
+ameba_add_subdirectory(${c_CMPT_WIFI_DIR})
 ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_fw)
-ameba_add_subdirectory(${c_CMPT_VERIFICATION_DIR})
+ameba_add_subdirectory_if_exist(${c_CMPT_VERIFICATION_DIR})
 
 ameba_add_subdirectory(${c_MCU_PROJECT_DIR}/src)
-ameba_add_subdirectory(${c_MCU_SDK_DIR}/make/project)
 
 ###############################  GENERATE IMAGE  ###################################
 #---------------- PRE LINK -------------------#
@@ -47,6 +46,9 @@ add_custom_command(
 )
 
 #----------------- LINKING -------------------#
+ameba_set_if(CONFIG_TRUSTZONE c_CMSE_IMPLIB
+    ${c_SDK_IMAGE_TARGET_DIR}/cmse_implib.lib
+)
 
 target_link_libraries(${c_CURRENT_IMAGE}
     PRIVATE
@@ -63,6 +65,7 @@ target_link_libraries(${c_CURRENT_IMAGE}
     $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},${c_CURRENT_IMAGE}_no_whole_archive_libs>
 
     ${c_LINK_ROM_LIB_NS}
+    ${c_CMSE_IMPLIB}
 
     ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${ASDK_VER}/thumb/v8-m.main+fp/fpu/crtbegin.o
     ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${ASDK_VER}/thumb/v8-m.main+fp/fpu/crtend.o

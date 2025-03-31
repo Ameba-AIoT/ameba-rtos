@@ -1023,7 +1023,7 @@ __WEAK uint32_t nor_ftl_save_to_storage(void *pdata_tmp, uint16_t offset, uint16
 	u32 ret;
 	if (ftl_mutex_lock == NULL) {
 		return FTL_WRITE_ERROR_NOT_INIT;
-	} else if (rtos_mutex_take(ftl_mutex_lock, 100) != SUCCESS) {
+	} else if (rtos_mutex_take(ftl_mutex_lock, 100) != RTK_SUCCESS) {
 		return ERROR_MUTEX_GET_TIMEOUT;
 	}
 
@@ -1085,7 +1085,7 @@ uint32_t ftl_write(uint16_t logical_addr, uint32_t w_data)
 //
 //#endif
 	if (NULL != ftl_sem) {
-		if (rtos_mutex_recursive_take(ftl_sem, RTOS_MAX_DELAY) == SUCCESS) {
+		if (rtos_mutex_recursive_take(ftl_sem, RTOS_MAX_DELAY) == RTK_SUCCESS) {
 			sem_flag = TRUE;
 		}
 	}
@@ -1182,7 +1182,7 @@ __WEAK uint32_t nor_ftl_load_from_storage(void *pdata_tmp, uint16_t offset, uint
 	u32 ret;
 	if (ftl_mutex_lock == NULL) {
 		return FTL_READ_ERROR_NOT_INIT;
-	} else if (rtos_mutex_take(ftl_mutex_lock, 100) != SUCCESS) {
+	} else if (rtos_mutex_take(ftl_mutex_lock, 100) != RTK_SUCCESS) {
 		return ERROR_MUTEX_GET_TIMEOUT;
 	}
 

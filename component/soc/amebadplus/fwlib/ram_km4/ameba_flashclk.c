@@ -141,7 +141,7 @@ static void flash_set_status_register(void)
 SRAMDRAM_ONLY_TEXT_SECTION
 int flash_rx_mode_switch(u32 spic_mode)
 {
-	int Ret = SUCCESS;
+	int Ret = RTK_SUCCESS;
 	u8 status = 0;
 	char *str[] = {"1IO", "2O", "2IO", "4O", "4IO"};
 	FLASH_InitTypeDef *FLASH_InitStruct = &flash_init_para;
@@ -165,7 +165,7 @@ int flash_rx_mode_switch(u32 spic_mode)
 
 		if (spic_mode == Spic1IOBitMode) {
 			RTK_LOGE(TAG, "Flash Switch Read Mode FAIL\n");
-			Ret = FAIL;
+			Ret = RTK_FAIL;
 			break;
 		}
 

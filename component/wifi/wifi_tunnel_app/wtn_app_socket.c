@@ -28,7 +28,7 @@
 #include "rtw_queue.h"
 #include <lwip/sockets.h>
 #include "log.h"
-#include "wifi_intf_drv_to_app_basic.h"
+#include "wifi_api.h"
 #include "build_info.h"
 #include "wtn_app_socket.h"
 
@@ -92,7 +92,7 @@ int wtn_socket_send(u8 *buf, u32 len)
 	/* check if DHCP finished */
 	ip = (u8 *)LwIP_GetIP(0);
 	if (memcmp(ip, invalid_ip, 4) == 0 || wtn_client_fd < 0) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	/*fill IP*/
@@ -115,7 +115,7 @@ int wtn_socket_send(u8 *buf, u32 len)
 	rtos_critical_exit(RTOS_CRITICAL_WIFI);
 	if (pnode == NULL) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "wtn not enough buf node\n");
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	pnode->buf_addr = buf_copy;
@@ -124,7 +124,7 @@ int wtn_socket_send(u8 *buf, u32 len)
 	rtw_list_insert_tail(&(pnode->list), get_list_head(&wtn_buf_queue));
 	rtos_critical_exit(RTOS_CRITICAL_WIFI);
 	rtos_sema_give(wtn_socket_send_sema);
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 #ifdef WTN_SINGLE_NODE_OTA
@@ -181,7 +181,7 @@ int wtn_ota_socket_process(int *ota_socket_fd, u8 *buf)
 	if ((*ota_socket_fd == -1)) {/*create socket first*/ //&& (memcmp(wtn_server_ip, invalid_ip, 4) != 0)
 		*ota_socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
 		if (*ota_socket_fd < 0) {
-			return FAIL;
+			return RTK_FAIL;
 		}
 		memset(&ota_server_addr, 0, sizeof(ota_server_addr));
 		ota_server_addr.sin_family = AF_INET;
@@ -191,7 +191,7 @@ int wtn_ota_socket_process(int *ota_socket_fd, u8 *buf)
 		if (bind(*ota_socket_fd, (struct sockaddr *)&ota_server_addr, sizeof(ota_server_addr)) < 0) {
 			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "wtn bind ota rx socket fail\n");
 			closesocket(*ota_socket_fd);
-			return FAIL;
+			return RTK_FAIL;
 		}
 
 		timeout.tv_sec = 3;
@@ -205,7 +205,7 @@ int wtn_ota_socket_process(int *ota_socket_fd, u8 *buf)
 		ret = lwip_recvfrom(*ota_socket_fd, buf, 50, 0, (struct sockaddr *)&ota_client_addr, (u32_t *)&client_len);
 		if (ret < 0) {
 			if (errno == EWOULDBLOCK || errno == EAGAIN) {
-				return FAIL;
+				return RTK_FAIL;
 			}
 		} else if (((u32)ret) >= 5) {
 			if (memcmp(buf, ota_packet_pattern, 4) == 0) {
@@ -221,14 +221,14 @@ int wtn_ota_socket_process(int *ota_socket_fd, u8 *buf)
 					memcpy(&ota_param.port, buf + 4 + 1 + 1 + httpiplen + 1 + http_resourcelen, 4);
 					ota_param.port = htonl(ota_param.port);
 					/*create task to do http ota*/
-					if (rtos_task_create(NULL, ((const char *)"update_ota_task"), wtn_http_ota_task, &ota_param, 8000, 1) != SUCCESS) {
+					if (rtos_task_create(NULL, ((const char *)"update_ota_task"), wtn_http_ota_task, &ota_param, 8000, 1) != RTK_SUCCESS) {
 						RTK_LOGS(NOTAG, RTK_LOG_ERROR, "wtn ota task create fail\n");
 					}
 				}
 			}
 		}
 	}
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 #endif
 
@@ -282,7 +282,7 @@ void wtn_bcmc_socket_handler(void *param)
 
 		memset(&softap_bcmc_addr, 0, sizeof(softap_bcmc_addr));
 		softap_bcmc_addr.sin_family = AF_INET;
-		softap_bcmc_addr.sin_addr.s_addr = (u32)(ip[0] | ip[1] << 8 | ip[2] << 16 | (0xFF) << 24);
+		softap_bcmc_addr.sin_addr.s_addr = (u32)(ip[0] | ip[1] << 8 | ip[2] << 16 | ((u32)0xFF << 24));
 		softap_bcmc_addr.sin_port = htons(WTN_BROADCAST_PORT);
 	}
 
@@ -363,7 +363,7 @@ void wtn_bcmc_socket_handler(void *param)
 		}
 #ifdef WTN_SINGLE_NODE_OTA
 ota_process:
-		if (wtn_ota_socket_process(&ota_socket_fd, buf) == FAIL) {
+		if (wtn_ota_socket_process(&ota_socket_fd, buf) == RTK_FAIL) {
 			continue;
 		}
 #endif
@@ -494,18 +494,18 @@ int wtn_socket_init(u8 enable)
 		wtn_server_port = 0;
 		memset(wtn_server_ip, 0, 4);
 		memset(wtn_buf_pool, 0, WTN_BUF_NUM * sizeof(struct wtn_buf_node));
-		if (rtos_task_create(NULL, "wtn_bcmc_socket_handler", wtn_bcmc_socket_handler, NULL, 2048, 2) != SUCCESS) {
-			return FAIL;
+		if (rtos_task_create(NULL, "wtn_bcmc_socket_handler", wtn_bcmc_socket_handler, NULL, 2048, 2) != RTK_SUCCESS) {
+			return RTK_FAIL;
 		}
 
-		if (rtos_task_create(NULL, "wtn_tx_socket_handler", wtn_tx_socket_handler, NULL, 2048, 2) != SUCCESS) {
-			return FAIL;
+		if (rtos_task_create(NULL, "wtn_tx_socket_handler", wtn_tx_socket_handler, NULL, 2048, 2) != RTK_SUCCESS) {
+			return RTK_FAIL;
 		}
 	} else {
 		wtn_socket_need_close = 1;
 		rtos_sema_give(wtn_socket_send_sema);/*trigger socket tx task to end*/
 	}
 
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 #endif

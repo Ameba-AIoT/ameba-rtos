@@ -6,7 +6,7 @@
 /* FreeRTOS includes. */
 
 #include "MQTTClient.h"
-#include "wifi_conf.h"
+#include "wifi_api.h"
 #include "lwip_netconf.h"
 #define MQTT_SELECT_TIMEOUT 1
 static void messageArrived(MessageData *data, void *discard)

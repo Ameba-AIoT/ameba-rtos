@@ -1,86 +1,76 @@
-set(d_GLOBAL_COMMON_COMPILE_DEFINES)
-set(d_GLOBAL_COMMON_COMPILE_C_OPTIONS)
-set(d_GLOBAL_COMMON_COMPILE_CPP_OPTIONS)
-set(d_GLOBAL_COMMON_COMPILE_ASM_OPTIONS)
-set(d_GLOBAL_MCU_INCLUDE_DIRECTORIES)
+set(c_GLOBAL_COMMON_COMPILE_DEFINES)
+set(c_GLOBAL_COMMON_COMPILE_ASM_OPTIONS)
+set(c_GLOBAL_COMMON_COMPILE_C_OPTIONS)
+set(c_GLOBAL_COMMON_COMPILE_CPP_OPTIONS)
+set(c_GLOBAL_MCU_INCLUDE_DIRECTORIES)
 
-# +++++++++++++++++ d_GLOBAL_COMMON_COMPILE_DEFINES ++++++++++++++++ #
-list(APPEND d_GLOBAL_COMMON_COMPILE_DEFINES
-    CONFIG_PLATFORM_${d_PLATFORM_TYPE_UPPER}
-    CONFIG_USE_MBEDTLS_ROM_ALG
-    CONFIG_FUNCION_O0_OPTIMIZE
-    DM_ODM_SUPPORT_TYPE=32
+# +++++++++++++++++ c_GLOBAL_COMMON_COMPILE_DEFINES ++++++++++++++++ #
+ameba_list_append(c_GLOBAL_COMMON_COMPILE_DEFINES
+    #TODO: to be removed when new cmake is ready
+    CONFIG_USE_MBEDTLS_ROM_ALG # sw ed25519 used.
+    CONFIG_FUNCION_O0_OPTIMIZE # sw ed25519 used.
+    DM_ODM_SUPPORT_TYPE=32 # wifi used.
 )
-
-ameba_list_append_if(IMAGE2_CFLAGS d_GLOBAL_COMMON_COMPILE_DEFINES IMAGE2_BUILD)
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
-# ++++++++++++++++ d_GLOBAL_COMMON_COMPILE_C_OPTIONS +++++++++++++++ #
-list(APPEND d_GLOBAL_COMMON_COMPILE_C_OPTIONS
+# +++++++++++++++ c_GLOBAL_COMMON_COMPILE_ASM_OPTIONS ++++++++++++++ #
+ameba_list_append(c_GLOBAL_COMMON_COMPILE_ASM_OPTIONS
     -g
+    -c
+    -MMD -MP
+)
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
+
+# ++++++++++++++++ c_GLOBAL_COMMON_COMPILE_C_OPTIONS +++++++++++++++ #
+ameba_list_append(c_GLOBAL_COMMON_COMPILE_C_OPTIONS
+    ${c_GLOBAL_COMMON_COMPILE_ASM_OPTIONS}
     -nostartfiles
     -nodefaultlibs
     -nostdlib
-    -fno-builtin-printf
-    -O2
-    -fno-strict-aliasing
-    -fno-strict-overflow
-    -fno-delete-null-pointer-checks
+    # avoid compile optimize based on undefined behavior
+    -fno-strict-aliasing -fno-strict-overflow -fno-delete-null-pointer-checks
     -fno-tree-loop-distribute-patterns
     -flax-vector-conversions
     -gdwarf-3
     -fstack-usage
-    -Wall
-    -Werror
-    -Wpointer-arith
-
-    #When the memory length is 4 bytes, memset/memcpy will be optimized for direct 32-bit reading and writing.
-    #If the source address is not aligned, an error will result because the hardware does not support unaligned accesses.
-    -fno-builtin-memset
-    -fno-builtin-memcpy
 
     -Wundef
+    -Wpointer-arith
+    -Wstrict-prototypes
     -Wno-write-strings
     -Wno-maybe-uninitialized
-    -save-temps=obj
-    -c
-    -MMD
-    -MP
-    #-fno-short-enums
+    -Wall
     -Wextra
+    -Werror
 
+    # When the memory length is 4 bytes, memset/memcpy will be optimized for direct 32-bit reading and writing.
+    # If the source address is not aligned, an error will result because the hardware does not support unaligned accesses.
+    -fno-builtin # avoid strcpy(ISO C90) to be optimized to stpcpy(posix) by compiler, including -fno-builtin-memset -fno-builtin-memcpy -fno-builtin-printf
+
+    -save-temps=obj
+    # -fno-short-enums
     # -ffile-prefix-map=${c_BASEDIR}=.
-    -Wstrict-prototypes
 )
 
+if(CONFIG_AMEBALITE OR CONFIG_AMEBAD)
+    ameba_list_append(c_GLOBAL_COMMON_COMPILE_C_OPTIONS -Os)
+else()
+    ameba_list_append(c_GLOBAL_COMMON_COMPILE_C_OPTIONS -O2)
+endif()
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
-
-# +++++++++++++++ d_GLOBAL_COMMON_COMPILE_CPP_OPTIONS ++++++++++++++ #
-list(APPEND d_GLOBAL_COMMON_COMPILE_CPP_OPTIONS
-    ${d_GLOBAL_COMMON_COMPILE_C_OPTIONS}
+# +++++++++++++++ c_GLOBAL_COMMON_COMPILE_CPP_OPTIONS ++++++++++++++ #
+ameba_list_append(c_GLOBAL_COMMON_COMPILE_CPP_OPTIONS
+    ${c_GLOBAL_COMMON_COMPILE_C_OPTIONS}
     -std=c++11
     -fno-use-cxa-atexit
 )
-list(REMOVE_ITEM d_GLOBAL_COMMON_COMPILE_CPP_OPTIONS  -Wstrict-prototypes)
+list(REMOVE_ITEM c_GLOBAL_COMMON_COMPILE_CPP_OPTIONS  -Wstrict-prototypes)
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
-
-# +++++++++++++++ d_GLOBAL_COMMON_COMPILE_ASM_OPTIONS ++++++++++++++ #
-list(APPEND d_GLOBAL_COMMON_COMPILE_ASM_OPTIONS
-    -g
-    -c
-    -MMD
-    -MP
-)
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
-
-
-
-
-# ++++++++++++++++ d_GLOBAL_MCU_INCLUDE_DIRECTORIES ++++++++++++++++ #
-list(APPEND d_GLOBAL_MCU_INCLUDE_DIRECTORIES
-    ${c_MENUCONFIG_DIR}/project_${d_MCU_PROJECT_NAME}
-    ${d_MCU_PROJECT_DIR}/inc
+# ++++++++++++++++ c_GLOBAL_MCU_INCLUDE_DIRECTORIES ++++++++++++++++ #
+ameba_list_append(c_GLOBAL_MCU_INCLUDE_DIRECTORIES
+    ${c_MENUCONFIG_DIR}/project_${c_MCU_PROJECT_NAME}
+    ${c_MCU_PROJECT_DIR}/inc
 )
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #

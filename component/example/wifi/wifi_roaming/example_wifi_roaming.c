@@ -1,7 +1,7 @@
 #include "rtw_autoconf.h"
 #include "platform_stdlib.h"
 #include "basic_types.h"
-#include "wifi_conf.h"
+#include "wifi_api.h"
 #include "lwip_netconf.h"
 #include "lwip/netif.h"
 
@@ -39,21 +39,21 @@ u32 wifi_roaming_find_ap_from_scan_buf(char *target_ssid, void *user_data, int a
 	wifi_roaming_ap_t *candicate, *temp;
 	u32 i, j = 0;
 	pwifi->rssi = -100;//init
-	char *scan_buf = NULL;
+	struct rtw_scan_result *scanned_ap_list = NULL;
 
-	scan_buf = (char *)rtos_mem_zmalloc(ap_num * sizeof(struct rtw_scan_result));
-	if (scan_buf == NULL) {
+	scanned_ap_list = (struct rtw_scan_result *)rtos_mem_zmalloc(ap_num * sizeof(struct rtw_scan_result));
+	if (scanned_ap_list == NULL) {
 		printf("malloc scan buf for example wifi roaming\n");
 		return -1;
 	}
 
-	if (wifi_get_scan_records(&ap_num, scan_buf) < 0) {
-		rtos_mem_free(scan_buf);
+	if (wifi_get_scan_records(&ap_num, scanned_ap_list) < 0) {
+		rtos_mem_free(scanned_ap_list);
 		return -1;
 	}
 
 	for (i = 0; i < ap_num; i++) {
-		scanned_ap_info = (struct rtw_scan_result *)(scan_buf + i * sizeof(struct rtw_scan_result));
+		scanned_ap_info = &scanned_ap_list[i];
 		if (pwifi->security_type == scanned_ap_info->security ||
 			((pwifi->security_type & (WPA2_SECURITY | WPA_SECURITY)) && (scanned_ap_info->security & (WPA2_SECURITY | WPA_SECURITY)))) {
 			if (ap_count < MAX_AP_NUM) {
@@ -83,7 +83,7 @@ u32 wifi_roaming_find_ap_from_scan_buf(char *target_ssid, void *user_data, int a
 				ap_list[j + 1] = temp;
 			}
 	}
-	rtos_mem_free(scan_buf);
+	rtos_mem_free(scanned_ap_list);
 	return 0;
 }
 
@@ -100,21 +100,23 @@ void wifi_roaming_thread(void *param)
 	struct _rtw_scan_param_t scan_param;
 	int scanned_ap_num = 0;
 	struct _rtw_network_info_t connect_param;
-	struct _rtw_phy_statistics_t phy_statistics;
+	union _rtw_phy_statistics_t phy_statistics;
 	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
 	memset(&connect_param, 0, sizeof(struct _rtw_network_info_t));
 	memset(&setting, 0, sizeof(struct _rtw_wifi_setting_t));
 	memset(&roaming_ap, 0, sizeof(wifi_roaming_ap_t));
 	roaming_ap.rssi = -100;
 	u8 autoreconn_en = 0;
+	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 #ifdef CONFIG_LWIP_LAYER
 	uint8_t *IP = LwIP_GetIP(0);
 #endif
 	printf("\nExample: wifi_roaming \n");
 	while (1) {
-		if (wifi_is_running(WLAN0_IDX) && ((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
+		if (wifi_is_running(WLAN0_IDX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
+			&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
 			wifi_get_phy_statistic(&phy_statistics);
-			if ((phy_statistics.rssi < RSSI_THRESHOLD)) {
+			if ((phy_statistics.sta_phy_stats.rssi < RSSI_THRESHOLD)) {
 				if (polling_count >= (MAX_POLLING_COUNT - 1)) {
 					wifi_get_setting(WLAN0_IDX, &setting);
 					strcpy((char *)roaming_ap.ssid, (char const *)setting.ssid);
@@ -136,7 +138,7 @@ void wifi_roaming_thread(void *param)
 						wifi_roaming_find_ap_from_scan_buf(roaming_ap.ssid, (void *)&roaming_ap, scanned_ap_num);
 					}
 
-					if ((wifi_get_autoreconnect(&autoreconn_en) == RTW_SUCCESS) && autoreconn_en) {
+					if ((wifi_get_autoreconnect(&autoreconn_en) == RTK_SUCCESS) && autoreconn_en) {
 						wifi_set_autoreconnect(0);
 					}
 
@@ -153,7 +155,7 @@ connect_ap:
 							connect_param.password = ap_list[i]->password;
 							connect_param.password_len =  strlen((char const *)ap_list[i]->password);
 							connect_param.key_id = ap_list[i]->key_idx;
-							if (RTW_SUCCESS == wifi_connect(&connect_param, 1)) {
+							if (RTK_SUCCESS == wifi_connect(&connect_param, 1)) {
 #ifdef CONFIG_LWIP_LAYER
 
 								LwIP_DHCP(0, DHCP_START);

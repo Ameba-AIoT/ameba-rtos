@@ -1,1 +1,0 @@
-ameba_add_subdirectories(class)
