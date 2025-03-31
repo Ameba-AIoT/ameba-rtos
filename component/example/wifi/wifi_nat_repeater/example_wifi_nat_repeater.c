@@ -1,9 +1,9 @@
 #include <platform_autoconf.h>
 
 #include "example_wifi_nat_repeater.h"
-#include "wifi_intf_drv_to_app_basic.h"
+#include "wifi_api.h"
 #include "lwip_netconf.h"
-#include "wifi_conf.h"
+#include "wifi_api.h"
 #include "dhcp/dhcps.h"
 #include "main.h"
 

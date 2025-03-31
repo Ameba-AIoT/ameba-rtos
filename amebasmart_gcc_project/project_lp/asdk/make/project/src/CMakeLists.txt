@@ -1,1 +1,0 @@
-add_subdirectory(${d_MCU_PROJECT_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src)

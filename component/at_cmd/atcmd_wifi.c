@@ -13,7 +13,7 @@
 #include <dhcp/dhcps.h>
 #endif
 #ifdef CONFIG_WLAN
-#include <wifi_conf.h>
+#include <wifi_api.h>
 #include <wifi_intf_drv_to_upper.h>
 #endif
 #ifdef CONFIG_AS_INIC_AP
@@ -48,7 +48,7 @@ extern void ipnat_dump(void);
 
 extern int wifi_set_ips_internal(u8 enable);
 
-#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
 extern struct netif eth_netif;
 #endif
 
@@ -63,6 +63,8 @@ static void init_wifi_struct(void)
 	wifi.key_id = -1;
 	wifi.channel = 0;
 	wifi.pscan_option = 0;
+	wifi.security_type = RTW_SECURITY_OPEN;
+
 	memset(ap.ssid.val, 0, sizeof(ap.ssid.val));
 	ap.ssid.len = 0;
 	ap.password = NULL;
@@ -166,13 +168,12 @@ static void print_scan_result(struct rtw_scan_result *record)
 	at_printf(""MAC_FMT", ", MAC_ARG(record->BSSID.octet));
 	at_printf("%d, ", record->signal_strength);
 	at_printf("%d, ", record->channel);
-	at_printf("%s, ", (record->wireless_mode == WLAN_MD_11B) ? "B" :
-			  (record->wireless_mode == WLAN_MD_11BG) ? "G" :
-			  (record->wireless_mode == WLAN_MD_11G) ? "G" :
-			  (record->wireless_mode == WLAN_MD_11A) ? "A" :
-			  (record->wireless_mode == WLAN_MD_11N) ? "N" :
-			  (record->wireless_mode == WLAN_MD_11AC) ? "AC" :
-			  (record->wireless_mode == WLAN_MD_11AX) ? "AX" :
+	at_printf("%s, ", (record->wireless_mode & WLAN_MD_11AX) ? "AX" :
+			  (record->wireless_mode & WLAN_MD_11AC) ? "AC" :
+			  (record->wireless_mode & WLAN_MD_11N) ? "N" :
+			  (record->wireless_mode & WLAN_MD_11A) ? "A" :
+			  (record->wireless_mode & WLAN_MD_11G) ? "G" :
+			  (record->wireless_mode & WLAN_MD_11B) ? "B" :
 			  "Unknown");
 	at_printf("\"%s\", ", (record->security == RTW_SECURITY_OPEN) ? "Open" :
 			  (record->security == RTW_SECURITY_WEP_PSK) ? "WEP" :
@@ -206,7 +207,7 @@ static void print_scan_result(struct rtw_scan_result *record)
 
 	at_printf("\"%s\" ", record->SSID.val);
 	if (record->bss_type == RTW_BSS_TYPE_WTN_HELPER) {
-		at_printf(" Helper\t ");
+		at_printf(" Helper ");
 	}
 	at_printf("\r\n");
 #endif
@@ -261,7 +262,7 @@ void at_wlconn(void *arg)
 		j = i + 1;  /* next i. */
 		/* SSID. */
 		if (0 == strcmp("ssid", argv[i])) {
-			if ((argc <= j) || (strlen(argv[j]) == 0) || (strlen(argv[j]) >= WHC_MAX_SSID_LENGTH)) {
+			if ((argc <= j) || (strlen(argv[j]) == 0) || (strlen(argv[j]) > RTW_ESSID_MAX_SIZE)) {
 				RTK_LOGW(NOTAG, "[+WLCONN] Invalid SSID\r\n");
 				error_no = 2;
 				goto end;
@@ -323,16 +324,14 @@ void at_wlconn(void *arg)
 		goto end;
 	}
 
-	/* Check password. */
-	if (wifi.password != NULL) {
-		wifi.security_type = ((wifi.key_id >= 0) && (wifi.key_id <= 3)) ? RTW_SECURITY_WEP_SHARED : RTW_SECURITY_WPA2_AES_PSK;
-	} else {
-		wifi.security_type = RTW_SECURITY_OPEN;
+	/* Check WEP. */
+	if ((wifi.key_id >= 0) && (wifi.key_id <= 3) && (wifi.password != NULL)) {
+		wifi.security_type = RTW_SECURITY_WEP_SHARED;
 	}
 
 	/* Connecting ...... */
 	ret = wifi_connect(&wifi, 1);
-	if (ret != RTW_SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGW(NOTAG, "[+WLCONN] Fail:%d", ret);
 		if ((ret == RTW_CONNECT_INVALID_KEY)) {
 			RTK_LOGW(NOTAG, "(password format wrong)");
@@ -374,6 +373,7 @@ AT command process:
 ****************************************************************/
 void at_wldisconn(void *arg)
 {
+	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 	int timeout = 20;
 	int error_no = 0, ret = 0;
 	struct _rtw_wifi_setting_t wifi_setting = {0};
@@ -390,7 +390,13 @@ void at_wldisconn(void *arg)
 		goto end;
 	}
 
-	if (wifi_get_join_status() != RTW_JOINSTATUS_SUCCESS) {
+	if (wifi_get_join_status(&join_status) != RTK_SUCCESS) {
+		error_no = 2;
+		RTK_LOGW(NOTAG, "[+WLDISCONN] Wifi get join status ERROR\r\n");
+		goto end;
+	}
+
+	if (join_status == RTW_JOINSTATUS_UNKNOWN) {
 		RTK_LOGI(NOTAG, "[+WLDISCONN] Not connected yet\r\n");
 		goto end;
 	}
@@ -406,7 +412,7 @@ void at_wldisconn(void *arg)
 	/* error_no == 4 means time out. */
 	error_no = 4;
 	while (timeout > 0) {
-		if (wifi_get_join_status() != RTW_JOINSTATUS_SUCCESS) {
+		if ((wifi_get_join_status(&join_status) == RTK_SUCCESS) && join_status != RTW_JOINSTATUS_SUCCESS) {
 			RTK_LOGI(NOTAG, "[+WLDISCONN] disconnect done\r\n");
 			error_no = 0;
 			break;
@@ -488,14 +494,18 @@ void at_wlscan(void *arg)
 	unsigned int i = 0, j = 0, argc = 0, scanned_AP_num = 0;
 	int error_no = 0, ret = 0;
 	char *argv[MAX_ARGC] = {0};
-	char *scan_buf = NULL;
+	struct rtw_scan_result *scanned_AP_list = NULL;
 	struct _rtw_scan_param_t scan_param;
 	struct rtw_scan_result *scanned_AP_info;
 	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 
 	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
 
-	join_status = wifi_get_join_status();
+	if (wifi_get_join_status(&join_status) != RTK_SUCCESS) {
+		error_no = 4;
+		RTK_LOGW(NOTAG, "[+WLSCAN] wifi get join status ERROR\r\n");
+		goto end;
+	}
 	if ((join_status > RTW_JOINSTATUS_UNKNOWN) && (join_status < RTW_JOINSTATUS_SUCCESS)) {
 		RTK_LOGW(NOTAG, "[+WLSCAN] Connecting now, forbid scanning\r\n");
 		error_no = 2;
@@ -509,7 +519,7 @@ void at_wlscan(void *arg)
 		/* SSID. */
 		if (0 == strcmp("ssid", argv[i])) {
 			if ((argc <= j) || (0 == strlen(argv[j]))
-				|| (WHC_MAX_SSID_LENGTH <= strlen(argv[j]))) {
+				|| (RTW_ESSID_MAX_SIZE < strlen(argv[j]))) {
 				RTK_LOGW(NOTAG, "[+WLSCAN] Invalid ssid\r\n");
 				error_no = 1;
 				goto end;
@@ -549,7 +559,7 @@ void at_wlscan(void *arg)
 	}
 
 	ret = wifi_scan_networks(&scan_param, 1);
-	if (ret < RTW_SUCCESS) {
+	if (ret < RTK_SUCCESS) {
 		RTK_LOGW(NOTAG, "[+WLSCAN] wifi_scan_networks ERROR\r\n");
 		error_no = 5;
 		goto end;
@@ -559,16 +569,16 @@ void at_wlscan(void *arg)
 	scanned_AP_num = ret;
 
 	if (scanned_AP_num != 0) {
-		scan_buf = (char *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
-		if (scan_buf == NULL) {
+		scanned_AP_list = (struct rtw_scan_result *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
+		if (scanned_AP_list == NULL) {
 			RTK_LOGW(NOTAG, "[+WLSCAN]ERROR: Can not malloc memory for scan result\r\n");
 			error_no = 3;
 			goto end;
 		}
 
-		if (wifi_get_scan_records(&scanned_AP_num, scan_buf) < 0) {
+		if (wifi_get_scan_records(&scanned_AP_num, scanned_AP_list) < 0) {
 			RTK_LOGW(NOTAG, "[+WLSCAN] Get result failed\r\n");
-			rtos_mem_free((void *)scan_buf);
+			rtos_mem_free((void *)scanned_AP_list);
 			error_no = 5;
 			goto end;
 		}
@@ -579,13 +589,13 @@ void at_wlscan(void *arg)
 #else
 			at_printf("%2d, ", (i + 1));
 #endif
-			scanned_AP_info = (struct rtw_scan_result *)(scan_buf + i * sizeof(struct rtw_scan_result));
+			scanned_AP_info = &scanned_AP_list[i];
 			scanned_AP_info->SSID.val[scanned_AP_info->SSID.len] = 0; /* Ensure the SSID is null terminated */
 
 			print_scan_result(scanned_AP_info);
 		}
 
-		rtos_mem_free((void *)scan_buf);
+		rtos_mem_free((void *)scanned_AP_list);
 	}
 
 end:
@@ -610,7 +620,7 @@ AT command process:
 ****************************************************************/
 void at_wlrssi(void *arg)
 {
-	struct _rtw_phy_statistics_t phy_statistics;
+	union _rtw_phy_statistics_t phy_statistics;
 
 	UNUSED(arg);
 
@@ -618,9 +628,9 @@ void at_wlrssi(void *arg)
 	wifi_get_phy_statistic(&phy_statistics);
 
 	/* cal complement for logs */
-	at_printf("rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.rssi + 1));
-	at_printf("data rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.data_rssi + 1));
-	at_printf("beacon rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.beacon_rssi + 1));
+	at_printf("rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.sta_phy_stats.rssi + 1));
+	at_printf("data rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.sta_phy_stats.data_rssi + 1));
+	at_printf("beacon rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.sta_phy_stats.beacon_rssi + 1));
 	at_printf(ATCMD_OK_END_STR);
 }
 
@@ -693,7 +703,7 @@ void at_wlstartap(void *arg)
 		j = i + 1;  /* next i. */
 		/* SSID */
 		if (0 == strcmp("ssid", argv[i])) {
-			if ((argc <= j) || (strlen(argv[j]) == 0) || (strlen(argv[j]) >= WHC_MAX_SSID_LENGTH)) {
+			if ((argc <= j) || (strlen(argv[j]) == 0) || (strlen(argv[j]) > RTW_ESSID_MAX_SIZE)) {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid SSID length\r\n");
 				error_no = 2;
 				goto end;
@@ -932,7 +942,6 @@ void at_wlstate(void *arg)
 	u8 *msk = LwIP_GetMASK(0);
 #endif
 	struct _rtw_wifi_setting_t *p_wifi_setting = NULL;
-	struct _rtw_sw_statistics_t stats;
 
 	UNUSED(arg);
 
@@ -955,20 +964,16 @@ void at_wlstate(void *arg)
 			at_printf("WLAN%d Status: Running\r\n",  i);
 			at_printf("==============================\r\n");
 
-			wifi_get_sw_statistic(i, &stats);
-			if (i == 0) {
-				at_printf("max_skbbuff_used_num=%d, skbbuff_used_num=%d\r\n", stats.max_skbbuf_used_number, stats.skbbuf_used_number);
-			}
 			wifi_get_setting(i, p_wifi_setting);
 			print_wifi_setting(i, p_wifi_setting);
 
 #ifdef CONFIG_LWIP_LAYER
 			at_printf("Interface (%d)\r\n", i);
 			at_printf("==============================\r\n");
-			at_printf("\tMAC => %02x:%02x:%02x:%02x:%02x:%02x\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) ;
-			at_printf("\tIP  => %d.%d.%d.%d\r\n", ip[0], ip[1], ip[2], ip[3]);
-			at_printf("\tGW  => %d.%d.%d.%d\r\n", gw[0], gw[1], gw[2], gw[3]);
-			at_printf("\tmsk  => %d.%d.%d.%d\r\n\r\n", msk[0], msk[1], msk[2], msk[3]);
+			at_printf("MAC => %02x:%02x:%02x:%02x:%02x:%02x\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) ;
+			at_printf("IP  => %d.%d.%d.%d\r\n", ip[0], ip[1], ip[2], ip[3]);
+			at_printf("GW  => %d.%d.%d.%d\r\n", gw[0], gw[1], gw[2], gw[3]);
+			at_printf("MSK  => %d.%d.%d.%d\r\n\r\n", msk[0], msk[1], msk[2], msk[3]);
 #endif
 			if (p_wifi_setting->mode == RTW_MODE_AP || i == 1) {
 				unsigned int client_number;
@@ -996,7 +1001,7 @@ void at_wlstate(void *arg)
 							}
 						}
 #else
-						at_printf("\tMAC => "MAC_FMT"\r\n",
+						at_printf("MAC => "MAC_FMT"\r\n",
 								  MAC_ARG(client_info.mac_list[client_number].octet));
 #endif
 					}
@@ -1006,18 +1011,18 @@ void at_wlstate(void *arg)
 	}
 
 	/* show the ethernet interface info */
-#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
 #ifdef CONFIG_LWIP_LAYER
 	mac = (uint8_t *)(eth_netif.hwaddr);
 	ip = (uint8_t *) & (eth_netif.ip_addr);
 	gw = (uint8_t *) & (eth_netif.gw);
 	at_printf("Interface ethernet\r\n");
 	at_printf("==============================\r\n");
-	at_printf("\tMAC => %02x:%02x:%02x:%02x:%02x:%02x\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) ;
-	at_printf("\tIP  => %d.%d.%d.%d\r\n", ip[0], ip[1], ip[2], ip[3]);
-	at_printf("\tGW  => %d.%d.%d.%d\r\n\r\n", gw[0], gw[1], gw[2], gw[3]);
+	at_printf("MAC => %02x:%02x:%02x:%02x:%02x:%02x\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) ;
+	at_printf("IP  => %d.%d.%d.%d\r\n", ip[0], ip[1], ip[2], ip[3]);
+	at_printf("GW  => %d.%d.%d.%d\r\n\r\n", gw[0], gw[1], gw[2], gw[3]);
 #endif /* CONFIG_LWIP_LAYER */
-#endif /* CONFIG_ETHERNET */
+#endif /* CONFIG_LWIP_USB_ETHERNET || CONFIG_ETHERNET */
 
 	rtos_mem_free((void *)p_wifi_setting);
 
@@ -1219,7 +1224,7 @@ void at_wldbg(void *arg)
 #else
 	ret = rtw_iwpriv_command(STA_WLAN_INDEX, copy, 1);
 #endif
-	if (ret != RTW_SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGW(NOTAG, "[WLDBG] Failed while iwpriv\r\n");
 		error_no = 2;
 		goto end;
@@ -1420,6 +1425,7 @@ end:
 #endif /* CONFIG_LWIP_LAYER */
 
 log_item_t at_wifi_items[ ] = {
+#ifndef CONFIG_WHC_BRIDGE_HOST
 #ifdef CONFIG_LWIP_LAYER
 	{"+WLSTATICIP", at_wlstaticip, {NULL, NULL}},
 #endif /* CONFIG_LWIP_LAYER */
@@ -1439,6 +1445,7 @@ log_item_t at_wifi_items[ ] = {
 #endif
 	{"+WLPS", at_wlps, {NULL, NULL}},
 #endif /* CONFIG_WLAN */
+#endif
 };
 
 void print_wifi_at(void)

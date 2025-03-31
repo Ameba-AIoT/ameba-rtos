@@ -1,5 +1,0 @@
-if(CONFIG_802154_ZIGBEE_ROLE_ZED)
-ameba_add_subdirectories(ed)
-else()
-ameba_add_subdirectories(zc_zr)
-endif()

@@ -9,7 +9,7 @@
 #include "atcmd_service.h"
 #ifdef CONFIG_LWIP_LAYER
 #if defined(CONFIG_ATCMD_OTA) && (CONFIG_ATCMD_OTA == 1)
-#include "wifi_conf.h"
+#include "wifi_api.h"
 #include "atcmd_ota.h"
 
 static const char *const TAG = "AT-OTA";

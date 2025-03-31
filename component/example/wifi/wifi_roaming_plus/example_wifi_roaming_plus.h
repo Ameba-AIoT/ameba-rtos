@@ -1,7 +1,7 @@
 #ifndef __EXAMPLE_WIFI_ROAMING_H__
 #define __EXAMPLE_WIFI_ROAMING_H__
 
-#include "wifi_intf_drv_to_app_basic.h"
+#include "wifi_api.h"
 
 //fast reconnect callback fun
 extern int (*p_wifi_do_fast_connect)(void);

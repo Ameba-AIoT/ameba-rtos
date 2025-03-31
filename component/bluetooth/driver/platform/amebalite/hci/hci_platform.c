@@ -12,7 +12,7 @@
 #include "ameba.h"
 #include "platform_autoconf.h"
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
-#include "wifi_conf.h"
+#include "wifi_api.h"
 extern int wifi_set_ips_internal(u8 enable);
 #endif
 #include "rtw_coex_host_api.h"
@@ -33,8 +33,6 @@ extern int wifi_set_ips_internal(u8 enable);
 
 #define DBG_BT_VENDOR              0
 #define DBG_BT_ON                  1
-
-uint32_t hci_cfg_sw_val = 0xFF;    /* Open BT Trace log & FW log use 0xDD */
 
 static uint8_t bt_manual_tx_power_gain_enable = 0;
 static uint8_t bt_manual_gain_index_le;

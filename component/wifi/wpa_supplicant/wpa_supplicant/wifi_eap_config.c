@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include <os_wrapper.h>
 #include "utils/os.h"
-#include "wifi_conf.h"
-#include "wifi_ind.h"
+#include "wifi_api.h"
+#include "wifi_intf_drv_to_app_internal.h"
 
 #ifndef ENABLE
 #define ENABLE	(1)
@@ -267,9 +267,8 @@ int connect_by_open_system(char *target_ssid)
 	if (target_ssid != NULL) {
 		memcpy(connect_param.ssid.val, target_ssid, strlen(target_ssid));
 		connect_param.ssid.len = strlen(target_ssid);
-		connect_param.security_type = RTW_SECURITY_OPEN;
 		ret = wifi_connect(&connect_param, 1);
-		if (ret == RTW_SUCCESS) {
+		if (ret == RTK_SUCCESS) {
 			return 0;
 		} else {
 			return -1;

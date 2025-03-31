@@ -1,7 +1,6 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
-#include "wifi_conf.h"
-#include "wifi_ind.h"
+#include "wifi_api.h"
 #include "websocket/libwsclient.h"
 #include "websocket/wsclient_api.h"
 #include <stdio.h>

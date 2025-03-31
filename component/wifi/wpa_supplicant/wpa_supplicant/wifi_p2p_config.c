@@ -1,7 +1,7 @@
 
 #include "utils/os.h"
 #include <lwipconf.h>
-#include <wifi_conf.h>
+#include <wifi_api.h>
 #include "wps/wps_defs.h"
 
 #if defined(CONFIG_ENABLE_P2P) && CONFIG_ENABLE_P2P
@@ -89,7 +89,7 @@ int wifi_start_p2p_go(char *ssid, char *passphrase, u8 channel)
 	softAP_config.password_len = strlen(passphrase);
 	softAP_config.security_type = RTW_SECURITY_WPA2_AES_PSK;
 	softAP_config.channel = channel;
-	if (wifi_start_ap(&softAP_config) != RTW_SUCCESS) {
+	if (wifi_start_ap(&softAP_config) != RTK_SUCCESS) {
 		DiagPrintf("\n\rERROR: Operation failed!");
 		return -1;
 	}

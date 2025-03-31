@@ -15,11 +15,10 @@
 
 # all bin files
 *.bin
-!/**/gnu_utility/**/*.bin
+*.axf
+# !/**/gnu_utility/**/*.bin
+# !/**/gnu_utility/**/*.axf
 !/tools/**/*.bin
-
-# img2 axf files
-target_img2*.axf
 
 # project library files
 
@@ -30,27 +29,15 @@ target_img2*.axf
 lib_*_git_version.c
 __tmp_*_build_info.c
 
-#wifi ext noused c files
+# wifi ext noused c files
 /**/wifi_feature_disable/wifi_intf_drv_to_app_ext_noused.c
 
 # menuconfig lxdialog files
-/**/menuconfig/*
-
-# config files
-/**/.config.old
-/**/.setconfig
-/**/.setconfig.old
-
-# wlan makefile
-/**/make/wlan/
+/ameba*_gcc_project/menuconfig/*
 
 # fiptool
 /**/fiptool/fiptool
 /**/fiptool/fiptool.exe
-
-# git files
-.repo/
-.git/
 
 # trusted-firmware-m build files
 /**/build_tfm/
@@ -65,10 +52,10 @@ __tmp_*_build_info.c
 
 # IDE extra files
 compile_commands.json
+.repo/
+.git/
 .vscode
 .cache
-
-# venv
 .venv
 
 # ignore submodules end

@@ -19,7 +19,7 @@
 #define __SKBUFF_H__
 
 #include "rtw_autoconf.h"
-#include "wifi_intf_drv_to_app_types.h"
+#include "ameba.h"
 #include "os_wrapper.h"
 #include "rtw_atomic.h"
 #include "rtw_misc.h"

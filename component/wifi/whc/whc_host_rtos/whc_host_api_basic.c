@@ -47,7 +47,7 @@ int (*scan_acs_report_user_callback_ptr)(struct acs_mntr_rpt *acs_mntr_rpt) = NU
 
 extern void *param_indicator;
 u8 rtw_join_status = RTW_JOINSTATUS_UNKNOWN;
-int join_fail_reason = RTW_SUCCESS;
+int join_fail_reason = RTK_SUCCESS;
 
 int (*p_wifi_do_fast_connect)(void) = NULL;
 int (*p_store_fast_connect_info)(unsigned int data1, unsigned int data2) = NULL;
@@ -58,127 +58,25 @@ void (*p_wifi_join_info_free)(u8 iface_type) = NULL;
  ******************************************************/
 
 #if CONFIG_WLAN
-static void *_my_calloc(size_t nelements, size_t elementSize)
-{
-	size_t size;
-	void *ptr = NULL;
-
-	size = nelements * elementSize;
-	ptr = rtos_mem_zmalloc(size);
-
-	return ptr;
-}
-
-static void _my_free(void *pbuf)
-{
-	rtos_mem_free(pbuf);
-}
-
-static int _my_random(void *p_rng, unsigned char *output, size_t output_len)
-{
-	/* To avoid gcc warnings */
-	(void) p_rng;
-
-	TRNG_get_random_bytes(output, output_len);
-	return 0;
-}
-int wifi_set_platform_rom_func(void *(*calloc_func)(size_t, size_t),
-							   void (*free_func)(void *),
-							   int (*rand_func)(void *, unsigned char *, size_t))
-{
-	/* Realtek added to initialize HW crypto function pointers
-	* mbedtls RAM codes use function pointers in platform memory implementation
-	* Not use malloc/free in ssl ram map for mbedtls RAM codes
-	*/
-	p_wifi_rom_func_map = (struct _wifi_rom_func_map *)&wifi_rom_func_map;
-	p_wifi_rom_func_map->zmalloc = calloc_func;
-	p_wifi_rom_func_map->mfree = free_func;
-	p_wifi_rom_func_map->random = rand_func;
-
-	return (0);
-}
-
-static void rtos_critical_enter_wifi_rom2flash(void)
-{
-	rtos_critical_enter(RTOS_CRITICAL_WIFI);
-}
-
-static void rtos_critical_exit_wifi_rom2flash(void)
-{
-	rtos_critical_exit(RTOS_CRITICAL_WIFI);
-}
-
-static void wifi_set_platform_rom_os_func(void)
-{
-	/* Realtek added for code in rom
-	*/
-	p_wifi_rom2flash = (struct _wifi_rom_to_flash_func_map *)&wifi_rom2flash;
-
-	/* mutex */
-	p_wifi_rom2flash->rtw_rtos_mutex_give_t = rtos_mutex_give;
-	p_wifi_rom2flash->rtw_rtos_mutex_take_t = rtos_mutex_take;
-	p_wifi_rom2flash->rtos_mutex_delete_static_t = rtos_mutex_delete_static;
-	p_wifi_rom2flash->rtos_mutex_create_static_t = rtos_mutex_create_static;
-
-	/* sema */
-	p_wifi_rom2flash->rtos_sema_give = rtos_sema_give;
-	p_wifi_rom2flash->rtos_sema_take = rtos_sema_take;
-
-	/* critical */
-	p_wifi_rom2flash->rtw_rtos_critical_enter_t = rtos_critical_enter_wifi_rom2flash;
-	p_wifi_rom2flash->rtw_rtos_critical_exit_t = rtos_critical_exit_wifi_rom2flash;
-
-	/* os */
-	p_wifi_rom2flash->rtos_time_delay_ms_t = rtos_time_delay_ms;
-	p_wifi_rom2flash->rtos_time_get_current_system_time_ms = rtos_time_get_current_system_time_ms;
-
-	/* timer */
-	p_wifi_rom2flash->rtw_init_timer_t = rtw_init_timer;
-	p_wifi_rom2flash->rtw_set_timer_t = rtw_set_timer;
-
-	p_wifi_rom2flash->rtw_cancel_timer_t = rtw_cancel_timer;
-	p_wifi_rom2flash->rtw_del_timer_t = rtw_del_timer;
-
-	/* pmu */
-	p_wifi_rom2flash->pmu_set_sysactive_time_t = pmu_set_sysactive_time;
-	p_wifi_rom2flash->rtw_wakelock_timeout = rtw_wakelock_timeout;
-
-	/* wakelock */
-	p_wifi_rom2flash->rtw_acquire_wakelock_t = rtw_acquire_wakelock;
-	p_wifi_rom2flash->rtw_release_wakelock_t = rtw_release_wakelock;
-
-	/* skbuff not in ap*/
-}
-
-void wifi_set_rom2flash(void)
-{
-	wifi_set_platform_rom_func(_my_calloc, _my_free, _my_random);
-	wifi_set_platform_rom_os_func();
-}
-//----------------------------------------------------------------------------//
 int wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char block)
 {
-	int result = RTW_SUCCESS;
+	int result = RTK_SUCCESS;
 	struct internal_join_block_param *block_param = NULL;
 
 	u8 *param_buf = rtos_mem_zmalloc(sizeof(struct _rtw_network_info_t) + connect_param->password_len);
 	u8 *ptr;
 	u8 no_need_indicate = 0;
 	struct rtw_event_join_fail_info_t fail_info = {0};
-#ifdef CONFIG_WIFI_HOST_BRIDGE
-	u8 ip_addr[4];
-	u32 ipaddr, netmask, gw;
-#endif
 
 	/* check if SoftAP is running */
 	if ((wifi_user_config.concurrent_enabled == FALSE) && wifi_is_running(SOFTAP_WLAN_INDEX)) {
 		RTK_LOGE(TAG_WLAN_INIC, "ap running, please set concurrent_enabled in wifi_set_user_config\n");
-		return RTW_ERROR;
+		return RTK_FAIL;
 	}
 
 	if (connect_param == NULL) {
 		RTK_LOGE(TAG_WLAN_INIC, "connect param not set!\n");
-		return RTW_ERROR;
+		return RTK_FAIL;
 	}
 
 	/* step1: check if there's ongoing connect*/
@@ -248,7 +146,7 @@ int wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char block)
 	whc_host_api_message_send(WHC_API_WIFI_CONNECT, (u8 *)param_buf, sizeof(struct _rtw_network_info_t) + connect_param->password_len, (u8 *)&result,
 							  sizeof(result));
 
-	if (result != RTW_SUCCESS) {
+	if (result != RTK_SUCCESS) {
 		rtw_join_status = RTW_JOINSTATUS_FAIL;
 		goto error;
 	}
@@ -265,13 +163,13 @@ int wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char block)
 #endif
 			block_param->join_timeout = RTW_JOIN_TIMEOUT;
 
-		if (rtos_sema_take(block_param->join_sema, block_param->join_timeout) != SUCCESS) {
+		if (rtos_sema_take(block_param->join_sema, block_param->join_timeout) != RTK_SUCCESS) {
 			RTK_LOGE(TAG_WLAN_INIC, "Join bss timeout\n");
 			rtw_join_status = RTW_JOINSTATUS_FAIL;
 			result = RTW_TIMEOUT;
 			goto error;
 		} else {
-			if (wifi_get_join_status() != RTW_JOINSTATUS_SUCCESS) {
+			if (rtw_join_status != RTW_JOINSTATUS_SUCCESS) {
 				result = join_fail_reason;
 				no_need_indicate = 1;
 				goto error;
@@ -279,22 +177,9 @@ int wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char block)
 		}
 	}
 
-#ifdef CONFIG_WIFI_HOST_BRIDGE
-	if (result == RTW_SUCCESS) {
-		wifi_bridge_dhcp();
-
-		wifi_bridge_get_ip(ip_addr);
-		ipaddr = CONCAT_TO_UINT32(ip_addr[0], ip_addr[1], ip_addr[2], ip_addr[3]);
-		netmask = CONCAT_TO_UINT32(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-		gw = CONCAT_TO_UINT32(ip_addr[0], ip_addr[1], ip_addr[2], 1);
-		LwIP_SetIP(STA_WLAN_INDEX, ipaddr, netmask, gw);
-		LwIP_netif_set_link_up(0);
-	}
-#endif
-
 	/* ameba start dhcp in atcmd, check where start dhcp when connect success in no ameba ic */
-#if defined(TODO) && defined(CONFIG_LWIP_LAYER) && !defined(CONFIG_WIFI_HOST_BRIDGE)
-	if (result == RTW_SUCCESS) {
+#if defined(TODO) && defined(CONFIG_LWIP_LAYER)
+	if (result == RTK_SUCCESS) {
 		/* Start DHCPClient */
 		LwIP_DHCP(0, DHCP_START);
 	}
@@ -339,9 +224,10 @@ int wifi_is_running(unsigned char wlan_idx)
 	return ret;
 }
 
-u8 wifi_get_join_status(void)
+int wifi_get_join_status(u8 *join_status)
 {
-	return rtw_join_status;
+	*join_status = rtw_join_status;
+	return RTK_SUCCESS;
 }
 
 int wifi_on(u8 mode)
@@ -349,9 +235,6 @@ int wifi_on(u8 mode)
 	int ret = 1;
 	u32 wifi_mode;
 	static u32 wifi_boot = 0;
-#ifdef CONFIG_WIFI_HOST_BRIDGE
-	u8 mac[6];
-#endif
 
 	/* tell dev host linux or rtos */
 	whc_host_api_message_send(WHC_API_WIFI_SET_HOST_RTOS, NULL, 0, NULL, 0);
@@ -361,13 +244,6 @@ int wifi_on(u8 mode)
 
 	wifi_mode = (u32)mode;
 	whc_host_api_message_send(WHC_API_WIFI_ON, (u8 *)&wifi_mode, 4, (u8 *)&ret, sizeof(ret));
-
-#ifdef CONFIG_WIFI_HOST_BRIDGE
-	ret = wifi_get_mac_address(STA_WLAN_INDEX, mac, 6);
-	LwIP_wlan_set_netif_info(STA_WLAN_INDEX, NULL, mac);
-#else
-	whc_host_api_message_send(WHC_API_WIFI_ON, (u8 *)&wifi_mode, 4, (u8 *)&ret, sizeof(ret));
-#endif
 
 	if (wifi_boot == 0) {
 		wifi_boot = 1;
@@ -380,8 +256,8 @@ int wifi_on(u8 mode)
 		}
 	}
 
-	if (ret == RTW_SUCCESS) { //wifi on success
-#if defined(CONFIG_LWIP_LAYER) && !defined(CONFIG_WIFI_HOST_BRIDGE)
+	if (ret == RTK_SUCCESS) { //wifi on success
+#if defined(CONFIG_LWIP_LAYER)
 		if (mode == RTW_MODE_STA) {
 			LwIP_netif_set_up(0);
 		}
@@ -391,7 +267,7 @@ int wifi_on(u8 mode)
 	return ret;
 }
 
-int wifi_start_ap(struct _rtw_softap_info_t *softAP_config)
+int wifi_start_ap(struct _rtw_softap_info_t *softap_config)
 {
 	int ret = 0;
 	u8 *param_buf;
@@ -408,37 +284,37 @@ int wifi_start_ap(struct _rtw_softap_info_t *softAP_config)
 	if ((wifi_user_config.concurrent_enabled == FALSE) &&
 		(rtw_join_status > RTW_JOINSTATUS_UNKNOWN) && (rtw_join_status <= RTW_JOINSTATUS_SUCCESS)) {
 		RTK_LOGE(TAG_WLAN_INIC, "need ap? please set concurrent_enabled to TRUE in wifi_set_user_config() !!\n");
-		ret = RTW_ERROR;
+		ret = RTK_FAIL;
 		goto exit;
 	}
 
-	DCache_Clean((u32)softAP_config->password, softAP_config->password_len);
-	DCache_Clean((u32)softAP_config, sizeof(struct _rtw_softap_info_t));
+	DCache_Clean((u32)softap_config->password, softap_config->password_len);
+	DCache_Clean((u32)softap_config, sizeof(struct _rtw_softap_info_t));
 
-	param_buf = rtos_mem_zmalloc(sizeof(struct _rtw_softap_info_t) + softAP_config->password_len);
+	param_buf = rtos_mem_zmalloc(sizeof(struct _rtw_softap_info_t) + softap_config->password_len);
 
 	if (!param_buf) {
 		goto exit;
 	}
 	ptr = param_buf;
 
-	memcpy(ptr, &softAP_config->ssid, sizeof(softAP_config->ssid));
-	ptr += sizeof(softAP_config->ssid);
+	memcpy(ptr, &softap_config->ssid, sizeof(softap_config->ssid));
+	ptr += sizeof(softap_config->ssid);
 
-	memcpy(ptr, &softAP_config->hidden_ssid, sizeof(softAP_config->hidden_ssid));
-	ptr += sizeof(softAP_config->hidden_ssid);
+	memcpy(ptr, &softap_config->hidden_ssid, sizeof(softap_config->hidden_ssid));
+	ptr += sizeof(softap_config->hidden_ssid);
 
-	memcpy(ptr, &softAP_config->security_type, sizeof(softAP_config->security_type));
-	ptr += sizeof(softAP_config->security_type);
+	memcpy(ptr, &softap_config->security_type, sizeof(softap_config->security_type));
+	ptr += sizeof(softap_config->security_type);
 
-	memcpy(ptr, &softAP_config->password_len, sizeof(softAP_config->password_len));
-	ptr += sizeof(softAP_config->password_len);
+	memcpy(ptr, &softap_config->password_len, sizeof(softap_config->password_len));
+	ptr += sizeof(softap_config->password_len);
 
-	memcpy(ptr, &softAP_config->channel, sizeof(softAP_config->channel));
-	ptr += sizeof(softAP_config->channel);
+	memcpy(ptr, &softap_config->channel, sizeof(softap_config->channel));
+	ptr += sizeof(softap_config->channel);
 
-	if (softAP_config->password_len) {
-		memcpy(ptr, softAP_config->password, sizeof(softAP_config->password_len));
+	if (softap_config->password_len) {
+		memcpy(ptr, softap_config->password, sizeof(softap_config->password_len));
 	}
 
 	rtw_wpa_init(SOFTAP_WLAN_INDEX);
@@ -447,17 +323,17 @@ int wifi_start_ap(struct _rtw_softap_info_t *softAP_config)
 		ret = FALSE;
 		goto exit;
 	}
-	if (softAP_config->password && softAP_config->password_len) {
+	if (softap_config->password && softap_config->password_len) {
 		PSK_INFO->index = SOFTAP_WLAN_INDEX;
-		PSK_INFO->security_type = softAP_config->security_type;
-		memcpy(PSK_INFO->psk_essid, softAP_config->ssid.val, softAP_config->ssid.len);
-		memcpy(PSK_INFO->psk_passphrase, softAP_config->password, softAP_config->password_len);
+		PSK_INFO->security_type = softap_config->security_type;
+		memcpy(PSK_INFO->psk_essid, softap_config->ssid.val, softap_config->ssid.len);
+		memcpy(PSK_INFO->psk_passphrase, softap_config->password, softap_config->password_len);
 		rtw_psk_set_psk_info(PSK_INFO);
 	}
 
-	whc_host_api_message_send(WHC_API_WIFI_START_AP, (u8 *)param_buf, sizeof(struct _rtw_softap_info_t) + softAP_config->password_len, (u8 *)&ret, sizeof(ret));
+	whc_host_api_message_send(WHC_API_WIFI_START_AP, (u8 *)param_buf, sizeof(struct _rtw_softap_info_t) + softap_config->password_len, (u8 *)&ret, sizeof(ret));
 
-	if (ret == RTW_SUCCESS) {
+	if (ret == RTK_SUCCESS) {
 #ifdef CONFIG_LWIP_LAYER
 		LwIP_netif_set_up(SOFTAP_WLAN_INDEX);
 		LwIP_netif_set_link_up(SOFTAP_WLAN_INDEX);

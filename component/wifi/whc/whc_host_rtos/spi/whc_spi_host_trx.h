@@ -3,7 +3,7 @@
 /* -------------------------------- Includes -------------------------------- */
 /* external head files */
 #include "rtw_wifi_common.h"
-
+#include "rtw_skbuff.h"
 /* -------------------------------- Defines --------------------------------- */
 #define whc_host_send           whc_spi_host_send
 

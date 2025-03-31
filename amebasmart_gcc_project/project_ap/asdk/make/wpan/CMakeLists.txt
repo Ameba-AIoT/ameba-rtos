@@ -1,5 +1,0 @@
-ameba_add_subdirectories_if(CONFIG_802154_THREAD_EN openthread)
-ameba_add_subdirectories_if(CONFIG_802154_ZIGBEE_EN zigbee)
-if(CONFIG_802154_THREAD_EN OR CONFIG_802154_ZIGBEE_EN)
-    ameba_add_subdirectories(platform)
-endif()

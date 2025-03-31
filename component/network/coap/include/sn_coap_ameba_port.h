@@ -11,7 +11,7 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "os_wrapper.h"
-#include "wifi_conf.h"
+#include "wifi_api.h"
 #include <lwipconf.h>
 #include <stdint.h>
 

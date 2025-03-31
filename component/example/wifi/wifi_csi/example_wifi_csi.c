@@ -9,7 +9,7 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "lwip_netconf.h"
-#include "wifi_conf.h"
+#include "wifi_api.h"
 #include "rtw_autoconf.h"
 
 extern int wifi_csi_config(struct _rtw_csi_action_parm_t *act_param);
@@ -21,6 +21,7 @@ unsigned int csi_data_len = 2048;
 static void wifi_csi_thread(void *param)
 {
 	(void)param;
+	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 	struct _rtw_csi_action_parm_t act_param = {0};
 	u32 len;
 	unsigned char *csi_buf = NULL;
@@ -42,7 +43,8 @@ NEXT:
 			goto NEXT;
 
 		}
-		if (wifi_is_running(STA_WLAN_INDEX) && (wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID)) {
+		if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
+			&& (join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID)) {
 			rtos_time_delay_ms(2000);  /* 2s */
 			RTK_LOGA(NOTAG, "### STA Break ###\r\n");
 			break;

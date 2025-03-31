@@ -120,7 +120,7 @@ void mod_timer(struct timer_list *timer, u32 delay_time_ms)
 
 	//Set Timer period
 	if (timer->timer_hdl != NULL)
-		if (rtos_timer_change_period(timer->timer_hdl, delay_time_ms, RTOS_TIMER_MAX_DELAY) == FAIL) {
+		if (rtos_timer_change_period(timer->timer_hdl, delay_time_ms, RTOS_TIMER_MAX_DELAY) == RTK_FAIL) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "ModTimer fail\n");
 		}
 }

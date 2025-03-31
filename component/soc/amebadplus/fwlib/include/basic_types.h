@@ -12,16 +12,12 @@
 #include <stddef.h> /* for size_t */
 #include <limits.h> /* for INT_MAX */
 #include "rtk_compiler.h"
+#include "rtk_status.h"
 
 #define PLATFORM_LITTLE_ENDIAN                  0
 #define PLATFORM_BIG_ENDIAN                     1
 
 #define SYSTEM_ENDIAN                           PLATFORM_LITTLE_ENDIAN
-
-#define SUCCESS	0
-#define FAIL	(-1)
-#define RTK_SUCCESS	0
-#define RTK_FAIL	(-1)
 
 #ifndef FALSE
 #define FALSE   0

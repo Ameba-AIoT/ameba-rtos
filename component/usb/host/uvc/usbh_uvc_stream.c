@@ -14,13 +14,13 @@
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
-
+#if (UVC_USE_HW == 0)
 static void usbh_uvc_decode_thread(void *param);
 static void usbh_uvc_decode_thread_deinit(uvc_stream_t *stream);
 static int usbh_uvc_decode_thread_init(uvc_stream_t *stream);
 static uvc_frame_t *usbh_uvc_next_frame_buffer(uvc_stream_t *stream, uvc_frame_t *buf);
 static void usbh_uvc_decode_urb(uvc_stream_t *stream, uvc_urb_t *urb);
-
+#endif
 /* Private function prototypes -----------------------------------------------*/
 
 /* Private variables ---------------------------------------------------------*/
@@ -28,12 +28,12 @@ static void usbh_uvc_decode_urb(uvc_stream_t *stream, uvc_urb_t *urb);
 static const char *const TAG = "UVC";
 
 extern usbh_uvc_host_t uvc_host;
-
+#if (UVC_USE_HW == 0)
 static u32 wait_recv_timeout = RTOS_MAX_DELAY;
+static u32 giveback_send_timeout = RTOS_MAX_DELAY;
+#endif
 static u32 wait_send_timeout = RTOS_MAX_DELAY;
 static u32 giveback_recv_timeout = RTOS_MAX_DELAY;
-static u32 giveback_send_timeout = RTOS_MAX_DELAY;
-
 /* Private functions ---------------------------------------------------------*/
 
 /**
@@ -171,7 +171,7 @@ static void usbh_uvc_reset_buf(uvc_stream_t *stream)
 
 	usb_os_mfree(stream->uvc_buffer);
 }
-
+#if (UVC_USE_HW == 0)
 /**
   * @brief	UVC decode thread
   * @param	param: task parameter
@@ -204,7 +204,6 @@ static void usbh_uvc_decode_thread(void *param)
 	rtos_task_delete(NULL);
 }
 
-#if (UVC_USE_HW == 0)
 /**
   * @brief	Deinit UVC decode thread
   * @param	stream: uvc stream interface
@@ -251,7 +250,7 @@ static int usbh_uvc_decode_thread_init(uvc_stream_t *stream)
 	}
 
 	if (rtos_task_create(&stream->decode_task, "usbh_uvc_decode_thread", usbh_uvc_decode_thread, (void *)stream, UVC_DECODE_TASK_STACK,
-						 UVC_DECODE_TASK_PRIORITY) != SUCCESS) {
+						 UVC_DECODE_TASK_PRIORITY) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create uvc decode thread\n");
 		return -1;
 	}
@@ -260,7 +259,6 @@ static int usbh_uvc_decode_thread_init(uvc_stream_t *stream)
 
 	return HAL_OK;
 }
-#endif
 
 /**
   * @brief	Get next frame buffer to fill video data
@@ -379,7 +377,7 @@ static void usbh_uvc_decode_urb(uvc_stream_t *stream, uvc_urb_t *urb)
 	}
 
 }
-
+#endif
 
 /* Exported functions --------------------------------------------------------*/
 

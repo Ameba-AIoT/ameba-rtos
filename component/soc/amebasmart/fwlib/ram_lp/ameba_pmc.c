@@ -98,6 +98,22 @@ static void OTP_Raise_AonVol(u32 status)
 	}
 
 }
+/**
+ * @brief set loguart rx pin as gpio waking-up
+ *
+ * @param status, ENABLE or DISABLE
+ *
+ * @return None
+ */
+void SOCPS_UartRxPinWakeSet(u32 status)
+{
+	if (status == ENABLE) {
+		GPIO_INTConfig(UART_LOG_RXD, ENABLE);
+		Pinmux_UartLogCtrl(PINMUX_S0, OFF);
+	} else {
+		Pinmux_UartLogCtrl(PINMUX_S0, ON);
+	}
+}
 
 void SOCPS_CLK_SwitchToLow(u32 status)
 {
@@ -147,9 +163,7 @@ void SOCPS_SleepCG(void)
 		return;
 	}
 
-	/* switch chipen inti intr mode to wakeup system*/
-	CHIPEN_WorkMode(CHIPEN_INT_RESET_MODE);
-
+	SOCPS_UartRxPinWakeSet(ENABLE);
 	/* switch IP clk to OSC4M, so that can wakeup system when need */
 	SOCPS_CLK_SwitchToLow(ENABLE);
 
@@ -159,6 +173,8 @@ void SOCPS_SleepCG(void)
 
 	/* switch IP clk to lsbus */
 	SOCPS_CLK_SwitchToLow(DISABLE);
+
+	SOCPS_UartRxPinWakeSet(DISABLE);
 
 	/* exec sleep hook functions */
 	pmu_exec_wakeup_hook_funs(PMU_MAX);
@@ -194,10 +210,7 @@ void SOCPS_SleepPG(void)
 	}
 
 	//SOCPS_Hplat_OFF();
-
-	/* switch chipen inti intr mode to wakeup system*/
-	CHIPEN_WorkMode(CHIPEN_INT_RESET_MODE);
-
+	SOCPS_UartRxPinWakeSet(ENABLE);
 	/* switch IP clk to OSC4M, so that can wakeup system when need */
 	SOCPS_CLK_SwitchToLow(ENABLE);
 
@@ -207,6 +220,7 @@ void SOCPS_SleepPG(void)
 
 	/* switch IP clk to lsbus */
 	SOCPS_CLK_SwitchToLow(DISABLE);
+	SOCPS_UartRxPinWakeSet(DISABLE);
 
 	/* exec sleep hook functions */
 	pmu_exec_wakeup_hook_funs(PMU_MAX);

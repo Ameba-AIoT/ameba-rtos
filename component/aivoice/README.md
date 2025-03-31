@@ -6,7 +6,7 @@ AIVoice provides offline AI solution to build voice related applications on Real
 
 ### Supported SoCs
 
-| Chip       | OS    |     AIVoice_1.2.0      | aivoice_lib_dir   | aivoice_example_dir     |
+| Chip       | OS    |     AIVoice            | aivoice_lib_dir   | aivoice_example_dir     |
 | :--------- | ----- | :--------------------: | ----------------- | ----------------------- |
 | AmebaSmart | Linux | ![alt text][supported] | apps/aivoice      | apps/aivoice/example    |
 | AmebaSmart | RTOS  | ![alt text][supported] | component/aivoice | example/aivoice         |

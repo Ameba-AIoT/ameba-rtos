@@ -6,7 +6,7 @@
  *
  * The PSCI v0.1 function numbers are implementation defined.
  *
- * Only PSCI return values such as: SUCCESS, NOT_SUPPORTED,
+ * Only PSCI return values such as: RTK_SUCCESS, NOT_SUPPORTED,
  * INVALID_PARAMS, and DENIED defined below are applicable
  * to PSCI v0.1.
  */

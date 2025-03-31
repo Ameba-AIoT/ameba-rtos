@@ -49,14 +49,14 @@ int efuse_get_remaining_length(void)
   */
 void efuse_mtp_read(uint8_t *data)
 {
-	int ret = FAIL;
+	int ret = RTK_FAIL;
 
 	/*0xff will be eFuse default value instead of 0x00. */
 	_memset(data, 0xFF, OTP_MTP_USER_LEN);
 
 	ret = OTP_LogicalMap_Read(data, OTP_MTP_USER_START, OTP_MTP_USER_LEN);
 
-	if (ret == FAIL) {
+	if (ret == RTK_FAIL) {
 		printf("ERR: efuse_mtp_read fail \n");
 	}
 
@@ -73,7 +73,7 @@ void efuse_mtp_read(uint8_t *data)
   */
 int efuse_mtp_write(uint32_t offset, uint32_t len, uint8_t *data)
 {
-	int bResult = FAIL;
+	int bResult = RTK_FAIL;
 
 	if ((offset + len) > OTP_MTP_USER_LEN) {
 		printf("ERR: Write MTP out of boundary\n");
@@ -82,7 +82,7 @@ int efuse_mtp_write(uint32_t offset, uint32_t len, uint8_t *data)
 
 	bResult = OTP_LogicalMap_Write((OTP_MTP_USER_START + offset), len, data);
 
-	if (bResult != SUCCESS) {
+	if (bResult != RTK_SUCCESS) {
 		printf("write fail \n");
 		return bResult;
 	}
@@ -106,7 +106,7 @@ int efuse_mtp_write(uint32_t offset, uint32_t len, uint8_t *data)
 int efuse_otp_read(uint32_t offset, uint32_t len, uint8_t *buf)
 {
 	u32 index;
-	int bResult = FAIL;
+	int bResult = RTK_FAIL;
 
 	if ((offset + len) > OTP_USER_LEN) {
 		printf("ERR: Read Out of boundary\n");
@@ -116,7 +116,7 @@ int efuse_otp_read(uint32_t offset, uint32_t len, uint8_t *buf)
 	for (index = 0; index < len; index++) {
 		bResult = OTP_Read8((OTP_USER_START + offset + index), (u8 *)(buf + index));
 
-		if (bResult != SUCCESS) {
+		if (bResult != RTK_SUCCESS) {
 			printf("ERR: Read User defined physical OTP fail\n");
 			return bResult;
 		}
@@ -151,7 +151,7 @@ int efuse_otp_write(uint32_t offset, uint32_t len, uint8_t *buf)
 	for (index = 0; index < len; index++) {
 		bResult = OTP_Write8((OTP_USER_START + offset + index), buf[index]);
 
-		if (bResult != SUCCESS) {
+		if (bResult != RTK_SUCCESS) {
 			printf("ERR: Write User defined physical OTP fail\n");
 			return -1;
 		}

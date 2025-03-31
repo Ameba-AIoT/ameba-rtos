@@ -16,7 +16,7 @@ ameba_add_subdirectory(${c_CMPT_MISC_DIR})
 
 ameba_add_subdirectory(${c_MCU_PROJECT_DIR}/src)
 ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_fw)
-ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_make)
+ameba_add_subdirectory(${c_CMPT_WIFI_DIR})
 
 ###############################  GENERATE IMAGE  ###################################
 #---------------- PRE LINK -------------------#

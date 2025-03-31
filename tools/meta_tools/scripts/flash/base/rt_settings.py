@@ -10,12 +10,17 @@ class RtSettings():
     MIN_USB_ROM_BOOT_DELAY_IN_MILLISECOND = 200
     MIN_USB_FLOADER_BOOT_DELAY_IN_MILLISECOND = 200
 
+    FLASH_PROTECTION_PROCESS_PROMPT = 0
+    FLASH_PROTECTION_PROCESS_TRY = 1
+    FLASH_PROTECTION_PROCESS_UNLOCK = 2
+    FLASH_PROTECTION_PROCESS_ABORT = 3
+
     def __init__(self, **kwargs):
         self.sense_packet_count = kwargs.get("SensePacketCount", 32)
         self.request_retry_count = kwargs.get("RequestRetryCount", 3)
         self.request_retry_interval_second = round(kwargs.get("RequestRetryIntervalInMillisecond", 10) / 1000, 2)
         self.async_response_timeout_in_second = round(kwargs.get("AsyncResponseTimeoutInMilliseccond", 1000) / 1000, 2)
-        self.sync_response_timeout_in_second = round(kwargs.get("SyncResponseTimeoutInMillisecond", 10000) / 1000, 2)
+        self.sync_response_timeout_in_second = round(kwargs.get("SyncResponseTimeoutInMillisecond", 1000) / 1000, 2)
         self.baudrate_switch_delay_in_second = round(kwargs.get("BaudrateSwitchDelayInMillisecond", 200) / 1000, 2)
         self.rom_boot_delay_in_second = round(max(kwargs.get("RomBootDelayInMillisecond", 100), self.MIN_ROM_BOOT_DELAY_IN_MILLISECOND) / 1000, 2)
         self.usb_rom_boot_delay_in_second = round(max(kwargs.get("UsbRomBootDelayInMillisecond", 500), self.MIN_USB_ROM_BOOT_DELAY_IN_MILLISECOND) / 1000, 2)
@@ -24,6 +29,7 @@ class RtSettings():
         self.write_response_timeout_in_second = round(kwargs.get("WriteResponseTimeoutInMillisecond", 2000) / 1000, 2)
         self.floader_boot_delay_in_second = round(kwargs.get("FloaderBootDelayInMillisecond", 1000) / 1000, 2)
         self.auto_switch_to_download_mode_with_dtr_rts = kwargs.get("AutoSwitchToDownloadModeWithDtrRts", 0)
+        self.flash_protection_process = kwargs.get("FlashProtectionProcess", self.FLASH_PROTECTION_PROCESS_PROMPT)
         self.erase_by_block = kwargs.get("EraseByBlock", 0)
         self.program_config1 = kwargs.get("ProgramConfig1", 0)
         self.program_config2 = kwargs.get("ProgramConfig2", 0)
@@ -45,6 +51,7 @@ class RtSettings():
             "WriteResponseTimeoutInMillisecond": int(self.write_response_timeout_in_second * 1000),
             "FloaderBootDelayInMillisecond": int(self.floader_boot_delay_in_second * 1000),
             "AutoSwitchToDownloadModeWithDtrRts": self.auto_switch_to_download_mode_with_dtr_rts,
+            "FlashProtectionProcess": self.flash_protection_process,
             "EraseByBlock": self.erase_by_block,
             "ProgramConfig1": self.program_config1,
             "ProgramConfig2": self.program_config2,

@@ -46,7 +46,7 @@ static int whc_usb_dev_rx_done_cb(usbd_inic_ep_t *ep, u16 len)
 
 			if (buf == NULL) {
 				RTK_LOGE(TAG_WLAN_INIC, "%s, can't alloc buffer!!\n", __func__);
-				return FAIL;
+				return RTK_FAIL;
 			}
 
 			memcpy(buf, ep->buf, len);
@@ -56,7 +56,7 @@ static int whc_usb_dev_rx_done_cb(usbd_inic_ep_t *ep, u16 len)
 			if ((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 2) {
 				/*todo: if return fail, pkt will be droped??*/
 				//RTK_LOGS(NOTAG, RTK_LOG_ERROR, "SKB FAIL\n");
-				return FAIL;
+				return RTK_FAIL;
 			}
 
 			msg_info = (struct whc_msg_info *) ep->buf;
@@ -67,7 +67,7 @@ static int whc_usb_dev_rx_done_cb(usbd_inic_ep_t *ep, u16 len)
 			new_skb = dev_alloc_skb(USB_BUFSZ, USB_SKB_RSVD_LEN);
 			if (!new_skb) {
 				RTK_LOGS(NOTAG, RTK_LOG_ERROR, "rxdone cb alloc fail\n");
-				return FAIL;
+				return RTK_FAIL;
 			}
 
 			skb_rcv->dev = (void *)msg_info->wlan_idx;
@@ -206,7 +206,7 @@ void whc_usb_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb)
 		break;
 	case WHC_WIFI_EVT_XIMT_PKTS:
 		/* put the inic message to the queue */
-		if (whc_msg_enqueue(skb, &dev_xmit_priv.xmit_queue) == FAIL) {
+		if (whc_msg_enqueue(skb, &dev_xmit_priv.xmit_queue) == RTK_FAIL) {
 			break;
 		}
 		/* wakeup task */

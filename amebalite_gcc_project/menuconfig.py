@@ -73,7 +73,7 @@ def main():
     if args.menuconfig_dir:
         menuconfigdir = args.menuconfig_dir
     else:
-        menuconfigdir = '.'
+        menuconfigdir = ''
 
     os.environ['KCONFIG_CONFIG']= os.path.join(menuconfigdir, 'menuconfig/.config')
 

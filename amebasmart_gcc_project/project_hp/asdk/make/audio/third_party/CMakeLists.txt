@@ -1,1 +1,0 @@
-ameba_add_subdirectories_if(CONFIG_SPEEX_LIB speexdsp)

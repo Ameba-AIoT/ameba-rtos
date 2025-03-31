@@ -155,7 +155,7 @@ void ipc_app_init(int32_t task_size, int32_t priority, int32_t log_enable)
 int32_t RPC_Init(RPC_INIT_STRUCT *init_param)
 {
 	RPC_MutexInit(&g_lock);
-	if (rtos_task_create(NULL, ((const char *)"RPC_InitThread"), RPC_InitThread, init_param, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"RPC_InitThread"), RPC_InitThread, init_param, 1024 * 4, 1) != RTK_SUCCESS) {
 		RPC_LOGE("\n\r%s rtos_task_create(RPC_InitThread) failed", __FUNCTION__);
 	}
 	return 0;

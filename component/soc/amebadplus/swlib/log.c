@@ -27,9 +27,9 @@ int rtk_log_array_print(rtk_log_tag_t *rtk_log_tag_array)
 		for (uint32_t i = 0; i < index; i++) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] level = %d\n", rtk_log_tag_array[i].tag, rtk_log_tag_array[i].level);
 		}
-		return SUCCESS;
+		return RTK_SUCCESS;
 	}
-	return FAIL;
+	return RTK_FAIL;
 }
 
 /***
@@ -106,12 +106,12 @@ int rtk_log_level_set(const char *tag, rtk_log_level_t level)
 	uint32_t i = 0;
 	uint32_t index = MIN(rtk_log_entry_count, LOG_TAG_CACHE_ARRAY_SIZE);
 	if ((tag == NULL) || (level > RTK_LOG_DEBUG)) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 	// for wildcard tag, remove all array items and clear the cache
 	if (_strcmp(tag, "*") == 0) {
 		rtk_log_default_level = level;
-		return SUCCESS;
+		return RTK_SUCCESS;
 	}
 	// search in the cache and update the entry it if exists
 	for (i = 0; i < index; i++) {
@@ -128,7 +128,7 @@ int rtk_log_level_set(const char *tag, rtk_log_level_t level)
 	if (i >= index) { //
 		rtk_log_array_add(tag, level);
 	}
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 /***

@@ -1,0 +1,7 @@
+if(CONFIG_KERNEL)
+    ameba_add_subdirectory(freertos)
+    if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
+        ameba_add_subdirectory(freertos/os_wrapper)
+        ameba_add_subdirectory_if(CONFIG_CORE_AS_AP freertos/freertos_posix)
+    endif()
+endif()

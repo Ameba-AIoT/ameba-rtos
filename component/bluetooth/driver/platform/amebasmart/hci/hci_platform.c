@@ -9,7 +9,7 @@
 #include "hci_uart.h"
 #include "hci_platform.h"
 #include "bt_debug.h"
-#include "wifi_conf.h"
+#include "wifi_api.h"
 
 #define HCI_PHY_EFUSE_OFFSET       0x740
 #define HCI_PHY_EFUSE_LEN          0x70
@@ -27,7 +27,6 @@
 #define DBG_BT_VENDOR              0
 #define DBG_BT_ON                  1
 
-uint32_t hci_cfg_sw_val = 0xFF;    /* Open BT Trace log & FW log use 0xDD */
 uint8_t bt_ant_switch = 0xFF;      /* Select BT RF Patch */
 
 static uint8_t bt_manual_tx_power_gain_enable = 0;

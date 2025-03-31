@@ -920,7 +920,7 @@ u32 usbd_composite_hid_read(u8 *buffer, u32 size, u32 time_out_ms)
 			if (pdata_ctrl->read_idx == pdata_ctrl->write_idx) {
 				//wait sema
 				pdata_ctrl->read_wait_sema = 1;
-				if (rtos_sema_take(pdata_ctrl->uac_hid_sema, time_out_ms) != SUCCESS) {
+				if (rtos_sema_take(pdata_ctrl->uac_hid_sema, time_out_ms) != RTK_SUCCESS) {
 					pdata_ctrl->read_wait_sema = 0;
 					break;
 				}

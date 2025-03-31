@@ -29,7 +29,7 @@ int whc_fullmac_host_dump_survey_params(struct wiphy *wiphy, struct net_device *
 		return -ENOENT;
 	}
 
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -ENOENT;
 	}
 

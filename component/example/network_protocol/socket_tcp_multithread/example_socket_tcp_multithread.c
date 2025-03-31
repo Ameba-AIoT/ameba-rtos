@@ -3,8 +3,7 @@
 #include "lwipconf.h"
 //#include <osdep_api.h>
 #include "os_wrapper.h"
-#include "rtw_wifi_defs.h"
-#include "wifi_conf.h"
+#include "wifi_api.h"
 #include "lwip_netconf.h"
 
 

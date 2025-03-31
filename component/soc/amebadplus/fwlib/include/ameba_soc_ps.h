@@ -74,6 +74,6 @@ extern void SOCPS_Peripheral_Clk_Sleep(u8 state);
 extern void SOCPS_HWSleepFilter_KM0(u32 enable);
 
 extern void SOCPS_MDLO_Disable(void);
-
+extern void SOCPS_UartRxPinWakeSet(u32 status);
 
 #endif  //_AMEBA_SOCPS_H_

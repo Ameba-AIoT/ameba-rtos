@@ -14,7 +14,7 @@
  *****************************************************************************/
 #define __WIFI_FEATURE_DIS_CSI_C__
 
-#include "wifi_intf_drv_to_app_types.h"
+#include "wifi_api_types.h"
 
 #ifdef CONFIG_RADAR
 void wifi_hal_radar_en_by_user(u8 *radar_en_by_user)

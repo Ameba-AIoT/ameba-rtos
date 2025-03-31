@@ -214,7 +214,7 @@ int mbedtls_ecdsa_verify(mbedtls_ecp_group *grp,
 	pke_ecp_group_init_in_rom(&pke_grp, get_curve_id_from_mbedtls(grp));
 	ret = pke_ecdsa_read_signature(&pke_grp, (uint8_t *)Q->X.p, (uint8_t *)Q->Y.p,
 										hash_buf, blen, (uint8_t *)r->p, (uint8_t *)s->p);
-	if (ret != SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		mbedtls_printf("%s fail, ret %d\n", __func__, ret);
 	}
 

@@ -6,7 +6,7 @@ AIVoice提供用于在Realtek SoC上构建语音相关应用的离线AI解决方
 
 ### 支持平台
 
-| Chip       | OS    |     AIVoice_1.2.0      | aivoice_lib_dir   | aivoice_example_dir     |
+| Chip       | OS    |     AIVoice            | aivoice_lib_dir   | aivoice_example_dir     |
 | :--------- | ----- | :--------------------: | ----------------- | ----------------------- |
 | AmebaSmart | Linux | ![alt text][supported] | apps/aivoice      | apps/aivoice/example    |
 | AmebaSmart | RTOS  | ![alt text][supported] | component/aivoice | example/aivoice         |

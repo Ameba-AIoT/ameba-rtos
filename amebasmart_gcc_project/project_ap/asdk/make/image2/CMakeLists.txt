@@ -4,7 +4,7 @@ ameba_add_image(target_img2)
 
 ###############################  ADD COMPONENT  ###################################
 
-
+ameba_add_subdirectory(${c_CMPT_AIVOICE_DIR})
 ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
 ameba_add_subdirectory(${c_CMPT_MONITOR_DIR})
 ameba_add_subdirectory(${c_CMPT_SOC_DIR})
@@ -25,11 +25,11 @@ ameba_add_subdirectory(${c_CMPT_SSL_DIR})
 ameba_add_subdirectory(${c_CMPT_UI_DIR})
 ameba_add_subdirectory(${c_CMPT_DYN_APP_DIR})
 ameba_add_subdirectory(${c_CMPT_OS_DIR})
-ameba_add_subdirectory(${c_CMPT_TFLITE_DIR}/cmake)
-ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_make)
-ameba_add_subdirectory(${c_CMPT_APP_DIR})
+ameba_add_subdirectory_if_exist(${c_CMPT_TFLITE_DIR}/cmake)
+ameba_add_subdirectory(${c_CMPT_WIFI_DIR})
+ameba_add_subdirectory_if_exist(${c_CMPT_APP_DIR})
 ameba_add_subdirectory(${c_CMPT_RTK_COEX_DIR})
-ameba_add_subdirectory(${c_CMPT_SOC_DIR}/verification)
+ameba_add_subdirectory_if_exist(${c_CMPT_SOC_DIR}/verification)
 
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
 ameba_add_subdirectory(${c_CMPT_PMC_DIR})

@@ -49,38 +49,53 @@ ameba_list_append(private_sources
 	rtk_bt_gatt.c
 	rtk_bt_vendor.c
 	rtk_bt_power_control.c
-	rtk_bt_br_gap.c
-	rtk_bt_avrcp.c
-	rtk_bt_a2dp.c
-	rtk_bt_sdp.c
-	rtk_bt_spp.c
-    rtk_bt_rfc.c
-	rtk_bt_hid.c
-	rtk_bt_hfp.c
-	rtk_bt_pbap.c
-	rtk_bt_mesh_common.c
-	rtk_bt_mesh_config_client_model.c
-	rtk_bt_mesh_datatrans_model.c
-	rtk_bt_mesh_device_firmware_update_model.c
-	rtk_bt_mesh_generic_model.c
-	rtk_bt_mesh_generic_onoff_model.c
-	rtk_bt_mesh_generic_default_transition_time.c
-	rtk_bt_mesh_light_model.c
-	rtk_bt_mesh_time_model.c
-	rtk_bt_mesh_scheduler_model.c
-	rtk_bt_mesh_scene_model.c
-	rtk_bt_mesh_remote_prov_model.c
-	rtk_bt_mesh_health_model.c
-	rtk_bt_mesh_sensor_model.c
-	rtk_bt_mesh_directed_forwarding_model.c
-	rtk_bt_mesh_subnet_bridge_model.c
-	rtk_bt_mesh_private_beacon_model.c
-	rtk_bt_le_iso.c
-	rtk_bt_bap.c
-	rtk_bt_cap.c
-	rtk_bt_tmap.c
-	rtk_bt_gmap.c
 )
+
+if(CONFIG_BT_HAS_BREDR)
+	ameba_list_append(private_sources
+		rtk_bt_br_gap.c
+		rtk_bt_avrcp.c
+		rtk_bt_a2dp.c
+		rtk_bt_sdp.c
+		rtk_bt_spp.c
+		rtk_bt_rfc.c
+		rtk_bt_hid.c
+		rtk_bt_hfp.c
+		rtk_bt_pbap.c
+	)
+endif()
+
+if(CONFIG_BT_HAS_MESH)
+	ameba_list_append(private_sources
+		rtk_bt_mesh_common.c
+		rtk_bt_mesh_config_client_model.c
+		rtk_bt_mesh_datatrans_model.c
+		rtk_bt_mesh_device_firmware_update_model.c
+		rtk_bt_mesh_generic_model.c
+		rtk_bt_mesh_generic_onoff_model.c
+		rtk_bt_mesh_generic_default_transition_time.c
+		rtk_bt_mesh_light_model.c
+		rtk_bt_mesh_time_model.c
+		rtk_bt_mesh_scheduler_model.c
+		rtk_bt_mesh_scene_model.c
+		rtk_bt_mesh_remote_prov_model.c
+		rtk_bt_mesh_health_model.c
+		rtk_bt_mesh_sensor_model.c
+		rtk_bt_mesh_directed_forwarding_model.c
+		rtk_bt_mesh_subnet_bridge_model.c
+		rtk_bt_mesh_private_beacon_model.c
+	)
+endif()
+
+if(CONFIG_BT_HAS_LEAUDIO)
+	ameba_list_append(private_sources
+		rtk_bt_le_iso.c
+		rtk_bt_bap.c
+		rtk_bt_cap.c
+		rtk_bt_tmap.c
+		rtk_bt_gmap.c
+	)
+endif()
 
 if(CONFIG_BT_ZEPHYR)
     ameba_add_subdirectory(zephyr_stack)

@@ -1,7 +1,0 @@
-add_compile_definitions(__RTOS__)
-ameba_app_library(base)
-add_subdirectory(libs)
-add_subdirectory(log)
-add_subdirectory(osal)
-add_subdirectory(cutils/src)
-add_subdirectory(audio_utils)

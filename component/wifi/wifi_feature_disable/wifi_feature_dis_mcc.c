@@ -14,7 +14,7 @@
  *****************************************************************************/
 #define __WIFI_FEATURE_DIS_MCC_C__
 
-#include "wifi_intf_drv_to_app_types.h"
+#include "wifi_api_types.h"
 
 #ifdef CONFIG_MCC_MODE
 void rtw_mccapi_port0_sitesurvey_start(void)
@@ -36,7 +36,7 @@ int rtw_mccapi_port0_joinbss_chk_done_concurrent(u8 sta_chan, int join_res)
 {
 	UNUSED(sta_chan);
 	UNUSED(join_res);
-	return FAIL;
+	return RTK_FAIL;
 }
 
 void rtw_mccapi_port1_add_sta(u8 mac_id, u8 add)
@@ -77,7 +77,7 @@ int rtw_mcc_parse_vendor_ie(u8 *pframe, u32 pkt_len)
 {
 	UNUSED(pframe);
 	UNUSED(pkt_len);
-	return FAIL;
+	return RTK_FAIL;
 }
 
 u8 rtw_mcc_filter_mgnt_rx_by_port(u8 iface_type, u8 subtype)

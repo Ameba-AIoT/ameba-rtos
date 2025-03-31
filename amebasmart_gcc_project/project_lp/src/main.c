@@ -118,30 +118,6 @@ void app_IWDG_int(void)
 	}
 }
 
-u32 chipen_irq(void *Data)
-{
-	/* To avoid gcc warnings */
-	(void) Data;
-
-	pmu_acquire_wakelock(PMU_OS);
-
-	u32 INTrBit = CHIPEN_GetINT();
-
-	if (INTrBit & AON_BIT_CHIPEN_SP_ISR) {
-		RTK_LOGI(TAG, "SP INT \n");
-	}
-
-	if (INTrBit & AON_BIT_CHIPEN_LP_ISR) {
-		RTK_LOGI(TAG, "LP INT \n");
-		/*switch chipen to hw reset mode*/
-		CHIPEN_WorkMode(CHIPEN_HW_RESET_MODE);
-	}
-
-	CHIPEN_ClearINT(INTrBit);
-
-	return 0;
-}
-
 _WEAK void app_example(void)
 {
 
@@ -163,10 +139,6 @@ int main(void)
 #endif
 	shell_init_rom(0, NULL);
 	shell_init_ram();
-
-	CHIPEN_ThresHoldSet(CHIPEN_LP_3S, CHIPEN_SP_0MS);
-	InterruptRegister((IRQ_FUN) chipen_irq, PWR_DOWN_IRQ, (u32)NULL, INT_PRI_LOWEST);
-	InterruptEn(PWR_DOWN_IRQ, INT_PRI_LOWEST);
 
 	/*IPC table initialization*/
 	ipc_table_init(IPCLP_DEV);

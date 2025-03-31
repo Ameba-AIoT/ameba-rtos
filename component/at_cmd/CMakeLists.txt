@@ -41,7 +41,7 @@ set(private_compile_options)         #private compile_options
 ameba_list_append(private_sources
     monitor.c
 )
-if(CONFIG_CORE_AS_AP)
+if(CONFIG_CORE_AS_AP AND CONFIG_SUPPORT_ATCMD)
     ameba_list_append(private_sources
         atcmd_service.c
         atcmd_sys.c

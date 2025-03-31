@@ -1,9 +1,12 @@
-set(d_GLOBAL_MCU_LINK_OPTIONS)
+set(c_GLOBAL_MCU_LINK_OPTIONS)
 
-# +++++++++++++++++++ d_GLOBAL_MCU_LINK_OPTIONS +++++++++++++++++ #
-list(APPEND d_GLOBAL_MCU_LINK_OPTIONS
-    #TODO: add global mcu link options here
+# +++++++++++++++++++ c_GLOBAL_MCU_LINK_OPTIONS +++++++++++++++++ #
+ameba_list_append(c_GLOBAL_MCU_LINK_OPTIONS
+    -L${SDK_TOOLCHAIN}/arm-none-eabi/lib/thumb/v8-m.base
+    -L${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${ASDK_VER}/thumb/v8-m.base
     -march=armv8-m.base
+    "SHELL:-specs nano.specs"
     -mthumb
+    -Wl,--no-enum-size-warning
 )
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #

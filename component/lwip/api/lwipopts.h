@@ -34,7 +34,7 @@ extern unsigned int sys_now(void);
 #define MEMP_NUM_UDP_PCB                16
 #define MEMP_NUM_TCP_PCB                16
 #define MEMP_NUM_TCP_PCB_LISTEN         16
-#define MEMP_NUM_NETCONN                10
+#define MEMP_NUM_NETCONN                20
 /* ARP options */
 #define LWIP_ARP                        1
 #define ETHARP_SUPPORT_STATIC_ENTRIES   1

@@ -301,7 +301,7 @@ int tcp_server_func(struct iperf_data_t iperf_data)
 		if (ntohl(client_hdr.flags) == 0x80000001) { //bi-direction, create client to send packets back
 			if ((NULL == g_tcp_client_task)) {
 				if (rtos_task_create(&g_tcp_client_task, "tcp_client_handler", tcp_client_handler, NULL, BSD_STACK_SIZE * 4,
-									 1 + PRIORITIE_OFFSET) != SUCCESS) {
+									 1 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
 					printf("\n\rTCP ERROR: Create TCP client task failed.");
 				} else {
 					strncpy((char *)tcp_client_data.server_ip, inet_ntoa(client_addr.sin_addr), (strlen(inet_ntoa(client_addr.sin_addr))));
@@ -634,7 +634,7 @@ int udp_server_timeout_init(void)
 	rtos_sema_create_binary(&udp_server_rfoff_sema);
 
 #ifndef RFOFF_USER_TIMER
-	if (SUCCESS != rtos_task_create(NULL, (const char *const)"udp_server_rfoff", udp_server_rfoff_thread, NULL, 64 * 4, 6)) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"udp_server_rfoff", udp_server_rfoff_thread, NULL, 64 * 4, 6)) {
 		DBG_8195A("Create udp_server_rfoff Err!!\n");
 	}
 #endif
@@ -644,11 +644,13 @@ int udp_server_timeout_init(void)
 
 u64 udp_get_tdma_time(void)
 {
-	if (wifi_get_tsf(1) < sync_time) {
+	u64 tsf = 0;
+
+	if (wifi_get_tsf(1, &tsf) != RTK_SUCCESS || tsf < sync_time) {
 		DBG_8195A("get tdma time err!\n");
 		return 0;
 	} else {
-		return (wifi_get_tsf(1) - sync_time);
+		return (tsf - sync_time);
 	}
 }
 
@@ -777,7 +779,7 @@ void tdma_timer_sync_server(void *param)
 				sync_hdr.rsp = TIMER_SYNC_RSP;
 				memcpy(timer_server_buffer, &sync_hdr, sizeof(sync_hdr));
 				send(iperf_data->client_fd, timer_server_buffer, sizeof(sync_hdr), TCP_NODELAY);
-				sync_time = wifi_get_tsf(1);
+				wifi_get_tsf(1, &sync_time);
 				printf("\n\rtime:%d\n", sync_time);
 			}
 		}
@@ -807,7 +809,7 @@ void tdma_timer_sync_client(void *param)
 	struct iperf_tcp_client_hdr client_hdr;
 	struct tmda_timer_sync_hdr sync_hdr;
 	struct iperf_data_t *iperf_data = (struct iperf_data_t *)param;
-	u64 delta_time = 0;
+	u64 delta_time = 0, cur_time = 0;
 
 	rtos_time_delay_ms(100);
 	sync_hdr.headerstart = 0xAAAAAAAA;
@@ -851,13 +853,14 @@ void tdma_timer_sync_client(void *param)
 				printf("\n\r[ERROR] %s: TCP client send data error", __func__);
 				goto Exit1;
 			}
-			delta_time = wifi_get_tsf(1);
+			wifi_get_tsf(1, &delta_time);
 			recv(iperf_data->client_tcp, timer_client_buffer, sizeof(sync_hdr), 0);
 			memcpy(&sync_hdr, timer_client_buffer, sizeof(sync_hdr));
 			if (sync_hdr.rsp == 0xCCCCCCCC) {
-				delta_time = wifi_get_tsf(1) - delta_time;
+				wifi_get_tsf(1, &cur_time);
+				delta_time = cur_time - delta_time;
 				if (delta_time < 2000) {
-					sync_time = wifi_get_tsf(1);
+					wifi_get_tsf(1, &sync_time);
 					printf("\n\rtimer sync ok!%d\n", sync_time);
 					rtos_sema_give(timer_sync_ok_sema);
 					break;
@@ -945,7 +948,7 @@ int udp_server_func(struct iperf_data_t iperf_data)
 		if (ntohl(client_hdr.flags) == 0x80000001) { //bi-direction, create client to send packets back
 			if (NULL == g_udp_client_task) {
 				if (rtos_task_create(&g_udp_client_task, "udp_client_handler", udp_client_handler, NULL, BSD_STACK_SIZE * 4,
-									 1 + PRIORITIE_OFFSET) != SUCCESS) {
+									 1 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
 					printf("\r\nUDP ERROR: Create UDP client task failed.");
 				} else {
 					strncpy((char *)udp_client_data.server_ip, inet_ntoa(client_addr.sin_addr), (strlen(inet_ntoa(client_addr.sin_addr))));
@@ -1284,7 +1287,7 @@ void cmd_tcp(int argc, char **argv)
 
 	if (tcp_server_data.start && (NULL == g_tcp_server_task)) {
 		if (rtos_task_create(&g_tcp_server_task, "tcp_server_handler", tcp_server_handler, NULL, BSD_STACK_SIZE * 4,
-							 1 + PRIORITIE_OFFSET) != SUCCESS) {
+							 1 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
 			printf("\n\rTCP ERROR: Create TCP server task failed.");
 		} else {
 			if (tcp_server_data.port == 0) {
@@ -1301,7 +1304,7 @@ void cmd_tcp(int argc, char **argv)
 
 	if (tcp_client_data.start && (NULL == g_tcp_client_task)) {
 		if (rtos_task_create(&g_tcp_client_task, "tcp_client_handler", tcp_client_handler, NULL, BSD_STACK_SIZE * 4,
-							 1 + PRIORITIE_OFFSET) != SUCCESS) {
+							 1 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
 			printf("\n\rTCP ERROR: Create TCP client task failed.");
 		} else {
 			if (tcp_client_data.port == 0) {
@@ -1553,7 +1556,7 @@ void cmd_udp(int argc, char **argv)
 
 	if (udp_server_data.start && (NULL == g_udp_server_task)) {
 		if (rtos_task_create(&g_udp_server_task, "udp_server_handler", udp_server_handler, NULL, (BSD_STACK_SIZE + 1000) * 4,
-							 2 + PRIORITIE_OFFSET) != SUCCESS) {
+							 2 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
 			printf("\r\nUDP ERROR: Create UDP server task failed.");
 		} else {
 			if (udp_server_data.port == 0) {
@@ -1570,14 +1573,14 @@ void cmd_udp(int argc, char **argv)
 			}
 		}
 		if (rtos_task_create(&g_timer_sync_server_task, "tdma_timer_sync_server", tdma_timer_sync_server, &udp_server_data, BSD_STACK_SIZE * 4,
-							 2 + PRIORITIE_OFFSET) != SUCCESS) {
+							 2 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
 			printf("\r\nUDP ERROR: Create timer_sync server task failed.");
 		}
 	}
 
 	if (udp_client_data.start && (NULL == g_udp_client_task)) {
 		if (rtos_task_create(&g_udp_client_task, "udp_client_handler", udp_client_handler, NULL, BSD_STACK_SIZE * 4,
-							 1 + PRIORITIE_OFFSET) != SUCCESS) {
+							 1 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
 			printf("\r\nUDP ERROR: Create UDP client task failed.");
 		} else {
 			if (udp_client_data.port == 0) {
@@ -1600,7 +1603,7 @@ void cmd_udp(int argc, char **argv)
 			}
 		}
 		if (rtos_task_create(&g_timer_sync_client_task, "tdma_timer_sync_client", tdma_timer_sync_client, &udp_client_data, BSD_STACK_SIZE * 4,
-							 1 + PRIORITIE_OFFSET) != SUCCESS) {
+							 1 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
 			printf("\r\nUDP ERROR: Create timer_sync client task failed.");
 		}
 	}

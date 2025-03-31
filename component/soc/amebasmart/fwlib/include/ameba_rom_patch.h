@@ -80,6 +80,9 @@ int rtl_crypto_sha2_final_A(OUT u8 *pDigest, hw_sha_context *ctx);
 int rtl_crypto_hmac_sha2_update_A(IN u8 *message, IN u32 msglen, hw_sha_context *ctx);
 int rtl_crypto_hmac_sha2_final_A(OUT u8 *pDigest, hw_sha_context *ctx);
 #endif
+char *__real_strncpy(char *dst0, const char *src0, int count);
+char *__real_strcpy(char *s1, const char *s2);
+long __real_strtol(const char *nptr, char **endptr, int base);
 /**
   * @}
   */

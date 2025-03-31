@@ -1,6 +1,6 @@
 
 #include "os_wrapper.h"
-#include "wifi_conf.h"
+#include "wifi_api.h"
 #include "lwip_netconf.h"
 #include "ameba_ota.h"
 

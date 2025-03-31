@@ -11,18 +11,18 @@
 extern "C" {
 #endif
 
-#include "main.h"
 #ifdef CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
+#endif
+#ifdef CONFIG_WLAN
+#include "wifi_api.h"
 #endif
 #include "MQTTClient.h"
 #include "MQTTPublish.h"
 #include "MQTTFreertos.h"
 #include "MQTTConnect.h"
 #include "os_wrapper.h"
-
-/* Remain 30 bytes for command-header and other parameters. */
-#define MQTT_SINGLE_STR_LEN         (UART_LOG_CMD_BUFLEN - 30)
+#include "atcmd_service.h"
 
 /* There are 4 connection IDs at most. */
 #define MQTT_MAX_CLIENT_NUM         4
@@ -34,31 +34,31 @@ extern "C" {
 
 #define MQTT_DEFAULT_RETAIN         0
 
-#define MQTT_DEFAULT_BUF_SIZE       MQTT_SINGLE_STR_LEN
-
 #define MQTT_SELECT_TIMEOUT         1
 
 #define MQTT_EXCEPT_FDS             1
 
 #define MQTT_CONNECT_LATER          1
 
+#define MQTT_DEFAULT_BUF_SIZE       MAX_TT_BUF_LEN
+
 /* Host name's length (excluding '\0'). */
-#define MQTT_MAX_HOSTNAME_LEN       MQTT_SINGLE_STR_LEN
+#define MQTT_MAX_HOSTNAME_LEN       128
 
 /* Client ID's length  (excluding '\0').*/
-#define MQTT_MAX_CLIENT_ID_LEN      MQTT_SINGLE_STR_LEN
+#define MQTT_MAX_CLIENT_ID_LEN      256
 
 /* username's length  (excluding '\0'). */
-#define MQTT_MAX_USERNAME_LEN       MQTT_SINGLE_STR_LEN
+#define MQTT_MAX_USERNAME_LEN       64
 
 /* password's length  (excluding '\0'). */
-#define MQTT_MAX_PASSWORD_LEN       MQTT_SINGLE_STR_LEN
+#define MQTT_MAX_PASSWORD_LEN       64
 
 /* topic's length  (excluding '\0'). */
-#define MQTT_MAX_TOPIC_LEN          MQTT_SINGLE_STR_LEN
+#define MQTT_MAX_TOPIC_LEN          128
 
 /* msg's length  (excluding '\0'). */
-#define MQTT_MAX_MSG_LEN            MQTT_DEFAULT_BUF_SIZE
+#define MQTT_MAX_MSG_LEN            512
 
 #define ATCMD_MQTT_TASK_PRIORITY    4
 
@@ -144,7 +144,6 @@ typedef struct MQTT_CONTROL_BLOCK_t {
 	MQTT_PUB_DATA   pubData;
 	u8          networkConnect;
 	u8          initailClient;
-	u8          initialConnect; /* Set to 1 between MQTTCONN and CONN_ACK. */
 	Network         network;
 	MQTTClient  client;
 	MQTTPacket_connectData  connectData;
@@ -153,16 +152,10 @@ typedef struct MQTT_CONTROL_BLOCK_t {
 }
 MQTT_CONTROL_BLOCK;
 
-typedef struct MQTT_AT_HANDLE_t {
-	MQTT_CONTROL_BLOCK  *mqttCb[MQTT_MAX_CLIENT_NUM];
-}
-MQTT_AT_HANDLE;
-
 void mqtt_main(void *param);
 void print_mqtt_at(void);
 void at_mqtt_init(void);
 
-extern MQTT_AT_HANDLE mqtt_at_handle;
 extern MQTTPacket_connectData mqtt_default_conn_data;
 
 extern int keepalive(MQTTClient *c);

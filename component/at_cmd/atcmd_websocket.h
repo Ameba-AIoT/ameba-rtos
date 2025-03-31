@@ -10,7 +10,7 @@
 #ifdef CONFIG_LWIP_LAYER
 
 #include "wsclient_api.h"
-#include "wifi_conf.h"
+#include "wifi_api.h"
 
 #define TAG_AT_WEBSOCKET   "AT_WEBSOCKET"
 

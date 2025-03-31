@@ -16,7 +16,6 @@ static const char *const TAG = "AT_SPI-S";
 
 #define SPI_DATA_FRAME_SIZE	8
 #define SPI_MODE			0
-#define ATCMD_SPI_DMA_SIZE	2048 //for dma mode, buffer size should be multiple of CACHE_LINE_SIZE 
 
 #define CHECKSUM_EN 0
 
@@ -143,9 +142,9 @@ void atcmd_spi_task(void)
 
 	while (1) {
 		spi_flush_rx_fifo(&spi_slave);
-
-		rtos_queue_receive(g_spi_cmd_queue, (void *)&req, 0xFFFFFFFF);
 		gpio_write(&at_spi_slave_to_master_gpio, 0);
+		rtos_queue_receive(g_spi_cmd_queue, (void *)&req, 0xFFFFFFFF);
+
 
 		while (spi_busy(&spi_slave)) {
 			RTK_LOGW(TAG, "spi busy, wait...\n");
@@ -179,15 +178,15 @@ void atcmd_spi_task(void)
 
 			spi_slave_read_stream_dma(&spi_slave, (char *)SlaveRxBuf, ATCMD_SPI_DMA_SIZE);
 
-			while (rtos_sema_take(slave_rx_sema, 0) == RTK_SUCCESS) {}
-
 			gpio_write(&at_spi_slave_to_master_gpio, 1);
 			rtos_sema_take(slave_rx_sema, 0xFFFFFFFF);
-
+			if (remain_len > 0) {
+				rtos_sema_take(slave_tx_sema, 0xFFFFFFFF);
+			}
 
 			// check rx dataheader
 			if (SlaveRxBuf[0] != 0x41 || SlaveRxBuf[1] != 0x54) {
-				RTK_LOGE(TAG, "recv master data magic number error\n");
+				RTK_LOGI(TAG, "empty pkt, data may have been transmitted\n");
 				continue;
 			}
 
@@ -270,10 +269,9 @@ void atcmd_spi_task(void)
 			spi_slave_read_stream_dma(&spi_slave, (char *)SlaveRxBuf, ATCMD_SPI_DMA_SIZE);
 			spi_slave_write_stream_dma(&spi_slave, (char *)SlaveTxBuf, ATCMD_SPI_DMA_SIZE);
 
-			while (rtos_sema_take(slave_tx_sema, 0) == RTK_SUCCESS) {}
-
 			gpio_write(&at_spi_slave_to_master_gpio, 1);
 			rtos_sema_take(slave_tx_sema, 0xFFFFFFFF);
+			rtos_sema_take(slave_rx_sema, 0xFFFFFFFF);
 
 			remain_len = RingBuffer_Available(at_spi_tx_ring_buf);
 			if (remain_len > 0) {
@@ -403,7 +401,7 @@ void atio_spi_output(char *buf, int len)
 			send_len -= space;
 		}
 
-		rtos_time_delay_ms(10);
+		rtos_time_delay_ms(1);
 	}
 }
 

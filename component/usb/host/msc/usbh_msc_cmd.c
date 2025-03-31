@@ -39,12 +39,28 @@ static __IO int msc_is_ready = 0;
 static u32 filenum = 0;
 
 static usbh_config_t usbh_cfg = {
-	.pipes = 5U,
 	.speed = USB_SPEED_HIGH,
 	.dma_enable = FALSE,
 	.ext_intr_en = USBH_SOF_INTR,
 	.main_task_priority = 3U,
 	.isr_task_priority  = 4U,
+
+#if defined (CONFIG_AMEBAGREEN2)
+	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined (CONFIG_AMEBASMARTPLUS)
+	/*FIFO total depth is 1280 DWORD, reserve 14 DWORD for DMA addr*/
+	.rx_fifo_depth = 754,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined (CONFIG_AMEBAL2)
+	/*FIFO total depth is 1024 DWORD, reserve 11 DWORD for DMA addr*/
+	.rx_fifo_depth = 501,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#endif
 };
 
 static usbh_msc_cb_t msc_usr_cb = {
@@ -155,7 +171,7 @@ static int msc_trx_test(u8 looptime)
 
 	strcpy(path, logical_drv);
 
-	if (rtos_sema_take(msc_attach_sema, RTOS_SEMA_MAX_COUNT) != SUCCESS) {
+	if (rtos_sema_take(msc_attach_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to take sema\n");
 		goto exit_unmount;
 	}

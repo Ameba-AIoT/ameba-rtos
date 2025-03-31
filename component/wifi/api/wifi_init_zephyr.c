@@ -15,7 +15,6 @@
   ******************************************************************************
   */
 #include "ameba_soc.h"
-#include "rtw_wifi_defs.h"
 #include "rtw_inic_common.h"
 #include <zephyr/kernel.h>
 
@@ -47,7 +46,7 @@ void _init_thread(void *param)
 	rtos_task_delete(NULL);
 }
 
-void wlan_initialize(void)
+void wifi_init(void)
 {
 	wifi_set_rom2flash();
 	whc_host_init();
@@ -71,7 +70,7 @@ void _init_thread(void *param)
 	rtos_task_delete(NULL);
 }
 
-void wlan_initialize(void)
+void wifi_init(void)
 {
 	wifi_set_rom2flash();
 

@@ -132,13 +132,10 @@ cp ../whc/whc_def.h ./common/include
 cp ../whc/whc_dev/whc_dev.h ./common/include
 cp ../whc/whc_dev/whc_dev_struct.h ./common/include
 cp ../whc/whc_dev/whc_dev_protocal_offload.h ./common/include
-cp ../driver/include/rom_rtw_defs.h ./common/include
-cp ../driver/include/rtw_wifi_defs.h ./common/include
-cp ../api/wifi_intf_drv_to_app_basic.h ./common/include
-cp ../api/wifi_intf_drv_to_app_types.h ./common/include
-cp ../api/wifi_ind.h ./common/include
+cp ../api/wifi_api_types.h ./common/include
+cp ../api/wifi_api_event.h ./common/include
+cp ../../soc/usrcfg/common/ameba_wificfg_common.h ./common/include
 cp ../../soc/amebadplus/fwlib/include/ameba_inic.h ./common/include
-cp ../../soc/amebadplus/usrcfg/ameba_wificfg.c ./common/sdio
 cp ../../bluetooth/driver/bt_inic/bt_inic_defs.h ./common/include
 
 echo "Fullmac setup complete"

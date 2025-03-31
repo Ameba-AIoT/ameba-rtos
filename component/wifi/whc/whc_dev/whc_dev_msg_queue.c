@@ -37,7 +37,7 @@ struct whc_msg_node *whc_msg_dequeue(struct __queue *p_queue)
  * @param  p_node[in]: the pointer for the inic message node that need to be
  * 	pushed into the queue.
  * @param  p_queue[in]: the queue used to store the p_node.
- * @return status, always SUCCESS.
+ * @return status, always RTK_SUCCESS.
  */
 sint whc_msg_enqueue(void *msg, struct __queue *p_queue)
 {
@@ -46,7 +46,7 @@ sint whc_msg_enqueue(void *msg, struct __queue *p_queue)
 	/* allocate memory for message node. */
 	p_node = rtos_mem_zmalloc(sizeof(struct whc_msg_node));
 	if (p_node == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 	p_node->msg = msg;
 
@@ -55,6 +55,6 @@ sint whc_msg_enqueue(void *msg, struct __queue *p_queue)
 	rtw_list_insert_tail(&(p_node->list), get_list_head(p_queue));
 	rtos_critical_exit(RTOS_CRITICAL_WIFI);
 
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 

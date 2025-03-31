@@ -18,20 +18,18 @@
 #ifndef __WIFI_FAST_CONNECT_H__
 #define __WIFI_FAST_CONNECT_H__
 
-#include "wifi_conf.h"
+#include "wifi_api.h"
 #include "wpa_lite_intf.h"
 
 #ifdef CONFIG_WLAN
-#define RTW_PASSPHRASE_MAX_SIZE RTW_PASSPHRASE_WPA3_SIZE
 //#define FAST_RECONNECT_DATA (0x80000 - 0x1000)
-#define RTW_ESSID_MAX_SIZE         32
 #define A_SHA_DIGEST_LEN		20
 
 
 struct wlan_fast_reconnect {
 	unsigned char version;
 	unsigned char psk_essid[RTW_ESSID_MAX_SIZE + 1];
-	unsigned char psk_passphrase[RTW_PASSPHRASE_MAX_SIZE + 1];
+	unsigned char psk_passphrase[RTW_MAX_PSK_LEN + 1];
 	unsigned char wpa_global_PSK[A_SHA_DIGEST_LEN * 2];
 	unsigned int  channel;
 	unsigned int    security_type;

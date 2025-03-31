@@ -1,7 +1,9 @@
 #include "ameba_soc.h"
 #include "main.h"
 #include "os_wrapper.h"
+#if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_ipc.h"
+#endif
 
 static const char *const TAG = "MAIN";
 
@@ -80,11 +82,13 @@ int main(void)
 	wififw_task_create();
 #endif
 
+#if defined(CONFIG_BT_COEXIST)
 	/* init coex ipc */
 	coex_ipc_entry();
+#endif
 
 #ifdef CONFIG_WLAN
-	wlan_initialize();
+	wifi_init();
 #endif
 
 	/* initialize BT iNIC */

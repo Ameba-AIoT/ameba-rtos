@@ -523,7 +523,7 @@ int whc_fullmac_host_get_statistics(dma_addr_t statistic_addr)
 {
 	int ret = 0;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_GET_PHY_STATISTIC, NULL, 0, (u8 *)statistic_addr, sizeof(struct _rtw_phy_statistics_t));
+	whc_fullmac_host_send_event(WHC_API_WIFI_GET_PHY_STATISTIC, NULL, 0, (u8 *)statistic_addr, sizeof(union _rtw_phy_statistics_t));
 
 	return ret;
 }

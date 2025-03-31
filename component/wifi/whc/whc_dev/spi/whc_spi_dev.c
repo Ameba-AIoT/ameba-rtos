@@ -99,7 +99,7 @@ exit:
 	/* restart RX DMA */
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 u32 whc_spi_dev_rxdma_irq_handler(void *pData)
@@ -232,7 +232,7 @@ int whc_spi_dev_set_dev_status(struct whc_spi_priv_t *whc_spi_priv, u32 ops, u32
 		}
 	} while (1);
 
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 u32 whc_spi_dev_recover(void *Data)
@@ -249,7 +249,7 @@ u32 whc_spi_dev_recover(void *Data)
 	if (whc_spi_priv->dev_status & DEV_STS_SPI_CS_LOW) {
 		RTK_LOGD(TAG_WLAN_INIC, "SSR interrupt lost\n");
 
-		if (whc_spi_dev_set_dev_status(whc_spi_priv, DISABLE, DEV_STS_SPI_CS_LOW) == FAIL) {
+		if (whc_spi_dev_set_dev_status(whc_spi_priv, DISABLE, DEV_STS_SPI_CS_LOW) == RTK_FAIL) {
 			whc_spi_priv->ssris_pending = TRUE;
 		}
 	} else if (whc_spi_priv->dev_status & DEV_STS_WAIT_TXDMA_DONE) {
@@ -309,14 +309,14 @@ u32 whc_spi_dev_interrupt_handler(void *param)
 			status |= DEV_STS_WAIT_TXDMA_DONE;
 		}
 
-		if (whc_spi_dev_set_dev_status(whc_spi_priv, ENABLE, status) == FAIL) {
+		if (whc_spi_dev_set_dev_status(whc_spi_priv, ENABLE, status) == RTK_FAIL) {
 			whc_spi_priv->set_devsts_pending = TRUE;
 		}
 	}
 
 	if (interrupt_status & SPI_BIT_SSRIS) {
 		if (whc_spi_priv->dev_status & DEV_STS_SPI_CS_LOW) {
-			if (whc_spi_dev_set_dev_status(whc_spi_priv, DISABLE, DEV_STS_SPI_CS_LOW) == FAIL) {
+			if (whc_spi_dev_set_dev_status(whc_spi_priv, DISABLE, DEV_STS_SPI_CS_LOW) == RTK_FAIL) {
 				whc_spi_priv->ssris_pending = TRUE;
 			}
 		}
@@ -412,12 +412,12 @@ void whc_spi_dev_init(void)
 	SSI_SetDmaEnable(WHC_SPI_DEV, ENABLE, SPI_BIT_RDMAE);
 
 	/* Create irq task */
-	if (rtos_task_create(NULL, "SPI_RXDMA_IRQ_TASK", whc_spi_dev_rxdma_irq_task, (void *)whc_spi_priv, 1024 * 4, 7) != SUCCESS) {
+	if (rtos_task_create(NULL, "SPI_RXDMA_IRQ_TASK", whc_spi_dev_rxdma_irq_task, (void *)whc_spi_priv, 1024 * 4, 7) != RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, "Create SPI_RXDMA_IRQ_TASK Err!!\n");
 		return;
 	}
 
-	if (rtos_task_create(NULL, "SPI_TXDMA_IRQ_TASK", whc_spi_dev_txdma_irq_task, (void *)whc_spi_priv, 1024 * 4, 7) != SUCCESS) {
+	if (rtos_task_create(NULL, "SPI_TXDMA_IRQ_TASK", whc_spi_dev_txdma_irq_task, (void *)whc_spi_priv, 1024 * 4, 7) != RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, "Create SPI_TXDMA_IRQ_TASK Err!!\n");
 		return;
 	}

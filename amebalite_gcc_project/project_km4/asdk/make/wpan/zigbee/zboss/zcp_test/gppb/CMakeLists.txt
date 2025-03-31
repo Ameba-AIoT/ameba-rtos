@@ -1,5 +1,0 @@
-if(CONFIG_802154_ZIGBEE_ROLE_ZC)
-add_subdirectory(zc)
-elseif(CONFIG_802154_ZIGBEE_ROLE_ZR)
-add_subdirectory(zr)
-endif()

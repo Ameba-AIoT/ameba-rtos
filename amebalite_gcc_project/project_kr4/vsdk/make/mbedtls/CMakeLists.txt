@@ -1,1 +1,0 @@
-add_subdirectory(mbedtls-${MBEDTLS_VER})

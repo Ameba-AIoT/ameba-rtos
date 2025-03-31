@@ -22,7 +22,8 @@
 extern "C" {
 #endif
 
-#include "wifi_conf.h"
+#include "wifi_api.h"
+#include "wifi_intf_drv_to_app_internal.h"
 
 #define		_1M_RATE_		0
 #define		_2M_RATE_		1

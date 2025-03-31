@@ -9,6 +9,8 @@
 #include "ameba.h"
 #include "atcmd_service.h"
 #include "atcmd_coex.h"
+
+#if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_host_api.h"
 
 #define AT_CMD_HELP	1
@@ -373,3 +375,5 @@ void at_coex_init(void)
 	atcmd_service_add_table(at_coex_items, sizeof(at_coex_items) / sizeof(at_coex_items[0]));
 #endif
 }
+
+#endif

@@ -41,9 +41,7 @@ static const char *const TAG = "UVC";
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_HTTPC)
 #include "httpc/httpc.h"
-#include "rtw_wifi_defs.h"
 #include "lwipconf.h"
-#include "rtw_wifi_defs.h"
 #endif
 
 /* Private macros ------------------------------------------------------------*/
@@ -51,8 +49,8 @@ static const char *const TAG = "UVC";
 #define USBH_UVC_BUF_SIZE       UVC_VIDEO_FRAME_SIZE   // Frame buffer size, resident in PSRAM, depends on format type
 //resolution and compression ratio
 #define USBH_UVC_FORMAT_TYPE    UVC_FORMAT_MJPEG
-#define USBH_UVC_WIDTH          1280
-#define USBH_UVC_HEIGHT         720
+#define USBH_UVC_WIDTH          160
+#define USBH_UVC_HEIGHT         120
 #define USBH_UVC_FRAME_RATE     30
 
 #define USBH_UVC_IF_NUM_0                0     // most cameras have only one video stream interface
@@ -104,13 +102,28 @@ static RingBuffer *uvc_rb;
 u8 uvc_buf[USBH_UVC_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 
 static usbh_config_t usbh_cfg = {
-	.pipes = 5U,
 	.speed = USB_SPEED_HIGH,
 	.dma_enable = 1,
 	.alt_max = 25,
 	.main_task_priority = 3U,
 	.isr_task_priority  = 4U,
-	.ptx_fifo_first     = 1U,
+	.sof_tick_en = 1U,
+#if defined (CONFIG_AMEBAGREEN2)
+	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined (CONFIG_AMEBASMARTPLUS)
+	/*FIFO total depth is 1280 DWORD, reserve 14 DWORD for DMA addr*/
+	.rx_fifo_depth = 754,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined (CONFIG_AMEBAL2)
+	/*FIFO total depth is 1024 DWORD, reserve 11 DWORD for DMA addr*/
+	.rx_fifo_depth = 501,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#endif
 };
 
 static usbh_uvc_cb_t uvc_cb = {

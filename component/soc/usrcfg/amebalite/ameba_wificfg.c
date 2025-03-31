@@ -5,7 +5,7 @@
 */
 
 #include "platform_autoconf.h"
-#include <wifi_conf.h>
+#include <wifi_api.h>
 
 struct wifi_user_conf wifi_user_config __attribute__((aligned(64)));
 
@@ -14,7 +14,7 @@ _WEAK void wifi_set_user_config(void)
 	int skb_num_np_rsvd = 2; /* 2 for mgnt trx */
 	_memset(&wifi_user_config, 0, sizeof(struct wifi_user_conf));
 
-	/* below items for user config, for details, see wifi_user_conf in wifi_intf_drv_to_app_basic.h */
+	/* below items for user config, for details, see wifi_user_conf in ameba_wificfg_common.h */
 	wifi_user_config.concurrent_enabled = (u8)TRUE;
 	wifi_user_config.softap_addr_offset_idx = 1;
 	wifi_user_config.fast_reconnect_en = 1;

@@ -15,8 +15,7 @@ static struct wps_str wps_info;
 static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_device *ndev, const u8 *mac, struct station_info *sinfo)
 {
 	int ret = 0;
-	unsigned char tx_rate;
-	struct _rtw_phy_statistics_t *statistic_vir = NULL;
+	union _rtw_phy_statistics_t *statistic_vir = NULL;
 	dma_addr_t statistic_phy;
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
@@ -25,7 +24,7 @@ static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_devi
 		dev_dbg(global_idev.fullmac_dev, "Only net device-0 is used for STA.");
 	}
 
-	statistic_vir = rtw_malloc(sizeof(struct _rtw_phy_statistics_t), &statistic_phy);
+	statistic_vir = rtw_malloc(sizeof(union _rtw_phy_statistics_t), &statistic_phy);
 	if (!statistic_vir) {
 		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
@@ -34,26 +33,10 @@ static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_devi
 	ret = whc_fullmac_host_get_statistics(statistic_phy);
 
 	sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
-	sinfo->signal = statistic_vir->rssi;
+	sinfo->signal = statistic_vir->sta_phy_stats.rssi;
 
 	sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
-	tx_rate = statistic_vir->cur_tx_data_rate;
-	if (tx_rate <= MGN_54M) {
-		sinfo->txrate.legacy = (tx_rate / 2) * 10; // bitrate in 100kbit/s
-	} else if ((tx_rate >= MGN_MCS0) && (tx_rate <= MGN_MCS7)) {
-		sinfo->txrate.flags |= RATE_INFO_FLAGS_MCS;
-		sinfo->txrate.mcs = tx_rate - MGN_MCS0;
-	} else if ((tx_rate >= MGN_VHT1SS_MCS0) && (tx_rate <= MGN_VHT1SS_MCS8)) {
-		sinfo->txrate.flags |= RATE_INFO_FLAGS_VHT_MCS;
-		sinfo->txrate.mcs = tx_rate - MGN_VHT1SS_MCS0;
-	} else if ((tx_rate >= MGN_HE1SS_MCS0) && (tx_rate <= MGN_HE1SS_MCS9)) {
-		sinfo->txrate.flags |= RATE_INFO_FLAGS_HE_MCS;
-		sinfo->txrate.mcs = tx_rate - MGN_HE1SS_MCS0;
-	} else {
-		sinfo->txrate.legacy = 540;
-	}
-
-	rtw_mfree(sizeof(struct _rtw_phy_statistics_t), statistic_vir, statistic_phy);
+	rtw_mfree(sizeof(union _rtw_phy_statistics_t), statistic_vir, statistic_phy);
 
 	return ret;
 }
@@ -237,7 +220,7 @@ static int whc_fullmac_host_scan_ops(struct wiphy *wiphy, struct cfg80211_scan_r
 	u32 ssid_len = 0;
 	u32 channel_num = 0;
 
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -533,7 +516,7 @@ static int whc_fullmac_host_connect_ops(struct wiphy *wiphy, struct net_device *
 	struct rtw_owe_param_t owe_info;
 	struct cfg80211_external_auth_params *auth_ext_para = &global_idev.mlme_priv.auth_ext_para;
 
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -563,7 +546,7 @@ static int whc_fullmac_host_connect_ops(struct wiphy *wiphy, struct net_device *
 	dev_dbg(global_idev.fullmac_dev, "wpa_versions=0x%x, ciphers_pairwise=0x%x, cipher_group=0x%x,, akm_suites=0x%x\n",
 			sme->crypto.wpa_versions, sme->crypto.ciphers_pairwise[0], sme->crypto.cipher_group, sme->crypto.akm_suites[0]);
 
-	size = sizeof(struct _rtw_network_info_t) + sme->key_len;
+	size = sizeof(struct _rtw_network_info_t) + (sme->key_len ? sme->key_len : sizeof(pwd));
 	ptr = buf = kmalloc(size, GFP_KERNEL);
 	if (!buf) {
 		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
@@ -745,7 +728,7 @@ static int whc_fullmac_host_disconnect_ops(struct wiphy *wiphy, struct net_devic
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac] --- %s ---", __func__);
 
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -788,7 +771,7 @@ static int whc_fullmac_host_set_power_mgmt(struct wiphy *wiphy, struct net_devic
 {
 	dev_dbg(global_idev.fullmac_dev, "%s: enable = %d, timeout = %d", __func__, enabled, timeout);
 
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -804,7 +787,7 @@ static int whc_fullmac_host_set_monitor_channel(struct wiphy *wiphy, struct cfg8
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s, channel %d", __func__, chandef->center_freq1);
 
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -835,7 +818,7 @@ static int whc_fullmac_host_get_channel_ops(struct wiphy *wiphy,
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -883,7 +866,7 @@ static int whc_fullmac_host_get_channel_ops(struct wiphy *wiphy,
 
 static int whc_fullmac_host_external_auth_status(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_external_auth_params *params)
 {
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 
@@ -1038,7 +1021,7 @@ static int whc_fullmac_host_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wd
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
-	if (global_idev.mp_fw) {
+	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 

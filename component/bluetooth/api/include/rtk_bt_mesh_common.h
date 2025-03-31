@@ -44,6 +44,9 @@ typedef enum {
 	RTK_BT_MESH_STACK_ACT_LPN_DEINIT,
 	RTK_BT_MESH_STACK_ACT_SEND_ONE_SHOT_ADV,
 	RTK_BT_MESH_STACK_ACT_SET_RETRANS_PARAM,
+#if defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
+	RTK_BT_MESH_STACK_ACT_SET_TX_PHY,
+#endif
 	RTK_BT_MESH_STACK_ACT_MAX,
 } rtk_bt_mesh_stack_act_t;
 
@@ -868,6 +871,20 @@ typedef struct {
 	uint8_t trans_retrans_count;
 } rtk_bt_mesh_stack_set_retrans_param_t;
 
+#if defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
+/**
+ * @typedef   rtk_bt_mesh_stack_act_set_tx_phy_t
+ * @brief     BLE MESH set tx phy data structure when use BLE 5.0 AE.
+ */
+typedef enum {
+	RTK_BT_MESH_GAP_SCHED_AE_ADV_TYPE_LEGACY_ON_1M =    0x01,
+	RTK_BT_MESH_GAP_SCHED_AE_ADV_TYPE_LEGACY_ON_S2 =    0x02,
+	RTK_BT_MESH_GAP_SCHED_AE_ADV_TYPE_LEGACY_ON_S8 =    0x04,
+	RTK_BT_MESH_GAP_SCHED_AE_ADV_TYPE_EXTEND_ON_1M_1M = 0x08,
+	RTK_BT_MESH_GAP_SCHED_AE_ADV_TYPE_EXTEND_ON_1M_2M = 0x10,
+} rtk_bt_mesh_stack_act_set_tx_phy_t;  // gap_sched_ae_adv_type_t
+#endif
+
 /********************************* Functions Declaration *******************************/
 /**
  * @defgroup  ble_mesh_common BT LE Mesh Common APIs
@@ -1110,6 +1127,16 @@ uint16_t rtk_bt_mesh_stack_fn_deinit(void);
  *            - Others: Error code
  */
 uint16_t rtk_bt_mesh_stack_retrans_param_set(rtk_bt_mesh_stack_set_retrans_param_t *param);
+
+#if defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
+/**
+ * @brief     Set mesh tx phy, will cause event @ref RTK_BT_MESH_STACK_ACT_SET_TX_PHY
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_mesh_stack_set_tx_phy(rtk_bt_mesh_stack_act_set_tx_phy_t *tx_phy);
+#endif
 
 /**
  * @}

@@ -152,10 +152,6 @@ int rtw_netdev_probe(struct device *pdev)
 		dev_err(global_idev.fullmac_dev, "ndev register fail");
 		goto os_ndevs_deinit;
 	}
-#if !defined(CONFIG_WHC_BRIDGE)
-	global_idev.mp_fw = whc_fullmac_host_dev_driver_is_mp();
-	dev_info(global_idev.fullmac_dev, "%s Wi-Fi driver!", global_idev.mp_fw ? "MP" : "Normal");
-#endif
 
 #if !defined(CONFIG_WHC_BRIDGE)
 	rtw_regd_init();

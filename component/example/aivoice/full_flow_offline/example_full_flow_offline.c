@@ -7,6 +7,13 @@
 #include <stdio.h>
 #include <string.h>
 
+
+#define AIVOICE_ENABLE_AFE_SSL (1)
+
+#if AIVOICE_ENABLE_AFE_SSL
+#include "cJSON/cJSON.h"
+#endif
+
 #if defined(USE_DTCM)
 #define DRAM0 __attribute__((section(".dram0.data")))
 #define DRAM1 __attribute__((section(".dram1.data")))
@@ -20,6 +27,28 @@ char DRAM0 g_dtcm_buffer_124k_0[DATASIZE_124K];
 
 extern unsigned char *get_test_wav(void);
 extern unsigned int get_test_wav_len(void);
+
+#if AIVOICE_ENABLE_AFE_SSL
+static void aivoice_show_afe_ssl_message(struct aivoice_evout_afe *afe_out)
+{
+	if (afe_out->out_others_json) {
+		char *json = afe_out->out_others_json;
+
+		cJSON *root_obj = cJSON_Parse((char *)json);
+		if (root_obj != NULL) {
+			cJSON *ssl_angle_obj = cJSON_GetObjectItem(root_obj, "ssl_angle");
+			if (ssl_angle_obj) {
+				float angle = ssl_angle_obj->valuedouble;
+				if (angle >= 0) {
+					printf("[user] voice angle %.1f\n", angle);
+				}
+			}
+
+			cJSON_Delete(root_obj);
+		}
+	}
+}
+#endif
 
 static int aivoice_callback_process(void *userdata,
 									enum aivoice_out_event_type event_type,
@@ -60,6 +89,10 @@ static int aivoice_callback_process(void *userdata,
 				   afe_out->ch_num, afe_out->out_others_json ? afe_out->out_others_json : "null");
 		}
 
+#if AIVOICE_ENABLE_AFE_SSL
+		aivoice_show_afe_ssl_message(afe_out);
+#endif
+
 		// process afe output raw audio as needed
 		// xx
 		break;
@@ -98,6 +131,14 @@ void aivoice_algo_offline_example(void)
 	struct afe_config afe_param = AFE_CONFIG_ASR_DEFAULT();
 	afe_param.mic_array = AFE_LINEAR_2MIC_50MM;  // change this according to the linked afe resource.
 	config.afe = &afe_param;
+
+	// afe ssl related configurations
+#if AIVOICE_ENABLE_AFE_SSL
+	afe_param.enable_ssl     = true;
+	afe_param.ssl_resolution = 10;
+	afe_param.ssl_min_hz     = 300;
+	afe_param.ssl_max_hz     = 3500;
+#endif
 
 	/*
 	 * ONLY turn on these settings when you are sure about what you are doing.

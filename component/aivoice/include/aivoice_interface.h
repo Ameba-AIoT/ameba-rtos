@@ -123,6 +123,20 @@ void rtk_aivoice_set_single_kws_mode(void);
 void rtk_aivoice_set_multi_kws_mode(void);
 
 /**
+ * @brief Trigger SSL to get the voice angle.
+ *        Only available when afe module is used.
+ *
+ *        You can call this function at the moment of wakeup or recognition,
+ *        then next time after feed, you'll get the output angle
+ *        in callback message AIVOICE_EVOUT_AFE:aivoice_evout_afe->out_others_json.
+ *
+ * @param[in] handle      aiovice instance
+ * @param[in] duration    length (number of sampleling points in one channel) of valid voice.
+ */
+void rtk_aivoice_trigger_ssl(void *handle, int duration);
+
+////////////////////////////////////////////////////////////////////////////////
+/**
  * This structure contains the functions used to do operations on aivoice.
  */
 struct rtk_aivoice_iface {

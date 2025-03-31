@@ -27,7 +27,7 @@ ifndef WINDOWS_MK
     define SHELL_COPY
 	$(eval tmp_from_file:=$(subst /,\,${1}))
 	$(eval tmp_to_file:=$(subst /,\,${2}))
-	copy "${tmp_from_file}" "${tmp_to_file}"
+	copy /Y "${tmp_from_file}" "${tmp_to_file}"
     endef
 
     # ${1} is the directory to be copied.
@@ -83,6 +83,6 @@ BUILT_TIME_DATE_STRING = const char build_message[] = "Built : "${BUILD_MESSAGE_
 VERSION_STRING_MESSAGE = const char version_string[] = "${VERSION_STRING}";
 define MAKE_BUILD_STRINGS
 	@echo $$(BUILT_TIME_DATE_STRING) $$(VERSION_STRING_MESSAGE) | \
-		$$(CC) $$(TF_CFLAGS) $$(CFLAGS) -x c -c - -o $1
+		"$$(CC)" $$(TF_CFLAGS) $$(CFLAGS) -x c -c - -o $1
 endef
 

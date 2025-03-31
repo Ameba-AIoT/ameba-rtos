@@ -65,7 +65,7 @@ enum whc_spi_dma_type {
 #define SPI_SKB_RSVD_LEN	N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct whc_msg_info), 4)
 
 #define WIFI_STACK_SIZE_INIC_RX_REQ_TASK		    (268 + 128 + CONTEXT_SAVE_SIZE)
-#define WIFI_STACK_WHC_SPI_HOST_RXDMA_IRQ_TASK		(332 + 128 + CONTEXT_SAVE_SIZE)
+#define WIFI_STACK_WHC_SPI_HOST_RXDMA_IRQ_TASK		(456 + 128 + CONTEXT_SAVE_SIZE)
 #define WIFI_STACK_WHC_SPI_HOST_TXDMA_IRQ_TASK		(168 + 128 + CONTEXT_SAVE_SIZE)
 
 static inline void set_host_rdy_pin(u8 status)
@@ -78,4 +78,3 @@ void whc_spi_host_send_to_dev(u8 *buf, u8 *buf_alloc, u16 len);
 void whc_spi_host_init(void);
 
 #endif
-

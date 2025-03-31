@@ -13,7 +13,7 @@
 #include "os_wrapper_time.h"
 #include "usbh.h"
 #include "usbh_cdc_ecm_hal.h"
-#include "wifi_intf_drv_to_app_basic.h"
+#include "wifi_api.h"
 
 /* Private defines -----------------------------------------------------------*/
 extern void rltk_mii_init(void);
@@ -285,10 +285,11 @@ static void ecm_example_monitor_link_change_thread(void *param)
 static void ecm_example_bridge_thread(void *param)
 {
 	UNUSED(param);
+	u8 join_status;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Bridge example \n");
 
-	while (!(wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS)) {
+	while (!(wifi_get_join_status(&join_status) == RTK_SUCCESS && join_status == RTW_JOINSTATUS_SUCCESS)) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for WIFI connection ...\n");
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Please use ATW0=ssid, ATW1=password, ATWC or AT+WLCONN to connect AP first time\n");
 		rtos_time_delay_ms(2000);
