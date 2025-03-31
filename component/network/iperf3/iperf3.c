@@ -163,7 +163,7 @@ void cmd_iperf3(int argc, char **argv)
 	iperf_defaults(test);	/* sets defaults */
 	if (iperf_parse_arguments(test, argc, argv) < 0) {
 		iperf_err(test, "parameter error - %s", iperf_strerror(i_errno));
-		fprintf(stderr, "\n");
+		printf("\n");
 		usage_long(stdout);
 		iperf_free_test(test);
 		goto Exit;
