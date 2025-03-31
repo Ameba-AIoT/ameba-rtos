@@ -20,7 +20,7 @@
 #include <wifi_ind.h>
 #include <lwip_netconf.h>
 
-#define BLE_WIFIMATE_DECODE_KEY_LEN                             (8)
+#define BLE_WIFIMATE_DECODE_KEY_LEN                             (16)
 
 #define RTK_BT_UUID_BLE_WIFIMATE_SRV                            BT_UUID_DECLARE_16(BLE_WIFIMATE_UUID_SRV)
 #define RTK_BT_UUID_BLE_WIFIMATE_KEY_NEGOTIATE                  BT_UUID_DECLARE_16(BLE_WIFIMATE_UUID_CHAR_KEY_NEGOTIATE)
@@ -59,7 +59,7 @@ enum ble_wifimate_server_state_e {
 
 struct password_decode_t {
 	uint8_t         algorithm;
-	int8_t          key[BLE_WIFIMATE_DECODE_KEY_LEN];
+	uint8_t         key[BLE_WIFIMATE_DECODE_KEY_LEN];
 };
 
 struct ble_wifimate_wifi_scan_result_t {
@@ -278,15 +278,18 @@ static uint16_t ble_wifimate_server_key_negotiate_hdl(uint16_t len, uint8_t *dat
 			return ret;
 		}
 
-		s_pw_decode.key[5] = bd_addr.addr_val[2];
-		s_pw_decode.key[6] = bd_addr.addr_val[1];
-		s_pw_decode.key[7] = bd_addr.addr_val[0];
+		s_pw_decode.key[BLE_WIFIMATE_DECODE_KEY_LEN - 3] = bd_addr.addr_val[2];
+		s_pw_decode.key[BLE_WIFIMATE_DECODE_KEY_LEN - 2] = bd_addr.addr_val[1];
+		s_pw_decode.key[BLE_WIFIMATE_DECODE_KEY_LEN - 1] = bd_addr.addr_val[0];
 	}
 
-	BT_LOGA("[APP] BLE WiFiMate server negotiate key procedure: algorithm=%d, key=%x%x%x%x%x%x%x%x\r\n",
+	BT_LOGA("[APP] BLE WiFiMate server negotiate key procedure: algorithm=%d, \
+			key=%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\r\n",
 			s_pw_decode.algorithm,
 			s_pw_decode.key[0], s_pw_decode.key[1], s_pw_decode.key[2], s_pw_decode.key[3],
-			s_pw_decode.key[4], s_pw_decode.key[5], s_pw_decode.key[6], s_pw_decode.key[7]);
+			s_pw_decode.key[4], s_pw_decode.key[5], s_pw_decode.key[6], s_pw_decode.key[7],
+			s_pw_decode.key[8], s_pw_decode.key[9], s_pw_decode.key[10], s_pw_decode.key[11],
+			s_pw_decode.key[12], s_pw_decode.key[13], s_pw_decode.key[14], s_pw_decode.key[15]);
 
 	return RTK_BT_OK;
 }
