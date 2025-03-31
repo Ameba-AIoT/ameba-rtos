@@ -60,6 +60,8 @@ static void init_wifi_struct(void)
 	wifi.key_id = -1;
 	wifi.channel = 0;
 	wifi.pscan_option = 0;
+	wifi.security_type = RTW_SECURITY_OPEN;
+
 	memset(ap.ssid.val, 0, sizeof(ap.ssid.val));
 	ap.ssid.len = 0;
 	ap.password = NULL;
@@ -767,7 +769,7 @@ void at_wlstartap(void *arg)
 			}
 
 			if (argv[j + 1] != NULL && inet_addr(argv[j + 1]) != IPADDR_NONE) {
-				ip_addr_set_ip4_u32(&end_ip, inet_addr(argv[j+1]));
+				ip_addr_set_ip4_u32(&end_ip, inet_addr(argv[j + 1]));
 			} else {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid end ip value\r\n");
 				error_no = 2;
