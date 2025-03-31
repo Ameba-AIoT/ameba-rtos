@@ -118,304 +118,306 @@
   * @endverbatim
   */
 
-/* AUTO_GEN_START */
-
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
 
 /** @defgroup SPI
-* @brief SPI driver modules
-* @{
-*/
+  * @brief SPI driver modules
+  * @{
+  */
+
+/* AUTO_GEN_START */
+// Do NOT modify any AUTO_GEN code below
 
 /* Registers Definitions --------------------------------------------------------*/
 
 /** @defgroup SPI_Register_Definitions SPI Register Definitions
- * @{
- *****************************************************************************/
+  * @{
+  */
 
 /** @defgroup SPI_CTRLR0
- * @brief Control Register 0
- * @{
- **/
-#define SPI_BIT_SS_T            ((u32)0x00000001 << 31)          /*!<R/W 0  When SCPH is 0 (Relevant only when the SPI is configured as a serial-master device) 0: ss_n_out doesn't toggle between successive frames 1: ss_n_out does toggle between successive frames */
-#define SPI_BIT_RXBITSWAP       ((u32)0x00000001 << 24)          /*!<R/W 0  0: Order of receive bit doesn't swap 1: Order of receive bit does swap */
-#define SPI_BIT_RXBYTESWAP      ((u32)0x00000001 << 23)          /*!<R/W 0  0: Order of receive byte doesn't swap 1: Order of receive byte does swap */
-#define SPI_BIT_TXBITSWAP       ((u32)0x00000001 << 22)          /*!<R/W 0  0: Order of transmit bit doesn't swap 1: Order of transmit bit does swap */
-#define SPI_BIT_TXBYTESWAP      ((u32)0x00000001 << 21)          /*!<R/W 0  0: Order of transmit byte doesn't swap 1: Order of transmit byte does swap */
-#define SPI_BIT_SLV_OE          ((u32)0x00000001 << 10)          /*!<R/W 0  Slave Output Enable. Relevant only when the SPI is configured as a serial-slave device. When configured as a serial master, this bit field has no functionality. This bit enables or disables the setting of the ssi_oe_n output from the SPI serial slave. When SLV_OE = 1, the ssi_oe_n output can never be active. When the ssi_oe_n output controls the tri-state buffer on the txd output from the slave, a high impedance state is always present on the slave txd output when SLV_OE = 1. This is useful when the master transmits in broadcast mode (master transmits data to all slave devices). Only one slave may respond with data on the master rxd line. This bit is enabled after reset and must be disabled by software (when broadcast mode is used), if you do not want this device to respond with data. 0: Slave txd is enabled 1: Slave txd is disabled */
-#define SPI_MASK_TMOD           ((u32)0x00000003 << 8)          /*!<R/W 00  Transfer Mode. Relevant only when the SPI is configured as a serial-master device. Selects the mode of transfer for serial communication. This field does not affect the transfer duplicity. Only indicates whether the receive or transmit data are valid. In transmit-only mode, data received from the external device is not valid and is not stored in the receive FIFO memory; it is overwritten on the next transfer. In receive-only mode, transmitted data are not valid. After the first write to the transmit FIFO, the same word is retransmitted for the duration of the transfer. In transmit-and-receive mode, both transmit and receive data are valid. The transfer continues until the transmit FIFO is empty. Data received from the external device are stored into the receive FIFO memory, where it can be accessed by the host processor. 00: Transmit & Receive 01: Transmit Only 10: Receive Only */
-#define SPI_TMOD(x)             (((u32)((x) & 0x00000003) << 8))
-#define SPI_GET_TMOD(x)         ((u32)(((x >> 8) & 0x00000003)))
-#define SPI_BIT_SCPOL           ((u32)0x00000001 << 7)          /*!<R/W 0  Serial Clock Polarity. Valid when the frame format (FRF) is set to Motorola SPI. Used to select the polarity of the inactive serial clock, which is held inactive when the SPI master is not actively transferring data on the serial bus. 0: Inactive state of serial clock is low 1: Inactive state of serial clock is high */
-#define SPI_BIT_SCPH            ((u32)0x00000001 << 6)          /*!<R/W 0  Serial Clock Phase. Valid when the frame format (FRF) is set to Motorola SPI. The serial clock phase selects the relationship of the serial clock with the slave select signal. When SCPH = 0, data are captured on the first edge of the serial clock. When SCPH = 1, the serial clock starts toggling one cycle after the slave select line is activated, and data are captured on the second edge of the serial clock. 0: Serial clock toggles in middle of the first data bit 1: Serial clock toggles at start of the first data bit */
-#define SPI_MASK_FRF            ((u32)0x00000003 << 4)          /*!<R/W 00  Frame Format. Selects which serial protocol transfers the data. 00: Motorola SPI Other: Reserved */
-#define SPI_FRF(x)              (((u32)((x) & 0x00000003) << 4))
-#define SPI_GET_FRF(x)          ((u32)(((x >> 4) & 0x00000003)))
-#define SPI_MASK_DFS            ((u32)0x0000000F << 0)          /*!<R/W 0111  Data Frame Size. Selects the data frame length. When the data frame size is programmed to be less than 16 bits, the receive data are automatically right-justified by the receive logic, with the upper bits of the receive FIFO zero-padded. You must right-justify transmit data before writing into the transmit FIFO. The transmit logic ignores the upper unused bits when transmitting the data. For the DFS decode, refer to the following description: 0000/0001/0010: Reserved (undefined operation) 0011: 4-bit serial data transfer 0100: 5-bit serial data transfer 0101: 6-bit serial data transfer 0110: 7-bit serial data transfer 0111: 8-bit serial data transfer 1000: 9-bit serial data transfer 1001: 10-bit serial data transfer 1010: 11-bit serial data transfer 1011: 12-bit serial data transfer 1100: 13-bit serial data transfer 1101: 14-bit serial data transfer 1110: 15-bit serial data transfer 1111: 16-bit serial data transfer */
-#define SPI_DFS(x)              (((u32)((x) & 0x0000000F) << 0))
-#define SPI_GET_DFS(x)          ((u32)(((x >> 0) & 0x0000000F)))
+  * @brief Control Register 0
+  * @{
+  */
+#define SPI_BIT_SS_T       ((u32)0x00000001 << 31)          /*!< R/W 0x0  When SCPH is 0 (Relevant only when the SPI is configured as a serial-master device) 0: ss_n_out doesn't toggle between successive frames 1: ss_n_out does toggle between successive frames*/
+#define SPI_BIT_RXBITSWAP  ((u32)0x00000001 << 24)          /*!< R/W 0x0  0: Order of receive bit doesn't swap 1: Order of receive bit does swap*/
+#define SPI_BIT_RXBYTESWAP ((u32)0x00000001 << 23)          /*!< R/W 0x0  0: Order of receive byte doesn't swap 1: Order of receive byte does swap*/
+#define SPI_BIT_TXBITSWAP  ((u32)0x00000001 << 22)          /*!< R/W 0x0  0: Order of transmit bit doesn't swap 1: Order of transmit bit does swap*/
+#define SPI_BIT_TXBYTESWAP ((u32)0x00000001 << 21)          /*!< R/W 0x0  0: Order of transmit byte doesn't swap 1: Order of transmit byte does swap*/
+#define SPI_BIT_SLV_OE     ((u32)0x00000001 << 10)          /*!< R/W 0x0  Slave Output Enable. Relevant only when the SPI is configured as a serial-slave device. When configured as a serial master, this bit field has no functionality. This bit enables or disables the setting of the ssi_oe_n output from the SPI serial slave.  When SLV_OE = 1, the ssi_oe_n output can never be active. When the ssi_oe_n output controls the tri-state buffer on the txd output from the slave, a high impedance state is always present on the slave txd output when SLV_OE = 1. This is useful when the master transmits in broadcast mode (master transmits data to all slave devices). Only one slave may respond with data on the master rxd line. This bit is enabled after reset and must be disabled by software (when broadcast mode is used), if you do not want this device to respond with data. 0: Slave txd is enabled 1: Slave txd is disabled*/
+#define SPI_MASK_TMOD      ((u32)0x00000003 << 8)           /*!< R/W 0x00  Transfer Mode. Relevant only when the SPI is configured as a serial-master device. Selects the mode of transfer for serial communication. This field does not affect the transfer duplicity. Only indicates whether the receive or transmit data are valid.  In transmit-only mode, data received from the external device is not valid and is not stored in the receive FIFO memory; it is overwritten on the next transfer. In receive-only mode, transmitted data are not valid. After the first write to the transmit FIFO, the same word is retransmitted for the duration of the transfer. In transmit-and-receive mode, both transmit and receive data are valid. The transfer continues until the transmit FIFO is empty. Data received from the external device are stored into the receive FIFO memory, where it can be accessed by the host processor. 00: Transmit & Receive 01: Transmit Only 10: Receive Only*/
+#define SPI_TMOD(x)        (((u32)((x) & 0x00000003) << 8))
+#define SPI_GET_TMOD(x)    ((u32)(((x >> 8) & 0x00000003)))
+#define SPI_BIT_SCPOL      ((u32)0x00000001 << 7)           /*!< R/W 0x0  Serial Clock Polarity. Valid when the frame format (FRF) is set to Motorola SPI. Used to select the polarity of the inactive serial clock, which is held inactive when the SPI master is not actively transferring data on the serial bus. 0: Inactive state of serial clock is low 1: Inactive state of serial clock is high*/
+#define SPI_BIT_SCPH       ((u32)0x00000001 << 6)           /*!< R/W 0x0  Serial Clock Phase. Valid when the frame format (FRF) is set to Motorola SPI. The serial clock phase selects the relationship of the serial clock with the slave select signal. When SCPH = 0, data are captured on the first edge of the serial clock. When SCPH = 1, the serial clock starts toggling one cycle after the slave select line is activated, and data are captured on the second edge of the serial clock. 0: Serial clock toggles in middle of the first data bit 1: Serial clock toggles at start of the first data bit*/
+#define SPI_MASK_FRF       ((u32)0x00000003 << 4)           /*!< R/W 0x00  Frame Format. Selects which serial protocol transfers the data. 00: Motorola SPI Other: Reserved*/
+#define SPI_FRF(x)         (((u32)((x) & 0x00000003) << 4))
+#define SPI_GET_FRF(x)     ((u32)(((x >> 4) & 0x00000003)))
+#define SPI_MASK_DFS       ((u32)0x0000000F << 0)           /*!< R/W 0x0111  Data Frame Size. Selects the data frame length. When the data frame size is programmed to be less than 16 bits, the receive data are automatically right-justified by the receive logic, with the upper bits of the receive FIFO zero-padded. You must right-justify transmit data before writing into the transmit FIFO. The transmit logic ignores the upper unused bits when transmitting the data. For the DFS decode, refer to the following description: 0000/0001/0010: Reserved (undefined operation) 0011: 4-bit serial data transfer 0100: 5-bit serial data transfer 0101: 6-bit serial data transfer 0110: 7-bit serial data transfer 0111: 8-bit serial data transfer 1000: 9-bit serial data transfer 1001: 10-bit serial data transfer 1010: 11-bit serial data transfer 1011: 12-bit serial data transfer 1100: 13-bit serial data transfer 1101: 14-bit serial data transfer 1110: 15-bit serial data transfer 1111: 16-bit serial data transfer*/
+#define SPI_DFS(x)         (((u32)((x) & 0x0000000F) << 0))
+#define SPI_GET_DFS(x)     ((u32)(((x >> 0) & 0x0000000F)))
 /** @} */
 
 /** @defgroup SPI_CTRLR1
- * @brief Control Register 1
- * @{
- **/
-#define SPI_MASK_NDF            ((u32)0x0000FFFF << 0)          /*!<R/W 0x0  Number of Data Frames. When TMOD = 10 or TMOD = 11, this register field sets the number of data frames to be continuously received by the SPI. The SPI continues to receive serial data until the number of data frames received is equal to this register value plus 1, which enables you to receive up to 64 KB of data in a continuous transfer. When the SPI is configured as a serial slave, the transfer continues for as long as the slave is selected. Therefore, this register serves no purpose and is not present when the SPI is configured as a serial slave. */
-#define SPI_NDF(x)              (((u32)((x) & 0x0000FFFF) << 0))
-#define SPI_GET_NDF(x)          ((u32)(((x >> 0) & 0x0000FFFF)))
+  * @brief Control Register 1
+  * @{
+  */
+#define SPI_MASK_NDF   ((u32)0x0000FFFF << 0)           /*!< R/W 0x0  Number of Data Frames. When TMOD = 10 or TMOD = 11, this register field sets the number of data frames to be continuously received by the SPI. The SPI continues to receive serial data until the number of data frames received is equal to this register value plus 1, which enables you to receive up to 64 KB of data in a continuous transfer. When the SPI is configured as a serial slave, the transfer continues for as long as the slave is selected. Therefore, this register serves no purpose and is not present when the SPI is configured as a serial slave.*/
+#define SPI_NDF(x)     (((u32)((x) & 0x0000FFFF) << 0))
+#define SPI_GET_NDF(x) ((u32)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
 /** @defgroup SPI_SSIENR
- * @brief SSI Enable Register
- * @{
- **/
-#define SPI_BIT_SSI_EN          ((u32)0x00000001 << 0)          /*!<R/W 0  SPI Enable. Enables and disables all SPI operations. When disabled, all serial transfers are halted immediately. Transmit and receive FIFO buffers are cleared when the device is disabled. It is impossible to program some of the SPI control registers when enabled. When disabled, the ssi_sleep output is set (after delay) to inform the system that it is safe to remove the ssi_clk, thus saving power consumption in the system. */
+  * @brief SSI Enable Register
+  * @{
+  */
+#define SPI_BIT_SSI_EN ((u32)0x00000001 << 0) /*!< R/W 0x0  SPI Enable. Enables and disables all SPI operations. When disabled, all serial transfers are halted immediately. Transmit and receive FIFO buffers are cleared when the device is disabled. It is impossible to program some of the SPI control registers when enabled. When disabled, the ssi_sleep output is set (after delay) to inform the system that it is safe to remove the ssi_clk, thus saving power consumption in the system.*/
 /** @} */
 
 /** @defgroup SPI_SER
- * @brief Slave Enable Register
- * @{
- **/
-#define SPI_BIT_SER             ((u32)0x00000001 << 0)          /*!<R/W 0  Slave Select Enable Flag. When this bit is set (1), the corresponding slave select line from the master is activated when a serial transfer begins. It should be noted that setting or clearing bits in this register have no effect on the corresponding slave select outputs until a transfer is started. Before beginning a transfer, you should enable the bit in this register that corresponds to the slave device with which the master wants to communicate. 1: Selected 0: Not selected */
+  * @brief Slave Enable Register
+  * @{
+  */
+#define SPI_BIT_SER ((u32)0x00000001 << 0) /*!< R/W 0x0  Slave Select Enable Flag. When this bit is set (1), the corresponding slave select line from the master is activated when a serial transfer begins. It should be noted that setting or clearing bits in this register have no effect on the corresponding slave select outputs until a transfer is started. Before beginning a transfer, you should enable the bit in this register that corresponds to the slave device with which the master wants to communicate. 1: Selected 0: Not selected*/
 /** @} */
 
 /** @defgroup SPI_BAUDR
- * @brief Baud Rate Select
- * @{
- **/
-#define SPI_MASK_SCKDV          ((u32)0x0000FFFF << 0)          /*!<R/W 0x0  SPI Clock Divider. The LSB for this field is always set to 0 and is unaffected by a write operation, which ensures an even value is held in this register. If the value is 0, the serial output clock (sclk_out) is disabled. The frequency of the sclk_out is derived from the equation: Fsclk_out =Fssi_clk/SCKDV, where SCKDV is any even value between 2 and 65534. */
-#define SPI_SCKDV(x)            (((u32)((x) & 0x0000FFFF) << 0))
-#define SPI_GET_SCKDV(x)        ((u32)(((x >> 0) & 0x0000FFFF)))
+  * @brief Baud Rate Select
+  * @{
+  */
+#define SPI_MASK_SCKDV   ((u32)0x0000FFFF << 0)           /*!< R/W 0x0  SPI Clock Divider. The LSB for this field is always set to 0 and is unaffected by a write operation, which ensures an even value is held in this register. If the value is 0, the serial output clock (sclk_out) is disabled. The frequency of the sclk_out is derived from the  equation: Fsclk_out =Fssi_clk/SCKDV, where SCKDV is any even value between 2 and 65534.*/
+#define SPI_SCKDV(x)     (((u32)((x) & 0x0000FFFF) << 0))
+#define SPI_GET_SCKDV(x) ((u32)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
 /** @defgroup SPI_TXFTLR
- * @brief Transmit FIFO Threshold Level
- * @{
- **/
-#define SPI_MASK_TFT            ((u32)0x0000003F << 0)          /*!<R/W 0x0  Transmit FIFO Threshold. Controls the level of entries (or below) at which the transmit FIFO controller triggers an interrupt. The FIFO depth is 64; this register is sized to the number of address bits needed to access the FIFO. If you attempt to set this value greater than or equal to the depth of the FIFO, this field is not written and retains its current value. When the number of transmit FIFO entries is less than or equal to this value, the transmit FIFO empty interrupt is triggered. For TFT decode, refer to the following description: 000000: ssi_txe_intr is asserted when 0 data entry is present in transmit FIFO. 000001: ssi_txe_intr is asserted when 1 data entry is present in transmit FIFO. 000010: ssi_txe_intr is asserted when 2 data entries are present in transmit FIFO. 000011: ssi_txe_intr is asserted when 3 data entries are present in transmit FIFO. ... 111100: ssi_txe_intr is asserted when 60 data entries are present in transmit FIFO. 111101: ssi_txe_intr is asserted when 61 data entries are present in transmit FIFO. 111110: ssi_txe_intr is asserted when 62 data entries are present in transmit FIFO. 111111: ssi_txe_intr is asserted when 63 data entries are present in transmit FIFO. */
-#define SPI_TFT(x)              (((u32)((x) & 0x0000003F) << 0))
-#define SPI_GET_TFT(x)          ((u32)(((x >> 0) & 0x0000003F)))
+  * @brief Transmit FIFO Threshold Level
+  * @{
+  */
+#define SPI_MASK_TFT   ((u32)0x0000003F << 0)           /*!< R/W 0x0  Transmit FIFO Threshold. Controls the level of entries (or below) at which the transmit FIFO controller triggers an interrupt. The FIFO depth is 64; this register is sized to the number of address bits needed to access the FIFO. If you attempt to set this value greater than or equal to the depth of the FIFO, this field is not written and retains its current value. When the number of transmit FIFO entries is less than or equal to this value, the transmit FIFO empty interrupt is triggered. For TFT decode, refer to the following description: 000000: ssi_txe_intr is asserted when 0 data entry is present in transmit FIFO. 000001: ssi_txe_intr is asserted when 1 data entry is present in transmit FIFO. 000010: ssi_txe_intr is asserted when 2 data entries are present in transmit FIFO. 000011: ssi_txe_intr is asserted when 3 data entries are present in transmit FIFO. ... 111100: ssi_txe_intr is asserted when 60 data entries are present in transmit FIFO. 111101: ssi_txe_intr is asserted when 61 data entries are present in transmit FIFO. 111110: ssi_txe_intr is asserted when 62 data entries are present in transmit FIFO. 111111: ssi_txe_intr is asserted when 63 data entries are present in transmit FIFO.*/
+#define SPI_TFT(x)     (((u32)((x) & 0x0000003F) << 0))
+#define SPI_GET_TFT(x) ((u32)(((x >> 0) & 0x0000003F)))
 /** @} */
 
 /** @defgroup SPI_RXFTLR
- * @brief Receive FIFO Threshold Level
- * @{
- **/
-#define SPI_MASK_RFT            ((u32)0x0000003F << 0)          /*!<R/W 0x0  Receive FIFO Threshold. Controls the level of entries (or above) at which the receive FIFO controller triggers an interrupt. The FIFO depth is configurable in the range 2~64. This register is sized to the number of address bits needed to access the FIFO. If you attempt to set this value greater than the depth of the FIFO, this field is not written and retains its current value. When the number of receive FIFO entries is greater than or equal to this value + 1, the receive FIFO full interrupt is triggered. For RFT decode, refer to the following description: 000000: ssi_rxf_intr is asserted when 1 or more data entries are present in receive FIFO. 000001: ssi_rxf_intr is asserted when 2 or more data entries are present in receive FIFO. 000010: ssi_rxf_intr is asserted when 3 or more data entries are present in receive FIFO. 000011: ssi_rxf_intr is asserted when 4 or more data entries are present in receive FIFO. ... 111110: ssi_rxf_intr is asserted when 61 or more data entries are present in receive FIFO. 111101: ssi_rxf_intr is asserted when 62 or more data entries are present in receive FIFO. 111110: ssi_rxf_intr is asserted when 63 or more data entries are present in receive FIFO. 111111: ssi_rxf_intr is asserted when 64 or more data entries are present in receive FIFO. */
-#define SPI_RFT(x)              (((u32)((x) & 0x0000003F) << 0))
-#define SPI_GET_RFT(x)          ((u32)(((x >> 0) & 0x0000003F)))
+  * @brief Receive FIFO Threshold Level
+  * @{
+  */
+#define SPI_MASK_RFT   ((u32)0x0000003F << 0)           /*!< R/W 0x0  Receive FIFO Threshold. Controls the level of entries (or above) at which the receive FIFO controller triggers an interrupt. The FIFO depth is configurable in the range 2~64. This register is sized to the number of address bits needed to access the FIFO. If you attempt to set this value greater than the depth of the FIFO, this field is not written and retains its current value. When the number of receive FIFO entries is greater than or equal to this value + 1, the receive FIFO full interrupt is triggered. For RFT decode, refer to the following description: 000000: ssi_rxf_intr is asserted when 1 or more data entries are present in receive FIFO. 000001: ssi_rxf_intr is asserted when 2 or more data entries are present in receive FIFO. 000010: ssi_rxf_intr is asserted when 3 or more data entries are present in receive FIFO. 000011: ssi_rxf_intr is asserted when 4 or more data entries are present in receive FIFO. ... 111110: ssi_rxf_intr is asserted when 61 or more data entries are present in receive FIFO. 111101: ssi_rxf_intr is asserted when 62 or more data entries are present in receive FIFO. 111110: ssi_rxf_intr is asserted when 63 or more data entries are present in receive FIFO. 111111: ssi_rxf_intr is asserted when 64 or more data entries are present in receive FIFO.*/
+#define SPI_RFT(x)     (((u32)((x) & 0x0000003F) << 0))
+#define SPI_GET_RFT(x) ((u32)(((x >> 0) & 0x0000003F)))
 /** @} */
 
 /** @defgroup SPI_TXFLR
- * @brief Transmit FIFO Level Register
- * @{
- **/
-#define SPI_MASK_TXTFL          ((u32)0x0000007F << 0)          /*!<R 0x0  Transmit FIFO Level. Contains the number of valid data entries in the transmit FIFO. */
-#define SPI_TXTFL(x)            (((u32)((x) & 0x0000007F) << 0))
-#define SPI_GET_TXTFL(x)        ((u32)(((x >> 0) & 0x0000007F)))
+  * @brief Transmit FIFO Level Register
+  * @{
+  */
+#define SPI_MASK_TXTFL   ((u32)0x0000007F << 0)           /*!< R 0x0  Transmit FIFO Level. Contains the number of valid data entries in the transmit FIFO.*/
+#define SPI_TXTFL(x)     (((u32)((x) & 0x0000007F) << 0))
+#define SPI_GET_TXTFL(x) ((u32)(((x >> 0) & 0x0000007F)))
 /** @} */
 
 /** @defgroup SPI_RXFLR
- * @brief Receive FIFO Level Register
- * @{
- **/
-#define SPI_MASK_RXTFL          ((u32)0x0000007F << 0)          /*!<R 0x0  Receive FIFO Level. Contains the number of valid data entries in the receive FIFO. */
-#define SPI_RXTFL(x)            (((u32)((x) & 0x0000007F) << 0))
-#define SPI_GET_RXTFL(x)        ((u32)(((x >> 0) & 0x0000007F)))
+  * @brief Receive FIFO Level Register
+  * @{
+  */
+#define SPI_MASK_RXTFL   ((u32)0x0000007F << 0)           /*!< R 0x0  Receive FIFO Level. Contains the number of valid data entries in the receive FIFO.*/
+#define SPI_RXTFL(x)     (((u32)((x) & 0x0000007F) << 0))
+#define SPI_GET_RXTFL(x) ((u32)(((x >> 0) & 0x0000007F)))
 /** @} */
 
 /** @defgroup SPI_SR
- * @brief Status Register
- * @{
- **/
-#define SPI_BIT_DCOL            ((u32)0x00000001 << 6)          /*!<R 0  Data Collision Error. Relevant only when the SPI is configured as a master device. This bit is set if the SPI master is actively transmitting when another master selects this device as a slave. This informs the processor that the last data transfer was halted before completion. This bit is cleared when read. 0: No error 1: Transmit data collision error */
-#define SPI_BIT_TXE             ((u32)0x00000001 << 5)          /*!<R 0  Transmission Error. Set if the transmit FIFO is empty when a transfer is started. This bit can be set only when the SPI is configured as a slave device. Data from the previous transmission is resent on the txd line. This bit is cleared when read. 0: No error 1: Transmission error */
-#define SPI_BIT_RFF             ((u32)0x00000001 << 4)          /*!<R 0  Receive FIFO Full. When the receive FIFO is completely full, this bit is set. When the receive FIFO contains one or more empty location, this bit is cleared. 0: Receive FIFO is not full 1: Receive FIFO is full */
-#define SPI_BIT_RFNE            ((u32)0x00000001 << 3)          /*!<R 0  Receive FIFO Not Empty. Set when the receive FIFO contains one or more entries and is cleared when the receive FIFO is empty. This bit can be polled by software to completely empty the receive FIFO. 0: Receive FIFO is empty 1: Receive FIFO is not empty */
-#define SPI_BIT_TFE             ((u32)0x00000001 << 2)          /*!<R 1  Transmit FIFO Empty. When the transmit FIFO is completely empty, this bit is set. When the transmit FIFO contains one or more valid entries, this bit is cleared. This bit field does not request an interrupt. 0: Transmit FIFO is not empty 1: Transmit FIFO is empty */
-#define SPI_BIT_TFNF            ((u32)0x00000001 << 1)          /*!<R 1  Transmit FIFO Not Full. Set when the transmit FIFO contains one or more empty locations, and is cleared when the FIFO is full. 0: Transmit FIFO is full 1: Transmit FIFO is not full */
-#define SPI_BIT_BUSY            ((u32)0x00000001 << 0)          /*!<R 0  SSI Busy Flag. When set, indicates that a serial transfer is in progress; when cleared indicates that the SPI is idle or disabled. 0: SPI is idle or disabled 1: SPI is actively transferring data */
+  * @brief Status Register
+  * @{
+  */
+#define SPI_BIT_DCOL ((u32)0x00000001 << 6) /*!< R 0x0  Data Collision Error. Relevant only when the SPI is configured as a master device. This bit is set if the SPI master is actively transmitting when another master selects this device as a slave. This informs the processor that the last data transfer was halted before completion. This bit is cleared when read. 0: No error 1: Transmit data collision error*/
+#define SPI_BIT_TXE  ((u32)0x00000001 << 5) /*!< R 0x0  Transmission Error. Set if the transmit FIFO is empty when a transfer is started. This bit can be set only when the SPI is configured as a slave device. Data from the previous transmission is resent on the txd line. This bit is cleared when read. 0: No error 1: Transmission error*/
+#define SPI_BIT_RFF  ((u32)0x00000001 << 4) /*!< R 0x0  Receive FIFO Full. When the receive FIFO is completely full, this bit is set. When the receive FIFO contains one or more empty location, this bit is cleared. 0: Receive FIFO is not full 1: Receive FIFO is full*/
+#define SPI_BIT_RFNE ((u32)0x00000001 << 3) /*!< R 0x0  Receive FIFO Not Empty. Set when the receive FIFO contains one or more entries and is cleared when the receive FIFO is empty. This bit can be polled by software to completely empty the receive FIFO. 0: Receive FIFO is empty 1: Receive FIFO is not empty*/
+#define SPI_BIT_TFE  ((u32)0x00000001 << 2) /*!< R 0x1  Transmit FIFO Empty. When the transmit FIFO is completely empty, this bit is set. When the transmit FIFO contains one or more valid entries, this bit is cleared. This bit field does not request an interrupt. 0: Transmit FIFO is not empty 1: Transmit FIFO is empty*/
+#define SPI_BIT_TFNF ((u32)0x00000001 << 1) /*!< R 0x1  Transmit FIFO Not Full. Set when the transmit FIFO contains one or more empty locations, and is cleared when the FIFO is full. 0: Transmit FIFO is full 1: Transmit FIFO is not full*/
+#define SPI_BIT_BUSY ((u32)0x00000001 << 0) /*!< R 0x0  SSI Busy Flag. When set, indicates that a serial transfer is in progress; when cleared indicates that the SPI is idle or disabled. 0: SPI is idle or disabled 1: SPI is actively transferring data*/
 /** @} */
 
 /** @defgroup SPI_IMR
- * @brief Interrupt Mask Register
- * @{
- **/
-#define SPI_BIT_SSRIM           ((u32)0x00000001 << 7)          /*!<R/W 1  SS_N Rising Edge Detect Interrupt Mask. This bit field is present only if the SPI is configured as a serial-slave device. 0: ssi_ssr_intr is masked 1: ssi_ssr_intr is not masked */
-#define SPI_BIT_TXUIM           ((u32)0x00000001 << 6)          /*!<R/W 1  Transmit FIFO Underflow Interrupt Mask. This bit field is present only if the SPI is configured as a serial-slave device. 0: ssi_txu_intr is masked 1: ssi_txu_intr is not masked */
-#define SPI_BIT_MSTIM_FAEIM     ((u32)0x00000001 << 5)          /*!<R/W 1  When SPI is configured as serial-master, this bit field is present as Multi-Master Contention Interrupt Mask. 0: ssi_mst_intr interrupt is masked 1: ssi_mst_intr interrupt is not masked When SPI is configured as serial-slave, this bit field is present as Frame Alignment Interrupt Mask. 0: ssi_fae_intr interrupt is masked 1: ssi_fae_intr interrupt is not masked */
-#define SPI_BIT_RXFIM           ((u32)0x00000001 << 4)          /*!<R/W 1  Receive FIFO Full Interrupt Mask. 0: ssi_rxf_intr interrupt is masked 1: ssi_rxf_intr interrupt is not masked */
-#define SPI_BIT_RXOIM           ((u32)0x00000001 << 3)          /*!<R/W 1  Receive FIFO Overflow Interrupt Mask. 0: ssi_rxo_intr interrupt is masked 1: ssi_rxo_intr interrupt is not masked */
-#define SPI_BIT_RXUIM           ((u32)0x00000001 << 2)          /*!<R/W 1  Receive FIFO Underflow Interrupt Mask. 0: ssi_rxu_intr interrupt is masked 1: ssi_rxu_intr interrupt is not masked */
-#define SPI_BIT_TXOIM           ((u32)0x00000001 << 1)          /*!<R/W 1  Transmit FIFO Overflow Interrupt Mask. 0: ssi_txo_intr interrupt is masked 1: ssi_txo_intr interrupt is not masked */
-#define SPI_BIT_TXEIM           ((u32)0x00000001 << 0)          /*!<R/W 1  Transmit FIFO Empty Interrupt Mask. 0: ssi_txe_intr interrupt is masked 1: ssi_txe_intr interrupt is not masked */
+  * @brief Interrupt Mask Register
+  * @{
+  */
+#define SPI_BIT_SSRIM       ((u32)0x00000001 << 7) /*!< R/W 0x1  SS_N Rising Edge Detect Interrupt Mask. This bit field is present only if the SPI is configured as a serial-slave device. 0: ssi_ssr_intr is masked 1: ssi_ssr_intr is not masked*/
+#define SPI_BIT_TXUIM       ((u32)0x00000001 << 6) /*!< R/W 0x1  Transmit FIFO Underflow Interrupt Mask. This bit field is present only if the SPI is configured as a serial-slave device. 0: ssi_txu_intr is masked 1: ssi_txu_intr is not masked*/
+#define SPI_BIT_MSTIM_FAEIM ((u32)0x00000001 << 5) /*!< R/W 0x1  When SPI is configured as serial-master, this bit field is present as Multi-Master Contention Interrupt Mask. 0: ssi_mst_intr interrupt is masked 1: ssi_mst_intr interrupt is not masked When SPI is configured as serial-slave, this bit field is present as Frame Alignment Interrupt Mask.  0: ssi_fae_intr interrupt is masked 1: ssi_fae_intr interrupt is not masked*/
+#define SPI_BIT_RXFIM       ((u32)0x00000001 << 4) /*!< R/W 0x1  Receive FIFO Full Interrupt Mask. 0: ssi_rxf_intr interrupt is masked 1: ssi_rxf_intr interrupt is not masked*/
+#define SPI_BIT_RXOIM       ((u32)0x00000001 << 3) /*!< R/W 0x1  Receive FIFO Overflow Interrupt Mask. 0: ssi_rxo_intr interrupt is masked 1: ssi_rxo_intr interrupt is not masked*/
+#define SPI_BIT_RXUIM       ((u32)0x00000001 << 2) /*!< R/W 0x1  Receive FIFO Underflow Interrupt Mask. 0: ssi_rxu_intr interrupt is masked 1: ssi_rxu_intr interrupt is not masked*/
+#define SPI_BIT_TXOIM       ((u32)0x00000001 << 1) /*!< R/W 0x1  Transmit FIFO Overflow Interrupt Mask. 0: ssi_txo_intr interrupt is masked 1: ssi_txo_intr interrupt is not masked*/
+#define SPI_BIT_TXEIM       ((u32)0x00000001 << 0) /*!< R/W 0x1  Transmit FIFO Empty Interrupt Mask. 0: ssi_txe_intr interrupt is masked 1: ssi_txe_intr interrupt is not masked*/
 /** @} */
 
 /** @defgroup SPI_ISR
- * @brief Interrupt Status Register
- * @{
- **/
-#define SPI_BIT_SSRIS           ((u32)0x00000001 << 7)          /*!<R 0  SS_N Rising Edge Detect Interrupt Status. This bit field is present only if the SPI is configured as a serial-slave device. 0: ssi_ssr_intr interrupt is not active after masking 1: ssi_ssr_intr interrupt is active after masking */
-#define SPI_BIT_TXUIS           ((u32)0x00000001 << 6)          /*!<R 0  Transmit FIFO Under Flow Interrupt Status. This bit field is present only if the SPI is configured as a serial-slave device. 0: ssi_txu_intr interrupt is not active after masking 1: ssi_txu_intr interrupt is active after masking */
-#define SPI_BIT_MSTIS_FAEIS     ((u32)0x00000001 << 5)          /*!<R 0  When SPI is configured as serial-master, this bit field is present as Multi-Master Contention Interrupt Status. 0: ssi_mst_intr interrupt is not active after masking 1: ssi_mst_intr interrupt is active after masking When SPI is configured as serial-slave, this bit field is present as Frame Alignment Interrupt Status. 0: ssi_fae_intr interrupt not active after masking 1: ssi_fae_intr interrupt is active after masking */
-#define SPI_BIT_RXFIS           ((u32)0x00000001 << 4)          /*!<R 0  Receive FIFO Full Interrupt Status. 0: ssi_rxf_intr interrupt is not active after masking 1: ssi_rxf_intr interrupt is full after masking */
-#define SPI_BIT_RXOIS           ((u32)0x00000001 << 3)          /*!<R 0  Receive FIFO Overflow Interrupt Status. 0: ssi_rxo_intr interrupt is not active after masking 1: ssi_rxo_intr interrupt is active after masking */
-#define SPI_BIT_RXUIS           ((u32)0x00000001 << 2)          /*!<R 0  Receive FIFO Underflow Interrupt Status. 0: ssi_rxu_intr interrupt is not active after masking 1: ssi_rxu_intr interrupt is active after masking */
-#define SPI_BIT_TXOIS           ((u32)0x00000001 << 1)          /*!<R 0  Transmit FIFO Overflow Interrupt Status. 0: ssi_txo_intr interrupt is not active after masking 1: ssi_txo_intr interrupt is active after masking */
-#define SPI_BIT_TXEIS           ((u32)0x00000001 << 0)          /*!<R 0  Transmit FIFO Empty Interrupt Status. 0: ssi_txe_intr interrupt is not active after masking 1: ssi_txe_intr interrupt is active after masking */
+  * @brief Interrupt Status Register
+  * @{
+  */
+#define SPI_BIT_SSRIS       ((u32)0x00000001 << 7) /*!< R 0x0  SS_N Rising Edge Detect Interrupt Status. This bit field is present only if the SPI is configured as a serial-slave device. 0: ssi_ssr_intr interrupt is not active after masking 1: ssi_ssr_intr interrupt is active after masking*/
+#define SPI_BIT_TXUIS       ((u32)0x00000001 << 6) /*!< R 0x0  Transmit FIFO Under Flow Interrupt Status. This bit field is present only if the SPI is configured as a serial-slave device. 0: ssi_txu_intr interrupt is not active after masking 1: ssi_txu_intr interrupt is active after masking*/
+#define SPI_BIT_MSTIS_FAEIS ((u32)0x00000001 << 5) /*!< R 0x0  When SPI is configured as serial-master, this bit field is present as Multi-Master Contention Interrupt Status. 0: ssi_mst_intr interrupt is not active after masking 1: ssi_mst_intr interrupt is active after masking When SPI is configured as serial-slave, this bit field is present as Frame Alignment Interrupt Status.  0: ssi_fae_intr interrupt not active after masking 1: ssi_fae_intr interrupt is active after masking*/
+#define SPI_BIT_RXFIS       ((u32)0x00000001 << 4) /*!< R 0x0  Receive FIFO Full Interrupt Status. 0: ssi_rxf_intr interrupt is not active after masking 1: ssi_rxf_intr interrupt is full after masking*/
+#define SPI_BIT_RXOIS       ((u32)0x00000001 << 3) /*!< R 0x0  Receive FIFO Overflow Interrupt Status. 0: ssi_rxo_intr interrupt is not active after masking 1: ssi_rxo_intr interrupt is active after masking*/
+#define SPI_BIT_RXUIS       ((u32)0x00000001 << 2) /*!< R 0x0  Receive FIFO Underflow Interrupt Status. 0: ssi_rxu_intr interrupt is not active after masking 1: ssi_rxu_intr interrupt is active after masking*/
+#define SPI_BIT_TXOIS       ((u32)0x00000001 << 1) /*!< R 0x0  Transmit FIFO Overflow Interrupt Status. 0: ssi_txo_intr interrupt is not active after masking 1: ssi_txo_intr interrupt is active after masking*/
+#define SPI_BIT_TXEIS       ((u32)0x00000001 << 0) /*!< R 0x0  Transmit FIFO Empty Interrupt Status. 0: ssi_txe_intr interrupt is not active after masking 1: ssi_txe_intr interrupt is active after masking*/
 /** @} */
 
 /** @defgroup SPI_RISR
- * @brief Raw Interrupt Status Register
- * @{
- **/
-#define SPI_BIT_SSRIR           ((u32)0x00000001 << 7)          /*!<R 0  SS_N Rising Edge Detect Raw Interrupt Status. This bit field is present only if the SPI is configured as a serial-slave device. 0: ssi_ssr_intr interrupt is not active prior to masking 1: ssi_ssr_intr interrupt is active prior to masking */
-#define SPI_BIT_TXUIR           ((u32)0x00000001 << 6)          /*!<R 0  Transmit FIFO Under Flow Raw Interrupt Status. This bit field is present only if the SPI is configured as a serial-slave device. 0: ssi_txu_intr interrupt is not active prior to masking 1: ssi_txu_intr interrupt is active prior to masking */
-#define SPI_BIT_MSTIR_FAEIR     ((u32)0x00000001 << 5)          /*!<R 0  When SPI is configured as serial-master, this bit field is present as Multi-Master Contention Raw Interrupt Status. 0: ssi_mst_intr interrupt is not active prior to masking 1: ssi_mst_intr interrupt is active prior to masking When SPI is configured as serial-slave, this bit field is present as Frame Alignment Error Raw Interrupt Status. 0: ssi_fae_intr interrupt not active prior to masking 1: ssi_fae_intr interrupt is active prior to masking */
-#define SPI_BIT_RXFIR           ((u32)0x00000001 << 4)          /*!<R 0  Receive FIFO Full Raw Interrupt Status. 0: ssi_rxf_intr interrupt is not active prior to masking 1: ssi_rxf_intr interrupt is active prior to masking */
-#define SPI_BIT_RXOIR           ((u32)0x00000001 << 3)          /*!<R 0  Receive FIFO Overflow Raw Interrupt Status. 0: ssi_rxo_intr interrupt is not active prior to masking 1: ssi_rxo_intr interrupt is active prior to masking */
-#define SPI_BIT_RXUIR           ((u32)0x00000001 << 2)          /*!<R 0  Receive FIFO Underflow Raw Interrupt Status. 0: ssi_rxu_intr interrupt is not active prior to masking 1: ssi_rxu_intr interrupt is active prior to masking */
-#define SPI_BIT_TXOIR           ((u32)0x00000001 << 1)          /*!<R 0  Transmit FIFO Overflow Raw Interrupt Status. 0: ssi_txo_intr interrupt is not active prior to masking 1: ssi_txo_intr interrupt is active prior to masking */
-#define SPI_BIT_TXEIR           ((u32)0x00000001 << 0)          /*!<R 0  Transmit FIFO Empty Raw Interrupt Status. 0: ssi_txe_intr interrupt is not active prior to masking 1: ssi_txe_intr interrupt is active prior to masking */
+  * @brief Raw Interrupt Status Register
+  * @{
+  */
+#define SPI_BIT_SSRIR       ((u32)0x00000001 << 7) /*!< R 0x0  SS_N Rising Edge Detect Raw Interrupt Status. This bit field is present only if the SPI is configured as a serial-slave device. 0: ssi_ssr_intr interrupt is not active prior to masking 1: ssi_ssr_intr interrupt is active prior to masking*/
+#define SPI_BIT_TXUIR       ((u32)0x00000001 << 6) /*!< R 0x0  Transmit FIFO Under Flow Raw Interrupt Status. This bit field is present only if the SPI is configured as a serial-slave device. 0: ssi_txu_intr interrupt is not active prior to masking 1: ssi_txu_intr interrupt is active prior to masking*/
+#define SPI_BIT_MSTIR_FAEIR ((u32)0x00000001 << 5) /*!< R 0x0  When SPI is configured as serial-master, this bit field is present as Multi-Master Contention Raw Interrupt Status. 0: ssi_mst_intr interrupt is not active prior to masking 1: ssi_mst_intr interrupt is active prior to masking When SPI is configured as serial-slave, this bit field is present as Frame Alignment Error Raw Interrupt Status. 0: ssi_fae_intr interrupt not active prior to masking 1: ssi_fae_intr interrupt is active prior to masking*/
+#define SPI_BIT_RXFIR       ((u32)0x00000001 << 4) /*!< R 0x0  Receive FIFO Full Raw Interrupt Status. 0: ssi_rxf_intr interrupt is not active prior to masking 1: ssi_rxf_intr interrupt is active prior to masking*/
+#define SPI_BIT_RXOIR       ((u32)0x00000001 << 3) /*!< R 0x0  Receive FIFO Overflow Raw Interrupt Status. 0: ssi_rxo_intr interrupt is not active prior to masking 1: ssi_rxo_intr interrupt is active prior to masking*/
+#define SPI_BIT_RXUIR       ((u32)0x00000001 << 2) /*!< R 0x0  Receive FIFO Underflow Raw Interrupt Status. 0: ssi_rxu_intr interrupt is not active prior to masking 1: ssi_rxu_intr interrupt is active prior to masking*/
+#define SPI_BIT_TXOIR       ((u32)0x00000001 << 1) /*!< R 0x0  Transmit FIFO Overflow Raw Interrupt Status. 0: ssi_txo_intr interrupt is not active prior to masking 1: ssi_txo_intr interrupt is active prior to masking*/
+#define SPI_BIT_TXEIR       ((u32)0x00000001 << 0) /*!< R 0x0  Transmit FIFO Empty Raw Interrupt Status. 0: ssi_txe_intr interrupt is not active prior to masking 1: ssi_txe_intr interrupt is active prior to masking*/
 /** @} */
 
 /** @defgroup SPI_TXOICR
- * @brief Transmit FIFO Overflow Interrupt Clear Register
- * @{
- **/
-#define SPI_BIT_TXOICR          ((u32)0x00000001 << 0)          /*!<R 0  Clear Transmit FIFO Overflow Interrupt. This register reflects the status of the interrupt. A read from this register clears the ssi_txo_intr interrupt; writing has no effect. */
+  * @brief Transmit FIFO Overflow Interrupt Clear Register
+  * @{
+  */
+#define SPI_BIT_TXOICR ((u32)0x00000001 << 0) /*!< R 0x0  Clear Transmit FIFO Overflow Interrupt. This register reflects the status of the interrupt. A read from this register clears the ssi_txo_intr interrupt; writing has no effect.*/
 /** @} */
 
 /** @defgroup SPI_RXOICR
- * @brief Receive FIFO Overflow Interrupt Clear Register
- * @{
- **/
-#define SPI_BIT_RXOICR          ((u32)0x00000001 << 0)          /*!<R 0  Clear Receive FIFO Overflow Interrupt. This register reflects the status of the interrupt. A read from this register clears the ssi_rxo_intr interrupt; writing has no effect. */
+  * @brief Receive FIFO Overflow Interrupt Clear Register
+  * @{
+  */
+#define SPI_BIT_RXOICR ((u32)0x00000001 << 0) /*!< R 0x0  Clear Receive FIFO Overflow Interrupt. This register reflects the status of the interrupt. A read from this register clears the ssi_rxo_intr interrupt; writing has no effect.*/
 /** @} */
 
 /** @defgroup SPI_RXUICR
- * @brief Receive FIFO Underflow Interrupt Clear Register
- * @{
- **/
-#define SPI_BIT_RXUICR          ((u32)0x00000001 << 0)          /*!<R 0  Clear Receive FIFO Underflow Interrupt. This register reflects the status of the interrupt. A read from this register clears the ssi_rxu_intr interrupt; writing has no effect. */
+  * @brief Receive FIFO Underflow Interrupt Clear Register
+  * @{
+  */
+#define SPI_BIT_RXUICR ((u32)0x00000001 << 0) /*!< R 0x0  Clear Receive FIFO Underflow Interrupt. This register reflects the status of the interrupt. A read from this register clears the ssi_rxu_intr interrupt; writing has no effect.*/
 /** @} */
 
 /** @defgroup SPI_MSTICR_FAEICR
- * @brief Multi
- * @{
- **/
-#define SPI_BIT_MSTICR_FAEICR   ((u32)0x00000001 << 0)          /*!<R 0  Multi-Master Interrupt Clear Register/Frame Alignment Error Interrupt Clear Register. When SPI is configured as serial-master, this bit field is used to Clear Multi-Master Contention Interrupt. A read from this register clears the ssi_mst_intr interrupt; writing has no effect. When SPI is configured as serial-slave, this bit field is used to Clear Frame Alignment Interrupt. A read from this register clears the ssi_fae_intr interrupt; writing has no effect. */
+  * @brief Multi-Master & Frame Alignment Error Interrupt Clear Register
+  * @{
+  */
+#define SPI_BIT_MSTICR_FAEICR ((u32)0x00000001 << 0) /*!< R 0x0  Multi-Master Interrupt Clear Register/Frame Alignment Error Interrupt Clear Register. When SPI is configured as serial-master, this bit field is used to Clear Multi-Master Contention Interrupt. A read from this register clears the ssi_mst_intr interrupt; writing has no effect. When SPI is configured as serial-slave, this bit field is used to Clear Frame Alignment Interrupt. A read from this register clears the ssi_fae_intr interrupt; writing has no effect.*/
 /** @} */
 
 /** @defgroup SPI_ICR
- * @brief Interrupt Clear Register
- * @{
- **/
-#define SPI_BIT_ICR             ((u32)0x00000001 << 0)          /*!<R 0  Clear Interrupt. This register is set if any of the interrupts below are active. A read clears the ssi_txo_intr, ssi_rxu_intr, ssi_rxo_intr, and the ssi_mst_intr/ssi_fae_intr interrupts. Writing to this register has no effect. */
+  * @brief Interrupt Clear Register
+  * @{
+  */
+#define SPI_BIT_ICR ((u32)0x00000001 << 0) /*!< R 0x0  Clear Interrupt. This register is set if any of the interrupts below are active. A read clears the ssi_txo_intr, ssi_rxu_intr, ssi_rxo_intr, and the ssi_mst_intr/ssi_fae_intr interrupts. Writing to this register has no effect.*/
 /** @} */
 
 /** @defgroup SPI_DMACR
- * @brief DMA Control Register
- * @{
- **/
-#define SPI_BIT_TDMAE           ((u32)0x00000001 << 1)          /*!<R/W 0  Transmit DMA Enable. This bit enables/disables the transmit FIFO DMA channel. 0: Transmit DMA disabled 1: Transmit DMA enabled */
-#define SPI_BIT_RDMAE           ((u32)0x00000001 << 0)          /*!<R/W 0  Receive DMA Enable. This bit enables/disables the receive FIFO DMA channel 0: Receive DMA disabled 1: Receive DMA enabled */
+  * @brief DMA Control Register
+  * @{
+  */
+#define SPI_BIT_TDMAE ((u32)0x00000001 << 1) /*!< R/W 0x0  Transmit DMA Enable. This bit enables/disables the transmit FIFO DMA channel. 0: Transmit DMA disabled 1: Transmit DMA enabled*/
+#define SPI_BIT_RDMAE ((u32)0x00000001 << 0) /*!< R/W 0x0  Receive DMA Enable. This bit enables/disables the receive FIFO DMA channel 0: Receive DMA disabled 1: Receive DMA enabled*/
 /** @} */
 
 /** @defgroup SPI_DMATDLR
- * @brief DMA Transmit Data Level
- * @{
- **/
-#define SPI_MASK_DMATDL         ((u32)0x0000003F << 0)          /*!<R/W 0x0  Transmit Data Level. This bit field controls the level at which a DMA request is made by the transmit logic. It is equal to the watermark level; that is, the dma_tx_req signal is generated when the number of valid data entries in the transmit FIFO is equal to or below this field value, and TDMAE = 1. For DMATDL decode, refer to the following description: 000000: dma_tx_req is asserted when 0 data entry is present in transmit FIFO. 000001: dma_tx_req is asserted when 1 data entry is present in transmit FIFO. 000010: dma_tx_req is asserted when 2 data entries are present in transmit FIFO. 000011: dma_tx_req is asserted when 3 data entries are present in transmit FIFO. ... 111100: dma_tx_req is asserted when 60 data entries are present in transmit FIFO. 111101: dma_tx_req is asserted when 61 data entries are present in transmit FIFO. 111110: dma_tx_req is asserted when 62 data entries are present in transmit FIFO. 111111: dma_tx_req is asserted when 63 data entries are present in transmit FIFO. */
-#define SPI_DMATDL(x)           (((u32)((x) & 0x0000003F) << 0))
-#define SPI_GET_DMATDL(x)       ((u32)(((x >> 0) & 0x0000003F)))
+  * @brief DMA Transmit Data Level
+  * @{
+  */
+#define SPI_MASK_DMATDL   ((u32)0x0000003F << 0)           /*!< R/W 0x0  Transmit Data Level. This bit field controls the level at which a DMA request is made by the transmit logic. It is equal to the watermark level; that is, the dma_tx_req signal is generated when the number of valid data entries in the transmit FIFO is equal to or below this field value, and TDMAE = 1. For DMATDL decode, refer to the following description: 000000: dma_tx_req is asserted when 0 data entry is present in transmit FIFO. 000001: dma_tx_req is asserted when 1 data entry is present in transmit FIFO. 000010: dma_tx_req is asserted when 2 data entries are present in transmit FIFO. 000011: dma_tx_req is asserted when 3 data entries are present in transmit FIFO. ... 111100: dma_tx_req is asserted when 60 data entries are present in transmit FIFO. 111101: dma_tx_req is asserted when 61 data entries are present in transmit FIFO. 111110: dma_tx_req is asserted when 62 data entries are present in transmit FIFO. 111111: dma_tx_req is asserted when 63 data entries are present in transmit FIFO.*/
+#define SPI_DMATDL(x)     (((u32)((x) & 0x0000003F) << 0))
+#define SPI_GET_DMATDL(x) ((u32)(((x >> 0) & 0x0000003F)))
 /** @} */
 
 /** @defgroup SPI_DMARDLR
- * @brief DMA Receive Data Level
- * @{
- **/
-#define SPI_MASK_DMARDL         ((u32)0x0000003F << 0)          /*!<R/W 0x0  Receive Data Level. This bit field controls the level at which a DMA request is made by the receive logic. The watermark level = DMARDL+1; that is, dma_rx_req is generated when the number of valid data entries in the receive FIFO is equal to or above this field value + 1, and RDMAE=1. For DMARDL decode, refer to the following description: 000000: dma_rx_req is asserted when 1 or more data entries are present in transmit FIFO. 000001: dma_rx_req is asserted when 2 or more data entries are present in transmit FIFO. 000010: dma_rx_req is asserted when 3 or more data entries are present in transmit FIFO. 000011: dma_rx_req is asserted when 4 or more data entries are present in transmit FIFO. ... 111100: dma_rx_req is asserted when 61 or more data entries are present in transmit FIFO. 111101: dma_rx_req is asserted when 62 or more data entries are present in transmit FIFO. 111110: dma_rx_req is asserted when 63 or more data entries are present in transmit FIFO. 111111: dma_rx_req is asserted when 64 data entries are present in transmit FIFO. */
-#define SPI_DMARDL(x)           (((u32)((x) & 0x0000003F) << 0))
-#define SPI_GET_DMARDL(x)       ((u32)(((x >> 0) & 0x0000003F)))
+  * @brief DMA Receive Data Level
+  * @{
+  */
+#define SPI_MASK_DMARDL   ((u32)0x0000003F << 0)           /*!< R/W 0x0  Receive Data Level. This bit field controls the level at which a DMA request is made by the receive logic. The watermark level = DMARDL+1; that is, dma_rx_req is generated when the number of valid data entries in the receive FIFO is equal to or above this field value + 1, and RDMAE=1. For DMARDL decode, refer to the following description: 000000: dma_rx_req is asserted when 1 or more data entries are present in transmit FIFO. 000001: dma_rx_req is asserted when 2 or more data entries are present in transmit FIFO. 000010: dma_rx_req is asserted when 3 or more data entries are present in transmit FIFO. 000011: dma_rx_req is asserted when 4 or more data entries are present in transmit FIFO. ... 111100: dma_rx_req is asserted when 61 or more data entries are present in transmit FIFO. 111101: dma_rx_req is asserted when 62 or more data entries are present in transmit FIFO. 111110: dma_rx_req is asserted when 63 or more data entries are present in transmit FIFO. 111111: dma_rx_req is asserted when 64 data entries are present in transmit FIFO.*/
+#define SPI_DMARDL(x)     (((u32)((x) & 0x0000003F) << 0))
+#define SPI_GET_DMARDL(x) ((u32)(((x >> 0) & 0x0000003F)))
 /** @} */
 
 /** @defgroup SPI_TXUICR
- * @brief Transmit FIFO Underflow Interrupt Clear Register
- * @{
- **/
-#define SPI_BIT_TXUICR          ((u32)0x00000001 << 0)          /*!<R 0  When SPI is configured as serial-slave, this register is used to Clear Transmit FIFO Underflow Interrupt. This register reflects the status of the interrupt. A read from this register clears the ssi_txu_intr interrupt; writing has no effect. */
+  * @brief Transmit FIFO Underflow Interrupt Clear Register
+  * @{
+  */
+#define SPI_BIT_TXUICR ((u32)0x00000001 << 0) /*!< R 0x0  When SPI is configured as serial-slave, this register is used to Clear Transmit FIFO Underflow Interrupt. This register reflects the status of the interrupt. A read from this register clears the ssi_txu_intr interrupt; writing has no effect.*/
 /** @} */
 
 /** @defgroup SPI_SSRICR
- * @brief SS_N Rising Edge Detect Interrupt Clear Register
- * @{
- **/
-#define SPI_BIT_SSRICR          ((u32)0x00000001 << 0)          /*!<R 0  When SPI is configured as serial-slave, this register is used to Clear SS_N Rinsing Edge Detect Interrupt. This register reflects the status of the interrupt. A read from this register clears the ssi_ssr_intr interrupt; writing has no effect. */
+  * @brief SS_N Rising Edge Detect Interrupt Clear Register
+  * @{
+  */
+#define SPI_BIT_SSRICR ((u32)0x00000001 << 0) /*!< R 0x0  When SPI is configured as serial-slave, this register is used to Clear SS_N Rinsing Edge Detect Interrupt. This register reflects the status of the interrupt. A read from this register clears the ssi_ssr_intr interrupt; writing has no effect.*/
 /** @} */
 
 /** @defgroup SPI_DRx
- * @brief Data Register x
- * @{
- **/
-#define SPI_MASK_DRx            ((u32)0x0000FFFF << 0)          /*!<R/W 0x0  Data Register. When writing to this register, you must right-justify the data. Read data are automatically right-justified. Read: Receive FIFO buffer Write: Transmit FIFO buffer */
-#define SPI_DRx(x)              (((u32)((x) & 0x0000FFFF) << 0))
-#define SPI_GET_DRx(x)          ((u32)(((x >> 0) & 0x0000FFFF)))
+  * @brief Data Register x
+  * @{
+  */
+#define SPI_MASK_DRx   ((u32)0x0000FFFF << 0)           /*!< R/W 0x0  Data Register. When writing to this register, you must right-justify the data. Read data are automatically right-justified. Read: Receive FIFO buffer Write: Transmit FIFO buffer*/
+#define SPI_DRx(x)     (((u32)((x) & 0x0000FFFF) << 0))
+#define SPI_GET_DRx(x) ((u32)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
 /** @defgroup SPI_RX_SAMPLE_DLY
- * @brief rxd Sample Delay Register
- * @{
- **/
-#define SPI_MASK_RSD            ((u32)0x000000FF << 0)          /*!<R/W 0x0  Receive Data (rxd) Sample Delay. This register is used to delay the sample of the rxd input signal. Each value represents a single ssi_clk delay on the sample of the rxd signal. */
-#define SPI_RSD(x)              (((u32)((x) & 0x000000FF) << 0))
-#define SPI_GET_RSD(x)          ((u32)(((x >> 0) & 0x000000FF)))
+  * @brief rxd Sample Delay Register
+  * @{
+  */
+#define SPI_MASK_RSD   ((u32)0x000000FF << 0)           /*!< R/W 0x0  Receive Data (rxd) Sample Delay. This register is used to delay the sample of the rxd input signal. Each value represents a single ssi_clk delay on the sample of the rxd signal.*/
+#define SPI_RSD(x)     (((u32)((x) & 0x000000FF) << 0))
+#define SPI_GET_RSD(x) ((u32)(((x >> 0) & 0x000000FF)))
 /** @} */
+
 /** @} */
-
-
-
-/* Exported types --------------------------------------------------------*/
+/* Exported Types --------------------------------------------------------*/
 
 /** @defgroup SPI_Exported_Types SPI Exported Types
   * @{
-*****************************************************************************/
+  */
 
+/** @brief SPI Register Declaration
+  */
 
-/**
- * @brief SPI Register Declaration
- *****************************************************************************/
 typedef struct {
-	__IO uint32_t SPI_CTRLR0;                             /*!< CONTROL REGISTER 0 Register,  Address offset: 0x00 */
-	__IO uint32_t SPI_CTRLR1;                             /*!< CONTROL REGISTER 1 Register,  Address offset: 0x04 */
-	__IO uint32_t SPI_SSIENR;                             /*!< SSI ENABLE REGISTER,  Address offset: 0x08 */
-	__IO uint32_t RSVD0;                                  /*!<  Reserved,  Address offset:0xC */
-	__IO uint32_t SPI_SER;                                /*!< SLAVE ENABLE REGISTER,  Address offset: 0x10 */
-	__IO uint32_t SPI_BAUDR;                              /*!< BAUD RATE SELECT Register,  Address offset: 0x14 */
-	__IO uint32_t SPI_TXFTLR;                             /*!< TRANSMIT FIFO THRESHOLD LEVEL Register,  Address offset: 0x18 */
-	__IO uint32_t SPI_RXFTLR;                             /*!< RECEIVE FIFO THRESHOLD LEVEL Register,  Address offset: 0x1C */
-	__I  uint32_t SPI_TXFLR;                              /*!< TRANSMIT FIFO LEVEL REGISTER,  Address offset: 0x20 */
-	__I  uint32_t SPI_RXFLR;                              /*!< RECEIVE FIFO LEVEL REGISTER,  Address offset: 0x24 */
-	__I  uint32_t SPI_SR;                                 /*!< STATUS REGISTER,  Address offset: 0x28 */
-	__IO uint32_t SPI_IMR;                                /*!< INTERRUPT MASK REGISTER,  Address offset: 0x2C */
-	__I  uint32_t SPI_ISR;                                /*!< INTERRUPT STATUS REGISTER,  Address offset: 0x30 */
-	__I  uint32_t SPI_RISR;                               /*!< RAW INTERRUPT STATUS REGISTER,  Address offset: 0x34 */
-	__I  uint32_t SPI_TXOICR;                             /*!< TRANSMIT FIFO OVERFLOW INTERRUPT CLEAR REGISTER,  Address offset: 0x38 */
-	__I  uint32_t SPI_RXOICR;                             /*!< RECEIVE FIFO OVERFLOW INTERRUPT CLEAR REGISTER,  Address offset: 0x3C */
-	__I  uint32_t SPI_RXUICR;                             /*!< RECEIVE FIFO UNDERFLOW INTERRUPT CLEAR REGISTER,  Address offset: 0x40 */
-	__I  uint32_t SPI_MSTICR_FAEICR;                      /*!< MULTI-MASTER & FRAME ALIGNMENT ERROR INTERRUPT CLEAR REGISTER,  Address offset: 0x44 */
-	__I  uint32_t SPI_ICR;                                /*!< INTERRUPT CLEAR REGISTER,  Address offset: 0x48 */
-	__IO uint32_t SPI_DMACR;                              /*!< DMA CONTROL REGISTER,  Address offset: 0x4C */
-	__IO uint32_t SPI_DMATDLR;                            /*!< DMA TRANSMIT DATA LEVEL Register,  Address offset: 0x50 */
-	__IO uint32_t SPI_DMARDLR;                            /*!< DMA RECEIVE DATA LEVEL Register,  Address offset: 0x54 */
-	__I  uint32_t SPI_TXUICR;                             /*!< TRANSMIT FIFO UNDERFLOW INTERRUPT CLEAR REGISTER,  Address offset: 0x58 */
-	__I  uint32_t SPI_SSRICR;                             /*!< SS_N RISING EDGE DETECT INTERRUPT CLEAR REGISTER,  Address offset: 0x5C */
-	__IO uint32_t SPI_DRx[36];                            /*!< DATA REGISTER x Register,  Address offset: 0x60-0xEC */
-	__IO uint32_t SPI_RX_SAMPLE_DLY;                      /*!< RXD SAMPLE DELAY REGISTER,  Address offset: 0xF0 */
+	__IO uint32_t SPI_CTRLR0       ;  /*!< CONTROL REGISTER 0 Register,  Address offset:0x000 */
+	__IO uint32_t SPI_CTRLR1       ;  /*!< CONTROL REGISTER 1 Register,  Address offset:0x004 */
+	__IO uint32_t SPI_SSIENR       ;  /*!< SSI ENABLE REGISTER,  Address offset:0x008 */
+	__IO uint32_t RSVD0            ;  /*!< Reserved,  Address offset:0x00C-0x00F */
+	__IO uint32_t SPI_SER          ;  /*!< SLAVE ENABLE REGISTER,  Address offset:0x010 */
+	__IO uint32_t SPI_BAUDR        ;  /*!< BAUD RATE SELECT Register,  Address offset:0x014 */
+	__IO uint32_t SPI_TXFTLR       ;  /*!< TRANSMIT FIFO THRESHOLD LEVEL Register,  Address offset:0x018 */
+	__IO uint32_t SPI_RXFTLR       ;  /*!< RECEIVE FIFO THRESHOLD LEVEL Register,  Address offset:0x01C */
+	__I  uint32_t SPI_TXFLR        ;  /*!< TRANSMIT FIFO LEVEL REGISTER,  Address offset:0x020 */
+	__I  uint32_t SPI_RXFLR        ;  /*!< RECEIVE FIFO LEVEL REGISTER,  Address offset:0x024 */
+	__I  uint32_t SPI_SR           ;  /*!< STATUS REGISTER,  Address offset:0x028 */
+	__IO uint32_t SPI_IMR          ;  /*!< INTERRUPT MASK REGISTER,  Address offset:0x02C */
+	__I  uint32_t SPI_ISR          ;  /*!< INTERRUPT STATUS REGISTER,  Address offset:0x030 */
+	__I  uint32_t SPI_RISR         ;  /*!< RAW INTERRUPT STATUS REGISTER,  Address offset:0x034 */
+	__I  uint32_t SPI_TXOICR       ;  /*!< TRANSMIT FIFO OVERFLOW INTERRUPT CLEAR REGISTER,  Address offset:0x038 */
+	__I  uint32_t SPI_RXOICR       ;  /*!< RECEIVE FIFO OVERFLOW INTERRUPT CLEAR REGISTER,  Address offset:0x03C */
+	__I  uint32_t SPI_RXUICR       ;  /*!< RECEIVE FIFO UNDERFLOW INTERRUPT CLEAR REGISTER,  Address offset:0x040 */
+	__I  uint32_t SPI_MSTICR_FAEICR;  /*!< MULTI-MASTER & FRAME ALIGNMENT ERROR INTERRUPT CLEAR REGISTER,  Address offset:0x044 */
+	__I  uint32_t SPI_ICR          ;  /*!< INTERRUPT CLEAR REGISTER,  Address offset:0x048 */
+	__IO uint32_t SPI_DMACR        ;  /*!< DMA CONTROL REGISTER,  Address offset:0x04C */
+	__IO uint32_t SPI_DMATDLR      ;  /*!< DMA TRANSMIT DATA LEVEL Register,  Address offset:0x050 */
+	__IO uint32_t SPI_DMARDLR      ;  /*!< DMA RECEIVE DATA LEVEL Register,  Address offset:0x054 */
+	__I  uint32_t SPI_TXUICR       ;  /*!< TRANSMIT FIFO UNDERFLOW INTERRUPT CLEAR REGISTER,  Address offset:0x058 */
+	__I  uint32_t SPI_SSRICR       ;  /*!< SS_N RISING EDGE DETECT INTERRUPT CLEAR REGISTER,  Address offset:0x05C */
+	__IO uint32_t SPI_DRx[36]      ;  /*!< DATA REGISTER x Register,  Address offset:0x060-0x0EC */
+	__IO uint32_t SPI_RX_SAMPLE_DLY;  /*!< RXD SAMPLE DELAY REGISTER,  Address offset:0x0F0 */
 } SPI_TypeDef;
+
 /** @} */
+
+
+// Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */

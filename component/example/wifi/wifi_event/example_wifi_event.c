@@ -22,23 +22,23 @@ static void exampe_wifi_join_status_event_hdl(char *buf, int buf_len, int flags,
 	if (join_status == RTW_JOINSTATUS_FAIL) {/*Include 4 way handshake but not include DHCP*/
 		RTK_LOGI(TAG, "Join fail, reason = %d ", fail_info->fail_reason);/*definition in enum int*/
 		switch (fail_info->fail_reason) {
-		case RTW_CONNECT_SCAN_FAIL:
+		case -RTK_ERR_WIFI_CONN_SCAN_FAIL:
 			RTK_LOGI(NOTAG, "(Can not found target AP)\n");
 			break;
-		case RTW_CONNECT_INVALID_KEY:
+		case -RTK_ERR_WIFI_CONN_INVALID_KEY:
 			RTK_LOGI(NOTAG, "(Password format wrong)\n");
 			break;
-		case RTW_CONNECT_AUTH_PASSWORD_WRONG:
-		case RTW_CONNECT_4WAY_PASSWORD_WRONG:
+		case -RTK_ERR_WIFI_CONN_AUTH_PASSWORD_WRONG:
+		case -RTK_ERR_WIFI_CONN_4WAY_PASSWORD_WRONG:
 			RTK_LOGI(NOTAG, "(Password may wrong)\n");/*Not entirely accurate*/
 			break;
-		case RTW_CONNECT_AUTH_FAIL:
+		case -RTK_ERR_WIFI_CONN_AUTH_FAIL:
 			RTK_LOGI(NOTAG, "(Auth fail)\n");
 			break;
-		case RTW_CONNECT_ASSOC_FAIL:
+		case -RTK_ERR_WIFI_CONN_ASSOC_FAIL:
 			RTK_LOGI(NOTAG, "(Assoc fail)\n");
 			break;
-		case RTW_CONNECT_4WAY_HANDSHAKE_FAIL:
+		case -RTK_ERR_WIFI_CONN_4WAY_HANDSHAKE_FAIL:
 			RTK_LOGI(NOTAG, "(4 way handshake fail)\n");
 			break;
 		default:
@@ -46,11 +46,11 @@ static void exampe_wifi_join_status_event_hdl(char *buf, int buf_len, int flags,
 			break;
 		}
 		/*Get more detail fail info*/
-		if (fail_info->fail_reason == RTW_CONNECT_AUTH_FAIL || fail_info->fail_reason == RTW_CONNECT_ASSOC_FAIL ||
-			fail_info->fail_reason == RTW_CONNECT_AUTH_PASSWORD_WRONG) {
+		if (fail_info->fail_reason == -RTK_ERR_WIFI_CONN_AUTH_FAIL || fail_info->fail_reason == -RTK_ERR_WIFI_CONN_ASSOC_FAIL ||
+			fail_info->fail_reason == -RTK_ERR_WIFI_CONN_AUTH_PASSWORD_WRONG) {
 			/*status code is valid during auth and assoc*/
 			RTK_LOGI(TAG, "status code from AP = %d\n", fail_info->reason_or_status_code);
-		} else if (fail_info->fail_reason == RTW_CONNECT_4WAY_HANDSHAKE_FAIL || RTW_CONNECT_4WAY_PASSWORD_WRONG) {
+		} else if (fail_info->fail_reason == -RTK_ERR_WIFI_CONN_4WAY_HANDSHAKE_FAIL || -RTK_ERR_WIFI_CONN_4WAY_PASSWORD_WRONG) {
 			/*reason code is valid after assoc success*/
 			RTK_LOGI(TAG, "reason code from AP = %d\n", fail_info->reason_or_status_code);
 		}

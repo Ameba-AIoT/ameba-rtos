@@ -44,266 +44,264 @@
   * @endverbatim
   */
 
-/* AUTO_GEN_START */
-
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
 
-/** @addtogroup ADC
-* @brief COMP driver modules
-* @{
-*/
+
+/* AUTO_GEN_START */
+// Do NOT modify any AUTO_GEN code below
 
 /* Registers Definitions --------------------------------------------------------*/
 
 /** @defgroup COMP_Register_Definitions COMP Register Definitions
- * @{
- *****************************************************************************/
+  * @{
+  */
 
 /** @defgroup COMP_REF_CHx
- * @brief Comparator Channel x Reference Voltage Register
- * @{
- **/
-#define COMP_MASK_REF1_CHx               ((u32)0x0000001F << 16)          /*!<R/W 0h  This field controls the comparator channel x internal reference voltage 1. Vref1 is equal to (the value of bit_comp_ref1)*0.1V. Therefore, when bit_comp_ref1 is 5, Vref1 is 0.5V. Vref1 is used as high level thredshold, so user must keep Vref1 >= Vref0. */
-#define COMP_REF1_CHx(x)                 ((u32)(((x) & 0x0000001F) << 16))
-#define COMP_GET_REF1_CHx(x)             ((u32)(((x >> 16) & 0x0000001F)))
-#define COMP_MASK_REF0_CHx               ((u32)0x0000001F << 0)          /*!<R/W 0h  This field controls the comparator channel x internal reference voltage 0. Vref0 is equal to (the value of bit_comp_ref0)*0.1V. Therefore, when bit_comp_ref0 is 5, Vref0 is 0.5V. Vref0 is used as low level thredshold, so user must keep Vref1 >= Vref0. */
-#define COMP_REF0_CHx(x)                 ((u32)(((x) & 0x0000001F) << 0))
-#define COMP_GET_REF0_CHx(x)             ((u32)(((x >> 0) & 0x0000001F)))
+  * @brief Comparator Channel x Reference Voltage Register
+  * @{
+  */
+#define COMP_MASK_REF1_CHx   ((u32)0x0000001F << 16)           /*!< R/W 0h  This field controls the comparator channel x internal reference voltage 1. Vref1 is equal to (the value of bit_comp_ref1)*0.1V. Therefore, when bit_comp_ref1 is 5, Vref1 is 0.5V. Vref1 is used as high level thredshold, so user must keep Vref1 >= Vref0.*/
+#define COMP_REF1_CHx(x)     (((u32)((x) & 0x0000001F) << 16))
+#define COMP_GET_REF1_CHx(x) ((u32)(((x >> 16) & 0x0000001F)))
+#define COMP_MASK_REF0_CHx   ((u32)0x0000001F << 0)            /*!< R/W 0h  This field controls the comparator channel x internal reference voltage 0. Vref0 is equal to (the value of bit_comp_ref0)*0.1V. Therefore, when bit_comp_ref0 is 5, Vref0 is 0.5V. Vref0 is used as low level thredshold, so user must keep Vref1 >= Vref0.*/
+#define COMP_REF0_CHx(x)     (((u32)((x) & 0x0000001F) << 0))
+#define COMP_GET_REF0_CHx(x) ((u32)(((x >> 0) & 0x0000001F)))
 /** @} */
 
 /** @defgroup COMP_INTR_CTRL
- * @brief Comparator Interrupt Control Register
- * @{
- **/
-#define COMP_MASK_WK_SYS_CTRL_3          ((u32)0x00000003 << 26)          /*!<R/W 0h  This field defines the criterion of when comparator channel 3 should wake up system. The comparator should send wakeup signal only when bit_comp_wk_sys_en is 1, if the criterion matches. 0: When Vin < Vref0, the comparator wakes up system. 1: When Vin >= Vref1, the comparator wakes up system. 2: When Vin > Vref0 and Vin < Vref1, the comparator wakes up system. */
-#define COMP_WK_SYS_CTRL_3(x)            ((u32)(((x) & 0x00000003) << 26))
-#define COMP_GET_WK_SYS_CTRL_3(x)        ((u32)(((x >> 26) & 0x00000003)))
-#define COMP_BIT_WK_SYS_EN_3             ((u32)0x00000001 << 25)          /*!<R/W 0h  This bit controls whether the comparator channel 3 sends wakeup signal or not when the criterion of bit_comp_wk_sys_ctrl matches. 0: Disable comparator wakes up system. 1: Enable comparator wakes up system. */
-#define COMP_MASK_WK_SYS_CTRL_2          ((u32)0x00000003 << 23)          /*!<R/W 0h  This field defines the criterion of when comparator channel 2 should wake up system. The comparator should send wakeup signal only when bit_comp_wk_sys_en is 1, if the criterion matches. 0: When Vin < Vref0, the comparator wakes up system. 1: When Vin >= Vref1, the comparator wakes up system. 2: When Vin > Vref0 and Vin < Vref1, the comparator wakes up system. */
-#define COMP_WK_SYS_CTRL_2(x)            ((u32)(((x) & 0x00000003) << 23))
-#define COMP_GET_WK_SYS_CTRL_2(x)        ((u32)(((x >> 23) & 0x00000003)))
-#define COMP_BIT_WK_SYS_EN_2             ((u32)0x00000001 << 22)          /*!<R/W 0h  This bit controls whether the comparator channel 2 sends wakeup signal or not when the criterion of bit_comp_wk_sys_ctrl matches. 0: Disable comparator wakes up system. 1: Enable comparator wakes up system. */
-#define COMP_MASK_WK_SYS_CTRL_1          ((u32)0x00000003 << 20)          /*!<R/W 0h  This field defines the criterion of when comparator channel 1 should wake up system. The comparator should send wakeup signal only when bit_comp_wk_sys_en is 1, if the criterion matches. 0: When Vin < Vref0, the comparator wakes up system. 1: When Vin >= Vref1, the comparator wakes up system. 2: When Vin > Vref0 and Vin < Vref1, the comparator wakes up system. */
-#define COMP_WK_SYS_CTRL_1(x)            ((u32)(((x) & 0x00000003) << 20))
-#define COMP_GET_WK_SYS_CTRL_1(x)        ((u32)(((x >> 20) & 0x00000003)))
-#define COMP_BIT_WK_SYS_EN_1             ((u32)0x00000001 << 19)          /*!<R/W 0h  This bit controls whether the comparator channel 1 sends wakeup signal or not when the criterion of bit_comp_wk_sys_ctrl matches. 0: Disable comparator wakes up system. 1: Enable comparator wakes up system. */
-#define COMP_MASK_WK_SYS_CTRL_0          ((u32)0x00000003 << 17)          /*!<R/W 0h  This field defines the criterion of when comparator channel 0 should wake up system. The comparator should send wakeup signal only when bit_comp_wk_sys_en is 1, if the criterion matches. 0: When Vin < Vref0, the comparator wakes up system. 1: When Vin >= Vref1, the comparator wakes up system. 2: When Vin > Vref0 and Vin < Vref1, the comparator wakes up system. */
-#define COMP_WK_SYS_CTRL_0(x)            ((u32)(((x) & 0x00000003) << 17))
-#define COMP_GET_WK_SYS_CTRL_0(x)        ((u32)(((x >> 17) & 0x00000003)))
-#define COMP_BIT_WK_SYS_EN_0             ((u32)0x00000001 << 16)          /*!<R/W 0h  This bit controls whether the comparator channel 0 sends wakeup signal or not when the criterion of bit_comp_wk_sys_ctrl matches. 0: Disable comparator wakes up system. 1: Enable comparator wakes up system. */
-#define COMP_MASK_WK_ADC_CTRL_3          ((u32)0x00000003 << 10)          /*!<R/W 0h  This field defines the criterion of when comparator channel 3 should wake up ADC. The comparator should send wakeup signal only when bit_comp_wk_adc_en is 1, if the criterion matches. 0: When Vin < Vref0, the comparator wakes up ADC. 1: When Vin >= Vref1, the comparator wakes up ADC. 2: When Vin > Vref0 and Vin < Vref1, the comparator wakes up ADC. */
-#define COMP_WK_ADC_CTRL_3(x)            ((u32)(((x) & 0x00000003) << 10))
-#define COMP_GET_WK_ADC_CTRL_3(x)        ((u32)(((x >> 10) & 0x00000003)))
-#define COMP_BIT_WK_ADC_EN_3             ((u32)0x00000001 << 9)          /*!<R/W 0h  This bit controls whether the comparator channel 3 sends wakeup signal or not when the criterion of bit_comp_wk_adc_ctrl matches. 0: Disable comparator wakes up ADC. 1: Enable comparator wakes up ADC. */
-#define COMP_MASK_WK_ADC_CTRL_2          ((u32)0x00000003 << 7)          /*!<R/W 0h  This field defines the criterion of when comparator channel 2 should wake up ADC. The comparator should send wakeup signal only when bit_comp_wk_adc_en is 1, if the criterion matches. 0: When Vin < Vref0, the comparator wakes up ADC. 1: When Vin >= Vref1, the comparator wakes up ADC. 2: When Vin > Vref0 and Vin < Vref1, the comparator wakes up ADC. */
-#define COMP_WK_ADC_CTRL_2(x)            ((u32)(((x) & 0x00000003) << 7))
-#define COMP_GET_WK_ADC_CTRL_2(x)        ((u32)(((x >> 7) & 0x00000003)))
-#define COMP_BIT_WK_ADC_EN_2             ((u32)0x00000001 << 6)          /*!<R/W 0h  This bit controls whether the comparator channel 2 sends wakeup signal or not when the criterion of bit_comp_wk_adc_ctrl matches. 0: Disable comparator wakes up ADC. 1: Enable comparator wakes up ADC. */
-#define COMP_MASK_WK_ADC_CTRL_1          ((u32)0x00000003 << 4)          /*!<R/W 0h  This field defines the criterion of when comparator channel 1 should wake up ADC. The comparator should send wakeup signal only when bit_comp_wk_adc_en is 1, if the criterion matches. 0: When Vin < Vref0, the comparator wakes up ADC. 1: When Vin >= Vref1, the comparator wakes up ADC. 2: When Vin > Vref0 and Vin < Vref1, the comparator wakes up ADC. */
-#define COMP_WK_ADC_CTRL_1(x)            ((u32)(((x) & 0x00000003) << 4))
-#define COMP_GET_WK_ADC_CTRL_1(x)        ((u32)(((x >> 4) & 0x00000003)))
-#define COMP_BIT_WK_ADC_EN_1             ((u32)0x00000001 << 3)          /*!<R/W 0h  This bit controls whether the comparator channel 1 sends wakeup signal or not when the criterion of bit_comp_wk_adc_ctrl matches. 0: Disable comparator wakes up ADC. 1: Enable comparator wakes up ADC. */
-#define COMP_MASK_WK_ADC_CTRL_0          ((u32)0x00000003 << 1)          /*!<R/W 0h  This field defines the criterion of when comparator channel 0 should wake up ADC. The comparator should send wakeup signal only when bit_comp_wk_adc_en is 1, if the criterion matches. 0: When Vin < Vref0, the comparator wakes up ADC. 1: When Vin >= Vref1, the comparator wakes up ADC. 2: When Vin > Vref0 and Vin < Vref1, the comparator wakes up ADC. */
-#define COMP_WK_ADC_CTRL_0(x)            ((u32)(((x) & 0x00000003) << 1))
-#define COMP_GET_WK_ADC_CTRL_0(x)        ((u32)(((x >> 1) & 0x00000003)))
-#define COMP_BIT_WK_ADC_EN_0             ((u32)0x00000001 << 0)          /*!<R/W 0h  This bit controls whether the comparator channel 0 sends wakeup signal or not when the criterion of bit_comp_wk_adc_ctrl matches. 0: Disable comparator wakes up ADC. 1: Enable comparator wakes up ADC. */
+  * @brief Comparator Interrupt Control Register
+  * @{
+  */
+#define COMP_MASK_WK_SYS_CTRL_3   ((u32)0x00000003 << 26)           /*!< R/W 0h  This field defines the criterion of when comparator channel 3 should wake up system. The comparator should send wakeup signal only when bit_comp_wk_sys_en is 1, if the criterion matches.  0: When Vin < Vref0, the comparator wakes up system.  1: When Vin >= Vref1, the comparator wakes up system.  2: When Vin > Vref0 and Vin < Vref1, the comparator wakes up system.*/
+#define COMP_WK_SYS_CTRL_3(x)     (((u32)((x) & 0x00000003) << 26))
+#define COMP_GET_WK_SYS_CTRL_3(x) ((u32)(((x >> 26) & 0x00000003)))
+#define COMP_BIT_WK_SYS_EN_3      ((u32)0x00000001 << 25)           /*!< R/W 0h  This bit controls whether the comparator channel 3 sends wakeup signal or not when the criterion of bit_comp_wk_sys_ctrl matches.  0: Disable comparator wakes up system.  1: Enable comparator wakes up system.*/
+#define COMP_MASK_WK_SYS_CTRL_2   ((u32)0x00000003 << 23)           /*!< R/W 0h  This field defines the criterion of when comparator channel 2 should wake up system. The comparator should send wakeup signal only when bit_comp_wk_sys_en is 1, if the criterion matches.  0: When Vin < Vref0, the comparator wakes up system.  1: When Vin >= Vref1, the comparator wakes up system.  2: When Vin > Vref0 and Vin < Vref1, the comparator wakes up system.*/
+#define COMP_WK_SYS_CTRL_2(x)     (((u32)((x) & 0x00000003) << 23))
+#define COMP_GET_WK_SYS_CTRL_2(x) ((u32)(((x >> 23) & 0x00000003)))
+#define COMP_BIT_WK_SYS_EN_2      ((u32)0x00000001 << 22)           /*!< R/W 0h  This bit controls whether the comparator channel 2 sends wakeup signal or not when the criterion of bit_comp_wk_sys_ctrl matches.  0: Disable comparator wakes up system.  1: Enable comparator wakes up system.*/
+#define COMP_MASK_WK_SYS_CTRL_1   ((u32)0x00000003 << 20)           /*!< R/W 0h  This field defines the criterion of when comparator channel 1 should wake up system. The comparator should send wakeup signal only when bit_comp_wk_sys_en is 1, if the criterion matches.  0: When Vin < Vref0, the comparator wakes up system.  1: When Vin >= Vref1, the comparator wakes up system.  2: When Vin > Vref0 and Vin < Vref1, the comparator wakes up system.*/
+#define COMP_WK_SYS_CTRL_1(x)     (((u32)((x) & 0x00000003) << 20))
+#define COMP_GET_WK_SYS_CTRL_1(x) ((u32)(((x >> 20) & 0x00000003)))
+#define COMP_BIT_WK_SYS_EN_1      ((u32)0x00000001 << 19)           /*!< R/W 0h  This bit controls whether the comparator channel 1 sends wakeup signal or not when the criterion of bit_comp_wk_sys_ctrl matches.  0: Disable comparator wakes up system.  1: Enable comparator wakes up system.*/
+#define COMP_MASK_WK_SYS_CTRL_0   ((u32)0x00000003 << 17)           /*!< R/W 0h  This field defines the criterion of when comparator channel 0 should wake up system. The comparator should send wakeup signal only when bit_comp_wk_sys_en is 1, if the criterion matches.  0: When Vin < Vref0, the comparator wakes up system.  1: When Vin >= Vref1, the comparator wakes up system.  2: When Vin > Vref0 and Vin < Vref1, the comparator wakes up system.*/
+#define COMP_WK_SYS_CTRL_0(x)     (((u32)((x) & 0x00000003) << 17))
+#define COMP_GET_WK_SYS_CTRL_0(x) ((u32)(((x >> 17) & 0x00000003)))
+#define COMP_BIT_WK_SYS_EN_0      ((u32)0x00000001 << 16)           /*!< R/W 0h  This bit controls whether the comparator channel 0 sends wakeup signal or not when the criterion of bit_comp_wk_sys_ctrl matches.  0: Disable comparator wakes up system.  1: Enable comparator wakes up system.*/
+#define COMP_MASK_WK_ADC_CTRL_3   ((u32)0x00000003 << 10)           /*!< R/W 0h  This field defines the criterion of when comparator channel 3 should wake up ADC. The comparator should send wakeup signal only when bit_comp_wk_adc_en is 1, if the criterion matches.  0: When Vin < Vref0, the comparator wakes up ADC.  1: When Vin >= Vref1, the comparator wakes up ADC.  2: When Vin > Vref0 and Vin < Vref1, the comparator wakes up ADC.*/
+#define COMP_WK_ADC_CTRL_3(x)     (((u32)((x) & 0x00000003) << 10))
+#define COMP_GET_WK_ADC_CTRL_3(x) ((u32)(((x >> 10) & 0x00000003)))
+#define COMP_BIT_WK_ADC_EN_3      ((u32)0x00000001 << 9)            /*!< R/W 0h  This bit controls whether the comparator channel 3 sends wakeup signal or not when the criterion of bit_comp_wk_adc_ctrl matches.  0: Disable comparator wakes up ADC.  1: Enable comparator wakes up ADC.*/
+#define COMP_MASK_WK_ADC_CTRL_2   ((u32)0x00000003 << 7)            /*!< R/W 0h  This field defines the criterion of when comparator channel 2 should wake up ADC. The comparator should send wakeup signal only when bit_comp_wk_adc_en is 1, if the criterion matches.  0: When Vin < Vref0, the comparator wakes up ADC.  1: When Vin >= Vref1, the comparator wakes up ADC.  2: When Vin > Vref0 and Vin < Vref1, the comparator wakes up ADC.*/
+#define COMP_WK_ADC_CTRL_2(x)     (((u32)((x) & 0x00000003) << 7))
+#define COMP_GET_WK_ADC_CTRL_2(x) ((u32)(((x >> 7) & 0x00000003)))
+#define COMP_BIT_WK_ADC_EN_2      ((u32)0x00000001 << 6)            /*!< R/W 0h  This bit controls whether the comparator channel 2 sends wakeup signal or not when the criterion of bit_comp_wk_adc_ctrl matches.  0: Disable comparator wakes up ADC.  1: Enable comparator wakes up ADC.*/
+#define COMP_MASK_WK_ADC_CTRL_1   ((u32)0x00000003 << 4)            /*!< R/W 0h  This field defines the criterion of when comparator channel 1 should wake up ADC. The comparator should send wakeup signal only when bit_comp_wk_adc_en is 1, if the criterion matches.  0: When Vin < Vref0, the comparator wakes up ADC.  1: When Vin >= Vref1, the comparator wakes up ADC.  2: When Vin > Vref0 and Vin < Vref1, the comparator wakes up ADC.*/
+#define COMP_WK_ADC_CTRL_1(x)     (((u32)((x) & 0x00000003) << 4))
+#define COMP_GET_WK_ADC_CTRL_1(x) ((u32)(((x >> 4) & 0x00000003)))
+#define COMP_BIT_WK_ADC_EN_1      ((u32)0x00000001 << 3)            /*!< R/W 0h  This bit controls whether the comparator channel 1 sends wakeup signal or not when the criterion of bit_comp_wk_adc_ctrl matches.  0: Disable comparator wakes up ADC.  1: Enable comparator wakes up ADC.*/
+#define COMP_MASK_WK_ADC_CTRL_0   ((u32)0x00000003 << 1)            /*!< R/W 0h  This field defines the criterion of when comparator channel 0 should wake up ADC. The comparator should send wakeup signal only when bit_comp_wk_adc_en is 1, if the criterion matches.  0: When Vin < Vref0, the comparator wakes up ADC.  1: When Vin >= Vref1, the comparator wakes up ADC.  2: When Vin > Vref0 and Vin < Vref1, the comparator wakes up ADC.*/
+#define COMP_WK_ADC_CTRL_0(x)     (((u32)((x) & 0x00000003) << 1))
+#define COMP_GET_WK_ADC_CTRL_0(x) ((u32)(((x >> 1) & 0x00000003)))
+#define COMP_BIT_WK_ADC_EN_0      ((u32)0x00000001 << 0)            /*!< R/W 0h  This bit controls whether the comparator channel 0 sends wakeup signal or not when the criterion of bit_comp_wk_adc_ctrl matches.  0: Disable comparator wakes up ADC.  1: Enable comparator wakes up ADC.*/
 /** @} */
 
 /** @defgroup COMP_WK_STS
- * @brief Comparator Wakeup ADC/SYS Status Register
- * @{
- **/
-#define COMP_BIT_WK_SYS_STS_3            ((u32)0x00000001 << 25)          /*!<RW1C 0h  Channle 3 system wakeup status */
-#define COMP_BIT_WK_SYS_STS_2            ((u32)0x00000001 << 22)          /*!<RW1C 0h  Channel 2 system wakeup status */
-#define COMP_BIT_WK_SYS_STS_1            ((u32)0x00000001 << 19)          /*!<RW1C 0h  Channle 1 system wakeup status */
-#define COMP_BIT_WK_SYS_STS_0            ((u32)0x00000001 << 16)          /*!<RW1C 0h  Channle 0 system wakeup status */
-#define COMP_BIT_WK_ADC_STS_3            ((u32)0x00000001 << 9)          /*!<RW1C 0h  Channle 3 ADC wakeup status */
-#define COMP_BIT_WK_ADC_STS_2            ((u32)0x00000001 << 6)          /*!<RW1C 0h  Channel 2 ADC wakeup status */
-#define COMP_BIT_WK_ADC_STS_1            ((u32)0x00000001 << 3)          /*!<RW1C 0h  Channle 1 ADC wakeup status */
-#define COMP_BIT_WK_ADC_STS_0            ((u32)0x00000001 << 0)          /*!<RW1C 0h  Channle 0 ADC wakeup status */
+  * @brief Comparator Wakeup ADC/SYS Status Register
+  * @{
+  */
+#define COMP_BIT_WK_SYS_STS_3 ((u32)0x00000001 << 25) /*!< RW1C 0h  Channle 3 system wakeup status*/
+#define COMP_BIT_WK_SYS_STS_2 ((u32)0x00000001 << 22) /*!< RW1C 0h  Channel 2 system wakeup status*/
+#define COMP_BIT_WK_SYS_STS_1 ((u32)0x00000001 << 19) /*!< RW1C 0h  Channle 1 system wakeup status*/
+#define COMP_BIT_WK_SYS_STS_0 ((u32)0x00000001 << 16) /*!< RW1C 0h  Channle 0 system wakeup status*/
+#define COMP_BIT_WK_ADC_STS_3 ((u32)0x00000001 << 9)  /*!< RW1C 0h  Channle 3 ADC wakeup status*/
+#define COMP_BIT_WK_ADC_STS_2 ((u32)0x00000001 << 6)  /*!< RW1C 0h  Channel 2 ADC wakeup status*/
+#define COMP_BIT_WK_ADC_STS_1 ((u32)0x00000001 << 3)  /*!< RW1C 0h  Channle 1 ADC wakeup status*/
+#define COMP_BIT_WK_ADC_STS_0 ((u32)0x00000001 << 0)  /*!< RW1C 0h  Channle 0 ADC wakeup status*/
 /** @} */
 
 /** @defgroup COMP_WK_STS_RAW
- * @brief Comparator Wakeup Register
- * @{
- **/
-#define COMP_BIT_SYS_WAKE_3              ((u32)0x00000001 << 25)          /*!<R 0h  Channle 3 system wakeup status raw */
-#define COMP_BIT_SYS_WAKE_2              ((u32)0x00000001 << 22)          /*!<R 0h  Channel 2 system wakeup status raw */
-#define COMP_BIT_SYS_WAKE_1              ((u32)0x00000001 << 19)          /*!<R 0h  Channle 1 system wakeup status raw */
-#define COMP_BIT_SYS_WAKE_0              ((u32)0x00000001 << 16)          /*!<R 0h  Channle 0 system wakeup status raw */
-#define COMP_BIT_ADC_WAKE_3_RAW          ((u32)0x00000001 << 9)          /*!<R 0h  Channle 3 ADC wakeup status raw */
-#define COMP_BIT_ADC_WAKE_2_RAW          ((u32)0x00000001 << 6)          /*!<R 0h  Channel 2 ADC wakeup status raw */
-#define COMP_BIT_ADC_WAKE_1_RAW          ((u32)0x00000001 << 3)          /*!<R 0h  Channle 1 ADC wakeup status raw */
-#define COMP_BIT_ADC_WAKE_0_RAW          ((u32)0x00000001 << 0)          /*!<R 0h  Channle 0 ADC wakeup status raw */
+  * @brief Comparator Wakeup Register
+  * @{
+  */
+#define COMP_BIT_SYS_WAKE_3     ((u32)0x00000001 << 25) /*!< R 0h  Channle 3 system wakeup status raw*/
+#define COMP_BIT_SYS_WAKE_2     ((u32)0x00000001 << 22) /*!< R 0h  Channel 2 system wakeup status raw*/
+#define COMP_BIT_SYS_WAKE_1     ((u32)0x00000001 << 19) /*!< R 0h  Channle 1 system wakeup status raw*/
+#define COMP_BIT_SYS_WAKE_0     ((u32)0x00000001 << 16) /*!< R 0h  Channle 0 system wakeup status raw*/
+#define COMP_BIT_ADC_WAKE_3_RAW ((u32)0x00000001 << 9)  /*!< R 0h  Channle 3 ADC wakeup status raw*/
+#define COMP_BIT_ADC_WAKE_2_RAW ((u32)0x00000001 << 6)  /*!< R 0h  Channel 2 ADC wakeup status raw*/
+#define COMP_BIT_ADC_WAKE_1_RAW ((u32)0x00000001 << 3)  /*!< R 0h  Channle 1 ADC wakeup status raw*/
+#define COMP_BIT_ADC_WAKE_0_RAW ((u32)0x00000001 << 0)  /*!< R 0h  Channle 0 ADC wakeup status raw*/
 /** @} */
 
 /** @defgroup COMP_CHSW_LIST
- * @brief Comparator Channel Switch List Register
- * @{
- **/
-#define COMP_MASK_CHSW_3                 ((u32)0x0000000F << 12)          /*!<R/W 0h  This field defines the channel 3 to do a comparison when the start-compare event takes place. */
-#define COMP_CHSW_3(x)                   ((u32)(((x) & 0x0000000F) << 12))
-#define COMP_GET_CHSW_3(x)               ((u32)(((x >> 12) & 0x0000000F)))
-#define COMP_MASK_CHSW_2                 ((u32)0x0000000F << 8)          /*!<R/W 0h  This field defines the channel 2 to do a comparison when the start-compare event takes place. */
-#define COMP_CHSW_2(x)                   ((u32)(((x) & 0x0000000F) << 8))
-#define COMP_GET_CHSW_2(x)               ((u32)(((x >> 8) & 0x0000000F)))
-#define COMP_MASK_CHSW_1                 ((u32)0x0000000F << 4)          /*!<R/W 0h  This field defines the channel 1 to do a comparison when the start-compare event takes place. */
-#define COMP_CHSW_1(x)                   ((u32)(((x) & 0x0000000F) << 4))
-#define COMP_GET_CHSW_1(x)               ((u32)(((x >> 4) & 0x0000000F)))
-#define COMP_MASK_CHSW_0                 ((u32)0x0000000F << 0)          /*!<R/W 0h  This field defines the channel 0 to do a comparison when the start-compare event takes place. */
-#define COMP_CHSW_0(x)                   ((u32)(((x) & 0x0000000F) << 0))
-#define COMP_GET_CHSW_0(x)               ((u32)(((x >> 0) & 0x0000000F)))
+  * @brief Comparator Channel Switch List Register
+  * @{
+  */
+#define COMP_MASK_CHSW_3   ((u32)0x0000000F << 12)           /*!< R/W 0h  This field defines the channel 3 to do a comparison when the start-compare event takes place.*/
+#define COMP_CHSW_3(x)     (((u32)((x) & 0x0000000F) << 12))
+#define COMP_GET_CHSW_3(x) ((u32)(((x >> 12) & 0x0000000F)))
+#define COMP_MASK_CHSW_2   ((u32)0x0000000F << 8)            /*!< R/W 0h  This field defines the channel 2 to do a comparison when the start-compare event takes place.*/
+#define COMP_CHSW_2(x)     (((u32)((x) & 0x0000000F) << 8))
+#define COMP_GET_CHSW_2(x) ((u32)(((x >> 8) & 0x0000000F)))
+#define COMP_MASK_CHSW_1   ((u32)0x0000000F << 4)            /*!< R/W 0h  This field defines the channel 1 to do a comparison when the start-compare event takes place.*/
+#define COMP_CHSW_1(x)     (((u32)((x) & 0x0000000F) << 4))
+#define COMP_GET_CHSW_1(x) ((u32)(((x >> 4) & 0x0000000F)))
+#define COMP_MASK_CHSW_0   ((u32)0x0000000F << 0)            /*!< R/W 0h  This field defines the channel 0 to do a comparison when the start-compare event takes place.*/
+#define COMP_CHSW_0(x)     (((u32)((x) & 0x0000000F) << 0))
+#define COMP_GET_CHSW_0(x) ((u32)(((x >> 0) & 0x0000000F)))
 /** @} */
 
 /** @defgroup COMP_LAST_CH
- * @brief Comparator Last Channel Register
- * @{
- **/
-#define COMP_MASK_LAST_CH                ((u32)0x00000003 << 0)          /*!<R/W 0h  Last channel used */
-#define COMP_LAST_CH(x)                  ((u32)(((x) & 0x00000003) << 0))
-#define COMP_GET_LAST_CH(x)              ((u32)(((x >> 0) & 0x00000003)))
+  * @brief Comparator Last Channel Register
+  * @{
+  */
+#define COMP_MASK_LAST_CH   ((u32)0x00000003 << 0)           /*!< R/W 0h  Last channel used*/
+#define COMP_LAST_CH(x)     (((u32)((x) & 0x00000003) << 0))
+#define COMP_GET_LAST_CH(x) ((u32)(((x >> 0) & 0x00000003)))
 /** @} */
 
 /** @defgroup COMP_BUSY_STS
- * @brief Comparator Busy Status Register
- * @{
- **/
-#define COMP_BIT_BUSY_STS                ((u32)0x00000001 << 0)          /*!<R 0h  This bit reflects whether the comparatos is busy or not. 0: The comparatos is ready. 1: The comparator is busy. */
+  * @brief Comparator Busy Status Register
+  * @{
+  */
+#define COMP_BIT_BUSY_STS ((u32)0x00000001 << 0) /*!< R 0h  This bit reflects whether the comparatos is busy or not.  0: The comparatos is ready.  1: The comparator is busy.*/
 /** @} */
 
 /** @defgroup COMP_CH_STS
- * @brief Comparator Channel Status Register
- * @{
- **/
-#define COMP_MASK_CH_STS_3               ((u32)0x00000003 << 6)          /*!<R 0h  This field reflects the channel 3 comparison result. 0: When Vin < Vref0. 1: When Vin >= Vref1. 2: When Vin > Vref0 and Vin < Vref1. */
-#define COMP_CH_STS_3(x)                 ((u32)(((x) & 0x00000003) << 6))
-#define COMP_GET_CH_STS_3(x)             ((u32)(((x >> 6) & 0x00000003)))
-#define COMP_MASK_CH_STS_2               ((u32)0x00000003 << 4)          /*!<R 0h  This field reflects the channel 2 comparison result. 0: When Vin < Vref0. 1: When Vin >= Vref1. 2: When Vin > Vref0 and Vin < Vref1. */
-#define COMP_CH_STS_2(x)                 ((u32)(((x) & 0x00000003) << 4))
-#define COMP_GET_CH_STS_2(x)             ((u32)(((x >> 4) & 0x00000003)))
-#define COMP_MASK_CH_STS_1               ((u32)0x00000003 << 2)          /*!<R 0h  This field reflects the channel 1 comparison result. 0: When Vin < Vref0. 1: When Vin >= Vref1. 2: When Vin > Vref0 and Vin < Vref1. */
-#define COMP_CH_STS_1(x)                 ((u32)(((x) & 0x00000003) << 2))
-#define COMP_GET_CH_STS_1(x)             ((u32)(((x >> 2) & 0x00000003)))
-#define COMP_MASK_CH_STS_0               ((u32)0x00000003 << 0)          /*!<R 0h  This field reflects the channel 0 comparison result. 0: When Vin < Vref0. 1: When Vin >= Vref1. 2: When Vin > Vref0 and Vin < Vref1. */
-#define COMP_CH_STS_0(x)                 ((u32)(((x) & 0x00000003) << 0))
-#define COMP_GET_CH_STS_0(x)             ((u32)(((x >> 0) & 0x00000003)))
+  * @brief Comparator Channel Status Register
+  * @{
+  */
+#define COMP_MASK_CH_STS_3   ((u32)0x00000003 << 6)           /*!< R 0h  This field reflects the channel 3 comparison result. 0: When Vin < Vref0.  1: When Vin >= Vref1.  2: When Vin > Vref0 and Vin < Vref1.*/
+#define COMP_CH_STS_3(x)     (((u32)((x) & 0x00000003) << 6))
+#define COMP_GET_CH_STS_3(x) ((u32)(((x >> 6) & 0x00000003)))
+#define COMP_MASK_CH_STS_2   ((u32)0x00000003 << 4)           /*!< R 0h  This field reflects the channel 2 comparison result. 0: When Vin < Vref0.  1: When Vin >= Vref1.  2: When Vin > Vref0 and Vin < Vref1.*/
+#define COMP_CH_STS_2(x)     (((u32)((x) & 0x00000003) << 4))
+#define COMP_GET_CH_STS_2(x) ((u32)(((x >> 4) & 0x00000003)))
+#define COMP_MASK_CH_STS_1   ((u32)0x00000003 << 2)           /*!< R 0h  This field reflects the channel 1 comparison result. 0: When Vin < Vref0.  1: When Vin >= Vref1.  2: When Vin > Vref0 and Vin < Vref1.*/
+#define COMP_CH_STS_1(x)     (((u32)((x) & 0x00000003) << 2))
+#define COMP_GET_CH_STS_1(x) ((u32)(((x >> 2) & 0x00000003)))
+#define COMP_MASK_CH_STS_0   ((u32)0x00000003 << 0)           /*!< R 0h  This field reflects the channel 0 comparison result. 0: When Vin < Vref0.  1: When Vin >= Vref1.  2: When Vin > Vref0 and Vin < Vref1.*/
+#define COMP_CH_STS_0(x)     (((u32)((x) & 0x00000003) << 0))
+#define COMP_GET_CH_STS_0(x) ((u32)(((x >> 0) & 0x00000003)))
 /** @} */
 
 /** @defgroup COMP_AUTO_SHUT
- * @brief Comparator Automatic Shut Register
- * @{
- **/
-#define COMP_BIT_AUTO_SHUT               ((u32)0x00000001 << 0)          /*!<R/W 0h  This bit controls the comparator to disable the analog module and mux automatically or not after the analog conversion is done. 0: The analog module and mux will NOT be disabled. 1: The analog module and mux will be disabled automatically after the analog conversion is done. */
+  * @brief Comparator Automatic Shut Register
+  * @{
+  */
+#define COMP_BIT_AUTO_SHUT ((u32)0x00000001 << 0) /*!< R/W 0h  This bit controls the comparator to disable the analog module and mux automatically or not after the analog conversion is done.  0: The analog module and mux will NOT be disabled.  1: The analog module and mux will be disabled automatically after the analog conversion is done.*/
 /** @} */
 
 /** @defgroup COMP_EXT_TRIG_CTRL
- * @brief Comparator External Trigger Control Register
- * @{
- **/
-#define COMP_BIT_EXT_WK_TIMER            ((u32)0x00000001 << 0)          /*!<R/W 0h  This bit controls the external trigger source of general timer enabled or not. If it's enabled, the comparator would execute comparison process when the timer event sends to comparator module. 0: Disable external timer trigger. 1: Enable external timer trigger. */
+  * @brief Comparator External Trigger Control Register
+  * @{
+  */
+#define COMP_BIT_EXT_WK_TIMER ((u32)0x00000001 << 0) /*!< R/W 0h  This bit controls the external trigger source of general timer enabled or not. If it's enabled, the comparator would execute comparison process when the timer event sends to comparator module.  0: Disable external timer trigger.  1: Enable external timer trigger.*/
 /** @} */
 
 /** @defgroup COMP_EXT_TRIG_TIMER_SEL
- * @brief Comparator External Trigger Timer Select Register
- * @{
- **/
-#define COMP_MASK_EXT_WK_TIMER_SEL       ((u32)0x00000007 << 0)          /*!<R/W 0h  This field defines which timer channel would be used to wake up the comparator. 0: timer module 0 is used as the comparator external trigger source. 1:timer module 1 is used as the comparator external trigger source. ...so on... 7:timer module 7 is used as the comparator external trigger source. */
-#define COMP_EXT_WK_TIMER_SEL(x)         ((u32)(((x) & 0x00000007) << 0))
-#define COMP_GET_EXT_WK_TIMER_SEL(x)     ((u32)(((x >> 0) & 0x00000007)))
+  * @brief Comparator External Trigger Timer Select Register
+  * @{
+  */
+#define COMP_MASK_EXT_WK_TIMER_SEL   ((u32)0x00000007 << 0)           /*!< R/W 0h  This field defines which timer channel would be used to wake up the comparator.  0: timer module 0 is used as the comparator external trigger source.  1:timer module 1 is used as the comparator external trigger source. ...so on...  7:timer module 7 is used as the comparator external trigger source.*/
+#define COMP_EXT_WK_TIMER_SEL(x)     (((u32)((x) & 0x00000007) << 0))
+#define COMP_GET_EXT_WK_TIMER_SEL(x) ((u32)(((x >> 0) & 0x00000007)))
 /** @} */
 
 /** @defgroup COMP_RST_LIST
- * @brief Comparator Reset Channel List Register
- * @{
- **/
-#define COMP_BIT_RST_LIST                ((u32)0x00000001 << 0)          /*!<R/W 0h  This bit controls to reset the channel switch to default state or not. Once this bit is set, the timer/manual channel switch goes to the first channel as a default state. 0: Do Not reset conversion list to default state. 1:Reset conversion list to default state. In auto mode, this bit doesn't take effect. */
+  * @brief Comparator Reset Channel List Register
+  * @{
+  */
+#define COMP_BIT_RST_LIST ((u32)0x00000001 << 0) /*!< R/W 0h  This bit controls to reset the channel switch to default state or not. Once this bit is set, the timer/manual channel switch goes to the first channel as a default state. 0: Do Not reset conversion list to default state. 1:Reset conversion list to default state. In auto mode, this bit doesn't take effect.*/
 /** @} */
 
 /** @defgroup COMP_AUTOSW_EN
- * @brief Comparator Automatic Channel Switch Enable Register
- * @{
- **/
-#define COMP_BIT_AUTOSW_EN               ((u32)0x00000001 << 0)          /*!<R/W 0h  This bit controls the automatic channel switch enabled or disabled. 0: Disable the automatic channel switch. If an automatic channel switch is in process, writing 0 will terminate the automatic channel switch. 1: Enable the automatic channel switch. When setting this bit, an automatic channel switch starts from the first channel in the channel switch list. */
+  * @brief Comparator Automatic Channel Switch Enable Register
+  * @{
+  */
+#define COMP_BIT_AUTOSW_EN ((u32)0x00000001 << 0) /*!< R/W 0h  This bit controls the automatic channel switch enabled or disabled.  0: Disable the automatic channel switch. If an automatic channel switch is in process, writing 0 will terminate the automatic channel switch.  1: Enable the automatic channel switch. When setting this bit, an automatic channel switch starts from the first channel in the channel switch list.*/
 /** @} */
 
 /** @defgroup COMP_EN_TRIG
- * @brief Comparator Enable Trigger Register
- * @{
- **/
-#define COMP_BIT_DBG_EN                  ((u32)0x00000001 << 2)          /*!<R/W 0h  The comparator IP debug port enable. */
-#define COMP_BIT_EN_TRIG                 ((u32)0x00000001 << 1)          /*!<R/W 0h  This bit controls the analog module and the analog mux of comparator to be enabled or not. Every time this bit is written, the comparator switches to a new channel and does one comparison. After this, it shuts down the analog module according to REG_COMP_AUTO_SHUT. Therefore, this bit can be used as a start-compare event which is controlled by software. Every time a comparison is done, software must clear this bit manually. 0: Disable the analog module and analog mux. 1: Enable the analog module and analog mux, then start a new channel comparison. */
-#define COMP_BIT_ENABLE                  ((u32)0x00000001 << 0)          /*!<R/W 0h  The comparator IP internal enable. */
+  * @brief Comparator Enable Trigger Register
+  * @{
+  */
+#define COMP_BIT_DBG_EN  ((u32)0x00000001 << 2) /*!< R/W 0h  The comparator IP debug port enable.*/
+#define COMP_BIT_EN_TRIG ((u32)0x00000001 << 1) /*!< R/W 0h  This bit controls the analog module and the analog mux of comparator to be enabled or not. Every time this bit is written, the comparator switches to a new channel and does one comparison. After this, it shuts down the analog module according to REG_COMP_AUTO_SHUT. Therefore, this bit can be used as a start-compare event which is controlled by software. Every time a comparison is done, software must clear this bit manually. 0: Disable the analog module and analog mux. 1: Enable the analog module and analog mux, then start a new channel comparison.*/
+#define COMP_BIT_ENABLE  ((u32)0x00000001 << 0) /*!< R/W 0h  The comparator IP internal enable.*/
 /** @} */
 
 /** @defgroup COMP_CTRL_CNT
- * @brief Comparator External Wake Shut Count Register
- * @{
- **/
-#define COMP_MASK_POWON_CNT              ((u32)0x000000FF << 24)          /*!<R/W A0h  This field defines how long the comparator analog module can work after the comparator is enabled, the value will be multipled 2 in hardware circuit. Therefore, this is about 160us. */
-#define COMP_POWON_CNT(x)                ((u32)(((x) & 0x000000FF) << 24))
-#define COMP_GET_POWON_CNT(x)            ((u32)(((x >> 24) & 0x000000FF)))
-#define COMP_MASK_DATA_VALID_CNT         ((u32)0x000000FF << 16)          /*!<R/W 6Eh  This field defines how long the comparator analog module data is valid for digital module after analog module works. It's about 55us. */
-#define COMP_DATA_VALID_CNT(x)           ((u32)(((x) & 0x000000FF) << 16))
-#define COMP_GET_DATA_VALID_CNT(x)       ((u32)(((x >> 16) & 0x000000FF)))
-#define COMP_MASK_CHSW_CNT               ((u32)0x000000FF << 8)          /*!<R/W 6Eh  This field defines how long the channel switch can jump to next channel at automatic channel switch mode. It's about 55us. */
-#define COMP_CHSW_CNT(x)                 ((u32)(((x) & 0x000000FF) << 8))
-#define COMP_GET_CHSW_CNT(x)             ((u32)(((x >> 8) & 0x000000FF)))
-#define COMP_MASK_EXT_WK_SHUT_CNT        ((u32)0x000000FF << 0)          /*!<R/W 96h  This field defines how long to disable comparator analog module when an external trigger event is sent to the comparator. The count must include the comparator response time to get a correct compare result.It's about 75us. */
-#define COMP_EXT_WK_SHUT_CNT(x)          ((u32)(((x) & 0x000000FF) << 0))
-#define COMP_GET_EXT_WK_SHUT_CNT(x)      ((u32)(((x >> 0) & 0x000000FF)))
+  * @brief Comparator External Wake Shut Count Register
+  * @{
+  */
+#define COMP_MASK_POWON_CNT         ((u32)0x000000FF << 24)           /*!< R/W A0h  This field defines how long the comparator analog module can work after the comparator is enabled, the value will be multipled 2 in hardware circuit. Therefore, this is about 160us.*/
+#define COMP_POWON_CNT(x)           (((u32)((x) & 0x000000FF) << 24))
+#define COMP_GET_POWON_CNT(x)       ((u32)(((x >> 24) & 0x000000FF)))
+#define COMP_MASK_DATA_VALID_CNT    ((u32)0x000000FF << 16)           /*!< R/W 6Eh  This field defines how long the comparator analog module data is valid for digital module after analog module works. It's about 55us.*/
+#define COMP_DATA_VALID_CNT(x)      (((u32)((x) & 0x000000FF) << 16))
+#define COMP_GET_DATA_VALID_CNT(x)  ((u32)(((x >> 16) & 0x000000FF)))
+#define COMP_MASK_CHSW_CNT          ((u32)0x000000FF << 8)            /*!< R/W 6Eh  This field defines how long the channel switch can jump to next channel at automatic channel switch mode. It's about 55us.*/
+#define COMP_CHSW_CNT(x)            (((u32)((x) & 0x000000FF) << 8))
+#define COMP_GET_CHSW_CNT(x)        ((u32)(((x >> 8) & 0x000000FF)))
+#define COMP_MASK_EXT_WK_SHUT_CNT   ((u32)0x000000FF << 0)            /*!< R/W 96h  This field defines how long to disable comparator analog module when an external trigger event is sent to the comparator. The count must include the comparator response time to get a correct compare result.It's about 75us.*/
+#define COMP_EXT_WK_SHUT_CNT(x)     (((u32)((x) & 0x000000FF) << 0))
+#define COMP_GET_EXT_WK_SHUT_CNT(x) ((u32)(((x >> 0) & 0x000000FF)))
 /** @} */
 
 /** @defgroup COMP_LPSD
- * @brief Comparator Analog Register
- * @{
- **/
-#define COMP_MASK_LPSD_31_25             ((u32)0x0000007F << 25)          /*!<R/W 0h  comp_lpsd[31:25] */
-#define COMP_LPSD_31_25(x)               ((u32)(((x) & 0x0000007F) << 25))
-#define COMP_GET_LPSD_31_25(x)           ((u32)(((x >> 25) & 0x0000007F)))
-#define COMP_BIT_LPAD_PC                 ((u32)0x00000001 << 16)          /*!<R 0h  comp_lpsd[16], power LDO/mbias/res ladder */
-#define COMP_BIT_LPSD_15                 ((u32)0x00000001 << 15)          /*!<R/W 0h  comp_lpsd[15] */
-#define COMP_BIT_LPSD_12                 ((u32)0x00000001 << 12)          /*!<R 0h  comp_lpsd[12], POW_BG, power on BG */
-#define COMP_MASK_LPSD_11_2_FW           ((u32)0x000003FF << 2)          /*!<R/WP 0h  comp_lpsd[11:2], for every bit: [11:7]: SEL_VREFL, Vref low voltage 0000: 25mV, 25mV/step [6:2]: SEL_VREFH, Vref high voltage 0000: 25mV, 25 mV/step */
-#define COMP_LPSD_11_2_FW(x)             ((u32)(((x) & 0x000003FF) << 2))
-#define COMP_GET_LPSD_11_2_FW(x)         ((u32)(((x >> 2) & 0x000003FF)))
-#define COMP_BIT_LPSD_1                  ((u32)0x00000001 << 1)          /*!<R/W 0h  SD_POSEDGE, 1: Vin > Vref output high */
-#define COMP_BIT_LPSD_0_FW               ((u32)0x00000001 << 0)          /*!<R/WP 0h  POW SD, power on SD */
+  * @brief Comparator Analog Register
+  * @{
+  */
+#define COMP_MASK_LPSD_31_25     ((u32)0x0000007F << 25)           /*!< R/W 0h  comp_lpsd[31:25]*/
+#define COMP_LPSD_31_25(x)       (((u32)((x) & 0x0000007F) << 25))
+#define COMP_GET_LPSD_31_25(x)   ((u32)(((x >> 25) & 0x0000007F)))
+#define COMP_BIT_LPAD_PC         ((u32)0x00000001 << 16)           /*!< R 0h  comp_lpsd[16], power LDO/mbias/res ladder*/
+#define COMP_BIT_LPSD_15         ((u32)0x00000001 << 15)           /*!< R/W 0h  comp_lpsd[15]*/
+#define COMP_BIT_LPSD_12         ((u32)0x00000001 << 12)           /*!< R 0h  comp_lpsd[12], POW_BG, power on BG*/
+#define COMP_MASK_LPSD_11_2_FW   ((u32)0x000003FF << 2)            /*!< R/WP 0h  comp_lpsd[11:2], for every bit: [11:7]: SEL_VREFL, Vref low voltage     0000: 25mV, 25mV/step [6:2]: SEL_VREFH, Vref high voltage     0000: 25mV, 25 mV/step*/
+#define COMP_LPSD_11_2_FW(x)     (((u32)((x) & 0x000003FF) << 2))
+#define COMP_GET_LPSD_11_2_FW(x) ((u32)(((x >> 2) & 0x000003FF)))
+#define COMP_BIT_LPSD_1          ((u32)0x00000001 << 1)            /*!< R/W 0h  SD_POSEDGE, 1: Vin > Vref output high*/
+#define COMP_BIT_LPSD_0_FW       ((u32)0x00000001 << 0)            /*!< R/WP 0h  POW SD, power on SD*/
 /** @} */
+
 /** @} */
-
-
-
-/* Exported types --------------------------------------------------------*/
+/* Exported Types --------------------------------------------------------*/
 
 /** @defgroup COMP_Exported_Types COMP Exported Types
   * @{
-*****************************************************************************/
+  */
 
+/** @brief COMP Register Declaration
+  */
 
-/**
- * @brief COMP Register Declaration
- *****************************************************************************/
 typedef struct {
-	__IO uint32_t COMP_REF_CHx[4];                        /*!< COMPARATOR CHANNEL x REFERENCE VOLTAGE REGISTER,  Address offset: 0x000-0x00C */
-	__IO uint32_t COMP_INTR_CTRL;                         /*!< COMPARATOR INTERRUPT CONTROL REGISTER,  Address offset: 0x010 */
-	__IO uint32_t COMP_WK_STS;                            /*!< COMPARATOR WAKEUP ADC/SYS STATUS REGISTER,  Address offset: 0x014 */
-	__I  uint32_t COMP_WK_STS_RAW;                        /*!< COMPARATOR WAKEUP REGISTER,  Address offset: 0x018 */
-	__IO uint32_t COMP_CHSW_LIST;                         /*!< COMPARATOR CHANNEL SWITCH LIST REGISTER,  Address offset: 0x01C */
-	__IO uint32_t COMP_LAST_CH;                           /*!< COMPARATOR LAST CHANNEL REGISTER,  Address offset: 0x020 */
-	__I  uint32_t COMP_BUSY_STS;                          /*!< COMPARATOR BUSY STATUS REGISTER,  Address offset: 0x024 */
-	__I  uint32_t COMP_CH_STS;                            /*!< COMPARATOR CHANNEL STATUS REGISTER,  Address offset: 0x028 */
-	__IO uint32_t COMP_AUTO_SHUT;                         /*!< COMPARATOR AUTOMATIC SHUT REGISTER,  Address offset: 0x02C */
-	__IO uint32_t COMP_EXT_TRIG_CTRL;                     /*!< COMPARATOR EXTERNAL TRIGGER CONTROL REGISTER,  Address offset: 0x030 */
-	__IO uint32_t COMP_EXT_TRIG_TIMER_SEL;                /*!< COMPARATOR EXTERNAL TRIGGER TIMER SELECT REGISTER,  Address offset: 0x034 */
-	__IO uint32_t COMP_RST_LIST;                          /*!< COMPARATOR RESET CHANNEL LIST REGISTER,  Address offset: 0x038 */
-	__IO uint32_t COMP_AUTOSW_EN;                         /*!< COMPARATOR AUTOMATIC CHANNEL SWITCH ENABLE REGISTER,  Address offset: 0x03C */
-	__IO uint32_t COMP_EN_TRIG;                           /*!< COMPARATOR ENABLE TRIGGER REGISTER,  Address offset: 0x040 */
-	__IO uint32_t COMP_CTRL_CNT;                          /*!< COMPARATOR EXTERNAL WAKE SHUT COUNT REGISTER,  Address offset: 0x044 */
-	__IO uint32_t COMP_LPSD;                              /*!< COMPARATOR ANALOG REGISTER,  Address offset: 0x048 */
+	__IO uint32_t COMP_REF_CHx[4]        ;  /*!< COMPARATOR CHANNEL x REFERENCE VOLTAGE REGISTER,  Address offset:0x000-0x00C */
+	__IO uint32_t COMP_INTR_CTRL         ;  /*!< COMPARATOR INTERRUPT CONTROL REGISTER,  Address offset:0x010 */
+	__IO uint32_t COMP_WK_STS            ;  /*!< COMPARATOR WAKEUP ADC/SYS STATUS REGISTER,  Address offset:0x014 */
+	__I  uint32_t COMP_WK_STS_RAW        ;  /*!< COMPARATOR WAKEUP REGISTER,  Address offset:0x018 */
+	__IO uint32_t COMP_CHSW_LIST         ;  /*!< COMPARATOR CHANNEL SWITCH LIST REGISTER,  Address offset:0x01C */
+	__IO uint32_t COMP_LAST_CH           ;  /*!< COMPARATOR LAST CHANNEL REGISTER,  Address offset:0x020 */
+	__I  uint32_t COMP_BUSY_STS          ;  /*!< COMPARATOR BUSY STATUS REGISTER,  Address offset:0x024 */
+	__I  uint32_t COMP_CH_STS            ;  /*!< COMPARATOR CHANNEL STATUS REGISTER,  Address offset:0x028 */
+	__IO uint32_t COMP_AUTO_SHUT         ;  /*!< COMPARATOR AUTOMATIC SHUT REGISTER,  Address offset:0x02C */
+	__IO uint32_t COMP_EXT_TRIG_CTRL     ;  /*!< COMPARATOR EXTERNAL TRIGGER CONTROL REGISTER,  Address offset:0x030 */
+	__IO uint32_t COMP_EXT_TRIG_TIMER_SEL;  /*!< COMPARATOR EXTERNAL TRIGGER TIMER SELECT REGISTER,  Address offset:0x034 */
+	__IO uint32_t COMP_RST_LIST          ;  /*!< COMPARATOR RESET CHANNEL LIST REGISTER,  Address offset:0x038 */
+	__IO uint32_t COMP_AUTOSW_EN         ;  /*!< COMPARATOR AUTOMATIC CHANNEL SWITCH ENABLE REGISTER,  Address offset:0x03C */
+	__IO uint32_t COMP_EN_TRIG           ;  /*!< COMPARATOR ENABLE TRIGGER REGISTER,  Address offset:0x040 */
+	__IO uint32_t COMP_CTRL_CNT          ;  /*!< COMPARATOR EXTERNAL WAKE SHUT COUNT REGISTER,  Address offset:0x044 */
+	__IO uint32_t COMP_LPSD              ;  /*!< COMPARATOR ANALOG REGISTER,  Address offset:0x048 */
 } CMP_TypeDef;
+
 /** @} */
+
+
+// Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */

@@ -332,12 +332,12 @@ void at_wlconn(void *arg)
 	/* Connecting ...... */
 	ret = wifi_connect(&wifi, 1);
 	if (ret != RTK_SUCCESS) {
-		RTK_LOGW(NOTAG, "[+WLCONN] Fail:%d", ret);
-		if ((ret == RTW_CONNECT_INVALID_KEY)) {
+		RTK_LOGW(NOTAG, "[+WLCONN] Fail:-0x%x", -ret);
+		if ((ret == -RTK_ERR_WIFI_CONN_INVALID_KEY)) {
 			RTK_LOGW(NOTAG, "(password format wrong)");
-		} else if (ret == RTW_CONNECT_SCAN_FAIL) {
+		} else if (ret == -RTK_ERR_WIFI_CONN_SCAN_FAIL) {
 			RTK_LOGW(NOTAG, "(not found AP)");
-		} else if (ret == RTW_BUSY) {
+		} else if (ret == -RTK_ERR_BUSY) {
 			RTK_LOGW(NOTAG, "(busy)");
 		}
 		RTK_LOGW(NOTAG, "\r\n");

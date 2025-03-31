@@ -568,37 +568,37 @@ static uint8_t ble_wifimate_wifi_conn_result_to_bwm_errcode(int wifi_res)
 	case RTK_SUCCESS:
 		err_code = BWM_OK;
 		break;
-	case RTW_BADARG:
+	case -RTK_ERR_BADARG:
 		err_code = BWM_ERR_PARAM_INVALID;
 		break;
-	case RTW_BUSY:
+	case -RTK_ERR_BUSY:
 		err_code = BWM_ERR_BUSY;
 		break;
-	case RTW_NOMEM:
+	case -RTK_ERR_NOMEM:
 		err_code = BWM_ERR_NOMEM;
 		break;
-	case RTW_TIMEOUT:
+	case -RTK_ERR_TIMEOUT:
 		err_code = BWM_ERR_TIMEOUT;
 		break;
-	case RTW_CONNECT_INVALID_KEY:
+	case -RTK_ERR_WIFI_CONN_INVALID_KEY:
 		err_code = BWM_ERR_PASSWORD_WRONG;
 		break;
-	case RTW_CONNECT_SCAN_FAIL:
+	case -RTK_ERR_WIFI_CONN_SCAN_FAIL:
 		err_code = BWM_ERR_AP_NOT_FOUND;
 		break;
-	case RTW_CONNECT_AUTH_FAIL:
+	case -RTK_ERR_WIFI_CONN_AUTH_FAIL:
 		err_code = BWM_ERR_AUTH_FAIL;
 		break;
-	case RTW_CONNECT_AUTH_PASSWORD_WRONG:
+	case -RTK_ERR_WIFI_CONN_AUTH_PASSWORD_WRONG:
 		err_code = BWM_ERR_PASSWORD_WRONG;
 		break;
-	case RTW_CONNECT_ASSOC_FAIL:
+	case -RTK_ERR_WIFI_CONN_ASSOC_FAIL:
 		err_code = BWM_ERR_ASSOC_FAIL;
 		break;
-	case RTW_CONNECT_4WAY_HANDSHAKE_FAIL:
+	case -RTK_ERR_WIFI_CONN_4WAY_HANDSHAKE_FAIL:
 		err_code = BWM_ERR_PASSWORD_WRONG;
 		break;
-	case RTW_CONNECT_4WAY_PASSWORD_WRONG:
+	case -RTK_ERR_WIFI_CONN_4WAY_PASSWORD_WRONG:
 		err_code = BWM_ERR_PASSWORD_WRONG;
 		break;
 	default:

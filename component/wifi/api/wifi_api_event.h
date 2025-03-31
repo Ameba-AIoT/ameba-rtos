@@ -135,7 +135,7 @@ struct rtw_event_disconn_info_t {
   * @brief Buf of @ref WIFI_EVENT_JOIN_STATUS when flag is @ref RTW_JOINSTATUS_FAIL
   */
 struct rtw_event_join_fail_info_t {
-	int					fail_reason;           /**< Value: @ref RTK_FAIL, @ref RTW_CONNECT_INVALID_KEY...*/
+	int					fail_reason;           /**< Value: @ref RTK_FAIL, -@ref RTK_ERR_WIFI_CONN_INVALID_KEY...*/
 	u16					reason_or_status_code; /**< From AP, define in 802.11 spec.*/
 	u8					bssid[6];              /**< AP's MAC address.*/
 };

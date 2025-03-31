@@ -174,7 +174,8 @@
 #define BIT_CFGX_UP_SEC_DISABLE			    ((u32)(0x00000001 << 3))		      /*!< Upper word Bit[10:7]. write 0 to enable secure transfer, default is 0 */
 #define BIT_CFGX_UP_SRC_PER				      ((u32)(0x0000000F << 7))		      /*!< Upper word Bit[10:7].hardware handshaking interface for source peripheral*/
 #define BIT_CFGX_UP_DEST_PER			      ((u32)(0x0000000F << 11))		      /*!< Upper word Bit[14:11].hardware handshaking interface for destination peripheral*/
-#define BIT_CFGX_UP_FIFO_MODE			      ((u32)(0x00000001<<1 ))		        /*!< Upper word Bit[1].hardware FIFO Mode Select, write 1 to enable*/
+#define BIT_CFGX_UP_FIFO_MODE			      ((u32)(0x00000001 << 1))	        /*!< Upper word Bit[1].hardware FIFO Mode Select, write 1 to enable*/
+
 /** @} */
 /** @} */
 

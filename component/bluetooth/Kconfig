@@ -141,6 +141,12 @@ if BT_EXAMPLE_DEMO_MENU
             default n
     endif
 
+    if BT_HAS_MESH && BT_HAS_BREDR
+        #config BT_A2DP_PROVISIONER_SCATTERNET_MENU
+        #    bool "BT A2DP and BLE provisioner and BLE Scatternet"
+        #    default n
+    endif
+
 endif
 
 if BT
@@ -197,6 +203,14 @@ if BT
        bool
        select BT_MESH_DEVICE_TEST
        select BT_MESH_DEVICE_SUPPORT
+
+    config BT_A2DP_PROVISIONER_SCATTERNET_MENU
+        bool
+        select BT_A2DP_PROVISIONER_SCATTERNET
+        select BT_MESH_PROVISIONER_SUPPORT
+        select BT_APP_AUDIO_DATA
+        select BT_AUDIO_CODEC_SUPPORT
+        select BT_AUDIO_CODEC_SBC
 
     config BT_ISO_TEST_MENU
         bool
@@ -303,6 +317,8 @@ config BT_MESH_PROVISIONER_SCATTERNET
 config BT_MESH_PROVISIONER_SUPPORT
     bool
 config BT_MESH_DEVICE_SCATTERNET
+    bool
+config BT_A2DP_PROVISIONER_SCATTERNET
     bool
 
 
