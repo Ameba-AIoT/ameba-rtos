@@ -292,7 +292,9 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
 {
     bool ret = TRUE;
     uint8_t *pbuffer = pmesh_msg->pbuffer + pmesh_msg->msg_offset;
+    // RTK porting:Add a method to get data from app layer
 	mesh_model_info_p pmodel_info = pmesh_msg->pmodel_info;
+
     switch (pmesh_msg->access_opcode)
     {
     case MESH_MSG_HEALTH_ATTN_GET:

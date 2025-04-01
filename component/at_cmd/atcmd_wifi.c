@@ -332,12 +332,12 @@ void at_wlconn(void *arg)
 	/* Connecting ...... */
 	ret = wifi_connect(&wifi, 1);
 	if (ret != RTK_SUCCESS) {
-		RTK_LOGW(NOTAG, "[+WLCONN] Fail:%d", ret);
-		if ((ret == RTW_CONNECT_INVALID_KEY)) {
+		RTK_LOGW(NOTAG, "[+WLCONN] Fail:-0x%x", -ret);
+		if ((ret == -RTK_ERR_WIFI_CONN_INVALID_KEY)) {
 			RTK_LOGW(NOTAG, "(password format wrong)");
-		} else if (ret == RTW_CONNECT_SCAN_FAIL) {
+		} else if (ret == -RTK_ERR_WIFI_CONN_SCAN_FAIL) {
 			RTK_LOGW(NOTAG, "(not found AP)");
-		} else if (ret == RTW_BUSY) {
+		} else if (ret == -RTK_ERR_BUSY) {
 			RTK_LOGW(NOTAG, "(busy)");
 		}
 		RTK_LOGW(NOTAG, "\r\n");
@@ -620,17 +620,17 @@ AT command process:
 ****************************************************************/
 void at_wlrssi(void *arg)
 {
-	union _rtw_phy_statistics_t phy_statistics;
+	union _rtw_phy_stats_t phy_stats;
 
 	UNUSED(arg);
 
 	RTK_LOGI(NOTAG, "[WLRSSI] _AT_WLAN_GET_RSSI_\r\n");
-	wifi_get_phy_statistic(&phy_statistics);
+	wifi_get_phy_stats(STA_WLAN_INDEX, NULL, &phy_stats);
 
 	/* cal complement for logs */
-	at_printf("rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.sta_phy_stats.rssi + 1));
-	at_printf("data rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.sta_phy_stats.data_rssi + 1));
-	at_printf("beacon rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.sta_phy_stats.beacon_rssi + 1));
+	at_printf("rssi = -%d\r\n", (signed char)(0xFF - phy_stats.sta.rssi + 1));
+	at_printf("data rssi = -%d\r\n", (signed char)(0xFF - phy_stats.sta.data_rssi + 1));
+	at_printf("beacon rssi = -%d\r\n", (signed char)(0xFF - phy_stats.sta.beacon_rssi + 1));
 	at_printf(ATCMD_OK_END_STR);
 }
 

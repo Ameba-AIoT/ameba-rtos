@@ -1225,7 +1225,7 @@ static void ConnectTargetAP(void)
 	ret = wifi_connect(&connect_param, 0);
 
 	if (ret != RTK_SUCCESS) {
-		if (ret == RTW_CONNECT_INVALID_KEY) {
+		if (ret == -RTK_ERR_WIFI_CONN_INVALID_KEY) {
 			RTK_LOGE(NOTAG, "ERROR:Invalid Key\n");
 		}
 

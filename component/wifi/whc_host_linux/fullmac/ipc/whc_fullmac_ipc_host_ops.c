@@ -501,15 +501,34 @@ u32 whc_fullmac_host_update_ip_addr(void)
 	return ret;
 }
 
-int whc_fullmac_host_get_statistics(dma_addr_t statistic_phy)
+int whc_fullmac_host_get_stats(u8 wlan_idx, u8 *mac_addr, dma_addr_t stats_phy)
 {
 	int ret = 0;
-	u32 param_buf[1];
+	u32 param_buf[3];
+	dma_addr_t dma_addr_mac_addr = 0;
+	struct device *pdev = global_idev.ipc_dev;
+
+	param_buf[0] = (u32)wlan_idx;
+
+	if (mac_addr) {
+		dma_addr_mac_addr = dma_map_single(pdev, mac_addr, 6, DMA_TO_DEVICE);
+		if (dma_mapping_error(pdev, dma_addr_mac_addr)) {
+			dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
+			return -1;
+		}
+		param_buf[1] = (u32)dma_addr_mac_addr;
+	} else {
+		param_buf[1] = 0;
+	}
 
 	/* ptr of statistics to fullfill. */
-	param_buf[0] = (u32)statistic_phy;
+	param_buf[2] = (u32)stats_phy;
 
-	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_GET_PHY_STATISTIC, param_buf, 1);
+	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_GET_PHY_STATS, param_buf, 3);
+
+	if (mac_addr) {
+		dma_unmap_single(pdev, dma_addr_mac_addr, 6, DMA_TO_DEVICE);
+	}
 
 	return ret;
 }

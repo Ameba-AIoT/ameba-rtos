@@ -29,11 +29,11 @@ WIFI_CONNECT:
 	ret = wifi_connect(&connect_param, 1);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGI(TAG, "Reconnect Fail:%d", ret);
-		if ((ret == RTW_CONNECT_INVALID_KEY)) {
+		if ((ret == -RTK_ERR_WIFI_CONN_INVALID_KEY)) {
 			RTK_LOGI(TAG, "(password format wrong)\r\n");
-		} else if (ret == RTW_CONNECT_SCAN_FAIL) {
+		} else if (ret == -RTK_ERR_WIFI_CONN_SCAN_FAIL) {
 			RTK_LOGI(TAG, "(not found AP)\r\n");
-		} else if (ret == RTW_BUSY) {
+		} else if (ret == -RTK_ERR_BUSY) {
 			RTK_LOGI(TAG, "(busy)\r\n");
 		} else {
 			RTK_LOGI(TAG, "(other)\r\n");

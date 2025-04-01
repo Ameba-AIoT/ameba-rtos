@@ -327,8 +327,6 @@ menu "CONFIG BT"
         # IC BT capability
         config BT_HAS_MESH
             def_bool y
-        config BT_HAS_ATSYNC
-            def_bool y
 
         choice
             depends on FULLMAC_DEV

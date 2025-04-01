@@ -7,6 +7,7 @@
 #include "ameba_rtos_version.h"
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_ipc.h"
+#include "rtw_coex_api_ext.h"
 #endif
 
 static const char *const TAG = "MAIN";
@@ -176,6 +177,9 @@ int main(void)
 #if defined(CONFIG_BT_COEXIST)
 	/* init coex ipc */
 	coex_ipc_entry();
+#if defined(CONFIG_COEX_EXT_CHIP_SUPPORT) && defined(CONFIG_COEXIST_DEV)
+	coex_extc_paras_config();
+#endif
 #endif
 
 //only NP can init FW

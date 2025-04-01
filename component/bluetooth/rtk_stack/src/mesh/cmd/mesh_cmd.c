@@ -42,7 +42,214 @@ user_cmd_parse_result_t user_cmd_reset(user_cmd_parse_value_t *pparse_value)
     return USER_CMD_RESULT_OK;
 }
 
+#if 0
+// RTK porting:redefine this function after, if this function changed from release file, should change the next same function
+user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
+{
+    UNUSED(pparse_value);
+    data_uart_debug("MeshState:\t%d\r\n", mesh_node.node_state);
+    data_uart_debug("DevUUID:\t");
+    data_uart_dump(mesh_node.dev_uuid, 16);
+    uint8_t bt_addr[6];
+    gap_get_param(GAP_PARAM_BD_ADDR, bt_addr);
+    data_uart_debug("BTAddr:\t\t0x%02x%02x%02x%02x%02x%02x\r\n",
+                    bt_addr[5], bt_addr[4], bt_addr[3], bt_addr[2], bt_addr[1], bt_addr[0]);
+    for (uint16_t index = 0; index < mesh_node.dev_key_num; index++)
+    {
+        if (mesh_node.dev_key_list[index].used && mesh_node.dev_key_list[index].element_num != 0)
+        {
+            data_uart_debug("DevKey:\t\t%d-0x%04x-%d-", index, mesh_node.dev_key_list[index].unicast_addr,
+                            mesh_node.dev_key_list[index].element_num);
+            data_uart_dump(mesh_node.dev_key_list[index].dev_key, 16);
+        }
+    }
+    for (uint16_t index = 0; index < mesh_node.app_key_num; index++)
+    {
+        if (mesh_node.app_key_list[index].key_state != MESH_KEY_STATE_INVALID)
+        {
+            data_uart_debug("AppKey:\t\t%d-0x%04x-%d-%d-%d\r\n", index,
+                            mesh_node.app_key_list[index].app_key_index_g, mesh_node.app_key_list[index].key_state,
+                            key_state_to_tx_loop(mesh_node.app_key_list[index].key_state),
+                            mesh_node.app_key_list[index].net_key_binding);
+            for (uint8_t loop = 0; loop < 2; loop++)
+            {
+                if (mesh_node.app_key_list[index].papp_key[loop] != NULL)
+                {
+                    data_uart_debug("\t\t");
+                    data_uart_dump(mesh_node.app_key_list[index].papp_key[loop]->app_key, 16);
+                }
+            }
+        }
+    }
+    for (uint16_t index = 0; index < mesh_node.net_key_num; index++)
+    {
+        if (mesh_node.net_key_list[index].key_state != MESH_KEY_STATE_INVALID)
+        {
+            switch (net_key_type_get(index))
+            {
+            case NET_KEY_TYPE_MASTER:
+                data_uart_debug("NetKey:\t\t");
+                break;
+            case NET_KEY_TYPE_FRND:
+                data_uart_debug("NetKey-FN:\t");
+                break;
+#if F_BT_MESH_1_1_DF_SUPPORT
+            case NET_KEY_TYPE_DF:
+                data_uart_debug("NetKey-DF:\t");
+                break;
+#endif
+            default:
+                break;
+            }
+            data_uart_debug("%d-0x%04x-%d-%d-%d\r\n", index,
+                            mesh_node.net_key_list[index].net_key_index_g, mesh_node.net_key_list[index].key_state,
+                            key_state_to_tx_loop(mesh_node.net_key_list[index].key_state),
+                            key_state_to_key_refresh_phase(mesh_node.net_key_list[index].key_state));
+            if (NET_KEY_TYPE_MASTER == net_key_type_get(index))
+            {
+                for (uint8_t loop = 0; loop < 2; loop++)
+                {
+                    if (mesh_node.net_key_list[index].pnet_key[loop] != NULL)
+                    {
+                        data_uart_debug("\t\t");
+                        data_uart_dump(mesh_node.net_key_list[index].pnet_key[loop]->net_key, 16);
+                    }
+                }
+            }
+        }
+    }
+    data_uart_debug("IVindex:\t%d-0x%x\r\n", mesh_node.iv_update_flag, mesh_node.iv_index);
+    data_uart_debug("Seq:\t\t0x%06x\r\n", mesh_node.seq);
+    data_uart_debug("NodeAddr:\t0x%04x-%d-%d\r\n", mesh_node.unicast_addr,
+                    mesh_node.element_queue.count, mesh_node.model_num);
+    mesh_element_p pelement = (mesh_element_p)mesh_node.element_queue.pfirst;
+    while (pelement != NULL)
+    {
+        data_uart_debug("Element:\t%d-%d\r\n", pelement->element_index, pelement->model_queue.count);
+        mesh_model_p pmodel = (mesh_model_p)pelement->model_queue.pfirst;
+        while (pmodel != NULL)
+        {
+            data_uart_debug("Model:\t\t%d-%d-0x%08x", pmodel->pmodel_info->model_index,
+                            pmodel->model_index, pmodel->pmodel_info->model_id);
+            uint8_t key_flag = true;
+            for (uint16_t index = 0; index < mesh_node.app_key_num; index++)
+            {
+                if (plt_bit_pool_get(pmodel->app_key_binding, index) &&
+                    mesh_node.app_key_list[index].key_state != MESH_KEY_STATE_INVALID)
+                {
+                    if (key_flag)
+                    {
+                        key_flag = false;
+                        data_uart_debug("-(key:%d", index);
+                    }
+                    else
+                    {
+                        data_uart_debug("-%d", index);
+                    }
+                }
+            }
+            if (!key_flag)
+            {
+                data_uart_debug(")");
+            }
+            if (MESH_NOT_UNASSIGNED_ADDR(pmodel->pub_params.pub_addr)
+#if F_BT_MESH_1_1_DF_SUPPORT
+                || pmodel->pub_params.pub_policy != PUBLISH_POLICY_MANAGED_FLOODING
+#endif
+               )
+            {
+                data_uart_debug("-(pub:0x%04x-%d-%d", pmodel->pub_params.pub_addr, pmodel->pub_params.pub_ttl,
+                                pmodel->pub_params.pub_key_info.app_key_index);
+#if F_BT_MESH_1_1_DF_SUPPORT
+                data_uart_debug("-%d", pmodel->pub_params.pub_policy);
+#endif
+                data_uart_debug(")");
+            }
+            mesh_model_p pmodelb = pmodel;
+            while (pmodelb->pmodel_info->pmodel_bound != NULL)
+            {
+                pmodelb = (mesh_model_p)pmodelb->pmodel_info->pmodel_bound->pmodel;
+            }
+            mesh_addr_member_p paddr_element = (mesh_addr_member_p)pmodelb->sub_queue.pfirst;
+            while (paddr_element != NULL)
+            {
+                if (paddr_element == (mesh_addr_member_p)pmodelb->sub_queue.pfirst)
+                {
+                    if (pmodelb != pmodel)
+                    {
+                        data_uart_debug("-(sub:-%d-%d-0x%04x",
+                                        ((mesh_model_p)pmodel->pmodel_info->pmodel_bound->pmodel)->model_index,
+                                        pmodelb->model_index, paddr_element->mesh_addr);
+                    }
+                    else
+                    {
+                        data_uart_debug("-(sub:0x%04x", paddr_element->mesh_addr);
+                    }
+                }
+                else
+                {
+                    data_uart_debug("-0x%04x", paddr_element->mesh_addr);
+                }
+                paddr_element = paddr_element->pnext;
+                if (paddr_element == NULL)
+                {
+                    data_uart_debug(")");
+                }
+            }
+            pmodel = pmodel->pnext;
+            data_uart_debug("\r\n");
+        }
+        pelement = pelement->pnext;
+    }
+
+#if F_BT_MESH_1_1_SBR_SUPPORT
+    bridging_table_t *ptable;
+    for (uint16_t i = 0; i < mesh_node.bridging_table_size; ++i)
+    {
+        ptable = subnet_bridge_table_get_by_index(i);
+        if (ptable->used)
+        {
+            data_uart_debug("Bridge:\t\t%d-%d-0x%04x-0x%04x-0x%04x-0x%04x\r\n", i, ptable->directions,
+                            ptable->net_key_index1, ptable->net_key_index2, ptable->addr1, ptable->addr2);
+        }
+    }
+#endif
+#if F_BT_MESH_1_1_DF_SUPPORT
+    forwarding_table_t *ptable_f = (forwarding_table_t *)forwarding_table_list.pfirst;
+    while (NULL != ptable_f)
+    {
+        data_uart_debug("DF-Path:\t%d-%d-%d-%d-%d-%d-0x%04x-0x%04x\r\n\t\t0x%04x(%d)",
+                        ptable_f->df_key_index, ptable_f->master_key_index,
+                        ptable_f->entry.fixed_path, ptable_f->entry.backward_path_valid,
+                        ptable_f->entry.forwarding_num, ptable_f->entry.lane_counter,
+                        ptable_f->entry.bearer_toward_path_origin, ptable_f->entry.bearer_toward_path_target,
+                        ptable_f->entry.origin_addr, ptable_f->entry.origin_secondary_elem_num);
+        df_dependent_addr_t *paddr = (df_dependent_addr_t *)ptable_f->entry.dependent_origin_list.pfirst;
+        while (NULL != paddr)
+        {
+            data_uart_debug("-<0x%04x(%d)>", paddr->primary_addr, paddr->secondary_elem_num);
+            paddr = paddr->pnext;
+        }
+        data_uart_debug("\r\n\t\t----->\r\n\t\t0x%04x(%d)", ptable_f->entry.target_addr,
+                        ptable_f->entry.target_secondary_elem_num);
+        paddr = (df_dependent_addr_t *)ptable_f->entry.dependent_target_list.pfirst;
+        while (NULL != paddr)
+        {
+            data_uart_debug("-<0x%04x(%d)>", paddr->primary_addr, paddr->secondary_elem_num);
+            paddr = paddr->pnext;
+        }
+        data_uart_debug("\r\n");
+        ptable_f = ptable_f->pnext;
+    }
+#endif
+    return USER_CMD_RESULT_OK;
+}
+#else
 // RTK porting:for report cmd list info event
+#define USER_CMD_LIST_MAX_LEN    1024
+// max of user cmd list for provisioner : 190 + N(provisioned device num)*24 + 2(IPC align)
+// Provisioner list info len with 20 device : 190+20*24 + 2 = 672 bytes
+
 static void copy_data_to_memory_byte_by_byte(uint32_t val, uint8_t *p, uint8_t data_len)
 {
 	// Copy a val to memory using little endian
@@ -56,10 +263,6 @@ static void copy_data_to_memory_byte_by_byte(uint32_t val, uint8_t *p, uint8_t d
 	return true;
 }
 
-// RTK porting:for report cmd list info event
-#define USER_CMD_LIST_MAX_LEN    1024
-// max of user cmd list for provisioner : 190 + N(provisioned device num)*24 + 2(IPC align)
-// Provisioner list info len with 20 device : 190+20*24 + 2 = 672 bytes
 user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
 {
     UNUSED(pparse_value);
@@ -503,6 +706,7 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
 	}
     return USER_CMD_RESULT_OK;
 }
+#endif
 
 user_cmd_parse_result_t user_cmd_dev_info_show(user_cmd_parse_value_t *pparse_value)
 {

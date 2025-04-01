@@ -196,9 +196,11 @@ int wifi_get_associated_client_list(struct _rtw_client_list_t *client_list_buf)
 	return -1;
 }
 
-int wifi_get_phy_statistic(union _rtw_phy_statistics_t *phy_statistic)
+int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union _rtw_phy_stats_t *phy_stats)
 {
-	UNUSED(phy_statistic);
+	UNUSED(wlan_idx);
+	UNUSED(mac_addr);
+	UNUSED(phy_stats);
 	call_noused = __LINE__;
 	return -1;
 }

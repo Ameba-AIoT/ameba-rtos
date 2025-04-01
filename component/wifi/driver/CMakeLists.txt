@@ -192,8 +192,9 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-
+set(CSRC_DRV)
 set(CSRC_PHY)
+set(CSRC_BTC)
 
 include(drv.cmake OPTIONAL)
 include(drv_common.cmake OPTIONAL)

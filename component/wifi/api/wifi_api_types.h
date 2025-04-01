@@ -63,6 +63,10 @@ extern "C" {
 #define NAN_WLAN_INDEX	2
 #endif
 
+#ifndef NONE_WLAN_INDEX
+#define NONE_WLAN_INDEX	0xFF
+#endif
+
 #define SCAN_LONGEST_WAIT_TIME	(12000) /**< Scan longest wait time. */
 
 /** Set to this means do fast survey on the specified channel with scan time set to 25ms,
@@ -917,23 +921,22 @@ struct _rtw_wifi_setting_t {
 /**
   * @brief  The structure is used to describe the phy statistics.
   */
-union _rtw_phy_statistics_t {
+union _rtw_phy_stats_t {
 	struct {
 		signed char	rssi;          /**< Average mixed rssi in 1 sec. */
 		signed char	data_rssi;          /**< Average data rssi in 1 sec. */
 		signed char	beacon_rssi;          /**< Average beacon rssi in 1 sec. */
 		signed char	snr;          /**< Average snr in 1 sec (not include cck rate).*/
-	} sta_phy_stats; /**< For STA mode statistic.*/
+	} sta; /**< For STA mode statistic.*/
 	struct {
 		signed char	data_rssi;          /**< Average data rssi in 1 sec. */
-		signed char	snr;          /**< Average snr in 1 sec (not include cck rate).*/
-	} ap_phy_stats; /**< For SOFTAP mode statistic.*/
+	} ap; /**< For SOFTAP mode statistic.*/
 	struct {
 		unsigned char
 		cca_clm; /**< Channel loading measurement ratio by cca (the ratio of CCA = 1 in number of samples). driver do clm every 2 seconds, the value is the lastest result. */
 		unsigned char	edcca_clm; /**< Channel loading measurement ratio by edcca (the ratio of EDCCA = 1 in number of samples). The value is also the lastest result. */
 		unsigned char	clm_channel; /**< Channel corresponding to the latest clm result.*/
-	} cmn_phy_stats; /**< For common statistic.*/
+	} cmn; /**< For common statistic.*/
 };
 
 /**********************************************************************************************

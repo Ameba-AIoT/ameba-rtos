@@ -160,7 +160,16 @@ static void flash_get_vendor(void)
 		break;
 	case FlashClass2:
 		FLASH_StructInit_GD(&flash_init_para);
-		if (flash_ID[2] > 0x15) { /* GD capacity more than 2MB */
+		/* GD flash */
+		if (flash_ID[0] == 0xC8) {
+			/* 3.3v flash_id[1] = 40h or 1.8v ~ 3.3v flash_id[1] = 65h */
+			if ((flash_ID[1] == 0x40) || (flash_ID[1] == 0x65)) {
+				/* GD capacity more than 2MB, need 31h cmd to write SR2 */
+				if (flash_ID[2] >= 0x16) {
+					flash_init_para.FLASH_cmd_wr_status2 = 0x31;
+				}
+			}
+		} else {
 			flash_init_para.FLASH_cmd_wr_status2 = 0x31;
 		}
 		break;

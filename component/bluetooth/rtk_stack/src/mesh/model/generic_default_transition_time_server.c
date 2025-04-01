@@ -129,6 +129,7 @@ static bool generic_default_transition_time_server_receive(mesh_msg_p pmesh_msg)
 static int32_t generic_default_transition_time_server_publish(mesh_model_info_p pmodel_info,
                                                               bool retrans)
 {
+    // RTK porting:avoid compile warning
 	(void) retrans;
     generic_default_transition_time_stat(pmodel_info, 0, 0, get_present_transition_time(pmodel_info));
     return 0;

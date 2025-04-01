@@ -256,11 +256,24 @@ int wifi_set_pmk_cache_enable(unsigned char value)
 	return ret;
 }
 
-int wifi_get_phy_statistic(union _rtw_phy_statistics_t *phy_statistic)
+int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union _rtw_phy_stats_t *phy_stats)
 {
 	int ret = 0;
+	u32 param_buf[4] = {0};
+	u32 len = 0;
 
-	whc_host_api_message_send(WHC_API_WIFI_GET_PHY_STATISTIC, NULL, 0, (u8 *)phy_statistic, sizeof(union _rtw_phy_statistics_t));
+	param_buf[0] = (u32)wlan_idx;
+	len = 4;
+	if (mac_addr) {
+		param_buf[1] = 6;
+		memcpy((void *)&param_buf[2], (void *)mac_addr, 6);
+		len += 10;
+	} else {
+		param_buf[1] = 0;
+		len += 4;
+	}
+
+	whc_host_api_message_send(WHC_API_WIFI_GET_PHY_STATS, (u8 *)param_buf, len, (u8 *)phy_stats, sizeof(union _rtw_phy_stats_t));
 	return ret;
 }
 

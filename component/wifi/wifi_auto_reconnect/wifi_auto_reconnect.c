@@ -101,12 +101,12 @@ void rtw_reconn_task_hdl(void *param)
 
 	ret = wifi_connect(&rtw_reconn.conn_param, 1);
 	if (ret != RTK_SUCCESS) {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "reconn fail:%d", ret);
-		if ((ret == RTW_CONNECT_INVALID_KEY)) {
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "reconn fail:-0x%x", -ret);
+		if ((ret == -RTK_ERR_WIFI_CONN_INVALID_KEY)) {
 			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "(password format wrong)");
-		} else if (ret == RTW_CONNECT_SCAN_FAIL) {
+		} else if (ret == -RTK_ERR_WIFI_CONN_SCAN_FAIL) {
 			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "(not found AP)");
-		} else if (ret == RTW_BUSY) {
+		} else if (ret == -RTK_ERR_BUSY) {
 			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "(busy)");
 		}
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\r\n");

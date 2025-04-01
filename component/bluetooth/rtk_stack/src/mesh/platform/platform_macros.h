@@ -30,11 +30,14 @@ extern "C"  {
 #define _PACKED4_            __attribute__ ((packed))
 #define _SHORT_ENUM_        __attribute__ ((packed))
 #ifndef __INLINE
-
-#if defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#if   defined ( __CC_ARM )
+#define __INLINE            __inline
+#elif defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
 #define __INLINE            __inline
 #elif defined ( __GNUC__ )
 #define __INLINE            __inline
+#elif defined( __ICCARM__ )
+#define __INLINE            inline
 #endif
 #endif
 

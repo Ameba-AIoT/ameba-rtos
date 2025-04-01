@@ -7,188 +7,190 @@
 #ifndef _AMEBA_PWMTIMER_H_
 #define _AMEBA_PWMTIMER_H_
 
-/* AUTO_GEN_START */
-
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
 
 /** @defgroup PWMTIMER
-* @brief PWMTIMER driver modules
-* @{
-*/
+  * @brief PWMTIMER driver modules
+  * @{
+  */
+
+/* AUTO_GEN_START */
+// Do NOT modify any AUTO_GEN code below
 
 /* Registers Definitions --------------------------------------------------------*/
 
 /** @defgroup PWMTIMER_Register_Definitions PWMTIMER Register Definitions
- * @{
- *****************************************************************************/
+  * @{
+  */
 
 /** @defgroup EN
- * @brief TIM enable register
- * @{
- **/
-#define TIM_BIT_CNT_EN       ((u32)0x00000001 << 16)          /*!<R 0x0  counter working status * 0: counter is stoppped * 1: counter is working */
-#define TIM_BIT_CEN          ((u32)0x00000001 << 8)          /*!<R 0x0  counter run status * 0: counter is disabled * 1: counter is enabled */
-#define TIM_BIT_CNT_STOP     ((u32)0x00000001 << 1)          /*!<WA0 0x0  disable the counter. Poll CNT_RUN to see the counter status. If CNT_RUN is 0, it means that the counter has been disabled internally. */
-#define TIM_BIT_CNT_START    ((u32)0x00000001 << 0)          /*!<WA0 0x0  enable the counter. Poll CNT_RUN to see the counter status. If CNT_RUN is 1, it means that the counter has been enabled internally. */
+  * @brief TIM enable register
+  * @{
+  */
+#define TIM_BIT_CNT_EN    ((u32)0x00000001 << 16) /*!< R 0x0  Counter working status * 0: counter is stoppped * 1: counter is working*/
+#define TIM_BIT_CEN       ((u32)0x00000001 << 8)  /*!< R 0x0  Counter run status * 0: counter is disabled * 1: counter is enabled*/
+#define TIM_BIT_CNT_STOP  ((u32)0x00000001 << 1)  /*!< WA0 0x0  Disable the counter. Poll cnt_run to see the counter status. If cnt_run is 0, it means that the counter has been disabled internally.*/
+#define TIM_BIT_CNT_START ((u32)0x00000001 << 0)  /*!< WA0 0x0  Enable the counter.  Poll cnt_run to see the counter status. If cnt_run is 1, it means that the counter has been enabled internally.*/
 /** @} */
 
 /** @defgroup CR
- * @brief TIM control register
- * @{
- **/
-#define TIM_MASK_ETP         ((u32)0x00000003 << 8)          /*!<R/W 0x0  external trigger polarity(TRGI) * 0: positive edge is active * 1: negative edge is active * 2 or 3: both edge is active Note: these bits are only valid in one-pulse mode. */
-#define TIM_ETP(x)           (((u32)((x) & 0x00000003) << 8))
-#define TIM_GET_ETP(x)       ((u32)(((x >> 8) & 0x00000003)))
-#define TIM_BIT_ARPE         ((u32)0x00000001 << 4)          /*!<R/W 0x0  enable auto-reload preloading * 0: TIM_ARR register is not buffered * 1: TIM_ARR register is buffered */
-#define TIM_BIT_OPM          ((u32)0x00000001 << 3)          /*!<R/W 0x0  one-pulse mode * 0: counter is not stopped at UEV * 1: counter stops counting at next UEV */
-#define TIM_BIT_URS          ((u32)0x00000001 << 2)          /*!<R/W 0x0  update request source * 0: counter overflow and setting the UG bit * 1: counter overflow */
-#define TIM_BIT_UDIS         ((u32)0x00000001 << 1)          /*!<R/W 0x0  disable UEV. Shadow registers keep their values. Otherwise, buffered registers are then loaded with their preload values when UEV happen. */
+  * @brief TIM control register
+  * @{
+  */
+#define TIM_MASK_ETP   ((u32)0x00000003 << 8)           /*!< R/W 0x0  External trigger polarity (TRGI) * 0: positive edge is active * 1: negative edge is active * 2 or 3: both edge is active Note: these bits are only valid in one-pulse mode.*/
+#define TIM_ETP(x)     (((u32)((x) & 0x00000003) << 8))
+#define TIM_GET_ETP(x) ((u32)(((x >> 8) & 0x00000003)))
+#define TIM_BIT_ARPE   ((u32)0x00000001 << 4)           /*!< R/W 0x0  Enable auto-reload preloading * 0: TIM_ARR register is not buffered * 1: TIM_ARR register is buffered*/
+#define TIM_BIT_OPM    ((u32)0x00000001 << 3)           /*!< R/W 0x0  One-pulse mode * 0: counter is not stopped at UEV * 1: counter stops counting at next UEV*/
+#define TIM_BIT_URS    ((u32)0x00000001 << 2)           /*!< R/W 0x0  update request source * 0: counter overflow and setting the UG bit * 1: counter overflow*/
+#define TIM_BIT_UDIS   ((u32)0x00000001 << 1)           /*!< R/W 0x0  Disable uev. Shadow registers keep their values. Otherwise, buffered registers are then loaded with their preload values when uev happens.*/
 /** @} */
 
 /** @defgroup DIER
- * @brief TIM interupt enable register
- * @{
- **/
-#define TIM_BIT_UIE5         ((u32)0x00000001 << 21)          /*!<R/W 0x0  enable channel 5 update interrupt */
-#define TIM_BIT_UIE4         ((u32)0x00000001 << 20)          /*!<R/W 0x0  enable channel 4 update interrupt */
-#define TIM_BIT_UIE3         ((u32)0x00000001 << 19)          /*!<R/W 0x0  enable channel 3 update interrupt */
-#define TIM_BIT_UIE2         ((u32)0x00000001 << 18)          /*!<R/W 0x0  enable channel 2 update interrupt */
-#define TIM_BIT_UIE1         ((u32)0x00000001 << 17)          /*!<R/W 0x0  enable channel 1 update interrupt */
-#define TIM_BIT_UIE0         ((u32)0x00000001 << 16)          /*!<R/W 0x0  enable channel 0 update interrupt */
-#define TIM_BIT_CC5IE        ((u32)0x00000001 << 6)          /*!<R/W 0x0  enable Capture/Compare 5 interrupt */
-#define TIM_BIT_CC4IE        ((u32)0x00000001 << 5)          /*!<R/W 0x0  enable Capture/Compare 4 interrupt */
-#define TIM_BIT_CC3IE        ((u32)0x00000001 << 4)          /*!<R/W 0x0  enable Capture/Compare 3 interrupt */
-#define TIM_BIT_CC2IE        ((u32)0x00000001 << 3)          /*!<R/W 0x0  enable Capture/Compare 2 interrupt */
-#define TIM_BIT_CC1IE        ((u32)0x00000001 << 2)          /*!<R/W 0x0  enable Capture/Compare 1 interrupt */
-#define TIM_BIT_CC0IE        ((u32)0x00000001 << 1)          /*!<R/W 0x0  enable Capture/Compare 0 interrupt */
-#define TIM_BIT_UIE          ((u32)0x00000001 << 0)          /*!<R/W 0x0  enable counter update interrupt */
+  * @brief TIM interupt enable register
+  * @{
+  */
+#define TIM_BIT_UIE5  ((u32)0x00000001 << 21) /*!< R/W 0x0  Enable channel 5 update interrupt*/
+#define TIM_BIT_UIE4  ((u32)0x00000001 << 20) /*!< R/W 0x0  Enable channel 4 update interrupt*/
+#define TIM_BIT_UIE3  ((u32)0x00000001 << 19) /*!< R/W 0x0  Enable channel 3 update interrupt*/
+#define TIM_BIT_UIE2  ((u32)0x00000001 << 18) /*!< R/W 0x0  Enable channel 2 update interrupt*/
+#define TIM_BIT_UIE1  ((u32)0x00000001 << 17) /*!< R/W 0x0  Enable channel 1 update interrupt*/
+#define TIM_BIT_UIE0  ((u32)0x00000001 << 16) /*!< R/W 0x0  Enable channel 0 update interrupt*/
+#define TIM_BIT_CC5IE ((u32)0x00000001 << 6)  /*!< R/W 0x0  Enable capture/compare 5 interrupt*/
+#define TIM_BIT_CC4IE ((u32)0x00000001 << 5)  /*!< R/W 0x0  Enable capture/compare 4 interrupt*/
+#define TIM_BIT_CC3IE ((u32)0x00000001 << 4)  /*!< R/W 0x0  Enable capture/compare 3 interrupt*/
+#define TIM_BIT_CC2IE ((u32)0x00000001 << 3)  /*!< R/W 0x0  Enable capture/compare 2 interrupt*/
+#define TIM_BIT_CC1IE ((u32)0x00000001 << 2)  /*!< R/W 0x0  Enable capture/compare 1 interrupt*/
+#define TIM_BIT_CC0IE ((u32)0x00000001 << 1)  /*!< R/W 0x0  Enable capture/compare 0 interrupt*/
+#define TIM_BIT_UIE   ((u32)0x00000001 << 0)  /*!< R/W 0x0  Enable counter update interrupt*/
 /** @} */
 
 /** @defgroup SR
- * @brief TIM status register
- * @{
- **/
-#define TIM_BIT_UG_DONE      ((u32)0x00000001 << 31)          /*!<R 0x1  UG operation status This bit is cleared by hardware when the UG bit in the TIMx_EGR register is set. When the UG operation is done, hardware set this bit to '1'. So, software can poll this bit to see the UG operation status. */
-#define TIM_BIT_UIF5         ((u32)0x00000001 << 21)          /*!<R/W1C/ES 0x0  refer to UIF0 description */
-#define TIM_BIT_UIF4         ((u32)0x00000001 << 20)          /*!<R/W1C/ES 0x0  refer to UIF0 description */
-#define TIM_BIT_UIF3         ((u32)0x00000001 << 19)          /*!<R/W1C/ES 0x0  refer to UIF0 description */
-#define TIM_BIT_UIF2         ((u32)0x00000001 << 18)          /*!<R/W1C/ES 0x0  refer to UIF0 description */
-#define TIM_BIT_UIF1         ((u32)0x00000001 << 17)          /*!<R/W1C/ES 0x0  refer to UIF0 description */
-#define TIM_BIT_UIF0         ((u32)0x00000001 << 16)          /*!<R/W1C/ES 0x0  update interrupt flag of channel0 This flag is set by hardware when the UIE0 bit in the TIMx_EGR register is set, and update interrupt of channel0 happens. */
-#define TIM_BIT_CC5IF        ((u32)0x00000001 << 6)          /*!<R/W1C/ES 0x0  refer to CC0IF description */
-#define TIM_BIT_CC4IF        ((u32)0x00000001 << 5)          /*!<R/W1C/ES 0x0  refer to CC0IF description */
-#define TIM_BIT_CC3IF        ((u32)0x00000001 << 4)          /*!<R/W1C/ES 0x0  refer to CC0IF description */
-#define TIM_BIT_CC2IF        ((u32)0x00000001 << 3)          /*!<R/W1C/ES 0x0  refer to CC0IF description */
-#define TIM_BIT_CC1IF        ((u32)0x00000001 << 2)          /*!<R/W1C/ES 0x0  refer to CC0IF description */
-#define TIM_BIT_CC0IF        ((u32)0x00000001 << 1)          /*!<R/W1C/ES 0x0  Capture/Compare 0 interrupt flag channel CC0 configured as output: This flag is set by hardware when the counter TIM_CNT value matches the value of TIM_CCR0 register. It is cleared by software. Channel CC0 configured as input: This flag is set by hardware and the counter value has been captured in CCR0 field of TIM_CCR0 register when an active edge has been detected. It is cleared by software. */
-#define TIM_BIT_UIF          ((u32)0x00000001 << 0)          /*!<R/W1C/ES 0x0  update interrupt flag */
+  * @brief TIM status register
+  * @{
+  */
+#define TIM_BIT_UG_DONE ((u32)0x00000001 << 31) /*!< R 0x1  UG operation status.This bit is cleared by hardware when the ug bit in the timx_egr register is set. When the ug operation is done, hardware set this bit to '1'. So, software can poll this bit to see the ug operation status.*/
+#define TIM_BIT_UIF5    ((u32)0x00000001 << 21) /*!< R/W1C/ES 0x0  Refer to uif0 description*/
+#define TIM_BIT_UIF4    ((u32)0x00000001 << 20) /*!< R/W1C/ES 0x0  Refer to uif0 description*/
+#define TIM_BIT_UIF3    ((u32)0x00000001 << 19) /*!< R/W1C/ES 0x0  Refer to uif0 description*/
+#define TIM_BIT_UIF2    ((u32)0x00000001 << 18) /*!< R/W1C/ES 0x0  Refer to uif0 description*/
+#define TIM_BIT_UIF1    ((u32)0x00000001 << 17) /*!< R/W1C/ES 0x0  Refer to uif0 description*/
+#define TIM_BIT_UIF0    ((u32)0x00000001 << 16) /*!< R/W1C/ES 0x0  Update interrupt flag of channel0.this flag is set by hardware when the uie0 bit in the timx_egr register is set, and update interrupt of channel 0 happens.*/
+#define TIM_BIT_CC5IF   ((u32)0x00000001 << 6)  /*!< R/W1C/ES 0x0  Refer to cc0if description*/
+#define TIM_BIT_CC4IF   ((u32)0x00000001 << 5)  /*!< R/W1C/ES 0x0  Refer to cc0if description*/
+#define TIM_BIT_CC3IF   ((u32)0x00000001 << 4)  /*!< R/W1C/ES 0x0  Refer to cc0if description*/
+#define TIM_BIT_CC2IF   ((u32)0x00000001 << 3)  /*!< R/W1C/ES 0x0  Refer to cc0if description*/
+#define TIM_BIT_CC1IF   ((u32)0x00000001 << 2)  /*!< R/W1C/ES 0x0  Refer to cc0if description*/
+#define TIM_BIT_CC0IF   ((u32)0x00000001 << 1)  /*!< R/W1C/ES 0x0  Capture/compare 0 interrupt flag. Channel cc0 configured as output,this flag is set by hardware when the counter tim_cnt value matches the value of tim_ccr0 register. It is cleared by software. Channel cc0 configured as input,this flag is set by hardware and the counter value has been captured in ccr0 field of tim_ccr0 register when an active edge has been detected. It is cleared by software.*/
+#define TIM_BIT_UIF     ((u32)0x00000001 << 0)  /*!< R/W1C/ES 0x0  Update interrupt flag*/
 /** @} */
 
 /** @defgroup EGR
- * @brief TIM event generation register
- * @{
- **/
-#define TIM_BIT_CC5G         ((u32)0x00000001 << 6)          /*!<WA0 0x0  refer to CC0G description */
-#define TIM_BIT_CC4G         ((u32)0x00000001 << 5)          /*!<WA0 0x0  refer to CC0G description */
-#define TIM_BIT_CC3G         ((u32)0x00000001 << 4)          /*!<WA0 0x0  refer to CC0G description */
-#define TIM_BIT_CC2G         ((u32)0x00000001 << 3)          /*!<WA0 0x0  refer to CC0G description */
-#define TIM_BIT_CC1G         ((u32)0x00000001 << 2)          /*!<WA0 0x0  refer to CC0G description */
-#define TIM_BIT_CC0G         ((u32)0x00000001 << 1)          /*!<WA0 0x0  Capture/Compare 0 generation This bit is set by software and is automatically cleared by hardware. channel CC0 configured as output: The CC0IF flag is set, the corresponding interrupt or request is sent if enabled. Channel CC0 configured as input: The current value of counter is capture in CCR0 field of TIM_CCR0 register. The CC0IF flag is set, the corresponding interrupt or request is sent if enabled. */
-#define TIM_BIT_UG           ((u32)0x00000001 << 0)          /*!<WA0 0x0  update generation. Re-initialize the counter and generate an update of registers. Note that the prescaler counter is cleared too.(anyway the prescaler ratio is not affected) */
+  * @brief TIM event generation register
+  * @{
+  */
+#define TIM_BIT_CC5G ((u32)0x00000001 << 6) /*!< WA0 0x0  Refer to cc0g description*/
+#define TIM_BIT_CC4G ((u32)0x00000001 << 5) /*!< WA0 0x0  Refer to cc0g description*/
+#define TIM_BIT_CC3G ((u32)0x00000001 << 4) /*!< WA0 0x0  Refer to cc0g description*/
+#define TIM_BIT_CC2G ((u32)0x00000001 << 3) /*!< WA0 0x0  Refer to cc0g description*/
+#define TIM_BIT_CC1G ((u32)0x00000001 << 2) /*!< WA0 0x0  Refer to cc0g description*/
+#define TIM_BIT_CC0G ((u32)0x00000001 << 1) /*!< WA0 0x0  Capture/compare 0 generation.this bit is set by software and is automatically cleared by hardware. Channel cc0 configured as output,the cc0if flag is set, the corresponding interrupt or request is sent if enabled.  Channel cc0 configured as input,the current value of counter is capture in ccr0 field of tim_ccr0 register. The cc0if flag is set, the corresponding interrupt or  request is sent if enabled.*/
+#define TIM_BIT_UG   ((u32)0x00000001 << 0) /*!< WA0 0x0  Update generation. Re-initialize the counter and generate an update of registers. Note that the prescaler counter is cleared too (anyway the prescaler ratio is not affected).*/
 /** @} */
 
 /** @defgroup CNT
- * @brief TIM counter
- * @{
- **/
-#define TIM_MASK_CNT         ((u32)0x0000FFFF << 0)          /*!<R 0x0  counter value */
-#define TIM_CNT(x)           (((u32)((x) & 0x0000FFFF) << 0))
-#define TIM_GET_CNT(x)       ((u32)(((x >> 0) & 0x0000FFFF)))
+  * @brief TIM counter
+  * @{
+  */
+#define TIM_MASK_CNT   ((u32)0x0000FFFF << 0)           /*!< R 0x0  Counter value*/
+#define TIM_CNT(x)     (((u32)((x) & 0x0000FFFF) << 0))
+#define TIM_GET_CNT(x) ((u32)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
 /** @defgroup PSC
- * @brief TIM prescaler register
- * @{
- **/
-#define TIM_MASK_PSC         ((u32)0x0000FFFF << 0)          /*!<R/W 0x0  prescaler value. PSC contains the value to be loaded in the actual prescaler register at each UEV(including when the counter is cleared through UG bit of TIM_EGR register). */
-#define TIM_PSC(x)           (((u32)((x) & 0x0000FFFF) << 0))
-#define TIM_GET_PSC(x)       ((u32)(((x >> 0) & 0x0000FFFF)))
+  * @brief TIM prescaler register
+  * @{
+  */
+#define TIM_MASK_PSC   ((u32)0x0000FFFF << 0)           /*!< R/W 0x0  Prescaler value. Psc contains the value to be loaded in the actual prescaler register at each uev (including when the counter is cleared through ug bit of tim_egr register).*/
+#define TIM_PSC(x)     (((u32)((x) & 0x0000FFFF) << 0))
+#define TIM_GET_PSC(x) ((u32)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
 /** @defgroup ARR
- * @brief TIM auto
- * @{
- **/
-#define TIM_MASK_ARR         ((u32)0x0000FFFF << 0)          /*!<R/W 0xFFFF  the value to be loaded in the actual auto-reload register. It can be preloaded by setting ARPE bit in TIM_CR. */
-#define TIM_ARR(x)           (((u32)((x) & 0x0000FFFF) << 0))
-#define TIM_GET_ARR(x)       ((u32)(((x >> 0) & 0x0000FFFF)))
+  * @brief TIM auto-reload register
+  * @{
+  */
+#define TIM_MASK_ARR   ((u32)0x0000FFFF << 0)           /*!< R/W 0xFFFF  The value to be loaded in the actual auto-reload register. It can be preloaded by setting arpe bit in tim_cr.*/
+#define TIM_ARR(x)     (((u32)((x) & 0x0000FFFF) << 0))
+#define TIM_GET_ARR(x) ((u32)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
 /** @defgroup CCRx
- * @brief TIM Capture/Compare register x
- * @{
- **/
-#define TIM_BIT_OPM_DLx      ((u32)0x00000001 << 29)          /*!<R/W 0x0  One Pulse Mode default level 0: default level is 0 1: default level is 1 this bit takes effect only in PWM output mode's One-Pulse-Mode */
-#define TIM_BIT_CCxM         ((u32)0x00000001 << 27)          /*!<R/W 0x0  CCx working mode * 0: PWM mode * 1: Input capture mode */
-#define TIM_BIT_CCxP         ((u32)0x00000001 << 26)          /*!<R/W 0x0  CCx channel configured as output: * 0: OCx active high * 1: OCx ative low CCx channel configured as input: * 0: positive edge of TRGI is active for capture * 1: negative edge of TRGI is active for capture */
-#define TIM_BIT_OCxPE        ((u32)0x00000001 << 25)          /*!<R/W 0x0  enable output capture x preload * 0: disable preload register on CCRx. CCRx can be written at any time, the new value is taken into account immediately. * 1: enable preload register on CCRx. Read/Write operations access the preload register. CCRx preload value is loaded in the active register at each UEV. */
-#define TIM_BIT_CCxE         ((u32)0x00000001 << 24)          /*!<R/W 0x0  enable CCx */
-#define TIM_MASK_CCRx        ((u32)0x0000FFFF << 0)          /*!<R/W/ES 0x0  Capture/Compare x value CCx channel configured as output: CCRx is the value to be loaded in the actual capture/compare x register(preload value). It is loaded permanently if the preload feature is not selected in the OCxPE bit.Else the preload value is copied in the active capture/compare x register when an UEV occurs.The active capture/compare x register contains the value to be compared to the counter TIM_CNT and signalled on OCx output. CCx channel configured as pulse mode 1: CCRx is the counter value transferred by the last input capture event(TRGI) */
-#define TIM_CCRx(x)          (((u32)((x) & 0x0000FFFF) << 0))
-#define TIM_GET_CCRx(x)      ((u32)(((x >> 0) & 0x0000FFFF)))
+  * @brief TIM Capture/Compare register x
+  * @{
+  */
+#define TIM_BIT_OPM_DLx ((u32)0x00000001 << 29)          /*!< R/W 0x0  One Pulse Mode default level 0: default level is 0 1: default level is 1 This bit takes effect only in PWM output mode's One-Pulse-Mode.*/
+#define TIM_BIT_CCxM    ((u32)0x00000001 << 27)          /*!< R/W 0x0  CCx working mode * 0: PWM mode * 1: Input capture mode*/
+#define TIM_BIT_CCxP    ((u32)0x00000001 << 26)          /*!< R/W 0x0  CCx channel configured as output: * 0: OCx active high * 1: OCx ative low CCx channel configured as input: * 0: positive edge of TRGI is active for capture * 1: negative edge of TRGI is active for capture*/
+#define TIM_BIT_OCxPE   ((u32)0x00000001 << 25)          /*!< R/W 0x0  Enable output capture x preload * 0: disable preload register on CCRx. CCRx can be written at any time, the new value is taken into account immediately. * 1: enable preload register on CCRx. Read/Write operations access the preload register. CCRx preload value is loaded in the active register at each UEV.*/
+#define TIM_BIT_CCxE    ((u32)0x00000001 << 24)          /*!< R/W 0x0  Enable CCx*/
+#define TIM_MASK_CCRx   ((u32)0x0000FFFF << 0)           /*!< R/W/ES 0x0  Capture/Compare x value CCx channel configured as output: CCRx is the value to be loaded in the actual capture/compare x register (preload value). It is loaded permanently if the preload feature is not selected in the OCxPE bit. Else the preload value is copied in the active capture/compare x register when an UEV occurs. The active capture/compare x register contains the value to be compared to the counter TIM_CNT and signalled on OCx output. CCx channel configured as pulse mode 1: CCRx is the counter value transferred by the last input capture event (TRGI)*/
+#define TIM_CCRx(x)     (((u32)((x) & 0x0000FFFF) << 0))
+#define TIM_GET_CCRx(x) ((u32)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
 /** @defgroup PSYNCx
- * @brief TIM Phase Synchronization register x
- * @{
- **/
-#define TIM_BIT_SYNCENx      ((u32)0x00000001 << 27)          /*!<R/W 0x0  enable phase sync function in channel x. Phase sync takes effect only in output PWM mode. */
-#define TIM_BIT_SYNCDIRx     ((u32)0x00000001 << 26)          /*!<R/W 0x0  phase sync direction to the reference counter: 0:delay to the reference counter 1:ahead to the reference counter */
-#define TIM_BIT_SYNCPEx      ((u32)0x00000001 << 25)          /*!<R/W 0x0  enable sync phase parameter preload * 0: disable preload register on PSYNCx. PSYNCx can be written at any time, the new value is taken into account immediately. * 1: enable preload register on PSYNCx. Read/Write operations access the preload register. PSYNCx preload value is loaded in the active register at each UEV. */
-#define TIM_MASK_SYNCPHASEx  ((u32)0x0000FFFF << 0)          /*!<R/W 0x0  the deviation value of channelx to the reference counter */
-#define TIM_SYNCPHASEx(x)    (((u32)((x) & 0x0000FFFF) << 0))
+  * @brief TIM Phase Synchronization register x
+  * @{
+  */
+#define TIM_BIT_SYNCENx       ((u32)0x00000001 << 27)          /*!< R/W 0x0  Enable phase sync function in channel x. Phase sync takes effect only in output PWM mode.*/
+#define TIM_BIT_SYNCDIRx      ((u32)0x00000001 << 26)          /*!< R/W 0x0  Phase sync direction to the reference counter: 0: delay to the reference counter 1: ahead to the reference counter*/
+#define TIM_BIT_SYNCPEx       ((u32)0x00000001 << 25)          /*!< R/W 0x0  Enable sync phase parameter preload * 0: disable preload register on PSYNCx. PSYNCx can be written at any time, the new value is taken into account immediately. * 1: enable preload register on PSYNCx. Read/Write operations access the preload register. PSYNCx preload value is loaded in the active register at each UEV.*/
+#define TIM_MASK_SYNCPHASEx   ((u32)0x0000FFFF << 0)           /*!< R/W 0x0  The deviation value of channelx to the reference counter*/
+#define TIM_SYNCPHASEx(x)     (((u32)((x) & 0x0000FFFF) << 0))
 #define TIM_GET_SYNCPHASEx(x) ((u32)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
 /** @defgroup PHASECNTx
- * @brief TIM phase counter register x
- * @{
- **/
-#define TIM_MASK_CNTx        ((u32)0x0000FFFF << 0)          /*!<R 0x0  phase counter value of channelx */
-#define TIM_CNTx(x)          (((u32)((x) & 0x0000FFFF) << 0))
-#define TIM_GET_CNTx(x)      ((u32)(((x >> 0) & 0x0000FFFF)))
+  * @brief TIM phase counter register x
+  * @{
+  */
+#define TIM_MASK_CNTx   ((u32)0x0000FFFF << 0)           /*!< R 0x0  Phase counter value of channelx*/
+#define TIM_CNTx(x)     (((u32)((x) & 0x0000FFFF) << 0))
+#define TIM_GET_CNTx(x) ((u32)(((x >> 0) & 0x0000FFFF)))
 /** @} */
+
 /** @} */
-
-
-
-/* Exported types --------------------------------------------------------*/
+/* Exported Types --------------------------------------------------------*/
 
 /** @defgroup PWMTIMER_Exported_Types PWMTIMER Exported Types
   * @{
-*****************************************************************************/
+  */
 
+/** @brief PWMTIMER Register Declaration
+  */
 
-/**
- * @brief PWMTIMER Register Declaration
- *****************************************************************************/
 typedef struct {
-	__IO uint32_t EN;                                     /*!< TIM ENABLE REGISTER,  Address offset: 0x00 */
-	__IO uint32_t CR;                                     /*!< TIM CONTROL REGISTER,  Address offset: 0x04 */
-	__IO uint32_t DIER;                                   /*!< TIM INTERUPT ENABLE REGISTER,  Address offset: 0x08 */
-	__IO uint32_t SR;                                     /*!< TIM STATUS REGISTER,  Address offset: 0x0C */
-	__O  uint32_t EGR;                                    /*!< TIM EVENT GENERATION REGISTER,  Address offset: 0x10 */
-	__I  uint32_t CNT;                                    /*!< TIM COUNTER Register,  Address offset: 0x14 */
-	__IO uint32_t PSC;                                    /*!< TIM PRESCALER REGISTER,  Address offset: 0x18 */
-	__IO uint32_t ARR;                                    /*!< TIM AUTO-RELOAD REGISTER,  Address offset: 0x1C */
-	__IO uint32_t RSVD0;                                  /*!<  Reserved,  Address offset:0x20 */
-	__IO uint32_t CCRx[6];                                /*!< TIM CAPTURE/COMPARE REGISTER x Register,  Address offset: 0x24-0x38 */
-	__IO uint32_t PSYNCx[6];                              /*!< TIM PHASE SYNCHRONIZATION REGISTER x Register,  Address offset: 0x3C-0x50 */
-	__I  uint32_t PHASECNTx[6];                           /*!< TIM PHASE COUNTER REGISTER x Register,  Address offset: 0x54-0x68 */
+	__IO uint32_t EN          ;  /*!< TIM ENABLE REGISTER,  Address offset:0x000 */
+	__IO uint32_t CR          ;  /*!< TIM CONTROL REGISTER,  Address offset:0x004 */
+	__IO uint32_t DIER        ;  /*!< TIM INTERUPT ENABLE REGISTER,  Address offset:0x008 */
+	__IO uint32_t SR          ;  /*!< TIM STATUS REGISTER,  Address offset:0x00C */
+	__O  uint32_t EGR         ;  /*!< TIM EVENT GENERATION REGISTER,  Address offset:0x010 */
+	__I  uint32_t CNT         ;  /*!< TIM COUNTER Register,  Address offset:0x014 */
+	__IO uint32_t PSC         ;  /*!< TIM PRESCALER REGISTER,  Address offset:0x018 */
+	__IO uint32_t ARR         ;  /*!< TIM AUTO-RELOAD REGISTER,  Address offset:0x01C */
+	__IO uint32_t RSVD0       ;  /*!< Reserved,  Address offset:0x020-0x023 */
+	__IO uint32_t CCRx[6]     ;  /*!< TIM CAPTURE/COMPARE REGISTER x Register,  Address offset:0x024-0x038 */
+	__IO uint32_t PSYNCx[6]   ;  /*!< TIM PHASE SYNCHRONIZATION REGISTER x Register,  Address offset:0x03C-0x050 */
+	__I  uint32_t PHASECNTx[6];  /*!< TIM PHASE COUNTER REGISTER x Register,  Address offset:0x054-0x068 */
 } RTIM_TypeDef;
+
 /** @} */
+
+
+// Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
@@ -617,4 +619,3 @@ extern u32 APBPeriph_TIMx_CLOCK[TimerNum];
 /* MANUAL_GEN_END */
 
 #endif
-

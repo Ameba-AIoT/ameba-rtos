@@ -19,7 +19,6 @@ set(
     ${BASEDIR}/component/wifi/wifi_fast_connect
     ${BASEDIR}/component/wifi/wifi_auto_reconnect
     ${BASEDIR}/component/wifi/simple_config
-    ${BASEDIR}/component/wifi/wifi_cast
     ${BASEDIR}/component/wifi/common
     ${BASEDIR}/component/wifi/common/secure
     ${BASEDIR}/component/wifi/wpa_supplicant/wpa_lite
@@ -27,16 +26,6 @@ set(
     ${BASEDIR}/component/wifi/driver/nan
     ${BASEDIR}/component/wifi/driver/mesh
     ${BASEDIR}/component/wifi/driver/wifi_tunnel
-    ${BASEDIR}/component/wifi/whc
-    ${BASEDIR}/component/wifi/whc/whc_dev
-    ${BASEDIR}/component/wifi/whc/whc_host_rtos
-    ${BASEDIR}/component/wifi/whc/whc_dev/spi
-    ${BASEDIR}/component/wifi/whc/whc_dev/sdio
-    ${BASEDIR}/component/wifi/whc/whc_dev/usb
-    ${BASEDIR}/component/wifi/whc/whc_dev/ipc
-    ${BASEDIR}/component/wifi/whc/whc_host_rtos/spi
-    ${BASEDIR}/component/wifi/whc/whc_host_rtos/ipc
-    ${BASEDIR}/component/wifi/wifi_tunnel_app
     ${BASEDIR}/component/at_cmd
 )
 

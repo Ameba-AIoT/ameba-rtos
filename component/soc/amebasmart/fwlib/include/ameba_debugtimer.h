@@ -7,93 +7,95 @@
 #ifndef _AMEBA_DEBUGTIMER_H_
 #define _AMEBA_DEBUGTIMER_H_
 
-/* AUTO_GEN_START */
-
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
 
 /** @defgroup DEBUGTIMER
-* @brief DEBUGTIMER driver modules
-* @{
-*/
+  * @brief DEBUGTIMER driver modules
+  * @{
+  */
+
+/* AUTO_GEN_START */
+// Do NOT modify any AUTO_GEN code below
 
 /* Registers Definitions --------------------------------------------------------*/
 
 /** @defgroup DEBUGTIMER_Register_Definitions DEBUGTIMER Register Definitions
- * @{
- *****************************************************************************/
+  * @{
+  */
 
 /** @defgroup DBGT_CTRL
- * @brief debugtimer control register
- * @{
- **/
-#define DBGT_MASK_DIV            ((u32)0x00000FFF << 4)          /*!<R/W 28h  The default value can used to divide 40M Xtal to 1M */
-#define DBGT_DIV(x)              (((u32)((x) & 0x00000FFF) << 4))
-#define DBGT_GET_DIV(x)          ((u32)(((x >> 4) & 0x00000FFF)))
-#define DBGT_MASK_CLKSEL         ((u32)0x00000007 << 1)          /*!<R/W 0h  Clock source select 2~7: Reserved 1: Select 32K as clock source. 0: Select Xtal as clock source. */
-#define DBGT_CLKSEL(x)           (((u32)((x) & 0x00000007) << 1))
-#define DBGT_GET_CLKSEL(x)       ((u32)(((x >> 1) & 0x00000007)))
-#define DBGT_BIT_ENABLE          ((u32)0x00000001 << 0)          /*!<R/W 1h  Debug timer enable. 1: The counter is enabled. 0: The counter is disabled. */
+  * @brief debugtimer control register
+  * @{
+  */
+#define DBGT_MASK_DIV      ((u32)0x00000FFF << 4)           /*!< R/W 28h  The default value can used to divide 40M Xtal to 1M*/
+#define DBGT_DIV(x)        (((u32)((x) & 0x00000FFF) << 4))
+#define DBGT_GET_DIV(x)    ((u32)(((x >> 4) & 0x00000FFF)))
+#define DBGT_MASK_CLKSEL   ((u32)0x00000007 << 1)           /*!< R/W 0h  Clock source select 1: Select 32K as clock source. 0: Select Xtal as clock source. 2~7: Reserved*/
+#define DBGT_CLKSEL(x)     (((u32)((x) & 0x00000007) << 1))
+#define DBGT_GET_CLKSEL(x) ((u32)(((x >> 1) & 0x00000007)))
+#define DBGT_BIT_ENABLE    ((u32)0x00000001 << 0)           /*!< R/W 1h  Debug timer enable. 1: The counter is enabled. 0: The counter is disabled.*/
 /** @} */
 
 /** @defgroup DBGT_CRV
- * @brief debugtimer count register
- * @{
- **/
-#define DBGT_MASK_CRV            ((u32)0xFFFFFFFF << 0)          /*!<WOP 0h  Continuing to count from 0 once it's reached 32'hFFFFFFFF */
-#define DBGT_CRV(x)              (((u32)((x) & 0xFFFFFFFF) << 0))
-#define DBGT_GET_CRV(x)          ((u32)(((x >> 0) & 0xFFFFFFFF)))
+  * @brief debugtimer count register
+  * @{
+  */
+#define DBGT_MASK_CRV   ((u32)0xFFFFFFFF << 0)           /*!< WOP 0h  Continuing to count from 0 once it's reached 32'hFFFFFFFF*/
+#define DBGT_CRV(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
+#define DBGT_GET_CRV(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
 /** @defgroup DBGT_ATOM_INC
- * @brief debugtimer atom read increase
- * @{
- **/
-#define DBGT_MASK_ATOM_INC       ((u32)0xFFFFFFFF << 0)          /*!<RP 0h  Each read will increase 1 and return to the increased value to bus. */
-#define DBGT_ATOM_INC(x)         (((u32)((x) & 0xFFFFFFFF) << 0))
-#define DBGT_GET_ATOM_INC(x)     ((u32)(((x >> 0) & 0xFFFFFFFF)))
+  * @brief debugtimer atom read increase
+  * @{
+  */
+#define DBGT_MASK_ATOM_INC   ((u32)0xFFFFFFFF << 0)           /*!< RP 0h  Each read will increase 1 and return to the increased value to bus.*/
+#define DBGT_ATOM_INC(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
+#define DBGT_GET_ATOM_INC(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
 /** @defgroup DBGT_ATOM
- * @brief debugtimer atom
- * @{
- **/
-#define DBGT_MASK_ATOM           ((u32)0xFFFFFFFF << 0)          /*!<WOP 0h  Return the last increased value of atom counter */
-#define DBGT_ATOM(x)             (((u32)((x) & 0xFFFFFFFF) << 0))
-#define DBGT_GET_ATOM(x)         ((u32)(((x >> 0) & 0xFFFFFFFF)))
+  * @brief debugtimer atom
+  * @{
+  */
+#define DBGT_MASK_ATOM   ((u32)0xFFFFFFFF << 0)           /*!< WOP 0h  Return the last increased value of atom counter*/
+#define DBGT_ATOM(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
+#define DBGT_GET_ATOM(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
 /** @defgroup DBGT_SCRATCH
- * @brief debugtimer scratch
- * @{
- **/
-#define DBGT_MASK_SCRATCH        ((u32)0xFFFFFFFF << 0)          /*!<R/W 0h  Reserved for user use */
-#define DBGT_SCRATCH(x)          (((u32)((x) & 0xFFFFFFFF) << 0))
-#define DBGT_GET_SCRATCH(x)      ((u32)(((x >> 0) & 0xFFFFFFFF)))
+  * @brief debugtimer scratch
+  * @{
+  */
+#define DBGT_MASK_SCRATCH   ((u32)0xFFFFFFFF << 0)           /*!< R/W 0h  Reserved for user use*/
+#define DBGT_SCRATCH(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
+#define DBGT_GET_SCRATCH(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
+
 /** @} */
-
-
-
-/* Exported types --------------------------------------------------------*/
+/* Exported Types --------------------------------------------------------*/
 
 /** @defgroup DEBUGTIMER_Exported_Types DEBUGTIMER Exported Types
   * @{
-*****************************************************************************/
+  */
 
+/** @brief DEBUGTIMER Register Declaration
+  */
 
-/**
- * @brief DEBUGTIMER Register Declaration
- *****************************************************************************/
 typedef struct {
-	__IO uint32_t DBGT_CTRL;                              /*!< DEBUGTIMER CONTROL REGISTER,  Address offset: 0x000 */
-	__O  uint32_t DBGT_CRV;                               /*!< DEBUGTIMER COUNT REGISTER,  Address offset: 0x004 */
-	__IO uint32_t DBGT_ATOM_INC;                          /*!< DEBUGTIMER ATOM READ INCREASE Register,  Address offset: 0x008 */
-	__O  uint32_t DBGT_ATOM;                              /*!< DEBUGTIMER ATOM Register,  Address offset: 0x00C */
-	__IO uint32_t DBGT_SCRATCH;                           /*!< DEBUGTIMER SCRATCH Register,  Address offset: 0x010 */
+	__IO uint32_t DBGT_CTRL    ;  /*!< DEBUGTIMER CONTROL REGISTER,  Address offset:0x000 */
+	__O  uint32_t DBGT_CRV     ;  /*!< DEBUGTIMER COUNT REGISTER,  Address offset:0x004 */
+	__I  uint32_t DBGT_ATOM_INC;  /*!< DEBUGTIMER ATOM READ INCREASE Register,  Address offset:0x008 */
+	__O  uint32_t DBGT_ATOM    ;  /*!< DEBUGTIMER ATOM Register,  Address offset:0x00C */
+	__IO uint32_t DBGT_SCRATCH ;  /*!< DEBUGTIMER SCRATCH Register,  Address offset:0x010 */
 } DEBUGTIMER_TypeDef;
+
 /** @} */
+
+
+// Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */

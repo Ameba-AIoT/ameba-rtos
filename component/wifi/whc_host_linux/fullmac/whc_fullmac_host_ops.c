@@ -15,8 +15,8 @@ static struct wps_str wps_info;
 static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_device *ndev, const u8 *mac, struct station_info *sinfo)
 {
 	int ret = 0;
-	union _rtw_phy_statistics_t *statistic_vir = NULL;
-	dma_addr_t statistic_phy;
+	union _rtw_phy_stats_t *stats_vir = NULL;
+	dma_addr_t stats_phy;
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
@@ -24,19 +24,20 @@ static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_devi
 		dev_dbg(global_idev.fullmac_dev, "Only net device-0 is used for STA.");
 	}
 
-	statistic_vir = rtw_malloc(sizeof(union _rtw_phy_statistics_t), &statistic_phy);
-	if (!statistic_vir) {
+	stats_vir = rtw_malloc(sizeof(union _rtw_phy_stats_t), &stats_phy);
+	if (!stats_vir) {
 		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
 	}
 
-	ret = whc_fullmac_host_get_statistics(statistic_phy);
+	ret = whc_fullmac_host_get_stats(STA_WLAN_INDEX, NULL, stats_phy);
 
 	sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
-	sinfo->signal = statistic_vir->sta_phy_stats.rssi;
+	sinfo->signal = stats_vir->sta.rssi;
 
 	sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
-	rtw_mfree(sizeof(union _rtw_phy_statistics_t), statistic_vir, statistic_phy);
+
+	rtw_mfree(sizeof(union _rtw_phy_stats_t), stats_vir, stats_phy);
 
 	return ret;
 }

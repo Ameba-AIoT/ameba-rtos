@@ -35,7 +35,7 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_SET_PMF_MODE,	whc_event_wifi_set_pmf_mode},
 	{WHC_API_WIFI_SET_LPS_EN,	whc_event_wifi_set_lps_enable},
 	{WHC_API_WIFI_SAE_STATUS,	whc_event_wifi_set_sae_status},
-	{WHC_API_WIFI_GET_PHY_STATISTIC,	whc_event_wifi_fetch_phy_statistic},
+	{WHC_API_WIFI_GET_PHY_STATS,	whc_event_wifi_fetch_phy_stats},
 	{WHC_API_WIFI_SEND_MGNT,	whc_event_wifi_send_mgnt},
 	{WHC_API_WIFI_SET_EDCA_PARAM,	whc_event_wifi_set_EDCA_param},
 	{WHC_API_WIFI_DEL_STA,	whc_event_wifi_del_station},
@@ -551,13 +551,19 @@ void whc_event_wifi_set_sae_status(u32 api_id, u32 *param_buf)
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
-void whc_event_wifi_fetch_phy_statistic(u32 api_id, u32 *param_buf)
+void whc_event_wifi_fetch_phy_stats(u32 api_id, u32 *param_buf)
 {
-	(void)param_buf;
+	u8 wlan_idx = (u8)param_buf[0];
+	u32 mac_len = param_buf[1];
+	u8 *mac_addr = NULL;
+	union _rtw_phy_stats_t phy_stats;
 
-	union _rtw_phy_statistics_t statistic;
-	wifi_get_phy_statistic(&statistic);
-	whc_send_api_ret_value(api_id, (u8 *)&statistic, sizeof(union _rtw_phy_statistics_t));
+	if (mac_len) {
+		mac_addr = (u8 *)(param_buf + 2);
+	}
+
+	wifi_get_phy_stats(wlan_idx, mac_addr, &phy_stats);
+	whc_send_api_ret_value(api_id, (u8 *)&phy_stats, sizeof(union _rtw_phy_stats_t));
 }
 
 void whc_event_wifi_send_mgnt(u32 api_id, u32 *param_buf)

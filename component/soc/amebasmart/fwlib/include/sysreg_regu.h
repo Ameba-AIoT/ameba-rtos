@@ -74,9 +74,9 @@
  * @brief
  * @{
  **/
-#define REGU_BIT_HIT_BST_VOLT              ((u32)0x00000001 << 30)          /*!<R   Current voltage is in bst setting。 */
-#define REGU_BIT_HIT_LPS_VOLT              ((u32)0x00000001 << 29)          /*!<R   Current voltage is in lps setting。 */
-#define REGU_BIT_HIT_NM_VOLT               ((u32)0x00000001 << 28)          /*!<R   Current voltage is in nm setting。 */
+#define REGU_BIT_HIT_BST_VOLT              ((u32)0x00000001 << 30)          /*!<R   Current voltage is in bst setting¡£ */
+#define REGU_BIT_HIT_LPS_VOLT              ((u32)0x00000001 << 29)          /*!<R   Current voltage is in lps setting¡£ */
+#define REGU_BIT_HIT_NM_VOLT               ((u32)0x00000001 << 28)          /*!<R   Current voltage is in nm setting¡£ */
 #define REGU_MASK_SWR_BST_PFM_VOL          ((u32)0x0000000F << 24)          /*!<R/W 0111  Same as SWR_NM_PFM_VOL */
 #define REGU_SWR_BST_PFM_VOL(x)            ((u32)(((x) & 0x0000000F) << 24))
 #define REGU_GET_SWR_BST_PFM_VOL(x)        ((u32)(((x >> 24) & 0x0000000F)))

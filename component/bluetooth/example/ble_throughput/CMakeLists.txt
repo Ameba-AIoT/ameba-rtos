@@ -44,6 +44,8 @@ ameba_list_append(private_sources
 )
 
 ameba_list_append(private_includes
+	${CMAKE_CURRENT_SOURCE_DIR}
+	../gatt_service/server
 	../gatt_service/client
 )
 

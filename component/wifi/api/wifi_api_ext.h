@@ -239,14 +239,16 @@ int wifi_get_ccmp_key(u8 wlan_idx, u8 *mac_addr, unsigned char *uncst_key, unsig
 
 /**
  * @brief  Fetch statistic info about wifi.
- * @param[out]  phy_statistic: The location where the statistic
- * 	info will be stored, for detail info, please refer to union _rtw_phy_statistics_t .
+ * @param[in]  wlan_idx: STA_WLAN_IDX or SOFTAP_WLAN_IDX or COMMON_WLAN_IDX.
+ * @param[in]  mac_addr: Client mac addr for softap mode, set to NULL for sta mode and none mode.
+ * @param[out]  phy_stats: The location where the statistic
+ * 	info will be stored, for detail info, please refer to union _rtw_phy_stats_t .
  * @return
  *    - @ref RTK_SUCCESS : If the statistic info is successfully get.
  *    - @ref RTK_FAIL : If the statistic info is not successfully get.
  * @note  The rssi and snr info will only be valid after connected to AP successfully.
  */
-int wifi_get_phy_statistic(union _rtw_phy_statistics_t *phy_statistic);
+int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union _rtw_phy_stats_t *phy_stats);
 
 /**
  * @brief  Get current remaining number of packets in HW TX buffer.
