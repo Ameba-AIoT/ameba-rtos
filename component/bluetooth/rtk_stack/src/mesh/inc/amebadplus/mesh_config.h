@@ -17,16 +17,19 @@
 
 /* Add Includes here */
 #include "platform_types.h"
+// RTK porting:for get mesh support info macro
 #include "platform_autoconf.h"
 
 BEGIN_DECLS
 
+// RTK porting:for get mesh support info macro
 #if defined(CONFIG_BT_MESH_PROVISIONER_SUPPORT) && CONFIG_BT_MESH_PROVISIONER_SUPPORT
 #define MESH_PROVISIONER 1
 #else
 #define MESH_PROVISIONER 0
 #endif
 
+// RTK porting:for get mesh support info macro
 #if defined(CONFIG_BT_MESH_DEVICE_SUPPORT) && CONFIG_BT_MESH_DEVICE_SUPPORT
 #define MESH_DEVICE 1
 #else
@@ -75,6 +78,7 @@ BEGIN_DECLS
 #define MESH_DEVICE_PROV_PROXY_SERVER_COEXIST   1 //!< Why not?
 #define MESH_DEVICE_PROV_CTX_CNT                1
 #define MESH_DEVICE_PROV_PROXY_CTX_CNT          1
+// RTK porting:maybe for fix compile warning
 #else
 #define MESH_LPN                                0 //!< low power node
 #endif
@@ -84,6 +88,7 @@ BEGIN_DECLS
 #define MESH_PROV_WO_AUTH_VALUE                 0
 #define MESH_PROVER_PROV_CTX_CNT                2
 #define MESH_PROVER_PROV_PROXY_CTX_CNT          2
+// RTK porting:maybe for fix compile warning
 #else
 #define MESH_PROV_WO_AUTH_VALUE                 0
 #endif

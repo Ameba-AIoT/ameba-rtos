@@ -18,7 +18,6 @@
 #include <rtk_bt_gatts.h>
 #include <bt_utils.h>
 
-#if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
 #include "rtk_bt_le_iso.h"
 #include <rtk_bt_le_iso_def.h>
 
@@ -1403,4 +1402,3 @@ int bt_le_iso_main(uint8_t role, uint8_t enable)
 	}
 	return 0;
 }
-#endif

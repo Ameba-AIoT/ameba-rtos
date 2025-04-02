@@ -222,8 +222,18 @@ extern "C"
 #endif
 #if defined(CONFIG_BT_LE_AUDIO) && CONFIG_BT_LE_AUDIO
 #define RTK_BLE_AUDIO_SUPPORT               1
+#if defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT
+#define RTK_BLE_AUDIO_TMAP_SUPPORT          1
+#endif
+#if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
+#define RTK_BLE_AUDIO_GMAP_SUPPORT          1
+#endif
 #endif
 #endif /* RTK_BLE_5_2_SUPPORT */
+
+#if (defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT) && (defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT)
+#error "Can not enable RTK_BLE_ISO_SUPPORT and RTK_BLE_AUDIO_SUPPORT at same time"
+#endif
 
 #if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
 #undef RTK_BLE_5_0_AE_ADV_SUPPORT

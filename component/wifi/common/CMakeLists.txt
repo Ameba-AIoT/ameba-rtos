@@ -81,6 +81,7 @@ ameba_add_external_app_library(${release_target_name}
         ${private_compile_options}
 )
 
+###NOTE: For open-source component, always build from source
 ameba_add_internal_library(rtw_event
     p_SOURCES
         rtw_event.c

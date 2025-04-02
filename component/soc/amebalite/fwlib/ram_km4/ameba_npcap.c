@@ -134,61 +134,54 @@ u32 NPWAP_INTHandler(UNUSED_WARN_DIS void *Data)
 
 	return TRUE;
 }
-
-u32 aontimer_int_wakeup_ap(UNUSED_WARN_DIS void *Data)
+u32 kr4_aontimer_wake_int_hdl(UNUSED_WARN_DIS void *Data)
 {
 	UNUSED(Data);
-
 	SOCPS_AONTimerClearINT();
-	RTK_LOGD(TAG, "wakereason: 0x%x \n", SOCPS_AONWakeReason());
-	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, DISABLE);
-
 	return TRUE;
 }
 
-int kr4_suspend(u32 type)
+void kr4_wakeup_timer_init(uint32_t sleep_ms)
+{
+	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
+	SOCPS_SetAPWakeEvent_MSK1(WAKE_SRC_AON_TIM, ENABLE);
+	SOCPS_AONTimerINT_EN(ENABLE);
+	SOCPS_AONTimer(sleep_ms);
+	InterruptRegister(kr4_aontimer_wake_int_hdl, AON_TIM_IRQ, (u32)PMC_BASE, INT_PRI3);
+	InterruptEn(AON_TIM_IRQ, INT_PRI3);
+}
+int kr4_suspend(SLEEP_ParamDef *psleep_param)
 {
 	int ret = RTK_SUCCESS;
-	SLEEP_ParamDef *sleep_param;
-	u32 duration = 0;
 	RRAM_TypeDef *rram = RRAM_DEV;
 
-	sleep_param = (SLEEP_ParamDef *)ipc_get_message(IPC_KR4_TO_KM4, IPC_R2M_TICKLESS_INDICATION);
-
-	if (sleep_param != NULL) {
-		duration = sleep_param->sleep_time;
-	}
-
-	if (duration > 0) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "duration: %lu\n", duration);
-		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
-		SOCPS_AONTimer(duration);
-		SOCPS_SetAPWakeEvent_MSK1(WAKE_SRC_AON_TIM, ENABLE);
-		SOCPS_AONTimerINT_EN(ENABLE);
-		InterruptRegister(aontimer_int_wakeup_ap, AON_TIM_IRQ, (u32)PMC_BASE, INT_PRI3);
-		InterruptEn(AON_TIM_IRQ, INT_PRI3);
-	}
-
-	/*clean np wake pending interrupt*/
-	NVIC_ClearPendingIRQ(NP_WAKE_IRQ);
-
-	RTK_LOGD(TAG, "register np_wake_irq\n");
-	InterruptRegister(NPWAP_INTHandler, NP_WAKE_IRQ, (u32)PMC_BASE, INT_PRI5);
-	InterruptEn(NP_WAKE_IRQ, INT_PRI5);
-
-	if (type == SLEEP_CG) {
-		kr4_clock_gate();
-	} else {
-		kr4_power_gate();
-	}
-
-	if (rram->PMC_CORE_ROLE_Flag == PMC_CORE_ROLE_AP2NP) {
-		if (!dsp_status_on()) {
-			SOCPS_AP_suspend_config(type, ENABLE);
+	if (psleep_param != NULL) {
+		if (psleep_param->sleep_time) {
+			kr4_wakeup_timer_init(psleep_param->sleep_time);
 		}
-	}
+		/*clean np wake pending interrupt*/
+		NVIC_ClearPendingIRQ(NP_WAKE_IRQ);
 
-	pmu_set_sleep_type(type);
+		RTK_LOGD(TAG, "register np_wake_irq\n");
+		InterruptRegister(NPWAP_INTHandler, NP_WAKE_IRQ, (u32)PMC_BASE, INT_PRI5);
+		InterruptEn(NP_WAKE_IRQ, INT_PRI5);
+
+		if (psleep_param->sleep_type == SLEEP_CG) {
+			kr4_clock_gate();
+		} else {
+			kr4_power_gate();
+		}
+
+		if (rram->PMC_CORE_ROLE_Flag == PMC_CORE_ROLE_AP2NP) {
+			if (!dsp_status_on()) {
+				SOCPS_AP_suspend_config(psleep_param->sleep_type, ENABLE);
+			}
+		}
+
+		pmu_set_sleep_type(psleep_param->sleep_type);
+	} else {
+		ret = RTK_FAIL;
+	}
 
 	return ret;
 }
@@ -247,7 +240,7 @@ void kr4_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqSta
 	kr4_sleep_type = psleep_param->sleep_type;
 
 	if ((psleep_param->sleep_type == SLEEP_PG) || (psleep_param->sleep_type == SLEEP_CG)) {
-		kr4_suspend(psleep_param->sleep_type);
+		kr4_suspend(psleep_param);
 	} else {
 		RTK_LOGW(TAG, "unknow sleep type\n");
 	}

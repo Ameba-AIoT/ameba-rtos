@@ -33,7 +33,7 @@ static void wifi_csi_thread(void *param)
 	while (1) {
 NEXT:
 		if (wifi_is_running(SOFTAP_WLAN_INDEX)) {
-			wifi_get_associated_client_list(&client_info);
+			wifi_ap_get_connected_clients(&client_info);
 			if (client_info.count) {
 				memcpy(act_param.mac_addr, client_info.mac_list[0].octet, 6);
 				RTK_LOGA(NOTAG, "### SOFTAP Break ###\r\n");

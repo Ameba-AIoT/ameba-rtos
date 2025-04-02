@@ -2226,7 +2226,7 @@ int usbd_uac_receive_data(void)
   * @param  flag: Unused parameter
   * @retval Status
   */
-u8 usbd_uac_audio_cfg_init(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 flag)
+u8 usbd_uac_config(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 flag)
 {
 	UNUSED(flag);
 
@@ -2252,11 +2252,11 @@ u8 usbd_uac_audio_cfg_init(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 fl
 }
 
 /**
-  * @brief  Initializes and starts the UAC data reception process
+  * @brief  Initializes and starts the UAC data rx process
   * @param  void
   * @retval Status
   */
-u32 usbd_uac_start(void)
+u32 usbd_uac_start_play(void)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	int ret = HAL_OK;
@@ -2266,19 +2266,17 @@ u32 usbd_uac_start(void)
 	cdev->uac_isoc_out.isoc_read_idx = 0;
 	cdev->uac_isoc_out.isoc_write_idx = 0;
 
-	// uac_cb_isoc_transmitted(0);  TODO
-
 	ret = usbd_uac_receive_data();
 
 	return ret;
 }
 
 /**
-  * @brief  Stop UAC device
+  * @brief  Stop UAC device play
   * @param  void
   * @retval void
   */
-void usbd_uac_stop(void)
+void usbd_uac_stop_play(void)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 
@@ -2337,11 +2335,11 @@ u32 usbd_uac_read(u8 *buffer, u32 size, u32 time_out_ms)
 }
 
 /**
-  * @brief  Get UAC read buffer cnt
+  * @brief  Get UAC read frame cnt
   * @param  void
-  * @retval read buffer cnt
+  * @retval read frame cnt
   */
-u32 usbd_uac_get_read_buf_cnt(void)
+u32 usbd_uac_get_read_frame_cnt(void)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usbd_uac_buf_ctrl_t *pdata_ctrl = &(cdev->uac_isoc_out);

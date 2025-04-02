@@ -205,6 +205,7 @@ u32 np_status_on(void);
 void km4_set_wake_event(u32 wevt);
 void np_tickless_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum);
 void ap_resume(void);
+int ap_suspend(SLEEP_ParamDef *psleep_param);
 void ap_tickless_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum);
 uint32_t pmu_get_km4sleeptime(void);
 void SOCPS_ResMemMode(u32 module);

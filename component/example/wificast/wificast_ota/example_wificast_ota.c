@@ -87,7 +87,7 @@ static wcast_err_t example_send(u16 type, const wifi_cast_addr_t dst_mac, u8 *da
 static void example_ota_scan_request_cb(u8 *src_mac)
 {
 	struct example_scan_info info = {0};
-	struct _rtw_mac_t self_mac = {0};
+	struct rtw_mac self_mac = {0};
 
 	wifi_get_mac_address(0, &self_mac, 0);
 	memcpy(info.mac, self_mac.octet, 6);

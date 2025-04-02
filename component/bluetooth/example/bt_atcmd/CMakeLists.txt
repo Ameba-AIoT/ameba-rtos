@@ -96,12 +96,6 @@ if(CONFIG_BT_HAS_LEAUDIO)
 	)
 endif()
 
-if(CONFIG_AMEBADPLUS)
-	ameba_list_append(private_sources
-		atcmd_bt_cmd_sync.c
-	)
-endif()
-
 ameba_list_append(private_includes
     ../gatt_service/client
     ../gatt_service/server

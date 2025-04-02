@@ -1,4 +1,5 @@
 #include <wifi_api.h>
+#include "wifi_intf_drv_to_app_internal.h"
 u16 call_noused = 0;
 
 int wifi_get_scan_records(unsigned int *ap_num, struct rtw_scan_result *ap_list)
@@ -123,7 +124,7 @@ int wifi_set_cts2self_duration_and_send(unsigned char wlan_idx, unsigned short d
 	return -1;
 }
 
-int wifi_get_mac_address(int idx, struct _rtw_mac_t *mac, u8 efuse)
+int wifi_get_mac_address(int idx, struct rtw_mac *mac, u8 efuse)
 {
 	UNUSED(idx);
 	UNUSED(mac);
@@ -189,16 +190,18 @@ u8 wifi_driver_is_mp(void)
 	return 0;
 }
 
-int wifi_get_associated_client_list(struct _rtw_client_list_t *client_list_buf)
+int wifi_ap_get_connected_clients(struct _rtw_client_list_t *client_list_buf)
 {
 	UNUSED(client_list_buf);
 	call_noused = __LINE__;
 	return -1;
 }
 
-int wifi_get_phy_statistic(union _rtw_phy_statistics_t *phy_statistic)
+int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union _rtw_phy_stats_t *phy_stats)
 {
-	UNUSED(phy_statistic);
+	UNUSED(wlan_idx);
+	UNUSED(mac_addr);
+	UNUSED(phy_stats);
 	call_noused = __LINE__;
 	return -1;
 }

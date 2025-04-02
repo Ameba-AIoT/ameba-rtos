@@ -33,9 +33,12 @@ struct rtw_eap_context {
 
 //extern struct rtw_peap_context g_peap_context;
 
+void eap_sm_deinit(void);
 int get_eap_ctx_method(void);
 int set_eap_peap_method(void);
 int set_eap_tls_method(void);
 int set_eap_ttls_method(void);
 
+void eap_eapol_start_hdl(char *buf, int buf_len, int flags, void *handler_user_data);
+void eap_eapol_recvd_hdl(char *buf, int buf_len, int flags, void *handler_user_data);
 #endif

@@ -34,7 +34,7 @@
  * @{
  **/
 
-#define USB_REG_BASE								USB_OTG_REG_BASE
+#define USB_REG_BASE                             USB_OTG_REG_BASE
 
 /** @} */
 
@@ -43,11 +43,11 @@
  * @{
  **/
 
-#define USB_ADDON_REG_VND_STS_OUT					(USB_OTG_REG_BASE + 0x3001CUL)
+#define USB_ADDON_REG_VND_STS_OUT                (USB_OTG_REG_BASE + 0x3001CUL)
 
-#define USB_ADDON_REG_VND_STS_OUT_DATA_POS			0U
-#define USB_ADDON_REG_VND_STS_OUT_DATA_MASK			(0xFFU << USB_ADDON_REG_VND_STS_OUT_DATA_POS)
-#define USB_ADDON_REG_VND_STS_OUT_DATA				(USB_ADDON_REG_VND_STS_OUT_DATA_MASK)
+#define USB_ADDON_REG_VND_STS_OUT_DATA_POS       0U
+#define USB_ADDON_REG_VND_STS_OUT_DATA_MASK      (0xFFU << USB_ADDON_REG_VND_STS_OUT_DATA_POS)
+#define USB_ADDON_REG_VND_STS_OUT_DATA           (USB_ADDON_REG_VND_STS_OUT_DATA_MASK)
 
 /** @} */
 
@@ -60,8 +60,8 @@
 /** @defgroup USB_Hardware_Configurations
   * @{
   */
-#define CONFIG_USB_OTG								0U
-#define CONFIG_USB_PHY								1U
+#define CONFIG_USB_OTG                           0U
+#define CONFIG_USB_PHY                           1U
 
 #define USB_MAX_ENDPOINTS							6U
 #define USB_MAX_PIPES								8U
@@ -79,8 +79,8 @@
 /** @defgroup USB_IRQ_Configurations
   * @{
   */
-#define USB_IRQ										USB_OTG_IRQ
-#define USB_IRQ_PRI									INT_PRI_MIDDLE
+#define USB_IRQ                                  USB_OTG_IRQ
+#define USB_IRQ_PRI                              INT_PRI_MIDDLE
 /** @} */
 
 /** @} */

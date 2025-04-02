@@ -36,6 +36,32 @@
 #include "sys_queue.h"
 #include "platform_autoconf.h"
 
+typedef struct {
+	size_t xAvailableHeapSpaceInBytes;          /* The total heap size currently available - this is the sum of all the free blocks, not the largest block that can be allocated. */
+	size_t xSizeOfLargestFreeBlockInBytes;      /* The maximum size, in bytes, of all the free blocks within the heap at the time vPortGetHeapStats() is called. */
+	size_t xSizeOfSmallestFreeBlockInBytes;     /* The minimum size, in bytes, of all the free blocks within the heap at the time vPortGetHeapStats() is called. */
+	size_t xNumberOfFreeBlocks;                 /* The number of free memory blocks within the heap at the time vPortGetHeapStats() is called. */
+	size_t xMinimumEverFreeBytesRemaining;      /* The minimum amount of total free memory (sum of all free blocks) there has been in the heap since the system booted. */
+	size_t xNumberOfSuccessfulAllocations;      /* The number of calls to pvPortMalloc() that have returned a valid memory block. */
+	size_t xNumberOfSuccessfulFrees;            /* The number of calls to vPortFree() that has successfully freed a block of memory. */
+} rtos_heap_stats;
+
+/**
+ * @brief	Retrieve heap statistics.
+ *
+ * @param	pxHeapStats: A pointer to a rtos_heap_stats structure where heap statistics will be stored.
+ */
+void heap_get_stats(rtos_heap_stats *pxHeapStats);
+
+#if defined (CONFIG_HEAP_PROTECTOR)
+/**
+ * @brief	Check the integrity of the heap.
+ *
+ * @return	Returns pdTRUE if the heap is intact, or assert if corruption is detected.
+ */
+uint32_t heap_check_integrity(void);
+#endif
+
 #ifdef CONFIG_HEAP_TRACE
 
 /**
@@ -53,16 +79,6 @@ typedef enum {
 	HEAP_TRACE_ALL,
 	HEAP_TRACE_LEAKS,
 } heap_trace_mode_t;
-
-typedef struct {
-	size_t xAvailableHeapSpaceInBytes;          /* The total heap size currently available - this is the sum of all the free blocks, not the largest block that can be allocated. */
-	size_t xSizeOfLargestFreeBlockInBytes;      /* The maximum size, in bytes, of all the free blocks within the heap at the time vPortGetHeapStats() is called. */
-	size_t xSizeOfSmallestFreeBlockInBytes;     /* The minimum size, in bytes, of all the free blocks within the heap at the time vPortGetHeapStats() is called. */
-	size_t xNumberOfFreeBlocks;                 /* The number of free memory blocks within the heap at the time vPortGetHeapStats() is called. */
-	size_t xMinimumEverFreeBytesRemaining;      /* The minimum amount of total free memory (sum of all free blocks) there has been in the heap since the system booted. */
-	size_t xNumberOfSuccessfulAllocations;      /* The number of calls to pvPortMalloc() that have returned a valid memory block. */
-	size_t xNumberOfSuccessfulFrees;            /* The number of calls to vPortFree() that has successfully freed a block of memory. */
-} rtos_heap_stats;
 
 /**
  * @brief Trace record data type. Stores information about an allocated region of memory.
@@ -125,20 +141,6 @@ void trace_free(void *pvAddress, uint32_t uiSize);
  * This function will provide detailed information about heap usage for each task.
  */
 void heap_get_per_task_info(void);
-
-/**
- * @brief	Retrieve heap statistics.
- *
- * @param	pxHeapStats: A pointer to a rtos_heap_stats structure where heap statistics will be stored.
- */
-void heap_get_stats(rtos_heap_stats *pxHeapStats);
-
-/**
- * @brief	Check the integrity of the heap.
- *
- * @return	Returns pdTRUE if the heap is intact, or assert if corruption is detected.
- */
-uint32_t heap_check_integrity(void);
 
 #endif
 #endif /* CONFIG_HEAP_TRACE */

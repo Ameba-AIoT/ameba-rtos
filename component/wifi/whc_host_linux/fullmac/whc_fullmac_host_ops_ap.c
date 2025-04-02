@@ -110,7 +110,7 @@ static int whc_fullmac_host_del_station(struct wiphy *wiphy, struct net_device *
 		return -ENOMEM;
 	}
 	memcpy(mac_vir, params->mac, 6);
-	ret = whc_fullmac_host_del_sta(wlan_idx, (u8 *) mac_phy);
+	ret = whc_fullmac_host_ap_del_client(wlan_idx, (u8 *) mac_phy);
 
 	if (mac_vir) {
 		rtw_mfree(6, mac_vir, mac_phy);
@@ -443,7 +443,7 @@ static int whc_fullmac_host_stop_ap_ops(struct wiphy *wiphy, struct net_device *
 int whc_fullmac_host_ap_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request)
 {
 	int ret = 0;
-	struct _rtw_scan_param_t scan_param = {0};
+	struct rtw_scan_param scan_param = {0};
 	struct cfg80211_scan_info info;
 
 	dev_dbg(global_idev.fullmac_dev, "whc_fullmac_host_scan enter\n");
@@ -452,7 +452,7 @@ int whc_fullmac_host_ap_scan(struct wiphy *wiphy, struct cfg80211_scan_request *
 		return -EPERM;
 	}
 
-	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
+	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
 
 	/* Add fake callback to inform rots give scan indicate when scan done. */
 	scan_param.scan_user_callback = (int (*)(unsigned int,  void *))0xffffffff;

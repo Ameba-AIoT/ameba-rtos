@@ -32,4 +32,8 @@ menu "CONFIG SMP"
         int
         default 2 if SMP_DUAL_CORE_FOR_CA32
         default 1 if SMP_SINGLE_CORE_FOR_CA32
+
+    config SMP
+        bool
+        default y if SMP_DUAL_CORE_FOR_CA32
 endmenu

@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <bt_api_config.h>
-#if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
+#if defined(RTK_BLE_AUDIO_GMAP_SUPPORT) && RTK_BLE_AUDIO_GMAP_SUPPORT
 #include <osif.h>
 #include <ble_audio_flags.h>
 #include <ble_audio.h>
@@ -266,4 +266,4 @@ void bt_stack_gmap_deinit(void)
 	BT_LOGA("[GMAP] bt_stack_gmap_deinit\n");
 }
 
-#endif /* CONFIG_BT_GMAP_SUPPORT */
+#endif /* RTK_BLE_AUDIO_GMAP_SUPPORT */

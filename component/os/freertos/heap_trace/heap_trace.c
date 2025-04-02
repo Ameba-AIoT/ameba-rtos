@@ -31,11 +31,50 @@
 #include "stdio.h"
 #include "stdint.h"
 
-#ifdef CONFIG_HEAP_TRACE
-
-#include "heap_trace.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "heap_trace.h"
+
+static_assert(sizeof(rtos_heap_stats) == sizeof(HeapStats_t), "sizeof(rtos_heap_stats) and sizeof(HeapStats_t) missmatch");
+
+extern void vPortGetTaskHeapInfo(void);
+
+#if defined (CONFIG_HEAP_PROTECTOR)
+extern uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK);
+/**
+ * @brief	Check the integrity of the heap.
+ *
+ * @return	Returns pdTRUE if the heap is intact, or assert if corruption is detected.
+ */
+uint32_t heap_check_integrity(void)
+{
+	uint32_t ret;
+
+	ret = ulPortCheckHeapIntegrity(TRUE);
+
+	return ret;
+}
+#endif
+
+/**
+ * @brief	Retrieve heap statistics.
+ *
+ * @param	pxHeapStats: A pointer to a HeapStats_t structure where heap statistics will be stored.
+ */
+void heap_get_stats(rtos_heap_stats *pxHeapStats)
+{
+	vPortGetHeapStats((HeapStats_t *)pxHeapStats);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "********** Heap Usage Status **********\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Total Number Of Successful Allocations:    %u\n", pxHeapStats->xNumberOfSuccessfulAllocations);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Total Number Of Successful Frees:          %u\n", pxHeapStats->xNumberOfSuccessfulFrees);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Current Available Heap Space:              %u bytes\n", pxHeapStats->xAvailableHeapSpaceInBytes);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Minimum Ever Free Space Remaining:         %u bytes\n", pxHeapStats->xMinimumEverFreeBytesRemaining);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Number Of Free Blocks:                     %u\n", pxHeapStats->xNumberOfFreeBlocks);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Size Of Largest Free Block:                %u bytes\n", pxHeapStats->xSizeOfLargestFreeBlockInBytes);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Size Of Smallest Free Block:               %u bytes\n", pxHeapStats->xSizeOfSmallestFreeBlockInBytes);
+}
+
+#ifdef CONFIG_HEAP_TRACE
 
 #if defined CONFIG_ARM_CORE_CM4
 #include "ameba_v8m_backtrace.h"
@@ -45,10 +84,6 @@
 
 static_assert(CONFIG_HEAP_TRACE_STACK_DEPTH <= CONFIG_BACK_TRACE_DEPTH_LIMIT,
 			  "CONFIG_HEAP_TRACE_STACK_DEPTH needs to be less than or equal to CONFIG_BACK_TRACE_DEPTH_LIMIT");
-static_assert(sizeof(rtos_heap_stats) == sizeof(HeapStats_t), "sizeof(rtos_heap_stats) and sizeof(HeapStats_t) missmatch");
-
-extern void vPortGetTaskHeapInfo(void);
-extern uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK);
 
 /**
  * @var     static tracing_state_t tracing
@@ -401,7 +436,7 @@ static void list_find_and_remove(void *p)
  */
 void __attribute__((optimize("O0"))) trace_malloc(void *pvAddress, uint32_t uiSize)
 {
-#if defined (HEAP_TRACE_MALLOC_FREE_LOG)
+#if defined (CONFIG_HEAP_TRACE_MALLOC_FREE_LOG)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%s] pvAddress:0x%08x, uiSize:0x%08x \n", __func__, pvAddress, uiSize);
 #endif
 	if (tracing == TRACING_STARTED) {
@@ -424,7 +459,7 @@ void __attribute__((optimize("O0"))) trace_malloc(void *pvAddress, uint32_t uiSi
  */
 void __attribute__((optimize("O0"))) trace_free(void *pvAddress, uint32_t uiSize)
 {
-#if defined (HEAP_TRACE_MALLOC_FREE_LOG)
+#if defined (CONFIG_HEAP_TRACE_MALLOC_FREE_LOG)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%s] pvAddress:0x%08x, uiSize:0x%08x \n", __func__, pvAddress, uiSize);
 #else
 	UNUSED(uiSize);
@@ -436,24 +471,6 @@ void __attribute__((optimize("O0"))) trace_free(void *pvAddress, uint32_t uiSize
 }
 
 /**
- * @brief	Retrieve heap statistics.
- *
- * @param	pxHeapStats: A pointer to a HeapStats_t structure where heap statistics will be stored.
- */
-void heap_get_stats(rtos_heap_stats *pxHeapStats)
-{
-	vPortGetHeapStats((HeapStats_t *)pxHeapStats);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "********** Heap Usage Status **********\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Total Number Of Successful Allocations:    %u\n", pxHeapStats->xNumberOfSuccessfulAllocations);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Total Number Of Successful Frees:          %u\n", pxHeapStats->xNumberOfSuccessfulFrees);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Current Available Heap Space:              %u bytes\n", pxHeapStats->xAvailableHeapSpaceInBytes);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Minimum Ever Free Space Remaining:         %u bytes\n", pxHeapStats->xMinimumEverFreeBytesRemaining);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Number Of Free Blocks:                     %u\n", pxHeapStats->xNumberOfFreeBlocks);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Size Of Largest Free Block:                %u bytes\n", pxHeapStats->xSizeOfLargestFreeBlockInBytes);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Size Of Smallest Free Block:               %u bytes\n", pxHeapStats->xSizeOfSmallestFreeBlockInBytes);
-}
-
-/**
  * @brief	Retrieve per-task heap usage information.
  *
  * This function will provide detailed information about heap usage for each task.
@@ -462,30 +479,6 @@ void heap_get_per_task_info(void)
 {
 	vPortGetTaskHeapInfo();
 }
-
-#if defined (CONFIG_HEAP_PROTECTOR)
-/**
- * @brief	Check the integrity of the heap.
- *
- * @return	Returns pdTRUE if the heap is intact, or assert if corruption is detected.
- */
-uint32_t heap_check_integrity(void)
-{
-	uint32_t ret;
-
-	ret = ulPortCheckHeapIntegrity(TRUE);
-
-	return ret;
-}
-#endif
-
-#ifdef CONFIG_DEBUG_BACK_TRACE
-void TaskExitError(void)
-{
-	portDISABLE_INTERRUPTS();
-	while (1);
-}
-#endif
 
 #endif /* CONFIG_HEAP_TRACE */
 

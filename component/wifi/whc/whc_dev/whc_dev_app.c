@@ -27,7 +27,7 @@ __weak void whc_bridge_dev_pkt_rx_to_user(u8 *rxbuf, u16 size)
 			return;
 		}
 		if (*ptr == BRIDGE_WIFI_TEST_GET_MAC_ADDR) {
-			struct _rtw_mac_t dev_mac = {0};
+			struct rtw_mac dev_mac = {0};
 			idx = *(ptr + 1);
 			if (!wifi_is_running(idx)) {
 				RTK_LOGE(TAG_WLAN_INIC, "%s, port %d is not running!\n", __func__, idx);

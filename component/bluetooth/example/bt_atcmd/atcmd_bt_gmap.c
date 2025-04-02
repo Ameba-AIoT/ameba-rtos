@@ -6,7 +6,7 @@
 
 #include "platform_autoconf.h"
 #include <bt_api_config.h>
-#if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
+#if defined(RTK_BLE_AUDIO_GMAP_SUPPORT) && RTK_BLE_AUDIO_GMAP_SUPPORT
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

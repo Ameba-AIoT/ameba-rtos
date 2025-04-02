@@ -15,8 +15,8 @@ static struct wps_str wps_info;
 static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_device *ndev, const u8 *mac, struct station_info *sinfo)
 {
 	int ret = 0;
-	union _rtw_phy_statistics_t *statistic_vir = NULL;
-	dma_addr_t statistic_phy;
+	union _rtw_phy_stats_t *stats_vir = NULL;
+	dma_addr_t stats_phy;
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
@@ -24,19 +24,20 @@ static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_devi
 		dev_dbg(global_idev.fullmac_dev, "Only net device-0 is used for STA.");
 	}
 
-	statistic_vir = rtw_malloc(sizeof(union _rtw_phy_statistics_t), &statistic_phy);
-	if (!statistic_vir) {
+	stats_vir = rtw_malloc(sizeof(union _rtw_phy_stats_t), &stats_phy);
+	if (!stats_vir) {
 		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
 	}
 
-	ret = whc_fullmac_host_get_statistics(statistic_phy);
+	ret = whc_fullmac_host_get_stats(STA_WLAN_INDEX, NULL, stats_phy);
 
 	sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
-	sinfo->signal = statistic_vir->sta_phy_stats.rssi;
+	sinfo->signal = stats_vir->sta.rssi;
 
 	sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
-	rtw_mfree(sizeof(union _rtw_phy_statistics_t), statistic_vir, statistic_phy);
+
+	rtw_mfree(sizeof(union _rtw_phy_stats_t), stats_vir, stats_phy);
 
 	return ret;
 }
@@ -213,8 +214,8 @@ static int whc_fullmac_host_scan_ops(struct wiphy *wiphy, struct cfg80211_scan_r
 	u32 wlan_idx = 0;
 	struct net_device *pnetdev = NULL;
 	u8 *buf = NULL, *ptr = NULL;
-	size_t size = sizeof(struct _rtw_scan_param_t);
-	struct _rtw_scan_param_t *scan_param = NULL;
+	size_t size = sizeof(struct rtw_scan_param);
+	struct rtw_scan_param *scan_param = NULL;
 	struct cfg80211_scan_info info;
 
 	u32 ssid_len = 0;
@@ -236,8 +237,8 @@ static int whc_fullmac_host_scan_ops(struct wiphy *wiphy, struct cfg80211_scan_r
 		return -ENOMEM;
 	}
 
-	scan_param = (struct _rtw_scan_param_t *)ptr;
-	ptr += sizeof(struct _rtw_scan_param_t);
+	scan_param = (struct rtw_scan_param *)ptr;
+	ptr += sizeof(struct rtw_scan_param);
 
 	wdev = request->wdev;
 	pnetdev = wdev_to_ndev(wdev);
@@ -255,7 +256,7 @@ static int whc_fullmac_host_scan_ops(struct wiphy *wiphy, struct cfg80211_scan_r
 
 	dev_dbg(global_idev.fullmac_dev, "whc_fullmac_host_scan enter\n");
 
-	memset(scan_param, 0, sizeof(struct _rtw_scan_param_t));
+	memset(scan_param, 0, sizeof(struct rtw_scan_param));
 
 	/* Add fake callback to inform rots give scan indicate when scan done. */
 	scan_param->scan_user_callback = (int (*)(unsigned int,  void *))0xffffffff;
@@ -919,8 +920,8 @@ static s32 whc_fullmac_host_remain_on_channel(struct wiphy *wiphy, struct wirele
 	u32 wlan_idx = 0;
 	struct net_device *pnetdev = NULL;
 	u8 *buf = NULL, *ptr = NULL;
-	size_t size = sizeof(struct _rtw_scan_param_t);
-	struct _rtw_scan_param_t *scan_param = NULL;
+	size_t size = sizeof(struct rtw_scan_param);
+	struct rtw_scan_param *scan_param = NULL;
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
@@ -943,9 +944,9 @@ static s32 whc_fullmac_host_remain_on_channel(struct wiphy *wiphy, struct wirele
 
 	whc_fullmac_host_scan_abort(1);
 
-	scan_param = (struct _rtw_scan_param_t *)ptr;
-	ptr += sizeof(struct _rtw_scan_param_t);
-	memset(scan_param, 0, sizeof(struct _rtw_scan_param_t));
+	scan_param = (struct rtw_scan_param *)ptr;
+	ptr += sizeof(struct rtw_scan_param);
+	memset(scan_param, 0, sizeof(struct rtw_scan_param));
 	/* Add fake callback to inform rots give scan indicate when scan done. */
 	scan_param->scan_user_callback = (int (*)(unsigned int,  void *))0xffffffff;
 	scan_param->ssid = NULL;

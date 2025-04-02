@@ -604,10 +604,10 @@ static const cmd_table_t cmd_table[] = {
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 	{CMD_NAME_BAP,              atcmd_bt_bap_cmd,                               2, 10},
 	{CMD_NAME_CAP,              atcmd_bt_cap_cmd,                               3, 10},
-#if (defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT)
+#if (defined(RTK_BLE_AUDIO_TMAP_SUPPORT) && RTK_BLE_AUDIO_TMAP_SUPPORT)
 	{CMD_NAME_TMAP,             atcmd_bt_tmap_cmd,                              3, 10},
 #endif
-#if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
+#if defined(RTK_BLE_AUDIO_GMAP_SUPPORT) && RTK_BLE_AUDIO_GMAP_SUPPORT
 	{CMD_NAME_GMAP,             atcmd_bt_gmap_cmd,                              3, 10},
 #endif
 #endif
@@ -690,16 +690,16 @@ static const cmd_table_t example_table[] = {
 #if defined(CONFIG_BT_A2DP_HFP) && CONFIG_BT_A2DP_HFP
 	{"a2dp_hfp",         atcmd_bt_a2dp_hfp,         3, 3},
 #endif
-#if defined(CONFIG_BT_GENERIC_LE_AUDIO_DEMO_SUPPORT) && CONFIG_BT_GENERIC_LE_AUDIO_DEMO_SUPPORT
+#if defined(CONFIG_BT_LE_AUDIO_GENERIC_DEMO) && CONFIG_BT_LE_AUDIO_GENERIC_DEMO
 	{"generic_le_audio_demo", atcmd_bt_generic_le_audio_demo, 3, 4},
 #endif
-#if defined(CONFIG_BT_PBP_SUPPORT) && CONFIG_BT_PBP_SUPPORT
+#if defined(CONFIG_BT_PBP) && CONFIG_BT_PBP
 	{"pbp",              atcmd_bt_pbp,              3, 4},
 #endif
-#if defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT
+#if defined(CONFIG_BT_TMAP) && CONFIG_BT_TMAP
 	{"tmap",             atcmd_bt_tmap,             3, 4},
 #endif
-#if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
+#if defined(CONFIG_BT_GMAP) && CONFIG_BT_GMAP
 	{"gmap",             atcmd_bt_gmap,             3, 4},
 #endif
 #if defined(CONFIG_BT_PTS) && CONFIG_BT_PTS
@@ -892,19 +892,19 @@ static inline void fBLECAP(void *arg)
 	atcmd_bt_cmd(arg, CMD_NAME_CAP, "[AT+BLECAP]");
 }
 
-#if (defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT)
+#if (defined(RTK_BLE_AUDIO_TMAP_SUPPORT) && RTK_BLE_AUDIO_TMAP_SUPPORT)
 static inline void fBLETMAP(void *arg)
 {
 	atcmd_bt_cmd(arg, CMD_NAME_TMAP, "[AT+BLETMAP]");
 }
-#endif /* CONFIG_BT_TMAP_SUPPORT */
+#endif /* RTK_BLE_AUDIO_TMAP_SUPPORT */
 
-#if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
+#if defined(RTK_BLE_AUDIO_GMAP_SUPPORT) && RTK_BLE_AUDIO_GMAP_SUPPORT
 static inline void fBLEGMAP(void *arg)
 {
 	atcmd_bt_cmd(arg, CMD_NAME_GMAP, "[AT+BLEGMAP]");
 }
-#endif /* CONFIG_BT_GMAP_SUPPORT */
+#endif /* RTK_BLE_AUDIO_GMAP_SUPPORT */
 
 #endif /* RTK_BLE_AUDIO_SUPPORT */
 
@@ -1136,10 +1136,10 @@ static log_item_t at_bt_items[] = {
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 	{CMD_NAME_BAP,              fBLEBAP,              {NULL, NULL}},
 	{CMD_NAME_CAP,              fBLECAP,              {NULL, NULL}},
-#if (defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT)
+#if (defined(RTK_BLE_AUDIO_TMAP_SUPPORT) && RTK_BLE_AUDIO_TMAP_SUPPORT)
 	{CMD_NAME_TMAP,             fBLETMAP,             {NULL, NULL}},
 #endif
-#if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
+#if defined(RTK_BLE_AUDIO_GMAP_SUPPORT) && RTK_BLE_AUDIO_GMAP_SUPPORT
 	{CMD_NAME_GMAP,             fBLEGMAP,             {NULL, NULL}},
 #endif
 #endif /* RTK_BLE_AUDIO_SUPPORT */

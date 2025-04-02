@@ -13,12 +13,6 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
-/* USB speed */
-#define USB_SPEED_HIGH                                 0
-#define USB_SPEED_HIGH_IN_FULL                         1
-#define USB_SPEED_LOW                                  2
-#define USB_SPEED_FULL                                 3
-
 /* USB descriptor length */
 #define USB_LEN_DEV_QUALIFIER_DESC                     0x0AU
 #define USB_LEN_DEV_DESC                               0x12U

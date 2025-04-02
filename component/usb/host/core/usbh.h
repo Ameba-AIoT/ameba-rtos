@@ -11,6 +11,7 @@
 
 #include "usb_os.h"
 #include "usb_ch9.h"
+#include "usb_hal.h"
 
 /* Exported defines ----------------------------------------------------------*/
 #define USBH_DEFAULT_MAX_ALT_NUM			3

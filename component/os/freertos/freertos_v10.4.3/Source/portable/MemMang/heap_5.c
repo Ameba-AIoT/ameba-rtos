@@ -70,6 +70,10 @@
 #include <stdlib.h>
 #include "ameba.h"
 
+#if defined (CONFIG_HEAP_PROTECTOR) && (CONFIG_HEAP_PROTECTOR== 1)
+#include "heap_trace.h"
+#endif
+
 /* Defining MPU_WRAPPERS_INCLUDED_FROM_API_FILE prevents task.h from redefining
  * all the API functions to use the MPU wrappers.  That should only be done when
  * task.h is included from an application file. */
@@ -79,7 +83,6 @@
 #include "task.h"
 
 #ifdef CONFIG_HEAP_TRACE
-#include "heap_trace.h"
 #if defined CONFIG_ARM_CORE_CM4
 #include "ameba_v8m_backtrace.h"
 #elif defined CONFIG_RSICV_CORE_KR4
@@ -987,34 +990,11 @@ void vPortGetHeapStats(HeapStats_t *pxHeapStats)
 	taskEXIT_CRITICAL();
 }
 
-#ifdef CONFIG_HEAP_TRACE
-extern HeapRegion_t xHeapRegions[];
-void vPortGetTaskHeapInfo(void)
-{
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "********** Each Task Heap Usage **********\n");
-	vTaskSuspendAll();
-
-	for (int i = 0; i < CONFIG_HEAP_TRACE_MAX_TASK_NUMBER; i++) {
-		if (heap_task_info[i].TaskHandle != NULL) {
-			switch (heap_task_info[i].isExist) {
-			case pdTRUE:
-				RTK_LOGS(NOTAG, RTK_LOG_INFO, "Task: %s, task heap usage: 0x%x\n", heap_task_info[i].Task_Name, heap_task_info[i].heap_size);
-				break;
-			case pdFALSE:
-				RTK_LOGS(NOTAG, RTK_LOG_INFO, "Deleted Task: %s, task heap usage: 0x%x\n", heap_task_info[i].Task_Name, heap_task_info[i].heap_size);
-				break;
-			default :
-				break;
-			}
-		}
-	}
-
-	(void) xTaskResumeAll();
-}
-
 #if ( CONFIG_HEAP_PROTECTOR == 1 )
+extern HeapRegion_t xHeapRegions[];
 uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK)
 {
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "********** ulPortCheckHeapIntegrity COMPREHENSIVE_CHECK:%d **********\n", COMPREHENSIVE_CHECK);
 	BlockLink_t *pxBlockToCheck;
 	uint8_t *pucAlignedHeap;
 	size_t xAddress, xEndAddress;
@@ -1103,6 +1083,19 @@ uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK)
 #else
 				UNUSED(COMPREHENSIVE_CHECK);
 #endif
+			} else {
+					/* This is the last free block before pxEnd */
+#if ( CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE == 1)
+					size_t xCheckFreedBlockSize = pxBlockToCheck->xBlockSize - xHeapStructSize;
+					uint8_t * pxAddress = ( uint8_t * ) pxBlockToCheck + xHeapStructSize;
+					for( size_t i = 0; i < xCheckFreedBlockSize; i++)
+					{
+						if ( pxAddress[i] != xFillFreed) {
+							RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Write to a unallocated Block: 0x%08x. Invalidate value: 0x%08x\n", &pxAddress[i], pxAddress[i]);
+							configASSERT( pdFALSE );
+						}
+					}
+#endif
 			}
 
 			xCurBlockSize = pxBlockToCheck->xBlockSize;
@@ -1125,6 +1118,30 @@ uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK)
 	}
 
 	return pdPASS;
+}
+
+#ifdef CONFIG_HEAP_TRACE
+void vPortGetTaskHeapInfo(void)
+{
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "********** Each Task Heap Usage **********\n");
+	vTaskSuspendAll();
+
+	for (int i = 0; i < CONFIG_HEAP_TRACE_MAX_TASK_NUMBER; i++) {
+		if (heap_task_info[i].TaskHandle != NULL) {
+			switch (heap_task_info[i].isExist) {
+			case pdTRUE:
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "Task: %s, task heap usage: 0x%x\n", heap_task_info[i].Task_Name, heap_task_info[i].heap_size);
+				break;
+			case pdFALSE:
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "Deleted Task: %s, task heap usage: 0x%x\n", heap_task_info[i].Task_Name, heap_task_info[i].heap_size);
+				break;
+			default :
+				break;
+			}
+		}
+	}
+
+	(void) xTaskResumeAll();
 }
 #endif
 #endif
@@ -1188,10 +1205,19 @@ void *pvPortCalloc(size_t xWantedCnt, size_t xWantedSize)
 	return p;
 }
 
-#if defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBALITE)
+#if defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAD)
 void vApplicationMallocFailedHook(size_t xWantedSize)
 {
 	char *pcCurrentTask = "NoTsk";
+#if defined (CONFIG_ARM_CORE_CM0)
+	const char *core_name = "KM0";
+#elif defined (CONFIG_ARM_CORE_CM4)
+	const char *core_name = "KM4";
+#elif defined (CONFIG_RSICV_CORE_KR4)
+	const char *core_name = "KR4";
+#elif defined (CONFIG_ARM_CORE_CA32)
+	const char *core_name = "CA32";
+#endif
 
 	taskENTER_CRITICAL();
 
@@ -1200,22 +1226,15 @@ void vApplicationMallocFailedHook(size_t xWantedSize)
 	}
 
 	/* 1. Basic info: Task name / Free Heap Size / WantedSize */
-#if defined (CONFIG_ARM_CORE_CM0)
 	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d] [xWantedSize:%d]\r\n",
-			"KM0", pcCurrentTask, xPortGetFreeHeapSize(), xWantedSize);
-#elif defined (CONFIG_ARM_CORE_CM4)
-	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d] [xWantedSize:%d]\r\n",
-			"KM4", pcCurrentTask, xPortGetFreeHeapSize(), xWantedSize);
-#elif defined (CONFIG_RSICV_CORE_KR4)
-	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d] [xWantedSize:%d]\r\n",
-			"KR4", pcCurrentTask, xPortGetFreeHeapSize(), xWantedSize);
-#endif
+			core_name, pcCurrentTask, xPortGetFreeHeapSize(), xWantedSize);
 
-#ifdef CONFIG_HEAP_TRACE
+#if defined (CONFIG_HEAP_PROTECTOR) && (CONFIG_HEAP_PROTECTOR== 1)
 	rtos_heap_stats stats;
 	/* 2. Full heap status */
     heap_get_stats(&stats);
 
+#if defined (CONFIG_HEAP_TRACE) && (CONFIG_HEAP_TRACE == 1)
 	/* 3. Task heap useage */
     heap_get_per_task_info();
 
@@ -1238,6 +1257,7 @@ void vApplicationMallocFailedHook(size_t xWantedSize)
 	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\r\n");
 #endif /* CONFIG_ARM_CORE_CM4 || CONFIG_RSICV_CORE_KR4 */
 #endif /* CONFIG_HEAP_TRACE */
+#endif /* CONFIG_HEAP_PROTECTOR */
 	for (;;);
 }
 #endif

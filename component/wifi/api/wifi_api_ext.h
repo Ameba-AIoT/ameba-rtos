@@ -19,8 +19,6 @@
 #ifndef __WIFI_API_EXT_H
 #define __WIFI_API_EXT_H
 
-#include "wifi_api_types.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -107,13 +105,13 @@ int wifi_set_autoreconnect(u8 enable);
 int wifi_get_autoreconnect(u8 *enable);
 
 /**
- * @brief  Get the associated clients with SoftAP.
+ * @brief  Get the connected clients with SoftAP.
  * @param[out]  client_list_buffer: The location where the client list will be stored.
  * @return
  *    - @ref RTK_SUCCESS : The result is successfully got.
  *    - @ref RTK_FAIL : The result is not successfully got.
  */
-int wifi_get_associated_client_list(struct _rtw_client_list_t	*client_list_buffer);
+int wifi_ap_get_connected_clients(struct _rtw_client_list_t	*client_list_buffer);
 
 /**
  * @brief  Delete a STA for softap.
@@ -121,7 +119,23 @@ int wifi_get_associated_client_list(struct _rtw_client_list_t	*client_list_buffe
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL.
  * @note  This function should be used when operating as AP.
  */
-int wifi_del_station(unsigned char *hwaddr);
+int wifi_ap_del_client(unsigned char *hwaddr);
+
+/**
+ * @brief  Switch to a new channel in AP mode and using CSA to inform sta.
+ * @param[in]  csa_param: Pointer to the csa config structure _rtw_csa_parm_t.
+ * @return  @ref RTK_SUCCESS or @ref RTK_FAIL, only indicate whether channel switch cmd is
+ * 	successfully set to wifi driver.
+ * @note  This function should be used when operating as AP.
+ */
+int wifi_ap_switch_chl_and_inform(struct _rtw_csa_parm_t *csa_param);
+
+/**
+  * @brief  For user to toggle softap whether can be discovered.
+  * @param[in]  enable 1-invisible, 0-visible.
+  * @return  None.
+  */
+void wifi_ap_set_invisible(u8 enable);
 
 /**
  * @brief  Set channel.
@@ -149,17 +163,24 @@ int wifi_set_channel(unsigned char wlan_idx, u8 channel);
 int wifi_set_countrycode(char *cntcode);
 
 /**
+ * @brief  get country code info
+ * @param[in]  table: Pointer to the currently obtained country code table
+ * @return  @ref RTK_SUCCESS or @ref RTK_FAIL
+ */
+int wifi_get_countrycode(struct country_code_table_t *table);
+
+/**
  * @brief  Retrieves the current Media Access Control (MAC) address
  *	(or Ethernet hardware address) of the 802.11 device.
  * @param[in]  idx: Get STA or SoftAP mac address. Invalid parameter while setting efuse = 1.
- * @param[in]  mac: Pointer to the struct _rtw_mac_t  which contain obtained mac address.
+ * @param[in]  mac: Pointer to the struct rtw_mac  which contain obtained mac address.
  * @param[in]  efuse: Get mac address from efuse or get from RAM.
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL.
  * @note
  *     - Get mac address inside EFUSE(efuse = 1).
  *     - Get runtime mac address(efuse = 0). (RECOMMENDED)
  */
-int wifi_get_mac_address(int idx, struct _rtw_mac_t  *mac, u8 efuse);
+int wifi_get_mac_address(int idx, struct rtw_mac  *mac, u8 efuse);
 
 /**
  * @brief  This function is used to get wifi wireless mode for station mode when connecting to AP.
@@ -239,14 +260,16 @@ int wifi_get_ccmp_key(u8 wlan_idx, u8 *mac_addr, unsigned char *uncst_key, unsig
 
 /**
  * @brief  Fetch statistic info about wifi.
- * @param[out]  phy_statistic: The location where the statistic
- * 	info will be stored, for detail info, please refer to union _rtw_phy_statistics_t .
+ * @param[in]  wlan_idx: STA_WLAN_IDX or SOFTAP_WLAN_IDX or COMMON_WLAN_IDX.
+ * @param[in]  mac_addr: Client mac addr for softap mode, set to NULL for sta mode and none mode.
+ * @param[out]  phy_stats: The location where the statistic
+ * 	info will be stored, for detail info, please refer to union _rtw_phy_stats_t .
  * @return
  *    - @ref RTK_SUCCESS : If the statistic info is successfully get.
  *    - @ref RTK_FAIL : If the statistic info is not successfully get.
  * @note  The rssi and snr info will only be valid after connected to AP successfully.
  */
-int wifi_get_phy_statistic(union _rtw_phy_statistics_t *phy_statistic);
+int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union _rtw_phy_stats_t *phy_stats);
 
 /**
  * @brief  Get current remaining number of packets in HW TX buffer.
@@ -290,15 +313,6 @@ int wifi_get_band_type(u8 *band_type);
  *    - @ref RTK_FAIL : If the tsf is not successfully get.
  */
 int wifi_get_tsf(unsigned char wlan_idx, u64 *tsf);
-
-/**
- * @brief  Switch to a new channel in AP mode and using CSA to inform sta.
- * @param[in]  csa_param: Pointer to the csa config structure _rtw_csa_parm_t.
- * @return  @ref RTK_SUCCESS or @ref RTK_FAIL, only indicate whether channel switch cmd is
- * 	successfully set to wifi driver.
- * @note  This function should be used when operating as AP.
- */
-int wifi_ap_switch_chl_and_inform(struct _rtw_csa_parm_t *csa_param);
 
 /**
  * @brief  Setup custom IE list. (Information Element).
@@ -466,13 +480,6 @@ int wifi_get_tx_power(u8 rate, s8 *txpwr);
   * @return  None.
   */
 void wifi_set_conn_step_try_limit(struct rtw_conn_step_retries *conn_step_retries);
-
-/**
-  * @brief  For user to toggle softap whether can be discovered.
-  * @param[in]  enable 1-invisible, 0-visible.
-  * @return  None.
-  */
-void wifi_ap_set_invisible(u8 enable);
 
 /** @} End of Extended_Functions group */
 /** @} End of WIFI_Exported_Functions group*/

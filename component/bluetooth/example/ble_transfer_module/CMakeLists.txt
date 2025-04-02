@@ -39,6 +39,7 @@ ameba_list_append(private_sources
     transfer_module_main.c
 	transfer_module_server.c
 	transfer_module_client.c
+	../bt_atcmd/atcmd_bt_cmd_sync.c
 	../bt_atcmd/atcmd_bt_transfer_module.c
 )
 

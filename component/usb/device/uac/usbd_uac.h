@@ -405,19 +405,19 @@ int usbd_uac_deinit(void);
   * @param  flag: write buffer handle used to save the data
   * @retval Status
   */
-u8  usbd_uac_audio_cfg_init(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 flag);
+u8  usbd_uac_config(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 flag);
 
 /**
-  * @brief  Usb audio start
+  * @brief  Usb audio start play
   * @retval Status
   */
-u32  usbd_uac_start(void);
+u32  usbd_uac_start_play(void);
 
 /**
-  * @brief  Usb audio stop
+  * @brief  Usb audio stop play
   * @retval Status
   */
-void usbd_uac_stop(void);
+void usbd_uac_stop_play(void);
 
 /**
   * @brief  Read the data from the ring_buffer
@@ -430,13 +430,13 @@ void usbd_uac_stop(void);
 u32  usbd_uac_read(u8 *buffer, u32 size, u32 time_out_ms);
 
 /**
-  * @brief  Get the read buf packet count
+  * @brief  Get the read frame packet count
   * @retval return avail packet cnt
   */
-u32  usbd_uac_get_read_buf_cnt(void);
+u32  usbd_uac_get_read_frame_cnt(void);
 
 // for USB IN tx, TODO
 // u32  usbd_uac_write(void, void *buffer, u32 size, u8 blocking);
-// u32  usbd_uac_get_writebuf_cnt(void);
+// u32  usbd_uac_get_write_frame_cnt(void);
 
 #endif  /* USBD_UAC_H */

@@ -332,12 +332,12 @@ void at_wlconn(void *arg)
 	/* Connecting ...... */
 	ret = wifi_connect(&wifi, 1);
 	if (ret != RTK_SUCCESS) {
-		RTK_LOGW(NOTAG, "[+WLCONN] Fail:%d", ret);
-		if ((ret == RTW_CONNECT_INVALID_KEY)) {
+		RTK_LOGW(NOTAG, "[+WLCONN] Fail:-0x%x", -ret);
+		if ((ret == -RTK_ERR_WIFI_CONN_INVALID_KEY)) {
 			RTK_LOGW(NOTAG, "(password format wrong)");
-		} else if (ret == RTW_CONNECT_SCAN_FAIL) {
+		} else if (ret == -RTK_ERR_WIFI_CONN_SCAN_FAIL) {
 			RTK_LOGW(NOTAG, "(not found AP)");
-		} else if (ret == RTW_BUSY) {
+		} else if (ret == -RTK_ERR_BUSY) {
 			RTK_LOGW(NOTAG, "(busy)");
 		}
 		RTK_LOGW(NOTAG, "\r\n");
@@ -495,11 +495,11 @@ void at_wlscan(void *arg)
 	int error_no = 0, ret = 0;
 	char *argv[MAX_ARGC] = {0};
 	struct rtw_scan_result *scanned_AP_list = NULL;
-	struct _rtw_scan_param_t scan_param;
+	struct rtw_scan_param scan_param;
 	struct rtw_scan_result *scanned_AP_info;
 	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 
-	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
+	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
 
 	if (wifi_get_join_status(&join_status) != RTK_SUCCESS) {
 		error_no = 4;
@@ -620,17 +620,17 @@ AT command process:
 ****************************************************************/
 void at_wlrssi(void *arg)
 {
-	union _rtw_phy_statistics_t phy_statistics;
+	union _rtw_phy_stats_t phy_stats;
 
 	UNUSED(arg);
 
 	RTK_LOGI(NOTAG, "[WLRSSI] _AT_WLAN_GET_RSSI_\r\n");
-	wifi_get_phy_statistic(&phy_statistics);
+	wifi_get_phy_stats(STA_WLAN_INDEX, NULL, &phy_stats);
 
 	/* cal complement for logs */
-	at_printf("rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.sta_phy_stats.rssi + 1));
-	at_printf("data rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.sta_phy_stats.data_rssi + 1));
-	at_printf("beacon rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.sta_phy_stats.beacon_rssi + 1));
+	at_printf("rssi = -%d\r\n", (signed char)(0xFF - phy_stats.sta.rssi + 1));
+	at_printf("data rssi = -%d\r\n", (signed char)(0xFF - phy_stats.sta.data_rssi + 1));
+	at_printf("beacon rssi = -%d\r\n", (signed char)(0xFF - phy_stats.sta.beacon_rssi + 1));
 	at_printf(ATCMD_OK_END_STR);
 }
 
@@ -978,7 +978,8 @@ void at_wlstate(void *arg)
 			if (p_wifi_setting->mode == RTW_MODE_AP || i == 1) {
 				unsigned int client_number;
 				struct _rtw_client_list_t client_info = {0};
-				wifi_get_associated_client_list(&client_info);
+				union _rtw_phy_stats_t phy_stats = {0};
+				wifi_ap_get_connected_clients(&client_info);
 
 				at_printf("Associated Client List:\r\n");
 				at_printf("==============================\r\n");
@@ -995,7 +996,8 @@ void at_wlstate(void *arg)
 							if (memcmp(p, client_info.mac_list[client_number].octet, 6) == 0) {
 								at_printf("IPv4 address: %d.%d.%d.%d, ", gw[0], gw[1], gw[2], ip_table.ip_addr4[n]);
 								at_printf("MAC address: %02x:%02x:%02x:%02x:%02x:%02x, ", p[0], p[1], p[2], p[3], p[4], p[5]);
-								at_printf("RSSI: %d", client_info.rssi_list[client_number]);
+								wifi_get_phy_stats(SOFTAP_WLAN_INDEX, p, &phy_stats);
+								at_printf("RSSI: %d", phy_stats.ap.data_rssi);
 								at_printf("\r\n");
 								break;
 							}

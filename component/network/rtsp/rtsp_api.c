@@ -1344,14 +1344,14 @@ Redo:
 		}
 		if (rtsp_ctx->interface <= 1) {
 			if (wifi_is_running(0) > 0) {
-				wifi_get_setting(WLAN0_IDX, &setting);
+				wifi_get_setting(STA_WLAN_INDEX, &setting);
 				wifi_get_join_status(&join_status);
 				mode = setting.mode;
 				if (((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID)) && (mode == RTW_MODE_STA)) {
 					printf("connect successful sta mode\r\n");
 					break;
 				}
-				if (wifi_is_running(WLAN0_IDX) && (mode == RTW_MODE_AP)) {
+				if (wifi_is_running(STA_WLAN_INDEX) && (mode == RTW_MODE_AP)) {
 					printf("connect successful ap mode\r\n");
 					break;
 				}
@@ -1754,7 +1754,7 @@ Redo:
 							goto out;
 						}
 					} else if (mode == RTW_MODE_AP) {
-						if (wifi_is_running(WLAN0_IDX) == 0) {
+						if (wifi_is_running(STA_WLAN_INDEX) == 0) {
 							goto out;
 						}
 					} else {
@@ -1794,7 +1794,7 @@ out:
 					goto Redo;
 				}
 			} else if (mode == RTW_MODE_AP) {
-				if (wifi_is_running(WLAN0_IDX) == 0) {
+				if (wifi_is_running(STA_WLAN_INDEX) == 0) {
 					RTSP_DBG_ERROR("wifi Tx/Rx broke! rtsp service cannot stream");
 					close(rtsp_ctx->connect_ctx.socket_id);
 					RTSP_DBG_ERROR("RTSP Reconnect!");

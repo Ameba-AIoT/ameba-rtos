@@ -1064,7 +1064,7 @@ static void usbd_composite_uac_append_data(void)
 		usbd_composite_uac_list_add_tail(&(pdata_ctrl->data_list), p_buf);
 
 		//used for usb read
-		if (usbd_composite_uac_get_read_buf_cnt() >= USBD_UAC_HS_SOF_COUNT_PER_MS) {
+		if (usbd_composite_uac_get_read_frame_cnt() >= USBD_UAC_HS_SOF_COUNT_PER_MS) {
 			rtos_sema_give(pdata_ctrl->uac_isoc_sema);
 		}
 	}
@@ -1998,7 +1998,7 @@ static int usbd_composite_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16
 					pdata_ctrl->p_cur_buf_node = p_buf;
 
 					//used for usb read
-					if (usbd_composite_uac_get_read_buf_cnt() >= USBD_UAC_HS_SOF_COUNT_PER_MS) {
+					if (usbd_composite_uac_get_read_frame_cnt() >= USBD_UAC_HS_SOF_COUNT_PER_MS) {
 						rtos_sema_give(pdata_ctrl->uac_isoc_sema);
 					}
 				}
@@ -2407,7 +2407,7 @@ int usbd_composite_uac_receive_data(void)
   * @param  flag: Unused parameter
   * @retval Status
   */
-u8 usbd_composite_uac_audio_cfg_init(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 flag)
+u8 usbd_composite_uac_cfg(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 flag)
 {
 	UNUSED(flag);
 
@@ -2434,11 +2434,11 @@ u8 usbd_composite_uac_audio_cfg_init(const usbd_audio_cfg_t *uac_cfg, u8 is_reco
 }
 
 /**
-  * @brief  Initializes and starts the UAC data reception process
+  * @brief  Initializes and starts the UAC data rx process
   * @param  void
   * @retval Status
   */
-u32 usbd_composite_uac_start(void)
+u32 usbd_composite_uac_start_play(void)
 {
 	int ret = HAL_OK;
 	// RTK_LOGS(TAG, RTK_LOG_DEBUG, "UAC start\n");
@@ -2448,19 +2448,17 @@ u32 usbd_composite_uac_start(void)
 	uac->isoc_rx_last_tick = 0;
 #endif
 
-	// uac_cb_isoc_transmitted(0);  TODO
-
 	ret = usbd_composite_uac_receive_data();
 
 	return ret;
 }
 
 /**
-  * @brief  Stop UAC device
+  * @brief  Stop UAC device play
   * @param  void
   * @retval void
   */
-void usbd_composite_uac_stop(void)
+void usbd_composite_uac_stop_play(void)
 {
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
 
@@ -2528,11 +2526,11 @@ u32 usbd_composite_uac_read(u8 *buffer, u32 size, u32 time_out_ms, u32 *zero_pkt
 }
 
 /**
-  * @brief  Get UAC read buffer cnt
+  * @brief  Get UAC read frame cnt
   * @param  void
-  * @retval read buffer cnt
+  * @retval read frame cnt
   */
-u32 usbd_composite_uac_get_read_buf_cnt(void)
+u32 usbd_composite_uac_get_read_frame_cnt(void)
 {
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
 	usbd_composite_uac_buf_ctrl_t *pdata_ctrl = &(uac->uac_isoc_out);
@@ -2545,11 +2543,11 @@ u32 usbd_composite_uac_get_read_buf_cnt(void)
 }
 
 /**
-  * @brief  Get UAC read buffer cnt
+  * @brief  Get UAC read frame cnt
   * @param  void
   * @retval return the time duration for the avail packet in us
   */
-u32 usbd_composite_uac_get_read_buf_time_in_us(void)
+u32 usbd_composite_uac_get_read_frame_time_in_us(void)
 {
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
 	usbd_composite_uac_buf_ctrl_t *pdata_ctrl = &(uac->uac_isoc_out);

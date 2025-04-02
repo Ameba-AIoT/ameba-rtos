@@ -39,10 +39,6 @@
 
 #define INFO_ELEMENT_SIZE       128 /*TODO: rom should check because moved from rom_rtw_defs.h*/
 
-#define netdev_priv(dev)		dev->priv
-#define rtw_is_netdev_enable(idx)	(rltk_wlan_info[idx].enable)
-#define rtw_get_netdev(idx)		(&(rltk_wlan_info[idx].dev))
-
 enum _IFACE_TYPE {
 	IFACE_PORT0, //mapping to port0 for C/D series chips
 	IFACE_PORT1, //mapping to port1 for C/D series chip

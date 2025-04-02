@@ -19,7 +19,7 @@ extern "C"
 {
 #endif
 
-#if (defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT)
+#if (defined(RTK_BLE_AUDIO_TMAP_SUPPORT) && RTK_BLE_AUDIO_TMAP_SUPPORT)
 /* ---------------------------------- Date Types ------------------------------------- */
 /**
  * @typedef    rtk_bt_le_audio_tmap_role_t
@@ -76,7 +76,7 @@ uint16_t rtk_bt_le_audio_tmas_client_read_role(uint16_t conn_handle);
  * @}
  */
 
-#endif /* CONFIG_BT_TMAP_SUPPORT */
+#endif /* RTK_BLE_AUDIO_TMAP_SUPPORT */
 #ifdef __cplusplus
 }
 #endif

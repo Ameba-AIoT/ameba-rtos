@@ -95,7 +95,7 @@ static void example_debug_log_cb(u8 *data, u32 data_len)
 static void example_debug_scan_request_cb(u8 *src_mac)
 {
 	struct example_scan_info info = {0};
-	struct _rtw_mac_t self_mac = {0};
+	struct rtw_mac self_mac = {0};
 
 	wifi_get_mac_address(0, &self_mac, 0);
 	memcpy(info.mac, self_mac.octet, 6);

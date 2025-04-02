@@ -35,10 +35,10 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_SET_PMF_MODE,	whc_event_wifi_set_pmf_mode},
 	{WHC_API_WIFI_SET_LPS_EN,	whc_event_wifi_set_lps_enable},
 	{WHC_API_WIFI_SAE_STATUS,	whc_event_wifi_set_sae_status},
-	{WHC_API_WIFI_GET_PHY_STATISTIC,	whc_event_wifi_fetch_phy_statistic},
+	{WHC_API_WIFI_GET_PHY_STATS,	whc_event_wifi_fetch_phy_stats},
 	{WHC_API_WIFI_SEND_MGNT,	whc_event_wifi_send_mgnt},
 	{WHC_API_WIFI_SET_EDCA_PARAM,	whc_event_wifi_set_EDCA_param},
-	{WHC_API_WIFI_DEL_STA,	whc_event_wifi_del_station},
+	{WHC_API_WIFI_AP_DEL_CLIENT,	whc_event_wifi_ap_del_client},
 	{WHC_API_WIFI_IWPRIV_INFO,	whc_event_wifi_iwpriv_info},
 	{WHC_API_WIFI_IP_UPDATE,		whc_event_wifi_ip_update},
 	{WHC_API_WIFI_AP_CH_SWITCH,		whc_event_wifi_ap_switch_ch},
@@ -82,7 +82,7 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_GET_SCANNED_AP_INFO, whc_event_get_scan_res},
 	{WHC_API_WIFI_GET_SETTING, whc_event_wifi_get_setting},
 	{WHC_API_WIFI_SEND_EAPOL, whc_event_send_eapol},
-	{WHC_API_WIFI_GET_ASSOCIATED_CLIENT_LIST, whc_event_get_assoc_client_list},
+	{WHC_API_WIFI_AP_GET_CONNECTED_CLIENTS, whc_event_wifi_ap_get_connected_clients},
 	{WHC_API_WPA_4WAY_REPORT, whc_event_wpa_4way_rpt},
 #endif
 };
@@ -243,7 +243,7 @@ void whc_event_send_eapol(u32 api_id, u32 *param_buf)
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
-void whc_event_get_assoc_client_list(u32 api_id, u32 *param_buf)
+void whc_event_wifi_ap_get_connected_clients(u32 api_id, u32 *param_buf)
 {
 	(void)param_buf;
 	int ret = -1;
@@ -252,7 +252,7 @@ void whc_event_get_assoc_client_list(u32 api_id, u32 *param_buf)
 	if (!client_list_buffer) {
 		goto error_exit;
 	}
-	ret = wifi_get_associated_client_list(client_list_buffer);
+	ret = wifi_ap_get_connected_clients(client_list_buffer);
 
 	if (ret != 0) {
 		goto error_exit;
@@ -269,6 +269,22 @@ exit:
 	if (client_list_buffer)  {
 		rtos_mem_free(client_list_buffer);
 	}
+}
+
+void whc_event_wifi_ap_del_client(u32 api_id, u32 *param_buf)
+{
+	int ret;
+	unsigned char *hwaddr = (unsigned char *)(param_buf + 1);
+
+	ret = wifi_ap_del_client(hwaddr);
+	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
+}
+
+void whc_event_wifi_ap_switch_ch(u32 api_id, u32 *param_buf)
+{
+	int ret = 0;
+	ret = wifi_ap_switch_chl_and_inform((struct _rtw_csa_parm_t *)param_buf);
+	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
 void whc_event_wpa_4way_rpt(u32 api_id, u32 *param_buf)
@@ -455,7 +471,7 @@ void whc_event_wifi_scan_networks(u32 api_id, u32 *param_buf)
 	u8 *ptr = (u8 *)param_buf;
 	u8 block;
 	u32 ssid_length;
-	struct _rtw_scan_param_t scan_param = {0};
+	struct rtw_scan_param scan_param = {0};
 	char *ssid = NULL;
 
 	memcpy(&block, ptr, sizeof(block));
@@ -551,13 +567,19 @@ void whc_event_wifi_set_sae_status(u32 api_id, u32 *param_buf)
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
-void whc_event_wifi_fetch_phy_statistic(u32 api_id, u32 *param_buf)
+void whc_event_wifi_fetch_phy_stats(u32 api_id, u32 *param_buf)
 {
-	(void)param_buf;
+	u8 wlan_idx = (u8)param_buf[0];
+	u32 mac_len = param_buf[1];
+	u8 *mac_addr = NULL;
+	union _rtw_phy_stats_t phy_stats;
 
-	union _rtw_phy_statistics_t statistic;
-	wifi_get_phy_statistic(&statistic);
-	whc_send_api_ret_value(api_id, (u8 *)&statistic, sizeof(union _rtw_phy_statistics_t));
+	if (mac_len) {
+		mac_addr = (u8 *)(param_buf + 2);
+	}
+
+	wifi_get_phy_stats(wlan_idx, mac_addr, &phy_stats);
+	whc_send_api_ret_value(api_id, (u8 *)&phy_stats, sizeof(union _rtw_phy_stats_t));
 }
 
 void whc_event_wifi_send_mgnt(u32 api_id, u32 *param_buf)
@@ -579,15 +601,6 @@ void whc_event_wifi_set_EDCA_param(u32 api_id, u32 *param_buf)
 	unsigned int ac_param = param_buf[0];
 
 	ret = wifi_set_edca_param(ac_param);
-	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
-}
-
-void whc_event_wifi_del_station(u32 api_id, u32 *param_buf)
-{
-	int ret;
-	unsigned char *hwaddr = (unsigned char *)(param_buf + 1);
-
-	ret = wifi_del_station(hwaddr);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
@@ -739,13 +752,6 @@ void whc_event_p2p_remain_on_ch(u32 api_id, u32 *param_buf)
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 #endif
-
-void whc_event_wifi_ap_switch_ch(u32 api_id, u32 *param_buf)
-{
-	int ret = 0;
-	ret = wifi_ap_switch_chl_and_inform((struct _rtw_csa_parm_t *)param_buf);
-	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
-}
 
 void whc_event_wifi_set_chplan(u32 api_id, u32 *param_buf)
 {
@@ -1313,7 +1319,7 @@ void whc_dev_cfg80211_indicate_channel_ready(void *scan_userdata)
 void whc_event_bridge_get_dev_mac(u32 api_id, u32 *param_buf)
 {
 	(void) param_buf;
-	struct _rtw_mac_t dev_mac = {0};
+	struct rtw_mac dev_mac = {0};
 	wifi_get_mac_address(STA_WLAN_INDEX, &dev_mac, 0);
 	whc_send_api_ret_value(api_id, dev_mac.octet, 6);
 }

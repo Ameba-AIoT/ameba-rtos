@@ -9,7 +9,7 @@ set(v_USER_CUSTOM_LOG_PREFIX "kr4_POSTBUILD")
 execute_process(COMMAND_ERROR_IS_FATAL ANY
     COMMAND ${CMAKE_OBJCOPY} -j .xip_image2.text -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/xip_image2.bin
     COMMAND ${CMAKE_OBJCOPY} -j .psram_image2.text.data -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/psram_2.bin
-    COMMAND ${CMAKE_OBJCOPY} -j .sram_image2.text.data -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/sram_2.bin
+    COMMAND ${CMAKE_OBJCOPY} -j .sram_image2.text.data -j .ram_image2_fill -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/sram_2.bin
     COMMAND ${CMAKE_OBJCOPY} -j .boot.entry -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/boot.bin
     COMMAND ${CMAKE_OBJCOPY} -j .sram_only.text.data -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/sram_only.bin
     COMMAND ${CMAKE_OBJCOPY} -j .ram_retention.text -j .ram_retention.entry -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/ram_retention.bin
@@ -40,24 +40,7 @@ execute_process(COMMAND_ERROR_IS_FATAL ANY
 )
 
 if(CONFIG_MP_SHRINK)
-    if(CONFIG_AS_INIC_NP)
-        set(GETSEGLEN python ${c_CMAKE_FILES_DIR}/extract_ld_var.py SIZE)
-        set(LD_FILE ${c_SOC_PROJECT_DIR}/amebalite_layout.ld)
-
-        execute_process(COMMAND_ERROR_IS_FATAL ANY
-            COMMAND ${GETSEGLEN} ${LD_FILE} KR4_BD_RAM_MP
-            OUTPUT_VARIABLE length
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-
-        file(WRITE ${c_SDK_IMAGE_TARGET_DIR}/xip_image2.bin "")
-        file(WRITE ${c_SDK_IMAGE_TARGET_DIR}/psram_2.bin "")
-
-        execute_process(COMMAND_ERROR_IS_FATAL ANY
-            COMMAND ${PADTOOL} ${c_SDK_IMAGE_TARGET_DIR}/sram_2.bin ${length}
-        )
-
-    elseif(CONFIG_AS_INIC_AP)
+    if(CONFIG_AS_INIC_AP)
         message(FATAL_ERROR "Setting KR4 as AP is NOT ALLOWED in SHRINK MP.")
     endif()
 endif()

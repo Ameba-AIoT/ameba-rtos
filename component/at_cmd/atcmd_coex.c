@@ -291,9 +291,8 @@ static void fEXTCOEX(void *arg)
 		extchip_para.pta_pad_pri = pad_pri;
 		extchip_para.pta_pad_gnt = pad_gnt;
 		extchip_para.pta_index = (pta_index == 0) ? EXT_PTA1 : EXT_PTA2;
-		extchip_para.pta_pad_gnt_use = (gnt_out_use == 0) ? EXT_GNT_DEFAULT : EXT_GNT_GNT_BT;
 
-		rtk_coex_extc_ntfy_init(&extchip_para, sizeof(struct extchip_para_t));
+		rtk_coex_extc_ntfy_init(&extchip_para);
 
 	} else if (0 == strcasecmp(argv[1], "state")) {
 		if (argc != 3) {

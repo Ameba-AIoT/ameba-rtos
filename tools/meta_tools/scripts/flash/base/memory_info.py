@@ -18,7 +18,7 @@ class MemoryInfo:
         self.start_address = 0
         self.end_address = 0
         self.memory_type = self.MEMORY_TYPE_RAM
-        self.size_in_Kbyte = 0
+        self.size_in_kbyte = 0
 
     def size_in_byte(self):
-        return self.size_in_Kbyte * 1024
+        return self.size_in_kbyte * 1024

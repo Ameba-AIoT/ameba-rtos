@@ -7,6 +7,7 @@
 /* Includes ------------------------------------------------------------------ */
 
 #include "ameba_soc.h"
+#include "usb_regs.h"
 #include "usb_hal.h"
 #include "usbh.h"
 

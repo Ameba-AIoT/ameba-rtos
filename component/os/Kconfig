@@ -15,7 +15,18 @@ menu "CONFIG OS"
         endchoice
     endif
 
-    if AMEBADPLUS || AMEBALITE
+    if AMEBASMART
+        choice
+            prompt "CA32 SMP FreeRTOS OS version select"
+            default CA32_FREERTOS_V10_2_1_SMP_FOR_CA32
+            config CA32_FREERTOS_V10_2_1_SMP_FOR_CA32
+                bool "v10.2.1_smp"
+            config CA32_FREERTOS_V11_1_0_FOR_CA32
+                bool "v11.1.0"
+        endchoice
+    endif
+
+    if AMEBADPLUS || AMEBALITE || AMEBAD
         config BACK_TRACE_DEPTH_LIMIT
             int "Crash Back Trace Depth Limit"
             default 8

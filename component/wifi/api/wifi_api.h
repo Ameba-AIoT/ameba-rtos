@@ -78,16 +78,16 @@ int wifi_is_running(unsigned char wlan_idx);
  *    - @ref RTK_SUCCESS : Join successfully for synchronized wifi connect,
  *  						or connect cmd is set successfully for asynchronized wifi connect.
  *    - @ref RTK_FAIL : An error occurred.
- *    - @ref RTW_BUSY : Wifi connect or scan is ongoing.
- *    - @ref RTW_NOMEM : Malloc fail during wifi connect.
- *    - @ref RTW_TIMEOUT : More than RTW_JOIN_TIMEOUT(~70s) without successful connection.
- *    - @ref RTW_CONNECT_INVALID_KEY : Password format wrong.
- *    - @ref RTW_CONNECT_SCAN_FAIL : Scan fail.
- *    - @ref RTW_CONNECT_AUTH_FAIL : Auth fail.
- *    - @ref RTW_CONNECT_AUTH_PASSWORD_WRONG : Password error causing auth failure, not entirely accurate.
- *    - @ref RTW_CONNECT_ASSOC_FAIL : Assoc fail.
- *    - @ref RTW_CONNECT_4WAY_HANDSHAKE_FAIL : 4 way handshake fail.
- *    - @ref RTW_CONNECT_4WAY_PASSWORD_WRONG : Password error causing 4 way handshake failure,not entirely accurate.
+ *    - -@ref RTK_ERR_BUSY : Wifi connect or scan is ongoing.
+ *    - -@ref RTK_ERR_NOMEM : Malloc fail during wifi connect.
+ *    - -@ref RTK_ERR_TIMEOUT : More than RTW_JOIN_TIMEOUT(~70s) without successful connection.
+ *    - -@ref RTK_ERR_WIFI_CONN_INVALID_KEY : Password format wrong.
+ *    - -@ref RTK_ERR_WIFI_CONN_SCAN_FAIL : Scan fail.
+ *    - -@ref RTK_ERR_WIFI_CONN_AUTH_FAIL : Auth fail.
+ *    - -@ref RTK_ERR_WIFI_CONN_AUTH_PASSWORD_WRONG : Password error causing auth failure, not entirely accurate.
+ *    - -@ref RTK_ERR_WIFI_CONN_ASSOC_FAIL : Assoc fail.
+ *    - -@ref RTK_ERR_WIFI_CONN_4WAY_HANDSHAKE_FAIL : 4 way handshake fail.
+ *    - -@ref RTK_ERR_WIFI_CONN_4WAY_PASSWORD_WRONG : Password error causing 4 way handshake failure,not entirely accurate.
  * @note
  *      - Please make sure the Wi-Fi is enabled (wifi_on()) before invoking this function.
  *      - If bssid in connect_param is set, then bssid will be used for connect, otherwise ssid is used for connect.
@@ -136,7 +136,7 @@ int wifi_get_join_status(u8 *join_status);
  *             report a NULL pointer for notification. So in this way, scan_report_each_mode_user_callback need to
  *             be registered in scan_param, and RTW_SCAN_REPORT_EACH need to be set in scan_param->options.Also in
  *             this mode, scan_user_callback is no need to be registered.
- * @param[in]  scan_param: Refer to struct struct _rtw_scan_param_t in wifi_api_types.h.
+ * @param[in]  scan_param: Refer to struct struct rtw_scan_param in wifi_api_types.h.
  * @param[in]  block:
  * 					- If set to 1, it's synchronized scan and this API will return after scan is done.
  * 					- If set to 0, it's asynchronized scan and this API will return immediately.
@@ -146,7 +146,7 @@ int wifi_get_join_status(u8 *join_status);
  * 	allocated memory, for synchronized scan or asynchronized scan which not use RTW_SCAN_REPORT_EACH,
  * 	these memory will be freed when wifi_get_scan_records() is called.
  */
-int wifi_scan_networks(struct _rtw_scan_param_t *scan_param, unsigned char block);
+int wifi_scan_networks(struct rtw_scan_param *scan_param, unsigned char block);
 
 /**
  * @brief  Get scan results

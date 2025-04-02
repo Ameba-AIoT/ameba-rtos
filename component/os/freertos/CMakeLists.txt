@@ -12,8 +12,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${c_MCU_PROJECT_NAME}" STREQUAL "ap")
-        #OPTIMIZE: Change the dir name from ARM_CA7 to AmebaSmart_CA32 will be same as other soc.
-        set(portable_soc_mcu_dir ${c_FREERTOS_DIR}/portable/GCC/ARM_CA7)
+        set(portable_soc_mcu_dir ${c_FREERTOS_DIR}/portable/GCC/ARM_CA32)
         if(CONFIG_MP_SHRINK)
             if("${CONFIG_CORE_NUM}" EQUAL 1)
                 set(output_name freertos_smp_sc_mp)
@@ -151,21 +150,22 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
         endif()
     endif()
 
-    if(CONFIG_HEAP_TRACE)
-        ameba_list_append(private_sources
-            heap_trace/heap_trace.c
-        )
+if(CONFIG_HEAP_PROTECTOR)
+    ameba_list_append(private_sources
+        heap_trace/heap_trace.c
+    )
 
-        ameba_list_append(private_includes
-            heap_trace
-        )
+    ameba_list_append(private_includes
+        heap_trace
+    )
 
-        file(RELATIVE_PATH IMAGE_DIR ${FINAL_IMAGE_DIR} ${c_SDK_IMAGE_TARGET_DIR})
-        ameba_list_append(private_definitions
-            SDK_TOOLCHAIN="${SDK_TOOLCHAIN}"
-            IMAGE_DIR="${IMAGE_DIR}"
-        )
-    endif()
+    file(RELATIVE_PATH IMAGE_DIR ${FINAL_IMAGE_DIR} ${c_SDK_IMAGE_TARGET_DIR})
+    ameba_list_append(private_definitions
+        SDK_TOOLCHAIN="${SDK_TOOLCHAIN}"
+        IMAGE_DIR="${IMAGE_DIR}"
+    )
+endif()
+
 elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image3")
     ameba_list_append(private_sources
         ${portable_soc_mcu_dir}/secure/secure_context.c

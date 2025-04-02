@@ -10,6 +10,7 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "usbd_cmd.h"
+#include "usb_regs.h"
 #include "usb_hal.h"
 #include "usbd.h"
 
@@ -104,6 +105,8 @@ static u32 usbd_test(u16 argc, u8 *argv[])
 #endif
 	} else if (_stricmp(cmd, "verify") == 0) {
 		status = cmd_usbd_verify_test_entry(argc, argv);
+	} else if (_stricmp(cmd, "bus") == 0) {
+		status = cmd_usbd_bus_cmd(argc, argv);
 	} else if (_stricmp(cmd, "acm") == 0) {
 		status = cmd_usbd_cdc_acm(argc, argv);
 	} else {

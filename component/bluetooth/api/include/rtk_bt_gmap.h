@@ -18,7 +18,7 @@ extern "C"
 {
 #endif  /* __cplusplus */
 
-#if (defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT)
+#if (defined(RTK_BLE_AUDIO_GMAP_SUPPORT) && RTK_BLE_AUDIO_GMAP_SUPPORT)
 
 #define RTK_BT_GATT_UUID_GMAS                        0x1858    /**< Gaming Audio Service. */
 #define RTK_BT_GMAS_UUID_CHAR_GMAP_ROLE              0x2C00    /**< GMAP Role. */
@@ -121,7 +121,7 @@ uint16_t rtk_bt_le_audio_gmas_client_read_features(uint16_t conn_handle, uint16_
  * @}
  */
 
-#endif /* CONFIG_BT_GMAP_SUPPORT */
+#endif /* RTK_BLE_AUDIO_GMAP_SUPPORT */
 
 #ifdef __cplusplus
 }

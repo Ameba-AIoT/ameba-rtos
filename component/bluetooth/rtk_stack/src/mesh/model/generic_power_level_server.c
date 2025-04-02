@@ -172,6 +172,7 @@ static int32_t generic_power_level_trans_step_change(const mesh_model_info_p pmo
                                                      generic_transition_time_t total_time,
                                                      generic_transition_time_t remaining_time)
 {
+    // RTK porting:avoid compile warning
 	(void) type; //avoid warning
     int32_t ret = MODEL_SUCCESS;
     generic_power_level_server_set_t set_data;
@@ -508,6 +509,7 @@ static bool generic_power_level_server_receive(mesh_msg_p pmesh_msg)
 
 static int32_t generic_power_level_server_publish(const mesh_model_info_p pmodel_info, bool retrans)
 {
+    // RTK porting:avoid compile warning
 	(void) retrans;
     generic_transition_time_t remaining_time = {0, 0};
     generic_power_level_stat(pmodel_info, 0, 0, get_present_power_level(pmodel_info), FALSE, 0,

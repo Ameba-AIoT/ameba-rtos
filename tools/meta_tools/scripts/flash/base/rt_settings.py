@@ -35,6 +35,7 @@ class RtSettings():
         self.program_config2 = kwargs.get("ProgramConfig2", 0)
         self.disable_nand_access_with_uart = kwargs.get("DisableNandAccessWithUart", 0)
         self.ram_download_padding_byte = kwargs.get("RamDownloadPaddingByte", 0x00)
+        self.auto_program_spic_addr_mode_4byte = kwargs.get("AutoProgramSpicAddrMode4Byte", 0)
 
     def __repr__(self):
         profile_dict = {
@@ -56,7 +57,8 @@ class RtSettings():
             "ProgramConfig1": self.program_config1,
             "ProgramConfig2": self.program_config2,
             "DisableNandAccessWithUart": self.disable_nand_access_with_uart,
-            "RamDownloadPaddingByte": self.ram_download_padding_byte
+            "RamDownloadPaddingByte": self.ram_download_padding_byte,
+            "AutoProgramSpicAddrMode4Byte": self.auto_program_spic_addr_mode_4byte
         }
 
         return profile_dict

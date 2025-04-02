@@ -76,7 +76,7 @@ int rtos_sched_get_state(void);
  * @retval RTK_SUCCESS(0) / RTK_FAIL(-1)
  */
 int rtos_task_create(rtos_task_t *pp_handle, const char *p_name, rtos_task_function_t p_routine,
-					 void *p_param, uint16_t stack_size_in_byte, uint16_t priority);
+					 void *p_param, size_t stack_size_in_byte, uint16_t priority);
 
 /**
  * @brief  Delete os level task routine.

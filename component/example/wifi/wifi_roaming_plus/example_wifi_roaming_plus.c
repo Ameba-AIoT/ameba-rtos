@@ -270,7 +270,7 @@ WIFI_RETRY_LOOP:
 		break;
 	}
 	/* Set prev_bssid to trigger joinbss by roaming, and will not release IP when receive RTW_JOINSTATUS_DISCONNECT in wifi_join_status_indicate*/
-	wifi_get_setting(WLAN0_IDX, &ap_info);
+	wifi_get_setting(STA_WLAN_INDEX, &ap_info);
 	memcpy(wifi.prev_bssid.octet, ap_info.bssid, 6);
 	// 1.connect
 	ret = wifi_connect(&wifi, 1);
@@ -392,7 +392,7 @@ int  wifi_write_ap_info_to_flash(u32 offer_ip, u32 server_ip)
 	ROAMING_DBG("%s()\n", __FUNCTION__);
 
 	/* STEP1: get current connect info from wifi driver*/
-	if (wifi_get_setting(WLAN0_IDX, &setting) || setting.mode == RTW_MODE_AP) {
+	if (wifi_get_setting(STA_WLAN_INDEX, &setting) || setting.mode == RTW_MODE_AP) {
 		printf("\r\n %s():wifi_get_setting fail or ap mode", __func__);
 		return RTK_FAIL;
 	}
@@ -547,12 +547,12 @@ static u32 wifi_roaming_plus_find_ap_from_scan_buf(char *target_ssid, void *user
 int wifi_roaming_scan_one_channel(wifi_roaming_ap_t	roaming_ap, u32 retry)
 {
 	int cur_rssi, rssi_delta;
-	union _rtw_phy_statistics_t phy_statistics;
-	struct _rtw_scan_param_t scan_param;
+	union _rtw_phy_stats_t phy_stats;
+	struct rtw_scan_param scan_param;
 	int scanned_ap_num = 0;
 
 	//set scan_param for scan
-	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
+	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
 	scan_param.ssid = (char *)roaming_ap.ssid;
 	scan_param.channel_list = pscan_channel_list;
 	scan_param.channel_list_num = 1;
@@ -562,8 +562,8 @@ int wifi_roaming_scan_one_channel(wifi_roaming_ap_t	roaming_ap, u32 retry)
 		wifi_roaming_plus_find_ap_from_scan_buf((char *)roaming_ap.ssid, (void *)&roaming_ap.security_type, scanned_ap_num);
 	}
 	ROAMING_DBG("scan done(%d)\n", pscan_channel_list[0]);
-	wifi_get_phy_statistic(&phy_statistics);
-	cur_rssi = phy_statistics.sta_phy_stats.rssi;
+	wifi_get_phy_stats(STA_WLAN_INDEX, NULL, &phy_stats);
+	cur_rssi = phy_stats.rssi;
 	rssi_delta = ((FIND_BETTER_RSSI_DELTA - retry * 2) > 1) ? (FIND_BETTER_RSSI_DELTA - retry * 2) : 2; //at least 3db better
 	if (ap_list->rssi - cur_rssi > rssi_delta && (memcmp(roaming_ap.bssid, ap_list->bssid, ETH_ALEN))) {
 		printf("\r\n[Wifi roaming plus]: Find a better ap on channel %d, rssi = %d, cur_rssi=%d\n", ap_list->channel, ap_list->rssi, cur_rssi);
@@ -584,7 +584,7 @@ int wifi_roaming_scan(struct wifi_roaming_data  read_data, u32 retry)
 	memset(&roaming_ap, 0, sizeof(wifi_roaming_ap_t));
 	roaming_ap.rssi = -100;
 
-	wifi_get_setting(WLAN0_IDX, &setting);
+	wifi_get_setting(STA_WLAN_INDEX, &setting);
 	strcpy((char *)roaming_ap.ssid, (char const *)setting.ssid);
 	roaming_ap.security_type =  setting.security_type;
 	strcpy((char *)roaming_ap.password, (char const *)setting.password);
@@ -681,7 +681,7 @@ void wifi_roaming_plus_thread(void *param)
 	(void)param;
 	ROAMING_DBG("\n %s()\n", __func__);
 	signed char ap_rssi;
-	union _rtw_phy_statistics_t phy_statistics;
+	union _rtw_phy_stats_t phy_stats;
 	u32 scan_retry = 0;
 	u32	polling_count = 0;
 	u32 ap_valid = AP_VALID_TIME;
@@ -690,7 +690,7 @@ void wifi_roaming_plus_thread(void *param)
 
 	printf("\nExample: wifi_roaming_plus \n");
 	while (1) { //wait wifi connect
-		if (wifi_is_running(WLAN0_IDX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
+		if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
 			&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
 			break;
 		} else {
@@ -700,10 +700,10 @@ void wifi_roaming_plus_thread(void *param)
 	rtos_time_delay_ms(10000);//wait rssi stable
 
 	while (1) {
-		if (wifi_is_running(WLAN0_IDX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
+		if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
 			&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-			wifi_get_phy_statistic(&phy_statistics);
-			ap_rssi = phy_statistics.sta_phy_stats.rssi;
+			wifi_get_phy_stats(STA_WLAN_INDEX, NULL, phy_stats);
+			ap_rssi = phy_stats.rssi;
 			ROAMING_DBG("\r\n %s():Current rssi(%d),scan threshold rssi(%d)\n", __func__, ap_rssi, RSSI_SCAN_THRESHOLD);
 			rt_kv_get("wlan_data", (uint8_t *) &read_data, sizeof(struct wifi_roaming_data));
 			if (ap_rssi < RSSI_SCAN_THRESHOLD) {
@@ -719,10 +719,10 @@ void wifi_roaming_plus_thread(void *param)
 #if PRE_SCAN
 						ap_valid = AP_VALID_TIME;
 						while (ap_valid) {
-							if (wifi_is_running(WLAN0_IDX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
+							if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
 								&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-								wifi_get_phy_statistic(&phy_statistics);
-								ap_rssi = phy_statistics.sta_phy_stats.rssi;
+								wifi_get_phy_stats(STA_WLAN_INDEX, NULL, phy_stats);
+								ap_rssi = phy_stats.rssi;
 								ROAMING_DBG("\r\n %s():Current rssi(%d),roaming threshold rssi(%d)\n", __func__, ap_rssi, RSSI_ROAMING_THRESHOLD);
 								if ((ap_rssi < RSSI_ROAMING_THRESHOLD)) {
 									/*2.connect a better ap*/
@@ -746,10 +746,10 @@ void wifi_roaming_plus_thread(void *param)
 							rtos_time_delay_ms(1000);
 						}
 #else//no pre scan
-						if (wifi_is_running(WLAN0_IDX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
+						if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
 							&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-							wifi_get_phy_statistic(&phy_statistics);
-							ap_rssi = phy_statistics.sta_phy_stats.rssi;
+							wifi_get_phy_stats(STA_WLAN_INDEX, NULL, phy_stats);
+							ap_rssi = phy_stats.rssi;
 							if (ap_rssi > RSSI_SCAN_THRESHOLD + 5) {
 								/*no need to roaming*/
 								printf("\r\n[Wifi roaming plus]: Cancel roaming, current rssi=%d\n", ap_rssi);

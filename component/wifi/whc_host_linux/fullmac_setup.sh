@@ -134,6 +134,7 @@ cp ../whc/whc_dev/whc_dev_struct.h ./common/include
 cp ../whc/whc_dev/whc_dev_protocal_offload.h ./common/include
 cp ../api/wifi_api_types.h ./common/include
 cp ../api/wifi_api_event.h ./common/include
+cp ../driver/intf/wifi_intf_drv_to_app_internal.h ./common/include
 cp ../../soc/usrcfg/common/ameba_wificfg_common.h ./common/include
 cp ../../soc/amebadplus/fwlib/include/ameba_inic.h ./common/include
 cp ../../bluetooth/driver/bt_inic/bt_inic_defs.h ./common/include

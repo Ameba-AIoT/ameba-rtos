@@ -39,6 +39,13 @@ extern "C" {
 
 #define BLE_WIFIMATE_SSID_LEN_MAX                       (33)
 
+#define BLE_WIFIMATE_ENCRYPT_DECRYPT_KEY_LEN            (16)
+
+struct ble_wifimate_encrypt_decrypt_t {
+	uint8_t         algorithm_type;
+	uint8_t         key[BLE_WIFIMATE_ENCRYPT_DECRYPT_KEY_LEN];
+};
+
 struct wifi_scan_info_t {
 	uint8_t         ssid_len;
 	unsigned char   ssid[BLE_WIFIMATE_SSID_LEN_MAX];
@@ -55,8 +62,10 @@ struct wifi_conn_config_t {
 	unsigned char   *password;
 };
 
-enum key_algorithm_e {
-	BLE_WIFIMATE_KEY_ENCODE_ALGORITHM_NONE = 0,
+enum encypt_decrypt_algorithm_e {
+	BLE_WIFIMATE_ENCRYPT_DECRYPT_ALGO_NONE = 0,
+	BLE_WIFIMATE_ENCRYPT_DECRYPT_ALGO_AES_ECB = 1,
+	BLE_WIFIMATE_ENCRYPT_DECRYPT_ALGO_NUM = 2,
 };
 
 struct key_negotiate_config_t {
@@ -136,6 +145,7 @@ rtk_bt_evt_cb_ret_t ble_wifimate_gattc_app_callback(uint8_t event, void *data, u
 uint16_t ble_wifimate_client_add(void);
 uint16_t ble_wifimate_client_attach_conn(uint16_t conn_handle);
 uint16_t ble_wifimate_client_detach_conn(uint16_t conn_handle);
+uint16_t ble_wifimate_client_encrypt_set(struct ble_wifimate_encrypt_decrypt_t *enc);
 uint16_t ble_wifimate_client_wifi_connect(uint16_t conn_handle, struct wifi_conn_config_t *conn_info);
 uint16_t ble_wifimate_client_wifi_scan(uint16_t conn_handle);
 void ble_wifimate_client_deinit(void);
