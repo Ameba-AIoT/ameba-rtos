@@ -21,6 +21,9 @@
 #include <ble_wifimate_service.h>
 #include <bt_utils.h>
 
+static uint8_t client_attach = false;
+static struct ble_wifimate_encrypt_decrypt_t s_encrypt = {0};
+
 static rtk_bt_evt_cb_ret_t ble_wifimate_gap_app_callback(uint8_t evt_code, void *param, uint32_t len)
 {
 	(void)len;
@@ -72,13 +75,24 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_gap_app_callback(uint8_t evt_code, void 
 			BT_LOGA("[APP] Connected, handle: %d, role: %s, remote device: %s\r\n",
 					conn_ind->conn_handle, role, le_addr);
 
+			/* update encrypt key */
+			if (s_encrypt.algorithm_type != BLE_WIFIMATE_ENCRYPT_DECRYPT_ALGO_NONE) {
+				s_encrypt.key[BLE_WIFIMATE_ENCRYPT_DECRYPT_KEY_LEN - 3] = conn_ind->peer_addr.addr_val[2];
+				s_encrypt.key[BLE_WIFIMATE_ENCRYPT_DECRYPT_KEY_LEN - 2] = conn_ind->peer_addr.addr_val[1];
+				s_encrypt.key[BLE_WIFIMATE_ENCRYPT_DECRYPT_KEY_LEN - 1] = conn_ind->peer_addr.addr_val[0];
+			}
+			if (RTK_BT_OK == ble_wifimate_client_encrypt_set(&s_encrypt)) {
+				BT_LOGA("[APP] BLE wifimate client set encrypt success.\r\n");
+			}
 #if !defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB
+
 			/* when connection established, attach the profile(who has been registered)
 			    to this connection */
 			if (RTK_BT_OK == ble_wifimate_client_attach_conn(conn_ind->conn_handle)) {
 				BT_LOGA("[APP] BLE wifimate client attach connection success, conn_handle: %d\r\n",
 						conn_ind->conn_handle);
 			}
+			client_attach = true;
 #endif
 			if (rtk_bt_le_sm_is_device_bonded(&conn_ind->peer_addr)) {
 				BT_LOGA("[APP] Bonded device, start link encryption procedure\r\n");
@@ -104,6 +118,7 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_gap_app_callback(uint8_t evt_code, void 
 			BT_LOGA("[APP] GATTC Profiles detach connection success, conn_handle: %d\r\n",
 					disconn_ind->conn_handle);
 		}
+		client_attach = false;
 		break;
 	}
 
@@ -302,6 +317,25 @@ static rtk_bt_le_security_param_t sec_param = {
 	.fixed_key = 000000,
 };
 
+uint16_t ble_wifimate_configurator_encrypt_set(uint8_t type, uint8_t key[BLE_WIFIMATE_KEY_LEN])
+{
+	if (!key) {
+		BT_LOGE("[APP] BLE WifiMate configurator encrypt key invalid.\r\n");
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	if (client_attach) {
+		BT_LOGE("[APP] BLE WifiMate configurator encrypt inuse, can't set now.\r\n");
+		return RTK_BT_ERR_ALREADY_IN_PROGRESS;
+	}
+
+	s_encrypt.algorithm_type = type;
+	memcpy(s_encrypt.key, key, BLE_WIFIMATE_KEY_LEN);
+
+	return RTK_BT_OK;
+}
+
+
 int ble_wifimate_configurator_main(uint8_t enable)
 {
 	rtk_bt_app_conf_t bt_app_conf = {0};
@@ -340,6 +374,9 @@ int ble_wifimate_configurator_main(uint8_t enable)
 		BT_APP_PROCESS(ble_wifimate_client_add());
 
 	} else if (0 == enable) {
+		client_attach = false;
+		memset(&s_encrypt, 0, sizeof(s_encrypt));
+
 		ble_wifimate_client_deinit();
 
 		/* Disable BT */
