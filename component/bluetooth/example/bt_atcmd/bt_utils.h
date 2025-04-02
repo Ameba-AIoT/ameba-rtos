@@ -83,6 +83,8 @@ bool hexnum_str_to_array(char *str, uint8_t *byte_arr, uint8_t arr_len);
 
 bool hexdata_str_to_array(char *str, uint8_t *byte_arr, uint8_t arr_len);
 
+bool array_to_little_endian(uint8_t *data, size_t length);
+
 uint16_t bt_at_rtk_err_to_at_err(uint16_t rtk_err);
 
 #if defined(CONFIG_ATCMD_IO_UART) && CONFIG_ATCMD_IO_UART
