@@ -6,8 +6,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <bt_api_config.h>
-#if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
-/* #if unsupported */
 #include <osif.h>
 #include <rtk_bt_gmap.h>
 #include <rtk_bt_device.h>
@@ -4025,4 +4023,3 @@ exit:
 	gmap_demo_init_flag = false;
 	return 1;
 }
-#endif

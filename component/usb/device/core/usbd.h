@@ -11,6 +11,7 @@
 
 #include "usb_os.h"
 #include "usb_ch9.h"
+#include "usb_hal.h"
 
 /* Exported defines ----------------------------------------------------------*/
 /* This define used to debug the isr time issue */
@@ -34,12 +35,6 @@
 #define USBD_EPMIS_INTR               (BIT2) /* Endpoint Mismatch Interrupt, GINTSTS.EPMis*/
 
 /* Exported types ------------------------------------------------------------*/
-/* USB device bus state */
-typedef enum {
-	USBD_BUS_STATUS_DN       = BIT0,  // D-
-	USBD_BUS_STATUS_DP    	 = BIT1,  // D+
-	USBD_BUS_STATUS_SUSPEND  = BIT2,  // suspend indication
-} usbd_bus_state_t;
 
 /* USB device state */
 typedef enum {

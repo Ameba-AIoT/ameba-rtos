@@ -35,10 +35,16 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-ameba_list_append(private_sources
+ameba_list_append_if(CONFIG_BT_LE_AUDIO_GENERIC_DEMO private_sources
     generic_le_audio_demo.c
+)
+ameba_list_append_if(CONFIG_BT_PBP private_sources
     pbp.c
+)
+ameba_list_append_if(CONFIG_BT_TMAP private_sources
     tmap.c
+)
+ameba_list_append_if(CONFIG_BT_GMAP private_sources
     gmap.c
 )
 
@@ -53,6 +59,7 @@ ameba_list_append(private_includes
 
 ###NOTE: For open-source component, always build from source
 ameba_add_internal_library(ble_audio
+    p_ADD_EMPTY_C_FILE #OPTIMIZE: Better to ensure private_sources is not empty when the component is enabled
     p_SOURCES
         ${private_sources}
     p_INCLUDES

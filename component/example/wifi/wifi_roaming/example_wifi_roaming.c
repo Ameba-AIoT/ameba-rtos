@@ -97,11 +97,11 @@ void wifi_roaming_thread(void *param)
 	struct _rtw_wifi_setting_t	setting;
 	wifi_roaming_ap_t	roaming_ap;
 	u32	i = 0, polling_count = 0;
-	struct _rtw_scan_param_t scan_param;
+	struct rtw_scan_param scan_param;
 	int scanned_ap_num = 0;
 	struct _rtw_network_info_t connect_param;
-	union _rtw_phy_statistics_t phy_statistics;
-	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
+	union _rtw_phy_stats_t phy_stats;
+	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
 	memset(&connect_param, 0, sizeof(struct _rtw_network_info_t));
 	memset(&setting, 0, sizeof(struct _rtw_wifi_setting_t));
 	memset(&roaming_ap, 0, sizeof(wifi_roaming_ap_t));
@@ -113,12 +113,12 @@ void wifi_roaming_thread(void *param)
 #endif
 	printf("\nExample: wifi_roaming \n");
 	while (1) {
-		if (wifi_is_running(WLAN0_IDX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
+		if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
 			&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-			wifi_get_phy_statistic(&phy_statistics);
-			if ((phy_statistics.sta_phy_stats.rssi < RSSI_THRESHOLD)) {
+			wifi_get_phy_stats(STA_WLAN_INDEX, NULL, &phy_stats);
+			if ((phy_stats.rssi < RSSI_THRESHOLD)) {
 				if (polling_count >= (MAX_POLLING_COUNT - 1)) {
-					wifi_get_setting(WLAN0_IDX, &setting);
+					wifi_get_setting(STA_WLAN_INDEX, &setting);
 					strcpy((char *)roaming_ap.ssid, (char const *)setting.ssid);
 					roaming_ap.security_type =  setting.security_type;
 					strcpy((char *)roaming_ap.password, (char const *)setting.password);

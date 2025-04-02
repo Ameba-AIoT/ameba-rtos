@@ -327,7 +327,7 @@ static void example_tflm_micro_speech_thread(void *param) {
 
 void example_tflm_micro_speech(void) {
     if (rtos_task_create(NULL, "example_tflm_micro_speech_thread", example_tflm_micro_speech_thread, NULL,
-                         1024 * 4, 1) != SUCCESS) {
+                         1024 * 4, 1) != RTK_SUCCESS) {
         printf("\n\r%s create example_tflm_micro_speech_thread failed", __FUNCTION__);
     }
 }

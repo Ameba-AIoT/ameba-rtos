@@ -190,6 +190,7 @@ MEMORY
 
 #if defined(CONFIG_AP_CORE_KM4)
 	KR4_BD_RAM_MP (rwx) :                   ORIGIN = 0x2001A060, LENGTH = 0x20061F80 - 0x2001A060 /* KR4 BD RAM: 288k */
+	KR4_BD_RAM_MP_END (rwx) :               ORIGIN = 0x20061F80 - 32, LENGTH = 32                 /* Only for KR4 shrink MP image2 */
 	KM4_BD_RAM_MP (rwx) :                   ORIGIN = 0x20062060, LENGTH = 0x2007FFA0 - 0x20062060 /* KM4 BD RAM: TZ off,120k */
 #else
 	KR4_BD_RAM_MP (rwx) :                   ORIGIN = 0x2001A060, LENGTH = 0x20041F80 - 0x2001A060 /* KR4 BD RAM: TZ off,160K */

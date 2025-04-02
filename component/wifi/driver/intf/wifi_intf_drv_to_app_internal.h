@@ -25,12 +25,215 @@
 extern "C" {
 #endif
 
+#define SCAN_LONGEST_WAIT_TIME	(12000) /**< Scan longest wait time. */
+
+#define RTW_SEND_AND_WAIT_ACK 				2
+#define RTW_SEND_BY_HIGH_RATE				4 // IEEE80211_OFDM_RATE_54MB
+#define RTW_NAV_BY_USER						8
+
+#define MAX_WPA_IE_LEN (257)
+#define MAX_WPS_IE_LEN (512)
+#define MAX_P2P_IE_LEN (256)
+#define MAX_WFD_IE_LEN (128)
+#define MAX_FT_IE_LEN (256)
+
+#define RTW_OWE_KEY_LEN		32 /*32(Temporarily support group 19 with 256 bit public key)*/
+
 /**
- * @brief  get country code info
- * @param[in]  table: Pointer to the currently obtained country code table
- * @return  RTK_SUCCESS or RTK_FAIL
+ * @brief The enumeration lists the type of pmksa operations.
  */
-int wifi_get_countrycode(struct country_code_table_t *table);
+enum {
+	PMKSA_SET = 0,
+	PMKSA_DEL = 1,
+	PMKSA_FLUSH = 2,
+};
+
+/**
+  * @brief  only internal used events.
+  */
+enum  {
+	/* only internal used */
+	WIFI_EVENT_INTERNAL_BASE		 	= 100,
+	WIFI_EVENT_RX_MGNT					= 101,
+	WIFI_EVENT_RX_MGNT_AP				= 102,
+	WIFI_EVENT_EXTERNAL_AUTH_REQ		= 103,
+
+	WIFI_EVENT_WPA_STA_4WAY_START		= 104,
+	WIFI_EVENT_WPA_AP_4WAY_START		= 105,
+	WIFI_EVENT_WPA_STA_4WAY_RECV		= 106,
+	WIFI_EVENT_WPA_AP_4WAY_RECV			= 107,
+	WIFI_EVENT_WPA_SET_PSK_INFO			= 108,
+
+	WIFI_EVENT_OWE_START_CALC			= 109,
+	WIFI_EVENT_OWE_PEER_KEY_RECV		= 110,
+
+#if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K) || defined(CONFIG_IEEE80211R)
+	WIFI_EVENT_KVR_CAP_UPDATE			= 111,
+#if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K)
+	WIFI_EVENT_NB_RESP_RECV				= 112,
+#endif
+#ifdef CONFIG_IEEE80211V
+	WIFI_EVENT_BTM_REQ_RECV				= 113,
+	WIFI_EVENT_BTM_DEBUG_CMD			= 114,
+#endif
+#ifdef CONFIG_IEEE80211R
+	WIFI_EVENT_FT_AUTH_START			= 115,
+	WIFI_EVENT_FT_RX_MGNT				= 116,
+#endif
+#endif
+
+	WIFI_EVENT_DEAUTH_INFO_FLASH		= 117,
+	WIFI_EVENT_INTERNAL_MAX,
+};
+
+/**
+  * The enumeration lists the p2p role type.
+  */
+enum rtw_p2p_role {
+	P2P_ROLE_DISABLE = 0,
+	P2P_ROLE_DEVICE = 1,
+	P2P_ROLE_CLIENT = 2,
+	P2P_ROLE_GO = 3
+};
+
+enum gen_ie_type {
+	P2PWPS_PROBE_REQ_IE = 0,
+	P2PWPS_PROBE_RSP_IE,
+	P2PWPS_BEACON_IE,
+	P2PWPS_ASSOC_REQ_IE,
+	P2PWPS_ASSOC_RSP_IE
+};
+
+/**********************************************************************************************
+ *                                     wpa_lite structures
+ *********************************************************************************************/
+/**
+ * @brief  The structure is pmksa ops.
+ */
+struct rtw_pmksa_ops_t {
+	u8 ops_id;
+	u8 wlan_idx;
+	u8 pmkid[16];
+	u8 mac_addr[6];
+	u8 pmk[32]; /**< Pmksa is maintained in NP when use wpa_lite.*/
+};
+
+/**
+ * @brief  The structure is crypt info.
+ */
+struct rtw_crypt_info {
+	u8 pairwise;            /**<  Indicate pairwise(1) key or group key(0). */
+	u8 mac_addr[6];
+	u8 wlan_idx;
+	u16 key_len;
+	u8 key[32];
+	u8 key_idx;
+	u8 driver_cipher;
+	u8 transition_disable_exist;
+	u8 transition_disable_bitmap;
+	u8 device_id : 5;       /**<  tx_raw: Flag for no linked peer, and will be converted to camid when force_cam_entry = 1. */
+	u8 force_cam_entry : 1; /**<  tx_raw must set force_cam_entry = 1. Upper layer direct set specified cam entry, not dependent on 4 way or stainfo. */
+	u8 rpt_mode : 1;
+};
+
+/**
+ * @brief  The structure is status of wpa_4way.
+ */
+struct rtw_wpa_4way_status {
+	u8 *mac_addr;             /**< Mac addr of 4-way interactive peer device. */
+	u8 wlan_idx;              /**< Index of wlan interface. */
+	u8 is_start : 1;          /**< Start(1) or stop(0) of 4way/2way exchange. */
+	u8 is_grpkey_update : 1;  /**< Indicate first key change(0) or update grp_key change(1). */
+	u8 is_success : 1;        /**< Result of 4way/2way exchange: 0-fail; 1-success. */
+};
+
+/**
+* @brief  The structure is used to store configuration of SAE protocol
+* which is used in secure auth process.
+*/
+struct wpa_sae_param_t {
+	unsigned char 		peer_mac[6];
+	unsigned char 		self_mac[6];
+	u8					h2e;  /**< A flag indicating the use of Hash-to-Element (H2E) optimization in SAE. */
+	u8					sae_reauth_limit;
+};
+
+/**
+ * @brief  The structure is used to describe the DH(Diffie-Hellman) params of
+ *         OWE(Opportunistic Wireless Encryption).
+ * @note  Temporarily support group 19 with 256 bit public key, i.e., group = 19, pub_key_len = 32.
+ */
+struct rtw_owe_param_t {
+	u16 group;                   /**< Specify the DH group number used for public key generation. */
+	u8 pub_key[RTW_OWE_KEY_LEN]; /**< The public key for OWE. */
+	u8 pub_key_len;              /**< The length of the public key.*/
+	u8 peer_mac[6];              /**< The MAC address of the peer device.*/
+};
+
+struct rtw_kvr_param_t {
+#if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K) || defined(CONFIG_IEEE80211R)
+	u8 nb_active;
+	u8 btm_active;
+	unsigned char 		peer_mac[6];
+	unsigned char 		self_mac[6];
+#ifdef CONFIG_IEEE80211R
+	u8 ft_active;
+	u16 mdid;
+	u8 ft_cap;
+	u8 privacy;
+	u32 grp_privacy;
+	u8 ie[5 + MAX_WPA_IE_LEN + MAX_FT_IE_LEN]; /**<  1.NP->AP: rsnie; 2.AP->NP: mdie+rsnie+ftie*/
+	u32 ielen;
+#endif
+#endif
+};
+
+#ifndef CONFIG_FULLMAC
+/**
+ * @brief  The structure is join block param.
+ */
+struct internal_join_block_param {
+	void				*join_sema;
+	unsigned int		join_timeout;
+	unsigned char		block;
+};
+
+/**
+ * @brief  The structure is used to describe net device.
+ */
+struct net_device {
+	void			*priv;		/**<  Pointer to private data. */
+	unsigned char		dev_addr[6];	/**<  Set during bootup. */
+	u8 iface_type;
+};
+
+/**
+ * @brief  The structure is used to describe wlan info.
+ */
+struct _Rltk_wlan_t {
+	struct net_device	dev;		/**<  Binding wlan driver netdev. */
+	void			*skb;		/**<  Pending Rx packet. */
+	unsigned int		tx_busy;
+	unsigned int		rx_busy;
+	unsigned char		enable;
+	rtos_sema_t			netif_rx_sema;	/**<  Prevent race condition on .skb in rltk_netif_rx(). */
+};
+extern struct _Rltk_wlan_t rltk_wlan_info[NET_IF_NUM];
+
+#define netdev_priv(dev)		dev->priv
+#define rtw_is_netdev_enable(idx)	(rltk_wlan_info[idx].enable)
+#define rtw_get_netdev(idx)		(&(rltk_wlan_info[idx].dev))
+#endif
+
+/**
+  * @brief  Old version raw data description, only used for driver internal send mgnt frames.
+  */
+struct _raw_data_desc_t {
+	unsigned char		wlan_idx;      /**< Index of wlan interface which will transmit. */
+	unsigned char		*buf;          /**< Poninter of buf where raw data is stored.*/
+	unsigned short		buf_len;      /**< The length of raw data.*/
+	unsigned short		flags;        /**< Send options.*/
+};
 
 /**
  * @brief  Set the current Media Access Control (MAC) address

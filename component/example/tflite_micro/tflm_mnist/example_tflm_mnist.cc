@@ -138,7 +138,7 @@ static void tflm_mnist_thread(void *param)
 
 void example_tflm_mnist(void)
 {
-    if (rtos_task_create(NULL, "example_tflm_mnist_thread", tflm_mnist_thread, NULL, 1024 * 4, 1) != SUCCESS) {
+    if (rtos_task_create(NULL, "example_tflm_mnist_thread", tflm_mnist_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
         printf("\n\r%s create example_tflm_mnist_thread failed", __FUNCTION__);
     }
 }

@@ -254,27 +254,19 @@ enum PTA_INDEX {
 	EXT_PTA2 = 1,
 	EXT_PTA_INVALID,
 };
-/**
- * @brief   The enumeration lists pta gnt output source for extchip.
- */
-enum PTA_GNT_USE {
-	EXT_GNT_DEFAULT,
-	EXT_GNT_GNT_BT,
-	EXT_GNT_INVALID,
-};
+
 /**
  * @struct   extchip_para_t
  * @brief    pta related parameter structure for extchip.
  */
 struct extchip_para_t {
-	u8 pri_det_time;	///< T2 us
-	u8 trx_det_time;	///< T1 us
+	u8 pri_det_time;	///< T1 us
+	u8 trx_det_time;	///< T2 us
 	u8 pri_mode: 1;		///< 1: static Priority; 0: directional Priority
 	u8 req_polar: 1;	///< 1: active high; 0: active low
 	u8 gnt_polar: 1;	///< 1: active high; 0: active low
 	u8 pta_index: 1;	///< 1: extbt; 0: extwpan
-	u8 pta_pad_gnt_use: 2; ///< -> enum PTA_GNT_USE
-	u8 rsvd : 2;		///< rsvd
+	u8 rsvd : 4;		///< rsvd
 	enum EXT_PROTOCOL active_protocol;	///< -> enum EXT_PROTOCOL
 	u8 pta_pad_req;		///< pinmux pad define
 	u8 pta_pad_pri;		///< pinmux pad define
@@ -362,11 +354,10 @@ void rtk_coex_btc_set_pta(u8 type, u8 role, u8 process);
 /**
  * @brief      ext chip init notification.
  * @param[in]  p_extchip_para	A pointer to struct extchip_para_t.
- * @param[in]  length	size of struct extchip_para_t.
  * @return
  *             - None.
  */
-void rtk_coex_extc_ntfy_init(struct extchip_para_t *p_extchip_para, u16 length);
+void rtk_coex_extc_ntfy_init(struct extchip_para_t *p_extchip_para);
 /**
  * @brief     ext wpan state notification.
  * @param[in] state  wpan status state, refer to enum EXT_STATE.

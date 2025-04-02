@@ -169,7 +169,7 @@ static int uac_cb_init(void)
   */
 static int uac_cb_deinit(void)
 {
-	usbd_uac_stop();
+	usbd_uac_stop_play();
 	return HAL_OK;
 }
 
@@ -308,9 +308,9 @@ static void example_audio_track_play(void)
 	u32 read_dat_len = 0;
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Audio track demo begin\n");
 
-	usbd_uac_audio_cfg_init(&(uac_cb.out), 0, 0);
+	usbd_uac_config(&(uac_cb.out), 0, 0);
 	do {
-		if (usbd_uac_start() == HAL_OK) {
+		if (usbd_uac_start_play() == HAL_OK) {
 			break;
 		}
 	} while (1);

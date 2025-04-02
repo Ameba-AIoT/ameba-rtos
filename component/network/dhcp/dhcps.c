@@ -152,7 +152,7 @@ static void save_client_addr(struct ip_addr *client_ip, uint8_t *hwaddr)
 	}
 	/* cache of ip_table is full,write the new mac&ip instead of an invalid pairs */
 	if (i == wifi_user_config.ap_sta_num) {
-		wifi_get_associated_client_list(&client_info);
+		wifi_ap_get_connected_clients(&client_info);
 		for (j = 0; j < wifi_user_config.ap_sta_num; j++) {
 			for (client_number = 0; client_number < client_info.count; client_number++) {
 				if (memcmp(ip_table.client_mac[j], client_info.mac_list[client_number].octet, 6) == 0) {

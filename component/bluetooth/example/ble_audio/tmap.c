@@ -6,7 +6,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <bt_api_config.h>
-#if defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT
 #include <osif.h>
 #include <rtk_bt_def.h>
 #include <rtk_bt_device.h>
@@ -365,10 +364,10 @@ static void app_bt_le_audio_update_adv(uint8_t *device_name, uint8_t device_name
 	uint16_t sink_available_contexts = p_lea_app_conf->pacs_param.sink_available_contexts;
 	uint16_t source_available_contexts = p_lea_app_conf->pacs_param.source_available_contexts;
 	uint8_t bap_role = p_lea_app_conf->bap_role;
-#if defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT
+#if defined(RTK_BLE_AUDIO_TMAP_SUPPORT) && RTK_BLE_AUDIO_TMAP_SUPPORT
 	uint16_t tmas_role = p_lea_app_conf->tmap_role;
 #endif
-#if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
+#if defined(RTK_BLE_AUDIO_GMAP_SUPPORT) && RTK_BLE_AUDIO_GMAP_SUPPORT
 	uint8_t gmap_role = p_lea_app_conf->gmap_role;
 #endif
 	BT_LOGA("[APP] device_name_len %d *adv_data_len %d\r\n", device_name_len, *adv_data_len);
@@ -410,7 +409,7 @@ static void app_bt_le_audio_update_adv(uint8_t *device_name, uint8_t device_name
 		adv_data[idx] = 0; // metadata length
 		idx++;
 	}
-#if defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT
+#if defined(RTK_BLE_AUDIO_TMAP_SUPPORT) && RTK_BLE_AUDIO_TMAP_SUPPORT
 	if ((tmas_role & RTK_BT_LE_AUDIO_TMAP_ROLE_CT) || (tmas_role & RTK_BT_LE_AUDIO_TMAP_ROLE_UMR) || \
 		(tmas_role & RTK_BT_LE_AUDIO_TMAP_ROLE_BMR)) {
 		adv_data[idx] = 0x05;
@@ -427,7 +426,7 @@ static void app_bt_le_audio_update_adv(uint8_t *device_name, uint8_t device_name
 		idx++;
 	}
 #endif
-#if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
+#if defined(RTK_BLE_AUDIO_GMAP_SUPPORT) && RTK_BLE_AUDIO_GMAP_SUPPORT
 	if ((gmap_role & RTK_BT_LE_AUDIO_GMAP_ROLE_BGR) || (gmap_role & RTK_BT_LE_AUDIO_GMAP_ROLE_UGT)) {
 		adv_data[idx] = 0x04;
 		idx++;
@@ -3894,4 +3893,3 @@ exit:
 	return 1;
 
 }
-#endif

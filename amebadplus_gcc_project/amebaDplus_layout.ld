@@ -172,6 +172,7 @@ MEMORY
 
 
 	KM0_BD_RAM_MP (rwx) :                   ORIGIN = 0x2001A040, LENGTH = 0x2005DF80 - 0x2001A040	/* KM0 BD RAM: 272K, (LENGTH + 0xC0) must be a multiple of 4KB */
+	KM0_BD_RAM_MP_END(rwx) :                ORIGIN = 0x2005DF80 - 32, LENGTH = 32                 /* Only for KM0 shrink MP image2 */
 	KM4_BD_RAM_MP (rwx) :                   ORIGIN = 0x2005E040, LENGTH = 0x2007FFA0 - 0x2005E040	/* KM4 BD RAM: TZ off, 136k */
 }
 

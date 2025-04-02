@@ -13,6 +13,7 @@
 #include "crypto/tls.h"
 #include "eap_peer/eap_config.h"
 #include "wpa_lite_intf.h"
+#include "rtw_wifi_constants.h"
 
 struct task_struct eap_recvd_tsk;
 struct rtw_eap_context g_eap_context = {0};
@@ -485,7 +486,7 @@ void eap_eapol_recvd_hdl(char *buf, int buf_len, int flags, void *handler_user_d
 
 	char *copy_buf = os_malloc(buf_len);
 	memcpy(copy_buf, buf, buf_len);
-	if (rtos_task_create(&eap_recvd_tsk.task, "eap_recvd", (thread_func_t)eap_eapol_recvd, copy_buf, 4096, 1) != SUCCESS) {
+	if (rtos_task_create(&eap_recvd_tsk.task, "eap_recvd", (thread_func_t)eap_eapol_recvd, copy_buf, 4096, 1) != RTK_SUCCESS) {
 		DiagPrintf("\n\r%s eap_recvd failed\n", __FUNCTION__);
 	} else {
 		Rx_handle = rtos_task_handle_get();

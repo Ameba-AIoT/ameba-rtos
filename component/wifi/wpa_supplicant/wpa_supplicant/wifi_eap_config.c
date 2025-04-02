@@ -1,13 +1,13 @@
-#ifdef CONFIG_LWIP_LAYER
-#include <lwip_netconf.h>
-#endif
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <os_wrapper.h>
 #include "utils/os.h"
+#ifdef CONFIG_LWIP_LAYER
+#include "lwip_netconf.h"
+#endif
 #include "wifi_api.h"
 #include "wifi_intf_drv_to_app_internal.h"
+#include "eap_protocol_handler.h"
 
 #ifndef ENABLE
 #define ENABLE	(1)
@@ -36,13 +36,6 @@ char *eap_client_key_pwd = NULL;
 
 void set_eap_phase(unsigned char is_trigger_eap);
 int get_eap_phase(void);
-int get_eap_ctx_method(void);
-int set_eap_peap_method(void);
-int set_eap_tls_method(void);
-int set_eap_ttls_method(void);
-
-void eap_eapol_recvd_hdl(char *buf, int buf_len, int flags, void *handler_user_data);
-void eap_eapol_start_hdl(char *buf, int buf_len, int flags, void *handler_user_data);
 int connect_by_open_system(char *target_ssid);
 
 int eap_start(char *method);
@@ -186,7 +179,7 @@ int eap_start(char *method)
 		rtos_time_delay_ms(1000);
 	}
 
-	if (wifi_is_running(WLAN1_IDX)) {
+	if (wifi_is_running(SOFTAP_WLAN_INDEX)) {
 		DiagPrintf("\n\rNot support con-current mode!\n\r");
 		return -1;
 	}
@@ -305,7 +298,7 @@ void eap_autoreconnect_hdl(u8 method_id)
 		DiagPrintf("invalid eap method\n");
 		return;
 	}
-	if (rtos_task_create(NULL, ((const char *)"eap_autoreconnect_thread"), eap_autoreconnect_thread, (void *) method, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"eap_autoreconnect_thread"), eap_autoreconnect_thread, (void *) method, 1024 * 4, 1) != RTK_SUCCESS) {
 		DiagPrintf("\n\r%s rtos_task_create failed\n", __FUNCTION__);
 	}
 #endif
@@ -337,7 +330,8 @@ static int eap_verify(void *data, mbedtls_x509_crt *crt, int depth, uint32_t *fl
 {
 
 	//char buf[1024];
-	((void) data);
+	(void) data;
+	(void) crt;
 
 	DiagPrintf("\nVerify requested for (Depth %d):\n", depth);
 	//mbedtls_x509_crt_info(buf, sizeof(buf) - 1, "", crt);

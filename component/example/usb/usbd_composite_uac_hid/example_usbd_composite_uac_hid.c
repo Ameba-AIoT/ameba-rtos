@@ -245,7 +245,7 @@ static void composite_handle_event_task(void *param)
 			case COMP_USBD_HOT_PLUG_STATUS:
 				if (composite_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 					usbd_comp_uac_class_alive = 0;
-					usbd_composite_uac_stop();
+					usbd_composite_uac_stop_play();
 					usbd_comp_audio_task_stop = 1;
 
 					composite_do_reinit();
@@ -400,7 +400,7 @@ static int composite_uac_cb_volume_changed(u8 volume)
 
 static int composite_uac_cb_format_changed(u32 freq, u8 ch_cnt, u8 byte_width)
 {
-	usbd_composite_uac_stop();
+	usbd_composite_uac_stop_play();
 	usbd_comp_audio_task_stop = 1;
 	uac_play_start_flag = 1;
 
@@ -421,9 +421,9 @@ static void composite_usbd_audio_track_play(void)
 	u32 read_dat_len = 0;
 	u32 zero_pkt = 0;
 
-	usbd_composite_uac_audio_cfg_init(&(composite_uac_usr_cb.out), 0, 0);
+	usbd_composite_uac_cfg(&(composite_uac_usr_cb.out), 0, 0);
 	do {
-		if (usbd_composite_uac_start() == HAL_OK) {
+		if (usbd_composite_uac_start_play() == HAL_OK) {
 			break;
 		}
 	} while (1);

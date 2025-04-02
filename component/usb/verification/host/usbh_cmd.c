@@ -10,6 +10,7 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "usbh_cmd.h"
+#include "usb_regs.h"
 #include "usb_hal.h"
 #include "usbh.h"
 

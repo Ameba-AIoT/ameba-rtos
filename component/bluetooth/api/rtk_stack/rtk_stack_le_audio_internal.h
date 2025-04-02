@@ -222,10 +222,10 @@ typedef struct {
 	rtk_bt_le_audio_link_t le_link[RTK_BT_LE_AUDIO_MAX_BLE_LINK_NUM];
 	rtk_bt_le_audio_bap_role_t bap_role;
 	rtk_bt_le_audio_cap_role_t cap_role;
-#if defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT
+#if defined(RTK_BLE_AUDIO_TMAP_SUPPORT) && RTK_BLE_AUDIO_TMAP_SUPPORT
 	uint8_t tmap_role;
 #endif
-#if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
+#if defined(RTK_BLE_AUDIO_GMAP_SUPPORT) && RTK_BLE_AUDIO_GMAP_SUPPORT
 	uint8_t gmap_role;
 #endif
 	rtk_bt_le_audio_app_conf_t lea_app_conf;

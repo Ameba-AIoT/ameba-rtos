@@ -339,7 +339,7 @@ void LOGUART_Relay_StructInit(LOGUART_Relay_InitTypeDef *LOGUART_Relay_InitStruc
 	LOGUART_Relay_InitStruct->Parity = DISABLE;      // parity check enable
 	LOGUART_Relay_InitStruct->ParityType = LOGUART_ODD_PARITY;
 	LOGUART_Relay_InitStruct->StickParity = DISABLE;
-	LOGUART_Relay_InitStruct->RxErReportCtrl = LOGUART_RX_EEROR_REPORT_ENABLE;
+	LOGUART_Relay_InitStruct->RxErReportCtrl = LOGUART_RX_ERROR_REPORT_ENABLE;
 }
 
 void LOGUART_Relay_SetFormat(LOGUART_TypeDef *UARTLOG, LOGUART_Relay_InitTypeDef *LOGUART_Relay_InitStruct)

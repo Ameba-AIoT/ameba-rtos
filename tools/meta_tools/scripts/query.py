@@ -55,7 +55,7 @@ def do_query_app(sdkroot, cfg):
         if os.path.exists(include_path):
             for root, dirs, files in os.walk(include_path):
                 for file in files:
-                    if file == "main.c":
+                    if file == "app_example.c":
                         app = root
                         for exclude_path in exclude_path_list:
                             if app.startswith(exclude_path):

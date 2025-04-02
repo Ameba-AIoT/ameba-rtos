@@ -108,15 +108,15 @@ int whc_fullmac_host_set_mac_addr(u32 wlan_idx, u8 *addr)
 	return ret;
 }
 
-int whc_fullmac_host_scan(struct _rtw_scan_param_t *scan_param, u32 ssid_length, u8 block)
+int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8 block)
 {
 	int ret = 0;
 	u32 param_buf[2];
 	u8 *buf_vir = NULL;
 	dma_addr_t buf_phy = 0;
-	size_t size = sizeof(struct _rtw_scan_param_t);
+	size_t size = sizeof(struct rtw_scan_param);
 	size_t offset = 0;
-	struct _rtw_scan_param_t *scan_param_tmp = NULL;
+	struct rtw_scan_param *scan_param_tmp = NULL;
 
 	size += (sizeof(block) + ssid_length + scan_param->channel_list_num);
 	buf_vir = rtw_malloc(size, &buf_phy);
@@ -128,8 +128,8 @@ int whc_fullmac_host_scan(struct _rtw_scan_param_t *scan_param, u32 ssid_length,
 	offset += sizeof(block);
 	memcpy(buf_vir + offset, scan_param, size - sizeof(block));
 
-	scan_param_tmp = (struct _rtw_scan_param_t *)(buf_vir + offset);
-	offset += sizeof(struct _rtw_scan_param_t);
+	scan_param_tmp = (struct rtw_scan_param *)(buf_vir + offset);
+	offset += sizeof(struct rtw_scan_param);
 	if (ssid_length) {
 		scan_param_tmp->ssid = (char *)(buf_phy + offset);
 		offset += ssid_length;
@@ -290,7 +290,7 @@ int whc_fullmac_host_deinit_ap(void)
 	return ret;
 }
 
-int whc_fullmac_host_del_sta(u8 wlan_idx, u8 *mac)
+int whc_fullmac_host_ap_del_client(u8 wlan_idx, u8 *mac)
 {
 	int ret = 0;
 	u32 param_buf[2];
@@ -298,7 +298,7 @@ int whc_fullmac_host_del_sta(u8 wlan_idx, u8 *mac)
 	param_buf[0] = (u32)wlan_idx;
 	param_buf[1] = (u32)mac;
 
-	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_DEL_STA, param_buf, 2);
+	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_AP_DEL_CLIENT, param_buf, 2);
 	return ret;
 }
 
@@ -501,15 +501,34 @@ u32 whc_fullmac_host_update_ip_addr(void)
 	return ret;
 }
 
-int whc_fullmac_host_get_statistics(dma_addr_t statistic_phy)
+int whc_fullmac_host_get_stats(u8 wlan_idx, u8 *mac_addr, dma_addr_t stats_phy)
 {
 	int ret = 0;
-	u32 param_buf[1];
+	u32 param_buf[3];
+	dma_addr_t dma_addr_mac_addr = 0;
+	struct device *pdev = global_idev.ipc_dev;
+
+	param_buf[0] = (u32)wlan_idx;
+
+	if (mac_addr) {
+		dma_addr_mac_addr = dma_map_single(pdev, mac_addr, 6, DMA_TO_DEVICE);
+		if (dma_mapping_error(pdev, dma_addr_mac_addr)) {
+			dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
+			return -1;
+		}
+		param_buf[1] = (u32)dma_addr_mac_addr;
+	} else {
+		param_buf[1] = 0;
+	}
 
 	/* ptr of statistics to fullfill. */
-	param_buf[0] = (u32)statistic_phy;
+	param_buf[2] = (u32)stats_phy;
 
-	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_GET_PHY_STATISTIC, param_buf, 1);
+	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_GET_PHY_STATS, param_buf, 3);
+
+	if (mac_addr) {
+		dma_unmap_single(pdev, dma_addr_mac_addr, 6, DMA_TO_DEVICE);
+	}
 
 	return ret;
 }

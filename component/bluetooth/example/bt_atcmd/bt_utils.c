@@ -164,6 +164,22 @@ bool hexdata_str_to_array(char *str, uint8_t *byte_arr, uint8_t arr_len)
 	return TRUE;
 }
 
+bool array_to_little_endian(uint8_t *data, size_t length)
+{
+	if (!data) {
+		BT_LOGE("[%s]Error: array is invalid\r\n", __func__);
+		return FALSE;
+	}
+
+	for (size_t i = 0; i < length / 2; ++i) {
+		uint8_t temp = data[i];
+		data[i] = data[length - 1 - i];
+		data[length - 1 - i] = temp;
+	}
+
+	return TRUE;
+}
+
 uint16_t bt_at_rtk_err_to_at_err(uint16_t rtk_err)
 {
 	uint16_t at_sync_err;

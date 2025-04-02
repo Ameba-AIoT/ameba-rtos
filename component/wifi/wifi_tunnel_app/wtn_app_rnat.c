@@ -115,11 +115,11 @@ static int rnat_avoid_confliction_ip(void)
 	u32 bitmask = 0;
 	int i = 0;
 
-	wlan0_ip = *((unsigned int *)(LwIP_GetIP(WLAN0_IDX)));
-	wlan0_mask = *((unsigned int *)(LwIP_GetMASK(WLAN0_IDX)));
+	wlan0_ip = *((unsigned int *)(LwIP_GetIP(STA_WLAN_INDEX)));
+	wlan0_mask = *((unsigned int *)(LwIP_GetMASK(STA_WLAN_INDEX)));
 
-	wlan1_ip = *((unsigned int *)(LwIP_GetIP(WLAN1_IDX)));
-	wlan1_mask = *((unsigned int *)(LwIP_GetMASK(WLAN1_IDX)));
+	wlan1_ip = *((unsigned int *)(LwIP_GetIP(SOFTAP_WLAN_INDEX)));
+	wlan1_mask = *((unsigned int *)(LwIP_GetMASK(SOFTAP_WLAN_INDEX)));
 
 	memcpy(&maskVal, wlan1_mask > wlan0_mask ? &wlan0_mask : &wlan1_mask, 4);
 
@@ -137,7 +137,7 @@ static int rnat_avoid_confliction_ip(void)
 			wlan1_ip = wlan1_ip & (~bitmask);
 		}
 
-		wifi_get_setting(WLAN1_IDX, &setting);
+		wifi_get_setting(SOFTAP_WLAN_INDEX, &setting);
 		softAP_config.ssid.len = strlen((char *)setting.ssid);
 		memcpy(softAP_config.ssid.val, setting.ssid, softAP_config.ssid.len);
 		softAP_config.password = setting.password;
@@ -157,10 +157,10 @@ static void rnat_poll_ip_changed_thread(void *param)
 {
 	(void) param;
 	unsigned int oldip, newip;
-	memcpy(&oldip, LwIP_GetIP(WLAN0_IDX), 4);
+	memcpy(&oldip, LwIP_GetIP(STA_WLAN_INDEX), 4);
 
 	while (1) {
-		memcpy(&newip, LwIP_GetIP(WLAN0_IDX), 4);
+		memcpy(&newip, LwIP_GetIP(STA_WLAN_INDEX), 4);
 		if (0x0 == newip) {
 			goto nextcheck;
 		}
@@ -202,7 +202,7 @@ static void rnat_ap_start_thread(void *param)
 	}
 
 	/*step2: get STA port setting and start softap with same ssid and password*/
-	wifi_get_setting(WLAN0_IDX, &wifi_setting);
+	wifi_get_setting(STA_WLAN_INDEX, &wifi_setting);
 	if (wifi_setting.security_type & WPA_SECURITY) {/*softap only support WPA2, currently not support WPA*/
 		softap_config.security_type = (wifi_setting.security_type & (~WPA_SECURITY)) | (WPA2_SECURITY);
 	} else {

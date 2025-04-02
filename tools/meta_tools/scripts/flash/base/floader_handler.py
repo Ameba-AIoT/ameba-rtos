@@ -425,7 +425,7 @@ class FloaderHandler(object):
         request_data.append(1 if force else 0)
 
         request_data.extend(list(start_addr.to_bytes(4, byteorder="little")))
-        request_data.extend(list(end_addr.to_bytes(4, byteorder="little")))
+        request_data.extend(list((end_addr & 0xFFFFFFFF).to_bytes(4, byteorder="little")))
 
         request_data.extend(list((size & 0xFFFFFFFF).to_bytes(4, byteorder="little")))
 
@@ -562,7 +562,7 @@ class FloaderHandler(object):
         return ret, status
 
     def otp_read_map(self, cmd, address, size):
-        request_data = [(cmd)]
+        request_data = [cmd]
 
         request_data.extend(list(address.to_bytes(4, byteorder="little")))
 
@@ -574,6 +574,7 @@ class FloaderHandler(object):
         if ret == ErrType.OK:
             if buf[0] == cmd:
                 self.logger.debug(f"Otp read: {buf[0]}")
+                return ret, buf[1:-1]
             else:
                 self.logger.debug(f"Otp read fail: unexpected response {buf[0]}")
                 ret = ErrType.SYS_PROTO
@@ -581,17 +582,20 @@ class FloaderHandler(object):
         return ret, buf
 
     def otp_write_map(self, cmd, address, size, data):
-        request_data = [ord(cmd)]
+        request_data = [cmd]
 
         request_data.extend(list(address.to_bytes(4, byteorder="little")))
 
         request_data.extend(list(size.to_bytes(4, byteorder="little")))
 
-        request_data.extend(data)
+        for idx in range(size):
+            request_data.append(data[address + idx])
 
         request_bytes = bytearray(request_data)
 
-        return self.send_request(request_bytes, len(request_bytes), self.setting.async_response_timeout_in_second, is_sync=False)
+        ret, _ = self.send_request(request_bytes, len(request_bytes), self.setting.async_response_timeout_in_second, is_sync=False)
+
+        return ret
 
     def otp_read_physical_map(self, address, size):
         self.logger.debug(f"OTP_RRAW: addr={hex(address)}, size={size}")

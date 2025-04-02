@@ -15,7 +15,7 @@
 #ifndef __WIFI_FEATURE_DIS_P2P_C__
 #define __WIFI_FEATURE_DIS_P2P_C__
 
-#include "wifi_api_types.h"
+#include "wifi_intf_drv_to_app_internal.h"
 
 #ifndef CONFIG_WIFI_P2P_ENABLE
 void wifi_hal_p2p_addr_cam_init(void)

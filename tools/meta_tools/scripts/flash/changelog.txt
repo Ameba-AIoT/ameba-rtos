@@ -9,3 +9,5 @@ ChangeLog:
 20250321  v1.0.1.0  (1) Support linux images download
                     (2) Optimize request timeout
                     (3) Support check flash block protection before process flash
+20250401  v1.0.1.1  (1) Check and program otp for flash size >=16MB
+                    (2) Fix dtr/rts level unexpectedly changed issue when open/close serial port

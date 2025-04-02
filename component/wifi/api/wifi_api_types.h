@@ -42,15 +42,6 @@ extern "C" {
 /** @addtogroup WIFI_Exported_Constants Wi-Fi Exported Constants
  * @{
  */
-/*TODO: replace WLAN0_IDX by STA_WLAN_INDEX*/
-#ifndef WLAN0_IDX
-#define WLAN0_IDX	0  /**< wlan0 index */
-#endif
-
-#ifndef WLAN1_IDX
-#define WLAN1_IDX	1  /**< wlan1 index */
-#endif
-
 #ifndef STA_WLAN_INDEX
 #define STA_WLAN_INDEX	0
 #endif
@@ -63,7 +54,9 @@ extern "C" {
 #define NAN_WLAN_INDEX	2
 #endif
 
-#define SCAN_LONGEST_WAIT_TIME	(12000) /**< Scan longest wait time. */
+#ifndef NONE_WLAN_INDEX
+#define NONE_WLAN_INDEX	0xFF
+#endif
 
 /** Set to this means do fast survey on the specified channel with scan time set to 25ms,
  * otherwise do normal scan on the specified channel with scan time set to 110ms. */
@@ -78,7 +71,6 @@ extern "C" {
 #define RTW_WPA3_MAX_PSK_LEN		(128)		/**< maxmum psk length */
 #define RTW_MAX_PSK_LEN		RTW_WPA3_MAX_PSK_LEN /* TODO: rom should also check RTW_PASSPHRASE_MAX_SIZE. */
 #define RTW_MIN_PSK_LEN		(8)		/**< minimum psk length */
-#define RTW_OWE_KEY_LEN		32 /*32(Temporarily support group 19 with 256 bit public key)*/
 
 #define WEP_ENABLED		0x0001		/**< wep enable */
 #define TKIP_ENABLED		0x0002		/**< tkip enable */
@@ -93,37 +85,6 @@ extern "C" {
 #define WPA3_SECURITY		0x00800000	/**< wpa3 */
 #define WPS_ENABLED		0x10000000	/**< wps  enable*/
 
-/* SECCAM sec_type define */
-/*TODO: rom should check because moved from rom_rtw_defs.h*/
-#define _NO_PRIVACY_	0x0
-#define _WEP40_		0x1
-#define _TKIP_		0x2
-#define _TKIP_WTMIC_	0x3
-#define _AES_		0x4	//_CCMP_128_
-#define _WEP104_	0x5
-#define _SMS4_		0x6	//_WAPI_
-#define _GCMP_		0x7
-#define _GCMP_256_	(_GCMP_ | BIT(3))
-#define _CCMP_256_	(_AES_ | BIT(3))
-#define _GCM_WAPI_	(_SMS4_ | BIT(3))		//_GCM_WAPI_
-#define _BIP_		0x8
-
-/*cipher suite from 802.11-2016 p884*/
-#define WIFI_CIPHER_SUITE_WEP_40			0x000FAC01
-#define WIFI_CIPHER_SUITE_TKIP				0x000FAC02
-#define WIFI_CIPHER_SUITE_CCMP_128		0x000FAC04
-#define WIFI_CIPHER_SUITE_WEP_104			0x000FAC05
-#define WIFI_CIPHER_SUITE_BIP_CMAC_128	0x000FAC06
-#define WIFI_CIPHER_SUITE_GCMP				0x000FAC08
-#define WIFI_CIPHER_SUITE_GCMP_256		0x000FAC09
-#define WIFI_CIPHER_SUITE_CCMP_256		0x000FAC0A
-#define WIFI_CIPHER_SUITE_BIP_GMAC_128	0x000FAC0B
-#define WIFI_CIPHER_SUITE_BIP_GMAC_256	0x000FAC0C
-#define WIFI_CIPHER_SUITE_BIP_CMAC_256	0x000FAC0D
-
-#define RTW_SEND_AND_WAIT_ACK 				2
-#define RTW_SEND_BY_HIGH_RATE				4 // IEEE80211_OFDM_RATE_54MB
-#define RTW_NAV_BY_USER						8
 /**
  * @brief  mac address format.
  */
@@ -131,12 +92,6 @@ extern "C" {
 				((u8*)(x))[2],((u8*)(x))[3],\
 				((u8*)(x))[4],((u8*)(x))[5]
 #define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
-
-#define MAX_WPA_IE_LEN (257)
-#define MAX_WPS_IE_LEN (512)
-#define MAX_P2P_IE_LEN (256)
-#define MAX_WFD_IE_LEN (128)
-#define MAX_FT_IE_LEN (256)
 
 /** @} End of WIFI_Exported_Constants group*/
 
@@ -148,43 +103,58 @@ extern "C" {
  * @{
  */
 /**
- * @brief The enumeration lists the results of the function, size int.
- */
+  * @brief  The enumeration lists the disconnet reasons in rtw_event_disconn_info_t when @ref RTW_JOINSTATUS_DISCONNECT happenned.
+  */
 enum {
-	RTW_SUCCESS                      = 0,	/**< Success. */
+#ifndef CONFIG_FULLMAC
+	/*Reason code in 802.11 spec, Receive AP's deauth or disassoc after wifi connected*/
+	WLAN_REASON_UNSPECIFIED                         = 1,
+	WLAN_REASON_PREV_AUTH_NOT_VALID 			        	= 2,
+	WLAN_REASON_DEAUTH_LEAVING                      = 3,
+	WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY          = 4,
+	WLAN_REASON_DISASSOC_AP_BUSY                    = 5,
+	WLAN_REASON_CLASS2_FRAME_FROM_NONAUTH_STA       = 6,
+	WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA      = 7,
+	WLAN_REASON_DISASSOC_STA_HAS_LEFT               = 8,
+	WLAN_REASON_STA_REQ_ASSOC_WITHOUT_AUTH          = 9,
+	WLAN_REASON_PWR_CAPABILITY_NOT_VALID            = 10,
+	WLAN_REASON_SUPPORTED_CHANNEL_NOT_VALID         = 11,
+	WLAN_REASON_INVALID_IE                          = 13,
+	WLAN_REASON_MICHAEL_MIC_FAILURE                 = 14,
+	WLAN_REASON_4WAY_HANDSHAKE_TIMEOUT              = 15,
+	WLAN_REASON_GROUP_KEY_UPDATE_TIMEOUT            = 16,
+	WLAN_REASON_IE_IN_4WAY_DIFFERS                  = 17,
+	WLAN_REASON_GROUP_CIPHER_NOT_VALID              = 18,
+	WLAN_REASON_PAIRWISE_CIPHER_NOT_VALID           = 19,
+	WLAN_REASON_AKMP_NOT_VALID                      = 20,
+	WLAN_REASON_UNSUPPORTED_RSN_IE_VERSION          = 21,
+	WLAN_REASON_INVALID_RSN_IE_CAPAB                = 22,
+	WLAN_REASON_IEEE_802_1X_AUTH_FAILED             = 23,
+	WLAN_REASON_CIPHER_SUITE_REJECTED               = 24,
+#endif
+	/*RTK defined, Driver disconenct from AP after wifi connected and detect something wrong*/
+	WLAN_REASON_DRV_BASE                            = 60000,
+	WLAN_REASON_DRV_AP_LOSS                         = 60001,
+	WLAN_REASON_DRV_AP_CHANGE                       = 60002,
+	WLAN_REASON_DRV_BASE_END                        = 60099,
 
-	RTW_ERROR                        = -1,	/**< Generic Error. */
-	RTW_BADARG                       = -2,	/**< Bad Argument. */
-	RTW_BUSY                         = -3,	/**< Busy. */
-	RTW_NOMEM                        = -4,	/**< No Memory. */
-	RTW_TIMEOUT                      = -5,	/**< Timeout. */
+	/*RTK defined, Application layer call some API to cause wifi disconnect*/
+	WLAN_REASON_APP_BASE                            = 60100,
+	WLAN_REASON_APP_DISCONN                         = 60101,
+	WLAN_REASON_APP_CONN_WITHOUT_DISCONN            = 60102,
+	WLAN_REASON_APP_BASE_END                        = 60199,
 
-	RTW_CONNECT_INVALID_KEY	         = -11,	/**< Invalid key. */
-	RTW_CONNECT_SCAN_FAIL            = -12,
-	RTW_CONNECT_AUTH_FAIL            = -13,
-	RTW_CONNECT_AUTH_PASSWORD_WRONG  = -14,
-	RTW_CONNECT_ASSOC_FAIL           = -15,
-	RTW_CONNECT_4WAY_HANDSHAKE_FAIL  = -16,
-	RTW_CONNECT_4WAY_PASSWORD_WRONG  = -17,
+	WLAN_REASON_MAX                                 = 65535,/*0xffff*/
 };
 
 /**
- * @brief  The enumeration is wl band type.
+ * @brief  The enumeration lists supported band type.
  */
 enum {
 	WL_BAND_2_4G = 0,   /**< 2.4g band. */
 	WL_BAND_5G,            /**< 5g band. */
 	WL_BAND_2_4G_5G_BOTH, /**< 2.4g&5g band. */
 	WL_BANDMAX  /**< Max band. */
-};
-
-/**
- * @brief The enumeration lists the type of pmksa operations.
- */
-enum {
-	PMKSA_SET = 0,
-	PMKSA_DEL = 1,
-	PMKSA_FLUSH = 2,
 };
 
 /**
@@ -223,7 +193,7 @@ enum {
 };
 
 /**
- * @brief The enumeration lists band type
+ * @brief The enumeration lists band type where the sta/ap is located.
  */
 enum band_type {
 	BAND_ON_24G	= 0,   /**< band is on 2.4G                          */
@@ -567,15 +537,6 @@ enum rtw_antdiv_mode {
 };
 
 /**
-* @brief The enumeration lists band types, size u8
-*/
-/*TODO: replace by band_type*/
-enum {
-	RTW_802_11_BAND_5GHZ   = 0, /**< Denotes 5GHz radio band */
-	RTW_802_11_BAND_2_4GHZ = 1,  /**< Denotes 2.4GHz radio band */
-};
-
-/**
   * @brief  The enumeration lists the bss types. size u8
   */
 enum {
@@ -623,68 +584,12 @@ enum {
 };
 
 /**
-  * @brief  only internal used events.
-  */
-enum  {
-	/* only internal used */
-	WIFI_EVENT_INTERNAL_BASE		 	= 100,
-	WIFI_EVENT_RX_MGNT					= 101,
-	WIFI_EVENT_RX_MGNT_AP				= 102,
-	WIFI_EVENT_EXTERNAL_AUTH_REQ		= 103,
-
-	WIFI_EVENT_WPA_STA_4WAY_START		= 104,
-	WIFI_EVENT_WPA_AP_4WAY_START		= 105,
-	WIFI_EVENT_WPA_STA_4WAY_RECV		= 106,
-	WIFI_EVENT_WPA_AP_4WAY_RECV			= 107,
-	WIFI_EVENT_WPA_SET_PSK_INFO			= 108,
-
-	WIFI_EVENT_OWE_START_CALC			= 109,
-	WIFI_EVENT_OWE_PEER_KEY_RECV		= 110,
-
-#if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K) || defined(CONFIG_IEEE80211R)
-	WIFI_EVENT_KVR_CAP_UPDATE			= 111,
-#if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K)
-	WIFI_EVENT_NB_RESP_RECV				= 112,
-#endif
-#ifdef CONFIG_IEEE80211V
-	WIFI_EVENT_BTM_REQ_RECV				= 113,
-	WIFI_EVENT_BTM_DEBUG_CMD			= 114,
-#endif
-#ifdef CONFIG_IEEE80211R
-	WIFI_EVENT_FT_AUTH_START			= 115,
-	WIFI_EVENT_FT_RX_MGNT				= 116,
-#endif
-#endif
-
-	WIFI_EVENT_DEAUTH_INFO_FLASH		= 117,
-	WIFI_EVENT_INTERNAL_MAX,
-};
-
-/**
   * The enumeration lists the power save status.
   */
 enum {
 	IPS_WIFI_OFF = 0,
 	IPS_WIFI_PG,
 	IPS_LEVEL_MAX,
-};
-
-/**
-  * The enumeration lists the p2p role type.
-  */
-enum rtw_p2p_role {
-	P2P_ROLE_DISABLE = 0,
-	P2P_ROLE_DEVICE = 1,
-	P2P_ROLE_CLIENT = 2,
-	P2P_ROLE_GO = 3
-};
-
-enum gen_ie_type {
-	P2PWPS_PROBE_REQ_IE = 0,
-	P2PWPS_PROBE_RSP_IE,
-	P2PWPS_BEACON_IE,
-	P2PWPS_ASSOC_REQ_IE,
-	P2PWPS_ASSOC_RSP_IE
 };
 
 enum UAPSD_MAX_SP {
@@ -759,11 +664,11 @@ enum _REGULATION_TXPWR_LMT {
 /**********************************************************************************************
  *                                  common structures
  *********************************************************************************************/
-#pragma pack(1)/*_rtw_ssid_t and _rtw_mac_t are 1 byte alignment for some issues long long ago*/
+#pragma pack(1)/*rtw_ssid and rtw_mac are 1 byte alignment for some issues long long ago*/
 /**
   * @brief  The structure is used to describe the SSID (Service Set Identification), i.e., the name of Access Point.
   */
-struct _rtw_ssid_t {
+struct rtw_ssid {
 	unsigned char
 	len;     /**< SSID length, i.e., equal to the length of `val`. The length of ssid should not > @ref RTW_ESSID_MAX_SIZE.  */
 	unsigned char		val[RTW_ESSID_MAX_SIZE + 1]; /**< SSID name (AP name).*/
@@ -772,7 +677,7 @@ struct _rtw_ssid_t {
 /**
   * @brief  The structure is used to describe the unique 6-byte MAC address.
   */
-struct _rtw_mac_t {
+struct rtw_mac {
 	unsigned char		octet[6]; /**< Unique 6-byte MAC address. */
 };
 #pragma pack()
@@ -797,8 +702,8 @@ struct acs_mntr_rpt {
   * @brief  The structure is used to describe the details of a scanned AP.
   */
 struct rtw_scan_result {
-	struct _rtw_ssid_t       SSID;             /**< Service Set Identification (i.e. Name of Access Point). */
-	struct _rtw_mac_t        BSSID;            /**< Basic Service Set Identification (i.e. MAC address of Access Point). */
+	struct rtw_ssid          SSID;             /**< Service Set Identification (i.e. Name of Access Point). */
+	struct rtw_mac           BSSID;            /**< Basic Service Set Identification (i.e. MAC address of Access Point). */
 	signed short             signal_strength;  /**< Receive Signal Strength Indication in dBm. <-90=Very poor, >-30=Excellent. */
 	u8
 	bss_type;         /**< The bss type. The noraml type is infrastructure BSS. Val: RTW_BSS_TYPE_INFRASTRUCTURE, RTW_BSS_TYPE_WTN_HELPER.*/
@@ -806,7 +711,7 @@ struct rtw_scan_result {
 	u8
 	wps_type;         /**< The WPS(Wi-Fi Protected Setup) types supported by this AP. Val: RTW_WPS_TYPE_DEFAULT, RTW_WPS_TYPE_USER_SPECIFIED...*/
 	unsigned int             channel;          /**< Radio channel that the AP beacon was received on. */
-	u8                       band;             /**< The frequency ranges used by this AP. Val: RTW_802_11_BAND_5GHZ, RTW_802_11_BAND_2_4GHZ. */
+	u8                       band;             /**< The frequency ranges used by this AP. Val: BAND_ON_5G, BAND_ON_24G. */
 
 	/** The wireless spectrum management regulations of which region followed by the AP. `country_code` is coded
 	 * according to ISO 3166 standard. Specific values can refer to ameba_wifi_country_code_table_usrcfg.c.\n
@@ -819,7 +724,7 @@ struct rtw_scan_result {
 /**
   * @brief  The structure is used to describe the scan time per channel.
   */
-struct _rtw_channel_scan_time_t {
+struct rtw_channel_scan_time {
 	unsigned short		active_scan_time;      /**< Active scan time per channel, units: millisecond, default is 110ms. */
 	unsigned short		passive_scan_time;     /**< Passive scan time per channel, units: millisecond, default is 110ms. */
 };
@@ -827,12 +732,12 @@ struct _rtw_channel_scan_time_t {
 /**
   * @brief  The structure is used to describe the scan parameters used for scan.
   */
-struct _rtw_scan_param_t {
+struct rtw_scan_param {
 	u8                                 options; /**< The scan option, such as active scan. Val: RTW_SCAN_ACTIVE, RTW_SCAN_PASSIVE...*/
 	char                              *ssid;    /**< The data length of string pointed by ssid should not exceed @ref RTW_ESSID_MAX_SIZE. */
 	unsigned char                     *channel_list;      /**< The list of specified channels to be scanned.*/
 	unsigned char                      channel_list_num;  /**< The total number in `channel_list`.*/
-	struct _rtw_channel_scan_time_t    chan_scan_time;    /**< The scan time per channel.*/
+	struct rtw_channel_scan_time       chan_scan_time;    /**< The scan time per channel.*/
 
 	/** Config the max number of recorded AP. When set to 0, use default value 64.
 	 * When the number of scanned APs exceed `max_ap_record_num`, the AP(s) with smallest rssi will be discarded. */
@@ -866,8 +771,8 @@ struct _rtw_wpa_supp_connect_t {
   * 	      set to 0 means do normal scan on the specified channel or full channel.
   */
 struct _rtw_network_info_t {
-	struct _rtw_ssid_t					ssid;  /**< The AP's name and the length of name (should not exceed @ref RTW_ESSID_MAX_SIZE). */
-	struct _rtw_mac_t					bssid; /**< The unique 6-byte MAC address of AP. */
+	struct rtw_ssid					ssid;  /**< The AP's name and the length of name (should not exceed @ref RTW_ESSID_MAX_SIZE). */
+	struct rtw_mac					bssid; /**< The unique 6-byte MAC address of AP. */
 	u32							security_type; /**< Only need to be set when use WEP (@ref RTW_SECURITY_WEP_PSK @ref RTW_SECURITY_WEP_SHARED), Other case will automatically adjust according to the AP.*/
 	unsigned char				*password;	   /**< The password of AP which sta is trying to connect. */
 	int 						password_len;  /**< The data length of string pointed by password should not exceed RTW_MAX_PSK_LEN. Equal to length of `password`. */
@@ -877,7 +782,7 @@ struct _rtw_network_info_t {
 	pscan_option;	/**< Can set to @ref PSCAN_FAST_SURVEY for fast survey, which means quick scan, involves using an active scan on a specified channel, scanning for 25ms each time, and attempting up to 7 times until the target AP is found.. */
 	unsigned char 				is_wps_trigger;	/**< Connection triggered by WPS process.*/
 	struct _rtw_wpa_supp_connect_t	wpa_supp;   /**< Only used by Linux host to specific some details required for STA connect, which RTOS do not use. */
-	struct _rtw_mac_t		prev_bssid; /**< The BSSID of the AP before roaming. */
+	struct rtw_mac		prev_bssid; /**< The BSSID of the AP before roaming. */
 	u8							by_reconn; /**< Connection triggered by RTK auto reconnect process. */
 	u8							rom_rsvd[4];
 };
@@ -917,23 +822,22 @@ struct _rtw_wifi_setting_t {
 /**
   * @brief  The structure is used to describe the phy statistics.
   */
-union _rtw_phy_statistics_t {
+union _rtw_phy_stats_t {
 	struct {
 		signed char	rssi;          /**< Average mixed rssi in 1 sec. */
 		signed char	data_rssi;          /**< Average data rssi in 1 sec. */
 		signed char	beacon_rssi;          /**< Average beacon rssi in 1 sec. */
 		signed char	snr;          /**< Average snr in 1 sec (not include cck rate).*/
-	} sta_phy_stats; /**< For STA mode statistic.*/
+	} sta; /**< For STA mode statistic.*/
 	struct {
 		signed char	data_rssi;          /**< Average data rssi in 1 sec. */
-		signed char	snr;          /**< Average snr in 1 sec (not include cck rate).*/
-	} ap_phy_stats; /**< For SOFTAP mode statistic.*/
+	} ap; /**< For SOFTAP mode statistic.*/
 	struct {
 		unsigned char
 		cca_clm; /**< Channel loading measurement ratio by cca (the ratio of CCA = 1 in number of samples). driver do clm every 2 seconds, the value is the lastest result. */
 		unsigned char	edcca_clm; /**< Channel loading measurement ratio by edcca (the ratio of EDCCA = 1 in number of samples). The value is also the lastest result. */
 		unsigned char	clm_channel; /**< Channel corresponding to the latest clm result.*/
-	} cmn_phy_stats; /**< For common statistic.*/
+	} cmn; /**< For common statistic.*/
 };
 
 /**********************************************************************************************
@@ -946,7 +850,7 @@ union _rtw_phy_statistics_t {
   *        and the data length of string pointed by password should not exceed RTW_MAX_PSK_LEN.
   */
 struct _rtw_softap_info_t {
-	struct _rtw_ssid_t		ssid;
+	struct rtw_ssid		ssid;
 	unsigned char		hidden_ssid;
 	u32					security_type; /**< Val: RTW_SECURITY_OPEN, RTW_SECURITY_WEP_PSK...*/
 	unsigned char 		*password;
@@ -960,9 +864,7 @@ struct _rtw_softap_info_t {
   */
 struct _rtw_client_list_t {
 	unsigned int    count;         /**< Number of associated clients in the list.    */
-	struct _rtw_mac_t mac_list[MACID_HW_MAX_NUM - 2]; /**< Max length array of MAC addresses. */
-	signed char rssi_list[MACID_HW_MAX_NUM - 2]; /**< Max length array of client rssi. */
-	unsigned char macid_list[MACID_HW_MAX_NUM - 2]; /**< Max length array of client macid. */
+	struct rtw_mac mac_list[MACID_HW_MAX_NUM - 2]; /**< Max length array of MAC addresses. */
 };
 #endif
 
@@ -1011,90 +913,6 @@ struct _promisc_para_t {
 	  * 	- @ref NEED_DRIVER_HANDLE : Driver continue processing this packet, This setting is usually required when the STA remains connected.
 	  *     - @ref BYPASS_DRIVER_HANDLE : Driver drop this packet, This setting is usually used when STA does not need connect.*/
 	u8(*callback)(struct rx_pkt_info *pkt_info);
-};
-
-/**********************************************************************************************
- *                                     wpa_lite structures
- *********************************************************************************************/
-/**
- * @brief  The structure is pmksa ops.
- */
-struct rtw_pmksa_ops_t {
-	u8 ops_id;
-	u8 wlan_idx;
-	u8 pmkid[16];
-	u8 mac_addr[6];
-	u8 pmk[32]; /**< Pmksa is maintained in NP when use wpa_lite.*/
-};
-
-/**
- * @brief  The structure is crypt info.
- */
-struct rtw_crypt_info {
-	u8 pairwise;            /**<  Indicate pairwise(1) key or group key(0). */
-	u8 mac_addr[6];
-	u8 wlan_idx;
-	u16 key_len;
-	u8 key[32];
-	u8 key_idx;
-	u8 driver_cipher;
-	u8 transition_disable_exist;
-	u8 transition_disable_bitmap;
-	u8 device_id : 5;       /**<  tx_raw: Flag for no linked peer, and will be converted to camid when force_cam_entry = 1. */
-	u8 force_cam_entry : 1; /**<  tx_raw must set force_cam_entry = 1. Upper layer direct set specified cam entry, not dependent on 4 way or stainfo. */
-	u8 rpt_mode : 1;
-};
-
-/**
- * @brief  The structure is status of wpa_4way.
- */
-struct rtw_wpa_4way_status {
-	u8 *mac_addr;             /**< Mac addr of 4-way interactive peer device. */
-	u8 wlan_idx;              /**< Index of wlan interface. */
-	u8 is_start : 1;          /**< Start(1) or stop(0) of 4way/2way exchange. */
-	u8 is_grpkey_update : 1;  /**< Indicate first key change(0) or update grp_key change(1). */
-	u8 is_success : 1;        /**< Result of 4way/2way exchange: 0-fail; 1-success. */
-};
-
-/**
- * @brief  The structure is used to store configuration of SAE protocol
- * which is used in secure auth process.
- */
-struct wpa_sae_param_t {
-	unsigned char 		peer_mac[6];
-	unsigned char 		self_mac[6];
-	u8					h2e;  /**< A flag indicating the use of Hash-to-Element (H2E) optimization in SAE. */
-	u8					sae_reauth_limit;
-};
-
-/**
- * @brief  The structure is used to describe the DH(Diffie-Hellman) params of
- *         OWE(Opportunistic Wireless Encryption).
- * @note  Temporarily support group 19 with 256 bit public key, i.e., group = 19, pub_key_len = 32.
- */
-struct rtw_owe_param_t {
-	u16 group;                   /**< Specify the DH group number used for public key generation. */
-	u8 pub_key[RTW_OWE_KEY_LEN]; /**< The public key for OWE. */
-	u8 pub_key_len;              /**< The length of the public key.*/
-	u8 peer_mac[6];              /**< The MAC address of the peer device.*/
-};
-
-struct rtw_kvr_param_t {
-#if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K) || defined(CONFIG_IEEE80211R)
-	u8 nb_active;
-	u8 btm_active;
-	unsigned char 		peer_mac[6];
-	unsigned char 		self_mac[6];
-#ifdef CONFIG_IEEE80211R
-	u8 ft_active;
-	u16 mdid;
-	u8 ft_cap;
-	u8 privacy;
-	u32 grp_privacy;
-	u8 ie[5 + MAX_WPA_IE_LEN + MAX_FT_IE_LEN]; /**<  1.NP->AP: rsnie; 2.AP->NP: mdie+rsnie+ftie*/
-	u32 ielen;
-#endif
-#endif
 };
 
 /**********************************************************************************************
@@ -1187,38 +1005,6 @@ struct _rtw_csi_action_parm_t {
 /**********************************************************************************************
  *                                     other structures
  *********************************************************************************************/
-#ifndef CONFIG_FULLMAC
-/**
- * @brief  The structure is join block param.
- */
-struct internal_join_block_param {
-	void				*join_sema;
-	unsigned int		join_timeout;
-	unsigned char		block;
-};
-
-/**
- * @brief  The structure is used to describe net device.
- */
-struct net_device {
-	void			*priv;		/**<  Pointer to private data. */
-	unsigned char		dev_addr[6];	/**<  Set during bootup. */
-	u8 iface_type;
-};
-
-/**
- * @brief  The structure is used to describe wlan info.
- */
-struct _Rltk_wlan_t {
-	struct net_device	dev;		/**<  Binding wlan driver netdev. */
-	void			*skb;		/**<  Pending Rx packet. */
-	unsigned int		tx_busy;
-	unsigned int		rx_busy;
-	unsigned char		enable;
-	rtos_sema_t			netif_rx_sema;	/**<  Prevent race condition on .skb in rltk_netif_rx(). */
-};
-#endif
-
 /**
   * @brief  The structure is power limit regu map.
   */
@@ -1241,16 +1027,6 @@ struct raw_frame_desc_t {
 	unsigned char ac_queue;      /**< 0/3 for BE, 1/2 for BK, 4/5 for VI, 6/7 for VO. */
 	unsigned char sgi : 1;       /**< 1 for enable data short. */
 	unsigned char agg_en : 1;    /**< Aggregation of tx_raw frames. 1:enable; 0-disable. */
-};
-
-/**
-  * @brief  Old version raw data description, only used for driver internal send mgnt frames.
-  */
-struct _raw_data_desc_t {
-	unsigned char		wlan_idx;      /**< Index of wlan interface which will transmit. */
-	unsigned char		*buf;          /**< Poninter of buf where raw data is stored.*/
-	unsigned short		buf_len;      /**< The length of raw data.*/
-	unsigned short		flags;        /**< Send options.*/
 };
 
 /**
@@ -1287,9 +1063,6 @@ struct rtw_tx_power_ctl_info_t {
 /** @} End of WIFI_API group */
 
 /* not included in any api groups*/
-#ifndef CONFIG_FULLMAC
-extern struct _Rltk_wlan_t rltk_wlan_info[NET_IF_NUM];
-#endif
 extern  struct wifi_user_conf wifi_user_config;
 extern struct _rtw_wifi_setting_t wifi_setting[2];
 

@@ -25,7 +25,8 @@ static uint32_t sysactive_timeout_temp = 0;
 uint32_t system_can_yield = 1; /* default is can */
 uint32_t sysactive_timeout_flag = 0;
 
-
+static uint32_t timer_min_sleep_time = 0;
+static uint32_t timer_max_sleep_time = 0;
 /* ++++++++ FreeRTOS macro implementation ++++++++ */
 
 /* psm dd hook info */
@@ -224,6 +225,11 @@ void pmu_pre_sleep_processing(uint32_t *expected_idle_time)
 		sleep_param.sleep_time = 0;// do not wake on system schedule tick
 		sleep_param.dlps_enable = ENABLE;
 	} else {
+		if (timer_max_sleep_time > timer_min_sleep_time) {
+			max_sleep_time = _rand() % (timer_max_sleep_time - timer_min_sleep_time + 1) + timer_min_sleep_time;
+		} else if (timer_min_sleep_time != 0) {
+			max_sleep_time = timer_min_sleep_time;
+		}
 		sleep_param.sleep_time = max_sleep_time;//*expected_idle_time;
 		max_sleep_time = 0;
 		sleep_param.dlps_enable = DISABLE;
@@ -278,11 +284,15 @@ void pmu_set_max_sleep_time(uint32_t timer_ms)
 {
 	max_sleep_time = timer_ms;
 }
+void pmu_set_sleep_time_range(uint32_t min_time, uint32_t max_time)
+{
+	timer_min_sleep_time = min_time;
+	timer_max_sleep_time = max_time;
+}
 
 void pmu_set_dsleep_active_time(uint32_t TimeOutMs)
 {
 	u32 timeout = 0;
-
 
 	timeout = rtos_time_get_current_system_time_ms() + TimeOutMs;
 	RTK_LOGD(TAG, "pmu_set_dsleep_active_time: %d %d\n", timeout, deepwakelock_timeout);

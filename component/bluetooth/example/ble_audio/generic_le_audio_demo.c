@@ -6,7 +6,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <bt_api_config.h>
-#if defined(CONFIG_BT_GENERIC_LE_AUDIO_DEMO_SUPPORT) && CONFIG_BT_GENERIC_LE_AUDIO_DEMO_SUPPORT
 #include <osif.h>
 #include <rtk_bt_def.h>
 #include <rtk_bt_device.h>
@@ -3871,5 +3870,3 @@ exit:
 	demo_init_flag = false;
 	return 1;
 }
-
-#endif

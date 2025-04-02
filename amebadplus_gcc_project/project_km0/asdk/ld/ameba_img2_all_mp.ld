@@ -152,6 +152,12 @@ SECTIONS
 		__psram_heap_buffer_start__ = .;
 	} > KM0_BD_RAM_MP
 
+	.ram_image2_fill :
+	{
+		BYTE(0x00)
+		. = ALIGN(32);
+	} > KM0_BD_RAM_MP_END
+
 	.coex_trace.text :
 	{
 		__ctrace_start__ = .;

@@ -38,51 +38,6 @@ extern "C" {
  */
 
 /**
-  * @brief  The enumeration lists the disconnet reasons in rtw_event_disconn_info_t when @ref RTW_JOINSTATUS_DISCONNECT happenned.
-  */
-enum {
-#ifndef CONFIG_FULLMAC
-	/*Reason code in 802.11 spec, Receive AP's deauth or disassoc after wifi connected*/
-	WLAN_REASON_UNSPECIFIED                         = 1,
-	WLAN_REASON_PREV_AUTH_NOT_VALID 			        	= 2,
-	WLAN_REASON_DEAUTH_LEAVING                      = 3,
-	WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY          = 4,
-	WLAN_REASON_DISASSOC_AP_BUSY                    = 5,
-	WLAN_REASON_CLASS2_FRAME_FROM_NONAUTH_STA       = 6,
-	WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA      = 7,
-	WLAN_REASON_DISASSOC_STA_HAS_LEFT               = 8,
-	WLAN_REASON_STA_REQ_ASSOC_WITHOUT_AUTH          = 9,
-	WLAN_REASON_PWR_CAPABILITY_NOT_VALID            = 10,
-	WLAN_REASON_SUPPORTED_CHANNEL_NOT_VALID         = 11,
-	WLAN_REASON_INVALID_IE                          = 13,
-	WLAN_REASON_MICHAEL_MIC_FAILURE                 = 14,
-	WLAN_REASON_4WAY_HANDSHAKE_TIMEOUT              = 15,
-	WLAN_REASON_GROUP_KEY_UPDATE_TIMEOUT            = 16,
-	WLAN_REASON_IE_IN_4WAY_DIFFERS                  = 17,
-	WLAN_REASON_GROUP_CIPHER_NOT_VALID              = 18,
-	WLAN_REASON_PAIRWISE_CIPHER_NOT_VALID           = 19,
-	WLAN_REASON_AKMP_NOT_VALID                      = 20,
-	WLAN_REASON_UNSUPPORTED_RSN_IE_VERSION          = 21,
-	WLAN_REASON_INVALID_RSN_IE_CAPAB                = 22,
-	WLAN_REASON_IEEE_802_1X_AUTH_FAILED             = 23,
-	WLAN_REASON_CIPHER_SUITE_REJECTED               = 24,
-#endif
-	/*RTK defined, Driver disconenct from AP after wifi connected and detect something wrong*/
-	WLAN_REASON_DRV_BASE                            = 60000,
-	WLAN_REASON_DRV_AP_LOSS                         = 60001,
-	WLAN_REASON_DRV_AP_CHANGE                       = 60002,
-	WLAN_REASON_DRV_BASE_END                        = 60099,
-
-	/*RTK defined, Application layer call some API to cause wifi disconnect*/
-	WLAN_REASON_APP_BASE                            = 60100,
-	WLAN_REASON_APP_DISCONN                         = 60101,
-	WLAN_REASON_APP_CONN_WITHOUT_DISCONN            = 60102,
-	WLAN_REASON_APP_BASE_END                        = 60199,
-
-	WLAN_REASON_MAX                                 = 65535,/*0xffff*/
-};
-
-/**
   * @brief Flags of @ref WIFI_EVENT_JOIN_STATUS.
   */
 enum {
@@ -135,7 +90,7 @@ struct rtw_event_disconn_info_t {
   * @brief Buf of @ref WIFI_EVENT_JOIN_STATUS when flag is @ref RTW_JOINSTATUS_FAIL
   */
 struct rtw_event_join_fail_info_t {
-	int					fail_reason;           /**< Value: @ref RTK_FAIL, @ref RTW_CONNECT_INVALID_KEY...*/
+	int					fail_reason;           /**< Value: @ref RTK_FAIL, -@ref RTK_ERR_WIFI_CONN_INVALID_KEY...*/
 	u16					reason_or_status_code; /**< From AP, define in 802.11 spec.*/
 	u8					bssid[6];              /**< AP's MAC address.*/
 };

@@ -53,9 +53,39 @@
 
 #define configNUM_CORES							CONFIG_CPUS_NUM  /* Do not modify core number here but in menuconfig*/
 
+#ifdef CONFIG_CA32_FREERTOS_V11_1_0
+/* SMP related */
+#define configNUMBER_OF_CORES					CONFIG_CORE_NUM
+#if ( configNUMBER_OF_CORES > 1 )
+#define configRUN_MULTIPLE_PRIORITIES			1
+#define configUSE_CORE_AFFINITY					1
+#define configTASK_DEFAULT_CORE_AFFINITY        tskNO_AFFINITY
+#define configUSE_TASK_PREEMPTION_DISABLE       1
+#define configUSE_PASSIVE_IDLE_HOOK             0
+#define configTIMER_SERVICE_TASK_CORE_AFFINITY  1
+#endif
+
+/* Different form v10.2.1_smp*/
+#define configUSE_TICKLESS_IDLE					0
+#define configTASK_NOTIFICATION_ARRAY_ENTRIES      3
+#define configENABLE_BACKWARD_COMPATIBILITY        1
+#define configSTACK_DEPTH_TYPE					   uint32_t
+#define configSUPPORT_DYNAMIC_ALLOCATION             1
+#define configAPPLICATION_ALLOCATED_HEAP             0
+#define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP    0
+#define configUSE_MINI_LIST_ITEM                     1
+#define configKERNEL_PROVIDED_STATIC_MEMORY     0
+#define configUSE_TASK_NOTIFICATIONS           1
+#define INCLUDE_xTaskGetSchedulerState          1
+#define INCLUDE_xTaskGetIdleTaskHandle          1
+#define INCLUDE_uxTaskGetStackHighWaterMark     0
+#define INCLUDE_xEventGroupSetBitFromISR        1
+#else
+#define configUSE_TICKLESS_IDLE					1
+#endif  /* CONFIG_CA32_FREERTOS_V11_1_0 */
+
 #define configCPU_CLOCK_HZ						CPU_ClkGet()
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION	0
-#define configUSE_TICKLESS_IDLE					1
 #define configUSE_NEWLIB_REENTRANT				1
 #define configTICK_RATE_HZ						( ( TickType_t ) 1000 )
 #define configUSE_PREEMPTION					1

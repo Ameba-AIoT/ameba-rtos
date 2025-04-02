@@ -1000,6 +1000,8 @@ class IMAGETOOL():
         for app in apps:
             if os.path.exists(app):
                 app_mp = os.path.join(image_dir, os.path.splitext(os.path.basename(app))[0] + '_mp.bin')
+                if os.path.exists(app_mp):
+                    os.remove(app_mp)
                 os.rename(app, app_mp)
 
     def amebalite(self, KM4_IMG_DIR):

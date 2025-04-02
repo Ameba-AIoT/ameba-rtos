@@ -33,5 +33,7 @@ int cmd_usbd_verify_test_entry(u16 argc, u8  *argv[]);
 
 int cmd_usbd_cdc_acm(u16 argc, u8 *argv[]);
 
+int cmd_usbd_bus_cmd(u16 argc, u8 *argv[]);
+
 #endif /* USBH_CMD_H */
 

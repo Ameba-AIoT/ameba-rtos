@@ -18,6 +18,7 @@
 #include <ble_wifimate_service.h>
 #include <wifi_api.h>
 #include <lwip_netconf.h>
+#include <ameba_soc.h>
 
 #define BLE_WIFIMATE_DECODE_KEY_LEN                             (16)
 
@@ -49,16 +50,13 @@
 #define CHAR_WIFI_SCAN_INFO_SEG_FORTH_ELE_LEN           (1)
 #define CHAR_WIFI_SCAN_INFO_SEG_FIFTH_ELE_LEN           (1)
 
+#define BLE_WIFIMATE_DECRYPT_PASSWORD_LEN_MAX           (128)
+
 enum ble_wifimate_server_state_e {
 	BLE_WIFIMATE_SERVER_STATE_IDLE = 0,
 	BLE_WIFIMATE_SERVER_STATE_CONNECT = 1,
 	BLE_WIFIMATE_SERVER_STATE_WIFI_SCAN = 2,
 	BLE_WIFIMATE_SERVER_STATE_WIFI_CONN = 3,
-};
-
-struct password_decode_t {
-	uint8_t         algorithm;
-	uint8_t         key[BLE_WIFIMATE_DECODE_KEY_LEN];
 };
 
 struct ble_wifimate_wifi_scan_result_t {
@@ -104,7 +102,7 @@ static uint16_t s_mtu_size = 23;
 static uint8_t s_cccd_ind_en_wifi_scan = 0;
 static uint8_t s_cccd_ind_en_wifi_conn = 0;
 static uint8_t s_ble_wifimate_state = 0;
-static struct password_decode_t s_pw_decode = {0};
+static struct ble_wifimate_encrypt_decrypt_t s_decrypt = {0};
 
 static struct ble_wifimate_char_send_data_t s_multi_indicate = {0};
 static struct ble_wifimate_char_recv_data_t s_multi_recv = {0};
@@ -263,32 +261,33 @@ static uint16_t ble_wifimate_server_key_negotiate_hdl(uint16_t len, uint8_t *dat
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
-	memset(&s_pw_decode, 0, sizeof(s_pw_decode));
-	memcpy(&s_pw_decode.algorithm, data, CHAR_NEGOTIATE_KEY_FIRST_ELE_LEN);
-	memcpy(&s_pw_decode.key, data + CHAR_NEGOTIATE_KEY_FIRST_ELE_LEN, CHAR_NEGOTIATE_KEY_SECOND_ELE_LEN);
+	memset(&s_decrypt, 0, sizeof(s_decrypt));
+	memcpy(&s_decrypt.algorithm_type, data, CHAR_NEGOTIATE_KEY_FIRST_ELE_LEN);
+	memcpy(&s_decrypt.key, data + CHAR_NEGOTIATE_KEY_FIRST_ELE_LEN, CHAR_NEGOTIATE_KEY_SECOND_ELE_LEN);
 
-	if (s_pw_decode.algorithm != BLE_WIFIMATE_KEY_ENCODE_ALGORITHM_NONE) {
-		BT_LOGE("[APP] BLE WiFiMate server does not support key encryption and decryption algorithms temporarily\r\n");
+	if (s_decrypt.algorithm_type >= BLE_WIFIMATE_ENCRYPT_DECRYPT_ALGO_NUM) {
+		BT_LOGE("[APP] BLE WiFiMate server does not support encryption and decryption algorithms type=%d.\r\n", s_decrypt.algorithm_type);
+		memset(&s_decrypt, 0, sizeof(s_decrypt));
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
-	if (s_pw_decode.algorithm != BLE_WIFIMATE_KEY_ENCODE_ALGORITHM_NONE) {
+	if (s_decrypt.algorithm_type != BLE_WIFIMATE_ENCRYPT_DECRYPT_ALGO_NONE) {
 		if ((ret = rtk_bt_le_gap_get_bd_addr(&bd_addr)) != RTK_BT_OK) {
 			return ret;
 		}
 
-		s_pw_decode.key[BLE_WIFIMATE_DECODE_KEY_LEN - 3] = bd_addr.addr_val[2];
-		s_pw_decode.key[BLE_WIFIMATE_DECODE_KEY_LEN - 2] = bd_addr.addr_val[1];
-		s_pw_decode.key[BLE_WIFIMATE_DECODE_KEY_LEN - 1] = bd_addr.addr_val[0];
+		s_decrypt.key[BLE_WIFIMATE_ENCRYPT_DECRYPT_KEY_LEN - 3] = bd_addr.addr_val[2];
+		s_decrypt.key[BLE_WIFIMATE_ENCRYPT_DECRYPT_KEY_LEN - 2] = bd_addr.addr_val[1];
+		s_decrypt.key[BLE_WIFIMATE_ENCRYPT_DECRYPT_KEY_LEN - 1] = bd_addr.addr_val[0];
 	}
 
 	BT_LOGA("[APP] BLE WiFiMate server negotiate key procedure: algorithm=%d, \
 			key=%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\r\n",
-			s_pw_decode.algorithm,
-			s_pw_decode.key[0], s_pw_decode.key[1], s_pw_decode.key[2], s_pw_decode.key[3],
-			s_pw_decode.key[4], s_pw_decode.key[5], s_pw_decode.key[6], s_pw_decode.key[7],
-			s_pw_decode.key[8], s_pw_decode.key[9], s_pw_decode.key[10], s_pw_decode.key[11],
-			s_pw_decode.key[12], s_pw_decode.key[13], s_pw_decode.key[14], s_pw_decode.key[15]);
+			s_decrypt.algorithm_type,
+			s_decrypt.key[0], s_decrypt.key[1], s_decrypt.key[2], s_decrypt.key[3],
+			s_decrypt.key[4], s_decrypt.key[5], s_decrypt.key[6], s_decrypt.key[7],
+			s_decrypt.key[8], s_decrypt.key[9], s_decrypt.key[10], s_decrypt.key[11],
+			s_decrypt.key[12], s_decrypt.key[13], s_decrypt.key[14], s_decrypt.key[15]);
 
 	return RTK_BT_OK;
 }
@@ -462,10 +461,10 @@ static uint16_t ble_wifimate_server_write_wifi_scan_hdl(uint16_t conn_handle, ui
 	uint16_t ret = RTK_BT_OK;
 	uint8_t enable = 0;
 	struct rtw_scan_result *scanned_AP_list = NULL;
-	int join_status = RTW_JOINSTATUS_UNKNOWN;
+	uint8_t join_status = RTW_JOINSTATUS_UNKNOWN;
 	int scan_network = 0;
 	unsigned int scanned_AP_num = 0;
-	struct _rtw_scan_param_t scan_param;
+	struct rtw_scan_param scan_param;
 	struct ble_wifimate_wifi_scan_result_t *wifi_scan_result = NULL;
 
 	if (len != 1 || !data) {
@@ -486,7 +485,7 @@ static uint16_t ble_wifimate_server_write_wifi_scan_hdl(uint16_t conn_handle, ui
 	}
 
 	memset(wifi_scan_result, 0, sizeof(struct ble_wifimate_wifi_scan_result_t));
-	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
+	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
 
 	wifi_get_join_status(&join_status);
 	BT_LOGD("%s join_status=%d\r\n", __func__, join_status);
@@ -568,37 +567,37 @@ static uint8_t ble_wifimate_wifi_conn_result_to_bwm_errcode(int wifi_res)
 	case RTK_SUCCESS:
 		err_code = BWM_OK;
 		break;
-	case RTW_BADARG:
+	case -RTK_ERR_BADARG:
 		err_code = BWM_ERR_PARAM_INVALID;
 		break;
-	case RTW_BUSY:
+	case -RTK_ERR_BUSY:
 		err_code = BWM_ERR_BUSY;
 		break;
-	case RTW_NOMEM:
+	case -RTK_ERR_NOMEM:
 		err_code = BWM_ERR_NOMEM;
 		break;
-	case RTW_TIMEOUT:
+	case -RTK_ERR_TIMEOUT:
 		err_code = BWM_ERR_TIMEOUT;
 		break;
-	case RTW_CONNECT_INVALID_KEY:
+	case -RTK_ERR_WIFI_CONN_INVALID_KEY:
 		err_code = BWM_ERR_PASSWORD_WRONG;
 		break;
-	case RTW_CONNECT_SCAN_FAIL:
+	case -RTK_ERR_WIFI_CONN_SCAN_FAIL:
 		err_code = BWM_ERR_AP_NOT_FOUND;
 		break;
-	case RTW_CONNECT_AUTH_FAIL:
+	case -RTK_ERR_WIFI_CONN_AUTH_FAIL:
 		err_code = BWM_ERR_AUTH_FAIL;
 		break;
-	case RTW_CONNECT_AUTH_PASSWORD_WRONG:
+	case -RTK_ERR_WIFI_CONN_AUTH_PASSWORD_WRONG:
 		err_code = BWM_ERR_PASSWORD_WRONG;
 		break;
-	case RTW_CONNECT_ASSOC_FAIL:
+	case -RTK_ERR_WIFI_CONN_ASSOC_FAIL:
 		err_code = BWM_ERR_ASSOC_FAIL;
 		break;
-	case RTW_CONNECT_4WAY_HANDSHAKE_FAIL:
+	case -RTK_ERR_WIFI_CONN_4WAY_HANDSHAKE_FAIL:
 		err_code = BWM_ERR_PASSWORD_WRONG;
 		break;
-	case RTW_CONNECT_4WAY_PASSWORD_WRONG:
+	case -RTK_ERR_WIFI_CONN_4WAY_PASSWORD_WRONG:
 		err_code = BWM_ERR_PASSWORD_WRONG;
 		break;
 	default:
@@ -665,7 +664,7 @@ static uint16_t ble_wifimate_wifi_connect(uint16_t conn_handle, struct wifi_conn
 	}
 
 	//Check if in AP mode
-	wifi_get_setting(WLAN0_IDX, &setting);
+	wifi_get_setting(STA_WLAN_INDEX, &setting);
 
 	ret = wifi_connect(&wifi, 1);
 	if (ret != RTK_SUCCESS) {
@@ -690,20 +689,77 @@ static uint16_t ble_wifimate_wifi_connect(uint16_t conn_handle, struct wifi_conn
 	return ble_wifimate_server_indicate_wifi_conn_state(conn_handle, BWM_WIFI_STATE_CONNECTED, BWM_OK);
 }
 
-static void ble_wifimate_password_decode(uint8_t *pw, uint8_t *decode_pw)
+static uint16_t ble_wifimate_aes_ecb_decrypt(uint8_t src_len, uint8_t *src, uint8_t key_len,
+											 uint8_t *key, uint8_t *result_len, uint8_t *result)
 {
-	//TODO
-	(void)pw;
-	(void)decode_pw;
-	return;
+	uint8_t key_le[key_len] ALIGNMTO(0x4);
+	uint32_t timeout = 0xFFFFFFFF;
+
+	if (!src || !key || !result_len || !result) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	if (CRYPTO_Init(NULL) != 0) {
+		BT_LOGE("crypto engine init failed\r\n");
+	} else {
+		BT_LOGA("init success\n");
+	}
+
+	/*take sema to obtain the right to crypto engine*/
+	while (IPC_SEMTake(IPC_SEM_CRYPTO, timeout) != TRUE) {
+		BT_LOGE("ipsec get hw sema fail\n");
+	}
+
+	/* use a software key, it needs to be converted to little-endian format.
+	    For example, the key is 00112233445566778899aabbccddeeff, the key array should like:
+	    uint8_t key1[32] = {
+	        0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00 };.*/
+	memcpy(key_le, key, key_len);
+	array_to_little_endian(key_le, key_len);
+	rtl_crypto_aes_ecb_init(key_le, key_len);
+
+	rtl_crypto_aes_ecb_decrypt(src, src_len, NULL, 0, result);
+
+	/*free sema to release the right to crypto engine*/
+	IPC_SEMFree(IPC_SEM_CRYPTO);
+
+	*result_len = strlen((char *)result);
+
+	BT_DUMPD("====decrypt key=====\r\n", key, key_len);
+	BT_DUMPD("====decrypt message=====\r\n", src, src_len);
+	BT_DUMPD("====decrypt result=====\r\n", result, src_len);
+	return 0;
+}
+
+static uint16_t ble_wifimate_server_decrypt(uint8_t src_len, uint8_t *src, uint8_t *des_len, uint8_t *des)
+{
+	uint16_t ret = RTK_BT_OK;
+
+	if (!src || !des_len || !des) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	switch (s_decrypt.algorithm_type) {
+	case BLE_WIFIMATE_ENCRYPT_DECRYPT_ALGO_AES_ECB: {
+		ret = ble_wifimate_aes_ecb_decrypt(src_len, src, 16, s_decrypt.key, des_len, des);
+		break;
+	}
+	default:
+		ret = RTK_BT_ERR_UNSUPPORTED;
+		break;
+	}
+
+	return ret;
 }
 
 static uint16_t ble_wifimate_parse_wifi_connect_config(
-	uint16_t len, uint8_t *data, struct wifi_conn_config_t *conn_config)
+	uint16_t len, uint8_t *data, uint8_t *decrypt_pw, struct wifi_conn_config_t *conn_config)
 {
 	uint16_t offset = 0;
+	uint16_t ret = RTK_BT_OK;
 
-	if (!conn_config || !data) {
+	if (!conn_config || !data || !decrypt_pw) {
+		BT_LOGA("[APP] BLE WiFiMate server parse wifi connect param invalid.\r\n");
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
@@ -731,12 +787,17 @@ static uint16_t ble_wifimate_parse_wifi_connect_config(
 
 	if (len == (offset + conn_config->password_len)) {
 		conn_config->password = data + offset;
-		if (s_pw_decode.algorithm) {
-			ble_wifimate_password_decode(data + offset, conn_config->password);
-		}
 	}
 
-	return RTK_BT_OK;
+	if (s_decrypt.algorithm_type) {
+		if (conn_config->password_len > BLE_WIFIMATE_DECRYPT_PASSWORD_LEN_MAX) {
+			BT_LOGA("[APP] BLE WiFiMate wifi connect decrypt password len(%d) unsupport\r\n", conn_config->password_len);
+			return RTK_BT_ERR_UNSUPPORTED;
+		}
+		ret = ble_wifimate_server_decrypt(conn_config->password_len, conn_config->password, &conn_config->password_len, decrypt_pw);
+		conn_config->password = decrypt_pw;
+	}
+	return ret;
 }
 
 static uint16_t ble_wifimate_server_write_wifi_connect_hdl(uint16_t conn_handle, uint16_t len, uint8_t *data)
@@ -784,15 +845,16 @@ static uint16_t ble_wifimate_server_write_wifi_connect_hdl(uint16_t conn_handle,
 			BT_LOGD("%s: recv_checksum=%u, cal_checksum=%u\r\n",
 					__func__, s_multi_recv.checksum, checksum);
 			if (checksum == s_multi_recv.checksum) {
+				uint8_t decrypt_pw[BLE_WIFIMATE_DECRYPT_PASSWORD_LEN_MAX] ALIGNMTO(CACHE_LINE_SIZE) = {0};
 				struct wifi_conn_config_t conn_config = {0};
-				BT_LOGA("[APP] BLE WiFiMate conn_handle=%d wifi scan indicate recv checksum pass!\r\n", conn_handle);
-				ret = ble_wifimate_parse_wifi_connect_config(s_multi_recv.total_len, s_multi_recv.data, &conn_config);
+				BT_LOGA("[APP] BLE WiFiMate conn_handle=%d wifi connect recv checksum pass!\r\n", conn_handle);
+				ret = ble_wifimate_parse_wifi_connect_config(s_multi_recv.total_len, s_multi_recv.data, decrypt_pw, &conn_config);
 				if (ret == RTK_BT_OK) {
 					ret = ble_wifimate_wifi_connect(conn_handle, &conn_config);
 				}
 			} else {
 				ret = RTK_BT_FAIL;
-				BT_LOGA("[APP] BLE WiFiMate conn_handle=%d wifi scan indicate recv checksum fail!\r\n", conn_handle);
+				BT_LOGA("[APP] BLE WiFiMate conn_handle=%d wifi connect recv checksum fail!\r\n", conn_handle);
 			}
 			ble_wifimate_char_multi_recv_data_deinit();
 		}
@@ -1023,7 +1085,7 @@ void ble_wifimate_server_disconnect(uint16_t conn_hdl)
 	s_cccd_ind_en_wifi_scan = 0;
 	s_cccd_ind_en_wifi_conn = 0;
 	s_ble_wifimate_state = BLE_WIFIMATE_SERVER_STATE_IDLE;
-	memset(&s_pw_decode, 0, sizeof(s_pw_decode));
+	memset(&s_decrypt, 0, sizeof(s_decrypt));
 
 	ble_wifimate_char_multi_indicate_data_deinit();
 	ble_wifimate_char_multi_recv_data_deinit();
@@ -1034,7 +1096,7 @@ void ble_wifimate_server_deinit(void)
 	s_cccd_ind_en_wifi_scan = 0;
 	s_cccd_ind_en_wifi_conn = 0;
 	s_ble_wifimate_state = BLE_WIFIMATE_SERVER_STATE_IDLE;
-	memset(&s_pw_decode, 0, sizeof(s_pw_decode));
+	memset(&s_decrypt, 0, sizeof(s_decrypt));
 
 	ble_wifimate_char_multi_indicate_data_deinit();
 	ble_wifimate_char_multi_recv_data_deinit();

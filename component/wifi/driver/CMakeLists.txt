@@ -13,18 +13,21 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 
 ameba_list_append(public_includes
-    ${c_CMPT_WIFI_DIR}/common
-    ${c_CMPT_WIFI_DIR}/driver
-    ${c_CMPT_WIFI_DIR}/driver/halcommon
-    ${c_CMPT_WIFI_DIR}/driver/halbtc
-    ${c_CMPT_WIFI_DIR}/driver/phl
-    ${c_CMPT_WIFI_DIR}/driver/core
-    ${c_CMPT_WIFI_DIR}/driver/intf
-    ${c_CMPT_WIFI_DIR}/common/secure
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/halcommon
+    ${CMAKE_CURRENT_SOURCE_DIR}/halbtc
+    ${CMAKE_CURRENT_SOURCE_DIR}/phl
+    ${CMAKE_CURRENT_SOURCE_DIR}/core
+    ${CMAKE_CURRENT_SOURCE_DIR}/intf
+    ${CMAKE_CURRENT_SOURCE_DIR}/core_rom
+    ${CMAKE_CURRENT_SOURCE_DIR}/halcommon_rom
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/halmac
+    ${CMAKE_CURRENT_SOURCE_DIR}/p2p
+    ${CMAKE_CURRENT_SOURCE_DIR}/nan
+    ${CMAKE_CURRENT_SOURCE_DIR}/mesh
+    ${CMAKE_CURRENT_SOURCE_DIR}/wifi_tunnel
     ${c_CMPT_BLUETOOTH_DIR}/driver/bt_inic
-    ${c_CMPT_WIFI_DIR}/whc
-    ${c_CMPT_WIFI_DIR}/whc/whc_dev
-    ${c_CMPT_WIFI_DIR}/whc/whc_host_rtos
 )
 
 ameba_list_append_if(CONFIG_WHC_INTF_SDIO public_includes
@@ -47,86 +50,90 @@ ameba_list_append_if(CONFIG_WHC_INTF_IPC public_includes
 )
 
 ameba_list_append_if(CONFIG_AMEBALITE public_includes
-    ${c_CMPT_WIFI_DIR}/phy_g6/bb
-    ${c_CMPT_WIFI_DIR}/driver/phy_g6/bb/halbb_8720e
-    ${c_CMPT_WIFI_DIR}/driver/phy_g6/rf
-    ${c_CMPT_WIFI_DIR}/driver/rtl8720e
-    ${c_CMPT_WIFI_DIR}/driver/rtl8720e_rom
-    ${c_CMPT_WIFI_DIR}/wifi_fw/amebalite/include
+    ${c_CMPT_WIFI_DIR}/wifi_reg/rtl8720e
+    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf
+    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf/rtl8720e
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb/halbb_8720e
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf/halrf_8720e
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8720e
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8720e_rom
 )
 
 ameba_list_append_if(CONFIG_AMEBADPLUS public_includes
-    ${c_CMPT_WIFI_DIR}/driver/phydm
-    ${c_CMPT_WIFI_DIR}/driver/rtl8721da
-    ${c_CMPT_WIFI_DIR}/driver/rtl8721da_rom
-    ${c_CMPT_WIFI_DIR}/wifi_fw/amebadplus/include
-    ${c_FREERTOS_DIR}/include
-    ${c_FREERTOS_DIR}/portable/GCC/AmebaDplus_KM0
+    ${c_CMPT_WIFI_DIR}/wifi_reg/rtl8721da
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8721da
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8721da_rom
+    ${CMAKE_CURRENT_SOURCE_DIR}/phydm
+    ${CMAKE_CURRENT_SOURCE_DIR}/wifi_tunnel/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/wifi_tunnel/rtl8721da
 )
 
 ameba_list_append_if(CONFIG_AMEBAD public_includes
-    ${c_CMPT_WIFI_DIR}/driver/phydm
-    ${c_CMPT_WIFI_DIR}/driver/rtl8721d
-    ${c_CMPT_WIFI_DIR}/driver/rtl8721d_rom
-    ${c_CMPT_WIFI_DIR}/wifi_fw/amebad/include
-    ${c_FREERTOS_DIR}/include
-    ${c_FREERTOS_DIR}/portable/GCC/AmebaD_KM4/non_secure
-    ${c_FREERTOS_DIR}/portable/GCC/AmebaD_KM4/secure
+    ${c_CMPT_WIFI_DIR}/wifi_reg/rtl8721d
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8721d
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8721d_rom
+    ${CMAKE_CURRENT_SOURCE_DIR}/phydm
 )
 
 ameba_list_append_if(CONFIG_AMEBASMART public_includes
-    ${c_CMPT_FWLIB_DIR}/ap_core
-    ${c_CMPT_WIFI_DIR}/driver/phy_g6
-    ${c_CMPT_WIFI_DIR}/driver/phy_g6/bb
-    ${c_CMPT_WIFI_DIR}/driver/phy_g6/bb/halbb_8730e
-    ${c_CMPT_WIFI_DIR}/driver/phy_g6/rf
-    ${c_CMPT_WIFI_DIR}/driver/rtl8730e
-    ${c_CMPT_WIFI_DIR}/driver/rtl8730e_rom
-    ${c_CMPT_WIFI_DIR}/wifi_fw/amebasmart/include
-    ${c_FREERTOS_DIR}/include/
-    ${c_FREERTOS_DIR}/portable/GCC/AmebaSmart_HP/non_secure
-    ${c_FREERTOS_DIR}/portable/GCC/AmebaSmart_HP/secure
+    ${c_CMPT_WIFI_DIR}/wifi_reg/rtl8730e
+    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf
+    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf/rtl8730e
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8730e_rom
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb/halbb_8730e
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8730e
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6
 )
 
 ameba_list_append_if(CONFIG_AMEBASMARTPLUS public_includes
-    ${c_CMPT_FWLIB_DIR}/ap_core
-    ${c_CMPT_WIFI_DIR}/driver/phy_g6
-    ${c_CMPT_WIFI_DIR}/driver/phy_g6/bb
-    ${c_CMPT_WIFI_DIR}/driver/phy_g6/bb/halbb_8730e
-    ${c_CMPT_WIFI_DIR}/driver/phy_g6/rf
-    ${c_CMPT_WIFI_DIR}/driver/rtl8730e
-    ${c_CMPT_WIFI_DIR}/driver/rtl8730e_rom
-    ${c_CMPT_WIFI_DIR}/wifi_fw/amebasmart/include
-    ${c_FREERTOS_DIR}/include/
-    ${c_FREERTOS_DIR}/portable/GCC/AmebaSmart_HP/non_secure
-    ${c_FREERTOS_DIR}/portable/GCC/AmebaSmart_HP/secure
+    ${c_CMPT_WIFI_DIR}/wifi_reg/rtl8730e
+    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf
+    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf/rtl8730e
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8730e_rom
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb/halbb_8730e
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8730e
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6
 )
 
 ameba_list_append_if(CONFIG_AMEBAGREEN2 public_includes
-    ${c_CMPT_WIFI_DIR}/driver/phy_g6/bb
-    ${c_CMPT_WIFI_DIR}/driver/phy_g6/rf
-    ${c_CMPT_WIFI_DIR}/driver/rtl8720f
-    ${c_CMPT_WIFI_DIR}/driver/rtl8720f_rom
-    ${c_COMPONENT_DIR}/soc/amebagreen2/rom/include
-    ${c_CMPT_WIFI_DIR}/wifi_fw/amebagreen2/include
+    ${c_CMPT_WIFI_DIR}/wifi_reg/rtl7005
+    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf
+    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf/rtl8720f
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb/halbb_8720f
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8720f
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8720f_rom
+    ${CMAKE_CURRENT_SOURCE_DIR}/wifi_tunnel/rtl8720f
 )
 
 ameba_list_append_if(CONFIG_AMEBAPRO3 public_includes
-    ${c_CMPT_WIFI_DIR}/driver/phy_g6/bb
-    ${c_CMPT_WIFI_DIR}/driver/phy_g6/rf
-    ${c_CMPT_WIFI_DIR}/driver/rtl8720f
-    ${c_CMPT_WIFI_DIR}/driver/rtl8720f_rom
-    ${c_COMPONENT_DIR}/soc/amebagreen2/rom/include
-    ${c_CMPT_WIFI_DIR}/wifi_fw/amebagreen2/include
+    ${c_CMPT_WIFI_DIR}/wifi_reg/rtl7005
+    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf
+    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf/rtl8720f
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb/halbb_8720f
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8720f
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8720f_rom
 )
 
 ameba_list_append_if(CONFIG_AMEBAL2 public_includes
-    ${c_CMPT_WIFI_DIR}/driver/phy_g6/bb
-    ${c_CMPT_WIFI_DIR}/driver/phy_g6/rf
-    ${c_CMPT_WIFI_DIR}/driver/rle1331
-    ${c_CMPT_WIFI_DIR}/driver/rle1331_rom
-    ${c_COMPONENT_DIR}/soc/amebaL2/rom/include
-    ${c_CMPT_WIFI_DIR}/wifi_fw/rle1331/include
+    ${c_CMPT_WIFI_DIR}/wifi_reg/rle1331
+    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf
+    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf/rle1331
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb/halbb_6955
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf/halrf_6955
+    ${CMAKE_CURRENT_SOURCE_DIR}/rle1331
+    ${CMAKE_CURRENT_SOURCE_DIR}/rle1331_rom
 )
 
 
@@ -162,9 +169,11 @@ elseif(CONFIG_SINGLE_CORE_WIFI)
     endif()
 endif()
 
-ameba_list_append_if(CONFIG_WLAN public_libraries
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_${release_target_name}.a
-)
+if(CONFIG_WLAN AND (CONFIG_AS_INIC_NP OR CONFIG_SINGLE_CORE_WIFI))
+    ameba_list_append_if(CONFIG_WLAN public_libraries
+        ${c_SDK_LIB_APPLICATION_DIR}/lib_${release_target_name}.a
+    )
+endif()
 
 # Component public part, user config end
 #----------------------------------------#
@@ -192,8 +201,9 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-
+set(CSRC_DRV)
 set(CSRC_PHY)
+set(CSRC_BTC)
 
 include(drv.cmake OPTIONAL)
 include(drv_common.cmake OPTIONAL)
@@ -203,6 +213,54 @@ include(halbtc/btc.cmake OPTIONAL)
 
 ameba_list_append(private_sources ${CSRC_DRV} ${CSRC_PHY} ${CSRC_BTC})
 
+ameba_list_append_if(CONFIG_AMEBALITE private_includes
+    ${c_CMPT_WIFI_DIR}/wifi_fw/amebalite/include
+)
+
+ameba_list_append_if(CONFIG_AMEBADPLUS private_includes
+    ${c_CMPT_WIFI_DIR}/wifi_fw/amebadplus/include
+    ${c_FREERTOS_DIR}/include
+    ${c_FREERTOS_DIR}/portable/GCC/AmebaDplus_KM0
+)
+
+ameba_list_append_if(CONFIG_AMEBAD private_includes
+    ${c_CMPT_WIFI_DIR}/wifi_fw/amebad/include
+    ${c_FREERTOS_DIR}/include
+    ${c_FREERTOS_DIR}/portable/GCC/AmebaD_KM4/non_secure
+    ${c_FREERTOS_DIR}/portable/GCC/AmebaD_KM4/secure
+)
+
+ameba_list_append_if(CONFIG_AMEBASMART private_includes
+    ${c_CMPT_WIFI_DIR}/wifi_fw/amebasmart/include
+    ${c_FREERTOS_DIR}/include/
+    ${c_FREERTOS_DIR}/portable/GCC/AmebaSmart_HP/non_secure
+    ${c_FREERTOS_DIR}/portable/GCC/AmebaSmart_HP/secure
+    ${c_CMPT_FWLIB_DIR}/ap_core
+)
+
+ameba_list_append_if(CONFIG_AMEBASMARTPLUS private_includes
+    ${c_CMPT_WIFI_DIR}/wifi_fw/amebasmart/include
+    ${c_FREERTOS_DIR}/include/
+    ${c_FREERTOS_DIR}/portable/GCC/AmebaSmart_HP/non_secure
+    ${c_FREERTOS_DIR}/portable/GCC/AmebaSmart_HP/secure
+    ${c_CMPT_FWLIB_DIR}/ap_core
+)
+
+ameba_list_append_if(CONFIG_AMEBAGREEN2 private_includes
+    ${c_COMPONENT_DIR}/soc/amebagreen2/rom/include
+    ${c_CMPT_WIFI_DIR}/wifi_fw/amebagreen2/include
+)
+
+ameba_list_append_if(CONFIG_AMEBAPRO3 private_includes
+    ${c_COMPONENT_DIR}/soc/amebagreen2/rom/include
+    ${c_CMPT_WIFI_DIR}/wifi_fw/amebagreen2/include
+)
+
+ameba_list_append_if(CONFIG_AMEBAL2 private_includes
+    ${c_COMPONENT_DIR}/soc/amebaL2/rom/include
+    ${c_CMPT_WIFI_DIR}/wifi_fw/rle1331/include
+)
+
 ameba_list_append(private_definitions COMPIL_LOG_LEVEL=RTK_LOG_INFO)
 
 ameba_list_append_if(CONFIG_MP_INCLUDED private_compile_options -Wno-unused-function)
@@ -211,17 +269,18 @@ ameba_list_append_if(CONFIG_MP_INCLUDED private_compile_options -Wno-unused-func
 #------------------------------#
 
 #WARNING: Select right API based on your component's release/not-release/standalone
-
-###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
-ameba_add_external_app_library(${release_target_name}
-    p_ADD_BUILD_INFO
-    p_SOURCES
-        ${private_sources}
-    p_INCLUDES
-        ${private_includes}
-    p_DEFINITIONS
-        ${private_definitions}
-    p_COMPILE_OPTIONS
-        ${private_compile_options}
-)
+if(CONFIG_WLAN AND (CONFIG_AS_INIC_NP OR CONFIG_SINGLE_CORE_WIFI))
+    ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
+    ameba_add_external_app_library(${release_target_name}
+        p_ADD_BUILD_INFO
+        p_SOURCES
+            ${private_sources}
+        p_INCLUDES
+            ${private_includes}
+        p_DEFINITIONS
+            ${private_definitions}
+        p_COMPILE_OPTIONS
+            ${private_compile_options}
+    )
+endif()
 ##########################################################################################

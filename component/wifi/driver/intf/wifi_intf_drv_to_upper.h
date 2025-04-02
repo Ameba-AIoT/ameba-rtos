@@ -59,7 +59,7 @@ void wifi_set_rom2flash_user_config(void);
 extern int rtw_disconnect(void);
 extern int rtw_joinbss_start_api(struct _rtw_network_info_t *connect_param);
 extern int rtw_ap_start_api(struct _rtw_softap_info_t *softAP_config, unsigned char value);
-extern int rtw_scan_start_api(struct _rtw_scan_param_t *scan_param, unsigned char block);
+extern int rtw_scan_start_api(struct rtw_scan_param *scan_param, unsigned char block);
 extern void rtw_joinbss_by_roaming(struct _rtw_network_info_t *connect_param);
 
 extern int wifi_hal_iwpriv_command(unsigned char wlan_idx, char *cmd, int show_msg);

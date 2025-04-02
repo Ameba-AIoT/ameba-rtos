@@ -56,10 +56,10 @@ void whc_event_wifi_set_mac_address(u32 api_id, u32 *param_buf);
 void whc_event_wifi_set_pmf_mode(u32 api_id, u32 *param_buf);
 void whc_event_wifi_set_lps_enable(u32 api_id, u32 *param_buf);
 void whc_event_wifi_set_sae_status(u32 api_id, u32 *param_buf);
-void whc_event_wifi_fetch_phy_statistic(u32 api_id, u32 *param_buf);
+void whc_event_wifi_fetch_phy_stats(u32 api_id, u32 *param_buf);
 void whc_event_wifi_send_mgnt(u32 api_id, u32 *param_buf);
 void whc_event_wifi_set_EDCA_param(u32 api_id, u32 *param_buf);
-void whc_event_wifi_del_station(u32 api_id, u32 *param_buf);
+void whc_event_wifi_ap_del_client(u32 api_id, u32 *param_buf);
 void whc_event_wifi_iwpriv_info(u32 api_id, u32 *param_buf);
 void whc_event_wifi_ip_update(u32 api_id, u32 *param_buf);
 void whc_event_wifi_ap_switch_ch(u32 api_id, u32 *param_buf);
@@ -106,7 +106,7 @@ void whc_event_p2p_remain_on_ch(u32 api_id, u32 *param_buf);
 void whc_event_get_scan_res(u32 api_id, u32 *param_buf);
 void whc_event_wifi_get_setting(u32 api_id, u32 *param_buf);
 void whc_event_send_eapol(u32 api_id, u32 *param_buf);
-void whc_event_get_assoc_client_list(u32 api_id, u32 *param_buf);
+void whc_event_wifi_ap_get_connected_clients(u32 api_id, u32 *param_buf);
 void whc_event_wpa_4way_rpt(u32 api_id, u32 *param_buf);
 #endif
 

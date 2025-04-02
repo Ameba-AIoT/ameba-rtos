@@ -62,6 +62,22 @@ if(CONFIG_MP_SHRINK)
         rtw_coex_ipc_dev.c
         rtw_coex_ipc_dev_api.c
     )
+    if(CONFIG_AMEBADPLUS)
+        ameba_list_append(private_sources
+            rtk_coex_wl_chip/rtw_coex_wl_chip_rtl8721da.c
+        )
+    elseif(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
+        ameba_list_append(private_sources
+            rtk_coex_wl_chip/rtw_coex_wl_chip_rtl8730e.c
+        )
+    elseif(CONFIG_AMEBALITE)
+        ameba_list_append(private_sources
+            rtk_coex_wl_chip/rtw_coex_wl_chip_rtl8720e.c
+        )
+    elseif(AMEBAGREEN2)
+    else()
+
+    endif()    
 else()
     ameba_list_append(private_sources
         rtk_coex_wl_chip/rtw_coex_wl_chip.c

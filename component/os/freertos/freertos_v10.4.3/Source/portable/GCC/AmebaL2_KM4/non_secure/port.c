@@ -1036,7 +1036,7 @@ void pmu_post_sleep_processing(uint32_t *tick_before_sleep)
 	/* update xTickCount and mark to trigger task list update in xTaskResumeAll */
 	vTaskCompTick(ms_passed);
 
-	RTK_LOGD(NOTAG, "%s sleeped:[%d] ms\n", (SYS_CPUID() == NP_CPU_ID) ? "NP" : "AP", ms_passed);
+	RTK_LOGD(NOTAG, "%s sleeped:[%d] ms\n", (SYS_CPUID() == KM4NS_CPU_ID) ? "KM4NS" : "KM4TZ", ms_passed);
 }
 
 /* NVIC will power off under sleep power gating mode, so we can */

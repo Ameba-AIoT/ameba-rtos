@@ -207,7 +207,7 @@ int wifi_event_handle(unsigned int event_cmd, char *buf, int buf_len, int flags)
 
 	if ((event_cmd >= WIFI_EVENT_MAX && event_cmd <= WIFI_EVENT_INTERNAL_BASE) || event_cmd > WIFI_EVENT_INTERNAL_MAX) {
 		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "invalid evt: %d \n", event_cmd);
-		return RTW_BADARG;
+		return -RTK_ERR_BADARG;
 	}
 
 	wifi_event_handle_internal(event_cmd, buf, buf_len, flags);

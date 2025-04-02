@@ -174,6 +174,12 @@ SECTIONS
 		__psram_heap_buffer_start__ = .;
 	} > KR4_BD_RAM_MP
 
+	.ram_image2_fill :
+	{
+		BYTE(0x00)
+		. = ALIGN(32);
+	} > KR4_BD_RAM_MP_END
+
 	.bluetooth_trace.text :
 	{
 		__btrace_start__ = .;

@@ -408,7 +408,7 @@ void bt_power_off(void)
 	set_reg_value(0x41008208, BIT1, 0);             /* assert BTON reset */
 	osif_delay(5);
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
-	if (!(wifi_is_running(WLAN0_IDX) || wifi_is_running(WLAN1_IDX)))
+	if (!(wifi_is_running(STA_WLAN_INDEX) || wifi_is_running(SOFTAP_WLAN_INDEX)))
 #endif
 	{
 		set_reg_value(0x41008480, BIT5 | BIT6, 0);  /* disable RFAFE (if WIFI active, keep 2'b11) */
@@ -448,7 +448,7 @@ void hci_platform_controller_reset(void)
 bool rtk_bt_pre_enable(void)
 {
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
-	if (!(wifi_is_running(WLAN0_IDX) || wifi_is_running(WLAN1_IDX))) {
+	if (!(wifi_is_running(STA_WLAN_INDEX) || wifi_is_running(SOFTAP_WLAN_INDEX))) {
 		BT_LOGE("WiFi is OFF! Please Restart BT after Wifi on!\r\n");
 		return false;
 	}

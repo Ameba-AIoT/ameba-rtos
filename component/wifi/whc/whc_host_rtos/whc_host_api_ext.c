@@ -140,14 +140,14 @@ int wifi_scan_abort(u8 block)
 
 //----------------------------------------------------------------------------//
 
-int wifi_get_mac_address(int idx, struct _rtw_mac_t *mac, u8 efuse)
+int wifi_get_mac_address(int idx, struct rtw_mac *mac, u8 efuse)
 {
 	int ret = 0;
 	u32 param_buf[3];
 
 	param_buf[0] = idx;
 	param_buf[2] = efuse;
-	whc_host_api_message_send(WHC_API_WIFI_GET_MAC_ADDR, (u8 *)param_buf, 8, (u8 *)mac, sizeof(struct _rtw_mac_t));
+	whc_host_api_message_send(WHC_API_WIFI_GET_MAC_ADDR, (u8 *)param_buf, 8, (u8 *)mac, sizeof(struct rtw_mac));
 
 	return ret;
 }
@@ -174,13 +174,43 @@ u8 wifi_driver_is_mp(void)
 }
 
 //----------------------------------------------------------------------------//
-int wifi_get_associated_client_list(struct _rtw_client_list_t *client_list_buffer)
+int wifi_ap_get_connected_clients(struct _rtw_client_list_t *client_list_buffer)
 {
 	int ret = 0;
 
-	whc_host_api_message_send(WHC_API_WIFI_GET_ASSOCIATED_CLIENT_LIST, NULL, 0, (u8 *)client_list_buffer, sizeof(struct _rtw_client_list_t));
+	whc_host_api_message_send(WHC_API_WIFI_AP_GET_CONNECTED_CLIENTS, NULL, 0, (u8 *)client_list_buffer, sizeof(struct _rtw_client_list_t));
 	return ret;
 }
+
+int wifi_ap_del_client(unsigned char *hwaddr)
+{
+	int ret = 0;
+	u32 param_buf[3];
+
+	param_buf[0] = (u32)IFACE_PORT1;
+	memcpy((void *)(&param_buf[1]), (void *)hwaddr, 6);
+	whc_host_api_message_send(WHC_API_WIFI_AP_DEL_CLIENT, (u8 *)param_buf, 12, (u8 *)&ret, sizeof(ret));
+	return ret;
+
+}
+
+int wifi_ap_switch_chl_and_inform(struct _rtw_csa_parm_t *csa_param)
+{
+	int ret = 0;
+	char *param_buf = rtos_mem_zmalloc(sizeof(struct _rtw_csa_parm_t));
+	if (!param_buf) {
+		return -1;
+	}
+
+	p_ap_channel_switch_callback = csa_param->callback;
+	memcpy(param_buf, (void *)csa_param, sizeof(struct _rtw_csa_parm_t));
+
+	whc_host_api_message_send(WHC_API_WIFI_AP_CH_SWITCH, (u8 *)param_buf, sizeof(struct _rtw_csa_parm_t), (u8 *)&ret, sizeof(ret));
+
+	rtos_mem_free(param_buf);
+	return ret;
+}
+
 //----------------------------------------------------------------------------//
 int wifi_get_setting(unsigned char wlan_idx, struct _rtw_wifi_setting_t *psetting)
 {
@@ -256,11 +286,24 @@ int wifi_set_pmk_cache_enable(unsigned char value)
 	return ret;
 }
 
-int wifi_get_phy_statistic(union _rtw_phy_statistics_t *phy_statistic)
+int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union _rtw_phy_stats_t *phy_stats)
 {
 	int ret = 0;
+	u32 param_buf[4] = {0};
+	u32 len = 0;
 
-	whc_host_api_message_send(WHC_API_WIFI_GET_PHY_STATISTIC, NULL, 0, (u8 *)phy_statistic, sizeof(union _rtw_phy_statistics_t));
+	param_buf[0] = (u32)wlan_idx;
+	len = 4;
+	if (mac_addr) {
+		param_buf[1] = 6;
+		memcpy((void *)&param_buf[2], (void *)mac_addr, 6);
+		len += 10;
+	} else {
+		param_buf[1] = 0;
+		len += 4;
+	}
+
+	whc_host_api_message_send(WHC_API_WIFI_GET_PHY_STATS, (u8 *)param_buf, len, (u8 *)phy_stats, sizeof(union _rtw_phy_stats_t));
 	return ret;
 }
 
@@ -582,35 +625,6 @@ int wifi_get_band_type(u8 *band_type)
 {
 	whc_host_api_message_send(WHC_API_WIFI_GET_BAND_TYPE, NULL, 0, (u8 *)band_type, sizeof(band_type));
 	return RTK_SUCCESS;
-}
-
-int wifi_del_station(unsigned char *hwaddr)
-{
-	int ret = 0;
-	u32 param_buf[3];
-
-	param_buf[0] = (u32)IFACE_PORT1;
-	memcpy((void *)(&param_buf[1]), (void *)hwaddr, 6);
-	whc_host_api_message_send(WHC_API_WIFI_DEL_STA, (u8 *)param_buf, 12, (u8 *)&ret, sizeof(ret));
-	return ret;
-
-}
-
-int wifi_ap_switch_chl_and_inform(struct _rtw_csa_parm_t *csa_param)
-{
-	int ret = 0;
-	char *param_buf = rtos_mem_zmalloc(sizeof(struct _rtw_csa_parm_t));
-	if (!param_buf) {
-		return -1;
-	}
-
-	p_ap_channel_switch_callback = csa_param->callback;
-	memcpy(param_buf, (void *)csa_param, sizeof(struct _rtw_csa_parm_t));
-
-	whc_host_api_message_send(WHC_API_WIFI_AP_CH_SWITCH, (u8 *)param_buf, sizeof(struct _rtw_csa_parm_t), (u8 *)&ret, sizeof(ret));
-
-	rtos_mem_free(param_buf);
-	return ret;
 }
 
 //----------------------------------------------------------------------------//

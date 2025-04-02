@@ -37,7 +37,6 @@
 /* Exported constants --------------------------------------------------------*/
 
 /* AUTO_GEN_START */
-
 /** @defgroup DBG_PORT_Exported_Constants DBG_PORT Exported Constants
  * @{
  */
@@ -163,7 +162,6 @@
 /**
   * @}
   */
-
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */

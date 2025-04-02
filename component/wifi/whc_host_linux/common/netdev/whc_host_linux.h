@@ -82,6 +82,7 @@
 #include "whc_host_wiphy.h"
 #include "wifi_api_types.h"
 #include "wifi_api_event.h"
+#include "wifi_intf_drv_to_app_internal.h"
 #include "whc_host_trx.h"
 #include "ameba_wificfg_common.h"
 
@@ -187,6 +188,34 @@ struct wps_str {
 #define MFPR_BIT BIT(0)
 #define MFPC_BIT BIT(1)
 #define _WEAK           __attribute__ ((weak))
+
+/*cipher suite from 802.11-2016 p884*/
+#define WIFI_CIPHER_SUITE_WEP_40			0x000FAC01
+#define WIFI_CIPHER_SUITE_TKIP				0x000FAC02
+#define WIFI_CIPHER_SUITE_CCMP_128		0x000FAC04
+#define WIFI_CIPHER_SUITE_WEP_104			0x000FAC05
+#define WIFI_CIPHER_SUITE_BIP_CMAC_128	0x000FAC06
+#define WIFI_CIPHER_SUITE_GCMP				0x000FAC08
+#define WIFI_CIPHER_SUITE_GCMP_256		0x000FAC09
+#define WIFI_CIPHER_SUITE_CCMP_256		0x000FAC0A
+#define WIFI_CIPHER_SUITE_BIP_GMAC_128	0x000FAC0B
+#define WIFI_CIPHER_SUITE_BIP_GMAC_256	0x000FAC0C
+#define WIFI_CIPHER_SUITE_BIP_CMAC_256	0x000FAC0D
+
+/* SECCAM sec_type define */
+#define _NO_PRIVACY_	0x0
+#define _WEP40_		0x1
+#define _TKIP_		0x2
+#define _TKIP_WTMIC_	0x3
+#define _AES_		0x4	//_CCMP_128_
+#define _WEP104_	0x5
+#define _SMS4_		0x6	//_WAPI_
+#define _GCMP_		0x7
+#define _GCMP_256_	(_GCMP_ | BIT(3))
+#define _CCMP_256_	(_AES_ | BIT(3))
+#define _GCM_WAPI_	(_SMS4_ | BIT(3))		//_GCM_WAPI_
+#define _BIP_		0x8
+
 /******************************************************************/
 /***************** inline functions for fullmac. *****************/
 /******************************************************************/

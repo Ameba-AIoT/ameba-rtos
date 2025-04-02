@@ -275,12 +275,12 @@ void bt_stack_bap_deinit(void);
 uint16_t bt_stack_cap_act_handle(rtk_bt_cmd_t *p_cmd);
 uint16_t bt_stack_cap_init(void *p_conf);
 void bt_stack_cap_deinit(void);
-#if defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT
+#if defined(RTK_BLE_AUDIO_TMAP_SUPPORT) && RTK_BLE_AUDIO_TMAP_SUPPORT
 uint16_t bt_stack_tmap_act_handle(rtk_bt_cmd_t *p_cmd);
 uint16_t bt_stack_tmap_init(void *p_conf);
 void bt_stack_tmap_deinit(void);
 #endif
-#if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
+#if defined(RTK_BLE_AUDIO_GMAP_SUPPORT) && RTK_BLE_AUDIO_GMAP_SUPPORT
 uint16_t bt_stack_gmap_act_handle(rtk_bt_cmd_t *p_cmd);
 uint16_t bt_stack_gmap_init(void *p_conf);
 void bt_stack_gmap_deinit(void);

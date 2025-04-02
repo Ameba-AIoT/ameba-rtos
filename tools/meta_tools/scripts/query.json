@@ -22,9 +22,7 @@
     },
     "apps": {
         "include": [
-            "amebad_gcc_project/project_km4/src",
-            "amebadplus_gcc_project/project_km4/src",
-            "amebalite_gcc_project/project_km4/src"
+	    "component/example"
         ]
     },
     "devices": {
@@ -35,20 +33,30 @@
         "amebalite": {
             "chip": "AmebaLite",
             "path": "amebalite_gcc_project"
+        },
+        "amebasmart": {
+            "chip": "AmebaSmart",
+            "path": "amebasmart_gcc_project"
         }
     },
     "chips": {
         "AmebaDplus": {
             "core": "Cortex-M33",
-            "target": "project_km4/asdk/make/target_img2_km4.axf",
+            "target": "project_km4/asdk/make/image2/target_img2_km4.axf",
             "toolchain": "asdk-10.3.1",
             "jlinkScript": "utils/jlink_script/AP2_KM4.JLinkScript"
         },
         "AmebaLite": {
             "core": "Cortex-M33",
-            "target": "project_km4/asdk/make/target_img2_km4.axf",
+            "target": "project_km4/asdk/make/image2/target_img2_km4.axf",
             "toolchain": "asdk-10.3.1",
             "jlinkScript": "utils/jlink_script/AP0_KM4.JLinkScript"
+        },
+        "AmebaSmart": {
+            "core": "Cortex-M33",
+            "target": "project_hp/asdk/make/image2/target_img2_hp.axf",
+            "toolchain": "asdk-10.3.1",
+            "jlinkScript": "utils/jlink_script/AP1_KM4.JLinkScript"
         }
     }
 }

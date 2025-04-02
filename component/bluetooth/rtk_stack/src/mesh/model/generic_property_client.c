@@ -191,11 +191,11 @@ static bool generic_property_client_receive(mesh_msg_p pmesh_msg)
                 status_data.src = pmesh_msg->src;
                 status_data.pproperty_ids = NULL;
                 status_data.num_ids = 0;
-				if (value_len > 0) {
-                    // avoid compile warning
-					// status_data.pproperty_ids = pmsg->property_ids;
-					void *pointer = (uint8_t *)pmsg + 1;
-					status_data.pproperty_ids = (uint16_t *)pointer;
+                if (value_len > 0)
+                {
+                    // RTK porting:avoid compile error
+                    void *p = (void *)pmsg->property_ids;
+                    status_data.pproperty_ids = (uint16_t *)p;
                     status_data.num_ids = value_len / 2;
                 }
                 pmodel_info->model_data_cb(pmodel_info, GENERIC_USER_PROPERTIES_CLIENT_STATUS, &status_data);
@@ -238,11 +238,11 @@ static bool generic_property_client_receive(mesh_msg_p pmesh_msg)
                 status_data.src = pmesh_msg->src;
                 status_data.pproperty_ids = NULL;
                 status_data.num_ids = 0;
-				if (value_len > 0) {
-                    // avoid compile warning
-					// status_data.pproperty_ids = pmsg->property_ids;
-					void *pointer = (uint8_t *)pmsg + 1;
-					status_data.pproperty_ids = (uint16_t *)pointer;
+                if (value_len > 0)
+                {
+                    // RTK porting:avoid compile error
+                    void *p = (void *)pmsg->property_ids;
+                    status_data.pproperty_ids = (uint16_t *)p;
                     status_data.num_ids = value_len / 2;
                 }
                 pmodel_info->model_data_cb(pmodel_info, GENERIC_ADMIN_PROPERTIES_CLIENT_STATUS, &status_data);
@@ -286,11 +286,11 @@ static bool generic_property_client_receive(mesh_msg_p pmesh_msg)
                 status_data.src = pmesh_msg->src;
                 status_data.pproperty_ids = NULL;
                 status_data.num_ids = 0;
-				if (value_len > 0) {
-                    // avoid compile warning
-					// status_data.pproperty_ids = pmsg->property_ids;
-					void *pointer = (uint8_t *)pmsg + 1;
-					status_data.pproperty_ids = (uint16_t *)pointer;
+                if (value_len > 0)
+                {
+                    // RTK porting:avoid compile error
+                    void *p = (void *)pmsg->property_ids;
+                    status_data.pproperty_ids = (uint16_t *)p;
                     status_data.num_ids = value_len / 2;
                 }
                 pmodel_info->model_data_cb(pmodel_info, GENERIC_MANUFACTURER_PROPERTIES_CLIENT_STATUS,
@@ -334,11 +334,11 @@ static bool generic_property_client_receive(mesh_msg_p pmesh_msg)
                 status_data.src = pmesh_msg->src;
                 status_data.pproperty_ids = NULL;
                 status_data.num_ids = 0;
-				if (value_len > 0) {
-                    // avoid compile warning
-					// status_data.pproperty_ids = pmsg->property_ids;
-					void *pointer = (uint8_t *)pmsg + 1;
-					status_data.pproperty_ids = (uint16_t *)pointer;
+                if (value_len > 0)
+                {
+                    // RTK porting:avoid compile error
+                    void *p = (void *)pmsg->property_ids;
+                    status_data.pproperty_ids = (uint16_t *)p;
                     status_data.num_ids = value_len / 2;
                 }
                 pmodel_info->model_data_cb(pmodel_info, GENERIC_CLIENT_PROPERTIES_CLIENT_STATUS, &status_data);

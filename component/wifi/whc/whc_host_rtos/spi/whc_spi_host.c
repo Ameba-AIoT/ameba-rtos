@@ -201,6 +201,10 @@ int whc_spi_host_recv_process(void)
 	case WHC_WIFI_EVT_BRIDGE:
 		hdr = (struct whc_bridge_hdr *)recv_msg;
 		whc_bridge_host_pkt_rx_to_user((u8 *)(hdr + 1), hdr->len);
+		break;
+
+	default:
+		break;
 #endif
 	}
 
@@ -631,28 +635,30 @@ void whc_spi_host_send_data(struct whc_buf_info *pbuf)
 
 	DCache_CleanInvalidate(pbuf->buf_addr, SPI_BUFSZ);
 
+	if (pbuf->buf_size > SPI_BUFSZ) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s: len(%d) > SPI_BUFSZ\n\r", __func__, pbuf->buf_size);
+	}
+
 retry:
 	while (GPIO_ReadDataBit(DEV_READY_PIN) == DEV_BUSY) {
 		/* wait for sema*/
 		if (rtos_sema_take(spi_host_priv.dev_rdy_sema, 1000) == RTK_SUCCESS) {
 			if (spi_host_priv.dev_state == DEV_BUSY) {
-				RTK_LOGD(TAG_WLAN_INIC, "%s: wait dev busy timeout, can't send data %x, %d \n\r", __func__, __builtin_return_address(0), spi_host_priv.dev_state);
+				RTK_LOGD(TAG_WLAN_INIC, "%s: wait dev busy timeout, can't send data %d \n\r", __func__, spi_host_priv.dev_state);
 			}
 		} else {
 			RTK_LOGD(TAG_WLAN_INIC, "%s: down sema timeout, can't send data\n\r", __func__);
 		}
 	}
-	rtos_mutex_take(spi_host_priv.dev_lock, MUTEX_WAIT_TIMEOUT);
 
-	if (pbuf->buf_size > SPI_BUFSZ) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s: len(%d) > SPI_BUFSZ\n\r", __func__, pbuf->buf_size);
-	}
+	rtos_mutex_take(spi_host_priv.dev_lock, MUTEX_WAIT_TIMEOUT);
 
 	if (SSI_Busy(WHC_SPI_DEV)) {
 		rtos_mutex_give(spi_host_priv.dev_lock);
 		goto retry;
 	}
 
+	set_host_rdy_pin(HOST_BUSY);
 
 	/* initiate spi transaction */
 	if (!spi_host_priv.txdma_initialized) {
@@ -672,8 +678,6 @@ retry:
 	whc_spi_host_flush_rx_fifo();
 	spi_host_priv.host_recv_state = 1;
 	spi_host_priv.host_tx_state = 1;
-
-	set_host_rdy_pin(HOST_BUSY);
 
 	rtos_critical_enter(RTOS_CRITICAL_WIFI);
 	SSI_SetDmaEnable(WHC_SPI_DEV, ENABLE, SPI_BIT_RDMAE);

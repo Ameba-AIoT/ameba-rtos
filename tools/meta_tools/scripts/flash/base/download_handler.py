@@ -15,12 +15,25 @@ from .flash_utils import *
 from .device_profile import *
 from .json_utils import *
 from .rt_settings import *
+from .spic_addr_mode import *
 
 _RTK_USB_VID = "0BDA"
 
 CmdEsc = b'\x1b\r\n'
 CmdSetBackupRegister = bytes("EW 0x480003C0 0x200\r\n", encoding="utf-8")
 CmdResetIntoDownloadMode = bytes("reboot uartburn\r\n", encoding="utf-8")
+
+OtpSpicAddrModeAddr = 0x02
+OtpSpicAddrModeMask = 0x02
+OtpSpicAddrModePos = 1
+OtpSpicAddrMode4Byte = (1 << OtpSpicAddrModePos)
+OtpSpicAddrMode3Byte = (0 << OtpSpicAddrModePos)
+
+OtpSpicAddrModeAddrForAmebaD = 0x0E
+OtpSpicAddrModeMaskForAmebaD = 0x40
+OtpSpicAddrModePosForAmebaD = 6
+OtpSpicAddrMode4ByteForAmebaD = (1 << OtpSpicAddrModePosForAmebaD)
+OtpSpicAddrMode3ByteForAmebaD = (0 << OtpSpicAddrModePosForAmebaD)
 
 
 class Ameba(object):
@@ -258,7 +271,7 @@ class Ameba(object):
             f'* CmdSetVersion: {(self.device_info.cmd_set_version >> 8) & 0xFF}.{self.device_info.cmd_set_version & 0xFF}')
         if self.device_info.is_boot_from_nand():
             self.logger.info(f'* MemoryType: NAND')
-            self.logger.info(f'* FlashMID: 0x{format(self.device_info.flash_mid, "02X")}')
+            self.logger.info(f'* FlashMID: 0x{format(self.device_info.flash_mid, "02X")}')  # customized, do not modify
             if self.device_info.flash_mid == FlashUtils.NandMfgMicron:
                 self.logger.info(f'* FlashDID: 0x{format(self.device_info.flash_did, "04X")}')
             else:
@@ -575,11 +588,11 @@ class Ameba(object):
                     self.logger.warning(f"NOR flash start address should be aligned to {FlashUtils.NorDefaultBlockSize.value}B.")
                     ret = ErrType.SYS_PARAMETER
                     return ret
-                if not self.is_address_block_aligned(self.erase_info.size_in_byte()):
+                if (self.erase_info.size_in_kbyte != 0xFFFFFFFF) and (not self.is_address_block_aligned(self.erase_info.size_in_byte())):
                     self.logger.warning(f"NOR flash erase size should be aligned to {FlashUtils.NorDefaultBlockSize.value}B.")
                     ret = ErrType.SYS_PARAMETER
                     return ret
-                self.logger.info(f"NOR flash erase: start address={hex(self.erase_info.start_address)}, size={self.erase_info.size_in_Kbyte}KB.")
+                self.logger.info(f"NOR flash erase: start address={hex(self.erase_info.start_address)}, size={self.erase_info.size_in_kbyte}KB.")
             else:
                 if not self.is_address_block_aligned(self.erase_info.start_address):
                     self.logger.warning(f"NAND flash start address should be block size aligned!")
@@ -657,16 +670,20 @@ class Ameba(object):
         chksum = chksum & 0xffffffff
         return chksum
 
+    def erase_flash_chip(self):
+        self.logger.info(f"Chip erase start")  # customized, do not modify
+        ret = self.floader_handler.erase_flash(MemoryInfo.MEMORY_TYPE_NOR, RtkDeviceProfile.DEFAULT_FLASH_START_ADDR,
+                                               0, 0xFFFFFFFF,
+                                               nor_erase_timeout_in_second(0xFFFFFFFF),
+                                               sense=True, force=False)
+        return ret
+
     def download_images(self):
         ret = ErrType.OK
 
         # support chip erase
         if self.chip_erase and (self.memory_type == MemoryInfo.MEMORY_TYPE_NOR):
-            self.logger.info(f"Chip erase start")
-            ret = self.floader_handler.erase_flash(self.memory_type, RtkDeviceProfile.DEFAULT_FLASH_START_ADDR,
-                                                   0, 0xFFFFFFFF,
-                                                   nor_erase_timeout_in_second(0xFFFFFFFF),
-                                                   sense=True, force=False)
+            ret = self.erase_flash_chip()
             if ret != ErrType.OK:
                 self.logger.error(f"Chip erase fail")
                 return ret
@@ -866,6 +883,7 @@ class Ameba(object):
                         divide_then_round_up(block_size, 1024))
                     if erase_addr != last_erase_addr:
                         if (not is_ram) and (erase_addr % block_size) != 0:
+                            # error: # customized, do not modify
                             self.logger.error(
                                 f"Flash erase address align error: addr {hex(erase_addr)} not aligned to block size {hex(block_size)}")
                             ret = ErrType.SYS_PARAMETER
@@ -1024,7 +1042,7 @@ class Ameba(object):
                 ret = self.floader_handler.erase_flash(self.erase_info.memory_type,
                                                        self.erase_info.start_address,
                                                        self.erase_info.end_address,
-                                                       self.erase_info.size_in_byte(),
+                                                       self.erase_info.size_in_kbyte,
                                                        nor_erase_timeout_in_second(
                                                            divide_then_round_up(self.erase_info.size_in_byte(), 1024)),
                                                        sense=True)
@@ -1043,5 +1061,112 @@ class Ameba(object):
         else:
             # TBD
             pass
+
+        return ret
+
+    def set_spic_address_mode(self, mode):
+        ret = ErrType.OK
+        is_amebad = self.profile_info.is_amebad()
+        otp_spic_addr_mode_addr = OtpSpicAddrModeAddrForAmebaD if is_amebad else OtpSpicAddrModeAddr
+        otp_spic_addr_mode_mask = OtpSpicAddrModeMask if is_amebad else OtpSpicAddrModeMask
+        otp_spic_addr_mode_pos = OtpSpicAddrModePosForAmebaD if is_amebad else OtpSpicAddrModePos
+
+        if self.device_info.is_boot_from_nand():
+            return ret
+
+        ret, buf = self.floader_handler.otp_read_logical_map(0, self.profile_info.logical_efuse_len)
+        if ret != ErrType.OK:
+            self.logger.error(f"Fail to read eFuse: {ret}")
+            return
+
+        cfg = buf[otp_spic_addr_mode_addr]
+        if cfg != 0xFF:
+            if ((cfg & otp_spic_addr_mode_mask) >> otp_spic_addr_mode_pos) == mode:
+                self.logger.info(f"No need to change supported flash size")
+                return ErrType.OK
+
+            cfg &= (~otp_spic_addr_mode_mask)
+            cfg |= ((mode << otp_spic_addr_mode_pos) & otp_spic_addr_mode_mask)
+        else:
+            if mode == SpicAddrMode.FOUR_BYTE_MODE.value:
+                cfg = OtpSpicAddrMode4Byte
+            else:
+                self.logger.info(f"No need to change default supported flash size")
+                return ErrType.OK
+
+        # buf[otp_spic_addr_mode_addr] = cfg
+        buf_array = bytearray(buf)
+        buf_array[otp_spic_addr_mode_addr] = cfg
+        buf = bytes(buf_array)
+        self.logger.info(f"Program eFuse to change supported flash size {'>' if (mode == SpicAddrMode.FOUR_BYTE_MODE.value) else '<='}16MB")
+
+        ret = self.floader_handler.otp_write_logical_map(otp_spic_addr_mode_addr, 1, buf)
+        if ret != ErrType.OK:
+            self.logger.error(f"Fail to program eFuse[{otp_spic_addr_mode_addr}]: {ret}")
+            return ret
+        time.sleep(0.01)
+
+        ret, buf = self.floader_handler.otp_read_logical_map(0, self.profile_info.logical_efuse_len)
+        if ret != ErrType.OK:
+            self.logger.error(f"Fail to read eFuse: {ret}")
+            return ret
+
+        cfg = buf[otp_spic_addr_mode_addr]
+        if ((cfg & otp_spic_addr_mode_mask) >> otp_spic_addr_mode_pos) == mode:
+            self.logger.info(f"Program eFuse done")
+            return ErrType.OK
+        else:
+            self.logger.error(f"Fail to verify eFuse[{otp_spic_addr_mode_addr}]")
+            self.logger.error(f"Fail to program eFuse")
+            return ErrType.SYS_CHECKSUM
+
+    def get_spic_address_mode(self):
+        ret = ErrType.OK
+        is_amebad = self.profile_info.is_amebad()
+        otp_spic_addr_mode_addr = OtpSpicAddrModeAddrForAmebaD if is_amebad else OtpSpicAddrModeAddr
+        otp_spic_addr_mode_mask = OtpSpicAddrModeMask if is_amebad else OtpSpicAddrModeMask
+        otp_spic_addr_mode_4byte = OtpSpicAddrMode4ByteForAmebaD if is_amebad else OtpSpicAddrMode4Byte
+        mode = SpicAddrMode.THREE_BYTE_MODE.value
+
+        if self.device_info.is_boot_from_nand():
+            return ret, mode
+
+        ret, buf = self.floader_handler.otp_read_logical_map(0, self.profile_info.logical_efuse_len)
+        if ret != ErrType.OK:
+            self.logger.error(f"Fail to read eFuse: {ret}")
+            return ret, mode
+
+        cfg = buf[otp_spic_addr_mode_addr]
+        if cfg != 0xFF:
+            if (cfg & otp_spic_addr_mode_mask) == otp_spic_addr_mode_4byte:
+                mode = SpicAddrMode.FOUR_BYTE_MODE.value
+                self.logger.info(f"Current supported flash size >16MB")
+            else:
+                self.logger.info(f"Current supported flash size <=16MB")
+        else:
+            self.logger.info(f"Current supported flash size <=16MB as default")
+
+        return ret, mode
+
+    def check_supported_flash_size(self):
+        ret, mode = self.get_spic_address_mode()
+        if ret != ErrType.OK:
+            return ret
+
+        flash_size = self.device_info.flash_capacity // 1024 // 1024  # MB
+        if self.setting.auto_program_spic_addr_mode_4byte == 0:
+            if (mode == SpicAddrMode.THREE_BYTE_MODE.value) and (flash_size > 16):
+                self.logger.warning(f"Flash size: {flash_size}MB, OTP supported flash size <= 16MB")
+                ret = ErrType.SYS_CANCEL
+            if (mode == SpicAddrMode.FOUR_BYTE_MODE.value) and (flash_size <= 16):
+                self.logger.warning(f"Flash size: {flash_size}MB, OTP supported flash size >16MB")
+                ret = ErrType.SYS_CANCEL
+        else:
+            if mode == SpicAddrMode.THREE_BYTE_MODE.value and flash_size > 16:
+                self.logger.warning(f"OTP supports flash size <=16MB, tool will program OTP to support flash size >16MB")
+                ret = self.set_spic_address_mode(SpicAddrMode.FOUR_BYTE_MODE.value)
+            elif mode == SpicAddrMode.FOUR_BYTE_MODE.value and flash_size <= 16:
+                self.logger.warning(f"OTP supports flash size >16MB, tool will program OTP to support flash size <=16MB")
+                ret = self.set_spic_address_mode(SpicAddrMode.THREE_BYTE_MODE.value)
 
         return ret

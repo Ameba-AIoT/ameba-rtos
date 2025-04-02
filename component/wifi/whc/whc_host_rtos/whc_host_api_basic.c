@@ -82,7 +82,7 @@ int wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char block)
 	/* step1: check if there's ongoing connect*/
 	if ((rtw_join_status > RTW_JOINSTATUS_UNKNOWN) && (rtw_join_status < RTW_JOINSTATUS_SUCCESS)) {
 		RTK_LOGD(TAG_WLAN_INIC, "on wifi connect\n");
-		return RTW_BUSY;
+		return -RTK_ERR_BUSY;
 	}
 
 	/*clear for last connect status */
@@ -93,14 +93,14 @@ int wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char block)
 	if (block) {
 		block_param = (struct internal_join_block_param *)rtos_mem_zmalloc(sizeof(struct internal_join_block_param));
 		if (!block_param) {
-			result = (int) RTW_NOMEM;
+			result = -RTK_ERR_NOMEM;
 			rtw_join_status = RTW_JOINSTATUS_FAIL;
 			goto error;
 		}
 		block_param->block = block;
 		rtos_sema_create_static(&block_param->join_sema, 0, 0xFFFFFFFF);
 		if (!block_param->join_sema) {
-			result = (int) RTW_NOMEM;
+			result = -RTK_ERR_NOMEM;
 			rtw_join_status = RTW_JOINSTATUS_FAIL;
 			goto error;
 		}
@@ -166,7 +166,7 @@ int wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char block)
 		if (rtos_sema_take(block_param->join_sema, block_param->join_timeout) != RTK_SUCCESS) {
 			RTK_LOGE(TAG_WLAN_INIC, "Join bss timeout\n");
 			rtw_join_status = RTW_JOINSTATUS_FAIL;
-			result = RTW_TIMEOUT;
+			result = -RTK_ERR_TIMEOUT;
 			goto error;
 		} else {
 			if (rtw_join_status != RTW_JOINSTATUS_SUCCESS) {
@@ -372,7 +372,7 @@ int wifi_stop_ap(void)
 	return ret;
 }
 
-int wifi_scan_networks(struct _rtw_scan_param_t *scan_param, unsigned char block)
+int wifi_scan_networks(struct rtw_scan_param *scan_param, unsigned char block)
 {
 	assert_param(scan_param);
 	int ret = 0;
@@ -397,7 +397,7 @@ int wifi_scan_networks(struct _rtw_scan_param_t *scan_param, unsigned char block
 		buf_len += scan_param->channel_list_num;
 	}
 
-	buf_len += sizeof(struct _rtw_scan_param_t);
+	buf_len += sizeof(struct rtw_scan_param);
 
 	param_buf = rtos_mem_zmalloc(buf_len);
 

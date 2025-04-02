@@ -44,7 +44,7 @@ static int ip_nat_wifi_restart_ap(struct _rtw_softap_info_t *softAP_config)
 	u32 gw;
 	int timeout = 20;
 
-	if (wifi_is_running(WLAN1_IDX)) {
+	if (wifi_is_running(SOFTAP_WLAN_INDEX)) {
 		idx = 1;
 	}
 
@@ -119,8 +119,8 @@ static int ip_nat_avoid_confliction_ip(void)
 	unsigned int inIpVal, inMaskVal, myIpVal, myMaskVal, maskVal;
 	char tmpBufIP[64] = {0}, tmpBufMask[64] = {0};
 
-	wanMask = LwIP_GetMASK(WLAN0_IDX);
-	wanIp =  LwIP_GetIP(WLAN0_IDX);
+	wanMask = LwIP_GetMASK(STA_WLAN_INDEX);
+	wanIp =  LwIP_GetIP(STA_WLAN_INDEX);
 
 	inIp.s_addr = *((unsigned int *) wanIp);
 	inMask.s_addr = *((unsigned int *) wanMask);
@@ -128,8 +128,8 @@ static int ip_nat_avoid_confliction_ip(void)
 	memcpy(&inIpVal, &inIp, 4);
 	memcpy(&inMaskVal, &inMask, 4);
 
-	myLocalMask = LwIP_GetMASK(WLAN1_IDX);
-	myLocalIp =  LwIP_GetIP(WLAN1_IDX);
+	myLocalMask = LwIP_GetMASK(SOFTAP_WLAN_INDEX);
+	myLocalIp =  LwIP_GetIP(SOFTAP_WLAN_INDEX);
 
 	myIp.s_addr = *((unsigned int *) myLocalIp);
 	myMask.s_addr = *((unsigned int *) myLocalMask);
@@ -192,7 +192,7 @@ static int ip_nat_avoid_confliction_ip(void)
 		netif_set_addr(&xnetif[1], ip_2_ip4(&set_ipaddr), ip_2_ip4(&set_netmask), ip_2_ip4(&set_gw));
 
 		struct _rtw_wifi_setting_t setting;
-		wifi_get_setting(WLAN1_IDX, &setting);
+		wifi_get_setting(SOFTAP_WLAN_INDEX, &setting);
 
 		struct _rtw_softap_info_t softAP_config = {0};
 		softAP_config.ssid.len = strlen((char *)setting.ssid);
@@ -221,10 +221,10 @@ static void poll_ip_changed_thread(void *param)
 {
 	(void) param;
 	unsigned int oldip, newip;
-	memcpy(&oldip, LwIP_GetIP(WLAN0_IDX), 4);
+	memcpy(&oldip, LwIP_GetIP(STA_WLAN_INDEX), 4);
 
 	while (1) {
-		memcpy(&newip, LwIP_GetIP(WLAN0_IDX), 4);
+		memcpy(&newip, LwIP_GetIP(STA_WLAN_INDEX), 4);
 		if (0x0 == newip) {
 			goto nextcheck;
 		}

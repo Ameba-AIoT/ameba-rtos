@@ -783,6 +783,7 @@ static int eap_ttls_phase2_request(struct eap_sm *sm,
 								   struct wpabuf **resp)
 {
 	(void)hdr;
+	(void)resp;
 	int res = 0;
 	size_t len;
 	enum phase2_types phase2_type = data->phase2_type;
@@ -1134,6 +1135,9 @@ static int eap_ttls_process_phase2_mschapv2(struct eap_sm *sm,
 		struct ttls_parse_avp *parse)
 {
 	(void)sm;
+	(void)data;
+	(void)ret;
+	(void)parse;
 #ifdef EAP_MSCHAPv2
 	if (parse->mschapv2_error) {
 		wpa_printf(MSG_DEBUG, "EAP-TTLS/MSCHAPV2: Received "

@@ -14,7 +14,7 @@ struct wlan_network;
 struct txdesc_priv;
 struct pkt_attrib;
 struct _rtw_network_info_t;
-struct _rtw_ssid_t;
+struct rtw_ssid;
 
 struct _wifi_rom_to_flash_func_map {
 	/* OS interface */

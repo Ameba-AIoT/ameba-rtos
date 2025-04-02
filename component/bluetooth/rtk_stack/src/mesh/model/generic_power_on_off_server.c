@@ -87,6 +87,7 @@ static bool generic_power_on_off_server_receive(mesh_msg_p pmesh_msg)
 static int32_t generic_power_on_off_server_publish(const mesh_model_info_p pmodel_info,
                                                    bool retrans)
 {
+    // RTK porting:avoid compile warning
 	(void) retrans; //avoid warning
     generic_on_power_up_stat(pmodel_info, 0, 0, get_present_power_on_off(pmodel_info), 0);
     return 0;

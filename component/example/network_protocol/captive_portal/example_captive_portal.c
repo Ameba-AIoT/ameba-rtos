@@ -375,7 +375,7 @@ static void vProcessConnection(void *param);
 extern int wifi_get_setting(unsigned char wlan_idx, struct _rtw_wifi_setting_t *psetting);
 static void LoadWifiSetting(void)
 {
-	unsigned char wlan_idx = WLAN0_IDX;
+	unsigned char wlan_idx = STA_WLAN_INDEX;
 
 	if (wifi_is_running(SOFTAP_WLAN_INDEX)) {
 		//STA_AP_MODE
@@ -495,7 +495,7 @@ int wifi_restart_ap(struct _rtw_softap_info_t *softAP_config)
 
 #ifdef  CONFIG_CONCURRENT_MODE
 	if (idx > 0) {
-		sta_linked = wifi_get_setting(WLAN0_IDX, &setting);
+		sta_linked = wifi_get_setting(STA_WLAN_INDEX, &setting);
 		rtos_time_delay_ms(20);
 		wifi_on(RTW_MODE_STA);
 	} else
@@ -1115,7 +1115,7 @@ static int scan_result_handler(unsigned int scanned_AP_num, void *user_data)
 static int wifi_start_scan(void)
 {
 	RTK_LOGI(NOTAG, "%s\n", __func__);
-	struct _rtw_scan_param_t scan_param;
+	struct rtw_scan_param scan_param;
 	char *scanned_AP_list;
 
 	scanned_AP_list = rtos_mem_malloc(2 * SCAN_AP_LIST_MAX * sizeof(struct rtw_scan_result));
@@ -1125,7 +1125,7 @@ static int wifi_start_scan(void)
 	}
 	memset(scanned_AP_list, 0, 2 * SCAN_AP_LIST_MAX * sizeof(struct rtw_scan_result));
 	memset(scan_result.ap_list, 0, 2 * SCAN_AP_LIST_MAX * sizeof(ap_list_t));
-	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
+	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
 
 	scan_param.scan_user_callback = scan_result_handler;
 	scan_param.max_ap_record_num = 2 * SCAN_AP_LIST_MAX;
@@ -1149,13 +1149,13 @@ static void wifi_scan_thread(void *pvParameters)
 /*get ap security mode from scan list*/
 static int _get_ap_security_mode(IN char *ssid, OUT u32 *security_mode, OUT u8 *channel)
 {
-	struct _rtw_scan_param_t scan_param;
+	struct rtw_scan_param scan_param;
 	struct rtw_scan_result *scanned_ap_info;
 	int scan_cnt = 0;
 	struct rtw_scan_result *scanned_AP_list;
 	int i = 0;
 
-	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
+	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
 	scan_param.ssid = ssid;
 
 	if ((scan_cnt = wifi_scan_networks(&scan_param, 1)) <= 0) {
@@ -1225,7 +1225,7 @@ static void ConnectTargetAP(void)
 	ret = wifi_connect(&connect_param, 0);
 
 	if (ret != RTK_SUCCESS) {
-		if (ret == RTW_CONNECT_INVALID_KEY) {
+		if (ret == -RTK_ERR_WIFI_CONN_INVALID_KEY) {
 			RTK_LOGE(NOTAG, "ERROR:Invalid Key\n");
 		}
 
