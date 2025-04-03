@@ -2,8 +2,7 @@ name: Pull Request on Branch Push
 on:
   push:
     branches:
-    - master_sync_*
-    - release/v1.0_sync_*
+    - '*_sync_*'
 
 jobs:
   auto-pull-request:
