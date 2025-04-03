@@ -15,7 +15,7 @@ u8 reconnect_cnt = 0;
 int user_wifi_connect(void)
 {
 	int ret = 0;
-	struct _rtw_network_info_t connect_param = {0};
+	struct rtw_network_info connect_param = {0};
 
 	/*Connect parameter set*/
 	memcpy(connect_param.ssid.val, test_ssid, strlen(test_ssid));

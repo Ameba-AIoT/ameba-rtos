@@ -147,8 +147,6 @@ class Manager(object):
             print(f"{MAGENTA}Difference between: menuconfig/.config_default.old and menuconfig/.config_default{RESET}")
             self.unified_file_diff(self.config_default_old, self.config_default)
 
-            print("按下[回车] 继续: 忽略Kconfig变更差异，使用当前的.config配置")
-            print("按下[Ctrl+C] 退出: 退出后请运行 menuconfig.py 脚本以重新配置")
             print(f"{YELLOW}Press [Enter] to continue: Skip Kconfig updating and using current .config{RESET}")
             print(f"{YELLOW}Press [CTRL+C] to exit: Run menuconfig.py to reconfiguration after exiting\r\n{RESET}")
 

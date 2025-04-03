@@ -227,7 +227,7 @@ static int whc_fullmac_host_change_beacon(struct wiphy *wiphy, struct net_device
 static int whc_fullmac_host_channel_switch_ops(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_csa_settings *params)
 {
 	int ret;
-	struct _rtw_csa_parm_t *csa_param_vir;
+	struct rtw_csa_parm *csa_param_vir;
 	dma_addr_t csa_param_phy;
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
@@ -235,7 +235,7 @@ static int whc_fullmac_host_channel_switch_ops(struct wiphy *wiphy, struct net_d
 	dev_dbg(global_idev.fullmac_dev, "switch to freq: %d", params->chandef.chan->center_freq);
 	dev_dbg(global_idev.fullmac_dev, "channel switch count: %d", params->count);
 
-	csa_param_vir = rtw_malloc(sizeof(struct _rtw_csa_parm_t), &csa_param_phy);
+	csa_param_vir = rtw_malloc(sizeof(struct rtw_csa_parm), &csa_param_phy);
 	if (!csa_param_vir) {
 		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
@@ -252,7 +252,7 @@ static int whc_fullmac_host_channel_switch_ops(struct wiphy *wiphy, struct net_d
 	ret = whc_fullmac_host_channel_switch(csa_param_phy);
 
 	if (csa_param_vir) {
-		rtw_mfree(sizeof(struct _rtw_csa_parm_t), csa_param_vir, csa_param_phy);
+		rtw_mfree(sizeof(struct rtw_csa_parm), csa_param_vir, csa_param_phy);
 	}
 
 	return ret;
@@ -281,7 +281,7 @@ static int whc_fullmac_host_start_ap_ops(struct wiphy *wiphy, struct net_device 
 	int ret = 0;
 	u8 *buf = NULL, *ptr = NULL;
 	size_t size = 0;
-	struct _rtw_softap_info_t *softAP_config = NULL;
+	struct rtw_softap_info *softAP_config = NULL;
 	char fake_pwd[] = "12345678";
 	u8 elem_num = 0;
 	const struct element *elem, **pelem;
@@ -300,16 +300,16 @@ static int whc_fullmac_host_start_ap_ops(struct wiphy *wiphy, struct net_device 
 		return -EPERM;
 	}
 
-	size = sizeof(struct _rtw_softap_info_t) + (settings->privacy ? strlen(fake_pwd) + 1 : 0);
+	size = sizeof(struct rtw_softap_info) + (settings->privacy ? strlen(fake_pwd) + 1 : 0);
 	ptr = buf = kmalloc(size, GFP_KERNEL);
 	if (!buf) {
 		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
 	}
-	softAP_config = (struct _rtw_softap_info_t *)ptr;
-	ptr += sizeof(struct _rtw_softap_info_t);
+	softAP_config = (struct rtw_softap_info *)ptr;
+	ptr += sizeof(struct rtw_softap_info);
 
-	memset(softAP_config, 0, sizeof(struct _rtw_softap_info_t));
+	memset(softAP_config, 0, sizeof(struct rtw_softap_info));
 
 	memcpy(softAP_config->ssid.val, (u8 *)settings->ssid, settings->ssid_len);
 	softAP_config->ssid.len = settings->ssid_len;

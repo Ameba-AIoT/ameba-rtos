@@ -356,7 +356,7 @@ static int composite_uac_cb_init(void)
   */
 static int composite_uac_cb_deinit(void)
 {
-	usbd_composite_uac_stop();
+	usbd_composite_uac_stop_play();
 	return HAL_OK;
 }
 
@@ -405,9 +405,9 @@ static void example_audio_track_play(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Audio track demo begin\n");
 
-	usbd_composite_uac_audio_cfg_init(&(composite_uac_usr_cb.out), 0, 0);
+	usbd_composite_uac_config(&(composite_uac_usr_cb.out), 0, 0);
 	do {
-		if (usbd_composite_uac_start() == HAL_OK) {
+		if (usbd_composite_uac_start_play() == HAL_OK) {
 			break;
 		}
 	} while (1);
@@ -509,7 +509,7 @@ static void example_audio_track_play(void)
 		}
 	}
 
-	usbd_composite_uac_stop();
+	usbd_composite_uac_stop_play();
 
 	RTAudioTrack_Pause(audio_track);
 	RTAudioTrack_Flush(audio_track);

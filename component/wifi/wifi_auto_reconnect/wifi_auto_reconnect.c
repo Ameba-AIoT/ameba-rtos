@@ -134,10 +134,10 @@ void rtw_reconn_timer_hdl(rtos_timer_t timer_hdl)
 	}
 }
 
-void rtw_reconn_new_conn(struct _rtw_network_info_t *connect_param)
+void rtw_reconn_new_conn(struct rtw_network_info *connect_param)
 {
 	if ((connect_param->by_reconn == 0) && (rtw_reconn.b_enable)) { /*a new wifi connect*/
-		memcpy(&rtw_reconn.conn_param, connect_param, sizeof(struct _rtw_network_info_t));
+		memcpy(&rtw_reconn.conn_param, connect_param, sizeof(struct rtw_network_info));
 		/*fix auto reconnect fail: https://jira.realtek.com/browse/RSWLANDIOT-9031*/
 		rtw_reconn.conn_param.channel = 0;
 		rtw_reconn.conn_param.pscan_option = 0;

@@ -421,7 +421,7 @@ static void composite_usbd_audio_track_play(void)
 	u32 read_dat_len = 0;
 	u32 zero_pkt = 0;
 
-	usbd_composite_uac_cfg(&(composite_uac_usr_cb.out), 0, 0);
+	usbd_composite_uac_config(&(composite_uac_usr_cb.out), 0, 0);
 	do {
 		if (usbd_composite_uac_start_play() == HAL_OK) {
 			break;
@@ -535,7 +535,7 @@ static void composite_usbd_audio_track_play(void)
 		}
 	}
 	// RTK_LOGS(TAG, RTK_LOG_DEBUG,"Audio track exit\n");
-	usbd_composite_uac_stop();
+	usbd_composite_uac_stop_play();
 
 	RTAudioTrack_Pause(audio_track);
 	RTAudioTrack_Flush(audio_track);

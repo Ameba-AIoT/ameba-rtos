@@ -896,7 +896,7 @@ void at_wssend(void *arg)
 
 	if (argv[5] != NULL && (strlen(argv[5]) > 0)) {
 		send_buf = (char *)argv[5];
-		ws_sendData(opcode, length, (u8 *)send_buf, use_mask, ws_config[link_id].ws_client);
+		ws_send_with_opcode(send_buf, length, use_mask, opcode, 1, ws_config[link_id].ws_client);
 	} else {
 		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "data is empty\r\n");
 		error_no = 1;
@@ -927,8 +927,9 @@ void at_wssendraw(void *arg)
 	int error_no = 0;
 	char *argv[MAX_ARGC] = {0};
 	int link_id, length, opcode, use_mask;
-	u8 *send_buf = NULL;
+	char *send_buf = NULL;
 	int frag_len, res;
+	uint8_t is_first_frag = 0;
 
 	UNUSED(argc);
 
@@ -954,8 +955,8 @@ void at_wssendraw(void *arg)
 	}
 
 	length = atoi(argv[2]);
-	if (length <= 0 || length > ws_config[link_id].buffer_size) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "length must be 1~%d\r\n", ws_config[link_id].buffer_size);
+	if (length <= 0) {
+		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "length must be bigger than 0\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -977,7 +978,7 @@ void at_wssendraw(void *arg)
 		opcode = TEXT_FRAME;
 	}
 
-	send_buf = (u8 *)ws_malloc(length <= MAX_TT_BUF_LEN ? length : MAX_TT_BUF_LEN);
+	send_buf = ws_malloc(length <= MAX_TT_BUF_LEN ? length + 1 : MAX_TT_BUF_LEN + 1);
 	if (send_buf == NULL) {
 		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "ws_malloc failed, length = %d\r\n", length);
 		error_no = 2;
@@ -992,15 +993,51 @@ void at_wssendraw(void *arg)
 		goto end;
 	}
 
-	if (length <= MAX_TT_BUF_LEN) {
-		atcmd_tt_mode_get(send_buf, length);
-		ws_sendData(opcode, length, send_buf, use_mask, ws_config[link_id].ws_client);
+	if (ws_config[link_id].buffer_size < MAX_TT_BUF_LEN) {
+		if (length <= ws_config[link_id].buffer_size) {
+			atcmd_tt_mode_get((u8 *)send_buf, length);
+			ws_send_with_opcode(send_buf, length, use_mask, opcode, 1, ws_config[link_id].ws_client);
+		} else {
+			while (length > 0) {
+				frag_len = (length <= ws_config[link_id].buffer_size) ? length : ws_config[link_id].buffer_size;
+				atcmd_tt_mode_get((u8 *)send_buf, frag_len);
+				if (length > ws_config[link_id].buffer_size) {
+					if (is_first_frag == 0) {
+						is_first_frag = 1;
+						ws_send_with_opcode(send_buf, frag_len, use_mask, opcode, 0, ws_config[link_id].ws_client);
+					} else {
+						ws_send_with_opcode(send_buf, frag_len, use_mask, CONTINUATION, 0, ws_config[link_id].ws_client);
+					}
+
+				} else {
+					ws_send_with_opcode(send_buf, frag_len, use_mask, CONTINUATION, 1, ws_config[link_id].ws_client);
+				}
+
+				length -= frag_len;
+			}
+		}
 	} else {
-		while (length > 0) {
-			frag_len = (length <= MAX_TT_BUF_LEN) ? length : MAX_TT_BUF_LEN;
-			atcmd_tt_mode_get(send_buf, frag_len);
-			ws_sendData(opcode, frag_len, send_buf, use_mask, ws_config[link_id].ws_client);
-			length -= frag_len;
+		if (length <= MAX_TT_BUF_LEN) {
+			atcmd_tt_mode_get((u8 *)send_buf, length);
+			ws_send_with_opcode(send_buf, length, use_mask, opcode, 1, ws_config[link_id].ws_client);
+		} else {
+			while (length > 0) {
+				frag_len = (length <= MAX_TT_BUF_LEN) ? length : MAX_TT_BUF_LEN;
+				atcmd_tt_mode_get((u8 *)send_buf, frag_len);
+				if (length > MAX_TT_BUF_LEN) {
+					if (is_first_frag == 0) {
+						is_first_frag = 1;
+						ws_send_with_opcode(send_buf, frag_len, use_mask, opcode, 0, ws_config[link_id].ws_client);
+					} else {
+						ws_send_with_opcode(send_buf, frag_len, use_mask, CONTINUATION, 0, ws_config[link_id].ws_client);
+					}
+
+				} else {
+					ws_send_with_opcode(send_buf, frag_len, use_mask, CONTINUATION, 1, ws_config[link_id].ws_client);
+				}
+
+				length -= frag_len;
+			}
 		}
 	}
 	atcmd_tt_mode_end();
@@ -1395,7 +1432,7 @@ void at_wssrvstart_help(void)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+WSSRVSTART=[<port>],<conn_type>[,<cert_index>]\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<port>:\tport of server\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<port>:\tport of server, must be 0~65535\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<conn_type>:\twhether to use ssl and certificate, must be %d~%d\r\n", WEBSOCKET_SERVER_OVER_TCP,
 			 WEBSOCKET_SERVER_OVER_TLS_VERIFY_CLIENT);
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<cert_index>:\tspecify which set of certificate suite to use in the file system, must be bigger than 0\r\n");
@@ -1425,8 +1462,8 @@ void at_wssrvstart(void *arg)
 	if (argv[1] != NULL && (strlen(argv[1]) > 0)) {
 		port = atoi(argv[1]);
 
-		if (port <= 0 || port > 65535) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "port must be 1~65535\r\n");
+		if (port < 0 || port > 65535) {
+			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "port must be 0~65535\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -1719,7 +1756,7 @@ void at_wssrvsend(void *arg)
 		}
 		memset(send_buf, 0, length + 1);
 		memcpy(send_buf, argv[4], length);
-		ws_server_sendData(opcode, length, send_buf, 0, 1, cli_conn);
+		ws_server_sendData(opcode, length, send_buf, 0, 1, 1, cli_conn);
 	} else {
 		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "data is empty\r\n");
 		error_no = 1;
@@ -1756,6 +1793,7 @@ void at_wssrvsendraw(void *arg)
 	uint8_t *send_buf = NULL;
 	struct wssrv_conn *cli_conn;
 	int frag_len, res;
+	uint8_t is_first_frag = 0;
 
 	UNUSED(argc);
 
@@ -1782,8 +1820,8 @@ void at_wssrvsendraw(void *arg)
 	}
 
 	length = atoi(argv[2]);
-	if (length <= 0 || length > wssrvcfg_tx_size) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "length must be 1~%d\r\n", wssrvcfg_tx_size);
+	if (length <= 0) {
+		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "length must be bigger than 0\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -1814,17 +1852,54 @@ void at_wssrvsendraw(void *arg)
 		goto end;
 	}
 
-	if (length <= MAX_TT_BUF_LEN) {
-		atcmd_tt_mode_get(send_buf, length);
-		ws_server_sendData(opcode, length, send_buf, 0, 1, cli_conn);
+	if (wssrvcfg_tx_size < MAX_TT_BUF_LEN) {
+		if (length <= wssrvcfg_tx_size) {
+			atcmd_tt_mode_get(send_buf, length);
+			ws_server_sendData(opcode, length, send_buf, 0, 1, 1, cli_conn);
+		} else {
+			while (length > 0) {
+				frag_len = (length <= wssrvcfg_tx_size) ? length : wssrvcfg_tx_size;
+				atcmd_tt_mode_get(send_buf, frag_len);
+				if (length > wssrvcfg_tx_size) {
+					if (is_first_frag == 0) {
+						is_first_frag = 1;
+						ws_server_sendData(opcode, frag_len, send_buf, 0, 1, 0, cli_conn);
+					} else {
+						ws_server_sendData(CONTINUATION, frag_len, send_buf, 0, 1, 0, cli_conn);
+					}
+
+				} else {
+					ws_server_sendData(CONTINUATION, frag_len, send_buf, 0, 1, 1, cli_conn);
+				}
+
+				length -= frag_len;
+			}
+		}
 	} else {
-		while (length > 0) {
-			frag_len = (length <= MAX_TT_BUF_LEN) ? length : MAX_TT_BUF_LEN;
-			atcmd_tt_mode_get(send_buf, frag_len);
-			ws_server_sendData(opcode, frag_len, send_buf, 0, 1, cli_conn);
-			length -= frag_len;
+		if (length <= MAX_TT_BUF_LEN) {
+			atcmd_tt_mode_get(send_buf, length);
+			ws_server_sendData(opcode, length, send_buf, 0, 1, 1, cli_conn);
+		} else {
+			while (length > 0) {
+				frag_len = (length <= MAX_TT_BUF_LEN) ? length : MAX_TT_BUF_LEN;
+				atcmd_tt_mode_get(send_buf, frag_len);
+				if (length > MAX_TT_BUF_LEN) {
+					if (is_first_frag == 0) {
+						is_first_frag = 1;
+						ws_server_sendData(opcode, frag_len, send_buf, 0, 1, 0, cli_conn);
+					} else {
+						ws_server_sendData(CONTINUATION, frag_len, send_buf, 0, 1, 0, cli_conn);
+					}
+
+				} else {
+					ws_server_sendData(CONTINUATION, frag_len, send_buf, 0, 1, 1, cli_conn);
+				}
+
+				length -= frag_len;
+			}
 		}
 	}
+
 	atcmd_tt_mode_end();
 end:
 	if (error_no == 0) {

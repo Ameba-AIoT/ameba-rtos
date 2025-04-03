@@ -80,7 +80,7 @@ int wifi_set_tx_cca_enable(unsigned char enable)
 	return -1;
 }
 
-int wifi_ap_switch_chl_and_inform(struct _rtw_csa_parm_t *csa_param)
+int wifi_ap_switch_chl_and_inform(struct rtw_csa_parm *csa_param)
 {
 	UNUSED(csa_param);
 	call_noused = __LINE__;
@@ -94,7 +94,7 @@ int wifi_set_countrycode(char *cntcode)
 	return RTK_FAIL;
 }
 
-int wifi_get_countrycode(struct country_code_table_t *table)
+int wifi_get_countrycode(struct rtw_country_code_table *table)
 {
 	UNUSED(table);
 	call_noused = __LINE__;
@@ -147,7 +147,7 @@ int wifi_get_bt_mac_address(u8 *mac)
 	return -1;
 }
 
-int wifi_csi_config(struct _rtw_csi_action_parm_t *act_param)
+int wifi_csi_config(struct rtw_csi_action_parm *act_param)
 {
 	(void)act_param;
 	call_noused = __LINE__;
@@ -190,14 +190,22 @@ u8 wifi_driver_is_mp(void)
 	return 0;
 }
 
-int wifi_ap_get_connected_clients(struct _rtw_client_list_t *client_list_buf)
+int wifi_ap_get_connected_clients(struct rtw_client_list *client_list_buf)
 {
 	UNUSED(client_list_buf);
 	call_noused = __LINE__;
 	return -1;
 }
 
-int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union _rtw_phy_stats_t *phy_stats)
+int wifi_get_traffic_stats(u8 wlan_idx, union rtw_traffic_stats *traffic_stats)
+{
+	UNUSED(wlan_idx);
+	UNUSED(traffic_stats);
+	call_noused = __LINE__;
+	return -1;
+}
+
+int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union rtw_phy_stats *phy_stats)
 {
 	UNUSED(wlan_idx);
 	UNUSED(mac_addr);
@@ -227,7 +235,7 @@ int wifi_get_autoreconnect(u8 *enable)
 	return -1;
 }
 
-int wifi_add_custom_ie(struct custom_ie *cus_ie, int ie_num)
+int wifi_add_custom_ie(struct rtw_custom_ie *cus_ie, int ie_num)
 {
 	UNUSED(cus_ie);
 	UNUSED(ie_num);
@@ -236,7 +244,7 @@ int wifi_add_custom_ie(struct custom_ie *cus_ie, int ie_num)
 }
 
 
-int wifi_update_custom_ie(struct custom_ie *cus_ie, int ie_index)
+int wifi_update_custom_ie(struct rtw_custom_ie *cus_ie, int ie_index)
 {
 	UNUSED(cus_ie);
 	UNUSED(ie_index);
@@ -253,7 +261,7 @@ int wifi_del_custom_ie(unsigned char wlan_idx)
 	return -1;
 }
 
-int wifi_send_raw_frame(struct raw_frame_desc_t *raw_frame_desc)
+int wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc)
 {
 	UNUSED(raw_frame_desc);
 	call_noused = __LINE__;
@@ -344,14 +352,14 @@ void wifi_wpa_add_key(struct rtw_crypt_info *crypt)
 	call_noused = __LINE__;
 }
 
-void wifi_promisc_enable(u32 enable, struct _promisc_para_t *para)
+void wifi_promisc_enable(u32 enable, struct rtw_promisc_para *para)
 {
 	UNUSED(enable);
 	UNUSED(para);
 	call_noused = __LINE__;
 }
 
-void wifi_speaker_setting(u8 set_type, union speaker_set *settings)
+void wifi_speaker_setting(u8 set_type, union rtw_speaker_set *settings)
 {
 	UNUSED(set_type);
 	UNUSED(settings);

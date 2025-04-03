@@ -459,7 +459,7 @@ int usbd_composite_uac_deinit(void);
   * @param  flag: write buffer handle used to save the data
   * @retval Status
   */
-u8 usbd_composite_uac_cfg(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 flag);
+u8 usbd_composite_uac_config(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 flag);
 
 /**
   * @brief  Usb audio start play

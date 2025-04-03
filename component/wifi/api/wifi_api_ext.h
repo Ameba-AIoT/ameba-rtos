@@ -111,7 +111,7 @@ int wifi_get_autoreconnect(u8 *enable);
  *    - @ref RTK_SUCCESS : The result is successfully got.
  *    - @ref RTK_FAIL : The result is not successfully got.
  */
-int wifi_ap_get_connected_clients(struct _rtw_client_list_t	*client_list_buffer);
+int wifi_ap_get_connected_clients(struct rtw_client_list	*client_list_buffer);
 
 /**
  * @brief  Delete a STA for softap.
@@ -123,12 +123,12 @@ int wifi_ap_del_client(unsigned char *hwaddr);
 
 /**
  * @brief  Switch to a new channel in AP mode and using CSA to inform sta.
- * @param[in]  csa_param: Pointer to the csa config structure _rtw_csa_parm_t.
+ * @param[in]  csa_param: Pointer to the csa config structure rtw_csa_parm.
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL, only indicate whether channel switch cmd is
  * 	successfully set to wifi driver.
  * @note  This function should be used when operating as AP.
  */
-int wifi_ap_switch_chl_and_inform(struct _rtw_csa_parm_t *csa_param);
+int wifi_ap_switch_chl_and_inform(struct rtw_csa_parm *csa_param);
 
 /**
   * @brief  For user to toggle softap whether can be discovered.
@@ -167,7 +167,7 @@ int wifi_set_countrycode(char *cntcode);
  * @param[in]  table: Pointer to the currently obtained country code table
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL
  */
-int wifi_get_countrycode(struct country_code_table_t *table);
+int wifi_get_countrycode(struct rtw_country_code_table *table);
 
 /**
  * @brief  Retrieves the current Media Access Control (MAC) address
@@ -236,7 +236,7 @@ int wifi_set_wireless_mode(u32 wmode);
  * @note Callback return value will decide whether driver need continue process this packet.
  * @return  None.
  */
-void wifi_promisc_enable(u32 enable, struct _promisc_para_t *para);
+void wifi_promisc_enable(u32 enable, struct rtw_promisc_para *para);
 
 /**
  * @brief  Check whether current wifi driver is mp or not.
@@ -259,17 +259,28 @@ u8 wifi_driver_is_mp(void);
 int wifi_get_ccmp_key(u8 wlan_idx, u8 *mac_addr, unsigned char *uncst_key, unsigned char *group_key);
 
 /**
- * @brief  Fetch statistic info about wifi.
+ * @brief  Fetch the traffic statistic about wifi.
+ * @param[in]  wlan_idx: STA_WLAN_INDEX or SOFTAP_WLAN_IDX.
+ * @param[in]  traffic_stats: The location where the statistic
+ * 	info will be stored, for detail info, please refer to union rtw_traffic_stats .
+ * @return
+ *    - @ref RTK_SUCCESS : If the statistic info is successfully get.
+ *    - @ref RTK_FAIL : If the statistic info is not successfully get.
+ */
+int wifi_get_traffic_stats(u8 wlan_idx, union rtw_traffic_stats *traffic_stats);
+
+/**
+ * @brief  Fetch the phy statistic info about wifi.
  * @param[in]  wlan_idx: STA_WLAN_IDX or SOFTAP_WLAN_IDX or COMMON_WLAN_IDX.
  * @param[in]  mac_addr: Client mac addr for softap mode, set to NULL for sta mode and none mode.
  * @param[out]  phy_stats: The location where the statistic
- * 	info will be stored, for detail info, please refer to union _rtw_phy_stats_t .
+ * 	info will be stored, for detail info, please refer to union rtw_phy_stats .
  * @return
  *    - @ref RTK_SUCCESS : If the statistic info is successfully get.
  *    - @ref RTK_FAIL : If the statistic info is not successfully get.
  * @note  The rssi and snr info will only be valid after connected to AP successfully.
  */
-int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union _rtw_phy_stats_t *phy_stats);
+int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union rtw_phy_stats *phy_stats);
 
 /**
  * @brief  Get current remaining number of packets in HW TX buffer.
@@ -317,30 +328,30 @@ int wifi_get_tsf(unsigned char wlan_idx, u64 *tsf);
 /**
  * @brief  Setup custom IE list. (Information Element).
  * @warning  This API can't be executed twice before deleting the previous custom ie list.
- * @param[in]  ie_list: A buffer stores custom IE list, format of custom ie is struct custom_ie. e.g.
+ * @param[in]  ie_list: A buffer stores custom IE list, format of custom ie is struct rtw_custom_ie. e.g.
  * @code
  *  u8 ie1[] = {221, 2, 2, 2};
  *  u8 ie2[] = {221, 2, 1, 1};
- *  struct custom_ie ie_list[2] = {{ie1, BEACON|PROBE_RSP}, {ie2, PROBE_RSP}};
+ *  struct rtw_custom_ie ie_list[2] = {{ie1, BEACON|PROBE_RSP}, {ie2, PROBE_RSP}};
  *  wifi_add_custom_ie(ie_list, 2);
  * @endcode
  * @param[in]  ie_num: The number of custom IEs in ie_list.
  * @return  0 if success, otherwise return -1.
  */
-int wifi_add_custom_ie(struct custom_ie *ie_list, int ie_num);
+int wifi_add_custom_ie(struct rtw_custom_ie *ie_list, int ie_num);
 
 /**
  * @brief  Update the item in WIFI CUSTOM IE(Information Element) list.
  * @param[in]  cus_ie: Pointer to WIFI CUSTOM IE address.
  * @code
  *  u8 ie[] = {221, 2, 1, 3} ;
- *  struct custom_ie ie_update = {ie, PROBE_RSP};
+ *  struct rtw_custom_ie ie_update = {ie, PROBE_RSP};
  *  wifi_update_custom_ie(&ie_update, 2);
  * @endcode
  * @param[in]  ie_index: Index of WIFI CUSTOM IE list.
  * @return  0 if success, otherwise return -1.
  */
-int wifi_update_custom_ie(struct custom_ie *cus_ie, int ie_index);
+int wifi_update_custom_ie(struct rtw_custom_ie *cus_ie, int ie_index);
 
 /**
  * @brief  Delete WIFI CUSTOM IE(Information Element) list.
@@ -351,11 +362,11 @@ int wifi_del_custom_ie(unsigned char wlan_idx);
 
 /**
  * @brief  Send raw frame.
- * @param[in]  raw_frame_desc: The pointer of struct raw_frame_desc_t,
+ * @param[in]  raw_frame_desc: The pointer of struct rtw_raw_frame_desc,
  * 	which describe related information, include the pointer of raw frame and so on.
  * @return  @ref RTK_FAIL or @ref RTK_SUCCESS.
  */
-int wifi_send_raw_frame(struct raw_frame_desc_t *raw_frame_desc);
+int wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc);
 
 /**
  * @brief  Control initial tx rate by different ToS value in IP header.
@@ -399,14 +410,14 @@ int wifi_set_cts2self_duration_and_send(unsigned char wlan_idx, unsigned short d
  * @brief  Set the csi parameters and enable or disable csi func(sta or softap).
  * @param[in]  act_param: A pointer to the param.
  * @code
- *    struct _rtw_csi_action_parm_t act_param = {0};
+ *    struct rtw_csi_action_parm act_param = {0};
  *    act_param.mode = 2;
  *    ...
  *    wifi_csi_config(&act_param);
  * @endcode
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL
  */
-int wifi_csi_config(struct _rtw_csi_action_parm_t *act_param);
+int wifi_csi_config(struct rtw_csi_action_parm *act_param);
 
 /**
  * @brief  Get csi raw data and csi hdr info.
@@ -443,13 +454,13 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
  *                       - \b port: 0 for select port 0's TSFT to trigger twt timer interrupt, 1 for port 1.
  * @return  None.
  */
-void wifi_speaker_setting(u8 set_type, union speaker_set *settings);
+void wifi_speaker_setting(u8 set_type, union rtw_speaker_set *settings);
 
 /**
  * @brief  For user to set tx power.
  * 1. Currently will TX with the set power,  regardless of power by rate and power by limit.
  * 2. Afterwards, it can be extended to specify rate, or power by limit needs to be considered.
- * @param[in]  txpwr_ctrl_info: The pointer of rtw_tx_power_ctl_info_t:
+ * @param[in]  txpwr_ctrl_info: The pointer of rtw_tx_power_ctl_info:
  *                            - \b b_tx_pwr_force_enbale: 1 for enable, 0 for disable.
  *                            - \b tx_pwr_force: Unit 0.25dBm.
  * @note
@@ -459,7 +470,7 @@ void wifi_speaker_setting(u8 set_type, union speaker_set *settings);
  *    - For both, we suggest setting the power not to exceed the power by rate table.
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL
  */
-int wifi_set_tx_power(struct rtw_tx_power_ctl_info_t *txpwr_ctrl_info);
+int wifi_set_tx_power(struct rtw_tx_power_ctl_info *txpwr_ctrl_info);
 
 /**
  * @brief  For user to get tx power.

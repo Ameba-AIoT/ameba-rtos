@@ -43,6 +43,7 @@ void pmu_exec_wakeup_hook_funs(uint32_t nDeviceIdMax);
 uint32_t pmu_set_sleep_type(uint32_t type);
 uint32_t pmu_get_sleep_type(void);
 void pmu_set_max_sleep_time(uint32_t timer_ms);
+void pmu_set_sleep_time_range(uint32_t min_time, uint32_t max_time);
 void pmu_init_wakeup_timer(void);
 void pmu_set_wakeup_timer(uint32_t timeout_ms);
 void pmu_reset_wakeup_timer(void);

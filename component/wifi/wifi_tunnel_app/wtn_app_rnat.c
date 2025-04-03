@@ -54,7 +54,7 @@ static void rnat_wifi_stop_ap(void)
 	wifi_stop_ap();
 }
 
-static int rnat_wifi_restart_ap(struct _rtw_softap_info_t *softAP_config, u32 softap_ip, u32 softap_netmask)
+static int rnat_wifi_restart_ap(struct rtw_softap_info *softAP_config, u32 softap_ip, u32 softap_netmask)
 {
 	u32 addr;
 	u32 netmask;
@@ -70,7 +70,7 @@ static int rnat_wifi_restart_ap(struct _rtw_softap_info_t *softAP_config, u32 so
 	}
 
 	while (1) {
-		struct _rtw_wifi_setting_t softapsetting;
+		struct rtw_wifi_setting softapsetting;
 		wifi_get_setting(SOFTAP_WLAN_INDEX, &softapsetting);
 		if (strlen((const char *)softapsetting.ssid) > 0) {
 			if (strcmp((const char *) softapsetting.ssid, (const char *)softAP_config->ssid.val) == 0) {
@@ -109,8 +109,8 @@ static int rnat_wifi_restart_ap(struct _rtw_softap_info_t *softAP_config, u32 so
 
 static int rnat_avoid_confliction_ip(void)
 {
-	struct _rtw_wifi_setting_t setting;
-	struct _rtw_softap_info_t softAP_config = {0};
+	struct rtw_wifi_setting setting;
+	struct rtw_softap_info softAP_config = {0};
 	u32 wlan1_ip, wlan1_mask, wlan0_ip, wlan0_mask, maskVal;
 	u32 bitmask = 0;
 	int i = 0;
@@ -187,8 +187,8 @@ static void rnat_ap_start_thread(void *param)
 	u32 ip_addr;
 	u32 netmask;
 	u32 gw;
-	struct _rtw_wifi_setting_t wifi_setting = {0};
-	struct _rtw_softap_info_t softap_config = {0};
+	struct rtw_wifi_setting wifi_setting = {0};
+	struct rtw_softap_info softap_config = {0};
 	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 	u8 timeout = 20;
 

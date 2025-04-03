@@ -790,6 +790,11 @@ void at_tickps(void *arg)
 		pmu_acquire_wakelock(PMU_OS);
 	}
 
+	if (_strcmp((const char *)argv[1], "DSLP") == 0) {
+		pmu_release_wakelock(PMU_OS);
+		pmu_release_deepwakelock(PMU_OS);
+	}
+
 	if (_strcmp((const char *)argv[1], "TYPE") == 0) {
 		if (argc < 3) {
 			RTK_LOGW(NOTAG, "[TICKPS] Error parameters\r\n");
@@ -803,6 +808,25 @@ void at_tickps(void *arg)
 		} else {
 			pmu_set_sleep_type(SLEEP_PG);
 		}
+	}
+
+	if (_strcmp((char *)argv[1], "TIMER") == 0) {
+		u32 min_time = 0, max_time = 0;
+		if (argc < 3 || argc > 4) {
+			RTK_LOGW(NOTAG, "[TICKPS] Error parameters\r\n");
+			return;
+		}
+		/*unit: ms*/
+		if (argc >= 4) {
+			max_time =  _strtoul((const char *)(argv[3]), (char **)NULL, 10);
+		}
+		if (argc >= 3) {
+			min_time =  _strtoul((const char *)(argv[2]), (char **)NULL, 10);
+		}
+
+		pmu_set_sleep_time_range(min_time, max_time);
+
+		pmu_release_wakelock(PMU_OS);
 	}
 
 	if (_strcmp((const char *)argv[1], "GET") == 0) {

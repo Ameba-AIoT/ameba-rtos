@@ -70,6 +70,20 @@ void ws_setsockopt_timeout(uint32_t recv_timeout, uint32_t send_timeout, uint32_
 int ws_send(char *message, int message_len, int use_mask, wsclient_context *wsclient);
 
 /*************************************************************************************************
+** Function Name  : ws_send_with_opcode
+** Description    : Create the sending string data and copy to queue
+** Input          : message: the string that send to server(cannot exceeding the MAX_DATA_LEN
+**					message_len: the length of the string
+**					use_mask: 0/1; 1 means using mask for bynary
+**					opcode: frame type
+**					fin_flag: 0/1; 1 means this is the final fragment in a message
+**					wsclient: the websocket client context
+** Return         : 0:send message to queue successfully
+					-1:fail to send message to queue
+**************************************************************************************************/
+int ws_send_with_opcode(char *message, int message_len, int use_mask, uint8_t opcode, uint8_t fin_flag, wsclient_context *wsclient);
+
+/*************************************************************************************************
 ** Function Name  : ws_sendBinary
 ** Description    : Create the sending binary data and copy to queue
 ** Input          : message: the binary that send to server(cannot exceeding the MAX_DATA_LEN

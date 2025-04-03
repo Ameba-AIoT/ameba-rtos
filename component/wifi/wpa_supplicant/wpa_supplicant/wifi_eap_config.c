@@ -69,7 +69,7 @@ void reset_config(void)
 
 void judge_station_disconnect(void)
 {
-	struct _rtw_wifi_setting_t setting = {0};
+	struct rtw_wifi_setting setting = {0};
 
 	wifi_get_setting(STA_WLAN_INDEX, &setting);
 
@@ -256,7 +256,7 @@ int eap_start(char *method)
 int connect_by_open_system(char *target_ssid)
 {
 	int ret;
-	struct _rtw_network_info_t connect_param = {0};
+	struct rtw_network_info connect_param = {0};
 	if (target_ssid != NULL) {
 		memcpy(connect_param.ssid.val, target_ssid, strlen(target_ssid));
 		connect_param.ssid.len = strlen(target_ssid);

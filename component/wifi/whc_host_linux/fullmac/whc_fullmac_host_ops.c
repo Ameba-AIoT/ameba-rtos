@@ -15,8 +15,11 @@ static struct wps_str wps_info;
 static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_device *ndev, const u8 *mac, struct station_info *sinfo)
 {
 	int ret = 0;
-	union _rtw_phy_stats_t *stats_vir = NULL;
+	unsigned char tx_rate;
+	union rtw_phy_stats *phy_stats_vir = NULL;
+	union rtw_traffic_stats *traffic_stats_vir = NULL;
 	dma_addr_t stats_phy;
+	dma_addr_t stats_traffic;
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
@@ -24,20 +27,39 @@ static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_devi
 		dev_dbg(global_idev.fullmac_dev, "Only net device-0 is used for STA.");
 	}
 
-	stats_vir = rtw_malloc(sizeof(union _rtw_phy_stats_t), &stats_phy);
-	if (!stats_vir) {
+	phy_stats_vir = rtw_malloc(sizeof(union rtw_phy_stats), &stats_phy);
+	traffic_stats_vir = rtw_malloc(sizeof(union rtw_traffic_stats), &stats_traffic);
+	if (!phy_stats_vir || !traffic_stats_vir) {
 		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
 	}
 
-	ret = whc_fullmac_host_get_stats(STA_WLAN_INDEX, NULL, stats_phy);
+	ret = whc_fullmac_host_get_phy_stats(STA_WLAN_INDEX, NULL, stats_phy);
 
 	sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
-	sinfo->signal = stats_vir->sta.rssi;
+	sinfo->signal = phy_stats_vir->sta.rssi;
+
+	ret = whc_fullmac_host_get_traffic_stats(STA_WLAN_INDEX, stats_traffic);
 
 	sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
+	tx_rate = traffic_stats_vir->sta.cur_tx_data_rate;
+	if (tx_rate <= MGN_54M) {
+		sinfo->txrate.legacy = (tx_rate / 2) * 10; // bitrate in 100kbit/s
+	} else if ((tx_rate >= MGN_MCS0) && (tx_rate <= MGN_MCS7)) {
+		sinfo->txrate.flags |= RATE_INFO_FLAGS_MCS;
+		sinfo->txrate.mcs = tx_rate - MGN_MCS0;
+	} else if ((tx_rate >= MGN_VHT1SS_MCS0) && (tx_rate <= MGN_VHT1SS_MCS8)) {
+		sinfo->txrate.flags |= RATE_INFO_FLAGS_VHT_MCS;
+		sinfo->txrate.mcs = tx_rate - MGN_VHT1SS_MCS0;
+	} else if ((tx_rate >= MGN_HE1SS_MCS0) && (tx_rate <= MGN_HE1SS_MCS9)) {
+		sinfo->txrate.flags |= RATE_INFO_FLAGS_HE_MCS;
+		sinfo->txrate.mcs = tx_rate - MGN_HE1SS_MCS0;
+	} else {
+		sinfo->txrate.legacy = 540;
+	}
 
-	rtw_mfree(sizeof(union _rtw_phy_stats_t), stats_vir, stats_phy);
+	rtw_mfree(sizeof(union rtw_phy_stats), phy_stats_vir, stats_phy);
+	rtw_mfree(sizeof(union rtw_traffic_stats), traffic_stats_vir, stats_traffic);
 
 	return ret;
 }
@@ -506,7 +528,7 @@ static int whc_fullmac_host_connect_ops(struct wiphy *wiphy, struct net_device *
 	int ret = 0;
 	u8 *buf = NULL, *ptr = NULL;
 	size_t size = 0;
-	struct _rtw_network_info_t *connect_param = NULL;
+	struct rtw_network_info *connect_param = NULL;
 	u32 wlan_idx = 0;
 	/* coherent alloc: revise vir addr will be mapped to phy addr. Send phy addr to rtos by ipc. */
 	u8 pwd[] = "12345678";
@@ -547,16 +569,16 @@ static int whc_fullmac_host_connect_ops(struct wiphy *wiphy, struct net_device *
 	dev_dbg(global_idev.fullmac_dev, "wpa_versions=0x%x, ciphers_pairwise=0x%x, cipher_group=0x%x,, akm_suites=0x%x\n",
 			sme->crypto.wpa_versions, sme->crypto.ciphers_pairwise[0], sme->crypto.cipher_group, sme->crypto.akm_suites[0]);
 
-	size = sizeof(struct _rtw_network_info_t) + (sme->key_len ? sme->key_len : sizeof(pwd));
+	size = sizeof(struct rtw_network_info) + (sme->key_len ? sme->key_len : sizeof(pwd));
 	ptr = buf = kmalloc(size, GFP_KERNEL);
 	if (!buf) {
 		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
 	}
-	connect_param = (struct _rtw_network_info_t *)ptr;
-	ptr += sizeof(struct _rtw_network_info_t);
+	connect_param = (struct rtw_network_info *)ptr;
+	ptr += sizeof(struct rtw_network_info);
 
-	memset(connect_param, 0, sizeof(struct _rtw_network_info_t));
+	memset(connect_param, 0, sizeof(struct rtw_network_info));
 	connect_param->security_type = 0;
 	if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_3) {
 		connect_param->security_type |= WPA3_SECURITY;
@@ -812,7 +834,7 @@ static int whc_fullmac_host_get_channel_ops(struct wiphy *wiphy,
 	u32 wlan_idx = 0;
 	struct net_device *pnetdev = NULL;
 	struct ieee80211_channel *chan = NULL;
-	struct _rtw_wifi_setting_t *setting_vir = NULL;
+	struct rtw_wifi_setting *setting_vir = NULL;
 	dma_addr_t setting_phy;
 	int freq = 0;
 	int ret = 0;
@@ -836,7 +858,7 @@ static int whc_fullmac_host_get_channel_ops(struct wiphy *wiphy,
 			return -EINVAL;
 		}
 
-	setting_vir = rtw_malloc(sizeof(struct _rtw_wifi_setting_t), &setting_phy);
+	setting_vir = rtw_malloc(sizeof(struct rtw_wifi_setting), &setting_phy);
 	if (!setting_vir) {
 		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
@@ -861,7 +883,7 @@ static int whc_fullmac_host_get_channel_ops(struct wiphy *wiphy,
 	chandef->center_freq1 = freq;
 	chandef->chan = chan;
 
-	rtw_mfree(sizeof(struct _rtw_wifi_setting_t), setting_vir, setting_phy);
+	rtw_mfree(sizeof(struct rtw_wifi_setting), setting_vir, setting_phy);
 	return ret;
 }
 

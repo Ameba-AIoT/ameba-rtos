@@ -68,7 +68,7 @@ int wifi_is_running(unsigned char wlan_idx);
  * 	Scan for, associate and authenticate with a Wi-Fi network.
  * @param[in]  connect_param: The pointer of a struct which store the connection
  * 	info, including ssid, bssid, password, etc, for details, please refer to struct
- * 	_rtw_network_info_t in wifi_api_types.h.
+ * 	rtw_network_info in wifi_api_types.h.
  * @param[in]  block:
  *                  - If block is set to 1, it means synchronized wifi connect, and this
  * 	                  API will return until connect is finished;
@@ -92,7 +92,7 @@ int wifi_is_running(unsigned char wlan_idx);
  *      - Please make sure the Wi-Fi is enabled (wifi_on()) before invoking this function.
  *      - If bssid in connect_param is set, then bssid will be used for connect, otherwise ssid is used for connect.
  */
-int wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char block);
+int wifi_connect(struct rtw_network_info *connect_param, unsigned char block);
 
 /**
  * @brief  Disassociates from current Wi-Fi network.
@@ -169,7 +169,7 @@ int wifi_get_scan_records(unsigned int *ap_num, struct rtw_scan_result *ap_list)
 /**
  * @brief  Trigger Wi-Fi driver to start an infrastructure Wi-Fi network.
  * @param[in]  softap_config: The pointer of a struct which store the softAP
- * 	configuration, please refer to struct _rtw_softap_info_t in wifi_api_types.h.
+ * 	configuration, please refer to struct rtw_softap_info in wifi_api_types.h.
  * @warning  If a STA interface is active when this function is called,
  * 	the softAP will start on the same channel as the STA.
  * 	It will NOT use the channel provided!
@@ -181,7 +181,7 @@ int wifi_get_scan_records(unsigned int *ap_num, struct rtw_scan_result *ap_list)
  * 	     with hidden ssid.
  *     - Please make sure the Wi-Fi is enabled (wifi_on()) before invoking this function.
  */
-int wifi_start_ap(struct _rtw_softap_info_t *softap_config);
+int wifi_start_ap(struct rtw_softap_info *softap_config);
 
 /**
  * @brief  Disable Wi-Fi interface-2.
@@ -194,15 +194,15 @@ int wifi_stop_ap(void);
 /**
  * @brief  Get current Wi-Fi setting from driver.
  * @param[in]  wlan_idx: STA_WLAN_IDX or SOFTAP_WLAN_IDX.
- * @param[out]  psetting: Points to the struct _rtw_wifi_setting_t structure which information is gotten.
+ * @param[out]  psetting: Points to the struct rtw_wifi_setting structure which information is gotten.
  * @return
  *    - @ref RTK_SUCCESS : The result is successfully got.
  *    - @ref RTK_FAIL : The result is not successfully got.
- * @note  The mode in struct _rtw_wifi_setting_t corresponding to the wifi mode of current wlan_idx:
- *      - If in station mode, the info in struct _rtw_wifi_setting_t except mode will correspond to the AP it connected,
- *      - If in AP mode, the info in struct _rtw_wifi_setting_t will correspond to the softAP itself.
+ * @note  The mode in struct rtw_wifi_setting corresponding to the wifi mode of current wlan_idx:
+ *      - If in station mode, the info in struct rtw_wifi_setting except mode will correspond to the AP it connected,
+ *      - If in AP mode, the info in struct rtw_wifi_setting will correspond to the softAP itself.
  */
-int wifi_get_setting(unsigned char wlan_idx, struct _rtw_wifi_setting_t *psetting);
+int wifi_get_setting(unsigned char wlan_idx, struct rtw_wifi_setting *psetting);
 
 /** @} End of Basic_Functions group */
 /** @} End of WIFI_Exported_Functions group */

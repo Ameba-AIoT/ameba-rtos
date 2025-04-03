@@ -37,8 +37,8 @@ extern struct table  ip_table;
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
 extern void cmd_wps(int argc, char **argv);
 #endif
-static struct _rtw_network_info_t wifi = {0};
-static struct _rtw_softap_info_t ap = {0};
+static struct rtw_network_info wifi = {0};
+static struct rtw_softap_info ap = {0};
 static unsigned char password[129] = {0};
 static int security = -1;
 
@@ -74,7 +74,7 @@ static void init_wifi_struct(void)
 	security = -1;
 }
 
-static void print_wifi_setting(unsigned char wlan_idx, struct _rtw_wifi_setting_t *pSetting)
+static void print_wifi_setting(unsigned char wlan_idx, struct rtw_wifi_setting *pSetting)
 {
 #ifndef CONFIG_INIC_NO_FLASH
 
@@ -376,7 +376,7 @@ void at_wldisconn(void *arg)
 	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 	int timeout = 20;
 	int error_no = 0, ret = 0;
-	struct _rtw_wifi_setting_t wifi_setting = {0};
+	struct rtw_wifi_setting wifi_setting = {0};
 
 	UNUSED(arg);
 
@@ -620,7 +620,7 @@ AT command process:
 ****************************************************************/
 void at_wlrssi(void *arg)
 {
-	union _rtw_phy_stats_t phy_stats;
+	union rtw_phy_stats phy_stats;
 
 	UNUSED(arg);
 
@@ -683,7 +683,7 @@ void at_wlstartap(void *arg)
 	struct netif *pnetif = &xnetif[SOFTAP_WLAN_INDEX];
 #endif
 	int timeout = 20;
-	struct _rtw_wifi_setting_t *setting = NULL;
+	struct rtw_wifi_setting *setting = NULL;
 
 	if (arg == NULL) {
 		RTK_LOGW(NOTAG, "[+WLSTARTAP] The parameters can not be ignored\r\n");
@@ -862,7 +862,7 @@ void at_wlstartap(void *arg)
 		goto end;
 	}
 
-	setting = rtos_mem_zmalloc(sizeof(struct _rtw_wifi_setting_t));
+	setting = rtos_mem_zmalloc(sizeof(struct rtw_wifi_setting));
 	if (setting == NULL) {
 		RTK_LOGW(NOTAG, "[+WLSTARTAP] memory failed for setting\r\n");
 		error_no = 5;
@@ -941,11 +941,11 @@ void at_wlstate(void *arg)
 	u8 *gw = LwIP_GetGW(0);
 	u8 *msk = LwIP_GetMASK(0);
 #endif
-	struct _rtw_wifi_setting_t *p_wifi_setting = NULL;
+	struct rtw_wifi_setting *p_wifi_setting = NULL;
 
 	UNUSED(arg);
 
-	p_wifi_setting = (struct _rtw_wifi_setting_t *)rtos_mem_zmalloc(sizeof(struct _rtw_wifi_setting_t));
+	p_wifi_setting = (struct rtw_wifi_setting *)rtos_mem_zmalloc(sizeof(struct rtw_wifi_setting));
 	if (p_wifi_setting == NULL) {
 		RTK_LOGW(NOTAG, "[+WLSTATE]: alloc p_wifi_setting fail \r\n");
 		at_printf(ATCMD_ERROR_END_STR, 1);
@@ -977,8 +977,8 @@ void at_wlstate(void *arg)
 #endif
 			if (p_wifi_setting->mode == RTW_MODE_AP || i == 1) {
 				unsigned int client_number;
-				struct _rtw_client_list_t client_info = {0};
-				union _rtw_phy_stats_t phy_stats = {0};
+				struct rtw_client_list client_info = {0};
+				union rtw_phy_stats phy_stats = {0};
 				wifi_ap_get_connected_clients(&client_info);
 
 				at_printf("Associated Client List:\r\n");
@@ -1127,10 +1127,10 @@ void at_wlpromisc(void *arg)
 {
 	int argc = 0, error_no = 0;
 	char *argv[MAX_ARGC] = {0};
-	struct _promisc_para_t promisc_para;
+	struct rtw_promisc_para promisc_para;
 	u32 status;
 
-	memset(&promisc_para, 0, sizeof(struct _promisc_para_t));
+	memset(&promisc_para, 0, sizeof(struct rtw_promisc_para));
 
 	argc = parse_param(arg, argv);
 	if (argc > 1) {

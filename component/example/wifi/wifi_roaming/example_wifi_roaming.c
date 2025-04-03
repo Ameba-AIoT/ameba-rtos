@@ -94,16 +94,16 @@ void wifi_ip_changed_hdl(u8 *buf, u32 buf_len, u32 flags, void *userdata)
 }
 void wifi_roaming_thread(void *param)
 {
-	struct _rtw_wifi_setting_t	setting;
+	struct rtw_wifi_setting	setting;
 	wifi_roaming_ap_t	roaming_ap;
 	u32	i = 0, polling_count = 0;
 	struct rtw_scan_param scan_param;
 	int scanned_ap_num = 0;
-	struct _rtw_network_info_t connect_param;
-	union _rtw_phy_stats_t phy_stats;
+	struct rtw_network_info connect_param;
+	union rtw_phy_stats phy_stats;
 	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
-	memset(&connect_param, 0, sizeof(struct _rtw_network_info_t));
-	memset(&setting, 0, sizeof(struct _rtw_wifi_setting_t));
+	memset(&connect_param, 0, sizeof(struct rtw_network_info));
+	memset(&setting, 0, sizeof(struct rtw_wifi_setting));
 	memset(&roaming_ap, 0, sizeof(wifi_roaming_ap_t));
 	roaming_ap.rssi = -100;
 	u8 autoreconn_en = 0;
