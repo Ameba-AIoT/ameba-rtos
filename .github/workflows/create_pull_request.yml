@@ -3,7 +3,7 @@ on:
   push:
     branches:
     - master_sync_*
-    - release/v1.0_sync_*
+    - release/v1.1_sync_*
 
 jobs:
   auto-pull-request:
@@ -40,7 +40,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         PULL_REQUEST_TOKEN: ${{ secrets.PAT_TOKEN }}
-        PULL_REQUEST_BRANCH: "master"
+        PULL_REQUEST_BRANCH: "release/v1.1"
         PULL_REQUEST_REPOSITORY: Ameba-AIoT/ameba-rtos
         PULL_REQUEST_REVIEWERS: raulcxw
         PASS_IF_EXISTS: true
