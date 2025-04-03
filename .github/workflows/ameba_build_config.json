@@ -4,17 +4,20 @@
                         "B3":"utils/confs_daily_build/lite_cross.conf utils/confs_daily_build/audio_passthrough_km4_ap.conf utils/confs_daily_build/ipc.conf utils/confs_daily_build/trustzone.conf", 
                         "B4":"utils/confs_daily_build/lite_cross.conf utils/confs_daily_build/audio_mixer_kr4_ap.conf utils/confs_daily_build/bt2.conf utils/confs_daily_build/ipc.conf utils/confs_daily_build/trustzone.conf",
                         "B5":"utils/confs_daily_build/mp_shrink.conf utils/confs_daily_build/bt_only.conf",
-                        "B6":"utils/confs_daily_build/mp_expand.conf utils/confs_daily_build/bt_only.conf"},
+                        "B6":"utils/confs_daily_build/mp_expand.conf utils/confs_daily_build/bt_only.conf",
+                        "B7":"utils/confs_daily_build/atcmd.conf"},
           "amebasmart":{"B1":"utils/confs_daily_build/bt1.conf utils/confs_daily_build/audio_mixer_ca32_ap_km4_np.conf utils/confs_daily_build/ipc.conf utils/confs_daily_build/trustzone.conf utils/confs_daily_build/vfs_fatfs.conf utils/confs_daily_build/usb_ap_device.conf utils/confs_daily_build/usb_ap_host.conf utils/confs_daily_build/wifi_all.conf", 
                         "B2":"utils/confs_daily_build/audio_mixer_km4_single_core.conf utils/confs_daily_build/trustzone.conf", 
                         "B3":"utils/confs_daily_build/bt2.conf utils/confs_daily_build/ipc.conf utils/confs_daily_build/audio_passthrough_ca32_ap_km4_np.conf utils/confs_daily_build/trustzone.conf", 
                         "B4":"utils/confs_daily_build/bt3.conf utils/confs_daily_build/audio_passthrough_km4_single_core.conf utils/confs_daily_build/trustzone.conf utils/confs_daily_build/usb_hp_device.conf",
                         "B5":"utils/confs_daily_build/mp_shrink.conf utils/confs_daily_build/bt_en.conf",
-                        "B6":"utils/confs_daily_build/mp_expand.conf utils/confs_daily_build/bt_en.conf"},
+                        "B6":"utils/confs_daily_build/mp_expand.conf utils/confs_daily_build/bt_en.conf",
+                        "B7":"utils/confs_daily_build/atcmd.conf"},
           "amebadplus":{"B1":"utils/confs_daily_build/bt1.conf utils/confs_daily_build/audio_passthrough.conf", 
                         "B2":"utils/confs_daily_build/wifi_all.conf", 
                         "B3":"utils/confs_daily_build/bt2.conf utils/confs_daily_build/usb.conf", 
 			"B4":"utils/confs_daily_build/bt2.conf utils/confs_daily_build/usb.conf", 
                         "B5":"utils/confs_daily_build/bt_en.conf utils/confs_daily_build/mp_shrink.conf",
-                        "B6":"utils/confs_daily_build/bt_en.conf utils/confs_daily_build/mp_expand.conf"}
+                        "B6":"utils/confs_daily_build/bt_en.conf utils/confs_daily_build/mp_expand.conf",
+                        "B7":"utils/confs_daily_build/atcmd.conf"}
 }
