@@ -119,6 +119,9 @@ endif
 ifeq ($(CONFIG_BT_PTS), y)
 	make -C bt_pts all
 endif
+ifeq ($(findstring y, $(CONFIG_BT_WIFIMATE_DEVICE) $(CONFIG_BT_WIFIMATE_CONFIGURATOR)), y)
+	make -C ble_wifimate all
+endif
 
 #*****************************************************************************#
 #                            GENERATE OBJECT FILE                             #
@@ -248,6 +251,9 @@ ifeq ($(CONFIG_BT_A2DP_LE_AUDIO_TMAP), y)
 endif
 ifeq ($(CONFIG_BT_PTS), y)
 	make -C bt_pts clean
+endif
+ifeq ($(findstring y, $(CONFIG_BT_WIFIMATE_DEVICE) $(CONFIG_BT_WIFIMATE_CONFIGURATOR)), y)
+	make -C ble_wifimate clean
 endif
 
 -include $(DEPS)

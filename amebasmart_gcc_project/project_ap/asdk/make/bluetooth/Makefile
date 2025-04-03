@@ -116,6 +116,9 @@ ifeq ($(CONFIG_BT_A2DP_LE_AUDIO_TMAP), y)
 	make -C bt_a2dp_tmap all
 	make -C bt_audio all
 endif
+ifeq ($(findstring y, $(CONFIG_BT_WIFIMATE_DEVICE) $(CONFIG_BT_WIFIMATE_CONFIGURATOR)), y)
+	make -C ble_wifimate all
+endif
 
 #*****************************************************************************#
 #                            GENERATE OBJECT FILE                             #
@@ -240,6 +243,9 @@ ifeq ($(CONFIG_BT_A2DP_LE_AUDIO_TMAP), y)
 	make -C bt_audio clean
 	make -C bt_audio/bt_codec clean
 	make -C bt_audio/audio_sync clean
+endif
+ifeq ($(findstring y, $(CONFIG_BT_WIFIMATE_DEVICE) $(CONFIG_BT_WIFIMATE_CONFIGURATOR)), y)
+	make -C ble_wifimate clean
 endif
 
 -include $(DEPS)
