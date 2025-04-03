@@ -159,7 +159,7 @@ int whc_fullmac_host_scan_abort(u8 block)
 	return ret;
 }
 
-int whc_fullmac_host_event_connect(struct _rtw_network_info_t *connect_param, unsigned char block)
+int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsigned char block)
 {
 	int ret = 0;
 	struct internal_join_block_param *block_param = NULL;
@@ -168,7 +168,7 @@ int whc_fullmac_host_event_connect(struct _rtw_network_info_t *connect_param, un
 	dma_addr_t buf_phy = 0;
 	size_t size = 0;
 	size_t offset = 0;
-	struct _rtw_network_info_t *connect_param_tmp = NULL;
+	struct rtw_network_info *connect_param_tmp = NULL;
 
 	/* step1: check if there's ongoing connect*/
 	if ((global_idev.mlme_priv.rtw_join_status > RTW_JOINSTATUS_UNKNOWN)
@@ -195,15 +195,15 @@ int whc_fullmac_host_event_connect(struct _rtw_network_info_t *connect_param, un
 	}
 
 	/* step3: set connect cmd to driver*/
-	size = sizeof(struct _rtw_network_info_t) + connect_param->password_len;
+	size = sizeof(struct rtw_network_info) + connect_param->password_len;
 	buf_vir = rtw_malloc(size, &buf_phy);
 	if (!buf_vir) {
 		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
 		return -1;
 	}
 	memcpy(buf_vir, connect_param, size);
-	connect_param_tmp = (struct _rtw_network_info_t *)buf_vir;
-	offset += sizeof(struct _rtw_network_info_t);
+	connect_param_tmp = (struct rtw_network_info *)buf_vir;
+	offset += sizeof(struct rtw_network_info);
 	if (connect_param->password_len) {
 		connect_param_tmp->password = (unsigned char *)(buf_phy + offset);
 	}
@@ -302,7 +302,7 @@ int whc_fullmac_host_ap_del_client(u8 wlan_idx, u8 *mac)
 	return ret;
 }
 
-int whc_fullmac_host_start_ap(struct _rtw_softap_info_t *softAP_config)
+int whc_fullmac_host_start_ap(struct rtw_softap_info *softAP_config)
 {
 	int ret = 0;
 	u32 param_buf[2];
@@ -310,17 +310,17 @@ int whc_fullmac_host_start_ap(struct _rtw_softap_info_t *softAP_config)
 	dma_addr_t buf_phy = 0;
 	size_t size = 0;
 	size_t offset = 0;
-	struct _rtw_softap_info_t *softAP_config_tmp = NULL;
+	struct rtw_softap_info *softAP_config_tmp = NULL;
 
-	size = sizeof(struct _rtw_softap_info_t) + softAP_config->password_len;
+	size = sizeof(struct rtw_softap_info) + softAP_config->password_len;
 	buf_vir = rtw_malloc(size, &buf_phy);
 	if (!buf_vir) {
 		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
 		return -1;
 	}
 	memcpy(buf_vir, softAP_config, size);
-	softAP_config_tmp = (struct _rtw_softap_info_t *)buf_vir;
-	offset += sizeof(struct _rtw_softap_info_t);
+	softAP_config_tmp = (struct rtw_softap_info *)buf_vir;
+	offset += sizeof(struct rtw_softap_info);
 	if (softAP_config->password_len) {
 		softAP_config_tmp->password = (unsigned char *)(buf_phy + offset);
 	}
@@ -501,7 +501,22 @@ u32 whc_fullmac_host_update_ip_addr(void)
 	return ret;
 }
 
-int whc_fullmac_host_get_stats(u8 wlan_idx, u8 *mac_addr, dma_addr_t stats_phy)
+int whc_fullmac_host_get_traffic_stats(u8 wlan_idx, dma_addr_t stats_traffic)
+{
+	int ret = 0;
+	u32 param_buf[2];
+
+	param_buf[0] = (u32)wlan_idx;
+
+	/* ptr of statistics to fullfill. */
+	param_buf[1] = (u32)stats_traffic;
+
+	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_GET_TRAFFIC_STATS, param_buf, 2);
+
+	return ret;
+}
+
+int whc_fullmac_host_get_phy_stats(u8 wlan_idx, u8 *mac_addr, dma_addr_t stats_phy)
 {
 	int ret = 0;
 	u32 param_buf[3];
@@ -867,10 +882,10 @@ int whc_fullmac_host_add_custom_ie(const struct element **elem, u8 num, u16 type
 	size_t size = 0;
 	size_t offset = 0;
 	u8 *ie_vir = NULL;
-	struct custom_ie *cus_ie_array = NULL;
+	struct rtw_custom_ie *cus_ie_array = NULL;
 	u8 i = 0;
 
-	size = sizeof(struct custom_ie) * num;
+	size = sizeof(struct rtw_custom_ie) * num;
 	for (i = 0; i < num; i++) {
 		size += elem[i]->datalen + 2;
 	}
@@ -882,8 +897,8 @@ int whc_fullmac_host_add_custom_ie(const struct element **elem, u8 num, u16 type
 		return -ENOMEM;
 	}
 
-	cus_ie_array = (struct custom_ie *)buf_vir;
-	offset += sizeof(struct custom_ie) * num;
+	cus_ie_array = (struct rtw_custom_ie *)buf_vir;
+	offset += sizeof(struct rtw_custom_ie) * num;
 
 	for (i = 0; i < num; i++) {
 		cus_ie_array[i].type = type;
@@ -926,17 +941,17 @@ int whc_fullmac_host_update_custom_ie(u8 *ie, int ie_index, u8 type)
 	dma_addr_t buf_phy = 0;
 	size_t size = 0;
 	size_t offset = 0;
-	struct custom_ie *cus_ie_array = NULL;
+	struct rtw_custom_ie *cus_ie_array = NULL;
 
-	size = sizeof(struct custom_ie) + ie[1] + 2;
+	size = sizeof(struct rtw_custom_ie) + ie[1] + 2;
 	buf_vir = rtw_malloc(size, &buf_phy);
 
 	if (!buf_vir) {
 		dev_err(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
 	}
-	cus_ie_array = (struct custom_ie *)buf_vir;
-	offset += sizeof(struct custom_ie);
+	cus_ie_array = (struct rtw_custom_ie *)buf_vir;
+	offset += sizeof(struct rtw_custom_ie);
 	cus_ie_array->type = type;
 	memcpy(buf_vir + offset, ie, ie[1] + 2);
 	cus_ie_array->ie = (u8 *)(buf_phy + offset);
@@ -1070,12 +1085,12 @@ int whc_fullmac_host_set_country_code(char *cc)
 	return ret;
 }
 
-int whc_fullmac_host_get_country_code(struct country_code_table_t *table)
+int whc_fullmac_host_get_country_code(struct rtw_country_code_table *table)
 {
 	int ret = 0;
 	u32 param_buf[1];
 	dma_addr_t phy_addr = 0;
-	struct country_code_table_t *virt_addr = NULL;
+	struct rtw_country_code_table *virt_addr = NULL;
 	struct device *pdev = global_idev.ipc_dev;
 
 	if (table == NULL) {
@@ -1083,13 +1098,13 @@ int whc_fullmac_host_get_country_code(struct country_code_table_t *table)
 		return -EINVAL;
 	}
 
-	virt_addr = kzalloc(sizeof(struct country_code_table_t), GFP_KERNEL);
+	virt_addr = kzalloc(sizeof(struct rtw_country_code_table), GFP_KERNEL);
 	if (virt_addr == NULL) {
 		dev_err(global_idev.fullmac_dev, "%s: allocate memory failed!\n", __func__);
 		return -EPERM;
 	}
 
-	phy_addr = dma_map_single(pdev, virt_addr, sizeof(struct country_code_table_t), DMA_FROM_DEVICE);
+	phy_addr = dma_map_single(pdev, virt_addr, sizeof(struct rtw_country_code_table), DMA_FROM_DEVICE);
 	if (dma_mapping_error(pdev, phy_addr)) {
 		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
 		kfree(virt_addr);
@@ -1098,8 +1113,8 @@ int whc_fullmac_host_get_country_code(struct country_code_table_t *table)
 
 	param_buf[0] = (u32)phy_addr;
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_GET_COUNTRY_CODE, param_buf, 1);
-	dma_unmap_single(pdev, phy_addr, sizeof(struct country_code_table_t), DMA_FROM_DEVICE);
-	memcpy(table, virt_addr, sizeof(struct country_code_table_t));
+	dma_unmap_single(pdev, phy_addr, sizeof(struct rtw_country_code_table), DMA_FROM_DEVICE);
+	memcpy(table, virt_addr, sizeof(struct rtw_country_code_table));
 	if ((virt_addr->char2[0] == 0xff) && (virt_addr->char2[1] == 0xff)) {
 		table->char2[0] = '0';
 		table->char2[1] = '0';

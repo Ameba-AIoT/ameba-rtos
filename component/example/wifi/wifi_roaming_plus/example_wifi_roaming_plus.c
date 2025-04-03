@@ -214,9 +214,9 @@ static int wlan_fast_connect(struct wifi_roaming_data *data, u8 scan_type)
 	u8 key_id ;
 	int ret;
 	uint32_t wifi_retry_connect = 3; //For fast wifi connect retry
-	struct _rtw_network_info_t wifi = {0};
+	struct rtw_network_info wifi = {0};
 	struct ap_additional_info store_dhcp_info = {0};
-	struct _rtw_wifi_setting_t ap_info = {0};
+	struct rtw_wifi_setting ap_info = {0};
 	struct psk_info PSK_INFO;
 	u8 autoreconn_en = 0;
 
@@ -383,7 +383,7 @@ int  wifi_write_ap_info_to_flash(u32 offer_ip, u32 server_ip)
 	u8 ap_change = 0;
 	u32 tick1 = rtos_time_get_current_system_time_ms();
 	struct wlan_fast_reconnect fast_connect_info;
-	struct _rtw_wifi_setting_t setting;
+	struct rtw_wifi_setting setting;
 	struct psk_info PSK_info;
 	u32 channel = 0;
 
@@ -547,7 +547,7 @@ static u32 wifi_roaming_plus_find_ap_from_scan_buf(char *target_ssid, void *user
 int wifi_roaming_scan_one_channel(wifi_roaming_ap_t	roaming_ap, u32 retry)
 {
 	int cur_rssi, rssi_delta;
-	union _rtw_phy_stats_t phy_stats;
+	union rtw_phy_stats phy_stats;
 	struct rtw_scan_param scan_param;
 	int scanned_ap_num = 0;
 
@@ -575,12 +575,12 @@ int wifi_roaming_scan_one_channel(wifi_roaming_ap_t	roaming_ap, u32 retry)
 int wifi_roaming_scan(struct wifi_roaming_data  read_data, u32 retry)
 {
 	wifi_roaming_ap_t	roaming_ap;
-	struct _rtw_wifi_setting_t	setting;
+	struct rtw_wifi_setting	setting;
 	channel_plan_t channel_plan_temp = roaming_channel_plan;
 	u8 ch = 0, ch_num;
 	u8 first_5g = 0;
 
-	memset(&setting, 0, sizeof(struct _rtw_wifi_setting_t));
+	memset(&setting, 0, sizeof(struct rtw_wifi_setting));
 	memset(&roaming_ap, 0, sizeof(wifi_roaming_ap_t));
 	roaming_ap.rssi = -100;
 
@@ -681,7 +681,7 @@ void wifi_roaming_plus_thread(void *param)
 	(void)param;
 	ROAMING_DBG("\n %s()\n", __func__);
 	signed char ap_rssi;
-	union _rtw_phy_stats_t phy_stats;
+	union rtw_phy_stats phy_stats;
 	u32 scan_retry = 0;
 	u32	polling_count = 0;
 	u32 ap_valid = AP_VALID_TIME;

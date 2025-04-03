@@ -16,6 +16,9 @@ static uint32_t deepwakelock     = DEFAULT_DEEP_WAKELOCK;
 
 uint32_t system_can_yield = 1; /* default is can */
 
+static uint32_t timer_min_sleep_time = 0;
+static uint32_t timer_max_sleep_time = 0;
+
 #ifdef CONFIG_ARM_CORE_CM4
 #define PMC_TIMER_DEV PMCTIMER_DEV0
 #define PMC_TIMER_IRQ PMC_TIMER0_IRQ
@@ -215,6 +218,11 @@ void pmu_pre_sleep_processing(uint32_t *tick_before_sleep)
 		sleep_param.sleep_time = 0;// do not wake on system schedule tick
 		sleep_param.dlps_enable = ENABLE;
 	} else {
+		if (timer_max_sleep_time > timer_min_sleep_time) {
+			max_sleep_time = _rand() % (timer_max_sleep_time - timer_min_sleep_time + 1) + timer_min_sleep_time;
+		} else if (timer_min_sleep_time != 0) {
+			max_sleep_time = timer_min_sleep_time;
+		}
 		sleep_param.sleep_time = max_sleep_time;//*expected_idle_time;
 		max_sleep_time = 0;
 		sleep_param.dlps_enable = DISABLE;
@@ -272,6 +280,12 @@ uint32_t pmu_get_sleep_type(void)
 void pmu_set_max_sleep_time(uint32_t timer_ms)
 {
 	max_sleep_time = timer_ms;
+}
+
+void pmu_set_sleep_time_range(uint32_t min_time, uint32_t max_time)
+{
+	timer_min_sleep_time = min_time;
+	timer_max_sleep_time = max_time;
 }
 
 u32 pmc_wakeuptimer_int_hdl(UNUSED_WARN_DIS void *Data)

@@ -30,13 +30,13 @@ extern void ip_nat_sync_dns_serever_data(void);
 
 int wifi_repeater_ap_config_complete = 0;
 
-static struct _rtw_softap_info_t rptap = {0};
+static struct rtw_softap_info rptap = {0};
 char *rptssid = "AmebaRPT";
 char *rptpassword = "12345678";	// NULL for RTW_SECURITY_OPEN
 unsigned char rptchannel = 6;
 static const char *const TAG = "WIFI_NAT_REPEATER";
 
-static int ip_nat_wifi_restart_ap(struct _rtw_softap_info_t *softAP_config)
+static int ip_nat_wifi_restart_ap(struct rtw_softap_info *softAP_config)
 {
 	unsigned char idx = 0;
 	u32 addr;
@@ -72,7 +72,7 @@ static int ip_nat_wifi_restart_ap(struct _rtw_softap_info_t *softAP_config)
 	}
 
 	while (1) {
-		struct _rtw_wifi_setting_t softapsetting;
+		struct rtw_wifi_setting softapsetting;
 		wifi_get_setting(SOFTAP_WLAN_INDEX, &softapsetting);
 		if (strlen((const char *)softapsetting.ssid) > 0) {
 			if (strcmp((const char *) softapsetting.ssid, (const char *)softAP_config->ssid.val) == 0) {
@@ -191,10 +191,10 @@ static int ip_nat_avoid_confliction_ip(void)
 		IP4_ADDR(ip_2_ip4(&set_gw), iptab[0], iptab[1], iptab[2], iptab[3]);
 		netif_set_addr(&xnetif[1], ip_2_ip4(&set_ipaddr), ip_2_ip4(&set_netmask), ip_2_ip4(&set_gw));
 
-		struct _rtw_wifi_setting_t setting;
+		struct rtw_wifi_setting setting;
 		wifi_get_setting(SOFTAP_WLAN_INDEX, &setting);
 
-		struct _rtw_softap_info_t softAP_config = {0};
+		struct rtw_softap_info softAP_config = {0};
 		softAP_config.ssid.len = strlen((char *)setting.ssid);
 		memcpy(softAP_config.ssid.val, setting.ssid, softAP_config.ssid.len);
 		softAP_config.password = setting.password;
@@ -301,7 +301,7 @@ static void example_wlan_repeater_thread(void *param)
 	RTK_LOGI(TAG, "\n\r[WLAN_REPEATER_EXAMPLE] Check AP running\n");
 	int timeout = 20;
 	while (1) {
-		struct _rtw_wifi_setting_t setting;
+		struct rtw_wifi_setting setting;
 		wifi_get_setting(SOFTAP_WLAN_INDEX, &setting);
 		if (strlen((const char *)setting.ssid) > 0) {
 			if (strcmp((const char *) setting.ssid, (const char *)rptap.ssid.val) == 0) {

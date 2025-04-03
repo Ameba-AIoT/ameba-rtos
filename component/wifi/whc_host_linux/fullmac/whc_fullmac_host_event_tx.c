@@ -192,7 +192,7 @@ int whc_fullmac_host_scan_abort(u8 block)
 	return ret;
 }
 
-int whc_fullmac_host_event_connect(struct _rtw_network_info_t *connect_param, unsigned char block)
+int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsigned char block)
 {
 	int ret = 0;
 	struct internal_join_block_param *block_param = NULL;
@@ -373,7 +373,7 @@ int whc_fullmac_host_ap_del_client(u8 wlan_idx, u8 *mac)
 	return ret;
 }
 
-int whc_fullmac_host_start_ap(struct _rtw_softap_info_t *softAP_config)
+int whc_fullmac_host_start_ap(struct rtw_softap_info *softAP_config)
 {
 	int ret = 0;
 	u32 size;
@@ -519,7 +519,26 @@ u32 whc_fullmac_host_update_ip_addr(void)
 	return ret;
 }
 
-int whc_fullmac_host_get_stats(u8 wlan_idx, u8 *mac_addr, dma_addr_t stats_addr)
+int whc_fullmac_host_get_traffic_stats(u8 wlan_idx, dma_addr_t traffic_stats_addr)
+{
+	int ret = 0;
+	u32 size;
+	u32 *param;
+
+	size = 1 * sizeof(u32);
+
+	param = (u32 *)kzalloc(size, GFP_KERNEL);
+
+	param[0] = (u32)wlan_idx;
+
+	whc_fullmac_host_send_event(WHC_API_WIFI_GET_TRAFFIC_STATS, (u8 *)param, size, (u8 *)traffic_stats_addr, sizeof(union rtw_traffic_stats));
+
+	kfree((void *)param);
+
+	return ret;
+}
+
+int whc_fullmac_host_get_phy_stats(u8 wlan_idx, u8 *mac_addr, dma_addr_t phy_stats_addr)
 {
 	int ret = 0;
 	u32 size, mac_len = 0;
@@ -540,7 +559,7 @@ int whc_fullmac_host_get_stats(u8 wlan_idx, u8 *mac_addr, dma_addr_t stats_addr)
 		memcpy((void *)(param + 2), mac_addr, ETH_ALEN);
 	}
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_GET_PHY_STATS, (u8 *)param, size, (u8 *)stats_addr, sizeof(union _rtw_phy_stats_t));
+	whc_fullmac_host_send_event(WHC_API_WIFI_GET_PHY_STATS, (u8 *)param, size, (u8 *)phy_stats_addr, sizeof(union rtw_phy_stats));
 
 	kfree((void *)param);
 
@@ -554,7 +573,7 @@ int whc_fullmac_host_get_setting(unsigned char wlan_idx, dma_addr_t setting_addr
 
 	param_buf[0] = wlan_idx;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_GET_SETTING, (u8 *)param_buf, sizeof(param_buf), (u8 *)setting_addr, sizeof(struct _rtw_wifi_setting_t));
+	whc_fullmac_host_send_event(WHC_API_WIFI_GET_SETTING, (u8 *)param_buf, sizeof(param_buf), (u8 *)setting_addr, sizeof(struct rtw_wifi_setting));
 
 	return ret;
 }
@@ -563,7 +582,7 @@ int whc_fullmac_host_channel_switch(dma_addr_t csa_param_addr)
 {
 	int ret = 0;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_AP_CH_SWITCH, (u8 *)csa_param_addr, sizeof(struct _rtw_csa_parm_t), (u8 *)&ret, sizeof(int));
+	whc_fullmac_host_send_event(WHC_API_WIFI_AP_CH_SWITCH, (u8 *)csa_param_addr, sizeof(struct rtw_csa_parm), (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
@@ -965,7 +984,7 @@ int whc_fullmac_host_set_country_code(char *cc)
 	return ret;
 }
 
-int whc_fullmac_host_get_country_code(struct country_code_table_t *table)
+int whc_fullmac_host_get_country_code(struct rtw_country_code_table *table)
 {
 	int ret = 0;
 
@@ -974,7 +993,7 @@ int whc_fullmac_host_get_country_code(struct country_code_table_t *table)
 		return -EINVAL;
 	}
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_GET_COUNTRY_CODE, NULL, 0, (u8 *)table, sizeof(struct country_code_table_t));
+	whc_fullmac_host_send_event(WHC_API_WIFI_GET_COUNTRY_CODE, NULL, 0, (u8 *)table, sizeof(struct rtw_country_code_table));
 
 	if ((table->char2[0] == 0xff) && (table->char2[1] == 0xff)) {
 		table->char2[0] = '0';

@@ -113,7 +113,7 @@ void *ws_malloc(unsigned int size);
 void ws_free(void *buf);
 int ws_client_handshake(wsclient_context *wsclient);
 int ws_check_handshake(wsclient_context *wsclient);
-int ws_sendData(uint8_t type, size_t message_size, uint8_t *message, int useMask, wsclient_context *wsclient);
+int ws_sendData(uint8_t type, size_t message_size, uint8_t *message, int useMask, uint8_t fin_flag, wsclient_context *wsclient);
 /*******************************************************************/
 
 /*************Functions used by wsclient without SSL****************/

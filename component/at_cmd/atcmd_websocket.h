@@ -68,7 +68,7 @@ enum CONNECTION_TYPE_SERVER {
 };
 
 #define MAX_SERVER_PING_INTERVAL           7200 //send interval of ping of server in seconds
-#define MAX_SERVER_CONN                    MEMP_NUM_NETCONN
+#define MAX_SERVER_CONN                    3
 #define MAX_SERVER_IDLE_TIMEOUT            7200 //the timeout if there is no data between server and client in seconds
 #define MAX_SERVER_TX_SIZE                 (16 * 1024)
 #define MAX_SERVER_RX_SIZE                 (16 * 1024)
@@ -136,7 +136,7 @@ extern struct wssrv_conn *ws_server_get_conn_info(int conn_no);
 extern void ws_server_sendText(char *message, size_t message_len, int use_mask, struct wssrv_conn *conn);
 extern void ws_server_sendBinary(uint8_t *message, size_t message_len, int use_mask, struct wssrv_conn *conn);
 extern void ws_server_sendClose(struct wssrv_conn *conn);
-extern void ws_server_sendData(uint8_t type, size_t message_size, uint8_t *message, int useMask, uint8_t send_mode, struct wssrv_conn *conn);
+extern void ws_server_sendData(uint8_t type, size_t message_size, uint8_t *message, int useMask, uint8_t send_mode, uint8_t fin_flag, struct wssrv_conn *conn);
 extern int ws_server_get_close_reason(struct wssrv_conn *conn);
 extern void ws_server_set_close_reason(struct wssrv_conn *conn, int reason);
 

@@ -640,8 +640,8 @@ static uint16_t ble_wifimate_server_indicate_wifi_conn_state(uint16_t conn_handl
 static uint16_t ble_wifimate_wifi_connect(uint16_t conn_handle, struct wifi_conn_config_t *conn_config)
 {
 	int ret = 0;
-	struct _rtw_network_info_t wifi;
-	struct _rtw_wifi_setting_t setting = {0};
+	struct rtw_network_info wifi;
+	struct rtw_wifi_setting setting = {0};
 
 	if (!conn_config) {
 		return RTK_BT_ERR_PARAM_INVALID;

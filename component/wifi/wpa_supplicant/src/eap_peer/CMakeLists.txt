@@ -60,7 +60,6 @@ ameba_list_append(private_sources ${CSRC})
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
 ameba_add_external_app_library(${TARGET_LIB}
-    p_ADD_BUILD_INFO
     p_SOURCES
         ${private_sources}
     p_INCLUDES

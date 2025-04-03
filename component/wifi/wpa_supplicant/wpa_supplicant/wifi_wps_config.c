@@ -221,7 +221,7 @@ static unsigned char wps_stop_notified = 0;
 
 void wps_check_and_show_connection_info(void)
 {
-	struct _rtw_wifi_setting_t setting;
+	struct rtw_wifi_setting setting;
 #ifdef CONFIG_LWIP_LAYER
 	/* Start DHCP Client */
 	LwIP_DHCP(0, DHCP_START);
@@ -302,7 +302,7 @@ void wps_check_and_show_connection_info(void)
 	DiagPrintf("\n\r");
 }
 
-static void wps_config_wifi_setting(struct _rtw_network_info_t *wifi, struct dev_credential *dev_cred)
+static void wps_config_wifi_setting(struct rtw_network_info *wifi, struct dev_credential *dev_cred)
 {
 	DiagPrintf("\r\nwps_config_wifi_setting\n");
 	//memcpy((void *)wifi->ssid, (void *)dev_cred->ssid, dev_cred->ssid_len);
@@ -352,7 +352,7 @@ static void wps_config_wifi_setting(struct _rtw_network_info_t *wifi, struct dev
 	//rtos_sema_give(wps_reconnect_semaphore);
 }
 
-static int wps_connect_to_AP_by_certificate(struct _rtw_network_info_t *wifi)
+static int wps_connect_to_AP_by_certificate(struct rtw_network_info *wifi)
 {
 	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 	int retry_count = wifi_user_config.wps_retry_count, ret;
@@ -389,7 +389,7 @@ static int wps_connect_to_AP_by_certificate(struct _rtw_network_info_t *wifi)
 static int wps_connect_to_AP_by_open_system(char *target_ssid, u8 channel)
 {
 	int retry_count = 3, ret;
-	struct _rtw_network_info_t connect_param = {0};
+	struct rtw_network_info connect_param = {0};
 
 	if (target_ssid != NULL) {
 		memcpy(connect_param.ssid.val, target_ssid, strlen(target_ssid));
@@ -423,9 +423,9 @@ static int wps_connect_to_AP_by_open_system(char *target_ssid, u8 channel)
 static int wps_connect_to_AP_by_open_system_with_bssid(char *target_ssid, unsigned char *target_bssid)
 {
 	int retry_count = 3, ret;
-	struct _rtw_network_info_t connect_param = {0};
+	struct rtw_network_info connect_param = {0};
 
-	memset(&connect_param, 0, sizeof(struct _rtw_network_info_t));
+	memset(&connect_param, 0, sizeof(struct rtw_network_info));
 
 	if ((target_ssid != NULL) && (target_bssid != NULL)) {
 		rtos_time_delay_ms(500);	//wait scan complete.
@@ -571,7 +571,7 @@ static void update_discovered_ssids(char *ssid)
 static int start_discovery_phase(u16 wps_config)
 {
 	struct dev_credential *dev_cred;
-	struct _rtw_network_info_t wifi = {0};
+	struct rtw_network_info wifi = {0};
 	int ret = 0;
 
 
@@ -824,7 +824,7 @@ static void wps_filter_cred_by_scan(struct dev_credential *dev_cred, int cred_cn
 int wps_start(u16 wps_config, char *pin, u8 channel, char *ssid)
 {
 	struct dev_credential *dev_cred;
-	struct _rtw_network_info_t wifi = {0};
+	struct rtw_network_info wifi = {0};
 	char target_ssid[64];
 	unsigned char target_bssid[ETH_ALEN];
 	int is_overlap = -1;
@@ -1052,7 +1052,7 @@ void wps_stop(void)
 
 int wps_judge_staion_disconnect(void)
 {
-	struct _rtw_wifi_setting_t setting = {0};
+	struct rtw_wifi_setting setting = {0};
 
 	if (wifi_get_setting(STA_WLAN_INDEX, &setting) != 0) {
 		return -1;

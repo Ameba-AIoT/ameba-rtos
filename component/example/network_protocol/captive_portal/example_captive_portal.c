@@ -366,13 +366,13 @@ alert(\"Your password is too long!(8-64)\");\
 #define MAX_PASSWORD_LEN		64
 #define MAX_CHANNEL_NUM			13
 
-struct _rtw_wifi_setting_t Wifi_Setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0};
-struct _rtw_wifi_setting_t target_ap_setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0};
+struct rtw_wifi_setting Wifi_Setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0};
+struct rtw_wifi_setting target_ap_setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0};
 
 static void vProcessConnection(void *param);
 
 /*------------------------------------------------------------------------------*/
-extern int wifi_get_setting(unsigned char wlan_idx, struct _rtw_wifi_setting_t *psetting);
+extern int wifi_get_setting(unsigned char wlan_idx, struct rtw_wifi_setting *psetting);
 static void LoadWifiSetting(void)
 {
 	unsigned char wlan_idx = STA_WLAN_INDEX;
@@ -469,7 +469,7 @@ int EraseApinfo(void)
 
 extern void dhcps_init(struct netif *pnetif);
 extern void dhcps_deinit(void);
-int wifi_restart_ap(struct _rtw_softap_info_t *softAP_config)
+int wifi_restart_ap(struct rtw_softap_info *softAP_config)
 {
 	unsigned char idx = 0;
 #ifdef CONFIG_LWIP_LAYER
@@ -479,9 +479,9 @@ int wifi_restart_ap(struct _rtw_softap_info_t *softAP_config)
 #endif
 
 #ifdef  CONFIG_CONCURRENT_MODE
-	struct _rtw_wifi_setting_t setting;
+	struct rtw_wifi_setting setting;
 	int sta_linked = 0;
-	struct _rtw_network_info_t connect_param = {0};
+	struct rtw_network_info connect_param = {0};
 #endif
 
 	if (wifi_is_running(SOFTAP_WLAN_INDEX)) {
@@ -558,7 +558,7 @@ static void RestartSoftAP(void)
 	RTK_LOGI(NOTAG, "RestartAP: security_type=%d\n", Wifi_Setting.security_type);
 	RTK_LOGI(NOTAG, "RestartAP: password=%s\n", Wifi_Setting.password);
 	RTK_LOGI(NOTAG, "RestartAP: channel=%d\n", Wifi_Setting.channel);
-	struct _rtw_softap_info_t softAP_config = {0};
+	struct rtw_softap_info softAP_config = {0};
 	softAP_config.ssid.len = strlen((char *)Wifi_Setting.ssid);
 	memcpy(softAP_config.ssid.val, Wifi_Setting.ssid, softAP_config.ssid.len);
 	softAP_config.password = Wifi_Setting.password;
@@ -1191,7 +1191,7 @@ static int _get_ap_security_mode(IN char *ssid, OUT u32 *security_mode, OUT u8 *
 static void ConnectTargetAP(void)
 {
 	int ret;
-	struct _rtw_network_info_t connect_param = {0};
+	struct rtw_network_info connect_param = {0};
 	int security_retry_count = 0;
 	u8 connect_channel;
 	u8 connect_status;
@@ -1659,7 +1659,7 @@ static void example_start_captive_portal(void *param)
 	RTK_LOGI(NOTAG, "Check AP running\n");
 
 	while (1) {
-		struct _rtw_wifi_setting_t setting;
+		struct rtw_wifi_setting setting;
 		wifi_get_setting(SOFTAP_WLAN_INDEX, &setting);
 		if (strlen((const char *)setting.ssid) > 0) {
 			if (strcmp((const char *) setting.ssid, (const char *)SOFTAP_CONFIG.ssid.val) == 0) {

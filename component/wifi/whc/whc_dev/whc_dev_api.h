@@ -108,6 +108,7 @@ void whc_event_wifi_get_setting(u32 api_id, u32 *param_buf);
 void whc_event_send_eapol(u32 api_id, u32 *param_buf);
 void whc_event_wifi_ap_get_connected_clients(u32 api_id, u32 *param_buf);
 void whc_event_wpa_4way_rpt(u32 api_id, u32 *param_buf);
+void whc_event_get_traffic_stats(u32 api_id, u32 *param_buf);
 #endif
 
 #if defined(CONFIG_WHC_BRIDGEB)
@@ -125,7 +126,7 @@ void whc_dev_wifi_event_indicate(int event_cmd, char *buf, int buf_len, int flag
 void whc_dev_scan_user_callback_indicate(unsigned int ap_num, void *user_data);
 void whc_dev_acs_info_indicate(struct acs_mntr_rpt *acs_mntr_rpt);
 void whc_dev_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data);
-u8 whc_dev_promisc_callback_indicate(struct rx_pkt_info *pkt_info);
+u8 whc_dev_promisc_callback_indicate(struct rtw_rx_pkt_info *pkt_info);
 void whc_dev_ap_ch_switch_callback_indicate(unsigned char channel, s8 ret);
 void whc_dev_set_netif_info(int idx_wlan, unsigned char *dev_addr);
 int whc_dev_get_lwip_info(u32 type, unsigned char *input, int index);

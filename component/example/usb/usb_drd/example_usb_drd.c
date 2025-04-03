@@ -64,7 +64,6 @@ static rtos_sema_t usbh_msc_attach_sema;
 static __IO int usbh_msc_is_ready = 0;
 
 static usbh_config_t usbh_cfg = {
-	.pipes = 5U,
 	.speed = USB_DRD_SPEED,
 	.dma_enable = FALSE,
 	.main_task_priority = 3U,
