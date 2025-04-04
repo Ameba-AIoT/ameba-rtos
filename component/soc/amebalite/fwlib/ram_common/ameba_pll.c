@@ -364,3 +364,30 @@ void PLL_ClkSet(u8 pll_type, u32 PllClk)
 		return;
 	}
 }
+
+/**
+  * @brief  Acquire Hbus clock.
+  * @param  none
+  * @retval  ipclk, units Hz.
+  */
+u32 PLL_GetHBUSClk(void)
+{
+	u32 PLLCLk, hperi_div, ipclk, ClkSel;
+
+	ClkSel = LSYS_GET_CKSL_PLFM(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0));
+
+	if (ClkSel == CLK_CPU_MPLL) {
+		PLLCLk = PLL_ClkGet(CLK_CPU_MPLL);
+
+	} else if (ClkSel == CLK_CPU_DPLL) {
+		PLLCLk = PLL_ClkGet(CLK_CPU_DPLL);
+	} else {
+		PLLCLk = 4000000;
+	}
+
+	hperi_div = LSYS_GET_CKD_HBUS(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKD_GRP0));
+
+	ipclk = PLLCLk / (hperi_div + 1);
+
+	return ipclk;
+}

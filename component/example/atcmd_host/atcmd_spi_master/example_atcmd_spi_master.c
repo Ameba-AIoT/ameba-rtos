@@ -22,7 +22,7 @@
 #define FORMAT_LEN 128
 
 #define CHECKSUM_EN 0
-#define TT_MODE_TEST 1
+#define TT_MODE_TEST 0
 
 void *master_tx_done_sema;
 void *master_rx_done_sema;

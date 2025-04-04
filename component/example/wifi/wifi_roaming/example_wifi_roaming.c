@@ -63,8 +63,8 @@ u32 wifi_roaming_find_ap_from_scan_buf(char *target_ssid, void *user_data, int a
 					break;
 				}
 				memset(candicate, 0, sizeof(wifi_roaming_ap_t));
-				memcpy(candicate->ssid, scanned_ap_info->SSID.val, scanned_ap_info->SSID.len);
-				memcpy(candicate->bssid, scanned_ap_info->BSSID.octet, ETH_ALEN);
+				memcpy(candicate->ssid, scanned_ap_info->ssid.val, scanned_ap_info->ssid.len);
+				memcpy(candicate->bssid, scanned_ap_info->bssid.octet, ETH_ALEN);
 				candicate->channel = scanned_ap_info->channel;
 				candicate->security_type = scanned_ap_info->security;
 				memcpy(candicate->password, pwifi->password, strlen((char const *)pwifi->password));

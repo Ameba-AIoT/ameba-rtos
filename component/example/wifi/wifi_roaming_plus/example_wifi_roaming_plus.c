@@ -527,13 +527,13 @@ static u32 wifi_roaming_plus_find_ap_from_scan_buf(char *target_ssid, void *user
 
 	for (i = 0; i < ap_num; i++) {
 		scanned_ap_info = &scanned_ap_list[i];
-		ROAMING_DBG("Scan ap:"MAC_FMT"(%d)\n", MAC_ARG(scanned_ap_info->BSSID.octet), scanned_ap_info->channel);
+		ROAMING_DBG("Scan ap:"MAC_FMT"(%d)\n", MAC_ARG(scanned_ap_info->bssid.octet), scanned_ap_info->channel);
 		if (target_security == scanned_ap_info->security ||
 			((target_security & (WPA2_SECURITY | WPA_SECURITY)) && ((scanned_ap_info->security) & (WPA2_SECURITY | WPA_SECURITY)))) {
 			if (ap_list->rssi < scanned_ap_info->signal_strength) {
 				ROAMING_DBG("rssi(%d) is better than last(%d)\n", scanned_ap_info->signal_strength, ap_list->rssi);
 				memset(ap_list, 0, sizeof(wifi_roaming_ap_t));
-				memcpy(ap_list->bssid, scanned_ap_info->BSSID.octet, ETH_ALEN);
+				memcpy(ap_list->bssid, scanned_ap_info->bssid.octet, ETH_ALEN);
 				ap_list->channel = scanned_ap_info->channel;
 				ap_list->rssi = scanned_ap_info->signal_strength;
 			}

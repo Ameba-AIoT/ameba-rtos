@@ -58,12 +58,16 @@ static void atcmd_ssl_debug(void *ctx, int level, const char *file, int line, co
 	}
 }
 
+
 static int atcmd_ssl_random(void *p_rng, unsigned char *output, size_t output_len)
 {
-	UNUSED(p_rng);
-	random_get_bytes(output, output_len);
+	/* To avoid gcc warnings */
+	(void) p_rng;
+
+	TRNG_get_random_bytes(output, output_len);
 	return 0;
 }
+
 
 static void *atcmd_lwip_calloc(size_t num, size_t ele_size)
 {

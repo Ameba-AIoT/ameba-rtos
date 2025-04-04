@@ -21,7 +21,7 @@ u8 rtw_chnl_tbl[MAX_CHANNEL_NUM] = {
 	149, 153, 157, 161, 165, 169, 173, 177
 };
 
-struct acs_mntr_rpt acs_mntr_rpt_tbl[MAX_CHANNEL_NUM] = {0};
+struct rtw_acs_mntr_rpt acs_mntr_rpt_tbl[MAX_CHANNEL_NUM] = {0};
 
 int whc_fullmac_host_dump_survey_params(struct wiphy *wiphy, struct net_device *netdev, int idx, struct survey_info *info)
 {

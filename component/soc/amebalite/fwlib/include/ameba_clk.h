@@ -227,6 +227,7 @@ _LONG_CALL_ void PLL_DSP(u32 status);
 _LONG_CALL_ void PLL_BG(u32 status);
 _LONG_CALL_ bool PLL_State(u8 pll_type);
 _LONG_CALL_ void PLL_ClkSet(u8 pll_type, u32 PllClk);
+_LONG_CALL_ u32 PLL_GetHBUSClk(void);
 
 
 

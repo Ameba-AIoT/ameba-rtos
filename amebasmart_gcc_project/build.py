@@ -115,7 +115,8 @@ def main(argc, argv):
         rc = 1
 
     if rc != 0:
-        print('Error: Fail to build application')
+        print('\033[31mError: Fail to build application')
+        print('Error CMD : ', cmd, '\033[0m')
         # Return code will be truncated, e.g.: 256 => 0, so the raw return code will not be used
         sys.exit(1)
     else:

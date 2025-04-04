@@ -58,6 +58,8 @@ void wifi_init_thread(void *param)
 	LwIP_Init();
 #endif
 
+	whc_host_init();
+
 #ifndef CONFIG_WHC_BRIDGE_HOST
 	wifi_on(RTW_MODE_STA);
 
@@ -115,9 +117,6 @@ void wifi_init_thread(void *param)
 void wifi_init(void)
 {
 	wifi_set_rom2flash();
-#if defined(CONFIG_AS_INIC_AP)
-	whc_host_init();
-#endif
 	if (rtos_task_create(NULL, ((const char *)"wifi_init_thread"), wifi_init_thread, NULL, WIFI_STACK_SIZE_INIT, 5) != RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_DRV, "wifi_init failed\n");
 	}

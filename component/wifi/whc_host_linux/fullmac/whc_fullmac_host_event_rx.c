@@ -21,19 +21,19 @@ static void whc_fullmac_host_event_set_acs_info(u32 *param_buf)
 {
 	extern u8 chanel_idx_max;
 	extern u8 rtw_chnl_tbl[MAX_CHANNEL_NUM];
-	extern struct acs_mntr_rpt acs_mntr_rpt_tbl[MAX_CHANNEL_NUM];
+	extern struct rtw_acs_mntr_rpt acs_mntr_rpt_tbl[MAX_CHANNEL_NUM];
 
 	u8 idx = 0;
-	struct acs_mntr_rpt *acs_rpt = (struct acs_mntr_rpt *)&param_buf[0];
+	struct rtw_acs_mntr_rpt *acs_rpt = (struct rtw_acs_mntr_rpt *)&param_buf[0];
 
 	if (acs_rpt->channel == 0) {
-		memset(acs_mntr_rpt_tbl, 0, sizeof(struct acs_mntr_rpt)*MAX_CHANNEL_NUM);
+		memset(acs_mntr_rpt_tbl, 0, sizeof(struct rtw_acs_mntr_rpt)*MAX_CHANNEL_NUM);
 		return;
 	}
 
 	for (idx = 0; idx < MAX_CHANNEL_NUM; idx++) {
 		if (acs_rpt->channel == rtw_chnl_tbl[idx]) {
-			memcpy(&acs_mntr_rpt_tbl[idx], acs_rpt, sizeof(struct acs_mntr_rpt));
+			memcpy(&acs_mntr_rpt_tbl[idx], acs_rpt, sizeof(struct rtw_acs_mntr_rpt));
 			chanel_idx_max = idx;
 			break;
 		}
