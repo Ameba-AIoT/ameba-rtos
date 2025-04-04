@@ -669,8 +669,7 @@ enum _REGULATION_TXPWR_LMT {
   * @brief  The structure is used to describe the SSID (Service Set Identification), i.e., the name of Access Point.
   */
 struct rtw_ssid {
-	unsigned char
-	len;     /**< SSID length, i.e., equal to the length of `val`. The length of ssid should not > @ref RTW_ESSID_MAX_SIZE.  */
+	unsigned char		len;     /**< SSID length, i.e., equal to the length of `val`. The length of ssid should not > @ref RTW_ESSID_MAX_SIZE.  */
 	unsigned char		val[RTW_ESSID_MAX_SIZE + 1]; /**< SSID name (AP name).*/
 };
 
@@ -690,7 +689,7 @@ struct rtw_mac {
 /**
   * @brief  The structure is used to describe the busyness of a channel for ACS(Automatic Channel Selection).
   */
-struct acs_mntr_rpt {
+struct rtw_acs_mntr_rpt {
 	u16 meas_time; /**< Measurements time on this channel, unit:ms.*/
 	u16 busy_time; /**< Time that the primary channel was sensed busy, unit:ms.*/
 	u16 tx_time;   /**< Time spent transmitting frame on this channel, unit:ms.*/
@@ -702,23 +701,21 @@ struct acs_mntr_rpt {
   * @brief  The structure is used to describe the details of a scanned AP.
   */
 struct rtw_scan_result {
-	struct rtw_ssid          SSID;             /**< Service Set Identification (i.e. Name of Access Point). */
-	struct rtw_mac           BSSID;            /**< Basic Service Set Identification (i.e. MAC address of Access Point). */
-	signed short             signal_strength;  /**< Receive Signal Strength Indication in dBm. <-90=Very poor, >-30=Excellent. */
-	u8
-	bss_type;         /**< The bss type. The noraml type is infrastructure BSS. Val: RTW_BSS_TYPE_INFRASTRUCTURE, RTW_BSS_TYPE_WTN_HELPER.*/
-	u32                      security;         /**< The security type of this AP. Val: RTW_SECURITY_OPEN, RTW_SECURITY_WEP_PSK...*/
-	u8
-	wps_type;         /**< The WPS(Wi-Fi Protected Setup) types supported by this AP. Val: RTW_WPS_TYPE_DEFAULT, RTW_WPS_TYPE_USER_SPECIFIED...*/
-	unsigned int             channel;          /**< Radio channel that the AP beacon was received on. */
-	u8                       band;             /**< The frequency ranges used by this AP. Val: BAND_ON_5G, BAND_ON_24G. */
+	struct rtw_ssid         ssid;             /**< Service Set Identification (i.e. Name of Access Point). */
+	struct rtw_mac          bssid;            /**< Basic Service Set Identification (i.e. MAC address of Access Point). */
+	signed short            signal_strength;  /**< Receive Signal Strength Indication in dBm. <-90=Very poor, >-30=Excellent. */
+	u8						bss_type;         /**< The bss type. The noraml type is infrastructure BSS. Val: RTW_BSS_TYPE_INFRASTRUCTURE, RTW_BSS_TYPE_WTN_HELPER.*/
+	u32                     security;         /**< The security type of this AP. Val: RTW_SECURITY_OPEN, RTW_SECURITY_WEP_PSK...*/
+	u8						wps_type;         /**< The WPS(Wi-Fi Protected Setup) types supported by this AP. Val: RTW_WPS_TYPE_DEFAULT, RTW_WPS_TYPE_USER_SPECIFIED...*/
+	unsigned int            channel;          /**< Radio channel that the AP beacon was received on. */
+	u8                      band;             /**< The frequency ranges used by this AP. Val: BAND_ON_5G, BAND_ON_24G. */
 
 	/** The wireless spectrum management regulations of which region followed by the AP. `country_code` is coded
 	 * according to ISO 3166 standard. Specific values can refer to ameba_wifi_country_code_table_usrcfg.c.\n
 	 * e.g. China: country_code[0] = 'C', country_code[1] = 'N'. */
-	char                     country_code[2];
-	char                     wireless_mode;    /**< The wireless mode of this AP. Val: WLAN_MD_11B, WLAN_MD_11A...*/
-	u8                       rom_rsvd[3];
+	char                    country_code[2];
+	char                    wireless_mode;    /**< The wireless mode of this AP. Val: WLAN_MD_11B, WLAN_MD_11A...*/
+	u8                      rom_rsvd[3];
 };
 
 /**
@@ -745,7 +742,7 @@ struct rtw_scan_param {
 	void                              *scan_user_data;
 	int (*scan_user_callback)(unsigned int ap_num, void *user_data);/**< Used for normal asynchronized mode. */
 	int (*scan_report_each_mode_user_callback)(struct rtw_scan_result *scanned_ap_info, void *user_data); /**< Used for RTW_SCAN_REPORT_EACH mode. */
-	int (*scan_report_acs_user_callback)(struct acs_mntr_rpt *acs_mntr_rpt); /**< Used for report acs info.*/
+	int (*scan_report_acs_user_callback)(struct rtw_acs_mntr_rpt *acs_mntr_rpt); /**< Used for report acs info.*/
 };
 #pragma pack()
 
@@ -771,8 +768,8 @@ struct rtw_wpa_supp_connect {
   * 	      set to 0 means do normal scan on the specified channel or full channel.
   */
 struct rtw_network_info {
-	struct rtw_ssid					ssid;  /**< The AP's name and the length of name (should not exceed @ref RTW_ESSID_MAX_SIZE). */
-	struct rtw_mac					bssid; /**< The unique 6-byte MAC address of AP. */
+	struct rtw_ssid				ssid;  /**< The AP's name and the length of name (should not exceed @ref RTW_ESSID_MAX_SIZE). */
+	struct rtw_mac				bssid; /**< The unique 6-byte MAC address of AP. */
 	u32							security_type; /**< Only need to be set when use WEP (@ref RTW_SECURITY_WEP_PSK @ref RTW_SECURITY_WEP_SHARED), Other case will automatically adjust according to the AP.*/
 	unsigned char				*password;	   /**< The password of AP which sta is trying to connect. */
 	int 						password_len;  /**< The data length of string pointed by password should not exceed RTW_MAX_PSK_LEN. Equal to length of `password`. */
@@ -782,7 +779,7 @@ struct rtw_network_info {
 	pscan_option;	/**< Can set to @ref PSCAN_FAST_SURVEY for fast survey, which means quick scan, involves using an active scan on a specified channel, scanning for 25ms each time, and attempting up to 7 times until the target AP is found.. */
 	unsigned char 				is_wps_trigger;	/**< Connection triggered by WPS process.*/
 	struct rtw_wpa_supp_connect	wpa_supp;   /**< Only used by Linux host to specific some details required for STA connect, which RTOS do not use. */
-	struct rtw_mac		prev_bssid; /**< The BSSID of the AP before roaming. */
+	struct rtw_mac				prev_bssid; /**< The BSSID of the AP before roaming. */
 	u8							by_reconn; /**< Connection triggered by RTK auto reconnect process. */
 	u8							rom_rsvd[4];
 };

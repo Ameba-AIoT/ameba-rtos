@@ -14,6 +14,7 @@
 #include "atcmd_service.h"
 #include "atcmd_http.h"
 #include "httpc/httpc.h"
+#include "lwip/opt.h"
 
 static const char *const AT_HTTP_TAG = "AT_HTTP";
 
@@ -29,6 +30,7 @@ void at_httpconf(void *arg)
 {
 	int argc = 0, error_no = 0;
 	char *argv[MAX_ARGC] = {0};
+	int http_to = 0, http_srv_port = 0;
 
 	if (arg == NULL) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httpconf] Input parameter is NULL\r\n");
@@ -42,20 +44,27 @@ void at_httpconf(void *arg)
 		error_no = 1;
 		goto end;
 	}
-	http_timeout = atoi(argv[1]);
-	if (http_timeout < 0) {
+	if (strlen(argv[1]) == 0)  {
+		RTK_LOGE(AT_HTTP_TAG, "[at_httpconf] Missing input parameters\r\n");
+		error_no = 1;
+		goto end;
+	}
+	http_to = atoi(argv[1]);
+	if (http_to < 0) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httpconf] HTTP timeout setting value is incorrect\r\n");
 		error_no = 1;
 		goto end;
 	}
-	if (argv[2])  {
-		http_server_port = atoi(argv[2]);
-		if ((http_server_port < 0) || (http_server_port > 65535)) {
+	if (strlen(argv[2]))  {
+		http_srv_port = atoi(argv[2]);
+		if ((http_srv_port < 0) || (http_srv_port > 65535)) {
 			RTK_LOGE(AT_HTTP_TAG, "[at_httpconf] HTTP server port setting value is incorrect\r\n");
 			error_no = 1;
 			goto end;
 		}
 	}
+	http_timeout = http_to;
+	http_server_port = http_srv_port;
 
 end:
 	if (error_no == 0) {

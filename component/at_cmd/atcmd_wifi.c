@@ -161,11 +161,11 @@ static void print_wifi_setting(unsigned char wlan_idx, struct rtw_wifi_setting *
 static void print_scan_result(struct rtw_scan_result *record)
 {
 #if (defined(WIFI_LOGO_CERTIFICATION_CONFIG) && WIFI_LOGO_CERTIFICATION_CONFIG)
-	at_printf(""MAC_FMT",", MAC_ARG(record->BSSID.octet));
-	at_printf("%s,\r\n", record->SSID.val);
+	at_printf(""MAC_FMT",", MAC_ARG(record->bssid.octet));
+	at_printf("%s,\r\n", record->ssid.val);
 #else
 
-	at_printf(""MAC_FMT", ", MAC_ARG(record->BSSID.octet));
+	at_printf(""MAC_FMT", ", MAC_ARG(record->bssid.octet));
 	at_printf("%d, ", record->signal_strength);
 	at_printf("%d, ", record->channel);
 	at_printf("%s, ", (record->wireless_mode & WLAN_MD_11AX) ? "AX" :
@@ -205,7 +205,7 @@ static void print_scan_result(struct rtw_scan_result *record)
 #endif
 			  "Unknown");
 
-	at_printf("\"%s\" ", record->SSID.val);
+	at_printf("\"%s\" ", record->ssid.val);
 	if (record->bss_type == RTW_BSS_TYPE_WTN_HELPER) {
 		at_printf(" Helper ");
 	}
@@ -590,7 +590,7 @@ void at_wlscan(void *arg)
 			at_printf("%2d, ", (i + 1));
 #endif
 			scanned_AP_info = &scanned_AP_list[i];
-			scanned_AP_info->SSID.val[scanned_AP_info->SSID.len] = 0; /* Ensure the SSID is null terminated */
+			scanned_AP_info->ssid.val[scanned_AP_info->ssid.len] = 0; /* Ensure the SSID is null terminated */
 
 			print_scan_result(scanned_AP_info);
 		}
