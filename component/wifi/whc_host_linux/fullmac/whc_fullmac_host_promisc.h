@@ -13,6 +13,6 @@
 
 #include <whc_host_linux.h>
 
-int rtw_promisc_rx(struct rtw_rx_pkt_info *ppktinfo);
+int rtw_promisc_rx(struct rx_pkt_info *ppktinfo);
 
 #endif //__RTW_PROMISC_H__

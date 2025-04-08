@@ -43,15 +43,15 @@ static u16 usbd_uac_get_mps(usbd_audio_cfg_t *params, u8 speed);
 static u8 usbd_uac_get_ch_config(u8 ch_cnt);
 static inline u8 usbd_uac_ep_enable(usbd_audio_cfg_t *ep);
 static void usbd_uac_clk_valid_req(usb_dev_t *dev, u8 flag);
-static void usbd_uac_cur_freq_req(usb_dev_t *dev, u32 frequency);
-static int usbd_uac_freq_ctrl_range_req(usb_dev_t *dev, u16 max_len);
+static void usbd_uac_cur_sampling_freq_req(usb_dev_t *dev, u32 frequency);
+static int usbd_uac_sampling_freq_ctrl_range_req(usb_dev_t *dev, u16 max_len);
 static void usbd_uac_connect_ctrl_req(usb_dev_t *dev, u8 ch_num, u32 ch_cfg, u16 max_len);
 static bool usbd_uac_is_valid_sample_rate(u32 freq, u8 speed);
 
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "UAC";
 
-static u32 usbd_uac_sample_rates[USBD_UAC_SAMPLE_RATE_MAX_COUNT] = {USBD_UAC_FREQ1, USBD_UAC_FREQ2, USBD_UAC_FREQ3, USBD_UAC_FREQ4};
+static u32 usbd_uac_sampling_rates[USBD_UAC_SAMPLING_FREQ_MAX_COUNT] = {USBD_UAC_SAMPLING_FREQ_44K, USBD_UAC_SAMPLING_FREQ_48K, USBD_UAC_SAMPLING_FREQ_96K, USBD_UAC_SAMPLING_FREQ_192K};
 /* USB Standard Device Descriptor */
 static u8 usbd_uac_dev_desc[USB_LEN_DEV_DESC] USB_DMA_ALIGNED = {
 	USB_LEN_DEV_DESC,            /* bLength */
@@ -1098,14 +1098,14 @@ static u16 usbd_uac_get_mps(usbd_audio_cfg_t *params, u8 speed)
 	}
 
 	if (speed == USB_SPEED_HIGH) {
-		mps_value = params->ch_cnt * params->byte_width * (params->freqence / USBD_UAC_ONE_KHZ / USBD_UAC_HS_SOF_COUNT_PER_MS + 1);
+		mps_value = params->ch_cnt * params->byte_width * (params->sampling_freq / USBD_UAC_ONE_KHZ / USBD_UAC_HS_SOF_COUNT_PER_MS + 1);
 		if (mps_value > USBD_UAC_HS_ISOC_MPS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "MPS %d exceed HS limited %d\n", mps_value, USBD_UAC_HS_ISOC_MPS);
 			return 0;
 		}
 	} else {
 		/* for 44.1khz or the host clk is bigger than the device */
-		mps_value = params->ch_cnt * params->byte_width * (params->freqence / USBD_UAC_ONE_KHZ + 1);
+		mps_value = params->ch_cnt * params->byte_width * (params->sampling_freq / USBD_UAC_ONE_KHZ + 1);
 		if (mps_value > USBD_UAC_FS_ISOC_MPS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "MPS %d exceed FS limited %d\n", mps_value, USBD_UAC_FS_ISOC_MPS);
 			return 0;
@@ -1258,7 +1258,7 @@ static void usbd_uac_clk_valid_req(usb_dev_t *dev, u8 flag)
   * @param  frequency: UAC current freq
   * @retval void
   */
-static void usbd_uac_cur_freq_req(usb_dev_t *dev, u32 frequency)
+static void usbd_uac_cur_sampling_freq_req(usb_dev_t *dev, u32 frequency)
 {
 	u32 dCur = frequency;
 
@@ -1272,19 +1272,19 @@ static void usbd_uac_cur_freq_req(usb_dev_t *dev, u32 frequency)
   * @param  max_len: Maximum allowed length for response
   * @retval Status
   */
-static int usbd_uac_freq_ctrl_range_req(usb_dev_t *dev, u16 max_len)
+static int usbd_uac_sampling_freq_ctrl_range_req(usb_dev_t *dev, u16 max_len)
 {
-	usbd_uac_freq_ctrl_range_t *response = NULL;
+	usbd_uac_sampling_freq_ctrl_range_t *response = NULL;
 	u16 num_sub_ranges;
 	u16 len;
 	if (dev->dev_speed  == USB_SPEED_HIGH) {
-		num_sub_ranges = USBD_UAC_HS_SAMPLE_RATE_COUNT;
+		num_sub_ranges = USBD_UAC_HS_SAMPLING_FREQ_COUNT;
 	} else {
-		num_sub_ranges = USBD_UAC_FS_SAMPLE_RATE_COUNT;
+		num_sub_ranges = USBD_UAC_FS_SAMPLING_FREQ_COUNT;
 	}
 
 	len = sizeof(num_sub_ranges) + num_sub_ranges * sizeof(usbd_uac_sub_range_t);
-	response = (usbd_uac_freq_ctrl_range_t *)malloc(len);
+	response = (usbd_uac_sampling_freq_ctrl_range_t *)malloc(len);
 
 	if (!response) {
 		return HAL_ERR_MEM;
@@ -1292,7 +1292,7 @@ static int usbd_uac_freq_ctrl_range_req(usb_dev_t *dev, u16 max_len)
 
 	response->wNumSubRanges = num_sub_ranges;
 	for (u8 i = 0; i < num_sub_ranges; i++) {
-		USBD_UAC_INIT_SUB_RANGE(response->usbd_uac_sub_ranges[i], usbd_uac_sample_rates[i], usbd_uac_sample_rates[i], 0);
+		USBD_UAC_INIT_SUB_RANGE(response->usbd_uac_sub_ranges[i], usbd_uac_sampling_rates[i], usbd_uac_sampling_rates[i], 0);
 	}
 
 	if (len > max_len) {
@@ -1397,13 +1397,13 @@ static bool usbd_uac_is_valid_sample_rate(u32 freq, u8 speed)
 	u8 count;
 
 	if (speed == USB_SPEED_HIGH) {
-		count = USBD_UAC_HS_SAMPLE_RATE_COUNT;
+		count = USBD_UAC_HS_SAMPLING_FREQ_COUNT;
 	} else {
-		count = USBD_UAC_FS_SAMPLE_RATE_COUNT;
+		count = USBD_UAC_FS_SAMPLING_FREQ_COUNT;
 	}
 
 	for (u8 i = 0; i < count; ++i) {
-		if (freq == usbd_uac_sample_rates[i]) {
+		if (freq == usbd_uac_sampling_rates[i]) {
 			return true;
 		}
 	}
@@ -1519,9 +1519,9 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			case USBD_UAC_CTRL_ENTITYID_CLOCK_HEADSET_MICROPHONE:
 				if (controlSelector == USBD_UAC_CS_SAM_FREQ_CONTROL) {
 					if (req->bRequest == USBD_UAC_CLASS_REQ_CODE_CUR) {
-						usbd_uac_cur_freq_req(dev, cdev->cur_freq);
+						usbd_uac_cur_sampling_freq_req(dev, cdev->cur_sampling_freq);
 					} else if (req->bRequest == USBD_UAC_CLASS_REQ_CODE_RANGE) {
-						usbd_uac_freq_ctrl_range_req(dev, req->wLength);
+						usbd_uac_sampling_freq_ctrl_range_req(dev, req->wLength);
 					} else {
 						RTK_LOGS(TAG, RTK_LOG_WARN, "SETUP: bRequest err %d-%d\n", entityId, req->bRequest);
 						ret = HAL_ERR_PARA;
@@ -1535,9 +1535,9 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			case USBD_UAC_CTRL_ENTITYID_CLOCK_HEADSET_HEADPHONES:
 				if (controlSelector == USBD_UAC_CS_SAM_FREQ_CONTROL) {
 					if (req->bRequest == USBD_UAC_CLASS_REQ_CODE_CUR) {
-						usbd_uac_cur_freq_req(dev, cdev->cur_freq);
+						usbd_uac_cur_sampling_freq_req(dev, cdev->cur_sampling_freq);
 					} else if (req->bRequest == USBD_UAC_CLASS_REQ_CODE_RANGE) {
-						usbd_uac_freq_ctrl_range_req(dev, req->wLength);
+						usbd_uac_sampling_freq_ctrl_range_req(dev, req->wLength);
 					} else {
 						RTK_LOGS(TAG, RTK_LOG_WARN, "SETUP: bRequest err %d-%d\n", entityId, req->bRequest);
 						ret = HAL_ERR_PARA;
@@ -1631,8 +1631,8 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						freq = (cdev->ctrl_buf[3] << 24) | (cdev->ctrl_buf[2] << 16) | (cdev->ctrl_buf[1] << 8) | cdev->ctrl_buf[0];
 
 						if (usbd_uac_is_valid_sample_rate(freq, dev->dev_speed)) {
-							if ((cdev->cur_freq != freq) || (cdev->cur_ch_cnt !=  cdev->cb->out.ch_cnt)) {
-								cdev->cur_freq = freq;
+							if ((cdev->cur_sampling_freq != freq) || (cdev->cur_ch_cnt !=  cdev->cb->out.ch_cnt)) {
+								cdev->cur_sampling_freq = freq;
 								byte_width = cdev->cur_byte_width;
 								ch_cnt = cdev->cur_ch_cnt;
 
@@ -1655,7 +1655,7 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 								}
 
 								if (cb->format_changed != NULL) {
-									cb->format_changed(cdev->cur_freq, cdev->cur_ch_cnt);
+									cb->format_changed(cdev->cur_sampling_freq, cdev->cur_ch_cnt);
 								}
 							}
 						} else {

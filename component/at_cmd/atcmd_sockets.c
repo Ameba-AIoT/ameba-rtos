@@ -2331,7 +2331,7 @@ int atcmd_lwip_start_tt_handle(struct _node *curnode, int total_data_len, struct
 			goto end;
 		}
 		if (total_data_len <= MAX_TT_BUF_LEN) {
-			if (atcmd_tt_mode_get(tt_data, (u32)total_data_len) != (u32)total_data_len) {
+			if (atcmd_tt_mode_get(tt_data, (u32)total_data_len) != total_data_len) {
 				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_start_tt_handle] atcmd_tt_mode_get() failed\r\n");
 				error_no = 6;
 				goto end;
@@ -2343,7 +2343,7 @@ int atcmd_lwip_start_tt_handle(struct _node *curnode, int total_data_len, struct
 		} else {
 			while (total_data_len > 0) {
 				frag_tt_data_len = total_data_len <= MAX_TT_BUF_LEN ? total_data_len : MAX_TT_BUF_LEN;
-				if (atcmd_tt_mode_get(tt_data, (u32)frag_tt_data_len) != (u32)frag_tt_data_len) {
+				if (atcmd_tt_mode_get(tt_data, (u32)frag_tt_data_len) != frag_tt_data_len) {
 					RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_start_tt_handle] atcmd_tt_mode_get() failed\r\n");
 					error_no = 6;
 					goto end;

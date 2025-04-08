@@ -1370,7 +1370,7 @@ static struct ieee80211_regdomain *_rtl_reg_get_regd(u8 chplan)
 static void _rtl_reg_set_country_code(struct wiphy *wiphy, u8 *country)
 {
 	int ret = 0;
-	struct rtw_country_code_table table;
+	struct country_code_table_t table;
 	struct ieee80211_regdomain *regd = NULL;
 
 	ret = whc_fullmac_host_set_country_code(country);
@@ -1412,7 +1412,7 @@ void rtw_reg_notifier(struct wiphy *wiphy, struct regulatory_request *request)
 int rtw_regd_init(void)
 {
 	struct wiphy *wiphy = global_idev.pwiphy_global;
-	struct rtw_country_code_table table;
+	struct country_code_table_t table;
 	char ww_char2[2] = {'0', '0'};
 	struct ieee80211_regdomain *regd = NULL;
 	int ret = 0;

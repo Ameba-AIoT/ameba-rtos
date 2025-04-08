@@ -136,8 +136,8 @@ static void save_client_addr(struct ip_addr *client_ip, uint8_t *hwaddr)
 	int i, j;
 	uint8_t invalid_ipaddr4;
 	unsigned int client_number;
-	struct rtw_client_list client_info;
-	memset(&client_info, 0, sizeof(struct rtw_client_list));
+	struct _rtw_client_list_t client_info;
+	memset(&client_info, 0, sizeof(struct _rtw_client_list_t));
 
 	uint8_t d = (uint8_t)ip4_addr4(ip_2_ip4(client_ip));
 

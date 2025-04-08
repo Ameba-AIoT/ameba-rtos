@@ -177,7 +177,7 @@ void whc_ipc_dev_wifi_event_indicate(int event_cmd, char *buf, int buf_len, int 
 void whc_ipc_dev_scan_user_callback_indicate(unsigned int ap_num, void *user_data);
 void whc_ipc_dev_acs_info_indicate(struct acs_mntr_rpt *acs_mntr_rpt);
 void whc_ipc_dev_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data);
-u8 whc_ipc_dev_promisc_callback_indicate(struct rtw_rx_pkt_info *pkt_info);
+u8 whc_ipc_dev_promisc_callback_indicate(struct rx_pkt_info *pkt_info);
 void whc_ipc_dev_ap_ch_switch_callback_indicate(unsigned char channel, s8 ret);
 int whc_ipc_dev_set_netif_info(int idx_wlan, unsigned char *dev_addr);
 int whc_dev_get_lwip_info(u32 type, unsigned char *input, int index);

@@ -38,7 +38,7 @@ extern struct table  ip_table;
 extern void cmd_wps(int argc, char **argv);
 #endif
 static struct rtw_network_info wifi = {0};
-static struct rtw_softap_info ap = {0};
+static struct _rtw_softap_info_t ap = {0};
 static unsigned char password[129] = {0};
 static int security = -1;
 
@@ -620,7 +620,7 @@ AT command process:
 ****************************************************************/
 void at_wlrssi(void *arg)
 {
-	union rtw_phy_stats phy_stats;
+	union _rtw_phy_stats_t phy_stats;
 
 	UNUSED(arg);
 
@@ -977,8 +977,8 @@ void at_wlstate(void *arg)
 #endif
 			if (p_wifi_setting->mode == RTW_MODE_AP || i == 1) {
 				unsigned int client_number;
-				struct rtw_client_list client_info = {0};
-				union rtw_phy_stats phy_stats = {0};
+				struct _rtw_client_list_t client_info = {0};
+				union _rtw_phy_stats_t phy_stats = {0};
 				wifi_ap_get_connected_clients(&client_info);
 
 				at_printf("Associated Client List:\r\n");
@@ -1127,10 +1127,10 @@ void at_wlpromisc(void *arg)
 {
 	int argc = 0, error_no = 0;
 	char *argv[MAX_ARGC] = {0};
-	struct rtw_promisc_para promisc_para;
+	struct _promisc_para_t promisc_para;
 	u32 status;
 
-	memset(&promisc_para, 0, sizeof(struct rtw_promisc_para));
+	memset(&promisc_para, 0, sizeof(struct _promisc_para_t));
 
 	argc = parse_param(arg, argv);
 	if (argc > 1) {

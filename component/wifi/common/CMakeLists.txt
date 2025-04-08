@@ -31,11 +31,9 @@ ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/secure
 )
 
-if(CONFIG_WLAN)
 ameba_list_append_if(CONFIG_WLAN public_libraries
     ${c_SDK_LIB_APPLICATION_DIR}/lib_${release_target_name}.a
 )
-endif()
 
 # Component public part, user config end
 #----------------------------------------#
@@ -69,9 +67,10 @@ include(sources.cmake OPTIONAL)
 #------------------------------#
 
 #WARNING: Select right API based on your component's release/not-release/standalone
-if(CONFIG_WLAN)
+
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
 ameba_add_external_app_library(${release_target_name}
+    p_ADD_BUILD_INFO
     p_SOURCES
         ${private_sources}
     p_INCLUDES
@@ -93,5 +92,4 @@ ameba_add_internal_library(rtw_event
     p_COMPILE_OPTIONS
         ${private_compile_options}
 )
-endif()
 ##########################################################################################

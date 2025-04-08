@@ -13,7 +13,6 @@ set(TARGET_LIB wifi_api)
 # You may use if-else condition to set or update predefined variable above
 ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${c_CMPT_WIFI_DIR}/wpa_supplicant/src
 )
 if(CONFIG_ZEPHYR_SDK AND CONFIG_SINGLE_CORE_WIFI)
     ameba_list_append(public_libraries
@@ -94,6 +93,7 @@ endif()
 if(CONFIG_ZEPHYR_SDK AND CONFIG_SINGLE_CORE_WIFI)
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
     ameba_add_external_app_library(${TARGET_LIB}
+        p_ADD_BUILD_INFO
         p_SOURCES
             ${private_sources}
         p_INCLUDES

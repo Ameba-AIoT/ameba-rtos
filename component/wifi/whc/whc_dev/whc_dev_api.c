@@ -84,7 +84,6 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_SEND_EAPOL, whc_event_send_eapol},
 	{WHC_API_WIFI_AP_GET_CONNECTED_CLIENTS, whc_event_wifi_ap_get_connected_clients},
 	{WHC_API_WPA_4WAY_REPORT, whc_event_wpa_4way_rpt},
-	{WHC_API_WIFI_GET_TRAFFIC_STATS, whc_event_get_traffic_stats},
 #endif
 };
 
@@ -248,7 +247,7 @@ void whc_event_wifi_ap_get_connected_clients(u32 api_id, u32 *param_buf)
 {
 	(void)param_buf;
 	int ret = -1;
-	struct rtw_client_list *client_list_buffer = (struct rtw_client_list *)rtos_mem_zmalloc(sizeof(struct rtw_client_list));
+	struct _rtw_client_list_t *client_list_buffer = (struct _rtw_client_list_t *)rtos_mem_zmalloc(sizeof(struct _rtw_client_list_t));
 
 	if (!client_list_buffer) {
 		goto error_exit;
@@ -259,7 +258,7 @@ void whc_event_wifi_ap_get_connected_clients(u32 api_id, u32 *param_buf)
 		goto error_exit;
 	}
 
-	whc_send_api_ret_value(api_id, (u8 *)client_list_buffer, sizeof(struct rtw_client_list));
+	whc_send_api_ret_value(api_id, (u8 *)client_list_buffer, sizeof(struct _rtw_client_list_t));
 	goto exit;
 
 error_exit:
@@ -284,7 +283,7 @@ void whc_event_wifi_ap_del_client(u32 api_id, u32 *param_buf)
 void whc_event_wifi_ap_switch_ch(u32 api_id, u32 *param_buf)
 {
 	int ret = 0;
-	ret = wifi_ap_switch_chl_and_inform((struct rtw_csa_parm *)param_buf);
+	ret = wifi_ap_switch_chl_and_inform((struct _rtw_csa_parm_t *)param_buf);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
@@ -293,15 +292,6 @@ void whc_event_wpa_4way_rpt(u32 api_id, u32 *param_buf)
 	int ret = 0;
 	wifi_wpa_4way_status_indicate((struct rtw_wpa_4way_status *)param_buf);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
-}
-
-void whc_event_get_traffic_stats(u32 api_id, u32 *param_buf)
-{
-	u8 wlan_idx = (u8)param_buf[0];
-	union rtw_traffic_stats traffic_stats;
-
-	wifi_get_traffic_stats(wlan_idx, &traffic_stats);
-	whc_send_api_ret_value(api_id, (u8 *)&traffic_stats, sizeof(union rtw_traffic_stats));
 }
 
 #endif
@@ -382,7 +372,7 @@ void whc_event_wifi_get_chplan(u32 api_id, u32 *param_buf)
 void whc_event_wifi_get_countrycode(u32 api_id, u32 *param_buf)
 {
 	(void)param_buf;
-	struct rtw_country_code_table countryCode_t;
+	struct country_code_table_t countryCode_t;
 
 	wifi_get_countrycode(&countryCode_t);
 	whc_send_api_ret_value(api_id, (u8 *)&countryCode_t, sizeof(countryCode_t));
@@ -443,7 +433,7 @@ void whc_event_wifi_start_ap(u32 api_id, u32 *param_buf)
 {
 	int ret;
 	u8 *ptr = (u8 *)param_buf;
-	struct rtw_softap_info softAP_config;
+	struct _rtw_softap_info_t softAP_config;
 
 	memcpy(&softAP_config.ssid, ptr, sizeof(softAP_config.ssid));
 	ptr += sizeof(softAP_config.ssid);
@@ -582,14 +572,14 @@ void whc_event_wifi_fetch_phy_stats(u32 api_id, u32 *param_buf)
 	u8 wlan_idx = (u8)param_buf[0];
 	u32 mac_len = param_buf[1];
 	u8 *mac_addr = NULL;
-	union rtw_phy_stats phy_stats;
+	union _rtw_phy_stats_t phy_stats;
 
 	if (mac_len) {
 		mac_addr = (u8 *)(param_buf + 2);
 	}
 
 	wifi_get_phy_stats(wlan_idx, mac_addr, &phy_stats);
-	whc_send_api_ret_value(api_id, (u8 *)&phy_stats, sizeof(union rtw_phy_stats));
+	whc_send_api_ret_value(api_id, (u8 *)&phy_stats, sizeof(union _rtw_phy_stats_t));
 }
 
 void whc_event_wifi_send_mgnt(u32 api_id, u32 *param_buf)
@@ -828,7 +818,7 @@ void whc_event_wifi_custom_ie_ops(u32 api_id, u32 *param_buf)
 		ret = wifi_del_custom_ie(wlan_idx);
 	} else if (type == 1) {
 		int ie_index = (int)ptr[1];
-		struct rtw_custom_ie *cus_ie = rtos_mem_zmalloc(sizeof(struct rtw_custom_ie));
+		struct custom_ie *cus_ie = rtos_mem_zmalloc(sizeof(struct custom_ie));
 
 		cus_ie->type = ptr[2];
 		ptr += 3;
@@ -843,7 +833,7 @@ void whc_event_wifi_custom_ie_ops(u32 api_id, u32 *param_buf)
 
 		ptr += 2;
 		if (ie_num) {
-			struct rtw_custom_ie *cus_ie_array = rtos_mem_zmalloc(sizeof(struct rtw_custom_ie) * ie_num);
+			struct custom_ie *cus_ie_array = rtos_mem_zmalloc(sizeof(struct custom_ie) * ie_num);
 			for (i = 0; i < ie_num; i++) {
 				cus_ie_array[i].type = ptr[0];/*ptr[0]: type*/
 				cus_ie_array[i].ie = &ptr[1];/*ptr[1]: id*/
@@ -1083,7 +1073,7 @@ void whc_dev_scan_each_report_user_callback_indicate(struct rtw_scan_result *sca
 	(void) user_data;
 }
 
-u8 whc_dev_promisc_callback_indicate(struct rtw_rx_pkt_info *pkt_info)
+u8 whc_dev_promisc_callback_indicate(struct rx_pkt_info *pkt_info)
 {
 	/* TODO for Linux */
 	(void) pkt_info;

@@ -169,7 +169,7 @@ int wifi_get_scan_records(unsigned int *ap_num, struct rtw_scan_result *ap_list)
 /**
  * @brief  Trigger Wi-Fi driver to start an infrastructure Wi-Fi network.
  * @param[in]  softap_config: The pointer of a struct which store the softAP
- * 	configuration, please refer to struct rtw_softap_info in wifi_api_types.h.
+ * 	configuration, please refer to struct _rtw_softap_info_t in wifi_api_types.h.
  * @warning  If a STA interface is active when this function is called,
  * 	the softAP will start on the same channel as the STA.
  * 	It will NOT use the channel provided!
@@ -181,7 +181,7 @@ int wifi_get_scan_records(unsigned int *ap_num, struct rtw_scan_result *ap_list)
  * 	     with hidden ssid.
  *     - Please make sure the Wi-Fi is enabled (wifi_on()) before invoking this function.
  */
-int wifi_start_ap(struct rtw_softap_info *softap_config);
+int wifi_start_ap(struct _rtw_softap_info_t *softap_config);
 
 /**
  * @brief  Disable Wi-Fi interface-2.

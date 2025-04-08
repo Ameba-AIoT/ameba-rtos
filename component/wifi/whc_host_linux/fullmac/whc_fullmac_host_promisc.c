@@ -10,7 +10,7 @@
 
 #include <whc_host_linux.h>
 
-static int rtw_promisc_rx_80211_radiotap(struct rtw_rx_pkt_info *ppktinfo)
+static int rtw_promisc_rx_80211_radiotap(struct rx_pkt_info *ppktinfo)
 {
 	struct sk_buff *pskb = NULL;
 	struct ieee80211_radiotap_header *rtap_hdr = NULL;
@@ -96,7 +96,7 @@ static int rtw_promisc_rx_80211_radiotap(struct rtw_rx_pkt_info *ppktinfo)
 	return 0;
 }
 
-static int rtw_promisc_rx_ether(struct rtw_rx_pkt_info *ppktinfo)
+static int rtw_promisc_rx_ether(struct rx_pkt_info *ppktinfo)
 {
 	struct sk_buff *pskb = NULL;
 
@@ -122,7 +122,7 @@ static int rtw_promisc_rx_ether(struct rtw_rx_pkt_info *ppktinfo)
 	return 0;
 }
 
-int rtw_promisc_rx(struct rtw_rx_pkt_info *ppktinfo)
+int rtw_promisc_rx(struct rx_pkt_info *ppktinfo)
 {
 	int ret = 0;
 	struct net_device *ndev = global_idev.pndev[0];

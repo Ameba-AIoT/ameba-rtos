@@ -42,7 +42,7 @@ struct internal_join_block_param *join_block_param = NULL;
 int (*scan_user_callback_ptr)(unsigned int, void *) = NULL;
 int (*scan_each_report_user_callback_ptr)(struct rtw_scan_result *, void *) = NULL;
 
-u8(*promisc_user_callback_ptr)(struct rtw_rx_pkt_info *pkt_info) = NULL;
+u8(*promisc_user_callback_ptr)(struct rx_pkt_info *pkt_info) = NULL;
 int (*scan_acs_report_user_callback_ptr)(struct acs_mntr_rpt *acs_mntr_rpt) = NULL;
 
 extern void *param_indicator;
@@ -267,7 +267,7 @@ int wifi_on(u8 mode)
 	return ret;
 }
 
-int wifi_start_ap(struct rtw_softap_info *softap_config)
+int wifi_start_ap(struct _rtw_softap_info_t *softap_config)
 {
 	int ret = 0;
 	u8 *param_buf;
@@ -289,9 +289,9 @@ int wifi_start_ap(struct rtw_softap_info *softap_config)
 	}
 
 	DCache_Clean((u32)softap_config->password, softap_config->password_len);
-	DCache_Clean((u32)softap_config, sizeof(struct rtw_softap_info));
+	DCache_Clean((u32)softap_config, sizeof(struct _rtw_softap_info_t));
 
-	param_buf = rtos_mem_zmalloc(sizeof(struct rtw_softap_info) + softap_config->password_len);
+	param_buf = rtos_mem_zmalloc(sizeof(struct _rtw_softap_info_t) + softap_config->password_len);
 
 	if (!param_buf) {
 		goto exit;
@@ -331,7 +331,7 @@ int wifi_start_ap(struct rtw_softap_info *softap_config)
 		rtw_psk_set_psk_info(PSK_INFO);
 	}
 
-	whc_host_api_message_send(WHC_API_WIFI_START_AP, (u8 *)param_buf, sizeof(struct rtw_softap_info) + softap_config->password_len, (u8 *)&ret, sizeof(ret));
+	whc_host_api_message_send(WHC_API_WIFI_START_AP, (u8 *)param_buf, sizeof(struct _rtw_softap_info_t) + softap_config->password_len, (u8 *)&ret, sizeof(ret));
 
 	if (ret == RTK_SUCCESS) {
 #ifdef CONFIG_LWIP_LAYER
@@ -447,7 +447,7 @@ int wifi_scan_networks(struct rtw_scan_param *scan_param, unsigned char block)
 	return ret;
 }
 
-void wifi_promisc_enable(u32 enable, struct rtw_promisc_para *para)
+void wifi_promisc_enable(u32 enable, struct _promisc_para_t *para)
 {
 	u32 buf[3] = {0};
 	buf[0] = enable;

@@ -100,7 +100,7 @@ void wifi_roaming_thread(void *param)
 	struct rtw_scan_param scan_param;
 	int scanned_ap_num = 0;
 	struct rtw_network_info connect_param;
-	union rtw_phy_stats phy_stats;
+	union _rtw_phy_stats_t phy_stats;
 	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
 	memset(&connect_param, 0, sizeof(struct rtw_network_info));
 	memset(&setting, 0, sizeof(struct rtw_wifi_setting));

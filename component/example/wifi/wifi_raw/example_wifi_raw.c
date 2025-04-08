@@ -19,7 +19,7 @@ u8 addr3[6] = {0xBC, 0x46, 0x99, 0x7B, 0x48, 0x74};
 
 void wifi_raw_tx(void *param)
 {
-	struct rtw_raw_frame_desc tx_raw_data_desc = {0};
+	struct raw_frame_desc_t tx_raw_data_desc = {0};
 	UNUSED(param);
 
 	printf("%s start.\n", __func__);
@@ -54,7 +54,7 @@ void wifi_raw_tx(void *param)
 	rtos_task_delete(NULL);
 }
 
-static u8 promisc_callback(struct rtw_rx_pkt_info *pkt_info)
+static u8 promisc_callback(struct rx_pkt_info *pkt_info)
 {
 	u8 *buf = pkt_info->buf;
 	u8 subtype;
@@ -77,11 +77,11 @@ static u8 promisc_callback(struct rtw_rx_pkt_info *pkt_info)
 void wifi_raw_rx(void *param)
 {
 	UNUSED(param);
-	struct rtw_promisc_para promiscpara;
+	struct _promisc_para_t promiscpara;
 
 	printf("%s start.\n", __func__);
 
-	memset(&promiscpara, 0, sizeof(struct rtw_promisc_para));
+	memset(&promiscpara, 0, sizeof(struct _promisc_para_t));
 	promiscpara.filter_mode = RCR_ALL_PKT;
 	promiscpara.callback = promisc_callback;
 	wifi_promisc_enable(ENABLE, &promiscpara);

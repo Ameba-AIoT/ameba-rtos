@@ -30,13 +30,13 @@ extern void ip_nat_sync_dns_serever_data(void);
 
 int wifi_repeater_ap_config_complete = 0;
 
-static struct rtw_softap_info rptap = {0};
+static struct _rtw_softap_info_t rptap = {0};
 char *rptssid = "AmebaRPT";
 char *rptpassword = "12345678";	// NULL for RTW_SECURITY_OPEN
 unsigned char rptchannel = 6;
 static const char *const TAG = "WIFI_NAT_REPEATER";
 
-static int ip_nat_wifi_restart_ap(struct rtw_softap_info *softAP_config)
+static int ip_nat_wifi_restart_ap(struct _rtw_softap_info_t *softAP_config)
 {
 	unsigned char idx = 0;
 	u32 addr;
@@ -194,7 +194,7 @@ static int ip_nat_avoid_confliction_ip(void)
 		struct rtw_wifi_setting setting;
 		wifi_get_setting(SOFTAP_WLAN_INDEX, &setting);
 
-		struct rtw_softap_info softAP_config = {0};
+		struct _rtw_softap_info_t softAP_config = {0};
 		softAP_config.ssid.len = strlen((char *)setting.ssid);
 		memcpy(softAP_config.ssid.val, setting.ssid, softAP_config.ssid.len);
 		softAP_config.password = setting.password;

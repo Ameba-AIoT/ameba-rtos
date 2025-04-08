@@ -547,7 +547,7 @@ static u32 wifi_roaming_plus_find_ap_from_scan_buf(char *target_ssid, void *user
 int wifi_roaming_scan_one_channel(wifi_roaming_ap_t	roaming_ap, u32 retry)
 {
 	int cur_rssi, rssi_delta;
-	union rtw_phy_stats phy_stats;
+	union _rtw_phy_stats_t phy_stats;
 	struct rtw_scan_param scan_param;
 	int scanned_ap_num = 0;
 
@@ -681,7 +681,7 @@ void wifi_roaming_plus_thread(void *param)
 	(void)param;
 	ROAMING_DBG("\n %s()\n", __func__);
 	signed char ap_rssi;
-	union rtw_phy_stats phy_stats;
+	union _rtw_phy_stats_t phy_stats;
 	u32 scan_retry = 0;
 	u32	polling_count = 0;
 	u32 ap_valid = AP_VALID_TIME;

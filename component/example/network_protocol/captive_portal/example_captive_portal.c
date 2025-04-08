@@ -469,7 +469,7 @@ int EraseApinfo(void)
 
 extern void dhcps_init(struct netif *pnetif);
 extern void dhcps_deinit(void);
-int wifi_restart_ap(struct rtw_softap_info *softAP_config)
+int wifi_restart_ap(struct _rtw_softap_info_t *softAP_config)
 {
 	unsigned char idx = 0;
 #ifdef CONFIG_LWIP_LAYER
@@ -558,7 +558,7 @@ static void RestartSoftAP(void)
 	RTK_LOGI(NOTAG, "RestartAP: security_type=%d\n", Wifi_Setting.security_type);
 	RTK_LOGI(NOTAG, "RestartAP: password=%s\n", Wifi_Setting.password);
 	RTK_LOGI(NOTAG, "RestartAP: channel=%d\n", Wifi_Setting.channel);
-	struct rtw_softap_info softAP_config = {0};
+	struct _rtw_softap_info_t softAP_config = {0};
 	softAP_config.ssid.len = strlen((char *)Wifi_Setting.ssid);
 	memcpy(softAP_config.ssid.val, Wifi_Setting.ssid, softAP_config.ssid.len);
 	softAP_config.password = Wifi_Setting.password;

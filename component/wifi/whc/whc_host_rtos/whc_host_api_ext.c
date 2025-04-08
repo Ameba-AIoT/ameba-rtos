@@ -174,11 +174,11 @@ u8 wifi_driver_is_mp(void)
 }
 
 //----------------------------------------------------------------------------//
-int wifi_ap_get_connected_clients(struct rtw_client_list *client_list_buffer)
+int wifi_ap_get_connected_clients(struct _rtw_client_list_t *client_list_buffer)
 {
 	int ret = 0;
 
-	whc_host_api_message_send(WHC_API_WIFI_AP_GET_CONNECTED_CLIENTS, NULL, 0, (u8 *)client_list_buffer, sizeof(struct rtw_client_list));
+	whc_host_api_message_send(WHC_API_WIFI_AP_GET_CONNECTED_CLIENTS, NULL, 0, (u8 *)client_list_buffer, sizeof(struct _rtw_client_list_t));
 	return ret;
 }
 
@@ -194,18 +194,18 @@ int wifi_ap_del_client(unsigned char *hwaddr)
 
 }
 
-int wifi_ap_switch_chl_and_inform(struct rtw_csa_parm *csa_param)
+int wifi_ap_switch_chl_and_inform(struct _rtw_csa_parm_t *csa_param)
 {
 	int ret = 0;
-	char *param_buf = rtos_mem_zmalloc(sizeof(struct rtw_csa_parm));
+	char *param_buf = rtos_mem_zmalloc(sizeof(struct _rtw_csa_parm_t));
 	if (!param_buf) {
 		return -1;
 	}
 
 	p_ap_channel_switch_callback = csa_param->callback;
-	memcpy(param_buf, (void *)csa_param, sizeof(struct rtw_csa_parm));
+	memcpy(param_buf, (void *)csa_param, sizeof(struct _rtw_csa_parm_t));
 
-	whc_host_api_message_send(WHC_API_WIFI_AP_CH_SWITCH, (u8 *)param_buf, sizeof(struct rtw_csa_parm), (u8 *)&ret, sizeof(ret));
+	whc_host_api_message_send(WHC_API_WIFI_AP_CH_SWITCH, (u8 *)param_buf, sizeof(struct _rtw_csa_parm_t), (u8 *)&ret, sizeof(ret));
 
 	rtos_mem_free(param_buf);
 	return ret;
@@ -286,19 +286,7 @@ int wifi_set_pmk_cache_enable(unsigned char value)
 	return ret;
 }
 
-int wifi_get_traffic_stats(u8 wlan_idx, union rtw_traffic_stats *traffic_stats)
-{
-	int ret = 0;
-	u32 param_buf[1] = {0};
-
-	param_buf[0] = (u32)wlan_idx;
-
-	whc_host_api_message_send(WHC_API_WIFI_GET_TRAFFIC_STATS, (u8 *)param_buf, 4, (u8 *)traffic_stats, sizeof(union rtw_traffic_stats));
-
-	return ret;
-}
-
-int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union rtw_phy_stats *phy_stats)
+int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union _rtw_phy_stats_t *phy_stats)
 {
 	int ret = 0;
 	u32 param_buf[4] = {0};
@@ -315,7 +303,7 @@ int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union rtw_phy_stats *phy_stats
 		len += 4;
 	}
 
-	whc_host_api_message_send(WHC_API_WIFI_GET_PHY_STATS, (u8 *)param_buf, len, (u8 *)phy_stats, sizeof(union rtw_phy_stats));
+	whc_host_api_message_send(WHC_API_WIFI_GET_PHY_STATS, (u8 *)param_buf, len, (u8 *)phy_stats, sizeof(union _rtw_phy_stats_t));
 	return ret;
 }
 
@@ -449,10 +437,10 @@ void wifi_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way)
  *
  * u8 test_1[] = {221, 2, 2, 2};
  * u8 test_2[] = {221, 2, 1, 1};
- * struct rtw_custom_ie buf[2] = {{test_1, BEACON},
+ * struct custom_ie buf[2] = {{test_1, BEACON},
  *		 {test_2, PROBE_RSP}};
  * u8 buf_test2[] = {221, 2, 1, 3} ;
- * struct rtw_custom_ie buf_update = {buf_test2, PROBE_RSP};
+ * struct custom_ie buf_update = {buf_test2, PROBE_RSP};
  *
  * add ie list
  * static void cmd_add_ie(int argc, char **argv)
@@ -473,13 +461,13 @@ void wifi_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way)
  * }
  */
 
-int wifi_add_custom_ie(struct rtw_custom_ie *cus_ie, int ie_num)
+int wifi_add_custom_ie(struct custom_ie *cus_ie, int ie_num)
 {
 	int ret = 0;
 	u8 *param_buf, *ptr;
 	u32 size = 0;
 	u8 i = 0;
-	struct rtw_custom_ie *pcus_ie = cus_ie;
+	struct custom_ie *pcus_ie = cus_ie;
 
 	size += 2;
 	for (i = 0; i < ie_num; i++) {
@@ -507,12 +495,12 @@ int wifi_add_custom_ie(struct rtw_custom_ie *cus_ie, int ie_num)
 	return ret;
 }
 
-int wifi_update_custom_ie(struct rtw_custom_ie *cus_ie, int ie_index)
+int wifi_update_custom_ie(struct custom_ie *cus_ie, int ie_index)
 {
 	int ret = 0;
 	u8 *ptr, *param_buf;
 	u32 size = 0;
-	struct rtw_custom_ie *pcus_ie = cus_ie;
+	struct custom_ie *pcus_ie = cus_ie;
 
 	size = 3 + 2 + pcus_ie->ie[1];
 	ptr = param_buf = (u8 *)rtos_mem_zmalloc(size);
@@ -640,7 +628,7 @@ int wifi_get_band_type(u8 *band_type)
 }
 
 //----------------------------------------------------------------------------//
-int wifi_csi_config(struct rtw_csi_action_parm *act_param)
+int wifi_csi_config(struct _rtw_csi_action_parm_t *act_param)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -712,7 +700,7 @@ int wifi_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 	return 0;
 }
 
-int wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc)
+int wifi_send_raw_frame(struct raw_frame_desc_t *raw_frame_desc)
 {
 	int ret;
 	int idx = 0;
@@ -742,14 +730,14 @@ int wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc)
 }
 
 
-void wifi_speaker_setting(u8 set_type, union rtw_speaker_set *settings)
+void wifi_speaker_setting(u8 set_type, union speaker_set *settings)
 {
 #ifdef CONFIG_WIFI_SPEAKER_ENABLE
 	u32 param_buf[2] = {0};
 
 	param_buf[0] = (u32)set_type;
 
-	DCache_Clean((u32)settings, sizeof(union rtw_speaker_set));
+	DCache_Clean((u32)settings, sizeof(union speaker_set));
 	param_buf[1] = (u32)settings;
 	whc_host_api_message_send(WHC_API_WIFI_SPEAKER, (u8 *)param_buf, 8, NULL, 0);
 #else

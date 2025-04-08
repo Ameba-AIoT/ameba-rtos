@@ -820,25 +820,9 @@ struct rtw_wifi_setting {
 };
 
 /**
-  * @brief  The structure is used to describe the traffic statistics.
-  */
-union rtw_traffic_stats {
-	struct {
-		unsigned int	rx_packets;			/**< total packets received on the interface(exclude custom pkts).*/
-		unsigned int	tx_packets;			/**< total packets transmitted on the interface.*/
-		unsigned char	cur_rx_data_rate;	/**< Current rx data rate, val: MGN_1M, MGN_2M...*/
-		unsigned char	cur_tx_data_rate;	/**< Current tx data rate, val: MGN_1M, MGN_2M... */
-	} sta; /**< For STA mode statistic.*/
-	struct {
-		unsigned int	rx_packets;			/**< total packets received on the interface(exclude custom pkts).*/
-		unsigned int	tx_packets;			/**< total packets transmitted on the interface.*/
-	} ap; /**< For SOFTAP mode statistic.*/
-};
-
-/**
   * @brief  The structure is used to describe the phy statistics.
   */
-union rtw_phy_stats {
+union _rtw_phy_stats_t {
 	struct {
 		signed char	rssi;          /**< Average mixed rssi in 1 sec. */
 		signed char	data_rssi;          /**< Average data rssi in 1 sec. */
@@ -865,7 +849,7 @@ union rtw_phy_stats {
   * @note  The data length of string pointed by ssid should not exceed @ref RTW_ESSID_MAX_SIZE,
   *        and the data length of string pointed by password should not exceed RTW_MAX_PSK_LEN.
   */
-struct rtw_softap_info {
+struct _rtw_softap_info_t {
 	struct rtw_ssid		ssid;
 	unsigned char		hidden_ssid;
 	u32					security_type; /**< Val: RTW_SECURITY_OPEN, RTW_SECURITY_WEP_PSK...*/
@@ -878,7 +862,7 @@ struct rtw_softap_info {
 /**
   * @brief  The structure is used to describe the associated clients of SoftAP.
   */
-struct rtw_client_list {
+struct _rtw_client_list_t {
 	unsigned int    count;         /**< Number of associated clients in the list.    */
 	struct rtw_mac mac_list[MACID_HW_MAX_NUM - 2]; /**< Max length array of MAC addresses. */
 };
@@ -887,7 +871,7 @@ struct rtw_client_list {
 /**
   * @brief  The structure is used to describe the cfg parameters used for channel switch announcement.
   */
-struct rtw_csa_parm {
+struct _rtw_csa_parm_t {
 	unsigned char new_chl; /**< The new channel will be switched to. */
 	unsigned char chl_switch_cnt; /**< The channel switch cnt, after chl_switch_cnt*102ms, ap will switch to new channel. */
 	unsigned char action_type;	/**< 0: unicast csa action, 1: broadcast csa action, other values: disable transmit csa action. */
@@ -906,7 +890,7 @@ struct rtw_csa_parm {
 /**
 *@brief The structure is used to describe the rx packet's detail information.
 */
-struct rtw_rx_pkt_info {
+struct rx_pkt_info {
 	s8 recv_signal_power;
 	u8 data_rate; /**< Val: MGN_1M, MGN_2M...*/
 	u8 channel;
@@ -917,24 +901,24 @@ struct rtw_rx_pkt_info {
 /**
 *@brief The structure is used to describe the selected promisc mode and callback function.
 */
-struct rtw_promisc_para {
+struct _promisc_para_t {
 	/** @brief Receive all packets in the air or set some filtering conditions.
 		- @ref RCR_ALL_PKT : Receive all packets in the air.
 		- @ref RCR_AP_ALL : Receive all packtets send by connected AP.
 		*/
 	u8 filter_mode;
 	/** @brief User handle a packet.
-	  * @param[in] pkt_info:  The pointer of a struct rtw_rx_pkt_info which store the packet's detail information.
+	  * @param[in] pkt_info:  The pointer of a struct rx_pkt_info which store the packet's detail information.
 	  * @return Should the driver continue processing this packet after user has processed.
 	  * 	- @ref NEED_DRIVER_HANDLE : Driver continue processing this packet, This setting is usually required when the STA remains connected.
 	  *     - @ref BYPASS_DRIVER_HANDLE : Driver drop this packet, This setting is usually used when STA does not need connect.*/
-	u8(*callback)(struct rtw_rx_pkt_info *pkt_info);
+	u8(*callback)(struct rx_pkt_info *pkt_info);
 };
 
 /**********************************************************************************************
  *                                     speaker structures
  *********************************************************************************************/
-union rtw_speaker_set {
+union speaker_set {
 	struct {
 		u8 mode;              /**< 0 for slave, 1 for master. */
 		u8 nav_thresh;        /**< Unit 128us. */
@@ -992,7 +976,7 @@ struct rtw_csi_header {
   * @brief  The structure is used to describe the cfg parameters used for csi report.
   * @note  The mac_addr if not specified, the default value must be 0.
   */
-struct rtw_csi_action_parm {
+struct _rtw_csi_action_parm_t {
 	unsigned char group_num;   /**< val: CSI_GROUP_NUM_1, CSI_GROUP_NUM_2... */
 	unsigned char accuracy;    /**< val: CSI_ACCU_1BYTE, CSI_ACCU_2BYTE */
 	unsigned char alg_opt;     /**< val: CSI_ALG_LS, CSI_ALG_SMOTHING */
@@ -1033,7 +1017,7 @@ struct _pwr_lmt_regu_remap {
 /**
   * @brief  The structure is used to describe the raw frame.
   */
-struct rtw_raw_frame_desc {
+struct raw_frame_desc_t {
 	unsigned char wlan_idx;      /**< Index of wlan interface which will transmit. */
 	unsigned char device_id;     /**< Index of peer device which as a rx role for receiving this pkt, and will be update when linked peer. */
 	unsigned char *buf;          /**< Poninter of buf where raw data is stored.*/
@@ -1049,7 +1033,7 @@ struct rtw_raw_frame_desc {
  * @brief  The structure is used to set WIFI custom ie list,
  *
  */
-struct rtw_custom_ie {
+struct custom_ie {
 	/** Format:
 	 * <table>
 	 * <tr><th>1byte</th><th>1byte</th><th>length bytes</th></tr>
@@ -1063,13 +1047,13 @@ struct rtw_custom_ie {
 /**
  * @brief  The structure is used to describe channel plan and country code.
  */
-struct rtw_country_code_table {
+struct country_code_table_t {
 	char char2[2];   /**< Country code. */
 	u8 channel_plan; /**< Channel plan code. */
 	u8 pwr_lmt;      /**< Tx power limit index. */
 };
 
-struct rtw_tx_power_ctl_info {
+struct rtw_tx_power_ctl_info_t {
 	s8	tx_pwr_force; /**< Currently user can specify tx power for all rate, unit 0.25dbm.*/
 	u8	b_tx_pwr_force_enbale : 1; /**< 1 for enable, 0 for disable. */
 };

@@ -12,7 +12,7 @@
 #include "wifi_api.h"
 #include "rtw_autoconf.h"
 
-extern int wifi_csi_config(struct rtw_csi_action_parm *act_param);
+extern int wifi_csi_config(struct _rtw_csi_action_parm_t *act_param);
 extern int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
 
 rtos_sema_t wc_ready_sema = NULL;
@@ -22,12 +22,12 @@ static void wifi_csi_thread(void *param)
 {
 	(void)param;
 	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
-	struct rtw_csi_action_parm act_param = {0};
+	struct _rtw_csi_action_parm_t act_param = {0};
 	u32 len;
 	unsigned char *csi_buf = NULL;
 	unsigned char assoc_ap_mac[6] = {0xa4, 0x39, 0xb3, 0xa4, 0xbe, 0x2d};  /* need modify to mac address of associated AP when sta mode */
-	struct rtw_client_list client_info;
-	memset(&client_info, 0, sizeof(struct rtw_client_list));
+	struct _rtw_client_list_t client_info;
+	memset(&client_info, 0, sizeof(struct _rtw_client_list_t));
 	memcpy(act_param.mac_addr, assoc_ap_mac, 6);
 
 	while (1) {

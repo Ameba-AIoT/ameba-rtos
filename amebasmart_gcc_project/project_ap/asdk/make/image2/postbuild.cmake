@@ -45,10 +45,21 @@ execute_process(
 
 message( "========== Image manipulating start ==========")
 
+# Call make -C atf image to generate fip.bin after ca32_image2_all.bin is generated
+# TODO: need to catch the error
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E echo "Building atf img"
-    COMMAND ${CMAKE_COMMAND} -E env make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${c_SOC_PROJECT_DIR}/project_ap MENUCONFIG_DIR=${c_MENUCONFIG_DIR} -C ${c_BASEDIR}/component/soc/${c_SOC_TYPE}/atf image
+    COMMAND ${CMAKE_COMMAND} -E env make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${c_SOC_PROJECT_DIR}/project_ap BUILD_BASE=${BUILD_BASE} -C ${c_BASEDIR}/component/soc/${c_SOC_TYPE}/atf image
     WORKING_DIRECTORY ${c_BASEDIR}/component/soc/${c_SOC_TYPE}/atf
+)
+
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl1/bl1.dump ${c_SDK_IMAGE_TARGET_DIR}/bl1.dump
+    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl2/bl2.dump ${c_SDK_IMAGE_TARGET_DIR}/bl2.dump
+    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl32/bl32.dump ${c_SDK_IMAGE_TARGET_DIR}/bl32.dump
+    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl1/bl1.map ${c_SDK_IMAGE_TARGET_DIR}/bl1.map
+    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl2/bl2.map ${c_SDK_IMAGE_TARGET_DIR}/bl2.map
+    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl32/bl32.map ${c_SDK_IMAGE_TARGET_DIR}/bl32.map
 )
 
 execute_process(

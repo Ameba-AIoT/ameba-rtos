@@ -28,11 +28,6 @@ ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/mesh
     ${CMAKE_CURRENT_SOURCE_DIR}/wifi_tunnel
     ${c_CMPT_BLUETOOTH_DIR}/driver/bt_inic
-    ${c_CMPT_WIFI_DIR}/wifi_reg/common
-    ${c_CMPT_WIFI_DIR}/wifi_fast_connect
-    ${c_CMPT_WIFI_DIR}/wifi_auto_reconnect
-    ${c_CMPT_WIFI_DIR}/wifi_fw/common
-    ${c_CMPT_WIFI_DIR}/wifi_fw/${c_SOC_TYPE}/include
 )
 
 ameba_list_append_if(CONFIG_WHC_INTF_SDIO public_includes
@@ -276,6 +271,7 @@ ameba_list_append_if(CONFIG_MP_INCLUDED private_compile_options -Wno-unused-func
 if(CONFIG_WLAN AND (CONFIG_AS_INIC_NP OR CONFIG_SINGLE_CORE_WIFI))
     ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
     ameba_add_external_app_library(${release_target_name}
+        p_ADD_BUILD_INFO
         p_SOURCES
             ${private_sources}
         p_INCLUDES

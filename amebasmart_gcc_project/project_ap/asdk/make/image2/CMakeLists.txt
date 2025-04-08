@@ -36,13 +36,12 @@ ameba_add_subdirectory(${c_CMPT_PMC_DIR})
 
 ameba_add_subdirectory(${c_MCU_PROJECT_DIR}/src)
 
-# return()
-
+# TODO: need to catch the error
 add_custom_target(atf ALL
     COMMAND ${CMAKE_COMMAND} -E echo "Building atf project"
     # COMMAND ${CMAKE_COMMAND} -E make_directory ${c_SDK_IMAGE_TARGET_DIR}
-    COMMAND make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${c_SOC_PROJECT_DIR}/project_ap MENUCONFIG_DIR=${c_MENUCONFIG_DIR} -C ${c_CMPT_SOC_DIR}/atf all
-    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/../atf
+    COMMAND make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${c_SOC_PROJECT_DIR}/project_ap BUILD_BASE=${CMAKE_BINARY_DIR} -C ${c_CMPT_SOC_DIR}/atf all
+    WORKING_DIRECTORY ${c_CMPT_SOC_DIR}/atf
     COMMENT "Building atf project using make"
 )
 
@@ -105,7 +104,7 @@ add_custom_command(
         -Dc_SOC_PROJECT_DIR=${c_SOC_PROJECT_DIR} # dir of soc project
         -Dc_MCU_PROJECT_DIR=${c_MCU_PROJECT_DIR} # dir of current mcu project
         -Dc_SDK_IMAGE_TARGET_DIR=${c_SDK_IMAGE_TARGET_DIR} # dir of image output
-        -Dc_MENUCONFIG_DIR=${c_MENUCONFIG_DIR}
+        -DBUILD_BASE=${CMAKE_BINARY_DIR}
         -Dc_MCU_KCONFIG_FILE=${c_MCU_KCONFIG_FILE}
         -Dc_SOC_TYPE=${c_SOC_TYPE}
 

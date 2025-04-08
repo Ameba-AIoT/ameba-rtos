@@ -76,7 +76,7 @@ struct rtw_wifi_config {
 #define CAPTIVE_PORTAL_DEBUG	0
 #define CONFIG_READ_FLASH		0
 
-struct rtw_softap_info SOFTAP_CONFIG;
+struct _rtw_softap_info_t SOFTAP_CONFIG;
 struct netconn *pxHTTPListener = NULL;
 web_conn *web_connections = NULL;
 

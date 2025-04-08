@@ -15,11 +15,8 @@ static struct wps_str wps_info;
 static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_device *ndev, const u8 *mac, struct station_info *sinfo)
 {
 	int ret = 0;
-	unsigned char tx_rate;
-	union rtw_phy_stats *phy_stats_vir = NULL;
-	union rtw_traffic_stats *traffic_stats_vir = NULL;
+	union _rtw_phy_stats_t *stats_vir = NULL;
 	dma_addr_t stats_phy;
-	dma_addr_t stats_traffic;
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
@@ -27,39 +24,20 @@ static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_devi
 		dev_dbg(global_idev.fullmac_dev, "Only net device-0 is used for STA.");
 	}
 
-	phy_stats_vir = rtw_malloc(sizeof(union rtw_phy_stats), &stats_phy);
-	traffic_stats_vir = rtw_malloc(sizeof(union rtw_traffic_stats), &stats_traffic);
-	if (!phy_stats_vir || !traffic_stats_vir) {
+	stats_vir = rtw_malloc(sizeof(union _rtw_phy_stats_t), &stats_phy);
+	if (!stats_vir) {
 		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
 	}
 
-	ret = whc_fullmac_host_get_phy_stats(STA_WLAN_INDEX, NULL, stats_phy);
+	ret = whc_fullmac_host_get_stats(STA_WLAN_INDEX, NULL, stats_phy);
 
 	sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
-	sinfo->signal = phy_stats_vir->sta.rssi;
-
-	ret = whc_fullmac_host_get_traffic_stats(STA_WLAN_INDEX, stats_traffic);
+	sinfo->signal = stats_vir->sta.rssi;
 
 	sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
-	tx_rate = traffic_stats_vir->sta.cur_tx_data_rate;
-	if (tx_rate <= MGN_54M) {
-		sinfo->txrate.legacy = (tx_rate / 2) * 10; // bitrate in 100kbit/s
-	} else if ((tx_rate >= MGN_MCS0) && (tx_rate <= MGN_MCS7)) {
-		sinfo->txrate.flags |= RATE_INFO_FLAGS_MCS;
-		sinfo->txrate.mcs = tx_rate - MGN_MCS0;
-	} else if ((tx_rate >= MGN_VHT1SS_MCS0) && (tx_rate <= MGN_VHT1SS_MCS8)) {
-		sinfo->txrate.flags |= RATE_INFO_FLAGS_VHT_MCS;
-		sinfo->txrate.mcs = tx_rate - MGN_VHT1SS_MCS0;
-	} else if ((tx_rate >= MGN_HE1SS_MCS0) && (tx_rate <= MGN_HE1SS_MCS9)) {
-		sinfo->txrate.flags |= RATE_INFO_FLAGS_HE_MCS;
-		sinfo->txrate.mcs = tx_rate - MGN_HE1SS_MCS0;
-	} else {
-		sinfo->txrate.legacy = 540;
-	}
 
-	rtw_mfree(sizeof(union rtw_phy_stats), phy_stats_vir, stats_phy);
-	rtw_mfree(sizeof(union rtw_traffic_stats), traffic_stats_vir, stats_traffic);
+	rtw_mfree(sizeof(union _rtw_phy_stats_t), stats_vir, stats_phy);
 
 	return ret;
 }

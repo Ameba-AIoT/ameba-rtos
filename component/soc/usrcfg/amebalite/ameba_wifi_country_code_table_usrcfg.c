@@ -20,7 +20,7 @@ struct country_code_table_common_t {
 };
 
 //Default table is modified according to Regulatory country list domain code-new format(internal) 20240104-R45.xlsx
-const struct rtw_country_code_table country_code_table[] = {
+const struct country_code_table_t country_code_table[] = {
 	{{'A', 'R'}, 0x4d, TXPWR_LMT_FCC}, /* 0000 Argentina */
 	{{'B', 'O'}, 0x11, TXPWR_LMT_FCC}, /* 0001 Bolivia */
 	{{'B', 'R'}, 0x62, TXPWR_LMT_FCC}, /* 0002 Brazil */
