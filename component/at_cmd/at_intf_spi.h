@@ -14,7 +14,7 @@
 #define SPI_SLAVE_RD_CMD 0x01
 #define SPI_SLAVE_WR_CMD 0x02
 
-#define ATCMD_SPI_DMA_SIZE	2048 //for dma mode, buffer size should be multiple of CACHE_LINE_SIZE 
+#define ATCMD_SPI_DMA_SIZE	2048 * 8//for dma mode, buffer size should be multiple of CACHE_LINE_SIZE 
 
 struct atcmd_spi_req {
 	u8 cmd;

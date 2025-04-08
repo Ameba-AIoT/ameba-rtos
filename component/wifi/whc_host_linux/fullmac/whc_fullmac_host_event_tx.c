@@ -519,26 +519,7 @@ u32 whc_fullmac_host_update_ip_addr(void)
 	return ret;
 }
 
-int whc_fullmac_host_get_traffic_stats(u8 wlan_idx, dma_addr_t traffic_stats_addr)
-{
-	int ret = 0;
-	u32 size;
-	u32 *param;
-
-	size = 1 * sizeof(u32);
-
-	param = (u32 *)kzalloc(size, GFP_KERNEL);
-
-	param[0] = (u32)wlan_idx;
-
-	whc_fullmac_host_send_event(WHC_API_WIFI_GET_TRAFFIC_STATS, (u8 *)param, size, (u8 *)traffic_stats_addr, sizeof(union rtw_traffic_stats));
-
-	kfree((void *)param);
-
-	return ret;
-}
-
-int whc_fullmac_host_get_phy_stats(u8 wlan_idx, u8 *mac_addr, dma_addr_t phy_stats_addr)
+int whc_fullmac_host_get_stats(u8 wlan_idx, u8 *mac_addr, dma_addr_t stats_addr)
 {
 	int ret = 0;
 	u32 size, mac_len = 0;
@@ -559,7 +540,7 @@ int whc_fullmac_host_get_phy_stats(u8 wlan_idx, u8 *mac_addr, dma_addr_t phy_sta
 		memcpy((void *)(param + 2), mac_addr, ETH_ALEN);
 	}
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_GET_PHY_STATS, (u8 *)param, size, (u8 *)phy_stats_addr, sizeof(union rtw_phy_stats));
+	whc_fullmac_host_send_event(WHC_API_WIFI_GET_PHY_STATS, (u8 *)param, size, (u8 *)stats_addr, sizeof(union rtw_phy_stats));
 
 	kfree((void *)param);
 

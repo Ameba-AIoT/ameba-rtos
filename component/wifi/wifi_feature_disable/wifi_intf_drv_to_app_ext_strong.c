@@ -197,14 +197,6 @@ int wifi_ap_get_connected_clients(struct rtw_client_list *client_list_buf)
 	return -1;
 }
 
-int wifi_get_traffic_stats(u8 wlan_idx, union rtw_traffic_stats *traffic_stats)
-{
-	UNUSED(wlan_idx);
-	UNUSED(traffic_stats);
-	call_noused = __LINE__;
-	return -1;
-}
-
 int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union rtw_phy_stats *phy_stats)
 {
 	UNUSED(wlan_idx);

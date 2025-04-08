@@ -820,22 +820,6 @@ struct rtw_wifi_setting {
 };
 
 /**
-  * @brief  The structure is used to describe the traffic statistics.
-  */
-union rtw_traffic_stats {
-	struct {
-		unsigned int	rx_packets;			/**< total packets received on the interface(exclude custom pkts).*/
-		unsigned int	tx_packets;			/**< total packets transmitted on the interface.*/
-		unsigned char	cur_rx_data_rate;	/**< Current rx data rate, val: MGN_1M, MGN_2M...*/
-		unsigned char	cur_tx_data_rate;	/**< Current tx data rate, val: MGN_1M, MGN_2M... */
-	} sta; /**< For STA mode statistic.*/
-	struct {
-		unsigned int	rx_packets;			/**< total packets received on the interface(exclude custom pkts).*/
-		unsigned int	tx_packets;			/**< total packets transmitted on the interface.*/
-	} ap; /**< For SOFTAP mode statistic.*/
-};
-
-/**
   * @brief  The structure is used to describe the phy statistics.
   */
 union rtw_phy_stats {

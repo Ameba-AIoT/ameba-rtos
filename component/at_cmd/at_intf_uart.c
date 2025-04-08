@@ -175,6 +175,27 @@ tt_recv_again:
 			} else {
 				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "atcmd_tt_mode_rx_ring_buf is full, drop data\n");
 			}
+
+			/*recv stop char under tt mode*/
+			if (uart_tt_buf_len == 1 && uart_tt_buf[0] == '<') {
+				g_tt_mode_stop_char_cnt++;
+			} else {
+				g_tt_mode_stop_char_cnt = 0;
+			}
+
+			/*cancel tt mode stop timer if recv pkt before timeout*/
+			if (g_tt_mode_stop_flag == 0 && rtos_timer_is_timer_active(xTimers_TT_Mode)) {
+				rtos_timer_stop(xTimers_TT_Mode, 0);
+				g_tt_mode_stop_char_cnt = 0;
+			}
+
+			/*start tt mode stop timer once*/
+			if (g_tt_mode_stop_char_cnt >= 3) {
+				if (rtos_timer_is_timer_active(xTimers_TT_Mode) == 0) {
+					rtos_timer_start(xTimers_TT_Mode, 0);
+				}
+			}
+
 			uart_tt_buf_len = 0;
 			goto tt_recv_again;
 		}

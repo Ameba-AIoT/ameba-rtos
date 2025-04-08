@@ -149,3 +149,4 @@ ChangeLog:
 20250221  v2.8.5  Fix request timeout issue
 20250228  v2.8.6  Fix 1 byte otp program issue
 20250314  v2.8.7  Optimize request timeout
+20250408  v2.8.8  Fix nand flash download error with bad block

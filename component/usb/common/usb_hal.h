@@ -44,6 +44,7 @@ void usb_hal_unregister_irq_handler(void);
 void usb_hal_enable_global_interrupt(void);
 void usb_hal_disable_global_interrupt(void);
 u32 usb_hal_read_clear_interrupts(void);
+u32 usb_hal_read_interrupts(void);
 void usb_hal_clear_interrupts(u32 interrupt);
 int usb_hal_set_otg_mode(usb_otg_mode_t mode);
 usb_otg_mode_t usb_hal_get_otg_mode(void);

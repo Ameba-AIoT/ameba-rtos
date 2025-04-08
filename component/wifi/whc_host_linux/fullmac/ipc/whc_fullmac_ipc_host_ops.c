@@ -501,22 +501,7 @@ u32 whc_fullmac_host_update_ip_addr(void)
 	return ret;
 }
 
-int whc_fullmac_host_get_traffic_stats(u8 wlan_idx, dma_addr_t stats_traffic)
-{
-	int ret = 0;
-	u32 param_buf[2];
-
-	param_buf[0] = (u32)wlan_idx;
-
-	/* ptr of statistics to fullfill. */
-	param_buf[1] = (u32)stats_traffic;
-
-	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_GET_TRAFFIC_STATS, param_buf, 2);
-
-	return ret;
-}
-
-int whc_fullmac_host_get_phy_stats(u8 wlan_idx, u8 *mac_addr, dma_addr_t stats_phy)
+int whc_fullmac_host_get_stats(u8 wlan_idx, u8 *mac_addr, dma_addr_t stats_phy)
 {
 	int ret = 0;
 	u32 param_buf[3];

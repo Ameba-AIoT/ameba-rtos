@@ -286,18 +286,6 @@ int wifi_set_pmk_cache_enable(unsigned char value)
 	return ret;
 }
 
-int wifi_get_traffic_stats(u8 wlan_idx, union rtw_traffic_stats *traffic_stats)
-{
-	int ret = 0;
-	u32 param_buf[1] = {0};
-
-	param_buf[0] = (u32)wlan_idx;
-
-	whc_host_api_message_send(WHC_API_WIFI_GET_TRAFFIC_STATS, (u8 *)param_buf, 4, (u8 *)traffic_stats, sizeof(union rtw_traffic_stats));
-
-	return ret;
-}
-
 int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union rtw_phy_stats *phy_stats)
 {
 	int ret = 0;

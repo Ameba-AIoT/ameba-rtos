@@ -10,6 +10,10 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # Component public part, user config begin
 
 # You may use if-else condition to set or update predefined variable above
+ameba_list_append_if(CONFIG_GUI_EN public_libraries
+    ${c_SDK_LIB_APPLICATION_DIR}/lib_lvgl_drivers.a
+)
+
 ameba_list_append(public_includes
     lv_drivers/interfaces
 )
@@ -65,7 +69,7 @@ ameba_list_append(private_compile_options
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For open-source component, always build from source
-ameba_add_internal_library(lvgl_drivers
+ameba_add_external_app_library(lvgl_drivers
     p_SOURCES
         ${private_sources}
     p_INCLUDES

@@ -11,7 +11,7 @@ if(NOT TOOLCHAIN_DIR)
 			OUTPUT_VARIABLE stdoutput
 			)
 		if(ret)
-			message(FATAL_ERROR "${stdoutput} Create Toolchain Dir Failed. May Not Have Permission. Please Refer To README.MD Or AN900 Chapter 1.3 Installing Toolchain")
+			message(FATAL_ERROR "${stdoutput} Create Toolchain Dir Failed. May Not Have Permission!")
 		else()
 			message("Create Toolchain Dir ${TOOLCHAINDIR} Success")
 		endif()
@@ -26,7 +26,7 @@ if(NOT TOOLCHAIN_DIR)
 				OUTPUT_VARIABLE stdoutput
 			)
 			if(ret)
-				message(FATAL_ERROR "Download Failed. Please Check If Wget Is Installed And Network Connection Is Accessible Or Refer To AN900 Chapter 1.3")
+				message(FATAL_ERROR "Download Failed. Please Check If Wget Is Installed And Network Connection Is Accessible!")
 			else()
 				message("Download ${TOOLCHAINNAME} Success")
 			endif()
@@ -35,9 +35,21 @@ if(NOT TOOLCHAIN_DIR)
 		message("unzip ${TOOLCHAINNAME} ...")
 
 		if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
-			execute_process(COMMAND tar -jxf ${TOOLCHAINDIR}/${TOOLCHAINNAME} -C ${TOOLCHAINDIR})
+			execute_process(
+				COMMAND tar -jxf ${TOOLCHAINDIR}/${TOOLCHAINNAME} -C ${TOOLCHAINDIR}
+				RESULT_VARIABLE ret
+			)
 		else()
-			execute_process(COMMAND 7z x ${TOOLCHAINDIR}/${TOOLCHAINNAME} -o${TOOLCHAINDIR})
+			execute_process(
+				COMMAND 7z x ${TOOLCHAINDIR}/${TOOLCHAINNAME} -o${TOOLCHAINDIR}
+				RESULT_VARIABLE ret
+			)
+		endif()
+
+		if(ret)
+			message(FATAL_ERROR "Unzip Failed. Please Delete ${TOOLCHAINNAME} Manually and Try Again!")
+		else()
+			message("Unzip ${TOOLCHAINNAME} Success")
 		endif()
 		execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${TOOLCHAINDIR}/${ToolChainVerMajor}-${ToolChainVerMinor})
 		execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory ${TOOLCHAINDIR}/${ToolChainVerMajor} ${TOOLCHAINDIR}/${ToolChainVerMajor}-${ToolChainVerMinor})

@@ -120,7 +120,7 @@ static int proc_read_beacon_rssi(struct seq_file *m, void *v)
 		return -ENOMEM;
 	}
 
-	ret = whc_fullmac_host_get_phy_stats(STA_WLAN_INDEX, NULL, stats_phy);
+	ret = whc_fullmac_host_get_stats(STA_WLAN_INDEX, NULL, stats_phy);
 
 	beacon_rssi = stats_vir->sta.beacon_rssi;
 	seq_printf(m, "%d\n", beacon_rssi);
@@ -146,7 +146,7 @@ static int proc_read_data_rssi(struct seq_file *m, void *v)
 		return -ENOMEM;
 	}
 
-	ret = whc_fullmac_host_get_phy_stats(STA_WLAN_INDEX, NULL, stats_phy);
+	ret = whc_fullmac_host_get_stats(STA_WLAN_INDEX, NULL, stats_phy);
 
 	data_rssi = stats_vir->sta.data_rssi;
 	seq_printf(m, "%d\n", data_rssi);

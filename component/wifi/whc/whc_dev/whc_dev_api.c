@@ -84,7 +84,6 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_SEND_EAPOL, whc_event_send_eapol},
 	{WHC_API_WIFI_AP_GET_CONNECTED_CLIENTS, whc_event_wifi_ap_get_connected_clients},
 	{WHC_API_WPA_4WAY_REPORT, whc_event_wpa_4way_rpt},
-	{WHC_API_WIFI_GET_TRAFFIC_STATS, whc_event_get_traffic_stats},
 #endif
 };
 
@@ -293,15 +292,6 @@ void whc_event_wpa_4way_rpt(u32 api_id, u32 *param_buf)
 	int ret = 0;
 	wifi_wpa_4way_status_indicate((struct rtw_wpa_4way_status *)param_buf);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
-}
-
-void whc_event_get_traffic_stats(u32 api_id, u32 *param_buf)
-{
-	u8 wlan_idx = (u8)param_buf[0];
-	union rtw_traffic_stats traffic_stats;
-
-	wifi_get_traffic_stats(wlan_idx, &traffic_stats);
-	whc_send_api_ret_value(api_id, (u8 *)&traffic_stats, sizeof(union rtw_traffic_stats));
 }
 
 #endif

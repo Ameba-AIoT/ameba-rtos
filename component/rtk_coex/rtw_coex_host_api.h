@@ -21,7 +21,7 @@
  * @{
  */
 
-#include "ameba_soc.h"
+#include "ameba.h"
 
 #ifdef __cplusplus
 extern "C" {
