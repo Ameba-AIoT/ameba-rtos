@@ -14,6 +14,7 @@
 #include "atcmd_service.h"
 #include "atcmd_http.h"
 #include "httpc/httpc.h"
+#include "lwip/opt.h"
 
 static const char *const AT_HTTP_TAG = "AT_HTTP";
 
@@ -29,6 +30,7 @@ void at_httpconf(void *arg)
 {
 	int argc = 0, error_no = 0;
 	char *argv[MAX_ARGC] = {0};
+	int http_to = 0, http_srv_port = 0;
 
 	if (arg == NULL) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httpconf] Input parameter is NULL\r\n");
@@ -42,20 +44,27 @@ void at_httpconf(void *arg)
 		error_no = 1;
 		goto end;
 	}
-	http_timeout = atoi(argv[1]);
-	if (http_timeout < 0) {
+	if (strlen(argv[1]) == 0)  {
+		RTK_LOGE(AT_HTTP_TAG, "[at_httpconf] Missing input parameters\r\n");
+		error_no = 1;
+		goto end;
+	}
+	http_to = atoi(argv[1]);
+	if (http_to < 0) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httpconf] HTTP timeout setting value is incorrect\r\n");
 		error_no = 1;
 		goto end;
 	}
-	if (argv[2])  {
-		http_server_port = atoi(argv[2]);
-		if ((http_server_port < 0) || (http_server_port > 65535)) {
+	if (strlen(argv[2]))  {
+		http_srv_port = atoi(argv[2]);
+		if ((http_srv_port < 0) || (http_srv_port > 65535)) {
 			RTK_LOGE(AT_HTTP_TAG, "[at_httpconf] HTTP server port setting value is incorrect\r\n");
 			error_no = 1;
 			goto end;
 		}
 	}
+	http_timeout = http_to;
+	http_server_port = http_srv_port;
 
 end:
 	if (error_no == 0) {
@@ -111,7 +120,7 @@ void at_httpheader(void *arg)
 			error_no = 2;
 			goto end;
 		}
-		if (atcmd_tt_mode_get((u8 *)g_http_req_header[g_http_req_header_cnt], (u32)req_header_len) != (u32)req_header_len)  {
+		if (atcmd_tt_mode_get((u8 *)g_http_req_header[g_http_req_header_cnt], (u32)req_header_len) != req_header_len)  {
 			RTK_LOGI(AT_HTTP_TAG, "[at_httpheader] Get data failed in TT mode\r\n");
 			error_no = 3;
 			goto end;
@@ -713,7 +722,7 @@ void at_httppost(void *arg)
 			goto end;
 		}
 		if (total_post_body_size <= MAX_TT_BUF_LEN)  {
-			if (atcmd_tt_mode_get(post_data_buffer, (u32)total_post_body_size) != (u32)total_post_body_size)  {
+			if (atcmd_tt_mode_get(post_data_buffer, (u32)total_post_body_size) != total_post_body_size)  {
 				RTK_LOGI(AT_HTTP_TAG, "[at_httppost] Get data failed in TT mode\r\n");
 				error_no = 5;
 				goto end;
@@ -726,7 +735,7 @@ void at_httppost(void *arg)
 		} else  {
 			while (total_post_body_size > 0)  {
 				single_post_size = (total_post_body_size <= MAX_TT_BUF_LEN) ? total_post_body_size : MAX_TT_BUF_LEN;
-				if (atcmd_tt_mode_get(post_data_buffer, (u32)single_post_size) != (u32)single_post_size)  {
+				if (atcmd_tt_mode_get(post_data_buffer, (u32)single_post_size) != single_post_size)  {
 					RTK_LOGI(AT_HTTP_TAG, "[at_httppost] Get data failed in TT mode\r\n");
 					error_no = 5;
 					goto end;
@@ -1065,7 +1074,7 @@ void at_httpput(void *arg)
 			goto end;
 		}
 		if (total_post_body_size <= MAX_TT_BUF_LEN)  {
-			if (atcmd_tt_mode_get(post_data_buffer, (u32)total_post_body_size) != (u32)total_post_body_size)  {
+			if (atcmd_tt_mode_get(post_data_buffer, (u32)total_post_body_size) != total_post_body_size)  {
 				RTK_LOGI(AT_HTTP_TAG, "[at_httpput] Get data failed in TT mode\r\n");
 				error_no = 5;
 				goto end;
@@ -1078,7 +1087,7 @@ void at_httpput(void *arg)
 		} else  {
 			while (total_post_body_size > 0)  {
 				single_post_size = (total_post_body_size <= MAX_TT_BUF_LEN) ? total_post_body_size : MAX_TT_BUF_LEN;
-				if (atcmd_tt_mode_get(post_data_buffer, (u32)single_post_size) != (u32)single_post_size)  {
+				if (atcmd_tt_mode_get(post_data_buffer, (u32)single_post_size) != single_post_size)  {
 					RTK_LOGI(AT_HTTP_TAG, "[at_httpput] Get data failed in TT mode\r\n");
 					error_no = 5;
 					goto end;
@@ -1123,7 +1132,7 @@ void at_httpput(void *arg)
 			memset(response_data, 0, HTTP_READ_RESPONSE_DATA);
 			read_size = httpc_response_read_data(conn_ptr, response_data, HTTP_READ_RESPONSE_DATA - 1);
 			if (read_size > 0) {
-				RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_response_read_data() read_size=%d\r\n", read_size);
+				//RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_response_read_data() read_size=%d\r\n", read_size);
 				total_resp_body_size += read_size;
 				at_printf_data((char *)response_data, read_size);
 			} else {
@@ -1141,7 +1150,7 @@ void at_httpput(void *arg)
 			memset(response_data, 0, HTTP_READ_RESPONSE_DATA);
 			read_size = httpc_response_read_data(conn_ptr, response_data, HTTP_READ_RESPONSE_DATA - 1);
 			if (read_size > 0) {
-				RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_response_read_data() read_size=%d\r\n", read_size);
+				//RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_response_read_data() read_size=%d\r\n", read_size);
 				total_resp_body_size += read_size;
 				at_printf_data((char *)response_data, read_size);
 			} else {

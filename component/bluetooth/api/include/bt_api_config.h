@@ -210,6 +210,89 @@ extern "C"
 #endif /* RTK_BLE_5_0_SUPPORT */
 
 /*
+ * PLATFORM_AMEBAL2 (AmebaL2)
+ */
+#elif defined(CONFIG_AMEBAL2) && CONFIG_AMEBAL2
+#define RTK_BLE_GAP_MAX_LINKS               4
+#define RTK_BLE_SUPPORT                     1
+#define RTK_BT_POWER_CONTROL_SUPPORT        1
+
+#define RTK_BLE_GATTS                       1
+#define RTK_BLE_GATTC                       1
+#if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
+#define RTK_BLE_4_0_SUPPORT                 1
+#define RTK_BLE_4_2_SUPPORT                 1
+#define RTK_BLE_5_0_SUPPORT                 1
+#define RTK_BLE_5_1_SUPPORT                 0
+#define RTK_BLE_5_2_SUPPORT                 0
+#define RTK_BLE_SMP_OOB_SUPPORT             1
+#endif /* RTK_BLE_SUPPORT */
+
+#if defined(RTK_BLE_4_2_SUPPORT) && RTK_BLE_4_2_SUPPORT
+#define RTK_BLE_PRIVACY_SUPPORT             1
+#define RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT    1
+#endif /* RTK_BLE_4_2_SUPPORT */
+
+#if defined(RTK_BLE_5_0_SUPPORT) && RTK_BLE_5_0_SUPPORT
+#define RTK_BLE_5_0_SET_PHYS_SUPPORT        1
+#define RTK_BLE_5_0_AE_ADV_SUPPORT          0
+#define RTK_BLE_5_0_AE_SCAN_SUPPORT         0
+#endif /* RTK_BLE_5_0_SUPPORT */
+
+/*
+ * PLATFORM_AMEBASMART (AmebaSmartPlus)
+ */
+#elif defined(CONFIG_AMEBASMARTPLUS) && CONFIG_AMEBASMARTPLUS
+#define RTK_BLE_GAP_MAX_LINKS               4
+#define RTK_BLE_SUPPORT                     1
+#if defined(CONFIG_BT_BLE_ONLY) && CONFIG_BT_BLE_ONLY   // Defined in menuconfig
+#define RTK_BREDR_SUPPORT                   0
+#endif
+#if defined(CONFIG_BT_DUAL_MODE) && CONFIG_BT_DUAL_MODE // Defined in menuconfig
+#define RTK_BREDR_SUPPORT                   1
+#endif
+#define RTK_BT_POWER_CONTROL_SUPPORT        1
+#define RTK_BLE_SET_TX_QUEUE_NUM            0
+#define RTK_BLE_TX_SOF_EOF_INDICATION       0
+
+#define RTK_BLE_GATTS                       1
+#define RTK_BLE_GATTC                       1
+#if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
+#define RTK_BLE_4_0_SUPPORT                 1
+#define RTK_BLE_4_2_SUPPORT                 1
+#define RTK_BLE_5_0_SUPPORT                 1
+#define RTK_BLE_5_1_SUPPORT                 1
+#define RTK_BLE_5_2_SUPPORT                 1
+#define RTK_BLE_SMP_OOB_SUPPORT             1
+#define RTK_BLE_COC_SUPPORT                 0
+#endif /* RTK_BLE_SUPPORT */
+
+#if defined(RTK_BLE_4_2_SUPPORT) && RTK_BLE_4_2_SUPPORT
+#define RTK_BLE_PRIVACY_SUPPORT             1
+#define RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT    1
+#endif /* RTK_BLE_4_2_SUPPORT */
+
+#if defined(RTK_BLE_5_0_SUPPORT) && RTK_BLE_5_0_SUPPORT
+#define RTK_BLE_5_0_SET_PHYS_SUPPORT        1
+#define RTK_BLE_5_0_AE_ADV_SUPPORT          0
+#define RTK_BLE_5_0_AE_SCAN_SUPPORT         0
+#define RTK_BLE_5_0_PA_ADV_SUPPORT         (0 && RTK_BLE_5_0_AE_ADV_SUPPORT)
+#define RTK_BLE_5_0_PA_SYNC_SUPPORT        (0 && RTK_BLE_5_0_AE_SCAN_SUPPORT)
+#endif /* RTK_BLE_5_0_SUPPORT */
+
+#if defined(RTK_BLE_5_1_SUPPORT) && RTK_BLE_5_1_SUPPORT
+#define RTK_BLE_5_1_PAST_SENDER_SUPPORT     0
+#define RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT  0
+#define RTK_BLE_5_1_CTE_SUPPORT             0
+#endif /* RTK_BLE_5_1_SUPPORT */
+
+#if defined(RTK_BLE_5_2_SUPPORT) && RTK_BLE_5_2_SUPPORT
+#define RTK_BLE_5_2_POWER_CONTROL_SUPPORT   0
+#define RTK_BT_5_2_EATT_SUPPORT             0
+#define RTK_BT_5_2_L2C_ECFC_SUPPORT         (RTK_BT_5_2_EATT_SUPPORT)
+#endif /* RTK_BLE_5_2_SUPPORT */
+
+/*
  * Error Platform
  */
 #else

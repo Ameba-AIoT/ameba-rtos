@@ -53,7 +53,7 @@ NEXT:
 	}
 
 	/* register wifi event callback function */
-	wifi_reg_event_handler(WIFI_EVENT_CSI_DONE, example_wifi_csi_report_cb, NULL);
+	wifi_reg_event_handler(RTW_EVENT_CSI_DONE, example_wifi_csi_report_cb, NULL);
 
 	/**
 	 * should use semaphore to wait wifi event happen
@@ -69,7 +69,7 @@ NEXT:
 	act_param.mode = CSI_MODE_RX_RESP;
 	act_param.accuracy = CSI_ACCU_1BYTE;
 	act_param.trig_period = 200;     /* units: 320us */
-	act_param.data_rate = MGN_6M;    /* ofdm 6 mpbs*/
+	act_param.data_rate = RTW_RATE_6M;    /* ofdm 6 mpbs*/
 	act_param.trig_frame_mgnt = 0;   /* no need for rx resp mode, default 0*/
 	act_param.trig_frame_ctrl = 0;   /* no need for rx resp mode, default 0*/
 	act_param.trig_frame_data = 0;   /* no need for rx resp mode, default 0*/
@@ -111,7 +111,7 @@ NEXT:
 	}
 
 	/* unregister wifi event callback function */
-	wifi_unreg_event_handler(WIFI_EVENT_CSI_DONE, example_wifi_csi_report_cb);
+	wifi_unreg_event_handler(RTW_EVENT_CSI_DONE, example_wifi_csi_report_cb);
 
 	if (wc_ready_sema) {
 		rtos_sema_delete(wc_ready_sema);

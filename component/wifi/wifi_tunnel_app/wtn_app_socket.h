@@ -27,5 +27,5 @@ struct wtn_http_ota_param {
 /* -------------------------------- Includes -------------------------------- */
 
 int wtn_socket_send(u8 *buf, u32 len);
-int wtn_socket_init(u8 enable);
+int wtn_socket_init(u8 enable, u8 rnat_ap_start);
 #endif

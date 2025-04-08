@@ -373,7 +373,7 @@ int wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc);
  * @param[in]  enable: Set 1 to add control for specified tx_rate for
  * 	corresponding ToS_value, set 0 to disable initial rate control for this ToS_value.
  * @param[in]  tos_precedence: Range from 0 to 7, corresponding to IP precedence in TOS field of IP header(BIT7~5).
- * @param[in]  tx_rate: Initial tx rate for packet which has the same ToS value as setted. val: MGN_1M, MGN_2M...
+ * @param[in]  tx_rate: Initial tx rate for packet which has the same ToS value as setted. val: RTW_RATE_1M, RTW_RATE_2M...
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL.
  * @note This function only take IP Precedence(BIT 7~5 in ToS field) into consideration.
  */
@@ -474,7 +474,7 @@ int wifi_set_tx_power(struct rtw_tx_power_ctl_info *txpwr_ctrl_info);
 
 /**
  * @brief  For user to get tx power.
- * @param[in]  rate: Phy rate, val: MGN_1M, MGN_2M...
+ * @param[in]  rate: Phy rate, val: RTW_RATE_1M, RTW_RATE_2M...
  *                 - CCK rate 1M,2M,5.5M,11M
  *                 - OFDM rate 6M,9M,12M,18M,24M,36M,48M,54M
  *                 - HT rate MCS0~MCS7

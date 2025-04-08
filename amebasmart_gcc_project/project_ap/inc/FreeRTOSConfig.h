@@ -49,6 +49,14 @@
  * setting configMAX_API_CALL_INTERRUPT_PRIORITY 0xFF represents the lowest
  * priority.
  */
+#include "platform_autoconf.h"
+
+/* Realtek Heap Integrity Check configuration. */
+#ifdef CONFIG_HEAP_INTEGRITY_CHECK_IN_TASK_SWITCHED_OUT
+extern uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK);
+#define traceTASK_SWITCHED_OUT ulPortCheckHeapIntegrity
+#endif
+
 #define configMAX_API_CALL_INTERRUPT_PRIORITY	0x11
 
 #define configNUM_CORES							CONFIG_CPUS_NUM  /* Do not modify core number here but in menuconfig*/

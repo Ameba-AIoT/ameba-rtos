@@ -315,8 +315,8 @@ void DDR_PHY_CRT_Init(void)
 
 	/*PLL and DPI enable*/
 	ddr_phy->DDRPHY_CRT_RST_CTL &= (~DDRPHY_BIT_PTR_RST_N);	//PLL and DPI enable (ptr_rst_n = 0x0)
-	ddr_phy->DDRPHY_CRT_RST_CTL |= DDRPHY_BIT_RST_N;	//PLL and DPI enable (rst_n = 0x1)
 	DelayUs(5);
+	ddr_phy->DDRPHY_CRT_RST_CTL |= DDRPHY_BIT_RST_N;	//PLL and DPI enable (rst_n = 0x1)
 	ddr_phy->DDRPHY_CRT_RST_CTL |= DDRPHY_BIT_PTR_RST_N;	//PLL and DPI enable (ptr_rst_n = 0x0)
 
 	/*SSC NFCODE fetch*/

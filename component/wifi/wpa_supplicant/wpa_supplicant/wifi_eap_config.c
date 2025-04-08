@@ -84,7 +84,7 @@ extern void eap_sm_deinit(void);
 void eap_disconnected_hdl(void)
 {
 	if (eap_event_reg_disconn) {
-		wifi_unreg_event_handler(WIFI_EVENT_WPA_EAPOL_RECVD, eap_eapol_recvd_hdl);
+		wifi_unreg_event_handler(RTW_EVENT_WPA_EAPOL_RECVD, eap_eapol_recvd_hdl);
 		eap_event_reg_disconn = 0;
 		//eap_peer_unregister_methods();
 		eap_sm_deinit();
@@ -216,8 +216,8 @@ int eap_start(char *method)
 	//eap_config();
 
 	set_eap_phase(ENABLE);
-	wifi_reg_event_handler(WIFI_EVENT_WPA_EAPOL_START, eap_eapol_start_hdl, NULL);
-	wifi_reg_event_handler(WIFI_EVENT_WPA_EAPOL_RECVD, eap_eapol_recvd_hdl, NULL);
+	wifi_reg_event_handler(RTW_EVENT_WPA_EAPOL_START, eap_eapol_start_hdl, NULL);
+	wifi_reg_event_handler(RTW_EVENT_WPA_EAPOL_RECVD, eap_eapol_recvd_hdl, NULL);
 
 
 
@@ -230,7 +230,7 @@ int eap_start(char *method)
 	}
 #endif
 
-	wifi_unreg_event_handler(WIFI_EVENT_WPA_EAPOL_START, eap_eapol_start_hdl);
+	wifi_unreg_event_handler(RTW_EVENT_WPA_EAPOL_START, eap_eapol_start_hdl);
 	eap_event_reg_disconn = 1;
 	set_eap_phase(DISABLE);
 
