@@ -23,8 +23,8 @@ jobs:
     - name: Set branch as environment variable
       run: |
         echo "CURRENT_DATE=$(date '+%Y-%m-%d')" >> $GITHUB_ENV
-        echo "CURRENT_BRANCH=${{ github.actor }}:${GITHUB_REF##*/}" >> $GITHUB_ENV
-        echo "PULL_REQUEST_FROM_BRANCH=${{ github.actor }}:${GITHUB_REF##*/}" >> $GITHUB_ENV
+        echo "CURRENT_BRANCH=${{ github.actor }}:release/${GITHUB_REF##*/}" >> $GITHUB_ENV
+        echo "PULL_REQUEST_FROM_BRANCH=${{ github.actor }}:release/${GITHUB_REF##*/}" >> $GITHUB_ENV
   
     - name: Get current commit message
       run: |
