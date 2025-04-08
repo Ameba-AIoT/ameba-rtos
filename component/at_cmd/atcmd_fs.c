@@ -398,6 +398,10 @@ end:
 
 int atcmd_get_ssl_certificate_size(CERT_TYPE cert_type, int index)
 {
+	if (index < 1 || index > 10) {
+		return -1;
+	}
+
 	char *prefix;
 	char *path = (char *)rtos_mem_zmalloc(PATH_MAX);
 
@@ -443,6 +447,10 @@ int atcmd_get_ssl_certificate_size(CERT_TYPE cert_type, int index)
 int atcmd_get_ssl_certificate(char *buffer, CERT_TYPE cert_type, int index)
 {
 	if (buffer == NULL) {
+		return -1;
+	}
+
+	if (index < 1 || index > 10) {
 		return -1;
 	}
 
@@ -505,7 +513,7 @@ int atcmd_get_ssl_certificate(char *buffer, CERT_TYPE cert_type, int index)
 static void at_cert_help(void)
 {
 	RTK_LOGI(TAG, "\r\n");
-	RTK_LOGI(TAG, "AT+FS=<role>,<index>\r\n");
+	RTK_LOGI(TAG, "AT+CERT=<role>,<index>\r\n");
 	RTK_LOGI(TAG, "\t<role>:\t0=client, 1=server\r\n");
 	RTK_LOGI(TAG, "\t<index>:\tcert index, start from 1\r\n");
 }

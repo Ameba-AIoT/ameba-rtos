@@ -1,8 +1,31 @@
-menu "CONFIG FUNCTION TEST"
-    config PER_TEST
-        bool "Enable Peripheral Test"
+config TEST_KM0_MENU
+    bool "Test code run on km0"
 
-    if PER_TEST
+config TEST_KM4_MENU
+    bool "Test code run on km4"
+
+config TEST_CA32_MENU
+    bool "Test code run on ca32"
+
+if TEST_KM0_MENU||TEST_KM4_MENU||TEST_CA32_MENU
+
+menu "CONFIG FUNCTION TEST"
+    config PER_TEST_MENU
+        bool "Enable Peripheral Test"
+        select PER_TEST_FOR_KM0  if TEST_KM0_MENU
+        select PER_TEST_FOR_KM4  if TEST_KM4_MENU
+        select PER_TEST_FOR_CA32 if TEST_CA32_MENU
+
+    config PER_TEST_FOR_KM0
+        bool
+
+    config PER_TEST_FOR_KM4
+        bool
+
+    config PER_TEST_FOR_CA32
+        bool
+
+    if PER_TEST_MENU
         config SYS_VERIFY
             bool "System_Verify_Mode"
 
@@ -192,10 +215,23 @@ endmenu # CONFIG PER TEST
 
 
 menu "CONFIG SECURE TEST"
-    config SEC_VERIFY
+    config SEC_VERIFY_MENU
         bool "SEC_Verify_Mode"
+        select SEC_VERIFY_FOR_KM0  if TEST_KM0_MENU
+        select SEC_VERIFY_FOR_KM4  if TEST_KM4_MENU
+        select SEC_VERIFY_FOR_CA32 if TEST_CA32_MENU
 
-    if SEC_VERIFY
+
+    config SEC_VERIFY_FOR_KM0
+        bool
+
+    config SEC_VERIFY_FOR_KM4
+        bool
+
+    config SEC_VERIFY_FOR_CA32
+        bool
+
+    if SEC_VERIFY_MENU
         config CACHE_SEC_VERIFY
             bool "CACHE Secure Test"
         config EFUSE_SEC_VERIFY
@@ -240,3 +276,5 @@ menu "CONFIG SECURE TEST"
             bool "AUDIO Secure Test"
     endif
 endmenu
+
+endif

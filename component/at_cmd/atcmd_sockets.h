@@ -8,8 +8,9 @@
 #define __ATCMD_SOCKETS_H__
 
 
-#include "random.h"
 #include "lwip_netconf.h"
+
+#include "at_intf_spi.h"
 
 #include "mbedtls/config.h"
 #include "mbedtls/platform.h"
@@ -54,6 +55,11 @@
 #define NODE_MODE_SSL                     2
 #define NODE_MODE_INVALID                 -1
 
+#define SOCKET_SERVER_OVER_UDP                   0
+#define SOCKET_SERVER_OVER_TCP                   1
+#define SOCKET_SERVER_OVER_TLS                   2	// do not verify client certificate
+#define SOCKET_SERVER_OVER_TLS_VERIFY_CLIENT	 3	// verify client certificate
+
 #define SOCKET_CLIENT_OVER_UDP                   0
 #define SOCKET_CLIENT_OVER_TCP                   1
 #define SOCKET_CLIENT_OVER_TLS_NO_VERIFY         2
@@ -71,6 +77,10 @@
 #define ATCMD_LWIP_TASK_PRIORITY          1
 
 #define ETH_MAX_MTU                       1500
+
+#define AT_SOCKET_RECEIVE_BUFFER_SIZE     ATCMD_SPI_DMA_SIZE
+
+#define SOCKET_AT_BACKLOG				  5
 
 #define RECV_SELECT_TIMEOUT_SEC           0
 #define RECV_SELECT_TIMEOUT_USEC          20000

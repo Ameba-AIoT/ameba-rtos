@@ -5,19 +5,19 @@
  */
 
 /* Includes ------------------------------------------------------------------ */
-/* This used to check the USB issue */
-#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBADPLUS)
-#define CONFIG_USBD_COMPOSITE_AUDIO_EN                          1
-#else
-#define CONFIG_USBD_COMPOSITE_AUDIO_EN                          0
-#endif
-
 #include <platform_autoconf.h>
 #include "usbd_composite_uac_hid.h"
 #include "os_wrapper.h"
 #include "ameba_soc.h"
 #include "platform_stdlib.h"
 #include "basic_types.h"
+
+/* This used to check the USB issue */
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBADPLUS)
+#define CONFIG_USBD_COMPOSITE_AUDIO_EN                          1
+#else
+#define CONFIG_USBD_COMPOSITE_AUDIO_EN                          0
+#endif
 
 #if  CONFIG_USBD_COMPOSITE_AUDIO_EN
 #include "audio/audio_control.h"
@@ -94,7 +94,7 @@ static int composite_uac_cb_deinit(void);
 static int composite_uac_cb_set_config(void);
 static int composite_uac_cb_mute_changed(u8 mute);
 static int composite_uac_cb_volume_changed(u8 volume);
-static int composite_uac_cb_format_changed(u32 freq, u8 ch_cnt, u8 byte_width);
+static int composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
 
 /* Private variables ---------------------------------------------------------*/
 /*
@@ -398,17 +398,17 @@ static int composite_uac_cb_volume_changed(u8 volume)
 	return HAL_OK;
 }
 
-static int composite_uac_cb_format_changed(u32 freq, u8 ch_cnt, u8 byte_width)
+static int composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
 {
 	usbd_composite_uac_stop_play();
 	usbd_comp_audio_task_stop = 1;
 	uac_play_start_flag = 1;
 
-	composite_uac_usr_cb.out.freqence = freq;
+	composite_uac_usr_cb.out.sampling_freq = sampling_freq;
 	composite_uac_usr_cb.out.ch_cnt = ch_cnt;
 	composite_uac_usr_cb.out.byte_width = byte_width;
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC set freq %d ch_cnt %d\n", freq, ch_cnt);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC set sampling_freq %d ch_cnt %d\n", sampling_freq, ch_cnt);
 
 	return HAL_OK;
 }
@@ -435,8 +435,8 @@ static void composite_usbd_audio_track_play(void)
 	int32_t track_buf_size;
 
 	/* audio trace config params */
-	// RTK_LOGS(TAG, RTK_LOG_DEBUG,"Audio info %d-%d-%d\n",composite_uac_usr_cb.out.byte_width,composite_uac_usr_cb.out.ch_cnt,composite_uac_usr_cb.out.freqence);
-	uint32_t g_track_rate = composite_uac_usr_cb.out.freqence;
+	// RTK_LOGS(TAG, RTK_LOG_DEBUG,"Audio info %d-%d-%d\n",composite_uac_usr_cb.out.byte_width,composite_uac_usr_cb.out.ch_cnt,composite_uac_usr_cb.out.sampling_freq);
+	uint32_t g_track_rate = composite_uac_usr_cb.out.sampling_freq;
 	uint32_t g_track_channel = composite_uac_usr_cb.out.ch_cnt;
 	uint32_t g_track_format = composite_uac_usr_cb.out.byte_width * 8;
 

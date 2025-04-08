@@ -5,12 +5,6 @@
  */
 
 /* Includes ------------------------------------------------------------------ */
-/* This used to check the USB issue */
-#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBADPLUS)
-#define CONFIG_USBD_COMPOSITE_AUDIO_EN                          1
-#else
-#define CONFIG_USBD_COMPOSITE_AUDIO_EN                          0
-#endif
 
 #include <platform_autoconf.h>
 #include "usbd_composite_cdc_acm_uac.h"
@@ -19,6 +13,13 @@
 #include "os_wrapper.h"
 #include "platform_stdlib.h"
 #include "basic_types.h"
+
+/* This used to check the USB issue */
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBADPLUS)
+#define CONFIG_USBD_COMPOSITE_AUDIO_EN                          1
+#else
+#define CONFIG_USBD_COMPOSITE_AUDIO_EN                          0
+#endif
 
 #if  CONFIG_USBD_COMPOSITE_AUDIO_EN
 #include "audio/audio_control.h"
@@ -77,7 +78,7 @@ static int composite_uac_cb_set_config(void);
 
 static int composite_uac_cb_mute_changed(u8 mute);
 static int composite_uac_cb_volume_changed(u8 volume);
-static int composite_uac_cb_format_changed(u32 freq, u8 ch_cnt, u8 byte_width);
+static int composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
 
 /* Private variables ---------------------------------------------------------*/
 static usbd_config_t composite_cfg = {
@@ -385,10 +386,10 @@ static int composite_uac_cb_volume_changed(u8 volume)
 	return HAL_OK;
 }
 
-static int composite_uac_cb_format_changed(u32 freq, u8 ch_cnt, u8 byte_width)
+static int composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set freq %d set ch_cnt %d\n", freq, ch_cnt);
-	composite_uac_usr_cb.out.freqence = freq;
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set sampling_freq %d set ch_cnt %d\n", sampling_freq, ch_cnt);
+	composite_uac_usr_cb.out.sampling_freq = sampling_freq;
 	composite_uac_usr_cb.out.ch_cnt = ch_cnt;
 	composite_uac_usr_cb.out.byte_width = byte_width;
 	rtos_sema_give(uac_ready_sema);
@@ -419,7 +420,7 @@ static void example_audio_track_play(void)
 	int32_t track_buf_size;
 
 	/* audio trace config params */
-	uint32_t g_track_rate = composite_uac_usr_cb.out.freqence;
+	uint32_t g_track_rate = composite_uac_usr_cb.out.sampling_freq;
 	uint32_t g_track_channel = composite_uac_usr_cb.out.ch_cnt;
 	uint32_t g_track_format = composite_uac_usr_cb.out.byte_width * 8;
 

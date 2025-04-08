@@ -43,17 +43,17 @@ static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_devi
 
 	sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
 	tx_rate = traffic_stats_vir->sta.cur_tx_data_rate;
-	if (tx_rate <= MGN_54M) {
+	if (tx_rate <= RTW_RATE_54M) {
 		sinfo->txrate.legacy = (tx_rate / 2) * 10; // bitrate in 100kbit/s
-	} else if ((tx_rate >= MGN_MCS0) && (tx_rate <= MGN_MCS7)) {
+	} else if ((tx_rate >= RTW_RATE_MCS0) && (tx_rate <= RTW_RATE_MCS7)) {
 		sinfo->txrate.flags |= RATE_INFO_FLAGS_MCS;
-		sinfo->txrate.mcs = tx_rate - MGN_MCS0;
-	} else if ((tx_rate >= MGN_VHT1SS_MCS0) && (tx_rate <= MGN_VHT1SS_MCS8)) {
+		sinfo->txrate.mcs = tx_rate - RTW_RATE_MCS0;
+	} else if ((tx_rate >= RTW_RATE_VHT1SS_MCS0) && (tx_rate <= RTW_RATE_VHT1SS_MCS8)) {
 		sinfo->txrate.flags |= RATE_INFO_FLAGS_VHT_MCS;
-		sinfo->txrate.mcs = tx_rate - MGN_VHT1SS_MCS0;
-	} else if ((tx_rate >= MGN_HE1SS_MCS0) && (tx_rate <= MGN_HE1SS_MCS9)) {
+		sinfo->txrate.mcs = tx_rate - RTW_RATE_VHT1SS_MCS0;
+	} else if ((tx_rate >= RTW_RATE_HE1SS_MCS0) && (tx_rate <= RTW_RATE_HE1SS_MCS9)) {
 		sinfo->txrate.flags |= RATE_INFO_FLAGS_HE_MCS;
-		sinfo->txrate.mcs = tx_rate - MGN_HE1SS_MCS0;
+		sinfo->txrate.mcs = tx_rate - RTW_RATE_HE1SS_MCS0;
 	} else {
 		sinfo->txrate.legacy = 540;
 	}
@@ -764,7 +764,7 @@ static int whc_fullmac_host_disconnect_ops(struct wiphy *wiphy, struct net_devic
 		whc_fullmac_host_set_wps_phase(0);
 	}
 
-	/* KM4 will report WIFI_EVENT_DISCONNECT event to linux, after disconnect done, and b_in_disconnect can prevent a deadlock caused by an early event. */
+	/* KM4 will report RTW_EVENT_DISCONNECT event to linux, after disconnect done, and b_in_disconnect can prevent a deadlock caused by an early event. */
 	global_idev.mlme_priv.b_in_disconnect = true;
 
 	ret = whc_fullmac_host_event_disconnect();

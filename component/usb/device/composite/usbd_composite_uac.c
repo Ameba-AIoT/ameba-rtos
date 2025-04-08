@@ -46,16 +46,16 @@ static u16 usbd_composite_uac_get_mps(usbd_audio_cfg_t *params, u8 speed);
 static u8 usbd_composite_uac_get_ch_config(u8 ch_cnt);
 static inline u8 usbd_composite_uac_ep_enable(usbd_audio_cfg_t *ep);
 static void usbd_composite_uac_clk_valid_req(usb_dev_t *dev, u8 flag);
-static void usbd_composite_uac_cur_freq_req(usb_dev_t *dev, u32 frequency);
-static int usbd_composite_uac_freq_ctrl_range_req(usb_dev_t *dev, u16 max_len);
+static void usbd_composite_uac_cur_sampling_freq_req(usb_dev_t *dev, u32 sampling_freq);
+static int usbd_composite_uac_sampling_freq_ctrl_range_req(usb_dev_t *dev, u16 max_len);
 static void usbd_composite_uac_connect_ctrl_req(usb_dev_t *dev, u8 ch_num, u32 ch_cfg, u16 max_len);
-static int usbd_composite_uac_is_valid_sample_rate(u32 freq, u8 speed);
+static int usbd_composite_uac_is_valid_sample_rate(u32 sampling_freq, u8 speed);
 
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "COMP";
 
-static u32 usbd_composite_uac_sample_rates[USBD_UAC_SAMPLE_RATE_MAX_COUNT] = {USBD_UAC_FREQ2};
+static u32 usbd_composite_uac_sampling_freq[USBD_UAC_SAMPLING_FREQ_MAX_COUNT] = {USBD_UAC_SAMPLING_FREQ_48K};
 
 /* UAC interface descriptor */
 static u8 usbd_composite_uac_hs_itf_desc[] USB_DMA_ALIGNED = {
@@ -282,8 +282,8 @@ static u8 usbd_composite_uac_hs_itf_desc[] USB_DMA_ALIGNED = {
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
                                                                 Usage: Data EP  */
-	USB_LOW_BYTE(USBD_UAC_CALC_HS_MPS(USBD_UAC_CH_CNT_8, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_FREQ2)),   /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_UAC_CALC_HS_MPS(USBD_UAC_CH_CNT_8, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_FREQ2)),
+	USB_LOW_BYTE(USBD_UAC_CALC_HS_MPS(USBD_UAC_CH_CNT_8, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_SAMPLING_FREQ_48K)),   /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_UAC_CALC_HS_MPS(USBD_UAC_CH_CNT_8, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_SAMPLING_FREQ_48K)),
 	USBD_UAC_HS_DEFAULT_BINTERVAL,                           /* bInterval */
 
 
@@ -351,8 +351,8 @@ static u8 usbd_composite_uac_hs_itf_desc[] USB_DMA_ALIGNED = {
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
                                                                 Usage: Data EP  */
-	USB_LOW_BYTE(USBD_UAC_CALC_HS_MPS(USBD_UAC_CH_CNT_6, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_FREQ2)),    /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_UAC_CALC_HS_MPS(USBD_UAC_CH_CNT_6, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_FREQ2)),
+	USB_LOW_BYTE(USBD_UAC_CALC_HS_MPS(USBD_UAC_CH_CNT_6, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_SAMPLING_FREQ_48K)),    /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_UAC_CALC_HS_MPS(USBD_UAC_CH_CNT_6, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_SAMPLING_FREQ_48K)),
 	USBD_UAC_HS_DEFAULT_BINTERVAL,                           /* bInterval */
 
 
@@ -420,8 +420,8 @@ static u8 usbd_composite_uac_hs_itf_desc[] USB_DMA_ALIGNED = {
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
                                                                 Usage: Data EP  */
-	USB_LOW_BYTE(USBD_UAC_CALC_HS_MPS(USBD_UAC_CH_CNT_4, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_FREQ2)),    /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_UAC_CALC_HS_MPS(USBD_UAC_CH_CNT_4, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_FREQ2)),
+	USB_LOW_BYTE(USBD_UAC_CALC_HS_MPS(USBD_UAC_CH_CNT_4, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_SAMPLING_FREQ_48K)),    /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_UAC_CALC_HS_MPS(USBD_UAC_CH_CNT_4, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_SAMPLING_FREQ_48K)),
 	USBD_UAC_HS_DEFAULT_BINTERVAL,                           /* bInterval */
 
 
@@ -489,8 +489,8 @@ static u8 usbd_composite_uac_hs_itf_desc[] USB_DMA_ALIGNED = {
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
                                                                 Usage: Data EP  */
-	USB_LOW_BYTE(USBD_UAC_CALC_HS_MPS(USBD_UAC_CH_CNT_2, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_FREQ2)),    /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_UAC_CALC_HS_MPS(USBD_UAC_CH_CNT_2, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_FREQ2)),
+	USB_LOW_BYTE(USBD_UAC_CALC_HS_MPS(USBD_UAC_CH_CNT_2, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_SAMPLING_FREQ_48K)),    /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_UAC_CALC_HS_MPS(USBD_UAC_CH_CNT_2, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_SAMPLING_FREQ_48K)),
 	USBD_UAC_HS_DEFAULT_BINTERVAL,                           /* bInterval */
 
 
@@ -730,8 +730,8 @@ static u8 usbd_composite_uac_fs_itf_desc[] USB_DMA_ALIGNED = {
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
                                                                 Usage: Data EP  */
-	USB_LOW_BYTE(USBD_UAC_CALC_FS_MPS(USBD_UAC_CH_CNT_8, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_FREQ2)),   /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_UAC_CALC_FS_MPS(USBD_UAC_CH_CNT_8, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_FREQ2)),
+	USB_LOW_BYTE(USBD_UAC_CALC_FS_MPS(USBD_UAC_CH_CNT_8, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_SAMPLING_FREQ_48K)),   /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_UAC_CALC_FS_MPS(USBD_UAC_CH_CNT_8, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_SAMPLING_FREQ_48K)),
 	USBD_UAC_FS_DEFAULT_BINTERVAL,                           /* bInterval */
 
 
@@ -799,8 +799,8 @@ static u8 usbd_composite_uac_fs_itf_desc[] USB_DMA_ALIGNED = {
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
                                                                 Usage: Data EP  */
-	USB_LOW_BYTE(USBD_UAC_CALC_FS_MPS(USBD_UAC_CH_CNT_6, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_FREQ2)),    /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_UAC_CALC_FS_MPS(USBD_UAC_CH_CNT_6, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_FREQ2)),
+	USB_LOW_BYTE(USBD_UAC_CALC_FS_MPS(USBD_UAC_CH_CNT_6, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_SAMPLING_FREQ_48K)),    /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_UAC_CALC_FS_MPS(USBD_UAC_CH_CNT_6, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_SAMPLING_FREQ_48K)),
 	USBD_UAC_FS_DEFAULT_BINTERVAL,                           /* bInterval */
 
 
@@ -868,8 +868,8 @@ static u8 usbd_composite_uac_fs_itf_desc[] USB_DMA_ALIGNED = {
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
                                                                 Usage: Data EP  */
-	USB_LOW_BYTE(USBD_UAC_CALC_FS_MPS(USBD_UAC_CH_CNT_4, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_FREQ2)),    /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_UAC_CALC_FS_MPS(USBD_UAC_CH_CNT_4, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_FREQ2)),
+	USB_LOW_BYTE(USBD_UAC_CALC_FS_MPS(USBD_UAC_CH_CNT_4, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_SAMPLING_FREQ_48K)),    /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_UAC_CALC_FS_MPS(USBD_UAC_CH_CNT_4, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_SAMPLING_FREQ_48K)),
 	USBD_UAC_FS_DEFAULT_BINTERVAL,                           /* bInterval */
 
 
@@ -937,8 +937,8 @@ static u8 usbd_composite_uac_fs_itf_desc[] USB_DMA_ALIGNED = {
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
                                                                 Usage: Data EP  */
-	USB_LOW_BYTE(USBD_UAC_CALC_FS_MPS(USBD_UAC_CH_CNT_2, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_FREQ2)),    /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_UAC_CALC_FS_MPS(USBD_UAC_CH_CNT_2, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_FREQ2)),
+	USB_LOW_BYTE(USBD_UAC_CALC_FS_MPS(USBD_UAC_CH_CNT_2, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_SAMPLING_FREQ_48K)),    /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_UAC_CALC_FS_MPS(USBD_UAC_CH_CNT_2, USBD_UAC_DEFAULT_BYTE_WIDTH, USBD_UAC_SAMPLING_FREQ_48K)),
 	USBD_UAC_FS_DEFAULT_BINTERVAL,                           /* bInterval */
 
 
@@ -970,8 +970,8 @@ static usbd_composite_uac_device_t usbd_composite_uac_device;
 
 /* UAC volume data from windows10 PC*/
 /* Different OS transmit the same vol level, but the corresponding driver vol values are different. */
-static u8 usbd_composite_uac_pc_vol_lvl[] = {0, 5, 10, 20, 30, 40, 50, 60, 65, 75, 80, 85, 90, 95, 96, 97, 98, 100};
-static s16 usbd_composite_uac_drv_vol[] = {-15180, -8952, -6259, -3374, -1859, -966, -78, 772, 1616, 2543, 3763, 4432, 5888, 8244, 8952, 9818, 12505, 15180};
+static u8 usbd_composite_uac_pc_vol_lvl[] = {0, 5, 10, 20, 30, 40, 50, 60, 65, 75, 80, 85, 90, 95, 100};
+static s16 usbd_composite_uac_drv_vol[] = {-190, -170, -151, -112, -74, -37, 0, 37, 56, 93, 112, 132, 151, 170, 190};
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -1099,21 +1099,21 @@ static u16 usbd_composite_uac_get_mps(usbd_audio_cfg_t *params, u8 speed)
 	}
 
 	if (speed == USB_SPEED_HIGH) {
-		mps_value = USBD_UAC_CALC_HS_MPS(params->ch_cnt, params->byte_width, params->freqence);
+		mps_value = USBD_UAC_CALC_HS_MPS(params->ch_cnt, params->byte_width, params->sampling_freq);
 		if ((mps_value == 0) || (mps_value > USBD_UAC_HS_ISOC_MPS)) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "MPS %d zero or exceed HS limited %d\n", mps_value, USBD_UAC_HS_ISOC_MPS);
 			return 0;
 		}
 	} else {
 		/* for 44.1khz or the host clk is bigger than the device */
-		mps_value = USBD_UAC_CALC_FS_MPS(params->ch_cnt, params->byte_width, params->freqence);
+		mps_value = USBD_UAC_CALC_FS_MPS(params->ch_cnt, params->byte_width, params->sampling_freq);
 		if ((mps_value == 0) || (mps_value > USBD_UAC_FS_ISOC_MPS)) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "MPS %d : zero or exceed FS limited %d\n", mps_value, USBD_UAC_FS_ISOC_MPS);
 			return 0;
 		}
 	}
 
-	// RTK_LOGS(TAG, RTK_LOG_DEBUG, "Ch %d bw %d freq %d speed %d mps %d\n", params->ch_cnt , params->byte_width , params->freqence, speed, mps_value);
+	// RTK_LOGS(TAG, RTK_LOG_DEBUG, "Ch %d bw %d sampling_freq %d speed %d mps %d\n", params->ch_cnt , params->byte_width , params->sampling_freq, speed, mps_value);
 	return mps_value;
 }
 
@@ -1222,7 +1222,7 @@ static int usbd_composite_uac_ep_buf_ctrl_init(usbd_composite_uac_buf_ctrl_t *bu
 		buf_list_cnt = usbd_composite_uac_get_ring_buf_cnt(USB_SPEED_HIGH);
 #if USBD_UAC_ISOC_XFER_DEBUG
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Buf mps len %d-%d(%d %d %d), cnt %d\n", buf_ctrl->isoc_mps, CACHE_LINE_ALIGMENT(buf_ctrl->isoc_mps), params->ch_cnt,
-				 params->byte_width, params->freqence, buf_list_cnt);
+				 params->byte_width, params->sampling_freq, buf_list_cnt);
 #endif
 
 		buf_ctrl->isoc_buf = (u8 *)usb_os_malloc(CACHE_LINE_ALIGMENT(buf_ctrl->isoc_mps) * buf_list_cnt);
@@ -1280,36 +1280,36 @@ static void usbd_composite_uac_clk_valid_req(usb_dev_t *dev, u8 flag)
 }
 
 /**
-  * @brief  Handle UAC current freq request
+  * @brief  Handle UAC current sampling_freq request
   * @param  dev: USB device instance
-  * @param  frequency: UAC current freq
+  * @param  sampling_freq: UAC current sampling_freq
   * @retval void
   */
-static void usbd_composite_uac_cur_freq_req(usb_dev_t *dev, u32 frequency)
+static void usbd_composite_uac_cur_sampling_freq_req(usb_dev_t *dev, u32 sampling_freq)
 {
-	u32 dCur = frequency;
+	u32 dCur = sampling_freq;
 
 	memcpy(dev->ctrl_buf, &dCur, sizeof(dCur));
 	usbd_ep0_transmit(dev, dev->ctrl_buf, sizeof(dCur));
 }
 
 /**
-  * @brief  Handle freq ctrl requests
+  * @brief  Handle sampling_freq ctrl requests
   * @param  dev: USB device instance
   * @param  max_len: Maximum allowed length for response
   * @retval Status
   */
-static int usbd_composite_uac_freq_ctrl_range_req(usb_dev_t *dev, u16 max_len)
+static int usbd_composite_uac_sampling_freq_ctrl_range_req(usb_dev_t *dev, u16 max_len)
 {
-	usbd_composite_uac_sub_range_t freq_range;
+	usbd_composite_uac_sub_range_t sampling_freq_range;
 	u16 num_sub_ranges;
 	u16 len;
 	u16 data_offset = 0;
 
 	if (dev->dev_speed  == USB_SPEED_HIGH) {
-		num_sub_ranges = USBD_UAC_HS_SAMPLE_RATE_COUNT;
+		num_sub_ranges = USBD_UAC_HS_SAMPLING_FREQ_COUNT;
 	} else {
-		num_sub_ranges = USBD_UAC_FS_SAMPLE_RATE_COUNT;
+		num_sub_ranges = USBD_UAC_FS_SAMPLING_FREQ_COUNT;
 	}
 
 	len = sizeof(num_sub_ranges) + num_sub_ranges * sizeof(usbd_composite_uac_sub_range_t);
@@ -1318,9 +1318,9 @@ static int usbd_composite_uac_freq_ctrl_range_req(usb_dev_t *dev, u16 max_len)
 	data_offset += 2;
 
 	for (u8 i = 0; i < num_sub_ranges; i++) {
-		USBD_UAC_INIT_SUB_RANGE(freq_range, usbd_composite_uac_sample_rates[i], usbd_composite_uac_sample_rates[i], 0);
-		memcpy(dev->ctrl_buf + data_offset, &freq_range, sizeof(freq_range));
-		data_offset += sizeof(freq_range);
+		USBD_UAC_INIT_SUB_RANGE(sampling_freq_range, usbd_composite_uac_sampling_freq[i], usbd_composite_uac_sampling_freq[i], 0);
+		memcpy(dev->ctrl_buf + data_offset, &sampling_freq_range, sizeof(sampling_freq_range));
+		data_offset += sizeof(sampling_freq_range);
 	}
 
 	if (len > max_len) {
@@ -1391,7 +1391,7 @@ static int usbd_composite_uac_set_config(usb_dev_t *dev, u8 config)
 	}
 
 	//usbd_audio_cfg_t *paudio_cfg = &(pbuf_ctrl->audio_config);
-	//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Fmt %d-%d-%d speed %d mps %d-%d cnt %d\n", paudio_cfg->ch_cnt , paudio_cfg->byte_width , paudio_cfg->freqence, cdev->dev->dev_speed, pbuf_ctrl->isoc_mps, CACHE_LINE_ALIGMENT(pbuf_ctrl->isoc_mps), buf_list_cnt);
+	//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Fmt %d-%d-%d speed %d mps %d-%d cnt %d\n", paudio_cfg->ch_cnt , paudio_cfg->byte_width , paudio_cfg->sampling_freq, cdev->dev->dev_speed, pbuf_ctrl->isoc_mps, CACHE_LINE_ALIGMENT(pbuf_ctrl->isoc_mps), buf_list_cnt);
 
 	pbuf_data = usbd_composite_uac_list_remove_head(&(pbuf_ctrl->empty_list));
 	if (NULL == pbuf_data) {
@@ -1440,23 +1440,23 @@ static int usbd_composite_uac_clear_config(usb_dev_t *dev, u8 config)
 }
 
 /**
-  * @brief  Check freq requests
-  * @param  freq: Freq requests from host
+  * @brief  Check sampling_freq requests
+  * @param  sampling_freq: Freq requests from host
   * @param  speed: USB connection speed
   * @retval Status
   */
-static int usbd_composite_uac_is_valid_sample_rate(u32 freq, u8 speed)
+static int usbd_composite_uac_is_valid_sample_rate(u32 sampling_freq, u8 speed)
 {
 	u8 count;
 
 	if (speed == USB_SPEED_HIGH) {
-		count = USBD_UAC_HS_SAMPLE_RATE_COUNT;
+		count = USBD_UAC_HS_SAMPLING_FREQ_COUNT;
 	} else {
-		count = USBD_UAC_FS_SAMPLE_RATE_COUNT;
+		count = USBD_UAC_FS_SAMPLING_FREQ_COUNT;
 	}
 
 	for (u8 i = 0; i < count; ++i) {
-		if (freq == usbd_composite_uac_sample_rates[i]) {
+		if (sampling_freq == usbd_composite_uac_sampling_freq[i]) {
 			return HAL_OK;
 		}
 	}
@@ -1538,7 +1538,7 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					audio_cfg = &(uac->uac_isoc_out.audio_config);
 					fmt_change = 0;
 					uac->alt_setting = alt_setting;
-					// RTK_LOGS(TAG, RTK_LOG_DEBUG, "Set new alt %d old %d-%d-%d\n",uac->alt_setting,audio_cfg->byte_width,audio_cfg->ch_cnt,audio_cfg->freqence);
+					// RTK_LOGS(TAG, RTK_LOG_DEBUG, "Set new alt %d old %d-%d-%d\n",uac->alt_setting,audio_cfg->byte_width,audio_cfg->ch_cnt,audio_cfg->sampling_freq);
 					switch (uac->alt_setting) {
 					case 1:
 						byte_width = 2;
@@ -1580,7 +1580,7 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						// RTK_LOGS(TAG, RTK_LOG_DEBUG, "fmt_change %d\n",fmt_change);
 						if (fmt_change) {
 							if (cb->format_changed != NULL) {
-								cb->format_changed(audio_cfg->freqence, audio_cfg->ch_cnt, audio_cfg->byte_width);
+								cb->format_changed(audio_cfg->sampling_freq, audio_cfg->ch_cnt, audio_cfg->byte_width);
 							}
 						}
 					}
@@ -1627,9 +1627,9 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				if (controlSelector == USBD_UAC_CS_SAM_FREQ_CONTROL) {
 					if (req->bRequest == USBD_UAC_CLASS_REQ_CODE_CUR) {
 						audio_cfg = &(uac->uac_isoc_in.audio_config);
-						usbd_composite_uac_cur_freq_req(dev, audio_cfg->freqence);
+						usbd_composite_uac_cur_sampling_freq_req(dev, audio_cfg->sampling_freq);
 					} else if (req->bRequest == USBD_UAC_CLASS_REQ_CODE_RANGE) {
-						usbd_composite_uac_freq_ctrl_range_req(dev, req->wLength);
+						usbd_composite_uac_sampling_freq_ctrl_range_req(dev, req->wLength);
 					} else {
 						RTK_LOGS(TAG, RTK_LOG_ERROR, "SETUP: bRequest err %d-%d\n", entityId, req->bRequest);
 						ret = HAL_ERR_PARA;
@@ -1644,9 +1644,9 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				if (controlSelector == USBD_UAC_CS_SAM_FREQ_CONTROL) {
 					if (req->bRequest == USBD_UAC_CLASS_REQ_CODE_CUR) {
 						audio_cfg = &(uac->uac_isoc_out.audio_config);
-						usbd_composite_uac_cur_freq_req(dev, audio_cfg->freqence);
+						usbd_composite_uac_cur_sampling_freq_req(dev, audio_cfg->sampling_freq);
 					} else if (req->bRequest == USBD_UAC_CLASS_REQ_CODE_RANGE) {
-						usbd_composite_uac_freq_ctrl_range_req(dev, req->wLength);
+						usbd_composite_uac_sampling_freq_ctrl_range_req(dev, req->wLength);
 					} else {
 						RTK_LOGS(TAG, RTK_LOG_ERROR, "SETUP: bRequest err %d-%d\n", entityId, req->bRequest);
 						ret = HAL_ERR_PARA;
@@ -1741,11 +1741,11 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					} else if (req->bRequest == USBD_UAC_CLASS_REQ_CODE_RANGE) {
 						// Do nothing
 					} else {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "Set freq err %d-%d\n", entityId, req->bRequest);
+						RTK_LOGS(TAG, RTK_LOG_ERROR, "Set sampling_freq err %d-%d\n", entityId, req->bRequest);
 						ret = HAL_ERR_PARA;
 					}
 				} else {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "Set freq ctrl err %d-%d\n", entityId, controlSelector);
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "Set sampling_freq ctrl err %d-%d\n", entityId, controlSelector);
 					ret = HAL_ERR_PARA;
 				}
 				break;/* case USBD_UAC_CTRL_ENTITYID_CLOCK_HEADSET_HEADPHONES */
@@ -1847,7 +1847,7 @@ static int usbd_composite_uac_handle_ep0_data_out(usb_dev_t *dev)
 	u8 num_points;
 	u8 target_volume;
 	s16 volume_value = 0;
-	u32 freq;
+	u32 sampling_freq;
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
 	usbd_composite_uac_usr_cb_t *cb = uac->cb;
 	usbd_composite_dev_t *cdev = uac->cdev;
@@ -1890,19 +1890,19 @@ static int usbd_composite_uac_handle_ep0_data_out(usb_dev_t *dev)
 
 		if ((USB_HIGH_BYTE(p_ctrl_req->wIndex) == USBD_UAC_CTRL_ENTITYID_CLOCK_HEADSET_HEADPHONES)
 			&& (USB_HIGH_BYTE(p_ctrl_req->wValue) == USBD_UAC_CS_SAM_FREQ_CONTROL) && (p_ctrl_req->wLength == 0x04)) {
-			freq = (cdev->ctrl_buf[3] << 24) | (cdev->ctrl_buf[2] << 16) | (cdev->ctrl_buf[1] << 8) | cdev->ctrl_buf[0];
+			sampling_freq = (cdev->ctrl_buf[3] << 24) | (cdev->ctrl_buf[2] << 16) | (cdev->ctrl_buf[1] << 8) | cdev->ctrl_buf[0];
 
-			if (usbd_composite_uac_is_valid_sample_rate(freq, dev->dev_speed) == HAL_OK) {
+			if (usbd_composite_uac_is_valid_sample_rate(sampling_freq, dev->dev_speed) == HAL_OK) {
 				audio_cfg = &(uac->uac_isoc_out.audio_config);
-				if (audio_cfg->freqence != freq) {
-					audio_cfg->freqence = freq;
+				if (audio_cfg->sampling_freq != sampling_freq) {
+					audio_cfg->sampling_freq = sampling_freq;
 
 					if (cb->format_changed != NULL) {
-						cb->format_changed(audio_cfg->freqence, audio_cfg->ch_cnt, audio_cfg->byte_width);
+						cb->format_changed(audio_cfg->sampling_freq, audio_cfg->ch_cnt, audio_cfg->byte_width);
 					}
 				}
 			} else {
-				// Do nothing, return HAL_ERR_PARA(STALL) will cause PC continue setting invalid freq request
+				// Do nothing, return HAL_ERR_PARA(STALL) will cause PC continue setting invalid sampling_freq request
 			}
 		}
 		// To do: handle vendor
@@ -2273,7 +2273,7 @@ int usbd_composite_uac_init(usbd_composite_dev_t *cdev, usbd_composite_uac_usr_c
 		usb_os_memcpy(&(uac->uac_isoc_out.audio_config), &(cb->out), sizeof(usbd_audio_cfg_t));
 
 		uac->uac_isoc_out.audio_config.ch_cnt = USBD_UAC_DEFAULT_CH_CNT;//init the default value
-		uac->uac_isoc_out.audio_config.freqence = USBD_UAC_FREQ2;
+		uac->uac_isoc_out.audio_config.sampling_freq = USBD_UAC_SAMPLING_FREQ_48K;
 		uac->uac_isoc_out.audio_config.byte_width = USBD_UAC_DEFAULT_BYTE_WIDTH;
 
 		pbuf_ctrl = &(uac->uac_isoc_out);

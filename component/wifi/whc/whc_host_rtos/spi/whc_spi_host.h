@@ -29,10 +29,15 @@
 
 #define whc_host_send_data       whc_spi_host_send_data
 #define whc_host_init            whc_spi_host_init
+
+#define HOST_RX_DMA_CB_DONE		BIT(0)
+#define HOST_TX_DMA_CB_DONE		BIT(1)
 struct whc_spi_host_priv_t {
 	u8 dev_state;
 	u8 host_recv_state;
 	u8 host_tx_state;
+	u8 host_dma_waiting_status;
+
 	rtos_mutex_t	dev_lock; /* mutex to protect send host event_priv message */
 	rtos_sema_t dev_rdy_sema;
 	rtos_sema_t host_send; /* sema to protect inic  host send */

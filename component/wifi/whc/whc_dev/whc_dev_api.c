@@ -1161,10 +1161,10 @@ void whc_dev_set_netif_info(int idx_wlan, unsigned char *dev_addr)
 	rtos_mem_free((u8 *)param);
 }
 
-void whc_dev_acs_info_indicate(struct acs_mntr_rpt *acs_mntr_rpt)
+void whc_dev_acs_info_indicate(struct rtw_acs_mntr_rpt *acs_mntr_rpt)
 {
 	u32 *param = NULL;
-	u32 size = sizeof(struct acs_mntr_rpt);
+	u32 size = sizeof(struct rtw_acs_mntr_rpt);
 
 	param = (u32 *)rtos_mem_zmalloc(size);
 	memcpy((void *)(param), acs_mntr_rpt, size);

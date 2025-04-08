@@ -235,7 +235,8 @@ u32 whc_spi_host_rxdma_irq_handler(void *pData)
 		rtos_sema_give(spi_host_priv.host_recv_done);
 	}
 
-	if ((spi_host_priv.host_tx_state == 0) && (spi_host_priv.host_recv_state) == 0) {
+	spi_host_priv.host_dma_waiting_status &= (~HOST_RX_DMA_CB_DONE);
+	if (spi_host_priv.host_dma_waiting_status == 0) {
 		set_host_rdy_pin(HOST_READY);
 	}
 
@@ -274,7 +275,7 @@ retry:
 			/* wait for sema*/
 			if (rtos_sema_take(spi_host_priv.dev_rdy_sema, 1000) == RTK_SUCCESS) {
 				if (spi_host_priv.dev_state == DEV_BUSY) {
-					//RTK_LOGE(TAG_WLAN_INIC, "%s: wait dev busy timeout, can't recv data %x, %d \n\r", __func__, __builtin_return_address(0), spi_host_priv.dev_state);
+					//RTK_LOGE(TAG_WLAN_INIC, "%s: wait dev busy timeout, can't recv data %d \n\r", __func__, spi_host_priv.dev_state);
 				}
 			} else {
 				RTK_LOGD(TAG_WLAN_INIC, "%s: down sema timeout, can't recv data\n\r", __func__);
@@ -286,13 +287,15 @@ retry:
 		}
 		rtos_mutex_take(spi_host_priv.dev_lock, MUTEX_WAIT_TIMEOUT);
 
-		while (spi_host_priv.txbuf_info) {
+		while ((GPIO_ReadDataBit(HOST_READY_PIN) == HOST_BUSY) || (spi_host_priv.txbuf_info != NULL)) {
 			rtos_time_delay_ms(1);
 		}
 
 		/* check RX_REQ level */
 		if (GPIO_ReadDataBit(RX_REQ_PIN)) {
 			rtos_sema_take(spi_host_priv.host_recv_done, MUTEX_WAIT_TIMEOUT);
+			spi_host_priv.host_dma_waiting_status = HOST_RX_DMA_CB_DONE | HOST_TX_DMA_CB_DONE;
+
 			set_host_rdy_pin(HOST_BUSY);
 
 			whc_spi_host_flush_rx_fifo();
@@ -368,6 +371,8 @@ static void whc_spi_host_setup_gpio(void)
 	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_Init(&GPIO_InitStruct);
+	set_host_rdy_pin(HOST_READY);
+
 #ifdef SPI_DEBUG
 	GPIO_InitStruct.GPIO_Pin = _PB_20;
 	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
@@ -412,7 +417,8 @@ u32 whc_spi_host_txdma_irq_handler(void *pData)
 		SSI_SetDmaEnable(WHC_SPI_DEV, DISABLE, SPI_BIT_TDMAE);
 	}
 
-	if ((spi_host_priv.host_tx_state == 0) && (spi_host_priv.host_recv_state) == 0) {
+	spi_host_priv.host_dma_waiting_status &= (~HOST_TX_DMA_CB_DONE);
+	if (spi_host_priv.host_dma_waiting_status == 0) {
 		set_host_rdy_pin(HOST_READY);
 	}
 
@@ -658,6 +664,10 @@ retry:
 		goto retry;
 	}
 
+	while ((GPIO_ReadDataBit(HOST_READY_PIN) == HOST_BUSY) || (spi_host_priv.txbuf_info != NULL)) {
+		rtos_time_delay_ms(1);
+	}
+
 	set_host_rdy_pin(HOST_BUSY);
 
 	/* initiate spi transaction */
@@ -668,16 +678,13 @@ retry:
 		GDMA_SetSrcAddr(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, pbuf->buf_addr);
 	}
 
-	while (spi_host_priv.txbuf_info) {
-		rtos_time_delay_ms(1);
-	}
-
 	/* take without block */
 	rtos_sema_take(spi_host_priv.host_recv_done, MUTEX_WAIT_TIMEOUT);
 
 	whc_spi_host_flush_rx_fifo();
 	spi_host_priv.host_recv_state = 1;
 	spi_host_priv.host_tx_state = 1;
+	spi_host_priv.host_dma_waiting_status = HOST_RX_DMA_CB_DONE | HOST_TX_DMA_CB_DONE;
 
 	rtos_critical_enter(RTOS_CRITICAL_WIFI);
 	SSI_SetDmaEnable(WHC_SPI_DEV, ENABLE, SPI_BIT_RDMAE);
@@ -705,6 +712,7 @@ static void whc_spi_host_drv_init(void)
 	rtos_sema_create(&(spi_host_priv.rxirq_sema), 0, RTOS_SEMA_MAX_COUNT);
 	rtos_sema_create(&(spi_host_priv.txirq_sema), 0, RTOS_SEMA_MAX_COUNT);
 	spi_host_priv.rx_buf = NULL;
+	spi_host_priv.host_dma_waiting_status = 0;
 
 	rtos_sema_give(spi_host_priv.host_send);
 

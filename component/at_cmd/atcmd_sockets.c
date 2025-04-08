@@ -13,6 +13,7 @@
 #include "atcmd_service.h"
 #include "atcmd_sockets.h"
 
+
 static const char *const AT_SOCKET_TAG = "AT_SKT";
 
 static struct _node node_pool[NUM_NS];
@@ -58,12 +59,16 @@ static void atcmd_ssl_debug(void *ctx, int level, const char *file, int line, co
 	}
 }
 
+
 static int atcmd_ssl_random(void *p_rng, unsigned char *output, size_t output_len)
 {
-	UNUSED(p_rng);
-	random_get_bytes(output, output_len);
+	/* To avoid gcc warnings */
+	(void) p_rng;
+
+	TRNG_get_random_bytes(output, output_len);
 	return 0;
 }
+
 
 static void *atcmd_lwip_calloc(size_t num, size_t ele_size)
 {
@@ -102,30 +107,6 @@ static void atcmd_lwip_set_autorecv_mode(int enable)
 {
 	atcmd_lwip_auto_recv = enable;
 }
-
-static void init_node_pool(void)
-{
-	int i;
-	memset(node_pool, 0, sizeof(node_pool));
-	for (i = 0; i < NUM_NS; i++) {
-		node_pool[i].con_id = INVALID_CON_ID;
-		node_pool[i].sockfd = INVALID_SOCKET_ID;
-	}
-}
-
-
-static void init_single_node(struct _node *socket_node)
-{
-	SYS_ARCH_DECL_PROTECT(lev);
-	SYS_ARCH_PROTECT(lev);
-	memset(socket_node, 0, sizeof(struct _node));
-	socket_node->con_id = INVALID_CON_ID;
-	socket_node->role = NODE_ROLE_INVALID;
-	socket_node->sockfd = INVALID_SOCKET_ID;
-	socket_node->protocol = SOCKET_PROTOCOL_INVALID;
-	SYS_ARCH_UNPROTECT(lev);
-}
-
 
 static struct _node *create_list_node(int mode, s8_t role)
 {
@@ -640,6 +621,42 @@ void atcmd_lwip_write_info_to_flash(struct _atcmd_lwip_conn_info *cur_conn, int 
 }
 #endif
 
+
+static void init_node_pool(void)
+{
+	int i;
+	memset(node_pool, 0, sizeof(node_pool));
+	for (i = 0; i < NUM_NS; i++) {
+		node_pool[i].con_id = INVALID_CON_ID;
+		node_pool[i].sockfd = INVALID_SOCKET_ID;
+	}
+}
+
+
+static void init_single_node(struct _node *socket_node)
+{
+	SYS_ARCH_DECL_PROTECT(lev);
+	SYS_ARCH_PROTECT(lev);
+	memset(socket_node, 0, sizeof(struct _node));
+	socket_node->con_id = INVALID_CON_ID;
+	socket_node->role = NODE_ROLE_INVALID;
+	socket_node->sockfd = INVALID_SOCKET_ID;
+	socket_node->protocol = SOCKET_PROTOCOL_INVALID;
+	SYS_ARCH_UNPROTECT(lev);
+}
+
+
+static int search_available_node(void)
+{
+	for (int i = 0; i < NUM_NS; i++) {
+		if (node_pool[i].con_id == INVALID_CON_ID) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+
 int hang_seednode(struct _node *main_node, struct _node *insert_node)
 {
 	struct _node *n = main_node;
@@ -648,13 +665,13 @@ int hang_seednode(struct _node *main_node, struct _node *insert_node)
 
 	while (n->nextseed != NULL) {
 		n = n->nextseed;
-		if ((n->port == insert_node->port) && (n->addr == insert_node->addr)) {
+		/*if ((n->port == insert_node->port) && (n->addr == insert_node->addr)) {
 			SYS_ARCH_UNPROTECT(lev);
 			struct in_addr addr;
 			addr.s_addr = htonl(insert_node->addr);
 			RTK_LOGI(AT_SOCKET_TAG, "This seed IP:%s PORT:%d already exist\r\n", inet_ntoa(addr), insert_node->port);
 			return -1;
-		}
+		}*/
 	}
 
 	n->nextseed = insert_node;
@@ -868,14 +885,14 @@ int set_socket_tcp_option(int sockfd)
 	if (tcp_nodelay == 1) {
 		ret = setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay, sizeof(tcp_nodelay));
 		if (ret < 0) {
-			RTK_LOGI(NOTAG, "[set_socket_tcp_option] setsockopt(TCP_NODELAY) failed\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[set_socket_tcp_option] setsockopt(TCP_NODELAY) failed\r\n");
 			goto end;
 		}
 	}
 	if (skt_keepalive == 1) {
 		ret = setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &skt_keepalive, sizeof(skt_keepalive));
 		if (ret < 0) {
-			RTK_LOGI(NOTAG, "[set_socket_tcp_option] setsockopt(SO_KEEPALIVE) failed\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[set_socket_tcp_option] setsockopt(SO_KEEPALIVE) failed\r\n");
 			goto end;
 		}
 	}
@@ -883,17 +900,17 @@ int set_socket_tcp_option(int sockfd)
 	if (skt_keepalive == 1) {
 		ret = setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPIDLE, &tcp_keepalive_idle, sizeof(tcp_keepalive_idle));
 		if (ret < 0) {
-			RTK_LOGI(NOTAG, "[set_socket_tcp_option] setsockopt(TCP_KEEPIDLE) failed\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[set_socket_tcp_option] setsockopt(TCP_KEEPIDLE) failed\r\n");
 			goto end;
 		}
 		ret = setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPINTVL, &tcp_keepalive_interval, sizeof(tcp_keepalive_interval));
 		if (ret < 0) {
-			RTK_LOGI(NOTAG, "[set_socket_tcp_option] setsockopt(TCP_KEEPINTVL) failed\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[set_socket_tcp_option] setsockopt(TCP_KEEPINTVL) failed\r\n");
 			goto end;
 		}
 		ret = setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPCNT, &tcp_keepalive_count, sizeof(tcp_keepalive_count));
 		if (ret < 0) {
-			RTK_LOGI(NOTAG, "[set_socket_tcp_option] setsockopt(TCP_KEEPCNT) failed\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[set_socket_tcp_option] setsockopt(TCP_KEEPCNT) failed\r\n");
 			goto end;
 		}
 	}
@@ -1405,6 +1422,301 @@ static void server_start_task(void *param)
 	rtos_task_delete(NULL);
 	return;
 }
+
+
+void socket_server_tcp_auto_rcv_client_and_data(void *param)
+{
+	int new_client_sockfd = INVALID_SOCKET_ID;
+	static int max_fd = INVALID_SOCKET_ID;
+	struct sockaddr_in client_addr;
+	socklen_t client_addr_len = 0;
+	static fd_set read_fds;
+	int ret = 0;
+	int index = -1;
+	struct _node *current_node = (struct _node *)param;
+	struct _node *seednode = NULL;
+	int actual_bytes_received = 0;
+	char *read_buf = NULL;
+
+	client_addr_len = sizeof(client_addr);
+	max_fd = current_node->sockfd;
+
+	if (current_node->auto_rcv == TRUE) {
+		read_buf = rtos_mem_zmalloc(AT_SOCKET_RECEIVE_BUFFER_SIZE + 1);
+		if (read_buf == NULL) {
+			RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tcp_auto_rcv_client_and_data] read_buf malloc failed\r\n");
+			goto end;
+		}
+	}
+
+	while (1) {
+		FD_ZERO(&read_fds);
+		FD_SET(current_node->sockfd, &read_fds);
+		seednode = current_node->nextseed;
+		while (seednode) {
+			if (seednode->sockfd >= 0) {
+				FD_SET(seednode->sockfd, &read_fds);
+			}
+			seednode = seednode->nextseed;
+		}
+		ret = select(max_fd + 1, &read_fds, NULL, NULL, NULL);
+		if (ret < 0) {
+			RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tcp_auto_rcv_client_and_data] Failed to select() = %d\r\n", ret);
+			continue;
+		}
+
+		if ((current_node->sockfd >= 0) && FD_ISSET(current_node->sockfd, &read_fds)) {
+			new_client_sockfd = accept(current_node->sockfd, (struct sockaddr *)&client_addr, &client_addr_len);
+			RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tcp_auto_rcv_client_and_data] accept() = %d\r\n", new_client_sockfd);
+			if (new_client_sockfd < 0) {
+				RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tcp_auto_rcv_client_and_data] Failed to accept() = %d\r\n", new_client_sockfd);
+				continue;
+			}
+			index = search_available_node();
+			if (index < 0) {
+				RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tcp_auto_rcv_client_and_data] Failed to search_available_node()\r\n");
+				close(new_client_sockfd);
+				continue;
+			}
+			SYS_ARCH_DECL_PROTECT(lev);
+			SYS_ARCH_PROTECT(lev);
+			node_pool[index].con_id = index;
+			node_pool[index].role = NODE_ROLE_SEED;
+			node_pool[index].sockfd = new_client_sockfd;
+			node_pool[index].protocol = SOCKET_SERVER_OVER_TCP;
+			node_pool[index].dst_ip = client_addr.sin_addr.s_addr;
+			node_pool[index].dst_port = ntohs(client_addr.sin_port);
+			SYS_ARCH_UNPROTECT(lev);
+			ret = hang_seednode(current_node, &node_pool[index]);
+			if (ret < 0) {
+				RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tcp_auto_rcv_client_and_data] Failed to hang_seednode()\r\n");
+				close(new_client_sockfd);
+				init_single_node(&node_pool[index]);
+				continue;
+			}
+			at_printf_indicate("[SKT][EVENT]: A client[link_id:%d, seed, tcp, address:%s, port:%d] connected to server[link_id:%d]\r\n",
+							   node_pool[index].con_id, inet_ntoa(client_addr.sin_addr), node_pool[index].dst_port, current_node->con_id);
+
+			if (current_node->auto_rcv == TRUE) {
+				if (new_client_sockfd > max_fd) {
+					max_fd = new_client_sockfd;
+				}
+				continue;
+			}
+		}
+		if (current_node->auto_rcv == TRUE) {
+			seednode = current_node->nextseed;
+			while (seednode) {
+				if ((seednode->sockfd >= 0) && FD_ISSET(seednode->sockfd, &read_fds)) {
+					actual_bytes_received = read(seednode->sockfd, read_buf, AT_SOCKET_RECEIVE_BUFFER_SIZE);
+
+					if (actual_bytes_received == 0) {
+						RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tcp_auto_rcv_client_and_data] read() = 0; Connection closed\r\n");
+						FD_CLR(seednode->sockfd, &read_fds);
+						close(seednode->sockfd);
+						seednode->sockfd = INVALID_SOCKET_ID;
+					} else if (actual_bytes_received < 0) {
+						RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tcp_auto_rcv_client_and_data] Failed to read() = %d\r\n", actual_bytes_received);
+						FD_CLR(seednode->sockfd, &read_fds);
+						close(seednode->sockfd);
+						seednode->sockfd = INVALID_SOCKET_ID;
+					}
+					if (actual_bytes_received > 0) {
+						at_printf_lock();
+						at_printf_indicate("[SKT][DATA][%d][%d]:", seednode->con_id, actual_bytes_received);
+						at_printf_data(read_buf, (u32)actual_bytes_received);
+						at_printf("\r\n");
+						at_printf_unlock();
+					}
+				}
+				seednode = seednode->nextseed;
+			}
+		}
+	}
+
+end:
+	if (current_node->auto_rcv == TRUE) {
+		rtos_mem_free(read_buf);
+	}
+	current_node->auto_rcv_task = NULL;
+	rtos_task_delete(NULL);
+	return;
+}
+
+
+int create_socket_server_tcp(struct _node *current_node)
+{
+	int ret = 0;
+	int error_no = 0;
+	int sockfd = INVALID_SOCKET_ID;
+	int optval = 1;
+	struct sockaddr_in local_server_addr;
+
+	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_tcp] Failed to create TCP socket\r\n");
+		error_no = 2;
+		goto end;
+	}
+	if ((ret = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval))) < 0) {
+		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_tcp] setsockopt(SO_REUSEADDR) failed = %d\r\n", ret);
+		close(sockfd);
+		error_no = 2;
+		goto end;
+	}
+
+	if ((ret = set_socket_tcp_option(sockfd)) < 0) {
+		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_tcp] set_socket_tcp_option() failed = %d\r\n", ret);
+		close(sockfd);
+		error_no = 2;
+		goto end;
+	}
+
+	memset(&local_server_addr, 0, sizeof(local_server_addr));
+	local_server_addr.sin_family = AF_INET;
+	local_server_addr.sin_addr.s_addr = INADDR_ANY;
+	local_server_addr.sin_port = htons(current_node->src_port);
+
+	if ((ret = bind(sockfd, (struct sockaddr *)&local_server_addr, sizeof(local_server_addr))) < 0) {
+		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_tcp] Failed to bind() to port: %d, ret = %d\r\n", current_node->src_port, ret);
+		close(sockfd);
+		error_no = 2;
+		goto end;
+	}
+
+	if ((ret = listen(sockfd, SOCKET_AT_BACKLOG)) < 0) {
+		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_tcp] Failed to listen() to port: %d, ret = %d\r\n", current_node->src_port, ret);
+		close(sockfd);
+		error_no = 2;
+		goto end;
+	}
+
+	current_node->sockfd = sockfd;
+
+	if (rtos_task_create(&(current_node->auto_rcv_task), "socket_server_tcp_auto_rcv_client_and_data", socket_server_tcp_auto_rcv_client_and_data, current_node,
+						 1024 * 4, ATCMD_LWIP_TASK_PRIORITY) != RTK_SUCCESS) {
+		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_tcp] rtos_task_create(socket_server_tcp_auto_rcv_client_and_data) failed\r\n");
+		close(sockfd);
+		error_no = 3;
+		goto end;
+	}
+
+	struct in_addr local_addr;
+	local_addr.s_addr = current_node->src_ip;
+	RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_tcp] The TCP server created on (%s:%d) successfully\r\n", inet_ntoa(local_addr), current_node->src_port);
+
+end:
+	if (error_no != 0) {
+		init_single_node(current_node);
+	}
+	return error_no;
+}
+
+
+int create_socket_server(struct _node *current_node)
+{
+	int error_no = 0;
+	if (current_node->protocol == SOCKET_SERVER_OVER_UDP) {
+		//error_no = create_socket_server_udp(current_node);
+	} else if (current_node->protocol == SOCKET_SERVER_OVER_TCP) {
+		error_no = create_socket_server_tcp(current_node);
+	} else {
+		//error_no = create_socket_server_tls(current_node);
+	}
+	return error_no;
+}
+
+
+//AT+SKTSERVER=<link_id>,<conn_type>[,<cert_index>],<src_port>,<auto_rcv>
+void at_sktserver_1(void *arg)
+{
+	int argc = 0, error_no = 0;
+	char *argv[MAX_ARGC] = {0};
+	int link_id = 0, conn_type = 0, cert_index = 0, src_port = 0, auto_rcv = 0;
+	uint8_t *local_ip = NULL;
+
+	if (arg == NULL) {
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] Input parameter is NULL\r\n");
+		error_no = 1;
+		goto end;
+	}
+	argc = parse_param(arg, argv);
+	if (argc != 6) {
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] Invalid number of parameters\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	if ((strlen(argv[1]) == 0) || (strlen(argv[2]) == 0) ||
+		(strlen(argv[4]) == 0) || (strlen(argv[5]) == 0)) {
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] Missing input parameters\r\n");
+		error_no = 1;
+		goto end;
+	}
+	link_id = atoi(argv[1]);
+	if ((link_id < 0) || (link_id > (NUM_NS - 1))) {
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] Incorrect <link_id>\r\n");
+		error_no = 1;
+		goto end;
+	}
+	if (node_pool[link_id].con_id >= 0) {
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] The <link_id> is in use\r\n");
+		error_no = 1;
+		goto end;
+	}
+	conn_type = atoi(argv[2]);
+	if ((conn_type < SOCKET_SERVER_OVER_UDP) || (conn_type > SOCKET_SERVER_OVER_TLS_VERIFY_CLIENT)) {
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] Incorrect <conn_type>\r\n");
+		error_no = 1;
+		goto end;
+	}
+	if ((conn_type >= SOCKET_SERVER_OVER_TLS) && (conn_type <= SOCKET_SERVER_OVER_TLS_VERIFY_CLIENT)) {
+		if (argv[3] == NULL) {
+			RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] The <cert_index> is NULL for SOCKET_SERVER_OVER_TLS\r\n");
+			error_no = 1;
+			goto end;
+		}
+		cert_index = atoi(argv[3]);
+		if (cert_index <= 0) {
+			RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] Incorrect <cert_index>\r\n");
+			error_no = 1;
+			goto end;
+		}
+	}
+	src_port = atoi(argv[4]);
+	if (src_port <= 0 || src_port > 65535) {
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] Incorrect <src_port>\r\n");
+		error_no = 1;
+		goto end;
+	}
+	auto_rcv = atoi(argv[5]);
+	if (auto_rcv < 0 || auto_rcv > 1) {
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] Incorrect <auto_rcv>\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	//Generate the node
+	node_pool[link_id].con_id = link_id;
+	node_pool[link_id].role = NODE_ROLE_SERVER;
+	node_pool[link_id].cert_index = cert_index;
+	node_pool[link_id].auto_rcv = auto_rcv;
+	node_pool[link_id].protocol = conn_type;
+	node_pool[link_id].src_port = src_port;
+	local_ip = LwIP_GetIP(0);
+	node_pool[link_id].src_ip = *((u32_t *)local_ip);
+
+	error_no = create_socket_server(&node_pool[link_id]);
+
+end:
+	if (error_no == 0) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+
+	return;
+}
+
 
 /* Create a socket server. */
 void at_sktserver(void *arg)
@@ -1930,26 +2242,30 @@ static void client_start_task(void *param)
 void socket_client_tcp_auto_rcv(void *param)
 {
 	char *read_buf = NULL;
-	int actual_size = 0;
+	int actual_bytes_received = 0;
 	struct _node *current_node = (struct _node *)param;
 
-	read_buf = rtos_mem_zmalloc(ETH_MAX_MTU + 1);
+	read_buf = rtos_mem_zmalloc(AT_SOCKET_RECEIVE_BUFFER_SIZE + 1);
 	if (read_buf == NULL) {
 		RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tcp_auto_rcv] read_buf malloc failed\r\n");
 		goto end;
 	}
 
 	while (1) {
-		actual_size = read(current_node->sockfd, read_buf, ETH_MAX_MTU);
-		if (actual_size == 0) {
+		actual_bytes_received = read(current_node->sockfd, read_buf, AT_SOCKET_RECEIVE_BUFFER_SIZE);
+		if (actual_bytes_received == 0) {
 			RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tcp_auto_rcv] read() = 0; Connection closed\r\n");
-		} else if (actual_size < 0) {
-			RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tcp_auto_rcv] Failed to read() = %d\r\n", actual_size);
+			close(current_node->sockfd);
+			current_node->sockfd = INVALID_SOCKET_ID;
+		} else if (actual_bytes_received < 0) {
+			RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tcp_auto_rcv] Failed to read() = %d\r\n", actual_bytes_received);
+			close(current_node->sockfd);
+			current_node->sockfd = INVALID_SOCKET_ID;
 			goto end;
 		}
 		at_printf_lock();
-		at_printf_indicate("[SKT][DATA][%d][%d]:", current_node->con_id, actual_size);
-		at_printf_data(read_buf, (u32)actual_size);
+		at_printf_indicate("[SKT][DATA][%d][%d]:", current_node->con_id, actual_bytes_received);
+		at_printf_data(read_buf, (u32)actual_bytes_received);
 		at_printf("\r\n");
 		at_printf_unlock();
 	}
@@ -1964,6 +2280,7 @@ end:
 
 int create_socket_client_tcp(struct _node *current_node)
 {
+	int ret = 0;
 	int error_no = 0;
 	int sockfd = INVALID_SOCKET_ID;
 	struct sockaddr_in server_addr;
@@ -1974,8 +2291,9 @@ int create_socket_client_tcp(struct _node *current_node)
 		goto end;
 	}
 
-	if (set_socket_tcp_option(sockfd) < 0) {
-		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_client_tcp] set_socket_tcp_option() failed\r\n");
+	if ((ret = set_socket_tcp_option(sockfd)) < 0) {
+		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_client_tcp] set_socket_tcp_option() failed = %d\r\n", ret);
+		close(sockfd);
 		error_no = 2;
 		goto end;
 	}
@@ -1985,8 +2303,9 @@ int create_socket_client_tcp(struct _node *current_node)
 	server_addr.sin_addr.s_addr = current_node->dst_ip;
 	server_addr.sin_port = htons(current_node->dst_port);
 
-	if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_client_tcp] Failed to connect to TCP server(%s:%d)\r\n", inet_ntoa(server_addr.sin_addr), current_node->dst_port);
+	if ((ret = connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr))) < 0) {
+		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_client_tcp] Failed to connect to TCP server(%s:%d), ret = %d\r\n", inet_ntoa(server_addr.sin_addr),
+				 current_node->dst_port, ret);
 		close(sockfd);
 		error_no = 2;
 		goto end;
@@ -1999,6 +2318,7 @@ int create_socket_client_tcp(struct _node *current_node)
 		if (rtos_task_create(&(current_node->auto_rcv_task), "socket_client_tcp_auto_rcv", socket_client_tcp_auto_rcv, current_node, 1024,
 							 ATCMD_LWIP_TASK_PRIORITY) != RTK_SUCCESS) {
 			RTK_LOGI(AT_SOCKET_TAG, "[create_socket_client_tcp] rtos_task_create(socket_client_tcp_auto_rcv) failed\r\n");
+			close(sockfd);
 			error_no = 3;
 			goto end;
 		}
@@ -2023,6 +2343,7 @@ int create_socket_client(struct _node *current_node)
 }
 
 
+//AT+SKTCLIENT=<link_id>,<conn_type>[,<cert_index>],<dst_host>,<dst_port>[,<src_port>],<auto_rcv>
 void at_sktclient_1(void *arg)
 {
 	int argc = 0, error_no = 0;
@@ -2331,7 +2652,7 @@ int atcmd_lwip_start_tt_handle(struct _node *curnode, int total_data_len, struct
 			goto end;
 		}
 		if (total_data_len <= MAX_TT_BUF_LEN) {
-			if (atcmd_tt_mode_get(tt_data, (u32)total_data_len) != (u32)total_data_len) {
+			if (atcmd_tt_mode_get(tt_data, (u32)total_data_len) != total_data_len) {
 				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_start_tt_handle] atcmd_tt_mode_get() failed\r\n");
 				error_no = 6;
 				goto end;
@@ -2343,7 +2664,7 @@ int atcmd_lwip_start_tt_handle(struct _node *curnode, int total_data_len, struct
 		} else {
 			while (total_data_len > 0) {
 				frag_tt_data_len = total_data_len <= MAX_TT_BUF_LEN ? total_data_len : MAX_TT_BUF_LEN;
-				if (atcmd_tt_mode_get(tt_data, (u32)frag_tt_data_len) != (u32)frag_tt_data_len) {
+				if (atcmd_tt_mode_get(tt_data, (u32)frag_tt_data_len) != frag_tt_data_len) {
 					RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_start_tt_handle] atcmd_tt_mode_get() failed\r\n");
 					error_no = 6;
 					goto end;

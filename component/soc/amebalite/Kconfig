@@ -1,7 +1,24 @@
+config TEST_KM4_MENU
+    bool "Test code run on km4"
+
+config TEST_KR4_MENU
+    bool "Test code run on kr4"
+
+if TEST_KM4_MENU||TEST_KR4_MENU
+
 menu "CONFIG FUNCTION TEST"
-    config PER_TEST
+    config PER_TEST_MENU
         bool "Enable Peripheral Test"
-    if PER_TEST
+        select PER_TEST_FOR_KM4 if TEST_KM4_MENU
+        select PER_TEST_FOR_KR4 if TEST_KR4_MENU
+
+    config PER_TEST_FOR_KM4
+        bool
+
+    config PER_TEST_FOR_KR4
+        bool
+
+    if PER_TEST_MENU
         config SYS_VERIFY
             bool "System_Verify_Mode"
         if SYS_VERIFY
@@ -163,9 +180,18 @@ menu "CONFIG FUNCTION TEST"
 endmenu
 
 menu "CONFIG SECURE TEST"
-    config SEC_VERIFY
+    config SEC_VERIFY_MENU
         bool "SEC_Verify_Mode"
-    if SEC_VERIFY
+        select SEC_VERIFY_FOR_KM4 if TEST_KM4_MENU
+        select SEC_VERIFY_FOR_KR4 if TEST_KR4_MENU
+
+    config SEC_VERIFY_FOR_KM4
+        bool
+
+    config SEC_VERIFY_FOR_KR4
+        bool
+
+    if SEC_VERIFY_MENU
         config EFUSE_SEC_VERIFY
             bool "EFUSE Secure Test"
         config GDMA_SEC_VERIFY
@@ -182,3 +208,5 @@ menu "CONFIG SECURE TEST"
             bool "Trustzone Secure Test"
     endif
 endmenu
+
+endif

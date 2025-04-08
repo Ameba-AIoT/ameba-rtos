@@ -84,6 +84,14 @@ function(import_kconfig prefix kconfig_fragment)
 endfunction()
 
 function(ameba_add_library name)
+    # Add linking ${c_MCU_PROJ_CONFIG}
+    list(FIND ARGN "p_LINK_LIBRARIES" _INDEX)
+    if(_INDEX GREATER -1)
+        list(INSERT ARGN ${_INDEX} ${c_MCU_PROJ_CONFIG})
+    else()
+        list(APPEND ARGN p_LINK_LIBRARIES ${c_MCU_PROJ_CONFIG})
+    endif()
+
     ameba_target_add(${name}
         p_WRAP_TARGET_NAME
         p_PREFIX lib_
@@ -94,50 +102,16 @@ endfunction()
 
 function(ameba_add_internal_library name)
     set(options
-        p_ADD_EMPTY_C_FILE          # If set, an empty c file is added to the target sources
-        p_ADD_BUILD_INFO            # Set target compile with build info: git version, time, etc..
         p_NO_WHOLE_ARCHIVE          # If set, the target will be linked without whole_archive options
     )
-    set(oneValueArgs
-    )
-    set(multiValueArgs
-        p_SOURCES                   # Set target source files
-        p_INCLUDES                  # Set target include directories
-        p_COMPILE_OPTIONS           # Set target compile options
-        p_DEFINITIONS               # Set target compile definitions
-        p_LINK_OPTIONS              # Set target link options
-        p_LINK_LIBRARIES            # Set target link libraries
-        p_DEPENDENCIES              # Set target dependencies
-        p_REMOVE_COMPILE_OPTIONS    # Remove compile options(maybe from global config) for the target.
-    )
-    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    set(NEW_ARGS)
-    foreach(o IN LISTS options)
-        ameba_list_append_if(ARG_${o} NEW_ARGS ${o})
-    endforeach()
+    cmake_parse_arguments(ARG "${options}" "" "" ${ARGN})
 
-    foreach(o IN LISTS multiValueArgs)
-        if (ARG_${o})
-            if("${o}" STREQUAL "p_LINK_LIBRARIES")
-                 ameba_list_append(NEW_ARGS p_LINK_LIBRARIES ${ARG_p_LINK_LIBRARIES} ${c_MCU_PROJ_CONFIG})
-            else()
-                ameba_list_append(NEW_ARGS ${o} ${ARG_${o}})
-            endif()
-        endif()
-    endforeach()
-
-    if (NOT DEFINED ARG_p_LINK_LIBRARIES)
-        ameba_list_append(NEW_ARGS p_LINK_LIBRARIES ${c_MCU_PROJ_CONFIG})
-    endif()
     if(ARG_p_NO_WHOLE_ARCHIVE)
-        list(REMOVE_ITEM NEW_ARGS p_NO_WHOLE_ARCHIVE)
+        list(REMOVE_ITEM ARGN p_NO_WHOLE_ARCHIVE)
     endif()
-    ameba_target_add(${name}
-        p_WRAP_TARGET_NAME
-        p_PREFIX lib_
-        ${NEW_ARGS}
-    )
+
+    ameba_add_library(${name} ${ARGN})
 
     if(c_CURRENT_IMAGE)
         if(ARG_p_NO_WHOLE_ARCHIVE)
@@ -152,23 +126,6 @@ function(ameba_add_internal_library name)
 endfunction()
 
 function(ameba_add_external_library name output_path output_name)
-    set(options
-        p_ADD_EMPTY_C_FILE              # If set, an empty c file is added to the target sources
-        p_ADD_BUILD_INFO                # Set target compile with build info: git version, time, etc..
-    )
-
-    set(multiValueArgs
-        p_SOURCES                   # Set target source files
-        p_INCLUDES                  # Set target include directories
-        p_COMPILE_OPTIONS           # Set target compile options
-        p_DEFINITIONS           # Set target compile definitions
-        p_LINK_OPTIONS              # Set target link options
-        p_LINK_LIBRARIES               # Set target link libraries
-        p_DEPENDENCIES              # Set target dependencies
-        p_REMOVE_COMPILE_OPTIONS    # Remove compile options(maybe from global config) for the target.
-    )
-    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
     # NOTE: A component may be compiled multiple times in an
     #       MCU project (using a wrapper based on the image name).
     #       In this case, it's okay if the output library files are
@@ -183,40 +140,13 @@ function(ameba_add_external_library name output_path output_name)
         add_library(${flag_target} INTERFACE)
     endif()
 
-    set(NEW_ARGS)
-    foreach(o IN LISTS options)
-        ameba_list_append_if(ARG_${o} NEW_ARGS ${o})
-    endforeach()
-
-    foreach(o IN LISTS multiValueArgs)
-        if (ARG_${o})
-            if("${o}" STREQUAL "p_LINK_LIBRARIES")
-                ameba_list_append(NEW_ARGS p_LINK_LIBRARIES ${ARG_p_LINK_LIBRARIES} ${c_MCU_PROJ_CONFIG})
-            else()
-                ameba_list_append(NEW_ARGS ${o} ${ARG_${o}})
-            endif()
-        endif()
-    endforeach()
-
-    if (NOT DEFINED ARG_p_LINK_LIBRARIES)
-        ameba_list_append(NEW_ARGS p_LINK_LIBRARIES ${c_MCU_PROJ_CONFIG})
-    endif()
-
-    ameba_target_add(${name}
-        p_WRAP_TARGET_NAME
+    ameba_add_library(${name}
         p_STRIP_DEBUG
         p_ENABLE_DETERMINISTIC_ARCHIVES
-        p_PREFIX lib_
         p_OUTPUT_PATH ${output_path}
         p_OUTPUT_NAME ${output_name}
-        ${NEW_ARGS}
+        ${ARGN}
     )
-
-    #REVIEW: Need to add dependency for all images or current image?
-    # get_property(img_list TARGET ${c_MCU_PROJ_CONFIG} PROPERTY image_list)
-    # foreach(image ${img_list})
-    #     add_dependencies(${image} ${c_CURRENT_TARGET_NAME})
-    # endforeach()
 
     if(TARGET ${c_CURRENT_IMAGE})
         add_dependencies(${c_CURRENT_IMAGE} ${c_CURRENT_TARGET_NAME})
@@ -228,53 +158,12 @@ endfunction()
 
 
 function(ameba_add_external_tmp_library name)
-    set(options
-        p_ADD_EMPTY_C_FILE          # If set, an empty c file is added to the target sources
-        p_ADD_BUILD_INFO            # Set target compile with build info: git version, time, etc..
-    )
-    set(oneValueArgs
-    )
-    set(multiValueArgs
-        p_SOURCES                   # Set target source files
-        p_INCLUDES                  # Set target include directories
-        p_COMPILE_OPTIONS           # Set target compile options
-        p_DEFINITIONS               # Set target compile definitions
-        p_LINK_OPTIONS              # Set target link options
-        p_LINK_LIBRARIES            # Set target link libraries
-        p_DEPENDENCIES              # Set target dependencies
-        p_REMOVE_COMPILE_OPTIONS    # Remove compile options(maybe from global config) for the target.
-    )
-    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
     #NOTE: Only work before release
     if(CONFIG_AMEBA_RLS)
         return()
     endif()
 
-    set(NEW_ARGS)
-    foreach(o IN LISTS options)
-        ameba_list_append_if(ARG_${o} NEW_ARGS ${o})
-    endforeach()
-
-    foreach(o IN LISTS multiValueArgs)
-        if (ARG_${o})
-            if("${o}" STREQUAL "p_LINK_LIBRARIES")
-                 ameba_list_append(NEW_ARGS p_LINK_LIBRARIES ${ARG_p_LINK_LIBRARIES} ${c_MCU_PROJ_CONFIG})
-            else()
-                ameba_list_append(NEW_ARGS ${o} ${ARG_${o}})
-            endif()
-        endif()
-    endforeach()
-
-    if (NOT DEFINED ARG_p_LINK_LIBRARIES)
-        ameba_list_append(NEW_ARGS p_LINK_LIBRARIES ${c_MCU_PROJ_CONFIG})
-    endif()
-
-    ameba_target_add(${name}
-        p_WRAP_TARGET_NAME
-        p_PREFIX lib_
-        ${NEW_ARGS}
-    )
+    ameba_add_library(${name} ${ARGN})
 
     set(c_CURRENT_TARGET_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
 endfunction()
@@ -290,14 +179,13 @@ function(ameba_add_external_app_library name)
         return()
     endif()
 
-    set(tmp_argn "${ARGN}")
     if (ARG_p_OUTPUT_NAME)
-        ameba_list_remove_key_value(tmp_argn p_OUTPUT_NAME)
+        ameba_list_remove_key_value(ARGN p_OUTPUT_NAME)
     else()
         set(ARG_p_OUTPUT_NAME ${name})
     endif()
 
-    ameba_add_external_library(${name} ${c_SDK_LIB_APPLICATION_DIR} ${ARG_p_OUTPUT_NAME} ${tmp_argn})
+    ameba_add_external_library(${name} ${c_SDK_LIB_APPLICATION_DIR} ${ARG_p_OUTPUT_NAME} ${ARGN})
     set(c_CURRENT_TARGET_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
 endfunction()
 
@@ -312,14 +200,13 @@ function(ameba_add_external_soc_library name)
         return()
     endif()
 
-    set(tmp_argn "${ARGN}")
     if (ARG_p_OUTPUT_NAME)
-        ameba_list_remove_key_value(tmp_argn p_OUTPUT_NAME)
+        ameba_list_remove_key_value(ARGN p_OUTPUT_NAME)
     else()
         set(ARG_p_OUTPUT_NAME ${name})
     endif()
 
-    ameba_add_external_library(${name} ${c_SDK_LIB_SOC_DIR} ${ARG_p_OUTPUT_NAME} ${tmp_argn})
+    ameba_add_external_library(${name} ${c_SDK_LIB_SOC_DIR} ${ARG_p_OUTPUT_NAME} ${ARGN})
     set(c_CURRENT_TARGET_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
 endfunction()
 
@@ -377,21 +264,21 @@ function(ameba_add_merge_library output_name output_path)
         )
     endforeach()
 
-	if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
-		set(list_cmd COMMAND ${CMAKE_COMMAND} -E chdir ${temp_dir} cmd /C "dir /b *.o > o_files.list")
-	else()
-		set(list_cmd COMMAND ls ${temp_dir}/*.o > ${temp_dir}/o_files.list)
-	endif()
+   if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
+        set(list_cmd COMMAND ${CMAKE_COMMAND} -E chdir ${temp_dir} cmd /C "dir /b *.o > o_files.list")
+   else()
+      set(list_cmd COMMAND ls ${temp_dir}/*.o > ${temp_dir}/o_files.list)
+   endif()
 
     set(full_output ${output_path}/lib_${output_name}.a)
     add_custom_command(
         OUTPUT ${full_output}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${temp_dir}
         ${unpack_commands}
-		COMMAND ${CMAKE_COMMAND} -E touch ${temp_dir}/o_files.list
-		${list_cmd}
+        COMMAND ${CMAKE_COMMAND} -E touch ${temp_dir}/o_files.list
+        ${list_cmd}
         COMMAND ${CMAKE_COMMAND} -E rm -f ${full_output}
-		COMMAND ${CMAKE_COMMAND} -E chdir ${temp_dir} ${CMAKE_AR} crs ${full_output} "@o_files.list"
+        COMMAND ${CMAKE_COMMAND} -E chdir ${temp_dir} ${CMAKE_AR} crs ${full_output} "@o_files.list"
         COMMAND ${CMAKE_OBJCOPY} -g -D ${full_output}
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${temp_dir}
         DEPENDS ${libs}
@@ -423,7 +310,6 @@ function(ameba_add_merge_app_library output_name)
     if(CONFIG_AMEBA_RLS)
         return()
     endif()
-
     ameba_add_merge_library(${output_name} ${c_SDK_LIB_APPLICATION_DIR} ${ARGN})
     set(c_CURRENT_TARGET_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
 endfunction()
@@ -582,6 +468,6 @@ function(ameba_app_library name)
 endfunction()
 
 function(ameba_app_library_with_gitver name)
-    ameba_add_external_app_library(${name} p_ADD_BUILD_INFO)
+    ameba_add_external_app_library(${name})
     set(CURRENT_LIB_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
 endfunction()

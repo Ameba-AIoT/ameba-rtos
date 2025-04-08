@@ -13,14 +13,17 @@ $(error error: PROJECT_DIR is not defined. Please specify it by running 'make PR
 endif
 # PROJECT_DIR = ../../../../amebasmartplus_gcc_project/project_ap
 
-ifndef MENUCONFIG_DIR
-$(error error: MENUCONFIG_DIR is not defined. Please specify it by running 'make MENUCONFIG_DIR=xxx')
+# specify the build base directory
+ifndef BUILD_BASE
+$(error error: BUILD_BASE is not defined. Please specify it by running 'make BUILD_BASE=xxx')
 endif
 
-AUTOCONFIG_H_DIR:= ${MENUCONFIG_DIR}/project_ap
+# specify the menuconfig directory for .config_ca32 and platform_autoconf.h
+AUTOCONFIG_H_DIR:= ${BUILD_BASE}/../menuconfig/project_ap
 
 include .config
-include $(MENUCONFIG_DIR)/.config_ca32
+# find the build/project_ap/.config_ca32
+include $(BUILD_BASE)/project_ap/.config_ca32
 include Formosa.mk
 
 # ifeq (${ASDK_VER},)
@@ -547,8 +550,8 @@ include common/backtrace/backtrace.mk
 
 include ${MAKE_HELPERS_DIRECTORY}plat_helpers.mk
 
-BUILD_BASE		:=	${PROJECT_DIR}/asdk/build
-BUILD_PLAT		:=	$(BUILD_BASE)/atf
+# BUILD_BASE		:=	${PROJECT_DIR}/asdk/build
+BUILD_PLAT		:=	$(BUILD_BASE)/project_ap/asdk/make/atf
 #${BUILD_BASE}/${PLAT}/${BUILD_TYPE}
 
 ifneq ($(ARCH),mips)
@@ -1390,11 +1393,11 @@ cscope:
 
 image: fiptool fip
 ifeq ($(CONFIG_MP_INCLUDED),y)
-	$(call SHELL_COPY,${BUILD_PLAT}/${FIP_NAME},${BUILD_PLAT}/../../image_mp)
-	$(call SHELL_COPY,${BUILD_PLAT}/bl1*.bin,${BUILD_PLAT}/../../image_mp)
+	$(call SHELL_COPY,${BUILD_PLAT}/${FIP_NAME},${PROJECT_DIR}/asdk/image_mp)
+	$(call SHELL_COPY,${BUILD_PLAT}/bl1*.bin,${PROJECT_DIR}/asdk/image_mp)
 else
-	$(call SHELL_COPY,${BUILD_PLAT}/${FIP_NAME},${BUILD_PLAT}/../../image)
-	$(call SHELL_COPY,${BUILD_PLAT}/bl1*.bin,${BUILD_PLAT}/../../image)
+	$(call SHELL_COPY,${BUILD_PLAT}/${FIP_NAME},${PROJECT_DIR}/asdk/image)
+	$(call SHELL_COPY,${BUILD_PLAT}/bl1*.bin,${PROJECT_DIR}/asdk/image)
 endif
 #	@#$(call boot/atf/image)
 

@@ -459,16 +459,16 @@ static void process_wps_scan_result(struct rtw_scan_result *record, void *user_d
 	struct _internal_wps_scan_handler_arg *wps_arg = (struct _internal_wps_scan_handler_arg *)user_data;
 
 	if ((record->wps_type != 0xff) && (record->channel != 0) &&
-		(memcmp(&record->BSSID, zero_mac, 6) != 0) && (!(record->security & WEP_ENABLED))) {
+		(memcmp(&record->bssid, zero_mac, 6) != 0) && (!(record->security & WEP_ENABLED))) {
 		// ignore hidden ssid
-		if (record->SSID.len == 0) {
+		if (record->ssid.len == 0) {
 			return;
 		} else {
 			int i;
 			u8 is_hidden_ssid = 1;
 
-			for (i = 0; i < record->SSID.len; i ++) {
-				if (record->SSID.val[i] != 0) {
+			for (i = 0; i < record->ssid.len; i ++) {
+				if (record->ssid.val[i] != 0) {
 					is_hidden_ssid = 0;
 					break;
 				}
@@ -484,18 +484,18 @@ static void process_wps_scan_result(struct rtw_scan_result *record, void *user_d
 				wps_password_id = record->wps_type;
 				if (record->channel > 14) {
 					if (++wps_arg->isoverlap_5G == 0) {
-						memcpy(&wps_arg->target_ssid[0], record->SSID.val, record->SSID.len);
-						memcpy(wps_arg->target_bssid, record->BSSID.octet, ETH_ALEN);
-						wps_arg->target_ssid[record->SSID.len] = '\0';
+						memcpy(&wps_arg->target_ssid[0], record->ssid.val, record->ssid.len);
+						memcpy(wps_arg->target_bssid, record->bssid.octet, ETH_ALEN);
+						wps_arg->target_ssid[record->ssid.len] = '\0';
 						DiagPrintf("\r\n[pbc]Record first triger wps 5G AP = %s, %02x:%02x:%02x:%02x:%02x:%02x\n", \
 								   wps_arg->target_ssid, wps_arg->target_bssid[0], wps_arg->target_bssid[1], wps_arg->target_bssid[2], \
 								   wps_arg->target_bssid[3], wps_arg->target_bssid[4], wps_arg->target_bssid[5]);
 					}
 				} else {
 					if ((++wps_arg->isoverlap == 0) && (wps_arg->isoverlap_5G == -1)) {
-						memcpy(&wps_arg->target_ssid[0], record->SSID.val, record->SSID.len);
-						memcpy(wps_arg->target_bssid, record->BSSID.octet, ETH_ALEN);
-						wps_arg->target_ssid[record->SSID.len] = '\0';
+						memcpy(&wps_arg->target_ssid[0], record->ssid.val, record->ssid.len);
+						memcpy(wps_arg->target_bssid, record->bssid.octet, ETH_ALEN);
+						wps_arg->target_ssid[record->ssid.len] = '\0';
 						DiagPrintf("\r\n[pbc]Record first triger wps AP = %s, %02x:%02x:%02x:%02x:%02x:%02x\n", \
 								   wps_arg->target_ssid, wps_arg->target_bssid[0], wps_arg->target_bssid[1], wps_arg->target_bssid[2], \
 								   wps_arg->target_bssid[3], wps_arg->target_bssid[4], wps_arg->target_bssid[5]);
@@ -506,9 +506,9 @@ static void process_wps_scan_result(struct rtw_scan_result *record, void *user_d
 			if (record->wps_type == 0x00) {
 				wps_arg->isoverlap = 0;
 				wps_password_id = record->wps_type;
-				memcpy(&wps_arg->target_ssid[0], record->SSID.val, record->SSID.len);
-				memcpy(wps_arg->target_bssid, record->BSSID.octet, ETH_ALEN);
-				wps_arg->target_ssid[record->SSID.len] = '\0';
+				memcpy(&wps_arg->target_ssid[0], record->ssid.val, record->ssid.len);
+				memcpy(wps_arg->target_bssid, record->bssid.octet, ETH_ALEN);
+				wps_arg->target_ssid[record->ssid.len] = '\0';
 				DiagPrintf("\r\n[pin]find out first triger wps AP = %s, %02x:%02x:%02x:%02x:%02x:%02x\n", \
 						   wps_arg->target_ssid, wps_arg->target_bssid[0], wps_arg->target_bssid[1], wps_arg->target_bssid[2], \
 						   wps_arg->target_bssid[3], wps_arg->target_bssid[4], wps_arg->target_bssid[5]);
@@ -591,9 +591,9 @@ static int start_discovery_phase(u16 wps_config)
 		return -1;
 	}
 
-	wifi_reg_event_handler(WIFI_EVENT_WPA_STA_WPS_START, wpas_wsc_sta_wps_start_hdl, NULL);
-	wifi_reg_event_handler(WIFI_EVENT_WPA_WPS_FINISH, wpas_wsc_wps_finish_hdl, NULL);
-	wifi_reg_event_handler(WIFI_EVENT_WPA_EAPOL_RECVD, wpas_wsc_eapol_recvd_hdl, NULL);
+	wifi_reg_event_handler(RTW_EVENT_WPA_STA_WPS_START, wpas_wsc_sta_wps_start_hdl, NULL);
+	wifi_reg_event_handler(RTW_EVENT_WPA_WPS_FINISH, wpas_wsc_wps_finish_hdl, NULL);
+	wifi_reg_event_handler(RTW_EVENT_WPA_EAPOL_RECVD, wpas_wsc_eapol_recvd_hdl, NULL);
 
 	wpas_wps_enrollee_init_probe_ie(wps_config);
 	wpas_wps_enrollee_init_assoc_ie();
@@ -644,9 +644,9 @@ exit1:
 		queue_for_credential = NULL;
 	}
 
-	wifi_unreg_event_handler(WIFI_EVENT_WPA_STA_WPS_START, wpas_wsc_sta_wps_start_hdl);
-	wifi_unreg_event_handler(WIFI_EVENT_WPA_WPS_FINISH, wpas_wsc_wps_finish_hdl);
-	wifi_unreg_event_handler(WIFI_EVENT_WPA_EAPOL_RECVD, wpas_wsc_eapol_recvd_hdl);
+	wifi_unreg_event_handler(RTW_EVENT_WPA_STA_WPS_START, wpas_wsc_sta_wps_start_hdl);
+	wifi_unreg_event_handler(RTW_EVENT_WPA_WPS_FINISH, wpas_wsc_wps_finish_hdl);
+	wifi_unreg_event_handler(RTW_EVENT_WPA_EAPOL_RECVD, wpas_wsc_eapol_recvd_hdl);
 
 	wpas_wps_deinit();
 	rtos_time_delay_ms(10);
@@ -681,7 +681,7 @@ static int wps_scan_result_handler(unsigned int scanned_AP_num, void *user_data)
 
 	for (i = 0; i < scanned_AP_num; i++) {
 		scaned_ap_info = &scanned_ap_list[i];
-		scaned_ap_info->SSID.val[scaned_ap_info->SSID.len] = 0; /* Ensure the SSID is null terminated */
+		scaned_ap_info->ssid.val[scaned_ap_info->ssid.len] = 0; /* Ensure the SSID is null terminated */
 
 		process_wps_scan_result(scaned_ap_info, (void *)wps_arg);
 
@@ -689,7 +689,7 @@ static int wps_scan_result_handler(unsigned int scanned_AP_num, void *user_data)
 		if (((wps_arg->config_method == WPS_CONFIG_DISPLAY) || (wps_arg->config_method == WPS_CONFIG_KEYPAD))
 			&& (scaned_ap_info->wps_type == 0x07)) {
 
-			update_discovered_ssids((char *)scaned_ap_info->SSID.val);
+			update_discovered_ssids((char *)scaned_ap_info->ssid.val);
 		}
 #endif
 	}
@@ -775,7 +775,7 @@ static u8 wps_scan_cred_ssid(struct dev_credential *dev_cred)
 
 		for (i = 0; i < scanned_ap_num; i++) {
 			scanned_ap_info = &scanned_ap_list[i];
-			if ((scanned_ap_info->SSID.len == dev_cred->ssid_len) && (memcmp(scanned_ap_info->SSID.val, dev_cred->ssid, dev_cred->ssid_len) == 0)) {
+			if ((scanned_ap_info->ssid.len == dev_cred->ssid_len) && (memcmp(scanned_ap_info->ssid.val, dev_cred->ssid, dev_cred->ssid_len) == 0)) {
 				ssid_found = 1;
 				break;
 			}
@@ -928,9 +928,9 @@ int wps_start(u16 wps_config, char *pin, u8 channel, char *ssid)
 		goto exit2;
 	}
 
-	wifi_reg_event_handler(WIFI_EVENT_WPA_STA_WPS_START, wpas_wsc_sta_wps_start_hdl, NULL);
-	wifi_reg_event_handler(WIFI_EVENT_WPA_WPS_FINISH, wpas_wsc_wps_finish_hdl, NULL);
-	wifi_reg_event_handler(WIFI_EVENT_WPA_EAPOL_RECVD, wpas_wsc_eapol_recvd_hdl, NULL);
+	wifi_reg_event_handler(RTW_EVENT_WPA_STA_WPS_START, wpas_wsc_sta_wps_start_hdl, NULL);
+	wifi_reg_event_handler(RTW_EVENT_WPA_WPS_FINISH, wpas_wsc_wps_finish_hdl, NULL);
+	wifi_reg_event_handler(RTW_EVENT_WPA_EAPOL_RECVD, wpas_wsc_eapol_recvd_hdl, NULL);
 
 	wpas_wps_enrollee_init_probe_ie(wps_config);
 	wpas_wps_enrollee_init_assoc_ie();
@@ -1032,9 +1032,9 @@ exit1:
 		queue_for_credential = NULL;
 	}
 
-	wifi_unreg_event_handler(WIFI_EVENT_WPA_STA_WPS_START, wpas_wsc_sta_wps_start_hdl);
-	wifi_unreg_event_handler(WIFI_EVENT_WPA_WPS_FINISH, wpas_wsc_wps_finish_hdl);
-	wifi_unreg_event_handler(WIFI_EVENT_WPA_EAPOL_RECVD, wpas_wsc_eapol_recvd_hdl);
+	wifi_unreg_event_handler(RTW_EVENT_WPA_STA_WPS_START, wpas_wsc_sta_wps_start_hdl);
+	wifi_unreg_event_handler(RTW_EVENT_WPA_WPS_FINISH, wpas_wsc_wps_finish_hdl);
+	wifi_unreg_event_handler(RTW_EVENT_WPA_EAPOL_RECVD, wpas_wsc_eapol_recvd_hdl);
 	wpas_wps_deinit();
 
 exit2:
