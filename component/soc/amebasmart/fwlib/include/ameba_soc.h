@@ -22,6 +22,7 @@
 #include "ameba_ota.h"
 
 #include "os_wrapper.h"
+#include "heap_trace.h"
 
 #include "ameba_pmu.h"
 #endif

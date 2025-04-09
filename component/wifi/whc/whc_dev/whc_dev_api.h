@@ -124,7 +124,7 @@ int wifi_set_ips_internal(u8 enable);
 void whc_dev_api_init(void);
 void whc_dev_wifi_event_indicate(int event_cmd, char *buf, int buf_len, int flags);
 void whc_dev_scan_user_callback_indicate(unsigned int ap_num, void *user_data);
-void whc_dev_acs_info_indicate(struct acs_mntr_rpt *acs_mntr_rpt);
+void whc_dev_acs_info_indicate(struct rtw_acs_mntr_rpt *acs_mntr_rpt);
 void whc_dev_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data);
 u8 whc_dev_promisc_callback_indicate(struct rtw_rx_pkt_info *pkt_info);
 void whc_dev_ap_ch_switch_callback_indicate(unsigned char channel, s8 ret);

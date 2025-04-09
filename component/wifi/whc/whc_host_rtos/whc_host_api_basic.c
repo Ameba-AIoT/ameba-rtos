@@ -43,7 +43,7 @@ int (*scan_user_callback_ptr)(unsigned int, void *) = NULL;
 int (*scan_each_report_user_callback_ptr)(struct rtw_scan_result *, void *) = NULL;
 
 u8(*promisc_user_callback_ptr)(struct rtw_rx_pkt_info *pkt_info) = NULL;
-int (*scan_acs_report_user_callback_ptr)(struct acs_mntr_rpt *acs_mntr_rpt) = NULL;
+int (*scan_acs_report_user_callback_ptr)(struct rtw_acs_mntr_rpt *acs_mntr_rpt) = NULL;
 
 extern void *param_indicator;
 u8 rtw_join_status = RTW_JOINSTATUS_UNKNOWN;

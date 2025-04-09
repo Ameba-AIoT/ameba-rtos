@@ -20,6 +20,10 @@
 #include "atcmd_sys.h"
 #include "atcmd_fs.h"
 
+#ifdef CONFIG_ATCMD_HOST_CONTROL
+#include "ringbuffer.h"
+#endif
+
 #if defined(CONFIG_ATCMD_SOCKET) && (CONFIG_ATCMD_SOCKET == 1)
 #include "atcmd_sockets.h"
 #endif
@@ -49,7 +53,7 @@ int parse_param(char *buf, char **argv);
 int parse_param_advance(char *buf, char **argv);
 
 int atcmd_tt_mode_start(u32 len);
-u32 atcmd_tt_mode_get(u8 *buf, u32 len);
+int atcmd_tt_mode_get(u8 *buf, u32 len);
 void atcmd_tt_mode_end(void);
 
 int at_printf_data(char *data, u32 len);
@@ -75,6 +79,19 @@ void at_printf_unlock(void);
 #define STR_END_OF_ATDATA_RET	"\r\n\n> " //data transparent transmission indicator
 #define SMALL_BUF               512
 #define MAX_BUF_LEN             20000
+
+#ifdef CONFIG_ATCMD_HOST_CONTROL
+extern char g_tt_mode;
+
+extern char g_tt_mode_check_watermark;
+extern char g_tt_mode_indicate_high_watermark;
+extern char g_tt_mode_indicate_low_watermark;
+extern RingBuffer *atcmd_tt_mode_rx_ring_buf;
+extern rtos_sema_t atcmd_tt_mode_sema;
+extern volatile char g_tt_mode_stop_flag;
+extern volatile u8 g_tt_mode_stop_char_cnt;
+extern rtos_timer_t xTimers_TT_Mode;
+#endif
 
 #define PIN_VAL_TO_NAME_STR(val) \
 	({ \
