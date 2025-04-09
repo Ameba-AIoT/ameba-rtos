@@ -9,13 +9,14 @@ None
 # SW configuration
 
 1. Menuconfig
-	Type command `./menuconfig.py` under the project directory and choose `CONFIG USB`:
+	Type command `./menuconfig.py` under the project directory and :
+	- Choose `CONFIG USB --->`:
 	```
 	[*] Enable USB
 			USB Mode (Device)  --->
 	[*] UAC
 	```
-	choose `CONFIG APPLICATION` -> `Audio Config`:
+	- Choose `CONFIG APPLICATION --->` -> `Audio Config --->`:
 	```
 	[*] Enable Audio Framework
 			Select Audio Interfaces (Mixer)  --->

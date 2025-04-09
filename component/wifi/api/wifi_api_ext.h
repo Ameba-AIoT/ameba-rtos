@@ -184,7 +184,7 @@ int wifi_get_mac_address(int idx, struct rtw_mac  *mac, u8 efuse);
 
 /**
  * @brief  This function is used to get wifi wireless mode for station mode when connecting to AP.
- * @param[out]  wmode: the wireless mode, Val: WLAN_MD_11B, WLAN_MD_11A...
+ * @param[out]  wmode: the wireless mode, Val: RTW_80211_B, RTW_80211_A...
  * @return
  *    - @ref RTK_SUCCESS : The result is successfully got.
  *    - @ref RTK_FAIL : The result is not successfully got.
@@ -196,27 +196,27 @@ int wifi_get_wireless_mode(u8 *wmode);
  * 	Driver works in BGNAX mode in default after driver initialization. This function is used
  *  to change wireless mode for station mode before connecting to AP.
  * @param[in]  wmode: wireless mode to set. The value can be
-*               	- WLAN_MD_11B
-*               	- WLAN_MD_11A
-*               	- WLAN_MD_11G
-*               	- WLAN_MD_11N
-*               	- WLAN_MD_11AC
-*               	- WLAN_MD_11AX
-*               	- WLAN_MD_11BG
-*               	- WLAN_MD_11GN
-*               	- WLAN_MD_11AN
-*               	- WLAN_MD_11BN
-*               	- WLAN_MD_11BGN
-*               	- WLAN_MD_11BGAX
-*               	- WLAN_MD_11GAX
-*               	- WLAN_MD_11A_AC
-*               	- WLAN_MD_11A_AX
-*               	- WLAN_MD_11AGN
-*               	- WLAN_MD_11ABGN
-*               	- WLAN_MD_11ANAC
-*               	- WLAN_MD_24G_MIX
-*               	- WLAN_MD_5G_MIX
-*               	- WLAN_MD_MAX
+*               	- RTW_80211_B
+*               	- RTW_80211_A
+*               	- RTW_80211_G
+*               	- RTW_80211_N
+*               	- RTW_80211_AC
+*               	- RTW_80211_AX
+*               	- RTW_80211_BG
+*               	- RTW_80211_GN
+*               	- RTW_80211_AN
+*               	- RTW_80211_BN
+*               	- RTW_80211_BGN
+*               	- RTW_80211_BGAX
+*               	- RTW_80211_GAX
+*               	- RTW_80211_A_AC
+*               	- RTW_80211_A_AX
+*               	- RTW_80211_AGN
+*               	- RTW_80211_ABGN
+*               	- RTW_80211_ANAC
+*               	- RTW_80211_24G_MIX
+*               	- RTW_80211_5G_MIX
+*               	- RTW_80211_MAX
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL.
  * @note  We do not recommend 2G without 11b mode and 5G without 11a mode, as this may lead to compatibility issues.
  */
@@ -306,9 +306,9 @@ int wifi_get_antdiv_info(unsigned char *antdiv_mode, unsigned char *curr_ant);
  * @brief Get band type.
  * @param[out]  band_type: The location where the band type info will be stored.
  * The support band type.
- *    - @ref WL_BAND_2_4G : Only support 2.4G.
- *    - @ref WL_BAND_5G : Only support 5G.
- *    - @ref WL_BAND_2_4G_5G_BOTH : Support both 2.4G and 5G.
+ *    - @ref RTW_SUPPORT_BAND_2_4G : Only support 2.4G.
+ *    - @ref RTW_SUPPORT_BAND_5G : Only support 5G.
+ *    - @ref RTW_SUPPORT_BAND_2_4G_5G_BOTH : Support both 2.4G and 5G.
  * @return
  *    - @ref RTK_SUCCESS : If the band type info is successfully get.
  *    - @ref RTK_FAIL : If the band type info is not successfully get.
@@ -332,7 +332,7 @@ int wifi_get_tsf(unsigned char wlan_idx, u64 *tsf);
  * @code
  *  u8 ie1[] = {221, 2, 2, 2};
  *  u8 ie2[] = {221, 2, 1, 1};
- *  struct rtw_custom_ie ie_list[2] = {{ie1, BEACON|PROBE_RSP}, {ie2, PROBE_RSP}};
+ *  struct rtw_custom_ie ie_list[2] = {{ie1, RTW_BEACON|RTW_PROBE_RSP}, {ie2, RTW_PROBE_RSP}};
  *  wifi_add_custom_ie(ie_list, 2);
  * @endcode
  * @param[in]  ie_num: The number of custom IEs in ie_list.
@@ -345,7 +345,7 @@ int wifi_add_custom_ie(struct rtw_custom_ie *ie_list, int ie_num);
  * @param[in]  cus_ie: Pointer to WIFI CUSTOM IE address.
  * @code
  *  u8 ie[] = {221, 2, 1, 3} ;
- *  struct rtw_custom_ie ie_update = {ie, PROBE_RSP};
+ *  struct rtw_custom_ie ie_update = {ie, RTW_PROBE_RSP};
  *  wifi_update_custom_ie(&ie_update, 2);
  * @endcode
  * @param[in]  ie_index: Index of WIFI CUSTOM IE list.
@@ -437,18 +437,18 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
 /**
  * @brief  For wifi speaker setting.
  * @param[in]  set_type: Wifi speaker setting type:
- *                - @ref SPEAKER_SET_INIT
- *                - @ref SPEAKER_SET_LATCH_I2S_COUNT
- *                - @ref SPEAKER_SET_TSF_TIMER
+ *                - @ref RTW_SPEAKER_SET_INIT
+ *                - @ref RTW_SPEAKER_SET_LATCH_I2S_COUNT
+ *                - @ref RTW_SPEAKER_SET_TSF_TIMER
  * @param[in]  settings: A pointer to the params:
- *                     - When set_type == @ref SPEAKER_SET_INIT
+ *                     - When set_type == @ref RTW_SPEAKER_SET_INIT
  *                       - \b mode: 0 for slave, 1 for master.
  *                       - \b thresh: Unit 128us.
  *                       - \b relay_en: Relay control.
- *                     - When set_type == @ref SPEAKER_SET_LATCH_I2S_COUNT
+ *                     - When set_type == @ref RTW_SPEAKER_SET_LATCH_I2S_COUNT
  *                       - \b port: 0 for select port 0's TSFT to trigger audio latch count, 1 for port 1.
  *                       - \b latch_period: 0 for trigger audio latch period is 4.096ms, 1 for 8.192ms.
- *                     - When set_type == @ref SPEAKER_SET_TSF_TIMER
+ *                     - When set_type == @ref RTW_SPEAKER_SET_TSF_TIMER
  *                       - \b enable: 1 for enable twt timer, 0 for disable.
  *                       - \b tsft: Absolute value for twt timer, unit ms.
  *                       - \b port: 0 for select port 0's TSFT to trigger twt timer interrupt, 1 for port 1.

@@ -28,12 +28,12 @@ struct wifi_user_conf {
 	unsigned char rtw_trp_tis_cert_en;
 
 	/*!	Force wpa mode:
-		- \b WPA_AUTO_MODE: Auto mode, follow AP;
-		- \b WPA_ONLY_MODE: Wpa only;
-		- \b WPA2_ONLY_MODE: Wpa2 only;
-		- \b WPA3_ONLY_MODE: Wpa3 only;
-		- \b WPA_WPA2_MIXED_MODE: Wpa and wpa2 mixed;
-		- \b WPA2_WPA3_MIXED_MODE: Wpa2 and wpa3 mixed.*/
+		- \b RTW_WPA_AUTO_MODE: Auto mode, follow AP;
+		- \b RTW_WPA_ONLY_MODE: Wpa only;
+		- \b RTW_WPA2_ONLY_MODE: Wpa2 only;
+		- \b RTW_WPA3_ONLY_MODE: Wpa3 only;
+		- \b RTW_WPA_WPA2_MIXED_MODE: Wpa and wpa2 mixed;
+		- \b RTW_WPA2_WPA3_MIXED_MODE: Wpa2 and wpa3 mixed.*/
 	unsigned char wifi_wpa_mode_force;
 
 	/*!	TDMA DIG affects the range of RX, when enabled, both near and distant devices can be received.\n
@@ -54,8 +54,8 @@ struct wifi_user_conf {
 	unsigned char ips_enable;
 
 	/*!	Power save status:
-		- \b IPS_WIFI_OFF: The WIFI is powered off during the IPS;
-		- \b IPS_WIFI_PG: The WIFI enters the PG state during the IPS, and therefore it exits the IPS faster. Only dplus support this status. */
+		- \b RTW_IPS_WIFI_OFF: The WIFI is powered off during the IPS;
+		- \b RTW_IPS_WIFI_PG: The WIFI enters the PG state during the IPS, and therefore it exits the IPS faster. Only dplus support this status. */
 	unsigned char ips_level;
 
 	/*!	The driver does not enter the IPS due to 2s disconnection. Instead, API wifi_set_ips_internal() controls the IPS.\n
@@ -67,14 +67,14 @@ struct wifi_user_conf {
 	unsigned char lps_enable;
 
 	/*!	Power management mode:
-		- \b PS_MODE_LEGACY: During TBTT, wake up to receive beacon; otherwise, WIFI remains in power-save mode;\n
-		- \b PS_MODE_UAPSD_WMM: Not support right now. */
+		- \b RTW_PS_MODE_LEGACY: During TBTT, wake up to receive beacon; otherwise, WIFI remains in power-save mode;\n
+		- \b RTW_PS_MODE_UAPSD_WMM: Not support right now. */
 	unsigned char lps_mode;
 
 	/*!	In LPS, the sta wakes up every legacy_ps_listen_interval* 102.4ms to receive beacon.*/
 	unsigned char legacy_ps_listen_interval;
 
-	/*!	0: NO_LIMIT, 1: TWO_MSDU, 2: FOUR_MSDU, 3: SIX_MSDU. */
+	/*!	0: RTW_UAPSD_NO_LIMIT, 1: RTW_UAPSD_TWO_MSDU, 2: RTW_UAPSD_FOUR_MSDU, 3: RTW_UAPSD_SIX_MSDU. */
 	unsigned char uapsd_max_sp_len;
 
 	/*!	BIT0: AC_VO UAPSD, BIT1: AC_VI UAPSD, BIT2: AC_BK UAPSD, BIT3: AC_BE UAPSD. */
@@ -107,7 +107,7 @@ struct wifi_user_conf {
 
 	/*!	RF calibration is triggered during WIFI initialization and channel switch to calibrate TRX to optimal performance,\n
 		but it takes a long time (around 100ms), so some applications can sacrifice performance so that WIFI initializes and switches faster.\n
-		- \b Bit0: DIS_DPK;
+		- \b Bit0: RTW_DIS_DPK;
 		- <b>Other bits:</b> reserved.*/
 	u16 rf_calibration_disable;
 
@@ -216,8 +216,11 @@ struct wifi_user_conf {
 	/*! R-mesh child refresh timeout, when not receive beacon from child for this timeout, will delete this child, unit: millisecond.*/
 	u16 wtn_child_refresh_timeout;
 
-	/*! 0: Disable R-mesh NAT function, 1: Enable R-mesh NAT function.*/
+	/*! 0: Disable R-mesh NAT feature, 1: Enable R-mesh NAT feature.*/
 	unsigned char wtn_rnat_en;
+
+	/*! 0: Determine whether to become RNAT node based on the rssi to AP, 1: Become RNAT node regardless of the rssi to AP.*/
+	unsigned char wtn_fixed_rnat_node;
 
 	/*! Max node number in R-mesh network, this is used for decide each node's beacon window.*/
 	u16 wtn_max_node_num;

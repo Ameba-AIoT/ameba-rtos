@@ -245,7 +245,7 @@ static int wlan_fast_connect(struct wifi_roaming_data *data, u8 scan_type)
 WIFI_RETRY_LOOP:
 	if (scan_type == FAST_CONNECT_SPECIFIC_CH) {
 		wifi.channel = (u8)channel;
-		wifi.pscan_option = PSCAN_FAST_SURVEY;
+		wifi.pscan_option = RTW_PSCAN_FAST_SURVEY;
 	}
 	wifi.security_type = security_type;
 	//SSID

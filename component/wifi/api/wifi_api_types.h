@@ -60,10 +60,10 @@ extern "C" {
 
 /** Set to this means do fast survey on the specified channel with scan time set to 25ms,
  * otherwise do normal scan on the specified channel with scan time set to 110ms. */
-#define PSCAN_FAST_SURVEY	0x02
+#define RTW_PSCAN_FAST_SURVEY	0x02
 
 /** Set to this means disable DPK(Digital Pre-Distortion Calibration) of rf calibration. */
-#define DIS_DPK BIT(0)
+#define RTW_DIS_DPK     BIT(0)
 
 /* Maximum size of the ESSID and NICKN strings */
 #define RTW_ESSID_MAX_SIZE	32  /**< Refer to 802.11 spec, the max length of ssid is 32 bytes. */
@@ -150,68 +150,68 @@ enum rtw_disconn_reason {
 /**
  * @brief  The enumeration lists supported band type.
  */
-enum {
-	WL_BAND_2_4G = 0,   /**< 2.4g band. */
-	WL_BAND_5G,            /**< 5g band. */
-	WL_BAND_2_4G_5G_BOTH, /**< 2.4g&5g band. */
-	WL_BANDMAX  /**< Max band. */
+enum rtw_support_band {
+	RTW_SUPPORT_BAND_2_4G = 0,     /**< 2.4g band. */
+	RTW_SUPPORT_BAND_5G,           /**< 5g band. */
+	RTW_SUPPORT_BAND_2_4G_5G_BOTH, /**< 2.4g&5g band. */
+	RTW_SUPPORT_BANDMAX            /**< Max band. */
 };
 
 /**
  * @brief The enumeration lists the type of speaker related settings.
  */
-enum {
-	SPEAKER_SET_INIT = 0,
-	SPEAKER_SET_LATCH_I2S_COUNT = 1,
-	SPEAKER_SET_TSF_TIMER = 2,
+enum rtw_speaker_set_type {
+	RTW_SPEAKER_SET_INIT = 0,
+	RTW_SPEAKER_SET_LATCH_I2S_COUNT = 1,
+	RTW_SPEAKER_SET_TSF_TIMER = 2,
 };
 
 /**
- * @brief  The enumeration is transmission type for wifi custom ie.
+ * @brief  The enumeration lists transmission frame type for wifi custom ie.
  */
-enum {
-	PROBE_REQ = BIT(0),  /**< Probe request. */
-	PROBE_RSP = BIT(1),  /**< Probe response. */
-	BEACON	  = BIT(2),     /**< Beacon. */
-	ASSOC_REQ = BIT(3), /**< Assocation request. */
+enum rtw_frame_type {
+	RTW_PROBE_REQ = BIT(0),  /**< Probe request. */
+	RTW_PROBE_RSP = BIT(1),  /**< Probe response. */
+	RTW_BEACON	  = BIT(2),     /**< Beacon. */
+	RTW_ASSOC_REQ = BIT(3), /**< Assocation request. */
 };
 
 /**
  * @brief The enumeration lists rcr mode under promisc.
  */
-enum {
-	RCR_ALL_PKT,  /**< Receive all packets. */
-	RCR_AP_ALL     /**< Receive all packtets send by connected ap. */
+enum rtw_promisc_filter_mode {
+	RTW_PROMISC_FILTER_ALL_PKT,  /**< Receive all packets. */
+	RTW_PROMISC_FILTER_AP_ALL     /**< Receive all packtets send by connected ap. */
 };
 
 /**
  * @brief The enumeration lists promisc callback return value.
  */
-enum {
-	NEED_DRIVER_HANDLE,  /**< Driver will continue process this pkt. */
-	BYPASS_DRIVER_HANDLE     /**< Driver will bypass this pkt. */
+enum rtw_promisc_drv_hdl {
+	RTW_PROMISC_NEED_DRV_HDL,  /**< Driver will continue process this pkt. */
+	RTW_PROMISC_BYPASS_DRV_HDL     /**< Driver will bypass this pkt. */
 };
 
 /**
  * @brief The enumeration lists band type where the sta/ap is located.
  */
-enum band_type {
-	BAND_ON_24G	= 0,   /**< band is on 2.4G                          */
-	BAND_ON_5G	= 1,   /**< band is on 5G                          */
-	BAND_ON_6G	= 2,   /**< band is on 6G                          */
-	BAND_MAX,                  /**< max band                          */
+enum rtw_band_type {
+	RTW_BAND_ON_24G	= 0,   /**< band is on 2.4G                          */
+	RTW_BAND_ON_5G	= 1,   /**< band is on 5G                          */
+	RTW_BAND_ON_6G	= 2,   /**< band is on 6G                          */
+	RTW_BAND_MAX,                  /**< max band                          */
 };
 
 /**
  * @brief The enumeration lists wpa mode， size u8
  */
-enum {
-	WPA_AUTO_MODE,  /**< wpa auto mode                       */
-	WPA_ONLY_MODE,   /**< wpa only mode                       */
-	WPA2_ONLY_MODE, /**< wpa2 only mode                       */
-	WPA3_ONLY_MODE, /**< wpa3 only mode                       */
-	WPA_WPA2_MIXED_MODE, /**< wpa and wpa2  mixed mode                       */
-	WPA2_WPA3_MIXED_MODE /**< wpa2 and wpa3  mixed mode                       */
+enum rtw_wpa_mode {
+	RTW_WPA_AUTO_MODE,       /**< wpa auto mode                       */
+	RTW_WPA_ONLY_MODE,       /**< wpa only mode                       */
+	RTW_WPA2_ONLY_MODE,      /**< wpa2 only mode                       */
+	RTW_WPA3_ONLY_MODE,      /**< wpa3 only mode                       */
+	RTW_WPA_WPA2_MIXED_MODE, /**< wpa and wpa2  mixed mode                       */
+	RTW_WPA2_WPA3_MIXED_MODE /**< wpa2 and wpa3  mixed mode                       */
 };
 
 
@@ -296,126 +296,126 @@ enum rtw_rate {
 /**
   * @brief csi trig management frame subtype.
   */
-enum {
-	CSI_TRIG_ASSOCREQ   = BIT(0),
-	CSI_TRIG_ASSOCRSP   = BIT(1),
-	CSI_TRIG_REASSOCREQ = BIT(2),
-	CSI_TRIG_REASSOCRSP = BIT(3),
-	CSI_TRIG_PROBEREQ   = BIT(4),
-	CSI_TRIG_PROBERSP   = BIT(5),
-	CSI_TRIG_BEACON     = BIT(8),
-	CSI_TRIG_ATIM       = BIT(9),
-	CSI_TRIG_DISASSOC   = BIT(10),
-	CSI_TRIG_AUTH       = BIT(11),
-	CSI_TRIG_DEAUTH     = BIT(12),
-	CSI_TRIG_ACTION     = BIT(13)
+enum rtw_csi_trig_frame_mgnt {
+	RTW_CSI_TRIG_ASSOCREQ   = BIT(0),
+	RTW_CSI_TRIG_ASSOCRSP   = BIT(1),
+	RTW_CSI_TRIG_REASSOCREQ = BIT(2),
+	RTW_CSI_TRIG_REASSOCRSP = BIT(3),
+	RTW_CSI_TRIG_PROBEREQ   = BIT(4),
+	RTW_CSI_TRIG_PROBERSP   = BIT(5),
+	RTW_CSI_TRIG_BEACON     = BIT(8),
+	RTW_CSI_TRIG_ATIM       = BIT(9),
+	RTW_CSI_TRIG_DISASSOC   = BIT(10),
+	RTW_CSI_TRIG_AUTH       = BIT(11),
+	RTW_CSI_TRIG_DEAUTH     = BIT(12),
+	RTW_CSI_TRIG_ACTION     = BIT(13)
 };
 
 /**
   * @brief csi trig control frame subtype.
   */
-enum {
-	CSI_TRIG_TRIGGER     = BIT(2),
-	CSI_TRIG_BA          = BIT(9),
-	CSI_TRIG_PSPOLL      = BIT(10),
-	CSI_TRIG_RTS         = BIT(11),
-	CSI_TRIG_CTS         = BIT(12),
-	CSI_TRIG_ACK         = BIT(13),
-	CSI_TRIG_CFEND       = BIT(14),
-	CSI_TRIG_CFEND_CFACK = BIT(15)
+enum rtw_csi_trig_frame_ctrl {
+	RTW_CSI_TRIG_TRIGGER     = BIT(2),
+	RTW_CSI_TRIG_BA          = BIT(9),
+	RTW_CSI_TRIG_PSPOLL      = BIT(10),
+	RTW_CSI_TRIG_RTS         = BIT(11),
+	RTW_CSI_TRIG_CTS         = BIT(12),
+	RTW_CSI_TRIG_ACK         = BIT(13),
+	RTW_CSI_TRIG_CFEND       = BIT(14),
+	RTW_CSI_TRIG_CFEND_CFACK = BIT(15)
 };
 
 /**
   * @brief csi trig data frame subtype.
   */
-enum {
-	CSI_TRIG_DATA           = BIT(0),
-	CSI_TRIG_DATA_CFACK     = BIT(1),
-	CSI_TRIG_DATA_CFPOLL    = BIT(2),
-	CSI_TRIG_DATA_CFACKPOLL = BIT(3),
-	CSI_TRIG_DATA_NULL      = BIT(4),
-	CSI_TRIG_CF_ACK         = BIT(5),
-	CSI_TRIG_CF_POLL        = BIT(6),
-	CSI_TRIG_CF_ACKPOLL     = BIT(7),
-	CSI_TRIG_QOS_DATA       = BIT(8),
-	CSI_TRIG_QOS_DATA_NULL	= BIT(12)
+enum rtw_csi_trig_frame_data {
+	RTW_CSI_TRIG_DATA           = BIT(0),
+	RTW_CSI_TRIG_DATA_CFACK     = BIT(1),
+	RTW_CSI_TRIG_DATA_CFPOLL    = BIT(2),
+	RTW_CSI_TRIG_DATA_CFACKPOLL = BIT(3),
+	RTW_CSI_TRIG_DATA_NULL      = BIT(4),
+	RTW_CSI_TRIG_CF_ACK         = BIT(5),
+	RTW_CSI_TRIG_CF_POLL        = BIT(6),
+	RTW_CSI_TRIG_CF_ACKPOLL     = BIT(7),
+	RTW_CSI_TRIG_QOS_DATA       = BIT(8),
+	RTW_CSI_TRIG_QOS_DATA_NULL	= BIT(12)
 };
 
 /**
   * @brief csi enable or config.
   */
-enum {
-	CSI_ACT_EN,           /**< enable or disable csi func */
-	CSI_ACT_CFG,          /**< config csi parameters */
-	CSI_ACT_MAX
+enum rtw_csi_action_type {
+	RTW_CSI_ACT_EN,           /**< enable or disable csi func */
+	RTW_CSI_ACT_CFG,          /**< config csi parameters */
+	RTW_CSI_ACT_MAX
 };
 
 /**
   * @brief csi group num.
   */
-enum {
-	CSI_GROUP_NUM_1 = 0,  /**< per tone */
-	CSI_GROUP_NUM_2,      /**< per 2tone */
-	CSI_GROUP_NUM_4,      /**< per 4tone */
-	CSI_GROUP_NUM_8_16,   /**< per 8tone for dplus; per 16tone for others */
-	CSI_GROUP_NUM_MAX
+enum rtw_csi_group_num {
+	RTW_CSI_GROUP_NUM_1 = 0,  /**< per tone */
+	RTW_CSI_GROUP_NUM_2,      /**< per 2tone */
+	RTW_CSI_GROUP_NUM_4,      /**< per 4tone */
+	RTW_CSI_GROUP_NUM_8_16,   /**< per 8tone for dplus; per 16tone for others */
+	RTW_CSI_GROUP_NUM_MAX
 };
 
 /**
   * @brief csi mode.
   */
-enum {
-	CSI_MODE_NORMAL = 0,  /**< rx normal mode */
-	CSI_MODE_NDP,         /**< rx ndp mode: not support */
-	CSI_MODE_RX_RESP,     /**< rx response mode */
-	CSI_MODE_MAX,
+enum rtw_csi_mode {
+	RTW_CSI_MODE_NORMAL = 0,  /**< rx normal mode */
+	RTW_CSI_MODE_NDP,         /**< rx ndp mode: not support */
+	RTW_CSI_MODE_RX_RESP,     /**< rx response mode */
+	RTW_CSI_MODE_MAX,
 };
 
 /**
   * @brief csi accuracy.
   */
-enum {
-	CSI_ACCU_1BYTE = 0,   /**< CSI_ACCU_1BYTE: S(8,3) for dplus and S(8,4) for others */
-	CSI_ACCU_2BYTES,      /**< CSI_ACCU_2BYTE: S(16,11) for dplus and S(16,12) for others */
-	CSI_ACCU_MAX
+enum rtw_csi_accuracy {
+	RTW_CSI_ACCU_1BYTE = 0,   /**< RTW_CSI_ACCU_1BYTE: S(8,3) for dplus and S(8,4) for others */
+	RTW_CSI_ACCU_2BYTES,      /**< RTW_CSI_ACCU_2BYTE: S(16,11) for dplus and S(16,12) for others */
+	RTW_CSI_ACCU_MAX
 };
 
 /**
   * @brief csi alg_opt.
   */
-enum {
-	CSI_ALG_LS = 0,       /**< ls algo */
-	CSI_ALG_SMOTHING,     /**< smothing algo */
-	CSI_ALG_MAX           /**< other algo */
+enum rtw_csi_alg {
+	RTW_CSI_ALG_LS = 0,       /**< ls algo */
+	RTW_CSI_ALG_SMOTHING,     /**< smothing algo */
+	RTW_CSI_ALG_MAX           /**< other algo */
 };
 
 /**
   * @brief csi ch_opt.
   */
-enum {
-	CSI_CH_LEGACY = 0,    /**< legacy part(L-LTF) channel estmation result */
-	CSI_CH_NON_LEGACY,    /**< non-legacy(HT-LTF) part */
-	CSI_CH_MAX
+enum rtw_csi_ch {
+	RTW_CSI_CH_LEGACY = 0,    /**< legacy part(L-LTF) channel estmation result */
+	RTW_CSI_CH_NON_LEGACY,    /**< non-legacy(HT-LTF) part */
+	RTW_CSI_CH_MAX
 };
 
 /**
   * @brief csi csi_role.
   */
-enum {
-	CSI_OP_ROLE_TRX = 0,  /**< both trx */
-	CSI_OP_ROLE_TX  = 1,  /**< only tx csi triggering frame */
-	CSI_OP_ROLE_RX  = 2,  /**< only rx csi triggering frame for fetching csi report */
-	CSI_OP_ROLE_MAX
+enum rtw_csi_role {
+	RTW_CSI_OP_ROLE_TRX = 0,  /**< both trx */
+	RTW_CSI_OP_ROLE_TX  = 1,  /**< only tx csi triggering frame */
+	RTW_CSI_OP_ROLE_RX  = 2,  /**< only rx csi triggering frame for fetching csi report */
+	RTW_CSI_OP_ROLE_MAX
 };
 
 /**
   * @brief Power Mgnt
   */
-enum power_mgnt_mode {
-	PS_MODE_ACTIVE	= 0	, ///< active mode
-	PS_MODE_LEGACY		,       ///< legacy mode
-	PS_MODE_UAPSD_WMM	, ///< uapsd wmm mode
-	PS_MODE_WTNPS	, ///< wtn ps mode
+enum rtw_power_mgnt_mode {
+	RTW_PS_MODE_ACTIVE	= 0	, ///< active mode
+	RTW_PS_MODE_LEGACY		,       ///< legacy mode
+	RTW_PS_MODE_UAPSD_WMM	, ///< uapsd wmm mode
+	RTW_PS_MODE_WTNPS	, ///< wtn ps mode
 };
 
 /**
@@ -452,7 +452,7 @@ enum rtw_antdiv_mode {
 /**
   * @brief  The enumeration lists the bss types. size u8
   */
-enum {
+enum rtw_bss_type {
 	RTW_BSS_TYPE_INFRASTRUCTURE 	= 0, /**< Denotes infrastructure network                  */
 	RTW_BSS_TYPE_WTN_HELPER          		= 1, /**< Denotes an wtn helper network           */
 	RTW_BSS_TYPE_UNKNOWN
@@ -461,7 +461,7 @@ enum {
 /**
   * @brief  The enumeration lists the scan options.
   */
-enum {
+enum rtw_scan_type {
 	RTW_SCAN_NOUSE			= 0x00,  /**< default value */
 	RTW_SCAN_ACTIVE              	= 0x01,     /**< active scan */
 	RTW_SCAN_PASSIVE             	= 0x02,    /**< passive scan*/
@@ -473,7 +473,7 @@ enum {
 /**
   * @brief  The enumeration lists the WPS types.
   */
-enum {
+enum rtw_wps_type {
 	RTW_WPS_TYPE_DEFAULT 		    		= 0,	/**< default type */
 	RTW_WPS_TYPE_USER_SPECIFIED 		= 1,	/**< user specified type */
 	RTW_WPS_TYPE_MACHINE_SPECIFIED   	= 2,	/**< machine specified type */
@@ -488,7 +488,7 @@ enum {
   * @brief The enumeration lists the supported operation mode by WIFI driver,
   *			including station and AP mode.
   */
-enum {
+enum rtw_drv_op_mode {
 	RTW_MODE_NONE	= 0,		///<none
 	RTW_MODE_STA		= 1,	///<sta mode
 	RTW_MODE_AP		= 2,	///<ap mode
@@ -499,50 +499,50 @@ enum {
 /**
   * The enumeration lists the power save status.
   */
-enum {
-	IPS_WIFI_OFF = 0,
-	IPS_WIFI_PG,
-	IPS_LEVEL_MAX,
+enum rtw_ips_level {
+	RTW_IPS_WIFI_OFF = 0,
+	RTW_IPS_WIFI_PG,
+	RTW_IPS_LEVEL_MAX,
 };
 
-enum UAPSD_MAX_SP {
-	NO_LIMIT,
-	TWO_MSDU,
-	FOUR_MSDU,
-	SIX_MSDU
+enum rtw_uapsd_max_sp {
+	RTW_UAPSD_NO_LIMIT,
+	RTW_UAPSD_TWO_MSDU,
+	RTW_UAPSD_FOUR_MSDU,
+	RTW_UAPSD_SIX_MSDU
 };
 
 /**
   * @brief  The enumeration lists all the network mode.
   */
 /*TODO: rom should check because moved from rom_rtw_defs.h*/
-enum {
-	WLAN_MD_INVALID = 0,
-	WLAN_MD_11B	= BIT(0),
-	WLAN_MD_11A	= BIT(1),
-	WLAN_MD_11G	= BIT(2),
-	WLAN_MD_11N	= BIT(3),
-	WLAN_MD_11AC	= BIT(4),
-	WLAN_MD_11AX	= BIT(5),
+enum rtw_wireless_mode {
+	RTW_80211_INVALID = 0,
+	RTW_80211_B       = BIT(0),
+	RTW_80211_A       = BIT(1),
+	RTW_80211_G       = BIT(2),
+	RTW_80211_N       = BIT(3),
+	RTW_80211_AC      = BIT(4),
+	RTW_80211_AX      = BIT(5),
 
 	/* Type for current wireless mode */
-	WLAN_MD_11BG	= (WLAN_MD_11B | WLAN_MD_11G),
-	WLAN_MD_11GN	= (WLAN_MD_11G | WLAN_MD_11N),
-	WLAN_MD_11AN	= (WLAN_MD_11A | WLAN_MD_11N),
-	WLAN_MD_11BN	= (WLAN_MD_11B | WLAN_MD_11N),
-	WLAN_MD_11BGN	= (WLAN_MD_11B | WLAN_MD_11G | WLAN_MD_11N),
-	WLAN_MD_11BGAX = (WLAN_MD_11B | WLAN_MD_11G | WLAN_MD_11AX),
-	WLAN_MD_11GAX  = (WLAN_MD_11G | WLAN_MD_11AX),
-	WLAN_MD_11A_AC = (WLAN_MD_11A | WLAN_MD_11AC),
-	WLAN_MD_11A_AX = (WLAN_MD_11A | WLAN_MD_11AX),
+	RTW_80211_BG      = (RTW_80211_B | RTW_80211_G),
+	RTW_80211_GN      = (RTW_80211_G | RTW_80211_N),
+	RTW_80211_AN      = (RTW_80211_A | RTW_80211_N),
+	RTW_80211_BN      = (RTW_80211_B | RTW_80211_N),
+	RTW_80211_BGN     = (RTW_80211_B | RTW_80211_G | RTW_80211_N),
+	RTW_80211_BGAX    = (RTW_80211_B | RTW_80211_G | RTW_80211_AX),
+	RTW_80211_GAX     = (RTW_80211_G | RTW_80211_AX),
+	RTW_80211_A_AC    = (RTW_80211_A | RTW_80211_AC),
+	RTW_80211_A_AX    = (RTW_80211_A | RTW_80211_AX),
 
 	/* Capability -Type for registry default wireless mode */
-	WLAN_MD_11AGN	= (WLAN_MD_11A | WLAN_MD_11G | WLAN_MD_11N),
-	WLAN_MD_11ABGN	= (WLAN_MD_11A | WLAN_MD_11B | WLAN_MD_11G | WLAN_MD_11N),
-	WLAN_MD_11ANAC	= (WLAN_MD_11A | WLAN_MD_11N | WLAN_MD_11AC),
-	WLAN_MD_24G_MIX = (WLAN_MD_11B | WLAN_MD_11G | WLAN_MD_11N  | WLAN_MD_11AX),
-	WLAN_MD_5G_MIX	= (WLAN_MD_11A | WLAN_MD_11N | WLAN_MD_11AC | WLAN_MD_11AX),
-	WLAN_MD_MAX	= (WLAN_MD_24G_MIX | WLAN_MD_5G_MIX),
+	RTW_80211_AGN     = (RTW_80211_A | RTW_80211_G | RTW_80211_N),
+	RTW_80211_ABGN    = (RTW_80211_A | RTW_80211_B | RTW_80211_G | RTW_80211_N),
+	RTW_80211_ANAC    = (RTW_80211_A | RTW_80211_N | RTW_80211_AC),
+	RTW_80211_24G_MIX = (RTW_80211_B | RTW_80211_G | RTW_80211_N  | RTW_80211_AX),
+	RTW_80211_5G_MIX  = (RTW_80211_A | RTW_80211_N | RTW_80211_AC | RTW_80211_AX),
+	RTW_80211_MAX     = (RTW_80211_24G_MIX | RTW_80211_5G_MIX),
 };
 
 // Tx Power Limit Table Size
@@ -621,13 +621,13 @@ struct rtw_scan_result {
 	u32                     security;         /**< The security type of this AP. Val: RTW_SECURITY_OPEN, RTW_SECURITY_WEP_PSK...*/
 	u8						wps_type;         /**< The WPS(Wi-Fi Protected Setup) types supported by this AP. Val: RTW_WPS_TYPE_DEFAULT, RTW_WPS_TYPE_USER_SPECIFIED...*/
 	unsigned int            channel;          /**< Radio channel that the AP beacon was received on. */
-	u8                      band;             /**< The frequency ranges used by this AP. Val: BAND_ON_5G, BAND_ON_24G. */
+	u8                      band;             /**< The frequency ranges used by this AP. Val: RTW_BAND_ON_5G, RTW_BAND_ON_24G. */
 
 	/** The wireless spectrum management regulations of which region followed by the AP. `country_code` is coded
 	 * according to ISO 3166 standard. Specific values can refer to ameba_wifi_country_code_table_usrcfg.c.\n
 	 * e.g. China: country_code[0] = 'C', country_code[1] = 'N'. */
 	char                    country_code[2];
-	char                    wireless_mode;    /**< The wireless mode of this AP. Val: WLAN_MD_11B, WLAN_MD_11A...*/
+	char                    wireless_mode;    /**< The wireless mode of this AP. Val: RTW_80211_B, RTW_80211_A...*/
 	u8                      rom_rsvd[3];
 };
 
@@ -677,7 +677,7 @@ struct rtw_wpa_supp_connect {
   *        1. If this struct is used for wifi connect, the channel is used to config
   * 	      whether it is a full channel scan(when channel is set to 0), or it will
   * 	      only scan one channel(do active scan on the configured channel).
-  *        2. `pscan_option` set to @ref PSCAN_FAST_SURVEY means do fast survey on the specified channel
+  *        2. `pscan_option` set to @ref RTW_PSCAN_FAST_SURVEY means do fast survey on the specified channel
   * 	      set to 0 means do normal scan on the specified channel or full channel.
   */
 struct rtw_network_info {
@@ -689,7 +689,7 @@ struct rtw_network_info {
 	int 						key_id;		   /**< Only need to be set when use WEP. Val: 0~3.*/
 	unsigned char				channel;		/**< Set to 0 means full channel scan, set to other value means only scan on the specified channel. */
 	unsigned char
-	pscan_option;	/**< Can set to @ref PSCAN_FAST_SURVEY for fast survey, which means quick scan, involves using an active scan on a specified channel, scanning for 25ms each time, and attempting up to 7 times until the target AP is found.. */
+	pscan_option;	/**< Can set to @ref RTW_PSCAN_FAST_SURVEY for fast survey, which means quick scan, involves using an active scan on a specified channel, scanning for 25ms each time, and attempting up to 7 times until the target AP is found.. */
 	unsigned char 				is_wps_trigger;	/**< Connection triggered by WPS process.*/
 	struct rtw_wpa_supp_connect	wpa_supp;   /**< Only used by Linux host to specific some details required for STA connect, which RTOS do not use. */
 	struct rtw_mac				prev_bssid; /**< The BSSID of the AP before roaming. */
@@ -829,15 +829,15 @@ struct rtw_rx_pkt_info {
 */
 struct rtw_promisc_para {
 	/** @brief Receive all packets in the air or set some filtering conditions.
-		- @ref RCR_ALL_PKT : Receive all packets in the air.
-		- @ref RCR_AP_ALL : Receive all packtets send by connected AP.
+		- @ref RTW_PROMISC_FILTER_ALL_PKT : Receive all packets in the air.
+		- @ref RTW_PROMISC_FILTER_AP_ALL : Receive all packtets send by connected AP.
 		*/
 	u8 filter_mode;
 	/** @brief User handle a packet.
 	  * @param[in] pkt_info:  The pointer of a struct rtw_rx_pkt_info which store the packet's detail information.
 	  * @return Should the driver continue processing this packet after user has processed.
-	  * 	- @ref NEED_DRIVER_HANDLE : Driver continue processing this packet, This setting is usually required when the STA remains connected.
-	  *     - @ref BYPASS_DRIVER_HANDLE : Driver drop this packet, This setting is usually used when STA does not need connect.*/
+	  * 	- @ref RTW_PROMISC_NEED_DRV_HDL : Driver continue processing this packet, This setting is usually required when the STA remains connected.
+	  *     - @ref RTW_PROMISC_BYPASS_DRV_HDL : Driver drop this packet, This setting is usually used when STA does not need connect.*/
 	u8(*callback)(struct rtw_rx_pkt_info *pkt_info);
 };
 
@@ -849,16 +849,16 @@ union rtw_speaker_set {
 		u8 mode;              /**< 0 for slave, 1 for master. */
 		u8 nav_thresh;        /**< Unit 128us. */
 		u8 relay_en;          /**< Relay control. */
-	} init; /**< For wifi speaker setting case SPEAKER_SET_INIT.*/
+	} init; /**< For wifi speaker setting case RTW_SPEAKER_SET_INIT.*/
 	struct {
 		u8 port;           /**< 0 for select port 0's TSFT to trigger audio latch count, 1 for port 1. */
 		u8 latch_period;      /**< 0 for trigger audio latch period is 4.096ms, 1 for 8.192ms. */
-	} latch_i2s_count; /**< For wifi speaker setting case  SPEAKER_SET_LATCH_I2S_COUNT.*/
+	} latch_i2s_count; /**< For wifi speaker setting case  RTW_SPEAKER_SET_LATCH_I2S_COUNT.*/
 	struct {
 		u8 enable;			/**< 1 for enable, 0 for disable. */
 		u64 tsft;           /**< Unit us. */
 		u8 port;           /**< 0 for select port 0's TSFT to trigger audio latch count, 1 for port 1. */
-	} tsf_timer; /**< For wifi speaker setting case SPEAKER_SET_TSF_TIMER.*/
+	} tsf_timer; /**< For wifi speaker setting case RTW_SPEAKER_SET_TSF_TIMER.*/
 };
 
 /**********************************************************************************************
@@ -903,16 +903,16 @@ struct rtw_csi_header {
   * @note  The mac_addr if not specified, the default value must be 0.
   */
 struct rtw_csi_action_parm {
-	unsigned char group_num;   /**< val: CSI_GROUP_NUM_1, CSI_GROUP_NUM_2... */
-	unsigned char accuracy;    /**< val: CSI_ACCU_1BYTE, CSI_ACCU_2BYTE */
-	unsigned char alg_opt;     /**< val: CSI_ALG_LS, CSI_ALG_SMOTHING */
-	unsigned char ch_opt;      /**< val: CSI_CH_LEGACY, CSI_CH_NON_LEGACY */
-	unsigned char csi_role;    /**< indicate csi operation role, val: CSI_OP_ROLE_TRX, CSI_OP_ROLE_TX, CSI_OP_ROLE_RX */
-	unsigned char mode;        /**< val: CSI_MODE_NORMAL, CSI_MODE_NDP, CSI_MODE_RX_RESP*/
-	unsigned char act;         /**< val: CSI_ACT_EN, CSI_ACT_CFG */
-	unsigned short trig_frame_mgnt;	/**< indicate management frame subtype of rx csi triggering frame for fetching csi, val: CSI_TRIG_ASSOCREQ... */
-	unsigned short trig_frame_ctrl;	/**< indicate control frame subtype of rx csi triggering frame for fetching csi, val: CSI_TRIG_TRIGGER... */
-	unsigned short trig_frame_data;	/**< indicate data frame subtype of rx csi triggering frame for fetching csi, val: CSI_TRIG_DATA... */
+	unsigned char group_num;   /**< val: RTW_CSI_GROUP_NUM_1, RTW_CSI_GROUP_NUM_2... */
+	unsigned char accuracy;    /**< val: RTW_CSI_ACCU_1BYTE, RTW_CSI_ACCU_2BYTE */
+	unsigned char alg_opt;     /**< val: RTW_CSI_ALG_LS, RTW_CSI_ALG_SMOTHING */
+	unsigned char ch_opt;      /**< val: RTW_CSI_CH_LEGACY, RTW_CSI_CH_NON_LEGACY */
+	unsigned char csi_role;    /**< indicate csi operation role, val: RTW_CSI_OP_ROLE_TRX, RTW_CSI_OP_ROLE_TX, RTW_CSI_OP_ROLE_RX */
+	unsigned char mode;        /**< val: RTW_CSI_MODE_NORMAL, RTW_CSI_MODE_NDP, RTW_CSI_MODE_RX_RESP*/
+	unsigned char act;         /**< val: RTW_CSI_ACT_EN, RTW_CSI_ACT_CFG */
+	unsigned short trig_frame_mgnt;	/**< indicate management frame subtype of rx csi triggering frame for fetching csi, val: RTW_CSI_TRIG_ASSOCREQ... */
+	unsigned short trig_frame_ctrl;	/**< indicate control frame subtype of rx csi triggering frame for fetching csi, val: RTW_CSI_TRIG_TRIGGER... */
+	unsigned short trig_frame_data;	/**< indicate data frame subtype of rx csi triggering frame for fetching csi, val: RTW_CSI_TRIG_DATA... */
 	unsigned char enable;
 	unsigned char trig_period;
 	unsigned char data_rate;
@@ -956,7 +956,7 @@ struct rtw_raw_frame_desc {
 };
 
 /**
- * @brief  The structure is used to set WIFI custom ie list,
+ * @brief  The structure is used to set WIFI custom ie list.
  *
  */
 struct rtw_custom_ie {
@@ -967,7 +967,7 @@ struct rtw_custom_ie {
 	 * </table>
 	 */
 	u8 *ie;
-	u8 type;    /**< Val: @ref PROBE_REQ, @ref PROBE_RSP...*/
+	u8 type;    /**< Val: @ref RTW_PROBE_REQ, @ref RTW_PROBE_RSP...*/
 };
 
 /**

@@ -19,7 +19,6 @@
 #define HCI_WRITE_PHY_EFUSE_LEN    0x6D
 #endif
 
-#define HCI_DEFAULT_LMP_SUBVER     0x8730
 #define HCI_PATCH_PROJECT_ID       0x28
 #define HCI_PATCH_FLASH_ADDRESS    0x08300000    /* Temp value, need sync flash layout with platform owner if use this function */
 
@@ -41,7 +40,6 @@ void hci_platform_cfg_bd_addr(uint8_t *bdaddr);
 void hci_platform_get_config(uint8_t **buf, uint16_t *len);
 int hci_platform_get_write_phy_efuse_data(uint8_t *data, uint8_t len);
 uint8_t hci_platform_get_rom_ver(void);
-bool hci_platform_check_lmp_subver(uint16_t lmp_subver);
 uint8_t hci_platform_record_chipid(uint8_t chipid);
 
 bool rtk_bt_pre_enable(void);

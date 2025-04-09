@@ -50,13 +50,16 @@ message( "========== Image manipulating start ==========")
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E echo "Building atf img"
     COMMAND ${CMAKE_COMMAND} -E env make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${c_SOC_PROJECT_DIR}/project_ap BUILD_BASE=${BUILD_BASE} -C ${c_BASEDIR}/component/soc/${c_SOC_TYPE}/atf image
-    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl1/bl1.dump ${IMAGE_TARGET_FOLDER}/bl1.dump
-    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl2/bl2.dump ${IMAGE_TARGET_FOLDER}/bl2.dump
-    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl32/bl32.dump ${IMAGE_TARGET_FOLDER}/bl32.dump
-    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl1/bl1.map ${IMAGE_TARGET_FOLDER}/bl1.map
-    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl2/bl2.map ${IMAGE_TARGET_FOLDER}/bl2.map
-    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl32/bl32.map ${IMAGE_TARGET_FOLDER}/bl32.map
     WORKING_DIRECTORY ${c_BASEDIR}/component/soc/${c_SOC_TYPE}/atf
+)
+
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl1/bl1.dump ${c_SDK_IMAGE_TARGET_DIR}/bl1.dump
+    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl2/bl2.dump ${c_SDK_IMAGE_TARGET_DIR}/bl2.dump
+    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl32/bl32.dump ${c_SDK_IMAGE_TARGET_DIR}/bl32.dump
+    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl1/bl1.map ${c_SDK_IMAGE_TARGET_DIR}/bl1.map
+    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl2/bl2.map ${c_SDK_IMAGE_TARGET_DIR}/bl2.map
+    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl32/bl32.map ${c_SDK_IMAGE_TARGET_DIR}/bl32.map
 )
 
 execute_process(

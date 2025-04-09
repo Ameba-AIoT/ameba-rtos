@@ -56,7 +56,7 @@ _WEAK void wifi_set_user_config(void)
 #endif
 #endif
 	wifi_user_config.skb_buf_size = 0;
-	wifi_user_config.wifi_wpa_mode_force = WPA_AUTO_MODE;
+	wifi_user_config.wifi_wpa_mode_force = RTW_WPA_AUTO_MODE;
 
 	/*Regulatory related*/
 	wifi_user_config.country_code[0] = 0;
@@ -71,12 +71,12 @@ _WEAK void wifi_set_user_config(void)
 
 	/* IPS(Inactive Power Save), power save when wifi unconnected */
 	wifi_user_config.ips_enable = 1;
-	wifi_user_config.ips_level = IPS_WIFI_OFF;
+	wifi_user_config.ips_level = RTW_IPS_WIFI_OFF;
 	wifi_user_config.ips_ctrl_by_usr = 0;
 
 	/* LPS(Leisure Power Save), power save when wifi connected, has 2 mode - legacy and uapsd, uapsd not support right now */
 	wifi_user_config.lps_enable = 1;
-	wifi_user_config.lps_mode = PS_MODE_LEGACY;
+	wifi_user_config.lps_mode = RTW_PS_MODE_LEGACY;
 	wifi_user_config.legacy_ps_listen_interval = 0;
 
 	/* Softap related */
@@ -119,6 +119,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wtn_father_refresh_timeout = 3000;
 	wifi_user_config.wtn_child_refresh_timeout = 4000;
 	wifi_user_config.wtn_rnat_en = 0;
+	wifi_user_config.wtn_fixed_rnat_node = 0;
 	wifi_user_config.wtn_max_node_num = 15;
 	if (wifi_user_config.wtn_en) {
 		skb_num_np_rsvd = 16; /*4 for rx_ring_buffer + 2 for mgnt trx + 10 for tunnel tx */

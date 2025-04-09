@@ -168,12 +168,12 @@ static void print_scan_result(struct rtw_scan_result *record)
 	at_printf(""MAC_FMT", ", MAC_ARG(record->bssid.octet));
 	at_printf("%d, ", record->signal_strength);
 	at_printf("%d, ", record->channel);
-	at_printf("%s, ", (record->wireless_mode & WLAN_MD_11AX) ? "AX" :
-			  (record->wireless_mode & WLAN_MD_11AC) ? "AC" :
-			  (record->wireless_mode & WLAN_MD_11N) ? "N" :
-			  (record->wireless_mode & WLAN_MD_11A) ? "A" :
-			  (record->wireless_mode & WLAN_MD_11G) ? "G" :
-			  (record->wireless_mode & WLAN_MD_11B) ? "B" :
+	at_printf("%s, ", (record->wireless_mode & RTW_80211_AX) ? "AX" :
+			  (record->wireless_mode & RTW_80211_AC) ? "AC" :
+			  (record->wireless_mode & RTW_80211_N) ? "N" :
+			  (record->wireless_mode & RTW_80211_A) ? "A" :
+			  (record->wireless_mode & RTW_80211_G) ? "G" :
+			  (record->wireless_mode & RTW_80211_B) ? "B" :
 			  "Unknown");
 	at_printf("\"%s\", ", (record->security == RTW_SECURITY_OPEN) ? "Open" :
 			  (record->security == RTW_SECURITY_WEP_PSK) ? "WEP" :
@@ -1147,9 +1147,9 @@ void at_wlpromisc(void *arg)
 			}
 			status = ENABLE;
 			if (strcmp((char *)argv[2], "all") == 0) {
-				promisc_para.filter_mode = RCR_ALL_PKT;
+				promisc_para.filter_mode = RTW_PROMISC_FILTER_ALL_PKT;
 			} else if (strcmp((char *)argv[2], "apall") == 0) {
-				promisc_para.filter_mode = RCR_AP_ALL;
+				promisc_para.filter_mode = RTW_PROMISC_FILTER_AP_ALL;
 			} else {
 				RTK_LOGW(NOTAG, "[WLPROMISC]: WRONG filter mode\r\n");
 				error_no = 3;
