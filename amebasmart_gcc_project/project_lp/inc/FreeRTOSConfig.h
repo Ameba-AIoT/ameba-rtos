@@ -54,6 +54,12 @@ extern uint32_t SystemCoreClock;
 #include "platform_autoconf.h"
 #include "ameba_userheapcfg.h"
 
+/* Realtek Heap Integrity Check configuration. */
+#ifdef CONFIG_HEAP_INTEGRITY_CHECK_IN_TASK_SWITCHED_OUT
+extern uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK);
+#define traceTASK_SWITCHED_OUT ulPortCheckHeapIntegrity
+#endif
+
 /* Cortex M33 port configuration. */
 #define configENABLE_MPU								0
 

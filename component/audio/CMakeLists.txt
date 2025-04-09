@@ -1,17 +1,15 @@
-if (CONFIG_AMEBASMART OR CONFIG_AMEBALITE)
-    if(CONFIG_MEDIA_PLAYER)
-        ameba_add_subdirectory_if_exist(media_utils)
-        ameba_add_subdirectory_if_exist(media_common)
-        ameba_add_subdirectory_if_exist(media_source)
-        ameba_add_subdirectory_if_exist(media_demux)
+if(!CONFIG_MP_INCLUDED AND CONFIG_MEDIA_PLAYER)
+    ameba_add_subdirectory_if_exist(media_utils)
+    ameba_add_subdirectory_if_exist(media_common)
+    ameba_add_subdirectory_if_exist(media_source)
+    ameba_add_subdirectory_if_exist(media_demux)
 
-        ameba_add_subdirectory_if_exist(media_codec)
-        ameba_add_subdirectory_if_exist(media_core)
-        ameba_add_subdirectory_if_exist(media_libmedia)
+    ameba_add_subdirectory_if_exist(media_codec)
+    ameba_add_subdirectory_if_exist(media_core)
+    ameba_add_subdirectory_if_exist(media_libmedia)
 
-        include(configs/media_configs.cmake)
-        include(play_back.cmake)
-    endif()
+    include(configs/media_configs.cmake)
+    include(play_back.cmake)
 endif()
 
 if(CONFIG_AUDIO_FWK)
@@ -26,9 +24,8 @@ endif()
 
 ameba_add_subdirectory_if(CONFIG_AUDIO_FWK audio_hal)
 
-if (CONFIG_AMEBASMART OR CONFIG_AMEBALITE)
-    ameba_add_subdirectory(third_party)
-endif()
+
+ameba_add_subdirectory(third_party)
 
 if(CONFIG_AUDIO_FWK)
     ameba_add_subdirectory_if_exist(base)

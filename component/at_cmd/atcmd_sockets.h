@@ -8,7 +8,6 @@
 #define __ATCMD_SOCKETS_H__
 
 
-#include "random.h"
 #include "lwip_netconf.h"
 
 #include "mbedtls/config.h"

@@ -43,7 +43,7 @@ int (*scan_user_callback_ptr)(unsigned int, void *) = NULL;
 int (*scan_each_report_user_callback_ptr)(struct rtw_scan_result *, void *) = NULL;
 
 u8(*promisc_user_callback_ptr)(struct rtw_rx_pkt_info *pkt_info) = NULL;
-int (*scan_acs_report_user_callback_ptr)(struct acs_mntr_rpt *acs_mntr_rpt) = NULL;
+int (*scan_acs_report_user_callback_ptr)(struct rtw_acs_mntr_rpt *acs_mntr_rpt) = NULL;
 
 extern void *param_indicator;
 u8 rtw_join_status = RTW_JOINSTATUS_UNKNOWN;
@@ -66,7 +66,7 @@ int wifi_connect(struct rtw_network_info *connect_param, unsigned char block)
 	u8 *param_buf = rtos_mem_zmalloc(sizeof(struct rtw_network_info) + connect_param->password_len);
 	u8 *ptr;
 	u8 no_need_indicate = 0;
-	struct rtw_event_join_fail_info_t fail_info = {0};
+	struct rtw_event_info_joinstatus_joinfail fail_info = {0};
 
 	/* check if SoftAP is running */
 	if ((wifi_user_config.concurrent_enabled == FALSE) && wifi_is_running(SOFTAP_WLAN_INDEX)) {
@@ -87,7 +87,7 @@ int wifi_connect(struct rtw_network_info *connect_param, unsigned char block)
 
 	/*clear for last connect status */
 	rtw_join_status = RTW_JOINSTATUS_STARTING;
-	wifi_indication(WIFI_EVENT_JOIN_STATUS, NULL, 0, RTW_JOINSTATUS_STARTING);
+	wifi_indication(RTW_EVENT_JOIN_STATUS, NULL, 0, RTW_JOINSTATUS_STARTING);
 
 	/* step2: malloc and set synchronous connection related variables*/
 	if (block) {
@@ -199,7 +199,7 @@ error:
 
 	if (rtw_join_status == RTW_JOINSTATUS_FAIL && no_need_indicate == 0) {
 		fail_info.fail_reason = result;
-		wifi_indication(WIFI_EVENT_JOIN_STATUS, (char *)&fail_info, sizeof(struct rtw_event_join_fail_info_t), RTW_JOINSTATUS_FAIL);
+		wifi_indication(RTW_EVENT_JOIN_STATUS, (char *)&fail_info, sizeof(struct rtw_event_info_joinstatus_joinfail), RTW_JOINSTATUS_FAIL);
 	}
 
 	return result;

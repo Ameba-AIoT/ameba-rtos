@@ -13,7 +13,7 @@
 #include "semphr.h"
 #include "queue.h"
 
-#define ATCMD_SPI_DMA_SIZE	2048
+#define ATCMD_SPI_DMA_SIZE	2048 * 8
 #define SPI_SCLK_FREQ		20*1000*1000
 #define SPI_DATA_FRAME_SIZE	8
 #define SPI_MODE			0
@@ -22,7 +22,7 @@
 #define FORMAT_LEN 128
 
 #define CHECKSUM_EN 0
-#define TT_MODE_TEST 1
+#define TT_MODE_TEST 0
 
 void *master_tx_done_sema;
 void *master_rx_done_sema;

@@ -39,7 +39,7 @@ void ADC_StructInit(ADC_InitTypeDef *ADC_InitStruct)
 	ADC_InitStruct->ADC_CvlistLen = ADC_CH_NUM - 1;
 	ADC_InitStruct->ADC_ChanInType = 0;
 	ADC_InitStruct->ADC_SpecialCh = 0xFF;
-	ADC_InitStruct->ADC_ChIDEn = DISABLE;
+	ADC_InitStruct->ADC_ChIDEn = ENABLE;
 
 	for (i = 0; i < ADC_InitStruct->ADC_CvlistLen + 1; i++) {
 		ADC_InitStruct->ADC_Cvlist[i] = i;

@@ -15,7 +15,6 @@ menu "Audio Config"
     endif
 
 
-    if AMEBALITE||AMEBASMART||AMEBASMARTPLUS  #amebalite amebasmart smart+
         config MEDIA_PLAYER_MENU
             bool "Enable Media Framework"
             select AUDIO_FWK_MENU
@@ -91,7 +90,6 @@ menu "Audio Config"
 
             endmenu
         endif
-    endif
 
 
     menu "Third Party Lib"
@@ -169,13 +167,4 @@ config SPEEX_LIB
 bool
 
 config OPUS_LIB
-bool
-
-config WIFI_AUDIO
-bool
-
-config WFA_SRC
-bool
-
-config WFA_FEC_USE_SRAM
 bool
