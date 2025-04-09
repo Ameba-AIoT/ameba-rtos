@@ -53,7 +53,7 @@ NEXT:
 	}
 
 	/* register wifi event callback function */
-	wifi_reg_event_handler(WIFI_EVENT_CSI_DONE, example_wifi_csi_report_cb, NULL);
+	wifi_reg_event_handler(RTW_EVENT_CSI_DONE, example_wifi_csi_report_cb, NULL);
 
 	/**
 	 * should use semaphore to wait wifi event happen
@@ -111,7 +111,7 @@ NEXT:
 	}
 
 	/* unregister wifi event callback function */
-	wifi_unreg_event_handler(WIFI_EVENT_CSI_DONE, example_wifi_csi_report_cb);
+	wifi_unreg_event_handler(RTW_EVENT_CSI_DONE, example_wifi_csi_report_cb);
 
 	if (wc_ready_sema) {
 		rtos_sema_delete(wc_ready_sema);

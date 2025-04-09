@@ -132,7 +132,7 @@ static uint16_t ble_wifimate_char_multi_indicate_data_init(struct ble_wifimate_w
 	}
 
 	for (uint8_t i = 0; i < wifi_scan_result->ap_num; ++i) {
-		total_len += CHAR_WIFI_SCAN_INFO_SEG_FIRST_ELE_LEN + wifi_scan_result->ap_info[i].SSID.len + \
+		total_len += CHAR_WIFI_SCAN_INFO_SEG_FIRST_ELE_LEN + wifi_scan_result->ap_info[i].ssid.len + \
 					 CHAR_WIFI_SCAN_INFO_SEG_THIRD_ELE_LEN + CHAR_WIFI_SCAN_INFO_SEG_FORTH_ELE_LEN + \
 					 CHAR_WIFI_SCAN_INFO_SEG_FIFTH_ELE_LEN;
 	}
@@ -152,11 +152,11 @@ static uint16_t ble_wifimate_char_multi_indicate_data_init(struct ble_wifimate_w
 	for (uint8_t i = 0; i < wifi_scan_result->ap_num; ++i) {
 		ap_info = &wifi_scan_result->ap_info[i];
 
-		memcpy(s_multi_indicate.data + offset, &ap_info->SSID.len, CHAR_WIFI_SCAN_INFO_SEG_FIRST_ELE_LEN);
+		memcpy(s_multi_indicate.data + offset, &ap_info->ssid.len, CHAR_WIFI_SCAN_INFO_SEG_FIRST_ELE_LEN);
 		offset += CHAR_WIFI_SCAN_INFO_SEG_FIRST_ELE_LEN;
 
-		memcpy(s_multi_indicate.data + offset, ap_info->SSID.val, ap_info->SSID.len);
-		offset += ap_info->SSID.len;
+		memcpy(s_multi_indicate.data + offset, ap_info->ssid.val, ap_info->ssid.len);
+		offset += ap_info->ssid.len;
 
 		memcpy(s_multi_indicate.data + offset, &ap_info->signal_strength, CHAR_WIFI_SCAN_INFO_SEG_THIRD_ELE_LEN);
 		offset += CHAR_WIFI_SCAN_INFO_SEG_THIRD_ELE_LEN;
@@ -524,14 +524,14 @@ static uint16_t ble_wifimate_server_write_wifi_scan_hdl(uint16_t conn_handle, ui
 		for (uint32_t i = 0; (i < scanned_AP_num) && (i < BLE_WIFIMATE_MAX_WIFI_SCAN_AP_NUM); i++) {
 			struct rtw_scan_result *scanned_ap_info = &scanned_AP_list[i];
 			/* Ensure the SSID is null terminated */
-			scanned_ap_info->SSID.val[scanned_ap_info->SSID.len] = 0;
+			scanned_ap_info->ssid.val[scanned_ap_info->ssid.len] = 0;
 			/* security */
 			scanned_ap_info->security = ble_wifimate_convert_wifi_scan_security(scanned_ap_info->security);
 			memcpy(&(wifi_scan_result->ap_info[wifi_scan_result->ap_num]), scanned_ap_info, sizeof(struct rtw_scan_result));
 			BT_LOGD("Wifi scan result: ap_num=%d SSID_LEN=%d ssid=%s, rssi=%d, security=%u, channel=%d\r\n",
 					wifi_scan_result->ap_num,
-					wifi_scan_result->ap_info[wifi_scan_result->ap_num].SSID.len,
-					wifi_scan_result->ap_info[wifi_scan_result->ap_num].SSID.val,
+					wifi_scan_result->ap_info[wifi_scan_result->ap_num].ssid.len,
+					wifi_scan_result->ap_info[wifi_scan_result->ap_num].ssid.val,
 					wifi_scan_result->ap_info[wifi_scan_result->ap_num].signal_strength,
 					wifi_scan_result->ap_info[wifi_scan_result->ap_num].security,
 					wifi_scan_result->ap_info[wifi_scan_result->ap_num].channel);

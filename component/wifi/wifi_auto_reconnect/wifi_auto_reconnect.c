@@ -56,12 +56,13 @@ void rtw_reconn_join_status_hdl(char *buf, int flags)
 	}
 
 	if (join_status == RTW_JOINSTATUS_FAIL) {
-		disconn_reason = ((struct rtw_event_join_fail_info_t *)buf)->reason_or_status_code;
+		disconn_reason = ((struct rtw_event_info_joinstatus_joinfail *)buf)->reason_or_status_code;
 	} else if (join_status == RTW_JOINSTATUS_DISCONNECT) {
-		disconn_reason = ((struct rtw_event_disconn_info_t *)buf)->disconn_reason;
+		disconn_reason = ((struct rtw_event_info_joinstatus_disconn *)buf)->disconn_reason;
 	}
 
-	if (disconn_reason >= 0 && !(disconn_reason > WLAN_REASON_APP_BASE && disconn_reason < WLAN_REASON_APP_BASE_END)) {/*disconnect by APP no need do reconnect*/
+	if (disconn_reason >= 0 && !(disconn_reason > RTW_DISCONN_RSN_APP_BASE &&
+								 disconn_reason < RTW_DISCONN_RSN_APP_BASE_END)) {/*disconnect by APP no need do reconnect*/
 		need_reconn = 1;
 	}
 

@@ -17,6 +17,7 @@
 #include "ameba_soc.h"
 #include "display.h"
 #include "os_wrapper.h"
+#include <stdlib.h>
 
 #include "ili9341.h"
 

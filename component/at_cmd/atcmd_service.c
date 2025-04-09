@@ -11,7 +11,6 @@
 #include "vfs.h"
 #include "cJSON.h"
 #include "kv.h"
-#include "ringbuffer.h"
 
 #ifdef CONFIG_SUPPORT_ATCMD
 
@@ -29,12 +28,6 @@
 //======================================================
 struct list_head log_hash[ATC_INDEX_NUM];
 
-RingBuffer *atcmd_tt_mode_rx_ring_buf = NULL;
-char g_tt_mode = 0;
-char g_tt_mode_check_watermark = 0;
-char g_tt_mode_indicate_high_watermark = 0;
-char g_tt_mode_indicate_low_watermark = 1;
-char g_host_control_mode = AT_HOST_CONTROL_UART;
 rtos_mutex_t at_printf_mutex = NULL;
 
 static const char *const TAG = "AT";
@@ -93,6 +86,17 @@ log_init_t log_init_table[] = {
 
 //======================================================
 #ifdef CONFIG_ATCMD_HOST_CONTROL
+
+RingBuffer *atcmd_tt_mode_rx_ring_buf = NULL;
+char g_tt_mode = 0;
+char g_tt_mode_check_watermark = 0;
+char g_tt_mode_indicate_high_watermark = 0;
+char g_tt_mode_indicate_low_watermark = 1;
+char g_host_control_mode = AT_HOST_CONTROL_UART;
+volatile char g_tt_mode_stop_flag = 0;
+volatile u8 g_tt_mode_stop_char_cnt = 0;
+rtos_timer_t xTimers_TT_Mode;
+
 char global_buf[SMALL_BUF];
 /* Out callback function */
 at_write out_buffer;
@@ -266,7 +270,7 @@ int atcmd_tt_mode_start(u32 len)
 	return 0;
 }
 
-u32 atcmd_tt_mode_get(u8 *buf, u32 len)
+int atcmd_tt_mode_get(u8 *buf, u32 len)
 {
 	u32 get_len = len;
 	u8 *buf_temp = buf;
@@ -280,6 +284,9 @@ u32 atcmd_tt_mode_get(u8 *buf, u32 len)
 	while (get_len != 0) {
 		while (RingBuffer_Available(atcmd_tt_mode_rx_ring_buf) == 0) {
 			rtos_sema_take(atcmd_tt_mode_sema, 0xFFFFFFFF);
+			if (g_tt_mode_stop_flag) {
+				return -1;
+			}
 		}
 
 		actual_len = RingBuffer_Available(atcmd_tt_mode_rx_ring_buf);
@@ -304,6 +311,7 @@ u32 atcmd_tt_mode_get(u8 *buf, u32 len)
 void atcmd_tt_mode_end(void)
 {
 	g_tt_mode = 0;
+	g_tt_mode_stop_flag = 0;
 	g_tt_mode_check_watermark = 0;
 	RingBuffer_Destroy(atcmd_tt_mode_rx_ring_buf);
 	RTK_LOGI(TAG, "exit tt mode\n");
@@ -509,6 +517,15 @@ DEFAULT:
 	return ret;
 }
 
+void tt_mode_timeout_handler(void *arg)
+{
+	// indicate tt_mode_get stop tt mode
+	(void) arg;
+	g_tt_mode_stop_flag = 1;
+	g_tt_mode_stop_char_cnt = 0;
+	rtos_sema_give(atcmd_tt_mode_sema);
+}
+
 #else
 
 int at_printf_data(char *data, u32 len)
@@ -530,7 +547,7 @@ int atcmd_tt_mode_start(u32 len)
 	return -1;
 }
 
-u32 atcmd_tt_mode_get(u8 *buf, u32 len)
+int atcmd_tt_mode_get(u8 *buf, u32 len)
 {
 	(void) buf;
 	(void) len;
@@ -590,6 +607,8 @@ void atcmd_service_init(void)
 	rtos_mutex_recursive_create(&at_printf_mutex);
 
 #ifdef CONFIG_ATCMD_HOST_CONTROL
+	rtos_timer_create(&xTimers_TT_Mode, "TT_Mode_Timer", NULL, 30, FALSE, tt_mode_timeout_handler);
+
 	//initialize tt mode ring sema
 	rtos_sema_create(&atcmd_tt_mode_sema, 0, 0xFFFF);
 

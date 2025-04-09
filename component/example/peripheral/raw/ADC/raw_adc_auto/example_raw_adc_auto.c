@@ -52,9 +52,6 @@ void adc_auto_demo(void)
 	ADC_InitStruct.ADC_CvlistLen = ADC_CH_CNT - 1; /* ADC_CvlistLen should be channel number -1*/
 	ADC_InitStruct.ADC_Cvlist[0] = ADC_CHAN[0];
 	ADC_InitStruct.ADC_Cvlist[1] = ADC_CHAN[1];
-#if defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBALITE)
-	ADC_InitStruct.ADC_ChIDEn = ENABLE;
-#endif
 	ADC_Init(&ADC_InitStruct);
 	ADC_Cmd(ENABLE);
 

@@ -1065,22 +1065,22 @@ static int scan_result_handler(unsigned int scanned_AP_num, void *user_data)
 
 	for (i = 0; i < scanned_AP_num; i++) {
 		scanned_AP_info = &scanned_AP_list[i];
-		scanned_AP_info->SSID.val[scanned_AP_info->SSID.len] = 0; /* Ensure the SSID is null terminated */
+		scanned_AP_info->ssid.val[scanned_AP_info->ssid.len] = 0; /* Ensure the SSID is null terminated */
 
-		if (!strcmp((char *)scanned_AP_info->SSID.val, "")) {
+		if (!strcmp((char *)scanned_AP_info->ssid.val, "")) {
 			continue;
 		}
 
-		memcpy((scan_result.ap_list + ApNum)->ssid, scanned_AP_info->SSID.val, scanned_AP_info->SSID.len + 1);
+		memcpy((scan_result.ap_list + ApNum)->ssid, scanned_AP_info->ssid.val, scanned_AP_info->ssid.len + 1);
 
-		memcpy((scan_result.ap_list + ApNum)->bssid, scanned_AP_info->BSSID.octet, 6);
+		memcpy((scan_result.ap_list + ApNum)->bssid, scanned_AP_info->bssid.octet, 6);
 
 		(scan_result.ap_list + ApNum)->channel = scanned_AP_info->channel;
 		(scan_result.ap_list + ApNum)->sec_type = scanned_AP_info->security;
 		(scan_result.ap_list + ApNum)->ap_power = scanned_AP_info->signal_strength;
 
 #if CAPTIVE_PORTAL_DEBUG
-		RTK_LOGI(NOTAG, MAC_FMT, MAC_ARG(scanned_AP_info->BSSID.octet));
+		RTK_LOGI(NOTAG, MAC_FMT, MAC_ARG(scanned_AP_info->bssid.octet));
 		RTK_LOGI(NOTAG, " %d\t ", scanned_AP_info->signal_strength);
 		RTK_LOGI(NOTAG, " %d\t  ", scanned_AP_info->channel);
 		RTK_LOGI(NOTAG, " %d\t  ", (unsigned int)scanned_AP_info->wps_type);
@@ -1096,7 +1096,7 @@ static int scan_result_handler(unsigned int scanned_AP_num, void *user_data)
 				 (scanned_AP_info->security == RTW_SECURITY_WPA_WPA2_AES_PSK) ? "WPA/WPA2 AES" :
 				 (scanned_AP_info->security == RTW_SECURITY_WPA_WPA2_MIXED_PSK) ? "WPA/WPA2 Mixed" :
 				 "Unknown		");
-		RTK_LOGI(NOTAG, " %s\n", scanned_AP_info->SSID.val);
+		RTK_LOGI(NOTAG, " %s\n", scanned_AP_info->ssid.val);
 #endif
 		ApNum++;
 		if (ApNum > SCAN_AP_LIST_MAX) {
@@ -1172,9 +1172,9 @@ static int _get_ap_security_mode(IN char *ssid, OUT u32 *security_mode, OUT u8 *
 		}
 		for (i = 0; i < scan_cnt; i++) {
 			scanned_ap_info = &scanned_AP_list[i];
-			scanned_ap_info->SSID.val[scanned_ap_info->SSID.len] = 0; /* Ensure the SSID is null terminated */
-			//RTK_LOGI(NOTAG, "info %s, ssid: %s\n", __func__, scanned_ap_info->SSID.val);
-			if (strcmp(ssid, (char *)scanned_ap_info->SSID.val) == 0) {
+			scanned_ap_info->ssid.val[scanned_ap_info->ssid.len] = 0; /* Ensure the SSID is null terminated */
+			//RTK_LOGI(NOTAG, "info %s, ssid: %s\n", __func__, scanned_ap_info->ssid.val);
+			if (strcmp(ssid, (char *)scanned_ap_info->ssid.val) == 0) {
 				*security_mode = scanned_ap_info->security;
 				*channel = scanned_ap_info->channel;
 				RTK_LOGI(NOTAG, "info %s, channel: %d\n", __func__, *channel);
