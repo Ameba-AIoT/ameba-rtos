@@ -303,7 +303,7 @@ class Manager(object):
             core_config = self.extract_lines(core_config_file, [self.general_section_name, core.upper()])
 
             skip_pattern = [f"_FOR_{c}" for c in self.projects.values() if c != core]
-            skip_pattern.append("_MENU(=|\s).*$")
+            skip_pattern.append(r"_MENU(=|\s).*$")
             self.process_section_suffix(core_config_file, core_config_file, skip_pattern, f"_FOR_{core}", core_config)
 
             #To avoid header_file regeneration even nothing changed, this bad case will break incremental build.

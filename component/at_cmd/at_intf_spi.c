@@ -49,8 +49,6 @@ u8 AT_SYNC_FROM_MASTER_GPIO = PB_30;
 u8 AT_SYNC_TO_MASTER_GPIO = PB_31;
 #endif
 
-
-
 /* for dma mode, start address of buffer should be CACHE_LINE_SIZE  aligned*/
 u8 SlaveTxBuf[ATCMD_SPI_DMA_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 u8 SlaveRxBuf[ATCMD_SPI_DMA_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
@@ -68,14 +66,10 @@ rtos_queue_t g_spi_cmd_queue;
 RingBuffer *at_spi_rx_ring_buf = NULL;
 RingBuffer *at_spi_tx_ring_buf = NULL;
 
-extern char g_tt_mode;
-extern char g_tt_mode_check_watermark;
-extern char g_tt_mode_indicate_high_watermark;
-extern char g_tt_mode_indicate_low_watermark;
+rtos_timer_t xTimers_SPI_Output;
+
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
-extern RingBuffer *atcmd_tt_mode_rx_ring_buf;
-extern rtos_sema_t atcmd_tt_mode_sema;
 
 uint32_t checksum_32_spi(uint32_t start_value, uint8_t *data, int len)
 {
@@ -228,6 +222,27 @@ void atcmd_spi_task(void)
 				} else {
 					RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop data\n");
 				}
+
+				/*recv stop char under tt mode*/
+				if (recv_len == 1 && SlaveRxBuf[4] == '<') {
+					g_tt_mode_stop_char_cnt++;
+				} else {
+					g_tt_mode_stop_char_cnt = 0;
+				}
+
+				/*cancel tt mode stop timer if recv pkt before timeout*/
+				if (g_tt_mode_stop_flag == 0 && rtos_timer_is_timer_active(xTimers_TT_Mode)) {
+					rtos_timer_stop(xTimers_TT_Mode, 0);
+					g_tt_mode_stop_char_cnt = 0;
+				}
+
+				/*start tt mode stop timer once*/
+				if (g_tt_mode_stop_char_cnt >= 3) {
+					if (rtos_timer_is_timer_active(xTimers_TT_Mode) == 0) {
+						rtos_timer_start(xTimers_TT_Mode, 0);
+					}
+				}
+
 			} else {
 				space = RingBuffer_Space(at_spi_rx_ring_buf);
 				if (space >= recv_len) {
@@ -273,15 +288,16 @@ void atcmd_spi_task(void)
 			rtos_sema_take(slave_tx_sema, 0xFFFFFFFF);
 			rtos_sema_take(slave_rx_sema, 0xFFFFFFFF);
 
-			remain_len = RingBuffer_Available(at_spi_tx_ring_buf);
-			if (remain_len > 0) {
-				req.cmd = 0;
-				if (rtos_queue_peek(g_spi_cmd_queue, (void *)&req, 0) == RTK_SUCCESS) {
-					if (req.cmd != SPI_SLAVE_WR_CMD) {
-						req.cmd = SPI_SLAVE_WR_CMD;
-						if (rtos_queue_send(g_spi_cmd_queue, (void *)&req, 0) != RTK_SUCCESS) {
-							RTK_LOGE(TAG, "g_spi_cmd_queue is full\n");
-						}
+			if (rtos_queue_peek(g_spi_cmd_queue, (void *)&req, 0) == RTK_FAIL) {
+				remain_len = RingBuffer_Available(at_spi_tx_ring_buf);
+				if (remain_len >= (ATCMD_SPI_DMA_SIZE - 8)) {
+					if (rtos_timer_is_timer_active(xTimers_SPI_Output)) {
+						rtos_timer_stop(xTimers_SPI_Output, 0);
+					}
+					rtos_queue_send(g_spi_cmd_queue, (void *)&req, 0xFFFFFFFF);
+				} else if (remain_len > 0) {
+					if (rtos_timer_is_timer_active(xTimers_SPI_Output) == 0) {
+						rtos_timer_start(xTimers_SPI_Output, 0);
 					}
 				}
 			}
@@ -330,6 +346,27 @@ void atcmd_spi_task(void)
 				} else {
 					RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop data\n");
 				}
+
+				/*recv stop char under tt mode*/
+				if (recv_len == 1 && SlaveRxBuf[4] == '<') {
+					g_tt_mode_stop_char_cnt++;
+				} else {
+					g_tt_mode_stop_char_cnt = 0;
+				}
+
+				/*cancel tt mode stop timer if recv pkt before timeout*/
+				if (g_tt_mode_stop_flag == 0 && rtos_timer_is_timer_active(xTimers_TT_Mode)) {
+					rtos_timer_stop(xTimers_TT_Mode, 0);
+					g_tt_mode_stop_char_cnt = 0;
+				}
+
+				/*start tt mode stop timer once*/
+				if (g_tt_mode_stop_char_cnt >= 3) {
+					if (rtos_timer_is_timer_active(xTimers_TT_Mode) == 0) {
+						rtos_timer_start(xTimers_TT_Mode, 0);
+					}
+				}
+
 			} else {
 				space = RingBuffer_Space(at_spi_rx_ring_buf);
 				if (space >= recv_len) {
@@ -382,9 +419,17 @@ recv_again:
 	}
 }
 
+void spi_output_timeout_handler(void *arg)
+{
+	(void) arg;
+	struct atcmd_spi_req req = {0};
+	req.cmd = SPI_SLAVE_WR_CMD;
+	rtos_queue_send(g_spi_cmd_queue, (void *)&req, 0xFFFFFFFF);
+}
+
 void atio_spi_output(char *buf, int len)
 {
-	int space = 0;
+	int space = 0, remain_len = 0;
 	int send_len = len;
 	struct atcmd_spi_req req = {0};
 	req.cmd = SPI_SLAVE_WR_CMD;
@@ -393,18 +438,29 @@ void atio_spi_output(char *buf, int len)
 		space = RingBuffer_Space(at_spi_tx_ring_buf);
 		if (space >= send_len) {
 			RingBuffer_Write(at_spi_tx_ring_buf, (u8 *)buf, send_len);
-			rtos_queue_send(g_spi_cmd_queue, (void *)&req, 0xFFFFFFFF);
 			break;
 		} else if (space > 0) {
 			RingBuffer_Write(at_spi_tx_ring_buf, (u8 *)buf, space);
-			rtos_queue_send(g_spi_cmd_queue, (void *)&req, 0xFFFFFFFF);
 			send_len -= space;
 		}
 
 		rtos_time_delay_ms(1);
 	}
-}
 
+	if (rtos_queue_peek(g_spi_cmd_queue, (void *)&req, 0) == RTK_FAIL) {
+		remain_len = RingBuffer_Available(at_spi_tx_ring_buf);
+		if (remain_len >= (ATCMD_SPI_DMA_SIZE - 8)) {
+			if (rtos_timer_is_timer_active(xTimers_SPI_Output)) {
+				rtos_timer_stop(xTimers_SPI_Output, 0);
+			}
+			rtos_queue_send(g_spi_cmd_queue, (void *)&req, 0xFFFFFFFF);
+		} else if (remain_len > 0) {
+			if (rtos_timer_is_timer_active(xTimers_SPI_Output) == 0) {
+				rtos_timer_start(xTimers_SPI_Output, 0);
+			}
+		}
+	}
+}
 
 int atio_spi_init(void)
 {
@@ -416,8 +472,10 @@ int atio_spi_init(void)
 	rtos_sema_create(&atcmd_spi_rx_sema, 0, 0xFFFF);
 
 	rtos_queue_create(&g_spi_cmd_queue, 16, sizeof(struct atcmd_spi_req));
-	at_spi_rx_ring_buf = RingBuffer_Create(NULL, 4 * 1024, LOCAL_RINGBUFF, 1);
-	at_spi_tx_ring_buf = RingBuffer_Create(NULL, 4 * 1024, LOCAL_RINGBUFF, 1);
+	at_spi_rx_ring_buf = RingBuffer_Create(NULL, 32 * 1024, LOCAL_RINGBUFF, 1);
+	at_spi_tx_ring_buf = RingBuffer_Create(NULL, 32 * 1024, LOCAL_RINGBUFF, 1);
+
+	rtos_timer_create(&xTimers_SPI_Output, "SPI_Output_Timer", NULL, 12, FALSE, spi_output_timeout_handler);
 
 	if (slave_rx_sema == NULL || slave_tx_sema == NULL || atcmd_spi_rx_sema == NULL ||
 		g_spi_cmd_queue == NULL || at_spi_rx_ring_buf == NULL || at_spi_tx_ring_buf == NULL) {

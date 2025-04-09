@@ -21,6 +21,7 @@
 #include "rtw_coex_host_api.h"
 
 extern struct extchip_para_t g_extchip_para;
+extern u8 g_extchip_en;
 extern PinName port_pin(PortName port, int pin_n);
 
 static inline uint16_t uart_pinname_to_pin(char *pin_name)
@@ -54,6 +55,8 @@ static inline uint16_t uart_pinname_to_pin(char *pin_name)
 //////////////////////////////////////////////////////////////////
 static inline void coex_extc_paras_config(void)
 {
+	g_extchip_en = true;
+
 // pta mode
 #if defined(CONFIG_EXT_PTA_MODE_SIMPLE)
 	g_extchip_para.pta_index = EXT_PTA1;
@@ -68,6 +71,8 @@ static inline void coex_extc_paras_config(void)
 	g_extchip_para.active_protocol = EXT_PTA_PROTOCOL_BT;
 #elif defined(CONFIG_EXT_PROTOCOL_BT_WPAN)
 	g_extchip_para.active_protocol = EXT_PROTOCOL_BT_WPAN;
+#else
+	g_extchip_para.active_protocol = EXT_PTA_PROTOCOL_UNDEF;
 #endif
 
 // pri mode

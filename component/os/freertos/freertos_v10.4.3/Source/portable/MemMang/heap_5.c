@@ -116,7 +116,7 @@ typedef struct A_BLOCK_LINK {
 #define heapSUBTRACT_WILL_UNDERFLOW( a, b )    ( ( a ) < ( b ) )
 
 
-#if ( CONFIG_HEAP_PROTECTOR == 1 )
+#if ( defined CONFIG_HEAP_PROTECTOR )
 
 /* Canary value for protecting internal heap pointers. */
 PRIVILEGED_DATA static portPOINTER_SIZE_TYPE xHeapCanary;
@@ -131,7 +131,7 @@ PRIVILEGED_DATA static uint8_t *pucHeapLowAddress = NULL;
  * protection using an application supplied canary value to catch heap
  * corruption should a heap buffer overflow occur.
  */
-#if ( CONFIG_HEAP_PROTECTOR == 1 )
+#if ( defined CONFIG_HEAP_PROTECTOR )
 
 /* Macro to load/store BlockLink_t pointers to memory. By XORing the
  * pointers with a random canary value, heap overflows will result
@@ -146,7 +146,7 @@ PRIVILEGED_DATA static uint8_t *pucHeapLowAddress = NULL;
                   ( ( uint8_t * ) ( pxBlock ) >= pucHeapLowAddress ) && \
                   ( ( uint8_t * ) ( pxBlock ) < pucHeapHighAddress ) )
 
-#else /* if ( CONFIG_HEAP_PROTECTOR == 1 ) */
+#else /* if ( defined CONFIG_HEAP_PROTECTOR ) */
 
 #define heapPROTECT_BLOCK_POINTER( pxBlock )    ( pxBlock )
 
@@ -154,7 +154,7 @@ PRIVILEGED_DATA static uint8_t *pucHeapLowAddress = NULL;
 
 #endif /* CONFIG_HEAP_PROTECTOR */
 
-#if ( CONFIG_HEAP_PROTECTOR == 1 )
+#if ( defined CONFIG_HEAP_PROTECTOR )
 
 /**
  * @brief Application provided function to get a random value to be used as canary.
@@ -179,14 +179,14 @@ static void prvInsertBlockIntoFreeList(BlockLink_t *pxBlockToInsert);
  * block must by correctly byte aligned. */
  const size_t xHeapStructSize = (sizeof(BlockLink_t) + ((size_t)(portBYTE_ALIGNMENT - 1))) & ~((size_t) portBYTE_ALIGNMENT_MASK);
 
-#if ( (CONFIG_HEAP_PROTECTOR == 1 ) && ( CONFIG_HEAP_CORRUPTION_DETECT_LITE == 1 ) )
+#if ( (defined CONFIG_HEAP_PROTECTOR ) && ( defined CONFIG_HEAP_CORRUPTION_DETECT_LITE ) )
 #define xHeadCanaryValue 0xABBA1234
 #define xTailCanaryValue 0xBAAD5678
  const size_t xHeadCanarySize = portBYTE_ALIGNMENT;
  const size_t xTailCanarySize = portBYTE_ALIGNMENT;
  const size_t xNumPadding = portBYTE_ALIGNMENT / sizeof(uint32_t);
 
-#if ( CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE == 1 )
+#if ( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE )
 #define xFillAlocated   0xCE
 #define xFillFreed      0xFE
 #endif /* CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE */
@@ -293,7 +293,7 @@ static void vPortRemoveHeapInfo( BlockLink_t *pxBlock )
 }
 #endif
 
-#if ( (CONFIG_HEAP_PROTECTOR == 1 ) && ( CONFIG_HEAP_CORRUPTION_DETECT_LITE == 1 ) )
+#if ( (defined CONFIG_HEAP_PROTECTOR ) && ( defined CONFIG_HEAP_CORRUPTION_DETECT_LITE ) )
 static size_t xPortCanaryCheck(BlockLink_t *pxBlock)
 {
 	size_t xCurBlockSize = pxBlock->xBlockSize;
@@ -322,7 +322,7 @@ static size_t xPortCanaryCheck(BlockLink_t *pxBlock)
 #endif
 /*-----------------------------------------------------------*/
 
-#if ( ( CONFIG_HEAP_CORRUPTION_DETECT_LITE == 0 ) )
+#if ( ( !defined CONFIG_HEAP_CORRUPTION_DETECT_LITE ) )
 void *pvPortMalloc(size_t xWantedSize)
 {
 	BlockLink_t *pxBlock, * pxPreviousBlock, * pxNewBlockLink;
@@ -460,14 +460,14 @@ void *pvPortMalloc(size_t xWantedSize)
 	configASSERT((((size_t) pvReturn) & (size_t) portBYTE_ALIGNMENT_MASK) == 0);
 	return pvReturn;
 }
-#else /* CONFIG_HEAP_CORRUPTION_DETECT_LITE == 0 */
+#else /* !defined CONFIG_HEAP_CORRUPTION_DETECT_LITE */
 void *pvPortMalloc(size_t xWantedSize)
 {
 	BlockLink_t *pxBlock, * pxPreviousBlock, * pxNewBlockLink;
 	void *pvReturn = NULL;
 	uint32_t *pvHeadCanary = NULL;
 	uint32_t *pvTailCanary = NULL;
-#if ( CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE == 1 )
+#if ( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE )
 	void *pvBlockToFill = NULL;
 	size_t xFillBlockSize = 0;
 	size_t xCheckFreedBlockSize = 0;
@@ -536,7 +536,7 @@ void *pvPortMalloc(size_t xWantedSize)
 					heapVALIDATE_BLOCK_POINTER(pvReturn);
 
 					pvHeadCanary = (uint32_t *)(((uint8_t *) pxBlock) + xHeapStructSize);
-#if ( CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE == 1)
+#if ( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE)
 					xCheckFreedBlockSize = xWantedSize - xHeapStructSize;
 					uint8_t *pxAddress = (uint8_t *) pvHeadCanary;
 					for (size_t i = 0; i < xCheckFreedBlockSize; i++) {
@@ -549,7 +549,7 @@ void *pvPortMalloc(size_t xWantedSize)
 					for (size_t i = 0; i < xNumPadding; i++) {
 						*(pvHeadCanary + i) = xHeadCanaryValue;
 					}
-#if ( CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE == 1)
+#if ( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE)
 					pvBlockToFill = (void *)(((uint8_t *) pvHeadCanary) + xHeadCanarySize);
 					xFillBlockSize = xWantedSize - xHeapStructSize - xTailCanarySize - xHeadCanarySize;
 					_memset(pvBlockToFill, xFillAlocated, xFillBlockSize);
@@ -632,16 +632,16 @@ void *pvPortMalloc(size_t xWantedSize)
 	configASSERT((((size_t) pvReturn) & (size_t) portBYTE_ALIGNMENT_MASK) == 0);
 	return pvReturn;
 }
-#endif /* CONFIG_HEAP_CORRUPTION_DETECT_LITE == 1 */
+#endif /* defined CONFIG_HEAP_CORRUPTION_DETECT_LITE */
 /*-----------------------------------------------------------*/
 
-#if (CONFIG_HEAP_CORRUPTION_DETECT_LITE == 1)
+#if (defined CONFIG_HEAP_CORRUPTION_DETECT_LITE)
 void vPortFree(void *pv)
 {
 	uint8_t *puc = (uint8_t *) pv;
 	BlockLink_t *pxLink;
 
-#if( CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE == 1 )
+#if( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE )
 	uint8_t *pucBlockToFree = NULL;
 	size_t xBlockToFillSize = 0;
 #endif
@@ -666,11 +666,11 @@ void vPortFree(void *pv)
 				 * allocated. */
 				pxLink->xBlockSize &= ~xBlockAllocatedBit;
 
-#if( CONFIG_HEAP_CORRUPTION_DETECT_LITE == 1)
+#if( defined CONFIG_HEAP_CORRUPTION_DETECT_LITE)
 				configASSERT(xPortCanaryCheck(pxLink));
 #endif
 
-#if ( CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE == 1)
+#if ( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE)
 				pucBlockToFree = puc + xHeapStructSize;
 				xBlockToFillSize = pxLink->xBlockSize - xHeapStructSize;
 				_memset(pucBlockToFree, xFillFreed, xBlockToFillSize);
@@ -696,7 +696,7 @@ void vPortFree(void *pv)
 		}
 	}
 }
-#else /* CONFIG_HEAP_CORRUPTION_DETECT_LITE == 1 */
+#else /* defined CONFIG_HEAP_CORRUPTION_DETECT_LITE */
 void vPortFree(void *pv)
 {
 	uint8_t *puc = (uint8_t *) pv;
@@ -741,7 +741,7 @@ void vPortFree(void *pv)
 		}
 	}
 }
-#endif /* CONFIG_HEAP_CORRUPTION_DETECT_LITE == 0 */
+#endif /* !defined CONFIG_HEAP_CORRUPTION_DETECT_LITE */
 /*-----------------------------------------------------------*/
 
 size_t xPortGetFreeHeapSize(void)
@@ -778,7 +778,7 @@ static void prvInsertBlockIntoFreeList(BlockLink_t *pxBlockToInsert)
 
 	if ((puc + pxIterator->xBlockSize) == (uint8_t *) pxBlockToInsert) {
 		pxIterator->xBlockSize += pxBlockToInsert->xBlockSize;
-#if( CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE == 1 )
+#if( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE )
 		_memset(pxBlockToInsert, xFillFreed, xHeapStructSize);
 #endif
 		pxBlockToInsert = pxIterator;
@@ -794,11 +794,11 @@ static void prvInsertBlockIntoFreeList(BlockLink_t *pxBlockToInsert)
 		if (heapPROTECT_BLOCK_POINTER(pxIterator->pxNextFreeBlock) != pxEnd) {
 			/* Form one big block from the two blocks. */
 			pxBlockToInsert->xBlockSize += heapPROTECT_BLOCK_POINTER(pxIterator->pxNextFreeBlock)->xBlockSize;
-#if ( CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE == 1)
+#if ( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE)
 			BlockLink_t *pxHeadStuct = heapPROTECT_BLOCK_POINTER(pxIterator->pxNextFreeBlock);
 #endif
 			pxBlockToInsert->pxNextFreeBlock = heapPROTECT_BLOCK_POINTER(pxIterator->pxNextFreeBlock)->pxNextFreeBlock;
-#if( CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE == 1 )
+#if( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE )
 			_memset((void *) pxHeadStuct, xFillFreed, xHeapStructSize);
 #endif
 		} else {
@@ -832,7 +832,7 @@ void vPortDefineHeapRegions(const HeapRegion_t *const pxHeapRegions)
 	/* Can only call once! */
 	configASSERT(pxEnd == NULL);
 
-#if ( CONFIG_HEAP_PROTECTOR == 1 )
+#if ( defined CONFIG_HEAP_PROTECTOR )
 	{
 		vApplicationGetRandomHeapCanary(&(xHeapCanary));
 	}
@@ -871,7 +871,7 @@ void vPortDefineHeapRegions(const HeapRegion_t *const pxHeapRegions)
 			configASSERT(xAddress > (size_t) pxEnd);
 		}
 
-#if ( CONFIG_HEAP_PROTECTOR == 1 )
+#if ( defined CONFIG_HEAP_PROTECTOR )
 		{
 			if ((pucHeapLowAddress == NULL) ||
 				((uint8_t *) xAlignedHeap < pucHeapLowAddress)) {
@@ -900,7 +900,7 @@ void vPortDefineHeapRegions(const HeapRegion_t *const pxHeapRegions)
 		pxFirstFreeBlockInRegion->xBlockSize = xAddress - (size_t) pxFirstFreeBlockInRegion;
 		pxFirstFreeBlockInRegion->pxNextFreeBlock = heapPROTECT_BLOCK_POINTER(pxEnd);
 
-#if ( CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE == 1)
+#if ( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE)
 		size_t pxBlockTofill = xAlignedHeap + xHeapStructSize;
 		size_t xBlockTofileSize = pxFirstFreeBlockInRegion->xBlockSize - xHeapStructSize;
 		_memset((void *) pxBlockTofill, xFillFreed, xBlockTofileSize);
@@ -913,7 +913,7 @@ void vPortDefineHeapRegions(const HeapRegion_t *const pxHeapRegions)
 
 		xTotalHeapSize += pxFirstFreeBlockInRegion->xBlockSize;
 
-#if ( CONFIG_HEAP_PROTECTOR == 1 )
+#if ( defined CONFIG_HEAP_PROTECTOR )
 		{
 			if ((pucHeapHighAddress == NULL) ||
 				((((uint8_t *) pxFirstFreeBlockInRegion) + pxFirstFreeBlockInRegion->xBlockSize) > pucHeapHighAddress)) {
@@ -990,11 +990,10 @@ void vPortGetHeapStats(HeapStats_t *pxHeapStats)
 	taskEXIT_CRITICAL();
 }
 
-#if ( CONFIG_HEAP_PROTECTOR == 1 )
+#if ( defined CONFIG_HEAP_PROTECTOR )
 extern HeapRegion_t xHeapRegions[];
 uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK)
 {
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "********** ulPortCheckHeapIntegrity COMPREHENSIVE_CHECK:%d **********\n", COMPREHENSIVE_CHECK);
 	BlockLink_t *pxBlockToCheck;
 	uint8_t *pucAlignedHeap;
 	size_t xAddress, xEndAddress;
@@ -1057,7 +1056,7 @@ uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK)
 				if ((pxBlockToCheck->xBlockSize & xBlockAllocatedBit) == 0) {
 					configASSERT(pdFAIL);
 				}
-#if( CONFIG_HEAP_CORRUPTION_DETECT_LITE == 1)
+#if( defined CONFIG_HEAP_CORRUPTION_DETECT_LITE)
 				if (xPortCanaryCheck(pxBlockToCheck) == pdFALSE) {
 					configASSERT(pdFAIL);
 				}
@@ -1069,7 +1068,7 @@ uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK)
 					configASSERT(pdFAIL);
 				}
 
-#if ( CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE == 1)
+#if ( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE)
 				if (COMPREHENSIVE_CHECK) {
 					size_t xCheckFreedBlockSize = pxBlockToCheck->xBlockSize - xHeapStructSize;
 					uint8_t *pxAddress = (uint8_t *) pxBlockToCheck + xHeapStructSize;
@@ -1085,7 +1084,7 @@ uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK)
 #endif
 			} else {
 					/* This is the last free block before pxEnd */
-#if ( CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE == 1)
+#if ( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE)
 					size_t xCheckFreedBlockSize = pxBlockToCheck->xBlockSize - xHeapStructSize;
 					uint8_t * pxAddress = ( uint8_t * ) pxBlockToCheck + xHeapStructSize;
 					for( size_t i = 0; i < xCheckFreedBlockSize; i++)
@@ -1219,11 +1218,12 @@ void vApplicationMallocFailedHook(size_t xWantedSize)
 	const char *core_name = "CA32";
 #endif
 
-	taskENTER_CRITICAL();
-
 	if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
 		pcCurrentTask = pcTaskGetName(NULL);
 	}
+
+	/* amebasmart use portGET_TASK_LOCK in xTaskGetSchedulerState */
+	taskENTER_CRITICAL();
 
 	/* 1. Basic info: Task name / Free Heap Size / WantedSize */
 	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d] [xWantedSize:%d]\r\n",

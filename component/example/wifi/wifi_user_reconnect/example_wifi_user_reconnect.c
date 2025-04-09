@@ -83,9 +83,9 @@ void user_wifi_join_status_event_hdl(char *buf, int buf_len, int flags, void *us
 
 	/*Reconnect when disconnect after connected*/
 	if (join_status == RTW_JOINSTATUS_DISCONNECT) {
-		disconn_reason = ((struct rtw_event_disconn_info_t *)buf)->disconn_reason;
+		disconn_reason = ((struct rtw_event_info_joinstatus_disconn *)buf)->disconn_reason;
 		/*Disconnect by APP no need do reconnect*/
-		if (disconn_reason > WLAN_REASON_APP_BASE && disconn_reason < WLAN_REASON_APP_BASE_END) {
+		if (disconn_reason > RTW_DISCONN_RSN_APP_BASE && disconn_reason < RTW_DISCONN_RSN_APP_BASE_END) {
 			return;
 		}
 
@@ -110,7 +110,7 @@ static void user_main_task(void *param)
 	wifi_set_autoreconnect(0);
 
 	/* Register join status event, trigger reconnect when disconnect happen*/
-	wifi_reg_event_handler(WIFI_EVENT_JOIN_STATUS, user_wifi_join_status_event_hdl, NULL);
+	wifi_reg_event_handler(RTW_EVENT_JOIN_STATUS, user_wifi_join_status_event_hdl, NULL);
 
 	/* Start connect */
 	user_wifi_connect();

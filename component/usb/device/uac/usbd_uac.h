@@ -149,8 +149,8 @@
 #define USBD_UAC_AS_FORMAT_DESC_SLOT_SIZE_OFFSET    4U
 #define USBD_UAC_AS_FORMAT_DESC_BIT_CNT_OFFSET      5U
 #define USBD_UAC_AS_EP_DESC_MPS_OFFSET              4U
-/* sample rate max count */
-#define USBD_UAC_SAMPLE_RATE_MAX_COUNT              4U
+/* sample sampling freq max count */
+#define USBD_UAC_SAMPLING_FREQ_MAX_COUNT            4U
 
 /* 1ms 8 frame in high speed */
 #define USBD_UAC_HS_SOF_COUNT_PER_MS                8U
@@ -194,15 +194,15 @@
 #define USBD_UAC_DEFAULT_CH_CNT                     USBD_UAC_CH_CNT_8
 
 /* limit */
-#define USBD_UAC_HS_SAMPLE_RATE_COUNT               USBD_UAC_SAMPLE_RATE_MAX_COUNT
+#define USBD_UAC_HS_SAMPLING_FREQ_COUNT               USBD_UAC_SAMPLING_FREQ_MAX_COUNT
 #ifdef CONFIG_USB_FS
 #if USBD_UAC_DEFAULT_CH_CNT == USBD_UAC_CH_CNT_4
-#define USBD_UAC_FS_SAMPLE_RATE_COUNT               3U
+#define USBD_UAC_FS_SAMPLING_FREQ_COUNT               3U
 #elif USBD_UAC_DEFAULT_CH_CNT == USBD_UAC_CH_CNT_6 || USBD_UAC_DEFAULT_CH_CNT == USBD_UAC_CH_CNT_8
-#define USBD_UAC_FS_SAMPLE_RATE_COUNT               2U
+#define USBD_UAC_FS_SAMPLING_FREQ_COUNT               2U
 #endif
 #else
-#define USBD_UAC_FS_SAMPLE_RATE_COUNT               USBD_UAC_SAMPLE_RATE_MAX_COUNT
+#define USBD_UAC_FS_SAMPLING_FREQ_COUNT               USBD_UAC_SAMPLING_FREQ_MAX_COUNT
 #endif
 
 
@@ -235,51 +235,51 @@
 #define USBD_UAC_HS_CFG_DESC_BUF_LEN(ch_cnt) \
     (USB_LEN_CFG_DESC + USB_LEN_IAD_DESC  + USBD_UAC_AC_IF_LEN(ch_cnt) + USBD_UAC_AS_TIF_LEN(USBD_UAC_HS_AS_ALT_SETTING_NUM))
 
-/* freq */
-#define USBD_UAC_FREQ1                              44100U
-#define USBD_UAC_FREQ2                              48000U
-#define USBD_UAC_FREQ3                              96000U
-#define USBD_UAC_FREQ4                              192000U
+/* sampling freq */
+#define USBD_UAC_SAMPLING_FREQ_44K                              44100U
+#define USBD_UAC_SAMPLING_FREQ_48K                              48000U
+#define USBD_UAC_SAMPLING_FREQ_96K                              96000U
+#define USBD_UAC_SAMPLING_FREQ_192K                             192000U
 
 #define USBD_UAC_ONE_KHZ                            1000U
 /* calculate full speed MPS */
-#define USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, freq_hz) \
-    ((ch_cnt) * (byte_width) * ((freq_hz) / USBD_UAC_ONE_KHZ + 1U))
+#define USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, sampling_freq_hz) \
+    ((ch_cnt) * (byte_width) * ((sampling_freq_hz) / USBD_UAC_ONE_KHZ + 1U))
 /* check MPS */
-#define USBD_UAC_IS_FS_MPS_VALID(ch_cnt, byte_width, freq_hz) \
-    ((USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, freq_hz)) <= USBD_UAC_FS_ISOC_MPS)
-/* get full speed MPS, if MPS > limit, choose next lower freq to calculate */
+#define USBD_UAC_IS_FS_MPS_VALID(ch_cnt, byte_width, sampling_freq_hz) \
+    ((USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, sampling_freq_hz)) <= USBD_UAC_FS_ISOC_MPS)
+/* get full speed MPS, if MPS > limit, choose next lower sampling freq to calculate */
 #define USBD_UAC_GET_FS_MPS(ch_cnt, byte_width) \
-    (USBD_UAC_IS_FS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_FREQ4) ? \
-    USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, USBD_UAC_FREQ4) : \
-    (USBD_UAC_IS_FS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_FREQ3) ? \
-    USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, USBD_UAC_FREQ3) : \
-    (USBD_UAC_IS_FS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_FREQ2) ? \
-    USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, USBD_UAC_FREQ2) : \
-    (USBD_UAC_IS_FS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_FREQ1) ? \
-    USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, USBD_UAC_FREQ1) : 0))))
+    (USBD_UAC_IS_FS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_192K) ? \
+    USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_192K) : \
+    (USBD_UAC_IS_FS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_96K) ? \
+    USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_96K) : \
+    (USBD_UAC_IS_FS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_48K) ? \
+    USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_48K) : \
+    (USBD_UAC_IS_FS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_44K) ? \
+    USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_44K) : 0))))
 
 /* calculate high speed MPS */
-#define USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, freq_hz) \
-  ((ch_cnt) * (byte_width) * ((freq_hz) / USBD_UAC_ONE_KHZ / USBD_UAC_HS_SOF_COUNT_PER_MS + 1U))
+#define USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, sampling_freq_hz) \
+  ((ch_cnt) * (byte_width) * ((sampling_freq_hz) / USBD_UAC_ONE_KHZ / USBD_UAC_HS_SOF_COUNT_PER_MS + 1U))
 /* check MPS */
-#define USBD_UAC_IS_HS_MPS_VALID(ch_cnt, byte_width, freq_hz) \
-    ((USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, freq_hz)) <= USBD_UAC_HS_ISOC_MPS)
-/* get high speed MPS, if MPS > limit, choose next lower freq to calculate */
+#define USBD_UAC_IS_HS_MPS_VALID(ch_cnt, byte_width, sampling_freq_hz) \
+    ((USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, sampling_freq_hz)) <= USBD_UAC_HS_ISOC_MPS)
+/* get high speed MPS, if MPS > limit, choose next lower sampling_freq to calculate */
 #define USBD_UAC_GET_HS_MPS(ch_cnt, byte_width) \
-    (USBD_UAC_IS_HS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_FREQ4) ? \
-    USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, USBD_UAC_FREQ4) : \
-    (USBD_UAC_IS_HS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_FREQ3) ? \
-    USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, USBD_UAC_FREQ3) : \
-    (USBD_UAC_IS_HS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_FREQ2) ? \
-    USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, USBD_UAC_FREQ2) : \
-    (USBD_UAC_IS_HS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_FREQ1) ? \
-    USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, USBD_UAC_FREQ1) : 0))))
+    (USBD_UAC_IS_HS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_192K) ? \
+    USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_192K) : \
+    (USBD_UAC_IS_HS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_96K) ? \
+    USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_96K) : \
+    (USBD_UAC_IS_HS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_48K) ? \
+    USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_48K) : \
+    (USBD_UAC_IS_HS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_44K) ? \
+    USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_44K) : 0))))
 
-#define USBD_UAC_INIT_SUB_RANGE(sub_range, min_rate, max_rate, res) \
+#define USBD_UAC_INIT_SUB_RANGE(sub_range, min_sampling_freq, max_sampling_freq, res) \
     do {                                               \
-        (sub_range).dMIN = (min_rate);                   \
-        (sub_range).dMAX = (max_rate);                   \
+        (sub_range).dMIN = (min_sampling_freq);                   \
+        (sub_range).dMAX = (max_sampling_freq);                   \
         (sub_range).dRES = (res);                       \
     } while(0)
 
@@ -301,7 +301,7 @@ typedef struct {
 typedef struct __PACKED {
 	u16 wNumSubRanges;
 	usbd_uac_sub_range_t usbd_uac_sub_ranges[];
-} usbd_uac_freq_ctrl_range_t;
+} usbd_uac_sampling_freq_ctrl_range_t;
 
 typedef struct __PACKED {
 	u8  bNrChannels;
@@ -310,7 +310,7 @@ typedef struct __PACKED {
 } usbd_uac_ac_connect_ctrl_t;
 
 typedef struct {
-	u32 freqence;     // 384000
+	u32 sampling_freq;     // 384000
 	u8 byte_width;   // 4
 	u8 ch_cnt;       // 128
 	u8 enable;
@@ -327,7 +327,7 @@ typedef struct {
 	void(* status_changed)(u8 status);
 	void(* mute_changed)(u8 mute);
 	void(* volume_changed)(u8 volume);
-	void(* format_changed)(u32 freq, u8 ch_cnt);
+	void(* format_changed)(u32 sampling_freq, u8 ch_cnt);
 	void(* sof)(void);
 } usbd_uac_cb_t;
 
@@ -360,7 +360,7 @@ typedef struct {
 	usb_dev_t *dev;
 	usbd_uac_cb_t *cb;
 
-	u32 cur_freq;
+	u32 cur_sampling_freq;
 	u8 *ctrl_buf;
 	u16 cur_volume;
 	u8 cur_byte_width;

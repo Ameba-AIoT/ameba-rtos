@@ -16,6 +16,7 @@
 #include "atcmd_websocket.h"
 #include "atcmd_network.h"
 #include "at_intf_spi.h"
+#include "ameba_ota.h"
 #ifndef CONFIG_MP_SHRINK
 #include "atcmd_wifi.h"
 #endif
@@ -370,6 +371,10 @@ void at_test(void *arg)
 	char *argv[MAX_ARGC] = {0};
 
 	argc = parse_param(arg, argv);
+	if (argc == 1) {
+		goto end;
+	}
+
 	if (argc != 3) {
 		error_no = 1;
 		goto end;
@@ -403,14 +408,18 @@ void at_test(void *arg)
 
 		while (remain_len > 0) {
 			get_len = atcmd_tt_mode_get(buffer_ptr, remain_len);
+			if (get_len < 0) {
+				RTK_LOGI(TAG, "host stops tt mode\r\n");
+				break;
+			}
 			remain_len -= get_len;
 		}
 
 		end_time = rtos_time_get_current_system_time_ms();
 		atcmd_tt_mode_end();
 
-		at_printf("upstream test(tt mode): Send %d KBytes in %d ms, %d Kbits/sec\n\r", (int)(tt_len / 1024), (int)(end_time - start_time),
-				  (int)((tt_len * 8) / (end_time - start_time)));
+		at_printf("upstream test(tt mode): Send %d KBytes in %d ms, %d Kbits/sec\n\r", (int)((tt_len - remain_len) / 1024), (int)(end_time - start_time),
+				  (int)(((tt_len - remain_len) * 8) / (end_time - start_time)));
 	} else if (mode == 2) {
 		u32 at_len = (u32)atoi(argv[2]);
 		u32 send_len = 0;
@@ -562,6 +571,46 @@ void at_state(void *arg)
 	at_printf(ATCMD_OK_END_STR);
 }
 
+#ifndef CONFIG_AMEBAD
+static Certificate_TypeDef cert[2];
+static s64 ver[2] = {0};  //32-bit full version
+static u32 ota_region[3][2] = {0};
+static const u32 image_pattern[2] = {
+	0x35393138, 0x31313738,
+};
+
+static u8 at_get_ota_version(void)
+{
+	u16 MajorVer[2] = {0}; //16-bit major
+	u16 MinorVer[2] = {0}; //16-bit minor
+	u32 Vertemp;
+	u8 ImgIndex, i;
+
+	flash_get_layout_info(IMG_APP_OTA1, &ota_region[IMG_CERT][0], NULL);
+	flash_get_layout_info(IMG_APP_OTA2, &ota_region[IMG_CERT][1], NULL);
+
+	ota_region[IMG_IMG2][0] = ota_region[IMG_CERT][0] + 0x1000;
+	ota_region[IMG_IMG2][1] = ota_region[IMG_CERT][1] + 0x1000;
+
+	for (i = 0; i < 2; i++) {
+		_memcpy((void *)&cert[i], (void *)ota_region[IMG_CERT][i], sizeof(Certificate_TypeDef));
+
+		if (_memcmp(cert[i].Pattern, image_pattern, sizeof(image_pattern)) == 0) {
+			MajorVer[i] = (u16)cert[i].MajorKeyVer;
+			MinorVer[i] = (u16)cert[i].MinorKeyVer;
+			Vertemp = (MajorVer[i] << 16) | MinorVer[i]; // get 32-bit full version number
+			ver[i] = (s64)Vertemp;
+		} else {
+			ver[i] = -1;
+		}
+	}
+
+	ImgIndex = ota_get_cur_index(1);
+
+	return ImgIndex;
+}
+#endif
+
 
 /****************************************************************
 AT command process:
@@ -576,6 +625,12 @@ void at_gmr(void *arg)
 	char *buf = rtos_mem_malloc(buflen);
 	at_printf("AMEBA-RTOS SDK VERSION: %d.%d.%d\n", AMEBA_RTOS_VERSION_MAJOR, AMEBA_RTOS_VERSION_MINOR, AMEBA_RTOS_VERSION_PATCH);
 	at_printf("ATCMD VERSION: %d.%d.%d\r\n", ATCMD_VERSION, ATCMD_SUBVERSION, ATCMD_REVISION);
+
+#ifndef CONFIG_AMEBAD
+	u8 image_id = at_get_ota_version();
+	u32 version = (u32)(ver[image_id] & 0xFFFFFFFF);
+	at_printf("IMAGE VERSION: %d.%d\r\n", ((version >> 16) & 0xFFFF), (version & 0xFFFF));
+#endif
 
 	ChipInfo_GetSocName_ToBuf(buf, buflen - 1);
 	at_printf("%s", buf);

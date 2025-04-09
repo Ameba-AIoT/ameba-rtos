@@ -37,8 +37,8 @@ struct event_list_elem_t {
 	void	*handler_user_data;
 };
 
-#define WIFI_EVENT_MAX_ROW	2
-static struct event_list_elem_t event_callback_list[WIFI_EVENT_MAX][WIFI_EVENT_MAX_ROW] = {0};
+#define RTW_EVENT_MAX_ROW	2
+static struct event_list_elem_t event_callback_list[RTW_EVENT_MAX][RTW_EVENT_MAX_ROW] = {0};
 extern int (*p_store_fast_connect_info)(unsigned int data1, unsigned int data2);
 extern u8 rtw_join_status;
 extern int join_fail_reason;
@@ -59,7 +59,7 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
 	u8 zero_mac[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 	u8 join_status = (u8)flags;
-	struct rtw_event_join_fail_info_t *fail_info = (struct rtw_event_join_fail_info_t *)buf;
+	struct rtw_event_info_joinstatus_joinfail *fail_info = (struct rtw_event_info_joinstatus_joinfail *)buf;
 
 	rtw_join_status = join_status;
 
@@ -141,42 +141,42 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
  */
 void (*const event_internal_hdl[])(char *buf, int len, int flags, void *user_data) = {
 #if (!defined(CONFIG_AS_INIC_NP) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP))) || defined(CONFIG_ZEPHYR_SDK) || defined(CONFIG_WPA_LOCATION_DEV)
-	rtw_sae_sta_rx_auth,				/*WIFI_EVENT_RX_MGNT*/
-	rtw_sae_ap_rx_auth,					/*WIFI_EVENT_RX_MGNT_AP*/
-	rtw_sae_sta_start,					/*WIFI_EVENT_EXTERNAL_AUTH_REQ*/
-	rtw_psk_sta_start_4way,				/*WIFI_EVENT_WPA_STA_4WAY_START*/
-	rtw_psk_ap_start_4way, 				/*WIFI_EVENT_WPA_AP_4WAY_START*/
-	rtw_psk_sta_recv_eapol, 			/*WIFI_EVENT_WPA_STA_4WAY_RECV*/
-	rtw_psk_ap_recv_eapol, 				/*WIFI_EVENT_WPA_AP_4WAY_RECV*/
-	rtw_psk_set_psk_info_evt_hdl,		/*WIFI_EVENT_WPA_SET_PSK_INFO*/
-	rtw_owe_start_calc,					/*WIFI_EVENT_OWE_START_CALC*/
-	rtw_owe_peer_key_recv,				/*WIFI_EVENT_OWE_PEER_KEY_RECV*/
+	rtw_sae_sta_rx_auth,				/*RTW_EVENT_RX_MGNT*/
+	rtw_sae_ap_rx_auth,					/*RTW_EVENT_RX_MGNT_AP*/
+	rtw_sae_sta_start,					/*RTW_EVENT_EXTERNAL_AUTH_REQ*/
+	rtw_psk_sta_start_4way,				/*RTW_EVENT_WPA_STA_4WAY_START*/
+	rtw_psk_ap_start_4way, 				/*RTW_EVENT_WPA_AP_4WAY_START*/
+	rtw_psk_sta_recv_eapol, 			/*RTW_EVENT_WPA_STA_4WAY_RECV*/
+	rtw_psk_ap_recv_eapol, 				/*RTW_EVENT_WPA_AP_4WAY_RECV*/
+	rtw_psk_set_psk_info_evt_hdl,		/*RTW_EVENT_WPA_SET_PSK_INFO*/
+	rtw_owe_start_calc,					/*RTW_EVENT_OWE_START_CALC*/
+	rtw_owe_peer_key_recv,				/*RTW_EVENT_OWE_PEER_KEY_RECV*/
 #if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K) || defined(CONFIG_IEEE80211R)
-	rtw_roam_kvr_cap_update,			/*WIFI_EVENT_KVR_CAP_UPDATE*/
+	rtw_roam_kvr_cap_update,			/*RTW_EVENT_KVR_CAP_UPDATE*/
 #if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K)
-	rtw_roam_nb_rpt_elem_parsing,		/*WIFI_EVENT_NB_RESP_RECV*/
+	rtw_roam_nb_rpt_elem_parsing,		/*RTW_EVENT_NB_RESP_RECV*/
 #endif
 #ifdef CONFIG_IEEE80211V
-	rtw_wnm_btm_req_process,			/*WIFI_EVENT_BTM_REQ_RECV*/
-	rtw_wnm_dbg_cmd, 						/*WIFI_EVENT_BTM_DEBUG_CMD*/
+	rtw_wnm_btm_req_process,			/*RTW_EVENT_BTM_REQ_RECV*/
+	rtw_wnm_dbg_cmd, 						/*RTW_EVENT_BTM_DEBUG_CMD*/
 #endif
 #ifdef CONFIG_IEEE80211R
-	rtw_ft_auth_start,					/*WIFI_EVENT_FT_AUTH_START*/
-	rtw_ft_rx_mgnt,						/*WIFI_EVENT_FT_RX_MGNT*/
+	rtw_ft_auth_start,					/*RTW_EVENT_FT_AUTH_START*/
+	rtw_ft_rx_mgnt,						/*RTW_EVENT_FT_RX_MGNT*/
 #endif
 #endif
-	rtw_psk_deauth_info_flash,			/*WIFI_EVENT_DEAUTH_INFO_FLASH*/
+	rtw_psk_deauth_info_flash,			/*RTW_EVENT_DEAUTH_INFO_FLASH*/
 #endif
-	/*WIFI_EVENT_INTERNAL_MAX*/
+	/*RTW_EVENT_INTERNAL_MAX*/
 };
 
 void wifi_event_handle_internal(unsigned int event_cmd, char *buf, int buf_len, int flags)
 {
 	u8 *mac_addr = NULL;
 	/*internal only events*/
-	if (event_cmd > WIFI_EVENT_INTERNAL_BASE) {
+	if (event_cmd > RTW_EVENT_INTERNAL_BASE) {
 #if !defined(CONFIG_MP_SHRINK) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP))
-		event_internal_hdl[event_cmd - WIFI_EVENT_INTERNAL_BASE - 1](buf, buf_len, flags, NULL);
+		event_internal_hdl[event_cmd - RTW_EVENT_INTERNAL_BASE - 1](buf, buf_len, flags, NULL);
 #else
 		UNUSED(buf_len);
 #endif
@@ -184,13 +184,13 @@ void wifi_event_handle_internal(unsigned int event_cmd, char *buf, int buf_len, 
 	}
 
 	/*some common events also need internal handle*/
-	if (event_cmd == WIFI_EVENT_JOIN_STATUS) {
+	if (event_cmd == RTW_EVENT_JOIN_STATUS) {
 		wifi_event_join_status_internal_hdl(buf, flags);
-	} else if (event_cmd == WIFI_EVENT_STA_ASSOC) {
+	} else if (event_cmd == RTW_EVENT_STA_ASSOC) {
 		/* softap add sta */
 		mac_addr = ((unsigned char *)((SIZE_PTR)(buf) + 10)); // GetAddr2Ptr
 		at_printf_indicate("client connected:\""MAC_FMT"\"\r\n", MAC_ARG(mac_addr));
-	} else if (event_cmd == WIFI_EVENT_STA_DISASSOC) {
+	} else if (event_cmd == RTW_EVENT_STA_DISASSOC) {
 		/* softap dis sta */
 		mac_addr = (u8 *)buf;
 		at_printf_indicate("client disconnected:\""MAC_FMT"\"\r\n", MAC_ARG(mac_addr));
@@ -205,15 +205,15 @@ int wifi_event_handle(unsigned int event_cmd, char *buf, int buf_len, int flags)
 	void (*handle)(char *buf, int len, int flags, void *user_data) = NULL;
 	int i;
 
-	if ((event_cmd >= WIFI_EVENT_MAX && event_cmd <= WIFI_EVENT_INTERNAL_BASE) || event_cmd > WIFI_EVENT_INTERNAL_MAX) {
+	if ((event_cmd >= RTW_EVENT_MAX && event_cmd <= RTW_EVENT_INTERNAL_BASE) || event_cmd > RTW_EVENT_INTERNAL_MAX) {
 		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "invalid evt: %d \n", event_cmd);
 		return -RTK_ERR_BADARG;
 	}
 
 	wifi_event_handle_internal(event_cmd, buf, buf_len, flags);
 	/*user callback handle*/
-	if (event_cmd < WIFI_EVENT_MAX) {
-		for (i = 0; i < WIFI_EVENT_MAX_ROW; i++) {
+	if (event_cmd < RTW_EVENT_MAX) {
+		for (i = 0; i < RTW_EVENT_MAX_ROW; i++) {
 			handle = event_callback_list[event_cmd][i].handler;
 			if (handle == NULL) {
 				continue;
@@ -227,10 +227,10 @@ int wifi_event_handle(unsigned int event_cmd, char *buf, int buf_len, int flags)
 void wifi_reg_event_handler(unsigned int event_cmds, void (*handler_func)(char *buf, int len, int flags, void *user_data), void *handler_user_data)
 {
 	int i = 0, j = 0;
-	if (event_cmds < WIFI_EVENT_MAX) {
-		for (i = 0; i < WIFI_EVENT_MAX_ROW; i++) {
+	if (event_cmds < RTW_EVENT_MAX) {
+		for (i = 0; i < RTW_EVENT_MAX_ROW; i++) {
 			if (event_callback_list[event_cmds][i].handler == NULL) { //there exists an empty position for new handler
-				for (j = 0; j < WIFI_EVENT_MAX_ROW; j++) {
+				for (j = 0; j < RTW_EVENT_MAX_ROW; j++) {
 					if (event_callback_list[event_cmds][j].handler == handler_func) { //the new handler already exists in the table
 						return;
 					}
@@ -241,15 +241,15 @@ void wifi_reg_event_handler(unsigned int event_cmds, void (*handler_func)(char *
 			}
 		}
 		//there is no empty position for new handler
-		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "WifiEvtReg fail: %d %d \n", event_cmds, WIFI_EVENT_MAX_ROW);
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "WifiEvtReg fail: %d %d \n", event_cmds, RTW_EVENT_MAX_ROW);
 	}
 }
 
 void wifi_unreg_event_handler(unsigned int event_cmds, void (*handler_func)(char *buf, int len, int flags, void *user_data))
 {
 	int i;
-	if (event_cmds < WIFI_EVENT_MAX) {
-		for (i = 0; i < WIFI_EVENT_MAX_ROW; i++) {
+	if (event_cmds < RTW_EVENT_MAX) {
+		for (i = 0; i < RTW_EVENT_MAX_ROW; i++) {
 			if (event_callback_list[event_cmds][i].handler == handler_func) {
 				event_callback_list[event_cmds][i].handler = NULL;
 				event_callback_list[event_cmds][i].handler_user_data = NULL;

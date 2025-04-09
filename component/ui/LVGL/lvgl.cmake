@@ -9,7 +9,12 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 #----------------------------------------#
 # Component public part, user config begin
 
+
 # You may use if-else condition to set or update predefined variable above
+ameba_list_append_if(CONFIG_GUI_EN public_libraries
+    ${c_SDK_LIB_APPLICATION_DIR}/lib_lvgl.a
+)
+
 ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/lvgl/src
     ${CMAKE_CURRENT_SOURCE_DIR}/lvgl/src/core

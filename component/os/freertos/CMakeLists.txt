@@ -46,6 +46,10 @@ ameba_list_append(public_includes
     ${portable_soc_mcu_dir}
 )
 
+ameba_list_append(public_includes
+    heap_trace
+)
+
 if(EXISTS ${portable_soc_mcu_dir}/secure)
     ameba_list_append(public_includes
         ${portable_soc_mcu_dir}/secure
@@ -153,10 +157,6 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
 if(CONFIG_HEAP_PROTECTOR)
     ameba_list_append(private_sources
         heap_trace/heap_trace.c
-    )
-
-    ameba_list_append(private_includes
-        heap_trace
     )
 
     file(RELATIVE_PATH IMAGE_DIR ${FINAL_IMAGE_DIR} ${c_SDK_IMAGE_TARGET_DIR})

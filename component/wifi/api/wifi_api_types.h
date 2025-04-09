@@ -103,48 +103,48 @@ extern "C" {
  * @{
  */
 /**
-  * @brief  The enumeration lists the disconnet reasons in rtw_event_disconn_info_t when @ref RTW_JOINSTATUS_DISCONNECT happenned.
+  * @brief  The enumeration lists the disconnet reasons in rtw_event_info_joinstatus_disconn when @ref RTW_JOINSTATUS_DISCONNECT happenned.
   */
 enum {
 #ifndef CONFIG_FULLMAC
 	/*Reason code in 802.11 spec, Receive AP's deauth or disassoc after wifi connected*/
-	WLAN_REASON_UNSPECIFIED                         = 1,
-	WLAN_REASON_PREV_AUTH_NOT_VALID 			        	= 2,
-	WLAN_REASON_DEAUTH_LEAVING                      = 3,
-	WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY          = 4,
-	WLAN_REASON_DISASSOC_AP_BUSY                    = 5,
-	WLAN_REASON_CLASS2_FRAME_FROM_NONAUTH_STA       = 6,
-	WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA      = 7,
-	WLAN_REASON_DISASSOC_STA_HAS_LEFT               = 8,
-	WLAN_REASON_STA_REQ_ASSOC_WITHOUT_AUTH          = 9,
-	WLAN_REASON_PWR_CAPABILITY_NOT_VALID            = 10,
-	WLAN_REASON_SUPPORTED_CHANNEL_NOT_VALID         = 11,
-	WLAN_REASON_INVALID_IE                          = 13,
-	WLAN_REASON_MICHAEL_MIC_FAILURE                 = 14,
-	WLAN_REASON_4WAY_HANDSHAKE_TIMEOUT              = 15,
-	WLAN_REASON_GROUP_KEY_UPDATE_TIMEOUT            = 16,
-	WLAN_REASON_IE_IN_4WAY_DIFFERS                  = 17,
-	WLAN_REASON_GROUP_CIPHER_NOT_VALID              = 18,
-	WLAN_REASON_PAIRWISE_CIPHER_NOT_VALID           = 19,
-	WLAN_REASON_AKMP_NOT_VALID                      = 20,
-	WLAN_REASON_UNSUPPORTED_RSN_IE_VERSION          = 21,
-	WLAN_REASON_INVALID_RSN_IE_CAPAB                = 22,
-	WLAN_REASON_IEEE_802_1X_AUTH_FAILED             = 23,
-	WLAN_REASON_CIPHER_SUITE_REJECTED               = 24,
+	RTW_DISCONN_RSN_80211_UNSPECIFIED                         = 1,
+	RTW_DISCONN_RSN_80211_PREV_AUTH_NOT_VALID 			      = 2,
+	RTW_DISCONN_RSN_80211_DEAUTH_LEAVING                      = 3,
+	RTW_DISCONN_RSN_80211_DISASSOC_DUE_TO_INACTIVITY          = 4,
+	RTW_DISCONN_RSN_80211_DISASSOC_AP_BUSY                    = 5,
+	RTW_DISCONN_RSN_80211_CLASS2_FRAME_FROM_NONAUTH_STA       = 6,
+	RTW_DISCONN_RSN_80211_CLASS3_FRAME_FROM_NONASSOC_STA      = 7,
+	RTW_DISCONN_RSN_80211_DISASSOC_STA_HAS_LEFT               = 8,
+	RTW_DISCONN_RSN_80211_STA_REQ_ASSOC_WITHOUT_AUTH          = 9,
+	RTW_DISCONN_RSN_80211_PWR_CAPABILITY_NOT_VALID            = 10,
+	RTW_DISCONN_RSN_80211_SUPPORTED_CHANNEL_NOT_VALID         = 11,
+	RTW_DISCONN_RSN_80211_INVALID_IE                          = 13,
+	RTW_DISCONN_RSN_80211_MICHAEL_MIC_FAILURE                 = 14,
+	RTW_DISCONN_RSN_80211_4WAY_HANDSHAKE_TIMEOUT              = 15,
+	RTW_DISCONN_RSN_80211_GROUP_KEY_UPDATE_TIMEOUT            = 16,
+	RTW_DISCONN_RSN_80211_IE_IN_4WAY_DIFFERS                  = 17,
+	RTW_DISCONN_RSN_80211_GROUP_CIPHER_NOT_VALID              = 18,
+	RTW_DISCONN_RSN_80211_PAIRWISE_CIPHER_NOT_VALID           = 19,
+	RTW_DISCONN_RSN_80211_AKMP_NOT_VALID                      = 20,
+	RTW_DISCONN_RSN_80211_UNSUPPORTED_RSN_IE_VERSION          = 21,
+	RTW_DISCONN_RSN_80211_INVALID_RSN_IE_CAPAB                = 22,
+	RTW_DISCONN_RSN_80211_IEEE_802_1X_AUTH_FAILED             = 23,
+	RTW_DISCONN_RSN_80211_CIPHER_SUITE_REJECTED               = 24,
 #endif
 	/*RTK defined, Driver disconenct from AP after wifi connected and detect something wrong*/
-	WLAN_REASON_DRV_BASE                            = 60000,
-	WLAN_REASON_DRV_AP_LOSS                         = 60001,
-	WLAN_REASON_DRV_AP_CHANGE                       = 60002,
-	WLAN_REASON_DRV_BASE_END                        = 60099,
+	RTW_DISCONN_RSN_DRV_BASE                            = 60000,
+	RTW_DISCONN_RSN_DRV_AP_LOSS                         = 60001,
+	RTW_DISCONN_RSN_DRV_AP_CHANGE                       = 60002,
+	RTW_DISCONN_RSN_DRV_BASE_END                        = 60099,
 
 	/*RTK defined, Application layer call some API to cause wifi disconnect*/
-	WLAN_REASON_APP_BASE                            = 60100,
-	WLAN_REASON_APP_DISCONN                         = 60101,
-	WLAN_REASON_APP_CONN_WITHOUT_DISCONN            = 60102,
-	WLAN_REASON_APP_BASE_END                        = 60199,
+	RTW_DISCONN_RSN_APP_BASE                            = 60100,
+	RTW_DISCONN_RSN_APP_DISCONN                         = 60101,
+	RTW_DISCONN_RSN_APP_CONN_WITHOUT_DISCONN            = 60102,
+	RTW_DISCONN_RSN_APP_BASE_END                        = 60199,
 
-	WLAN_REASON_MAX                                 = 65535,/*0xffff*/
+	RTW_DISCONN_RSN_MAX                                 = 65535,/*0xffff*/
 };
 
 /**
@@ -669,8 +669,7 @@ enum _REGULATION_TXPWR_LMT {
   * @brief  The structure is used to describe the SSID (Service Set Identification), i.e., the name of Access Point.
   */
 struct rtw_ssid {
-	unsigned char
-	len;     /**< SSID length, i.e., equal to the length of `val`. The length of ssid should not > @ref RTW_ESSID_MAX_SIZE.  */
+	unsigned char		len;     /**< SSID length, i.e., equal to the length of `val`. The length of ssid should not > @ref RTW_ESSID_MAX_SIZE.  */
 	unsigned char		val[RTW_ESSID_MAX_SIZE + 1]; /**< SSID name (AP name).*/
 };
 
@@ -690,7 +689,7 @@ struct rtw_mac {
 /**
   * @brief  The structure is used to describe the busyness of a channel for ACS(Automatic Channel Selection).
   */
-struct acs_mntr_rpt {
+struct rtw_acs_mntr_rpt {
 	u16 meas_time; /**< Measurements time on this channel, unit:ms.*/
 	u16 busy_time; /**< Time that the primary channel was sensed busy, unit:ms.*/
 	u16 tx_time;   /**< Time spent transmitting frame on this channel, unit:ms.*/
@@ -702,23 +701,21 @@ struct acs_mntr_rpt {
   * @brief  The structure is used to describe the details of a scanned AP.
   */
 struct rtw_scan_result {
-	struct rtw_ssid          SSID;             /**< Service Set Identification (i.e. Name of Access Point). */
-	struct rtw_mac           BSSID;            /**< Basic Service Set Identification (i.e. MAC address of Access Point). */
-	signed short             signal_strength;  /**< Receive Signal Strength Indication in dBm. <-90=Very poor, >-30=Excellent. */
-	u8
-	bss_type;         /**< The bss type. The noraml type is infrastructure BSS. Val: RTW_BSS_TYPE_INFRASTRUCTURE, RTW_BSS_TYPE_WTN_HELPER.*/
-	u32                      security;         /**< The security type of this AP. Val: RTW_SECURITY_OPEN, RTW_SECURITY_WEP_PSK...*/
-	u8
-	wps_type;         /**< The WPS(Wi-Fi Protected Setup) types supported by this AP. Val: RTW_WPS_TYPE_DEFAULT, RTW_WPS_TYPE_USER_SPECIFIED...*/
-	unsigned int             channel;          /**< Radio channel that the AP beacon was received on. */
-	u8                       band;             /**< The frequency ranges used by this AP. Val: BAND_ON_5G, BAND_ON_24G. */
+	struct rtw_ssid         ssid;             /**< Service Set Identification (i.e. Name of Access Point). */
+	struct rtw_mac          bssid;            /**< Basic Service Set Identification (i.e. MAC address of Access Point). */
+	signed short            signal_strength;  /**< Receive Signal Strength Indication in dBm. <-90=Very poor, >-30=Excellent. */
+	u8						bss_type;         /**< The bss type. The noraml type is infrastructure BSS. Val: RTW_BSS_TYPE_INFRASTRUCTURE, RTW_BSS_TYPE_WTN_HELPER.*/
+	u32                     security;         /**< The security type of this AP. Val: RTW_SECURITY_OPEN, RTW_SECURITY_WEP_PSK...*/
+	u8						wps_type;         /**< The WPS(Wi-Fi Protected Setup) types supported by this AP. Val: RTW_WPS_TYPE_DEFAULT, RTW_WPS_TYPE_USER_SPECIFIED...*/
+	unsigned int            channel;          /**< Radio channel that the AP beacon was received on. */
+	u8                      band;             /**< The frequency ranges used by this AP. Val: BAND_ON_5G, BAND_ON_24G. */
 
 	/** The wireless spectrum management regulations of which region followed by the AP. `country_code` is coded
 	 * according to ISO 3166 standard. Specific values can refer to ameba_wifi_country_code_table_usrcfg.c.\n
 	 * e.g. China: country_code[0] = 'C', country_code[1] = 'N'. */
-	char                     country_code[2];
-	char                     wireless_mode;    /**< The wireless mode of this AP. Val: WLAN_MD_11B, WLAN_MD_11A...*/
-	u8                       rom_rsvd[3];
+	char                    country_code[2];
+	char                    wireless_mode;    /**< The wireless mode of this AP. Val: WLAN_MD_11B, WLAN_MD_11A...*/
+	u8                      rom_rsvd[3];
 };
 
 /**
@@ -745,7 +742,7 @@ struct rtw_scan_param {
 	void                              *scan_user_data;
 	int (*scan_user_callback)(unsigned int ap_num, void *user_data);/**< Used for normal asynchronized mode. */
 	int (*scan_report_each_mode_user_callback)(struct rtw_scan_result *scanned_ap_info, void *user_data); /**< Used for RTW_SCAN_REPORT_EACH mode. */
-	int (*scan_report_acs_user_callback)(struct acs_mntr_rpt *acs_mntr_rpt); /**< Used for report acs info.*/
+	int (*scan_report_acs_user_callback)(struct rtw_acs_mntr_rpt *acs_mntr_rpt); /**< Used for report acs info.*/
 };
 #pragma pack()
 
@@ -771,8 +768,8 @@ struct rtw_wpa_supp_connect {
   * 	      set to 0 means do normal scan on the specified channel or full channel.
   */
 struct rtw_network_info {
-	struct rtw_ssid					ssid;  /**< The AP's name and the length of name (should not exceed @ref RTW_ESSID_MAX_SIZE). */
-	struct rtw_mac					bssid; /**< The unique 6-byte MAC address of AP. */
+	struct rtw_ssid				ssid;  /**< The AP's name and the length of name (should not exceed @ref RTW_ESSID_MAX_SIZE). */
+	struct rtw_mac				bssid; /**< The unique 6-byte MAC address of AP. */
 	u32							security_type; /**< Only need to be set when use WEP (@ref RTW_SECURITY_WEP_PSK @ref RTW_SECURITY_WEP_SHARED), Other case will automatically adjust according to the AP.*/
 	unsigned char				*password;	   /**< The password of AP which sta is trying to connect. */
 	int 						password_len;  /**< The data length of string pointed by password should not exceed RTW_MAX_PSK_LEN. Equal to length of `password`. */
@@ -782,7 +779,7 @@ struct rtw_network_info {
 	pscan_option;	/**< Can set to @ref PSCAN_FAST_SURVEY for fast survey, which means quick scan, involves using an active scan on a specified channel, scanning for 25ms each time, and attempting up to 7 times until the target AP is found.. */
 	unsigned char 				is_wps_trigger;	/**< Connection triggered by WPS process.*/
 	struct rtw_wpa_supp_connect	wpa_supp;   /**< Only used by Linux host to specific some details required for STA connect, which RTOS do not use. */
-	struct rtw_mac		prev_bssid; /**< The BSSID of the AP before roaming. */
+	struct rtw_mac				prev_bssid; /**< The BSSID of the AP before roaming. */
 	u8							by_reconn; /**< Connection triggered by RTK auto reconnect process. */
 	u8							rom_rsvd[4];
 };

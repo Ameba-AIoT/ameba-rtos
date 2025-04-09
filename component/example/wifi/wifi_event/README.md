@@ -1,6 +1,6 @@
 # Example Description
 
-Using the most common event `WIFI_EVENT_JOIN_STATUS` to show how to use wifi event.
+Using the most common event `RTW_EVENT_JOIN_STATUS` to show how to use wifi event.
 
 # HW Configuration
 

@@ -21,19 +21,19 @@ static void whc_fullmac_host_event_set_acs_info(u32 *param_buf)
 {
 	extern u8 chanel_idx_max;
 	extern u8 rtw_chnl_tbl[MAX_CHANNEL_NUM];
-	extern struct acs_mntr_rpt acs_mntr_rpt_tbl[MAX_CHANNEL_NUM];
+	extern struct rtw_acs_mntr_rpt acs_mntr_rpt_tbl[MAX_CHANNEL_NUM];
 
 	u8 idx = 0;
-	struct acs_mntr_rpt *acs_rpt = (struct acs_mntr_rpt *)&param_buf[0];
+	struct rtw_acs_mntr_rpt *acs_rpt = (struct rtw_acs_mntr_rpt *)&param_buf[0];
 
 	if (acs_rpt->channel == 0) {
-		memset(acs_mntr_rpt_tbl, 0, sizeof(struct acs_mntr_rpt)*MAX_CHANNEL_NUM);
+		memset(acs_mntr_rpt_tbl, 0, sizeof(struct rtw_acs_mntr_rpt)*MAX_CHANNEL_NUM);
 		return;
 	}
 
 	for (idx = 0; idx < MAX_CHANNEL_NUM; idx++) {
 		if (acs_rpt->channel == rtw_chnl_tbl[idx]) {
-			memcpy(&acs_mntr_rpt_tbl[idx], acs_rpt, sizeof(struct acs_mntr_rpt));
+			memcpy(&acs_mntr_rpt_tbl[idx], acs_rpt, sizeof(struct rtw_acs_mntr_rpt));
 			chanel_idx_max = idx;
 			break;
 		}
@@ -54,13 +54,13 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 	u16 frame_type;
 #endif
 
-	if (event == WIFI_EVENT_JOIN_STATUS) {
+	if (event == RTW_EVENT_JOIN_STATUS) {
 		whc_fullmac_host_connect_indicate(flags, buf, buf_len);
 	}
 
-	if ((event == WIFI_EVENT_JOIN_STATUS) && ((flags == RTW_JOINSTATUS_FAIL) || (flags == RTW_JOINSTATUS_DISCONNECT))) {
+	if ((event == RTW_EVENT_JOIN_STATUS) && ((flags == RTW_JOINSTATUS_FAIL) || (flags == RTW_JOINSTATUS_DISCONNECT))) {
 		if (flags == RTW_JOINSTATUS_DISCONNECT) {
-			disassoc_reason = (u16)(((struct rtw_event_disconn_info_t *)buf)->disconn_reason && 0xffff);
+			disassoc_reason = (u16)(((struct rtw_event_info_joinstatus_disconn *)buf)->disconn_reason && 0xffff);
 			dev_dbg(global_idev.fullmac_dev, "%s: disassoc_reason=%d \n", __func__, disassoc_reason);
 			whc_fullmac_host_disconnect_indicate(disassoc_reason, 1);
 		}
@@ -70,22 +70,22 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 		}
 	}
 
-	if (event == WIFI_EVENT_STA_ASSOC) {
+	if (event == RTW_EVENT_STA_ASSOC) {
 		dev_dbg(global_idev.fullmac_dev, "%s: sta assoc \n", __func__);
 		whc_fullmac_host_sta_assoc_indicate(buf, buf_len);
 	}
 
-	if (event == WIFI_EVENT_STA_DISASSOC) {
+	if (event == RTW_EVENT_STA_DISASSOC) {
 		dev_dbg(global_idev.fullmac_dev, "%s: sta disassoc \n", __func__);
 		cfg80211_del_sta(global_idev.pndev[1], buf, GFP_ATOMIC);
 	}
 
-	if (event == WIFI_EVENT_EXTERNAL_AUTH_REQ) {
+	if (event == RTW_EVENT_EXTERNAL_AUTH_REQ) {
 		dev_dbg(global_idev.fullmac_dev, "%s: auth req \n", __func__);
 		whc_fullmac_host_external_auth_request(buf, buf_len);
 	}
 
-	if (event == WIFI_EVENT_RX_MGNT) {
+	if (event == RTW_EVENT_RX_MGNT) {
 		dev_dbg(global_idev.fullmac_dev, "%s: rx mgnt \n", __func__);
 #ifdef CONFIG_P2P
 		channel = (flags > 0) ? (flags & 0x0000FFFF) : 6;
@@ -108,7 +108,7 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 		cfg80211_rx_mgmt(wdev, rtw_ch2freq(channel), 0, buf, buf_len, 0);
 	}
 
-	if (event == WIFI_EVENT_RX_MGNT_AP) {
+	if (event == RTW_EVENT_RX_MGNT_AP) {
 		dev_dbg(global_idev.fullmac_dev, "%s: rx mgnt \n", __func__);
 		wdev = ndev_to_wdev(global_idev.pndev[1]);
 #ifdef CONFIG_P2P
@@ -133,7 +133,7 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 		cfg80211_rx_mgmt(wdev, rtw_ch2freq(channel), 0, buf, buf_len, 0);
 	}
 
-	if (event == WIFI_EVENT_OWE_PEER_KEY_RECV) {
+	if (event == RTW_EVENT_OWE_PEER_KEY_RECV) {
 		dev_dbg(global_idev.fullmac_dev, "%s: owe update \n", __func__);
 		whc_fullmac_host_update_owe_info_event(buf, buf_len);
 	}

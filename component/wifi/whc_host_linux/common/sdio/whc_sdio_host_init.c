@@ -310,6 +310,7 @@ u32 rtw_sdio_init(struct whc_sdio *priv)
 	}
 
 	rtw_sdio_init_interrupt(priv);
+	priv->bSurpriseRemoved = false;
 
 	return true;
 }
