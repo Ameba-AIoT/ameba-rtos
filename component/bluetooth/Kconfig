@@ -54,6 +54,16 @@ if BT_EXAMPLE_DEMO_MENU
         bool "BLE WiFiMate Configurator"
         default n
 
+    config BT_OTA_CENTRAL
+        depends on AMEBADPLUS && !AMEBA_RLS    #internal amebadplus
+        bool "BLE OTA Central"
+        default n
+
+    config BT_OTA_PERIPHERAL
+        depends on AMEBADPLUS && !AMEBA_RLS    #internal amebadplus
+        bool "BLE OTA Peripheral"
+        default n
+
     if BT_HAS_MESH
         config BT_MESH_PROVISIONER_MENU
             bool "BLE Mesh Provisioner"
@@ -321,4 +331,8 @@ config BT_AUDIO_CODEC_CVSD
 config BT_WIFIMATE_DEVICE
     bool
 config BT_WIFIMATE_CONFIGURATOR
+    bool
+config BT_OTA_CENTRAL
+    bool
+config BT_OTA_PERIPHERAL
     bool

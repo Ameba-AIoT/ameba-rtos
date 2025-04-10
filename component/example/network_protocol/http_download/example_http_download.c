@@ -30,15 +30,10 @@ static void example_http_download_thread(void *param)
 		printf("ERROR: socket\n");
 		goto exit;
 	} else {
-		int recv_timeout_ms = RECV_TO;
-#if defined(LWIP_SO_SNDRCVTIMEO_NONSTANDARD) && (LWIP_SO_SNDRCVTIMEO_NONSTANDARD == 0)	// lwip 1.5.0
 		struct timeval recv_timeout;
-		recv_timeout.tv_sec = recv_timeout_ms / 1000;
-		recv_timeout.tv_usec = recv_timeout_ms % 1000 * 1000;
+		recv_timeout.tv_sec = RECV_TO / 1000;
+		recv_timeout.tv_usec = (RECV_TO % 1000) * 1000;
 		setsockopt(server_fd, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout, sizeof(recv_timeout));
-#else	// lwip 1.4.1
-		setsockopt(server_fd, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout_ms, sizeof(recv_timeout_ms));
-#endif
 	}
 
 	server_addr.sin_family = AF_INET;

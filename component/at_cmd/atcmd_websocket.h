@@ -18,6 +18,9 @@
 #define MAX_WEBSOCKET_LINK_NUM      3
 #define MAX_PING_INTERVAL           7200
 #define MAX_PING_TIMEOUT            7200
+#define MAX_KEEPALIVE_IDLE          7200
+#define MAX_KEEPALIVE_INTERVAL      75
+#define MAX_KEEPALIVE_COUNT         10
 #define MAX_BUFFER_SIZE             (16 * 1024)
 #define MAX_QUEUE_SIZE              50
 #define MAX_HEADER_NUM              10
@@ -39,9 +42,9 @@ enum CONNECTION_TYPE {
 };
 
 struct websocket_config {
-	int ping_intv_sec; //send interval of ping in seconds
+	int ping_interval; //send interval of ping in seconds
 	uint32_t next_ping_time; // next time of sending ping in milliseconds
-	int ping_timeout_sec; //timeout of ping in seconds
+	int ping_timeout; //timeout of ping in seconds
 	int buffer_size;
 	int max_queue_size;
 	char *protocol;

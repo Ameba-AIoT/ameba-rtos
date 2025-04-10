@@ -9,14 +9,19 @@
 #include "ameba_ota.h"
 #include "platform_autoconf.h"
 
-#define OTA_TYPE_MIN  OTA_HTTP
-#if defined(CONFIG_AMEBADPLUS)
-#define OTA_TYPE_MAX  OTA_VFS
-#elif defined(CONFIG_AMEBASMART)
-#define OTA_TYPE_MAX  OTA_SDCARD
-#else
-#define OTA_TYPE_MAX  OTA_HTTPS
-#endif
+#define OTA_MAX_HOSTNAME_LEN    128
+#define OTA_MAX_PATH_LEN        256
+
+#define OTA_STATUS_RUNNING      BIT(0)
+#define OTA_STATUS_SYSRST       BIT(1)
+
+enum OTA_CONN_TYPE {
+	OTA_HTTP_OVER_TCP = 1,
+	OTA_HTTPS_VERIFY_NONE,
+	OTA_HTTPS_VERIFY_SERVER,
+	OTA_HTTPS_VERIFY_CLIENT,
+	OTA_HTTPS_VERIFY_BOTH,
+};
 
 void at_ota_init(void);
 

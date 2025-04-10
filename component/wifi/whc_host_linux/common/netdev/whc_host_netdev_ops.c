@@ -349,10 +349,10 @@ static void rtw_set_rx_mode(struct net_device *dev)
 #ifndef CONFIG_WHC_BRIDGE
 	if (dev->flags & IFF_PROMISC) {
 		dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s enable promisc mode!\n", __func__);
-		whc_fullmac_host_set_promisc_enable(1, RCR_ALL_PKT);
+		whc_fullmac_host_set_promisc_enable(1, RTW_PROMISC_FILTER_ALL_PKT);
 	} else {
 		dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s disable promisc mode!\n", __func__);
-		whc_fullmac_host_set_promisc_enable(0, RCR_ALL_PKT);
+		whc_fullmac_host_set_promisc_enable(0, RTW_PROMISC_FILTER_ALL_PKT);
 	}
 #endif
 }

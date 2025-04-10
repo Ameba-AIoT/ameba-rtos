@@ -8,9 +8,8 @@ None
 
 # SW configuration
 
-Taking AmebaSmart in GCC environmnet for example.
-
-1. Type command `./menuconfig.py` under the project directory
+1. Menuconfig
+	Type command `./menuconfig.py` under the project directory:
 	- choose `CONFIG USB --->`:
 		```
 		[*] Enable USB
@@ -26,9 +25,11 @@ Taking AmebaSmart in GCC environmnet for example.
 		```
 	Save and exit.
 
-2. How to use:
-   - Run `./build.py -a usbd_composite_uac_hid` under the project directory to generate images.
-   - `Download` images to board by Ameba Image Tool.
+2. Build
+	Type command `./build.py -a usbd_composite_uac_hid` under the project directory to build images.
+
+3. Download
+	Download images to board by Ameba Image Tool.
 
 # Expect result
 

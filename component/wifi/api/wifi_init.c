@@ -53,7 +53,6 @@
 void wifi_init_thread(void *param)
 {
 	UNUSED(param);
-	wifi_set_rom2flash();
 #ifdef CONFIG_LWIP_LAYER
 	LwIP_Init();
 #endif

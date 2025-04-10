@@ -4,7 +4,8 @@ In this application, Ameba is designed as an USB UVC host which can communicate 
 
 # HW Configuration
 
-Attach an USB camera to the USB port of the Ameba board.
+Some Ameba boards need to be reworked to support USB host, refer to AN for details.
+Taking RTL8730EA/QFN100 boards for example, the register R20 shall be parted on with 0Ohm register or just shorted to provide power for USB device via VBUS.
 
 # SW configuration
 
@@ -31,14 +32,15 @@ Attach an USB camera to the USB port of the Ameba board.
 
 # Expect result
 
-1. Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
+1. Attach an USB camera to the USB port of the Ameba board.
+2. Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
 	```
 	[UVC-I] USBH UVC demo start
 	```
 
-2. Ameba board will recoganize the USB camera and start to capture MJPEG frames at the rate of one frame per second.
+3. Ameba board will recoganize the USB camera and start to capture MJPEG frames at the rate of one frame per second.
 
-3. Once attach uvc camera to host, host will capture 200 images cyclically. Following log shall be printed on the LOGUART console:
+4. Once attach uvc camera to host, host will capture 200 images cyclically. Following log shall be printed on the LOGUART console:
 	```
 	[UVC] USB host uvc demo started...
 	[MAIN-I] KM4 START SCHEDULER 
@@ -91,7 +93,7 @@ Attach an USB camera to the USB port of the Ameba board.
 
 # Note
 
-For other chips, refer to the AN for setup guide.
+None
 
 # Supported IC
 

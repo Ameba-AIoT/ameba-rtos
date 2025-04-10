@@ -21,7 +21,6 @@
 #define HCI_WRITE_PHY_EFUSE_LEN    0x70
 #endif
 
-#define HCI_DEFAULT_LMP_SUBVER     0x8720
 #define HCI_PATCH_PROJECT_ID       0x27
 #define HCI_PATCH_FLASH_ADDRESS    0x080F8000    /* Temp value, need sync flash layout with platform owner if use this function */
 
@@ -37,7 +36,6 @@ void hci_platform_get_config(uint8_t **buf, uint16_t *len);
 void hci_platform_bt_rf_calibration(void);
 void hci_platform_bt_rx_dck(void);
 int hci_platform_get_write_phy_efuse_data(uint8_t *data, uint8_t len);
-bool hci_platform_check_lmp_subver(uint16_t lmp_subver);
 
 bool rtk_bt_pre_enable(void);
 void rtk_bt_post_enable(void);

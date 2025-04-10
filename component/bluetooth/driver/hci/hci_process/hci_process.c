@@ -35,6 +35,7 @@ static uint8_t hci_process_read_local_ver(uint16_t opcode)
 	/* OpCode: 0x1001, Data Len: Cmd(3), Event(14) */
 	uint8_t buf_raw[RESERVE_LEN + 14];
 	uint8_t *buf = buf_raw + RESERVE_LEN;
+	uint16_t hci_revision, lmp_subver;
 
 	buf[0] = (uint8_t)(opcode >> 0);
 	buf[1] = (uint8_t)(opcode >> 8);
@@ -50,10 +51,9 @@ static uint8_t hci_process_read_local_ver(uint16_t opcode)
 	}
 
 	/* Get LMP Subversion and Check */
-	uint16_t lmp_subver = ((uint16_t)buf[12]) | (((uint16_t)buf[13]) << 8);
-	if (hci_platform_check_lmp_subver(lmp_subver) == false) {
-		return HCI_FAIL;
-	}
+	hci_revision = ((uint16_t)buf[7]) | (((uint16_t)buf[8]) << 8);
+	lmp_subver = ((uint16_t)buf[12]) | (((uint16_t)buf[13]) << 8);
+	BT_LOGA("HCI Revision is 0x%04x, LMP Subversion is 0x%04x.\r\n", hci_revision, lmp_subver);
 
 	return HCI_SUCCESS;
 }

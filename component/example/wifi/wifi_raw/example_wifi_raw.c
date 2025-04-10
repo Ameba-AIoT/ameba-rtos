@@ -82,7 +82,7 @@ void wifi_raw_rx(void *param)
 	printf("%s start.\n", __func__);
 
 	memset(&promiscpara, 0, sizeof(struct rtw_promisc_para));
-	promiscpara.filter_mode = RCR_ALL_PKT;
+	promiscpara.filter_mode = RTW_PROMISC_FILTER_ALL_PKT;
 	promiscpara.callback = promisc_callback;
 	wifi_promisc_enable(ENABLE, &promiscpara);
 

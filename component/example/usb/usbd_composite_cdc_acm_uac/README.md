@@ -28,6 +28,7 @@ None
 
 3. Download
 	Download images to board by Ameba Image Tool.
+
 # Expect result
 
 1. Plugin Reset the board, following log shall be printed on the LOGUART console:

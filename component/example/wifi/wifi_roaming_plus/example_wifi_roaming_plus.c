@@ -157,7 +157,10 @@ static int roaming_ping_test(u32_t ip_addr)
 	for (i = 0; (i < ping_count) ; i ++) {
 		ping_socket = socket(AF_INET, SOCK_RAW, IP_PROTO_ICMP);
 		/* lwip 1.4.1 */
-		setsockopt(ping_socket, SOL_SOCKET, SO_RCVTIMEO, &pint_timeout, sizeof(pint_timeout));
+		struct timeval tv;
+		tv.tv_sec = pint_timeout / 1000;
+		tv.tv_usec = (pint_timeout % 1000) * 1000;
+		setsockopt(ping_socket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
 		to_addr.sin_len = sizeof(to_addr);
 		to_addr.sin_family = AF_INET;
@@ -245,7 +248,7 @@ static int wlan_fast_connect(struct wifi_roaming_data *data, u8 scan_type)
 WIFI_RETRY_LOOP:
 	if (scan_type == FAST_CONNECT_SPECIFIC_CH) {
 		wifi.channel = (u8)channel;
-		wifi.pscan_option = PSCAN_FAST_SURVEY;
+		wifi.pscan_option = RTW_PSCAN_FAST_SURVEY;
 	}
 	wifi.security_type = security_type;
 	//SSID

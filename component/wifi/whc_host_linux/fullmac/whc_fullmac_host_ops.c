@@ -585,11 +585,11 @@ static int whc_fullmac_host_connect_ops(struct wiphy *wiphy, struct net_device *
 	}
 	if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_2) {
 		connect_param->security_type |= WPA2_SECURITY;
-		whc_fullmac_host_set_wpa_mode(WPA2_ONLY_MODE);
+		whc_fullmac_host_set_wpa_mode(RTW_WPA2_ONLY_MODE);
 	}
 	if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_1) {
 		connect_param->security_type |= WPA_SECURITY;
-		whc_fullmac_host_set_wpa_mode(WPA_ONLY_MODE);
+		whc_fullmac_host_set_wpa_mode(RTW_WPA_ONLY_MODE);
 	}
 
 	if (sme->auth_type == NL80211_AUTHTYPE_SHARED_KEY) {
@@ -659,7 +659,7 @@ static int whc_fullmac_host_connect_ops(struct wiphy *wiphy, struct net_device *
 		/*SAE need request wpa_suppilcant to auth*/
 		memcpy(auth_ext_para->ssid.ssid, (u8 *)sme->ssid, sme->ssid_len);
 		auth_ext_para->ssid.ssid_len = sme->ssid_len;
-		whc_fullmac_host_set_wpa_mode(WPA3_ONLY_MODE);
+		whc_fullmac_host_set_wpa_mode(RTW_WPA3_ONLY_MODE);
 	}
 
 	connect_param->password_len = sme->key_len;
