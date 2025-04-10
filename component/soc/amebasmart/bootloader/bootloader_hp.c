@@ -218,7 +218,7 @@ void BOOT_GRstConfig(void)
 	/* step 3: release por */
 	Val = HAL_READ16(SYSTEM_CTRL_BASE_LP, REG_LSYS_POR);
 	Val |= TempVal;
-	HAL_WRITE16(SYSTEM_CTRL_BASE_LP, REG_LSYS_POR, TempVal);
+	HAL_WRITE16(SYSTEM_CTRL_BASE_LP, REG_LSYS_POR, Val);
 }
 
 
