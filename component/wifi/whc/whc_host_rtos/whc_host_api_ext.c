@@ -449,10 +449,10 @@ void wifi_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way)
  *
  * u8 test_1[] = {221, 2, 2, 2};
  * u8 test_2[] = {221, 2, 1, 1};
- * struct rtw_custom_ie buf[2] = {{test_1, BEACON},
- *		 {test_2, PROBE_RSP}};
+ * struct rtw_custom_ie buf[2] = {{test_1, RTW_BEACON},
+ *		 {test_2, RTW_PROBE_RSP}};
  * u8 buf_test2[] = {221, 2, 1, 3} ;
- * struct rtw_custom_ie buf_update = {buf_test2, PROBE_RSP};
+ * struct rtw_custom_ie buf_update = {buf_test2, RTW_PROBE_RSP};
  *
  * add ie list
  * static void cmd_add_ie(int argc, char **argv)
@@ -629,9 +629,9 @@ int wifi_get_antdiv_info(unsigned char *antdiv_mode, unsigned char *curr_ant)
 /*
  * @brief get WIFI band type
  *@retval  the support band type.
- * 	WL_BAND_2_4G: only support 2.4G
- *	WL_BAND_5G: only support 5G
- *      WL_BAND_2_4G_5G_BOTH: support both 2.4G and 5G
+ * 	RTW_SUPPORT_BAND_2_4G: only support 2.4G
+ *	RTW_SUPPORT_BAND_5G: only support 5G
+ *  RTW_SUPPORT_BAND_2_4G_5G_BOTH: support both 2.4G and 5G
  */
 int wifi_get_band_type(u8 *band_type)
 {

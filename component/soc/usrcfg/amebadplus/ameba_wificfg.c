@@ -56,7 +56,7 @@ _WEAK void wifi_set_user_config(void)
 #endif
 #endif
 	wifi_user_config.skb_buf_size = 0;
-	wifi_user_config.wifi_wpa_mode_force = WPA_AUTO_MODE;
+	wifi_user_config.wifi_wpa_mode_force = RTW_WPA_AUTO_MODE;
 
 	/*Regulatory related*/
 	wifi_user_config.country_code[0] = 0;
@@ -71,12 +71,12 @@ _WEAK void wifi_set_user_config(void)
 
 	/* IPS(Inactive Power Save), power save when wifi unconnected */
 	wifi_user_config.ips_enable = 1;
-	wifi_user_config.ips_level = IPS_WIFI_OFF;
+	wifi_user_config.ips_level = RTW_IPS_WIFI_OFF;
 	wifi_user_config.ips_ctrl_by_usr = 0;
 
 	/* LPS(Leisure Power Save), power save when wifi connected, has 2 mode - legacy and uapsd, uapsd not support right now */
 	wifi_user_config.lps_enable = 1;
-	wifi_user_config.lps_mode = PS_MODE_LEGACY;
+	wifi_user_config.lps_mode = RTW_PS_MODE_LEGACY;
 	wifi_user_config.legacy_ps_listen_interval = 0;
 
 	/* Softap related */

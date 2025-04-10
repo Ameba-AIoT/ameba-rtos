@@ -797,14 +797,10 @@ int set_socket_udp_option(int sockfd)
 
 #if LWIP_SO_SNDTIMEO
 	if (skt_sendtimeout > 0) {
-#if defined(LWIP_SO_SNDRCVTIMEO_NONSTANDARD) && (LWIP_SO_SNDRCVTIMEO_NONSTANDARD == 1)
 		struct timeval timeout;
 		timeout.tv_sec  = skt_sendtimeout / 1000;
 		timeout.tv_usec = (skt_sendtimeout % 1000) * 1000;
 		ret = setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
-#else
-		ret = setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &skt_sendtimeout, sizeof(skt_sendtimeout));
-#endif
 		if (ret < 0) {
 			RTK_LOGI(AT_SOCKET_TAG, "[set_socket_tcp_option] setsockopt(SO_SNDTIMEO) failed\r\n");
 			goto end;
@@ -813,14 +809,10 @@ int set_socket_udp_option(int sockfd)
 #endif
 #if LWIP_SO_RCVTIMEO
 	if (skt_recvtimeout > 0) {
-#if defined(LWIP_SO_SNDRCVTIMEO_NONSTANDARD) && (LWIP_SO_SNDRCVTIMEO_NONSTANDARD == 1)
 		struct timeval timeout;
 		timeout.tv_sec  = skt_recvtimeout / 1000;
 		timeout.tv_usec = (skt_recvtimeout % 1000) * 1000;
 		ret = setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-#else
-		ret = setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &skt_recvtimeout, sizeof(skt_recvtimeout));
-#endif
 		if (ret < 0) {
 			RTK_LOGI(AT_SOCKET_TAG, "[set_socket_tcp_option] setsockopt(SO_RCVTIMEO) failed\r\n");
 			goto end;
@@ -839,14 +831,10 @@ int set_socket_tcp_option(int sockfd)
 
 #if LWIP_SO_SNDTIMEO
 	if (skt_sendtimeout > 0) {
-#if defined(LWIP_SO_SNDRCVTIMEO_NONSTANDARD) && (LWIP_SO_SNDRCVTIMEO_NONSTANDARD == 1)
 		struct timeval timeout;
 		timeout.tv_sec  = skt_sendtimeout / 1000;
 		timeout.tv_usec = (skt_sendtimeout % 1000) * 1000;
 		ret = setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
-#else
-		ret = setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &skt_sendtimeout, sizeof(skt_sendtimeout));
-#endif
 		if (ret < 0) {
 			RTK_LOGI(AT_SOCKET_TAG, "[set_socket_tcp_option] setsockopt(SO_SNDTIMEO) failed\r\n");
 			goto end;
@@ -855,14 +843,10 @@ int set_socket_tcp_option(int sockfd)
 #endif
 #if LWIP_SO_RCVTIMEO
 	if (skt_recvtimeout > 0) {
-#if defined(LWIP_SO_SNDRCVTIMEO_NONSTANDARD) && (LWIP_SO_SNDRCVTIMEO_NONSTANDARD == 1)
 		struct timeval timeout;
 		timeout.tv_sec  = skt_recvtimeout / 1000;
 		timeout.tv_usec = (skt_recvtimeout % 1000) * 1000;
 		ret = setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-#else
-		ret = setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &skt_recvtimeout, sizeof(skt_recvtimeout));
-#endif
 		if (ret < 0) {
 			RTK_LOGI(AT_SOCKET_TAG, "[set_socket_tcp_option] setsockopt(SO_RCVTIMEO) failed\r\n");
 			goto end;

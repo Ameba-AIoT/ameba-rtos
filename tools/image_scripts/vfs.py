@@ -167,8 +167,12 @@ def main():
     print(f"{args.output_image} has been successfully generated.")
     print("args:")
     print(f"├─ type: {args.type}")
-    print(f"├─ block_size: {block_size}")
-    print(f"├─ block_count: {block_count}")
+    if args.type == "LITTLEFS":
+        print(f"├─ block_size: {block_size}")
+        print(f"├─ block_count: {block_count}")
+    else:
+        print(f"├─ sector_size: {block_size}")
+        print(f"├─ sector_count: {block_count}")
     print(f"├─ image_size: {block_size * block_count}")
     print(f"├─ source_directory: {args.source_directory}")
     print(f"└─ output_image: {args.output_image}")

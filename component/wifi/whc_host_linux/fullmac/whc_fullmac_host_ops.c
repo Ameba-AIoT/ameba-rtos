@@ -43,17 +43,17 @@ static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_devi
 
 	sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
 	tx_rate = traffic_stats_vir->sta.cur_tx_data_rate;
-	if (tx_rate <= MGN_54M) {
+	if (tx_rate <= RTW_RATE_54M) {
 		sinfo->txrate.legacy = (tx_rate / 2) * 10; // bitrate in 100kbit/s
-	} else if ((tx_rate >= MGN_MCS0) && (tx_rate <= MGN_MCS7)) {
+	} else if ((tx_rate >= RTW_RATE_MCS0) && (tx_rate <= RTW_RATE_MCS7)) {
 		sinfo->txrate.flags |= RATE_INFO_FLAGS_MCS;
-		sinfo->txrate.mcs = tx_rate - MGN_MCS0;
-	} else if ((tx_rate >= MGN_VHT1SS_MCS0) && (tx_rate <= MGN_VHT1SS_MCS8)) {
+		sinfo->txrate.mcs = tx_rate - RTW_RATE_MCS0;
+	} else if ((tx_rate >= RTW_RATE_VHT1SS_MCS0) && (tx_rate <= RTW_RATE_VHT1SS_MCS8)) {
 		sinfo->txrate.flags |= RATE_INFO_FLAGS_VHT_MCS;
-		sinfo->txrate.mcs = tx_rate - MGN_VHT1SS_MCS0;
-	} else if ((tx_rate >= MGN_HE1SS_MCS0) && (tx_rate <= MGN_HE1SS_MCS9)) {
+		sinfo->txrate.mcs = tx_rate - RTW_RATE_VHT1SS_MCS0;
+	} else if ((tx_rate >= RTW_RATE_HE1SS_MCS0) && (tx_rate <= RTW_RATE_HE1SS_MCS9)) {
 		sinfo->txrate.flags |= RATE_INFO_FLAGS_HE_MCS;
-		sinfo->txrate.mcs = tx_rate - MGN_HE1SS_MCS0;
+		sinfo->txrate.mcs = tx_rate - RTW_RATE_HE1SS_MCS0;
 	} else {
 		sinfo->txrate.legacy = 540;
 	}
@@ -585,11 +585,11 @@ static int whc_fullmac_host_connect_ops(struct wiphy *wiphy, struct net_device *
 	}
 	if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_2) {
 		connect_param->security_type |= WPA2_SECURITY;
-		whc_fullmac_host_set_wpa_mode(WPA2_ONLY_MODE);
+		whc_fullmac_host_set_wpa_mode(RTW_WPA2_ONLY_MODE);
 	}
 	if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_1) {
 		connect_param->security_type |= WPA_SECURITY;
-		whc_fullmac_host_set_wpa_mode(WPA_ONLY_MODE);
+		whc_fullmac_host_set_wpa_mode(RTW_WPA_ONLY_MODE);
 	}
 
 	if (sme->auth_type == NL80211_AUTHTYPE_SHARED_KEY) {
@@ -659,7 +659,7 @@ static int whc_fullmac_host_connect_ops(struct wiphy *wiphy, struct net_device *
 		/*SAE need request wpa_suppilcant to auth*/
 		memcpy(auth_ext_para->ssid.ssid, (u8 *)sme->ssid, sme->ssid_len);
 		auth_ext_para->ssid.ssid_len = sme->ssid_len;
-		whc_fullmac_host_set_wpa_mode(WPA3_ONLY_MODE);
+		whc_fullmac_host_set_wpa_mode(RTW_WPA3_ONLY_MODE);
 	}
 
 	connect_param->password_len = sme->key_len;

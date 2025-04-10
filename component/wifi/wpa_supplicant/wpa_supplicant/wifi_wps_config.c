@@ -397,7 +397,7 @@ static int wps_connect_to_AP_by_open_system(char *target_ssid, u8 channel)
 		connect_param.security_type = RTW_SECURITY_OPEN;
 		if (channel) {
 			connect_param.channel = channel;
-			connect_param.pscan_option = PSCAN_FAST_SURVEY;
+			connect_param.pscan_option = RTW_PSCAN_FAST_SURVEY;
 		}
 		rtos_time_delay_ms(500);	//wait scan complete.
 		while (1) {

@@ -84,7 +84,7 @@ typedef struct wifi_cast_frame_info {
 	unsigned char retry_limit;      /* tx packet retry times (hardware retry limit times) */
 	unsigned char retransmit_count; /* tx packet restansmit count by software */
 	unsigned char channel;          /* tx packet channel, set to WIFI_CAST_CHANNEL_CURRENT or WIFI_CAST_CHANNEL_ALL */
-	unsigned char tx_rate;     /* tx packet rate, val: MGN_1M, MGN_2M...*/
+	unsigned char tx_rate;     /* tx packet rate, val: RTW_RATE_1M, RTW_RATE_2M...*/
 } wifi_cast_frame_info_t;
 
 #define WIFI_CAST_FRAME_INFO_DEFAULT() \
@@ -92,7 +92,7 @@ typedef struct wifi_cast_frame_info {
         .wait_ms = 3000, \
         .retry_limit = 4, \
         .retransmit_count = 6, \
-        .tx_rate = MGN_54M, \
+        .tx_rate = RTW_RATE_54M, \
     }
 
 /**
