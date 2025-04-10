@@ -1,10 +1,11 @@
 # Example Description
 
-In this application, Ameba is designed as an USB CDC ACM host which can communicate with specific USB CDC ACM device as defined in `usbd_cdc_acm(_new)` application.
+In this application, Ameba is designed as an USB CDC ACM host which can communicate with specific USB CDC ACM device as defined in `usbd_cdc_acm` application.
 
 # HW Configuration
 
-None
+Some Ameba boards need to be reworked to support USB host, refer to AN for details.
+Taking RTL8730EA/QFN100 boards for example, the register R20 shall be parted on with 0Ohm register or just shorted to provide power for USB device via VBUS.
 
 # SW configuration
 

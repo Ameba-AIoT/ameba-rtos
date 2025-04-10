@@ -119,7 +119,7 @@ static void example_ipv6_udp_client(void)
 	ip6_addr_t dest_addr6;
 
 	u32_t addrlen = sizeof(struct sockaddr_in6);
-	int recv_timeout = RECV_TO;
+	struct timeval recv_timeout;
 
 	char recv_data[MAX_RECV_SIZE];
 	char send_data[MAX_SEND_SIZE] = "Hi Server!!";
@@ -131,6 +131,8 @@ static void example_ipv6_udp_client(void)
 	}
 	printf("\n\r[INFO] Create socket successfully\n");
 
+	recv_timeout.tv_sec = RECV_TO / 1000;
+	recv_timeout.tv_usec = (RECV_TO % 1000) * 1000;
 	setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout, sizeof(recv_timeout));
 
 	//initialize value in dest
@@ -397,7 +399,7 @@ static void example_ipv6_mcast_client(void)
 	ip6_addr_t dest_addr6;
 
 	u32_t addrlen = sizeof(struct sockaddr_in6);
-	int recv_timeout = RECV_TO;
+	struct timeval recv_timeout;
 
 	char recv_data[MAX_RECV_SIZE];
 	char send_data[MAX_SEND_SIZE] = "Hi Server!!";
@@ -409,6 +411,8 @@ static void example_ipv6_mcast_client(void)
 	}
 	printf("\n\r[INFO] Create socket successfully\n");
 
+	recv_timeout.tv_sec = RECV_TO / 1000;
+	recv_timeout.tv_usec = (RECV_TO % 1000) * 1000;
 	setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout, sizeof(recv_timeout));
 
 	//initialize value in dest

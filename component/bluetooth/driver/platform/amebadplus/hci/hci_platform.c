@@ -209,15 +209,6 @@ int hci_platform_get_rx_adck_data(uint8_t *data, uint8_t len)
 	return HCI_SUCCESS;
 }
 
-bool hci_platform_check_lmp_subver(uint16_t lmp_subver)
-{
-	if (HCI_DEFAULT_LMP_SUBVER == lmp_subver) {
-		return true;
-	} else {
-		return false;
-	}
-}
-
 static void hci_platform_read_voltage(void)
 {
 	uint32_t value = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_RSVD_FOR_SW1);

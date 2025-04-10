@@ -122,12 +122,12 @@ struct rtw_event_info_joinstatus_joinfail {
  *                    - \b buf: Event data transmitted from the driver layer to the application layer.
  *                    - \b len: Length of buf.
  *                    - \b flag: Flag set by wifi driver.
- *                    - \b user_data: Equal handler_user_data.
+ *                    - \b user_data: Equal to `handler_user_data`.
  * @param[in] handler_user_data : User specific data that will be passed directly to the callback function, can set to NULL.
  * @return
  *    - @ref RTK_SUCCESS : If successfully registers the event.
  *    - @ref RTK_FAIL : If an error occurred.
- * @note  Set the same event_cmds with empty handler_func will unregister the event_cmds.
+ * @note  Set the same `event_cmds` with empty `handler_func` will unregister the `event_cmds`.
  */
 void wifi_reg_event_handler(unsigned int event_cmds, void (*handler_func)(char *buf, int len, int flag, void *user_data), void *handler_user_data);
 

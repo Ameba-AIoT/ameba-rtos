@@ -117,17 +117,6 @@ static inline void coex_extc_paras_config(void)
 	g_extchip_para.pta_pad_gnt = uart_pinname_to_pin(CONFIG_EXT_PTA_PIN_GNT);
 #endif
 
-	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "pta/proto/prim/pridet/trxdet/reqp/gntp/pinr/pinp/ping=%d/%d/%d/%d/%d/%d/%d/%x/%x/%x\r\n",
-			 g_extchip_para.pta_index,
-			 g_extchip_para.active_protocol,
-			 g_extchip_para.pri_mode,
-			 g_extchip_para.pri_det_time,
-			 g_extchip_para.trx_det_time,
-			 g_extchip_para.req_polar,
-			 g_extchip_para.gnt_polar,
-			 g_extchip_para.pta_pad_req,
-			 g_extchip_para.pta_pad_pri,
-			 g_extchip_para.pta_pad_gnt);
 
 }
 

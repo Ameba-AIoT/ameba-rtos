@@ -194,7 +194,7 @@ int wifi_do_fast_connect(void)
 		//set partial scan for entering to listen beacon quickly
 WIFI_RETRY_LOOP:
 		wifi.channel = channel;
-		wifi.pscan_option = PSCAN_FAST_SURVEY;
+		wifi.pscan_option = RTW_PSCAN_FAST_SURVEY;
 		wifi.security_type = (enum rtw_security)security_type;
 		//SSID
 		wifi.ssid.len = strlen((char *)(data->psk_essid));

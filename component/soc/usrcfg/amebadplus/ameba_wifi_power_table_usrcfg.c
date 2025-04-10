@@ -166,7 +166,7 @@ s8 wifi_hal_phy_get_power_limit_value(u8 regulation, u8 band, u8 limit_rate, u8 
 		if (is_shape) {
 			tx_shape_idx = tx_shap_fcc[band][limit_rate];
 		} else {
-			if (band == BAND_ON_24G) {
+			if (band == RTW_BAND_ON_24G) {
 				power_limit = tx_pwr_limit_2g_fcc[limit_rate][chnl_idx];
 			} else {
 				power_limit = tx_pwr_limit_5g_fcc[limit_rate][chnl_idx];
@@ -178,7 +178,7 @@ s8 wifi_hal_phy_get_power_limit_value(u8 regulation, u8 band, u8 limit_rate, u8 
 		if (is_shape) {
 			tx_shape_idx = tx_shap_etsi[band][limit_rate];
 		} else {
-			if (band == BAND_ON_24G) {
+			if (band == RTW_BAND_ON_24G) {
 				power_limit = tx_pwr_limit_2g_etsi[limit_rate][chnl_idx];
 			} else {
 				power_limit = tx_pwr_limit_5g_etsi[limit_rate][chnl_idx];
@@ -190,7 +190,7 @@ s8 wifi_hal_phy_get_power_limit_value(u8 regulation, u8 band, u8 limit_rate, u8 
 		if (is_shape) {
 			tx_shape_idx = tx_shap_mkk[band][limit_rate];
 		} else {
-			if (band == BAND_ON_24G) {
+			if (band == RTW_BAND_ON_24G) {
 				power_limit = tx_pwr_limit_2g_mkk[limit_rate][chnl_idx];
 			} else {
 				power_limit = tx_pwr_limit_5g_mkk[limit_rate][chnl_idx];
@@ -202,7 +202,7 @@ s8 wifi_hal_phy_get_power_limit_value(u8 regulation, u8 band, u8 limit_rate, u8 
 		if (is_shape) {
 			tx_shape_idx = tx_shap_ic[band][limit_rate];
 		} else {
-			if (band == BAND_ON_24G) {
+			if (band == RTW_BAND_ON_24G) {
 				power_limit = tx_pwr_limit_2g_ic[limit_rate][chnl_idx];
 			} else {
 				power_limit = tx_pwr_limit_5g_ic[limit_rate][chnl_idx];
@@ -214,7 +214,7 @@ s8 wifi_hal_phy_get_power_limit_value(u8 regulation, u8 band, u8 limit_rate, u8 
 		if (is_shape) {
 			tx_shape_idx = tx_shap_kcc[band][limit_rate];
 		} else {
-			if (band == BAND_ON_24G) {
+			if (band == RTW_BAND_ON_24G) {
 				power_limit = tx_pwr_limit_2g_kcc[limit_rate][chnl_idx];
 			} else {
 				power_limit = tx_pwr_limit_5g_kcc[limit_rate][chnl_idx];
@@ -226,7 +226,7 @@ s8 wifi_hal_phy_get_power_limit_value(u8 regulation, u8 band, u8 limit_rate, u8 
 		if (is_shape) {
 			tx_shape_idx = tx_shap_acma[band][limit_rate];
 		} else {
-			if (band == BAND_ON_24G) {
+			if (band == RTW_BAND_ON_24G) {
 				power_limit = tx_pwr_limit_2g_acma[limit_rate][chnl_idx];
 			} else {
 				power_limit = tx_pwr_limit_5g_acma[limit_rate][chnl_idx];
@@ -238,7 +238,7 @@ s8 wifi_hal_phy_get_power_limit_value(u8 regulation, u8 band, u8 limit_rate, u8 
 		if (is_shape) {
 			tx_shape_idx = tx_shap_ncc[band][limit_rate];
 		} else {
-			if (band == BAND_ON_24G) {
+			if (band == RTW_BAND_ON_24G) {
 				power_limit = tx_pwr_limit_2g_ncc[limit_rate][chnl_idx];
 			} else {
 				power_limit = tx_pwr_limit_5g_ncc[limit_rate][chnl_idx];
@@ -250,7 +250,7 @@ s8 wifi_hal_phy_get_power_limit_value(u8 regulation, u8 band, u8 limit_rate, u8 
 		if (is_shape) {
 			tx_shape_idx = tx_shap_mexico[band][limit_rate];
 		} else {
-			if (band == BAND_ON_24G) {
+			if (band == RTW_BAND_ON_24G) {
 				power_limit = tx_pwr_limit_2g_mexico[limit_rate][chnl_idx];
 			} else {
 				power_limit = tx_pwr_limit_5g_mexico[limit_rate][chnl_idx];
@@ -262,7 +262,7 @@ s8 wifi_hal_phy_get_power_limit_value(u8 regulation, u8 band, u8 limit_rate, u8 
 		if (is_shape) {
 			tx_shape_idx = tx_shap_chile[band][limit_rate];
 		} else {
-			if (band == BAND_ON_24G) {
+			if (band == RTW_BAND_ON_24G) {
 				power_limit = tx_pwr_limit_2g_chile[limit_rate][chnl_idx];
 			} else {
 				power_limit = tx_pwr_limit_5g_chile[limit_rate][chnl_idx];
@@ -274,7 +274,7 @@ s8 wifi_hal_phy_get_power_limit_value(u8 regulation, u8 band, u8 limit_rate, u8 
 		if (is_shape) {
 			tx_shape_idx = tx_shap_ukraine[band][limit_rate];
 		} else {
-			if (band == BAND_ON_24G) {
+			if (band == RTW_BAND_ON_24G) {
 				power_limit = tx_pwr_limit_2g_ukraine[limit_rate][chnl_idx];
 			} else {
 				power_limit = tx_pwr_limit_5g_ukraine[limit_rate][chnl_idx];
@@ -286,7 +286,7 @@ s8 wifi_hal_phy_get_power_limit_value(u8 regulation, u8 band, u8 limit_rate, u8 
 		if (is_shape) {
 			tx_shape_idx = tx_shap_cn[band][limit_rate];
 		} else {
-			if (band == BAND_ON_24G) {
+			if (band == RTW_BAND_ON_24G) {
 				power_limit = tx_pwr_limit_2g_cn[limit_rate][chnl_idx];
 			} else {
 				power_limit = tx_pwr_limit_5g_cn[limit_rate][chnl_idx];
@@ -298,7 +298,7 @@ s8 wifi_hal_phy_get_power_limit_value(u8 regulation, u8 band, u8 limit_rate, u8 
 		if (is_shape) {
 			tx_shape_idx = tx_shap_qatar[band][limit_rate];
 		} else {
-			if (band == BAND_ON_24G) {
+			if (band == RTW_BAND_ON_24G) {
 				power_limit = tx_pwr_limit_2g_qatar[limit_rate][chnl_idx];
 			} else {
 				power_limit = tx_pwr_limit_5g_qatar[limit_rate][chnl_idx];
@@ -310,7 +310,7 @@ s8 wifi_hal_phy_get_power_limit_value(u8 regulation, u8 band, u8 limit_rate, u8 
 		if (is_shape) {
 			tx_shape_idx = tx_shap_uk[band][limit_rate];
 		} else {
-			if (band == BAND_ON_24G) {
+			if (band == RTW_BAND_ON_24G) {
 				power_limit = tx_pwr_limit_2g_uk[limit_rate][chnl_idx];
 			} else {
 				power_limit = tx_pwr_limit_5g_uk[limit_rate][chnl_idx];
@@ -322,7 +322,7 @@ s8 wifi_hal_phy_get_power_limit_value(u8 regulation, u8 band, u8 limit_rate, u8 
 		if (is_shape) {
 			tx_shape_idx = -1;
 		} else {
-			if (band == BAND_ON_24G) {
+			if (band == RTW_BAND_ON_24G) {
 				power_limit = tx_pwr_limit_2g_ww[limit_rate][chnl_idx];
 			} else {
 				power_limit = tx_pwr_limit_5g_ww[limit_rate][chnl_idx];
@@ -333,7 +333,7 @@ s8 wifi_hal_phy_get_power_limit_value(u8 regulation, u8 band, u8 limit_rate, u8 
 		if (is_shape) {
 			tx_shape_idx = tx_shap_ext[band][limit_rate];
 		} else {
-			if (band == BAND_ON_24G) {
+			if (band == RTW_BAND_ON_24G) {
 				power_limit = tx_pwr_limit_2g_ext[limit_rate][chnl_idx];
 			} else {
 				power_limit = tx_pwr_limit_5g_ext[limit_rate][chnl_idx];

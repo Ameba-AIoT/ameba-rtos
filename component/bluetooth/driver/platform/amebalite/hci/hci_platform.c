@@ -159,15 +159,6 @@ int hci_platform_get_write_phy_efuse_data(uint8_t *data, uint8_t len)
 	return HCI_SUCCESS;
 }
 
-bool hci_platform_check_lmp_subver(uint16_t lmp_subver)
-{
-	if (HCI_DEFAULT_LMP_SUBVER == lmp_subver) {
-		return true;
-	} else {
-		return false;
-	}
-}
-
 static uint8_t hci_platform_read_efuse(void)
 {
 	uint8_t i;

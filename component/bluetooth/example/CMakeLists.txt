@@ -113,3 +113,9 @@ if(CONFIG_BT_WIFIMATE_DEVICE OR CONFIG_BT_WIFIMATE_CONFIGURATOR)
         ble_wifimate
     )
 endif()
+
+if (CONFIG_BT_OTA_CENTRAL OR CONFIG_BT_OTA_PERIPHERAL)
+    ameba_add_subdirectory(
+        ble_ota
+    )
+endif()

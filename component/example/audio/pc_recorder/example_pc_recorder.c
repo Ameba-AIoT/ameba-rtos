@@ -820,7 +820,10 @@ void pc_playback_task(void *param)
 		printf("[PC RECORDER INFO] create socket: %d\n", server_fd);
 
 		int recv_timeout_ms = 5000;
-		setsockopt(server_fd, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout_ms, sizeof(recv_timeout_ms));
+		struct timeval tv;
+		tv.tv_sec  = recv_timeout_ms / 1000;
+		tv.tv_usec = (recv_timeout_ms % 1000) * 1000;
+		setsockopt(server_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
 		server_addr.sin_family = AF_INET;
 		server_addr.sin_port = htons(80);

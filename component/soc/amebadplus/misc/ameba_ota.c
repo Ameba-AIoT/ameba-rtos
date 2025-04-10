@@ -103,57 +103,48 @@ u32 get_ota_tartget_header(ota_context *ctx, u8 *buf, u32 len)
 	update_file_hdr *pOtaFileHdr;
 	update_ota_target_hdr *pOtaTgtHdr = ctx->otaTargetHdr;
 	u8 *pTempAddr;
-	u32 i = 0, j = 0;
-	int index = -1;
+	u32 i = 0;
 
 	/*check if buf and len is valid or not*/
 	if ((len < HEADER_LEN) || (!buf)) {
-		goto error;
+		return 0;
 	}
 
 	pOtaFileHdr = (update_file_hdr *)buf;
 	pTempAddr = buf + HEADER_LEN;
+	pOtaTgtHdr->ValidImgCnt = 0;
 
 	if (len < (pOtaTgtHdr->FileHdr.HdrNum * SUB_HEADER_LEN + HEADER_LEN)) {
-		goto error;
+		return 0;
 	}
 
 	/*get the target OTA header from the new firmware file header*/
 	for (i = 0; i < pOtaFileHdr->HdrNum; i++) {
-		index = -1;
 		pTempAddr = buf + HEADER_LEN + SUB_HEADER_LEN * i;
 		ImgHdr = (update_file_img_hdr *)(pTempAddr);
 
-		if (strncmp("OTA", (const char *)ImgHdr->Signature, 3) == 0) {
-			index = 0;
-		} else {
-			goto error;
+		if (strncmp("OTA", (const char *)ImgHdr->Signature, 3) != 0) {
+			return 0;
 		}
 
-		if (index >= 0) {
-			_memcpy((void *)(u8 *)(&pOtaTgtHdr->FileImgHdr[j]), (void *)pTempAddr, sizeof(update_file_img_hdr));
-			j++;
-		}
+		_memcpy((void *)(u8 *)(&pOtaTgtHdr->FileImgHdr[pOtaTgtHdr->ValidImgCnt]), (void *)pTempAddr, sizeof(update_file_img_hdr));
+		pOtaTgtHdr->ValidImgCnt++;
 	}
 
-	pOtaTgtHdr->ValidImgCnt = j;
-
-	if (j == 0) {
+	if (pOtaTgtHdr->ValidImgCnt == 0) {
 		ota_printf(_OTA_INFO_, "[%s] no valid image\n", __FUNCTION__);
-		goto error;
+		return 0;
 	}
 
 	return 1;
-error:
-	return 0;
 }
 
 /**
   * @brief  check if update image length exceeds the layout
   * @param  pOtaTgtHdr: point to target image OTA  header
   * The retval can be one of the followings:
-  *              TRUE: update image length is valid
-  *              FALSE: update image length is invalid
+  *              1: update image length is valid
+  *              0: update image length is invalid
   */
 u8 ota_checkimage_layout(update_ota_target_hdr *pOtaTgtHdr)
 {
@@ -185,11 +176,11 @@ u8 ota_checkimage_layout(update_ota_target_hdr *pOtaTgtHdr)
 			ota_printf(_OTA_ERR_, "ImgID: %lu, OTA%d start addr: 0x%08X, end addr: 0x%08X, OTA image Length(%d) > Layout(%d)!!!\n",
 					   pOtaTgtHdr->FileImgHdr[index].ImgID, targetIdx + 1, (unsigned int)start_addr, (unsigned int)end_addr, pOtaTgtHdr->FileImgHdr[index].ImgLen,
 					   (end_addr - start_addr));
-			return FALSE;
+			return 0;
 		}
 	}
 
-	return TRUE;
+	return 1;
 }
 
 /**
@@ -207,7 +198,6 @@ u32 verify_ota_checksum(update_ota_target_hdr *pOtaTgtHdr, u8 targetIdx, int ind
 	u32 addr;
 	u32 len;
 	Manifest_TypeDef *manifest = NULL;
-	u8 res = TRUE;
 
 	addr = IMG_ADDR[pOtaTgtHdr->FileImgHdr[index].ImgID][targetIdx];
 	len = pOtaTgtHdr->FileImgHdr[index].ImgLen - sizeof(Manifest_TypeDef);
@@ -227,11 +217,11 @@ u32 verify_ota_checksum(update_ota_target_hdr *pOtaTgtHdr, u8 targetIdx, int ind
 	if (flash_checksum != pOtaTgtHdr->FileImgHdr[index].Checksum) {
 		ota_printf(_OTA_ERR_, "OTA image(%08x) checksum error!!!\nCalculated checksum 0x%8x, host checksum 0x%8x\n", (unsigned int)addr, \
 				   (unsigned int)flash_checksum, (unsigned int)pOtaTgtHdr->FileImgHdr[index].Checksum);
-		res = FALSE;
+		return 0;
 	} else {
 		ota_printf(_OTA_INFO_, "OTA image(%08x) checksum ok!!!\n", (unsigned int)addr);
 	}
-	return res;
+	return 1;
 }
 
 /**
@@ -323,24 +313,51 @@ static int ota_ssl_random(void *p_rng, u8 *output, size_t output_len)
 	return 0;
 }
 
+static int ota_ssl_verify(void *data, mbedtls_x509_crt *crt, int depth, int *flags)
+{
+	(void) data;
+	(void) depth;
+	char *buf = NULL;
+
+	buf = (char *)rtos_mem_zmalloc(1024);
+	if (!buf) {
+		return 0;
+	}
+
+	mbedtls_x509_crt_info(buf, sizeof(buf) - 1, "", crt);
+
+	if (*flags) {
+		ota_printf(_OTA_INFO_, "\nERROR: certificate verify\n%s\n", buf);
+	} else {
+		ota_printf(_OTA_INFO_, "\nCertificate verified\n%s\n", buf);
+	}
+	rtos_mem_free(buf);
+	return 0;
+}
+
 int ota_update_tls_new(ota_context *ctx)
 {
 	int ret = -1;
-	update_tls *tls = NULL;
 
-	tls = (update_tls *)rtos_mem_malloc(sizeof(update_tls));
-	if (!tls) {
+	ctx->tls = (update_tls *)rtos_mem_malloc(sizeof(update_tls));
+	if (!ctx->tls) {
 		ota_printf(_OTA_ERR_, "%s, tls malloc failed", __func__);
 		return -1;
 	}
-	ctx->tls = tls;
-	mbedtls_ssl_context *ssl = &tls->ssl;
-	mbedtls_ssl_config *conf = &tls->conf;
+
+	mbedtls_ssl_context *ssl = &ctx->tls->ssl;
+	mbedtls_ssl_config *conf = &ctx->tls->conf;
+	mbedtls_x509_crt *ca = &ctx->tls->ca;
+	mbedtls_x509_crt *cert = &ctx->tls->cert;
+	mbedtls_pk_context *key = &ctx->tls->key;
 
 	ota_printf(_OTA_INFO_, "  . Setting up the SSL/TLS structure...");
 
 	mbedtls_ssl_init(ssl);
 	mbedtls_ssl_config_init(conf);
+	mbedtls_x509_crt_init(ca);
+	mbedtls_x509_crt_init(cert);
+	mbedtls_pk_init(key);
 
 	if ((ret = mbedtls_ssl_config_defaults(conf,
 										   MBEDTLS_SSL_IS_CLIENT,
@@ -348,27 +365,48 @@ int ota_update_tls_new(ota_context *ctx)
 										   MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
 
 		ota_printf(_OTA_ERR_, "ERROR: mbedtls_ssl_config_defaults ret(%d)\n", ret);
-		goto exit;
+		return -1;
 	}
 
-	mbedtls_ssl_conf_authmode(conf, MBEDTLS_SSL_VERIFY_NONE);
 	mbedtls_ssl_conf_rng(conf, ota_ssl_random, NULL);
 
 	if ((ret = mbedtls_ssl_setup(ssl, conf)) != 0) {
 		ota_printf(_OTA_ERR_, "ERROR: mbedtls_ssl_setup ret(%d)\n", ret);
-		goto exit;
+		return -1;
 	}
 
 	ota_printf(_OTA_INFO_, " ok\n");
 
 	mbedtls_ssl_set_bio(ssl, &ctx->fd, mbedtls_net_send, mbedtls_net_recv, NULL);
-	return 0;
-exit:
-	if (tls) {
-		rtos_mem_free(tls);
-		ctx->tls = NULL;
+
+	if (ctx->ca_cert != NULL) {
+		if (mbedtls_x509_crt_parse(ca, (const unsigned char *)ctx->ca_cert, strlen(ctx->ca_cert) + 1) != 0) {
+			ota_printf(_OTA_ERR_, "parse ca_crt failed!");
+			return -1;
+		}
+		mbedtls_ssl_conf_ca_chain(conf, ca, NULL);
+		mbedtls_ssl_conf_authmode(conf, MBEDTLS_SSL_VERIFY_REQUIRED);
+		mbedtls_ssl_conf_verify(conf, (int (*)(void *, mbedtls_x509_crt *, int, uint32_t *))ota_ssl_verify, NULL);
+		ota_printf(_OTA_INFO_, "ca_crt parse done");
+	} else {
+		mbedtls_ssl_conf_authmode(conf, MBEDTLS_SSL_VERIFY_NONE);
 	}
-	return -1;
+
+	if (ctx->client_cert != NULL && ctx->private_key != NULL) {
+		if (mbedtls_x509_crt_parse(cert, (const unsigned char *)ctx->client_cert, strlen(ctx->client_cert) + 1) != 0) {
+			ota_printf(_OTA_ERR_, "parse client_crt failed!");
+			return -1;
+		}
+
+		if (mbedtls_pk_parse_key(key, (const unsigned char *)ctx->private_key, strlen(ctx->private_key) + 1, NULL, 0, NULL, NULL) != 0) {
+			ota_printf(_OTA_ERR_, "parse private_key failed!");
+			return -1;
+		}
+
+		mbedtls_ssl_conf_own_cert(conf, cert, key);
+	}
+
+	return 0;
 }
 
 int ota_update_conn_write(ota_context *ctx, u8 *data, int data_len)
@@ -648,7 +686,7 @@ int ota_update_http_connect_server(ota_context *ctx)
 	server = gethostbyname(ctx->host);
 	if (server == NULL) {
 		ota_printf(_OTA_ERR_, "[ERROR] Get host ip failed\n");
-		goto exit;
+		return -1;
 	}
 
 	_memset(&server_addr, 0, sizeof(server_addr));
@@ -658,7 +696,7 @@ int ota_update_http_connect_server(ota_context *ctx)
 
 	if (connect(ctx->fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
 		ota_printf(_OTA_ERR_, "[%s] Socket connect failed", __FUNCTION__);
-		goto exit;
+		return -1;
 	}
 
 	ota_printf(_OTA_INFO_, "[%s] Connect success!\n", __FUNCTION__);
@@ -667,22 +705,19 @@ int ota_update_http_connect_server(ota_context *ctx)
 		ret = ota_update_tls_new(ctx);
 		if (ret != 0) {
 			ota_printf(_OTA_ERR_, "[%s] tls create failed", __FUNCTION__);
-			goto exit;
+			return -1;
 		}
 
 		ota_printf(_OTA_INFO_, "  . Performing the SSL/TLS handshake...");
 
 		if ((ret = mbedtls_ssl_handshake(&ctx->tls->ssl)) != 0) {
 			ota_printf(_OTA_INFO_, "ERROR: mbedtls_ssl_handshake ret(-0x%x)", -ret);
-			goto exit;
+			return -1;
 		}
 		ota_printf(_OTA_INFO_, " ok\n");
 		ota_printf(_OTA_INFO_, "  . Use ciphersuite %s\n", mbedtls_ssl_get_ciphersuite(&ctx->tls->ssl));
 	}
 	return 0;
-exit:
-	closesocket(ctx->fd);
-	return -1;
 }
 
 int ota_update_http_prepare(ota_context *ctx)
@@ -717,9 +752,13 @@ int ota_update_http_close(ota_context *ctx)
 
 	if (ctx->type == OTA_HTTPS) {
 		if (ctx->tls) {
+			mbedtls_x509_crt_free(&ctx->tls->ca);
+			mbedtls_x509_crt_free(&ctx->tls->cert);
+			mbedtls_pk_free(&ctx->tls->key);
 			mbedtls_ssl_free(&ctx->tls->ssl);
 			mbedtls_ssl_config_free(&ctx->tls->conf);
 			rtos_mem_free(ctx->tls);
+			ctx->tls = NULL;
 		}
 	}
 	return 0;
@@ -750,7 +789,7 @@ u32 recv_ota_file_header(ota_context *ctx, u8 *Recvbuf, u32 writelen, u32 *len)
 			read_bytes = ota_update_conn_read(ctx, buf, TempLen);
 			if (read_bytes < 0) {
 				ota_printf(_OTA_ERR_, "[%s] read socket failed\n", __FUNCTION__);
-				goto error;
+				return 0;
 			}
 			if (read_bytes == 0) {
 				break;
@@ -770,7 +809,7 @@ u32 recv_ota_file_header(ota_context *ctx, u8 *Recvbuf, u32 writelen, u32 *len)
 
 	if (pOtaTgtHdr->FileHdr.HdrNum > MAX_IMG_NUM) {
 		ota_printf(_OTA_ERR_, "ota header num: %lu is invaild\n", pOtaTgtHdr->FileHdr.HdrNum);
-		goto error;
+		return 0;
 	}
 
 	/*read the remaining Header info*/
@@ -787,17 +826,18 @@ u32 recv_ota_file_header(ota_context *ctx, u8 *Recvbuf, u32 writelen, u32 *len)
 
 	*len = (pOtaFileHdr->HdrNum * SUB_HEADER_LEN) + HEADER_LEN;
 	return 1;
-error:
-	return 0;
 }
 
-void download_percentage(int cur_size, int total_size)
+void download_percentage(ota_context *ctx, int cur_size, int total_size)
 {
 	static int percent_bak = -1;
 	int percent = cur_size * 100 / total_size;
 	if (percent_bak != percent && percent % 10 == 0) {
 		percent_bak = percent;
 		ota_printf(_OTA_INFO_, "ota download percentage: %d", percent);
+	}
+	if (ctx->progress_cb) {
+		ctx->progress_cb(percent);
 	}
 }
 
@@ -1021,11 +1061,11 @@ int ota_update_fw_program(ota_context *ctx, u8 *buf, u32 len)
 	}
 
 	size = download_packet_process(ctx, buf, len);
-	download_percentage(size, otaCtrl->ImageLen);
+	download_percentage(ctx, size, otaCtrl->ImageLen);
 
 	if (otaCtrl->RemainBytes <= 0) {
 		size += sizeof(Manifest_TypeDef);    //add the manifest length
-		download_percentage(size, otaCtrl->ImageLen);
+		download_percentage(ctx, size, otaCtrl->ImageLen);
 
 		ota_printf(_OTA_INFO_, "Update file size: %d bytes, start addr:0x%08x\n", size, (unsigned int)(otaCtrl->FlashAddr + SPI_FLASH_BASE));
 		if ((u32)(size) != otaCtrl->ImageLen) {
@@ -1166,6 +1206,16 @@ update_ota_exit:
 	return ret;
 }
 
+int ota_update_register_progress_cb(ota_context *ctx, ota_progress_cb_t cb)
+{
+	if (!ctx) {
+		ota_printf(_OTA_ERR_, "%s, ctx is null", __func__);
+		return -1;
+	}
+	ctx->progress_cb = cb;
+	return 0;
+}
+
 int ota_update_connection_params_init(ota_context *ctx, char *host, int port, char *resource)
 {
 	if (ctx->type == OTA_USER) {
@@ -1271,6 +1321,18 @@ void ota_update_deinit(ota_context *ctx)
 
 	if (ctx->resource) {
 		rtos_mem_free(ctx->resource);
+	}
+
+	if (ctx->ca_cert) {
+		rtos_mem_free(ctx->ca_cert);
+	}
+
+	if (ctx->client_cert) {
+		rtos_mem_free(ctx->client_cert);
+	}
+
+	if (ctx->private_key) {
+		rtos_mem_free(ctx->private_key);
 	}
 
 	if (ctx->otactrl) {

@@ -1087,7 +1087,7 @@ u8 whc_dev_promisc_callback_indicate(struct rtw_rx_pkt_info *pkt_info)
 {
 	/* TODO for Linux */
 	(void) pkt_info;
-	return NEED_DRIVER_HANDLE;
+	return RTW_PROMISC_NEED_DRV_HDL;
 }
 
 int whc_dev_ip_in_table_indicate(u8 gate, u8 ip)
