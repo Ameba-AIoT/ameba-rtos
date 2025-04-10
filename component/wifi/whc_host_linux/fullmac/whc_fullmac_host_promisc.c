@@ -70,10 +70,10 @@ static int rtw_promisc_rx_80211_radiotap(struct rtw_rx_pkt_info *ppktinfo)
 		} else {
 			*((uint16_t *)pos) |= cpu_to_le16((IEEE80211_CHAN_2GHZ));
 		}
-		if ((ppktinfo->data_rate == MGN_1M) || \
-			(ppktinfo->data_rate == MGN_2M) || \
-			(ppktinfo->data_rate == MGN_5_5M) || \
-			(ppktinfo->data_rate == MGN_11M)) {
+		if ((ppktinfo->data_rate == RTW_RATE_1M) || \
+			(ppktinfo->data_rate == RTW_RATE_2M) || \
+			(ppktinfo->data_rate == RTW_RATE_5_5M) || \
+			(ppktinfo->data_rate == RTW_RATE_11M)) {
 			*((uint16_t *)pos) |= cpu_to_le16((IEEE80211_CHAN_CCK));
 		} else {
 			*((uint16_t *)pos) |= cpu_to_le16((IEEE80211_CHAN_OFDM));

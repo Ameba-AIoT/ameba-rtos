@@ -257,8 +257,8 @@ void wifi_set_edcca_mode(u8 edcca_mode);
 /**
  * @brief  Set global variable wifi_wpa_mode.
  * @param[in]  wpa_mode:
- 	(WPA_AUTO_MODE,WPA_ONLY_MODE, WPA2_ONLY_MODE,
-	WPA3_ONLY_MODE,WPA_WPA2_MIXED_MODE, WPA2_WPA3_MIXED_MODE).
+ 	(RTW_WPA_AUTO_MODE,RTW_WPA_ONLY_MODE, RTW_WPA2_ONLY_MODE,
+	RTW_WPA3_ONLY_MODE,RTW_WPA_WPA2_MIXED_MODE, RTW_WPA2_WPA3_MIXED_MODE).
  * @return  0:success  -1:fail.
  */
 int wifi_set_wpa_mode(u8 wpa_mode);

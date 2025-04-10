@@ -65,21 +65,21 @@ NEXT:
 	}
 
 	/* config csi parameters and enable wifi csi */
-	act_param.group_num = CSI_GROUP_NUM_1;
-	act_param.mode = CSI_MODE_RX_RESP;
-	act_param.accuracy = CSI_ACCU_1BYTE;
+	act_param.group_num = RTW_CSI_GROUP_NUM_1;
+	act_param.mode = RTW_CSI_MODE_RX_RESP;
+	act_param.accuracy = RTW_CSI_ACCU_1BYTE;
 	act_param.trig_period = 200;     /* units: 320us */
-	act_param.data_rate = MGN_6M;    /* ofdm 6 mpbs*/
+	act_param.data_rate = RTW_RATE_6M;    /* ofdm 6 mpbs*/
 	act_param.trig_frame_mgnt = 0;   /* no need for rx resp mode, default 0*/
 	act_param.trig_frame_ctrl = 0;   /* no need for rx resp mode, default 0*/
 	act_param.trig_frame_data = 0;   /* no need for rx resp mode, default 0*/
-	act_param.csi_role = CSI_OP_ROLE_TRX;
+	act_param.csi_role = RTW_CSI_OP_ROLE_TRX;
 
 	/* cis cfg and csi en */
-	act_param.act = CSI_ACT_CFG;  /* csi cfg */
+	act_param.act = RTW_CSI_ACT_CFG;  /* csi cfg */
 	wifi_csi_config(&act_param);
 
-	act_param.act = CSI_ACT_EN;  /* csi en */
+	act_param.act = RTW_CSI_ACT_EN;  /* csi en */
 	act_param.enable = 1;
 	wifi_csi_config(&act_param);
 
@@ -88,7 +88,7 @@ NEXT:
 		if (rtos_sema_take(wc_ready_sema, 0xFFFFFFFF) != RTK_SUCCESS) {
 			rtos_sema_delete(wc_ready_sema);
 
-			act_param.act = CSI_ACT_EN;  /* csi dis */
+			act_param.act = RTW_CSI_ACT_EN;  /* csi dis */
 			act_param.enable = 0;
 			wifi_csi_config(&act_param);
 			break;

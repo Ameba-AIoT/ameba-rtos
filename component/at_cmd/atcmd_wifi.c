@@ -168,12 +168,12 @@ static void print_scan_result(struct rtw_scan_result *record)
 	at_printf(""MAC_FMT", ", MAC_ARG(record->bssid.octet));
 	at_printf("%d, ", record->signal_strength);
 	at_printf("%d, ", record->channel);
-	at_printf("%s, ", (record->wireless_mode & WLAN_MD_11AX) ? "AX" :
-			  (record->wireless_mode & WLAN_MD_11AC) ? "AC" :
-			  (record->wireless_mode & WLAN_MD_11N) ? "N" :
-			  (record->wireless_mode & WLAN_MD_11A) ? "A" :
-			  (record->wireless_mode & WLAN_MD_11G) ? "G" :
-			  (record->wireless_mode & WLAN_MD_11B) ? "B" :
+	at_printf("%s, ", (record->wireless_mode & RTW_80211_AX) ? "AX" :
+			  (record->wireless_mode & RTW_80211_AC) ? "AC" :
+			  (record->wireless_mode & RTW_80211_N) ? "N" :
+			  (record->wireless_mode & RTW_80211_A) ? "A" :
+			  (record->wireless_mode & RTW_80211_G) ? "G" :
+			  (record->wireless_mode & RTW_80211_B) ? "B" :
 			  "Unknown");
 	at_printf("\"%s\", ", (record->security == RTW_SECURITY_OPEN) ? "Open" :
 			  (record->security == RTW_SECURITY_WEP_PSK) ? "WEP" :
@@ -234,7 +234,8 @@ AT command process:
 ****************************************************************/
 void at_wlconn(void *arg)
 {
-	int argc = 0, error_no = 0, ret = 0, i = 0, j = 0, k = 0;
+	int argc = 0, ret = 0, i = 0, j = 0, k = 0;
+	int error_no = RTW_AT_OK;
 	unsigned int mac[ETH_ALEN];
 	char *argv[MAX_ARGC] = {0};
 	char empty_bssid[6] = {0};
@@ -246,14 +247,14 @@ void at_wlconn(void *arg)
 
 	if (arg == NULL) {
 		RTK_LOGW(NOTAG, "[+WLCONN] The parameters can not be ignored\r\n");
-		error_no = 1;
+		error_no = RTW_AT_ERR_REQUIRED_PARAM_MISS;
 		goto end;
 	}
 
 	argc = parse_param(arg, argv);
 	if ((argc < 2) || (argc > 11)) {
 		RTK_LOGW(NOTAG, "[+WLCONN] The parameters format ERROR\r\n");
-		error_no = 1;
+		error_no = RTW_AT_ERR_PARAM_NUM_ERR;
 		goto end;
 	}
 
@@ -264,7 +265,7 @@ void at_wlconn(void *arg)
 		if (0 == strcmp("ssid", argv[i])) {
 			if ((argc <= j) || (strlen(argv[j]) == 0) || (strlen(argv[j]) > RTW_ESSID_MAX_SIZE)) {
 				RTK_LOGW(NOTAG, "[+WLCONN] Invalid SSID\r\n");
-				error_no = 2;
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
 			wifi.ssid.len = strlen(argv[j]);
@@ -274,7 +275,7 @@ void at_wlconn(void *arg)
 		else if (0 == strcmp("bssid", argv[i])) {
 			if ((argc <= j) || (strlen(argv[j]) != 17)) {
 				RTK_LOGW(NOTAG, "[+WLCONN] Invalid BSSID\r\n");
-				error_no = 2;
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
 			_sscanf_ss(argv[j], MAC_FMT, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
@@ -286,7 +287,7 @@ void at_wlconn(void *arg)
 		else if (0 == strcmp("pw", argv[i])) {
 			if ((argc <= j) || (strlen(argv[j]) == 0)) {
 				RTK_LOGW(NOTAG, "[+WLCONN] Invalid password\r\n");
-				error_no = 2;
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
 			strncpy((char *)password, argv[j], sizeof(password) - 1);
@@ -298,7 +299,7 @@ void at_wlconn(void *arg)
 			if ((argc <= j) || (strlen(argv[j]) != 1)
 				|| (*(char *)argv[j] < '0') || (*(char *)argv[j] > '3')) {
 				RTK_LOGW(NOTAG, "[+WLCONN] Invalid KEYID\r\n");
-				error_no = 2;
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
 			wifi.key_id = atoi(argv[j]);
@@ -312,7 +313,7 @@ void at_wlconn(void *arg)
 		/* Invalid input. */
 		else {
 			RTK_LOGW(NOTAG, "[+WLCONN] Invalid parameter type\r\n");
-			error_no = 2;
+			error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 			goto end;
 		}
 	}
@@ -320,7 +321,7 @@ void at_wlconn(void *arg)
 	/* Check bssid is empty && ssid is null */
 	if (!memcmp(wifi.bssid.octet, empty_bssid, sizeof(empty_bssid)) && (wifi.ssid.val[0] == 0)) {
 		RTK_LOGW(NOTAG, "[+WLCONN] SSID should exist here\r\n");
-		error_no = 3;
+		error_no = RTW_AT_ERR_REQUIRED_PARAM_MISS;
 		goto end;
 	}
 
@@ -341,7 +342,7 @@ void at_wlconn(void *arg)
 			RTK_LOGW(NOTAG, "(busy)");
 		}
 		RTK_LOGW(NOTAG, "\r\n");
-		error_no = 4;
+		error_no = RTW_AT_ERR_CONNECT_FAILED;
 		goto end;
 	}
 
@@ -354,10 +355,10 @@ void at_wlconn(void *arg)
 
 end:
 	init_wifi_struct();
-	if (error_no == 0) {
+	if (error_no == RTW_AT_OK) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
-		if (error_no == 1 || error_no == 2) {
+		if (error_no >= RTW_AT_ERR_REQUIRED_PARAM_MISS && error_no <= RTW_AT_ERR_PARAM_NUM_ERR) {
 			at_wlconn_help();
 		}
 		at_printf(ATCMD_ERROR_END_STR, error_no);
@@ -374,8 +375,8 @@ AT command process:
 void at_wldisconn(void *arg)
 {
 	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
-	int timeout = 20;
-	int error_no = 0, ret = 0;
+	int timeout = 20, ret = 0;
+	int error_no = RTW_AT_OK;
 	struct rtw_wifi_setting wifi_setting = {0};
 
 	UNUSED(arg);
@@ -391,7 +392,7 @@ void at_wldisconn(void *arg)
 	}
 
 	if (wifi_get_join_status(&join_status) != RTK_SUCCESS) {
-		error_no = 2;
+		error_no = RTW_AT_ERR_UNKNOWN_ERR;
 		RTK_LOGW(NOTAG, "[+WLDISCONN] Wifi get join status ERROR\r\n");
 		goto end;
 	}
@@ -405,16 +406,16 @@ void at_wldisconn(void *arg)
 	ret = wifi_disconnect();
 	if (ret < 0) {
 		RTK_LOGW(NOTAG, "[+WLDISCONN] Disconnect ERROR\r\n");
-		error_no = 3;
+		error_no = RTW_AT_ERR_UNKNOWN_ERR;
 		goto end;
 	}
 
-	/* error_no == 4 means time out. */
-	error_no = 4;
+	/* error_no == RTW_AT_ERR_STATUS_GET_FAILED means that the expected results have not been obtained within the specified time */
+	error_no = RTW_AT_ERR_RESULT_GET_FAILED;
 	while (timeout > 0) {
 		if ((wifi_get_join_status(&join_status) == RTK_SUCCESS) && join_status != RTW_JOINSTATUS_SUCCESS) {
 			RTK_LOGI(NOTAG, "[+WLDISCONN] disconnect done\r\n");
-			error_no = 0;
+			error_no = RTW_AT_OK;
 			break;
 		}
 
@@ -429,7 +430,7 @@ end:
 	LwIP_ReleaseIP(STA_WLAN_INDEX);
 #endif
 	init_wifi_struct();
-	if (error_no == 0) {
+	if (error_no == RTW_AT_OK) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
 		at_printf(ATCMD_ERROR_END_STR, error_no);
@@ -490,9 +491,9 @@ AT command process:
 void at_wlscan(void *arg)
 {
 	u8 *channel_list = NULL;
-	int num_channel = 0;
+	int num_channel = 0, ret = 0;
 	unsigned int i = 0, j = 0, argc = 0, scanned_AP_num = 0;
-	int error_no = 0, ret = 0;
+	int error_no = RTW_AT_OK;
 	char *argv[MAX_ARGC] = {0};
 	struct rtw_scan_result *scanned_AP_list = NULL;
 	struct rtw_scan_param scan_param;
@@ -502,13 +503,13 @@ void at_wlscan(void *arg)
 	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
 
 	if (wifi_get_join_status(&join_status) != RTK_SUCCESS) {
-		error_no = 4;
+		error_no = RTW_AT_ERR_UNKNOWN_ERR;
 		RTK_LOGW(NOTAG, "[+WLSCAN] wifi get join status ERROR\r\n");
 		goto end;
 	}
 	if ((join_status > RTW_JOINSTATUS_UNKNOWN) && (join_status < RTW_JOINSTATUS_SUCCESS)) {
 		RTK_LOGW(NOTAG, "[+WLSCAN] Connecting now, forbid scanning\r\n");
-		error_no = 2;
+		error_no = RTW_AT_ERR_INVALID_WIFI_STATUS;
 		goto end;
 	}
 
@@ -521,7 +522,7 @@ void at_wlscan(void *arg)
 			if ((argc <= j) || (0 == strlen(argv[j]))
 				|| (RTW_ESSID_MAX_SIZE < strlen(argv[j]))) {
 				RTK_LOGW(NOTAG, "[+WLSCAN] Invalid ssid\r\n");
-				error_no = 1;
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
 			wifi.ssid.len = strlen(argv[j]);
@@ -532,19 +533,19 @@ void at_wlscan(void *arg)
 		else if (0 == strcmp("ch", argv[i])) {
 			if ((argc <= j) || (0 == strlen(argv[j]))) {
 				RTK_LOGW(NOTAG, "[+WLSCAN] Invalid channel list\r\n");
-				error_no = 1;
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
 			num_channel = count_get_channel_list(argv[j], NULL);
 			if (0 >= num_channel) {
 				RTK_LOGW(NOTAG, "[+WLSCAN] Invalid channel list\r\n");
-				error_no = 1;
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
 			channel_list = (u8 *)rtos_mem_zmalloc(num_channel);
 			if (channel_list == NULL) {
 				RTK_LOGW(NOTAG, "[+WLSCAN]ERROR: Can not malloc memory for channel list\r\n");
-				error_no = 3;
+				error_no = RTW_AT_ERR_MEM_ALLOC_FAIL;
 				goto end;
 			}
 			scan_param.channel_list_num = count_get_channel_list(argv[j], channel_list);
@@ -553,7 +554,7 @@ void at_wlscan(void *arg)
 		/* Invalid input. */
 		else {
 			RTK_LOGW(NOTAG, "[+WLSCAN] Invalid input\r\n");
-			error_no = 1;
+			error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 			goto end;
 		}
 	}
@@ -561,7 +562,7 @@ void at_wlscan(void *arg)
 	ret = wifi_scan_networks(&scan_param, 1);
 	if (ret < RTK_SUCCESS) {
 		RTK_LOGW(NOTAG, "[+WLSCAN] wifi_scan_networks ERROR\r\n");
-		error_no = 5;
+		error_no = RTW_AT_ERR_INVALID_SCAN_PARAM;
 		goto end;
 	}
 
@@ -572,14 +573,14 @@ void at_wlscan(void *arg)
 		scanned_AP_list = (struct rtw_scan_result *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
 		if (scanned_AP_list == NULL) {
 			RTK_LOGW(NOTAG, "[+WLSCAN]ERROR: Can not malloc memory for scan result\r\n");
-			error_no = 3;
+			error_no = RTW_AT_ERR_MEM_ALLOC_FAIL;
 			goto end;
 		}
 
 		if (wifi_get_scan_records(&scanned_AP_num, scanned_AP_list) < 0) {
 			RTK_LOGW(NOTAG, "[+WLSCAN] Get result failed\r\n");
 			rtos_mem_free((void *)scanned_AP_list);
-			error_no = 5;
+			error_no = RTW_AT_ERR_UNKNOWN_ERR;
 			goto end;
 		}
 
@@ -601,10 +602,10 @@ void at_wlscan(void *arg)
 end:
 	RTK_LOGI(NOTAG, "\r\n[+WLSCAN] scan_ap_num: %d\r\n", scanned_AP_num);
 	rtos_mem_free((void *)channel_list);
-	if (error_no == 0) {
+	if (error_no == RTW_AT_OK) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
-		if (error_no == 1) {
+		if (error_no == RTW_AT_ERR_INVALID_PARAM_VALUE) {
 			at_wlscan_help();
 		}
 		at_printf(ATCMD_ERROR_END_STR, error_no);
@@ -675,7 +676,8 @@ AT command process:
 ****************************************************************/
 void at_wlstartap(void *arg)
 {
-	int argc = 0, error_no = 0, ret = 0, i = 0, j = 0;
+	int argc = 0, ret = 0, i = 0, j = 0;
+	int error_no = RTW_AT_OK;
 	char *argv[MAX_ARGC] = {0};
 #ifdef CONFIG_LWIP_LAYER
 	u32 ip_addr, netmask, gw;
@@ -687,14 +689,14 @@ void at_wlstartap(void *arg)
 
 	if (arg == NULL) {
 		RTK_LOGW(NOTAG, "[+WLSTARTAP] The parameters can not be ignored\r\n");
-		error_no = 1;
+		error_no = RTW_AT_ERR_REQUIRED_PARAM_MISS;
 		goto end;
 	}
 
 	argc = parse_param(arg, argv);
 	if ((argc < 2) || (argc > 18)) {
 		RTK_LOGW(NOTAG, "[+WLSTARTAP] command format error\r\n");
-		error_no = 2;
+		error_no = RTW_AT_ERR_PARAM_NUM_ERR;
 		goto end;
 	}
 
@@ -705,7 +707,7 @@ void at_wlstartap(void *arg)
 		if (0 == strcmp("ssid", argv[i])) {
 			if ((argc <= j) || (strlen(argv[j]) == 0) || (strlen(argv[j]) > RTW_ESSID_MAX_SIZE)) {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid SSID length\r\n");
-				error_no = 2;
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
 			ap.ssid.len = strlen(argv[j]);
@@ -715,7 +717,7 @@ void at_wlstartap(void *arg)
 		else if (0 == strcmp("pw", argv[i])) {
 			if ((argc <= j) || (0 == strlen(argv[j])) || (64 < strlen(argv[j]))) {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid password\r\n");
-				error_no = 2;
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
 			ap.password_len = strlen(argv[j]);
@@ -737,7 +739,7 @@ void at_wlstartap(void *arg)
 					security = 4;
 				} else {
 					RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid security value\r\n");
-					error_no = 2;
+					error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 					goto end;
 				}
 			}
@@ -756,7 +758,7 @@ void at_wlstartap(void *arg)
 				get_ip_addr(ap_gw, argv[j]);
 			} else {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid ip value\r\n");
-				error_no = 2;
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
 		} else if (0 == strcmp("pl", argv[i])) {
@@ -764,7 +766,7 @@ void at_wlstartap(void *arg)
 				ip_addr_set_ip4_u32(&start_ip, inet_addr(argv[j]));
 			} else {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid start ip value\r\n");
-				error_no = 2;
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
 
@@ -772,7 +774,7 @@ void at_wlstartap(void *arg)
 				ip_addr_set_ip4_u32(&end_ip, inet_addr(argv[j + 1]));
 			} else {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid end ip value\r\n");
-				error_no = 2;
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
 
@@ -783,7 +785,7 @@ void at_wlstartap(void *arg)
 				get_ip_addr(ap_gw, argv[j]);
 			} else {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid gateway value\r\n");
-				error_no = 2;
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
 		} else if (0 == strcmp("msk", argv[i])) {
@@ -791,15 +793,15 @@ void at_wlstartap(void *arg)
 				get_ip_addr(ap_netmask, argv[j]);
 			} else {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid netmask value\r\n");
-				error_no = 2;
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
 		}
 #endif
 		/* Invalid input. */
 		else {
-			RTK_LOGW(NOTAG, "[+WLSTARTAP] command format error\r\n");
-			error_no = 2;
+			RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid parameter type\r\n");
+			error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 			goto end;
 		}
 	}
@@ -807,7 +809,7 @@ void at_wlstartap(void *arg)
 	/* Check SSID */
 	if (ap.ssid.val[0] == 0) {
 		RTK_LOGW(NOTAG, "[+WLSTARTAP] Empty SSID here\r\n");
-		error_no = 2;
+		error_no = RTW_AT_ERR_REQUIRED_PARAM_MISS;
 		goto end;
 	}
 
@@ -822,7 +824,7 @@ void at_wlstartap(void *arg)
 			ap.security_type = RTW_SECURITY_WEP_PSK;
 		} else {
 			RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid password saved\r\n");
-			error_no = 2;
+			error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 			goto end;
 		}
 	}
@@ -841,7 +843,7 @@ void at_wlstartap(void *arg)
 	}
 	if ((security > 0) && (ap.password == NULL)) {
 		RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid password, please input it\r\n");
-		error_no = 2;
+		error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 		goto end;
 	}
 
@@ -858,19 +860,19 @@ void at_wlstartap(void *arg)
 	ret = wifi_start_ap(&ap);
 	if (ret < 0) {
 		RTK_LOGW(NOTAG, "[+WLSTARTAP] wifi_start_ap failed\r\n");
-		error_no = 4;
+		error_no = RTW_AT_ERR_SAP_START_FAILED;
 		goto end;
 	}
 
 	setting = rtos_mem_zmalloc(sizeof(struct rtw_wifi_setting));
 	if (setting == NULL) {
 		RTK_LOGW(NOTAG, "[+WLSTARTAP] memory failed for setting\r\n");
-		error_no = 5;
+		error_no = RTW_AT_ERR_MEM_ALLOC_FAIL;
 		goto end;
 	}
 
-	/* error_no = 3 means time out. */
-	error_no = 3;
+	/* error_no = RTW_AT_ERR_SAP_START_FAILED means time out. */
+	error_no = RTW_AT_ERR_SAP_START_FAILED;
 	while (timeout > 0) {
 		wifi_get_setting(SOFTAP_WLAN_INDEX, setting);
 		if (strlen((char *)setting->ssid) > 0) {
@@ -897,10 +899,10 @@ void at_wlstartap(void *arg)
 end:
 	rtos_mem_free((void *)setting);
 	init_wifi_struct();
-	if (error_no == 0) {
+	if (error_no == RTW_AT_OK) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
-		if (error_no == 1 || error_no == 2) {
+		if (error_no >= RTW_AT_ERR_REQUIRED_PARAM_MISS && error_no <= RTW_AT_ERR_PARAM_NUM_ERR) {
 			at_wlstartap_help();
 		}
 		at_printf(ATCMD_ERROR_END_STR, error_no);
@@ -1055,20 +1057,21 @@ AT command process:
 ****************************************************************/
 void at_wlreconn(void *arg)
 {
-	int error_no = 0;
+	int error_no = RTW_AT_OK;
 	int argc = 0, mode = 0;
 	char *argv[MAX_ARGC] = {0};
 
 	if (arg == NULL) {
-		RTK_LOGW(NOTAG, "[+WLRECONN] Invalid parameter\r\n");
-		error_no = 1;
+		RTK_LOGW(NOTAG, "[+WLRECONN] The parameters can not be ignored\r\n");
+		error_no = RTW_AT_ERR_REQUIRED_PARAM_MISS;
 		goto end;
 	}
 
 	argc = parse_param(arg, argv);
+
 	if (argc != 3 || argv[1] == NULL || argv[2] == NULL) {
 		RTK_LOGW(NOTAG, "[+WLRECONN] Invalid parameter number\r\n");
-		error_no = 1;
+		error_no = RTW_AT_ERR_PARAM_NUM_ERR;
 		goto end;
 	}
 
@@ -1081,7 +1084,7 @@ void at_wlreconn(void *arg)
 			RTK_LOGI(NOTAG, "[+WLRECONN] Enable autoreconnect\r\n");
 			wifi_set_autoreconnect(1);
 		} else {
-			error_no = 2;
+			error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 		}
 	} else if (0 == strcmp("fast", argv[1])) {
 		extern void wifi_fast_connect_enable(unsigned char enable);
@@ -1094,14 +1097,14 @@ void at_wlreconn(void *arg)
 			RTK_LOGI(NOTAG, "[+WLRECONN] Enable fast reconnect\r\n");
 			wifi_fast_connect_enable(1);
 		} else {
-			error_no = 2;
+			error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 		}
 	} else {
-		error_no = 1;
+		error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 	}
 
 end:
-	if (error_no == 0) {
+	if (error_no == RTW_AT_OK) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
 		at_wlreconn_help();
@@ -1125,48 +1128,55 @@ AT command process:
 ****************************************************************/
 void at_wlpromisc(void *arg)
 {
-	int argc = 0, error_no = 0;
+	int argc = 0, error_no = RTW_AT_OK;
 	char *argv[MAX_ARGC] = {0};
 	struct rtw_promisc_para promisc_para;
 	u32 status;
 
 	memset(&promisc_para, 0, sizeof(struct rtw_promisc_para));
 
+	if (arg == NULL) {
+		RTK_LOGW(NOTAG, "[WLPROMISC]: The parameters can not be ignored\r\n");
+		error_no = RTW_AT_ERR_REQUIRED_PARAM_MISS;
+		goto end;
+	}
+
 	argc = parse_param(arg, argv);
+
 	if (argc > 1) {
 		if (strlen(argv[1]) == 0) {
 			RTK_LOGW(NOTAG, "[WLPROMISC]: Input ERROR parameter\r\n");
-			error_no = 1;
+			error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 			goto end;
 		}
 		if (strcmp((char *)argv[1], "enable") == 0) {
 			if (argc != 3 || argv[2] == NULL) {
 				RTK_LOGW(NOTAG, "[WLPROMISC]: Should be filter mode here\r\n");
-				error_no = 2;
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
 			status = ENABLE;
 			if (strcmp((char *)argv[2], "all") == 0) {
-				promisc_para.filter_mode = RCR_ALL_PKT;
+				promisc_para.filter_mode = RTW_PROMISC_FILTER_ALL_PKT;
 			} else if (strcmp((char *)argv[2], "apall") == 0) {
-				promisc_para.filter_mode = RCR_AP_ALL;
+				promisc_para.filter_mode = RTW_PROMISC_FILTER_AP_ALL;
 			} else {
 				RTK_LOGW(NOTAG, "[WLPROMISC]: WRONG filter mode\r\n");
-				error_no = 3;
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
 		} else if (strcmp((char *)argv[1], "disable") == 0) {
 			status = DISABLE;
 		} else {
 			RTK_LOGW(NOTAG, "[WLPROMISC]: ERROR parameter\r\n");
-			error_no = 1;
+			error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 			goto end;
 		}
 		wifi_promisc_enable(status, &promisc_para);
 	}
 
 end:
-	if (error_no == 0) {
+	if (error_no == RTW_AT_OK) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
 		at_wlpromisc_help();
@@ -1192,13 +1202,13 @@ void at_wldbg(void *arg)
 	char *copy = buf;
 	int i = 0;
 	int len = 0;
-	int error_no = 0;
+	int error_no = RTW_AT_OK;
 	int ret = 0;
 
 	RTK_LOGI(NOTAG, "[WLDBG]: _AT_WLAN_IWPRIV_\r\n");
 	if (arg == NULL) {
 		RTK_LOGW(NOTAG, "[WLDBG]Usage: AT+WLDBG=COMMAND[PARAMETERS]\r\n");
-		error_no = 1;
+		error_no = RTW_AT_ERR_REQUIRED_PARAM_MISS;
 		goto end;
 	}
 	strncpy(copy, arg, sizeof(buf) - 1);
@@ -1228,15 +1238,15 @@ void at_wldbg(void *arg)
 #endif
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGW(NOTAG, "[WLDBG] Failed while iwpriv\r\n");
-		error_no = 2;
+		error_no = RTW_AT_ERR_UNKNOWN_ERR;
 		goto end;
 	}
 
 end:
-	if (error_no == 0) {
+	if (error_no == RTW_AT_OK) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
-		if (error_no == 1) {
+		if (error_no == RTW_AT_ERR_REQUIRED_PARAM_MISS) {
 			at_wldbg_help();
 		}
 		at_printf(ATCMD_ERROR_END_STR, error_no);
@@ -1258,21 +1268,21 @@ AT command process:
 ****************************************************************/
 void at_wlwps(void *arg)
 {
-	int error_no = 0;
+	int error_no = RTW_AT_OK;
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
 	int argc = 0;
 	char *argv[MAX_ARGC] = {0};
 	char *wps_argv[4];
 
 	if (arg == NULL) {
-		RTK_LOGW(NOTAG, "[WLWPS]: ERROR parameter\r\n");
-		error_no = 1;
+		RTK_LOGW(NOTAG, "[WLWPS]: The parameters can not be ignored\r\n");
+		error_no = RTW_AT_ERR_REQUIRED_PARAM_MISS;
 		goto end;
 	}
 	argc = parse_param(arg, argv);
 	if (argc < 2 || strlen(argv[1]) == 0) {
 		RTK_LOGW(NOTAG, "[WLWPS]: Should be pbc or pin here\r\n");
-		error_no = 1;
+		error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 		goto end;
 	}
 
@@ -1285,15 +1295,15 @@ void at_wlwps(void *arg)
 	UNUSED(arg);
 
 	RTK_LOGW(NOTAG, "[WLWPS]: Not supported\r\n");
-	error_no = 2;
+	error_no = RTW_AT_ERR_FUNC_NOT_SUPPORT;
 	goto end;
 #endif
 
 end:
-	if (error_no == 0) {
+	if (error_no == RTW_AT_OK) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
-		if (error_no == 1 || error_no == 2) {
+		if (error_no == RTW_AT_ERR_REQUIRED_PARAM_MISS || error_no == RTW_AT_ERR_INVALID_PARAM_VALUE) {
 			at_wlwps_help();
 		}
 		at_printf(ATCMD_ERROR_END_STR, error_no);
@@ -1317,7 +1327,7 @@ AT command process:
 ****************************************************************/
 void at_wlps(void *arg)
 {
-	int error_no = 0;
+	int error_no = RTW_AT_OK;
 	int argc = 0;
 	int i = 0, j = 0;
 	char *argv[MAX_ARGC] = {0};
@@ -1327,14 +1337,14 @@ void at_wlps(void *arg)
 
 	if (arg == NULL) {
 		RTK_LOGW(NOTAG, "[WLPS] Usage: AT+WLPS=lps/ips[mode]\r\n");
-		error_no = 1;
+		error_no = RTW_AT_ERR_REQUIRED_PARAM_MISS;
 		goto end;
 	}
 
 	argc = parse_param(arg, argv);
 	if (argc < 3) {
 		RTK_LOGW(NOTAG, "[WLPS] Usage: AT+WLPS=lps/ips/[mode]\r\n");
-		error_no = 1;
+		error_no = RTW_AT_ERR_PARAM_NUM_ERR;
 		goto end;
 	}
 
@@ -1343,7 +1353,7 @@ void at_wlps(void *arg)
 		if (strcmp(argv[i], "lps") == 0) {
 			if ((argc <= j) || (strlen(argv[j]) == 0)) {
 				RTK_LOGW(NOTAG, "[WLPS] Invalid parameter");
-				error_no = 2;
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
 			ps_en = atoi(argv[j]);
@@ -1352,7 +1362,7 @@ void at_wlps(void *arg)
 		} else if (strcmp(argv[i], "ips") == 0) {
 			if ((argc <= j) || (strlen(argv[j]) == 0)) {
 				RTK_LOGW(NOTAG, "[WLPS] Invalid parameter");
-				error_no = 2;
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
 			ps_en = atoi(argv[j]);
@@ -1360,13 +1370,13 @@ void at_wlps(void *arg)
 			RTK_LOGW(NOTAG, "ips %s\r\n", (ps_en == 0) ? "disable" : "enable");
 		} else {
 			RTK_LOGW(NOTAG, "[WLPS] Invalid parameter");
-			error_no = 2;
+			error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 			goto end;
 		}
 	}
 
 end:
-	if (error_no == 0) {
+	if (error_no == RTW_AT_OK) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
 		at_wlps_help();
@@ -1392,19 +1402,19 @@ AT command process:
 ****************************************************************/
 void at_wlstaticip(void *arg)
 {
-	int argc = 0, error_no = 0;
+	int argc = 0, error_no = RTW_AT_OK;
 	char *argv[MAX_ARGC] = {0};
 
 	if (arg == NULL) {
-		RTK_LOGW(NOTAG, "[+WLSTATICIP]: Invalid parameter\r\n");
-		error_no = 1;
+		RTK_LOGW(NOTAG, "[+WLSTATICIP]: The parameters can not be ignored\r\n");
+		error_no = RTW_AT_ERR_REQUIRED_PARAM_MISS;
 		goto end;
 	}
 
 	argc = parse_param(arg, argv);
 	if (argc != 2 && argc != 4) {
 		RTK_LOGW(NOTAG, "[+WLSTATICIP]: Invalid parameter number\r\n");
-		error_no = 1;
+		error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 		goto end;
 	}
 
@@ -1417,7 +1427,7 @@ void at_wlstaticip(void *arg)
 	}
 
 end:
-	if (error_no == 0) {
+	if (error_no == RTW_AT_OK) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
 		at_wlstaticip_help();

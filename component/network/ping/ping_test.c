@@ -98,14 +98,12 @@ void ping_test(void *param)
 			printf("create socket failed\r\n");
 		}
 		pint_timeout = PING_TO;
-#if defined(LWIP_SO_SNDRCVTIMEO_NONSTANDARD) && (LWIP_SO_SNDRCVTIMEO_NONSTANDARD == 0)	// lwip 1.5.0
+
 		struct timeval timeout;
 		timeout.tv_sec = pint_timeout / 1000;
 		timeout.tv_usec = pint_timeout % 1000 * 1000;
 		setsockopt(ping_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-#else	// lwip 1.4.1
-		setsockopt(ping_socket, SOL_SOCKET, SO_RCVTIMEO, &pint_timeout, sizeof(pint_timeout));
-#endif
+
 		to_addr.sin_len = sizeof(to_addr);
 		to_addr.sin_family = AF_INET;
 		if (inet_aton(host, &to_addr.sin_addr) == 0) {
@@ -169,14 +167,10 @@ void ping_test(void *param)
 				}
 				pint_timeout -= (int)((reply_time - ping_time));
 				if (pint_timeout > 0) {
-#if defined(LWIP_SO_SNDRCVTIMEO_NONSTANDARD) && (LWIP_SO_SNDRCVTIMEO_NONSTANDARD == 0)	// lwip 1.5.0
 					struct timeval timeout;
 					timeout.tv_sec = pint_timeout / 1000;
 					timeout.tv_usec = pint_timeout % 1000 * 1000;
 					setsockopt(ping_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-#else	// lwip 1.4.1
-					setsockopt(ping_socket, SOL_SOCKET, SO_RCVTIMEO, &pint_timeout, sizeof(pint_timeout));
-#endif
 					continue;
 				}
 			}

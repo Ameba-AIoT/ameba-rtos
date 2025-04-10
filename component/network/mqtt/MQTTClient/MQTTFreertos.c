@@ -111,15 +111,10 @@ int FreeRTOS_read(Network *n, unsigned char *buffer, int len, int timeout_ms)
 	rtos_task_set_time_out_state(&xTimeOut); /* Record the time at which this function was entered. */
 	do {
 		int rc = 0;
-#if defined(LWIP_SO_SNDRCVTIMEO_NONSTANDARD) && (LWIP_SO_SNDRCVTIMEO_NONSTANDARD == 0)
-		// timeout format is changed in lwip 1.5.0
 		struct timeval timeout;
 		timeout.tv_sec  = ms_to_wait / 1000;
 		timeout.tv_usec = (ms_to_wait % 1000) * 1000;
 		setsockopt(n->my_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval));
-#else
-		setsockopt(n->my_socket, SOL_SOCKET, SO_RCVTIMEO, &ms_to_wait, sizeof(ms_to_wait));
-#endif
 #if (MQTT_OVER_SSL)
 		if (n->use_ssl) {
 			rc = mbedtls_ssl_read(n->ssl, buffer + recvLen, len - recvLen);
@@ -150,15 +145,10 @@ int FreeRTOS_write(Network *n, unsigned char *buffer, int len, int timeout_ms)
 	rtos_task_set_time_out_state(&xTimeOut); /* Record the time at which this function was entered. */
 	do {
 		int rc = 0;
-#if defined(LWIP_SO_SNDRCVTIMEO_NONSTANDARD) && (LWIP_SO_SNDRCVTIMEO_NONSTANDARD == 0)
-		// timeout format is changed in lwip 1.5.0
 		struct timeval timeout;
 		timeout.tv_sec  = ms_to_wait / 1000;
 		timeout.tv_usec = (ms_to_wait % 1000) * 1000;
 		setsockopt(n->my_socket, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(struct timeval));
-#else
-		setsockopt(n->my_socket, SOL_SOCKET, SO_SNDTIMEO, &ms_to_wait, sizeof(ms_to_wait));
-#endif
 #if (MQTT_OVER_SSL)
 		if (n->use_ssl) {
 			rc = mbedtls_ssl_write(n->ssl, buffer + sentLen, len - sentLen);

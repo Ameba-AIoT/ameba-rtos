@@ -42,7 +42,7 @@ extern "C" {
   */
 /**
  * @brief  Enable Wi-Fi, i.e., bring the Wireless interface 0 "Up".
- * @param[in]  mode: Should always set to RTW_MODE_STA.
+ * @param[in]  mode: Should always set to @ref RTW_MODE_STA.
  * @return
  *    - @ref RTK_SUCCESS : If the WiFi chip initialized successfully.
  *    - @ref RTK_FAIL : If the WiFi chip initialization failed.
@@ -56,10 +56,9 @@ int wifi_on(u8 mode);
 
 /**
  * @brief  Check if the specified wlan interface  is running.
- * @param[in]  wlan_idx: Can be set as STA_WLAN_INDEX or SOFTAP_WLAN_INDEX.
+ * @param[in]  wlan_idx: Can be set as @ref STA_WLAN_INDEX (for STA mode) or @ref SOFTAP_WLAN_INDEX (for AP mode).
  * @return  If the function succeeds, the return value is 1.
  * 	Otherwise, return 0.
- * @note  For STA mode, use STA_WLAN_INDEX; for AP mode, use SOFTAP_WLAN_INDEX.
  */
 int wifi_is_running(unsigned char wlan_idx);
 
@@ -80,7 +79,7 @@ int wifi_is_running(unsigned char wlan_idx);
  *    - @ref RTK_FAIL : An error occurred.
  *    - -@ref RTK_ERR_BUSY : Wifi connect or scan is ongoing.
  *    - -@ref RTK_ERR_NOMEM : Malloc fail during wifi connect.
- *    - -@ref RTK_ERR_TIMEOUT : More than RTW_JOIN_TIMEOUT(~70s) without successful connection.
+ *    - -@ref RTK_ERR_TIMEOUT : More than ~70s without successful connection.
  *    - -@ref RTK_ERR_WIFI_CONN_INVALID_KEY : Password format wrong.
  *    - -@ref RTK_ERR_WIFI_CONN_SCAN_FAIL : Scan fail.
  *    - -@ref RTK_ERR_WIFI_CONN_AUTH_FAIL : Auth fail.
@@ -90,7 +89,7 @@ int wifi_is_running(unsigned char wlan_idx);
  *    - -@ref RTK_ERR_WIFI_CONN_4WAY_PASSWORD_WRONG : Password error causing 4 way handshake failure,not entirely accurate.
  * @note
  *      - Please make sure the Wi-Fi is enabled (wifi_on()) before invoking this function.
- *      - If bssid in connect_param is set, then bssid will be used for connect, otherwise ssid is used for connect.
+ *      - If `connect_param->bssid` is set, then bssid will be used for connect, otherwise ssid is used for connect.
  */
 int wifi_connect(struct rtw_network_info *connect_param, unsigned char block);
 
@@ -129,21 +128,23 @@ int wifi_get_join_status(u8 *join_status);
  *         - Synchronized scan.
  *         - Asynchronized scan. There are two different ways about how the scan result will be reported:
  *           - The first way is that when scan is done ,the total number of scanned APs will be reported through
- *             scan_user_callback, and the detailed scanned AP infos can be get by calling wifi_get_scan_records(),
- *             so in this way, scan_user_callback need to be registered in scan_param.
+ *             `scan_param->scan_user_callback`, and the detailed scanned AP infos can be get by calling
+ *             wifi_get_scan_records(), so in this way, rtw_scan_param::scan_user_callback need to be registered
+ *             in `scan_param`.
  *           - The second way is that every time a AP is scanned, this AP info will be directly reported by
- *             scan_report_each_mode_user_callback, and when scan is done, scan_report_each_mode_user_callback will
- *             report a NULL pointer for notification. So in this way, scan_report_each_mode_user_callback need to
- *             be registered in scan_param, and RTW_SCAN_REPORT_EACH need to be set in scan_param->options.Also in
- *             this mode, scan_user_callback is no need to be registered.
- * @param[in]  scan_param: Refer to struct struct rtw_scan_param in wifi_api_types.h.
+ *             `scan_param->scan_report_each_mode_user_callback`, and when scan is done,
+ *             `scan_report_each_mode_user_callback` will report a NULL pointer for notification.
+ *             So in this way, rtw_scan_param::scan_report_each_mode_user_callback need to be registered in
+ *             `scan_param`, and rtw_scan_param::options need to be set to @ref RTW_SCAN_REPORT_EACH in `scan_param`.
+ *             Also in this mode, rtw_scan_param::scan_user_callback is no need to be registered.
+ * @param[in]  scan_param: Refer to struct rtw_scan_param in wifi_api_types.h.
  * @param[in]  block:
  * 					- If set to 1, it's synchronized scan and this API will return after scan is done.
  * 					- If set to 0, it's asynchronized scan and this API will return immediately.
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL for asynchronized scan, return @ref RTK_FAIL or
  * 	scanned AP number for Synchronized scan.
  * @note  If this API is called, the scanned APs are stored in WiFi driver dynamic
- * 	allocated memory, for synchronized scan or asynchronized scan which not use RTW_SCAN_REPORT_EACH,
+ * 	allocated memory, for synchronized scan or asynchronized scan which not use @ref RTW_SCAN_REPORT_EACH,
  * 	these memory will be freed when wifi_get_scan_records() is called.
  */
 int wifi_scan_networks(struct rtw_scan_param *scan_param, unsigned char block);
@@ -156,12 +157,12 @@ int wifi_scan_networks(struct rtw_scan_param *scan_param, unsigned char block);
  * 	will be stored one by one in form of struct rtw_scan_result.
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL.
  * @note
- *     - For synchronized scan or asynchronized scan which do not config RTW_SCAN_REPORT_EACH,
+ *     - For synchronized scan or asynchronized scan which do not config @ref RTW_SCAN_REPORT_EACH,
  *       if once called wifi_scan_networks() but not use this API to get scanned AP info,
  * 	     driver memory for these scanned AP will not be freed until next time
  * 	     wifi_scan_networks() is called.
- *     - For asynchronized scan which config RTW_SCAN_REPORT_EACH, every time a
- * 	     AP is scanned, the AP info will be directly reported through scan_report_each_mode_user_callback
+ *     - For asynchronized scan which config @ref RTW_SCAN_REPORT_EACH, every time a
+ * 	     AP is scanned, the AP info will be directly reported through `scan_report_each_mode_user_callback`
  * 	     and freed after user callback executed, thus there is no need to use this function to get scan result.
  */
 int wifi_get_scan_records(unsigned int *ap_num, struct rtw_scan_result *ap_list);
@@ -177,7 +178,7 @@ int wifi_get_scan_records(unsigned int *ap_num, struct rtw_scan_result *ap_list)
  *    - @ref RTK_SUCCESS : If successfully creates an AP.
  *    - @ref RTK_FAIL : If an error occurred.
  * @note
- *     - If hidden_ssid in softap_config is set to 1, then this softAP will start
+ *     - If `softap_config->hidden_ssid` is set to 1, then this softAP will start
  * 	     with hidden ssid.
  *     - Please make sure the Wi-Fi is enabled (wifi_on()) before invoking this function.
  */
@@ -186,19 +187,19 @@ int wifi_start_ap(struct rtw_softap_info *softap_config);
 /**
  * @brief  Disable Wi-Fi interface-2.
  * @return
- *    - @ref RTK_SUCCESS : Deinit success, wifi mode is changed to RTW_MODE_STA.
+ *    - @ref RTK_SUCCESS : Deinit success, wifi mode is changed to @ref RTW_MODE_STA.
  *    - @ref RTK_FAIL : Otherwise.
  */
 int wifi_stop_ap(void);
 
 /**
  * @brief  Get current Wi-Fi setting from driver.
- * @param[in]  wlan_idx: STA_WLAN_IDX or SOFTAP_WLAN_IDX.
+ * @param[in]  wlan_idx: @ref STA_WLAN_INDEX or @ref SOFTAP_WLAN_INDEX.
  * @param[out]  psetting: Points to the struct rtw_wifi_setting structure which information is gotten.
  * @return
  *    - @ref RTK_SUCCESS : The result is successfully got.
  *    - @ref RTK_FAIL : The result is not successfully got.
- * @note  The mode in struct rtw_wifi_setting corresponding to the wifi mode of current wlan_idx:
+ * @note  The mode in struct rtw_wifi_setting corresponding to the wifi mode of current `wlan_idx`:
  *      - If in station mode, the info in struct rtw_wifi_setting except mode will correspond to the AP it connected,
  *      - If in AP mode, the info in struct rtw_wifi_setting will correspond to the softAP itself.
  */
