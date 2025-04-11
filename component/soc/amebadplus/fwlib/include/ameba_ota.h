@@ -157,6 +157,9 @@ typedef struct {
 typedef struct {
 	mbedtls_ssl_context ssl;
 	mbedtls_ssl_config conf;
+	mbedtls_x509_crt ca;
+	mbedtls_x509_crt cert;
+	mbedtls_pk_context key;
 } update_tls;
 
 /**
@@ -170,6 +173,8 @@ typedef struct {
 	char *resource;
 } update_redirect_conn;
 
+typedef void (*ota_progress_cb_t)(int percent);
+
 /**
   * @brief  OTA context structure definition
   */
@@ -177,12 +182,16 @@ typedef struct {
 	char *host;
 	int port;
 	char *resource;
+	char *ca_cert;
+	char *client_cert;
+	char *private_key;
 	int fd;
 	u8 type;
 	update_tls *tls;
 	update_ota_ctrl_info *otactrl;
 	update_redirect_conn *redirect;
 	update_ota_target_hdr *otaTargetHdr;
+	ota_progress_cb_t progress_cb;
 } ota_context;
 
 /* Exported functions --------------------------------------------------------*/
@@ -196,6 +205,7 @@ int ota_update_init(ota_context *ctx, char *host, int port, char *resource, u8 t
 void ota_update_deinit(ota_context *ctx);
 int ota_update_start(ota_context *ctx);
 int ota_update_fw_program(ota_context *ctx, u8 *buf, u32 len);
+int ota_update_register_progress_cb(ota_context *ctx, ota_progress_cb_t cb);
 
 #define OTA_GET_FWVERSION(address) \
 	(HAL_READ16(SPI_FLASH_BASE, address + 22) << 16) | HAL_READ16(SPI_FLASH_BASE, address + 20)

@@ -41,11 +41,12 @@ static void mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set *read_fds)
 		TimerInit(&timer);
 		TimerCountdownMS(&timer, 1000);
 		packet_type = readPacket(&mqttCb->client, &timer);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, Read packet %d\n", __func__, mqttCb->linkId, packet_type);
 		if (packet_type < CONNECT || packet_type > DISCONNECT) {
+			MQTTSetStatus(&mqttCb->client, MQTT_START);
 			resultNo = MQTT_ARGS_ERROR;
 			goto end;
 		}
-		RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, Read packet %d\n", __func__, mqttCb->linkId, packet_type);
 	}
 
 	switch (mqttStatus) {
@@ -57,16 +58,20 @@ static void mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set *read_fds)
 				rc = connack_rc;
 				at_printf_indicate("[MQTT][EVENT]:linkid:%d, connected\r\n", mqttCb->linkId);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, connected\n", __func__, mqttCb->linkId);
+				mqttCb->client.isconnected = 1;
 				MQTTSetStatus(&mqttCb->client, MQTT_RUNNING);
 			} else {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, connect fail\n", __func__, mqttCb->linkId);
-				resultNo = MQTT_CONNECTION_ERROR;
-				MQTTSetStatus(&mqttCb->client, MQTT_START);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, deserialize CONNACK failed\n", __func__, mqttCb->linkId);
+				rc = FAILURE;
 			}
-		} else if (packet_type == PINGRESP) {
-			mqttCb->client.ping_outstanding = 0;
 		} else if (TimerIsExpired(&mqttCb->client.cmd_timer)) {
-			keepalive(&mqttCb->client);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, not received CONNACK\n", __func__, mqttCb->linkId);
+			rc = FAILURE;
+		}
+
+		if (rc == FAILURE) {
+			resultNo = MQTT_CONNECTION_ERROR;
+			MQTTSetStatus(&mqttCb->client, MQTT_START);
 		}
 		break;
 
@@ -92,10 +97,6 @@ static void mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set *read_fds)
 				RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, subscribed\n", __func__, mqttCb->linkId);
 				MQTTSetStatus(&mqttCb->client, MQTT_RUNNING);
 			}
-		} else if (packet_type == UNSUBACK) {
-			MQTTSetStatus(&mqttCb->client, MQTT_CONNECT);
-			at_printf_indicate("[MQTT][EVENT]:linkid:%d, unsubscribed\r\n", mqttCb->linkId);
-			RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, unsubscribed\n", __func__, mqttCb->linkId);
 		} else if (TimerIsExpired(&mqttCb->client.cmd_timer)) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] linkid:%d, subscribe timeout\n", __func__, mqttCb->linkId);
 			resultNo = MQTT_WAITACK_TIMEOUT_ERROR;
@@ -271,7 +272,6 @@ Brief                   The main function of mqtt AT task.
 ****************************************************************/
 void mqtt_main(void *param)
 {
-	int resultNo = 0;
 	MQTT_CONTROL_BLOCK *mqttCb = (MQTT_CONTROL_BLOCK *)param;
 	fd_set read_fds;
 	fd_set except_fds;
@@ -296,14 +296,10 @@ void mqtt_main(void *param)
 		if (0 <= mqttCb->network.my_socket) {
 			FD_SET(mqttCb->network.my_socket, &read_fds);
 			FD_SET(mqttCb->network.my_socket, &except_fds);
-			resultNo = FreeRTOS_Select(mqttCb->network.my_socket + 1, &read_fds, NULL, &except_fds, &timeout);
+			FreeRTOS_Select(mqttCb->network.my_socket + 1, &read_fds, NULL, &except_fds, &timeout);
 			/* The my_socket may be close, then will try reopen in mqtt_clent_data_proc if STATUS set to MQTT_START */
 			if (FD_ISSET(mqttCb->network.my_socket, &except_fds)) {
 				MQTTSetStatus(&mqttCb->client, MQTT_START);
-			} else if (0 == resultNo) { /* Select timeout. */
-				if (mqttCb->client.isconnected) {
-					keepalive(&mqttCb->client);
-				}
 			}
 		}
 		/* Process the received data. */
@@ -459,27 +455,22 @@ static int mqtt_set_ssl_certificate(char **dest, CERT_TYPE cert_type, int index)
 
 	cert_size = atcmd_get_ssl_certificate_size(cert_type, index);
 	if (cert_size <= 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTUSERCFG] %d get size %d\r\n", cert_type, cert_size);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%d get size %d\r\n", cert_type, cert_size);
 		return MQTT_CERTIFICATE_READ_ERROR;
 	}
 	cert_buffer = (char *)rtos_mem_zmalloc(cert_size);
 	if (cert_buffer == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTUSERCFG] cert_buffer malloc failed\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "cert_buffer malloc failed\r\n");
 		return MQTT_MALLOC_FAILED;
 	}
 	ret = atcmd_get_ssl_certificate(cert_buffer, cert_type, index);
 	if (ret <= 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTUSERCFG] %d get failed\r\n", cert_type);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%d get failed\r\n", cert_type);
 		rtos_mem_free(cert_buffer);
 		return MQTT_CERTIFICATE_READ_ERROR;
 	}
 
-	ret = mqtt_string_copy(dest, cert_buffer, cert_size);
-	if (ret != MQTT_OK) {
-		rtos_mem_free(cert_buffer);
-		return ret;
-	}
-	rtos_mem_free(cert_buffer);
+	*dest = cert_buffer;
 	return MQTT_OK;
 }
 
@@ -530,9 +521,9 @@ void at_mqttsub(void *arg)
 	}
 
 	mqttCb = &g_mqttCb[link_id];
-	if (!mqttCb->client.isconnected) {
+	if (!mqttCb->client.isconnected || !mqttCb->networkConnect) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] The link ID is not connected\r\n");
-		resultNo = MQTT_ARGS_ERROR;
+		resultNo = MQTT_NOT_CONNECTED_ERROR;
 		goto end;
 	}
 
@@ -574,14 +565,6 @@ void at_mqttsub(void *arg)
 	}
 
 	mqttCb->subData[topic_index].qos = qos;
-
-	/* Check status. */
-	if (1 != mqttCb->client.isconnected || 0 > mqttCb->network.my_socket) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] Not connected now (%d, %d)\r\n",
-				 mqttCb->client.isconnected, mqttCb->network.my_socket);
-		resultNo = MQTT_NOT_CONNECTED_ERROR;
-		goto end;
-	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTSUB] Subscribe topic %s\r\n", mqttCb->subData[topic_index].topic);
 
@@ -658,9 +641,9 @@ void at_mqttunsub(void *arg)
 	}
 
 	mqttCb = &g_mqttCb[link_id];
-	if (!mqttCb->client.isconnected) {
+	if (!mqttCb->client.isconnected || !mqttCb->networkConnect) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTUNSUB] The link ID is not connected\r\n");
-		resultNo = MQTT_ARGS_ERROR;
+		resultNo = MQTT_NOT_CONNECTED_ERROR;
 		goto end;
 	}
 
@@ -680,14 +663,6 @@ void at_mqttunsub(void *arg)
 	if (topic_index == MAX_MESSAGE_HANDLERS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTUNSUB] Invalid topic\r\n");
 		resultNo = MQTT_ARGS_ERROR;
-		goto end;
-	}
-
-	/* Check status. */
-	if (1 != mqttCb->client.isconnected || 0 > mqttCb->network.my_socket) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTUNSUB] Invalid status (%d, %d)\r\n",
-				 mqttCb->client.isconnected, mqttCb->network.my_socket);
-		resultNo = MQTT_NOT_CONNECTED_ERROR;
 		goto end;
 	}
 
@@ -765,9 +740,9 @@ void at_mqttpub(void *arg)
 	}
 
 	mqttCb = &g_mqttCb[link_id];
-	if (!mqttCb->client.isconnected) {
+	if (!mqttCb->client.isconnected || !mqttCb->networkConnect) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUB] The link ID is not connected\r\n");
-		resultNo = MQTT_ARGS_ERROR;
+		resultNo = MQTT_NOT_CONNECTED_ERROR;
 		goto end;
 	}
 
@@ -815,11 +790,6 @@ void at_mqttpub(void *arg)
 	mqttCb->pubData.retain = (u8)retain;
 
 	/* send publish. */
-	if (1 != mqttCb->client.isconnected) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUB] Invalid status (%d)\r\n", mqttCb->client.isconnected);
-		resultNo = MQTT_NOT_CONNECTED_ERROR;
-		goto end;
-	}
 	MQTTMessage mqttMsg = {.qos = mqttCb->pubData.qos,
 						   .retained = mqttCb->pubData.retain,
 						   .dup = 0,
@@ -867,6 +837,7 @@ void at_mqttpubraw(void *arg)
 	MQTT_CONTROL_BLOCK *mqttCb = NULL;
 	int link_id = MQTT_MAX_CLIENT_NUM;
 	int msg_id = 0, length = 0, qos = 0, retain = 0;
+	int tt_get_len = 0;
 	u8 *msg = NULL;
 
 	/* Get the parameters of AT command. */
@@ -891,9 +862,9 @@ void at_mqttpubraw(void *arg)
 	}
 
 	mqttCb = &g_mqttCb[link_id];
-	if (!mqttCb->client.isconnected) {
+	if (!mqttCb->client.isconnected || !mqttCb->networkConnect) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUBRAW] The link ID is not connected\r\n");
-		resultNo = MQTT_ARGS_ERROR;
+		resultNo = MQTT_NOT_CONNECTED_ERROR;
 		goto end;
 	}
 
@@ -951,7 +922,13 @@ void at_mqttpubraw(void *arg)
 		goto end;
 	}
 
-	atcmd_tt_mode_get(msg, length);
+	tt_get_len = atcmd_tt_mode_get(msg, length);
+	if (tt_get_len < 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUBRAW] host stops tt mode\r\n");
+		resultNo = MQTT_TT_MODE_ERROR;
+		atcmd_tt_mode_end();
+		goto end;
+	}
 	atcmd_tt_mode_end();
 
 	mqttCb->pubData.topic = argv[3];
@@ -960,11 +937,6 @@ void at_mqttpubraw(void *arg)
 	mqttCb->pubData.retain = (u8)retain;
 
 	/* send publish. */
-	if (1 != mqttCb->client.isconnected) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUBRAW] Invalid status (%d)\r\n", mqttCb->client.isconnected);
-		resultNo = MQTT_PUBLISH_ERROR;
-		goto end;
-	}
 	MQTTMessage mqttMsg = {.qos = mqttCb->pubData.qos,
 						   .retained = mqttCb->pubData.retain,
 						   .dup = 0,
@@ -1108,7 +1080,6 @@ void at_mqttconn(void *arg)
 			if (conn_type == MQTT_OVER_TLS_VERIFY_SERVER || conn_type == MQTT_OVER_TLS_VERIFY_BOTH) {
 				resultNo = mqtt_set_ssl_certificate(&mqttCb->network.rootCA, CLIENT_CA, cert_index);
 				if (MQTT_OK != resultNo) {
-					resultNo = MQTT_ARGS_ERROR;
 					goto end;
 				}
 			}
@@ -1116,13 +1087,11 @@ void at_mqttconn(void *arg)
 			if (conn_type == MQTT_OVER_TLS_VERIFY_CLIENT || conn_type == MQTT_OVER_TLS_VERIFY_BOTH) {
 				resultNo = mqtt_set_ssl_certificate(&mqttCb->network.clientCA, CLIENT_CERT, cert_index);
 				if (MQTT_OK != resultNo) {
-					resultNo = MQTT_ARGS_ERROR;
 					goto end;
 				}
 
 				resultNo = mqtt_set_ssl_certificate(&mqttCb->network.private_key, CLIENT_KEY, cert_index);
 				if (MQTT_OK != resultNo) {
-					resultNo = MQTT_ARGS_ERROR;
 					goto end;
 				}
 			}
@@ -1236,6 +1205,7 @@ void at_mqttconn(void *arg)
 	} else {
 		/* AT output when receiving CONNACK. */
 		RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTCONN] Sent connection request, waiting for ACK\r\n");
+		mqttCb->client.isconnected = 0;
 		MQTTSetStatus(&mqttCb->client, MQTT_CONNECT);
 	}
 
@@ -1334,10 +1304,10 @@ end:
 static void at_mqttcfg_help(void)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+MQTTCFG=<link_id>,<keepalive>,<timeout>,<disable_clean_session>[,<lwt_topic>,<lwt_msg>,<lwt_qos>,<lwt_retain>]\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+MQTTCFG=<link_id>,<keepalive>,<cmd_timeout>,<disable_clean_session>[,<lwt_topic>,<lwt_msg>,<lwt_qos>,<lwt_retain>]\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>:\t0~3. link ID.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<keepalive>:\ttimeout of MQTT ping. Unit: second.\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<timeout>:\tsocket send/recv timeout. Unit: second.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<cmd_timeout>:\tmqtt connect and subcribe timeout. Unit: second.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<disable_clean_session>:\tset MQTT clean session.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t0:\tenable clean session.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t1:\tdisable clean session.\r\n");
@@ -1346,13 +1316,13 @@ static void at_mqttcfg_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<lwt_qos>:\tLWT QoS, which can be set to 0, 1, or 2. Default: 0.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<lwt_retain>:\tLWT retain, which can be set to 0 or 1. Default: 0.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "e.g.\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tAT+MQTTCFG=0,10,10000,0,topic/lwt,This is a lwt message,0,0\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tAT+MQTTCFG=0,20,60,0,topic/lwt,This is a lwt message,0,0\r\n");
 }
 
 /****************************************************************
 Function            at_mqttcfg
 Brief                   MQTT connection parameters configure. The command is used to configure mqtt connection parameters.
-AT+MQTTCFG=<link_id>,<keepalive>,<timeout>,<disable_clean_session>[,<lwt_topic>,<lwt_msg>,<lwt_qos>,<lwt_retain>]
+AT+MQTTCFG=<link_id>,<keepalive>,<cmd_timeout>,<disable_clean_session>[,<lwt_topic>,<lwt_msg>,<lwt_qos>,<lwt_retain>]
 ****************************************************************/
 void at_mqttcfg(void *arg)
 {
@@ -1413,7 +1383,7 @@ void at_mqttcfg(void *arg)
 	/* timeout. */
 	timeout = atoi(argv[3]);
 	if (timeout < 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCFG] Invalid timeout\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCFG] Invalid cmd_timeout\r\n");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
@@ -1573,7 +1543,7 @@ void at_mqttquery(void *arg)
 	at_printf("client_id: %s\r\n", mqttCb->clientId ? mqttCb->clientId : "NULL");
 	at_printf("username: %s\r\n", mqttCb->userName ? mqttCb->userName : "NULL");
 	at_printf("password: %s\r\n", mqttCb->password ? mqttCb->password : "NULL");
-	at_printf("timeout: %d\r\n", mqttCb->client.command_timeout_ms / 1000);
+	at_printf("cmd_timeout: %d\r\n", mqttCb->client.command_timeout_ms / 1000);
 	at_printf("keepalive: %d\r\n", mqttCb->connectData.keepAliveInterval);
 	at_printf("disable_clean_session: %d\r\n", mqttCb->connectData.cleansession);
 	at_printf("LWT: %d\r\n", mqttCb->connectData.willFlag);
