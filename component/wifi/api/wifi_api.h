@@ -52,7 +52,7 @@ extern "C" {
  *    - In WHC mode as a device, this API is automatically called by the host’s wifi_on, so users don’t need to call it again.
  *    - This API performs general initialization and sets interface 0 to STA mode. To start AP mode, call wifi_start_ap after this API.
  */
-int wifi_on(u8 mode);
+s32 wifi_on(u8 mode);
 
 /**
  * @brief  Check if the specified wlan interface  is running.
@@ -60,7 +60,7 @@ int wifi_on(u8 mode);
  * @return  If the function succeeds, the return value is 1.
  * 	Otherwise, return 0.
  */
-int wifi_is_running(unsigned char wlan_idx);
+s32 wifi_is_running(u8 wlan_idx);
 
 /**
  * @brief  Join a Wi-Fi network.
@@ -91,7 +91,7 @@ int wifi_is_running(unsigned char wlan_idx);
  *      - Please make sure the Wi-Fi is enabled (wifi_on()) before invoking this function.
  *      - If `connect_param->bssid` is set, then bssid will be used for connect, otherwise ssid is used for connect.
  */
-int wifi_connect(struct rtw_network_info *connect_param, unsigned char block);
+s32 wifi_connect(struct rtw_network_info *connect_param, u8 block);
 
 /**
  * @brief  Disassociates from current Wi-Fi network.
@@ -99,7 +99,7 @@ int wifi_connect(struct rtw_network_info *connect_param, unsigned char block);
  *    - @ref RTK_SUCCESS : On successful disassociation from the AP.
  *    - @ref RTK_FAIL : If an error occurred.
  */
-int wifi_disconnect(void);
+s32 wifi_disconnect(void);
 
 /**
  * @brief  Get join status during wifi connectection.
@@ -120,7 +120,7 @@ int wifi_disconnect(void);
  *    - @ref RTK_SUCCESS : If the join_status is successfully get.
  *    - @ref RTK_FAIL : If the join_status is not successfully get.
  */
-int wifi_get_join_status(u8 *join_status);
+s32 wifi_get_join_status(u8 *join_status);
 
 /**
  * @brief  Initiate a scan to search for 802.11 networks. There are two different scan type can be confgiured
@@ -147,7 +147,7 @@ int wifi_get_join_status(u8 *join_status);
  * 	allocated memory, for synchronized scan or asynchronized scan which not use @ref RTW_SCAN_REPORT_EACH,
  * 	these memory will be freed when wifi_get_scan_records() is called.
  */
-int wifi_scan_networks(struct rtw_scan_param *scan_param, unsigned char block);
+s32 wifi_scan_networks(struct rtw_scan_param *scan_param, u8 block);
 
 /**
  * @brief  Get scan results
@@ -165,7 +165,7 @@ int wifi_scan_networks(struct rtw_scan_param *scan_param, unsigned char block);
  * 	     AP is scanned, the AP info will be directly reported through `scan_report_each_mode_user_callback`
  * 	     and freed after user callback executed, thus there is no need to use this function to get scan result.
  */
-int wifi_get_scan_records(unsigned int *ap_num, struct rtw_scan_result *ap_list);
+s32 wifi_get_scan_records(u32 *ap_num, struct rtw_scan_result *ap_list);
 
 /**
  * @brief  Trigger Wi-Fi driver to start an infrastructure Wi-Fi network.
@@ -182,7 +182,7 @@ int wifi_get_scan_records(unsigned int *ap_num, struct rtw_scan_result *ap_list)
  * 	     with hidden ssid.
  *     - Please make sure the Wi-Fi is enabled (wifi_on()) before invoking this function.
  */
-int wifi_start_ap(struct rtw_softap_info *softap_config);
+s32 wifi_start_ap(struct rtw_softap_info *softap_config);
 
 /**
  * @brief  Disable Wi-Fi interface-2.
@@ -190,7 +190,7 @@ int wifi_start_ap(struct rtw_softap_info *softap_config);
  *    - @ref RTK_SUCCESS : Deinit success, wifi mode is changed to @ref RTW_MODE_STA.
  *    - @ref RTK_FAIL : Otherwise.
  */
-int wifi_stop_ap(void);
+s32 wifi_stop_ap(void);
 
 /**
  * @brief  Get current Wi-Fi setting from driver.
@@ -203,7 +203,7 @@ int wifi_stop_ap(void);
  *      - If in station mode, the info in struct rtw_wifi_setting except mode will correspond to the AP it connected,
  *      - If in AP mode, the info in struct rtw_wifi_setting will correspond to the softAP itself.
  */
-int wifi_get_setting(unsigned char wlan_idx, struct rtw_wifi_setting *psetting);
+s32 wifi_get_setting(u8 wlan_idx, struct rtw_wifi_setting *psetting);
 
 /** @} End of Basic_Functions group */
 /** @} End of WIFI_Exported_Functions group */

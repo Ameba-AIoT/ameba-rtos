@@ -15,6 +15,10 @@ ameba_add_subdirectory_if(CONFIG_BT_ISO_TEST
     ble_iso
 )
 
+ameba_add_subdirectory_if(CONFIG_BT_HOGP
+    ble_hogp_gamepad
+)
+
 ameba_add_subdirectory_if(CONFIG_BT_MESH_DEVICE
     ble_mesh_device
 )

@@ -15,8 +15,6 @@ ameba_list_append(public_includes
     Include
 )
 
-#FIXME: miss role for public_libraries
-
 # Component public part, user config end
 #----------------------------------------#
 
@@ -70,7 +68,7 @@ ameba_list_append(private_sources
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
-ameba_add_external_app_library(cmsis_dsp
+ameba_add_internal_library(cmsis_dsp
     p_SOURCES
         ${private_sources}
     p_INCLUDES

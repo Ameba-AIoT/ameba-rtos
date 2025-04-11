@@ -45,6 +45,7 @@ void audio_app_entry(void)
 void audio_pad_digital_demo(void)
 {
 	u8 PinName = AUDIO_PAD_PIN;
+	u32 chnmode;
 	RCC_PeriphClockCmd(APBPeriph_AUDIO, APBPeriph_CLOCK_NULL, ENABLE);
 
 #ifdef DIGIT_PATH_EN
@@ -117,9 +118,9 @@ void audio_pad_digital_demo(void)
 			break;
 		case _PB_4:
 			/* AOUT LPLN */
-			u32 chnlmode = AUDIO_CODEC_GetHPOMode(CHN_L);
-			if (!chnlmode) {
-				AUDIO_CODEC_SetHPOMode(CHN_L, SINGAL);
+			chnmode = AUDIO_CODEC_GetHPOMode(CHN_L);
+			if (!chnmode) {
+				AUDIO_CODEC_SetHPOMode(CHN_L, SINGLE);
 			}
 			break;
 		case _PB_5:
@@ -128,9 +129,9 @@ void audio_pad_digital_demo(void)
 			break;
 		case _PB_6:
 			/* AOUT RPRN */
-			u32 chnrmode = AUDIO_CODEC_GetHPOMode(CHN_R);
-			if (!chnrmode) {
-				AUDIO_CODEC_SetHPOMode(CHN_R, SINGAL);
+			chnmode = AUDIO_CODEC_GetHPOMode(CHN_R);
+			if (!chnmode) {
+				AUDIO_CODEC_SetHPOMode(CHN_R, SINGLE);
 			}
 			break;
 		default:

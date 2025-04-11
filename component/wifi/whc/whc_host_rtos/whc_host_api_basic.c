@@ -39,11 +39,11 @@
  ******************************************************/
 struct internal_join_block_param *join_block_param = NULL;
 
-int (*scan_user_callback_ptr)(unsigned int, void *) = NULL;
-int (*scan_each_report_user_callback_ptr)(struct rtw_scan_result *, void *) = NULL;
+s32(*scan_user_callback_ptr)(u32, void *) = NULL;
+s32(*scan_each_report_user_callback_ptr)(struct rtw_scan_result *, void *) = NULL;
 
 u8(*promisc_user_callback_ptr)(struct rtw_rx_pkt_info *pkt_info) = NULL;
-int (*scan_acs_report_user_callback_ptr)(struct rtw_acs_mntr_rpt *acs_mntr_rpt) = NULL;
+s32(*scan_acs_report_user_callback_ptr)(struct rtw_acs_mntr_rpt *acs_mntr_rpt) = NULL;
 
 extern void *param_indicator;
 u8 rtw_join_status = RTW_JOINSTATUS_UNKNOWN;
@@ -58,7 +58,7 @@ void (*p_wifi_join_info_free)(u8 iface_type) = NULL;
  ******************************************************/
 
 #if CONFIG_WLAN
-int wifi_connect(struct rtw_network_info *connect_param, unsigned char block)
+s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 {
 	int result = RTK_SUCCESS;
 	struct internal_join_block_param *block_param = NULL;
@@ -205,7 +205,7 @@ error:
 	return result;
 }
 
-int wifi_disconnect(void)
+s32 wifi_disconnect(void)
 {
 	int ret = 0;
 
@@ -214,7 +214,7 @@ int wifi_disconnect(void)
 }
 
 //----------------------------------------------------------------------------//
-int wifi_is_running(unsigned char wlan_idx)
+s32 wifi_is_running(u8 wlan_idx)
 {
 	int ret;
 	u32 param_buf[1];
@@ -224,13 +224,13 @@ int wifi_is_running(unsigned char wlan_idx)
 	return ret;
 }
 
-int wifi_get_join_status(u8 *join_status)
+s32 wifi_get_join_status(u8 *join_status)
 {
 	*join_status = rtw_join_status;
 	return RTK_SUCCESS;
 }
 
-int wifi_on(u8 mode)
+s32 wifi_on(u8 mode)
 {
 	int ret = 1;
 	u32 wifi_mode;
@@ -267,7 +267,7 @@ int wifi_on(u8 mode)
 	return ret;
 }
 
-int wifi_start_ap(struct rtw_softap_info *softap_config)
+s32 wifi_start_ap(struct rtw_softap_info *softap_config)
 {
 	int ret = 0;
 	u8 *param_buf;
@@ -351,7 +351,7 @@ exit:
 	return ret;
 }
 
-int wifi_stop_ap(void)
+s32 wifi_stop_ap(void)
 {
 	int ret = 0;
 
@@ -372,7 +372,7 @@ int wifi_stop_ap(void)
 	return ret;
 }
 
-int wifi_scan_networks(struct rtw_scan_param *scan_param, unsigned char block)
+s32 wifi_scan_networks(struct rtw_scan_param *scan_param, u8 block)
 {
 	assert_param(scan_param);
 	int ret = 0;
@@ -387,7 +387,7 @@ int wifi_scan_networks(struct rtw_scan_param *scan_param, unsigned char block)
 	scan_acs_report_user_callback_ptr = scan_param->scan_report_acs_user_callback;
 
 	if (scan_param->ssid)  {
-		ssid_len = strlen(scan_param->ssid);
+		ssid_len = strlen((char *)scan_param->ssid);
 		buf_len += ssid_len;
 	} else {
 		ssid_len = 0;

@@ -33,27 +33,15 @@
 #define ATCMD_SSL_DEBUG_LEVEL             0	//RTK_LOG_DEBUG
 #define ENABLE_TCPIP_AUTOLINK             0
 
-#define SSL_CERT_NUM                      1
-#define SSL_CERT_SIZE                     2048
-#define SSL_AUTH_MODE_NO                  0
-#define SSL_AUTH_MODE_LOAD_CERT           1
-#define SSL_AUTH_MODE_LOAD_CA             2
-#define SSL_AUTH_MODE_BOTH                3
-
 
 #ifdef CONFIG_LWIP_LAYER
 #define NUM_NS                            MEMP_NUM_NETCONN
 
-#define INVALID_CON_ID                    -1
+#define INVALID_LINK_ID                   -1
 
 #define INVALID_SOCKET_ID                 -1
 
 #define ATCP_STACK_SIZE                   4096
-
-#define NODE_MODE_TCP                     0
-#define NODE_MODE_UDP                     1
-#define NODE_MODE_SSL                     2
-#define NODE_MODE_INVALID                 -1
 
 #define SOCKET_SERVER_OVER_UDP                   0
 #define SOCKET_SERVER_OVER_TCP                   1
@@ -74,9 +62,7 @@
 #define NODE_ROLE_SEED                    2
 #define NODE_ROLE_INVALID                 -1
 
-#define ATCMD_LWIP_TASK_PRIORITY          1
-
-#define ETH_MAX_MTU                       1500
+#define ATCMD_SOCKET_TASK_PRIORITY          1
 
 #define AT_SOCKET_RECEIVE_BUFFER_SIZE     ATCMD_SPI_DMA_SIZE
 
@@ -85,36 +71,30 @@
 #define RECV_SELECT_TIMEOUT_SEC           0
 #define RECV_SELECT_TIMEOUT_USEC          20000
 
-#define ATCMD_LWIP_CONN_STORE_MAX_NUM     1
-
-
 typedef struct _node {
-	s8_t con_id;
+	s8_t link_id;
 	s8_t role;	// 0:server, 1:client, 2:seed
-	s8_t cert_index;	//Security certificate suite index
+	s8_t cert_index;	//Security certificate & key suite index for TLS
 	s8_t auto_rcv;	//auto receive flag
 	int sockfd;
-	int protocol;	// 0:UDP, 1:TCP, 2-5:TLS
+	int protocol;	// 0:UDP, 1:TCP, 2-5:TLS(client)/2-3:TLS(server)
 	u32_t dst_ip;
 	u16_t dst_port;
 	u16_t src_port;
 	u32_t src_ip;
 	rtos_task_t auto_rcv_task;
-	u32_t addr;
-	u16_t port;
-	u16_t local_port;
-	u32_t local_addr;
-	rtos_task_t handletask;
-	struct _node *next;
+	struct _node *prevnode;
 	struct _node *nextseed;
 	mbedtls_ssl_context *ssl;
 	mbedtls_ssl_config *conf;
-	mbedtls_x509_crt *ca_crt[SSL_CERT_NUM];
-	mbedtls_x509_crt *cert_crt[SSL_CERT_NUM];
-	mbedtls_pk_context *private_key[SSL_CERT_NUM];
+	mbedtls_x509_crt *ca_crt;
+	mbedtls_x509_crt *cert_crt;
+	mbedtls_pk_context *private_key;
 } node;
 
 #if ENABLE_TCPIP_AUTOLINK
+
+#define ATCMD_LWIP_CONN_STORE_MAX_NUM     1
 typedef enum {
 	AT_PARTITION_ALL = 0,
 	AT_PARTITION_UART = 1,

@@ -242,6 +242,10 @@ void spi_handle_recv_data(u8 *data, u16 len)
 					start_time = 0;
 					end_time = 0;
 					ds_count = 0;
+
+					if (strstr((char *)data, "OK")) {
+						uart_send_string(&sobj, "\r\nOK\r\n", strlen("\r\nOK\r\n"));
+					}
 				} else {
 					ds_count += len;
 				}

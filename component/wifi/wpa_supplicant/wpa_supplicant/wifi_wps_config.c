@@ -654,12 +654,12 @@ exit1:
 }
 #endif /* CONFIG_ENABLE_WPS_DISCOVERY */
 
-static int wps_scan_result_handler(unsigned int scanned_AP_num, void *user_data)
+static s32 wps_scan_result_handler(u32 scanned_AP_num, void *user_data)
 {
 	struct _internal_wps_scan_handler_arg *wps_arg = (struct _internal_wps_scan_handler_arg *)user_data;
 	struct rtw_scan_result *scaned_ap_info;
 	struct rtw_scan_result *scanned_ap_list = NULL;
-	int ret = RTK_SUCCESS;
+	s32 ret = RTK_SUCCESS;
 	unsigned int i = 0;
 
 	if (scanned_AP_num == 0) {
@@ -699,7 +699,7 @@ EXIT:
 	}
 	DiagPrintf("\r\nWPS scan done!\r\n");
 	rtos_sema_give(wps_arg->scan_sema);
-	return (int)ret;
+	return ret;
 }
 
 static int wps_find_out_triger_wps_AP(char *target_ssid, unsigned char *target_bssid, u16 config_method)
@@ -753,11 +753,12 @@ static u8 wps_scan_cred_ssid(struct dev_credential *dev_cred)
 	struct rtw_scan_result *scanned_ap_list = NULL;
 	struct rtw_scan_param scan_param;
 	struct rtw_scan_result *scanned_ap_info;
-	int scanned_ap_num, i = 0;
+	s32 scanned_ap_num;
+	int i = 0;
 
 	//set scan_param for scan
 	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
-	scan_param.ssid = (char *)(dev_cred->ssid);
+	scan_param.ssid = dev_cred->ssid;
 
 	if ((scanned_ap_num = wifi_scan_networks(&scan_param, 1)) <= 0) {
 		DiagPrintf("\n\rERROR: wifi scan failed");
@@ -768,7 +769,7 @@ static u8 wps_scan_cred_ssid(struct dev_credential *dev_cred)
 			ssid_found = 1;
 			return ssid_found;
 		}
-		if (wifi_get_scan_records((unsigned int *)(&scanned_ap_num), scanned_ap_list) < 0) {
+		if (wifi_get_scan_records((u32 *)(&scanned_ap_num), scanned_ap_list) < 0) {
 			rtos_mem_free((u8 *)scanned_ap_list);
 			return ssid_found;
 		}

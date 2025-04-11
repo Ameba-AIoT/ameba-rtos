@@ -1132,7 +1132,7 @@ void cmd_iperf(int argc, char **argv)
 				stream_data->port = (uint16_t) atoi(argv[argv_count]);
 				argv_count += 2;
 			}
-#if CONFIG_WLAN
+#ifdef CONFIG_WLAN
 			else if (strcmp(argv[argv_count - 1], "-S") == 0) { //for wmm test
 				if (argc < (argv_count + 1)) {
 					goto exit;
@@ -1224,7 +1224,7 @@ exit:
 		printf("  \r     -d             Do a bidirectional test simultaneously\n");
 		printf("  \r     -t    #        time in seconds to transmit for (default 10 secs)\n");
 		printf("  \r     -n    #[KM]    number of bytes to transmit (instead of -t)\n");
-#if CONFIG_WLAN
+#ifdef CONFIG_WLAN
 		printf("  \r     -S    #        for UDP, set the IP 'type of service'\n");
 #endif
 		printf("\n\r   Example for TCP:\n");

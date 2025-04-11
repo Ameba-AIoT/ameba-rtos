@@ -182,7 +182,7 @@ void whc_event_get_scan_res(u32 api_id, u32 *param_buf)
 {
 	(void)param_buf;
 	struct rtw_scan_result *scanned_AP_list = NULL;
-	unsigned int scanned_AP_num = 0;
+	u32 scanned_AP_num = 0;
 	int ret = 0;
 
 	scanned_AP_num = param_buf[0];
@@ -482,7 +482,7 @@ void whc_event_wifi_scan_networks(u32 api_id, u32 *param_buf)
 	u8 block;
 	u32 ssid_length;
 	struct rtw_scan_param scan_param = {0};
-	char *ssid = NULL;
+	u8 *ssid = NULL;
 
 	memcpy(&block, ptr, sizeof(block));
 	ptr += sizeof(block);
@@ -775,7 +775,7 @@ void whc_event_wifi_set_countrycode(u32 api_id, u32 *param_buf)
 {
 	int ret = 0;
 
-	ret = wifi_set_countrycode((char *)param_buf);
+	ret = wifi_set_countrycode((s8 *)param_buf);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 

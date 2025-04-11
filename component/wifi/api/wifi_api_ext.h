@@ -49,7 +49,7 @@ extern "C" {
  * 	     will be executed. If there is no wifi scan in progress, this function will just return
  * 	     @ref RTK_SUCCESS and user callback won't be executed.
  */
-int wifi_scan_abort(u8 block);
+s32 wifi_scan_abort(u8 block);
 
 /**
  * @brief  Enable or disable LPS. LPS is the abbreviation of Leisure Power Save mode.
@@ -60,7 +60,7 @@ int wifi_scan_abort(u8 block);
  *    - @ref RTK_SUCCESS : If setting LPS successful.
  *    - @ref RTK_FAIL : Otherwise.
  */
-int wifi_set_lps_enable(u8 enable);
+s32 wifi_set_lps_enable(u8 enable);
 
 /**
  * @brief  Set the listen interval of LPS. LPS is the abbreviation of Leisure Power Save mode.
@@ -78,7 +78,7 @@ int wifi_set_lps_enable(u8 enable);
  *    - @ref RTK_SUCCESS : If setting LPS listen interval successful.
  *    - @ref RTK_FAIL : Otherwise.
  */
-int wifi_set_lps_listen_interval(u8 interval);
+s32 wifi_set_lps_listen_interval(u8 interval);
 
 
 /**
@@ -91,7 +91,7 @@ int wifi_set_lps_listen_interval(u8 interval);
  *    - @ref RTK_SUCCESS
  *    - @ref RTK_FAIL : CONFIG_AUTO_RECONNECT in not defined or creating reconnect timer failed.
  */
-int wifi_set_autoreconnect(u8 enable);
+s32 wifi_set_autoreconnect(u8 enable);
 
 /**
  * @brief  Get the current auto-reconnect settings as a backup so you can restore the previous state after temporarily disabling it.
@@ -102,7 +102,7 @@ int wifi_set_autoreconnect(u8 enable);
  *    - @ref RTK_SUCCESS
  *    - @ref RTK_FAIL : CONFIG_AUTO_RECONNECT in not defined.
  */
-int wifi_get_autoreconnect(u8 *enable);
+s32 wifi_get_autoreconnect(u8 *enable);
 
 /**
  * @brief  Get the connected clients with SoftAP.
@@ -111,7 +111,7 @@ int wifi_get_autoreconnect(u8 *enable);
  *    - @ref RTK_SUCCESS : The result is successfully got.
  *    - @ref RTK_FAIL : The result is not successfully got.
  */
-int wifi_ap_get_connected_clients(struct rtw_client_list	*client_list_buffer);
+s32 wifi_ap_get_connected_clients(struct rtw_client_list	*client_list_buffer);
 
 /**
  * @brief  Delete a STA for softap.
@@ -119,7 +119,7 @@ int wifi_ap_get_connected_clients(struct rtw_client_list	*client_list_buffer);
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL.
  * @note  This function should be used when operating as AP.
  */
-int wifi_ap_del_client(unsigned char *hwaddr);
+s32 wifi_ap_del_client(u8 *hwaddr);
 
 /**
  * @brief  Switch to a new channel in AP mode and using CSA to inform sta.
@@ -128,7 +128,7 @@ int wifi_ap_del_client(unsigned char *hwaddr);
  * 	successfully set to wifi driver.
  * @note  This function should be used when operating as AP.
  */
-int wifi_ap_switch_chl_and_inform(struct rtw_csa_parm *csa_param);
+s32 wifi_ap_switch_chl_and_inform(struct rtw_csa_parm *csa_param);
 
 /**
   * @brief  For user to toggle softap whether can be discovered.
@@ -153,21 +153,21 @@ void wifi_ap_set_invisible(u8 enable);
  *         operating channel has changed, resulting in inconsistency with the channel claimed by BCN.
  *         Softap channel switching recommendation: call wifi_ap_switch_chl_and_inform().
  */
-int wifi_set_channel(unsigned char wlan_idx, u8 channel);
+s32 wifi_set_channel(u8 wlan_idx, u8 channel);
 
 /**
  * @brief  Set country code.
  * @param[in]  cntcode: Pointer to the country code which want to be set.
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL.
  */
-int wifi_set_countrycode(char *cntcode);
+s32 wifi_set_countrycode(s8 *cntcode);
 
 /**
  * @brief  get country code info
  * @param[in]  table: Pointer to the currently obtained country code table
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL
  */
-int wifi_get_countrycode(struct rtw_country_code_table *table);
+s32 wifi_get_countrycode(struct rtw_country_code_table *table);
 
 /**
  * @brief  Retrieves the current Media Access Control (MAC) address
@@ -180,7 +180,7 @@ int wifi_get_countrycode(struct rtw_country_code_table *table);
  *     - Get mac address inside EFUSE(efuse = 1).
  *     - Get runtime mac address(efuse = 0). (RECOMMENDED)
  */
-int wifi_get_mac_address(int idx, struct rtw_mac  *mac, u8 efuse);
+s32 wifi_get_mac_address(s32 idx, struct rtw_mac  *mac, u8 efuse);
 
 /**
  * @brief  This function is used to get wifi wireless mode for station mode when connecting to AP.
@@ -189,7 +189,7 @@ int wifi_get_mac_address(int idx, struct rtw_mac  *mac, u8 efuse);
  *    - @ref RTK_SUCCESS : The result is successfully got.
  *    - @ref RTK_FAIL : The result is not successfully got.
  */
-int wifi_get_wireless_mode(u8 *wmode);
+s32 wifi_get_wireless_mode(u8 *wmode);
 
 /**
  * @brief  Set the wireless mode according to the data rate its supported.
@@ -220,7 +220,7 @@ int wifi_get_wireless_mode(u8 *wmode);
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL.
  * @note  We do not recommend 2G without 11b mode and 5G without 11a mode, as this may lead to compatibility issues.
  */
-int wifi_set_wireless_mode(u32 wmode);
+s32 wifi_set_wireless_mode(u32 wmode);
 
 /** @} End of Basic_Functions group */
 
@@ -258,7 +258,7 @@ u8 wifi_driver_is_mp(void);
  *    - @ref RTK_SUCCESS : If get key successfully.
  *    - @ref RTK_FAIL : Otherwise.
  */
-int wifi_get_ccmp_key(u8 wlan_idx, u8 *mac_addr, unsigned char *uncst_key, unsigned char *group_key);
+s32 wifi_get_ccmp_key(u8 wlan_idx, u8 *mac_addr, u8 *uncst_key, u8 *group_key);
 
 /**
  * @brief  Fetch the traffic statistic about wifi.
@@ -269,7 +269,7 @@ int wifi_get_ccmp_key(u8 wlan_idx, u8 *mac_addr, unsigned char *uncst_key, unsig
  *    - @ref RTK_SUCCESS : If the statistic info is successfully get.
  *    - @ref RTK_FAIL : If the statistic info is not successfully get.
  */
-int wifi_get_traffic_stats(u8 wlan_idx, union rtw_traffic_stats *traffic_stats);
+s32 wifi_get_traffic_stats(u8 wlan_idx, union rtw_traffic_stats *traffic_stats);
 
 /**
  * @brief  Fetch the phy statistic info about wifi.
@@ -282,7 +282,7 @@ int wifi_get_traffic_stats(u8 wlan_idx, union rtw_traffic_stats *traffic_stats);
  *    - @ref RTK_FAIL : If the statistic info is not successfully get.
  * @note  The `phy_stats->sta.rssi` and `phy_stats->sta.snr` info will only be valid after connected to AP successfully.
  */
-int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union rtw_phy_stats *phy_stats);
+s32 wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union rtw_phy_stats *phy_stats);
 
 /**
  * @brief  Get current remaining number of packets in HW TX buffer.
@@ -291,7 +291,7 @@ int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union rtw_phy_stats *phy_stats
  *    - @ref RTK_SUCCESS : If the number of packets is successfully get.
  *    - @ref RTK_FAIL : If the number of packets is not successfully get.
  */
-int wifi_get_txbuf_pkt_num(int *pkt_num);
+s32 wifi_get_txbuf_pkt_num(s32 *pkt_num);
 
 /**
  * @brief  Get antdiv infomation.
@@ -301,7 +301,7 @@ int wifi_get_txbuf_pkt_num(int *pkt_num);
  * @return  0 if get successfully, otherwise return -1.
  */
 
-int wifi_get_antdiv_info(unsigned char *antdiv_mode, unsigned char *curr_ant);
+s32 wifi_get_antdiv_info(u8 *antdiv_mode, u8 *curr_ant);
 
 //-------------------------------------------------------------//
 /**
@@ -315,7 +315,7 @@ int wifi_get_antdiv_info(unsigned char *antdiv_mode, unsigned char *curr_ant);
  *    - @ref RTK_SUCCESS : If the band type info is successfully get.
  *    - @ref RTK_FAIL : If the band type info is not successfully get.
  */
-int wifi_get_band_type(u8 *band_type);
+s32 wifi_get_band_type(u8 *band_type);
 
 /**
  * @brief	Get wifi TSF register[63:32]&[31:0].
@@ -325,7 +325,7 @@ int wifi_get_band_type(u8 *band_type);
  *    - @ref RTK_SUCCESS : If the tsf is successfully get.
  *    - @ref RTK_FAIL : If the tsf is not successfully get.
  */
-int wifi_get_tsf(unsigned char wlan_idx, u64 *tsf);
+s32 wifi_get_tsf(u8 wlan_idx, u64 *tsf);
 
 /**
  * @brief  Setup custom IE(Information Element) list.
@@ -340,7 +340,7 @@ int wifi_get_tsf(unsigned char wlan_idx, u64 *tsf);
  * @param[in]  ie_num: The number of custom IEs in `ie_list`.
  * @return  0 if success, otherwise return -1.
  */
-int wifi_add_custom_ie(struct rtw_custom_ie *ie_list, int ie_num);
+s32 wifi_add_custom_ie(struct rtw_custom_ie *ie_list, s32 ie_num);
 
 /**
  * @brief  Update the item in WIFI CUSTOM IE(Information Element) list.
@@ -353,14 +353,14 @@ int wifi_add_custom_ie(struct rtw_custom_ie *ie_list, int ie_num);
  * @param[in]  ie_index: Index of WIFI CUSTOM IE list.
  * @return  0 if success, otherwise return -1.
  */
-int wifi_update_custom_ie(struct rtw_custom_ie *cus_ie, int ie_index);
+s32 wifi_update_custom_ie(struct rtw_custom_ie *cus_ie, s32 ie_index);
 
 /**
  * @brief  Delete WIFI CUSTOM IE(Information Element) list.
  * @param[in]  wlan_idx: Should be @ref STA_WLAN_INDEX or @ref SOFTAP_WLAN_INDEX.
  * @return  0 if success, otherwise return -1.
  */
-int wifi_del_custom_ie(unsigned char wlan_idx);
+s32 wifi_del_custom_ie(u8 wlan_idx);
 
 /**
  * @brief  Send raw frame.
@@ -368,7 +368,7 @@ int wifi_del_custom_ie(unsigned char wlan_idx);
  * 	which describe related information, include the pointer of raw frame and so on.
  * @return  @ref RTK_FAIL or @ref RTK_SUCCESS.
  */
-int wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc);
+s32 wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc);
 
 /**
  * @brief  Control initial tx rate by different ToS value in IP header.
@@ -379,7 +379,7 @@ int wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc);
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL.
  * @note This function only take IP Precedence(BIT 7~5 in ToS field) into consideration.
  */
-int wifi_set_tx_rate_by_tos(unsigned char enable, unsigned char tos_precedence, unsigned char tx_rate);
+s32 wifi_set_tx_rate_by_tos(u8 enable, u8 tos_precedence, u8 tx_rate);
 
 /**
  * @brief  Set EDCA parameter.
@@ -390,7 +390,7 @@ int wifi_set_tx_rate_by_tos(unsigned char enable, unsigned char tos_precedence, 
  * </table>
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL
  */
-int wifi_set_edca_param(unsigned int ac_param);
+s32 wifi_set_edca_param(u32 ac_param);
 
 /**
  * @brief  Enable or disable CCA/EDCCA for TX.
@@ -398,7 +398,7 @@ int wifi_set_edca_param(unsigned int ac_param);
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL.
  * @note Both CCA and EDCCA will be enabled or disabled.
  */
-int wifi_set_tx_cca_enable(unsigned char enable);
+s32 wifi_set_tx_cca_enable(u8 enable);
 
 /**
  * @brief  Set duration and send a CTS2SELF frame.
@@ -406,7 +406,7 @@ int wifi_set_tx_cca_enable(unsigned char enable);
  * @param[in]  duration: The duration value for the CTS2SELF frame.
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL.
  */
-int wifi_set_cts2self_duration_and_send(unsigned char wlan_idx, unsigned short duration);
+s32 wifi_set_cts2self_duration_and_send(u8 wlan_idx, u16 duration);
 
 /**
  * @brief  Set the csi parameters and enable or disable csi func(sta or softap).
@@ -419,7 +419,7 @@ int wifi_set_cts2self_duration_and_send(unsigned char wlan_idx, unsigned short d
  * @endcode
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL
  */
-int wifi_csi_config(struct rtw_csi_action_parm *act_param);
+s32 wifi_csi_config(struct rtw_csi_action_parm *act_param);
 
 /**
  * @brief  Get csi raw data and csi hdr info.
@@ -427,14 +427,14 @@ int wifi_csi_config(struct rtw_csi_action_parm *act_param);
  * @param[in]  csi_buf: The pointer to csi data buffer.
  * @param[in]  len: The size of csi raw data.
  * @code
- *    unsigned char *csi_buf = NULL;
- *    unsigned int len;
+ *    u8 *csi_buf = NULL;
+ *    u32 len;
  *    csi_buf = rtos_mem_zmalloc(buf_len);
  *    wifi_csi_report(buf_len,csi_buf,&len);
  * @endcode
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL.
  */
-int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
+s32 wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
 
 /**
  * @brief  For wifi speaker setting.
@@ -472,7 +472,7 @@ void wifi_speaker_setting(u8 set_type, union rtw_speaker_set *settings);
  *    - For both, we suggest setting the power not to exceed the power by rate table.
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL
  */
-int wifi_set_tx_power(struct rtw_tx_power_ctl_info *txpwr_ctrl_info);
+s32 wifi_set_tx_power(struct rtw_tx_power_ctl_info *txpwr_ctrl_info);
 
 /**
  * @brief  For user to get tx power.
@@ -485,7 +485,7 @@ int wifi_set_tx_power(struct rtw_tx_power_ctl_info *txpwr_ctrl_info);
  * @param[out]  txpwr: The current tx power, unit 0.25dBm.
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL
  */
-int wifi_get_tx_power(u8 rate, s8 *txpwr);
+s32 wifi_get_tx_power(u8 rate, s8 *txpwr);
 
 /**
   * @brief  For user to config retry limit for different stages of join.
