@@ -372,10 +372,10 @@ struct rtw_wifi_setting target_ap_setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SEC
 static void vProcessConnection(void *param);
 
 /*------------------------------------------------------------------------------*/
-extern int wifi_get_setting(unsigned char wlan_idx, struct rtw_wifi_setting *psetting);
+extern s32 wifi_get_setting(u8 wlan_idx, struct rtw_wifi_setting *psetting);
 static void LoadWifiSetting(void)
 {
-	unsigned char wlan_idx = STA_WLAN_INDEX;
+	u8 wlan_idx = STA_WLAN_INDEX;
 
 	if (wifi_is_running(SOFTAP_WLAN_INDEX)) {
 		//STA_AP_MODE
@@ -1038,7 +1038,7 @@ static void GenerateWaitHtmlPage(char *cDynamicPage)
 	rtos_sema_give(webs_wpage_sema);
 }
 
-extern int wifi_get_scan_records(unsigned int *ap_num, struct rtw_scan_result *ap_list);
+extern s32 wifi_get_scan_records(u32 *ap_num, struct rtw_scan_result *ap_list);
 static int scan_result_handler(unsigned int scanned_AP_num, void *user_data)
 {
 	/* To avoid gcc warnings */
@@ -1058,7 +1058,7 @@ static int scan_result_handler(unsigned int scanned_AP_num, void *user_data)
 		return RTK_FAIL;
 	}
 
-	if (wifi_get_scan_records(&scanned_AP_num, scanned_AP_list) < 0) {
+	if (wifi_get_scan_records((u32 *)&scanned_AP_num, scanned_AP_list) < 0) {
 		rtos_mem_free((u8 *)scanned_AP_list);
 		return RTK_FAIL;
 	}
@@ -1166,7 +1166,7 @@ static int _get_ap_security_mode(IN char *ssid, OUT u32 *security_mode, OUT u8 *
 			RTK_LOGE(NOTAG, "error %s, malloc scan_buf failed\n", __func__);
 			return -1;
 		}
-		if (wifi_get_scan_records((unsigned int *)&scan_cnt, scanned_AP_list) < 0) {
+		if (wifi_get_scan_records((u32 *)&scan_cnt, scanned_AP_list) < 0) {
 			rtos_mem_free((unsigned char *)scanned_AP_list);
 			return -1;
 		}

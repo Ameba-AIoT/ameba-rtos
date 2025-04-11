@@ -189,10 +189,6 @@ int lfs_diskio_unlock(const struct lfs_config *c)
 
 int rt_lfs_init(lfs_t *lfs)
 {
-#if !defined(CONFIG_AS_INIC_AP) && !defined(CONFIG_SINGLE_CORE_WIFI)
-	(void) lfs;
-	return 0;
-#else
 	struct lfs_config *lfs_cfg;
 	int ret = 0;
 
@@ -225,5 +221,4 @@ int rt_lfs_init(lfs_t *lfs)
 	}
 
 	return ret;
-#endif
 }

@@ -102,7 +102,7 @@ char global_buf[SMALL_BUF];
 at_write out_buffer;
 rtos_sema_t atcmd_tt_mode_sema;
 
-extern int wifi_set_countrycode(char *cntcode);
+extern s32 wifi_set_countrycode(s8 *cntcode);
 
 /**
  * @brief Output format strings, like printf.
@@ -370,7 +370,7 @@ int atcmd_wifi_config_setting(void)
 				ret = -1;
 				goto EXIT;
 			} else {
-				ret = wifi_set_countrycode(country_code_ob->valuestring);
+				ret = wifi_set_countrycode((s8 *)country_code_ob->valuestring);
 				RTK_LOGI(TAG, "wifi_set_countrycode : %s %s\r\n", country_code_ob->valuestring, ret == 0 ? "OK" : "ERROR");
 			}
 		}

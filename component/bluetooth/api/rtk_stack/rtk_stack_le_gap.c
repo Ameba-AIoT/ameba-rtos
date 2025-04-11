@@ -1970,7 +1970,7 @@ static T_APP_RESULT bt_stack_le_coc_callback(uint8_t coc_msg_type, void *coc_dat
 		data_ind->conn_handle = conn_handle;
 		data_ind->cid = recv_data->cid;
 		data_ind->len = recv_data->value_len;
-		data_ind->data = (uint8_t *)p_evt + sizeof(rtk_bt_le_coc_receive_data_ind_t);
+		data_ind->data = (uint8_t *)data_ind + sizeof(rtk_bt_le_coc_receive_data_ind_t);
 		memcpy(data_ind->data, recv_data->p_data, recv_data->value_len);
 		rtk_bt_evt_indicate(p_evt, NULL);
 		break;

@@ -34,6 +34,11 @@ if BT_EXAMPLE_DEMO_MENU
         bool "BLE Scatternet"
         default n
 
+    config BT_HOGP
+        depends on AMEBASMART && !AMEBA_RLS    #internal amebasmart
+        bool "BLE HOGP"
+        default n
+
     config BT_THROUGHPUT
         depends on !AMEBA_RLS    #internal
         bool "BLE Throughput"

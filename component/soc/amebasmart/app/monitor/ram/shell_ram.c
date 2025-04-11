@@ -54,7 +54,7 @@ static void shell_give_sema(void)
 	}
 }
 
-static u32 shell_cmd_exec_ram(u8 *pbuf)
+__attribute__((noinline)) static u32 shell_cmd_exec_ram(u8 *pbuf)
 {
 	monitor_cmd_handler cmd_handler = NULL;
 	u8 argc = shell_get_argc((const u8 *) pbuf);
@@ -198,7 +198,7 @@ static void shell_task_ram(void *Data)
 		shell_loguartRx_dispatch();
 
 		if (shell_ctl.ExecuteCmd) {
-#if (defined CONFIG_SUPPORT_ATCMD) && ((defined CONFIG_SINGLE_CORE_WIFI) || (defined CONFIG_AS_INIC_AP))
+#if (defined CONFIG_SUPPORT_ATCMD) && (defined CONFIG_CORE_AS_AP)
 			shell_array_init((u8 *)atcmd_buf, sizeof(atcmd_buf), '\0');
 			strcpy(atcmd_buf, (const char *)pUartLogBuf->UARTLogBuf);
 			ret = atcmd_service(atcmd_buf);
@@ -225,7 +225,7 @@ static void shell_task_ram(void *Data)
 
 void shell_init_ram(void)
 {
-#if (defined CONFIG_SUPPORT_ATCMD) && ((defined CONFIG_SINGLE_CORE_WIFI) || (defined CONFIG_AS_INIC_AP))
+#if (defined CONFIG_SUPPORT_ATCMD) && (defined CONFIG_CORE_AS_AP)
 	atcmd_service_init();
 #endif
 
