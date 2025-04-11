@@ -1,4 +1,4 @@
-if(CONFIG_WLAN AND CONFIG_CORE_AS_AP)
+if(CONFIG_CORE_AS_AP)
     ameba_add_subdirectory(mqtt)
     ameba_add_subdirectory(httpc)
     ameba_add_subdirectory(httpd)
