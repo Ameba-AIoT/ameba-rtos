@@ -1602,11 +1602,14 @@ function(ameba_target_add name)
     ameba_list_append_if(ARG_p_ENABLE_DETERMINISTIC_ARCHIVES _tmp_param -D)
     if (_tmp_param)
         add_custom_target(
-            ${c_CURRENT_TARGET_NAME}_postbuild
+            ${c_CURRENT_TARGET_NAME}_objcopy
             COMMAND ${CMAKE_OBJCOPY} ${_tmp_param} $<TARGET_FILE:${c_CURRENT_TARGET_NAME}>
             COMMENT "strip target ${c_CURRENT_TARGET_NAME}"
             DEPENDS ${c_CURRENT_TARGET_NAME}
         )
+        if(c_CURRENT_IMAGE)
+            add_dependencies(${c_CURRENT_IMAGE} ${c_CURRENT_TARGET_NAME}_objcopy)
+        endif()
         unset(_tmp_param)
     endif()
 

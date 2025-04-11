@@ -13,7 +13,7 @@
 #ifdef CONFIG_MP_INCLUDED
 #define SHELL_TASK_FUNC_STACK_SIZE (1024 * 4)
 #elif (defined (CONFIG_AS_INIC_AP) || defined(CONFIG_SINGLE_CORE_WIFI))
-#define SHELL_TASK_FUNC_STACK_SIZE (1252 + 128 + CONTEXT_SAVE_SIZE + 1536)
+#define SHELL_TASK_FUNC_STACK_SIZE (3056 + 128 + CONTEXT_SAVE_SIZE)
 #else
 #define SHELL_TASK_FUNC_STACK_SIZE (632 + 128 + CONTEXT_SAVE_SIZE)	/* KM0 cost stack: max_size < 300 bytes, test by monitor cmd */
 #endif

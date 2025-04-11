@@ -1,8 +1,6 @@
 execute_process(
 		COMMAND
 			whoami
-		TIMEOUT
-			1
 		OUTPUT_VARIABLE
 			_user_name
 		OUTPUT_STRIP_TRAILING_WHITESPACE

@@ -14,9 +14,6 @@ extern "C" {
 #ifdef CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
 #endif
-#ifdef CONFIG_WLAN
-#include "wifi_api.h"
-#endif
 #include "MQTTClient.h"
 #include "MQTTPublish.h"
 #include "MQTTFreertos.h"

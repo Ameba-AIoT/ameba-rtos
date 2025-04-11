@@ -463,7 +463,7 @@ static uint16_t ble_wifimate_server_write_wifi_scan_hdl(uint16_t conn_handle, ui
 	struct rtw_scan_result *scanned_AP_list = NULL;
 	uint8_t join_status = RTW_JOINSTATUS_UNKNOWN;
 	int scan_network = 0;
-	unsigned int scanned_AP_num = 0;
+	uint32_t scanned_AP_num = 0;
 	struct rtw_scan_param scan_param;
 	struct ble_wifimate_wifi_scan_result_t *wifi_scan_result = NULL;
 

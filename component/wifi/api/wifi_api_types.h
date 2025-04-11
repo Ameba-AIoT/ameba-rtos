@@ -52,6 +52,14 @@ extern "C" {
  * otherwise do normal scan on the specified channel with scan time set to 110ms. */
 #define RTW_PSCAN_FAST_SURVEY	0x02
 
+/** Max channel num in each channel plan */
+#if !defined(SUPPORT_5G_CHANNEL)
+#define	RTW_MAX_CHANNEL_NUM			14
+#else
+#define	RTW_MAX_CHANNEL_NUM			42
+#endif
+
+
 /** Set to this means disable DPK(Digital Pre-Distortion Calibration) of rf calibration. */
 #define RTW_RFK_DIS_DPK     BIT(0)
 
@@ -572,15 +580,15 @@ enum rtw_txpwr_lmt {
   * @brief  The structure is used to describe the SSID (Service Set Identification), i.e., the name of Access Point.
   */
 struct rtw_ssid {
-	unsigned char		len;     /**< SSID length, i.e., equal to the length of `val`. The length of ssid should not > @ref RTW_ESSID_MAX_SIZE.  */
-	unsigned char		val[RTW_ESSID_MAX_SIZE + 1]; /**< SSID name (AP name).*/
+	u8		len;     /**< SSID length, i.e., equal to the length of `val`. The length of ssid should not > @ref RTW_ESSID_MAX_SIZE.  */
+	u8		val[RTW_ESSID_MAX_SIZE + 1]; /**< SSID name (AP name).*/
 };
 
 /**
   * @brief  The structure is used to describe the unique 6-byte MAC address.
   */
 struct rtw_mac {
-	unsigned char		octet[6]; /**< Unique 6-byte MAC address. */
+	u8		octet[6]; /**< Unique 6-byte MAC address. */
 };
 #pragma pack()
 
@@ -604,48 +612,49 @@ struct rtw_acs_mntr_rpt {
   * @brief  The structure is used to describe the details of a scanned AP.
   */
 struct rtw_scan_result {
-	struct rtw_ssid         ssid;             /**< Service Set Identification (i.e. Name of Access Point). */
-	struct rtw_mac          bssid;            /**< Basic Service Set Identification (i.e. MAC address of Access Point). */
-	signed short            signal_strength;  /**< Receive Signal Strength Indication in dBm. <-90=Very poor, >-30=Excellent. */
-	u8						bss_type;         /**< The bss type. The noraml type is infrastructure BSS. Val: @ref RTW_BSS_TYPE_INFRASTRUCTURE, @ref RTW_BSS_TYPE_WTN_HELPER.*/
-	u32                     security;         /**< The security type of this AP. Val: @ref RTW_SECURITY_OPEN, @ref RTW_SECURITY_WEP_PSK...*/
-	u8						wps_type;         /**< The WPS(Wi-Fi Protected Setup) types supported by this AP. Val: @ref RTW_WPS_TYPE_DEFAULT, @ref RTW_WPS_TYPE_USER_SPECIFIED...*/
-	unsigned int            channel;          /**< Radio channel that the AP beacon was received on. */
-	u8                      band;             /**< The frequency ranges used by this AP. Val: @ref RTW_BAND_ON_5G, @ref RTW_BAND_ON_24G. */
+	struct rtw_ssid    ssid;             /**< Service Set Identification (i.e. Name of Access Point). */
+	struct rtw_mac     bssid;            /**< Basic Service Set Identification (i.e. MAC address of Access Point). */
+	s16                signal_strength;  /**< Receive Signal Strength Indication in dBm. <-90=Very poor, >-30=Excellent. */
+	u8				   bss_type;         /**< The bss type. The noraml type is infrastructure BSS. Val: @ref RTW_BSS_TYPE_INFRASTRUCTURE, @ref RTW_BSS_TYPE_WTN_HELPER.*/
+	u32                security;         /**< The security type of this AP. Val: @ref RTW_SECURITY_OPEN, @ref RTW_SECURITY_WEP_PSK...*/
+	u8
+	wps_type;         /**< The WPS(Wi-Fi Protected Setup) types supported by this AP. Val: @ref RTW_WPS_TYPE_DEFAULT, @ref RTW_WPS_TYPE_USER_SPECIFIED...*/
+	u32                channel;          /**< Radio channel that the AP beacon was received on. */
+	u8                 band;             /**< The frequency ranges used by this AP. Val: @ref RTW_BAND_ON_5G, @ref RTW_BAND_ON_24G. */
 
 	/** The wireless spectrum management regulations of which region followed by the AP. `country_code` is coded
 	 * according to ISO 3166 standard. Specific values can refer to ameba_wifi_country_code_table_usrcfg.c.\n
 	 * e.g. China: country_code[0] = 'C', country_code[1] = 'N'. */
-	char                    country_code[2];
-	char                    wireless_mode;    /**< The wireless mode of this AP. Val: @ref RTW_80211_B, @ref RTW_80211_A...*/
-	u8                      rom_rsvd[3];
+	u8                 country_code[2];
+	u8                 wireless_mode;    /**< The wireless mode of this AP. Val: @ref RTW_80211_B, @ref RTW_80211_A...*/
+	u8                 rom_rsvd[3];
 };
 
 /**
   * @brief  The structure is used to describe the scan time per channel.
   */
 struct rtw_channel_scan_time {
-	unsigned short		active_scan_time;      /**< Active scan time per channel, units: millisecond, default is 110ms. */
-	unsigned short		passive_scan_time;     /**< Passive scan time per channel, units: millisecond, default is 110ms. */
+	u16		active_scan_time;      /**< Active scan time per channel, units: millisecond, default is 110ms. */
+	u16		passive_scan_time;     /**< Passive scan time per channel, units: millisecond, default is 110ms. */
 };
 
 /**
   * @brief  The structure is used to describe the scan parameters used for scan.
   */
 struct rtw_scan_param {
-	u8                                 options; /**< The scan option, such as active scan. Val: @ref RTW_SCAN_ACTIVE, @ref RTW_SCAN_PASSIVE...*/
-	char                              *ssid;    /**< The data length of string pointed by ssid should not exceed @ref RTW_ESSID_MAX_SIZE. */
-	unsigned char                     *channel_list;      /**< The list of specified channels to be scanned.*/
-	unsigned char                      channel_list_num;  /**< The total number in `channel_list`.*/
-	struct rtw_channel_scan_time       chan_scan_time;    /**< The scan time per channel.*/
+	u8                               options; /**< The scan option, such as active scan. Val: @ref RTW_SCAN_ACTIVE, @ref RTW_SCAN_PASSIVE...*/
+	u8                              *ssid;    /**< The data length of string pointed by ssid should not exceed @ref RTW_ESSID_MAX_SIZE. */
+	u8                              *channel_list;      /**< The list of specified channels to be scanned.*/
+	u8                               channel_list_num;  /**< The total number in `channel_list`.*/
+	struct rtw_channel_scan_time     chan_scan_time;    /**< The scan time per channel.*/
 
 	/** Config the max number of recorded AP. When set to 0, use default value 64.
 	 * When the number of scanned APs exceed `max_ap_record_num`, the AP(s) with smallest rssi will be discarded. */
-	unsigned short                     max_ap_record_num;
-	void                              *scan_user_data;
-	int (*scan_user_callback)(unsigned int ap_num, void *user_data);/**< Used for normal asynchronized mode. */
-	int (*scan_report_each_mode_user_callback)(struct rtw_scan_result *scanned_ap_info, void *user_data); /**< Used for @ref RTW_SCAN_REPORT_EACH mode. */
-	int (*scan_report_acs_user_callback)(struct rtw_acs_mntr_rpt *acs_mntr_rpt); /**< Used for report acs info.*/
+	u16                              max_ap_record_num;
+	void                            *scan_user_data;
+	s32(*scan_user_callback)(u32 ap_num, void *user_data); /**< Used for normal asynchronized mode. */
+	s32(*scan_report_each_mode_user_callback)(struct rtw_scan_result *scanned_ap_info, void *user_data);  /**< Used for @ref RTW_SCAN_REPORT_EACH mode. */
+	s32(*scan_report_acs_user_callback)(struct rtw_acs_mntr_rpt *acs_mntr_rpt);  /**< Used for report acs info.*/
 };
 #pragma pack()
 
@@ -674,13 +683,13 @@ struct rtw_network_info {
 	struct rtw_ssid				ssid;  /**< The AP's name and the length of name (should not exceed @ref RTW_ESSID_MAX_SIZE). */
 	struct rtw_mac				bssid; /**< The unique 6-byte MAC address of AP. */
 	u32							security_type; /**< Only need to be set when use WEP (@ref RTW_SECURITY_WEP_PSK @ref RTW_SECURITY_WEP_SHARED), Other case will automatically adjust according to the AP.*/
-	unsigned char				*password;	   /**< The password of AP which sta is trying to connect. */
-	int 						password_len;  /**< The data length of string pointed by password should not exceed @ref RTW_MAX_PSK_LEN. Equal to length of `password`. */
-	int 						key_id;		   /**< Only need to be set when use WEP. Val: 0~3.*/
-	unsigned char				channel;		/**< Set to 0 means full channel scan, set to other value means only scan on the specified channel. */
-	unsigned char
+	u8				           *password;	   /**< The password of AP which sta is trying to connect. */
+	s32 						password_len;  /**< The data length of string pointed by password should not exceed @ref RTW_MAX_PSK_LEN. Equal to length of `password`. */
+	s32 						key_id;		   /**< Only need to be set when use WEP. Val: 0~3.*/
+	u8				            channel;		/**< Set to 0 means full channel scan, set to other value means only scan on the specified channel. */
+	u8
 	pscan_option;	/**< Can set to @ref RTW_PSCAN_FAST_SURVEY for fast survey, which means quick scan, involves using an active scan on a specified channel, scanning for 25ms each time, and attempting up to 7 times until the target AP is found.. */
-	unsigned char 				is_wps_trigger;	/**< Connection triggered by WPS process.*/
+	u8 				            is_wps_trigger;	/**< Connection triggered by WPS process.*/
 	struct rtw_wpa_supp_connect	wpa_supp;   /**< Only used by Linux host to specific some details required for STA connect, which RTOS do not use. */
 	struct rtw_mac				prev_bssid; /**< The BSSID of the AP before roaming. */
 	u8							by_reconn; /**< Connection triggered by RTK auto reconnect process. */
@@ -706,17 +715,17 @@ struct rtw_conn_step_retries {
   * @note	Size can't be changed.
   */
 struct rtw_wifi_setting {
-	u8					mode;   /**< The mode of current wlan interface, val: @ref RTW_MODE_STA, @ref RTW_MODE_AP, @ref RTW_MODE_NAN. */
-	unsigned char 		ssid[33];   /**< The ssid of connected AP or softAP. */
-	unsigned char		bssid[6];   /**< The bssid of connected AP or softAP. */
-	unsigned char		channel;
-	u32					security_type; /**< The security type of connected AP or softAP, val: @ref RTW_SECURITY_OPEN, @ref RTW_SECURITY_WEP_PSK...*/
-	unsigned char 		password[RTW_MAX_PSK_LEN];   /**< The password of connected AP or softAP. */
-	unsigned char		key_idx;
-	unsigned char		alg;		/**< Encryption algorithm. */
-	unsigned int		auth_type;
-	unsigned char		is_wps_trigger;	/**< Connection triggered by WPS process.*/
-	unsigned int		rom_rsvd;
+	u8		mode;   /**< The mode of current wlan interface, val: @ref RTW_MODE_STA, @ref RTW_MODE_AP, @ref RTW_MODE_NAN. */
+	u8 		ssid[33];   /**< The ssid of connected AP or softAP. */
+	u8		bssid[6];   /**< The bssid of connected AP or softAP. */
+	u8		channel;
+	u32		security_type; /**< The security type of connected AP or softAP, val: @ref RTW_SECURITY_OPEN, @ref RTW_SECURITY_WEP_PSK...*/
+	u8 		password[RTW_MAX_PSK_LEN];   /**< The password of connected AP or softAP. */
+	u8		key_idx;
+	u8		alg;		/**< Encryption algorithm. */
+	u32		auth_type;
+	u8		is_wps_trigger;	/**< Connection triggered by WPS process.*/
+	u32		rom_rsvd;
 };
 
 /**
@@ -724,14 +733,14 @@ struct rtw_wifi_setting {
   */
 union rtw_traffic_stats {
 	struct rtw_sta_traffic_stats {
-		unsigned int	rx_packets;			/**< total packets received on the interface(exclude custom pkts).*/
-		unsigned int	tx_packets;			/**< total packets transmitted on the interface.*/
-		unsigned char	cur_rx_data_rate;	/**< Current rx data rate, val: @ref RTW_RATE_1M, @ref RTW_RATE_2M...*/
-		unsigned char	cur_tx_data_rate;	/**< Current tx data rate, val: @ref RTW_RATE_1M, @ref RTW_RATE_2M... */
+		u32	rx_packets;			/**< total packets received on the interface(exclude custom pkts).*/
+		u32	tx_packets;			/**< total packets transmitted on the interface.*/
+		u8	cur_rx_data_rate;	/**< Current rx data rate, val: @ref RTW_RATE_1M, @ref RTW_RATE_2M...*/
+		u8	cur_tx_data_rate;	/**< Current tx data rate, val: @ref RTW_RATE_1M, @ref RTW_RATE_2M... */
 	} sta; /**< For STA mode statistic.*/
 	struct rtw_ap_traffic_stats {
-		unsigned int	rx_packets;			/**< total packets received on the interface(exclude custom pkts).*/
-		unsigned int	tx_packets;			/**< total packets transmitted on the interface.*/
+		u32	rx_packets;			/**< total packets received on the interface(exclude custom pkts).*/
+		u32	tx_packets;			/**< total packets transmitted on the interface.*/
 	} ap; /**< For SOFTAP mode statistic.*/
 };
 
@@ -740,19 +749,18 @@ union rtw_traffic_stats {
   */
 union rtw_phy_stats {
 	struct rtw_sta_phy_stats {
-		signed char	rssi;          /**< Average mixed rssi in 1 sec. */
-		signed char	data_rssi;          /**< Average data rssi in 1 sec. */
-		signed char	beacon_rssi;          /**< Average beacon rssi in 1 sec. */
-		signed char	snr;          /**< Average snr in 1 sec (not include cck rate).*/
+		s8	rssi;          /**< Average mixed rssi in 1 sec. */
+		s8	data_rssi;          /**< Average data rssi in 1 sec. */
+		s8	beacon_rssi;          /**< Average beacon rssi in 1 sec. */
+		s8	snr;          /**< Average snr in 1 sec (not include cck rate).*/
 	} sta; /**< For STA mode statistic.*/
 	struct rtw_ap_phy_stats {
-		signed char	data_rssi;          /**< Average data rssi in 1 sec. */
+		s8	data_rssi;          /**< Average data rssi in 1 sec. */
 	} ap; /**< For SOFTAP mode statistic.*/
 	struct rtw_cmn_phy_stats {
-		unsigned char
-		cca_clm; /**< Channel loading measurement ratio by cca (the ratio of CCA = 1 in number of samples). driver do clm every 2 seconds, the value is the lastest result. */
-		unsigned char	edcca_clm; /**< Channel loading measurement ratio by edcca (the ratio of EDCCA = 1 in number of samples). The value is also the lastest result. */
-		unsigned char	clm_channel; /**< Channel corresponding to the latest clm result.*/
+		u8  cca_clm; /**< Channel loading measurement ratio by cca (the ratio of CCA = 1 in number of samples). driver do clm every 2 seconds, the value is the lastest result. */
+		u8	edcca_clm; /**< Channel loading measurement ratio by edcca (the ratio of EDCCA = 1 in number of samples). The value is also the lastest result. */
+		u8	clm_channel; /**< Channel corresponding to the latest clm result.*/
 	} cmn; /**< For common statistic.*/
 };
 
@@ -767,11 +775,11 @@ union rtw_phy_stats {
   */
 struct rtw_softap_info {
 	struct rtw_ssid		ssid;
-	unsigned char		hidden_ssid;
+	u8		            hidden_ssid;
 	u32					security_type; /**< Val: @ref RTW_SECURITY_OPEN, @ref RTW_SECURITY_WEP_PSK...*/
-	unsigned char 		*password;
-	unsigned char 		password_len;
-	unsigned char		channel;
+	u8 		           *password;
+	u8 		            password_len;
+	u8		            channel;
 };
 
 #ifndef CONFIG_FULLMAC
@@ -779,7 +787,7 @@ struct rtw_softap_info {
   * @brief  The structure is used to describe the associated clients of SoftAP.
   */
 struct rtw_client_list {
-	unsigned int    count;         /**< Number of associated clients in the list.    */
+	u32    count;         /**< Number of associated clients in the list.    */
 	struct rtw_mac mac_list[MACID_HW_MAX_NUM - 2]; /**< Max length array of MAC addresses. */
 };
 #endif
@@ -788,16 +796,16 @@ struct rtw_client_list {
   * @brief  The structure is used to describe the cfg parameters used for channel switch announcement.
   */
 struct rtw_csa_parm {
-	unsigned char new_chl; /**< The new channel will be switched to. */
-	unsigned char chl_switch_cnt; /**< The channel switch cnt, after chl_switch_cnt*102ms, ap will switch to new channel. */
-	unsigned char action_type;	/**< 0: unicast csa action, 1: broadcast csa action, other values: disable transmit csa action. */
-	unsigned char bc_action_cnt; /**< Indicate the number of broadcast csa actions to send for each beacon interval. only valid when action_type = 1.*/
+	u8 new_chl; /**< The new channel will be switched to. */
+	u8 chl_switch_cnt; /**< The channel switch cnt, after chl_switch_cnt*102ms, ap will switch to new channel. */
+	u8 action_type;	/**< 0: unicast csa action, 1: broadcast csa action, other values: disable transmit csa action. */
+	u8 bc_action_cnt; /**< Indicate the number of broadcast csa actions to send for each beacon interval. only valid when action_type = 1.*/
 	/** @brief User handle when softap switch channel by csa function. This callback will be called after channel switch is
 	 *         done, and will return the new channel number and channel switch result.
 	  * @param[in] channel:  New channel.
 	  * @param[in] ret: Val: @ref RTK_FAIL, @ref RTK_SUCCESS.
 	  */
-	void (*callback)(unsigned char channel, s8 ret);
+	void (*callback)(u8 channel, s8 ret);
 };
 
 /**********************************************************************************************
@@ -893,28 +901,28 @@ struct rtw_csi_header {
   * @note  The mac_addr if not specified, the default value must be 0.
   */
 struct rtw_csi_action_parm {
-	unsigned char group_num;   /**< val: @ref RTW_CSI_GROUP_NUM_1, @ref RTW_CSI_GROUP_NUM_2... */
-	unsigned char accuracy;    /**< val: @ref RTW_CSI_ACCU_1BYTE, @ref RTW_CSI_ACCU_2BYTES */
-	unsigned char alg_opt;     /**< val: @ref RTW_CSI_ALG_LS, @ref RTW_CSI_ALG_SMOTHING */
-	unsigned char ch_opt;      /**< val: @ref RTW_CSI_CH_LEGACY, @ref RTW_CSI_CH_NON_LEGACY */
-	unsigned char csi_role;    /**< indicate csi operation role, val: @ref RTW_CSI_OP_ROLE_TRX, @ref RTW_CSI_OP_ROLE_TX, @ref RTW_CSI_OP_ROLE_RX */
-	unsigned char mode;        /**< val: @ref RTW_CSI_MODE_NORMAL, @ref RTW_CSI_MODE_NDP, @ref RTW_CSI_MODE_RX_RESP*/
-	unsigned char act;         /**< val: @ref RTW_CSI_ACT_EN, @ref RTW_CSI_ACT_CFG */
-	unsigned short trig_frame_mgnt;	/**< indicate management frame subtype of rx csi triggering frame for fetching csi, val: @ref RTW_CSI_TRIG_ASSOCREQ... */
-	unsigned short trig_frame_ctrl;	/**< indicate control frame subtype of rx csi triggering frame for fetching csi, val: @ref RTW_CSI_TRIG_TRIGGER... */
-	unsigned short trig_frame_data;	/**< indicate data frame subtype of rx csi triggering frame for fetching csi, val: @ref RTW_CSI_TRIG_DATA... */
-	unsigned char enable;
-	unsigned char trig_period;
-	unsigned char data_rate;
-	unsigned char data_bw;
-	unsigned char mac_addr[6];
-	unsigned char multi_type;  /**< 0-uc csi triggering frame; 1-bc csi triggering frame */
+	u8 group_num;   /**< val: @ref RTW_CSI_GROUP_NUM_1, @ref RTW_CSI_GROUP_NUM_2... */
+	u8 accuracy;    /**< val: @ref RTW_CSI_ACCU_1BYTE, @ref RTW_CSI_ACCU_2BYTES */
+	u8 alg_opt;     /**< val: @ref RTW_CSI_ALG_LS, @ref RTW_CSI_ALG_SMOTHING */
+	u8 ch_opt;      /**< val: @ref RTW_CSI_CH_LEGACY, @ref RTW_CSI_CH_NON_LEGACY */
+	u8 csi_role;    /**< indicate csi operation role, val: @ref RTW_CSI_OP_ROLE_TRX, @ref RTW_CSI_OP_ROLE_TX, @ref RTW_CSI_OP_ROLE_RX */
+	u8 mode;        /**< val: @ref RTW_CSI_MODE_NORMAL, @ref RTW_CSI_MODE_NDP, @ref RTW_CSI_MODE_RX_RESP*/
+	u8 act;         /**< val: @ref RTW_CSI_ACT_EN, @ref RTW_CSI_ACT_CFG */
+	u16 trig_frame_mgnt;	/**< indicate management frame subtype of rx csi triggering frame for fetching csi, val: @ref RTW_CSI_TRIG_ASSOCREQ... */
+	u16 trig_frame_ctrl;	/**< indicate control frame subtype of rx csi triggering frame for fetching csi, val: @ref RTW_CSI_TRIG_TRIGGER... */
+	u16 trig_frame_data;	/**< indicate data frame subtype of rx csi triggering frame for fetching csi, val: @ref RTW_CSI_TRIG_DATA... */
+	u8 enable;
+	u8 trig_period;
+	u8 data_rate;
+	u8 data_bw;
+	u8 mac_addr[6];
+	u8 multi_type;  /**< 0-uc csi triggering frame; 1-bc csi triggering frame */
 
 	/** indicate role for transmitting CSI triggering frame in METHOD4 and
 	 * role for transmitting response ACK for CSI triggering frame in METHOD1_Variant,
 	 * others are reserved. \n
 	 * Value=1 ~ 15 (0 is reserved)*/
-	unsigned char trig_flag;
+	u8 trig_flag;
 };
 
 
@@ -925,24 +933,24 @@ struct rtw_csi_action_parm {
   * @brief  The structure is power limit regu map.
   */
 struct _pwr_lmt_regu_remap {
-	unsigned char	domain_code;
-	unsigned char	PwrLmtRegu_2g;	/**< Not distinguish 2.4G and 5G; just set PwrLmtRegu_2g. */
-	unsigned char	PwrLmtRegu_5g;
+	u8	domain_code;
+	u8	PwrLmtRegu_2g;	/**< Not distinguish 2.4G and 5G; just set PwrLmtRegu_2g. */
+	u8	PwrLmtRegu_5g;
 };
 
 /**
   * @brief  The structure is used to describe the raw frame.
   */
 struct rtw_raw_frame_desc {
-	unsigned char wlan_idx;      /**< Index of wlan interface which will transmit. */
-	unsigned char device_id;     /**< Index of peer device which as a rx role for receiving this pkt, and will be update when linked peer. */
-	unsigned char *buf;          /**< Poninter of buf where raw data is stored.*/
-	unsigned short buf_len;      /**< The length of raw data.*/
-	unsigned char tx_rate;	     /**< Val: @ref RTW_RATE_1M, @ref RTW_RATE_2M...*/
-	unsigned char retry_limit;
-	unsigned char ac_queue;      /**< 0/3 for BE, 1/2 for BK, 4/5 for VI, 6/7 for VO. */
-	unsigned char sgi : 1;       /**< 1 for enable data short. */
-	unsigned char agg_en : 1;    /**< Aggregation of tx_raw frames. 1:enable; 0-disable. */
+	u8 wlan_idx;      /**< Index of wlan interface which will transmit. */
+	u8 device_id;     /**< Index of peer device which as a rx role for receiving this pkt, and will be update when linked peer. */
+	u8 *buf;          /**< Poninter of buf where raw data is stored.*/
+	u16 buf_len;      /**< The length of raw data.*/
+	u8 tx_rate;	     /**< Val: @ref RTW_RATE_1M, @ref RTW_RATE_2M...*/
+	u8 retry_limit;
+	u8 ac_queue;      /**< 0/3 for BE, 1/2 for BK, 4/5 for VI, 6/7 for VO. */
+	u8 sgi : 1;       /**< 1 for enable data short. */
+	u8 agg_en : 1;    /**< Aggregation of tx_raw frames. 1:enable; 0-disable. */
 };
 
 /**
@@ -961,10 +969,28 @@ struct rtw_custom_ie {
 };
 
 /**
+ * @brief  The structure is used to describe channel info.
+ */
+
+struct rtw_channel_info {
+	u8 channel;      /**< Channel id */
+	u8 scan_type;    /**< 1 for passive, 0 for active. */
+};
+
+/**
+ * @brief  The structure is used to describe channel list.
+ */
+struct rtw_channel_list {
+	u8 ch_num;         /**< Number of available channel in the list.    */
+	struct rtw_channel_info ch_info[RTW_MAX_CHANNEL_NUM];
+};
+
+
+/**
  * @brief  The structure is used to describe channel plan and country code.
  */
 struct rtw_country_code_table {
-	char char2[2];   /**< Country code. */
+	u8 char2[2];   /**< Country code. */
 	u8 channel_plan; /**< Channel plan code. */
 	u8 pwr_lmt;      /**< Tx power limit index. */
 };

@@ -133,7 +133,7 @@ void at_otahttp(void *arg)
 
 	if (at_ota_status & OTA_STATUS_RUNNING) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "ota is already running\r\n");
-		err_no = 3;
+		err_no = 4;
 		goto end;
 	}
 
@@ -220,7 +220,7 @@ void at_otahttp(void *arg)
 	ret = ota_update_init(ctx, host, port, resource, ota_type);
 	if (ret != 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ota_update_init failed\r\n");
-		err_no = 4;
+		err_no = 3;
 		goto end;
 	}
 
@@ -332,7 +332,7 @@ void at_otauser(void *arg)
 	ret = ota_update_init(ctx, NULL, 0, NULL, OTA_USER);
 	if (ret != 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ota_update_init failed\r\n");
-		err_no = 5;
+		err_no = 3;
 		goto end;
 	}
 	at_ota_status |= OTA_STATUS_RUNNING;
@@ -341,7 +341,7 @@ void at_otauser(void *arg)
 	ret = atcmd_tt_mode_start(length);
 	if (ret < 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "atcmd_tt_mode_start failed\r\n");
-		err_no = 2;
+		err_no = 5;
 		goto end;
 	}
 
@@ -349,7 +349,12 @@ void at_otauser(void *arg)
 
 	while (length > 0) {
 		frag_len = (length < BUF_SIZE) ? length : BUF_SIZE;
-		atcmd_tt_mode_get(buffer, frag_len);
+		ret = atcmd_tt_mode_get(buffer, frag_len);
+		if (ret < 0) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "host stops tt mode\r\n");
+			err_no = 5;
+			break;
+		}
 		ret = ota_update_fw_program(ctx, buffer, frag_len);
 		if (ret == OTA_RET_FINISH) {
 			at_printf(ATCMD_OK_END_STR);
@@ -359,7 +364,7 @@ void at_otauser(void *arg)
 			}
 		}
 		if (ret == OTA_RET_ERR) {
-			err_no = 3;
+			err_no = 6;
 			break;
 		}
 		length -= frag_len;

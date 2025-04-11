@@ -169,7 +169,7 @@ int wifi_stop_autoreconnect(void)
 
 #endif
 
-int wifi_set_autoreconnect(u8 enable)
+s32 wifi_set_autoreconnect(u8 enable)
 {
 #if CONFIG_AUTO_RECONNECT
 	if ((enable == 0) && rtw_reconn.b_enable) {
@@ -197,7 +197,7 @@ int wifi_set_autoreconnect(u8 enable)
 #endif
 }
 
-int wifi_get_autoreconnect(u8 *enable)
+s32 wifi_get_autoreconnect(u8 *enable)
 {
 #if CONFIG_AUTO_RECONNECT
 	if (enable == NULL) {

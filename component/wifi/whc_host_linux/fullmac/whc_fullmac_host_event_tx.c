@@ -443,15 +443,6 @@ int whc_fullmac_host_add_key(struct rtw_crypt_info *crypt)
 	return ret;
 }
 
-int whc_fullmac_host_get_chplan(u8 *chplan)
-{
-	int ret = 0;
-
-	whc_fullmac_host_send_event(WHC_API_WIFI_GET_CHPLAN, NULL, 0, chplan, sizeof(u8));
-
-	return ret;
-}
-
 int whc_fullmac_host_tx_mgnt(u8 wlan_idx, const u8 *buf, size_t buf_len, u8 need_wait_ack)
 {
 	int ret = 0;

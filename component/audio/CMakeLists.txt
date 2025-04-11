@@ -1,4 +1,4 @@
-if(!CONFIG_MP_INCLUDED AND CONFIG_MEDIA_PLAYER)
+if(CONFIG_MEDIA_PLAYER)
     ameba_add_subdirectory_if_exist(media_utils)
     ameba_add_subdirectory_if_exist(media_common)
     ameba_add_subdirectory_if_exist(media_source)

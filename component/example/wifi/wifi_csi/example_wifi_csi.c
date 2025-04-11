@@ -12,8 +12,8 @@
 #include "wifi_api.h"
 #include "rtw_autoconf.h"
 
-extern int wifi_csi_config(struct rtw_csi_action_parm *act_param);
-extern int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
+extern s32 wifi_csi_config(struct rtw_csi_action_parm *act_param);
+extern s32 wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
 
 rtos_sema_t wc_ready_sema = NULL;
 unsigned int csi_data_len = 2048;
