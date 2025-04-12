@@ -50,12 +50,10 @@ if BT_EXAMPLE_DEMO_MENU
         default n
 
     config BT_WIFIMATE_DEVICE
-        depends on AMEBADPLUS || AMEBALITE || AMEBASMART    #amebadplus || amebalite || amebasmart
         bool "BLE WiFiMate Device"
         default n
 
     config BT_WIFIMATE_CONFIGURATOR
-        depends on AMEBADPLUS || AMEBALITE || AMEBASMART    #amebadplus || amebalite || amebasmart
         bool "BLE WiFiMate Configurator"
         default n
 
@@ -257,18 +255,7 @@ if BT
         select BT_AUDIO_CODEC_SBC
 endif
 
-config BT_PERIPHERAL
-    bool
-config BT_CENTRAL
-    bool
-config BT_SCATTERNET
-    bool
-config BT_TRANSFER_MODULE
-    bool
-config BT_WIFIMATE_DEVICE
-    bool
-config BT_WIFIMATE_CONFIGURATOR
-    bool
+# Only select item needs following
 config BT_MESH_PROVISIONER
     bool
 config BT_MESH_PROVISIONER_SUPPORT
@@ -279,29 +266,19 @@ config BT_MESH_DEVICE_SUPPORT
     bool
 config BT_MESH_PROVISIONER_SCATTERNET
     bool
-config BT_MESH_PROVISIONER_SUPPORT
-    bool
 config BT_MESH_DEVICE_SCATTERNET
-    bool
-config BT_A2DP_PROVISIONER_SCATTERNET
-    bool
-config BT_SPP
-    bool
-config BT_RFC
     bool
 config BT_MESH_PROVISIONER_TEST
     bool
 config BT_MESH_DEVICE_TEST
     bool
-config BT_ISO_TEST
+config BT_LE_AUDIO
     bool
-config BT_GENERIC_LE_AUDIO_DEMO
+config BT_APP_AUDIO_DATA
     bool
-config BT_GENERIC_LE_AUDIO_DEMO_SUPPORT
+config BT_AUDIO_CODEC_SUPPORT
     bool
-config BT_PBP
-    bool
-config BT_PBP_SUPPORT
+config BT_AUDIO_CODEC_LC3
     bool
 config BT_TMAP
     bool
@@ -313,31 +290,17 @@ config BT_GMAP_SUPPORT
     bool
 config BT_A2DP
     bool
-config BT_HFP
-    bool
-config BT_A2DP_HFP
-    bool
-config BT_A2DP_SCATTERNET
-    bool
-config BT_LE_AUDIO
-    bool
-config BT_AUDIO_MP_TEST
-    bool
-config BT_APP_AUDIO_DATA
-    bool
-config BT_AUDIO_CODEC_LC3
-    bool
-config BT_AUDIO_CODEC_SUPPORT
-    bool
 config BT_AUDIO_CODEC_SBC
+    bool
+config BT_HFP
     bool
 config BT_AUDIO_CODEC_CVSD
     bool
-config BT_WIFIMATE_DEVICE
+config BT_A2DP_HFP
     bool
-config BT_WIFIMATE_CONFIGURATOR
+config BT_AUDIO_MP_TEST
     bool
-config BT_OTA_CENTRAL
+config BT_A2DP_SCATTERNET
     bool
-config BT_OTA_PERIPHERAL
+config BT_A2DP_PROVISIONER_SCATTERNET
     bool

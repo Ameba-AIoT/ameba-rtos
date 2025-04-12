@@ -212,12 +212,12 @@ static int whc_fullmac_host_change_beacon(struct wiphy *wiphy, struct net_device
 
 	target_ptr = (struct element *)cfg80211_find_vendor_ie(WLAN_OUI_MICROSOFT, WLAN_OUI_TYPE_MICROSOFT_WPS, info->beacon_ies, info->beacon_ies_len);
 	if (target_ptr) {
-		whc_fullmac_host_update_custom_ie((u8 *)target_ptr, (global_idev.p2p_global.beacon_wps_ie_idx + 1), (RTW_BEACON | RTW_PROBE_RSP));
+		whc_fullmac_host_update_custom_ie((u8 *)target_ptr, (global_idev.p2p_global.beacon_wps_ie_idx + 1), (RTW_CUS_IE_BEACON | RTW_CUS_IE_PROBERSP));
 	}
 
 	target_ptr = (struct element *)cfg80211_find_vendor_ie(WLAN_OUI_WFA, WLAN_OUI_TYPE_WFA_P2P, info->beacon_ies, info->beacon_ies_len);
 	if (target_ptr) {
-		whc_fullmac_host_update_custom_ie((u8 *)target_ptr, (global_idev.p2p_global.beacon_p2p_ie_idx + 1), (RTW_BEACON | RTW_PROBE_RSP));
+		whc_fullmac_host_update_custom_ie((u8 *)target_ptr, (global_idev.p2p_global.beacon_p2p_ie_idx + 1), (RTW_CUS_IE_BEACON | RTW_CUS_IE_PROBERSP));
 	}
 #endif
 
@@ -267,7 +267,7 @@ void whc_fullmac_host_sta_assoc_indicate(char *buf, int buf_len)
 	frame_styp = le16_to_cpu(((struct rtw_ieee80211_hdr_3addr *)buf)->frame_ctl) & IEEE80211_FCTL_STYPE;
 	if (frame_styp == IEEE80211_STYPE_ASSOC_REQ) {
 		ie_offset = 4;
-	} else { /* WIFI_REASSOCREQ */
+	} else { /* RTW_REASSOCREQ */
 		ie_offset = 10;
 	}
 	sinfo.filled = 0;
@@ -408,7 +408,7 @@ static int whc_fullmac_host_start_ap_ops(struct wiphy *wiphy, struct net_device 
 				elem_num++;
 			}
 
-			whc_fullmac_host_add_custom_ie(pelem, elem_num, (RTW_BEACON | RTW_PROBE_RSP));
+			whc_fullmac_host_add_custom_ie(pelem, elem_num, (RTW_CUS_IE_BEACON | RTW_CUS_IE_PROBERSP));
 
 			kfree(pelem);
 		}
