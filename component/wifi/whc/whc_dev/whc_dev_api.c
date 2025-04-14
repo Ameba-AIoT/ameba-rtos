@@ -12,7 +12,6 @@
 #endif
 
 extern int wifi_set_chplan(u8 chplan);
-extern int wifi_get_chplan(u8 *chplan);
 
 struct event_priv_t event_priv;
 
@@ -20,7 +19,6 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_CONNECT,	whc_event_wifi_connect},
 	{WHC_API_WIFI_ADD_KEY,	whc_event_wifi_add_key},
 	{WHC_API_WPA_PMKSA_OPS,	whc_event_wpa_pmksa_ops},
-	{WHC_API_WIFI_GET_CHPLAN,	whc_event_wifi_get_chplan},
 	{WHC_API_WIFI_GET_COUNTRY_CODE,	whc_event_wifi_get_countrycode},
 	{WHC_API_WIFI_DISCONNECT,	whc_event_wifi_disconnect},
 	{WHC_API_WIFI_IS_RUNNING,	whc_event_wifi_is_running},
@@ -182,7 +180,7 @@ void whc_event_get_scan_res(u32 api_id, u32 *param_buf)
 {
 	(void)param_buf;
 	struct rtw_scan_result *scanned_AP_list = NULL;
-	unsigned int scanned_AP_num = 0;
+	u32 scanned_AP_num = 0;
 	int ret = 0;
 
 	scanned_AP_num = param_buf[0];
@@ -370,15 +368,6 @@ void whc_event_wpa_pmksa_ops(u32 api_id, u32 *param_buf)
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
-void whc_event_wifi_get_chplan(u32 api_id, u32 *param_buf)
-{
-	(void)param_buf;
-	u8 chplan;
-
-	wifi_get_chplan(&chplan);
-	whc_send_api_ret_value(api_id, &chplan, sizeof(chplan));
-}
-
 void whc_event_wifi_get_countrycode(u32 api_id, u32 *param_buf)
 {
 	(void)param_buf;
@@ -482,7 +471,7 @@ void whc_event_wifi_scan_networks(u32 api_id, u32 *param_buf)
 	u8 block;
 	u32 ssid_length;
 	struct rtw_scan_param scan_param = {0};
-	char *ssid = NULL;
+	u8 *ssid = NULL;
 
 	memcpy(&block, ptr, sizeof(block));
 	ptr += sizeof(block);
@@ -775,7 +764,7 @@ void whc_event_wifi_set_countrycode(u32 api_id, u32 *param_buf)
 {
 	int ret = 0;
 
-	ret = wifi_set_countrycode((char *)param_buf);
+	ret = wifi_set_countrycode((s8 *)param_buf);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 

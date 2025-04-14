@@ -281,7 +281,7 @@ static int whc_fullmac_host_scan_ops(struct wiphy *wiphy, struct cfg80211_scan_r
 	memset(scan_param, 0, sizeof(struct rtw_scan_param));
 
 	/* Add fake callback to inform rots give scan indicate when scan done. */
-	scan_param->scan_user_callback = (int (*)(unsigned int,  void *))0xffffffff;
+	scan_param->scan_user_callback = (s32(*)(u32,  void *))0xffffffff;
 	scan_param->ssid = NULL;
 #ifdef CONFIG_P2P
 	scan_param->scan_user_data = (void *)(uintptr_t)whc_fullmac_host_p2p_get_wdex_idx(wdev); /*for later cfg80211 indicate*/
@@ -294,7 +294,7 @@ static int whc_fullmac_host_scan_ops(struct wiphy *wiphy, struct cfg80211_scan_r
 			memcpy((char *)ptr, ssids[0].ssid, ssids[0].ssid_len);
 			ssid_len = ssids[0].ssid_len + 1;
 			/* Only hidden ssid scan has ssid param. */
-			scan_param->ssid = (char *)ptr;
+			scan_param->ssid = ptr;
 			scan_param->ssid[ssids[0].ssid_len] = '\0';
 			ptr += ssid_len;
 
@@ -970,7 +970,7 @@ static s32 whc_fullmac_host_remain_on_channel(struct wiphy *wiphy, struct wirele
 	ptr += sizeof(struct rtw_scan_param);
 	memset(scan_param, 0, sizeof(struct rtw_scan_param));
 	/* Add fake callback to inform rots give scan indicate when scan done. */
-	scan_param->scan_user_callback = (int (*)(unsigned int,  void *))0xffffffff;
+	scan_param->scan_user_callback = (s32(*)(u32,  void *))0xffffffff;
 	scan_param->ssid = NULL;
 	scan_param->options = RTW_SCAN_PASSIVE;
 	scan_param->chan_scan_time.passive_scan_time = duration;

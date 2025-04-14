@@ -41,7 +41,6 @@ extern u8 whc_ipc_ip_addr[4];
 void whc_event_wifi_connect(u32 api_id, u32 *param_buf);
 void whc_event_wifi_add_key(u32 api_id, u32 *param_buf);
 void whc_event_wpa_pmksa_ops(u32 api_id, u32 *param_buf);
-void whc_event_wifi_get_chplan(u32 api_id, u32 *param_buf);
 void whc_event_wifi_get_countrycode(u32 api_id, u32 *param_buf);
 void whc_event_wifi_disconnect(u32 api_id, u32 *param_buf);
 void whc_event_wifi_is_running(u32 api_id, u32 *param_buf);

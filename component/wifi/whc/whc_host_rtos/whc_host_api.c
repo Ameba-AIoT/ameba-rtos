@@ -24,8 +24,8 @@ struct event_priv_t event_priv;
 #ifdef CONFIG_ENABLE_EAP
 extern void eap_autoreconnect_hdl(u8 method_id);
 #endif
-extern int (*scan_user_callback_ptr)(unsigned int, void *);
-extern int (*scan_each_report_user_callback_ptr)(struct rtw_scan_result *, void *);
+extern s32(*scan_user_callback_ptr)(u32, void *);
+extern s32(*scan_each_report_user_callback_ptr)(struct rtw_scan_result *, void *);
 extern void (*p_ap_channel_switch_callback)(unsigned char channel, s8 ret);
 extern u8(*promisc_user_callback_ptr)(void *);
 extern int dhcps_ip_in_table_check(uint8_t gate, uint8_t d);
