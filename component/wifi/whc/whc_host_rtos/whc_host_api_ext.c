@@ -37,7 +37,7 @@ extern u8 rtw_join_status;
 extern struct netif xnetif[NET_IF_NUM];
 #endif
 
-void (*p_ap_channel_switch_callback)(unsigned char channel, s8 ret) = NULL;
+void (*p_ap_channel_switch_callback)(u8 channel, s8 ret) = NULL;
 
 
 /******************************************************
@@ -73,7 +73,7 @@ struct task_struct wifi_autoreconnect_task = {0};
 #if CONFIG_WLAN
 //----------------------------------------------------------------------------//
 //----------------------------------------------------------------------------//
-int wifi_set_channel(unsigned char wlan_idx, u8 channel)
+s32 wifi_set_channel(u8 wlan_idx, u8 channel)
 {
 	int ret = 0;
 	u32 param_buf[2];
@@ -85,7 +85,7 @@ int wifi_set_channel(unsigned char wlan_idx, u8 channel)
 }
 
 //----------------------------------------------------------------------------//
-int wifi_set_countrycode(char *cntcode)
+s32 wifi_set_countrycode(s8 *cntcode)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -109,7 +109,7 @@ int wifi_set_chplan(u8 chplan)
 //----------------------------------------------------------------------------//
 
 _OPTIMIZE_NONE_
-int wifi_get_scan_records(unsigned int *ap_num, struct rtw_scan_result *ap_list)
+s32 wifi_get_scan_records(u32 *ap_num, struct rtw_scan_result *ap_list)
 {
 	int ret = 0;
 	u32 param_buf[2];
@@ -127,7 +127,7 @@ int wifi_get_scan_records(unsigned int *ap_num, struct rtw_scan_result *ap_list)
 	return ret;
 }
 
-int wifi_scan_abort(u8 block)
+s32 wifi_scan_abort(u8 block)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -174,7 +174,7 @@ u8 wifi_driver_is_mp(void)
 }
 
 //----------------------------------------------------------------------------//
-int wifi_ap_get_connected_clients(struct rtw_client_list *client_list_buffer)
+s32 wifi_ap_get_connected_clients(struct rtw_client_list *client_list_buffer)
 {
 	int ret = 0;
 
@@ -182,7 +182,7 @@ int wifi_ap_get_connected_clients(struct rtw_client_list *client_list_buffer)
 	return ret;
 }
 
-int wifi_ap_del_client(unsigned char *hwaddr)
+s32 wifi_ap_del_client(u8 *hwaddr)
 {
 	int ret = 0;
 	u32 param_buf[3];
@@ -212,7 +212,7 @@ int wifi_ap_switch_chl_and_inform(struct rtw_csa_parm *csa_param)
 }
 
 //----------------------------------------------------------------------------//
-int wifi_get_setting(unsigned char wlan_idx, struct rtw_wifi_setting *psetting)
+s32 wifi_get_setting(u8 wlan_idx, struct rtw_wifi_setting *psetting)
 {
 	int ret = 0;
 	u32 param_buf[2];
@@ -236,7 +236,7 @@ int wifi_set_ips_internal(u8 enable)
 	return ret;
 }
 
-int wifi_set_lps_enable(u8 enable)
+s32 wifi_set_lps_enable(u8 enable)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -247,7 +247,7 @@ int wifi_set_lps_enable(u8 enable)
 	return ret;
 }
 
-int wifi_set_lps_listen_interval(u8 interval)
+s32 wifi_set_lps_listen_interval(u8 interval)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -286,7 +286,7 @@ int wifi_set_pmk_cache_enable(unsigned char value)
 	return ret;
 }
 
-int wifi_get_traffic_stats(u8 wlan_idx, union rtw_traffic_stats *traffic_stats)
+s32 wifi_get_traffic_stats(u8 wlan_idx, union rtw_traffic_stats *traffic_stats)
 {
 	int ret = 0;
 	u32 param_buf[1] = {0};
@@ -298,7 +298,7 @@ int wifi_get_traffic_stats(u8 wlan_idx, union rtw_traffic_stats *traffic_stats)
 	return ret;
 }
 
-int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union rtw_phy_stats *phy_stats)
+s32 wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union rtw_phy_stats *phy_stats)
 {
 	int ret = 0;
 	u32 param_buf[4] = {0};
@@ -319,14 +319,14 @@ int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union rtw_phy_stats *phy_stats
 	return ret;
 }
 
-int wifi_get_wireless_mode(u8 *wmode)
+s32 wifi_get_wireless_mode(u8 *wmode)
 {
 	int ret = 0;
 	whc_host_api_message_send(WHC_API_WIFI_GET_WIRELESS_MODE, NULL, 0, (u8 *)wmode, sizeof(u8));
 	return ret;
 }
 
-int wifi_set_wireless_mode(u32 wmode)
+s32 wifi_set_wireless_mode(u32 wmode)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -473,7 +473,7 @@ void wifi_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way)
  * }
  */
 
-int wifi_add_custom_ie(struct rtw_custom_ie *cus_ie, int ie_num)
+s32 wifi_add_custom_ie(struct rtw_custom_ie *cus_ie, s32 ie_num)
 {
 	int ret = 0;
 	u8 *param_buf, *ptr;
@@ -507,7 +507,7 @@ int wifi_add_custom_ie(struct rtw_custom_ie *cus_ie, int ie_num)
 	return ret;
 }
 
-int wifi_update_custom_ie(struct rtw_custom_ie *cus_ie, int ie_index)
+s32 wifi_update_custom_ie(struct rtw_custom_ie *cus_ie, s32 ie_index)
 {
 	int ret = 0;
 	u8 *ptr, *param_buf;
@@ -530,7 +530,7 @@ int wifi_update_custom_ie(struct rtw_custom_ie *cus_ie, int ie_index)
 	return ret;
 }
 
-int wifi_del_custom_ie(unsigned char wlan_idx)
+s32 wifi_del_custom_ie(u8 wlan_idx)
 {
 	int ret;
 	u8 param_buf[2];
@@ -566,7 +566,7 @@ int wifi_send_mgnt(struct _raw_data_desc_t *raw_data_desc)
 	return ret;
 }
 
-int wifi_set_tx_rate_by_tos(unsigned char enable, unsigned char tos_precedence, unsigned char tx_rate)
+s32 wifi_set_tx_rate_by_tos(u8 enable, u8 tos_precedence, u8 tx_rate)
 {
 	int ret = 0;
 	u32 param_buf[3];
@@ -610,7 +610,7 @@ int wifi_set_cts2self_duration_and_send(unsigned char wlan_idx, unsigned short d
 
 }
 
-int wifi_get_antdiv_info(unsigned char *antdiv_mode, unsigned char *curr_ant)
+s32 wifi_get_antdiv_info(u8 *antdiv_mode, u8 *curr_ant)
 {
 #ifdef CONFIG_WIFI_ANTDIV
 	int ret = 0;
@@ -633,14 +633,14 @@ int wifi_get_antdiv_info(unsigned char *antdiv_mode, unsigned char *curr_ant)
  *	RTW_SUPPORT_BAND_5G: only support 5G
  *  RTW_SUPPORT_BAND_2_4G_5G_BOTH: support both 2.4G and 5G
  */
-int wifi_get_band_type(u8 *band_type)
+s32 wifi_get_band_type(u8 *band_type)
 {
 	whc_host_api_message_send(WHC_API_WIFI_GET_BAND_TYPE, NULL, 0, (u8 *)band_type, sizeof(band_type));
 	return RTK_SUCCESS;
 }
 
 //----------------------------------------------------------------------------//
-int wifi_csi_config(struct rtw_csi_action_parm *act_param)
+s32 wifi_csi_config(struct rtw_csi_action_parm *act_param)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -712,7 +712,7 @@ int wifi_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 	return 0;
 }
 
-int wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc)
+s32 wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc)
 {
 	int ret;
 	int idx = 0;

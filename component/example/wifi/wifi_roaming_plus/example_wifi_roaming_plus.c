@@ -556,7 +556,7 @@ int wifi_roaming_scan_one_channel(wifi_roaming_ap_t	roaming_ap, u32 retry)
 
 	//set scan_param for scan
 	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
-	scan_param.ssid = (char *)roaming_ap.ssid;
+	scan_param.ssid = roaming_ap.ssid;
 	scan_param.channel_list = pscan_channel_list;
 	scan_param.channel_list_num = 1;
 	ROAMING_DBG("scan(%d)\n", pscan_channel_list[0]);

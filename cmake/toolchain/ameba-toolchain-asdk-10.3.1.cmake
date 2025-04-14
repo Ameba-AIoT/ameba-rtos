@@ -22,6 +22,8 @@ if(TOOLCHAIN_DIR)
 	message("User defined toolchain path: ${TOOLCHAINDIR}")
 endif()
 
+file(TO_CMAKE_PATH "${TOOLCHAINDIR}" TOOLCHAINDIR)
+
 if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
 	if(NOT TOOLCHAINDIR)
 		set(TOOLCHAINDIR /opt/rtk-toolchain)

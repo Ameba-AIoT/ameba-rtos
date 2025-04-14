@@ -132,7 +132,7 @@ void wifi_roaming_thread(void *param)
 						scan_param.channel_list_num = sizeof(pscan_channel_list);
 					}
 
-					scan_param.ssid = (char *)roaming_ap.ssid;
+					scan_param.ssid = roaming_ap.ssid;
 					scanned_ap_num = wifi_scan_networks(&scan_param, 1);
 					if (scanned_ap_num > 0) {
 						wifi_roaming_find_ap_from_scan_buf(roaming_ap.ssid, (void *)&roaming_ap, scanned_ap_num);

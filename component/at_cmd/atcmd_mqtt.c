@@ -762,7 +762,7 @@ void at_mqttpub(void *arg)
 	}
 
 	/* msg. */
-	if (0 == strlen(argv[4]) && MQTT_MAX_MSG_LEN < strlen(argv[4])) {
+	if (0 == strlen(argv[4]) || MQTT_MAX_MSG_LEN < strlen(argv[4])) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUB] Invalid msg\r\n");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
@@ -885,7 +885,7 @@ void at_mqttpubraw(void *arg)
 
 	/* msg length. */
 	length = atoi(argv[4]);
-	if (length <= 0 && length > MAX_TT_BUF_LEN) {
+	if (length <= 0 || length > MAX_TT_BUF_LEN) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUBRAW] Invalid length\r\n");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;

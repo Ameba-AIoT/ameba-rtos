@@ -492,7 +492,8 @@ void at_wlscan(void *arg)
 {
 	u8 *channel_list = NULL;
 	int num_channel = 0, ret = 0;
-	unsigned int i = 0, j = 0, argc = 0, scanned_AP_num = 0;
+	unsigned int i = 0, j = 0, argc = 0;
+	u32 scanned_AP_num = 0;
 	int error_no = RTW_AT_OK;
 	char *argv[MAX_ARGC] = {0};
 	struct rtw_scan_result *scanned_AP_list = NULL;
@@ -527,7 +528,7 @@ void at_wlscan(void *arg)
 			}
 			wifi.ssid.len = strlen(argv[j]);
 			strncpy((char *)wifi.ssid.val, argv[j], sizeof(wifi.ssid.val) - 1);
-			scan_param.ssid = (char *)wifi.ssid.val;
+			scan_param.ssid = wifi.ssid.val;
 		}
 		/* Channel list. */
 		else if (0 == strcmp("ch", argv[i])) {

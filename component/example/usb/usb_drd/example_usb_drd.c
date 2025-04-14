@@ -142,10 +142,18 @@ void example_usb_drd_thread(void *param)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USB DRD demo start\n");
 
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Init disk\n");
+	ret = usbd_msc_disk_init();
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init disk fail\n");
+		goto exit;
+	}
+
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Init device driver\n");
 	ret = usbd_init(&usbd_msc_cfg);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to init device driver\n");
+		usbd_msc_disk_deinit();
 		goto exit;
 	}
 
@@ -154,6 +162,7 @@ void example_usb_drd_thread(void *param)
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to init MSC device class\n");
 		usbd_deinit();
+		usbd_msc_disk_deinit();
 		goto exit;
 	}
 
@@ -168,6 +177,9 @@ void example_usb_drd_thread(void *param)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit device driver\n");
 	usbd_deinit();
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit disk\n");
+	usbd_msc_disk_deinit();
 
 	rtos_sema_create(&usbh_msc_attach_sema, 0U, 1U);
 
@@ -338,7 +350,7 @@ void example_usb_drd(void)
 	int ret;
 	rtos_task_t task;
 
-	ret = rtos_task_create(&task, "example_usb_drd_thread", example_usb_drd_thread, NULL, 2048, USB_DRD_INIT_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usb_drd_thread", example_usb_drd_thread, NULL, 4096, USB_DRD_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USB DRD thread fail\n");
 	}

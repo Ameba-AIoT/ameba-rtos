@@ -14,7 +14,7 @@
 
 #include <dlist.h>
 
-extern int wifi_get_join_status(u8 *join_status);
+extern s32 wifi_get_join_status(u8 *join_status);
 
 #define PR_UART_TX			PA_25
 #define PR_UART_RX			PA_24

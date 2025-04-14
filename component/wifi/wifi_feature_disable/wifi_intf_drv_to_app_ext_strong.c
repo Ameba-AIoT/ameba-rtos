@@ -2,7 +2,7 @@
 #include "wifi_intf_drv_to_app_internal.h"
 u16 call_noused = 0;
 
-int wifi_get_scan_records(unsigned int *ap_num, struct rtw_scan_result *ap_list)
+s32 wifi_get_scan_records(u32 *ap_num, struct rtw_scan_result *ap_list)
 {
 	UNUSED(ap_num);
 	UNUSED(ap_list);
@@ -10,14 +10,14 @@ int wifi_get_scan_records(unsigned int *ap_num, struct rtw_scan_result *ap_list)
 	return -1;
 }
 
-int wifi_scan_abort(u8 block)
+s32 wifi_scan_abort(u8 block)
 {
 	UNUSED(block);
 	call_noused = __LINE__;
 	return -1;
 }
 
-int wifi_get_ccmp_key(u8 wlan_idx, u8 *mac_addr, unsigned char *uncst_key, unsigned char *group_key)
+s32 wifi_get_ccmp_key(u8 wlan_idx, u8 *mac_addr, u8 *uncst_key, u8 *group_key)
 {
 	UNUSED(wlan_idx);
 	UNUSED(mac_addr);
@@ -27,7 +27,7 @@ int wifi_get_ccmp_key(u8 wlan_idx, u8 *mac_addr, unsigned char *uncst_key, unsig
 	return -1;
 }
 
-int wifi_get_wireless_mode(u8 *wmode)
+s32 wifi_get_wireless_mode(u8 *wmode)
 {
 	UNUSED(wmode);
 	call_noused = __LINE__;
@@ -35,14 +35,14 @@ int wifi_get_wireless_mode(u8 *wmode)
 }
 
 
-int wifi_set_wireless_mode(u32 wmode)
+s32 wifi_set_wireless_mode(u32 wmode)
 {
 	UNUSED(wmode);
 	call_noused = __LINE__;
 	return RTK_FAIL;
 }
 
-int wifi_get_tsf(unsigned char wlan_idx, u64 *tsf)
+s32 wifi_get_tsf(u8 wlan_idx, u64 *tsf)
 {
 	UNUSED(wlan_idx);
 	UNUSED(tsf);
@@ -50,14 +50,14 @@ int wifi_get_tsf(unsigned char wlan_idx, u64 *tsf)
 	return 0;
 }
 
-int wifi_get_txbuf_pkt_num(int *pkt_num)
+s32 wifi_get_txbuf_pkt_num(s32 *pkt_num)
 {
 	UNUSED(pkt_num);
 	call_noused = __LINE__;
 	return -1;
 }
 
-int wifi_set_tx_rate_by_tos(unsigned char enable, unsigned char tos_precedence, unsigned char tx_rate)
+s32 wifi_set_tx_rate_by_tos(u8 enable, u8 tos_precedence, u8 tx_rate)
 {
 	UNUSED(enable);
 	UNUSED(tos_precedence);
@@ -66,35 +66,35 @@ int wifi_set_tx_rate_by_tos(unsigned char enable, unsigned char tos_precedence, 
 	return -1;
 }
 
-int wifi_set_edca_param(unsigned int ac_param)
+s32 wifi_set_edca_param(u32 ac_param)
 {
 	UNUSED(ac_param);
 	call_noused = __LINE__;
 	return -1;
 }
 
-int wifi_set_tx_cca_enable(unsigned char enable)
+s32 wifi_set_tx_cca_enable(u8 enable)
 {
 	UNUSED(enable);
 	call_noused = __LINE__;
 	return -1;
 }
 
-int wifi_ap_switch_chl_and_inform(struct rtw_csa_parm *csa_param)
+s32 wifi_ap_switch_chl_and_inform(struct rtw_csa_parm *csa_param)
 {
 	UNUSED(csa_param);
 	call_noused = __LINE__;
 	return -1;
 }
 
-int wifi_set_countrycode(char *cntcode)
+s32 wifi_set_countrycode(s8 *cntcode)
 {
 	UNUSED(cntcode);
 	call_noused = __LINE__;
 	return RTK_FAIL;
 }
 
-int wifi_get_countrycode(struct rtw_country_code_table *table)
+s32 wifi_get_countrycode(struct rtw_country_code_table *table)
 {
 	UNUSED(table);
 	call_noused = __LINE__;
@@ -108,15 +108,7 @@ int wifi_set_chplan(u8 chplan)
 	return RTK_FAIL;
 }
 
-int wifi_get_chplan(u8 *chplan)
-{
-	UNUSED(chplan);
-	call_noused = __LINE__;
-	return RTK_FAIL;
-}
-
-
-int wifi_set_cts2self_duration_and_send(unsigned char wlan_idx, unsigned short duration)
+s32 wifi_set_cts2self_duration_and_send(u8 wlan_idx, u16 duration)
 {
 	UNUSED(wlan_idx);
 	UNUSED(duration);
@@ -124,7 +116,7 @@ int wifi_set_cts2self_duration_and_send(unsigned char wlan_idx, unsigned short d
 	return -1;
 }
 
-int wifi_get_mac_address(int idx, struct rtw_mac *mac, u8 efuse)
+s32 wifi_get_mac_address(s32 idx, struct rtw_mac *mac, u8 efuse)
 {
 	UNUSED(idx);
 	UNUSED(mac);
@@ -147,14 +139,14 @@ int wifi_get_bt_mac_address(u8 *mac)
 	return -1;
 }
 
-int wifi_csi_config(struct rtw_csi_action_parm *act_param)
+s32 wifi_csi_config(struct rtw_csi_action_parm *act_param)
 {
 	(void)act_param;
 	call_noused = __LINE__;
 	return -1;
 }
 
-int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len)
+s32 wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len)
 {
 	(void)buf_len;
 	(void)csi_buf;
@@ -190,14 +182,14 @@ u8 wifi_driver_is_mp(void)
 	return 0;
 }
 
-int wifi_ap_get_connected_clients(struct rtw_client_list *client_list_buf)
+s32 wifi_ap_get_connected_clients(struct rtw_client_list *client_list_buf)
 {
 	UNUSED(client_list_buf);
 	call_noused = __LINE__;
 	return -1;
 }
 
-int wifi_get_traffic_stats(u8 wlan_idx, union rtw_traffic_stats *traffic_stats)
+s32 wifi_get_traffic_stats(u8 wlan_idx, union rtw_traffic_stats *traffic_stats)
 {
 	UNUSED(wlan_idx);
 	UNUSED(traffic_stats);
@@ -205,7 +197,7 @@ int wifi_get_traffic_stats(u8 wlan_idx, union rtw_traffic_stats *traffic_stats)
 	return -1;
 }
 
-int wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union rtw_phy_stats *phy_stats)
+s32 wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union rtw_phy_stats *phy_stats)
 {
 	UNUSED(wlan_idx);
 	UNUSED(mac_addr);
@@ -228,14 +220,14 @@ int wifi_set_group_id(unsigned char value)
 	return -1;
 }
 
-int wifi_get_autoreconnect(u8 *enable)
+s32 wifi_get_autoreconnect(u8 *enable)
 {
 	UNUSED(enable);
 	call_noused = __LINE__;
 	return -1;
 }
 
-int wifi_add_custom_ie(struct rtw_custom_ie *cus_ie, int ie_num)
+s32 wifi_add_custom_ie(struct rtw_custom_ie *cus_ie, s32 ie_num)
 {
 	UNUSED(cus_ie);
 	UNUSED(ie_num);
@@ -244,7 +236,7 @@ int wifi_add_custom_ie(struct rtw_custom_ie *cus_ie, int ie_num)
 }
 
 
-int wifi_update_custom_ie(struct rtw_custom_ie *cus_ie, int ie_index)
+s32 wifi_update_custom_ie(struct rtw_custom_ie *cus_ie, s32 ie_index)
 {
 	UNUSED(cus_ie);
 	UNUSED(ie_index);
@@ -254,21 +246,21 @@ int wifi_update_custom_ie(struct rtw_custom_ie *cus_ie, int ie_index)
 
 
 
-int wifi_del_custom_ie(unsigned char wlan_idx)
+s32 wifi_del_custom_ie(u8 wlan_idx)
 {
 	UNUSED(wlan_idx);
 	call_noused = __LINE__;
 	return -1;
 }
 
-int wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc)
+s32 wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc)
 {
 	UNUSED(raw_frame_desc);
 	call_noused = __LINE__;
 	return -1;
 }
 
-int wifi_get_antdiv_info(unsigned char *antdiv_mode, unsigned char *curr_ant)
+s32 wifi_get_antdiv_info(u8 *antdiv_mode, u8 *curr_ant)
 {
 	UNUSED(antdiv_mode);
 	UNUSED(curr_ant);
@@ -283,7 +275,7 @@ int wifi_set_pmk_cache_enable(unsigned char value)
 	return -1;
 }
 
-int wifi_set_lps_listen_interval(u8 interval)
+s32 wifi_set_lps_listen_interval(u8 interval)
 {
 	UNUSED(interval);
 	call_noused = __LINE__;
@@ -326,7 +318,7 @@ int wifi_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags)
 	return -1;
 }
 
-int wifi_get_band_type(u8 *band_type)
+s32 wifi_get_band_type(u8 *band_type)
 {
 	UNUSED(band_type);
 	call_noused = __LINE__;

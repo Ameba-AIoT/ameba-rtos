@@ -455,7 +455,7 @@ int whc_fullmac_host_ap_scan(struct wiphy *wiphy, struct cfg80211_scan_request *
 	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
 
 	/* Add fake callback to inform rots give scan indicate when scan done. */
-	scan_param.scan_user_callback = (int (*)(unsigned int,  void *))0xffffffff;
+	scan_param.scan_user_callback = (s32(*)(u32,  void *))0xffffffff;
 	scan_param.ssid = NULL;
 
 	if (global_idev.mlme_priv.b_in_scan) {
