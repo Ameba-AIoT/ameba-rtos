@@ -16,6 +16,7 @@ u8 addr2[6] = {0x00, 0xE0, 0x4C, 0x00, 0x02, 0xF0};
 u8 addr3[6] = {0xBC, 0x46, 0x99, 0x7B, 0x48, 0x74};
 
 #define WIFI_RAW_CH 1
+#define WifiGetFrameSubType(pbuf)	(*(unsigned short *)(pbuf)) & (BIT(7) | BIT(6) | BIT(5) | BIT(4) | BIT(3) | BIT(2))
 
 void wifi_raw_tx(void *param)
 {
@@ -61,9 +62,9 @@ static u8 promisc_callback(struct rtw_rx_pkt_info *pkt_info)
 	u32 buf_len = pkt_info->len;
 	u32 i;
 
-	subtype = GetFrameSubType(buf);
+	subtype = WifiGetFrameSubType(buf);
 
-	if (subtype == WIFI_PROBERSP) {
+	if (subtype == RTW_PROBERSP) {
 		printf("Probe Rsp frame:\n");
 		for (i = 0; i < buf_len; i++) {
 			printf("%x ", buf[i]);

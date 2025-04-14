@@ -341,7 +341,7 @@ s32 wifi_get_tsf(u8 wlan_idx, u64 *tsf);
  * @code
  *  u8 ie1[] = {221, 2, 2, 2};
  *  u8 ie2[] = {221, 2, 1, 1};
- *  struct rtw_custom_ie ie_list[2] = {{ie1, RTW_BEACON|RTW_PROBE_RSP}, {ie2, RTW_PROBE_RSP}};
+ *  struct rtw_custom_ie ie_list[2] = {{ie1, RTW_CUS_IE_BEACON|RTW_CUS_IE_PROBERSP}, {ie2, RTW_CUS_IE_PROBERSP}};
  *  wifi_add_custom_ie(ie_list, 2);
  * @endcode
  * @param[in]  ie_num: The number of custom IEs in `ie_list`.
@@ -354,7 +354,7 @@ s32 wifi_add_custom_ie(struct rtw_custom_ie *ie_list, s32 ie_num);
  * @param[in]  cus_ie: Pointer to WIFI CUSTOM IE address.
  * @code
  *  u8 ie[] = {221, 2, 1, 3} ;
- *  struct rtw_custom_ie ie_update = {ie, RTW_PROBE_RSP};
+ *  struct rtw_custom_ie ie_update = {ie, RTW_CUS_IE_PROBERSP};
  *  wifi_update_custom_ie(&ie_update, 2);
  * @endcode
  * @param[in]  ie_index: Index of WIFI CUSTOM IE list.

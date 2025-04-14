@@ -197,7 +197,7 @@ void whc_fullmac_host_inform_bss(u32 channel, u32 frame_is_bcn, s32 rssi, u8 *ma
 	fctrl = &(pwlanhdr->frame_ctl);
 	*(fctrl) = 0;
 
-	if (frame_is_bcn) { /* WIFI_BEACON */
+	if (frame_is_bcn) { /* RTW_BEACON */
 		memcpy(pwlanhdr->addr1, bc_addr, ETH_ALEN);
 		set_frame_sub_type(pbuf, BIT(7));
 	} else {
