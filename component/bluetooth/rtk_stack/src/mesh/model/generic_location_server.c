@@ -180,6 +180,7 @@ mesh_msg_send_cause_t generic_location_local_publish(const mesh_model_info_p pmo
 
 static int32_t generic_location_server_publish(mesh_model_info_p pmodel_info, bool retrans)
 {
+    // RTK porting:avoid compile warning
 	(void) retrans; //avoid warning
     if (location_global_period_pub_enabled)
     {
