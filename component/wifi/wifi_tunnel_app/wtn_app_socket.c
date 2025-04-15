@@ -57,6 +57,7 @@ u32 wtn_server_port = 0;
 u8 wtn_socket_need_close = 0;
 u8 wtn_tool_restart = 0;
 u8 wtn_tool_rand = 0;
+u8 wtn_rnat_ap_start = 0;
 u8 wtn_server_ip[4] = {0};
 rtos_sema_t  wtn_socket_send_sema = NULL;
 struct wtn_buf_node wtn_buf_pool[WTN_BUF_NUM] = {0};
@@ -261,7 +262,7 @@ void wtn_bcmc_socket_handler(void *param)
 	}
 
 	/*when rnat enabled, check whether softap ap has started*/
-	if (wifi_user_config.wtn_rnat_en) {
+	if (wifi_user_config.wtn_rnat_en && wtn_rnat_ap_start) {
 		ip = (u8 *)LwIP_GetIP(1);
 		while (memcmp(ip, invalid_ip, 4) == 0) {
 			rtos_time_delay_ms(1000);
@@ -355,7 +356,7 @@ void wtn_bcmc_socket_handler(void *param)
 					memcpy(&wtn_server_port, buf + 10, 4);
 					wtn_server_port = htonl(wtn_server_port);
 				}
-				if (wifi_user_config.wtn_rnat_en) {
+				if (wifi_user_config.wtn_rnat_en && wtn_rnat_ap_start) {
 					/*forward this packet by softap port*/
 					sendto(softap_bcmc_socket_fd, buf, ret, 0, (struct sockaddr *)&softap_bcmc_addr, sizeof(softap_bcmc_addr));
 				}
@@ -482,8 +483,9 @@ exit:
 	rtos_task_delete(NULL);
 }
 
-int wtn_socket_init(u8 enable)
+int wtn_socket_init(u8 enable, u8 rnat_ap_start)
 {
+	wtn_rnat_ap_start = rnat_ap_start;
 	if (enable) {
 		rtos_sema_create_static(&wtn_socket_send_sema, 0, 0xFFFFFFFF);
 		rtw_init_queue(&wtn_buf_queue);

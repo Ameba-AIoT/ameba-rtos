@@ -119,6 +119,8 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wtn_father_refresh_timeout = 3000;
 	wifi_user_config.wtn_child_refresh_timeout = 4000;
 	wifi_user_config.wtn_rnat_en = 0;
+	wifi_user_config.wtn_fixed_rnat_node = 0;
+	wifi_user_config.wtn_connect_only_to_rnat = 0;
 	wifi_user_config.wtn_max_node_num = 15;
 	if (wifi_user_config.wtn_en) {
 		skb_num_np_rsvd = 16; /*4 for rx_ring_buffer + 2 for mgnt trx + 10 for tunnel tx */

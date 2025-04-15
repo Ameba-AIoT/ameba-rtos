@@ -60,6 +60,11 @@ typedef enum {
 	AFE_NS_AGGR_HIGH = 2,       // NS level: strong
 } afe_ns_aggressive_mode_e;
 
+typedef enum {
+	AFE_NS_COST_LOW  = 0,       // NS low cost mode: 1 channel
+	AFE_NS_COST_HIGH = 1,       // NS high cost mode: all channels
+} afe_ns_cost_mode_e;
+
 /*------------------- Structure Definition ------------------*/
 typedef struct afe_config {
 
@@ -70,10 +75,10 @@ typedef struct afe_config {
 	int frame_size;                         // frame length(samples), must be 256
 
 	afe_mode_e afe_mode;                    // AFE mode, for ASR or voice communication. Only support AFE for ASR in current version.
-	bool enable_aec;                        // AEC(Acoustic Echo Vancellation) module switch
+	bool enable_aec;                        // AEC(Acoustic Echo Cancellation) module switch
 	bool enable_ns;                         // NS(Noise Suppression) module switch
 	bool enable_agc;                        // AGC(Automation Gain Control) module switch
-	bool enable_ssl;                        // SSL(Sound Source Localization) module switch. SSL is not supported in current version.
+	bool enable_ssl;                        // SSL(Sound Source Localization) module switch.
 
 	// AEC module parameter
 	afe_aec_mode_e aec_mode;                // AEC mode, signal process or NN method. NN method is not supported in current version.
@@ -85,6 +90,7 @@ typedef struct afe_config {
 
 	// NS module parameter
 	afe_ns_mode_e ns_mode;                  // NS mode, signal process or NN method. NN method is not supported in current version.
+	afe_ns_cost_mode_e ns_cost_mode;        // low cost mode means 1channel NR and poorer noise reduction effect
 	afe_ns_aggressive_mode_e ns_aggressive_mode;        // higher mode means more stationary noise suppression but more distortion
 
 	// AGC module parameter
@@ -114,6 +120,7 @@ typedef struct afe_config {
     .aec_cost = AFE_AEC_FILTER_MID, \
     .res_aggressive_mode = AFE_AEC_RES_LOW, \
     .ns_mode = AFE_NS_SIGNAL, \
+    .ns_cost_mode = AFE_NS_COST_HIGH, \
     .ns_aggressive_mode = AFE_NS_AGGR_LOW, \
     .agc_fixed_gain = 0, \
     .enable_adaptive_agc = false, \
@@ -138,6 +145,7 @@ typedef struct afe_config {
     .aec_cost = AFE_AEC_FILTER_MID, \
     .res_aggressive_mode = AFE_AEC_RES_HIGH, \
     .ns_mode = AFE_NS_SIGNAL, \
+    .ns_cost_mode = AFE_NS_COST_HIGH, \
     .ns_aggressive_mode = AFE_NS_AGGR_HIGH, \
     .agc_fixed_gain = 0, \
     .enable_adaptive_agc = false, \

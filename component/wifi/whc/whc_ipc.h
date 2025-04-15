@@ -200,7 +200,7 @@ int whc_ipc_host_api_wtn_identity_key_calc(u8 *password, u32 password_len);
 void whc_ipc_dev_wtn_rnat_ap_init(u8 enable);
 #ifdef CONFIG_WTN_SOCKET_APP
 int whc_ipc_dev_wtn_socket_send(u8 *buf, u32 len);
-void whc_ipc_dev_wtn_socket_init(u8 enable);
+void whc_ipc_dev_wtn_socket_init(u8 enable, u8 rnat_ap_start);
 #endif
 #endif
 #endif /* __INIC_IPC_H__ */
