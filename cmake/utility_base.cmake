@@ -46,7 +46,6 @@ macro(ameba_fatal msg)
     endif()
 endmacro()
 
-
 macro(ameba_option var description value)
     option(${var} ${description} "${value}")
 endmacro()
@@ -1471,7 +1470,8 @@ function(ameba_target_add name)
 
     if (ARG_p_DROP_IF_NO_SOURCES)
         if(NOT ARG_p_ADD_EMPTY_C_FILE AND NOT ARG_p_SOURCES AND NOT srcs_from_libs)
-            ameba_warning("target ${c_CURRENT_TARGET_NAME} has no source, abort")
+            ameba_warning("Target ${c_CURRENT_TARGET_NAME} dropped: no source given")
+            unset(c_CURRENT_TARGET_NAME PARENT_SCOPE)
             return()
         endif()
     endif()
@@ -1614,6 +1614,8 @@ function(ameba_target_add name)
             set_property(GLOBAL APPEND PROPERTY ${prop} ${c_CURRENT_TARGET_NAME})
         endforeach()
     endif()
+    ameba_target_get_output_info(${c_CURRENT_TARGET_NAME} o_path o_name)
+    set(${c_CURRENT_TARGET_FILE} ${o_path}/${o_name} PARENT_SCOPE)
     #TODO: why not create target and call ameba_target_set?
 endfunction()
 

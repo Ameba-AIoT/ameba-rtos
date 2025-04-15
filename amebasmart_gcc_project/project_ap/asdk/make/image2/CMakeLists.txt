@@ -39,10 +39,14 @@ ameba_add_subdirectory(${c_MCU_PROJECT_DIR}/src)
 # TODO: need to catch the error
 add_custom_target(atf ALL
     COMMAND ${CMAKE_COMMAND} -E echo "Building atf project"
-    # COMMAND ${CMAKE_COMMAND} -E make_directory ${c_SDK_IMAGE_TARGET_DIR}
     COMMAND make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${c_SOC_PROJECT_DIR}/project_ap BUILD_BASE=${CMAKE_BINARY_DIR} -C ${c_CMPT_SOC_DIR}/atf all
     WORKING_DIRECTORY ${c_CMPT_SOC_DIR}/atf
     COMMENT "Building atf project using make"
+)
+
+set_target_properties(atf PROPERTIES
+    ADDITIONAL_CLEAN_FILES
+        ${CMAKE_BINARY_DIR}/project_ap/asdk/make/atf
 )
 
 ameba_target_depend(${c_CURRENT_IMAGE} atf)
@@ -144,7 +148,6 @@ add_custom_target(
 
 set(clean_files
     ${c_SDK_IMAGE_TARGET_DIR}
-    ${c_MCU_PROJECT_DIR}/asdk/build/atf
 )
 
 set(link_deps

@@ -34,7 +34,7 @@ struct rtw_auto_reconn_t {
 extern struct rtw_auto_reconn_t  rtw_reconn;
 int wifi_stop_autoreconnect(void);
 void rtw_reconn_new_conn(struct rtw_network_info *connect_param);
-void rtw_reconn_join_status_hdl(char *buf, int flags);
+void rtw_reconn_join_status_hdl(s8 *buf, s32 flags);
 #endif
 
 #endif

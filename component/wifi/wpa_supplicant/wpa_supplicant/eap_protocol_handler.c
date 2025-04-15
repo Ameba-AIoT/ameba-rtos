@@ -478,7 +478,7 @@ exit:
 	rtos_task_delete(eap_recvd_tsk.task);
 }
 
-void eap_eapol_recvd_hdl(char *buf, int buf_len, int flags, void *handler_user_data)
+void eap_eapol_recvd_hdl(s8 *buf, s32 buf_len, s32 flags, void *handler_user_data)
 {
 	(void)flags;
 	(void)handler_user_data;
@@ -494,7 +494,7 @@ void eap_eapol_recvd_hdl(char *buf, int buf_len, int flags, void *handler_user_d
 	}
 }
 
-void eap_eapol_start_hdl(char *buf, int buf_len, int flags, void *handler_user_data)
+void eap_eapol_start_hdl(s8 *buf, s32 buf_len, s32 flags, void *handler_user_data)
 {
 	(void)buf_len;
 	(void)flags;

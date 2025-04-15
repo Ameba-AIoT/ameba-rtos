@@ -173,7 +173,7 @@ void whc_ipc_dev_trx_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum);
 /*for ipc dev api*/
 void whc_ipc_dev_api_init(void);
 void whc_ipc_dev_api_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum);
-void whc_ipc_dev_wifi_event_indicate(int event_cmd, char *buf, int buf_len, int flags);
+void whc_ipc_dev_wifi_event_indicate(u32 event_cmd, s8 *buf, s32 buf_len, s32 flags);
 void whc_ipc_dev_scan_user_callback_indicate(unsigned int ap_num, void *user_data);
 void whc_ipc_dev_acs_info_indicate(struct rtw_acs_mntr_rpt *acs_mntr_rpt);
 void whc_ipc_dev_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data);

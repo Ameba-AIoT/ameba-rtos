@@ -22,10 +22,11 @@ if(CONFIG_CORE_AS_AP)
 
     endif()
 
-    ameba_add_subdirectory(cJSON)
     ameba_add_subdirectory(httplite)
     ameba_add_subdirectory(iperf)
     ameba_add_subdirectory(ping)
     ameba_add_subdirectory(xml)
-
 endif()
+
+#OPTIMIZE: cJSON.h is always included in atcmd
+ameba_add_subdirectory(cJSON)

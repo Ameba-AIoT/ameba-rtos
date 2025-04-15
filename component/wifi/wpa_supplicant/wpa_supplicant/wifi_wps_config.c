@@ -74,10 +74,10 @@ struct _internal_wps_scan_handler_arg {
 extern void _wifi_p2p_wps_success(const u8 *peer_addr, int registrar);
 extern void _wifi_p2p_wps_failed(void);
 #endif
-extern void wpas_wsc_sta_wps_start_hdl(char *buf, int buf_len, int flags, void *userdata);
-extern void wpas_wsc_wps_finish_hdl(char *buf, int buf_len, int flags, void *userdata);
-extern void wpas_wsc_server_wps_finish_hdl(char *buf, int buf_len, int flags, void *userdata);
-extern void wpas_wsc_eapol_recvd_hdl(char *buf, int buf_len, int flags, void *userdata);
+extern void wpas_wsc_sta_wps_start_hdl(s8 *buf, s32 buf_len, s32 flags, void *userdata);
+extern void wpas_wsc_wps_finish_hdl(s8 *buf, s32 buf_len, s32 flags, void *userdata);
+extern void wpas_wsc_server_wps_finish_hdl(s8 *buf, s32 buf_len, s32 flags, void *userdata);
+extern void wpas_wsc_eapol_recvd_hdl(s8 *buf, s32 buf_len, s32 flags, void *userdata);
 
 void wifi_p2p_wps_success(const u8 *peer_addr, int registrar)
 {

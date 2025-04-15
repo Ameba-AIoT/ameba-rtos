@@ -56,6 +56,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.lps_enable = 1;
 	wifi_user_config.lps_mode = RTW_PS_MODE_LEGACY;
 	wifi_user_config.legacy_ps_listen_interval = 0;
+	wifi_user_config.wowlan_rx_bcmc_dis = 0;
 
 	/* Softap related */
 	wifi_user_config.ap_sta_num = 5;	/*should not exceed 5 */

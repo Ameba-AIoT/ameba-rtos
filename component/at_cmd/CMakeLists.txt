@@ -38,17 +38,23 @@ set(private_compile_options)         #private compile_options
 
 #NOTE: User defined section, add your private build configures here
 # You may use if-else condition to set these predefined variable
-ameba_list_append(private_sources
-    monitor.c
-)
+#TODO: AMEBAD need port otp and monitor.c
+if (CONFIG_AMEBAD)
+    ameba_list_append(private_sources ${c_EMPTY_C_FILE})
+else()
+    ameba_list_append(private_sources monitor.c)
+endif()
+
 if(CONFIG_CORE_AS_AP AND CONFIG_SUPPORT_ATCMD)
     ameba_list_append(private_sources
         atcmd_service.c
         atcmd_sys.c
         atcmd_fs.c
         atcmd_bt_mp.c
-        atcmd_otp.c
         atcmd_coex.c
+    )
+    ameba_list_append_ifnot(CONFIG_AMEBAD private_sources
+        atcmd_otp.c
     )
     ameba_list_append_if(CONFIG_WLAN private_sources
         atcmd_http.c

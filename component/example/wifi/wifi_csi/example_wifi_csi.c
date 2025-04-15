@@ -24,7 +24,7 @@ static void wifi_csi_thread(void *param)
 	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 	struct rtw_csi_action_parm act_param = {0};
 	u32 len;
-	unsigned char *csi_buf = NULL;
+	u8 *csi_buf = NULL;
 	unsigned char assoc_ap_mac[6] = {0xa4, 0x39, 0xb3, 0xa4, 0xbe, 0x2d};  /* need modify to mac address of associated AP when sta mode */
 	struct rtw_client_list client_info;
 	memset(&client_info, 0, sizeof(struct rtw_client_list));
@@ -121,7 +121,7 @@ NEXT:
 }
 
 /* wifi csi report callback */
-void example_wifi_csi_report_cb(char *buf, int buf_len, int flags, void *userdata)
+void example_wifi_csi_report_cb(s8 *buf, s32 buf_len, s32 flags, void *userdata)
 {
 	(void)buf;
 	(void)buf_len;
@@ -131,7 +131,7 @@ void example_wifi_csi_report_cb(char *buf, int buf_len, int flags, void *userdat
 	return;
 }
 
-void wifi_csi_show(unsigned char *csi_buf)
+void wifi_csi_show(u8 *csi_buf)
 {
 	struct rtw_csi_header *csi_header = (struct rtw_csi_header *)csi_buf;
 	unsigned long long *buff_tmp = NULL; /* for printf csi data*/

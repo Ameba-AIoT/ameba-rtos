@@ -31,14 +31,9 @@
  */
 
 /* lwIP includes. */
-#include "lwip/debug.h"
-#include "lwip/def.h"
 #include "lwip/sys.h"
-#include "lwip/mem.h"
 #include "lwip/stats.h"
-#include "os_wrapper.h"
 #include "lwip/timeouts.h"
-#include "rtw_autoconf.h"
 
 struct timeoutlist
 {
