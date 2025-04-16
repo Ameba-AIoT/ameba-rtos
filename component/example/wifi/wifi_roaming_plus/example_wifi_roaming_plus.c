@@ -523,7 +523,7 @@ static u32 wifi_roaming_plus_find_ap_from_scan_buf(char *target_ssid, void *user
 		return -1;
 	}
 
-	if (wifi_get_scan_records(&ap_num, scanned_ap_list) < 0) {
+	if (wifi_get_scan_records((u32 *)&ap_num, scanned_ap_list) < 0) {
 		rtos_mem_free(scanned_ap_list);
 		return -1;
 	}

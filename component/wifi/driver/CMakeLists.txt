@@ -95,7 +95,7 @@ ameba_list_append_if(CONFIG_AMEBASMART public_includes
 )
 
 ameba_list_append_if(CONFIG_AMEBASMARTPLUS public_includes
-    ${c_CMPT_WIFI_DIR}/wifi_reg/rtl8730e
+    ${c_CMPT_WIFI_DIR}/wifi_reg/rtl8730f
     ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf
     ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf/rtl8730e
     ${CMAKE_CURRENT_SOURCE_DIR}/rtl8730e_rom

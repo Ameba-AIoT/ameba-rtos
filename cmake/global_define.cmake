@@ -23,8 +23,13 @@ ameba_set_if_unset(v_GIC_VER 2)
 
 ameba_set_basedir(c_BASEDIR)
 ameba_set(c_CMAKE_FILES_DIR ${CMAKE_CURRENT_LIST_DIR})
+ameba_set(c_CMAKE_BUILD_DIR)
 ameba_set(c_COMPONENT_DIR ${c_BASEDIR}/component)
 ameba_set(c_EMPTY_C_FILE ${CMAKE_CURRENT_LIST_DIR}/empty_file.c)
+
+#An empty object library with empty_file.c but remove or rename some sections
+ameba_set(c_EMPTY_C_OBJECT)         # File used like empty_file.c
+ameba_set(c_EMPTY_C_OBJECT_FILE)    # File used like empty_file.c
 
 #-------------------------#
 
@@ -53,6 +58,7 @@ ameba_set(c_CMPT_WPAN_DIR         ${c_COMPONENT_DIR}/wpan)
 
 ameba_set(c_CMPT_CRASHDUMP_DIR    ${c_COMPONENT_DIR}/soc/common/crashdump)
 ameba_set(c_CMPT_LZMA_DIR         ${c_COMPONENT_DIR}/soc/common/lzma)
+ameba_set(c_CMPT_ED25519_DIR      ${c_COMPONENT_DIR}/soc/common/rom_ed25519)
 #-------------------------#
 
 # Define dynamic dirs under component/
@@ -76,6 +82,7 @@ ameba_set(c_CMPT_SWLIB_DIR)
 ameba_set(c_CMPT_USRCFG_DIR)
 ameba_set(c_CMPT_VECTOR_DIR)
 ameba_set(c_CMPT_VERIFICATION_DIR)
+ameba_set(c_CMPT_XMODEM_DIR)
 
 #-------------------------#
 
@@ -125,6 +132,12 @@ ameba_set(c_SDK_LIB_SOC_DIR)
 ameba_set(c_SDK_IMAGE_FOLDER_NAME)
 ameba_set(c_SDK_IMAGE_TARGET_DIR)
 
+# scripts in ${c_SDK_IMAGE_UTILITY_DIR}
+ameba_set(c_SDK_ROM_SYMBOL_GEN_SCRIPT)
+ameba_set(c_SDK_ROM_SYMBOL_S_GEN_SCRIPT)
+ameba_set(c_SDK_ROM_TOTAL_SIZE_SCRIPT)
+ameba_set(c_SDK_ROM_CODE_ANALYZE_SCRIPT)
+ameba_set(c_SDK_EXTRACT_LD_SCRIPT)
 ############################################################
 
 macro(ameba_reset_global_define)
@@ -140,12 +153,15 @@ macro(ameba_reset_global_define)
     ameba_set(c_CMPT_HAL_DIR ${c_CMPT_SOC_DIR}/hal)
     ameba_set(c_CMPT_IMG3_DIR ${c_CMPT_SOC_DIR}/img3)
     ameba_set(c_CMPT_MISC_DIR ${c_CMPT_SOC_DIR}/misc)
+    ameba_set(c_CMPT_MVE_DIR ${c_CMPT_SOC_DIR}/mve_lib)
     ameba_set(c_CMPT_SWLIB_DIR ${c_CMPT_SOC_DIR}/swlib)
     ameba_set(c_CMPT_USRCFG_DIR ${c_COMPONENT_DIR}/soc/usrcfg/${c_SOC_TYPE})
     ameba_set(c_CMPT_VECTOR_DIR ${c_CMPT_SOC_DIR}/vector)
     ameba_set(c_CMPT_VERIFICATION_DIR ${c_CMPT_SOC_DIR}/verification)
     ameba_set(c_CMPT_CHIPINFO_DIR ${c_CMPT_SOC_DIR}/lib/chipinfo)
     ameba_set(c_CMPT_MONITOR_DIR ${c_CMPT_SOC_DIR}/app/monitor)
+    ameba_set(c_CMPT_DOWNLOAD_XMODEM_DIR ${c_CMPT_SOC_DIR}/rom/download/xmodem)
+    ameba_set(c_CMPT_DOWNLOAD_USB_DIR ${c_CMPT_SOC_DIR}/rom/download/usb)
     ameba_set(c_CMPT_PMC_DIR ${c_CMPT_SOC_DIR}/lib/pmc)
 endmacro()
 

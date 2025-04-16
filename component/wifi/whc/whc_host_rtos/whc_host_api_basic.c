@@ -199,7 +199,7 @@ error:
 
 	if (rtw_join_status == RTW_JOINSTATUS_FAIL && no_need_indicate == 0) {
 		fail_info.fail_reason = result;
-		wifi_indication(RTW_EVENT_JOIN_STATUS, (char *)&fail_info, sizeof(struct rtw_event_info_joinstatus_joinfail), RTW_JOINSTATUS_FAIL);
+		wifi_indication(RTW_EVENT_JOIN_STATUS, (u8 *)&fail_info, sizeof(struct rtw_event_info_joinstatus_joinfail), RTW_JOINSTATUS_FAIL);
 	}
 
 	return result;

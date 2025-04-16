@@ -64,7 +64,7 @@ macro(ameba_soc_project_create name)
     <FINAL_IMAGE_DIR> after building. Default final image directory is project root path, \
     where the current CMakeLists.txt is located.")
     ###############################################################################
-
+    ameba_set(c_CMAKE_BUILD_DIR ${CMAKE_BINARY_DIR})
     ameba_set(c_SOC_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
     ameba_set(c_SOC_TYPE ${name})
     ameba_set_upper(c_SOC_TYPE_UPPER ${c_SOC_TYPE})
@@ -130,6 +130,8 @@ macro(ameba_soc_project_create name)
 
     ameba_set_if(c_VERBOSE_MAKEFILE CMAKE_VERBOSE_MAKEFILE ON)
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+    add_library(g_PROJECT_CONFIG INTERFACE)
 
     ameba_set(c_SOC_PROJECT_CREATED TRUE)
 endmacro()
@@ -220,13 +222,19 @@ macro(ameba_mcu_project_create name mcu_type)
     ameba_set(c_SDK_FLOADER_BIN_DIR     ${c_SDK_IMGTOOL_FLOADER_DIR}/${c_SOC_TYPE}_acut)
     ameba_set(c_SDK_IMAGE_DIR           ${c_MCU_SDK_DIR}/image)
     ameba_set(c_SDK_IMAGE_MP_DIR        ${c_MCU_SDK_DIR}/image_mp)
-    ameba_set(c_SDK_IMAGE_UTILITY_DIR   ${c_MCU_SDK_DIR}/image_utility)
+    ameba_set(c_SDK_IMAGE_UTILITY_DIR   ${c_MCU_SDK_DIR}/img_utility)
     ameba_set(c_SDK_LD_DIR              ${c_MCU_SDK_DIR}/ld)
     ameba_set(c_SDK_LD_NS_DIR           ${c_MCU_SDK_DIR}/ld_ns)
     ameba_set(c_SDK_LIB_DIR             ${c_MCU_SDK_DIR}/lib)
     ameba_set(c_SDK_LIB_APPLICATION_DIR ${c_MCU_SDK_DIR}/lib/application)
     ameba_set(c_SDK_LIB_APP_DIR         ${c_MCU_SDK_DIR}/lib/application)
     ameba_set(c_SDK_LIB_SOC_DIR         ${c_MCU_SDK_DIR}/lib/soc)
+
+    ameba_set(c_SDK_ROM_SYMBOL_GEN_SCRIPT       ${c_SDK_IMAGE_UTILITY_DIR}/export_rom_symbol.py)
+    ameba_set(c_SDK_ROM_SYMBOL_S_GEN_SCRIPT     ${c_SDK_IMAGE_UTILITY_DIR}/export_rom_symbol_s.py)
+    ameba_set(c_SDK_ROM_TOTAL_SIZE_SCRIPT       ${c_SDK_IMAGE_UTILITY_DIR}/total_rom_size.py)
+    ameba_set(c_SDK_ROM_CODE_ANALYZE_SCRIPT     ${c_SDK_IMAGE_UTILITY_DIR}/code_analyze.py)
+    ameba_set(c_SDK_EXTRACT_LD_SCRIPT           ${c_SDK_IMAGE_UTILITY_DIR}/extract_ld_vars.sh)
 
     if (CONFIG_CA32_FREERTOS_V10_2_1_SMP)
         set(v_FREERTOS_VER v10.2.1)
@@ -279,8 +287,7 @@ macro(ameba_mcu_project_create name mcu_type)
         ${c_GLOBAL_MCU_INCLUDE_DIRECTORIES}
     )
 
-    #REVIEW: Register mcu config's name to g_PROJECT_CONFIG, necessary?
-    # set_target_properties(g_PROJECT_CONFIG PROPERTIES ${c_MCU_PROJECT_NAME}_config "${c_MCU_PROJ_CONFIG}")
+    set_property(TARGET g_PROJECT_CONFIG APPEND PROPERTY ${c_MCU_PROJECT_NAME}_config "${c_MCU_PROJ_CONFIG}")
 
     set(c_BUILD_INFO build_info_${PROJECT_NAME})
     add_custom_target(
@@ -291,6 +298,8 @@ macro(ameba_mcu_project_create name mcu_type)
         BYPRODUCTS ${c_MCU_INC_DIR}/build_info.h
     )
     set_property(TARGET ${c_BUILD_INFO} PROPERTY ADDITIONAL_CLEAN_FILES ${c_MCU_PROJECT_DIR}/inc/build_info.h)
+
+    ameba_add_empty_object()
 endmacro()
 
 function(ameba_soc_project_check)

@@ -68,7 +68,7 @@ Command ID39, 接听电话
 Command ID40, 挂断电话
 ---------------------------------------------------------
 
-[AIVOICE] rtk_aivoice version: v1.4.0#Sf2d3735#N13dbfdf#A939812f
+[AIVOICE] rtk_aivoice version: v1.4.1#Sb993ddf#N014ae4b#Abf7ba50
 [AIVOICE] rtk_aivoice_model afe version: afe_2mic_asr_v1.2_AfePara_2mic50_v1.0_bf_v0.0_20241210
 [AIVOICE] rtk_aivoice_model vad version: vad_v7_opt
 [AIVOICE] rtk_aivoice_model kws version: kws_xqxq_v4.1_opt

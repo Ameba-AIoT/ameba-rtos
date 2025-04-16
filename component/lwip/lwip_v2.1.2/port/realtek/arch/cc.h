@@ -32,7 +32,10 @@
 #ifndef __CC_H__
 #define __CC_H__
 
-#include "cpu.h"
+#ifdef BYTE_ORDER
+#undef BYTE_ORDER
+#define BYTE_ORDER LITTLE_ENDIAN
+#endif
 
 typedef unsigned   char    u8_t;
 typedef signed     char    s8_t;
@@ -51,50 +54,10 @@ typedef int sys_prot_t;
 #define X32_F "x"
 #define SZT_F "uz"
 
-/* define compiler specific symbols */
-#if defined (__ICCARM__)
-#if !defined (__IARSTDLIB__)
-#define _STRING
-#ifndef memcmp
-#define memcmp(dst, src, sz)            _memcmp(dst, src, sz)
-#endif
-#ifndef memset
-#define memset(dst, val, sz)            _memset(dst, val, sz)
-#endif
-#ifndef memcpy
-#define memcpy(dst, src, sz)            _memcpy(dst, src, sz)
-#endif
-#endif // __IARSTDLIB__
-
-#define PACK_STRUCT_BEGIN
-#define PACK_STRUCT_STRUCT
-#define PACK_STRUCT_END
-#define PACK_STRUCT_FIELD(x) x
-#define PACK_STRUCT_USE_INCLUDES
-
-#elif defined (__CC_ARM)
-
-#define PACK_STRUCT_BEGIN __packed
-#define PACK_STRUCT_STRUCT
-#define PACK_STRUCT_END
-#define PACK_STRUCT_FIELD(x) x
-
-#elif defined (__GNUC__)
-
 #define PACK_STRUCT_BEGIN
 #define PACK_STRUCT_STRUCT __attribute__ ((__packed__))
 #define PACK_STRUCT_END
 #define PACK_STRUCT_FIELD(x) x
-#define PACK_STRUCT_USE_INCLUDES
-
-#elif defined (__TASKING__)
-
-#define PACK_STRUCT_BEGIN
-#define PACK_STRUCT_STRUCT
-#define PACK_STRUCT_END
-#define PACK_STRUCT_FIELD(x) x
-
-#endif
 
 #define LWIP_PLATFORM_ASSERT(x) //do { if(!(x)) while(1); } while(0)
 

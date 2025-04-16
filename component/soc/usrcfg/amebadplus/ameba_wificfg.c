@@ -78,6 +78,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.lps_enable = 1;
 	wifi_user_config.lps_mode = RTW_PS_MODE_LEGACY;
 	wifi_user_config.legacy_ps_listen_interval = 0;
+	wifi_user_config.wowlan_rx_bcmc_dis = 0;
 
 	/* Softap related */
 	wifi_user_config.ap_sta_num = 5;	/*should not exceed 14 */
@@ -88,7 +89,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.max_roaming_times = 2;
 	wifi_user_config.ampdu_rx_enable = 1;
 	wifi_user_config.ampdu_tx_enable = 1;
-	wifi_user_config.bCheckDestAddress = 1;
+	wifi_user_config.check_dest_address_en = 1;
 	wifi_user_config.ap_compatibilty_enabled = 0x0B;
 	wifi_user_config.set_channel_api_do_rfk = 1;
 	wifi_user_config.rf_calibration_disable = 0;

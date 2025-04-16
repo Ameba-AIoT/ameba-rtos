@@ -147,8 +147,6 @@ void app_pmu_init(void)
 {
 	pmu_set_sleep_type(SLEEP_PG);
 	pmu_acquire_deepwakelock(PMU_OS);
-	/*Init logUart rx pin for gpio wakeup*/
-	app_uart_rx_pin_wake_init();
 }
 
 /*

@@ -59,5 +59,11 @@ typedef struct _sys_arch_state_t
 
 /* Message queue constants. */
 #define archMESG_QUEUE_LENGTH    ( 6 )
+
+#define LWIP_INDEX               ( 0 )
+sys_sem_t *sys_thread_sem_get(void);
+sys_sem_t *sys_thread_sem_init(void);
+void sys_thread_sem_deinit(void);
+
 #endif /* __SYS_RTXC_H__ */
 

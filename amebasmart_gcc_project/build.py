@@ -104,10 +104,15 @@ def main(argc, argv):
     else:
         cmd += f' -D CMAKE_REFACTOR="TRUE"'
 
-    cmd += ' -G Ninja && ninja'
+    cmd += ' -G Ninja'
 
     if args.target != None:
         cmd += ' ' + args.target
+
+    if args.pristine:
+        cmd += ' && ninja clean && ninja'
+    else:
+        cmd += ' && ninja'
 
     try:
         rc = os.system(cmd)

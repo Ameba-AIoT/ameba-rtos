@@ -11,7 +11,6 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 # You may use if-else condition to set or update predefined variable above
 
-#FIXME: miss role for public_libraries
 ameba_list_append(public_includes
     include
     library
@@ -137,7 +136,6 @@ ameba_list_append(private_sources
     library/rsa.c
     hw_alt/entropy_hardware_alt.c
 
-
     library/asn1parse.c
     library/asn1write.c
     library/ecp.c
@@ -157,7 +155,6 @@ ameba_list_append(private_sources
 )
 
 if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2)
-
     ameba_list_append (private_sources
         hw_alt/rsa_alt.c
         hw_alt/aes_alt.c
@@ -166,10 +163,7 @@ if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2)
         hw_alt/ecc_alt.c
         hw_alt/ssl_rom_to_ram_map.c
     )
-
-
 else()
-
     ameba_list_append(private_sources
         library/aes.c
         library/pk_ecc.c
@@ -178,7 +172,6 @@ else()
         library/psa_crypto_driver_wrappers_no_static.c
         library/psa_crypto_ffdh.c
     )
-
 endif()
 # Component private part, user config end
 #------------------------------#

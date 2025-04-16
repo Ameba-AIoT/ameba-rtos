@@ -43,24 +43,7 @@
  * something that better describes your network interface.
  */
 
-#include "platform_autoconf.h"
-#include "lwip/opt.h"
-#include "lwip/def.h"
-#include "lwip/mem.h"
-#include "lwip/pbuf.h"
-#include "lwip/sys.h"
-#include "lwip/tcpip.h"
-#include "lwip/icmp.h"
-#include "netif/etharp.h"
-#include "lwip/err.h"
-#include "ethernetif.h"
 #include "lwip_netconf.h"
-
-#include "lwip/ethip6.h" //Add for ipv6
-
-#include "wifi_api.h"
-#include "platform_stdlib.h"
-#include "basic_types.h"
 
 #if CONFIG_WLAN
 #include <wifi_intf_drv_to_lwip.h>

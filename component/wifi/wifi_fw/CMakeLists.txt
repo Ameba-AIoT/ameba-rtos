@@ -2,7 +2,7 @@ if(CMAKE_REFACTOR) # For temporary compatibility.
     ameba_set(WIFIFWDIR ${c_COMPONENT_DIR}/wifi/wifi_fw) #Used in component/wifi/wifi_fw/amebasmart/CMakeLists.txt
 
     if(CONFIG_AMEBAD)
-        ameba_fatal("not ported for ${c_SOC_TYPE} yet")
+        ameba_add_subdirectory_if(CONFIG_WIFI_FW_EN amebad)
     elseif(CONFIG_AMEBADPLUS)
         ameba_add_subdirectory(amebadplus)
     elseif(CONFIG_AMEBAGREEN2)
@@ -20,10 +20,19 @@ if(CMAKE_REFACTOR) # For temporary compatibility.
     else()
         ameba_fatal("not ported for ${c_SOC_TYPE} yet")
     endif()
+
     ameba_global_include(
         common
-        ${c_SOC_TYPE}/include
     )
+    if(CONFIG_AMEBASMARTPLUS)
+        ameba_global_include(
+            amebasmart/include
+        )
+    else()
+        ameba_global_include(
+            ${c_SOC_TYPE}/include
+        )
+    endif()
 
 else()# For temporary compatibility.
     ameba_fatal("only used in CMAKE_REFACTOR")

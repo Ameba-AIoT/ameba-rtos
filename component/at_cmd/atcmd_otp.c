@@ -21,7 +21,7 @@ void at_otp(void *arg)
 	char *argv[MAX_ARGC] = {0};
 	int argc = parse_param(arg, argv);
 
-	if ((EfuseBuf = rtos_mem_zmalloc(OTP_REAL_CONTENT_LEN)) == NULL) {
+	if ((EfuseBuf = rtos_mem_zmalloc(MAX(OTP_REAL_CONTENT_LEN, OTP_LMAP_LEN))) == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "efuse mem malloc fail \n");
 		return;
 	}
