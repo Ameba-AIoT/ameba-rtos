@@ -336,6 +336,7 @@ mesh_msg_send_cause_t sensor_publish(const mesh_model_info_p pmodel_info,
 
 static int32_t sensor_server_publish(mesh_model_info_p pmodel_info, bool retrans)
 {
+    // RTK porting:avoid compile warning
 	(void ) retrans;//avoid compile warning
     sensor_info_t *pinfo = pmodel_info->pargs;
     sensor_db_t *psensor = NULL;

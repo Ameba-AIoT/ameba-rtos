@@ -140,6 +140,27 @@ static int atcmd_ble_mesh_set_retrans_param(int argc, char **argv)
 	}
 }
 
+static int atcmd_ble_mesh_set_tx_phy(int argc, char **argv)
+{
+	(void)argc;
+#if defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
+	uint16_t ret = 0;
+	rtk_bt_mesh_stack_act_set_tx_phy_t tx_phy = 0;
+	tx_phy = str_to_int(argv[0]);
+	ret = rtk_bt_mesh_stack_set_tx_phy(&tx_phy);
+	if (ret) {
+		BT_LOGE("[%s] Call mesh API failed! reason: 0x%x\r\n", __func__, ret);
+		return -1;
+	} else {
+		return 0;
+	}
+#else
+	(void)argv;
+	BT_LOGE("[%s] Platform not support this feature, fail.\r\n", __func__);
+	return -2;
+#endif
+}
+
 static int atcmd_ble_mesh_fn_init(int argc, char **argv)
 {
 	(void)argc;
@@ -604,6 +625,7 @@ static const cmd_table_t mesh_stack_cmd_table[] = {
 	{"hb_sub",      atcmd_ble_mesh_get_hb_subscribe_result,   1, 1},
 	{"model_sub",   atcmd_ble_mesh_set_model_subscribe,       4, 4},
 	{"retran_set",  atcmd_ble_mesh_set_retrans_param,         5, 5},
+	{"set_txphy",   atcmd_ble_mesh_set_tx_phy,                2, 2},
 	{"fn_init",     atcmd_ble_mesh_fn_init,                   4, 4},
 	{"fn_deinit",   atcmd_ble_mesh_fn_deinit,                 1, 1},
 	{"pbadvcon",    atcmd_ble_mesh_pbadvcon,                  2, 2},

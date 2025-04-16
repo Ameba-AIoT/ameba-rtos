@@ -707,7 +707,7 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 			scan_res->peri_adv_interval = p_info->peri_adv_interval;
 			rtk_bt_evt_indicate(p_evt, NULL);
 		}
-#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
 		if (rtk_bt_mesh_is_enable()) {
 			// APP_PRINT_INFO5("GAP_MSG_LE_EXT_ADV_REPORT_INFO:event_type 0x%x, bd_addr %s, addr_type %d, rssi %d, data_len %d",
 			//              p_data->p_le_ext_adv_report_info->event_type,
@@ -1003,7 +1003,7 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 				p_cmd->ret = p_data->p_le_ext_adv_start_setting_rsp->cause;
 				osif_sem_give(p_cmd->psem);
 			}
-#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
 			if (rtk_bt_mesh_is_enable()) {
 				// APP_PRINT_INFO3("GAP_MSG_LE_EXT_ADV_START_SETTING:cause 0x%x, flag 0x%x, adv_handle %d",
 				//              p_data->p_le_ext_adv_start_setting_rsp->cause, p_data->p_le_ext_adv_start_setting_rsp->flag,
@@ -1023,7 +1023,7 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 			osif_sem_give(p_cmd->psem);
 		}
 
-#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
 		if (rtk_bt_mesh_is_enable()) {
 			// APP_PRINT_INFO3("GAP_MSG_LE_EXT_ADV_START_SETTING:cause 0x%x, flag 0x%x, adv_handle %d",
 			//              p_data->p_le_ext_adv_start_setting_rsp->cause, p_data->p_le_ext_adv_start_setting_rsp->flag,
@@ -1973,7 +1973,7 @@ static T_APP_RESULT bt_stack_le_coc_callback(uint8_t coc_msg_type, void *coc_dat
 		data_ind->conn_handle = conn_handle;
 		data_ind->cid = recv_data->cid;
 		data_ind->len = recv_data->value_len;
-		data_ind->data = (uint8_t *)p_evt + sizeof(rtk_bt_le_coc_receive_data_ind_t);
+		data_ind->data = (uint8_t *)data_ind + sizeof(rtk_bt_le_coc_receive_data_ind_t);
 		memcpy(data_ind->data, recv_data->p_data, recv_data->value_len);
 		rtk_bt_evt_indicate(p_evt, NULL);
 		break;
@@ -2579,7 +2579,7 @@ void bt_stack_le_gap_handle_io_msg(uint16_t gap_type, void *gap_msg)
 		bt_stack_le_gap_handle_ext_adv_state_evt(p_gap_msg->msg_data.gap_ext_adv_state_change.adv_handle,
 												 (T_GAP_EXT_ADV_STATE)p_gap_msg->msg_data.gap_ext_adv_state_change.new_state,
 												 p_gap_msg->msg_data.gap_ext_adv_state_change.cause);
-#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
 		if (rtk_bt_mesh_is_enable()) {
 			gap_sched_handle_ext_adv_state_evt(p_gap_msg->msg_data.gap_ext_adv_state_change.adv_handle,
 											   (T_GAP_EXT_ADV_STATE)p_gap_msg->msg_data.gap_ext_adv_state_change.new_state,
@@ -3057,7 +3057,7 @@ static uint16_t bt_stack_le_gap_start_ext_adv(void *param)
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
-#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
 	if (rtk_bt_mesh_is_enable()) {
 		if (true == gap_sched_ext_adv_set_param_flag(adv_handle, EXT_ADV_SET_AUTO)) {
 			cause = GAP_CAUSE_SUCCESS;
@@ -3074,7 +3074,7 @@ static uint16_t bt_stack_le_gap_start_ext_adv(void *param)
 		BT_LOGD("bt_stack_le_gap_start_ext_adv: start_setting cause = %x \r\n", cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
-#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
 	if (rtk_bt_mesh_is_enable()) {
 		uint8_t cause;
 		cause = gap_sched_ext_adv_start(adv_handle);
@@ -3115,7 +3115,7 @@ static uint16_t bt_stack_le_gap_stop_ext_adv(void *param)
 #if defined(RTK_BLE_MGR_LIB_EADV) && RTK_BLE_MGR_LIB_EADV
 	cause = ble_ext_adv_mgr_disable(handle, 0);
 #else
-#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
 	if (rtk_bt_mesh_is_enable()) {
 		cause = gap_sched_ext_adv_stop(handle);
 	} else {
@@ -5826,7 +5826,7 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 #if (defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV) && \
     (defined(F_BT_LE_5_0_AE_ADV_SUPPORT) && F_BT_LE_5_0_AE_ADV_SUPPORT) && \
     (!defined(RTK_BLE_MGR_LIB_EADV) || !RTK_BLE_MGR_LIB_EADV)
-#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
 		if (rtk_bt_mesh_is_enable()) {
 			ret = bt_stack_le_gap_start_adv(p_cmd->param);
 		} else
@@ -5867,7 +5867,7 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = bt_stack_le_gap_create_ext_adv(p_cmd->param);
 #if !defined(RTK_BLE_MGR_LIB_EADV) || !RTK_BLE_MGR_LIB_EADV
 		if (!ret) {
-#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
 			if (!rtk_bt_mesh_is_enable())
 #endif  // RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
 			{
@@ -5884,7 +5884,7 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 #if defined(RTK_BLE_MGR_LIB_EADV) && RTK_BLE_MGR_LIB_EADV
 		ret = bt_stack_le_gap_start_ext_adv(p_cmd->param);
 #else
-#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
 		if (rtk_bt_mesh_is_enable()) {
 			ret = bt_stack_le_gap_start_ext_adv(p_cmd->param);
 		} else

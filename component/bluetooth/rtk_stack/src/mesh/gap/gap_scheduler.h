@@ -95,14 +95,15 @@ extern T_GAP_CAUSE le_ae_coding_scheme(T_GAP_AE_CODING_SCHEME coding_scheme);
   * @brief
   * @{
   */
-typedef enum
+enum
 {
-    GAP_SCHED_BT5_AE_ADV_TYPE_LEGACY_ON_1M,
-    GAP_SCHED_BT5_AE_ADV_TYPE_LEGACY_ON_C2,
-    GAP_SCHED_BT5_AE_ADV_TYPE_LEGACY_ON_C8,
-    GAP_SCHED_BT5_AE_ADV_TYPE_EXTEND_ON_1M_1M,
-    GAP_SCHED_BT5_AE_ADV_TYPE_EXTEND_ON_1M_2M,
-} gap_sched_bt5_ae_adv_type_t;
+    GAP_SCHED_AE_ADV_TYPE_LEGACY_ON_1M =    0x01,
+    GAP_SCHED_AE_ADV_TYPE_LEGACY_ON_S2 =    0x02,
+    GAP_SCHED_AE_ADV_TYPE_LEGACY_ON_S8 =    0x04,
+    GAP_SCHED_AE_ADV_TYPE_EXTEND_ON_1M_1M = 0x08,
+    GAP_SCHED_AE_ADV_TYPE_EXTEND_ON_1M_2M = 0x10,
+};
+typedef uint8_t gap_sched_ae_adv_type_t;
 
 typedef enum
 {
@@ -120,6 +121,7 @@ typedef enum
     GAP_SCHED_PARAMS_ADV_TIMES,
     GAP_SCHED_PARAMS_BT5_AE, /**< Shall be configured before mesh_node_cfg invoked */
     GAP_SCHED_PARAMS_BT5_AE_ADV_TYPE,
+    GAP_SCHED_PARAMS_BT5_AE_SCAN_PHYS
 } gap_sched_params_type_t;
 
 typedef enum
@@ -389,6 +391,14 @@ void gap_sched_ext_adv_state_dump(void);
   * @return the result
   */
 T_GAP_CAUSE gap_sched_ext_adv_step(uint8_t handle);
+
+/**
+  * @brief call after AE coding scheme set done
+  *
+  * proceed to process the AE adv flow
+  * @return none
+  */
+void gap_sched_handle_ae_coding_scheme_set_done(void);
 
 /**
   * @brief process the extended adv state change event

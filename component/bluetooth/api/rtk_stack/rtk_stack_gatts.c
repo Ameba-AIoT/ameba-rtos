@@ -985,6 +985,7 @@ static uint16_t bt_stack_gatts_register_service(void  *p_gatts_srv)
 	uint16_t ret = 0;
 	uint32_t i = 0;
 
+	app_srv->alloc_ind = 0;
 	gatt_type = (GATT_SERVICE_OVER_BLE == app_srv->type) ? ATTRIB_FLAG_LE : ATTRIB_FLAG_BREDR;
 
 	node = bt_stack_gatts_find_service_node_by_app_id(app_srv->app_id);

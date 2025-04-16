@@ -325,8 +325,7 @@ static bool sensor_client_receive(mesh_msg_p pmesh_msg)
                 status_data.property_id = pmsg->property_id;
                 uint16_t ids_len = pmesh_msg->msg_len - sizeof(sensor_settings_status_t);
                 status_data.num_ids = ids_len / SETTING_PROPERTY_ID_LEN;
-                // avoid compile warning
-                // status_data.setting_ids = pmsg->setting_ids;
+                // RTK porting:avoid compile warning
                 void *pointer = (void *)pmsg->setting_ids;
                 status_data.setting_ids = (uint16_t *)pointer;
                 pmodel_info->model_data_cb(pmodel_info, SENSOR_CLIENT_STATUS_SETTINGS, &status_data);
