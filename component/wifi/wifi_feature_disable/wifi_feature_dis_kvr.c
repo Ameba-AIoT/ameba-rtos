@@ -24,7 +24,7 @@ u8 rtw_check_peer_kvr_cap(void *a)
 	return 0;
 }
 
-void rtw_roam_kvr_cap_update(char *buf, int buf_len, int flags, void *userdata)
+void rtw_roam_kvr_cap_update(s8 *buf, s32 buf_len, s32 flags, void *userdata)
 {
 	UNUSED(buf);
 	UNUSED(buf_len);
@@ -77,7 +77,7 @@ void rtw_rrm_dbg_cmd(char *s)
 #endif
 
 #ifndef CONFIG_WIFI_11V_ENABLE
-void rtw_wnm_btm_req_process(char *buf, int buf_len, int flags, void *userdata)
+void rtw_wnm_btm_req_process(s8 *buf, s32 buf_len, s32 flags, void *userdata)
 {
 	UNUSED(buf);
 	UNUSED(buf_len);
@@ -90,7 +90,7 @@ void rtw_wnm_btm_flags_set(u8 flags)
 	UNUSED(flags);
 }
 
-void rtw_wnm_dbg_cmd(char *buf, int buf_len, int flags, void *userdata)
+void rtw_wnm_dbg_cmd(s8 *buf, s32 buf_len, s32 flags, void *userdata)
 {
 	UNUSED(buf);
 	UNUSED(buf_len);
@@ -100,7 +100,7 @@ void rtw_wnm_dbg_cmd(char *buf, int buf_len, int flags, void *userdata)
 #endif
 
 #if !defined(CONFIG_WIFI_11K_ENABLE) && !defined(CONFIG_WIFI_11V_ENABLE)
-void rtw_roam_nb_rpt_elem_parsing(char *buf, int buf_len, int flags, void *userdata)
+void rtw_roam_nb_rpt_elem_parsing(s8 *buf, s32 buf_len, s32 flags, void *userdata)
 {
 	UNUSED(buf);
 	UNUSED(buf_len);
@@ -159,7 +159,7 @@ void rtw_ft_cap_update(void *a)
 	UNUSED(a);
 }
 
-void rtw_ft_rx_mgnt(char *buf, int buf_len, int flags, void *userdata)
+void rtw_ft_rx_mgnt(s8 *buf, s32 buf_len, s32 flags, void *userdata)
 {
 	UNUSED(buf);
 	UNUSED(buf_len);
@@ -167,7 +167,7 @@ void rtw_ft_rx_mgnt(char *buf, int buf_len, int flags, void *userdata)
 	UNUSED(userdata);
 }
 
-void rtw_ft_auth_start(char *buf, int buf_len, int flags, void *userdata)
+void rtw_ft_auth_start(s8 *buf, s32 buf_len, s32 flags, void *userdata)
 {
 	UNUSED(buf);
 	UNUSED(buf_len);

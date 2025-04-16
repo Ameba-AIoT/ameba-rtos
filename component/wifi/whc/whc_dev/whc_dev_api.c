@@ -1034,7 +1034,7 @@ exit:
 
 }
 
-void whc_dev_wifi_event_indicate(int event_cmd, char *buf, int buf_len, int flags)
+void whc_dev_wifi_event_indicate(u32 event_cmd, s8 *buf, s32 buf_len, s32 flags)
 {
 	/*not indicate Beacon event since it is too frequent*/
 	/*not indicate scan event since it is handled in device*/

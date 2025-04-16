@@ -436,7 +436,7 @@ int _wifi_off_ap(void);
 int wifi_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags);
 
 void wifi_event_init(void);
-void wifi_indication(unsigned int event, char *buf, int buf_len, int flags);
+void wifi_indication(u32 event, s8 *buf, s32 buf_len, s32 flags);
 
 #ifdef __cplusplus
 }

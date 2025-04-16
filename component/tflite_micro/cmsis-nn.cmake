@@ -17,7 +17,7 @@ get_target_property(TARGET_COMPILE_OPTIONS cmsis-nn COMPILE_OPTIONS)
 if (TARGET_COMPILE_OPTIONS)
     # The compiler option *'-fno-builtin'* does not utilize optimized implementations of e.g. memcpy and memset, 
     # which are heavily used by CMSIS-NN
-    list(REMOVE_ITEM TARGET_COMPILE_OPTIONS "-fno-builtin-memcpy" "-fno-builtin-memset")
+    list(REMOVE_ITEM TARGET_COMPILE_OPTIONS "-fno-builtin" "-fno-builtin-memcpy" "-fno-builtin-memset")
     list(APPEND TARGET_COMPILE_OPTIONS "-Wno-undef")
     set_target_properties(cmsis-nn PROPERTIES COMPILE_OPTIONS "${TARGET_COMPILE_OPTIONS}")
 endif()

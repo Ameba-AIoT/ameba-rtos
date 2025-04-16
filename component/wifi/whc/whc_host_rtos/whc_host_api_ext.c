@@ -449,10 +449,10 @@ void wifi_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way)
  *
  * u8 test_1[] = {221, 2, 2, 2};
  * u8 test_2[] = {221, 2, 1, 1};
- * struct rtw_custom_ie buf[2] = {{test_1, RTW_BEACON},
- *		 {test_2, RTW_PROBE_RSP}};
+ * struct rtw_custom_ie buf[2] = {{test_1, RTW_CUS_IE_BEACON},
+ *		 {test_2, RTW_CUS_IE_PROBERSP}};
  * u8 buf_test2[] = {221, 2, 1, 3} ;
- * struct rtw_custom_ie buf_update = {buf_test2, RTW_PROBE_RSP};
+ * struct rtw_custom_ie buf_update = {buf_test2, RTW_CUS_IE_PROBERSP};
  *
  * add ie list
  * static void cmd_add_ie(int argc, char **argv)

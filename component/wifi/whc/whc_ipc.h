@@ -173,7 +173,7 @@ void whc_ipc_dev_trx_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum);
 /*for ipc dev api*/
 void whc_ipc_dev_api_init(void);
 void whc_ipc_dev_api_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum);
-void whc_ipc_dev_wifi_event_indicate(int event_cmd, char *buf, int buf_len, int flags);
+void whc_ipc_dev_wifi_event_indicate(u32 event_cmd, s8 *buf, s32 buf_len, s32 flags);
 void whc_ipc_dev_scan_user_callback_indicate(unsigned int ap_num, void *user_data);
 void whc_ipc_dev_acs_info_indicate(struct rtw_acs_mntr_rpt *acs_mntr_rpt);
 void whc_ipc_dev_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data);
@@ -200,7 +200,7 @@ int whc_ipc_host_api_wtn_identity_key_calc(u8 *password, u32 password_len);
 void whc_ipc_dev_wtn_rnat_ap_init(u8 enable);
 #ifdef CONFIG_WTN_SOCKET_APP
 int whc_ipc_dev_wtn_socket_send(u8 *buf, u32 len);
-void whc_ipc_dev_wtn_socket_init(u8 enable);
+void whc_ipc_dev_wtn_socket_init(u8 enable, u8 rnat_ap_start);
 #endif
 #endif
 #endif /* __INIC_IPC_H__ */

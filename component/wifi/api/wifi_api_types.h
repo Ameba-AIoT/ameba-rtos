@@ -159,11 +159,11 @@ enum rtw_speaker_set_type {
 /**
  * @brief  The enumeration lists transmission frame type for wifi custom ie.
  */
-enum rtw_frame_type {
-	RTW_PROBE_REQ = BIT(0),  /**< Probe request. */
-	RTW_PROBE_RSP = BIT(1),  /**< Probe response. */
-	RTW_BEACON	  = BIT(2),     /**< Beacon. */
-	RTW_ASSOC_REQ = BIT(3), /**< Assocation request. */
+enum rtw_cus_ie_frame_type {
+	RTW_CUS_IE_PROBEREQ = BIT(0),  /**< Probe request. */
+	RTW_CUS_IE_PROBERSP = BIT(1),  /**< Probe response. */
+	RTW_CUS_IE_BEACON	  = BIT(2),     /**< Beacon. */
+	RTW_CUS_IE_ASSOCREQ = BIT(3), /**< Assocation request. */
 };
 
 /**
@@ -557,6 +557,50 @@ enum rtw_txpwr_lmt {
 
 	/* ===== Add new power limit above this line. ===== */
 	TXPWR_LMT_CONST_MAX     /* unchanging part define max */
+};
+
+enum rtw_frame_type {
+	RTW_MGT_TYPE  =	(0),
+	RTW_CTRL_TYPE =	(BIT(2)),
+	RTW_DATA_TYPE =	(BIT(3)),
+	RTW_QOS_DATA_TYPE	= (BIT(7) | BIT(3)),	//!< QoS Data
+};
+
+enum rtw_frame_type_subtype {
+	// below is for mgt frame
+	RTW_ASSOCREQ       = (0 | RTW_MGT_TYPE),
+	RTW_ASSOCRSP       = (BIT(4) | RTW_MGT_TYPE),
+	RTW_REASSOCREQ     = (BIT(5) | RTW_MGT_TYPE),
+	RTW_REASSOCRSP     = (BIT(5) | BIT(4) | RTW_MGT_TYPE),
+	RTW_PROBEREQ       = (BIT(6) | RTW_MGT_TYPE),
+	RTW_PROBERSP       = (BIT(6) | BIT(4) | RTW_MGT_TYPE),
+	RTW_BEACON         = (BIT(7) | RTW_MGT_TYPE),
+	RTW_ATIM           = (BIT(7) | BIT(4) | RTW_MGT_TYPE),
+	RTW_DISASSOC       = (BIT(7) | BIT(5) | RTW_MGT_TYPE),
+	RTW_AUTH           = (BIT(7) | BIT(5) | BIT(4) | RTW_MGT_TYPE),
+	RTW_DEAUTH         = (BIT(7) | BIT(6) | RTW_MGT_TYPE),
+	RTW_ACTION         = (BIT(7) | BIT(6) | BIT(4) | RTW_MGT_TYPE),
+
+	// below is for control frame
+	RTW_PSPOLL         = (BIT(7) | BIT(5) | RTW_CTRL_TYPE),
+	RTW_RTS            = (BIT(7) | BIT(5) | BIT(4) | RTW_CTRL_TYPE),
+	RTW_CTS            = (BIT(7) | BIT(6) | RTW_CTRL_TYPE),
+	RTW_ACK            = (BIT(7) | BIT(6) | BIT(4) | RTW_CTRL_TYPE),
+	RTW_BA            	= (BIT(7) | BIT(4) | RTW_CTRL_TYPE),
+	RTW_CFEND          = (BIT(7) | BIT(6) | BIT(5) | RTW_CTRL_TYPE),
+	RTW_CFEND_CFACK    = (BIT(7) | BIT(6) | BIT(5) | BIT(4) | RTW_CTRL_TYPE),
+	RTW_TRIGGER        = (BIT(5) | RTW_CTRL_TYPE),
+
+	// below is for data frame
+	RTW_DATA           = (0 | RTW_DATA_TYPE),
+	RTW_DATA_CFACK     = (BIT(4) | RTW_DATA_TYPE),
+	RTW_DATA_CFPOLL    = (BIT(5) | RTW_DATA_TYPE),
+	RTW_DATA_CFACKPOLL = (BIT(5) | BIT(4) | RTW_DATA_TYPE),
+	RTW_DATA_NULL      = (BIT(6) | RTW_DATA_TYPE),
+	RTW_CF_ACK         = (BIT(6) | BIT(4) | RTW_DATA_TYPE),
+	RTW_CF_POLL        = (BIT(6) | BIT(5) | RTW_DATA_TYPE),
+	RTW_CF_ACKPOLL     = (BIT(6) | BIT(5) | BIT(4) | RTW_DATA_TYPE),
+	RTW_QOS_DATA_NULL	= (BIT(6) | RTW_QOS_DATA_TYPE),
 };
 
 /** @} End of WIFI_Exported_Enumeration_Types group*/
@@ -957,7 +1001,7 @@ struct rtw_custom_ie {
 	 * </table>
 	 */
 	u8 *ie;
-	u8 type;    /**< Val: @ref RTW_PROBE_REQ, @ref RTW_PROBE_RSP...*/
+	u8 type;    /**< Val: @ref RTW_CUS_IE_PROBEREQ, @ref RTW_CUS_IE_PROBERSP...*/
 };
 
 /**
