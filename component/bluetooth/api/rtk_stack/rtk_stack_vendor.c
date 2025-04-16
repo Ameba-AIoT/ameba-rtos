@@ -83,12 +83,31 @@ void bt_stack_vendor_callback(uint8_t cb_type, void *p_cb_data)
 		case VENDOR_CMD_ONE_SHOT_ADV_OPCODE: {
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 			if (rtk_bt_mesh_is_enable()) {
-				APP_PRINT_INFO1("One shot adv resp: cause 0x%x", cmd_rsp->cause);
-				gap_sched_adv_done(GAP_SCHED_ADV_END_TYPE_SUCCESS);
+				if (cmd_rsp->cause) {
+					BT_LOGE("[%s] One shot adv resp fail: cause 0x%x", __func__, cmd_rsp->cause);
+				} else {
+					gap_sched_adv_done(GAP_SCHED_ADV_END_TYPE_SUCCESS);
+				}
 			}
 #endif
 		}
 		break;
+#endif
+#if defined(VENDOR_CMD_LE_EXTENSION_FEATURE_SUPPORT) && VENDOR_CMD_LE_EXTENSION_FEATURE_SUPPORT
+		case VENDOR_CMD_LE_EXTENSION_FEATURE_OPCODE: {
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
+			if (rtk_bt_mesh_is_enable()) {
+				if (cmd_rsp->cause) {
+					BT_LOGE("[%s] Vendor cmd extension feature of opcode:0x%x fail, cause:0x%x.\r\n", __func__, VENDOR_CMD_LE_EXTENSION_FEATURE_OPCODE, cmd_rsp->cause);
+				} else {
+					if (cmd_rsp->param_len >= 1 && HCI_EXT_SUB_SET_CONTROLLER_PREFERRED_TX_CI == cmd_rsp->param[0]) {
+						gap_sched_handle_ae_coding_scheme_set_done();
+					}
+				}
+			}
+#endif
+			break;
+		}
 #endif
 		default:
 			(void)cmd_rsp;
