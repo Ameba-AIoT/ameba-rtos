@@ -896,15 +896,22 @@ static void rtk_bt_mesh_gap_init(void)
 #endif
 	gap_sched_params_set(GAP_SCHED_PARAMS_DEVICE_NAME, dev_name, GAP_DEVICE_NAME_LEN);
 	gap_sched_params_set(GAP_SCHED_PARAMS_APPEARANCE, &appearance, sizeof(appearance));
-#if RTK_BLE_MESH_BASED_ON_CODED_PHY
+#if defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
+	uint8_t scan_phys = GAP_EXT_SCAN_PHYS_1M_BIT | GAP_EXT_SCAN_PHYS_CODED_BIT;
+	if (!gap_sched_params_set(GAP_SCHED_PARAMS_BT5_AE_SCAN_PHYS, &scan_phys, sizeof(scan_phys))) {
+		BT_LOGE("[%s] Set GAP_SCHED_PARAMS_BT5_AE_SCAN_PHYS param fail.\r\n", __func__);
+	}
+
 	bool ae = true;
 	if (!gap_sched_params_set(GAP_SCHED_PARAMS_BT5_AE, &ae, sizeof(ae))) {
 		BT_LOGE("[%s] Set GAP_SCHED_PARAMS_BT5_AE fail.\r\n", __func__);
 	}
-	gap_sched_bt5_ae_adv_type_t ae_adv_type = GAP_SCHED_BT5_AE_ADV_TYPE_LEGACY_ON_C8;
+
+	gap_sched_ae_adv_type_t ae_adv_type = GAP_SCHED_AE_ADV_TYPE_LEGACY_ON_1M | GAP_SCHED_AE_ADV_TYPE_LEGACY_ON_S8;
 	if (!gap_sched_params_set(GAP_SCHED_PARAMS_BT5_AE_ADV_TYPE, &ae_adv_type, sizeof(ae_adv_type))) {
-		BT_LOGE("[%s] Set GAP_SCHED_PARAMS_BT5_AE_ADV_TYPE fail.\r\n", __func__);
+		BT_LOGE("[%s] Set GAP_SCHED_PARAMS_BT5_AE_ADV_TYPE param fail.\r\n", __func__);
 	}
+
 #endif
 }
 
@@ -1414,6 +1421,14 @@ static void rtk_stack_prov_param_set(rtk_bt_mesh_stack_act_set_prov_param_t *p_d
 #endif
 }
 
+#if defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
+static bool rtk_stack_set_tx_phy(rtk_bt_mesh_stack_act_set_tx_phy_t *tx_phy)
+{
+	gap_sched_ae_adv_type_t tx_type = *tx_phy;
+	return gap_sched_params_set(GAP_SCHED_PARAMS_BT5_AE_ADV_TYPE, &tx_type, sizeof(tx_type));
+}
+#endif
+
 #if defined(RTK_BLE_MESH_FN_SUPPORT) && RTK_BLE_MESH_FN_SUPPORT
 static void friendship_fn_callback(uint8_t frnd_index, fn_cb_type_t type, uint16_t lpn_addr)
 {
@@ -1827,6 +1842,13 @@ uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_MESH_STACK_ACT_SET_RETRANS_PARAM:
 		ret = rtk_stack_retrans_param_set(p_cmd->param);
 		break;
+#if defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
+	case RTK_BT_MESH_STACK_ACT_SET_TX_PHY:
+		if (rtk_stack_set_tx_phy(p_cmd->param)) {
+			ret = RTK_BT_MESH_STACK_API_SUCCESS;
+		}
+		break;
+#endif
 	case RTK_BT_MESH_STACK_ACT_SET_PROV_PARAM:
 		rtk_stack_prov_param_set(p_cmd->param);
 		ret = RTK_BT_MESH_STACK_API_SUCCESS;

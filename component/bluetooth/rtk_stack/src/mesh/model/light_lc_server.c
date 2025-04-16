@@ -247,6 +247,7 @@ static int32_t light_lc_light_on_off_trans_step_change(const mesh_model_info_p p
                                                        generic_transition_time_t total_time,
                                                        generic_transition_time_t remaining_time)
 {
+    // RTK porting:avoid compile warning
 	(void) type; //avoid warning
     int32_t ret = MODEL_SUCCESS;
     light_lc_server_set_light_on_off_t set_data;
@@ -651,6 +652,7 @@ static bool light_lc_server_receive(mesh_msg_p pmesh_msg)
 
 static int32_t light_lc_server_publish(mesh_model_info_p pmodel_info, bool retrans)
 {
+    // RTK porting:avoid compile warning
 	(void) retrans; //avoid warning
     generic_transition_time_t remaining_time;
     light_lc_light_on_off_status(pmodel_info, 0, 0, get_present_light_on_off(pmodel_info), FALSE,

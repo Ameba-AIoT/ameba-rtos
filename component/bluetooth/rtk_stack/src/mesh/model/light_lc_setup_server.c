@@ -80,6 +80,7 @@ mesh_msg_send_cause_t light_lc_property_publish(const mesh_model_info_p pmodel_i
 
 bool light_lc_property_value_check(uint16_t property_id, const uint8_t *value, uint16_t value_len)
 {
+    // RTK porting:avoid compile warning
 	(void)value; //avoid warning
     if (MODEL_PROPERTY_INVALID == property_id)
     {

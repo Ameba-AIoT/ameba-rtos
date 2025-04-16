@@ -578,7 +578,7 @@ static int atcmd_ble_gap_set_ext_adv_data(int argc, char **argv)
 	uint16_t ret = 0;
 	uint8_t adv_handle = 0;
 	uint8_t *pdata = (uint8_t *)def_ext_adv_data;
-	uint8_t len = sizeof(def_ext_adv_data);
+	uint16_t len = sizeof(def_ext_adv_data);
 
 	if (argc > 0) {
 		adv_handle = str_to_int(argv[0]);
@@ -713,7 +713,7 @@ static int atcmd_ble_gap_set_ext_scan_resp(int argc, char **argv)
 	uint16_t ret = 0;
 	uint8_t adv_handle = 0;
 	uint8_t *pdata = (uint8_t *)def_ext_scan_data;
-	uint8_t len = sizeof(def_ext_scan_data);
+	uint16_t len = sizeof(def_ext_scan_data);
 
 	if (argc > 0) {
 		adv_handle = str_to_int(argv[0]);
