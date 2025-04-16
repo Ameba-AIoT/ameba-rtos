@@ -33,7 +33,7 @@ WakeEvent_TypeDef sleep_wevent_config[] = {
 	{WAKE_SRC_CTOUCH,						WAKEUP_NULL},
 	{WAKE_SRC_RTC,							WAKEUP_NULL},
 	{WAKE_SRC_GPIOC,						WAKEUP_NULL},
-	{WAKE_SRC_GPIOB,						WAKEUP_AP},		/* Do not modify, uart rx pin is used as gpio wake source*/
+	{WAKE_SRC_GPIOB,						WAKEUP_NULL},
 	{WAKE_SRC_GPIOA,						WAKEUP_NULL},
 	{WAKE_SRC_UART_LOG,						WAKEUP_NULL},
 	{WAKE_SRC_Timer7,						WAKEUP_NULL},

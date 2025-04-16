@@ -163,7 +163,6 @@ void SOCPS_SleepCG(void)
 		return;
 	}
 
-	SOCPS_UartRxPinWakeSet(ENABLE);
 	/* switch IP clk to OSC4M, so that can wakeup system when need */
 	SOCPS_CLK_SwitchToLow(ENABLE);
 
@@ -173,8 +172,6 @@ void SOCPS_SleepCG(void)
 
 	/* switch IP clk to lsbus */
 	SOCPS_CLK_SwitchToLow(DISABLE);
-
-	SOCPS_UartRxPinWakeSet(DISABLE);
 
 	/* exec sleep hook functions */
 	pmu_exec_wakeup_hook_funs(PMU_MAX);
@@ -210,7 +207,7 @@ void SOCPS_SleepPG(void)
 	}
 
 	//SOCPS_Hplat_OFF();
-	SOCPS_UartRxPinWakeSet(ENABLE);
+
 	/* switch IP clk to OSC4M, so that can wakeup system when need */
 	SOCPS_CLK_SwitchToLow(ENABLE);
 
@@ -220,7 +217,6 @@ void SOCPS_SleepPG(void)
 
 	/* switch IP clk to lsbus */
 	SOCPS_CLK_SwitchToLow(DISABLE);
-	SOCPS_UartRxPinWakeSet(DISABLE);
 
 	/* exec sleep hook functions */
 	pmu_exec_wakeup_hook_funs(PMU_MAX);

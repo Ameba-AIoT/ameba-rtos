@@ -74,7 +74,7 @@ static void user_wifi_reconnect_task(void *param)
 	rtos_task_delete(NULL);
 }
 
-void user_wifi_join_status_event_hdl(char *buf, int buf_len, int flags, void *userdata)
+void user_wifi_join_status_event_hdl(s8 *buf, s32 buf_len, s32 flags, void *userdata)
 {
 	(void) userdata;
 	(void) buf_len;

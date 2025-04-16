@@ -216,8 +216,14 @@ struct wifi_user_conf {
 	/*! R-mesh child refresh timeout, when not receive beacon from child for this timeout, will delete this child, unit: millisecond.*/
 	u16 wtn_child_refresh_timeout;
 
-	/*! 0: Disable R-mesh NAT function, 1: Enable R-mesh NAT function.*/
+	/*! 0: Disable R-mesh NAT feature, 1: Enable R-mesh NAT feature.*/
 	unsigned char wtn_rnat_en;
+
+	/*! 0: Determine whether to become RNAT node based on the rssi to AP, 1: Become RNAT node regardless of the rssi to AP.*/
+	unsigned char wtn_fixed_rnat_node;
+
+	/*! 0: This device can connect to R-Mesh group or R-NAT group, 1: this device will only connect to R-NAT group.*/
+	unsigned char wtn_connect_only_to_rnat;
 
 	/*! Max node number in R-mesh network, this is used for decide each node's beacon window.*/
 	u16 wtn_max_node_num;

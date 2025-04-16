@@ -33,7 +33,7 @@
  *********************************************************************************************/
 #if !(defined CONFIG_AS_INIC_NP) || defined CONFIG_ZEPHYR_SDK || defined(CONFIG_WPA_LOCATION_DEV)
 struct event_list_elem_t {
-	void (*handler)(char *buf, int len, int flags, void *user_data);
+	void (*handler)(s8 *buf, s32 len, s32 flags, void *user_data);
 	void	*handler_user_data;
 };
 
@@ -52,7 +52,7 @@ extern void eap_disconnected_hdl(void);
  *                                          Internal events
  *********************************************************************************************/
 
-void wifi_event_join_status_internal_hdl(char *buf, int flags)
+void wifi_event_join_status_internal_hdl(s8 *buf, s32 flags)
 {
 #if !defined(CONFIG_MP_SHRINK) && !defined(CONFIG_AS_INIC_NP)
 	struct deauth_info  *deauth_data, *deauth_data_pre;
@@ -106,10 +106,10 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
 
 #if !defined(CONFIG_AS_INIC_NP) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP))
 		deauth_data_pre = (struct deauth_info *)rtos_mem_zmalloc(sizeof(struct deauth_info));
-		rtw_psk_deauth_info_flash((char *)deauth_data_pre, sizeof(struct deauth_info), FLASH_READ, NULL);
+		rtw_psk_deauth_info_flash((s8 *)deauth_data_pre, sizeof(struct deauth_info), FLASH_READ, NULL);
 		if (memcmp(deauth_data_pre->bssid, zero_mac, 6) != 0) {
 			deauth_data = (struct deauth_info *)rtos_mem_zmalloc(sizeof(struct deauth_info));
-			rtw_psk_deauth_info_flash((char *)deauth_data, sizeof(struct deauth_info), FLASH_WRITE, NULL);
+			rtw_psk_deauth_info_flash((s8 *)deauth_data, sizeof(struct deauth_info), FLASH_WRITE, NULL);
 			rtos_mem_free((u8 *)deauth_data);
 		}
 		rtos_mem_free((u8 *)deauth_data_pre);
@@ -139,7 +139,7 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
 /**
  * @brief internal event handle, must have same order as enum
  */
-void (*const event_internal_hdl[])(char *buf, int len, int flags, void *user_data) = {
+void (*const event_internal_hdl[])(s8 *buf, s32 len, s32 flags, void *user_data) = {
 #if (!defined(CONFIG_AS_INIC_NP) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP))) || defined(CONFIG_ZEPHYR_SDK) || defined(CONFIG_WPA_LOCATION_DEV)
 	rtw_sae_sta_rx_auth,				/*RTW_EVENT_RX_MGNT*/
 	rtw_sae_ap_rx_auth,					/*RTW_EVENT_RX_MGNT_AP*/
@@ -170,7 +170,7 @@ void (*const event_internal_hdl[])(char *buf, int len, int flags, void *user_dat
 	/*RTW_EVENT_INTERNAL_MAX*/
 };
 
-void wifi_event_handle_internal(unsigned int event_cmd, char *buf, int buf_len, int flags)
+void wifi_event_handle_internal(u32 event_cmd, s8 *buf, s32 buf_len, s32 flags)
 {
 	u8 *mac_addr = NULL;
 	/*internal only events*/
@@ -200,9 +200,9 @@ void wifi_event_handle_internal(unsigned int event_cmd, char *buf, int buf_len, 
 /**********************************************************************************************
  *                                          Common events
  *********************************************************************************************/
-int wifi_event_handle(unsigned int event_cmd, char *buf, int buf_len, int flags)
+int wifi_event_handle(u32 event_cmd, s8 *buf, s32 buf_len, s32 flags)
 {
-	void (*handle)(char *buf, int len, int flags, void *user_data) = NULL;
+	void (*handle)(s8 * buf, s32 len, s32 flags, void *user_data) = NULL;
 	int i;
 
 	if ((event_cmd >= RTW_EVENT_MAX && event_cmd <= RTW_EVENT_INTERNAL_BASE) || event_cmd > RTW_EVENT_INTERNAL_MAX) {
@@ -224,7 +224,7 @@ int wifi_event_handle(unsigned int event_cmd, char *buf, int buf_len, int flags)
 	return RTK_SUCCESS;
 }
 
-void wifi_reg_event_handler(unsigned int event_cmds, void (*handler_func)(char *buf, int len, int flags, void *user_data), void *handler_user_data)
+void wifi_reg_event_handler(u32 event_cmds, void (*handler_func)(s8 *buf, s32 len, s32 flags, void *user_data), void *handler_user_data)
 {
 	int i = 0, j = 0;
 	if (event_cmds < RTW_EVENT_MAX) {
@@ -245,7 +245,7 @@ void wifi_reg_event_handler(unsigned int event_cmds, void (*handler_func)(char *
 	}
 }
 
-void wifi_unreg_event_handler(unsigned int event_cmds, void (*handler_func)(char *buf, int len, int flags, void *user_data))
+void wifi_unreg_event_handler(u32 event_cmds, void (*handler_func)(s8 *buf, s32 len, s32 flags, void *user_data))
 {
 	int i;
 	if (event_cmds < RTW_EVENT_MAX) {
@@ -266,10 +266,10 @@ void wifi_event_init(void)
 }
 #endif
 
-void wifi_indication(unsigned int event, char *buf, int buf_len, int flags)
+void wifi_indication(u32 event, s8 *buf, s32 buf_len, s32 flags)
 {
 #if defined(CONFIG_AS_INIC_NP) || defined(CONFIG_WHC_BRIDGEB)
-	extern void whc_dev_wifi_event_indicate(int event_cmd, char *buf, int buf_len, int flags);
+	extern void whc_dev_wifi_event_indicate(u32 event_cmd, s8 * buf, s32 buf_len, s32 flags);
 	whc_dev_wifi_event_indicate(event, buf, buf_len, flags);
 #endif
 
