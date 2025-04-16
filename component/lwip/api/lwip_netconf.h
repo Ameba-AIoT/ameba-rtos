@@ -16,10 +16,8 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "platform_autoconf.h"
-#include "wifi_api_types.h"
+#include "wifi_api.h"
 #include "lwipconf.h"
-#include "lwip/netifapi.h"
 
 extern unsigned char ap_ip[4], ap_netmask[4], ap_gw[4];
 // macros

@@ -27,6 +27,11 @@
 #endif
 #include "wifi_intf_drv_to_upper.h"
 
+#if defined(CONFIG_WHC_BRIDGE)
+#include "whc_dev_bridge.h"
+#include "whc_bridge_dev_api.h"
+#endif
+
 //todo clarify
 #if defined(CONFIG_WHC_INTF_SDIO)
 #if defined(CONFIG_WHC_BRIDGE)
@@ -102,6 +107,7 @@ void wifi_init_thread(void *param)
 	wifi_on(RTW_MODE_STA);
 
 #ifdef CONFIG_WHC_BRIDGE
+	whc_bridge_dev_init_user_task();
 	whc_dev_init_lite();
 #endif
 

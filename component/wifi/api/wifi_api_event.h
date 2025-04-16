@@ -90,7 +90,7 @@ struct rtw_event_info_joinstatus_disconn {
   * @brief Buf of @ref RTW_EVENT_JOIN_STATUS when flag is @ref RTW_JOINSTATUS_FAIL
   */
 struct rtw_event_info_joinstatus_joinfail {
-	int					fail_reason;           /**< Value: @ref RTK_FAIL, -@ref RTK_ERR_WIFI_CONN_INVALID_KEY...*/
+	s32					fail_reason;           /**< Value: @ref RTK_FAIL, -@ref RTK_ERR_WIFI_CONN_INVALID_KEY...*/
 	u16					reason_or_status_code; /**< From AP, define in 802.11 spec.*/
 	u8					bssid[6];              /**< AP's MAC address.*/
 };
@@ -129,7 +129,7 @@ struct rtw_event_info_joinstatus_joinfail {
  *    - @ref RTK_FAIL : If an error occurred.
  * @note  Set the same `event_cmds` with empty `handler_func` will unregister the `event_cmds`.
  */
-void wifi_reg_event_handler(unsigned int event_cmds, void (*handler_func)(char *buf, int len, int flag, void *user_data), void *handler_user_data);
+void wifi_reg_event_handler(u32 event_cmds, void (*handler_func)(u8 *buf, s32 len, s32 flag, void *user_data), void *handler_user_data);
 
 /**
  * @brief  Un-register the event listener.
@@ -147,7 +147,7 @@ void wifi_reg_event_handler(unsigned int event_cmds, void (*handler_func)(char *
  *    - @ref RTK_SUCCESS : If successfully un-registers the event.
  *    - @ref RTK_FAIL : If an error occurred.
  */
-void wifi_unreg_event_handler(unsigned int event_cmds, void (*handler_func)(char *buf, int len, int flag, void *user_data));
+void wifi_unreg_event_handler(u32 event_cmds, void (*handler_func)(u8 *buf, s32 len, s32 flag, void *user_data));
 
 /** @} End of Event_Functions group*/
 /** @} End of WIFI_Exported_Functions group*/

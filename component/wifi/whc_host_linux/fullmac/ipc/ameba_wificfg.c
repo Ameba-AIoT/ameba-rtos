@@ -65,6 +65,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.lps_enable = 1;
 	wifi_user_config.lps_mode = RTW_PS_MODE_LEGACY;
 	wifi_user_config.legacy_ps_listen_interval = 0;
+	wifi_user_config.wowlan_rx_bcmc_dis = 0;
 
 	/*wmm ps, when wifi_user_config.lps_enable = 1 and wifi_user_config.lps_mode = RTW_PS_MODE_UAPSD_WMM */
 	wifi_user_config.uapsd_max_sp_len = 0;
@@ -79,7 +80,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.max_roaming_times = 2;
 	wifi_user_config.ampdu_rx_enable = 1;
 	wifi_user_config.ampdu_tx_enable = 1;
-	wifi_user_config.bCheckDestAddress = 1;
+	wifi_user_config.check_dest_address_en = 1;
 	wifi_user_config.ap_compatibilty_enabled = 0x0B;
 	wifi_user_config.set_channel_api_do_rfk = 1;
 	wifi_user_config.dpk_peak_limit = 0;

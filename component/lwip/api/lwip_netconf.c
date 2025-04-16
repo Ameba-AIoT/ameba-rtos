@@ -1,14 +1,7 @@
 /* Includes ------------------------------------------------------------------*/
+#include "lwip/prot/dhcp.h"
 #include "lwip_netconf.h"
-#include "main.h"
 #include "atcmd_service.h"
-#if CONFIG_WLAN
-#include "wifi_api.h"
-#endif
-
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "os_wrapper.h"
 
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 #include "wifi_fast_connect.h"
@@ -249,7 +242,6 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 
 		case DHCP_WAIT_ADDRESS: {
 			/* If DHCP stopped by wifi_disconn_hdl*/
-#include "lwip/prot/dhcp.h"
 			if ((dhcp_state_enum_t)dhcp->state == DHCP_STATE_OFF) {
 				IP4_ADDR(ip_2_ip4(&ipaddr), IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
 				IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);

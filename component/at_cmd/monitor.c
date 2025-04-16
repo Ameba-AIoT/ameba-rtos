@@ -172,7 +172,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 	u8 *EfuseBuf = NULL;
 	char *DString;
 
-	if ((EfuseBuf = rtos_mem_zmalloc(OTP_REAL_CONTENT_LEN)) == NULL) {
+	if ((EfuseBuf = rtos_mem_zmalloc(MAX(OTP_REAL_CONTENT_LEN, OTP_LMAP_LEN))) == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "efuse mem malloc fail \n");
 		return 0;
 	}
@@ -341,6 +341,7 @@ static COMMAND_TABLE   shell_cmd_table[] = {
 	},
 #ifndef CONFIG_MP_SHRINK
 #if ((defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)) && (defined(CONFIG_ARM_CORE_CA32) || defined(CONFIG_ARM_CORE_CM4))) || \
+	(defined(CONFIG_AMEBAD) && defined(CONFIG_ARM_CORE_CM4)) || \
 	(defined(CONFIG_AMEBALITE) && defined(CONFIG_ARM_CORE_CM4)) || \
 	(defined(CONFIG_AMEBADPLUS) && defined(CONFIG_ARM_CORE_CM4)) || \
 	(defined(CONFIG_AMEBAGREEN2) && defined(CONFIG_ARM_CORE_CM4_KM4TZ)) || \

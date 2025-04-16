@@ -160,7 +160,7 @@ s32 wifi_set_channel(u8 wlan_idx, u8 channel);
  * @param[in]  cntcode: Pointer to the country code which want to be set.
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL.
  */
-s32 wifi_set_countrycode(s8 *cntcode);
+s32 wifi_set_countrycode(u8 *cntcode);
 
 /**
  * @brief  get country code info
@@ -171,7 +171,7 @@ s32 wifi_get_countrycode(struct rtw_country_code_table *table);
 
 /**
  * @brief  get channel list
- * @param[in]  table: Pointer to the currently obtained available channel list
+ * @param[in]  ch_list: Pointer to the currently obtained available channel list
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL
  */
 s32 wifi_get_channel_list(struct rtw_channel_list *ch_list);

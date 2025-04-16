@@ -31,8 +31,9 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
             ${c_SDK_LIB_SOC_DIR}/lib_${output_name}.a
         )
     else()
-        #OPTIMIZE: Change the dir name from AmebaSmart_HP/AmebaSmart_LP to AmebaSmart_KM4/AmebaSmart_KM0 will be same as other soc.
-        set(portable_soc_mcu_dir ${c_FREERTOS_DIR}/portable/GCC/${c_SOC_TYPE_CAMEL}_${c_MCU_PROJECT_NAME_UPPER})
+        #OPTIMIZE: Change the dir name from AmebaSmart_HP/AmebaSmart_LP to AmebaSmart_KM4/AmebaSmart_KM0 will be same as other soc.\
+        #OPTIMIZE: Amebasmart and amebasmartplus share same port dir
+        set(portable_soc_mcu_dir ${c_FREERTOS_DIR}/portable/GCC/AmebaSmart_${c_MCU_PROJECT_NAME_UPPER})
         set(output_name freertos)
     endif()
 else()

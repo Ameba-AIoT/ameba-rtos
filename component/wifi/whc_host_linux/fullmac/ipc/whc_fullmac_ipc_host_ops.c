@@ -131,7 +131,7 @@ int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8
 	scan_param_tmp = (struct rtw_scan_param *)(buf_vir + offset);
 	offset += sizeof(struct rtw_scan_param);
 	if (ssid_length) {
-		scan_param_tmp->ssid = (char *)(buf_phy + offset);
+		scan_param_tmp->ssid = (u8 *)(buf_phy + offset);
 		offset += ssid_length;
 	}
 	if (scan_param->channel_list_num) {

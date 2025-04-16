@@ -222,12 +222,13 @@ void whc_sdio_dev_send_data(u8 *data, u32 len)
 		return;
 	}
 
-	memcpy(buf, data, len);
-
 	inic_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
 	if (!inic_tx) {
+		rtos_mem_free(buf);
 		return;
 	}
+
+	memcpy(buf, data, len);
 
 	inic_tx->txbuf_info.buf_allocated = inic_tx->txbuf_info.buf_addr = (u32)buf;
 	inic_tx->txbuf_info.size_allocated = inic_tx->txbuf_info.buf_size = len;
