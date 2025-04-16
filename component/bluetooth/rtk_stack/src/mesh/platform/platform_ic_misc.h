@@ -16,6 +16,7 @@
 #define _PLATFORM_IC_MISC_H_
 
 /* Add Includes here */
+// RTK porting:can not find macro BEGIN_DECLS define
 #include "platform_macros.h"
 
 BEGIN_DECLS

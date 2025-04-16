@@ -150,7 +150,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 			BT_LOGA("[APP] Connected, handle: %d, role: %s, remote device: %s\r\n",
 					conn_ind->conn_handle, role, le_addr);
 			if (RTK_BT_LE_ROLE_SLAVE == conn_ind->role) {
-#if !RTK_BLE_MESH_BASED_ON_CODED_PHY
+#if !(defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY)
 				// If not enable mesh based on coded PHY, stop mesh customer one shot adv timer, otherwise upstack may auto stop extended connectionalbe legacy ADV so do nothing
 				rtk_bt_le_gap_stop_adv();
 #endif

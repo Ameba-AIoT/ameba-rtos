@@ -594,7 +594,7 @@ T_GAP_CAUSE le_bond_cfg_local_key_distribute(uint8_t init_dist, uint8_t rsp_dist
     static T_USER_CMD_PARSE_RESULT cmd_scoob(T_USER_CMD_PARSED_VALUE *p_parse_value)
     {
         int idx = p_parse_value->dw_param[0];
-        bool ret;
+        T_GAP_CAUSE ret;
         T_GAP_LE_PEER_OOB_DATA peer_oob_data;
 
         if (idx == 1)
@@ -625,18 +625,11 @@ T_GAP_CAUSE le_bond_cfg_local_key_distribute(uint8_t init_dist, uint8_t rsp_dist
             memcpy(peer_oob_data.rand, peer_rand, 16);
             memcpy(peer_oob_data.confirm, confirm, 16);
         }
-        if (ret)
+        if (ret == GAP_CAUSE_SUCCESS)
         {
             ret = le_bond_sc_peer_oob_init(&peer_oob_data);
         }
-        if (ret)
-        {
-            return RESULT_SUCESS;
-        }
-        else
-        {
-            return RESULT_ERR;
-        }
+        return (T_USER_CMD_PARSE_RESULT)ret;
     }
  * \endcode
  */
