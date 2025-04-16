@@ -46,23 +46,12 @@ jobs:
           ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config USB_AP_HOST
         fi
 
-        if ${{ inputs.artifacts_name == 'amebasmart-B2' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config AUDIO_MIXER_SINGLECORE
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config TRUSTZONE
-        fi
-
         if ${{ inputs.artifacts_name == 'amebasmart-B3' }}; then
           ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config BT2
           ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config IPC
           ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config AUDIO_PASSTHROUGH
           ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config TRUSTZONE
           ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config USB_HP_DEVICE
-        fi
-
-        if ${{ inputs.artifacts_name == 'amebasmart-B4' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config BT3
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config AUDIO_PASSTHROUGH_SINGLECORE
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config TRUSTZONE
         fi
 
         if ${{ inputs.artifacts_name == 'amebasmart-B5' }}; then
