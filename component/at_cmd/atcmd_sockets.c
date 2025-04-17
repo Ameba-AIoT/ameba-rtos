@@ -15,8 +15,7 @@
 
 static const char *const AT_SOCKET_TAG = "AT_SKT";
 
-static struct _node node_pool[NUM_NS];
-
+static struct _node node_pool[MEMP_NUM_NETCONN];
 
 // Socket global configuration
 static int skt_sendtimeout = 0;
@@ -27,18 +26,17 @@ static int tcp_keepalive_idle = 0;
 static int tcp_keepalive_interval = 0;
 static int tcp_keepalive_count = 0;
 
-extern struct netif xnetif[NET_IF_NUM];
 
 
 static void atcmd_ssl_debug(void *ctx, int level, const char *file, int line, const char *str)
 {
 	UNUSED(ctx);
+	UNUSED(level);
 	UNUSED(file);
 	UNUSED(line);
 
-	if (level <= ATCMD_SSL_DEBUG_LEVEL) {
-		RTK_LOGA(AT_SOCKET_TAG, "%s", str);
-	}
+	RTK_LOGA(AT_SOCKET_TAG, "%s", str);
+
 }
 
 
@@ -52,68 +50,11 @@ static int atcmd_ssl_random(void *p_rng, unsigned char *output, size_t output_le
 }
 
 
-#if ENABLE_TCPIP_AUTOLINK
-void atcmd_update_partition_info(AT_PARTITION id, AT_PARTITION_OP ops, u8 *data, u16 len)
-{
-	/* !FIXME */
-}
-
-void atcmd_lwip_erase_info(void)
-{
-	atcmd_update_partition_info(AT_PARTITION_LWIP, AT_PARTITION_ERASE, NULL, 0);
-}
-
-void atcmd_lwip_write_info_to_flash(struct _atcmd_lwip_conn_info *cur_conn, int enable)
-{
-	struct _atcmd_lwip_conf read_data = {0};
-	int i = 0, found = 0;
-
-	atcmd_update_partition_info(AT_PARTITION_LWIP, AT_PARTITION_READ, (u8 *) &read_data, sizeof(struct atcmd_lwip_conf));
-
-	/* fake that the conn exists already when disabling or there is no active conn on this moment */
-	if (enable == 0) {
-		atcmd_lwip_erase_info();
-	}
-
-	/* Enable. */
-	else {
-		if (read_data.conn_num < 0 || read_data.conn_num > ATCMD_LWIP_CONN_STORE_MAX_NUM) {
-			read_data.conn_num = 0;
-			read_data.last_index = -1;
-		}
-		for (i = 0; i < read_data.conn_num; i++) {
-			if (0 == memcmp((u8 *)cur_conn, (u8 *)&read_data.conn[i], sizeof(struct _atcmd_lwip_conn_info))) {
-				RTK_LOGI(AT_SOCKET_TAG, "the same profile found in flash\r\n");
-				found = 1;
-				break;
-			}
-		}
-		/* If not found. */
-		if (found == 0) {
-			read_data.last_index++;
-			if (read_data.last_index >= ATCMD_LWIP_CONN_STORE_MAX_NUM) {
-				read_data.last_index -= ATCMD_LWIP_CONN_STORE_MAX_NUM;
-			}
-			memcpy((u8 *)&read_data.conn[read_data.last_index], (u8 *)cur_conn, sizeof(struct _atcmd_lwip_conn_info));
-			read_data.conn_num++;
-			if (read_data.conn_num > ATCMD_LWIP_CONN_STORE_MAX_NUM) {
-				read_data.conn_num = ATCMD_LWIP_CONN_STORE_MAX_NUM;
-			}
-		}
-		if (found == 0 || read_data.enable != enable) {
-			read_data.enable = enable;
-			atcmd_update_partition_info(AT_PARTITION_LWIP, AT_PARTITION_WRITE, (u8 *) &read_data, sizeof(struct _atcmd_lwip_conf));
-		}
-	}
-}
-#endif
-
-
 static void init_node_pool(void)
 {
 	int i;
 	memset(node_pool, 0, sizeof(node_pool));
-	for (i = 0; i < NUM_NS; i++) {
+	for (i = 0; i < MEMP_NUM_NETCONN; i++) {
 		node_pool[i].link_id = INVALID_LINK_ID;
 		node_pool[i].role = NODE_ROLE_INVALID;
 		node_pool[i].sockfd = INVALID_SOCKET_ID;
@@ -137,7 +78,7 @@ static void init_single_node(struct _node *socket_node)
 
 static int search_available_node(void)
 {
-	for (int i = 0; i < NUM_NS; i++) {
+	for (int i = 0; i < MEMP_NUM_NETCONN; i++) {
 		if (node_pool[i].link_id == INVALID_LINK_ID) {
 			return i;
 		}
@@ -146,7 +87,7 @@ static int search_available_node(void)
 }
 
 
-void hang_seednode(struct _node *main_node, struct _node *insert_node)
+void hang_seednode(struct _node *main_node, struct _node *seed_node)
 {
 	struct _node *n = main_node;
 	SYS_ARCH_DECL_PROTECT(lev);
@@ -156,8 +97,8 @@ void hang_seednode(struct _node *main_node, struct _node *insert_node)
 		n = n->nextseed;
 	}
 
-	insert_node->prevnode = n;
-	n->nextseed = insert_node;
+	seed_node->prevnode = n;
+	n->nextseed = seed_node;
 	SYS_ARCH_UNPROTECT(lev);
 	return;
 }
@@ -168,7 +109,7 @@ void at_sktcfg(void *arg)
 {
 	int argc = 0, error_no = 0;
 	char *argv[MAX_ARGC] = {0};
-	int input_val = 0;
+	int so_sndtimeo = 0, so_rcvtimeo = 0, input_tcp_nodelay = 0, so_keepalive = 0, tcp_keepidle = 0, tcp_keepintvl = 0, tcp_keepcnt = 0;
 
 	if (arg == NULL) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] Input parameter is NULL\r\n");
@@ -183,66 +124,67 @@ void at_sktcfg(void *arg)
 	}
 
 	if (strlen(argv[1])) {
-		if ((input_val = atoi(argv[1])) < 0) {
+		if ((so_sndtimeo = atoi(argv[1])) < 0) {
 			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] Incorrect <so_sndtimeo>\r\n");
 			error_no = 1;
 			goto end;
 		}
-		skt_sendtimeout = input_val;
 	}
 	if (strlen(argv[2])) {
-		if ((input_val = atoi(argv[2])) < 0) {
+		if ((so_rcvtimeo = atoi(argv[2])) < 0) {
 			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] Incorrect <so_rcvtimeo>\r\n");
 			error_no = 1;
 			goto end;
 		}
-		skt_recvtimeout = input_val;
 	}
 	if (strlen(argv[3])) {
-		input_val = atoi(argv[3]);
-		if ((input_val != 0) && (input_val != 1)) {
+		input_tcp_nodelay = atoi(argv[3]);
+		if ((input_tcp_nodelay != 0) && (input_tcp_nodelay != 1)) {
 			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] Incorrect <tcp_nodelay>\r\n");
 			error_no = 1;
 			goto end;
 		}
-		tcp_nodelay = input_val;
 	}
 	if (strlen(argv[4])) {
-		input_val = atoi(argv[4]);
-		if ((input_val != 0) && (input_val != 1)) {
+		so_keepalive = atoi(argv[4]);
+		if ((so_keepalive != 0) && (so_keepalive != 1)) {
 			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] Incorrect <so_keepalive>\r\n");
 			error_no = 1;
 			goto end;
 		}
-		skt_keepalive = input_val;
 	}
 	if (strlen(argv[5])) {
-		input_val = atoi(argv[5]);
-		if ((input_val < 0) || (input_val > 7200)) {
+		tcp_keepidle = atoi(argv[5]);
+		if ((tcp_keepidle < 0) || (tcp_keepidle > 7200)) {
 			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] Incorrect <tcp_keepidle>\r\n");
 			error_no = 1;
 			goto end;
 		}
-		tcp_keepalive_idle = input_val;
 	}
 	if (strlen(argv[6])) {
-		input_val = atoi(argv[6]);
-		if ((input_val < 0) || (input_val > 75)) {
+		tcp_keepintvl = atoi(argv[6]);
+		if ((tcp_keepintvl < 0) || (tcp_keepintvl > 75)) {
 			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] Incorrect <tcp_keepintvl>\r\n");
 			error_no = 1;
 			goto end;
 		}
-		tcp_keepalive_interval = input_val;
 	}
 	if (strlen(argv[7])) {
-		input_val = atoi(argv[7]);
-		if ((input_val < 0) || (input_val > 10)) {
+		tcp_keepcnt = atoi(argv[7]);
+		if ((tcp_keepcnt < 0) || (tcp_keepcnt > 10)) {
 			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] Incorrect <tcp_keepcnt>\r\n");
 			error_no = 1;
 			goto end;
 		}
-		tcp_keepalive_count = input_val;
 	}
+
+	skt_sendtimeout = so_sndtimeo;
+	skt_recvtimeout = so_rcvtimeo;
+	tcp_nodelay = input_tcp_nodelay;
+	skt_keepalive = so_keepalive;
+	tcp_keepalive_idle = tcp_keepidle;
+	tcp_keepalive_interval = tcp_keepintvl;
+	tcp_keepalive_count = tcp_keepcnt;
 
 end:
 	if (error_no == 0) {
@@ -478,7 +420,7 @@ int create_socket_server_udp(struct _node *current_node)
 
 	if (current_node->auto_rcv == TRUE) {
 		if (rtos_task_create(&(current_node->auto_rcv_task), "socket_server_udp_auto_rcv_data", socket_server_udp_auto_rcv_data, current_node,
-							 1024, ATCMD_SOCKET_TASK_PRIORITY) != RTK_SUCCESS) {
+							 1024 * 3, ATCMD_SOCKET_TASK_PRIORITY) != RTK_SUCCESS) {
 			RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_udp] rtos_task_create(socket_server_udp_auto_rcv_data) failed\r\n");
 			close(sockfd);
 			error_no = 5;
@@ -559,6 +501,7 @@ void socket_server_tcp_auto_rcv_client_and_data(void *param)
 			node_pool[index].dst_ip = client_addr.sin_addr.s_addr;
 			node_pool[index].dst_port = ntohs(client_addr.sin_port);
 			SYS_ARCH_UNPROTECT(lev);
+
 			hang_seednode(current_node, &node_pool[index]);
 
 			at_printf_indicate("[SKT][EVENT]: A client[link_id:%d,seed,tcp,dst_address:%s,dst_port:%d] connected to server[link_id:%d]\r\n",
@@ -577,23 +520,21 @@ void socket_server_tcp_auto_rcv_client_and_data(void *param)
 				if ((seednode->sockfd >= 0) && FD_ISSET(seednode->sockfd, &read_fds)) {
 					actual_bytes_received = read(seednode->sockfd, read_buf, AT_SOCKET_RECEIVE_BUFFER_SIZE);
 
-					if (actual_bytes_received == 0) {
-						RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tcp_auto_rcv_client_and_data] read() = 0; Connection closed\r\n");
-						FD_CLR(seednode->sockfd, &read_fds);
-						close(seednode->sockfd);
-						seednode->sockfd = INVALID_SOCKET_ID;
-					} else if (actual_bytes_received < 0) {
-						RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tcp_auto_rcv_client_and_data] Failed to read() = %d\r\n", actual_bytes_received);
-						FD_CLR(seednode->sockfd, &read_fds);
-						close(seednode->sockfd);
-						seednode->sockfd = INVALID_SOCKET_ID;
-					}
 					if (actual_bytes_received > 0) {
 						at_printf_lock();
 						at_printf_indicate("[SKT][DATA][%d][%d]:", seednode->link_id, actual_bytes_received);
 						at_printf_data(read_buf, (u32)actual_bytes_received);
 						at_printf("\r\n");
 						at_printf_unlock();
+					} else {
+						if (actual_bytes_received == 0) {
+							RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tcp_auto_rcv_client_and_data] read() = 0; Connection closed\r\n");
+						} else if (actual_bytes_received < 0) {
+							RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tcp_auto_rcv_client_and_data] Failed to read() = %d\r\n", actual_bytes_received);
+						}
+						FD_CLR(seednode->sockfd, &read_fds);
+						close(seednode->sockfd);
+						seednode->sockfd = INVALID_SOCKET_ID;
 					}
 				}
 				seednode = seednode->nextseed;
@@ -661,7 +602,7 @@ int create_socket_server_tcp(struct _node *current_node)
 	current_node->sockfd = sockfd;
 
 	if (rtos_task_create(&(current_node->auto_rcv_task), "socket_server_tcp_auto_rcv_client_and_data", socket_server_tcp_auto_rcv_client_and_data, current_node,
-						 1024 * 4, ATCMD_SOCKET_TASK_PRIORITY) != RTK_SUCCESS) {
+						 1024 * 3, ATCMD_SOCKET_TASK_PRIORITY) != RTK_SUCCESS) {
 		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_tcp] rtos_task_create(socket_server_tcp_auto_rcv_client_and_data) failed\r\n");
 		close(sockfd);
 		error_no = 3;
@@ -741,6 +682,7 @@ void socket_server_tls_auto_rcv_client_and_data(void *param)
 				close(new_client_sockfd);
 				continue;
 			}
+
 			mbedtls_ssl_init(ssl);
 
 			if ((ret = mbedtls_ssl_setup(ssl, current_node->conf)) != 0) {
@@ -766,6 +708,7 @@ void socket_server_tls_auto_rcv_client_and_data(void *param)
 			node_pool[index].cert_crt = current_node->cert_crt;
 			node_pool[index].private_key = current_node->private_key;
 			mbedtls_ssl_set_bio(node_pool[index].ssl, &node_pool[index].sockfd, mbedtls_net_send, mbedtls_net_recv, NULL);
+			SYS_ARCH_UNPROTECT(lev);
 
 			RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tls_auto_rcv_client_and_data] Performing the SSL/TLS handshake...\r\n");
 
@@ -773,12 +716,12 @@ void socket_server_tls_auto_rcv_client_and_data(void *param)
 				RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tls_auto_rcv_client_and_data] mbedtls_ssl_handshake() failed ret = -0x%04x\r\n", -ret);
 				mbedtls_ssl_free(node_pool[index].ssl);
 				close(node_pool[index].sockfd);
+				node_pool[index].sockfd = INVALID_SOCKET_ID;
 				rtos_mem_free(node_pool[index].ssl);
 				node_pool[index].ssl = NULL;
 				init_single_node(&node_pool[index]);
 				continue;
 			}
-			SYS_ARCH_UNPROTECT(lev);
 
 			hang_seednode(current_node, &node_pool[index]);
 
@@ -798,23 +741,28 @@ void socket_server_tls_auto_rcv_client_and_data(void *param)
 				if ((seednode->sockfd >= 0) && FD_ISSET(seednode->sockfd, &read_fds)) {
 					actual_bytes_received = mbedtls_ssl_read(seednode->ssl, (unsigned char *)read_buf, AT_SOCKET_RECEIVE_BUFFER_SIZE);
 
-					if (actual_bytes_received == 0) {
-						RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tls_auto_rcv_client_and_data] read() = 0; Connection closed\r\n");
-						FD_CLR(seednode->sockfd, &read_fds);
-						close(seednode->sockfd);
-						seednode->sockfd = INVALID_SOCKET_ID;
-					} else if (actual_bytes_received < 0) {
-						RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tls_auto_rcv_client_and_data] Failed to read() = %d\r\n", actual_bytes_received);
-						FD_CLR(seednode->sockfd, &read_fds);
-						close(seednode->sockfd);
-						seednode->sockfd = INVALID_SOCKET_ID;
-					}
 					if (actual_bytes_received > 0) {
 						at_printf_lock();
 						at_printf_indicate("[SKT][DATA][%d][%d]:", seednode->link_id, actual_bytes_received);
 						at_printf_data(read_buf, (u32)actual_bytes_received);
 						at_printf("\r\n");
 						at_printf_unlock();
+					} else {
+						if ((actual_bytes_received == 0) || (actual_bytes_received == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY)) {
+							RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tls_auto_rcv_client_and_data] mbedtls_ssl_read() = 0; Connection closed\r\n");
+						} else if (actual_bytes_received < 0) {
+							if (actual_bytes_received == MBEDTLS_ERR_SSL_WANT_READ || actual_bytes_received == MBEDTLS_ERR_SSL_WANT_WRITE) {
+								RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tls_auto_rcv_client_and_data] MBEDTLS_ERR_SSL_WANT_READ / MBEDTLS_ERR_SSL_WANT_WRITE\r\n");
+								continue;
+							}
+							RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tls_auto_rcv_client_and_data] Failed to mbedtls_ssl_read() = -0x%04x\r\n", -actual_bytes_received);
+						}
+						FD_CLR(seednode->sockfd, &read_fds);
+						mbedtls_ssl_free(seednode->ssl);
+						close(seednode->sockfd);
+						seednode->sockfd = INVALID_SOCKET_ID;
+						rtos_mem_free(seednode->ssl);
+						seednode->ssl = NULL;
 					}
 				}
 				seednode = seednode->nextseed;
@@ -1001,7 +949,7 @@ int create_socket_server_tls(struct _node *current_node)
 	current_node->sockfd = tls_server_fd.fd;
 
 	if (rtos_task_create(&(current_node->auto_rcv_task), "socket_server_tls_auto_rcv_client_and_data", socket_server_tls_auto_rcv_client_and_data, current_node,
-						 1024 * 8, ATCMD_SOCKET_TASK_PRIORITY) != RTK_SUCCESS) {
+						 1024 * 7, ATCMD_SOCKET_TASK_PRIORITY) != RTK_SUCCESS) {
 		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_tls] rtos_task_create(socket_server_tls_auto_rcv_client_and_data) failed\r\n");
 		error_no = 11;
 		goto end;
@@ -1098,7 +1046,7 @@ void at_sktserver(void *arg)
 		goto end;
 	}
 	link_id = atoi(argv[1]);
-	if ((link_id < 0) || (link_id > (NUM_NS - 1))) {
+	if ((link_id < 0) || (link_id > (MEMP_NUM_NETCONN - 1))) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] Incorrect <link_id>\r\n");
 		error_no = 1;
 		goto end;
@@ -1116,7 +1064,7 @@ void at_sktserver(void *arg)
 	}
 	if ((conn_type >= SOCKET_SERVER_OVER_TLS) && (conn_type <= SOCKET_SERVER_OVER_TLS_VERIFY_CLIENT)) {
 		if (strlen(argv[3]) == 0) {
-			RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] The <cert_index> is NULL for SOCKET_SERVER_OVER_TLS\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] Missing <cert_index> for SOCKET_SERVER_OVER_TLS\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -1251,7 +1199,7 @@ int create_socket_client_udp(struct _node *current_node)
 	current_node->sockfd = sockfd;
 
 	if (current_node->auto_rcv == TRUE) {
-		if (rtos_task_create(&(current_node->auto_rcv_task), "socket_client_udp_auto_rcv", socket_client_udp_auto_rcv, current_node, 1024,
+		if (rtos_task_create(&(current_node->auto_rcv_task), "socket_client_udp_auto_rcv", socket_client_udp_auto_rcv, current_node, 1024 * 3,
 							 ATCMD_SOCKET_TASK_PRIORITY) != RTK_SUCCESS) {
 			RTK_LOGI(AT_SOCKET_TAG, "[create_socket_client_udp] rtos_task_create(socket_client_udp_auto_rcv) failed\r\n");
 			close(sockfd);
@@ -1355,7 +1303,7 @@ int create_socket_client_tcp(struct _node *current_node)
 	current_node->sockfd = sockfd;
 
 	if (current_node->auto_rcv == TRUE) {
-		if (rtos_task_create(&(current_node->auto_rcv_task), "socket_client_tcp_auto_rcv", socket_client_tcp_auto_rcv, current_node, 1024,
+		if (rtos_task_create(&(current_node->auto_rcv_task), "socket_client_tcp_auto_rcv", socket_client_tcp_auto_rcv, current_node, 1024 * 3,
 							 ATCMD_SOCKET_TASK_PRIORITY) != RTK_SUCCESS) {
 			RTK_LOGI(AT_SOCKET_TAG, "[create_socket_client_tcp] rtos_task_create(socket_client_tcp_auto_rcv) failed\r\n");
 			close(sockfd);
@@ -1389,14 +1337,15 @@ void socket_client_tls_auto_rcv(void *param)
 
 	while (1) {
 		actual_bytes_received = mbedtls_ssl_read(current_node->ssl, (unsigned char *)read_buf, AT_SOCKET_RECEIVE_BUFFER_SIZE);
-		if (actual_bytes_received == 0) {
+		if ((actual_bytes_received == 0) || (actual_bytes_received == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY)) {
 			RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tls_auto_rcv] mbedtls_ssl_read() = 0; Connection closed\r\n");
 			goto end;
 		} else if (actual_bytes_received < 0) {
-			RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tls_auto_rcv] Failed to mbedtls_ssl_read() = -0x%04x\r\n", -actual_bytes_received);
 			if (actual_bytes_received == MBEDTLS_ERR_SSL_WANT_READ || actual_bytes_received == MBEDTLS_ERR_SSL_WANT_WRITE) {
+				RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tls_auto_rcv] MBEDTLS_ERR_SSL_WANT_READ / MBEDTLS_ERR_SSL_WANT_WRITE\r\n");
 				continue;
 			}
+			RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tls_auto_rcv] Failed to mbedtls_ssl_read() = -0x%04x\r\n", -actual_bytes_received);
 			goto end;
 		}
 		at_printf_lock();
@@ -1404,7 +1353,6 @@ void socket_client_tls_auto_rcv(void *param)
 		at_printf_data(read_buf, (u32)actual_bytes_received);
 		at_printf("\r\n");
 		at_printf_unlock();
-
 	}
 
 end:
@@ -1646,7 +1594,7 @@ int create_socket_client_tls(struct _node *current_node)
 	}
 
 	if (current_node->auto_rcv == TRUE) {
-		if (rtos_task_create(&(current_node->auto_rcv_task), "socket_client_tls_auto_rcv", socket_client_tls_auto_rcv, current_node, 1024 * 8,
+		if (rtos_task_create(&(current_node->auto_rcv_task), "socket_client_tls_auto_rcv", socket_client_tls_auto_rcv, current_node, 1024 * 7,
 							 ATCMD_SOCKET_TASK_PRIORITY) != RTK_SUCCESS) {
 			RTK_LOGI(AT_SOCKET_TAG, "[create_socket_client_tcp] rtos_task_create(socket_client_tls_auto_rcv) failed\r\n");
 			error_no = 15;
@@ -1757,7 +1705,7 @@ void at_sktclient(void *arg)
 		goto end;
 	}
 	link_id = atoi(argv[1]);
-	if ((link_id < 0) || (link_id > (NUM_NS - 1))) {
+	if ((link_id < 0) || (link_id > (MEMP_NUM_NETCONN - 1))) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktclient] Incorrect <link_id>\r\n");
 		error_no = 1;
 		goto end;
@@ -1851,48 +1799,34 @@ end:
 }
 
 
-int atcmd_lwip_send_data(struct _node *curnode, u8 *data, u16 data_sz, struct sockaddr_in cli_addr)
+int atcmd_lwip_send_data(struct _node *curnode, u8 *data, u16 data_sz, struct sockaddr_in dst_addr)
 {
 	int ret = 0, error_no = 0;
 
-	/* UDP server. */
-	if ((curnode->protocol == 0) && (curnode->role == NODE_ROLE_SERVER)) {
-		ret = sendto(curnode->sockfd, data, data_sz, 0, (struct sockaddr *)&cli_addr, sizeof(cli_addr));
+	// UDP
+	if (curnode->protocol == 0) {
+		ret = sendto(curnode->sockfd, data, data_sz, 0, (struct sockaddr *)&dst_addr, sizeof(dst_addr));
 		if (ret < 0) {
-			RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_send_data] UDP server send failed in sendto()=%d\r\n", ret);
+			RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_send_data] UDP send failed in sendto() = %d\r\n", ret);
 			error_no = 2;
 			goto end;
 		}
 	}
-	/* UDP client. */
-	else if (curnode->protocol == 0) {
-		struct sockaddr_in serv_addr;
-		memset(&serv_addr, 0, sizeof(serv_addr));
-		serv_addr.sin_family = AF_INET;
-		serv_addr.sin_port = htons(curnode->dst_port);
-		serv_addr.sin_addr.s_addr = htonl(curnode->dst_ip);
-		ret = sendto(curnode->sockfd, data, data_sz, 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-		if (ret < 0) {
-			RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_send_data] UDP client send failed in sendto()=%d\r\n", ret);
-			error_no = 2;
-			goto end;
-		}
-	}
-	/* TCP */
+	// TCP
 	else if (curnode->protocol == 1) {
 		ret = write(curnode->sockfd, data, data_sz);
 		if (ret < 0) {
-			RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_send_data] Failed in write() = %d for protocol = %d\r\n", ret, curnode->protocol);
+			RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_send_data] TCP send failed in write() = %d\r\n", ret);
 			error_no = 2;
 			goto end;
 		}
 
 	}
-	/* TLS */
+	// TLS
 	else {
 		ret = mbedtls_ssl_write(curnode->ssl, (unsigned char *)data, (size_t)data_sz);
 		if (ret < 0) {
-			RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_send_data] Failed in mbedtls_ssl_write() = -0x%04X for protocol = %d\r\n", -ret, curnode->protocol);
+			RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_send_data] TLS/SSL send failed in mbedtls_ssl_write() = -0x%04x for protocol = %d\r\n", -ret, curnode->protocol);
 			error_no = 2;
 			goto end;
 		}
@@ -1903,7 +1837,7 @@ end:
 }
 
 
-int atcmd_lwip_start_tt_handle(struct _node *curnode, int total_data_len, struct sockaddr_in cli_addr)
+int atcmd_lwip_start_tt_handle(struct _node *curnode, int total_data_len, struct sockaddr_in dst_addr)
 {
 	int error_no = 0;
 	uint8_t *tt_data = NULL;
@@ -1927,7 +1861,7 @@ int atcmd_lwip_start_tt_handle(struct _node *curnode, int total_data_len, struct
 				error_no = 4;
 				goto tt_end;
 			}
-			if ((error_no = atcmd_lwip_send_data(curnode, tt_data, (u16)total_data_len, cli_addr)) != 0) {
+			if ((error_no = atcmd_lwip_send_data(curnode, tt_data, (u16)total_data_len, dst_addr)) != 0) {
 				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_start_tt_handle] atcmd_lwip_send_data() failed\r\n");
 				goto tt_end;
 			}
@@ -1939,7 +1873,7 @@ int atcmd_lwip_start_tt_handle(struct _node *curnode, int total_data_len, struct
 					error_no = 4;
 					goto tt_end;
 				}
-				if ((error_no = atcmd_lwip_send_data(curnode, tt_data, (u16)frag_tt_data_len, cli_addr)) != 0) {
+				if ((error_no = atcmd_lwip_send_data(curnode, tt_data, (u16)frag_tt_data_len, dst_addr)) != 0) {
 					RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_start_tt_handle] atcmd_lwip_send_data() failed\r\n");
 					goto tt_end;
 				}
@@ -1967,7 +1901,7 @@ void at_sktsendraw(void *arg)
 	int link_id = INVALID_LINK_ID;
 	struct _node *curnode = NULL;
 	int data_sz = 0;
-	struct sockaddr_in cli_addr;
+	struct sockaddr_in dst_addr;
 	int dst_port = 0;
 
 
@@ -1990,7 +1924,7 @@ void at_sktsendraw(void *arg)
 	}
 
 	link_id = atoi(argv[1]);
-	if (link_id < 0 || link_id > (NUM_NS - 1)) {
+	if (link_id < 0 || link_id > (MEMP_NUM_NETCONN - 1)) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsendraw] Incorrect <link_id>\r\n");
 		error_no = 1;
 		goto end;
@@ -2023,23 +1957,27 @@ void at_sktsendraw(void *arg)
 		}
 		dst_port = atoi(argv[4]);
 		if (dst_port <= 0 || dst_port > 65535) {
-			RTK_LOGI(AT_SOCKET_TAG, "[at_sktsendraw] Incorrect <dst_port>\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[at_sktsendraw] Incorrect <dst_port> for UDP server\r\n");
 			error_no = 1;
 			goto end;
 		}
-		char udp_clientaddr[17] = {0};
+		char udp_clientaddr[16] = {0};
 		strncpy(udp_clientaddr, argv[3], strlen(argv[3]));
-		cli_addr.sin_family = AF_INET;
-		cli_addr.sin_port = htons(dst_port);
-		ret = inet_aton(udp_clientaddr, &cli_addr.sin_addr);
+		dst_addr.sin_family = AF_INET;
+		dst_addr.sin_port = htons(dst_port);
+		ret = inet_aton(udp_clientaddr, &dst_addr.sin_addr);
 		if (ret == 0) {
 			RTK_LOGI(AT_SOCKET_TAG, "[at_sktsendraw] Failed in inet_aton()\r\n");
 			error_no = 1;
 			goto end;
 		}
+	} else if ((curnode->protocol == 0) && (curnode->role == NODE_ROLE_CLIENT)) {
+		dst_addr.sin_family = AF_INET;
+		dst_addr.sin_port = htons(curnode->dst_port);
+		dst_addr.sin_addr.s_addr = curnode->dst_ip;
 	}
 
-	if ((curnode->protocol >= SOCKET_SERVER_OVER_TCP) && (curnode->protocol <= SOCKET_SERVER_OVER_TLS_VERIFY_CLIENT)) {
+	if (curnode->protocol >= 1) {
 		if (curnode->role == NODE_ROLE_SERVER) {
 			RTK_LOGI(AT_SOCKET_TAG, "[at_sktsendraw] Please use the correct seed <link_id> for TCP/SSL server\r\n");
 			error_no = 1;
@@ -2047,7 +1985,7 @@ void at_sktsendraw(void *arg)
 		}
 	}
 
-	error_no = atcmd_lwip_start_tt_handle(curnode, data_sz, cli_addr);
+	error_no = atcmd_lwip_start_tt_handle(curnode, data_sz, dst_addr);
 
 end:
 	if (error_no == 0) {
@@ -2066,7 +2004,7 @@ void at_sktsend(void *arg)
 	int link_id = INVALID_LINK_ID;
 	struct _node *curnode = NULL;
 	int data_sz = 0;
-	struct sockaddr_in cli_addr;
+	struct sockaddr_in dst_addr;
 	int dst_port = 0;
 
 
@@ -2089,7 +2027,7 @@ void at_sktsend(void *arg)
 	}
 
 	link_id = atoi(argv[1]);
-	if (link_id < 0 || link_id > (NUM_NS - 1)) {
+	if (link_id < 0 || link_id > (MEMP_NUM_NETCONN - 1)) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsend] Incorrect <link_id>\r\n");
 		error_no = 1;
 		goto end;
@@ -2128,23 +2066,27 @@ void at_sktsend(void *arg)
 		}
 		dst_port = atoi(argv[4]);
 		if (dst_port <= 0 || dst_port > 65535) {
-			RTK_LOGI(AT_SOCKET_TAG, "[at_sktsend] Incorrect <dst_port>\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[at_sktsend] Incorrect <dst_port> for UDP server\r\n");
 			error_no = 1;
 			goto end;
 		}
 		char udp_clientaddr[16] = {0};
 		strncpy(udp_clientaddr, argv[3], strlen(argv[3]));
-		cli_addr.sin_family = AF_INET;
-		cli_addr.sin_port = htons(dst_port);
-		ret = inet_aton(udp_clientaddr, &cli_addr.sin_addr);
+		dst_addr.sin_family = AF_INET;
+		dst_addr.sin_port = htons(dst_port);
+		ret = inet_aton(udp_clientaddr, &dst_addr.sin_addr);
 		if (ret == 0) {
 			RTK_LOGI(AT_SOCKET_TAG, "[at_sktsend] Failed in inet_aton()\r\n");
 			error_no = 1;
 			goto end;
 		}
+	} else if ((curnode->protocol == 0) && (curnode->role == NODE_ROLE_CLIENT)) {
+		dst_addr.sin_family = AF_INET;
+		dst_addr.sin_port = htons(curnode->dst_port);
+		dst_addr.sin_addr.s_addr = curnode->dst_ip;
 	}
 
-	if ((curnode->protocol >= SOCKET_SERVER_OVER_TCP) && (curnode->protocol <= SOCKET_SERVER_OVER_TLS_VERIFY_CLIENT)) {
+	if (curnode->protocol >= 1) {
 		if (curnode->role == NODE_ROLE_SERVER) {
 			RTK_LOGI(AT_SOCKET_TAG, "[at_sktsend] Please use the correct seed <link_id> for TCP/SSL server\r\n");
 			error_no = 1;
@@ -2152,7 +2094,7 @@ void at_sktsend(void *arg)
 		}
 	}
 
-	error_no = atcmd_lwip_send_data(curnode, (u8 *)argv[5], data_sz, cli_addr);
+	error_no = atcmd_lwip_send_data(curnode, (u8 *)argv[5], data_sz, dst_addr);
 
 end:
 	if (error_no == 0) {
@@ -2163,7 +2105,7 @@ end:
 }
 
 
-int atcmd_lwip_receive_data(struct _node *curnode, u8 *buffer, u16 buffer_size, int *recv_size, u8_t *udp_clientaddr, u16_t *udp_clientport)
+int atcmd_lwip_receive_data(struct _node *curnode, u8 *buffer, int buffer_size, int *actual_recv_size, struct sockaddr_in *skt_dst_addr)
 {
 	struct timeval tv;
 	fd_set readfds;
@@ -2177,81 +2119,58 @@ int atcmd_lwip_receive_data(struct _node *curnode, u8 *buffer, u16 buffer_size, 
 	ret = select(curnode->sockfd + 1, &readfds, NULL, NULL, &tv);
 	if (ret == 0) {
 		RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] select() timeout\r\n");
+		error_no = 0;
+		goto end;
 	} else if (ret < 0) {
-		RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] select() error = %d\r\n", ret);
+		RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] Failed to select() = %d\r\n", ret);
 		error_no = 3;
 		goto end;
 	}
-	if (!((ret > 0) && (FD_ISSET(curnode->sockfd, &readfds)))) {
-		if (curnode->protocol >= 2) {
-			ret = mbedtls_ssl_get_bytes_avail(curnode->ssl);
-			if (ret == 0) {
-				// RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] No receive event for link_id %d\r\n", curnode->link_id);
-				goto end;
-			}
-		} else {
-			// RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] No receive event for link_id %d\r\n", curnode->link_id);
-			goto end;
-		}
-	}
 
-	/* udp server receive from client */
-	if (curnode->protocol == 0) {
-		if (curnode->role == NODE_ROLE_SERVER) {
-			struct sockaddr_in client_addr;
+	if ((curnode->sockfd >= 0) && FD_ISSET(curnode->sockfd, &readfds)) {
+		// UDP
+		if (curnode->protocol == 0) {
 			u32_t addr_len = sizeof(struct sockaddr_in);
-			memset((char *) &client_addr, 0, sizeof(client_addr));
-			size = recvfrom(curnode->sockfd, buffer, buffer_size, 0, (struct sockaddr *) &client_addr, &addr_len);
+			size = recvfrom(curnode->sockfd, buffer, buffer_size, 0, (struct sockaddr *) skt_dst_addr, &addr_len);
 			if (size == 0) {
-				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] recvfrom() return size = %d\r\n", size);
+				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] recvfrom() = 0\r\n");
 			} else if (size < 0) {
-				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] recvfrom() return size = %d\r\n", size);
-				error_no = 4;
-			}
-			inet_ntoa_r(client_addr.sin_addr.s_addr, (char *)udp_clientaddr, 16);
-			*udp_clientport = ntohs(client_addr.sin_port);
-		} else {
-			struct sockaddr_in serv_addr;
-			u32_t addr_len = sizeof(struct sockaddr_in);
-			memset((char *) &serv_addr, 0, sizeof(serv_addr));
-			serv_addr.sin_family = AF_INET;
-			serv_addr.sin_port = htons(curnode->dst_port);
-			serv_addr.sin_addr.s_addr = htonl(curnode->dst_ip);
-			size = recvfrom(curnode->sockfd, buffer, buffer_size, 0, (struct sockaddr *) &serv_addr, &addr_len);
-			if (size == 0) {
-				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] recvfrom() return size = %d\r\n", size);
-			} else if (size < 0) {
-				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] recvfrom() return size = %d\r\n", size);
+				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] Failed to recvfrom() = %d\r\n", size);
 				error_no = 4;
 			}
 		}
-	} else {
-		if (curnode->protocol == 1) {//TCP
+		// TCP
+		else if (curnode->protocol == 1) {
 			size = read(curnode->sockfd, buffer, buffer_size);
 			if (size == 0) {
 				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] read() = 0; Connection closed\r\n");
-				//error_no = 0;
-			} else if (size < 0) {
-				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] read() failed = %d\r\n", size);
 				error_no = 4;
-			}
-		} else {//TLS
-			size = mbedtls_ssl_read(curnode->ssl, buffer, buffer_size);
-			if (size == 0) {
-				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] mbedtls_ssl_read() = 0; Connection closed\r\n");
-				//error_no = 0;
 			} else if (size < 0) {
-				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] mbedtls_ssl_read() failed = -0x%04X\r\n", -size);
+				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] Failed to read() = %d\r\n", size);
 				error_no = 4;
 			}
 		}
-
-
+		//TLS
+		else {
+			size = mbedtls_ssl_read(curnode->ssl, buffer, buffer_size);
+			if ((size == 0) || (size == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY)) {
+				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] mbedtls_ssl_read() = 0; Connection closed\r\n");
+				error_no = 4;
+			} else if (size < 0) {
+				if (size == MBEDTLS_ERR_SSL_WANT_READ || size == MBEDTLS_ERR_SSL_WANT_WRITE) {
+					RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] MBEDTLS_ERR_SSL_WANT_READ / MBEDTLS_ERR_SSL_WANT_WRITE\r\n");
+					error_no = 0;
+					return 0;
+				}
+				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] Failed to mbedtls_ssl_read() = -0x%04x\r\n", -size);
+				error_no = 4;
+			}
+		}
 	}
 
 end:
 	if (error_no == 0) {
-		*recv_size = size;
+		*actual_recv_size = size;
 	} else {
 		if (curnode->protocol >= 2) {
 			mbedtls_net_context server_fd;
@@ -2259,6 +2178,8 @@ end:
 			mbedtls_ssl_close_notify(curnode->ssl);
 			mbedtls_net_free(&server_fd);
 			mbedtls_ssl_free(curnode->ssl);
+			rtos_mem_free(curnode->ssl);
+			curnode->ssl = NULL;
 		} else {
 			close(curnode->sockfd);
 		}
@@ -2271,11 +2192,13 @@ end:
 //AT+SKTREAD=<link_id>,<data_size>
 void at_sktread(void *arg)
 {
-	int argc = 0, error_no = 0, recv_size = 0, data_size = 0;
+	int argc = 0, error_no = 0;
 	char *argv[MAX_ARGC] = {0};
 	int link_id = INVALID_LINK_ID;
+	int wanted_recv_size = 0, actual_recv_size = 0;
 	struct _node *curnode = NULL;
-	u8_t udp_clientaddr[16] = {0};
+	struct sockaddr_in skt_dst_addr;
+	char udp_clientaddr[16] = {0};
 	u16_t udp_clientport = 0;
 	u8 *rx_buffer = NULL;
 
@@ -2299,7 +2222,7 @@ void at_sktread(void *arg)
 	}
 
 	link_id = atoi(argv[1]);
-	if (link_id < 0 || link_id > (NUM_NS - 1)) {
+	if (link_id < 0 || link_id > (MEMP_NUM_NETCONN - 1)) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktread] Incorrect <link_id>\r\n");
 		error_no = 1;
 		goto end;
@@ -2307,13 +2230,13 @@ void at_sktread(void *arg)
 	curnode = &node_pool[link_id];
 	if ((curnode->link_id == INVALID_LINK_ID) || (curnode->sockfd == INVALID_SOCKET_ID) || (curnode->role == NODE_ROLE_INVALID) ||
 		(curnode->protocol == SOCKET_PROTOCOL_INVALID)) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsendraw] The link does not exist or socket not established\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktread] The link does not exist or socket not established\r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	data_size = atoi(argv[2]);
-	if (data_size <= 0 || data_size > UART_LOG_CMD_BUFLEN) {
+	wanted_recv_size = atoi(argv[2]);
+	if (wanted_recv_size <= 0) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktread] Incorrect <data_size>\r\n");
 		error_no = 1;
 		goto end;
@@ -2326,25 +2249,27 @@ void at_sktread(void *arg)
 		goto end;
 	}
 
-	if (NULL == rx_buffer) {
-		rx_buffer = (u8 *)rtos_mem_zmalloc(data_size + 1);
-		if (rx_buffer == NULL) {
-			RTK_LOGI(AT_SOCKET_TAG, "[at_sktread] rx_buffer malloc fail\r\n");
-			error_no = 2;
-			goto end;
-		}
+	rx_buffer = (u8 *)rtos_mem_zmalloc(wanted_recv_size + 1);
+	if (rx_buffer == NULL) {
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktread] rx_buffer malloc fail\r\n");
+		error_no = 2;
+		goto end;
 	}
 
-	error_no = atcmd_lwip_receive_data(curnode, rx_buffer, (u16)data_size, &recv_size, udp_clientaddr, &udp_clientport);
+	memset(&skt_dst_addr, 0, sizeof(skt_dst_addr));
+
+	error_no = atcmd_lwip_receive_data(curnode, rx_buffer, wanted_recv_size, &actual_recv_size, &skt_dst_addr);
 
 end:
 	if (error_no == 0) {
-		if (curnode->protocol == 0 && curnode->role == NODE_ROLE_SERVER) {
-			at_printf("+SKTREAD:%d,%d,%s,%d,", link_id, recv_size, udp_clientaddr, udp_clientport);
+		if (curnode->protocol == 0) {
+			inet_ntoa_r(skt_dst_addr.sin_addr.s_addr, udp_clientaddr, 16);
+			udp_clientport = ntohs(skt_dst_addr.sin_port);
+			at_printf("+SKTREAD:%d,%d,%s,%d,", link_id, actual_recv_size, udp_clientaddr, udp_clientport);
 		} else {
-			at_printf("+SKTREAD:%d,%d,", link_id, recv_size);
+			at_printf("+SKTREAD:%d,%d,", link_id, actual_recv_size);
 		}
-		if (recv_size > 0) {
+		if (actual_recv_size > 0) {
 			at_printf("%s", rx_buffer);
 		}
 		at_printf(ATCMD_OK_END_STR);
@@ -2367,7 +2292,7 @@ void at_sktstate(void *arg)
 
 	UNUSED(arg);
 
-	for (int i = 0; i < NUM_NS; i++) {
+	for (int i = 0; i < MEMP_NUM_NETCONN; i++) {
 		n = &node_pool[i];
 		if (n->link_id != INVALID_LINK_ID) {
 			if (n->role == NODE_ROLE_SEED) {
@@ -2570,7 +2495,7 @@ void at_sktdel(void *arg)
 		goto end;
 	}
 	link_id = atoi(argv[1]);
-	if ((link_id < 0) || (link_id > (NUM_NS - 1))) {
+	if ((link_id < 0) || (link_id > (MEMP_NUM_NETCONN - 1))) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktdel] Incorrect <link_id>\r\n");
 		error_no = 1;
 		goto end;
@@ -2592,50 +2517,6 @@ end:
 }
 
 
-#if ENABLE_TCPIP_AUTOLINK
-void at_sktautolink(void *arg)
-{
-	int argc, error_no = 0, enable = 0;
-	char *argv[MAX_ARGC] = {0};
-	struct _atcmd_lwip_conn_info cur_conn = {0};
-	struct _node *cur_node = mainlist->next;
-
-	if (arg == NULL) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktautolink] Invalid parameter\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	argc = parse_param(arg, argv);
-	if (argc != 2 || strlen(argv[1]) == 0) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktautolink] Invalid parameter number\r\n");
-		error_no = 2;
-		goto end;
-	}
-
-	if (enable != 0 && cur_node == NULL) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktautolink] node should not be NULL when enable\r\n");
-		error_no = 3;
-		goto end;
-	}
-
-	cur_conn.role = cur_node->role;
-	cur_conn.protocol = cur_node->protocol;
-	cur_conn.remote_addr = cur_node->addr;
-	cur_conn.remote_port = cur_node->port;
-	cur_conn.local_addr = cur_node->local_addr;
-	cur_conn.local_port = cur_node->local_port;
-	atcmd_lwip_write_info_to_flash(&cur_conn, enable);
-
-end:
-	if (error_no == 0) {
-		at_printf(ATCMD_OK_END_STR);
-	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
-	}
-}
-#endif
-
 
 log_item_t at_socket_items[ ] = {
 	{"+SKTCFG", at_sktcfg, {NULL, NULL}},
@@ -2647,9 +2528,6 @@ log_item_t at_socket_items[ ] = {
 	{"+SKTREAD", at_sktread, {NULL, NULL}},
 	{"+SKTSTATE", at_sktstate, {NULL, NULL}},
 	{"+SKTDEL", at_sktdel, {NULL, NULL}},
-#if ENABLE_TCPIP_AUTOLINK
-	{"+SKTAUTOLINK", at_sktautolink, {NULL, NULL}},
-#endif
 };
 
 void print_socket_at(void)
