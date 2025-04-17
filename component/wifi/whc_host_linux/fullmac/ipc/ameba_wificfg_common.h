@@ -74,8 +74,8 @@ struct wifi_user_conf {
 	/*!	In LPS, the sta wakes up every legacy_ps_listen_interval* 102.4ms to receive beacon.*/
 	u8 legacy_ps_listen_interval;
 
-	/*! Enable or disable rx broadcast of LPS. LPS is the abbreviation of Leisure Power Save mode.
-		1 means disable rx broadcast of LPS, 0 means enable(default) rx broadcast of LPS.*/
+	/*! Enable or disable rx broadcast in tickless wowlan mode,
+		1 means disable rx broadcast in tickless wowlan mode, 0 means enable(default) rx broadcast in tickless wowlan mode.*/
 	u8 wowlan_rx_bcmc_dis;
 
 	/*!	0: RTW_UAPSD_NO_LIMIT, 1: RTW_UAPSD_TWO_MSDU, 2: RTW_UAPSD_FOUR_MSDU, 3: RTW_UAPSD_SIX_MSDU. */

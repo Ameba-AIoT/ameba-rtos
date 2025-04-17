@@ -375,7 +375,7 @@ menu "CONFIG BT"
             bool
             default y if CORE_AS_AP
             default y if BT_INIC_SHARE && CORE_AS_NP
-            default y if !BT_INIC_SHARE && !CORE_AS_NP
+            default y if FULLMAC_DEV && !BT_INIC_SHARE && !CORE_AS_NP
             select FTL_ENABLED
 
         config BT_ENABLE_FAST_MP

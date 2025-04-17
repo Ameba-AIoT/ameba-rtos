@@ -45,16 +45,6 @@ u32 app_mpu_nocache_init(void)
 		mpu_region_cfg(mpu_entry, &mpu_cfg);
 	}
 
-	/* close rom_ns cache */
-	mpu_entry = mpu_entry_alloc();
-	mpu_cfg.region_base = 0x1E000;
-	mpu_cfg.region_size = 0x45000 - 0x1E000;
-	mpu_cfg.xn = MPU_EXEC_ALLOW;
-	mpu_cfg.ap = MPU_UN_PRIV_RW;
-	mpu_cfg.sh = MPU_NON_SHAREABLE;
-	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
-	mpu_region_cfg(mpu_entry, &mpu_cfg);
-
 	return 0;
 }
 
