@@ -107,13 +107,13 @@ def main(argc, argv):
 
     cmd += ' -G Ninja'
 
-    if args.target != None:
-        cmd += ' ' + args.target
-
     if args.pristine:
         cmd += ' && ninja clean && ninja'
     else:
         cmd += ' && ninja'
+
+    if args.target != None:
+        cmd += ' ' + args.target
 
     try:
         rc = os.system(cmd)
