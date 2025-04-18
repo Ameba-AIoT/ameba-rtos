@@ -106,6 +106,14 @@ int wifi_set_chplan(u8 chplan)
 	return ret;
 }
 
+s32 wifi_get_channel_list(struct rtw_channel_list *ch_list);
+{
+	int ret = 0;
+
+	whc_host_api_message_send(WHC_API_WIFI_GET_CHANNEL_LIST, NULL, 0, (u8 *)ch_list, sizeof(struct rtw_channel_list));
+	return ret;
+}
+
 //----------------------------------------------------------------------------//
 
 _OPTIMIZE_NONE_
@@ -140,7 +148,7 @@ s32 wifi_scan_abort(u8 block)
 
 //----------------------------------------------------------------------------//
 
-int wifi_get_mac_address(int idx, struct rtw_mac *mac, u8 efuse)
+s32 wifi_get_mac_address(s32 idx, struct rtw_mac *mac, u8 efuse)
 {
 	int ret = 0;
 	u32 param_buf[3];
@@ -194,7 +202,7 @@ s32 wifi_ap_del_client(u8 *hwaddr)
 
 }
 
-int wifi_ap_switch_chl_and_inform(struct rtw_csa_parm *csa_param)
+s32 wifi_ap_switch_chl_and_inform(struct rtw_csa_parm *csa_param)
 {
 	int ret = 0;
 	char *param_buf = rtos_mem_zmalloc(sizeof(struct rtw_csa_parm));
@@ -578,7 +586,7 @@ s32 wifi_set_tx_rate_by_tos(u8 enable, u8 tos_precedence, u8 tx_rate)
 	return ret;
 }
 
-int wifi_set_edca_param(unsigned int ac_param)
+s32 wifi_set_edca_param(u32 ac_param)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -588,17 +596,17 @@ int wifi_set_edca_param(unsigned int ac_param)
 	return ret;
 }
 
-int wifi_set_tx_cca_enable(unsigned char enable)
+s32 wifi_set_tx_cca_enable(u8 enable)
 {
 	int ret = 0;
 	u32 param_buf[1];
 
-	param_buf[0] = enable;
+	param_buf[0] = (u32)enable;
 	whc_host_api_message_send(WHC_API_WIFI_SET_TX_CCA_EN, (u8 *)param_buf, 4, (u8 *)&ret, sizeof(ret));
 	return ret;
 }
 
-int wifi_set_cts2self_duration_and_send(unsigned char wlan_idx, unsigned short duration)
+s32 wifi_set_cts2self_duration_and_send(u8 wlan_idx, u16 duration)
 {
 	int ret = 0;
 	u32 param_buf[2];

@@ -170,6 +170,13 @@ s32 wifi_set_countrycode(s8 *cntcode);
 s32 wifi_get_countrycode(struct rtw_country_code_table *table);
 
 /**
+ * @brief  get channel list
+ * @param[in]  table: Pointer to the currently obtained available channel list
+ * @return  @ref RTK_SUCCESS or @ref RTK_FAIL
+ */
+s32 wifi_get_channel_list(struct rtw_channel_list *ch_list);
+
+/**
  * @brief  Retrieves the current Media Access Control (MAC) address
  *	(or Ethernet hardware address) of the 802.11 device.
  * @param[in]  idx: Get STA or SoftAP mac address. Invalid parameter while setting efuse = 1.

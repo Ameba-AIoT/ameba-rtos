@@ -1039,7 +1039,7 @@ static void GenerateWaitHtmlPage(char *cDynamicPage)
 }
 
 extern s32 wifi_get_scan_records(u32 *ap_num, struct rtw_scan_result *ap_list);
-static int scan_result_handler(unsigned int scanned_AP_num, void *user_data)
+static s32 scan_result_handler(u32 scanned_AP_num, void *user_data)
 {
 	/* To avoid gcc warnings */
 	(void) user_data;
@@ -1058,7 +1058,7 @@ static int scan_result_handler(unsigned int scanned_AP_num, void *user_data)
 		return RTK_FAIL;
 	}
 
-	if (wifi_get_scan_records((u32 *)&scanned_AP_num, scanned_AP_list) < 0) {
+	if (wifi_get_scan_records(&scanned_AP_num, scanned_AP_list) < 0) {
 		rtos_mem_free((u8 *)scanned_AP_list);
 		return RTK_FAIL;
 	}
@@ -1156,7 +1156,7 @@ static int _get_ap_security_mode(IN char *ssid, OUT u32 *security_mode, OUT u8 *
 	int i = 0;
 
 	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
-	scan_param.ssid = ssid;
+	scan_param.ssid = (u8 *)ssid;
 
 	if ((scan_cnt = wifi_scan_networks(&scan_param, 1)) <= 0) {
 		RTK_LOGE(NOTAG, "error %s, wifi scan failed\n", __func__);

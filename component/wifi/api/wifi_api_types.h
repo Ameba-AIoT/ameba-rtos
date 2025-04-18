@@ -52,6 +52,14 @@ extern "C" {
  * otherwise do normal scan on the specified channel with scan time set to 110ms. */
 #define RTW_PSCAN_FAST_SURVEY	0x02
 
+/** Max channel num in each channel plan */
+#if !defined(SUPPORT_5G_CHANNEL)
+#define	RTW_MAX_CHANNEL_NUM			14
+#else
+#define	RTW_MAX_CHANNEL_NUM			42
+#endif
+
+
 /** Set to this means disable DPK(Digital Pre-Distortion Calibration) of rf calibration. */
 #define RTW_RFK_DIS_DPK     BIT(0)
 
@@ -661,8 +669,8 @@ struct rtw_scan_result {
 	/** The wireless spectrum management regulations of which region followed by the AP. `country_code` is coded
 	 * according to ISO 3166 standard. Specific values can refer to ameba_wifi_country_code_table_usrcfg.c.\n
 	 * e.g. China: country_code[0] = 'C', country_code[1] = 'N'. */
-	u8                 country_code[2];
-	u8                 wireless_mode;    /**< The wireless mode of this AP. Val: @ref RTW_80211_B, @ref RTW_80211_A...*/
+	s8                 country_code[2];
+	s8                 wireless_mode;    /**< The wireless mode of this AP. Val: @ref RTW_80211_B, @ref RTW_80211_A...*/
 	u8                 rom_rsvd[3];
 };
 
@@ -1005,10 +1013,28 @@ struct rtw_custom_ie {
 };
 
 /**
+ * @brief  The structure is used to describe channel info.
+ */
+
+struct rtw_channel_info {
+	u8 channel;      /**< Channel id */
+	u8 scan_type;    /**< 1 for passive, 0 for active. */
+};
+
+/**
+ * @brief  The structure is used to describe channel list.
+ */
+struct rtw_channel_list {
+	u8 ch_num;         /**< Number of available channel in the list.    */
+	struct rtw_channel_info ch_info[RTW_MAX_CHANNEL_NUM];
+};
+
+
+/**
  * @brief  The structure is used to describe channel plan and country code.
  */
 struct rtw_country_code_table {
-	u8 char2[2];   /**< Country code. */
+	s8 char2[2];   /**< Country code. */
 	u8 channel_plan; /**< Channel plan code. */
 	u8 pwr_lmt;      /**< Tx power limit index. */
 };

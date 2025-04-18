@@ -9,7 +9,7 @@
 #define COUNTRY_CODE_LEN 2
 
 struct country {
-	u8 char2[COUNTRY_CODE_LEN];
+	s8 char2[COUNTRY_CODE_LEN];
 };
 
 struct country_code_table_common_t {

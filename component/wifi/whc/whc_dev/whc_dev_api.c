@@ -273,7 +273,7 @@ exit:
 void whc_event_wifi_ap_del_client(u32 api_id, u32 *param_buf)
 {
 	int ret;
-	unsigned char *hwaddr = (unsigned char *)(param_buf + 1);
+	u8 *hwaddr = (u8 *)(param_buf + 1);
 
 	ret = wifi_ap_del_client(hwaddr);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
@@ -1348,7 +1348,7 @@ void whc_event_bridge_get_scan_res(u32 api_id, u32 *param_buf)
 {
 	(void)param_buf;
 	struct rtw_scan_result *scanned_AP_list = NULL;
-	unsigned int scanned_AP_num = 0;
+	u32 scanned_AP_num = 0;
 	int ret = 0;
 
 	scanned_AP_num = param_buf[0];

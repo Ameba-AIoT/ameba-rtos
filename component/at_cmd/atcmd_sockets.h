@@ -30,18 +30,10 @@
 #endif
 
 
-#define ATCMD_SSL_DEBUG_LEVEL             0	//RTK_LOG_DEBUG
-#define ENABLE_TCPIP_AUTOLINK             0
-
-
 #ifdef CONFIG_LWIP_LAYER
-#define NUM_NS                            MEMP_NUM_NETCONN
 
 #define INVALID_LINK_ID                   -1
-
 #define INVALID_SOCKET_ID                 -1
-
-#define ATCP_STACK_SIZE                   4096
 
 #define SOCKET_SERVER_OVER_UDP                   0
 #define SOCKET_SERVER_OVER_TCP                   1
@@ -72,16 +64,16 @@
 #define RECV_SELECT_TIMEOUT_USEC          20000
 
 typedef struct _node {
-	s8_t link_id;
+	s8_t link_id;	// 0 ~ (MEMP_NUM_NETCONN-1)
 	s8_t role;	// 0:server, 1:client, 2:seed
-	s8_t cert_index;	//Security certificate & key suite index for TLS
-	s8_t auto_rcv;	//auto receive flag
-	int sockfd;
-	int protocol;	// 0:UDP, 1:TCP, 2-5:TLS(client)/2-3:TLS(server)
-	u32_t dst_ip;
-	u16_t dst_port;
-	u16_t src_port;
-	u32_t src_ip;
+	s8_t cert_index;	// > 0; Security certificate & key suite index for TLS
+	s8_t auto_rcv;	// Auto receive flag; 0-don't enable, 1-enable
+	int sockfd;	// >= 0; Socket fd
+	int protocol;	// 0:UDP, 1:TCP, 2-5:TLS(client) || 2-3:TLS(server)
+	u32_t dst_ip;	// Destination IP address
+	u16_t dst_port;	// Destination PORT
+	u16_t src_port;	// Source IP address
+	u32_t src_ip;	// Source PORT
 	rtos_task_t auto_rcv_task;
 	struct _node *prevnode;
 	struct _node *nextseed;
@@ -92,40 +84,6 @@ typedef struct _node {
 	mbedtls_pk_context *private_key;
 } node;
 
-#if ENABLE_TCPIP_AUTOLINK
-
-#define ATCMD_LWIP_CONN_STORE_MAX_NUM     1
-typedef enum {
-	AT_PARTITION_ALL = 0,
-	AT_PARTITION_UART = 1,
-	AT_PARTITION_WIFI = 2,
-	AT_PARTITION_LWIP = 3
-} AT_PARTITION;
-
-typedef enum {
-	AT_PARTITION_READ = 0,
-	AT_PARTITION_WRITE = 1,
-	AT_PARTITION_ERASE = 2
-} AT_PARTITION_OP;
-
-typedef struct _atcmd_lwip_conn_info {
-	int32_t role; /* client, server or seed */
-	uint32_t protocol; /* tcp or udp */
-	uint32_t remote_addr; /* remote ip */
-	uint32_t remote_port; /*remote port */
-	uint32_t local_addr; /* locale ip, not used yet */
-	uint32_t local_port; /* locale port, not used yet */
-	uint32_t reserved; /* reserve for further use */
-} atcmd_lwip_conn_info;
-
-typedef struct _atcmd_lwip_conf {
-	int32_t enable; /* enable / disable */
-	int32_t conn_num;
-	int32_t last_index;
-	int32_t reserved;
-	struct _atcmd_lwip_conn_info conn[ATCMD_LWIP_CONN_STORE_MAX_NUM];
-} atcmd_lwip_conf;
-#endif /* ENABLE_TCPIP_AUTOLINK */
 
 void print_socket_at(void);
 
