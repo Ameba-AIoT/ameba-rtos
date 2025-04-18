@@ -4,13 +4,7 @@
  *
  *
  ******************************************************************************/
-#include "platform_autoconf.h"
 #include "example_wifi_csi.h"
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "lwip_netconf.h"
-#include "wifi_api.h"
-#include "rtw_autoconf.h"
 
 extern s32 wifi_csi_config(struct rtw_csi_action_parm *act_param);
 extern s32 wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
