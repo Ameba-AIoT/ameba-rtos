@@ -101,6 +101,13 @@ s32 wifi_get_countrycode(struct rtw_country_code_table *table)
 	return RTK_FAIL;
 }
 
+s32 wifi_get_channel_list(struct rtw_channel_list *ch_list)
+{
+	UNUSED(ch_list);
+	call_noused = __LINE__;
+	return RTK_FAIL;
+}
+
 int wifi_set_chplan(u8 chplan)
 {
 	UNUSED(chplan);

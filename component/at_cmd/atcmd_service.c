@@ -533,7 +533,7 @@ int at_printf_data(char *data, u32 len)
 	u32 cur_len = 0;
 	if (len > 0) {
 		for (u32 i = 0; i < len; i++) {
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%2x", data[cur_len + i]);
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%c", data[cur_len + i]);
 		}
 	}
 
