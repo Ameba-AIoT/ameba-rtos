@@ -52,10 +52,10 @@ set(CSRC)
 
 include(sources.cmake OPTIONAL)
 
-# Component private part, user config end
-#------------------------------#
 ameba_list_append(private_sources ${CSRC})
 
+# Component private part, user config end
+#------------------------------#
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application

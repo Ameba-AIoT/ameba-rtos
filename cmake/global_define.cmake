@@ -26,6 +26,7 @@ ameba_set(c_CMAKE_FILES_DIR ${CMAKE_CURRENT_LIST_DIR})
 ameba_set(c_CMAKE_BUILD_DIR)
 ameba_set(c_COMPONENT_DIR ${c_BASEDIR}/component)
 ameba_set(c_EMPTY_C_FILE ${CMAKE_CURRENT_LIST_DIR}/empty_file.c)
+ameba_set(c_VALID_IMAGE_TYPES image1 image2 image3 gdb_floader imgtool_floader rom_ns rom_tz)
 
 #An empty object library with empty_file.c but remove or rename some sections
 ameba_set(c_EMPTY_C_OBJECT)         # File used like empty_file.c
@@ -146,7 +147,12 @@ macro(ameba_reset_global_define)
     ameba_set(c_MBEDTLS_DIR ${c_COMPONENT_DIR}/ssl/mbedtls-${v_MBEDTLS_VER})
 
     #Dirs below depend on ${c_CMPT_SOC_DIR}, which is set after sco project is created
-    ameba_set(c_CMPT_BOOTLOADER_DIR ${c_CMPT_SOC_DIR}/bootloader)
+    if(CONFIG_AMEBAL2 OR CONFIG_AMEBAGREEN2)
+        ameba_set(c_CMPT_BOOTLOADER_DIR ${c_CMPT_SOC_DIR}/loader/bootloader)
+    else()
+        ameba_set(c_CMPT_BOOTLOADER_DIR ${c_CMPT_SOC_DIR}/bootloader)
+    endif()
+    ameba_set(c_CMPT_GDB_FLOADER_DIR ${c_CMPT_SOC_DIR}/loader/gdb_floader)
     ameba_set(c_CMPT_CMSIS_DIR ${c_CMPT_SOC_DIR}/cmsis)
     ameba_set(c_CMPT_CMSIS_DSP_DIR ${c_CMPT_SOC_DIR}/cmsis-dsp)
     ameba_set(c_CMPT_FWLIB_DIR ${c_CMPT_SOC_DIR}/fwlib)
@@ -163,6 +169,7 @@ macro(ameba_reset_global_define)
     ameba_set(c_CMPT_DOWNLOAD_XMODEM_DIR ${c_CMPT_SOC_DIR}/rom/download/xmodem)
     ameba_set(c_CMPT_DOWNLOAD_USB_DIR ${c_CMPT_SOC_DIR}/rom/download/usb)
     ameba_set(c_CMPT_PMC_DIR ${c_CMPT_SOC_DIR}/lib/pmc)
+    ameba_set(c_CMPT_ROM_DIR ${c_CMPT_SOC_DIR}/rom)
 endmacro()
 
 ############################################################
