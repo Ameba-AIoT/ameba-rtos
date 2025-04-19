@@ -88,13 +88,11 @@
 #include "lwip/timeouts.h"
 #include <string.h>
 
-#include "rtw_autoconf.h"
-
 #if LWIP_NUM_NETIF_CLIENT_DATA && (defined(CONFIG_BRIDGE) && CONFIG_BRIDGE)
 extern int rpt_handle_init(unsigned char *br_mac);
 extern err_t br_rpt_handle(struct netif *br, struct pbuf *p, u8_t portif_idex);
 extern int br_rpt_handle_frame(struct netif *br, struct pbuf *pd);
-
+extern void bridgeif_fdbd_dump(void *fdb_ptr);
 
 /* Define those to better describe your network interface. */
 #define IFNAME0 'b'

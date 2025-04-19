@@ -23,6 +23,7 @@
 #ifdef CONFIG_WTN_SOCKET_APP
 #include "os_wrapper.h"
 #include "lwip_netconf.h"
+#include "ameba_soc.h"
 #include "ameba_ota.h"
 #include "dlist.h"
 #include "rtw_queue.h"

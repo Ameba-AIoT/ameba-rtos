@@ -50,14 +50,9 @@ typedef struct _sys_arch_state_t
     unsigned short nTaskCount;
 } sys_arch_state_t;
 
+sys_sem_t *sys_thread_sem_get(void);
+sys_sem_t *sys_thread_sem_init(void);
+void sys_thread_sem_deinit(void);
 
-
-//extern sys_arch_state_t s_sys_arch_state;
-
-//void sys_set_default_state();
-//void sys_set_state(signed char *pTaskName, unsigned short nStackSize);
-
-/* Message queue constants. */
-#define archMESG_QUEUE_LENGTH    ( 6 )
 #endif /* __SYS_RTXC_H__ */
 

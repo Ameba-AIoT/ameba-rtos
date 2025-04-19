@@ -129,7 +129,7 @@ struct rtw_event_info_joinstatus_joinfail {
  *    - @ref RTK_FAIL : If an error occurred.
  * @note  Set the same `event_cmds` with empty `handler_func` will unregister the `event_cmds`.
  */
-void wifi_reg_event_handler(u32 event_cmds, void (*handler_func)(s8 *buf, s32 len, s32 flag, void *user_data), void *handler_user_data);
+void wifi_reg_event_handler(u32 event_cmds, void (*handler_func)(u8 *buf, s32 len, s32 flag, void *user_data), void *handler_user_data);
 
 /**
  * @brief  Un-register the event listener.
@@ -147,7 +147,7 @@ void wifi_reg_event_handler(u32 event_cmds, void (*handler_func)(s8 *buf, s32 le
  *    - @ref RTK_SUCCESS : If successfully un-registers the event.
  *    - @ref RTK_FAIL : If an error occurred.
  */
-void wifi_unreg_event_handler(u32 event_cmds, void (*handler_func)(s8 *buf, s32 len, s32 flag, void *user_data));
+void wifi_unreg_event_handler(u32 event_cmds, void (*handler_func)(u8 *buf, s32 len, s32 flag, void *user_data));
 
 /** @} End of Event_Functions group*/
 /** @} End of WIFI_Exported_Functions group*/

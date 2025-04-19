@@ -121,7 +121,7 @@ struct _wifi_rom_to_flash_func_map {
 	void (*rtw_hal_btc_sec_key_exchange_notify)(u8 iface_type, u8 b_start, u8 b_grp_key_update);
 	bool (*halbb_set_bss_color)(u8 bss_color, enum phl_phy_idx phy_idx);
 	void (*wifi_hal_ra_update_support_rate)(struct sta_mlme_priv *psta_mlmepriv);
-	void (*wifi_indication)(u32 event, s8 *buf, s32 buf_len, s32 flags);
+	void (*wifi_indication)(u32 event, u8 *buf, s32 buf_len, s32 flags); //data type of buf in rom is char *
 	u8(*rtw_is_adapter_up)(u8 iface_type);
 	/* nan */
 	u8(*rtw_is_nan_frame)(union recv_frame *precv_frame);

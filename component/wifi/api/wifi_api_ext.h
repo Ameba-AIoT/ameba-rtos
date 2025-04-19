@@ -171,7 +171,7 @@ s32 wifi_get_countrycode(struct rtw_country_code_table *table);
 
 /**
  * @brief  get channel list
- * @param[in]  table: Pointer to the currently obtained available channel list
+ * @param[in]  ch_list: Pointer to the currently obtained available channel list
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL
  */
 s32 wifi_get_channel_list(struct rtw_channel_list *ch_list);

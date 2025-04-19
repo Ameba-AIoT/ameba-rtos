@@ -34,7 +34,7 @@ extern void eap_autoreconnect_hdl(u8 method_id);
 #if CONFIG_AUTO_RECONNECT
 struct rtw_auto_reconn_t  rtw_reconn;
 
-void rtw_reconn_join_status_hdl(s8 *buf, s32 flags)
+void rtw_reconn_join_status_hdl(u8 *buf, s32 flags)
 {
 	u8 join_status = (u8)flags;
 	static u8 join_status_last = RTW_JOINSTATUS_SUCCESS;

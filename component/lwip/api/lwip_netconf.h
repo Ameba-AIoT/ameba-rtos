@@ -16,10 +16,7 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "platform_autoconf.h"
-#include "wifi_api_types.h"
 #include "lwipconf.h"
-#include "lwip/netifapi.h"
 
 extern unsigned char ap_ip[4], ap_netmask[4], ap_gw[4];
 // macros
@@ -91,9 +88,6 @@ struct static_ip_config {
 #ifndef CONFIG_AS_INIC_AP
 void rtw_wakelock_timeout(uint32_t timeoutms);
 #endif
-/** Release a DHCP lease. */
-err_t dhcp_release_unicast(struct netif *netif);
-
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
@@ -103,9 +97,6 @@ void LwIP_Init(void);
 void LwIP_ReleaseIP(uint8_t idx);
 uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state);
 void LwIP_DHCP_stop(uint8_t idx);
-s8_t LwIP_etharp_find_addr(uint8_t idx, const ip4_addr_t *ipaddr,
-						   struct eth_addr **eth_ret, const ip4_addr_t **ip_ret);
-void LwIP_etharp_request(uint8_t idx, const ip4_addr_t *ipaddr);
 void LwIP_netif_set_up(uint8_t idx);
 void LwIP_netif_set_down(uint8_t idx);
 void LwIP_netif_set_link_up(uint8_t idx);
@@ -118,7 +109,6 @@ void LwIP_wlan_set_netif_info(int idx_wlan, void *dev, unsigned char *dev_addr);
 void LwIP_ethernetif_recv(uint8_t idx, int total_len);
 void LwIP_ethernetif_recv_inic(uint8_t idx, struct pbuf *p_buf);
 int LwIP_netif_is_valid_IP(int idx, unsigned char *ip_dest);
-uint8_t *LwIP_GetBC(uint8_t idx);
 #if LWIP_DNS
 void LwIP_GetDNS(struct ip_addr *dns);
 void LwIP_SetDNS(struct ip_addr *dns);
@@ -131,12 +121,9 @@ void LwIP_AUTOIP_STOP(uint8_t idx);
 #if LWIP_IPV6
 void LwIP_AUTOIP_IPv6(struct netif *pnetif);
 #endif
-uint32_t LWIP_Get_Dynamic_Sleep_Interval(void);
 int netif_get_idx(struct netif *pnetif);
-uint32_t LwIP_GetXID(uint8_t idx);
-uint32_t LwIP_GetLEASETIME(uint8_t idx);
-uint32_t LwIP_GetRENEWTIME(uint8_t idx);
 void LwIP_Check_Connectivity(void);
+
 #ifdef __cplusplus
 }
 #endif

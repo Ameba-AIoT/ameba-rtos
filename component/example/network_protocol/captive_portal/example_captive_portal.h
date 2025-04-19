@@ -9,7 +9,6 @@
 #include "lwip/ip.h"
 #include "lwip/memp.h"
 #include "lwip/stats.h"
-#include "netif/loopif.h"
 
 /* ------------------------ Project includes ------------------------------ */
 #include "main.h"
