@@ -74,7 +74,7 @@ void whc_host_api_wifi_event_handler(u32 api_id, u32 *param_buf)
 	u32 event = (u32)param_buf[0];
 	s32 flags = (s32)param_buf[1];
 	s32 buf_len = (s32)param_buf[2];
-	s8 *buf = (s8 *)(&param_buf[3]);
+	u8 *buf = (u8 *)(&param_buf[3]);
 
 	wifi_indication(event, buf, buf_len, flags);
 

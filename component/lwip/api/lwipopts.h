@@ -14,7 +14,6 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "rand.h" //use soc _rand, not lib rand & srand, because stack size
-#include "lwip/init.h" //for version control
 
 #ifdef __cplusplus
 extern "C" unsigned int sys_now(void);
@@ -159,10 +158,6 @@ extern unsigned int sys_now(void);
 
 #if defined(CONFIG_LWIP_NETCONN_SEM_PER_THREAD) && CONFIG_LWIP_NETCONN_SEM_PER_THREAD
 #define LWIP_NETCONN_SEM_PER_THREAD       1
-#include "sys_arch.h"
-extern sys_sem_t *sys_thread_sem_get(void);
-extern sys_sem_t *sys_thread_sem_init(void);
-extern void sys_thread_sem_deinit(void);
 #define LWIP_NETCONN_THREAD_SEM_GET()     sys_thread_sem_get()
 #define LWIP_NETCONN_THREAD_SEM_ALLOC()   sys_thread_sem_init()
 #define LWIP_NETCONN_THREAD_SEM_FREE()    sys_thread_sem_deinit()
