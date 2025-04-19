@@ -1055,14 +1055,13 @@ endfunction()
 
 # Usage:
 #   ameba_execute([<cmd> ...])
-function(ameba_execute)
-    foreach(cmd IN LISTS ARGN)
-        execute_process(COMMAND "${cmd}"
-            OUTPUT_VARIABLE output
-            ERROR_VARIABLE error
-        )
-        message("execute: ${cmd}, ${output}, ${error}")
-    endforeach()
+function(ameba_execute_process)
+    list(FIND ARGN "COMMAND_ERROR_IS_FATAL" COMMAND_ERROR_IS_FATAL_INDEX)
+    if(COMMAND_ERROR_IS_FATAL_INDEX EQUAL -1)
+        execute_process(COMMAND_ERROR_IS_FATAL ANY ${ARGN})
+    else()
+        execute_process(${ARGN})
+    endif()
 endfunction()
 
 # get all include directories of target recursively.

@@ -49,12 +49,12 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image1")
     )
 elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
     ameba_list_append(private_sources
-        ${c_CMPT_USRCFG_DIR}/ameba_flashcfg.c
-        ${c_CMPT_USRCFG_DIR}/ameba_sleepcfg.c
+        ameba_flashcfg.c
+        ameba_sleepcfg.c
     )
     if("${c_MCU_PROJECT_NAME}" STREQUAL "km0")
         ameba_list_append(private_sources
-            ${c_CMPT_USRCFG_DIR}/ameba_pinmapcfg.c
+            ameba_pinmapcfg.c
         )
     endif()
 endif()

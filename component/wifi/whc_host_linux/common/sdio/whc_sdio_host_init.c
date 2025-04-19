@@ -38,7 +38,27 @@ u8 rtw_sdio_query_txbd_status(struct whc_sdio *priv)
 
 	//dev_dbg(&priv->func->dev, "%s: Free page for TXBD(0x%x)\n", __FUNCTION__, priv->SdioTxBDFreeNum);
 #else
+#ifdef GREEN2_WA
+	//WA GREEN2 Bug, SDIO_REG_FREE_TXBD_NUM show 0 but >0 actually, and no tx bd aval int at last.
+	u16 wptr;
+	u16 rptr;
+
+	if (priv->txbd_size == 0) {
+		priv->txbd_size = rtw_read16(priv, SPDIO_REG_TXBD_NUM);
+		dev_dbg(&priv->func->dev, "txbd_size: %x\n", priv->txbd_size);
+	}
+
+	wptr = rtw_read8(priv, SPDIO_REG_TXBD_WPTR);
+	rptr = rtw_read8(priv, SPDIO_REG_TXBD_RPTR);
+
+	if (wptr >= rptr) {
+		priv->SdioTxBDFreeNum = priv->txbd_size + rptr - wptr - 1;
+	} else {
+		priv->SdioTxBDFreeNum = rptr - wptr - 1;
+	}
+#else
 	priv->SdioTxBDFreeNum = rtw_read16(priv, SDIO_REG_FREE_TXBD_NUM);
+#endif
 #endif
 	return true;
 }

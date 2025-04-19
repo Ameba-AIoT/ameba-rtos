@@ -4,9 +4,6 @@ void ConfigTargetSettings(void) {
   JLINK_CORESIGHT_AddAP(2, CORESIGHT_AHB_AP);
   JLINK_CORESIGHT_IndexAHBAPToUse = 1;
   
-  JLINK_ExecCommand("map ram 0x20001000-0x20002000");
-  JLINK_ExecCommand("map add 0x0C000000-0x0FFFFFFF N FLASH");
-  
   JTAG_WriteClocks(1);
   JTAG_Speed = 1000;
 }

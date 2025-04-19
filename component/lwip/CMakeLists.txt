@@ -102,6 +102,11 @@ ameba_list_append(private_sources
     lwip_${v_LWIP_VER}/src/apps/mdns/mdns.c
 )
 
+#WARNING: For toolchain version 12.3.1, code like this will cause a warning:
+#  ip_addr_isany(&cpcb->local_ip)
+ameba_list_append(private_compile_options
+    -Wno-address
+)
 
 # Component private part, user config end
 #------------------------------#
