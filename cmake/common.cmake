@@ -171,11 +171,18 @@ macro(ameba_mcu_project_create name mcu_type)
     project(${name} LANGUAGES C CXX ASM)
     ameba_set_if(c_VERBOSE_MAKEFILE CMAKE_VERBOSE_MAKEFILE ON)
 
-    ameba_info("import config: ${c_SOC_PROJECT_DIR}/menuconfig/.config_${mcu_type}")
 
-    configure_file(${c_MENUCONFIG_DIR}/.config_${mcu_type} ${CMAKE_CURRENT_BINARY_DIR}/.config_${mcu_type} COPYONLY)
-
-    import_kconfig("CONFIG" ${CMAKE_CURRENT_BINARY_DIR}/.config_${mcu_type})
+    if(EXISTS ${c_MENUCONFIG_DIR}/.config_${mcu_type})
+        configure_file(${c_MENUCONFIG_DIR}/.config_${mcu_type} ${CMAKE_CURRENT_BINARY_DIR}/.config_${mcu_type} COPYONLY)
+        ameba_set(c_MCU_KCONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/.config_${mcu_type})
+    elseif(EXISTS ${c_MENUCONFIG_DIR}/.config_${name})
+        configure_file(${c_MENUCONFIG_DIR}/.config_${name} ${CMAKE_CURRENT_BINARY_DIR}/.config_${name} COPYONLY)
+        ameba_set(c_MCU_KCONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/.config_${name})
+    else()
+        ameba_fatal("Could not find kconfig file")
+    endif()
+    ameba_info("import config: ${c_MCU_KCONFIG_FILE}")
+    import_kconfig("CONFIG" ${c_MCU_KCONFIG_FILE})
 
     #NOTE: Determine whether build example for this mcu project
     if(EXAMPLE) #By default, MCU as ap run example
@@ -204,7 +211,6 @@ macro(ameba_mcu_project_create name mcu_type)
     ameba_set(c_MCU_PROJECT_NAME ${PROJECT_NAME})
     ameba_set_upper(c_MCU_PROJECT_NAME_UPPER ${PROJECT_NAME})
     ameba_set(c_MCU_PROJECT_CREATED TRUE)
-    ameba_set(c_MCU_KCONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/.config_${mcu_type})
 
     ameba_set(c_SDK_VERSION ${v_${c_SDK_NAME_UPPER}_VER})
 
@@ -277,6 +283,7 @@ macro(ameba_mcu_project_create name mcu_type)
 
     set(c_MCU_PROJ_CONFIG g_PUBLIC_BUILD_INTERFACE_${c_MCU_PROJECT_NAME_UPPER})
     add_library(${c_MCU_PROJ_CONFIG} INTERFACE)
+    set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY project_dir "${c_MCU_PROJECT_DIR}")
 
     target_link_options(${c_MCU_PROJ_CONFIG} INTERFACE
         ${c_GLOBAL_COMMON_LINK_OPTIONS}     #defined in cmake/flags/common/link_options.cmake
@@ -298,7 +305,7 @@ macro(ameba_mcu_project_create name mcu_type)
         BYPRODUCTS ${c_MCU_INC_DIR}/build_info.h
     )
     set_property(TARGET ${c_BUILD_INFO} PROPERTY ADDITIONAL_CLEAN_FILES ${c_MCU_PROJECT_DIR}/inc/build_info.h)
-
+    set(c_CURRENT_IMAGE_IS_ROM FALSE) #Flag to identify whether current image is rom, updated in ameba_add_image
     ameba_add_empty_object()
 endmacro()
 

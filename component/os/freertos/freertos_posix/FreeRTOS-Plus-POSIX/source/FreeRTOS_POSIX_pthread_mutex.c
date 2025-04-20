@@ -149,13 +149,17 @@ int pthread_mutex_init( pthread_mutex_t * mutex,
         }
 
         /* Ensure that the FreeRTOS mutex was successfully created. */
-        if( ( SemaphoreHandle_t ) &pxMutex->xMutex == NULL )
-        {
-            /* Failed to create mutex. Set error EAGAIN and free mutex object. */
-            iStatus = EAGAIN;
-            vPortFree( pxMutex );
-        }
-        else
+        /*NOTE: xMutex's address is always valid when pxMutex is initialized
+         * and this is also checked in xSemaphoreCreateMutexStatic or xSemaphoreCreateRecursiveMutexStatic.
+         * So it's not necessary check as below which triggers a compile warning (Waddress) in toolchain 12.3.1
+         */
+        // if( ( SemaphoreHandle_t ) &pxMutex->xMutex == NULL )
+        // {
+        //     /* Failed to create mutex. Set error EAGAIN and free mutex object. */
+        //     iStatus = EAGAIN;
+        //     vPortFree( pxMutex );
+        // }
+        // else
         {
             /* Mutex successfully created. */
             pxMutex->xIsInitialized = pdTRUE;

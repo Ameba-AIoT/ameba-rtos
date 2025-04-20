@@ -70,11 +70,9 @@ menu "CONFIG Mass Production"
     if MP_INCLUDED
         choice
             prompt "MP Mode"
-            default MP_SHRINK
+            default MP_EXPAND
             config MP_EXPAND
                 bool "expand"
-            config MP_SHRINK
-                bool "shrink"
         endchoice
     endif
 endmenu

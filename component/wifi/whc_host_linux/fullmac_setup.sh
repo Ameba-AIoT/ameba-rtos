@@ -51,11 +51,13 @@ if [[ "$1" == "sdio" ]]; then
 	sed -i 's/#define CONFIG_AMEBAGREEN2 1/#undef CONFIG_AMEBAGREEN2/g' ./common/autoconf.h
 	sed -i 's/#define CONFIG_FW_DOWNLOAD 1/#undef CONFIG_FW_DOWNLOAD/g' ./common/autoconf.h
 	sed -i 's/#define CALCULATE_FREE_TXBD 1/#undef CALCULATE_FREE_TXBD/g' ./common/autoconf.h
+	sed -i 's/#define GREEN2_WA 1/#undef GREEN2_WA/g' ./common/autoconf.h
 
 	echo "choose target IC:"
 	echo "1) AMEBADPLUS"
 	echo "2) AMEBAGREEN2"
 	echo "3) AMEBAGREEN2 & FW_DOWNLOAD"
+	echo "4) AMEBAX"
 
 	read -p "choose target IC: " choice
     case $choice in
@@ -67,12 +69,19 @@ if [[ "$1" == "sdio" ]]; then
         2)
             echo "AMEBAGREEN2 select"
             sed -i 's/#undef CONFIG_AMEBAGREEN2/#define CONFIG_AMEBAGREEN2 1/g' ./common/autoconf.h
+            sed -i 's/#undef GREEN2_WA/#define GREEN2_WA 1/g' ./common/autoconf.h
             ;;
         3)
             echo "AMEBAGREEN2 with FW DOWNLOAD select"
             sed -i 's/#undef CONFIG_AMEBAGREEN2/#define CONFIG_AMEBAGREEN2 1/g' ./common/autoconf.h
             sed -i 's/#undef CONFIG_FW_DOWNLOAD/#define CONFIG_FW_DOWNLOAD 1/g' ./common/autoconf.h
+            sed -i 's/#undef GREEN2_WA/#define GREEN2_WA 1/g' ./common/autoconf.h
             ;;
+        4)
+            echo "AMEBAX select"
+            sed -i 's/#undef CONFIG_AMEBAGREEN2/#define CONFIG_AMEBAGREEN2 1/g' ./common/autoconf.h
+            ;;
+
         *)
             echo "Invalid selection"
             ;;
