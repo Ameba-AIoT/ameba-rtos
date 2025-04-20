@@ -10,18 +10,11 @@
 #include "lwip/etharp.h"
 #include "lwip/ethip6.h"
 #include "lwip/udp.h"
+#include "lwip/timeouts.h"
+#include "lwip/inet_chksum.h"
 #include "lwip/prot/dhcp.h"
 
-
-
-#include "lwip/dhcp.h"
-#include "lwip/snmp.h"
-#include "lwip/timeouts.h"
-#include <string.h>
-#include <os_wrapper.h>
-#include <rtw_atomic.h>
-
-
+#include "rtw_atomic.h"
 
 #ifdef PACK_STRUCT_USE_INCLUDES
 #  include "arch/bpstruct.h"
@@ -170,8 +163,6 @@ struct nat25_network_db_entry *rpt_nethash_handle = NULL;
 
 
 void dhcp_dst_bcast(struct pbuf *pd);
-#define FOLD_U32T(u)          (((u) >> 16) + ((u) & 0x0000ffffUL))
-#define SWAP_BYTES_IN_WORD(w) (((w) & 0xff) << 8) | (((w) & 0xff00) >> 8)
 extern u16_t lwip_standard_chksum(const void *dataptr, int len);
 static u16_t cksum_pseudo_base(uint8_t *payload, u8_t proto, u16_t proto_len, u32_t acc)
 {
@@ -224,7 +215,7 @@ static uint32_t checksum32(uint32_t start_value, uint8_t *data, size_t len)
 {
 	uint32_t checksum32 = start_value;
 	uint16_t data16 = 0;
-	int i;
+	size_t i;
 
 	for (i = 0; i < (len / 2 * 2); i += 2) {
 		data16 = (data[i] << 8) | data[i + 1];
@@ -972,7 +963,7 @@ int nat25_db_handle(struct netif *br, struct pbuf *pd, int method)
 		struct br_rpt_ip6_addr ip6_address_src, ip6_address_dest;
 		struct br_rpt_ip6_addr *pip6_address_src = &ip6_address_src, *pip6_address_dest = &ip6_address_dest;
 		struct br_rpt_ip6_hdr  *ip6h = (struct br_rpt_ip6_hdr *)(data + ETH_HLEN);
-		if (sizeof(struct br_rpt_ip6_hdr) >= (pd->len - ETH_HLEN)) {
+		if (sizeof(struct br_rpt_ip6_hdr) >= (size_t)(pd->len - ETH_HLEN)) {
 			printf("\n\rNAT25: malformed IPv6 packet !");
 			return -1;
 		}

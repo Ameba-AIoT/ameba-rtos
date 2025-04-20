@@ -1,14 +1,8 @@
 /* Includes ------------------------------------------------------------------*/
+#include "lwip/prot/dhcp.h"
 #include "lwip_netconf.h"
-#include "main.h"
 #include "atcmd_service.h"
-#if CONFIG_WLAN
 #include "wifi_api.h"
-#endif
-
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "os_wrapper.h"
 
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 #include "wifi_fast_connect.h"
@@ -249,7 +243,6 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 
 		case DHCP_WAIT_ADDRESS: {
 			/* If DHCP stopped by wifi_disconn_hdl*/
-#include "lwip/prot/dhcp.h"
 			if ((dhcp_state_enum_t)dhcp->state == DHCP_STATE_OFF) {
 				IP4_ADDR(ip_2_ip4(&ipaddr), IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
 				IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
@@ -371,19 +364,6 @@ void LwIP_DHCP_stop(uint8_t idx)
 	IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
 	IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 	netifapi_netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
-}
-
-s8_t LwIP_etharp_find_addr(uint8_t idx, const ip4_addr_t *ipaddr,
-						   struct eth_addr **eth_ret, const ip4_addr_t **ip_ret)
-{
-	struct netif *pnetif = &xnetif[idx];
-	return etharp_find_addr(pnetif, ipaddr, eth_ret, ip_ret);
-}
-
-void LwIP_etharp_request(uint8_t idx, const ip4_addr_t *ipaddr)
-{
-	struct netif *pnetif = &xnetif[idx];
-	etharp_request(pnetif, ipaddr);
 }
 
 int netif_get_idx(struct netif *pnetif)
@@ -522,15 +502,6 @@ int LwIP_netif_is_valid_IP(int idx, unsigned char *ip_dest)
 	return 0;
 }
 
-uint8_t *LwIP_GetBC(uint8_t idx)
-{
-	/* To avoid gcc warnings */
-	UNUSED(idx);
-
-	//struct dhcp *dhcp = ((struct dhcp*)netif_get_client_data(pnetif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP));
-	return NULL;
-}
-
 #if LWIP_DNS
 void LwIP_GetDNS(struct ip_addr *dns)
 {
@@ -617,40 +588,6 @@ void LwIP_AUTOIP_IPv6(struct netif *pnetif)
 			 ipv6[8], ipv6[9], ipv6[10], ipv6[11], ipv6[12], ipv6[13], ipv6[14], ipv6[15]);
 }
 #endif
-
-uint32_t LWIP_Get_Dynamic_Sleep_Interval()
-{
-#ifdef DYNAMIC_TICKLESS_SLEEP_INTERVAL
-	return DYNAMIC_TICKLESS_SLEEP_INTERVAL;
-#else
-	return 0;
-#endif
-}
-
-uint32_t LwIP_GetXID(uint8_t idx)
-{
-	struct netif *pnetif = &xnetif[idx];
-	struct dhcp *dhcp = NULL;
-	dhcp = ((struct dhcp *)netif_get_client_data(pnetif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP));
-	return dhcp->xid;
-}
-
-uint32_t LwIP_GetLEASETIME(uint8_t idx)
-{
-	struct netif *pnetif = &xnetif[idx];
-	struct dhcp *dhcp = NULL;
-	dhcp = ((struct dhcp *)netif_get_client_data(pnetif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP));
-	return dhcp->offered_t0_lease;
-}
-
-uint32_t LwIP_GetRENEWTIME(uint8_t idx)
-{
-	struct netif *pnetif = &xnetif[idx];
-	struct dhcp *dhcp = NULL;
-	dhcp = ((struct dhcp *)netif_get_client_data(pnetif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP));
-
-	return dhcp->t1_renew_time;
-}
 
 //To check successful WiFi connection and obtain of an IP address
 void LwIP_Check_Connectivity(void)

@@ -15,6 +15,8 @@
 #define RTOS_SCHED_NOT_STARTED           0x1UL
 #define RTOS_SCHED_RUNNING               0x2UL
 
+#define RTOS_LOCAL_STORAGE_LWIP_INDEX    0
+
 /**
  * @brief  task handle and function type
  */

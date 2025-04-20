@@ -7,7 +7,7 @@
  *
  *
  ******************************************************************************/
-void example_wifi_csi_report_cb(s8 *buf, s32 buf_len, s32 flags, void *userdata);
+void example_wifi_csi_report_cb(u8 *buf, s32 buf_len, s32 flags, void *userdata);
 void wifi_csi_show(u8 *csi_buf);
 void example_wifi_csi(void);
 
