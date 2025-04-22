@@ -39,33 +39,32 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
+ameba_list_append(private_sources
+        ameba_chipinfo_lib.c
+        ameba_rom_patch.c
+)
+if("${c_MCU_PROJECT_NAME}" STREQUAL "ap")
     ameba_list_append(private_sources
-            ameba_chipinfo_lib.c
-            ameba_rom_patch.c
-    )
-    if("${c_MCU_PROJECT_NAME}" STREQUAL "ap")
-        ameba_list_append(private_sources
-            ${c_CMPT_FWLIB_DIR}/rom_common/ameba_systimer_rom.c
-            ${c_CMPT_FWLIB_DIR}/rom_common/ameba_assert_rom.c
-            ${c_CMPT_FWLIB_DIR}/rom_common/ameba_syscfg_rom.c
-            ${c_CMPT_FWLIB_DIR}/rom_common/ameba_backup_reg.c
-            ${c_CMPT_FWLIB_DIR}/rom_common/ameba_tim_rom.c
-            ${c_CMPT_FWLIB_DIR}/rom_common/ameba_clk_rom.c
-            ${c_CMPT_FWLIB_DIR}/rom_common/ameba_pinmux_rom.c
-            ${c_CMPT_FWLIB_DIR}/rom_common/ameba_rcc_rom.c
-            ${c_CMPT_FWLIB_DIR}/rom_common/ameba_uart_rom.c
-            ${c_CMPT_FWLIB_DIR}/rom_common/ameba_gpio_rom.c
-            ${c_CMPT_FWLIB_DIR}/rom_common/ameba_flash_rom.c
-            ${c_CMPT_FWLIB_DIR}/rom_common/ameba_wdg.c
+        ${c_CMPT_FWLIB_DIR}/rom_common/ameba_systimer_rom.c
+        ${c_CMPT_FWLIB_DIR}/rom_common/ameba_assert_rom.c
+        ${c_CMPT_FWLIB_DIR}/rom_common/ameba_syscfg_rom.c
+        ${c_CMPT_FWLIB_DIR}/rom_common/ameba_backup_reg.c
+        ${c_CMPT_FWLIB_DIR}/rom_common/ameba_tim_rom.c
+        ${c_CMPT_FWLIB_DIR}/rom_common/ameba_clk_rom.c
+        ${c_CMPT_FWLIB_DIR}/rom_common/ameba_pinmux_rom.c
+        ${c_CMPT_FWLIB_DIR}/rom_common/ameba_rcc_rom.c
+        ${c_CMPT_FWLIB_DIR}/rom_common/ameba_uart_rom.c
+        ${c_CMPT_FWLIB_DIR}/rom_common/ameba_gpio_rom.c
+        ${c_CMPT_FWLIB_DIR}/rom_common/ameba_flash_rom.c
+        ${c_CMPT_FWLIB_DIR}/rom_common/ameba_wdg.c
 
-            ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_aes.c
-            ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_crypto_rom.c
-            ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_md5.c
-            ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_rsa.c
-            ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_sha.c
-        )
-    endif()
+        ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_aes.c
+        ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_crypto_rom.c
+        ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_md5.c
+        ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_rsa.c
+        ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_sha.c
+        ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_spinand_rom.c
+    )
 endif()
 
 # Component private part, user config end

@@ -8,8 +8,6 @@
 
 #include "usbd.h"
 #include "usbd_composite_cdc_acm_uac.h"
-#include "usbd_composite_cdc_acm.h"
-#include "usbd_composite_uac.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -37,9 +35,9 @@ static u8 usbd_composite_dev_desc[USB_LEN_DEV_DESC] USB_DMA_ALIGNED = {
 	USB_LEN_DEV_DESC,                                                /* bLength */
 	USB_DESC_TYPE_DEVICE,                                            /* bDescriptorType */
 	0x00, 0x02,                                                        /* bcdUSB */
-	0xEF,                                                            /* bDeviceClass: Miscellaneous */
-	0x02,                                                            /* bDeviceSubClass: Common Class */
-	0x01,                                                            /* bDeviceProtocol: Interface Association Descriptor */
+	0x00,                                                            /* bDeviceClass: Miscellaneous */
+	0x00,                                                            /* bDeviceSubClass: Common Class */
+	0x00,                                                            /* bDeviceProtocol: Interface Association Descriptor */
 	USB_MAX_EP0_SIZE,                                                /* bMaxPacketSize */
 	USB_LOW_BYTE(USBD_COMP_VID), USB_HIGH_BYTE(USBD_COMP_VID),       /* idVendor */
 	USB_LOW_BYTE(USBD_COMP_PID), USB_HIGH_BYTE(USBD_COMP_PID),       /* idProduct */
@@ -57,6 +55,7 @@ static u8 usbd_composite_lang_id_desc[USB_LEN_LANGID_STR_DESC] USB_DMA_ALIGNED =
 	USB_LOW_BYTE(USBD_COMP_LANGID), USB_HIGH_BYTE(USBD_COMP_LANGID)  /* wLANGID */
 };  /* usbd_composite_lang_id_desc */
 
+#if !defined(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC1)
 /* USB Standard Device Qualifier Descriptor */
 static u8 usbd_composite_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] USB_DMA_ALIGNED = {
 	USB_LEN_DEV_QUALIFIER_DESC,                                      /* bLength */
@@ -69,6 +68,7 @@ static u8 usbd_composite_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] USB_D
 	0x01,                                                            /* bNumConfigurations */
 	0x00,                                                            /* Reserved */
 };  /* usbd_composite_device_qualifier_desc */
+#endif
 
 /* USB CDC ACM Device High Speed Configuration Descriptor */
 static u8 usbd_composite_config_desc[USB_LEN_CFG_DESC] USB_DMA_ALIGNED = {
@@ -142,6 +142,27 @@ static int usbd_composite_clear_config(usb_dev_t *dev, u8 config)
 }
 
 /**
+  * @brief  Check USB Audio Class request version
+  * @param  entityId: USB entity ID
+  * @param  req: Pointer to the USB request structure
+  * @retval Status
+  */
+static int usbd_composite_is_uac_class_request(int entityId, usb_setup_req_t *req)
+{
+	int ret = 0U;
+#if defined(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC1)
+	ret = (entityId == USBD_COMP_UAC_AC_HEADSET) ||
+		  (entityId == USBD_COMP_UAC_AS_HEADSET_HEADPHONES) ||
+		  ((req->bmRequestType & 0x1FU) == USB_REQ_RECIPIENT_ENDPOINT);
+#else/* CONFIG_USBD_COMPOSITE_CDC_ACM_UAC2 */
+	UNUSED(req);
+	ret = (entityId == USBD_COMP_UAC_AC_HEADSET) ||
+		  (entityId == USBD_COMP_UAC_AS_HEADSET_HEADPHONES);
+#endif
+	return ret;
+}
+
+/**
   * @brief  Handle CDC specific CTRL requests
   * @param  dev: USB device instance
   * @param  req: USB CTRL requests
@@ -153,22 +174,12 @@ static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	int ret = HAL_OK;
 	u8 entityId;
 
-	//RTK_LOGS(TAG, RTK_LOG_DEBUG, "SETUP: bmRequestType=0x%02x bRequest=0x%02x wValue=%x wIndex=%x wLength=0x%04x\n",
+	//RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP: bmRequestType=0x%02x bRequest=0x%02x wValue=%x wIndex=%x wLength=0x%04x\n",
 	//    req->bmRequestType, req->bRequest, req->wValue, req->wIndex, req->wLength);
 
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
 	case USB_REQ_TYPE_STANDARD:
 		switch (req->bRequest) {
-		case USB_REQ_GET_INTERFACE:
-			if (dev->dev_state == USBD_STATE_CONFIGURED) {
-				cdev->ctrl_buf[0] = 0U;
-				usbd_ep0_transmit(dev, cdev->ctrl_buf, 1U);
-			} else {
-				ret = HAL_ERR_PARA;
-			}
-
-			break;
-
 		case USB_REQ_GET_STATUS:
 			if (dev->dev_state == USBD_STATE_CONFIGURED) {
 				cdev->ctrl_buf[0] = 0U;
@@ -191,7 +202,7 @@ static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		entityId = USB_LOW_BYTE(req->wIndex);
 		if ((entityId == USBD_COMP_CDC_COM_ITF) || (entityId == USBD_COMP_CDC_DAT_ITF)) {
 			ret = cdev->cdc->setup(dev, req);
-		} else if ((entityId == USBD_COMP_UAC_AC_HEADSET) || (entityId == USBD_COMP_UAC_AS_HEADSET_HEADPHONES)) {
+		} else if (usbd_composite_is_uac_class_request(entityId, req)) {
 			ret = cdev->uac->setup(dev, req);
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid class req\n");
@@ -304,30 +315,40 @@ static u8 *usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
+#if !defined(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC1)
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
+#endif
 		usb_os_memcpy((void *)desc, (void *)usbd_composite_config_desc, USB_LEN_CFG_DESC);
 		desc += USB_LEN_CFG_DESC;
 		total_len += USB_LEN_CFG_DESC;
+
+		buf = cdev->uac->get_descriptor(dev, req, speed, &desc_len);
+		usb_os_memcpy((void *)desc, (void *)buf, desc_len);
+		desc += desc_len;
+		total_len += desc_len;
+
 		buf = cdev->cdc->get_descriptor(dev, req, speed, &desc_len);
 		usb_os_memcpy((void *)desc, (void *)buf, desc_len);
 		desc += desc_len;
 		total_len += desc_len;
-		buf = cdev->uac->get_descriptor(dev, req, speed, &desc_len);
-		usb_os_memcpy((void *)desc, (void *)buf, desc_len);
-		total_len += desc_len;
+
 		buf = cdev->ctrl_buf;
+#if !defined(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC1)
 		if (((req->wValue >> 8) & 0xFF) == USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION) {
 			buf[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
 		}
+#endif
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(total_len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(total_len);
 		*len = total_len;
 		break;
 
+#if !defined(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC1)
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		buf = usbd_composite_device_qualifier_desc;
 		*len = sizeof(usbd_composite_device_qualifier_desc);
 		break;
+#endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (req->wValue & 0xFF) {

@@ -49,7 +49,7 @@ ameba_list_append(private_sources
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and as part of some libs that are packaged into lib/application
-ameba_add_external_tmp_library(st7789v
+ameba_add_internal_library(st7789v
     p_SOURCES
         ${private_sources}
     p_INCLUDES

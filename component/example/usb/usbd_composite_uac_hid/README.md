@@ -9,20 +9,22 @@ None
 # SW configuration
 
 1. Menuconfig
-	Type command `./menuconfig.py` under the project directory:
-	- choose `CONFIG USB --->`:
-		```
-		[*] Enable USB
-				USB Mode (Device)  --->
-		[*] 	Composite
-					 Select Composite Class (HID + UAC)  --->
-		```
-	- choose `CONFIG APPLICATION --->`:
-		```
-		Audio Config
-			[*] Enable Audio Framework
-					 Select Audio Interfaces (Mixer)  --->
-		```
+	Type command `./menuconfig.py` under the project directory and :
+	- Choose `CONFIG USB --->`:
+	```
+	[*] Enable USB
+			USB Mode (Device)  --->
+	[*] Composite
+			Select Composite Class (HID + UAC)  --->
+	- Choose UAC Version 1.0 or 2.0 :
+	(X) CDC ACM + UAC
+			Select UAC Version (UAC 2.0)  --->
+	```
+	- Choose `CONFIG APPLICATION --->` -> `Audio Config --->`:
+	```
+	[*] Enable Audio Framework
+			Select Audio Interfaces (Mixer)  --->
+	```
 	Save and exit.
 
 2. Build

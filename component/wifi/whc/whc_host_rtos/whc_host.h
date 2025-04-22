@@ -18,7 +18,12 @@
 #ifdef CONFIG_WHC_INTF_SPI
 #include "whc_spi_host.h"
 #include "whc_spi_host_trx.h"
+#elif CONFIG_WHC_INTF_SDIO
+#include "whc_sdio_host.h"
+#include "whc_sdio_host_trx.h"
+#include "rtw_sdio_drvio.h"
 #endif
+
 #ifdef CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
 #include <dhcp/dhcps.h>

@@ -472,7 +472,7 @@ int atio_spi_init(void)
 	rtos_sema_create(&atcmd_spi_rx_sema, 0, 0xFFFF);
 
 	rtos_queue_create(&g_spi_cmd_queue, 16, sizeof(struct atcmd_spi_req));
-	at_spi_rx_ring_buf = RingBuffer_Create(NULL, 32 * 1024, LOCAL_RINGBUFF, 1);
+	at_spi_rx_ring_buf = RingBuffer_Create(NULL, 4 * 1024, LOCAL_RINGBUFF, 1);
 	at_spi_tx_ring_buf = RingBuffer_Create(NULL, 32 * 1024, LOCAL_RINGBUFF, 1);
 
 	rtos_timer_create(&xTimers_SPI_Output, "SPI_Output_Timer", NULL, 12, FALSE, spi_output_timeout_handler);

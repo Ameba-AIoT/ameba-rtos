@@ -113,6 +113,50 @@ int whc_spi_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	return ret;
 }
 
+/**
+* @brief  send buf to dev
+* @param  buf: data buf to be sent.
+* @param  len: real buf address, to be freed after sent.
+* @return none.
+*/
+void whc_bridge_spi_host_send_to_dev(u8 *buf, u32 len)
+{
+	struct whc_bridge_hdr *hdr = NULL;
+	u8 *txbuf = NULL;
+	u32 txsize = len + sizeof(struct whc_bridge_hdr);
+	struct whc_txbuf_info_t *inic_tx;
+
+	/* construct struct whc_buf_info & whc_buf_info_t */
+	inic_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
+	txbuf = rtos_mem_zmalloc(txsize);
+
+	if ((txbuf == NULL) || (inic_tx == NULL)) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s mem fail \r\n", __func__);
+		if (inic_tx) {
+			rtos_mem_free(inic_tx);
+		}
+
+		if (txbuf) {
+			rtos_mem_free(txbuf);
+		}
+		return;
+	}
+
+	hdr = (struct whc_bridge_hdr *)txbuf;
+	hdr->event = WHC_WIFI_EVT_BRIDGE;
+	hdr->len = len;
+	/* copy data */
+	memcpy(txbuf + sizeof(struct whc_bridge_hdr), buf, len);
+
+	inic_tx->txbuf_info.buf_allocated = inic_tx->txbuf_info.buf_addr = (u32)txbuf;
+	inic_tx->txbuf_info.size_allocated = inic_tx->txbuf_info.buf_size = txsize;
+
+	inic_tx->ptr = txbuf;
+	inic_tx->is_skb = 0;
+
+	/* send ret_msg + ret_val(buf, len) */
+	whc_spi_host_send_data(&inic_tx->txbuf_info);
+}
 
 /* -------------------------------- spi done --------------------------------- */
 

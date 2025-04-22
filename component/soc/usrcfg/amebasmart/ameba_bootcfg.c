@@ -10,7 +10,6 @@
 * @brif	RCC Configuration.
 *	 by Users.
 */
-BOOT_RAM_DATA_SECTION
 RCC_ConfDef RCC_Config[] = {
 	/*Function,				Clock,							State*/
 	/* AON */
@@ -44,7 +43,6 @@ CACHETCM_TypeDef CACHETCM_Def[7] = {
 	{TCM_SIZE_96KB,		DISABLE, 		DISABLE, 	CACHE_WWR_4WAY,		CACHE_WWR_4WAY,		0x80000,		0x97fff},
 };
 
-BOOT_RAM_DATA_SECTION
 u32 Cert_PKHash_OTP_ADDR = SEC_PKKEY_PK1_0;
 
 /**
@@ -59,7 +57,6 @@ u32 Cert_PKHash_OTP_ADDR = SEC_PKKEY_PK1_0;
 *	TCM_SIZE_0KB :  0KB TCM, 32KB D-Cache, 64KB I-Cache
 * @note: cache way restrict setting and TCM memory setting can only choose one
 */
-BOOT_RAM_DATA_SECTION
 u32 Boot_TCM_Size = TCM_SIZE_0KB;
 
 /*
@@ -81,10 +78,8 @@ CACHEWRR_TypeDef CACHEWRR_Def[2] = {
 	{DISABLE,	CACHE_WWR_4WAY,		0x00000000,		0xffff0000},	//for DCache Setting
 };
 
-BOOT_RAM_DATA_SECTION
 u8 Boot_AP_Enbale = ENABLE;
 
-BOOT_RAM_DATA_SECTION
 u8 Boot_MemSwr_Only = DISABLE;
 
 // for km4, max 333MHz under 1.0v, max 250MHz under 0.9v
@@ -102,6 +97,5 @@ SocClk_Info_TypeDef SocClk_Info[] = {
 * 	FALSE: disable
 *	TRUE: enable
 */
-BOOT_RAM_DATA_SECTION
 u8 Boot_Agg_En = FALSE;
 

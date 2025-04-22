@@ -18,7 +18,7 @@
 
 #include <rtw_timer.h>
 #include <rtw_wakelock.h>
-
+#include "ameba_pmu.h"
 #include <wifi_intf_ram_to_rom.h>
 #include "wpa_lite_intf.h"
 #include "rom_hal_rom_to_flash.h"

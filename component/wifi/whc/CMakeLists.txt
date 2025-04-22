@@ -153,6 +153,22 @@ elseif(CONFIG_AS_INIC_AP)
             )
         endif()
         set(target_name wifi_whc_spi_host)
+    elseif(CONFIG_WHC_INTF_SDIO)
+        ameba_list_append(private_sources
+            ${HOSTDIR}/whc_host_init.c
+            ${HOSTDIR}/sdio/rtw_sdio_drvio.c
+            ${HOSTDIR}/sdio/whc_sdio_host.c
+            ${HOSTDIR}/sdio/whc_sdio_host_trx.c
+            ${HOSTDIR}/sdio/whc_sdio_init.c
+        )
+        if(CONFIG_WHC_BRIDGE_HOST)
+            ameba_list_append(private_sources
+                ${HOSTDIR}/whc_bridge_host_app.c
+            )
+        else()
+
+        endif()
+        set(target_name wifi_whc_sdio_host)
     else()
         ameba_list_append(private_sources
             whc_host_rtos/ipc/whc_ipc_host.c

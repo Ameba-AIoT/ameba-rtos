@@ -14,7 +14,9 @@ None
 	```
 	[*] Enable USB
 			USB Mode (Device)  --->
+	- Choose UAC version 1.0 or 2.0 :
 	[*] UAC
+			Select UAC Version (UAC 2.0)  --->
 	```
 	- Choose `CONFIG APPLICATION --->` -> `Audio Config --->`:
 	```

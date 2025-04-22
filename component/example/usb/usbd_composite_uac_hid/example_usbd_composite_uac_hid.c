@@ -45,11 +45,13 @@ static const char *const TAG = "COMP";
 
 // USB speed
 #ifdef CONFIG_USB_FS
-#define CONFIG_USBD_COMPOSITE_SPEED                                USB_SPEED_FULL
+#define CONFIG_USBD_COMPOSITE_SPEED USB_SPEED_FULL
+#elif defined(CONFIG_USBD_COMPOSITE_HID_UAC1)
+/* UAC 1.0 spec supports only Full Speed. */
+#define CONFIG_USBD_COMPOSITE_SPEED USB_SPEED_HIGH_IN_FULL
 #else
-#define CONFIG_USBD_COMPOSITE_SPEED                                USB_SPEED_HIGH  //USB_SPEED_HIGH_IN_FULL  USB_SPEED_HIGH
+#define CONFIG_USBD_COMPOSITE_SPEED USB_SPEED_HIGH
 #endif
-
 
 // Thread priorities
 #define CONFIG_USBD_COMPOSITE_HID_THREAD_PRIORITY                4U
@@ -404,9 +406,15 @@ static int composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte
 	usbd_comp_audio_task_stop = 1;
 	uac_play_start_flag = 1;
 
-	composite_uac_usr_cb.out.sampling_freq = sampling_freq;
-	composite_uac_usr_cb.out.ch_cnt = ch_cnt;
-	composite_uac_usr_cb.out.byte_width = byte_width;
+	if (sampling_freq != 0U) {
+		composite_uac_usr_cb.out.sampling_freq = sampling_freq;
+	}
+	if (ch_cnt != 0U) {
+		composite_uac_usr_cb.out.ch_cnt = ch_cnt;
+	}
+	if (byte_width != 0U) {
+		composite_uac_usr_cb.out.byte_width = byte_width;
+	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC set sampling_freq %d ch_cnt %d\n", sampling_freq, ch_cnt);
 
@@ -680,7 +688,7 @@ static u32 composite_usbd_comp_hid_test(u16 argc, u8 *argv[])
 	const char *cmd;
 
 	if (argc == 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid USB argument\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid argument\n");
 		return HAL_ERR_PARA;
 	}
 
@@ -706,7 +714,7 @@ static u32 composite_usbd_comp_hid_test(u16 argc, u8 *argv[])
 	} else if (_stricmp(cmd, "ver") == 0) {
 		composite_usbd_hid_test_send_data();
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Input USB cmd err %s\n", cmd);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Input cmd err %s\n", cmd);
 	}
 
 	return status;
