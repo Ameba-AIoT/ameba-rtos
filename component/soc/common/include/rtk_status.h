@@ -1,6 +1,15 @@
 #ifndef __RTK_STATUS_H__
 #define __RTK_STATUS_H__
 
+/* The following wifi doxygen groups are workaround for online docs display. SoC need replace these with SoC's own. */
+/** @addtogroup WIFI_API Wi-Fi APIs
+ *  @brief      WIFI_API module
+ *  @{
+ */
+/** @addtogroup WIFI_Exported_Constants Wi-Fi Exported Constants
+ * @{
+ */
+
 #define RTK_SUCCESS	0
 #define RTK_FAIL	(-1)
 
@@ -18,5 +27,7 @@
 #define	RTK_ERR_WIFI_CONN_4WAY_HANDSHAKE_FAIL   (RTK_ERR_WIFI_BASE + 16)
 #define	RTK_ERR_WIFI_CONN_4WAY_PASSWORD_WRONG   (RTK_ERR_WIFI_BASE + 17)
 
+/** @}*/
+/** @}*/
 
 #endif

@@ -85,7 +85,7 @@ s32 wifi_set_channel(u8 wlan_idx, u8 channel)
 }
 
 //----------------------------------------------------------------------------//
-s32 wifi_set_countrycode(s8 *cntcode)
+s32 wifi_set_countrycode(u8 *cntcode)
 {
 	int ret = 0;
 	u32 param_buf[1];

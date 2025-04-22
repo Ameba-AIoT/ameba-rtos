@@ -41,6 +41,8 @@ int atcmd_bt_central(int argc, char *argv[]);
 
 int atcmd_bt_peripheral(int argc, char *argv[]);
 
+int atcmd_bt_hogp_gamepad(int argc, char *argv[]);
+
 int atcmd_bt_scatternet(int argc, char *argv[]);
 
 int atcmd_bt_throughput(int argc, char *argv[]);

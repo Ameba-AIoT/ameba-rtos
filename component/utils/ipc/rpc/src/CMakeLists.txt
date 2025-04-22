@@ -17,7 +17,7 @@ ameba_list_append(public_includes
     ${c_CMPT_UTILS_DIR}/ipc/rpc/xdr/include
 )
 
-ameba_list_append_if(public_libraries
+ameba_list_append(public_libraries
     ${c_SDK_LIB_APPLICATION_DIR}/lib_rpc.a
 )
 

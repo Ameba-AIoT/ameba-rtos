@@ -154,15 +154,6 @@ uint8_t hci_platform_get_rom_ver(void)
 	return EFUSE_GetChipVersion() + 1; /* 2: B cut, 3: C cut */
 }
 
-bool hci_platform_check_lmp_subver(uint16_t lmp_subver)
-{
-	if (HCI_DEFAULT_LMP_SUBVER == lmp_subver) {
-		return true;
-	} else {
-		return false;
-	}
-}
-
 static uint8_t hci_platform_read_antenna(void)
 {
 	uint8_t val;

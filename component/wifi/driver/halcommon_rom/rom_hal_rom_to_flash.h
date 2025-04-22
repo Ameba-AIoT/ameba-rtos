@@ -45,7 +45,7 @@ struct _wifi_rom_to_flash_func_map {
 	/* below for driver core only */
 	void (*wifi_hal_normal_rx_process_t)(union recv_frame *precvframe);
 
-	bool(*wifi_get_country_code_info)(char  *country_code, u8 *channel_plan, u8 *power_limit);
+	bool(*wifi_get_country_code_info)(u8 *country_code, u8 *channel_plan, u8 *power_limit); //data type of country_code in rom is char *
 
 	/* adapter */
 	u8 *(*rtw_get_adapter_mac_addr)(u8 iface_type);

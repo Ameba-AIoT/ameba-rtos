@@ -67,6 +67,27 @@ int atcmd_bt_central(int argc, char *argv[])
 	return 0;
 }
 
+int hogp_gamepad_main(uint8_t enable);
+int atcmd_bt_hogp_gamepad(int argc, char *argv[])
+{
+	(void)argc;
+	uint8_t op;
+	char *action[] = {"disable", "enable"};
+
+	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
+		BT_LOGE("Error: wrong value (%d) for HOGP example!\r\n", op);
+		return -1;
+	}
+
+	if (hogp_gamepad_main(op)) {
+		BT_LOGE("Error: HOGP example %s failed!\r\n", action[op]);
+		return -1;
+	}
+
+	BT_LOGA("HOGP example %s OK!\r\n", action[op]);
+	return 0;
+}
+
 int ble_peripheral_main(uint8_t enable);
 int atcmd_bt_peripheral(int argc, char *argv[])
 {

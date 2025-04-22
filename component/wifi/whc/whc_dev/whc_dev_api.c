@@ -764,7 +764,7 @@ void whc_event_wifi_set_countrycode(u32 api_id, u32 *param_buf)
 {
 	int ret = 0;
 
-	ret = wifi_set_countrycode((s8 *)param_buf);
+	ret = wifi_set_countrycode((u8 *)param_buf);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 

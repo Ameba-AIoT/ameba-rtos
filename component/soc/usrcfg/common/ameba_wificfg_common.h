@@ -123,7 +123,7 @@ struct wifi_user_conf {
 
 	/*!	Refer to ameba_wifi_country_code_table_usrcfg.c, e.g. China: country_code[0] = 'C', country_code[1] = 'N'.\n
 		Specical value: country_code[0]~[1] = 0x0000: follow efuse; country_code[0]='0', country_code[1]='0' : WORLDWIDE. */
-	s8 country_code[2];
+	u8 country_code[2];
 
 	/*!	Bandwidth 40MHz, some IC hardware does not support.*/
 	u8 bw_40_enable;
