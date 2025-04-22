@@ -6,7 +6,17 @@ menu "GUI Config"
         depends on GUI_EN_MENU
         bool "LVGL"
         select LVGL_EN if CORE_AS_AP
-
+    if LVGL_EN_MENU
+        choice
+            prompt "LVGL version"
+            config LVGL_8.3.0_MENU
+                bool "LVGL 8.3.0"
+                select LVGL_8_3_0 if CORE_AS_AP
+            config LVGL_9.2.2_MENU
+                bool "LVGL 9.2.2"
+                select LVGL_9_2_2 if CORE_AS_AP
+        endchoice
+	endif
     menu "Third Party Lib"
         depends on AMEBASMART||AMEBASMARTPLUS           #amebasmart smart+
         config GUI_LIB_PNG_MENU
@@ -24,6 +34,10 @@ endmenu
 config GUI_EN
     bool
 config LVGL_EN
+    bool
+config LVGL_8_3_0
+    bool
+config LVGL_9_2_2
     bool
 
 config GUI_LIB_PNG

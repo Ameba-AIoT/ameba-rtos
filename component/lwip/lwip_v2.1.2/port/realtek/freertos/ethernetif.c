@@ -56,6 +56,8 @@
 #if defined(CONFIG_AS_INIC_AP)
 #if defined(CONFIG_WHC_INTF_SPI)
 #include "whc_spi_host_trx.h"
+#elif defined(CONFIG_WHC_INTF_SDIO)
+#include "whc_sdio_host_trx.h"
 #elif defined(CONFIG_WHC_INTF_IPC)
 #include "whc_ipc_host_trx.h"
 #endif

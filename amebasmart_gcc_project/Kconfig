@@ -9,6 +9,17 @@ config AMEBA_RLS
 config AMEBASMART
     def_bool y
 
+#---------- FEATURE LIST START-----------#
+#All features are invisible in menuconfig
+
+config SUPPORT_NAND_FLASH
+    def_bool y
+
+config SUPPORT_USB
+    def_bool y
+
+#---------- FEATURE LIST END-------------#
+
 menu "CONFIG BOOT OPTION"
     config XIP_FLASH
         bool "XIP_FLASH"

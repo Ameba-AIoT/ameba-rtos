@@ -63,10 +63,10 @@
 
 #elif defined(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC)  //acm+uac
 /* Interfaces */
-#define USBD_COMP_CDC_COM_ITF                  0x00
-#define USBD_COMP_CDC_DAT_ITF                  0x01
-#define USBD_COMP_UAC_AC_HEADSET               0x02
-#define USBD_COMP_UAC_AS_HEADSET_HEADPHONES    0x03
+#define USBD_COMP_UAC_AC_HEADSET               0x00
+#define USBD_COMP_UAC_AS_HEADSET_HEADPHONES    0x01
+#define USBD_COMP_CDC_COM_ITF                  0x02
+#define USBD_COMP_CDC_DAT_ITF                  0x03
 /* Endpoints */
 #if defined (CONFIG_AMEBAGREEN2)
 #define USBD_COMP_CDC_BULK_IN_EP               0x82U
@@ -81,6 +81,7 @@
 #define USBD_COMP_UAC_ISOC_OUT_EP              0x04U
 #define USBD_COMP_UAC_ISOC_IN_EP               0x85U
 #endif
+
 /* String indices */
 #define USBD_IDX_CDC_ITF_STR                   ((USBD_IDX_SERIAL_STR) + 1)
 #define USBD_IDX_UAC_ITF_STR                   ((USBD_IDX_CDC_ITF_STR) + 1)

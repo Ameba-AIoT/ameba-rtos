@@ -82,7 +82,11 @@ endif()
 
 if(CONFIG_USBD_UAC)
     ameba_list_append(private_includes uac)
-    ameba_list_append(private_sources uac/usbd_uac.c)
+    if(CONFIG_USBD_UAC1)
+        ameba_list_append(private_sources uac/usbd_uac1.c)
+    else()
+        ameba_list_append(private_sources uac/usbd_uac2.c)
+    endif()
 endif()
 
 if(CONFIG_USBD_VENDOR)
@@ -103,16 +107,22 @@ ameba_list_append_if(CONFIG_USBD_COMPOSITE_CDC_ACM_MSC private_sources
     composite/usbd_composite_scsi.c
 )
 
+if(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC1 OR CONFIG_USBD_COMPOSITE_HID_UAC1)
+    set(COMPOSITE_UAC_SOURCE composite/usbd_composite_uac1.c)
+else()
+    set(COMPOSITE_UAC_SOURCE composite/usbd_composite_uac2.c)
+endif()
+
 ameba_list_append_if(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC private_sources
     composite/usbd_composite_cdc_acm_uac.c
     composite/usbd_composite_cdc_acm.c
-    composite/usbd_composite_uac.c
+    ${COMPOSITE_UAC_SOURCE}
 )
 
 ameba_list_append_if(CONFIG_USBD_COMPOSITE_HID_UAC private_sources
     composite/usbd_composite_uac_hid.c
     composite/usbd_composite_hid_bi_dir.c
-    composite/usbd_composite_uac.c
+    ${COMPOSITE_UAC_SOURCE}
 )
 
 # Component private part, user config end

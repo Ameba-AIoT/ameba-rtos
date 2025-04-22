@@ -9,14 +9,18 @@ None
 # SW configuration
 
 1. Menuconfig
-	Type command `./menuconfig.py` under the project directory and choose `CONFIG USB`:
+	Type command `./menuconfig.py` under the project directory and :
+	- Choose `CONFIG USB --->`:
 	```
 	[*] Enable USB
 			USB Mode (Device)  --->
 	[*] Composite
 			Select Composite Class (CDC ACM + UAC)  --->
+	- Choose UAC Version 1.0 or 2.0 :
+	(X) CDC ACM + UAC
+			Select UAC Version (UAC 2.0)  --->
 	```
-	choose `CONFIG APPLICATION` -> `Audio Config`:
+	- Choose `CONFIG APPLICATION --->` -> `Audio Config --->`:
 	```
 	[*] Enable Audio Framework
 			Select Audio Interfaces (Mixer)  --->

@@ -12,8 +12,11 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "usbd.h"
-#include "usbd_uac.h"
-
+#if defined(CONFIG_USBD_UAC1)
+#include "usbd_uac1.h"
+#else
+#include "usbd_uac2.h"
+#endif
 /* This used to check the USB issue */
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBADPLUS)
 #define CONFIG_USBD_AUDIO_EN                          1
@@ -47,6 +50,9 @@ static const char *const TAG = "UAC";
 /* USB speed */
 #ifdef CONFIG_USB_FS
 #define CONFIG_USBD_UAC_SPEED USB_SPEED_FULL
+#elif defined(CONFIG_USBD_UAC1)
+/* UAC 1.0 spec supports only Full Speed. */
+#define CONFIG_USBD_UAC_SPEED USB_SPEED_HIGH_IN_FULL
 #else
 #define CONFIG_USBD_UAC_SPEED USB_SPEED_HIGH
 #endif
@@ -57,7 +63,7 @@ static const char *const TAG = "UAC";
 #define CONFIG_USBD_UAC_HOTPLUG_THREAD_PRIORITY 8U
 
 #define AUDIO_BYTE_WIDTH_SIZE                   0x02U
-#define AUDIO_SAMPLING_FREQ                     USBD_UAC_SAMPLING_FREQ_44K
+#define AUDIO_SAMPLING_FREQ                     USBD_UAC_SAMPLING_FREQ_48K
 #define AUDIO_CHANNEL_NUM                       USBD_UAC_DEFAULT_CH_CNT
 
 /* ms */
@@ -84,7 +90,7 @@ static int uac_cb_set_config(void);
 static void uac_cb_status_changed(u8 status);
 static void uac_cb_mute_changed(u8 mute);
 static void uac_cb_volume_changed(u8 volume);
-static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt);
+static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
 /* Private variables ---------------------------------------------------------*/
 
 #if CONFIG_USBD_UAC_HOTPLUG
@@ -295,10 +301,17 @@ static void uac_cb_volume_changed(u8 volume)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set volume %d\n", volume);
 }
 
-static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt)
+static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
 {
-	uac_cb.out.sampling_freq = sampling_freq;
-	uac_cb.out.ch_cnt = ch_cnt;
+	if (sampling_freq != 0U) {
+		uac_cb.out.sampling_freq = sampling_freq;
+	}
+	if (ch_cnt != 0U) {
+		uac_cb.out.ch_cnt = ch_cnt;
+	}
+	if (byte_width != 0U) {
+		uac_cb.out.byte_width = byte_width;
+	}
 	rtos_sema_give(uac_ready_sema);
 	audio_task_stop = 1;
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set sampling_freq %d set ch_cnt %d\n", sampling_freq, ch_cnt);

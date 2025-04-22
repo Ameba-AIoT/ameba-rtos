@@ -41,28 +41,14 @@ set(private_compile_options)         #private compile_options
 #NOTE: User defined section, add your private build configures here
 # You may use if-else condition to set these predefined variable
 
-if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image1")
-    # Only km4 has image1
-    ameba_list_append(private_sources
-        ameba_boot_trustzonecfg.c
-        ameba_bootcfg.c
-        ameba_flashcfg.c
-    )
-elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
-    if("${c_MCU_PROJECT_NAME}" STREQUAL "km4")
-        ameba_list_append(private_sources
-            ameba_flashcfg.c
-            ameba_sleepcfg.c
-        )
-    elseif("${c_MCU_PROJECT_NAME}" STREQUAL "kr4")
-        ameba_list_append(private_sources
-            ameba_bootcfg.c
-            ameba_pinmapcfg.c
-            ameba_sleepcfg.c
-            ameba_flashcfg.c
-        )
-    endif()
-endif()
+ameba_list_append(private_sources
+    ameba_boot_trustzonecfg.c
+    ameba_bootcfg.c
+    ameba_flashcfg.c
+    ameba_pinmapcfg.c
+    ameba_sleepcfg.c
+)
+
 
 # Component private part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#

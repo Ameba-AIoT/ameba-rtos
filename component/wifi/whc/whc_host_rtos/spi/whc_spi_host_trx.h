@@ -7,6 +7,7 @@
 /* -------------------------------- Defines --------------------------------- */
 #define whc_host_send           whc_spi_host_send
 
+#define whc_bridge_host_send_to_dev           whc_bridge_spi_host_send_to_dev
 /* -------------------------------- Macros ---------------------------------- */
 /* ------------------------------- Data Types ------------------------------- */
 
@@ -14,6 +15,7 @@
 
 /* -------------------------- Function declaration -------------------------- */
 int whc_spi_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_len, struct skb_raw_para *raw_para, u8 is_special_pkt);
+void whc_bridge_spi_host_send_to_dev(u8 *buf, u32 len);
 
 
 #endif /* __INIC_IPC_HOST_TRX_H__ */

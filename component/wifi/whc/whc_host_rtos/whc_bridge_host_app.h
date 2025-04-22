@@ -6,7 +6,6 @@
 
 /* -------------------------- Function declaration -------------------------- */
 void whc_bridge_host_pkt_rx_to_user(u8 *payload, u32 len);
-void whc_bridge_spi_host_send_to_dev(u8 *buf, u32 len);
 
 /* for test demo */
 #define WHC_WIFI_TEST 0xffa5a5a5

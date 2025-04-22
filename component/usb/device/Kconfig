@@ -19,10 +19,26 @@ if USBD_COMPOSITE_MENU
             bool "CDC ACM + UAC"
             depends on AMEBASMART||AMEBASMARTPLUS||AMEBADPLUS
             select USBD_COMPOSITE_CDC_ACM_UAC if CORE_AS_AP
+            choice
+                prompt "Select UAC Version"
+                depends on USBD_COMPOSITE_CDC_ACM_UAC_MENU
+                config USBD_COMPOSITE_CDC_ACM_UAC1
+                    bool "UAC 1.0"
+                config USBD_COMPOSITE_CDC_ACM_UAC2
+                    bool "UAC 2.0"
+            endchoice
         config USBD_COMPOSITE_HID_UAC_MENU
             bool "HID + UAC"
             depends on AMEBASMART||AMEBADPLUS
             select USBD_COMPOSITE_HID_UAC if CORE_AS_AP
+            choice
+                prompt "Select UAC Version"
+                depends on USBD_COMPOSITE_HID_UAC_MENU
+                config USBD_COMPOSITE_HID_UAC1
+                    bool "UAC 1.0"
+                config USBD_COMPOSITE_HID_UAC2
+                    bool "UAC 2.0"
+            endchoice
     endchoice
 endif
 
@@ -44,3 +60,11 @@ config USBD_UAC_MENU
     bool "UAC"
     depends on AMEBASMART||AMEBASMARTPLUS||AMEBADPLUS
     select USBD_UAC if CORE_AS_AP
+    choice
+        prompt "Select UAC Version"
+        depends on USBD_UAC_MENU
+        config USBD_UAC1
+            bool "UAC 1.0"
+        config USBD_UAC2
+            bool "UAC 2.0"
+    endchoice
