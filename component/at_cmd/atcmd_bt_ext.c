@@ -624,6 +624,9 @@ static const cmd_table_t example_table[] = {
 #if defined(CONFIG_BT_PERIPHERAL) && CONFIG_BT_PERIPHERAL
 	{"peripheral",       atcmd_bt_peripheral,       2, 2},
 #endif
+#if defined(CONFIG_BT_HOGP) && CONFIG_BT_HOGP
+	{"hogp",       atcmd_bt_hogp_gamepad,           2, 2},
+#endif
 #if defined(CONFIG_BT_CENTRAL) && CONFIG_BT_CENTRAL
 	{"central",          atcmd_bt_central,          2, 2},
 #endif

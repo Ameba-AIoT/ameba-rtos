@@ -9,7 +9,7 @@
 #define COUNTRY_CODE_LEN 2
 
 struct country {
-	s8 char2[COUNTRY_CODE_LEN];
+	u8 char2[COUNTRY_CODE_LEN];
 };
 
 struct country_code_table_common_t {
@@ -284,7 +284,7 @@ const struct country_code_table_common_t country_code_table_common[] = {
 	{country_code_ETSI2, 0x3a, TXPWR_LMT_ETSI, sizeof(country_code_ETSI2) / sizeof(country_code_ETSI2[0])},
 };
 
-bool wifi_get_country_code_info(char *country_code, u8 *channel_plan, u8 *power_limit)
+bool wifi_get_country_code_info(u8 *country_code, u8 *channel_plan, u8 *power_limit)
 {
 	u8 i, j;
 	if (!country_code) {

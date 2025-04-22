@@ -15,6 +15,10 @@ ameba_add_subdirectory_if(CONFIG_BT_ISO_TEST
     ble_iso
 )
 
+ameba_add_subdirectory_if(CONFIG_BT_HOGP
+    ble_hogp_gamepad
+)
+
 ameba_add_subdirectory_if(CONFIG_BT_MESH_DEVICE
     ble_mesh_device
 )
@@ -111,5 +115,11 @@ ameba_add_subdirectory_if(CONFIG_BT_SPP
 if(CONFIG_BT_WIFIMATE_DEVICE OR CONFIG_BT_WIFIMATE_CONFIGURATOR)
     ameba_add_subdirectory(
         ble_wifimate
+    )
+endif()
+
+if (CONFIG_BT_OTA_CENTRAL OR CONFIG_BT_OTA_PERIPHERAL)
+    ameba_add_subdirectory(
+        ble_ota
     )
 endif()

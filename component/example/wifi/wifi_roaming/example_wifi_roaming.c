@@ -32,8 +32,9 @@ static u32 ap_count = 0;//scanned AP NUM
 static u8 pscan_enable = FALSE; // if set TRUE, please set pscan_channel_list
 static u8 pscan_channel_list[] = {1, 3, 5}; // set by customer
 
-u32 wifi_roaming_find_ap_from_scan_buf(char *target_ssid, void *user_data, int ap_num)
+u32 wifi_roaming_find_ap_from_scan_buf(u8 *target_ssid, void *user_data, int ap_num)
 {
+	(void)target_ssid;
 	wifi_roaming_ap_t *pwifi = (wifi_roaming_ap_t *)user_data;
 	struct rtw_scan_result *scanned_ap_info;
 	wifi_roaming_ap_t *candicate, *temp;
@@ -52,7 +53,7 @@ u32 wifi_roaming_find_ap_from_scan_buf(char *target_ssid, void *user_data, int a
 		return -1;
 	}
 
-	for (i = 0; i < ap_num; i++) {
+	for (i = 0; i < (u32)ap_num; i++) {
 		scanned_ap_info = &scanned_ap_list[i];
 		if (pwifi->security_type == scanned_ap_info->security ||
 			((pwifi->security_type & (WPA2_SECURITY | WPA_SECURITY)) && (scanned_ap_info->security & (WPA2_SECURITY | WPA_SECURITY)))) {
@@ -89,11 +90,16 @@ u32 wifi_roaming_find_ap_from_scan_buf(char *target_ssid, void *user_data, int a
 
 void wifi_ip_changed_hdl(u8 *buf, u32 buf_len, u32 flags, void *userdata)
 {
+	(void)buf;
+	(void)buf_len;
+	(void)flags;
+	(void)userdata;
 	//todo for customer
 	printf("\r\n IP has channged!");
 }
 void wifi_roaming_thread(void *param)
 {
+	(void)param;
 	struct rtw_wifi_setting	setting;
 	wifi_roaming_ap_t	roaming_ap;
 	u32	i = 0, polling_count = 0;
@@ -116,7 +122,7 @@ void wifi_roaming_thread(void *param)
 		if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
 			&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
 			wifi_get_phy_stats(STA_WLAN_INDEX, NULL, &phy_stats);
-			if ((phy_stats.rssi < RSSI_THRESHOLD)) {
+			if ((phy_stats.sta.rssi < RSSI_THRESHOLD)) {
 				if (polling_count >= (MAX_POLLING_COUNT - 1)) {
 					wifi_get_setting(STA_WLAN_INDEX, &setting);
 					strcpy((char *)roaming_ap.ssid, (char const *)setting.ssid);
