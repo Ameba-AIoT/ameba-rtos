@@ -85,6 +85,12 @@ LINK_ROM_LIB_NS += $(ROOTDIR)/lib/soc/lib_chipinfo.a
 ifeq ($(CONFIG_802154_THREAD_EN), y)
 LINK_THIRD_APP_LIB += $(ROOTDIR)/lib/application/lib_openthread.a
 endif
+
+#matter
+ifeq ($(CONFIG_MATTER_EN), y)
+LINK_THIRD_APP_LIB += -Wl,--start-group $(ROOTDIR)/lib/application/lib_main.a $(ROOTDIR)/lib/application/libCHIP.a -Wl,--end-group
+endif
+
 #add all app lib in this file
 include $(MAKE_INCLUDE_LIB)
 
@@ -109,6 +115,15 @@ flashloader: prebuild copy_ld_floader make_subdirs_flashloader linker_loader cop
 imgtool_flashloader:  prebuild copy_ld_floader make_subdirs_imgtool_flashloader linker_loader copy_imgtool_flashloader
 analysis_extract: code_extract
 toolchain: download_toolchain
+
+#*****************************************************************************#
+#                         MATTER MAKE RULES                                   #
+#*****************************************************************************#
+
+ifeq ($(CONFIG_MATTER_EN), y)
+include $(MATTER_BUILDDIR)/Makefile
+endif
+
 #*****************************************************************************#
 #                      RULES TO CREATE DIRECTORY                              #
 #*****************************************************************************#
@@ -555,6 +570,13 @@ clean:
 	@# #flashloader code start
 	@# @+$(MAKE) -C make/flashloader clean
 	@#+$(MAKE) -C $(TARGETDIR)/imgtool_floader clean
+
+ifeq ($(CONFIG_MATTER_EN), y)
+	@make -C $(MATTER_BUILDDIR)/make/chip_main clean
+	@make -C $(MATTER_BUILDDIR)/make/chip clean
+	@make -C $(MATTER_BUILDDIR)/make clean
+	@rm -rf $(MATTER_TOOLDIR)/codegen_helpers/gen
+endif
 
 clean_xip:
 	@make -C make clean

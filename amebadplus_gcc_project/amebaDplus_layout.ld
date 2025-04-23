@@ -14,7 +14,11 @@
 /* layout configuration */
 #define TZ_NSC_SIZE 	 			(4)
 #define TZ_ENTRY_SIZE 				(16)
+#if defined(CONFIG_MATTER_SECURE_EN)
+#define TZ_S_SIZE 					(130)
+#else
 #define TZ_S_SIZE 					(44)
+#endif
 
 #if defined(CONFIG_IMG3_SRAM)
 #define RAM_TZ_NSC_SIZE 	 		KBYTES(TZ_NSC_SIZE)

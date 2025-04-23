@@ -1161,6 +1161,12 @@ nd6_tmr(void)
   if (!nd6_tmr_rs_reduction) {
     nd6_tmr_rs_reduction = (ND6_RTR_SOLICITATION_INTERVAL / ND6_TMR_INTERVAL) - 1;
     NETIF_FOREACH(netif) {
+/* Added by Realtek start*/
+#if defined(CONFIG_MATTER) && CONFIG_MATTER
+      ip6_addr_t zero_address;
+      ip6_addr_set_any(&zero_address);
+#endif
+/* Added by Realtek end*/
       if ((netif->rs_count > 0) && netif_is_up(netif) &&
           netif_is_link_up(netif) &&
           !ip6_addr_isinvalid(netif_ip6_addr_state(netif, 0)) &&
@@ -1172,6 +1178,17 @@ nd6_tmr(void)
           }
         }
       }
+/* Added by Realtek start */
+#if defined(CONFIG_MATTER) && CONFIG_MATTER
+      else if((netif->rs_count == 0) && netif_is_up(netif) &&
+        netif_is_link_up(netif) &&
+        !ip6_addr_isinvalid(netif_ip6_addr_state(netif, 0)) &&
+        !ip6_addr_isduplicated(netif_ip6_addr_state(netif, 0))
+        && (ip6_addr_cmp(&zero_address, netif_ip6_addr(netif, 1)))) {
+          netif->rs_timeout = 1;
+      }
+#endif
+/* Added by Realtek end */
     }
   } else {
     nd6_tmr_rs_reduction--;

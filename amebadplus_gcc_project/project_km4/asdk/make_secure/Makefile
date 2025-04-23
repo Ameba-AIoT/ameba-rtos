@@ -26,6 +26,9 @@ COMPONENT_CLEAN += mbedtls
 $(foreach n, $(COMPONENT), $(eval $(call GenerateTargets, $(n),all)))
 
 all: $(addsuffix -all, $(COMPONENT))
+ifeq ($(CONFIG_MATTER_SECURE_EN),y)
+	@make -C $(MATTER_BUILDDIR)/make/mbedtls_secure all
+endif
 
 #*****************************************************************************#
 #              CLEAN GENERATED FILES                                          #
@@ -33,5 +36,8 @@ all: $(addsuffix -all, $(COMPONENT))
 $(foreach n, $(COMPONENT_CLEAN), $(eval $(call GenerateTargets,$(n),clean)))
 
 clean: $(addsuffix -clean, $(COMPONENT_CLEAN))
+ifeq ($(CONFIG_MATTER_SECURE_EN),y)
+	@make -C $(MATTER_BUILDDIR)/make/mbedtls_secure clean
+endif
 
 -include $(DEPS)

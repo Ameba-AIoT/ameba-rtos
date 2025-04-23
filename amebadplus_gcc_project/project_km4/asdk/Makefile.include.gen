@@ -36,7 +36,9 @@ TOOLCHAINDIR	= /opt/rtk-toolchain
 
 OSDIR		= $(BASEDIR)/component/os
 FREERTOSDIR	= $(BASEDIR)/component/os/freertos/freertos_v10.4.3/Source
+ifneq ($(MBEDTLS_MATTER_ENABLE),y)
 MBEDTLSDIR	 = $(BASEDIR)/component/ssl/mbedtls-2.16.9
+endif
 
 WIFIFWDIR	= $(BASEDIR)/component/wifi/wifi_fw
 WIFIMAKEDIR = $(BASEDIR)/component/wifi/wifi_make
@@ -186,8 +188,10 @@ IFLAGS               += -I$(BASEDIR)/component/network/rtsp
 #IFLAGS               += -I$(BASEDIR)/component/ssl/ssl_ram_map/rom
 
 #MBEDTLS
+ifneq ($(MBEDTLS_MATTER_ENABLE),y)
 IFLAGS               += -I$(BASEDIR)/component/ssl/mbedtls-2.16.9/include
 IFLAGS               += -I$(BASEDIR)/component/ssl/mbedtls_ram_map/rom
+endif
 
 #apple
 IFLAGS               += -I$(BASEDIR)/component/application/apple/WACServer/External/Curve25519 \
@@ -291,7 +295,9 @@ GLOBAL_CFLAGS += -nodefaultlibs
 GLOBAL_CFLAGS += -nostdlib
 GLOBAL_CFLAGS += -O2
 #avoid compile optimize based on undefined behavior
+ifneq ($(CONFIG_MATTER_EN),y)
 GLOBAL_CFLAGS += -fno-strict-aliasing -fno-strict-overflow -fno-delete-null-pointer-checks
+endif
 GLOBAL_CFLAGS += -fno-tree-loop-distribute-patterns
 GLOBAL_CFLAGS += -flax-vector-conversions
 
@@ -304,11 +310,15 @@ GLOBAL_CFLAGS += -nostdlib
 GLOBAL_CFLAGS += -fno-builtin-printf
 GLOBAL_CFLAGS += -Wall
 GLOBAL_CFLAGS += -Wpointer-arith
+ifneq ($(CONFIG_MATTER_EN),y)
 GLOBAL_CFLAGS += -Wstrict-prototypes
 GLOBAL_CFLAGS += -Wundef
+endif
 GLOBAL_CFLAGS += -Wno-write-strings
 GLOBAL_CFLAGS += -Wno-maybe-uninitialized
+ifneq ($(CONFIG_MATTER_EN),y)
 GLOBAL_CFLAGS += --save-temps
+endif
 GLOBAL_CFLAGS += -c
 GLOBAL_CFLAGS += -MMD -MP
 
@@ -330,9 +340,13 @@ GLOBAL_CFLAGS += -ffile-prefix-map=$(BASEDIR)=.
 
 # COPY GLOBAL_CFLAGS to CPP_FLAGS except -Wstrict-prototypes
 CPPFLAGS = $(filter-out -Wstrict-prototypes, $(GLOBAL_CFLAGS))
+ifneq ($(CONFIG_MATTER_EN),y)
 CPPFLAGS += -std=c++11 -fno-use-cxa-atexit
+endif
 
+ifneq ($(CONFIG_MATTER_EN),y)
 GLOBAL_CFLAGS += -Wstrict-prototypes
+endif
 
 ifneq (${ROM_CFLAG},YES)
 GLOBAL_CFLAGS += -fdata-sections
@@ -341,6 +355,10 @@ endif
 
 ifeq (${IMAGE2_CFLAGS},YES)
 GLOBAL_CFLAGS += -DIMAGE2_BUILD
+endif
+
+ifeq ($(CONFIG_MATTER_EN), y)
+include $(BASEDIR)/component/application/matter/project/amebadplus/Makefile.include.matter
 endif
 
 #*****************************************************************************#

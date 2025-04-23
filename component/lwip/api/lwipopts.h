@@ -684,4 +684,8 @@ Certain platform allows computing and verifying the IP, UDP, TCP and ICMP checks
 
 #define MEM_LIBC_MALLOC                 1
 
+#if defined(CONFIG_MATTER) && CONFIG_MATTER
+#include "lwipopts_matter.h"
+#endif
+
 #endif /* LWIP_HDR_LWIPOPTS_H */

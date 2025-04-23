@@ -117,7 +117,7 @@ enum SPEAKER_SET_TYPE {
 /**
  * @brief The enumeration typedef export to user. */
 typedef enum rtw_promisc_level rtw_rcr_level_t;
-typedef enum rtw_country_code rtw_country_code_t;
+// typedef enum rtw_country_code rtw_country_code_t; // rtw_country_code removed from rtw_wifi_defs.h
 typedef enum rtw_wpa_mode_type rtw_wpa_mode;
 typedef enum rtw_autoreconnect_mode rtw_autoreconnect_mode_t;
 typedef enum rtw_event_indicate rtw_event_indicate_t;

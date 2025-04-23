@@ -111,6 +111,9 @@ comment '< CONFIG BT'
 bool "Enable BT"														CONFIG_BT_MENU
 # !!Notice that "[ ]" both side and "$CONFIG_XXX" should has a whitespace
 if [ "$CONFIG_BT_MENU" = "y" ]; then
+	if [ "$CONFIG_MATTER_EN" = "y" ]; then
+		bool "BLE_Matter_Adapter"	CONFIG_BLE_MATTER_ADAPTER
+	fi
 	if [ "$CONFIG_AP_CORE_KM4" = "y" ]; then
 		define_bool CONFIG_BT_FOR_KM4 y
 		define_bool CONFIG_FTL_ENABLED_FOR_KM4 y
@@ -615,6 +618,9 @@ comment '< SSL Config'
 define_bool CONFIG_USE_MBEDTLS_ROM_FOR_KM4 y
 bool "MBEDTLS Enable"		CONFIG_MBED_TLS_ENABLED_FOR_KM4
 bool "SSL ROM Test"		CONFIG_SSL_ROM_TEST_FOR_KM4
+if [ "$CONFIG_MATTER_EN" = "y" ]; then
+	bool "Matter MBEDTLS Enable"		MBEDTLS_MATTER_ENABLE
+fi
 endmenu
 
 # mainmenu_option next_comment
@@ -672,6 +678,14 @@ endmenu
 	# fi
 # fi
 # endmenu
+
+mainmenu_option next_comment
+comment '< Matter Config '
+bool "Enable Matter"							CONFIG_MATTER_EN
+if [ "$CONFIG_MATTER_EN" = "y" ]; then
+	define_bool CONFIG_MATTER y
+fi
+endmenu
 
 mainmenu_option next_comment
 comment '< GUI Config'

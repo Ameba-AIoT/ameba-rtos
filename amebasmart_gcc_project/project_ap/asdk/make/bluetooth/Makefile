@@ -112,6 +112,9 @@ ifeq ($(CONFIG_BT_A2DP_LE_AUDIO_TMAP), y)
 	make -C bt_a2dp_tmap all
 	make -C bt_audio all
 endif
+ifeq ($(CONFIG_BLE_MATTER_ADAPTER),y)
+	make -C ble_matter_adapter all
+endif
 
 #*****************************************************************************#
 #                            GENERATE OBJECT FILE                             #
@@ -233,6 +236,9 @@ ifeq ($(CONFIG_BT_A2DP_LE_AUDIO_TMAP), y)
 	make -C bt_audio clean
 	make -C bt_audio/bt_codec clean
 	make -C bt_audio/audio_sync clean
+endif
+ifeq ($(CONFIG_BLE_MATTER_ADAPTER),y)
+	make -C ble_matter_adapter clean
 endif
 
 -include $(DEPS)

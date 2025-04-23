@@ -791,6 +791,10 @@ enum rtw_event_indicate {
 	/* csi rx done event */
 	WIFI_EVENT_CSI_DONE,
 
+	/* matter modifications*/
+#if defined(CONFIG_MATTER) && CONFIG_MATTER
+	WIFI_EVENT_DHCP6_DONE,
+#endif
 	/* flash event */
 	WIFI_EVENT_DEAUTH_INFO_FLASH,
 #if defined (CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD

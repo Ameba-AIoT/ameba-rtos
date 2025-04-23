@@ -1513,6 +1513,15 @@ netif_create_ip6_linklocal_address(struct netif *netif, u8_t from_mac_48bit)
 
   LWIP_ASSERT("netif_create_ip6_linklocal_address: invalid netif", netif != NULL);
 
+/*Realtek Added Start*/
+#if defined(CONFIG_MATTER) && CONFIG_MATTER
+  if(ip6_addr_isvalid(netif_ip6_addr_state(netif, 0))){
+    printf("IPv6 Linklocal address already exist\n");
+    return;
+  }
+#endif
+/*Realtek Added End*/
+
   /* Link-local prefix. */
   ip_2_ip6(&netif->ip6_addr[0])->addr[0] = PP_HTONL(0xfe800000ul);
   ip_2_ip6(&netif->ip6_addr[0])->addr[1] = 0;
