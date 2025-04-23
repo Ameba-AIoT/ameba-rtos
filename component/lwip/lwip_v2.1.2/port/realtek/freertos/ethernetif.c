@@ -44,6 +44,7 @@
  */
 
 #include "lwip_netconf.h"
+#include "wifi_api.h"
 
 #if CONFIG_WLAN
 #include <wifi_intf_drv_to_lwip.h>
@@ -63,21 +64,10 @@
 #endif
 #endif
 
-#define netifMTU                                (1500)
-#define netifINTERFACE_TASK_STACK_SIZE        ( 350 )
-#define netifINTERFACE_TASK_PRIORITY        ( configMAX_PRIORITIES - 1 )
-#define netifGUARD_BLOCK_TIME            ( 250 )
-/* The time to block waiting for input. */
-#define emacBLOCK_TIME_WAITING_FOR_INPUT    ( ( portTickType ) 100 )
-
-#define IF2NAME0 'r'
-#define IF2NAME1 '2'
-
 extern struct netif xnetif[NET_IF_NUM];
 extern struct netif eth_netif;
 extern signed char rltk_mii_send(struct eth_drv_sg *sg_list, int sg_len, int total_len);
 
-static void arp_timer(void *arg);
 #if defined(CONFIG_BRIDGE) && CONFIG_BRIDGE
 extern unsigned char get_bridge_portnum(void);
 #endif
@@ -281,30 +271,6 @@ static err_t low_level_output_mii(struct netif *netif, struct pbuf *p)
 #endif
 	return ERR_OK;
 }
-
-
-/**
- * Should allocate a pbuf and transfer the bytes of the incoming
- * packet from the interface into the pbuf.
- *
- * @param netif the lwip network interface structure for this ethernetif
- * @return a pbuf filled with the received packet (including MAC header)
- *         NULL on memory error
- */
-//static struct pbuf * low_level_input(struct netif *netif){}
-
-
-/**
- * This function is the ethernetif_input task, it is processed when a packet
- * is ready to be read from the interface. It uses the function low_level_input()
- * that should handle the actual reception of bytes from the network
- * interface. Then the type of the received packet is determined and
- * the appropriate input function is called.
- *
- * @param netif the lwip network interface structure for this ethernetif
- */
-//void ethernetif_input( void * pvParameters )
-
 
 /* Refer to eCos eth_drv_recv to do similarly in ethernetif_input */
 void ethernetif_recv(struct netif *netif, int total_len)
@@ -598,48 +564,3 @@ err_t ethernetif_mii_init(struct netif *netif)
 
 	return ERR_OK;
 }
-
-static void arp_timer(void *arg)
-{
-	(void) arg;
-	etharp_tmr();
-	sys_timeout(ARP_TMR_INTERVAL, arp_timer, NULL);
-}
-
-/*
- * For FreeRTOS tickless
- */
-int lwip_tickless_used = 0;
-
-int arp_timeout_exist(void)
-{
-	struct sys_timeouts *timeouts;
-	struct sys_timeo *t;
-
-	timeouts = sys_arch_timeouts();
-
-	for (t = timeouts->next; t != NULL; t = t->next)
-		if (t->h == arp_timer) {
-			return 1;
-		}
-
-	return 0;
-}
-
-//Called by rltk_wlan_PRE_SLEEP_PROCESSING()
-void lwip_PRE_SLEEP_PROCESSING(void)
-{
-	if (arp_timeout_exist()) {
-		tcpip_untimeout(arp_timer, NULL);
-	}
-	lwip_tickless_used = 1;
-}
-
-//Called in ips_leave() path, support tickless when wifi power wakeup due to ioctl or deinit
-void lwip_POST_SLEEP_PROCESSING(void)
-{
-	if (lwip_tickless_used) {
-		tcpip_timeout(ARP_TMR_INTERVAL, arp_timer, NULL);
-	}
-}
-

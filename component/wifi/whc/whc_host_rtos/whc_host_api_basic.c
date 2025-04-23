@@ -320,7 +320,7 @@ s32 wifi_start_ap(struct rtw_softap_info *softap_config)
 	rtw_wpa_init(SOFTAP_WLAN_INDEX);
 
 	if ((PSK_INFO = rtos_mem_zmalloc(sizeof(struct psk_info))) == NULL) {
-		ret = FALSE;
+		ret = RTK_FAIL;
 		goto exit;
 	}
 	if (softap_config->password && softap_config->password_len) {

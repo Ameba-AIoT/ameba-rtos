@@ -78,6 +78,12 @@ extern const SocClk_Info_TypeDef SocClk_Info[];
 extern u8 Boot_SocClk_Info_Idx;
 
 /**
+ * @brif  In order to ensure the performance of RF, we limit the PLL setting values ​​for chips in different packages.
+*/
+extern u8 Valid_Boot_Idx_for_SiP_Psram[6];
+extern u8 Valid_Boot_Idx_for_No_Psram[6];
+
+/**
 * @brif  Loguart AGG enable or disable
 * 	FALSE: disable
 *	TRUE: enable

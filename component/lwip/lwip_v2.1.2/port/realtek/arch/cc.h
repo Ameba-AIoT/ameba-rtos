@@ -32,6 +32,10 @@
 #ifndef __CC_H__
 #define __CC_H__
 
+/** LWIP_TIMEVAL_PRIVATE: if you want to use the struct timeval provided
+ * by your system, set this to 0 and include <sys/time.h> in cc.h */
+#include <sys/time.h>
+
 #ifdef BYTE_ORDER
 #undef BYTE_ORDER
 #define BYTE_ORDER LITTLE_ENDIAN
@@ -62,10 +66,6 @@ typedef int sys_prot_t;
 #define LWIP_PLATFORM_ASSERT(x) //do { if(!(x)) while(1); } while(0)
 
 #define LWIP_NO_STDINT_H 1
-
-/** LWIP_TIMEVAL_PRIVATE: if you want to use the struct timeval provided
- * by your system, set this to 0 and include <sys/time.h> in cc.h */
-#include <sys/time.h>
 
 #ifdef LWIP_NO_CTYPE_H
 #undef LWIP_NO_CTYPE_H

@@ -9,7 +9,7 @@ int sdio_read_byte(void *func, uint32_t addr, uint8_t *pdata)
 	(void)pdata;
 
 	if (RTK_SUCCESS != rtos_mutex_take(sdio_lock, 500)) {
-		RTK_LOGE(TAG_WLAN_INIC, "fail %s %d \r\n", __func__, __LINE__);
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "fail %s %d \r\n", __func__, __LINE__);
 		return 1;
 	}
 
@@ -24,7 +24,7 @@ int sdio_write_byte(void *func, uint32_t addr, uint8_t pdata)
 	(void)pdata;
 
 	if (RTK_SUCCESS != rtos_mutex_take(sdio_lock, 500)) {
-		RTK_LOGE(TAG_WLAN_INIC, "fail %s %d \r\n", __func__, __LINE__);
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "fail %s %d \r\n", __func__, __LINE__);
 		return 1;
 	}
 
@@ -41,7 +41,7 @@ int sdio_read_fifo(void *func, uint32_t addr, uint8_t *pdata, int len)
 	(void)len;
 
 	if (RTK_SUCCESS != rtos_mutex_take(sdio_lock, 500)) {
-		RTK_LOGE(TAG_WLAN_INIC, "fail %s %d \r\n", __func__, __LINE__);
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "fail %s %d \r\n", __func__, __LINE__);
 		return 1;
 	}
 
@@ -57,7 +57,7 @@ int sdio_write_fifo(void *func, uint32_t addr, uint8_t *pdata, int len)
 	(void)len;
 
 	if (RTK_SUCCESS != rtos_mutex_take(sdio_lock, 500)) {
-		RTK_LOGE(TAG_WLAN_INIC, "fail %s %d \r\n", __func__, __LINE__);
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "fail %s %d \r\n", __func__, __LINE__);
 		return 1;
 	}
 
@@ -67,29 +67,45 @@ int sdio_write_fifo(void *func, uint32_t addr, uint8_t *pdata, int len)
 	return 0;
 }
 
-int rtw_inc_and_chk_continual_io_error(struct whc_sdio *priv)
-{
-	(void)priv;
-
-	return FALSE;
-}
-
-void rtw_reset_continual_io_error(struct whc_sdio *priv)
-{
-	(void)priv;
-
-	return;
-}
-
-
 int sd_cmd52_read(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pdata)
 {
-
 	int err = 0;
-	(void)priv;
-	(void)addr;
-	(void)pdata;
-	(void)cnt;
+	uint32_t i;
+
+
+	for (i = 0; i < cnt; i++) {
+		err = sdio_read_byte(priv->func, addr + i, pdata + i);
+		if (err) {
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s(): sdio_readb failed, err:%d!\n", __func__, err);
+			break;
+		}
+	}
+
+	if (err) {
+		int j;
+
+		err = 0;
+		for (j = 0; j < SD_IO_TRY_CNT; j++) {
+			for (i = 0; i < cnt; i++) {
+				err = sdio_read_byte(priv->func, addr + i, pdata + i);
+				if (err) {
+					RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s(): sdio_readb failed, err:%d!\n", __func__, err);
+					break;
+				}
+			}
+
+			if (err == 0) {
+				break;
+			} else {
+				//TODO err
+			}
+		}
+
+		if (j == SD_IO_TRY_CNT) {
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: FAIL!(%d) addr=0x%05x, try_cnt=%d\n", __func__, err, addr, j);
+		}
+
+	}
 
 	return err;
 }
@@ -97,10 +113,40 @@ int sd_cmd52_read(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *p
 int sd_cmd52_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pdata)
 {
 	int err = 0;
-	(void)priv;
-	(void)addr;
-	(void)pdata;
-	(void)cnt;
+	uint32_t i;
+
+
+	for (i = 0; i < cnt; i++) {
+		err = sdio_write_byte(priv->func, addr + i, pdata[i]);
+		if (err) {
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: FAIL!(%d) addr=0x%05x val=0x%02x\n", __func__, err, addr + i, pdata[i]);
+			break;
+		}
+	}
+
+	if (err) {
+		int j;
+
+		err = 0;
+		for (j = 0; j < SD_IO_TRY_CNT; j++) {
+			for (i = 0; i < cnt; i++) {
+				err = sdio_write_byte(priv->func, addr + i, pdata[i]);
+				if (err) {
+					RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s(): sdio_writeb failed!\n", __func__);
+					break;
+				}
+			}
+
+			if (err == 0) {
+				break;
+			}
+		}
+
+		if (j == SD_IO_TRY_CNT) {
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: FAIL!(%d) addr=0x%05x, try_cnt=%d\n", __func__, err, addr, j);
+		}
+
+	}
 
 	return err;
 }
@@ -108,9 +154,12 @@ int sd_cmd52_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *
 uint8_t sd_read8(struct whc_sdio *priv, uint32_t addr, int *err)
 {
 	uint8_t v = 0;
-	(void)priv;
-	(void)addr;
-	(void)err;
+
+	*err = sdio_read_byte(priv->func, addr, &v);
+
+	if (err && *err) {
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: FAIL!(%d) addr=0x%05x\n", __func__, *err, addr);
+	}
 
 	return v;
 }
@@ -118,9 +167,33 @@ uint8_t sd_read8(struct whc_sdio *priv, uint32_t addr, int *err)
 uint16_t sd_read16(struct whc_sdio *priv, uint32_t addr, int *err)
 {
 	uint16_t v = 0;
-	(void)priv;
-	(void)addr;
-	(void)err;
+	uint8_t data[2] = {0};
+
+	*err = sdio_read_fifo(priv->func, addr, data, 2);
+	v = (data[0] << 8) | data[1];
+
+	if (err && *err) {
+		int i;
+
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: (%d) addr=0x%05x, val=0x%x\n", __func__, *err, addr, v);
+
+		*err = 0;
+		for (i = 0; i < SD_IO_TRY_CNT; i++) {
+			*err = sdio_read_fifo(priv->func, addr, data, 2);
+			v = (data[0] << 8) | data[1];
+
+			if (*err == 0) {
+				break;
+			} else {
+				RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: (%d) addr=0x%05x, val=0x%x, try_cnt=%d\n", __func__, *err, addr, (data[0] << 8) | data[1], i);
+
+			}
+		}
+
+		if (i == SD_IO_TRY_CNT) {
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: FAIL!(%d) addr=0x%05x, val=0x%x, try_cnt=%d\n", __func__, *err, addr, v, i);
+		}
+	}
 
 	return  v;
 }
@@ -128,59 +201,152 @@ uint16_t sd_read16(struct whc_sdio *priv, uint32_t addr, int *err)
 uint32_t sd_read32(struct whc_sdio *priv, uint32_t addr, int *err)
 {
 	uint32_t v = 0;
-	(void)priv;
-	(void)addr;
-	(void)err;
+	uint8_t data[4] = {0};
+
+	if (err) {
+		*err = sdio_read_fifo(priv->func, addr, data, 4);
+	}
+
+	v = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+
+	if (err && *err) {
+		int i;
+
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: (%d) addr=0x%05x, val=0x%x\n", __func__, *err, addr, v);
+
+		*err = 0;
+		for (i = 0; i < SD_IO_TRY_CNT; i++) {
+			*err = sdio_read_fifo(priv->func, addr, data, 4);
+			v = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+
+			if (*err == 0) {
+				break;
+			} else {
+				RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: (%d) addr=0x%05x, val=0x%x, try_cnt=%d\n", __func__, *err, addr, v, i);
+			}
+		}
+
+		if (i == SD_IO_TRY_CNT) {
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: FAIL!(%d) addr=0x%05x, val=0x%x, try_cnt=%d\n", __func__, *err, addr, v, i);
+		}
+	}
 
 	return  v;
 }
 
 void sd_write8(struct whc_sdio *priv, uint32_t addr, uint8_t v, int *err)
 {
-	(void)priv;
-	(void)addr;
-	(void)err;
-	(void)v;
+	*err = sdio_write_byte(priv->func, addr, v);
+
+	if (err && *err) {
+		int i;
+
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: (%d) addr=0x%05x, val=0x%x\n", __func__, *err, addr, v);
+
+		*err = 0;
+		for (i = 0; i < SD_IO_TRY_CNT; i++) {
+			*err = sdio_write_byte(priv->func, addr, v);
+
+			if (*err == 0) {
+				break;
+			} else {
+				RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: (%d) addr=0x%05x, val=0x%x, try_cnt=%d\n", __func__, *err, addr, v, i);
+			}
+		}
+
+		if (i == SD_IO_TRY_CNT) {
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: FAIL!(%d) addr=0x%05x, val=0x%x, try_cnt=%d\n", __func__, *err, addr, v, i);
+		}
+	}
 
 }
 
-void sd_write16(struct whc_sdio *priv, uint32_t addr, uint16_t v, int *err)
-{
-	(void)priv;
-	(void)addr;
-	(void)v;
-	(void)err;
 
-}
-
-void sd_write32(struct whc_sdio *priv, uint32_t addr, uint32_t v, s32 *err)
+void sd_write32(struct whc_sdio *priv, uint32_t addr, uint32_t v, int *err)
 {
-	(void)priv;
-	(void)addr;
-	(void)v;
-	(void)err;
+	uint8_t data[4] = {0};
+
+	data[0] = (v >> 24) & 0xff;
+	data[1] = (v >> 16) & 0xff;
+	data[2] = (v >> 8) & 0xff;
+	data[3] = v & 0xff;
+
+	*err = sdio_write_fifo(priv->func, addr, data, 4);
+	if (err && *err) {
+		int i;
+
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: (%d) addr=0x%05x val=0x%08x\n", __func__, *err, addr, v);
+
+		*err = 0;
+		for (i = 0; i < SD_IO_TRY_CNT; i++) {
+			*err = sdio_write_fifo(priv->func, addr, data, 4);
+			if (*err == 0) {
+				break;
+			} else {
+				RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: (%d) addr=0x%05x, val=0x%x, try_cnt=%d\n", __func__, *err, addr, v, i);
+
+			}
+		}
+
+		if (i == SD_IO_TRY_CNT) {
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: FAIL!(%d) addr=0x%05x val=0x%08x, try_cnt=%d\n", __func__, *err, addr, v, i);
+		} else {
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: (%d) addr=0x%05x val=0x%08x, try_cnt=%d\n", __func__, *err, addr, v, i);
+		}
+	}
 }
 
 int sd_read(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, void *pdata)
 {
-	int err = -1;
+	u32 err;
+	u32 i;
+	u8 *pbuf;
+	if (unlikely((cnt == 1) || (cnt == 2))) {
+		pbuf = (u8 *)pdata;
 
-	(void)priv;
-	(void)addr;
-	(void)pdata;
-	(void)cnt;
+		for (i = 0; i < cnt; i++) {
+			err = sdio_read_byte(priv->func, addr + i, pbuf + i);
+
+			if (err) {
+				RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: FAIL!(%d) addr=0x%05x\n", __func__, err, addr);
+				break;
+			}
+		}
+		return err;
+	}
+
+	err = sdio_read_fifo(priv->func, addr, (uint8_t *)pdata, cnt);
+	if (err) {
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: FAIL(%d)! ADDR=0x%x Size=%d\n", __func__, err, addr, cnt);
+	}
 
 	return err;
 }
 
 int sd_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, void *pdata)
 {
-	int err = -1;
+	int err = 0;
+	u32 i;
+	u8 *pbuf;
 
-	(void)priv;
-	(void)addr;
-	(void)pdata;
-	(void)cnt;
+	if (unlikely((cnt == 1) || (cnt == 2))) {
+		pbuf = (u8 *)pdata;
+
+		for (i = 0; i < cnt; i++) {
+			err = sdio_write_byte(priv->func, addr + i, pbuf[i]);
+			if (err) {
+				RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: FAIL!(%d) addr=0x%05x val=0x%02x\n", __func__, err, addr, *(pbuf + i));
+				break;
+			}
+		}
+
+		return err;
+	}
+
+	err = sdio_write_fifo(priv->func, addr, pdata, cnt);
+	if (err) {
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: FAIL(%d)! ADDR=0x%x Size=%d(%d)\n", __func__, err, addr, cnt, cnt);
+	}
 
 	return err;
 }
@@ -272,165 +438,310 @@ uint32_t sdio_convert_to_cmdaddr(const uint32_t addr, uint8_t *pdeviceId, uint16
 
 uint8_t sdio_read8(struct whc_sdio *priv, uint32_t addr)
 {
+	uint32_t ftaddr;
 	uint8_t val = 0;
-	(void)priv;
-	(void)addr;
+
+	ftaddr = sdio_convert_to_cmdaddr(addr, NULL, NULL);
+
+	sd_cmd52_read(priv, ftaddr, 1, (uint8_t *)&val);
 
 	return val;
 }
 
 uint16_t sdio_read16(struct whc_sdio *priv, uint32_t addr)
 {
-	uint16_t val = 0;
-	(void)priv;
-	(void)addr;
+	u32 ftaddr;
+	u16 val = 0;
+
+	ftaddr = sdio_convert_to_cmdaddr(addr, NULL, NULL);
+	sd_cmd52_read(priv, ftaddr, 2, (u8 *)&val);
 
 	return val;
 }
 
 uint32_t sdio_read32(struct whc_sdio *priv, uint32_t addr)
 {
-	(void)priv;
-	(void)addr;
-	uint32_t val = 0;
+	u32 ftaddr;
+	u32 val;
+	u8 shift;
+	int err;
+
+	ftaddr = sdio_convert_to_cmdaddr(addr, NULL, NULL);
+
+	// 4 bytes alignment
+	shift = ftaddr & 0x3;
+	if (shift == 0) {
+		val = sd_read32(priv, ftaddr, &err);
+	} else {
+		u8 *ptmpbuf;
+
+		ptmpbuf = (u8 *)rtos_mem_zmalloc(8);
+		if (NULL == ptmpbuf) {
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s: Allocate memory FAIL!(size=8) addr=0x%x\n", __func__, addr);
+			return false;
+		}
+
+		ftaddr &= ~(u16)0x3;
+		sd_read(priv, ftaddr, 8, ptmpbuf);
+		memcpy(&val, ptmpbuf + shift, 4);
+		val = le32_to_cpu(val);
+
+		rtos_mem_free(ptmpbuf);
+	}
 
 	return val;
 }
 
-s32 sdio_readN(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pbuf)
+int sdio_readN(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pbuf)
 {
-	s32 err = 0;
+	u8 deviceId;
+	u16 offset;
+	u32 ftaddr;
+	u8 shift;
+	int err = 0;
 
-	(void)priv;
-	(void)addr;
-	(void)cnt;
-	(void)pbuf;
+	ftaddr = sdio_convert_to_cmdaddr(addr, &deviceId, &offset);
+
+	// 4 bytes alignment
+	shift = ftaddr & 0x3;
+	if (shift == 0) {
+		err = sd_read(priv, ftaddr, cnt, pbuf);
+	} else {
+		u8 *ptmpbuf;
+		u32 n;
+
+		ftaddr &= ~(u16)0x3;
+		n = cnt + shift;
+		ptmpbuf = (u8 *)rtos_mem_zmalloc(n);
+		if (NULL == ptmpbuf) {
+			return -1;
+		}
+		err = sd_read(priv, ftaddr, n, ptmpbuf);
+		if (!err) {
+			memcpy(pbuf, ptmpbuf + shift, cnt);
+		}
+		rtos_mem_free(ptmpbuf);
+	}
 
 	return err;
 }
 
 void sdio_read_mem(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *rmem)
 {
-	(void)priv;
-	(void)addr;
-	(void)cnt;
-	(void)rmem;
+	sdio_readN(priv, addr, cnt, rmem);
 }
 
 uint32_t sdio_read_port(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *mem)
 {
-	(void)priv;
-	(void)addr;
-	(void)cnt;
-	(void)mem;
+	int err;
 
-	return 1;
+	sdio_get_cmdaddr(addr, priv->SdioRxFIFOCnt++, &addr);
+
+	cnt = _RND4(cnt);
+
+	if (cnt >  priv->block_transfer_len) {
+		cnt = _RND(cnt,  priv->block_transfer_len);
+	}
+
+	err = sd_read(priv, addr, cnt, mem);
+	if (err) {
+		return RTK_FAIL;
+	}
+	return RTK_SUCCESS;
 }
 
 
-s32 sdio_write8(struct whc_sdio *priv, uint32_t addr, uint8_t val)
+int sdio_write8(struct whc_sdio *priv, uint32_t addr, uint8_t val)
 {
-	s32 err = 0;
+	int err = 0;
+	u32 ftaddr;
 
-	(void)priv;
-	(void)addr;
-	(void)val;
+	ftaddr = sdio_convert_to_cmdaddr(addr, NULL, NULL);
+	sd_write8(priv, ftaddr, val, &err);
 
 	return err;
 }
 
-s32 sdio_write16(struct whc_sdio *priv, uint32_t addr, uint16_t val)
+int sdio_write16(struct whc_sdio *priv, uint32_t addr, uint16_t val)
 {
-	s32 err = 0;
+	int err = 0;
+	u32 ftaddr;
 
-	(void)priv;
-	(void)addr;
-	(void)val;
+	ftaddr = sdio_convert_to_cmdaddr(addr, NULL, NULL);
+	err = sd_cmd52_write(priv, ftaddr, 2, (u8 *)&val);
 
 	return err;
 }
 
-s32 sdio_write32(struct whc_sdio *priv, uint32_t addr, uint32_t val)
+int sdio_write32(struct whc_sdio *priv, uint32_t addr, uint32_t val)
 {
-	s32 err = 0;
+	int err = 0;
+	uint32_t ftaddr;
+	uint16_t offset;
+	uint8_t deviceId;
+	uint8_t shift;
 
-	(void)priv;
-	(void)addr;
-	(void)val;
+	ftaddr = sdio_convert_to_cmdaddr(addr, &deviceId, &offset);
+
+	// 4 bytes alignment
+	shift = ftaddr & 0x3;
+
+	if (shift == 0) {
+		sd_write32(priv, ftaddr, val, &err);
+	} else {
+		err = sd_cmd52_write(priv, ftaddr, 4, (u8 *)&val);
+	}
 
 	return err;
 }
 
-s32 sdio_writeN(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pbuf)
+int sdio_writeN(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pbuf)
 {
+	uint8_t deviceId;
+	uint16_t offset;
+	uint32_t ftaddr;
+	uint8_t shift;
+	int err = 0;
 
-	s32 err = 0;
+	ftaddr = sdio_convert_to_cmdaddr(addr, &deviceId, &offset);
 
-	(void)priv;
-	(void)addr;
-	(void)cnt;
-	(void)pbuf;
+	shift = ftaddr & 0x3;
+	if (shift == 0) {
+		err = sd_write(priv, ftaddr, cnt, pbuf);
+	} else {
+		u8 *ptmpbuf;
+		u32 n;
 
+		ftaddr &= ~(u16)0x3;
+		n = cnt + shift;
+		ptmpbuf = (u8 *)rtos_mem_zmalloc(n);
+		if (NULL == ptmpbuf) {
+			return -1;
+		}
+		err = sd_read(priv, ftaddr, 4, ptmpbuf);
+		if (err) {
+			rtos_mem_free(ptmpbuf);
+			return err;
+		}
+		memcpy(ptmpbuf + shift, pbuf, cnt);
+		err = sd_write(priv, ftaddr, n, ptmpbuf);
+		rtos_mem_free(ptmpbuf);
+	}
 	return err;
 }
 
 void sdio_write_mem(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *wmem)
 {
-	(void)priv;
-	(void)addr;
-	(void)cnt;
-	(void)wmem;
+	sdio_writeN(priv, addr, cnt, wmem);
+
 }
 
 uint32_t sdio_write_port(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *mem)
 {
+	int err;
 	(void)priv;
 	(void)addr;
 	(void)cnt;
 	(void)mem;
 
-	return 1;
+	cnt = _RND4(cnt);
+
+	sdio_get_cmdaddr(addr, cnt >> 2, &addr);
+
+	if (cnt >  priv->block_transfer_len) {
+		cnt = _RND(cnt,  priv->block_transfer_len);
+	}
+
+	err = sd_write(priv, addr, cnt, mem);
+
+	if (err) {
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s, error=%d\n", __func__, err);
+		return 1;
+	}
+
+	return 0;
 }
 
 /*
  * align address to 4 bytes in future.
  */
-s32 sdio_local_read(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pbuf)
+int sdio_local_read(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pbuf)
 {
-	s32 err = 0;
-	(void)priv;
-	(void)addr;
-	(void)cnt;
-	(void)pbuf;
+	int err = 0;
+	uint8_t *ptmpbuf;
+	uint32_t n, retry = 0;
+
+	sdio_get_cmdaddr(SDIO_LOCAL_DOMAIN_ID, addr, &addr);
+	n = RND4(cnt);
+	ptmpbuf = (u8 *)rtos_mem_zmalloc(n);
+	if (!ptmpbuf) {
+		return (1);
+	}
+
+	while (1) {
+		err = sd_read(priv, addr, n, ptmpbuf);
+		if (!err) {
+			memcpy(pbuf, ptmpbuf, cnt);
+			break;
+		} else {
+			/* retry to reduce impact of bus err */
+			if (retry ++ > 10) {
+				break;
+			}
+		}
+	}
+
+	if (ptmpbuf) {
+		rtos_mem_free(ptmpbuf);
+	}
+
 	return err;
 }
 
 /*
  * align address to 4 bytes in future.
  */
-s32 sdio_local_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pbuf)
+int sdio_local_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pbuf)
 {
-	s32 err = 0;
-	(void)priv;
-	(void)addr;
-	(void)cnt;
-	(void)pbuf;
+	int err = 0;
+	uint8_t *ptmpbuf;
 
+	if (addr & 0x3) {
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s, address must be 4 bytes alignment\n", __FUNCTION__);
+	}
+	if (cnt  & 0x3) {
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%s, size must be the multiple of 4 \n", __FUNCTION__);
+	}
+
+	sdio_get_cmdaddr(SDIO_LOCAL_DOMAIN_ID, addr, &addr);
+
+	ptmpbuf = (u8 *)rtos_mem_zmalloc(cnt);
+	if (!ptmpbuf) {
+		return (1);
+	}
+
+	memcpy(ptmpbuf, pbuf, cnt);
+
+	err = sd_write(priv, addr, cnt, ptmpbuf);
+
+	if (ptmpbuf) {
+		rtos_mem_free(ptmpbuf);
+	}
 	return err;
 }
 
 uint32_t sdio_cmd53_read4byte_local(struct whc_sdio *priv, uint32_t addr)
 {
 	uint32_t val = 0;
-	(void)priv;
-	(void)addr;
+	int err;
 
+	sdio_get_cmdaddr(SDIO_LOCAL_DOMAIN_ID, addr, &addr);
+	val = sd_read32(priv, addr, &err);
 	return val;
 }
 
 uint8_t sdio_cmd52_read1byte_local(struct whc_sdio *priv, uint32_t addr)
 {
-
 	uint8_t val = 0;
 
 	sdio_get_cmdaddr(SDIO_LOCAL_DOMAIN_ID, addr, &addr);

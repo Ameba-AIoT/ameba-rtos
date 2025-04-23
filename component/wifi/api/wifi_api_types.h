@@ -695,10 +695,30 @@ struct rtw_scan_param {
 	/** Config the max number of recorded AP. When set to 0, use default value 64.
 	 * When the number of scanned APs exceed `max_ap_record_num`, the AP(s) with smallest rssi will be discarded. */
 	u16                              max_ap_record_num;
+
+	/** The pointer of a buffer which stores the user need extra information when user handle the scan result in the
+	 * callback `scan_user_callback` or `scan_report_each_mode_user_callback`.*/
 	void                            *scan_user_data;
-	s32(*scan_user_callback)(u32 ap_num, void *user_data); /**< Used for normal asynchronized mode. */
-	s32(*scan_report_each_mode_user_callback)(struct rtw_scan_result *scanned_ap_info, void *user_data);  /**< Used for @ref RTW_SCAN_REPORT_EACH mode. */
-	s32(*scan_report_acs_user_callback)(struct rtw_acs_mntr_rpt *acs_mntr_rpt);  /**< Used for report acs info.*/
+
+	/** @brief Used for normal asynchronized mode.
+	  * @param[in] ap_num: The total number of scanned APs.
+	  * @param[in] user_data: Equal to `scan_user_data`.
+	  * @return @ref RTK_SUCCESS or @ref RTK_FAIL which indicates the result of user processing the scanned information.
+	  */
+	s32(*scan_user_callback)(u32 ap_num, void *user_data);
+
+	/** @brief Used for @ref RTW_SCAN_REPORT_EACH mode.
+	  * @param[in] scanned_ap_info: The pointer of a struct which stores a scanned AP's details.
+	  * @param[in] user_data: Equal to `scan_user_data`.
+	  * @return @ref RTK_SUCCESS or @ref RTK_FAIL which indicates the result of user processing the scanned information.
+	  */
+	s32(*scan_report_each_mode_user_callback)(struct rtw_scan_result *scanned_ap_info, void *user_data);
+
+	/** @brief Used for report acs info.
+	  * @param[in] scanned_ap_info: The pointer of a struct which describes the busyness of a channel.
+	  * @return @ref RTK_SUCCESS or @ref RTK_FAIL.
+	  */
+	s32(*scan_report_acs_user_callback)(struct rtw_acs_mntr_rpt *acs_mntr_rpt);
 };
 #pragma pack()
 
@@ -732,7 +752,7 @@ struct rtw_network_info {
 	s32 						key_id;		   /**< Only need to be set when use WEP. Val: 0~3.*/
 	u8				            channel;		/**< Set to 0 means full channel scan, set to other value means only scan on the specified channel. */
 	u8
-	pscan_option;	/**< Can set to @ref RTW_PSCAN_FAST_SURVEY for fast survey, which means quick scan, involves using an active scan on a specified channel, scanning for 25ms each time, and attempting up to 7 times until the target AP is found.. */
+	pscan_option;	/**< Can set to @ref RTW_PSCAN_FAST_SURVEY for fast survey, which means quick scan, involves using an active scan on a specified channel, scanning for 25ms each time, and attempting up to 7 times until the target AP is found. */
 	u8 				            is_wps_trigger;	/**< Connection triggered by WPS process.*/
 	struct rtw_wpa_supp_connect	wpa_supp;   /**< Only used by Linux host to specific some details required for STA connect, which RTOS do not use. */
 	struct rtw_mac				prev_bssid; /**< The BSSID of the AP before roaming. */
@@ -762,12 +782,12 @@ struct rtw_wifi_setting {
 	u8		mode;   /**< The mode of current wlan interface, val: @ref RTW_MODE_STA, @ref RTW_MODE_AP, @ref RTW_MODE_NAN. */
 	u8 		ssid[33];   /**< The ssid of connected AP or softAP. */
 	u8		bssid[6];   /**< The bssid of connected AP or softAP. */
-	u8		channel;
+	u8		channel;    /**< The operation channel of connected AP or softAP. */
 	u32		security_type; /**< The security type of connected AP or softAP, val: @ref RTW_SECURITY_OPEN, @ref RTW_SECURITY_WEP_PSK...*/
 	u8 		password[RTW_MAX_PSK_LEN];   /**< The password of connected AP or softAP. */
-	u8		key_idx;
-	u8		alg;		/**< Encryption algorithm. */
-	u32		auth_type;
+	u8		key_idx;      /**< The WEP key index used by connected AP or softAP which only valid when the security type of network is WEP.*/
+	u8		alg;		/**< Reserved only for driver internal compatibility; users can ignore this. */
+	u32		auth_type;  /**< Reserved only for driver internal compatibility; users can ignore this. */
 	u8		is_wps_trigger;	/**< Connection triggered by WPS process.*/
 	u32		rom_rsvd;
 };
@@ -785,7 +805,7 @@ union rtw_traffic_stats {
 	struct rtw_ap_traffic_stats {
 		u32	rx_packets;			/**< total packets received on the interface(exclude custom pkts).*/
 		u32	tx_packets;			/**< total packets transmitted on the interface.*/
-	} ap; /**< For SOFTAP mode statistic.*/
+	} ap; /**< For SoftAP mode statistic.*/
 };
 
 /**
@@ -800,7 +820,7 @@ union rtw_phy_stats {
 	} sta; /**< For STA mode statistic.*/
 	struct rtw_ap_phy_stats {
 		s8	data_rssi;          /**< Average data rssi in 1 sec. */
-	} ap; /**< For SOFTAP mode statistic.*/
+	} ap; /**< For SoftAP mode statistic.*/
 	struct rtw_cmn_phy_stats {
 		u8  cca_clm; /**< Channel loading measurement ratio by cca (the ratio of CCA = 1 in number of samples). driver do clm every 2 seconds, the value is the lastest result. */
 		u8	edcca_clm; /**< Channel loading measurement ratio by edcca (the ratio of EDCCA = 1 in number of samples). The value is also the lastest result. */
@@ -818,12 +838,12 @@ union rtw_phy_stats {
   *        and the data length of string pointed by password should not exceed @ref RTW_MAX_PSK_LEN.
   */
 struct rtw_softap_info {
-	struct rtw_ssid		ssid;
-	u8		            hidden_ssid;
+	struct rtw_ssid		ssid;          /**< SoftAP's name and length of name. */
+	u8		            hidden_ssid;   /**< Set to 1 means the SSID is hidden in SoftAP's beacon. */
 	u32					security_type; /**< Val: @ref RTW_SECURITY_OPEN, @ref RTW_SECURITY_WEP_PSK...*/
-	u8 		           *password;
-	u8 		            password_len;
-	u8		            channel;
+	u8 		           *password;      /**< SoftAP's password. */
+	u8 		            password_len;  /**< The length of `password`. */
+	u8		            channel;       /**< The expected operating channel for the SoftAP. */
 };
 
 #ifndef CONFIG_FULLMAC

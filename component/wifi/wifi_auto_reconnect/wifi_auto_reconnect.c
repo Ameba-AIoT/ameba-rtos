@@ -130,7 +130,11 @@ void rtw_reconn_timer_hdl(rtos_timer_t timer_hdl)
 	if (rtos_task_create(NULL, ((const char *)"rtw_reconn_task_hdl"), rtw_reconn_task_hdl, NULL, WIFI_STACK_SIZE_AUTO_RECONN_TASKLET, 6) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Create reconn task failed\n");
 	} else {
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "auto reconn %d\n", rtw_reconn.cnt);
+		if (rtw_reconn.b_infinite) {
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "auto reconn infinite\n");
+		} else {
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "auto reconn %d\n", rtw_reconn.cnt);
+		}
 		at_printf_indicate("wifi reconnecting\r\n");
 	}
 }
@@ -188,7 +192,7 @@ s32 wifi_set_autoreconnect(u8 enable)
 		rtw_reconn.cnt = 0;
 	}
 
-	rtw_reconn.b_infinite = 0;/*Set wifi_user_config.auto_reconnect_count to a high number is equivalent to having infinite auto-reconnects.*/
+	rtw_reconn.b_infinite = (wifi_user_config.auto_reconnect_count == 0xff) ? 1 : 0;
 
 	return RTK_SUCCESS;
 #else
