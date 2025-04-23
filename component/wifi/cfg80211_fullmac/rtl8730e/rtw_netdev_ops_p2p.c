@@ -38,7 +38,7 @@ static int rtw_p2p_ndev_close(struct net_device *pnetdev)
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 
-	ret = llhw_wifi_scan_abort(0);
+	ret = llhw_wifi_scan_abort(1);
 	if (ret) {
 		dev_err(global_idev.fullmac_dev, "[fullmac]: %s abort wifi scan failed!\n", __func__);
 		return -EPERM;
@@ -47,6 +47,8 @@ static int rtw_p2p_ndev_close(struct net_device *pnetdev)
 		memset(&info, 0, sizeof(info));
 		info.aborted = 1;
 		cfg80211_scan_done(global_idev.mlme_priv.pscan_req_global, &info);
+		global_idev.mlme_priv.pscan_req_global = NULL;
+		global_idev.mlme_priv.b_in_scan = false;
 	}
 
 	netif_tx_stop_all_queues(pnetdev);
