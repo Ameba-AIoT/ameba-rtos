@@ -301,15 +301,12 @@ static uint16_t _send_data(bool notify, rtk_bt_gatts_req_t *req)
 	struct rtk_bt_gatt_service *node = NULL;
 	uint8_t conn_id;
 	bool sent;
-
-#if !defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB
-	/* ble_mgr.a will queue packets, no need to care credits. */
 	uint16_t credits = 0;
+
 	le_get_gap_param(GAP_PARAM_LE_REMAIN_CREDITS, &credits);
 	if (!credits) {
 		return RTK_BT_ERR_NO_CREDITS;
 	}
-#endif
 
 	if (!le_get_conn_id_by_handle(req->conn_handle, &conn_id)) {
 		return RTK_BT_ERR_PARAM_INVALID;

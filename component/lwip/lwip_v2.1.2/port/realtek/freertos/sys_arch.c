@@ -575,34 +575,36 @@ sys_sem_t *sys_thread_sem_init(void)
         rtos_mem_free(sem);
         return 0;
     }
-    rtos_task_set_thread_local_storage_pointer(NULL, LWIP_INDEX, (void *)sem);
+    rtos_task_set_thread_local_storage_pointer(NULL, RTOS_LOCAL_STORAGE_LWIP_INDEX, (void *)sem);
     return sem;
 }
+
 sys_sem_t* sys_thread_sem_get(void)
 {
-    sys_sem_t *sem = (sys_sem_t *)rtos_task_get_thread_local_storage_pointer(NULL, LWIP_INDEX);
+    sys_sem_t *sem = (sys_sem_t *)rtos_task_get_thread_local_storage_pointer(NULL, RTOS_LOCAL_STORAGE_LWIP_INDEX);
     if (!sem) {
         sem = sys_thread_sem_init();
     }
     return sem;
 }
+
 void sys_thread_sem_deinit(void)
 {
-    sys_sem_t *sem = (sys_sem_t *)rtos_task_get_thread_local_storage_pointer(NULL, LWIP_INDEX);
+    sys_sem_t *sem = (sys_sem_t *)rtos_task_get_thread_local_storage_pointer(NULL, RTOS_LOCAL_STORAGE_LWIP_INDEX);
     if (sem != NULL) {
         sys_sem_free(sem);
         rtos_mem_free(sem);
-        rtos_task_set_thread_local_storage_pointer(NULL, LWIP_INDEX, NULL);
+        rtos_task_set_thread_local_storage_pointer(NULL, RTOS_LOCAL_STORAGE_LWIP_INDEX, NULL);
     }
 }
 
 void sys_thread_sem_deinit_tcb(uint32_t *pxTCB)
 {
-    sys_sem_t *sem = (sys_sem_t *)rtos_task_get_thread_local_storage_pointer((rtos_task_t)pxTCB, LWIP_INDEX);
+    sys_sem_t *sem = (sys_sem_t *)rtos_task_get_thread_local_storage_pointer((rtos_task_t)pxTCB, RTOS_LOCAL_STORAGE_LWIP_INDEX);
     if (sem != NULL) {
         sys_sem_free(sem);
         rtos_mem_free(sem);
-        rtos_task_set_thread_local_storage_pointer((rtos_task_t)pxTCB, LWIP_INDEX, NULL);
+        rtos_task_set_thread_local_storage_pointer((rtos_task_t)pxTCB, RTOS_LOCAL_STORAGE_LWIP_INDEX, NULL);
     }
 }
 #else

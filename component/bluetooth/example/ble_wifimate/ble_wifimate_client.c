@@ -195,15 +195,17 @@ static uint16_t ble_wifimate_char_multi_write_data_init(struct wifi_conn_config_
 
 	} else if (sp_encrypt->algorithm_type == BLE_WIFIMATE_ENCRYPT_DECRYPT_ALGO_AES_ECB) {
 		encrypt_len = (uint8_t)ceil(conn_info->password_len / 16.0) * 16;
-		encrypt_res = (void *)osif_mem_alloc(RAM_TYPE_DATA_ON, encrypt_len);
-		if (!encrypt_res) {
-			BT_LOGE("[APP] BLE WifiMate client can't alloc memory\r\n");
-			return RTK_BT_ERR_NO_MEMORY;
-		}
+		if (encrypt_len > 0) {
+			encrypt_res = (void *)osif_mem_alloc(RAM_TYPE_DATA_ON, encrypt_len);
+			if (!encrypt_res) {
+				BT_LOGE("[APP] BLE WifiMate client can't alloc memory\r\n");
+				return RTK_BT_ERR_NO_MEMORY;
+			}
 
-		if ((ret = ble_wifimate_client_encrypt(conn_info->password_len, conn_info->password, &encrypt_len, encrypt_res)) != RTK_BT_OK) {
-			osif_mem_free(encrypt_res);
-			return ret;
+			if ((ret = ble_wifimate_client_encrypt(conn_info->password_len, conn_info->password, &encrypt_len, encrypt_res)) != RTK_BT_OK) {
+				osif_mem_free(encrypt_res);
+				return ret;
+			}
 		}
 
 		char_data_len = CHAR_WIFI_CONN_ENABLE_SEG_FIRST_ELE_LEN + conn_info->ssid_len + \

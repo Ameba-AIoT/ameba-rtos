@@ -46,22 +46,35 @@ u32 Cert_PKHash_OTP_ADDR = SEC_PKKEY_PK1_0;
 // KM4_CKD range is [1, 8], KM0_CKD range is [1, 16] or USEXTAL
 const SocClk_Info_TypeDef SocClk_Info[] = {
 	/* PLL_CLK,		Vol_Type,		KM4_CKD,	KM0_CKD,	PSRAMC_CKD*/
-	{PLL_520M,		CORE_VOL_0P9,	CLKDIV(2),	CLKDIV(5),	CLKDIV(2)},
-	{PLL_331M,		CORE_VOL_1P0,	CLKDIV(1),	CLKDIV(3),	CLKDIV(1)},
-	{PLL_400M,		CORE_VOL_0P9,	CLKDIV(2),	CLKDIV(4),	CLKDIV(1)},
-	{PLL_480M,		CORE_VOL_0P9,	CLKDIV(2),	CLKDIV(5),	CLKDIV(2)},  // 48M for usb
-	{PLL_677P376M,	CORE_VOL_1P0,	CLKDIV(2),	CLKDIV(6),	CLKDIV(2)},
-	{PLL_688P128M,	CORE_VOL_1P0,	CLKDIV(2),	CLKDIV(6),	CLKDIV(2)},
+	/* This group is to reduce the impact of PSRAM on RF, the frequency is specially selected */
+	{PLL_524M,		CORE_VOL_0P9,	CLKDIV(2),	CLKDIV(5),	CLKDIV(2)},  // For SiP Psram
+	{PLL_392M,		CORE_VOL_0P9,	CLKDIV(2),	CLKDIV(4),	CLKDIV(1)},  // For SiP Psram
+	{PLL_334M,		CORE_VOL_1P0,	CLKDIV(1),	CLKDIV(3),	CLKDIV(1)},  // For SiP Psram
+	/* This group is to reduce the impact of Flash on RF, the frequency is specially selected.
+		Single die use the same settings. */
+	{PLL_512M,		CORE_VOL_0P9,	CLKDIV(2),	CLKDIV(5),	CLKDIV(2)},  // For SiP Flash or single die (No Psram)
+	{PLL_400M,		CORE_VOL_0P9,	CLKDIV(2),	CLKDIV(4),	CLKDIV(1)},  // For SiP Flash or single die (No Psram)
+	{PLL_334M,		CORE_VOL_1P0,	CLKDIV(1),	CLKDIV(3),	CLKDIV(1)},  // For SiP Flash or single die (No Psram)
+	/* The following frequency settings are not adjustable */
+	{PLL_480M,		CORE_VOL_0P9,	CLKDIV(2),	CLKDIV(5),	CLKDIV(2)},  // 48M for usb, both For SiP Psram / SiP Flash / single die
+	{PLL_677P376M,	CORE_VOL_1P0,	CLKDIV(2),	CLKDIV(6),	CLKDIV(2)},  // Audio
+	{PLL_688P128M,	CORE_VOL_1P0,	CLKDIV(2),	CLKDIV(6),	CLKDIV(2)},  // Audio
 };
 
 /**
-* @brif  SocClk_Info select
+ * @brif  In order to ensure the performance of RF, we limit the PLL setting values ​​for chips in different packages.
+*/
+u8 Valid_Boot_Idx_for_SiP_Psram[6] = {0, 1, 2, 6, 7, 8};
+u8 Valid_Boot_Idx_for_No_Psram[6] = {3, 4, 5, 6, 7, 8};
+
+/**
+* @brif  SocClk_Info select. One of Valid_Boot_Idx_for_SiP_Psram or Valid_Boot_Idx_for_No_Psram depend on different chip types
 * Boot_SocClk_Info_Idx is [0, sizeof(SocClk_Info)), Soc will set socclk by SocClk_Info[Boot_SocClk_Info_Idx]
 */
 #ifdef CONFIG_USB_DEVICE_EN
-u8 Boot_SocClk_Info_Idx = 3; /* Make sure the PLL_CLK for USB is an integer multiple of 48MHz */
+u8 Boot_SocClk_Info_Idx = 6; /* Make sure the PLL_CLK for USB is an integer multiple of 48MHz */
 #else
-u8 Boot_SocClk_Info_Idx = 0;
+u8 Boot_SocClk_Info_Idx = 6; /* 480M has an acceptable impact on the RF performance of SiP Psram and SiP Flash */
 #endif
 
 /**

@@ -139,8 +139,34 @@ void BOOT_Data_Flash_Init(void)
 u32 BOOT_ChipInfo_ClkInfoIdx(void)
 {
 	/*psram die is wb955 which can run up to 200MHz*/
+	bool idx_is_valid = false;
+	u8 *Valid_Boot_Idx_arr;
+	size_t Valid_Boot_Idx_arr_len;
+	u32 sip_memory = MEMORY_VENDOR_GET(ChipInfo_MemoryInfo());
 
-	/*Boot_SocClk_Info_Idx is valid, use user config socclk*/
+	/* Select different support tables according to different chip types */
+	if (IS_SIP_PSRAM(sip_memory)) {
+		Valid_Boot_Idx_arr = Valid_Boot_Idx_for_SiP_Psram;
+		Valid_Boot_Idx_arr_len = sizeof(Valid_Boot_Idx_for_SiP_Psram);
+	} else {
+		Valid_Boot_Idx_arr = Valid_Boot_Idx_for_No_Psram;
+		Valid_Boot_Idx_arr_len = sizeof(Valid_Boot_Idx_for_No_Psram);
+	}
+
+	/* Check if the configuration selected by the user is in the recommended list */
+	for (size_t i = 0; i < Valid_Boot_Idx_arr_len; i++) {
+		if (Boot_SocClk_Info_Idx == Valid_Boot_Idx_arr[i]) {
+			idx_is_valid = true;
+			break;
+		}
+	}
+
+	if (!idx_is_valid) {
+		RTK_LOGE(TAG, "user select Boot_SocClk_Info_Idx is NOT recommended. \n"
+				 "Please refer to the SocClk_Info configuration instructions in ameab_bootcfg.c\n");
+		assert_param(0);
+	}
+
 	return Boot_SocClk_Info_Idx;
 }
 

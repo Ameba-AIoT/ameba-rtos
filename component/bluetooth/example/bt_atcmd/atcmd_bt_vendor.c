@@ -314,8 +314,8 @@ int atcmd_bt_set_tx_power(int argc, char *argv[])
 		return 0;
 	}
 
-	if (!rtk_bt_set_tx_power(&tx_power)) {
-		BT_LOGA("Set tx power 0x%x OK!\r\n", tx_power.tx_gain);
+	if (rtk_bt_set_tx_power(&tx_power)) {
+		BT_LOGE("Set tx power 0x%x fail!\r\n", tx_power.tx_gain);
 	}
 	return 0;
 }
