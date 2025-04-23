@@ -137,7 +137,8 @@ struct wifi_user_conf {
 	/*!	When disconnection, STA automatically reconnects.*/
 	u8 auto_reconnect_en;
 
-	/*!	When disconnection, STA automatically reconnects, and auto_reconnect_count is the number of attempts.*/
+	/*!	When disconnection, STA automatically reconnects, and auto_reconnect_count is the number of attempts.
+		Specical value: 0xff means infinite retry count*/
 	u8 auto_reconnect_count;
 
 	/*!	auto_reconnect_interval is Automatic reconnection interval, unit s.*/
