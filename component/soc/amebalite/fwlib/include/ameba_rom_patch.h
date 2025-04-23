@@ -59,4 +59,8 @@ _LONG_CALL_ int TRNG_get_random_bytes_f_rng(void *p_rng, unsigned char *output, 
   * @}
   */
 
+#if defined(CONFIG_MATTER) && CONFIG_MATTER
+#define rtw_get_random_bytes TRNG_get_random_bytes
+#endif
+
 #endif /* _AMEBA_ROM_PATCH_H_ */

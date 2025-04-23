@@ -18,7 +18,9 @@
 
 #include "cmsis.h"
 #include "PortNames.h"
+#if !(defined(CHIP_PROJECT) && CHIP_PROJECT)
 #include "PeripheralNames.h"
+#endif // !(defined(CHIP_PROJECT) && CHIP_PROJECT)
 #include "PinNames.h"
 #include "ameba.h"
 #include <stdio.h>

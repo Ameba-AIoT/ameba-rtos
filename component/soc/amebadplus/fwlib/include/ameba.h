@@ -9,6 +9,9 @@
 
 #include "basic_types.h"
 #include "section_config.h"
+#if defined(CHIP_PROJECT) && CHIP_PROJECT
+#include "ameba_matter.h"
+#else
 #include "memproc.h"
 #include "strproc.h"
 #include "rand.h"
@@ -80,6 +83,7 @@
 #include "ameba_usrcfg.h"
 #include "log.h"
 #include "sscanf_minimal.h"
+#endif //defined(CHIP_PROJECT) && CHIP_PROJECT
 
 #define IMAGE_HEADER_LEN		0x20
 typedef struct {

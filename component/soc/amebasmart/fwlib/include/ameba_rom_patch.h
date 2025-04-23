@@ -73,4 +73,8 @@ int rtl_crypto_hmac_sha2_final_A(OUT u8 *pDigest, hw_sha_context *ctx);
   * @}
   */
 
+#if defined(CONFIG_MATTER) && CONFIG_MATTER
+#define rtw_get_random_bytes TRNG_get_random_bytes
+#endif
+
 #endif /* _AMEBA_ROM_PATCH_H_ */

@@ -24,6 +24,9 @@ __attribute__((unused)) static const char *TAG = "WLAN";
 #include "lwip_netconf.h"
 #endif
 extern void wifi_set_rom2flash(void);
+#if defined(CONFIG_MATTER) && CONFIG_MATTER
+#include "matter_wifis.h"
+#endif
 #if defined(CONFIG_AS_INIC_AP)
 #include "wifi_fast_connect.h"
 
@@ -46,11 +49,20 @@ void _init_thread(void *param)
 	val32 &= ~ AON_BIT_WIFI_INIC_NP_READY;
 	HAL_WRITE32(REG_AON_WIFI_IPC, 0, val32);
 
+#if defined(CONFIG_MATTER) && CONFIG_MATTER
+	matter_wifi_on(RTW_MODE_STA);
+
+#if CONFIG_AUTO_RECONNECT
+	//setup reconnection flag
+	matter_set_autoreconnect(1);
+#endif
+#else
 	wifi_on(RTW_MODE_STA);
 
 #if CONFIG_AUTO_RECONNECT
 	//setup reconnection flag
 	wifi_config_autoreconnect(1);
+#endif
 #endif
 
 	RTK_LOGI(TAG, "%s(%d), Available heap %d\n", __FUNCTION__, __LINE__, rtos_mem_get_free_heap_size());
@@ -64,7 +76,11 @@ void wlan_initialize(void)
 	wifi_set_rom2flash();
 	inic_host_init();
 
+#if defined(CONFIG_MATTER) && CONFIG_MATTER
+	wifi_fast_connect_enable(0);
+#else
 	wifi_fast_connect_enable(1);
+#endif
 
 	if (rtos_task_create(NULL, ((const char *)"init"), _init_thread, NULL, (512 + 768) * 4, 2) != SUCCESS) {
 		RTK_LOGE(TAG, "wlan_initialize failed\n");
@@ -105,10 +121,18 @@ void _init_thread(void *param)
 #endif
 	wifi_set_user_config();
 
+#if defined(CONFIG_MATTER) && CONFIG_MATTER
+	matter_wifi_on(RTW_MODE_STA);
+#if CONFIG_AUTO_RECONNECT
+	//setup reconnection flag
+	matter_set_autoreconnect(1);
+#endif
+#else
 	wifi_on(RTW_MODE_STA);
 #if CONFIG_AUTO_RECONNECT
 	//setup reconnection flag
 	wifi_config_autoreconnect(1);
+#endif
 #endif
 
 	RTK_LOGI(TAG, "%s(%d), Available heap %d\n", __FUNCTION__, __LINE__, rtos_mem_get_free_heap_size());
@@ -120,7 +144,11 @@ void _init_thread(void *param)
 void wlan_initialize(void)
 {
 	wifi_set_rom2flash();
+#if defined(CONFIG_MATTER) && CONFIG_MATTER
+	wifi_fast_connect_enable(0);
+#else
 	wifi_fast_connect_enable(1);
+#endif
 
 	if (rtos_task_create(NULL, ((const char *)"init"), _init_thread, NULL, (512 + 768) * 4, 5) != SUCCESS) {
 		RTK_LOGE(TAG, "wlan_initialize failed\n");

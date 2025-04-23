@@ -17,6 +17,9 @@ COMPONENT_CLEAN += realmesh
 $(foreach n, $(COMPONENT), $(eval $(call GenerateTargets, $(n),all)))
 
 all: $(addsuffix -all, $(COMPONENT)) 
+ifeq ($(CONFIG_MATTER_EN), y)
+	@make -C $(MATTER_BUILDDIR)/make all
+endif
 
 #*****************************************************************************#
 #              CLEAN GENERATED FILES                                          #
@@ -24,5 +27,8 @@ all: $(addsuffix -all, $(COMPONENT))
 $(foreach n, $(COMPONENT_CLEAN), $(eval $(call GenerateTargets,$(n),clean)))
 
 clean: $(addsuffix -clean, $(COMPONENT_CLEAN))
+ifeq ($(CONFIG_MATTER_EN), y)
+	@make -C $(MATTER_BUILDDIR)/make clean
+endif
 
 -include $(DEPS)

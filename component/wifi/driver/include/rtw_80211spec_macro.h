@@ -866,6 +866,9 @@ __inline static unsigned char *get_hdr_bssid(unsigned char *pframe)
 	return sa;
 }
 
+#if defined(CHIP_PROJECT) && CHIP_PROJECT
+#undef GetPriority
+#endif
 
 
 #endif

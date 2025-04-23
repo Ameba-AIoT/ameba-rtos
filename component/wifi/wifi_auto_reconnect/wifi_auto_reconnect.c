@@ -114,7 +114,12 @@ void rtw_reconn_timer_hdl(rtos_timer_t timer_hdl)
 
 	rtw_reconn.b_waiting = 0;
 	/*Creat a task to do wifi reconnect because call WIFI API in WIFI event is not safe*/
+#if defined(CONFIG_MATTER) && CONFIG_MATTER
+	extern void matter_reconn_task_hdl(void *param);
+	if (rtos_task_create(NULL, ((const char *)"matter_reconn_task_hdl"), matter_reconn_task_hdl, NULL, 1024, 6) != SUCCESS) {
+#else
 	if (rtos_task_create(NULL, ((const char *)"rtw_reconn_task_hdl"), rtw_reconn_task_hdl, NULL, 1024, 6) != SUCCESS) {
+#endif
 		RTK_LOGS(NOTAG, "Create reconn task failed\n");
 	} else {
 		RTK_LOGS(NOTAG, "auto reconn %d\n", rtw_reconn.cnt);

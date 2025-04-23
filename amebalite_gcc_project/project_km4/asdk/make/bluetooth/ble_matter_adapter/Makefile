@@ -1,22 +1,33 @@
-
 include $(MAKE_INCLUDE_GEN)
 
+# Include folder list
+# -------------------------------------------------------------------
 
 .PHONY: all clean
 
 #*****************************************************************************#
-#                                  VARIABLES                                  #
+#                               VARIABLES	                              #
 #*****************************************************************************#
-ifneq ($(MBEDTLS_MATTER_ENABLE),y)
-COMPONENT := mbedtls-2.16.9
-endif
+BTDIR       = $(BASEDIR)/component/bluetooth
 
-COMPONENT_CLEAN := mbedtls-2.16.9
+vpath %.c $(BTDIR)/ $(shell find $(BTDIR)/ -type d)
 
 #*****************************************************************************#
 #                               Source FILE LIST                              #
 #*****************************************************************************#
-OBJS =
+
+# Source file list
+# -------------------------------------------------------------------
+ifeq ($(CONFIG_MATTER_EN),y)
+# Matter BLE Adapter
+CSRC += $(BTDIR)/example/ble_matter_adapter_peripheral/ble_matter_adapter_service.c \
+        $(BTDIR)/example/ble_matter_adapter_peripheral/ble_matter_adapter_peripheral_main.c
+endif
+
+#*****************************************************************************#
+#                               Object FILE LIST                              #
+#*****************************************************************************#
+OBJS = $(notdir $(CSRC:.c=.o))
 
 #*****************************************************************************#
 #                               Include Dependency                            #
@@ -27,19 +38,19 @@ OBJS =
 #*****************************************************************************#
 #                        RULES TO GENERATE TARGETS                            #
 #*****************************************************************************#
-$(foreach n, $(COMPONENT), $(eval $(call GenerateTargets, $(n),all)))
-
 COPY_RAM_OBJS: CORE_TARGETS
-all: COPY_RAM_OBJS $(addsuffix -all, $(COMPONENT))
+all: COPY_RAM_OBJS
+
 #*****************************************************************************#
-#              GENERATE OBJECT FILE                                           #
+#              GENERATE OBJECT FILE 
 #*****************************************************************************#
 CORE_TARGETS: $(OBJS)
 
 #*****************************************************************************#
-#              CLEAN GENERATED FILES                                          #
+#                        RULES TO CLEAN TARGETS                               #
 #*****************************************************************************#
-$(foreach n, $(COMPONENT_CLEAN), $(eval $(call GenerateTargets,$(n),clean)))
-clean: CLEAN_OBJS $(addsuffix -clean, $(COMPONENT_CLEAN))
+clean: CLEAN_OBJS
+	$(call CLEAN_FUNC)
 
 -include $(DEPS)
+

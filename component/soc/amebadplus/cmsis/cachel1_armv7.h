@@ -182,9 +182,15 @@ __STATIC_FORCEINLINE void SCB_DisableDCache (void)
 {
   #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
     /* add register by realtek to speed up when _OPTIMIZE_NONE_, root cause is DCache Disabled */
+#if defined(__cplusplus) && (__cplusplus >= 201703L)
+    uint32_t ccsidr;
+    uint32_t sets;
+    uint32_t ways;
+#else
     register uint32_t ccsidr;
     register uint32_t sets;
     register uint32_t ways;
+#endif
 
     SCB->CSSELR = 0U;                       /* select Level 1 data cache */
     __DSB();

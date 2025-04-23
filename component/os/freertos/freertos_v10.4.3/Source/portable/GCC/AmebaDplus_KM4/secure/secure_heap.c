@@ -457,3 +457,17 @@ void vApplicationMallocFailedHook(void)
 	for (;;);
 }
 
+#if defined(CONFIG_MATTER_SECURE) && CONFIG_MATTER_SECURE
+size_t xPortGetTotalHeapSize( void )
+{
+	return secureconfigTOTAL_SRAM_HEAP_SIZE;
+}
+
+IMAGE3_ENTRY_SECTION
+void NS_ENTRY vMatterPrintSecureHeapStatus(void)
+{
+	DiagPrintf("[Secure Memory] xPortGetTotalHeapSize            = %d\n", xPortGetTotalHeapSize());
+	DiagPrintf("[Secure Memory] xPortGetMinimumEverFreeHeapSize  = %d\n", xPortGetMinimumEverFreeHeapSize());
+	DiagPrintf("[Secure Memory] xPortGetFreeHeapSize             = %d\n", xPortGetFreeHeapSize());
+}
+#endif

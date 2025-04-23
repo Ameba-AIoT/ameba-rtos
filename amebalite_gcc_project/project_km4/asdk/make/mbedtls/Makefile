@@ -7,7 +7,9 @@ include $(MAKE_INCLUDE_GEN)
 #*****************************************************************************#
 #                                  VARIABLES                                  #
 #*****************************************************************************#
+ifneq ($(MBEDTLS_MATTER_ENABLE), y)
 COMPONENT := mbedtls-2.16.9
+endif
 
 COMPONENT_CLEAN := mbedtls-2.16.9
 

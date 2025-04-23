@@ -97,6 +97,9 @@ mainmenu_option next_comment
 comment '< CONFIG BT'
 bool "Enable BT"														CONFIG_BT_MENU
 if [ "$CONFIG_BT_MENU" = "y" ]; then
+	if [ "$CONFIG_MATTER_EN" = "y" ]; then
+		bool "BLE_Matter_Adapter"	CONFIG_BLE_MATTER_ADAPTER
+	fi
 	if [ "$CONFIG_AP_CORE_CA32" = "y" ]; then
 		define_bool CONFIG_BT_FOR_AP y
 		define_bool CONFIG_FTL_ENABLED_FOR_AP y
@@ -1004,9 +1007,16 @@ mainmenu_option next_comment
 comment '< SSL Config'
 bool "MBEDTLS Enable"		CONFIG_MBED_TLS_ENABLED_FOR_AP
 if [ "$CONFIG_MBED_TLS_ENABLED_FOR_AP" = "y" ]; then
+if [ "$CONFIG_MATTER_EN" = "y" ]; then
+choice 'MBEDTLS Version'        "MBEDTLS_V_3_4_1   MBEDTLS_V_3_4_1_ENABLE \
+								 MBEDTLS_MATTER   MBEDTLS_MATTER_ENABLE \
+								 MBEDTLS_V_2_16_9   MBEDTLS_V_2_16_9_ENABLE
+								 " MBEDTLS_MATTER
+else
 choice 'MBEDTLS Version'        "MBEDTLS_V_3_4_1   MBEDTLS_V_3_4_1_ENABLE \
 								 MBEDTLS_V_2_16_9   MBEDTLS_V_2_16_9_ENABLE
 								 " MBEDTLS_V_2_16_9
+fi
 
 if [ "$MBEDTLS_V_3_4_1_ENABLE" = "y" ]; then
 define_int	MBEDTLS_VERSION     0x03040100
@@ -1116,6 +1126,14 @@ bool "Enable IPC Message Queue"        CONFIG_IMQ_EN_FOR_AP
 if [ "$CONFIG_IMQ_EN_FOR_AP" = "y" ]; then
 	bool "Enable RPC"	 CONFIG_RPC_EN_FOR_AP
 	bool "Enable IPC Message Queue Test"        CONFIG_IMQ2_TEST_FOR_AP
+fi
+endmenu
+
+mainmenu_option next_comment
+comment '< Matter Config '
+bool "Enable Matter"							CONFIG_MATTER_EN
+if [ "$CONFIG_MATTER_EN" = "y" ]; then
+	define_bool CONFIG_MATTER y
 fi
 endmenu
 

@@ -64,6 +64,9 @@ endif
 ifeq ($(CONFIG_BT_TRANSFER_MODULE), y)
 	make -C ble_transfer_module all
 endif
+ifeq ($(CONFIG_BLE_MATTER_ADAPTER),y)
+	make -C ble_matter_adapter all
+endif
 
 #*****************************************************************************#
 #              GENERATE OBJECT FILE                                           #
@@ -115,6 +118,9 @@ ifeq ($(CONFIG_BT_MESH_DEVICE_SCATTERNET), y)
 endif
 ifeq ($(CONFIG_BT_TRANSFER_MODULE), y)
 	make -C ble_transfer_module clean
+endif
+ifeq ($(CONFIG_BLE_MATTER_ADAPTER),y)
+	make -C ble_matter_adapter clean
 endif
 
 -include $(DEPS)

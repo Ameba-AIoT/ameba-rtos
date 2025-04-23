@@ -392,11 +392,23 @@ void at_wlconn(void *arg)
 #ifdef CONFIG_LWIP_LAYER
 	/* Start DHCPClient */
 	LwIP_DHCP(0, DHCP_START);
+#if defined(CONFIG_MATTER) && CONFIG_MATTER
+#if LWIP_VERSION_MAJOR >= 2 && LWIP_VERSION_MINOR >= 1
+#if LWIP_IPV6
+	matter_lwip_dhcp6();
+#endif
+#endif
+#endif
 	tick3 = rtos_time_get_current_system_time_ms();
 	RTK_LOGI(NOTAG, "[+WLCONN] Got IP after %d ms.\r\n", (unsigned int)(tick3 - tick1));
 #endif
 
 end:
+#if defined(CONFIG_MATTER) && CONFIG_MATTER
+	if ((ret == RTW_SUCCESS) && (error_no == 0)) {
+		wifi_indication(WIFI_EVENT_STA_ASSOC, NULL, 0, 0);
+	}
+#endif
 	rtos_mem_free((void *)p_wifi_setting);
 	init_wifi_struct();
 	if (error_no == 0) {
@@ -673,7 +685,11 @@ void at_wlstartap(void *arg)
 	char *argv[MAX_ARGC] = {0};
 #ifdef CONFIG_LWIP_LAYER
 	u32 ip_addr, netmask, gw;
+#if LWIP_IPV6
+	struct ip4_addr start_ip, end_ip;
+#else
 	struct ip_addr start_ip, end_ip;
+#endif
 	struct netif *pnetif = &xnetif[SOFTAP_WLAN_INDEX];
 #endif
 	int timeout = 20;

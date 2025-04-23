@@ -225,6 +225,9 @@ bool "Enable BT"												CONFIG_BT_MENU
 if [ "$CONFIG_BT_MENU" = "y" ]; then
 	define_bool CONFIG_BT_FOR_KM4 y
 	define_bool CONFIG_FTL_ENABLED_FOR_KM4 y
+	if [ "$CONFIG_MATTER_EN" = "y" ]; then
+		bool "BLE_Matter_Adapter"	CONFIG_BLE_MATTER_ADAPTER
+	fi
 	if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
 		define_bool CONFIG_BT_ENABLE_FAST_MP y
 	fi
@@ -371,6 +374,12 @@ endmenu #CONFIG OS
 # Normall function config
 #
 
+comment '--------------Matter Config Start--------------'
+mainmenu_option next_comment
+comment '< Matter Config '
+bool "Enable Matter"							CONFIG_MATTER_EN
+endmenu
+comment '--------------Matter Config End--------------'
 
 comment '--------------Peripheral Test start---------------'
 mainmenu_option next_comment
@@ -656,6 +665,9 @@ comment '< SSL Config'
 define_bool CONFIG_USE_MBEDTLS_ROM_FOR_KM4 y
 bool "MBEDTLS Enable"		CONFIG_MBED_TLS_ENABLED_FOR_KM4
 bool "SSL ROM Test"		CONFIG_SSL_ROM_TEST_FOR_KM4
+if [ "$CONFIG_MATTER_EN" = "y" ]; then
+	bool "Matter MBEDTLS Enable"		MBEDTLS_MATTER_ENABLE
+fi
 endmenu
 
 mainmenu_option next_comment
@@ -679,6 +691,20 @@ if [ "$CONFIG_802154_EN_FOR_KM4" = "y" ]; then
 	bool "Enable 802154 Test"               CONFIG_802154_TEST_EN_FOR_KM4
 	if [ "$CONFIG_802154_TEST_EN_FOR_KM4" = "y" ]; then
 		define_bool CONFIG_802154_THREAD_EN_FOR_KM4 n
+	fi
+fi
+endmenu
+
+mainmenu_option next_comment
+comment '< Matter Config '
+bool "Enable Matter"							CONFIG_MATTER_EN
+if [ "$CONFIG_MATTER_EN" = "y" ]; then
+	define_bool CONFIG_MATTER y
+	if [ "$CONFIG_TRUSTZONE_FOR_KM4" = "y" ]; then
+		bool "Enable Matter Secure"					CONFIG_MATTER_SECURE_EN
+		if [ "$CONFIG_MATTER_SECURE_EN" = "y" ]; then
+			define_bool CONFIG_MATTER_SECURE y
+		fi
 	fi
 fi
 endmenu
