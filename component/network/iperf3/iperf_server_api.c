@@ -34,9 +34,7 @@
 #include <stdint.h>
 #endif
 
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "lwipconf.h" //realtek add
+#include "lwip_netconf.h" //realtek add
 
 #include <sys/time.h>
 #include <setjmp.h>

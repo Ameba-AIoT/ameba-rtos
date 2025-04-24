@@ -201,7 +201,6 @@ ameba_add_external_app_library(wifi_fw
         ${private_definitions}
     p_COMPILE_OPTIONS
         ${private_compile_options}
-    p_ADD_BUILD_INFO
 )
 ##########################################################################################
 endif()# For temporary compatibility.

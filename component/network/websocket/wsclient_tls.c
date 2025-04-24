@@ -1,5 +1,4 @@
-#include "platform_autoconf.h"
-#include <websocket/libwsclient.h>
+#include "libwsclient.h"
 
 #include "mbedtls/ssl.h"
 #include "mbedtls/net_sockets.h"

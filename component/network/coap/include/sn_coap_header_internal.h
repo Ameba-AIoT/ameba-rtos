@@ -28,6 +28,7 @@ extern "C" {
 #ifndef SN_COAP_HEADER_INTERNAL_H_
 #define SN_COAP_HEADER_INTERNAL_H_
 
+#include "sn_coap_header.h"
 
 /* * * * * * * * * * * */
 /* * * * DEFINES * * * */
@@ -58,12 +59,12 @@ extern "C" {
  * \brief This structure is returned by sn_coap_exec() for sending
  */
 typedef struct sn_nsdl_transmit_ {
-    sn_nsdl_addr_s         *dst_addr_ptr;
+	sn_nsdl_addr_s         *dst_addr_ptr;
 
-    sn_nsdl_capab_e         protocol;
+	sn_nsdl_capab_e         protocol;
 
-    uint16_t                packet_len;
-    uint8_t                *packet_ptr;
+	uint16_t                packet_len;
+	uint8_t                *packet_ptr;
 } sn_nsdl_transmit_s;
 
 /* * * * * * * * * * * * * * * * * * * * * * */

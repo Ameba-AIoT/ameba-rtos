@@ -26,11 +26,11 @@
  */
 #include "iperf_config.h"
 
-#include "platform_stdlib.h"
-#include "basic_types.h"
 #include <errno.h>
 #include <assert.h>
-#include "lwipconf.h" //realtek add
+
+#include "lwip_netconf.h" //realtek add
+
 #ifdef HAVE_SENDFILE
 #ifdef linux
 #include <sys/sendfile.h>

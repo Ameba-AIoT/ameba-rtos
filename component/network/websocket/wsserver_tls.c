@@ -1,14 +1,12 @@
-#include "platform_autoconf.h"
-#include <websocket/wsserver_api.h>
-#include <websocket/ws_server_msg.h>
+#include "ameba_soc.h"
+#include "wsserver_api.h"
+#include "ws_server_msg.h"
 
 #include "mbedtls/ssl.h"
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/platform.h"
 #include "mbedtls/base64.h"
 #include "mbedtls/sha1.h"
-#include "os_wrapper.h"
-#include "ameba.h"
 
 struct wss_tls {
 	mbedtls_ssl_context ctx;

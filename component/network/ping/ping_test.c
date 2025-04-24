@@ -1,11 +1,4 @@
-#include "os_wrapper.h"
-#include "basic_types.h"
-#include "rtw_misc.h"
-
-#include <lwipconf.h>
-#include <lwip_netconf.h>
-#include "platform_stdlib.h"
-#include "basic_types.h"
+#include "lwip_netconf.h"
 
 #define printf	DiagPrintfNano
 
@@ -307,7 +300,7 @@ void cmd_ping(int argc, char **argv)
 
 	if (g_ping_task == NULL) {
 		if (rtos_task_create(&g_ping_task, (char const *)((const signed char *)"ping_test"), ping_test, host, STACKSIZE * 4,
-							 1 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
+							 1 + 4) != RTK_SUCCESS) {
 			printf("\n\r Ping ERROR: Create ping task failed.");
 		}
 	}

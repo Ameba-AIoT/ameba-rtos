@@ -1,6 +1,7 @@
 #ifndef WSCLIENT_H
 #define WSCLIENT_H
-#include <websocket/libwsclient.h>
+
+#include "libwsclient.h"
 
 /****************Define if using the polarssl*******************/
 #define USING_SSL

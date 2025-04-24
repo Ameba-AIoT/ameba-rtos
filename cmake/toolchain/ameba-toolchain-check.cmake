@@ -97,8 +97,6 @@ endif()
 find_package(Git)
 if(Git_FOUND)
 	message("Git found: ${GIT_EXECUTABLE}")
-else()
-	message(SEND_ERROR "Git check failed")
 endif()
 
 #CHECK python

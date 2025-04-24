@@ -33,8 +33,7 @@ extern "C" {
 #define DLLExport
 #endif
 
-#include "../MQTTPacket/MQTTPacket.h"
-#include "stdio.h"
+#include "MQTTPacket.h"
 #include "MQTTFreertos.h"
 
 #define MQTT_TASK

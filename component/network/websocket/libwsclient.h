@@ -1,10 +1,8 @@
 #ifndef EASYWSCLIENT_H
 #define EASYWSCLIENT_H
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "os_wrapper.h"
-#include "ameba.h"
 
+#include "ameba_soc.h"
+#include "os_wrapper.h"
 
 /****************Define the debug message level*********************/
 #define DEBUG_WSCLIENT    1

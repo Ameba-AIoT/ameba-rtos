@@ -1,9 +1,4 @@
-#include "main.h"
-
-#include <lwipconf.h>
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include <os_wrapper.h>
+#include "lwip_netconf.h"
 
 #define BSD_STACK_SIZE		    256
 #define DEFAULT_PORT            5001
@@ -301,7 +296,7 @@ int tcp_server_func(struct iperf_data_t iperf_data)
 		if (ntohl(client_hdr.flags) == 0x80000001) { //bi-direction, create client to send packets back
 			if ((NULL == g_tcp_client_task)) {
 				if (rtos_task_create(&g_tcp_client_task, "tcp_client_handler", tcp_client_handler, NULL, BSD_STACK_SIZE * 4,
-									 1 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
+									 1 + 4) != RTK_SUCCESS) {
 					printf("\n\rTCP ERROR: Create TCP client task failed.");
 				} else {
 					strncpy((char *)tcp_client_data.server_ip, inet_ntoa(client_addr.sin_addr), (strlen(inet_ntoa(client_addr.sin_addr))));
@@ -948,7 +943,7 @@ int udp_server_func(struct iperf_data_t iperf_data)
 		if (ntohl(client_hdr.flags) == 0x80000001) { //bi-direction, create client to send packets back
 			if (NULL == g_udp_client_task) {
 				if (rtos_task_create(&g_udp_client_task, "udp_client_handler", udp_client_handler, NULL, BSD_STACK_SIZE * 4,
-									 1 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
+									 1 + 4) != RTK_SUCCESS) {
 					printf("\r\nUDP ERROR: Create UDP client task failed.");
 				} else {
 					strncpy((char *)udp_client_data.server_ip, inet_ntoa(client_addr.sin_addr), (strlen(inet_ntoa(client_addr.sin_addr))));
@@ -1287,7 +1282,7 @@ void cmd_tcp(int argc, char **argv)
 
 	if (tcp_server_data.start && (NULL == g_tcp_server_task)) {
 		if (rtos_task_create(&g_tcp_server_task, "tcp_server_handler", tcp_server_handler, NULL, BSD_STACK_SIZE * 4,
-							 1 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
+							 1 + 4) != RTK_SUCCESS) {
 			printf("\n\rTCP ERROR: Create TCP server task failed.");
 		} else {
 			if (tcp_server_data.port == 0) {
@@ -1304,7 +1299,7 @@ void cmd_tcp(int argc, char **argv)
 
 	if (tcp_client_data.start && (NULL == g_tcp_client_task)) {
 		if (rtos_task_create(&g_tcp_client_task, "tcp_client_handler", tcp_client_handler, NULL, BSD_STACK_SIZE * 4,
-							 1 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
+							 1 + 4) != RTK_SUCCESS) {
 			printf("\n\rTCP ERROR: Create TCP client task failed.");
 		} else {
 			if (tcp_client_data.port == 0) {
@@ -1556,7 +1551,7 @@ void cmd_udp(int argc, char **argv)
 
 	if (udp_server_data.start && (NULL == g_udp_server_task)) {
 		if (rtos_task_create(&g_udp_server_task, "udp_server_handler", udp_server_handler, NULL, (BSD_STACK_SIZE + 1000) * 4,
-							 2 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
+							 2 + 4) != RTK_SUCCESS) {
 			printf("\r\nUDP ERROR: Create UDP server task failed.");
 		} else {
 			if (udp_server_data.port == 0) {
@@ -1573,14 +1568,14 @@ void cmd_udp(int argc, char **argv)
 			}
 		}
 		if (rtos_task_create(&g_timer_sync_server_task, "tdma_timer_sync_server", tdma_timer_sync_server, &udp_server_data, BSD_STACK_SIZE * 4,
-							 2 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
+							 2 + 4) != RTK_SUCCESS) {
 			printf("\r\nUDP ERROR: Create timer_sync server task failed.");
 		}
 	}
 
 	if (udp_client_data.start && (NULL == g_udp_client_task)) {
 		if (rtos_task_create(&g_udp_client_task, "udp_client_handler", udp_client_handler, NULL, BSD_STACK_SIZE * 4,
-							 1 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
+							 1 + 4) != RTK_SUCCESS) {
 			printf("\r\nUDP ERROR: Create UDP client task failed.");
 		} else {
 			if (udp_client_data.port == 0) {
@@ -1603,7 +1598,7 @@ void cmd_udp(int argc, char **argv)
 			}
 		}
 		if (rtos_task_create(&g_timer_sync_client_task, "tdma_timer_sync_client", tdma_timer_sync_client, &udp_client_data, BSD_STACK_SIZE * 4,
-							 1 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
+							 1 + 4) != RTK_SUCCESS) {
 			printf("\r\nUDP ERROR: Create timer_sync client task failed.");
 		}
 	}
