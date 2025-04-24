@@ -1,11 +1,9 @@
 #ifndef _WS_SERVER_API_H_
 #define _WS_SERVER_API_H_
 
-#include "platform_autoconf.h"
-#include "platform_stdlib.h"
-#include "basic_types.h"
 #include "os_wrapper.h"
-#include "rtw_misc.h"
+#include "wifi_api.h"
+
 /********************Define the secure level***************************/
 #define WS_SERVER_SECURE_NONE        0   /*!< Running with WS server */
 #define WS_SERVER_SECURE_TLS         1   /*!< Running with WSS server */

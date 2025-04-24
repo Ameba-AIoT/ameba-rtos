@@ -1,6 +1,7 @@
 #ifndef _WS_SERVER_MSG_H_
 #define _WS_SERVER_MSG_H_
-#include <websocket/wsserver_api.h>
+
+#include "wsserver_api.h"
 
 struct ws_data_header_type {
 	size_t header_size;

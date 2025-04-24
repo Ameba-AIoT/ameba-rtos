@@ -1,5 +1,5 @@
-#include "sn_coap_ameba_port.h"
-
+#include "ameba_soc.h"
+#include "sn_coap_protocol_internal.h"
 
 ///////////////////////////////////////////ramdom function///////////////////////////////////////////
 uint16_t randLIB_get_16bit()

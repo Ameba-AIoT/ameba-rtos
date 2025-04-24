@@ -1,9 +1,5 @@
-#include "os_wrapper.h"
-#include "diag.h"
-#include "lwip/sockets.h"
-#include "rtw_misc.h"
+#include "lwip_netconf.h"
 
-#include <lwipconf.h>
 #if defined(CONFIG_AS_INIC_AP)
 #define BSD_STACK_SIZE		    1024
 #else
@@ -530,7 +526,7 @@ int tcp_server_func(struct iperf_data_t iperf_data)
 			tcp_client_data->is_sub_stream = SUBSTREAM_FLAG | iperf_data.stream_id;
 
 			if (rtos_task_create(&tcp_client_data->task, "iperf_test_handler", iperf_test_handler, (void *) tcp_client_data, BSD_STACK_SIZE * 4,
-								 1 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
+								 1 + 4) != RTK_SUCCESS) {
 				tptest_res_log("\n\rTCP ERROR: Create TCP client task failed.\n\r");
 				rtos_mutex_take(g_tptest_mutex, MUTEX_WAIT_TIMEOUT);
 				free_stream_data(tcp_client_data);
@@ -1170,7 +1166,7 @@ void cmd_iperf(int argc, char **argv)
 
 	if (stream_data->role == 's') {
 		if (rtos_task_create(&stream_data->task, "iperf_test_handler", iperf_test_handler, (void *) stream_data, BSD_STACK_SIZE * 4,
-							 2 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
+							 2 + 4) != RTK_SUCCESS) {
 			tptest_res_log("UDP ERROR: Create UDP server task failed.\n\r");
 			goto exit;
 		}
@@ -1182,13 +1178,13 @@ void cmd_iperf(int argc, char **argv)
 				goto exit;
 			}
 			if (rtos_task_create(&stream_data_s->task, "iperf_test_handler", iperf_test_handler, (void *) stream_data_s, BSD_STACK_SIZE * 4,
-								 2 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
+								 2 + 4) != RTK_SUCCESS) {
 				tptest_res_log("UDP ERROR: Create UDP server task failed.\n\r");
 				goto exit;
 			}
 		}
 		if (rtos_task_create(&stream_data->task, "iperf_test_handler", iperf_test_handler, (void *) stream_data, BSD_STACK_SIZE * 4,
-							 1 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
+							 1 + 4) != RTK_SUCCESS) {
 			tptest_res_log("UDP ERROR: Create UDP client task failed.\n\r");
 			if (stream_data_s != NULL) {
 				rtos_task_delete(stream_data_s->task);

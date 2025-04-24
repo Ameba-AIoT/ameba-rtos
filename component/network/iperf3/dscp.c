@@ -28,7 +28,7 @@
 #include <inttypes.h>
 
 #include "platform_stdlib.h"
-#include "basic_types.h"
+
 #ifdef WIN32
 #define strcasecmp(a,b) _stricmp(a,b)
 #define snprintf _snprintf

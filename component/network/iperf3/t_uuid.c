@@ -27,7 +27,7 @@
 #include <sys/time.h>
 
 #include "platform_stdlib.h"
-#include "basic_types.h"
+
 #include "iperf_util.h"
 
 void uuid_thread(void *param)

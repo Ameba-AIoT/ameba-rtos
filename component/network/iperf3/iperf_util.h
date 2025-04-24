@@ -27,7 +27,7 @@
 #ifndef __IPERF_UTIL_H
 #define __IPERF_UTIL_H
 
-#include <cJSON.h>
+#include "cJSON.h"
 #include <stddef.h>
 
 int readentropy(void *out, size_t outsize);

@@ -99,7 +99,6 @@ ameba_add_external_app_library(${TARGET_LIB} #target name, will be part of outpu
         ${private_definitions}
     p_COMPILE_OPTIONS
         ${private_compile_options}
-    p_ADD_BUILD_INFO
 )
 ##########################################################################################
 endif()# For temporary compatibility.

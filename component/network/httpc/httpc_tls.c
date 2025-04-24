@@ -1,9 +1,6 @@
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "os_wrapper.h"
-#include "ameba.h"
-#include <lwipconf.h>
-#include "httpc.h"
+#include "ameba_soc.h"
+#include "lwip_netconf.h"
+#include "httpc_util.h"
 
 int httpc_setsockopt_rcvtimeo(struct httpc_conn *conn, int recv_timeout)
 {

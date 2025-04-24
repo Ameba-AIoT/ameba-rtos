@@ -35,13 +35,9 @@
 #include <time.h>
 #include <errno.h>
 
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "lwipconf.h" //realtek add
-#include "os_wrapper.h" //realtek add
-#include "rtw_misc.h" //realtek add
+#include "lwip_netconf.h" //realtek add
 
-#include <cJSON.h>
+#include "cJSON.h"
 #include "iperf.h"
 #include "iperf_api.h"
 

@@ -10,8 +10,6 @@ Tree Structure
 NULL<-prev-child1-next-><-prev-child2-next->NULL
 */
 
-#include "platform_stdlib.h"
-#include "basic_types.h"
 #include "os_wrapper.h"
 #include "xml.h"
 
