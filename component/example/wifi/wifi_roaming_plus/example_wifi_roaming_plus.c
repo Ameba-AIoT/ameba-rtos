@@ -26,7 +26,7 @@
 #endif
 
 #if ROAMING_PLUS_DBG
-#define ROAMING_DBG	printf
+#define ROAMING_DBG	DiagPrintf
 #else
 #define ROAMING_DBG
 #endif
@@ -134,19 +134,19 @@ static int roaming_ping_test(u32_t ip_addr)
 	u32 ping_flag = 0;
 
 	if (data_size > PING_TEST_DATA_SIZE_MAX) {
-		printf("\n\r[Wifi roaming plus][ERROR]: data size error, can't exceed %d", PING_TEST_DATA_SIZE_MAX);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r[Wifi roaming plus][ERROR]: data size error, can't exceed %d", PING_TEST_DATA_SIZE_MAX);
 		return 1;
 	}
 	ping_size = sizeof(struct icmp_echo_hdr) + data_size;
 	ping_buf = rtos_mem_malloc(ping_size);
 	if (NULL == ping_buf) {
-		printf("\n\r[Wifi roaming plus][ERROR] : Allocate ping_buf failed");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r[Wifi roaming plus][ERROR] : Allocate ping_buf failed");
 		return 1;
 	}
 	reply_buf = rtos_mem_malloc(ping_size);
 	if (NULL == reply_buf) {
 		rtos_mem_free(ping_buf);
-		printf("\n\r[Wifi roaming plus][ERROR] : Allocate reply_buf failed");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r[Wifi roaming plus][ERROR] : Allocate reply_buf failed");
 		return 1;
 	}
 
@@ -282,7 +282,7 @@ WIFI_RETRY_LOOP:
 	if (ret != RTK_SUCCESS) {
 		wifi_retry_connect--;
 		if (wifi_retry_connect > 0) {
-			printf("[Wifi roaming plus]: wifi retry connect\r\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "[Wifi roaming plus]: wifi retry connect\r\n");
 			goto WIFI_RETRY_LOOP;
 		}
 	}
@@ -396,7 +396,7 @@ int  wifi_write_ap_info_to_flash(u32 offer_ip, u32 server_ip)
 
 	/* STEP1: get current connect info from wifi driver*/
 	if (wifi_get_setting(STA_WLAN_INDEX, &setting) || setting.mode == RTW_MODE_AP) {
-		printf("\r\n %s():wifi_get_setting fail or ap mode", __func__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\r\n %s():wifi_get_setting fail or ap mode", __func__);
 		return RTK_FAIL;
 	}
 	channel = (u32)setting.channel;
@@ -444,13 +444,13 @@ int  wifi_write_ap_info_to_flash(u32 offer_ip, u32 server_ip)
 	if (read_data->num) {
 		/*check if ap info {ssid/password/security_type} has changed*/
 		if (memcmp((u8 *)fast_connect_info.psk_essid, (u8 *)fast_connect_info.psk_essid, 32)) {
-			printf("\r\n[Wifi roaming plus]: ap ssid change\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus]: ap ssid change\n");
 			ap_change = 1;
 		} else if (memcmp((u8 *)fast_connect_info.psk_passphrase, (u8 *)(read_data->ap_info.psk_passphrase), 32)) {
-			printf("\r\n[Wifi roaming plus]: ap password change\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus]: ap password change\n");
 			ap_change = 1;
 		} else if (fast_connect_info.security_type != read_data->ap_info.security_type) {
-			printf("\r\n[Wifi roaming plus]: ap security type change\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus]: ap security type change\n");
 			ap_change = 1;
 		} else { /*ap info doesn't change*/
 			for (i = 0; i < read_data->num; i++) {
@@ -462,11 +462,11 @@ int  wifi_write_ap_info_to_flash(u32 offer_ip, u32 server_ip)
 		}
 	}
 	if (ap_change) {
-		printf("\r\n[Wifi roaming plus]: erase flash and restore new ap info\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus]: erase flash and restore new ap info\n");
 		memset((u8 *)read_data, 0, sizeof(struct  wifi_roaming_data));
 		read_data->num = 1;
 	} else {
-		printf("\r\n[Wifi roaming plus]: Add a new channel into flash\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus]: Add a new channel into flash\n");
 		read_data->num++;
 	}
 	read_data->channel[read_data->num - 1] = fast_connect_info.channel; //store channel
@@ -490,7 +490,7 @@ int wifi_init_done_callback_roaming(void)
 
 	/* Check whether stored flash profile is empty */
 	if ((read_data.num == 0) || (read_data.num > MAX_CH_NUM)) {
-		printf("\r\n[Wifi roaming plus]: Fast connect profile is empty, abort fast connection\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus]: Fast connect profile is empty, abort fast connection\n");
 	}
 	/* Find the best ap in flash profile */
 	else {
@@ -519,7 +519,7 @@ static u32 wifi_roaming_plus_find_ap_from_scan_buf(char *target_ssid, void *user
 
 	scanned_ap_list = (struct rtw_scan_result *)rtos_mem_zmalloc(ap_num * sizeof(struct rtw_scan_result));
 	if (scanned_ap_list == NULL) {
-		printf("malloc scan buf for example wifi roaming plus\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "malloc scan buf fail for example wifi roaming plus\n");
 		return -1;
 	}
 
@@ -569,7 +569,7 @@ int wifi_roaming_scan_one_channel(wifi_roaming_ap_t	roaming_ap, u32 retry)
 	cur_rssi = phy_stats.rssi;
 	rssi_delta = ((FIND_BETTER_RSSI_DELTA - retry * 2) > 1) ? (FIND_BETTER_RSSI_DELTA - retry * 2) : 2; //at least 3db better
 	if (ap_list->rssi - cur_rssi > rssi_delta && (memcmp(roaming_ap.bssid, ap_list->bssid, ETH_ALEN))) {
-		printf("\r\n[Wifi roaming plus]: Find a better ap on channel %d, rssi = %d, cur_rssi=%d\n", ap_list->channel, ap_list->rssi, cur_rssi);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus]: Find a better ap on channel %d, rssi = %d, cur_rssi=%d\n", ap_list->channel, ap_list->rssi, cur_rssi);
 		return 1;
 	}
 	return 0;
@@ -674,7 +674,7 @@ int wifi_roaming_scan(struct wifi_roaming_data  read_data, u32 retry)
 			rtos_time_delay_ms(500);
 		}
 	}
-	printf("\r\n[Wifi roaming plus]: Find a better ap fail,retry:%d!\n", retry);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus]: Find a better ap fail,retry:%d!\n", retry);
 	return 0;
 }
 
@@ -691,7 +691,7 @@ void wifi_roaming_plus_thread(void *param)
 	struct wifi_roaming_data read_data = {0};
 	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 
-	printf("\nExample: wifi_roaming_plus \n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: wifi_roaming_plus \n");
 	while (1) { //wait wifi connect
 		if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
 			&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
@@ -711,7 +711,7 @@ void wifi_roaming_plus_thread(void *param)
 			rt_kv_get("wlan_data", (uint8_t *) &read_data, sizeof(struct wifi_roaming_data));
 			if (ap_rssi < RSSI_SCAN_THRESHOLD) {
 				if (polling_count >= 1) {
-					printf("\r\n[Wifi roaming plus]: Start scan, current rssi(%d) < scan threshold rssi(%d) \n", ap_rssi, RSSI_SCAN_THRESHOLD);
+					RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus]: Start scan, current rssi(%d) < scan threshold rssi(%d) \n", ap_rssi, RSSI_SCAN_THRESHOLD);
 					ap_list = (wifi_roaming_ap_t *)malloc(sizeof(wifi_roaming_ap_t));
 					memset(ap_list, 0, sizeof(wifi_roaming_ap_t));
 					ap_list->rssi = -100;
@@ -729,19 +729,19 @@ void wifi_roaming_plus_thread(void *param)
 								ROAMING_DBG("\r\n %s():Current rssi(%d),roaming threshold rssi(%d)\n", __func__, ap_rssi, RSSI_ROAMING_THRESHOLD);
 								if ((ap_rssi < RSSI_ROAMING_THRESHOLD)) {
 									/*2.connect a better ap*/
-									printf("\r\n[Wifi roaming plus] :Start roaming, current rssi(%d) < roaming threshold rssi(%d),target ap rssi(%d)\n", \
-										   ap_rssi, RSSI_ROAMING_THRESHOLD, ap_list->rssi);
+									RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus] :Start roaming, current rssi(%d) < roaming threshold rssi(%d),target ap rssi(%d)\n", \
+											 ap_rssi, RSSI_ROAMING_THRESHOLD, ap_list->rssi);
 									read_data.ap_info.channel = ap_list->channel;
 									wlan_fast_connect(&read_data, FAST_CONNECT_SPECIFIC_CH);
 									break;
 								} else if (ap_rssi > RSSI_SCAN_THRESHOLD + 5) {
 									/*no need to roaming*/
-									printf("\r\n[Wifi roaming plus] :Cancel roaming, current rssi=%d\n", ap_rssi);
+									RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus] :Cancel roaming, current rssi=%d\n", ap_rssi);
 									break;
 								}
 								ap_valid--;
 								if (!ap_valid) {
-									printf("\r\n[Wifi roaming plus]: Valid time(%d) expire, retry scan\n");
+									RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus]: Valid time(%d) expire, retry scan\n");
 								}
 							} else {
 								break;
@@ -755,11 +755,11 @@ void wifi_roaming_plus_thread(void *param)
 							ap_rssi = phy_stats.rssi;
 							if (ap_rssi > RSSI_SCAN_THRESHOLD + 5) {
 								/*no need to roaming*/
-								printf("\r\n[Wifi roaming plus]: Cancel roaming, current rssi=%d\n", ap_rssi);
+								RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus]: Cancel roaming, current rssi=%d\n", ap_rssi);
 							} else {
 								/*2.connect a better ap*/
-								printf("\r\n[Wifi roaming plus]: Start roaming, current rssi(%d) < roaming threshold rssi(%d),target ap rssi(%d)\n", \
-									   ap_rssi, RSSI_ROAMING_THRESHOLD, ap_list->rssi);
+								RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus]: Start roaming, current rssi(%d) < roaming threshold rssi(%d),target ap rssi(%d)\n", \
+										 ap_rssi, RSSI_ROAMING_THRESHOLD, ap_list->rssi);
 								read_data.ap_info.channel = ap_list->channel;
 								wlan_fast_connect(&read_data, FAST_CONNECT_SPECIFIC_CH);
 							}
@@ -790,7 +790,7 @@ void wifi_roaming_plus_thread(void *param)
 void example_wifi_roaming_plus(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"wifi_roaming_thread"), wifi_roaming_plus_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
-		printf("\n\r%s rtos_task_create(wifi_roaming_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(wifi_roaming_thread) failed", __FUNCTION__);
 	}
 	return;
 }

@@ -51,6 +51,8 @@ if(CONFIG_AS_INIC_NP)
         ${DIR_COMMON}/wififw_keepalive_common.c
         ${DIR_COMMON}/wififw_disconchk_common.c
         ${DIR_COMMON}/wififw_media_common.c
+        ${DIR}/wififw_txrpt.c
+        ${DIR_COMMON}/wififw_txrpt_common.c
     )
 
     if(CONFIG_WIFI_FW_VERIFY)
@@ -114,6 +116,8 @@ if(CONFIG_SINGLE_CORE_WIFI)
 	   ${DIR_COMMON}/wififw_keepalive_common.c
 	   ${DIR_COMMON}/wififw_disconchk_common.c
 	   ${DIR_COMMON}/wififw_media_common.c
+       ${DIR}/wififw_txrpt.c
+       ${DIR_COMMON}/wififw_txrpt_common.c
     )
     if(CONFIG_WIFI_FW_VERIFY)
         list(

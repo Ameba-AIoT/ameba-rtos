@@ -60,7 +60,7 @@ ameba_list_append(private_compile_options
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
-ameba_add_external_tmp_library(audio_configs
+ameba_add_internal_library(audio_configs
     p_SOURCES
         ${private_sources}
     p_INCLUDES

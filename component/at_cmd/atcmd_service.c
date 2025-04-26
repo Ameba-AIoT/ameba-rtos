@@ -4,25 +4,50 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdarg.h>
-#include <string.h>
-#include <stdio.h>
-#include "atcmd_service.h"
-#include "vfs.h"
-#include "cJSON.h"
-#include "kv.h"
+
+#include "platform_autoconf.h"
 
 #ifdef CONFIG_SUPPORT_ATCMD
 
-#include "atcmd_mqtt.h"
-#include "atcmd_http.h"
-#include "atcmd_websocket.h"
-#include "atcmd_ota.h"
-#include "atcmd_otp.h"
+#include "lwip_netconf.h"
+#include "at_intf_uart.h"
+#include "at_intf_spi.h"
+#include "atcmd_service.h"
+#include "vfs.h"
+#include "kv.h"
+#include "cJSON.h"
+
+#include "atcmd_sys.h"
 
 #ifndef CONFIG_MP_SHRINK
+#ifdef CONFIG_WLAN
 #include "atcmd_wifi.h"
+#ifdef CONFIG_LWIP_LAYER
+#include "atcmd_mqtt.h"
+#include "atcmd_sockets.h"
+#include "atcmd_http.h"
+#include "atcmd_websocket.h"
 #include "atcmd_network.h"
+#include "atcmd_ota.h"
+#endif
+#endif
+#include "atcmd_fs.h"
+#endif
+
+#if defined(CONFIG_BT) && CONFIG_BT
+#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
+#include "atcmd_bt_mp.h"
+#endif
+#endif
+
+#ifndef CONFIG_MP_INCLUDED
+#if defined(CONFIG_BT_COEXIST)
+#include "atcmd_coex.h"
+#endif
+#endif
+
+#ifndef CONFIG_AMEBAD
+#include "atcmd_otp.h"
 #endif
 
 //======================================================
@@ -31,10 +56,6 @@ struct list_head log_hash[ATC_INDEX_NUM];
 rtos_mutex_t at_printf_mutex = NULL;
 
 static const char *const TAG = "AT";
-
-#include "at_intf_uart.h"
-#include "at_intf_spi.h"
-#include "lwip_netconf.h"
 
 log_init_t log_init_table[] = {
 

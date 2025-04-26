@@ -2,6 +2,7 @@ ameba_add_image(target_img2)
 # variable c_CURRENT_IMAGE value is ${c_CURRENT_IMAGE}
 ###############################  ADD COMPONENT  ###################################
 
+ameba_add_subdirectory(${c_CMPT_AIVOICE_DIR})
 ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_APP_DIR}/benchmark)
 ameba_add_subdirectory(${c_CMPT_AUDIO_DIR})

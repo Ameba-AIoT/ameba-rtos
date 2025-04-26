@@ -4,12 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdio.h>
-#include <os_wrapper.h>
-#include <atcmd_service.h>
-#include <atcmd_bt_impl.h>
-#include <bt_utils.h>
-#include <bt_api_config.h>
+#include "atcmd_service.h"
+#include "atcmd_bt_impl.h"
+#include "bt_utils.h"
+#include "bt_api_config.h"
 
 #define BT_ATCMD_HELP   0  // decide whether open the usage of atcmd help
 

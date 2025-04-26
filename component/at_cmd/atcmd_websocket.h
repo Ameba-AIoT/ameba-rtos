@@ -9,10 +9,8 @@
 
 #ifdef CONFIG_LWIP_LAYER
 
-#include "wsclient_api.h"
 #include "wifi_api.h"
-
-#define TAG_AT_WEBSOCKET   "AT_WEBSOCKET"
+#include "wsclient_api.h"
 
 /* for websocket client */
 #define MAX_WEBSOCKET_LINK_NUM      3

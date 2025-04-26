@@ -435,7 +435,6 @@ static void SPDIO_Recycle_Rx_BD(IN PHAL_SPDIO_ADAPTER pgSPDIODev)
 	struct spdio_t *obj = (struct spdio_t *)pgSPDIODev->spdio_priv;
 	u8 isPktEnd = FALSE;
 
-	SDIO_INTConfig(SDIO_WIFI, BIT_C2H_DMA_OK, DISABLE);
 	while (SDIO_RXBD_RPTR_Get(SDIO_WIFI) != pgSPDIODev->RXBDRPtr) {
 		pRxBdHdl = pgSPDIODev->pRXBDHdl + pgSPDIODev->RXBDRPtr;
 		pRXBD = pRxBdHdl->pRXBD;
@@ -461,7 +460,6 @@ static void SPDIO_Recycle_Rx_BD(IN PHAL_SPDIO_ADAPTER pgSPDIODev)
 			spdio_tx_done_cb(obj, (u8 *)(pRxBdHdl->priv));
 		}
 	}
-	SDIO_INTConfig(SDIO_WIFI, BIT_C2H_DMA_OK, ENABLE);
 	RTK_LOGS(TAG, RTK_LOG_DEBUG, "<==SDIO_Recycle_Rx_BD(%u)\n", FreeCnt);
 }
 
@@ -509,9 +507,7 @@ static void SPDIO_IRQ_Handler_BH(void *pData)
 		}
 
 		if (IntStatus & BIT_H2C_DMA_OK || pgSPDIODev->WaitForTxbuf) {
-			SDIO_INTConfig(SDIO_WIFI, BIT_H2C_DMA_OK, DISABLE);
 			SPDIO_TX_FIFO_DataReady(pgSPDIODev);
-			SDIO_INTConfig(SDIO_WIFI, BIT_H2C_DMA_OK, ENABLE);
 		}
 		if (IntStatus & BIT_TXFIFO_H2C_OVF) {
 			pgSPDIODev->TxOverFlow = 1;

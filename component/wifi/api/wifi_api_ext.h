@@ -52,7 +52,7 @@ extern "C" {
 s32 wifi_scan_abort(u8 block);
 
 /**
- * @brief  Enable or disable LPS. LPS is the abbreviation of Leisure Power Save mode.
+ * @brief  Enable or disable LPS. LPS is the abbreviation of Legacy Power Save mode.
  * 	Wi-Fi automatically turns RF off during the association to AP if traffic is not busy, while
  *  it also automatically turns RF on to listen to the beacon of the associated AP.
  * @param[in]  enable: It could be TRUE(1) (means enable LPS) or FALSE(0) (means disable LPS).
@@ -63,7 +63,7 @@ s32 wifi_scan_abort(u8 block);
 s32 wifi_set_lps_enable(u8 enable);
 
 /**
- * @brief  Set the listen interval of LPS. LPS is the abbreviation of Leisure Power Save mode.
+ * @brief  Set the listen interval of LPS. LPS is the abbreviation of Legacy Power Save mode.
  * 	Wi-Fi automatically turns RF off during the association to AP	if traffic is not busy, while
  *  it also automatically turns RF on to listen to the beacon of the associated AP.
  *  The listen interval is used to indicate how often the STA wakes to listen to beacons of AP.
@@ -500,6 +500,18 @@ s32 wifi_get_tx_power(u8 rate, s8 *txpwr);
   * @return  None.
   */
 void wifi_set_conn_step_try_limit(struct rtw_conn_step_retries *conn_step_retries);
+
+/**
+  * @brief  Automatically select a better channel based on environmental conditions.
+  * @param[in]  acs_config: configure acs parameters
+  * @param[out] ideal_ch
+  * @return
+  *    - @ref RTK_SUCCESS : The API executed successfully.
+  *    - @ref RTK_FAIL :
+  *      - Scan fail.
+  *      - Get acs report fail
+  */
+s32 wifi_acs_find_ideal_channel(struct rtw_acs_config *acs_config, u8 *ideal_ch);
 
 /** @} End of Extended_Functions group */
 /** @} End of WIFI_Exported_Functions group*/

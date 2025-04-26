@@ -1,10 +1,10 @@
+#include "platform_stdlib.h"
 #include "atcmd_service.h"
-#include "log.h"
-#include "stdlib.h"
 #include "kv.h"
 #include "vfs.h"
 
 static const char *const TAG = "AT-FS";
+static char g_cert_fs = VFS_REGION_1;
 
 #define MAX_CERT_LEN 4096
 
@@ -12,7 +12,7 @@ int32_t at_fs_delete(const char *key)
 {
 	int res;
 	char *path = NULL;
-	char *prefix = find_vfs_tag(VFS_REGION_1);
+	char *prefix = find_vfs_tag(g_cert_fs);
 	if (prefix == NULL) {
 		return -1;
 	}
@@ -33,7 +33,7 @@ int32_t at_fs_size(const char *key)
 	struct stat *stat_buf;
 	int res = -1;
 	char *path = NULL;
-	char *prefix = find_vfs_tag(VFS_REGION_1);
+	char *prefix = find_vfs_tag(g_cert_fs);
 
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
 		RTK_LOGE(TAG, "malloc fail\r\n");
@@ -81,7 +81,7 @@ int32_t at_fs_get_offset(const char *key, void *buffer, int32_t len, int32_t off
 	vfs_file *finfo;
 	int res = -1;
 	char *path = NULL;
-	char *prefix = find_vfs_tag(VFS_REGION_1);
+	char *prefix = find_vfs_tag(g_cert_fs);
 
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
 		RTK_LOGE(TAG, "malloc fail\r\n");
@@ -132,7 +132,7 @@ int32_t at_fs_set_offset(const char *key, const void *val, int32_t len, int32_t 
 	vfs_file *finfo;
 	int res = -1;
 	char *path = NULL;
-	char *prefix = find_vfs_tag(VFS_REGION_1);
+	char *prefix = find_vfs_tag(g_cert_fs);
 
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
 		RTK_LOGE(TAG, "malloc fail\r\n");
@@ -187,7 +187,7 @@ int at_fs_list(char *buf, int32_t len)
 	DIR *dir;
 	char *path = NULL;
 	char *name_str = NULL;
-	char *prefix = find_vfs_tag(VFS_REGION_1);
+	char *prefix = find_vfs_tag(g_cert_fs);
 	int ret = -1;
 
 	if (prefix == NULL) {
@@ -410,7 +410,12 @@ int atcmd_get_ssl_certificate_size(CERT_TYPE cert_type, int index)
 	}
 
 	struct stat stat_buf;
-	prefix = find_vfs_tag(VFS_REGION_1);
+	prefix = find_vfs_tag(g_cert_fs);
+	if (prefix == NULL) {
+		RTK_LOGW(TAG, "VFS region is not exist\r\n");
+		return -1;
+	}
+
 	switch (cert_type) {
 	case CLIENT_CA:
 		DiagSnPrintf(path, PATH_MAX, "%s:CERT/client_ca_%d.crt", prefix, index);
@@ -464,7 +469,12 @@ int atcmd_get_ssl_certificate(char *buffer, CERT_TYPE cert_type, int index)
 
 	vfs_file *finfo;
 	struct stat stat_buf;
-	prefix = find_vfs_tag(VFS_REGION_1);
+	prefix = find_vfs_tag(g_cert_fs);
+	if (prefix == NULL) {
+		RTK_LOGW(TAG, "VFS region is not exist\r\n");
+		return -1;
+	}
+
 	switch (cert_type) {
 	case CLIENT_CA:
 		DiagSnPrintf(path, PATH_MAX, "%s:CERT/client_ca_%d.crt", prefix, index);
@@ -547,7 +557,12 @@ void at_cert(void *arg)
 	path = (char *)rtos_mem_zmalloc(PATH_MAX);
 	buffer = (char *)rtos_mem_zmalloc(MAX_CERT_LEN + 1);
 	memset(buffer, 0, sizeof(buffer));
-	prefix = find_vfs_tag(VFS_REGION_1);
+	prefix = find_vfs_tag(g_cert_fs);
+	if (prefix == NULL) {
+		RTK_LOGW(TAG, "VFS region is not exist\r\n");
+		error_no = 2;
+		goto end;
+	}
 
 	DiagSnPrintf(path, PATH_MAX, "%s:CERT/%s_ca_%d.crt", prefix, role == 0 ? "client" : "server", index);
 	at_printf("%s\r\n", path);
@@ -610,9 +625,57 @@ end:
 
 }
 
+static void at_fs_region_help(void)
+{
+	RTK_LOGI(TAG, "\r\n");
+	RTK_LOGI(TAG, "AT+FSRGN=<fs region>\r\n");
+	RTK_LOGI(TAG, "\t<fs region>:\t1=region1, 2=region2\r\n");
+}
+
+void at_fs_region(void *arg)
+{
+	int argc = 0;
+	char *argv[MAX_ARGC] = {0};
+	u8 error_no = 0, region;
+
+	if (arg == NULL) {
+		RTK_LOGW(TAG, "The parameters can not be ignored\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	argc = parse_param(arg, argv);
+	if (argc != 2) {
+		RTK_LOGW(TAG, "Number of parameters is wrong\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	region = atoi(argv[1]);
+	if (region == 1) {
+		g_cert_fs = VFS_REGION_1;
+	} else if (region == 2) {
+		g_cert_fs = VFS_REGION_2;
+	} else {
+		RTK_LOGW(TAG, "Parameter value is wrong\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+end:
+	if (error_no == 0) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+		at_fs_region_help();
+	}
+
+}
+
 log_item_t at_fs_items[] = {
 	{"+FS", at_fs, {NULL, NULL}},
 	{"+CERT", at_cert, {NULL, NULL}},
+	{"+FSRGN", at_fs_region, {NULL, NULL}},
 };
 
 void at_fs_init(void)

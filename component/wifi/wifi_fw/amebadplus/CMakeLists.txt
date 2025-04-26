@@ -26,7 +26,8 @@ set(
     ${DIR}/wififw_ps_dbg.c
     ${DIR}/wififw_gtimer.c
     ${DIR}/wififw_btcoex.c
-	${DIR}/wififw_twt_timer.c
+    ${DIR}/wififw_twt_timer.c
+    ${DIR}/wififw_txrpt.c
 )
 
 include(${WIFIFWDIR}/common/wififw_common.cmake)

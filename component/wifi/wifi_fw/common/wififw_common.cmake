@@ -1,5 +1,6 @@
 set(DIR_COMMON ${WIFIFWDIR}/common)
 
+
 list(
     APPEND CSRC
     ${DIR_COMMON}/wififw_init_common.c
@@ -28,4 +29,5 @@ list(
     ${DIR_COMMON}/wififw_disconchk_common.c
     ${DIR_COMMON}/wififw_media_common.c
     ${DIR_COMMON}/wififw_tunnel.c
+    ${DIR_COMMON}/wififw_txrpt_common.c
 )
