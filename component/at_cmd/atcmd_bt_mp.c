@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "platform_autoconf.h"
+
+#if defined(CONFIG_BT) && CONFIG_BT
+#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
 #include "atcmd_service.h"
-#include "ameba_soc.h"
-#include "os_wrapper.h"
+#include "atcmd_bt_mp.h"
 
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_host_api.h"
 #endif
-
-#if defined(CONFIG_BT) && CONFIG_BT
-#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
 
 static bool open_flag = 0;
 

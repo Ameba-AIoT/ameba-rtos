@@ -6,10 +6,6 @@
 
 #include "at_intf_uart.h"
 #include "atcmd_service.h"
-#include "cJSON.h"
-#include "kv.h"
-#include "stdlib.h"
-#include "ringbuffer.h"
 
 #if defined (CONFIG_AMEBASMART)
 u8 UART_TX = _PA_3; // UART0 TX

@@ -61,13 +61,13 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.ips_enable = 1;
 	wifi_user_config.ips_level = RTW_IPS_WIFI_OFF;
 
-	/* LPS(Leisure Power Save), power save when wifi connected, has 2 mode - legacy power save and uapsd power save*/
+	/* LPS(Legacy Power Save), the legacy power save when wifi connected. */
 	wifi_user_config.lps_enable = 1;
-	wifi_user_config.lps_mode = RTW_PS_MODE_LEGACY;
-	wifi_user_config.legacy_ps_listen_interval = 0;
+	wifi_user_config.lps_listen_interval = 0;
 	wifi_user_config.wowlan_rx_bcmc_dis = 0;
 
-	/*wmm ps, when wifi_user_config.lps_enable = 1 and wifi_user_config.lps_mode = RTW_PS_MODE_UAPSD_WMM */
+	/* U-APSD WMM power save when wifi connected. Only one of the lps mode or uapsd mode can be enabled */
+	wifi_user_config.uapsd_enable = 0;
 	wifi_user_config.uapsd_max_sp_len = 0;
 	wifi_user_config.uapsd_ac_enable = 0;
 
@@ -117,6 +117,13 @@ _WEAK void wifi_set_user_config(void)
 		wifi_user_config.ap_sta_num = 12;
 #ifndef CONFIG_FULLMAC
 		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to 12\n");
+#endif
+	}
+
+	if (wifi_user_config.lps_enable && wifi_user_config.uapsd_enable) {
+		wifi_user_config.lps_enable = 0;
+#ifndef CONFIG_FULLMAC
+		RTK_LOGW(TAG_WLAN_DRV, "only enable uspsd mode\n");
 #endif
 	}
 }

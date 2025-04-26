@@ -4,22 +4,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "ameba_soc.h"
-#include "platform_stdlib.h"
-#include <sys_api.h>
-#include <flash_api.h>
+#include "sys_api.h"
 #include "ameba_rtos_version.h"
-#include <build_info.h>
+#include "build_info.h"
+
+#include "at_intf_spi.h"
+#include "ameba_ota.h"
+
 #include "atcmd_service.h"
+#ifndef CONFIG_MP_SHRINK
+#include "atcmd_wifi.h"
+#ifdef CONFIG_LWIP_LAYER
 #include "atcmd_mqtt.h"
+#include "atcmd_sockets.h"
 #include "atcmd_http.h"
 #include "atcmd_websocket.h"
 #include "atcmd_network.h"
-#include "at_intf_spi.h"
-#include "ameba_ota.h"
-#ifndef CONFIG_MP_SHRINK
-#include "atcmd_wifi.h"
 #endif
+#endif
+#if defined(CONFIG_BT) && CONFIG_BT
+#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
+#include "atcmd_bt_mp.h"
+#endif
+#endif
+#ifndef CONFIG_MP_INCLUDED
+#if defined(CONFIG_BT_COEXIST)
+#include "atcmd_coex.h"
+#endif
+#endif
+#include "atcmd_sys.h"
 
 #include "FreeRTOS.h"
 #if (configGENERATE_RUN_TIME_STATS == 1)
@@ -469,13 +482,11 @@ void at_list(void *arg)
 	at_printf("Common AT Command:\r\n");
 	print_system_at();
 
-#ifdef CONFIG_WLAN
 #ifndef CONFIG_MP_SHRINK
+#ifdef CONFIG_WLAN
 	/* Wifi commands. */
 	at_printf("Wi-Fi AT Command:\r\n");
 	print_wifi_at();
-#endif
-
 #ifdef CONFIG_LWIP_LAYER
 #if defined(CONFIG_ATCMD_SOCKET) && (CONFIG_ATCMD_SOCKET == 1)
 	/* Socket AT Commands. */
@@ -497,14 +508,14 @@ void at_list(void *arg)
 	at_printf("NETWORK AT command:\r\n");
 	print_network_at();
 #endif
-#endif
-
 #if defined(CONFIG_ATCMD_MQTT) && (CONFIG_ATCMD_MQTT == 1)
 	/* MQTT commands. */
 	at_printf("MQTT AT command:\r\n");
 	print_mqtt_at();
 #endif
-#endif
+#endif // CONFIG_LWIP_LAYER
+#endif // CONFIG_WLAN
+#endif // CONFIG_MP_SHRINK
 
 #if defined(CONFIG_BT) && CONFIG_BT
 	/* Bluetooth commands. */

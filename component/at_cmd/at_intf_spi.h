@@ -6,10 +6,8 @@
  *  This module is a confidential and proprietary property of RealTek and
  *  possession or use of this module requires written permission of RealTek.
  */
-#ifndef SPI_EXT_H
-#define SPI_EXT_H
-
-#include "platform_autoconf.h"
+#ifndef AT_INTF_SPI_H
+#define AT_INTF_SPI_H
 
 #define SPI_SLAVE_RD_CMD 0x01
 #define SPI_SLAVE_WR_CMD 0x02
@@ -31,4 +29,4 @@ extern u8 AT_SYNC_TO_MASTER_GPIO;
 _LONG_CALL_ void atio_spi_output(char *buf, int len);
 _LONG_CALL_ int atio_spi_init(void);
 
-#endif
+#endif /* AT_INTF_SPI_H */

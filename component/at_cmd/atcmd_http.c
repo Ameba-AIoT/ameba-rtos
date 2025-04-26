@@ -8,13 +8,10 @@
 
 #ifdef CONFIG_LWIP_LAYER
 #if defined(CONFIG_ATCMD_HTTP) && (CONFIG_ATCMD_HTTP == 1)
-
-#include "ameba.h"
-#include "os_wrapper.h"
+#include "lwip_netconf.h"
 #include "atcmd_service.h"
 #include "atcmd_http.h"
 #include "httpc/httpc.h"
-#include "lwip/opt.h"
 
 static const char *const AT_HTTP_TAG = "AT_HTTP";
 

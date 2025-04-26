@@ -44,7 +44,7 @@ u32 wifi_roaming_find_ap_from_scan_buf(u8 *target_ssid, void *user_data, int ap_
 
 	scanned_ap_list = (struct rtw_scan_result *)rtos_mem_zmalloc(ap_num * sizeof(struct rtw_scan_result));
 	if (scanned_ap_list == NULL) {
-		printf("malloc scan buf for example wifi roaming\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "malloc scan buf fail for example wifi roaming\n");
 		return -1;
 	}
 
@@ -60,7 +60,7 @@ u32 wifi_roaming_find_ap_from_scan_buf(u8 *target_ssid, void *user_data, int ap_
 			if (ap_count < MAX_AP_NUM) {
 				candicate = (wifi_roaming_ap_t *)malloc(sizeof(wifi_roaming_ap_t));
 				if (!candicate) {
-					printf("\r\n malloc buf for AP info fail!");
+					RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\r\n malloc buf for AP info fail!");
 					break;
 				}
 				memset(candicate, 0, sizeof(wifi_roaming_ap_t));
@@ -95,7 +95,7 @@ void wifi_ip_changed_hdl(u8 *buf, u32 buf_len, u32 flags, void *userdata)
 	(void)flags;
 	(void)userdata;
 	//todo for customer
-	printf("\r\n IP has channged!");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n IP has channged!");
 }
 void wifi_roaming_thread(void *param)
 {
@@ -117,7 +117,7 @@ void wifi_roaming_thread(void *param)
 #ifdef CONFIG_LWIP_LAYER
 	uint8_t *IP = LwIP_GetIP(0);
 #endif
-	printf("\nExample: wifi_roaming \n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: wifi_roaming \n");
 	while (1) {
 		if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
 			&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
@@ -209,7 +209,7 @@ void example_wifi_roaming(void)
 {
 
 	if (rtos_task_create(NULL, ((const char *)"wifi_roaming_thread"), wifi_roaming_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
-		printf("\n\r%s rtos_task_create(wifi_roaming_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(wifi_roaming_thread) failed", __FUNCTION__);
 	}
 
 	return;

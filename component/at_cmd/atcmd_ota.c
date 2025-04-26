@@ -5,17 +5,17 @@
  */
 
 #include "platform_autoconf.h"
-#include "os_wrapper.h"
-#include "atcmd_service.h"
+
 #ifdef CONFIG_LWIP_LAYER
 #if defined(CONFIG_ATCMD_OTA) && (CONFIG_ATCMD_OTA == 1)
-#include "wifi_api.h"
+#include "sys_api.h"
+#include "atcmd_service.h"
+#include "ameba_ota.h"
 #include "atcmd_ota.h"
 
 static const char *const TAG = "AT-OTA";
 
 static int at_ota_status = 0;
-extern void sys_reset(void);
 
 static int ota_set_ssl_certificate(char **dest, CERT_TYPE cert_type, int index)
 {
