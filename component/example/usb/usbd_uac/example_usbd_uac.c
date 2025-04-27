@@ -48,7 +48,7 @@ static const char *const TAG = "UAC";
 #define CONFIG_USBD_UAC_DEMUX_CH_DEBUG   1
 
 /* USB speed */
-#ifdef CONFIG_USB_FS
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
 #define CONFIG_USBD_UAC_SPEED USB_SPEED_FULL
 #elif defined(CONFIG_USBD_UAC1)
 /* UAC 1.0 spec supports only Full Speed. */
@@ -67,7 +67,7 @@ static const char *const TAG = "UAC";
 #define AUDIO_CHANNEL_NUM                       USBD_UAC_DEFAULT_CH_CNT
 
 /* ms */
-#ifdef CONFIG_USB_FS
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
 #define USB_AUDIO_MS_BUF_SIZE               1023U
 #else
 /* the buffer size maybe need to be changed if format( AUDIO_BYTE_WIDTH_SIZE * AUDIO_CHANNEL_NUM num * AUDIO_SAMPLING_FREQ) changes */

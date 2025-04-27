@@ -13,59 +13,24 @@ menu "CONFIG USB"
                 select USB_DEVICE_EN if CORE_AS_AP
             config USB_HOST_EN_MENU
                 bool "Host"
-                depends on AMEBASMART||AMEBASMARTPLUS||AMEBAGREEN2||AMEBAL2||AMEBAD
+                depends on !SUPPORT_USB_DEVICE_ONLY
                 select USB_HOST_EN if CORE_AS_AP
             config USB_DRD_EN_MENU
                 bool "DRD"
-                depends on AMEBASMART||AMEBASMARTPLUS||AMEBAGREEN2||AMEBAL2||AMEBAD
+                depends on !SUPPORT_USB_DEVICE_ONLY
                 select USB_DRD_EN if CORE_AS_AP
         endchoice
     endif
 
-    if USB_DEVICE_EN_MENU
+    if USB_DEVICE_EN_MENU || USB_DRD_EN_MENU
+        comment "USB Device Class"
         orsource "device/Kconfig"
     endif
 
-    if USB_HOST_EN_MENU
+    if USB_HOST_EN_MENU || USB_DRD_EN_MENU
+        comment "USB Host Class"
         orsource "host/Kconfig"
     endif
-
-    if USB_DRD_EN_MENU
-        comment "USB Device Class"
-
-        config USBD_CDC_ACM_MENU
-            bool "CDC ACM"
-            select USBD_CDC_ACM if CORE_AS_AP
-
-        config USBD_HID_MENU
-            bool "HID"
-            select USBD_HID if CORE_AS_AP
-
-        config USBD_MSC_MENU
-            bool "MSC"
-            depends on AMEBASMART||AMEBASMARTPLUS||AMEBAGREEN2||AMEBAD
-            select USBD_MSC if CORE_AS_AP
-
-        config USBD_UAC_MENU
-            bool "UAC"
-            depends on AMEBASMART
-            select USBD_UAC if CORE_AS_AP
-
-        comment "USB Host Class"
-
-        config USBH_CDC_ACM_MENU
-            bool "CDC ACM"
-            select USBH_CDC_ACM if CORE_AS_AP
-
-        config USBH_MSC_MENU
-            bool "MSC"
-            select USBH_MSC if CORE_AS_AP
-
-        config USBH_UVC_MENU
-            bool "UVC"
-            select USBH_UVC if CORE_AS_AP
-    endif
-
 
     config USB_OTG_EN
         bool
@@ -75,7 +40,6 @@ menu "CONFIG USB"
         bool
     config USB_DRD_EN
         bool
-
 
     config USBD_CDC_ACM
         bool
@@ -87,7 +51,15 @@ menu "CONFIG USB"
         bool
     config USBD_COMPOSITE_CDC_ACM_UAC
         bool
+    config USBD_COMPOSITE_CDC_ACM_UAC1
+        bool
+    config USBD_COMPOSITE_CDC_ACM_UAC2
+        bool
     config USBD_COMPOSITE_HID_UAC
+        bool
+    config USBD_COMPOSITE_HID_UAC1
+        bool
+    config USBD_COMPOSITE_HID_UAC2
         bool
     config USBD_HID
         bool
@@ -97,6 +69,10 @@ menu "CONFIG USB"
         bool
     config USBD_UAC
         bool
+    config USBD_UAC1
+        bool
+    config USBD_UAC2
+        bool
     config USBD_VENDOR
         bool
 
@@ -104,7 +80,7 @@ menu "CONFIG USB"
         bool
     config USBH_CDC_ECM
         bool
-    config USBH_ECM_ETHERNE
+    config USBH_ECM_ETHERNET
         bool
     config USBH_ECM_ETHERNET_BRIDGE
         bool

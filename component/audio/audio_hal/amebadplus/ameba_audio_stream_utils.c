@@ -665,6 +665,67 @@ void ameba_audio_stream_tx_set_i2s_pin(uint32_t index)
 	}
 }
 
+void ameba_audio_stream_rx_reset_i2s_pin(void)
+{
+	if (AUDIO_I2S_IN_MCLK_PIN != -1) {
+		Pinmux_Config(AUDIO_I2S_IN_MCLK_PIN, PINMUX_FUNCTION_GPIO);
+	}
+	if (AUDIO_I2S_IN_BCLK_PIN != -1) {
+		Pinmux_Config(AUDIO_I2S_IN_BCLK_PIN, PINMUX_FUNCTION_GPIO);
+	}
+	if (AUDIO_I2S_IN_LRCLK_PIN != -1) {
+		Pinmux_Config(AUDIO_I2S_IN_LRCLK_PIN, PINMUX_FUNCTION_GPIO);
+	}
+
+	ameba_audio_set_sp_data_in(0);
+
+	if (AUDIO_I2S_IN_DATA0_PIN != -1) {
+		Pinmux_Config(AUDIO_I2S_IN_DATA0_PIN, PINMUX_FUNCTION_GPIO);
+	}
+
+	if (AUDIO_I2S_IN_MULTIIO_EN) {
+		if (AUDIO_I2S_IN_DATA1_PIN != -1) {
+			Pinmux_Config(AUDIO_I2S_IN_DATA1_PIN, PINMUX_FUNCTION_GPIO);
+		}
+		if (AUDIO_I2S_IN_DATA2_PIN != -1) {
+			Pinmux_Config(AUDIO_I2S_IN_DATA2_PIN, PINMUX_FUNCTION_GPIO);
+		}
+		if (AUDIO_I2S_IN_DATA3_PIN != -1) {
+			Pinmux_Config(AUDIO_I2S_IN_DATA3_PIN, PINMUX_FUNCTION_GPIO);
+		}
+	}
+}
+
+void ameba_audio_stream_rx_reset_i2s_extra_pin(void)
+{
+	if (AUDIO_I2S_IN_EXTRA_MCLK_PIN != -1) {
+		Pinmux_Config(AUDIO_I2S_IN_EXTRA_MCLK_PIN, PINMUX_FUNCTION_GPIO);
+	}
+	if (AUDIO_I2S_IN_EXTRA_BCLK_PIN != -1) {
+		Pinmux_Config(AUDIO_I2S_IN_EXTRA_BCLK_PIN, PINMUX_FUNCTION_GPIO);
+	}
+	if (AUDIO_I2S_IN_EXTRA_LRCLK_PIN != -1) {
+		Pinmux_Config(AUDIO_I2S_IN_EXTRA_LRCLK_PIN, PINMUX_FUNCTION_GPIO);
+	}
+
+	ameba_audio_set_sp_data_in(0);
+
+	if (AUDIO_I2S_IN_EXTRA_DATA0_PIN != -1) {
+		Pinmux_Config(AUDIO_I2S_IN_EXTRA_DATA0_PIN, PINMUX_FUNCTION_GPIO);
+	}
+	if (AUDIO_I2S_IN_EXTRA_MULTIIO_EN) {
+		if (AUDIO_I2S_IN_EXTRA_DATA1_PIN != -1) {
+			Pinmux_Config(AUDIO_I2S_IN_EXTRA_DATA1_PIN, PINMUX_FUNCTION_GPIO);
+		}
+		if (AUDIO_I2S_IN_EXTRA_DATA2_PIN != -1) {
+			Pinmux_Config(AUDIO_I2S_IN_EXTRA_DATA2_PIN, PINMUX_FUNCTION_GPIO);
+		}
+		if (AUDIO_I2S_IN_EXTRA_DATA3_PIN != -1) {
+			Pinmux_Config(AUDIO_I2S_IN_EXTRA_DATA3_PIN, PINMUX_FUNCTION_GPIO);
+		}
+	}
+}
+
 int32_t ameba_audio_stream_get_direct_out_channel_idx(uint32_t channel)
 {
 	uint32_t direct_out_channel = HAL_OSAL_ERR_INVALID_PARAM;

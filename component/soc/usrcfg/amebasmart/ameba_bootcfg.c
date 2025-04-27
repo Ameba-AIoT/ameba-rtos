@@ -29,6 +29,9 @@ RCC_ConfDef RCC_Config[] = {
 	{0xFFFFFFFF,			NULL,							ENABLE},
 };
 
+u32 Cert_PKHash_OTP_ADDR = SEC_PKKEY_PK1_0;
+
+#if defined (CONFIG_ARM_CORE_CM4)
 /*
 * @brif	CACHE and TCM share memory setting
 */
@@ -42,8 +45,6 @@ CACHETCM_TypeDef CACHETCM_Def[7] = {
 	{TCM_SIZE_80KB,		ENABLE, 		DISABLE, 	CACHE_WWR_1WAY,		CACHE_WWR_4WAY,		0x80000,		0x93fff},
 	{TCM_SIZE_96KB,		DISABLE, 		DISABLE, 	CACHE_WWR_4WAY,		CACHE_WWR_4WAY,		0x80000,		0x97fff},
 };
-
-u32 Cert_PKHash_OTP_ADDR = SEC_PKKEY_PK1_0;
 
 /**
 * @brif  TCM size select.
@@ -77,6 +78,7 @@ CACHEWRR_TypeDef CACHEWRR_Def[2] = {
 	{DISABLE,	CACHE_WWR_4WAY,		0x00000000,		0xffff0000},	//for ICache Setting
 	{DISABLE,	CACHE_WWR_4WAY,		0x00000000,		0xffff0000},	//for DCache Setting
 };
+#endif
 
 u8 Boot_AP_Enbale = ENABLE;
 

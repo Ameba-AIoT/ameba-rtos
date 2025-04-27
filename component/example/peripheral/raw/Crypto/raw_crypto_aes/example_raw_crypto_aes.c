@@ -35,15 +35,15 @@ static unsigned char aes_test_ecb_hwkey_enc[32] = {
 u8 cipher_result[128] ALIGNMTO(CACHE_LINE_SIZE);
 
 
-void dump_buf(char *info, u8 *buf, u32 len)
+void aes_dump_buf(char *info, u8 *buf, u32 len)
 {
 	if (info) {
-		printf("%s", info);
+		RTK_LOGI(NOTAG, "%s", info);
 	}
 
 	for (u32 i = 0; i < len; i++) {
-		printf("%s0x%02X%s", i % 16 == 0 ? "\n     " : " ",
-			   buf[i], i == len - 1 ? "\n" : "");
+		RTK_LOGI(NOTAG, "%s0x%02X%s", i % 16 == 0 ? "\n     " : " ",
+				 buf[i], i == len - 1 ? "\n" : "");
 	}
 }
 
@@ -68,7 +68,7 @@ int test_aes_ecb(u32 OTPkey)
 
 	/*take sema to obtain the right to crypto engine*/
 	while (IPC_SEMTake(IPC_SEM_CRYPTO, timeout) != TRUE) {
-		printf("ipsec get hw sema fail\n");
+		RTK_LOGI(NOTAG, "ipsec get hw sema fail\n");
 	}
 
 	if (OTPkey > 3) {
@@ -87,17 +87,17 @@ int test_aes_ecb(u32 OTPkey)
 	if (OTPkey > 3) {
 
 		if (_memcmp(aes_test_ecb_swkey_enc, pResult, msglen) == 0) {
-			printf("AES ECB sw key encrypt result success\r\n");
+			RTK_LOGI(NOTAG, "AES ECB sw key encrypt result success\r\n");
 		} else {
-			printf("AES ECB sw key encrypt result failed\r\n");
-			dump_buf("====encrypt result=====\r\n", pResult, msglen);
+			RTK_LOGI(NOTAG, "AES ECB sw key encrypt result failed\r\n");
+			aes_dump_buf("====encrypt result=====\r\n", pResult, msglen);
 		}
 	} else {
 		if (_memcmp(aes_test_ecb_hwkey_enc, pResult, msglen) == 0) {
-			printf("AES ECB otp key encrypt result success\r\n");
+			RTK_LOGI(NOTAG, "AES ECB otp key encrypt result success\r\n");
 		} else {
-			printf("AES ECB otp key encrypt result failed\r\n");
-			dump_buf("====encrypt result=====\r\n", pResult, msglen);
+			RTK_LOGI(NOTAG, "AES ECB otp key encrypt result failed\r\n");
+			aes_dump_buf("====encrypt result=====\r\n", pResult, msglen);
 		}
 
 
@@ -107,7 +107,7 @@ int test_aes_ecb(u32 OTPkey)
 
 	/*take sema to obtain the right to crypto engine*/
 	while (IPC_SEMTake(IPC_SEM_CRYPTO, timeout) != TRUE) {
-		printf("ipsec get hw sema fail\n");
+		RTK_LOGI(NOTAG, "ipsec get hw sema fail\n");
 	}
 
 	if (OTPkey > 3) {
@@ -122,10 +122,10 @@ int test_aes_ecb(u32 OTPkey)
 	IPC_SEMFree(IPC_SEM_CRYPTO);
 
 	if (_memcmp(aes_test_ecb_buf, pResult, msglen) == 0) {
-		printf("AES ECB decrypt result success\r\n");
+		RTK_LOGI(NOTAG, "AES ECB decrypt result success\r\n");
 	} else {
-		printf("AES ECB decrypt result failed\r\n");
-		dump_buf("====decrypt result=====\r\n", pResult, msglen);
+		RTK_LOGI(NOTAG, "AES ECB decrypt result failed\r\n");
+		aes_dump_buf("====decrypt result=====\r\n", pResult, msglen);
 	}
 
 	return 0;
@@ -133,16 +133,16 @@ int test_aes_ecb(u32 OTPkey)
 
 void aes_test(void)
 {
-	printf("CRYPTO API Demo...\r\n");
+	RTK_LOGI(NOTAG, "CRYPTO API Demo...\r\n");
 
 	if (CRYPTO_Init(NULL) != 0) {
-		printf("crypto engine init failed\r\n");
+		RTK_LOGI(NOTAG, "crypto engine init failed\r\n");
 	} else {
-		printf("init success\n");
+		RTK_LOGI(NOTAG, "init success\n");
 	}
-	printf("******************************sw key***********************\r\n");
+	RTK_LOGI(NOTAG, "******************************sw key***********************\r\n");
 	test_aes_ecb(4);
-	printf("******************************OTP key ********************\r\n");
+	RTK_LOGI(NOTAG, "******************************OTP key ********************\r\n");
 	test_aes_ecb(2);//rsip key 1 0x2c0
 
 
@@ -153,7 +153,7 @@ void aes_test(void)
 int example_raw_crypto_aes(void)
 {
 	if (rtos_task_create(NULL, "aes_test", (rtos_task_t)aes_test, NULL, (3072), (1)) != RTK_SUCCESS) {
-		printf("Cannot create aes_md5_test demo task\n\r");
+		RTK_LOGI(NOTAG, "Cannot create aes_md5_test demo task\n\r");
 	}
 
 	rtos_sched_start();

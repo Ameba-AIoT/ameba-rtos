@@ -1064,6 +1064,10 @@ struct rtw_tx_power_ctl_info {
 	u8	b_tx_pwr_force_enbale : 1; /**< 1 for enable, 0 for disable. */
 };
 
+struct rtw_acs_config {
+	u8 band; /**< val: @ref RTW_SUPPORT_BAND_2_4G ...*/
+};
+
 /** @} End of WIFI_Exported_Structure_Types group*/
 /** @} End of WIFI_Exported_Types group*/
 /** @} End of WIFI_API group */

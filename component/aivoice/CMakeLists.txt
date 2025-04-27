@@ -30,18 +30,31 @@ if(CONFIG_KWS_RES_CUSTOM)
     set(KWS_RESOURCE kws_custom)
 endif()
 
-ameba_list_append_if(CONFIG_AIVOICE_EN public_libraries
-    ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libaivoice.a
-    ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libafe_kernel.a
-    ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/lib${AFE_RESOURCE}.a
-    ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libkernel.a
-    ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libfst.a
-    ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/lib${KWS_RESOURCE}.a
-    ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libasr.a
-    ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libvad.a
-    ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libtomlc99.a
-    ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libNE10.a
-)
+if(CONFIG_AMEBADPLUS)
+    ameba_list_append_if(CONFIG_AIVOICE_EN public_libraries
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8721dx_km4/libaivoice.a
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8721dx_km4/libafe_kernel.a
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8721dx_km4/libafe_res_1mic.a
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8721dx_km4/libkernel.a
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8721dx_km4/libkws.a
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8721dx_km4/libvad.a
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8721dx_km4/libtomlc99.a
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8721dx_km4/libkissfft.a
+    )
+elseif(CONFIG_AMEBASMART)
+    ameba_list_append_if(CONFIG_AIVOICE_EN public_libraries
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libaivoice.a
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libafe_kernel.a
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/lib${AFE_RESOURCE}.a
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libkernel.a
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libfst.a
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/lib${KWS_RESOURCE}.a
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libasr.a
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libvad.a
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libtomlc99.a
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libNE10.a
+    )
+endif()
 
 #WARNING: Fixed section, DO NOT change!
 ameba_global_include(${public_includes})

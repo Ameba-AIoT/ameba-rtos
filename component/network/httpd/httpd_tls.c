@@ -1,10 +1,6 @@
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "os_wrapper.h"
-#include "ameba.h"
-#include "httpd.h"
+#include "ameba_soc.h"
 #include "httpd_util.h"
-#
+
 #include "mbedtls/ssl.h"
 #include "mbedtls/platform.h"
 #include "mbedtls/net_sockets.h"

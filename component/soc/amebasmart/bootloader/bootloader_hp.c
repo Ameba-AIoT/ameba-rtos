@@ -150,9 +150,7 @@ void BOOT_TCMSet(u32 TCM_Size)
 	}
 
 	if (0 == index || 7 == index) {
-		/*enable nonsecure cache*/
-		SCB_EnableICache_NS();
-		SCB_EnableDCache_NS();
+		/* enable nonsecure cache in app_start */
 		return;
 	}
 
@@ -176,11 +174,9 @@ void BOOT_TCMSet(u32 TCM_Size)
 	RIDR->DTCM0_TOP = CACHETCM_Def[index].TCM_TOP;
 	//RTK_LOGD(TAG, "%x = %x, %x = %x\n", &(RIDR->DTCM0_BASE), RIDR->DTCM0_BASE, &(RIDR->DTCM0_TOP), RIDR->DTCM0_TOP);
 	if (ENABLE == CACHETCM_Def[index].ICACHE_EN) {
-		SCB_EnableICache_NS();
 		SCB_EnableICache();
 	}
 	if (ENABLE == CACHETCM_Def[index].DCACHE_EN) {
-		SCB_EnableDCache_NS();
 		SCB_EnableDCache();
 	}
 }

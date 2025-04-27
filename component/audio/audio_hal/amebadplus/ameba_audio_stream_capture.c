@@ -408,12 +408,6 @@ Stream *ameba_audio_stream_rx_init(uint32_t device, StreamConfig config)
 	}
 	cstream->stream.sport_dev_addr = ameba_audio_get_sport_addr(cstream->stream.sport_dev_num);
 
-	if (config.sport_index == AUDIO_I2S_IN_SPORT_INDEX) {
-		ameba_audio_stream_rx_set_i2s_pin(cstream->stream.sport_dev_num);
-	} else if (config.sport_index == AUDIO_I2S_IN_EXTRA_SPORT_INDEX) {
-		ameba_audio_stream_rx_set_i2s_extra_pin(cstream->stream.sport_dev_num);
-	}
-
 	/*configure perphclock*/
 	ameba_audio_periphclock_init(cstream->stream.sport_dev_num);
 
@@ -423,6 +417,13 @@ Stream *ameba_audio_stream_rx_init(uint32_t device, StreamConfig config)
 
 	/*configure sport according to the parameters*/
 	ameba_audio_stream_rx_sport_init(&cstream, config, device);
+
+	if (config.sport_index == AUDIO_I2S_IN_SPORT_INDEX) {
+		ameba_audio_stream_rx_set_i2s_pin(cstream->stream.sport_dev_num);
+	} else if (config.sport_index == AUDIO_I2S_IN_EXTRA_SPORT_INDEX) {
+		ameba_audio_stream_rx_set_i2s_extra_pin(cstream->stream.sport_dev_num);
+	}
+
 	if (cstream->stream.sport_dev_num == 0) {
 		ameba_audio_set_audio_ip_use_status(cstream->stream.direction, SPORT0, true);
 	} else if (cstream->stream.sport_dev_num == 1) {
@@ -1037,6 +1038,14 @@ void ameba_audio_stream_rx_close(Stream *stream)
 		}
 
 		AUDIO_SP_Deinit(cstream->stream.sport_dev_num, SP_DIR_RX);
+
+		if (cstream->stream.sport_dev_num == AUDIO_I2S_IN_SPORT_INDEX) {
+			ameba_audio_stream_rx_reset_i2s_pin();
+		}
+
+		if (cstream->stream.sport_dev_num == AUDIO_I2S_IN_EXTRA_SPORT_INDEX) {
+			ameba_audio_stream_rx_reset_i2s_extra_pin();
+		}
 
 		ameba_audio_reset_audio_ip_status((Stream *)cstream);
 

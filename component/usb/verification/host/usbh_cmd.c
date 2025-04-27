@@ -9,13 +9,14 @@
 #include <platform_autoconf.h>
 #include "platform_stdlib.h"
 #include "basic_types.h"
-#include "usbh_cmd.h"
 #include "usb_regs.h"
 #include "usb_hal.h"
 #include "usbh.h"
+#include "usb_cmd.h"
+#include "usbh_cmd.h"
 
 /* Private defines -----------------------------------------------------------*/
-static const char *const TAG = "VFY";
+static const char *const TAG = "USBH";
 
 /* Private types -------------------------------------------------------------*/
 
@@ -43,8 +44,21 @@ static usbh_user_cb_t usbh_usr_cb = {
 
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE usbh_test_cmd_table[] = {
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
 	{
-		(const u8 *)"USBH", 3, usbh_test, (const u8 *)"\tUSB host test cmd:\n"
+		(const u8 *)"USBH", 3, usbh_test, (const u8 *)"\tUSB HOST\n"
+		"\t\t usbh init\n"
+		"\t\t usbh deinit\n"
+		"\t\t usbh emc\n"
+		"\t\t usbh tmod <value>\n"
+		"\t\t usbh resume\n"
+		"\t\t usbh suspend\n"
+		"\t\t usbh xfer <subcmd>\n"
+		"\t\t usbh verify <subcmd>\n"
+	}
+#else
+	{
+		(const u8 *)"USBH", 3, usbh_test, (const u8 *)"\tUSB HOST\n"
 		"\t\t usbh init\n"
 		"\t\t usbh deinit\n"
 		"\t\t usbh phydw <address, hex>\n"
@@ -56,6 +70,7 @@ const COMMAND_TABLE usbh_test_cmd_table[] = {
 		"\t\t usbh xfer <subcmd>\n"
 		"\t\t usbh verify <subcmd>\n"
 	}
+#endif
 };
 
 /* Private functions ---------------------------------------------------------*/
@@ -108,10 +123,12 @@ static u32 usbh_test(u16 argc, u8 *argv[])
 		}
 	} else if (_stricmp(cmd, "regdump") == 0) {
 		usb_hal_dump_registers();
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
 	} else if (_stricmp(cmd, "phydw") == 0) {
-		ret = cmd_usbh_cts_phydw(argc, argv);
+		ret = cmd_usb_phydw(argc, argv);
 	} else if (_stricmp(cmd, "phyew") == 0) {
-		ret = cmd_usbh_cts_phyew(argc, argv);
+		ret = cmd_usb_phyew(argc, argv);
+#endif
 	} else if (_stricmp(cmd, "emc") == 0) {
 		ret = cmd_usbh_emc_test();
 	} else if (_stricmp(cmd, "tmod") == 0) {

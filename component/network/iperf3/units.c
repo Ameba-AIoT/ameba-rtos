@@ -51,14 +51,14 @@
  * input and output numbers, converting with kilo, mega, giga, tera
  * ------------------------------------------------------------------- */
 
-#include <stdio.h>
 #include <assert.h>
 #include <ctype.h>
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
-#include "lwip/sockets.h"
 #include <sys/time.h>
+
+#include "lwip_netconf.h" //realtek add
 
 #include "iperf.h"
 

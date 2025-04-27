@@ -9,7 +9,7 @@
 #include "usbd_verify.h"
 #include "usbd_chip_info.h"
 
-static const char *const TAG = "VRY";
+static const char *const TAG = "USBD";
 static volatile u8 usbd_verify_ep_status_flag = 0;
 
 /* Echo asynchronously, for transfer size larger than packet size. While fpr

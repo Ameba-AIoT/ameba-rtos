@@ -12,9 +12,11 @@
 #include "os_wrapper.h"
 
 /* Private defines -----------------------------------------------------------*/
-static const char *const TAG = "ACM";
+
+static const char *const TAG = "USBD";
+
 // USB speed
-#ifdef CONFIG_USB_FS
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
 #define CONFIG_USBD_CDC_ACM_SPEED					USB_SPEED_FULL
 #else
 #define CONFIG_USBD_CDC_ACM_SPEED					USB_SPEED_HIGH

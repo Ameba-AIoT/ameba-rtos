@@ -26,7 +26,7 @@ static const char *const TAG = "MSC";
 #endif
 
 // USB speed
-#ifdef CONFIG_USB_FS
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
 #define CONFIG_USBD_MSC_SPEED						USB_SPEED_FULL
 #else
 #define CONFIG_USBD_MSC_SPEED						USB_SPEED_HIGH

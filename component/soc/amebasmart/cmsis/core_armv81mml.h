@@ -1,11 +1,11 @@
 /**************************************************************************//**
  * @file     core_armv81mml.h
  * @brief    CMSIS Armv8.1-M Mainline Core Peripheral Access Layer Header File
- * @version  V1.4.0
- * @date     15. April 2020
+ * @version  V1.4.2
+ * @date     13. October 2021
  ******************************************************************************/
 /*
- * Copyright (c) 2018-2020 Arm Limited. All rights reserved.
+ * Copyright (c) 2018-2021 Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -210,14 +210,14 @@
     #define __FPU_PRESENT             0U
     #warning "__FPU_PRESENT not defined in device header file; using default!"
   #endif
-  
+
   #if __FPU_PRESENT != 0U
     #ifndef __FPU_DP
       #define __FPU_DP             0U
       #warning "__FPU_DP not defined in device header file; using default!"
     #endif
   #endif
-  
+
   #ifndef __MPU_PRESENT
     #define __MPU_PRESENT             0U
     #warning "__MPU_PRESENT not defined in device header file; using default!"
@@ -232,7 +232,7 @@
     #define __DCACHE_PRESENT          0U
     #warning "__DCACHE_PRESENT not defined in device header file; using default!"
   #endif
-  
+
   #ifndef __PMU_PRESENT
     #define __PMU_PRESENT             0U
     #warning "__PMU_PRESENT not defined in device header file; using default!"
@@ -261,7 +261,7 @@
     #define __VTOR_PRESENT             1U
     #warning "__VTOR_PRESENT not defined in device header file; using default!"
   #endif
-  
+
   #ifndef __NVIC_PRIO_BITS
     #define __NVIC_PRIO_BITS          3U
     #warning "__NVIC_PRIO_BITS not defined in device header file; using default!"
@@ -526,7 +526,7 @@ typedef struct
   __IOM uint32_t AFSR;                   /*!< Offset: 0x03C (R/W)  Auxiliary Fault Status Register */
   __IM  uint32_t ID_PFR[2U];             /*!< Offset: 0x040 (R/ )  Processor Feature Register */
   __IM  uint32_t ID_DFR;                 /*!< Offset: 0x048 (R/ )  Debug Feature Register */
-  __IM  uint32_t ID_ADR;                 /*!< Offset: 0x04C (R/ )  Auxiliary Feature Register */
+  __IM  uint32_t ID_AFR;                 /*!< Offset: 0x04C (R/ )  Auxiliary Feature Register */
   __IM  uint32_t ID_MMFR[4U];            /*!< Offset: 0x050 (R/ )  Memory Model Feature Register */
   __IM  uint32_t ID_ISAR[6U];            /*!< Offset: 0x060 (R/ )  Instruction Set Attributes Register */
   __IM  uint32_t CLIDR;                  /*!< Offset: 0x078 (R/ )  Cache Level ID register */
@@ -535,7 +535,10 @@ typedef struct
   __IOM uint32_t CSSELR;                 /*!< Offset: 0x084 (R/W)  Cache Size Selection Register */
   __IOM uint32_t CPACR;                  /*!< Offset: 0x088 (R/W)  Coprocessor Access Control Register */
   __IOM uint32_t NSACR;                  /*!< Offset: 0x08C (R/W)  Non-Secure Access Control Register */
-        uint32_t RESERVED3[92U];
+        uint32_t RESERVED7[21U];
+  __IOM uint32_t SFSR;                   /*!< Offset: 0x0E4 (R/W)  Secure Fault Status Register */
+  __IOM uint32_t SFAR;                   /*!< Offset: 0x0E8 (R/W)  Secure Fault Address Register */
+        uint32_t RESERVED3[69U];
   __OM  uint32_t STIR;                   /*!< Offset: 0x200 ( /W)  Software Triggered Interrupt Register */
   __IOM uint32_t RFSR;                   /*!< Offset: 0x204 (R/W)  RAS Fault Status Register */
         uint32_t RESERVED4[14U];
@@ -766,22 +769,22 @@ typedef struct
 #define SCB_CFSR_MEMFAULTSR_Msk            (0xFFUL /*<< SCB_CFSR_MEMFAULTSR_Pos*/)        /*!< SCB CFSR: Memory Manage Fault Status Register Mask */
 
 /* MemManage Fault Status Register (part of SCB Configurable Fault Status Register) */
-#define SCB_CFSR_MMARVALID_Pos             (SCB_SHCSR_MEMFAULTACT_Pos + 7U)               /*!< SCB CFSR (MMFSR): MMARVALID Position */
+#define SCB_CFSR_MMARVALID_Pos             (SCB_CFSR_MEMFAULTSR_Pos + 7U)                 /*!< SCB CFSR (MMFSR): MMARVALID Position */
 #define SCB_CFSR_MMARVALID_Msk             (1UL << SCB_CFSR_MMARVALID_Pos)                /*!< SCB CFSR (MMFSR): MMARVALID Mask */
 
-#define SCB_CFSR_MLSPERR_Pos               (SCB_SHCSR_MEMFAULTACT_Pos + 5U)               /*!< SCB CFSR (MMFSR): MLSPERR Position */
+#define SCB_CFSR_MLSPERR_Pos               (SCB_CFSR_MEMFAULTSR_Pos + 5U)                 /*!< SCB CFSR (MMFSR): MLSPERR Position */
 #define SCB_CFSR_MLSPERR_Msk               (1UL << SCB_CFSR_MLSPERR_Pos)                  /*!< SCB CFSR (MMFSR): MLSPERR Mask */
 
-#define SCB_CFSR_MSTKERR_Pos               (SCB_SHCSR_MEMFAULTACT_Pos + 4U)               /*!< SCB CFSR (MMFSR): MSTKERR Position */
+#define SCB_CFSR_MSTKERR_Pos               (SCB_CFSR_MEMFAULTSR_Pos + 4U)                 /*!< SCB CFSR (MMFSR): MSTKERR Position */
 #define SCB_CFSR_MSTKERR_Msk               (1UL << SCB_CFSR_MSTKERR_Pos)                  /*!< SCB CFSR (MMFSR): MSTKERR Mask */
 
-#define SCB_CFSR_MUNSTKERR_Pos             (SCB_SHCSR_MEMFAULTACT_Pos + 3U)               /*!< SCB CFSR (MMFSR): MUNSTKERR Position */
+#define SCB_CFSR_MUNSTKERR_Pos             (SCB_CFSR_MEMFAULTSR_Pos + 3U)                 /*!< SCB CFSR (MMFSR): MUNSTKERR Position */
 #define SCB_CFSR_MUNSTKERR_Msk             (1UL << SCB_CFSR_MUNSTKERR_Pos)                /*!< SCB CFSR (MMFSR): MUNSTKERR Mask */
 
-#define SCB_CFSR_DACCVIOL_Pos              (SCB_SHCSR_MEMFAULTACT_Pos + 1U)               /*!< SCB CFSR (MMFSR): DACCVIOL Position */
+#define SCB_CFSR_DACCVIOL_Pos              (SCB_CFSR_MEMFAULTSR_Pos + 1U)                 /*!< SCB CFSR (MMFSR): DACCVIOL Position */
 #define SCB_CFSR_DACCVIOL_Msk              (1UL << SCB_CFSR_DACCVIOL_Pos)                 /*!< SCB CFSR (MMFSR): DACCVIOL Mask */
 
-#define SCB_CFSR_IACCVIOL_Pos              (SCB_SHCSR_MEMFAULTACT_Pos + 0U)               /*!< SCB CFSR (MMFSR): IACCVIOL Position */
+#define SCB_CFSR_IACCVIOL_Pos              (SCB_CFSR_MEMFAULTSR_Pos + 0U)                 /*!< SCB CFSR (MMFSR): IACCVIOL Position */
 #define SCB_CFSR_IACCVIOL_Msk              (1UL /*<< SCB_CFSR_IACCVIOL_Pos*/)             /*!< SCB CFSR (MMFSR): IACCVIOL Mask */
 
 /* BusFault Status Register (part of SCB Configurable Fault Status Register) */
@@ -962,36 +965,22 @@ typedef struct
 #define SCB_RFSR_UET_Msk                   (3UL /*<< SCB_RFSR_UET_Pos*/)                  /*!< SCB RFSR: UET Mask */
 
 /* SCB D-Cache Invalidate by Set-way Register Definitions */
-#ifdef DCACHE_4WAY
 #define SCB_DCISW_WAY_Pos                  30U                                            /*!< SCB DCISW: Way Position */
 #define SCB_DCISW_WAY_Msk                  (3UL << SCB_DCISW_WAY_Pos)                     /*!< SCB DCISW: Way Mask */
-#else
-#define SCB_DCISW_WAY_Pos                  31U                                            /*!< SCB DCISW: Way Position */
-#define SCB_DCISW_WAY_Msk                  (1UL << SCB_DCISW_WAY_Pos)                     /*!< SCB DCISW: Way Mask */
-#endif
 
 #define SCB_DCISW_SET_Pos                   5U                                            /*!< SCB DCISW: Set Position */
 #define SCB_DCISW_SET_Msk                  (0x1FFUL << SCB_DCISW_SET_Pos)                 /*!< SCB DCISW: Set Mask */
 
 /* SCB D-Cache Clean by Set-way Register Definitions */
-#ifdef DCACHE_4WAY
 #define SCB_DCCSW_WAY_Pos                  30U                                            /*!< SCB DCCSW: Way Position */
 #define SCB_DCCSW_WAY_Msk                  (3UL << SCB_DCCSW_WAY_Pos)                     /*!< SCB DCCSW: Way Mask */
-#else
-#define SCB_DCCSW_WAY_Pos                  31U                                            /*!< SCB DCCSW: Way Position */
-#define SCB_DCCSW_WAY_Msk                  (1UL << SCB_DCCSW_WAY_Pos)                     /*!< SCB DCCSW: Way Mask */
-#endif
+
 #define SCB_DCCSW_SET_Pos                   5U                                            /*!< SCB DCCSW: Set Position */
 #define SCB_DCCSW_SET_Msk                  (0x1FFUL << SCB_DCCSW_SET_Pos)                 /*!< SCB DCCSW: Set Mask */
 
 /* SCB D-Cache Clean and Invalidate by Set-way Register Definitions */
-#ifdef DCACHE_4WAY
 #define SCB_DCCISW_WAY_Pos                 30U                                            /*!< SCB DCCISW: Way Position */
 #define SCB_DCCISW_WAY_Msk                 (3UL << SCB_DCCISW_WAY_Pos)                    /*!< SCB DCCISW: Way Mask */
-#else
-#define SCB_DCCISW_WAY_Pos                 31U                                            /*!< SCB DCCISW: Way Position */
-#define SCB_DCCISW_WAY_Msk                 (1UL << SCB_DCCISW_WAY_Pos)                    /*!< SCB DCCISW: Way Mask */
-#endif
 
 #define SCB_DCCISW_SET_Pos                  5U                                            /*!< SCB DCCISW: Set Position */
 #define SCB_DCCISW_SET_Msk                 (0x1FFUL << SCB_DCCISW_SET_Pos)                /*!< SCB DCCISW: Set Mask */
@@ -1020,10 +1009,6 @@ typedef struct
 /* Interrupt Controller Type Register Definitions */
 #define SCnSCB_ICTR_INTLINESNUM_Pos         0U                                         /*!< ICTR: INTLINESNUM Position */
 #define SCnSCB_ICTR_INTLINESNUM_Msk        (0xFUL /*<< SCnSCB_ICTR_INTLINESNUM_Pos*/)  /*!< ICTR: INTLINESNUM Mask */
-
-/* Auxiliary Control Register Definitions */
-#define SCnSCB_ACTLR_LOOPBUF_DIS_Pos        6U                                         /*!< ACTLR: LoopBuf_Dis Position */
-#define SCnSCB_ACTLR_LOOPBUF_DIS_Msk        (1UL << SCnSCB_ACTLR_LOOPBUF_DIS_Pos)      /*!< ACTLR: LoopBuf_Dis Mask */
 
 /*@} end of group CMSIS_SCnotSCB */
 
@@ -1464,103 +1449,6 @@ typedef struct
 
 /*@}*/ /* end of group CMSIS_TPI */
 
-/**
-  \ingroup  CMSIS_core_register
-  \defgroup CMSIS_RIDR     RTK Implementation Defined Registers (RIDR)
-  \brief    Type definitions for the RTK Implementation Defined Registers (RIDR)
-  @{
- */
-
-/**
-  \brief  Structure type to access the RTK Implementation Defined Registers (RIDR).
- */
-typedef struct
-{
-  __IM  uint32_t VNUM;						/*!< Offset: 0x000 (R/)  Revision number register */
-  __IM  uint32_t CPUNUM;					/*!< Offset: 0x004 (R/)  CPU number register */
-  __IOM uint32_t ACTLR1;					/*!< Offset: 0x008 (R/W) Reserved for future extension */
-  __IOM uint32_t ACTLR2;					/*!< Offset: 0x00C (R/W) Reserved for future extension */
-  __IOM uint32_t CNTCTRL0;					/*!< Offset: 0x010 (R/W) Legacy cp3 control regsiter 0 */
-  __IOM uint32_t CNTCTRL1;					/*!< Offset: 0x014 (R/W) Legacy cp3 control regsiter 1 */
-  __IOM uint32_t CNTCTRL2;					/*!< Offset: 0x018 (R/W) Legacy cp3 control regsiter 2 */
-  __IOM uint32_t CNTDATA;					/*!< Offset: 0x01C (R/W) cp3 read/write data regsiter */
-        uint32_t RESERVED0[8U];				/*!< Offset: 0x020 ~ 0x03C */
-  __IOM uint32_t LMUARBTSLT;				/*!< Offset: 0x040 (R/W)  LMU arbiter time slot */
-        uint32_t RESERVED1[3U];				/*!< Offset: 0x044 ~ 0x04C */
-  __IOM uint32_t ITCM0_BASE;				/*!< Offset: 0x050 (R/W)  ITCM0 Range Base register */
-  __IOM uint32_t ITCM0_TOP;					/*!< Offset: 0x054 (R/W)  ITCM0 Range Top register */
-  __IOM uint32_t ITCM1_BASE;				/*!< Offset: 0x058 (R/W)  ITCM1 Range Base register */
-  __IOM uint32_t ITCM1_TOP;					/*!< Offset: 0x05C (R/W)  ITCM1 Range Top register */
-  __IOM uint32_t DTCM0_BASE;				/*!< Offset: 0x060 (R/W)  DTCM0 Range Base register */
-  __IOM uint32_t DTCM0_TOP;					/*!< Offset: 0x064 (R/W)  DTCM0 Range Top register */
-  __IOM uint32_t DTCM1_BASE;				/*!< Offset: 0x068 (R/W)  DTCM1 Range Base register */
-  __IOM uint32_t DTCM1_TOP;					/*!< Offset: 0x06C (R/W)  DTCM1 Range Top register */
-  __IM  uint32_t XO_RANGE_EN; 				/*!< Offset: 0x070 (R/W)  execution only range enable register */
-  __IM  uint32_t XO_BASE;					/*!< Offset: 0x074 (R/W)  execution only base register */
-  __IM  uint32_t XO_TOP;					/*!< Offset: 0x078 (R/W)  execution only top register */
-        uint32_t RESERVED2;					/*!< Offset: 0x07C */
-  __IM  uint32_t EXEC_PRI;					/*!< Offset: 0x080 (R/W)  execution Priority register */
-        uint32_t RESERVED3[3U];				/*!< Offset: 0x084 ~ 0x8C */
-  __IOM uint32_t DBGACTLR;					/*!< Offset: 0x090 (R/W)  Debug Auxiliary Control register */
-        uint32_t RESERVED4[3U];			  	/*!< Offset: 0x094 ~ 0x9C */
-  __IOM uint32_t ICWRR_BASE;				/*!< Offset: 0x0A0 (R/W)  Instruction Cache Way Restricted Range Base register */
-  __IOM uint32_t ICWRR_TOP;					/*!< Offset: 0x0A4 (R/W)  Instruction Cache Way Restricted Range Top register */
-  __IOM uint32_t DCWRR_BASE;				/*!< Offset: 0x0A8 (R/W)  Data Cache Way Restricted Range Base register */
-  __IOM uint32_t DCWRR_TOP;					/*!< Offset: 0x0AC (R/W)  Data Cache Way Restricted Range Top register */
-        uint32_t RESERVED5[3U];			  	/*!< Offset: 0x0B0 ~ 0xB8 */
-  __IOM uint32_t PBUS_WRESP;				/*!< Offset: 0x0BC (R/W)  Peripheral Bus Wait Response register */
-  __IOM uint32_t PBUS_RANGE;				/*!< Offset: 0x0C0 (R/W)  Peripheral Bus Range register */
-        uint32_t RESERVED6[7U];				/*!< Offset: 0x0C4 ~ 0x0DC */
-  __IOM uint32_t ZWF_RANGE;					/*!< Offset: 0x0E0 (R/W)  ZWF Range register */
-} RIDR_Type;
-
-/* RIDR Legacy CP3 Control Register 0 Definitions */
-#define RIDR_CNTCTRL0_CNT3_LO_Pos						24U                                     /*!< RIDR CNTCTRL0: Counter3 Low Position */
-#define RIDR_CNTCTRL0_CNT3_LO_Msk						(0xFFUL << RIDR_CNTCTRL0_CNT3_LO_Pos)    /*!< RIDR CNTCTRL0: Counter3 Low Mask */
-
-#define RIDR_CNTCTRL0_CNT2_LO_Pos						16U                                     /*!< RIDR CNTCTRL0: Counter2 Low Position */
-#define RIDR_CNTCTRL0_CNT2_LO_Msk						(0xFFUL << RIDR_CNTCTRL0_CNT2_LO_Pos)    /*!< RIDR CNTCTRL0: Counter2 Low Mask */
-
-#define RIDR_CNTCTRL0_CNT1_LO_Pos						8U                                      /*!< RIDR CNTCTRL0: Counter1 Low Position */
-#define RIDR_CNTCTRL0_CNT1_LO_Msk						(0xFFUL << RIDR_CNTCTRL0_CNT1_LO_Pos)    /*!< RIDR CNTCTRL0: Counter1 Low Mask */
-
-#define RIDR_CNTCTRL0_CNT0_LO_Pos						0U                                          /*!< RIDR CNTCTRL0: Counter0 Low Position */
-#define RIDR_CNTCTRL0_CNT0_LO_Msk           			(0xFFUL /*<< RIDR_CNTCTRL0_CNT0_LO_Pos*/)    /*!< RIDR CNTCTRL0: Counter0 Low Mask */
-
-/* RIDR Legacy CP3 Control Register 1 Definitions */
-#define RIDR_CNTCTRL1_DUAL_MODE_CNT3_HI_Pos              24U                                               /*!< RIDR CNTCTRL1: Dual-mode Counter3 High Position */
-#define RIDR_CNTCTRL1_DUAL_MODE_CNT3_HI_Msk             (0xFFUL << RIDR_CNTCTRL1_DUAL_MODE_CNT3_HI_Pos)    /*!< RIDR CNTCTRL1: Dual-mode Counter3 High Mask */
-
-#define RIDR_CNTCTRL1_DUAL_MODE_CNT2_HI_Pos              16U                                               /*!< RIDR CNTCTRL1: Dual-mode Counter2 High Position */
-#define RIDR_CNTCTRL1_DUAL_MODE_CNT2_HI_Msk             (0xFFUL << RIDR_CNTCTRL1_DUAL_MODE_CNT2_HI_Pos)    /*!< RIDR CNTCTRL1: Dual-mode Counter2 High Mask */
-
-#define RIDR_CNTCTRL1_DUAL_MODE_CNT1_HI_Pos              8U                                                /*!< RIDR CNTCTRL1: Dual-mode Counter1 High Position */
-#define RIDR_CNTCTRL1_DUAL_MODE_CNT1_HI_Msk             (0xFFUL << RIDR_CNTCTRL1_DUAL_MODE_CNT1_HI_Pos)    /*!< RIDR CNTCTRL1: Dual-mode Counter1 High Mask */
-
-#define RIDR_CNTCTRL1_DUAL_MODE_CNT0_HI_Pos              0U                                                /*!< RIDR CNTCTRL1: Dual-mode Counter0 High Position */
-#define RIDR_CNTCTRL1_DUAL_MODE_CNT0_HI_Msk             (0xFFUL /*<< RIDR_CNTCTRL1_DUAL_MODE_CNT0_HI_Pos*/)/*!< RIDR CNTCTRL1: Dual-mode Counter0 High Mask */
-
-/* RIDR Legacy CP3 Control Register 2 Definitions */
-#define RIDR_CNTCTRL2_CNT_EN_Pos						16U                                              	/*!< RIDR CNTCTRL2: Counter Enable Position */
-#define RIDR_CNTCTRL2_CNT_EN_Msk						(0x1UL << RIDR_CNTCTRL2_CNT_EN_Pos)    				/*!< RIDR CNTCTRL2: Counter Enable Mask */
-
-#define RIDR_CNTCTRL2_CNT_IDX_Pos						6U                                              	/*!< RIDR CNTCTRL2: Counter Index Position */
-#define RIDR_CNTCTRL2_CNT_IDX_Msk						(0xFUL << RIDR_CNTCTRL2_CNT_IDX_Pos)    			/*!< RIDR CNTCTRL2: Counter Index Mask */
-
-#define RIDR_CNTCTRL2_DUAL_MODE_CNT3_SET_Pos			3U                                              	/*!< RIDR CNTCTRL2: Dual-mode Counter3 Set Position */
-#define RIDR_CNTCTRL2_DUAL_MODE_CNT3_SET_Msk			(0x1UL << RIDR_CNTCTRL2_DUAL_MODE_CNT3_SET_Pos)		/*!< RIDR CNTCTRL2: Dual-mode Counter3 Set Mask */
-
-#define RIDR_CNTCTRL2_DUAL_MODE_CNT2_SET_Pos			2U                                              	/*!< RIDR CNTCTRL2: Dual-mode Counter2 Set Position */
-#define RIDR_CNTCTRL2_DUAL_MODE_CNT2_SET_Msk			(0x1UL << RIDR_CNTCTRL2_DUAL_MODE_CNT2_SET_Pos)		/*!< RIDR CNTCTRL2: Dual-mode Counter2 Set Mask */
-
-#define RIDR_CNTCTRL2_DUAL_MODE_CNT1_SET_Pos			1U                                              	/*!< RIDR CNTCTRL2: Dual-mode Counter1 Set Position */
-#define RIDR_CNTCTRL2_DUAL_MODE_CNT1_SET_Msk			(0x1UL << RIDR_CNTCTRL2_DUAL_MODE_CNT1_SET_Pos)		/*!< RIDR CNTCTRL2: Dual-mode Counter1 Set Mask */
-
-#define RIDR_CNTCTRL2_DUAL_MODE_CNT0_SET_Pos			0U                                                	/*!< RIDR CNTCTRL2: Dual-mode Counter0 Set Position */
-#define RIDR_CNTCTRL2_DUAL_MODE_CNT0_SET_Msk			(0x1UL /*<< RIDR_CNTCTRL2_DUAL_MODE_CNT0_SET_Pos*/)	/*!< RIDR CNTCTRL2: Dual-mode Counter0 Set Mask */
-
-/*@}*/ /* end of group CMSIS_RIDR */
-
 #if defined (__PMU_PRESENT) && (__PMU_PRESENT == 1U)
 /**
   \ingroup  CMSIS_core_register
@@ -1605,15 +1493,14 @@ typedef struct
         uint32_t RESERVED11[108];
   __IOM uint32_t AUTHSTATUS;                        /*!< Offset: 0xFB8 (R/W)  PMU Authentication Status Register */
   __IOM uint32_t DEVARCH;                           /*!< Offset: 0xFBC (R/W)  PMU Device Architecture Register */
-        uint32_t RESERVED12[4];
+        uint32_t RESERVED12[3];
   __IOM uint32_t DEVTYPE;                           /*!< Offset: 0xFCC (R/W)  PMU Device Type Register */
   __IOM uint32_t PIDR4;                             /*!< Offset: 0xFD0 (R/W)  PMU Peripheral Identification Register 4 */
         uint32_t RESERVED13[3];
   __IOM uint32_t PIDR0;                             /*!< Offset: 0xFE0 (R/W)  PMU Peripheral Identification Register 0 */
-  __IOM uint32_t PIDR1;                             /*!< Offset: 0xFE0 (R/W)  PMU Peripheral Identification Register 1 */
-  __IOM uint32_t PIDR2;                             /*!< Offset: 0xFE0 (R/W)  PMU Peripheral Identification Register 2 */
-  __IOM uint32_t PIDR3;                             /*!< Offset: 0xFE0 (R/W)  PMU Peripheral Identification Register 3 */
-        uint32_t RESERVED14[3];
+  __IOM uint32_t PIDR1;                             /*!< Offset: 0xFE4 (R/W)  PMU Peripheral Identification Register 1 */
+  __IOM uint32_t PIDR2;                             /*!< Offset: 0xFE8 (R/W)  PMU Peripheral Identification Register 2 */
+  __IOM uint32_t PIDR3;                             /*!< Offset: 0xFEC (R/W)  PMU Peripheral Identification Register 3 */
   __IOM uint32_t CIDR0;                             /*!< Offset: 0xFF0 (R/W)  PMU Component Identification Register 0 */
   __IOM uint32_t CIDR1;                             /*!< Offset: 0xFF4 (R/W)  PMU Component Identification Register 1 */
   __IOM uint32_t CIDR2;                             /*!< Offset: 0xFF8 (R/W)  PMU Component Identification Register 2 */
@@ -3214,7 +3101,6 @@ typedef struct
   #define SysTick_BASE        (SCS_BASE +  0x0010UL)                     /*!< SysTick Base Address */
   #define NVIC_BASE           (SCS_BASE +  0x0100UL)                     /*!< NVIC Base Address */
   #define SCB_BASE            (SCS_BASE +  0x0D00UL)                     /*!< System Control Block Base Address */
-  #define RIDR_BASE           (TPI_BASE +  0x2000UL)                     /*!< RTK Implementation Defined Registers Base Address*/
 
   #define SCnSCB              ((SCnSCB_Type    *)     SCS_BASE         ) /*!< System control Register not in SCB */
   #define SCB                 ((SCB_Type       *)     SCB_BASE         ) /*!< SCB configuration struct */
@@ -3226,7 +3112,6 @@ typedef struct
   #define CoreDebug           ((CoreDebug_Type *)     CoreDebug_BASE   ) /*!< \deprecated Core Debug configuration struct */
   #define DCB                 ((DCB_Type       *)     DCB_BASE         ) /*!< DCB configuration struct */
   #define DIB                 ((DIB_Type       *)     DIB_BASE         ) /*!< DIB configuration struct */
-  #define RIDR                ((RIDR_Type      *)     RIDR_BASE        ) /*!< RTK Implementation Defined struct */
 
   #if defined (__MPU_PRESENT) && (__MPU_PRESENT == 1U)
     #define MPU_BASE          (SCS_BASE +  0x0D90UL)                     /*!< Memory Protection Unit */
@@ -3274,6 +3159,15 @@ typedef struct
 #endif /* defined (__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3U) */
 /*@} */
 
+
+/**
+  \ingroup    CMSIS_core_register
+  \defgroup   CMSIS_register_aliases     Backwards Compatibility Aliases
+  \brief      Register alias definitions for backwards compatibility.
+  @{
+ */
+#define ID_ADR  (ID_AFR)    /*!< SCB Auxiliary Feature Register */
+/*@} */
 
 
 /*******************************************************************************
@@ -3592,10 +3486,6 @@ __STATIC_INLINE uint32_t NVIC_ClearTargetState(IRQn_Type IRQn)
  */
 __STATIC_INLINE void __NVIC_SetPriority(IRQn_Type IRQn, uint32_t priority)
 {
-  if(priority > MAX_IRQ_PRIORITY_VALUE) {
-	  priority = MAX_IRQ_PRIORITY_VALUE;
-  }
-
   if ((int32_t)(IRQn) >= 0)
   {
     NVIC->IPR[((uint32_t)IRQn)]               = (uint8_t)((priority << (8U - __NVIC_PRIO_BITS)) & (uint32_t)0xFFUL);
@@ -3718,7 +3608,7 @@ __STATIC_INLINE uint32_t __NVIC_GetVector(IRQn_Type IRQn)
   \brief   System Reset
   \details Initiates a system reset request to reset the MCU.
  */
-__STATIC_INLINE void __NVIC_SystemReset(void)
+__NO_RETURN __STATIC_INLINE void __NVIC_SystemReset(void)
 {
   __DSB();                                                          /* Ensure all outstanding memory accesses included
                                                                        buffered write are completed before reset */

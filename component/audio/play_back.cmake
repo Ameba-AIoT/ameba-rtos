@@ -57,6 +57,5 @@ ameba_add_merge_app_library(play_back
     audio_media_libmedia_standard
     audio_media_source
     audio_media_utils
-    media_configs
 )
 ##########################################################################################

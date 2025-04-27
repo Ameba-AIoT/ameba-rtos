@@ -5,16 +5,15 @@
  */
 
 #include "platform_autoconf.h"
-#include "os_wrapper.h"
+
+#ifndef CONFIG_MP_SHRINK
 #include "atcmd_service.h"
 #include "atcmd_wifi.h"
 #ifdef CONFIG_LWIP_LAYER
-#include <lwip_netconf.h>
-#include <dhcp/dhcps.h>
+#include "dhcp/dhcps.h"
 #endif
 #ifdef CONFIG_WLAN
-#include <wifi_api.h>
-#include <wifi_intf_drv_to_upper.h>
+#include "wifi_intf_drv_to_upper.h"
 #endif
 #ifdef CONFIG_AS_INIC_AP
 #ifdef CONFIG_WHC_INTF_IPC
@@ -24,7 +23,6 @@
 #endif
 #endif
 
-#ifndef CONFIG_MP_SHRINK
 #ifdef CONFIG_LWIP_LAYER
 struct static_ip_config user_static_ip;
 extern struct netif xnetif[NET_IF_NUM];
@@ -69,7 +67,7 @@ static void init_wifi_struct(void)
 	ap.ssid.len = 0;
 	ap.password = NULL;
 	ap.password_len = 0;
-	ap.channel = 1;
+	ap.channel = 0;
 	ap.hidden_ssid = 0;
 	security = -1;
 }
@@ -687,6 +685,8 @@ void at_wlstartap(void *arg)
 #endif
 	int timeout = 20;
 	struct rtw_wifi_setting *setting = NULL;
+	struct rtw_acs_config acs_config;
+	acs_config.band = RTW_SUPPORT_BAND_2_4G_5G_BOTH;
 
 	if (arg == NULL) {
 		RTK_LOGW(NOTAG, "[+WLSTARTAP] The parameters can not be ignored\r\n");
@@ -749,6 +749,22 @@ void at_wlstartap(void *arg)
 		else if (0 == strcmp("ch", argv[i])) {
 			if ((argc > j) && (0 != strlen(argv[j]))) {
 				ap.channel = atoi(argv[j]);
+			}
+		}
+		/* band */
+		else if (0 == strcmp("band", argv[i])) {
+			if (argc > j) {
+				if (0 == strcmp("2g", argv[j])) {
+					acs_config.band = 0;
+				} else if (0 == strcmp("5g", argv[j])) {
+					acs_config.band = 1;
+				} else if (0 == strcmp("2g_5g", argv[j])) {
+					acs_config.band = 2;
+				} else {
+					RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid band value\r\n");
+					error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
+					goto end;
+				}
 			}
 		}
 #ifdef CONFIG_LWIP_LAYER
@@ -855,6 +871,16 @@ void at_wlstartap(void *arg)
 	gw = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 	LwIP_SetIP(SOFTAP_WLAN_INDEX, ip_addr, netmask, gw);
 #endif
+
+	if (ap.channel == 0) {
+		ret = wifi_acs_find_ideal_channel(&acs_config, &ap.channel);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGW(NOTAG, "[+WLSTARTAP] Auto channel select fail, use default channel 1\r\n");
+			ap.channel = 1;
+		} else {
+			RTK_LOGW(NOTAG, "[+WLSTARTAP] Auto channel select %d\r\n", ap.channel);
+		}
+	}
 
 	/* Starting ...... */
 	wifi_stop_ap();
@@ -981,7 +1007,9 @@ void at_wlstate(void *arg)
 			if (p_wifi_setting->mode == RTW_MODE_AP || i == 1) {
 				unsigned int client_number;
 				struct rtw_client_list client_info = {0};
+#ifdef CONFIG_DHCPS_KEPT_CLIENT_INFO
 				union rtw_phy_stats phy_stats = {0};
+#endif
 				wifi_ap_get_connected_clients(&client_info);
 
 				at_printf("Associated Client List:\r\n");

@@ -54,6 +54,8 @@
 #elif defined ( __GNUC__ )
 #ifdef CONFIG_ARM_CORE_CA32
   #include "cmsis_gcc_ca.h"
+#elif defined(CONFIG_RSICV_CORE_KR4)
+#include "cmsis_gcc_riscv.h"
 #else
   #include "cmsis_gcc.h"
 #endif
@@ -64,7 +66,9 @@
  */
 #elif defined ( __ICCARM__ )
 #ifdef CONFIG_ARM_CORE_CA32
-  #include <cmsis_iccarm_ca.h>  
+  #include <cmsis_iccarm_ca.h>
+#elif defined(CONFIG_RSICV_CORE_KR4)
+
 #else
   #include <cmsis_iccarm.h>
 #endif
@@ -90,7 +94,7 @@
     #define __NO_RETURN                            __attribute__((noreturn))
   #endif
   #ifndef   CMSIS_DEPRECATED
-    #define CMSIS_DEPRECATED          __attribute__((deprecated))
+    #define CMSIS_DEPRECATED                       __attribute__((deprecated))
   #endif
   #ifndef   __USED
     #define __USED                                 __attribute__((used))
@@ -165,7 +169,7 @@
     #define __NO_RETURN                            __attribute__((noreturn))
   #endif
   #ifndef   CMSIS_DEPRECATED
-    #define CMSIS_DEPRECATED          __attribute__((deprecated))
+    #define CMSIS_DEPRECATED                       __attribute__((deprecated))
   #endif
   #ifndef   __USED
     #define __USED                                 __attribute__((used))

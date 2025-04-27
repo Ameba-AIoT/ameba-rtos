@@ -51,9 +51,10 @@ static int _my_random(void *p_rng, unsigned char *output, size_t output_len)
 	TRNG_get_random_bytes(output, output_len);
 	return 0;
 }
-int wifi_set_platform_rom_func(void *(*calloc_func)(size_t, size_t),
-							   void (*free_func)(void *),
-							   int (*rand_func)(void *, unsigned char *, size_t))
+
+__weak int wifi_set_platform_rom_func(void *(*calloc_func)(size_t, size_t),
+									  void (*free_func)(void *),
+									  int (*rand_func)(void *, unsigned char *, size_t))
 {
 	/* Realtek added to initialize HW crypto function pointers
 	* mbedtls RAM codes use function pointers in platform memory implementation
@@ -119,7 +120,7 @@ static void wifi_set_platform_rom_os_func(void)
 	/* skbuff not in ap*/
 }
 
-void wifi_set_rom2flash(void)
+__weak void wifi_set_rom2flash(void)
 {
 	wifi_set_platform_rom_func(_my_calloc, _my_free, _my_random);
 	wifi_set_platform_rom_os_func();

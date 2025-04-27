@@ -8,13 +8,10 @@
 
 #ifdef CONFIG_LWIP_LAYER
 #if defined(CONFIG_ATCMD_HTTP) && (CONFIG_ATCMD_HTTP == 1)
-
-#include "ameba.h"
-#include "os_wrapper.h"
+#include "lwip_netconf.h"
 #include "atcmd_service.h"
 #include "atcmd_http.h"
 #include "httpc/httpc.h"
-#include "lwip/opt.h"
 
 static const char *const AT_HTTP_TAG = "AT_HTTP";
 
@@ -486,7 +483,7 @@ end:
 }
 
 
-//AT+HTTPPOST=<host>,<path>,<conn_type>,<body_size>[,<certificate_index>][,<req_header_cnt>,<req_header>...<req_header>]
+//AT+HTTPPOST=<host>,<path>,<conn_type>[,<certificate_index>],<body_size>[,<req_header_cnt>,<req_header>...<req_header>]
 void at_httppost(void *arg)
 {
 	int argc = 0, error_no = 0, ret = -1;
@@ -838,7 +835,7 @@ end:
 }
 
 
-//AT+HTTPPUT=<host>,<path>,<conn_type>,<body_size>[,<certificate_index>][,<req_header_cnt>,<req_header>...<req_header>]
+//AT+HTTPPUT=<host>,<path>,<conn_type>[,<certificate_index>],<body_size>[,<req_header_cnt>,<req_header>...<req_header>]
 void at_httpput(void *arg)
 {
 	int argc = 0, error_no = 0, ret = -1;
@@ -1132,7 +1129,7 @@ void at_httpput(void *arg)
 			memset(response_data, 0, HTTP_READ_RESPONSE_DATA);
 			read_size = httpc_response_read_data(conn_ptr, response_data, HTTP_READ_RESPONSE_DATA - 1);
 			if (read_size > 0) {
-				//RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_response_read_data() read_size=%d\r\n", read_size);
+				RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_response_read_data() read_size=%d\r\n", read_size);
 				total_resp_body_size += read_size;
 				at_printf_data((char *)response_data, read_size);
 			} else {
@@ -1150,7 +1147,7 @@ void at_httpput(void *arg)
 			memset(response_data, 0, HTTP_READ_RESPONSE_DATA);
 			read_size = httpc_response_read_data(conn_ptr, response_data, HTTP_READ_RESPONSE_DATA - 1);
 			if (read_size > 0) {
-				//RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_response_read_data() read_size=%d\r\n", read_size);
+				RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_response_read_data() read_size=%d\r\n", read_size);
 				total_resp_body_size += read_size;
 				at_printf_data((char *)response_data, read_size);
 			} else {

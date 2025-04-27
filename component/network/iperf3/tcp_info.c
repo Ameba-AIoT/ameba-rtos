@@ -43,10 +43,9 @@
  * I think MS Windows does support TCP_INFO, but iperf3 does not currently support Windows.
  */
 
-#include "lwip/sockets.h"
-#include "platform_stdlib.h"
-#include "basic_types.h"
 #include <errno.h>
+
+#include "lwip_netconf.h" //realtek add
 
 #include "iperf.h"
 #include "iperf_api.h"

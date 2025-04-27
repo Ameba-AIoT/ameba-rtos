@@ -4,9 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "ameba_soc.h"
 #include "atcmd_service.h"
-
 
 static const char *TAG = "ATCMD_OTP";
 

@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef AT_INTF_UART_H
+#define AT_INTF_UART_H
+
 #include "ameba_soc.h"
 
 /* note: Selected UART shall not conflict with UART_BT, */
@@ -20,3 +23,4 @@ extern u8 UART_RX;
 _LONG_CALL_ void atio_uart_output(char *buf, int len);
 _LONG_CALL_ int atio_uart_init(void);
 
+#endif /* AT_INTF_UART_H */

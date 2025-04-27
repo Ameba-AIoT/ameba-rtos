@@ -122,6 +122,8 @@ if(CONFIG_FATFS_WITHIN_APP_IMG)
                 COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_DIR}/kr4_km4_dsp_app_ns_tmp.bin ${c_BASEDIR}/amebalite_gcc_project/fatfs_prepend.bin
                 OUTPUT_FILE ${c_SDK_IMAGE_TARGET_DIR}/kr4_km4_dsp_app_ns.bin
             )
+        else()
+            message(FATAL_ERROR "Lack of fatfs.bin when enabling CONFIG_FATFS_WITHIN_APP_IMG")
         endif()
     endif()
 endif()

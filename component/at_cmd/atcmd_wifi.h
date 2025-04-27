@@ -6,12 +6,10 @@
 
 #ifndef __ATCMD_WIFI_H__
 #define __ATCMD_WIFI_H__
-#include "main.h"
-#include "wifi_api_types.h"
-#include "FreeRTOS.h"
 
 #define RTW_AT_COMMON_ERR_NO_BASE		0x0
 #define RTW_AT_UNIQUE_ERR_NO_BASE		0x10
+
 /**
  * @brief  The enumeration lists wifi at_cmd error codes.
  */
@@ -35,9 +33,7 @@ enum rtw_atcmd_err_no {
 	RTW_AT_ERR_SAP_START_TIMEOUT      = RTW_AT_UNIQUE_ERR_NO_BASE + 6,           /**< at+wlstartap: ap start timeout */
 };
 
-#ifndef CONFIG_MP_SHRINK
 void print_wifi_at(void);
 void at_wifi_init(void);
-#endif
 
 #endif

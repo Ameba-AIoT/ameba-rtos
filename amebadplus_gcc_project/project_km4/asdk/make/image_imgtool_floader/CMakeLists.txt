@@ -3,7 +3,6 @@ ameba_add_image(target_imgtool_floader p_EXCLUDE_FROM_ALL)
 
 ###############################  ADD COMPONENT  ###################################
 add_compile_definitions(
-    CONFIG_USB_FS
     CONFIG_FLOADER_USBD_EN
 )
 ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_download/imgtool_floader)

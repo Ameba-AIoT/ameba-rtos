@@ -5,9 +5,11 @@
  */
 
 #include "platform_autoconf.h"
-#include "atcmd_mqtt.h"
 
+#ifdef CONFIG_LWIP_LAYER
 #if defined(CONFIG_ATCMD_MQTT) && (CONFIG_ATCMD_MQTT == 1)
+#include "atcmd_service.h"
+#include "atcmd_mqtt.h"
 
 static const char *TAG = "AT-MQTT";
 
@@ -1654,3 +1656,4 @@ void at_mqtt_init(void)
 }
 
 #endif /* CONFIG_ATCMD_MQTT */
+#endif /* CONFIG_LWIP_LAYER */

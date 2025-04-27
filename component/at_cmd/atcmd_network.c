@@ -5,11 +5,11 @@
  */
 
 #include "platform_autoconf.h"
+
 #ifndef CONFIG_MP_SHRINK
 #ifdef CONFIG_LWIP_LAYER
 #if defined(CONFIG_ATCMD_NETWORK) && (CONFIG_ATCMD_NETWORK == 1)
-
-#include "os_wrapper.h"
+#include "lwip_netconf.h"
 #include "atcmd_service.h"
 #include "atcmd_network.h"
 

@@ -62,21 +62,22 @@ struct wifi_user_conf {
 		0: API wifi_set_ips_internal() control ips enable/disable, 1: Control ips enter/leave. */
 	u8 ips_ctrl_by_usr;
 
-	/*!	LPS(leisure power save), After connection, with low traffic, part of WIFI can be powered off and woken up upon packet interaction.\n
-		0: Disable power save when wifi connected, 1: Enable. */
+	/*!	LPS(Legacy power save). After connection, with low traffic, part of WIFI can be powered off and woken up upon packet interaction.\n
+		There are two power save modes: legacy power save and uapsd mode. Can only enable one of them.\n
+		0: Disable legacy power save, 1: Enable. */
 	u8 lps_enable;
 
-	/*!	Power management mode:
-		- \b RTW_PS_MODE_LEGACY: During TBTT, wake up to receive beacon; otherwise, WIFI remains in power-save mode;\n
-		- \b RTW_PS_MODE_UAPSD_WMM: Not support right now. */
-	u8 lps_mode;
-
-	/*!	In LPS, the sta wakes up every legacy_ps_listen_interval* 102.4ms to receive beacon.*/
-	u8 legacy_ps_listen_interval;
+	/*!	In LPS, the sta wakes up every lps_listen_interval * 102.4ms to receive beacon.*/
+	u8 lps_listen_interval;
 
 	/*! Enable or disable rx broadcast in tickless wowlan mode,
 		1 means disable rx broadcast in tickless wowlan mode, 0 means enable(default) rx broadcast in tickless wowlan mode.*/
 	u8 wowlan_rx_bcmc_dis;
+
+	/*!	U-APSD WMM power save mode. After connection, with low traffic, part of WIFI can be powered off and woken up upon packet interaction.\n
+		There are two power save modes: legacy power save and uapsd mode. Can only enable one of them.
+		0: Disable uapsd mode, 1: Enable. */
+	u8 uapsd_enable;
 
 	/*!	0: RTW_UAPSD_NO_LIMIT, 1: RTW_UAPSD_TWO_MSDU, 2: RTW_UAPSD_FOUR_MSDU, 3: RTW_UAPSD_SIX_MSDU. */
 	u8 uapsd_max_sp_len;

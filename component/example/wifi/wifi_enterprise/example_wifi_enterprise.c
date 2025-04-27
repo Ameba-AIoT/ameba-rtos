@@ -107,7 +107,7 @@ void example_eap_config(void)
 static void example_eap_thread(void *method)
 {
 	example_eap_config();
-	printf("\nExample: EAP\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: EAP\n");
 	if (strcmp(method, "tls") == 0) {
 		// tls must present client_cert, client_key
 		eap_start("tls");
@@ -116,7 +116,7 @@ static void example_eap_thread(void *method)
 	} else if (strcmp(method, "ttls") == 0) {
 		eap_start("ttls");
 	} else {
-		printf("Invalid method\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Invalid method\n");
 	}
 
 	rtos_task_delete(NULL);
@@ -128,6 +128,6 @@ void example_eap(char *method)
 	wifi_fast_connect_enable(0);
 
 	if (rtos_task_create(NULL, ((const char *)"example_eap_thread"), example_eap_thread, method, 1024 * 4, 1) != RTK_SUCCESS) {
-		printf("\n\r%s rtos_task_create failed\n", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create failed\n", __FUNCTION__);
 	}
 }

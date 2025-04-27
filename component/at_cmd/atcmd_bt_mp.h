@@ -7,10 +7,7 @@
 #ifndef __ATCMD_BT_MP_H__
 #define __ATCMD_BT_MP_H__
 
-#include "platform_autoconf.h"
-#include "atcmd_service.h"
-#include "os_wrapper.h"
-#include "wifi_intf_drv_to_bt.h"
+#include "ameba_soc.h"
 
 #if defined(CONFIG_BT) && CONFIG_BT
 #if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED

@@ -26,6 +26,7 @@
 #define __CMSIS_COMPILER_H
 
 #include <stdint.h>
+#include <platform_autoconf.h>
 
 /*
  * Arm Compiler 4/5
@@ -51,16 +52,26 @@
  * GNU Compiler
  */
 #elif defined ( __GNUC__ )
+#ifdef CONFIG_ARM_CORE_CA32
+  #include "cmsis_gcc_ca.h"
+#elif defined(CONFIG_RSICV_CORE_KR4)
+#include "cmsis_gcc_riscv.h"
+#else
   #include "cmsis_gcc.h"
+#endif
 
 
 /*
  * IAR Compiler
  */
 #elif defined ( __ICCARM__ )
+#ifdef CONFIG_ARM_CORE_CA32
+  #include <cmsis_iccarm_ca.h>
+#elif defined(CONFIG_RSICV_CORE_KR4)
+
+#else
   #include <cmsis_iccarm.h>
-
-
+#endif
 /*
  * TI Arm Compiler
  */
@@ -81,6 +92,9 @@
   #endif
   #ifndef   __NO_RETURN
     #define __NO_RETURN                            __attribute__((noreturn))
+  #endif
+  #ifndef   CMSIS_DEPRECATED
+    #define CMSIS_DEPRECATED                       __attribute__((deprecated))
   #endif
   #ifndef   __USED
     #define __USED                                 __attribute__((used))
@@ -153,6 +167,9 @@
   #endif
   #ifndef   __NO_RETURN
     #define __NO_RETURN                            __attribute__((noreturn))
+  #endif
+  #ifndef   CMSIS_DEPRECATED
+    #define CMSIS_DEPRECATED                       __attribute__((deprecated))
   #endif
   #ifndef   __USED
     #define __USED                                 __attribute__((used))
@@ -227,6 +244,10 @@
   #ifndef   __USED
     #warning No compiler specific solution for __USED. __USED is ignored.
     #define __USED
+  #endif
+  #ifndef   CMSIS_DEPRECATED
+    #warning No compiler specific solution for CMSIS_DEPRECATED. CMSIS_DEPRECATED is ignored.
+    #define CMSIS_DEPRECATED
   #endif
   #ifndef   __WEAK
     #define __WEAK                                 __weak

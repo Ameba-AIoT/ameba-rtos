@@ -27,15 +27,14 @@
 #include "iperf_config.h"
 #include <errno.h>
 #include <sys/time.h>
-#include "lwipconf.h" //realtek add
 
-#include "platform_stdlib.h"
-#include "basic_types.h"
+#include "lwip_netconf.h" //realtek add
+
 #include "iperf.h"
 #include "iperf_api.h"
 #include "iperf_tcp.h"
 #include "net.h"
-#include <cJSON.h>
+#include "cJSON.h"
 
 #if defined(HAVE_FLOWLABEL)
 #include "flowlabel.h"

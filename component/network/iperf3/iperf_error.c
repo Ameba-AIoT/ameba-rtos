@@ -25,9 +25,7 @@
  * file for complete information.
  */
 #include <errno.h>
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "lwip/netdb.h" //realtek add
+#include "lwip_netconf.h" //realtek add
 #include "iperf.h"
 #include "iperf_api.h"
 #include "diag.h"

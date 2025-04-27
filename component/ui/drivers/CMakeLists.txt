@@ -53,6 +53,8 @@ elseif(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     endif()
 elseif(CONFIG_AMEBADPLUS)
     ameba_list_append(driver_list ili9341)
+elseif(CONFIG_AMEBAGREEN2)
+    ameba_list_append(driver_list st7272a)
 endif()
 
 if(driver_list)

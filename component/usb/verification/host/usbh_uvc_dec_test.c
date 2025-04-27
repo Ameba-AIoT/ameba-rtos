@@ -18,7 +18,7 @@
 #include "ppapi.h"
 
 /* Private defines -----------------------------------------------------------*/
-static const char *const TAG = "UVC_TEST";
+static const char *const TAG = "USBH";
 /*Just capture and abandon frame*/
 #define USBH_UVC_APP_SIMPLE	1
 

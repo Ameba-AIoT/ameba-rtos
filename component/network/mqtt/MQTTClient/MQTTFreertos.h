@@ -17,10 +17,8 @@
 #if !defined(MQTTFreeRTOS_H)
 #define MQTTFreeRTOS_H
 
-
-#include "lwipconf.h"
-#include "os_wrapper.h"
-#include "ameba.h"
+#include "ameba_soc.h"
+#include "lwip_netconf.h"
 
 #define MQTT_OVER_SSL (1)
 #if (MQTT_OVER_SSL)

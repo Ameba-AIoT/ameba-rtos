@@ -13,7 +13,7 @@
 #define CONFIG_USBH_VERIFY_HOT_PLUG_TEST 0     /* Hot plug / memory leak test */
 
 /* Private types -------------------------------------------------------------*/
-static const char *const TAG = "VFY";
+static const char *const TAG = "USBH";
 
 /* Private macros ------------------------------------------------------------*/
 

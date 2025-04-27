@@ -136,34 +136,34 @@ elseif(CONFIG_WHC_BRIDGE)
 elseif(CONFIG_AS_INIC_AP)
     if(CONFIG_WHC_INTF_SPI)
         ameba_list_append(private_sources
-            ${HOSTDIR}/whc_host_init.c
-            ${HOSTDIR}/spi/whc_spi_host.c
-            ${HOSTDIR}/spi/whc_spi_host_trx.c
+            whc_host_rtos/whc_host_init.c
+            whc_host_rtos/spi/whc_spi_host.c
+            whc_host_rtos/spi/whc_spi_host_trx.c
         )
         if(CONFIG_WHC_BRIDGE_HOST)
             ameba_list_append(private_sources
-                ${HOSTDIR}/whc_bridge_host_app.c
+            whc_host_rtos/whc_bridge_host_app.c
             )
         else()
             ameba_list_append(private_sources
-                ${HOSTDIR}/whc_host_api.c
-                ${HOSTDIR}/whc_host_api_basic.c
-                ${HOSTDIR}/whc_host_api_ext.c
-                ${HOSTDIR}/whc_host_cust_evt.c
+                whc_host_rtos/whc_host_api.c
+                whc_host_rtos/whc_host_api_basic.c
+                whc_host_rtos/whc_host_api_ext.c
+                whc_host_rtos/whc_host_cust_evt.c
             )
         endif()
         set(target_name wifi_whc_spi_host)
     elseif(CONFIG_WHC_INTF_SDIO)
         ameba_list_append(private_sources
-            ${HOSTDIR}/whc_host_init.c
-            ${HOSTDIR}/sdio/rtw_sdio_drvio.c
-            ${HOSTDIR}/sdio/whc_sdio_host.c
-            ${HOSTDIR}/sdio/whc_sdio_host_trx.c
-            ${HOSTDIR}/sdio/whc_sdio_init.c
+            whc_host_rtos/whc_host_init.c
+            whc_host_rtos/sdio/rtw_sdio_drvio.c
+            whc_host_rtos/sdio/whc_sdio_host.c
+            whc_host_rtos/sdio/whc_sdio_host_trx.c
+            whc_host_rtos/sdio/whc_sdio_init.c
         )
         if(CONFIG_WHC_BRIDGE_HOST)
             ameba_list_append(private_sources
-                ${HOSTDIR}/whc_bridge_host_app.c
+                whc_host_rtos/whc_bridge_host_app.c
             )
         else()
 
@@ -178,6 +178,11 @@ elseif(CONFIG_AS_INIC_AP)
             whc_host_rtos/ipc/whc_ipc_host_api_ext.c
             whc_ipc_msg_queue.c
         )
+        if(CONFIG_ZEPHYR_SDK)
+            ameba_list_append(private_sources
+                whc_host_rtos/ipc/whc_ipc_host_zephyr.c
+            )
+        endif()
         set(is_internal_library FALSE)
     endif()
 endif()

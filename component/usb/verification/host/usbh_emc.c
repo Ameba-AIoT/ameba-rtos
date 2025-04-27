@@ -16,7 +16,7 @@
 #include "usbh.h"
 
 /* Private defines -----------------------------------------------------------*/
-static const char *const TAG = "EMC";
+static const char *const TAG = "USBH";
 
 /* Private types -------------------------------------------------------------*/
 

@@ -1035,7 +1035,6 @@ int ota_update_fw_program(ota_context *ctx, u8 *buf, u32 len)
 		if (otaCtrl->NextImgFg) {
 			if (otaCtrl->NextImgLen > (int)RevHdrLen) {
 				/* remove ota header from NextImgBuf*/
-				_memset(ctx->otactrl->NextImgBuf, 0, ctx->otactrl->NextImgLen - RevHdrLen);
 				_memcpy((void *)ctx->otactrl->NextImgBuf, (void *)(ctx->otactrl->NextImgBuf + RevHdrLen), ctx->otactrl->NextImgLen - RevHdrLen);
 				ctx->otactrl->NextImgLen -= RevHdrLen;
 			} else {
@@ -1079,11 +1078,13 @@ int ota_update_fw_program(ota_context *ctx, u8 *buf, u32 len)
 		}
 
 		/*----------step4: verify checksum and update signature-----------------*/
-		if (verify_ota_checksum(ctx->otaTargetHdr, otaCtrl->targetIdx, otaCtrl->index)) {
-			if (!ota_update_manifest(ctx->otaTargetHdr, otaCtrl->targetIdx, otaCtrl->index)) {
-				ota_printf(_OTA_ERR_, "Change signature failed\n");
-				return OTA_RET_ERR;
-			}
+		if (!verify_ota_checksum(ctx->otaTargetHdr, otaCtrl->targetIdx, otaCtrl->index)) {
+			return OTA_RET_ERR;
+		}
+
+		if (!ota_update_manifest(ctx->otaTargetHdr, otaCtrl->targetIdx, otaCtrl->index)) {
+			ota_printf(_OTA_ERR_, "Change signature failed\n");
+			return OTA_RET_ERR;
 		}
 download_app:
 		/*check if another image is needed to download*/

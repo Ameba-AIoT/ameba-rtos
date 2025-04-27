@@ -14,6 +14,8 @@
 #include "rand.h"
 #include "diag.h"
 #include "hal_platform.h"
+#include "cmsis_cpu.h"
+#include "mpu_config.h"
 #include "ameba_vector.h"
 #include "ameba_loguart.h"
 #include "ameba_soc_ps.h"
@@ -41,47 +43,7 @@
 #include "ameba_chipinfo.h"
 #include "ameba_swr_calib.h"
 #include "ameba_ipc_api.h"
-
-
-
-
-/* ===========================  Configuration of the ARM ARMV8MBL Processor and Core Peripherals  ============================ */
-
-#if defined (CONFIG_ARM_CORE_CM4)
-#define __CM3_REV                      0x0200    /**< Core revision r0p0 */
-#define __MPU_PRESENT                  1         /**< Defines if an MPU is present or not */
-#define __NVIC_PRIO_BITS               3         /**< Number of priority bits implemented in the NVIC */
-#define __Vendor_SysTickConfig         1         /**< Vendor specific implementation of SysTickConfig is defined *///see vPortSetupTimerInterrupt
-#define __SAUREGION_PRESENT            1        /*!< SAU present or not                                                        */
-#define DCACHE_4WAY
-
-#define __FPU_PRESENT             1       /*!< FPU present                                   */
-#define __VFP_FP__	1
-#define __DSP_PRESENT             1
-
-#define __PMU_PRESENT             1
-#define __PMU_NUM_EVENTCNT        4       /*!< __PMU_NUM_EVENTCNT range is [2, 31]           */
-
-#ifndef __ARM_FEATURE_CMSE
-#define __ARM_FEATURE_CMSE	3
-#endif
-#include <arm_cmse.h>   /* Use CMSE intrinsics */
-#include "core_armv81mml.h"
-#include "core_cache.h"
-#elif defined (CONFIG_RSICV_CORE_KR4)
-#define __RISCV_REV                 0x0000U  /*!< RISCV Core Revision                                                    */
-
-/* ----------------------------------------------------------------------------
-   -- RISC-V MMCR register offset
-   ---------------------------------------------------------------------------- */
-#define RV_INTC_BASE (0x80000000u)
-
-#include "core_riscv.h"
-#include "cache_riscv.h"
-#endif
 #include "ameba_trustzone.h"
-#include "mpu_config.h"
-
 #include "ameba_gdma.h"
 #include "ameba_pwmtimer.h"
 #include "ameba_ups.h"

@@ -34,35 +34,14 @@
   * @endverbatim
   */
 
-/** @defgroup CACHE_Type_define
-  * @{
-  */
-#define DATA_CACHE						((u32)0x00000000)
-#define CODE_CACHE						((u32)0x00000001)
-/**
-  * @}
-  */
-
 /** @defgroup CACHE_Line_Aligned_define
   * @{
   */
-#define CACHE_LINE_SIZE							32
-#define CACHE_LINE_ADDR_MSK						0xFFFFFFE0
-#define CACHE_LINE_ALIGMENT(x)					(((u32)(x) + CACHE_LINE_SIZE - 1) & CACHE_LINE_ADDR_MSK)
+#define CACHE_LINE_SIZE						        	32U
+#define CACHE_LINE_ADDR_MSK					      	(~(CACHE_LINE_SIZE - 1U))
+#define CACHE_LINE_ALIGMENT(x)				    	(((u32)(x) + (CACHE_LINE_SIZE - 1U)) & CACHE_LINE_ADDR_MSK)
 
-#define IS_CACHE_LINE_ALIGNED_SIZE(BYTES)		((BYTES & 0x1F) == 0)
-#define IS_CACHE_LINE_ALIGNED_ADDR(ADDR)		((ADDR & 0x1F) == 0)
-/**
-  * @}
-  */
-
-/** @defgroup CACHE_Way_define
-  * @{
-  */
-#define CACHE_WWR_1WAY			((u32)0x00000000)
-#define CACHE_WWR_2WAY			((u32)0x00000001)
-#define CACHE_WWR_3WAY			((u32)0x00000002)
-#define CACHE_WWR_4WAY			((u32)0x00000003)
+#define IS_CACHE_LINE_ALIGNED_ADDR(ADDR)		((ADDR & (CACHE_LINE_SIZE - 1U)) == 0)
 /**
   * @}
   */
@@ -241,27 +220,6 @@ void Cache_Enable(u32 Enable)
 	}
 }
 
-#if defined (CONFIG_ARM_CORE_CM4)
-/**
-  * @brief  Disable/Enable Nonsecure I/D cache by secure world.
-  * @param  Enable
-  *   This parameter can be any combination of the following values:
-  *		 @arg ENABLE cache enable & SPIC read 16bytes every read command
-  *		 @arg DISABLE cache disable & SPIC read 4bytes every read command
-  */
-__STATIC_INLINE
-void Cache_Enable_NS(u32 Enable)
-{
-	if (Enable) {
-		SCB_EnableICache_NS();
-		SCB_EnableDCache_NS();
-	} else {
-		SCB_DisableICache_NS();
-		SCB_DisableDCache_NS();
-	}
-}
-#endif
-
 /**
   * @brief  flush I/D cache.
   */
@@ -270,62 +228,6 @@ void Cache_Flush(void)
 {
 	SCB_InvalidateICache();
 	SCB_InvalidateDCache();
-}
-
-/**
-  * @brief  set dcache ways for restrict range under secure world.
-  * @param  Dcwrr_base: restrict range base address, 64KB align.
-  * @param  Dcwrr_top: restrict range top address, 64KB align.
-  * @param  way_restrict: ways can be used for restrict range.
-  *          This parameter can be one of the following values:
-  *            CACHE_WWR_1WAY: 1 way for restrict range.
-  *            CACHE_WWR_2WAY: 2 way for restrict range.
-  *            CACHE_WWR_3WAY: 3 way for restrict range.
-  *            CACHE_WWR_4WAY: 4 way for restrict range.
-  * @retval None
-  * @note: This function can only be called under secure world
-  */
-__STATIC_INLINE
-void DCache_Way_Set(u32 Dcwrr_base, u32 Dcwrr_top, u32 way_restrict)
-{
-	u32 temp;
-
-	temp = SCnSCB->ACTLR;
-
-	temp &= (~(0x3 << 20));
-	temp |= (way_restrict << 20);
-	SCnSCB->ACTLR = temp;
-
-	RIDR->DCWRR_BASE = Dcwrr_base;
-	RIDR->DCWRR_TOP = Dcwrr_top;
-}
-
-/**
-  * @brief  set icache ways for restrict range under secure world
-  * @param  Icwrr_base: restrict range base address, 64KB align.
-  * @param  Icwrr_top: restrict range top address, 64KB align.
-  * @param  way_restrict: ways can be used for restrict range.
-  *          This parameter can be one of the following values:
-  *            CACHE_WWR_1WAY: 1 way for restrict range.
-  *            CACHE_WWR_2WAY: 2 way for restrict range.
-  *            CACHE_WWR_3WAY: 3 way for restrict range.
-  *            CACHE_WWR_4WAY: 4 way for restrict range.
-  * @retval None
-  * @note: This function can only be called under secure world
-  */
-__STATIC_INLINE
-void ICache_Way_Set(u32 Icwrr_base, u32 Icwrr_top, u32 way_restrict)
-{
-	u32 temp;
-
-	temp = SCnSCB->ACTLR;
-
-	temp &= (~(0x3 << 12));
-	temp |= (way_restrict << 12);
-	SCnSCB->ACTLR = temp;
-
-	RIDR->ICWRR_BASE = Icwrr_base;
-	RIDR->ICWRR_TOP = Icwrr_top;
 }
 
 /**

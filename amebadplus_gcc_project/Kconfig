@@ -15,6 +15,18 @@ config AMEBADPLUS
 config SUPPORT_USB
     def_bool y
 
+config SUPPORT_USB_DEVICE_ONLY
+    def_bool y
+
+config SUPPORT_USB_FS_ONLY
+    def_bool y
+
+config SUPPORT_USBD_INIC
+    def_bool y
+
+config SUPPORT_USBD_UAC
+    def_bool y
+
 #---------- FEATURE LIST END-------------#
 
 menu "CONFIG TrustZone"
@@ -95,6 +107,7 @@ menu "CONFIG APPLICATION"
 
     menu "AI Config"
         orsource "../component/tflite_micro/Kconfig"
+        rsource "../component/aivoice/Kconfig"
     endmenu
 
     orsource "${RTK_APP_DIR}/Kconfig"
@@ -219,7 +232,7 @@ menu "CONFIG WIFI"
             default NORMAL_SDK
             config NORMAL_SDK
                 bool "NORMAL_INIC"
-            config ZEPHYR_SDK_FOR_KM0
+            config ZEPHYR_SDK
                 bool "ZEPHYR_INIC"
         endchoice
         orsource "../component/wifi/Kconfig.wifi"
@@ -230,7 +243,7 @@ menu "CONFIG WIFI"
             select WLAN
             select AS_INIC_NP if CORE_AS_NP
             select AS_INIC_AP if CORE_AS_AP
-            select LWIP_LAYER if CORE_AS_AP && !MP_SHRINK
+            select LWIP_LAYER if CORE_AS_AP && !MP_SHRINK && !ZEPHYR_SDK
             select FW_DRIVER_COEXIST if CORE_AS_NP
             select ENABLE_WPS if CORE_AS_AP && WIFI_WPS_ENABLE_MENU
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS

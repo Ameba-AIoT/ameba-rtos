@@ -32,10 +32,7 @@
 #include <getopt.h>
 #include <errno.h>
 
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "lwipconf.h" //realtek add
-#include <os_wrapper.h>
+#include "lwip_netconf.h" //realtek add
 #include "rtw_misc.h"
 
 #include "iperf.h"
@@ -171,13 +168,13 @@ void cmd_iperf3(int argc, char **argv)
 
 	switch (test->role) {
 	case 's':
-		if (rtos_task_create(&g_server_task.task, ((const char *)"server_thread"), server_thread, NULL, 4096, 2 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
+		if (rtos_task_create(&g_server_task.task, ((const char *)"server_thread"), server_thread, NULL, 4096, 2 + 4) != RTK_SUCCESS) {
 			printf("\n\r%s rtos_task_create(server_thread) failed", __FUNCTION__);
 			iperf_free_test(test);
 		}
 		break;
 	case 'c':
-		if (rtos_task_create(&g_client_task.task, ((const char *)"client_thread"), client_thread, NULL, 4096, 1 + PRIORITIE_OFFSET) != RTK_SUCCESS) {
+		if (rtos_task_create(&g_client_task.task, ((const char *)"client_thread"), client_thread, NULL, 4096, 1 + 4) != RTK_SUCCESS) {
 			printf("\n\r%s rtos_task_create(client_thread) failed", __FUNCTION__);
 			iperf_free_test(test);
 		}

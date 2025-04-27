@@ -32,9 +32,9 @@ void FLASH_WaitBusy_InUserMode(u32 WaitType);
 
 #define TEST_DATA_SIZE          256
 #define SCUR_NUM                3
-#define FLASH_CMD_ERSCUR		0x44            // erase security register
-#define FLASH_CMD_WRSCUR		0x42            // write security register 
-#define FLASH_CMD_RDSCUR		0x48            // read security register
+#define FLASH_CMD_ERSCUR        0x44            // erase security register
+#define FLASH_CMD_WRSCUR        0x42            // write security register
+#define FLASH_CMD_RDSCUR        0x48            // read security register
 #define FLASH_CMD_WRSR2         0x31            // write status register2
 #define FLASH_CMD_RDSR2         0x35            // read status register2
 #define SCUR_OTP_BITS          0x0800           // Security Register Lock Bit
@@ -44,6 +44,7 @@ void FLASH_WaitBusy_InUserMode(u32 WaitType);
 #define IS_IN_SCUR_OFFSET(Address)   (SCUR_OFFSET(Address) < 0x100) // Indicates address is in Security Register2 range or not
 #define IS_IN_SCUR_RANGE(Address)    (IS_IN_SCUR_GROUP(Address) && IS_IN_SCUR_OFFSET(Address)) // Indicates address is in Security Register1~3 range or not
 
+#if defined (CONFIG_AMEBASMART) || defined(CONFIG_AMEBALITE) || defined(CONFIG_AMEBADPLUS)
 /**
 * @brief  This function is used to read data from flash in User Mode.
 * @param  cmd: Read data command.
@@ -53,23 +54,24 @@ void FLASH_WaitBusy_InUserMode(u32 WaitType);
 * @retval none
 */
 SRAMDRAM_ONLY_TEXT_SECTION
-void FLASH_RxCmd_Patch(u8 cmd, u32 Address, u32 read_len, u8 *read_data)
+void FLASH_RxBasic(u8 cmd, u32 Address, u32 read_len, u8 *read_data)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
 	u8 rd_cmd = cmd;
 	u32 rx_num = 0;
 	u32 value;
 
+	FLASH_UserMode_Enter();
+
 #if defined (CONFIG_AMEBASMART) || defined(CONFIG_AMEBALITE)
 	FLASH_SetSpiMode(&flash_init_para, SpicOneBitMode);
 #elif defined (CONFIG_AMEBADPLUS)
 	FLASH_SetSpiMode(spi_flash, &flash_init_para, Spic1IOBitMode);
 #endif
-	FLASH_UserMode_Enter();
 
 	spi_flash->RX_NDF = RX_NDF(read_len);
 	spi_flash->TX_NDF = 0;
-
+	flash_init_para.FLASH_dum_en = 0;
 	/* Set ADDR length */
 	value = spi_flash->USER_LENGTH & ~MASK_USER_ADDR_LENGTH;
 	if (flash_init_para.FLASH_dum_en) {
@@ -108,7 +110,6 @@ void FLASH_RxCmd_Patch(u8 cmd, u32 Address, u32 read_len, u8 *read_data)
 
 	/* Wait transfer complete. When complete, SSIENR.SPIC_EN are cleared by HW automatically. */
 	FLASH_WaitBusy_InUserMode(WAIT_TRANS_COMPLETE);
-	FLASH_UserMode_Exit();
 
 #if defined (CONFIG_AMEBASMART) || defined(CONFIG_AMEBALITE)
 	FLASH_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
@@ -116,6 +117,7 @@ void FLASH_RxCmd_Patch(u8 cmd, u32 Address, u32 read_len, u8 *read_data)
 	FLASH_SetSpiMode(spi_flash, &flash_init_para, flash_init_para.FLASH_cur_bitmode);
 #endif
 
+	FLASH_UserMode_Exit();
 }
 
 /**
@@ -127,7 +129,7 @@ void FLASH_RxCmd_Patch(u8 cmd, u32 Address, u32 read_len, u8 *read_data)
   * @retval none
   */
 SRAMDRAM_ONLY_TEXT_SECTION
-void FLASH_TxCmd_Patch(u8 cmd, u32 Address, u32 DataLen, u8 *TransmitData)
+void FLASH_TxBasic(u8 cmd, u32 Address, u32 DataLen, u8 *TransmitData)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
 	u32 tx_num = 0;
@@ -199,11 +201,14 @@ void FLASH_TxCmd_Patch(u8 cmd, u32 Address, u32 DataLen, u8 *TransmitData)
 	FLASH_WaitBusy_InUserMode(WAIT_FLASH_BUSY);
 	FLASH_UserMode_Exit();
 }
+#endif
+
 /**
   * @brief Erase Security Register
   * @param  Address: the security register address that you want to erase
   * @retval  true or false
   */
+SRAMDRAM_ONLY_TEXT_SECTION
 bool EraseSecurityRegister(u32 Address)
 {
 	if (!IS_IN_SCUR_RANGE(Address)) {
@@ -211,7 +216,7 @@ bool EraseSecurityRegister(u32 Address)
 		return false;
 	}
 	FLASH_Write_Lock();
-	FLASH_TxCmd_Patch(FLASH_CMD_ERSCUR, Address, 0, (u8 *)&Address);
+	FLASH_TxBasic(FLASH_CMD_ERSCUR, Address, 0, NULL);
 	FLASH_Write_Unlock();
 	return true;
 }
@@ -224,6 +229,7 @@ bool EraseSecurityRegister(u32 Address)
   * @param  TransmitData: pointer to a byte array that is to be sent.
   * @retval none
   */
+SRAMDRAM_ONLY_TEXT_SECTION
 bool ProgramSecurityRegister(u32 Address, u32 DataLen, u8 *TransmitData)
 {
 	if (!(IS_IN_SCUR_RANGE(Address) && IS_IN_SCUR_RANGE((Address + DataLen)))) {
@@ -231,7 +237,7 @@ bool ProgramSecurityRegister(u32 Address, u32 DataLen, u8 *TransmitData)
 		return false;
 	}
 	FLASH_Write_Lock();
-	FLASH_TxCmd_Patch(FLASH_CMD_WRSCUR, Address, DataLen, TransmitData);
+	FLASH_TxBasic(FLASH_CMD_WRSCUR, Address, DataLen, TransmitData);
 	FLASH_Write_Unlock();
 	return true;
 }
@@ -244,6 +250,7 @@ bool ProgramSecurityRegister(u32 Address, u32 DataLen, u8 *TransmitData)
   * @param  read_data: pointer to byte array which is used to save received data.
   * @retval  true or false
   */
+SRAMDRAM_ONLY_TEXT_SECTION
 bool ReadSecurityRegister(u32 Address, u32 read_len, u8 *read_data)
 {
 	if (!(IS_IN_SCUR_RANGE(Address) && IS_IN_SCUR_RANGE((Address + read_len)))) {
@@ -251,7 +258,9 @@ bool ReadSecurityRegister(u32 Address, u32 read_len, u8 *read_data)
 		return false;
 	}
 	FLASH_Write_Lock();
-	FLASH_RxCmd_Patch(FLASH_CMD_RDSCUR, Address, read_len, read_data);
+	flash_init_para.FLASH_rd_dummy_cycle[0] = 8;
+	FLASH_RxBasic(FLASH_CMD_RDSCUR, Address, read_len, read_data);
+	flash_init_para.FLASH_rd_dummy_cycle[0] = 0;
 	FLASH_Write_Unlock();
 	return true;
 }
@@ -261,6 +270,7 @@ bool ReadSecurityRegister(u32 Address, u32 read_len, u8 *read_data)
   * @param  Address: the security register address that you want to lock.
   * @retval  true or false
   */
+SRAMDRAM_ONLY_TEXT_SECTION
 bool LockSecurityRegister(u32 Address)
 {
 	u32 lockbits;
@@ -273,7 +283,8 @@ bool LockSecurityRegister(u32 Address)
 	return true;
 }
 
-static void flash_test_task(void *param)
+SRAMDRAM_ONLY_TEXT_SECTION
+void flash_test_task(void *param)
 {
 	uint32_t Address = 0x00001001; //the address that you want to test
 	uint16_t DataLen = 8; // the test data length
@@ -292,7 +303,6 @@ static void flash_test_task(void *param)
 	/*
 	 * test security registers before OTP
 	 */
-
 	bool isErased = EraseSecurityRegister(Address);
 	if (isErased == false) {
 		RTK_LOGI(NOTAG, "\nErase Security Register error.\n");
@@ -310,6 +320,7 @@ static void flash_test_task(void *param)
 		RTK_LOGI(NOTAG, "Verify Security Register error.\n");
 		while (1);
 	}
+
 	/*Verify Security Register by comparing Transmitdata with Rcevivedata*/
 	for (int i = 0; i < DataLen; i++) {
 		if (TransmitData[i] != ReceiveData[i]) {
@@ -386,12 +397,5 @@ int example_raw_flash_otp(void)
 	if (rtos_task_create(NULL, ((const char *)"flash_test_task"), flash_test_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGI(NOTAG, "\n\r%s rtos_task_create(flash_test_task) failed", __FUNCTION__);
 	}
-
-	rtos_sched_start();
-	while (1) {
-		rtos_time_delay_ms(1000);
-	}
-
 	return 0;
 }
-

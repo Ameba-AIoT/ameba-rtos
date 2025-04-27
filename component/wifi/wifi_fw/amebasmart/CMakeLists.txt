@@ -21,6 +21,7 @@ if(CONFIG_WIFI_FW_EN)
         ${DIR}/wififw_periodcca.c
         ${DIR}/wififw_ra_new.c
         ${DIR}/wififw_btcoex.c
+        ${DIR}/wififw_txrpt.c
     )
 
     include(${WIFIFWDIR}/common/wififw_common.cmake)

@@ -6,8 +6,6 @@
 
 #ifndef __ATCMD_OTA_H__
 #define __ATCMD_OTA_H__
-#include "ameba_ota.h"
-#include "platform_autoconf.h"
 
 #define OTA_MAX_HOSTNAME_LEN    128
 #define OTA_MAX_PATH_LEN        256

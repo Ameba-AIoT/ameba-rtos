@@ -89,6 +89,8 @@ if(CONFIG_FATFS_WITHIN_APP_IMG)
             COMMAND ${CMAKE_COMMAND} -E cat ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app_ns_tmp.bin ${c_SOC_PROJECT_DIR}/fatfs_prepend.bin
             OUTPUT_FILE ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app_ns.bin
         )
+    else()
+        message(FATAL_ERROR "Lack of fatfs.bin when enabling CONFIG_FATFS_WITHIN_APP_IMG")
     endif()
 endif()
 
