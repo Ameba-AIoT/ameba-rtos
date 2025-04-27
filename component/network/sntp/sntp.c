@@ -41,12 +41,8 @@
  *
  * Author: Simon Goldschmidt (lwIP raw API part)
  */
-#include "lwipconf.h"
+#include "lwip_netconf.h"
 #include "sntp.h"
-
-#include <string.h>
-
-#include <time.h>
 
 #if LWIP_UDP
 
@@ -534,6 +530,7 @@ sntp_try_next_server(void *arg)
 static void
 sntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *addr, u16_t port)
 {
+	printf("%s\n", __func__);
 	u8_t mode;
 	u8_t stratum;
 	u32_t receive_timestamp[SNTP_RECEIVE_TIME_SIZE];
@@ -619,6 +616,7 @@ sntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *addr, u16_t
 static void
 sntp_send_request(ip_addr_t *server_addr)
 {
+	printf("%s\n", __func__);
 	struct pbuf *p;
 	p = pbuf_alloc(PBUF_TRANSPORT, SNTP_MSG_LEN, PBUF_RAM);
 	if (p != NULL) {

@@ -7,30 +7,16 @@
 #ifndef ATCMD_SERVICE_H
 #define ATCMD_SERVICE_H
 
-#include "platform_autoconf.h"
-#include "dlist.h"
 /*
  * Include user defined options first. Anything not defined in these files
  * will be set to standard values. Override anything you dont like!
  */
+#include "dlist.h"
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 
-#include "atcmd_sys.h"
-#include "atcmd_fs.h"
-
 #ifdef CONFIG_ATCMD_HOST_CONTROL
 #include "ringbuffer.h"
-#endif
-
-#if defined(CONFIG_ATCMD_SOCKET) && (CONFIG_ATCMD_SOCKET == 1)
-#include "atcmd_sockets.h"
-#endif
-
-#if defined(CONFIG_BT) && CONFIG_BT
-#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
-#include "atcmd_bt_mp.h"
-#endif
 #endif
 
 #define ATC_INDEX_NUM 32
@@ -72,10 +58,6 @@ void at_printf_unlock(void);
 #define ATCMD_TT_MODE_LOW_WATERMARK_STR	"[$][TT]:Low Watermark\r\n"
 #define ATCMD_DOWNSTREAM_TEST_START_STR "Downstream Test Start\r\n"
 #define ATCMD_DOWNSTREAM_TEST_END_STR "Downstream Test End\r\n"
-#define C_NUM_AT_CMD			4 //"ATxx", 4 characters
-#define C_NUM_AT_CMD_DLT		1 //"=", 1 charater
-#define STR_END_OF_ATCMD_RET	"\r\n\n# " //each AT command response will end with this string
-#define STR_END_OF_ATDATA_RET	"\r\n\n> " //data transparent transmission indicator
 #define SMALL_BUF               512
 #define MAX_BUF_LEN             20000
 
@@ -147,9 +129,6 @@ extern int wext_private_command(char *cmd, int show_msg, char *user_buf);
 #endif
 #if defined(CONFIG_BT) && CONFIG_BT
 extern void at_bt_init(void);
-#endif
-#if defined(CONFIG_BT_COEXIST)
-extern void at_coex_init(void);
 #endif
 
 #endif /* ATCMD_SERVICE_H */

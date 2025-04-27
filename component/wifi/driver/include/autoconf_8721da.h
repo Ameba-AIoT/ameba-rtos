@@ -28,7 +28,7 @@
 //#define CONFIG_NAN
 #endif
 
-#ifdef CONFIG_WIFI_HOST_CONTROL
+#if defined(CONFIG_WIFI_HOST_CONTROL) || defined(CONFIG_ZEPHYR_SDK)
 #undef CONFIG_WIFI_TUNNEL
 #undef CONFIG_WTN_SOCKET_APP
 #endif

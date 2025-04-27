@@ -18,6 +18,18 @@ config SUPPORT_NAND_FLASH
 config SUPPORT_USB
     def_bool y
 
+config SUPPORT_SDIOH
+    def_bool y
+
+config SUPPORT_USBD_UAC
+    def_bool y
+
+config SUPPORT_USBH_ECM
+    def_bool y
+
+config SUPPORT_USBH_ECM_BRIDGE
+    def_bool y
+
 #---------- FEATURE LIST END-------------#
 
 menu "CONFIG BOOT OPTION"

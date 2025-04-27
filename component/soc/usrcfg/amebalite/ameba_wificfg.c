@@ -52,10 +52,9 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.ips_enable = 1;
 	wifi_user_config.ips_level = RTW_IPS_WIFI_OFF;
 
-	/* LPS(Leisure Power Save), power save when wifi connected, has 2 mode - legacy and uapsd, uapsd not support right now */
+	/* LPS(Legacy Power Save), power save when wifi connected */
 	wifi_user_config.lps_enable = 1;
-	wifi_user_config.lps_mode = RTW_PS_MODE_LEGACY;
-	wifi_user_config.legacy_ps_listen_interval = 0;
+	wifi_user_config.lps_listen_interval = 0;
 	wifi_user_config.wowlan_rx_bcmc_dis = 0;
 
 	/* Softap related */

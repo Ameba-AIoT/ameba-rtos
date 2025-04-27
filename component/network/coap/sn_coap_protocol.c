@@ -28,19 +28,11 @@
 /* * * * INCLUDE FILES * * * */
 /* * * * * * * * * * * * * * */
 
-#include <stdio.h>
-#include <stdlib.h> /* For libary malloc() */
-#include <string.h> /* For memset() and memcpy() */
 #if defined __linux__ || defined TARGET_LIKE_MBED
 #include <time.h>
 #endif
 
-#include "ns_types.h"
-#include "sn_coap_protocol.h"
-#include "sn_coap_header_internal.h"
 #include "sn_coap_protocol_internal.h"
-//#include "randLIB.h"
-//#include "mbed_trace.h"
 
 #define TRACE_GROUP "coap"
 /* * * * * * * * * * * * * * * * * * * * */

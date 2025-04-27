@@ -18,7 +18,7 @@ static const char *const TAG = "COMP";
 #define CONFIG_USBD_COMPOSITE_HOTPLUG							1
 
 // USB speed
-#ifdef CONFIG_USB_FS
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
 #define CONFIG_USBD_COMPOSITE_SPEED								USB_SPEED_FULL
 #else
 #define CONFIG_USBD_COMPOSITE_SPEED								USB_SPEED_HIGH

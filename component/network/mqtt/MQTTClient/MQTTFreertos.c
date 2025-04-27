@@ -16,7 +16,6 @@
  *******************************************************************************/
 
 #include "MQTTFreertos.h"
-#include "lwip/netdb.h"
 
 #ifdef LWIP_IPV6
 #undef LWIP_IPV6

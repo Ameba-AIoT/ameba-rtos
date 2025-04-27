@@ -9,18 +9,17 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 #------------------------------------------------------------------#
 # Component public part, user config begin(DO NOT remove this line)
 
-if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
-    ameba_list_append(public_includes
-        include
-        ${c_CMPT_SWLIB_DIR}
-        ${c_COMPONENT_DIR}/soc/common/include
-    )
+ameba_list_append(public_includes
+    include
+    ${c_CMPT_CMSIS_DIR}
+    ${c_CMPT_SWLIB_DIR}
+    ${c_COMPONENT_DIR}/soc/common/include
+)
 
-    if("${c_MCU_PROJECT_NAME}" STREQUAL "ap")
-        ameba_list_append(public_includes
-            ap_core
-        )
-    endif()
+if("${c_MCU_PROJECT_NAME}" STREQUAL "ap")
+    ameba_list_append(public_includes
+        ap_core
+    )
 endif()
 
 # Component public part, user config end(DO NOT remove this line)

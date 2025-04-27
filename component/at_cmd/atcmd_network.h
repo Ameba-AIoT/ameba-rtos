@@ -7,8 +7,6 @@
 #ifndef ATCMD_NETWORK_H
 #define ATCMD_NETWORK_H
 
-#include "lwip_netconf.h"
-
 extern void cmd_iperf(int argc, char **argv);
 extern void cmd_ping(int argc, char **argv);
 

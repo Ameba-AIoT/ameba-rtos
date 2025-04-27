@@ -937,27 +937,6 @@ int atcmd_bt_gmap(int argc, char *argv[])
 	return 0;
 }
 
-int bt_config_main(uint8_t enable);
-int atcmd_bt_config(int argc, char *argv[])
-{
-	(void)argc;
-	uint8_t op;
-	char *action[] = {"disable", "enable"};
-
-	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
-		BT_LOGE("Error: wrong value (%d) for bt config!\r\n", op);
-		return -1;
-	}
-
-	if (bt_config_main(op)) {
-		BT_LOGE("Error: bt config example %s failed!\r\n", action[op]);
-		return -1;
-	}
-
-	BT_LOGA("bt config example %s OK!\r\n", action[op]);
-	return 0;
-}
-
 int bt_pts_main(uint8_t enable);
 int atcmd_bt_pts(int argc, char *argv[])
 {

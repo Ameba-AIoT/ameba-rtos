@@ -4,12 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdio.h>
-#include <os_wrapper.h>
-#include <atcmd_service.h>
-#include <atcmd_bt_impl.h>
-#include <bt_utils.h>
-#include <bt_api_config.h>
+#include "atcmd_service.h"
+#include "atcmd_bt_impl.h"
+#include "bt_utils.h"
+#include "bt_api_config.h"
 
 #define BT_ATCMD_HELP   0  // decide whether open the usage of atcmd help
 
@@ -708,7 +706,6 @@ static const cmd_table_t example_table[] = {
 #if defined(CONFIG_BT_PTS) && CONFIG_BT_PTS
 	{"pts",              atcmd_bt_pts,              2, 4},
 #endif
-	// {"bt_config",        atcmd_bt_config,           2, 2},
 	// {"demo",             atcmd_bt_demo,             1, 1},
 #if defined(CONFIG_BT_TRANSFER_MODULE) && CONFIG_BT_TRANSFER_MODULE
 	{"transfer_module",  atcmd_bt_transfer_module,  2, 4},

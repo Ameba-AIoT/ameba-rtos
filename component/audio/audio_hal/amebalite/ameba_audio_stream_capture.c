@@ -357,6 +357,19 @@ HAL_AUDIO_WEAK int32_t ameba_audio_stream_rx_get_time(Stream *stream, int64_t *n
 	return 0;
 }
 
+void ameba_audio_stream_rx_reset_i2s_pin(void)
+{
+	Pinmux_Config(AUDIO_I2S_IN_MCLK_PIN, PINMUX_FUNCTION_GPIO);
+	Pinmux_Config(AUDIO_I2S_IN_BCLK_PIN, PINMUX_FUNCTION_GPIO);
+	Pinmux_Config(AUDIO_I2S_IN_LRCLK_PIN, PINMUX_FUNCTION_GPIO);
+	Pinmux_Config(AUDIO_I2S_IN_DATA0_PIN, PINMUX_FUNCTION_GPIO);
+	if (AUDIO_I2S_IN_MULTIIO_EN) {
+		Pinmux_Config(AUDIO_I2S_IN_DATA1_PIN, PINMUX_FUNCTION_GPIO);
+		Pinmux_Config(AUDIO_I2S_IN_DATA2_PIN, PINMUX_FUNCTION_GPIO);
+		Pinmux_Config(AUDIO_I2S_IN_DATA3_PIN, PINMUX_FUNCTION_GPIO);
+	}
+}
+
 void ameba_audio_stream_rx_set_i2s_pin(uint32_t index)
 {
 	switch (index) {
@@ -407,7 +420,6 @@ Stream *ameba_audio_stream_rx_init(uint32_t device, StreamConfig config)
 
 	if (device == AMEBA_AUDIO_IN_I2S) {
 		cstream->stream.sport_dev_num = AUDIO_I2S_IN_SPORT_INDEX;
-		ameba_audio_stream_rx_set_i2s_pin(cstream->stream.sport_dev_num);
 	} else if (device == AMEBA_AUDIO_IN_MIC) {
 		cstream->stream.sport_dev_num = 0;
 	}
@@ -422,6 +434,11 @@ Stream *ameba_audio_stream_rx_init(uint32_t device, StreamConfig config)
 
 	/*configure sport according to the parameters*/
 	ameba_audio_stream_rx_sport_init(&cstream, config);
+
+	if (device == AMEBA_AUDIO_IN_I2S) {
+		ameba_audio_stream_rx_set_i2s_pin(cstream->stream.sport_dev_num);
+	}
+
 	if (cstream->stream.sport_dev_num == 0) {
 		ameba_audio_set_audio_ip_use_status(cstream->stream.direction, SPORT0, true);
 	} else if (cstream->stream.sport_dev_num == 1) {
@@ -990,6 +1007,10 @@ void ameba_audio_stream_rx_close(Stream *stream)
 		}
 
 		AUDIO_SP_Deinit(cstream->stream.sport_dev_num, SP_DIR_RX);
+
+		if (cstream->stream.device == AMEBA_AUDIO_IN_I2S) {
+			ameba_audio_stream_rx_reset_i2s_pin();
+		}
 
 		ameba_audio_reset_audio_ip_status((Stream *)cstream);
 

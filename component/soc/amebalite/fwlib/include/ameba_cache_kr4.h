@@ -37,13 +37,11 @@
 /** @defgroup CACHE_Line_Aligned_define
   * @{
   */
-#define CACHE_LINE_SIZE							32
-#define CACHE_LINE_ADDR_MSK						0xFFFFFFE0
-#define CACHE_LINE_ALIGMENT(x)					(((u32)(x) + CACHE_LINE_SIZE - 1) & CACHE_LINE_ADDR_MSK)
+#define CACHE_LINE_SIZE						        	32U
+#define CACHE_LINE_ADDR_MSK					      	(~(CACHE_LINE_SIZE - 1U))
+#define CACHE_LINE_ALIGMENT(x)				    	(((u32)(x) + (CACHE_LINE_SIZE - 1U)) & CACHE_LINE_ADDR_MSK)
 
-
-#define IS_CACHE_LINE_ALIGNED_SIZE(BYTES)		((BYTES & 0x1F) == 0)
-#define IS_CACHE_LINE_ALIGNED_ADDR(ADDR)		((ADDR & 0x1F) == 0)
+#define IS_CACHE_LINE_ALIGNED_ADDR(ADDR)		((ADDR & (CACHE_LINE_SIZE - 1U)) == 0)
 /**
   * @}
   */

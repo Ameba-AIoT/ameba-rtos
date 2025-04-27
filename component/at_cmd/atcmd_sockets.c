@@ -8,8 +8,6 @@
 
 #ifdef CONFIG_LWIP_LAYER
 #if defined(CONFIG_ATCMD_SOCKET) && (CONFIG_ATCMD_SOCKET == 1)
-
-#include "os_wrapper.h"
 #include "atcmd_service.h"
 #include "atcmd_sockets.h"
 
@@ -125,14 +123,14 @@ void at_sktcfg(void *arg)
 
 	if (strlen(argv[1])) {
 		if ((so_sndtimeo = atoi(argv[1])) < 0) {
-			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] Incorrect <so_sndtimeo>\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] The <so_sndtimeo> should be >= 0\r\n");
 			error_no = 1;
 			goto end;
 		}
 	}
 	if (strlen(argv[2])) {
 		if ((so_rcvtimeo = atoi(argv[2])) < 0) {
-			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] Incorrect <so_rcvtimeo>\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] The <so_rcvtimeo> should be >= 0\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -140,7 +138,7 @@ void at_sktcfg(void *arg)
 	if (strlen(argv[3])) {
 		input_tcp_nodelay = atoi(argv[3]);
 		if ((input_tcp_nodelay != 0) && (input_tcp_nodelay != 1)) {
-			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] Incorrect <tcp_nodelay>\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] The <tcp_nodelay>'s possible values are 0 and 1\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -148,7 +146,7 @@ void at_sktcfg(void *arg)
 	if (strlen(argv[4])) {
 		so_keepalive = atoi(argv[4]);
 		if ((so_keepalive != 0) && (so_keepalive != 1)) {
-			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] Incorrect <so_keepalive>\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] The <so_keepalive>'s possible values are 0 and 1\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -156,7 +154,7 @@ void at_sktcfg(void *arg)
 	if (strlen(argv[5])) {
 		tcp_keepidle = atoi(argv[5]);
 		if ((tcp_keepidle < 0) || (tcp_keepidle > 7200)) {
-			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] Incorrect <tcp_keepidle>\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] The range of <tcp_keepidle> is [0, 7200]\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -164,7 +162,7 @@ void at_sktcfg(void *arg)
 	if (strlen(argv[6])) {
 		tcp_keepintvl = atoi(argv[6]);
 		if ((tcp_keepintvl < 0) || (tcp_keepintvl > 75)) {
-			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] Incorrect <tcp_keepintvl>\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] The range of <tcp_keepintvl> is [0, 75]\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -172,7 +170,7 @@ void at_sktcfg(void *arg)
 	if (strlen(argv[7])) {
 		tcp_keepcnt = atoi(argv[7]);
 		if ((tcp_keepcnt < 0) || (tcp_keepcnt > 10)) {
-			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] Incorrect <tcp_keepcnt>\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] The range of <tcp_keepcnt> is [0, 10]\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -943,7 +941,7 @@ int create_socket_server_tls(struct _node *current_node)
 
 	if ((ret = mbedtls_net_bind(&tls_server_fd, NULL, src_port_str, MBEDTLS_NET_PROTO_TCP)) != 0) {
 		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_tls] mbedtls_net_bind() failed ret = -0x%04x\r\n", -ret);
-		error_no = 10;
+		error_no = 11;
 		goto end;
 	}
 	current_node->sockfd = tls_server_fd.fd;
@@ -951,7 +949,7 @@ int create_socket_server_tls(struct _node *current_node)
 	if (rtos_task_create(&(current_node->auto_rcv_task), "socket_server_tls_auto_rcv_client_and_data", socket_server_tls_auto_rcv_client_and_data, current_node,
 						 1024 * 7, ATCMD_SOCKET_TASK_PRIORITY) != RTK_SUCCESS) {
 		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_tls] rtos_task_create(socket_server_tls_auto_rcv_client_and_data) failed\r\n");
-		error_no = 11;
+		error_no = 12;
 		goto end;
 	}
 
@@ -1047,7 +1045,7 @@ void at_sktserver(void *arg)
 	}
 	link_id = atoi(argv[1]);
 	if ((link_id < 0) || (link_id > (MEMP_NUM_NETCONN - 1))) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] Incorrect <link_id>\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] The range of <link_id> is [0, MEMP_NUM_NETCONN - 1]\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -1058,7 +1056,7 @@ void at_sktserver(void *arg)
 	}
 	conn_type = atoi(argv[2]);
 	if ((conn_type < SOCKET_SERVER_OVER_UDP) || (conn_type > SOCKET_SERVER_OVER_TLS_VERIFY_CLIENT)) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] Incorrect <conn_type>\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] The range of <conn_type> is [0, 3]\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -1070,7 +1068,7 @@ void at_sktserver(void *arg)
 		}
 		cert_index = atoi(argv[3]);
 		if (cert_index <= 0) {
-			RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] Incorrect <cert_index>\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] The <cert_index> should be greater than or equal to 1\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -1079,16 +1077,23 @@ void at_sktserver(void *arg)
 			error_no = 1;
 			goto end;
 		}
+		if (conn_type == SOCKET_SERVER_OVER_TLS_VERIFY_CLIENT) {
+			if (atcmd_get_ssl_certificate_size(SERVER_CA, cert_index) <= 0)  {
+				RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] SERVER_CA_%d does not exist in flash\r\n", cert_index);
+				error_no = 1;
+				goto end;
+			}
+		}
 	}
 	src_port = atoi(argv[4]);
 	if (src_port <= 0 || src_port > 65535) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] Incorrect <src_port>\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] The range of <src_port> is [1, 65535]\r\n");
 		error_no = 1;
 		goto end;
 	}
 	auto_rcv = atoi(argv[5]);
 	if (auto_rcv < 0 || auto_rcv > 1) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] Incorrect <auto_rcv>\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] The <auto_rcv>'s possible values are 0 and 1\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -1706,7 +1711,7 @@ void at_sktclient(void *arg)
 	}
 	link_id = atoi(argv[1]);
 	if ((link_id < 0) || (link_id > (MEMP_NUM_NETCONN - 1))) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktclient] Incorrect <link_id>\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktclient] The range of <link_id> is [0, MEMP_NUM_NETCONN - 1]\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -1717,7 +1722,7 @@ void at_sktclient(void *arg)
 	}
 	conn_type = atoi(argv[2]);
 	if ((conn_type < SOCKET_CLIENT_OVER_UDP) || (conn_type > SOCKET_CLIENT_OVER_TLS_VERIFY_BOTH)) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktclient] Incorrect <conn_type>\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktclient] The range of <conn_type> is [0, 5]\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -1729,9 +1734,23 @@ void at_sktclient(void *arg)
 		}
 		cert_index = atoi(argv[3]);
 		if (cert_index <= 0) {
-			RTK_LOGI(AT_SOCKET_TAG, "[at_sktclient] Incorrect <cert_index>\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[at_sktclient] The <cert_index> should be greater than or equal to 1\r\n");
 			error_no = 1;
 			goto end;
+		}
+		if ((conn_type == SOCKET_CLIENT_OVER_TLS_VERIFY_SERVER) || (conn_type == SOCKET_CLIENT_OVER_TLS_VERIFY_BOTH)) {
+			if (atcmd_get_ssl_certificate_size(CLIENT_CA, cert_index) <= 0)  {
+				RTK_LOGI(AT_SOCKET_TAG, "[at_sktclient] CLIENT_CA_%d does not exist in flash\r\n", cert_index);
+				error_no = 1;
+				goto end;
+			}
+		}
+		if ((conn_type == SOCKET_CLIENT_OVER_TLS_VERIFY_CLIENT) || (conn_type == SOCKET_CLIENT_OVER_TLS_VERIFY_BOTH)) {
+			if ((atcmd_get_ssl_certificate_size(CLIENT_CERT, cert_index) <= 0) || (atcmd_get_ssl_certificate_size(CLIENT_KEY, cert_index) <= 0))  {
+				RTK_LOGI(AT_SOCKET_TAG, "[at_sktclient] CLIENT_CERT_%d/CLIENT_KEY_%d does not exist in flash\r\n", cert_index, cert_index);
+				error_no = 1;
+				goto end;
+			}
 		}
 	}
 	if (conn_type == SOCKET_CLIENT_OVER_UDP) {
@@ -1757,21 +1776,21 @@ void at_sktclient(void *arg)
 	}
 	dst_port = atoi(argv[5]);
 	if (dst_port <= 0 || dst_port > 65535) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktclient] Incorrect <dst_port>\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktclient] The range of <dst_port> is [1, 65535]\r\n");
 		error_no = 1;
 		goto end;
 	}
 	if (strlen(argv[6])) {
 		src_port = atoi(argv[6]);
 		if (src_port <= 0 || src_port > 65535) {
-			RTK_LOGI(AT_SOCKET_TAG, "[at_sktclient] Incorrect <src_port>\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[at_sktclient] The range of <src_port> is [1, 65535]\r\n");
 			error_no = 1;
 			goto end;
 		}
 	}
 	auto_rcv = atoi(argv[7]);
 	if (auto_rcv < 0 || auto_rcv > 1) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktclient] Incorrect <auto_rcv>\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktclient] The <auto_rcv>'s possible values are 0 and 1\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -1925,21 +1944,21 @@ void at_sktsendraw(void *arg)
 
 	link_id = atoi(argv[1]);
 	if (link_id < 0 || link_id > (MEMP_NUM_NETCONN - 1)) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsendraw] Incorrect <link_id>\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsendraw] The range of <link_id> is [0, MEMP_NUM_NETCONN - 1]\r\n");
 		error_no = 1;
 		goto end;
 	}
 	curnode = &node_pool[link_id];
 	if ((curnode->link_id == INVALID_LINK_ID) || (curnode->sockfd == INVALID_SOCKET_ID) || (curnode->role == NODE_ROLE_INVALID) ||
 		(curnode->protocol == SOCKET_PROTOCOL_INVALID)) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsendraw] The link does not exist or socket not established\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsendraw] The link=%d does not exist or socket not established\r\n", link_id);
 		error_no = 1;
 		goto end;
 	}
 
 	data_sz = atoi(argv[2]);
 	if (data_sz <= 0) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsendraw] Incorrect <data_size>\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsendraw] The <data_size> should be greater than 0\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -1957,7 +1976,7 @@ void at_sktsendraw(void *arg)
 		}
 		dst_port = atoi(argv[4]);
 		if (dst_port <= 0 || dst_port > 65535) {
-			RTK_LOGI(AT_SOCKET_TAG, "[at_sktsendraw] Incorrect <dst_port> for UDP server\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[at_sktsendraw] The range of <dst_port> is [1, 65535] for UDP server\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -2028,21 +2047,21 @@ void at_sktsend(void *arg)
 
 	link_id = atoi(argv[1]);
 	if (link_id < 0 || link_id > (MEMP_NUM_NETCONN - 1)) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsend] Incorrect <link_id>\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsend] The range of <link_id> is [0, MEMP_NUM_NETCONN - 1]\r\n");
 		error_no = 1;
 		goto end;
 	}
 	curnode = &node_pool[link_id];
 	if ((curnode->link_id == INVALID_LINK_ID) || (curnode->sockfd == INVALID_SOCKET_ID) || (curnode->role == NODE_ROLE_INVALID) ||
 		(curnode->protocol == SOCKET_PROTOCOL_INVALID)) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsend] The link does not exist or socket not established\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsend] The link=%d does not exist or socket not established\r\n", link_id);
 		error_no = 1;
 		goto end;
 	}
 
 	data_sz = atoi(argv[2]);
 	if ((data_sz <= 0) || (data_sz >= UART_LOG_CMD_BUFLEN)) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsend] Incorrect <data_size>\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsend] The range of <data_size> is [1, UART_LOG_CMD_BUFLEN-1]\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -2066,7 +2085,7 @@ void at_sktsend(void *arg)
 		}
 		dst_port = atoi(argv[4]);
 		if (dst_port <= 0 || dst_port > 65535) {
-			RTK_LOGI(AT_SOCKET_TAG, "[at_sktsend] Incorrect <dst_port> for UDP server\r\n");
+			RTK_LOGI(AT_SOCKET_TAG, "[at_sktsend] The range of <dst_port> is [1, 65535] for UDP server\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -2198,8 +2217,8 @@ void at_sktread(void *arg)
 	int wanted_recv_size = 0, actual_recv_size = 0;
 	struct _node *curnode = NULL;
 	struct sockaddr_in skt_dst_addr;
-	char udp_clientaddr[16] = {0};
-	u16_t udp_clientport = 0;
+	char udp_dstaddr[16] = {0};
+	u16_t udp_dstport = 0;
 	u8 *rx_buffer = NULL;
 
 	if (arg == NULL) {
@@ -2223,21 +2242,21 @@ void at_sktread(void *arg)
 
 	link_id = atoi(argv[1]);
 	if (link_id < 0 || link_id > (MEMP_NUM_NETCONN - 1)) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktread] Incorrect <link_id>\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktread] The range of <link_id> is [0, MEMP_NUM_NETCONN - 1]\r\n");
 		error_no = 1;
 		goto end;
 	}
 	curnode = &node_pool[link_id];
 	if ((curnode->link_id == INVALID_LINK_ID) || (curnode->sockfd == INVALID_SOCKET_ID) || (curnode->role == NODE_ROLE_INVALID) ||
 		(curnode->protocol == SOCKET_PROTOCOL_INVALID)) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktread] The link does not exist or socket not established\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktread] The link=%d does not exist or socket not established\r\n", link_id);
 		error_no = 1;
 		goto end;
 	}
 
 	wanted_recv_size = atoi(argv[2]);
 	if (wanted_recv_size <= 0) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktread] Incorrect <data_size>\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktread] The <data_size> should be greater than 0\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -2263,9 +2282,9 @@ void at_sktread(void *arg)
 end:
 	if (error_no == 0) {
 		if (curnode->protocol == 0) {
-			inet_ntoa_r(skt_dst_addr.sin_addr.s_addr, udp_clientaddr, 16);
-			udp_clientport = ntohs(skt_dst_addr.sin_port);
-			at_printf("+SKTREAD:%d,%d,%s,%d,", link_id, actual_recv_size, udp_clientaddr, udp_clientport);
+			inet_ntoa_r(skt_dst_addr.sin_addr.s_addr, udp_dstaddr, 16);
+			udp_dstport = ntohs(skt_dst_addr.sin_port);
+			at_printf("+SKTREAD:%d,%d,%s,%d,", link_id, actual_recv_size, udp_dstaddr, udp_dstport);
 		} else {
 			at_printf("+SKTREAD:%d,%d,", link_id, actual_recv_size);
 		}
@@ -2347,37 +2366,40 @@ void at_sktstate(void *arg)
 void close_and_free_tls_resource(struct _node *current_node)
 {
 	mbedtls_net_context tls_fd;
-
 	mbedtls_ssl_close_notify(current_node->ssl);
 	tls_fd.fd = current_node->sockfd;
 	mbedtls_net_free(&tls_fd);
 	current_node->sockfd = INVALID_SOCKET_ID;
 
-	if (current_node->ca_crt) {
-		mbedtls_x509_crt_free(current_node->ca_crt);
-		rtos_mem_free(current_node->ca_crt);
-		current_node->ca_crt = NULL;
+	if (current_node->role != NODE_ROLE_SEED) {
+		if (current_node->ca_crt) {
+			mbedtls_x509_crt_free(current_node->ca_crt);
+			rtos_mem_free(current_node->ca_crt);
+			current_node->ca_crt = NULL;
+		}
+		if (current_node->cert_crt) {
+			mbedtls_x509_crt_free(current_node->cert_crt);
+			rtos_mem_free(current_node->cert_crt);
+			current_node->cert_crt = NULL;
+		}
+		if (current_node->private_key) {
+			mbedtls_pk_free(current_node->private_key);
+			rtos_mem_free(current_node->private_key);
+			current_node->private_key = NULL;
+		}
+		if (current_node->conf) {
+			mbedtls_ssl_config_free(current_node->conf);
+			rtos_mem_free(current_node->conf);
+			current_node->conf = NULL;
+		}
 	}
-	if (current_node->cert_crt) {
-		mbedtls_x509_crt_free(current_node->cert_crt);
-		rtos_mem_free(current_node->cert_crt);
-		current_node->cert_crt = NULL;
-	}
-	if (current_node->private_key) {
-		mbedtls_pk_free(current_node->private_key);
-		rtos_mem_free(current_node->private_key);
-		current_node->private_key = NULL;
-	}
+
 	if (current_node->ssl) {
 		mbedtls_ssl_free(current_node->ssl);
 		rtos_mem_free(current_node->ssl);
 		current_node->ssl = NULL;
 	}
-	if (current_node->conf) {
-		mbedtls_ssl_config_free(current_node->conf);
-		rtos_mem_free(current_node->conf);
-		current_node->conf = NULL;
-	}
+
 	return;
 }
 
@@ -2386,9 +2408,6 @@ void close_and_free_tls_resource(struct _node *current_node)
 void close_and_free_node(struct _node *freenode)
 {
 	struct _node *prevnode = NULL, *nextnode = NULL, *tempnode = NULL;
-
-	SYS_ARCH_DECL_PROTECT(lev);
-	SYS_ARCH_PROTECT(lev);
 
 	//UDP
 	if (freenode->protocol == 0) {
@@ -2463,8 +2482,6 @@ void close_and_free_node(struct _node *freenode)
 		}
 	}
 
-	SYS_ARCH_UNPROTECT(lev);
-
 	init_single_node(freenode);
 	return;
 }
@@ -2496,7 +2513,7 @@ void at_sktdel(void *arg)
 	}
 	link_id = atoi(argv[1]);
 	if ((link_id < 0) || (link_id > (MEMP_NUM_NETCONN - 1))) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktdel] Incorrect <link_id>\r\n");
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktdel] The range of <link_id> is [0, MEMP_NUM_NETCONN - 1]\r\n");
 		error_no = 1;
 		goto end;
 	}

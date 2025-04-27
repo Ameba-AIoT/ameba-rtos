@@ -1,11 +1,5 @@
-if (CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2)
-    if("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz")
-        include(lib.cmake)
-    endif()
-elseif (NOT CONFIG_AMEBADPLUS)
+if (NOT CONFIG_SUPPORT_USB_DEVICE_ONLY)
     include(lib.cmake)
-else()
-
 endif()
 
 if(CONFIG_USB_HOST_EN)

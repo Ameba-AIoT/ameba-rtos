@@ -3,14 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "atcmd_service.h"
 #include "spi_api.h"
 #include "spi_ex_api.h"
-#include "os_wrapper.h"
 #include "gpio_api.h"
 #include "gpio_irq_api.h"
+#include "atcmd_service.h"
 #include "at_intf_spi.h"
-#include "ringbuffer.h"
 
 static const char *const TAG = "AT_SPI-S";
 

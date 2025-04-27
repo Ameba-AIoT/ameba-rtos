@@ -110,7 +110,9 @@ int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int server_
 
 	/* STEP2: get last time fast connect info from flash*/
 	memset(&read_data, 0xff, sizeof(struct wlan_fast_reconnect));
+#ifndef CONFIG_ZEPHYR_SDK
 	rt_kv_get("wlan_data", (uint8_t *) &read_data, sizeof(struct wlan_fast_reconnect));
+#endif
 
 	/* STEP3: wirte new connect info to flash if different content: SSID, Passphrase, Channel, Security type*/
 	if (memcmp((u8 *) &wifi_data_to_flash, (u8 *) &read_data, sizeof(struct wlan_fast_reconnect)) != 0) {
@@ -119,7 +121,9 @@ int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int server_
 #else
 		DiagPrintf("\r\n %s():not the same ssid/passphrase/channel, write new profile to flash \n", __func__);
 #endif
+#ifndef CONFIG_ZEPHYR_SDK
 		rt_kv_set("wlan_data", (uint8_t *)&wifi_data_to_flash, sizeof(struct wlan_fast_reconnect));
+#endif
 	}
 
 	return RTK_SUCCESS;
@@ -152,8 +156,9 @@ int wifi_do_fast_connect(void)
 	data = (struct wlan_fast_reconnect *)malloc(sizeof(struct wlan_fast_reconnect));
 	if (data) {
 		memset(data, 0xff, sizeof(struct wlan_fast_reconnect));
+#ifndef CONFIG_ZEPHYR_SDK
 		ret = rt_kv_get("wlan_data", (uint8_t *)data, sizeof(struct wlan_fast_reconnect));
-
+#endif
 		if (ret < 0) {
 			DiagPrintf("[FAST_CONNECT] Fast connect profile is not exist\n");
 			return 0;

@@ -23,7 +23,7 @@ void wifi_raw_tx(void *param)
 	struct rtw_raw_frame_desc tx_raw_data_desc = {0};
 	UNUSED(param);
 
-	printf("%s start.\n", __func__);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s start.\n", __func__);
 
 	unsigned char tx_frame_buf[42] = {
 		0x40, 0x00, 												// Frame Control field
@@ -47,7 +47,7 @@ void wifi_raw_tx(void *param)
 
 	while (1) {
 		if (wifi_send_raw_frame(&tx_raw_data_desc) < 0) {
-			printf("%s failed!\n", __func__);
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "%s failed!\n", __func__);
 		}
 		rtos_time_delay_ms(100);
 	}
@@ -65,11 +65,11 @@ static u8 promisc_callback(struct rtw_rx_pkt_info *pkt_info)
 	subtype = WifiGetFrameSubType(buf);
 
 	if (subtype == RTW_PROBERSP) {
-		printf("Probe Rsp frame:\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Probe Rsp frame:\n");
 		for (i = 0; i < buf_len; i++) {
-			printf("%x ", buf[i]);
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "%x ", buf[i]);
 		}
-		printf("\n\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\n");
 		return 1;
 	}
 
@@ -80,7 +80,7 @@ void wifi_raw_rx(void *param)
 	UNUSED(param);
 	struct rtw_promisc_para promiscpara;
 
-	printf("%s start.\n", __func__);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s start.\n", __func__);
 
 	memset(&promiscpara, 0, sizeof(struct rtw_promisc_para));
 	promiscpara.filter_mode = RTW_PROMISC_FILTER_ALL_PKT;
@@ -102,12 +102,12 @@ void wifi_raw_task(void *param)
 	wifi_set_channel(STA_WLAN_INDEX, WIFI_RAW_CH);
 
 	if (rtos_task_create(NULL, ((const char *)"wifi_raw_tx_task"), wifi_raw_tx, NULL, 1024 * 4, 4) != RTK_SUCCESS) {
-		printf("\n\r[%s] Create wifi raw tx task failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r[%s] Create wifi raw tx task failed", __FUNCTION__);
 		goto exit;
 	}
 
 	if (rtos_task_create(NULL, ((const char *)"wifi_raw_rx_task"), wifi_raw_rx, NULL, 1024 * 4, 4) != RTK_SUCCESS) {
-		printf("\n\r[%s] Create wifi raw rx task failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r[%s] Create wifi raw rx task failed", __FUNCTION__);
 		goto exit;
 	}
 
@@ -119,7 +119,7 @@ exit:
 void example_wifi_raw(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"wifi_raw_task"), wifi_raw_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
-		printf("\n\r[%s] Create wifi raw task failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r[%s] Create wifi raw task failed", __FUNCTION__);
 	}
 }
 

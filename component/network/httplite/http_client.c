@@ -1,11 +1,5 @@
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <string.h>
-
-#include "platform_stdlib.h"
-#include "basic_types.h"
-
 #include "os_wrapper.h"
+#include "http_client.h"
 
 const char *http_strstr(const char *str1, const char *str2)
 {

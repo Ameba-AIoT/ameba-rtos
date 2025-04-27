@@ -11,9 +11,7 @@ None
 
 # SW Configuration
 
-Replace the original main.c under sdk project (source\amebaxxx_gcc_project\project_core\src) with the main.c in the example directory. Then re-build project. 
-
-For AmebaSmart, please compile it in CA32(ap) core. 
+cmd: `./build.py -a raw_flash_otp` to build image.
 
 # Expected Result
 
@@ -30,4 +28,6 @@ xx xx xx xx xx xx xx xx
 
 * AMEBASMART
 * AMEBALITE
+* AMEBADPLUS
+* AMEBAGREEN2
 * W25Q256jv Nor Flash and GD25B64C Nor FLASh have been tested, other Flash with the same operation commands and flow also can be supported.

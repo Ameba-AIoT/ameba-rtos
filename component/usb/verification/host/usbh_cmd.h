@@ -23,10 +23,6 @@
 
 int cmd_usbh_emc_test(void);
 
-int cmd_usbh_cts_phydw(u16 argc, u8  *argv[]);
-
-int cmd_usbh_cts_phyew(u16 argc, u8  *argv[]);
-
 int cmd_usbh_tmod_test(u16 argc, u8  *argv[]);
 
 int cmd_usbh_resume_test(void);

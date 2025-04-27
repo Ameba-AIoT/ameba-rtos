@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef USBD_COMPOSITE_HID_H
-#define USBD_COMPOSITE_HID_H
+#ifndef USBD_COMPOSITE_HID_BI_DIR_H
+#define USBD_COMPOSITE_HID_BI_DIR_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -104,4 +104,4 @@ u32 usbd_composite_hid_read(u8 *buffer, u32 size, u32 time_out_ms);
 u32 usbd_composite_hid_get_read_buf_cnt(void);
 u32 usbd_composite_hid_ring_buf_is_full(void);
 
-#endif // USBD_COMPOSITE_HID_H
+#endif // USBD_COMPOSITE_HID_BI_DIR_H

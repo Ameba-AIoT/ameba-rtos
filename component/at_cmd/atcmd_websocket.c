@@ -7,12 +7,12 @@
 #include "platform_autoconf.h"
 
 #ifdef CONFIG_LWIP_LAYER
-#include "os_wrapper.h"
+#if defined(CONFIG_ATCMD_WEBSOCKET) && (CONFIG_ATCMD_WEBSOCKET == 1)
+#include "lwip_netconf.h"
 #include "atcmd_service.h"
 #include "atcmd_websocket.h"
-#include "lwip/sockets.h"
 
-#if defined(CONFIG_ATCMD_WEBSOCKET) && (CONFIG_ATCMD_WEBSOCKET == 1)
+static const char *const AT_WEBSOCKET_TAG = "AT_WEBSOCKET";
 
 /* for websocket client */
 struct websocket_config ws_config[MAX_WEBSOCKET_LINK_NUM];
@@ -64,14 +64,14 @@ void at_wscfg(void *arg)
 	link_id = atoi(argv[1]);
 
 	if (link_id < 0 || link_id >= MAX_WEBSOCKET_LINK_NUM) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
 		error_no = 1;
 		goto end;
 	}
 
 	ping_interval = atoi(argv[2]);
 	if (ping_interval < 1 || ping_interval > MAX_PING_INTERVAL) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "ping_interval must be 1~%d\r\n", MAX_PING_INTERVAL);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "ping_interval must be 1~%d\r\n", MAX_PING_INTERVAL);
 		error_no = 1;
 		goto end;
 	}
@@ -79,7 +79,7 @@ void at_wscfg(void *arg)
 
 	ping_timeout = atoi(argv[3]);
 	if (ping_timeout < 1 || ping_timeout > MAX_PING_TIMEOUT) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "ping_timeout must be 1~%d\r\n", MAX_PING_TIMEOUT);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "ping_timeout must be 1~%d\r\n", MAX_PING_TIMEOUT);
 		error_no = 1;
 		goto end;
 	}
@@ -88,7 +88,7 @@ void at_wscfg(void *arg)
 	if (argv[4] != NULL && (strlen(argv[4]) > 0)) {
 		buffer_size = atoi(argv[4]);
 		if (buffer_size < 1 || buffer_size > MAX_BUFFER_SIZE) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "buffer_size must be 1~%d\r\n", MAX_BUFFER_SIZE);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "buffer_size must be 1~%d\r\n", MAX_BUFFER_SIZE);
 			error_no = 1;
 			goto end;
 		}
@@ -99,7 +99,7 @@ void at_wscfg(void *arg)
 	if (argv[5] != NULL && (strlen(argv[5]) > 0)) {
 		max_queue_size = atoi(argv[5]);
 		if (max_queue_size < 1 || max_queue_size > MAX_QUEUE_SIZE) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "max_queue_size must be 1~%d\r\n", MAX_QUEUE_SIZE);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "max_queue_size must be 1~%d\r\n", MAX_QUEUE_SIZE);
 			error_no = 1;
 			goto end;
 		}
@@ -114,7 +114,7 @@ void at_wscfg(void *arg)
 		}
 		ws_config[link_id].protocol = (char *) ws_malloc(strlen(protocol) + 1);
 		if (ws_config[link_id].protocol == NULL) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "malloc failed\r\n");
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "malloc failed\r\n");
 			error_no = 2;
 			goto end;
 		}
@@ -129,7 +129,7 @@ void at_wscfg(void *arg)
 
 		ws_config[link_id].version = (char *) ws_malloc(strlen(version) + 1);
 		if (ws_config[link_id].version == NULL) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "malloc failed\r\n");
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "malloc failed\r\n");
 			error_no = 2;
 			goto end;
 		}
@@ -139,7 +139,7 @@ void at_wscfg(void *arg)
 	if (argv[8] != NULL && (strlen(argv[8]) > 0)) {
 		stable_buf_num = atoi(argv[8]);
 		if (stable_buf_num < 0 || stable_buf_num > ws_config[link_id].max_queue_size) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "stable_buf_num must be 1~%d\r\n", ws_config[link_id].max_queue_size);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "stable_buf_num must be 1~%d\r\n", ws_config[link_id].max_queue_size);
 			error_no = 1;
 			goto end;
 		}
@@ -203,7 +203,7 @@ void at_wsglcfg(void *arg)
 	if (argv[5] != NULL && (strlen(argv[5]) > 0)) {
 		wsclient_keepalive_idle = atoi(argv[5]);
 		if (wsclient_keepalive_idle < 1 || wsclient_keepalive_idle > MAX_KEEPALIVE_IDLE) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "wsclient_keepalive_idle must be 1~%d\r\n", MAX_KEEPALIVE_IDLE);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "wsclient_keepalive_idle must be 1~%d\r\n", MAX_KEEPALIVE_IDLE);
 			error_no = 1;
 			goto end;
 		}
@@ -212,7 +212,7 @@ void at_wsglcfg(void *arg)
 	if (argv[6] != NULL && (strlen(argv[6]) > 0)) {
 		wsclient_keepalive_interval = atoi(argv[6]);
 		if (wsclient_keepalive_interval < 1 || wsclient_keepalive_interval > MAX_KEEPALIVE_INTERVAL) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "wsclient_keepalive_interval must be 1~%d\r\n", MAX_KEEPALIVE_INTERVAL);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "wsclient_keepalive_interval must be 1~%d\r\n", MAX_KEEPALIVE_INTERVAL);
 			error_no = 1;
 			goto end;
 		}
@@ -221,7 +221,7 @@ void at_wsglcfg(void *arg)
 	if (argv[7] != NULL && (strlen(argv[7]) > 0)) {
 		wsclient_keepalive_count = atoi(argv[7]);
 		if (wsclient_keepalive_count < 1 || wsclient_keepalive_count > MAX_KEEPALIVE_COUNT) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "wsclient_keepalive_count must be 1~%d\r\n", MAX_KEEPALIVE_COUNT);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "wsclient_keepalive_count must be 1~%d\r\n", MAX_KEEPALIVE_COUNT);
 			error_no = 1;
 			goto end;
 		}
@@ -267,7 +267,7 @@ void at_wshead(void *arg)
 	link_id = atoi(argv[1]);
 
 	if (link_id < 0 || link_id >= MAX_WEBSOCKET_LINK_NUM) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
 		error_no = 1;
 		goto end;
 	}
@@ -285,7 +285,7 @@ void at_wshead(void *arg)
 	} else {
 		header = (char *)argv[3];
 		if (header == NULL) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "header is empty\r\n");
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "header is empty\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -295,7 +295,7 @@ void at_wshead(void *arg)
 			if (ws_config[link_id].ws_header[i] == NULL) {
 				ws_config[link_id].ws_header[i] = (char *) ws_malloc(header_len + 1);
 				if (ws_config[link_id].ws_header[i] == NULL) {
-					RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "malloc failed\r\n");
+					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "malloc failed\r\n");
 					error_no = 2;
 					goto end;
 				}
@@ -305,7 +305,7 @@ void at_wshead(void *arg)
 		}
 
 		if (i == MAX_HEADER_NUM) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "header number can not exceed %d\r\n", MAX_HEADER_NUM);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "header number can not exceed %d\r\n", MAX_HEADER_NUM);
 			error_no = 3;
 			goto end;
 		}
@@ -350,7 +350,7 @@ void at_wsheadraw(void *arg)
 	link_id = atoi(argv[1]);
 
 	if (link_id < 0 || link_id >= MAX_WEBSOCKET_LINK_NUM) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
 		error_no = 1;
 		goto end;
 	}
@@ -371,20 +371,20 @@ void at_wsheadraw(void *arg)
 			if (ws_config[link_id].ws_header[i] == NULL) {
 				ws_config[link_id].ws_header[i] = (char *) ws_malloc(header_len + 1);
 				if (ws_config[link_id].ws_header[i] == NULL) {
-					RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "malloc failed\r\n");
+					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "malloc failed\r\n");
 					error_no = 2;
 					goto end;
 				}
 				/* tt mode */
 				res = atcmd_tt_mode_start(header_len);
 				if (res < 0) {
-					RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "atcmd_tt_mode_start failed\r\n");
+					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_start failed\r\n");
 					error_no = 3;
 					goto end;
 				}
 				res = atcmd_tt_mode_get((u8 *)ws_config[link_id].ws_header[i], header_len);
 				if (res < 0) {
-					RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
+					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 					error_no = 3;
 					goto end;
 				}
@@ -394,7 +394,7 @@ void at_wsheadraw(void *arg)
 		}
 
 		if (i == MAX_HEADER_NUM) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "header number can not exceed %d\r\n", MAX_HEADER_NUM);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "header number can not exceed %d\r\n", MAX_HEADER_NUM);
 			error_no = 4;
 			goto end;
 		}
@@ -493,7 +493,7 @@ static void wsclient_conn_thread(void *param)
 		struct pingtime_item *item = list_first_entry(&ping_time_list[link_id], struct pingtime_item, node);
 		if (!list_empty(&ping_time_list[link_id])) {
 			if (rtos_time_get_current_system_time_ms() >= item->ping_send_time + ws_config[link_id].ping_timeout * 1000) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "ping timeout, not receive pong for %d seconds\n", ws_config[link_id].ping_timeout);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "ping timeout, not receive pong for %d seconds\n", ws_config[link_id].ping_timeout);
 				ws_close(&(ws_config[link_id].ws_client));
 			}
 		}
@@ -506,14 +506,14 @@ static void wsclient_conn_thread(void *param)
 			struct pingtime_item *new_item;
 			new_item = (struct pingtime_item *)ws_malloc(sizeof(struct pingtime_item));
 			if (new_item == NULL) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "malloc failed\r\n");
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "malloc failed\r\n");
 				ws_close(&(ws_config[link_id].ws_client));
 			}
 			new_item->ping_send_time = rtos_time_get_current_system_time_ms();
 			list_add_tail(&new_item->node, &ping_time_list[link_id]);
 
 			ws_sendPing(1, wsclient);
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_DEBUG, "send ping\n");
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_DEBUG, "send ping\n");
 		}
 
 		ws_poll(1000, &wsclient);
@@ -555,12 +555,12 @@ void at_wsconn(void *arg)
 
 	link_id = atoi(argv[1]);
 	if (link_id < 0 || link_id >= MAX_WEBSOCKET_LINK_NUM) {  //todo: check link status
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
 		error_no = 1;
 		goto end;
 	} else {
 		if (ws_config[link_id].ws_client && ws_config[link_id].ws_client->readyState != WSC_CLOSED) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link %d is open\r\n", link_id);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link %d is open\r\n", link_id);
 			error_no = 1;
 			goto end;
 		}
@@ -568,7 +568,7 @@ void at_wsconn(void *arg)
 
 	host = (char *)argv[2];
 	if (host == NULL) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "host is empty\r\n");
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "host is empty\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -579,7 +579,7 @@ void at_wsconn(void *arg)
 
 	conn_type = atoi(argv[5]);
 	if (conn_type < WEBSOCKET_OVER_TCP || conn_type > WEBSOCKET_OVER_TLS_VERIFY_SERVER_AND_CLIENT_CERT) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "conn_type must be %d~%d\r\n", WEBSOCKET_OVER_TCP, WEBSOCKET_OVER_TLS_VERIFY_SERVER_AND_CLIENT_CERT);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "conn_type must be %d~%d\r\n", WEBSOCKET_OVER_TCP, WEBSOCKET_OVER_TLS_VERIFY_SERVER_AND_CLIENT_CERT);
 		error_no = 1;
 		goto end;
 	}
@@ -590,14 +590,14 @@ void at_wsconn(void *arg)
 		memcpy(url + strlen("ws://"), host, strlen(host));
 	} else {
 #ifndef USING_SSL
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "\r\nNot Support the wss server!\r\n");
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "\r\nNot Support the wss server!\r\n");
 		error_no = 1;
 		goto end;
 #endif
 
 		if (conn_type > WEBSOCKET_OVER_TLS) {
 			if (!(argv[6] != NULL && (strlen(argv[6]) > 0))) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "cert_index is empty!\r\n");
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "cert_index is empty!\r\n");
 				error_no = 1;
 				goto end;
 			}
@@ -619,7 +619,7 @@ void at_wsconn(void *arg)
 		}
 
 		if (ws_config[link_id].stable_buf_num > ws_config[link_id].max_queue_size) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "stable_buf_num(%d) must not exceed max_queue_size(%d)!\r\n", ws_config[link_id].stable_buf_num,
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "stable_buf_num(%d) must not exceed max_queue_size(%d)!\r\n", ws_config[link_id].stable_buf_num,
 					 ws_config[link_id].max_queue_size);
 			error_no = 1;
 			goto end;
@@ -638,7 +638,7 @@ void at_wsconn(void *arg)
 		if (total_header_len > 0) {
 			header = (char *) ws_malloc(total_header_len + 1);
 			if (header == NULL) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", total_header_len + 1);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", total_header_len + 1);
 				error_no = 2;
 				goto end;
 			}
@@ -658,13 +658,13 @@ void at_wsconn(void *arg)
 			/* get ca */
 			size = atcmd_get_ssl_certificate_size(CLIENT_CA, cert_index);
 			if (size <= 0) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "get CLIENT_CA size failed, size = %d!\r\n", size);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CA size failed, size = %d!\r\n", size);
 				error_no = 4;
 				goto end;
 			}
 			ca_cert = (char *) ws_malloc(size + 1);
 			if (ca_cert == NULL) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
 				error_no = 2;
 				goto end;
 			}
@@ -672,7 +672,7 @@ void at_wsconn(void *arg)
 			if (ret > 0) {
 				wsclient->ca_cert = ca_cert;
 			} else {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "get CLIENT_CA failed, ret = %d!\r\n", ret);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CA failed, ret = %d!\r\n", ret);
 				error_no = 4;
 				goto end;
 			}
@@ -680,13 +680,13 @@ void at_wsconn(void *arg)
 			/* get client cert */
 			size = atcmd_get_ssl_certificate_size(CLIENT_CERT, cert_index);
 			if (size <= 0) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "get CLIENT_CERT size failed, size = %d!\r\n", size);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CERT size failed, size = %d!\r\n", size);
 				error_no = 4;
 				goto end;
 			}
 			client_cert = (char *) ws_malloc(size + 1);
 			if (client_cert == NULL) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
 				error_no = 2;
 				goto end;
 			}
@@ -694,7 +694,7 @@ void at_wsconn(void *arg)
 			if (ret > 0) {
 				wsclient->client_cert = client_cert;
 			} else {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "get CLIENT_CERT failed, ret = %d!\r\n", ret);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CERT failed, ret = %d!\r\n", ret);
 				error_no = 4;
 				goto end;
 			}
@@ -702,13 +702,13 @@ void at_wsconn(void *arg)
 			/* get client key */
 			size = atcmd_get_ssl_certificate_size(CLIENT_KEY, cert_index);
 			if (size <= 0) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "get CLIENT_KEY size failed, size = %d!\r\n", size);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_KEY size failed, size = %d!\r\n", size);
 				error_no = 4;
 				goto end;
 			}
 			client_key = (char *) ws_malloc(size + 1);
 			if (client_key == NULL) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
 				error_no = 2;
 				goto end;
 			}
@@ -716,7 +716,7 @@ void at_wsconn(void *arg)
 			if (ret > 0) {
 				wsclient->client_key = client_key;
 			} else {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "get CLIENT_KEY failed, ret = %d!\r\n", ret);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_KEY failed, ret = %d!\r\n", ret);
 				error_no = 4;
 				goto end;
 			}
@@ -724,13 +724,13 @@ void at_wsconn(void *arg)
 			/* get ca */
 			size = atcmd_get_ssl_certificate_size(CLIENT_CA, cert_index);
 			if (size <= 0) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "get CLIENT_CA size failed, size = %d!\r\n", size);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CA size failed, size = %d!\r\n", size);
 				error_no = 4;
 				goto end;
 			}
 			ca_cert = (char *) ws_malloc(size + 1);
 			if (ca_cert == NULL) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
 				error_no = 2;
 				goto end;
 			}
@@ -738,7 +738,7 @@ void at_wsconn(void *arg)
 			if (ret > 0) {
 				wsclient->ca_cert = ca_cert;
 			} else {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "get CLIENT_CA failed, ret = %d!\r\n", ret);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CA failed, ret = %d!\r\n", ret);
 				error_no = 4;
 				goto end;
 			}
@@ -746,13 +746,13 @@ void at_wsconn(void *arg)
 			/* get client cert */
 			size = atcmd_get_ssl_certificate_size(CLIENT_CERT, cert_index);
 			if (size <= 0) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "get CLIENT_CERT size failed, size = %d!\r\n", size);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CERT size failed, size = %d!\r\n", size);
 				error_no = 4;
 				goto end;
 			}
 			client_cert = (char *) ws_malloc(size + 1);
 			if (client_cert == NULL) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
 				error_no = 2;
 				goto end;
 			}
@@ -760,7 +760,7 @@ void at_wsconn(void *arg)
 			if (ret > 0) {
 				wsclient->client_cert = client_cert;
 			} else {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "get CLIENT_CERT failed, ret = %d!\r\n", ret);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CERT failed, ret = %d!\r\n", ret);
 				error_no = 4;
 				goto end;
 			}
@@ -768,13 +768,13 @@ void at_wsconn(void *arg)
 			/* get client key */
 			size = atcmd_get_ssl_certificate_size(CLIENT_KEY, cert_index);
 			if (size <= 0) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "get CLIENT_KEY size failed, size = %d!\r\n", size);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_KEY size failed, size = %d!\r\n", size);
 				error_no = 4;
 				goto end;
 			}
 			client_key = (char *) ws_malloc(size + 1);
 			if (client_key == NULL) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
 				error_no = 2;
 				goto end;
 			}
@@ -782,7 +782,7 @@ void at_wsconn(void *arg)
 			if (ret > 0) {
 				wsclient->client_key = client_key;
 			} else {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "get CLIENT_KEY failed, ret = %d!\r\n", ret);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_KEY failed, ret = %d!\r\n", ret);
 				error_no = 4;
 				goto end;
 			}
@@ -804,17 +804,17 @@ void at_wsconn(void *arg)
 			at_printf_indicate("[WS][EVENT]:linkid:%d, connected\r\n", link_id);
 
 			if (rtos_task_create(NULL, ((const char *)"wsclient_conn_thread"), wsclient_conn_thread, &link_id, 1024 * 4, 1) != RTK_SUCCESS) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "\n\r%s rtos_task_create(wsclient_conn_thread) failed", __FUNCTION__);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(wsclient_conn_thread) failed", __FUNCTION__);
 				error_no = 6;
 				goto end;
 			}
 		} else {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "\r\nConnect to websocket server failed!\r\n");
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "\r\nConnect to websocket server failed!\r\n");
 			error_no = 5;
 			goto end;
 		}
 	} else {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "\r\nCreate websocket context failed!\r\n");
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "\r\nCreate websocket context failed!\r\n");
 		error_no = 3;
 		goto end;
 	}
@@ -879,20 +879,20 @@ void at_wssend(void *arg)
 
 	link_id = atoi(argv[1]);
 	if (link_id < 0 || link_id >= MAX_WEBSOCKET_LINK_NUM) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
 		error_no = 1;
 		goto end;
 	}
 
 	if (ws_config[link_id].ws_client == NULL) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link %d is not open\r\n", link_id);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link %d is not open\r\n", link_id);
 		error_no = 2;
 		goto end;
 	}
 
 	length = atoi(argv[2]);
 	if (length <= 0 || length > ws_config[link_id].buffer_size) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "length must be 1~%d\r\n", ws_config[link_id].buffer_size);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "length must be 1~%d\r\n", ws_config[link_id].buffer_size);
 		error_no = 1;
 		goto end;
 	}
@@ -906,7 +906,7 @@ void at_wssend(void *arg)
 	if (argv[4] != NULL && (strlen(argv[4]) > 0)) {
 		opcode = atoi(argv[4]);
 		if (opcode < 0 || opcode > 0xF) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "opcode must be 0~0xF\r\n");
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "opcode must be 0~0xF\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -918,7 +918,7 @@ void at_wssend(void *arg)
 		send_buf = (char *)argv[5];
 		ws_send_with_opcode(send_buf, length, use_mask, opcode, 1, ws_config[link_id].ws_client);
 	} else {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "data is empty\r\n");
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "data is empty\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -963,20 +963,20 @@ void at_wssendraw(void *arg)
 
 	link_id = atoi(argv[1]);
 	if (link_id < 0 || link_id >= MAX_WEBSOCKET_LINK_NUM) {  //todo: check link status
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
 		error_no = 1;
 		goto end;
 	}
 
 	if (ws_config[link_id].ws_client == NULL) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link %d is not open\r\n", link_id);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link %d is not open\r\n", link_id);
 		error_no = 2;
 		goto end;
 	}
 
 	length = atoi(argv[2]);
 	if (length <= 0) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "length must be bigger than 0\r\n");
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "length must be bigger than 0\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -990,7 +990,7 @@ void at_wssendraw(void *arg)
 	if (argv[4] != NULL && (strlen(argv[4]) > 0)) {
 		opcode = atoi(argv[4]);
 		if (opcode < 0 || opcode > 0xF) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "opcode must be 0~0xF\r\n");
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "opcode must be 0~0xF\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -1000,7 +1000,7 @@ void at_wssendraw(void *arg)
 
 	send_buf = ws_malloc(length <= MAX_TT_BUF_LEN ? length + 1 : MAX_TT_BUF_LEN + 1);
 	if (send_buf == NULL) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "ws_malloc failed, length = %d\r\n", length);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "ws_malloc failed, length = %d\r\n", length);
 		error_no = 3;
 		goto end;
 	}
@@ -1008,7 +1008,7 @@ void at_wssendraw(void *arg)
 	/* tt mode */
 	res = atcmd_tt_mode_start(length);
 	if (res < 0) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "atcmd_tt_mode_start failed\r\n");
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_start failed\r\n");
 		error_no = 4;
 		goto end;
 	}
@@ -1017,7 +1017,7 @@ void at_wssendraw(void *arg)
 		if (length <= ws_config[link_id].buffer_size) {
 			res = atcmd_tt_mode_get((u8 *)send_buf, length);
 			if (res < 0) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 				error_no = 4;
 				goto end;
 			}
@@ -1027,7 +1027,7 @@ void at_wssendraw(void *arg)
 				frag_len = (length <= ws_config[link_id].buffer_size) ? length : ws_config[link_id].buffer_size;
 				res = atcmd_tt_mode_get((u8 *)send_buf, frag_len);
 				if (res < 0) {
-					RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
+					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 					error_no = 4;
 					goto end;
 				}
@@ -1050,7 +1050,7 @@ void at_wssendraw(void *arg)
 		if (length <= MAX_TT_BUF_LEN) {
 			res = atcmd_tt_mode_get((u8 *)send_buf, length);
 			if (res < 0) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 				error_no = 4;
 				goto end;
 			}
@@ -1060,7 +1060,7 @@ void at_wssendraw(void *arg)
 				frag_len = (length <= MAX_TT_BUF_LEN) ? length : MAX_TT_BUF_LEN;
 				res = atcmd_tt_mode_get((u8 *)send_buf, frag_len);
 				if (res < 0) {
-					RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
+					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 					error_no = 4;
 					goto end;
 				}
@@ -1119,14 +1119,14 @@ void at_wsdisconn(void *arg)
 
 	link_id = atoi(argv[1]);
 	if (link_id < 0 || link_id >= MAX_WEBSOCKET_LINK_NUM) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
 		error_no = 1;
 		goto end;
 	} else {
 		if (ws_config[link_id].ws_client) {
 			ws_close(&(ws_config[link_id].ws_client));
 		} else {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link %d is not open\r\n", link_id);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link %d is not open\r\n", link_id);
 			error_no = 2;
 			goto end;
 		}
@@ -1196,7 +1196,7 @@ void at_wsquery(void *arg)
 	} else {
 		link_id = atoi(argv[1]);
 		if (link_id < 0 || link_id >= MAX_WEBSOCKET_LINK_NUM) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
 			error_no = 1;
 			goto end;
 		} else {
@@ -1238,7 +1238,7 @@ void at_wsqueuecheck(void *arg)
 
 	link_id = atoi(argv[1]);
 	if (link_id < 0 || link_id >= MAX_WEBSOCKET_LINK_NUM) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
 		error_no = 1;
 		goto end;
 	} else {
@@ -1249,7 +1249,7 @@ void at_wsqueuecheck(void *arg)
 				at_printf("Tx queue is full\n");
 			}
 		} else {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link %d is not open\r\n", link_id);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link %d is not open\r\n", link_id);
 			error_no = 2;
 			goto end;
 		}
@@ -1308,7 +1308,7 @@ void at_wssrvcfg(void *arg)
 		max_conn = atoi(argv[1]);
 
 		if (max_conn < 1 || max_conn > MAX_SERVER_CONN) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "max_conn must be 1~%d\r\n", MAX_SERVER_CONN);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "max_conn must be 1~%d\r\n", MAX_SERVER_CONN);
 			error_no = 1;
 			goto end;
 		}
@@ -1319,7 +1319,7 @@ void at_wssrvcfg(void *arg)
 		ping_interval = atoi(argv[2]);
 
 		if (ping_interval < 1 || ping_interval > MAX_SERVER_PING_INTERVAL) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "ping_interval must be 1~%d\r\n", MAX_SERVER_PING_INTERVAL);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "ping_interval must be 1~%d\r\n", MAX_SERVER_PING_INTERVAL);
 			error_no = 1;
 			goto end;
 		}
@@ -1331,7 +1331,7 @@ void at_wssrvcfg(void *arg)
 		idle_timeout = atoi(argv[3]);
 
 		if (idle_timeout < 0 || idle_timeout > MAX_SERVER_IDLE_TIMEOUT) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "idle_timeout must be 0~%d\r\n", MAX_SERVER_IDLE_TIMEOUT);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "idle_timeout must be 0~%d\r\n", MAX_SERVER_IDLE_TIMEOUT);
 			error_no = 1;
 			goto end;
 		}
@@ -1343,7 +1343,7 @@ void at_wssrvcfg(void *arg)
 		tx_size = atoi(argv[4]);
 
 		if (tx_size < 1 || tx_size > MAX_SERVER_TX_SIZE) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "tx_size must be 1~%d\r\n", MAX_SERVER_TX_SIZE);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "tx_size must be 1~%d\r\n", MAX_SERVER_TX_SIZE);
 			error_no = 1;
 			goto end;
 		}
@@ -1354,7 +1354,7 @@ void at_wssrvcfg(void *arg)
 		rx_size = atoi(argv[5]);
 
 		if (rx_size < 1 || rx_size > MAX_SERVER_RX_SIZE) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "rx_size must be 1~%d\r\n", MAX_SERVER_RX_SIZE);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "rx_size must be 1~%d\r\n", MAX_SERVER_RX_SIZE);
 			error_no = 1;
 			goto end;
 		}
@@ -1503,7 +1503,7 @@ void at_wssrvstart(void *arg)
 		port = atoi(argv[1]);
 
 		if (port < 0 || port > 65535) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "port must be 0~65535\r\n");
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "port must be 0~65535\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -1511,7 +1511,7 @@ void at_wssrvstart(void *arg)
 	}
 
 	if (wssrv_is_running) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "server is running\r\n");
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "server is running\r\n");
 		error_no = 2;
 		goto end;
 	}
@@ -1519,12 +1519,12 @@ void at_wssrvstart(void *arg)
 	if (argv[2] != NULL && (strlen(argv[2]) > 0)) {
 		conn_type = atoi(argv[2]);
 		if (conn_type < WEBSOCKET_SERVER_OVER_TCP || conn_type > WEBSOCKET_SERVER_OVER_TLS_VERIFY_CLIENT) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "conn_type must be %d~%d\r\n", WEBSOCKET_SERVER_OVER_TCP, WEBSOCKET_SERVER_OVER_TLS_VERIFY_CLIENT);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "conn_type must be %d~%d\r\n", WEBSOCKET_SERVER_OVER_TCP, WEBSOCKET_SERVER_OVER_TLS_VERIFY_CLIENT);
 			error_no = 1;
 			goto end;
 		}
 	} else {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "conn_type must not be empty\r\n");
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "conn_type must not be empty\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -1539,13 +1539,13 @@ void at_wssrvstart(void *arg)
 		}
 
 		if (!(argv[3] != NULL && (strlen(argv[3]) > 0))) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "cert_index is empty\r\n");
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "cert_index is empty\r\n");
 			error_no = 1;
 			goto end;
 		}
 		cert_index = atoi(argv[3]);
 		if (cert_index <= 0) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "cert_index must be bigger than 0\r\n");
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "cert_index must be bigger than 0\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -1553,19 +1553,19 @@ void at_wssrvstart(void *arg)
 		/* get server cert */
 		size = atcmd_get_ssl_certificate_size(SERVER_CERT, cert_index);
 		if (size <= 0) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "get SERVER_CERT size failed, size = %d\r\n", size);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get SERVER_CERT size failed, size = %d\r\n", size);
 			error_no = 3;
 			goto end;
 		}
 		server_cert = (char *) ws_malloc(size + 1);
 		if (server_cert == NULL) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "malloc(%d bytes) failed\r\n", size + 1);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "malloc(%d bytes) failed\r\n", size + 1);
 			error_no = 4;
 			goto end;
 		}
 		ret = atcmd_get_ssl_certificate(server_cert, SERVER_CERT, cert_index);
 		if (ret <= 0) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "get SERVER_CERT failed, ret = %d\r\n", ret);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get SERVER_CERT failed, ret = %d\r\n", ret);
 			error_no = 3;
 			goto end;
 		}
@@ -1573,19 +1573,19 @@ void at_wssrvstart(void *arg)
 		/* get server key */
 		size = atcmd_get_ssl_certificate_size(SERVER_KEY, cert_index);
 		if (size <= 0) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "get SERVER_KEY size failed, size = %d\r\n", size);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get SERVER_KEY size failed, size = %d\r\n", size);
 			error_no = 3;
 			goto end;
 		}
 		server_key = (char *) ws_malloc(size + 1);
 		if (server_key == NULL) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "malloc(%d bytes) failed\r\n", size + 1);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "malloc(%d bytes) failed\r\n", size + 1);
 			error_no = 4;
 			goto end;
 		}
 		ret = atcmd_get_ssl_certificate(server_key, SERVER_KEY, cert_index);
 		if (ret <= 0) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "get SERVER_KEY failed, ret = %d\r\n", ret);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get SERVER_KEY failed, ret = %d\r\n", ret);
 			error_no = 3;
 			goto end;
 		}
@@ -1593,25 +1593,25 @@ void at_wssrvstart(void *arg)
 		/* get ca */
 		size = atcmd_get_ssl_certificate_size(SERVER_CA, cert_index);
 		if (size <= 0) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "get SERVER_CA size failed, size = %d\r\n", size);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get SERVER_CA size failed, size = %d\r\n", size);
 			error_no = 3;
 			goto end;
 		}
 		server_ca = (char *) ws_malloc(size + 1);
 		if (server_ca == NULL) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "malloc(%d bytes) failed\r\n", size + 1);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "malloc(%d bytes) failed\r\n", size + 1);
 			error_no = 4;
 			goto end;
 		}
 		ret = atcmd_get_ssl_certificate(server_ca, SERVER_CA, cert_index);
 		if (ret <= 0) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "get SERVER_CA failed, ret = %d\r\n", ret);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get SERVER_CA failed, ret = %d\r\n", ret);
 			error_no = 3;
 			goto end;
 		}
 
 		if (ws_server_setup_cert(server_cert, server_key, server_ca) != 0) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "ws_server_setup_cert failed\r\n");
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "ws_server_setup_cert failed\r\n");
 			error_no = 5;
 			goto end;
 		}
@@ -1624,7 +1624,7 @@ void at_wssrvstart(void *arg)
 	ws_server_setup_tx_rx_size(wssrvcfg_tx_size, wssrvcfg_rx_size);
 
 	if (ws_server_start(wssrvcfg_port, wssrvcfg_max_conn, DEFAULT_SERVER_STACK_BYTES, conn_type - 1) != 0) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "ws_server_start failed\r\n");
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "ws_server_start failed\r\n");
 		error_no = 6;
 		goto end;
 	}
@@ -1705,14 +1705,14 @@ void at_wssrvdisconn(void *arg)
 
 	link_id = atoi(argv[1]);
 	if (link_id < 0 || link_id >= wssrvcfg_max_conn) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", wssrvcfg_max_conn - 1);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", wssrvcfg_max_conn - 1);
 		error_no = 1;
 		goto end;
 	}
 
 	cli_conn = ws_server_get_conn_info(link_id);
 	if (cli_conn == NULL || cli_conn->sock == -1) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link %d is not open\r\n", link_id);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link %d is not open\r\n", link_id);
 		error_no = 2;
 		goto end;
 	}
@@ -1759,21 +1759,21 @@ void at_wssrvsend(void *arg)
 
 	link_id = atoi(argv[1]);
 	if (link_id < 0 || link_id >= wssrvcfg_max_conn) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", wssrvcfg_max_conn - 1);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", wssrvcfg_max_conn - 1);
 		error_no = 1;
 		goto end;
 	}
 
 	cli_conn = ws_server_get_conn_info(link_id);
 	if (cli_conn == NULL || cli_conn->sock == -1) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link %d is not open\r\n", link_id);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link %d is not open\r\n", link_id);
 		error_no = 1;
 		goto end;
 	}
 
 	length = atoi(argv[2]);
 	if (length <= 0 || length > wssrvcfg_tx_size) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "length must be 1~%d\r\n", wssrvcfg_tx_size);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "length must be 1~%d\r\n", wssrvcfg_tx_size);
 		error_no = 1;
 		goto end;
 	}
@@ -1781,7 +1781,7 @@ void at_wssrvsend(void *arg)
 	if (argv[3] != NULL && (strlen(argv[3]) > 0)) {
 		opcode = atoi(argv[3]);
 		if (opcode < 0 || opcode > 0xF) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "opcode must be 0~0xF\r\n");
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "opcode must be 0~0xF\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -1792,7 +1792,7 @@ void at_wssrvsend(void *arg)
 	if (argv[4] != NULL && (strlen(argv[4]) > 0)) {
 		send_buf = (uint8_t *) ws_malloc(length + 1);
 		if (send_buf == NULL) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "malloc(%d bytes) failed\r\n", length + 1);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "malloc(%d bytes) failed\r\n", length + 1);
 			error_no = 2;
 			goto end;
 		}
@@ -1800,7 +1800,7 @@ void at_wssrvsend(void *arg)
 		memcpy(send_buf, argv[4], length);
 		ws_server_sendData(opcode, length, send_buf, 0, 1, 1, cli_conn);
 	} else {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "data is empty\r\n");
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "data is empty\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -1849,21 +1849,21 @@ void at_wssrvsendraw(void *arg)
 
 	link_id = atoi(argv[1]);
 	if (link_id < 0 || link_id >= wssrvcfg_max_conn) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", wssrvcfg_max_conn - 1);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", wssrvcfg_max_conn - 1);
 		error_no = 1;
 		goto end;
 	}
 
 	cli_conn = ws_server_get_conn_info(link_id);
 	if (cli_conn == NULL || cli_conn->sock == -1) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "link %d is not open\r\n", link_id);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link %d is not open\r\n", link_id);
 		error_no = 1;
 		goto end;
 	}
 
 	length = atoi(argv[2]);
 	if (length <= 0) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "length must be bigger than 0\r\n");
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "length must be bigger than 0\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -1871,7 +1871,7 @@ void at_wssrvsendraw(void *arg)
 	if (argv[3] != NULL && (strlen(argv[3]) > 0)) {
 		opcode = atoi(argv[3]);
 		if (opcode < 0 || opcode > 0xF) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "opcode must be 0~0xF\r\n");
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "opcode must be 0~0xF\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -1881,7 +1881,7 @@ void at_wssrvsendraw(void *arg)
 
 	send_buf = (u8 *)ws_malloc(length <= MAX_TT_BUF_LEN ? length + 1 : MAX_TT_BUF_LEN + 1);
 	if (send_buf == NULL) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "malloc(%d bytes) failed\r\n", length);
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "malloc(%d bytes) failed\r\n", length);
 		error_no = 2;
 		goto end;
 	}
@@ -1889,7 +1889,7 @@ void at_wssrvsendraw(void *arg)
 	/* tt mode */
 	res = atcmd_tt_mode_start(length);
 	if (res < 0) {
-		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "atcmd_tt_mode_start failed\r\n");
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_start failed\r\n");
 		error_no = 3;
 		goto end;
 	}
@@ -1898,7 +1898,7 @@ void at_wssrvsendraw(void *arg)
 		if (length <= wssrvcfg_tx_size) {
 			res = atcmd_tt_mode_get(send_buf, length);
 			if (res < 0) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 				error_no = 3;
 				goto end;
 			}
@@ -1908,7 +1908,7 @@ void at_wssrvsendraw(void *arg)
 				frag_len = (length <= wssrvcfg_tx_size) ? length : wssrvcfg_tx_size;
 				res = atcmd_tt_mode_get(send_buf, frag_len);
 				if (res < 0) {
-					RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
+					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 					error_no = 3;
 					goto end;
 				}
@@ -1931,7 +1931,7 @@ void at_wssrvsendraw(void *arg)
 		if (length <= MAX_TT_BUF_LEN) {
 			res = atcmd_tt_mode_get(send_buf, length);
 			if (res < 0) {
-				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 				error_no = 3;
 				goto end;
 			}
@@ -1941,7 +1941,7 @@ void at_wssrvsendraw(void *arg)
 				frag_len = (length <= MAX_TT_BUF_LEN) ? length : MAX_TT_BUF_LEN;
 				res = atcmd_tt_mode_get(send_buf, frag_len);
 				if (res < 0) {
-					RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
+					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 					error_no = 3;
 					goto end;
 				}

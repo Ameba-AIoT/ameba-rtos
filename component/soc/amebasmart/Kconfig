@@ -162,18 +162,11 @@ menu "CONFIG FUNCTION TEST"
 
         if USB_VERIFY
             config USBD_VERIFY
-                depends on USB_DEVICE_EN_MENU
+                depends on USB_DEVICE_EN_MENU || USB_DRD_EN_MENU
                 bool "USB Device Verification"
 
             config USBH_VERIFY
-                depends on USB_HOST_EN_MENU
-                bool "USB Host Verification"
-
-            config USBD_VERIFY
-                depends on USB_DRD_EN_MENU
-                bool "USB Device Verification"
-            config USBH_VERIFY
-                depends on USB_DRD_EN_MENU
+                depends on USB_HOST_EN_MENU || USB_DRD_EN_MENU
                 bool "USB Host Verification"
         endif
 

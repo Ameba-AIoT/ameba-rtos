@@ -21,9 +21,7 @@
  *  @{
  */
 
-#include "platform_autoconf.h"
 #include "platform_stdlib.h"
-#include "basic_types.h"
 
 #define HTTPC_SECURE_NONE        0    /*!< Running with HTTP client */
 #define HTTPC_SECURE_TLS         1    /*!< Running with HTTPS client */

@@ -4,14 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <os_wrapper.h>
-#include "ameba.h"
-#include "atcmd_service.h"
-#include "atcmd_coex.h"
+#include "platform_autoconf.h"
 
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_host_api.h"
+#include "platform_stdlib.h"
+#include "atcmd_service.h"
+#include "atcmd_coex.h"
 
 #define AT_CMD_HELP	1
 

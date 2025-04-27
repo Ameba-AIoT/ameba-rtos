@@ -34,6 +34,10 @@ endif()
 if (CONFIG_MP_SHRINK)
     return()
 endif()
+
+if(CONFIG_ZEPHYR_SDK AND CONFIG_CORE_AS_AP)
+    return()
+endif()
 ##########################################################################################
 ## * This part defines private part of the component
 ## * Private part is used to build target of current component

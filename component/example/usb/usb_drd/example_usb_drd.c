@@ -19,7 +19,7 @@
 static const char *const TAG = "DRD";
 
 // USB speed
-#ifdef CONFIG_USB_FS
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
 #error	"USB DRD example only supports USB high speed"
 #endif
 

@@ -27,13 +27,7 @@
 /* * * * INCLUDE FILES * * * */
 /* * * * * * * * * * * * * * */
 
-#include <string.h> /* For memset() and memcpy() */
-
-#include "ns_types.h"
-#include "sn_coap_header.h"
-#include "sn_coap_header_internal.h"
 #include "sn_coap_protocol_internal.h"
-//#include "mbed_trace.h"
 
 #define TRACE_GROUP "coap"
 /* * * * LOCAL FUNCTION PROTOTYPES * * * */

@@ -113,6 +113,7 @@ extern void xPortSpinLockTask( void );
 extern void xPortSpinUnLockTask( void );
 extern void vPortEnterCritical( void );
 extern void vPortExitCritical( void );
+extern uint32_t xPortGetCriticalState( void );
 extern void vPortInstallFreeRTOSVectorTable( void );
 
 extern uint32_t ulPortInterruptLock(void);

@@ -10,10 +10,8 @@
 #ifndef _RTK_CONSOL_H_
 #define _RTK_CONSOL_H_
 
-#ifdef CONFIG_MP_INCLUDED
-#define SHELL_TASK_FUNC_STACK_SIZE (1024 * 4)
-#elif (defined (CONFIG_AS_INIC_AP) || defined(CONFIG_SINGLE_CORE_WIFI))
-#define SHELL_TASK_FUNC_STACK_SIZE (3248 + 128 + CONTEXT_SAVE_SIZE)
+#if (defined (CONFIG_AS_INIC_AP) || defined(CONFIG_SINGLE_CORE_WIFI))
+#define SHELL_TASK_FUNC_STACK_SIZE (4000 + 128 + CONTEXT_SAVE_SIZE)
 #else
 #define SHELL_TASK_FUNC_STACK_SIZE (984 + 128 + CONTEXT_SAVE_SIZE)	/* 744 for cmd_efuse_protect, when kr4 as ap */
 #endif

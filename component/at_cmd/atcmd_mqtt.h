@@ -11,15 +11,8 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_LWIP_LAYER
-#include <lwip_netconf.h>
-#endif
-#include "MQTTClient.h"
-#include "MQTTPublish.h"
-#include "MQTTFreertos.h"
-#include "MQTTConnect.h"
 #include "os_wrapper.h"
-#include "atcmd_service.h"
+#include "MQTTClient.h"
 
 /* There are 4 connection IDs at most. */
 #define MQTT_MAX_CLIENT_NUM         4
@@ -149,16 +142,16 @@ typedef struct MQTT_CONTROL_BLOCK_t {
 }
 MQTT_CONTROL_BLOCK;
 
-void mqtt_main(void *param);
-void print_mqtt_at(void);
-void at_mqtt_init(void);
-
 extern MQTTPacket_connectData mqtt_default_conn_data;
 
 extern int keepalive(MQTTClient *c);
 extern int sendPacket(MQTTClient *c, int length, Timer *timer);
 extern int readPacket(MQTTClient *c, Timer *timer);
 extern int deliverMessage(MQTTClient *c, MQTTString *topicName, MQTTMessage *message);
+
+void mqtt_main(void *param);
+void print_mqtt_at(void);
+void at_mqtt_init(void);
 
 #if defined(__cplusplus)
 }

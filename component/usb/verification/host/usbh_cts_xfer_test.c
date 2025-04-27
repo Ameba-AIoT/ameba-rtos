@@ -12,7 +12,7 @@
 
 
 /* Private defines -----------------------------------------------------------*/
-static const char *const TAG = "CTS";
+static const char *const TAG = "USBH";
 
 /* Exported defines ----------------------------------------------------------*/
 

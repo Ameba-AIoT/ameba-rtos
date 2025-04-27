@@ -1768,13 +1768,26 @@ static bool bt_stack_le_audio_broadcast_establish(void)
 #endif
 	big_param.max_transport_latency = bt_le_audio_priv_data.bsrc.prefer_qos.max_transport_latency;
 	big_param.rtn = bt_le_audio_priv_data.bsrc.prefer_qos.retransmission_number;
+#if (RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG == RTK_BT_ISO_INTERVAL_20_MS)
+	big_param.max_transport_latency = 60;
+#elif (RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG == RTK_BT_ISO_INTERVAL_30_MS)
+	big_param.rtn = 3;
+	big_param.max_transport_latency = 80;
+#else
+	//use default prefer qos value
+#endif
 	big_param.phy = RTK_BT_LE_AUDIO_BROADCAST_SOURCE_PHY;
-	big_param.packing = 0x00;
+	big_param.packing = 0x00; /* 0x00: Sequential 0x01: Interleaved */
 	big_param.framing = bt_le_audio_priv_data.bsrc.prefer_qos.framing;
+	big_param.encryption = 0x00;
 	if (bt_le_audio_priv_data.bsrc.cfg_encryption) {
 		big_param.encryption = 0x01;
 		memcpy(big_param.broadcast_code, bt_stack_le_audio_broadcast_code, RTK_BT_LE_AUDIO_BROADCAST_CODE_LEN);
 	}
+	BT_LOGA("[LEA STACK] %s: num_bis:%d, sdu_interval:%d, rtn: %d, max_sdu: %d, max_transport_latency: %d, phy:0x%x, packing:0x%x, framing:0x%x, encryption: 0x%x \r\n",
+			__func__, big_param.num_bis, big_param.sdu_interval, big_param.rtn,
+			big_param.max_sdu, big_param.max_transport_latency, big_param.phy,
+			big_param.packing, big_param.framing, big_param.encryption);
 	if (false == broadcast_source_establish(bt_le_audio_priv_data.bsrc.source_handle, big_param)) {
 		BT_LOGE("%s fail: broadcast_source_establish fail\r\n", __func__);
 		return false;

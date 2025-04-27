@@ -39,57 +39,7 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-if(CONFIG_AMEBAL2)
-    ameba_list_append(private_definitions CONFIG_USB_FS)
-endif()
-
-ameba_list_append(private_includes
-    ../common
-    core
-)
-
-if(CONFIG_USBH_CDC_ACM)
-    ameba_list_append(private_includes cdc_acm)
-    ameba_list_append(private_sources cdc_acm/usbh_cdc_acm.c)
-endif()
-
-if(CONFIG_USBH_CDC_ECM)
-    ameba_list_append(private_includes cdc_ecm)
-    ameba_list_append(private_sources cdc_ecm/usbh_cdc_ecm.c cdc_ecm/usbh_cdc_ecm_hal.c)
-endif()
-
-
-if(CONFIG_USBH_MSC)
-    ameba_list_append(private_includes msc)
-    ameba_list_append(private_sources
-        msc/usbh_msc.c
-        msc/usbh_msc_scsi.c
-        msc/usbh_msc_disk.c
-    )
-    if (CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
-        if("${c_MCU_PROJECT_NAME}" STREQUAL "ap")
-            ameba_list_append(private_sources msc/usbh_msc_cmd.c)
-        endif()
-    endif()
-endif()
-
-if(CONFIG_USBH_UVC)
-    ameba_list_append(private_includes uvc)
-    ameba_list_append(private_sources
-        uvc/usbh_uvc_class.c
-        uvc/usbh_uvc_intf.c
-        uvc/usbh_uvc_parse.c
-        uvc/usbh_uvc_stream.c
-    )
-    if (CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2)
-        ameba_list_append(private_sources uvc/usbh_uvc_dec.c)
-    endif()
-endif()
-
-if(CONFIG_USBH_VENDOR)
-    ameba_list_append(private_includes vendor)
-    ameba_list_append(private_sources vendor/usbh_vendor.c)
-endif()
+include(class.cmake)
 
 # Component private part, user config end
 #------------------------------#

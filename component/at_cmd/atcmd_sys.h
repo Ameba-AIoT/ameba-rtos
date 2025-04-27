@@ -45,8 +45,6 @@ enum {
 };
 
 extern void print_bt_ext_at(void);
-extern void print_coex_at(void);
-extern void sys_reset(void);
 
 void at_sys_init(void);
 void print_system_at(void);

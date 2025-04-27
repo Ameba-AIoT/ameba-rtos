@@ -99,7 +99,7 @@ void rtk_bt_fw_log_open(void)
 	LOGUART_Relay_StructInit(&LOGUART_Relay_InitStruct);
 	LOGUART_Relay_ClearRxFifo(LOGUART_DEV);
 	LOGUART_Relay_SetFormat(LOGUART_DEV, &LOGUART_Relay_InitStruct);
-	LOGUART_Relay_SetBaud(LOGUART_DEV, 833333);
+	LOGUART_Relay_SetBaud(LOGUART_DEV, 833333);    //If capture FW log before patch download, please change baudrate to 115200.
 	LOGUART_Relay_RxCmd(LOGUART_DEV, ENABLE);
 #endif
 }

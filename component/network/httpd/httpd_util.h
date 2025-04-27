@@ -1,6 +1,7 @@
 #ifndef _HTTPD_UTIL_H_
 #define _HTTPD_UTIL_H_
 
+#include "os_wrapper.h"
 #include "httpd.h"
 
 extern uint8_t httpd_debug;
