@@ -103,19 +103,19 @@ int wifi_scan_abort(u8 block);
 int wifi_set_lps_enable(u8 enable);
 
 /**
- * @brief  Set the listen interval of LPS. LPS is the abbreviation of Leisure Power Save mode.
- * 	Wi-Fi automatically turns RF off during the association to AP
- * 	if traffic is not busy, while it also automatically turns RF on
- * 	to listen to the beacon of the associated AP. The listen interval is used to indicate
- *	how often the STA wakes to listen to beacons of AP.
- * @param[in]  interval: the listen interval of LPS (unit: 102.4 ms).
- *	If the specified interval is not a multiple of beacon interval, the actual listen interval
- *	will be rounded to the largest multiple that <= the specified value. It will not be
- *	rounded to 0 when the specified value < beacon interval. In this case, use 1 instead.
- *	e.g. Given that beacon interval = 2, calling wifi_set_lps_listen_interval(5) will make actual
- *	listen interval = 4, calling wifi_set_lps_listen_interval(1) will make actual listen interval = 1
- * @return  RTW_SUCCESS if setting LPS listen interval successful.
- * @return  RTW_ERROR otherwise.
+ * @brief  Set the listen interval of LPS. LPS is the abbreviation of Legacy Power Save mode.
+ * 	Wi-Fi automatically turns RF off during the association to AP	if traffic is not busy, while
+ *  it also automatically turns RF on to listen to the beacon of the associated AP.
+ *  The listen interval is used to indicate how often the STA wakes to listen to beacons of AP.
+ * @param[in]  interval: The listen interval of LPS (unit: 102.4 ms).
+ * @note If the specified interval is not a multiple of beacon interval, the actual listen interval
+ *	     will be rounded to the largest multiple that <= the specified value. It will not be
+ *	     rounded to 0 when the specified value < beacon interval. In this case, the actual listen interval
+ *       is set to one beacon interval.
+ *       e.g. Given that beacon interval = 2 * 102.4 ms:
+ *       - Calling wifi_set_lps_listen_interval(5) will make actual listen interval = 4 * 102.4 ms.
+ *       - Calling wifi_set_lps_listen_interval(1) will make actual listen interval = 2 * 102.4 ms.
+ * @return  @ref RTK_SUCCESS : The API executed successfully.
  */
 int wifi_set_lps_listen_interval(u8 interval);
 
