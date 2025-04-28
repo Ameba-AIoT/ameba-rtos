@@ -890,6 +890,8 @@ int download_fw_program(ota_context *ctx, u8 *buf, u32 len)
 				ota_printf(_OTA_ERR_, "Change signature failed\n");
 				return -1;
 			}
+		} else {
+			return -1;
 		}
 download_app:
 		/*check if another image is needed to download*/
