@@ -1,15 +1,30 @@
+#include "ameba_soc.h"
 #include "whc_host.h"
 
+#define MAX_BLOCKS		0x1FF
+#define MAX_BYTE_SIZE	512
+
+extern SD_HdlTypeDef hsd0;
 rtos_mutex_t sdio_lock;
 
 int sdio_read_byte(void *func, uint32_t addr, uint8_t *pdata)
 {
 	(void)func;
-	(void)addr;
-	(void)pdata;
+
+	if (pdata == NULL) {
+		return 1;
+	}
 
 	if (RTK_SUCCESS != rtos_mutex_take(sdio_lock, 500)) {
 		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "fail %s %d \r\n", __func__, __LINE__);
+		return 1;
+	}
+
+	if (SD_IO_RW_Direct(&hsd0, BUS_READ, SDIO_FUNC0, addr, NULL, pdata) == SD_OK) {
+		if (SD_CheckStatusTO(&hsd0, SD_FATFS_TIMEOUT) < 0) {
+			return 1;
+		}
+	} else {
 		return 1;
 	}
 
@@ -17,14 +32,20 @@ int sdio_read_byte(void *func, uint32_t addr, uint8_t *pdata)
 	return 0;
 }
 
-int sdio_write_byte(void *func, uint32_t addr, uint8_t pdata)
+int sdio_write_byte(void *func, uint32_t addr, uint8_t data)
 {
 	(void)func;
-	(void)addr;
-	(void)pdata;
 
 	if (RTK_SUCCESS != rtos_mutex_take(sdio_lock, 500)) {
 		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "fail %s %d \r\n", __func__, __LINE__);
+		return 1;
+	}
+
+	if (SD_IO_RW_Direct(&hsd0, BUS_WRITE, SDIO_FUNC0, addr, data, NULL) == SD_OK) {
+		if (SD_CheckStatusTO(&hsd0, SD_FATFS_TIMEOUT) < 0) {
+			return 1;
+		}
+	} else {
 		return 1;
 	}
 
@@ -32,16 +53,68 @@ int sdio_write_byte(void *func, uint32_t addr, uint8_t pdata)
 	return 0;
 }
 
+int sdio_io_rw_ext_helper(u8 dir, u32 addr, u16 byte_cnt, u8 *data)
+{
+	u16 remainder = byte_cnt;
+	u8 *buf = data;
+	u16 size;
+
+	/* Do the bulk of the transfer using block mode (if supported). */
+	while (remainder > SD_BLOCK_SIZE) {
+		u32 blocks;
+
+		blocks = remainder / SD_BLOCK_SIZE;
+
+		if (blocks > MAX_BLOCKS) {
+			blocks = MAX_BLOCKS;
+		}
+
+		size = blocks * SD_BLOCK_SIZE;
+
+		if (dir == BUS_WRITE) { // write
+			if (SD_IO_WriteBlocks(SDIO_FUNC1, addr, buf, blocks) != SD_OK) {
+				return -1;
+			}
+		} else { // read
+			if (SD_IO_ReadBlocks(SDIO_FUNC1, addr, buf, blocks) != SD_OK) {
+				return -1;
+			}
+		}
+
+		remainder -= size;
+		buf += size;
+	}
+
+	/* Write the remainder using byte mode. */
+	while (remainder > 0) {
+
+		size = remainder > MAX_BYTE_SIZE ? MAX_BYTE_SIZE : remainder;
+
+		if (dir == BUS_WRITE) { // write
+			if (SD_IO_WriteBytes(SDIO_FUNC1, addr, buf, size) != SD_OK) {
+				return -1;
+			}
+		} else { // read
+			if (SD_IO_ReadBytes(SDIO_FUNC1, addr, buf, size) != SD_OK) {
+				return -1;
+			}
+		}
+		remainder -= size;
+		buf += size;
+	}
+	return 0;
+}
 
 int sdio_read_fifo(void *func, uint32_t addr, uint8_t *pdata, int len)
 {
 	(void)func;
-	(void)addr;
-	(void)pdata;
-	(void)len;
 
 	if (RTK_SUCCESS != rtos_mutex_take(sdio_lock, 500)) {
 		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "fail %s %d \r\n", __func__, __LINE__);
+		return 1;
+	}
+
+	if (sdio_io_rw_ext_helper(BUS_READ, addr, len, pdata) < 0) {
 		return 1;
 	}
 
@@ -52,15 +125,15 @@ int sdio_read_fifo(void *func, uint32_t addr, uint8_t *pdata, int len)
 int sdio_write_fifo(void *func, uint32_t addr, uint8_t *pdata, int len)
 {
 	(void)func;
-	(void)addr;
-	(void)pdata;
-	(void)len;
 
 	if (RTK_SUCCESS != rtos_mutex_take(sdio_lock, 500)) {
 		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "fail %s %d \r\n", __func__, __LINE__);
 		return 1;
 	}
 
+	if (sdio_io_rw_ext_helper(BUS_WRITE, addr, len, pdata) < 0) {
+		return 1;
+	}
 
 	rtos_mutex_give(sdio_lock);
 

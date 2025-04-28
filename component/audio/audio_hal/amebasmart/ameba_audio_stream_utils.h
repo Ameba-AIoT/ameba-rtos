@@ -26,8 +26,8 @@
 extern "C" {
 #endif
 
-#define ameba_audio_gdma_calloc calloc
-#define ameba_audio_gdma_free free
+#define ameba_audio_gdma_calloc rtos_mem_calloc
+#define ameba_audio_gdma_free rtos_mem_free
 
 #define HAL_AUDIO_WEAK __attribute__((weak))
 

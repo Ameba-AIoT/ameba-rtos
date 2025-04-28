@@ -150,7 +150,7 @@ int32_t ameba_audio_stream_create_audio_patch(int32_t num_sources, struct AmebaA
     AUDIO_SP_RXStart(AUDIO_I2S_IN_SPORT_INDEX, ENABLE);
 
     if (sinks[0].device == AMEBA_AUDIO_DEVICE_SPEAKER) {
-        ameba_audio_ctl_set_amp_state(ameba_audio_get_ctl(), true);
+        ameba_audio_ctl_set_amp_state(ameba_audio_get_ctl(), ameba_audio_get_ctl()->amp_state, false);
     }
 
     ameba_audio_stream_tx_set_i2s_pin(AUDIO_I2S_OUT_SPORT_INDEX);

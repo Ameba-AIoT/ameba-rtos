@@ -195,7 +195,7 @@ int whc_fullmac_host_scan_abort(u8 block)
 int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsigned char block)
 {
 	int ret = 0;
-	struct internal_join_block_param *block_param = NULL;
+	struct internal_block_param *block_param = NULL;
 	u32 size;
 	u8 *param, *ptr;
 
@@ -212,7 +212,7 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 
 	/* step2: malloc and set synchronous connection related variables*/
 	if (block) {
-		block_param = (struct internal_join_block_param *)kzalloc(sizeof(struct internal_join_block_param), GFP_KERNEL);
+		block_param = (struct internal_block_param *)kzalloc(sizeof(struct internal_block_param), GFP_KERNEL);
 		if (!block_param) {
 			ret = -ENOMEM;
 			global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
@@ -220,7 +220,7 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 		}
 		block_param->block = block;
 		/* initialize join_sema. */
-		init_completion(&block_param->join_sema);
+		init_completion(&block_param->sema);
 	}
 
 	/* step3: set connect cmd to driver*/
@@ -280,9 +280,9 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 	/* step4: wait connect finished for synchronous connection*/
 	if (block) {
 		global_idev.mlme_priv.join_block_param = block_param;
-		block_param->join_timeout = RTW_JOIN_TIMEOUT;
+		block_param->timeout = RTW_JOIN_TIMEOUT;
 
-		if (wait_for_completion_timeout(&block_param->join_sema, block_param->join_timeout) == 0) {
+		if (wait_for_completion_timeout(&block_param->sema, block_param->timeout) == 0) {
 			dev_err(global_idev.fullmac_dev, "%s: Join bss timeout!\n", __func__);
 			global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
 			ret = -EINVAL;
@@ -298,7 +298,7 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 
 error:
 	if (block_param) {
-		complete_release(&block_param->join_sema);
+		complete_release(&block_param->sema);
 		kfree((u8 *)block_param);
 		global_idev.mlme_priv.join_block_param = NULL;
 	}

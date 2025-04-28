@@ -458,7 +458,7 @@ Stream *ameba_audio_stream_rx_init(uint32_t device, StreamConfig config)
 	CaptureStream *cstream;
 	size_t buf_size;
 
-	cstream = (CaptureStream *)calloc(1, sizeof(CaptureStream));
+	cstream = (CaptureStream *)rtos_mem_calloc(1, sizeof(CaptureStream));
 	if (!cstream) {
 		HAL_AUDIO_ERROR("calloc stream fail");
 		return NULL;
@@ -554,7 +554,7 @@ Stream *ameba_audio_stream_rx_init(uint32_t device, StreamConfig config)
 	cstream->stream.sem_need_post = false;
 	cstream->stream.sem_gdma_end_need_post = false;
 
-	cstream->stream.gdma_struct = (GdmaCallbackData *)calloc(1, sizeof(GdmaCallbackData));
+	cstream->stream.gdma_struct = (GdmaCallbackData *)rtos_mem_calloc(1, sizeof(GdmaCallbackData));
 	if (!cstream->stream.gdma_struct) {
 		HAL_AUDIO_ERROR("calloc gdma_struct fail");
 		return NULL;
@@ -578,7 +578,7 @@ Stream *ameba_audio_stream_rx_init(uint32_t device, StreamConfig config)
 		cstream->stream.extra_sem_need_post = false;
 		cstream->stream.extra_sem_gdma_end_need_post = false;
 
-		cstream->stream.extra_gdma_struct = (GdmaCallbackData *)calloc(1, sizeof(GdmaCallbackData));
+		cstream->stream.extra_gdma_struct = (GdmaCallbackData *)rtos_mem_calloc(1, sizeof(GdmaCallbackData));
 		if (!cstream->stream.extra_gdma_struct) {
 			HAL_AUDIO_ERROR("calloc extra SPGdmaStruct fail");
 			return NULL;
@@ -909,7 +909,7 @@ static int32_t ameba_audio_stream_rx_read_in_irq_mode(Stream *stream, void *data
 	int ret = bytes;
 
 	if (cstream->stream.extra_channel) {
-		p_buf = (char *)calloc(total_bytes, sizeof(char));
+		p_buf = (char *)rtos_mem_calloc(total_bytes, sizeof(char));
 	} else {
 		p_buf = (char *)data;
 	}
@@ -936,7 +936,7 @@ static int32_t ameba_audio_stream_rx_read_in_irq_mode(Stream *stream, void *data
 		uint32_t extra_bytes_to_read = extra_total_bytes;
 		uint32_t extra_bytes_read = 0;
 
-		p_extra_buf = (char *)calloc(extra_total_bytes, sizeof(char));
+		p_extra_buf = (char *)rtos_mem_calloc(extra_total_bytes, sizeof(char));
 
 		while (extra_bytes_to_read != 0) {
 			ameba_audio_stream_rx_check_and_start_gdma(cstream);
@@ -973,10 +973,10 @@ static int32_t ameba_audio_stream_rx_read_in_irq_mode(Stream *stream, void *data
 		}
 
 		if (p_buf) {
-			free(p_buf);
+			rtos_mem_free(p_buf);
 		}
 		if (p_extra_buf) {
-			free(p_extra_buf);
+			rtos_mem_free(p_extra_buf);
 		}
 	}
 
@@ -1113,12 +1113,12 @@ void ameba_audio_stream_rx_close(Stream *stream)
 		}
 
 		if (cstream->stream.gdma_struct) {
-			free(cstream->stream.gdma_struct);
+			rtos_mem_free(cstream->stream.gdma_struct);
 			cstream->stream.gdma_struct = NULL;
 		}
 
 		if (cstream->stream.extra_gdma_struct) {
-			free(cstream->stream.extra_gdma_struct);
+			rtos_mem_free(cstream->stream.extra_gdma_struct);
 			cstream->stream.extra_gdma_struct = NULL;
 		}
 
@@ -1127,7 +1127,7 @@ void ameba_audio_stream_rx_close(Stream *stream)
 			cstream->stream.gdma_ch_lli = NULL;
 		}
 
-		free(cstream);
+		rtos_mem_free(cstream);
 
 	}
 }

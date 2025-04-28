@@ -15,4 +15,8 @@ const COMMAND_TABLE track_test_cmd_table[] = {
 		"\t\t test demo: audio_track -r 48000 -c 1 \n"
 		"\t\t careful: if you set SINE_GEN_EVERY_TIME as 0, please remember to set -b as [integer * rate * 1 / g_freq]\n"
 	},
+	{
+		(const u8 *)"audio_volume",  1, example_track_control_test, (const u8 *)"\t audio_volume\n"
+		"\t\t test cmd: ~audio_volume [-v] volume [-m] mute\n"
+	},
 };

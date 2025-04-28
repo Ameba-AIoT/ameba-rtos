@@ -66,7 +66,7 @@ def update_git_hooks():
         sys.exit(2)
 
     print('Sync Git hooks to repositories...')
-    rc = run_command(CMD_REPO_UPDATE + ' 2>&1', True)
+    rc = run_command(CMD_REPO_UPDATE + ' 2>&1')
     if rc.returncode != 0:
         print('Error: Fail to sync Git hooks to repositories')
         sys.exit(2)

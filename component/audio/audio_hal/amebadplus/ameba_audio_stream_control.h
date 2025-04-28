@@ -21,20 +21,23 @@
 extern "C" {
 #endif
 
+typedef struct AudioAmplifier AudioAmplifier;
+
 // only for ameba soc codec's control. I2S will not use this.
 typedef struct _StreamControl {
-	int32_t   board_amp_pin;
-	bool      amp_state;
-	bool      tx_state;
-	uint32_t  playback_device;
-	uint32_t  capture_usage;
-	uint32_t  adc_use_status;
-	bool      amic_ref_for_dmic;
-	uint32_t  volume_for_dacl;
-	uint32_t  volume_for_dacr;
-	uint32_t  volume_for_adc[MAX_AD_NUM];
-	uint32_t  mic_category_for_adc[MAX_AD_NUM];
-	bool      mute_for_adc[MAX_AD_NUM];
+	int32_t              board_amp_pin;
+	bool                 amp_state;
+	bool                 tx_state;
+	uint32_t             playback_device;
+	uint32_t             capture_usage;
+	uint32_t             adc_use_status;
+	bool                 amic_ref_for_dmic;
+	float                volume_for_dacl;
+	float                volume_for_dacr;
+	uint32_t             volume_for_adc[MAX_AD_NUM];
+	uint32_t             mic_category_for_adc[MAX_AD_NUM];
+	bool                 mute_for_adc[MAX_AD_NUM];
+	AudioAmplifier      *amplifier;
 } StreamControl;
 
 StreamControl *ameba_audio_get_ctl(void);
@@ -43,7 +46,7 @@ int32_t ameba_audio_ctl_set_tx_volume(StreamControl *control, float left, float 
 int32_t ameba_audio_ctl_get_tx_volume(StreamControl *control, float *left, float *right);
 int32_t ameba_audio_ctl_set_amp_pin(StreamControl *control, uint32_t pin);
 int32_t ameba_audio_ctl_get_amp_pin(StreamControl *control);
-int32_t ameba_audio_ctl_set_amp_state(StreamControl *control, bool state);
+int32_t ameba_audio_ctl_set_amp_state(StreamControl *control, bool state, bool user_set);
 bool ameba_audio_ctl_get_amp_state(StreamControl *control);
 int32_t ameba_audio_ctl_set_tx_mute(StreamControl *control, bool muted, bool should_zdet, bool user_set);
 bool ameba_audio_ctl_get_tx_mute(StreamControl *control);

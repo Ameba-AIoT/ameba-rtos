@@ -7,9 +7,9 @@
 /**
  * @brief  The enumeration is join block param.
  */
-struct internal_join_block_param {
-	struct completion	join_sema;
-	unsigned int		join_timeout;
+struct internal_block_param {
+	struct completion	sema;
+	unsigned int		timeout;
 	unsigned char		block;
 };
 

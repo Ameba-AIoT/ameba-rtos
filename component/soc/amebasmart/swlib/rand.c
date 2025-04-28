@@ -68,7 +68,7 @@ u32 _rand(void)
 /**
   * @brief  wrap for _rand
   */
-HAL_ROM_TEXT_SECTION _LONG_CALL_
+__weak HAL_ROM_TEXT_SECTION _LONG_CALL_
 u32 __wrap_rand(void)
 {
 	return _rand();

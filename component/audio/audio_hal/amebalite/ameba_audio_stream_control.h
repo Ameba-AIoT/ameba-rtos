@@ -21,23 +21,27 @@
 extern "C" {
 #endif
 
+typedef struct AudioAmplifier AudioAmplifier;
+
 typedef struct _StreamControl {
-	int32_t   board_amp_pin;
-	bool      amp_state;
-	bool      tx_state;
-	uint32_t  playback_device;
-	uint32_t  capture_usage;
-	uint32_t  adc_use_status;
-	bool      amic_ref_for_dmic;
-	uint32_t  volume_for_dac;
-	uint32_t  volume_for_adc[MAX_AD_NUM];
-	uint32_t  mic_category_for_adc[MAX_AD_NUM];
-	uint32_t  gain_for_micbst[MAX_AMIC_NUM];
-	bool      mute_for_adc[MAX_AD_NUM];
-	bool      mute_for_mic_bst[MAX_AMIC_NUM];
+	int32_t              board_amp_pin;
+	bool                 amp_state;
+	bool                 tx_state;
+	uint32_t             playback_device;
+	uint32_t             capture_usage;
+	uint32_t             adc_use_status;
+	bool                 amic_ref_for_dmic;
+	uint32_t             volume_for_dac;
+	uint32_t             volume_for_adc[MAX_AD_NUM];
+	uint32_t             mic_category_for_adc[MAX_AD_NUM];
+	uint32_t             gain_for_micbst[MAX_AMIC_NUM];
+	bool                 mute_for_adc[MAX_AD_NUM];
+	bool                 mute_for_mic_bst[MAX_AMIC_NUM];
+	AudioAmplifier      *amplifier;
 } StreamControl;
 
 StreamControl *ameba_audio_get_ctl(void);
+void ameba_audio_destroy_ctl(void);
 int32_t ameba_audio_ctl_set_tx_volume(StreamControl *control, float left, float right);
 int32_t ameba_audio_ctl_get_tx_volume(StreamControl *control, float *left, float *right);
 int32_t ameba_audio_ctl_set_amp_pin(StreamControl *control, uint32_t pin);

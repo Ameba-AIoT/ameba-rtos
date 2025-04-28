@@ -13,14 +13,32 @@
 #define AUDIO_HW_AMPLIFIER_PIN          _PA_31
 
 /*
- *After enable amplifer, it need some time to be steady. For d2 demo board, it's 90ms.
+ * See amplifier types defined in: component/audio/audio_driver/amp_manager/interfaces/amp_manager.h
+ * enum AMP_TYPE. for example: dummy = 0, ht513 = 1.
  */
-#define AUDIO_HW_AMPLIFIER_ENABLE_TIME  90
+#define AUDIO_HW_AMPLIFIER_TYPE         0
 
 /*
- *After disable amplifer, it need some time to be steady. For d2 demo board, it's 1ms.
+ * if amplifer controlled by i2c, setup i2c sda pinmux here.
  */
-#define AUDIO_HW_AMPLIFIER_DISABLE_TIME 1
+#define AUDIO_HW_AMPLIFIER_I2C_SDA_PIN  _PB_30
+
+/*
+ * if amplifer controlled by i2c, setup i2c scl pinmux here.
+ */
+#define AUDIO_HW_AMPLIFIER_I2C_SCL_PIN  _PB_31
+
+/*
+ *After enable amplifer, it need some time to be steady.
+ */
+#define AUDIO_HW_AMPLIFIER_ENABLE_TIME  1
+
+/*
+ *on our demo board, when enable ht513 fade out, after sd set low, should wait 45ms.
+ *when disable ht513 fade out, after sd set low, should wait 1ms as spec(but after testing, should be 9ms).
+ *user should define this with own spec.
+ */
+#define AUDIO_HW_AMPLIFIER_DISABLE_TIME 9
 
 /*
  * Set 1 to let hal control amplifier's enable and disable automatically.
@@ -31,22 +49,17 @@
 /*
  *When no sound playing, should amplifier mute? Set 1 if user wants amplifier mute, set
  *0 if user wants amplifier stay unmute.
- *For d2 and lite demo board, our hardware design makes sure aec noise acceptable, if
- *amplifier stays unmute, so it can be set 0.
  */
-#define AUDIO_HW_AMPLIFIER_MUTE_ENABLE  0
+#define AUDIO_HW_AMPLIFIER_MUTE_ENABLE  1
 
 /*
  *DMIC clock and data pins.
  */
 #define AUDIO_HW_DMIC_CLK_PIN           _PB_0
 #define AUDIO_HW_DMIC_DATA0_PIN         _PB_1
-// #define AUDIO_HW_DMIC_DATA1_PIN         _PB_18
-// #define AUDIO_HW_DMIC_DATA2_PIN         _PB_17
-// #define AUDIO_HW_DMIC_DATA3_PIN         _PB_16
 
 /*
- *After dmic clock enable, it need some time to be steady. For d2 demo board, it's 100ms.
+ *After dmic clock enable, it need some time to be steady.
  *For customer's board, need to check with customer.
  */
 #define AUDIO_HW_DMIC_STEADY_TIME       100
