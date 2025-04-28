@@ -10,6 +10,7 @@
 #define _RAND_H_
 
 _LONG_CALL_ extern u32 _rand(void);
+_LONG_CALL_ int _rand_integer(void);
 _LONG_CALL_ extern int RandBytes_Get(void *buf, u32 len);
 
 #endif //_RAND_H_

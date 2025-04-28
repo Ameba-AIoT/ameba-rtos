@@ -192,9 +192,9 @@ struct rtw_kvr_param_t {
 /**
  * @brief  The structure is join block param.
  */
-struct internal_join_block_param {
-	void				*join_sema;
-	unsigned int		join_timeout;
+struct internal_block_param {
+	void				*sema;
+	unsigned int		timeout;
 	unsigned char		block;
 };
 
@@ -437,6 +437,7 @@ int wifi_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags);
 
 void wifi_event_init(void);
 void wifi_indication(u32 event, u8 *buf, s32 buf_len, s32 flags);
+void wifi_blk_api_done(u32 event_id, int ret);
 
 #ifdef __cplusplus
 }

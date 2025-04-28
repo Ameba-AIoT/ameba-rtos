@@ -52,7 +52,7 @@ int32_t ameba_audio_stream_tx_set_amp_state(bool state)
 	}
 
 	if (AUDIO_HW_AMPLIFIER_CONTROL_ENABLE) {
-		ameba_audio_ctl_set_amp_state(control, state);
+		ameba_audio_ctl_set_amp_state(control, state, false);
 	}
 
 	return HAL_OSAL_OK;
@@ -325,7 +325,9 @@ Stream *ameba_audio_stream_tx_init(uint32_t device, StreamConfig config)
 	RenderStream *rstream;
 	size_t buf_size;
 
-	rstream = (RenderStream *)calloc(1, sizeof(RenderStream));
+	ameba_audio_ctl_set_tx_volume(ameba_audio_get_ctl(), ameba_audio_get_ctl()->volume_for_dacl, ameba_audio_get_ctl()->volume_for_dacr);
+
+	rstream = (RenderStream *)rtos_mem_calloc(1, sizeof(RenderStream));
 	if (!rstream) {
 		HAL_AUDIO_ERROR("calloc stream fail");
 		return NULL;
@@ -391,7 +393,7 @@ Stream *ameba_audio_stream_tx_init(uint32_t device, StreamConfig config)
 	rstream->stream.sem_need_post = false;
 	rstream->stream.sem_gdma_end_need_post = false;
 
-	rstream->stream.gdma_struct = (GdmaCallbackData *)calloc(1, sizeof(GdmaCallbackData));
+	rstream->stream.gdma_struct = (GdmaCallbackData *)rtos_mem_calloc(1, sizeof(GdmaCallbackData));
 	if (!rstream->stream.gdma_struct) {
 		HAL_AUDIO_ERROR("calloc gdma_struct fail");
 		return NULL;
@@ -413,7 +415,7 @@ Stream *ameba_audio_stream_tx_init(uint32_t device, StreamConfig config)
 	rstream->stream.dma_irq_masked = false;
 
 	if (IS_6_8_CHANNEL(config.channels)) {
-		rstream->stream.extra_gdma_struct = (GdmaCallbackData *)calloc(1, sizeof(GdmaCallbackData));
+		rstream->stream.extra_gdma_struct = (GdmaCallbackData *)rtos_mem_calloc(1, sizeof(GdmaCallbackData));
 		if (!rstream->stream.extra_gdma_struct) {
 			HAL_AUDIO_ERROR("calloc extra SPGdmaStruct fail");
 			return NULL;
@@ -452,13 +454,10 @@ Stream *ameba_audio_stream_tx_init(uint32_t device, StreamConfig config)
 	}
 
 	if (device == AMEBA_AUDIO_DEVICE_SPEAKER) {
-		ameba_audio_stream_tx_set_amp_state(ameba_audio_get_ctl()->amp_state);
-		// Pinmux_Swdoff();
-		// GPIO_InitTypeDef GPIO_InitStruct_Temp;
-		// GPIO_InitStruct_Temp.GPIO_Pin = _PA_31;
-		// GPIO_InitStruct_Temp.GPIO_Mode = GPIO_Mode_OUT;
-		// GPIO_Init(&GPIO_InitStruct_Temp);
-		// GPIO_WriteBit(_PA_31, 1);
+		// no auto mute for amplifer when standy, only set amp state once.
+		if (!AUDIO_HW_AMPLIFIER_MUTE_ENABLE) {
+			ameba_audio_stream_tx_set_amp_state(ameba_audio_get_ctl()->amp_state);
+		}
 	}
 
 	rstream->stream.state = STATE_INITED;
@@ -836,8 +835,8 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 	if (has_extra_dma) {
 		extra_total_bytes = bytes * rstream->stream.extra_channel / (rstream->stream.channel + rstream->stream.extra_channel);
 		extra_bytes_left_to_write = extra_total_bytes;
-		p_buf = (char *)calloc(total_bytes, sizeof(char));
-		p_extra_buf = (char *)calloc(extra_total_bytes, sizeof(char));
+		p_buf = (char *)rtos_mem_calloc(total_bytes, sizeof(char));
+		p_extra_buf = (char *)rtos_mem_calloc(extra_total_bytes, sizeof(char));
 
 		uint32_t idx = 0;
 		for (; idx < bytes / rstream->stream.config.frame_size; idx++) {
@@ -940,12 +939,12 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 
 	if (has_extra_dma) {
 		if (p_buf) {
-			free(p_buf);
+			rtos_mem_free(p_buf);
 			p_buf = NULL;
 		}
 
 		if (p_extra_buf) {
-			free(p_extra_buf);
+			rtos_mem_free(p_extra_buf);
 			p_extra_buf = NULL;
 		}
 	}
@@ -1016,11 +1015,11 @@ void ameba_audio_stream_tx_close(Stream *stream)
 		}
 
 		if (rstream->stream.gdma_struct) {
-			free(rstream->stream.gdma_struct);
+			rtos_mem_free(rstream->stream.gdma_struct);
 			rstream->stream.gdma_struct = NULL;
 		}
 		if (rstream->stream.extra_gdma_struct) {
-			free(rstream->stream.extra_gdma_struct);
+			rtos_mem_free(rstream->stream.extra_gdma_struct);
 			rstream->stream.extra_gdma_struct = NULL;
 		}
 
@@ -1030,7 +1029,7 @@ void ameba_audio_stream_tx_close(Stream *stream)
 		}
 
 		rstream->stream.state = STATE_DEINITED;
-		free(rstream);
+		rtos_mem_free(rstream);
 	}
 }
 

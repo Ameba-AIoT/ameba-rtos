@@ -73,6 +73,27 @@ If you want to play with I2S, please change the following codes:
 
 ```
 
+For I2S, if you need to add logic in our codes to avoid amplifier noise.
+Here is the time sequence of our playback:
+
+```
+    1. when create hal's stream out, ameba_audio_stream_render.c's API ameba_audio_stream_tx_sport_init will be called, in which bclk clock will be generated.
+    2. if hal is in standby mode, and user write first data, hal will exit standby and call ameba_audio_stream_tx_set_amp_state(true), amplifier will be enabled.
+    3. if hal enters standby mode, ameba_audio_stream_tx_set_amp_state(false) will be called to disable amplifer.
+    4. when destroy hal's stream out, first hal enters standby mode, and disable amplifier, then ameba_audio_stream_render.c's API ameba_audio_stream_tx_close will be called, and bclk clock will stop output.
+```
+
+Here are the suggestions for you to add related codes:
+
+```
+    1. set ameba_audio_hw_usrcfg.h's AUDIO_HW_AMPLIFIER_MUTE_ENABLE as 1, set AUDIO_HW_AMPLIFIER_TYPE as 0, if you have your own amplifier.
+    2. add amplifer's implentations in component/audio/audio_driver/amp_manager/dummy.c
+    3. if you want to do some initialization work of amplifier, the codes can be added in ameba_audio_stream_render.c's API ameba_audio_stream_tx_init.
+       after line:ameba_audio_stream_tx_sport_init(&rstream, config, device);
+    4. in ameba_audio_stream_control.c's ameba_audio_ctl_set_amp_state, add amplifer enable, and disable implementations.
+    5. if you want to deinit amplifier, the codes can be added in ameba_audio_stream_render.c's API ameba_audio_stream_tx_close, before line:AUDIO_SP_Deinit.
+```
+
 ### internal record
 
 For audio internal record, the default setting is using amic.

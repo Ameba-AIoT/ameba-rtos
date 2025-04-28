@@ -13,6 +13,12 @@
 #define AUDIO_HW_AMPLIFIER_PIN          _PA_12
 
 /*
+ * See amplifier types defined in: component/audio/audio_driver/amp_manager/interfaces/amp_manager.h
+ * enum AMP_TYPE. for example: dummy = 0.
+ */
+#define AUDIO_HW_AMPLIFIER_TYPE         0
+
+/*
  *After enable amplifer, it need some time to be steady. For d2 demo board, it's 90ms.
  */
 #define AUDIO_HW_AMPLIFIER_ENABLE_TIME  90

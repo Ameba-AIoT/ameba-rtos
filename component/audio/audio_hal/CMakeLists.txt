@@ -60,6 +60,7 @@ ameba_list_append(private_includes
     ${c_CMPT_AUDIO_DIR}/interfaces
     ${c_CMPT_AUDIO_DIR}/base/cutils/interfaces
     ${c_CMPT_AUDIO_DIR}/base/osal/osal_c/interfaces
+    ${c_CMPT_AUDIO_DIR}/audio_driver/include
 )
 
 ameba_list_append(private_definitions

@@ -207,8 +207,12 @@ struct AudioHwControl *GetAudioHwControl(void)
 
 void DestroyAudioHwControl(struct AudioHwControl *control)
 {
+	rtos_mutex_take(s_hw_ctl_instance_lock, MUTEX_WAIT_TIMEOUT);
+	ameba_audio_destroy_ctl();
 	if (control != NULL) {
 		HAL_AUDIO_VERBOSE("free control");
 		rtos_mem_free(control);
+		s_hw_ctl_instance = NULL;
 	}
+	rtos_mutex_give(s_hw_ctl_instance_lock);
 }

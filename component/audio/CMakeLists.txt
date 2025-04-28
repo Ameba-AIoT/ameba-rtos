@@ -23,7 +23,7 @@ if(CONFIG_AUDIO_FWK)
 endif()
 
 ameba_add_subdirectory_if(CONFIG_AUDIO_FWK audio_hal)
-
+ameba_add_subdirectory_if(CONFIG_AUDIO_FWK audio_driver)
 
 ameba_add_subdirectory(third_party)
 

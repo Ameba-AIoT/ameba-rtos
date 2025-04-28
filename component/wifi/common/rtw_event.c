@@ -42,7 +42,7 @@ static struct event_list_elem_t event_callback_list[RTW_EVENT_MAX][RTW_EVENT_MAX
 extern int (*p_store_fast_connect_info)(unsigned int data1, unsigned int data2);
 extern u8 rtw_join_status;
 extern int join_fail_reason;
-extern struct internal_join_block_param *join_block_param;
+extern struct internal_block_param *join_block_param;
 extern void (*p_wifi_join_info_free)(u8 iface_type);
 #ifdef CONFIG_ENABLE_EAP
 extern void eap_disconnected_hdl(void);
@@ -83,7 +83,7 @@ void wifi_event_join_status_internal_hdl(u8 *buf, s32 flags)
 
 		/* if Synchronous connection, up sema when connect success*/
 		if (join_block_param && join_block_param->block) {
-			rtos_sema_give(join_block_param->join_sema);
+			rtos_sema_give(join_block_param->sema);
 		}
 	}
 
@@ -91,7 +91,7 @@ void wifi_event_join_status_internal_hdl(u8 *buf, s32 flags)
 		/* if synchronous connection, up sema when connect fail*/
 		if (join_block_param && join_block_param->block) {
 			join_fail_reason = fail_info->fail_reason;
-			rtos_sema_give(join_block_param->join_sema);
+			rtos_sema_give(join_block_param->sema);
 		}
 
 		at_printf_indicate("wifi connect failed\r\n");

@@ -412,7 +412,7 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *user_data
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
 		/* if Synchronous connection, up sema when connect success */
 		if (mlme_priv->join_block_param && mlme_priv->join_block_param->block) {
-			complete(&mlme_priv->join_block_param->join_sema);
+			complete(&mlme_priv->join_block_param->sema);
 		}
 	}
 
@@ -467,7 +467,7 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *user_data
 		dev_dbg(global_idev.fullmac_dev, "[fullmac] --- %s --- join failed up sema.", __func__);
 		/* merge from wifi_join_status_indicate if synchronous connection, up sema when connect fail*/
 		if (mlme_priv->join_block_param && mlme_priv->join_block_param->block) {
-			complete(&mlme_priv->join_block_param->join_sema);
+			complete(&mlme_priv->join_block_param->sema);
 		}
 		dev_dbg(global_idev.fullmac_dev, "[fullmac] --- %s --- join failed inform cfg80211.", __func__);
 		cfg80211_connect_result(global_idev.pndev[wlan_idx], NULL, NULL, 0, NULL, 0, WLAN_STATUS_UNSPECIFIED_FAILURE, GFP_ATOMIC);
