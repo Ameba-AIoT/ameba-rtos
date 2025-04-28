@@ -20,13 +20,13 @@ void raw_gpio_port_demo(void)
 	//int pin_index;
 	int i;
 
-	printf("Bit\t");
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "Bit\t");
 	for (i = 0; i < 32; i++) {
 		if (pin_mask & (0x1UL << i)) {
-			printf("%d ", i);
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%d ", i);
 		}
 	}
-	printf("enabled!\n");
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "enabled!\n");
 
 #if PORT_OUTPUT_TEST
 
@@ -35,9 +35,9 @@ void raw_gpio_port_demo(void)
 	while (1) {
 		for (i = 0; i < LED_PATTERN_NUM; i++) {
 			GPIO_PortWrite(GPIO_TEST_PORT, pin_mask, led_pattern[i]);
-			printf("[%d]set port: 0x%x\r\n", i, pin_mask & led_pattern[i]);
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[%d]set port: 0x%x\r\n", i, pin_mask & led_pattern[i]);
 			DelayMs(1000);
-			printf("[%d]get port: 0x%lx\r\n\n", i, GPIO_PortRead(GPIO_TEST_PORT, pin_mask));
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[%d]get port: 0x%lx\r\n\n", i, GPIO_PortRead(GPIO_TEST_PORT, pin_mask));
 		}
 
 	}
@@ -48,7 +48,7 @@ void raw_gpio_port_demo(void)
 	GPIO_PortDirection(GPIO_TEST_PORT, pin_mask, GPIO_Mode_IN);
 
 	value_old = GPIO_PortRead(GPIO_TEST_PORT, pin_mask);
-	printf(" > value_old: 0x%x\r\n", value_old);
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, " > value_old: 0x%x\r\n", value_old);
 	while (1) {
 		// De-bounce
 		value_new = GPIO_PortRead(GPIO_TEST_PORT, pin_mask);
@@ -65,7 +65,7 @@ void raw_gpio_port_demo(void)
 		}
 
 		if (value_old != value_new) {
-			printf(" < 0x%x\r\n", value_new);
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, " < 0x%x\r\n", value_new);
 			value_old = value_new;
 		}
 		DelayMs(50);
@@ -75,9 +75,8 @@ void raw_gpio_port_demo(void)
 
 int example_raw_gpio_port(void)
 {
-	if (RTK_SUCCESS != rtos_task_create(NULL, "RAW_GPIO_PORT_TASK", (rtos_task_t)raw_gpio_port_demo, (void *)NULL, 3072,
-										(1))) {
-		printf("Create RAW_GPIO_PORT_TASK Err!!!\n");
+	if (RTK_SUCCESS != rtos_task_create(NULL, "RAW_GPIO_PORT_TASK", (rtos_task_t)raw_gpio_port_demo, (void *)NULL, 3072, 1)) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "Create RAW_GPIO_PORT_TASK Err!!!\n");
 	}
 
 	// rtos_sched_start();

@@ -23,7 +23,7 @@
 AudioBuffer *ameba_audio_stream_buffer_create(void)
 {
 	AudioBuffer *buffer;
-	buffer = (AudioBuffer *)calloc(1, sizeof(AudioBuffer));
+	buffer = (AudioBuffer *)rtos_mem_calloc(1, sizeof(AudioBuffer));
 	if (!buffer) {
 		HAL_AUDIO_ERROR("[AmebaAudioRbuf] calloc AudioRBuffer fail");
 		return NULL;
@@ -39,19 +39,19 @@ AudioBuffer *ameba_audio_stream_buffer_create(void)
 void ameba_audio_stream_buffer_release(AudioBuffer *buffer)
 {
 	if (buffer->raw_data != NULL) {
-		free(buffer->raw_data);
+		rtos_mem_free(buffer->raw_data);
 		buffer->raw_data = NULL;
 	}
 
 	if (buffer) {
-		free(buffer);
+		rtos_mem_free(buffer);
 	}
 }
 
 
 void ameba_audio_stream_buffer_alloc(AudioBuffer *buffer, size_t capacity)
 {
-	buffer->raw_data  = (char *)calloc(capacity, sizeof(char));
+	buffer->raw_data  = (char *)rtos_mem_calloc(capacity, sizeof(char));
 	if (!(buffer->raw_data)) {
 		HAL_AUDIO_ERROR("[AmebaAudioRbuf] calloc raw_data fail");
 		return;

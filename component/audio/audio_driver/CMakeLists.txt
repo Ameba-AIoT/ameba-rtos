@@ -38,28 +38,12 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources
-    ${c_SOC_TYPE}/ameba_audio_stream_buffer.c
-    ${c_SOC_TYPE}/ameba_audio_stream.c
-    ${c_SOC_TYPE}/ameba_audio_stream_control.c
-    ${c_SOC_TYPE}/ameba_audio_stream_utils.c
-    ${c_SOC_TYPE}/ameba_audio_stream_render.c
-    ${c_SOC_TYPE}/ameba_audio_stream_capture.c
-    ${c_SOC_TYPE}/primary_audio_hw_stream_out.c
-    ${c_SOC_TYPE}/primary_audio_hw_card.c
-    ${c_SOC_TYPE}/primary_audio_hw_stream_in.c
-    ${c_SOC_TYPE}/audio_hw_params_handle.c
-    ${c_SOC_TYPE}/audio_hw_manager.c
-    ${c_SOC_TYPE}/audio_hw_control.c
-)
-
-ameba_list_append_if(CONFIG_AMEBADPLUS private_sources
-    ${c_SOC_TYPE}/ameba_audio_stream_audio_patch.c
+    ${c_CMPT_AUDIO_DIR}/audio_driver/audio_amplifier.c
+    ${c_CMPT_AUDIO_DIR}/audio_driver/amp_dummy.c
+    ${c_CMPT_AUDIO_DIR}/audio_driver/ht513.c
 )
 
 ameba_list_append(private_includes
-    ${c_CMPT_AUDIO_DIR}/interfaces
-    ${c_CMPT_AUDIO_DIR}/base/cutils/interfaces
-    ${c_CMPT_AUDIO_DIR}/base/osal/osal_c/interfaces
     ${c_CMPT_AUDIO_DIR}/audio_driver/include
 )
 
@@ -78,7 +62,7 @@ ameba_list_append(private_compile_options
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For open-source component, always build from source
-ameba_add_internal_library(audio_hal
+ameba_add_internal_library(audio_driver
     p_SOURCES
         ${private_sources}
     p_INCLUDES

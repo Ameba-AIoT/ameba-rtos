@@ -48,6 +48,11 @@ struct OpDataConvCa32 {
   int32_t output_activation_min;
   int32_t output_activation_max;
 
+  // A buffer used to store unpacked filter values. This is used if the source
+  // tensor is of n-bit precision that cannot be easily processed by kernels.
+  int filter_buffer_index;
+
+  // A buffer used to store im2col values. Used for optimized kernels
   int scratch_tensor_index;
   bool need_im2col;
 };

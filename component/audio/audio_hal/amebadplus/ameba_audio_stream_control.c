@@ -19,6 +19,9 @@
 #include "basic_types.h"
 
 #include "ameba.h"
+
+#include "amp/audio_amplifier.h"
+
 #include "ameba_audio_types.h"
 #include "ameba_audio_hw_usrcfg.h"
 #include "ameba_audio_stream_utils.h"
@@ -30,8 +33,6 @@
 #include "ameba_audio_stream_control.h"
 
 #define DEVICE_SPEAKER 1
-#define MAX_DAC_VOLUME 141
-
 #define IS_AUDIO_DMIC(NUM) (((NUM) == AMEBA_AUDIO_DMIC1) || ((NUM) == AMEBA_AUDIO_DMIC2)
 
 static StreamControl *g_control_instance = NULL;
@@ -46,19 +47,25 @@ StreamControl *ameba_audio_get_ctl(void)
 
 	if (AudioHALAtomicCompareAddSwap(&g_control_create, &expected_value, &new_value)) {
 		if (g_control_instance == NULL) {
-			g_control_instance = (StreamControl *)calloc(1, sizeof(StreamControl));
+			g_control_instance = (StreamControl *)rtos_mem_zmalloc(sizeof(StreamControl));
 			if (!g_control_instance) {
-				HAL_AUDIO_ERROR("calloc control fail");
-				return NULL;
+				HAL_AUDIO_ERROR("alloc control fail");
+				goto err_finish;
 			}
+
+			g_control_instance->amplifier = CreateAudioAmplifier(AUDIO_HW_AMPLIFIER_TYPE);
+			if (!g_control_instance->amplifier) {
+				goto err_create_amplifier;
+			}
+
 			g_control_instance->board_amp_pin = AUDIO_HW_AMPLIFIER_PIN;
 			g_control_instance->amp_state = true;
 			g_control_instance->tx_state = false;
 			g_control_instance->playback_device = AMEBA_AUDIO_DEVICE_SPEAKER;
 			g_control_instance->capture_usage = AMEBA_AUDIO_CAPTURE_USAGE_DMIC;
 			g_control_instance->adc_use_status = 0;
-			g_control_instance->volume_for_dacl = 0x50;
-			g_control_instance->volume_for_dacr = 0x50;
+			g_control_instance->volume_for_dacl = 0.6;
+			g_control_instance->volume_for_dacr = 0.6;
 			g_control_instance->volume_for_adc[0] = 0x2f;
 			g_control_instance->volume_for_adc[1] = 0x2f;
 			g_control_instance->mic_category_for_adc[0] = AMEBA_AUDIO_DMIC1;
@@ -66,10 +73,29 @@ StreamControl *ameba_audio_get_ctl(void)
 			g_control_instance->mute_for_adc[0] = false;
 			g_control_instance->mute_for_adc[1] = false;
 
+			AmpPinConfig amp_info;
+			amp_info.pinmux = AUDIO_HW_AMPLIFIER_PIN;
+			amp_info.enable_time = AUDIO_HW_AMPLIFIER_ENABLE_TIME;
+			amp_info.disable_time = AUDIO_HW_AMPLIFIER_DISABLE_TIME;
+			g_control_instance->amplifier->SetSDPinmux(g_control_instance->amplifier, &amp_info);
+
+			AmpI2cConfig i2c_config;
+			i2c_config.sda_pinmux = AUDIO_HW_AMPLIFIER_I2C_SDA_PIN;
+			i2c_config.scl_pinmux = AUDIO_HW_AMPLIFIER_I2C_SCL_PIN;
+			i2c_config.bus_clk = 400000;
+			i2c_config.port = 0;
+			g_control_instance->amplifier->SetUpI2c(g_control_instance->amplifier, &i2c_config);
 		}
 	}
 
 	return g_control_instance;
+
+err_create_amplifier:
+	rtos_mem_free(g_control_instance);
+	g_control_instance = NULL;
+
+err_finish:
+	return NULL;
 }
 
 void ameba_audio_destroy_ctl()
@@ -79,7 +105,9 @@ void ameba_audio_destroy_ctl()
 
 	if (AudioHALAtomicCompareAddSwap(&g_control_create, &expected_value, &new_value)) {
 		if (g_control_instance != NULL) {
-			free(g_control_instance);
+			DestoryAudioAmplifier(g_control_instance->amplifier);
+			rtos_mem_free(g_control_instance);
+			g_control_instance = NULL;
 		}
 	}
 }
@@ -91,8 +119,11 @@ int32_t ameba_audio_ctl_set_tx_volume(StreamControl *control, float left, float 
 		return HAL_OSAL_ERR_INVALID_OPERATION;
 	}
 
-	(void)left;
-	(void)right;
+	control->volume_for_dacl = left;
+	control->amplifier->SetVolume(control->amplifier, AMP_CHANNEL_INDEX_0, control->volume_for_dacl);
+
+	control->volume_for_dacr = right;
+	control->amplifier->SetVolume(control->amplifier, AMP_CHANNEL_INDEX_1, control->volume_for_dacr);
 
 	return HAL_OSAL_ERR_NOT_SUPPORT;
 }
@@ -104,8 +135,8 @@ int32_t ameba_audio_ctl_get_tx_volume(StreamControl *control, float *left, float
 		return HAL_OSAL_ERR_INVALID_OPERATION;
 	}
 
-	(void)left;
-	(void)right;
+	*left = control->volume_for_dacl;
+	*right = control->volume_for_dacr;
 
 	return HAL_OSAL_ERR_NOT_SUPPORT;
 }
@@ -117,7 +148,13 @@ int32_t ameba_audio_ctl_set_tx_mute(StreamControl *control, bool muted, bool sho
 		return HAL_OSAL_ERR_INVALID_OPERATION;
 	}
 
-	(void)should_zdet;
+	(void) should_zdet;
+
+	if (muted) {
+		control->amplifier->SetMute(control->amplifier, true);
+	} else {
+		control->amplifier->SetMute(control->amplifier, false);
+	}
 
 	if (user_set) {
 		control->tx_state = muted;
@@ -146,6 +183,11 @@ int32_t ameba_audio_ctl_set_amp_pin(StreamControl *control, uint32_t pin)
 	if (control->board_amp_pin != (int32_t)pin) {
 		HAL_AUDIO_INFO("set amp pin from %" PRId32 " to %" PRIu32 "", control->board_amp_pin, pin);
 		control->board_amp_pin = pin;
+		AmpPinConfig amp_info;
+		amp_info.pinmux = pin;
+		amp_info.enable_time = AUDIO_HW_AMPLIFIER_ENABLE_TIME;
+		amp_info.disable_time = AUDIO_HW_AMPLIFIER_DISABLE_TIME;
+		control->amplifier->SetSDPinmux(control->amplifier, &amp_info);
 	}
 
 	return HAL_OSAL_OK;
@@ -160,7 +202,7 @@ int32_t ameba_audio_ctl_get_amp_pin(StreamControl *control)
 	return control->board_amp_pin;
 }
 
-int32_t ameba_audio_ctl_set_amp_state(StreamControl *control, bool state)
+int32_t ameba_audio_ctl_set_amp_state(StreamControl *control, bool state, bool user_set)
 {
 	if (control == NULL) {
 		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
@@ -173,22 +215,20 @@ int32_t ameba_audio_ctl_set_amp_state(StreamControl *control, bool state)
 
 	Pinmux_Swdoff();
 
-	GPIO_InitTypeDef gpio_initstruct_temp;
-	gpio_initstruct_temp.GPIO_Pin = control->board_amp_pin;
-	gpio_initstruct_temp.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_Init(&gpio_initstruct_temp);
-
-	if (state == true) {
-		HAL_AUDIO_INFO("enable amp:%ld", control->board_amp_pin);
-		GPIO_WriteBit(control->board_amp_pin, 1);
-		rtos_time_delay_ms(AUDIO_HW_AMPLIFIER_ENABLE_TIME);
+	if (state) {
+		control->amplifier->SetEnable(control->amplifier, AMP_CTRL_GPIO, true);
 	} else {
-		HAL_AUDIO_INFO("disable amp:%ld", control->board_amp_pin);
-		GPIO_WriteBit(control->board_amp_pin, 0);
-		rtos_time_delay_ms(AUDIO_HW_AMPLIFIER_DISABLE_TIME);
+#if AUDIO_HW_AMPLIFIER_TYPE == 1
+		control->amplifier->SetEnable(control->amplifier, AMP_CTRL_I2C, false);
+#else
+		control->amplifier->SetEnable(control->amplifier, AMP_CTRL_GPIO, false);
+#endif
 	}
 
-	control->amp_state = state;
+	if (user_set) {
+		control->amp_state = state;
+	}
+
 	return HAL_OSAL_OK;
 }
 

@@ -50,7 +50,7 @@ static int32_t AmebaGetAmplifierEnPin(struct AudioHwControl *control)
 static int32_t AmebaSetAmplifierMute(struct AudioHwControl *control, bool mute)
 {
 	(void) control;
-	return ameba_audio_ctl_set_amp_state(ameba_audio_get_ctl(), !mute);
+	return ameba_audio_ctl_set_amp_state(ameba_audio_get_ctl(), !mute, true);
 }
 
 static bool AmebaGetAmplifierMute(struct AudioHwControl *control)
@@ -205,6 +205,7 @@ void DestroyAudioHwControl(struct AudioHwControl *control)
 		ameba_audio_destroy_ctl();
 		if (control != NULL) {
 			rtos_mem_free(control);
+			s_hw_ctl_instance = NULL;
 		}
 	}
 }

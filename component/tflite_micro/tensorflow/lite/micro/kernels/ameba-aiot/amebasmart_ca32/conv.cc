@@ -18,6 +18,7 @@ limitations under the License.
 #include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/kernels/internal/common.h"
 #include "tensorflow/lite/kernels/internal/compatibility.h"
+#include "tensorflow/lite/kernels/internal/portable_tensor_utils.h"
 #include "tensorflow/lite/kernels/internal/quantization_util.h"
 #include "tensorflow/lite/kernels/internal/reference/conv.h"
 #include "tensorflow/lite/kernels/internal/reference/integer_ops/conv.h"
@@ -54,7 +55,7 @@ bool IsIm2ColRequired(const TfLiteConvParams* params,
       params->dilation_width_factor != 1 || params->dilation_height_factor != 1;
 
   if (need_dilated_im2col) {
-    MicroPrintf("need_dilated_im2col si not supported currently!!");
+    MicroPrintf("need_dilated_im2col optimization is not supported currently!!");
     return false;
   }
   const bool need_non_dilated_im2col =
@@ -97,7 +98,17 @@ inline void ConvFloat(const ConvParams& params, const RuntimeShape& input_shape,
   const bool need_im2col = stride_width != 1 || stride_height != 1 ||
                            filter_width != 1 || filter_height != 1;
   if (need_dilated_im2col) {
-    MicroPrintf("need_dilated_im2col don't supported currently!!");
+    MicroPrintf("need_dilated_im2col optimization is not supported currently!!");
+    tflite::reference_ops::Conv(
+      params, input_shape,
+      input_data,
+      filter_shape,
+      filter_data,
+      bias_shape,
+      bias_data,
+      output_shape,
+      output_data,
+      tflite::micro::GetTensorShape(nullptr), nullptr);
     return;
   } else if (need_im2col) {
     TFLITE_DCHECK(im2col_data);
@@ -156,6 +167,20 @@ inline void ConvFloat(const ConvParams& params, const RuntimeShape& input_shape,
   gemm_params.bias = bias_data;
   gemm_params.clamp_min = output_activation_min;
   gemm_params.clamp_max = output_activation_max;
+
+  if(lhs_params.cols < 8 || lhs_params.rows < 4) {
+    tflite::reference_ops::Conv(
+      params, input_shape,
+      input_data,
+      filter_shape,
+      filter_data,
+      bias_shape,
+      bias_data,
+      output_shape,
+      output_data,
+      tflite::micro::GetTensorShape(nullptr), nullptr);
+    return;
+  }
   
   // calculate gemm as gemv loops
   float* gemv_input_data = (float*)gemm_input_data;
@@ -245,7 +270,13 @@ inline void ConvPerChannelCa32(
 
 
   if (need_dilated_im2col) {
-    MicroPrintf("need_dilated_im2col don't supported currently!!");
+    MicroPrintf("need_dilated_im2col optimization is not supported currently!!");
+    tflite::reference_integer_ops::ConvPerChannel(
+      params, output_multiplier,
+      output_shift, input_shape,
+      input_data, filter_shape,
+      filter_data, bias_shape,
+      bias_data, output_shape, output_data);
     return;
   } else if (need_im2col) {
     TFLITE_DCHECK(im2col_data);
@@ -264,7 +295,7 @@ inline void ConvPerChannelCa32(
         input_data, filter_shape,
         filter_data, bias_shape,
         bias_data, output_shape, output_data);
-        return;
+    return;
   }
 
   const int gemm_input_rows = gemm_input_shape->Dims(3);
@@ -306,6 +337,16 @@ inline void ConvPerChannelCa32(
   gemm_params.clamp_max = output_activation_max;
   gemm_params.multiplier_fixedpoint_perchannel = output_multiplier;
   gemm_params.multiplier_exponent_perchannel = output_shift;
+
+  if(lhs_params.cols < 8 || lhs_params.rows < 4) {
+    tflite::reference_integer_ops::ConvPerChannel(
+        params, output_multiplier,
+        output_shift, input_shape,
+        input_data, filter_shape,
+        filter_data, bias_shape,
+        bias_data, output_shape, output_data);
+    return;
+  }
 
   const bool do_custom_gemv = (dst_params.cols == 1);
   if (do_custom_gemv) {
@@ -402,30 +443,35 @@ TfLiteStatus CalculateOpDataConvCa32(TfLiteContext* context, TfLiteNode* node,
   data->output_zero_point = output->params.zero_point;
 
   // im2col tensor allocate
-  data->need_im2col = IsIm2ColRequired(&params, filter);
-  if (data->need_im2col) {
-    int input_depth = input->dims->data[3];
-    int batches = input->dims->data[0];
-    int required_scratch = batches * out_height * out_width * input_depth *
-                           filter_height * filter_width;
-    if (input->type == kTfLiteFloat32) {
-      required_scratch *= sizeof(float);
-    }
-    TF_LITE_ENSURE_OK(
-        context, context->RequestScratchBufferInArena(
-                     context, required_scratch, &data->scratch_tensor_index));
+  // only for optimized kernel (float32 or int8)
+  if(input->type == kTfLiteFloat32 || input->type == kTfLiteInt8) {
+    data->need_im2col = IsIm2ColRequired(&params, filter);
+    if (data->need_im2col) {
+      int input_depth = input->dims->data[3];
+      int batches = input->dims->data[0];
+      int required_scratch = batches * out_height * out_width * input_depth *
+                             filter_height * filter_width;
+      if (input->type == kTfLiteFloat32) {
+        required_scratch *= sizeof(float);
+      }
+      TF_LITE_ENSURE_OK(
+          context, context->RequestScratchBufferInArena(
+                       context, required_scratch, &data->scratch_tensor_index));
 
-    data->im2col_size = 4;
-    data->im2col_dims[0] = batches;
-    data->im2col_dims[1] = out_height;
-    data->im2col_dims[2] = out_width;
-    data->im2col_dims[3] = input_depth * filter_height * filter_width;
+      data->im2col_size = 4;
+      data->im2col_dims[0] = batches;
+      data->im2col_dims[1] = out_height;
+      data->im2col_dims[2] = out_width;
+      data->im2col_dims[3] = input_depth * filter_height * filter_width;
+    }
   }
 
   micro_context->DeallocateTempTfLiteTensor(input);
   micro_context->DeallocateTempTfLiteTensor(filter);
   micro_context->DeallocateTempTfLiteTensor(output);
-  micro_context->DeallocateTempTfLiteTensor(bias);
+  if (bias != nullptr) {
+    micro_context->DeallocateTempTfLiteTensor(bias);
+  }
 
   return kTfLiteOk;
 }
@@ -453,6 +499,15 @@ TfLiteStatus PrepareConvCa32(TfLiteContext* context, TfLiteNode* node) {
   TfLiteTensor* filter =
       micro_context->AllocateTempInputTensor(node, kConvWeightsTensor);
   TF_LITE_ENSURE(context, filter != nullptr);
+
+  TF_LITE_ENSURE_EQ(context, input->type, output->type);
+  TF_LITE_ENSURE_MSG(
+      context,
+      (input->type == kTfLiteFloat32 && filter->type == kTfLiteFloat32) ||
+          (input->type == kTfLiteInt16 && filter->type == kTfLiteInt8) ||
+          (input->type == kTfLiteInt8 &&
+           (filter->type == kTfLiteInt4 || filter->type == kTfLiteInt8)),
+      "Hybrid models are not supported on TFLite Micro.");
 
   const int input_width = input->dims->data[2];
   const int input_height = input->dims->data[1];
@@ -490,6 +545,15 @@ TfLiteStatus PrepareConvCa32(TfLiteContext* context, TfLiteNode* node) {
   TF_LITE_ENSURE_STATUS(CalculateOpDataConvCa32(
       context, node, params, input_width, input_height, filter_width,
       filter_height, output_width, output_height, input->type, data));
+  
+  if (filter->type == kTfLiteInt4) {
+    int filter_size =
+        RuntimeShape(filter->dims->size,
+                     reinterpret_cast<const int32_t*>(filter->dims->data))
+            .FlatSize();
+    context->RequestScratchBufferInArena(context, filter_size,
+                                         &data->filter_buffer_index);
+  }
 
   micro_context->DeallocateTempTfLiteTensor(filter);
   micro_context->DeallocateTempTfLiteTensor(input);
@@ -515,33 +579,54 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   TFLITE_DCHECK(node->user_data != nullptr);
   const auto& data = *(static_cast<const OpDataConvCa32*>(node->user_data));
 
-  TF_LITE_ENSURE_EQ(context, input->type, output->type);
-  TF_LITE_ENSURE_MSG(
-      context,
-      input->type == filter->type ||
-          (input->type == kTfLiteInt16 && filter->type == kTfLiteInt8),
-      "Hybrid models are not supported on TFLite Micro.");
-
   switch (input->type) {  // Already know in/out types are same.
     case kTfLiteInt8: {
-      int8_t* im2col = NULL;
-      tflite::RuntimeShape im2col_shape(data.im2col_size, data.im2col_dims);
-      if (data.need_im2col) {
-        im2col = static_cast<int8_t*>(
-            context->GetScratchBuffer(context, data.scratch_tensor_index));
+      switch (filter->type) {
+        case kTfLiteInt4: {
+          int8_t* unpacked_filter_data = static_cast<int8_t*>(
+              context->GetScratchBuffer(context, data.filter_buffer_index));
+          tflite::tensor_utils::UnpackDenseInt4IntoInt8(
+              tflite::micro::GetTensorData<int8_t>(filter),
+              tflite::micro::GetTensorShape(filter).FlatSize(),
+              unpacked_filter_data);
+          reference_integer_ops::ConvPerChannel(
+              ConvParamsQuantizedCa32(params, data),
+              data.per_channel_output_multiplier, data.per_channel_output_shift,
+              tflite::micro::GetTensorShape(input),
+              tflite::micro::GetTensorData<int8_t>(input),
+              tflite::micro::GetTensorShape(filter), unpacked_filter_data,
+              tflite::micro::GetTensorShape(bias),
+              tflite::micro::GetOptionalTensorData<int32_t>(bias),
+              tflite::micro::GetTensorShape(output),
+              tflite::micro::GetTensorData<int8_t>(output));
+          break;
+        }
+        case kTfLiteInt8: {
+          int8_t* im2col = NULL;
+          tflite::RuntimeShape im2col_shape(data.im2col_size, data.im2col_dims);
+          if (data.need_im2col) {
+            im2col = static_cast<int8_t*>(
+                context->GetScratchBuffer(context, data.scratch_tensor_index));
+          }
+        
+          ConvPerChannelCa32(
+              ConvParamsQuantizedCa32(params, data),
+              data.per_channel_output_multiplier, data.per_channel_output_shift,
+              tflite::micro::GetTensorShape(input),
+              tflite::micro::GetTensorData<int8_t>(input),
+              tflite::micro::GetTensorShape(filter),
+              tflite::micro::GetTensorData<int8_t>(filter),
+              tflite::micro::GetTensorShape(bias),
+              tflite::micro::GetOptionalTensorData<int32_t>(bias),
+              tflite::micro::GetTensorShape(output),
+              tflite::micro::GetTensorData<int8_t>(output), im2col_shape, im2col);
+          break;
+        }
+        default:
+          MicroPrintf("Weight type %s (%d) not supported.",
+                    TfLiteTypeGetName(filter->type), filter->type);
+          return kTfLiteError;
       }
-
-      ConvPerChannelCa32(
-          ConvParamsQuantizedCa32(params, data),
-          data.per_channel_output_multiplier, data.per_channel_output_shift,
-          tflite::micro::GetTensorShape(input),
-          tflite::micro::GetTensorData<int8_t>(input),
-          tflite::micro::GetTensorShape(filter),
-          tflite::micro::GetTensorData<int8_t>(filter),
-          tflite::micro::GetTensorShape(bias),
-          tflite::micro::GetOptionalTensorData<int32_t>(bias),
-          tflite::micro::GetTensorShape(output),
-          tflite::micro::GetTensorData<int8_t>(output), im2col_shape, im2col);
       break;
     }
     case kTfLiteFloat32: {
@@ -574,6 +659,38 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
       //    tflite::micro::GetTensorShape(nullptr), nullptr);
         break;
     }
+    case kTfLiteInt16: {
+      if (bias == nullptr || bias->type == kTfLiteInt32) {
+        reference_integer_ops::ConvPerChannel(
+            ConvParamsQuantizedCa32(params, data),
+            data.per_channel_output_multiplier, data.per_channel_output_shift,
+            tflite::micro::GetTensorShape(input),
+            tflite::micro::GetTensorData<int16_t>(input),
+            tflite::micro::GetTensorShape(filter),
+            tflite::micro::GetTensorData<int8_t>(filter),
+            tflite::micro::GetTensorShape(bias),
+            tflite::micro::GetOptionalTensorData<std::int32_t>(bias),
+            tflite::micro::GetTensorShape(output),
+            tflite::micro::GetTensorData<int16_t>(output));
+      } else if (bias->type == kTfLiteInt64) {
+        reference_integer_ops::ConvPerChannel(
+            ConvParamsQuantizedCa32(params, data),
+            data.per_channel_output_multiplier, data.per_channel_output_shift,
+            tflite::micro::GetTensorShape(input),
+            tflite::micro::GetTensorData<int16_t>(input),
+            tflite::micro::GetTensorShape(filter),
+            tflite::micro::GetTensorData<int8_t>(filter),
+            tflite::micro::GetTensorShape(bias),
+            tflite::micro::GetOptionalTensorData<std::int64_t>(bias),
+            tflite::micro::GetTensorShape(output),
+            tflite::micro::GetTensorData<int16_t>(output));
+      } else {
+        MicroPrintf("Bias type %s (%d) not supported.",
+                    TfLiteTypeGetName(bias->type), bias->type);
+        return kTfLiteError;
+      }
+      break;
+    } 
     default:
       TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
                          TfLiteTypeGetName(input->type), input->type);
