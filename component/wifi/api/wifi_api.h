@@ -188,7 +188,7 @@ s32 wifi_get_scan_records(u32 *ap_num, struct rtw_scan_result *ap_list);
 s32 wifi_start_ap(struct rtw_softap_info *softap_config);
 
 /**
- * @brief  Disable SoftAP (i.e. Wi-Fi interface-2).
+ * @brief  Disable SoftAP (i.e. Wi-Fi interface-1).
  * @return @ref RTK_SUCCESS : The API executed successfully.
  */
 s32 wifi_stop_ap(void);

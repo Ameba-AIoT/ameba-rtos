@@ -191,6 +191,7 @@ target_compile_options(${MICROLITE_LIB_NAME} INTERFACE -DTF_LITE_STATIC_MEMORY)
 target_compile_options(${MICROLITE_LIB_NAME} PRIVATE -Wno-undef)
 if(USE_CMSIS_NN)
   target_compile_definitions(${MICROLITE_LIB_NAME} PRIVATE CMSIS_NN)
+  target_compile_definitions(${MICROLITE_LIB_NAME} PRIVATE KERNELS_OPTIMIZED_FOR_SPEED) #or KERNELS_OPTIMIZED_FOR_SIZE
 endif()
 if(BUILD_IN_MCU_SDK)
   target_compile_definitions(${MICROLITE_LIB_NAME} PRIVATE TF_LITE_USE_AIOT_TIME)

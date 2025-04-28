@@ -303,7 +303,7 @@ static int32_t StartAudioHwStreamOut(struct PrimaryAudioHwStreamOut *out)
 	(void) out;
 	//ameba_audio_ctl_set_tx_mute(ameba_audio_get_ctl(), false);
 	if (AUDIO_HW_AMPLIFIER_MUTE_ENABLE) {
-		ameba_audio_stream_tx_set_amp_state(true);
+		ameba_audio_stream_tx_set_amp_state(ameba_audio_get_ctl()->amp_state);
 	}
 	return HAL_OSAL_OK;
 }

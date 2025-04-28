@@ -27,7 +27,7 @@ char *param_strdup(const char *s)
 
 	const char *sin = s;
 	size_t len = strlen(sin) + 1;
-	char *new = (char *) malloc(len);
+	char *new = (char *) rtos_mem_zmalloc(len);
 	if (new == NULL) {
 		return NULL;
 	}
@@ -40,7 +40,7 @@ char *param_strndup(const char *s, int32_t count)
 	const char *sin = s;
 	size_t len = strnlen(sin, (count)) + 1;
 	HAL_AUDIO_VERBOSE("count:%d, len:%d", count, len);
-	char *new = (char *) malloc(len);
+	char *new = (char *) rtos_mem_zmalloc(len);
 	if (new == NULL) {
 		return NULL;
 	}
@@ -51,7 +51,7 @@ char *param_strndup(const char *s, int32_t count)
 static struct string_cell *string_cells_create(void)
 {
 	HAL_AUDIO_VERBOSE("malloc string cells");
-	struct string_cell *cell_head = (struct string_cell *) malloc(sizeof(struct string_cell));
+	struct string_cell *cell_head = (struct string_cell *) rtos_mem_zmalloc(sizeof(struct string_cell));
 	cell_head->key = NULL;
 	cell_head->value = NULL;
 	cell_head->next = NULL;
@@ -60,7 +60,7 @@ static struct string_cell *string_cells_create(void)
 
 static void insert_string_cell_by_last(struct string_cell *cell_head, char *key, char *value)
 {
-	struct string_cell *new_cell = (struct string_cell *) malloc(sizeof(struct string_cell));
+	struct string_cell *new_cell = (struct string_cell *) rtos_mem_zmalloc(sizeof(struct string_cell));
 	new_cell->key = param_strdup(key);
 	new_cell->value = param_strdup(value);
 	struct string_cell *cell_iterate = cell_head;
@@ -78,13 +78,13 @@ void string_cells_destroy(struct string_cell *cell_head)
 	struct string_cell *next_cell = NULL;
 	while (cell_iterate != NULL) {
 		if (cell_iterate->key) {
-			free(cell_iterate->key);
+			rtos_mem_free(cell_iterate->key);
 		}
 		if (cell_iterate->value) {
-			free(cell_iterate->value);
+			rtos_mem_free(cell_iterate->value);
 		}
 		next_cell = cell_iterate->next;
-		free(cell_iterate);
+		rtos_mem_free(cell_iterate);
 		cell_iterate = next_cell;
 	}
 }
@@ -139,16 +139,16 @@ struct string_cell *string_cells_create_from_str(const char *string)
 		insert_string_cell_by_last(cell_head, key, value);
 
 		if (NULL != key) {
-			free(key);
+			rtos_mem_free(key);
 		}
 		if (value) {
-			free(value);
+			rtos_mem_free(value);
 		}
 
 		one_cell_str = (char *)strtok_r(NULL, ";", &str_left);
 	}
 
-	free(duped_str);
+	rtos_mem_free(duped_str);
 
 	return cell_head;
 

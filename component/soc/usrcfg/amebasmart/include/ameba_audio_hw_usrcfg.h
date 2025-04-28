@@ -10,7 +10,13 @@
 /*
  *Audio amplifier pin, if your board has no audio amplifier pin , please set it as -1.
  */
-#define AUDIO_HW_AMPLIFIER_PIN          _PB_31
+#define AUDIO_HW_AMPLIFIER_PIN          _PB_19 /*_PB_31 for old board*/
+
+/*
+ * See amplifier types defined in: component/audio/audio_driver/amp_manager/interfaces/amp_manager.h
+ * enum AMP_TYPE. for example: dummy = 0.
+ */
+#define AUDIO_HW_AMPLIFIER_TYPE         0
 
 /*
  *After enable amplifer, it need some time to be steady. For d2 demo board, it's 90ms.
@@ -152,7 +158,7 @@
 #define AUDIO_I2S_IN_LRCLK_PIN          _PB_16
 #define AUDIO_I2S_IN_DATA0_PIN          _PB_17
 #define AUDIO_I2S_IN_DATA1_PIN          _PB_18
-#define AUDIO_I2S_IN_DATA2_PIN          _PB_19
+#define AUDIO_I2S_IN_DATA2_PIN          _PB_31  /*_PB_19 for old board*/
 #define AUDIO_I2S_IN_DATA3_PIN          _PB_20
 
 #define AUDIO_I2S_IN_MULTIIO_EN         0

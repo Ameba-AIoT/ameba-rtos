@@ -50,6 +50,8 @@ static uint32_t  g_write_frames_one_time = 1024;
 /* pcm frequency in Hz */
 static double    g_freq = 1000;
 static uint32_t  g_generate_cnt = 0;
+static float     g_vol = 0.6;
+static uint32_t  g_mute = 0;
 
 static struct RTAudioTrack *g_audio_track = NULL;
 
@@ -272,12 +274,9 @@ void play_sample(uint32_t channels, uint32_t rate, uint32_t bits, uint32_t perio
 	test_eq(&audio_equalizer);
 #endif
 
-	/*set dac hardware volume, if you want to test this demo's sine from oscilloscope, better set 0.956*/
-#if TEST_DELAY
-	RTAudioControl_SetHardwareVolume(0.956, 0.956);
-#endif
 	/*for mixer version, this mean sw volume, for passthrough version, sw volume is not supported*/
 	RTAudioTrack_SetVolume(audio_track, 1.0, 1.0);
+	RTAudioControl_SetHardwareVolume(g_vol, g_vol);
 
 	RTAudioTrack_SetStartThresholdBytes(audio_track, track_buf_size);
 	track_start_threshold = RTAudioTrack_GetStartThresholdBytes(audio_track);
@@ -371,6 +370,9 @@ void play_sample(uint32_t channels, uint32_t rate, uint32_t bits, uint32_t perio
 	RTAudioTrack_Stop(audio_track);
 	RTAudioTrack_Destroy(audio_track);
 
+	bool muted = RTAudioControl_GetAmplifierMute();
+	EXAMPLE_AUDIO_DEBUG("amp muted:%d", muted);
+
 #if DUMP_ENABLE
 	if (dump_buffer) {
 		free(dump_buffer);
@@ -414,6 +416,7 @@ void example_audio_track_thread(void *param)
 #endif
 
 	play_sample(g_track_channel, g_track_rate, g_track_format, g_write_frames_one_time);
+
 	rtos_time_delay_ms(2 * RTOS_TICK_RATE_HZ);
 
 #if LITTLEFS_RAW
@@ -525,13 +528,23 @@ void example_audio_track(char **argv)
 			if (*argv) {
 				g_gain = atoi(*argv);
 			}
+		} else if (strcmp(*argv, "-v") == 0) {
+			argv++;
+			if (*argv) {
+				g_vol = atof(*argv);
+			}
+		} else if (strcmp(*argv, "-m") == 0) {
+			argv++;
+			if (*argv) {
+				g_mute = atoi(*argv);
+			}
 		}
 		if (*argv) {
 			argv++;
 		}
 	}
 
-	if (rtos_task_create(NULL, ((const char *)"example_audio_track_thread"), example_audio_track_thread, NULL, 8192 * 4, 1) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_audio_track_thread"), example_audio_track_thread, NULL, 8192 * 6, 1) != RTK_SUCCESS) {
 		EXAMPLE_AUDIO_ERROR("error: rtos_task_create(example_audio_track_thread) failed");
 	}
 
@@ -543,9 +556,56 @@ void example_audio_track(char **argv)
 }
 
 u32 example_track_test(u16 argc, unsigned char **argv)
-
 {
 	(void) argc;
 	example_audio_track((char **)argv);
+	return TRUE;
+}
+
+void example_track_control_thread(void *param)
+{
+	(void) param;
+	RTAudioControl_SetHardwareVolume(g_vol, g_vol);
+	RTAudioControl_SetAmplifierMute(g_mute);
+
+	float left, right;
+	bool muted;
+
+	RTAudioControl_GetHardwareVolume(&left, &right);
+	muted = RTAudioControl_GetAmplifierMute();
+	EXAMPLE_AUDIO_DEBUG("amp vol:%f %f, muted:%d", left, right, muted);
+
+	rtos_task_delete(NULL);
+}
+
+void example_track_control(char **argv)
+{
+	/* parse command line arguments */
+	while (*argv) {
+		if (strcmp(*argv, "-v") == 0) {
+			argv++;
+			if (*argv) {
+				g_vol = atof(*argv);
+			}
+		} else if (strcmp(*argv, "-m") == 0) {
+			argv++;
+			if (*argv) {
+				g_mute = atoi(*argv);
+			}
+		}
+		if (*argv) {
+			argv++;
+		}
+	}
+
+	if (rtos_task_create(NULL, ((const char *)"example_track_control_thread"), example_track_control_thread, NULL, 8192 * 6, 1) != RTK_SUCCESS) {
+		EXAMPLE_AUDIO_ERROR("error: rtos_task_create(example_track_control_thread) failed");
+	}
+}
+
+u32 example_track_control_test(u16 argc, unsigned char **argv)
+{
+	(void) argc;
+	example_track_control((char **)argv);
 	return TRUE;
 }

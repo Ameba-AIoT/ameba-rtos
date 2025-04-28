@@ -134,8 +134,8 @@ TfLiteStatus CalculateOpData(TfLiteContext* context, TfLiteNode* node,
     }
   }
 
-  // only support Int8 and Float32 optimization
-  if ((input->type == kTfLiteInt8) || (input->type == kTfLiteFloat32)) {
+  // only support Float32 optimization
+  if (input->type == kTfLiteFloat32) {
     // col2im
     data->col2im_size = 2;
     data->col2im_dims[0] = input->dims->data[1] * input->dims->data[2];
@@ -277,6 +277,7 @@ TfLiteStatus TransposeConvPrepare(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 }
 
+// TransposeConv Float32 optimization
 // TransposeConvV2 expect the weights in HWOI order.
 void TransposeConvV2(
     const ConvParams& params, const RuntimeShape& input_shape,
@@ -368,108 +369,6 @@ void TransposeConvV2(
   }
 }
 
-// TransposeConvV2 expect the weights in HWOI order.
-//template <typename InputScalar, typename DestinationScalar>
-//void TransposeConvV2(
-//    const ConvParams& params, const int32* output_multiplier,
-//    const int32* output_shift, const RuntimeShape& input_shape,
-//    const InputScalar* input_data,
-//    const RuntimeShape& hwoi_ordered_filter_shape,
-//    const int8_t* hwoi_ordered_filter_data, const RuntimeShape& bias_shape,
-//    const int32* bias_data, const RuntimeShape& output_shape,
-//    DestinationScalar* output_data, const RuntimeShape& col2im_shape,
-//    int32_t* col2im_data, int32_t* scratch_data
-//    /*CpuBackendContext* cpu_backend_context*/) {
-//  //ruy::profiler::ScopeLabel label("TransposeConvV2/int8");
-//  TFLITE_DCHECK_EQ(input_shape.DimensionsCount(), 4);
-//  TFLITE_DCHECK_EQ(hwoi_ordered_filter_shape.DimensionsCount(), 4);
-//  TFLITE_DCHECK(col2im_data);
-//  TFLITE_DCHECK(hwoi_ordered_filter_data);
-//
-//  const int batch_size = MatchingDim(input_shape, 0, output_shape, 0);
-//  const int input_image_size = input_shape.Dims(1) * input_shape.Dims(2);
-//  const int output_height = output_shape.Dims(1);
-//  const int output_width = output_shape.Dims(2);
-//  const int output_image_size = output_height * output_width;
-//  const int input_depth =
-//      MatchingDim(input_shape, 3, hwoi_ordered_filter_shape, 3);
-//  const int output_depth =
-//      MatchingDim(output_shape, 3, hwoi_ordered_filter_shape, 2);
-//  const int input_offset = input_image_size * input_depth;
-//  const int output_offset = output_image_size * output_depth;
-//
-//  const int filter_height = hwoi_ordered_filter_shape.Dims(0);
-//  const int filter_width = hwoi_ordered_filter_shape.Dims(1);
-//  const int padding_top = params.padding_values.height;
-//  const int padding_bottom =
-//      params.padding_values.height + params.padding_values.height_offset;
-//  const int padding_left = params.padding_values.width;
-//  const int padding_right =
-//      params.padding_values.width + params.padding_values.width_offset;
-//  const int stride_height = params.stride_height;
-//  const int stride_width = params.stride_width;
-//
-//  const int32 output_activation_min = params.quantized_activation_min;
-//  const int32 output_activation_max = params.quantized_activation_max;
-//
-//  const int hwoi_ordered_filter_total_size =
-//      filter_height * filter_width * output_depth;
-//
-//  cpu_backend_gemm::MatrixParams<int8_t> lhs_params;
-//  lhs_params.order = cpu_backend_gemm::Order::kRowMajor;
-//  lhs_params.rows = hwoi_ordered_filter_total_size;
-//  lhs_params.cols = input_depth;
-//  // Since our weight is symmetric quantized, the zp will always be 0.
-//  lhs_params.zero_point = 0;
-//
-//  int32_t* scratch_data_p = scratch_data;
-//  std::fill_n(scratch_data, output_offset * batch_size, static_cast<int32>(0));
-//  for (int i = 0; i < batch_size; ++i) {
-//    cpu_backend_gemm::MatrixParams<InputScalar> rhs_params;
-//    rhs_params.order = cpu_backend_gemm::Order::kColMajor;
-//    rhs_params.rows = input_depth;
-//    rhs_params.cols = 1; //input_image_size;
-//    rhs_params.zero_point = -params.input_offset;
-//
-//    cpu_backend_gemm::MatrixParams<int32_t> dst_params;
-//    dst_params.order = cpu_backend_gemm::Order::kColMajor;
-//    dst_params.rows = hwoi_ordered_filter_total_size;
-//    dst_params.cols = 1; //input_image_size;
-//
-//    cpu_backend_gemm::GemmParams<int32_t, int32_t> gemm_params;
-//    //cpu_backend_gemm::Gemm(lhs_params, hwoi_ordered_filter_data, rhs_params,
-//    //                       input_data + input_offset * i, dst_params,
-//    //                       col2im_data, gemm_params, cpu_backend_context);
-//    int8_t* gemv_input_data = (int8_t*)input_data + input_offset * i;
-//    int8_t* gemv_dst_data = col2im_data;
-//    for (int j = 0; j < input_image_size; j++) {
-//      tflite::cpu_backend_gemm::detail::CustomGemv(
-//        lhs_params, hwoi_ordered_filter_data, rhs_params,
-//        gemv_input_data, dst_params, gemv_dst_data,
-//        gemm_params);
-//      gemv_input_data += rhs_params.rows;
-//      gemv_dst_data += dst_params.rows;
-//    }
-//    gemv_input_data = nullptr;
-//    gemv_dst_data = nullptr;
-//
-//    optimized_ops::Col2im(
-//        col2im_data, output_depth, output_height, output_width, filter_height,
-//        filter_width, padding_top, padding_left, padding_bottom, padding_right,
-//        stride_height, stride_width, scratch_data_p);
-//
-//    scratch_data_p += output_offset;
-//  }
-//  scratch_data_p = scratch_data;
-//  optimized_ops::BiasAdd(scratch_data_p, bias_data, batch_size, output_height,
-//                         output_width, output_depth);
-//
-//  optimized_ops::Quantize(output_multiplier, output_shift, output_depth,
-//                          output_shape.FlatSize(), params.output_offset,
-//                          output_activation_min, output_activation_max,
-//                          scratch_data, output_data);
-//}
-
 TfLiteStatus TransposeConvEval(TfLiteContext* context, TfLiteNode* node) {
   const TfLiteEvalTensor* input =
       tflite::micro::GetEvalInput(context, node, kInputTensor);
@@ -497,8 +396,24 @@ TfLiteStatus TransposeConvEval(TfLiteContext* context, TfLiteNode* node) {
                                &op_params.float_activation_max);
       // Transposed filter
       const RuntimeShape& filter_shape = tflite::micro::GetTensorShape(filter);
-      //int lhs_row = filter_shape.Dims(0) * filter_shape.Dims(1) * filter_shape.Dims(2);
-      //if (lhs_row >=4 ) {
+      const RuntimeShape& input_shape = tflite::micro::GetTensorShape(input);
+
+      const int lhs_cols = input_shape.Dims(3);
+      const int lhs_rows = filter_shape.Dims(0) * filter_shape.Dims(1) * filter_shape.Dims(2);
+      if(lhs_cols < 8 || lhs_rows < 4) {
+        reference_ops::TransposeConv(
+          op_params, tflite::micro::GetTensorShape(input),
+          tflite::micro::GetTensorData<float>(input),
+          tflite::micro::GetTensorShape(filter),
+          tflite::micro::GetTensorData<float>(filter),
+          tflite::micro::GetTensorShape(bias),
+          tflite::micro::GetOptionalTensorData<float>(bias),
+          tflite::micro::GetTensorShape(output),
+          tflite::micro::GetTensorData<float>(output),
+          tflite::micro::GetTensorShape(nullptr), nullptr);
+        return kTfLiteOk;
+      }
+
       float* transposed_filter = static_cast<float*>(
           context->GetScratchBuffer(context, data.transposed_filter_buffer_index));
       RuntimeShape hwoi_ordered_filter_shape(data.transposed_filter_size, data.transposed_filter_dims);
@@ -529,18 +444,6 @@ TfLiteStatus TransposeConvEval(TfLiteContext* context, TfLiteNode* node) {
           tflite::micro::GetTensorShape(output),
           tflite::micro::GetTensorData<float>(output),
           col2im_shape, col2im);
-      //}else{
-      //reference_ops::TransposeConv(
-      //    op_params, tflite::micro::GetTensorShape(input),
-      //    tflite::micro::GetTensorData<float>(input),
-      //    tflite::micro::GetTensorShape(filter),
-      //    tflite::micro::GetTensorData<float>(filter),
-      //    tflite::micro::GetTensorShape(bias),
-      //    tflite::micro::GetOptionalTensorData<float>(bias),
-      //    tflite::micro::GetTensorShape(output),
-      //    tflite::micro::GetTensorData<float>(output),
-      //    tflite::micro::GetTensorShape(nullptr), nullptr);
-      //}
       break;
     }
     case kTfLiteInt8: {
@@ -557,13 +460,6 @@ TfLiteStatus TransposeConvEval(TfLiteContext* context, TfLiteNode* node) {
           tflite::micro::GetTensorShape(output),
           tflite::micro::GetTensorData<int8_t>(output),
           tflite::micro::GetTensorShape(nullptr), nullptr, scratch_buffer);
-      //TransposeConvV2(
-      //  data.params, data.per_channel_output_multiplier,
-      //  data.per_channel_output_shift, tflite::micro::GetTensorShape(input),
-      //  tflite::micro::GetTensorData<int8>(input),
-      //  
-      //);
-
       break;
     }
     case kTfLiteInt16: {

@@ -188,6 +188,8 @@ int32_t RTAudioControl_GetAmplifierEnPin(void);
 
 /**
  * @brief Set Amplifier Mute.
+ * Note: this interface may take some time, see component/audio/audio_hal/ameba_audio_stream_control:
+ *       ameba_audio_ctl_set_amp_state.
  *
  * @param mute true means mute amplifier, false means unmute amplifier.
  * @return  Returns a value listed below: \n
