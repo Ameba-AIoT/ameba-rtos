@@ -9,6 +9,17 @@
  ******************************************************************************/
 #include <rtw_autoconf.h>
 
+#define EXAMPLE_IPV6_UDP    1
+#define EXAMPLE_IPV6_TCP    0
+#define EXAMPLE_IPV6_MCAST  0
+#if EXAMPLE_IPV6_UDP
+#define UDP_SERVER          1
+#elif EXAMPLE_IPV6_TCP
+#define TCP_SERVER          1
+#elif EXAMPLE_IPV6_MCAST
+#define MCAST_SERVER        1
+#endif
+
 #define MAX_RECV_SIZE    1500
 #define MAX_SEND_SIZE    256
 #define UDP_SERVER_PORT  5002

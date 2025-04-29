@@ -5,3 +5,8 @@ target_sources(
     example_ipv6.c
     app_example.c
 )
+
+target_compile_options(
+    ${CURRENT_LIB_NAME} PRIVATE
+    -Wno-unused-function
+)

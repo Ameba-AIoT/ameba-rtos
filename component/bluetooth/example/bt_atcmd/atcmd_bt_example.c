@@ -453,49 +453,35 @@ int atcmd_bt_a2dp_pbp(int argc, char *argv[])
 	return 0;
 }
 
-int bt_a2dp_sink_tmap_main(uint8_t role, uint8_t enable);
-int bt_tmap_a2dp_source_main(uint8_t role, uint8_t enable);
+int bt_a2dp_sink_tmap_main(uint8_t enable, uint8_t role);
 int atcmd_bt_a2dp_tmap(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t role = 0;
 	uint8_t op = 0;
 	char *action[] = {"disable", "enable"};
-
 	if (strcmp(argv[0], "ums") == 0) {
 		role = 0x04;
 		BT_LOGA("Set a2dp sink ums role\r\n");
 	} else if (strcmp(argv[0], "bms") == 0) {
 		role = 0x10;
 		BT_LOGA("Set a2dp sink bms role\r\n");
-	} else if (strcmp(argv[0], "umr") == 0) {
-		role = 0x08;
-		BT_LOGA("Set tmap umr a2dp source role\r\n");
-	} else if (strcmp(argv[0], "bmr") == 0) {
-		role = 0x20;
-		BT_LOGA("Set tmap bmr a2dp source role\r\n");
 	} else {
 		BT_LOGE("Invalid role set\r\n");
 		return -1;
 	}
 
 	if ((op = (uint8_t)(str_to_int(argv[1]))) > 2) {
-		BT_LOGE("Error: wrong value (%d) for a2dp tmap example!\r\n", op);
+		BT_LOGE("Error: wrong value (%d) for a2dp sink tmap example!\r\n", op);
 		return -1;
 	}
 
 	if (role == 0x04 || role == 0x10) {
-		if (bt_a2dp_sink_tmap_main(role, op)) {
+		if (bt_a2dp_sink_tmap_main(op, role)) {
 			BT_LOGE("Error: a2dp sink tmap example %s failed!\r\n", action[op]);
 			return -1;
 		}
 		BT_LOGA("a2dp sink tmap example %s OK!\r\n", action[op]);
-	} else if (role == 0x08 || role == 0x20) {
-		if (bt_tmap_a2dp_source_main(role, op)) {
-			BT_LOGE("Error: tmap a2dp source example %s failed!\r\n", action[op]);
-			return -1;
-		}
-		BT_LOGA("tmap a2dp source example %s OK!\r\n", action[op]);
 	}
 
 	return 0;

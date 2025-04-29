@@ -27,6 +27,9 @@ config SUPPORT_USBD_INIC
 config SUPPORT_USBD_UAC
     def_bool y
 
+config SUPPORT_HEAP_TRACE
+    def_bool y
+
 #---------- FEATURE LIST END-------------#
 
 menu "CONFIG TrustZone"

@@ -9,6 +9,9 @@ config AMEBA_RLS
 config AMEBALITE
     def_bool y
 
+config SUPPORT_HEAP_TRACE
+    def_bool y
+
 #---------- FEATURE LIST START-----------#
 #All features are invisible in menuconfig
 
