@@ -11,6 +11,9 @@ menu "CONFIG LWIP"
         bool "Enable LWIP NETCONN SEM PER THREAD"
         select LWIP_NETCONN_SEM_PER_THREAD if CORE_AS_AP
 
+    config LWIP_IPV6_MENU
+        bool "Enable LWIP IPV6"
+        select LWIP_IPV6 if CORE_AS_AP
 
     config LWIP_USB_ETHERNET
         depends on USBH_ECM_ETHERNE_MENU||USBH_ECM_ETHERNET_BRIDGE_MENU||USBH_ECM_MENU
@@ -26,6 +29,8 @@ menu "CONFIG LWIP"
     config IP_NAT
         bool
     config LWIP_NETCONN_SEM_PER_THREAD
+        bool
+    config LWIP_IPV6
         bool
 
     config LWIP_DEBUG

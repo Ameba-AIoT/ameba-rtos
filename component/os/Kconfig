@@ -15,7 +15,7 @@ menu "CONFIG OS"
         endchoice
     endif
 
-    if AMEBASMART
+    if SUPPORT_SMP
         choice
             prompt "CA32 SMP FreeRTOS OS version select"
             default CA32_FREERTOS_V10_2_1_SMP_FOR_CA32
@@ -26,14 +26,16 @@ menu "CONFIG OS"
         endchoice
     endif
 
-    if AMEBADPLUS || AMEBALITE || AMEBAD || AMEBASMART
-        config BACK_TRACE_DEPTH_LIMIT
-            int "Crash Back Trace Depth Limit"
-            default 8
-            range 4 16
-            help
-                This defines the maximum depth of back trace. The value must be at least 4.
+    # the back trace setting is only valid for KM4 / KR4 core
+    config BACK_TRACE_DEPTH_LIMIT
+        int "Crash Back Trace Depth Limit"
+        default 8
+        range 4 16
+        help
+            This defines the maximum depth of back trace. The value must be at least 4.
 
+    # freertos v11 not support heap protect currently. Other versions all supprot.
+    if !CA32_FREERTOS_V11_1_0_FOR_CA32
         config HEAP_PROTECTOR
             bool "Enable Heap Protector"
             default n
@@ -54,7 +56,7 @@ menu "CONFIG OS"
             help
                 Checks for uninitialized-access and use-after-free bugs. Huge impact on runtime performance, only enable this mode when debugging.
 
-        if AMEBADPLUS || AMEBALITE || AMEBAD
+        if SUPPORT_HEAP_TRACE
             config HEAP_INTEGRITY_CHECK_IN_TASK_SWITCHED_OUT
                 bool "Check Heap Integrity in Task Switched Out Hook (Increase CPU load)"
                 default n

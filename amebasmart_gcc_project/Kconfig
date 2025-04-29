@@ -30,6 +30,9 @@ config SUPPORT_USBH_ECM
 config SUPPORT_USBH_ECM_BRIDGE
     def_bool y
 
+config SUPPORT_SMP
+    def_bool y
+
 #---------- FEATURE LIST END-------------#
 
 menu "CONFIG BOOT OPTION"

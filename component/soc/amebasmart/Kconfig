@@ -125,7 +125,7 @@ menu "CONFIG FUNCTION TEST"
             bool "Flash RW Test"
         config DHRYSTONE_TEST
             bool "Dhrystone Test"
-        config VMIN_TEST
+        config VMIN_TEST_FOR_CA32
             bool "Vmin Test"
         config SSL_ROM_TEST
             bool "SSL ROM Test"

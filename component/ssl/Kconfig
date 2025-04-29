@@ -18,7 +18,7 @@ menu "CONFIG SSL"
         int "Maximum len of outgoing fragments."
         default 4096
 
-    if AMEBAGREEN2||AMEBAL2          #amebagreen2 amebaL2
+    if AMEBAGREEN2          # only for amebagreen2 km4tz
         config SSL_ROM_TEST_MENU
             bool "SSL ROM Test"
             select SSL_ROM_TEST if CORE_AS_AP
