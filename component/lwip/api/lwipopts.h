@@ -87,8 +87,6 @@ extern unsigned int sys_now(void);
 #define SO_REUSE                        1
 /* Statistics options */
 #define LWIP_STATS                      0
-/* IPv6 options */
-#define LWIP_IPV6                       0
 /* Other lwip options */
 #define DHCP_COARSE_TIMER_SECS          60
 #define LWIP_COMPAT_MUTEX               0
@@ -105,6 +103,13 @@ extern unsigned int sys_now(void);
 
 
 /* ------------------------------------ Options for different sdk configurations ------------------------------------ */
+#if defined(CONFIG_LWIP_IPV6) && (CONFIG_LWIP_IPV6 == 1)
+/* IPv6 options */
+#define LWIP_IPV6                       1
+#else
+#define LWIP_IPV6                       0
+#endif
+
 #ifdef CONFIG_LWIP_DEBUG
 #define LWIP_DEBUG                      1
 #endif

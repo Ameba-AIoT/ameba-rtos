@@ -93,8 +93,6 @@ int atcmd_bt_tmap(int argc, char *argv[]);
 
 int atcmd_bt_gmap(int argc, char *argv[]);
 
-int atcmd_bt_config(int argc, char *argv[]);
-
 int atcmd_bt_pts(int argc, char *argv[]);
 
 /* bt vendor cmd implementation */
