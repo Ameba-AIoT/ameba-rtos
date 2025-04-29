@@ -170,11 +170,6 @@ uint16_t rtk_bt_set_tx_power(rtk_bt_vendor_tx_power_param_t *tx_power)
 		data[2] = tx_power->tx_gain;
 		param.len = 3;
 	} else if (1 == tx_power->tx_power_type) {
-		uint8_t conn_id = 0;
-		if (RTK_BT_OK != rtk_bt_le_gap_get_conn_id(tx_power->conn_tx_power.conn_handle, &conn_id)) {
-			BT_LOGE("%s: conn_handle %d is not connect!\r\n", __func__, tx_power->conn_tx_power.conn_handle);
-			return RTK_BT_FAIL;
-		}
 		data[0] = SUB_CMD_SET_CONN_TX_POWER;
 		data[1] = tx_power->conn_tx_power.conn_handle & 0xFF;
 		data[2] = (tx_power->conn_tx_power.conn_handle >> 8) & 0xFF;
@@ -186,7 +181,7 @@ uint16_t rtk_bt_set_tx_power(rtk_bt_vendor_tx_power_param_t *tx_power)
 		return RTK_BT_FAIL;
 	}
 
-	param.op = VENDOR_CMD_SET_TX_POWER_OPCODE;
+	param.op = VENDOR_CMD_LE_EXTENSION_FEATURE_OPCODE;
 	param.cmd_param = data;
 
 	return rtk_bt_gap_vendor_cmd_req(&param);

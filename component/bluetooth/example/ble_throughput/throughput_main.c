@@ -202,7 +202,6 @@ static rtk_bt_evt_cb_ret_t ble_throughput_gap_app_callback(uint8_t evt_code, voi
 
 	case RTK_BT_LE_GAP_EVT_DISCONN_IND: {
 		rtk_bt_le_disconn_ind_t *disconn_ind = (rtk_bt_le_disconn_ind_t *)param;
-		rtk_bt_le_gap_dev_state_t dev_state;
 		rtk_bt_le_addr_to_str(&(disconn_ind->peer_addr), le_addr, sizeof(le_addr));
 		role = disconn_ind->role ? "slave" : "master";
 		BT_LOGA("[APP] Disconnected, reason: 0x%x, handle: %d, role: %s, remote device: %s\r\n",
@@ -210,17 +209,21 @@ static rtk_bt_evt_cb_ret_t ble_throughput_gap_app_callback(uint8_t evt_code, voi
 		BT_AT_PRINT("+BLEGAP:disconn,0x%x,%d,%s,%s\r\n",
 					disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
 
-		if (RTK_BT_LE_ROLE_SLAVE == disconn_ind->role &&
-			rtk_bt_le_gap_get_dev_state(&dev_state) == RTK_BT_OK &&
-			dev_state.gap_adv_state == RTK_BT_LE_ADV_STATE_IDLE) {
+		if (RTK_BT_LE_ROLE_SLAVE == disconn_ind->role) {
 #if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
-			BT_LOGA("[APP] Reconnect Ext ADV starting, adv event prop:%d,  own addr type: %d, filter policy: %d\r\n",
-					def_tp_ext_adv_param.adv_event_prop, def_tp_ext_adv_param.own_addr.type, def_tp_ext_adv_param.filter_policy);
-			BT_APP_PROCESS(rtk_bt_le_gap_start_ext_adv(tp_ext_adv_handle, 0, 0));
+			if (rtk_bt_le_gap_adv_is_idle()) {
+				BT_LOGA("[APP] Reconnect Ext ADV starting, adv event prop:%d,  own addr type: %d, filter policy: %d\r\n",
+						def_tp_ext_adv_param.adv_event_prop, def_tp_ext_adv_param.own_addr.type, def_tp_ext_adv_param.filter_policy);
+				BT_APP_PROCESS(rtk_bt_le_gap_start_ext_adv(tp_ext_adv_handle, 0, 0));
+			}
 #else
-			BT_LOGA("[APP] Reconnect ADV starting, adv type:%d,  own addr type: %d, filter policy: %d\r\n",
-					def_tp_adv_param.type, def_tp_adv_param.own_addr_type, def_tp_adv_param.filter_policy);
-			BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&def_tp_adv_param));
+			rtk_bt_le_gap_dev_state_t dev_state;
+			if (rtk_bt_le_gap_get_dev_state(&dev_state) == RTK_BT_OK &&
+				dev_state.gap_adv_state == RTK_BT_LE_ADV_STATE_IDLE) {
+				BT_LOGA("[APP] Reconnect ADV starting, adv type:%d,  own addr type: %d, filter policy: %d\r\n",
+						def_tp_adv_param.type, def_tp_adv_param.own_addr_type, def_tp_adv_param.filter_policy);
+				BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&def_tp_adv_param));
+			}
 #endif
 			if (RTK_BT_OK == ble_throughput_server_link_disconnected(disconn_ind->conn_handle)) {
 				BT_LOGA("[APP] Throughput server link disconnect success, conn_handle: %d\r\n",

@@ -33,7 +33,7 @@ extern "C"
 #define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_NUM 1 /* should be <= RTK_BT_LE_AUDIO_BROADCASTER_BIS_MAX_NUM within rtk_bt_bap.h */
 #define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_SUB_GROUP_NUM 1 /* should be <= RTK_BT_LE_AUDIO_BROADCASTER_SUBGROUP_MAX_NUM within rtk_bt_bap.h */
 #define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_GROUP_NUM 1
-/*                                             user cfg max config end                                      */
+/*                                             user cfg max config end                                   */
 /*                                              user cfg media start                                     */
 /* stream source config */
 #define RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT 1
@@ -63,7 +63,13 @@ extern "C"
 #define RTK_BT_LE_AUDIO_DEFAULT_CODEC_CFG_ITEM RTK_BT_LE_CODEC_CFG_ITEM_16_2
 #define RTK_BT_LE_AUDIO_DEFAULT_QOS_CFG_TYPE RTK_BT_LE_QOS_CFG_CIS_HIG_RELIABILITY
 /*                                              user cfg unicast end                                      */
-/*                                             user cfg broadcast start                                     */
+/*                                              user cfg le audio ISO interval config start              */
+#define RTK_BT_ISO_INTERVAL_10_MS                         0x01
+#define RTK_BT_ISO_INTERVAL_20_MS                         0x02
+#define RTK_BT_ISO_INTERVAL_30_MS                         0x03
+#define RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG           RTK_BT_ISO_INTERVAL_10_MS
+/*                                              user cfg le audio ISO interval config end                */
+/*                                                user cfg broadcast start                               */
 /* broadcast init parameter */
 #define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_CODEC_CFG               RTK_BT_LE_CODEC_CFG_ITEM_16_2
 #define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_QOS_CFG                 RTK_BT_LE_QOS_CFG_BIS_LOW_LATENCY
@@ -85,8 +91,13 @@ extern "C"
 #define RTK_BT_LE_AUDIO_PA_INTERVAL_MIN (80)
 /** @brief  Default maximum periodic advertising interval */
 #define RTK_BT_LE_AUDIO_PA_INTERVAL_MAX (80)
-/*                                              user cfg broadcast end                                      */
-/*                                                   cap cfg start                                          */
+/*                                              user cfg broadcast end                                   */
+/*                                             user cfg le audio combo demo configuration start          */
+#define RTK_BT_LE_AUDIO_COMPO_DEMO_AUDIO_STREAM_SAMPLE_RATE     RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K
+#define RTK_BT_LE_AUDIO_COMPO_DEMO_DEFAULT_BIS_CODEC_CFG        RTK_BT_LE_CODEC_CFG_ITEM_48_2
+#define RTK_BT_LE_AUDIO_COMPO_DEMO_DEFAULT_BIS_QOS_CFG          RTK_BT_LE_QOS_CFG_BIS_HIG_RELIABILITY
+/*                                             user cfg le audio combo demo configuration end            */
+/*                                                   cap cfg start                                       */
 #if defined(RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT) && RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT
 /* Define Audio VCS and MICS value.*/
 #define RTK_BT_LE_AUDIO_MAX_VCS_OUTPUT_LEVEL 15

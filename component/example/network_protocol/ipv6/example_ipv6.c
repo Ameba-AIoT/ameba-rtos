@@ -21,23 +21,23 @@ static void ipv6_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_a
 	LWIP_UNUSED_ARG(arg);
 
 	if (p == NULL) {
-		printf("\n\r[ERROR] No pbuf, p == NULL\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] No pbuf, p == NULL\n");
 		return;
 	}
 
 	netifp = &xnetif[0];
 
 	if (netifp == NULL) {
-		printf("\n\r[ERROR] No route, netif == NULL\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] No route, netif == NULL\n");
 	} else {
-		printf("\n\r[INFO] Receive data: %s\n", (char *)p->payload);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive data: %s\n", (char *)p->payload);
 
 		memcpy(p->payload, send_data, MAX_SEND_SIZE);
 		err = udp_sendto_if(pcb, p, addr, port, netifp);
 		if (err == ERR_OK) {
-			printf("\n\r[INFO] Send data to client successfully\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Send data to client successfully\n");
 		} else {
-			printf("\n\r[ERROR] Failed to send data, error:%d\n", err);
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Failed to send data, error:%d\n", err);
 		}
 	}
 	pbuf_free(p);
@@ -50,14 +50,14 @@ static void example_ipv6_udp_server(void)
 	pcb = udp_new_ip6();
 	if (pcb != NULL) {
 		if (udp_bind(pcb, IP6_ADDR_ANY, UDP_SERVER_PORT) != 0) {
-			printf("\n\r[ERROR] Bind failed\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Bind failed\n");
 			return;
 		}
-		printf("\n\r[INFO] Bind successfully\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Bind successfully\n");
 
 		udp_recv(pcb, ipv6_recv, NULL);
 	} else {
-		printf("\n\r[ERROR] Unable to allocate pcb\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Unable to allocate pcb\n");
 	}
 }
 #else
@@ -73,10 +73,10 @@ static void example_ipv6_udp_server(void)
 
 	//create socket
 	if ((server_fd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
-		printf("\n\r[ERROR] Create socket failed\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Create socket failed\n");
 		return;
 	}
-	printf("\n\r[INFO] Create socket successfully\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Create socket successfully\n");
 
 	//initialize structure dest
 	memset(&ser_addr, 0, sizeof(ser_addr));
@@ -86,21 +86,21 @@ static void example_ipv6_udp_server(void)
 
 	//Assign a port number to socket
 	if (bind(server_fd, (struct sockaddr *)&ser_addr, sizeof(ser_addr)) != 0) {
-		printf("\n\r[ERROR] Bind socket failed\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Bind socket failed\n");
 		closesocket(server_fd);
 		return;
 	}
-	printf("\n\r[INFO] Bind socket successfully\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Bind socket successfully\n");
 
 	while (1) {
 		memset(recv_data, 0, MAX_RECV_SIZE);
 		if (recvfrom(server_fd, recv_data, MAX_RECV_SIZE, 0, (struct sockaddr *)&client_addr, &addrlen) > 0) {
-			printf("\n\r[INFO] Receive data : %s\n", recv_data);
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive data : %s\n", recv_data);
 			//Send Response
 			if (sendto(server_fd, send_data, MAX_SEND_SIZE, 0, (struct sockaddr *)&client_addr, addrlen) == -1) {
-				printf("\n\r[ERROR] Send data failed\n");
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Send data failed\n");
 			} else {
-				printf("\n\r[INFO] Send data successfully\n");
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Send data successfully\n");
 			}
 		}
 	}
@@ -126,10 +126,10 @@ static void example_ipv6_udp_client(void)
 
 	//create socket
 	if ((client_fd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
-		printf("\n\r[ERROR] Create socket failed\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Create socket failed\n");
 		return;
 	}
-	printf("\n\r[INFO] Create socket successfully\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Create socket successfully\n");
 
 	recv_timeout.tv_sec = RECV_TO / 1000;
 	recv_timeout.tv_usec = (RECV_TO % 1000) * 1000;
@@ -150,7 +150,7 @@ static void example_ipv6_udp_client(void)
 		inet6_addr_from_ip6addr(&src_addr6.sin6_addr, (ip6_addr_t *)&xnetif[0].ip6_addr[0]);
 
 		if (bind(client_fd, (struct sockaddr *)&src_addr6, sizeof(src_addr6)) != 0) {
-			printf("\n\r[ERROR] Bind socket failed\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Bind socket failed\n");
 			closesocket(client_fd);
 			return;
 		}
@@ -159,17 +159,17 @@ static void example_ipv6_udp_client(void)
 	while (1) {
 		//Send data to server
 		if (sendto(client_fd, send_data, MAX_SEND_SIZE, 0, (struct sockaddr *)&ser_addr, sizeof(ser_addr)) == -1) {
-			printf("\n\r[ERROR] Send data failed\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Send data failed\n");
 		} else {
-			printf("\n\r[INFO] Send data to server successfully\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Send data to server successfully\n");
 		}
 
 		//Receive data from server response
 		memset(recv_data, 0, MAX_RECV_SIZE);
 		if (recvfrom(client_fd, recv_data, MAX_RECV_SIZE, 0, (struct sockaddr *)&ser_addr, &addrlen) <= 0) {
-			printf("\n\r[ERROR] Receive data timeout\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Receive data timeout\n");
 		} else {
-			printf("\n\r[INFO] Receive from server: %s\n", recv_data);
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive from server: %s\n", recv_data);
 		}
 		rtos_time_delay_ms(1000);
 	}
@@ -191,10 +191,10 @@ static void example_ipv6_tcp_server(void)
 
 	//create socket
 	if ((server_fd = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP)) == -1) {
-		printf("\n\r[ERROR] Create socket failed\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Create socket failed\n");
 		return;
 	}
-	printf("\n\r[INFO] Create socket successfully\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Create socket successfully\n");
 
 	//initialize structure dest
 	memset(&ser_addr, 0, sizeof(ser_addr));
@@ -204,38 +204,38 @@ static void example_ipv6_tcp_server(void)
 
 	//Assign a port number to socket
 	if (bind(server_fd, (struct sockaddr *)&ser_addr, sizeof(ser_addr)) != 0) {
-		printf("\n\r[ERROR] Bind socket failed\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Bind socket failed\n");
 		closesocket(server_fd);
 		return;
 	}
-	printf("\n\r[INFO] Bind socket successfully\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Bind socket successfully\n");
 
 	//Make it listen to socket with max 20 connections
 	if (listen(server_fd, 20) != 0) {
-		printf("\n\r[ERROR] Listen socket failed\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Listen socket failed\n");
 		closesocket(server_fd);
 		return;
 	}
-	printf("\n\r[INFO] Listen socket successfully\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Listen socket successfully\n");
 
 	//Accept
 	if ((client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &addrlen)) == -1) {
-		printf("\n\r[ERROR] Accept connection failed\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Accept connection failed\n");
 		closesocket(server_fd);
 		closesocket(client_fd);
 		return;
 	}
-	printf("\n\r[INFO] Accept connection successfully\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Accept connection successfully\n");
 
 	while (1) {
 		memset(recv_data, 0, MAX_RECV_SIZE);
 		if (recv(client_fd, recv_data, MAX_RECV_SIZE, 0) > 0) {
-			printf("\n\r[INFO] Receive data : %s\n", recv_data);
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive data : %s\n", recv_data);
 			//Send Response
 			if (send(client_fd, send_data, MAX_SEND_SIZE, 0) == -1) {
-				printf("\n\r[ERROR] Send data failed\n");
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Send data failed\n");
 			} else {
-				printf("\n\r[INFO] Send data successfully\n");
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Send data successfully\n");
 			}
 		}
 	}
@@ -256,10 +256,10 @@ static void example_ipv6_tcp_client(void)
 
 	//create socket
 	if ((client_fd = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP)) ==  -1) {
-		printf("\n\r[ERROR] Create socket failed\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Create socket failed\n");
 		return;
 	}
-	printf("\n\r[INFO] Create socket successfully\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Create socket successfully\n");
 
 	//initialize value in dest
 	memset(&ser_addr, 0, sizeof(ser_addr));
@@ -277,7 +277,7 @@ static void example_ipv6_tcp_client(void)
 		inet6_addr_from_ip6addr(&src_addr6.sin6_addr, (ip6_addr_t *)&xnetif[0].ip6_addr[0]);
 
 		if (bind(client_fd, (struct sockaddr *)&src_addr6, sizeof(src_addr6)) != 0) {
-			printf("\n\r[ERROR] Bind socket failed\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Bind socket failed\n");
 			closesocket(client_fd);
 			return;
 		}
@@ -285,23 +285,23 @@ static void example_ipv6_tcp_client(void)
 
 	//Connecting to server
 	if (connect(client_fd, (struct sockaddr *)&ser_addr, sizeof(ser_addr)) == -1) {
-		printf("\n\r[ERROR] Connect to server failed\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Connect to server failed\n");
 	}
-	printf("[INFO] Connect to server successfully\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "[INFO] Connect to server successfully\n");
 
 	while (1) {
 		//Send data to server
 		if (send(client_fd, send_data, MAX_SEND_SIZE, 0) == -1) {
-			printf("\n\r[ERROR] Send data failed\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Send data failed\n");
 		} else {
-			printf("\n\r[INFO] Send data to server successfully\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Send data to server successfully\n");
 		}
 
 		//Receive data from server response
 		if (recv(client_fd, recv_data, MAX_RECV_SIZE, 0) <= 0) {
-			//printf("\n\r[ERROR] Receive data failed\n");
+			//RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Receive data failed\n");
 		} else {
-			printf("\n\r[INFO] Receive from server: %s\n", recv_data);
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive from server: %s\n", recv_data);
 		}
 		rtos_time_delay_ms(1000);
 	}
@@ -318,19 +318,19 @@ static void example_ipv6_mcast_server(void)
 	pcb = udp_new_ip6();
 	if (pcb != NULL) {
 		if (udp_bind(pcb, IP6_ADDR_ANY, MCAST_GROUP_PORT) != 0) {
-			printf("\n\r[ERROR] Bind failed\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Bind failed\n");
 			return;
 		}
-		printf("\n\r[INFO] Bind successfully\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Bind successfully\n");
 
 		inet_pton(AF_INET6, MCAST_GROUP_IP, &(mcast_addr.addr));
 		if (mld6_joingroup(IP6_ADDR_ANY6, &mcast_addr) != 0) {
-			printf("\n\r[ERROR] Register to ipv6 multicast group failed\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Register to ipv6 multicast group failed\n");
 		}
 
 		udp_recv(pcb, ipv6_recv, NULL);
 	} else {
-		printf("\n\r[ERROR] Unable to allocate pcb\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Unable to allocate pcb\n");
 	}
 }
 #else
@@ -350,15 +350,15 @@ static void example_ipv6_mcast_server(void)
 	ip6_addr_assign_zone(&mcast_addr, IP6_MULTICAST, &xnetif[0]);
 
 	if (mld6_joingroup(IP6_ADDR_ANY6, &mcast_addr) != 0) {
-		printf("\n\r[ERROR] Register to ipv6 multicast group failed\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Register to ipv6 multicast group failed\n");
 	}
 
 	//create socket
 	if ((server_fd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
-		printf("\n\r[ERROR] Create socket failed\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Create socket failed\n");
 		return;
 	}
-	printf("\n\r[INFO] Create socket successfully\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Create socket successfully\n");
 
 	//initialize structure dest
 	memset(&ser_addr, 0, sizeof(ser_addr));
@@ -368,21 +368,21 @@ static void example_ipv6_mcast_server(void)
 
 	//Assign a port number to socket
 	if (bind(server_fd, (struct sockaddr *)&ser_addr, sizeof(ser_addr)) != 0) {
-		printf("\n\r[ERROR] Bind socket failed\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Bind socket failed\n");
 		closesocket(server_fd);
 		return;
 	}
-	printf("\n\r[INFO] Bind socket successfully\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Bind socket successfully\n");
 
 	while (1) {
 		memset(recv_data, 0, MAX_RECV_SIZE);
 		if (recvfrom(server_fd, recv_data, MAX_RECV_SIZE, 0, (struct sockaddr *)&client_addr, &addrlen) > 0) {
-			printf("\n\r[INFO] Receive data : %s\n", recv_data);
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive data : %s\n", recv_data);
 			//Send Response
 			if (sendto(server_fd, send_data, MAX_SEND_SIZE, 0, (struct sockaddr *)&client_addr, addrlen) == -1) {
-				printf("\n\r[ERROR] Send data failed\n");
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Send data failed\n");
 			} else {
-				printf("\n\r[INFO] Send data successfully\n");
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Send data successfully\n");
 			}
 		}
 	}
@@ -406,10 +406,10 @@ static void example_ipv6_mcast_client(void)
 
 	//create socket
 	if ((client_fd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) ==  -1) {
-		printf("\n\r[ERROR] Create socket failed\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Create socket failed\n");
 		return;
 	}
-	printf("\n\r[INFO] Create socket successfully\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Create socket successfully\n");
 
 	recv_timeout.tv_sec = RECV_TO / 1000;
 	recv_timeout.tv_usec = (RECV_TO % 1000) * 1000;
@@ -431,7 +431,7 @@ static void example_ipv6_mcast_client(void)
 		inet6_addr_from_ip6addr(&src_addr6.sin6_addr, (ip6_addr_t *)&xnetif[0].ip6_addr[0]);
 
 		if (bind(client_fd, (struct sockaddr *)&src_addr6, sizeof(src_addr6)) != 0) {
-			printf("\n\r[ERROR] Bind socket failed\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Bind socket failed\n");
 			closesocket(client_fd);
 			return;
 		}
@@ -440,17 +440,17 @@ static void example_ipv6_mcast_client(void)
 	while (1) {
 		//Send data to server
 		if (sendto(client_fd, send_data, MAX_SEND_SIZE, 0, (struct sockaddr *)&ser_addr, sizeof(ser_addr)) == -1) {
-			printf("\n\r[ERROR] Send data failed\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Send data failed\n");
 		} else {
-			printf("\n\r[INFO] Send data to server successfully\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Send data to server successfully\n");
 		}
 
 		//Receive data from server response
 		memset(recv_data, 0, MAX_RECV_SIZE);
 		if (recvfrom(client_fd, recv_data, MAX_RECV_SIZE, 0, (struct sockaddr *)&ser_addr, &addrlen) <= 0) {
-			printf("\n\r[ERROR] Receive data timeout\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Receive data timeout\n");
 		} else {
-			printf("\n\r[INFO] Receive from server: %s\n", recv_data);
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive from server: %s\n", recv_data);
 		}
 		rtos_time_delay_ms(1000);
 	}
@@ -463,7 +463,7 @@ static void example_ipv6_udp_server_thread(void *param)
 	/* To avoid gcc warnings */
 	(void) param;
 
-	printf("\nExample: IPV6 UDP Server\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: IPV6 UDP Server\n");
 
 	example_ipv6_udp_server();
 
@@ -475,7 +475,7 @@ static void example_ipv6_tcp_server_thread(void *param)
 	/* To avoid gcc warnings */
 	(void) param;
 
-	printf("\nExample: IPV6 TCP Server\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: IPV6 TCP Server\n");
 
 	example_ipv6_tcp_server();
 
@@ -487,7 +487,7 @@ static void example_ipv6_mcast_server_thread(void *param)
 	/* To avoid gcc warnings */
 	(void) param;
 
-	printf("\nExample: IPV6 MCAST Server\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: IPV6 MCAST Server\n");
 
 	example_ipv6_mcast_server();
 
@@ -499,7 +499,7 @@ static void example_ipv6_udp_client_thread(void *param)
 	/* To avoid gcc warnings */
 	(void) param;
 
-	printf("\nExample: IPV6 UDP Client\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: IPV6 UDP Client\n");
 
 	example_ipv6_udp_client();
 
@@ -511,7 +511,7 @@ static void example_ipv6_tcp_client_thread(void *param)
 	/* To avoid gcc warnings */
 	(void) param;
 
-	printf("\nExample: IPV6 TCP Client\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: IPV6 TCP Client\n");
 
 	example_ipv6_tcp_client();
 
@@ -523,7 +523,7 @@ static void example_ipv6_mcast_client_thread(void *param)
 	/* To avoid gcc warnings */
 	(void) param;
 
-	printf("\nExample: IPV6 MCAST Client\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: IPV6 MCAST Client\n");
 
 	example_ipv6_mcast_client();
 
@@ -538,42 +538,58 @@ static void example_ipv6_thread(void *param)
 	// Delay to check successful WiFi connection and obtain of an IP address
 	LwIP_Check_Connectivity();
 
-	printf("\nExample: IPV6 \n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: IPV6 \n");
 
 	LwIP_AUTOIP_IPv6(&xnetif[0]);
 	//Wait for ipv6 addr process conflict done
 	while (!ip6_addr_isvalid(netif_ip6_addr_state(&xnetif[0], 0))) {
 		rtos_time_delay_ms(10);
 	}
-
 	/***---open a example service once!!---***/
+#if EXAMPLE_IPV6_UDP
+
+#if UDP_SERVER
 	if (rtos_task_create(NULL, ((const char *)"example_ipv6_udp_server_thread"), example_ipv6_udp_server_thread, NULL, 1024 * 4, 1 + 4) != RTK_SUCCESS) {
-		printf("\n\r%s rtos_task_create(example_ipv6_udp_server_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r%s rtos_task_create(example_ipv6_udp_server_thread) failed", __FUNCTION__);
 	}
-	if (rtos_task_create(NULL, ((const char *)"example_ipv6_tcp_server_thread"), example_ipv6_tcp_server_thread, NULL, 1024 * 4, 1 + 4) != RTK_SUCCESS) {
-		printf("\n\r%s rtos_task_create(example_ipv6_tcp_server_thread) failed", __FUNCTION__);
-	}
-	if (rtos_task_create(NULL, ((const char *)"example_ipv6_mcast_server_thread"), example_ipv6_mcast_server_thread, NULL, 1024 * 4, 1 + 4) != RTK_SUCCESS) {
-		printf("\n\r%s rtos_task_create(example_ipv6_mcast_server_thread) failed", __FUNCTION__);
-	}
-
+#else
 	if (rtos_task_create(NULL, ((const char *)"example_ipv6_udp_client_thread"), example_ipv6_udp_client_thread, NULL, 1024 * 4, 1 + 4) != RTK_SUCCESS) {
-		printf("\n\r%s rtos_task_create(example_ipv6_udp_client_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r%s rtos_task_create(example_ipv6_udp_client_thread) failed", __FUNCTION__);
 	}
-	if (rtos_task_create(NULL, ((const char *)"example_ipv6_tcp_client_thread"), example_ipv6_tcp_client_thread, NULL, 1024 * 4, 1 + 4) != RTK_SUCCESS) {
-		printf("\n\r%s rtos_task_create(example_ipv6_tcp_client_thread) failed", __FUNCTION__);
-	}
-	if (rtos_task_create(NULL, ((const char *)"example_ipv6_mcast_client_thread"), example_ipv6_mcast_client_thread, NULL, 1024 * 4, 1 + 4) != RTK_SUCCESS) {
-		printf("\n\r%s rtos_task_create(example_ipv6_mcast_client_thread) failed", __FUNCTION__);
-	}
+#endif
 
+#elif EXAMPLE_IPV6_TCP
+
+#if TCP_SERVER
+	if (rtos_task_create(NULL, ((const char *)"example_ipv6_tcp_server_thread"), example_ipv6_tcp_server_thread, NULL, 1024 * 4, 1 + 4) != RTK_SUCCESS) {
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r%s rtos_task_create(example_ipv6_tcp_server_thread) failed", __FUNCTION__);
+	}
+#else
+	if (rtos_task_create(NULL, ((const char *)"example_ipv6_tcp_client_thread"), example_ipv6_tcp_client_thread, NULL, 1024 * 4, 1 + 4) != RTK_SUCCESS) {
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r%s rtos_task_create(example_ipv6_tcp_client_thread) failed", __FUNCTION__);
+	}
+#endif
+
+#elif EXAMPLE_IPV6_MCAST
+
+#if MCAST_SERVER
+	if (rtos_task_create(NULL, ((const char *)"example_ipv6_mcast_server_thread"), example_ipv6_mcast_server_thread, NULL, 1024 * 4, 1 + 4) != RTK_SUCCESS) {
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r%s rtos_task_create(example_ipv6_mcast_server_thread) failed", __FUNCTION__);
+	}
+#else
+	if (rtos_task_create(NULL, ((const char *)"example_ipv6_mcast_client_thread"), example_ipv6_mcast_client_thread, NULL, 1024 * 4, 1 + 4) != RTK_SUCCESS) {
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r%s rtos_task_create(example_ipv6_mcast_client_thread) failed", __FUNCTION__);
+	}
+#endif
+
+#endif
 	rtos_task_delete(NULL);
 }
 
 void example_ipv6(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_ipv6_thread"), example_ipv6_thread, NULL, 1024 * 4, 1 + 4) != RTK_SUCCESS) {
-		printf("\n\r%s rtos_task_create(example_ipv6_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r%s rtos_task_create(example_ipv6_thread) failed", __FUNCTION__);
 	}
 }
 #endif

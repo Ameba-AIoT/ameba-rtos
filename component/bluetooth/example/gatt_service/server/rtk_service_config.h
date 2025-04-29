@@ -18,14 +18,13 @@ extern "C"  {
 #define IMMEDIATE_ALERT_SRV_ID              4
 #define GLUCOSE_SRV_ID                      5
 #define HID_SRV_ID                          6
-#define BT_CONFIG_SRV_ID                    7
-#define LONG_UUID_SRV_ID                    8
-#define CTE_SRV_ID                          9
-#define PTS_VENDOR_SRV_ID                   10
-#define THROUGHPUT_SRV_ID                   11
+#define LONG_UUID_SRV_ID                    7
+#define CTE_SRV_ID                          8
+#define PTS_VENDOR_SRV_ID                   9
+#define THROUGHPUT_SRV_ID                   10
+#define BLE_WIFIMATE_SRV_ID                 11
 #define TRANSFER_MODULE_SRV_ID              12
 #define BLE_OTA_SRV_ID                      13
-#define BLE_WIFIMATE_SRV_ID                 14
 
 #ifdef __cplusplus
 }
