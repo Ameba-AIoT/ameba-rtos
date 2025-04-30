@@ -27,7 +27,7 @@ uint8_t coap_tx_cb(uint8_t *a, uint16_t b, sn_nsdl_addr_s *c, void *d)
 	(void)c;
 	(void)d;
 
-	printf("coap tx cb\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "coap tx cb\n");
 	return 0;
 }
 
@@ -38,7 +38,7 @@ int8_t coap_rx_cb(sn_coap_hdr_s *a, sn_nsdl_addr_s *b, void *c)
 	(void)b;
 	(void)c;
 
-	printf("coap rx cb\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "coap rx cb\n");
 	return 0;
 }
 
@@ -50,7 +50,7 @@ static void example_coap_thread(void *para)
 	// Delay to check successful WiFi connection and obtain of an IP address
 	LwIP_Check_Connectivity();
 
-	printf("\nCoAP Client Example\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nCoAP Client Example\n");
 
 	// Initialize the CoAP protocol handle, pointing to local implementations on malloc/free/tx/rx functions
 	coapHandle = coap_protocol_init(&coap_tx_cb, &coap_rx_cb);
@@ -118,7 +118,7 @@ static void example_coap_thread(void *para)
 		bytes[2] = (ip >> 16) & 0xFF;
 		bytes[3] = (ip >> 24) & 0xFF;
 
-		printf("\nReceived %d bytes from '%d.%d.%d.%d:%d'\n", ret, bytes[0], bytes[1], bytes[2], bytes[3], from_address.sin_port);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nReceived %d bytes from '%d.%d.%d.%d:%d'\n", ret, bytes[0], bytes[1], bytes[2], bytes[3], from_address.sin_port);
 
 		sn_coap_hdr_s *parsed = sn_coap_parser(coapHandle, ret, recv_buffer, &coapVersion);
 
@@ -137,7 +137,7 @@ static void example_coap_thread(void *para)
 void example_coap(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_coap_thread"), example_coap_thread, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
-		printf("\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
 	}
 }
 
