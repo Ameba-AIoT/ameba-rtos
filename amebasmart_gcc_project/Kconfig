@@ -87,7 +87,7 @@ menu "CONFIG WHC INTF"
         prompt "WHC MODE"
         default WHC_INTF_IPC_MENU
         config WHC_INTF_IPC_MENU
-            bool "INIC_IPC"
+            bool "WHC_IPC"
             select CORE_AS_NP_FOR_KM4
             select CORE_AS_AP_FOR_CA32
         # config FULLMAC_DEV

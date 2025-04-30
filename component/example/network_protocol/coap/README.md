@@ -8,28 +8,7 @@ None
 
 # SW configuration
 
-1. Add include directories to project.
-   - For AmebaSmart, cancel comment in `network.cmake`:
-		```
-		${c_CMPT_NETWORK_DIR}/coap/sn_coap_ameba_port.c
-		${c_CMPT_NETWORK_DIR}/coap/sn_coap_builder.c
-		${c_CMPT_NETWORK_DIR}/coap/sn_coap_header_check.c
-		${c_CMPT_NETWORK_DIR}/coap/sn_coap_parser.c
-		${c_CMPT_NETWORK_DIR}/coap/sn_coap_protocol.c
-		```
-   - For AmebaLite & AmebaDplus, cancel comment in `network/lwip/CMakeLists.txt`:
-		```
-		${NETWORK}/coap/include
-
-		${NETWORK}/coap/sn_coap_ameba_port.c
-		${NETWORK}/coap/sn_coap_builder.c
-		${NETWORK}/coap/sn_coap_header_check.c
-		${NETWORK}/coap/sn_coap_parser.c
-		${NETWORK}/coap/sn_coap_protocol.c
-		```
-
-
-2. How to use:
+1. How to use:
    - Run `./build.py -a coap` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
    - `Download` images to board by Ameba Image Tool.
 
