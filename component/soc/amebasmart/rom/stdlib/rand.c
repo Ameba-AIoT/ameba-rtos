@@ -77,7 +77,7 @@ u32 __wrap_rand(void)
 /**
   * @brief  Get Rand data from TRNG
   * @param  buf: TRNG data target buf
-   * @param  Len: request data len
+* @param  Len: request data len
   * @retval successful or not
   */
 HAL_ROM_TEXT_SECTION _LONG_CALL_

@@ -19,7 +19,6 @@
 #define HCI_WRITE_PHY_EFUSE_LEN    0x6D
 #endif
 
-#define HCI_PATCH_PROJECT_ID       0x28
 #define HCI_PATCH_FLASH_ADDRESS    0x08300000    /* Temp value, need sync flash layout with platform owner if use this function */
 
 #define HCI_BT_COEX_ENABLE         1

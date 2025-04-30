@@ -7,11 +7,11 @@ INDEX
 
 ANSI_SYNOPSIS
 	#include <string.h>
-	int strcmp(const char *<[a]>, const char *<[b]>);
+	int _strcmp(const char *<[a]>, const char *<[b]>);
 
 TRAD_SYNOPSIS
 	#include <string.h>
-	int strcmp(<[a]>, <[b]>)
+	int _strcmp(<[a]>, <[b]>)
 	char *<[a]>;
 	char *<[b]>;
 

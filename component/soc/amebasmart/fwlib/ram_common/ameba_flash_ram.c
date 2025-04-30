@@ -305,7 +305,7 @@ exit:
 	return 1;
 }
 
-
+#if 0//defined (CONFIG_ARM_CORE_CM0)
 /**
   * @brief    Configure SPIC IP Clock.
   * @param  Source:  This parameter can be one of the following values:
@@ -320,7 +320,7 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 	/* To avoid gcc warnings */
 	(void) Source;
 	(void) Protection;
-#if defined (CONFIG_ARM_CORE_CM0)
+
 	u32 Temp = 0;
 	u32 timeout = 20;
 
@@ -379,5 +379,6 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 		asm volatile("cpsie i" : : : "memory");
 		//asm volatile ("cpsie f" : : : "memory");
 	}
-#endif
+
 }
+#endif

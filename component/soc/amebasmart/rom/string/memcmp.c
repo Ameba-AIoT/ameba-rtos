@@ -7,11 +7,11 @@ INDEX
 
 ANSI_SYNOPSIS
 	#include <string.h>
-	int memcmp(const void *<[s1]>, const void *<[s2]>, size_t <[n]>);
+	int _memcmp(const void *<[s1]>, const void *<[s2]>, size_t <[n]>);
 
 TRAD_SYNOPSIS
 	#include <string.h>
-	int memcmp(<[s1]>, <[s2]>, <[n]>)
+	int _memcmp(<[s1]>, <[s2]>, <[n]>)
 	void *<[s1]>;
 	void *<[s2]>;
 	size_t <[n]>;
