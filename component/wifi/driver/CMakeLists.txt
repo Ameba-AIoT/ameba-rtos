@@ -29,8 +29,6 @@ ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/wifi_tunnel
     ${c_CMPT_BLUETOOTH_DIR}/driver/bt_inic
     ${c_CMPT_WIFI_DIR}/wifi_reg/common
-    ${c_CMPT_WIFI_DIR}/wifi_fast_connect
-    ${c_CMPT_WIFI_DIR}/wifi_auto_reconnect
     ${c_CMPT_WIFI_DIR}/wifi_fw/common
     ${c_CMPT_WIFI_DIR}/wifi_fw/${c_SOC_TYPE}/include
 )

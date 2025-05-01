@@ -7,21 +7,14 @@
 import argparse
 import json
 import os
-import subprocess
-import sys
 import uuid
 import xml.dom.minidom
 
-LOONG_SDK_BRIEF_DESC = 'Realtek Loong FreeRTOS SDK'
+import base.rtk_utils
+
+
 LOONG_SDK_MANIFEST_FILE = os.path.join('.repo', 'manifest.xml')
-LOONG_SDK_QUERY_CFG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'query.json')
-LOONG_SDK_APP_FILE = 'main.c'
-
 CMD_GET_MANIFEST_URL = "cat .repo/manifests.git/config | grep -m 1 url | cut -d\"=\" -f 2"
-
-def run_shell_cmd_with_output(cmd):
-    return subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-
 
 def do_query_app(sdkroot, cfg):
     include_path_list = [os.path.normpath(os.path.join(sdkroot, x)) for x in cfg.get("apps", {}).get("include", [])]
@@ -108,10 +101,6 @@ def do_query_device(cfg):
     print(ret)
 
 
-def is_repo_workspace():
-    return os.path.exists('.repo') and os.path.isdir('.repo')
-
-
 def do_query_info(sdkroot, cfg):
     repo_info = cfg['info']
     info = dict()
@@ -121,7 +110,7 @@ def do_query_info(sdkroot, cfg):
     info['soc'] = repo_info['soc']
     info['os'] = repo_info['os']
     info['server'] = None
-    info['vcs'] = repo_info['vcs']
+    info['vcs'] = base.rtk_utils.get_current_vcs()
     info['metaTool'] = repo_info['meta']
     info['metaToolPath'] = os.path.join('tools', 'meta_tools', repo_info['meta'])
     info['repoUrl'] = None
@@ -129,7 +118,7 @@ def do_query_info(sdkroot, cfg):
     info['revision'] = None
     info['worktree'] = False
 
-    rc = is_repo_workspace()
+    rc = base.rtk_utils.is_repo_workspace()
     if rc:
         dom = xml.dom.minidom.parse(LOONG_SDK_MANIFEST_FILE)
         root = dom.documentElement
@@ -138,7 +127,7 @@ def do_query_info(sdkroot, cfg):
         info['manifest'] = item.getAttribute('name')
         info['manifestDir'] = None
 
-        rc = run_shell_cmd_with_output(CMD_GET_MANIFEST_URL)
+        rc = base.rtk_utils.run_command(CMD_GET_MANIFEST_URL)
         if rc.returncode == 0:
             info['url'] = rc.stdout.strip()
         else:
@@ -169,14 +158,14 @@ def main():
     args = parser.parse_args()
 
     cfg = None
-    if os.path.exists(LOONG_SDK_QUERY_CFG_FILE):
+    if os.path.exists(base.rtk_utils.LOONG_SDK_QUERY_CFG_FILE):
         try:
-            with open(LOONG_SDK_QUERY_CFG_FILE, 'r') as f:
+            with open(base.rtk_utils.LOONG_SDK_QUERY_CFG_FILE, 'r') as f:
                 cfg = json.load(f)
         except:
-            raise RuntimeError('Error: Fail to load query configuration file "' + LOONG_SDK_QUERY_CFG_FILE + '"')
+            raise RuntimeError('Error: Fail to load query configuration file "' + base.rtk_utils.LOONG_SDK_QUERY_CFG_FILE + '"')
     else:
-        raise RuntimeError('Error: Query configuration file "' + LOONG_SDK_QUERY_CFG_FILE + '" does not exist')
+        raise RuntimeError('Error: Query configuration file "' + base.rtk_utils.LOONG_SDK_QUERY_CFG_FILE + '" does not exist')
 
     # Meta tool should only run under SDK root directory
     sdkroot = os.getcwd()
