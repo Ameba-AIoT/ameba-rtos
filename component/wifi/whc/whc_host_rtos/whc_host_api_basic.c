@@ -62,6 +62,7 @@ s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 {
 	int result = RTK_SUCCESS;
 	struct internal_block_param *block_param = NULL;
+	unsigned int timeout;
 
 	u8 *param_buf = rtos_mem_zmalloc(sizeof(struct rtw_network_info) + connect_param->password_len);
 	u8 *ptr;
@@ -97,7 +98,6 @@ s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 			rtw_join_status = RTW_JOINSTATUS_FAIL;
 			goto error;
 		}
-		block_param->block = block;
 		rtos_sema_create_static(&block_param->sema, 0, 0xFFFFFFFF);
 		if (!block_param->sema) {
 			result = -RTK_ERR_NOMEM;
@@ -158,12 +158,12 @@ s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 #ifdef CONFIG_ENABLE_EAP
 		// for eap connection, timeout should be longer (default value in wpa_supplicant: 60s)
 		if (wifi_get_eap_phase()) {
-			block_param->timeout = 60000;
+			timeout = 60000;
 		} else
 #endif
-			block_param->timeout = RTW_JOIN_TIMEOUT;
+			timeout = RTW_JOIN_TIMEOUT;
 
-		if (rtos_sema_take(block_param->sema, block_param->timeout) != RTK_SUCCESS) {
+		if (rtos_sema_take(block_param->sema, timeout) != RTK_SUCCESS) {
 			RTK_LOGE(TAG_WLAN_INIC, "Join bss timeout\n");
 			rtw_join_status = RTW_JOINSTATUS_FAIL;
 			result = -RTK_ERR_TIMEOUT;

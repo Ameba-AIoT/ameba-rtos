@@ -9,23 +9,12 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 #----------------------------------------#
 # Component public part, user config begin
 
-# You may use if-else condition to set or update predefined variable above
-
-set(TARGET_LIB wifi_cast)
-
-ameba_list_append(public_includes
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
-ameba_list_append(public_libraries
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_${TARGET_LIB}.a
-)
-
 # Component public part, user config end
 #----------------------------------------#
 
 #WARNING: Fixed section, DO NOT change!
 ameba_global_include(${public_includes})
-ameba_global_define(${public_defines})
+ameba_global_define(${public_definitions})
 ameba_global_library(${public_libraries}) #default: whole-archived
 
 ##########################################################################################
@@ -46,15 +35,17 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-ameba_list_append(private_sources wifi_intf_drv_to_app_cast.c)
+ameba_list_append(private_sources
+    rtk_assert.c
+)
 
 # Component private part, user config end
 #------------------------------#
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 
-###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
-ameba_add_external_app_library(${TARGET_LIB}
+###NOTE: For closed-source component, only build before release and libs are packaged into lib/soc
+ameba_add_internal_library(rtk_assert
     p_SOURCES
         ${private_sources}
     p_INCLUDES

@@ -45,6 +45,10 @@ ameba_list_append(private_sources
     ameba_rom_patch.c
 )
 
+ameba_list_append_if(CONFIG_LONGER_CMD private_sources
+    shell_rom_patch.c
+)
+
 ameba_list_append(private_includes
     ../include
 )

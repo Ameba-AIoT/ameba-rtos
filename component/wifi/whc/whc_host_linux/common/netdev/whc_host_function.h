@@ -58,6 +58,7 @@ void whc_fullmac_host_external_auth_request(char *buf, int buf_len);
 void whc_fullmac_host_update_owe_info_event(char *buf, int buf_len);
 void whc_fullmac_host_connect_indicate(unsigned int join_status, void *user_data, size_t user_data_len);
 int whc_fullmac_host_scan_done_indicate(unsigned int scanned_AP_num, void *user_data);
+int whc_fullmac_host_blk_api_done(u32 event_id, int ret_val);
 u64 whc_fullmac_host_get_tsft(u8 iface_type);
 void rtw_reg_notifier(struct wiphy *wiphy, struct regulatory_request *request);
 int rtw_regd_init(void);

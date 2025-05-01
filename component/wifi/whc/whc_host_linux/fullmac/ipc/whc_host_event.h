@@ -16,8 +16,6 @@
  */
 struct internal_block_param {
 	struct completion	sema;
-	unsigned int		timeout;
-	unsigned char		block;
 };
 
 #ifdef CONFIG_NAN
