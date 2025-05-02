@@ -110,7 +110,7 @@ def do_query_info(sdkroot, cfg):
     info['soc'] = repo_info['soc']
     info['os'] = repo_info['os']
     info['server'] = None
-    info['vcs'] = repo_info['vcs']
+    info['vcs'] = base.rtk_utils.get_current_vcs()
     info['metaTool'] = repo_info['meta']
     info['metaToolPath'] = os.path.join('tools', 'meta_tools', repo_info['meta'])
     info['repoUrl'] = None
@@ -127,7 +127,7 @@ def do_query_info(sdkroot, cfg):
         info['manifest'] = item.getAttribute('name')
         info['manifestDir'] = None
 
-        rc = base.rtk_utils.run_command(CMD_GET_MANIFEST_URL, show_output=True)
+        rc = base.rtk_utils.run_command(CMD_GET_MANIFEST_URL)
         if rc.returncode == 0:
             info['url'] = rc.stdout.strip()
         else:
