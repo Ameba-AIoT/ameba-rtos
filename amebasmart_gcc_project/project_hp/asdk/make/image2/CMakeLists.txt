@@ -23,6 +23,7 @@ ameba_add_subdirectory(${c_CMPT_LWIP_DIR})
 ameba_add_subdirectory(${c_CMPT_SSL_DIR})
 ameba_add_subdirectory(${c_CMPT_UI_DIR})
 ameba_add_subdirectory(${c_CMPT_RTK_COEX_DIR})
+ameba_add_subdirectory(${c_CMPT_SWLIB_DIR})
 
 ameba_add_subdirectory(${c_CMPT_WIFI_DIR})
 ameba_add_subdirectory(${c_CMPT_USB_DIR})

@@ -3,14 +3,7 @@
 #include "hci/hci_common.h"
 #include "hci/hci_transport.h"
 
-#define USE_HCI_H4 1
-#if defined(USE_HCI_H4) && USE_HCI_H4
 #define RESERVE_LEN 1
-#elif defined(USE_HCI_H5) && USE_HCI_H5
-#define RESERVE_LEN 4
-#else
-#define RESERVE_LEN 0
-#endif
 
 #define DTM_ARRAY_TO_UINT16(_array)           \
         (((uint16_t)(*(_array + 0)) <<  0) |  \
@@ -27,23 +20,11 @@ uint8_t hci_dtm_reveiver_test_v1(uint8_t rx_chann)
 	/* OpCode: 0x201D, Data Len: Cmd(1+3), Event(6) */
 	uint8_t buf_raw[RESERVE_LEN + 6] = {0};
 	uint8_t *buf = buf_raw + RESERVE_LEN;
-	uint16_t opcode = 0x201D;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(1);
 	buf[3] = rx_chann;
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, buf[2] + 3, true)) {
-		return HCI_FAIL;
-	}
-
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
-
-	return HCI_SUCCESS;
+	return hci_sa_send_cmd_sync(0x201D, buf, buf[2] + 3);
 }
 
 uint8_t hci_dtm_reveiver_test_v2(uint8_t rx_chann, uint8_t phy, uint8_t mod_idx)
@@ -51,25 +32,13 @@ uint8_t hci_dtm_reveiver_test_v2(uint8_t rx_chann, uint8_t phy, uint8_t mod_idx)
 	/* OpCode: 0x2033, Data Len: Cmd(3+3), Event(6) */
 	uint8_t buf_raw[RESERVE_LEN + 6] = {0};
 	uint8_t *buf = buf_raw + RESERVE_LEN;
-	uint16_t opcode = 0x2033;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(3);
 	buf[3] = rx_chann;
 	buf[4] = phy;
 	buf[5] = mod_idx;
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, buf[2] + 3, true)) {
-		return HCI_FAIL;
-	}
-
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
-
-	return HCI_SUCCESS;
+	return hci_sa_send_cmd_sync(0x2033, buf, buf[2] + 3);
 }
 
 uint8_t hci_dtm_receiver_test_v3(uint8_t rx_chann, uint8_t phy, uint8_t mod_idx,
@@ -80,10 +49,7 @@ uint8_t hci_dtm_receiver_test_v3(uint8_t rx_chann, uint8_t phy, uint8_t mod_idx,
 	uint8_t buf_raw[RESERVE_LEN + 10 + sw_pattern_len];
 	uint8_t *buf = buf_raw + RESERVE_LEN;
 	uint8_t i = 0;
-	uint16_t opcode = 0x204F;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(7 + sw_pattern_len);
 	buf[3] = rx_chann;
 	buf[4] = phy;
@@ -98,16 +64,7 @@ uint8_t hci_dtm_receiver_test_v3(uint8_t rx_chann, uint8_t phy, uint8_t mod_idx,
 		}
 	}
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, buf[2] + 3, true)) {
-		return HCI_FAIL;
-	}
-
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
-
-	return HCI_SUCCESS;
+	return hci_sa_send_cmd_sync(0x204F, buf, buf[2] + 3);
 }
 
 uint8_t hci_dtm_transmitter_test_v1(uint8_t tx_chann, uint8_t data_len, uint8_t pkt_pl)
@@ -115,25 +72,13 @@ uint8_t hci_dtm_transmitter_test_v1(uint8_t tx_chann, uint8_t data_len, uint8_t 
 	/* OpCode: 0x201E, Data Len: Cmd(3+3), Event(6) */
 	uint8_t buf_raw[RESERVE_LEN + 6] = {0};
 	uint8_t *buf = buf_raw + RESERVE_LEN;
-	uint16_t opcode = 0x201E;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(3);
 	buf[3] = tx_chann;
 	buf[4] = data_len;
 	buf[5] = pkt_pl;
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, buf[2] + 3, true)) {
-		return HCI_FAIL;
-	}
-
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
-
-	return HCI_SUCCESS;
+	return hci_sa_send_cmd_sync(0x201E, buf, buf[2] + 3);
 }
 
 uint8_t hci_dtm_transmitter_test_v2(uint8_t tx_chann, uint8_t data_len, uint8_t pkt_pl, uint8_t phy)
@@ -141,26 +86,14 @@ uint8_t hci_dtm_transmitter_test_v2(uint8_t tx_chann, uint8_t data_len, uint8_t 
 	/* OpCode: 0x2034, Data Len: Cmd(4+3), Event(6) */
 	uint8_t buf_raw[RESERVE_LEN + 7] = {0};
 	uint8_t *buf = buf_raw + RESERVE_LEN;
-	uint16_t opcode = 0x2034;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(4);
 	buf[3] = tx_chann;
 	buf[4] = data_len;
 	buf[5] = pkt_pl;
 	buf[6] = phy;
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, buf[2] + 3, true)) {
-		return HCI_FAIL;
-	}
-
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
-
-	return HCI_SUCCESS;
+	return hci_sa_send_cmd_sync(0x2034, buf, buf[2] + 3);
 }
 
 uint8_t hci_dtm_transmitter_test_v3(uint8_t tx_chann, uint8_t data_len, uint8_t pkt_pl,
@@ -171,10 +104,7 @@ uint8_t hci_dtm_transmitter_test_v3(uint8_t tx_chann, uint8_t data_len, uint8_t 
 	uint8_t buf_raw[RESERVE_LEN + 10 + sw_pattern_len];
 	uint8_t *buf = buf_raw + RESERVE_LEN;
 	uint8_t i = 0;
-	uint16_t opcode = 0x2050;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(7 + sw_pattern_len);
 	buf[3] = tx_chann;
 	buf[4] = data_len;
@@ -189,16 +119,7 @@ uint8_t hci_dtm_transmitter_test_v3(uint8_t tx_chann, uint8_t data_len, uint8_t 
 		}
 	}
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, buf[2] + 3, true)) {
-		return HCI_FAIL;
-	}
-
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
-
-	return HCI_SUCCESS;
+	return hci_sa_send_cmd_sync(0x2050, buf, buf[2] + 3);
 }
 
 uint8_t hci_dtm_transmitter_test_v4(uint8_t tx_chann, uint8_t data_len, uint8_t pkt_pl,
@@ -209,10 +130,7 @@ uint8_t hci_dtm_transmitter_test_v4(uint8_t tx_chann, uint8_t data_len, uint8_t 
 	uint8_t buf_raw[RESERVE_LEN + 11 + sw_pattern_len];
 	uint8_t *buf = buf_raw + RESERVE_LEN;
 	uint8_t i = 0;
-	uint16_t opcode = 0x207B;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(8 + sw_pattern_len);
 	buf[3] = tx_chann;
 	buf[4] = data_len;
@@ -228,16 +146,7 @@ uint8_t hci_dtm_transmitter_test_v4(uint8_t tx_chann, uint8_t data_len, uint8_t 
 	}
 	buf[10 + i] = tx_power_level;
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, buf[2] + 3, true)) {
-		return HCI_FAIL;
-	}
-
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
-
-	return HCI_SUCCESS;
+	return hci_sa_send_cmd_sync(0x207B, buf, buf[2] + 3);
 }
 
 uint8_t hci_dtm_test_end(uint16_t *p_num_pkts)
@@ -245,20 +154,13 @@ uint8_t hci_dtm_test_end(uint16_t *p_num_pkts)
 	/* OpCode: 0x201F, Data Len: Cmd(3), Event(8) */
 	uint8_t buf_raw[RESERVE_LEN + 8] = {0};
 	uint8_t *buf = buf_raw + RESERVE_LEN;
-	uint16_t opcode = 0x201F;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(0);
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, buf[2] + 3, true)) {
+	if (HCI_SUCCESS != hci_sa_send_cmd_sync(0x201F, buf, buf[2] + 3)) {
 		return HCI_FAIL;
 	}
 
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
 	if (p_num_pkts != NULL) {
 		*p_num_pkts = DTM_ARRAY_TO_UINT16(&buf[6]);
 	}
@@ -272,20 +174,13 @@ uint8_t hci_dtm_vendor_get_receiver_report(uint32_t *p_rx_pkts, uint32_t *p_rx_b
 	/* OpCode: 0xFCE5, Data Len: Cmd(3), Event(23) */
 	uint8_t buf_raw[RESERVE_LEN + 23] = {0};
 	uint8_t *buf = buf_raw + RESERVE_LEN;
-	uint16_t opcode = 0xFCE5;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(0);
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, buf[2] + 3, true)) {
+	if (HCI_SUCCESS != hci_sa_send_cmd_sync(0xFCE5, buf, buf[2] + 3)) {
 		return HCI_FAIL;
 	}
 
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
 	if (p_rx_pkts != NULL) {
 		*p_rx_pkts = DTM_ARRAY_TO_UINT32(&buf[6]);
 	}
@@ -315,10 +210,7 @@ uint8_t hci_dtm_vendor_set_transmitter_count(uint8_t tx_cnt_mode_en, uint8_t tx_
 	uint8_t buf_raw[RESERVE_LEN + 11] = {0};
 	uint8_t *buf = buf_raw + RESERVE_LEN;
 	uint8_t i = 0;
-	uint16_t opcode = 0xFCDC;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(8);
 	buf[3] = tx_cnt_mode_en;
 	buf[4] = tx_pkt_cnt;
@@ -330,16 +222,7 @@ uint8_t hci_dtm_vendor_set_transmitter_count(uint8_t tx_cnt_mode_en, uint8_t tx_
 	}
 	buf[10] = prbs_fix;
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, buf[2] + 3, true)) {
-		return HCI_FAIL;
-	}
-
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
-
-	return HCI_SUCCESS;
+	return hci_sa_send_cmd_sync(0xFCDC, buf, buf[2] + 3);
 }
 
 uint8_t hci_dtm_vendor_ctrl_tx_power(uint8_t bdr_1m, uint8_t edr_2m, uint8_t edr_3m,
@@ -348,10 +231,7 @@ uint8_t hci_dtm_vendor_ctrl_tx_power(uint8_t bdr_1m, uint8_t edr_2m, uint8_t edr
 	/* OpCode: 0xFCE7, Data Len: Cmd(5+3), Event(6) */
 	uint8_t buf_raw[RESERVE_LEN + 8] = {0};
 	uint8_t *buf = buf_raw + RESERVE_LEN;
-	uint16_t opcode = 0xFCE7;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(5);
 	buf[3] = bdr_1m;
 	buf[4] = edr_2m;
@@ -359,16 +239,7 @@ uint8_t hci_dtm_vendor_ctrl_tx_power(uint8_t bdr_1m, uint8_t edr_2m, uint8_t edr
 	buf[6] = ble_1m;
 	buf[7] = ble_2m;
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, buf[2] + 3, true)) {
-		return HCI_FAIL;
-	}
-
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
-
-	return HCI_SUCCESS;
+	return hci_sa_send_cmd_sync(0xFCE7, buf, buf[2] + 3);
 }
 
 uint8_t hci_dtm_vendor_k_power_setting(uint8_t sub_index, uint32_t value, uint8_t *p_tx_gaink,
@@ -377,10 +248,7 @@ uint8_t hci_dtm_vendor_k_power_setting(uint8_t sub_index, uint32_t value, uint8_
 	/* OpCode: 0xFD14, Data Len: Cmd(5+3), Event(12) */
 	uint8_t buf_raw[RESERVE_LEN + 12] = {0};
 	uint8_t *buf = buf_raw + RESERVE_LEN;
-	uint16_t opcode = 0xFD14;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[3] = sub_index;
 	if (sub_index == 0x00) {         /* get TX power */
 		buf[2] = (uint8_t)(1);
@@ -395,14 +263,10 @@ uint8_t hci_dtm_vendor_k_power_setting(uint8_t sub_index, uint32_t value, uint8_
 		buf[7] = (uint8_t)(value >> 24);
 	}
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, buf[2] + 3, true)) {
+	if (HCI_SUCCESS != hci_sa_send_cmd_sync(0xFD14, buf, buf[2] + 3)) {
 		return HCI_FAIL;
 	}
 
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
 	if (sub_index == 0x00) {
 		if (p_tx_gaink != NULL) {
 			*p_tx_gaink = buf[6];
@@ -423,20 +287,13 @@ uint8_t hci_dtm_vendor_read_thermal_meter_data(uint8_t *p_thermal_value)
 	/* OpCode: 0xFC40, Data Len: Cmd(3), Event(7) */
 	uint8_t buf_raw[RESERVE_LEN + 7] = {0};
 	uint8_t *buf = buf_raw + RESERVE_LEN;
-	uint16_t opcode = 0xFC40;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(0);
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, buf[2] + 3, true)) {
+	if (HCI_SUCCESS != hci_sa_send_cmd_sync(0xFC40, buf, buf[2] + 3)) {
 		return HCI_FAIL;
 	}
 
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
 	if (p_thermal_value != NULL) {
 		*p_thermal_value = buf[6];
 	}
@@ -450,10 +307,7 @@ uint8_t hci_dtm_vendor_enable_tx_power_tracking(uint8_t is_get_or_set, uint8_t i
 	/* OpCode: 0xFCE8, Data Len: Cmd(2+3), Event(7) */
 	uint8_t buf_raw[RESERVE_LEN + 7] = {0};
 	uint8_t *buf = buf_raw + RESERVE_LEN;
-	uint16_t opcode = 0xFCE8;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[3] = is_get_or_set;
 	if (is_get_or_set == 0x00) {         /* set TX power tracking */
 		buf[2] = (uint8_t)(2);
@@ -462,14 +316,10 @@ uint8_t hci_dtm_vendor_enable_tx_power_tracking(uint8_t is_get_or_set, uint8_t i
 		buf[2] = (uint8_t)(1);
 	}
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, buf[2] + 3, true)) {
+	if (HCI_SUCCESS != hci_sa_send_cmd_sync(0xFCE8, buf, buf[2] + 3)) {
 		return HCI_FAIL;
 	}
 
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
 	if (is_get_or_set == 0x01 && p_is_get_enable != NULL) {
 		*p_is_get_enable = buf[6];
 	}

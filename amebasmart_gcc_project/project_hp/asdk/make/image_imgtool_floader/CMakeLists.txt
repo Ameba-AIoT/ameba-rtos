@@ -12,6 +12,7 @@ ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_wrapper)
 ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
 ameba_add_subdirectory(${c_CMPT_SOC_DIR}/lib/bootloader lib_bootloader)
+ameba_add_subdirectory(${c_CMPT_SWLIB_DIR})
 
 target_sources(${c_CURRENT_IMAGE} PRIVATE
     ${c_CMPT_FWLIB_DIR}/ram_common/ameba_reset.c
@@ -21,7 +22,6 @@ target_sources(${c_CURRENT_IMAGE} PRIVATE
     ${c_CMPT_FWLIB_DIR}/ram_common/ameba_usb.c
     ${c_CMPT_FWLIB_DIR}/ram_hp/ameba_codec.c
 
-    ${c_CMPT_SWLIB_DIR}/log.c
     ${c_CMPT_USB_DIR}/common/usb_hal.c
     ${c_CMPT_USB_DIR}/common/usb_os.c
 )

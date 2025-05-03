@@ -53,8 +53,8 @@ execute_process(COMMAND_ERROR_IS_FATAL ANY
 message( "========== Image manipulating start ==========")
 
 if (CONFIG_DSP_WITHIN_APP_IMG)
-    if(NOT EXISTS ${c_MCU_PROJECT_DIR}/../${DSP_IMAGE_TARGET_DIR}/dsp.bin)
-        message(FATAL_ERROR "no dsp.bin in ${DSP_IMAGE_TARGET_DIR}")
+    if(NOT EXISTS ${c_MCU_PROJECT_DIR}/../${CONFIG_DSP_IMAGE_TARGET_DIR}/dsp.bin)
+        message(FATAL_ERROR "no dsp.bin in ${CONFIG_DSP_IMAGE_TARGET_DIR}")
     endif()
 endif()
 
@@ -80,7 +80,7 @@ execute_process(COMMAND_ERROR_IS_FATAL ANY
 )
 
 execute_process(COMMAND_ERROR_IS_FATAL ANY
-    COMMAND ${IMAGETOOL} ${c_SDK_IMAGE_TARGET_DIR}/km4_image2_all.bin ${BUILD_TYPE} ${DSP_IMAGE_TARGET_DIR}
+    COMMAND ${IMAGETOOL} ${c_SDK_IMAGE_TARGET_DIR}/km4_image2_all.bin ${BUILD_TYPE} ${CONFIG_DSP_IMAGE_TARGET_DIR}
     WORKING_DIRECTORY ${c_MCU_PROJECT_DIR}/..
 )
 

@@ -40,6 +40,12 @@ def is_repo_workspace():
 def is_git_workspace():
     return os.path.exists('.git') and os.path.isdir('.git')
 
+def get_current_vcs():
+    if is_repo_workspace():
+        return "repo"
+    if is_git_workspace():
+        return "git"
+    return "none"
 
 def get_abs_path(path):
     abs_path = os.path.normcase(path)

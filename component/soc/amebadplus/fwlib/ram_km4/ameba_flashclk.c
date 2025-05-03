@@ -224,10 +224,10 @@ void flash_highspeed_setup(void)
 	 * Disable DREIR to avoid that interrupt hanler time is lager than 0x1_0000 SPIC cycles.
 	 */
 	SPIC->CTRLR0 |= BIT_SPI_DREIR_R_DIS;
-	if (flash_speed == spic_ckd) {
-		/* CS setup time changed to 2 SPIC Clk for greater than tSLCH if SPIC is 200MHz */
-		SPIC->TPR1 = (SPIC->TPR1 & ~MASK_CR_ACTIVE_SETUP) | CR_ACTIVE_SETUP(2);
-	}
+
+	/* Note: some full voltage range Flash e.g.GD25WQ64E need 10ns
+	   HW recommend: at leaset 10ns */
+	SPIC->TPR1 = (SPIC->TPR1 & ~MASK_CR_ACTIVE_SETUP) | CR_ACTIVE_SETUP(2);
 
 	/* Get flash ID to reinitialize FLASH_InitTypeDef structure */
 	flash_get_vendor();

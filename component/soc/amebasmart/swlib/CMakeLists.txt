@@ -39,28 +39,10 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image1")
-    ameba_list_append(private_sources
-        log.c
-    )
-elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
-    ameba_list_append(private_sources
-        diag.c
-        memset.c
-        rand.c
-        memcpy.c
-        memcmp.c
-        memchr.c
-        memmove.c
-        strcmp.c
-        strlen.c
-        stricmp.c
-        strupr.c
-        strtoul.c
-        char2num.c
-        strwrap.c
-    )
-endif()
+ameba_list_append(private_sources
+    log.c
+    sscanf_minimal.c
+)
 
 # Component private part, user config end
 #------------------------------#

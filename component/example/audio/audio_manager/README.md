@@ -22,9 +22,9 @@ Ameba audio project can achieve:
 
 ## Configurations <a name = "configurations"></a>
 
-1. Please see discriptions in component/soc/xx/usrcfg/include/ameba_audio_hw_usrcfg.h.
+1. Please see discriptions in component/soc/usrcfg/xx/include/ameba_audio_hw_usrcfg.h.
 ameba_audio_hw_usrcfg.h is for audio Hardware configurations.
-2. Please set component/soc/xxx/usrcfg/ameba_bootcfg.c's Boot_SocClk_Info_Idx to choose right cpu pll.
+2. Please set component/soc/usrcfg/xxx/ameba_bootcfg.c's Boot_SocClk_Info_Idx to choose right cpu pll.
 take amebadplus for example: 48000 rate, choose PLL_688P128M. 44100 rate choose PLL_677P376M.
 
 ### Hardware configurations
@@ -33,5 +33,5 @@ take amebadplus for example: 48000 rate, choose PLL_688P128M. 44100 rate choose 
 2. Please refer to component/audio/audio_hal/xx/README.md.
 
 ## How to run <a name = "How to run"></a>
-1. Use CMD `make EXAMPLE=audio_manager` to compile this example.
+1. Use CMD `./build.py -a audio_manager -p` to compile this example.
 2. For playing run command and parameters, please refer to app_example.c.

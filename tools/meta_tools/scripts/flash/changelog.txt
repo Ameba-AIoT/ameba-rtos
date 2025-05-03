@@ -12,3 +12,5 @@ ChangeLog:
 20250401  v1.0.1.1  (1) Check and program otp for flash size >=16MB
                     (2) Fix dtr/rts level unexpectedly changed issue when open/close serial port
 20250408  v1.0.1.2  Fix nand flash download error with bad block
+20250423  v1.0.1.3  (1) Fix download fail in 4byte address mode
+                    (2) Supported otp about flash size >=16MB work for download

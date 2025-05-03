@@ -72,7 +72,6 @@ void DATA_FLASH_SetStatusBitsXIP(u32 SetBits, u32 NewState);
 void DATA_FLASH_TxData12BXIP(u32 StartAddr, u8 DataPhaseLen, u8 *pData);
 void DATA_FLASH_TxData256BXIP(u32 StartAddr, u32 DataPhaseLen, u8 *pData);
 void DATA_FLASH_EraseXIP(u32 EraseType, u32 Address);
-void DATA_FLASH_EreaseDwordsXIP(u32 address, u32 dword_num);
 void DATA_FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum);
 /**
   * @}

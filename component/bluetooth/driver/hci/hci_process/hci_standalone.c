@@ -60,3 +60,21 @@ uint8_t hci_sa_send(uint8_t type, uint8_t *buf, uint16_t len, bool is_sync)
 	/* Then We can process Response */
 	return HCI_SUCCESS;
 }
+
+/* 1 byte must be reserved ahead 'buf' */
+uint8_t hci_sa_send_cmd_sync(uint16_t opcode, uint8_t *buf, uint16_t len)
+{
+	buf[0] = (uint8_t)(opcode >> 0);
+	buf[1] = (uint8_t)(opcode >> 8);
+
+	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, len, true)) {
+		return HCI_FAIL;
+	}
+
+	/* Check Resp: OpCode and Status */
+	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
+		return HCI_FAIL;
+	}
+
+	return HCI_SUCCESS;
+}
