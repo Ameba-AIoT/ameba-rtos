@@ -116,7 +116,6 @@ ameba_set(c_MCU_INC_DIR)    # PATH to the ${c_MCU_PROJECT_DIR}/inc directory.
 
 # sub dirs in ${c_MCU_PROJECT_DIR}/*sdk/
 ameba_set(c_SDK_BUILD_DIR)
-ameba_set(c_SDK_FLASHLOADER_DIR)
 ameba_set(c_SDK_GNU_UTILITY_DIR)
 ameba_set(c_SDK_GNU_SCRIPT_DIR)
 ameba_set(c_SDK_IMGTOOL_FLOADER_DIR)
@@ -147,11 +146,7 @@ macro(ameba_reset_global_define)
     ameba_set(c_MBEDTLS_DIR ${c_COMPONENT_DIR}/ssl/mbedtls-${v_MBEDTLS_VER})
 
     #Dirs below depend on ${c_CMPT_SOC_DIR}, which is set after sco project is created
-    if(CONFIG_AMEBAL2 OR CONFIG_AMEBAGREEN2)
-        ameba_set(c_CMPT_BOOTLOADER_DIR ${c_CMPT_SOC_DIR}/loader/bootloader)
-    else()
-        ameba_set(c_CMPT_BOOTLOADER_DIR ${c_CMPT_SOC_DIR}/bootloader)
-    endif()
+    ameba_set(c_CMPT_BOOTLOADER_DIR ${c_CMPT_SOC_DIR}/loader/bootloader)
     ameba_set(c_CMPT_GDB_FLOADER_DIR ${c_CMPT_SOC_DIR}/loader/gdb_floader)
     ameba_set(c_CMPT_CMSIS_DIR ${c_CMPT_SOC_DIR}/cmsis)
     ameba_set(c_CMPT_CMSIS_DSP_DIR ${c_CMPT_SOC_DIR}/cmsis-dsp)
@@ -159,7 +154,6 @@ macro(ameba_reset_global_define)
     ameba_set(c_CMPT_HAL_DIR ${c_CMPT_SOC_DIR}/hal)
     ameba_set(c_CMPT_IMG3_DIR ${c_CMPT_SOC_DIR}/img3)
     ameba_set(c_CMPT_MISC_DIR ${c_CMPT_SOC_DIR}/misc)
-    ameba_set(c_CMPT_MVE_DIR ${c_CMPT_SOC_DIR}/mve_lib)
     ameba_set(c_CMPT_SWLIB_DIR ${c_CMPT_SOC_DIR}/swlib)
     ameba_set(c_CMPT_USRCFG_DIR ${c_COMPONENT_DIR}/soc/usrcfg/${c_SOC_TYPE})
     ameba_set(c_CMPT_VECTOR_DIR ${c_CMPT_SOC_DIR}/vector)

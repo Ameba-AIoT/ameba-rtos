@@ -163,7 +163,7 @@ SECTIONS
     PROVIDE(SYSCFG_OTP_RMAMode = 0x20aad);
     PROVIDE(SYSCFG_OTP_GetUsbPhyCalData = 0x20ad1);
     PROVIDE(SYSCFG_OTP_GetUsbPhyCalData2 = 0x20add);
-    PROVIDE(SYSCFG_OTP_UsbDownloadEnable = 0x20ae9);
+    PROVIDE(SYSCFG_OTP_UsbDownloadEn = 0x20ae9);
     PROVIDE(SYSCFG_BootFromNor = 0x20af5);
     PROVIDE(SYSCFG_HWTrigDownload = 0x20b1d);
     PROVIDE(SYSCFG_SWTrigDownload = 0x20b89);

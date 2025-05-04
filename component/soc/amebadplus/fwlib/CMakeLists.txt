@@ -11,6 +11,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 ameba_list_append(public_includes
     include
+    include/cmsis
     ${c_COMPONENT_DIR}/soc/common/include
 )
 

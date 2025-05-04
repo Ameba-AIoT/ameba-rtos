@@ -1029,8 +1029,6 @@ void FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum);
 extern FLASH_InitTypeDef flash_init_para;
 extern u32 SPIC_CALIB_PATTERN[2];
 
-typedef void (*FLASH_STRUCT_INIT_FUNC)(FLASH_InitTypeDef *FLASH_InitStruct);
-
 #define PAGE_SIZE_4K	0x1000
 
 #define SPIC_LOWSPEED_SAMPLE_PHASE	0

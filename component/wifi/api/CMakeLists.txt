@@ -47,7 +47,6 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources
-    wifi_init.c
     ${c_CMPT_USRCFG_DIR}/ameba_wificfg.c
 )
 
@@ -57,8 +56,6 @@ if(CONFIG_AS_INIC_AP)
         ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant/wifi_p2p_config.c
         ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant/wifi_wps_config.c
         ${c_CMPT_WIFI_DIR}/wpa_supplicant/src/crypto/tls_polarssl.c
-        ${c_CMPT_WIFI_DIR}/wifi_fast_connect/wifi_fast_connect.c
-        ${c_CMPT_WIFI_DIR}/wifi_auto_reconnect/wifi_auto_reconnect.c
     )
 elseif(CONFIG_SINGLE_CORE_WIFI)
     ameba_list_append(private_sources
@@ -66,8 +63,6 @@ elseif(CONFIG_SINGLE_CORE_WIFI)
         ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant/wifi_p2p_config.c
         ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant/wifi_wps_config.c
         ${c_CMPT_WIFI_DIR}/wpa_supplicant/src/crypto/tls_polarssl.c
-        ${c_CMPT_WIFI_DIR}/wifi_fast_connect/wifi_fast_connect.c
-        ${c_CMPT_WIFI_DIR}/wifi_auto_reconnect/wifi_auto_reconnect.c
     )
 endif()
 
@@ -106,6 +101,7 @@ if(CONFIG_ZEPHYR_SDK AND CONFIG_SINGLE_CORE_WIFI)
 else()
 ###NOTE: For open-source component, always build from source
     ameba_add_internal_library(${TARGET_LIB}
+        p_DROP_IF_NO_SOURCES
         p_SOURCES
             ${private_sources}
         p_INCLUDES

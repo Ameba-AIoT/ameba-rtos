@@ -7,7 +7,6 @@ ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
 ameba_add_subdirectory(${c_CMPT_BLUETOOTH_DIR})
 ameba_add_subdirectory(${c_CMPT_BOOTLOADER_DIR})
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
-ameba_add_subdirectory(${c_CMPT_CMSIS_DIR})
 ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})
 ameba_add_subdirectory(${c_CMPT_FWLIB_DIR})
 
