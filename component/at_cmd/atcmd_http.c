@@ -115,15 +115,16 @@ void at_httpheader(void *arg)
 		if (g_http_req_header[g_http_req_header_cnt] == NULL) {
 			RTK_LOGW(AT_HTTP_TAG, "[at_httpheader] g_http_req_header[%d] malloc fail\r\n", g_http_req_header_cnt);
 			error_no = 2;
-			goto end;
+			goto tt_end;
 		}
 		if (atcmd_tt_mode_get((u8 *)g_http_req_header[g_http_req_header_cnt], (u32)req_header_len) != req_header_len)  {
 			RTK_LOGI(AT_HTTP_TAG, "[at_httpheader] Get data failed in TT mode\r\n");
 			error_no = 3;
-			goto end;
+			goto tt_end;
 		}
-		atcmd_tt_mode_end();
 		g_http_req_header_cnt++;
+tt_end:
+		atcmd_tt_mode_end();
 	} else if (req_header_len == 0) {
 		while (g_http_req_header_cnt) {
 			g_http_req_header_cnt--;
@@ -187,20 +188,277 @@ end:
 }
 
 
+int at_http_load_ssl_cert_from_flash(int conn_type, int cert_index, char **http_client_ca_pem, char **http_client_cert_pem, char **http_client_pkey_pem)
+{
+	int cert_size = 0, pk_size = 0;
+	int error_no = 0;
+	int ret = -1;
+
+	if (http_client_ca_pem == NULL || http_client_cert_pem == NULL || http_client_pkey_pem == NULL) {
+		RTK_LOGW(AT_HTTP_TAG, "http_client_ca_pem or http_client_cert_pem or http_client_pkey_pem is NULL\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	if ((conn_type == HTTP_OVER_TLS_VERIFY_SERVER) || (conn_type == HTTP_OVER_TLS_VERIFY_BOTH)) {
+		if ((cert_size = atcmd_get_ssl_certificate_size(CLIENT_CA, cert_index)) <= 0)  {
+			RTK_LOGW(AT_HTTP_TAG, "Failed to get CLIENT_CA_%d size!\r\n", cert_index);
+			error_no = 3;
+			goto end;
+		}
+		*http_client_ca_pem = rtos_mem_zmalloc(cert_size + 1);
+		if (*http_client_ca_pem == NULL) {
+			RTK_LOGW(AT_HTTP_TAG, "*http_client_ca_pem malloc fail\r\n");
+			error_no = 2;
+			goto end;
+		}
+		ret = atcmd_get_ssl_certificate(*http_client_ca_pem, CLIENT_CA, cert_index);
+		if (ret == 0) {
+			RTK_LOGW(AT_HTTP_TAG, "NO CLIENT_CA_%d!\r\n", cert_index);
+			error_no = 3;
+			goto end;
+		} else if (ret < 0) {
+			RTK_LOGW(AT_HTTP_TAG, "CLIENT_CA_%d read failed\r\n", cert_index);
+			error_no = 3;
+			goto end;
+		}
+	}
+	if ((conn_type == HTTP_OVER_TLS_VERIFY_CLIENT) || (conn_type == HTTP_OVER_TLS_VERIFY_BOTH)) {
+		if (((cert_size = atcmd_get_ssl_certificate_size(CLIENT_CERT, cert_index)) <= 0) ||
+			((pk_size = atcmd_get_ssl_certificate_size(CLIENT_KEY, cert_index)) <= 0))  {
+			RTK_LOGW(AT_HTTP_TAG, "Failed to get CLIENT_CERT_%d / CLIENT_KEY_%d size!\r\n", cert_index, cert_index);
+			error_no = 3;
+			goto end;
+		}
+		*http_client_cert_pem = rtos_mem_zmalloc(cert_size + 1);
+		if (*http_client_cert_pem == NULL) {
+			RTK_LOGW(AT_HTTP_TAG, "*http_client_cert_pem malloc fail\r\n");
+			error_no = 2;
+			goto end;
+		}
+		ret = atcmd_get_ssl_certificate(*http_client_cert_pem, CLIENT_CERT, cert_index);
+		if (ret > 0) {
+			*http_client_pkey_pem = rtos_mem_zmalloc(pk_size + 1);
+			if (*http_client_pkey_pem == NULL) {
+				RTK_LOGW(AT_HTTP_TAG, "*http_client_pkey_pem malloc fail\r\n");
+				error_no = 2;
+				goto end;
+			}
+			ret = atcmd_get_ssl_certificate(*http_client_pkey_pem, CLIENT_KEY, cert_index);
+			if (ret <= 0)  {
+				RTK_LOGW(AT_HTTP_TAG, "CLIENT_KEY_%d read failed\r\n", cert_index);
+				error_no = 3;
+				goto end;
+			}
+		} else if (ret == 0) {
+			RTK_LOGW(AT_HTTP_TAG, "NO CLIENT_CERT_%d!\r\n", cert_index);
+			error_no = 3;
+			goto end;
+		} else {
+			RTK_LOGW(AT_HTTP_TAG, "CLIENT_CERT_%d read failed\r\n", cert_index);
+			error_no = 3;
+			goto end;
+		}
+	}
+
+end:
+	return error_no;
+}
+
+
+int at_http_create_connection(int conn_type, struct httpc_conn **conn_ptr, char *http_client_ca_pem, char *http_client_cert_pem, char *http_client_pkey_pem,
+							  char *host)
+{
+	int error_no = 0;
+	int ret = -1;
+
+	if (conn_ptr == NULL || host == NULL) {
+		RTK_LOGW(AT_HTTP_TAG, "conn_ptr or host is NULL\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	switch (conn_type) {
+	case HTTP_OVER_TCP:
+		*conn_ptr = httpc_conn_new(HTTPC_SECURE_NONE, NULL, NULL, NULL);
+		break;
+	case HTTP_OVER_TLS_NO_VERIFY:
+		*conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, NULL, NULL, NULL);
+		break;
+	case HTTP_OVER_TLS_VERIFY_SERVER:
+		*conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, NULL, NULL, http_client_ca_pem);
+		break;
+	case HTTP_OVER_TLS_VERIFY_CLIENT:
+		*conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, http_client_cert_pem, http_client_pkey_pem, NULL);
+		break;
+	case HTTP_OVER_TLS_VERIFY_BOTH:
+		*conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, http_client_cert_pem, http_client_pkey_pem, http_client_ca_pem);
+		break;
+	default:
+		RTK_LOGE(AT_HTTP_TAG, "The range of <conn_type> is [1, 5]\r\n");
+		error_no = 1;
+		break;
+	}
+
+	if (*conn_ptr == NULL) {
+		RTK_LOGI(AT_HTTP_TAG, "*conn_ptr is NULL\r\n");
+		error_no = 2;
+		goto end;
+	}
+	httpc_enable_ignore_content_len(*conn_ptr);
+
+	if (http_server_port == 0)  {
+		if (conn_type == HTTP_OVER_TCP) {
+			ret = httpc_conn_connect(*conn_ptr, host, 80, http_timeout);
+		} else {
+			ret = httpc_conn_connect(*conn_ptr, host, 443, http_timeout);
+		}
+	} else  {
+		ret = httpc_conn_connect(*conn_ptr, host, (uint16_t)http_server_port, http_timeout);
+	}
+
+	if (ret != 0) {
+		RTK_LOGI(AT_HTTP_TAG, "httpc_conn_connect() failed\r\n");
+		error_no = 4;
+		goto end;
+	}
+
+end:
+	return error_no;
+}
+
+
+int at_http_send_req_header(struct httpc_conn *conn_ptr, char *method, char *resource, char *content_type, size_t content_len, int header_cnt,
+							char **http_req_header)
+{
+	int error_no = 0;
+	int i = 0;
+
+	if (conn_ptr == NULL || method == NULL || resource == NULL || http_req_header == NULL) {
+		RTK_LOGW(AT_HTTP_TAG, "conn_ptr or method or resource or http_req_header is NULL\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	if (httpc_request_write_header_start(conn_ptr, method, resource, content_type, content_len) != 0) {
+		RTK_LOGI(AT_HTTP_TAG, "httpc_request_write_header_start() failed\r\n");
+		error_no = 4;
+		goto end;
+	}
+
+	for (i = 1; i <= header_cnt; i++) {
+		if (httpc_request_write_header_raw(conn_ptr, http_req_header[i]) != 0) {
+			RTK_LOGI(AT_HTTP_TAG, "httpc_request_write_header_raw() failed\r\n");
+			error_no = 4;
+			goto end;
+		}
+	}
+
+	for (i = 0; i < g_http_req_header_cnt; i++) {
+		if (httpc_request_write_header_raw(conn_ptr, g_http_req_header[i]) != 0) {
+			RTK_LOGI(AT_HTTP_TAG, "httpc_request_write_header_raw() failed\r\n");
+			error_no = 4;
+			goto end;
+		}
+	}
+
+	if (httpc_request_write_header_finish(conn_ptr) <= 0) {
+		RTK_LOGI(AT_HTTP_TAG, "httpc_request_write_header_finish() failed\r\n");
+		error_no = 4;
+		goto end;
+	}
+
+end:
+	return error_no;
+}
+
+
+int at_http_read_resp_header(struct httpc_conn *conn_ptr)
+{
+	int error_no = 0;
+
+	if (httpc_response_read_header(conn_ptr) != 0) {
+		RTK_LOGI(AT_HTTP_TAG, "httpc_response_read_header() failed\r\n");
+		error_no = 5;
+	}
+	return error_no;
+}
+
+
+int at_http_malloc_response_body(uint8_t **response_data)
+{
+	int error_no = 0;
+
+	if (response_data == NULL) {
+		RTK_LOGW(AT_HTTP_TAG, "response_data is NULL\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	*response_data = rtos_mem_zmalloc(HTTP_READ_RESPONSE_DATA);
+	if (*response_data == NULL) {
+		RTK_LOGW(AT_HTTP_TAG, "*response_data malloc fail\r\n");
+		error_no = 2;
+		goto end;
+	}
+
+end:
+	return error_no;
+}
+
+
+int at_http_read_resp_body(uint8_t *response_data, struct httpc_conn *conn_ptr, uint32_t *total_resp_body_size)
+{
+	int read_size = 0;
+
+	memset(response_data, 0, HTTP_READ_RESPONSE_DATA);
+	read_size = httpc_response_read_data(conn_ptr, response_data, HTTP_READ_RESPONSE_DATA - 1);
+	if (read_size > 0) {
+		RTK_LOGI(AT_HTTP_TAG, "httpc_response_read_data() read_size = %d\r\n", read_size);
+		*total_resp_body_size += read_size;
+		at_printf_data((char *)response_data, read_size);
+	} else {
+		goto end;
+	}
+
+end:
+	return read_size;
+}
+
+
+void at_http_free_resource(int conn_type, char **http_client_ca_pem, char **http_client_cert_pem, char **http_client_pkey_pem, struct httpc_conn **conn_ptr,
+						   uint8_t **response_data)
+{
+	if ((conn_type >= HTTP_OVER_TLS_VERIFY_SERVER) && (conn_type <= HTTP_OVER_TLS_VERIFY_BOTH)) {
+		rtos_mem_free(*http_client_ca_pem);
+		*http_client_ca_pem = NULL;
+		rtos_mem_free(*http_client_cert_pem);
+		*http_client_cert_pem = NULL;
+		rtos_mem_free(*http_client_pkey_pem);
+		*http_client_pkey_pem = NULL;
+	}
+	if (*conn_ptr) {
+		httpc_conn_close(*conn_ptr);
+		httpc_conn_free(*conn_ptr);
+	}
+
+	rtos_mem_free(*response_data);
+	*response_data = NULL;
+}
+
+
 //AT+HTTPGET=<host>,<path>,<conn_type>[,<certificate_index>][,<req_header_cnt>,<req_header>...<req_header>]
 void at_httpget(void *arg)
 {
-	int argc = 0, error_no = 0, ret = -1;
+	int argc = 0, error_no = 0;
 	char *argv[MAX_ARGC] = {0};
 	int conn_type = 0, cert_index = 0, header_cnt = 0, i = 0;
 	char *find_result = NULL;
 	struct httpc_conn *conn_ptr = NULL;
-	int cert_size = 0, pk_size = 0;
 	char *http_client_ca_pem = NULL;   // read client CA
 	char *http_client_cert_pem = NULL;   // read client cert
 	char *http_client_pkey_pem = NULL;   // read client private key
 	uint8_t *response_data = NULL;
-	int read_size = 0;
 	uint32_t total_resp_body_size = 0;
 
 
@@ -232,19 +490,19 @@ void at_httpget(void *arg)
 
 	conn_type = atoi(argv[3]);
 	if ((conn_type < HTTP_OVER_TCP) || (conn_type > HTTP_OVER_TLS_VERIFY_BOTH)) {
-		RTK_LOGE(AT_HTTP_TAG, "[at_httpget] Connect type is incorrect\r\n");
+		RTK_LOGE(AT_HTTP_TAG, "[at_httpget] The range of <conn_type> is [1, 5]\r\n");
 		error_no = 1;
 		goto end;
 	}
 	if ((conn_type >= HTTP_OVER_TLS_VERIFY_SERVER) && (conn_type <= HTTP_OVER_TLS_VERIFY_BOTH)) {
-		if (argv[4] == NULL)  {
-			RTK_LOGE(AT_HTTP_TAG, "[at_httpget] Certificate index is NULL\r\n");
+		if (strlen(argv[4]) == 0)  {
+			RTK_LOGE(AT_HTTP_TAG, "[at_httpget] Missing <cert_index> for HTTP_OVER_TLS\r\n");
 			error_no = 1;
 			goto end;
 		}
 		cert_index = atoi(argv[4]);
 		if (cert_index <= 0) {
-			RTK_LOGE(AT_HTTP_TAG, "[at_httpget] Certificate index is incorrect\r\n");
+			RTK_LOGE(AT_HTTP_TAG, "[at_httpget] The <cert_index> should be greater than or equal to 1\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -260,150 +518,26 @@ void at_httpget(void *arg)
 		for (i = 1; i <= header_cnt; i++) {
 			find_result = strstr(argv[5 + i], ": ");
 			if (!find_result) {
-				RTK_LOGE(AT_HTTP_TAG, "[at_httpget] The input request header is incorrect\r\n");
+				RTK_LOGE(AT_HTTP_TAG, "[at_httpget] The format of <req_header> is incorrect\r\n");
 				error_no = 1;
 				goto end;
 			}
 		}
 	}
 
-	if ((conn_type == HTTP_OVER_TLS_VERIFY_SERVER) || (conn_type == HTTP_OVER_TLS_VERIFY_BOTH)) {
-		if ((cert_size = atcmd_get_ssl_certificate_size(CLIENT_CA, cert_index)) <= 0)  {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpget] Failed to get CLIENT_CA_%d size!\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		}
-		http_client_ca_pem = rtos_mem_zmalloc(cert_size + 1);
-		if (http_client_ca_pem == NULL) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpget] http_client_ca_pem malloc fail\r\n");
-			error_no = 2;
-			goto end;
-		}
-		ret = atcmd_get_ssl_certificate(http_client_ca_pem, CLIENT_CA, cert_index);
-		if (ret == 0) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpget] NO CLIENT_CA_%d!\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		} else if (ret < 0) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpget] CLIENT_CA_%d read failed\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		}
-	}
-	if ((conn_type == HTTP_OVER_TLS_VERIFY_CLIENT) || (conn_type == HTTP_OVER_TLS_VERIFY_BOTH)) {
-		if (((cert_size = atcmd_get_ssl_certificate_size(CLIENT_CERT, cert_index)) <= 0) ||
-			((pk_size = atcmd_get_ssl_certificate_size(CLIENT_KEY, cert_index)) <= 0))  {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpget] Failed to get CLIENT_CERT_%d / CLIENT_KEY_%d size!\r\n", cert_index, cert_index);
-			error_no = 3;
-			goto end;
-		}
-		http_client_cert_pem = rtos_mem_zmalloc(cert_size + 1);
-		if (http_client_cert_pem == NULL) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpget] http_client_cert_pem malloc fail\r\n");
-			error_no = 2;
-			goto end;
-		}
-		ret = atcmd_get_ssl_certificate(http_client_cert_pem, CLIENT_CERT, cert_index);
-		if (ret > 0) {
-			http_client_pkey_pem = rtos_mem_zmalloc(pk_size + 1);
-			if (http_client_pkey_pem == NULL) {
-				RTK_LOGW(AT_HTTP_TAG, "[at_httpget] http_client_pkey_pem malloc fail\r\n");
-				error_no = 2;
-				goto end;
-			}
-			ret = atcmd_get_ssl_certificate(http_client_pkey_pem, CLIENT_KEY, cert_index);
-			if (ret <= 0)  {
-				RTK_LOGW(AT_HTTP_TAG, "[at_httpget] CLIENT_KEY_%d read failed\r\n", cert_index);
-				error_no = 3;
-				goto end;
-			}
-		} else if (ret == 0) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpget] NO CLIENT_CERT_%d!\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		} else {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpget] CLIENT_CERT_%d read failed\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		}
-	}
-
-	switch (conn_type) {
-	case HTTP_OVER_TCP:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_NONE, NULL, NULL, NULL);
-		break;
-	case HTTP_OVER_TLS_NO_VERIFY:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, NULL, NULL, NULL);
-		break;
-	case HTTP_OVER_TLS_VERIFY_SERVER:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, NULL, NULL, http_client_ca_pem);
-		break;
-	case HTTP_OVER_TLS_VERIFY_CLIENT:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, http_client_cert_pem, http_client_pkey_pem, NULL);
-		break;
-	case HTTP_OVER_TLS_VERIFY_BOTH:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, http_client_cert_pem, http_client_pkey_pem, http_client_ca_pem);
-		break;
-	default:
-		RTK_LOGE(AT_HTTP_TAG, "[at_httpget] Connect type is incorrect\r\n");
-		error_no = 1;
-		break;
-	}
-
-	if (!conn_ptr) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httpget] conn_ptr is NULL\r\n");
-		error_no = 2;
-		goto end;
-	}
-	httpc_enable_ignore_content_len(conn_ptr);
-
-	if (http_server_port == 0)  {
-		if (conn_type == HTTP_OVER_TCP) {
-			ret = httpc_conn_connect(conn_ptr, argv[1], 80, http_timeout);
-		} else {
-			ret = httpc_conn_connect(conn_ptr, argv[1], 443, http_timeout);
-		}
-	} else  {
-		ret = httpc_conn_connect(conn_ptr, argv[1], (uint16_t)http_server_port, http_timeout);
-	}
-
-	if (ret != 0) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httpget] httpc_conn_connect failed\r\n");
-		error_no = 4;
+	if ((error_no = at_http_load_ssl_cert_from_flash(conn_type, cert_index, &http_client_ca_pem, &http_client_cert_pem, &http_client_pkey_pem)) != 0) {
 		goto end;
 	}
 
-	if (httpc_request_write_header_start(conn_ptr, "GET", argv[2], NULL, 0) != 0) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httpget] httpc_request_write_header_start failed\r\n");
-		error_no = 4;
+	if ((error_no = at_http_create_connection(conn_type, &conn_ptr, http_client_ca_pem, http_client_cert_pem, http_client_pkey_pem, argv[1])) != 0) {
 		goto end;
 	}
 
-	for (i = 1; i <= header_cnt; i++) {
-		if (httpc_request_write_header_raw(conn_ptr, argv[5 + i]) != 0) {
-			RTK_LOGI(AT_HTTP_TAG, "[at_httpget] httpc_request_write_header_raw failed\r\n");
-			error_no = 4;
-			goto end;
-		}
-	}
-
-	for (i = 0; i < g_http_req_header_cnt; i++) {
-		if (httpc_request_write_header_raw(conn_ptr, g_http_req_header[i]) != 0) {
-			RTK_LOGI(AT_HTTP_TAG, "[at_httpget] httpc_request_write_header_raw failed\r\n");
-			error_no = 4;
-			goto end;
-		}
-	}
-
-	if (httpc_request_write_header_finish(conn_ptr) <= 0) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httpget] httpc_request_write_header_finish failed\r\n");
-		error_no = 4;
+	if ((error_no = at_http_send_req_header(conn_ptr, "GET", argv[2], NULL, 0, header_cnt, &argv[5])) != 0) {
 		goto end;
 	}
 
-	if (httpc_response_read_header(conn_ptr) != 0) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httpget] httpc_response_read_header failed\r\n");
-		error_no = 5;
+	if ((error_no = at_http_read_resp_header(conn_ptr)) != 0) {
 		goto end;
 	}
 
@@ -414,23 +548,14 @@ void at_httpget(void *arg)
 	at_printf("+HTTPGET: HEADER DUMP END\r\n");
 	at_printf_unlock();
 
-	response_data = rtos_mem_zmalloc(HTTP_READ_RESPONSE_DATA);
-	if (response_data == NULL) {
-		RTK_LOGW(AT_HTTP_TAG, "[at_httpget] response_data malloc fail\r\n");
-		error_no = 2;
+	if ((error_no = at_http_malloc_response_body(&response_data)) != 0) {
 		goto end;
 	}
 
 	if (conn_ptr->response.content_len > 0) {
 		at_printf("+HTTPGET: BODY DUMP START\r\n");
 		while (1) {
-			memset(response_data, 0, HTTP_READ_RESPONSE_DATA);
-			read_size = httpc_response_read_data(conn_ptr, response_data, HTTP_READ_RESPONSE_DATA - 1);
-			if (read_size > 0) {
-				RTK_LOGI(AT_HTTP_TAG, "[at_httpget] httpc_response_read_data() read_size=%d\r\n", read_size);
-				total_resp_body_size += read_size;
-				at_printf_data((char *)response_data, read_size);
-			} else {
+			if (at_http_read_resp_body(response_data, conn_ptr, &total_resp_body_size) <= 0) {
 				break;
 			}
 			if (total_resp_body_size >= conn_ptr->response.content_len) {
@@ -442,13 +567,7 @@ void at_httpget(void *arg)
 	} else {    //Some websites’ response headers do not include the content length, ex: Transfer-Encoding: chunked
 		at_printf("+HTTPGET: BODY DUMP START\r\n");
 		while (1) {
-			memset(response_data, 0, HTTP_READ_RESPONSE_DATA);
-			read_size = httpc_response_read_data(conn_ptr, response_data, HTTP_READ_RESPONSE_DATA - 1);
-			if (read_size > 0) {
-				RTK_LOGI(AT_HTTP_TAG, "[at_httpget] httpc_response_read_data() read_size=%d\r\n", read_size);
-				total_resp_body_size += read_size;
-				at_printf_data((char *)response_data, read_size);
-			} else {
+			if (at_http_read_resp_body(response_data, conn_ptr, &total_resp_body_size) <= 0) {
 				break;
 			}
 		}
@@ -457,21 +576,7 @@ void at_httpget(void *arg)
 	}
 
 end:
-	if ((conn_type >= HTTP_OVER_TLS_VERIFY_SERVER) && (conn_type <= HTTP_OVER_TLS_VERIFY_BOTH)) {
-		rtos_mem_free(http_client_ca_pem);
-		http_client_ca_pem = NULL;
-		rtos_mem_free(http_client_cert_pem);
-		http_client_cert_pem = NULL;
-		rtos_mem_free(http_client_pkey_pem);
-		http_client_pkey_pem = NULL;
-	}
-	if (conn_ptr) {
-		httpc_conn_close(conn_ptr);
-		httpc_conn_free(conn_ptr);
-	}
-
-	rtos_mem_free(response_data);
-	response_data = NULL;
+	at_http_free_resource(conn_type, &http_client_ca_pem, &http_client_cert_pem, &http_client_pkey_pem, &conn_ptr, &response_data);
 
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);
@@ -483,22 +588,77 @@ end:
 }
 
 
+int at_http_send_req_body(int total_post_body_size, struct httpc_conn *conn_ptr)
+{
+	u8 *post_data_buffer = NULL;
+	int single_post_size = 0;
+	int error_no = 0;
+
+	if (total_post_body_size > 0)  {
+		post_data_buffer = rtos_mem_zmalloc((total_post_body_size <= MAX_TT_BUF_LEN ? total_post_body_size : MAX_TT_BUF_LEN) + 1);
+		if (post_data_buffer == NULL) {
+			RTK_LOGW(AT_HTTP_TAG, "post_data_buffer malloc fail\r\n");
+			error_no = 2;
+			goto end;
+		}
+		if (atcmd_tt_mode_start((u32)total_post_body_size) < 0)  {
+			RTK_LOGI(AT_HTTP_TAG, "Enter TT mode failed\r\n");
+			error_no = 5;
+			goto end;
+		}
+		if (total_post_body_size <= MAX_TT_BUF_LEN)  {
+			if (atcmd_tt_mode_get(post_data_buffer, (u32)total_post_body_size) != total_post_body_size)  {
+				RTK_LOGI(AT_HTTP_TAG, "Get data failed in TT mode\r\n");
+				error_no = 5;
+				goto tt_end;
+			}
+			if (httpc_request_write_data(conn_ptr, (uint8_t *)post_data_buffer, (size_t)total_post_body_size) != total_post_body_size)  {
+				RTK_LOGI(AT_HTTP_TAG, "httpc_request_write_data() failed\r\n");
+				error_no = 6;
+				goto tt_end;
+			}
+		} else  {
+			while (total_post_body_size > 0)  {
+				single_post_size = (total_post_body_size <= MAX_TT_BUF_LEN) ? total_post_body_size : MAX_TT_BUF_LEN;
+				if (atcmd_tt_mode_get(post_data_buffer, (u32)single_post_size) != single_post_size)  {
+					RTK_LOGI(AT_HTTP_TAG, "Get data failed in TT mode\r\n");
+					error_no = 5;
+					goto tt_end;
+				}
+				if (httpc_request_write_data(conn_ptr, (uint8_t *)post_data_buffer, (size_t)single_post_size) != single_post_size)  {
+					RTK_LOGI(AT_HTTP_TAG, "httpc_request_write_data() failed\r\n");
+					error_no = 6;
+					goto tt_end;
+				}
+				total_post_body_size -= single_post_size;
+			}
+		}
+
+tt_end:
+		atcmd_tt_mode_end();
+
+		rtos_mem_free(post_data_buffer);
+		post_data_buffer = NULL;
+	}
+
+end:
+	return error_no;
+}
+
+
 //AT+HTTPPOST=<host>,<path>,<conn_type>[,<certificate_index>],<body_size>[,<req_header_cnt>,<req_header>...<req_header>]
 void at_httppost(void *arg)
 {
-	int argc = 0, error_no = 0, ret = -1;
+	int argc = 0, error_no = 0;
 	char *argv[MAX_ARGC] = {0};
 	int conn_type = 0, cert_index = 0, header_cnt = 0, i = 0;
 	char *find_result = NULL;
 	struct httpc_conn *conn_ptr = NULL;
-	int cert_size = 0, pk_size = 0;
 	char *http_client_ca_pem = NULL;   // read client CA
 	char *http_client_cert_pem = NULL;   // read client cert
 	char *http_client_pkey_pem = NULL;   // read client private key
-	int total_post_body_size = 0, single_post_size = 0;
-	u8 *post_data_buffer = NULL;
+	int total_post_body_size = 0;
 	uint8_t *response_data = NULL;
-	int read_size = 0;
 	uint32_t total_resp_body_size = 0;
 
 
@@ -509,7 +669,7 @@ void at_httppost(void *arg)
 	}
 
 	argc = parse_param_advance(arg, argv);
-	if ((argc < 5) || (argc > MAX_ARGC)) {
+	if ((argc < 6) || (argc > MAX_ARGC)) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httppost] Invalid number of parameters\r\n");
 		error_no = 1;
 		goto end;
@@ -530,24 +690,29 @@ void at_httppost(void *arg)
 
 	conn_type = atoi(argv[3]);
 	if ((conn_type < HTTP_OVER_TCP) || (conn_type > HTTP_OVER_TLS_VERIFY_BOTH)) {
-		RTK_LOGE(AT_HTTP_TAG, "[at_httppost] Connect type is incorrect\r\n");
+		RTK_LOGE(AT_HTTP_TAG, "[at_httppost] The range of <conn_type> is [1, 5]\r\n");
 		error_no = 1;
 		goto end;
 	}
 	if ((conn_type >= HTTP_OVER_TLS_VERIFY_SERVER) && (conn_type <= HTTP_OVER_TLS_VERIFY_BOTH)) {
-		if (argv[4] == NULL)  {
-			RTK_LOGE(AT_HTTP_TAG, "[at_httppost] Certificate index is NULL\r\n");
+		if (strlen(argv[4]) == 0)  {
+			RTK_LOGE(AT_HTTP_TAG, "[at_httppost] Missing <cert_index> for HTTP_OVER_TLS\r\n");
 			error_no = 1;
 			goto end;
 		}
 		cert_index = atoi(argv[4]);
 		if (cert_index <= 0) {
-			RTK_LOGE(AT_HTTP_TAG, "[at_httppost] Certificate index is incorrect\r\n");
+			RTK_LOGE(AT_HTTP_TAG, "[at_httppost] The <cert_index> should be greater than or equal to 1\r\n");
 			error_no = 1;
 			goto end;
 		}
 	}
 
+	if (strlen(argv[5]) == 0)  {
+		RTK_LOGE(AT_HTTP_TAG, "[at_httppost] Missing <body_size>\r\n");
+		error_no = 1;
+		goto end;
+	}
 	total_post_body_size = atoi(argv[5]);
 	if (total_post_body_size < 0) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httppost] Total length of POST is incorrect\r\n");
@@ -565,194 +730,32 @@ void at_httppost(void *arg)
 		for (i = 1; i <= header_cnt; i++) {
 			find_result = strstr(argv[6 + i], ": ");
 			if (!find_result) {
-				RTK_LOGE(AT_HTTP_TAG, "[at_httppost] The input request header is incorrect\r\n");
+				RTK_LOGE(AT_HTTP_TAG, "[at_httppost] The format of <req_header> is incorrect\r\n");
 				error_no = 1;
 				goto end;
 			}
 		}
 	}
 
-	if ((conn_type == HTTP_OVER_TLS_VERIFY_SERVER) || (conn_type == HTTP_OVER_TLS_VERIFY_BOTH)) {
-		if ((cert_size = atcmd_get_ssl_certificate_size(CLIENT_CA, cert_index)) <= 0)  {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httppost] Failed to get CLIENT_CA_%d size!\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		}
-		http_client_ca_pem = rtos_mem_zmalloc(cert_size + 1);
-		if (http_client_ca_pem == NULL) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httppost] http_client_ca_pem malloc fail\r\n");
-			error_no = 2;
-			goto end;
-		}
-		ret = atcmd_get_ssl_certificate(http_client_ca_pem, CLIENT_CA, cert_index);
-		if (ret == 0) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httppost] NO CLIENT_CA_%d!\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		} else if (ret < 0) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httppost] CLIENT_CA_%d read failed\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		}
-	}
-	if ((conn_type == HTTP_OVER_TLS_VERIFY_CLIENT) || (conn_type == HTTP_OVER_TLS_VERIFY_BOTH)) {
-		if (((cert_size = atcmd_get_ssl_certificate_size(CLIENT_CERT, cert_index)) <= 0) ||
-			((pk_size = atcmd_get_ssl_certificate_size(CLIENT_KEY, cert_index)) <= 0))  {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httppost] Failed to get CLIENT_CERT_%d / CLIENT_KEY_%d size!\r\n", cert_index, cert_index);
-			error_no = 3;
-			goto end;
-		}
-		http_client_cert_pem = rtos_mem_zmalloc(cert_size + 1);
-		if (http_client_cert_pem == NULL) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httppost] http_client_cert_pem malloc fail\r\n");
-			error_no = 2;
-			goto end;
-		}
-		ret = atcmd_get_ssl_certificate(http_client_cert_pem, CLIENT_CERT, cert_index);
-		if (ret > 0) {
-			http_client_pkey_pem = rtos_mem_zmalloc(pk_size + 1);
-			if (http_client_pkey_pem == NULL) {
-				RTK_LOGW(AT_HTTP_TAG, "[at_httppost] http_client_pkey_pem malloc fail\r\n");
-				error_no = 2;
-				goto end;
-			}
-			ret = atcmd_get_ssl_certificate(http_client_pkey_pem, CLIENT_KEY, cert_index);
-			if (ret <= 0)  {
-				RTK_LOGW(AT_HTTP_TAG, "[at_httppost] CLIENT_KEY_%d read failed\r\n", cert_index);
-				error_no = 3;
-				goto end;
-			}
-		} else if (ret == 0) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httppost] NO CLIENT_CERT_%d!\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		} else {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httppost] CLIENT_CERT_%d read failed\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		}
-	}
-
-	switch (conn_type) {
-	case HTTP_OVER_TCP:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_NONE, NULL, NULL, NULL);
-		break;
-	case HTTP_OVER_TLS_NO_VERIFY:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, NULL, NULL, NULL);
-		break;
-	case HTTP_OVER_TLS_VERIFY_SERVER:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, NULL, NULL, http_client_ca_pem);
-		break;
-	case HTTP_OVER_TLS_VERIFY_CLIENT:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, http_client_cert_pem, http_client_pkey_pem, NULL);
-		break;
-	case HTTP_OVER_TLS_VERIFY_BOTH:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, http_client_cert_pem, http_client_pkey_pem, http_client_ca_pem);
-		break;
-	default:
-		RTK_LOGE(AT_HTTP_TAG, "[at_httppost] Connect type is incorrect\r\n");
-		error_no = 1;
-		break;
-	}
-
-	if (!conn_ptr) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httppost] conn_ptr is NULL\r\n");
-		error_no = 2;
-		goto end;
-	}
-	httpc_enable_ignore_content_len(conn_ptr);
-
-	if (http_server_port == 0)  {
-		if (conn_type == HTTP_OVER_TCP) {
-			ret = httpc_conn_connect(conn_ptr, argv[1], 80, http_timeout);
-		} else {
-			ret = httpc_conn_connect(conn_ptr, argv[1], 443, http_timeout);
-		}
-	} else  {
-		ret = httpc_conn_connect(conn_ptr, argv[1], (uint16_t)http_server_port, http_timeout);
-	}
-
-	if (ret != 0) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httppost] httpc_conn_connect failed\r\n");
-		error_no = 4;
+	if ((error_no = at_http_load_ssl_cert_from_flash(conn_type, cert_index, &http_client_ca_pem, &http_client_cert_pem, &http_client_pkey_pem)) != 0) {
 		goto end;
 	}
 
-	if (httpc_request_write_header_start(conn_ptr, "POST", argv[2], NULL, (size_t)total_post_body_size) != 0) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httppost] httpc_request_write_header_start failed\r\n");
-		error_no = 4;
+	if ((error_no = at_http_create_connection(conn_type, &conn_ptr, http_client_ca_pem, http_client_cert_pem, http_client_pkey_pem, argv[1])) != 0) {
 		goto end;
 	}
 
-	for (i = 1; i <= header_cnt; i++) {
-		if (httpc_request_write_header_raw(conn_ptr, argv[6 + i]) != 0) {
-			RTK_LOGI(AT_HTTP_TAG, "[at_httppost] httpc_request_write_header_raw failed\r\n");
-			error_no = 4;
-			goto end;
-		}
-	}
-
-	for (i = 0; i < g_http_req_header_cnt; i++) {
-		if (httpc_request_write_header_raw(conn_ptr, g_http_req_header[i]) != 0) {
-			RTK_LOGI(AT_HTTP_TAG, "[at_httppost] httpc_request_write_header_raw failed\r\n");
-			error_no = 4;
-			goto end;
-		}
-	}
-
-	if (httpc_request_write_header_finish(conn_ptr) <= 0) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httppost] httpc_request_write_header_finish failed\r\n");
-		error_no = 4;
+	if ((error_no = at_http_send_req_header(conn_ptr, "POST", argv[2], NULL, (size_t)total_post_body_size, header_cnt, &argv[6])) != 0) {
 		goto end;
 	}
 
-	if (total_post_body_size > 0)  {
-		post_data_buffer = rtos_mem_zmalloc((total_post_body_size <= MAX_TT_BUF_LEN ? total_post_body_size : MAX_TT_BUF_LEN) + 1);
-		if (post_data_buffer == NULL) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httppost] post_data_buffer malloc fail\r\n");
-			error_no = 2;
-			goto end;
-		}
-		if (atcmd_tt_mode_start((u32)total_post_body_size) < 0)  {
-			RTK_LOGI(AT_HTTP_TAG, "[at_httppost] Enter TT mode failed\r\n");
-			error_no = 5;
-			goto end;
-		}
-		if (total_post_body_size <= MAX_TT_BUF_LEN)  {
-			if (atcmd_tt_mode_get(post_data_buffer, (u32)total_post_body_size) != total_post_body_size)  {
-				RTK_LOGI(AT_HTTP_TAG, "[at_httppost] Get data failed in TT mode\r\n");
-				error_no = 5;
-				goto end;
-			}
-			if (httpc_request_write_data(conn_ptr, (uint8_t *)post_data_buffer, (size_t)total_post_body_size) != total_post_body_size)  {
-				RTK_LOGI(AT_HTTP_TAG, "[at_httppost] httpc_request_write_data failed\r\n");
-				error_no = 6;
-				goto end;
-			}
-		} else  {
-			while (total_post_body_size > 0)  {
-				single_post_size = (total_post_body_size <= MAX_TT_BUF_LEN) ? total_post_body_size : MAX_TT_BUF_LEN;
-				if (atcmd_tt_mode_get(post_data_buffer, (u32)single_post_size) != single_post_size)  {
-					RTK_LOGI(AT_HTTP_TAG, "[at_httppost] Get data failed in TT mode\r\n");
-					error_no = 5;
-					goto end;
-				}
-				if (httpc_request_write_data(conn_ptr, (uint8_t *)post_data_buffer, (size_t)single_post_size) != single_post_size)  {
-					RTK_LOGI(AT_HTTP_TAG, "[at_httppost] httpc_request_write_data failed\r\n");
-					error_no = 6;
-					goto end;
-				}
-				total_post_body_size -= single_post_size;
-			}
-		}
-		atcmd_tt_mode_end();
-
-		rtos_mem_free(post_data_buffer);
-		post_data_buffer = NULL;
+	if ((error_no = at_http_send_req_body(total_post_body_size, conn_ptr)) != 0) {
+		goto end;
 	}
+
 
 	if (httpc_response_read_header(conn_ptr) != 0) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httppost] httpc_response_read_header failed\r\n");
+		RTK_LOGI(AT_HTTP_TAG, "[at_httppost] httpc_response_read_header() failed\r\n");
 		error_no = 7;
 		goto end;
 	}
@@ -764,23 +767,14 @@ void at_httppost(void *arg)
 	at_printf("+HTTPPOST: HEADER DUMP END\r\n");
 	at_printf_unlock();
 
-	response_data = rtos_mem_zmalloc(HTTP_READ_RESPONSE_DATA);
-	if (response_data == NULL) {
-		RTK_LOGW(AT_HTTP_TAG, "[at_httppost] response_data malloc fail\r\n");
-		error_no = 2;
+	if ((error_no = at_http_malloc_response_body(&response_data)) != 0) {
 		goto end;
 	}
 
 	if (conn_ptr->response.content_len > 0) {
 		at_printf("+HTTPPOST: BODY DUMP START\r\n");
 		while (1) {
-			memset(response_data, 0, HTTP_READ_RESPONSE_DATA);
-			read_size = httpc_response_read_data(conn_ptr, response_data, HTTP_READ_RESPONSE_DATA - 1);
-			if (read_size > 0) {
-				RTK_LOGI(AT_HTTP_TAG, "[at_httppost] httpc_response_read_data() read_size=%d\r\n", read_size);
-				total_resp_body_size += read_size;
-				at_printf_data((char *)response_data, read_size);
-			} else {
+			if (at_http_read_resp_body(response_data, conn_ptr, &total_resp_body_size) <= 0) {
 				break;
 			}
 			if (total_resp_body_size >= conn_ptr->response.content_len) {
@@ -792,13 +786,7 @@ void at_httppost(void *arg)
 	} else {    //Some websites’ response headers do not include the content length, ex: Transfer-Encoding: chunked
 		at_printf("+HTTPPOST: BODY DUMP START\r\n");
 		while (1) {
-			memset(response_data, 0, HTTP_READ_RESPONSE_DATA);
-			read_size = httpc_response_read_data(conn_ptr, response_data, HTTP_READ_RESPONSE_DATA - 1);
-			if (read_size > 0) {
-				RTK_LOGI(AT_HTTP_TAG, "[at_httppost] httpc_response_read_data() read_size=%d\r\n", read_size);
-				total_resp_body_size += read_size;
-				at_printf_data((char *)response_data, read_size);
-			} else {
+			if (at_http_read_resp_body(response_data, conn_ptr, &total_resp_body_size) <= 0) {
 				break;
 			}
 		}
@@ -807,23 +795,7 @@ void at_httppost(void *arg)
 	}
 
 end:
-	if ((conn_type >= HTTP_OVER_TLS_VERIFY_SERVER) && (conn_type <= HTTP_OVER_TLS_VERIFY_BOTH)) {
-		rtos_mem_free(http_client_ca_pem);
-		http_client_ca_pem = NULL;
-		rtos_mem_free(http_client_cert_pem);
-		http_client_cert_pem = NULL;
-		rtos_mem_free(http_client_pkey_pem);
-		http_client_pkey_pem = NULL;
-	}
-	if (conn_ptr) {
-		httpc_conn_close(conn_ptr);
-		httpc_conn_free(conn_ptr);
-	}
-
-	rtos_mem_free(response_data);
-	response_data = NULL;
-	rtos_mem_free(post_data_buffer);
-	post_data_buffer = NULL;
+	at_http_free_resource(conn_type, &http_client_ca_pem, &http_client_cert_pem, &http_client_pkey_pem, &conn_ptr, &response_data);
 
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);
@@ -838,19 +810,16 @@ end:
 //AT+HTTPPUT=<host>,<path>,<conn_type>[,<certificate_index>],<body_size>[,<req_header_cnt>,<req_header>...<req_header>]
 void at_httpput(void *arg)
 {
-	int argc = 0, error_no = 0, ret = -1;
+	int argc = 0, error_no = 0;
 	char *argv[MAX_ARGC] = {0};
 	int conn_type = 0, cert_index = 0, header_cnt = 0, i = 0;
 	char *find_result = NULL;
 	struct httpc_conn *conn_ptr = NULL;
-	int cert_size = 0, pk_size = 0;
 	char *http_client_ca_pem = NULL;   // read client CA
 	char *http_client_cert_pem = NULL;   // read client cert
 	char *http_client_pkey_pem = NULL;   // read client private key
-	int total_post_body_size = 0, single_post_size = 0;
-	u8 *post_data_buffer = NULL;
+	int total_put_body_size = 0;
 	uint8_t *response_data = NULL;
-	int read_size = 0;
 	uint32_t total_resp_body_size = 0;
 
 
@@ -861,7 +830,7 @@ void at_httpput(void *arg)
 	}
 
 	argc = parse_param_advance(arg, argv);
-	if ((argc < 5) || (argc > MAX_ARGC)) {
+	if ((argc < 6) || (argc > MAX_ARGC)) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httpput] Invalid number of parameters\r\n");
 		error_no = 1;
 		goto end;
@@ -882,27 +851,32 @@ void at_httpput(void *arg)
 
 	conn_type = atoi(argv[3]);
 	if ((conn_type < HTTP_OVER_TCP) || (conn_type > HTTP_OVER_TLS_VERIFY_BOTH)) {
-		RTK_LOGE(AT_HTTP_TAG, "[at_httpput] Connect type is incorrect\r\n");
+		RTK_LOGE(AT_HTTP_TAG, "[at_httpput] The range of <conn_type> is [1, 5]\r\n");
 		error_no = 1;
 		goto end;
 	}
 	if ((conn_type >= HTTP_OVER_TLS_VERIFY_SERVER) && (conn_type <= HTTP_OVER_TLS_VERIFY_BOTH)) {
-		if (argv[4] == NULL)  {
-			RTK_LOGE(AT_HTTP_TAG, "[at_httpput] Certificate index is NULL\r\n");
+		if (strlen(argv[4]) == 0)  {
+			RTK_LOGE(AT_HTTP_TAG, "[at_httpput] Missing <cert_index> for HTTP_OVER_TLS\r\n");
 			error_no = 1;
 			goto end;
 		}
 		cert_index = atoi(argv[4]);
 		if (cert_index <= 0) {
-			RTK_LOGE(AT_HTTP_TAG, "[at_httpput] Certificate index is incorrect\r\n");
+			RTK_LOGE(AT_HTTP_TAG, "[at_httpput] The <cert_index> should be greater than or equal to 1\r\n");
 			error_no = 1;
 			goto end;
 		}
 	}
 
-	total_post_body_size = atoi(argv[5]);
-	if (total_post_body_size < 0) {
-		RTK_LOGE(AT_HTTP_TAG, "[at_httpput] Total length of POST is incorrect\r\n");
+	if (strlen(argv[5]) == 0)  {
+		RTK_LOGE(AT_HTTP_TAG, "[at_httpput] Missing <body_size>\r\n");
+		error_no = 1;
+		goto end;
+	}
+	total_put_body_size = atoi(argv[5]);
+	if (total_put_body_size < 0) {
+		RTK_LOGE(AT_HTTP_TAG, "[at_httpput] Total length of PUT is incorrect\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -917,194 +891,31 @@ void at_httpput(void *arg)
 		for (i = 1; i <= header_cnt; i++) {
 			find_result = strstr(argv[6 + i], ": ");
 			if (!find_result) {
-				RTK_LOGE(AT_HTTP_TAG, "[at_httpput] The input request header is incorrect\r\n");
+				RTK_LOGE(AT_HTTP_TAG, "[at_httpput] The format of <req_header> is incorrect\r\n");
 				error_no = 1;
 				goto end;
 			}
 		}
 	}
 
-	if ((conn_type == HTTP_OVER_TLS_VERIFY_SERVER) || (conn_type == HTTP_OVER_TLS_VERIFY_BOTH)) {
-		if ((cert_size = atcmd_get_ssl_certificate_size(CLIENT_CA, cert_index)) <= 0)  {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpput] Failed to get CLIENT_CA_%d size!\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		}
-		http_client_ca_pem = rtos_mem_zmalloc(cert_size + 1);
-		if (http_client_ca_pem == NULL) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpput] http_client_ca_pem malloc fail\r\n");
-			error_no = 2;
-			goto end;
-		}
-		ret = atcmd_get_ssl_certificate(http_client_ca_pem, CLIENT_CA, cert_index);
-		if (ret == 0) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpput] NO CLIENT_CA_%d!\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		} else if (ret < 0) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpput] CLIENT_CA_%d read failed\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		}
-	}
-	if ((conn_type == HTTP_OVER_TLS_VERIFY_CLIENT) || (conn_type == HTTP_OVER_TLS_VERIFY_BOTH)) {
-		if (((cert_size = atcmd_get_ssl_certificate_size(CLIENT_CERT, cert_index)) <= 0) ||
-			((pk_size = atcmd_get_ssl_certificate_size(CLIENT_KEY, cert_index)) <= 0))  {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpput] Failed to get CLIENT_CERT_%d / CLIENT_KEY_%d size!\r\n", cert_index, cert_index);
-			error_no = 3;
-			goto end;
-		}
-		http_client_cert_pem = rtos_mem_zmalloc(cert_size + 1);
-		if (http_client_cert_pem == NULL) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpput] http_client_cert_pem malloc fail\r\n");
-			error_no = 2;
-			goto end;
-		}
-		ret = atcmd_get_ssl_certificate(http_client_cert_pem, CLIENT_CERT, cert_index);
-		if (ret > 0) {
-			http_client_pkey_pem = rtos_mem_zmalloc(pk_size + 1);
-			if (http_client_pkey_pem == NULL) {
-				RTK_LOGW(AT_HTTP_TAG, "[at_httpput] http_client_pkey_pem malloc fail\r\n");
-				error_no = 2;
-				goto end;
-			}
-			ret = atcmd_get_ssl_certificate(http_client_pkey_pem, CLIENT_KEY, cert_index);
-			if (ret <= 0)  {
-				RTK_LOGW(AT_HTTP_TAG, "[at_httpput] CLIENT_KEY_%d read failed\r\n", cert_index);
-				error_no = 3;
-				goto end;
-			}
-		} else if (ret == 0) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpput] NO CLIENT_CERT_%d!\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		} else {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpput] CLIENT_CERT_%d read failed\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		}
-	}
-
-	switch (conn_type) {
-	case HTTP_OVER_TCP:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_NONE, NULL, NULL, NULL);
-		break;
-	case HTTP_OVER_TLS_NO_VERIFY:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, NULL, NULL, NULL);
-		break;
-	case HTTP_OVER_TLS_VERIFY_SERVER:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, NULL, NULL, http_client_ca_pem);
-		break;
-	case HTTP_OVER_TLS_VERIFY_CLIENT:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, http_client_cert_pem, http_client_pkey_pem, NULL);
-		break;
-	case HTTP_OVER_TLS_VERIFY_BOTH:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, http_client_cert_pem, http_client_pkey_pem, http_client_ca_pem);
-		break;
-	default:
-		RTK_LOGE(AT_HTTP_TAG, "[at_httpput] Connect type is incorrect\r\n");
-		error_no = 1;
-		break;
-	}
-
-	if (!conn_ptr) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httpput] conn_ptr is NULL\r\n");
-		error_no = 2;
-		goto end;
-	}
-	httpc_enable_ignore_content_len(conn_ptr);
-
-	if (http_server_port == 0)  {
-		if (conn_type == HTTP_OVER_TCP) {
-			ret = httpc_conn_connect(conn_ptr, argv[1], 80, http_timeout);
-		} else {
-			ret = httpc_conn_connect(conn_ptr, argv[1], 443, http_timeout);
-		}
-	} else  {
-		ret = httpc_conn_connect(conn_ptr, argv[1], (uint16_t)http_server_port, http_timeout);
-	}
-
-	if (ret != 0) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_conn_connect failed\r\n");
-		error_no = 4;
+	if ((error_no = at_http_load_ssl_cert_from_flash(conn_type, cert_index, &http_client_ca_pem, &http_client_cert_pem, &http_client_pkey_pem)) != 0) {
 		goto end;
 	}
 
-	if (httpc_request_write_header_start(conn_ptr, "PUT", argv[2], NULL, (size_t)total_post_body_size) != 0) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_request_write_header_start failed\r\n");
-		error_no = 4;
+	if ((error_no = at_http_create_connection(conn_type, &conn_ptr, http_client_ca_pem, http_client_cert_pem, http_client_pkey_pem, argv[1])) != 0) {
 		goto end;
 	}
 
-	for (i = 1; i <= header_cnt; i++) {
-		if (httpc_request_write_header_raw(conn_ptr, argv[6 + i]) != 0) {
-			RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_request_write_header_raw failed\r\n");
-			error_no = 4;
-			goto end;
-		}
-	}
-
-	for (i = 0; i < g_http_req_header_cnt; i++) {
-		if (httpc_request_write_header_raw(conn_ptr, g_http_req_header[i]) != 0) {
-			RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_request_write_header_raw failed\r\n");
-			error_no = 4;
-			goto end;
-		}
-	}
-
-	if (httpc_request_write_header_finish(conn_ptr) <= 0) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_request_write_header_finish failed\r\n");
-		error_no = 4;
+	if ((error_no = at_http_send_req_header(conn_ptr, "PUT", argv[2], NULL, (size_t)total_put_body_size, header_cnt, &argv[6])) != 0) {
 		goto end;
 	}
 
-	if (total_post_body_size > 0)  {
-		post_data_buffer = rtos_mem_zmalloc((total_post_body_size <= MAX_TT_BUF_LEN ? total_post_body_size : MAX_TT_BUF_LEN) + 1);
-		if (post_data_buffer == NULL) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpput] post_data_buffer malloc fail\r\n");
-			error_no = 2;
-			goto end;
-		}
-		if (atcmd_tt_mode_start((u32)total_post_body_size) < 0)  {
-			RTK_LOGI(AT_HTTP_TAG, "[at_httpput] Enter TT mode failed\r\n");
-			error_no = 5;
-			goto end;
-		}
-		if (total_post_body_size <= MAX_TT_BUF_LEN)  {
-			if (atcmd_tt_mode_get(post_data_buffer, (u32)total_post_body_size) != total_post_body_size)  {
-				RTK_LOGI(AT_HTTP_TAG, "[at_httpput] Get data failed in TT mode\r\n");
-				error_no = 5;
-				goto end;
-			}
-			if (httpc_request_write_data(conn_ptr, (uint8_t *)post_data_buffer, (size_t)total_post_body_size) != total_post_body_size)  {
-				RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_request_write_data failed\r\n");
-				error_no = 6;
-				goto end;
-			}
-		} else  {
-			while (total_post_body_size > 0)  {
-				single_post_size = (total_post_body_size <= MAX_TT_BUF_LEN) ? total_post_body_size : MAX_TT_BUF_LEN;
-				if (atcmd_tt_mode_get(post_data_buffer, (u32)single_post_size) != single_post_size)  {
-					RTK_LOGI(AT_HTTP_TAG, "[at_httpput] Get data failed in TT mode\r\n");
-					error_no = 5;
-					goto end;
-				}
-				if (httpc_request_write_data(conn_ptr, (uint8_t *)post_data_buffer, (size_t)single_post_size) != single_post_size)  {
-					RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_request_write_data failed\r\n");
-					error_no = 6;
-					goto end;
-				}
-				total_post_body_size -= single_post_size;
-			}
-		}
-		atcmd_tt_mode_end();
-
-		rtos_mem_free(post_data_buffer);
-		post_data_buffer = NULL;
+	if ((error_no = at_http_send_req_body(total_put_body_size, conn_ptr)) != 0) {
+		goto end;
 	}
 
 	if (httpc_response_read_header(conn_ptr) != 0) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_response_read_header failed\r\n");
+		RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_response_read_header() failed\r\n");
 		error_no = 7;
 		goto end;
 	}
@@ -1116,23 +927,14 @@ void at_httpput(void *arg)
 	at_printf("+HTTPPUT: HEADER DUMP END\r\n");
 	at_printf_unlock();
 
-	response_data = rtos_mem_zmalloc(HTTP_READ_RESPONSE_DATA);
-	if (response_data == NULL) {
-		RTK_LOGW(AT_HTTP_TAG, "[at_httpput] response_data malloc fail\r\n");
-		error_no = 2;
+	if ((error_no = at_http_malloc_response_body(&response_data)) != 0) {
 		goto end;
 	}
 
 	if (conn_ptr->response.content_len > 0) {
 		at_printf("+HTTPPUT: BODY DUMP START\r\n");
 		while (1) {
-			memset(response_data, 0, HTTP_READ_RESPONSE_DATA);
-			read_size = httpc_response_read_data(conn_ptr, response_data, HTTP_READ_RESPONSE_DATA - 1);
-			if (read_size > 0) {
-				RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_response_read_data() read_size=%d\r\n", read_size);
-				total_resp_body_size += read_size;
-				at_printf_data((char *)response_data, read_size);
-			} else {
+			if (at_http_read_resp_body(response_data, conn_ptr, &total_resp_body_size) <= 0) {
 				break;
 			}
 			if (total_resp_body_size >= conn_ptr->response.content_len) {
@@ -1144,13 +946,7 @@ void at_httpput(void *arg)
 	} else {    //Some websites’ response headers do not include the content length, ex: Transfer-Encoding: chunked
 		at_printf("+HTTPPUT: BODY DUMP START\r\n");
 		while (1) {
-			memset(response_data, 0, HTTP_READ_RESPONSE_DATA);
-			read_size = httpc_response_read_data(conn_ptr, response_data, HTTP_READ_RESPONSE_DATA - 1);
-			if (read_size > 0) {
-				RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_response_read_data() read_size=%d\r\n", read_size);
-				total_resp_body_size += read_size;
-				at_printf_data((char *)response_data, read_size);
-			} else {
+			if (at_http_read_resp_body(response_data, conn_ptr, &total_resp_body_size) <= 0) {
 				break;
 			}
 		}
@@ -1159,23 +955,7 @@ void at_httpput(void *arg)
 	}
 
 end:
-	if ((conn_type >= HTTP_OVER_TLS_VERIFY_SERVER) && (conn_type <= HTTP_OVER_TLS_VERIFY_BOTH)) {
-		rtos_mem_free(http_client_ca_pem);
-		http_client_ca_pem = NULL;
-		rtos_mem_free(http_client_cert_pem);
-		http_client_cert_pem = NULL;
-		rtos_mem_free(http_client_pkey_pem);
-		http_client_pkey_pem = NULL;
-	}
-	if (conn_ptr) {
-		httpc_conn_close(conn_ptr);
-		httpc_conn_free(conn_ptr);
-	}
-
-	rtos_mem_free(response_data);
-	response_data = NULL;
-	rtos_mem_free(post_data_buffer);
-	post_data_buffer = NULL;
+	at_http_free_resource(conn_type, &http_client_ca_pem, &http_client_cert_pem, &http_client_pkey_pem, &conn_ptr, &response_data);
 
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);
@@ -1191,17 +971,15 @@ end:
 //AT+HTTPDEL=<host>,<path>,<conn_type>[,<certificate_index>][,<req_header_cnt>,<req_header>...<req_header>]
 void at_httpdel(void *arg)
 {
-	int argc = 0, error_no = 0, ret = -1;
+	int argc = 0, error_no = 0;
 	char *argv[MAX_ARGC] = {0};
 	int conn_type = 0, cert_index = 0, header_cnt = 0, i = 0;
 	char *find_result = NULL;
 	struct httpc_conn *conn_ptr = NULL;
-	int cert_size = 0, pk_size = 0;
 	char *http_client_ca_pem = NULL;   // read client CA
 	char *http_client_cert_pem = NULL;   // read client cert
 	char *http_client_pkey_pem = NULL;   // read client private key
 	uint8_t *response_data = NULL;
-	int read_size = 0;
 	uint32_t total_resp_body_size = 0;
 
 
@@ -1233,19 +1011,19 @@ void at_httpdel(void *arg)
 
 	conn_type = atoi(argv[3]);
 	if ((conn_type < HTTP_OVER_TCP) || (conn_type > HTTP_OVER_TLS_VERIFY_BOTH)) {
-		RTK_LOGE(AT_HTTP_TAG, "[at_httpdel] Connect type is incorrect\r\n");
+		RTK_LOGE(AT_HTTP_TAG, "[at_httpdel] The range of <conn_type> is [1, 5]\r\n");
 		error_no = 1;
 		goto end;
 	}
 	if ((conn_type >= HTTP_OVER_TLS_VERIFY_SERVER) && (conn_type <= HTTP_OVER_TLS_VERIFY_BOTH)) {
-		if (argv[4] == NULL)  {
-			RTK_LOGE(AT_HTTP_TAG, "[at_httpdel] Certificate index is NULL\r\n");
+		if (strlen(argv[4]) == 0)  {
+			RTK_LOGE(AT_HTTP_TAG, "[at_httpdel] Missing <cert_index> for HTTP_OVER_TLS\r\n");
 			error_no = 1;
 			goto end;
 		}
 		cert_index = atoi(argv[4]);
 		if (cert_index <= 0) {
-			RTK_LOGE(AT_HTTP_TAG, "[at_httpdel] Certificate index is incorrect\r\n");
+			RTK_LOGE(AT_HTTP_TAG, "[at_httpdel] The <cert_index> should be greater than or equal to 1\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -1261,150 +1039,26 @@ void at_httpdel(void *arg)
 		for (i = 1; i <= header_cnt; i++) {
 			find_result = strstr(argv[5 + i], ": ");
 			if (!find_result) {
-				RTK_LOGE(AT_HTTP_TAG, "[at_httpdel] The input request header is incorrect\r\n");
+				RTK_LOGE(AT_HTTP_TAG, "[at_httpdel] The format of <req_header> is incorrect\r\n");
 				error_no = 1;
 				goto end;
 			}
 		}
 	}
 
-	if ((conn_type == HTTP_OVER_TLS_VERIFY_SERVER) || (conn_type == HTTP_OVER_TLS_VERIFY_BOTH)) {
-		if ((cert_size = atcmd_get_ssl_certificate_size(CLIENT_CA, cert_index)) <= 0)  {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpdel] Failed to get CLIENT_CA_%d size!\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		}
-		http_client_ca_pem = rtos_mem_zmalloc(cert_size + 1);
-		if (http_client_ca_pem == NULL) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpdel] http_client_ca_pem malloc fail\r\n");
-			error_no = 2;
-			goto end;
-		}
-		ret = atcmd_get_ssl_certificate(http_client_ca_pem, CLIENT_CA, cert_index);
-		if (ret == 0) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpdel] NO CLIENT_CA_%d!\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		} else if (ret < 0) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpdel] CLIENT_CA_%d read failed\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		}
-	}
-	if ((conn_type == HTTP_OVER_TLS_VERIFY_CLIENT) || (conn_type == HTTP_OVER_TLS_VERIFY_BOTH)) {
-		if (((cert_size = atcmd_get_ssl_certificate_size(CLIENT_CERT, cert_index)) <= 0) ||
-			((pk_size = atcmd_get_ssl_certificate_size(CLIENT_KEY, cert_index)) <= 0))  {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpdel] Failed to get CLIENT_CERT_%d / CLIENT_KEY_%d size!\r\n", cert_index, cert_index);
-			error_no = 3;
-			goto end;
-		}
-		http_client_cert_pem = rtos_mem_zmalloc(cert_size + 1);
-		if (http_client_cert_pem == NULL) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpdel] http_client_cert_pem malloc fail\r\n");
-			error_no = 2;
-			goto end;
-		}
-		ret = atcmd_get_ssl_certificate(http_client_cert_pem, CLIENT_CERT, cert_index);
-		if (ret > 0) {
-			http_client_pkey_pem = rtos_mem_zmalloc(pk_size + 1);
-			if (http_client_pkey_pem == NULL) {
-				RTK_LOGW(AT_HTTP_TAG, "[at_httpdel] http_client_pkey_pem malloc fail\r\n");
-				error_no = 2;
-				goto end;
-			}
-			ret = atcmd_get_ssl_certificate(http_client_pkey_pem, CLIENT_KEY, cert_index);
-			if (ret <= 0)  {
-				RTK_LOGW(AT_HTTP_TAG, "[at_httpdel] CLIENT_KEY_%d read failed\r\n", cert_index);
-				error_no = 3;
-				goto end;
-			}
-		} else if (ret == 0) {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpdel] NO CLIENT_CERT_%d!\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		} else {
-			RTK_LOGW(AT_HTTP_TAG, "[at_httpdel] CLIENT_CERT_%d read failed\r\n", cert_index);
-			error_no = 3;
-			goto end;
-		}
-	}
-
-	switch (conn_type) {
-	case HTTP_OVER_TCP:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_NONE, NULL, NULL, NULL);
-		break;
-	case HTTP_OVER_TLS_NO_VERIFY:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, NULL, NULL, NULL);
-		break;
-	case HTTP_OVER_TLS_VERIFY_SERVER:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, NULL, NULL, http_client_ca_pem);
-		break;
-	case HTTP_OVER_TLS_VERIFY_CLIENT:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, http_client_cert_pem, http_client_pkey_pem, NULL);
-		break;
-	case HTTP_OVER_TLS_VERIFY_BOTH:
-		conn_ptr = httpc_conn_new(HTTPC_SECURE_TLS, http_client_cert_pem, http_client_pkey_pem, http_client_ca_pem);
-		break;
-	default:
-		RTK_LOGE(AT_HTTP_TAG, "[at_httpdel] Connect type is incorrect\r\n");
-		error_no = 1;
-		break;
-	}
-
-	if (!conn_ptr) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httpdel] conn_ptr is NULL\r\n");
-		error_no = 2;
-		goto end;
-	}
-	httpc_enable_ignore_content_len(conn_ptr);
-
-	if (http_server_port == 0)  {
-		if (conn_type == HTTP_OVER_TCP) {
-			ret = httpc_conn_connect(conn_ptr, argv[1], 80, http_timeout);
-		} else {
-			ret = httpc_conn_connect(conn_ptr, argv[1], 443, http_timeout);
-		}
-	} else  {
-		ret = httpc_conn_connect(conn_ptr, argv[1], (uint16_t)http_server_port, http_timeout);
-	}
-
-	if (ret != 0) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httpdel] httpc_conn_connect failed\r\n");
-		error_no = 4;
+	if ((error_no = at_http_load_ssl_cert_from_flash(conn_type, cert_index, &http_client_ca_pem, &http_client_cert_pem, &http_client_pkey_pem)) != 0) {
 		goto end;
 	}
 
-	if (httpc_request_write_header_start(conn_ptr, "DELETE", argv[2], NULL, 0) != 0) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httpdel] httpc_request_write_header_start failed\r\n");
-		error_no = 4;
+	if ((error_no = at_http_create_connection(conn_type, &conn_ptr, http_client_ca_pem, http_client_cert_pem, http_client_pkey_pem, argv[1])) != 0) {
 		goto end;
 	}
 
-	for (i = 1; i <= header_cnt; i++) {
-		if (httpc_request_write_header_raw(conn_ptr, argv[5 + i]) != 0) {
-			RTK_LOGI(AT_HTTP_TAG, "[at_httpdel] httpc_request_write_header_raw failed\r\n");
-			error_no = 4;
-			goto end;
-		}
-	}
-
-	for (i = 0; i < g_http_req_header_cnt; i++) {
-		if (httpc_request_write_header_raw(conn_ptr, g_http_req_header[i]) != 0) {
-			RTK_LOGI(AT_HTTP_TAG, "[at_httpdel] httpc_request_write_header_raw failed\r\n");
-			error_no = 4;
-			goto end;
-		}
-	}
-
-	if (httpc_request_write_header_finish(conn_ptr) <= 0) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httpdel] httpc_request_write_header_finish failed\r\n");
-		error_no = 4;
+	if ((error_no = at_http_send_req_header(conn_ptr, "DELETE", argv[2], NULL, 0, header_cnt, &argv[5])) != 0) {
 		goto end;
 	}
 
-	if (httpc_response_read_header(conn_ptr) != 0) {
-		RTK_LOGI(AT_HTTP_TAG, "[at_httpdel] httpc_response_read_header failed\r\n");
-		error_no = 5;
+	if ((error_no = at_http_read_resp_header(conn_ptr)) != 0) {
 		goto end;
 	}
 
@@ -1415,23 +1069,14 @@ void at_httpdel(void *arg)
 	at_printf("+HTTPDEL: HEADER DUMP END\r\n");
 	at_printf_unlock();
 
-	response_data = rtos_mem_zmalloc(HTTP_READ_RESPONSE_DATA);
-	if (response_data == NULL) {
-		RTK_LOGW(AT_HTTP_TAG, "[at_httpdel] response_data malloc fail\r\n");
-		error_no = 2;
+	if ((error_no = at_http_malloc_response_body(&response_data)) != 0) {
 		goto end;
 	}
 
 	if (conn_ptr->response.content_len > 0) {
 		at_printf("+HTTPDEL: BODY DUMP START\r\n");
 		while (1) {
-			memset(response_data, 0, HTTP_READ_RESPONSE_DATA);
-			read_size = httpc_response_read_data(conn_ptr, response_data, HTTP_READ_RESPONSE_DATA - 1);
-			if (read_size > 0) {
-				RTK_LOGI(AT_HTTP_TAG, "[at_httpdel] httpc_response_read_data() read_size=%d\r\n", read_size);
-				total_resp_body_size += read_size;
-				at_printf_data((char *)response_data, read_size);
-			} else {
+			if (at_http_read_resp_body(response_data, conn_ptr, &total_resp_body_size) <= 0) {
 				break;
 			}
 			if (total_resp_body_size >= conn_ptr->response.content_len) {
@@ -1443,13 +1088,7 @@ void at_httpdel(void *arg)
 	} else {    //Some websites’ response headers do not include the content length, ex: Transfer-Encoding: chunked
 		at_printf("+HTTPDEL: BODY DUMP START\r\n");
 		while (1) {
-			memset(response_data, 0, HTTP_READ_RESPONSE_DATA);
-			read_size = httpc_response_read_data(conn_ptr, response_data, HTTP_READ_RESPONSE_DATA - 1);
-			if (read_size > 0) {
-				RTK_LOGI(AT_HTTP_TAG, "[at_httpdel] httpc_response_read_data() read_size=%d\r\n", read_size);
-				total_resp_body_size += read_size;
-				at_printf_data((char *)response_data, read_size);
-			} else {
+			if (at_http_read_resp_body(response_data, conn_ptr, &total_resp_body_size) <= 0) {
 				break;
 			}
 		}
@@ -1458,21 +1097,7 @@ void at_httpdel(void *arg)
 	}
 
 end:
-	if ((conn_type >= HTTP_OVER_TLS_VERIFY_SERVER) && (conn_type <= HTTP_OVER_TLS_VERIFY_BOTH)) {
-		rtos_mem_free(http_client_ca_pem);
-		http_client_ca_pem = NULL;
-		rtos_mem_free(http_client_cert_pem);
-		http_client_cert_pem = NULL;
-		rtos_mem_free(http_client_pkey_pem);
-		http_client_pkey_pem = NULL;
-	}
-	if (conn_ptr) {
-		httpc_conn_close(conn_ptr);
-		httpc_conn_free(conn_ptr);
-	}
-
-	rtos_mem_free(response_data);
-	response_data = NULL;
+	at_http_free_resource(conn_type, &http_client_ca_pem, &http_client_cert_pem, &http_client_pkey_pem, &conn_ptr, &response_data);
 
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);

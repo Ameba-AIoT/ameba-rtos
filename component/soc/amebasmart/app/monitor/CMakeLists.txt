@@ -47,18 +47,6 @@ if(${c_MCU_PROJECT_NAME} STREQUAL "hp")
     )
 endif()
 
-if(CONFIG_LONGER_CMD)
-    ameba_list_append(private_sources
-        rom/shell_rom_patch.c
-    )
-else()
-    if(${c_MCU_PROJECT_NAME} STREQUAL "ap")
-        ameba_list_append(private_sources
-            rom/shell_rom.c
-        )
-    endif()
-endif()
-
 # Component private part, user config end
 #------------------------------#
 

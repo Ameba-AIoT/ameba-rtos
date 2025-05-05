@@ -344,10 +344,6 @@ typedef struct {
 /** @} */
 /** @} */
 
-#define OTPC_PHY_ROM_PATCH_ZONE					((u32)0x00000001 << 2)
-#define ROM_PATCH_LENGTH							0x200
-
-
 //Please add your defination here
 enum OTP_OPMode {
 	OTP_USER_MODE = 0,
@@ -400,7 +396,6 @@ enum OTP_OPMode {
 #define OTP_SUPPERPATCH_BASE						0x40000000
 #define OTP_SUPPERPATCH_END						0x50000000
 #define OTP_IS_SUPPERPATCH(x)						((x >= OTP_SUPPERPATCH_BASE) && (x < OTP_SUPPERPATCH_END))
-
 #define OTP_RTKPATCH_BASE							0x500
 #define OTP_RTKPATCH_END							0x6FC
 

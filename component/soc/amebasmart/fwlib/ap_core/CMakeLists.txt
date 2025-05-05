@@ -9,15 +9,8 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 #----------------------------------------#
 # Component public part, user config begin
 
-# You may use if-else condition to set or update predefined variable above
-
-set(TARGET_LIB wifi_acs)
-
 ameba_list_append(public_includes
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
-ameba_list_append(public_libraries
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_${TARGET_LIB}.a
+    .
 )
 
 # Component public part, user config end
@@ -25,7 +18,7 @@ ameba_list_append(public_libraries
 
 #WARNING: Fixed section, DO NOT change!
 ameba_global_include(${public_includes})
-ameba_global_define(${public_defines})
+ameba_global_define(${public_definitions})
 ameba_global_library(${public_libraries}) #default: whole-archived
 
 ##########################################################################################
@@ -46,15 +39,46 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-ameba_list_append(private_sources wifi_acs.c)
+ameba_list_append(private_sources
+    arm_gic.c
+    cstub.c
+    system_sheipa.c
+    amebaap_vector.c
+    ameba_app_start.c
+    traps.c
+    psci.c
+    smp.c
+    ameba_pmc.c
+)
+
+ameba_list_append(private_sources
+    startup.S
+    vectors_table.S
+    smccc_call.S
+    cache-v7.S
+    # translation_table.S
+
+    ameba_xlat_table.c
+    xlat_table/xlat_tables_context.c
+    xlat_table/xlat_tables_core.c
+    xlat_table/xlat_tables_utils.c
+    xlat_table/xlat_tables_arch.c
+    xlat_table/enable_mmu.S
+    xlat_table/cache_helpers.S
+)
+
+#FIXME: Here cannot add xlat_table to private_includes for some header file conflict with toolchain
+set_source_files_properties(ameba_xlat_table.c PROPERTIES INCLUDE_DIRECTORIES
+    ${CMAKE_CURRENT_SOURCE_DIR}/xlat_table
+)
 
 # Component private part, user config end
 #------------------------------#
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 
-###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
-ameba_add_external_app_library(${TARGET_LIB}
+###NOTE: For closed-source component, only build before release and libs are packaged into lib/soc
+ameba_add_internal_library(ap_core
     p_SOURCES
         ${private_sources}
     p_INCLUDES

@@ -5,14 +5,7 @@
 #include "bt_debug.h"
 #include "dlist.h"
 
-#define USE_HCI_H4 1
-#if defined(USE_HCI_H4) && USE_HCI_H4
 #define RESERVE_LEN 1
-#elif defined(USE_HCI_H5) && USE_HCI_H5
-#define RESERVE_LEN 4
-#else
-#define RESERVE_LEN 0
-#endif
 
 #define HCI_PATCH_FRAG_SIZE 252
 

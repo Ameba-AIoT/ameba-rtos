@@ -335,13 +335,13 @@ class FloaderHandler(object):
 
         return ret
 
-    def next_operation(self, opecode, operand):
+    def next_operation(self, opcode, operand):
         request_data = [NEXTOP]
 
-        request_data.append((opecode) & 0xFF)
+        request_data.append((opcode.value) & 0xFF)
         request_data.extend(list(operand.to_bytes(4, byteorder="little")))
 
-        self.logger.debug(f"NEXTOTP: opecode={opecode}, operand={operand}")
+        self.logger.debug(f"NEXTOTP: opecode={opcode}, operand={operand}")
 
         request_bytes = bytearray(request_data)
 

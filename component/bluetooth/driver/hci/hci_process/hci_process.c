@@ -10,14 +10,7 @@
 #include "hci_transport.h"
 #include "bt_debug.h"
 
-#define USE_HCI_H4 1
-#if defined(USE_HCI_H4) && USE_HCI_H4
 #define RESERVE_LEN 1
-#elif defined(USE_HCI_H5) && USE_HCI_H5
-#define RESERVE_LEN 4
-#else
-#define RESERVE_LEN 0
-#endif
 
 #if defined(hci_platform_START_RF_CALIBRATION) && hci_platform_START_RF_CALIBRATION
 static uint8_t hci_process_start_rf_calibration(uint16_t opcode)
@@ -37,16 +30,8 @@ static uint8_t hci_process_read_local_ver(uint16_t opcode)
 	uint8_t *buf = buf_raw + RESERVE_LEN;
 	uint16_t hci_revision, lmp_subver;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(0);
-
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 3, true)) {
-		return HCI_FAIL;
-	}
-
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
+	if (HCI_SUCCESS != hci_sa_send_cmd_sync(opcode, buf, 3)) {
 		return HCI_FAIL;
 	}
 
@@ -64,16 +49,8 @@ static uint8_t hci_process_read_rom_ver(uint16_t opcode)
 	uint8_t buf_raw[RESERVE_LEN + 7];
 	uint8_t *buf = buf_raw + RESERVE_LEN;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(0);
-
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 3, true)) {
-		return HCI_FAIL;
-	}
-
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
+	if (HCI_SUCCESS != hci_sa_send_cmd_sync(opcode, buf, 3)) {
 		return HCI_FAIL;
 	}
 
@@ -89,17 +66,9 @@ static uint8_t _hci_process_set_baudrate(uint16_t opcode, bool use_default)
 	uint8_t buf_raw[RESERVE_LEN + 7];
 	uint8_t *buf = buf_raw + RESERVE_LEN;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = sizeof(uint32_t);
 	hci_get_baudrate(&buf[3], use_default);
-
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 7, true)) {
-		return HCI_FAIL;
-	}
-
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
+	if (HCI_SUCCESS != hci_sa_send_cmd_sync(opcode, buf, 7)) {
 		return HCI_FAIL;
 	}
 
@@ -129,7 +98,7 @@ static uint8_t hci_process_reset_baudrate(uint16_t opcode)
 
 #if defined(hci_platform_DOWNLOAD_PATCH) && hci_platform_DOWNLOAD_PATCH
 extern uint8_t hci_patch_download_v2(uint16_t opcode, uint8_t *p_patch, uint32_t patch_len);
-extern uint8_t hci_patch_download_v3(uint16_t opcode, uint8_t *p_patch, uint32_t patch_len);
+extern uint8_t hci_patch_download_v3(uint8_t *p_patch);
 static uint8_t hci_process_download_patch(uint16_t opcode)
 {
 	uint8_t patch_version;
@@ -151,7 +120,7 @@ static uint8_t hci_process_download_patch(uint16_t opcode)
 
 	case PATCH_VERSION_V3:
 		BT_LOGA("Signature check success: Merge patch v3\r\n");
-		ret = hci_patch_download_v3(opcode, p_patch, patch_len);
+		ret = hci_patch_download_v3(p_patch);
 		break;
 
 	default:
@@ -181,23 +150,12 @@ static uint8_t hci_process_write_phy_efuse(uint16_t opcode)
 	uint8_t buf_raw[RESERVE_LEN + HCI_WRITE_PHY_EFUSE_LEN + 3];
 	uint8_t *buf = buf_raw + RESERVE_LEN;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(HCI_WRITE_PHY_EFUSE_LEN);
 	if (HCI_SUCCESS != hci_platform_get_write_phy_efuse_data(&buf[3], buf[2])) {
 		return HCI_FAIL;
 	}
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, HCI_WRITE_PHY_EFUSE_LEN + 3, true)) {
-		return HCI_FAIL;
-	}
-
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
-
-	return HCI_SUCCESS;
+	return hci_sa_send_cmd_sync(opcode, buf, HCI_WRITE_PHY_EFUSE_LEN + 3);
 }
 #endif
 
@@ -208,8 +166,6 @@ static uint8_t hci_process_write_rx_adck(uint16_t opcode)
 	uint8_t buf_raw[RESERVE_LEN + 6];
 	uint8_t *buf = buf_raw + RESERVE_LEN;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(1);
 	if (HCI_SUCCESS != hci_platform_get_rx_adck_data(&buf[3], buf[2])) {
 		return HCI_FAIL;
@@ -219,12 +175,7 @@ static uint8_t hci_process_write_rx_adck(uint16_t opcode)
 	BT_DUMPA("hci_process_write_rx_adck HCI CMD:", buf, RESERVE_LEN + 4);
 #endif
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 4, true)) {
-		return HCI_FAIL;
-	}
-
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
+	if (HCI_SUCCESS != hci_sa_send_cmd_sync(opcode, buf, 4)) {
 		BT_DUMPA("hci_process_write_rx_adck HCI Event:", buf, RESERVE_LEN + 6);
 		return HCI_FAIL;
 	}
@@ -240,21 +191,10 @@ static uint8_t hci_process_set_cut_ver(uint16_t opcode)
 	uint8_t buf_raw[RESERVE_LEN + 6];
 	uint8_t *buf = buf_raw + RESERVE_LEN;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(1);
 	buf[3] = hci_platform_get_rom_ver();
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 4, true)) {
-		return HCI_FAIL;
-	}
-
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
-
-	return HCI_SUCCESS;
+	return hci_sa_send_cmd_sync(opcode, buf, 4);
 }
 #endif
 
@@ -264,20 +204,9 @@ static uint8_t hci_process_hci_reset(uint16_t opcode)
 	uint8_t buf_raw[RESERVE_LEN + 6];
 	uint8_t *buf = buf_raw + RESERVE_LEN;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(0);
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 3, true)) {
-		return HCI_FAIL;
-	}
-
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
-
-	return HCI_SUCCESS;
+	return hci_sa_send_cmd_sync(opcode, buf, 3);
 }
 
 static struct {

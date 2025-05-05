@@ -137,25 +137,6 @@ typedef struct {
 	int(*loguart_getchar)(char *ptr, int len);
 } ROM_CUSTOMER_LOGUART;
 
-enum _REG_CONFIG_SEQ_ {
-	/*use these command means do not care the index,
-		use these cmd if do not care excute location*/
-	CPU_PWRSEQ_CMD_READ = 0xFFFFFF00,
-	CPU_PWRSEQ_CMD_WRITE  = 0xFFFFFF01,
-	CPU_PWRSEQ_CMD_POLLING   = 0xFFFFFF02,
-	CPU_PWRSEQ_CMD_DELAY   = 0xFFFFFF03,
-	CPU_PWRSEQ_CMD_LOGE   = 0xFFFFFF08,
-	CPU_PWRSEQ_CMD_END   = 0xFFFFFFFF,
-
-	/*newly add command,use if care the seq excute location*/
-	REG_CONFIG_CMD_READ = 0x00,
-	REG_CONFIG_CMD_WRITE  = 0x01,
-	REG_CONFIG_CMD_POLLING   = 0x02,
-	REG_CONFIG_CMD_DELAY   = 0x03,
-	REG_CONFIG_CMD_LOGE   = 0x08,
-	REG_CONFIG_CMD_END   = 0xFF,
-};
-
 typedef struct {
 	u32 address; /*!< Specifies the register going to config.
 			0xFFFFFFFF means end of the register config sequence */

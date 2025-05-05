@@ -8,7 +8,6 @@
 	- [Supported IC ](#supported-ic-)
 	- [Configurations ](#configurations-)
 		- [Hardware configurations](#hardware-configurations)
-		- [Software configurations](#software-configurations)	
 	- [How to run ](#how-to-run-)
 
 ## About <a name = "about"></a>
@@ -25,7 +24,7 @@ Ameba audio project can achieve:
 
 ## Configurations <a name = "configurations"></a>
 
-Please see discriptions in component/soc/xx/usrcfg/include/ameba_audio_hw_usrcfg.h, ameba_audio_hw_usrcfg.h is for audio hardware configurations.
+Please see discriptions in component/soc/usrcfg/xx/include/ameba_audio_hw_usrcfg.h, ameba_audio_hw_usrcfg.h is for audio hardware configurations.
 
 ### Hardware configurations
 
@@ -33,17 +32,7 @@ Please see discriptions in component/soc/xx/usrcfg/include/ameba_audio_hw_usrcfg
 2. Define whether using pll clock or xtal clock for playback.
 3. Please refer to component/audio/audio_hal/xx/README.md.
 
-### Software configurations
-Select the core used for application core(KM4 or CA32):
-Under "Audio Config"
-[*] "Enable Audio Framework"
-(X) "PassThrough"
-[*]"Enable Media Framework"
-"Demux" --->
-[*] "Demux FLAC"
-[*] "Demux OGG"
-
 ## How to run <a name = "How to run"></a>
-1. Use CMD `make all EXAMPLE=audio_hal_render` to compile this example.
+1. Use CMD `./build.py -a audio_hal_render -p` to compile this example.
 2. For playing run command and parameters, please refer to app_example.c.
 3. To run the example, the default command in serial log UART is: AudioHalRender
