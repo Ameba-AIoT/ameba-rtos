@@ -10,7 +10,6 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # Component public part, user config begin(DO NOT remove this line)
 
 ameba_list_append(public_includes
-    cmsis
     misc
     ${c_MBEDTLS_DIR}/include
     ${c_BASEDIR}/component/soc/common/include

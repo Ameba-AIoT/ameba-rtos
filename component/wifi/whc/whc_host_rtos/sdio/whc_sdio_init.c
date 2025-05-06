@@ -1,5 +1,14 @@
 #include "whc_host.h"
 
+static rtos_sema_t sdio_whc_sema;
+
+static SDIOHCFG_TypeDef sdioh_config = {
+	.sdioh_bus_speed = SD_SPEED_HS,			 // SD_SPEED_DS or SD_SPEED_HS
+	.sdioh_bus_width = SDIOH_BUS_WIDTH_4BIT, // SDIOH_BUS_WIDTH_1BIT or SDIOH_BUS_WIDTH_4BIT
+	.sdioh_cd_pin = _PNC,					 // _PNC
+	.sdioh_wp_pin = _PNC,					 // _PNC
+};
+
 extern struct whc_sdio whc_sdio_priv;
 extern struct sdio_func sdio_func1;
 
@@ -73,8 +82,26 @@ void whc_sdio_irq_sema_give(void)
 	rtos_sema_give(priv->host_irq); /* ignore failure since there is nothing that can be done about it in a ISR */
 }
 
+static int sdio_give_sema(u32 timeout)
+{
+	UNUSED(timeout);
+	return  rtos_sema_give(sdio_whc_sema);
+}
+
+static int sdio_take_sema(u32 timeout)
+{
+	return rtos_sema_take(sdio_whc_sema, timeout);
+}
+
 static uint32_t rtw_sdio_enable_func(struct whc_sdio *priv)
 {
+	rtos_sema_create(&sdio_whc_sema, 0, 1);
+	SD_SetSema(sdio_take_sema, sdio_give_sema);
+
+	if (SD_Init(&sdioh_config) != SD_OK) {
+		return FALSE;
+	}
+
 	//TODO set block size SDIO_BLOCK_SIZE
 #ifdef TODO
 #endif

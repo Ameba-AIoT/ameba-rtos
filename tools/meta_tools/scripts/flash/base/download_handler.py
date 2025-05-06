@@ -51,27 +51,20 @@ class Ameba(object):
                  erase_info=None):
         self.logger = logger
         self.profile_info = profile
-        self.serial_port = serial_port
+        self.serial_port = None
+        self.serial_port_name = serial_port
+        self.is_usb = self.is_realtek_usb()
+        self.initial_serial_port()
         self.baudrate = baudrate
         self.image_path = image_path
         self.download_img_info = download_img_info
         self.chip_erase = chip_erase
         self.memory_type = memory_type
         self.setting = setting
-        self.is_usb = self.is_realtek_usb()
         self.device_info = None
         self.erase_info = erase_info
         self.is_all_ram = True
-        if self.is_usb:
-            if self.serial_port.is_open:
-                self.serial_port.close()
-                while self.serial_port.is_open:
-                    pass
-            self.serial_port = serial.Serial(self.serial_port.port,
-                                             baudrate=self.profile_info.handshake_baudrate,
-                                             parity=serial.PARITY_NONE,
-                                             stopbits=serial.STOPBITS_ONE,
-                                             bytesize=serial.EIGHTBITS)
+
         self.rom_handler = RomHandler(self)
         self.floader_handler = FloaderHandler(self)
 
@@ -81,8 +74,33 @@ class Ameba(object):
                 self.serial_port.close()
             while self.serial_port.is_open:
                 pass
-            if not self.serial_port.is_open:
-                self.logger.info(f"{self.serial_port.port} closed.")
+            self.logger.info(f"{self.serial_port.port} closed.")
+
+    def initial_serial_port(self):
+        # initial serial port
+        port = None
+        try:
+            if self.is_usb:
+                self.serial_port = serial.Serial(self.serial_port_name,
+                                                 baudrate=self.profile_info.handshake_baudrate,
+                                                 parity=serial.PARITY_NONE,
+                                                 stopbits=serial.STOPBITS_ONE,
+                                                 bytesize=serial.EIGHTBITS)
+            else:
+
+                # create an empty port-object, then assign port info to object, to avoid dtr/rts level changes when open/close port
+                self.serial_port = serial.Serial()
+                self.serial_port.port = self.serial_port_name
+                self.serial_port.baudrate = self.profile_info.handshake_baudrate
+                self.serial_port.parity = serial.PARITY_NONE
+                self.serial_port.stopbits = serial.STOPBITS_ONE
+                self.serial_port.bytesize = serial.EIGHTBITS
+                self.serial_port.dtr = False
+                self.serial_port.rts = False
+                self.serial_port.open()
+        except Exception as err:
+            self.logger.error(f"Access serial port {self.serial_port_name} fail: {err}")
+            sys.exit(1)
 
     def read_bytes(self, timeout_seconds, size=1):
         ret = ErrType.OK
@@ -111,7 +129,7 @@ class Ameba(object):
     def is_realtek_usb(self):
         ports = serial.tools.list_ports.comports()
         for port, desc, hvid in sorted(ports):
-            if port == self.serial_port.port:
+            if port == self.serial_port_name:
                 # hvid: USB VID:PID=0BDA:8722 SER=5 LOCATION=1-1
                 if _RTK_USB_VID in hvid:
                     return True
@@ -243,7 +261,7 @@ class Ameba(object):
 
         return ret, is_floader
 
-    def prepare(self):
+    def prepare(self, show_device_info=True):
         ret = ErrType.OK
         floader_init_baud = self.baudrate if self.is_usb else (self.profile_info.handshake_baudrate if
                                                                (self.setting.switch_baudrate_at_floader == 1) else self.baudrate)
@@ -281,6 +299,9 @@ class Ameba(object):
         ret, self.device_info = self.floader_handler.query()
         if ret != ErrType.OK:
             self.logger.error(f"Query fail: {ret}")
+            return ret
+
+        if not show_device_info:
             return ret
 
         self.logger.info("Device info:")
@@ -1178,15 +1199,22 @@ class Ameba(object):
 
         return ret, mode
 
-    def check_supported_flash_size(self):
+    def check_supported_flash_size(self, memory_type):
         ret = ErrType.OK
+        reset_system = False
 
-        if self.device_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND:
-            return ret
+        if memory_type == MemoryInfo.MEMORY_TYPE_NAND:
+            return ret, reset_system
+
+        self.logger.info(f"Check supported flash size...")
+        ret = self.prepare(show_device_info=False)
+        if ret != ErrType.OK:
+            self.logger.error("Prepare for check supported flash size fail")
+            return ret, reset_system
 
         ret, mode = self.get_spic_address_mode()
         if ret != ErrType.OK:
-            return ret
+            return ret, reset_system
 
         flash_size = self.device_info.flash_capacity // 1024 // 1024  # MB
         if self.setting.auto_program_spic_addr_mode_4byte == 0:
@@ -1200,8 +1228,17 @@ class Ameba(object):
             if mode == SpicAddrMode.THREE_BYTE_MODE.value and flash_size > 16:
                 self.logger.warning(f"OTP supports flash size <=16MB, tool will program OTP to support flash size >16MB")
                 ret = self.set_spic_address_mode(SpicAddrMode.FOUR_BYTE_MODE.value)
+                reset_system = True
             elif mode == SpicAddrMode.FOUR_BYTE_MODE.value and flash_size <= 16:
                 self.logger.warning(f"OTP supports flash size >16MB, tool will program OTP to support flash size <=16MB")
                 ret = self.set_spic_address_mode(SpicAddrMode.THREE_BYTE_MODE.value)
+                reset_system = True
 
-        return ret
+            if reset_system:
+                boot_delay = self.setting.usb_rom_boot_delay_in_second if self.profile_info.support_usb_download else self.setting.floader_boot_delay_in_second
+                # reset floader with next option
+                self.floader_handler.next_operation(NextOpType.REBURN, 0)
+                self.logger.info(f"Reburn delay {boot_delay}s")
+                time.sleep(boot_delay)
+
+        return ret, reset_system

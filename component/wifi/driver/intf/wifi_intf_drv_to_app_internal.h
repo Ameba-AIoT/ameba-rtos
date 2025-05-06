@@ -194,8 +194,6 @@ struct rtw_kvr_param_t {
  */
 struct internal_block_param {
 	void				*sema;
-	unsigned int		timeout;
-	unsigned char		block;
 };
 
 /**

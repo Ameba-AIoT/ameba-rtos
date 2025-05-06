@@ -43,9 +43,7 @@ ameba_list_append(private_sources
     ram/shell_ram.c
     ram/low_level_io.c
 )
-ameba_list_append_if(CONFIG_LONGER_CMD private_sources
-    rom/shell_rom_patch.c
-)
+
 # Component private part, user config end
 #------------------------------#
 

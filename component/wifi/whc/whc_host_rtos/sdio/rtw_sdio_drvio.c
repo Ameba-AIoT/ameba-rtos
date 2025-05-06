@@ -825,11 +825,13 @@ uint8_t sdio_cmd52_read1byte_local(struct whc_sdio *priv, uint32_t addr)
 
 void sdio_enable_data1_irq(void)
 {
+	__SD_ENABLE_IT(&hsd0, SDIOHOST_BIT_CARD_INT_SIGNAL_EN);
 
 }
 
 void sdio_disable_data1_irq(void)
 {
+	__SD_DISABLE_IT(&hsd0, SDIOHOST_BIT_CARD_INT_SIGNAL_EN);
 
 }
 

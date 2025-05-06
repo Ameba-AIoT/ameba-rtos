@@ -272,22 +272,6 @@ def main(argc, argv):
         logger.error(f"Load device profile {profile} exception: {err}")
         sys.exit(1)
 
-    # check serial port
-    try:
-        # create an empty port-object, then assign port info to object, to avoid dtr/rts level changes when open/close port
-        port = serial.Serial()
-        port.port = serial_port
-        port.baudrate = profile_info.handshake_baudrate
-        port.parity = serial.PARITY_NONE
-        port.stopbits = serial.STOPBITS_ONE
-        port.bytesize = serial.EIGHTBITS
-        port.dtr = False
-        port.rts = False
-        port.open()
-    except Exception as err:
-        logger.error(f"Access serial port {serial_port} fail: {err}")
-        sys.exit(1)
-
     # load settings
     if getattr(sys, "frozen", False):  # judge if frozen as exe
         # get exe dir
@@ -313,7 +297,7 @@ def main(argc, argv):
     except Exception as err:
         logger.debug(f"save setting.json exception: {err}")
 
-    ameba = Ameba(profile_info, port, serial_baudrate, image_dir, settings, logger,
+    ameba = Ameba(profile_info, serial_port, serial_baudrate, image_dir, settings, logger,
                   download_img_info=images_info,
                   chip_erase=chip_erase,
                   memory_type=memory_type,
@@ -324,15 +308,23 @@ def main(argc, argv):
             ret = ErrType.SYS_PROTO
             sys_exit(logger, False, ret)
 
+        ret, is_reburn = ameba.check_supported_flash_size(memory_type)
+        if ret != ErrType.OK:
+            logger.error(f"Check supported flash size fail")
+            sys_exit(logger, False, ret)
+
+        if is_reburn:
+            ameba.__del__()
+            ameba = Ameba(profile_info, serial_port, serial_baudrate, image_dir, settings, logger,
+                          download_img_info=images_info,
+                          chip_erase=chip_erase,
+                          memory_type=memory_type,
+                          erase_info=memory_info)
+
         logger.info(f"Image download start...")  # customized, do not modify
         ret = ameba.prepare()
         if ret != ErrType.OK:
             logger.error("Download prepare fail")
-            sys_exit(logger, False, ret)
-
-        ret = ameba.check_supported_flash_size()
-        if ret != ErrType.OK:
-            logger.error(f"Check supported flash size fail")
             sys_exit(logger, False, ret)
 
         ret = ameba.verify_images()

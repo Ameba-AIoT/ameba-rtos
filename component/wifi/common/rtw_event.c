@@ -82,14 +82,14 @@ void wifi_event_join_status_internal_hdl(u8 *buf, s32 flags)
 #endif
 
 		/* if Synchronous connection, up sema when connect success*/
-		if (join_block_param && join_block_param->block) {
+		if (join_block_param) {
 			rtos_sema_give(join_block_param->sema);
 		}
 	}
 
 	if (join_status == RTW_JOINSTATUS_FAIL) {
 		/* if synchronous connection, up sema when connect fail*/
-		if (join_block_param && join_block_param->block) {
+		if (join_block_param) {
 			join_fail_reason = fail_info->fail_reason;
 			rtos_sema_give(join_block_param->sema);
 		}
