@@ -86,7 +86,11 @@ extern uint32_t SystemCoreClock;
 #define configMINIMAL_SECURE_STACK_SIZE					( 1024 )
 #define configMAX_TASK_NAME_LEN							( 24 )
 
+#if defined(CONFIG_MATTER_SECURE) && CONFIG_MATTER_SECURE
+#define secureconfigTOTAL_SRAM_HEAP_SIZE			( ( ( size_t ) ( 20 * 1024 ) ) )
+#else
 #define secureconfigTOTAL_SRAM_HEAP_SIZE			( ( ( size_t ) ( 6 * 1024 ) ) )
+#endif
 #define secureconfigTOTAL_PSRAM_HEAP_SIZE			( ( ( size_t ) ( 128 * 1024 ) ) )
 
 /* Constants that build features in or out. */

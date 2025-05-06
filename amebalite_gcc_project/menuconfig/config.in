@@ -700,6 +700,12 @@ if [ "$CONFIG_MATTER_EN" = "y" ]; then
 			define_bool CHIP_ENABLE_AMEBA_TERMS_AND_CONDITION y
 		fi
 	fi
+	if [ "$CONFIG_TRUSTZONE_FOR_KM4" = "y" ]; then
+		bool "Enable Matter Secure"					CONFIG_MATTER_SECURE_EN
+		if [ "$CONFIG_MATTER_SECURE_EN" = "y" ]; then
+			define_bool CONFIG_MATTER_SECURE y
+		fi
+	fi
 fi
 endmenu
 
