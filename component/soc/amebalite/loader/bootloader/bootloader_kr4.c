@@ -8,10 +8,8 @@
  */
 
 #include "ameba_soc.h"
-#include "FreeRTOS.h"
 
 extern void prvSetupFPU(void);
-extern u8 BOOT_Load_KR4_APP(void);
 
 NON_DRAM_TEXT_SECTION
 PRAM_START_FUNCTION BOOT_SectionInit(void)
@@ -19,7 +17,6 @@ PRAM_START_FUNCTION BOOT_SectionInit(void)
 	return (PRAM_START_FUNCTION)(void *)__image2_entry_func__;
 }
 
-#if( configENABLE_FPU == 1 )
 NON_DRAM_TEXT_SECTION
 void BOOT_SetupFPU(void)   /* PRIVILEGED_FUNCTION */
 {
@@ -36,9 +33,6 @@ void BOOT_SetupFPU(void)   /* PRIVILEGED_FUNCTION */
 		:::
 	);
 }
-#else
-#define BOOT_SetupFPU() ((void)0)
-#endif
 
 /* CPU shall be init at the entrance of the Img */
 NON_DRAM_TEXT_SECTION
@@ -49,8 +43,12 @@ void BOOT_CPU_init(void)
 	/*no need to flush icache because 0x0000_0000~0x3FFF_FFFF and 0x6000_0000 ~ 0x7FFF_FFFF is cacheable */
 	DCache_Enable();
 
+	BOOT_InitGP();
 	BOOT_SetupFPU();
 	__DSB();
+
+	SOCPS_Kr4_StartTbl_Backup();
+
 	/* Check boot or wake up from power saving */
 	if (HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG) & LSYS_BIT_BOOT_WAKE_FROM_PS_LS) {
 		BOOT_WakeFromPG();
@@ -62,7 +60,21 @@ void BOOT_CPU_init(void)
 NON_DRAM_TEXT_SECTION
 void BOOT_WakeFromPG(void)
 {
-	/* Init BOOT_InitGP() in Image2EntryFun->RamWakeupFun*/
+	PRAM_START_FUNCTION Image2EntryFun;
+
+	if (LSYS_GET_KR4_IS_NP(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_SYSTEM_CFG1))) {
+
+		if (SYSCFG_OTP_FlashDSleepEn()) {
+			FLASH_DeepPowerDown(DISABLE);
+			/* to fix hw bug: between flash user read and auto read wrap, need single auto read, otherwise SPIC may return error */
+			HAL_READ32(SPI_FLASH_BASE, 0);
+		}
+
+		set_psram_resume();
+	}
+
+	Image2EntryFun = BOOT_SectionInit();
+	Image2EntryFun->RamWakeupFun();
 }
 
 /***
@@ -80,18 +92,15 @@ void BOOT_Image1(void)
 
 	/* Initial Global Variable */
 	BOOT_ROM_InitDebugFlg();
-
+#ifndef CONFIG_MP_SHRINK
 	/* Get flash_init_para address for KR4 */
 	_memcpy((void *)&flash_init_para, (const void *)HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_FLASH_PARA_ADDR), sizeof(FLASH_InitTypeDef));
+#endif
+	/* goto IMG2 */
+	Image2EntryFun = (PRAM_START_FUNCTION)(void *)__image2_entry_func__;
+	Image2EntryFun->RamStartFun();
 
-	if (TRUE == BOOT_Load_KR4_APP()) {
-		/*Release ROM Flag*/
-		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG, HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG) | LSYS_BIT_BOOT_KR4_RUN);
-		Image2EntryFun = (PRAM_START_FUNCTION)(void *)__image2_entry_func__;
-		Image2EntryFun->RamStartFun();
-	}
-
-	while (1);
+	return;
 }
 
 IMAGE1_ENTRY_SECTION

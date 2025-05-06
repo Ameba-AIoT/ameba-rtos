@@ -3,7 +3,7 @@ ameba_add_image(target_loader)
 
 ###############################  ADD COMPONENT  ###################################
 
-ameba_add_subdirectory(${c_CMPT_BOOTLOADER_DIR})
+ameba_add_subdirectory(${c_CMPT_SOC_DIR}/loader/bootloader)
 ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
 ameba_add_subdirectory(${c_CMPT_FWLIB_DIR})

@@ -24,8 +24,8 @@ Ameba audio project can achieve:
 
 ## Configurations <a name = "configurations"></a>
 
-Please see discriptions in component/soc/xx/usrcfg/include/ameba_audio_hw_usrcfg.h.
-ameba_audio_hw_usrcfg.h is for audio Hardware configurations.
+Please see discriptions in component/soc/usrcfg/xx/include/ameba_audio_hw_usrcfg.h, ameba_audio_hw_usrcfg.h is for audio hardware configurations.
+Please see discriptions in component/audio/configs/include/ameba_audio_mixer_usrcfg.h, and setup component/audio/configs/ameba_audio_mixer_usrcfg.cpp.
 
 ### Hardware configurations
 
@@ -34,5 +34,6 @@ ameba_audio_hw_usrcfg.h is for audio Hardware configurations.
 3. Please refer to component/audio/audio_hal/xx/README.md.
 
 ## How to run <a name = "How to run"></a>
-1. Use CMD `make EXAMPLE=audio_track` to compile this example.
+
+1. Use CMD `./build.py -a audio_track -p` to compile this example.
 2. For playing run command and parameters, please refer to app_example.c.

@@ -38,41 +38,38 @@ set(private_compile_options)         #private compile_options
 
 #------------------------------#
 # Component private part, user config begin
+
 ameba_list_append(private_sources
     log.c
-)
-if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
-    ameba_list_append(private_sources
-        locks.c
-        sscanf_minimal.c
+    locks.c
+    sscanf_minimal.c
 
-        libnosys/_exit.c
-        libnosys/chown.c
-        libnosys/close.c
-        libnosys/environ.c
-        libnosys/errno.c
-        libnosys/execve.c
-        libnosys/fork.c
-        libnosys/fstat.c
-        libnosys/getpid.c
-        libnosys/gettod.c
-        libnosys/isatty.c
-        libnosys/kill.c
-        libnosys/link.c
-        libnosys/lseek.c
-        libnosys/open.c
-        libnosys/readlink.c
-        libnosys/sbrk.c
-        libnosys/stat.c
-        libnosys/symlink.c
-        libnosys/times.c
-        libnosys/unlink.c
-        libnosys/wait.c
-    )
-    ameba_list_append(private_compile_options
-        -Wno-unused-parameter
-    )
-endif()
+    libnosys/_exit.c
+    libnosys/chown.c
+    libnosys/close.c
+    libnosys/environ.c
+    libnosys/errno.c
+    libnosys/execve.c
+    libnosys/fork.c
+    libnosys/fstat.c
+    libnosys/getpid.c
+    libnosys/gettod.c
+    libnosys/isatty.c
+    libnosys/kill.c
+    libnosys/link.c
+    libnosys/lseek.c
+    libnosys/open.c
+    libnosys/readlink.c
+    libnosys/sbrk.c
+    libnosys/stat.c
+    libnosys/symlink.c
+    libnosys/times.c
+    libnosys/unlink.c
+    libnosys/wait.c
+)
+ameba_list_append(private_compile_options
+    -Wno-unused-parameter
+)
 # Component private part, user config end
 #------------------------------#
 
