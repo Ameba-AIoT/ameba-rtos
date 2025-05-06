@@ -9,17 +9,31 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 #----------------------------------------#
 # Component public part, user config begin
 
-set(TARGET_LIB wifi_api)
 # You may use if-else condition to set or update predefined variable above
+
+set(TARGET_LIB wifi_rtk_app)
+set(TARGET_LIB_OPEN wifi_rtk_app_open)
+
 ameba_list_append(public_includes
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${c_CMPT_WIFI_DIR}/wpa_supplicant/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/wifi_cast
+    ${CMAKE_CURRENT_SOURCE_DIR}/wifi_fast_connect
+    ${CMAKE_CURRENT_SOURCE_DIR}/wifi_auto_reconnect
 )
-if(CONFIG_ZEPHYR_SDK AND CONFIG_SINGLE_CORE_WIFI)
-    ameba_list_append(public_libraries
-        ${c_SDK_LIB_APPLICATION_DIR}/lib_${TARGET_LIB}.a
-    )
+
+set(need_external_lib OFF)
+
+if(CONFIG_SINGLE_CORE_WIFI OR CONFIG_AS_INIC_AP)
+    if(NOT CONFIG_MP_SHRINK)
+        set(need_external_lib ON)
+    endif()
 endif()
+
+if(CONFIG_ZEPHYR_SDK AND CONFIG_SINGLE_CORE_WIFI)
+    set(need_external_lib ON)
+endif()
+
+ameba_list_append_if(need_external_lib public_libraries ${c_SDK_LIB_APPLICATION_DIR}/lib_${TARGET_LIB}.a)
+
 # Component public part, user config end
 #----------------------------------------#
 
@@ -43,42 +57,32 @@ set(private_includes)                #private include directories, NOTE: relativ
 set(private_definitions)             #private definitions
 set(private_compile_options)         #private compile_options
 
+set(private_sources_open)                 #private source files, NOTE: relative path is OK
+set(private_includes_open)                #private include directories, NOTE: relative path is OK
+set(private_definitions_open)             #private definitions
+set(private_compile_options_open)         #private compile_options
+
 #------------------------------#
 # Component private part, user config begin
-
-ameba_list_append(private_sources
-    ${c_CMPT_USRCFG_DIR}/ameba_wificfg.c
-)
-
-if(CONFIG_AS_INIC_AP)
-    ameba_list_append(private_sources
-        ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant/wifi_eap_config.c
-        ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant/wifi_p2p_config.c
-        ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant/wifi_wps_config.c
-        ${c_CMPT_WIFI_DIR}/wpa_supplicant/src/crypto/tls_polarssl.c
-    )
-elseif(CONFIG_SINGLE_CORE_WIFI)
-    ameba_list_append(private_sources
-        ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant/wifi_eap_config.c
-        ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant/wifi_p2p_config.c
-        ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant/wifi_wps_config.c
-        ${c_CMPT_WIFI_DIR}/wpa_supplicant/src/crypto/tls_polarssl.c
-    )
+if(NOT CONFIG_MP_SHRINK)
+    if(CONFIG_SINGLE_CORE_WIFI OR CONFIG_AS_INIC_AP)
+        ameba_list_append(private_sources wifi_acs/wifi_acs.c)
+    endif()
+    ameba_list_append_if(CONFIG_AS_INIC_AP private_sources wifi_cast/wifi_intf_drv_to_app_cast.c)
 endif()
 
-if(NOT CONFIG_AS_INIC_AP)
-    ameba_list_append(private_sources
-        ${c_CMPT_USRCFG_DIR}/ameba_wifi_power_table_usrcfg.c
-        ${c_CMPT_USRCFG_DIR}/ameba_wifi_country_code_table_usrcfg.c
-    )
-    ameba_list_append_if(CONFIG_AMEBADPLUS private_sources
-        ${c_CMPT_USRCFG_DIR}/ameba_wifi_power_table_usrcfg_1v8.c
-        ${c_CMPT_USRCFG_DIR}/ameba_wifi_power_table_usrcfg_3v3_1v25.c
-    )
-
-    ameba_list_append_if(CONFIG_AMEBAD private_sources
-        ${c_CMPT_USRCFG_DIR}/ameba_wifi_power_table_usrcfg_1v8.c
-    )
+if(CONFIG_ZEPHYR_SDK AND CONFIG_SINGLE_CORE_WIFI)
+    ameba_list_append(private_sources wifi_init/wifi_init.c)
+    if(CONFIG_AS_INIC_AP OR CONFIG_SINGLE_CORE_WIFI)
+        ameba_list_append(private_sources wifi_auto_reconnect/wifi_auto_reconnect.c)
+        ameba_list_append(private_sources wifi_fast_connect/wifi_fast_connect.c)
+    endif()
+else()
+    ameba_list_append(private_sources_open wifi_init/wifi_init.c)
+    if(CONFIG_AS_INIC_AP OR CONFIG_SINGLE_CORE_WIFI)
+        ameba_list_append(private_sources_open wifi_auto_reconnect/wifi_auto_reconnect.c)
+        ameba_list_append(private_sources_open wifi_fast_connect/wifi_fast_connect.c)
+    endif()
 endif()
 
 # Component private part, user config end
@@ -86,8 +90,8 @@ endif()
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 
-if(CONFIG_ZEPHYR_SDK AND CONFIG_SINGLE_CORE_WIFI)
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
+if(need_external_lib)
     ameba_add_external_app_library(${TARGET_LIB}
         p_SOURCES
             ${private_sources}
@@ -98,21 +102,23 @@ if(CONFIG_ZEPHYR_SDK AND CONFIG_SINGLE_CORE_WIFI)
         p_COMPILE_OPTIONS
             ${private_compile_options}
     )
-else()
-###NOTE: For open-source component, always build from source
-    ameba_add_internal_library(${TARGET_LIB}
-        p_DROP_IF_NO_SOURCES
-        p_SOURCES
-            ${private_sources}
-        p_INCLUDES
-            ${private_includes}
-        p_DEFINITIONS
-            ${private_definitions}
-        p_COMPILE_OPTIONS
-            ${private_compile_options}
-    )
 endif()
 
-
-
+###NOTE: For open-source component, always build from source
+ameba_add_internal_library(${TARGET_LIB_OPEN}
+    p_DROP_IF_NO_SOURCES
+    p_SOURCES
+        ${private_sources_open}
+    p_INCLUDES
+        ${private_includes_open}
+    p_DEFINITIONS
+        ${private_definitions_open}
+    p_COMPILE_OPTIONS
+        ${private_compile_options_open}
+)
 ##########################################################################################
+
+if(CONFIG_AS_INIC_AP AND NOT CONFIG_ZEPHYR_SDK AND NOT CONFIG_MP_SHRINK)
+    ameba_add_subdirectory(wifi_tunnel_app)
+endif()
+ameba_add_subdirectory(wifi_feature_disable)

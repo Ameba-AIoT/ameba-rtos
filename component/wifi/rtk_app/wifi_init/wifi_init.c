@@ -34,6 +34,9 @@
 
 //todo clarify
 #if defined(CONFIG_WHC_INTF_SDIO)
+#if defined(CONFIG_WHC_HOST)
+#include "whc_sdio_host.h"
+#endif
 #if defined(CONFIG_WHC_BRIDGE)
 #include "whc_bridge_sdio_dev.h"
 #else

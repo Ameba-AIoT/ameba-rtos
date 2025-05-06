@@ -69,10 +69,11 @@ s32 wifi_set_lps_enable(u8 enable);
  * @param[in]  interval: The listen interval of LPS (unit: 102.4 ms).
  * @note If the specified interval is not a multiple of beacon interval, the actual listen interval
  *	     will be rounded to the largest multiple that <= the specified value. It will not be
- *	     rounded to 0 when the specified value < beacon interval. In this case, use 1 instead. e.g.
- *       Given that beacon interval = 2:
- *       - Calling wifi_set_lps_listen_interval(5) will make actual listen interval = 4.
- *       - Calling wifi_set_lps_listen_interval(1) will make actual listen interval = 1.
+ *	     rounded to 0 when the specified value < beacon interval. In this case, the actual listen interval
+ *       is set to one beacon interval.
+ *       e.g. Given that beacon interval = 2 * 102.4 ms:
+ *       - Calling wifi_set_lps_listen_interval(5) will make actual listen interval = 4 * 102.4 ms.
+ *       - Calling wifi_set_lps_listen_interval(1) will make actual listen interval = 2 * 102.4 ms.
  * @return  @ref RTK_SUCCESS : The API executed successfully.
  */
 s32 wifi_set_lps_listen_interval(u8 interval);
