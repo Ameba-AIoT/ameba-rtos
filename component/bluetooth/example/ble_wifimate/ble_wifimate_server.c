@@ -788,7 +788,11 @@ static uint16_t ble_wifimate_parse_wifi_connect_config(
 	}
 
 	if (len == (offset + conn_config->password_len)) {
-		conn_config->password = data + offset;
+		if (conn_config->password_len > 0) {
+			conn_config->password = data + offset;
+		} else {
+			conn_config->password = NULL;
+		}
 	}
 
 	if (s_decrypt.algorithm_type) {
@@ -796,8 +800,10 @@ static uint16_t ble_wifimate_parse_wifi_connect_config(
 			BT_LOGA("[APP] BLE WiFiMate wifi connect decrypt password len(%d) unsupport\r\n", conn_config->password_len);
 			return RTK_BT_ERR_UNSUPPORTED;
 		}
-		ret = ble_wifimate_server_decrypt(conn_config->password_len, conn_config->password, &conn_config->password_len, decrypt_pw);
-		conn_config->password = decrypt_pw;
+		if (conn_config->password_len > 0) {
+			ret = ble_wifimate_server_decrypt(conn_config->password_len, conn_config->password, &conn_config->password_len, decrypt_pw);
+			conn_config->password = decrypt_pw;
+		}
 	}
 	return ret;
 }
