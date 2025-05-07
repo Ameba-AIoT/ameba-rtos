@@ -21,7 +21,7 @@ u32 SWR_MEM(u32 NewState)
 	if (NewState == ENABLE) {
 		Rtemp = swr->SWR_OFF_CTRL1;
 		Rtemp &= (~SWR_MASK_VOFB_SEL);
-		Rtemp |= SWR_VOFB_SEL_(0x1);
+		Rtemp |= SWR_VOFB_SEL(0x1);
 		swr->SWR_OFF_CTRL1 = Rtemp;
 
 		swr->SWR_ON_CTRL0 &= (~SWR_MASK_STD_L1);

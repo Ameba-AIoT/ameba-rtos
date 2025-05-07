@@ -371,7 +371,7 @@ void example_usbh_cdc_ecm(void)
 	extern void ecm_debug_thread(void *param);
 	rtos_task_t ecm_debug_task;
 	status = rtos_task_create(&ecm_debug_task, "usbh_ecm_debug_task", ecm_debug_thread, NULL, 1024U * 2, 3U);
-	if (status != SUCCESS) {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[ECM] Create monitor_link thread fail\n");
 	}
 #endif

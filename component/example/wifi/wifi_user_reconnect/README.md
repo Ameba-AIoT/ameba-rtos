@@ -8,15 +8,21 @@ None
 
 # SW configuration
 
-1. Set `test_ssid` and `test_password` in `example_wifi_user_reconnect.c`.
+1. In `component/soc/amebaxxx/usrcfg/ameba_wificfg.c`.
+	```C
+	wifi_user_config.fast_reconnect_en = 0;
+   wifi_user_config.auto_reconnect_en = 0;
+	```
 
-2. How to use:
+2. Set `test_ssid` and `test_password` in `example_wifi_user_reconnect.c`.
+
+3. How to use:
    - Run `./build.py -a wifi_user_reconnect` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
    - `Download` images to board by Ameba Image Tool.
 
-3. Modify AP's channel, Ameba will detect AP change and reconnect success.
+4. Modify AP's channel, Ameba will detect AP change and reconnect success.
 
-4. Modify AP's password, Ameba will detect AP change and reconnect fail.
+5. Modify AP's password, Ameba will detect AP change and reconnect fail.
 
 # Expect result
 

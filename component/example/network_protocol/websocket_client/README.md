@@ -28,14 +28,7 @@ None
 		#define USING_SSL //using the WSS server
 		#define USING_SSL //using the WS server,comment out this macro
 		```
-
 2. If using the WS server:
-   - `mbedtls_config.h`
-		```C
-		#define MBEDTLS_SSL_OUT_CONTENT_LEN             16384
-		#define MBEDTLS_SSL_IN_CONTENT_LEN              16384
-		```
-
    - `example_websocket_client.c`
 		```C
 		wsclient_context *wsclient = create_wsclient("ws://websocket-echo.com", 0, NULL, NULL, 1500, 3);
@@ -44,8 +37,6 @@ None
 3. If using the WSS server:
    - `mbedtls_config.h`
 		```C
-		#define MBEDTLS_SSL_OUT_CONTENT_LEN             16384
-		#define MBEDTLS_SSL_IN_CONTENT_LEN              16384
 		#define MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 		#define MBEDTLS_ECDH_C
 		```
@@ -55,7 +46,13 @@ None
 		wsclient_context *wsclient = create_wsclient("wss://websocket-echo.com", 0, NULL, NULL, 1500, 3);
 		```
 
-4. How to use:
+4. If encounter the following errors in an SSL connection. Set `MBEDTLS_SSL_IN_CONTENT_LEN` by `./menuconfig.py` and choose `CONFIG SSL`-> `Maximum len of incoming fragments` -> set large size.
+	```C
+	#define MBEDTLS_ERR_SSL_BAD_INPUT_DATA                    -0x7100
+	#define MBEDTLS_ERR_SSL_INVALID_RECORD                    -0x7200
+	```
+
+5. How to use:
    - Run `./build.py -a websocket_client` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
    - `Download` images to board by Ameba Image Tool.
 

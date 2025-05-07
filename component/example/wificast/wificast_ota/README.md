@@ -48,7 +48,7 @@ The built-in python HTTP server locates in [tools\DownloadServer(HTTP)](tools/Do
     ```
     python http_server.py
     ```
-> Note: The `ota_all.bin` should be prepared first by running `make` under the project directory.
+> Note: The `ota_all.bin` should be prepared first by running `./build.py` under the project directory.
 
 ### Step 3: Build & Flash
 
@@ -57,7 +57,7 @@ The built-in python HTTP server locates in [tools\DownloadServer(HTTP)](tools/Do
     static const char *host = "192.168.137.1";  //"m-apps.oss-cn-shenzhen.aliyuncs.com"
     static const char *resource = "ota_all.bin";     //"051103061600.bin"
     ```
-2. Navigate to the project directory according to the chip you use. For GCC enviornment, type command `make EXAMPLE=wificast_ota` to compile the example.
+2. Navigate to the project directory according to the chip you use. For GCC enviornment, type command `./build.py -a wificast_ota` to compile the example.
 3. Download the image into flash for both sender and receiver.
 
 ### Step 4: Run Sender and Receiver

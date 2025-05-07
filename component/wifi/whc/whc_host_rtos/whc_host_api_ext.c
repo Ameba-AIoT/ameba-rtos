@@ -135,13 +135,11 @@ s32 wifi_get_scan_records(u32 *ap_num, struct rtw_scan_result *ap_list)
 	return ret;
 }
 
-s32 wifi_scan_abort(u8 block)
+s32 wifi_scan_abort(void)
 {
 	int ret = 0;
-	u32 param_buf[1];
 
-	param_buf[0] = (u32)block;
-	whc_host_api_message_send(WHC_API_WIFI_SCAN_ABORT, (u8 *)param_buf, 4, (u8 *)&ret, sizeof(ret));
+	whc_host_api_message_send(WHC_API_WIFI_SCAN_ABORT, NULL, 0, (u8 *)&ret, sizeof(ret));
 
 	return ret;
 }

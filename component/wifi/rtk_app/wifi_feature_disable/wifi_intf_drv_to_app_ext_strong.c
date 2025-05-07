@@ -10,9 +10,8 @@ s32 wifi_get_scan_records(u32 *ap_num, struct rtw_scan_result *ap_list)
 	return -1;
 }
 
-s32 wifi_scan_abort(u8 block)
+s32 wifi_scan_abort(void)
 {
-	UNUSED(block);
 	call_noused = __LINE__;
 	return -1;
 }

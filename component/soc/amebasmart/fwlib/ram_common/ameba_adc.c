@@ -5,6 +5,7 @@
  */
 
 #include "ameba_soc.h"
+#include <math.h>
 
 ADC_CalParaTypeDef CalParaNorm;
 ADC_CalParaTypeDef CalParaVBat;
@@ -737,6 +738,55 @@ u32 ADC_GetInterR(void)
 	OTP_Read8(INTER_R_ADDR, &r_offset);
 
 	return ((u32)r_offset + 400);
+}
+
+/**
+  * @brief Get normal or vbat sample value according to voltage in mV.
+  * @param VolMV: ADC Voltage in mV, which can be 0-1800.
+  * @param IsVBatChan: Calibration parameter belongs to vbat channel or normal channel.
+  *   This parameter can be one of the following values:
+  *        @arg TRUE: Calibration parameter belongs to vbat channel.
+  *        @arg FALSE: Calibration parameter belongs to normal channel.
+  * @return ADC conversion data.
+  */
+u32 ADC_GetSampleValue(s32 VolMV, u8 IsVBatChan)
+{
+	ADC_CalParaTypeDef CalPara;
+	s64 ka, kb;
+	s32 kc;
+	s64 discriminant;
+	s64 result;
+
+	if (IsVBatChan == TRUE) {
+		if (!CalParaVBat.init_done) {
+			ADC_InitCalPara(&CalParaVBat, TRUE);
+		}
+		CalPara = CalParaVBat;
+	} else {
+		if (!CalParaNorm.init_done) {
+			ADC_InitCalPara(&CalParaNorm, FALSE);
+		}
+		CalPara = CalParaNorm;
+	}
+
+	ka = CalPara.cal_a;
+	kb = CalPara.cal_b;
+	kc = CalPara.cal_c;
+
+	discriminant = kb * kb + 64 * ka * VolMV - ka * kc;
+	if (discriminant >= 0) {
+		result = (sqrt((float)discriminant) - kb) * 1024 / ka;
+
+		if (result < 0) {
+			return 0;
+		} else if (result > 0xFFF) {
+			return 0xFFF;
+		} else {
+			return (u32)result;
+		}
+	} else {
+		assert_param(0);
+	}
 }
 
 /**

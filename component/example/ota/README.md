@@ -19,21 +19,15 @@ None
 	```C
 	ota_update_init(ctx, (char *)host, PORT, (char *)resource, OTA_HTTPS);
 	```
-   - `mbedtls_config.h`
-		```C
-		#define MBEDTLS_SSL_MAX_CONTENT_LEN 16384
-		#define MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
-		#define MBEDTLS_ECDH_C
-		```
 
-3. For http or https update, modify `PORT`, `HOST` and `RESOURCE` based on your download server. e.g. [SERVER]: http://m-apps.oss-cn-shenzhen.aliyuncs.com/051103061600.bin
+	If encounter the following errors in an SSL connection. Set `MBEDTLS_SSL_IN_CONTENT_LEN` by `./menuconfig.py` and choose `CONFIG SSL`-> `Maximum len of incoming fragments` -> set large size.
+
 	```C
-	#define PORT    8082
-	#define HOST    "m-apps.oss-cn-shenzhen.aliyuncs.com"
-	#define RESOURCE    "051103061600.bin"
+	#define MBEDTLS_ERR_SSL_BAD_INPUT_DATA                    -0x7100
+	#define MBEDTLS_ERR_SSL_INVALID_RECORD                    -0x7200
 	```
 
-	Or set it with `IP` and `ota_all.bin`. e.g.
+3. For http or https update, modify `PORT`, `HOST` and `RESOURCE` based on your download server. Set it with `IP` and `ota_all.bin`. e.g.
 	```C
 	#define PORT    8082
 	#define HOST    "192.168.1.100"
@@ -44,15 +38,17 @@ None
    - Run `./build.py -a ota` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
    - `Download` images to board by Ameba Image Tool.
 
+5. Copy the `ota_all.bin` into `tools\DownloadServer(HTTP)`, and configure the script according to `tools\DownloadServer(HTTP)\readme.txt` first then execute the script.
+
+6. Reset the board and start the download.
+
 # Expect result
 
 A http download example thread will be started automatically when booting.
 
-Using the example with the tool in `tools\DownloadServer(HTTP)` with RESOURCE file.
-
 # Note
 
-Remember to Set the server `start.bat` with the same `PORT` and `RESOURCE`.
+The http server script and board need to be on the same local area network.
 
 # Supported IC
 

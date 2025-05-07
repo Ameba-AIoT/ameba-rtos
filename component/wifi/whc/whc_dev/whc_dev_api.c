@@ -800,9 +800,10 @@ void whc_event_wifi_set_gen_ie(u32 api_id, u32 *param_buf)
 
 void whc_event_wifi_scan_abort(u32 api_id, u32 *param_buf)
 {
+	(void)param_buf;
 	int ret = 0;
-	u8 block = (u8)param_buf[0];
-	ret = wifi_scan_abort(block);
+
+	ret = wifi_scan_abort();
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 

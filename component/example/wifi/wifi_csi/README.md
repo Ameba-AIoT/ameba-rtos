@@ -10,7 +10,7 @@ None
 
 1. Use cmd `./menuconfig.py` and select `CONFIG WIFI`->`Enable WIFI CSI`.
 
-2. If sta mode, please modify line27 in `example_wifi_csi.c`:
+2. If sta mode, please modify line22 in `example_wifi_csi.c`:
 	```
 	unsigned char assoc_ap_mac = <mac address of associated AP>
 	```
@@ -69,7 +69,7 @@ After compile success, the `wifi_csi_thread` may run and enable csi func when co
 	[CH INFO] raw data done!
 	```
 
-2. `DUT_IC` as sta mdoe, the log is as follows,
+2. `DUT_IC` as sta mode, the log is as follows,
 	```
 	### STA Break ###
 	[CH INFO] csi header info:

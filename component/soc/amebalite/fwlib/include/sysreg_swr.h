@@ -168,7 +168,7 @@
  * @{
  *****************************************************************************/
 #define SWR_MASK_VOFB_SEL                 ((u32)0x00000003 << 12)          /*!<R/W 00  // output feedback select, need set bits before SWR enable // 00 (default) from SWR internal PAD // 01 : from SWR external PAD_1 // 10: from SWR external PAD_2 // 11: from SWR external PAD_3 */
-#define SWR_VOFB_SEL_(x)                  ((u32)(((x) & 0x00000003) << 12))
+#define SWR_VOFB_SEL(x)                  ((u32)(((x) & 0x00000003) << 12))
 #define SWR_GET_VOFB_SEL(x)               ((u32)(((x >> 12) & 0x00000003)))
 #define SWR_MASK_BG_R1_TUNE               ((u32)0x00000007 << 9)          /*!<R/W 100  BG R2電阻調整 */
 #define SWR_BG_R1_TUNE(x)                 ((u32)(((x) & 0x00000007) << 9))
