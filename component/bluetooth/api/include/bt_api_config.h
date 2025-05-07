@@ -16,7 +16,7 @@ extern "C"
 #include "platform_autoconf.h"
 
 /*
- * PLATFORM_AMEBASMART (AmebaSmart)
+ * AmebaSmart
  */
 #if defined(CONFIG_AMEBASMART) && CONFIG_AMEBASMART
 #define RTK_BLE_GAP_MAX_LINKS               4
@@ -69,7 +69,7 @@ extern "C"
 #endif /* RTK_BLE_5_2_SUPPORT */
 
 /*
- * PLATFORM_AMEBALITE (AmebaLite)
+ * AmebaLite
  */
 #elif defined(CONFIG_AMEBALITE) && CONFIG_AMEBALITE
 #define RTK_BLE_GAP_MAX_LINKS               4
@@ -120,7 +120,7 @@ extern "C"
 #endif /* RTK_BLE_5_2_SUPPORT */
 
 /*
- * PLATFORM_8735B (AmebaPro2)
+ * AmebaPro2
  */
 #elif defined(CONFIG_8735B) && CONFIG_8735B
 #define RTK_BLE_GAP_MAX_LINKS               4
@@ -149,7 +149,7 @@ extern "C"
 #endif /* RTK_BLE_5_0_SUPPORT */
 
 /*
- * PLATFORM_AMEBADPLUS (AmebaDplus)
+ * AmebaDplus
  */
 #elif defined(CONFIG_AMEBADPLUS) && CONFIG_AMEBADPLUS
 #define RTK_BLE_GAP_MAX_LINKS               4
@@ -180,7 +180,7 @@ extern "C"
 #endif /* RTK_BLE_5_0_SUPPORT */
 
 /*
- * PLATFORM_AMEBAGREEN2 (AmebaGreen2)
+ * AmebaGreen2
  */
 #elif defined(CONFIG_AMEBAGREEN2) && CONFIG_AMEBAGREEN2
 #define RTK_BLE_GAP_MAX_LINKS               4

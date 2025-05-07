@@ -104,7 +104,13 @@ T_APP_RESULT bt_stack_gattc_common_callback(uint16_t conn_handle, T_GATT_CLIENT_
 			p_write_ind->char_type = (rtk_bt_gattc_char_type_t)p_result->char_type;
 			p_write_ind->srv_instance_id = p_result->srv_instance_id;
 			memcpy(&p_write_ind->char_uuid, &p_result->char_uuid, sizeof(rtk_bt_gattc_uuid_t));
-			p_write_ind->type = (rtk_bt_gattc_write_type_t)p_result->type;
+			if (p_result->type == GATT_WRITE_TYPE_REQ) {
+				p_write_ind->type = RTK_BT_GATT_CHAR_WRITE_REQ;
+			} else if (p_result->type == GATT_WRITE_TYPE_CMD) {
+				p_write_ind->type = RTK_BT_GATT_CHAR_WRITE_NO_RSP;
+			} else if (p_result->type == GATT_WRITE_TYPE_SIGNED_CMD) {
+				p_write_ind->type = RTK_BT_GATT_CHAR_WRITE_NO_RSP_SIGNED;
+			}
 			p_write_ind->handle = p_result->handle;
 			p_write_ind->err_code = p_result->cause;
 			if (p_write_ind->err_code) {
@@ -398,6 +404,12 @@ static uint16_t bt_stack_gattc_write(void *param)
 	T_GAP_CAUSE cause;
 	rtk_bt_gattc_write_param_t *p_write_param = (rtk_bt_gattc_write_param_t *)param;
 	T_GATT_WRITE_TYPE write_type = 0;
+	uint16_t credits = 0;
+
+	le_get_gap_param(GAP_PARAM_LE_REMAIN_CREDITS, &credits);
+	if (!credits) {
+		return RTK_BT_ERR_NO_CREDITS;
+	}
 
 	if (p_write_param->type == RTK_BT_GATT_CHAR_WRITE_REQ) {
 		write_type = GATT_WRITE_TYPE_REQ;

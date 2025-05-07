@@ -21,6 +21,13 @@
 
 #include <throughput_include.h>
 
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+rtk_bt_gattc_uuid_t throughput_ble_uuid = {
+	.is_uuid16 = true,
+	.p.uuid16 = THROUGHPUT_UUID_SRV
+};
+#endif
+
 typedef enum {
 	THROUGHPUT_CHAR_WRITE_REQ_PARAM = 0,
 	THROUGHPUT_CHAR_WRITE_REQ = 1,
@@ -138,6 +145,198 @@ static uint16_t ble_throughput_client_send_config_param(uint16_t conn_handle, vo
 	return rtk_bt_gattc_write(&write_param);
 }
 
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+static uint16_t ble_throughput_client_discover_dall(uint16_t conn_handle)
+{
+	uint16_t ret = 0;
+	throughput_client_links_t *p_conn_link;
+	throughput_client_db_t *p_conn_db;
+
+	if (!(p_conn_link = ble_throughput_client_choose_link(conn_handle))
+		|| !(p_conn_db = &p_conn_link->client_database)) {
+		return RTK_BT_ERR_NO_ENTRY;
+	}
+
+	ret = rtk_bt_gattc_discover_all(conn_handle);
+	if (RTK_BT_OK != ret) {
+		return ret;
+	}
+
+	p_conn_db->disc_state = DISC_START;
+	return RTK_BT_OK;
+}
+
+static uint16_t ble_throughput_client_char_find(uint16_t conn_handle)
+{
+	uint16_t char_handle;
+	rtk_bt_gattc_find_param_t find_param = {0};
+	rtk_bt_gattc_uuid_t char_uuid = {
+		.is_uuid16 = true,
+	};
+	throughput_client_links_t *p_conn_link;
+	throughput_client_db_t *p_conn_db;
+
+	if (!(p_conn_link = ble_throughput_client_choose_link(conn_handle))
+		|| !(p_conn_db = &p_conn_link->client_database)) {
+		return RTK_BT_ERR_NO_ENTRY;
+	}
+
+	find_param.conn_handle = conn_handle;
+	find_param.type = RTK_BT_GATT_FIND_CHARACTERISTIC_HANDLE;
+	find_param.find_char.srv_uuid = throughput_ble_uuid;
+	find_param.find_char.p_handle = &char_handle;
+
+	BT_LOGA("[APP] Throughput client find characteristic result (conn_handle): %d\r\n", conn_handle);
+	char_uuid.p.uuid16 = THROUGHPUT_UUID_WRITE_REQ_PARAM;
+	find_param.find_char.char_uuid = char_uuid;
+	if (RTK_BT_OK == rtk_bt_gattc_find(&find_param)) {
+		p_conn_db->char_db[THROUGHPUT_CHAR_WRITE_REQ_PARAM].char_val_handle = char_handle;
+		BT_LOGA("[APP] Characteristic WRITE_REQ_PARAM handle is 0x%04x.\r\n", char_handle);
+		BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+					find_param.type, find_param.conn_handle,
+					find_param.find_char.srv_uuid.p.uuid16,
+					find_param.find_char.char_uuid.p.uuid16,
+					char_handle);
+	} else {
+		BT_LOGE("[APP] Characteristic WRITE_REQ_PARAM fail.\r\n");
+	}
+
+	char_uuid.p.uuid16 = THROUGHPUT_UUID_WRITE_REQ;
+	find_param.find_char.char_uuid = char_uuid;
+	if (RTK_BT_OK == rtk_bt_gattc_find(&find_param)) {
+		p_conn_db->char_db[THROUGHPUT_CHAR_WRITE_REQ].char_val_handle = char_handle;
+		BT_LOGA("[APP] Characteristic WRITE_REQ handle is 0x%04x.\r\n", char_handle);
+		BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+					find_param.type, find_param.conn_handle,
+					find_param.find_char.srv_uuid.p.uuid16,
+					find_param.find_char.char_uuid.p.uuid16,
+					char_handle);
+	} else {
+		BT_LOGE("[APP] Characteristic WRITE_REQ fail.\r\n");
+	}
+
+	char_uuid.p.uuid16 = THROUGHPUT_UUID_WRITE_CMD;
+	find_param.find_char.char_uuid = char_uuid;
+	if (RTK_BT_OK == rtk_bt_gattc_find(&find_param)) {
+		p_conn_db->char_db[THROUGHPUT_CHAR_WRITE_CMD].char_val_handle = char_handle;
+		BT_LOGA("[APP] Characteristic WRITE_CMD handle is 0x%04x.\r\n", char_handle);
+		BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+					find_param.type, find_param.conn_handle,
+					find_param.find_char.srv_uuid.p.uuid16,
+					find_param.find_char.char_uuid.p.uuid16,
+					char_handle);
+	} else {
+		BT_LOGE("[APP] Characteristic WRITE_CMD fail.\r\n");
+	}
+
+	char_uuid.p.uuid16 = THROUGHPUT_UUID_NOTIFY;
+	find_param.find_char.char_uuid = char_uuid;
+	if (RTK_BT_OK == rtk_bt_gattc_find(&find_param)) {
+		p_conn_db->char_db[THROUGHPUT_CHAR_NOTIFY].char_val_handle = char_handle;
+		BT_LOGA("[APP] Characteristic NOTIFY handle is 0x%04x.\r\n", char_handle);
+		BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+					find_param.type, find_param.conn_handle,
+					find_param.find_char.srv_uuid.p.uuid16,
+					find_param.find_char.char_uuid.p.uuid16,
+					char_handle);
+	} else {
+		BT_LOGE("[APP] Characteristic NOTIFY fail.\r\n");
+	}
+
+	char_uuid.p.uuid16 = THROUGHPUT_UUID_INDICATE;
+	find_param.find_char.char_uuid = char_uuid;
+	if (RTK_BT_OK == rtk_bt_gattc_find(&find_param)) {
+		p_conn_db->char_db[THROUGHPUT_CHAR_INDICATE].char_val_handle = char_handle;
+		BT_LOGA("[APP] Characteristic INDICATE handle is 0x%04x.\r\n", char_handle);
+		BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+					find_param.type, find_param.conn_handle,
+					find_param.find_char.srv_uuid.p.uuid16,
+					find_param.find_char.char_uuid.p.uuid16,
+					char_handle);
+	} else {
+		BT_LOGE("[APP] Characteristic INDICATE fail.\r\n");
+	}
+
+	char_uuid.p.uuid16 = THROUGHPUT_UUID_WRITE_CMD_TEST;
+	find_param.find_char.char_uuid = char_uuid;
+	if (RTK_BT_OK == rtk_bt_gattc_find(&find_param)) {
+		p_conn_db->char_db[THROUGHPUT_CHAR_WRITE_CMD_TEST].char_val_handle = char_handle;
+		BT_LOGA("[APP] Characteristic WRITE_CMD_TEST handle is 0x%04x.\r\n", char_handle);
+		BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+					find_param.type, find_param.conn_handle,
+					find_param.find_char.srv_uuid.p.uuid16,
+					find_param.find_char.char_uuid.p.uuid16,
+					char_handle);
+	} else {
+		BT_LOGE("[APP] Characteristic WRITE_CMD_TEST fail.\r\n");
+	}
+
+	p_conn_db->disc_state = DISC_DONE;
+
+	return RTK_BT_OK;
+}
+
+static uint16_t ble_throughput_client_cccd_find(uint16_t conn_handle)
+{
+	uint16_t cccd_handle;
+	bool support_notify, support_indicate;
+	rtk_bt_gattc_find_param_t find_param = {0};
+	rtk_bt_gattc_uuid_t char_uuid = {
+		.is_uuid16 = true,
+	};
+	throughput_client_links_t *p_conn_link;
+	throughput_client_db_t *p_conn_db;
+
+	if (!(p_conn_link = ble_throughput_client_choose_link(conn_handle))
+		|| !(p_conn_db = &p_conn_link->client_database)) {
+		return RTK_BT_ERR_NO_ENTRY;
+	}
+
+	if (DISC_DONE != p_conn_db->disc_state) {
+		return RTK_BT_ERR_STATE_INVALID;
+	}
+
+	find_param.conn_handle = conn_handle;
+	find_param.type = RTK_BT_GATT_FIND_CHARACTERISTIC_CCCD_HANDLE;
+	find_param.find_char_cccd.srv_uuid = throughput_ble_uuid;
+	find_param.find_char_cccd.p_handle = &cccd_handle;
+	find_param.find_char_cccd.p_notify = &support_notify;
+	find_param.find_char_cccd.p_indicate = &support_indicate;
+
+	BT_LOGA("[APP] Throughput client find CCCD result (conn_handle): %d\r\n", conn_handle);
+	char_uuid.p.uuid16 = THROUGHPUT_UUID_NOTIFY;
+	find_param.find_char_cccd.char_uuid = char_uuid;
+	if (RTK_BT_OK == rtk_bt_gattc_find(&find_param)) {
+		p_conn_db->char_db[THROUGHPUT_CHAR_NOTIFY].cccd_handle = cccd_handle;
+		BT_LOGA("[APP] Characteristic NOTIFY CCCD handle is 0x%04x.\r\n", cccd_handle);
+		BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+					find_param.type, find_param.conn_handle,
+					find_param.find_char.srv_uuid.p.uuid16,
+					find_param.find_char.char_uuid.p.uuid16,
+					cccd_handle);
+	} else {
+		BT_LOGE("[APP] Characteristic NOTIFY CCCD fail.\r\n");
+	}
+
+	char_uuid.p.uuid16 = THROUGHPUT_UUID_INDICATE;
+	find_param.find_char_cccd.char_uuid = char_uuid;
+	if (RTK_BT_OK == rtk_bt_gattc_find(&find_param)) {
+		p_conn_db->char_db[THROUGHPUT_CHAR_INDICATE].cccd_handle = cccd_handle;
+		BT_LOGA("[APP] Characteristic INDICATE CCCD handle is 0x%04x.\r\n", cccd_handle);
+		BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+					find_param.type, find_param.conn_handle,
+					find_param.find_char.srv_uuid.p.uuid16,
+					find_param.find_char.char_uuid.p.uuid16,
+					cccd_handle);
+	} else {
+		BT_LOGE("[APP] Characteristic INDICATE CCCD fail.\r\n");
+	}
+
+	return RTK_BT_OK;
+}
+
+#else /* #if RTK_BLE_MGR_LIB */
+
 static uint16_t ble_throughput_client_srv_discover(uint16_t conn_handle)
 {
 	uint16_t ret = 0;
@@ -219,14 +418,13 @@ static uint16_t ble_throughput_client_desc_discover(uint16_t conn_handle)
 	p_conn_db->disc_state = DISC_START;
 	return RTK_BT_OK;
 }
+#endif /* #if RTK_BLE_MGR_LIB */
 
 static void ble_throughput_client_discover_res_hdl(void *data)
 {
 	rtk_bt_gattc_discover_ind_t *disc_res = (rtk_bt_gattc_discover_ind_t *)data;
 	uint16_t conn_handle = disc_res->conn_handle;
-	uint16_t uuid = 0;
 	uint16_t ret = 0;
-	rtk_bt_status_t disc_status = disc_res->status;
 	throughput_client_links_t *p_conn_link;
 	throughput_client_db_t *p_conn_db;
 	throughput_config_param_t *p_cfg_param;
@@ -237,6 +435,24 @@ static void ble_throughput_client_discover_res_hdl(void *data)
 		return;
 	}
 	p_cfg_param = &p_conn_link->tp_cfg_param;
+
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+	if (disc_res->is_found) {
+		if (RTK_BT_OK != (ret = ble_throughput_client_char_find(disc_res->conn_handle))) {
+			BT_LOGE("[APP] Throughput client discover characteristic failed, err: 0x%x conn_handle: %d\r\n",
+					ret, conn_handle);
+			return;
+		}
+		if (RTK_BT_OK != (ret = ble_throughput_client_cccd_find(disc_res->conn_handle))) {
+			BT_LOGE("[APP] Throughput client discover CCCD failed, err: 0x%x conn_handle: %d\r\n",
+					ret, conn_handle);
+			return;
+		}
+		BT_LOGA("[APP] Throughput client discover all success, conn_handle: %d\r\n", conn_handle);
+	}
+#else
+	uint16_t uuid = 0;
+	rtk_bt_status_t disc_status = disc_res->status;
 
 	if (RTK_BT_STATUS_CONTINUE == disc_status) {
 		switch (disc_res->type) {
@@ -324,11 +540,6 @@ static void ble_throughput_client_discover_res_hdl(void *data)
 		case RTK_BT_GATT_DISCOVER_DESCRIPTORS_ALL: {
 			p_conn_db->disc_state = DISC_DONE;
 			BT_LOGA("[APP] Throughput client discover all success, conn_handle: %d\r\n", conn_handle);
-			ret = ble_throughput_client_send_config_param(conn_handle, p_cfg_param, sizeof(throughput_config_param_t));
-			if (RTK_BT_OK != ret) {
-				BT_LOGE("[APP] Throughput client send config param failed, err: 0x%x, conn_handle: %d\r\n",
-						ret, conn_handle);
-			}
 			break;
 		}
 		default:
@@ -339,6 +550,15 @@ static void ble_throughput_client_discover_res_hdl(void *data)
 #if defined(THROUGHPUT_CLIENT_SHOW_DETAIL) && THROUGHPUT_CLIENT_SHOW_DETAIL
 	general_client_discover_res_hdl(data);
 #endif
+#endif /* #if RTK_BLE_MGR_LIB */
+
+	if (DISC_DONE == p_conn_db->disc_state) {
+		ret = ble_throughput_client_send_config_param(conn_handle, p_cfg_param, sizeof(throughput_config_param_t));
+		if (RTK_BT_OK != ret) {
+			BT_LOGE("[APP] Throughput client send config param failed, err: 0x%x, conn_handle: %d\r\n",
+					ret, conn_handle);
+		}
+	}
 }
 
 static uint16_t ble_throughput_client_enable_notify(uint16_t conn_handle, bool enable)
@@ -359,9 +579,16 @@ static uint16_t ble_throughput_client_enable_notify(uint16_t conn_handle, bool e
 
 	cccd_param.profile_id = THROUGHPUT_CLIENT_PROFILE_ID;
 	cccd_param.conn_handle = conn_handle;
-	cccd_param.bnotify = 1;
+	cccd_param.bnotify = true;
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+	cccd_param.srv_cfg = false;
+	cccd_param.srv_uuid = throughput_ble_uuid;
+	cccd_param.char_uuid.is_uuid16 = true;
+	cccd_param.char_uuid.p.uuid16 = THROUGHPUT_UUID_NOTIFY;
+#else
 	cccd_param.char_val_handle = p_conn_db->char_db[THROUGHPUT_CHAR_NOTIFY].char_val_handle;
 	cccd_param.cccd_handle = p_conn_db->char_db[THROUGHPUT_CHAR_NOTIFY].cccd_handle;
+#endif
 
 	if (enable) {
 		ret = rtk_bt_gattc_enable_notify_or_indicate(&cccd_param);
@@ -395,9 +622,16 @@ static uint16_t ble_throughput_client_enable_indicate(uint16_t conn_handle, bool
 
 	cccd_param.profile_id = THROUGHPUT_CLIENT_PROFILE_ID;
 	cccd_param.conn_handle = conn_handle;
-	cccd_param.bindicate = 1;
+	cccd_param.bindicate = true;
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+	cccd_param.srv_cfg = false;
+	cccd_param.srv_uuid = throughput_ble_uuid;
+	cccd_param.char_uuid.is_uuid16 = true;
+	cccd_param.char_uuid.p.uuid16 = THROUGHPUT_UUID_INDICATE;
+#else
 	cccd_param.char_val_handle = p_conn_db->char_db[THROUGHPUT_CHAR_INDICATE].char_val_handle;
 	cccd_param.cccd_handle = p_conn_db->char_db[THROUGHPUT_CHAR_INDICATE].cccd_handle;
+#endif
 
 	if (enable) {
 		ret = rtk_bt_gattc_enable_notify_or_indicate(&cccd_param);
@@ -828,6 +1062,25 @@ rtk_bt_evt_cb_ret_t ble_throughput_client_gattc_app_callback(uint8_t event, void
 		}
 		break;
 	}
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+	case RTK_BT_GATTC_EVT_DISCOVER_ALL_STATE_IND: {
+		rtk_bt_gattc_discover_all_state_ind_t *p_ind = (rtk_bt_gattc_discover_all_state_ind_t *)data;
+
+		BT_LOGA("[APP] Throughput client discover all finished: conn_handle: %d, is_success: %d, load_from_storage: %d\r\n",
+				p_ind->conn_handle, p_ind->is_success, p_ind->load_from_storage);
+		break;
+	}
+	case RTK_BT_GATTC_EVT_GATT_SERVICE_INFO_IND: {
+		rtk_bt_gattc_gatt_service_info_ind_t *p_ind = (rtk_bt_gattc_gatt_service_info_ind_t *)data;
+		BT_LOGA("[APP] Throughput client discover service info: conn_handle: %d, is_found: %d, load_from_storage: %d\r\n",
+				p_ind->conn_handle, p_ind->is_found, p_ind->load_from_storage);
+		if ((p_ind->char_flag & RTK_BT_GATT_SVC_SERVER_SUPPORTED_FEATURES_FLAG) &&
+			(p_ind->server_features[0] & RTK_BT_GATTS_SERVER_SUPPORTED_FEATURES_EATT_BIT)) {
+			BT_LOGA("[APP] Throughput client supported features: 0x%02x, Remote server supports EATT.\r\n", p_ind->server_features[0]);
+		}
+		break;
+	}
+#endif
 	case RTK_BT_GATTC_EVT_DISCOVER_RESULT_IND:
 		ble_throughput_client_discover_res_hdl(data);
 		break;
@@ -865,11 +1118,19 @@ rtk_bt_evt_cb_ret_t ble_throughput_client_gattc_app_callback(uint8_t event, void
 			|| RTK_BT_STATUS_DONE != cccd_update->status) {
 			return RTK_BT_EVT_CB_OK;
 		}
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+		if (THROUGHPUT_UUID_NOTIFY == cccd_update->uuid.p.uuid16) {
+			BT_LOGA("[APP] Throughput client enable notify succeed, conn_handle:%d\r\n", cccd_update->conn_handle);
+		} else if (THROUGHPUT_UUID_INDICATE == cccd_update->uuid.p.uuid16) {
+			BT_LOGA("[APP] Throughput client enable indicate succeed, conn_handle:%d\r\n", cccd_update->conn_handle);
+		}
+#else
 		if (p_conn_db->char_db[THROUGHPUT_CHAR_NOTIFY].cccd_handle == cccd_update->cccd_handle) {
 			BT_LOGA("[APP] Throughput client enable notify succeed, conn_handle:%d\r\n", cccd_update->conn_handle);
 		} else if (p_conn_db->char_db[THROUGHPUT_CHAR_INDICATE].cccd_handle == cccd_update->cccd_handle) {
 			BT_LOGA("[APP] Throughput client enable indicate succeed, conn_handle:%d\r\n", cccd_update->conn_handle);
 		}
+#endif
 		break;
 	}
 	case RTK_BT_GATTC_EVT_CCCD_DISABLE_IND: {
@@ -879,11 +1140,19 @@ rtk_bt_evt_cb_ret_t ble_throughput_client_gattc_app_callback(uint8_t event, void
 			|| RTK_BT_STATUS_DONE != cccd_update->status) {
 			return RTK_BT_EVT_CB_OK;
 		}
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+		if (THROUGHPUT_UUID_NOTIFY == cccd_update->uuid.p.uuid16) {
+			BT_LOGA("[APP] Throughput client disable notify succeed, conn_handle:%d\r\n", cccd_update->conn_handle);
+		} else if (THROUGHPUT_UUID_INDICATE == cccd_update->uuid.p.uuid16) {
+			BT_LOGA("[APP] Throughput client disable indicate succeed, conn_handle: %d\r\n", cccd_update->conn_handle);
+		}
+#else
 		if (p_conn_db->char_db[THROUGHPUT_CHAR_NOTIFY].cccd_handle == cccd_update->cccd_handle) {
 			BT_LOGA("[APP] Throughput client disable notify succeed, conn_handle:%d\r\n", cccd_update->conn_handle);
 		} else if (p_conn_db->char_db[THROUGHPUT_CHAR_INDICATE].cccd_handle == cccd_update->cccd_handle) {
 			BT_LOGA("[APP] Throughput client disable indicate succeed, conn_handle: %d\r\n", cccd_update->conn_handle);
 		}
+#endif
 		break;
 	}
 	default:
@@ -908,7 +1177,12 @@ uint16_t ble_throughput_client_link_connected(uint16_t conn_handle)
 	memcpy(&throughput_client_links[conn_id]->tp_cfg_param, &config_param, sizeof(throughput_config_param_t));
 	throughput_client_links[conn_id]->conn_handle = conn_handle;
 
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+	ret = ble_throughput_client_discover_dall(conn_handle);
+#else
 	ret = ble_throughput_client_srv_discover(conn_handle);
+#endif
+
 	if (RTK_BT_OK != ret) {
 		BT_LOGE("[APP] Throughput client discover service failed! err: 0x%x, conn_handle: %d\r\n",
 				ret, conn_handle);
@@ -938,7 +1212,11 @@ uint16_t ble_throughput_client_link_disconnected(uint16_t conn_handle)
 
 uint16_t ble_throughput_client_add(void)
 {
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+	return rtk_bt_gattc_register_profile(THROUGHPUT_CLIENT_PROFILE_ID, throughput_ble_uuid);
+#else
 	return rtk_bt_gattc_register_profile(THROUGHPUT_CLIENT_PROFILE_ID);
+#endif
 }
 
 uint16_t ble_throughput_client_delete(void)
