@@ -48,35 +48,31 @@ extern "C" {
 #define NAN_WLAN_INDEX	    2
 #define NONE_WLAN_INDEX	    0xFF
 
-/** Set to this means do fast survey on the specified channel with scan time set to 25ms,
- * otherwise do normal scan on the specified channel with scan time set to 110ms. */
+/** When set to this value, a fast survey is conducted with a scan time of 25 ms on the specified channel.
+ *  Otherwise, a normal scan is performed with a duration of 110 ms on the specified channel. */
 #define RTW_PSCAN_FAST_SURVEY	0x02
 
-/** Max channel num in each channel plan */
+/** Maximum number of channels in each channel plan. Defined as 14 for 2.4GHz only, or 42 when 5GHz is supported.*/
 #if !defined(SUPPORT_5G_CHANNEL)
 #define	RTW_MAX_CHANNEL_NUM			14
 #else
 #define	RTW_MAX_CHANNEL_NUM			42
 #endif
 
-
-/** Set to this means disable DPK(Digital Pre-Distortion Calibration) of rf calibration. */
+/** When set to this value, disables DPK (Digital Pre-Distortion Calibration) during RF calibration.*/
 #define RTW_RFK_DIS_DPK     BIT(0)
 
-/* Maximum size of the ESSID and NICKN strings */
-#define RTW_ESSID_MAX_SIZE	32  /**< Refer to 802.11 spec, the max length of ssid is 32 bytes. */
-#define RTW_WPA2_MAX_PSK_LEN		(64)
-#define RTW_WPA3_MAX_PSK_LEN		(128)		/**< maxmum psk length */
-#define RTW_MAX_PSK_LEN		RTW_WPA3_MAX_PSK_LEN /* TODO: rom should also check RTW_PASSPHRASE_MAX_SIZE. */
-#define RTW_MIN_PSK_LEN		(8)		/**< minimum psk length */
+#define RTW_ESSID_MAX_SIZE	32  /**< Maximum length of SSID is 32 bytes as per 802.11 specification. */
+#define RTW_WPA2_MAX_PSK_LEN		(64)    /**< Maximum pre-shared key (PSK) length for WPA2. */
+#define RTW_WPA3_MAX_PSK_LEN		(128)		/**< Maximum PSK length for WPA3. */
+/* TODO: rom should also check RTW_PASSPHRASE_MAX_SIZE. */
+#define RTW_MAX_PSK_LEN		RTW_WPA3_MAX_PSK_LEN /**< Maximum PSK length used. */
+#define RTW_MIN_PSK_LEN		(8)		/**< Minimum PSK length. */
 
-/**
- * @brief  mac address format.
- */
 #define MAC_ARG(x)		((u8*)(x))[0],((u8*)(x))[1],\
 				((u8*)(x))[2],((u8*)(x))[3],\
-				((u8*)(x))[4],((u8*)(x))[5]
-#define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
+				((u8*)(x))[4],((u8*)(x))[5]      /**< Formats MAC address for printing. Usage Example: RTK_LOGS(NOTAG, RTK_LOG_INFO, "MAC addr="MAC_FMT"\n", MAC_ARG(mac_addr));*/
+#define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"  /**< Format string for printing MAC address.*/
 
 /** @} End of WIFI_Exported_Constants group*/
 
@@ -101,11 +97,14 @@ enum rtw_security_flag {
 };
 
 /**
-  * @brief  The enumeration lists the disconnet reasons in rtw_event_info_joinstatus_disconn when @ref RTW_JOINSTATUS_DISCONNECT happenned.
+  * @brief  Enumerates the disconnect reasons used in @ref rtw_event_info_joinstatus_disconn
+  *         when a disconnect event (@ref RTW_JOINSTATUS_DISCONNECT) occurs (size: u16).
+  *         The reasons include both standard 802.11 specification-based reasons and custom-defined
+  *         reasons by the driver and application layers.
   */
 enum rtw_disconn_reason {
 #ifndef CONFIG_FULLMAC
-	/*Reason code in 802.11 spec, Receive AP's deauth or disassoc after wifi connected*/
+	/*802.11 spec reason codes, received after connection in AP's deauth or disassoc frame.*/
 	RTW_DISCONN_RSN_80211_UNSPECIFIED                         = 1,
 	RTW_DISCONN_RSN_80211_PREV_AUTH_NOT_VALID 			      = 2,
 	RTW_DISCONN_RSN_80211_DEAUTH_LEAVING                      = 3,
@@ -130,13 +129,13 @@ enum rtw_disconn_reason {
 	RTW_DISCONN_RSN_80211_IEEE_802_1X_AUTH_FAILED             = 23,
 	RTW_DISCONN_RSN_80211_CIPHER_SUITE_REJECTED               = 24,
 #endif
-	/*RTK defined, Driver disconenct from AP after wifi connected and detect something wrong*/
+	/*RTK defined: Driver-detected issues causing disconnection. */
 	RTW_DISCONN_RSN_DRV_BASE                            = 60000,
 	RTW_DISCONN_RSN_DRV_AP_LOSS                         = 60001,
 	RTW_DISCONN_RSN_DRV_AP_CHANGE                       = 60002,
 	RTW_DISCONN_RSN_DRV_BASE_END                        = 60099,
 
-	/*RTK defined, Application layer call some API to cause wifi disconnect*/
+	/*RTK defined: Application layer call some API to cause wifi disconnect.*/
 	RTW_DISCONN_RSN_APP_BASE                            = 60100,
 	RTW_DISCONN_RSN_APP_DISCONN                         = 60101,
 	RTW_DISCONN_RSN_APP_CONN_WITHOUT_DISCONN            = 60102,
@@ -146,17 +145,17 @@ enum rtw_disconn_reason {
 };
 
 /**
- * @brief  The enumeration lists supported band type.
+ * @brief  Supported Wi-Fi frequency bands (size: u8).
  */
 enum rtw_support_band {
-	RTW_SUPPORT_BAND_2_4G = 0,     /**< 2.4g band. */
-	RTW_SUPPORT_BAND_5G,           /**< 5g band. */
-	RTW_SUPPORT_BAND_2_4G_5G_BOTH, /**< 2.4g&5g band. */
-	RTW_SUPPORT_BAND_MAX            /**< Max band. */
+	RTW_SUPPORT_BAND_2_4G = 0,     /**< 2.4 GHz band. */
+	RTW_SUPPORT_BAND_5G,           /**< 5 GHz band. */
+	RTW_SUPPORT_BAND_2_4G_5G_BOTH, /**< Both 2.4 GHz and 5 GHz bands. */
+	RTW_SUPPORT_BAND_MAX            /**< Maximum band type (for bounds checking). */
 };
 
 /**
- * @brief The enumeration lists the type of speaker related settings.
+ * @brief  Speaker-related setting types (size: u8).
  */
 enum rtw_speaker_set_type {
 	RTW_SPEAKER_SET_INIT = 0,
@@ -165,7 +164,7 @@ enum rtw_speaker_set_type {
 };
 
 /**
- * @brief  The enumeration lists transmission frame type for wifi custom ie.
+ * @brief  Transmission frame types for Wi-Fi custom IE (size: u8).
  */
 enum rtw_cus_ie_frame_type {
 	RTW_CUS_IE_PROBEREQ = BIT(0),  /**< Probe request. */
@@ -175,71 +174,77 @@ enum rtw_cus_ie_frame_type {
 };
 
 /**
- * @brief The enumeration lists rcr mode under promisc.
+ * @brief  Promisc mode filter options (size: u8).
  */
 enum rtw_promisc_filter_mode {
-	RTW_PROMISC_FILTER_ALL_PKT,  /**< Receive all packets. */
-	RTW_PROMISC_FILTER_AP_ALL     /**< Receive all packtets send by connected ap. */
+	RTW_PROMISC_FILTER_ALL_PKT,  /**< Receive all packets in the air. */
+	RTW_PROMISC_FILTER_AP_ALL     /**< Receive all packtets sent by connected AP. */
 };
 
 /**
- * @brief The enumeration lists promisc callback return value.
+ * @brief  Promisc callback return values (size: u8).
  */
 enum rtw_promisc_drv_hdl {
-	RTW_PROMISC_NEED_DRV_HDL,  /**< Driver will continue process this pkt. */
-	RTW_PROMISC_BYPASS_DRV_HDL     /**< Driver will bypass this pkt. */
+	RTW_PROMISC_NEED_DRV_HDL,  /**< Driver will continue processing this packet. */
+	RTW_PROMISC_BYPASS_DRV_HDL     /**< Driver will bypass this packet. */
 };
 
 /**
- * @brief The enumeration lists band type where the sta/ap is located.
+ * @brief  Wi-Fi frequency bands for STA/AP operation (size: u8).
  */
 enum rtw_band_type {
-	RTW_BAND_ON_24G	= 0,   /**< band is on 2.4G                          */
-	RTW_BAND_ON_5G	= 1,   /**< band is on 5G                          */
-	RTW_BAND_ON_6G	= 2,   /**< band is on 6G                          */
-	RTW_BAND_MAX,                  /**< max band                          */
+	RTW_BAND_ON_24G	= 0,   /**< Operating on the 2.4 GHz band. */
+	RTW_BAND_ON_5G	= 1,   /**< Operating on the 5 GHz band. */
+	RTW_BAND_ON_6G	= 2,   /**< Operating on the 6 GHz band. */
+	RTW_BAND_MAX,          /**< Maximum band type (for bounds checking).*/
 };
 
 /**
- * @brief The enumeration lists wpa mode， size u8
+ * @brief Enumeration of WPA (Wi-Fi Protected Access) modes (size: u8), specifying different security protocol version.
  */
 enum rtw_wpa_mode {
-	RTW_WPA_AUTO_MODE,       /**< wpa auto mode                       */
-	RTW_WPA_ONLY_MODE,       /**< wpa only mode                       */
-	RTW_WPA2_ONLY_MODE,      /**< wpa2 only mode                       */
-	RTW_WPA3_ONLY_MODE,      /**< wpa3 only mode                       */
-	RTW_WPA_WPA2_MIXED_MODE, /**< wpa and wpa2  mixed mode                       */
-	RTW_WPA2_WPA3_MIXED_MODE /**< wpa2 and wpa3  mixed mode                       */
+	RTW_WPA_AUTO_MODE,       /**< Auto-select WPA versions based on network configuration. (default mode after driver initialization) */
+	RTW_WPA_ONLY_MODE,       /**< WPA only */
+	RTW_WPA2_ONLY_MODE,      /**< WPA2 only */
+	RTW_WPA3_ONLY_MODE,      /**< WPA3 only */
+	RTW_WPA_WPA2_MIXED_MODE, /**< Mixed mode supporting both WPA and WPA2 */
+	RTW_WPA2_WPA3_MIXED_MODE /**< Mixed mode supporting both WPA2 and WPA3 */
 };
 
 
 /**
- * @brief The enumeration lists the possible security types to set when connection.\n
- *			Station mode supports OPEN, WEP, and WPA2.\n
- *			AP mode support OPEN and WPA2.
- */
+ * @brief  Security types for Wi-Fi connections (size: u32).
+ * @note  Default Authentication and Key Management (AKM) is PSK for WPA/WPA2 and SAE for WPA3.
+ *        For Enterprise mode in WPA/WPA2/WPA3, use the @ref ENTERPRISE_ENABLED flag, e.g.,
+ *        @ref WPA3_SECURITY | @ref ENTERPRISE_ENABLED. */
 enum rtw_security {
-	RTW_SECURITY_OPEN               = 0,                                                            /**< Open security                           */
-	RTW_SECURITY_WEP_PSK            = (WEP_ENABLED),                                                /**< WEP Security with open authentication   */
-	RTW_SECURITY_WEP_SHARED         = (WEP_ENABLED | SHARED_ENABLED),                               /**< WEP Security with shared authentication */
+	RTW_SECURITY_OPEN               = 0,                                                            /**< Open (no security) */
+	RTW_SECURITY_WEP_PSK            = (WEP_ENABLED),                                                /**< WEP security with open authentication */
+	RTW_SECURITY_WEP_SHARED         = (WEP_ENABLED | SHARED_ENABLED),                               /**< WEP security with shared authentication */
 
-	RTW_SECURITY_WPA_TKIP_PSK       = (WPA_SECURITY | TKIP_ENABLED),                                /**< WPA Security with TKIP                  */
-	RTW_SECURITY_WPA_AES_PSK        = (WPA_SECURITY | AES_ENABLED),                                 /**< WPA Security with AES                   */
-	RTW_SECURITY_WPA_MIXED_PSK      = (WPA_SECURITY | AES_ENABLED | TKIP_ENABLED),                  /**< WPA Security with AES & TKIP            */
-	RTW_SECURITY_WPA2_TKIP_PSK		= (WPA2_SECURITY | TKIP_ENABLED),								/**< WPA2 Security with TKIP				 */
-	RTW_SECURITY_WPA2_AES_PSK       = (WPA2_SECURITY | AES_ENABLED),                                /**< WPA2 Security with AES                  */
-	RTW_SECURITY_WPA2_MIXED_PSK     = (WPA2_SECURITY | AES_ENABLED | TKIP_ENABLED),                 /**< WPA2 Security with AES & TKIP           */
-	RTW_SECURITY_WPA_WPA2_TKIP_PSK  = (WPA_SECURITY | WPA2_SECURITY | TKIP_ENABLED),                /**< WPA/WPA2 Security with TKIP             */
-	RTW_SECURITY_WPA_WPA2_AES_PSK   = (WPA_SECURITY | WPA2_SECURITY | AES_ENABLED),                 /**< WPA/WPA2 Security with AES              */
-	RTW_SECURITY_WPA_WPA2_MIXED_PSK = (WPA_SECURITY  | WPA2_SECURITY | TKIP_ENABLED | AES_ENABLED), /**< WPA/WPA2 Security with AES & TKIP       */
-	RTW_SECURITY_WPA3_AES_PSK	 = (WPA3_SECURITY | AES_ENABLED),				/**< WPA3-SAE with AES security			   */
-	RTW_SECURITY_WPA3_OWE	 = (WPA3_SECURITY | OWE_ENABLED | AES_ENABLED),				/**< WPA3-OWE with AES security			   */
-	RTW_SECURITY_WPA2_WPA3_MIXED = (WPA2_SECURITY | WPA3_SECURITY | AES_ENABLED), /**< WPA3-SAE/WPA2 with AES security		   */
-	RTW_SECURITY_WPA2_AES_CMAC      = (WPA2_SECURITY | AES_CMAC_ENABLED),                           /**< WPA2 Security with AES and Management Frame Protection */
+	RTW_SECURITY_WPA_TKIP_PSK       = (WPA_SECURITY | TKIP_ENABLED),                                /**< WPA security with TKIP encryption */
+	RTW_SECURITY_WPA_AES_PSK        = (WPA_SECURITY | AES_ENABLED),                                 /**< WPA security with AES (CCMP) encryption */
+	RTW_SECURITY_WPA_MIXED_PSK      = (WPA_SECURITY | AES_ENABLED | TKIP_ENABLED),                  /**< WPA security allowing both AES and TKIP */
+	RTW_SECURITY_WPA2_TKIP_PSK		= (WPA2_SECURITY | TKIP_ENABLED),								/**< WPA2 security with TKIP encryption */
+	RTW_SECURITY_WPA2_AES_PSK       = (WPA2_SECURITY | AES_ENABLED),                                /**< WPA2 security with AES (CCMP) encryption */
+	RTW_SECURITY_WPA2_MIXED_PSK     = (WPA2_SECURITY | AES_ENABLED | TKIP_ENABLED),                 /**< WPA2 security with allowing both AES and TKIP */
+	RTW_SECURITY_WPA_WPA2_TKIP_PSK  = (WPA_SECURITY | WPA2_SECURITY | TKIP_ENABLED),                /**< WPA/WPA2 security with TKIP encryption */
+	RTW_SECURITY_WPA_WPA2_AES_PSK   = (WPA_SECURITY | WPA2_SECURITY | AES_ENABLED),                 /**< WPA/WPA2 security with AES (CCMP) encryption */
+	RTW_SECURITY_WPA_WPA2_MIXED_PSK = (WPA_SECURITY  | WPA2_SECURITY | TKIP_ENABLED | AES_ENABLED), /**< WPA/WPA2 security allowing both AES and TKIP */
+	RTW_SECURITY_WPA3_AES_PSK       = (WPA3_SECURITY | AES_ENABLED),                                /**< WPA3-SAE security with AES (CCMP) encryption */
+	RTW_SECURITY_WPA3_OWE           = (WPA3_SECURITY | OWE_ENABLED | AES_ENABLED),                  /**< WPA3-OWE (Wi-Fi Enhanced Open) security with AES (CCMP) encryption */
+	RTW_SECURITY_WPA2_WPA3_MIXED    = (WPA2_SECURITY | WPA3_SECURITY | AES_ENABLED),                /**< WPA3-SAE/WPA2 with AES (CCMP) encryption */
+	RTW_SECURITY_WPA2_AES_CMAC      = (WPA2_SECURITY | AES_CMAC_ENABLED),                           /**< WPA2 security with AES and Management Frame Protection */
 };
 
 /**
-  * @brief The enumeration lists the BIT 7 HT Rate.
+  * @brief Supported PHY rates (size: u8):
+  *        - CCK rates: 1M, 2M, 5.5M, 11M
+  *        - OFDM rates: 6M, 9M, 12M, 18M, 24M, 36M, 48M, 54M
+  *        - HT rates: MCS0 to MCS7
+  *        - VHT rates: MCS0 to MCS8
+  *        - HE rates: MCS0 to MCS9
+  * @note For HT/VHT/HE PHY, only single spatial stream is supported.
   */
 enum rtw_rate {
 	RTW_RATE_1M		= 0x02,     /**< 0x02 */
@@ -292,7 +297,7 @@ enum rtw_rate {
 };
 
 /**
-  * @brief csi trig management frame subtype.
+  * @brief CSI triggering management frame subtypes (size: u16).
   */
 enum rtw_csi_trig_frame_mgnt {
 	RTW_CSI_TRIG_ASSOCREQ   = BIT(0),
@@ -310,7 +315,7 @@ enum rtw_csi_trig_frame_mgnt {
 };
 
 /**
-  * @brief csi trig control frame subtype.
+  * @brief CSI triggering control frame subtypes (size: u16).
   */
 enum rtw_csi_trig_frame_ctrl {
 	RTW_CSI_TRIG_TRIGGER     = BIT(2),
@@ -324,7 +329,7 @@ enum rtw_csi_trig_frame_ctrl {
 };
 
 /**
-  * @brief csi trig data frame subtype.
+  * @brief CSI triggering data frame subtypes (size: u16).
   */
 enum rtw_csi_trig_frame_data {
 	RTW_CSI_TRIG_DATA           = BIT(0),
@@ -332,7 +337,7 @@ enum rtw_csi_trig_frame_data {
 	RTW_CSI_TRIG_DATA_CFPOLL    = BIT(2),
 	RTW_CSI_TRIG_DATA_CFACKPOLL = BIT(3),
 	RTW_CSI_TRIG_DATA_NULL      = BIT(4),
-	RTW_CSI_TRIG_CF_ACK         = BIT(5),
+	RTW_CSI_TRIG_CF_ACK         = BIT(5), /**< CF-Ack (no data) */
 	RTW_CSI_TRIG_CF_POLL        = BIT(6),
 	RTW_CSI_TRIG_CF_ACKPOLL     = BIT(7),
 	RTW_CSI_TRIG_QOS_DATA       = BIT(8),
@@ -340,7 +345,7 @@ enum rtw_csi_trig_frame_data {
 };
 
 /**
-  * @brief csi enable or config.
+  * @brief CSI action types for wifi_csi_config() (size: u8).
   */
 enum rtw_csi_action_type {
 	RTW_CSI_ACT_EN,           /**< enable or disable csi func */
@@ -349,7 +354,7 @@ enum rtw_csi_action_type {
 };
 
 /**
-  * @brief csi group num.
+  * @brief CSI info subcarrier decimation for reducing data volume (size: u8).
   */
 enum rtw_csi_group_num {
 	RTW_CSI_GROUP_NUM_1 = 0,  /**< per tone */
@@ -360,17 +365,21 @@ enum rtw_csi_group_num {
 };
 
 /**
-  * @brief csi mode.
+  * @brief CSI mode for fetching CSI info (size: u8).
   */
 enum rtw_csi_mode {
-	RTW_CSI_MODE_NORMAL = 0,  /**< rx normal mode */
-	RTW_CSI_MODE_NDP,         /**< rx ndp mode: not support */
-	RTW_CSI_MODE_RX_RESP,     /**< rx response mode */
+	RTW_CSI_MODE_NORMAL = 0,  /**< Rx normal mode (estimating CSI by the currently received packet). */
+	RTW_CSI_MODE_NDP,         /**< Rx ndp mode: not support */
+	RTW_CSI_MODE_RX_RESP,     /**< Rx response mode (estimating CSI by receiving ACK for the previous transmission). */
 	RTW_CSI_MODE_MAX,
 };
 
 /**
-  * @brief csi accuracy.
+  * @brief  CSI accuracy specifies the format of CSI raw data represented as complex numbers (size: u8).
+  * @note
+  *       - Each CSI data point consists of an I (In-phase, real part) and Q (Quadrature, imaginary part) value.
+  *         Both I and Q use the same format for a given accuracy setting.
+  *       - For example, the format S(8,3) means a signed 8-bit number with 3 fractional bits.
   */
 enum rtw_csi_accuracy {
 	RTW_CSI_ACCU_1BYTE = 0,   /**< S(8,3) for dplus and S(8,4) for others */
@@ -379,16 +388,16 @@ enum rtw_csi_accuracy {
 };
 
 /**
-  * @brief csi alg_opt.
+  * @brief CSI algorithm options (size: u8).
   */
 enum rtw_csi_alg {
-	RTW_CSI_ALG_LS = 0,       /**< ls algo */
-	RTW_CSI_ALG_SMOTHING,     /**< smothing algo */
-	RTW_CSI_ALG_MAX           /**< other algo */
+	RTW_CSI_ALG_LS = 0,       /**< Least Squares algorithm */
+	RTW_CSI_ALG_SMOTHING,     /**< Smoothing algorithm */
+	RTW_CSI_ALG_MAX           /**< Other algorithm */
 };
 
 /**
-  * @brief csi ch_opt.
+  * @brief CSI acquisition from leagcy or non-legacy LTF (size: u8).
   */
 enum rtw_csi_ch {
 	RTW_CSI_CH_LEGACY = 0,    /**< legacy part(L-LTF) channel estmation result */
@@ -397,7 +406,7 @@ enum rtw_csi_ch {
 };
 
 /**
-  * @brief csi csi_role.
+  * @brief CSI operation role (size: u8).
   */
 enum rtw_csi_role {
 	RTW_CSI_OP_ROLE_TRX = 0,  /**< both trx */
@@ -406,113 +415,106 @@ enum rtw_csi_role {
 	RTW_CSI_OP_ROLE_MAX
 };
 
-/**
-  * @brief Power Mgnt
-  */
-enum rtw_power_mgnt_mode {
-	RTW_PS_MODE_ACTIVE	= 0	, ///< active mode
-	RTW_PS_MODE_LEGACY		,       ///< legacy mode
-	RTW_PS_MODE_UAPSD_WMM	, ///< uapsd wmm mode
-	RTW_PS_MODE_WTNPS	, ///< wtn ps mode
-};
 
 /**
-* @brief The enumeration lists the trp tis types.
+* @brief Total Radiated Power (TRP) and Total Isotropic Sensitivity (TIS) certification modes (size: u8).
 */
 enum rtw_trp_tis_mode {
-	RTW_TRP_TIS_DISABLE = 0,
+	RTW_TRP_TIS_DISABLE = 0,               /**< Disable TRP/TIS certification (default) */
 	RTW_TRP_TIS_NORMAL = 1,
-	RTW_TRP_TIS_DYNAMIC = 3,					///< enable dynamic mechanism
-	RTW_TRP_TIS_FIX_ACK_RATE = 5,			///< fix ack rate to 6M
-	RTW_TRP_TIS_FIX_PHY_ACK_HIGH_RATE = 9	///< fix phy ack rate to RATE_54M | RATE_48M | RATE_36M | RATE_24M | RATE_18M | RATE_12M | RATE_9M | RATE_6M
+	RTW_TRP_TIS_DYNAMIC = 3,               /**< Enable dynamic mechanism */
+	RTW_TRP_TIS_FIX_ACK_RATE = 5,          /**<  Fix ACK rate to 6M */
+	RTW_TRP_TIS_FIX_PHY_ACK_HIGH_RATE = 9  /**<  Fix PHY ACK rate to RATE_54M | RATE_48M | RATE_36M | RATE_24M | RATE_18M | RATE_12M | RATE_9M | RATE_6M */
 };
 
 /**
-* @brief The enumeration lists the edcca mode types.
+* @brief EDCCA modes (size: u8).
 */
 enum rtw_edcca_mode {
-	RTW_EDCCA_NORM	= 0, /* normal */
-	RTW_EDCCA_ADAPT	= 1, /* adaptivity */
-	RTW_EDCCA_CS	= 2, /* carrier sense */
-	RTW_EDCCA_DISABLE	= 9, /* disable */
+	RTW_EDCCA_NORM	= 0, /**< Dynamic threshold adjustment based on real-time RSSI measurements (default). */
+	RTW_EDCCA_ADAPT	= 1, /**< Fixed threshold to comply with ETSI Adaptivity Test requirements. */
+	RTW_EDCCA_CS	= 2, /**< Carrier Sense for Japan's interference avoidance regulations. */
+	RTW_EDCCA_DISABLE	= 9, /**< Disables EDCCA, allowing MAC transmission without signal verification. */
 };
 
 /**
-* @brief The enumeration lists the antdiv mode types.
+* @brief  Antenna diversity mode types (size: u8).
 */
 enum rtw_antdiv_mode {
-	RTW_ANTDIV_AUTO     = 0,    /* auto antdiv */
-	RTW_ANTDIV_FIX_MAIN = 1,    /* fix main ant */
-	RTW_ANTDIV_FIX_AUX  = 2,    /* fix aux ant */
-	RTW_ANTDIV_DISABLE  = 0xF,  /* disable antdiv*/
+	RTW_ANTDIV_AUTO     = 0,    /**< Automatic antenna diversity selection. */
+	RTW_ANTDIV_FIX_MAIN = 1,    /**< Fixed main antenna. */
+	RTW_ANTDIV_FIX_AUX  = 2,    /**< Fixed auxiliary antenna. */
+	RTW_ANTDIV_DISABLE  = 0xF,  /**< Disable antenna diversity.*/
 };
 
 /**
-  * @brief  The enumeration lists the bss types. size u8
+  * @brief  BSS types (size: u8).
   */
 enum rtw_bss_type {
-	RTW_BSS_TYPE_INFRASTRUCTURE 	= 0, /**< Denotes infrastructure network                  */
-	RTW_BSS_TYPE_WTN_HELPER          		= 1, /**< Denotes an wtn helper network           */
+	RTW_BSS_TYPE_INFRASTRUCTURE     = 0, /**< Infrastructure network */
+	RTW_BSS_TYPE_WTN_HELPER         = 1, /**< WTN helper network */
 	RTW_BSS_TYPE_UNKNOWN
 };
 
 /**
-  * @brief  The enumeration lists the scan options.
+  * @brief  Wi-Fi scan options (size: u8).
   */
 enum rtw_scan_type {
-	RTW_SCAN_NOUSE			= 0x00,  /**< default value */
-	RTW_SCAN_ACTIVE              	= 0x01,     /**< active scan */
-	RTW_SCAN_PASSIVE             	= 0x02,    /**< passive scan*/
-	RTW_SCAN_NO_HIDDEN_SSID	= 0x04, /**< Filter hidden ssid APs*/
-	RTW_SCAN_REPORT_EACH	= 0x08,    /**< report each */
-	RTW_SCAN_WITH_P2P		= 0x10    /**< for P2P usage */
+	RTW_SCAN_NOUSE          = 0x00,  /**< Default value */
+	RTW_SCAN_ACTIVE         = 0x01,  /**< Active scan */
+	RTW_SCAN_PASSIVE        = 0x02,  /**< Passive scan*/
+	RTW_SCAN_NO_HIDDEN_SSID = 0x04,  /**< Filter out hidden SSID APs*/
+	RTW_SCAN_REPORT_EACH    = 0x08,  /**< Report each found AP immediately */
+	RTW_SCAN_WITH_P2P       = 0x10   /**< For P2P usage */
 };
 
 /**
-  * @brief  The enumeration lists the WPS types.
+  * @brief  WPS (Wi-Fi Protected Setup) types.
   */
 enum rtw_wps_type {
-	RTW_WPS_TYPE_DEFAULT 		    		= 0,	/**< default type */
-	RTW_WPS_TYPE_USER_SPECIFIED 		= 1,	/**< user specified type */
-	RTW_WPS_TYPE_MACHINE_SPECIFIED   	= 2,	/**< machine specified type */
-	RTW_WPS_TYPE_REKEY 			        	= 3,	/**< retry key type */
-	RTW_WPS_TYPE_PUSHBUTTON 		    	= 4,	/**< push button type */
-	RTW_WPS_TYPE_REGISTRAR_SPECIFIED 	= 5,	/**< register specified type */
-	RTW_WPS_TYPE_NONE                   		= 6, 	/**< none */
-	RTW_WPS_TYPE_WSC                    		= 7,	/**< wsc type */
+	RTW_WPS_TYPE_DEFAULT                = 0,	/**< Default type */
+	RTW_WPS_TYPE_USER_SPECIFIED         = 1,	/**< User-specified type */
+	RTW_WPS_TYPE_MACHINE_SPECIFIED      = 2,	/**< Machine-specified type */
+	RTW_WPS_TYPE_REKEY                  = 3,	/**< Retry key type */
+	RTW_WPS_TYPE_PUSHBUTTON             = 4,	/**< Push button type */
+	RTW_WPS_TYPE_REGISTRAR_SPECIFIED    = 5,	/**< Register-specified type */
+	RTW_WPS_TYPE_NONE                   = 6, 	/**< none */
+	RTW_WPS_TYPE_WSC                    = 7,	/**< Wi-Fi Simple Configuration (WSC) type */
 };
 
 /**
-  * @brief The enumeration lists the supported operation mode by WIFI driver,
-  *			including station and AP mode.
+  * @brief Supported operation mode by the Wi-Fi driver.
   */
 enum rtw_drv_op_mode {
-	RTW_MODE_NONE	= 0,		///<none
-	RTW_MODE_STA		= 1,	///<sta mode
-	RTW_MODE_AP		= 2,	///<ap mode
-	RTW_MODE_NAN		= 3,	///<nan mode
+	RTW_MODE_NONE   = 0,   /**< None */
+	RTW_MODE_STA    = 1,   /**< STA mode */
+	RTW_MODE_AP     = 2,   /**< SoftAP mode */
+	RTW_MODE_NAN    = 3,   /**< NAN mode */
 	RTW_MODE_MAX
 };
 
 /**
-  * The enumeration lists the power save status.
+  * @brief  Power save levels for Inactive Power Save (IPS) mode.
   */
 enum rtw_ips_level {
-	RTW_IPS_WIFI_OFF = 0,
-	RTW_IPS_WIFI_PG,
+	RTW_IPS_WIFI_OFF = 0,  /**< The Wi-Fi is fully powered off during IPS to maximize power savings. */
+	RTW_IPS_WIFI_PG,       /**< The Wi-Fi module enters Power Gating, partially turning off RF/BB/MAC, allowing quicker exit from IPS. Only supported by Amebadplus. */
 	RTW_IPS_LEVEL_MAX,
 };
 
+/**
+ * @brief  The maximum service period lengths for U-APSD (Unscheduled Automatic Power Save Delivery) operations.
+ */
 enum rtw_uapsd_max_sp {
-	RTW_UAPSD_NO_LIMIT,
-	RTW_UAPSD_TWO_MSDU,
-	RTW_UAPSD_FOUR_MSDU,
-	RTW_UAPSD_SIX_MSDU
+	RTW_UAPSD_NO_LIMIT,  /**< No limit on service period length */
+	RTW_UAPSD_TWO_MSDU,  /**< Two MSDUs per service period */
+	RTW_UAPSD_FOUR_MSDU, /**< Four MSDUs per service period */
+	RTW_UAPSD_SIX_MSDU   /**< Six MSDUs per service period */
 };
 
 /**
-  * @brief  The enumeration lists all the network mode.
-  */
+ * @brief Enumeration of supported Wi-Fi network modes.
+ */
 /*TODO: rom should check because moved from rom_rtw_defs.h*/
 enum rtw_wireless_mode {
 	RTW_80211_INVALID = 0,
@@ -543,37 +545,45 @@ enum rtw_wireless_mode {
 	RTW_80211_MAX     = (RTW_80211_24G_MIX | RTW_80211_5G_MIX),
 };
 
-// Tx Power Limit Table Size
+/**
+ * @brief TX power limit regulatory domains.
+ */
 /*TODO: rom should check because moved from rom_rtw_defs.h*/
 enum rtw_txpwr_lmt {
-	TXPWR_LMT_FCC = 0,
-	TXPWR_LMT_MKK = 1,      /* Japan */
-	TXPWR_LMT_ETSI = 2,     /* CE */
-	TXPWR_LMT_IC = 3,       /* Canada */
-	TXPWR_LMT_KCC = 4,      /* South Korea */
-	TXPWR_LMT_ACMA = 5, 	/* Australia */
-	TXPWR_LMT_CHILE = 6,    /* Chile */
-	TXPWR_LMT_MEXICO = 7,   /* Mexico */
-	TXPWR_LMT_WW = 8,       /* Worldwide, The mininum of all */
-	TXPWR_LMT_GL = 9,		/* Global */
-	TXPWR_LMT_UKRAINE = 10, /* Ukraine */
-	TXPWR_LMT_CN = 11,       /* China */
-	TXPWR_LMT_QATAR = 12,   /* Qatar */
-	TXPWR_LMT_UK = 13,      /* Great Britain (United Kingdom; England) */
-	TXPWR_LMT_NCC = 14,     /* Taiwan */
-	TXPWR_LMT_EXT = 15,     /* Customer Customization */
+	TXPWR_LMT_FCC = 0,      /**< Federal Communications Commission (USA). */
+	TXPWR_LMT_MKK = 1,      /**< Japan */
+	TXPWR_LMT_ETSI = 2,     /**< European Telecommunications Standards Institute (CE).*/
+	TXPWR_LMT_IC = 3,       /**< Canada */
+	TXPWR_LMT_KCC = 4,      /**< South Korea */
+	TXPWR_LMT_ACMA = 5, 	/**< Australia */
+	TXPWR_LMT_CHILE = 6,    /**< Chile */
+	TXPWR_LMT_MEXICO = 7,   /**< Mexico */
+	TXPWR_LMT_WW = 8,       /**< Worldwide, The mininum of all */
+	TXPWR_LMT_GL = 9,		/**< Global */
+	TXPWR_LMT_UKRAINE = 10, /**< Ukraine */
+	TXPWR_LMT_CN = 11,       /**< China */
+	TXPWR_LMT_QATAR = 12,   /**< Qatar */
+	TXPWR_LMT_UK = 13,      /**< Great Britain (United Kingdom; England) */
+	TXPWR_LMT_NCC = 14,     /**< Taiwan */
+	TXPWR_LMT_EXT = 15,     /**< Customer Customization */
 
 	/* ===== Add new power limit above this line. ===== */
-	TXPWR_LMT_CONST_MAX     /* unchanging part define max */
+	TXPWR_LMT_CONST_MAX     /**< unchanging part define max */
 };
 
+/**
+ * @brief Wi-Fi frame types.
+ */
 enum rtw_frame_type {
-	RTW_MGT_TYPE  =	(0),
-	RTW_CTRL_TYPE =	(BIT(2)),
-	RTW_DATA_TYPE =	(BIT(3)),
-	RTW_QOS_DATA_TYPE	= (BIT(7) | BIT(3)),	//!< QoS Data
+	RTW_MGT_TYPE  =	(0),                     /**< Management frame */
+	RTW_CTRL_TYPE =	(BIT(2)),                /**< Control frame */
+	RTW_DATA_TYPE =	(BIT(3)),                /**< Data frame */
+	RTW_QOS_DATA_TYPE	= (BIT(7) | BIT(3)), /**< QoS data frame */
 };
 
+/**
+ * @brief Wi-Fi frame subtypes.
+ */
 enum rtw_frame_type_subtype {
 	// below is for mgt frame
 	RTW_ASSOCREQ       = (0 | RTW_MGT_TYPE),
@@ -621,15 +631,15 @@ enum rtw_frame_type_subtype {
  *********************************************************************************************/
 #pragma pack(1)/*rtw_ssid and rtw_mac are 1 byte alignment for some issues long long ago*/
 /**
-  * @brief  The structure is used to describe the SSID (Service Set Identification), i.e., the name of Access Point.
+  * @brief  Describes the SSID (Service Set Identification), which is the network name of an Access Point.
   */
 struct rtw_ssid {
-	u8		len;     /**< SSID length, i.e., equal to the length of `val`. The length of ssid should not > @ref RTW_ESSID_MAX_SIZE.  */
-	u8		val[RTW_ESSID_MAX_SIZE + 1]; /**< SSID name (AP name).*/
+	u8		len;     /**< SSID length. Should not > @ref RTW_ESSID_MAX_SIZE.  */
+	u8		val[RTW_ESSID_MAX_SIZE + 1]; /**< SSID value, terminated with a null character.*/
 };
 
 /**
-  * @brief  The structure is used to describe the unique 6-byte MAC address.
+  * @brief  Represents a unique 6-byte MAC address.
   */
 struct rtw_mac {
 	u8		octet[6]; /**< Unique 6-byte MAC address. */
@@ -642,80 +652,76 @@ struct rtw_mac {
 
 #pragma pack(1)/*scan related structs are 1 byte alignment for some issues long long ago*/
 /**
-  * @brief  The structure is used to describe the busyness of a channel for ACS(Automatic Channel Selection).
+  * @brief  Describes channel busyness for Automatic Channel Selection (ACS).
   */
 struct rtw_acs_mntr_rpt {
-	u16 meas_time; /**< Measurements time on this channel, unit:ms.*/
-	u16 busy_time; /**< Time that the primary channel was sensed busy, unit:ms.*/
-	u16 tx_time;   /**< Time spent transmitting frame on this channel, unit:ms.*/
-	s8 noise;      /**< Noise power measured on this channel, unit: dbm.*/
-	u8 channel;    /**< The scanned channel number. */
+	u16 meas_time; /**< Measurements duration on this channel, unit: ms.*/
+	u16 busy_time; /**< Time the primary channel was sensed busy, unit: ms.*/
+	u16 tx_time;   /**< Time spent transmitting frame on this channel, unit: ms.*/
+	s8 noise;      /**< Measured noise power on this channel, unit: dbm.*/
+	u8 channel;    /**< Scanned channel number. */
 };
 
 /**
-  * @brief  The structure is used to describe the details of a scanned AP.
+  * @brief  Contains details of a scanned AP.
   */
 struct rtw_scan_result {
-	struct rtw_ssid    ssid;             /**< Service Set Identification (i.e. Name of Access Point). */
-	struct rtw_mac     bssid;            /**< Basic Service Set Identification (i.e. MAC address of Access Point). */
-	s16                signal_strength;  /**< Receive Signal Strength Indication in dBm. <-90=Very poor, >-30=Excellent. */
-	u8				   bss_type;         /**< The bss type. The noraml type is infrastructure BSS. Val: @ref RTW_BSS_TYPE_INFRASTRUCTURE, @ref RTW_BSS_TYPE_WTN_HELPER.*/
-	u32                security;         /**< The security type of this AP. Val: @ref RTW_SECURITY_OPEN, @ref RTW_SECURITY_WEP_PSK...*/
-	u8
-	wps_type;         /**< The WPS(Wi-Fi Protected Setup) types supported by this AP. Val: @ref RTW_WPS_TYPE_DEFAULT, @ref RTW_WPS_TYPE_USER_SPECIFIED...*/
-	u32                channel;          /**< Radio channel that the AP beacon was received on. */
-	u8                 band;             /**< The frequency ranges used by this AP. Val: @ref RTW_BAND_ON_5G, @ref RTW_BAND_ON_24G. */
+	struct rtw_ssid    ssid;             /**< SSID of the AP. */
+	struct rtw_mac     bssid;            /**< BSSID (MAC address) of the AP. */
+	s16                signal_strength;  /**< Receive Signal Strength Indication (RSSI) in dBm: <-90 Very poor, >-30 Excellent. */
+	u8				   bss_type;         /**< BSS type. Common value: @ref RTW_BSS_TYPE_INFRASTRUCTURE.*/
+	u32                security;         /**< Security type of the AP: @ref RTW_SECURITY_OPEN, @ref RTW_SECURITY_WEP_PSK, etc. */
+	u8				   wps_type;         /**< WPS types supported by the AP: @ref RTW_WPS_TYPE_DEFAULT, @ref RTW_WPS_TYPE_USER_SPECIFIED, etc. */
+	u32                channel;          /**< Radio channel where the AP beacon was detected.*/
+	u8                 band;             /**< Frequency band used by the AP: @ref RTW_BAND_ON_5G, @ref RTW_BAND_ON_24G. */
 
-	/** The wireless spectrum management regulations of which region followed by the AP. `country_code` is coded
-	 * according to ISO 3166 standard. Specific values can refer to ameba_wifi_country_code_table_usrcfg.c.\n
-	 * e.g. China: country_code[0] = 'C', country_code[1] = 'N'. */
+	/** The wireless spectrum management regulations followed by the AP. Coded according to ISO 3166 standard. \n
+	 *  Reference: ameba_wifi_country_code_table_usrcfg.c for specific values. \n
+	 *  Example: For China, country_code[0] = 'C', country_code[1] = 'N'. */
 	u8                 country_code[2];
-	u8                 wireless_mode;    /**< The wireless mode of this AP. Val: @ref RTW_80211_B, @ref RTW_80211_A...*/
+	u8                 wireless_mode;    /**< Wireless mode: @ref RTW_80211_B, @ref RTW_80211_A, etc.*/
 	u8                 rom_rsvd[3];
 };
 
 /**
-  * @brief  The structure is used to describe the scan time per channel.
+  * @brief  Specifies the scan duration per channel.
   */
 struct rtw_channel_scan_time {
-	u16		active_scan_time;      /**< Active scan time per channel, units: millisecond, default is 110ms. */
-	u16		passive_scan_time;     /**< Passive scan time per channel, units: millisecond, default is 110ms. */
+	u16		active_scan_time;      /**< Active scan duration per channel (ms, default: 110). */
+	u16		passive_scan_time;     /**< Passive scan duration per channel (ms, default: 110). */
 };
 
 /**
-  * @brief  The structure is used to describe the scan parameters used for scan.
+  * @brief  Describes the scan parameters used for Wi-Fi scanning.
   */
 struct rtw_scan_param {
-	u8                               options; /**< The scan option, such as active scan. Val: @ref RTW_SCAN_ACTIVE, @ref RTW_SCAN_PASSIVE...*/
-	u8                              *ssid;    /**< The data length of string pointed by ssid should not exceed @ref RTW_ESSID_MAX_SIZE. */
-	u8                              *channel_list;      /**< The list of specified channels to be scanned.*/
-	u8                               channel_list_num;  /**< The total number in `channel_list`.*/
-	struct rtw_channel_scan_time     chan_scan_time;    /**< The scan time per channel.*/
+	u8                               options; /**< Scan option: @ref RTW_SCAN_ACTIVE, @ref RTW_SCAN_PASSIVE, etc.*/
+	u8                              *ssid;    /**< Target SSID to scan for. Length should not exceed @ref RTW_ESSID_MAX_SIZE. */
+	u8                              *channel_list;      /**< List of specific channels to scan. */
+	u8                               channel_list_num;  /**< Number of channels in `channel_list`.*/
+	struct rtw_channel_scan_time     chan_scan_time;    /**< Scan duration for each channel.*/
 
-	/** Config the max number of recorded AP. When set to 0, use default value 64.
-	 * When the number of scanned APs exceed `max_ap_record_num`, the AP(s) with smallest rssi will be discarded. */
+	/** Maximum number of APs to record. When set to 0, use default value 64.
+	 *  APs with the lowest RSSI are discarded if scanned APs exceed this number. */
 	u16                              max_ap_record_num;
+	void                            *scan_user_data;   /**< User-defined data passed to callback functions for handling scan results. */
 
-	/** The pointer of a buffer which stores the user need extra information when user handle the scan result in the
-	 * callback `scan_user_callback` or `scan_report_each_mode_user_callback`.*/
-	void                            *scan_user_data;
-
-	/** @brief Used for normal asynchronized mode.
-	  * @param[in] ap_num: The total number of scanned APs.
-	  * @param[in] user_data: Equal to `scan_user_data`.
-	  * @return @ref RTK_SUCCESS or @ref RTK_FAIL which indicates the result of user processing the scanned information.
+	/** @brief Callback for normal asynchronous mode.
+	  * @param[in] ap_num: Total number of scanned APs.
+	  * @param[in] user_data: Pointer to user data (see `scan_user_data`).
+	  * @return @ref RTK_SUCCESS or @ref RTK_FAIL.
 	  */
 	s32(*scan_user_callback)(u32 ap_num, void *user_data);
 
-	/** @brief Used for @ref RTW_SCAN_REPORT_EACH mode.
-	  * @param[in] scanned_ap_info: The pointer of a struct which stores a scanned AP's details.
-	  * @param[in] user_data: Equal to `scan_user_data`.
-	  * @return @ref RTK_SUCCESS or @ref RTK_FAIL which indicates the result of user processing the scanned information.
+	/** @brief Callback for @ref RTW_SCAN_REPORT_EACH mode.
+	  * @param[in] scanned_ap_info: Pointer to details of a scanned AP.
+	  * @param[in] user_data: Pointer to user data (see `scan_user_data`).
+	  * @return @ref RTK_SUCCESS or @ref RTK_FAIL.
 	  */
 	s32(*scan_report_each_mode_user_callback)(struct rtw_scan_result *scanned_ap_info, void *user_data);
 
-	/** @brief Used for report acs info.
-	  * @param[in] scanned_ap_info: The pointer of a struct which describes the busyness of a channel.
+	/** @brief  Callback for reporting ACS (Automatic Channel Selection) info.
+	  * @param[in] scanned_ap_info: Pointer to channel busyness information.
 	  * @return @ref RTK_SUCCESS or @ref RTK_FAIL.
 	  */
 	s32(*scan_report_acs_user_callback)(struct rtw_acs_mntr_rpt *acs_mntr_rpt);
@@ -726,148 +732,143 @@ struct rtw_scan_param {
  *                                     connect structures
  *********************************************************************************************/
 /**
-  * @brief  The structure is used for Linux host to get wpa_supplicant's info for STA connect,
-  *         which RTOS not need.
+  * @brief  Stores wpa_supplicant info for STA connection (Linux host only, not needed for RTOS).
   */
 struct rtw_wpa_supp_connect {
-	u8 rsnxe_ie[RSNXE_MAX_LEN];  /**< The RSNXE IE in beacon of AP which STA is trying to connect.*/
+	u8 rsnxe_ie[RSNXE_MAX_LEN];  /**< The RSNXE IE from beacon of the AP which STA is trying to connect.*/
 };
 
 /**
-  * @brief	The structure is used to describe the connection setting about SSID,
-  * 		security type and password,etc., used when trying to connect an AP.
+  * @brief	Describes connection settings for connecting to an AP
   * @note
-  *        1. If this struct is used for wifi connect, the channel is used to config
-  * 	      whether it is a full channel scan(when channel is set to 0), or it will
-  * 	      only scan one channel(do active scan on the configured channel).
-  *        2. `pscan_option` set to @ref RTW_PSCAN_FAST_SURVEY means do fast survey on the specified channel
-  * 	      set to 0 means do normal scan on the specified channel or full channel.
+  *        1. If used for Wi-Fi connect, setting `channel` to 0 means full channel scan;
+  *           setting `channel` to a specific value means do active scan on that channel.
+  *        2. Set `pscan_option` to @ref RTW_PSCAN_FAST_SURVEY for fast survey (active scan on
+  *           specified channel, 25ms each, up to 7 attempts); 0 for normal scan.
   */
 struct rtw_network_info {
-	struct rtw_ssid				ssid;  /**< The AP's name and the length of name (should not exceed @ref RTW_ESSID_MAX_SIZE). */
-	struct rtw_mac				bssid; /**< The unique 6-byte MAC address of AP. */
-	u32							security_type; /**< Only need to be set when use WEP (@ref RTW_SECURITY_WEP_PSK @ref RTW_SECURITY_WEP_SHARED), Other case will automatically adjust according to the AP.*/
-	u8				           *password;	   /**< The password of AP which sta is trying to connect. */
-	s32 						password_len;  /**< The data length of string pointed by password should not exceed @ref RTW_MAX_PSK_LEN. Equal to length of `password`. */
-	s32 						key_id;		   /**< Only need to be set when use WEP. Val: 0~3.*/
-	u8				            channel;		/**< Set to 0 means full channel scan, set to other value means only scan on the specified channel. */
-	u8
-	pscan_option;	/**< Can set to @ref RTW_PSCAN_FAST_SURVEY for fast survey, which means quick scan, involves using an active scan on a specified channel, scanning for 25ms each time, and attempting up to 7 times until the target AP is found. */
-	u8 				            is_wps_trigger;	/**< Connection triggered by WPS process.*/
-	struct rtw_wpa_supp_connect	wpa_supp;   /**< Only used by Linux host to specific some details required for STA connect, which RTOS do not use. */
-	struct rtw_mac				prev_bssid; /**< The BSSID of the AP before roaming. */
-	u8							by_reconn; /**< Connection triggered by RTK auto reconnect process. */
+	struct rtw_ssid				ssid;  /**< AP's SSID (max length: @ref RTW_ESSID_MAX_SIZE). */
+	struct rtw_mac				bssid; /**< AP's MAC address. */
+	u32							security_type; /**< Necessarily set for WEP (@ref RTW_SECURITY_WEP_PSK, @ref RTW_SECURITY_WEP_SHARED). Auto-adjusted for others. */
+	u8				           *password;	   /**< AP's password. */
+	s32 						password_len;  /**< Password length (max: @ref RTW_MAX_PSK_LEN). */
+	s32 						key_id;		   /**< WEP key ID (0-3). Only for WEP.*/
+	u8				            channel;	   /**< 0 for full scan, other values to scan specific channel. */
+	u8 						    pscan_option;	/**< @ref RTW_PSCAN_FAST_SURVEY for fast survey, 0 for normal scan. */
+	u8 				            is_wps_trigger;	/**< Indicates if connection is triggered by WPS. */
+	struct rtw_wpa_supp_connect	wpa_supp;   /**< Used by Linux host for STA connect details (not used by RTOS). */
+	struct rtw_mac				prev_bssid; /**< BSSID of the AP before roaming. */
+	u8							by_reconn; /**< Indicates if connection is triggered by auto-reconnect. */
 	u8							rom_rsvd[4];
 };
 
 /**
- * @brief  The structure is retry_limit for auth/assoc/key exchange.
- * @note   All re_limits are limited to within 10.
+ * @brief  Defines retry limits for different connection steps: authentication, association, and key exchange.
+ * @note   All retry limits are capped at 10.
  */
 struct rtw_conn_step_retries {
-	u8 reauth_limit : 4;             /**< Indicate retry limit of auth-open/shared key. */
-	u8 sae_reauth_limit : 4;         /**< Indicate retry limit of sae auth. */
-	u8 reassoc_limit : 4;            /**< Indicate retry limit of assoc. */
-	u8 eapol_key_rsend_limit : 4;    /**< Indicate retry limit of 4way handshake. */
+	u8 reauth_limit : 4;             /**< Retry limit for authentication (open/shared key). */
+	u8 sae_reauth_limit : 4;         /**< Retry limit for SAE authentication. */
+	u8 reassoc_limit : 4;            /**< Retry limit for association. */
+	u8 eapol_key_rsend_limit : 4;    /**< Retry limit for the 4-way handshake process. */
 };
 
 /**********************************************************************************************
  *                                     wifi_status structures
  *********************************************************************************************/
 /**
-  * @brief  The structure is used to store the WIFI setting gotten from WIFI driver.
-  * @note	Size can't be changed.
+  * @brief  Stores Wi-Fi settings retrieved from the Wi-Fi driver.
+  * @note	Structure size must remain unchanged for compatibility.
   */
 struct rtw_wifi_setting {
-	u8		mode;   /**< The mode of current wlan interface, val: @ref RTW_MODE_STA, @ref RTW_MODE_AP, @ref RTW_MODE_NAN. */
-	u8 		ssid[33];   /**< The ssid of connected AP or softAP. */
-	u8		bssid[6];   /**< The bssid of connected AP or softAP. */
-	u8		channel;    /**< The operation channel of connected AP or softAP. */
-	u32		security_type; /**< The security type of connected AP or softAP, val: @ref RTW_SECURITY_OPEN, @ref RTW_SECURITY_WEP_PSK...*/
-	u8 		password[RTW_MAX_PSK_LEN];   /**< The password of connected AP or softAP. */
-	u8		key_idx;      /**< The WEP key index used by connected AP or softAP which only valid when the security type of network is WEP.*/
-	u8		alg;		/**< Reserved only for driver internal compatibility; users can ignore this. */
-	u32		auth_type;  /**< Reserved only for driver internal compatibility; users can ignore this. */
-	u8		is_wps_trigger;	/**< Connection triggered by WPS process.*/
+	u8		mode;   /**< Current WLAN interface mode: @ref RTW_MODE_STA, @ref RTW_MODE_AP, @ref RTW_MODE_NAN. */
+	u8 		ssid[33];   /**< SSID of connected AP or SoftAP (null-terminated string). */
+	u8		bssid[6];   /**< BSSID (MAC address) of connected AP or SoftAP. */
+	u8		channel;    /**< Operating channel of connected AP or SoftAP. */
+	u32		security_type; /**< Security type of connected AP or SoftAP: @ref RTW_SECURITY_OPEN, @ref RTW_SECURITY_WEP_PSK, etc.*/
+	u8 		password[RTW_MAX_PSK_LEN];   /**< Password of connected AP or SoftAP. */
+	u8		key_idx;      /**< WEP key index (only valid when security type is WEP).*/
+	u8		alg;		/**< Reserved for internal driver compatibility; users can ignore. */
+	u32		auth_type;  /**< Reserved for internal driver use; users can ignore. */
+	u8		is_wps_trigger;	/**< Indicates if connection was triggered by WPS process. */
 	u32		rom_rsvd;
 };
 
 /**
-  * @brief  The structure is used to describe the traffic statistics.
+  * @brief  Traffic statistics for Wi-Fi interfaces.
   */
 union rtw_traffic_stats {
 	struct rtw_sta_traffic_stats {
-		u32	rx_packets;			/**< total packets received on the interface(exclude custom pkts).*/
-		u32	tx_packets;			/**< total packets transmitted on the interface.*/
-		u8	cur_rx_data_rate;	/**< Current rx data rate, val: @ref RTW_RATE_1M, @ref RTW_RATE_2M...*/
-		u8	cur_tx_data_rate;	/**< Current tx data rate, val: @ref RTW_RATE_1M, @ref RTW_RATE_2M... */
-	} sta; /**< For STA mode statistic.*/
+		u32	rx_packets;			/**< Total packets received (excluding custom packets).*/
+		u32	tx_packets;			/**< Total packets transmitted .*/
+		u8	cur_rx_data_rate;	/**< Current rx data rate. Values: @ref RTW_RATE_1M, @ref RTW_RATE_2M, etc. */
+		u8	cur_tx_data_rate;	/**< Current tx data rate. Values: @ref RTW_RATE_1M, @ref RTW_RATE_2M, etc. */
+	} sta; /**< Statistic for STA mode.*/
 	struct rtw_ap_traffic_stats {
-		u32	rx_packets;			/**< total packets received on the interface(exclude custom pkts).*/
-		u32	tx_packets;			/**< total packets transmitted on the interface.*/
-	} ap; /**< For SoftAP mode statistic.*/
+		u32	rx_packets;			/**< Total packets received (excluding custom packets).*/
+		u32	tx_packets;			/**< Total packets transmitted.*/
+	} ap; /**< Statistic for SoftAP mode.*/
 };
 
 /**
-  * @brief  The structure is used to describe the phy statistics.
+  * @brief  Wi-Fi related physical layer statistics.
   */
 union rtw_phy_stats {
 	struct rtw_sta_phy_stats {
-		s8	rssi;          /**< Average mixed rssi in 1 sec. */
-		s8	data_rssi;          /**< Average data rssi in 1 sec. */
-		s8	beacon_rssi;          /**< Average beacon rssi in 1 sec. */
-		s8	snr;          /**< Average snr in 1 sec (not include cck rate).*/
-	} sta; /**< For STA mode statistic.*/
+		s8	rssi;          /**< Average mixed rssi in last 1 sec. */
+		s8	data_rssi;          /**< Average data rssi in last 1 sec. */
+		s8	beacon_rssi;          /**< Average beacon rssi in last 1 sec. */
+		s8	snr;          /**< Average snr in 1 sec (excluding CCK rate).*/
+	} sta; /**< Statistics for STA mode */
 	struct rtw_ap_phy_stats {
-		s8	data_rssi;          /**< Average data rssi in 1 sec. */
-	} ap; /**< For SoftAP mode statistic.*/
+		s8	data_rssi;          /**< Average data rssi in last 1 sec. */
+	} ap; /**< Statistics for SoftAP mode */
 	struct rtw_cmn_phy_stats {
 		u8  cca_clm; /**< Channel loading measurement ratio by cca (the ratio of CCA = 1 in number of samples). driver do clm every 2 seconds, the value is the lastest result. */
 		u8	edcca_clm; /**< Channel loading measurement ratio by edcca (the ratio of EDCCA = 1 in number of samples). The value is also the lastest result. */
 		u8	clm_channel; /**< Channel corresponding to the latest clm result.*/
-	} cmn; /**< For common statistic.*/
+	} cmn; /**< Common statistic.*/
 };
 
 /**********************************************************************************************
  *                                     softap structures
  *********************************************************************************************/
 /**
-  * @brief  The structure is used to describe the setting about SSID,
+  * @brief  Describes the configuration for starting AP mode.
   *			security type, password and default channel, used to start AP mode.
-  * @note  The data length of string pointed by ssid should not exceed @ref RTW_ESSID_MAX_SIZE,
-  *        and the data length of string pointed by password should not exceed @ref RTW_MAX_PSK_LEN.
+  * @note  SSID length should not exceed @ref RTW_ESSID_MAX_SIZE.
+  *        Password length should not exceed @ref RTW_MAX_PSK_LEN.
   */
 struct rtw_softap_info {
-	struct rtw_ssid		ssid;          /**< SoftAP's name and length of name. */
-	u8		            hidden_ssid;   /**< Set to 1 means the SSID is hidden in SoftAP's beacon. */
-	u32					security_type; /**< Val: @ref RTW_SECURITY_OPEN, @ref RTW_SECURITY_WEP_PSK...*/
-	u8 		           *password;      /**< SoftAP's password. */
-	u8 		            password_len;  /**< The length of `password`. */
-	u8		            channel;       /**< The expected operating channel for the SoftAP. */
+	struct rtw_ssid		ssid;          /**< SoftAP SSID and its length. */
+	u8		            hidden_ssid;   /**< Set to 1 to hide SSID in SoftAP beacon. */
+	u32					security_type; /**< Security type: @ref RTW_SECURITY_OPEN, @ref RTW_SECURITY_WEP_PSK, etc.*/
+	u8 		           *password;      /**< Pointer to SoftAP password. */
+	u8 		            password_len;  /**< The length of password. */
+	u8		            channel;       /**< Desired operating channel for the SoftAP. */
 };
 
 #ifndef CONFIG_FULLMAC
 /**
-  * @brief  The structure is used to describe the associated clients of SoftAP.
+  * @brief  Stores information about clients associated with the SoftAP.
   */
 struct rtw_client_list {
-	u32    count;         /**< Number of associated clients in the list.    */
-	struct rtw_mac mac_list[MACID_HW_MAX_NUM - 2]; /**< Max length array of MAC addresses. */
+	u32    count;         /**< Number of associated clients.    */
+	struct rtw_mac mac_list[MACID_HW_MAX_NUM - 2]; /**< Array of client MAC addresses. */
 };
 #endif
 
 /**
-  * @brief  The structure is used to describe the cfg parameters used for channel switch announcement.
+  * @brief  Configuration parameters for Channel Switch Announcement (CSA).
   */
 struct rtw_csa_parm {
-	u8 new_chl; /**< The new channel will be switched to. */
-	u8 chl_switch_cnt; /**< The channel switch cnt, after chl_switch_cnt*102ms, ap will switch to new channel. */
-	u8 action_type;	/**< 0: unicast csa action, 1: broadcast csa action, other values: disable transmit csa action. */
-	u8 bc_action_cnt; /**< Indicate the number of broadcast csa actions to send for each beacon interval. only valid when action_type = 1.*/
-	/** @brief User handle when softap switch channel by csa function. This callback will be called after channel switch is
-	 *         done, and will return the new channel number and channel switch result.
-	  * @param[in] channel:  New channel.
-	  * @param[in] ret: Val: @ref RTK_FAIL, @ref RTK_SUCCESS.
+	u8 new_chl; /**< Target channel to switch to. */
+	u8 chl_switch_cnt; /**< Countdown to channel switch, in units of 102ms (`chl_switch_cnt`*102ms). */
+	u8 action_type;	/**< CSA action frame type: 0 - unicast, 1 - broadcast, other - disable CSA transmission. */
+	u8 bc_action_cnt; /**< Number of broadcast CSA actions sent per beacon interval. Only valid when `action_type = 1`.*/
+	/** @brief Callback function invoked after channel switch completion.
+	  * @param[in] channel:  New channel number.
+	  * @param[in] ret: Result of channel switch: @ref RTK_FAIL or @ref RTK_SUCCESS.
 	  */
 	void (*callback)(u8 channel, s8 ret);
 };
@@ -876,50 +877,54 @@ struct rtw_csa_parm {
  *                                     promisc structures
  *********************************************************************************************/
 /**
-*@brief The structure is used to describe the rx packet's detail information.
+*@brief  Provides detailed information about a received packet.
 */
 struct rtw_rx_pkt_info {
-	s8 recv_signal_power;
-	u8 data_rate; /**< Val: @ref RTW_RATE_1M, @ref RTW_RATE_2M...*/
-	u8 channel;
-	u8 *buf;
-	u32 len;
+	s8 recv_signal_power;  /**< Received signal strength indicator (RSSI) in dBm. */
+	u8 data_rate;          /**< Data rate of the received packet. Values: @ref RTW_RATE_1M, @ref RTW_RATE_2M, etc. */
+	u8 channel;            /**< Channel on which the packet was received. */
+	u8 *buf;               /**< Pointer to the buffer containing the received packet data. */
+	u32 len;               /**< Length of the data in the buffer. */
 };
 
 /**
-*@brief The structure is used to describe the selected promisc mode and callback function.
+*@brief Describes the chosen promisc mode and its associated callback function.
 */
 struct rtw_promisc_para {
-	/** @brief Receive all packets in the air or set some filtering conditions.
+	/** @brief Specify which packets to receive by setting filtering conditions.
 		- @ref RTW_PROMISC_FILTER_ALL_PKT : Receive all packets in the air.
-		- @ref RTW_PROMISC_FILTER_AP_ALL : Receive all packtets send by connected AP.
+		- @ref RTW_PROMISC_FILTER_AP_ALL : Receive all packtets sent by the connected AP.
 		*/
 	u8 filter_mode;
-	/** @brief User handle a packet.
-	  * @param[in] pkt_info:  The pointer of a struct rtw_rx_pkt_info which store the packet's detail information.
-	  * @return Should the driver continue processing this packet after user has processed.
-	  * 	- @ref RTW_PROMISC_NEED_DRV_HDL : Driver continue processing this packet, This setting is usually required when the STA remains connected.
-	  *     - @ref RTW_PROMISC_BYPASS_DRV_HDL : Driver drop this packet, This setting is usually used when STA does not need connect.*/
+	/** @brief Callback function to handle received packets.
+	  * @param[in] pkt_info: Pointer to struct rtw_rx_pkt_info containing packet details.
+	  * @return Determines whether the driver should continue processing the packet after user handling:
+	  *  - @ref RTW_PROMISC_NEED_DRV_HDL : Driver continues processing the packet. Typically needed when STA remains connected.
+	  *  - @ref RTW_PROMISC_BYPASS_DRV_HDL : Driver drops the packet. Typically used when STA does not need to remain connected.
+	  */
 	u8(*callback)(struct rtw_rx_pkt_info *pkt_info);
 };
 
 /**********************************************************************************************
  *                                     speaker structures
  *********************************************************************************************/
+/**
+ * @brief Union for different Wi-Fi speaker configuration settings.
+ */
 union rtw_speaker_set {
 	struct rtw_speaker_init {
 		u8 mode;              /**< 0 for slave, 1 for master. */
-		u8 nav_thresh;        /**< Unit 128us. */
+		u8 nav_thresh;        /**< NAV (Network Allocation Vector) threshold in units of 128us. */
 		u8 relay_en;          /**< Relay control. */
 	} init; /**< For wifi speaker setting case @ref RTW_SPEAKER_SET_INIT.*/
 	struct rtw_speaker_i2s {
-		u8 port;           /**< 0 for select port 0's TSFT to trigger audio latch count, 1 for port 1. */
-		u8 latch_period;      /**< 0 for trigger audio latch period is 4.096ms, 1 for 8.192ms. */
+		u8 port;           /**< Port selection for TSFT trigger: 0 for port 0, 1 for port 1. */
+		u8 latch_period;   /**< Audio latch period: 0 for 4.096ms, 1 for 8.192ms. */
 	} latch_i2s_count; /**< For wifi speaker setting case @ref RTW_SPEAKER_SET_LATCH_I2S_COUNT.*/
 	struct rtw_speaker_tsf_timer {
 		u8 enable;			/**< 1 for enable, 0 for disable. */
 		u64 tsft;           /**< Unit us. */
-		u8 port;           /**< 0 for select port 0's TSFT to trigger twt timer interrupt, 1 for port 1. */
+		u8 port;           /**< Port selection for TSFT trigger: 0 for port 0, 1 for port 1. */
 	} tsf_timer; /**< For wifi speaker setting case @ref RTW_SPEAKER_SET_TSF_TIMER.*/
 };
 
@@ -961,28 +966,28 @@ struct rtw_csi_header {
 #pragma pack()
 
 /**
-  * @brief  The structure is used to describe the cfg parameters used for csi report.
+  * @brief  Configuration parameters used for csi report.
   * @note  The mac_addr if not specified, the default value must be 0.
   */
 struct rtw_csi_action_parm {
-	u8 group_num;   /**< val: @ref RTW_CSI_GROUP_NUM_1, @ref RTW_CSI_GROUP_NUM_2... */
-	u8 accuracy;    /**< val: @ref RTW_CSI_ACCU_1BYTE, @ref RTW_CSI_ACCU_2BYTES */
-	u8 alg_opt;     /**< val: @ref RTW_CSI_ALG_LS, @ref RTW_CSI_ALG_SMOTHING */
-	u8 ch_opt;      /**< val: @ref RTW_CSI_CH_LEGACY, @ref RTW_CSI_CH_NON_LEGACY */
-	u8 csi_role;    /**< indicate csi operation role, val: @ref RTW_CSI_OP_ROLE_TRX, @ref RTW_CSI_OP_ROLE_TX, @ref RTW_CSI_OP_ROLE_RX */
-	u8 mode;        /**< val: @ref RTW_CSI_MODE_NORMAL, @ref RTW_CSI_MODE_NDP, @ref RTW_CSI_MODE_RX_RESP*/
-	u8 act;         /**< val: @ref RTW_CSI_ACT_EN, @ref RTW_CSI_ACT_CFG */
-	u16 trig_frame_mgnt;	/**< indicate management frame subtype of rx csi triggering frame for fetching csi, val: @ref RTW_CSI_TRIG_ASSOCREQ... */
-	u16 trig_frame_ctrl;	/**< indicate control frame subtype of rx csi triggering frame for fetching csi, val: @ref RTW_CSI_TRIG_TRIGGER... */
-	u16 trig_frame_data;	/**< indicate data frame subtype of rx csi triggering frame for fetching csi, val: @ref RTW_CSI_TRIG_DATA... */
-	u8 enable;
-	u8 trig_period;
-	u8 data_rate;
-	u8 data_bw;
-	u8 mac_addr[6];
-	u8 multi_type;  /**< 0-uc csi triggering frame; 1-bc csi triggering frame */
+	u8 group_num;   /**< CSI info subcarrier decimation. val: @ref RTW_CSI_GROUP_NUM_1, @ref RTW_CSI_GROUP_NUM_2... */
+	u8 accuracy;    /**< The format (bit length) of CSI raw data for both I and Q components. val: @ref RTW_CSI_ACCU_1BYTE, @ref RTW_CSI_ACCU_2BYTES */
+	u8 alg_opt;     /**< Reserved. */
+	u8 ch_opt;      /**< CSI acquisition from leagcy or non-legacy LTF. val: @ref RTW_CSI_CH_LEGACY, @ref RTW_CSI_CH_NON_LEGACY. */
+	u8 csi_role;    /**< The CSI operation role, val: @ref RTW_CSI_OP_ROLE_TRX, @ref RTW_CSI_OP_ROLE_TX, @ref RTW_CSI_OP_ROLE_RX. */
+	u8 mode;        /**< Mode for fetching CSI. val: @ref RTW_CSI_MODE_NORMAL, @ref RTW_CSI_MODE_RX_RESP*/
+	u8 act;         /**< Enable CSI or configure CSI parameters. val: @ref RTW_CSI_ACT_EN, @ref RTW_CSI_ACT_CFG. */
+	u16 trig_frame_mgnt;	/**< Management frame type(s) of rx CSI triggering frame. Used for @ref RTW_CSI_MODE_NORMAL. val: @ref RTW_CSI_TRIG_ASSOCREQ... */
+	u16 trig_frame_ctrl;	/**< Control frame type(s) of rx CSI triggering frame. Used for @ref RTW_CSI_MODE_NORMAL. val: @ref RTW_CSI_TRIG_TRIGGER... */
+	u16 trig_frame_data;	/**< Data frame type(s) of rx CSI triggering frame. Used for @ref RTW_CSI_MODE_NORMAL. val: @ref RTW_CSI_TRIG_DATA... */
+	u8 enable;      /**< 0: disable Wi-Fi CSI function; 1: enable Wi-Fi CSI function. */
+	u8 trig_period; /**< CSI sounding rate, unit: 320us (recommended value: 15~255). */
+	u8 data_rate; /**< Tx data rate of CSI triggering frame, invalid in @ref RTW_CSI_MODE_RX_RESP mode. val: only support OFDM/HT rate. */
+	u8 data_bw;   /**< The bandwidth of CSI triggering frame, invalid in @ref RTW_CSI_MODE_RX_RESP mode. val: 0 for 20MHz, 1 for 40MHz (only supported by dplus). */
+	u8 mac_addr[6]; /**< Destination address (MAC address) for CSI triggering frame, invalid when set `multi_type = 1`.*/
+	u8 multi_type;  /**< 0: unicast csi triggering frame; 1: broadcast csi triggering frame. Valid in Active CSI. */
 
-	/** indicate role for transmitting CSI triggering frame in METHOD4 and
+	/** Indicate role for transmitting CSI triggering frame in METHOD4 and
 	 * role for transmitting response ACK for CSI triggering frame in METHOD1_Variant,
 	 * others are reserved. \n
 	 * Value=1 ~ 15 (0 is reserved)*/
@@ -994,7 +999,7 @@ struct rtw_csi_action_parm {
  *                                     other structures
  *********************************************************************************************/
 /**
-  * @brief  The structure is power limit regu map.
+  * @brief  Power limit regulation map.
   */
 struct _pwr_lmt_regu_remap {
 	u8	domain_code;
@@ -1003,55 +1008,55 @@ struct _pwr_lmt_regu_remap {
 };
 
 /**
-  * @brief  The structure is used to describe the raw frame.
+  * @brief  Describes a raw frame to be transmitted.
   */
 struct rtw_raw_frame_desc {
-	u8 wlan_idx;      /**< Index of wlan interface which will transmit. */
-	u8 device_id;     /**< Index of peer device which as a rx role for receiving this pkt, and will be update when linked peer. */
+	u8 wlan_idx;      /**< Index of the Wi-Fi interface for transmission.  */
+	u8 device_id;     /**< Reserved for internal driver use; users can ignore.*/
 	u8 *buf;          /**< Poninter of buf where raw data is stored.*/
-	u16 buf_len;      /**< The length of raw data.*/
-	u8 tx_rate;	     /**< Val: @ref RTW_RATE_1M, @ref RTW_RATE_2M...*/
-	u8 retry_limit;
-	u8 ac_queue;      /**< 0/3 for BE, 1/2 for BK, 4/5 for VI, 6/7 for VO. */
-	u8 sgi : 1;       /**< 1 for enable data short. */
-	u8 agg_en : 1;    /**< Aggregation of tx_raw frames. 1:enable; 0-disable. */
+	u16 buf_len;      /**< Length of raw data (including MAC header and frame body).*/
+	u8 tx_rate;	     /**< Tx rate of tx_raw packets. Val: @ref RTW_RATE_1M, @ref RTW_RATE_2M, etc.*/
+	u8 retry_limit;  /**< Number of tx retry if sending the raw packet fails. */
+	u8 ac_queue;      /**< Access Category Queue: 0/3 for BE, 1/2 for BK, 4/5 for VI, 6/7 for VO. */
+	u8 sgi : 1;       /**< Short Guard Interval: 1 to enable, 0 to disable. */
+	u8 agg_en : 1;    /**< Frame Aggregation: 1 to enable, 0 to disable for tx raw frames. */
 };
 
 /**
- * @brief  The structure is used to set WIFI custom ie list.
+ * @brief  Sets the custom Information Element (IE) for Wi-Fi frames.
  *
  */
 struct rtw_custom_ie {
-	/** Format:
+	/** IE Format:
 	 * <table>
 	 * <tr><th>1byte</th><th>1byte</th><th>length bytes</th></tr>
 	 * <tr><td>element ID</td><td>length</td><td>content</td></tr>
 	 * </table>
 	 */
 	u8 *ie;
-	u8 type;    /**< Val: @ref RTW_CUS_IE_PROBEREQ, @ref RTW_CUS_IE_PROBERSP...*/
+	u8 type;    /**< The type of TX frame to attach the custom IE: @ref RTW_CUS_IE_PROBEREQ, @ref RTW_CUS_IE_PROBERSP, etc.*/
 };
 
 /**
- * @brief  The structure is used to describe channel info.
+ * @brief  Describes a single WiFi channel's information.
  */
 
 struct rtw_channel_info {
-	u8 channel;      /**< Channel id */
-	u8 scan_type;    /**< 1 for passive, 0 for active. */
+	u8 channel;      /**< Channel number */
+	u8 scan_type;    /**< Scan type: 0 for active, 1 for passive */
 };
 
 /**
- * @brief  The structure is used to describe channel list.
+ * @brief  Contains a list of available WiFi channels.
  */
 struct rtw_channel_list {
 	u8 ch_num;         /**< Number of available channel in the list.    */
-	struct rtw_channel_info ch_info[RTW_MAX_CHANNEL_NUM];
+	struct rtw_channel_info ch_info[RTW_MAX_CHANNEL_NUM]; /**< Array of channel information */
 };
 
 
 /**
- * @brief  The structure is used to describe channel plan and country code.
+ * @brief  Describes channel plan and country code.
  */
 struct rtw_country_code_table {
 	u8 char2[2];   /**< Country code. */
@@ -1059,13 +1064,19 @@ struct rtw_country_code_table {
 	u8 pwr_lmt;      /**< Tx power limit index. */
 };
 
+/**
+ * @brief Controls transmit power settings.
+ */
 struct rtw_tx_power_ctl_info {
-	s8	tx_pwr_force; /**< Currently user can specify tx power for all rate, unit 0.25dbm.*/
+	s8	tx_pwr_force; /**< User-specified TX power for all rates, in units of 0.25 dBm.*/
 	u8	b_tx_pwr_force_enbale : 1; /**< 1 for enable, 0 for disable. */
 };
 
+/**
+ * @brief Configuration for Automatic Channel Selection (ACS).
+ */
 struct rtw_acs_config {
-	u8 band; /**< val: @ref RTW_SUPPORT_BAND_2_4G ...*/
+	u8 band; /**< Frequency band: @ref RTW_SUPPORT_BAND_2_4G, etc. */
 };
 
 /** @} End of WIFI_Exported_Structure_Types group*/

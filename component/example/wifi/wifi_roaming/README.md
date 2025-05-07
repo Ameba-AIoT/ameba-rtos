@@ -8,7 +8,10 @@ None
 
 # SW configuration
 
-1. set `wifi_fast_connect_enable(1)` in `wifi_init()`
+1. In `component/soc/amebaxxx/usrcfg/ameba_wificfg.c`.
+	```C
+	wifi_user_config.fast_reconnect_en = 0;
+	```
 
 2. Set the `RSSI_THRESHOLD` in `example_wifi_roaming.c` according to the WLAN envrionment.
 

@@ -366,6 +366,7 @@ static u32 example_firmware_download(struct example_ota_status *status)
 	}
 	total_size = ctx->otactrl->ImageLen;
 	status->image_id = ctx->otactrl->ImgId;
+	ctx->otactrl->FlashAddr -= sizeof(ctx->otaTargetHdr->Manifest[0]);
 	status->image_addr = ctx->otactrl->FlashAddr;
 	status->checksum = ctx->otaTargetHdr->FileImgHdr[0].Checksum;
 	RTK_LOGI(TAG, "%s, server firmware download is finished, spend time: %d ms, total size: %d\n",

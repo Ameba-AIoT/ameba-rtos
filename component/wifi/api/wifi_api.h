@@ -67,11 +67,11 @@ s32 wifi_is_running(u8 wlan_idx);
  * @param[in]  connect_param: Pointer to a struct containing connection info (ssid, bssid, password, etc.).
  *                          See struct rtw_network_info in wifi_api_types.h for details.
  * @param[in]  block:
- *                  - 1: Synchronized wifi connect (function returns after connection attempt completes).
- *                  - 0: Asynchronized wifi connect (function returns immediately after initiating connection).
+ *                  - 1: Synchronous wifi connect (function returns after connection attempt completes).
+ *                  - 0: Asynchronous wifi connect (function returns immediately after initiating connection).
  * @return
- *    - @ref RTK_SUCCESS : Join successfully for synchronized wifi connect,
- *  						or connect cmd is set successfully for asynchronized wifi connect.
+ *    - @ref RTK_SUCCESS : Join successfully for synchronous wifi connect,
+ *  						or connect cmd is set successfully for asynchronous wifi connect.
  *    - @ref RTK_FAIL : Driver internal error.
  *    - -@ref RTK_ERR_BUSY : Wifi connect or scan is ongoing.
  *    - -@ref RTK_ERR_NOMEM : Memory malloc fail during wifi connect.
@@ -121,8 +121,8 @@ s32 wifi_get_join_status(u8 *join_status);
  * @brief  Initiate a scan to search for 802.11 networks.
  * @param[in]  scan_param: Scan parameters. See struct rtw_scan_param in wifi_api_types.h for details.
  * @param[in]  block:
- *             - 1: Synchronized scan (function returns after scan completes).
- *             - 0: Asynchronized scan (function returns immediately).
+ *             - 1: Synchronous scan (function returns after scan completes).
+ *             - 0: Asynchronous scan (function returns immediately).
  * @return  Number of scanned APs if successful (≥ 0), or an error code:
  *          - @ref RTK_FAIL : Driver internal error.
  *          - -@ref RTK_ERR_BUSY : Wifi connect or scan is ongoing.
@@ -130,8 +130,8 @@ s32 wifi_get_join_status(u8 *join_status);
  *           `scan_param->scan_user_callback`.
  * @note
  * 1. Scan Types:
- *    - Synchronized scan: Calling thread waits until scan done;
- *    - Asynchronized scan: Function returns immediately after parameter check.
+ *    - Synchronous scan: Calling thread waits until scan done;
+ *    - Asynchronous scan: Function returns immediately after parameter check.
  * 2. Scan Result Reporting:
  *    1. Bulk Report:
  *       - Total number of scanned APs reported via `scan_param->scan_user_callback` (async) or return value (sync).
