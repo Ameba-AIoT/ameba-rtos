@@ -43,16 +43,21 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_gap_app_callback(uint8_t evt_code, void 
 	}
 
 	case RTK_BT_LE_GAP_EVT_SCAN_RES_IND: {
+		const char target_name[13] = {'R', 'T', 'K', '_', 'W', 'i', 'F', 'i', 'M', 'a', 't', 'e', '\0'};
+		uint8_t *scan_name = NULL;
 		rtk_bt_le_scan_res_ind_t *scan_res_ind = (rtk_bt_le_scan_res_ind_t *)param;
 		rtk_bt_le_addr_to_str(&(scan_res_ind->adv_report.addr), le_addr, sizeof(le_addr));
 		/* local name end with 0 */
 		scan_res_ind->adv_report.data[9 + 19] = 0;
-		BT_LOGA("[APP] Scan info, [Device]: %s, AD evt type: %d, RSSI: %d, len: %d, adv_data: %s \r\n",
-				le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
-				scan_res_ind->adv_report.len, &(scan_res_ind->adv_report.data[9]));
-		BT_AT_PRINT("+BLEGAP:scan,info,%s,%d,%d,%d\r\n",
+		scan_name = &(scan_res_ind->adv_report.data[9]);
+		if (strstr((const char *)scan_name, target_name) != NULL) {
+			BT_LOGA("[APP] Scan info, [Device]: %s, AD evt type: %d, RSSI: %d, len: %d, adv_data: %s \r\n",
 					le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
-					scan_res_ind->adv_report.len);
+					scan_res_ind->adv_report.len, &(scan_res_ind->adv_report.data[9]));
+			BT_AT_PRINT("+BLEGAP:scan,info,%s,%d,%d,%d\r\n",
+						le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
+						scan_res_ind->adv_report.len);
+		}
 		break;
 	}
 

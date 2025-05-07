@@ -16,34 +16,6 @@ extern "C"
 #endif
 
 /**
- * @typedef   rtk_bt_vendor_tx_power_param_t
- * @brief     Set ADV or connect TX power parameter.
- */
-typedef struct {
-	uint8_t tx_power_type;                  /*!< 0: Set ADV TX power, 1: Set connect TX power */
-	union {
-		struct adv_tx_power_param {
-			uint8_t type;                   /*!< ADV TX power type */
-		} adv_tx_power;
-
-		struct conn_tx_power_param {
-			uint16_t conn_handle;           /*!< Connect handle */
-			uint8_t is_reset;               /*!< 0: User mode, 1: Reset to original */
-		} conn_tx_power;
-	};
-	uint8_t tx_gain;                        /*!< Ref gain index */
-} rtk_bt_vendor_tx_power_param_t;
-
-/**
- * @typedef   rtk_bt_vendor_tx_power_subcmd_type_t
- * @brief     Set TX power subcmd type.
- */
-typedef enum {
-	SUB_CMD_SET_ADV_TX_POWER  = 0x00,
-	SUB_CMD_SET_CONN_TX_POWER = 0x0c,
-} rtk_bt_vendor_tx_power_subcmd_type_t;
-
-/**
  * @typedef   rtk_bt_vendor_adv_tx_power_type_t
  * @brief     Set ADV TX power type.
  */
@@ -62,6 +34,34 @@ typedef enum {
 	CONN_TX_POW_USER_MODE,
 	CONN_TX_POW_RESET_TO_ORIGINAL,
 } rtk_bt_vendor_conn_tx_power_is_reset_t;
+
+/**
+ * @typedef   rtk_bt_vendor_tx_power_param_t
+ * @brief     Set ADV or connect TX power parameter.
+ */
+typedef struct {
+	uint8_t tx_power_type;                  /*!< 0: Set ADV TX power, 1: Set connect TX power */
+	union {
+		struct adv_tx_power_param {
+			rtk_bt_vendor_adv_tx_power_type_t type;                   /*!< ADV TX power type */
+		} adv_tx_power;
+
+		struct conn_tx_power_param {
+			uint16_t conn_handle;           /*!< Connect handle */
+			rtk_bt_vendor_conn_tx_power_is_reset_t is_reset;          /*!< 0: User mode, 1: Reset to original */
+		} conn_tx_power;
+	};
+	uint8_t tx_gain;                        /*!< Ref gain index */
+} rtk_bt_vendor_tx_power_param_t;
+
+/**
+ * @typedef   rtk_bt_vendor_tx_power_subcmd_type_t
+ * @brief     Set TX power subcmd type.
+ */
+typedef enum {
+	SUB_CMD_SET_ADV_TX_POWER  = 0x00,
+	SUB_CMD_SET_CONN_TX_POWER = 0x0c,
+} rtk_bt_vendor_tx_power_subcmd_type_t;
 
 /**
  * @defgroup  bt_vendor BT Vendor APIs
