@@ -964,7 +964,7 @@ static s32 whc_fullmac_host_remain_on_channel(struct wiphy *wiphy, struct wirele
 		goto exit;
 	}
 
-	whc_fullmac_host_scan_abort(1);
+	whc_fullmac_host_scan_abort();
 
 	scan_param = (struct rtw_scan_param *)ptr;
 	ptr += sizeof(struct rtw_scan_param);
@@ -1019,7 +1019,7 @@ static s32 whc_fullmac_host_cancel_remain_on_channel(struct wiphy *wiphy, struct
 {
 #ifdef CONFIG_P2P
 	if (global_idev.p2p_global.roch_onging) {
-		whc_fullmac_host_scan_abort(1);
+		whc_fullmac_host_scan_abort();
 	}
 	return 0;
 #else

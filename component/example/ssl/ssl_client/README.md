@@ -12,11 +12,7 @@ None
 
 2. Modify `SSL_MAX_CONTENT_LEN` in SSL config for large size file.  
 If the transmitted fils size is larger than 16kbytes, `SSL_MAX_CONTENT_LEN` should be set to 16384.
-   - `mbedtls_config.h`
-		```C
-		#define MBEDTLS_SSL_OUT_CONTENT_LEN             16384
-		#define MBEDTLS_SSL_IN_CONTENT_LEN              16384
-		```
+   - Type command `./menuconfig.py` and choose `CONFIG SSL`-> `Maximum len of incoming fragments` -> 16384.
 
 3. (Optional) Test for TLS1.3.
    - Type command `./menuconfig.py` and choose `CONFIG SSL`-> `Enable TLS 1.3`

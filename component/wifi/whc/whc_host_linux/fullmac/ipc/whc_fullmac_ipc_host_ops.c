@@ -147,16 +147,9 @@ int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8
 	return ret;
 }
 
-int whc_fullmac_host_scan_abort(u8 block)
+int whc_fullmac_host_scan_abort(void)
 {
-	int ret = 0;
-	u32 param_buf[1];
-
-	param_buf[0] = (u32)block;
-
-	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SCAN_ABORT, param_buf, 1);
-
-	return ret;
+	return whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SCAN_ABORT, NULL, 0);
 }
 
 int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsigned char block)

@@ -112,8 +112,6 @@ void bt_stack_vendor_callback(uint8_t cb_type, void *p_cb_data)
 			if (cmd_rsp->cause) {
 				BT_LOGE("[%s] error cmd rsp, command: 0x%x, cause: 0x%x, is_cmpl_evt: %d, param_len: %d.\r\n", __func__, cmd_rsp->command, cmd_rsp->cause, cmd_rsp->is_cmpl_evt,
 						cmd_rsp->param_len);
-			} else {
-
 			}
 		}
 		break;
@@ -143,8 +141,8 @@ void bt_stack_vendor_callback(uint8_t cb_type, void *p_cb_data)
 			}
 #endif
 #endif
-			break;
 		}
+		break;
 #endif
 		default:
 			(void)cmd_rsp;

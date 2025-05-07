@@ -55,7 +55,7 @@ Choose one board as the sender and connect the user-defined serial port with PC 
 
 ### Step 3: Build & Flash
 
-1. Navigate to the project directory according to the chip you use. For GCC enviornment, type command `make EXAMPLE=wificast_security` to compile the example.
+1. Navigate to the project directory according to the chip you use. For GCC enviornment, type command `./build.py -a wificast_security` to compile the example.
 2. Download the image into flash for both sender and receiver.
 
 ### Step 4: Run Sender and Receiver

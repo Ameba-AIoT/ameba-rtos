@@ -5,6 +5,7 @@
  */
 
 #include "ameba_soc.h"
+#include <math.h>
 
 ADC_CalParaTypeDef CalParaNorm;
 u8 vref_init_done = FALSE;
@@ -705,6 +706,42 @@ u32 ADC_GetInterR(void)
 	OTP_Read8(INTER_R_ADDR, &r_offset);
 
 	return ((u32)r_offset + 400);
+}
+
+/**
+  * @brief Get normal channel sample value according to voltage in mV.
+  * @param VolMV: ADC Voltage in mV, which can be 0-3300.
+  * @return ADC conversion data.
+  */
+u32 ADC_GetSampleValue(s32 VolMV)
+{
+	s64 ka, kb;
+	s32 kc;
+	s64 discriminant;
+	s64 result;
+
+	if (!CalParaNorm.init_done) {
+		ADC_InitCalPara(&CalParaNorm);
+	}
+
+	ka = CalParaNorm.cal_a;
+	kb = CalParaNorm.cal_b;
+	kc = CalParaNorm.cal_c;
+
+	discriminant = kb * kb + 64 * ka * VolMV - ka * kc;
+	if (discriminant >= 0) {
+		result = (sqrt((float)discriminant) - kb) * 1024 / ka;
+
+		if (result < 0) {
+			return 0;
+		} else if (result > 0xFFF) {
+			return 0xFFF;
+		} else {
+			return (u32)result;
+		}
+	} else {
+		assert_param(0);
+	}
 }
 
 /**

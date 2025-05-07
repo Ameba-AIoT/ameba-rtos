@@ -39,42 +39,41 @@ extern "C" {
 
 /**
  * @brief  Abort onoging wifi scan.
- * @param[in]  block: Set 1 for wait scan actually aborted.
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL.
  * @note
- *     - If `block` set to 0, this will be an asynchronized function and will return immediately,
- * 	     return value only indicates whether the scan abort cmd is successfully notified to driver or not.
- *	   - If `block` set to 1, this will be a synchronized function and will return when scan is actually aborted.
+ *	   - This will return when scan is actually aborted.
  * 	     When scan is actually aborted, the user callback registered in wifi_scan_networks()
  * 	     will be executed. If there is no wifi scan in progress, this function will just return
  * 	     @ref RTK_SUCCESS and user callback won't be executed.
  */
-s32 wifi_scan_abort(u8 block);
+s32 wifi_scan_abort(void);
 
 /**
- * @brief  Enable or disable LPS. LPS is the abbreviation of Legacy Power Save mode. When enable LPS,
- * 	Wi-Fi automatically turns RF off during the association to AP if traffic is not busy, while
- *  it also automatically turns RF on to listen to the beacon of the associated AP.
- * @param[in]  enable: It could be TRUE(1) (means enable LPS) or FALSE(0) (means disable LPS).
+ * @brief  Enable or disable Legacy Power Save (LPS) mode.
+ *         In LPS mode, Wi-Fi automatically turns the RF off when the traffic between the STA and the
+ *         connected AP is low and periodically turns it on to listen to the beacons from the associated AP.
+ * @param[in]  enable: 1 to enable LPS, 0 to disable LPS.
  * @return  @ref RTK_SUCCESS : The API executed successfully.
- * @note  If a SoftAP interface is active when this function is called, calling this API does not work.
+ * @note
+ *      - This function does not work if a SoftAP interface is active.
+ *      - STA does not immediately enter LPS; entry depends on current traffic status.
+ *      - This function temporarily overrides the default LPS setting in ameba_wificfg.c
+ *        (wifi_user_config.lps_enable).
  */
 s32 wifi_set_lps_enable(u8 enable);
 
 /**
- * @brief  Set the listen interval of LPS. LPS is the abbreviation of Legacy Power Save mode.
- * 	Wi-Fi automatically turns RF off during the association to AP	if traffic is not busy, while
- *  it also automatically turns RF on to listen to the beacon of the associated AP.
- *  The listen interval is used to indicate how often the STA wakes to listen to beacons of AP.
- * @param[in]  interval: The listen interval of LPS (unit: 102.4 ms).
- * @note If the specified interval is not a multiple of beacon interval, the actual listen interval
- *	     will be rounded to the largest multiple that <= the specified value. It will not be
- *	     rounded to 0 when the specified value < beacon interval. In this case, the actual listen interval
- *       is set to one beacon interval.
- *       e.g. Given that beacon interval = 2 * 102.4 ms:
- *       - Calling wifi_set_lps_listen_interval(5) will make actual listen interval = 4 * 102.4 ms.
- *       - Calling wifi_set_lps_listen_interval(1) will make actual listen interval = 2 * 102.4 ms.
+ * @brief  Set the listen interval for Legacy Power Save (LPS) mode. The listen interval dictates
+ *         how frequently the STA wakes up to listen to AP beacons when in LPS mode.
+ * @param[in]  interval: The listen interval for LPS, in units of 102.4 ms.
  * @return  @ref RTK_SUCCESS : The API executed successfully.
+ * @note
+ *      - If interval is not a multiple of the beacon interval, it's rounded down to
+ *        the largest multiple <= specified value.
+ *      - If interval < beacon interval, it's set to one beacon interval.
+ *      - For example, if the beacon interval is 2 * 102.4 ms:
+ *        - wifi_set_lps_listen_interval(5) sets interval to 4 * 102.4 ms
+ *        - wifi_set_lps_listen_interval(1) sets interval to 2 * 102.4 ms
  */
 s32 wifi_set_lps_listen_interval(u8 interval);
 
@@ -152,6 +151,7 @@ void wifi_ap_set_invisible(u8 enable);
  *    - @ref RTK_SUCCESS : The API executed successfully.
  *    - @ref RTK_FAIL : Wi-Fi is powered off in IPS(Inactive Power Save) mode, unable to access Wi-Fi registers.
  *    - -@ref RTK_ERR_BADARG : Invalid `channel` or `wlan_idx`(when set to @ref SOFTAP_WLAN_INDEX but SoftAP is not enabled).
+ *    - -@ref RTK_ERR_BUSY : Wi-Fi scan is ongoing.
  * @note
  *    - There are two channel concepts, generally consistent:
  *      1. The actual operating channel of the interface.
@@ -219,7 +219,7 @@ s32 wifi_get_wireless_mode(u8 *wmode);
 
 /**
  * @brief  Set the wireless mode.
- * @param[in]  wmode: wireless mode to set. The value can be
+ * @param[in]  wmode: Wireless mode to set. Valid values include:
  *               	- @ref RTW_80211_B
  *               	- @ref RTW_80211_A
  *               	- @ref RTW_80211_G
@@ -245,7 +245,9 @@ s32 wifi_get_wireless_mode(u8 *wmode);
  *    - @ref RTK_SUCCESS : The API executed successfully.
  *    - -@ref RTK_ERR_BADARG : Invalid `wmode` provided.
  * @note
- *    - Default mode after driver initialization is @ref RTW_80211_24G_MIX (BGNAX).
+ *    - Default mode after driver initialization:
+ *      - Dual-band device: @ref RTW_80211_MAX (i.e. @ref RTW_80211_24G_MIX (BGNAX) and @ref RTW_80211_5G_MIX (ANACAX)).
+ *      - Single-band device (i.e. Amebalite): @ref RTW_80211_24G_MIX for 2.4GHz only.
  *    - Use this function to change wireless mode for station mode before connecting to AP.
  *    - Avoid using 2.4GHz modes without 11b or 5GHz modes without 11a to prevent compatibility issues.
  */
@@ -314,7 +316,8 @@ s32 wifi_get_traffic_stats(u8 wlan_idx, union rtw_traffic_stats *traffic_stats);
  * @brief  Fetch Wi-Fi related physical layer information.
  * @param[in]  wlan_idx: The Wi-Fi interface:
  *                      - @ref STA_WLAN_INDEX or @ref SOFTAP_WLAN_INDEX : Get RSSI for the interface.
- *                      - @ref NONE_WLAN_INDEX : Get channel loading measurement.
+ *                      - @ref NONE_WLAN_INDEX : Get information that is common across all interfaces,
+ *                        such as channel loading measurement.
  * @param[in]  mac_addr: Client MAC address for SoftAP mode, NULL for STA and NONE mode.
  * @param[out]  phy_stats: Pointer to union rtw_phy_stats to store the information.
  * @return
@@ -429,6 +432,7 @@ s32 wifi_del_custom_ie(u8 wlan_idx);
  *    - @ref RTK_SUCCESS : The API executed successfully.
  *    - @ref RTK_FAIL : Driver internal error.
  *    - -@ref RTK_ERR_BADARG : NULL pointer passed for `raw_frame_desc`.
+ * @note  For unassociated peer devices in RX mode, only unencrypted frames are currently supported.
  */
 s32 wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc);
 
@@ -533,60 +537,55 @@ s32 wifi_csi_config(struct rtw_csi_action_parm *act_param);
 s32 wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
 
 /**
- * @brief  For wifi speaker setting.
- * @param[in]  set_type: Wifi speaker setting type:
+ * @brief  Configure Wi-Fi speaker settings for audio module.
+ * @param[in]  set_type: Wi-Fi speaker setting type:
  *                - @ref RTW_SPEAKER_SET_INIT
  *                - @ref RTW_SPEAKER_SET_LATCH_I2S_COUNT
  *                - @ref RTW_SPEAKER_SET_TSF_TIMER
- * @param[in]  settings: A pointer to the params:
- *                     - When `set_type` == @ref RTW_SPEAKER_SET_INIT
- *                       - `settings->init.mode`: 0 for slave, 1 for master.
- *                       - `settings->init.thresh`: Unit 128us.
- *                       - `settings->init.relay_en`: Relay control.
- *                     - When `set_type` == @ref RTW_SPEAKER_SET_LATCH_I2S_COUNT
- *                       - `settings->latch_i2s_count.port`: 0 for select port 0's TSFT to trigger audio latch count, 1 for port 1.
- *                       - `settings->latch_i2s_count.latch_period`: 0 for trigger audio latch period is 4.096ms, 1 for 8.192ms.
- *                     - When `set_type` == @ref RTW_SPEAKER_SET_TSF_TIMER
- *                       - `settings->tsf_timer.enable`: 1 for enable twt timer, 0 for disable.
- *                       - `settings->tsf_timer.tsft`: Absolute value for twt timer, unit ms.
- *                       - `settings->tsf_timer.port`: 0 for select port 0's TSFT to trigger twt timer interrupt, 1 for port 1.
+ * @param[in]  settings: A pointer to specific parameters.
  * @return  None.
  */
 void wifi_speaker_setting(u8 set_type, union rtw_speaker_set *settings);
 
 /**
- * @brief  For user to set tx power.
- * 1. Currently will TX with the set power,  regardless of power by rate and power by limit.
- * 2. Afterwards, it can be extended to specify rate, or power by limit needs to be considered.
- * @param[in]  txpwr_ctrl_info: The pointer of rtw_tx_power_ctl_info:
- *                            - \b b_tx_pwr_force_enbale: 1 for enable, 0 for disable.
- *                            - \b tx_pwr_force: Unit 0.25dBm.
+ * @brief  Set Wi-Fi tx power.
+ * @param[in]  txpwr_ctrl_info: Pointer to rtw_tx_power_ctl_info:
+ *                            - \b b_tx_pwr_force_enbale: 1 to enable, 0 to disable.
+ *                            - \b tx_pwr_force: Tx power to set (unit: 0.25 dBm).
  * @note
- *    - For amebadplus, the power range varies for different channels or IC, the recommended power range is -2 ~ 23 dBm,
- *      if exceeds the power range, the power may be inaccurate, and will be changed to the boundary value.
- *    - For amebasmart&amebalite, the recommended power range is -24 ~ 24 dBm.
- *    - For both, we suggest setting the power not to exceed the power by rate table.
- * @return  @ref RTK_SUCCESS or @ref RTK_FAIL
+ *    - Recommended power ranges:
+ *      - For Amebadplus, actual power range varies by channel and specific hardware (slight hardware differences
+ *        between boards can affect the tx power), the recommended range is approximately -2 to 23 dBm.
+ *      - For Amebasmart & Amebalite, the recommended range is -24 to 24 dBm.
+ *    - Values outside these ranges may be inaccurate and will be adjusted to the nearest boundary value.
+ *    - Not advised to exceed the tx power values defined in the rate table in `ameba_wifi_power_table_usrcfg.c`.
+ *    - This setting overrides power by rate and power by limit for all rates.
+ * @return  @ref RTK_SUCCESS : The API executed successfully.
  */
 s32 wifi_set_tx_power(struct rtw_tx_power_ctl_info *txpwr_ctrl_info);
 
 /**
- * @brief  For user to get tx power.
- * @param[in]  rate: Phy rate, val: @ref RTW_RATE_1M, @ref RTW_RATE_2M...
- *                 - CCK rate 1M,2M,5.5M,11M
- *                 - OFDM rate 6M,9M,12M,18M,24M,36M,48M,54M
- *                 - HT rate MCS0~MCS7
- *                 - VHT rate MCS0~MCS8
- *                 - HE rate MCS0~MCS9
- * @param[out]  txpwr: The current tx power, unit 0.25dBm.
- * @return  @ref RTK_SUCCESS or @ref RTK_FAIL
+ * @brief  Get current Wi-Fi tx power for a specific rate.
+ * @param[in]  rate: The PHY rate (e.g., RTW_RATE_1M, RTW_RATE_2M, etc.):
+ *                 - CCK rates: 1M, 2M, 5.5M, 11M
+ *                 - OFDM rates: 6M, 9M, 12M, 18M, 24M, 36M, 48M, 54M
+ *                 - HT rates: MCS0 to MCS7
+ *                 - VHT rates: MCS0 to MCS8
+ *                 - HE rates: MCS0 to MCS9
+ * @param[out]  txpwr: Current tx power (unit: 0.25 dBm).
+ * @note Retrieved the power set by wifi_set_tx_power() or the minimum of
+ *       power by rate and regulatory power limit.
+ * @return @ref RTK_SUCCESS : The API executed successfully.
  */
 s32 wifi_get_tx_power(u8 rate, s8 *txpwr);
 
 /**
-  * @brief  For user to config retry limit for different stages of join.
-  * @param[in]  conn_step_retries: The pointer of rtw_conn_step_retries.
+  * @brief  Configure retry limits for different stages of Wi-Fi connection process.
+  * @param[in]  conn_step_retries: Pointer to rtw_conn_step_retries.
   * @return  None.
+ * @note
+ *     - Configures retry limits for authentication, association, and key exchange.
+ *     - The retry limits for each stage are constrained to a maximum of 10 attempts.
   */
 void wifi_set_conn_step_try_limit(struct rtw_conn_step_retries *conn_step_retries);
 

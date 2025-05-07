@@ -10,12 +10,10 @@ None
 
 1. Modify `SERVER_HOST`, `SERVER_PORT`, `RESOURCE` in `example_ssl_client_verify_both.c` based on your SSL server.
 
-2. Modify `SSL_MAX_CONTENT_LEN` in SSL config for large size file.  
-If the transmitted fils size is larger than 16kbytes, `SSL_MAX_CONTENT_LEN` should be set to 16384.
-   - `mbedtls_config.h`
+2. If encounter the following errors in an SSL connection. Set `MBEDTLS_SSL_IN_CONTENT_LEN` by `./menuconfig.py` and choose `CONFIG SSL`-> `Maximum len of incoming fragments` -> set large size.
 	```C
-	#define MBEDTLS_SSL_OUT_CONTENT_LEN             16384
-	#define MBEDTLS_SSL_IN_CONTENT_LEN              16384
+	#define MBEDTLS_ERR_SSL_BAD_INPUT_DATA                    -0x7100
+	#define MBEDTLS_ERR_SSL_INVALID_RECORD                    -0x7200
 	```
 
 3. (Optional) Test for TLS1.3.

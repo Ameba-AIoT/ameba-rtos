@@ -124,9 +124,6 @@ static void example_eap_thread(void *method)
 
 void example_eap(char *method)
 {
-	/* disable fast connect for eap, need set it before wifi_on*/
-	wifi_fast_connect_enable(0);
-
 	if (rtos_task_create(NULL, ((const char *)"example_eap_thread"), example_eap_thread, method, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create failed\n", __FUNCTION__);
 	}

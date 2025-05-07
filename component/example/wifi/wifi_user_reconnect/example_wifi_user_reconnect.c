@@ -106,9 +106,6 @@ static void user_main_task(void *param)
 		rtos_time_delay_ms(1000);
 	}
 
-	/* Disable realtek auto reconnect */
-	wifi_set_autoreconnect(0);
-
 	/* Register join status event, trigger reconnect when disconnect happen*/
 	wifi_reg_event_handler(RTW_EVENT_JOIN_STATUS, user_wifi_join_status_event_hdl, NULL);
 
@@ -120,10 +117,6 @@ static void user_main_task(void *param)
 
 void example_wifi_user_reconnect(void)
 {
-	/* Disable realtek fast reconnect */
-	extern void wifi_fast_connect_enable(unsigned char enable);
-	wifi_fast_connect_enable(0);
-
 	if (rtos_task_create(NULL, ((const char *)"user_main_task"), user_main_task, NULL, 1024, 1) != RTK_SUCCESS) {
 		RTK_LOGI(TAG, "\n%s rtos_task_create failed\n", __FUNCTION__);
 	}

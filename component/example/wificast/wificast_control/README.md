@@ -37,7 +37,7 @@ Connect a LED with this GPIO to show the status.
 
 ### Step 2: Build & Flash
 
-1. Navigate to the project directory according to the chip you use. For GCC enviornment, type command `make EXAMPLE=wificast_control` to compile the example.
+1. Navigate to the project directory according to the chip you use. For GCC enviornment, type command `./build.py -a wificast_control` to compile the example.
 2. Download the image into flash both controller and responser.
 
 ### Step 3: Run Controller and Responser
