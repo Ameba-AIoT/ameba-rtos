@@ -28,8 +28,8 @@
 #include "wtn_app_rnat.h"
 
 /*dnrd.c will use this*/
-char *rptssid = NULL;
-int wifi_repeater_ap_config_complete = 0;
+extern char *rptssid;
+extern int wifi_repeater_ap_config_complete;
 rtos_task_t rnat_ap_start_task_hdl = NULL;
 rtos_task_t rnat_poll_ip_task_hdl = NULL;
 

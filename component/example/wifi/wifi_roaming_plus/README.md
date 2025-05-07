@@ -14,12 +14,12 @@ None
 
 # SW configuration
 
-1. Comment out the following line of code in `wifi_init()`
+1. In `component/soc/amebaxxx/usrcfg/ameba_wificfg.c`.
 	```C
-	wifi_fast_connect_enable(1);
+	wifi_user_config.fast_reconnect_en = 0;
 	```
 
-2. If using fast DHCP, remember to enable it. Type command `./menuconfig.py` in auto_build and choose `CONFIG WIFI` -> `CONFIG LWIP` -> `Enable Fast DHCP` save and exit.
+2. If using fast DHCP, remember to enable it. Type command `./menuconfig.py` in auto_build and choose `CONFIG LWIP` -> `Enable Fast DHCP` save and exit.
 
 3. Set the `RSSI_SCAN_THRESHOLD` and `RSSI_ROAMING_THRESHOLD` and `FIND_BETTER_RSSI_DELTA` according to the WLAN envrionment.
 

@@ -173,6 +173,9 @@ struct wifi_user_conf {
 		@note Mcc performance has limitations, please contact Realtek before use to clarify your requirements. */
 	u8 en_mcc;
 
+	/* Used for configuring mcc port1 slot ratio by user: optional values:[12,80] */
+	unsigned char mcc_force_p1_slot_ratio;
+
 	u8 tx_shortcut_enable;
 
 	u8 rx_shortcut_enable;

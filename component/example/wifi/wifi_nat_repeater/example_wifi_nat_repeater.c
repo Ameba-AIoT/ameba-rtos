@@ -28,10 +28,10 @@ extern void dns_relay_service_init(void);
 extern void ip_nat_reinitialize(void);
 extern void ip_nat_sync_dns_serever_data(void);
 
-int wifi_repeater_ap_config_complete = 0;
+extern char *rptssid;
+extern int wifi_repeater_ap_config_complete;
 
 static struct rtw_softap_info rptap = {0};
-char *rptssid = "AmebaRPT";
 char *rptpassword = "12345678";	// NULL for RTW_SECURITY_OPEN
 unsigned char rptchannel = 6;
 static const char *const TAG = "WIFI_NAT_REPEATER";
@@ -270,6 +270,11 @@ static void example_wlan_repeater_thread(void *param)
 	*	1. Start AP
 	*********************************************************************************/
 	RTK_LOGI(TAG, "\n\r[WLAN_REPEATER_EXAMPLE] Start AP\n");
+
+	if (rptssid == NULL) {
+		rptssid = (char *)rtos_mem_zmalloc(RTW_ESSID_MAX_SIZE + 1);
+	}
+	memcpy(rptssid, "AmebaRPT", strlen("AmebaRPT"));
 
 	rptap.ssid.len = strlen(rptssid);
 	strncpy((char *)rptap.ssid.val, (char *)rptssid, sizeof(rptap.ssid.val) - 1);

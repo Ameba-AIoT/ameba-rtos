@@ -25,10 +25,10 @@
 #define RSSI_SCAN_THRESHOLD RSSI_ROAMING_THRESHOLD
 #endif
 
-#if ROAMING_PLUS_DBG
-#define ROAMING_DBG	DiagPrintf
+#ifdef ROAMING_PLUS_DBG
+#define ROAMING_DBG(fmt, ...) DiagPrintf(fmt, ##__VA_ARGS__)
 #else
-#define ROAMING_DBG
+#define ROAMING_DBG(fmt, ...) do {} while(0)
 #endif
 
 //user should config channel plan
@@ -87,7 +87,6 @@ enum {
 extern struct netif xnetif[NET_IF_NUM];
 #endif
 static wifi_roaming_ap_t *ap_list;
-static u8 pscan_enable = TRUE; // if set TRUE, please set pscan_channel_list
 static u8 pscan_channel_list[] = {1}; // set by customer
 static unsigned short ping_seq = 0;
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
@@ -95,7 +94,7 @@ extern uint32_t offer_ip;
 #endif
 
 static int  wifi_write_ap_info_to_flash_ext(u8 *data, u32 len);
-int  wifi_write_ap_info_to_flash(u32 offer_ip, u32 server_ip);
+int  wifi_write_ap_info_to_flash(unsigned int offer_ip, unsigned int server_ip);
 
 static void generate_ping_echo(unsigned char *buf, int size)
 {
@@ -220,7 +219,7 @@ static int wlan_fast_connect(struct wifi_roaming_data *data, u8 scan_type)
 	struct rtw_network_info wifi = {0};
 	struct ap_additional_info store_dhcp_info = {0};
 	struct rtw_wifi_setting ap_info = {0};
-	struct psk_info PSK_INFO;
+	struct psk_info *PSK_INFO = NULL;
 	u8 autoreconn_en = 0;
 
 #ifdef CONFIG_LWIP_LAYER
@@ -234,11 +233,15 @@ static int wlan_fast_connect(struct wifi_roaming_data *data, u8 scan_type)
 	rtw_set_to_roam(1);
 #endif
 
-	memset(&PSK_INFO, 0, sizeof(struct psk_info));
-	memcpy(PSK_INFO.psk_essid, data->ap_info.psk_essid, sizeof(data->ap_info.psk_essid));
-	memcpy(PSK_INFO.psk_passphrase, data->ap_info.psk_passphrase, sizeof(data->ap_info.psk_passphrase));
-	memcpy(PSK_INFO.wpa_global_PSK, data->ap_info.wpa_global_PSK, sizeof(data->ap_info.wpa_global_PSK));
-	rtw_psk_set_psk_info(&PSK_INFO);
+	PSK_INFO = (struct psk_info *)rtos_mem_zmalloc(sizeof(struct psk_info));
+	if (PSK_INFO == NULL) {
+		return -1;
+	}
+	memcpy(PSK_INFO->psk_essid, data->ap_info.psk_essid, sizeof(data->ap_info.psk_essid));
+	memcpy(PSK_INFO->psk_passphrase, data->ap_info.psk_passphrase, sizeof(data->ap_info.psk_passphrase));
+	memcpy(PSK_INFO->wpa_global_PSK, data->ap_info.wpa_global_PSK, sizeof(data->ap_info.wpa_global_PSK));
+	rtw_psk_set_psk_info(PSK_INFO);
+	rtos_mem_free(PSK_INFO);
 
 	channel = data->ap_info.channel;
 	key_id = channel >> 28;
@@ -333,7 +336,6 @@ WIFI_RETRY_LOOP:
 static int  wifi_write_ap_info_to_flash_ext(u8 *data, u32 len)
 {
 	(void)len;
-	flash_t flash;
 	u8 n = 0;
 	struct wifi_roaming_data read_data = {0};
 	u32 tick1 = rtos_time_get_current_system_time_ms();
@@ -373,14 +375,14 @@ static int  wifi_write_ap_info_to_flash_ext(u8 *data, u32 len)
 	return 0;
 }
 
-int  wifi_write_ap_info_to_flash(u32 offer_ip, u32 server_ip)
+int  wifi_write_ap_info_to_flash(unsigned int offer_ip, unsigned int server_ip)
 {
 
 	/* To avoid gcc warnings */
 #if(!defined(CONFIG_FAST_DHCP) || (!CONFIG_FAST_DHCP))
-	(void) offer_ip, server_ip;
+	(void) offer_ip;
+	(void) server_ip;
 #endif
-	flash_t flash;
 	u8 i = 0;
 	struct wifi_roaming_data *read_data = NULL;
 	u8 ap_change = 0;
@@ -403,12 +405,12 @@ int  wifi_write_ap_info_to_flash(u32 offer_ip, u32 server_ip)
 	memset(&fast_connect_info, 0, sizeof(struct wlan_fast_reconnect));
 	switch (setting.security_type) {
 	case RTW_SECURITY_OPEN:
-		memcpy(fast_connect_info.psk_essid, setting.ssid, strlen(setting.ssid));
+		memcpy(fast_connect_info.psk_essid, setting.ssid, strlen((char *)setting.ssid));
 		fast_connect_info.security_type = RTW_SECURITY_OPEN;
 		break;
 	case RTW_SECURITY_WEP_PSK:
-		memcpy(fast_connect_info.psk_essid, setting.ssid, strlen(setting.ssid));
-		memcpy(fast_connect_info.psk_passphrase, setting.password, strlen(setting.password));
+		memcpy(fast_connect_info.psk_essid, setting.ssid, strlen((char *)setting.ssid));
+		memcpy(fast_connect_info.psk_passphrase, setting.password, strlen((char *)setting.password));
 		channel |= (setting.key_idx) << 28;
 		fast_connect_info.security_type = RTW_SECURITY_WEP_PSK;
 		break;
@@ -483,7 +485,6 @@ int  wifi_write_ap_info_to_flash(u32 offer_ip, u32 server_ip)
 
 int wifi_init_done_callback_roaming(void)
 {
-	flash_t flash;
 	struct wifi_roaming_data read_data = {0};
 
 	rt_kv_get("wlan_data", (uint8_t *) &read_data, sizeof(struct wifi_roaming_data));
@@ -512,9 +513,10 @@ void example_wifi_roaming_plus_init(void)
 
 static u32 wifi_roaming_plus_find_ap_from_scan_buf(char *target_ssid, void *user_data, int ap_num)
 {
+	(void)target_ssid;
 	u32 target_security = *(u32 *)user_data;
 	struct rtw_scan_result *scanned_ap_info;
-	u32 i = 0;
+	int i = 0;
 	struct rtw_scan_result *scanned_ap_list = NULL;
 
 	scanned_ap_list = (struct rtw_scan_result *)rtos_mem_zmalloc(ap_num * sizeof(struct rtw_scan_result));
@@ -566,7 +568,7 @@ int wifi_roaming_scan_one_channel(wifi_roaming_ap_t	roaming_ap, u32 retry)
 	}
 	ROAMING_DBG("scan done(%d)\n", pscan_channel_list[0]);
 	wifi_get_phy_stats(STA_WLAN_INDEX, NULL, &phy_stats);
-	cur_rssi = phy_stats.rssi;
+	cur_rssi = phy_stats.sta.rssi;
 	rssi_delta = ((FIND_BETTER_RSSI_DELTA - retry * 2) > 1) ? (FIND_BETTER_RSSI_DELTA - retry * 2) : 2; //at least 3db better
 	if (ap_list->rssi - cur_rssi > rssi_delta && (memcmp(roaming_ap.bssid, ap_list->bssid, ETH_ALEN))) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus]: Find a better ap on channel %d, rssi = %d, cur_rssi=%d\n", ap_list->channel, ap_list->rssi, cur_rssi);
@@ -575,13 +577,15 @@ int wifi_roaming_scan_one_channel(wifi_roaming_ap_t	roaming_ap, u32 retry)
 	return 0;
 }
 
-int wifi_roaming_scan(struct wifi_roaming_data  read_data, u32 retry)
+int wifi_roaming_scan(struct wifi_roaming_data *read_data, u32 retry)
 {
 	wifi_roaming_ap_t	roaming_ap;
 	struct rtw_wifi_setting	setting;
 	channel_plan_t channel_plan_temp = roaming_channel_plan;
 	u8 ch = 0, ch_num;
+#if SUPPORT_SCAN_5G_CHANNEL
 	u8 first_5g = 0;
+#endif
 
 	memset(&setting, 0, sizeof(struct rtw_wifi_setting));
 	memset(&roaming_ap, 0, sizeof(wifi_roaming_ap_t));
@@ -609,9 +613,9 @@ int wifi_roaming_scan(struct wifi_roaming_data  read_data, u32 retry)
 					break;
 				}
 			}
-			for (ch = 0 ; ch < read_data.num; ch++) {
-				if (read_data.channel[ch] == pscan_channel_list[0]) {
-					read_data.channel[ch] = 0;//skip scan later
+			for (ch = 0 ; ch < read_data->num; ch++) {
+				if (read_data->channel[ch] == pscan_channel_list[0]) {
+					read_data->channel[ch] = 0;//skip scan later
 					break;
 				}
 			}
@@ -621,11 +625,11 @@ int wifi_roaming_scan(struct wifi_roaming_data  read_data, u32 retry)
 #endif
 
 	/*scan specific channels*/
-	if (0 < read_data.num && read_data.num < MAX_CH_NUM) {
+	if (0 < read_data->num && read_data->num < MAX_CH_NUM) {
 		ROAMING_DBG("\r\n %s():try to find a better ap in flash\n", __func__);
-		while (read_data.num) {
-			if (read_data.channel[read_data.num - 1]) {
-				pscan_channel_list[0] = read_data.channel[read_data.num - 1];
+		while (read_data->num) {
+			if (read_data->channel[read_data->num - 1]) {
+				pscan_channel_list[0] = read_data->channel[read_data->num - 1];
 				if (wifi_roaming_scan_one_channel(roaming_ap, retry)) {
 					return 1;
 				}
@@ -637,7 +641,7 @@ int wifi_roaming_scan(struct wifi_roaming_data  read_data, u32 retry)
 				}
 				rtos_time_delay_ms(500);
 			}
-			read_data.num--;
+			read_data->num--;
 		}
 	}
 
@@ -687,8 +691,10 @@ void wifi_roaming_plus_thread(void *param)
 	union rtw_phy_stats phy_stats;
 	u32 scan_retry = 0;
 	u32	polling_count = 0;
+#if PRE_SCAN
 	u32 ap_valid = AP_VALID_TIME;
-	struct wifi_roaming_data read_data = {0};
+#endif
+	struct wifi_roaming_data *read_data = NULL;
 	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: wifi_roaming_plus \n");
@@ -701,21 +707,25 @@ void wifi_roaming_plus_thread(void *param)
 		}
 	}
 	rtos_time_delay_ms(10000);//wait rssi stable
+	read_data = (struct wifi_roaming_data *)rtos_mem_zmalloc(sizeof(struct wifi_roaming_data));
+	if (read_data == NULL) {
+		return;
+	}
 
 	while (1) {
 		if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
 			&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-			wifi_get_phy_stats(STA_WLAN_INDEX, NULL, phy_stats);
-			ap_rssi = phy_stats.rssi;
+			wifi_get_phy_stats(STA_WLAN_INDEX, NULL, &phy_stats);
+			ap_rssi = phy_stats.sta.rssi;
 			ROAMING_DBG("\r\n %s():Current rssi(%d),scan threshold rssi(%d)\n", __func__, ap_rssi, RSSI_SCAN_THRESHOLD);
-			rt_kv_get("wlan_data", (uint8_t *) &read_data, sizeof(struct wifi_roaming_data));
+			rt_kv_get("wlan_data", (uint8_t *)read_data, sizeof(struct wifi_roaming_data));
 			if (ap_rssi < RSSI_SCAN_THRESHOLD) {
 				if (polling_count >= 1) {
 					RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus]: Start scan, current rssi(%d) < scan threshold rssi(%d) \n", ap_rssi, RSSI_SCAN_THRESHOLD);
 					ap_list = (wifi_roaming_ap_t *)malloc(sizeof(wifi_roaming_ap_t));
 					memset(ap_list, 0, sizeof(wifi_roaming_ap_t));
 					ap_list->rssi = -100;
-					rt_kv_get("wlan_data", (uint8_t *) &read_data, sizeof(struct wifi_roaming_data));
+					rt_kv_get("wlan_data", (uint8_t *)read_data, sizeof(struct wifi_roaming_data));
 					/*1.find a better ap*/
 					if (wifi_roaming_scan(read_data, scan_retry)) {
 						scan_retry = 0;
@@ -724,15 +734,15 @@ void wifi_roaming_plus_thread(void *param)
 						while (ap_valid) {
 							if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
 								&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-								wifi_get_phy_stats(STA_WLAN_INDEX, NULL, phy_stats);
-								ap_rssi = phy_stats.rssi;
+								wifi_get_phy_stats(STA_WLAN_INDEX, NULL, &phy_stats);
+								ap_rssi = phy_stats.sta.rssi;
 								ROAMING_DBG("\r\n %s():Current rssi(%d),roaming threshold rssi(%d)\n", __func__, ap_rssi, RSSI_ROAMING_THRESHOLD);
 								if ((ap_rssi < RSSI_ROAMING_THRESHOLD)) {
 									/*2.connect a better ap*/
 									RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus] :Start roaming, current rssi(%d) < roaming threshold rssi(%d),target ap rssi(%d)\n", \
 											 ap_rssi, RSSI_ROAMING_THRESHOLD, ap_list->rssi);
-									read_data.ap_info.channel = ap_list->channel;
-									wlan_fast_connect(&read_data, FAST_CONNECT_SPECIFIC_CH);
+									read_data->ap_info.channel = ap_list->channel;
+									wlan_fast_connect(read_data, FAST_CONNECT_SPECIFIC_CH);
 									break;
 								} else if (ap_rssi > RSSI_SCAN_THRESHOLD + 5) {
 									/*no need to roaming*/
@@ -751,8 +761,8 @@ void wifi_roaming_plus_thread(void *param)
 #else//no pre scan
 						if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
 							&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-							wifi_get_phy_stats(STA_WLAN_INDEX, NULL, phy_stats);
-							ap_rssi = phy_stats.rssi;
+							wifi_get_phy_stats(STA_WLAN_INDEX, NULL, &phy_stats);
+							ap_rssi = phy_stats.sta.rssi;
 							if (ap_rssi > RSSI_SCAN_THRESHOLD + 5) {
 								/*no need to roaming*/
 								RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus]: Cancel roaming, current rssi=%d\n", ap_rssi);
@@ -760,8 +770,8 @@ void wifi_roaming_plus_thread(void *param)
 								/*2.connect a better ap*/
 								RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus]: Start roaming, current rssi(%d) < roaming threshold rssi(%d),target ap rssi(%d)\n", \
 										 ap_rssi, RSSI_ROAMING_THRESHOLD, ap_list->rssi);
-								read_data.ap_info.channel = ap_list->channel;
-								wlan_fast_connect(&read_data, FAST_CONNECT_SPECIFIC_CH);
+								read_data->ap_info.channel = ap_list->channel;
+								wlan_fast_connect(read_data, FAST_CONNECT_SPECIFIC_CH);
 							}
 						}
 #endif
@@ -784,6 +794,7 @@ void wifi_roaming_plus_thread(void *param)
 			rtos_time_delay_ms(1000);
 		}
 	}
+	rtos_mem_free(read_data);
 	rtos_task_delete(NULL);
 }
 
