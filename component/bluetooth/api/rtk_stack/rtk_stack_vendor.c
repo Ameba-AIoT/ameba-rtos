@@ -11,6 +11,7 @@
 #include <bt_vendor_config.h>
 #include <gap_vendor.h>
 #include <rtk_stack_vendor.h>
+#include <rtk_bt_vendor.h>
 
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 #include <trace_app.h>
@@ -93,21 +94,33 @@ void bt_stack_vendor_callback(uint8_t cb_type, void *p_cb_data)
 		}
 		break;
 #endif
-#if defined(VENDOR_CMD_LE_EXTENSION_FEATURE_SUPPORT) && VENDOR_CMD_LE_EXTENSION_FEATURE_SUPPORT
+#if (defined(VENDOR_CMD_SET_TX_POWER_SUPPORT) && VENDOR_CMD_SET_TX_POWER_SUPPORT) || (defined(VENDOR_CMD_LE_EXTENSION_FEATURE_SUPPORT) && VENDOR_CMD_LE_EXTENSION_FEATURE_SUPPORT)
 		case VENDOR_CMD_LE_EXTENSION_FEATURE_OPCODE: {
+#if defined(VENDOR_CMD_SET_TX_POWER_SUPPORT) && VENDOR_CMD_SET_TX_POWER_SUPPORT
+			if (cmd_rsp->param_len >= 1 && (SUB_CMD_SET_ADV_TX_POWER == cmd_rsp->param[0] || SUB_CMD_SET_CONN_TX_POWER == cmd_rsp->param[0])) {
+				if (cmd_rsp->cause) {
+					BT_LOGE("[%s] Set tx power fail, cause:0x%x.\r\n", __func__, cmd_rsp->cause);
+				} else {
+					BT_LOGA("[%s] Set tx power success.\r\n", __func__);
+				}
+			}
+#endif
+#if defined(VENDOR_CMD_LE_EXTENSION_FEATURE_SUPPORT) && VENDOR_CMD_LE_EXTENSION_FEATURE_SUPPORT
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
 			if (rtk_bt_mesh_is_enable()) {
-				if (cmd_rsp->cause) {
-					BT_LOGE("[%s] Vendor cmd extension feature of opcode:0x%x fail, cause:0x%x.\r\n", __func__, VENDOR_CMD_LE_EXTENSION_FEATURE_OPCODE, cmd_rsp->cause);
-				} else {
-					if (cmd_rsp->param_len >= 1 && HCI_EXT_SUB_SET_CONTROLLER_PREFERRED_TX_CI == cmd_rsp->param[0]) {
+				if (cmd_rsp->param_len >= 1 && HCI_EXT_SUB_SET_CONTROLLER_PREFERRED_TX_CI == cmd_rsp->param[0]) {
+					if (cmd_rsp->cause) {
+						BT_LOGE("[%s] Vendor cmd extension feature of opcode:0x%x subcmd:0x%x fail, cause:0x%x.\r\n", __func__, VENDOR_CMD_LE_EXTENSION_FEATURE_OPCODE,
+								cmd_rsp->param[0], cmd_rsp->cause);
+					} else {
 						gap_sched_handle_ae_coding_scheme_set_done();
 					}
 				}
 			}
 #endif
-			break;
+#endif
 		}
+		break;
 #endif
 		default:
 			(void)cmd_rsp;
