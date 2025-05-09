@@ -472,7 +472,6 @@ void whc_fullmac_host_event_task(unsigned long data)
 		/* If user callback provided as NULL, param_buf[1] appears NULL here. Do not make ptr. */
 		/* https://jira.realtek.com/browse/AMEBAD2-1543 */
 		whc_fullmac_host_scan_done_indicate(p_recv_msg->param_buf[0], NULL);
-		whc_fullmac_host_blk_api_done(p_recv_msg->enevt_id, 0);
 		break;
 	case WHC_API_IP_ACS:
 		whc_fullmac_host_event_set_acs_info(p_recv_msg);

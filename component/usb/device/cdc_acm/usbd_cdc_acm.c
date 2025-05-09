@@ -566,7 +566,13 @@ static u8 *cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_spee
 		} else {
 			buf = usbd_cdc_acm_hs_config_desc;
 		}
+
 		*len = CDC_ACM_CONFIG_DESC_SIZE;
+
+		usb_os_memcpy((void *)desc, (void *)buf, *len);
+		desc[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
+		buf = desc;
+
 		break;
 
 	case USB_DESC_TYPE_STRING:

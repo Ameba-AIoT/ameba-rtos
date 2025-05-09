@@ -83,17 +83,21 @@ extern "C" {
 /** @addtogroup WIFI_Exported_Enumeration_Types Enumeration Type
  * @{
  */
+
+/**
+ * @brief  Security flags for @ref rtw_security (size: u32).
+ */
 enum rtw_security_flag {
-	WEP_ENABLED          = BIT(0),     /**< wep enable */
-	TKIP_ENABLED         = BIT(1),     /**< tkip enable */
-	AES_ENABLED          = BIT(2),     /**< aes enable */
-	AES_CMAC_ENABLED     = BIT(4),     /**< aes cmac enable */
-	ENTERPRISE_ENABLED   = BIT(5),     /**< enterprise enable */
-	OWE_ENABLED          = BIT(6),     /**< owe enable */
-	SHARED_ENABLED       = BIT(15),    /**< shared enable */
-	WPA_SECURITY         = BIT(21),    /**< wpa */
-	WPA2_SECURITY        = BIT(22),    /**< wpa2 */
-	WPA3_SECURITY        = BIT(23),    /**< wpa3 */
+	WEP_ENABLED          = BIT(0),     /**< WEP encryption */
+	TKIP_ENABLED         = BIT(1),     /**< TKIP encryption */
+	AES_ENABLED          = BIT(2),     /**< AES (CCMP) encryption */
+	AES_CMAC_ENABLED     = BIT(4),     /**< AES-CMAC for Management Frame Protection */
+	ENTERPRISE_ENABLED   = BIT(5),     /**< Enterprise (802.1X) authentication */
+	OWE_ENABLED          = BIT(6),     /**< Opportunistic Wireless Encryption */
+	SHARED_ENABLED       = BIT(15),    /**< Shared Key authentication */
+	WPA_SECURITY         = BIT(21),    /**< WPA protocol */
+	WPA2_SECURITY        = BIT(22),    /**< WPA2 protocol */
+	WPA3_SECURITY        = BIT(23),    /**< WPA3 protocol */
 };
 
 /**
@@ -216,7 +220,8 @@ enum rtw_wpa_mode {
  * @brief  Security types for Wi-Fi connections (size: u32).
  * @note  Default Authentication and Key Management (AKM) is PSK for WPA/WPA2 and SAE for WPA3.
  *        For Enterprise mode in WPA/WPA2/WPA3, use the @ref ENTERPRISE_ENABLED flag, e.g.,
- *        @ref WPA3_SECURITY | @ref ENTERPRISE_ENABLED. */
+ *        @ref WPA3_SECURITY | @ref ENTERPRISE_ENABLED.
+ */
 enum rtw_security {
 	RTW_SECURITY_OPEN               = 0,                                                            /**< Open (no security) */
 	RTW_SECURITY_WEP_PSK            = (WEP_ENABLED),                                                /**< WEP security with open authentication */
@@ -469,7 +474,7 @@ enum rtw_scan_type {
 };
 
 /**
-  * @brief  WPS (Wi-Fi Protected Setup) types.
+  * @brief  WPS (Wi-Fi Protected Setup) types (size: u8).
   */
 enum rtw_wps_type {
 	RTW_WPS_TYPE_DEFAULT                = 0,	/**< Default type */
@@ -483,7 +488,7 @@ enum rtw_wps_type {
 };
 
 /**
-  * @brief Supported operation mode by the Wi-Fi driver.
+  * @brief Supported operation mode by the Wi-Fi driver (size: u8).
   */
 enum rtw_drv_op_mode {
 	RTW_MODE_NONE   = 0,   /**< None */
@@ -494,7 +499,7 @@ enum rtw_drv_op_mode {
 };
 
 /**
-  * @brief  Power save levels for Inactive Power Save (IPS) mode.
+  * @brief  Power save levels for Inactive Power Save (IPS) mode (size: u8).
   */
 enum rtw_ips_level {
 	RTW_IPS_WIFI_OFF = 0,  /**< The Wi-Fi is fully powered off during IPS to maximize power savings. */
@@ -503,7 +508,7 @@ enum rtw_ips_level {
 };
 
 /**
- * @brief  The maximum service period lengths for U-APSD (Unscheduled Automatic Power Save Delivery) operations.
+ * @brief  The maximum service period lengths for U-APSD (Unscheduled Automatic Power Save Delivery) operations (size: u8).
  */
 enum rtw_uapsd_max_sp {
 	RTW_UAPSD_NO_LIMIT,  /**< No limit on service period length */
@@ -513,7 +518,7 @@ enum rtw_uapsd_max_sp {
 };
 
 /**
- * @brief Enumeration of supported Wi-Fi network modes.
+ * @brief Enumeration of supported Wi-Fi network modes (size: u8).
  */
 /*TODO: rom should check because moved from rom_rtw_defs.h*/
 enum rtw_wireless_mode {
@@ -546,7 +551,7 @@ enum rtw_wireless_mode {
 };
 
 /**
- * @brief TX power limit regulatory domains.
+ * @brief TX power limit regulatory domains (size: u8).
  */
 /*TODO: rom should check because moved from rom_rtw_defs.h*/
 enum rtw_txpwr_lmt {
@@ -572,7 +577,7 @@ enum rtw_txpwr_lmt {
 };
 
 /**
- * @brief Wi-Fi frame types.
+ * @brief Wi-Fi frame types (size: u8).
  */
 enum rtw_frame_type {
 	RTW_MGT_TYPE  =	(0),                     /**< Management frame */
@@ -582,7 +587,7 @@ enum rtw_frame_type {
 };
 
 /**
- * @brief Wi-Fi frame subtypes.
+ * @brief Wi-Fi frame subtypes (size: u8).
  */
 enum rtw_frame_type_subtype {
 	// below is for mgt frame
@@ -933,34 +938,30 @@ union rtw_speaker_set {
  *********************************************************************************************/
 #pragma pack(1) /* csi report header should be 1 byte alignment */
 /**
- * @brief  The structure for layout of csi report header.
+ * @brief  Layout of CSI report header.
  */
 
 struct rtw_csi_header {
-	u16 csi_signature;          /**< pattern that be used to detect a new CSI packet */
-	u8 hdr_len;
-	/**< client MAC address, specifies transmitter address (MAC address) for CSI triggering frame in Active CSI
-	 * and receiver address for CSI triggering frame in Passive CSI.*/
-	u8 mac_addr[6];
-	/**< client MAC address, specifies destination address (MAC address) for CSI triggering frame in Active CSI
-	 * and source address for CSI triggering frame in Passive CSI (purpose to fetch CSI information from response packet)*/
-	u8 trig_addr[6];
-	u32 hw_assigned_timestamp;  /**< csi timestamp,unit:us */
-	u32 csi_sequence;           /**< csi data sequence number */
-	u32 csi_data_length;        /**< csi raw data length, unit: byte */
-	u8 csi_valid;               /**< indicates the current csi raw data whether valid */
-	u8 channel;                 /**< operation channel */
-	u8 bandwidth;               /**< operation bandwidth */
-	u8 rx_rate;                 /**< the rate of rx packet which used to obtain csi info */
-	u8 protocol_mode;           /**< protocol mode of the response packet, ofdm(0)/ht(1)/vht(2)/he(3) */
-	u16 num_sub_carrier;        /**< number of subcarriers contain in csi raw data */
-	u8 num_bit_per_tone;        /**< csi data wordlength(sum of I and Q) */
-	s8 rssi[2];                 /**< rssi[0]: dbm, rssi[1] is reserved */
-	s8 evm[2];                  /**< reserved, db */
-	u8 rxsc;                    /**< indicate which sub 20M channel is used to transmit packet */
-	u8 n_rx;                    /**< reserved */
-	u8 n_sts;                   /**< reserved */
-	u8 trig_flag;               /**< indicate source of role for triggering csi in sta-sta csi mode, trig_addr is invalid if zero */
+	u16 csi_signature;          /**< Unique pattern (0xABCD) to detect a new CSI packet. */
+	u8 hdr_len;                 /**< Length of CSI header excluding `csi_signature` and `hdr_len` (i.e., 3 bytes). */
+	u8 mac_addr[6];	            /**< MAC address of transmitter (Active CSI) or receiver (Passive CSI) for CSI triggering frame. */
+	u8 trig_addr[6];	        /**< MAC address of destination (Active CSI) or source (Passive CSI) for CSI triggering frame (Reserved in METHOD4). */
+	u32 hw_assigned_timestamp;  /**< CSI timestamp, unit: us. */
+	u32 csi_sequence;           /**< CSI data sequence number. */
+	u32 csi_data_length;        /**< CSI raw data length, unit: byte. */
+	u8 csi_valid;               /**< Indicates if current CSI raw data is valid. */
+	u8 channel;                 /**< Operation channel. */
+	u8 bandwidth;               /**< Operating bandwidth (0: 20MHz, 1: 40MHz). */
+	u8 rx_rate;                 /**< RX packet rate used to obtain CSI info. */
+	u8 protocol_mode;           /**< Protocol mode of response packet (0: OFDM, 1: HT, 2: VHT, 3: HE). */
+	u16 num_sub_carrier;        /**< Number of subcarriers in CSI raw data */
+	u8 num_bit_per_tone;        /**< CSI data word length (sum of I and Q). E.g., if using @ref RTW_CSI_ACCU_1BYTE accuracy (S(8,X)), num_bit_per_tone = 16. */
+	s8 rssi[2];                 /**< rssi[0]: dBm, rssi[1]: reserved */
+	s8 evm[2];                  /**< Error Vector Magnitude in dB (Reserved). */
+	u8 rxsc;                    /**< Sub-20MHz channel used for packet transmission. */
+	u8 n_rx;                    /**< Reserved. */
+	u8 n_sts;                   /**< Reserved. */
+	u8 trig_flag;               /**< CSI trigger source indicator (valid only in METHOD4, 0 if `trig_addr` valid) */
 	u8 rsvd[5];
 };
 #pragma pack()

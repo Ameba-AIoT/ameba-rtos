@@ -206,7 +206,7 @@ if(CONFIG_UPGRADE_BOOTLOADER)
             COMMAND ${OTAPREPENDTOOL} ${KM4_PROJECT_DIR}/asdk/image/tmp_app.bin ${KM4_PROJECT_DIR}/asdk/image/km4_boot_all.bin
         )
         execute_process(
-            COMMAND ${OTAPREPENDTOOL} ${KM4_PROJECT_DIR}/asdk/image/tmp_app_ns.bin${KM4_PROJECT_DIR}/asdk/image/km4_boot_all_ns.bin
+            COMMAND ${OTAPREPENDTOOL} ${KM4_PROJECT_DIR}/asdk/image/tmp_app_ns.bin ${KM4_PROJECT_DIR}/asdk/image/km4_boot_all_ns.bin
         )
     endif()
 else()

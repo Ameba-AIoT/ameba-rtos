@@ -308,7 +308,7 @@ void whc_event_wifi_connect(u32 api_id, u32 *param_buf)
 {
 	int ret = -1;
 	u8 *ptr = (u8 *)param_buf;
-	struct rtw_network_info connect_param;
+	struct rtw_network_info connect_param = {0};
 
 	memcpy(&connect_param.ssid, ptr, sizeof(connect_param.ssid));
 	ptr += sizeof(connect_param.ssid);
@@ -432,7 +432,7 @@ void whc_event_wifi_start_ap(u32 api_id, u32 *param_buf)
 {
 	int ret;
 	u8 *ptr = (u8 *)param_buf;
-	struct rtw_softap_info softAP_config;
+	struct rtw_softap_info softAP_config = {0};
 
 	memcpy(&softAP_config.ssid, ptr, sizeof(softAP_config.ssid));
 	ptr += sizeof(softAP_config.ssid);

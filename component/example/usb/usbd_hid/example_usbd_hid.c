@@ -187,14 +187,8 @@ static void hid_cb_transmitted(u8 status)
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 static void hid_cb_received(u8 *buf, u32 len)
 {
-	UNUSED(buf);
-	u32 i = 0;
-	RTK_LOGS(TAG, RTK_LOG_INFO, "RX %dB\n", len);
-	for (i = 0; i < len; i++) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, " 0x%x ", buf[i]);
-		if ((i + 1) % 10 == 0) {
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
-		}
+	if (len > 0) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "RX %d byte(s): 0x%02x\n", len, buf[0]);
 	}
 }
 #endif

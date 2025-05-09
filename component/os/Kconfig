@@ -66,7 +66,8 @@ menu "CONFIG OS"
                     Huge impact on runtime performance, only enable this mode when debugging. Especially when HEAP_CORRUPTION_DETECT_COMPREHENSIVE enabled.
                     1. if HEAP_PROTECTOR enabled: head protector, check block header.
                     2. if HEAP_CORRUPTION_DETECT_LITE enabled: boundary protector, check block header, head/tail canary.
-                    3. if HEAP_CORRUPTION_DETECT_COMPREHENSIVE enabled: content Portector, check block header, head/tail canary, additionally check if free/malloc space conforms to pattern.
+                    3. HEAP_CORRUPTION-DELECTCOMPREHENSIVE does not perform heap content checks regardless of whether it is enabled or not.
+                        This check is too time-consuming and executing it in the hook will affect the normal scheduling of the system.
 
             config HEAP_TRACE
                 bool "Enable Heap Trace"

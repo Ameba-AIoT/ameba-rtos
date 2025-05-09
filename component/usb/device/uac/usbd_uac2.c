@@ -1305,7 +1305,7 @@ static int usbd_uac_sampling_freq_ctrl_range_req(usb_dev_t *dev, u16 max_len)
 	}
 
 	len = sizeof(num_sub_ranges) + num_sub_ranges * sizeof(usbd_uac_sub_range_t);
-	response = (usbd_uac_sampling_freq_ctrl_range_t *)malloc(len);
+	response = (usbd_uac_sampling_freq_ctrl_range_t *)usb_os_malloc(len);
 
 	if (!response) {
 		return HAL_ERR_MEM;
