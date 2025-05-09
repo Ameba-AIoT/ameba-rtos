@@ -53,12 +53,10 @@ if(CONFIG_VFS_FATFS_INCLUDED)
         vfs_fatfs_flash.c
         vfs_fatfs_flash_api.c
     )
-    if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
-        ameba_list_append(private_sources
-            vfs_fatfs_sdcard_api.c
-            vfs_fatfs_sdcard.c
-        )
-    endif()
+    ameba_list_append_if(CONFIG_SUPPORT_SD_CARD private_sources
+        vfs_fatfs_sdcard_api.c
+        vfs_fatfs_sdcard.c
+    )
 endif()
 
 #FIXME: vfs/vfs.c uses headers from mbedtls, but these two component are not always enabled at same time

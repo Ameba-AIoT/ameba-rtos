@@ -26,7 +26,13 @@ None
 		```C
 		ret = send(client_fd, buffer, sizeof(buffer), MSG_DONTWAIT);
 		```
-	2. `iperf -c <tcp_server_IP_address> -i 1 -t 60`
+	2. modify recv into blocking and no-delay
+		```C
+		ret = recv(client_fd, buffer, sizeof(buffer), 0);
+		...
+		// rtos_time_delay_ms(10);
+		```
+	3. `iperf -c <tcp_server_IP_address> -i 1 -t 60`
 
 # Expect result
 

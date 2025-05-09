@@ -2900,7 +2900,6 @@ void bt_stack_le_audio_group_cb(T_AUDIO_GROUP_MSG msg, T_BLE_AUDIO_GROUP_HANDLE 
 						handle, p_data->dev_handle, p_data->cause);
 		BT_LOGD("AUDIO_GROUP_MSG_DEV_DISCONN: group handle 0x%08x, dev handle 0x%08x, cause 0x%x\r\n",
 				handle, p_data->dev_handle, p_data->cause);
-		bt_stack_le_audio_remove_group(handle);
 		bt_stack_le_audio_group_dev_msg_ind(RTK_BT_LE_AUDIO_GROUP_MSG_DEV_DISCONN, handle, p_data->dev_handle, p_data->cause);
 	}
 	break;

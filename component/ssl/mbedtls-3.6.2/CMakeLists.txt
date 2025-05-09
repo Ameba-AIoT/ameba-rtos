@@ -152,6 +152,7 @@ ameba_list_append(private_sources
     library/ctr_drbg.c
     library/hmac_drbg.c
     library/entropy.c
+    library/pk_ecc.c
 )
 
 if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2)
@@ -166,7 +167,6 @@ if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2)
 else()
     ameba_list_append(private_sources
         library/aes.c
-        library/pk_ecc.c
         library/sha256.c
         library/sha512.c
         library/psa_crypto_driver_wrappers_no_static.c

@@ -1211,9 +1211,6 @@ enum CORE_Vol_TYPE {
 #define SYSM0_MASTER_OTPC                                    1
 #define SYSM0_MASTER_KM0                                      2
 
-/*****************************Macro definition for OTP SYSCFG1**************/
-#define LSYS_BIT_DIS_BOOT_DELAY       ((u32)0x00000001 << 0)
-
 /**************************************************************************//**
  * @defgroup AMEBA_RRAM
  * @{

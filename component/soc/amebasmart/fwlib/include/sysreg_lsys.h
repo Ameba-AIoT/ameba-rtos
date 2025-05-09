@@ -635,6 +635,9 @@
 #define LSYS_MASK_GDMA_CHANNELS   ((u32)0x000000FF << 24)           /*!< R/W 0x0  Indicate the usage status of every GDMA channel.*/
 #define LSYS_GDMA_CHANNELS(x)     (((u32)((x) & 0x000000FF) << 24))
 #define LSYS_GET_GDMA_CHANNELS(x) ((u32)(((x >> 24) & 0x000000FF)))
+// #define LSYS_BIT_AP_ENABLE        ((u32)0x00000001 << 18)
+// #define LSYS_BIT_AP_RUNNING       ((u32)0x00000001 << 17)
+// #define LSYS_BIT_AP_WAKE_FROM_PG  ((u32)0x00000001 << 16)
 /** @} */
 
 /** @defgroup REG_LSYS_BOOT_CFG
@@ -1142,9 +1145,6 @@ enum CHIP_TYPE {
 #define SYSM0_MASTER_SIC                                       0
 #define SYSM0_MASTER_OTPC                                    1
 #define SYSM0_MASTER_KM0                                      2
-
-/*****************************Macro definition for OTP SYSCFG1**************/
-#define LSYS_BIT_DIS_BOOT_DELAY       ((u32)0x00000001 << 0)
 
 /******************Macro definition for REG_LSYS_BOOT_REASON_SW **************/
 #define REG_LSYS_AP_STATUS_SW			0x0266

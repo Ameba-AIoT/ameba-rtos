@@ -214,15 +214,23 @@ elif [ "$repo_name" != "audio" ]; then
 fi
 
 if [ -n "$changed_files" ]; then
-	echo
-	echo 'Indent changed files: '
+	filtered_files=()
 	for f in $changed_files
 	do
-		echo $f
+		if [ -L "$f" ]; then 
+			#ignore link file
+			continue
+		fi
+		filtered_files+=("$f")
 	done
-	# Only for AStyle 3.1
-	astyle --style=linux -p -xg -H -U -k3 -j -xC160 -xL -T4 -z2 -n -q $changed_files
-	git add $changed_files
+	if [ -n "$filtered_files" ]; then
+		echo
+		echo 'Indent changed files: '
+		echo "${filtered_files[@]}"
+		# Only for AStyle 3.1
+		astyle --style=linux -p -xg -H -U -k3 -j -xC160 -xL -T4 -z2 -n -q "${filtered_files[@]}"
+		git add "${filtered_files[@]}"
+	fi
 fi
 
 # Special indent for BT files
@@ -238,16 +246,27 @@ if [ "$repo_name" = "loong" ]; then
 		cut -d'	' -f 2)
 
 	if [ -n "$check_files" ]; then
-		# Just check, commit fails when files fail astyle check
-		check_ret=`astyle --dry-run --style=linux -p -xg -H -U -k3 -j -T4 -m0 -Y -M120 -Q -I $check_files`
-		if [[ $check_ret != '' ]]; then
-			echo $check_ret | sed 's/Formatted /\n/g'
-			echo 'Bluetooth coding style check FAIL! Please modify and commit again!'
-			exit 1
+		bt_filtered_files=()
+		for f in $check_files
+		do
+			if [ -L "$f" ]; then 
+				#ignore link file
+				continue
+			fi
+			bt_filtered_files+=("$f")
+		done
+		if [ -n "$bt_filtered_files" ]; then
+			# Just check, commit fails when files fail astyle check
+			check_ret=`astyle --dry-run --style=linux -p -xg -H -U -k3 -j -T4 -m0 -Y -M120 -Q -I "${bt_filtered_files[@]}"`
+			if [[ $check_ret != '' ]]; then
+				echo $check_ret | sed 's/Formatted /\n/g'
+				echo 'Bluetooth coding style check FAIL! Please modify and commit again!'
+				exit 1
+			fi
+			# Modify max code length and line end style '-xC160 -xL -z2 -c'
+			astyle --style=linux -p -xg -H -U -k3 -j -T4 -m0 -Y -M120 -xC160 -xL -z2 -c -n -q  "${bt_filtered_files[@]}"
+			git add "${bt_filtered_files[@]}"
 		fi
-		# Modify max code length and line end style '-xC160 -xL -z2 -c'
-		astyle --style=linux -p -xg -H -U -k3 -j -T4 -m0 -Y -M120 -xC160 -xL -z2 -c -n -q $check_files
-		git add $check_files
 	fi
 fi
 

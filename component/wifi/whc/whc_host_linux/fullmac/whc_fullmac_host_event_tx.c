@@ -272,6 +272,12 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 
 	kfree((void *)param);
 
+	if (ret != 0) {
+		ret = -EINVAL;
+		global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
+		goto error;
+	}
+
 	/* step4: wait connect finished for synchronous connection*/
 	if (block) {
 		global_idev.mlme_priv.join_block_param = block_param;

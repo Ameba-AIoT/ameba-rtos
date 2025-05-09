@@ -15,6 +15,12 @@ config AMEBASMART
 config SUPPORT_NAND_FLASH
     def_bool y
 
+config SUPPORT_FATFS_USB
+    def_bool y
+
+config SUPPORT_SD_CARD
+    def_bool y
+
 config SUPPORT_USB
     def_bool y
 

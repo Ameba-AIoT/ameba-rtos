@@ -28,40 +28,41 @@ void example_eap_config(void)
 		If you are not using EAP-TLS method, no need to set eap_client_cert and eap_client_key value. (leave them to NULL value)
 	*/
 
+	/* Internal QC Radius Server: hostapd-2.5/hostapd/client.pem+client.key */
 	eap_client_cert = (const unsigned char *)\
 					  "-----BEGIN CERTIFICATE-----\r\n" \
-					  "MIIC9zCCAd8CAQMwDQYJKoZIhvcNAQEEBQAwgZMxCzAJBgNVBAYTAkZSMQ8wDQYD\r\n" \
-					  "VQQIEwZSYWRpdXMxEjAQBgNVBAcTCVNvbWV3aGVyZTEVMBMGA1UEChMMRXhhbXBs\r\n" \
-					  "ZSBJbmMuMSAwHgYJKoZIhvcNAQkBFhFhZG1pbkBleGFtcGxlLmNvbTEmMCQGA1UE\r\n" \
-					  "AxMdRXhhbXBsZSBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkwHhcNMTYwMzE1MDgwNzEx\r\n" \
-					  "WhcNMTcwMzE1MDgwNzExWjBzMQswCQYDVQQGEwJGUjEPMA0GA1UECBMGUmFkaXVz\r\n" \
-					  "MRUwEwYDVQQKEwxFeGFtcGxlIEluYy4xGjAYBgNVBAMUEXVzZXIyQGV4YW1wbGUu\r\n" \
-					  "Y29tMSAwHgYJKoZIhvcNAQkBFhF1c2VyMkBleGFtcGxlLmNvbTCBnzANBgkqhkiG\r\n" \
-					  "9w0BAQEFAAOBjQAwgYkCgYEAqESlV4OYfBcIgZ+Cs8mWpiBjhvKoa0/kIe7saqhC\r\n" \
-					  "e5q4snox0jdkUpLcc4vOs3vQ7ZGnimqTltA9oF6XNUzTWW4vlJTKEfrCWK085l7c\r\n" \
-					  "DHFvHavH3E6vuP71lI7jq4PLXbo2TvZK+uBul4ozjzVWihaZBtz8eLHq446h/D/p\r\n" \
-					  "kzkCAwEAATANBgkqhkiG9w0BAQQFAAOCAQEAAfhVAIkNdeeUNJud720uUHVnIcxz\r\n" \
-					  "GXWI+Svi1qchuTEnRNhLwXmnE+A0WWSHyfdR6FvzdT3xtz3K50iOif8jY2gCGkSK\r\n" \
-					  "8RjKr97228SwbrGO9y9+dYIjH1uz9cBpoVKcpzdsWpKObrDPDYyReHSWo99jM2+O\r\n" \
-					  "vfJxnBw4PLiBj7Q0/dpd6o4JXyp7Cxa0mB4/+cZqjCzzuKfuK3WP7j6laMCV6mg4\r\n" \
-					  "wRZ528IdwDqB7OOqsDm1PVQM8vzny9PM6ikWUCRTVNQJN8RDLkrHR3FRjy15YLdt\r\n" \
-					  "yOfDqVnT/z0wGBaxnNziSJjqPGHPpRi4bJFGXwXOhtknKmciKzfj9/npoQ==\r\n" \
+					  "MIIC1TCCAb0CAQMwDQYJKoZIhvcNAQELBQAwgYsxCzAJBgNVBAYTAlRXMRAwDgYD\r\n" \
+					  "VQQIDAdIc2luY2h1MRAwDgYDVQQHDAdIc2luY2h1MRAwDgYDVQQKDAdSZWFsdGVr\r\n" \
+					  "MQwwCgYDVQQLDANTRDkxEDAOBgNVBAMMB1JlYWx0ZWsxJjAkBgkqhkiG9w0BCQEW\r\n" \
+					  "F3JheW1vbmQubGVlQHJlYWx0ZWsuY29tMCAXDTIxMDgxNjAzMzAzOVoYDzIxMjEw\r\n" \
+					  "NzIzMDMzMDM5WjBXMQswCQYDVQQGEwJDTjETMBEGA1UECAwKU29tZS1TdGF0ZTEh\r\n" \
+					  "MB8GA1UECgwYSW50ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMRAwDgYDVQQDDAdSZWFs\r\n" \
+					  "dGVrMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCv9TNqrJsSYoqq2n044Gz\r\n" \
+					  "Kdd86hYPtg5M6y7JfVjL3WxSIi3qsYLIUGOgNaqdQ5Kx/aCPCvzimfoGcAgL4cax\r\n" \
+					  "2c45qXPtPL18jd65kgAymQVRjw7ld5f4qFUIsu2TqSFQ4wETUmxOOm7xBXN50j7C\r\n" \
+					  "MpL6bITavjqJexJ7ZC2FWQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQCCuvBx98h0\r\n" \
+					  "NsRc9c8FJh62k7CkHgWHPmdYypsy15dGkZUQucrhOH8xvaxqeJBFBBtABZlRssLj\r\n" \
+					  "nOcqwE6wfT0geZrzfscOdidGqCg28yMSr9MmXk7jOKIE/FymdRT94lssFlUJrAVQ\r\n" \
+					  "eyua9S/c2Cl+O2gVQRtrKKAM/ISkTxfnkqJjtF3NZPmF+I/FR4cAvhzphW/5l+Yt\r\n" \
+					  "5BafPUHq19vblpUulveTZGzsS5lg0PCdK/I5LGC9WlSx7DON3VYpo4baxuzDP6AV\r\n" \
+					  "da5EBI+4dE1Dj3zI2HBzuR/jnb9NDAmhHlo6SJ0BU9lb3rVOhkhwoDa6xYNq3P1t\r\n" \
+					  "P9i+cdhnw30z\r\n" \
 					  "-----END CERTIFICATE-----\r\n";
 	eap_client_key = (const unsigned char *)\
 					 "-----BEGIN RSA PRIVATE KEY-----\r\n" \
-					 "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\r\n" \
+					 "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\r\n" \
 					 "-----END RSA PRIVATE KEY-----\r\n";
 	eap_client_key_pwd = "";
 
