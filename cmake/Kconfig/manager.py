@@ -116,10 +116,14 @@ class Manager(object):
         return 0
 
     def apply_manual_config(self) -> int:
+        if not os.path.exists(self.config_in): #load default value to .config
+            self.apply_default_config()
+
+        self.apply_files_config(files = [], output_config_default = True) #generate .config_default
+
         if os.path.exists(self.config_default_old):
             os.remove(self.config_default_old)
-        if not os.path.exists(self.config_in):
-            self.apply_default_config()
+
         return self.run_command('menuconfig.py', self.top_kconfig)
 
     def apply_default_config(self) ->int:

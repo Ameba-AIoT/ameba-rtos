@@ -123,40 +123,6 @@ def main(argc, argv):
         print('Error: Toolchain "' + toolchain_path + '" does not exist')
         sys.exit(1)
 
-    if os.path.exists(build_dir):
-        if args.pristine or args.clean:
-            cmd = 'cd ' + build_dir + ' && ninja clean'
-            try:
-                rc = os.system(cmd)
-            except:
-                rc = 1
-            if rc != 0:
-                print('Warning: Fail to clean project')
-            else:
-                pass
-            if args.clean:
-                if rc != 0:
-                    # Return code will be truncated, e.g.: 256 => 0, so the raw return code will not be used
-                    rc = 1
-                else:
-                    pass
-                sys.exit(rc)
-            else:
-                pass
-        else:
-            pass
-    else:
-        if args.clean:
-            print('No build need to clean')
-            sys.exit(0)
-        else:
-            pass
-        try:
-            os.makedirs(build_dir)
-        except:
-            print('Error: Fail to create build directory "' + build_dir + '"')
-            sys.exit(1)
-
     target_script = os.path.join(device_dir, "build.py")
     arguments = [
         '--app', args.app,

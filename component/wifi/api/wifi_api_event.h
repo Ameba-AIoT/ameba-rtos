@@ -38,61 +38,61 @@ extern "C" {
  */
 
 /**
-  * @brief Flags of @ref RTW_EVENT_JOIN_STATUS.
+  * @brief Join status flags for @ref RTW_EVENT_JOIN_STATUS.
   */
 enum rtw_join_status {
 	RTW_JOINSTATUS_UNKNOWN = 0,
 
-	/* The intermediate states of Linking should be added in front of @ref RTW_JOINSTATUS_SUCCESS */
-	RTW_JOINSTATUS_STARTING,				        /**< Starting phase. */
-	RTW_JOINSTATUS_SCANNING,				        /**< Scanning phase. */
-	RTW_JOINSTATUS_AUTHENTICATING,	    		/**< Authenticating phase. */
-	RTW_JOINSTATUS_AUTHENTICATED,			      /**< Authenticated phase. */
-	RTW_JOINSTATUS_ASSOCIATING,			       	/**< Associating phase. */
-	RTW_JOINSTATUS_ASSOCIATED,			      	/**< Associated phase. */
-	RTW_JOINSTATUS_4WAY_HANDSHAKING,	    	/**< 4 way handshaking phase. */
-	RTW_JOINSTATUS_4WAY_HANDSHAKE_DONE,	    /**< 4 way handshake done phase. */
-	RTW_JOINSTATUS_SUCCESS,				         	/**< Join success.  */
+	/* Intermediate connection states (new states should be added before RTW_JOINSTATUS_SUCCESS). */
+	RTW_JOINSTATUS_STARTING,                  /**< Connection initiation. */
+	RTW_JOINSTATUS_SCANNING,                  /**< Network scanning. */
+	RTW_JOINSTATUS_AUTHENTICATING,            /**< Authentication in progress. */
+	RTW_JOINSTATUS_AUTHENTICATED,             /**< Authentication completed. */
+	RTW_JOINSTATUS_ASSOCIATING,               /**< Association in progress. */
+	RTW_JOINSTATUS_ASSOCIATED,                /**< Association completed. */
+	RTW_JOINSTATUS_4WAY_HANDSHAKING,          /**< 4-way handshake in progress. */
+	RTW_JOINSTATUS_4WAY_HANDSHAKE_DONE,       /**< 4-way handshake completed. */
+	RTW_JOINSTATUS_SUCCESS,                   /**< Connection successful. */
 
-	/* The other result states of Linking should be added in back of @ref RTW_JOINSTATUS_SUCCESS */
-	RTW_JOINSTATUS_FAIL,						        /**< Join fail during wifi connect. */
-	RTW_JOINSTATUS_DISCONNECT,			      	/**< Disconnect after wifi connected.*/
+	/* Other connection result states (new states should be added after RTW_JOINSTATUS_SUCCESS). */
+	RTW_JOINSTATUS_FAIL,                      /**< Connection failed. */
+	RTW_JOINSTATUS_DISCONNECT,                /**< Disconnected after successful connection. */
 };
 
 /**
-  * @brief  event_cmds
+  * @brief  Wi-Fi event identifiers.
   */
 enum rtw_event_id {
-	RTW_EVENT_STA_ASSOC = 0, 			    	  /**< A station associate to softAP.*/
-	RTW_EVENT_STA_DISASSOC,			        	/**< A station disassociate to softAP.*/
-	RTW_EVENT_JOIN_STATUS,					        /**< Status change during STA connect to AP, see exampe_wifi_event.c.*/
-	RTW_EVENT_CSI_DONE,                    /**< Indicate CSI data is ready, see exampe_wifi_csi.c.*/
-	RTW_EVENT_WPA_STA_WPS_START,           /**< STA WPS start.*/
-	RTW_EVENT_WPA_WPS_FINISH,              /**< STA WPS finish.*/
-	RTW_EVENT_WPA_EAPOL_START,             /**< STA WPA enterprise start.*/
-	RTW_EVENT_WPA_EAPOL_RECVD,             /**< STA WPA enterprise receive a eapol packet.*/
+	RTW_EVENT_STA_ASSOC = 0,          /**< SoftAP mode: Station associated */
+	RTW_EVENT_STA_DISASSOC,           /**< SoftAP mode: Station disassociated */
+	RTW_EVENT_JOIN_STATUS,	          /**< STA mode: Connection status change (see example_wifi_event.c) */
+	RTW_EVENT_CSI_DONE,               /**< CSI data ready (see example_wifi_csi.c) */
+	RTW_EVENT_WPA_STA_WPS_START,      /**< STA mode: WPS procedure started */
+	RTW_EVENT_WPA_WPS_FINISH,         /**< STA mode: WPS procedure completed */
+	RTW_EVENT_WPA_EAPOL_START,        /**< STA mode: WPA enterprise authentication started */
+	RTW_EVENT_WPA_EAPOL_RECVD,        /**< STA mode: EAPOL packet received during WPA enterprise authentication */
 	RTW_EVENT_MAX,
 };
 /** @} End of WIFI_Exported_Enumeration_Types group*/
 
-/** @defgroup WIFI_Exported_Structure_Types Structure Type
+/** @addtogroup WIFI_Exported_Structure_Types Structure Type
  * @{
  */
 /**
-  * @brief Buf of @ref RTW_EVENT_JOIN_STATUS when flag is @ref RTW_JOINSTATUS_DISCONNECT.
+  * @brief Data structure for @ref RTW_EVENT_JOIN_STATUS when flag is @ref RTW_JOINSTATUS_DISCONNECT.
   */
 struct rtw_event_info_joinstatus_disconn {
-	u16 disconn_reason;      /**< Val: @ref RTW_DISCONN_RSN_80211_UNSPECIFIED, @ref RTW_DISCONN_RSN_80211_PREV_AUTH_NOT_VALID...*/
-	u8	bssid[6];            /**< AP's MAC address.*/
+	u16 disconn_reason;      /**< Disconnect reason, refer to @ref rtw_disconn_reason. */
+	u8	bssid[6];            /**< MAC address of the AP.*/
 };
 
 /**
-  * @brief Buf of @ref RTW_EVENT_JOIN_STATUS when flag is @ref RTW_JOINSTATUS_FAIL
+  * @brief Data structure for @ref RTW_EVENT_JOIN_STATUS when flag is @ref RTW_JOINSTATUS_FAIL
   */
 struct rtw_event_info_joinstatus_joinfail {
-	s32					fail_reason;           /**< Value: @ref RTK_FAIL, -@ref RTK_ERR_WIFI_CONN_INVALID_KEY...*/
-	u16					reason_or_status_code; /**< From AP, define in 802.11 spec.*/
-	u8					bssid[6];              /**< AP's MAC address.*/
+	s32					fail_reason;           /**< Failure reason, refer to @ref RTK_FAIL, -@ref RTK_ERR_WIFI_CONN_INVALID_KEY, etc. */
+	u16					reason_or_status_code; /**< 802.11 reason code or status code from AP.*/
+	u8					bssid[6];              /**< MAC address of the AP.*/
 };
 /** @} End of WIFI_Exported_Structure_Types group*/
 /** @} End of WIFI_Exported_Types group*/
@@ -100,7 +100,7 @@ struct rtw_event_info_joinstatus_joinfail {
 /**********************************************************************************************
  *                                     Function Declarations
  *********************************************************************************************/
-/** @defgroup WIFI_Exported_Functions Wi-Fi Exported Functions
+/** @addtogroup WIFI_Exported_Functions Wi-Fi Exported Functions
  * @{
  */
 /** @addtogroup WIFI_Exported_Event_Functions Event Functions

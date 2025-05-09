@@ -42,11 +42,10 @@ set(private_compile_options)         #private compile_options
 #NOTE: User defined section, add your private build configures here
 # You may use if-else condition to set these predefined variable
 
-if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
-    ameba_list_append(private_sources
-        ftl_nand.c
-    )
-endif()
+ameba_list_append_if(CONFIG_SUPPORT_NAND_FLASH private_sources
+    ftl_nand.c
+)
+
 ameba_list_append(private_sources
     ftl_nor.c
     ftl.c

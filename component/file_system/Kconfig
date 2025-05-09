@@ -11,7 +11,7 @@ menu "CONFIG VFS"
                 bool "FLASH"
             config FATFS_DISK_SD   #amebasmart  green2 smartplus
                 bool "SD"
-                depends on AMEBASMART||AMEBAGREEN2||AMEBASMARTPLUS
+                depends on SUPPORT_NAND_FLASH
         endchoice
         config FATFS_WITHIN_APP_IMG
             bool "FATFS within APP Image"
