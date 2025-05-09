@@ -34,7 +34,7 @@ extern "C" {
 /**********************************************************************************************
  *                                     Function Declarations
  *********************************************************************************************/
-/** @defgroup WIFI_Exported_Functions Wi-Fi Exported Functions
+/** @addtogroup WIFI_Exported_Functions Wi-Fi Exported Functions
  * @{
  */
 /** @addtogroup WIFI_Exported_Basic_Functions Basic Functions
@@ -64,7 +64,7 @@ s32 wifi_is_running(u8 wlan_idx);
 
 /**
  * @brief  Join a Wi-Fi network by scanning, authenticating, and associating.
- * @param[in]  connect_param: Pointer to a struct containing connection info (ssid, bssid, password, etc.).
+ * @param[in]  connect_param: Pointer to a struct containing connection info (SSID, BSSID, password, etc.).
  *                          See struct rtw_network_info in wifi_api_types.h for details.
  * @param[in]  block:
  *                  - 1: Synchronous wifi connect (function returns after connection attempt completes).
@@ -86,7 +86,7 @@ s32 wifi_is_running(u8 wlan_idx);
  *    - -@ref RTK_ERR_WIFI_CONN_4WAY_PASSWORD_WRONG : Password error causing 4 way handshake failure, not entirely accurate.
  * @note
  *      - Ensure Wi-Fi is enabled (wifi_on()) before calling this function.
- *      - If `connect_param->bssid` is set, it takes precedence over ssid for connection.
+ *      - If `connect_param->bssid` is set, it takes precedence over `connect_param->ssid` for connection.
  */
 s32 wifi_connect(struct rtw_network_info *connect_param, u8 block);
 
@@ -102,17 +102,17 @@ s32 wifi_disconnect(void);
  * @brief  Get join status during wifi connectection.
  * @param[out] join_status the join status during wifi connectection.
  *    - @ref RTW_JOINSTATUS_UNKNOWN : Unknown.
- *    - @ref RTW_JOINSTATUS_STARTING : Starting phase.
- *    - @ref RTW_JOINSTATUS_SCANNING : Scanning phase.
- *    - @ref RTW_JOINSTATUS_AUTHENTICATING : Authenticating phase.
- *    - @ref RTW_JOINSTATUS_AUTHENTICATED : Authenticated phase.
- *    - @ref RTW_JOINSTATUS_ASSOCIATING : Associating phase.
- *    - @ref RTW_JOINSTATUS_ASSOCIATED : Associated phase.
- *    - @ref RTW_JOINSTATUS_4WAY_HANDSHAKING : 4 way handshaking phase.
- *    - @ref RTW_JOINSTATUS_4WAY_HANDSHAKE_DONE : 4 way handshake done phase.
- *    - @ref RTW_JOINSTATUS_SUCCESS : Join success.
- *    - @ref RTW_JOINSTATUS_FAIL : Join fail.
- *    - @ref RTW_JOINSTATUS_DISCONNECT : Disconnect.
+ *    - @ref RTW_JOINSTATUS_STARTING : Connection initiation.
+ *    - @ref RTW_JOINSTATUS_SCANNING : Network scanning.
+ *    - @ref RTW_JOINSTATUS_AUTHENTICATING : Authentication in progress.
+ *    - @ref RTW_JOINSTATUS_AUTHENTICATED : Authentication completed.
+ *    - @ref RTW_JOINSTATUS_ASSOCIATING : Association in progress.
+ *    - @ref RTW_JOINSTATUS_ASSOCIATED : Association completed.
+ *    - @ref RTW_JOINSTATUS_4WAY_HANDSHAKING : 4-way handshake in progress.
+ *    - @ref RTW_JOINSTATUS_4WAY_HANDSHAKE_DONE : 4-way handshake completed.
+ *    - @ref RTW_JOINSTATUS_SUCCESS : Connection successful.
+ *    - @ref RTW_JOINSTATUS_FAIL : Connection failed.
+ *    - @ref RTW_JOINSTATUS_DISCONNECT : Disconnected after successful connection.
  * @return @ref RTK_SUCCESS : The API executed successfully.
  */
 s32 wifi_get_join_status(u8 *join_status);

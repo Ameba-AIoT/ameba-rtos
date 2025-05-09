@@ -27,7 +27,7 @@ extern "C" {
  *  @brief      WIFI_API module
  *  @{
  */
-/** @defgroup WIFI_Exported_Functions Wi-Fi Exported Functions
+/** @addtogroup WIFI_Exported_Functions Wi-Fi Exported Functions
  * @{
  */
 /** @addtogroup WIFI_Exported_Basic_Functions Basic Functions
@@ -152,7 +152,7 @@ void wifi_ap_set_invisible(u8 enable);
  * @param[in]  channel: RF channel to switch to.
  * @return
  *    - @ref RTK_SUCCESS : The API executed successfully.
- *    - @ref RTK_FAIL : Wi-Fi is powered off in IPS(Inactive Power Save) mode, unable to access Wi-Fi registers.
+ *    - @ref RTK_FAIL : Driver internal error.
  *    - -@ref RTK_ERR_BADARG : Invalid `channel` or `wlan_idx`(when set to @ref SOFTAP_WLAN_INDEX but SoftAP is not enabled).
  *    - -@ref RTK_ERR_BUSY : Wi-Fi scan is ongoing.
  * @note
@@ -336,7 +336,8 @@ s32 wifi_get_phy_stats(u8 wlan_idx, u8 *mac_addr, union rtw_phy_stats *phy_stats
  * @param[out]  pkt_num: Pointer to store the number of packets.
  * @return
  *    - @ref RTK_SUCCESS : The API executed successfully.
- *    - @ref RTK_FAIL : Wi-Fi is powered off in IPS(Inactive Power Save) mode, unable to access Wi-Fi registers.
+ *    - @ref RTK_FAIL : Unsupported chip.
+ *    - -@ref RTK_ERR_WIFI_POWEROFF : Wi-Fi is powered off in IPS(Inactive Power Save) mode, unable to access Wi-Fi registers.
  * @note Supported only by RTL8730E chip. Returns @ref RTK_FAIL for other chips.
  */
 s32 wifi_get_txbuf_pkt_num(s32 *pkt_num);
@@ -371,7 +372,7 @@ s32 wifi_get_band_type(u8 *band_type);
  * @param[out] tsf: Pointer to store the 64-bit TSF value.
  * @return
  *    - @ref RTK_SUCCESS : The API executed successfully.
- *    - @ref RTK_FAIL : Wi-Fi is powered off in IPS(Inactive Power Save) mode, unable to access Wi-Fi registers.
+ *    - -@ref RTK_ERR_WIFI_POWEROFF : Wi-Fi is powered off in IPS(Inactive Power Save) mode, unable to access Wi-Fi registers.
  */
 s32 wifi_get_tsf(u8 wlan_idx, u64 *tsf);
 
@@ -458,7 +459,7 @@ s32 wifi_set_tx_rate_by_tos(u8 enable, u8 tos_precedence, u8 tx_rate);
  * </table>
  * @return
  *    - @ref RTK_SUCCESS : The API executed successfully.
- *    - @ref RTK_FAIL : Wi-Fi is powered off in IPS(Inactive Power Save) mode,
+ *    - -@ref RTK_ERR_WIFI_POWEROFF : Wi-Fi is powered off in IPS(Inactive Power Save) mode,
  *                      unable to access Wi-Fi registers.
  */
 s32 wifi_set_edca_param(u32 ac_param);
@@ -468,7 +469,7 @@ s32 wifi_set_edca_param(u32 ac_param);
  * @param[in]  enable: 1 to enable, 0 to disable.
  * @return
  *    - @ref RTK_SUCCESS : The API executed successfully.
- *    - @ref RTK_FAIL : Wi-Fi is powered off in IPS(Inactive Power Save) mode,
+ *    - -@ref RTK_ERR_WIFI_POWEROFF : Wi-Fi is powered off in IPS(Inactive Power Save) mode,
  *                      unable to access Wi-Fi registers.
  * @note
  *      - Both CCA and EDCCA will be simultaneously enabled or disabled.

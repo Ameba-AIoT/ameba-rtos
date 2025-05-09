@@ -61,6 +61,17 @@
   * @}
   */
 
+/** @defgroup CACHE_Way_define
+  * @{
+  */
+#define CACHE_WWR_1WAY			((u32)0x00000000)
+#define CACHE_WWR_2WAY			((u32)0x00000001)
+#define CACHE_WWR_3WAY			((u32)0x00000002)
+#define CACHE_WWR_4WAY			((u32)0x00000003)
+/**
+  * @}
+  */
+
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup CACHE_Exported_Functions FLash Cache Exported Functions
   * @{

@@ -43,11 +43,11 @@ set(private_compile_options)         #private compile_options
 #NOTE: User defined section, add your private build configures here
 # You may use if-else condition to set these predefined variable
 
-if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
-    ameba_list_append(private_sources
-        disk_if/src/usbdisk.c
-    )
-endif()
+
+ameba_list_append_if(CONFIG_SUPPORT_FATFS_USB private_sources
+    disk_if/src/usbdisk.c
+)
+
 
 ameba_list_append(private_sources
     ${v_FATFS_VER}/src/ff.c

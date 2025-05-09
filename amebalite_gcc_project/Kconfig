@@ -9,6 +9,12 @@ config AMEBA_RLS
 config AMEBALITE
     def_bool y
 
+#---------- FEATURE LIST START-----------#
+#All features are invisible in menuconfig
+
+
+#---------- FEATURE LIST END-------------#
+
 menu "CONFIG DSP Enable"
     config DSP_EN
         bool "Enable DSP"
@@ -282,7 +288,7 @@ menu "CONFIG BT"
             def_bool y
         config BT_HAS_LEAUDIO
             def_bool y
-    
+
         choice
             prompt "BT Mode Selection"
             default BT_BLE_ONLY

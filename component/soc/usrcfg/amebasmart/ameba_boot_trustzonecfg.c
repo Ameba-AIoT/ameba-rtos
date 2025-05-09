@@ -6,7 +6,6 @@
 
 #include "ameba_soc.h"
 
-BOOT_RAM_DATA_SECTION
 const TZ_CFG_TypeDef sau_config[] = {
 	{0x0001E000,			0x00054000 - 1,			0},	/* entry0: IROM & DROM NS */
 	{0x08000000,			0x0A000000 - 1,			0},	/* entry1: BootLoader XIP */
@@ -24,7 +23,6 @@ const TZ_CFG_TypeDef sau_config[] = {
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry7: TODO */
 };
 
-BOOT_RAM_DATA_SECTION
 const TZ_CFG_TypeDef mpc1_config[] =					/* Security configuration for DDR/PSRAM */
 {
 //  Start					End						NSC
@@ -44,7 +42,6 @@ const TZ_CFG_TypeDef mpc1_config[] =					/* Security configuration for DDR/PSRAM
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry7: locked to [CA32_BL3_DRAM_NS, 0x00600000 - 1] in ATF for security reason */
 };
 
-BOOT_RAM_DATA_SECTION
 const TZ_CFG_TypeDef mpc2_config[] =					/* Security configuration for HS_SRAM */
 {
 //  Start					End						NSC

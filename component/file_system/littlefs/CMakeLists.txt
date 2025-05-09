@@ -48,17 +48,11 @@ ameba_list_append(private_sources
     ${v_LITTLEFS_VER}/lfs.c
     ${v_LITTLEFS_VER}/lfs_util.c
 )
-if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
-    ameba_list_append(private_sources
-        lfs_nand_ftl.c
-        lfs_nand_ftl_mfg.c
-    )
-    if("${c_MCU_PROJECT_NAME}" STREQUAL "ap")
-        ameba_list_append(private_sources
-            lfs_spinand.c
-        )
-    endif()
-endif()
+
+ameba_list_append_if(CONFIG_SUPPORT_NAND_FLASH private_sources
+    lfs_nand_ftl.c
+    lfs_nand_ftl_mfg.c
+)
 
 ameba_list_append(private_includes
     ${c_CMPT_FILE_SYSTEM_DIR}/ftl_common

@@ -8,6 +8,7 @@
 import argparse
 import json
 import os
+import pathlib
 import subprocess
 import sys
 
@@ -20,6 +21,7 @@ def main(argc, argv):
     parser.add_argument('-d', '--device', help='device name')
     parser.add_argument('-g', '--gui', action='store_true', help='GUI config')
     parser.add_argument('-f', '--file', help='config file(s)', nargs='+')
+    parser.add_argument('-c', '--clean', action='store_true', help='clean menuconfig')
 
     args = parser.parse_args()
     sdkroot = os.getcwd()
@@ -55,8 +57,9 @@ def main(argc, argv):
         chip = cfg['devices'][device]['chip']
         device_dir = os.path.join(sdkroot, os.path.normcase(cfg['devices'][device]['path']))
 
+    menuconfig_dir = str(pathlib.Path(args.build_dir).parent)
     result = subprocess.run(
-        ['python', 'menuconfig.py'] + (args.file if args.file else []),
+        ['python', 'menuconfig.py'] + (args.file if args.file else []) + (["-c", "-d", menuconfig_dir] if args.clean else []),
         cwd=device_dir,
         text=True
     )
