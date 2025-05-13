@@ -319,6 +319,7 @@ static uint8_t app_bt_le_audio_def_ext_adv_handle = 0xFF;
 static uint8_t app_bt_le_audio_adv_data_len = APP_LE_AUDIO_ADV_START_PARSING_IDX;
 
 #if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
+static bool csip_discover_flag = false;
 static rtk_bt_le_create_conn_param_t bt_le_audio_demo_conn_param = {
 	.peer_addr = {
 		.type = (rtk_bt_le_addr_type_t)0,
@@ -664,10 +665,12 @@ static uint16_t app_bt_le_audio_common_scan_report_handle(rtk_bt_le_ext_scan_res
 		if (scan_dev_info.common_scan_info_t.adv_data_flags) {
 			memcpy(&scan_dev_info.scan_res_ind, scan_res_ind, sizeof(rtk_bt_le_ext_scan_res_ind_t));
 #if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
-			if (scan_dev_info.common_scan_info_t.adv_data_flags & APP_BT_LE_AUDIO_ADV_DATA_RSI_BIT) {
-				if (RTK_BT_ERR_LOWER_STACK_API == rtk_bt_le_audio_csis_set_coordinator_check_adv_rsi(scan_res_ind->addr, scan_res_ind->len, scan_res_ind->data)) {
-					BT_LOGE("[APP] %s: The scanned device is not in the same coordinator set\r\n", __func__);
-					return RTK_BT_OK;
+			if (csip_discover_flag) {
+				if (scan_dev_info.common_scan_info_t.adv_data_flags & APP_BT_LE_AUDIO_ADV_DATA_RSI_BIT) {
+					if (RTK_BT_ERR_LOWER_STACK_API == rtk_bt_le_audio_csis_set_coordinator_check_adv_rsi(scan_res_ind->addr, scan_res_ind->len, scan_res_ind->data)) {
+						BT_LOGE("[APP] %s: The scanned device is not in the same coordinator set\r\n", __func__);
+						return RTK_BT_OK;
+					}
 				}
 			}
 #endif
@@ -1619,7 +1622,7 @@ static void app_bt_le_audio_cap_encode_data_control(bool enable)
 static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uint32_t len)
 {
 	(void)len;
-
+	uint16_t ret = RTK_BT_OK;
 	switch (evt_code) {
 
 	case RTK_BT_LE_AUDIO_EVT_BAP_DISCOVERY_DONE_IND: {
@@ -1901,6 +1904,25 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 			BT_LOGA("[APP] RTK_BT_LE_AUDIO_GROUP_MSG_DEV_CONN\r\n");
 			break;
 		case RTK_BT_LE_AUDIO_GROUP_MSG_DEV_DISCONN:
+#if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
+			ret = rtk_bt_le_audio_csis_set_coordinator_cfg_discover(param->group_handle, true, RTK_BLE_AUDIO_DEFAULT_CSIS_DISV_TIMEOUT);
+			BT_LOGA("[APP] %s: start csis discover in csis group %s (group_handle=%08x) \r\n", __func__, (RTK_BT_OK != ret) ? "fail" : "ok", param->group_handle);
+			csip_discover_flag = true;
+			app_bt_le_audio_scan_dev_list_remove_all();
+			// transfer to ext scanning state
+			ret = rtk_bt_le_audio_ext_scan_act(true);
+			BT_LOGA("[APP] %s: start ext scan in csis group(%08x) %s \r\n", __func__, param->group_handle, (RTK_BT_OK != ret) ? "fail" : "ok");
+			// set ext scan time out
+			if (bt_le_audio_demo_ext_scan_timer) {
+				bt_le_audio_demo_ext_scan_time_remaining = APP_LE_AUDIO_EXT_SCAN_TIMER_COUNT;
+				if (false == osif_timer_start(&bt_le_audio_demo_ext_scan_timer)) {
+					BT_LOGE("[APP] %s osif_timer_start fail \r\n", __func__);
+				}
+				BT_LOGA("[APP] %s: ext scan timer start\r\n", __func__);
+			}
+#else
+			(void)ret;
+#endif
 			BT_LOGA("[APP] RTK_BT_LE_AUDIO_GROUP_MSG_DEV_DISCONN\r\n");
 			break;
 		case RTK_BT_LE_AUDIO_GROUP_MSG_DEV_BOND_REMOVE:
@@ -2001,6 +2023,7 @@ static rtk_bt_evt_cb_ret_t app_bt_cap_callback(uint8_t evt_code, void *data, uin
 			if (param->group_handle == NULL) {//the server isnt in any group
 				if (param->mem_info.set_mem_size > 1) {
 					app_bt_le_audio_scan_dev_list_remove_all();
+					csip_discover_flag = true;
 					ret = rtk_bt_le_audio_ext_scan_act(true);
 					BT_LOGA("[APP] %s: start ext scan %s \r\n", __func__, (RTK_BT_OK != ret) ? "fail" : "ok");
 					if (bt_le_audio_demo_ext_scan_timer) {
@@ -2022,6 +2045,7 @@ static rtk_bt_evt_cb_ret_t app_bt_cap_callback(uint8_t evt_code, void *data, uin
 		BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_CSIS_CLIENT_SEARCH_DONE_IND: group_handle 0x%08x, set_mem_size %d, search_done %d,search_timeout %d\r\n",
 				param->group_handle, param->set_mem_size, param->search_done, param->search_timeout);
 #if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
+		csip_discover_flag = false;
 		if (bt_le_audio_demo_ext_scan_timer) {
 			osif_timer_stop(&bt_le_audio_demo_ext_scan_timer);
 		}
@@ -3527,8 +3551,9 @@ int bt_generic_le_audio_demo_main(uint8_t role, uint8_t enable, uint32_t sound_c
 				} else if ((RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR) == sound_channel) {
 #if defined(RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT
 					p_lea_app_conf->cap_param.csis_param.csis_cfg = RTK_BT_LEA_CSIS_CFG_RANK_1;
+					p_lea_app_conf->cap_param.csis_param.csis_size = 1,
 #endif
-					p_lea_app_conf->pacs_param.sink_audio_location = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
+									p_lea_app_conf->pacs_param.sink_audio_location = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
 					p_lea_app_conf->pacs_param.source_audio_location = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
 					channel[0] = 'S';
 				} else {

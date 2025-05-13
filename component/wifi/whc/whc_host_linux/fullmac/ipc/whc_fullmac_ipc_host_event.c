@@ -42,14 +42,9 @@ func_exit:
 
 static void whc_fullmac_host_event_set_acs_info(struct whc_ipc_dev_req_msg *p_ipc_msg)
 {
-	extern u8 chanel_idx_max;
-	extern u8 rtw_chnl_tbl[MAX_CHANNEL_NUM];
-	extern struct rtw_acs_mntr_rpt acs_mntr_rpt_tbl[MAX_CHANNEL_NUM];
-
 	u8 idx = 0;
 	struct device *pdev = NULL;
 	struct rtw_acs_mntr_rpt *acs_rpt = llhw_ipc_fw_phy_to_virt(p_ipc_msg->param_buf[0]);
-
 
 	if (!global_idev.event_ch) {
 		dev_err(global_idev.fullmac_dev, "%s,%s: event_priv_t is NULL in!\n", "event", __func__);
@@ -63,7 +58,6 @@ static void whc_fullmac_host_event_set_acs_info(struct whc_ipc_dev_req_msg *p_ip
 	}
 
 	if (acs_rpt->channel == 0) {
-		memset(acs_mntr_rpt_tbl, 0, sizeof(struct rtw_acs_mntr_rpt)*MAX_CHANNEL_NUM);
 		return;
 	}
 

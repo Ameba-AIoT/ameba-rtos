@@ -5,107 +5,47 @@
 #include "bt_debug.h"
 #include "dlist.h"
 
-#define USE_HCI_H4 1
-#if defined(USE_HCI_H4) && USE_HCI_H4
 #define RESERVE_LEN 1
-#elif defined(USE_HCI_H5) && USE_HCI_H5
-#define RESERVE_LEN 4
-#else
-#define RESERVE_LEN 0
-#endif
 
 #define HCI_PATCH_FRAG_SIZE         252
 #define HCI_PATCH_IMAGE_INFO_LEN    1024
 
-#define HCI_BT_REG_KEY_ID           0xb000ada4
+/* section fomart: ... [regaddr(8bytes) regvalue(8bytes)] index(1byte) image_len(8bytes) payload */
+#define REG_VALUE_POSITION(__payload, __idx)   ((__payload) - 9 - ((__idx) * 2 + 1) * 8)
+#define REG_ADDR_POSITION(__payload, __idx)    ((__payload) - 9 - ((__idx) * 2 + 2) * 8)
 
-#define REG_ADDR   0
-#define REG_VALUE  1
+enum {
+	/* enum uses reverse order */
+	SECURITY_HEADER_BUF_REMAIN_SIZE = 0x00,
+	PATCH_START_ADDRESS,
+	CURRENT_IMAGE_ID,
+	CURRENT_IMAGE_DOWNLOAD_ADDRESS,
+	SECTION_REG_NUM,
+};
 
-#define TRIM_INDEX(num, index)    {    \
-        num = (index >= 0x80) ? ((index - 0x80) % 0x7f + 1) : (index % 0x80); \
-    }
-
-typedef enum {
-	INFO_REG_PATCH_START_ADDRESS = 0x00,
-	INFO_REG_SECURITY_HEADER_BUF_REMAIN_SIZE = 0x01,
-	INFO_REG_NUM,
-} PATCH_IMAGE_INFO_REG_NAME;
-
-typedef enum {
+enum {
 	OPCODE_PATCH_IMAGE = 0x01,
-} SECTION_OPCODE;
+	OPCODE_PATCH_IMAGE_KR4, /* start from smartplus */
+};
 
 struct SECTION_NODE {
 	struct list_head list;
-	bool new_section_check;
-	uint8_t priority;
-	uint16_t cur_index;
-	uint16_t end_index;
-	uint8_t last_pkt;
-	uint32_t reg_addr[INFO_REG_NUM];
-	uint32_t reg_value[INFO_REG_NUM];
-	uint32_t image_len;
-	uint8_t *image_payload;
-	uint32_t sent_image_len;
+	uint8_t index;
+	uint32_t length;
+	uint8_t *payload;
+	uint16_t image_id;  /* always 0 when opcode=OPCODE_PATCH_IMAGE */
+	uint8_t config_rule;/* always 0 when opcode=OPCODE_PATCH_IMAGE */
+	uint8_t need_config;/* always 0 when opcode=OPCODE_PATCH_IMAGE */
 };
 
-struct PATCH_INFO {
-	uint32_t fw_len;
-	uint32_t sent_fw_len;
-	uint8_t section_cnt;
-	uint8_t *config_buf;
-	uint16_t config_len;
-	uint16_t sent_config_len;
-	uint8_t *patch_buf;
-	uint32_t patch_len;
-	struct SECTION_NODE head_node;
-	struct SECTION_NODE *security_node;
-};
-
-static struct PATCH_INFO *patch_info = NULL;
-static uint8_t patch_key_id = 0;
-
-static uint8_t hci_vendor_read(uint32_t addr, uint32_t *value)
-{
-	/* OpCode: 0xFC61, Data Len: Cmd(8), Event(10) */
-	uint16_t opcode = 0xFC61;
-	uint8_t buf_raw[RESERVE_LEN + 10];
-	uint8_t *buf = buf_raw + RESERVE_LEN;
-
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
-	buf[2] = (uint8_t)(5);
-	buf[3] = (uint8_t)(0x21);
-	for (uint8_t i = 0; i < 4; i++) {
-		buf[4 + i] = (uint8_t)(addr >> (8 * i));
-	}
-
-	BT_DUMPD("hci_vendor_read HCI CMD: ", buf, buf[2] + 3);
-
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 8, true)) {
-		return HCI_FAIL;
-	}
-
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
-
-	LE_TO_UINT32(*value, &buf[6]);
-
-	return HCI_SUCCESS;
-}
+struct SECTION_NODE section_head = {0};
 
 static uint8_t hci_vendor_write(uint32_t addr, uint32_t value)
 {
 	/* OpCode: 0xFC62, Data Len: Cmd(12), Event(5) */
-	uint16_t opcode = 0xFC62;
 	uint8_t buf_raw[RESERVE_LEN + 12];
 	uint8_t *buf = buf_raw + RESERVE_LEN;
 
-	buf[0] = (uint8_t)(opcode >> 0);
-	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(9);
 	buf[3] = (uint8_t)(0x21);
 	for (uint8_t i = 0; i < 4; i++) {
@@ -115,69 +55,22 @@ static uint8_t hci_vendor_write(uint32_t addr, uint32_t value)
 
 	BT_DUMPD("hci_vendor_write HCI CMD: ", buf, buf[2] + 3);
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 12, true)) {
-		return HCI_FAIL;
-	}
-
-	/* Check Resp: OpCode and Status */
-	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-		return HCI_FAIL;
-	}
-
-	return HCI_SUCCESS;
+	return hci_sa_send_cmd_sync(0xFC62, buf, 12);
 }
 
-static void _insert_patch_queue(struct list_head *head, struct SECTION_NODE *p_node)
+static uint32_t _parse_section(uint8_t *section)
 {
-	struct list_head *pos, *next;
-	struct SECTION_NODE *node;
-
-	if (!head || !p_node) {
-		return;
-	}
-
-	list_for_each_safe(pos, next, head) {
-		node = list_entry(pos, struct SECTION_NODE, list);
-		if (node->priority >= p_node->priority) {
-			break;
-		}
-	}
-
-	__list_add(&p_node->list, pos->prev, pos);
-}
-
-static void _select_security_section_node(struct SECTION_NODE **dest_node, struct SECTION_NODE *p_node)
-{
-	if (!p_node) {
-		return;
-	}
-
-	if ((p_node->reg_value[INFO_REG_SECURITY_HEADER_BUF_REMAIN_SIZE] != 0) &&
-		(p_node->reg_addr[INFO_REG_SECURITY_HEADER_BUF_REMAIN_SIZE] != 0) &&
-		(p_node->reg_addr[INFO_REG_SECURITY_HEADER_BUF_REMAIN_SIZE] != 0xffffffff) &&
-		((*dest_node == NULL) || (p_node->priority > (*dest_node)->priority))) {
-		*dest_node = p_node;
-	}
-}
-
-static uint32_t _parse_patch_image(uint8_t *p_payload)
-{
-	struct PATCH_INFO *info = patch_info;
-	struct SECTION_NODE *node;
-	uint8_t *position;
-	uint16_t chip_id;
+	struct SECTION_NODE *node, *p, *n;
 	uint8_t ic_cut, key_id, ota_en;
-	uint64_t temp_reg_addr, temp_reg_value, temp_image_len;
-	uint32_t total_len;
+	uint32_t length;
 
-	position = p_payload;
-	LE_TO_UINT16(chip_id, position);
-	ic_cut = *(position + sizeof(chip_id));
-	key_id = *(position + sizeof(chip_id) + sizeof(ic_cut));
-	ota_en = *(position + sizeof(chip_id) + sizeof(ic_cut) + sizeof(key_id));
+	/* ChipID(2) ICcut(1) KeyID(1) OTA(1) ImageID(2) CfgRule(1) NeedCfg(1) */
+	ic_cut = section[2];
+	key_id = section[3];
+	ota_en = section[4];
 
-	if (chip_id != HCI_PATCH_PROJECT_ID || key_id != patch_key_id || ota_en != 0) {
-		BT_LOGE("Mismatch chip id / key id / ota en!\r\n");
+	if (key_id != 0 || ota_en != 0) {
+		BT_LOGE("Mismatch key id / ota en!\r\n");
 		return 0;
 	}
 
@@ -187,15 +80,9 @@ static uint32_t _parse_patch_image(uint8_t *p_payload)
 		return 0;
 	}
 
-	if (info->section_cnt >= 64) {
-		BT_LOGE("Section number exceed 64!\r\n");
-		return 0;
-	}
-
-	position += HCI_PATCH_IMAGE_INFO_LEN;
-	LE_TO_UINT64(temp_image_len, position);
-	if (temp_image_len == 0) {
-		/* Drop section whose image_len is 0 */
+	LE_TO_UINT32(length, section + HCI_PATCH_IMAGE_INFO_LEN);
+	if (length == 0) {
+		/* Drop section whose length is 0 */
 		BT_LOGD("Section data length is 0.\r\n");
 		return 0;
 	}
@@ -206,299 +93,204 @@ static uint32_t _parse_patch_image(uint8_t *p_payload)
 		return 0;
 	}
 	memset(node, 0, sizeof(struct SECTION_NODE));
-	info->section_cnt++;
 
-	node->image_len = (uint32_t)(temp_image_len);
-	node->image_payload = position + sizeof(temp_image_len);
+	node->length = length;
+	LE_TO_UINT16(node->image_id, section + 5);
+	node->config_rule = section[7];
+	node->need_config = section[8];
+	node->index = section[HCI_PATCH_IMAGE_INFO_LEN - 1];
+	node->payload = section + HCI_PATCH_IMAGE_INFO_LEN + 8;
 
-	position -= sizeof(node->priority);
-	node->priority = *(position);
-	for (int8_t i = (INFO_REG_NUM - 1); i >= 0; i--) {
-		position -= sizeof(temp_reg_value);
-		LE_TO_UINT64(temp_reg_value, position);
-		node->reg_value[i] = (uint32_t)(temp_reg_value);
-
-		position -= sizeof(temp_reg_addr);
-		LE_TO_UINT64(temp_reg_addr, position);
-		node->reg_addr[i] = (uint32_t)(temp_reg_addr);
-	}
-
-	total_len = (info->section_cnt == 1) ? node->image_len + info->config_len : node->image_len;
-	node->cur_index = 1;
-	node->end_index = (total_len - 1) / HCI_PATCH_FRAG_SIZE + 1;
-	node->last_pkt = total_len % HCI_PATCH_FRAG_SIZE;
-	if (node->last_pkt == 0) {
-		node->last_pkt = HCI_PATCH_FRAG_SIZE;
-	}
-
-	_insert_patch_queue(&info->head_node.list, node);
-
-	_select_security_section_node(&info->security_node, node);
-
-	return node->image_len;
-}
-
-static uint32_t _parse_sections(uint8_t *p_buf)
-{
-	uint8_t *p_section;
-	uint32_t section_num, opcode, i;
-	uint32_t fw_len = 0;
-	uint64_t payload_len;
-
-	LE_TO_UINT32(section_num, p_buf);
-
-	if (section_num == 0) {
-		BT_LOGE("Section num error!\r\n");
-		return 0;
-	}
-
-	p_section = p_buf + sizeof(section_num);
-	for (i = 0; i < section_num; i++) {
-		LE_TO_UINT32(opcode, p_section);
-		LE_TO_UINT64(payload_len, p_section + sizeof(opcode));
-
-		switch (opcode) {
-		case OPCODE_PATCH_IMAGE:
-			fw_len += _parse_patch_image(p_section + sizeof(opcode) + sizeof(payload_len));
-			break;
-		default:
-			BT_LOGE("Unknown opcode 0x%x\r\n", opcode);
+	/* insert section to list in image, sorted by index */
+	list_for_each_entry_safe(p, n, &section_head.list, list, struct SECTION_NODE) {
+		if ((p->image_id > node->image_id) || (p->image_id == node->image_id && p->index > node->index)) {
 			break;
 		}
-		p_section += sizeof(opcode) + sizeof(payload_len) + payload_len;
 	}
+	list_add_tail(&node->list, &p->list);
 
-	return fw_len;
+	return node->length;
 }
 
-static uint8_t _get_patch_info(uint8_t *p_patch, uint32_t patch_len)
+static uint8_t hci_patch_parse(uint8_t *p_patch, uint32_t *p_opcode)
 {
-	struct PATCH_INFO *info = patch_info;
-	uint32_t version_date, version_time, reserved;
-	uint32_t fw_len;
-	uint8_t sig_len = 8;
+	uint32_t version_date, version_time;
+	uint8_t *p_section;
+	uint32_t fw_len = 0, section_num, opcode, payload_len, i;
 
-	info->patch_buf = p_patch;
-	info->patch_len = patch_len;
-
-	LE_TO_UINT32(version_date, info->patch_buf + sig_len);
-	LE_TO_UINT32(version_time, info->patch_buf + sig_len + sizeof(version_date));
+	/* signature(8) data(4) time(4) rsvd(4) SectionNum(4) */
+	LE_TO_UINT32(version_date, p_patch + 8);
+	LE_TO_UINT32(version_time, p_patch + 12);
 	BT_LOGA("FW Version: %08d%06d\r\n", version_date, version_time);
 
-	hci_platform_get_config(&info->config_buf, &info->config_len);
+	LE_TO_UINT32(section_num, p_patch + 20);
+	if (section_num == 0) {
+		BT_LOGE("Section num 0!\r\n");
+		return HCI_FAIL;
+	}
 
-	fw_len = _parse_sections(info->patch_buf + sig_len + sizeof(version_date) + sizeof(version_time) + sizeof(reserved));
+	p_section = p_patch + 24;
+	INIT_LIST_HEAD(&section_head.list);
+	/* opcode(4) length(8) playload(length) */
+	for (i = 0; i < section_num; i++) {
+		LE_TO_UINT32(opcode, p_section);
+		if (i == 0) {
+			*p_opcode = opcode;
+			BT_LOGD("Section opcode %d!\r\n", opcode);
+		} else if (*p_opcode != opcode) {
+			BT_LOGE("opcode mismatch %d %d\r\n", *p_opcode, opcode);
+			return HCI_FAIL;
+		}
+
+		fw_len += _parse_section(p_section + 12);
+		LE_TO_UINT32(payload_len, p_section + 4);
+		p_section += (12 + payload_len);
+	}
+
 	if (fw_len == 0) {
 		BT_LOGE("Available patch not found!\r\n");
 		return HCI_IGNORE;
 	}
 	BT_LOGA("FW Length: %d\r\n", fw_len);
 
-	info->fw_len = fw_len;
+	return HCI_SUCCESS;
+}
+
+static uint8_t _send_payload(uint8_t *data, uint32_t len)
+{
+	uint8_t buf_raw[RESERVE_LEN + 256];
+	uint8_t *cmd = buf_raw + RESERVE_LEN;
+	uint8_t send, idx = 0;
+	uint32_t remain = len;
+
+	while (remain) {
+		idx++;
+		idx = (idx & 0x80) ? 1 : idx; /* valid range 1~0x7F */
+		send = (remain < HCI_PATCH_FRAG_SIZE) ? remain : HCI_PATCH_FRAG_SIZE;
+		memcpy(&cmd[4], data + len - remain, send);
+		remain -= send;
+		cmd[2] = send + 1;
+		cmd[3] = idx;
+		if (HCI_SUCCESS != hci_sa_send_cmd_sync(0xFC20, cmd, send + 4)) {
+			return HCI_FAIL;
+		}
+	}
 
 	return HCI_SUCCESS;
 }
 
-static uint8_t hci_patch_download_init_parse(uint8_t *p_patch, uint32_t patch_len)
+static uint8_t _write_regs(struct SECTION_NODE *node)
 {
-	uint8_t ret;
+	uint32_t addr, value;
+	int i;
 
-	patch_info = osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct PATCH_INFO));
-	if (!patch_info) {
-		return HCI_FAIL;
-	}
-
-	memset(patch_info, 0, sizeof(struct PATCH_INFO));
-	INIT_LIST_HEAD(&patch_info->head_node.list);
-
-	/* Parse patch and get info */
-	ret = _get_patch_info(p_patch, patch_len);
-	if (HCI_SUCCESS != ret) {
-		return ret;
-	}
-
-	return HCI_SUCCESS;
-}
-
-static void hci_patch_download_done(void)
-{
-	struct list_head *pos, *next;
-	struct SECTION_NODE *node;
-
-	list_for_each_safe(pos, next, &patch_info->head_node.list) {
-		node = list_entry(pos, struct SECTION_NODE, list);
-		list_del_init(pos);
-		osif_mem_free(node);
-	}
-
-	if (patch_info) {
-		osif_mem_free(patch_info);
-	}
-	patch_info = NULL;
-}
-
-static uint8_t hci_patch_get_cmd_buf(uint32_t (*reg_arr)[2], bool *new_section, uint8_t *cmd_buf)
-{
-	struct PATCH_INFO *info = patch_info;
-	struct SECTION_NODE *node;
-	struct list_head *pos, *next;
-	uint8_t *data_buf = &cmd_buf[2];  /* cmd_buf[0]: len, cmd_buf[1]: index */
-	uint8_t remain_len, sending_len;
-
-	/* Send each section image frag */
-	list_for_each_safe(pos, next, &info->head_node.list) {
-		node = list_entry(pos, struct SECTION_NODE, list);
-		if (node->new_section_check == false) {
-			for (uint8_t i = 0; i < INFO_REG_NUM; i++) {
-				reg_arr[i][REG_ADDR] = node->reg_addr[i];
-				reg_arr[i][REG_VALUE] = node->reg_value[i];
-			}
-			node->new_section_check = true;
-			*new_section = true;
-		}
-
-		if (node->cur_index > node->end_index) {
-			/* Section sent completed when cur_index greater than end_index */
-			continue;
-		} else if (node->cur_index == node->end_index) {
-			cmd_buf[0] = node->last_pkt + 1;
-		} else {
-			cmd_buf[0] = HCI_PATCH_FRAG_SIZE + 1;
-		}
-		TRIM_INDEX(cmd_buf[1], node->cur_index);
-
-		remain_len = cmd_buf[0] - 1;
-		if (node->sent_image_len + remain_len <= node->image_len) {
-			sending_len = remain_len;
-			memcpy(data_buf, node->image_payload + node->sent_image_len, sending_len);
-			info->sent_fw_len += sending_len;
-			node->sent_image_len += sending_len;
-			remain_len -= sending_len;
-		} else {
-			/* For first section last pkt, need add config data */
-			sending_len = node->image_len - node->sent_image_len;
-			memcpy(data_buf, node->image_payload + node->sent_image_len, sending_len);
-			info->sent_fw_len += sending_len;
-			node->sent_image_len += sending_len;
-			remain_len -= sending_len;
-
-			memcpy(data_buf + sending_len, info->config_buf + info->sent_config_len, remain_len);
-			info->sent_config_len += remain_len;
-
-			if (node->image_len != node->sent_image_len) {
-				BT_LOGE("Section node has not been sent completely! image_len = %d, sent_image_len = %d\r\n", node->image_len, node->sent_image_len);
+	/* select security node, which is needed after all sections are downloaded */
+	for (i = SECTION_REG_NUM - 1; i >= 0; i--) {
+		LE_TO_UINT32(addr, REG_ADDR_POSITION(node->payload, i));
+		if (addr != 0 && addr != 0xffffffff) {
+			LE_TO_UINT32(value, REG_VALUE_POSITION(node->payload, i));
+			BT_LOGD("Write regs(%d): addr 0x%08x, value 0x%x\r\n", i, addr, value);
+			if (HCI_SUCCESS != hci_vendor_write(addr, value)) {
 				return HCI_FAIL;
 			}
 		}
-		break;
-	}
-
-	if (node->cur_index > node->end_index) {
-		/* Each section sent completed when exit the loop, last pkt need be sent */
-		cmd_buf[0] = 1;
-		cmd_buf[1] = 0x80;
-
-		if (info->sent_fw_len != info->fw_len) {
-			BT_LOGE("Firmware has not been sent completely! fw_len = %d, sent_fw_len = %d\r\n", info->fw_len, info->sent_fw_len);
-			return HCI_FAIL;
-		}
-
-		if (info->sent_config_len != info->config_len) {
-			BT_LOGE("Config data has not been sent completely! config_len = %d, sent_config_len = %d\r\n", info->config_len, info->sent_config_len);
-			return HCI_FAIL;
-		}
-	} else {
-		node->cur_index++;
 	}
 
 	return HCI_SUCCESS;
 }
 
-static bool hci_patch_found_security_section(uint32_t *reg_addr, uint32_t *reg_value)
+static void _write_reg_for_security_verify(void)
 {
-	struct SECTION_NODE *node = patch_info->security_node;
+	struct SECTION_NODE *node, *n, *security_node = NULL;
+	uint32_t addr, value, temp;
 
-	if (node == NULL) {
-		return false;
+	/* select security node, which is needed after all sections are downloaded */
+	list_for_each_entry_safe(node, n, &section_head.list, list, struct SECTION_NODE) {
+		LE_TO_UINT32(addr, REG_ADDR_POSITION(node->payload, SECURITY_HEADER_BUF_REMAIN_SIZE));
+		LE_TO_UINT32(value, REG_VALUE_POSITION(node->payload, SECURITY_HEADER_BUF_REMAIN_SIZE));
+		if (addr != 0 && addr != 0xffffffff && value != 0) {
+			if ((security_node == NULL) || (node->index > security_node->index)) {
+				security_node = node;
+			}
+		}
 	}
 
-	*reg_addr = (uint32_t)(node->reg_addr[INFO_REG_PATCH_START_ADDRESS]);
-	*reg_value = (uint32_t)(node->reg_value[INFO_REG_PATCH_START_ADDRESS] + node->image_len - node->reg_value[INFO_REG_SECURITY_HEADER_BUF_REMAIN_SIZE]);
+	if (security_node) {
+		LE_TO_UINT32(addr, REG_ADDR_POSITION(security_node->payload, PATCH_START_ADDRESS));
+		LE_TO_UINT32(temp, REG_VALUE_POSITION(security_node->payload, PATCH_START_ADDRESS));
+		value = temp + security_node->length;
+		LE_TO_UINT32(temp, REG_VALUE_POSITION(security_node->payload, SECURITY_HEADER_BUF_REMAIN_SIZE));
+		value -= temp;
 
-	return true;
+		hci_vendor_write(addr, value);
+	}
 }
 
-uint8_t hci_patch_download_v3(uint16_t opcode, uint8_t *p_patch, uint32_t patch_len)
+uint8_t hci_patch_download_v3(uint8_t *p_patch)
 {
-	/* OpCode: 0xFC20, Data Len: Cmd(256), Event(7) */
-	uint8_t ret = HCI_SUCCESS;
-	uint8_t buf_raw[RESERVE_LEN + 256];
-	uint8_t *buf = buf_raw + RESERVE_LEN;
-	bool new_section;
-	uint32_t reg_arr[INFO_REG_NUM][2];
-	uint32_t sec_reg_addr, sec_reg_value;
-	uint32_t key_id_addr = HCI_BT_REG_KEY_ID, key_id_value;
+	uint8_t ret = HCI_FAIL;
+	struct SECTION_NODE *node, *n;
+	uint8_t cmd[16];
+	bool add_config = true;
+	uint8_t *cfg;
+	uint16_t cfg_len;
+	uint32_t opcode, image_total_len = 0;
 
-	ret = hci_vendor_read(key_id_addr, &key_id_value);
-	if ((HCI_SUCCESS != ret) || (key_id_value != 0)) {
-		return HCI_FAIL;
-	}
-	patch_key_id = key_id_value;
-
-	ret = hci_patch_download_init_parse(p_patch, patch_len);
-	if (HCI_SUCCESS != ret) {
+	if (HCI_SUCCESS != hci_patch_parse(p_patch, &opcode)) {
 		goto dl_patch_done;
 	}
 
-	while (1) {
-		buf[0] = (uint8_t)(opcode >> 0);
-		buf[1] = (uint8_t)(opcode >> 8);
-		new_section = false;
-		memset(reg_arr, 0, sizeof(reg_arr));
-
-		ret = hci_patch_get_cmd_buf(reg_arr, &new_section, &buf[2]);
-		if (HCI_SUCCESS != ret) {
+	list_for_each_entry_safe(node, n, &section_head.list, list, struct SECTION_NODE) {
+		BT_LOGD("download: imageID 0x%x, index %d, length %d, cfgRule %d, needCfg %d, \r\n", node->image_id, node->index, node->length, node->config_rule,
+				node->need_config);
+		/* write registers if address is valid */
+		if (HCI_SUCCESS != _write_regs(node)) {
 			goto dl_patch_done;
 		}
-
-		if (new_section) {
-			for (uint8_t i = 0; i < INFO_REG_NUM; i++) {
-				if (reg_arr[i][REG_ADDR] != 0 && reg_arr[i][REG_ADDR] != 0xffffffff) {
-					ret = hci_vendor_write(reg_arr[i][REG_ADDR], reg_arr[i][REG_VALUE]);
-					if (HCI_SUCCESS != ret) {
-						goto dl_patch_done;
-					}
-				}
+		/* send section content to controller */
+		if (HCI_SUCCESS != _send_payload(node->payload, node->length)) {
+			goto dl_patch_done;
+		}
+		/* send config data
+		 * config_rule & image_id are always 0 when opcode = 1 */
+		if ((opcode == OPCODE_PATCH_IMAGE && add_config) || (node->config_rule && node->need_config)) {
+			add_config = false;
+			hci_platform_get_config(&cfg, &cfg_len); /* ToDo: get config by image id */
+			if (HCI_SUCCESS != _send_payload(cfg, cfg_len)) {
+				goto dl_patch_done;
 			}
 		}
-
-		if (buf[2] == 1 && buf[3] & 0x80) {
-			if (hci_patch_found_security_section(&sec_reg_addr, &sec_reg_value)) {
-				ret = hci_vendor_write(sec_reg_addr, sec_reg_value);
-				if (HCI_SUCCESS != ret) {
+		/* send 0xfc20 to indiacate all sections with this image ID are sent */
+		if (opcode == OPCODE_PATCH_IMAGE_KR4) {
+			image_total_len += node->length;
+			if (node->image_id != list_entry(node->list.next, struct SECTION_NODE, list)->image_id) {
+				BT_LOGA("FW Image(0x%04x) Length %d\r\n", node->image_id, image_total_len);
+				image_total_len = 0;
+				cmd[3] = 1;
+				cmd[4] = 0x80;
+				if (HCI_SUCCESS != hci_sa_send_cmd_sync(0xFC20, cmd + 1, 4)) {
 					goto dl_patch_done;
 				}
 			}
 		}
+	}
 
-		ret = hci_sa_send(HCI_CMD, buf, buf[2] + 3, true);
-		if (HCI_SUCCESS != ret) {
-			goto dl_patch_done;
-		}
-
-		/* Check Resp: OpCode and Status */
-		if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-			goto dl_patch_done;
-		}
-
-		/* Check the last download finished info */
-		if (buf[6] == 0x80) {
-			break;
-		}
+	/* Last step: trigger controller to verify */
+	if (opcode == OPCODE_PATCH_IMAGE) {
+		_write_reg_for_security_verify();
+		cmd[3] = 1;
+		cmd[4] = 0x80;
+		ret = hci_sa_send_cmd_sync(0xFC20, cmd + 1, 4);
+	} else if (opcode == OPCODE_PATCH_IMAGE_KR4) {
+		cmd[3] = 2;
+		cmd[4] = 0x3;
+		cmd[5] = 0xB2;
+		ret = hci_sa_send_cmd_sync(0xFC8E, cmd + 1, 5);
 	}
 
 dl_patch_done:
-	hci_patch_download_done();
-
+	list_for_each_entry_safe(node, n, &section_head.list, list, struct SECTION_NODE) {
+		osif_mem_free(node);
+	}
 	return ret;
 }

@@ -282,6 +282,10 @@ static int whc_fullmac_host_scan_ops(struct wiphy *wiphy, struct cfg80211_scan_r
 
 	/* Add fake callback to inform rots give scan indicate when scan done. */
 	scan_param->scan_user_callback = (s32(*)(u32,  void *))0xffffffff;
+	if (request->wdev->iftype == NL80211_IFTYPE_AP) {
+		scan_param->scan_report_acs_user_callback = (s32(*)(struct rtw_acs_mntr_rpt *))0xffffffff;
+	}
+
 	scan_param->ssid = NULL;
 #ifdef CONFIG_P2P
 	scan_param->scan_user_data = (void *)(uintptr_t)whc_fullmac_host_p2p_get_wdex_idx(wdev); /*for later cfg80211 indicate*/

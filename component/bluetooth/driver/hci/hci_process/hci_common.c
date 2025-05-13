@@ -28,34 +28,6 @@ uint8_t hci_patch_get_chipid(void)
 	return patch_chip_id;
 }
 
-static uint8_t _get_patch_project_id(uint8_t *p_buf)
-{
-	uint8_t opcode;
-	uint8_t length;
-	uint8_t data;
-
-	opcode = *(--p_buf);
-
-	while (opcode != 0xFF) {
-		length = *(--p_buf);
-		if (opcode == 0x00) {
-			if (length != 1) {
-				BT_LOGE("Project ID length error!\r\n");
-				return 0xFF;
-			} else {
-				data = *(--p_buf);
-				return data;
-			}
-		} else {
-			p_buf -= length;
-			opcode = *(--p_buf);
-		}
-	}
-
-	BT_LOGE("Project ID not found!\r\n");
-	return 0xFF;
-}
-
 uint8_t hci_patch_get_patch_version(uint8_t **pp_patch_buf, uint32_t *p_patch_len)
 {
 	const uint8_t patch_sig_v1[] = {0x52, 0x65, 0x61, 0x6C, 0x74, 0x65, 0x63, 0x68}; /* V1 signature: Realtech */
@@ -63,7 +35,6 @@ uint8_t hci_patch_get_patch_version(uint8_t **pp_patch_buf, uint32_t *p_patch_le
 	const uint8_t patch_sig_v3[] = {0x42, 0x54, 0x4E, 0x49, 0x43, 0x30, 0x30, 0x33}; /* V3 signature: BTNIC003 */
 	const uint8_t ext_section_sig[] = {0x51, 0x04, 0xFD, 0x77};                      /* Extension section signature */
 	bool ext_section_check;
-	uint8_t project_id;
 	uint8_t *p_patch = NULL;
 	uint32_t patch_len;
 	uint8_t patch_version = PATCH_VERSION_INVALID;
@@ -92,11 +63,6 @@ uint8_t hci_patch_get_patch_version(uint8_t **pp_patch_buf, uint32_t *p_patch_le
 			} else if ((!memcmp(p_patch, patch_sig_v2, sizeof(patch_sig_v2))) &&
 					   (!memcmp(p_patch + patch_len - sizeof(ext_section_sig), ext_section_sig, sizeof(ext_section_sig)))) {
 				patch_version = PATCH_VERSION_V2;
-				project_id = _get_patch_project_id(p_patch + patch_len - sizeof(ext_section_sig));
-				if (project_id != HCI_PATCH_PROJECT_ID) {
-					BT_LOGE("Project ID 0x%02x check fail, No available patch!\r\n", project_id);
-					return PATCH_VERSION_INVALID;
-				}
 			} else {
 				return PATCH_VERSION_INVALID;
 			}
