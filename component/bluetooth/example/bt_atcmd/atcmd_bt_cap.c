@@ -840,7 +840,7 @@ static const cmd_table_t cap_commander_cmd_table[] = {
 	{"vocs",        atcmd_bt_vocs_client_act,               2, 6},
 #endif
 #if defined(RTK_BLE_AUDIO_AICS_SUPPORT) && RTK_BLE_AUDIO_AICS_SUPPORT
-	{"aics",        atcmd_bt_aics_client_act,               2, 5},
+	{"aics",        atcmd_bt_aics_client_act,               2, 6},
 #endif
 	{NULL,},
 };

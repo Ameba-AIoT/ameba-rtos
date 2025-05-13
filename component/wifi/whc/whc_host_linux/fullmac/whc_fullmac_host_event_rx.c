@@ -19,15 +19,10 @@ static void whc_fullmac_host_event_scan_report_indicate(struct event_priv_t *eve
 
 static void whc_fullmac_host_event_set_acs_info(u32 *param_buf)
 {
-	extern u8 chanel_idx_max;
-	extern u8 rtw_chnl_tbl[MAX_CHANNEL_NUM];
-	extern struct rtw_acs_mntr_rpt acs_mntr_rpt_tbl[MAX_CHANNEL_NUM];
-
 	u8 idx = 0;
 	struct rtw_acs_mntr_rpt *acs_rpt = (struct rtw_acs_mntr_rpt *)&param_buf[0];
 
 	if (acs_rpt->channel == 0) {
-		memset(acs_mntr_rpt_tbl, 0, sizeof(struct rtw_acs_mntr_rpt)*MAX_CHANNEL_NUM);
 		return;
 	}
 

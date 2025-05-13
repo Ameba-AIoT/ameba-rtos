@@ -212,9 +212,6 @@ struct wifi_user_conf {
 	/*! STA mode will periodically send null packet to AP to keepalive, unit: second. */
 	u8 keepalive_interval;
 
-	/*! Automatic channel selection.*/
-	u8 acs_en;
-
 	/*! 0: Disable R-mesh function, 1: Enable R-mesh function.*/
 	u8 wtn_en;
 

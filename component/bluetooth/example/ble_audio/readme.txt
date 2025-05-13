@@ -71,7 +71,24 @@ Generic LE Audio demo ATCMD:
     3.10 reception_start                                   AT+BLEBAP=reception_start,<bd_addr type>,<bd_addr>,<group_idx>
     3.11 reception_stop                                    AT+BLEBAP=reception_stop,<bd_addr type>,<bd_addr>,<group_idx>
     3.12 reception_remove                                  AT+BLEBAP=reception_remove,<bd_addr type>,<bd_addr>,<group_idx>
-
+AICS test
+    3.13 aics client get char value                                        AT+BLECAP=commander,aics,get_char,<conn_handle>,<srv_instance_id>
+    3.14 aics client get srv data                                          AT+BLECAP=commander,aics,get_srv,<conn_handle>,<srv_instance_id>
+        AICS client write opcode test(Must test after aics client get char value)
+    3.15 aics client write opcode:UNMUTE                                   AT+BLECAP=commander,aics,write,<conn_handle>,<srv_instance_id>,2
+    3.16 aics client write opcode:MUTE                                     AT+BLECAP=commander,aics,write,<conn_handle>,<srv_instance_id>,3
+    3.17 aics client write opcode by group:SET_AUTOMATIC_GAIN_MODE         AT+BLECAP=commander,aics,write,<conn_handle>,<srv_instance_id>,5
+    3.18 aics client write opcode:SET_MANUAL_GAIN_MODE                     AT+BLECAP=commander,aics,write,<conn_handle>,<srv_instance_id>,4
+    3.19 aics client write opcode:SET_GAIN_SETTING (Must adjust to SET_MANUAL_GAIN_MODE before test this cmd)
+                                                                           AT+BLECAP=commander,aics,write,<conn_handle>,<srv_instance_id>,1,<gaining_setting>
+        AICS client group write opcode test(Must test after aics client get char value)
+    3.20 aics client write opcode by group:UNMUTE                          AT+BLECAP=commander,aics,gwrite,0,<srv_instance_id>,2
+    3.21 aics client write opcode by group:MUTE                            AT+BLECAP=commander,aics,gwrite,0,<srv_instance_id>,3
+    3.22 aics client write opcode by group:SET_AUTOMATIC_GAIN_MODE         AT+BLECAP=commander,aics,gwrite,0,<srv_instance_id>,5
+    3.23 aics client write opcode by group:SET_MANUAL_GAIN_MODE            AT+BLECAP=commander,aics,gwrite,0,<srv_instance_id>,4
+    3.24 aics client write opcode by group:SET_GAIN_SETTING                  (Must adjust to SET_MANUAL_GAIN_MODE before test this cmd)
+                                                                           AT+BLECAP=commander,aics,gwrite,0,<srv_instance_id>,1,<gaining_setting>
+                                                                            e.g.AT+BLECAP=commander,aics,gwrite,0,0,1,20
 ##################################################################################
 #                                                                                #
 #                           PBP demo                                             #
