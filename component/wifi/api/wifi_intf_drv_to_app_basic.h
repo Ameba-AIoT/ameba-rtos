@@ -685,6 +685,7 @@ typedef struct _rtw_csa_parm_t {
 	unsigned char chl_switch_cnt;
 	unsigned char action_type;	/* 0: unicast csa action, 1: broadcast csa action, other values: disable transmit csa action */
 	unsigned char bc_action_cnt; /* indicate the number of broadcast csa actions to send for each beacon interval. only valid when action_type = 1*/
+	unsigned char chl_switch_mode;
 	ap_channel_switch_callback_t callback;
 } rtw_csa_parm_t;
 
