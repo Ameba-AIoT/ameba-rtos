@@ -2,7 +2,7 @@ if WLAN_MENU && !FULLMAC_HOST
     menu "CONFIG COEX"
         config COEX_MENU
             bool "Enable Coex"
-            default y if !AMEBAL2 && !AMEBASMARTPLUS && !AMEBAGREEN2
+            default y if !AMEBAL2 && !AMEBASMARTPLUS
 
         if COEX_MENU
             config BT_COEXIST
