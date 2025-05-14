@@ -409,6 +409,7 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *user_data
 {
 	struct mlme_priv_t *mlme_priv = &global_idev.mlme_priv;
 	u8 wlan_idx = 0;
+	unsigned int rtw_join_status_last = mlme_priv->rtw_join_status;
 
 	mlme_priv->rtw_join_status = join_status;
 
@@ -474,7 +475,12 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *user_data
 			complete(&mlme_priv->join_block_param->join_sema);
 		}
 		dev_dbg(global_idev.fullmac_dev, "[fullmac] --- %s --- join failed inform cfg80211.", __func__);
-		cfg80211_connect_result(global_idev.pndev[wlan_idx], NULL, NULL, 0, NULL, 0, WLAN_STATUS_UNSPECIFIED_FAILURE, GFP_ATOMIC);
+
+		if (rtw_join_status_last >= RTW_JOINSTATUS_ASSOCIATED) {
+			cfg80211_disconnected(global_idev.pndev[wlan_idx], 0, NULL, 0, 1, GFP_ATOMIC);
+		} else {
+			cfg80211_connect_result(global_idev.pndev[wlan_idx], NULL, NULL, 0, NULL, 0, WLAN_STATUS_UNSPECIFIED_FAILURE, GFP_ATOMIC);
+		}
 		return;
 	}
 }
