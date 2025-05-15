@@ -2,15 +2,15 @@
 
 * [English Version](./README.md)
 
-ameba-rtos是瑞昱官方推出的物联网开发框架，目前仅支持Linux操作系统。
+ameba-rtos是瑞昱官方推出的物联网开发框架，同时支持Linux和Windows操作系统。
 
 # 支持的芯片
 
-|芯片         |          master       |     release/v1.0       |
-|:----------- |:---------------------:| :---------------------:|
-|AmebaSmart   |![alt text][supported] | ![alt text][supported] |
-|AmebaLite    |![alt text][supported] | ![alt text][supported] |
-|AmebaDplus   |![alt text][supported] | ![alt text][supported] |
+|芯片         |          master       |     release/v1.0       |     release/v1.1       |
+|:----------- |:---------------------:| :---------------------:| :---------------------:|
+|AmebaSmart   |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+|AmebaLite    |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+|AmebaDplus   |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
 
 [supported]: https://img.shields.io/badge/-supported-green "supported"
 
@@ -28,16 +28,16 @@ ameba-rtos是瑞昱官方推出的物联网开发框架，目前仅支持Linux�
 
 # 快速参考
 
-详细的配置步骤请参考上面链接中的应用指南的**Build Environment**章节，这里仅仅提供项目开发过程中部分通用命令和工程配置的参考：
+详细的配置步骤请参考上面链接中的应用指南的[GCC 编译环境](https://ameba-aiot.github.io/ameba-iot-docs/freertos/cn/latest/rst_rtos/0_gcc_build_environment/0_gcc_build_index_cn.html)章节，这里仅仅提供项目开发过程中部分通用命令和工程配置的参考：
 
 ## 配置编译环境
 
-* 工具链默认安装在路径`/opt/rtk-toolchain`中，如果编译过程中出现"Error: No Toolchain in `/opt/rtk-toolchain/vsdk-10.3.1/linux/newlib`"的错误提示，请参考应用指南中的**Installing Toolchain**章节，获取更多详细的信息。
-* 目前仅支持Linux系统，要求Ubuntu 16.04 64位或更高版本。
-* 未来将支持Windows系统，使用VSCode插件进行编译。
-* 要求Python版本3.7或更高版本。执行命令`python --version`检查当前系统中的Python版本，如果出现"Command `python` not found"的错误提示，请参考应用指南中的**Preparing GCC Environment**章节安装Python3。如果仍出现错误，请执行命令`sudo ln -s /usr/bin/python3 /usr/bin/python`创建`/usr/bin/python3`映射到`/usr/bin/python`的符号链接。
+* 工具链默认安装在路径`/opt/rtk-toolchain`中，如果编译过程中出现"Error: No Toolchain in `/opt/rtk-toolchain/vsdk-10.3.1/linux/newlib`"的错误提示，请参考应用指南中的[安装工具链](https://ameba-aiot.github.io/ameba-iot-docs/freertos/cn/latest/rst_rtos/0_gcc_build_environment/1_gcc_build_environment_toprst_cn.html#install-toolchain)章节，获取更多详细的信息。
+* 支持Linux系统，要求Ubuntu 16.04 64位或更高版本。
+* 支持Windows系统，要求Windows 10 64位。
+* 要求Python版本3.7或更高版本。执行命令`python --version`检查当前系统中的Python版本，如果出现"Command `python` not found"的错误提示，请参考应用指南中的[准备GCC编译环境](https://ameba-aiot.github.io/ameba-iot-docs/freertos/cn/latest/rst_rtos/0_gcc_build_environment/1_gcc_build_environment_toprst_cn.html#gcc)章节安装Python3。如果仍出现错误，请执行命令`sudo ln -s /usr/bin/python3 /usr/bin/python`创建`/usr/bin/python3`映射到`/usr/bin/python`的符号链接。
 
-**注意:** 首次编译工程时，工具链默认从GitHub下载并安装。如果发现下载速度过慢或者下载失败，请执行命令`make toolchan URL=github`或者`make toolchain URL=aliyun`先下载好工具链。为提升下载速度，我们建议执行`make toolchain URL=aliyun`从阿里云服务器下载。
+**注意:** 首次编译工程时，工具链默认从GitHub下载并安装。如果发现下载速度过慢或者下载失败，请执行命令`./build.py -D USE_ALIYUN_URL=true`从阿里云服务器下载工具链。从阿里云服务器下载可以提升下载速度。
 
 ## 寻找项目
 
@@ -47,7 +47,7 @@ ameba-rtos所支持的芯片的项目命名规则为amebaxxx_gcc_project。
 
 ## 配置项目
 
-执行命令`make menuconfig`可打开一个基于文本的配置菜单，在这里可以对芯片的各个核进行配置。
+执行命令`./menuconfig.py`可打开一个基于文本的配置菜单，在这里可以对芯片的各个核进行配置。
 
 * General Config: 所有核共享的配置选项。
 * Network Config: 各个核之间互斥的配置。
@@ -55,19 +55,19 @@ ameba-rtos所支持的芯片的项目命名规则为amebaxxx_gcc_project。
 
 ## 编译项目
 
-* 对于编译默认的固件，直接执行命令`make all`。
-* 对于编译带有例程的固件，执行命令`make all EXAMPLE=xxx`，每个例程的详细步骤请参考[example](component/example)。
-* 对于编译MP固件，请参考应用指南中的**How to Build MP Image**章节。
+* 对于编译默认的固件，直接执行命令`./build.py`。
+* 对于编译带有例程的固件，执行命令`./build.py -a xxx`，每个例程的详细步骤请参考[example](component/example)。
+* 对于编译MP固件，请参考应用指南中的[MP固件](https://ameba-aiot.github.io/ameba-iot-docs/freertos/cn/latest/rst_rtos/6_mass_production/1_mp_toprst_cn.html)章节。
 
 编译结束之后，将会生成引导程序固件和应用程序固件。
 
-**注意:** 如果编译失败，请执行命令`make clean`清理工程之后重新编译。
+**注意:** 如果编译失败，请执行命令`./build.py -c`清理工程之后重新编译。
 
 ## 固件烧录
 
 当编译结束之后，使用工具[AmebaImageTool](tools/ameba/ImageTool/AmebaImageTool.exe)将固件烧写到芯片中：
 
-对于烧写工具的详细使用请参考应用指南的**Image Tool**章节，以下仅列出通用配置。
+对于烧写工具的详细使用请参考应用指南的[Image Tool](https://ameba-aiot.github.io/ameba-iot-docs/freertos/cn/latest/rst_rtos/0_tools/1_image_tool_toprst_cn.html)章节，以下仅列出通用配置。
 
 * 仅支持Windows系统，包括WinXP，Win7或以上版本，需要安装微软插件.NET Framework 4.0。
 * 通过USB线将芯片和电脑连接。
