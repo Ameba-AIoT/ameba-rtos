@@ -174,7 +174,7 @@ u32 CHIPEN_GetINT(void)
   */
 u32 BOOT_Reason(void)
 {
-	return (u32) HAL_READ16(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_REASON_SW);
+	return (u32)(HAL_READ16(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_REASON_SW) & 0xFFFF);
 }
 
 /**
@@ -199,4 +199,6 @@ void System_Reset(void)
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_SW_RST_CTRL, Trig);
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_SW_RST_TRIG, SYS_RESET_TRIG);
 
+	/* wait for reset */
+	while (1);
 }
