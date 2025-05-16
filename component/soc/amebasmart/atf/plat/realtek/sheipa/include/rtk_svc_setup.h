@@ -8,5 +8,8 @@
 
 /* SMC function IDs for Standard Service queries */
 #define RTK_SMC_TEST		0x82000001
+#if defined(CONFIG_MATTER_SECURE) && (CONFIG_MATTER_SECURE == 1)
+#include <matter_rtk_svc_setup.h>
+#endif
 
 #endif /* BSEC_SVC_H */
