@@ -34,7 +34,7 @@ static int usbd_uac_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
 static int usbd_uac_handle_ep0_data_out(usb_dev_t *dev);
 static int usbd_uac_handle_sof(usb_dev_t *dev);
-static void usbd_uac_status_changed(usb_dev_t *dev, u8 status);
+static void usbd_uac_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 #if UABD_UAC_DESC_DUMP
 static int usbd_uac_desc_dump(u8 *pbuf, int len);
 #endif
@@ -665,7 +665,6 @@ static int usbd_uac_set_config(usb_dev_t *dev, u8 config)
 
 	cdev->dev = dev;
 	cdev->alt_setting = 0U;
-	cdev->is_ready = 1U;
 
 	if (cdev->cb->set_config != NULL) {
 		cdev->cb->set_config();
@@ -686,8 +685,6 @@ static int usbd_uac_clear_config(usb_dev_t *dev, u8 config)
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 
 	UNUSED(config);
-
-	cdev->is_ready = 0U;
 
 	/* DeInit ISOC IN EP */
 	if (usbd_uac_ep_enable(&(cdev->cb->in))) {
@@ -1275,21 +1272,18 @@ static u8 *usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_spe
 /**
   * @brief  USB attach status change
   * @param  dev: USB device instance
-  * @param  config: USB USB attach status
+  * @param  old_status: USB old attach status
+  * @param  status: USB attach status
   * @retval void
   */
-static void usbd_uac_status_changed(usb_dev_t *dev, u8 status)
+static void usbd_uac_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 
 	UNUSED(dev);
 
-	if (status == USBD_ATTACH_STATUS_DETACHED) {
-		cdev->is_ready = 0U;
-	}
-
 	if (cdev->cb->status_changed) {
-		cdev->cb->status_changed(status);
+		cdev->cb->status_changed(old_status, status);
 	}
 }
 
@@ -1457,8 +1451,6 @@ int usbd_uac_deinit(void)
 	cdev->isoc_dump_thread = 0;
 #endif
 
-	cdev->is_ready = 0U;
-
 	if (cdev->cb != NULL) {
 		if (cdev->cb->deinit != NULL) {
 			cdev->cb->deinit();
@@ -1489,8 +1481,9 @@ int usbd_uac_deinit(void)
 int usbd_uac_transmit_data(u8 *buf, u16 len)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
+	usb_dev_t *dev = cdev->dev;
 
-	if (!cdev->is_ready) {
+	if (!dev->is_ready) {
 		return HAL_ERR_HW;
 	}
 
@@ -1514,11 +1507,12 @@ int usbd_uac_transmit_data(u8 *buf, u16 len)
 int usbd_uac_receive_data(void)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
+	usb_dev_t *dev = cdev->dev;
 	usbd_uac_buf_ctrl_t *pbuf_ctrl = &(cdev->uac_isoc_out);
 	usbd_uac_buf_t *p_buf = NULL;
 
-	if (!cdev->is_ready) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "State %d err\n", cdev->is_ready);
+	if (!dev->is_ready) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "State %d err\n", dev->is_ready);
 		return HAL_ERR_PARA;
 	}
 

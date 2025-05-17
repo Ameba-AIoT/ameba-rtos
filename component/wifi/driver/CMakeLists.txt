@@ -12,6 +12,8 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # You may use if-else condition to set or update predefined variable above
 
 
+ameba_list_append(public_definitions DM_ODM_SUPPORT_TYPE=32)
+
 ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/halcommon
@@ -183,7 +185,7 @@ endif()
 
 #WARNING: Fixed section, DO NOT change!
 ameba_global_include(${public_includes})
-ameba_global_define(${public_defines})
+ameba_global_define(${public_definitions})
 ameba_global_library(${public_libraries}) #default: whole-archived
 
 ##########################################################################################

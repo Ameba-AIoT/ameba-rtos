@@ -73,7 +73,16 @@ u8 whc_sdio_host_rpwm_notify(struct whc_sdio *priv, enum RPWM2_EVENT event)
 	u8 old_state = priv->dev_state;
 	u8 ret = true, fw_ready;
 
+#ifdef CONFIG_AMEBADPLUS
+	/* toggele bit inverse to trigger a RPWM int in DP */
 	rpwm2 = rtw_read16(priv, SDIO_REG_HRPWM2) & RPWM2_TOGGLE_BIT;	// get the toggle bit
+	/* inverse toggle bit */
+	rpwm2 = rpwm2 ^ RPWM2_TOGGLE_BIT;
+#else
+	/* host write 1 to trigger interrupt to device, cleared by device */
+	rpwm2 = RPWM2_TOGGLE_BIT;
+#endif
+
 	switch (event) {
 	case RPWM2_PWR_SUSPEND:
 		if (priv->dev_state == PWR_STATE_SLEEP) {
@@ -105,8 +114,6 @@ u8 whc_sdio_host_rpwm_notify(struct whc_sdio *priv, enum RPWM2_EVENT event)
 		goto exit;
 	}
 
-	/* inverse toggle bit */
-	rpwm2 = rpwm2 ^ RPWM2_TOGGLE_BIT;
 	rtw_write16(priv, SDIO_REG_HRPWM2, rpwm2);
 
 	/* wait for device response */
@@ -142,12 +149,12 @@ int whc_sdio_host_suspend_common(struct whc_sdio *priv)
 	/* set wowlan_state, stop schedule rx/tx work */
 	global_idev.wowlan_state = 1;
 	netif_tx_stop_all_queues(global_idev.pndev[0]);
+#endif
 
 	/* suspend device */
 	if (!whc_sdio_host_rpwm_notify(priv, RPWM2_PWR_SUSPEND)) {
 		return -EPERM;
 	}
-#endif
 	return 0;
 }
 
@@ -209,10 +216,12 @@ int whc_sdio_host_resume_common(struct whc_sdio *priv)
 		return -EPERM;
 	}
 
+#ifndef CONFIG_WHC_BRIDGE
 	netif_tx_start_all_queues(global_idev.pndev[0]);
 	netif_tx_wake_all_queues(global_idev.pndev[0]);
 
 	global_idev.wowlan_state = 0;
+#endif
 
 	return 0;
 }

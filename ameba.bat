@@ -44,7 +44,10 @@ if exist "%PREBUILTS_DIR%\setenv.bat" (
 			)
 		)
 		echo unzip....
-		7z x "%PREBUILTS_DIR%.zip" -o%RTK_TOOLCHAIN_DIR%
+		7z x "%PREBUILTS_DIR%.zip" -o%RTK_TOOLCHAIN_DIR% || (
+			echo unzip failed. Please unzip %PREBUILTS_DIR%.zip manually
+			goto end
+		)
 
 		call "%PREBUILTS_DIR%\setenv.bat"
 

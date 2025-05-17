@@ -184,7 +184,7 @@ void uart_dma_demo(void)
 			/* data size: 2Byte ~ 33Byte */
 			len = i % CACHE_LINE_SIZE_ + 2;
 			i++;
-			RTK_LOGI(NOTAG, "Receive %d-byte-data\n", len);
+			RTK_LOGI(NOTAG, "Ready to receive %d-byte-data\n", len);
 			ret = uart_dma_recv(rx_buf, len);
 
 			if (!ret) {

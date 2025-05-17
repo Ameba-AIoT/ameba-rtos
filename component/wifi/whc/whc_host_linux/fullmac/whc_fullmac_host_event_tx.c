@@ -127,8 +127,19 @@ int whc_fullmac_host_set_mac_addr(u32 wlan_idx, u8 *addr)
 int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8 block)
 {
 	int ret = 0;
+	struct internal_block_param *block_param = NULL;
 	u32 size;
 	u8 *ptr, *param;
+
+	if (block) {
+		block_param = (struct internal_block_param *)kzalloc(sizeof(struct internal_block_param), GFP_KERNEL);
+		if (!block_param) {
+			ret = -ENOMEM;
+			goto error;
+		}
+		/* initialize scan_sema. */
+		init_completion(&block_param->sema);
+	}
 
 	size = sizeof(block) + sizeof(ssid_length) +
 		   sizeof(scan_param->options) +
@@ -175,6 +186,26 @@ int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8
 	whc_fullmac_host_send_event(WHC_API_WIFI_SCAN_NETWROKS, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
+
+	if (ret < 0) {
+		goto error;
+	}
+
+	if (block) {
+		global_idev.mlme_priv.scan_block_param = block_param;
+
+		if (wait_for_completion_timeout(&block_param->sema, RTW_SCAN_TIMEOUT) == 0) {
+			dev_err(global_idev.fullmac_dev, "%s: Scan timeout!\n", __func__);
+			ret = -EINVAL;
+		}
+		global_idev.mlme_priv.scan_block_param = NULL;
+	}
+
+error:
+	if (block_param) {
+		complete_release(&block_param->sema);
+		kfree((u8 *)block_param);
+	}
 
 	return ret;
 }
@@ -272,7 +303,7 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 
 	kfree((void *)param);
 
-	if (ret != 0) {
+		if (ret != 0) {
 		ret = -EINVAL;
 		global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
 		goto error;

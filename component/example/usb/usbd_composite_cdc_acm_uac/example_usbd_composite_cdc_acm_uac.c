@@ -66,7 +66,7 @@ static const char *const TAG = "COMP";
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
-static void composite_cb_status_changed(u8 status);
+static void composite_cb_status_changed(u8 old_status, u8 status);
 static int composite_cb_set_config(void);
 
 static int composite_cdc_acm_cb_init(void);
@@ -155,9 +155,9 @@ static rtos_sema_t composite_attach_status_changed_sema;
 #endif
 
 /* Private functions ---------------------------------------------------------*/
-static void composite_cb_status_changed(u8 status)
+static void composite_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d\n", status);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
 	composite_attach_status = status;
 	rtos_sema_give(composite_attach_status_changed_sema);

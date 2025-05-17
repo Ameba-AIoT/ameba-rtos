@@ -7,13 +7,10 @@
  *  possession or use of this module requires written permission of RealTek.
  */
 #include "platform_autoconf.h"
-#include "integer.h"
-#include "stdint.h"
 #include "vfs.h"
 #include "vfs_fatfs.h"
 #include "os_wrapper.h"
-
-#include "flash_api.h" // Flash interface
+#include "flash_api.h"
 
 #define FLASH_BLOCK_SIZE	512		// not passing any
 #define SECTOR_SIZE_FLASH	512

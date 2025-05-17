@@ -44,7 +44,7 @@ By default, `UART0` is used to communicate with PC under `38400bps` by DMA.
 
 1. When D-Cache is enabled, DMA buffer size must be a multiple of 32 bytes, and buffer address must be 32-byte aligned.
 2. End characters CRLF(CR: "0x0D" and LF: "0x0A") will be appended to input character(s) of terminal by default.
-3. If too few or too many charaters are entered, display of characters on the terminal may be completed after several tries.
+3. If too few or too many characters are entered, display of characters on the terminal may be completed after several tries.
 
 # Supported IC
 

@@ -52,7 +52,7 @@ static int cdc_acm_cb_init(void);
 static int cdc_acm_cb_deinit(void);
 static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf);
 static int cdc_acm_cb_received(u8 *buf, u32 Len);
-static void cdc_acm_cb_status_changed(u8 status);
+static void cdc_acm_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "ACM";
@@ -62,7 +62,7 @@ static usbd_cdc_acm_cb_t cdc_acm_cb = {
 	.deinit = cdc_acm_cb_deinit,
 	.setup = cdc_acm_cb_setup,
 	.received = cdc_acm_cb_received,
-	.status_changed = cdc_acm_cb_status_changed
+	.status_changed = cdc_acm_cb_status_changed,
 };
 
 static usbd_cdc_acm_line_coding_t cdc_acm_line_coding;
@@ -251,9 +251,19 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 	return HAL_OK;
 }
 
-static void cdc_acm_cb_status_changed(u8 status)
+static void cdc_acm_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d\n", status);
+	/*
+	The scenario of state change is as follows:
+		Status 0 to 1: Indicates the initialization of the USB device from a cold boot, transitioning it
+		to an attached state.
+		Status 1 to 2: Represents transition from attached to detached state; for example, when the device
+		is hot-plugged out, the host suspends, or the system enters sleep mode.
+		Status 2 to 1: Represents transition from detached to attached state; for example, when the device
+		is hot-plugged in, performs a remote wakeup, or the host resumes.
+	*/
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
+
 #if CONFIG_USBD_CDC_ACM_HOTPLUG
 	cdc_acm_attach_status = status;
 	rtos_sema_give(cdc_acm_attach_status_changed_sema);

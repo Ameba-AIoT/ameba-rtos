@@ -145,6 +145,7 @@ _LONG_CALL_ void EFUSE_GetUUID(u32 *UUID);
 
 _LONG_CALL_ u8 ChipInfo_Get(void);
 _LONG_CALL_ u8 ChipInfo_MemoryType(void);
+_LONG_CALL_ bool ChipInfo_PsramExists(void);
 _LONG_CALL_ u32 ChipInfo_PsramBoundary(void);
 _LONG_CALL_ u8 ChipInfo_DDRType(void);
 _LONG_CALL_ u8 ChipInfo_MemorySize(void);

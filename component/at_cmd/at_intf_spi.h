@@ -9,6 +9,8 @@
 #ifndef AT_INTF_SPI_H
 #define AT_INTF_SPI_H
 
+#include "spi_api.h"
+
 #define SPI_SLAVE_RD_CMD 0x01
 #define SPI_SLAVE_WR_CMD 0x02
 
@@ -25,6 +27,7 @@ extern u8 SPI0_SCLK;
 extern u8 SPI0_CS;
 extern u8 AT_SYNC_FROM_MASTER_GPIO;
 extern u8 AT_SYNC_TO_MASTER_GPIO;
+extern u8 SPI_INDEX;
 
 _LONG_CALL_ void atio_spi_output(char *buf, int len);
 _LONG_CALL_ int atio_spi_init(void);

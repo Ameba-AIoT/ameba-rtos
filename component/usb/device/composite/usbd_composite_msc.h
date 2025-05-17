@@ -122,7 +122,6 @@ typedef struct {
 	u8 bot_status;
 	u8 scsi_sense_head;
 	u8 scsi_sense_tail;
-	__IO u8 is_ready : 1;
 	u8 is_open : 1;
 	u8 phase_error : 1;
 } usbd_composite_msc_dev_t;
