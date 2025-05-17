@@ -6,10 +6,6 @@ set(c_GLOBAL_MCU_INCLUDE_DIRECTORIES)
 
 # +++++++++++++++++ c_GLOBAL_COMMON_COMPILE_DEFINES ++++++++++++++++ #
 ameba_list_append(c_GLOBAL_COMMON_COMPILE_DEFINES
-    #TODO: to be removed when new cmake is ready
-    CONFIG_USE_MBEDTLS_ROM_ALG # sw ed25519 used.
-    CONFIG_FUNCION_O0_OPTIMIZE # sw ed25519 used.
-    DM_ODM_SUPPORT_TYPE=32 # wifi used.
 )
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
@@ -45,7 +41,8 @@ ameba_list_append(c_GLOBAL_COMMON_COMPILE_C_OPTIONS
 
     # When the memory length is 4 bytes, memset/memcpy will be optimized for direct 32-bit reading and writing.
     # If the source address is not aligned, an error will result because the hardware does not support unaligned accesses.
-    -fno-builtin # avoid strcpy(ISO C90) to be optimized to stpcpy(posix) by compiler, including -fno-builtin-memset -fno-builtin-memcpy -fno-builtin-printf
+    #TODO: -fno-builtin will affect dhrystone and tflite_micro performance.
+    -fno-builtin # avoid strcpy(ISO C90) to be optimized to stpcpy(posix) by compiler, including -fno-builtin-memset -fno-builtin-memcpy -fno-builtin-printf...
 
     -save-temps=obj
     # -fno-short-enums

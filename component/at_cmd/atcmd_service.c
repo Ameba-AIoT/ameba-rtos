@@ -489,8 +489,13 @@ int atcmd_host_control_config_setting(void)
 				atcmd_get_pin_from_json(uart_ob, "rx", &UART_RX);
 			}
 		} else if (g_host_control_mode == AT_HOST_CONTROL_SPI) {
-			cJSON *spi_ob;
+			cJSON *spi_ob, *spi_index_ob;
 			if ((spi_ob = cJSON_GetObjectItem(atcmd_ob, "spi")) != NULL) {
+				spi_index_ob = cJSON_GetObjectItem(spi_ob, "index");
+				if (spi_index_ob) {
+					SPI_INDEX = spi_index_ob->valueint == 0 ? MBED_SPI0 : MBED_SPI1;
+				}
+
 				atcmd_get_pin_from_json(spi_ob, "mosi", &SPI0_MOSI);
 				atcmd_get_pin_from_json(spi_ob, "miso", &SPI0_MISO);
 				atcmd_get_pin_from_json(spi_ob, "clk", &SPI0_SCLK);
@@ -511,10 +516,10 @@ DEFAULT:
 				 PIN_VAL_TO_NAME_STR(UART_TX), PIN_VAL_TO_NAME_STR(UART_RX), (int)UART_BAUD);
 		ret = atio_uart_init();
 	} else if (g_host_control_mode == AT_HOST_CONTROL_SPI) {
-		RTK_LOGI(TAG, "ATCMD HOST Control Mode : SPI, mosi:%s, miso:%s, clk:%s, cs:%s, master_sync_pin:%s, slave_sync_pin:%s\r\n",
+		RTK_LOGI(TAG, "ATCMD HOST Control Mode : SPI, mosi:%s, miso:%s, clk:%s, cs:%s, master_sync_pin:%s, slave_sync_pin:%s, spi_index: %d\r\n",
 				 PIN_VAL_TO_NAME_STR(SPI0_MOSI), PIN_VAL_TO_NAME_STR(SPI0_MISO),
 				 PIN_VAL_TO_NAME_STR(SPI0_SCLK), PIN_VAL_TO_NAME_STR(SPI0_CS),
-				 PIN_VAL_TO_NAME_STR(AT_SYNC_FROM_MASTER_GPIO), PIN_VAL_TO_NAME_STR(AT_SYNC_TO_MASTER_GPIO));
+				 PIN_VAL_TO_NAME_STR(AT_SYNC_FROM_MASTER_GPIO), PIN_VAL_TO_NAME_STR(AT_SYNC_TO_MASTER_GPIO), SPI_INDEX - MBED_SPI0);
 		ret = atio_spi_init();
 	} else if (g_host_control_mode == AT_HOST_CONTROL_SDIO) {
 		// TODO: sdio interface

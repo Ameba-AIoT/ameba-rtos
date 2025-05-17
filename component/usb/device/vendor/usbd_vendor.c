@@ -23,7 +23,7 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static u8 *usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_type_t speed, u16 *len);
 static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
-static void usbd_vendor_status_changed(usb_dev_t *dev, u8 status);
+static void usbd_vendor_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -375,8 +375,6 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 		cdev->cb->set_config();
 	}
 
-	cdev->is_ready = 1U;
-
 	return ret;
 }
 
@@ -392,8 +390,6 @@ static int usbd_vendor_clear_config(usb_dev_t *dev, u8 config)
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 
 	UNUSED(config);
-
-	cdev->is_ready = 0U;
 
 	if (cdev->alt_setting == 0U) {
 #if CONFIG_USBD_VENDOR_INTR_TEST
@@ -751,21 +747,18 @@ static u8 *usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_
 /**
   * @brief  USB attach status change
   * @param  dev: USB device instance
-  * @param  config: USB USB attach status
+  * @param  old_status: USB old attach status
+  * @param  status: USB USB attach status
   * @retval void
   */
-static void usbd_vendor_status_changed(usb_dev_t *dev, u8 status)
+static void usbd_vendor_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 
 	UNUSED(dev);
 
-	if (status == USBD_ATTACH_STATUS_DETACHED) {
-		cdev->is_ready = 0U;
-	}
-
 	if (cdev->cb->status_changed) {
-		cdev->cb->status_changed(status);
+		cdev->cb->status_changed(old_status, status);
 	}
 }
 
@@ -877,8 +870,6 @@ int usbd_vendor_deinit(void)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 
-	cdev->is_ready = 0U;
-
 	if (cdev->cb != NULL) {
 		if (cdev->cb->deinit != NULL) {
 			cdev->cb->deinit();
@@ -932,7 +923,7 @@ int usbd_vendor_transmit_ctrl_data(u8 *buf, u16 len)
 	usb_dev_t *dev = cdev->dev;
 	u16 ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USB_HS_MAX_PACKET_SIZE : USB_FS_MAX_PACKET_SIZE;
 
-	if (!cdev->is_ready) {
+	if (!dev->is_ready) {
 		return HAL_ERR_HW;
 	}
 
@@ -956,7 +947,7 @@ int usbd_vendor_transmit_bulk_data(u8 *buf, u16 len)
 	usb_dev_t *dev = cdev->dev;
 	u16 ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_BULK_MPS : USBD_VENDOR_FS_BULK_MPS;
 
-	if (!cdev->is_ready) {
+	if (!dev->is_ready) {
 		return HAL_ERR_HW;
 	}
 
@@ -986,8 +977,9 @@ int usbd_vendor_transmit_bulk_data(u8 *buf, u16 len)
 int usbd_vendor_receive_bulk_data(void)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
+	usb_dev_t *dev = cdev->dev;
 
-	if (!cdev->is_ready) {
+	if (!dev->is_ready) {
 		return HAL_ERR_HW;
 	}
 
@@ -1000,8 +992,9 @@ int usbd_vendor_transmit_intr_data(u8 *buf, u16 len)
 {
 	int ret = HAL_OK;
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
+	usb_dev_t *dev = cdev->dev;
 
-	if (!cdev->is_ready) {
+	if (!dev->is_ready) {
 		return HAL_ERR_HW;
 	}
 
@@ -1025,8 +1018,9 @@ int usbd_vendor_transmit_intr_data(u8 *buf, u16 len)
 int usbd_vendor_receive_intr_data(void)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
+	usb_dev_t *dev = cdev->dev;
 
-	if (!cdev->is_ready) {
+	if (!dev->is_ready) {
 		return HAL_ERR_HW;
 	}
 
@@ -1038,8 +1032,9 @@ int usbd_vendor_receive_intr_data(void)
 int usbd_vendor_transmit_isoc_data(u8 *buf, u16 len)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
+	usb_dev_t *dev = cdev->dev;
 
-	if (!cdev->is_ready) {
+	if (!dev->is_ready) {
 		return HAL_ERR_HW;
 	}
 
@@ -1057,8 +1052,9 @@ int usbd_vendor_transmit_isoc_data(u8 *buf, u16 len)
 int usbd_vendor_receive_isoc_data(void)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
+	usb_dev_t *dev = cdev->dev;
 
-	if (!cdev->is_ready) {
+	if (!dev->is_ready) {
 		return HAL_ERR_HW;
 	}
 

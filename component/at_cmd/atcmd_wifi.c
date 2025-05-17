@@ -140,9 +140,11 @@ static void print_wifi_setting(unsigned char wlan_idx, struct rtw_wifi_setting *
 		at_printf("  SECURITY => WPA3-SAE AES\r\n");
 	} else if (pSetting->security_type == RTW_SECURITY_WPA2_WPA3_MIXED) {
 		at_printf("  SECURITY => WPA2/WPA3-SAE AES\r\n");
+#endif
+	} else if (pSetting->security_type == (WPA2_SECURITY | WPA3_SECURITY | ENTERPRISE_ENABLED)) {
+		at_printf("  SECURITY => WPA2/WPA3 ENTERPRISE\r\n");
 	} else if (pSetting->security_type == (WPA3_SECURITY | ENTERPRISE_ENABLED)) {
 		at_printf("  SECURITY => WPA3 ENTERPRISE\r\n");
-#endif
 #ifdef CONFIG_OWE_SUPPORT
 	} else if (pSetting->security_type == RTW_SECURITY_WPA3_OWE) {
 		at_printf("  SECURITY => WPA3-OWE\r\n");
@@ -196,8 +198,9 @@ static void print_scan_result(struct rtw_scan_result *record)
 #ifdef CONFIG_SAE_SUPPORT
 			  (record->security == RTW_SECURITY_WPA3_AES_PSK) ? "WPA3-SAE AES" :
 			  (record->security == RTW_SECURITY_WPA2_WPA3_MIXED) ? "WPA2/WPA3-SAE AES" :
-			  (record->security == (WPA3_SECURITY | ENTERPRISE_ENABLED)) ? "WPA3 Enterprise" :
 #endif
+			  (record->security == (WPA2_SECURITY | WPA3_SECURITY | ENTERPRISE_ENABLED)) ? "WPA2/WPA3 Enterprise" :
+			  (record->security == (WPA3_SECURITY | ENTERPRISE_ENABLED)) ? "WPA3 Enterprise" :
 #ifdef CONFIG_OWE_SUPPORT
 			  (record->security == RTW_SECURITY_WPA3_OWE) ? "WPA3-OWE" :
 #endif

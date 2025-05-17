@@ -48,13 +48,11 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 # You may use if-else condition to set or update predefined variable above
 
-if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
-    if("${c_MCU_PROJECT_NAME}" STREQUAL "lp")
-        #WARNING: for lp, lib_wifi_fw.a is required even CONFIG_WLAN is unset
-        ameba_list_append_if(CONFIG_WIFI_FW_EN public_libraries
-            ${c_SDK_LIB_APPLICATION_DIR}/lib_wifi_fw.a
-        )
-    endif()
+if("${c_MCU_PROJECT_NAME}" STREQUAL "lp")
+    #WARNING: for lp, lib_wifi_fw.a is required even CONFIG_WLAN is unset
+    ameba_list_append_if(CONFIG_WIFI_FW_EN public_libraries
+        ${c_SDK_LIB_APPLICATION_DIR}/lib_wifi_fw.a
+    )
 endif()
 
 # Component public part, user config end

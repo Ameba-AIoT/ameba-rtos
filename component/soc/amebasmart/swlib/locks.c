@@ -31,6 +31,7 @@ static const char *const TAG = "LOCKS";
 static void init_retarget_locks(void)
 {
 #ifdef CONFIG_ARM_CORE_CA32
+#error "CA32 do not need for __wrap_printf has spinlock"
 	RTK_LOGI(TAG, "CA32 %s\n", __func__);
 #elif defined CONFIG_ARM_CORE_CM4
 	RTK_LOGI(TAG, "KM4 %s\n", __func__);

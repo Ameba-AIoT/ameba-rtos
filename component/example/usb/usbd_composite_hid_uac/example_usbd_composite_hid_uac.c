@@ -80,7 +80,7 @@ typedef struct __PACKED {
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
-static void composite_cb_status_changed(u8 status);
+static void composite_cb_status_changed(u8 old_status, u8 status);;
 static int composite_cb_set_config(void);
 /* HID */
 static int composite_hid_cb_init(void);
@@ -184,9 +184,9 @@ static usbd_composite_uac_usr_cb_t composite_uac_usr_cb = {
 };
 
 /* Private functions ---------------------------------------------------------*/
-static void composite_cb_status_changed(u8 status)
+static void composite_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Status change: %d-%d\n", status, usb_ready_flag);
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Status change: %d-%d-%d\n", old_status, status, usb_ready_flag);
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
 	composite_attach_status = status;
 	if ((USBD_ATTACH_STATUS_DETACHED == status) && (usb_ready_flag)) {

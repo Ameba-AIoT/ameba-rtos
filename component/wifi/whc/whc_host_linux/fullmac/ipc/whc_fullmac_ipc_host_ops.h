@@ -17,6 +17,7 @@ struct axi_drv_priv {
 };
 
 #define RTW_JOIN_TIMEOUT		20000
+#define RTW_SCAN_TIMEOUT		12000
 #define DEV_REQ_NETWORK_INFO_MAX_LEN	6
 
 #endif /* __RTW_LLHW_OPS_H__ */

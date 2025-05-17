@@ -355,6 +355,12 @@ void at_fs(void *arg)
 			int get_len = 0, remain_len = length;
 			while (remain_len > 0) {
 				get_len = atcmd_tt_mode_get(buffer_ptr, remain_len);
+				if (get_len < 0) {
+					RTK_LOGW(TAG, "host stops tt mode\r\n");
+					error_no = 2;
+					atcmd_tt_mode_end();
+					goto end;
+				}
 				buffer_ptr += get_len;
 				remain_len -= get_len;
 			}

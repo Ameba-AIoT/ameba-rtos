@@ -34,7 +34,7 @@ static u8 *hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_ty
 static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
 static int hid_handle_ep0_data_out(usb_dev_t *dev);
 #endif
-static void hid_status_changed(usb_dev_t *dev, u8 status);
+static void hid_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -523,19 +523,14 @@ static int hid_set_config(usb_dev_t *dev, u8 config)
 	usbd_hid_receive();
 #endif
 
-	hid->is_ready = 1;
-
 	return ret;
 }
 
 static int hid_clear_config(usb_dev_t *dev, u8 config)
 {
 	int ret = HAL_OK;
-	usbd_hid_t *hid = &hid_device;
 
 	UNUSED(config);
-
-	hid->is_ready = 0;
 
 	/* DeInit INTR IN EP */
 	usbd_ep_deinit(dev, USBD_HID_INTERRUPT_IN_EP_ADDRESS);
@@ -646,21 +641,18 @@ static u8 *hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_ty
 /**
   * @brief  USB attach status change
   * @param  dev: USB device instance
-  * @param  status: USB attach status
+  * @param  old_status: USB old attach status
+  * @param  status: USB USB attach status
   * @retval void
   */
-static void hid_status_changed(usb_dev_t *dev, u8 status)
+static void hid_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 {
 	usbd_hid_t *hid = &hid_device;
 
 	UNUSED(dev);
 
-	if (status == USBD_ATTACH_STATUS_DETACHED) {
-		hid->is_ready = 0;
-	}
-
 	if (hid->cb->status_changed) {
-		hid->cb->status_changed(status);
+		hid->cb->status_changed(old_status, status);
 	}
 }
 
@@ -734,8 +726,6 @@ int usbd_hid_deinit(void)
 {
 	usbd_hid_t *hid = &hid_device;
 
-	hid->is_ready = 0;
-
 	while (hid->is_tx_busy) {
 		usb_os_delay_us(100);
 	}
@@ -769,8 +759,9 @@ int usbd_hid_send_data(u8 *data, u16 len)
 {
 	int ret = HAL_ERR_HW;
 	usbd_hid_t *hid = &hid_device;
+	usb_dev_t *dev = hid->dev;
 
-	if (!hid->is_ready) {
+	if (!dev->is_ready) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX %d not ready\n", USBD_HID_INTERRUPT_IN_EP_ADDRESS, len);
 		return ret;
 	}
@@ -780,11 +771,11 @@ int usbd_hid_send_data(u8 *data, u16 len)
 	}
 
 	if (!hid->intr_in_state) {
-		if (hid->is_ready) { // In case deinit when plug out
+		if (dev->is_ready) { // In case deinit when plug out
 			hid->is_tx_busy = 1U;
 			hid->intr_in_state = 1U;
 			usb_os_memcpy((void *)hid->intr_in_buf, (void *)data, len);
-			if (hid->is_ready) { // In case deinit when plug out
+			if (dev->is_ready) { // In case deinit when plug out
 				usbd_ep_transmit(hid->dev, USBD_HID_INTERRUPT_IN_EP_ADDRESS, hid->intr_in_buf, len);
 				ret = HAL_OK;
 			} else {

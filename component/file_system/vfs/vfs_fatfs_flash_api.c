@@ -2,17 +2,12 @@
 #include "vfs.h"
 #include "vfs_fatfs.h"
 #if defined(CONFIG_FATFS_DISK_FLASH) && CONFIG_FATFS_DISK_FLASH
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include <stdint.h>
 #include "os_wrapper.h"
-#include "diag.h"
+
 static fatfs_flash_params_t fatfs_flash_param;
 static uint8_t fatfs_flash_init_done = 0;
 static FIL     fatfs_flash_file;
-extern DRESULT FLASH_disk_read(BYTE *buff, DWORD sector, UINT count);
-extern DRESULT FLASH_disk_write(const BYTE *buff, DWORD sector, UINT count);
-extern DRESULT FLASH_disk_ioctl(BYTE cmd, void *buff);
+
 int fatfs_flash_close(void)
 {
 	if (fatfs_flash_init_done) {
@@ -99,45 +94,5 @@ fatfs_init_err:
 	fatfs_flash_close();
 	return ret;
 }
-
-int fatfs_flash_get_param(fatfs_flash_params_t *param)
-{
-	if (fatfs_flash_init_done)	{
-		memcpy(param, &fatfs_flash_param, sizeof(fatfs_flash_params_t));
-		return 0;
-	} else {
-		memset(param, 0, sizeof(fatfs_flash_params_t));
-		return -1;
-	}
-}
-
-/*For usb operation.........................................*/
-int usb_flash_init(void)
-{
-	int ret = 0;
-	return ret;
-}
-int usb_flash_deinit(void)
-{
-	int ret = 0;
-	return ret;
-}
-
-int usb_flash_getcapacity(uint32_t *sector_count)
-{
-	FLASH_disk_ioctl(GET_SECTOR_COUNT, sector_count); //FLASH_SECTOR_COUNT;
-	return 0;
-}
-int usb_flash_readblocks(uint32_t sector, uint8_t *data, uint32_t count)
-{
-	FLASH_disk_read(data, sector, count);
-	return 0;
-}
-int usb_flash_writeblocks(uint32_t sector, const uint8_t *data, uint32_t count)
-{
-	FLASH_disk_write(data, sector, count);
-	return 0;
-}
-/*For usb operation.........................................*/
 
 #endif //CONFIG_FATFS_DISK_FLASH

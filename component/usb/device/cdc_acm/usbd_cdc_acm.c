@@ -24,7 +24,7 @@ static u8 *cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_spee
 static int cdc_acm_handle_ep0_data_out(usb_dev_t *dev);
 static int cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
-static void acm_cdc_status_changed(usb_dev_t *dev, u8 status);
+static void cdc_acm_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -271,7 +271,7 @@ usbd_class_driver_t usbd_cdc_driver = {
 	.ep0_data_out = cdc_acm_handle_ep0_data_out,
 	.ep_data_in = cdc_acm_handle_ep_data_in,
 	.ep_data_out = cdc_acm_handle_ep_data_out,
-	.status_changed = acm_cdc_status_changed,
+	.status_changed = cdc_acm_status_changed,
 };
 
 /* CDC ACM Device */
@@ -316,8 +316,6 @@ static int cdc_acm_set_config(usb_dev_t *dev, u8 config)
 	/* Prepare to receive next BULK OUT packet */
 	usbd_ep_receive(dev, CDC_ACM_BULK_OUT_EP, cdev->bulk_out_buf, cdev->bulk_out_buf_size);
 
-	cdev->is_ready = 1U;
-
 	return ret;
 }
 
@@ -330,11 +328,8 @@ static int cdc_acm_set_config(usb_dev_t *dev, u8 config)
 static int cdc_acm_clear_config(usb_dev_t *dev, u8 config)
 {
 	int ret = 0U;
-	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 
 	UNUSED(config);
-
-	cdev->is_ready = 0U;
 
 	/* DeInit BULK IN EP */
 	usbd_ep_deinit(dev, CDC_ACM_BULK_IN_EP);
@@ -616,21 +611,18 @@ static u8 *cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_spee
 /**
   * @brief  USB attach status change
   * @param  dev: USB device instance
+  * @param  old_status: USB old attach status
   * @param  status: USB attach status
   * @retval void
   */
-static void acm_cdc_status_changed(usb_dev_t *dev, u8 status)
+static void cdc_acm_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 {
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 
 	UNUSED(dev);
 
-	if (status == USBD_ATTACH_STATUS_DETACHED) {
-		cdev->is_ready = 0;
-	}
-
 	if (cdev->cb->status_changed) {
-		cdev->cb->status_changed(status);
+		cdev->cb->status_changed(old_status, status);
 	}
 }
 
@@ -650,7 +642,7 @@ static int usbd_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 	usb_dev_t *dev = cdev->dev;
 	usbd_cdc_acm_ntf_t *ntf = cdev->intr_in_buf;
 
-	if (!cdev->is_ready) {
+	if (!dev->is_ready) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX %d not ready\n", CDC_ACM_INTR_IN_EP, len);
 		return ret;
 	}
@@ -660,7 +652,7 @@ static int usbd_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 	}
 
 	if (cdev->intr_in_state == 0U) {
-		if (cdev->is_ready) {
+		if (dev->is_ready) {
 			cdev->is_intr_in_busy = 1U;
 			cdev->intr_in_state = 1U;
 
@@ -672,7 +664,7 @@ static int usbd_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 
 			usb_os_memcpy((void *)ntf->buf, (void *)data, len);
 
-			if (cdev->is_ready) {
+			if (dev->is_ready) {
 				usbd_ep_transmit(dev, CDC_ACM_INTR_IN_EP, (u8 *)ntf, CDC_ACM_INTR_IN_REQUEST_SIZE + len);
 				ret = HAL_OK;
 			} else {
@@ -782,8 +774,6 @@ int usbd_cdc_acm_deinit(void)
 	u8 is_busy;
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 
-	cdev->is_ready = 0U;
-
 #if CONFIG_CDC_ACM_NOTIFY
 	is_busy = cdev->is_bulk_in_busy || cdev->is_intr_in_busy;
 #else
@@ -837,7 +827,7 @@ int usbd_cdc_acm_transmit(u8       *buf, u16 len)
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 	usb_dev_t *dev = cdev->dev;
 
-	if (!cdev->is_ready) {
+	if (!dev->is_ready) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX %d not ready\n", CDC_ACM_BULK_IN_EP, len);
 		return ret;
 	}
@@ -858,13 +848,13 @@ int usbd_cdc_acm_transmit(u8       *buf, u16 len)
 	}
 
 	if (cdev->bulk_in_state == 0U) {
-		if (cdev->is_ready) {
+		if (dev->is_ready) {
 			cdev->is_bulk_in_busy = 1U;
 			cdev->bulk_in_state = 1U;
 
 			usb_os_memcpy((void *)cdev->bulk_in_buf, (void *)buf, len);
 
-			if (cdev->is_ready) {
+			if (dev->is_ready) {
 				usbd_ep_transmit(dev, CDC_ACM_BULK_IN_EP, cdev->bulk_in_buf, len);
 				ret = HAL_OK;
 			} else {
@@ -887,8 +877,9 @@ int usbd_cdc_acm_notify_serial_state(u16 serial_state)
 {
 	int ret = 0;
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
+	usb_dev_t *dev = cdev->dev;
 
-	if (cdev->is_ready) {
+	if (dev->is_ready) {
 		ret = usbd_acm_cdc_notify(CDC_NOTIFY_SERIAL_STATE, 0, &serial_state, sizeof(serial_state));
 	}
 

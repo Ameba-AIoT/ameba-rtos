@@ -97,15 +97,19 @@ typedef struct {
 	void *pcd;								/* PCD handle */
 	u16 ep0_data_len;						/* EP0 data length */
 	u8 ep0_state;							/* EP0 state */
+	u8 ep0_old_state;						/* EP0 old state */
+	u32 ep0_out_intr;						/* EP0 old out interrupt */
 	u8 dev_config;							/* Device config index */
 	u8 dev_speed;							/* Device speed, usb_speed_type_t */
 	u8 dev_state;							/* Device state, usbd_state_t */
 	u8 dev_old_state;						/* Device old state, usbd_state_t */
 	u8 dev_attach_status;					/* Device attach status, usbd_attach_status_t */
+	u8 dev_old_attach_status;				/* Device old attach status, usbd_attach_status_t */
 	u8 test_mode;							/* Test mode */
 	u8 self_powered : 1;						/* Self powered or not, 0-bus powered, 1-self powered */
 	u8 remote_wakeup_en : 1;					/* Remote wakeup enable or not, 0-disabled, 1-enabled */
 	u8 remote_wakeup : 1;						/* Remote wakeup */
+	u8 is_ready : 1;							/* Device ready or not, 0-disabled, 1-enabled */
 } usb_dev_t;
 
 /* USB class driver */
@@ -126,7 +130,7 @@ typedef struct _usbd_class_driver_t {
 	int(*ep_data_in)(usb_dev_t *dev, u8 ep_addr, u8 status);
 	int(*ep_data_out)(usb_dev_t *dev, u8 ep_addr, u16 len);
 
-	void (*status_changed)(usb_dev_t *dev, u8 status);
+	void (*status_changed)(usb_dev_t *dev, u8 old_status, u8 status);
 } usbd_class_driver_t;
 
 /* Exported macros -----------------------------------------------------------*/

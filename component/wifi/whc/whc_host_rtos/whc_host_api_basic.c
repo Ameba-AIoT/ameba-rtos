@@ -29,6 +29,7 @@
  * including auth + assoc + 4way handshake, no dhcp
  */
 #define RTW_JOIN_TIMEOUT (3 * 12000 + 13100 + 20200 + 50) //(MAX_CNT_SCAN_TIMES * SCANNING_TIMEOUT + MAX_JOIN_TIMEOUT + KEY_EXCHANGE_TIMEOUT + 50)
+#define RTW_SCAN_TIMEOUT (12000) //When blocking scan is invoked in BT COEXIST, the scan time may increases due to TDMA scan, up to 8.96s (5G) +2.17s (2.4G)*/
 
 /******************************************************
  *               Variables Declarations
@@ -38,6 +39,7 @@
  *               Variables Definitions
  ******************************************************/
 struct internal_block_param *join_block_param = NULL;
+struct internal_block_param *scan_block_param = NULL;
 
 s32(*scan_user_callback_ptr)(u32, void *) = NULL;
 s32(*scan_each_report_user_callback_ptr)(struct rtw_scan_result *, void *) = NULL;
@@ -48,6 +50,8 @@ s32(*scan_acs_report_user_callback_ptr)(struct rtw_acs_mntr_rpt *acs_mntr_rpt) =
 extern void *param_indicator;
 u8 rtw_join_status = RTW_JOINSTATUS_UNKNOWN;
 int join_fail_reason = RTK_SUCCESS;
+u8 rtw_scan_api_inprocess = 0;
+u16 scanned_ap_cnt = 0;
 
 int (*p_wifi_do_fast_connect)(void) = NULL;
 int (*p_store_fast_connect_info)(unsigned int data1, unsigned int data2) = NULL;
@@ -375,11 +379,35 @@ s32 wifi_stop_ap(void)
 s32 wifi_scan_networks(struct rtw_scan_param *scan_param, u8 block)
 {
 	assert_param(scan_param);
+	struct internal_block_param *block_param = NULL;
 	int ret = 0;
 	u8 *param_buf;
 	u8 *ptr;
 	u32 ssid_len;
 	u32 buf_len = 0;
+
+	if (rtw_scan_api_inprocess) {
+		rtos_time_delay_ms(1);  //For case: callback excuted or block sema released but rtw_scan_api_inprocess not cleared yet
+		if (rtw_scan_api_inprocess) {
+			return -RTK_ERR_BUSY;
+		}
+	}
+
+	rtw_scan_api_inprocess = 1;
+
+	if (block) {
+		block_param = (struct internal_block_param *)rtos_mem_zmalloc(sizeof(struct internal_block_param));
+		if (!block_param) {
+			ret = -RTK_ERR_NOMEM;
+			goto error;
+		}
+		rtos_sema_create_static(&block_param->sema, 0, 0xFFFFFFFF);
+		if (!block_param->sema) {
+			ret = -RTK_ERR_NOMEM;
+			goto error;
+		}
+	}
+
 	/* lock 2s to forbid suspend under scan */
 	rtw_wakelock_timeout(2 * 1000);
 	scan_user_callback_ptr = scan_param->scan_user_callback;
@@ -403,7 +431,7 @@ s32 wifi_scan_networks(struct rtw_scan_param *scan_param, u8 block)
 
 	if (!param_buf) {
 		ret = -1;
-		return ret;
+		goto error;
 	}
 	ptr = param_buf;
 
@@ -443,9 +471,35 @@ s32 wifi_scan_networks(struct rtw_scan_param *scan_param, u8 block)
 
 	whc_host_api_message_send(WHC_API_WIFI_SCAN_NETWROKS, (u8 *)param_buf, buf_len, (u8 *)&ret, sizeof(ret));
 
-	rtos_mem_free(param_buf);
-	return ret;
-}
+	if (ret != RTK_SUCCESS) {
+		goto error;
+	}
+
+	if (block) {
+		scan_block_param = block_param;
+		if (rtos_sema_take(block_param->sema, RTW_SCAN_TIMEOUT) != RTK_SUCCESS) {
+			RTK_LOGW(TAG_WLAN_DRV, "Scan timeout!\n");
+			ret = -RTK_ERR_TIMEOUT;
+		} else {
+			ret = scanned_ap_cnt;
+			scanned_ap_cnt = 0;
+		}
+		scan_block_param = NULL;
+	}
+
+error:
+	if (block_param) {
+		if (block_param->sema) {
+			rtos_sema_delete_static(block_param->sema);
+		}
+		rtos_mem_free((u8 *)block_param);
+	}
+
+	if (param_buf) {
+		rtos_mem_free(param_buf);
+	}
+ 	return ret;
+ }
 
 void wifi_promisc_enable(u32 enable, struct rtw_promisc_para *para)
 {

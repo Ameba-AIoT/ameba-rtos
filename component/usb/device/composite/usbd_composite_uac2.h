@@ -354,7 +354,7 @@ typedef struct {
 	int(* deinit)(void);
 	int(* setup)(usb_setup_req_t *req, u8 *buf);
 	int(* set_config)(void);
-	int(* status_changed)(u8 status);
+	int(* status_changed)(u8 old_status, u8 status);
 	int(* mute_changed)(u8 mute);
 	int(* volume_changed)(u8 volume);
 	int(* format_changed)(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
@@ -424,7 +424,6 @@ typedef struct {
 	u8 cur_clk_valid;
 	u8 alt_setting;
 	u8 cur_mute;
-	__IO u8 is_ready;
 } usbd_composite_uac_device_t;
 
 /* Exported macros -----------------------------------------------------------*/

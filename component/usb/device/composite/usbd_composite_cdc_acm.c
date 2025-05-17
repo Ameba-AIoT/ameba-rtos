@@ -261,8 +261,6 @@ static int composite_cdc_acm_set_config(usb_dev_t *dev, u8 config)
 	/* Prepare to receive next BULK OUT packet */
 	usbd_ep_receive(dev, USBD_COMP_CDC_BULK_OUT_EP, cdc->bulk_out_buf, cdc->bulk_out_buf_size);
 
-	cdc->is_ready = 1U;
-
 	return ret;
 }
 
@@ -275,11 +273,8 @@ static int composite_cdc_acm_set_config(usb_dev_t *dev, u8 config)
 static int composite_cdc_acm_clear_config(usb_dev_t *dev, u8 config)
 {
 	int ret = 0U;
-	usbd_composite_cdc_acm_dev_t *cdc = &composite_cdc_acm_dev;
 
 	UNUSED(config);
-
-	cdc->is_ready = 0U;
 
 	/* DeInit BULK IN EP */
 	usbd_ep_deinit(dev, USBD_COMP_CDC_BULK_IN_EP);
@@ -487,10 +482,10 @@ static int composite_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 {
 	int ret = HAL_ERR_HW;
 	usbd_composite_cdc_acm_dev_t *cdc = &composite_cdc_acm_dev;
-	usb_dev_t *dev = cdc->dev;
+	usb_dev_t *dev = cdc->cdev->dev;
 	usbd_composite_cdc_acm_ntf_t *ntf = cdc->intr_in_buf;
 
-	if (!cdc->is_ready) {
+	if (!dev->is_ready) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX %d not ready\n", USBD_COMP_CDC_INTR_IN_EP, len);
 		return ret;
 	}
@@ -500,7 +495,7 @@ static int composite_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 	}
 
 	if (cdc->intr_in_state == 0U) {
-		if (cdc->is_ready) {
+		if (dev->is_ready) {
 			cdc->is_intr_in_busy = 1U;
 			cdc->intr_in_state = 1U;
 
@@ -512,7 +507,7 @@ static int composite_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 
 			usb_os_memcpy((void *)ntf->buf, (void *)data, len);
 
-			if (cdc->is_ready) {
+			if (dev->is_ready) {
 				usbd_ep_transmit(dev, USBD_COMP_CDC_INTR_IN_EP, (u8 *)ntf, COMP_CDC_ACM_INTR_IN_REQUEST_SIZE + len);
 				ret = HAL_OK;
 			} else {
@@ -612,8 +607,6 @@ int usbd_composite_cdc_acm_deinit(void)
 	u8 is_busy;
 	usbd_composite_cdc_acm_dev_t *cdc = &composite_cdc_acm_dev;
 
-	cdc->is_ready = 0U;
-
 #if CONFIG_COMP_CDC_ACM_NOTIFY
 	is_busy = cdc->is_bulk_in_busy || cdc->is_intr_in_busy;
 #else
@@ -659,7 +652,7 @@ int usbd_composite_cdc_acm_transmit(u8       *buf, u16 len)
 	usbd_composite_cdc_acm_dev_t *cdc = &composite_cdc_acm_dev;
 	usb_dev_t *dev = cdc->cdev->dev;
 
-	if (!cdc->is_ready) {
+	if (!dev->is_ready) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX %d not ready\n", USBD_COMP_CDC_BULK_IN_EP, len);
 		return ret;
 	}
@@ -678,13 +671,13 @@ int usbd_composite_cdc_acm_transmit(u8       *buf, u16 len)
 	}
 
 	if (cdc->bulk_in_state == 0U) {
-		if (cdc->is_ready) {
+		if (dev->is_ready) {
 			cdc->is_bulk_in_busy = 1U;
 			cdc->bulk_in_state = 1U;
 
 			usb_os_memcpy((void *)cdc->bulk_in_buf, (void *)buf, len);
 
-			if (cdc->is_ready) {
+			if (dev->is_ready) {
 				usbd_ep_transmit(dev, USBD_COMP_CDC_BULK_IN_EP, cdc->bulk_in_buf, len);
 				ret = HAL_OK;
 			} else {

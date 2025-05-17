@@ -58,13 +58,17 @@ void os_heap_init(void)
 	os_heap_add((uint8_t *)SRAM_HEAP1_START, (size_t)SRAM_HEAP1_SIZE);
 #endif
 
+	if (ChipInfo_PsramExists()) {
+
 #ifdef PSRAM_HEAP0_START		// Defines a block in bd_psram
-	os_heap_add((uint8_t *)PSRAM_HEAP0_START, (size_t)PSRAM_HEAP0_SIZE);
+		os_heap_add((uint8_t *)PSRAM_HEAP0_START, (size_t)PSRAM_HEAP0_SIZE);
 #endif
 
 #ifdef PSRAM_HEAP1_START		// Defines a block in psram
-	os_heap_add((uint8_t *)PSRAM_HEAP1_START, (size_t)PSRAM_HEAP1_SIZE);
+		os_heap_add((uint8_t *)PSRAM_HEAP1_START, (size_t)PSRAM_HEAP1_SIZE);
 #endif
+
+	}
 
 #ifdef SRAM_HEAP2_START 		// Defines a block in bd_ram
 	os_heap_add((uint8_t *)SRAM_HEAP2_START, (size_t)SRAM_HEAP2_SIZE);

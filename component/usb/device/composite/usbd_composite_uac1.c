@@ -37,7 +37,7 @@ static u8 *usbd_composite_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *re
 static int usbd_composite_uac_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_composite_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
 static int usbd_composite_uac_handle_ep0_data_out(usb_dev_t *dev);
-static void usbd_composite_uac_status_changed(usb_dev_t *dev, u8 status);
+static void usbd_composite_uac_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 #if USBD_UAC_ISOC_XFER_DEBUG
 static void usbd_composite_uac_status_dump_thread(void *param);
 static inline void usbd_composite_uac_get_audio_data_cnt(u32 audio_len);
@@ -705,7 +705,6 @@ static int usbd_composite_uac_set_config(usb_dev_t *dev, u8 config)
 	u8 idx;
 
 	uac->alt_setting = 0U;
-	uac->is_ready = 1U;
 
 	/* Init ISOC OUT EP */
 	usbd_composite_uac_ep_update_mps(pbuf_ctrl, (usbd_audio_cfg_t *) & (pbuf_ctrl->audio_config), cdev->dev->dev_speed);
@@ -753,8 +752,6 @@ static int usbd_composite_uac_clear_config(usb_dev_t *dev, u8 config)
 	usbd_composite_uac_device_t *cdev = &usbd_composite_uac_device;
 
 	UNUSED(config);
-
-	cdev->is_ready = 0U;
 
 	/* DeInit ISOC IN EP */
 	if (usbd_composite_uac_ep_enable(&(cdev->uac_isoc_in.audio_config))) {
@@ -1312,17 +1309,18 @@ static u8 *usbd_composite_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *re
 /**
   * @brief  USB attach status change
   * @param  dev: USB device instance
-  * @param  config: USB USB attach status
+  * @param  old_status: USB old attach status
+  * @param  status: USB attach status
   * @retval void
   */
-static void usbd_composite_uac_status_changed(usb_dev_t *dev, u8 status)
+static void usbd_composite_uac_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 {
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
 
 	UNUSED(dev);
 
-	if (status == USBD_ATTACH_STATUS_DETACHED) {
-		uac->is_ready = 0U;
+	if (uac->cb->status_changed) {
+		uac->cb->status_changed(old_status, status);
 	}
 }
 
@@ -1564,7 +1562,6 @@ init_clean_ctrl_buf_exit:
 int usbd_composite_uac_deinit(void)
 {
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
-	uac->is_ready = 0U;
 
 #if USBD_UAC_ISOC_XFER_DEBUG
 	if (uac->uac_dump_task_alive) {
@@ -1595,8 +1592,9 @@ int usbd_composite_uac_deinit(void)
 int usbd_composite_uac_transmit_data(u8 *buf, u16 len)
 {
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
+	usb_dev_t *dev = uac->cdev->dev;
 
-	if (!uac->is_ready) {
+	if (!dev->is_ready) {
 		return HAL_ERR_HW;
 	}
 
@@ -1621,9 +1619,10 @@ int usbd_composite_uac_receive_data(void)
 {
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
 	usbd_composite_uac_buf_ctrl_t *pbuf_ctrl = &(uac->uac_isoc_out);
+	usb_dev_t *dev = uac->cdev->dev;
 
-	if (!uac->is_ready) {
-		//RTK_LOGS(TAG, RTK_LOG_ERROR, "State %d err\n", uac->is_ready);
+	if (!dev->is_ready) {
+		//RTK_LOGS(TAG, RTK_LOG_ERROR, "State %d err\n", dev->is_ready);
 		return HAL_ERR_PARA;
 	}
 

@@ -26,7 +26,7 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static u8 *usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_type_t speed, u16 *len);
 static int usbd_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
-static void usbd_msc_status_changed(usb_dev_t *dev, u8 status);
+static void usbd_msc_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -208,12 +208,9 @@ static u8 *usbd_msc_ram_disk_buf;
 static int RAM_init(void)
 {
 	int result = SD_OK;
-	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 
 	usbd_msc_ram_disk_buf = (u8 *)usb_os_malloc(USBD_MSC_RAM_DISK_SIZE);
-	if (usbd_msc_ram_disk_buf != NULL) {
-		cdev->is_ready = 1U;
-	} else {
+	if (usbd_msc_ram_disk_buf == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc RAM disk buf fail");
 		result = SD_NODISK;
 	}
@@ -223,10 +220,6 @@ static int RAM_init(void)
 
 static int RAM_deinit(void)
 {
-	usbd_msc_dev_t *cdev = &usbd_msc_dev;
-
-	cdev->is_ready = 0U;
-
 	if (usbd_msc_ram_disk_buf != NULL) {
 		usb_os_mfree((void *)usbd_msc_ram_disk_buf);
 		usbd_msc_ram_disk_buf = NULL;
@@ -462,8 +455,6 @@ static int usbd_msc_set_config(usb_dev_t *dev, u8 config)
 	cdev->ro = 0;
 	cdev->phase_error = 0;
 
-	cdev->is_ready = 1U;
-
 	/* Prepare to receive next BULK OUT packet */
 	usbd_msc_bulk_receive(dev, (u8 *)cdev->cbw, USBD_MSC_CB_WRAP_LEN);
 
@@ -482,8 +473,6 @@ static int usbd_msc_clear_config(usb_dev_t *dev, u8 config)
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 
 	UNUSED(config);
-
-	cdev->is_ready = 0U;
 
 	/* DeInit BULK IN EP */
 	usbd_ep_deinit(dev, USBD_MSC_BULK_IN_EP);
@@ -813,21 +802,18 @@ static u8 *usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_spe
 /**
   * @brief  USB attach status change
   * @param  dev: USB device instance
+  * @param  old_status: USB old attach status
   * @param  status: USB attach status
   * @retval void
   */
-static void usbd_msc_status_changed(usb_dev_t *dev, u8 status)
+static void usbd_msc_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 {
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 
 	UNUSED(dev);
 
-	if (status == USBD_ATTACH_STATUS_DETACHED) {
-		cdev->is_ready = 0;
-	}
-
 	if (cdev->cb->status_changed) {
-		cdev->cb->status_changed(status);
+		cdev->cb->status_changed(old_status, status);
 	}
 }
 
@@ -941,8 +927,6 @@ void usbd_msc_deinit(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit\n");
 
-	cdev->is_ready = 0U;
-
 	usbd_unregister_class();
 
 	if (cdev->csw != NULL) {
@@ -976,9 +960,8 @@ void usbd_msc_deinit(void)
 int usbd_msc_bulk_transmit(usb_dev_t *dev, u8 *buf, u16 len)
 {
 	int ret = HAL_ERR_HW;
-	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 
-	if (cdev->is_ready) {
+	if (dev->is_ready) {
 		ret = usbd_ep_transmit(dev, USBD_MSC_BULK_IN_EP, buf, len);
 	}
 
@@ -995,9 +978,8 @@ int usbd_msc_bulk_transmit(usb_dev_t *dev, u8 *buf, u16 len)
 int usbd_msc_bulk_receive(usb_dev_t *dev, u8 *buf, u16 len)
 {
 	int ret = HAL_ERR_HW;
-	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 
-	if (cdev->is_ready) {
+	if (dev->is_ready) {
 		ret = usbd_ep_receive(dev, USBD_MSC_BULK_OUT_EP, buf, len);
 	}
 

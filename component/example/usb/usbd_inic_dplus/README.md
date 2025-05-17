@@ -18,7 +18,7 @@ None
 	Save and exit.
 
 2. Build
-	Type command `./build.py -a usbd_inic` under the project directory to build images.
+	Type command `./build.py -a usbd_inic_dplus` under the project directory to build images.
 
 3. Download
 	Download images to board by Ameba Image Tool.
@@ -41,4 +41,3 @@ Specific USB INIC driver is required for USB host to recoganize this USB INIC de
 # Supported IC
 
 - RTL8721Dx
-- RTL8721F

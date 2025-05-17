@@ -105,7 +105,7 @@ typedef struct {
 	int(* setup)(usb_setup_req_t *req, u8 *buf);
 	int(* received)(u8 *buf, u32 len);
 	void(* transmitted)(u8 status);
-	void (*status_changed)(u8 status);
+	void (*status_changed)(u8 old_status, u8 status);
 } usbd_cdc_acm_cb_t;
 
 typedef struct {
@@ -125,7 +125,6 @@ typedef struct {
 #endif
 	u8 bulk_out_zlp : 1;
 	__IO u8 is_bulk_in_busy : 1;
-	__IO u8 is_ready : 1;
 	__IO u8 bulk_in_state : 1;
 #if CONFIG_CDC_ACM_NOTIFY
 	__IO u8 is_intr_in_busy : 1;

@@ -28,7 +28,7 @@ static u8 *usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_sp
 static int usbd_inic_handle_ep0_data_out(usb_dev_t *dev);
 static int usbd_inic_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
-static void usbd_inic_status_changed(usb_dev_t *dev, u8 status);
+static void usbd_inic_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 static int usbd_inic_suspend(usb_dev_t *dev);
 static int usbd_inic_resume(usb_dev_t *dev);
 
@@ -201,7 +201,6 @@ static int usbd_inic_set_config(usb_dev_t *dev, u8 config)
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 
 	idev->dev = dev;
-	idev->is_ready = 1U;
 
 	usbd_inic_set_wifi_config(dev, config);
 
@@ -255,8 +254,6 @@ static int usbd_inic_clear_config(usb_dev_t *dev, u8 config)
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 
 	UNUSED(config);
-
-	idev->is_ready = 0U;
 
 	usbd_inic_clear_wifi_config(dev, config);
 
@@ -514,55 +511,34 @@ static int usbd_inic_wifi_init(void)
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN);
 	ep = &idev->in_ep[ep_num];
 	ep->addr = USBD_WHC_WIFI_EP3_BULK_IN;
-	ep->valid = 1U;
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_OUT);
 	ep = &idev->out_ep[ep_num];
 	ep->addr = USBD_WHC_WIFI_EP4_BULK_OUT;
-	ep->valid = 1U;
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP2_BULK_OUT);
 	ep = &idev->out_ep[ep_num];
 	ep->addr = USBD_WHC_WIFI_EP2_BULK_OUT;
-	ep->valid = 1U;
 
 	return HAL_OK;
 }
 
-static void usbd_inic_wifi_deinit(void)
-{
-	usbd_inic_dev_t *idev = &usbd_inic_dev;
-	usbd_inic_ep_t *ep;
-
-	ep = &idev->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN)];
-	ep->valid = 0U;
-
-	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_OUT)];
-	ep->valid = 0U;
-
-	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP2_BULK_OUT)];
-	ep->valid = 0U;
-
-}
 
 /**
   * @brief  USB attach status change
   * @param  dev: USB device instance
-  * @param  config: USB USB attach status
+  * @param  old_status: USB old attach status
+  * @param  status: USB USB attach status
   * @retval void
   */
-static void usbd_inic_status_changed(usb_dev_t *dev, u8 status)
+static void usbd_inic_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 
 	UNUSED(dev);
 
-	if (status == USBD_ATTACH_STATUS_DETACHED) {
-		idev->is_ready = 0U;
-	}
-
 	if (idev->cb->status_changed) {
-		idev->cb->status_changed(status);
+		idev->cb->status_changed(old_status, status);
 	}
 }
 
@@ -584,7 +560,7 @@ static int usbd_inic_resume(usb_dev_t *dev)
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 
 	UNUSED(dev);
-	idev->is_ready = 1U;
+
 	if (idev->cb->resume) {
 		idev->cb->resume();
 	}
@@ -610,17 +586,14 @@ int usbd_inic_init(usbd_inic_cb_t *cb)
 		goto init_exit;
 	}
 
-	ret = usbd_inic_wifi_init();
-	if (ret != HAL_OK) {
-		goto init_clean_ctrl_buf_exit;
-	}
+	usbd_inic_wifi_init();
 
 	if (cb != NULL) {
 		idev->cb = cb;
 		if (cb->init != NULL) {
 			ret = cb->init();
 			if (ret != HAL_OK) {
-				goto init_deinit_wifi_exit;
+				goto init_clean_ctrl_buf_exit;
 			}
 		}
 	}
@@ -628,9 +601,6 @@ int usbd_inic_init(usbd_inic_cb_t *cb)
 	usbd_register_class(&usbd_inic_driver);
 
 	return ret;
-
-init_deinit_wifi_exit:
-	usbd_inic_wifi_deinit();
 
 init_clean_ctrl_buf_exit:
 	usb_os_mfree(idev->ctrl_buf);
@@ -649,8 +619,6 @@ int usbd_inic_deinit(void)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 
-	idev->is_ready = 0U;
-
 	if (idev->cb != NULL) {
 		if (idev->cb->deinit != NULL) {
 			idev->cb->deinit();
@@ -659,8 +627,6 @@ int usbd_inic_deinit(void)
 	}
 
 	usbd_unregister_class();
-
-	usbd_inic_wifi_deinit();
 
 	if (idev->ctrl_buf != NULL) {
 		usb_os_mfree(idev->ctrl_buf);
@@ -675,7 +641,7 @@ int usbd_inic_transmit_ctrl_data(u8 *buf, u16 len)
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usb_dev_t *dev = idev->dev;
 
-	if (!idev->is_ready) {
+	if (!dev->is_ready) {
 		return HAL_ERR_HW;
 	}
 
@@ -695,6 +661,7 @@ int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u16 len, void *userdata)
 	int ret = HAL_OK;
 	u8 num = USB_EP_NUM(ep_addr);
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
+	usb_dev_t *dev = idev->dev;
 	usbd_inic_ep_t *ep;
 
 	if (USB_EP_IS_OUT(ep_addr) || (num >= USB_MAX_ENDPOINTS)) {
@@ -702,7 +669,7 @@ int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u16 len, void *userdata)
 		return HAL_ERR_PARA;
 	}
 
-	if (!idev->is_ready) {
+	if (!dev->is_ready) {
 		return HAL_ERR_HW;
 	}
 
@@ -732,6 +699,7 @@ int usbd_inic_receive_data(u8 ep_addr, u8 *buf, u16 len, void *userdata)
 {
 	u8 num = USB_EP_NUM(ep_addr);
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
+	usb_dev_t *dev = idev->dev;
 	usbd_inic_ep_t *ep;
 
 	if (USB_EP_IS_IN(ep_addr) || (num >= USB_MAX_ENDPOINTS)) {
@@ -739,7 +707,7 @@ int usbd_inic_receive_data(u8 ep_addr, u8 *buf, u16 len, void *userdata)
 		return HAL_ERR_PARA;
 	}
 
-	if (!idev->is_ready) {
+	if (!dev->is_ready) {
 		/*RX not ready*/
 		return HAL_ERR_HW;
 	}

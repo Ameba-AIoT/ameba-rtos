@@ -859,19 +859,20 @@ static u32 SD_IRQHandler(void *param)
 		if (tmp2 & SDIOH_SD_EXIST) {
 			if (tmp2 & SDIOH_SD_WP) {
 				card_info.sd_status = SD_PROTECTED;
-			} else {
+			} else if ((cd_cb != NULL) && (card_info.sd_status != SD_INIT)) {
+				card_info.sd_status = SD_INIT;
+				cd_cb(card_info.sd_status);
+			} else if (card_info.sd_status == SD_NODISK) {
 				card_info.sd_status = SD_INSERT;
 			}
 
 			RTK_LOGI(TAG, "Card Detect\n");
 		} else {
 			card_info.sd_status = SD_NODISK;
-
+			if (cd_cb != NULL) {
+				cd_cb(card_info.sd_status);
+			}
 			RTK_LOGI(TAG, "Card Remove\n");
-		}
-
-		if (cd_cb != NULL) {
-			cd_cb(card_info.sd_status);
 		}
 
 		psdioh->CARD_INT_PEND |= SDIOH_SDMMC_INT_PEND;
@@ -1746,14 +1747,7 @@ void SD_CardInit(void)
   */
 SD_RESULT SD_Init(SDIOHCFG_TypeDef *config)
 {
-	IRQn_Type IrqNum;
-
-#if defined (CONFIG_ARM_CORE_CM4)
-	IrqNum = SDIO_HOST_IRQ;
-#elif defined (CONFIG_ARM_CORE_CA32)
-	IrqNum = SDIO_HOST_IRQ;
-#endif
-
+	u32 temp;
 	sdioh_config = config;
 
 	_memset(&card_info, 0, sizeof(SD_CardInfo));
@@ -1772,19 +1766,30 @@ SD_RESULT SD_Init(SDIOHCFG_TypeDef *config)
 	SDIOH_DebounceSet(200);
 	SDIOH_DebounceCmd(ENABLE);
 
+	/* check if card exists or not */
+	temp = SDIOH_BASE->CARD_EXIST;
+	if (temp & SDIOH_SD_EXIST) {
+		if (!(temp & SDIOH_SD_WP)) {
+			card_info.sd_status = SD_INSERT;
+			RTK_LOGI(TAG, "Card exists!\n");
+		} else {
+			card_info.sd_status = SD_PROTECTED;
+		}
+	} else {
+		card_info.sd_status = SD_NODISK;
+	}
+
 	InterruptRegister((IRQ_FUN)SD_IRQHandler, SDIO_HOST_IRQ, NULL, 5);
-	InterruptEn(IrqNum, 5);
+	InterruptEn(SDIO_HOST_IRQ, 5);
 
 	__DSB();
 	__ISB();
-	DelayUs(10); /* for ap dual core system*/
 #endif
 
-	card_info.sd_status = SD_INSERT;
 	/* Initialize SD card */
 	if (card_info.sd_status == SD_INSERT) {
+		card_info.sd_status = SD_INIT;
 		SD_CardInit();
-
 	} else if (card_info.sd_status == SD_PROTECTED) {
 		RTK_LOGE(TAG, "Card is write protected !!\r\n");
 
@@ -1803,18 +1808,10 @@ SD_RESULT SD_Init(SDIOHCFG_TypeDef *config)
   */
 SD_RESULT SD_DeInit(void)
 {
-	IRQn_Type IrqNum;
-
-#if defined (CONFIG_ARM_CORE_CM4)
-	IrqNum = SDIO_HOST_IRQ;
-#elif defined (CONFIG_ARM_CORE_CA32)
-	IrqNum = SDIO_HOST_IRQ;
-#endif
-
 	SDIOH_DeInit();
 	RCC_PeriphClockCmd(APBPeriph_SDH, APBPeriph_SDH_CLOCK, DISABLE);
-	InterruptUnRegister(IrqNum);
-	InterruptDis(IrqNum);
+	InterruptUnRegister(SDIO_HOST_IRQ);
+	InterruptDis(SDIO_HOST_IRQ);
 
 	sdioh_config = NULL;
 

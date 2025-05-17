@@ -6,9 +6,10 @@
 		"mosi":"PB19",
 		"miso":"PB20",
 		"clk":"PB18",
-		"cs":"PB17",
+		"cs":"PB21",
 		"master_sync_pin":"PB30",
-		"slave_sync_pin":"PB31"
+		"slave_sync_pin":"PB31",
+		"index":1
 	},
 	
 	"uart":

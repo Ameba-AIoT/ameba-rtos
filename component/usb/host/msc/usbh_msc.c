@@ -251,7 +251,7 @@ static int usbh_msc_process(usb_host_t *host, u32 msg)
 			case MSC_INIT:
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Lun %d\n", msc->current_lun);
 				msc->unit[msc->current_lun].state = MSC_READ_INQUIRY;
-				msc->tick = usbh_get_current_tick(host);
+				msc->tick = usbh_get_tick(host);
 				break;
 
 			case MSC_READ_INQUIRY:
@@ -921,7 +921,7 @@ int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length)
 
 	usbh_scsi_read(msc, lun, address, pbuf, length);
 
-	timeout = usbh_get_current_tick(msc->host);
+	timeout = usbh_get_tick(msc->host);
 
 	while (usbh_msc_process_rw(msc->host, lun) == HAL_BUSY) {
 #if defined(CONFIG_ARM_CORE_CA32) && CONFIG_ARM_CORE_CA32
@@ -966,7 +966,7 @@ int usbh_msc_write(u8 lun, u32 address, u8 *pbuf, u32 length)
 
 	usbh_scsi_write(msc, lun, address, pbuf, length);
 
-	timeout = usbh_get_current_tick(msc->host);
+	timeout = usbh_get_tick(msc->host);
 	while (usbh_msc_process_rw(msc->host, lun) == HAL_BUSY) {
 #if defined(CONFIG_ARM_CORE_CA32) && CONFIG_ARM_CORE_CA32
 		//FIXME, remove this in AP

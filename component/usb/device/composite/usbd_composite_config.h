@@ -164,7 +164,7 @@
 /* Exported types ------------------------------------------------------------*/
 
 typedef struct {
-	void (*status_changed)(u8 status);
+	void (*status_changed)(u8 old_status, u8 status);
 	int (* set_config)(void);
 } usbd_composite_cb_t;
 

@@ -140,6 +140,25 @@ enum coex_subtype_c2h_wpan {
 ///////// for COMMON Variables
 //////////////////////////////////////////////////////////
 /**
+ * @brief  The enumeration lists vendor id.
+ */
+enum rtk_coex_custom_vendor_id {
+	RTK_COEX_CUSTOM_VID_UNDEF = 0,
+	/* Add from here*/
+	RTK_COEX_CUSTOM_VID_CLINTWOOD,			/* 1 */
+	RTK_COEX_CUSTOM_VID_MAX = 0xFF
+};
+/**
+ * @brief  The enumeration lists product id.
+ */
+enum rtk_coex_custom_product_id {
+	RTK_COEX_CUSTOM_PID_UNDEF = 0,
+	/* Add from here*/
+	RTK_COEX_CUSTOM_PID_GAMEPAD,			/* 1 */
+	RTK_COEX_CUSTOM_PID_MAX = 0xFF
+};
+
+/**
  * @struct   rtk_coex_vendor_info
  * @brief    vendor info.
  */
@@ -291,12 +310,12 @@ struct extchip_para_t {
 //////////////////////////////////////////////////////////
 /**
  * @brief      Vendor info set.
- * @param[in]  p_vendor_info  A pointer to struct rtk_coex_vendor_info.
- * @param[in]  length 		size of struct rtk_coex_vendor_info.
+ * @param[in]  vendor_id
+ * @param[in]  product_id
  * @return
  *             - None.
  */
-void rtk_coex_com_vendor_info_set(void *p_vendor_info, u8 length);
+void rtk_coex_com_vendor_info_set(u8 vendor_id, u8 product_id);
 /**
  * @brief      wlan slot duration set.
  * @param[in]  wl_slot  wlan slot duration, unit: percent, value: [0-100].

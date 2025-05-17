@@ -59,6 +59,9 @@ int usb_hal_get_device_bus_status(u32 *bus_status);
 void usb_hal_device_disconnect(u8 en);
 void usb_hal_dump_registers(void);
 
+u32 usb_hal_get_timestamp_ms(void);
+u32 usb_hal_get_time_tick(u8 speed);
+
 #if CONFIG_USB_PHY
 int usb_hal_read_phy_register(u8 addr, u8 *value);
 int usb_hal_write_phy_register(u8 addr, u8 value);

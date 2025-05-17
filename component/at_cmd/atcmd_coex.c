@@ -41,8 +41,6 @@ static void fCOMMONCOEX(void *arg)
 	static int wl_slot = 0;
 	int i = 0, j = 0;
 
-	struct rtk_coex_vendor_info vendor_info = {.product_id = 0, .vendor_id = 0};
-
 	if (!arg) {
 		RTK_LOGE(AT_COEX_TAG, "[AT%s] Error: No input args number!\r\n", CMD_NAME_COEX);
 		error_no = 1;
@@ -90,9 +88,7 @@ static void fCOMMONCOEX(void *arg)
 			}
 		}
 		at_printf("pid=0x%x, vid=0x%x\r\n", pid, vid);
-		vendor_info.product_id = pid;
-		vendor_info.vendor_id = vid;
-		rtk_coex_com_vendor_info_set((void *)&vendor_info, sizeof(struct rtk_coex_vendor_info));
+		rtk_coex_com_vendor_info_set(pid, vid);
 
 	} else if (0 == strcasecmp(argv[1], "wl_slot")) {
 		if (argc == 2) {

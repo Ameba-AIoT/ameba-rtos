@@ -111,9 +111,6 @@ _WEAK void wifi_set_user_config(void)
 	/* wifi speaker */
 	wifi_user_config.wifi_speaker_feature = 0;
 
-	/*Automatic channel selection*/
-	wifi_user_config.acs_en = 0;
-
 	/*R-mesh*/
 	wifi_user_config.wtn_en = 0;
 	wifi_user_config.wtn_strong_rssi_thresh = -50;

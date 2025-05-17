@@ -224,7 +224,7 @@ class mbedtls_ecp_group_id(Enum):
     MBEDTLS_ECP_DP_BP256R1 = 6        # Domain parameters for 256-bit Brainpool curve. */
     MBEDTLS_ECP_DP_BP384R1 = 7        # Domain parameters for 384-bit Brainpool curve. */
     MBEDTLS_ECP_DP_BP512R1 = 8        # Domain parameters for 512-bit Brainpool curve. */
-    MBEDTLS_ECP_DP_CURVE2551 = 9     # Domain parameters for Curve25519. */
+    MBEDTLS_ECP_DP_CURVE25519 = 9     # Domain parameters for Curve25519. */
     MBEDTLS_ECP_DP_SECP192K1 = 10      # Domain parameters for 192-bit "Koblitz" curve. */
     MBEDTLS_ECP_DP_SECP224K1 = 11      # Domain parameters for 224-bit "Koblitz" curve. */
     MBEDTLS_ECP_DP_SECP256K1 = 12      # Domain parameters for 256-bit "Koblitz" curve. */
@@ -251,43 +251,30 @@ class secure_boot():
         self.MdType = ''
 
     def get_supported_curve(self, auth_alg):
-        if auth_alg == mbedtls_ecp_group_id.MBEDTLS_ECP_DP_SECP192R1.value:
-            return Curve.SECP192R1
-        elif auth_alg == mbedtls_ecp_group_id.MBEDTLS_ECP_DP_SECP224R1.value:
-            return Curve.SECP224R1
-        elif auth_alg == mbedtls_ecp_group_id.MBEDTLS_ECP_DP_SECP256R1.value:
-            return Curve.SECP256R1
-        elif auth_alg == mbedtls_ecp_group_id.MBEDTLS_ECP_DP_BP256R1.value:
-            return Curve.BRAINPOOLP256R1
-        elif auth_alg == mbedtls_ecp_group_id.MBEDTLS_ECP_DP_SECP192K1.value:
-            return Curve.SECP192K1
-        elif auth_alg == mbedtls_ecp_group_id.MBEDTLS_ECP_DP_SECP224K1.value:
-            return Curve.SECP224K1
-        elif auth_alg == mbedtls_ecp_group_id.MBEDTLS_ECP_DP_SECP256K1.value:
-            return Curve.SECP256K1
+        name = mbedtls_ecp_group_id(auth_alg).name.split('_')[-1]
+        if hasattr(Curve, name):
+            return getattr(Curve, name)
         else:
-            print("Not supported AUTH_ALG!")
-            return -1
-    def gen_auth_id(self, strs):
+            if auth_alg == mbedtls_ecp_group_id.MBEDTLS_ECP_DP_BP256R1.value:
+                return Curve.BRAINPOOLP256R1
+            elif auth_alg == mbedtls_ecp_group_id.MBEDTLS_ECP_DP_BP384R1.value:
+                return Curve.BRAINPOOLP384R1
+            elif auth_alg == mbedtls_ecp_group_id.MBEDTLS_ECP_DP_BP512R1.value:
+                return Curve.BRAINPOOLP512R1
+            else:
+                print("Not supported AUTH_ALG!")
+                return -1
+
+    def gen_auth_id(self, strs:str):
         if strs == "ed25519":
             return Sec_AuthAlg.Sec_AuthID_ED25519.value
-        elif strs == "ecdsa_secp192r1":
-            return mbedtls_ecp_group_id.MBEDTLS_ECP_DP_SECP192R1.value
-        elif strs == "ecdsa_secp224r1":
-            return mbedtls_ecp_group_id.MBEDTLS_ECP_DP_SECP224R1.value
-        elif strs == "ecdsa_secp256r1":
-            return mbedtls_ecp_group_id.MBEDTLS_ECP_DP_SECP256R1.value
-        elif strs == "ecdsa_bp256r1":
-            return mbedtls_ecp_group_id.MBEDTLS_ECP_DP_BP256R1.value
-        elif strs == "ecdsa_secp192k1":
-            return mbedtls_ecp_group_id.MBEDTLS_ECP_DP_SECP192K1.value
-        elif strs == "ecdsa_secp224k1":
-            return mbedtls_ecp_group_id.MBEDTLS_ECP_DP_SECP224K1.value
-        elif strs == "ecdsa_secp256k1":
-            return mbedtls_ecp_group_id.MBEDTLS_ECP_DP_SECP256K1.value
         else:
-            print("Not supported AUTH_ALG!")
-            return -1
+            name = f"MBEDTLS_ECP_DP_{strs.split('_')[-1].upper()}"
+            if hasattr(mbedtls_ecp_group_id, name):
+                return getattr(mbedtls_ecp_group_id, name).value
+            else:
+                print("Not supported AUTH_ALG!")
+                return -1
 
     def gen_hash_id(self, manifest, strs):
         if strs == "hmac256":
@@ -380,8 +367,14 @@ class secure_boot():
             curve = ec.SECP224R1()
         elif id == Curve.SECP256R1:
             curve = ec.SECP256R1()
+        elif id == Curve.SECP384R1:
+            curve = ec.SECP384R1()
         elif id == Curve.BRAINPOOLP256R1:
             curve = ec.BrainpoolP256R1()
+        elif id == Curve.BRAINPOOLP384R1:
+            curve = ec.BrainpoolP384R1()
+        elif id == Curve.BRAINPOOLP512R1:
+            curve = ec.BrainpoolP512R1()
         elif id == Curve.SECP192K1:
             curve = 'secp192k1'
             use_fastecdsa = 1
@@ -706,13 +699,15 @@ class RSIP():
         init_val = [0x2, 0x3]
         i = 0
         # every 16bytes, due to xts mode need the enc result of iv
+        tag_name = os.path.join(os.path.dirname(self.argv[3]), os.path.splitext(self.argv[3])[0] + '_tag.bin')
         if self.RsipMode == 2:
             # print(list_to_hex_str(iv))
             # print(list_to_hex_str([int(i) for i in ctrkey_bytes]))
-            tag_name = os.path.join(os.path.dirname(self.argv[3]), os.path.splitext(self.argv[3])[0] + '_tag.bin')
             fw_tag = open(tag_name, 'wb')
             cnt = 32
         else:
+            if os.path.exists(tag_name):
+                os.remove(tag_name)
             cnt = 16
         fw = open(self.argv[3], 'wb')
         with open(self.argv[2], 'rb') as f:

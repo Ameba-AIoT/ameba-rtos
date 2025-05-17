@@ -90,7 +90,7 @@ typedef struct {
 	void(* bulk_transmitted)(u8 status);
 	void(* intr_transmitted)(u8 status);
 	void(* isoc_transmitted)(u8 status);
-	void (*status_changed)(u8 status);
+	void (*status_changed)(u8 old_status, u8 status);
 } usbd_vendor_cb_t;
 
 typedef struct {
@@ -108,7 +108,6 @@ typedef struct {
 	__IO u8 bulk_in_state : 1;
 	__IO u8 ctrl_in_state : 1;
 	__IO u8 intr_in_state : 1;
-	__IO u8 is_ready : 1;
 	__IO u8 bulk_in_zlp : 1;
 } usbd_vendor_dev_t;
 

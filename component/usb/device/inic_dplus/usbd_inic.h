@@ -60,7 +60,7 @@ typedef struct {
 	int(* clear_config)(void);
 	void(* transmitted)(usbd_inic_ep_t *ep, u8 status);
 	int(* received)(usbd_inic_ep_t *ep, u16 len);
-	void (*status_changed)(u8 status);
+	void (*status_changed)(u8 old_status, u8 status);
 	void(*suspend)(void);
 	void(*resume)(void);
 } usbd_inic_cb_t;
@@ -77,7 +77,6 @@ typedef struct {
 	u8  bt_sco_alt;
 	u8  wifi_alt;
 	__IO u8 ctrl_in_state : 1;
-	__IO u8 is_ready : 1;
 } usbd_inic_dev_t;
 
 /* Exported macros -----------------------------------------------------------*/

@@ -32,7 +32,7 @@ static int composite_hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status
 static int composite_hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
 static u8 *composite_hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_type_t speed, u16 *len);
 static int composite_hid_handle_ep0_data_out(usb_dev_t *dev);
-static void composite_hid_status_changed(usb_dev_t *dev, u8 status);
+static void composite_hid_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "COMP";
@@ -208,8 +208,9 @@ static int usbd_composite_hid_send_data_internal(u8 *data, u16 len)
 	int ret = HAL_ERR_HW;
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
 	usbd_composite_hid_ep_t *phid_in = &(hid->hid_in);
+	usb_dev_t *dev = hid->cdev->dev;
 
-	if (!hid->is_ready) {
+	if (!dev->is_ready) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX %d not ready\n", USBD_COMP_HID_CONSUMER_INTR_IN_EP, len);
 		return ret;
 	}
@@ -228,14 +229,14 @@ static int usbd_composite_hid_send_data_internal(u8 *data, u16 len)
 	}
 
 	if (!phid_in->intr_in_state) {
-		if (hid->is_ready) { // In case deinit when plug out
+		if (dev->is_ready) { // In case deinit when plug out
 			phid_in->is_intr_in_busy = 1U;
 			phid_in->intr_in_state = 1U;
 
 			usb_os_memcpy((void *) & (phid_in->intr_in_buf[offset]), (void *)data, len); //dma cache
 			valid_len = len;
 
-			if (hid->is_ready) { // In case deinit when plug out
+			if (dev->is_ready) { // In case deinit when plug out
 				usbd_ep_transmit(hid->cdev->dev, USBD_COMP_HID_CONSUMER_INTR_IN_EP, phid_in->intr_in_buf, valid_len);
 				ret = HAL_OK;
 			} else {
@@ -260,8 +261,9 @@ static int usbd_composite_hid_priv_send_data_internal(u8 *data, u16 len, u8 repo
 	int ret = HAL_ERR_HW;
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
 	usbd_composite_hid_ep_t *phid_priv_in = &(hid->hid_priv_in);
+	usb_dev_t *dev = hid->cdev->dev;
 
-	if (!hid->is_ready) {
+	if (!dev->is_ready) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX %d not ready\n", USBD_COMP_HID_INTR_IN_EP, len);
 		return ret;
 	}
@@ -284,7 +286,7 @@ static int usbd_composite_hid_priv_send_data_internal(u8 *data, u16 len, u8 repo
 	}
 
 	if (!phid_priv_in->intr_in_state) {
-		if (hid->is_ready) { // In case deinit when plug out
+		if (dev->is_ready) { // In case deinit when plug out
 			phid_priv_in->is_intr_in_busy = 1U;
 			phid_priv_in->intr_in_state = 1U;
 
@@ -304,7 +306,7 @@ static int usbd_composite_hid_priv_send_data_internal(u8 *data, u16 len, u8 repo
 				valid_len = len;
 			}
 
-			if (hid->is_ready) { // In case deinit when plug out
+			if (dev->is_ready) { // In case deinit when plug out
 				usbd_ep_transmit(hid->cdev->dev, USBD_COMP_HID_INTR_IN_EP, phid_priv_in->intr_in_buf, valid_len);
 				ret = HAL_OK;
 			} else {
@@ -470,19 +472,14 @@ static int composite_hid_set_config(usb_dev_t *dev, u8 config)
 		hid->cb->set_config();
 	}
 
-	hid->is_ready = 1U;
-
 	return ret;
 }
 
 static int composite_hid_clear_config(usb_dev_t *dev, u8 config)
 {
 	int ret = 0;
-	usbd_composite_hid_device_t *hid = &composite_hid_device;
 
 	UNUSED(config);
-
-	hid->is_ready = 0U;
 
 	/* DeInit INTR IN EP */
 	usbd_ep_deinit(dev, USBD_COMP_HID_INTR_IN_EP);
@@ -626,18 +623,15 @@ static u8 *composite_hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, us
 /**
   * @brief  USB attach status change
   * @param  dev: USB device instance
+  * @param  old_status: USB old attach status
   * @param  status: USB USB attach status
   * @retval void
   */
-static void composite_hid_status_changed(usb_dev_t *dev, u8 status)
+static void composite_hid_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 {
-	usbd_composite_hid_device_t *hid = &composite_hid_device;
-
 	UNUSED(dev);
-
-	if (status == USBD_ATTACH_STATUS_DETACHED) {
-		hid->is_ready = 0U;
-	}
+	UNUSED(old_status);
+	UNUSED(status);
 }
 
 /**
@@ -803,8 +797,6 @@ int usbd_composite_hid_deinit(void)
 {
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
 
-	hid->is_ready = 0U;
-
 	while (hid->hid_priv_in.is_intr_in_busy || hid->hid_in.is_intr_in_busy) {
 		usb_os_delay_us(100);
 	}
@@ -902,10 +894,11 @@ static u32 usbd_composite_hid_read_ring_buf(usbd_composite_hid_buf_ctrl_t *pdata
 u32 usbd_composite_hid_read(u8 *buffer, u32 size, u32 time_out_ms)
 {
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
+	usb_dev_t *dev = hid->cdev->dev;
 	usbd_composite_hid_buf_ctrl_t *pdata_ctrl = &(hid->hid_priv_out);
 	u32 copy_len = 0;
 
-	if (hid->is_ready == 0) {
+	if (dev->is_ready == 0) {
 		return 0;
 	}
 
@@ -932,7 +925,7 @@ u32 usbd_composite_hid_read(u8 *buffer, u32 size, u32 time_out_ms)
 					break;
 				}
 			}
-		} while (hid->is_ready);
+		} while (dev->is_ready);
 	}
 
 	if (copy_len > size) {

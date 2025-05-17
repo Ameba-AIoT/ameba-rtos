@@ -259,8 +259,8 @@ static int usbh_cdc_acm_nak(usb_host_t *host, u8 pipe_num)
 
 	ep_type = usbh_get_ep_type(host, pipe_num);
 	if (ep_type == USB_CH_EP_TYPE_INTR) {
-		cdc->intr_in_busy_tick = usbh_get_current_tick(host);
-		cdc->intr_in_idle_tick = usbh_get_current_tick(host);
+		cdc->intr_in_busy_tick = usbh_get_tick(host);
+		cdc->intr_in_idle_tick = usbh_get_tick(host);
 		//INTR ,NAK did not retrigger the EP,wait for next binterval
 		return HAL_OK;
 	}
@@ -430,7 +430,7 @@ static void usbh_cdc_acm_process_tx(usb_host_t *host)
 		}
 #endif
 		cdc->data_tx_state = CDC_ACM_TRANSFER_STATE_TX_BUSY;
-		cdc->tx_idle_tick = usbh_get_current_tick(host);
+		cdc->tx_idle_tick = usbh_get_tick(host);
 		usbh_notify_class_state_change(host, 0);
 		break;
 
@@ -518,7 +518,7 @@ static void usbh_cdc_acm_process_rx(usb_host_t *host)
 #endif
 
 		cdc->data_rx_state = CDC_ACM_TRANSFER_STATE_RX_BUSY;
-		cdc->rx_idle_tick = usbh_get_current_tick(host);
+		cdc->rx_idle_tick = usbh_get_tick(host);
 		break;
 
 	case CDC_ACM_TRANSFER_STATE_RX_BUSY:
@@ -573,8 +573,8 @@ static void usbh_cdc_acm_process_intr_rx(usb_host_t *host)
 							   cdc->intr_rx_buf,
 							   cdc->comm_if.intr_in_packet_size,
 							   cdc->comm_if.intr_in_pipe);
-		cdc->intr_in_idle_tick = usbh_get_current_tick(host);
-		cdc->intr_in_busy_tick = usbh_get_current_tick(host);
+		cdc->intr_in_idle_tick = usbh_get_tick(host);
+		cdc->intr_in_busy_tick = usbh_get_tick(host);
 		usbh_notify_class_state_change(host, 0);
 		break;
 

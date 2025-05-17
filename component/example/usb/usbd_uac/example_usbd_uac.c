@@ -87,7 +87,7 @@ static int uac_cb_deinit(void);
 static int uac_cb_setup(usb_setup_req_t *req, u8 *buf);
 static int uac_cb_set_config(void);
 
-static void uac_cb_status_changed(u8 status);
+static void uac_cb_status_changed(u8 old_status, u8 status);
 static void uac_cb_mute_changed(u8 mute);
 static void uac_cb_volume_changed(u8 volume);
 static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
@@ -191,9 +191,9 @@ static int uac_cb_set_config(void)
 	return HAL_OK;
 }
 
-static void uac_cb_status_changed(u8 status)
+static void uac_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d\n", status);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
 #if CONFIG_USBD_UAC_HOTPLUG
 	uac_attach_status = status;
 	rtos_sema_give(uac_attach_status_changed_sema);

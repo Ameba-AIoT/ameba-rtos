@@ -106,6 +106,11 @@ function update_prebuilts
                 ;;
         esac
 
+        if [ $? -ne 0 ]; then
+            echo "Unzip failed. Please unzip $PREBUILTS_DIR.zip manually"
+            return 1
+        fi
+
         source "$PREBUILTS_DIR/setenv.sh"
     else
         echo "RTK software suite not exist, please download from $DOWNLOAD_URL or $DOWNLOAD_URL_ALIYUN and unzip it at $RTK_TOOLCHAIN_DIR"

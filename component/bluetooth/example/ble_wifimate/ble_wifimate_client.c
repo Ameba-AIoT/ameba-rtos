@@ -18,6 +18,9 @@
 #include <ble_wifimate_service.h>
 #include <bt_utils.h>
 #include <ameba_soc.h>
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+#include <atcmd_bt_cmd_sync.h>
+#endif
 
 enum ble_wifimate_charac_index_e {
 	BLE_WIFIMATE_CHAR_NEGOTIATE_KEY_IDX = 0,
@@ -631,6 +634,10 @@ static void ble_wifimate_client_print_wifi_scan_info(void)
 		BT_LOGD("[APP] %s ap_info.ssid_len=%d offset=%u idx=%u ap_len=%d\r\n", __func__, ap_info.ssid_len, offset, idx, ap_len);
 		BT_LOGA("[APP] WiFi scan info: ssid=%s, rssi=%d, security=%d, channel=%d\r\n",
 				ap_info.ssid, ap_info.rssi, ap_info.security, ap_info.channel);
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		BT_AT_PRINT("+BTDEMO:ble_wifimate_configurator,wifi_scan,%s,%d,%d,%d\r\n",
+					ap_info.ssid, ap_info.rssi, ap_info.security, ap_info.channel);
+#endif
 	}
 
 	BT_LOGA("[APP] BLE WiFiMate wifi scan num=%d \r\n", ap_num);
@@ -690,6 +697,12 @@ static uint16_t ble_wifimate_client_receive_wifi_scan_info(uint16_t conn_handle,
 				BT_LOGA("[APP] BLE WiFiMate wifi scan info checksum fail\r\n", conn_handle);
 			}
 			ble_wifimate_char_multi_recv_data_deinit();
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+			if (bt_at_sync_event_match_check(RTK_BT_GATTS_EVT_INDICATE_COMPLETE_IND)) {
+				bt_at_sync_set_result(ret);
+				bt_at_sync_sem_give();
+			}
+#endif
 		}
 	}
 
@@ -715,6 +728,13 @@ static uint16_t ble_wifimate_client_receive_wifi_conn_state(uint16_t conn_handle
 	memcpy(&err_code, value + 1, 1);
 
 	BT_LOGA("[APP] BLE WiFiMate Client conn_handle=%d, wifi_state=%d, err_code=%d\r\n", conn_handle, wifi_state, err_code);
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+	BT_AT_PRINT("+BTDEMO:ble_wifimate_configurator,wifi_connect,%d,%d,%d\r\n", conn_handle, wifi_state, err_code);
+	if (bt_at_sync_event_match_check(RTK_BT_GATTS_EVT_INDICATE_COMPLETE_IND)) {
+		bt_at_sync_set_result(err_code);
+		bt_at_sync_sem_give();
+	}
+#endif
 	return RTK_BT_OK;
 }
 
@@ -903,8 +923,9 @@ void ble_wifimate_client_discover_res_hdl(void *data)
 			break;
 		}
 	}
-
+#if !defined(BT_AT_SYNC) || !BT_AT_SYNC
 	general_client_discover_res_hdl(data);
+#endif
 }
 
 static void ble_wifimate_client_write_res_hdl(void *data)

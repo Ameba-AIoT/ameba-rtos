@@ -6,26 +6,54 @@
 #include <atcmd_service.h>
 #include <atcmd_bt_impl.h>
 #include <ble_wifimate_service.h>
+#include <rtk_bt_def.h>
 #include <bt_utils.h>
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+#include <atcmd_bt_cmd_sync.h>
+#endif
 
 
 static int atcmd_bt_wifimate_configurator_wifi_scan(int argc, char **argv)
 {
 	uint16_t conn_handle;
+	int ret = 0;
 
 	if (argc < 1) {
 		BT_LOGE("[AT+BTDEMO] bLE wifimate configurator wifi scan param invalid\r\n");
 		return BT_AT_ERR_PARAM_INVALID;
 	}
 
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+	ret = bt_at_sync_init(BT_AT_SYNC_CMD_TYPE_BLE_GATTS_INDICATE, BT_AT_SYNC_OP_TYPE_NONE, conn_handle);
+	if (ret != BT_AT_OK) {
+		return ret;
+	}
+#endif
+
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 
-	return ble_wifimate_client_wifi_scan(conn_handle);
+	ret = ble_wifimate_client_wifi_scan(conn_handle);
+	if (ret != RTK_BT_OK) {
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		bt_at_sync_deinit();
+#endif
+		return bt_at_rtk_err_to_at_err(ret);
+	}
+
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+	ret = bt_at_sync_sem_take();
+	if (ret == BT_AT_OK) {
+		ret = bt_at_sync_get_result();
+	}
+	bt_at_sync_deinit();
+#endif
+	return ret;
 }
 
 static int atcmd_bt_wifimate_configurator_wifi_connect(int argc, char **argv)
 {
 	uint16_t conn_handle;
+	int ret = 0;
 	struct wifi_conn_config_t conn_info;
 
 	if (argc < 3) {
@@ -50,8 +78,29 @@ static int atcmd_bt_wifimate_configurator_wifi_connect(int argc, char **argv)
 		BT_LOGA("[AT+BTDEMO] BLE wifimate configurator conn_handle=%d, ssid_len=%d, ssid=%s, security=%d, password_len=0, password=\r\n",
 				conn_handle, conn_info.ssid_len, conn_info.ssid, conn_info.security);
 	}
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+	ret = bt_at_sync_init(BT_AT_SYNC_CMD_TYPE_BLE_GATTS_INDICATE, BT_AT_SYNC_OP_TYPE_NONE, conn_handle);
+	if (ret != BT_AT_OK) {
+		return ret;
+	}
+#endif
 
-	return ble_wifimate_client_wifi_connect(conn_handle, &conn_info);
+	ret = ble_wifimate_client_wifi_connect(conn_handle, &conn_info);
+	if (ret != RTK_BT_OK) {
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		bt_at_sync_deinit();
+#endif
+		return bt_at_rtk_err_to_at_err(ret);
+	}
+
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+	ret = bt_at_sync_sem_take();
+	if (ret == BT_AT_OK) {
+		ret = bt_at_sync_get_result();
+	}
+	bt_at_sync_deinit();
+#endif
+	return ret;
 }
 
 uint16_t ble_wifimate_configurator_encrypt_set(uint8_t type, uint8_t key[BLE_WIFIMATE_KEY_LEN]);
@@ -59,6 +108,7 @@ static int atcmd_bt_wifimate_configurator_encrypt_set(int argc, char **argv)
 {
 	uint8_t algo_type = 0;
 	uint8_t key[BLE_WIFIMATE_KEY_LEN] = {0};
+	int ret = 0;
 
 	if (!argv) {
 		return BT_AT_ERR_PARAM_INVALID;
@@ -88,7 +138,9 @@ static int atcmd_bt_wifimate_configurator_encrypt_set(int argc, char **argv)
 			algo_type, key[0], key[1], key[2], key[3], key[4], key[5], key[6],
 			key[7], key[8], key[9], key[10], key[11], key[12]);
 
-	return ble_wifimate_configurator_encrypt_set(algo_type, key);
+	ret = ble_wifimate_configurator_encrypt_set(algo_type, key);
+
+	return bt_at_rtk_err_to_at_err(ret);
 }
 
 static const cmd_table_t ble_wifimate_configrator_cmd_table[] = {

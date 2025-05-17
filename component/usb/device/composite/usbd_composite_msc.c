@@ -135,9 +135,7 @@ static int RAM_init(void)
 	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
 
 	usbd_composite_msc_ram_disk_buf = (u8 *)usb_os_malloc(COMP_MSC_RAM_DISK_SIZE);
-	if (usbd_composite_msc_ram_disk_buf != NULL) {
-		mdev->is_ready = 1U;
-	} else {
+	if (usbd_composite_msc_ram_disk_buf == NULL) {
 		RTK_LOGS(TAG,  RTK_LOG_ERROR, "Alloc RAM disk buf fail");
 		result = SD_NODISK;
 	}
@@ -147,10 +145,6 @@ static int RAM_init(void)
 
 static int RAM_deinit(void)
 {
-	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
-
-	mdev->is_ready = 0U;
-
 	if (usbd_composite_msc_ram_disk_buf != NULL) {
 		usb_os_mfree((void *)usbd_composite_msc_ram_disk_buf);
 		usbd_composite_msc_ram_disk_buf = NULL;
@@ -378,8 +372,6 @@ static int usbd_composite_msc_set_config(usb_dev_t *dev, u8 config)
 	mdev->ro = 0;
 	mdev->phase_error = 0;
 
-	mdev->is_ready = 1U;
-
 	/* Prepare to receive next BULK OUT packet */
 	usbd_composite_msc_bulk_receive(dev, (u8 *)mdev->cbw, COMP_MSC_CB_WRAP_LEN);
 
@@ -398,8 +390,6 @@ static int usbd_composite_msc_clear_config(usb_dev_t *dev, u8 config)
 	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
 
 	UNUSED(config);
-
-	mdev->is_ready = 0U;
 
 	/* DeInit BULK IN EP */
 	usbd_ep_deinit(dev, USBD_COMP_MSC_BULK_IN_EP);
@@ -768,8 +758,6 @@ void usbd_composite_msc_deinit(void)
 
 	RTK_LOGS(TAG,  RTK_LOG_DEBUG, "Deinit\n");
 
-	mdev->is_ready = 0U;
-
 	usbd_unregister_class();
 
 	usbd_composite_msc_disk_deinit();
@@ -800,9 +788,8 @@ void usbd_composite_msc_deinit(void)
 int usbd_composite_msc_bulk_transmit(usb_dev_t *dev, u8 *buf, u16 len)
 {
 	int ret = HAL_ERR_HW;
-	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
 
-	if (mdev->is_ready) {
+	if (dev->is_ready) {
 		ret = usbd_ep_transmit(dev, USBD_COMP_MSC_BULK_IN_EP, buf, len);
 		usb_hal_dump_registers();
 	}
@@ -820,9 +807,8 @@ int usbd_composite_msc_bulk_transmit(usb_dev_t *dev, u8 *buf, u16 len)
 int usbd_composite_msc_bulk_receive(usb_dev_t *dev, u8 *buf, u16 len)
 {
 	int ret = HAL_ERR_HW;
-	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
 
-	if (mdev->is_ready) {
+	if (dev->is_ready) {
 		ret = usbd_ep_receive(dev, USBD_COMP_MSC_BULK_OUT_EP, buf, len);
 	}
 

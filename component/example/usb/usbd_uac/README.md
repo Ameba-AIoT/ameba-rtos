@@ -21,7 +21,9 @@ None
 	- Choose `CONFIG APPLICATION --->` -> `Audio Config --->`:
 	```
 	[*] Enable Audio Framework
-			Select Audio Interfaces (Mixer)  --->
+			Select Audio Interfaces (PassThrough)  --->
+
+	Note: If the audio speaker is not very smooth, choose `Select Audio Interfaces (Mixer)`, check the audio composite note to get more details.
 	```
 	Save and exit.
 
@@ -43,6 +45,10 @@ None
 3. Reset and check the log via LOGUART console, USB Audio loading log will be printed, make sure there is no error reported.
 
 4. After the USB Audio driver is successfully loaded, USB host end will recognize Ameba as an audio device.
+   ```
+	- Open the OS Sound Bar, enable Realtek UAC Device speaker device if it is disabled
+	- Open the OS Sound Bar, set Realtek UAC Device Speaker as default device
+   ```
 
 5. Now user can play audio via the audio device.
 

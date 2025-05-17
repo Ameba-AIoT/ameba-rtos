@@ -92,18 +92,21 @@ if WLAN_MENU && !FULLMAC_HOST
                     default "PA_10" if AMEBASMART
                     default "PA_15" if AMEBALITE
                     default "PB_0" if AMEBADPLUS
+                    default "PA_21" if AMEBAGREEN2
 
                 config EXT_PTA_PIN_PRI
                     string "Pin PTA Priority"
                     default "PA_6" if AMEBASMART
                     default "PA_17" if AMEBALITE
                     default "PB_2" if AMEBADPLUS
+                    default "PA_18" if AMEBAGREEN2
 
                 config EXT_PTA_PIN_GNT
                     string "Pin PTA Gnt"
                     default "PA_9" if AMEBASMART
                     default "PA_16" if AMEBALITE
                     default "PB_1" if AMEBADPLUS
+                    default "PA_19" if AMEBAGREEN2
 
                 config COEX_EXT_CHIP_SUPPORT
                     bool

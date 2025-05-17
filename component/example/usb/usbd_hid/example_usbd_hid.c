@@ -66,7 +66,7 @@ static void hid_cb_transmitted(u8 status);
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 static void hid_cb_received(u8 *buf, u32 len);
 #endif
-static void hid_cb_status_changed(u8 status);
+static void hid_cb_status_changed(u8 old_status, u8 status);
 
 #if CONFIG_USBD_HID_MOUSE_CMD
 #if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
@@ -193,9 +193,9 @@ static void hid_cb_received(u8 *buf, u32 len)
 }
 #endif
 
-static void hid_cb_status_changed(u8 status)
+static void hid_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d\n", status);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
 #if CONFIG_USBD_HID_HOTPLUG
 	hid_attach_status = status;
 	rtos_sema_give(hid_attach_status_changed_sema);

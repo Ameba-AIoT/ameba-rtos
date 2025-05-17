@@ -84,7 +84,7 @@ typedef struct {
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 	void(* received)(u8 *buf, u32 len);
 #endif
-	void (*status_changed)(u8 status);
+	void (*status_changed)(u8 old_status, u8 status);
 } usbd_hid_usr_cb_t;
 
 typedef struct {
@@ -102,7 +102,6 @@ typedef struct {
 	u16 intr_in_buf_len;
 	u8 protocol;
 	u8 idle_rate;
-	__IO u8 is_ready : 1;
 	__IO u8 is_tx_busy : 1;
 	u8 intr_in_state : 1;
 } usbd_hid_t;

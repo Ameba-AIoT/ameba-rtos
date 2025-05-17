@@ -67,7 +67,7 @@ void uart_stream_dma(void)
 	serial_send_comp_handler(&sobj, (void *)uart_send_string_done, (uint32_t) &sobj);
 	serial_recv_comp_handler(&sobj, (void *)uart_recv_string_done, (uint32_t) &sobj);
 
-	RTK_LOGI(NOTAG, "Receive %d-byte-data\n", len);
+	RTK_LOGI(NOTAG, "Ready to receive %d-byte-data...\n", len);
 
 	ret = serial_recv_stream_dma(&sobj, rx_buf, len);
 

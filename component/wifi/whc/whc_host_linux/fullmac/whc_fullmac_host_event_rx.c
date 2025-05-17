@@ -19,15 +19,10 @@ static void whc_fullmac_host_event_scan_report_indicate(struct event_priv_t *eve
 
 static void whc_fullmac_host_event_set_acs_info(u32 *param_buf)
 {
-	extern u8 chanel_idx_max;
-	extern u8 rtw_chnl_tbl[MAX_CHANNEL_NUM];
-	extern struct rtw_acs_mntr_rpt acs_mntr_rpt_tbl[MAX_CHANNEL_NUM];
-
 	u8 idx = 0;
 	struct rtw_acs_mntr_rpt *acs_rpt = (struct rtw_acs_mntr_rpt *)&param_buf[0];
 
 	if (acs_rpt->channel == 0) {
-		memset(acs_mntr_rpt_tbl, 0, sizeof(struct rtw_acs_mntr_rpt)*MAX_CHANNEL_NUM);
 		return;
 	}
 
@@ -340,6 +335,11 @@ void whc_fullmac_host_event_task(struct work_struct *data)
 		/* If user callback provided as NULL, param_buf[1] appears NULL here. Do not make ptr. */
 		/* https://jira.realtek.com/browse/AMEBAD2-1543 */
 		whc_fullmac_host_scan_done_indicate(param_buf[0], NULL);
+
+		/* if Synchronous scan abort, up sema when scan done */
+		if (global_idev.mlme_priv.scan_block_param) {
+			complete(&global_idev.mlme_priv.scan_block_param->sema);
+		}
 		break;
 	case WHC_API_IP_ACS:
 		whc_fullmac_host_event_set_acs_info(param_buf);
