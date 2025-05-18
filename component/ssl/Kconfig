@@ -23,7 +23,7 @@ menu "CONFIG SSL"
             bool "SSL ROM Test"
             select SSL_ROM_TEST if CORE_AS_AP
 
-        config USE_MBEDTLS_ROM
+        config USE_MBEDTLS_ROM_ALG # ed25519 will use mbedtls rom
             bool
             default y
     endif

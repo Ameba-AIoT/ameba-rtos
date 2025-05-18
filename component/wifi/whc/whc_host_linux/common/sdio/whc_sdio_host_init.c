@@ -39,7 +39,8 @@ u8 rtw_sdio_query_txbd_status(struct whc_sdio *priv)
 	//dev_dbg(&priv->func->dev, "%s: Free page for TXBD(0x%x)\n", __FUNCTION__, priv->SdioTxBDFreeNum);
 #else
 #ifdef GREEN2_WA
-	//WA GREEN2 Bug, SDIO_REG_FREE_TXBD_NUM show 0 but >0 actually, and no tx bd aval int at last.
+	/* WA GREEN2 Bug, SDIO_REG_FREE_TXBD_NUM show 0 but >0 actually, and no tx bd aval int at last.
+	   JIRA: https://jira.realtek.com/browse/PRINTER-2628 */
 	u16 wptr;
 	u16 rptr;
 

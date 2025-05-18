@@ -67,13 +67,6 @@ ameba_list_append(private_sources
 
 )
 
-if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
-    ameba_list_append(private_sources
-        #FIXME: move to other location
-        ${c_CMPT_SWLIB_DIR}/locks.c
-    )
-endif()
-
 ameba_list_append_ifnot(CONFIG_ARM_CORE_CA32 private_sources
     ameba_arch.c
     ameba_mpu_ram.c

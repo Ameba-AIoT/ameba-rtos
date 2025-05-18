@@ -111,6 +111,7 @@ int whc_fullmac_host_set_mac_addr(u32 wlan_idx, u8 *addr)
 int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8 block)
 {
 	int ret = 0;
+	struct internal_block_param *block_param = NULL;
 	u32 param_buf[2];
 	u8 *buf_vir = NULL;
 	dma_addr_t buf_phy = 0;
@@ -118,11 +119,22 @@ int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8
 	size_t offset = 0;
 	struct rtw_scan_param *scan_param_tmp = NULL;
 
+	if (block) {
+		block_param = (struct internal_block_param *)kzalloc(sizeof(struct internal_block_param), GFP_KERNEL);
+		if (!block_param) {
+			ret = -ENOMEM;
+			goto error;
+		}
+		/* initialize scan_sema. */
+		init_completion(&block_param->sema);
+	}
+
 	size += (sizeof(block) + ssid_length + scan_param->channel_list_num);
 	buf_vir = rtw_malloc(size, &buf_phy);
 	if (!buf_vir) {
 		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto error;
 	}
 	memcpy(buf_vir, &block, sizeof(block));
 	offset += sizeof(block);
@@ -143,7 +155,29 @@ int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8
 
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SCAN_NETWROKS, param_buf, 2);
 
-	rtw_mfree(size, buf_vir, buf_phy);
+	if (ret < 0) {
+		goto error;
+	}
+
+	if (block) {
+		global_idev.mlme_priv.scan_block_param = block_param;
+
+		if (wait_for_completion_timeout(&block_param->sema, RTW_SCAN_TIMEOUT) == 0) {
+			dev_err(global_idev.fullmac_dev, "%s: Scan timeout!\n", __func__);
+			ret = -EINVAL;
+		}
+		global_idev.mlme_priv.scan_block_param = NULL;
+	}
+
+error:
+	if (block_param) {
+		complete_release(&block_param->sema);
+		kfree((u8 *)block_param);
+	}
+
+	if (buf_vir) {
+		rtw_mfree(size, buf_vir, buf_phy);
+	}
 	return ret;
 }
 

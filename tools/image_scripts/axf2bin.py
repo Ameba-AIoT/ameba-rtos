@@ -51,7 +51,8 @@ class AuthAlg(Enum):
 
 class Manifest_TypeDef(Structure):
         _fields_=[('Pattern',c_uint32 * 2),
-                  ('Rsvd1',c_uint8 * 8),
+                  ('Rsvd1',c_uint8 * 7),
+                  ('RsipCfg',c_uint8),
                   ('Ver',c_uint8),
                   ('ImgID',c_uint8),
                   ('AuthAlg',c_uint8),
@@ -346,6 +347,16 @@ class secure_boot():
                     self.HmacKeyLen = length // 2
 
             if rsip_en:
+                #update RsipCfg bit[7:2]
+                for i, img in enumerate(['boot', 'app', 'img3'], start=1):
+                    rsip_mode = json_data.get(img, {}).get("RSIP_MODE", 0xFF)
+                    if rsip_mode > 0x02: rsip_mode = 0x03 # invalid value
+                    manifest.RsipCfg = manifest.RsipCfg & (~(0x03 << (i * 2))|(rsip_mode << (i * 2)))
+
+                #update RsipCfg bit[1:0]
+                tag_len = img_json_data.get('GCM_TAG_LEN', 0)
+                if tag_len in [4, 8, 16]:
+                    manifest.RsipCfg = manifest.RsipCfg & (((tag_len // 4) >> 1) | ~0x03)
                 if 'RSIP_IV' in img_json_keys:
                     if len(img_json_data['RSIP_IV']) == 16:
                         rsip_iv_bytes = bytes.fromhex(img_json_data['RSIP_IV'])
@@ -686,6 +697,22 @@ def CATFILE(header, dst, *src):
                 with open(isrc, "rb") as f:
                     content = f.read()
                     dst_fd.write(content)
+
+def APPENDFILE(dst, *src):
+    """
+    append files
+
+    :param dst: destination file
+    :param *src: source files, (src1, src2, ...), append to dst
+
+    """
+    with open(dst, "ab") as dst_fd:
+        for isrc in src:
+            if os.path.exists(isrc):
+                with open(isrc, "rb") as f:
+                    content = f.read()
+                    dst_fd.write(content)
+
 class PREPEND_TOOL:
     def __init__(self, argc, argv):
         self.argc = argc
@@ -709,12 +736,17 @@ class PREPEND_TOOL:
         IMG2SIGN=0x3831393538373131
 
         # Get Parameters
-        IMAGE_FILENAME=self.argv[2]
-        IMAGE_SECTION_START_NAME=self.argv[3]
-        SYMBOL_LIST=self.argv[4]
+        if self.argc == 1:
+            IMAGE_FILENAME=self.argv[0]
+            IMAGE_ADDR = '0x0'
+        else:
+            IMAGE_FILENAME=self.argv[2]
+            IMAGE_SECTION_START_NAME=self.argv[3]
+            SYMBOL_LIST=self.argv[4]
+            IMAGE_ADDR = self.grep(IMAGE_SECTION_START_NAME, SYMBOL_LIST)
+
 
         IMAGE_LEN = os.path.getsize(IMAGE_FILENAME)
-        IMAGE_ADDR = self.grep(IMAGE_SECTION_START_NAME, SYMBOL_LIST)
         IMAGE_FILENAME_NEW=os.path.basename(IMAGE_FILENAME)
         IMAGE_FILENAME_PREPEND = os.path.join(os.path.dirname(IMAGE_FILENAME),
                                             os.path.splitext(IMAGE_FILENAME_NEW)[0] + '_prepend' + os.path.splitext(IMAGE_FILENAME_NEW)[1])
@@ -729,7 +761,7 @@ class PREPEND_TOOL:
             HEADER_FINAL = IMG2SIGN.to_bytes(8, 'big')
 
         HEADER_FINAL = HEADER_FINAL + IMAGE_LEN.to_bytes(4, 'little') + int(IMAGE_ADDR, 16).to_bytes(4, 'little')
-        if len(sys.argv) > 5: #add boot index for rom jump in amebagreen2 and later
+        if len(self.argv) > 5: #add boot index for rom jump in amebagreen2 and later
             BOOT_INDEX=self.argv[5]
             HEADER_FINAL = HEADER_FINAL + int(BOOT_INDEX, 16).to_bytes(4, 'little') + 0xFFFFFFFF.to_bytes(4, 'little')
         elif IMAGE_FILENAME_NEW == "fatfs.bin":
@@ -852,7 +884,7 @@ class OTA_PREPEND_TOOL():
                 CATFILE(self.HEADER_FINAL, IMAGE_FILENAME_PREPEND, IMAGE2_FILENAME, IMAGE_FILENAME_1, "")
                 self.CHECKSUMTOOL(IMAGE2_FILENAME, IMAGE_FILENAME_PREPEND, 16)
                 self.CHECKSUMTOOL(IMAGE_FILENAME_1, IMAGE_FILENAME_PREPEND, 40)
-        elif self.argc - 1 == 4:
+        elif self.argc == 5:
             if IMAGE_FILENAME_1_NEW == "km4_boot_all.bin" or IMAGE_FILENAME_1_NEW == "km4_boot_all_ns.bin":
                 CATFILE(self.HEADER_FINAL, IMAGE_FILENAME_PREPEND, IMAGE_FILENAME_1, IMAGE2_FILENAME, IMAGE_FILENAME_2)
                 self.CHECKSUMTOOL(IMAGE_FILENAME_1, IMAGE_FILENAME_PREPEND, 16)
@@ -914,6 +946,13 @@ def ENCTOOL(key, *value):
             raise ValueError
         rsip = RSIP(len(argv), argv)
         rsip.RSIP_ImageEncrypt()
+
+        tag_name = os.path.join(os.path.dirname(argv[3]), os.path.splitext(argv[3])[0] + '_tag.bin')
+        if os.path.exists(tag_name):
+            padtool = PADTOOL(4, (0, 0, tag_name, "32"))
+            padtool.pad()
+            prependtool = PREPEND_TOOL(1, (tag_name,))
+            prependtool.prepend_header()
     elif key == "rdp":
         if len(argv) < 6:
             print("\tpython axf2bin.py rdp [enc|dec] <img_file> <out_file> <manifest.json>, Actual IV is composed by app RSIP_IV + RDP_IV")
@@ -1232,6 +1271,10 @@ class IMAGETOOL():
 
             self.image2_posthandle(KM0_IMG_DIR, app, app_ns)
 
+        if self.IMAGE_FILENAME == 'ram_1_prepend.bin':
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
+            CATFILE('', os.path.join(KM0_IMG_DIR, 'imgtool_flashloader.bin'), IMAGE_NAME, self.manifest)
+
     def amebasmart(self, KM4_IMG_DIR):
         if self.BUILD_TYPE == 'MFG':
             CA32_IMG_DIR = os.path.join(self.pwd, 'project_ap', 'asdk', 'image_mp')
@@ -1452,14 +1495,47 @@ class IMAGETOOL():
         km4ns_image2_en = os.path.join(KM4TZ_IMG_DIR, 'km4ns_image2_all_en.bin')
         km4tz_image2_en = os.path.join(KM4TZ_IMG_DIR, 'km4tz_image2_all_en.bin')
         km4tz_image3_en = os.path.join(KM4TZ_IMG_DIR, 'km4tz_image3_all_en.bin')
+        km4ns_image2_gcm = os.path.join(KM4TZ_IMG_DIR, 'km4ns_image2_all_en_tag_prepend.bin')
+        km4tz_image2_gcm = os.path.join(KM4TZ_IMG_DIR, 'km4tz_image2_all_en_tag_prepend.bin')
+        km4tz_image3_gcm = os.path.join(KM4TZ_IMG_DIR, 'km4tz_image3_all_en_tag_prepend.bin')
+        boot_all = os.path.join(KM4TZ_IMG_DIR, 'amebaL2_boot.bin')
+        boot_all_ns = os.path.join(KM4TZ_IMG_DIR, 'amebaL2_boot_ns.bin')
+        boot_all_gcm = os.path.join(KM4TZ_IMG_DIR, 'km4tz_boot_all_en_tag_prepend.bin')
         app = os.path.join(KM4TZ_IMG_DIR, 'amebaL2_app.bin')
         app_ns = os.path.join(KM4TZ_IMG_DIR, 'amebaL2_app_ns.bin')
+        app_hash = os.path.join(KM4TZ_IMG_DIR, 'amebaL2_app_hash.bin')
+        boot_hash = os.path.join(KM4TZ_IMG_DIR, 'amebaL2_boot_hash.bin')
+
+        with open(self.MANIFEST_JSON, 'r', encoding='utf-8') as f:
+            manifest_data = json.load(f)
+
+        img1_gcm_enable = False
+        img2_gcm_enable = False
+        img3_gcm_enable = False
+        if manifest_data['boot'].get('RSIP_EN', False) and manifest_data['boot'].get('RSIP_MODE', 0) == 2:
+            img1_gcm_enable = True
+        if manifest_data['app'].get('RSIP_EN', False) and manifest_data['app'].get('RSIP_MODE', 0) == 2:
+            img2_gcm_enable = True
+        if manifest_data['img3'].get('RSIP_EN', False) and manifest_data['img3'].get('RSIP_MODE', 0) == 2:
+            img3_gcm_enable = True
+
+        img3_enable = False
+        if os.path.exists(km4tz_image3):
+            img3_enable = True
 
         if self.IMAGE_FILENAME == 'km4ns_image2_all.bin' or self.IMAGE_FILENAME == 'km4tz_image2_all.bin':
-            km4ns_image2 = self.image2_prehandle(km4ns_image2, km4tz_image2, km4tz_image3, app, KM4TZ_IMG_DIR)
+            if not os.path.exists(km4ns_image2) or not os.path.exists(km4tz_image2):
+                sys.exit(0)
+
+            if img3_enable and img3_gcm_enable:
+                if not os.path.exists(km4tz_image3_gcm):
+                    print('error: km4tz_image3_gcm is NULL file')
+                    sys.exit(-1)
+
+            shutil.copy(km4ns_image2, KM4TZ_IMG_DIR)
+            km4ns_image2 = os.path.join(KM4TZ_IMG_DIR, os.path.basename(km4ns_image2))
 
             ENCTOOL('cert', self.MANIFEST_JSON, self.MANIFEST_JSON, self.cert, 0, 'app')
-            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, app, self.manifest, 'app')
             np_addr = self.get_address(self.LD_FILE, 'KM4NS_IMG2_XIP', 'ORIGIN')
             ap_addr = self.get_address(self.LD_FILE, 'KM4TZ_IMG2_XIP', 'ORIGIN')
             if not np_addr:
@@ -1474,18 +1550,46 @@ class IMAGETOOL():
 
             ENCTOOL('rsip', km4tz_image2, km4tz_image2_en, ap_addr, self.MANIFEST_JSON, 'app')
 
+            if img2_gcm_enable:
+                if not os.path.exists(km4ns_image2_gcm) or not os.path.exists(km4tz_image2_gcm):
+                    print('error: km4ns_image2_gcm or km4tz_image2_gcm is NULL file')
+                    sys.exit(-1)
+
+            # generate menifest.bin
+            if os.path.exists(app_hash):
+                os.remove(app_hash)
+            if img2_gcm_enable:
+                CATFILE('', app_hash, km4ns_image2_gcm, km4ns_image2, km4tz_image2_gcm, km4tz_image2)
+            else:
+                CATFILE('', app_hash, km4ns_image2, km4tz_image2)
+            if img3_enable:
+                if img3_gcm_enable:
+                    APPENDFILE(app_hash, km4tz_image3_gcm)
+                APPENDFILE(app_hash, km4tz_image3)
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, app_hash, self.manifest, 'app')
+
             if os.path.exists(self.manifest) == False:
                 sys.exit(1)
 
-            if os.path.exists(km4tz_image3_en):
-                CATFILE('', app_ns, self.cert, self.manifest, km4ns_image2, km4tz_image2, km4tz_image3)
-                CATFILE('', app, self.cert, self.manifest, km4ns_image2_en, km4tz_image2_en, km4tz_image3_en)
+            # app_ns
+            CATFILE('', app_ns, self.cert, self.manifest, km4ns_image2, km4tz_image2)
+            if img3_enable:
+                APPENDFILE(app_ns, km4tz_image3)
+
+            # app
+            CATFILE('', app, self.cert, self.manifest)
+
+            if img2_gcm_enable:
+                APPENDFILE(app, km4ns_image2_gcm, km4ns_image2_en, km4tz_image2_gcm, km4tz_image2_en)
             else:
-                CATFILE('', app_ns, self.cert, self.manifest, km4ns_image2, km4tz_image2)
-                CATFILE('', app, self.cert, self.manifest, km4ns_image2_en, km4tz_image2_en)
+                APPENDFILE(app, km4ns_image2_en, km4tz_image2_en)
+
+            if img3_enable:
+                if img3_gcm_enable:
+                    APPENDFILE(app, km4tz_image3_gcm)
+                APPENDFILE(app, km4tz_image3_en)
 
             self.image2_posthandle(KM4TZ_IMG_DIR, app, app_ns)
-
         if self.IMAGE_FILENAME == 'fullmac_ram_1_prepend.bin':
             ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, os.path.join(KM4TZ_IMG_DIR, 'fullmac_ram_1_prepend.bin'), self.manifest, 'boot')
             CATFILE('', os.path.join(KM4TZ_IMG_DIR, 'km4tz_fullmac_img_1.bin'), os.path.join(KM4TZ_IMG_DIR, 'fullmac_ram_1_prepend.bin'), self.manifest)
@@ -1497,12 +1601,27 @@ class IMAGETOOL():
         IMAGE_NAME = self.IMAGE_FULLNAME
         IMAGE_NAME_EN = os.path.splitext(IMAGE_NAME)[0] + '_en.bin'
         if self.IMAGE_FILENAME == 'km4tz_boot_all.bin':
-            boot_all = os.path.join(KM4TZ_IMG_DIR, 'amebaL2_boot.bin')
-            boot_all_ns = os.path.join(KM4TZ_IMG_DIR, 'amebaL2_boot_ns.bin')
-            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
             ENCTOOL('rsip', IMAGE_NAME, IMAGE_NAME_EN, '0x10400000', self.MANIFEST_JSON, 'boot')
+            if img1_gcm_enable and not os.path.exists(boot_all_gcm):
+                    print('error: boot_all_gcm is NULL file')
+                    sys.exit(-1)
+
+            # generate menifest.bin
+            if os.path.exists(boot_hash):
+                os.remove(boot_hash)
+            if img1_gcm_enable:
+                CATFILE('', boot_hash, boot_all_gcm, IMAGE_NAME)
+            else:
+                CATFILE('', boot_hash, IMAGE_NAME)
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, boot_hash, self.manifest, 'boot')
+
             CATFILE('', boot_all_ns, self.manifest, IMAGE_NAME)
-            CATFILE('', boot_all, self.manifest, IMAGE_NAME_EN)
+
+            CATFILE('', boot_all, self.manifest)
+            if img1_gcm_enable:
+                APPENDFILE(boot_all, boot_all_gcm)
+
+            APPENDFILE(boot_all, IMAGE_NAME_EN)
             os.remove(IMAGE_NAME_EN)
 
         if self.IMAGE_FILENAME == 'km4tz_image3_all.bin':

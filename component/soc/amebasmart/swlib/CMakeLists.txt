@@ -44,6 +44,9 @@ ameba_list_append(private_sources
     sscanf_minimal.c
 )
 
+ameba_list_append_ifnot(CONFIG_ARM_CORE_CA32 private_sources
+    locks.c
+)
 # Component private part, user config end
 #------------------------------#
 

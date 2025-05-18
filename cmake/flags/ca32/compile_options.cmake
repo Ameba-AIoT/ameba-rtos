@@ -5,7 +5,6 @@ set(c_GLOBAL_MCU_COMPILE_CPP_OPTIONS)
 
 # +++++++++++++++++ c_GLOBAL_MCU_COMPILE_DEFINES ++++++++++++++++ #
 ameba_list_append(c_GLOBAL_MCU_COMPILE_DEFINES
-    #TODO: why global mcu define config here?
     CONFIG_GIC_VER=${v_GIC_VER}
     configINTERRUPT_CONTROLLER_VERSION=${v_GIC_VER}
     CONFIG_CPUS_NUM=${CONFIG_CORE_NUM}

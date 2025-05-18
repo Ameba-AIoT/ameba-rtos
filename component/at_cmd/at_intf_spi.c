@@ -3,12 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "spi_api.h"
+#include "at_intf_spi.h"
 #include "spi_ex_api.h"
 #include "gpio_api.h"
 #include "gpio_irq_api.h"
 #include "atcmd_service.h"
-#include "at_intf_spi.h"
 
 static const char *const TAG = "AT_SPI-S";
 
@@ -46,6 +45,8 @@ u8 SPI0_CS = _PA_12;
 u8 AT_SYNC_FROM_MASTER_GPIO = PB_30;
 u8 AT_SYNC_TO_MASTER_GPIO = PB_31;
 #endif
+
+u8 SPI_INDEX = MBED_SPI0;
 
 /* for dma mode, start address of buffer should be CACHE_LINE_SIZE  aligned*/
 u8 SlaveTxBuf[ATCMD_SPI_DMA_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
@@ -124,7 +125,7 @@ void atcmd_spi_task(void)
 	struct atcmd_spi_req req = {0};
 
 	/* SPI0 is as Slave */
-	spi_slave.spi_idx = MBED_SPI0;
+	spi_slave.spi_idx = SPI_INDEX;
 	spi_init(&spi_slave,  SPI0_MOSI, SPI0_MISO, SPI0_SCLK, SPI0_CS);
 	spi_format(&spi_slave, SPI_DATA_FRAME_SIZE, SPI_MODE, 1);
 

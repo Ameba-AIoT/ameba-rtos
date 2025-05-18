@@ -55,6 +55,7 @@ struct mlme_priv_t {
 
 	/* join parameters. */
 	struct internal_block_param	*join_block_param;
+	struct internal_block_param	*scan_block_param;
 	unsigned int		rtw_join_status;
 	u8				assoc_req_ie[ASSOC_IE_MAX_LEN];
 	u8				assoc_rsp_ie[ASSOC_IE_MAX_LEN];

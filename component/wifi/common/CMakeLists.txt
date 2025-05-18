@@ -11,19 +11,18 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 # You may use if-else condition to set or update predefined variable above
 
+set(SEC_CODE_IN_ROM FALSE)
+set(release_target_name wifi_com_sec)
 
-set(release_target_name wifi_common)
+if(CONFIG_AMEBAGREEN2)
+    set(SEC_CODE_IN_ROM TRUE)
+endif()
+if(CONFIG_AMEBADPLUS AND CONFIG_ARM_CORE_CM0)
+    set(SEC_CODE_IN_ROM TRUE)
+endif()
 
-if(NOT(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAPRO3))
-    if(CONFIG_AS_INIC_AP)
-        set(release_target_name wifi_com_sec)
-    else()
-        if(NOT CONFIG_AMEBADPLUS)
-            set(release_target_name wifi_com_sec)
-        elseif(CONFIG_SINGLE_CORE_WIFI OR CONFIG_KM4_AS_NP)
-            set(release_target_name wifi_com_sec)
-        endif()
-    endif()
+if(SEC_CODE_IN_ROM)
+    set(release_target_name wifi_common)
 endif()
 
 ameba_list_append(public_includes

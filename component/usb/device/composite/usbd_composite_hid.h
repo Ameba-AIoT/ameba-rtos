@@ -52,7 +52,6 @@ typedef struct {
 	u16 intr_in_buf_size;
 	__IO u8 intr_in_state;
 	__IO u8 is_intr_in_busy : 1;
-	__IO u8 is_ready : 1;
 } usbd_composite_hid_device_t;
 
 /* Exported macros -----------------------------------------------------------*/
