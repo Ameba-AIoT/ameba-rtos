@@ -39,6 +39,7 @@ u16 usbh_cdc_ecm_get_receive_mps(void);
 
 #if ECM_STATE_DEBUG_ENABLE
 int usbh_cdc_ecm_get_hw_statue(void);
+int usbh_cdc_ecm_get_usb_statue(void);
 #endif
 
 #endif  /* USBH_CDC_ECM_HAL_H */

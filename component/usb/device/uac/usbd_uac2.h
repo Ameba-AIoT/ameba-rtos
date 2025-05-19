@@ -326,7 +326,7 @@ typedef struct {
 	int(* deinit)(void);
 	int(* setup)(usb_setup_req_t *req, u8 *buf);
 	int(* set_config)(void);
-	void(* status_changed)(u8 status);
+	void(* status_changed)(u8 old_status, u8 status);
 	void(* mute_changed)(u8 mute);
 	void(* volume_changed)(u8 volume);
 	void(* format_changed)(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
@@ -370,7 +370,6 @@ typedef struct {
 	u8 alt_setting;
 	u8 cur_ch_cnt;
 	u8 cur_mute;
-	__IO u8 is_ready;
 
 #if USBD_UAC_ISOC_XFER_DEBUG
 	u32 copy_data_len;

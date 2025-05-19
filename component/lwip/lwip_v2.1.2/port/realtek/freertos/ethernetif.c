@@ -328,15 +328,19 @@ void ethernetif_recv(struct netif *netif, int total_len)
 void rltk_mii_init(void)
 {
 #if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
-	rtos_mutex_create(&mii_tx_mutex);
+	if(mii_tx_mutex == NULL) {
+		rtos_mutex_create(&mii_tx_mutex);
+	}
 #endif
 }
 
 void rltk_mii_deinit(void)
 {
 #if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
-	rtos_mutex_delete(mii_tx_mutex);
-	mii_tx_mutex = NULL;
+	if(mii_tx_mutex) {
+		rtos_mutex_delete(mii_tx_mutex);
+		mii_tx_mutex = NULL;
+	}
 #endif
 }
 

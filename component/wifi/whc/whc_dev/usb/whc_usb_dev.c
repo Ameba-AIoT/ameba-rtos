@@ -118,9 +118,10 @@ static void whc_usb_dev_resume_cb(void)
 	wifi_inic_usb_status = WIFI_INIC_USB_STATUS_ACTIVE;
 }
 
-void whc_usb_dev_status_changed_cb(u8 status)
+void whc_usb_dev_status_changed_cb(u8 old_status, u8 new_status)
 {
-	if (status == USBD_ATTACH_STATUS_ATTACHED) {
+	UNUSED(old_status);
+	if (new_status == USBD_ATTACH_STATUS_ATTACHED) {
 		wifi_inic_usb_status = WIFI_INIC_USB_STATUS_ACTIVE;
 	}
 }

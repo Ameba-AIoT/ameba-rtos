@@ -25,6 +25,7 @@ if(CONFIG_AS_INIC_NP)
         ${DIR_COMMON}/wififw_ps_state_common.c
         ${DIR}/wififw_ps_bcnhdl.c
         ${DIR_COMMON}/wififw_ps_bcnhdl_common.c
+        ${DIR_COMMON}/wififw_bcnrxwindow_adjust_com.c
         ${DIR_COMMON}/wififw_hioe_common.c
         ${DIR}/wififw_wowlan.c
         ${DIR}/wififw_lpsofld.c

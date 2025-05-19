@@ -139,8 +139,8 @@ typedef struct {
 	u8 dma_enable : 1;									/* Enable USB internal DMA mode, 0-Disable, 1-Enable */
 
 	/* 	used for get the usb host tick
-		if sof_tick_en = 1, usbh_get_current_tick will return the tick which support by sof interrupt(should enable sof interrupt)
-		if sof_tick_en = 0, usbh_get_current_tick will return the tick which got from the timestamp
+		if sof_tick_en = 1, usbh_get_tick will return the tick which support by sof interrupt(should enable sof interrupt)
+		if sof_tick_en = 0, usbh_get_tick will return the tick which got from the timestamp
 	*/
 	u8 sof_tick_en : 1;
 } usbh_config_t;
@@ -231,8 +231,10 @@ u32 usbh_get_interval(usb_host_t *host, u8 ep_type, u8 binterval);
 /* Get the tick difference */
 u32 usbh_get_elapsed_ticks(usb_host_t *host, u32 start_tick);
 
-/* Get Current time tick*/
-u32 usbh_get_current_tick(usb_host_t *host);
+/* Get current tick count, based SOF */
+u32 usbh_get_tick(usb_host_t *host);
+/* Get current timestamp in ms*/
+u32 usbh_get_timestamp(usb_host_t *host);
 
 /* Get raw configuration descriptor data */
 u8 *usbh_get_raw_configuration_descriptor(usb_host_t *host);

@@ -23,7 +23,9 @@ None
 	- Choose `CONFIG APPLICATION --->` -> `Audio Config --->`:
 	```
 	[*] Enable Audio Framework
-			Select Audio Interfaces (Mixer)  --->
+			Select Audio Interfaces (PassThrough)  --->
+		
+	Note: If the audio speaker is not very smooth, choose `Select Audio Interfaces (Mixer)`, check the audio composite note to get more details.
 	```
 	Save and exit.
 
@@ -41,8 +43,16 @@ None
 	```
 
 2. Connect the USB port of Ameba board to USB UAC HID host (for example PC) with USB cable.
-3. Play music on a PC, if you connect a speaker to the board, sound will come out
-4. Use HIDPyToy tool to test the HID message(download address https://github.com/todbot/hidpytoy)
+
+3. After the USB Audio driver is successfully loaded, USB host end will recognize Ameba as an audio device.
+
+4. Play music on a PC, if you connect a speaker to the board, sound will come out
+   ```
+	- Open the OS Sound Bar, enable the Realtek Composite Device speaker device if it is disabled
+	- Open the OS Sound Bar, set Realtek Composite Device Speaker as default device
+   ```
+
+5. Use HIDPyToy tool to test the HID message(download address https://github.com/todbot/hidpytoy)
    	```
 	- Connect the HID device
 		click rescan ,choose "Realtek HID Priv Device" device,and click connect
@@ -51,8 +61,10 @@ None
 		USBD TX:type "usbd tx" in the LOGUART console, and click "Read In Reports" in the HIDPyToy, you will get a message from the ameba device
 		Notice:please trigger USBD RX first
 	```
-5. Type usbd vol1/vol2 in the LOGUART console, the windows volume control bar will pop-up, and the volume will change
-6. Reset and check the log via LOGUART console, make sure there is no error reported
+
+6. Type usbd vol1/vol2 in the LOGUART console, the windows volume control bar will pop-up, and the volume will change
+
+7. Reset and check the log via LOGUART console, make sure there is no error reported
    
 
 # Supported IC

@@ -105,7 +105,7 @@ static usbd_config_t cmd_usbd_verify_cfg = {
 	/*DFIFO total 1024 DWORD, resv 12 DWORD for DMA addr and EP0 fixed 32 DWORD*/
 	.rx_fifo_depth = 292U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 256U, 128U, },
-	//.ext_intr_en = USBD_EOPF_INTR,//for ISOC OUT
+	.ext_intr_en = USBD_EOPF_INTR,//for ISOC OUT
 #elif defined (CONFIG_AMEBASMARTPLUS)
 	/*DFIFO total 1280 DWORD, resv 14 DWORD for DMA addr and EP0 fixed 32 DWORD*/
 	.rx_fifo_depth = 402U,

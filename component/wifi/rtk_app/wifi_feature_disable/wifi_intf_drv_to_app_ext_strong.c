@@ -350,13 +350,6 @@ void wifi_wpa_add_key(struct rtw_crypt_info *crypt)
 	call_noused = __LINE__;
 }
 
-void wifi_blk_api_done(u32 event_id, int ret)
-{
-	UNUSED(event_id);
-	UNUSED(ret);
-	call_noused = __LINE__;
-}
-
 void wifi_promisc_enable(u32 enable, struct rtw_promisc_para *para)
 {
 	UNUSED(enable);

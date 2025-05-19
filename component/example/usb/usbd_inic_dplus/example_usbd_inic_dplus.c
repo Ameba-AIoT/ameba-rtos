@@ -17,6 +17,8 @@
 // and reset USB stack to avoid memory leak, only for example.
 #define CONFIG_USBD_INIC_HOTPLUG					1
 
+#define USBD_INIC_BULK_BUF_SIZE							64U
+
 // Thread priorities
 #define CONFIG_USBD_INIC_INIT_THREAD_PRIORITY		5
 #define CONFIG_USBD_INIC_HOTPLUG_THREAD_PRIORITY	8
@@ -24,7 +26,6 @@
 #define CONFIG_USBD_INIC_RESET_THREAD_PRIORITY		6
 
 // Vendor requests
-#define USBD_INIC_VENDOR_REQ_BT_HCI_CMD				0x00U
 #define USBD_INIC_VENDOR_REQ_FW_DOWNLOAD			0xF0U
 #define USBD_INIC_VENDOR_QUERY_CMD					0x01U
 #define USBD_INIC_VENDOR_QUERY_ACK					0x81U
@@ -65,6 +66,16 @@ typedef struct {
 	u32	reserved;
 } usbd_inic_query_packet_t;
 
+typedef struct {
+	u8 *buf;
+	u16 buf_len;
+} usbd_inic_app_ep_t;
+
+typedef struct {
+	usbd_inic_app_ep_t in_ep[USB_MAX_ENDPOINTS];
+	usbd_inic_app_ep_t out_ep[USB_MAX_ENDPOINTS];
+} usbd_inic_app_t;
+
 #define	USBD_INIC_QUERY_PACKET_SIZE			(sizeof(usbd_inic_query_packet_t))
 
 /* Private macros ------------------------------------------------------------*/
@@ -78,20 +89,16 @@ static int inic_cb_set_config(void);
 static int inic_cb_clear_config(void);
 static int inic_cb_received(usbd_inic_ep_t *ep, u16 len);
 static void inic_cb_transmitted(usbd_inic_ep_t *ep, u8 status);
-static void inic_cb_status_changed(u8 status);
+static void inic_cb_status_changed(u8 old_status, u8 status);
 static void inic_cb_suspend(void);
 static void inic_cb_resume(void);
 
 /* Private variables ---------------------------------------------------------*/
 
 static usbd_config_t inic_cfg = {
-	.speed = USB_SPEED_HIGH,
+	.speed = USB_SPEED_FULL,
 	.dma_enable = 1U,
 	.isr_priority = INT_PRI_MIDDLE,
-#if defined (CONFIG_AMEBAGREEN2)
-	.rx_fifo_depth = 292U,
-	.ptx_fifo_depth = {16U, 256U, 32U, 256U, 128U, },
-#endif
 };
 
 static usbd_inic_cb_t inic_cb = {
@@ -107,16 +114,9 @@ static usbd_inic_cb_t inic_cb = {
 	.resume = inic_cb_resume,
 };
 
-//static u8 inic_bt_intr_in_buf[USBD_INIC_BT_EP1_INTR_IN_BUF_SIZE];
-
-static u8 *inic_wifi_bulk_in_buf = NULL;
-static u32 inic_wifi_bulk_in_len = 0;
+/* INIC Device */
+static usbd_inic_app_t usbd_inic_app;
 static rtos_sema_t inic_wifi_bulk_in_sema;
-
-static u8 *inic_bt_bulk_in_buf = NULL;
-static u32 inic_bt_bulk_in_len = 0;
-static rtos_sema_t inic_bt_bulk_in_sema;
-
 static rtos_sema_t reset_sema;
 
 #if CONFIG_USBD_INIC_HOTPLUG
@@ -125,16 +125,6 @@ static rtos_sema_t inic_attach_status_changed_sema;
 #endif
 
 /* Private functions ---------------------------------------------------------*/
-
-static u8 inic_setup_handle_hci_cmd(usb_setup_req_t *req, u8 *buf)
-{
-	UNUSED(req);
-	UNUSED(buf);
-
-	// Handle BT HCI commands
-
-	return HAL_OK;
-}
 
 static int inic_setup_handle_query(usb_setup_req_t *req, u8 *buf)
 {
@@ -177,9 +167,6 @@ static int inic_cb_setup(usb_setup_req_t *req, u8 *buf)
 {
 	int ret = HAL_ERR_PARA;
 	switch (req->bRequest) {
-	case USBD_INIC_VENDOR_REQ_BT_HCI_CMD:
-		ret = inic_setup_handle_hci_cmd(req, buf);
-		break;
 	case USBD_INIC_VENDOR_REQ_FW_DOWNLOAD:
 		ret = inic_setup_handle_query(req, buf);
 		break;
@@ -190,6 +177,80 @@ static int inic_cb_setup(usb_setup_req_t *req, u8 *buf)
 	return ret;
 }
 
+static void inic_wifi_deinit(void)
+{
+	usbd_inic_app_t *iapp = &usbd_inic_app;
+	usbd_inic_app_ep_t *ep;
+
+	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN)];
+	if (ep->buf != NULL) {
+		usb_os_mfree(ep->buf);
+		ep->buf = NULL;
+	}
+
+	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_OUT)];
+	if (ep->buf != NULL) {
+		usb_os_mfree(ep->buf);
+		ep->buf = NULL;
+	}
+
+	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP2_BULK_OUT)];
+	if (ep->buf != NULL) {
+		usb_os_mfree(ep->buf);
+		ep->buf = NULL;
+	}
+}
+
+static int inic_wifi_init(void)
+{
+	int ret = HAL_OK;
+	usbd_inic_app_t *iapp = &usbd_inic_app;
+	usbd_inic_app_ep_t *ep;
+	u8 ep_num;
+
+	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN);
+	ep = &iapp->in_ep[ep_num];
+	ep->buf_len = USBD_INIC_BULK_BUF_SIZE;
+	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
+	if (ep->buf == NULL) {
+		ret = HAL_ERR_MEM;
+		goto wifi_init_exit;
+	}
+
+	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_OUT);
+	ep = &iapp->out_ep[ep_num];
+	ep->buf_len = USBD_INIC_BULK_BUF_SIZE;
+	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
+	if (ep->buf == NULL) {
+		ret = HAL_ERR_MEM;
+		goto wifi_init_clean_ep3_bulk_in_buf_exit;
+	}
+
+	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP2_BULK_OUT);
+	ep = &iapp->out_ep[ep_num];
+	ep->buf_len = USBD_INIC_BULK_BUF_SIZE;
+	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
+	if (ep->buf == NULL) {
+		ret = HAL_ERR_MEM;
+		goto wifi_init_clean_ep4_bulk_out_buf_exit;
+	}
+
+	return HAL_OK;
+
+wifi_init_clean_ep4_bulk_out_buf_exit:
+	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_OUT)];
+	usb_os_mfree(ep->buf);
+	ep->buf = NULL;
+
+wifi_init_clean_ep3_bulk_in_buf_exit:
+	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN)];
+	usb_os_mfree(ep->buf);
+	ep->buf = NULL;
+
+wifi_init_exit:
+	return ret;
+}
+
 /**
   * @brief  Initializes inic application layer
   * @param  None
@@ -197,17 +258,20 @@ static int inic_cb_setup(usb_setup_req_t *req, u8 *buf)
   */
 static int inic_cb_init(void)
 {
-	inic_wifi_bulk_in_buf = NULL;
-	inic_wifi_bulk_in_len = 0;
+	int ret = HAL_OK;
+
+	ret = inic_wifi_init();
+	if (ret != HAL_OK) {
+		goto init_exit;
+	}
+
 	rtos_sema_create(&inic_wifi_bulk_in_sema, 0, 1);
-
-	inic_bt_bulk_in_buf = NULL;
-	inic_bt_bulk_in_len = 0;
-	rtos_sema_create(&inic_bt_bulk_in_sema, 0, 1);
-
 	rtos_sema_create(&reset_sema, 0, 1);
 
 	return HAL_OK;
+
+init_exit:
+	return ret;
 }
 
 /**
@@ -218,8 +282,10 @@ static int inic_cb_init(void)
 static int inic_cb_deinit(void)
 {
 	rtos_sema_delete(inic_wifi_bulk_in_sema);
-	rtos_sema_delete(inic_bt_bulk_in_sema);
 	rtos_sema_delete(reset_sema);
+
+	inic_wifi_deinit();
+
 	return HAL_OK;
 }
 
@@ -230,6 +296,15 @@ static int inic_cb_deinit(void)
   */
 static int inic_cb_set_config(void)
 {
+	usbd_inic_app_t *iapp = &usbd_inic_app;
+	usbd_inic_app_ep_t *ep;
+
+	// Prepare to RX
+	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_OUT)];
+	usbd_inic_receive_data(USBD_WHC_WIFI_EP4_BULK_OUT, ep->buf, ep->buf_len, NULL);
+	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP2_BULK_OUT)];
+	usbd_inic_receive_data(USBD_WHC_WIFI_EP2_BULK_OUT, ep->buf, ep->buf_len, NULL);
+
 	return HAL_OK;
 }
 
@@ -251,24 +326,18 @@ static int inic_cb_clear_config(void)
   */
 static int inic_cb_received(usbd_inic_ep_t *ep, u16 len)
 {
+	usbd_inic_app_t *iapp = &usbd_inic_app;
+	usbd_inic_app_ep_t *ep_in;
+	u8 ep_num;
+
 	switch (ep->addr) {
-	case USBD_INIC_BT_EP2_BULK_OUT:
-		// Loopback with EP2
-		inic_bt_bulk_in_buf = ep->buf;
-		inic_bt_bulk_in_len = len;
-		rtos_sema_give(inic_bt_bulk_in_sema);
-		break;
-	case USBD_WHC_WIFI_EP5_BULK_OUT:
-		// Loopback with EP4
-		inic_wifi_bulk_in_buf = ep->buf;
-		inic_wifi_bulk_in_len = len;
+	case USBD_WHC_WIFI_EP4_BULK_OUT:
+		// Loopback with EP3
+		ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN);
+		ep_in = &iapp->in_ep[ep_num];
+		usb_os_memcpy((void *)ep_in->buf, (void *)ep->buf, len);
+		ep_in->buf_len = len;
 		rtos_sema_give(inic_wifi_bulk_in_sema);
-		break;
-	case USBD_WHC_WIFI_EP6_BULK_OUT:
-		// TBD
-		break;
-	case USBD_WHC_WIFI_EP7_BULK_OUT:
-		// TBD
 		break;
 	default:
 		break;
@@ -281,13 +350,7 @@ static void inic_cb_transmitted(usbd_inic_ep_t *ep, u8 status)
 {
 	(void)status;
 	switch (ep->addr) {
-	case USBD_INIT_BT_EP1_INTR_IN:
-		// TBD
-		break;
-	case USBD_INIC_BT_EP2_BULK_IN:
-		// TBD
-		break;
-	case USBD_WHC_WIFI_EP4_BULK_IN:
+	case USBD_WHC_WIFI_EP3_BULK_IN:
 		// TBD
 		break;
 	default:
@@ -298,32 +361,25 @@ static void inic_cb_transmitted(usbd_inic_ep_t *ep, u8 status)
 static void inic_wifi_bulk_in_thread(void *param)
 {
 	UNUSED(param);
+	usbd_inic_app_t *iapp = &usbd_inic_app;
+	usbd_inic_app_ep_t *ep;
+	u8 ep_num;
+
+	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN);
+	ep = &iapp->in_ep[ep_num];
 
 	for (;;) {
 		if (rtos_sema_take(inic_wifi_bulk_in_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-			if ((inic_wifi_bulk_in_buf != NULL) && (inic_wifi_bulk_in_len != 0)) {
-				usbd_inic_transmit_data(USBD_WHC_WIFI_EP4_BULK_IN, inic_wifi_bulk_in_buf, inic_wifi_bulk_in_len);
+			if ((ep->buf != NULL) && (ep->buf_len != 0)) {
+				usbd_inic_transmit_data(USBD_WHC_WIFI_EP3_BULK_IN, ep->buf, ep->buf_len, NULL);
 			}
 		}
 	}
 }
 
-static void inic_bt_bulk_in_thread(void *param)
+static void inic_cb_status_changed(u8 old_status, u8 status)
 {
-	UNUSED(param);
-
-	for (;;) {
-		if (rtos_sema_take(inic_bt_bulk_in_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-			if ((inic_bt_bulk_in_buf != NULL) && (inic_bt_bulk_in_len != 0)) {
-				usbd_inic_transmit_data(USBD_INIC_BT_EP2_BULK_IN, inic_bt_bulk_in_buf, inic_bt_bulk_in_len);
-			}
-		}
-	}
-}
-
-static void inic_cb_status_changed(u8 status)
-{
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d\n", status);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
 #if CONFIG_USBD_INIC_HOTPLUG
 	inic_attach_status = status;
 	rtos_sema_give(inic_attach_status_changed_sema);
@@ -397,7 +453,6 @@ static void example_usbd_inic_thread(void *param)
 	rtos_task_t hotplug_task;
 #endif
 	rtos_task_t wifi_bulk_in_task;
-	rtos_task_t bt_bulk_in_task;
 	rtos_task_t reset_task;
 
 	UNUSED(param);
@@ -421,14 +476,9 @@ static void example_usbd_inic_thread(void *param)
 		goto clear_class_exit;
 	}
 
-	ret = rtos_task_create(&bt_bulk_in_task, "inic_bt_bulk_in_thread", inic_bt_bulk_in_thread, NULL, 1024, CONFIG_USBD_INIC_XFER_THREAD_PRIORITY);
-	if (ret != RTK_SUCCESS) {
-		goto clear_wifi_bulk_in_task;
-	}
-
 	ret = rtos_task_create(&reset_task, "inic_reset_thread", inic_reset_thread, NULL, 1024, CONFIG_USBD_INIC_RESET_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
-		goto clear_bt_bulk_in_task;
+		goto clear_wifi_bulk_in_task;
 	}
 
 #if CONFIG_USBD_INIC_HOTPLUG
@@ -440,7 +490,7 @@ static void example_usbd_inic_thread(void *param)
 
 	rtos_time_delay_ms(100);
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD INIC demo start\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD INIC dplus demo start\n");
 
 	rtos_task_delete(NULL);
 
@@ -450,9 +500,6 @@ static void example_usbd_inic_thread(void *param)
 clear_reset_task:
 	rtos_task_delete(reset_task);
 #endif
-
-clear_bt_bulk_in_task:
-	rtos_task_delete(bt_bulk_in_task);
 
 clear_wifi_bulk_in_task:
 	rtos_task_delete(wifi_bulk_in_task);
@@ -464,7 +511,7 @@ clear_usb_driver_exit:
 	usbd_deinit();
 
 exit:
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD INIC demo stop\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD INIC dplus demo stop\n");
 #if CONFIG_USBD_INIC_HOTPLUG
 	rtos_sema_delete(inic_attach_status_changed_sema);
 #endif
@@ -474,7 +521,7 @@ exit:
 
 /* Exported functions --------------------------------------------------------*/
 
-void example_usbd_inic(void)
+void example_usbd_inic_dplus(void)
 {
 	int status;
 	rtos_task_t task;
