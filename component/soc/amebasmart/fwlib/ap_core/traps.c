@@ -107,28 +107,28 @@ _WEAK void Crash_DumpReg(uint32_t cstack[], uint32_t spsr)
 
 	/* 1. R0 - R3, R12, LR. */
 	for (idx = REG_R0; idx <= REG_LR; idx++) {
-		printf("Core[%lx] %s = 0x%08lx\n", xCoreID, crash_reg_name[idx], cstack[idx]);
+		DiagPrintf("Core[%lx] %s = 0x%08lx\n", xCoreID, crash_reg_name[idx], cstack[idx]);
 	}
 
 	/* 2.R4-R11 have been push into current SP. */
 	for (idx = REG_R4; idx <= REG_R11; idx++) {
-		printf("Core[%lx] %s = 0x%08lx\n", xCoreID, crash_reg_name[idx], cstack[idx]);
+		DiagPrintf("Core[%lx] %s = 0x%08lx\n", xCoreID, crash_reg_name[idx], cstack[idx]);
 	}
 
 	/* 3. Print CPSR/LR value. */
-	printf("Core[%lx] Previous Mode's CPSR is 0x%08lx\n", xCoreID, (u32)spsr);
+	DiagPrintf("Core[%lx] Previous Mode's CPSR is 0x%08lx\n", xCoreID, (u32)spsr);
 	u32 except_stack, except_lr;
 	Crash_GetExStack(spsr, &except_stack, &except_lr);
-	printf("Core[%lx] Previous Mode's LR is 0x%08lx\n", xCoreID, except_lr);
+	DiagPrintf("Core[%lx] Previous Mode's LR is 0x%08lx\n", xCoreID, except_lr);
 
 	/* 4. dump stack. */
 	int depth = CONFIG_STACK_DUMP_DEPTH;
 	int i = 0;
 	u32 *sp = (uint32_t *)except_stack;
-	printf("Core[%lx] Current Stack Pointer = 0x%08lx, and dump stack depth = %d\r\n", xCoreID, (u32)sp, depth);
+	DiagPrintf("Core[%lx] Current Stack Pointer = 0x%08lx, and dump stack depth = %d\r\n", xCoreID, (u32)sp, depth);
 
 	while (depth > i) {
-		printf("Core[%lx] [%08lx] 0x%08lx 0x%08lx 0x%08lx 0x%08lx\n", xCoreID, (u32)(sp + i), sp[i], sp[i + 1], sp[i + 2], sp[i + 3]);
+		DiagPrintf("Core[%lx] [%08lx] 0x%08lx 0x%08lx 0x%08lx 0x%08lx\n", xCoreID, (u32)(sp + i), sp[i], sp[i + 1], sp[i + 2], sp[i + 3]);
 		i += 4;
 	}
 
@@ -137,7 +137,7 @@ _WEAK void Crash_DumpReg(uint32_t cstack[], uint32_t spsr)
 
 _WEAK void UndefinedExceptionHandler(uint32_t cstack[], uint32_t spsr)
 {
-	printf("Address of the undefined instruction 0x%08x\n", (unsigned int)UndefinedExceptionAddr);
+	DiagPrintf("Address of the undefined instruction 0x%08x\n", (unsigned int)UndefinedExceptionAddr);
 
 	Crash_DumpReg(cstack, spsr);
 	for (;;);
@@ -149,8 +149,8 @@ _WEAK void DataAbortHandler(uint32_t cstack[], uint32_t spsr)
 
 	asm volatile("mrc	p15, 0, %0, c5, c0, 0" : "=r"(FaultStatus));
 
-	printf("Data abort with Data Fault Status Register  0x%08x\n", (unsigned int)FaultStatus);
-	printf("Address of Instruction causing Data abort 0x%08x\n", (unsigned int)DataAbortAddr);
+	DiagPrintf("Data abort with Data Fault Status Register  0x%08x\n", (unsigned int)FaultStatus);
+	DiagPrintf("Address of Instruction causing Data abort 0x%08x\n", (unsigned int)DataAbortAddr);
 
 	Crash_DumpReg(cstack, spsr);
 	for (;;);
@@ -162,8 +162,8 @@ _WEAK void PrefetchAbortHandler(uint32_t cstack[], uint32_t spsr)
 
 	asm volatile("mrc	p15, 0, %0, c5, c0, 1" : "=r"(FaultStatus));
 
-	printf("Prefetch abort with Instruction Fault Status Register 0x%08x\n", (unsigned int)FaultStatus);
-	printf("Address of Instruction causing Data abort 0x%08x\n", (unsigned int)PrefetchAbortAddr);
+	DiagPrintf("Prefetch abort with Instruction Fault Status Register 0x%08x\n", (unsigned int)FaultStatus);
+	DiagPrintf("Address of Instruction causing Data abort 0x%08x\n", (unsigned int)PrefetchAbortAddr);
 
 	Crash_DumpReg(cstack, spsr);
 	for (;;);

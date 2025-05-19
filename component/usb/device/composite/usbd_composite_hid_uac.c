@@ -28,7 +28,7 @@ static int usbd_composite_handle_ep0_data_out(usb_dev_t *dev);
 static int usbd_composite_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_composite_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
 static u8 *usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_type_t speed, u16 *len);
-static void usbd_composite_status_changed(usb_dev_t *dev, u8 status);
+static void usbd_composite_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "COMP";
@@ -328,24 +328,25 @@ static int usbd_composite_handle_ep0_data_out(usb_dev_t *dev)
 /**
   * @brief  USB attach status change
   * @param  dev: USB device instance
+  * @param  old_status: USB old attach status
   * @param  status: USB attach status
   * @retval void
   */
-static void usbd_composite_status_changed(usb_dev_t *dev, u8 status)
+static void usbd_composite_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 	UNUSED(dev);
 
 	if ((cdev->hid != NULL) && (cdev->hid->status_changed)) {
-		cdev->hid->status_changed(dev, status);
+		cdev->hid->status_changed(dev, old_status, status);
 	}
 
 	if ((cdev->uac != NULL) && (cdev->uac->status_changed != NULL)) {
-		cdev->uac->status_changed(dev, status);
+		cdev->uac->status_changed(dev, old_status, status);
 	}
 
 	if ((cdev->cb != NULL) && (cdev->cb->status_changed)) {
-		cdev->cb->status_changed(status);
+		cdev->cb->status_changed(old_status, status);
 	}
 }
 

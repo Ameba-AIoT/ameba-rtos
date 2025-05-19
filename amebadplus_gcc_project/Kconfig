@@ -30,6 +30,12 @@ config SUPPORT_USBD_UAC
 config SUPPORT_HEAP_TRACE
     def_bool y
 
+config WIFI_POWER_TABLE_USRCFG_1v8
+    def_bool y
+
+config WIFI_POWER_TABLE_USRCFG_3v3_1v25
+    def_bool y
+
 #---------- FEATURE LIST END-------------#
 
 menu "CONFIG TrustZone"

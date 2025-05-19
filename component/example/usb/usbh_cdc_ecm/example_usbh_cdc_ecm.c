@@ -9,6 +9,7 @@
 #include <lwip/sockets.h>
 #include <lwip/netdb.h>
 #include "os_wrapper.h"
+#include "wifi_api.h"
 #include "usbh.h"
 #include "mbedtls/md5.h"
 #include "lwip_netconf.h"
@@ -88,10 +89,10 @@ static void ecm_link_change_thread(void *param)
 	eth_state_t ethernet_unplug = ETH_STATUS_IDLE;
 
 	UNUSED(param);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter link status task!\n");
-	cdc_ecm_do_init();
-
 	rltk_mii_init();
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter link status task!\n");
+
+	cdc_ecm_do_init();
 
 	while (1) {
 		link_is_up = usbh_cdc_ecm_get_connect_status();
@@ -114,7 +115,6 @@ static void ecm_link_change_thread(void *param)
 			ethernet_unplug = ETH_STATUS_DEINIT;
 			netif_set_default(&xnetif[0]);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Swicth to unlink\n");
-			//usbh_cdc_ecm_do_deinit();
 		} else {
 			rtos_time_delay_ms(1000);
 		}
@@ -326,9 +326,9 @@ static void usbh_ecm_mem_check_thread(void *param)
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Del monitor_task\n");
 			rtos_task_delete(monitor_task);
-			rltk_mii_deinit();
 
 			usbh_cdc_ecm_do_deinit();
+			// rltk_mii_deinit();
 			rtos_time_delay_ms(3000);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Loop delete %d: all_free:0x%08x\r\n", loop, usb_os_get_free_heap_size());
 			loop++;
@@ -358,7 +358,6 @@ void example_usbh_cdc_ecm(void)
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
 	}
-#endif
 
 #if ENABLE_REMOTE_FILE_DOWNLOAD
 	status = rtos_task_create(&download_task, "usbh_ecm_download_thread", ecm_download_thread, NULL, 10 * 512U, 2U);
@@ -374,6 +373,8 @@ void example_usbh_cdc_ecm(void)
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[ECM] Create monitor_link thread fail\n");
 	}
+#endif
+
 #endif
 }
 #else

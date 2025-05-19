@@ -2,6 +2,7 @@
 #define __RTW_LLHW_EVENT_H__
 
 #define RTW_JOIN_TIMEOUT		20000
+#define RTW_SCAN_TIMEOUT		12000
 #define DEV_REQ_NETWORK_INFO_MAX_LEN	6
 
 /**

@@ -124,7 +124,7 @@ typedef struct {
 } usbd_msc_scsi_sense_data_t;
 
 typedef struct {
-	void (*status_changed)(u8 status);
+	void (*status_changed)(u8 old_status, u8 status);
 } usbd_msc_cb_t;
 
 typedef struct {
@@ -147,7 +147,6 @@ typedef struct {
 	u8 bot_status;
 	u8 scsi_sense_head;
 	u8 scsi_sense_tail;
-	__IO u8 is_ready : 1;
 	u8 is_open : 1;
 	u8 phase_error : 1;
 } usbd_msc_dev_t;

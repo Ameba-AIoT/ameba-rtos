@@ -1,10 +1,15 @@
 #ifndef __WHC_SPI_HOST_H__
 #define __WHC_SPI_HOST_H__
 
-#if (KERNEL_VERSION(6, 6, 0) <= LINUX_VERSION_CODE)
+#if (KERNEL_VERSION(6, 12, 0) <= LINUX_VERSION_CODE)
+#define DEV_READY_PIN			591
+#define RX_REQ_PIN				592
+#define DEBUG_PIN				582
+
+#elif (KERNEL_VERSION(6, 6, 0) <= LINUX_VERSION_CODE)
 
 /* For kernel version higher than 6.6, gpio pins of raspberry pi 5 are numbered differently.
-check the correct number of the required GPIO pin to use command "gpioinfo" */
+check the correct number of the required GPIO pin to use command " cat /sys/kernel/debug/gpio" */
 
 #define DEV_READY_PIN			593
 #define RX_REQ_PIN				594

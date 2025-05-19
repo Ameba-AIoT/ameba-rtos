@@ -258,6 +258,13 @@ macro(ameba_mcu_project_create name mcu_type)
     ameba_set_if(CONFIG_MP_INCLUDED c_SDK_IMAGE_FOLDER_NAME image_mp p_ELSE image)
     ameba_set(c_SDK_IMAGE_TARGET_DIR ${c_MCU_SDK_DIR}/${c_SDK_IMAGE_FOLDER_NAME})
 
+    if(EXISTS ${c_SDK_IMAGE_TARGET_DIR})
+        file(GLOB FILES_TO_REMOVE "${c_SDK_IMAGE_TARGET_DIR}/*")
+        if(FILES_TO_REMOVE)
+            ameba_info("clear old files in ${c_SDK_IMAGE_TARGET_DIR}")
+            file(REMOVE_RECURSE ${FILES_TO_REMOVE})
+        endif()
+    endif()
 
     # Handle compile configs
     include(${c_CMAKE_FILES_DIR}/flags/common/compile_options.cmake)

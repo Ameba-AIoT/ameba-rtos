@@ -37,7 +37,7 @@ static int cdc_acm_verify_cb_deinit(void);
 static int cdc_acm_verify_cb_setup(usb_setup_req_t *req, u8 *buf);
 static int cdc_acm_verify_cb_received(u8 *buf, u32 Len);
 static void cdc_acm_verify_cb_transmitted(u8 status);
-static void cdc_acm_verify_cb_status_changed(u8 status);
+static void cdc_acm_verify_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -212,9 +212,9 @@ static int cdc_acm_verify_cb_setup(usb_setup_req_t *req, u8 *buf)
 	return HAL_OK;
 }
 
-static void cdc_acm_verify_cb_status_changed(u8 status)
+static void cdc_acm_verify_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d\n", status);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change from %d to %d\n", old_status, status);
 }
 
 static void cdc_acm_verify_xfer_thread(void *param)

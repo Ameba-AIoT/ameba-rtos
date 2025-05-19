@@ -33,7 +33,6 @@ set(
     # "SHELL:-Wl,-wrap,sprintf" # only allowed for ROM code
     # "SHELL:-Wl,-wrap,printf"
 )
-#TODO: maybe remove LINK_OPTIONS_ROM_WRAP later
 ameba_list_append(c_GLOBAL_COMMON_LINK_OPTIONS ${LINK_OPTIONS_ROM_WRAP})
 
 # wrap function are defined in gcc_wrap.c
