@@ -635,7 +635,6 @@ static uint16_t ble_wifimate_server_indicate_wifi_conn_state(uint16_t conn_handl
 		BT_DUMPD("[APP] GATTS indicate wifi conn state:\r\n", (uint8_t *)ind_param.data, ind_param.len);
 	}
 
-	BT_AT_PRINT("+BTDEMO:ble_wifimate_device,%d,%d,%d\r\n", conn_handle, state, err_code);
 	return ret;
 }
 
