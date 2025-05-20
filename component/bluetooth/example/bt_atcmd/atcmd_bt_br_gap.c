@@ -327,6 +327,28 @@ static int atcmd_br_gap_bond_delete(int argc, char **argv)
 	return 0;
 }
 
+static int atcmd_br_gap_set_link_qos(int argc, char **argv)
+{
+	(void)argc;
+	uint16_t ret = 1;
+	uint8_t bd_addr[6] = {0};
+	uint8_t type = 0;
+	uint16_t tpoll = 0;
+
+	hexdata_str_to_bd_addr(argv[0], bd_addr, 6);
+	type = (uint8_t)str_to_int(argv[1]);
+	tpoll = (uint16_t)str_to_int(argv[2]);
+	ret = rtk_bt_br_gap_set_link_qos(bd_addr, (rtk_bt_br_qos_type_t)type, (uint16_t)tpoll);
+	if (ret) {
+		BT_LOGE("BR GAP set link qos failed! err: 0x%x\r\n", ret);
+		return -1;
+	}
+
+	BT_LOGA("BR GAP set link qos success\r\n");
+
+	return 0;
+}
+
 static const cmd_table_t br_gap_cmd_table[] = {
 	{"inquiry_start",      atcmd_br_gap_inquiry_start,        3, 3},
 	{"disc",               atcmd_br_gap_disconnect,           2, 2},
@@ -342,6 +364,7 @@ static const cmd_table_t br_gap_cmd_table[] = {
 	{"bond_index_get",     atcmd_br_gap_bond_index_get,       2, 2},
 	{"bond_key_get",       atcmd_br_gap_bond_key_get,         2, 2},
 	{"bond_delete",        atcmd_br_gap_bond_delete,          2, 2},
+	{"set_qos",            atcmd_br_gap_set_link_qos,         4, 4},
 	{NULL,},
 };
 

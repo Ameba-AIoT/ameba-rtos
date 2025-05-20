@@ -1,9 +1,7 @@
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "example_ipv6.h"
-#include "lwip_netconf.h"
 #include "wifi_api.h"
+#include "lwip_netconf.h"
 #include "lwip/mld6.h"
+#include "example_ipv6.h"
 
 #if defined(LWIP_IPV6) && (LWIP_IPV6 == 1)
 

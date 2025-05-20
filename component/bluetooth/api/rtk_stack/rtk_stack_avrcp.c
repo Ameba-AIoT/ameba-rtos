@@ -18,6 +18,7 @@
 #include <remote.h>
 #include <btm.h>
 #include <bt_avrcp.h>
+#include <bt_sdp.h>
 
 static uint8_t volume_req = RTK_BT_DEFAULT_ABSOLUTE_VOLUME;
 extern T_APP_BR_LINK *app_find_br_link(uint8_t *bd_addr);
@@ -31,6 +32,46 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 	rtk_bt_evt_t *p_evt = NULL;
 
 	switch (event_type) {
+
+	case BT_EVENT_SDP_ATTR_INFO: {
+		T_BT_SDP_ATTR_INFO *sdp_info = &param->sdp_attr_info.info;
+		if ((sdp_info->srv_class_uuid_type == BT_SDP_UUID16) && (UUID_AV_REMOTE_CONTROL_TARGET == sdp_info->srv_class_uuid_data.uuid_16)) {
+			uint8_t *p_attr;
+
+			p_attr = bt_sdp_attr_find(sdp_info->p_attr,
+									  sdp_info->attr_len,
+									  SDP_ATTR_ADD_PROTO_DESC_LIST);
+			if (p_attr) {
+				uint8_t *p_attr_param;
+				uint8_t *p_elem;
+				uint8_t  loop;
+				uint16_t uuid_1;
+				uint16_t uuid_2;
+				uint16_t l2c_psm;
+
+				loop = 1;
+				while ((p_elem = bt_sdp_elem_access(p_attr, sdp_info->attr_len, loop)) != NULL) {
+					p_attr_param = bt_sdp_elem_access(p_elem, sdp_info->attr_len, 2);
+					if (p_attr_param) {
+						p_attr_param = bt_sdp_elem_access(p_elem, sdp_info->attr_len, 1);
+						uuid_1 = p_attr_param[3] << 8 | p_attr_param[4];
+						uuid_2 = p_attr_param[11] << 8 | p_attr_param[12];
+						if (uuid_1 == UUID_L2CAP && uuid_2 == UUID_OBEX) {
+							l2c_psm = p_attr_param[6] << 8 | p_attr_param[7];
+							BT_LOGA("app_avrcp_bt_cback: parse l2c_psm 0x%x \r\n", l2c_psm);
+							bt_avrcp_cover_art_connect_req(param->sdp_attr_info.bd_addr, l2c_psm);
+							break;
+						}
+					}
+					loop++;
+				}
+			} else {
+				BT_LOGE("app_avrcp_bt_cback: no p_attr find \r\n");
+			}
+		}
+	}
+	break;
+
 	case BT_EVENT_AVRCP_CONN_IND: {
 		rtk_bt_avrcp_conn_ind_t *p_avrcp_conn_ind = NULL;
 
@@ -501,7 +542,7 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		rtk_bt_avrcp_cover_art_data_ind_t *p_data_t = NULL;
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_COVER_ART_DATA_IND");
-		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_COVER_ART_DATA_IND \r\n");
+		BT_LOGD("app_avrcp_bt_cback: BT_EVENT_AVRCP_COVER_ART_DATA_IND \r\n");
 		p_link = app_find_br_link(param->avrcp_cover_art_data_ind.bd_addr);
 		if (p_link != NULL) {
 			if (!param->avrcp_cover_art_data_ind.data_end) {
@@ -520,9 +561,12 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 				p_data_t->p_data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, p_data_t->data_len);
 				if (NULL == p_data_t->p_data) {
 					BT_LOGE("app_avrcp_bt_cback: p_data allocate fail \r\n");
+					rtk_bt_event_free(p_evt);
+					break;
 				} else {
 					memcpy((void *)p_data_t->p_data, (void *)param->avrcp_cover_art_data_ind.p_data, p_data_t->data_len);
 				}
+				p_evt->user_data = p_data_t->p_data;
 				/* Send event */
 				if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
 					handle = false;
@@ -540,8 +584,8 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 
 	}
 	if (handle == true) {
-		APP_PRINT_INFO1("app_avrcp_bt_cback: event_type 0x%04x", event_type);
-		BT_LOGE("app_avrcp_bt_cback: event_type 0x%04x \r\n", event_type);
+		// APP_PRINT_INFO1("app_avrcp_bt_cback: event_type 0x%04x", event_type);
+		// BT_LOGE("app_avrcp_bt_cback: event_type 0x%04x \r\n", event_type);
 	}
 }
 
@@ -700,6 +744,21 @@ static uint16_t bt_stack_avrcp_get_element_attr_req(void *param)
 	return RTK_BT_FAIL;
 }
 
+static uint16_t bt_stack_avrcp_cover_art_connect(void *param)
+{
+	uint8_t *bd_addr = (uint8_t *)param;
+	T_BT_SDP_UUID_DATA uuid;
+
+	uuid.uuid_16 = UUID_AV_REMOTE_CONTROL_TARGET;
+
+	if (bt_sdp_discov_start(bd_addr, BT_SDP_UUID16, uuid)) {
+		return RTK_BT_OK;
+	}
+
+	return RTK_BT_FAIL;
+}
+
+
 uint16_t bt_stack_avrcp_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	int16_t ret = 0;
@@ -760,6 +819,10 @@ uint16_t bt_stack_avrcp_act_handle(rtk_bt_cmd_t *p_cmd)
 
 	case RTK_BT_AVRCP_ACT_GET_ELEMENT_ATTR:
 		ret = bt_stack_avrcp_get_element_attr_req(p_cmd->param);
+		break;
+
+	case RTK_BT_AVRCP_ACT_CONN_COVER_ART:
+		ret = bt_stack_avrcp_cover_art_connect(p_cmd->param);
 		break;
 
 	default:

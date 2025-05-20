@@ -12,9 +12,9 @@ void *IPC_IrqData[IPC_CHANNEL_NUM];
 
 static u8 PXID_Idx[4] = {1, 1, 1, 1};
 
-void (*ipc_delay)(uint32_t);
-void (*ipc_enter)(u32);
-void (*ipc_exit)(u32);
+void (*ipc_delay_func)(uint32_t);
+void (*ipc_enter_func)(u32);
+void (*ipc_exit_func)(u32);
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -182,8 +182,8 @@ void IPC_INTUserHandler(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, void *IrqHandler, vo
   */
 void IPC_patch_function(void (*pfunc1)(u32), void (*pfunc2)(u32))
 {
-	ipc_enter = pfunc1;
-	ipc_exit = pfunc2;
+	ipc_enter_func = pfunc1;
+	ipc_exit_func = pfunc2;
 }
 /**
   * @brief  Get core-to-core hardware semphone.
@@ -202,8 +202,8 @@ u32 IPC_SEMTake(IPC_SEM_IDX SEM_Idx, u32 timeout)
 	/* Check the parameters */
 	assert_param(IS_IPC_VALID_PXID(PXID_Idx[SEM_Idx]));
 
-	if (ipc_enter) {
-		ipc_enter(RTOS_CRITICAL_SEMA);
+	if (ipc_enter_func) {
+		ipc_enter_func(RTOS_CRITICAL_SEMA);
 	}
 
 	do {
@@ -216,8 +216,8 @@ u32 IPC_SEMTake(IPC_SEM_IDX SEM_Idx, u32 timeout)
 				return FALSE;
 			}
 
-			if (ipc_delay) {
-				ipc_delay(1);
+			if (ipc_delay_func) {
+				ipc_delay_func(1);
 			}
 		}
 		timeout--;
@@ -273,8 +273,8 @@ u32 IPC_SEMFree(IPC_SEM_IDX SEM_Idx)
 	/* Set CLR to free it, cpu ID and PXID will clear automatically */
 	IPCKR4_DEV->IPC_SEMx[SEM_Idx] |= IPC_BIT_SEMx_CLR;
 
-	if (ipc_exit) {
-		ipc_exit(RTOS_CRITICAL_SEMA);
+	if (ipc_exit_func) {
+		ipc_exit_func(RTOS_CRITICAL_SEMA);
 	}
 
 	return TRUE;
@@ -287,7 +287,7 @@ u32 IPC_SEMFree(IPC_SEM_IDX SEM_Idx)
   */
 void IPC_SEMDelayStub(void (*pfunc)(uint32_t))
 {
-	ipc_delay = pfunc;
+	ipc_delay_func = pfunc;
 }
 
 

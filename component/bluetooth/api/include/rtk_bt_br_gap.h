@@ -210,6 +210,22 @@ typedef struct {
 	uint16_t    sniff_timeout;                     /*!< Number of baseband receive slots for sniff timeout */
 } rtk_bt_br_sniff_mode_t;
 
+typedef enum {
+	RTK_BT_BR_QOS_TYPE_NO_TRAFFIC    = 0x00,
+	RTK_BT_BR_QOS_TYPE_BEST_EFFORT   = 0x01,
+	RTK_BT_BR_QOS_TYPE_GUARANTEED    = 0x02,
+} rtk_bt_br_qos_type_t;
+
+/**
+ * @struct    rtk_bt_br_link_qos_t
+ * @brief     BR/EDR config link qos parameters.
+ */
+typedef struct {
+	uint8_t              bd_addr[6];                        /*!< address */
+	rtk_bt_br_qos_type_t type;                              /*!< qos type */
+	uint16_t             tpoll;                             /*!< the poll interval ranged from 0x06 to 0x1000 in 625us slot unit */
+} rtk_bt_br_link_qos_t;
+
 /**
  * @struct    rtk_bt_br_security_param_t
  * @brief     Bluetooth BREDR SM security parameter type definition.
@@ -528,6 +544,17 @@ uint16_t rtk_bt_br_gap_set_radio_mode(uint8_t radio_mode);
  */
 uint16_t rtk_bt_br_gap_set_sniff_mode(uint8_t enable, uint8_t *bd_addr, uint16_t min_interval, uint16_t max_interval, uint16_t sniff_attempt,
 									  uint16_t sniff_timeout);
+
+/**
+* @brief     Set BT link QoS
+* @param[in] bd_addr The Bluetooth device address
+* @param[in] type QoS type defined in ref rtk_bt_br_qos_type_t.
+* @param[in] The poll interval ranged from 0x06 to 0x1000 in 625us slot unit.
+* @return
+*            - 0  : Succeed
+*            - Others: Error code
+*/
+uint16_t rtk_bt_br_gap_set_link_qos(uint8_t *bd_addr, rtk_bt_br_qos_type_t type, uint16_t tpoll);
 
 /**
  * @brief     set bt code of class(should be invoked before rtk_bt_enable).

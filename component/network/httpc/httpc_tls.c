@@ -2,6 +2,10 @@
 #include "lwip_netconf.h"
 #include "httpc_util.h"
 
+#include "mbedtls/ssl.h"
+#include "mbedtls/net_sockets.h"
+#include "mbedtls/base64.h"
+
 int httpc_setsockopt_rcvtimeo(struct httpc_conn *conn, int recv_timeout)
 {
 	int ret = 0;
@@ -11,17 +15,6 @@ int httpc_setsockopt_rcvtimeo(struct httpc_conn *conn, int recv_timeout)
 	ret = setsockopt(conn->sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 	return ret;
 }
-
-
-#include "mbedtls/ssl.h"
-#include "mbedtls/platform.h"
-#include "mbedtls/net_sockets.h"
-#include "mbedtls/base64.h"
-#include "mbedtls/config.h"
-#include "mbedtls/ssl.h"
-#include "mbedtls/error.h"
-#include "mbedtls/debug.h"
-#include "mbedtls/version.h"
 
 struct httpc_tls {
 	mbedtls_ssl_context ctx;         /*!< Context for mbedTLS */

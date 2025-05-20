@@ -211,22 +211,22 @@ void atcmd_spi_task(void)
 					}
 				}
 
-				if (space >= recv_len) {
-					RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, recv_len);
-					rtos_sema_give(atcmd_tt_mode_sema);
-				} else if (space > 0) {
-					RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, space);
-					rtos_sema_give(atcmd_tt_mode_sema);
-					RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop partial data\n");
-				} else {
-					RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop data\n");
-				}
-
 				/*recv stop char under tt mode*/
 				if (recv_len == 1 && SlaveRxBuf[4] == '<') {
 					g_tt_mode_stop_char_cnt++;
 				} else {
 					g_tt_mode_stop_char_cnt = 0;
+
+					if (space >= recv_len) {
+						RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, recv_len);
+						rtos_sema_give(atcmd_tt_mode_sema);
+					} else if (space > 0) {
+						RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, space);
+						rtos_sema_give(atcmd_tt_mode_sema);
+						RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop partial data\n");
+					} else {
+						RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop data\n");
+					}
 				}
 
 				/*cancel tt mode stop timer if recv pkt before timeout*/
@@ -335,22 +335,22 @@ void atcmd_spi_task(void)
 					}
 				}
 
-				if (space >= recv_len) {
-					RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, recv_len);
-					rtos_sema_give(atcmd_tt_mode_sema);
-				} else if (space > 0) {
-					RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, space);
-					rtos_sema_give(atcmd_tt_mode_sema);
-					RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop partial data\n");
-				} else {
-					RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop data\n");
-				}
-
 				/*recv stop char under tt mode*/
 				if (recv_len == 1 && SlaveRxBuf[4] == '<') {
 					g_tt_mode_stop_char_cnt++;
 				} else {
 					g_tt_mode_stop_char_cnt = 0;
+
+					if (space >= recv_len) {
+						RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, recv_len);
+						rtos_sema_give(atcmd_tt_mode_sema);
+					} else if (space > 0) {
+						RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, space);
+						rtos_sema_give(atcmd_tt_mode_sema);
+						RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop partial data\n");
+					} else {
+						RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop data\n");
+					}
 				}
 
 				/*cancel tt mode stop timer if recv pkt before timeout*/

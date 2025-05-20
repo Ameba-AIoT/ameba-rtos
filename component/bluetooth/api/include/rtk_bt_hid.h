@@ -78,6 +78,15 @@ typedef struct {
 uint16_t rtk_hid_descriptor_add(void *des, uint32_t length);
 
 /**
+ * @brief     connect hid.
+ * @param[in] bd_addr: bt address
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_hid_connect(uint8_t *bd_addr);
+
+/**
  * @brief     disconnect hid.
  * @param[in] bd_addr: bt address
  * @return

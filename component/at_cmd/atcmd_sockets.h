@@ -12,23 +12,9 @@
 
 #include "at_intf_spi.h"
 
-#include "mbedtls/config.h"
-#include "mbedtls/platform.h"
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/ssl.h"
-#include "mbedtls/error.h"
-//#include "mbedtls/certs.h"
 #include "mbedtls/debug.h"
-#include "mbedtls/version.h"
-
-
-#if ((!defined MBEDTLS_BIGNUM_C) \
-	|| (!defined MBEDTLS_SSL_TLS_C) || (!defined MBEDTLS_SSL_SRV_C) \
-	|| (!defined MBEDTLS_SSL_CLI_C) || (!defined MBEDTLS_NET_C) \
-	|| (!defined MBEDTLS_RSA_C) || (!defined MBEDTLS_X509_CRT_PARSE_C))
-#error "Please make sure the MBEDTLS options are enabled."
-#endif
-
 
 #ifdef CONFIG_LWIP_LAYER
 
@@ -72,8 +58,8 @@ typedef struct _node {
 	int protocol;	// 0:UDP, 1:TCP, 2-5:TLS(client) || 2-3:TLS(server)
 	u32_t dst_ip;	// Destination IP address
 	u16_t dst_port;	// Destination PORT
-	u16_t src_port;	// Source IP address
-	u32_t src_ip;	// Source PORT
+	u16_t src_port;	// Source PORT
+	u32_t src_ip;	// Source IP address
 	rtos_task_t auto_rcv_task;
 	struct _node *prevnode;
 	struct _node *nextseed;

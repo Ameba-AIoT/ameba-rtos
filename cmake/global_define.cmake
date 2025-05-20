@@ -142,6 +142,7 @@ ameba_set(c_SDK_EXTRACT_LD_SCRIPT)
 
 macro(ameba_reset_global_define)
     ameba_set(c_FREERTOS_DIR ${c_COMPONENT_DIR}/os/freertos/freertos_${v_FREERTOS_VER}${c_FREERTOS_DIR_SUFFIX}/Source)
+    ameba_set(c_POSIX_DIR ${c_COMPONENT_DIR}/os/freertos/freertos_posix)
     ameba_set(c_LWIP_DIR ${c_COMPONENT_DIR}/lwip/lwip_${v_LWIP_VER})
     ameba_set(c_MBEDTLS_DIR ${c_COMPONENT_DIR}/ssl/mbedtls-${v_MBEDTLS_VER})
 

@@ -347,6 +347,20 @@ uint16_t rtk_bt_br_gap_set_sniff_mode(uint8_t enable, uint8_t *bd_addr, uint16_t
 	return ret;
 }
 
+uint16_t rtk_bt_br_gap_set_link_qos(uint8_t *bd_addr, rtk_bt_br_qos_type_t type, uint16_t tpoll)
+{
+	uint16_t ret = 0;
+	rtk_bt_br_link_qos_t qos_t = {0};
+
+	memcpy((void *)qos_t.bd_addr, (void *)bd_addr, 6);
+	qos_t.type = type;
+	qos_t.tpoll = tpoll;
+
+	ret = rtk_bt_send_cmd(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_ACT_SET_LINK_QOS, (void *)&qos_t, sizeof(rtk_bt_br_link_qos_t));
+
+	return ret;
+}
+
 uint16_t rtk_bt_br_gap_set_cod(uint32_t *bt_cod)
 {
 	/* Check bt enable status (rtk_bt_br_gap_set_cod should only be invoked before RTK_BT_IS_ENABLED()) */

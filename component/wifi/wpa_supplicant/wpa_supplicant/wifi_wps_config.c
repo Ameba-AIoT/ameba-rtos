@@ -39,7 +39,6 @@ struct _internal_wps_scan_handler_arg {
 	char *target_ssid;
 	unsigned char *target_bssid;
 	u16 config_method;
-	rtos_sema_t scan_sema;
 	int isoverlap;
 	int isoverlap_5G;
 };
@@ -654,9 +653,8 @@ exit1:
 }
 #endif /* CONFIG_ENABLE_WPS_DISCOVERY */
 
-static s32 wps_scan_result_handler(u32 scanned_AP_num, void *user_data)
+static s32 wps_scan_result_handler(u32 scanned_AP_num, struct _internal_wps_scan_handler_arg *wps_arg)
 {
-	struct _internal_wps_scan_handler_arg *wps_arg = (struct _internal_wps_scan_handler_arg *)user_data;
 	struct rtw_scan_result *scaned_ap_info;
 	struct rtw_scan_result *scanned_ap_list = NULL;
 	s32 ret = RTK_SUCCESS;
@@ -697,8 +695,7 @@ EXIT:
 	if (scanned_ap_list) {
 		rtos_mem_free((u8 *)scanned_ap_list);
 	}
-	DiagPrintf("\r\nWPS scan done!\r\n");
-	rtos_sema_give(wps_arg->scan_sema);
+
 	return ret;
 }
 
@@ -706,7 +703,8 @@ static int wps_find_out_triger_wps_AP(char *target_ssid, unsigned char *target_b
 {
 	int isoverlap = -1;
 	struct _internal_wps_scan_handler_arg wps_arg = {0};
-	struct rtw_scan_param scan_param;
+	struct rtw_scan_param scan_param = {0};
+	s32 scanned_ap_num;
 
 	wps_password_id = 0xFF;
 
@@ -716,25 +714,12 @@ static int wps_find_out_triger_wps_AP(char *target_ssid, unsigned char *target_b
 	wps_arg.target_ssid = target_ssid;
 	wps_arg.target_bssid = target_bssid;
 
-	rtos_sema_create_static(&wps_arg.scan_sema, 0, 0xFFFFFFFF);
-	if (wps_arg.scan_sema == NULL) {
-		return RTK_FAIL;
-	}
-
-	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
-	scan_param.scan_user_data = &wps_arg;
-	scan_param.scan_user_callback = wps_scan_result_handler;
-
-	if (wifi_scan_networks(&scan_param, 0) != RTK_SUCCESS) {
+	if ((scanned_ap_num = wifi_scan_networks(&scan_param, 1)) <= 0) {
 		DiagPrintf("\n\rERROR: wifi scan failed");
-		goto exit;
-	}
-	if (rtos_sema_take(wps_arg.scan_sema, SCAN_LONGEST_WAIT_TIME) != RTK_SUCCESS) {
-		DiagPrintf("\r\nWPS scan done early!\r\n");
+		return -1;
 	}
 
-exit:
-	rtos_sema_delete_static(wps_arg.scan_sema);
+	wps_scan_result_handler(scanned_ap_num, &wps_arg);
 
 	if ((wps_arg.isoverlap >= 0) && (wps_arg.isoverlap_5G >= 0)) {
 		isoverlap = wps_arg.isoverlap + wps_arg.isoverlap_5G;

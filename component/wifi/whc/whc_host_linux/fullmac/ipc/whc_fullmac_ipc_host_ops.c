@@ -129,18 +129,16 @@ int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8
 		init_completion(&block_param->sema);
 	}
 
-	size += (sizeof(block) + ssid_length + scan_param->channel_list_num);
 	buf_vir = rtw_malloc(size, &buf_phy);
+	size += (ssid_length + scan_param->channel_list_num);
 	if (!buf_vir) {
 		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 		ret = -ENOMEM;
 		goto error;
 	}
-	memcpy(buf_vir, &block, sizeof(block));
-	offset += sizeof(block);
-	memcpy(buf_vir + offset, scan_param, size - sizeof(block));
+	memcpy(buf_vir, scan_param, size);
 
-	scan_param_tmp = (struct rtw_scan_param *)(buf_vir + offset);
+	scan_param_tmp = (struct rtw_scan_param *)buf_vir;
 	offset += sizeof(struct rtw_scan_param);
 	if (ssid_length) {
 		scan_param_tmp->ssid = (u8 *)(buf_phy + offset);
@@ -162,7 +160,7 @@ int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8
 	if (block) {
 		global_idev.mlme_priv.scan_block_param = block_param;
 
-		if (wait_for_completion_timeout(&block_param->sema, RTW_SCAN_TIMEOUT) == 0) {
+		if (wait_for_completion_interruptible_timeout(&block_param->sema, RTW_SCAN_TIMEOUT) == 0) {
 			dev_err(global_idev.fullmac_dev, "%s: Scan timeout!\n", __func__);
 			ret = -EINVAL;
 		}
@@ -183,7 +181,39 @@ error:
 
 int whc_fullmac_host_scan_abort(void)
 {
-	return whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SCAN_ABORT, NULL, 0);
+	int ret = 0;
+	struct internal_block_param *block_param = NULL;
+
+	block_param = (struct internal_block_param *)kzalloc(sizeof(struct internal_block_param), GFP_KERNEL);
+	if (!block_param) {
+		ret = -ENOMEM;
+		goto exit;
+	}
+	/* initialize scan_abort_sema. */
+	init_completion(&block_param->sema);
+
+	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SCAN_ABORT, NULL, 0);
+
+	if (ret < 0) {
+		ret = 0;
+		goto exit;  /* there is no scan ongoing, just return SUCCESS*/
+	}
+
+	global_idev.mlme_priv.scan_abort_block_param = block_param;
+
+	if (wait_for_completion_interruptible_timeout(&block_param->sema, RTW_SCAN_ABORT_TIMEOUT) == 0) {
+		dev_err(global_idev.fullmac_dev, "%s: Scan abort wait timeout!\n", __func__);
+		ret = -EINVAL;
+	}
+	global_idev.mlme_priv.scan_abort_block_param = NULL;
+
+exit:
+	if (block_param) {
+		complete_release(&block_param->sema);
+		kfree((u8 *)block_param);
+	}
+
+	return ret;
 }
 
 int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsigned char block)
@@ -225,7 +255,8 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 	buf_vir = rtw_malloc(size, &buf_phy);
 	if (!buf_vir) {
 		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		return -1;
+		ret = -1;
+		goto error;
 	}
 	memcpy(buf_vir, connect_param, size);
 	connect_param_tmp = (struct rtw_network_info *)buf_vir;
@@ -249,7 +280,7 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 	if (block) {
 		global_idev.mlme_priv.join_block_param = block_param;
 
-		if (wait_for_completion_timeout(&block_param->sema, RTW_JOIN_TIMEOUT) == 0) {
+		if (wait_for_completion_interruptible_timeout(&block_param->sema, RTW_JOIN_TIMEOUT) == 0) {
 			dev_err(global_idev.fullmac_dev, "%s: Join bss timeout!\n", __func__);
 			global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
 			ret = -EINVAL;

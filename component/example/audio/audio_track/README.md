@@ -20,7 +20,8 @@ Ameba audio project can achieve:
 ## Supported IC <a name = "supported-ic"></a>
 1. AmebaSmart
 2. AmebaLite
-3. AmebaDplus(for mixer architecture, please set psram for img2 in menuconfig)
+3. AmebaDplus(for mixer architecture, please set menuconfig.py->Config Link Option->Img2 In Psram)
+4. AmebaGreen2(for mixer architecture, please set menuconfig.py->Config Link Option->Img2 Code In Psram_DataHeapInSram)
 
 ## Configurations <a name = "configurations"></a>
 

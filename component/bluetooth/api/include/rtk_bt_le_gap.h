@@ -417,7 +417,7 @@ typedef enum {
 	RTK_BT_LE_ADV_STOP_BY_HOST      = 0,        /*!< 0, stopped by host */
 	RTK_BT_LE_ADV_STOP_BY_CONN      = 1,        /*!< 1, stopped due to connection established */
 	RTK_BT_LE_ADV_STOP_BY_DURATION  = 2,        /*!< 2, stopped due to duration expired or number of extended adv events exceeded */
-	RTK_BT_LE_ADV_STOP_UNKNOWN,                 /*!< unkown */
+	RTK_BT_LE_ADV_STOP_UNKNOWN,                 /*!< unknown */
 } rtk_bt_le_adv_stop_reason_t;
 
 /**
@@ -1586,7 +1586,7 @@ typedef struct {
 typedef enum {
 	RTK_BT_LE_SCAN_STOP_BY_HOST      = 0,        /*!< 0, stopped by host */
 	RTK_BT_LE_SCAN_STOP_BY_DURATION  = 1,        /*!< 1, stopped due to scan duration timeout */
-	RTK_BT_LE_SCAN_STOP_UNKNOWN,                 /*!< unkown */
+	RTK_BT_LE_SCAN_STOP_UNKNOWN,                 /*!< unknown */
 } rtk_bt_le_scan_stop_reason_t;
 
 /**

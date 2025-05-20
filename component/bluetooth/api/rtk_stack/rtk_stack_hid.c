@@ -20,6 +20,7 @@
 #include <trace_app.h>
 #include <remote.h>
 #include <bt_hid.h>
+#include <bt_sdp.h>
 
 static uint8_t hid_role;
 static uint8_t remote_addr[6] = {0};
@@ -39,6 +40,16 @@ static void app_hid_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 	rtk_bt_evt_t *p_evt = NULL;
 
 	switch (event_type) {
+
+	case BT_EVENT_SDP_ATTR_INFO: {
+		T_BT_SDP_ATTR_INFO *sdp_info = &param->sdp_attr_info.info;
+		if (sdp_info->srv_class_uuid_type == BT_SDP_UUID16 && sdp_info->srv_class_uuid_data.uuid_16 == UUID_HUMAN_INTERFACE_DEVICE_SERVICE) {
+			if (!bt_hid_connect_req(param->sdp_attr_info.bd_addr)) {
+				BT_LOGE("bt_stack_rfc_evt_ind_cback: bt_hid_connect_req send failed\r\n");
+			}
+		}
+	}
+	break;
 
 	case BT_EVENT_HID_CONN_IND: {
 		rtk_bt_hid_conn_ind_t *p_hid_conn_ind = NULL;
@@ -181,6 +192,20 @@ static void app_hid_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 	}
 }
 
+static uint16_t bt_stack_hid_connect(void *param)
+{
+	uint8_t *bd_addr = (uint8_t *)param;
+	T_BT_SDP_UUID_DATA uuid;
+
+	uuid.uuid_16 = UUID_HUMAN_INTERFACE_DEVICE_SERVICE;
+
+	if (bt_sdp_discov_start(bd_addr, BT_SDP_UUID16, uuid)) {
+		return RTK_BT_OK;
+	}
+
+	return RTK_BT_FAIL;
+}
+
 static uint16_t bt_stack_hid_disconnect(void *param)
 {
 	uint8_t *bd_addr = (uint8_t *)param;
@@ -258,6 +283,10 @@ uint16_t bt_stack_hid_act_handle(rtk_bt_cmd_t *p_cmd)
 	uint16_t ret = 0;
 	BT_LOGD("bt_stack_hid_act_handle: act = %d \r\n", p_cmd->act);
 	switch (p_cmd->act) {
+
+	case RTK_BT_HID_ACT_CONNECT:
+		ret = bt_stack_hid_connect(p_cmd->param);
+		break;
 
 	case RTK_BT_HID_ACT_DISCONNECT:
 		ret = bt_stack_hid_disconnect(p_cmd->param);

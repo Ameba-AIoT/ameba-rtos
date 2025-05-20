@@ -558,10 +558,10 @@ SECTIONS
     PROVIDE(crypto_engine = 0x20004200);
     PROVIDE(crypto_sha_engine = 0x20004440);
     PROVIDE(RBSS_UDELAY_CLK = 0x200046dc);
-    PROVIDE(PortA_IrqHandler = 0x200046e0);
-    PROVIDE(PortA_IrqData = 0x20004760);
-    PROVIDE(PortB_IrqHandler = 0x200047e0);
-    PROVIDE(PortB_IrqData = 0x20004860);
+    PROVIDE(PortA_IrqHandlerTable = 0x200046e0);
+    PROVIDE(PortA_IrqDataTable = 0x20004760);
+    PROVIDE(PortB_IrqHandlerTable = 0x200047e0);
+    PROVIDE(PortB_IrqDataTable = 0x20004860);
     PROVIDE(__rom_bss_chk__ = 0x200048e0);
     PROVIDE(__rom_bss_end__ = 0x200048e0);
     PROVIDE(__km0_ipc_memory_start__ = 0x20004e00);

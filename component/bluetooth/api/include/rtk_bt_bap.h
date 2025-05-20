@@ -328,7 +328,7 @@ typedef enum {
 	RTK_BLE_AUDIO_ASCS_ASE_STATE_STREAMING        = 0x04,
 	RTK_BLE_AUDIO_ASCS_ASE_STATE_DISABLING        = 0x05,
 	RTK_BLE_AUDIO_ASCS_ASE_STATE_RELEASING        = 0x06,
-	RTK_BLE_AUDIO_ASCS_ASE_STATE_UNKOWN           = 0xff,
+	RTK_BLE_AUDIO_ASCS_ASE_STATE_UNKNOWN          = 0xff,
 } rtk_bt_le_audio_ascs_ase_state_t;
 
 /**

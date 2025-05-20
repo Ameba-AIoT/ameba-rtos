@@ -1,7 +1,5 @@
-
-#include "os_wrapper.h"
-#include "wifi_api.h"
 #include "lwip_netconf.h"
+#include "ameba_soc.h"
 #include "ameba_ota.h"
 
 #define PORT	8082

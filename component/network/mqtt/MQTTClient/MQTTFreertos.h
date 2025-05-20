@@ -22,14 +22,9 @@
 
 #define MQTT_OVER_SSL (1)
 #if (MQTT_OVER_SSL)
-#include "mbedtls/config.h"
 #include "mbedtls/platform.h"
-#include "mbedtls/net_sockets.h"
 #include "mbedtls/ssl.h"
-#include "mbedtls/error.h"
-#include "mbedtls/debug.h"
-#include "mbedtls/version.h"
-#include "mbedtls/psa_util.h"
+#include "mbedtls/net_sockets.h"
 #endif
 
 enum {

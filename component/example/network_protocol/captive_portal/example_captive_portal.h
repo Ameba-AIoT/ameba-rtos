@@ -4,15 +4,9 @@
 /* ------------------------ FreeRTOS includes ----------------------------- */
 
 /* ------------------------ lwIP includes --------------------------------- */
-#include "lwip/api.h"
-#include "lwip/tcpip.h"
-#include "lwip/ip.h"
-#include "lwip/memp.h"
-#include "lwip/stats.h"
+#include "lwip_netconf.h"
 
 /* ------------------------ Project includes ------------------------------ */
-#include "main.h"
-#include <lwip_netconf.h>
 
 #include "wifi_api.h"
 

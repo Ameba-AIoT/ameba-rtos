@@ -467,9 +467,12 @@ void whc_fullmac_host_event_task(unsigned long data)
 		/* https://jira.realtek.com/browse/AMEBAD2-1543 */
 		whc_fullmac_host_scan_done_indicate(p_recv_msg->param_buf[0], NULL);
 
-		/* if Synchronous scan abort, up sema when scan done */
+		/* if Synchronous scan/scan abort, up sema when scan done */
 		if (global_idev.mlme_priv.scan_block_param) {
 			complete(&global_idev.mlme_priv.scan_block_param->sema);
+		}
+		if (global_idev.mlme_priv.scan_abort_block_param) {
+			complete(&global_idev.mlme_priv.scan_abort_block_param->sema);
 		}
 		break;
 	case WHC_API_IP_ACS:

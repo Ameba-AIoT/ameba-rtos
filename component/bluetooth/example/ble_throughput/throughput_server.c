@@ -452,7 +452,7 @@ static void ble_throughput_server_write_hdl(void *data)
 	}
 
 	default:
-		BT_LOGE("[APP] Throughput server receive write event unkown index: %d, conn_handle: %d\r\n",
+		BT_LOGE("[APP] Throughput server receive write event unknown index: %d, conn_handle: %d\r\n",
 				p_write_ind->index, conn_handle);
 		break;
 	}

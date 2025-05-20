@@ -1,10 +1,7 @@
+#include "ameba_soc.h"
+#include "os_wrapper.h"
 #include "kv.h"
 #include "example_kv.h"
-#include "lfs.h"
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
-#include "littlefs_adapter.h"
 
 void example_kv_thread(void *param)
 {
