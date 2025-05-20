@@ -33,7 +33,8 @@ ifeq ($(CONFIG_BT_WIFIMATE_CONFIGURATOR), y)
 endif
 
 CSRC += \
-	$(BT_DIR)/example/gatt_service/client/rtk_gcs_client.c
+	$(BT_DIR)/example/gatt_service/client/rtk_gcs_client.c \
+	$(BT_DIR)/example/bt_atcmd/atcmd_bt_cmd_sync.c
 
 OBJS = $(notdir $(CSRC:.c=.o))
 
