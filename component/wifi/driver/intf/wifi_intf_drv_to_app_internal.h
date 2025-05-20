@@ -25,8 +25,6 @@
 extern "C" {
 #endif
 
-#define SCAN_LONGEST_WAIT_TIME	(12000) /**< Scan longest wait time. */
-
 #define RTW_SEND_AND_WAIT_ACK 				2
 #define RTW_SEND_BY_HIGH_RATE				4 // IEEE80211_OFDM_RATE_54MB
 #define RTW_NAV_BY_USER						8

@@ -1,11 +1,7 @@
+#include "ameba_soc.h"
+#include "os_wrapper.h"
 #include "vfs.h"
 #include "example_vfs.h"
-#include "basic_types.h"
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
-#include "os_wrapper.h"
-#include "ameba.h"
 
 void example_vfs_thread(void *param)
 {

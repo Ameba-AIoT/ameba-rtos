@@ -449,10 +449,10 @@ SECTIONS
     PROVIDE(crypto_sha_engine = 0x20004440);
     PROVIDE(RBSS_UDELAY_CLK = 0x200046dc);
     PROVIDE(FLASH_PLL_Source_IsCPU = 0x200046e0);
-    PROVIDE(PortA_IrqHandler = 0x200046e4);
-    PROVIDE(PortA_IrqData = 0x20004764);
-    PROVIDE(PortB_IrqHandler = 0x200047e4);
-    PROVIDE(PortB_IrqData = 0x20004864);
+    PROVIDE(PortA_IrqHandlerTable = 0x200046e4);
+    PROVIDE(PortA_IrqDataTable = 0x20004764);
+    PROVIDE(PortB_IrqHandlerTable = 0x200047e4);
+    PROVIDE(PortB_IrqDataTable = 0x20004864);
     PROVIDE(__rom_bss_end__ = 0x200048e4);
     PROVIDE(__kr4_image2_entry_func__ = 0x20040020);
     PROVIDE(__kr4_ipc_memory_start__ = 0x2005fd00);

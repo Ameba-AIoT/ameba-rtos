@@ -1,14 +1,5 @@
-#include "platform_autoconf.h"
-#include "lwipconf.h"
-#include "http_client.h"
-#include "example_http_client.h"
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "wifi_api.h"
 #include "lwip_netconf.h"
-
-
-char *http_get_header(char *host, char *resource);
+#include "http_client.h"
 
 #define THREAD_STACK_SIZE 1024
 static const char *host = "www.google.com.tw";

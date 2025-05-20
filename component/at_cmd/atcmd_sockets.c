@@ -1818,7 +1818,7 @@ end:
 }
 
 
-int atcmd_lwip_send_data(struct _node *curnode, u8 *data, u16 data_sz, struct sockaddr_in dst_addr)
+int atcmd_lwip_send_data(struct _node *curnode, u8 *data, int data_sz, struct sockaddr_in dst_addr)
 {
 	int ret = 0, error_no = 0;
 
@@ -1861,6 +1861,7 @@ int atcmd_lwip_start_tt_handle(struct _node *curnode, int total_data_len, struct
 	int error_no = 0;
 	uint8_t *tt_data = NULL;
 	int frag_tt_data_len = 0;
+	int recv_tt_len = 0;
 
 	if (total_data_len > 0) {
 		tt_data = rtos_mem_zmalloc((total_data_len <= MAX_TT_BUF_LEN ? total_data_len : MAX_TT_BUF_LEN) + 1);
@@ -1875,28 +1876,30 @@ int atcmd_lwip_start_tt_handle(struct _node *curnode, int total_data_len, struct
 			goto end;
 		}
 		if (total_data_len <= MAX_TT_BUF_LEN) {
-			if (atcmd_tt_mode_get(tt_data, (u32)total_data_len) != total_data_len) {
+			recv_tt_len = atcmd_tt_mode_get(tt_data, (u32)total_data_len);
+			if (recv_tt_len == 0) {
 				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_start_tt_handle] atcmd_tt_mode_get() failed\r\n");
 				error_no = 4;
 				goto tt_end;
 			}
-			if ((error_no = atcmd_lwip_send_data(curnode, tt_data, (u16)total_data_len, dst_addr)) != 0) {
+			if ((error_no = atcmd_lwip_send_data(curnode, tt_data, recv_tt_len, dst_addr)) != 0) {
 				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_start_tt_handle] atcmd_lwip_send_data() failed\r\n");
 				goto tt_end;
 			}
 		} else {
 			while (total_data_len > 0) {
 				frag_tt_data_len = total_data_len <= MAX_TT_BUF_LEN ? total_data_len : MAX_TT_BUF_LEN;
-				if (atcmd_tt_mode_get(tt_data, (u32)frag_tt_data_len) != frag_tt_data_len) {
+				recv_tt_len = atcmd_tt_mode_get(tt_data, (u32)frag_tt_data_len);
+				if (recv_tt_len == 0) {
 					RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_start_tt_handle] atcmd_tt_mode_get() failed\r\n");
 					error_no = 4;
 					goto tt_end;
 				}
-				if ((error_no = atcmd_lwip_send_data(curnode, tt_data, (u16)frag_tt_data_len, dst_addr)) != 0) {
+				if ((error_no = atcmd_lwip_send_data(curnode, tt_data, recv_tt_len, dst_addr)) != 0) {
 					RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_start_tt_handle] atcmd_lwip_send_data() failed\r\n");
 					goto tt_end;
 				}
-				total_data_len -= frag_tt_data_len;
+				total_data_len -= recv_tt_len;
 			}
 		}
 tt_end:

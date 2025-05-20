@@ -24,6 +24,7 @@ struct event_priv_t event_priv;
 extern u16 scanned_ap_cnt;
 extern u8 rtw_scan_api_inprocess;
 extern struct internal_block_param *scan_block_param;
+extern struct internal_block_param *scan_abort_block_param;
 #ifdef CONFIG_ENABLE_EAP
 extern void eap_autoreconnect_hdl(u8 method_id);
 #endif
@@ -73,6 +74,11 @@ void whc_host_api_scan_user_callback_handler(u32 api_id, u32 *param_buf)
 
 	/* Clear state after callback excuted and/or block sema released, prevent new scan to overwrite these paras */
 	rtw_scan_api_inprocess = 0;
+
+	/* if Synchronous scan abort, up sema when scan done */
+	if (scan_abort_block_param) {
+		rtos_sema_give(scan_abort_block_param->sema);
+	}
 
 	whc_host_api_send_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }

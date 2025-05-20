@@ -2,7 +2,6 @@
 #include "httpd_util.h"
 
 #include "mbedtls/ssl.h"
-#include "mbedtls/platform.h"
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/base64.h"
 

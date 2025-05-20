@@ -32505,7 +32505,7 @@ const short birds_sing[] = {
 		-8, -19,
 	};
 #else
-#error "Please choose a corret bt le sample frequency"
+#error "Please choose a correct bt le sample frequency"
 #endif
 #else
 /* default is 48000 */

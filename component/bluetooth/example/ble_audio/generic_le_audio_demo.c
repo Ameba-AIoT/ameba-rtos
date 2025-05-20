@@ -2916,7 +2916,7 @@ static rtk_bt_evt_cb_ret_t app_le_audio_common_gap_app_callback(uint8_t evt_code
 	}
 #endif
 	default:
-		BT_LOGE("[APP] Unkown common gap cb evt type: %d\r\n", evt_code);
+		BT_LOGE("[APP] Unknown common gap cb evt type: %d\r\n", evt_code);
 		break;
 	}
 
@@ -3336,7 +3336,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_gap_app_callback(uint8_t evt_code, vo
 #endif
 
 	default:
-		BT_LOGE("[APP] Unkown gap cb evt type: %d", evt_code);
+		BT_LOGE("[APP] Unknown gap cb evt type: %d", evt_code);
 		break;
 	}
 

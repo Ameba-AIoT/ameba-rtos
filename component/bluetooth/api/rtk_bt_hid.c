@@ -35,6 +35,20 @@ uint16_t rtk_hid_descriptor_add(void *des, uint32_t length)
 	return bt_stack_hid_descriptor_add(des, length);
 }
 
+uint16_t rtk_bt_hid_connect(uint8_t *bd_addr)
+{
+	uint16_t ret = 0;
+
+	if (!bd_addr) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	ret = rtk_bt_send_cmd(RTK_BT_BR_GP_HID, RTK_BT_HID_ACT_CONNECT,
+						  bd_addr, 6);
+
+	return ret;
+}
+
 uint16_t rtk_bt_hid_disconnect(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;

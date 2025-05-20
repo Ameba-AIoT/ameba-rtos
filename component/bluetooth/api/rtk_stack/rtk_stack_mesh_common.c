@@ -1177,7 +1177,7 @@ static uint8_t rtk_bt_mesh_save_info(void *data)
 	}
 #endif
 	if ((RTK_BT_MESH_ROLE_PROVISIONER != mesh_app_conf->bt_mesh_role) && (RTK_BT_MESH_ROLE_DEVICE != mesh_app_conf->bt_mesh_role)) {
-		BT_LOGE("[%s] Unkown mesh role:%d\r\n", __func__, mesh_app_conf->bt_mesh_role);
+		BT_LOGE("[%s] Unknown mesh role:%d\r\n", __func__, mesh_app_conf->bt_mesh_role);
 		return RTK_BT_MESH_STACK_API_FAIL;
 	}
 	return 0;

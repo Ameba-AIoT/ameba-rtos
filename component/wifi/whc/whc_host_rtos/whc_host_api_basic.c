@@ -435,9 +435,6 @@ s32 wifi_scan_networks(struct rtw_scan_param *scan_param, u8 block)
 	}
 	ptr = param_buf;
 
-	memcpy(ptr, &block, sizeof(block));
-	ptr += 4;
-
 	memcpy(ptr, &ssid_len, sizeof(ssid_len));
 	ptr += sizeof(ssid_len);
 

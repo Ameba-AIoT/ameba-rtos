@@ -1,8 +1,6 @@
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include <mdns.h>
 #include "wifi_api.h"
 #include "lwip_netconf.h"
+#include "mdns.h"
 
 extern struct netif xnetif[NET_IF_NUM];
 

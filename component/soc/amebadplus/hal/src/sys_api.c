@@ -22,6 +22,7 @@
 #include "cmsis.h"
 #include "sys_api.h"
 #include "flash_api.h"
+#include "os_wrapper.h"
 #include "ameba_ota.h"
 #include "log.h"
 //#define printf					printf
@@ -108,7 +109,7 @@ void sys_recover_ota_signature(void)
 	u32 sig[2] = {0x35393138, 0x31313738};
 	int ImgID = 0;
 
-	backup = (u8 *)malloc(0x1000);
+	backup = (u8 *)rtos_mem_malloc(0x1000);
 	if (backup == NULL) {
 		RTK_LOGE(TAG, "[%s] backup malloc failded\n", __func__);
 		return;
@@ -141,7 +142,7 @@ void sys_recover_ota_signature(void)
 			FLASH_WriteStream((Address[otaDstIdx] + idx), 256, (u8 *)backup);
 		}
 	}
-	free(backup);
+	rtos_mem_free(backup);
 }
 
 /**

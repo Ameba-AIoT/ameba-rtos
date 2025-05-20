@@ -4,15 +4,10 @@
 * SPDX-License-Identifier: Apache-2.0
 */
 
-#include <stdlib.h>
-#include <string.h>
-
 #include "ameba_soc.h"
-#include "lwipconf.h"
-
-#include "os_wrapper.h"
-#include "flash_api.h"
 #include "ameba_ota.h"
+#include "lwip_netconf.h"
+#include "flash_api.h"
 
 u32 IMG_ADDR[OTA_IMGID_MAX][2] = {0}; /* IMG Flash Physical Address use for OTA */
 

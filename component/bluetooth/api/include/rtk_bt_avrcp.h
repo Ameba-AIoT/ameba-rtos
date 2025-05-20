@@ -297,6 +297,15 @@ uint16_t rtk_bt_avrcp_volume_change_req(uint8_t *bd_addr, uint8_t volume);
 uint16_t rtk_bt_avrcp_get_element_attr(uint8_t *bd_addr, uint8_t num, uint8_t *p_attr);
 
 /**
+ * @brief     send cover art connect.
+ * @param[in] bd_addr: bt address
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_avrcp_cover_art_connect(uint8_t *bd_addr);
+
+/**
  * @}
  */
 

@@ -144,7 +144,7 @@ void battery_service_callback(uint8_t event, void *data)
 		write_resp.cid = p_write_ind->cid;
 		write_resp.index = p_write_ind->index;
 		write_resp.type = p_write_ind->type;
-		BT_LOGE("[APP] BAS write event, while no writable attr, unkown index: %d\r\n", p_write_ind->index);
+		BT_LOGE("[APP] BAS write event, while no writable attr, unknown index: %d\r\n", p_write_ind->index);
 		write_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;
 
 		ret = rtk_bt_gatts_write_resp(&write_resp);

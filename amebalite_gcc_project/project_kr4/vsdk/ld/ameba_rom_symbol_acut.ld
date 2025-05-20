@@ -408,10 +408,10 @@ SECTIONS
     PROVIDE(RBSS_UDELAY_CLK = 0x20000860);
     PROVIDE(flash_init_para = 0x20000864);
     PROVIDE(FLASH_PLL_Source_IsCPU = 0x200008cc);
-    PROVIDE(PortA_IrqData = 0x200008d0);
-    PROVIDE(PortA_IrqHandler = 0x20000950);
-    PROVIDE(PortB_IrqData = 0x200009d0);
-    PROVIDE(PortB_IrqHandler = 0x20000a50);
+    PROVIDE(PortA_IrqDataTable = 0x200008d0);
+    PROVIDE(PortA_IrqHandlerTable = 0x20000950);
+    PROVIDE(PortB_IrqDataTable = 0x200009d0);
+    PROVIDE(PortB_IrqHandlerTable = 0x20000a50);
     PROVIDE(ConfigDebugClose = 0x20000ad4);
     PROVIDE(ConfigDebug = 0x20000ad8);
     PROVIDE(shell_argv_array = 0x20000b04);

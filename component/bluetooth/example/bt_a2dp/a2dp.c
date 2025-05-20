@@ -1249,7 +1249,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 	case RTK_BT_AVRCP_EVT_ELEMENT_ATTR_INFO: {
 		uint8_t temp_buff[50];
 		const char *attr[] = {"", "Title:", "Artist:", "Album:", "Track:",
-							  "TotalTrack:", "Genre:", "PlayingTime:"
+							  "TotalTrack:", "Genre:", "PlayingTime:", "CoverArt:"
 							 };
 		rtk_bt_avrcp_element_attr_info_t *p_attr_t = (rtk_bt_avrcp_element_attr_info_t *)param;
 
@@ -1259,9 +1259,22 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 			for (uint8_t i = 0; i < p_attr_t->num_of_attr; i ++) {
 				if (p_attr_t->attr[i].length) {
 					memset((void *)temp_buff, 0, 50);
-					uint16_t len = p_attr_t->attr[i].length + strlen(attr[p_attr_t->attr[i].attribute_id]) + 1;
-					snprintf((char *)temp_buff, len, "%s%s\r\n", attr[p_attr_t->attr[i].attribute_id], p_attr_t->attr[i].p_buf);
-					BT_LOGA("[AVRCP] %s \r\n", temp_buff);
+					if (RTK_BT_AVRCP_ELEM_ATTR_DEFAULT_COVER_ART == p_attr_t->attr[i].attribute_id) {
+						uint8_t image_handle[16] = {0};
+						for (uint8_t j = 0; j < p_attr_t->attr[i].length; j++) {
+							image_handle[2 * j + 1] = p_attr_t->attr[i].p_buf[j];
+						}
+						BT_LOGA("[AVRCP] Get cover art image handle ");
+						for (uint8_t i = 0; i < 16; i ++) {
+							BT_LOGA(" 0x%02x ", image_handle[i]);
+						}
+						BT_LOGA("\r\n");
+						continue;
+					} else {
+						uint16_t len = p_attr_t->attr[i].length + strlen(attr[p_attr_t->attr[i].attribute_id]) + 1;
+						snprintf((char *)temp_buff, len, "%s%s\r\n", attr[p_attr_t->attr[i].attribute_id], p_attr_t->attr[i].p_buf);
+						BT_LOGA("[AVRCP] %s \r\n", temp_buff);
+					}
 					osif_mem_free(p_attr_t->attr[i].p_buf);
 				}
 			}
@@ -1280,6 +1293,10 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 
 		if (p_data_t->data_end) {
 			BT_LOGA("[AVRCP] Get art cover successfully \r\n");
+			for (uint8_t i = 0; i < p_data_t->data_len; i ++) {
+				BT_LOGA(" 0x%02x ", p_data_t->p_data[i]);
+			}
+			BT_LOGA("\r\n");
 		}
 		break;
 	}

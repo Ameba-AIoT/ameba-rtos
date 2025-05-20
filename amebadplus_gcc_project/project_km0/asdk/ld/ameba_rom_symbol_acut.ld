@@ -779,10 +779,10 @@ SECTIONS
     PROVIDE(UserIrqDataTable = 0x200002c0);
     PROVIDE(RBSS_UDELAY_CLK = 0x20000400);
     PROVIDE(flash_init_para = 0x20000404);
-    PROVIDE(PortB_IrqData = 0x2000045c);
-    PROVIDE(PortA_IrqData = 0x200004dc);
-    PROVIDE(PortB_IrqHandler = 0x2000055c);
-    PROVIDE(PortA_IrqHandler = 0x200005dc);
+    PROVIDE(PortB_IrqDataTable = 0x2000045c);
+    PROVIDE(PortA_IrqDataTable = 0x200004dc);
+    PROVIDE(PortB_IrqHandlerTable = 0x2000055c);
+    PROVIDE(PortA_IrqHandlerTable = 0x200005dc);
     PROVIDE(ConfigDebugClose = 0x2000065c);
     PROVIDE(ConfigDebug = 0x20000660);
     PROVIDE(shell_argv_array = 0x20000670);
