@@ -147,22 +147,15 @@ int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8
 	return ret;
 }
 
-int whc_fullmac_host_scan_abort(u8 block)
+int whc_fullmac_host_scan_abort(void)
 {
-	int ret = 0;
-	u32 param_buf[1];
-
-	param_buf[0] = (u32)block;
-
-	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SCAN_ABORT, param_buf, 1);
-
-	return ret;
+	return whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SCAN_ABORT, NULL, 0);
 }
 
 int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsigned char block)
 {
 	int ret = 0;
-	struct internal_join_block_param *block_param = NULL;
+	struct internal_block_param *block_param = NULL;
 	u32 param_buf[2];
 	u8 *buf_vir = NULL;
 	dma_addr_t buf_phy = 0;
@@ -183,15 +176,14 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 
 	/* step2: malloc and set synchronous connection related variables*/
 	if (block) {
-		block_param = (struct internal_join_block_param *)kzalloc(sizeof(struct internal_join_block_param), GFP_KERNEL);
+		block_param = (struct internal_block_param *)kzalloc(sizeof(struct internal_block_param), GFP_KERNEL);
 		if (!block_param) {
 			ret = -ENOMEM;
 			global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
 			goto error;
 		}
-		block_param->block = block;
 		/* initialize join_sema. */
-		init_completion(&block_param->join_sema);
+		init_completion(&block_param->sema);
 	}
 
 	/* step3: set connect cmd to driver*/
@@ -216,9 +208,8 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 	/* step4: wait connect finished for synchronous connection*/
 	if (block) {
 		global_idev.mlme_priv.join_block_param = block_param;
-		block_param->join_timeout = RTW_JOIN_TIMEOUT;
 
-		if (wait_for_completion_timeout(&block_param->join_sema, block_param->join_timeout) == 0) {
+		if (wait_for_completion_timeout(&block_param->sema, RTW_JOIN_TIMEOUT) == 0) {
 			dev_err(global_idev.fullmac_dev, "%s: Join bss timeout!\n", __func__);
 			global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
 			ret = -EINVAL;
@@ -234,7 +225,7 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 
 error:
 	if (block_param) {
-		complete_release(&block_param->join_sema);
+		complete_release(&block_param->sema);
 		kfree((u8 *)block_param);
 		global_idev.mlme_priv.join_block_param = NULL;
 	}
@@ -1138,6 +1129,18 @@ int whc_fullmac_host_set_promisc_enable(u32 enable, u8 mode)
 	param_buf[1] = (u32)mode;
 	param_buf[2] = (u32)0xffffffff;
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_PROMISC_INIT, param_buf, 3);
+
+	return ret;
+}
+
+int whc_fullmac_host_blk_api_done(u32 event_id, int ret_val)
+{
+	int ret = 0;
+	u32 param_buf[2];
+
+	param_buf[0] = event_id;
+	param_buf[1] = (u32)ret_val;
+	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_BLOCK_API_DONE, param_buf, 2);
 
 	return ret;
 }

@@ -1,9 +1,5 @@
-#include "platform_stdlib.h"
-#include "basic_types.h"
-
-#include "wifi_api.h"
 #include "lwip_netconf.h"
-
+#include "log.h"
 
 static void example_bcast_thread(void *param)
 {

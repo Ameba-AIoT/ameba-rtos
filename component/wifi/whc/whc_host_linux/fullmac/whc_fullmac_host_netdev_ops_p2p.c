@@ -38,7 +38,7 @@ static int whc_fullmac_host_p2p_ndev_close(struct net_device *pnetdev)
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 
-	ret = whc_fullmac_host_scan_abort(1);
+	ret = whc_fullmac_host_scan_abort();
 	if (ret) {
 		dev_err(global_idev.fullmac_dev, "[fullmac]: %s abort wifi scan failed!\n", __func__);
 		return -EPERM;

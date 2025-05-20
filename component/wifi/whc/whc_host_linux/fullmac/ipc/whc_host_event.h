@@ -14,10 +14,8 @@
 /**
  * @brief  The enumeration is join block param.
  */
-struct internal_join_block_param {
-	struct completion	join_sema;
-	unsigned int		join_timeout;
-	unsigned char		block;
+struct internal_block_param {
+	struct completion	sema;
 };
 
 #ifdef CONFIG_NAN

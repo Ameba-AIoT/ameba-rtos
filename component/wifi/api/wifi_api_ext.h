@@ -39,17 +39,14 @@ extern "C" {
 
 /**
  * @brief  Abort onoging wifi scan.
- * @param[in]  block: Set 1 for wait scan actually aborted.
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL.
  * @note
- *     - If `block` set to 0, this will be an asynchronized function and will return immediately,
- * 	     return value only indicates whether the scan abort cmd is successfully notified to driver or not.
- *	   - If `block` set to 1, this will be a synchronized function and will return when scan is actually aborted.
+ *	   - This will return when scan is actually aborted.
  * 	     When scan is actually aborted, the user callback registered in wifi_scan_networks()
  * 	     will be executed. If there is no wifi scan in progress, this function will just return
  * 	     @ref RTK_SUCCESS and user callback won't be executed.
  */
-s32 wifi_scan_abort(u8 block);
+s32 wifi_scan_abort(void);
 
 /**
  * @brief  Enable or disable Legacy Power Save (LPS) mode.
@@ -270,8 +267,10 @@ s32 wifi_set_wireless_mode(u32 wmode);
  *                 - Filter mode: Receive all packets unconditionally or only packets from the connected AP.
  *                 - Callback: Provides details of the received packets. The return value of the callback determines
  *                   whether the driver should continue processing the packet.
- * @note  Enabling promisc mode temporarily disables LPS(Legacy Power Save) and IPS(Inactive Power Save).
- *        Original power save settings are restored when promisc mode is disabled.
+ * @note
+ *        - Do not support calling APIs in callback.
+ *        - Enabling promisc mode temporarily disables LPS(Legacy Power Save) and IPS(Inactive Power Save).
+ *        - Original power save settings are restored when promisc mode is disabled.
  * @return  None.
  */
 void wifi_promisc_enable(u32 enable, struct rtw_promisc_para *para);

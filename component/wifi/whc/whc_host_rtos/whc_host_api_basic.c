@@ -37,7 +37,7 @@
 /******************************************************
  *               Variables Definitions
  ******************************************************/
-struct internal_join_block_param *join_block_param = NULL;
+struct internal_block_param *join_block_param = NULL;
 
 s32(*scan_user_callback_ptr)(u32, void *) = NULL;
 s32(*scan_each_report_user_callback_ptr)(struct rtw_scan_result *, void *) = NULL;
@@ -61,7 +61,8 @@ void (*p_wifi_join_info_free)(u8 iface_type) = NULL;
 s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 {
 	int result = RTK_SUCCESS;
-	struct internal_join_block_param *block_param = NULL;
+	struct internal_block_param *block_param = NULL;
+	unsigned int timeout;
 
 	u8 *param_buf = rtos_mem_zmalloc(sizeof(struct rtw_network_info) + connect_param->password_len);
 	u8 *ptr;
@@ -91,15 +92,14 @@ s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 
 	/* step2: malloc and set synchronous connection related variables*/
 	if (block) {
-		block_param = (struct internal_join_block_param *)rtos_mem_zmalloc(sizeof(struct internal_join_block_param));
+		block_param = (struct internal_block_param *)rtos_mem_zmalloc(sizeof(struct internal_block_param));
 		if (!block_param) {
 			result = -RTK_ERR_NOMEM;
 			rtw_join_status = RTW_JOINSTATUS_FAIL;
 			goto error;
 		}
-		block_param->block = block;
-		rtos_sema_create_static(&block_param->join_sema, 0, 0xFFFFFFFF);
-		if (!block_param->join_sema) {
+		rtos_sema_create_static(&block_param->sema, 0, 0xFFFFFFFF);
+		if (!block_param->sema) {
 			result = -RTK_ERR_NOMEM;
 			rtw_join_status = RTW_JOINSTATUS_FAIL;
 			goto error;
@@ -158,12 +158,12 @@ s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 #ifdef CONFIG_ENABLE_EAP
 		// for eap connection, timeout should be longer (default value in wpa_supplicant: 60s)
 		if (wifi_get_eap_phase()) {
-			block_param->join_timeout = 60000;
+			timeout = 60000;
 		} else
 #endif
-			block_param->join_timeout = RTW_JOIN_TIMEOUT;
+			timeout = RTW_JOIN_TIMEOUT;
 
-		if (rtos_sema_take(block_param->join_sema, block_param->join_timeout) != RTK_SUCCESS) {
+		if (rtos_sema_take(block_param->sema, timeout) != RTK_SUCCESS) {
 			RTK_LOGE(TAG_WLAN_INIC, "Join bss timeout\n");
 			rtw_join_status = RTW_JOINSTATUS_FAIL;
 			result = -RTK_ERR_TIMEOUT;
@@ -190,8 +190,8 @@ error:
 		rtos_mem_free((u8 *)param_buf);
 	}
 	if (block_param) {
-		if (block_param->join_sema) {
-			rtos_sema_delete_static(block_param->join_sema);
+		if (block_param->sema) {
+			rtos_sema_delete_static(block_param->sema);
 		}
 		rtos_mem_free((u8 *)block_param);
 		join_block_param = NULL;

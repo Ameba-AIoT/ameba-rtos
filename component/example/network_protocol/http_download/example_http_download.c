@@ -1,11 +1,4 @@
-#include "platform_autoconf.h"
-
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "lwipconf.h"
-#include "wifi_api.h"
 #include "lwip_netconf.h"
-
 
 #define SERVER_HOST    "176.34.62.248"
 #define SERVER_PORT    80

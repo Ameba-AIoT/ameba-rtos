@@ -1,13 +1,5 @@
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "wifi_api.h"
-#include "websocket/libwsclient.h"
-#include "websocket/wsclient_api.h"
-#include <stdio.h>
-#include "example_websocket_client.h"
-#include "os_wrapper.h"
 #include "lwip_netconf.h"
-
+#include "websocket/wsclient_api.h"
 
 void handle_message(wsclient_context **wsclient, int data_len)
 {

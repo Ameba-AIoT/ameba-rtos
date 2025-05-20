@@ -1,5 +1,4 @@
 #include "example_captive_portal.h"
-#include "wifi_api.h"
 
 /* ------------------------ Defines --------------------------------------- */
 /* The size of the buffer in which the dynamic WEB page is created. */
