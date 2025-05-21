@@ -18,7 +18,7 @@ int rtw_wiphy_band_init(struct wiphy *pwiphy, u32 band_type);
 int whc_fullmac_host_set_user_config(struct wifi_user_conf *pwifi_usrcfg);
 void whc_fullmac_host_wifi_on(void);
 int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_len, u8 block);
-int whc_fullmac_host_scan_abort(u8 block);
+int whc_fullmac_host_scan_abort(void);
 int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsigned char block);
 int whc_fullmac_host_event_disconnect(void);
 int whc_fullmac_host_wifi_get_join_status(void);

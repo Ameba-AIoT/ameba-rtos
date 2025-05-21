@@ -421,7 +421,7 @@ void at_test(void *arg)
 
 		while (remain_len > 0) {
 			get_len = atcmd_tt_mode_get(buffer_ptr, remain_len);
-			if (get_len < 0) {
+			if (get_len == 0) {
 				RTK_LOGI(TAG, "host stops tt mode\r\n");
 				break;
 			}

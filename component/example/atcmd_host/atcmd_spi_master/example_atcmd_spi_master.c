@@ -26,8 +26,10 @@
 
 void *master_tx_done_sema;
 void *master_rx_done_sema;
-void *master_tt_mode_sema;
+void *master_trx_done_sema;
 void *master_gpio_sema;
+void *uart_irq_handle_sema;
+void *tx_ringbuffer_mutex;
 
 RingBuffer *atcmd_host_tx_ring_buf = NULL;
 
@@ -42,9 +44,7 @@ char uart_format_buffer[FORMAT_LEN];
 int current_edge = IRQ_FALL;
 char uart_irq_buffer[MAX_CMD_LEN] = {0};
 u32 uart_irq_count = 0;
-volatile u8 stop_flag = 0;
 volatile u8 tt_mode_task_start = 0;
-volatile u8 send_flag = 0;
 
 u8 MasterRxBuf[ATCMD_SPI_DMA_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 u8 MasterTxBuf[ATCMD_SPI_DMA_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
@@ -82,12 +82,17 @@ void spi_master_send(u8 *buf, u32 len)
 	u32 space;
 
 	while (1) {
+		xSemaphoreTake(tx_ringbuffer_mutex, 0xFFFFFFFF);
 		space = RingBuffer_Space(atcmd_host_tx_ring_buf);
 		if (space > len) {
 			RingBuffer_Write(atcmd_host_tx_ring_buf, (u8 *)buf, len);
-			spi_m2s_pin_set(0);
+			xSemaphoreGive(tx_ringbuffer_mutex);
+			if (xSemaphoreTake(master_trx_done_sema, 0) == pdPASS) {
+				spi_m2s_pin_set(0);
+			}
 			return;
 		} else {
+			xSemaphoreGive(tx_ringbuffer_mutex);
 			vTaskDelay(1);
 		}
 	}
@@ -121,6 +126,7 @@ void uart_format_string_output(const char *fmt, ...)
 void uart_irq(uint32_t id, SerialIrq event)
 {
 	serial_t *sobj = (void *)id;
+	BaseType_t task_woken = pdFALSE;
 
 	if (event == RxIrq) {
 		while (serial_readable(sobj)) {
@@ -134,10 +140,19 @@ void uart_irq(uint32_t id, SerialIrq event)
 
 		if ((uart_irq_count > 1 && uart_irq_buffer[uart_irq_count - 1] == '\n' && uart_irq_buffer[uart_irq_count - 2] == '\r')
 			|| (uart_irq_count == MAX_CMD_LEN)) {
-			spi_master_send((u8 *)uart_irq_buffer, uart_irq_count);
-			memset(uart_irq_buffer, 0, MAX_CMD_LEN);
-			uart_irq_count = 0;
+			xSemaphoreGiveFromISR(uart_irq_handle_sema, &task_woken);
+			portEND_SWITCHING_ISR(task_woken);
 		}
+	}
+}
+
+void uart_irq_handle_task(void)
+{
+	while (1) {
+		xSemaphoreTake(uart_irq_handle_sema, 0xFFFFFFFF);
+		spi_master_send((u8 *)uart_irq_buffer, uart_irq_count);
+		memset(uart_irq_buffer, 0, MAX_CMD_LEN);
+		uart_irq_count = 0;
 	}
 }
 
@@ -181,11 +196,7 @@ void atcmd_tt_mode_task(void)
 	while (tt_len > 0) {
 		send_len = tt_len > (ATCMD_SPI_DMA_SIZE - 8) ? (ATCMD_SPI_DMA_SIZE - 8) : tt_len;
 		spi_master_send((u8 *)tt_tx_buf, send_len);
-		xSemaphoreTake(master_tt_mode_sema, 0xFFFFFFFF);
 		tt_len -= send_len;
-		while (stop_flag) {
-			vTaskDelay(1);
-		}
 	}
 
 	vPortFree(tt_tx_buf);
@@ -210,18 +221,7 @@ void spi_handle_recv_data(u8 *data, u16 len)
 	}
 
 	if (tt_mode_task_start) {
-		if ((len > 0) && (memcmp(data, ATCMD_TT_MODE_HIGH_WATERMARK_STR, strlen(ATCMD_TT_MODE_HIGH_WATERMARK_STR)) == 0)) {
-			stop_flag = 1;
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, ATCMD_TT_MODE_HIGH_WATERMARK_STR);
-		} else if ((len > 0) && (memcmp(data, ATCMD_TT_MODE_LOW_WATERMARK_STR, strlen(ATCMD_TT_MODE_LOW_WATERMARK_STR)) == 0)) {
-			stop_flag = 0;
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, ATCMD_TT_MODE_LOW_WATERMARK_STR);
-		}
-
-		if (send_flag == 1) {
-			xSemaphoreGive(master_tt_mode_sema);
-		}
-
+		// if needed, handle received data during transparent transmission mode
 	} else
 #endif
 	{
@@ -308,6 +308,7 @@ void atcmd_spi_host_task(void)
 			vTaskDelay(10);
 		}
 
+		xSemaphoreTake(tx_ringbuffer_mutex, 0xFFFFFFFF);
 		remain_len = RingBuffer_Available(atcmd_host_tx_ring_buf);
 		if (remain_len > 0) {
 			tx_len = remain_len > max_tx_len ? max_tx_len : remain_len;
@@ -319,7 +320,7 @@ void atcmd_spi_host_task(void)
 			*p_tx_len = tx_len;
 
 			RingBuffer_Read(atcmd_host_tx_ring_buf, (u8 *)&MasterTxBuf[4], tx_len);
-
+			xSemaphoreGive(tx_ringbuffer_mutex);
 #if CHECKSUM_EN
 			// cal checksum
 			u32 tx_checksum = checksum_32_spi(0, (u8 *)MasterTxBuf, tx_len + 4);
@@ -329,11 +330,10 @@ void atcmd_spi_host_task(void)
 			spi_master_write_read_stream_dma(&spi_master, (char *)MasterTxBuf, (char *)MasterRxBuf, ATCMD_SPI_DMA_SIZE);
 			xSemaphoreTake(master_tx_done_sema, 0xFFFFFFFF);
 			xSemaphoreTake(master_rx_done_sema, 0xFFFFFFFF);
-			send_flag = 1;
 		} else {
+			xSemaphoreGive(tx_ringbuffer_mutex);
 			spi_master_read_stream_dma(&spi_master, (char *)MasterRxBuf, ATCMD_SPI_DMA_SIZE);
 			xSemaphoreTake(master_rx_done_sema, 0xFFFFFFFF);
-			send_flag = 0;
 		}
 
 		// check recv data
@@ -362,11 +362,19 @@ void atcmd_spi_host_task(void)
 
 
 NEXT:
+		spi_m2s_pin_set(1);
+
 		if (spi_recv_data_callback != NULL) {
 			spi_recv_data_callback((u8 *)&MasterRxBuf[4], rx_len);
 		}
 
-		spi_m2s_pin_set(1);
+		if (RingBuffer_Available(atcmd_host_tx_ring_buf) > 0) {
+			spi_m2s_pin_set(0);
+		} else {
+			while (xSemaphoreTake(master_trx_done_sema, 0) == pdPASS) {}
+
+			xSemaphoreGive(master_trx_done_sema);
+		}
 	}
 }
 
@@ -374,14 +382,20 @@ void example_atcmd_spi_master(void)
 {
 	master_tx_done_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
 	master_rx_done_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
-	master_tt_mode_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
+	master_trx_done_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
 	master_gpio_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
+	uart_irq_handle_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
+	tx_ringbuffer_mutex = (void *)xSemaphoreCreateMutex();
 
 	atcmd_host_tx_ring_buf = RingBuffer_Create(NULL, ((ATCMD_SPI_DMA_SIZE - 8) * 7) + 1, LOCAL_RINGBUFF, 1);
 
 	spi_recv_data_callback = spi_handle_recv_data;
 
 	if (xTaskCreate((void *)atcmd_spi_host_task, ((const char *)"atcmd_spi_host_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 5, NULL) != pdPASS) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s rtos_task_create(atcmd_spi_host_task) failed", __FUNCTION__);
+	}
+
+	if (xTaskCreate((void *)uart_irq_handle_task, ((const char *)"uart_irq_handle_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 5, NULL) != pdPASS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s rtos_task_create(atcmd_spi_host_task) failed", __FUNCTION__);
 	}
 }

@@ -441,8 +441,8 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *user_data
 	/* Merge from wifi_join_status_indicate. */
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
 		/* if Synchronous connection, up sema when connect success */
-		if (mlme_priv->join_block_param && mlme_priv->join_block_param->block) {
-			complete(&mlme_priv->join_block_param->join_sema);
+		if (mlme_priv->join_block_param) {
+			complete(&mlme_priv->join_block_param->sema);
 		}
 	}
 
@@ -496,8 +496,8 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *user_data
 #endif
 		dev_dbg(global_idev.fullmac_dev, "[fullmac] --- %s --- join failed up sema.", __func__);
 		/* merge from wifi_join_status_indicate if synchronous connection, up sema when connect fail*/
-		if (mlme_priv->join_block_param && mlme_priv->join_block_param->block) {
-			complete(&mlme_priv->join_block_param->join_sema);
+		if (mlme_priv->join_block_param) {
+			complete(&mlme_priv->join_block_param->sema);
 		}
 		dev_dbg(global_idev.fullmac_dev, "[fullmac] --- %s --- join failed inform cfg80211.", __func__);
 
@@ -999,7 +999,7 @@ static s32 whc_fullmac_host_remain_on_channel(struct wiphy *wiphy, struct wirele
 		goto exit;
 	}
 
-	whc_fullmac_host_scan_abort(1);
+	whc_fullmac_host_scan_abort();
 
 	scan_param = (struct rtw_scan_param *)ptr;
 	ptr += sizeof(struct rtw_scan_param);
@@ -1054,7 +1054,7 @@ static s32 whc_fullmac_host_cancel_remain_on_channel(struct wiphy *wiphy, struct
 {
 #ifdef CONFIG_P2P
 	if (global_idev.p2p_global.roch_onging) {
-		whc_fullmac_host_scan_abort(1);
+		whc_fullmac_host_scan_abort();
 	}
 	return 0;
 #else

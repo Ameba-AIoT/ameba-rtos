@@ -108,7 +108,7 @@ void sys_recover_ota_signature(void)
 	u32 app_ota1_start_addr;
 	u32 app_ota2_start_addr;
 
-	backup = (u8 *)malloc(0x1000);
+	backup = (u8 *)rtos_mem_malloc(0x1000);
 	if (backup == NULL) {
 		RTK_LOGE(TAG, "[%s] backup malloc failded\n", __func__);
 		return;
@@ -143,7 +143,7 @@ void sys_recover_ota_signature(void)
 		}
 	}
 
-	free(backup);
+	rtos_mem_free(backup);
 }
 
 /**

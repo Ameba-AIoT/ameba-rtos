@@ -23,7 +23,7 @@ static int whc_host_start_p2p_device(struct wiphy *wiphy, struct wireless_dev *w
 
 static void whc_host_stop_p2p_device(struct wiphy *wiphy, struct wireless_dev *wdev)
 {
-	whc_fullmac_host_scan_abort(1);
+	whc_fullmac_host_scan_abort();
 	global_idev.p2p_global.p2p_role = P2P_ROLE_DISABLE;
 	whc_fullmac_host_set_p2p_role(P2P_ROLE_DISABLE);
 }

@@ -468,13 +468,9 @@ void whc_event_wifi_scan_networks(u32 api_id, u32 *param_buf)
 {
 	int ret;
 	u8 *ptr = (u8 *)param_buf;
-	u8 block;
 	u32 ssid_length;
 	struct rtw_scan_param scan_param = {0};
 	u8 *ssid = NULL;
-
-	memcpy(&block, ptr, sizeof(block));
-	ptr += sizeof(block);
 
 	memcpy(&ssid_length, ptr, sizeof(ssid_length));
 	ptr += sizeof(ssid_length);
@@ -514,7 +510,7 @@ void whc_event_wifi_scan_networks(u32 api_id, u32 *param_buf)
 		RTK_LOGD(TAG_WLAN_INIC, "sdio tx path busy, scan fail\n");
 		ret = -1;
 	} else {
-		ret = wifi_scan_networks(&scan_param, block);
+		ret = wifi_scan_networks(&scan_param, 0);
 	}
 
 	if (ssid) {
@@ -800,9 +796,10 @@ void whc_event_wifi_set_gen_ie(u32 api_id, u32 *param_buf)
 
 void whc_event_wifi_scan_abort(u32 api_id, u32 *param_buf)
 {
+	(void)param_buf;
 	int ret = 0;
-	u8 block = (u8)param_buf[0];
-	ret = wifi_scan_abort(block);
+
+	ret = wifi_scan_abort();
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 

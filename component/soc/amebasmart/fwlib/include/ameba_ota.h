@@ -8,10 +8,8 @@
 #define _AMEBA_OTA_H_
 
 #include "ameba_secure_boot.h"
-#include <mbedtls/config.h>
-#include <mbedtls/platform.h>
-#include <mbedtls/net_sockets.h>
-#include <mbedtls/ssl.h>
+#include "mbedtls/net_sockets.h"
+#include "mbedtls/ssl.h"
 
 /** @addtogroup Ameba_Platform
   * @{

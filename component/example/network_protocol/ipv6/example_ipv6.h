@@ -7,7 +7,6 @@
  *
  *
  ******************************************************************************/
-#include <rtw_autoconf.h>
 
 #define EXAMPLE_IPV6_UDP    1
 #define EXAMPLE_IPV6_TCP    0

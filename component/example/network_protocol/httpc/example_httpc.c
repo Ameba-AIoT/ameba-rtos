@@ -1,9 +1,5 @@
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "httpc/httpc.h"
-#include "wifi_api.h"
 #include "lwip_netconf.h"
-#include "os_wrapper.h"
+#include "httpc/httpc.h"
 
 #define STACKSIZE    2048
 #define USE_HTTPS    0

@@ -37,6 +37,7 @@ set(private_compile_options)         #private compile_options
 
 ameba_list_append(private_sources
     ../bt_atcmd/atcmd_bt_wifimate_configurator.c
+    ../bt_atcmd/atcmd_bt_cmd_sync.c
 )
 
 if(CONFIG_BT_WIFIMATE_DEVICE)

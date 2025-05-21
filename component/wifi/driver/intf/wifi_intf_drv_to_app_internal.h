@@ -192,10 +192,8 @@ struct rtw_kvr_param_t {
 /**
  * @brief  The structure is join block param.
  */
-struct internal_join_block_param {
-	void				*join_sema;
-	unsigned int		join_timeout;
-	unsigned char		block;
+struct internal_block_param {
+	void				*sema;
 };
 
 /**
