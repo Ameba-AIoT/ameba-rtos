@@ -10,9 +10,8 @@ s32 wifi_get_scan_records(u32 *ap_num, struct rtw_scan_result *ap_list)
 	return -1;
 }
 
-s32 wifi_scan_abort(u8 block)
+s32 wifi_scan_abort(void)
 {
-	UNUSED(block);
 	call_noused = __LINE__;
 	return -1;
 }
@@ -348,13 +347,6 @@ void wifi_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way)
 void wifi_wpa_add_key(struct rtw_crypt_info *crypt)
 {
 	UNUSED(crypt);
-	call_noused = __LINE__;
-}
-
-void wifi_blk_api_done(u32 event_id, int ret)
-{
-	UNUSED(event_id);
-	UNUSED(ret);
 	call_noused = __LINE__;
 }
 

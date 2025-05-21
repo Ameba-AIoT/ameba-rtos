@@ -1,10 +1,8 @@
+#include "ameba_soc.h"
+#include "os_wrapper.h"
+#include "mbedtls/aes.h"
 #include "vfs.h"
 #include "example_vfs_encrypt.h"
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
-#include "mbedtls/aes.h"
-#include "os_wrapper.h"
 
 extern void vfs_set_user_encrypt_callback(char *prefix, vfs_encrypt_callback_t encrypt_func, vfs_decrypt_callback_t decrypt_func, unsigned char iv_len);
 

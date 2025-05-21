@@ -1,9 +1,5 @@
-#include "platform_stdlib.h"
-#include "basic_types.h"
 #include "lwip_netconf.h"
-#include "lwip/netif.h"
-#include "wifi_api.h"
-
+#include "log.h"
 
 #define TEST_MODE       0	// 0 to test client keepalive, 1 to test server keepalive
 #define SERVER_IP       "192.168.0.110"

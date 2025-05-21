@@ -4,7 +4,6 @@
 
 #include "mbedtls/ssl.h"
 #include "mbedtls/net_sockets.h"
-#include "mbedtls/platform.h"
 #include "mbedtls/base64.h"
 #include "mbedtls/sha1.h"
 

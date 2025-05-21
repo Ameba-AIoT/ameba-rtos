@@ -1,11 +1,5 @@
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "lwipconf.h"
-//#include <osdep_api.h>
-#include "os_wrapper.h"
-#include "wifi_api.h"
 #include "lwip_netconf.h"
-
+#include "log.h"
 
 #define SERVER_PORT     5001
 #define LISTEN_QLEN     2

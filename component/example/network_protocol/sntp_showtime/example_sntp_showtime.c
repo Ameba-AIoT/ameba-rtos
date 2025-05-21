@@ -1,9 +1,6 @@
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "sntp/sntp.h"
-#include "wifi_api.h"
 #include "lwip_netconf.h"
-#include "os_wrapper.h"
+#include "log.h"
+#include "sntp/sntp.h"
 
 #define TIME_MODE    1	//0: for UTC with microseconds, 1: for timezone with seconds
 

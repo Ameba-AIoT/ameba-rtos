@@ -46,7 +46,7 @@ void at_printf_lock(void);
 void at_printf_unlock(void);
 
 #define MAX_TT_BUF_LEN 1024 * 10
-#define MAX_TT_HEAP_SIZE 1024 * 120
+#define MAX_TT_HEAP_SIZE 1024 * 80
 #define TT_MODE_HIGH_WATERMARK 0.7
 #define TT_MODE_LOW_WATERMARK 0.2
 #define ATCMD_HOST_CONTROL_INIT_STR "ATCMD READY\r\n"

@@ -1,8 +1,6 @@
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "httpd/httpd.h"
+#include "ameba_soc.h"
 #include "os_wrapper.h"
-#include "ameba.h"
+#include "httpd/httpd.h"
 
 #define USE_HTTPS    0
 

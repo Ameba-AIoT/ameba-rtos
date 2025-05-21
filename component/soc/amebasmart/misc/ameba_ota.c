@@ -4,13 +4,8 @@
 * SPDX-License-Identifier: Apache-2.0
 */
 
-#include <stdlib.h>
-#include <string.h>
-
 #include "ameba_soc.h"
-#include "lwipconf.h"
-
-#include "os_wrapper.h"
+#include "lwip_netconf.h"
 #include "flash_api.h"
 #include "vfs.h"
 

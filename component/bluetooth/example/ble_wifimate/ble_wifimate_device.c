@@ -22,6 +22,9 @@
 #include <rtk_client_config.h>
 #include <ble_wifimate_service.h>
 #include <bt_utils.h>
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+#include <atcmd_bt_cmd_sync.h>
+#endif
 
 static uint8_t adv_data[] = {
 	/* Flags */
@@ -77,11 +80,16 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_device_gap_app_callback(uint8_t evt_code
 		} else {
 			BT_LOGE("[APP] ADV start failed, err 0x%x \r\n", adv_start_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP:adv,start,%d,%d\r\n", (adv_start_ind->err == 0) ? 0 : -1, adv_start_ind->adv_type);
 		if (s_ble_wifimate_timer_hdl) {
 			BT_LOGA("[APP] ble wifimate timer start succeed!\r\n");
 			osif_timer_start(&s_ble_wifimate_timer_hdl);
 		}
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		if (bt_at_sync_event_match_check(evt_code)) {
+			bt_at_sync_set_result(adv_start_ind->err);
+			bt_at_sync_sem_give();
+		}
+#endif
 		break;
 	}
 
@@ -92,7 +100,14 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_device_gap_app_callback(uint8_t evt_code
 		} else {
 			BT_LOGE("[APP] ADV stop failed, err 0x%x \r\n", adv_stop_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP:adv,stop,%d,0x%x\r\n", (adv_stop_ind->err == 0) ? 0 : -1, adv_stop_ind->stop_reason);
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		if (adv_stop_ind->stop_reason == RTK_BT_LE_ADV_STOP_BY_HOST) {
+			if (bt_at_sync_event_match_check(evt_code)) {
+				bt_at_sync_set_result(adv_stop_ind->err);
+				bt_at_sync_sem_give();
+			}
+		}
+#endif
 		break;
 	}
 
@@ -103,7 +118,12 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_device_gap_app_callback(uint8_t evt_code
 		} else {
 			BT_LOGE("[APP] Scan start failed(err: 0x%x)\r\n", scan_start_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP:scan,start,%d,%d\r\n", (scan_start_ind->err == 0) ? 0 : -1, scan_start_ind->scan_type);
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		if (bt_at_sync_event_match_check(evt_code)) {
+			bt_at_sync_set_result(scan_start_ind->err);
+			bt_at_sync_sem_give();
+		}
+#endif
 		break;
 	}
 
@@ -126,7 +146,14 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_device_gap_app_callback(uint8_t evt_code
 		} else {
 			BT_LOGE("[APP] Scan stop failed(err: 0x%x)\r\n", scan_stop_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP:scan,stop,%d,0x%x\r\n", (scan_stop_ind->err == 0) ? 0 : -1, scan_stop_ind->stop_reason);
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		if (scan_stop_ind->stop_reason == RTK_BT_LE_SCAN_STOP_BY_HOST) {
+			if (bt_at_sync_event_match_check(evt_code)) {
+				bt_at_sync_set_result(scan_stop_ind->err);
+				bt_at_sync_sem_give();
+			}
+		}
+#endif
 		break;
 	}
 
@@ -141,7 +168,6 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_device_gap_app_callback(uint8_t evt_code
 			BT_LOGE("[APP] Connection establish failed(err: 0x%x), remote device: %s\r\n",
 					conn_ind->err, le_addr);
 		}
-		BT_AT_PRINT("+BLEGAP:conn,%d,%d,%s\r\n", (conn_ind->err == 0) ? 0 : -1, (int)conn_ind->conn_handle, le_addr);
 
 		if (RTK_BT_LE_ROLE_SLAVE == conn_ind->role) {
 			ble_wifimate_server_connect(conn_ind->conn_handle);
@@ -151,6 +177,21 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_device_gap_app_callback(uint8_t evt_code
 			osif_timer_stop(&s_ble_wifimate_timer_hdl);
 			BT_LOGA("[APP] ble wifimate stop timer\r\n");
 		}
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		if (!conn_ind->err) {
+			if (conn_ind->role == RTK_BT_LE_ROLE_MASTER) {
+				BT_AT_PRINT("+BLEGAP:conn,%d,%s\r\n", conn_ind->conn_handle, le_addr);
+			} else if (conn_ind->role == RTK_BT_LE_ROLE_SLAVE) {
+				BT_AT_PRINT_INDICATE("+BLEGAP:conn,%d,%s\r\n", conn_ind->conn_handle, le_addr);
+			}
+		}
+		if (conn_ind->role == RTK_BT_LE_ROLE_MASTER) {
+			if (bt_at_sync_event_match_check(evt_code)) {
+				bt_at_sync_set_result(conn_ind->err);
+				bt_at_sync_sem_give();
+			}
+		}
+#endif
 		break;
 	}
 
@@ -160,8 +201,6 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_device_gap_app_callback(uint8_t evt_code
 		role = disconn_ind->role ? "slave" : "master";
 		BT_LOGA("[APP] Disconnected, reason: 0x%x, handle: %d, role: %s, remote device: %s\r\n",
 				disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
-		BT_AT_PRINT("+BLEGAP:disconn,0x%x,%d,%s,%s\r\n",
-					disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
 
 		if (RTK_BT_LE_ROLE_SLAVE == disconn_ind->role) {
 			/* gap action */
@@ -177,6 +216,14 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_device_gap_app_callback(uint8_t evt_code
 			/* gatts action */
 			ble_wifimate_server_disconnect(disconn_ind->conn_handle);
 		}
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		if (disconn_ind->reason != (RTK_BT_ERR_HCI_GROUP | RTK_BT_HCI_ERR_LOCAL_HOST_TERMINATE)) {
+			BT_AT_PRINT_INDICATE("+BLEGAP:disconn,%d,%s\r\n",
+								 disconn_ind->conn_handle, le_addr);
+		}
+
+		bt_at_sync_disconnect_hdl(disconn_ind->conn_handle);
+#endif
 		break;
 	}
 
@@ -186,7 +233,6 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_device_gap_app_callback(uint8_t evt_code
 		if (conn_update_ind->err) {
 			BT_LOGE("[APP] Update conn param failed, conn_handle: %d, err: 0x%x\r\n",
 					conn_update_ind->conn_handle, conn_update_ind->err);
-			BT_AT_PRINT("+BLEGAP:conn_update,%d,-1\r\n", conn_update_ind->conn_handle);
 		} else {
 			BT_LOGA("[APP] Conn param is updated, conn_handle: %d, conn_interval: 0x%x, "       \
 					"conn_latency: 0x%x, supervision_timeout: 0x%x\r\n",
@@ -194,12 +240,13 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_device_gap_app_callback(uint8_t evt_code
 					conn_update_ind->conn_interval,
 					conn_update_ind->conn_latency,
 					conn_update_ind->supv_timeout);
-			BT_AT_PRINT("+BLEGAP:conn_update,%d,0,0x%x,0x%x,0x%x\r\n",
-						conn_update_ind->conn_handle,
-						conn_update_ind->conn_interval,
-						conn_update_ind->conn_latency,
-						conn_update_ind->supv_timeout);
 		}
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		if (bt_at_sync_event_match_check(evt_code)) {
+			bt_at_sync_set_result(conn_update_ind->err);
+			bt_at_sync_sem_give();
+		}
+#endif
 		break;
 	}
 
@@ -229,12 +276,6 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_device_gap_app_callback(uint8_t evt_code
 				data_len_change->max_tx_time,
 				data_len_change->max_rx_octets,
 				data_len_change->max_rx_time);
-		BT_AT_PRINT("+BLEGAP:conn_datalen,%d,0x%x,0x%x,0x%x,0x%x\r\n",
-					data_len_change->conn_handle,
-					data_len_change->max_tx_octets,
-					data_len_change->max_tx_time,
-					data_len_change->max_rx_octets,
-					data_len_change->max_rx_time);
 		break;
 	}
 
@@ -245,16 +286,11 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_device_gap_app_callback(uint8_t evt_code
 			BT_LOGE("[APP] Update PHY failed, conn_handle: %d, err: 0x%x\r\n",
 					phy_update_ind->conn_handle,
 					phy_update_ind->err);
-			BT_AT_PRINT("+BLEGAP:conn_phy,%d,-1\r\n", phy_update_ind->conn_handle);
 		} else {
 			BT_LOGA("[APP] PHY is updated, conn_handle: %d, tx_phy: %d, rx_phy: %d\r\n",
 					phy_update_ind->conn_handle,
 					phy_update_ind->tx_phy,
 					phy_update_ind->rx_phy);
-			BT_AT_PRINT("+BLEGAP:conn_phy,%d,0,%d,%d\r\n",
-						phy_update_ind->conn_handle,
-						phy_update_ind->tx_phy,
-						phy_update_ind->rx_phy);
 		}
 		break;
 	}
@@ -282,6 +318,10 @@ int ble_wifimate_device_main(uint8_t enable, uint16_t timeout)
 	char addr_str[30] = {0};
 	uint8_t device_name[] = "RTK_WiFiMate_xxyyzz";
 	rtk_bt_le_adv_param_t adv_param = {0};
+
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+	bt_at_sync_enable(enable);
+#endif
 
 	if (1 == enable) {
 

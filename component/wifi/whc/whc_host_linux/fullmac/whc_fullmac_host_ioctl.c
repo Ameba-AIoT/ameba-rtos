@@ -83,7 +83,7 @@ static int whc_fullmac_host_wowlan_ctrl(struct net_device *dev, struct iw_reques
 	int ret = 0;
 	struct whc_sdio *priv = &whc_sdio_priv;
 
-	ret = whc_fullmac_host_scan_abort(0);
+	ret = whc_fullmac_host_scan_abort();
 	if (ret) {
 		dev_err(global_idev.fullmac_dev, "[fullmac]: %s abort wifi scan failed!\n", __func__);
 		return -EPERM;

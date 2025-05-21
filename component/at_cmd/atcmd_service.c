@@ -273,7 +273,7 @@ int atcmd_tt_mode_start(u32 len)
 		return -1;
 	}
 
-	if (ring_buf_size == MAX_TT_HEAP_SIZE) {
+	if (ring_buf_size == MAX_TT_HEAP_SIZE && g_host_control_mode == AT_HOST_CONTROL_UART) {
 		g_tt_mode_check_watermark = 1;
 	}
 
@@ -303,14 +303,22 @@ int atcmd_tt_mode_get(u8 *buf, u32 len)
 	}
 
 	while (get_len != 0) {
+		if (g_tt_mode_stop_flag && RingBuffer_Available(atcmd_tt_mode_rx_ring_buf) == 0) {
+			break;
+		}
+
 		while (RingBuffer_Available(atcmd_tt_mode_rx_ring_buf) == 0) {
 			rtos_sema_take(atcmd_tt_mode_sema, 0xFFFFFFFF);
 			if (g_tt_mode_stop_flag) {
-				return -1;
+				break;
 			}
 		}
 
 		actual_len = RingBuffer_Available(atcmd_tt_mode_rx_ring_buf);
+
+		if (actual_len == 0) {
+			continue;
+		}
 
 		if (g_tt_mode_check_watermark) {
 			if (actual_len < MAX_TT_HEAP_SIZE * TT_MODE_LOW_WATERMARK && g_tt_mode_indicate_low_watermark == 0) {
@@ -538,6 +546,10 @@ DEFAULT:
 
 	if (atcmd_config) {
 		rtos_mem_free(atcmd_config);
+	}
+
+	if (atcmd_ob) {
+		rtos_mem_free(atcmd_ob);
 	}
 
 	return ret;

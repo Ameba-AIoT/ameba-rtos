@@ -335,6 +335,14 @@ void whc_fullmac_host_event_task(struct work_struct *data)
 		/* If user callback provided as NULL, param_buf[1] appears NULL here. Do not make ptr. */
 		/* https://jira.realtek.com/browse/AMEBAD2-1543 */
 		whc_fullmac_host_scan_done_indicate(param_buf[0], NULL);
+
+		/* if Synchronous scan/scan abort, up sema when scan done */
+		if (global_idev.mlme_priv.scan_block_param) {
+			complete(&global_idev.mlme_priv.scan_block_param->sema);
+		}
+		if (global_idev.mlme_priv.scan_abort_block_param) {
+			complete(&global_idev.mlme_priv.scan_abort_block_param->sema);
+		}
 		break;
 	case WHC_API_IP_ACS:
 		whc_fullmac_host_event_set_acs_info(param_buf);

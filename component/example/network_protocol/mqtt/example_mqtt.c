@@ -1,14 +1,8 @@
-/* Standard includes. */
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-/* FreeRTOS includes. */
-
-#include "MQTTClient.h"
-#include "wifi_api.h"
 #include "lwip_netconf.h"
+#include "MQTTClient.h"
+
 #define MQTT_SELECT_TIMEOUT 1
+
 static void messageArrived(MessageData *data, void *discard)
 {
 	(void)discard;

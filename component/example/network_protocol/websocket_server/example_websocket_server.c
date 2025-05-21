@@ -1,10 +1,5 @@
-#include "platform_stdlib.h"
-#include "basic_types.h"
-#include "websocket/wsserver_api.h"
-#include "wifi_api.h"
-#include "websocket/ws_server_msg.h"
 #include "lwip_netconf.h"
-
+#include "websocket/ws_server_msg.h"
 
 #define USE_WSS    0
 

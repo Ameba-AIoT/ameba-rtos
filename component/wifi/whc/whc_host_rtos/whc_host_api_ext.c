@@ -24,6 +24,7 @@ extern u8 rtw_join_status;
 /******************************************************
  *                    Constants
  ******************************************************/
+#define RTW_SCAN_ABORT_TIMEOUT (20)
 
 /******************************************************
  *                 Type Definitions
@@ -32,6 +33,8 @@ extern u8 rtw_join_status;
 /******************************************************
  *               Variables Declarations
  ******************************************************/
+
+struct internal_block_param *scan_abort_block_param = NULL;
 
 #ifdef CONFIG_LWIP_LAYER
 extern struct netif xnetif[NET_IF_NUM];
@@ -135,13 +138,44 @@ s32 wifi_get_scan_records(u32 *ap_num, struct rtw_scan_result *ap_list)
 	return ret;
 }
 
-s32 wifi_scan_abort(u8 block)
+s32 wifi_scan_abort(void)
 {
 	int ret = 0;
-	u32 param_buf[1];
 
-	param_buf[0] = (u32)block;
-	whc_host_api_message_send(WHC_API_WIFI_SCAN_ABORT, (u8 *)param_buf, 4, (u8 *)&ret, sizeof(ret));
+	struct internal_block_param *block_param = NULL;
+
+	block_param = (struct internal_block_param *)rtos_mem_zmalloc(sizeof(struct internal_block_param));
+	if (!block_param) {
+		ret = -1;
+		goto exit;
+	}
+	rtos_sema_create_static(&block_param->sema, 0, 0xFFFFFFFF);
+	if (!block_param->sema) {
+		ret = -1;
+		goto exit;
+	}
+
+	whc_host_api_message_send(WHC_API_WIFI_SCAN_ABORT, NULL, 0, (u8 *)&ret, sizeof(ret));
+
+	if (ret != RTK_SUCCESS) {
+		ret = 0;  /* there is no scan ongoing, just return SUCCESS*/
+		goto exit;
+	}
+
+	scan_abort_block_param = block_param;
+
+	if (rtos_sema_take(block_param->sema, RTW_SCAN_ABORT_TIMEOUT) != RTK_SUCCESS) {
+		RTK_LOGW(TAG_WLAN_DRV, "scan abort wait timeout!\n");
+	}
+	scan_abort_block_param = NULL;
+
+exit:
+	if (block_param) {
+		if (block_param->sema) {
+			rtos_sema_delete_static(block_param->sema);
+		}
+		rtos_mem_free((u8 *)block_param);
+	}
 
 	return ret;
 }
