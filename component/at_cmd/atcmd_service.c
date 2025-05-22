@@ -437,6 +437,7 @@ int atcmd_host_control_config_setting(void)
 	char *path = NULL;
 	struct stat *stat_buf = NULL;
 	char *atcmd_config = NULL;
+	cJSON *atcmd_ob = NULL, *interface_ob;
 
 	if (lfs_mount_fail) {
 		goto DEFAULT;
@@ -459,8 +460,6 @@ int atcmd_host_control_config_setting(void)
 		goto DEFAULT;
 	}
 
-
-	cJSON *atcmd_ob, *interface_ob;
 	atcmd_config = (char *)rtos_mem_zmalloc(stat_buf->st_size);
 	ret = fread(atcmd_config, stat_buf->st_size, 1, (FILE *)finfo);
 	if (ret < 0) {
