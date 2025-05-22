@@ -925,7 +925,7 @@ void at_mqttpubraw(void *arg)
 	}
 
 	tt_get_len = atcmd_tt_mode_get(msg, length);
-	if (tt_get_len < 0) {
+	if (tt_get_len == 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUBRAW] host stops tt mode\r\n");
 		resultNo = MQTT_TT_MODE_ERROR;
 		atcmd_tt_mode_end();
@@ -944,7 +944,7 @@ void at_mqttpubraw(void *arg)
 						   .dup = 0,
 						   .id = msg_id,
 						   .payload = mqttCb->pubData.msg,
-						   .payloadlen = length
+						   .payloadlen = tt_get_len
 						  };
 	res = MQTTPublish(&mqttCb->client, mqttCb->pubData.topic, &mqttMsg);
 	if (0 != res) {
