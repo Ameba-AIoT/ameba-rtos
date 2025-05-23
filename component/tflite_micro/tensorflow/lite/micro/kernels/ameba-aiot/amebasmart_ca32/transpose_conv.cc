@@ -29,6 +29,7 @@ limitations under the License.
 #include "tensorflow/lite/kernels/internal/types.h"
 #include "tensorflow/lite/kernels/kernel_util.h"
 #include "tensorflow/lite/kernels/padding.h"
+#include "tensorflow/lite/micro/kernels/ameba-aiot/amebasmart_ca32/cpu_backend_gemm_custom.h"
 #include "tensorflow/lite/micro/kernels/ameba-aiot/amebasmart_ca32/cpu_backend_gemm_custom_gemv.h"
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
 #include "tensorflow/lite/micro/micro_log.h"
@@ -331,27 +332,18 @@ void TransposeConvV2(
     cpu_backend_gemm::MatrixParams<float> rhs_params;
     rhs_params.order = cpu_backend_gemm::Order::kColMajor;
     rhs_params.rows = input_depth;
-    rhs_params.cols = 1; //input_image_size;
+    rhs_params.cols = input_image_size;
     cpu_backend_gemm::MatrixParams<float> dst_params;
     dst_params.order = cpu_backend_gemm::Order::kColMajor;
     dst_params.rows = hwoi_ordered_filter_total_size;
-    dst_params.cols = 1; //input_image_size;
+    dst_params.cols = input_image_size;
     cpu_backend_gemm::GemmParams<float, float> gemm_params;
-    //cpu_backend_gemm::Gemm(lhs_params, hwoi_ordered_filter_data, rhs_params,
-    //                       input_data + input_offset * i, dst_params,
-    //                       col2im_data, gemm_params, cpu_backend_context);
-    float* gemv_input_data = (float*)input_data + input_offset * i;
-    float* gemv_dst_data = col2im_data;
-    for (int j = 0; j < input_image_size; j++) {
-      tflite::cpu_backend_gemm::detail::CustomGemv(
-        lhs_params, hwoi_ordered_filter_data, rhs_params,
-        gemv_input_data, dst_params, gemv_dst_data,
-        gemm_params);
-      gemv_input_data += rhs_params.rows;
-      gemv_dst_data += dst_params.rows;
-    }
-    gemv_input_data = nullptr;
-    gemv_dst_data = nullptr;
+
+    // lhs_params.rows >=4 and lhs_params.cols >=8 have been assured
+    // by the caller. So we can use the optimized gemm.
+    cpu_backend_gemm::Gemm(lhs_params, hwoi_ordered_filter_data, rhs_params,
+                           input_data + input_offset * i, dst_params,
+                           col2im_data, gemm_params);
 
     optimized_ops::Col2im(col2im_data, output_depth, output_height, output_width,
            filter_height, filter_width, padding_top, padding_left,
@@ -397,7 +389,8 @@ TfLiteStatus TransposeConvEval(TfLiteContext* context, TfLiteNode* node) {
       // Transposed filter
       const RuntimeShape& filter_shape = tflite::micro::GetTensorShape(filter);
       const RuntimeShape& input_shape = tflite::micro::GetTensorShape(input);
-
+      
+      // check lhs_cols and lhs_rows here to avoid unnecessary calculation of transposed filter and col2im
       const int lhs_cols = input_shape.Dims(3);
       const int lhs_rows = filter_shape.Dims(0) * filter_shape.Dims(1) * filter_shape.Dims(2);
       if(lhs_cols < 8 || lhs_rows < 4) {

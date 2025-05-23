@@ -10,9 +10,7 @@ None
 
 # SW Configuration
 
-Replace the original main.c under sdk project (project\realtek_amebaxxx_va0_example\src\src_xxx) with the main.c in the example directory. Then re-build project. 
-
-For AmebaSmart, please compile it in CA32(ap) core. 
+cmd: `./build.py -a raw_flash_read_write` to build image.
 
 # Expected Result
 

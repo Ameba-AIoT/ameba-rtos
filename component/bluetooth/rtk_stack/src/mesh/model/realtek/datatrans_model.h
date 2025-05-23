@@ -42,6 +42,7 @@ BEGIN_DECLS
  */
 #define MESH_MODEL_DATATRANS_SERVER                     0x0004005D
 #define MESH_MODEL_DATATRANS_CLIENT                     0x0005005D
+// RTK porting:define related macro for rtk app use
 #define MESH_MODEL_DATATRANS     0x0004005D
 /** @} */
 
@@ -89,6 +90,7 @@ typedef struct
  * @brief Data types and structure used by data process callback
  * @{
  */
+// RTK porting:define App don't need use related macro
 // #define DATATRANS_SERVER_WRITE                            0 //!< @ref datatrans_server_write_t
 // #define DATATRANS_SERVER_READ                             1 //!< @ref datatrans_server_read_t
 
@@ -117,9 +119,11 @@ typedef struct
  * @brief Data types and structure used by data process callback
  * @{
  */
+// RTK porting:App don't need use related macro
 // #define DATATRANS_CLIENT_STATUS                           0 //!< @ref datatrans_client_status_t
 // #define DATATRANS_CLIENT_DATA                             1 //!< @ref datatrans_client_data_t
 
+// RTK porting:define App related structure
 typedef enum {
 	DATATRANS_SERVER_WRITE = 1,
 	DATATRANS_SERVER_READ,
@@ -129,6 +133,7 @@ typedef enum {
 } datatrans_model_actions;
 
 typedef struct {
+// RTK porting: add src to app layer
     uint16_t src;
     datatrans_stat_t status;
     uint16_t written_len;
@@ -136,6 +141,7 @@ typedef struct {
 
 typedef struct
 {
+// RTK porting: add src to app layer
     uint16_t src;
     uint16_t data_len;
     uint8_t *data;
@@ -211,7 +217,7 @@ mesh_msg_send_cause_t datatrans_read(const mesh_model_info_p pmodel_info, uint16
                                      uint16_t app_key_index, uint16_t read_len);
 /** @} */
 /** @} */
-
+// RTK porting: add model register
 bool datatrans_reg(uint8_t element_index, mesh_model_info_p pmodel_info);
 
 END_DECLS

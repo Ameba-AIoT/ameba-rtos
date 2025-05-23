@@ -27,6 +27,10 @@ static usbd_config_t whc_usb_wifi_cfg = {
 	.speed = WIFI_INIC_USB_SPEED,
 	.dma_enable = 1U,
 	.isr_priority = 1,
+#if defined (CONFIG_AMEBAGREEN2)
+	.rx_fifo_depth = 292U,
+	.ptx_fifo_depth = {16U, 256U, 32U, 256U, 128U, },
+#endif
 };
 
 /* host->device */

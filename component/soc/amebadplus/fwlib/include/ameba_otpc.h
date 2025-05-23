@@ -366,11 +366,16 @@ enum OTP_OPMode {
 
 #define OTP_LPGPKT_SIZE 							16
 
+#define OTP_CRC0_BASE								0x370
+#define OTP_CRC1_BASE								0x374
+#define OTP_CRC2_BASE								0x378
+#define OTP_CRC3_BASE								0x37C
 
 _LONG_CALL_ int OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len);
 _LONG_CALL_ int OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data);
 _LONG_CALL_ u32 otp_logical_remain(void);
 _LONG_CALL_ u32 OTPGetCRC(void);
+_LONG_CALL_ int OTPSetCRC(void);
 _LONG_CALL_ int OTP_Read8(u32 Addr, u8 *Data);
 _LONG_CALL_ int OTP_Write8(u32 Addr, u8 Data);
 _LONG_CALL_ int OTP_Read32(u32 Addr, u32 *Data);

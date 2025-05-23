@@ -41,6 +41,9 @@ ameba_list_append(private_sources
 
 ameba_list_append(private_includes
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${c_CMPT_USB_DIR}/common
+    ${c_CMPT_USB_DIR}/device/core
+    ${c_CMPT_USB_DIR}/device/uac
 )
 
 # Component private part, user config end

@@ -12,18 +12,35 @@ config AMEBADPLUS
 #---------- FEATURE LIST START-----------#
 #All features are invisible in menuconfig
 
+#
+# USB features
+#
+
+# USB function
 config SUPPORT_USB
     def_bool y
 
+# USB device mode only
 config SUPPORT_USB_DEVICE_ONLY
     def_bool y
 
+# USB full-speed only
 config SUPPORT_USB_FS_ONLY
     def_bool y
 
+# NO USB PHY
+config SUPPORT_USB_NO_PHY
+    def_bool y
+
+# USB shared DFIFO mode
+config SUPPORT_USB_SHARED_DFIFO
+    def_bool y
+
+# USB INIC device
 config SUPPORT_USBD_INIC
     def_bool y
 
+# USB UAC device
 config SUPPORT_USBD_UAC
     def_bool y
 

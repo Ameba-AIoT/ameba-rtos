@@ -337,7 +337,7 @@ exit:
   *          - RTK_SUCCESS: write ok
   *          - RTK_FAIL: write fail
   */
-static int OTP_Read32(u32 Addr, u32 *Data)
+int OTP_Read32(u32 Addr, u32 *Data)
 {
 	u8 Temp;
 	u8 i;

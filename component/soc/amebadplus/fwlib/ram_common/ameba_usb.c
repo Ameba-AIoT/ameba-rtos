@@ -7,6 +7,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "ameba_soc.h"
+#include "usb_hal.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -25,34 +26,37 @@
 
 /* Private function prototypes -----------------------------------------------*/
 
+static int usb_chip_init(u8 mode);
+static int usb_chip_deinit(void);
+static void usb_chip_enable_interrupt(u8 priority);
+static void usb_chip_disable_interrupt(void);
+static void usb_chip_register_irq_handler(void *handler, u8 priority);
+static void usb_chip_unregister_irq_handler(void);
+
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "USB";
 
+/* Exported variables --------------------------------------------------------*/
+
+usb_hal_driver_t usb_hal_driver = {
+	.init = usb_chip_init,
+	.deinit = usb_chip_deinit,
+	.get_cal_data = NULL,
+	.enable_interrupt = usb_chip_enable_interrupt,
+	.disable_interrupt = usb_chip_disable_interrupt,
+	.register_irq_handler = usb_chip_register_irq_handler,
+	.unregister_irq_handler = usb_chip_unregister_irq_handler,
+};
+
 /* Private functions ---------------------------------------------------------*/
-
-/* Exported functions --------------------------------------------------------*/
-
-/**
-  * @brief  Get USB chip specific calibration data
-  * @param  mode: 0 - device; 1 - host
-  * @retval Pointer to calibration data buffer
-  */
-usb_cal_data_t *usb_chip_get_cal_data(u8 mode)
-{
-	UNUSED(mode);
-
-	/* No need to calibrate */
-
-	return (usb_cal_data_t *)NULL;
-}
 
 /**
   * @brief  USB chip specific initialization
   * @param  void
   * @retval HAL status
   */
-int usb_chip_init(u8 mode)
+static int usb_chip_init(u8 mode)
 {
 	UNUSED(mode);
 
@@ -104,7 +108,7 @@ int usb_chip_init(u8 mode)
   * @param  void
   * @retval HAL status
   */
-int usb_chip_deinit(void)
+static int usb_chip_deinit(void)
 {
 	u32 reg = 0;
 
@@ -116,3 +120,47 @@ int usb_chip_deinit(void)
 
 	return HAL_OK;
 }
+
+/**
+  * @brief  Enable USB interrupt
+  * @param  priority: IRQ priority
+  * @retval void
+  */
+static void usb_chip_enable_interrupt(u8 priority)
+{
+	UNUSED(priority);
+	InterruptEn(USB_INT_IRQ, priority);
+}
+
+/**
+  * @brief  Disable USB interrupt
+  * @retval void
+  */
+static void usb_chip_disable_interrupt(void)
+{
+	InterruptDis(USB_INT_IRQ);
+}
+
+/**
+  * @brief  Register USB IRQ handler
+  * @param  handler: IRQ handler
+  * @param  priority: IRQ priority
+  * @retval void
+  */
+static void usb_chip_register_irq_handler(void *handler, u8 priority)
+{
+	if (handler != NULL) {
+		InterruptRegister((IRQ_FUN)handler, USB_INT_IRQ, NULL, priority);
+	}
+}
+
+/**
+  * @brief  Unregister USB IRQ handler
+  * @retval void
+  */
+static void usb_chip_unregister_irq_handler(void)
+{
+	InterruptUnRegister(USB_INT_IRQ);
+}
+
+/* Exported functions --------------------------------------------------------*/

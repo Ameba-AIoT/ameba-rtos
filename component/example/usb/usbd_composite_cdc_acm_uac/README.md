@@ -50,8 +50,10 @@ None
 
 5. Play music on a PC, if you connect a speaker to the board, sound will come out.
    ```
-	- Open the OS Sound Bar, enable the Realtek Composite Device speaker device if it is disabled
-	- Open the OS Sound Bar, set Realtek Composite Device Speaker as default device
+	- Open the OS Sound Bar, enable the Realtek Composite Device speaker device if it is disabled. Locate the device in the Device Manager and enable it manually.
+	- Open the OS Sound Bar, set Realtek Composite Device Speaker as default device.
+	- Open the Sound Control Panel, select the Realtek Composite Device Speaker device -- configure the speakers -- choose a specific channel setup -- finalize the configuration, and then click Test.
+	- If you connect a speaker to the board, sound will play.
    ```
 
 6. Reset and check the log via LOGUART console, make sure there is no error reported.

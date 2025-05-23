@@ -27,6 +27,7 @@
 #define USBH_ECM_MAIN_THREAD_PRIORITY         5
 #define USBH_ECM_ISR_THREAD_PRIORITY          6
 #define USBH_ECM_HOTPLUG_THREAD_PRIORITY      7
+#define USBH_ECM_ISR_PRIORITY                 INT_PRI_MIDDLE
 
 #if USBH_ECM_RX_SPEED_CHECK | USBH_ECM_TX_SPEED_CHECK
 extern uint32_t xTaskGetTickCount(void);
@@ -79,8 +80,9 @@ static usbh_config_t usbh_ecm_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.dma_enable = 1U,
 	.ext_intr_en = 0, //USBH_SOF_INTR
-	.main_task_priority = USBH_ECM_MAIN_THREAD_PRIORITY,
+	.isr_priority = USBH_ECM_ISR_PRIORITY,
 	.isr_task_priority  = USBH_ECM_ISR_THREAD_PRIORITY,
+	.main_task_priority = USBH_ECM_MAIN_THREAD_PRIORITY,
 
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/

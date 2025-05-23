@@ -4,6 +4,7 @@ config USBH_CDC_ACM_MENU
 
 config USBH_CDC_ECM_MENU
     bool "CDC ECM"
+    depends on SUPPORT_USBH_ECM || SUPPORT_USBH_ECM_BRIDGE
     select USBH_CDC_ECM if CORE_AS_AP
 
     if USBH_CDC_ECM_MENU

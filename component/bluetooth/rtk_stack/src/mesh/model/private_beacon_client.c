@@ -115,6 +115,7 @@ static bool private_beacon_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_PRIVATE_BEACON_STATUS:
         if (pmesh_msg->msg_len == sizeof(private_beacon_status_t))
         {
+            // RTK porting:call event to app
             // private_beacon_status_t *pmsg = (private_beacon_status_t *)pbuffer;
             // data_uart_debug("private_beacon_client_receive: private beacon %d, random update interval steps %d\r\n",
             //                 pmsg->private_beacon, pmsg->random_update_interval_steps);
@@ -126,6 +127,7 @@ static bool private_beacon_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_PRIVATE_GATT_PROXY_STATUS:
         if (pmesh_msg->msg_len == sizeof(private_gatt_proxy_status_t))
         {
+            // RTK porting:call event to app
             // private_gatt_proxy_status_t *pmsg = (private_gatt_proxy_status_t *)pbuffer;
             // data_uart_debug("private_beacon_client_receive: private gatt proxy %d\r\n",
             //                 pmsg->private_gatt_proxy);
@@ -137,6 +139,7 @@ static bool private_beacon_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_PRIVATE_NODE_IDENTITY_STATUS:
         if (pmesh_msg->msg_len == sizeof(private_node_identity_status_t))
         {
+            // RTK porting:call event to app
             // private_node_identity_status_t *pmsg = (private_node_identity_status_t *)pbuffer;
             // data_uart_debug("private_beacon_client_receive: status %d, net_key_index 0x%04x, private identity %d\r\n",
             //                 pmsg->status, pmsg->net_key_index, pmsg->private_identity);

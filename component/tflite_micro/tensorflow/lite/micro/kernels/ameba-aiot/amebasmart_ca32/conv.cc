@@ -27,6 +27,7 @@ limitations under the License.
 #include "tensorflow/lite/kernels/padding.h"
 #include "tensorflow/lite/micro/kernels/ameba-aiot/amebasmart_ca32/conv.h"
 #include "tensorflow/lite/micro/kernels/ameba-aiot/amebasmart_ca32/cpu_backend_gemm_custom_gemv.h"
+#include "tensorflow/lite/micro/kernels/ameba-aiot/amebasmart_ca32/cpu_backend_gemm_custom.h"
 #include "tensorflow/lite/micro/kernels/ameba-aiot/amebasmart_ca32/im2col_utils.h"
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
 
@@ -158,45 +159,25 @@ inline void ConvFloat(const ConvParams& params, const RuntimeShape& input_shape,
   cpu_backend_gemm::MatrixParams<float> rhs_params;
   rhs_params.order = cpu_backend_gemm::Order::kColMajor;
   rhs_params.rows = k;
-  rhs_params.cols = 1;//m;
+  rhs_params.cols = m;
   cpu_backend_gemm::MatrixParams<float> dst_params;
   dst_params.order = cpu_backend_gemm::Order::kColMajor;
   dst_params.rows = n;
-  dst_params.cols = 1;//m;
+  dst_params.cols = m;
   cpu_backend_gemm::GemmParams<float, float> gemm_params;
   gemm_params.bias = bias_data;
   gemm_params.clamp_min = output_activation_min;
   gemm_params.clamp_max = output_activation_max;
 
-  if(lhs_params.cols < 8 || lhs_params.rows < 4) {
+  if(!(cpu_backend_gemm::Gemm(lhs_params, filter_data, rhs_params, gemm_input_data,
+    dst_params, output_data, gemm_params))) {
     tflite::reference_ops::Conv(
-      params, input_shape,
-      input_data,
-      filter_shape,
-      filter_data,
-      bias_shape,
-      bias_data,
-      output_shape,
-      output_data,
+      params, input_shape, input_data,
+      filter_shape, filter_data,
+      bias_shape, bias_data,
+      output_shape, output_data,
       tflite::micro::GetTensorShape(nullptr), nullptr);
-    return;
   }
-  
-  // calculate gemm as gemv loops
-  float* gemv_input_data = (float*)gemm_input_data;
-  float* gemv_output_data = output_data;
-  for(int i = 0; i < m; i++) {
-    tflite::cpu_backend_gemm::detail::CustomGemv(
-      lhs_params, filter_data, rhs_params, (const float*)gemv_input_data, dst_params,
-      gemv_output_data, gemm_params);
-    gemv_input_data += k;
-    gemv_output_data += n;
-  }
-  gemv_input_data = nullptr;
-  gemv_output_data = nullptr;
-  //cpu_backend_gemm::Gemm(lhs_params, filter_data, rhs_params, im2col_data,
-  //                       dst_params, output_data, gemm_params,
-  //                       cpu_backend_context);
 }
 
 ConvParams ConvParamsFloatCa32(const TfLiteConvParams& params,
@@ -338,59 +319,16 @@ inline void ConvPerChannelCa32(
   gemm_params.multiplier_fixedpoint_perchannel = output_multiplier;
   gemm_params.multiplier_exponent_perchannel = output_shift;
 
-  if(lhs_params.cols < 8 || lhs_params.rows < 4) {
-    tflite::reference_integer_ops::ConvPerChannel(
+  if(!(cpu_backend_gemm::Gemm(lhs_params, filter_data, rhs_params, gemm_input_data,
+      dst_params, output_data, gemm_params))) {
+      tflite::reference_integer_ops::ConvPerChannel(
         params, output_multiplier,
         output_shift, input_shape,
         input_data, filter_shape,
         filter_data, bias_shape,
         bias_data, output_shape, output_data);
-    return;
   }
-
-  const bool do_custom_gemv = (dst_params.cols == 1);
-  if (do_custom_gemv) {
-    // GEMV case: try a custom fast GEMV path.
-    tflite::cpu_backend_gemm::detail::CustomGemv(
-        lhs_params, filter_data, rhs_params, gemm_input_data, dst_params,
-        output_data, gemm_params);
-  } else {
-    //MicroPrintf("cpu_backend_gemm::Gemm: general GEMM");
-    //tflite::reference_integer_ops::ConvPerChannel(
-    //    params, output_multiplier,
-    //    output_shift, input_shape,
-    //    input_data, filter_shape,
-    //    filter_data, bias_shape,
-    //    bias_data, output_shape, output_data);
-
-    cpu_backend_gemm::MatrixParams<int8> gemv_rhs_params;
-    gemv_rhs_params.rows = rhs_params.rows;
-    gemv_rhs_params.cols = 1;
-    gemv_rhs_params.order = rhs_params.order;
-    gemv_rhs_params.zero_point = rhs_params.zero_point;
-    cpu_backend_gemm::MatrixParams<int8> gemv_dst_params;
-    gemv_dst_params.rows = dst_params.rows;
-    gemv_dst_params.cols = 1;
-    gemv_dst_params.order = dst_params.order;
-    gemv_dst_params.zero_point = dst_params.zero_point;
-    int8* gemv_input_data = (int8*)gemm_input_data;
-    int8* gemv_output_data = output_data;
-    for(int i = 0; i < dst_params.cols; i++) {
-      tflite::cpu_backend_gemm::detail::CustomGemv(
-        lhs_params, filter_data, gemv_rhs_params, (const int8*)gemv_input_data, gemv_dst_params,
-        gemv_output_data, gemm_params);
-      gemv_input_data += gemv_rhs_params.rows;
-      gemv_output_data += gemv_dst_params.rows;
-    }
-    gemv_input_data = nullptr;
-    gemv_output_data = nullptr;
-  }
-      //tflite::reference_integer_ops::ConvPerChannel(
-      //  params, output_multiplier,
-      //  output_shift, input_shape,
-      //  input_data, filter_shape,
-      //  filter_data, bias_shape,
-      //  bias_data, output_shape, output_data);
+  return;
 }
 
 TfLiteStatus CalculateOpDataConvCa32(TfLiteContext* context, TfLiteNode* node,

@@ -1,0 +1,20 @@
+menu "Third Party Libraries"
+    config LIBJPEG_TURBO_ENABLE
+        bool "Enable libjpeg-turbo"
+        default n
+        help
+            Enable JPEG image support via libjpeg-turbo (faster than standard libjpeg).
+
+    config LIBPNG_ENABLE
+        bool "Enable libpng (require zlib)"
+        default n
+        select ZLIB_ENABLE
+        help
+            Enable PNG image support via libpng. It require zlib for PNG decoding.
+
+    config ZLIB_ENABLE
+        bool "Enable zlib"
+        default n
+        help
+            Enable zlib compression library.
+endmenu

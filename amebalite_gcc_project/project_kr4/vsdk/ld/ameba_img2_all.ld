@@ -2,38 +2,28 @@ ENTRY(Reset_Handler)
 
 #include "../../../amebalite_layout.ld"
 
-#if defined(CONFIG_CODE_XIP_DATA_SRAM)
+#if defined(CONFIG_IMG2_FLASH)
 #define OUT_TEXT_SECTION			.xip_image2.text
-#define OUT_DATA_SECTION			.sram_image2.text.data
 #define IMG2_TEXT_LMA_REGION		KR4_IMG2_XIP
+#else /* CONFIG_IMG2_PSRAM */
+#define OUT_TEXT_SECTION			.psram_image2.text.data
+#define IMG2_TEXT_LMA_REGION		KR4_BD_PSRAM
+#endif
+
+#if defined(CONFIG_DATA_HEAP_SRAM)
+#define OUT_DATA_SECTION			.sram_image2.text.data
 #define IMG2_DATA_LMA_REGION		KR4_BD_RAM
-#define SRAM_INPUT_TEXT_SECTION		*(.sramdram.only.text*)	
+#define SRAM_INPUT_TEXT_SECTION		*(.sramdram.only.text*)
 #define PSRAM_INPUT_TEXT_SECTION
-#elif defined(CONFIG_CODE_XIP_DATA_PSRAM)
-#define OUT_TEXT_SECTION			.xip_image2.text
+#else /* CONFIG_DATA_HEAP_PSRAM */
 #define OUT_DATA_SECTION			.psram_image2.text.data
-#define IMG2_TEXT_LMA_REGION		KR4_IMG2_XIP
-#define IMG2_DATA_LMA_REGION		KR4_BD_PSRAM
-#define SRAM_INPUT_TEXT_SECTION		
-#define PSRAM_INPUT_TEXT_SECTION	*(.sramdram.only.text*)	
-#elif defined(CONFIG_CODE_PSRAM_DATA_SRAM)
-#define OUT_TEXT_SECTION			.psram_image2.text.data
-#define OUT_DATA_SECTION			.sram_image2.text.data
-#define IMG2_TEXT_LMA_REGION		KR4_BD_PSRAM
-#define IMG2_DATA_LMA_REGION		KR4_BD_RAM
-#define SRAM_INPUT_TEXT_SECTION		
-#define PSRAM_INPUT_TEXT_SECTION	*(.sramdram.only.text*)
-#else
-#define OUT_TEXT_SECTION			.psram_image2.text.data
-#define OUT_DATA_SECTION			.psram_image2.text.data
-#define IMG2_TEXT_LMA_REGION		KR4_BD_PSRAM
 #define IMG2_DATA_LMA_REGION		KR4_BD_PSRAM
 #define SRAM_INPUT_TEXT_SECTION
 #define PSRAM_INPUT_TEXT_SECTION	*(.sramdram.only.text*)
 #endif
 
-#if defined(CONFIG_DSP_EN) && (defined(CONFIG_CODE_XIP_DATA_SRAM) || defined(CONFIG_CODE_PSRAM_DATA_SRAM))
-#warning When DSP is turned on, DSP has exclusive access to SRAM by default. Please modify the running location of IMG2 in menuconfig or modify the default running location of DSP.
+#if defined(CONFIG_DSP_EN) && defined(CONFIG_DATA_HEAP_SRAM)
+#warning When DSP is turned on, DSP has exclusive access to SRAM by default.  Please modify the data and heap location of IMG2 in menuconfig or modify the default running location of DSP.
 #endif
 
 SECTIONS
@@ -133,7 +123,7 @@ SECTIONS
 		KEEP(*(SORT(.fini_array.*)))
 		KEEP(*(.fini_array))
 		__fini_array_end = .;
-		
+
 		*(.gcc_except_table*)
 		/*-----------------*/
 
@@ -163,12 +153,12 @@ SECTIONS
 		*(.srodata.cst2)
 		*(.srodata .srodata.*)
 		*(.sdata .sdata.* .gnu.linkonce.s.*)
-		
+
 		__sdata_end__ = .;
 		. = ALIGN(4);
 	} > IMG2_DATA_LMA_REGION
 
-	.ram_image2.sbss (NOLOAD): 
+	.ram_image2.sbss (NOLOAD):
 	{
 		__sbss_start__ = .;
 
@@ -234,36 +224,22 @@ ASSERT(__sram_image2_start__ == ORIGIN(KR4_BD_RAM), "__sram_image2_start__ is ch
 
 __global_pointer$ = MIN(__sdata_start__ + 0x800, __sbss_end__);
 
-#if defined(CONFIG_CODE_XIP_DATA_SRAM)
+#if defined(CONFIG_DATA_HEAP_SRAM)
 __bdram_heap_buffer_size__ = ORIGIN(KR4_BD_RAM) + LENGTH(KR4_BD_RAM) - __bdram_heap_buffer_start__;
+#else /* CONFIG_DATA_HEAP_PSRAM */
+__bdram_heap_buffer_size__ = 0;
+#endif
 
-__psram_image2_start__ = .;
+ASSERT( __psram_image2_start__ == ORIGIN(KR4_BD_PSRAM), "__psram_image2_start__ is changed.")
 
+#if defined(CONFIG_PSRAM_ALL_FOR_AP_HEAP)
 __psram_heap_buffer_start__ = .;
 __psram_heap_buffer_size__ = 0;
 
 __psram_heap_extend_start__ = .;
 __psram_heap_extend_size__ = 0;
-#elif defined(CONFIG_CODE_XIP_DATA_PSRAM)
-__bdram_heap_buffer_size__ = 0;
-
-ASSERT( __psram_image2_start__ == ORIGIN(KR4_BD_PSRAM), "__psram_image2_start__ is changed.")
-__psram_heap_buffer_size__ = ORIGIN(KR4_BD_PSRAM) + LENGTH(KR4_BD_PSRAM) - __psram_heap_buffer_start__;
-__psram_heap_extend_start__ = ORIGIN(KR4_PSRAM_HEAP_EXT);
-__psram_heap_extend_size__ = LENGTH(KR4_PSRAM_HEAP_EXT);
-#elif defined(CONFIG_CODE_PSRAM_DATA_SRAM)
-__bdram_heap_buffer_size__ = ORIGIN(KR4_BD_RAM) + LENGTH(KR4_BD_RAM) - __bdram_heap_buffer_start__;
-
-ASSERT( __psram_image2_start__ == ORIGIN(KR4_BD_PSRAM), "__psram_image2_start__ is changed.")
-__psram_heap_buffer_size__ = ORIGIN(KR4_BD_PSRAM) + LENGTH(KR4_BD_PSRAM) - __psram_heap_buffer_start__;
-
-__psram_heap_extend_start__ = ORIGIN(KR4_PSRAM_HEAP_EXT);
-__psram_heap_extend_size__ = LENGTH(KR4_PSRAM_HEAP_EXT);
 #else
-__bdram_heap_buffer_size__ = 0;
-ASSERT( __psram_image2_start__ == ORIGIN(KR4_BD_PSRAM), "__psram_image2_start__ is changed.")
 __psram_heap_buffer_size__ = ORIGIN(KR4_BD_PSRAM) + LENGTH(KR4_BD_PSRAM) - __psram_heap_buffer_start__;
-
 __psram_heap_extend_start__ = ORIGIN(KR4_PSRAM_HEAP_EXT);
 __psram_heap_extend_size__ = LENGTH(KR4_PSRAM_HEAP_EXT);
 #endif

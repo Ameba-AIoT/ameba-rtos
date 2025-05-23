@@ -1,0 +1,27 @@
+menu "Graphics Library Selection"
+    config LVGL_ENABLE
+        bool "Enable LVGL Graphics Library"
+        default n
+        help
+            Enable LVGL for graphical user interface.
+            Disable this to exclude LVGL completely.
+
+    if LVGL_ENABLE
+        choice
+            prompt "LVGL Version"
+            default LVGL_8_3
+            help
+                Select the version of LVGL graphics library.
+
+            config LVGL_8_3
+                bool "LVGL 8.3"
+                help
+                    Use stable LVGL 8.3 (recommended for legacy projects).
+
+            config LVGL_9_2
+                bool "LVGL 9.2"
+                help
+                    Use latest LVGL 9.2 with new features and optimizations.
+        endchoice
+    endif
+endmenu

@@ -14,6 +14,7 @@ int whc_fullmac_ipc_host_send_msg(u32 id, u32 *param_buf, u32 buf_len)
 {
 	struct event_priv_t *event_priv = &global_idev.event_priv;
 	int ret = 0;
+	int cnt = 120000;
 
 	if (!global_idev.event_ch) {
 		dev_err(global_idev.fullmac_dev, "%s: event ch is NULL when to send msg!\n",  "event");
@@ -42,6 +43,10 @@ int whc_fullmac_ipc_host_send_msg(u32 id, u32 *param_buf, u32 buf_len)
 	}
 
 	while (event_priv->preq_msg->api_id != WHC_API_PROCESS_DONE) {
+		cnt --;
+		if (cnt == 0) {
+			dev_warn(global_idev.fullmac_dev, "wait remsg has been 1.2s,id:%x\n", event_priv->preq_msg->api_id);
+		}
 		udelay(10);
 	}
 
@@ -255,7 +260,8 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 	buf_vir = rtw_malloc(size, &buf_phy);
 	if (!buf_vir) {
 		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		ret = -1;
+		global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
+		ret = -ENOMEM;
 		goto error;
 	}
 	memcpy(buf_vir, connect_param, size);

@@ -276,7 +276,7 @@ void at_otauser(void *arg)
 	ota_context *ctx = NULL;
 	u8 *buffer = NULL;
 	int argc = 0, ret = -1, err_no = 0;
-	int frag_len = 0;
+	int frag_len = 0, tt_get_len = 0;
 	int length = 0, sysrst = 0;
 
 	if (!arg) {
@@ -349,13 +349,13 @@ void at_otauser(void *arg)
 
 	while (length > 0) {
 		frag_len = (length < BUF_SIZE) ? length : BUF_SIZE;
-		ret = atcmd_tt_mode_get(buffer, frag_len);
-		if (ret < 0) {
+		tt_get_len = atcmd_tt_mode_get(buffer, frag_len);
+		if (tt_get_len == 0) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "host stops tt mode\r\n");
 			err_no = 5;
 			break;
 		}
-		ret = ota_update_fw_program(ctx, buffer, frag_len);
+		ret = ota_update_fw_program(ctx, buffer, tt_get_len);
 		if (ret == OTA_RET_FINISH) {
 			at_printf(ATCMD_OK_END_STR);
 			if (sysrst) {

@@ -304,8 +304,17 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 		}
 	}
 
-	if (_strcmp((const char *)argv[0], "GETCRC") == 0) {
-		RTK_LOGI(TAG, "new crc value is 0x%lx",  OTPGetCRC());
+	if (_strcmp((const char *)argv[0], "SETCRC") == 0) {
+		index = 0;
+		if (argc >= 2) {
+			index = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
+		}
+
+		if (index == 0x8730) {
+			OTPSetCRC();
+		} else {
+			RTK_LOGE(TAG, "Careful, Only 4 CRC entry. CMD is efuse SETCRC 0x8730\n");
+		}
 	}
 
 exit:

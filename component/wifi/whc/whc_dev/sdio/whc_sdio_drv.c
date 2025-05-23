@@ -37,12 +37,17 @@ static char whc_sdio_dev_rpwm_cb(void *priv, u16 value)
 
 	if (value & RPWM2_CG_BIT) {
 		SDIO_SetReady(SDIO_WIFI, DISABLE);
-		pmu_release_wakelock(PMU_WLAN_DEVICE);
+		pmu_release_wakelock(PMU_FULLMAC_WIFI);
 	}
 
 	if (value & RPWM2_ACT_BIT) {
-		pmu_acquire_wakelock(PMU_WLAN_DEVICE);
+		pmu_acquire_wakelock(PMU_FULLMAC_WIFI);
 		SDIO_SetReady(SDIO_WIFI, ENABLE);
+#if defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
+		extern void wifi_hal_system_resume_wlan(void);
+		/* normal wowlan resume by pkt rx. here by host tx */
+		wifi_hal_system_resume_wlan();
+#endif
 	}
 
 	return 0;
@@ -179,6 +184,11 @@ void whc_sdio_dev_init(void)
 	rtos_sema_create_static(&sdio_priv.rxbd_release_sema, 0, 0xFFFFFFFF);
 
 	spdio_init(dev);
+
+#ifndef CONFIG_WHC_BRIDGE
+	/* take lock after host ready in bridge mode */
+	pmu_acquire_wakelock(PMU_FULLMAC_WIFI);
+#endif
 
 	pmu_register_sleep_callback(PMU_FULLMAC_WIFI, (PSM_HOOK_FUN)whc_sdio_dev_suspend, NULL, (PSM_HOOK_FUN)whc_sdio_dev_resume, NULL);
 

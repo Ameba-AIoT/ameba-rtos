@@ -25,11 +25,17 @@ void app_start(void)
 	_memset((void *) __sbss_start__, 0, (__sbss_end__ - __sbss_start__));
 	_memset((void *) __bss_start__, 0, (__bss_end__ - __bss_start__));
 
-#ifdef CONFIG_AP_CORE_KR4
+#ifdef CONFIG_CORE_AS_AP
 	extern bool os_heap_add(u8 * start_addr, size_t heap_size);
 	if (ChipInfo_GetChipSram()) {
 		os_heap_add((u8 *)__ap_sram_heap_start, (size_t) __ap_sram_heap_size);
 	}
+
+#ifdef CONFIG_PSRAM_ALL_FOR_AP_HEAP
+	if (ChipInfo_PsramExists()) {
+		os_heap_add((uint8_t *)__km4_bd_psram_start__, (size_t)(__non_secure_psram_end__ - __km4_bd_psram_start__));
+	}
+#endif
 #endif
 	rtos_mem_init();
 

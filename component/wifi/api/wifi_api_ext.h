@@ -376,6 +376,18 @@ s32 wifi_get_band_type(u8 *band_type);
 s32 wifi_get_tsf(u8 wlan_idx, u64 *tsf);
 
 /**
+ * @brief	Get latest latched WIFI TSF us(64-bit), WIFI TSF ns(10-bit), I2S counter(64-bit).
+ * @param[in] req: Pointer to the struc for the request parameters.
+ * @param[out] rpt: Pointer to the struc to store the latched values.
+ * @return
+ *    - @ref RTK_SUCCESS : The API executed successfully.
+ *    - @ref RTK_FAIL : Unsupported chip.
+ *    - -@ref RTK_ERR_WIFI_POWEROFF : Wi-Fi is powered off in IPS(Inactive Power Save) mode, unable to access Wi-Fi registers.
+ *    - -@ref RTK_ERR_BADARG : NULL pointer passed.
+ */
+s32 wifi_get_latched_tsf_i2s(struct rtw_speaker_read_latch_req *req, struct rtw_speaker_read_latch_rpt *rpt);
+
+/**
  * @brief  Set up custom Information Element (IE) list.
  * @warning  This API cannot be called twice without deleting the previous custom IE list.
  * @param[in]  ie_list: Buffer containing custom IE list. Each element should be of type struct rtw_custom_ie.

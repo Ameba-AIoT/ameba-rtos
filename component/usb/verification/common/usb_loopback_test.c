@@ -9,13 +9,12 @@
 #include "ameba_soc.h"
 #include "usb_regs.h"
 #include "usb_hal.h"
-#include "usbd.h"
 
 /* Private defines -----------------------------------------------------------*/
 
-#define USB_REG_GPVNDCTL          0x34
-#define USB_REG_UTMI_STATUS_OUT   0x3001C
-#define USB_REG_SLBBIST_CTRL      0x30020
+#define USB_REG_GPVNDCTL          (USB_REG_BASE + 0x34)
+#define USB_REG_UTMI_STATUS_OUT   (USB_ADDON_REG_BASE + 0x1C)
+#define USB_REG_SLBBIST_CTRL      (USB_ADDON_REG_BASE + 0x20)
 
 /* Private types -------------------------------------------------------------*/
 
@@ -49,7 +48,7 @@ int cmd_usb_loopback_test(u16 argc, u8 *argv[])
 
 	RTK_LOGI(TAG, "Loopback test...\n");
 
-	ret = usb_chip_init(0);
+	ret = usb_hal_driver.init(0);
 	if (ret != HAL_OK) {
 		RTK_LOGE(TAG, "Init FAIL: %d\n", ret);
 		RTK_LOGE(TAG, "Loopback test FAIL\n");
@@ -57,33 +56,33 @@ int cmd_usb_loopback_test(u16 argc, u8 *argv[])
 	}
 
 	/* PHY SLB option */
-	HAL_WRITE32(USB_REG_BASE, USB_REG_UTMI_STATUS_OUT, 0x3);
+	HAL_WRITE32(USB_REG_UTMI_STATUS_OUT, 0, 0x3);
 
-	HAL_WRITE32(USB_REG_BASE, USB_REG_GPVNDCTL, 0x0a300F00);
-	HAL_WRITE32(USB_REG_BASE, USB_REG_GPVNDCTL, 0x0a300000);
+	HAL_WRITE32(USB_REG_GPVNDCTL, 0, 0x0a300F00);
+	HAL_WRITE32(USB_REG_GPVNDCTL, 0, 0x0a300000);
 
 	DelayMs(100);
 
 	/* SLB pattern */
 	for (count = 0; count < loops; count ++) {
-		HAL_WRITE32(USB_REG_BASE, USB_REG_SLBBIST_CTRL, 0xC0 + count);
-		HAL_WRITE32(USB_REG_BASE, USB_REG_SLBBIST_CTRL, 0x80 + count);
+		HAL_WRITE32(USB_REG_SLBBIST_CTRL, 0, 0xC0 + count);
+		HAL_WRITE32(USB_REG_SLBBIST_CTRL, 0, 0x80 + count);
 
 		DelayUs(1000);
 
-		reg = HAL_READ32(USB_REG_BASE, USB_REG_SLBBIST_CTRL);
+		reg = HAL_READ32(USB_REG_SLBBIST_CTRL, 0);
 		if ((reg & (BIT4 | BIT5)) == 0x10) {
 			continue;
 		} else {
-			RTK_LOGE(TAG, "Loopback test FAIL: [0x%08x]=0x%08x\n", USB_REG_BASE + USB_REG_SLBBIST_CTRL, reg);
+			RTK_LOGE(TAG, "Loopback test FAIL: [0x%08x]=0x%08x\n", USB_REG_SLBBIST_CTRL, reg);
 			ret = HAL_ERR_HW;
 			break;
 		}
 	}
 
-	HAL_WRITE32(USB_REG_BASE, USB_REG_SLBBIST_CTRL, 0);
+	HAL_WRITE32(USB_REG_SLBBIST_CTRL, 0, 0);
 
-	usb_chip_deinit();
+	usb_hal_driver.deinit();
 
 	if (ret == HAL_OK) {
 		RTK_LOGI(TAG, "Loopback test PASS\n");

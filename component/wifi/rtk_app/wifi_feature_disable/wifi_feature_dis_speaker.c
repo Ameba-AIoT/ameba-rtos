@@ -23,11 +23,9 @@ void wifi_hal_speaker_txrpt_fetch(void)
 {
 }
 
-void wifi_hal_speaker_setting(u8 mode, u8 nav_thresh, u8 relay_enable)
+void wifi_hal_speaker_init(void *param)
 {
-	UNUSED(mode);
-	UNUSED(nav_thresh);
-	UNUSED(relay_enable);
+	UNUSED(param);
 }
 
 u32 wifi_hal_speaker_tsf_interrupt(void *param)

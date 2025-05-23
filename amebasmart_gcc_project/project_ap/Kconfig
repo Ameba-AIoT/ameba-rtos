@@ -14,6 +14,12 @@ menu "CONFIG CHIP" #DONE
         config AMEBASMART_A_CUT_FOR_CA32
             bool "AMEBASMART_A_Cut"
     endchoice
+
+    # Enable NEON (Advanced SIMD) support for ARM Cortex-A processors
+    config NEON_FOR_CA32
+        bool
+        default y
+
 endmenu
 
 comment "--- --------------smp config Start------------"

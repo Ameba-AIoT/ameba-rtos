@@ -547,31 +547,30 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		if (p_link != NULL) {
 			if (!param->avrcp_cover_art_data_ind.data_end) {
 				bt_avrcp_cover_art_get(p_link->bd_addr, NULL);
+			}
+			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_COVER_ART_DATA_IND, sizeof(rtk_bt_avrcp_cover_art_data_ind_t));
+			if (!p_evt) {
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				handle = false;
+				break;
+			}
+			p_data_t = (rtk_bt_avrcp_cover_art_data_ind_t *)p_evt->data;
+			memcpy((void *)p_data_t->bd_addr, (void *)param->avrcp_cover_art_data_ind.bd_addr, 6);
+			p_data_t->data_end = param->avrcp_cover_art_data_ind.data_end;
+			p_data_t->data_len = param->avrcp_cover_art_data_ind.data_len;
+			p_data_t->p_data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, p_data_t->data_len);
+			if (NULL == p_data_t->p_data) {
+				BT_LOGE("app_avrcp_bt_cback: p_data allocate fail \r\n");
+				rtk_bt_event_free(p_evt);
+				break;
 			} else {
-				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_COVER_ART_DATA_IND, sizeof(rtk_bt_avrcp_cover_art_data_ind_t));
-				if (!p_evt) {
-					BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
-					handle = false;
-					break;
-				}
-				p_data_t = (rtk_bt_avrcp_cover_art_data_ind_t *)p_evt->data;
-				memcpy((void *)p_data_t->bd_addr, (void *)param->avrcp_cover_art_data_ind.bd_addr, 6);
-				p_data_t->data_end = param->avrcp_cover_art_data_ind.data_end;
-				p_data_t->data_len = param->avrcp_cover_art_data_ind.data_len;
-				p_data_t->p_data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, p_data_t->data_len);
-				if (NULL == p_data_t->p_data) {
-					BT_LOGE("app_avrcp_bt_cback: p_data allocate fail \r\n");
-					rtk_bt_event_free(p_evt);
-					break;
-				} else {
-					memcpy((void *)p_data_t->p_data, (void *)param->avrcp_cover_art_data_ind.p_data, p_data_t->data_len);
-				}
-				p_evt->user_data = p_data_t->p_data;
-				/* Send event */
-				if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
-					handle = false;
-					break;
-				}
+				memcpy((void *)p_data_t->p_data, (void *)param->avrcp_cover_art_data_ind.p_data, p_data_t->data_len);
+			}
+			p_evt->user_data = p_data_t->p_data;
+			/* Send event */
+			if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
+				handle = false;
+				break;
 			}
 		}
 	}
