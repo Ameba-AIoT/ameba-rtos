@@ -9,8 +9,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include "usbd.h"
-
 /* Exported defines ----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
@@ -21,7 +19,7 @@
 
 /* Exported functions --------------------------------------------------------*/
 
-#ifndef CONFIG_SUPPORT_USB_FS_ONLY
+#ifndef CONFIG_SUPPORT_USB_NO_PHY
 
 int cmd_usb_phydw(u16 argc, u8  *argv[]);
 

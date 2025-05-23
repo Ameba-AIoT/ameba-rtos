@@ -151,8 +151,17 @@ void at_otp(void *arg)
 		}
 	}
 
-	if (_strcmp((const char *)argv[1], "GETCRC") == 0) {
-		RTK_LOGI(TAG, "new crc value is 0x%lx",  OTPGetCRC());
+	if (_strcmp((const char *)argv[1], "SETCRC") == 0) {
+		index = 0;
+		if (argc >= 3) {
+			index = _strtoul((const char *)(argv[2]), (char **)NULL, 16);
+		}
+
+		if (index == 0x8730) {
+			OTPSetCRC();
+		} else {
+			RTK_LOGE(TAG, "Careful, Only 4 CRC entry. CMD is efuse SETCRC 0x8730\n");
+		}
 	}
 
 exit:

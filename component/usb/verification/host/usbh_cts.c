@@ -31,7 +31,7 @@ int cmd_usbh_tmod_test(u16 argc, u8 *argv[])
 	u32 mode;
 	if (argc < 2) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid arguments, usage:\n");
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "  usbh tmod value\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "  usbh tmod <value>\n");
 		return HAL_ERR_PARA;
 	}
 

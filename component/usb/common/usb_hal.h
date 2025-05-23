@@ -22,11 +22,29 @@
 #define USB_SPEED_LOW                                  2
 #define USB_SPEED_FULL                                 3
 
+#define USB_IN_TOKEN_QUEUE_DEPTH                       8U
 
 /* Exported macros -----------------------------------------------------------*/
 
 
-/* Exported variables --------------------------------------------------------*/
+/* Exported types ------------------------------------------------------------*/
+
+typedef struct {
+	u8 page; /*!< Page number */
+	u8 addr; /*!< Register address */
+	u8 val;  /*!< Register value */
+} usb_cal_data_t;
+
+typedef struct {
+	int(* init)(u8 mode);
+	int(* deinit)(void);
+	void(* enable_interrupt)(u8 priority);
+	void(* disable_interrupt)(void);
+	void(* register_irq_handler)(void *handler, u8 priority);
+	void(* unregister_irq_handler)(void);
+	usb_cal_data_t *(* get_cal_data)(u8 mode);
+} usb_hal_driver_t;
+
 /* USB device bus state */
 typedef enum {
 	USB_DEV_BUS_STATUS_DN       = BIT0,  // D-
@@ -34,13 +52,13 @@ typedef enum {
 	USB_DEV_BUS_STATUS_SUSPEND  = BIT2,  // suspend indication
 } usb_dev_bus_state_t;
 
+/* Exported variables --------------------------------------------------------*/
+
+extern usb_hal_driver_t usb_hal_driver;
+
 /* Exported functions --------------------------------------------------------*/
 
 int usb_hal_core_init(u8 dma_enable);
-void usb_hal_enable_interrupt(u32 usb_isr_priority);
-void usb_hal_disable_interrupt(void);
-void usb_hal_register_irq_handler(usb_irq_fun_t handler, u32 usb_isr_priority);
-void usb_hal_unregister_irq_handler(void);
 void usb_hal_enable_global_interrupt(void);
 void usb_hal_disable_global_interrupt(void);
 u32 usb_hal_read_clear_interrupts(void);
@@ -62,7 +80,7 @@ void usb_hal_dump_registers(void);
 u32 usb_hal_get_timestamp_ms(void);
 u32 usb_hal_get_time_tick(u8 speed);
 
-#if CONFIG_USB_PHY
+#ifndef CONFIG_SUPPORT_USB_NO_PHY
 int usb_hal_read_phy_register(u8 addr, u8 *value);
 int usb_hal_write_phy_register(u8 addr, u8 value);
 int usb_hal_calibrate(u8 mode);

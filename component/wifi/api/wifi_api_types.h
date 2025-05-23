@@ -918,9 +918,12 @@ struct rtw_promisc_para {
  */
 union rtw_speaker_set {
 	struct rtw_speaker_init {
-		u8 mode;              /**< 0 for slave, 1 for master. */
-		u8 nav_thresh;        /**< NAV (Network Allocation Vector) threshold in units of 128us. */
-		u8 relay_en;          /**< Relay control. */
+		u8 mode;                     /**< 0 for slave, 1 for master. */
+		u8 nav_thresh;               /**< NAV (Network Allocation Vector) threshold in units of 128us. */
+		u8 relay_en : 1;             /**< Relay control. */
+		u8 b_ignore_tx_nav_done : 1; /**< Queue BKF not need to wait TX Nav finished. */
+		u8 slot_time;                /**< The slot time value mentioned in 802.11 specification in units and use with caution. */
+		u16 life_time;               /**< Packet lifetime in units of 256us. */
 	} init; /**< For wifi speaker setting case @ref RTW_SPEAKER_SET_INIT.*/
 	struct rtw_speaker_i2s {
 		u8 port;           /**< Port selection for TSFT trigger: 0 for port 0, 1 for port 1. */
@@ -931,6 +934,22 @@ union rtw_speaker_set {
 		u64 tsft;           /**< Unit us. */
 		u8 port;           /**< Port selection for TSFT trigger: 0 for port 0, 1 for port 1. */
 	} tsf_timer; /**< For wifi speaker setting case @ref RTW_SPEAKER_SET_TSF_TIMER.*/
+};
+
+/**
+ * @brief Struct for latched value request.
+ */
+struct rtw_speaker_read_latch_req {
+	u8 i2s_tx;	/**< 1 for requesting I2S TX counter, 0 for requesting I2S RX counter. */
+};
+
+/**
+ * @brief Struct for latched value report.
+ */
+struct rtw_speaker_read_latch_rpt {
+	u64 tsf_us;			/**< latched Wi-Fi TSFT us value */
+	u16 tsf_ns;			/**< latched Wi-Fi TSFT ns value */
+	u64 i2s_counter;	/**< latched I2S counter value */
 };
 
 /**********************************************************************************************

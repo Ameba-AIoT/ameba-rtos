@@ -86,9 +86,9 @@ end:
 }
 
 
-static int whc_fullmac_host_start_nan(struct wiphy *wiphy,
-									  struct wireless_dev *wdev,
-									  struct cfg80211_nan_conf *conf)
+static int whc_fullmac_host_start_nan_ops(struct wiphy *wiphy,
+		struct wireless_dev *wdev,
+		struct cfg80211_nan_conf *conf)
 {
 	int ret = 0;
 	u8 band_support;
@@ -96,8 +96,8 @@ static int whc_fullmac_host_start_nan(struct wiphy *wiphy,
 	printk(" => %s: master_pref = %d, bands = %d\n", __func__, conf->master_pref, conf->bands);
 
 	/* prepare neccessary parameters */
-	band_support = ((conf->bands & BIT(NL80211_BAND_2GHZ)) ? BAND_CAP_2G : 0)
-				   | ((conf->bands & BIT(NL80211_BAND_5GHZ)) ? BAND_CAP_5G : 0);
+	band_support = ((conf->bands & BIT(NL80211_BAND_2GHZ)) ? BIT(RTW_SUPPORT_BAND_2_4G) : 0)
+				   | ((conf->bands & BIT(NL80211_BAND_5GHZ)) ? BIT(RTW_SUPPORT_BAND_5G) : 0);
 
 	if (whc_fullmac_host_start_nan(conf->master_pref, band_support) == -1) {
 		ret = -ENOTCONN;
@@ -106,14 +106,14 @@ static int whc_fullmac_host_start_nan(struct wiphy *wiphy,
 	return ret;
 }
 
-void whc_fullmac_host_stop_nan(struct wiphy *wiphy, struct wireless_dev *wdev)
+void whc_fullmac_host_stop_nan_ops(struct wiphy *wiphy, struct wireless_dev *wdev)
 {
 	printk(" => %s\n", __func__);
 
 	whc_fullmac_host_stop_nan();
 }
 
-static int whc_fullmac_host_add_nan_func(struct wiphy *wiphy,
+static int whc_fullmac_host_add_nan_func_ops(struct wiphy *wiphy,
 		struct wireless_dev *wdev,
 		struct cfg80211_nan_func *func)
 {
@@ -207,15 +207,15 @@ exit:
 	return ret;
 }
 
-void whc_fullmac_host_del_nan_func(struct wiphy *wiphy,
-								   struct wireless_dev *wdev, u64 cookie)
+void whc_fullmac_host_del_nan_func_ops(struct wiphy *wiphy,
+									   struct wireless_dev *wdev, u64 cookie)
 {
 	printk("%s =>\n", __func__);
 
 	whc_fullmac_host_del_nan_func(cookie);
 }
 
-static int whc_fullmac_host_nan_change_conf(struct wiphy *wiphy,
+static int whc_fullmac_host_nan_change_conf_ops(struct wiphy *wiphy,
 		struct wireless_dev *wdev,
 		struct cfg80211_nan_conf *conf,
 		u32 changes)
@@ -271,10 +271,10 @@ void whc_fullmac_host_nan_func_free(u64 os_dep_data)
 void whc_fullmac_host_nan_init(void)
 {
 	struct cfg80211_ops *ops = &global_idev.rtw_cfg80211_ops;
-	ops->start_nan = whc_fullmac_host_start_nan;
-	ops->stop_nan = whc_fullmac_host_stop_nan;
-	ops->add_nan_func = whc_fullmac_host_add_nan_func;
-	ops->del_nan_func = whc_fullmac_host_del_nan_func;
-	ops->nan_change_conf = whc_fullmac_host_nan_change_conf;
+	ops->start_nan = whc_fullmac_host_start_nan_ops;
+	ops->stop_nan = whc_fullmac_host_stop_nan_ops;
+	ops->add_nan_func = whc_fullmac_host_add_nan_func_ops;
+	ops->del_nan_func = whc_fullmac_host_del_nan_func_ops;
+	ops->nan_change_conf = whc_fullmac_host_nan_change_conf_ops;
 }
 #endif

@@ -1249,6 +1249,7 @@ void bt_stack_le_gap_set_config(void *app_conf)
 	rtk_bt_app_conf_t *papp_conf = (rtk_bt_app_conf_t *)app_conf;
 	uint8_t master_init_mtu_req = (uint8_t)papp_conf->master_init_mtu_req;
 	uint8_t slave_init_mtu_req = (uint8_t)papp_conf->slave_init_mtu_req;
+	uint8_t irk_auto_gen = (uint8_t)papp_conf->irk_auto_gen;
 
 	/* le_set_gap_param() shall be after bte_init() */
 	le_set_gap_param(GAP_PARAM_MASTER_INIT_GATT_MTU_REQ, sizeof(master_init_mtu_req), &master_init_mtu_req);
@@ -1265,7 +1266,11 @@ void bt_stack_le_gap_set_config(void *app_conf)
 #endif
 
 #if (defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT) && (defined(F_BT_LE_PRIVACY_SUPPORT) && F_BT_LE_PRIVACY_SUPPORT)
-	le_bond_set_param(GAP_PARAM_BOND_SET_LOCAL_IRK, GAP_KEY_LEN, papp_conf->irk);
+	if (irk_auto_gen) {
+		le_bond_set_param(GAP_PARAM_BOND_GEN_LOCAL_IRK_AUTO, sizeof(irk_auto_gen), &irk_auto_gen);
+	} else {
+		le_bond_set_param(GAP_PARAM_BOND_SET_LOCAL_IRK, GAP_KEY_LEN, papp_conf->irk);
+	}
 #endif
 }
 
@@ -3406,7 +3411,7 @@ static uint16_t bt_stack_le_gap_start_adv(void *param)
 
 	cause = le_ext_adv_set_adv_param(bt_stack_le_legacy_adv_hdl, adv_event_prop,
 									 padv_param->interval_min, padv_param->interval_max,
-									 (uint8_t)padv_param->channel_map, (padv_param->own_addr_type == RTK_BT_LE_ADDR_TYPE_PUBLIC) ? GAP_LOCAL_ADDR_LE_PUBLIC : GAP_LOCAL_ADDR_LE_RANDOM,
+									 (uint8_t)padv_param->channel_map, (T_GAP_LOCAL_ADDR_TYPE)padv_param->own_addr_type,
 									 (T_GAP_REMOTE_ADDR_TYPE)padv_param->peer_addr.type, padv_param->peer_addr.addr_val,
 									 (T_GAP_ADV_FILTER_POLICY)padv_param->filter_policy, 0x7F,
 									 GAP_PHYS_PRIM_ADV_1M, 0, GAP_PHYS_1M, 0, false);
@@ -3438,7 +3443,6 @@ static uint16_t bt_stack_le_gap_start_adv(void *param)
 	} else
 #endif
 	{
-		//step 1: set parameter
 		cause = le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MIN, sizeof(padv_param->interval_min),
 								 &padv_param->interval_min);
 		if (cause) {

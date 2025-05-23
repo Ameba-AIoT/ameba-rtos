@@ -993,6 +993,12 @@ _LONG_CALL_ void FLASH_CalibrationPLLPS_Shift(u32 phase_sel);
 _LONG_CALL_ void FLASH_ClockSwitch(u32 Source, u32 Protection);
 _LONG_CALL_ int FLASH_WriteStream(u32 address, u32 len, u8 *data);
 _LONG_CALL_ int  FLASH_ReadStream(u32 address, u32 len, u8 *data);
+_LONG_CALL_ void FLASH_RxBasic(u8 cmd, u32 Address, u32 read_len, u8 *read_data);
+_LONG_CALL_ void FLASH_TxBasic(u8 cmd, u32 Address, u32 DataLen, u8 *TransmitData);
+_LONG_CALL_ void FLASH_UserMode_Enter(void);
+_LONG_CALL_ void FLASH_UserMode_Exit(void);
+_LONG_CALL_ void FLASH_WriteEn_InUserMode(void);
+_LONG_CALL_ void FLASH_WaitBusy_InUserMode(u32 WaitType);
 
 /**
   * @}

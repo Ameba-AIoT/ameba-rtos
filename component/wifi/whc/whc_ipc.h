@@ -182,6 +182,7 @@ void whc_ipc_dev_ap_ch_switch_callback_indicate(unsigned char channel, s8 ret);
 int whc_ipc_dev_set_netif_info(int idx_wlan, unsigned char *dev_addr);
 int whc_dev_get_lwip_info(u32 type, unsigned char *input, int index);
 u64 whc_ipc_host_api_get_wifi_tsf(unsigned char port_id);
+s32 whc_ipc_host_api_get_wifi_latched_tsf_i2s(struct rtw_speaker_read_latch_req *req, struct rtw_speaker_read_latch_rpt *rpt);
 int whc_ipc_host_api_get_txbuf_pkt_num(void);
 void whc_ipc_dev_cfg80211_indicate_scan_report(u32 channel, u32 frame_is_bcn, s32 rssi, u8 *mac_addr, u8 *IEs, u32 ie_len);
 void whc_ipc_host_init_skb(void);

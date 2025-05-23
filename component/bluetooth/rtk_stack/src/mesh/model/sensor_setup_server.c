@@ -204,6 +204,7 @@ static mesh_msg_send_cause_t sensor_settings_status(const mesh_model_info_p pmod
 
         ACCESS_OPCODE_BYTE(pmsg->opcode, MESH_MSG_SENSOR_SETTINGS_STATUS);
         pmsg->property_id = property_id;
+        // RTK porting:fix compile error and crush
 		// uint16_t *pid = pmsg->setting_ids;
         uint8_t *pid = (uint8_t *)pmsg->setting_ids;
 		for (uint16_t i = 0; i < num_settings; ++i) {
@@ -546,7 +547,8 @@ static bool sensor_setup_server_receive(mesh_msg_p pmesh_msg)
 
 static int32_t sensor_setup_server_publish(mesh_model_info_p pmodel_info, bool retrans)
 {
-	(void) retrans; //avoid compile warning
+    // RTK porting: avoid compile warning
+	(void) retrans;
     sensor_setup_info_t *pinfo = pmodel_info->pargs;
     uint16_t property_id = 0;
     for (uint16_t i = 0; i < pinfo->num_sensors; ++i)

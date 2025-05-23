@@ -263,8 +263,23 @@ function(ameba_port_standalone_app_library target output_name)
 endfunction()
 
 function(ameba_port_standalone_internal_library name)
+    set(options
+        p_NO_WHOLE_ARCHIVE          # If set, the target will be linked without whole_archive options
+    )
+
+    cmake_parse_arguments(ARG "${options}" "" "" ${ARGN})
+
+    if(ARG_p_NO_WHOLE_ARCHIVE)
+        list(REMOVE_ITEM ARGN p_NO_WHOLE_ARCHIVE)
+    endif()
+
     if(c_CURRENT_IMAGE)
-        set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY ${c_CURRENT_IMAGE}_libraries "${name}")
+        if(ARG_p_NO_WHOLE_ARCHIVE)
+            ameba_target_get_output_info(${name} o_path o_name)
+            set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY ${c_CURRENT_IMAGE}_no_whole_archive_libs "${o_path}/${o_name}")
+        else()
+            set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY ${c_CURRENT_IMAGE}_libraries "${name}")
+        endif()
     else()
         ameba_warning("c_CURRENT_IMAGE is unset when call ameba_port_standalone_internal_library")
     endif()

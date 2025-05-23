@@ -25,6 +25,7 @@ limitations under the License.
 #include "tensorflow/lite/kernels/internal/reference/integer_ops/fully_connected.h"
 #include "tensorflow/lite/kernels/internal/tensor_ctypes.h"
 #include "tensorflow/lite/kernels/kernel_util.h"
+#include "tensorflow/lite/micro/kernels/ameba-aiot/amebasmart_ca32/cpu_backend_gemm_custom.h"
 #include "tensorflow/lite/micro/kernels/ameba-aiot/amebasmart_ca32/cpu_backend_gemm_custom_gemv.h"
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
 
@@ -66,13 +67,6 @@ inline void FullyConnected_ca32(
     TFLITE_DCHECK_EQ(bias_shape.FlatSize(), output_rows);
   }
 
-  if (filter_rows < 4) {
-    tflite::reference_integer_ops::FullyConnected(
-        params, input_shape, input_data, filter_shape, filter_data, bias_shape,
-        bias_data, output_shape, output_data);
-    return;
-  }
-
   cpu_backend_gemm::MatrixParams<int8> lhs_params;
   lhs_params.rows = filter_rows;
   lhs_params.cols = filter_cols;
@@ -95,13 +89,8 @@ inline void FullyConnected_ca32(
   gemm_params.multiplier_fixedpoint = output_multiplier;
   gemm_params.multiplier_exponent = output_shift;
 
-  if(lhs_params.cols >= 8 && lhs_params.rows >= 4) {
-    for (int b = 0; b < batches; ++b) {
-      tflite::cpu_backend_gemm::detail::CustomGemv(
-          lhs_params, filter_data, rhs_params, &input_data[filter_cols * b],
-          dst_params, &output_data[output_rows * b], gemm_params);
-    }
-  } else {
+  if(!(cpu_backend_gemm::Gemm(lhs_params, filter_data, rhs_params, input_data,
+                              dst_params, output_data, gemm_params))) {
     tflite::reference_integer_ops::FullyConnected(
         params, input_shape, input_data, filter_shape, filter_data, bias_shape,
         bias_data, output_shape, output_data);
@@ -119,12 +108,6 @@ inline void FullyConnectedFloat(
   const int dims_count = weights_shape.DimensionsCount();
   const int input_rows = weights_shape.Dims(dims_count - 1);
   const int lhs_params_rows = FlatSizeSkipDim(weights_shape, dims_count - 1);
-  if (lhs_params_rows < 4) {
-    tflite::reference_ops::FullyConnected(
-        params, input_shape, input_data, weights_shape, weights_data,
-        bias_shape, optional_bias_data, output_shape, output_data);
-    return;
-  }
 
   cpu_backend_gemm::MatrixParams<float> rhs_params;
   rhs_params.order = cpu_backend_gemm::Order::kColMajor;
@@ -150,15 +133,8 @@ inline void FullyConnectedFloat(
   gemm_params.clamp_min = params.float_activation_min;
   gemm_params.clamp_max = params.float_activation_max;
 
-  if (dst_params.cols == 1) {
-    // GEMV case: try a custom fast GEMV path.
-    if (tflite::cpu_backend_gemm::detail::CustomGemv(
-            lhs_params, weights_data, rhs_params, input_data, dst_params,
-            output_data, gemm_params)) {
-      LABEL_MARKER;
-      return;
-    }
-  } else {
+  if(!(cpu_backend_gemm::Gemm(lhs_params, filter_data, rhs_params, input_data,
+                              dst_params, output_data, gemm_params))) {
     tflite::reference_ops::FullyConnected(
         params, input_shape, input_data, weights_shape, weights_data,
         bias_shape, optional_bias_data, output_shape, output_data);

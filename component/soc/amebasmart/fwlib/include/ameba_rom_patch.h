@@ -46,6 +46,8 @@ _LONG_CALL_ void AUDIO_SP_SetI2S3ExtCKPinmux(u32 state);
 _LONG_CALL_ void AUDIO_SP_SetI2S2Ext2DoutPinmux(u32 state);
 _LONG_CALL_ void AUDIO_SP_SetI2S2Ext2CKPinmux(u32 state);
 _LONG_CALL_ void AUDIO_SP_SetI2S2Ext1CKPinmux(u32 state);
+_LONG_CALL_ void FLASH_RxBasic(u8 cmd, u32 Address, u32 read_len, u8 *read_data);
+_LONG_CALL_ void FLASH_TxBasic(u8 cmd, u32 Address, u32 DataLen, u8 *TransmitData);
 
 #ifdef CONFIG_ARM_CORE_CM4
 #include "ameba_secure_boot.h"

@@ -65,7 +65,6 @@ static int cmd_usbd_verify_deinit(void);
 static u8 *cmd_usbd_verify_get_config_desc(u16 *len);
 static int cmd_usbd_verify_set_config(usb_dev_t *dev);
 static int cmd_usbd_verify_clear_config(usb_dev_t *dev);
-static int cmd_usbd_verify_setup(u8 cmd, u8 *buf, u16 len, u16 value);
 static int cmd_usbd_verify_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int cmd_usbd_verify_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
 static int cmd_usbd_verify_handle_ep0_data_in(usb_dev_t *dev, u8 status);
@@ -85,7 +84,6 @@ static usbd_verify_cb_t cmd_usbd_verify_cb = {
 
 	.set_config = cmd_usbd_verify_set_config,
 	.clear_config = cmd_usbd_verify_clear_config,
-	.setup = cmd_usbd_verify_setup,
 
 	.ep0_data_in = cmd_usbd_verify_handle_ep0_data_in,
 	.ep0_data_out = cmd_usbd_verify_handle_ep0_data_out,
@@ -208,16 +206,6 @@ static int cmd_usbd_verify_clear_config(usb_dev_t *pdev)
 	for (ep_index = 0; ep_index < cdev->ep_count; ep_index++) {
 		usbd_verify_ep_disable(pdev, cdev->ep_array + ep_index);
 	}
-
-	return HAL_OK;
-}
-
-static int cmd_usbd_verify_setup(u8 cmd, u8 *buf, u16 len, u16 value)
-{
-	UNUSED(cmd);
-	UNUSED(value);
-	// Echo back the ctrl request
-	usbd_verify_transmit_ctrl_data(buf, len);
 
 	return HAL_OK;
 }
@@ -769,23 +757,24 @@ static void usbd_verify_xfer_dir(u8 *argv[])
 	}
 }
 
-/*
-	usbd verify test entry:
+static void usbd_verify_usage(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Invalid arguments, usage:\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify dma dis/en(default)\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify speed full/high_in_full/high(default)\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify ep_default <chiptype>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify set_ep <addr> <type> <interval> <mps> <transsize>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify loopback <ep_addr1> <ep_addr2>\n");
 
-	usbd verify dma dis/en(default)
-	usbd verify speed full/high_in_full/high(default)
-	usbd verify ep_default <chiptype> 	//default ep config group
-	usbd verify set_ep ......        	//manually set ep config
-	usbd verify loopback ep1 ep2
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify start\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify stop\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify dump\n");
 
-	usbd verify start
-	usbd verify stop
-	usbd verify dump
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify xfer bulk_out/intr_out/isoc_out <0/1>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify xfer bulk_in_len/intr_in_len/isoc_in_len <len>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify xfer bulk_in_start/intr_in_start/isoc_in_start\n");
+}
 
-	usbd verify xfer bulk_out/intr_out/isoc_out <0/1> // OUT only xfer
-	usbd verify xfer bulk_in_len/intr_in_len/isoc_in_len <len>
-	usbd verify xfer bulk_in_start/intr_in_start/isoc_in_start //prepare IN only xfer
-*/
 int cmd_usbd_verify_test_entry(
 	IN  u16 argc,
 	IN  u8  *argv[])
@@ -794,8 +783,7 @@ int cmd_usbd_verify_test_entry(
 	const char *sub_cmd;
 
 	if (argc < 2) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid arguments, usage:\n");
-		RTK_LOGS(TAG, RTK_LOG_ERROR, " usbd verify subcmd xxxx\n");
+		usbd_verify_usage();
 		return HAL_ERR_PARA;
 	}
 
@@ -880,7 +868,7 @@ int cmd_usbd_verify_test_entry(
 			usbd_verify_xfer_dir(argv);
 		}
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cmd %s\n", sub_cmd);
+		usbd_verify_usage();
 		status = HAL_ERR_PARA;
 	}
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Exit cmd\n");

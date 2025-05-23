@@ -131,8 +131,10 @@ typedef struct {
 	u16 nptx_fifo_depth;                                /* npTxFIFO depth in size of dword*/
 	u16 ptx_fifo_depth;                                 /* pTxFIFO depth in size of dword*/
 
-	u8 main_task_priority;								/* USB main thread priority */
+	u8 isr_priority;									/* USB ISR priority */
 	u8 isr_task_priority;								/* USB ISR thread priority */
+	u8 main_task_priority;								/* USB main thread priority */
+
 	u8 alt_max;											/* USB support max alt setting num */
 
 	u8 speed : 2;										/* USB speed, USB_SPEED_HIGH, USB_SPEED_HIGH_IN_FULL or USB_SPEED_LOW 0~3*/

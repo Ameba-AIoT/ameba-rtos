@@ -8,10 +8,9 @@
 
 #include <platform_autoconf.h>
 #include "ameba_soc.h"
-#include "usb_regs.h"
 #include "usb_hal.h"
 
-#ifndef CONFIG_SUPPORT_USB_FS_ONLY
+#ifndef CONFIG_SUPPORT_USB_NO_PHY
 
 /* Private defines -----------------------------------------------------------*/
 static const char *const TAG = "USB";

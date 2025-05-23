@@ -168,6 +168,10 @@ menu "CONFIG FUNCTION TEST"
             config USBH_VERIFY
                 depends on USB_HOST_EN_MENU || USB_DRD_EN_MENU
                 bool "USB Host Verification"
+
+            config USB_OTG_VERIFY
+                depends on USB_OTG_EN
+                bool "USB OTG Verification"
         endif
 
         config WIFI_VERIFY_MENU

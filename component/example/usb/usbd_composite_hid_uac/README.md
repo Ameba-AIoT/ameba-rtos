@@ -48,8 +48,10 @@ None
 
 4. Play music on a PC, if you connect a speaker to the board, sound will come out
    ```
-	- Open the OS Sound Bar, enable the Realtek Composite Device speaker device if it is disabled
-	- Open the OS Sound Bar, set Realtek Composite Device Speaker as default device
+	- Open the OS Sound Bar, enable the Realtek Composite Device speaker device if it is disabled. Locate the device in the Device Manager and enable it manually.
+	- Open the OS Sound Bar, set Realtek Composite Device Speaker as default device.
+	- Open the Sound Control Panel, select the Realtek Composite Device Speaker -- configure the speakers -- choose a specific channel setup -- finalize the configuration, and then click Test.
+	- If you connect a speaker to the board, sound will play.
    ```
 
 5. Use HIDPyToy tool to test the HID message(download address https://github.com/todbot/hidpytoy)
@@ -62,7 +64,7 @@ None
 		Notice:please trigger USBD RX first
 	```
 
-6. Type usbd vol1/vol2 in the LOGUART console, the windows volume control bar will pop-up, and the volume will change
+6. Type "usbd vol1"/"usbd vol2" in the LOGUART console, the windows volume control bar will pop-up, and the volume will up/down
 
 7. Reset and check the log via LOGUART console, make sure there is no error reported
    

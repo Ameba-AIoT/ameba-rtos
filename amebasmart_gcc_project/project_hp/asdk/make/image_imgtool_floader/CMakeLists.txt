@@ -24,7 +24,10 @@ target_sources(${c_CURRENT_IMAGE} PRIVATE
 
     ${c_CMPT_USB_DIR}/common/usb_hal.c
     ${c_CMPT_USB_DIR}/common/usb_os.c
+    ${c_CMPT_USB_DIR}/common/usb_phy.c
 )
+
+target_include_directories(${c_CURRENT_IMAGE} PRIVATE ${c_CMPT_USB_DIR}/common)
 
 ###############################  GENERATE IMAGE  ###################################
 

@@ -203,14 +203,6 @@ void atcmd_spi_task(void)
 			if (g_tt_mode) {
 				space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
 
-				if (g_tt_mode_check_watermark) {
-					if (space - recv_len < MAX_TT_HEAP_SIZE * (1 - TT_MODE_HIGH_WATERMARK) && g_tt_mode_indicate_high_watermark == 0) {
-						g_tt_mode_indicate_high_watermark = 1;
-						g_tt_mode_indicate_low_watermark = 0;
-						at_printf(ATCMD_TT_MODE_HIGH_WATERMARK_STR);
-					}
-				}
-
 				/*recv stop char under tt mode*/
 				if (recv_len == 1 && SlaveRxBuf[4] == '<') {
 					g_tt_mode_stop_char_cnt++;
@@ -220,12 +212,16 @@ void atcmd_spi_task(void)
 					if (space >= recv_len) {
 						RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, recv_len);
 						rtos_sema_give(atcmd_tt_mode_sema);
-					} else if (space > 0) {
-						RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, space);
-						rtos_sema_give(atcmd_tt_mode_sema);
-						RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop partial data\n");
 					} else {
-						RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop data\n");
+						while (1) {
+							rtos_time_delay_ms(1);
+							space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
+							if (space >= recv_len) {
+								RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, recv_len);
+								rtos_sema_give(atcmd_tt_mode_sema);
+								break;
+							}
+						}
 					}
 				}
 
@@ -327,14 +323,6 @@ void atcmd_spi_task(void)
 			if (g_tt_mode) {
 				space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
 
-				if (g_tt_mode_check_watermark) {
-					if (space - recv_len < MAX_TT_HEAP_SIZE * (1 - TT_MODE_HIGH_WATERMARK) && g_tt_mode_indicate_high_watermark == 0) {
-						g_tt_mode_indicate_high_watermark = 1;
-						g_tt_mode_indicate_low_watermark = 0;
-						at_printf(ATCMD_TT_MODE_HIGH_WATERMARK_STR);
-					}
-				}
-
 				/*recv stop char under tt mode*/
 				if (recv_len == 1 && SlaveRxBuf[4] == '<') {
 					g_tt_mode_stop_char_cnt++;
@@ -344,12 +332,16 @@ void atcmd_spi_task(void)
 					if (space >= recv_len) {
 						RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, recv_len);
 						rtos_sema_give(atcmd_tt_mode_sema);
-					} else if (space > 0) {
-						RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, space);
-						rtos_sema_give(atcmd_tt_mode_sema);
-						RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop partial data\n");
 					} else {
-						RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop data\n");
+						while (1) {
+							rtos_time_delay_ms(1);
+							space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
+							if (space >= recv_len) {
+								RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, recv_len);
+								rtos_sema_give(atcmd_tt_mode_sema);
+								break;
+							}
+						}
 					}
 				}
 

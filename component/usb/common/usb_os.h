@@ -52,7 +52,7 @@ typedef rtos_task_t usb_os_task_t;
 #endif
 
 #ifndef USB_HIGH_BYTE
-#define USB_HIGH_BYTE(x)	((u8)(((x) & 0xFF00U) >> 8U))
+#define USB_HIGH_BYTE(x)	((u8)(((x) >> 8) & 0x00FFU))
 #endif
 
 /* Exported variables --------------------------------------------------------*/

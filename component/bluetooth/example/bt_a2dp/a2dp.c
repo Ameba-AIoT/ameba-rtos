@@ -701,7 +701,7 @@ static rtk_bt_a2dp_media_codec_sbc_t codec_sbc = {
 #if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
 static int16_t pcm_buffer[512] = {0};
 static uint16_t a2dp_demo_send_data_seq = 0;
-#if defined(AUDIO_SOURCE_OUTBAND_FROM_USB) && AUDIO_SOURCE_OUTBAND_FROM_USB
+#if defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB
 static void app_a2dp_src_send_data(void)
 {
 	rtk_bt_a2dp_stream_data_send_t data_send_t = {0};
@@ -1291,12 +1291,14 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 	case RTK_BT_AVRCP_EVT_COVER_ART_DATA_IND: {
 		rtk_bt_avrcp_cover_art_data_ind_t *p_data_t = (rtk_bt_avrcp_cover_art_data_ind_t *)param;
 
-		if (p_data_t->data_end) {
-			BT_LOGA("[AVRCP] Get art cover successfully \r\n");
-			for (uint8_t i = 0; i < p_data_t->data_len; i ++) {
-				BT_LOGA(" 0x%02x ", p_data_t->p_data[i]);
+		for (uint16_t i = 0; i < p_data_t->data_len; i ++) {
+			if (i % 10 == 0) {
+				BT_LOGA("\r\n");
 			}
-			BT_LOGA("\r\n");
+			BT_LOGA(" 0x%02x ", p_data_t->p_data[i]);
+		}
+		if (p_data_t->data_end) {
+			BT_LOGA("[AVRCP] Data End -> Get art cover successfully \r\n");
 		}
 		break;
 	}
@@ -2015,7 +2017,7 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
 		rtk_bt_br_addr_to_str(bd_addr.addr, addr_str, sizeof(addr_str));
 		BT_LOGA("[APP] BD_ADDR: %s\r\n", addr_str);
 #if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
-#if defined(AUDIO_SOURCE_OUTBAND_FROM_USB) && AUDIO_SOURCE_OUTBAND_FROM_USB
+#if defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB
 		if (!demo_usb_init()) {
 			BT_LOGE("demo_usb_init failed\r\n");
 		}
@@ -2137,7 +2139,7 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
 		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_AVRCP));
 		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_A2DP));
 #if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
-#if defined(AUDIO_SOURCE_OUTBAND_FROM_USB) && AUDIO_SOURCE_OUTBAND_FROM_USB
+#if defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB
 		if (!demo_usb_deinit()) {
 			BT_LOGE("demo_usb_deinit failed\r\n");
 		}

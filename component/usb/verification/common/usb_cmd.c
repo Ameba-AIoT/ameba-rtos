@@ -54,7 +54,7 @@ static u32 usb_cmd(u16 argc, u8 *argv[])
 	cmd = (const char *)argv[0];
 
 	if (_stricmp(cmd, "init") == 0) {
-		ret = usb_chip_init(0);
+		ret = usb_hal_driver.init(0);
 		if (ret == HAL_OK) {
 			usb_hal_disable_global_interrupt();
 			ret = usb_hal_core_init(0);
@@ -69,7 +69,7 @@ static u32 usb_cmd(u16 argc, u8 *argv[])
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "USB init FAIL: %d\n", ret);
 		}
 	} else if (_stricmp(cmd, "deinit") == 0) {
-		usb_chip_deinit();
+		usb_hal_driver.deinit();
 		RTK_LOGS(TAG, RTK_LOG_INFO, "USB deinit done\n");
 	} else if (_stricmp(cmd, "status") == 0) {
 		ret = usb_hal_get_device_bus_status(&bus_status);

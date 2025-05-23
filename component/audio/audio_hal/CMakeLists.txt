@@ -59,7 +59,7 @@ ameba_list_append_if(CONFIG_AMEBADPLUS private_sources
 ameba_list_append(private_includes
     ${c_CMPT_AUDIO_DIR}/interfaces
     ${c_CMPT_AUDIO_DIR}/base/cutils/interfaces
-    ${c_CMPT_AUDIO_DIR}/base/osal/osal_c/interfaces
+    ${c_CMPT_AUDIO_DIR}/base/osal/osal_c/include
     ${c_CMPT_AUDIO_DIR}/audio_driver/include
 )
 

@@ -341,3 +341,124 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 		irq_enable_restore(PreState_irq);
 	}
 }
+
+/**
+* @brief  This function is used to read data from flash in User Mode.
+* @param  cmd: Read data command.
+* @param  Address: Start address in flash from which SPIC wants to read.
+* @param  read_len: the number of bytes that SPIC wants to read.
+* @param  read_data: pointer to a byte array which is used to save received data.
+* @retval none
+*/
+FLASH_RAM_TEXT_SECTION
+void FLASH_RxBasic(u8 cmd, u32 Address, u32 read_len, u8 *read_data)
+{
+	SPIC_TypeDef *spi_flash = SPIC;
+	u8 rd_cmd = cmd;
+	u32 rx_num = 0;
+	u32 value;
+
+	FLASH_UserMode_Enter();
+	FLASH_SetSpiMode(&flash_init_para, SpicOneBitMode);
+
+	spi_flash->RX_NDF = RX_NDF(read_len);
+	spi_flash->TX_NDF = 0;
+	flash_init_para.FLASH_dum_en = 0;
+	/* Set ADDR length */
+	value = spi_flash->USER_LENGTH & ~MASK_USER_ADDR_LENGTH;
+	if (flash_init_para.FLASH_dum_en) {
+		value |= USER_ADDR_LENGTH(flash_init_para.FLASH_addr_phase_len + 1);
+	} else {
+		value |= USER_ADDR_LENGTH(flash_init_para.FLASH_addr_phase_len);
+	}
+	spi_flash->USER_LENGTH = value;
+	spi_flash->CTRLR0 = ((spi_flash->CTRLR0 & 0xFFF0FFFF) | TMOD(3));
+	/* set flash_cmd: write cmd & address to fifo & addr is MSB */
+	spi_flash->DR[0].BYTE = rd_cmd;
+	if (flash_init_para.FLASH_addr_phase_len == ADDR_4_BYTE) {
+		spi_flash->DR[0].BYTE = (u8)((Address & 0xFF000000) >> 24);
+	}
+	spi_flash->DR[0].BYTE = (u8)((Address & 0xFF0000) >> 16);
+	spi_flash->DR[0].BYTE = (u8)((Address & 0xFF00) >> 8);
+	spi_flash->DR[0].BYTE = (u8)(Address & 0xFF);
+	/* Push dummy byte*/
+	if (flash_init_para.FLASH_dum_en) {
+		spi_flash->DR[0].BYTE = 0x0;
+	}
+	/* Enable SSIENR to start the transfer */
+	spi_flash->SSIENR = BIT_SPIC_EN;
+	rx_num = 0;
+	while (rx_num < read_len) {
+		if (spi_flash->SR & BIT_RFNE) {
+			read_data[rx_num] = spi_flash->DR[0].BYTE;
+			rx_num += 1;
+		}
+	}
+	/* Wait transfer complete. When complete, SSIENR.SPIC_EN are cleared by HW automatically. */
+	FLASH_WaitBusy_InUserMode(WAIT_TRANS_COMPLETE);
+	FLASH_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
+
+	FLASH_UserMode_Exit();
+}
+
+/**
+  * @brief  This function is used to write data to flash in OneBitMode and User Mode.
+  * @param  cmd: transmit data command.
+  * @param  Address: Start address in flash from which SPIC writes.
+  * @param  DataLen: the number of bytes that SPIC sends in Data Phase.
+  * @param  TransmitData: pointer to a byte array that is to be sent.
+  * @retval none
+  */
+FLASH_RAM_TEXT_SECTION
+void FLASH_TxBasic(u8 cmd, u32 Address, u32 DataLen, u8 *TransmitData)
+{
+	SPIC_TypeDef *spi_flash = SPIC;
+	u32 tx_num = 0;
+	u32 ctrl0;
+	u32 value;
+	/* write enable cmd */
+	FLASH_UserMode_Enter();
+	FLASH_WriteEn_InUserMode();
+	/* set CTRLR0: TX mode and one bit mode */
+	ctrl0 = spi_flash->CTRLR0;
+	spi_flash->CTRLR0 &= ~(TMOD(3) | CMD_CH(3) | ADDR_CH(3) | DATA_CH(3));
+	/* Set ADDR length */
+	value = spi_flash->USER_LENGTH & ~MASK_USER_ADDR_LENGTH;
+	spi_flash->USER_LENGTH = value | USER_ADDR_LENGTH(flash_init_para.FLASH_addr_phase_len);
+	/* Set TX_NDF: frame number of Tx data. */
+	spi_flash->RX_NDF = 0;
+	spi_flash->TX_NDF = TX_NDF(DataLen);
+	/* set flash_cmd: write cmd & address to fifo & addr is MSB */
+	spi_flash->DR[0].BYTE = cmd;
+	if (flash_init_para.FLASH_addr_phase_len == ADDR_4_BYTE) {
+		spi_flash->DR[0].BYTE = (u8)((Address & 0xFF000000) >> 24);
+	}
+	spi_flash->DR[0].BYTE = (u8)((Address & 0xFF0000) >> 16);
+	spi_flash->DR[0].BYTE = (u8)((Address & 0xFF00) >> 8);
+	spi_flash->DR[0].BYTE = (u8)(Address & 0xFF);
+	/* write some data to fill the fifo before set SSIENR. */
+	tx_num = 0;
+	while (tx_num < DataLen) {
+		if (spi_flash->SR & BIT_TFNF) {
+			spi_flash->DR[0].BYTE = (u8) * (TransmitData + tx_num);
+			tx_num += 1;
+		} else {
+			break;
+		}
+	}
+	/* Enable SSIENR to start the transfer */
+	spi_flash->SSIENR = BIT_SPIC_EN;
+	/* write the remaining data into fifo */
+	while (tx_num < DataLen) {
+		if (spi_flash->SR & BIT_TFNF) {
+			spi_flash->DR[0].BYTE = (u8) * (TransmitData + tx_num);
+			tx_num += 1;
+		}
+	}
+	/* Wait transfer complete. When complete, SSIENR.SPIC_EN are cleared by HW automatically. */
+	FLASH_WaitBusy_InUserMode(WAIT_TRANS_COMPLETE);
+	/* Restore bitmode */
+	spi_flash->CTRLR0 = ctrl0;
+	FLASH_WaitBusy_InUserMode(WAIT_FLASH_BUSY);
+	FLASH_UserMode_Exit();
+}

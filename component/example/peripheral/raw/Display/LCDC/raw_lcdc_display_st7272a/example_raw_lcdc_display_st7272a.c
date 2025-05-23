@@ -45,6 +45,15 @@ static void lcdc_pinmux_config(void)
 
 	GPIO_WriteBit(LCD_BLEN_SRGB, 1);
 
+	DelayMs(100);
+	/* LCD RESET */
+	GPIO_InitTypeDef GPIO_InitStruct_RESET;
+	GPIO_InitStruct_RESET.GPIO_Pin = _PA_21;//_PC_1
+	GPIO_InitStruct_RESET.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_Init(&GPIO_InitStruct_RESET);
+
+	GPIO_WriteBit(_PA_21, 1);
+
 	/* QAB group */
 	Pinmux_Config(_PB_17, PINMUX_FUNCTION_LCD_D0);			/* D0 - B0 */
 	Pinmux_Config(_PB_16, PINMUX_FUNCTION_LCD_D1);			/* D1 */

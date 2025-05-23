@@ -43,12 +43,11 @@ static usbd_config_t usbd_cfg = {
 
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE usbd_cmd_table[] = {
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
+#ifdef CONFIG_SUPPORT_USB_NO_PHY
 	{
 		(const u8 *)"USBD", 3, usbd_cmd, (const u8 *)"\tUSB DEVICE\n"
 		"\t\t usbd init\n"
 		"\t\t usbd deinit\n"
-		"\t\t usbd busdump\n"
 		"\t\t usbd regdump\n"
 		"\t\t usbd wakehost\n"
 		"\t\t usbd acm <arguments>\n"
@@ -59,7 +58,6 @@ const COMMAND_TABLE usbd_cmd_table[] = {
 		(const u8 *)"USBD", 3, usbd_cmd, (const u8 *)"\tUSB DEVICE\n"
 		"\t\t usbd init\n"
 		"\t\t usbd deinit\n"
-		"\t\t usbd busdump\n"
 		"\t\t usbd regdump\n"
 		"\t\t usbd wakehost\n"
 		"\t\t usbd phydw <addr_hex>\n"
@@ -102,7 +100,7 @@ static u32 usbd_cmd(u16 argc, u8 *argv[])
 		usbd_wake_host();
 	} else if (_stricmp(cmd, "regdump") == 0) {
 		usb_hal_dump_registers();
-#ifndef CONFIG_SUPPORT_USB_FS_ONLY
+#ifndef CONFIG_SUPPORT_USB_NO_PHY
 	} else if (_stricmp(cmd, "phydw") == 0) {
 		status = cmd_usb_phydw(argc, argv);
 	} else if (_stricmp(cmd, "phyew") == 0) {

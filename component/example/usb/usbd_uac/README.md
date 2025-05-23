@@ -46,8 +46,10 @@ None
 
 4. After the USB Audio driver is successfully loaded, USB host end will recognize Ameba as an audio device.
    ```
-	- Open the OS Sound Bar, enable Realtek UAC Device speaker device if it is disabled
-	- Open the OS Sound Bar, set Realtek UAC Device Speaker as default device
+	- Open the OS Sound Bar, enable Realtek UAC Device speaker device if it is disabled. Locate the device in the Device Manager and enable it manually.
+	- Open the OS Sound Bar, set Realtek UAC Device Speaker as default device.
+	- Open the Sound Control Panel, select the Realtek UAC Device Speaker device -- configure the speakers -- choose a specific channel setup -- finalize the configuration, and then click Test.
+	- If you connect a speaker to the board, sound will play.
    ```
 
 5. Now user can play audio via the audio device.

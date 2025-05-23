@@ -61,6 +61,10 @@ ameba_list_append(private_sources
     host/core/usbh_hcd.c
 )
 
+ameba_list_append_ifnot(CONFIG_SUPPORT_USB_NO_PHY private_sources
+    common/usb_phy.c
+)
+
 # Component private part, user config end
 #------------------------------#
 

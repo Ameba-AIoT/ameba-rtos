@@ -1,6 +1,6 @@
 /*
 *******************************************************************************
-* Copyright(c) 2021, Realtek Semiconductor Corporation. All rights reserved.
+* Copyright(c) 2025, Realtek Semiconductor Corporation. All rights reserved.
 *******************************************************************************
 */
 
@@ -8,56 +8,49 @@
 #include "app_audio_data.h"
 #include <bt_api_config.h>
 #if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
-#if defined(AUDIO_SOURCE_OUTBAND_FROM_USB) && AUDIO_SOURCE_OUTBAND_FROM_USB
+#if defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB
 #if defined(CONFIG_AMEBASMART) && CONFIG_AMEBASMART
 #include <bt_debug.h>
 #include <osif.h>
-#include "usbd.h"
-#include "usbd_uac.h"
-#include "ameba_soc.h"
-
+#include <ameba_soc.h>
+#include <usbd.h>
+#if defined(CONFIG_USBD_UAC1)
+#include <usbd_uac1.h>
+#else
+#include <usbd_uac2.h>
+#endif
 /*
-     USB_SPEED_FULL: pcm data will be callback in uac_cb_isoc_received() every 1/8 ms, which will increase the CPU load
-     USB_SPEED_HIGH_IN_FULL: pcm data will be callback in uac_cb_isoc_received() every 1 ms
+     USB_SPEED_FULL: pcm data will be callback in every 1/8 ms, which will increase the CPU load
+     USB_SPEED_HIGH_IN_FULL: pcm data will be callback every 1 ms
 */
-
-//#define CONFIG_USBD_UAC_SPEED USB_SPEED_HIGH
-#define CONFIG_USBD_UAC_SPEED USB_SPEED_HIGH_IN_FULL
-
-#define CONFIG_USBD_UAC_ISR_THREAD_PRIORITY     7U
-#define AUDIO_BYTE_WIDTH_SIZE                   0x02U
-#define AUDIO_CHANNEL_NUM                       0x02U
+#define CONFIG_USBD_UAC_SPEED USB_SPEED_HIGH_IN_FULL //#define CONFIG_USBD_UAC_SPEED USB_SPEED_HIGH
 #define AUDIO_SAMPLING_RATE_KHZ                 48U
 #define AUDIO_SAMPLING_RATE                     48000
-
-/* ms */
+#define AUDIO_BYTE_WIDTH_SIZE                   0x02U
+#define AUDIO_CHANNEL_NUM                       0x02U
 #define USB_AUDIO_MS_BUF_SIZE                   ((AUDIO_BYTE_WIDTH_SIZE) * (AUDIO_CHANNEL_NUM) * (AUDIO_SAMPLING_RATE_KHZ))
 #define USB_AUDIO_BUF_SIZE                      ((USB_AUDIO_MS_BUF_SIZE) * 10)
-
-#define USB_AUDIO_RECEIVER_BUF_SIZE             4*USB_AUDIO_BUF_SIZE
-
+#define USB_AUDIO_READ_TIME_OUT                 0
+#define USB_AUDIO_RECEIVER_BUF_SIZE             10*USB_AUDIO_BUF_SIZE
+/* recv_buf: uac isoc rx buffer, used to save the audio data that received from the USB host */
+static u8 recv_buf[USB_AUDIO_RECEIVER_BUF_SIZE];
+static u8 tmp_buf[USB_AUDIO_RECEIVER_BUF_SIZE];
+static u32 write_pos = 0;
+static u32 read_pos = 0;
+static u32 buf_size = USB_AUDIO_RECEIVER_BUF_SIZE;
+static void *demo_usb_task_hdl = NULL;
+static void *demo_usb_task_sem = NULL;
+static void *uac_ready_sem = NULL;
+static u8 usb_task_stop = 0;
+static uint8_t demo_usb_task_run = 0;
 static int uac_cb_init(void);
 static int uac_cb_deinit(void);
 static int uac_cb_setup(usb_setup_req_t *req, u8 *buf);
 static int uac_cb_set_config(void);
-static int uac_cb_isoc_received(void *audio, u8 *buf, u32 len);
-static void uac_cb_isoc_transmitted(u8 status);
-static void uac_cb_status_changed(u8 status);
+static void uac_cb_status_changed(u8 old_status, u8 status);
 static void uac_cb_mute_changed(u8 mute);
 static void uac_cb_volume_changed(u8 volume);
-/*
-    uac isoc tx buffer, used to send the audio data to USB host
-*/
-static u8 uac_isoc_tx_buf[USB_AUDIO_MS_BUF_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
-/*
-    uac isoc rx buffer, used to save the audio data that received from the USB host
-*/
-static u8 recv_buf[USB_AUDIO_RECEIVER_BUF_SIZE];
-static u8 uac_isoc_rx_buf[USB_AUDIO_MS_BUF_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
-
-static u32 write_pos = 0;
-static u32 read_pos = 0;
-static u32 buf_size = USB_AUDIO_RECEIVER_BUF_SIZE;
+static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
 
 static u32 usb_uac_get_enough_read_bytes(void)
 {
@@ -72,36 +65,25 @@ static u32 usb_uac_get_enough_write_bytes(void)
 static usbd_config_t uac_cfg = {
 	.speed = CONFIG_USBD_UAC_SPEED,
 	.dma_enable = 1U,
-	.ptx_fifo_first = 1U,
-	.isr_priority = CONFIG_USBD_UAC_ISR_THREAD_PRIORITY,
-	.ext_intr_en = USBD_EOPF_INTR | USBD_ICII_INTR,
+	.isr_priority = INT_PRI_MIDDLE,
+	.ext_intr_en = 0,
 	.intr_use_ptx_fifo = 0U,
 };
 
 static usbd_uac_cb_t uac_cb = {
-	.speed = CONFIG_USBD_UAC_SPEED,
-	.audio = NULL,
-	.in = {0,}, /* current just support usb out,usb in TODO */
-	.out = {1, AUDIO_BYTE_WIDTH_SIZE, AUDIO_CHANNEL_NUM, AUDIO_SAMPLING_RATE},
+	.audio_ctx = NULL,
+	.in = {.enable = 0,}, /* current just support usb out,usb in TODO */
+	.out = {.enable = 1, .sampling_freq = AUDIO_SAMPLING_RATE, .byte_width = AUDIO_BYTE_WIDTH_SIZE, .ch_cnt = AUDIO_CHANNEL_NUM},
 	.init = uac_cb_init,
 	.deinit = uac_cb_deinit,
 	.setup = uac_cb_setup,
 	.set_config = uac_cb_set_config,
-	.isoc_received = uac_cb_isoc_received,
-	.isoc_transmitted = uac_cb_isoc_transmitted,
 	.status_changed = uac_cb_status_changed,
 	.mute_changed = uac_cb_mute_changed,
 	.volume_changed = uac_cb_volume_changed,
+	.format_changed = uac_cb_format_changed,
 	.sof = NULL,
 };
-
-static int uac_cb_setup(usb_setup_req_t *req, u8 *buf)
-{
-	UNUSED(req);
-	UNUSED(buf);
-
-	return 0;
-}
 
 /* Initializes uac application layer */
 static int uac_cb_init(void)
@@ -112,95 +94,115 @@ static int uac_cb_init(void)
 /* DeInitializes uac application layer */
 static int uac_cb_deinit(void)
 {
+	usbd_uac_stop_play();
+	return 0;
+}
+
+static int uac_cb_setup(usb_setup_req_t *req, u8 *buf)
+{
+	UNUSED(req);
+	UNUSED(buf);
 	return 0;
 }
 
 /* Set config callback */
 static int uac_cb_set_config(void)
 {
-	usbd_uac_receive_data(uac_isoc_rx_buf, USB_AUDIO_MS_BUF_SIZE);
-	uac_cb_isoc_transmitted(0);
-	return 0;
+	return HAL_OK;
 }
 
-/**
-  * @brief  Data received over USB ISOC OUT endpoint
-  * @param  audio: audio handle
-  * @param  buf: RX buffer
-  * @param  len: RX data length (in bytes)
-  * @retval Status
-  */
-static int uac_cb_isoc_received(void *audio, u8 *p_data, u32 len)
+static void uac_cb_status_changed(u8 old_status, u8 status)
 {
-	UNUSED(audio);
-#if 1
-	//for USB packet loss debug
-	static int64_t g_last_tsf = 0;
-	int64_t tsf = DTimestamp_Get(); //us
-	if (tsf - g_last_tsf > 1200) {
-		printf("Large Time %lld %lld cost/%lld\r\n", tsf, g_last_tsf, tsf - g_last_tsf);
-	}
-	g_last_tsf = tsf;
-#endif
-	u32 copy_size = 0;
-	u32 write_bytes = 0;
-
-	if (len > 0) {
-		if (len > (write_bytes = usb_uac_get_enough_write_bytes())) {
-			printf("no enough write buffer: write_pos:%ld, read_pos:%ld, write bytes:%ld\r\n", write_pos, read_pos, write_bytes);
-			goto exit;
-		}
-		if ((write_pos + len) <= USB_AUDIO_RECEIVER_BUF_SIZE) {
-			copy_size = len;
-			memcpy((void *)&recv_buf[write_pos], (void *)p_data, copy_size);
-		} else {
-			copy_size = USB_AUDIO_RECEIVER_BUF_SIZE - write_pos;
-			memcpy((void *)&recv_buf[write_pos], (void *)p_data, copy_size);
-			memcpy((void *)&recv_buf[0], (void *)(p_data + (copy_size)), (len - copy_size));
-		}
-		write_pos = (write_pos + len) % buf_size;
-	}
-exit:
-	return usbd_uac_receive_data(uac_isoc_rx_buf, USB_AUDIO_MS_BUF_SIZE);
-}
-
-static void uac_cb_isoc_transmitted(u8 status)
-{
-	UNUSED(status);
-
-	/* for uac IN test */
-	memset((void *)uac_isoc_tx_buf, 0x00, 48);
-	usbd_uac_transmit_data(uac_isoc_tx_buf, 48);
-}
-
-static void uac_cb_status_changed(u8 status)
-{
-	printf("Status change:%d \r\n", status);
+	DiagPrintf("Status change: %d -> %d \r\n",  old_status, status);
 }
 
 static void uac_cb_mute_changed(u8 mute)
 {
-	printf("USBD set mute %d\r\n", mute);
+	DiagPrintf("USBD set mute: %d\r\n", mute);
 }
 
 static void uac_cb_volume_changed(u8 volume)
 {
-	printf("USBD set volume %d\r\n", volume);
+	DiagPrintf("USBD set volume: %d\r\n", volume);
+}
+
+static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
+{
+	if (sampling_freq != 0U) {
+		uac_cb.out.sampling_freq = sampling_freq;
+	}
+	if (ch_cnt != 0U) {
+		uac_cb.out.ch_cnt = ch_cnt;
+	}
+	if (byte_width != 0U) {
+		uac_cb.out.byte_width = byte_width;
+	}
+	osif_sem_give(uac_ready_sem);
+	usb_task_stop = 1;
+	DiagPrintf("USBD set sampling_freq %ld set ch_cnt %d\r\n", sampling_freq, ch_cnt);
+}
+
+static void bt_demo_usb_task_entry(void *ctx)
+{
+	(void)ctx;
+	u32 read_data_len, write_bytes, copy_size = 0;
+	demo_usb_task_run = 1;
+	while (demo_usb_task_run) {
+		if (uac_ready_sem) {
+			osif_sem_take(uac_ready_sem, BT_TIMEOUT_FOREVER);
+		}
+		usb_task_stop = 0;
+		usbd_uac_config(&(uac_cb.out), 0, 0);
+		while (1) {
+			if (!demo_usb_task_run || usbd_uac_start_play() == HAL_OK) {
+				break;
+			}
+		}
+		// if usb uac data format change, stop read audio data from usb
+		while (!usb_task_stop) {
+			if (!demo_usb_task_run) {
+				break;
+			}
+			read_data_len = usbd_uac_read(tmp_buf, USB_AUDIO_BUF_SIZE * 2, USB_AUDIO_READ_TIME_OUT);
+			if (read_data_len) {
+				//DiagPrintf("read_data_len: %ld \r\n", read_data_len);
+				if (read_data_len > (write_bytes = usb_uac_get_enough_write_bytes())) {
+					//DiagPrintf("no enough write buffer: write_pos:%ld, read_pos:%ld, write bytes:%ld\r\n", write_pos, read_pos, write_bytes);
+					continue;
+				}
+				if ((write_pos + read_data_len) <= buf_size) {
+					copy_size = read_data_len;
+					memcpy((void *)&recv_buf[write_pos], (void *)tmp_buf, copy_size);
+				} else {
+					copy_size = buf_size - write_pos;
+					memcpy((void *)&recv_buf[write_pos], (void *)tmp_buf, copy_size);
+					memcpy((void *)&recv_buf[0], (void *)(tmp_buf + (copy_size)), (read_data_len - copy_size));
+				}
+				write_pos = (write_pos + read_data_len) % buf_size;
+			} else {
+				//DiagPrintf("%s: read_data_len is 0\r\n", __func__);
+			}
+		}
+	}
+	DiagPrintf("[APP] %s task_delete\r\n", __func__);
+	osif_sem_give(demo_usb_task_sem);
+	demo_usb_task_run = 0;
+	demo_usb_task_hdl = NULL;
+	osif_task_delete(NULL);
 }
 
 uint16_t demo_usb_read_buffer(uint8_t *buf, uint16_t len)
 {
 	u32 read_bytes = 0;
 	if (len > (read_bytes = usb_uac_get_enough_read_bytes())) {
-		//printf("no enough read buffer, read_bytes:%ld,read_pos:%ld, write_pos:%ld \r\n", read_bytes, read_pos, write_pos);
+		DiagPrintf("no enough read buffer, read_bytes:%ld,read_pos:%ld, write_pos:%ld \r\n", read_bytes, read_pos, write_pos);
 		return 1;
 	}
-
-	if (read_pos + len <= USB_AUDIO_RECEIVER_BUF_SIZE) {
+	if (read_pos + len <= buf_size) {
 		memcpy((void *)buf, (void *)&recv_buf[read_pos], len);
 	} else {
-		memcpy(buf, (void *)&recv_buf[read_pos], USB_AUDIO_RECEIVER_BUF_SIZE - read_pos);
-		memcpy(buf + (USB_AUDIO_RECEIVER_BUF_SIZE - read_pos), (void *)&recv_buf[0], len - (USB_AUDIO_RECEIVER_BUF_SIZE - read_pos));
+		memcpy(buf, (void *)&recv_buf[read_pos], buf_size - read_pos);
+		memcpy(buf + (buf_size - read_pos), (void *)&recv_buf[0], len - (buf_size - read_pos));
 	}
 	read_pos = (read_pos + len) % buf_size;
 
@@ -210,28 +212,34 @@ uint16_t demo_usb_read_buffer(uint8_t *buf, uint16_t len)
 bool demo_usb_init(void)
 {
 	int ret = 0;
-
 	ret = usbd_init(&uac_cfg);
 	if (ret) {
-		BT_LOGE("USB device init failed\r\n");
+		DiagPrintf("USB device init failed\r\n");
 		goto exit;
 	}
-
 	ret = usbd_uac_init(&uac_cb);
 	if (ret) {
-		BT_LOGE("USB UAC init failed\r\n");
+		DiagPrintf("USB UAC init failed\r\n");
 		goto clear_usb_driver_exit;
 	}
-
+	if (uac_ready_sem == NULL) {
+		osif_sem_create(&uac_ready_sem, 0, 1);
+	}
+	if (demo_usb_task_sem == NULL) {
+		osif_sem_create(&demo_usb_task_sem, 0, 1);
+	}
+	if (demo_usb_task_hdl == NULL) {
+		if (osif_task_create(&demo_usb_task_hdl, ((const char *)"demo_usb_read_task"), bt_demo_usb_task_entry,
+							 NULL, 1024 * 5, 5) != true) {
+			DiagPrintf("%s: xTaskCreate(demo_usb_read_task) failed\r\n", __func__);
+			return false;
+		}
+	}
 	osif_delay(100);
-
-	BT_LOGA("USB UAC init success\r\n");
-
+	DiagPrintf("USB UAC init success\r\n");
 	return true;
-
 exit:
 	return false;
-
 clear_usb_driver_exit:
 	usbd_deinit();
 	return false;
@@ -240,21 +248,34 @@ clear_usb_driver_exit:
 bool demo_usb_deinit(void)
 {
 	int ret = 0;
-
+	// demo_usb_task deinit
+	demo_usb_task_run = 0;
+	if (uac_ready_sem) {
+		osif_sem_give(uac_ready_sem);
+	}
+	osif_sem_take(demo_usb_task_sem, BT_TIMEOUT_FOREVER);
+	if (demo_usb_task_sem) {
+		osif_sem_delete(demo_usb_task_sem);
+		demo_usb_task_sem = NULL;
+	}
+	if (uac_ready_sem) {
+		osif_sem_delete(uac_ready_sem);
+		uac_ready_sem = NULL;
+	}
 	ret = usbd_uac_deinit();
 	if (ret) {
-		BT_LOGE("USB UAC deinit failed\r\n");
+		DiagPrintf("USB UAC deinit failed\r\n");
 		return false;
 	}
-
 	ret = usbd_deinit();
 	if (ret) {
-		BT_LOGE("USB device deinit failed\r\n");
+		DiagPrintf("USB device deinit failed\r\n");
 		return false;
 	}
 
 	write_pos = 0;
 	read_pos = 0;
+	DiagPrintf("USB device deinit\r\n");
 
 	return true;
 }
