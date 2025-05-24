@@ -180,6 +180,10 @@ struct wifi_user_conf {
 
 	u8 rx_shortcut_enable;
 
+	/*!	0: No probe request will be sent on passive channel;
+		1: A unicast probe request will be sent when a null-SSID beacon is received on passive channel to obtain the ssid of the AP */
+	u8 probe_hidden_ap_on_passive_ch;
+
 	/*! For concurrent mode:
 	    - \b 0: STA or SoftAP only at any time, The MAC address of TA or Softap is the MAC address of chip;
 		- \b 1: STA and SoftAP may run at the same time, Softap's mac address depends on softap_addr_offset_idx. */

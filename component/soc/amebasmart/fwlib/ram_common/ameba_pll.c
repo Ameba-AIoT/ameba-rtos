@@ -316,6 +316,32 @@ void PLL_NP_ClkSet(u32 PllClk)
 }
 
 /**
+  * @brief  get nppll clk.
+  * @param  None.
+  */
+u32 PLL_NP_ClkGet(void)
+{
+	PLL_TypeDef *PLL = (PLL_TypeDef *)PLL_BASE;
+	u32 Div, FoN, FoF;
+	u32 XtalClk = XTAL_ClkGet();
+	u64 PllClk;
+
+	// Get Div value
+	Div = PLL_GET_NPLL_DIVN_SDM(PLL->PLL_NPPLL_CTRL1) + 2;
+
+	// Get FoN and FoF values
+	FoN = PLL_GET_NPLL_F0N_SDM(PLL->PLL_NPPLL_CTRL3);
+	FoF = PLL_GET_NPLL_F0F_SDM(PLL->PLL_NPPLL_CTRL3);
+
+	// Calculate PLL frequency
+	// PllClk = Div * XtalClk + (FoN + FoF >> 13) / 8 * XtalClk
+	PllClk = (u64)Div * XtalClk;
+	PllClk += ((u64)FoN * XtalClk + ((u64)FoF * XtalClk >> 13)) >> 3;
+
+	return (u32)PllClk;
+}
+
+/**
   * @brief  Enable or disable NP PLL 600M.
   * @param  NewState: DISABLE/ENABLE
   * @note  NP PLL disable should not power off BandGap, since BandGap power supply to ADC, and ADC may in use

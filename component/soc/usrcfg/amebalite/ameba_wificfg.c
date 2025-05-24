@@ -47,6 +47,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.rtw_edcca_mode = RTW_EDCCA_NORM;
 	wifi_user_config.tdma_dig_enable = 0; /*add for customer ctrl tdma dig on/off*/
 	wifi_user_config.antdiv_mode = RTW_ANTDIV_DISABLE;
+	wifi_user_config.probe_hidden_ap_on_passive_ch = 1;
 
 	/* IPS(Inactive Power Save), power save when wifi unconnected */
 	wifi_user_config.ips_enable = 1;

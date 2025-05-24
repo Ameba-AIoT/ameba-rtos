@@ -323,7 +323,7 @@ static size_t xPortCanaryCheck(BlockLink_t *pxBlock)
 /*-----------------------------------------------------------*/
 
 #if ( ( !defined CONFIG_HEAP_CORRUPTION_DETECT_LITE ) )
-void *pvPortMalloc(size_t xWantedSize)
+void *pvPortMallocBase(size_t xWantedSize, uint32_t startAddr)
 {
 	BlockLink_t *pxBlock, * pxPreviousBlock, * pxNewBlockLink;
 	void *pvReturn = NULL;
@@ -368,7 +368,7 @@ void *pvPortMalloc(size_t xWantedSize)
 				pxBlock = heapPROTECT_BLOCK_POINTER(xStart.pxNextFreeBlock);
 				heapVALIDATE_BLOCK_POINTER(pxBlock);
 
-				while ((pxBlock->xBlockSize < xWantedSize) && (pxBlock->pxNextFreeBlock != heapPROTECT_BLOCK_POINTER(NULL))) {
+				while (((pxBlock->xBlockSize < xWantedSize) || ((uint32_t)pxBlock + xHeapStructSize) < startAddr ) && (pxBlock->pxNextFreeBlock != heapPROTECT_BLOCK_POINTER(NULL))) {
 					pxPreviousBlock = pxBlock;
 					pxBlock = heapPROTECT_BLOCK_POINTER(pxBlock->pxNextFreeBlock);
 					heapVALIDATE_BLOCK_POINTER(pxBlock);
@@ -460,8 +460,9 @@ void *pvPortMalloc(size_t xWantedSize)
 	configASSERT((((size_t) pvReturn) & (size_t) portBYTE_ALIGNMENT_MASK) == 0);
 	return pvReturn;
 }
+
 #else /* !defined CONFIG_HEAP_CORRUPTION_DETECT_LITE */
-void *pvPortMalloc(size_t xWantedSize)
+void *pvPortMallocBase(size_t xWantedSize, uint32_t startAddr)
 {
 	BlockLink_t *pxBlock, * pxPreviousBlock, * pxNewBlockLink;
 	void *pvReturn = NULL;
@@ -515,7 +516,7 @@ void *pvPortMalloc(size_t xWantedSize)
 				pxBlock = heapPROTECT_BLOCK_POINTER(xStart.pxNextFreeBlock);
 				heapVALIDATE_BLOCK_POINTER(pxBlock);
 
-				while ((pxBlock->xBlockSize < xWantedSize) && (pxBlock->pxNextFreeBlock != heapPROTECT_BLOCK_POINTER(NULL))) {
+				while (((pxBlock->xBlockSize < xWantedSize) || ((uint32_t)pxBlock + xHeapStructSize) < startAddr ) && (pxBlock->pxNextFreeBlock != heapPROTECT_BLOCK_POINTER(NULL))) {
 					pxPreviousBlock = pxBlock;
 					pxBlock = heapPROTECT_BLOCK_POINTER(pxBlock->pxNextFreeBlock);
 					heapVALIDATE_BLOCK_POINTER(pxBlock);
@@ -633,6 +634,12 @@ void *pvPortMalloc(size_t xWantedSize)
 	return pvReturn;
 }
 #endif /* defined CONFIG_HEAP_CORRUPTION_DETECT_LITE */
+
+void *pvPortMalloc(size_t xWantedSize)
+{
+	return pvPortMallocBase(xWantedSize, 0);
+}
+
 /*-----------------------------------------------------------*/
 
 #if (defined CONFIG_HEAP_CORRUPTION_DETECT_LITE)
@@ -1185,6 +1192,52 @@ void* pvPortReAlloc( void *pv,  size_t xWantedSize )
 	}
 	else if( xWantedSize )
 		return pvPortMalloc( xWantedSize );
+	else
+		return NULL;
+
+	return NULL;
+}
+
+void* pvPortReAllocBase( void *pv,  size_t xWantedSize, uint32_t startAddr)
+{
+	BlockLink_t *pxLink;
+	unsigned char *puc = ( unsigned char * ) pv;
+
+	if( pv )
+	{
+		if( !xWantedSize )
+		{
+			vPortFree( pv );
+			return NULL;
+		}
+
+		void *newArea = pvPortMallocBase( xWantedSize, startAddr);
+		if( newArea )
+		{
+			/* The memory being freed will have an xBlockLink structure immediately
+				before it. */
+			puc -= xHeapStructSize;
+
+			/* This casting is to keep the compiler from issuing warnings. */
+			pxLink = ( void * ) puc;
+
+			size_t oldSize =  (pxLink->xBlockSize & ~xBlockAllocatedBit) - xHeapStructSize;
+			size_t copySize = ( oldSize < xWantedSize ) ? oldSize : xWantedSize;
+			memcpy( newArea, pv, copySize );
+
+			vTaskSuspendAll();
+			{
+				/* Add this block to the list of free blocks. */
+				pxLink->xBlockSize &= ~xBlockAllocatedBit;
+				xFreeBytesRemaining += pxLink->xBlockSize;
+				prvInsertBlockIntoFreeList( ( ( BlockLink_t * ) pxLink ) );
+			}
+			xTaskResumeAll();
+			return newArea;
+		}
+	}
+	else if( xWantedSize )
+		return pvPortMallocBase( xWantedSize, startAddr);
 	else
 		return NULL;
 
