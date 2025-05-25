@@ -138,7 +138,7 @@ void example_wifi_csi_report_cb(char *buf, int buf_len, int flags, void *userdat
 
 void example_wifi_csi(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"wifi_csi_thread"), wifi_csi_thread, NULL, 1024 * 4, 0) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"wifi_csi_thread"), wifi_csi_thread, NULL, 1024 * 4, 1) != SUCCESS) {
 		printf("\n\r%s rtos_task_create(wifi_csi_thread) failed", __FUNCTION__);
 	}
 
