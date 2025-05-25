@@ -175,10 +175,12 @@ void vPortGetHeapStats( HeapStats_t * pxHeapStats );
  * Map to the memory management routines required for the port.
  */
 void * pvPortMalloc( size_t xSize ) PRIVILEGED_FUNCTION;
+void *pvPortMallocBase(size_t xWantedSize, uint32_t startAddr) PRIVILEGED_FUNCTION;
 void * pvPortCalloc( size_t xNum,
                      size_t xSize ) PRIVILEGED_FUNCTION;
 void vPortFree( void * pv ) PRIVILEGED_FUNCTION;
 	void* pvPortReAlloc( void *pv,	size_t xWantedSize ) PRIVILEGED_FUNCTION;
+    void* pvPortReAllocBase( void *pv,  size_t xWantedSize, uint32_t startAddr) PRIVILEGED_FUNCTION;
 	void *pvPortCalloc(size_t xWantedCnt, size_t xWantedSize) PRIVILEGED_FUNCTION;
 void vPortInitialiseBlocks( void ) PRIVILEGED_FUNCTION;
 size_t xPortGetFreeHeapSize( void ) PRIVILEGED_FUNCTION;

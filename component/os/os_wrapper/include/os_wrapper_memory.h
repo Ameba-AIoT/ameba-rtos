@@ -79,4 +79,27 @@ uint32_t rtos_mem_get_free_heap_size(void);
  */
 uint32_t rtos_mem_get_minimum_ever_free_heap_size(void);
 
+/*
+ TYPE_TCM, reserved for tcm, can malloc heap after 0x00;
+ TYPE_SRAM, only can malloc heap after 0x20000000;
+ TYPE_DRAM, include PSRAM and DDR, only can malloc heap after 0x60000000
+ TYPE_ALL, can malloc heap after 0x00;
+*/
+typedef enum {
+	TYPE_TCM = 0,
+	TYPE_SRAM,
+	TYPE_DRAM,
+	TYPE_ALL
+} MALLOC_TYPES;
+
+void *rtos_heap_types_malloc(uint32_t size, MALLOC_TYPES type);
+
+void *rtos_heap_types_zmalloc(uint32_t size, MALLOC_TYPES type);
+
+void *rtos_heap_types_calloc(uint32_t elementNum, uint32_t elementSize, MALLOC_TYPES type);
+
+void *rtos_heap_types_realloc(void *pbuf, uint32_t size, MALLOC_TYPES type);
+
+void rtos_heap_types_free(void *pbuf);
+
 #endif

@@ -607,9 +607,25 @@ static int usbd_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 {
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 
+	UNUSED(dev);
 	UNUSED(ep_addr);
 
-	if (status == HAL_OK) {
+	cdev->tx_status = status;
+	rtos_sema_give(cdev->tx_sema);
+
+	return HAL_OK;
+}
+
+/**
+  * @brief  RX process
+  * @retval Status
+  */
+static void usbd_msc_tx_process(void)
+{
+	usbd_msc_dev_t *cdev = &usbd_msc_dev;
+	usb_dev_t *dev = cdev->dev;
+
+	if (cdev->tx_status == HAL_OK) {
 		switch (cdev->bot_state) {
 		case USBD_MSC_DATA_IN:
 			if (usbd_scsi_process_cmd(cdev, &cdev->cbw->CBWCB[0]) < 0) {
@@ -631,10 +647,8 @@ static int usbd_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 			break;
 		}
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX err: %d\n", ep_addr, status);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX err: %d\n", cdev->tx_status);
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -646,10 +660,26 @@ static int usbd_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 static int usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 {
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
+
+	UNUSED(dev);
+	UNUSED(ep_addr);
+
+	cdev->rx_data_length = len;
+	rtos_sema_give(cdev->rx_sema);
+
+	return HAL_OK;
+}
+
+/**
+  * @brief  RX process
+  * @retval void
+  */
+static void usbd_msc_rx_process(void)
+{
+	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usbd_msc_cbw_t *cbw = cdev->cbw;
 	usbd_msc_csw_t *csw = cdev->csw;
-
-	UNUSED(ep_addr);
+	usb_dev_t *dev = cdev->dev;
 
 	switch (cdev->bot_state) {
 	case USBD_MSC_IDLE:
@@ -657,7 +687,7 @@ static int usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 		csw->dCSWTag = cbw->dCBWTag;
 		csw->dCSWDataResidue = cbw->dCBWDataTransferLength;
 
-		if ((len != USBD_MSC_CB_WRAP_LEN) ||
+		if ((cdev->rx_data_length != USBD_MSC_CB_WRAP_LEN) ||
 			(cbw->dCBWSignature != USBD_MSC_CB_SIGN) ||
 			(cbw->bCBWLUN > 1U) ||
 			(cbw->bCBWCBLength < 1U) || (cbw->bCBWCBLength > 16U)) {
@@ -691,8 +721,6 @@ static int usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 				} else {
 					usbd_msc_abort(dev);
 				}
-			} else {
-				return HAL_OK;
 			}
 		}
 		break;
@@ -707,8 +735,6 @@ static int usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 	default:
 		break;
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -817,6 +843,32 @@ static void usbd_msc_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 	}
 }
 
+static void usbd_msc_rx_thread(void *param)
+{
+	usbd_msc_dev_t *cdev = &usbd_msc_dev;
+
+	UNUSED(param);
+
+	for (;;) {
+		if (rtos_sema_take(cdev->rx_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			usbd_msc_rx_process();
+		}
+	}
+}
+
+static void usbd_msc_tx_thread(void *param)
+{
+	usbd_msc_dev_t *cdev = &usbd_msc_dev;
+
+	UNUSED(param);
+
+	for (;;) {
+		if (rtos_sema_take(cdev->tx_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			usbd_msc_tx_process();
+		}
+	}
+}
+
 /* Exported functions --------------------------------------------------------*/
 int usbd_msc_disk_init(void)
 {
@@ -894,12 +946,34 @@ int usbd_msc_init(usbd_msc_cb_t *cb)
 		goto csw_fail;
 	}
 
+	rtos_sema_create(&cdev->rx_sema, 0U, 1U);
+	rtos_sema_create(&cdev->tx_sema, 0U, 1U);
+
+	ret = rtos_task_create(&cdev->rx_task, "usbd_msc_rx_thread", usbd_msc_rx_thread, NULL, 1024U, USBD_MSC_RX_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create RX thread fail\n");
+		goto create_rx_thread_fail;
+	}
+
+	ret = rtos_task_create(&cdev->tx_task, "usbd_msc_tx_thread", usbd_msc_tx_thread, NULL, 1024U, USBD_MSC_TX_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create TX thread fail\n");
+		goto create_tx_thread_fail;
+	}
+
 	cdev->blkbits = USBD_MSC_BLK_BITS;
 	cdev->blksize = USBD_MSC_BLK_SIZE;
 
 	usbd_register_class(&usbd_msc_driver);
 
 	return HAL_OK;
+
+create_tx_thread_fail:
+	rtos_task_delete(cdev->rx_task);
+
+create_rx_thread_fail:
+	rtos_sema_delete(cdev->tx_sema);
+	rtos_sema_delete(cdev->rx_sema);
 
 csw_fail:
 	usb_os_mfree(cdev->cbw);
@@ -926,6 +1000,12 @@ void usbd_msc_deinit(void)
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit\n");
+
+	rtos_task_delete(cdev->tx_task);
+	rtos_task_delete(cdev->rx_task);
+
+	rtos_sema_delete(cdev->tx_sema);
+	rtos_sema_delete(cdev->rx_sema);
 
 	usbd_unregister_class();
 

@@ -243,6 +243,7 @@ _LONG_CALL_ void PLL_I2S_45P158M(u32 NewState);
 _LONG_CALL_ float PLL_I2S_98P304M_ClkTune(float ppm, u32 action);
 _LONG_CALL_ float PLL_I2S_45P158M_ClkTune(float ppm, u32 action);
 _LONG_CALL_ void PLL_NP_ClkSet(u32 PllClk);
+_LONG_CALL_ u32 PLL_NP_ClkGet(void);
 _LONG_CALL_ void PLL_NP(u32 NewState);
 _LONG_CALL_ void PLL_AP_ClkSet(u32 PllClk);
 _LONG_CALL_ void PLL_AP(u32 NewState);

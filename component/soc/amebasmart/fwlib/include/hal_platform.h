@@ -248,6 +248,7 @@
  *****************************************************************************/
 #define DDR_BASE                 0x60000000        /* ID:HSLV-2, Inter. Type:AXI-128, Top Address:0x6FFFFFFF, Size(KB):256M, Clk Domain:DDR_CLK */
 #define PSRAM_BASE               0x60000000        /* ID:HSLV-2, Inter. Type:AXI-32(psram_spic_automode), Top Address:0x6FFFFFFF, Size(KB):256M, Clk Domain:PSRAM_CLK */
+#define SRAM_BASE                0x20000000        /* ID:HSLV-3, Inter. Type:AXI-64, Top Address:0x20FFFFFF, Size(KB):16M, Clk Domain:HS_AXI_CLK */
 #define HP_SRAM0_BASE            0x20000000        /* ID:HSLV-3, Inter. Type:AXI-64, Top Address:0x20FFFFFF, Size(KB):16M, Clk Domain:HS_AXI_CLK */
 #define HP_SRAM_EXT_BASE         0x22000000        /* ID:HSLV-5, Inter. Type:AXI, Top Address:0x22FFFFFF, Size(KB):16M, Clk Domain:HS_APB_CLK */
 #define SPI_FLASH_CTRL_BASE      0x44000000        /* ID:HSLV-7, Inter. Type:AXI, Top Address:0x440FFFFF, Size(KB):1M, Clk Domain:SPIC_CLK */

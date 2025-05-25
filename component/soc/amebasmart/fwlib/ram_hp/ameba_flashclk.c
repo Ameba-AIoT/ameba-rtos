@@ -462,6 +462,7 @@ int flash_calibration_highspeed(u8 div)
 
 	/* SPIC clock switch to PLL */
 	FLASH_ClockDiv(div);
+	RTK_LOGI(TAG, "SPIC CLK: %d Hz\n", PLL_NP_ClkGet() / (div + 1));
 
 	if (_flash_calibration_highspeed(spic_mode, div) == TRUE) {
 		/* we should open calibration new first, and then set phase index */
@@ -480,7 +481,7 @@ int flash_calibration_highspeed(u8 div)
 		/* calibration fail, revert SPIC clock to XTAL */
 		RCC_PeriphClockSource_SPIC(BIT_LSYS_CKSL_SPIC_XTAL);
 
-		RTK_LOGE(TAG, "FLASH CALIB[0x%x FAIL]\n", div);
+		RTK_LOGE(TAG, "FLASH CALIB[0x%x FAIL, use XTAL]\n", div);
 
 		Ret = RTK_FAIL;
 	}
