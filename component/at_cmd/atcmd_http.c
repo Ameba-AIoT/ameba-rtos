@@ -593,6 +593,7 @@ int at_http_send_req_body(int total_post_body_size, struct httpc_conn *conn_ptr)
 	u8 *post_data_buffer = NULL;
 	int single_post_size = 0;
 	int error_no = 0;
+	int recv_tt_len = 0;
 
 	if (total_post_body_size > 0)  {
 		post_data_buffer = rtos_mem_zmalloc((total_post_body_size <= MAX_TT_BUF_LEN ? total_post_body_size : MAX_TT_BUF_LEN) + 1);
@@ -607,12 +608,13 @@ int at_http_send_req_body(int total_post_body_size, struct httpc_conn *conn_ptr)
 			goto end;
 		}
 		if (total_post_body_size <= MAX_TT_BUF_LEN)  {
-			if (atcmd_tt_mode_get(post_data_buffer, (u32)total_post_body_size) != total_post_body_size)  {
+			recv_tt_len = atcmd_tt_mode_get(post_data_buffer, (u32)total_post_body_size);
+			if (recv_tt_len == 0)  {
 				RTK_LOGI(AT_HTTP_TAG, "Get data failed in TT mode\r\n");
 				error_no = 5;
 				goto tt_end;
 			}
-			if (httpc_request_write_data(conn_ptr, (uint8_t *)post_data_buffer, (size_t)total_post_body_size) != total_post_body_size)  {
+			if (httpc_request_write_data(conn_ptr, (uint8_t *)post_data_buffer, (size_t)recv_tt_len) != recv_tt_len)  {
 				RTK_LOGI(AT_HTTP_TAG, "httpc_request_write_data() failed\r\n");
 				error_no = 6;
 				goto tt_end;
@@ -620,17 +622,18 @@ int at_http_send_req_body(int total_post_body_size, struct httpc_conn *conn_ptr)
 		} else  {
 			while (total_post_body_size > 0)  {
 				single_post_size = (total_post_body_size <= MAX_TT_BUF_LEN) ? total_post_body_size : MAX_TT_BUF_LEN;
-				if (atcmd_tt_mode_get(post_data_buffer, (u32)single_post_size) != single_post_size)  {
+				recv_tt_len = atcmd_tt_mode_get(post_data_buffer, (u32)single_post_size);
+				if (recv_tt_len == 0)  {
 					RTK_LOGI(AT_HTTP_TAG, "Get data failed in TT mode\r\n");
 					error_no = 5;
 					goto tt_end;
 				}
-				if (httpc_request_write_data(conn_ptr, (uint8_t *)post_data_buffer, (size_t)single_post_size) != single_post_size)  {
+				if (httpc_request_write_data(conn_ptr, (uint8_t *)post_data_buffer, (size_t)recv_tt_len) != recv_tt_len)  {
 					RTK_LOGI(AT_HTTP_TAG, "httpc_request_write_data() failed\r\n");
 					error_no = 6;
 					goto tt_end;
 				}
-				total_post_body_size -= single_post_size;
+				total_post_body_size -= recv_tt_len;
 			}
 		}
 

@@ -35,7 +35,7 @@ u32 flash_handshake_highspeed(u32 div)
 		Ret = FALSE;
 	}
 
-	RTK_LOGI(TAG, "FLASH HandShake[0x%x %s]\n", div, Ret ? "OK" : "FAIL");
+	RTK_LOGI(TAG, "FLASH HandShake[0x%x %s]\n", div, Ret ? "OK" : "FAIL, use XTAL");
 	return Ret;
 }
 
@@ -217,6 +217,8 @@ void flash_highspeed_setup(void)
 
 	spic_ckd = CLKDIV_ROUND_UP(pll_clk, SPIC_CLK_LIMIT) - 1;
 	flash_speed = MAX(flash_speed, spic_ckd);
+
+	RTK_LOGI(TAG, "SPIC CLK: %d Hz\n", pll_clk / (flash_speed + 1));
 
 	__disable_irq();
 

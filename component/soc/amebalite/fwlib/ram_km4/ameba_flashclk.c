@@ -74,7 +74,6 @@ int flash_handshake_highspeed(FlashDivInt_E div)
 		RTK_LOGI(TAG, "FLASH HandShake[0x%lx OK]\n", div);
 	} else {
 		RCC_PeriphClockSource_SPIC(BIT_LSYS_CKSL_SPIC_LBUS);
-
 		RTK_LOGE(TAG, "FLASH HandShake[0x%lx FAIL]\n", div);
 		Ret = RTK_FAIL;
 	}
@@ -302,6 +301,9 @@ void flash_highspeed_setup(void)
 
 	spic_ckd = CLKDIV_ROUND_UP(pllm_clk, SPIC_CLK_LIMIT) - 1;
 	flash_speed = MAX(flash_speed, spic_ckd);
+
+	RTK_LOGI(TAG, "SPIC CLK: %d Hz\n", pllm_clk / (flash_speed + 1));
+
 
 	__disable_irq();
 

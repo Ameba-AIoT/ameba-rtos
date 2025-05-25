@@ -55,6 +55,7 @@ menu "CONFIG Link Option"
             bool "FLASH"
         config IMG2_PSRAM
             bool "PSRAM"
+            select PSRAM_USED
     endchoice
 
     choice
@@ -64,6 +65,7 @@ menu "CONFIG Link Option"
             bool "SRAM"
         config DATA_HEAP_PSRAM
             bool "PSRAM"
+            select PSRAM_USED
     endchoice
 
     if TRUSTZONE_FOR_KM4
@@ -72,6 +74,7 @@ menu "CONFIG Link Option"
             default IMG3_PSRAM
             config IMG3_PSRAM
                 bool "PSRAM"
+                select PSRAM_USED
             config IMG3_SRAM
                 bool "SRAM"
         endchoice
@@ -81,6 +84,9 @@ menu "CONFIG Link Option"
         depends on !IMG2_PSRAM && !DATA_HEAP_PSRAM
         bool "ALL PSRAM USED FOR APPLICATION HEAP"
         default y
+
+    config PSRAM_USED
+        bool
 endmenu
 
 menu "CONFIG Mass Production"

@@ -235,6 +235,7 @@
  * @{
  *****************************************************************************/
 #define SPI_FLASH_BASE           0x08000000        /* ID:S1, Inter. Type:AXI4, Top Address:0xFFFFFFF, Size(KB):128M, Clk Domain:SPIC_CLK */
+#define SRAM_BASE                0x20000000        /* ID:S2, Inter. Type:AXI4, Top Address:0x2003FFFF, Size(KB):256K, Clk Domain:SRAM_CLK */
 #define HP_SRAM0_BASE            0x20000000        /* ID:S2, Inter. Type:AXI4, Top Address:0x2003FFFF, Size(KB):256K, Clk Domain:SRAM_CLK */
 #define HP_SRAM_EXT_BASE         0x22000000        /* ID:S4, Inter. Type:AXI4, Top Address:0x22FFFFFF, Size(KB):16M, Clk Domain:SRAM2_CLK */
 #define WIFI_REG_BASE            0x40000000        /* ID:S5-0, Inter. Type:AHB, Top Address:0x4007FFFF, Size(KB):512K, Clk Domain:PERI_HCLK */
