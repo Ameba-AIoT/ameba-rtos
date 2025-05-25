@@ -68,6 +68,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.rtw_trp_tis_cert_en = RTW_TRP_TIS_DISABLE;
 	wifi_user_config.rtw_edcca_mode = RTW_EDCCA_NORM;
 	wifi_user_config.antdiv_mode = RTW_ANTDIV_DISABLE;
+	wifi_user_config.probe_hidden_ap_on_passive_ch = 1;
 
 	/* IPS(Inactive Power Save), power save when wifi unconnected */
 	wifi_user_config.ips_enable = 1;

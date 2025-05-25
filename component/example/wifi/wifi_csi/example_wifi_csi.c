@@ -166,7 +166,7 @@ void wifi_csi_show(u8 *csi_buf)
 
 void example_wifi_csi(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"wifi_csi_thread"), wifi_csi_thread, NULL, 1024 * 4, 0) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"wifi_csi_thread"), wifi_csi_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGA(NOTAG, "\n\r%s rtos_task_create(wifi_csi_thread) failed", __FUNCTION__);
 	}
 
