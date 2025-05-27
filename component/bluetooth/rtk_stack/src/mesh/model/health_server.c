@@ -304,10 +304,7 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
 #if MODEL_ENABLE_DELAY_MSG_RSP
             delay_rsp_time = delay_msg_get_rsp_delay(pmesh_msg->dst);
 #endif
-			/**
-             * RTK porting
-			 * Add a method to get data from app layer
-			*/
+			// RTK porting:Add a method to get data from app layer
 			health_server_attn_t attn_value;
 			if (NULL != pmodel_info->model_data_cb) {
 				pmodel_info->model_data_cb(pmodel_info, HEALTH_SERVER_GET_ATTENTION, &attn_value);
@@ -350,10 +347,7 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
 #if MODEL_ENABLE_DELAY_MSG_RSP
             delay_rsp_time = delay_msg_get_rsp_delay(pmesh_msg->dst);
 #endif
-			/**
-             * RTK porting
-			 * Add a method to get data from app layer
-			*/
+			// RTK porting:Add a method to get data from app layer
 			health_server_period_t period_value;
 			if (NULL != pmodel_info->model_data_cb) {
 				pmodel_info->model_data_cb(pmodel_info, HEALTH_SERVER_GET_PERIOD, &period_value);
@@ -377,10 +371,7 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
 #if MODEL_ENABLE_DELAY_MSG_RSP
                     delay_rsp_time = delay_msg_get_rsp_delay(pmesh_msg->dst);
 #endif
-				/**
-                 * RTK porting
-				 * Add a method to indicate app layer
-				*/
+				// RTK porting:Add a method to indicate app layer
 				health_server_period_t period_value;
 				period_value.fast_period_divisor = pmsg->fast_period_divisor;
 				if (NULL != pmodel_info->model_data_cb) {
@@ -402,10 +393,7 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
 #if MODEL_ENABLE_DELAY_MSG_RSP
                 delay_rsp_time = delay_msg_get_rsp_delay(pmesh_msg->dst);
 #endif
-				/**
-                 * RTK porting
-				 * Add a method to get data from and indicate app layer
-				*/
+				// RTK porting:Add a method to get data from and indicate app layer
 				health_server_fault_get_t fault_status;
 				fault_status.company_id = pmsg->company_id;
 				if (NULL != pmodel_info->model_data_cb) {
@@ -433,10 +421,7 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
 #if MODEL_ENABLE_DELAY_MSG_RSP
                     delay_rsp_time = delay_msg_get_rsp_delay(pmesh_msg->dst);
 #endif
-					/**
-                     * RTK porting
-					 * Add a method to get data from and indicate app layer
-					*/
+					// RTK porting:Add a method to get data from and indicate app layer
 					health_server_fault_clear_t fault_status;
 					fault_status.company_id = pmsg->company_id;
 					if (NULL != pmodel_info->model_data_cb) {
@@ -483,10 +468,7 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
                                           phealth_info->registered_faults, delay_rsp_time);
                     }
                 }
-				/**
-                 * RTK porting
-				 * Add a method to get data from and indicate app layer
-				*/
+				// RTK porting:Add a method to get data from and indicate app layer
 				health_server_fault_test_t fault_status;
 				fault_status.company_id = pmsg->company_id;
 				fault_status.test_id = pmsg->test_id;

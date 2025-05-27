@@ -21,7 +21,6 @@
 #include "mesh_api.h"
 #include "proxy_client.h"
 // RTK porting:do not need include this file
-// #include "dfu_client.h"
 #include "ping.h"
 #include "tp.h"
 #include "firmware_distribution.h"
@@ -244,12 +243,12 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
 #endif
     return USER_CMD_RESULT_OK;
 }
+
 #else
 // RTK porting:for report cmd list info event
 #define USER_CMD_LIST_MAX_LEN    1024
 // max of user cmd list for provisioner : 190 + N(provisioned device num)*24 + 2(IPC align)
 // Provisioner list info len with 20 device : 190+20*24 + 2 = 672 bytes
-
 static void copy_data_to_memory_byte_by_byte(uint32_t val, uint8_t *p, uint8_t data_len)
 {
 	// Copy a val to memory using little endian
@@ -1274,10 +1273,8 @@ user_cmd_parse_result_t user_cmd_df_path_solicitation(user_cmd_parse_value_t *pp
 user_cmd_parse_result_t user_cmd_df_path_dependents_update(user_cmd_parse_value_t *pparse_value)
 {
 #if F_BT_MESH_1_1_DF_SUPPORT
-    mesh_addr_range_t addr_range = unicast_addr_range_transform(true, pparse_value->dw_parameter[2],
-                                                                pparse_value->dw_parameter[3]);
     df_path_dependents_update(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
-                              &addr_range);
+                              pparse_value->dw_parameter[2], pparse_value->dw_parameter[3]);
 #endif
     return USER_CMD_RESULT_OK;
 }

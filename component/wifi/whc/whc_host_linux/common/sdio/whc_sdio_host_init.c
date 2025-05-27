@@ -247,7 +247,7 @@ static void rtw_sdio_init_interrupt(struct whc_sdio *priv)
 
 }
 
-static u32 rtw_sdio_enable_func(struct whc_sdio *priv)
+u32 rtw_sdio_enable_func(struct whc_sdio *priv)
 {
 	struct sdio_func *func = priv->func;
 	int err;
@@ -287,6 +287,7 @@ u32 rtw_sdio_init(struct whc_sdio *priv)
 	if (rtw_sdio_enable_func(priv) == false) {
 		return false;
 	}
+
 #ifdef CONFIG_FW_DOWNLOAD
 	/* image download, amebadplus not support yet */
 	if (rtw_sdio_firmware_download(priv, true) == true) {

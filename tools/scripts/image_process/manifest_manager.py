@@ -142,7 +142,8 @@ class ManifestManager(ABC):
         if 'image3' in self.new_json_data.keys():
             self.image3 = ManifestImageConfig.create(self.new_json_data['image3'])
         else:
-            self.image3 = None
+            context.logger.info(f"manifest file does not contains image3, will use image2 config for image3")
+            self.image3 = self.image2
         self.cert = ManifestImageConfig.create(self.new_json_data['cert'])
 
     def validate_config(self, data:Union[str, dict]) -> bool:
@@ -272,7 +273,7 @@ class ManifestManager(ABC):
             # gen signature
             self.sboot.HmacKey = self.image2.hmac_key
             self.sboot.HmacKeyLen = len(self.image2.hmac_key) // 2
-            ret = self.sboot.gen_signature(cert.AuthAlg, self.cer.private_key, cert.SBPubKey, cert, cert.TableSize, cert.Signature)
+            ret = self.sboot.gen_signature(cert.AuthAlg, self.cert.private_key, cert.SBPubKey, cert, cert.TableSize, cert.Signature)
             if ret != 0:
                 return Error(ErrorType.UNKNOWN_ERROR, f"self.sboot gen signature failed: {ret}")
 

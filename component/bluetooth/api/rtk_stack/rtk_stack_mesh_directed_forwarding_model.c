@@ -108,8 +108,7 @@ uint16_t bt_mesh_directed_forwarding_common_act_handle(rtk_bt_cmd_t *p_cmd)
 	}
 	case RTK_BT_MESH_DF_PATH_DEPENDENTS_UPDATE: {
 		rtk_bt_mesh_df_act_df_path_dependents_update_t *path_update = (rtk_bt_mesh_df_act_df_path_dependents_update_t *)p_cmd->param;
-		mesh_addr_range_t addr_range = unicast_addr_range_transform(true, path_update->dependent_addr, path_update->dependent_elem_num);
-		df_path_dependents_update(path_update->type, path_update->endpoint_addr, &addr_range);
+		df_path_dependents_update(path_update->type, path_update->endpoint_addr, path_update->dependent_addr, path_update->dependent_elem_num);
 		ret = RTK_BT_MESH_MSG_SEND_CAUSE_SUCCESS;
 		break;
 	}

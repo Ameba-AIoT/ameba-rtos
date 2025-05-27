@@ -73,7 +73,7 @@ def main():
 
     res = operator.process()
     if res:
-        context.logger.fatal('operation process failed: {args.operation}, {res}')
+        context.logger.fatal(f'operation process failed: {args.operation}, {res}')
         sys.exit(1)
 
     res = operator.post_process()

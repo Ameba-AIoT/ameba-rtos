@@ -2389,6 +2389,188 @@ typedef struct {
 } rtk_bt_le_gap_pawr_sync_subevent_t;
 #endif /* RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT */
 
+/**
+ * @typedef   rtk_bt_le_dtm_rx_version_t
+ * @brief     Receiver test version.
+ */
+typedef enum {
+	RTK_BT_LE_DTM_RX_VERSION_V1 = 0x01,    /**< Version 1. */
+	RTK_BT_LE_DTM_RX_VERSION_V2 = 0x02,    /**< Version 2. */
+	RTK_BT_LE_DTM_RX_VERSION_V3 = 0x03,    /**< Version 3. */
+} rtk_bt_le_dtm_rx_version_t;
+
+/**
+ * @typedef   rtk_bt_le_dtm_tx_version_t
+ * @brief     Transmitter test version.
+ */
+typedef enum {
+	RTK_BT_LE_DTM_TX_VERSION_V1 = 0x01,    /**< Version 1. */
+	RTK_BT_LE_DTM_TX_VERSION_V2 = 0x02,    /**< Version 2. */
+	RTK_BT_LE_DTM_TX_VERSION_V3 = 0x03,    /**< Version 3. */
+	RTK_BT_LE_DTM_TX_VERSION_V4 = 0x04,    /**< Version 4. */
+} rtk_bt_le_dtm_tx_version_t;
+
+/**
+ * @typedef   rtk_bt_le_dtm_phy_rx_t
+ * @brief     Bluetooth LE PHY type for receiver.
+ */
+typedef enum {
+	RTK_BT_LE_DTM_RX_PHYS_1M       = 0x01,    /**< LE PHY 1M used. */
+	RTK_BT_LE_DTM_RX_PHYS_2M       = 0x02,    /**< LE PHY 2M used. */
+	RTK_BT_LE_DTM_RX_PHYS_CODED    = 0x03,    /**< LE Coded PHY used. */
+} rtk_bt_le_dtm_phy_rx_t;
+
+/**
+ * @typedef   rtk_bt_le_dtm_phy_tx_t
+ * @brief     Bluetooth LE PHY type for transmitter.
+ */
+typedef enum {
+	RTK_BT_LE_DTM_TX_PHYS_1M          = 0x01,    /**< LE PHY 1M used. */
+	RTK_BT_LE_DTM_TX_PHYS_2M          = 0x02,    /**< LE PHY 2M used. */
+	RTK_BT_LE_DTM_TX_PHYS_CODED_S8    = 0x03,    /**< LE Coded PHY with S=8 data coding used. */
+	RTK_BT_LE_DTM_TX_PHYS_CODED_S2    = 0x04,    /**< LE Coded PHY with S=2 data coding used. */
+} rtk_bt_le_dtm_phy_tx_t;
+
+/**
+ * @typedef   rtk_bt_le_dtm_mod_idx_t
+ * @brief     Assume transmitter will have a certain type of modulation index.
+ */
+typedef enum {
+	RTK_BT_LE_DTM_MODULATION_INDEX_STANDARD   = 0x00,    /**< Standard modulation index. */
+	RTK_BT_LE_DTM_MODULATION_INDEX_STABLE     = 0x01,    /**< Stable modulation index. */
+} rtk_bt_le_dtm_mod_idx_t;
+
+/**
+ * @typedef   rtk_bt_le_dtm_cte_type_t
+ * @brief     Constant Tone Extension type.
+ */
+typedef enum {
+	RTK_BT_LE_DTM_CTE_TYPE_AOA                = 0x00,    /**< AoA Constant Tone Extension. */
+	RTK_BT_LE_DTM_CTE_TYPE_AOD_1US_SLOT       = 0x01,    /**< AoD Constant Tone Extension with 1 us slots. */
+	RTK_BT_LE_DTM_CTE_TYPE_AOD_2US_SLOT       = 0x02,    /**< AoD Constant Tone Extension with 2 us slots. */
+} rtk_bt_le_dtm_cte_type_t;
+
+/**
+ * @typedef   rtk_bt_le_dtm_slot_durations_t
+ * @brief     Switching and sampling slot duration type.
+ */
+typedef enum {
+	RTK_BT_LE_DTM_SLOT_DURATIONS_SWITCH_SAMPLE_1US    = 0x01,    /**< Switching and sampling slots are 1 us each. */
+	RTK_BT_LE_DTM_SLOT_DURATIONS_SWITCH_SAMPLE_2US    = 0x02,    /**< Switching and sampling slots are 2 us each. */
+} rtk_bt_le_dtm_slot_durations_t;
+
+/**
+ * @typedef   rtk_bt_le_dtm_packet_payload_t
+ * @brief     Transmitted packet payload type.
+ */
+typedef enum {
+	RTK_BT_LE_DTM_PACKET_PAYLOAD_PRBS9    = 0x00,    /**< PRBS9 sequence '11111111100000111101' (in transmission order). */
+	RTK_BT_LE_DTM_PACKET_PAYLOAD_1100     = 0x01,    /**< Repeated '11110000' (in transmission order) sequence. */
+	RTK_BT_LE_DTM_PACKET_PAYLOAD_10       = 0x02,    /**< Repeated '10101010' (in transmission order) sequence. */
+	RTK_BT_LE_DTM_PACKET_PAYLOAD_PRBS15   = 0x03,    /**< PRBS15 sequence. */
+	RTK_BT_LE_DTM_PACKET_PAYLOAD_ALL1     = 0x04,    /**< Repeated '11111111' (in transmission order) sequence. */
+	RTK_BT_LE_DTM_PACKET_PAYLOAD_ALL0     = 0x05,    /**< Repeated '00000000' (in transmission order) sequence. */
+	RTK_BT_LE_DTM_PACKET_PAYLOAD_0011     = 0x06,    /**< Repeated '00001111' (in transmission order) sequence. */
+	RTK_BT_LE_DTM_PACKET_PAYLOAD_01       = 0x07,    /**< Repeated '01010101' (in transmission order) sequence. */
+} rtk_bt_le_dtm_packet_payload_t;
+
+/**
+ * @struct    rtk_bt_le_dtm_rx_param_t
+ * @brief     Bluetooth LE receiver test parameters.
+ */
+
+typedef struct {
+	/**
+	 * Channel to receive packets.
+	 * Range: 0x00 - 0x27.
+	 * Frequency Range: 2402 - 2480 MHz.
+	 */
+	uint8_t rx_channel;
+	/** PHY used by the receiver: @ref rtk_bt_le_dtm_phy_rx_t. */
+	rtk_bt_le_dtm_phy_rx_t phy;
+	/** Modulation index to receive packets: @ref rtk_bt_le_dtm_mod_idx_t. */
+	rtk_bt_le_dtm_mod_idx_t mod_idx;
+	/**
+	 * Expected length of the Constant Tone Extensions in received test reference packets.
+	 * Range: 0x00 (No Constant Tone Extension expected (default)) or 0x02 to 0x14.
+	 * Units: 8 us.
+	 */
+	uint8_t exp_cte_len;
+	/**
+	 * Expected type of the Constant Tone Extensions in received test reference
+	 * packets: @ref rtk_bt_le_dtm_cte_type_t.
+	 */
+	rtk_bt_le_dtm_cte_type_t exp_cte_type;
+	/**
+	 * Slot durations to receive packets and shall be ignored when exp_cte_type is not set
+	 * to RTK_BT_LE_DTM_CTE_TYPE_AOA: @ref rtk_bt_le_dtm_slot_durations_t.
+	 */
+	rtk_bt_le_dtm_slot_durations_t slot_durations;
+	/**
+	 * The number of Antenna IDs in the pattern and shall be ignored when exp_cte_type
+	 * is not set to RTK_BT_LE_DTM_CTE_TYPE_AOA.
+	 * Range: 0x02 to max_switching_pattern_length supported by controller,
+	 * max_switching_pattern_length shall be less than or equal to 0x4B.
+	 */
+	uint8_t sw_pattern_len;
+	/**
+	 * Antenna ID in the pattern and shall be ignored when exp_cte_type is not set
+	 * to RTK_BT_LE_DTM_CTE_TYPE_AOA.
+	 */
+	uint8_t *p_antenna_ids;
+} rtk_bt_le_dtm_rx_param_t;
+
+/**
+ * @struct    rtk_bt_le_dtm_tx_param_t
+ * @brief     Bluetooth LE transmitter test paramters.
+ */
+
+typedef struct  {
+	/**
+	 * Channel to transmit packets.
+	 * Range: 0x00 - 0x27.
+	 * Frequency Range: 2402 - 2480 MHz.
+	 */
+	uint8_t tx_channel;
+	/** Length in bytes of payload data in each packet. */
+	uint8_t data_len;
+	/** Contents of the payload of the test reference packets: @ref rtk_bt_le_dtm_packet_payload_t. */
+	rtk_bt_le_dtm_packet_payload_t pkt_pl;
+	/** PHY used by the transmitter: @ref rtk_bt_le_dtm_phy_tx_t. */
+	rtk_bt_le_dtm_phy_tx_t phy;
+	/**
+	 * Length of the Constant Tone Extensions in transmitted test reference packets.
+	 * Range: 0x00 (No Constant Tone Extension expected (default)) or 0x02 to 0x14.
+	 * Units: 8 us.
+	 */
+	uint8_t cte_len;
+	/**
+	 * Type of the Constant Tone Extensions in transmitted test reference
+	 * packets: @ref rtk_bt_le_dtm_cte_type_t.
+	 */
+	rtk_bt_le_dtm_cte_type_t cte_type;
+	/**
+	 * The number of Antenna IDs in the pattern and shall be ignored when cte_type
+	 * is set to RTK_BT_LE_DTM_CTE_TYPE_AOA.
+	 * Range: 0x02 to max_switching_pattern_length supported by controller,
+	 * max_switching_pattern_length shall be less than or equal to 0x4B.
+	 */
+	uint8_t sw_pattern_len;
+	/**
+	 * Antenna ID in the pattern and shall be ignored when cte_type is set
+	 * to RTK_BT_LE_DTM_CTE_TYPE_AOA.
+	 */
+	uint8_t *p_antenna_ids;
+	/**
+	 * Set transmitter to the specified or the nearest transmit power level.
+	 * Range: 0xXX Set transmitter to the specified or the nearest transmit power level from -127 to +20.
+	 *             Units: dBm.
+	 *        0x7E Set transmitter to minimum transmit power level.
+	 *        0x7F Set transmitter to maximum transmit power level.
+	 */
+	int8_t tx_power_level;
+} rtk_bt_le_dtm_tx_param_t;
+
 /********************************* Functions Declaration *******************************/
 /**
  * @defgroup  bt_le_gap BT LE GAP APIs
@@ -3400,6 +3582,35 @@ uint16_t rtk_bt_le_gap_coc_disconnect(uint16_t cid);
  */
 uint16_t rtk_bt_le_gap_coc_send_data(uint16_t cid, uint16_t len, uint8_t *data);
 #endif /* RTK_BLE_COC_SUPPORT */
+
+/**
+ * @brief     Set BLE receiver test parameters and start
+ * @param[in] p_rx_test_param: BLE receiver test parameters
+ * @param[in] rx_version:      BLE receiver test version
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_gap_dtm_rx_test(rtk_bt_le_dtm_rx_param_t *p_rx_param, rtk_bt_le_dtm_rx_version_t rx_version);
+
+/**
+ * @brief     Set BLE transmitter test parameters and start
+ * @param[in] p_tx_test_param: BLE transmitter test parameters
+ * @param[in] tx_version:      BLE transmitter test version
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_gap_dtm_tx_test(rtk_bt_le_dtm_tx_param_t *p_tx_param, rtk_bt_le_dtm_tx_version_t tx_version);
+
+/**
+ * @brief     Set BLE receiver or transmitter end and report number of test packets received
+ * @param[out] p_num_pkts: Pointer of number of test packets received
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_gap_dtm_end(uint16_t *p_num_pkts);
 
 /**
  * @}

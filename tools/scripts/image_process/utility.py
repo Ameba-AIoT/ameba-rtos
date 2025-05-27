@@ -172,7 +172,11 @@ def parse_project_info(path:str) -> dict:
         file_body = os.path.splitext(os.path.basename(path))[0]
         if 'all' in file_body and ('image2' in file_body or 'image3' in file_body):
             if mcu_project not in file_body:
-                default_logger.warning(f"File maybe not in right location: file name: {file_body}, mcu project from path: {mcu_project}")
+                mcu_dicts = {'ap': 'ca32', 'hp': 'km4', 'lp': 'km0'}
+                if mcu_project in mcu_dicts.keys() and mcu_dicts[mcu_project] in file_body:
+                    pass
+                else:
+                    default_logger.warning(f"File maybe not in right location: file name: {os.path.basename(path)}, mcu project from path: {mcu_project}")
         # if mcu_project in os.path.splitext(os.path.basename(path))[0].split(' '):
 
     mcu_type = mcu_project_to_mcu_type(mcu_project, default='' if mcu_project == '' else None)

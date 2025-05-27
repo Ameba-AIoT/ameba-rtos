@@ -286,7 +286,7 @@ class FirmwarePackage(OperationBase):
         # ├───────────────────────────────┤
         # │ proj2: image3_all_all.bin     │  <- optional(only when image3 enabled)
         # ├───────────────────────────────┤
-        # │ proj3: image2_all_en.bin      │  <- optional(only when proj3:image2 enabled)
+        # │ proj3: image3_all_all.bin     │  <- optional(only when proj3:image2 enabled)
         # └───────────────────────────────┘
 
         #Step1: create encrypt file and manifest/cert file
@@ -294,7 +294,7 @@ class FirmwarePackage(OperationBase):
         if os.path.exists(tmp_manifest_source_file): os.remove(tmp_manifest_source_file)
 
         for img2 in self.context.args.image2:
-            tmp_en_file_name = modify_file_path(img2, suffix='_en2')             #encrypted file
+            tmp_en_file_name = modify_file_path(img2, suffix='_en')             #encrypted file
             self.encrypt_and_update_manifest_source(img2, ImageType.IMAGE2, tmp_en_file_name, tmp_manifest_source_file)
 
             if self.context.args.image3:
@@ -325,15 +325,18 @@ class FirmwarePackage(OperationBase):
         else:
             img3_gcm_enable = img3_manifest_config.rsip_en and img3_manifest_config.rsip_mode == 2
 
+        tmp_ns_file_name = modify_file_path(self.output_file, suffix='_ns')# non-secure app file
+        merge_files(tmp_ns_file_name, cert_file_name, manifest_file_name)  # merge_files api will overwrite output_file file
         merge_files(self.output_file, cert_file_name, manifest_file_name)  # merge_files api will overwrite output_file file
 
         for img2 in self.context.args.image2:
-            tmp_en_file_name = modify_file_path(img2, suffix='_en2')             #encrypted file
+            tmp_en_file_name = modify_file_path(img2, suffix='_en')             #encrypted file
 
             if img2_gcm_enable:
                 tmp_gcm_prepend_file_name = modify_file_path(tmp_en_file_name, suffix='_tag_prepend')
                 append_files(self.output_file, tmp_gcm_prepend_file_name)
             append_files(self.output_file, tmp_en_file_name)
+            append_files(tmp_ns_file_name, img2)
 
             if self.context.args.image3:
                 #WARNING: Here image3's file path is used to determine which image2 it should be packaged behind during the packaging process
@@ -345,6 +348,7 @@ class FirmwarePackage(OperationBase):
                         tmp_gcm_prepend_file_name = modify_file_path(tmp_en_file_name, suffix='_tag_prepend')
                         append_files(self.output_file, tmp_gcm_prepend_file_name)
                     append_files(self.output_file, tmp_en_file_name)
+                    append_files(tmp_ns_file_name, self.context.args.image3)
         return Error.success()
 
     def process_fullmac_image1(self) -> Error:
@@ -430,8 +434,7 @@ class FirmwarePackage(OperationBase):
         elif manifest_config.rdp_en:
             Rdp.execute(self.context, tmp_en_file_name, input_file, 'enc', ImageType.IMAGE1)
         else:
-            self.logger.warning("Both rsip and rdp are not enabled")
+            self.logger.warning(f"Both rsip and rdp are not enabled for {image_type.name.lower()}")
             shutil.copy(input_file, tmp_en_file_name)
-
         append_files(manifest_source_file, input_file)
         return Error.success()

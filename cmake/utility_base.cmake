@@ -329,6 +329,39 @@ macro(ameba_normalize_path output_path input_path)
         get_filename_component(${output_path} ${${output_path}} ABSOLUTE)
     endif()
 endmacro()
+
+function(modify_file_path original_path output_var)
+    set(oneValueArgs
+        p_PREFIX
+        p_BODY
+        p_SUFFIX
+        p_NEW_DIRECTORY
+    )
+    cmake_parse_arguments(ARG "" "BODY;PREFIX;SUFFIX;NEW_DIRECTORY" "" ${ARGN})
+
+    get_filename_component(original_directory "${original_path}" DIRECTORY)
+    get_filename_component(filename "${original_path}" NAME)
+
+    get_filename_component(name "${filename}" NAME_WE)
+    get_filename_component(ext "${filename}" EXT)
+
+    if(ARG_BODY)
+        set(new_name "${ARG_BODY}")
+    else()
+        set(new_name "${name}")
+    endif()
+
+    set(new_filename "${ARG_PREFIX}${new_name}${ARG_SUFFIX}${ext}")
+
+    if(ARG_NEW_DIRECTORY)
+        set(output_directory "${ARG_NEW_DIRECTORY}")
+    else()
+        set(output_directory "${original_directory}")
+    endif()
+
+    set(new_path "${output_directory}/${new_filename}")
+    set(${output_var} "${new_path}" PARENT_SCOPE)
+endfunction()
 ########################################################################################################
 # Usage:
 #   ameba_build_info_gen(<output> <var> [<value> ...] [p_LIB_NAME <libname>])
@@ -1056,12 +1089,86 @@ endfunction()
 # Usage:
 #   ameba_execute([<cmd> ...])
 function(ameba_execute_process)
-    list(FIND ARGN "COMMAND_ERROR_IS_FATAL" COMMAND_ERROR_IS_FATAL_INDEX)
-    if(COMMAND_ERROR_IS_FATAL_INDEX EQUAL -1)
-        execute_process(COMMAND_ERROR_IS_FATAL ANY ${ARGN})
-    else()
-        execute_process(${ARGN})
+    execute_process(${ARGN}
+        RESULT_VARIABLE RESULT
+        RESULTS_VARIABLE RESULTS
+        OUTPUT_VARIABLE OUTPUT
+        ERROR_VARIABLE ERROR
+    )
+
+    set(COMMAND_FAILED FALSE)
+    set(COMMAND_FAILED_CODE FALSE)
+    foreach(RES ${RESULTS})
+        if(NOT RES EQUAL 0)
+            set(COMMAND_FAILED TRUE)
+            set(COMMAND_FAILED_CODE ${RES})
+            break()
+        endif()
+    endforeach()
+
+    if(COMMAND_FAILED)
+        message(STATUS "Command >>${ARGN}<< failed with result: ${COMMAND_FAILED_CODE}")
+        message(STATUS "Command output: \n${OUTPUT}")
+        message(FATAL_ERROR "Command error: \n${ERROR}")
     endif()
+endfunction()
+
+function(ameba_axf2bin_pad input_file length)
+    ameba_execute_process(COMMAND ${op_PAD}
+        -i ${input_file}
+        -l ${length}
+    )
+endfunction()
+
+function(ameba_axf2bin_prepend_head output_file input_file symbol map_file)
+    set(oneValueArgs
+        p_BOOT_INDEX
+    )
+    cmake_parse_arguments(ARG "" "${oneValueArgs}" "" ${ARGN})
+    if (ARG_p_BOOT_INDEX)
+        ameba_execute_process(COMMAND ${op_PREPEND_HEADER}
+            -o ${output_file}
+            -i ${input_file}
+            -s ${symbol}
+            -m ${map_file}
+            --boot-index ${ARG_p_BOOT_INDEX}
+        )
+    else()
+        ameba_execute_process(COMMAND ${op_PREPEND_HEADER}
+            -o ${output_file}
+            -i ${input_file}
+            -s ${symbol}
+            -m ${map_file}
+        )
+    endif()
+endfunction()
+
+
+function(ameba_axf2bin_fw_pack output_file)
+    set(oneValueArgs
+        p_IMAGE1
+        p_IMAGE3
+        p_FULLMAC_IMAGE1
+        p_FULLMAC_IMAGE2
+        p_IMAGE_IMGTOOL_FLOADER
+    )
+    set(multiValueArgs
+        p_IMAGE2
+    )
+    cmake_parse_arguments(ARG "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    set(full_args -o ${output_file})
+
+    ameba_list_append_if(ARG_p_IMAGE1 full_args --image1 ${ARG_p_IMAGE1})
+    ameba_list_append_if(ARG_p_IMAGE2 full_args --image2 ${ARG_p_IMAGE2})
+    ameba_list_append_if(ARG_p_IMAGE3 full_args --image3 ${ARG_p_IMAGE3})
+    ameba_list_append_if(ARG_p_FULLMAC_IMAGE1 full_args --fullmac-image1 ${ARG_p_FULLMAC_IMAGE1})
+    ameba_list_append_if(ARG_p_FULLMAC_IMAGE2 full_args --fullmac-image2 ${ARG_p_FULLMAC_IMAGE2})
+    ameba_list_append_if(ARG_p_IMAGE_IMGTOOL_FLOADER full_args --imgtool-floader ${p_IMAGE_IMGTOOL_FLOADER})
+
+    ameba_execute_process(COMMAND ${op_FW_PACKAGE}
+        ${full_args}
+    )
 endfunction()
 
 # get all include directories of target recursively.

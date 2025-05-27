@@ -34,7 +34,7 @@ class Context(ABC):
             self.manifest_data = json5.load(f)
 
         self.layout_file = ''
-        for name in ['ameba_layout.ld', f'ameba{self.soc_project}_layout.ld', f'ameba{self.soc_project.capitalize()}_layout.ld']:
+        for name in ['ameba_layout.ld', f'{self.soc_project}_layout.ld', f'{self.soc_project.capitalize()}_layout.ld']:
             #FIXME: Uniform these name please!!
             layout_file = os.path.join(self.soc_dir, name)
             if os.path.exists(layout_file):

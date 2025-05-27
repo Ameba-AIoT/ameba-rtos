@@ -29,15 +29,15 @@ u32 SDIOH_Busy(void)
 			if ((psdioh->SD_TRANSFER & SDIOH_SD_MODULE_FSM_IDLE)) {
 				return HAL_OK;
 			} else {
-				RTK_LOGW(TAG, "SD card module state machine isn't in the idle state !\r\n");
+				RTK_LOGS(TAG, RTK_LOG_WARN, "SD card module state machine isn't in the idle state !\r\n");
 				return HAL_BUSY;
 			}
 		} else {
-			RTK_LOGW(TAG, "CMD or DATA state machine isn't in the idle state !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_WARN, "CMD or DATA state machine isn't in the idle state !!\r\n");
 			return HAL_BUSY;
 		}
 	} else {
-		RTK_LOGW(TAG, "CMD or DAT[3:0] pin isn't in the idle state !!\r\n");
+		RTK_LOGS(TAG, RTK_LOG_WARN, "CMD or DAT[3:0] pin isn't in the idle state !!\r\n");
 		return HAL_BUSY;
 	}
 }
@@ -109,7 +109,7 @@ u32 SDIOH_WaitDMADone(u32 timeout_us)
 
 		if (sd_sema_take_fn(MAX(timeout_us / 1000, SD_SEMA_MAX_DELAY)) != RTK_SUCCESS) {
 			SDIOH_INTConfig(SDIOH_DMA_CTL_INT_EN, DISABLE);
-			RTK_LOGE(TAG, " SD Get Semaphore Timeout\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, " SD Get Semaphore Timeout\r\n");
 			return HAL_TIMEOUT;
 		}
 
