@@ -751,6 +751,26 @@ static uint16_t bt_stack_br_gap_set_sniff_mode(void *param)
 	}
 }
 
+static uint16_t bt_stack_br_gap_set_link_qos(void *param)
+{
+	rtk_bt_br_link_qos_t *p_data_t = NULL;
+
+	if (!param) {
+		BT_LOGE("%s fail: param error\r\n", __func__);
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	p_data_t = (rtk_bt_br_link_qos_t *)param;
+
+	/* bt_link_qos_set use 1250us as unit, so tpoll need to divide 2 */
+	if (!bt_link_qos_set(p_data_t->bd_addr, (T_BT_QOS_TYPE)p_data_t->type, p_data_t->tpoll / 2)) {
+		BT_LOGE("bt_link_qos_set: fail \r\n");
+		return 1;
+	}
+
+	return 0;
+}
+
 uint16_t bt_stack_br_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = 0;
@@ -855,6 +875,11 @@ uint16_t bt_stack_br_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_BR_GAP_ACT_SET_SNIFF_MODE:
 		BT_LOGD("RTK_BT_BR_GAP_ACT_SET_SNIFF_MODE \r\n");
 		ret = bt_stack_br_gap_set_sniff_mode(p_cmd->param);
+		break;
+
+	case RTK_BT_BR_GAP_ACT_SET_LINK_QOS:
+		BT_LOGD("RTK_BT_BR_GAP_ACT_SET_LINK_QOS \r\n");
+		ret = bt_stack_br_gap_set_link_qos(p_cmd->param);
 		break;
 
 	default:

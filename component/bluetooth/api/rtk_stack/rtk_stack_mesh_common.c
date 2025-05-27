@@ -1098,7 +1098,7 @@ static void rtk_bt_mesh_stack_init(void *data)
 		mesh_node.ttl = mesh_app_conf->ttl;
 	}
 
-	// Set mesh FTL size for user,if not,use the default 1800 bytes
+	// Set mesh FTL size for user,if not,use the default 3000 bytes
 	if (mesh_app_conf->bt_mesh_flash_size) {
 		mesh_node.flash_size = mesh_app_conf->bt_mesh_flash_size;
 	}
@@ -1177,7 +1177,7 @@ static uint8_t rtk_bt_mesh_save_info(void *data)
 	}
 #endif
 	if ((RTK_BT_MESH_ROLE_PROVISIONER != mesh_app_conf->bt_mesh_role) && (RTK_BT_MESH_ROLE_DEVICE != mesh_app_conf->bt_mesh_role)) {
-		BT_LOGE("[%s] Unkown mesh role:%d\r\n", __func__, mesh_app_conf->bt_mesh_role);
+		BT_LOGE("[%s] Unknown mesh role:%d\r\n", __func__, mesh_app_conf->bt_mesh_role);
 		return RTK_BT_MESH_STACK_API_FAIL;
 	}
 	return 0;

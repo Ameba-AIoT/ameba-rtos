@@ -213,7 +213,7 @@ extern "C"
  * Error Platform
  */
 #else
-#error "Please choose a corret platform"
+#error "Please choose a correct platform"
 #endif
 
 #if (defined(RTK_BLE_5_2_SUPPORT) && RTK_BLE_5_2_SUPPORT)
@@ -283,12 +283,12 @@ extern "C"
 #if (defined(CONFIG_BT_ISO_TEST) && CONFIG_BT_ISO_TEST) && (defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT) && \
     ((!defined(RTK_BLE_5_0_AE_ADV_SUPPORT) || !RTK_BLE_5_0_AE_ADV_SUPPORT) || (!defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) || !RTK_BLE_5_0_AE_SCAN_SUPPORT) || \
      (!defined(RTK_BLE_5_0_PA_ADV_SUPPORT) || !RTK_BLE_5_0_PA_ADV_SUPPORT) || (!defined(RTK_BLE_5_0_PA_SYNC_SUPPORT) || !RTK_BLE_5_0_PA_SYNC_SUPPORT))
-#error "Please enable AE, AE Scan, PA, PA Sync for corret platform when enable ISO DEMO"
+#error "Please enable AE, AE Scan, PA, PA Sync for correct platform when enable ISO DEMO"
 #endif
 
 #if (defined(CONFIG_BT_LE_AUDIO) && CONFIG_BT_LE_AUDIO) && (defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT) && \
     ((!defined(RTK_BLE_5_0_AE_ADV_SUPPORT) || !RTK_BLE_5_0_AE_ADV_SUPPORT) || (!defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) || !RTK_BLE_5_0_AE_SCAN_SUPPORT))
-#error "Please enable AE, AE Scan for corret platform when enable LE AUDIO"
+#error "Please enable AE, AE Scan for correct platform when enable LE AUDIO"
 #endif
 
 #if defined(CONFIG_BT_MESH_PROVISIONER_SUPPORT) && CONFIG_BT_MESH_PROVISIONER_SUPPORT
@@ -307,7 +307,6 @@ extern "C"
 #define RTK_BLE_MESH_DEVICE_SUPPORT         0
 #endif
 #if (defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT) && \
-    (defined(CONFIG_AMEBADPLUS) && CONFIG_AMEBADPLUS) && \
     (defined(CONFIG_BT_MESH_BASED_ON_CODED_PHY) && CONFIG_BT_MESH_BASED_ON_CODED_PHY)
 #define RTK_BLE_MESH_BASED_ON_CODED_PHY     1
 #undef RTK_BLE_5_0_AE_ADV_SUPPORT
