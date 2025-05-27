@@ -13,6 +13,8 @@
 
 #define MM_ID MM_APP
 
+#if F_BT_MESH_1_1_DFU_SUPPORT
+
 #include "dfu_updater_app.h"
 #include "mem_config.h"
 #include "dfu_api.h"
@@ -21,8 +23,6 @@
 #include "silent_dfu_flash.h"
 #include "platform_ic_misc.h"
 #include "generic_types.h"
-
-#if F_BT_MESH_1_1_DFU_SUPPORT
 
 #if DFU_UPDATER_SUPPORT_POWER_OFF_GO_ON /* used for device power off but client is alive */
 typedef struct

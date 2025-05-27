@@ -117,8 +117,7 @@ static bool generic_battery_server_receive(mesh_msg_p pmesh_msg)
 
 static int32_t generic_battery_server_publish(const mesh_model_info_p pmodel_info, bool retrans)
 {
-    // RTK porting:avoid compile warning
-	(void) retrans; //avoid warning
+    UNUSED(retrans);
     generic_battery_server_get_t get_data = {0, 0, 0, {0, 0, 0, 0}};
     if (NULL != pmodel_info->model_data_cb)
     {

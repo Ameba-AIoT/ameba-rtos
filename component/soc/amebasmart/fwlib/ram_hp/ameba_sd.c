@@ -95,13 +95,13 @@ static u32 CmdRespError(u8 resp_type, u8 cmd)
 		resp_byte4 = SDIOH_GetResponse(SDIO_RESP4);
 
 		if ((resp_byte0 & SDIOH_CMD_IDX_MASK) != t_cmd) {
-			RTK_LOGE(TAG, "Command index error !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Command index error !!\r\n");
 			return HAL_ERR_UNKNOWN;
 		}
 
 		if (cmd == SD_CMD_AppCmd) {
 			if (!(resp_byte4 & SD_APP_CMD)) {
-				RTK_LOGE(TAG, "ACMD isn't expected !!\r\n");
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "ACMD isn't expected !!\r\n");
 				return HAL_ERR_UNKNOWN;
 			}
 		} else if ((cmd == SD_CMD_RdSingleBlk) || (cmd == SD_CMD_RdMulBlk)) {
@@ -119,12 +119,12 @@ static u32 CmdRespError(u8 resp_type, u8 cmd)
 	if (resp_type == SDIOH_RESP_R7) {
 		// check the echo-back of check pattern
 		if (resp_byte4 != SDIOH_CMD8_CHK_PATN) {
-			RTK_LOGE(TAG, "Check pattern error !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Check pattern error !!\r\n");
 			return HAL_ERR_UNKNOWN;
 		}
 		// check the VHS
 		if ((resp_byte3 & 0xF) != SDIOH_CMD8_VHS) {
-			RTK_LOGE(TAG, "Voltage accepted error !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Voltage accepted error !!\r\n");
 			return HAL_ERR_UNKNOWN;
 		}
 	}
@@ -189,12 +189,12 @@ static u32 SD_VoltageCheck(u8 *voltage_mismatch)
 	ret = CmdRespError(SDIOH_RESP_R7, SD_CMD_SendIfCond);
 	if (ret == HAL_TIMEOUT) {
 		*voltage_mismatch = 1;  /* for Ver1.x SD card*/
-		RTK_LOGI(TAG, "Voltage mismatch. Please check if SD card is inserted correctly\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Voltage mismatch. Please check if SD card is inserted correctly\n");
 		ret = HAL_OK;
 
 	} else if (ret == HAL_OK) {
 		*voltage_mismatch = 0;
-		RTK_LOGI(TAG, "Voltage match\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Voltage match\n");
 	}
 
 	return ret;
@@ -313,7 +313,7 @@ static u32 SD_GetOCR(u8 voltage_mismatch)
 	// check CCS(Card Capacity Status) bit, OCR bit30
 	if (SDIOH_GetResponse(SDIO_RESP1) & BIT6) {
 		card_info.is_sdhc_sdxc = 1;
-		RTK_LOGI(TAG, "This is a SDHC/SDXC card...\r\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "This is a SDHC/SDXC card...\r\n");
 
 #ifdef SDIOH_SUPPORT_SD30
 		// check S18A(Switching to 1.8V Accepted) bit, OCR bit24
@@ -325,18 +325,18 @@ static u32 SD_GetOCR(u8 voltage_mismatch)
 		} else {
 			card_info.sig_level = SDIOH_SIG_VOL_33;
 			card_info.bus_spd = SD_SPEED_DS;
-			RTK_LOGI(TAG, "Keep 3.3V...\r\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Keep 3.3V...\r\n");
 		}
 #else
 		card_info.sig_level = SDIOH_SIG_VOL_33;
 		card_info.bus_spd = SD_SPEED_DS;
-		RTK_LOGI(TAG, "Keep 3.3V...\r\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Keep 3.3V...\r\n");
 #endif
 	} else {
 		card_info.is_sdhc_sdxc = 0;
 		card_info.sig_level = SDIOH_SIG_VOL_33;
 		card_info.bus_spd = SD_SPEED_DS;
-		RTK_LOGI(TAG, "This is a SDSC card...\r\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "This is a SDSC card...\r\n");
 	}
 
 	return HAL_OK;
@@ -431,19 +431,19 @@ static u32 SD_GetCID(void)
 		return ret;
 	}
 #if defined(SDIO) && (SDIO == EMMC)
-	RTK_LOGI(TAG, "Manufacturer ID:%d\r\n", pbuf[1]);
-	RTK_LOGI(TAG, "OEM/Application ID:%x\r\n", pbuf[3]);
-	RTK_LOGI(TAG, "Product name:%x%x%x%x%x%x\r\n", pbuf[4], pbuf[5], pbuf[6], pbuf[7], pbuf[8],
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Manufacturer ID:%d\r\n", pbuf[1]);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "OEM/Application ID:%x\r\n", pbuf[3]);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Product name:%x%x%x%x%x%x\r\n", pbuf[4], pbuf[5], pbuf[6], pbuf[7], pbuf[8],
 			 pbuf[9]);
-	RTK_LOGI(TAG, "Product serial number:%02x%02x%02x%02x\r\n", pbuf[11], pbuf[12], pbuf[13],
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Product serial number:%02x%02x%02x%02x\r\n", pbuf[11], pbuf[12], pbuf[13],
 			 pbuf[14]);
-	RTK_LOGI(TAG, "Manufacturing date:%u/%u\r\n", 2013 + (pbuf[15] & 0xf), pbuf[15] >> 4);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Manufacturing date:%u/%u\r\n", 2013 + (pbuf[15] & 0xf), pbuf[15] >> 4);
 #else
-	RTK_LOGI(TAG, "Manufacturer ID:%u\r\n", pbuf[1]);
-	RTK_LOGI(TAG, "OEM/Application ID:%c%c\r\n", pbuf[2], pbuf[3]);
-	//RTK_LOGI(TAG, "Product name:%c%c%c%c%c\r\n", pbuf[4], pbuf[5], pbuf[6], pbuf[7], pbuf[8]);
-	//RTK_LOGI(TAG, "Product serial number:%02X%02X%02X%02X\r\n", pbuf[10], pbuf[11], pbuf[12], pbuf[13]);
-	RTK_LOGI(TAG, "Manufacturing date:%u/%u\r\n", 2000 + (((pbuf[14] & 0xF) << 4) | (pbuf[15] >> 4)),
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Manufacturer ID:%u\r\n", pbuf[1]);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "OEM/Application ID:%c%c\r\n", pbuf[2], pbuf[3]);
+	//RTK_LOGS(TAG, RTK_LOG_INFO, "Product name:%c%c%c%c%c\r\n", pbuf[4], pbuf[5], pbuf[6], pbuf[7], pbuf[8]);
+	//RTK_LOGS(TAG, RTK_LOG_INFO, "Product serial number:%02X%02X%02X%02X\r\n", pbuf[10], pbuf[11], pbuf[12], pbuf[13]);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Manufacturing date:%u/%u\r\n", 2000 + (((pbuf[14] & 0xF) << 4) | (pbuf[15] >> 4)),
 			 pbuf[15] & 0xF);
 #endif
 	return HAL_OK;
@@ -478,7 +478,7 @@ static u32 SD_GetRCA(void)
 
 	// get RCA
 	card_info.rca = (SDIOH_GetResponse(SDIO_RESP1) << 8) | (SDIOH_GetResponse(SDIO_RESP2));
-	RTK_LOGI(TAG, "RCA = %04X\r\n", card_info.rca);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "RCA = %04X\r\n", card_info.rca);
 
 	return HAL_OK;
 }
@@ -536,8 +536,8 @@ static u32 SD_GetCSD(void)
 		c_size = (((card_info.csd[7] & 0x3F) << 16) | (card_info.csd[8] << 8) | (card_info.csd[9])) + 1;
 		card_info.capaticy = c_size << 9;  //KB
 
-		RTK_LOGI(TAG, "CSD Version:2.0\r\n");
-		RTK_LOGI(TAG, "User data area capacity: %lu GB\r\n", card_info.capaticy / 1024 / 1024);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "CSD Version:2.0\r\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "User data area capacity: %lu GB\r\n", card_info.capaticy / 1024 / 1024);
 
 	} else {
 		c_size = (((card_info.csd[6] & 0x3) << 10) | (card_info.csd[7] << 2) | (card_info.csd[8] >> 6)) + 1;
@@ -545,16 +545,16 @@ static u32 SD_GetCSD(void)
 
 		card_info.capaticy = (u32)(c_size << (n - 10));  //KB
 
-		RTK_LOGI(TAG, "CSD Version:1.0\r\n");
-		RTK_LOGI(TAG, "User data area capacity: %lu MB\r\n", card_info.capaticy / 1024);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "CSD Version:1.0\r\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "User data area capacity: %lu MB\r\n", card_info.capaticy / 1024);
 	}
 #endif
 
 	card_info.read_bl_len = 1 << (card_info.csd[5] & 0xF);
 	card_info.write_bl_len = 1 << (((card_info.csd[12] & 0x3) << 2) | (card_info.csd[13] >> 6));
 
-	RTK_LOGI(TAG, "Max. read data block length: %lu Bytes\r\n", card_info.read_bl_len);
-	RTK_LOGI(TAG, "Max. write data block length: %lu Bytes\r\n", card_info.write_bl_len);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Max. read data block length: %lu Bytes\r\n", card_info.read_bl_len);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Max. write data block length: %lu Bytes\r\n", card_info.write_bl_len);
 
 	return HAL_OK;
 }
@@ -624,7 +624,7 @@ static u32 SD_SetBusWidth(u8 bus_width)
 	}
 
 	if (SDIOH_GetBusWidth() == bus_width) {
-		RTK_LOGI(TAG, "Current SD bus width is already the specified setting...\r\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Current SD bus width is already the specified setting...\r\n");
 		return HAL_OK;
 	}
 
@@ -729,7 +729,7 @@ static u32 SD_GetSCR(void)
 	if (ret != HAL_OK) {
 		ret = SD_StopTransfer();
 		if (ret != HAL_OK) {
-			RTK_LOGE(TAG, "Stop transmission error !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop transmission error !!\r\n");
 		}
 
 		return HAL_ERR_UNKNOWN;
@@ -745,27 +745,27 @@ static u32 SD_GetSCR(void)
 	switch (pbuf[0] & 0xF) {
 	case 2:
 		if (pbuf[2] >> 7) {
-			RTK_LOGI(TAG, "SD specification version: 3.0X\r\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "SD specification version: 3.0X\r\n");
 			card_info.sd_spec_ver = SD_SPEC_V300;
 		} else {
-			RTK_LOGI(TAG, "SD specification version: 2.00\r\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "SD specification version: 2.00\r\n");
 			card_info.sd_spec_ver = SD_SPEC_V200;
 		}
 		break;
 	case 1:
-		RTK_LOGI(TAG, "SD specification version: 1.10\r\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "SD specification version: 1.10\r\n");
 		card_info.sd_spec_ver = SD_SPEC_V110;
 		break;
 	case 0:
-		RTK_LOGI(TAG, "SD specification version: 1.01\r\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "SD specification version: 1.01\r\n");
 		card_info.sd_spec_ver = SD_SPEC_V101;
 		break;
 	default:
-		RTK_LOGW(TAG, "SD specification version: Unknown\r\n");
+		RTK_LOGS(TAG, RTK_LOG_WARN, "SD specification version: Unknown\r\n");
 		card_info.sd_spec_ver = 0xFF;
 	}
 
-	RTK_LOGI(TAG, "Data status after erase: %d\r\n", pbuf[1] >> 7);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Data status after erase: %d\r\n", pbuf[1] >> 7);
 
 	return HAL_OK;
 }
@@ -812,7 +812,7 @@ static u32 SD_SwitchFunction(u8 mode, u8 speed, u8 *buf_32align)
 	if (ret != HAL_OK) {
 		ret = SD_StopTransfer();
 		if (ret != HAL_OK) {
-			RTK_LOGE(TAG,  "Stop transmission error !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR,  "Stop transmission error !!\r\n");
 		}
 
 		return HAL_ERR_UNKNOWN;
@@ -866,13 +866,13 @@ static u32 SD_IRQHandler(void *param)
 				card_info.sd_status = SD_INSERT;
 			}
 
-			RTK_LOGI(TAG, "Card Detect\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Card Detect\n");
 		} else {
 			card_info.sd_status = SD_NODISK;
 			if (cd_cb != NULL) {
 				cd_cb(card_info.sd_status);
 			}
-			RTK_LOGI(TAG, "Card Remove\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Card Remove\n");
 		}
 
 		psdioh->CARD_INT_PEND |= SDIOH_SDMMC_INT_PEND;
@@ -905,7 +905,7 @@ SD_RESULT SD_GetEXTCSD(u8 *pbuf)
 	cmd_attr.data_present = SDIOH_DATA_EXIST;
 	ret = SDIOH_SendCommand(&cmd_attr, 100);
 	if (ret != HAL_OK) {
-		RTK_LOGE(TAG, "Send CMD8 error !!\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Send CMD8 error !!\r\n");
 		return (SD_RESULT)ret;
 	}
 
@@ -914,7 +914,7 @@ SD_RESULT SD_GetEXTCSD(u8 *pbuf)
 	if (ret != HAL_OK) {
 		ret = SD_StopTransfer();
 		if (ret != HAL_OK) {
-			RTK_LOGE(TAG, "Stop transmission error !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop transmission error !!\r\n");
 		}
 
 		return (SD_RESULT)HAL_ERR_UNKNOWN;
@@ -964,7 +964,7 @@ u32 SD_ReadBlock(uint8_t *readbuff, uint32_t BlockIdx)
 	cmd_attr.data_present = SDIOH_DATA_EXIST;
 	ret = SDIOH_SendCommand(&cmd_attr, 0);
 	if (ret != HAL_OK) {
-		RTK_LOGE(TAG, "Send CMD17 error !!\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Send CMD17 error !!\r\n");
 		return ret;
 	}
 
@@ -973,7 +973,7 @@ u32 SD_ReadBlock(uint8_t *readbuff, uint32_t BlockIdx)
 	if (ret != HAL_OK) {
 		ret = SD_StopTransfer();
 		if (ret != HAL_OK) {
-			RTK_LOGE(TAG, "Stop transmission error !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop transmission error !!\r\n");
 		}
 
 		return HAL_ERR_UNKNOWN;
@@ -1084,7 +1084,7 @@ u32 SD_WriteBlock(uint8_t *writebuff, uint32_t BlockIdx)
 	if (ret != HAL_OK) {
 		ret = SD_StopTransfer();
 		if (ret != HAL_OK) {
-			RTK_LOGE(TAG, "Stop transmission error !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop transmission error !!\r\n");
 		}
 
 		return HAL_ERR_UNKNOWN;
@@ -1223,7 +1223,7 @@ u32 SD_Erase(uint32_t StartBlock, uint32_t EndBlock)
 	cmd_attr.data_present = SDIOH_NO_DATA;
 	ret = SDIOH_SendCommand(&cmd_attr, SDIOH_CMD_CPLT_TIMEOUT);
 	if (ret != HAL_OK) {
-		RTK_LOGE(TAG, "Send CMD32 error !!\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Send CMD32 error !!\r\n");
 	}
 
 	ret = CmdRespError(SDIOH_RESP_R1, start_cmd);
@@ -1239,7 +1239,7 @@ u32 SD_Erase(uint32_t StartBlock, uint32_t EndBlock)
 	cmd_attr.data_present = SDIOH_NO_DATA;
 	ret = SDIOH_SendCommand(&cmd_attr, SDIOH_CMD_CPLT_TIMEOUT);
 	if (ret != HAL_OK) {
-		RTK_LOGE(TAG, "Send CMD33 error !!\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Send CMD33 error !!\r\n");
 	}
 
 	ret = CmdRespError(SDIOH_RESP_R1, end_cmd);
@@ -1255,7 +1255,7 @@ u32 SD_Erase(uint32_t StartBlock, uint32_t EndBlock)
 	cmd_attr.data_present = SDIOH_NO_DATA;
 	ret = SDIOH_SendCommand(&cmd_attr, SDIOH_ERASE_TIMEOUT * blk_cnt);
 	if (ret != HAL_OK) {
-		RTK_LOGE(TAG, "Send CMD38 error !!\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Send CMD38 error !!\r\n");
 		return ret;
 	}
 
@@ -1292,7 +1292,7 @@ u8 SD_GetCardStatus(void)
 
 	// get card's current state
 	state = (SDIOH_GetResponse(SDIO_RESP3) >> 1) & 0xF;
-	RTK_LOGI(TAG, "card_curr_ste = %d\r\n", state);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "card_curr_ste = %d\r\n", state);
 
 	return state;
 }
@@ -1351,7 +1351,7 @@ u32 SD_GetSDStatus(u8 *buf_32align)
 	if (ret != HAL_OK) {
 		ret = SD_StopTransfer();
 		if (ret != HAL_OK) {
-			RTK_LOGE(TAG, "Stop transmission error !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop transmission error !!\r\n");
 		}
 
 		return HAL_ERR_UNKNOWN;
@@ -1381,7 +1381,7 @@ u32 SD_SwitchBusSpeed(u8 speed)
 	assert_param(speed <= SD_SPEED_HS);
 
 	if ((card_info.bus_spd) == speed) {
-		RTK_LOGI(TAG, "Current SD bus speed is already the specified setting.\r\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Current SD bus speed is already the specified setting.\r\n");
 		return HAL_OK;
 	}
 
@@ -1403,7 +1403,7 @@ u32 SD_SwitchBusSpeed(u8 speed)
 		support_spd = pbuf[13];
 		if (support_spd & (1 << sw_spd)) {
 			if ((pbuf[16] & 0xF) == sw_spd) {
-				RTK_LOGI(TAG, "SD card's current speed mode is already the specified setting !!\r\n");
+				RTK_LOGS(TAG, RTK_LOG_INFO, "SD card's current speed mode is already the specified setting !!\r\n");
 			} else {
 				/* check if the specified speed can be switched */
 				ret = SD_SwitchFunction(SD_CMD6_CHECK_MODE, sw_spd, pbuf);
@@ -1421,7 +1421,7 @@ u32 SD_SwitchBusSpeed(u8 speed)
 					}
 
 					if ((pbuf[16] & 0xF) == sw_spd) {
-						RTK_LOGI(TAG, "SD card changes to the specified speed mode successfully\r\n");
+						RTK_LOGS(TAG, RTK_LOG_INFO, "SD card changes to the specified speed mode successfully\r\n");
 						if (speed == SD_SPEED_DS) {
 							SDIOH_SwitchSpeed(SDIOH_CLK_DIV4, SDIOH_SD20_MODE); // 25 MHz
 							card_info.bus_spd = SD_SPEED_DS;
@@ -1430,20 +1430,20 @@ u32 SD_SwitchBusSpeed(u8 speed)
 							card_info.bus_spd = SD_SPEED_HS;
 						}
 					} else {
-						RTK_LOGE(TAG, "The switch request is canceled !!\r\n");
+						RTK_LOGS(TAG, RTK_LOG_ERROR, "The switch request is canceled !!\r\n");
 						return HAL_ERR_UNKNOWN;
 					}
 				} else {
-					RTK_LOGW(TAG, "The specified speed mode can't be switched !!\r\n");
+					RTK_LOGS(TAG, RTK_LOG_WARN, "The specified speed mode can't be switched !!\r\n");
 					return HAL_ERR_UNKNOWN;
 				}
 			}
 		} else {
-			RTK_LOGW(TAG, "This card doesn't support the specified speed mode !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_WARN, "This card doesn't support the specified speed mode !!\r\n");
 			return HAL_ERR_HW;
 		}
 	} else {
-		RTK_LOGW(TAG, "This card doesn't support CMD6 and can't switch the bus speed !!\r\n");
+		RTK_LOGS(TAG, RTK_LOG_WARN, "This card doesn't support CMD6 and can't switch the bus speed !!\r\n");
 		return HAL_ERR_HW;
 	}
 	return HAL_OK;
@@ -1456,7 +1456,7 @@ SD_RESULT SD_SwitchBusSpeed(u8 speed)
 	SDIOH_CmdTypeDef cmd_attr;
 
 	if ((card_info.bus_spd) == speed) {
-		RTK_LOGI(TAG, "Current SD bus speed is already the specified setting.\r\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Current SD bus speed is already the specified setting.\r\n");
 		return HAL_OK;
 	}
 
@@ -1524,14 +1524,14 @@ SD_RESULT SD_WriteBlocks(u32 sector, const u8 *data, u32 count)
 	u8 *ptr;
 
 	if ((card_info.sd_status == SD_INITERR) || (card_info.sd_status == SD_ERROR) || (card_info.sd_status == SD_NODISK)) {
-		RTK_LOGE(TAG, "SD card is removed !!\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "SD card is removed !!\r\n");
 		return card_info.sd_status;
 	}
 
 	if ((u32)data & 0x1F) { /* Not 32-byte aligned */
 		ptr = rtos_mem_malloc(SD_BLOCK_SIZE + 0x1F);
 		if (ptr == NULL) {
-			RTK_LOGE(TAG, "Allocate buffer error !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Allocate buffer error !!\r\n");
 			return SD_ERROR;
 		}
 		ptr = (u8 *)(((((u32)ptr - 1) >> 5) + 1) << 5); /*next 32-byte aligned*/
@@ -1579,21 +1579,21 @@ SD_RESULT SD_ReadBlocks(u32 sector, u8 *data, u32 count)
 	u8 *ptr;
 
 	if ((card_info.sd_status == SD_INITERR) || (card_info.sd_status == SD_ERROR) || (card_info.sd_status == SD_NODISK)) {
-		RTK_LOGE(TAG, "SD card is removed !!\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "SD card is removed !!\r\n");
 		return card_info.sd_status;
 	}
 
 	if ((u32)data & 0x1F) { /* Not 32-byte aligned */
 		ptr = rtos_mem_malloc(SD_BLOCK_SIZE + 0x1F);
 		if (ptr == NULL) {
-			RTK_LOGE(TAG, "Allocate buffer error !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Allocate buffer error !!\r\n");
 			return SD_ERROR;
 		}
 		ptr = (u8 *)(((((u32)ptr - 1) >> 5) + 1) << 5); /*next 32-byte aligned*/
 
 		do {
 			if ((card_info.sd_status == SD_INITERR) || (card_info.sd_status == SD_ERROR) || (card_info.sd_status == SD_NODISK)) {
-				RTK_LOGE(TAG, "SD card is removed !!\r\n");
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "SD card is removed !!\r\n");
 				rtos_mem_free(ptr);
 				return card_info.sd_status;
 			}
@@ -1634,7 +1634,7 @@ SD_RESULT SD_ReadBlocks(u32 sector, u8 *data, u32 count)
 SD_RESULT SD_GetCapacity(u32 *sector_count)
 {
 	if ((card_info.sd_status == SD_INITERR) || (card_info.sd_status == SD_ERROR) || (card_info.sd_status == SD_NODISK)) {
-		RTK_LOGE(TAG, "SD card is removed !!\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "SD card is removed !!\r\n");
 		return card_info.sd_status;
 	}
 
@@ -1732,10 +1732,10 @@ void SD_CardInit(void)
 
 	if (ret == HAL_OK) {
 		card_info.sd_status = SD_OK;
-		RTK_LOGI(TAG, "SD card is initialized\r\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "SD card is initialized\r\n");
 	} else {
 		card_info.sd_status = SD_INITERR;
-		RTK_LOGE(TAG, "Init FAIL, ret: %lu\n", ret);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init FAIL, ret: %lu\n", ret);
 	}
 }
 
@@ -1771,7 +1771,7 @@ SD_RESULT SD_Init(SDIOHCFG_TypeDef *config)
 	if (temp & SDIOH_SD_EXIST) {
 		if (!(temp & SDIOH_SD_WP)) {
 			card_info.sd_status = SD_INSERT;
-			RTK_LOGI(TAG, "Card exists!\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Card exists!\n");
 		} else {
 			card_info.sd_status = SD_PROTECTED;
 		}
@@ -1791,10 +1791,10 @@ SD_RESULT SD_Init(SDIOHCFG_TypeDef *config)
 		card_info.sd_status = SD_INIT;
 		SD_CardInit();
 	} else if (card_info.sd_status == SD_PROTECTED) {
-		RTK_LOGE(TAG, "Card is write protected !!\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Card is write protected !!\r\n");
 
 	} else if (card_info.sd_status == SD_NODISK) {
-		RTK_LOGE(TAG, "Card is removed\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Card is removed\r\n");
 		return SD_INITERR;
 	}
 

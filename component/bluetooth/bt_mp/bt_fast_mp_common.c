@@ -7,7 +7,6 @@
 #include <bt_utils.h>
 #include <atcmd_service.h>
 #include <bt_mp_api.h>
-#include "wifi_intf_drv_to_bt.h"
 #include "bt_fast_mp_common.h"
 #include "rtw_coex_host_api.h"
 

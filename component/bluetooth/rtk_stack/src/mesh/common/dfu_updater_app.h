@@ -18,13 +18,14 @@
 extern "C" {
 #endif
 
+#if F_BT_MESH_1_1_DFU_SUPPORT
+
 #include "mesh_api.h"
 #include "firmware_update.h"
 #include "blob_transfer.h"
 #include "ftl_map.h"
 #include "app_mesh_flags.h"
 
-#if F_BT_MESH_1_1_DFU_SUPPORT
 /**
  * @addtogroup DFU_UPDATER_APP
  * @{

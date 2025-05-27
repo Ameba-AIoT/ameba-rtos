@@ -761,6 +761,7 @@ int32_t dfu_dist_update_client_data(const mesh_model_info_p pmodel_info, uint32_
 extern uint16_t bt_stack_msg_send(uint16_t type, uint16_t subtype, void *msg);
 static void dfu_dist_timeout(void *ptimer)
 {
+    // RTK porting:call common API for send msg through app main task
     bt_stack_msg_send(IO_MSG_TYPE_LE_MESH, RTK_BT_MESH_IO_MSG_SUBTYPE_DFU_DIST_APP_TIMEOUT_MSG, ptimer);
 }
 

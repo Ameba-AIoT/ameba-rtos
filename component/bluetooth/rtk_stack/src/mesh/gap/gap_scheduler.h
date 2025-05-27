@@ -48,7 +48,9 @@ BEGIN_DECLS
 #define GAP_SCHED_SCAN_ALL_THE_TIME             1
 #define GAP_SCHED_ONE_SHOT_ADV                  1 //!< adv
 // RTK porting:only AmebaDplus support bt5 ae
-#if defined(CONFIG_AMEBADPLUS) && CONFIG_AMEBADPLUS
+// NOTICE!!!:mesh stack formal bt mesh normal lib and coded phy lib separately;
+// The difference is all in GAP_SCHED_BT5_AE, should take care of the corresponding part when update corrent mesh lib
+#if defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
 #define GAP_SCHED_BT5_AE                        1
 #else
 #define GAP_SCHED_BT5_AE                        0
@@ -63,9 +65,17 @@ BEGIN_DECLS
 #include "gap_ext_adv.h"
 #include "gap_ext_scan.h"
 
+// RTK porting:for Dplus coded phy mesh lib only
 extern T_GAP_CAUSE le_vendor_ae_scheme(void);
 // RTK porting:already define T_GAP_AE_CODING_SCHEME in rtk_stack_vendor.h, if mesh lib or BT FW change the definitation, rtk_stack_vendor.h should follow mesh lib
 #include <rtk_stack_vendor.h>
+#if 0
+typedef enum
+{
+    GAP_AE_CODING_SCHEME_S8 = 2,
+    GAP_AE_CODING_SCHEME_S2 = 3,
+} T_GAP_AE_CODING_SCHEME;
+#endif
 extern T_GAP_CAUSE le_ae_coding_scheme(T_GAP_AE_CODING_SCHEME coding_scheme);
 #endif
 /** Advertising interval (units of 625us, 160=100ms), Value range: 0x0020 - 0x4000 (20ms - 10240ms 0.625ms/step) */
@@ -95,6 +105,8 @@ extern T_GAP_CAUSE le_ae_coding_scheme(T_GAP_AE_CODING_SCHEME coding_scheme);
   * @brief
   * @{
   */
+#if GAP_SCHED_BT5_AE
+// RTK porting:for Dplus coded phy mesh lib only
 enum
 {
     GAP_SCHED_AE_ADV_TYPE_LEGACY_ON_1M =    0x01,
@@ -104,6 +116,17 @@ enum
     GAP_SCHED_AE_ADV_TYPE_EXTEND_ON_1M_2M = 0x10,
 };
 typedef uint8_t gap_sched_ae_adv_type_t;
+#else
+// RTK porting:for Dplus normal mesh lib only
+typedef enum
+{
+    GAP_SCHED_BT5_AE_ADV_TYPE_LEGACY_ON_1M,
+    GAP_SCHED_BT5_AE_ADV_TYPE_LEGACY_ON_C2,
+    GAP_SCHED_BT5_AE_ADV_TYPE_LEGACY_ON_C8,
+    GAP_SCHED_BT5_AE_ADV_TYPE_EXTEND_ON_1M_1M,
+    GAP_SCHED_BT5_AE_ADV_TYPE_EXTEND_ON_1M_2M,
+} gap_sched_bt5_ae_adv_type_t;
+#endif
 
 typedef enum
 {
@@ -121,7 +144,10 @@ typedef enum
     GAP_SCHED_PARAMS_ADV_TIMES,
     GAP_SCHED_PARAMS_BT5_AE, /**< Shall be configured before mesh_node_cfg invoked */
     GAP_SCHED_PARAMS_BT5_AE_ADV_TYPE,
+#if GAP_SCHED_BT5_AE
+    // RTK porting:for Dlus mesh coded phy lib only
     GAP_SCHED_PARAMS_BT5_AE_SCAN_PHYS
+#endif
 } gap_sched_params_type_t;
 
 typedef enum
@@ -392,6 +418,7 @@ void gap_sched_ext_adv_state_dump(void);
   */
 T_GAP_CAUSE gap_sched_ext_adv_step(uint8_t handle);
 
+// RTK porting:for Dplus mesh coded phy only
 /**
   * @brief call after AE coding scheme set done
   *

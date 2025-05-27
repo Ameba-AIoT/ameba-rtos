@@ -1,6 +1,7 @@
 #include <whc_host_linux.h>
 
 struct whc_sdio whc_sdio_priv = {0};
+extern u32 rtw_sdio_enable_func(struct whc_sdio *priv);
 
 static int whc_sdio_host_probe(struct sdio_func *func, const struct sdio_device_id *id)
 {
@@ -237,14 +238,10 @@ int whc_sdio_host_resume(struct device *dev)
 	dev_dbg(dev, "%s", __func__);
 
 	/* some sdio local registers and CCCR would be reset after kernel resume from suspend */
-	sdio_claim_host(func);
-	ret = sdio_set_block_size(func, SDIO_BLOCK_SIZE);
-	if (ret) {
-		dev_err(dev, "%s: sdio_set_block_size FAIL(%d)!\n", __func__, ret);
-		sdio_release_host(func);
-		return -EPERM;
+	/* enable func and set block size */
+	if (rtw_sdio_enable_func(priv) == false) {
+		return false;
 	}
-	sdio_release_host(func);
 
 	value = rtw_read8(priv, SDIO_REG_TX_CTRL) | SDIO_EN_HISR_MASK_TIMER;
 	rtw_write8(priv, SDIO_REG_TX_CTRL, value);

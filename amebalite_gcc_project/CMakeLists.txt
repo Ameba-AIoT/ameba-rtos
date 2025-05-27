@@ -17,7 +17,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/ameba.cmake)
 set(v_AMEBA_LOG_LEVEL ${c_AMEBA_LOG_LEVEL_INFO})
 set(c_VERBOSE_MAKEFILE FALSE)
 ###############################################################################
-ameba_soc_project_create(amebalite)
+ameba_soc_project_create(amebalite p_OUTPUT_MCU_PROJECT km4)
 
 #WARNING: project MUST be called after ameba_soc_project_create()
 project(${c_SOC_TYPE} LANGUAGES C CXX ASM)

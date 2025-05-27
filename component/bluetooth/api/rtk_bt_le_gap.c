@@ -1794,3 +1794,118 @@ uint16_t rtk_bt_le_gap_coc_send_data(uint16_t cid, uint16_t len, uint8_t *data)
 	return ret;
 }
 #endif
+
+uint16_t rtk_bt_le_gap_dtm_rx_test(rtk_bt_le_dtm_rx_param_t *p_rx_param, rtk_bt_le_dtm_rx_version_t rx_version)
+{
+	uint16_t ret = 0;
+	rtk_bt_le_gap_act_t act;
+
+	if (!p_rx_param) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	if (rx_version < RTK_BT_LE_DTM_RX_VERSION_V1 || rx_version > RTK_BT_LE_DTM_RX_VERSION_V3) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	if (p_rx_param->rx_channel > 0x27) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+	act = RTK_BT_LE_GAP_ACT_DTM_RX_TEST_V1;
+
+	if (rx_version > RTK_BT_LE_DTM_RX_VERSION_V1) {
+		if (p_rx_param->phy < RTK_BT_LE_DTM_RX_PHYS_1M || p_rx_param->phy > RTK_BT_LE_DTM_RX_PHYS_CODED) {
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+		if (p_rx_param->mod_idx > RTK_BT_LE_DTM_MODULATION_INDEX_STABLE) {
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+		act = RTK_BT_LE_GAP_ACT_DTM_RX_TEST_V2;
+	}
+
+	if (rx_version > RTK_BT_LE_DTM_RX_VERSION_V2) {
+		if (p_rx_param->exp_cte_len == 0x01 || p_rx_param->exp_cte_len > 0x14) {
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+		if (p_rx_param->exp_cte_type > RTK_BT_LE_DTM_CTE_TYPE_AOD_2US_SLOT) {
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+		if (p_rx_param->slot_durations < RTK_BT_LE_DTM_SLOT_DURATIONS_SWITCH_SAMPLE_1US ||
+			p_rx_param->slot_durations > RTK_BT_LE_DTM_SLOT_DURATIONS_SWITCH_SAMPLE_2US) {
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+		if (p_rx_param->sw_pattern_len < 0x02 || p_rx_param->sw_pattern_len > 0x4B) {
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+		if (p_rx_param->p_antenna_ids == NULL) {
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+		act = RTK_BT_LE_GAP_ACT_DTM_RX_TEST_V3;
+	}
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, act, p_rx_param, sizeof(rtk_bt_le_dtm_rx_param_t));
+
+	return ret;
+}
+
+uint16_t rtk_bt_le_gap_dtm_tx_test(rtk_bt_le_dtm_tx_param_t *p_tx_param, rtk_bt_le_dtm_tx_version_t tx_version)
+{
+	uint16_t ret = 0;
+	rtk_bt_le_gap_act_t act;
+
+	if (!p_tx_param) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	if (tx_version < RTK_BT_LE_DTM_TX_VERSION_V1 || tx_version > RTK_BT_LE_DTM_TX_VERSION_V4) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	if (p_tx_param->tx_channel > 0x27) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+	if (p_tx_param->pkt_pl > RTK_BT_LE_DTM_PACKET_PAYLOAD_01) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+	act = RTK_BT_LE_GAP_ACT_DTM_TX_TEST_V1;
+
+	if (tx_version > RTK_BT_LE_DTM_TX_VERSION_V1) {
+		if (p_tx_param->phy < RTK_BT_LE_DTM_TX_PHYS_1M || p_tx_param->phy > RTK_BT_LE_DTM_TX_PHYS_CODED_S2) {
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+		act = RTK_BT_LE_GAP_ACT_DTM_TX_TEST_V2;
+	}
+
+	if (tx_version > RTK_BT_LE_DTM_TX_VERSION_V2) {
+		if (p_tx_param->cte_len == 0x01 || p_tx_param->cte_len > 0x14) {
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+		if (p_tx_param->cte_type > RTK_BT_LE_DTM_CTE_TYPE_AOD_2US_SLOT) {
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+		if (p_tx_param->sw_pattern_len < 0x02 || p_tx_param->sw_pattern_len > 0x4B) {
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+		if (p_tx_param->p_antenna_ids == NULL) {
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+		act = RTK_BT_LE_GAP_ACT_DTM_TX_TEST_V3;
+	}
+
+	if (tx_version > RTK_BT_LE_DTM_TX_VERSION_V3) {
+		act = RTK_BT_LE_GAP_ACT_DTM_TX_TEST_V4;
+	}
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, act, p_tx_param, sizeof(rtk_bt_le_dtm_tx_param_t));
+
+	return ret;
+}
+
+uint16_t rtk_bt_le_gap_dtm_end(uint16_t *p_num_pkts)
+{
+	uint16_t ret = 0;
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_DTM_END_TEST, p_num_pkts, sizeof(uint16_t));
+
+	return ret;
+}

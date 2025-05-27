@@ -138,6 +138,24 @@ ameba_set(c_SDK_ROM_SYMBOL_S_GEN_SCRIPT)
 ameba_set(c_SDK_ROM_TOTAL_SIZE_SCRIPT)
 ameba_set(c_SDK_ROM_CODE_ANALYZE_SCRIPT)
 ameba_set(c_SDK_EXTRACT_LD_SCRIPT)
+
+#-------------------------#
+#WARNING: Using ameba_set_if(CONFIG_MP_INCLUDED c_MP y p_ELSE n) will cause CMP0054 in postbuild
+if(CONFIG_MP_INCLUDED)
+    set(c_MP y)
+else()
+    set(c_MP n)
+endif()
+set(c_AXF2BIN_SCRIPT        ${c_BASEDIR}/tools/scripts/axf2bin.py)
+set(c_AXF2BIN_RUN python    ${c_AXF2BIN_SCRIPT})
+set(op_USAGE                ${c_AXF2BIN_RUN} -h)
+set(op_PREPEND_HEADER       ${c_AXF2BIN_RUN} prepend_header)
+set(op_OTA_PREPEND_HEADER   ${c_AXF2BIN_RUN} ota_prepend_header )
+set(op_PAD                  ${c_AXF2BIN_RUN} pad)
+set(op_FW_PACKAGE           ${c_AXF2BIN_RUN} fw_pack)
+set(op_COMPRESS             ${c_AXF2BIN_RUN} compress)
+set(op_PAD_BINARY           ${c_AXF2BIN_RUN} pad_binary)
+set(c_POST_BUILD_SCRIPT postbuild.cmake)
 ############################################################
 
 macro(ameba_reset_global_define)
@@ -165,6 +183,14 @@ macro(ameba_reset_global_define)
     ameba_set(c_CMPT_DOWNLOAD_USB_DIR ${c_CMPT_SOC_DIR}/rom/download/usb)
     ameba_set(c_CMPT_PMC_DIR ${c_CMPT_SOC_DIR}/lib/pmc)
     ameba_set(c_CMPT_ROM_DIR ${c_CMPT_SOC_DIR}/rom)
+
+    set(c_AXF2BIN_RUN python    ${c_BASEDIR}/tools/scripts/axf2bin.py --mp ${c_MP})
+    set(op_PREPEND_HEADER       ${c_AXF2BIN_RUN} prepend_header)
+    set(op_OTA_PREPEND_HEADER   ${c_AXF2BIN_RUN} ota_prepend_header )
+    set(op_PAD                  ${c_AXF2BIN_RUN} pad)
+    set(op_FW_PACKAGE           ${c_AXF2BIN_RUN} fw_pack)
+    set(op_COMPRESS             ${c_AXF2BIN_RUN} compress)
+    set(op_PAD_BINARY           ${c_AXF2BIN_RUN} pad_binary)
 endmacro()
 
 ############################################################

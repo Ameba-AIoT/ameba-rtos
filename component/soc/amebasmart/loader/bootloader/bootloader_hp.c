@@ -362,6 +362,12 @@ u32 BOOT_LoadImages(void)
 {
 	u8 CertImgIndex;
 
+#ifdef CONFIG_XIP_FLASH
+	if (FALSE == SYSCFG_BootFromNor()) {
+		assert_param(0); /* Nand Cannot XIP */
+	}
+#endif
+
 	/* Load from OTA and ECC check for Certificate and IMG2*/
 	CertImgIndex = BOOT_OTA_IMG2();
 

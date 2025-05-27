@@ -36,6 +36,7 @@
 #include <gap_customer.h>
 #include <gap_vendor.h>
 #include <gatt_builtin_services.h>
+#include <gap_dtm.h>
 
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 #include <ble_audio.h>
@@ -1237,6 +1238,119 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 		}
 		break;
 	}
+
+#if defined(F_BT_LE_4_0_DTM_SUPPORT) && F_BT_LE_4_0_DTM_SUPPORT
+	case GAP_MSG_LE_DTM_RECEIVER_TEST: {
+		BT_LOGD("GAP_MSG_LE_DTM_RECEIVER_TEST: cause 0x%x\r\n", p_data->le_cause.cause);
+		p_cmd = bt_stack_pending_cmd_search(type);
+		if (p_cmd) {
+			bt_stack_pending_cmd_delete(p_cmd);
+			p_cmd->ret = p_data->le_cause.cause;
+			osif_sem_give(p_cmd->psem);
+		} else {
+			BT_LOGE("[%s] GAP_MSG_LE_DTM_RECEIVER_TEST: find no pending command \r\n", __func__);
+		}
+		break;
+	}
+
+	case GAP_MSG_LE_DTM_TRANSMITTER_TEST: {
+		BT_LOGD("GAP_MSG_LE_DTM_TRANSMITTER_TEST: cause 0x%x\r\n", p_data->le_cause.cause);
+		p_cmd = bt_stack_pending_cmd_search(type);
+		if (p_cmd) {
+			bt_stack_pending_cmd_delete(p_cmd);
+			p_cmd->ret = p_data->le_cause.cause;
+			osif_sem_give(p_cmd->psem);
+		} else {
+			BT_LOGE("[%s] GAP_MSG_LE_DTM_TRANSMITTER_TEST: find no pending command \r\n", __func__);
+		}
+		break;
+	}
+
+	case GAP_MSG_LE_DTM_TEST_END: {
+		BT_LOGD("GAP_MSG_LE_DTM_TEST_END: cause 0x%x\r\n", p_data->p_le_dtm_test_end_rsp->cause);
+		p_cmd = bt_stack_pending_cmd_search(type);
+		if (p_cmd) {
+			bt_stack_pending_cmd_delete(p_cmd);
+			p_cmd->ret = p_data->p_le_dtm_test_end_rsp->cause;
+			*((uint16_t *)p_cmd->param) = p_data->p_le_dtm_test_end_rsp->num_pkts;
+			osif_sem_give(p_cmd->psem);
+		} else {
+			BT_LOGE("[%s] GAP_MSG_LE_DTM_TRANSMITTER_TEST: find no pending command \r\n", __func__);
+		}
+		break;
+	}
+
+#if defined(F_BT_LE_5_0_DTM_SUPPORT) && F_BT_LE_5_0_DTM_SUPPORT
+	case GAP_MSG_LE_DTM_ENHANCED_RECEIVER_TEST: {
+		BT_LOGD("GAP_MSG_LE_DTM_ENHANCED_RECEIVER_TEST: cause 0x%x\r\n", p_data->le_cause.cause);
+		p_cmd = bt_stack_pending_cmd_search(type);
+		if (p_cmd) {
+			bt_stack_pending_cmd_delete(p_cmd);
+			p_cmd->ret = p_data->le_cause.cause;
+			osif_sem_give(p_cmd->psem);
+		} else {
+			BT_LOGE("[%s] GAP_MSG_LE_DTM_ENHANCED_RECEIVER_TEST: find no pending command \r\n", __func__);
+		}
+		break;
+	}
+
+	case GAP_MSG_LE_DTM_ENHANCED_TRANSMITTER_TEST: {
+		BT_LOGD("GAP_MSG_LE_DTM_ENHANCED_TRANSMITTER_TEST: cause 0x%x\r\n", p_data->le_cause.cause);
+		p_cmd = bt_stack_pending_cmd_search(type);
+		if (p_cmd) {
+			bt_stack_pending_cmd_delete(p_cmd);
+			p_cmd->ret = p_data->le_cause.cause;
+			osif_sem_give(p_cmd->psem);
+		} else {
+			BT_LOGE("[%s] GAP_MSG_LE_DTM_ENHANCED_TRANSMITTER_TEST: find no pending command \r\n", __func__);
+		}
+		break;
+	}
+#endif
+
+#if defined(F_BT_LE_5_1_DTM_SUPPORT) && F_BT_LE_5_1_DTM_SUPPORT
+	case GAP_MSG_LE_DTM_RECEIVER_TEST_V3: {
+		BT_LOGD("GAP_MSG_LE_DTM_RECEIVER_TEST_V3: cause 0x%x\r\n", p_data->le_cause.cause);
+		p_cmd = bt_stack_pending_cmd_search(type);
+		if (p_cmd) {
+			bt_stack_pending_cmd_delete(p_cmd);
+			p_cmd->ret = p_data->le_cause.cause;
+			osif_sem_give(p_cmd->psem);
+		} else {
+			BT_LOGE("[%s] GAP_MSG_LE_DTM_RECEIVER_TEST_V3: find no pending command \r\n", __func__);
+		}
+		break;
+	}
+
+	case GAP_MSG_LE_DTM_TRANSMITTER_TEST_V3: {
+		BT_LOGD("GAP_MSG_LE_DTM_TRANSMITTER_TEST_V3: cause 0x%x\r\n", p_data->le_cause.cause);
+		p_cmd = bt_stack_pending_cmd_search(type);
+		if (p_cmd) {
+			bt_stack_pending_cmd_delete(p_cmd);
+			p_cmd->ret = p_data->le_cause.cause;
+			osif_sem_give(p_cmd->psem);
+		} else {
+			BT_LOGE("[%s] GAP_MSG_LE_DTM_TRANSMITTER_TEST_V3: find no pending command \r\n", __func__);
+		}
+		break;
+	}
+#endif
+
+#if defined(F_BT_LE_5_2_DTM_SUPPORT) && F_BT_LE_5_2_DTM_SUPPORT
+	case GAP_MSG_LE_DTM_TRANSMITTER_TEST_V4: {
+		BT_LOGD("GAP_MSG_LE_DTM_TRANSMITTER_TEST_V4: cause 0x%x\r\n", p_data->le_cause.cause);
+		p_cmd = bt_stack_pending_cmd_search(type);
+		if (p_cmd) {
+			bt_stack_pending_cmd_delete(p_cmd);
+			p_cmd->ret = p_data->le_cause.cause;
+			osif_sem_give(p_cmd->psem);
+		} else {
+			BT_LOGE("[%s] GAP_MSG_LE_DTM_TRANSMITTER_TEST_V4: find no pending command \r\n", __func__);
+		}
+		break;
+	}
+#endif
+#endif /* F_BT_LE_4_0_DTM_SUPPORT */
 	default:
 		break;
 	}
@@ -2155,11 +2269,13 @@ static void bt_stack_le_gap_handle_dev_state_evt(T_LE_GAP_MSG *p_gap_msg)
 static void bt_stack_le_gap_handle_conn_state_evt(T_LE_GAP_MSG *p_gap_msg)
 {
 	T_GAP_CONN_STATE_CHANGE *conn_state = &(p_gap_msg->msg_data.gap_conn_state_change);
+	uint8_t i;
 	uint8_t conn_id = conn_state->conn_id;
 	uint8_t new_state = conn_state->new_state;
 	/* get the last time conn state */
 	uint8_t prev_state = bt_stack_le_link_tbl[conn_id].conn_state;
 	uint16_t disc_cause = conn_state->disc_cause;
+	uint16_t conn_handle;
 	rtk_bt_evt_t *p_evt = NULL;
 	rtk_bt_le_conn_ind_t *p_conn_ind;
 	rtk_bt_le_disconn_ind_t *p_disconn_ind;
@@ -2229,7 +2345,16 @@ static void bt_stack_le_gap_handle_conn_state_evt(T_LE_GAP_MSG *p_gap_msg)
 
 	case GAP_CONN_STATE_CONNECTED:
 		BT_LOGD("[conn_state_evt]: connected success, conn_id: %d\r\n", conn_id);
-		bt_stack_le_conn_handle[conn_id] = le_get_conn_handle(conn_id);
+		conn_handle = le_get_conn_handle(conn_id);
+		/* when conn_handle 16 first comes as conn_id 0, then disconnct; conn_handle 16 may
+		comes as conn_id 1 next time. So both bt_stack_le_conn_handle[] of 0 and 1 may record
+		the handle 16, cause the mismatch in bt_stack_le_gap_get_conn_id. Clear the old record here.*/
+		for (i = 0; i < RTK_BLE_GAP_MAX_LINKS; i++) {
+			if (bt_stack_le_conn_handle[i] == conn_handle) {
+				bt_stack_le_conn_handle[i] = 0;
+			}
+		}
+		bt_stack_le_conn_handle[conn_id] = conn_handle;
 
 		bt_stack_le_link_tbl[conn_id].is_active = 1;
 		bt_stack_le_link_num++;
@@ -5846,6 +5971,154 @@ static uint16_t bt_stack_le_gap_coc_send_data(void *param)
 }
 #endif /* RTK_BLE_COC_SUPPORT */
 
+#if defined(F_BT_LE_4_0_DTM_SUPPORT) && F_BT_LE_4_0_DTM_SUPPORT
+static uint16_t bt_stack_le_gap_dtm_rx_test_v1(void *param)
+{
+	rtk_bt_le_dtm_rx_param_t *p_rx_param = (rtk_bt_le_dtm_rx_param_t *)param;
+	T_GAP_CAUSE cause;
+
+	cause = le_dtm_receiver_test(p_rx_param->rx_channel);
+	if (cause) {
+		BT_LOGE("le_dtm_receiver_test cause = 0x%x \r\n", cause);
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return 0;
+}
+
+static uint16_t bt_stack_le_gap_dtm_tx_test_v1(void *param)
+{
+	rtk_bt_le_dtm_tx_param_t *p_tx_param = (rtk_bt_le_dtm_tx_param_t *)param;
+	T_GAP_CAUSE cause;
+
+	cause = le_dtm_transmitter_test(p_tx_param->tx_channel,
+									p_tx_param->data_len,
+									(uint8_t)p_tx_param->pkt_pl);
+	if (cause) {
+		BT_LOGE("le_dtm_transmitter_test cause = 0x%x \r\n", cause);
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return 0;
+}
+
+static uint16_t bt_stack_le_gap_dtm_end_test(void)
+{
+	T_GAP_CAUSE cause;
+
+	cause = le_dtm_test_end();
+	if (cause) {
+		BT_LOGE("le_dtm_test_end cause = 0x%x \r\n", cause);
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return 0;
+}
+
+#if defined(F_BT_LE_5_0_DTM_SUPPORT) && F_BT_LE_5_0_DTM_SUPPORT
+static uint16_t bt_stack_le_gap_dtm_rx_test_v2(void *param)
+{
+	rtk_bt_le_dtm_rx_param_t *p_rx_param = (rtk_bt_le_dtm_rx_param_t *)param;
+	T_GAP_CAUSE cause;
+
+	cause = le_dtm_enhanced_receiver_test(p_rx_param->rx_channel,
+										  (uint8_t)p_rx_param->phy,
+										  (uint8_t)p_rx_param->mod_idx);
+	if (cause) {
+		BT_LOGE("le_dtm_enhanced_receiver_test cause = 0x%x \r\n", cause);
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return 0;
+}
+
+static uint16_t bt_stack_le_gap_dtm_tx_test_v2(void *param)
+{
+	rtk_bt_le_dtm_tx_param_t *p_tx_param = (rtk_bt_le_dtm_tx_param_t *)param;
+	T_GAP_CAUSE cause;
+
+	cause = le_dtm_enhanced_transmitter_test(p_tx_param->tx_channel,
+											 p_tx_param->data_len,
+											 (uint8_t)p_tx_param->pkt_pl,
+											 (uint8_t)p_tx_param->phy);
+	if (cause) {
+		BT_LOGE("le_dtm_enhanced_transmitter_test cause = 0x%x \r\n", cause);
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return 0;
+}
+#endif
+
+#if defined(F_BT_LE_5_1_DTM_SUPPORT) && F_BT_LE_5_1_DTM_SUPPORT
+static uint16_t bt_stack_le_gap_dtm_rx_test_v3(void *param)
+{
+	rtk_bt_le_dtm_rx_param_t *p_rx_param = (rtk_bt_le_dtm_rx_param_t *)param;
+	T_GAP_CAUSE cause;
+
+	cause = le_dtm_receiver_test_v3(p_rx_param->rx_channel,
+									(T_GAP_PHYS_TYPE)p_rx_param->phy,
+									(T_GAP_DTM_MODULATION_INDEX_TYPE)p_rx_param->mod_idx,
+									p_rx_param->exp_cte_len,
+									(T_GAP_CTE_TYPE)p_rx_param->exp_cte_type,
+									(T_GAP_SLOT_DUATIONS_TYPE)p_rx_param->slot_durations,
+									p_rx_param->sw_pattern_len,
+									p_rx_param->p_antenna_ids);
+	if (cause) {
+		BT_LOGE("le_dtm_receiver_test_v3 cause = 0x%x \r\n", cause);
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return 0;
+}
+
+static uint16_t bt_stack_le_gap_dtm_tx_test_v3(void *param)
+{
+	rtk_bt_le_dtm_tx_param_t *p_tx_param = (rtk_bt_le_dtm_tx_param_t *)param;
+	T_GAP_CAUSE cause;
+
+	cause = le_dtm_transmitter_test_v3(p_tx_param->tx_channel,
+									   p_tx_param->data_len,
+									   (T_GAP_DTM_PACKET_PAYLOAD_TYPE)p_tx_param->pkt_pl,
+									   (T_GAP_DTM_PHYS_TYPE)p_tx_param->phy,
+									   p_tx_param->cte_len,
+									   (T_GAP_CTE_TYPE)p_tx_param->cte_type,
+									   p_tx_param->sw_pattern_len,
+									   p_tx_param->p_antenna_ids);
+	if (cause) {
+		BT_LOGE("le_dtm_transmitter_test_v3 cause = 0x%x \r\n", cause);
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return 0;
+}
+#endif
+
+#if defined(F_BT_LE_5_2_DTM_SUPPORT) && F_BT_LE_5_2_DTM_SUPPORT
+static uint16_t bt_stack_le_gap_dtm_tx_test_v4(void *param)
+{
+	rtk_bt_le_dtm_tx_param_t *p_tx_param = (rtk_bt_le_dtm_tx_param_t *)param;
+	T_GAP_CAUSE cause;
+
+	cause = le_dtm_transmitter_test_v4(p_tx_param->tx_channel,
+									   p_tx_param->data_len,
+									   (T_GAP_DTM_PACKET_PAYLOAD_TYPE)p_tx_param->pkt_pl,
+									   (T_GAP_DTM_PHYS_TYPE)p_tx_param->phy,
+									   p_tx_param->cte_len,
+									   (T_GAP_CTE_TYPE)p_tx_param->cte_type,
+									   p_tx_param->sw_pattern_len,
+									   p_tx_param->p_antenna_ids,
+									   p_tx_param->tx_power_level);
+	if (cause) {
+		BT_LOGE("le_dtm_transmitter_test_v4 cause = 0x%x \r\n", cause);
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return 0;
+}
+#endif
+#endif /* F_BT_LE_4_0_DTM_SUPPORT */
+
 uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = 0;
@@ -6452,6 +6725,85 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 	}
 #endif /* RTK_BLE_COC_SUPPORT */
 
+#if defined(F_BT_LE_4_0_DTM_SUPPORT) && F_BT_LE_4_0_DTM_SUPPORT
+	case RTK_BT_LE_GAP_ACT_DTM_RX_TEST_V1: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_DTM_RX_TEST_V1 \r\n");
+		p_cmd->user_data = GAP_MSG_LE_DTM_RECEIVER_TEST;
+		bt_stack_pending_cmd_insert(p_cmd);
+		ret = bt_stack_le_gap_dtm_rx_test_v1(p_cmd->param);
+		goto async_handle;
+		break;
+	}
+
+	case RTK_BT_LE_GAP_ACT_DTM_TX_TEST_V1: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_DTM_TX_TEST_V1 \r\n");
+		p_cmd->user_data = GAP_MSG_LE_DTM_TRANSMITTER_TEST;
+		bt_stack_pending_cmd_insert(p_cmd);
+		ret = bt_stack_le_gap_dtm_tx_test_v1(p_cmd->param);
+		goto async_handle;
+		break;
+	}
+
+	case RTK_BT_LE_GAP_ACT_DTM_END_TEST: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_DTM_END_TEST \r\n");
+		p_cmd->user_data = GAP_MSG_LE_DTM_TEST_END;
+		bt_stack_pending_cmd_insert(p_cmd);
+		ret = bt_stack_le_gap_dtm_end_test();
+		goto async_handle;
+		break;
+	}
+
+#if defined(F_BT_LE_5_0_DTM_SUPPORT) && F_BT_LE_5_0_DTM_SUPPORT
+	case RTK_BT_LE_GAP_ACT_DTM_RX_TEST_V2: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_DTM_RX_TEST_V2 \r\n");
+		p_cmd->user_data = GAP_MSG_LE_DTM_ENHANCED_RECEIVER_TEST;
+		bt_stack_pending_cmd_insert(p_cmd);
+		ret = bt_stack_le_gap_dtm_rx_test_v2(p_cmd->param);
+		goto async_handle;
+		break;
+	}
+
+	case RTK_BT_LE_GAP_ACT_DTM_TX_TEST_V2: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_DTM_TX_TEST_V2 \r\n");
+		p_cmd->user_data = GAP_MSG_LE_DTM_ENHANCED_TRANSMITTER_TEST;
+		bt_stack_pending_cmd_insert(p_cmd);
+		ret = bt_stack_le_gap_dtm_tx_test_v2(p_cmd->param);
+		goto async_handle;
+		break;
+	}
+#endif
+
+#if defined(F_BT_LE_5_1_DTM_SUPPORT) && F_BT_LE_5_1_DTM_SUPPORT
+	case RTK_BT_LE_GAP_ACT_DTM_RX_TEST_V3: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_DTM_RX_TEST_V3 \r\n");
+		p_cmd->user_data = GAP_MSG_LE_DTM_RECEIVER_TEST_V3;
+		bt_stack_pending_cmd_insert(p_cmd);
+		ret = bt_stack_le_gap_dtm_rx_test_v3(p_cmd->param);
+		goto async_handle;
+		break;
+	}
+
+	case RTK_BT_LE_GAP_ACT_DTM_TX_TEST_V3: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_DTM_TX_TEST_V3 \r\n");
+		p_cmd->user_data = GAP_MSG_LE_DTM_TRANSMITTER_TEST_V3;
+		bt_stack_pending_cmd_insert(p_cmd);
+		ret = bt_stack_le_gap_dtm_tx_test_v3(p_cmd->param);
+		goto async_handle;
+		break;
+	}
+#endif
+
+#if defined(F_BT_LE_5_2_DTM_SUPPORT) && F_BT_LE_5_2_DTM_SUPPORT
+	case RTK_BT_LE_GAP_ACT_DTM_TX_TEST_V4: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_DTM_TX_TEST_V4 \r\n");
+		p_cmd->user_data = GAP_MSG_LE_DTM_TRANSMITTER_TEST_V4;
+		bt_stack_pending_cmd_insert(p_cmd);
+		ret = bt_stack_le_gap_dtm_tx_test_v4(p_cmd->param);
+		goto async_handle;
+		break;
+	}
+#endif
+#endif /* F_BT_LE_4_0_DTM_SUPPORT */
 	default:
 		BT_LOGE("bt_stack_le_act_handle: unknown act: %d \r\n", p_cmd->act);
 		ret = RTK_BT_ERR_NO_CASE_ELEMENT;

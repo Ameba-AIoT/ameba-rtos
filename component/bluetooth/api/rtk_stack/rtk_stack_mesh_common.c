@@ -609,16 +609,25 @@ uint16_t df_cb(uint8_t type, void *pdata)
 	return rtk_bt_evt_indicate(p_evt, NULL);
 }
 
-bool rpl_cb(mesh_rpl_fail_type_t type, uint8_t rpl_loop, uint16_t src, uint32_t iv_index,
-			uint32_t rpl_seq, uint32_t seq)
+static void rpl_cb(uint8_t type, void *pdata)
 {
-	(void)type;
-	(void)rpl_loop;
-	(void)src;
-	(void)iv_index;
-	(void)rpl_seq;
-	(void)seq;
-	return false;
+	switch (type) {
+	case MESH_RPL_TYPE_CHECK_FAIL: {
+		rpl_check_fail_t *pcheck = (rpl_check_fail_t *)pdata;
+		char *fail_type_str[] = {"Lower Seq", "Lower IV Index", "List Full"};
+		BT_LOGA("[%s]: %s, loop %d, src 0x%04x, iv index 0x%x, msg seq 0x%06x, rpl seq 0x%06x\r\n", __func__, \
+				fail_type_str[pcheck->type], pcheck->rpl_loop, pcheck->src, pcheck->iv_index, pcheck->seq, pcheck->rpl_seq);
+		*(pcheck->p_ignore) = false;
+		break;
+	}
+	case MESH_RPL_TYPE_ADD_ENTRY: {
+		// rpl_add_entry_t *padd = (rpl_add_entry_t *)pdata;
+		// BT_LOGA("[%s]: add entry, loop %d, src 0x%04x, seq 0x%06x, remain entry num %d\r\n", __func__, padd->rpl_loop, padd->src, padd->seq, padd->remain_entry_num);
+		break;
+	}
+	default:
+		break;
+	}
 }
 
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
@@ -1122,9 +1131,7 @@ static void rtk_bt_mesh_stack_init(void *data)
 	mesh_init();
 	device_info_cb_reg(device_info_cb);
 	hb_init(hb_cb);
-#if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
 	rpl_cb_reg(rpl_cb);
-#endif
 #if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
 	df_cb_reg(df_cb);
 #if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
