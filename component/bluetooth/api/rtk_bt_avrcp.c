@@ -219,3 +219,17 @@ uint16_t rtk_bt_avrcp_get_element_attr(uint8_t *bd_addr, uint8_t num, uint8_t *p
 
 	return ret;
 }
+
+uint16_t rtk_bt_avrcp_cover_art_connect(uint8_t *bd_addr)
+{
+	uint16_t ret = 0;
+
+	if (!bd_addr) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	ret = rtk_bt_send_cmd(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_ACT_CONN_COVER_ART,
+						  bd_addr, 6);
+
+	return ret;
+}

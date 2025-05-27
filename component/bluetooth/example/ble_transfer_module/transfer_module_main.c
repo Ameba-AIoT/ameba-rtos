@@ -24,7 +24,6 @@
 
 #if defined(BT_AT_SYNC) && BT_AT_SYNC
 #include <atcmd_bt_cmd_sync.h>
-#include <bt_types.h>
 #endif
 
 #define RTK_BT_DEFAULT_DEV_NAME         "RTK_BT_TRANSFER_MODULE"
@@ -127,7 +126,6 @@ static rtk_bt_le_security_param_t sec_param = {
 #define PRIVACY_USE_DIR_ADV_WHEN_BONDED    0
 static bool privacy_enable = false;
 static bool privacy_whitelist = true;
-static uint8_t privacy_irk[RTK_BT_LE_GAP_IRK_LEN] = "abcdef0123456789";
 #endif
 
 uint16_t ble_transfer_module_get_dev_name(uint8_t buf_len, char *buf)
@@ -181,14 +179,6 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 		rtk_bt_le_adv_start_ind_t *adv_start_ind = (rtk_bt_le_adv_start_ind_t *)param;
 		if (!adv_start_ind->err) {
 			BT_LOGA("[APP] ADV started: adv_type %d  \r\n", adv_start_ind->adv_type);
-#if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
-			// if (privacy_enable) {
-			//  uint8_t local_rpa[6] = {0};
-			//  rtk_bt_le_gap_read_local_resolv_addr(RTK_BT_LE_IDENT_ADDR_PUBLIC, NULL, local_rpa);
-			//  rtk_bt_addr_val_to_str(local_rpa, le_addr, sizeof(le_addr));
-			//  BT_LOGA("[APP] ADV use local RPA address: %s \r\n", le_addr);
-			// }
-#endif
 		} else {
 			BT_LOGE("[APP] ADV start failed, err 0x%x \r\n", adv_start_ind->err);
 		}
@@ -386,7 +376,7 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 
 		}
 #if defined(BT_AT_SYNC) && BT_AT_SYNC
-		if (disconn_ind->reason != (HCI_ERR | HCI_ERR_LOCAL_HOST_TERMINATE)) {
+		if (disconn_ind->reason != (RTK_BT_ERR_HCI_GROUP | RTK_BT_HCI_ERR_LOCAL_HOST_TERMINATE)) {
 			BT_AT_PRINT_INDICATE("+BLEGAP:disconn,%d,%s\r\n",
 								 disconn_ind->conn_handle, le_addr);
 		}
@@ -600,7 +590,7 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 #endif
 
 	default:
-		BT_LOGE("[APP] Unkown gap cb evt type: %d\r\n", evt_code);
+		BT_LOGE("[APP] Unknown gap cb evt type: %d\r\n", evt_code);
 		break;
 	}
 
@@ -640,7 +630,7 @@ int ble_transfer_module_main(uint8_t enable)
 		bt_app_conf.max_tx_octets = 0x40;
 		bt_app_conf.max_tx_time = 0x200;
 #if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
-		memcpy(bt_app_conf.irk, privacy_irk, RTK_BT_LE_GAP_IRK_LEN);
+		bt_app_conf.irk_auto_gen = true;
 #endif
 		bt_app_conf.user_def_service = false;
 		bt_app_conf.cccd_not_check = false;

@@ -818,7 +818,6 @@ static rtk_bt_le_security_param_t sec_param = {
 #define PRIVACY_USE_DIR_ADV_WHEN_BONDED    0
 static bool privacy_enable = false;
 static bool privacy_whitelist = true;
-static uint8_t privacy_irk[RTK_BT_LE_GAP_IRK_LEN] = "abcdef0123456789";
 #endif
 
 static void app_server_disconnect(uint16_t conn_handle)
@@ -908,7 +907,7 @@ static rtk_bt_evt_cb_ret_t scatternet_gap_app_callback(uint8_t evt_code, void *p
 	}
 #endif
 	default:
-		BT_LOGE("[APP] Unkown common gap cb evt type: %d\r\n", evt_code);
+		BT_LOGE("[APP] Unknown common gap cb evt type: %d\r\n", evt_code);
 		break;
 	}
 
@@ -1391,7 +1390,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 #endif
 
 	default:
-		BT_LOGE("[APP] Unkown gap cb evt type: %d\r\n", evt_code);
+		BT_LOGE("[APP] Unknown gap cb evt type: %d\r\n", evt_code);
 		break;
 	}
 
@@ -1595,7 +1594,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gattc_app_callback(uint8_t event, void
 #if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
 static int16_t pcm_buffer[512] = {0};
 static uint16_t a2dp_demo_send_data_seq = 0;
-#if defined(AUDIO_SOURCE_OUTBAND_FROM_USB) && AUDIO_SOURCE_OUTBAND_FROM_USB
+#if defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB
 static void app_a2dp_src_send_data(void)
 {
 	rtk_bt_a2dp_stream_data_send_t data_send_t = {0};
@@ -2867,7 +2866,7 @@ int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable)
 		bt_app_conf.max_tx_octets = 0x40;
 		bt_app_conf.max_tx_time = 0x200;
 #if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
-		memcpy(bt_app_conf.irk, privacy_irk, RTK_BT_LE_GAP_IRK_LEN);
+		bt_app_conf.irk_auto_gen = true;
 #endif
 		bt_app_conf.user_def_service = false;
 		bt_app_conf.cccd_not_check = false;
@@ -2989,7 +2988,7 @@ int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable)
 		/* bredr gap related */
 		{
 #if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
-#if defined(AUDIO_SOURCE_OUTBAND_FROM_USB) && AUDIO_SOURCE_OUTBAND_FROM_USB
+#if defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB
 			if (!demo_usb_init()) {
 				BT_LOGE("demo_usb_init failed\r\n");
 			}
@@ -3125,7 +3124,7 @@ int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable)
 		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_AVRCP));
 		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_A2DP));
 #if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
-#if defined(AUDIO_SOURCE_OUTBAND_FROM_USB) && AUDIO_SOURCE_OUTBAND_FROM_USB
+#if defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB
 		if (!demo_usb_deinit()) {
 			BT_LOGE("demo_usb_deinit failed\r\n");
 		}

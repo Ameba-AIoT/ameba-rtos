@@ -140,7 +140,7 @@ extern "C"
  * Error Platform
  */
 #else
-#error "Please choose a corret platform"
+#error "Please choose a correct platform"
 #endif
 
 #ifdef __cplusplus

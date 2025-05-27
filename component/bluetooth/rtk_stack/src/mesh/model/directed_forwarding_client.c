@@ -13,6 +13,7 @@
 
 /* Add Includes here */
 #include "directed_forwarding_model.h"
+//RTK porting:add head file for call app layer
 #include <rtk_stack_mesh_internal.h>
 #include <rtk_bt_mesh_directed_forwarding_model.h>
 #include <mesh_data_dump.h>
@@ -23,6 +24,7 @@ mesh_model_info_t df_client;
 static mesh_msg_send_cause_t directed_forwarding_client_send(uint16_t dst, uint16_t net_key_index,
                                                              void *pmsg, uint16_t msg_len, uint32_t delay_time)
 {
+//RTK porting: fix compile error
     (void)delay_time;
     mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = &df_client;
@@ -513,6 +515,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_DIRECTED_CONTROL_STATUS:
         if (pmesh_msg->msg_len == sizeof(directed_control_status_t))
         {
+            //RTK porting: for call app layer
             // directed_control_status_t *pmsg = (directed_control_status_t *)pbuffer;
             rtk_bt_mesh_directed_forwarding_client_model_indicate_event(RTK_BT_MESH_DF_MODEL_DIRECTED_CONTROL_STAT,
 				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_DIRECTED_CONTROL_STATUS),
@@ -527,6 +530,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_PATH_METRIC_STATUS:
         if (pmesh_msg->msg_len == sizeof(path_metric_status_t))
         {
+            //RTK porting: for call app layer
             // path_metric_status_t *pmsg = (path_metric_status_t *)pbuffer;
             rtk_bt_mesh_directed_forwarding_client_model_indicate_event(RTK_BT_MESH_DF_MODEL_PATH_METRIC_STAT,
 				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_PATH_METRIC_STATUS),
@@ -539,6 +543,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_DISCOVERY_TABLE_CAPABILITIES_STATUS:
         if (pmesh_msg->msg_len == sizeof(discovery_table_capabilities_status_t))
         {
+            //RTK porting: for call app layer
             // discovery_table_capabilities_status_t *pmsg = (discovery_table_capabilities_status_t *)pbuffer;
             rtk_bt_mesh_directed_forwarding_client_model_indicate_event(RTK_BT_MESH_DF_MODEL_DISCOVERY_TABLE_CAPABILITIES_STAT,
 				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_DISCOVERY_TABLE_CAPABILITIES_STATUS),
@@ -551,6 +556,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_FORWARDING_TABLE_STATUS:
         if (pmesh_msg->msg_len == sizeof(forwarding_table_status_t))
         {
+            //RTK porting: for call app layer
             // forwarding_table_status_t *pmsg = (forwarding_table_status_t *)pbuffer;
             rtk_bt_mesh_directed_forwarding_client_model_indicate_event(RTK_BT_MESH_DF_MODEL_FORWARDING_TABLE_STAT,
 				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_FORWARDING_TABLE_STATUS),
@@ -562,6 +568,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_FORWARDING_TABLE_DEPENDENTS_STATUS:
         if (pmesh_msg->msg_len == sizeof(forwarding_table_dependents_status_t))
         {
+            //RTK porting: for call app layer
             // forwarding_table_dependents_status_t *pmsg = (forwarding_table_dependents_status_t *)pbuffer;
             rtk_bt_mesh_directed_forwarding_client_model_indicate_event(RTK_BT_MESH_DF_MODEL_FORWARDING_TABLE_DEPENDENTS_STAT,
 				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_FORWARDING_TABLE_DEPENDENTS_STATUS),
@@ -573,6 +580,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_FORWARDING_TABLE_ENTRIES_COUNT_STATUS:
         if (pmesh_msg->msg_len == sizeof(forwarding_table_entries_count_status_t))
         {
+            //RTK porting: for call app layer
             // forwarding_table_entries_count_status_t *pmsg = (forwarding_table_entries_count_status_t *)pbuffer;
             rtk_bt_mesh_directed_forwarding_client_model_indicate_event(RTK_BT_MESH_DF_MODEL_FORWARDING_TABLE_ENTRIES_COUNT_STAT,
 				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_FORWARDING_TABLE_ENTRIES_COUNT_STATUS),
@@ -584,6 +592,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
         break;
     case MESH_MSG_FORWARDING_TABLE_ENTRIES_STATUS:
         {
+            //RTK porting:the whole modification for this case is for call app layer
             // uint16_t path_origin = MESH_UNASSIGNED_ADDR;
             // uint16_t dst = MESH_UNASSIGNED_ADDR;
             // uint16_t forwarding_table_update_counter = 0;
@@ -796,6 +805,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
         break;
     case MESH_MSG_FORWARDING_TABLE_DEPENDENTS_GET_STATUS:
         {
+            //RTK porting:the whole modification for this case is for call app layer
             forwarding_table_dependents_get_status_t *pmsg = (forwarding_table_dependents_get_status_t *)
                                                              pbuffer;
             // uint8_t *pdata = pmsg->data;
@@ -863,6 +873,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_WANTED_LANES_STATUS:
         if (pmesh_msg->msg_len == sizeof(wanted_lanes_status_t))
         {
+            //RTK porting:the whole modification for this case is for call app layer
             // wanted_lanes_status_t *pmsg = (wanted_lanes_status_t *)pbuffer;
             rtk_bt_mesh_directed_forwarding_client_model_indicate_event(RTK_BT_MESH_DF_MODEL_WANTED_LANES_STAT,
 				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_WANTED_LANES_STATUS),
@@ -874,6 +885,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_TWO_WAY_PATH_STATUS:
         if (pmesh_msg->msg_len == sizeof(two_way_path_status_t))
         {
+            //RTK porting:the whole modification for this case is for call app layer
             // two_way_path_status_t *pmsg = (two_way_path_status_t *)pbuffer;
             rtk_bt_mesh_directed_forwarding_client_model_indicate_event(RTK_BT_MESH_DF_MODEL_TWO_WAY_PATH_STAT,
 				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_TWO_WAY_PATH_STATUS),
@@ -885,6 +897,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_PATH_ECHO_INTERVAL_STATUS:
         if (pmesh_msg->msg_len == sizeof(path_echo_interval_status_t))
         {
+            //RTK porting:the whole modification for this case is for call app layer
             // path_echo_interval_status_t *pmsg = (path_echo_interval_status_t *)pbuffer;
             rtk_bt_mesh_directed_forwarding_client_model_indicate_event(RTK_BT_MESH_DF_MODEL_PATH_ECHO_INTERVAL_STAT,
 				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_PATH_ECHO_INTERVAL_STATUS),
@@ -896,6 +909,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_DIRECTED_NETWORK_TRANSMIT_STATUS:
         if (pmesh_msg->msg_len == sizeof(directed_network_transmit_status_t))
         {
+            //RTK porting:the whole modification for this case is for call app layer
             // directed_network_transmit_status_t *pmsg = (directed_network_transmit_status_t *)pbuffer;
             rtk_bt_mesh_directed_forwarding_client_model_indicate_event(RTK_BT_MESH_DF_MODEL_DIRECTED_NETWORK_TRANSMIT_STAT,
 				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_DIRECTED_NETWORK_TRANSMIT_STATUS),
@@ -908,6 +922,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_DIRECTED_RELAY_RETRANSMIT_STATUS:
         if (pmesh_msg->msg_len == sizeof(directed_relay_retransmit_status_t))
         {
+            //RTK porting:the whole modification for this case is for call app layer
             // directed_relay_retransmit_status_t *pmsg = (directed_relay_retransmit_status_t *)pbuffer;
             rtk_bt_mesh_directed_forwarding_client_model_indicate_event(RTK_BT_MESH_DF_MODEL_DIRECTED_RELAY_RETRANSMIT_STAT,
 				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_DIRECTED_RELAY_RETRANSMIT_STATUS),
@@ -920,6 +935,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_RSSI_THRESHOLD_STATUS:
         if (pmesh_msg->msg_len == sizeof(rssi_threshold_status_t))
         {
+            //RTK porting:the whole modification for this case is for call app layer
             // rssi_threshold_status_t *pmsg = (rssi_threshold_status_t *)pbuffer;
             rtk_bt_mesh_directed_forwarding_client_model_indicate_event(RTK_BT_MESH_DF_MODEL_RSSI_THRESHOLD_STAT,
 				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_RSSI_THRESHOLD_STATUS),
@@ -931,6 +947,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_DIRECTED_PATHS_STATUS:
         if (pmesh_msg->msg_len == sizeof(directed_paths_status_t))
         {
+            //RTK porting:the whole modification for this case is for call app layer
             // directed_paths_status_t *pmsg = (directed_paths_status_t *)pbuffer;
             rtk_bt_mesh_directed_forwarding_client_model_indicate_event(RTK_BT_MESH_DF_MODEL_DIRECTED_PATHS_STAT,
 				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_DIRECTED_PATHS_STATUS),
@@ -957,6 +974,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
             {
                 break;
             }
+            //RTK porting:the whole modification for this case is for call app layer
             directed_publish_policy_status_t call_data;
             call_data = *(directed_publish_policy_status_t *)pbuffer;
             call_data.model_id = model_id;
@@ -969,6 +987,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_PATH_DISCOVERY_TIMING_CONTROL_STATUS:
         if (pmesh_msg->msg_len == sizeof(path_discovery_timing_control_status_t))
         {
+            //RTK porting:the whole modification for this case is for call app layer
             // path_discovery_timing_control_status_t *pmsg = (path_discovery_timing_control_status_t *)pbuffer;
             rtk_bt_mesh_directed_forwarding_client_model_indicate_event(RTK_BT_MESH_DF_MODEL_PATH_DISCOVERY_TIMING_CONTROL_STAT,
 				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_PATH_DISCOVERY_TIMING_CONTROL_STATUS),
@@ -981,6 +1000,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_DIRECTED_CONTROL_NETWORK_TRANSMIT_STATUS:
         if (pmesh_msg->msg_len == sizeof(directed_control_network_transmit_status_t))
         {
+            //RTK porting:the whole modification for this case is for call app layer
             // directed_control_network_transmit_status_t *pmsg = (directed_control_network_transmit_status_t *)
             //                                                    pbuffer;
             rtk_bt_mesh_directed_forwarding_client_model_indicate_event(RTK_BT_MESH_DF_MODEL_DIRECTED_CONTROL_NETWORK_TRANSMIT_STAT,
@@ -994,6 +1014,7 @@ static bool directed_forwarding_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_DIRECTED_CONTROL_RELAY_RETRANSMIT_STATUS:
         if (pmesh_msg->msg_len == sizeof(directed_control_relay_retransmit_status_t))
         {
+            //RTK porting:the whole modification for this case is for call app layer
             // directed_control_relay_retransmit_status_t *pmsg = (directed_control_relay_retransmit_status_t *)
             //                                                    pbuffer;
             rtk_bt_mesh_directed_forwarding_client_model_indicate_event(RTK_BT_MESH_DF_MODEL_DIRECTED_CONTROL_RELAY_RETRANSMIT_STAT,

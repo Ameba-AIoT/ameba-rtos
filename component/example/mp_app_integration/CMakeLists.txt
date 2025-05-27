@@ -9,6 +9,9 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 #----------------------------------------#
 # Component public part, user config begin
 
+# You may use if-else condition to set or update predefined variable above
+ameba_list_append(public_includes ${CMAKE_CURRENT_SOURCE_DIR})
+
 # Component public part, user config end
 #----------------------------------------#
 
@@ -36,14 +39,11 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources
-    app_audio_data.c
+    example_mp_app_integration.c
+    app_example.c
 )
-
 ameba_list_append(private_includes
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${c_CMPT_USB_DIR}/common
-    ${c_CMPT_USB_DIR}/device/core
-    ${c_CMPT_USB_DIR}/device/uac
 )
 
 # Component private part, user config end
@@ -52,7 +52,7 @@ ameba_list_append(private_includes
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For open-source component, always build from source
-ameba_add_internal_library(bt_app_audio_data
+ameba_add_internal_library(example_mp_app_integration
     p_SOURCES
         ${private_sources}
     p_INCLUDES
@@ -62,4 +62,5 @@ ameba_add_internal_library(bt_app_audio_data
     p_COMPILE_OPTIONS
         ${private_compile_options}
 )
+
 ##########################################################################################
