@@ -16,6 +16,8 @@ static const char *const TAG = "CLK";
 void SDM32K_Enable(void)
 {
 	SDM_TypeDef *SDM = SDM_DEV;
+
+	SDM->SDM_TIMEOUT = SDM_TIEMRCAL_INTERVAL_1MIN;
 	SDM->SDM_CTRL0 |= SDM_BIT_EN | SDM_BIT_RST | SDM_BIT_ALWAYS_CAL_EN | SDM_BIT_TIMER_CAL_EN;
 }
 

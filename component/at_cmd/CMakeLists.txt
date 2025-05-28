@@ -62,10 +62,15 @@ if(CONFIG_CORE_AS_AP AND CONFIG_SUPPORT_ATCMD)
     ameba_list_append_if(CONFIG_BT private_sources
         atcmd_bt_ext.c
     )
-    ameba_list_append_if(CONFIG_ATCMD_HOST_CONTROL private_sources
-        at_intf_uart.c
-        at_intf_spi.c
-    )
+    if(CONFIG_ATCMD_HOST_CONTROL)
+        ameba_list_append_if(CONFIG_SUPPORT_SDIO_DEVICE private_sources
+            at_intf_sdio.c
+        )
+        ameba_list_append(private_sources
+            at_intf_uart.c
+            at_intf_spi.c
+        )
+    endif()
 endif()
 # Component private part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#
