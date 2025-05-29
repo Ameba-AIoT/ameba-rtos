@@ -362,7 +362,7 @@ u32 BOOT_LoadImages(void)
 {
 	u8 CertImgIndex;
 
-#ifdef CONFIG_XIP_FLASH
+#ifdef CONFIG_IMG2_FLASH
 	if (FALSE == SYSCFG_BootFromNor()) {
 		assert_param(0); /* Nand Cannot XIP */
 	}

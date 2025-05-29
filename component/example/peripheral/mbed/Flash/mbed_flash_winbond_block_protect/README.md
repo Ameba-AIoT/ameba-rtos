@@ -2,8 +2,6 @@
 
 This example demonstrates how to configure the status register of Winbond to protect all blocks by MBED API. Note that the status register should be reset if users want to reload code. 
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 Winbond Nor Flash

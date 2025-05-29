@@ -383,7 +383,7 @@ static void app_bt_le_iso_send_timer_update(uint32_t time_interval_us)
 	if (bt_le_iso_demo_send_timer.handler) {
 		gtimer_reload(&bt_le_iso_demo_send_timer, time_interval_us);
 	} else {
-		BT_LOGD("[APP] %s: timer not init\r\n", __func__);
+		BT_LOGE("[APP] %s: timer not init\r\n", __func__);
 	}
 #else
 	if (bt_le_iso_demo_send_timer) {
@@ -1283,7 +1283,7 @@ int bt_le_iso_main(uint8_t role, uint8_t enable)
 		}
 
 		default:
-			BT_LOGD("[APP] unknown role 0x%x\r\n", role);
+			BT_LOGE("[APP] unknown role 0x%x\r\n", role);
 			break;
 		}
 	} else if (0 == enable) {
@@ -1396,7 +1396,7 @@ int bt_le_iso_main(uint8_t role, uint8_t enable)
 		}
 
 		default:
-			BT_LOGD("[APP] unknown role 0x%x\r\n", role);
+			BT_LOGE("[APP] unknown role 0x%x\r\n", role);
 			break;
 		}
 	}

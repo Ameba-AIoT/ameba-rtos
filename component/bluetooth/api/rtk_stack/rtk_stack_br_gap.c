@@ -473,7 +473,7 @@ static uint16_t bt_stack_br_gap_get_device_addr(void *param)
 
 	cause = gap_get_param(GAP_PARAM_BD_ADDR, (void *)paddr->addr);
 	if (cause) {
-		BT_LOGD("bt_stack_br_gap_get_device_addr: cause = %x \r\n", cause);
+		BT_LOGE("bt_stack_br_gap_get_device_addr: cause = %x \r\n", cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -487,7 +487,7 @@ static uint16_t bt_stack_br_gap_set_device_name(void *param)
 
 	cause = gap_br_set_dev_name((uint8_t *)pname, strlen((const char *)pname));
 	if (cause) {
-		BT_LOGD("bt_stack_br_gap_set_device_name: cause = %x \r\n", cause);
+		BT_LOGE("bt_stack_br_gap_set_device_name: cause = %x \r\n", cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -504,7 +504,7 @@ static uint16_t bt_stack_br_gap_cfg_page_param(void *param)
 
 	cause = gap_br_cfg_page_scan_param(pagescan_type, pagescan_interval, pagescan_window);
 	if (cause) {
-		BT_LOGD("bt_stack_br_gap_cfg_page_param: cause = %x \r\n", cause);
+		BT_LOGE("bt_stack_br_gap_cfg_page_param: cause = %x \r\n", cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -521,7 +521,7 @@ static uint16_t bt_stack_br_gap_cfg_inquiry_param(void *param)
 
 	cause = gap_br_cfg_inquiry_scan_param(inquiryscan_type, inquiryscan_interval, inquiryscan_window);
 	if (cause) {
-		BT_LOGD("bt_stack_br_gap_cfg_inquiry_param: cause = %x \r\n", cause);
+		BT_LOGE("bt_stack_br_gap_cfg_inquiry_param: cause = %x \r\n", cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 

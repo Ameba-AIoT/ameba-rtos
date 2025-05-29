@@ -47,6 +47,13 @@
 
 #define SPDIO_RXDESC_SZ	24
 
+#define SPDIO_PINMUX_GRP1	(u8)(1)
+#define SPDIO_PINMUX_GRP2	(u8)(2)
+#define SPDIO_PINMUX_GRP3	(u8)(3)
+#define SPDIO_PINMUX_GRP4	(u8)(4)
+#define SPDIO_PINMUX_GRP5	(u8)(5)
+#define SPDIO_PINMUX_GRPMAX	SPDIO_PINMUX_GRP5
+
 /** @}*/
 
 /** @defgroup MBED_SPDIO_Exported_Types MBED_SPDIO Exported Types
@@ -133,6 +140,7 @@ void spdio_init(struct spdio_t *obj);
 void spdio_deinit(struct spdio_t *obj);
 s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf);
 void spdio_trigger_rx_handle(void);
+void SPDIO_Board_Init(u8 PinGrp);
 
 /**
  * @brief An obj which will be used to initialize SDIO interface,

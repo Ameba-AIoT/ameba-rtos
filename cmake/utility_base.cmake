@@ -330,14 +330,14 @@ macro(ameba_normalize_path output_path input_path)
     endif()
 endmacro()
 
-function(modify_file_path original_path output_var)
+function(ameba_modify_file_path original_path output_var)
     set(oneValueArgs
         p_PREFIX
         p_BODY
         p_SUFFIX
         p_NEW_DIRECTORY
     )
-    cmake_parse_arguments(ARG "" "BODY;PREFIX;SUFFIX;NEW_DIRECTORY" "" ${ARGN})
+    cmake_parse_arguments(ARG "" "${oneValueArgs}" "" ${ARGN})
 
     get_filename_component(original_directory "${original_path}" DIRECTORY)
     get_filename_component(filename "${original_path}" NAME)
@@ -345,22 +345,47 @@ function(modify_file_path original_path output_var)
     get_filename_component(name "${filename}" NAME_WE)
     get_filename_component(ext "${filename}" EXT)
 
-    if(ARG_BODY)
-        set(new_name "${ARG_BODY}")
+    if(ARG_p_BODY)
+        set(new_name "${ARG_p_BODY}")
     else()
         set(new_name "${name}")
     endif()
 
-    set(new_filename "${ARG_PREFIX}${new_name}${ARG_SUFFIX}${ext}")
+    set(new_filename "${ARG_p_PREFIX}${new_name}${ARG_p_SUFFIX}${ext}")
 
-    if(ARG_NEW_DIRECTORY)
-        set(output_directory "${ARG_NEW_DIRECTORY}")
+    if(ARG_p_NEW_DIRECTORY)
+        set(output_directory "${ARG_p_NEW_DIRECTORY}")
     else()
         set(output_directory "${original_directory}")
     endif()
-
-    set(new_path "${output_directory}/${new_filename}")
+    ameba_set_if(output_directory new_path "${output_directory}/${new_filename}" p_ELSE ${new_filename})
     set(${output_var} "${new_path}" PARENT_SCOPE)
+endfunction()
+
+function(ameba_file_append output_file)
+    ameba_modify_file_path(${output_file} output_file_tmp p_SUFFIX _tmp p_PREFIX ameba_file_append_)
+    ameba_execute_process(
+        COMMAND ${CMAKE_COMMAND} -E rename ${output_file} ${output_file_tmp}
+    )
+    ameba_execute_process(
+        COMMAND ${CMAKE_COMMAND} -E cat ${output_file_tmp} ${ARGN}
+        OUTPUT_FILE ${output_file}
+    )
+    ameba_execute_process(
+        COMMAND ${CMAKE_COMMAND} -E remove ${output_file_tmp}
+    )
+endfunction()
+
+function(ameba_copy_file src_file dst_file)
+    ameba_execute_process(
+        COMMAND ${CMAKE_COMMAND} -E copy ${src_file} ${dst_file}
+    )
+endfunction()
+
+function(ameba_remove_file)
+    ameba_execute_process(
+        COMMAND ${CMAKE_COMMAND} -E remove ${ARGN}
+    )
 endfunction()
 ########################################################################################################
 # Usage:
@@ -1089,6 +1114,14 @@ endfunction()
 # Usage:
 #   ameba_execute([<cmd> ...])
 function(ameba_execute_process)
+    set(options
+        p_SHOW_OUTPUT
+    )
+
+    cmake_parse_arguments(ARG "${options}" "" "" ${ARGN})
+    if(ARG_p_SHOW_OUTPUT)
+        list(REMOVE_ITEM ARGN p_SHOW_OUTPUT)
+    endif()
     execute_process(${ARGN}
         RESULT_VARIABLE RESULT
         RESULTS_VARIABLE RESULTS
@@ -1110,6 +1143,8 @@ function(ameba_execute_process)
         message(STATUS "Command >>${ARGN}<< failed with result: ${COMMAND_FAILED_CODE}")
         message(STATUS "Command output: \n${OUTPUT}")
         message(FATAL_ERROR "Command error: \n${ERROR}")
+    elseif(ARG_p_SHOW_OUTPUT)
+        message(STATUS "Command output: \n${OUTPUT}")
     endif()
 endfunction()
 
@@ -1143,6 +1178,23 @@ function(ameba_axf2bin_prepend_head output_file input_file symbol map_file)
     endif()
 endfunction()
 
+# Usage:
+#   ameba_axf2bin_ota_prepend_head(<output_file> [<input_file> ...])
+function(ameba_axf2bin_ota_prepend_head output_file)
+    ameba_execute_process(
+        COMMAND ${op_OTA_PREPEND_HEADER}
+            -i ${ARGN}
+            -o ${output_file}
+    )
+endfunction()
+
+function(ameba_axf2bin_compress output_file input_file)
+    ameba_execute_process(
+        COMMAND ${op_COMPRESS}
+            -i ${input_file}
+            -o ${output_file}
+    )
+endfunction()
 
 function(ameba_axf2bin_fw_pack output_file)
     set(oneValueArgs
@@ -1164,7 +1216,7 @@ function(ameba_axf2bin_fw_pack output_file)
     ameba_list_append_if(ARG_p_IMAGE3 full_args --image3 ${ARG_p_IMAGE3})
     ameba_list_append_if(ARG_p_FULLMAC_IMAGE1 full_args --fullmac-image1 ${ARG_p_FULLMAC_IMAGE1})
     ameba_list_append_if(ARG_p_FULLMAC_IMAGE2 full_args --fullmac-image2 ${ARG_p_FULLMAC_IMAGE2})
-    ameba_list_append_if(ARG_p_IMAGE_IMGTOOL_FLOADER full_args --imgtool-floader ${p_IMAGE_IMGTOOL_FLOADER})
+    ameba_list_append_if(ARG_p_IMAGE_IMGTOOL_FLOADER full_args --imgtool-floader ${ARG_p_IMAGE_IMGTOOL_FLOADER})
 
     ameba_execute_process(COMMAND ${op_FW_PACKAGE}
         ${full_args}

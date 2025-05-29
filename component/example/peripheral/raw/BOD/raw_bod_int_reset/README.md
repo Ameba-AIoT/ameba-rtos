@@ -2,8 +2,6 @@
 
 This example describes how to use BOD `under interrupt mode` or `under reset mode`.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 Required Components: power supply device.

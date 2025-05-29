@@ -642,7 +642,7 @@ static void hci_platform_bt_debug_bit(uint8_t bt_dbg_port, char *pad)
 		Pinmux_Config(_PB_20, PINMUX_FUNCTION_DBGPORT);
 		break;
 	default:
-		BT_LOGA("Invalid setting BT debug port, wrong BT debug port[%d].\r\n", bt_dbg_port);
+		BT_LOGE("Invalid setting BT debug port, wrong BT debug port[%d].\r\n", bt_dbg_port);
 		break;
 	}
 }
@@ -675,7 +675,7 @@ static void hci_platform_bt_debug_shift_bit(uint8_t original, uint8_t mapping)
 		set_reg_value(0x42008BEC, BIT24 | BIT25 | BIT26 | BIT27 | BIT28, original);
 		break;
 	default:
-		BT_LOGA("Invalid setting BT debug port shift, wrong shift mapping (%d).\r\n", mapping);
+		BT_LOGE("Invalid setting BT debug port shift, wrong shift mapping (%d).\r\n", mapping);
 		break;
 	}
 }
@@ -713,7 +713,7 @@ static void hci_platform_bt_gpio_pad(uint8_t bt_gpio, char *pad)
 		Pinmux_Config(_PB_22, PINMUX_FUNCTION_BT_GPIO);
 		break;
 	default:
-		BT_LOGA("Invalid setting BT GPIO, wrong BT GPIO[%d].\r\n", bt_gpio);
+		BT_LOGE("Invalid setting BT GPIO, wrong BT GPIO[%d].\r\n", bt_gpio);
 		break;
 	}
 }

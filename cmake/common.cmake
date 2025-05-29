@@ -358,14 +358,30 @@ function(ameba_firmware_package output_app_name)
     ameba_get_image_output_dir(c_IMAGE_OUTPUT_DIR)
 
     set(postbuild_targets)
+    set(image1_all_files)
+    set(image2_all_files)
+    set(image3_all_files)
     foreach(mcu_proj ${ARG_p_MCU_PROJECTS})
         ameba_get_image_target_name(image2 target_name p_MCU_PROJECT_NAME ${mcu_proj})
         ameba_list_append_if(target_name postbuild_targets ${target_name}_postbuild)
 
         ameba_get_image_target_name(image3 target_name p_MCU_PROJECT_NAME ${mcu_proj})
         ameba_list_append_if(target_name postbuild_targets ${target_name}_postbuild)
+
+        ameba_get_image_all_path(image1 all_name p_MCU_PROJECT_NAME ${mcu_proj})
+        ameba_list_append_if(all_name image1_all_files ${all_name})
+
+        ameba_get_image_all_path(image2 all_name p_MCU_PROJECT_NAME ${mcu_proj})
+        ameba_list_append_if(all_name image2_all_files ${all_name})
+
+        ameba_get_image_all_path(image3 all_name p_MCU_PROJECT_NAME ${mcu_proj})
+        ameba_list_append_if(all_name image3_all_files ${all_name})
     endforeach()
 
+    string(REPLACE ";" "\\;" image1_all_files "${image1_all_files}")
+    string(REPLACE ";" "\\;" image2_all_files "${image2_all_files}")
+    string(REPLACE ";" "\\;" image3_all_files "${image3_all_files}")
+    ameba_info("image all list: image1: ${image1_all_files}, image2: ${image2_all_files}, image3: ${image3_all_files}")
     add_custom_target(firmware_package ALL
         COMMAND ${CMAKE_COMMAND}
             # common variables
@@ -377,6 +393,9 @@ function(ameba_firmware_package output_app_name)
             -Dc_IMAGE_OUTPUT_DIR=${c_IMAGE_OUTPUT_DIR}
             -Dc_APP_BINARY_NAME=${c_APP_BINARY_NAME}
             -Dc_SDK_IMAGE_FOLDER_NAME=${c_SDK_IMAGE_FOLDER_NAME}
+            -Dc_IMAGE1_ALL_FILES="${image1_all_files}" #NOTE: transfer as list
+            -Dc_IMAGE2_ALL_FILES="${image2_all_files}" #NOTE: transfer as list
+            -Dc_IMAGE3_ALL_FILES="${image3_all_files}" #NOTE: transfer as list
 
             # user's variables
             -DFINAL_IMAGE_DIR=${FINAL_IMAGE_DIR}

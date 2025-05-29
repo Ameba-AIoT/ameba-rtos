@@ -154,8 +154,16 @@ def mcu_project_to_mcu_type(mcu_project:str, default:Union[str, None]='') -> Uni
 def parse_project_info(path:str) -> dict:
     if not os.path.isabs(path):
         path = os.path.abspath(path)
-
-    pattern = r'(.*?/(\w+)_gcc_project)(?:/build)?(?:/project_(\w+))?(?:/|$)'
+    #NOTE: support cases:
+    #      1. /path/to/amebaxxx_gcc_project                     => soc_project: amebaxxx, mcu_project: empty
+    #      2. /path/to/amebaxxx_gcc_project/build               => soc_project: amebaxxx, mcu_project: empty
+    #      3. /path/to/amebaxxx_gcc_project/project_abc         => soc_project: amebaxxx, mcu_project: abc
+    #      4. /path/to/amebaxxx_gcc_project/project_abc/build   => soc_project: amebaxxx, mcu_project: abc
+    #      5. case 1~4 but "/path/to" contains utils/release_tool (release build)
+    if "utils/release_tool" in path:
+        pattern = r'(.*?/utils/release_tool/.*?/(\w+)_gcc_project)(?:/build)?(?:/project_(\w+))?(?:/|$)'
+    else:
+        pattern = r'(.*?/(\w+)_gcc_project)(?:/build)?(?:/project_(\w+))?(?:/|$)'
     match = re.search(pattern, path)
 
     if match:

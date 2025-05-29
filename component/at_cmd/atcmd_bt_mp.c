@@ -23,7 +23,7 @@ static bool open_flag = 0;
 static uint8_t check_byte_num = 0;
 
 #if ((defined(CONFIG_AMEBALITE) && (CONFIG_AMEBALITE == 1)) \
-	|| (defined(CONFIG_AMEBASMART) && (CONFIG_AMEBASMART == 1)))
+    || (defined(CONFIG_AMEBASMART) && (CONFIG_AMEBASMART == 1)))
 #define HCI_UART_DEV             (UART3_DEV)
 #define HCI_UART_IRQ             (UART3_BT_IRQ)
 
@@ -95,7 +95,7 @@ static void bt_hci_uart_deinit(void)
 static void bt_uart_bridge_close(void)
 {
 #if ((defined(CONFIG_AMEBALITE) && (CONFIG_AMEBALITE == 1)) \
-	|| (defined(CONFIG_AMEBASMART) && (CONFIG_AMEBASMART == 1)))
+    || (defined(CONFIG_AMEBASMART) && (CONFIG_AMEBASMART == 1)))
 	LOGUART_PutChar_RAM('#');
 	LOGUART_PutChar_RAM(0x0A);
 	LOGUART_PutChar_RAM(0x0D);
@@ -213,7 +213,7 @@ static u32 bt_uart_bridge_irq(void *data)
 			rc = LOGUART_GetChar(FALSE);
 			ret = bt_uart_bridge_close_pattern(rc);
 #if ((defined(CONFIG_AMEBALITE) && (CONFIG_AMEBALITE == 1)) \
-	|| (defined(CONFIG_AMEBASMART) && (CONFIG_AMEBASMART == 1)))
+    || (defined(CONFIG_AMEBASMART) && (CONFIG_AMEBASMART == 1)))
 			if (ret != TRUE) {
 				while (!UART_Writable(HCI_UART_DEV));
 				UART_CharPut(HCI_UART_DEV, rc);
@@ -240,7 +240,7 @@ static u32 bt_uart_bridge_irq(void *data)
 void bt_uart_bridge_open(void)
 {
 #if ((defined(CONFIG_AMEBALITE) && (CONFIG_AMEBALITE == 1)) \
-	|| (defined(CONFIG_AMEBASMART) && (CONFIG_AMEBASMART == 1)))
+    || (defined(CONFIG_AMEBASMART) && (CONFIG_AMEBASMART == 1)))
 	/*backup the AGGC register value*/
 	temp_uart_aggc = LOGUART_DEV->LOGUART_UART_AGGC;
 	LOGUART_WaitTxComplete();
@@ -361,6 +361,7 @@ static int mp_ext2_gnt_bt(void **argv, int argc)
 	return 0;
 }
 
+#if defined (CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)
 static int mp_ext2_ant(void **argv, int argc)
 {
 	(void)argc;
@@ -377,12 +378,15 @@ static int mp_ext2_ant(void **argv, int argc)
 
 	return 0;
 }
+#endif /* CONFIG_AMEBASMART || CONFIG_AMEBASMARTPLUS */
 
 at_mp_ext_item_t at_mp_ext2_items[] = {
-	{"bridge",		mp_ext2_uart_bridge,		UART_BRIDGE_USAGE},
-	{"bt_power",	mp_ext2_bt_power,			BT_POWER_USAGE},
-	{"gnt_bt",		mp_ext2_gnt_bt,				GNT_BT_USAGE},
-	{"ant",			mp_ext2_ant,				SELECTION_BT_ANTENNA},
+	{"bridge",      mp_ext2_uart_bridge,        UART_BRIDGE_USAGE},
+	{"bt_power",    mp_ext2_bt_power,           BT_POWER_USAGE},
+	{"gnt_bt",      mp_ext2_gnt_bt,             GNT_BT_USAGE},
+#if defined (CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)
+	{"ant",         mp_ext2_ant,                SELECTION_BT_ANTENNA},
+#endif /* CONFIG_AMEBASMART || CONFIG_AMEBASMARTPLUS */
 };
 
 void fATM2(void *arg)
@@ -412,7 +416,7 @@ void fATM2(void *arg)
 
 //-------- AT MP commands ---------------------------------------------------------------
 log_item_t at_mp_items[] = {
-	{"M2", fATM2, {NULL, NULL}},	// MP ext2 AT command
+	{"M2", fATM2, {NULL, NULL}},    // MP ext2 AT command
 };
 
 /* TODO: A part of AT command "AT+LIST". */

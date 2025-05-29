@@ -132,7 +132,7 @@ static struct mesh_dfu_fw_update_server_opts dfu_update_server_if = {0};
 bool __attribute__((weak)) mesh_dfu_fw_updater_server_resource_init(struct mesh_dfu_fw_update_server_opts *p_if)
 {
 	(void)p_if;
-	BT_LOGD("[%s][%d] Weak function fail\r\n", __func__, __LINE__);
+	BT_LOGE("[%s][%d] Weak function fail\r\n", __func__, __LINE__);
 	return false;
 }
 

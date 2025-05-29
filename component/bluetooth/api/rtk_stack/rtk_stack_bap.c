@@ -494,7 +494,7 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 		/* add data path */
 		p_iso_chann = bt_stack_le_audio_data_path_add(LE_AUDIO_MSG_ASCS_SETUP_DATA_PATH, RTK_BT_LE_AUDIO_CIG_ISO_MODE, RTK_BLE_AUDIO_ISO_DATA_PATH_RX, (void *)p_data);
 		if (!p_iso_chann) {
-			BT_LOGD("[BAP] %s bt_stack_le_audio_data_path_add fail \r\n", __func__);
+			BT_LOGE("[BAP] %s bt_stack_le_audio_data_path_add fail \r\n", __func__);
 			break;
 		} else {
 			rtk_bt_le_audio_ase_t *p_lea_ase = NULL;
@@ -3110,7 +3110,7 @@ void bt_stack_le_audio_group_cb(T_AUDIO_GROUP_MSG msg, T_BLE_AUDIO_GROUP_HANDLE 
 		memcpy((void *)&param.codec_parsed_data, (void *)&p_data->codec_parsed_data, sizeof(rtk_bt_le_audio_cfg_codec_t));
 		p_iso_chann = bt_stack_le_audio_data_path_add(AUDIO_GROUP_MSG_BAP_SETUP_DATA_PATH, RTK_BT_LE_AUDIO_CIG_ISO_MODE, p_data->path_direction, (void *)&param);
 		if (!p_iso_chann) {
-			BT_LOGD("[BAP] %s bt_stack_le_audio_data_path_add fail \r\n", __func__);
+			BT_LOGE("[BAP] %s bt_stack_le_audio_data_path_add fail \r\n", __func__);
 			break;
 		}
 		rtk_bt_le_audio_bap_setup_data_path_ind_t *p_ind = NULL;

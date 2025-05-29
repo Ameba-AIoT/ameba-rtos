@@ -477,6 +477,7 @@ static void at_ws_handler_disconnect(wsclient_context *wsclient)
 	}
 
 	if (res > 0) {
+		ws_config[link_id].ws_client = NULL;
 		at_printf_indicate("[WS][EVENT]:linkid:%d, disconnect\r\n", link_id);
 	}
 }
@@ -493,7 +494,7 @@ static void wsclient_conn_thread(void *param)
 		struct pingtime_item *item = list_first_entry(&ping_time_list[link_id], struct pingtime_item, node);
 		if (!list_empty(&ping_time_list[link_id])) {
 			if (rtos_time_get_current_system_time_ms() >= item->ping_send_time + ws_config[link_id].ping_timeout * 1000) {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "ping timeout, not receive pong for %d seconds\n", ws_config[link_id].ping_timeout);
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "linkid %d ping timeout, not receive pong for %d seconds\n", link_id, ws_config[link_id].ping_timeout);
 				ws_close(&(ws_config[link_id].ws_client));
 			}
 		}
@@ -513,7 +514,7 @@ static void wsclient_conn_thread(void *param)
 			list_add_tail(&new_item->node, &ping_time_list[link_id]);
 
 			ws_sendPing(1, wsclient);
-			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_DEBUG, "send ping\n");
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_DEBUG, "linkid %d send ping\n", link_id);
 		}
 
 		ws_poll(1000, &wsclient);
@@ -522,7 +523,6 @@ static void wsclient_conn_thread(void *param)
 	if (wsclient) {
 		ws_free(wsclient);
 		wsclient = NULL;
-		ws_config[link_id].ws_client = NULL;
 	}
 
 	rtos_task_delete(NULL);

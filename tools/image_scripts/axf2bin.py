@@ -1458,13 +1458,13 @@ class IMAGETOOL():
 
             self.image2_posthandle(AP_IMG_DIR, app, app_ns)
 
-        if self.IMAGE_FILENAME == 'fullmac_ram_1_prepend.bin':
-            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, os.path.join(AP_IMG_DIR, 'fullmac_ram_1_prepend.bin'), self.manifest, 'boot')
-            CATFILE('', os.path.join(AP_IMG_DIR, 'ap_fullmac_img_1.bin'), os.path.join(AP_IMG_DIR, 'fullmac_ram_1_prepend.bin'), self.manifest)
+        if self.IMAGE_FILENAME == 'fullmac_img1_all.bin':
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, os.path.join(AP_IMG_DIR, 'fullmac_img1_all.bin'), self.manifest, 'boot')
+            CATFILE('', os.path.join(AP_IMG_DIR, 'ap_fullmac_boot.bin'), os.path.join(AP_IMG_DIR, 'fullmac_img1_all.bin'), self.manifest)
 
-        if self.IMAGE_FILENAME == 'fullmac_sram_2_prepend.bin':
-            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, os.path.join(AP_IMG_DIR, 'fullmac_sram_2_prepend.bin'), self.manifest, 'app')
-            CATFILE('', os.path.join(AP_IMG_DIR, 'ap_fullmac_img_2.bin'), os.path.join(AP_IMG_DIR, 'fullmac_sram_2_prepend.bin'), self.manifest)
+        if self.IMAGE_FILENAME == 'fullmac_img2_all.bin':
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, os.path.join(AP_IMG_DIR, 'fullmac_img2_all.bin'), self.manifest, 'app')
+            CATFILE('', os.path.join(AP_IMG_DIR, 'ap_fullmac_app.bin'), os.path.join(AP_IMG_DIR, 'fullmac_img2_all.bin'), self.manifest)
 
         IMAGE_NAME = self.IMAGE_FULLNAME
         IMAGE_NAME_EN = os.path.splitext(IMAGE_NAME)[0] + '_en.bin'

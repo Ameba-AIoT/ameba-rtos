@@ -384,10 +384,8 @@ function(ameba_add_merge_soc_library output_name)
 endfunction()
 
 function(ameba_add_image name)
-    set(options
-        p_EXCLUDE_FROM_ALL
-    )
-    set(oneValueArgs p_TYPE)
+    set(options p_EXCLUDE_FROM_ALL)
+    set(oneValueArgs p_TYPE p_IMAGE_ALL)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "" ${ARGN})
     ameba_gen_wrap_name(${name} c_CURRENT_IMAGE)
     if(ARG_p_EXCLUDE_FROM_ALL)
@@ -441,6 +439,9 @@ function(ameba_add_image name)
 
     #Can be used to get target name of image1/image2/image2 somewhere else
     set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY ${c_CURRENT_IMAGE_TYPE} "${c_CURRENT_IMAGE}")
+    if (ARG_p_IMAGE_ALL)
+        set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY ${c_CURRENT_IMAGE_TYPE}_all "${c_SDK_IMAGE_TARGET_DIR}/${ARG_p_IMAGE_ALL}")
+    endif()
     set(c_CURRENT_IMAGE ${c_CURRENT_IMAGE} PARENT_SCOPE)
     set(c_CURRENT_IMAGE_TYPE ${c_CURRENT_IMAGE_TYPE} PARENT_SCOPE)
 endfunction()
@@ -457,6 +458,25 @@ function(ameba_get_image_target_name image_type result)
     endif()
     if(TARGET ${mcu_config})
         get_property(tmp_result TARGET ${mcu_config} PROPERTY ${image_type})
+        set(${result} ${tmp_result} PARENT_SCOPE)
+    else()
+        ameba_warning("mcu config: ${mcu_config} not exist")
+        unset(${result} PARENT_SCOPE)
+    endif()
+endfunction()
+
+function(ameba_get_image_all_path image_type result)
+    set(oneValueArgs
+        p_MCU_PROJECT_NAME  # Specific which mcu project you want get image from, default is current mcu project
+    )
+    cmake_parse_arguments(ARG "" "${oneValueArgs}" "" ${ARGN})
+    if(ARG_p_MCU_PROJECT_NAME)
+        get_property(mcu_config TARGET g_PROJECT_CONFIG PROPERTY ${ARG_p_MCU_PROJECT_NAME}_config)
+    else()
+        set(mcu_config ${c_MCU_PROJ_CONFIG})
+    endif()
+    if(TARGET ${mcu_config})
+        get_property(tmp_result TARGET ${mcu_config} PROPERTY ${image_type}_all)
         set(${result} ${tmp_result} PARENT_SCOPE)
     else()
         ameba_warning("mcu config: ${mcu_config} not exist")
@@ -544,6 +564,14 @@ function(ameba_global_library)
     endif()
 endfunction()
 
+function(ameba_rename_sections_xip target_library section_prepend)
+    set(rename_script "${c_CMAKE_FILES_DIR}/rename_sections.cmake")
+    add_custom_command(
+        TARGET ${target_library}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -DLIBRARY_LOCATION=$<TARGET_FILE:${target_library}> -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY} -DCMAKE_OBJDUMP=${CMAKE_OBJDUMP} -DPREPEND=${section_prepend} -P ${rename_script}
+    )
+endfunction()
 
 ########################################################################################################
 #TODO: deprecated functions

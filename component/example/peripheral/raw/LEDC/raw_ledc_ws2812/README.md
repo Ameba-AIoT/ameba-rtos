@@ -2,8 +2,6 @@
 
 This example describes how to use LEDC to light WS2812 series LED in the state of a breathing RGB light.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 Required Components: a WS2812 series LED and a 4.5V-5.5V power supply.

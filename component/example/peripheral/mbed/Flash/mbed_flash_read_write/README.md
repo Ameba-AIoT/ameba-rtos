@@ -2,8 +2,6 @@
 
 This example read a specific flash offset, modify it and re-read again by MBED API.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 Nor Flash

@@ -176,7 +176,7 @@ static int atcmd_bt_gatts_loop_send(int argc, char **argv)
 
 		if (false == osif_task_create(&handle, "gatts_loop_send_task",
 									  gatts_loop_send_task_entry, (void *)(&gatts_tx),
-									  1024, 2))  {
+									  1024, 2)) {
 			gatts_loop_send_task_running = 0;
 			BT_LOGE("GATTS loop send task create failed\r\n");
 			return -1;

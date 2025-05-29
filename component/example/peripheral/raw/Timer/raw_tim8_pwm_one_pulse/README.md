@@ -1,8 +1,6 @@
 # Description
   This example describes how to use pwm one pulse mode, default negative edge will trigger one pulse.
 
-This example does not support the loguart command response.
-
 # HW Configuration
   - GPIO_Pin as GPIO interrupt pin, connect it to PWM_GEN_CH5_PIN.
   - PWM_GEN_CH5_PIN(channel 5) as one pulse output pin.

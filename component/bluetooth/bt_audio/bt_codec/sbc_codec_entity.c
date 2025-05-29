@@ -488,7 +488,7 @@ static uint16_t sbc_decoder_process_data(void *pentity, uint8_t *data, uint32_t 
 	return (decoder_process_data(&priv_decode_state, 0, data, (int)size, decode_buffer->pbuffer, ppcm_size));
 }
 
-// static int sbc_encoder_num_audio_frames(void){
+// static int sbc_encoder_num_audio_frames(void) {
 //  SBC_ENC_PARAMS * context = &((bludroid_encoder_state_t *)psbc_encoder_state_singleton->encoder_state)->context;
 //  return context->s16NumOfSubBands * context->s16NumOfBlocks;
 // }

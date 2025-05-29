@@ -1,8 +1,6 @@
 # Description
 This example describes how to use pwm.
 
-This example does not support the Loguart command response.
-
 # HW Configuration
 Connect LED to below PWM pins and ground
 

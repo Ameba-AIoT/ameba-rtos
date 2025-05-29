@@ -428,7 +428,10 @@ static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 		cb->received(ep, len);
 	}
 
-	usbd_inic_receive_data(ep_addr, ep->buf, ep->buf_len, ep->userdata);
+	if ((len == 0) || (cb->received == NULL) ||
+		((ep_addr & (USBD_WHC_WIFI_EP2_BULK_OUT | USBD_WHC_WIFI_EP4_BULK_OUT)) == 0)) {
+		usbd_inic_receive_data(ep_addr, ep->buf, ep->buf_len, ep->userdata);
+	}
 
 	return HAL_OK;
 }

@@ -13,6 +13,8 @@
 #include "hci_common.h"
 #include "bt_inic.h"
 
+uint8_t hci_process_download_patch(uint16_t opcode);
+
 void bt_inic_send_cmd_complete_evt(uint16_t opcode, uint8_t status)
 {
 	uint8_t evt[6] = {0x0e, 0x04, 0x03, 0x00, 0x00, 0x00};
@@ -216,10 +218,11 @@ void bt_inic_close(void)
 	osif_msg_queue_delete(internal_cmd_q);
 }
 
-static bool is_inic_vendor_cmd(uint16_t opcode)
+static bool is_inic_vendor_cmd(uint16_t opcode, uint8_t *pdata)
 {
 	bool is_inic_cmd = true;
 	uint8_t status = 0;
+	uint8_t param;
 
 	switch (opcode) {
 	case BT_HCI_CMD_VS_BT_ON:
@@ -235,6 +238,30 @@ static bool is_inic_vendor_cmd(uint16_t opcode)
 		break;
 	case BT_HCI_CMD_VS_BT_HOST_RESUME:
 		BT_LOGA("BT INIC Host resume\r\n");
+		break;
+	case BT_HCI_CMD_VS_BT_MP_DOWNLOAD:
+		param = pdata[3];
+		if (param == 0x01) {
+			hci_set_mp(true);
+			hci_transport_register(&hci_sa_cb);
+			if (!hci_process_download_patch(0xFC20)) {
+				BT_LOGE("BT MP Patch download failed!\r\n");
+				status = 1; // download patch failed
+			} else {
+				BT_LOGA("BT MP Patch download success!\r\n");
+			}
+			hci_transport_register(&bt_inic_cb);
+		} else {
+			hci_set_mp(false);
+			hci_transport_register(&hci_sa_cb);
+			if (!hci_process_download_patch(0xFC20)) {
+				BT_LOGE("BT Normal Patch download failed!\r\n");
+				status = 1; // download patch failed
+			} else {
+				BT_LOGA("BT Normal Patch download success!\r\n");
+			}
+			hci_transport_register(&bt_inic_cb);
+		}
 		break;
 	default:
 		is_inic_cmd = false;
@@ -266,7 +293,7 @@ void bt_inic_recv_from_host(uint8_t type, uint8_t *pdata, uint32_t len)
 #else
 	if (type == HCI_CMD) {
 		LE_TO_UINT16(opcode, pdata);
-		if (is_inic_vendor_cmd(opcode)) {
+		if (is_inic_vendor_cmd(opcode, pdata)) {
 			return;
 		}
 	}

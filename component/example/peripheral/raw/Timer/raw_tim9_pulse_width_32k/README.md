@@ -1,8 +1,6 @@
 # Description
 This example describes how to use Pulse Timer to capture pulse width.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 - PWM_32K_CH5_PIN as PWM channel output 32KHz periodical signal.

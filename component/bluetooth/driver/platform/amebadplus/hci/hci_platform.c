@@ -663,7 +663,7 @@ static void hci_platform_bt_debug_bit(uint8_t bt_dbg_port, char *pad)
 		Pinmux_Config(_PB_7, PINMUX_FUNCTION_DEBUG);
 		break;
 	default:
-		BT_LOGA("Invalid setting BT debug port, wrong BT debug port[%d].\r\n", bt_dbg_port);
+		BT_LOGE("Invalid setting BT debug port, wrong BT debug port[%d].\r\n", bt_dbg_port);
 		break;
 	}
 }
@@ -696,7 +696,7 @@ static void hci_platform_bt_debug_shift_bit(uint8_t original, uint8_t mapping)
 		set_reg_value(0x410089EC, BIT24 | BIT25 | BIT26 | BIT27 | BIT28, original);
 		break;
 	default:
-		BT_LOGA("Invalid setting BT debug port shift, wrong shift mapping (%d).\r\n", mapping);
+		BT_LOGE("Invalid setting BT debug port shift, wrong shift mapping (%d).\r\n", mapping);
 		break;
 	}
 }
@@ -710,7 +710,7 @@ static void hci_platform_bt_gpio_pad(uint8_t bt_gpio, char *pad)
 		} else if (strcmp(pad, "PA27") == 0) {
 			Pinmux_Config(_PA_27, PINMUX_FUNCTION_BT_IO);
 		} else {
-			BT_LOGA("Invalid setting BT GPIO, wrong pad[%s], this BT GPIO will mapping to PA19.\r\n", pad);
+			BT_LOGE("Invalid setting BT GPIO, wrong pad[%s], this BT GPIO will mapping to PA19.\r\n", pad);
 			Pinmux_Config(_PA_19, PINMUX_FUNCTION_BT_IO);
 		}
 		break;
@@ -720,7 +720,7 @@ static void hci_platform_bt_gpio_pad(uint8_t bt_gpio, char *pad)
 		} else if (strcmp(pad, "PA28") == 0) {
 			Pinmux_Config(_PA_28, PINMUX_FUNCTION_BT_IO);
 		} else {
-			BT_LOGA("Invalid setting BT GPIO, wrong pad[%s], this BT GPIO will mapping to PA20.\r\n", pad);
+			BT_LOGE("Invalid setting BT GPIO, wrong pad[%s], this BT GPIO will mapping to PA20.\r\n", pad);
 			Pinmux_Config(_PA_20, PINMUX_FUNCTION_BT_IO);
 		}
 		break;
@@ -730,7 +730,7 @@ static void hci_platform_bt_gpio_pad(uint8_t bt_gpio, char *pad)
 		} else if (strcmp(pad, "PA29") == 0) {
 			Pinmux_Config(_PA_29, PINMUX_FUNCTION_BT_IO);
 		} else {
-			BT_LOGA("Invalid setting BT GPIO, wrong pad[%s], this BT GPIO will mapping to PA21.\r\n", pad);
+			BT_LOGE("Invalid setting BT GPIO, wrong pad[%s], this BT GPIO will mapping to PA21.\r\n", pad);
 			Pinmux_Config(_PA_21, PINMUX_FUNCTION_BT_IO);
 		}
 		break;
@@ -740,7 +740,7 @@ static void hci_platform_bt_gpio_pad(uint8_t bt_gpio, char *pad)
 		} else if (strcmp(pad, "PA30") == 0) {
 			Pinmux_Config(_PA_30, PINMUX_FUNCTION_BT_IO);
 		} else {
-			BT_LOGA("Invalid setting BT GPIO, wrong pad[%s], this BT GPIO will mapping to PA22.\r\n", pad);
+			BT_LOGE("Invalid setting BT GPIO, wrong pad[%s], this BT GPIO will mapping to PA22.\r\n", pad);
 			Pinmux_Config(_PA_22, PINMUX_FUNCTION_BT_IO);
 		}
 		break;
@@ -750,7 +750,7 @@ static void hci_platform_bt_gpio_pad(uint8_t bt_gpio, char *pad)
 		} else if (strcmp(pad, "PA31") == 0) {
 			Pinmux_Config(_PA_31, PINMUX_FUNCTION_BT_IO);
 		} else {
-			BT_LOGA("Invalid setting BT GPIO, wrong pad[%s], this BT GPIO will mapping to PA23.\r\n", pad);
+			BT_LOGE("Invalid setting BT GPIO, wrong pad[%s], this BT GPIO will mapping to PA23.\r\n", pad);
 			Pinmux_Config(_PA_23, PINMUX_FUNCTION_BT_IO);
 		}
 		break;
@@ -760,12 +760,12 @@ static void hci_platform_bt_gpio_pad(uint8_t bt_gpio, char *pad)
 		} else if (strcmp(pad, "PB0") == 0) {
 			Pinmux_Config(_PB_0, PINMUX_FUNCTION_BT_IO);
 		} else {
-			BT_LOGA("Invalid setting BT GPIO, wrong pad[%s], this BT GPIO will mapping to PA26.\r\n", pad);
+			BT_LOGE("Invalid setting BT GPIO, wrong pad[%s], this BT GPIO will mapping to PA26.\r\n", pad);
 			Pinmux_Config(_PA_26, PINMUX_FUNCTION_BT_IO);
 		}
 		break;
 	default:
-		BT_LOGA("Invalid setting BT GPIO, wrong BT GPIO[%d].\r\n", bt_gpio);
+		BT_LOGE("Invalid setting BT GPIO, wrong BT GPIO[%d].\r\n", bt_gpio);
 		break;
 	}
 }

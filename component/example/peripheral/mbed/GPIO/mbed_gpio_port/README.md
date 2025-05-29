@@ -2,8 +2,6 @@
 
 This example describes how to use GPIO Port read/write by MBED GPIO API.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 - Requirement Components:

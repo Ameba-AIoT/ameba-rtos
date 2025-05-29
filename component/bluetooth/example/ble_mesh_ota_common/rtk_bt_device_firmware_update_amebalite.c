@@ -401,7 +401,7 @@ static bool fw_update_server_get_target_image_info(update_ota_target_hdr *hdr)
 			return false;
 		}
 	} else {
-		BT_LOGD("[%s] Can not get boot image header, maybe not exit in ota.bin\r\n", __func__);
+		BT_LOGE("[%s] Can not get boot image header, maybe not exit in ota.bin\r\n", __func__);
 	}
 
 	// Check whether the image size on ota.bin > local max flash size
@@ -412,7 +412,7 @@ static bool fw_update_server_get_target_image_info(update_ota_target_hdr *hdr)
 			return false;
 		}
 	} else {
-		BT_LOGD("[%s] Can not get app image header, maybe not exit in ota.bin\r\n", __func__);
+		BT_LOGE("[%s] Can not get app image header, maybe not exit in ota.bin\r\n", __func__);
 	}
 
 	return true;

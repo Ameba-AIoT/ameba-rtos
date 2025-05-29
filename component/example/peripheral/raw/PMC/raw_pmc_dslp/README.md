@@ -2,8 +2,6 @@
 
 This example shows how to enter deepsleep mode and configure wakeup source
 
-This example does not support the loguart command response.
-
 # HW Configuration
 AON_WAKEPIN_WAKEUP wakeup operation:
 * On AmebaSmart,

@@ -1430,12 +1430,12 @@ uint16_t rtk_bt_le_gap_connless_cte_rx_start(uint8_t sync_id, rtk_bt_le_gap_conn
 	}
 
 	if (!RTK_BLE_GAP_CTE_SLOT_DURATION_VALUE_IN_RANGE(params->slot_durations)) {
-		BT_LOGD("CTE rx param slot_durations=%u invalid\r\n", params->slot_durations);
+		BT_LOGE("CTE rx param slot_durations=%u invalid\r\n", params->slot_durations);
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
 	if (!RTK_BLE_GAP_CTE_MAX_SAMPLED_CTES_VALUE_IN_RANGE(params->max_sampled_ctes)) {
-		BT_LOGD("CTE rx param max_sampled_ctes=%u invalid\r\n", params->max_sampled_ctes);
+		BT_LOGE("CTE rx param max_sampled_ctes=%u invalid\r\n", params->max_sampled_ctes);
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
@@ -1577,23 +1577,23 @@ static uint16_t rtk_bt_le_gap_connless_cte_tx_enable(uint8_t adv_handle, rtk_bt_
 	}
 
 	if (!RTK_BLE_GAP_CTE_LEN_VALUE_IN_RANGE(params->cte_len)) {
-		BT_LOGD("CTE connectionless tx param cte_len=%u invalid\r\n", params->cte_len);
+		BT_LOGE("CTE connectionless tx param cte_len=%u invalid\r\n", params->cte_len);
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
 	if (!RTK_BLE_GAP_CTE_TYPE_VALUE_IN_RANGE(params->cte_type)) {
-		BT_LOGD("CTE connectionless tx param cte_type=%u invalid\r\n", params->cte_type);
+		BT_LOGE("CTE connectionless tx param cte_type=%u invalid\r\n", params->cte_type);
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
 	if (!RTK_BLE_GAP_CTE_CNT_VALUE_IN_RANGE(params->cte_count)) {
-		BT_LOGD("CTE connectionless tx param cte_count=%u invalid\r\n", params->cte_count);
+		BT_LOGE("CTE connectionless tx param cte_count=%u invalid\r\n", params->cte_count);
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
 	aod = (params->cte_type == RTK_BT_LE_GAP_CTE_TYPE_AOD_1US) || (params->cte_type == RTK_BT_LE_GAP_CTE_TYPE_AOD_2US);
 	if (aod && (!params->ant_ids || !RTK_BLE_GAP_CTE_NUM_ANT_IDS_VALUE_IN_RANGE(params->num_ant_ids))) {
-		BT_LOGD("CTE connectionless tx param antenna invalid, num_ant_ids=%u, ant_ids=%08x\r\n", params->num_ant_ids, params->ant_ids);
+		BT_LOGE("CTE connectionless tx param antenna invalid, num_ant_ids=%u, ant_ids=%08x\r\n", params->num_ant_ids, params->ant_ids);
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
@@ -1630,21 +1630,21 @@ uint16_t rtk_bt_le_gap_connless_cte_tx_start(rtk_bt_le_gap_connless_cte_tx_param
 
 	ret = rtk_bt_le_gap_create_ext_adv(p_eadv_param, &adv_handle);
 	if (ret) {
-		BT_LOGD("[LE GAP]Create eadv fail for connless CTE TX, ret=%u\r\n", ret);
+		BT_LOGE("[LE GAP]Create eadv fail for connless CTE TX, ret=%u\r\n", ret);
 		return ret;
 	}
 
 	p_pa_param->adv_handle = adv_handle;
 	ret = rtk_bt_le_gap_start_pa(p_pa_param);
 	if (ret) {
-		BT_LOGD("[LE GAP]Start PA fail for connless CTE TX, ret=%u\r\n", ret);
+		BT_LOGE("[LE GAP]Start PA fail for connless CTE TX, ret=%u\r\n", ret);
 		rtk_bt_le_gap_remove_ext_adv(adv_handle);
 		return ret;
 	}
 
 	ret = rtk_bt_le_gap_connless_cte_tx_enable(adv_handle, p_cte_param);
 	if (ret) {
-		BT_LOGD("[LE GAP]Enable CTE TX fail for connless CTE TX, ret=%u\r\n", ret);
+		BT_LOGE("[LE GAP]Enable CTE TX fail for connless CTE TX, ret=%u\r\n", ret);
 		rtk_bt_le_gap_stop_pa(adv_handle);
 		rtk_bt_le_gap_remove_ext_adv(adv_handle);
 		return ret;
@@ -1652,7 +1652,7 @@ uint16_t rtk_bt_le_gap_connless_cte_tx_start(rtk_bt_le_gap_connless_cte_tx_param
 
 	ret = rtk_bt_le_gap_start_ext_adv(adv_handle, 0, 0);
 	if (ret) {
-		BT_LOGD("[LE GAP]Start eadv fail for connless CTE TX, ret=%u\r\n", ret);
+		BT_LOGE("[LE GAP]Start eadv fail for connless CTE TX, ret=%u\r\n", ret);
 		rtk_bt_le_gap_connless_cte_tx_disable(adv_handle);
 		rtk_bt_le_gap_stop_pa(adv_handle);
 		rtk_bt_le_gap_remove_ext_adv(adv_handle);

@@ -51,7 +51,7 @@ typedef struct {
 	uint16_t max_stack_tx_pending_num;         /*!< Default max stack tx pending num: default is RTK_BT_GATT_DEFAULT_CREDITS */
 #endif
 	bool     irk_auto_gen;                     /*!< Whether stack auto generate local IRK. If true, stack will auto generate a value for local IRK and save to
-	                                                FTL first time, then load it from FTL when need to use local IRK next time. */
+                                                    FTL first time, then load it from FTL when need to use local IRK next time. */
 	uint8_t  irk[RTK_BT_LE_GAP_IRK_LEN];       /*!< Local IRK data. If irk_auto_gen is false, user can set local IRK value by this field. */
 	bool     user_def_service;                 /*!< Whether register gap and gatt service in app, or use builtin service in stack */
 	bool     cccd_not_check;                   /*!< Whether check if cccd is enabled before send indicate or notify. If true, cccd will not be checked;

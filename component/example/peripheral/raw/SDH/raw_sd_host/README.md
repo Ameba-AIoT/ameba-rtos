@@ -2,8 +2,6 @@
 
 This example shows how to use SD host. It will erase, read and write SD card and check data. 
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 User should prepare a SD card and plug it into SD card socket before runnig this example. 

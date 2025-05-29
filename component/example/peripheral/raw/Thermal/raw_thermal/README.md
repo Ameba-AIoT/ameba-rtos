@@ -2,8 +2,6 @@
 
 1. This example describes how to get the current temperature in Celsius and Fahrenheit formats.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 1. none

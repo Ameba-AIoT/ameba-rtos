@@ -56,7 +56,7 @@ MEMORY
 	CTRACE (rx) :                           ORIGIN = 0xCA000000, LENGTH = 0xCA7FFFFF - 0xCA000000	/* COEX LOG Virtual address: 8192k */
 
 	/* DRAM */
-#if CONFIG_XIP_FLASH
+#if CONFIG_IMG2_FLASH
 	KM4_BD_DRAM (rwx) :                     ORIGIN = 0x60000020, LENGTH = 0x60060000 - 0x60000020	/* KM4 MAIN DRAM: 384K */
 
 	CA32_BL1_DRAM_S (rwx) :                 ORIGIN = 0x70060020, LENGTH = 0x70070000 - 0x70060020	/* CA32 BL1 DRAM S: 64k */

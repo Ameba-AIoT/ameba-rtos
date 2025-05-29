@@ -57,7 +57,7 @@ struct hci_evt_hdr {
 
 #define HCI_HDR_MAX_SIZE 4
 
-#define LE_TO_UINT16(_data, _array)  {              \
+#define LE_TO_UINT16(_data, _array)    {            \
         _data = ((uint16_t)(*((uint8_t *)(_array) + 0)) << 0) |        \
                 ((uint16_t)(*((uint8_t *)(_array) + 1)) << 8);         \
     }

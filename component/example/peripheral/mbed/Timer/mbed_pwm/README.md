@@ -2,8 +2,6 @@
 This example describes how to use pwm timer.
 Use the four channels of PWM to generate PWM signals and dynamically modify the PWM duty cycle.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 Connect LED to below PWM pins and ground
 
