@@ -1,8 +1,6 @@
 # Example Description
 This example describes how to build and use MIPI, Which shows how to display picture.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 `PA_14` shall connect to LCM reset pin During the PCB design phase.
 

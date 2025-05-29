@@ -712,7 +712,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 				BT_LOGA("[APP] Refresh node composition data!\r\n");
 				break;
 			default:
-				BT_LOGA("[APP] Unknown dkri procedure %d done!\r\n", prov_complete->dkri);
+				BT_LOGE("[APP] Unknown dkri procedure %d done!\r\n", prov_complete->dkri);
 				break;
 			}
 		} else {

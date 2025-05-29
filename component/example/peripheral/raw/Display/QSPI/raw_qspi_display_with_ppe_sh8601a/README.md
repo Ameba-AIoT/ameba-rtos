@@ -2,8 +2,6 @@
 
 This example shows how to use QSPI to driver LCD SH8601A. It use PPE to write data to LCD.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 PPE will carry data from memory to QSPI, user should connect QSPI pins with LCD SH8601A pins as following pin definition:

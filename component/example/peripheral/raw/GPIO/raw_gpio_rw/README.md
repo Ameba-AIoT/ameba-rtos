@@ -2,8 +2,6 @@
 
 This example describes how to use GPIO read/write by RAW GPIO API.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 - Requirement Components:

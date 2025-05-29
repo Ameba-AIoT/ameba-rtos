@@ -16,10 +16,10 @@ static u8 check_config_reg = 0;
 static const char *const TAG = "FLASH";
 
 SRAMDRAM_ONLY_TEXT_SECTION
-u32 flash_handshake_highspeed(u32 div)
+int flash_handshake_highspeed(u32 div)
 {
 	u8 Dphy_Dly_Cnt = 3; /* DD recommend this value */
-	u32 Ret = TRUE;
+	int Ret = RTK_FAIL;
 
 	FLASH_PLLInit_ClockDiv(div);
 
@@ -27,15 +27,15 @@ u32 flash_handshake_highspeed(u32 div)
 	FLASH_Read_HandShake_Cmd(Dphy_Dly_Cnt, ENABLE);
 
 	if (FLASH_Read_DataIsRight()) {
+		Ret = RTK_SUCCESS;
 	} else {
 		/* should disable it, enbale it outside if needed */
 		FLASH_Read_HandShake_Cmd(Dphy_Dly_Cnt, DISABLE);
 		RCC_PeriphClockSource_SPIC(BIT_LSYS_CKSL_SPIC_XTAL);
 		SPIC->TPR1 = (SPIC->TPR1 & ~MASK_CR_ACTIVE_SETUP) | CR_ACTIVE_SETUP(1);
-		Ret = FALSE;
 	}
 
-	RTK_LOGI(TAG, "FLASH HandShake[0x%x %s]\n", div, Ret ? "OK" : "FAIL, use XTAL");
+	RTK_LOGI(TAG, "FLASH HandShake[0x%x %s]\n", div, Ret == RTK_SUCCESS ? "OK" : "FAIL, use XTAL");
 	return Ret;
 }
 

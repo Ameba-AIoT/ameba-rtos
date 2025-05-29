@@ -43,6 +43,7 @@ set(private_compile_options)         #private compile_options
 
 ameba_list_append(private_sources
     hci/hci_process/hci_process.c
+	hci/hci_process/hci_download_v1.c
 	hci/hci_process/hci_download_v2.c
 	hci/hci_process/hci_download_v3.c
 	hci/hci_process/hci_common.c

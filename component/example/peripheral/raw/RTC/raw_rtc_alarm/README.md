@@ -2,8 +2,6 @@
 
 This example describes how to use the RTC Alarm by RAW RTC API.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 None.

@@ -4,8 +4,6 @@ This example describes how to get ADC sample data in `vbat channel` `under timer
 
 ADC could cooperate with `timer` modules which drive ADC module to do conversions according to a pre-configured timer event `period`. Every time a timer event is sent to ADC module, a conversion would be executed.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 In this example, ADC is configured to sample data in `vbat channel`.

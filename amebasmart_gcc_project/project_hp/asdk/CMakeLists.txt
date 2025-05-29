@@ -46,6 +46,6 @@ add_custom_target(
         -DFILEPATH=${c_SDK_IMGTOOL_FLOADER_DIR}/${c_SOC_TYPE}_acut/imgtool_flashloader_raw.bin
         -P${c_CMAKE_FILES_DIR}/checkexists.cmake
     COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMGTOOL_FLOADER_DIR}/${c_SOC_TYPE}_acut/imgtool_flashloader_raw.bin ${c_SDK_IMAGE_TARGET_DIR}/ram_1_prepend.bin
-    COMMAND ${IMAGETOOL} ${c_SDK_IMAGE_TARGET_DIR}/ram_1_prepend.bin ${BUILD_TYPE}
+    COMMAND ${op_FW_PACKAGE} --imgtool-floader ${c_SDK_IMAGE_TARGET_DIR}/ram_1_prepend.bin -o ${c_SDK_IMAGE_TARGET_DIR}/imgtool_flashloader.bin
     COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/imgtool_flashloader.bin ${c_SDK_IMGTOOL_FLOADER_DIR}/${c_SOC_TYPE}_acut/floader_${c_SOC_TYPE}.bin
 )

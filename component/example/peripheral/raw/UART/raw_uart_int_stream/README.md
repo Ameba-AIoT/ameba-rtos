@@ -2,8 +2,6 @@
 
 This example describes how to use UART to communicate with PC by interrupt.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 Required Components: USBtoTTL adapter.

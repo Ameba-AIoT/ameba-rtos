@@ -4,8 +4,6 @@
 2. In this demo code, i2c as the master, can perform tx and rx 3 times in interrupt mode. The interrupt handler and driver alternately use semaphore, which reduces cycle waiting and is simple to use.
 3. The user needs to provide the semaphore of tx or rx and interface for acquiring and releasing semaphores.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 master's SDA connect to slave's SDA 

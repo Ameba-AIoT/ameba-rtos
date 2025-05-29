@@ -4,8 +4,6 @@ This example describes how to use PPE as a DMA, which means no other process, ju
 
 It has 2 cases, case1 shows how to carry data from memory to memory, case2 shows that from memory to QSPI (use LCD SH8601A as an example). 
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 For the case that carry data from memory to QSPI, user should connect QSPI pins with LCD SH8601A pins with following pin definition:

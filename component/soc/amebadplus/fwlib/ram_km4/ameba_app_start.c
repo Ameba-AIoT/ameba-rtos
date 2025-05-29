@@ -8,6 +8,7 @@
 #include "os_wrapper.h"
 #include "ameba_v8m_crashdump.h"
 #include "ameba_fault_handle.h"
+#include "os_wrapper_memory.h"
 
 static const char *const TAG = "APP";
 
@@ -126,6 +127,15 @@ void app_start(void)
 	Fault_Hanlder_Redirect(vTaskCrashCallback);
 
 	RTK_LOGI(TAG, "VTOR: %lx, VTOR_NS:%lx\n", SCB->VTOR, SCB_NS->VTOR);
+
+#ifdef CONFIG_CORE_AS_AP
+	extern bool os_heap_add(u8 * start_addr, size_t heap_size);
+#ifdef CONFIG_PSRAM_ALL_FOR_AP_HEAP
+	if (ChipInfo_PsramExists()) {
+		os_heap_add((uint8_t *)__km4_bd_psram_start__, (size_t)(__non_secure_psram_end__ - __km4_bd_psram_start__));
+	}
+#endif
+#endif
 
 	/* configure FreeRTOS interrupt and heap region. After heap is configured, printf can be used*/
 	rtos_mem_init();

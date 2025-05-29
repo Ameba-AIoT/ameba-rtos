@@ -2,8 +2,6 @@
 
 This example describes how to use UART TX to simulate clock source by DMA.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 Required Components: Oscilloscope.

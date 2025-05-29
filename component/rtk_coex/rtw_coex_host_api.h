@@ -85,10 +85,8 @@ enum coex_subtype_h2c_bt {
 enum coex_subtype_h2c_ext {
 	/* common info */
 	COEX_H2C_EXT_UNDEF = 0,
-	COEX_H2C_EXT_INIT,
 	COEX_H2C_EXT_WL_PERFORMANCE_REQUEST,
 	/* info for WPAN*/
-	COEX_H2C_EXT_WPAN_STATE,
 	COEX_H2C_EXT_WPAN_CHANNEL,
 	/* info for BT*/
 	COEX_H2C_EXT_BT_PROFILE,
@@ -370,20 +368,6 @@ void rtk_coex_btc_set_pta(u8 type, u8 role, u8 process);
 //////////////////////////////////////////////////////////
 ///////// for EXT Function Declare
 //////////////////////////////////////////////////////////
-/**
- * @brief      ext chip init notification.
- * @param[in]  p_extchip_para	A pointer to struct extchip_para_t.
- * @return
- *             - None.
- */
-void rtk_coex_extc_ntfy_init(struct extchip_para_t *p_extchip_para);
-/**
- * @brief     ext wpan state notification.
- * @param[in] state  wpan status state, refer to enum EXT_STATE.
- * @return
- *            - None.
- */
-void rtk_coex_extc_ntfy_wpan_state(u8 state);
 /**
  * @brief     ext wpan channel notification.
  * @param[in] channel  802.15.4 channel number [11-26].

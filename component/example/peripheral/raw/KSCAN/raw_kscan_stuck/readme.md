@@ -2,8 +2,6 @@
 
 This example describes how to use keyscan when there is key stuck.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 Support up to 8*8 keyboard, and this example hardware connection is as follows:

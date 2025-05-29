@@ -53,9 +53,22 @@ config SUPPORT_SMP
 
 #---------- FEATURE LIST END-------------#
 
-menu "CONFIG BOOT OPTION"
-    config XIP_FLASH
-        bool "XIP_FLASH"
+menu "CONFIG Link Option"
+    choice
+        prompt "IMG1(Bootloader) running on SRAM?"
+        default IMG1_SRAM
+        config IMG1_SRAM
+            bool "SRAM"
+    endchoice
+
+    choice
+        prompt "IMG2(Application) running on PSRAM or FLASH?"
+        default IMG2_PSRAM
+        config IMG2_PSRAM
+            bool "PSRAM"
+        config IMG2_FLASH
+            bool "FLASH"
+    endchoice
 endmenu
 
 menu "CONFIG TrustZone"

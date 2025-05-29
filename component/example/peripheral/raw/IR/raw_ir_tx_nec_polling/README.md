@@ -3,8 +3,6 @@
 1. This example describes how to use IR transmitting data in polling mode by RAW IR API.
 2. This data are encoded with NEC protocol.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 Logic Analyzer or oscilloscope.

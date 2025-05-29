@@ -1,8 +1,6 @@
 # Description
 This example describes how to use PWM input capture function.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
   - PWM_GEN_32KHz_CH5_PIN(channel 5) as PWM channel output 32K, connect it to TIM8_TRIG_PIN with UPS(Unmanned Peripheral System) or PRS(Peripheral Reflect System).

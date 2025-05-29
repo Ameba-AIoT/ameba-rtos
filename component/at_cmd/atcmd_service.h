@@ -62,8 +62,8 @@ void at_printf_unlock(void);
 #define MAX_BUF_LEN             20000
 
 #ifdef CONFIG_ATCMD_HOST_CONTROL
+extern char g_host_control_mode;
 extern char g_tt_mode;
-
 extern char g_tt_mode_check_watermark;
 extern char g_tt_mode_indicate_high_watermark;
 extern char g_tt_mode_indicate_low_watermark;

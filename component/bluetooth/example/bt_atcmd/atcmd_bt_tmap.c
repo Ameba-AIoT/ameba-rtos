@@ -22,7 +22,7 @@ int atcmd_bt_tmap_cmd(int argc, char *argv[])
 {
 	(void)argc;
 	(void)argv;
-	BT_LOGA("There is no available supported bt tmap at cmd \r\n");
+	BT_LOGE("There is no available supported bt tmap at cmd \r\n");
 
 	return 0;
 }

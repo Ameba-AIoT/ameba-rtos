@@ -2,8 +2,6 @@
 
 This example describes how to use key-Scan regular scan mode.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 Support up to 8*8 keyboard, and this example hardware connection is as follows:

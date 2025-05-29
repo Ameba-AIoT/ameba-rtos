@@ -3,8 +3,6 @@
 1. This example describes how to use i2c as the slave by using raw api.
 2. In this demo code, i2c as the slave, can perform rx and tx 3 times in interrupt mode.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 slave's SDA connect to master's SDA 

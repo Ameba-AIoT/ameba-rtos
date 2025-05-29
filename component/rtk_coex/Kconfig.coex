@@ -22,7 +22,7 @@ if WLAN_MENU && !FULLMAC_HOST
         endif
 
         config COEXIST_EXT_MENU
-            depends on COEX_MENU
+            depends on (COEX_MENU && (!MP_SHRINK))
             bool "Enable Ext Coex Support"
             default n
             select COEX_EXT_CHIP_SUPPORT

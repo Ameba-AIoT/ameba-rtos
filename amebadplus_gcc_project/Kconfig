@@ -12,6 +12,9 @@ config AMEBADPLUS
 #---------- FEATURE LIST START-----------#
 #All features are invisible in menuconfig
 
+config SUPPORT_SDIO_DEVICE
+    def_bool y
+
 #
 # USB features
 #
@@ -76,21 +79,39 @@ menu "CONFIG Link Option"
             bool "FLASH"
         config IMG2_PSRAM
             bool "PSRAM"
+            select PSRAM_USED
     endchoice
-    if IMG2_FLASH
-        config PSRAM_AS_HEAP
-            bool "PSRAM AS HEAP"
-    endif
+
+    choice
+        prompt "IMG2 Data and Heap in SRAM or PSRAM?"
+        default DATA_HEAP_SRAM
+        config DATA_HEAP_SRAM
+            bool "SRAM"
+        config DATA_HEAP_PSRAM
+            bool "PSRAM"
+            select PSRAM_USED
+    endchoice
+
     if TRUSTZONE_FOR_KM4
         choice
             prompt "IMG3(SecureImage) running on PSRAM or SRAM?"
             default IMG3_PSRAM
             config IMG3_PSRAM
                 bool "PSRAM"
+                select PSRAM_USED
             config IMG3_SRAM
                 bool "SRAM"
         endchoice
     endif
+
+    config PSRAM_USED
+        bool
+
+    config PSRAM_ALL_FOR_AP_HEAP
+        depends on !IMG2_PSRAM && !DATA_HEAP_PSRAM
+        bool "ALL PSRAM USED FOR APPLICATION HEAP"
+        default y
+
 endmenu
 
 menu "CONFIG Mass Production"

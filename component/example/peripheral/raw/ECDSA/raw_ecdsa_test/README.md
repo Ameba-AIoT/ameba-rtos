@@ -3,8 +3,6 @@
 1. In this case, use hardware ECDSA for signature and verification 
    otp_key : 0 for not use OTP key while 1 for key 0 and 2 for key 1.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 	none
 

@@ -144,7 +144,7 @@ static uint8_t hci_patch_parse(uint8_t *p_patch, uint32_t *p_opcode)
 			*p_opcode = opcode;
 			BT_LOGD("Section opcode %d!\r\n", opcode);
 		} else if (*p_opcode != opcode) {
-			BT_LOGE("opcode mismatch %d %d\r\n", *p_opcode, opcode);
+			BT_LOGE("Opcode mismatch %d %d\r\n", *p_opcode, opcode);
 			return HCI_FAIL;
 		}
 

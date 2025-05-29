@@ -57,8 +57,6 @@ def do_query_app(sdkroot, cfg):
                             rel_path = os.path.relpath(app, os.path.dirname(sdkroot))
                             node = Node(rel_path, sdkroot)
                             nodes_dict.update({rel_path: node})
-        else:
-            raise FileNotFoundError(f"Not exists {include_path}!")
 
     # restructure
     node_paths = list(nodes_dict.keys())

@@ -3,8 +3,6 @@
 This example will erase a security register, write security register in `USER mode` and verify result by comparing transmit data with receive data.
 If you wnat to test security register OTP function, set "#if 0" to "#if 1" and the example will lock the corresponding bit of security register,  erase the security register, write security register in `USER mode` and verify OTP result by comparing the receive data before OTP with the receive data after OTP.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 None

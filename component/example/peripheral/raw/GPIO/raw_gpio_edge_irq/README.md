@@ -2,8 +2,6 @@
 
 This example describes how to implement falling edge trigger on a gpio pin by RAW GPIO API.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 Connect wires:

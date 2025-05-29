@@ -2,8 +2,6 @@
 
 This example describes how to use GPIO read/write to generate a pulse and to measure the pulse width by MBED GPIO API.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 - Requirement Components:

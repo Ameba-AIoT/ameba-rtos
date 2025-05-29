@@ -5,7 +5,7 @@ ENTRY(Reset_Handler)
 
 #define OUTPUT_TEXT_SECTION 		.xip_image2.text
 #define IMG2_LMA_REGION 			KM0_BD_RAM_MP
-#if defined(CONFIG_PSRAM_AS_HEAP)
+#if defined(CONFIG_DATA_HEAP_PSRAM)
 	#define SRAM_INPUT_TEXT_SECTION
 	#define PSRAM_INPUT_TEXT_SECTION	*(.sramdram.only.text*)
 #else
@@ -46,7 +46,7 @@ SECTIONS
 		*(.sram.only.text*)
 		__sram_image2_end__ = .;
 		. = ALIGN(32);
-		
+
 		__flash_text_start__ = .;
 		*(.non.dram.text*)
 		__flash_text_end__ = .;
@@ -82,15 +82,15 @@ SECTIONS
 
 		__image2_backtrace_end__ = .;
 		. = ALIGN (32);
-		
-		
+
+
 	} > KM0_BD_RAM_MP
 
 
 	/* C++ .ARM.extab/.ARM.exidx address shall same as *(.text*) */
-	.ARM.extab  : 
+	.ARM.extab  :
 	{
-		*(.ARM.extab* .gnu.linkonce.armextab.*) 
+		*(.ARM.extab* .gnu.linkonce.armextab.*)
 
 	} > KM0_BD_RAM_MP
 

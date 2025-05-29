@@ -120,16 +120,16 @@ static int atcmd_bt_wifimate_configurator_encrypt_set(int argc, char **argv)
 			uint8_t str_len = strlen(argv[1]);
 
 			if (str_len != 2 * BLE_WIFIMATE_KEY_LEN) {
-				BT_LOGA("[AT+BTDEMO] BLE wifimate configurator: Invalid key string\r\n");
+				BT_LOGE("[AT+BTDEMO] BLE wifimate configurator: Invalid key string\r\n");
 				return BT_AT_ERR_PARAM_INVALID;
 			}
 
 			if (false == hexdata_str_to_array(argv[1], key, BLE_WIFIMATE_KEY_LEN)) {
-				BT_LOGA("[AT+BTDEMO] BLE wifimate configurator encrypt key invalid\r\n");
+				BT_LOGE("[AT+BTDEMO] BLE wifimate configurator encrypt key invalid\r\n");
 				return BT_AT_ERR_PARAM_INVALID;
 			}
 		} else {
-			BT_LOGA("[AT+BTDEMO] BLE wifimate configurator encrypt parameter invalid\r\n");
+			BT_LOGE("[AT+BTDEMO] BLE wifimate configurator encrypt parameter invalid\r\n");
 			return BT_AT_ERR_PARAM_INVALID;
 		}
 	}

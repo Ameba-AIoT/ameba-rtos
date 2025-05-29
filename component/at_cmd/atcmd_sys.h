@@ -9,7 +9,7 @@
 
 #define ATCMD_VERSION          2       /* ATCMD MAJOR VERSION, AT FORMAT CHANGED, OR PORTING NEW CHIPS */
 #define ATCMD_SUBVERSION       4       /* ATCMD MINOR VERSION, NEW COMMAND ADDED OR DELETED */
-#define ATCMD_REVISION         1       /* ATCMD FIX BUG REVISION */
+#define ATCMD_REVISION         2       /* ATCMD FIX BUG REVISION */
 
 typedef struct {
 	u8 Pattern[8];

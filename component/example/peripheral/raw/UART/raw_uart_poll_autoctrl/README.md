@@ -2,8 +2,6 @@
 
 This example describes how to UART auto-flow-control function.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 Required Components: another peer device.

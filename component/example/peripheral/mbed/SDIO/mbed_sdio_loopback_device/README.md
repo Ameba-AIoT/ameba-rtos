@@ -2,8 +2,6 @@
 
 This example shows how to use SDIO device. It will receive data from SDIO host and loopback data to SDIO host each 1 second.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 User should prepare a SDIO host with Linux System. Realtek SDIO host driver should be compiled into Kernel and set to loopback mode. Then connect SDIO device with SDIO host. Refer to SDIO application note to get more information.

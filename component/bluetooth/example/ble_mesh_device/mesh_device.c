@@ -699,7 +699,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_onoff_server_app_callback(uint8_t ev
 		break;
 	}
 	default:
-		BT_LOGA("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;

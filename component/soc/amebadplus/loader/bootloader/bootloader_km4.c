@@ -130,9 +130,6 @@ void BOOT_RccConfig(void)
 /* init psramc for flash r/w if needed */
 void BOOT_Data_Flash_Init(void)
 {
-#ifndef CONFIG_IMG2_FLASH
-	assert_param(0); /*Code Can only XIP When No Psram*/
-#endif
 	Combo_SPIC_Init();
 }
 
@@ -520,6 +517,9 @@ void BOOT_Image1(void)
 		PAD_PullCtrl(_PA_5, GPIO_PuPd_UP);
 		PAD_SleepPullCtrl(_PA_5, GPIO_PuPd_UP);
 	} else if (IS_SIP_FLASH(sip_memory)) {
+#ifdef CONFIG_PSRAM_USED
+		assert_param(0); /*Code Can only XIP When No Psram*/
+#endif
 		if (IS_TWO_FLASH(sip_memory)) {
 			/* init Combo SPIC use default parameter in bootrom */
 			BOOT_Data_Flash_Init();

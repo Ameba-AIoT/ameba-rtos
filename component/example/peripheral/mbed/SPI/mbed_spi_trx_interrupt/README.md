@@ -5,8 +5,6 @@
 3. This interface can be used for communication with SPI slave devices, such as FLASH memory, LCD screens and other modules or integrated circuits.
 4. This example communicates data in interrupt mode.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 In this example, it use 2 sets of SPI. One is master, the other is slave, by default it use SPI0 as slave, and use SPI1 as master. So we connect them as below:

@@ -3,8 +3,6 @@
 1. This example describes how to use i2c by using raw api.
 2. This test needs two demo board, one as master and the other as slave.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 slave's SDA connect to master's SDA 

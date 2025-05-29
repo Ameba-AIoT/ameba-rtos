@@ -1191,7 +1191,7 @@ static uint16_t bt_stack_gatts_send_data(void *param, bool notify)
 
 	/* Save memory when high throughput */
 	if (queue->pending_ele_num >= BT_QUEUE_PENDING_ELEMENT_MAX) {
-		// BT_LOGA("Error: GATTS pending queue full, wait a moment to send data again !!!\r\n");
+		// BT_LOGE("Error: GATTS pending queue full, wait a moment to send data again !!!\r\n");
 		return RTK_BT_ERR_QUEUE_FULL;
 	}
 

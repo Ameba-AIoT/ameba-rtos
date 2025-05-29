@@ -180,7 +180,7 @@ static void app_hid_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 
 	default: {
 		APP_PRINT_INFO1("app_hid_bt_cback: default event_type 0x%04x", event_type);
-		// BT_LOGA("app_hid_bt_cback: default event_type 0x%04x \r\n", event_type);
+		// BT_LOGE("app_hid_bt_cback: default event_type 0x%04x \r\n", event_type);
 		handle = false;
 	}
 	break;

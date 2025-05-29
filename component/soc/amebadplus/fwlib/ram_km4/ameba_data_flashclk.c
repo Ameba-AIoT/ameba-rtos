@@ -471,7 +471,7 @@ int data_flash_calibration_highspeed(FlashDivInt_E div)
 int data_flash_handshake_highspeed(FlashDivInt_E div)
 {
 	u8 Dphy_Dly_Cnt = 3; /* DD recommend this value */
-	int Ret = RTK_SUCCESS;
+	int Ret = RTK_FAIL;
 
 	/* SPIC clock switch to PLL */
 	DATA_FLASH_PLLInit_ClockDiv(div);
@@ -480,14 +480,14 @@ int data_flash_handshake_highspeed(FlashDivInt_E div)
 	DATA_FLASH_Read_HandShake_Cmd(Dphy_Dly_Cnt, ENABLE);
 
 	if (DATA_FLASH_Read_DataIsRight()) {
+		Ret = RTK_SUCCESS;
 	} else {
 		DATA_FLASH_Read_HandShake_Cmd(Dphy_Dly_Cnt, DISABLE);
 		RCC_PeriphClockSource_PSRAM(BIT_LSYS_CKSL_PSRAM_LBUS);
 		SPIC_COMBO->TPR1 = (SPIC_COMBO->TPR1 & ~MASK_CR_ACTIVE_SETUP) | CR_ACTIVE_SETUP(1);
-		Ret = RTK_FAIL;
 	}
 
-	RTK_LOGI(TAG, "DATA FLASH HandShake[0x%x %s]\n", div, Ret ? "OK" : "FAIL");
+	RTK_LOGI(TAG, "DATA FLASH HandShake[0x%x %s]\n", div, Ret == RTK_SUCCESS ? "OK" : "FAIL");
 	return Ret;
 }
 
