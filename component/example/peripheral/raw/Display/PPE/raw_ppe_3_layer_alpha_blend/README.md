@@ -2,8 +2,6 @@
 
 This example describes how to use 3 layer alpha blending function. All 3 input layers are ARGB8888. After blending by PPE, It will output ARGB8888 format data. It's interface is memory to memory. Software will checkout if data is right. User can select polling mode or interrupt mode to check if it blends over. 
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 None

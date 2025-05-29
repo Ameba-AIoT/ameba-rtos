@@ -5,8 +5,6 @@
    When OTPkey is less than or equal to 1, the crypto engine will load the OTP key from efuse.
    To prevent errors caused by multi-core access to crypto simultaneously, a lock is added before CRYPTO_OTPKey_Init, and the lock is released after crypto calculation.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 1. If you have programmed OTP physical mapping, the corresponding relationship of keynum is as follows, for specific instructions, please refer to the first section of the AN file in the crypto engine.

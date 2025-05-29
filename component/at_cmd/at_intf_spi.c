@@ -131,8 +131,6 @@ void atcmd_spi_task(void)
 
 	spi_irq_hook(&spi_slave, (spi_irq_handler) Slave_tr_done_callback, (uint32_t)&spi_slave);
 
-
-
 	while (1) {
 		spi_flush_rx_fifo(&spi_slave);
 		gpio_write(&at_spi_slave_to_master_gpio, 0);

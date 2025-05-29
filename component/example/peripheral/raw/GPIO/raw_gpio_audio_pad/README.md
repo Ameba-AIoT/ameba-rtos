@@ -2,8 +2,6 @@
 
 This example describes how to switch audio pad pin between digital path and analog path by RAW GPIO API.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 Logic Analyser or oscilloscope.

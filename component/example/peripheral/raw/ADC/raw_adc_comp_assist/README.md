@@ -4,8 +4,6 @@ This example describes how to get ADC sample data in normal channels `under comp
 
 To reduce ADC power consumption, an additional comparator could cooperate with ADC as a first level check of input voltage.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 In this example, ADC is configured to sample data in `2 normal channels`.

@@ -3,8 +3,6 @@
 1. This example describes how to set and get RTC time by RAW RTC API.
 2. The RTC function is implemented by an independent BCD timer/counter.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 None.

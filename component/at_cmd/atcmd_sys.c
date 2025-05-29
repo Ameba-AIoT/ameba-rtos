@@ -9,6 +9,7 @@
 #include "build_info.h"
 
 #include "at_intf_spi.h"
+#include "at_intf_sdio.h"
 #include "ameba_ota.h"
 
 #include "atcmd_service.h"
@@ -436,12 +437,19 @@ void at_test(void *arg)
 	} else if (mode == 2) {
 		u32 at_len = (u32)atoi(argv[2]);
 		u32 send_len = 0;
-		u32 malloc_size = at_len > ATCMD_SPI_DMA_SIZE ? ATCMD_SPI_DMA_SIZE : at_len;
+		u32 malloc_size = 256;
+#ifdef CONFIG_ATCMD_HOST_CONTROL
+		if (g_host_control_mode == AT_HOST_CONTROL_SPI) {
+			malloc_size = ATCMD_SPI_DMA_SIZE - 8;
+		} else if (g_host_control_mode == AT_HOST_CONTROL_SDIO) {
+			malloc_size = ATCMD_SDIO_MAX_SIZE;
+		}
+#endif
 		buffer = (u8 *)rtos_mem_malloc(malloc_size);
 		memset(buffer, 1, malloc_size);
 		at_printf(ATCMD_DOWNSTREAM_TEST_START_STR);
 		while (at_len > 0) {
-			send_len = at_len > (ATCMD_SPI_DMA_SIZE - 8) ? (ATCMD_SPI_DMA_SIZE - 8) : at_len;
+			send_len = at_len > malloc_size ? malloc_size : at_len;
 			at_printf_data((char *)buffer, send_len);
 			at_len -= send_len;
 		}

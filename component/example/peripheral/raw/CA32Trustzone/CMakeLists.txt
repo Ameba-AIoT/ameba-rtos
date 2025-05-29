@@ -10,7 +10,6 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # Component public part, user config begin(DO NOT remove this line)
 # You may use if-else condition to set or update predefined variable above
 
-ameba_list_append(public_includes ${c_COMPONENT_DIR}/at_cmd)
 
 # Component public part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#
@@ -38,45 +37,15 @@ set(private_compile_options)         #private compile_options
 
 #NOTE: User defined section, add your private build configures here
 # You may use if-else condition to set these predefined variable
-ameba_list_append(private_sources
-    monitor.c
+ameba_list_append_if(CONFIG_ARM_CORE_CA32 private_sources
+    example_CA32Trustzone.c
+    app_example.c
 )
-if(CONFIG_CORE_AS_AP AND CONFIG_SUPPORT_ATCMD)
-    ameba_list_append(private_sources
-        atcmd_service.c
-        atcmd_sys.c
-        atcmd_fs.c
-        atcmd_bt_mp.c
-        atcmd_otp.c
-        atcmd_coex.c
-    )
-    ameba_list_append_if(CONFIG_WLAN private_sources
-        atcmd_http.c
-        atcmd_mqtt.c
-        atcmd_network.c
-        atcmd_ota.c
-        atcmd_sockets.c
-        atcmd_websocket.c
-        atcmd_wifi.c
-    )
-    ameba_list_append_if(CONFIG_BT private_sources
-        atcmd_bt_ext.c
-    )
-    if(CONFIG_ATCMD_HOST_CONTROL)
-        ameba_list_append_if(CONFIG_SUPPORT_SDIO_DEVICE private_sources
-            at_intf_sdio.c
-        )
-        ameba_list_append(private_sources
-            at_intf_uart.c
-            at_intf_spi.c
-        )
-    endif()
-endif()
 # Component private part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#
 
 #WARNING: Template section, DO NOT change!
-ameba_add_internal_library(at_cmd
+ameba_add_internal_library(example_CA32Trustzone
     p_SOURCES
         ${private_sources}
     p_INCLUDES
@@ -85,7 +54,5 @@ ameba_add_internal_library(at_cmd
         ${private_definitions}
     p_COMPILE_OPTIONS
         ${private_compile_options}
-    p_DEPENDENCIES
-        ${c_BUILD_INFO} #REVIEW: build_info.h is REQUIRED by atcmd_sys.c
 )
 ##########################################################################################

@@ -2,8 +2,6 @@
 
 This example describes how to use IR receive and learn the received waveform frequency or data format by RAW IR API.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 Connect the rx pin to another board's tx pin defined in `ir_ext.h`.

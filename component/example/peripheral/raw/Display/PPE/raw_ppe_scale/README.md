@@ -1,8 +1,6 @@
 #  Example Description
 This example describes how to use scale function. For this example, its scale ratios of x axis and y axis are both 2. It's interface is memory to memory. Software will checkout if output data is right. User can select polling mode or interrupt mode to check if it blends over.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 None

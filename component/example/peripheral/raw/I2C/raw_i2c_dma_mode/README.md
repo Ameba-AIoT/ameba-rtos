@@ -3,8 +3,6 @@
 1. This example describes how to use i2c in dma mode.
 2. In this case, dma replaces cpu to transfer data from the buffer to i2c.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 This test needs two demo board, one as master and the other as slave.

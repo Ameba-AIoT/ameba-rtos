@@ -2,8 +2,6 @@
 
 This example show how to use PPE auto reload function. It blends 4 frames totally for this exmaple. After calling set valid, PPE will reload registers into internal register and start blending. It's interface is memory to memory. 
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 None
