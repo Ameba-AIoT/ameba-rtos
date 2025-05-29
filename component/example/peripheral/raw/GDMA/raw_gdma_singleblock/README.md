@@ -2,8 +2,6 @@
 
 This example describes how to use GDMA's single-block transfer mode.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 None.

@@ -2,8 +2,6 @@
 
 This example shows how to use SPI interface to driver ILI9341 LCD Module through GDMA. GDMA will carry data from SRAM to QSPI FIFO and then to LCD.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 The following is PIN definition and how to connect with ILI9341 LCD module:

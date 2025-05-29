@@ -2,8 +2,6 @@
 
 This example shows how to use freertos tickless with aontimer interruptable interface.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 

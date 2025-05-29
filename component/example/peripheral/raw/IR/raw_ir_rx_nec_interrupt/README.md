@@ -3,8 +3,6 @@
 1. This example describes how to use IR receiving data in interrupt mode by RAW IR API.
 2. This data are encoded with NEC protocol
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 Connect the rx pin to another board's tx pin defined in `ir_ext.h`.

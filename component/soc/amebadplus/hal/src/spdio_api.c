@@ -113,14 +113,13 @@ PHAL_SPDIO_ADAPTER pgSPDIODev = NULL;
 /* Since all the members in the group are static which will not be extracted to the doxygen doc,
   no @defgroup comment is added to avoid there is nothing displayed under the group. */
 
-/* Group3 */
-static const u8 SDIO_DEV_PAD[6] = {
-	_PB_9,  // CLK
-	_PB_8,  // CMD
-	_PB_7,  // D3
-	_PB_6,  // D2
-	_PB_14, // D1
-	_PB_13  // D0
+static const u8 SDIO_DEV_PAD[5][6] = {
+	/* CLK     CMD     D3      D2      D1      D0 */
+	{_PA_16, _PA_15, _PA_14, _PA_13, _PA_18, _PA_17}, // Group1: PA13-PA18
+	{_PA_29, _PA_28, _PA_27, _PA_26, _PA_31, _PA_30}, // Group2: PA26-PA31
+	{_PB_9,  _PB_8,  _PB_7,  _PB_6,  _PB_14, _PB_13}, // Group3: PB6-PB9, PB13-PB14, default
+	{_PB_19, _PB_18, _PB_17, _PA_12, _PB_21, _PB_20}, // Group4: PA12, PB17-PB21
+	{_PB_26, _PB_25, _PB_24, _PB_23, _PB_28, _PB_27}  // Group5: PB23-PB28
 };
 
 /* end of group */
@@ -517,21 +516,19 @@ static void SPDIO_IRQ_Handler_BH(void *pData)
 	}
 }
 
-static void SPDIO_Board_Init(void)
+void SPDIO_Board_Init(u8 PinGrp)
 {
 	u8 idx;
 
-	/* Pinmux function and Pad control */
-	/* Group3 */
-	for (idx = 0; idx < 6; idx++) {
-		PAD_PullCtrl(SDIO_DEV_PAD[idx], GPIO_PuPd_UP);
-		Pinmux_Config(SDIO_DEV_PAD[idx], PINMUX_FUNCTION_SDIO);
-		RTK_LOGI(TAG, "SDIO_DEV: P%c%d\n", 'A' + PORT_NUM(SDIO_DEV_PAD[idx]),
-				 PIN_NUM(SDIO_DEV_PAD[idx]));
-	}
+	assert_param(PinGrp <= SPDIO_PINMUX_GRPMAX);
 
-	/* SDIO function enable and clock enable*/
-	RCC_PeriphClockCmd(APBPeriph_SDIO, APBPeriph_SDIO_CLOCK, ENABLE);
+	/* Pinmux function and Pad control */
+	for (idx = 0; idx < 6; idx++) {
+		PAD_PullCtrl(SDIO_DEV_PAD[PinGrp][idx], GPIO_PuPd_UP);
+		Pinmux_Config(SDIO_DEV_PAD[PinGrp][idx], PINMUX_FUNCTION_SDIO);
+		RTK_LOGI(TAG, "SDIO_DEV: P%c%d\n", 'A' + PORT_NUM(SDIO_DEV_PAD[PinGrp][idx]),
+				 PIN_NUM(SDIO_DEV_PAD[PinGrp][idx]));
+	}
 }
 
 /**
@@ -584,7 +581,10 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 	}
 	pgSPDIODev->pRXDESCAddrAligned = (INIC_RX_DESC *)(((((u32)pgSPDIODev->pRXDESCAddr - 1) >> 2) + 1) << 2); // Make it 4-bytes aligned
 
-	SPDIO_Board_Init();
+	SPDIO_Board_Init(SPDIO_PINMUX_GRP3);
+
+	/* SDIO function enable and clock enable*/
+	RCC_PeriphClockCmd(APBPeriph_SDIO, APBPeriph_SDIO_CLOCK, ENABLE);
 
 	SDIO_StructInit(&SDIO_InitStruct);
 	SDIO_InitStruct.TXBD_BAR = (u32)pgSPDIODev->pTXBDAddrAligned;

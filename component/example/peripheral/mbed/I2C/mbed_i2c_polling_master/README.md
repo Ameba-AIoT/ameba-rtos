@@ -3,8 +3,6 @@
 1. This example describes how to use i2c as the master by using mbed api	
 2. In this case, i2c serves as the master and works in polling mode for reading or writing.  
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 master's SDA connect to slave's SDA 

@@ -2,8 +2,6 @@
 
 This example describes how to use CapTouch to detect key press and release.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 Required Components: capacitive circuit.

@@ -1,26 +1,24 @@
-- # Example Description
+# Example Description
 
-  This example describes how to achieve secure service in non secure world on CA32.
-
-  This example does not support the loguart command response.
+This example describes how to achieve secure service in non secure world on CA32.
 
 # HW Configuration
 
-  NO need.
+NO need.
 
-  # SW Configuration
+# SW Configuration
 
-  1. Copy main.c to amebasmart_gcc_project\project_ap\src, and replace old main.c.
-  2. make all and download new image.
+1. perform cmd: `./build.py -a CA32Trustzone` in directory `{sdk_path}/amebaXXX_gcc_project/`
+2. `Download` images to board by Ameba Image Tool.
 
-  # Expected Result
+# Expected Result
 
-  String "secure test here" will be shown from secure world.
+String "secure test here" will be shown from secure world.
 
-  # Note
+# Note
 
-  None.
+None.
 
-  # Supported IC
+# Supported IC
 
-  * AmebaSmart
+* AmebaSmart

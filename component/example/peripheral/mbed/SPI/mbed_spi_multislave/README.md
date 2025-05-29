@@ -4,8 +4,6 @@
 2. The SPI Interface provides a "Serial Peripheral Interface" Master.
 3. This interface can be used for communication with SPI slave devices, such as FLASH memory, LCD screens and other modules or integrated circuits.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 - master's `MOSI` connect to slave1's `MOSI` & slave2's `MOSI`

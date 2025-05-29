@@ -12,6 +12,7 @@
 #include "lwip_netconf.h"
 #include "at_intf_uart.h"
 #include "at_intf_spi.h"
+#include "at_intf_sdio.h"
 #include "atcmd_service.h"
 #include "vfs.h"
 #include "kv.h"
@@ -273,7 +274,7 @@ int atcmd_tt_mode_start(u32 len)
 		return -1;
 	}
 
-	if (ring_buf_size == MAX_TT_HEAP_SIZE && g_host_control_mode == AT_HOST_CONTROL_UART) {
+	if (ring_buf_size == MAX_TT_HEAP_SIZE && g_host_control_mode != AT_HOST_CONTROL_SPI) {
 		g_tt_mode_check_watermark = 1;
 	}
 
@@ -529,8 +530,13 @@ DEFAULT:
 				 PIN_VAL_TO_NAME_STR(AT_SYNC_FROM_MASTER_GPIO), PIN_VAL_TO_NAME_STR(AT_SYNC_TO_MASTER_GPIO), SPI_INDEX - MBED_SPI0);
 		ret = atio_spi_init();
 	} else if (g_host_control_mode == AT_HOST_CONTROL_SDIO) {
-		// TODO: sdio interface
+#ifdef CONFIG_SUPPORT_SDIO_DEVICE
+		ret = atio_sdio_init();
 		RTK_LOGI(TAG, "Confgure sdio host control mode!\r\n");
+#else
+		ret = -1;
+		RTK_LOGI(TAG, "NOT Support SDIO Interface!\r\n");
+#endif
 	} else {
 		RTK_LOGE(TAG, "g_host_control_mode is invalid\r\n");
 	}

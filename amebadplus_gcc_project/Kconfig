@@ -11,6 +11,8 @@ config AMEBADPLUS
 
 #---------- FEATURE LIST START-----------#
 #All features are invisible in menuconfig
+config SUPPORT_SDIO_DEVICE
+    def_bool y
 
 config SUPPORT_USB
     def_bool y

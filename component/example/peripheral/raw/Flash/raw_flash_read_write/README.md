@@ -2,8 +2,6 @@
 
 This example will read a specific flash offset, erase sector, write Flash in `USER mode` and re-read again. Cycle ten times.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 None

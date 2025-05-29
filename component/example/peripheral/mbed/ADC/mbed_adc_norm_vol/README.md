@@ -2,8 +2,6 @@
 
 This example describes how to get ADC sample data in normal channels by mbed API.
 
-This example does not support the loguart command response.
-
 # HW Configuration
 
 In this example, ADC is configured to sample data in `2 normal channels`.
