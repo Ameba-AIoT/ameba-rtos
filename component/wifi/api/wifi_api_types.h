@@ -921,16 +921,16 @@ union rtw_speaker_set {
 		u8 mode;              /**< 0 for slave, 1 for master. */
 		u8 nav_thresh;        /**< NAV (Network Allocation Vector) threshold in units of 128us. */
 		u8 relay_en;          /**< Relay control. */
-	} init; /**< For wifi speaker setting case @ref RTW_SPEAKER_SET_INIT.*/
+	} init; /**< For Wi-Fi speaker setting case @ref RTW_SPEAKER_SET_INIT.*/
 	struct rtw_speaker_i2s {
 		u8 port;           /**< Port selection for TSFT trigger: 0 for port 0, 1 for port 1. */
 		u8 latch_period;   /**< Audio latch period: 0 for 4.096ms, 1 for 8.192ms. */
-	} latch_i2s_count; /**< For wifi speaker setting case @ref RTW_SPEAKER_SET_LATCH_I2S_COUNT.*/
+	} latch_i2s_count; /**< For Wi-Fi speaker setting case @ref RTW_SPEAKER_SET_LATCH_I2S_COUNT.*/
 	struct rtw_speaker_tsf_timer {
 		u8 enable;			/**< 1 for enable, 0 for disable. */
 		u64 tsft;           /**< Unit us. */
 		u8 port;           /**< Port selection for TSFT trigger: 0 for port 0, 1 for port 1. */
-	} tsf_timer; /**< For wifi speaker setting case @ref RTW_SPEAKER_SET_TSF_TIMER.*/
+	} tsf_timer; /**< For Wi-Fi speaker setting case @ref RTW_SPEAKER_SET_TSF_TIMER.*/
 };
 
 /**********************************************************************************************

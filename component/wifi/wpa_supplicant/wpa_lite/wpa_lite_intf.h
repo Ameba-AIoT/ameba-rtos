@@ -34,10 +34,20 @@ struct psk_info {
 };
 
 /**
+  * @brief  The enum is used to indicate flash status
+  */
+enum rtw_flash_psk_info_status {
+	RTW_FLASH_PSK_INFO_INIT = 0, //deauth_info init to 0
+	RTW_FLASH_PSK_INFO_FROM_NP = 1,//flash psk info request from NP,  eg:rtw_start_clnt_join, deauth_info set to 1
+	RTW_FLASH_PSK_INFO_DONE = 2,//flash psk info done, notify NP poll
+};
+
+/**
   * @brief  The structure is used to describe the stored deauth info
   */
 struct deauth_info {
 	u8 bssid[6];
+	u8 flash_status;
 	u32  frame_len;
 	u8  frame_buf[50];
 };

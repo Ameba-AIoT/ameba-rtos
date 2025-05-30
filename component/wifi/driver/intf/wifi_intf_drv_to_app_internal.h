@@ -321,6 +321,14 @@ int wifi_set_mfp_support(unsigned char value);
 int wifi_set_group_id(unsigned char value);
 
 /**
+ * @brief  Enqueue join cmd.
+ * @param[in]  None
+ * @return  RTK_SUCCESS if enqueue join cmd successful.
+ * @return  RTK_FAIL otherwise.
+ */
+int wifi_start_join_cmd(void);
+
+/**
  * @brief  for wpa supplicant indicate sae status.
  * @param[in] wlan_idx:STA_WLAN_IDX or SOFTAP_WLAN_IDX.
  * @param[in] status:sae_status which will be indicated.

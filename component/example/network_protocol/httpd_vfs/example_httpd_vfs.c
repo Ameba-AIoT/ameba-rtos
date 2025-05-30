@@ -68,7 +68,7 @@ int get_method_handler(struct httpd_conn *conn)
 	}
 	//RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%s] page_path = %s\n", __func__, page_path);
 
-	prefix = find_vfs_tag(VFS_REGION_1);
+	prefix = find_vfs_tag(VFS_REGION_2);
 
 	DiagSnPrintf(path, MAX_PATH_LEN * 2, "%s:%s", prefix, page_path);
 
