@@ -12,32 +12,34 @@ None
 
 # SW configuration
 
-1. In `project/realtek_ameba<test board>_va0_example/src/src_<ap core>/main.c` `app_filesystem_init` interface, CONFIG `vfs_type` from `VFS_FATFS` to `VFS_LITTLEFS`:
+1. Type command `./menuconfig.py` under project directory, e.g. `amebadplus_gcc_project/`, and choose `CONFIG VFS`:
 	```C
-	ret = vfs_user_register(VFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
+	[*] Enable VFS FATFS
+	[*]     FATFS within APP Image
+	```
+	Save and exit.
+
+2. Use vfs.py (located in `tools/image_scripts/`) with following command to generate `fatfs.bin` from your html webpages directory `html_demo`. If captive portal is enabled, `html_demo` directory must include `index.html`.
+	```
+	vfs.py -t FATFS -s 512 -c 256 -dir html_demo -out fatfs.bin
 	```
 
-2. If you want to enable captive portal, please modify `dhcps.h`.
+3. Place `fatfs.bin` under project path, e.g. `amebadplus_gcc_project/`.
+
+4. If you want to enable captive portal, please modify `dhcps.h`.
 	```C
 	#define CONFIG_ENABLE_CAPTIVE_PORTAL  1
 	```
 
-3. How to compile:
-   - Run `./build.py -a httpd_vfs` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
+5. How to compile:
+   - Run `./build.py -a httpd_vfs` under project path, e.g. `amebadplus_gcc_project/`, to generate images.
 
-4. When you burn images, you need to burn `html.bin`. You can use the following command to generate html.bin with mklittlefs:
-	```
-	./mklittlefs -c html_demo/ -d 0 -b 4096 -p 1024 -s 131072 html.bin
-	```
-   - For AmebaDplus or AmebaLite, burn address is 0x08703000 and size is 128KB.
-   - For AmebaSmart, burn address is 0x08623000 and size is 128KB.
-
-5. A httpd example thread is started automatically when booting, then you need to set board as ap with the following command:
+6. A httpd example thread is started automatically when booting, then you need to set board as ap with the following command:
 	```
 	AT+WLSTARTAP=ssid,Test_AP,pw,12345678,sec,wpa2
 	```
 
-6. Connect your device to board.
+7. Connect your device to board.
 
 # Expect result
 
