@@ -50,12 +50,7 @@ void _init_thread(void *param)
 	HAL_WRITE32(REG_AON_WIFI_IPC, 0, val32);
 
 #if defined(CONFIG_MATTER) && CONFIG_MATTER
-	matter_wifi_on(RTW_MODE_STA);
-
-#if CONFIG_AUTO_RECONNECT
-	//setup reconnection flag
-	matter_set_autoreconnect(1);
-#endif
+	matter_wifi_init();
 #else
 	wifi_on(RTW_MODE_STA);
 
@@ -122,11 +117,7 @@ void _init_thread(void *param)
 	wifi_set_user_config();
 
 #if defined(CONFIG_MATTER) && CONFIG_MATTER
-	matter_wifi_on(RTW_MODE_STA);
-#if CONFIG_AUTO_RECONNECT
-	//setup reconnection flag
-	matter_set_autoreconnect(1);
-#endif
+	matter_wifi_init();
 #else
 	wifi_on(RTW_MODE_STA);
 #if CONFIG_AUTO_RECONNECT
