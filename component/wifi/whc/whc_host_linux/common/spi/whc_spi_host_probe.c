@@ -107,9 +107,9 @@ static int whc_spi_host_probe(struct spi_device *spi)
 			 (int)(spi->mode & (SPI_CPOL | SPI_CPHA)), spi->bits_per_word,
 			 spi->max_speed_hz);
 #if (KERNEL_VERSION(6, 12, 0) <= LINUX_VERSION_CODE)
-	dev_info(&spi->dev, "can_dma: %d\n", spi->master->can_dma != NULL);
-#else
 	dev_info(&spi->dev, "can_dma: %d\n", spi->controller->can_dma != NULL);
+#else
+	dev_info(&spi->dev, "can_dma: %d\n", spi->master->can_dma != NULL);
 #endif
 
 	rc = spi_setup(spi);
