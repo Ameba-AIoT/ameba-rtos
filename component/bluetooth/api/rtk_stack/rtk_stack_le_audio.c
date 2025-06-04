@@ -883,7 +883,7 @@ uint16_t bt_stack_le_audio_hold_iso_chann(rtk_bt_le_audio_iso_channel_info_t *p_
 	uint16_t ret = 1;
 
 	if (!p_iso_chann) {
-		BT_LOGA("[LEA STACK] %s p_iso_chann is NULL \r\n", __func__);
+		BT_LOGE("[LEA STACK] %s p_iso_chann is NULL \r\n", __func__);
 		return ret;
 	} else {
 		if (p_iso_chann->path_direction == RTK_BLE_AUDIO_ISO_DATA_PATH_TX) {
@@ -914,7 +914,7 @@ void bt_stack_le_audio_release_iso_chann(rtk_bt_le_audio_iso_channel_info_t *p_i
 	void *pmtx = NULL;
 
 	if (!p_iso_chann) {
-		BT_LOGA("[LEA STACK] %s p_iso_chann is NULL \r\n", __func__);
+		BT_LOGE("[LEA STACK] %s p_iso_chann is NULL \r\n", __func__);
 		return;
 	} else {
 		if (p_iso_chann->path_direction == RTK_BLE_AUDIO_ISO_DATA_PATH_TX) {

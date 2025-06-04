@@ -561,6 +561,7 @@ static T_APP_RESULT bt_stack_le_gap_service_callback(T_SERVER_ID service_id, voi
 {
 	(void)service_id;
 	T_APP_RESULT result = APP_RESULT_SUCCESS;
+	rtk_bt_evt_t *p_evt = NULL;
 	T_GAPS_CALLBACK_DATA *p_gap_data = (T_GAPS_CALLBACK_DATA *)param;
 
 	if (SERVICE_CALLBACK_TYPE_WRITE_CHAR_VALUE == p_gap_data->msg_type) {
@@ -578,7 +579,6 @@ static T_APP_RESULT bt_stack_le_gap_service_callback(T_SERVER_ID service_id, voi
 			break;
 		}
 		case GATT_SERVICE_WRITE_CLIENT_SUPPORTED_FEATURES: {
-			rtk_bt_evt_t *p_evt = NULL;
 			rtk_bt_gatts_client_supported_features_ind_t *p_ind = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GATTS,
 										RTK_BT_GATTS_EVT_CLIENT_SUPPORTED_FEATURES,
@@ -602,6 +602,29 @@ static T_APP_RESULT bt_stack_le_gap_service_callback(T_SERVER_ID service_id, voi
 		}
 		default:
 			break;
+		}
+	} else if (SERVICE_CALLBACK_TYPE_INDIFICATION_NOTIFICATION == p_gap_data->msg_type) {
+		if (GATT_SERVICE_CHANGE_CCCD_ENABLE == p_gap_data->msg_data.opcode ||
+			GATT_SERVICE_CHANGE_CCCD_DISABLE == p_gap_data->msg_data.opcode) {
+			rtk_bt_gatts_service_changed_cccd_ind_t *srv_change = NULL;
+			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GATTS,
+										RTK_BT_GATTS_EVT_SERVICE_CHANGED_CCCD_IND,
+										sizeof(rtk_bt_gatts_service_changed_cccd_ind_t));
+			if (!p_evt) {
+				return result;
+			}
+
+			srv_change = (rtk_bt_gatts_service_changed_cccd_ind_t *)p_evt->data;
+#if defined(F_BT_GATT_SERVER_EXT_API) && F_BT_GATT_SERVER_EXT_API
+			srv_change->conn_handle = p_gap_data->conn_handle;
+			srv_change->cid = p_gap_data->cid;
+#else
+			srv_change->conn_handle = le_get_conn_handle(p_gap_data->conn_id);
+			srv_change->cid = L2C_FIXED_CID_ATT;
+#endif
+			srv_change->cccd_enable = (GATT_SERVICE_CHANGE_CCCD_ENABLE == p_gap_data->msg_data.opcode) ? true : false;
+
+			rtk_bt_evt_indicate(p_evt, NULL);
 		}
 	}
 
@@ -1191,7 +1214,7 @@ static uint16_t bt_stack_gatts_send_data(void *param, bool notify)
 
 	/* Save memory when high throughput */
 	if (queue->pending_ele_num >= BT_QUEUE_PENDING_ELEMENT_MAX) {
-		// BT_LOGA("Error: GATTS pending queue full, wait a moment to send data again !!!\r\n");
+		// BT_LOGE("Error: GATTS pending queue full, wait a moment to send data again !!!\r\n");
 		return RTK_BT_ERR_QUEUE_FULL;
 	}
 
@@ -1258,6 +1281,33 @@ uint16_t bt_stack_le_gatts_get_tx_pending_num(uint16_t conn_handle, uint16_t *tx
 	return RTK_BT_OK;
 }
 
+uint16_t bt_stack_gatts_service_changed_indicate(void *param)
+{
+	rtk_bt_gatts_service_changed_indicate_param_t *srv_change = (rtk_bt_gatts_service_changed_indicate_param_t *)param;
+
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+	if (!gatt_svc_service_changed_indicate(srv_change->conn_handle,
+										   srv_change->cid ? srv_change->cid : L2C_FIXED_CID_ATT,
+										   srv_change->start_handle,
+										   srv_change->end_handle)) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+#else
+	uint8_t conn_id;
+	if (!le_get_conn_id_by_handle(srv_change->conn_handle, &conn_id)) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	if (!gatts_service_changed_indicate(conn_id,
+										srv_change->start_handle,
+										srv_change->end_handle)) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+#endif
+
+	return RTK_BT_OK;
+}
+
 extern bool bt_stack_profile_check(rtk_bt_profile_t profile);
 uint16_t bt_stack_gatts_act_handle(rtk_bt_cmd_t *p_cmd)
 {
@@ -1283,6 +1333,9 @@ uint16_t bt_stack_gatts_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 	case RTK_BT_GATTS_ACT_INDICATE:
 		ret = bt_stack_gatts_send_data(p_cmd->param, false);
+		break;
+	case RTK_BT_GATTS_ACT_SERVICE_CHANGED_INDICATE:
+		ret = bt_stack_gatts_service_changed_indicate(p_cmd->param);
 		break;
 	default:
 		BT_LOGE("bt_stack_le_act_handle:unknown act: %d \r\n", p_cmd->act);

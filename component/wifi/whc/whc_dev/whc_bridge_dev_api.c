@@ -144,6 +144,12 @@ void whc_bridge_dev_api_delete_filter_node(u32_t identity)
 void whc_bridge_dev_api_set_host_state(u8 state)
 {
 	whc_bridge_hostrdy = state;
+	if (state == WHC_BRIDGE_HOST_READY) {
+		pmu_acquire_wakelock(PMU_FULLMAC_WIFI);
+	} else {
+		pmu_release_wakelock(PMU_FULLMAC_WIFI);
+
+	}
 }
 
 /**

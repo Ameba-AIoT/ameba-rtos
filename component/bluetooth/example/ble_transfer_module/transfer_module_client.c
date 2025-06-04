@@ -128,7 +128,7 @@ void ble_transfer_module_client_read_res_hdl(void *data)
 	uint16_t handle = 1;
 
 	if (RTK_BT_STATUS_FAIL == read_status) {
-		BT_LOGA("[APP] GATTC read failed, profile_id: %d, conn_handle: %d, type: %d, err: 0x%x\r\n",
+		BT_LOGE("[APP] GATTC read failed, profile_id: %d, conn_handle: %d, type: %d, err: 0x%x\r\n",
 				read_res->profile_id, read_res->conn_handle, read_res->type, read_res->err_code);
 #if defined(BT_AT_SYNC) && BT_AT_SYNC
 		if (bt_at_sync_event_match_check(RTK_BT_GATTC_EVT_READ_RESULT_IND)) {

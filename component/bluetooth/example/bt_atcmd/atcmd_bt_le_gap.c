@@ -2575,6 +2575,160 @@ static int atcmd_ble_gap_coc_send_data(int argc, char *argv[])
 }
 #endif /* RTK_BLE_COC_SUPPORT */
 
+static int atcmd_ble_gap_dtm_rx_test(int argc, char **argv)
+{
+	uint8_t antenna_ids[2] = {0, 1};
+	rtk_bt_le_dtm_rx_param_t rx_param = {
+		.rx_channel = 19,
+		.phy = RTK_BT_LE_DTM_RX_PHYS_1M,
+		.mod_idx = RTK_BT_LE_DTM_MODULATION_INDEX_STABLE,
+		.exp_cte_len = 2,
+		.exp_cte_type = RTK_BT_LE_DTM_CTE_TYPE_AOD_1US_SLOT,
+		.slot_durations = RTK_BT_LE_DTM_SLOT_DURATIONS_SWITCH_SAMPLE_1US,
+		.sw_pattern_len = 2,
+		.p_antenna_ids = antenna_ids,
+	};
+	rtk_bt_le_dtm_rx_version_t rx_version = 0;
+	uint16_t ret = 0;
+	bool is_malloc = false;
+
+	if (argc != 1 && argc != 2 && argc != 4 && argc != 9) {
+		BT_LOGE("GAP set DTM receiver test failed! wrong args num!\r\n");
+		return -1;
+	}
+
+	rx_version = (rtk_bt_le_dtm_rx_version_t)str_to_int(argv[0]);
+
+	if (argc > 1) {
+		rx_param.rx_channel = str_to_int(argv[1]);
+	}
+
+	if (argc > 2) {
+		rx_param.phy = (rtk_bt_le_dtm_phy_rx_t)str_to_int(argv[2]);
+		rx_param.mod_idx = (rtk_bt_le_dtm_mod_idx_t)str_to_int(argv[3]);
+	}
+
+	if (argc > 4) {
+		rx_param.exp_cte_len = str_to_int(argv[4]);
+		rx_param.exp_cte_type = (rtk_bt_le_dtm_cte_type_t)str_to_int(argv[5]);
+		rx_param.slot_durations = (rtk_bt_le_dtm_slot_durations_t)str_to_int(argv[6]);
+		rx_param.sw_pattern_len = str_to_int(argv[7]);
+		if (rx_param.sw_pattern_len == 0 || (strlen(argv[8]) / 2 != rx_param.sw_pattern_len) ||
+			(rx_param.p_antenna_ids = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, rx_param.sw_pattern_len)) == NULL ||
+			hexdata_str_to_array(argv[8], rx_param.p_antenna_ids, rx_param.sw_pattern_len) == FALSE) {
+			BT_LOGE("GAP set DTM receiver test trans string to array error!\r\n");
+			if (rx_param.p_antenna_ids) {
+				osif_mem_free(rx_param.p_antenna_ids);
+			}
+			return -1;
+		}
+		is_malloc = true;
+	}
+
+	ret = rtk_bt_le_gap_dtm_rx_test(&rx_param, rx_version);
+	if (ret != RTK_BT_OK) {
+		BT_LOGE("GAP set DTM receiver test failed! err: 0x%x\r\n", ret);
+		if (is_malloc) {
+			osif_mem_free(rx_param.p_antenna_ids);
+		}
+		return -1;
+	}
+
+	BT_LOGA("GAP receiving DTM test packet ...\r\n");
+	if (is_malloc) {
+		osif_mem_free(rx_param.p_antenna_ids);
+	}
+	return 0;
+}
+
+static int atcmd_ble_gap_dtm_tx_test(int argc, char **argv)
+{
+	uint8_t antenna_ids[2] = {0, 1};
+	rtk_bt_le_dtm_tx_param_t tx_param = {
+		.tx_channel = 19,
+		.data_len = 37,
+		.pkt_pl = RTK_BT_LE_DTM_PACKET_PAYLOAD_PRBS9,
+		.phy = RTK_BT_LE_DTM_TX_PHYS_1M,
+		.cte_len = 2,
+		.cte_type = RTK_BT_LE_DTM_CTE_TYPE_AOD_1US_SLOT,
+		.sw_pattern_len = 2,
+		.p_antenna_ids = antenna_ids,
+		.tx_power_level = 0x7F,
+	};
+	rtk_bt_le_dtm_tx_version_t tx_version = 0;
+	uint16_t ret = 0;
+	bool is_malloc = false;
+
+	if (argc != 1 && argc != 4 && argc != 5 && argc != 9 && argc != 10) {
+		BT_LOGE("GAP set DTM transmitter test failed! wrong args num!\r\n");
+		return -1;
+	}
+
+	tx_version = (rtk_bt_le_dtm_tx_version_t)str_to_int(argv[0]);
+
+	if (argc > 1) {
+		tx_param.tx_channel = str_to_int(argv[1]);
+		tx_param.data_len = str_to_int(argv[2]);
+		tx_param.pkt_pl = (rtk_bt_le_dtm_packet_payload_t)str_to_int(argv[3]);
+	}
+
+	if (argc > 4) {
+		tx_param.phy = (rtk_bt_le_dtm_phy_tx_t)str_to_int(argv[4]);
+	}
+
+	if (argc > 5) {
+		tx_param.cte_len = str_to_int(argv[5]);
+		tx_param.cte_type = (rtk_bt_le_dtm_cte_type_t)str_to_int(argv[6]);
+		tx_param.sw_pattern_len = str_to_int(argv[7]);
+		if (tx_param.sw_pattern_len == 0 || (strlen(argv[8]) / 2 != tx_param.sw_pattern_len) ||
+			(tx_param.p_antenna_ids = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, tx_param.sw_pattern_len)) == NULL ||
+			hexdata_str_to_array(argv[8], tx_param.p_antenna_ids, tx_param.sw_pattern_len) == FALSE) {
+			BT_LOGE("GAP set DTM transmitter test trans string to array error!\r\n");
+			if (tx_param.p_antenna_ids) {
+				osif_mem_free(tx_param.p_antenna_ids);
+			}
+			return -1;
+		}
+		is_malloc = true;
+	}
+
+	if (argc > 9) {
+		tx_param.tx_power_level = (int8_t)str_to_int(argv[9]);
+	}
+
+	ret = rtk_bt_le_gap_dtm_tx_test(&tx_param, tx_version);
+	if (ret != RTK_BT_OK) {
+		BT_LOGE("GAP set DTM transmitter test failed! err: 0x%x\r\n", ret);
+		if (is_malloc) {
+			osif_mem_free(tx_param.p_antenna_ids);
+		}
+		return -1;
+	}
+
+	BT_LOGA("GAP transmitting DTM test packet ...\r\n");
+	if (is_malloc) {
+		osif_mem_free(tx_param.p_antenna_ids);
+	}
+	return 0;
+}
+
+static int atcmd_ble_gap_dtm_end_test(int argc, char **argv)
+{
+	(void)argc;
+	(void)argv;
+	uint16_t ret = 0;
+	uint16_t num_pkts = 0;
+
+	ret = rtk_bt_le_gap_dtm_end(&num_pkts);
+	if (ret) {
+		BT_LOGE("GAP end DTM failed! err: 0x%x\r\n", ret);
+		return -1;
+	}
+
+	BT_LOGA("GAP end DTM test, number of received packets: %d\r\n", num_pkts);
+	return 0;
+}
+
 static const cmd_table_t le_gap_cmd_table[] = {
 	{"version",      atcmd_ble_gap_get_version,        1, 1},
 	{"addr",         atcmd_ble_gap_get_bd_addr,        1, 1},
@@ -2676,6 +2830,9 @@ static const cmd_table_t le_gap_cmd_table[] = {
 	{"coc_disconn",  atcmd_ble_gap_coc_disconnect, 2, 2},
 	{"coc_send",     atcmd_ble_gap_coc_send_data, 4, 4},
 #endif
+	{"dtm_rx",       atcmd_ble_gap_dtm_rx_test,        2, 10},
+	{"dtm_tx",       atcmd_ble_gap_dtm_tx_test,        2, 11},
+	{"dtm_end",      atcmd_ble_gap_dtm_end_test,       1, 1},
 	{NULL,},
 };
 

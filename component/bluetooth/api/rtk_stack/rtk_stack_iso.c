@@ -493,7 +493,7 @@ T_APP_RESULT bt_stack_le_iso_cig_initiator_cb(uint8_t cig_id, uint8_t cb_type, v
 			p_cmd->ret = 0;//p_data->p_cig_mgr_disconnect_rsp->cause;
 			osif_sem_give(p_cmd->psem);
 		} else {
-			BT_LOGD("[%s] MSG_CIG_MGR_DISCONNECT_INFO: find no pending command\r\n", __func__);
+			BT_LOGE("[%s] MSG_CIG_MGR_DISCONNECT_INFO: find no pending command\r\n", __func__);
 		}
 		{
 			bool found = false;
@@ -506,7 +506,7 @@ T_APP_RESULT bt_stack_le_iso_cig_initiator_cb(uint8_t cig_id, uint8_t cb_type, v
 				}
 			}
 			if (!found) {
-				BT_LOGA("%s This conn_handle 0x%x is not fill within CIG\r\n", __func__, conn_handle);
+				BT_LOGE("%s This conn_handle 0x%x is not fill within CIG\r\n", __func__, conn_handle);
 				break;
 			}
 			if (RTK_BLE_CIS_INITIATOR_PATH_SETUP == bt_le_iso_priv_data.ini.initiator_info[cig_index].status) {
@@ -865,14 +865,13 @@ T_APP_RESULT bt_stack_le_iso_cig_acceptor_cb(uint8_t cb_type, void *p_cb_data)
 						p_data->p_cig_mgr_disconnect_info->conn_id, p_data->p_cig_mgr_disconnect_info->cis_conn_handle,
 						p_data->p_cig_mgr_disconnect_info->cig_id, p_data->p_cig_mgr_disconnect_info->cis_id,
 						p_data->p_cig_mgr_disconnect_info->cause);
-		BT_LOGD("[%s] MSG_CIG_MGR_DISCONNECT_INFO: find no pending command, indicate it \r\n", __func__);
 		p_cmd = bt_stack_pending_cmd_search(cb_type);
 		if (p_cmd) {
 			bt_stack_pending_cmd_delete(p_cmd);
 			p_cmd->ret = 0;//p_data->p_cig_mgr_disconnect_rsp->cause;
 			osif_sem_give(p_cmd->psem);
 		} else {
-			BT_LOGD("[%s] MSG_CIG_MGR_DISCONNECT_INFO: find no pending command\r\n", __func__);
+			BT_LOGE("[%s] MSG_CIG_MGR_DISCONNECT_INFO: find no pending command\r\n", __func__);
 		}
 		{
 			//If role is @ref RTK_BLE_ISO_ISOCH_ROLE_ACCEPTOR for specified CIS,
@@ -888,7 +887,7 @@ T_APP_RESULT bt_stack_le_iso_cig_acceptor_cb(uint8_t cb_type, void *p_cb_data)
 				}
 			}
 			if (!found) {
-				BT_LOGA("%s This conn_handle 0x%x is not fill within CIG \r\n", __func__, conn_handle);
+				BT_LOGE("%s This conn_handle 0x%x is not fill within CIG \r\n", __func__, conn_handle);
 				break;
 			}
 			osif_mutex_take(bt_le_iso_priv_data.acp.mtx, BT_TIMEOUT_FOREVER);
@@ -2186,7 +2185,7 @@ static uint16_t bt_stack_le_iso_sync_info(void *data)
 				}
 			}
 			if (found_cig_num == 0) {
-				BT_LOGA("%s This conn_handle 0x%x is not fill within CIG \r\n", __func__, disconn_ind->conn_handle);
+				BT_LOGE("%s This conn_handle 0x%x is not fill within CIG \r\n", __func__, disconn_ind->conn_handle);
 				osif_mutex_give(bt_le_iso_priv_data.ini.mtx);
 				break;
 			}
@@ -2212,7 +2211,7 @@ static uint16_t bt_stack_le_iso_sync_info(void *data)
 				}
 			}
 			if (found_cig_num == 0) {
-				BT_LOGA("%s This conn_handle 0x%x is not fill within CIG \r\n", __func__, disconn_ind->conn_handle);
+				BT_LOGE("%s This conn_handle 0x%x is not fill within CIG \r\n", __func__, disconn_ind->conn_handle);
 				osif_mutex_give(bt_le_iso_priv_data.acp.mtx);
 				break;
 			}
