@@ -1071,7 +1071,7 @@ static void rtk_bt_mesh_stack_init(void *data)
 		mesh_node.ttl = mesh_app_conf->ttl;
 	}
 
-	// Set mesh FTL size for user,if not,use the default 1800 bytes
+	// Set mesh FTL size for user,if not,use the default 3000 bytes
 	if (mesh_app_conf->bt_mesh_flash_size) {
 		mesh_node.flash_size = mesh_app_conf->bt_mesh_flash_size;
 	}
