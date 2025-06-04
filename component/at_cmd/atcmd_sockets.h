@@ -60,7 +60,8 @@ typedef struct _node {
 	u16_t dst_port;	// Destination PORT
 	u16_t src_port;	// Source PORT
 	u32_t src_ip;	// Source IP address
-	rtos_task_t auto_rcv_task;
+	rtos_sema_t del_task_sema;	//semaphore for delete auto receive task
+	bool stop_task;	//TRUE: stop and delete auto receive task; Set by AT+SKTDEL
 	struct _node *prevnode;
 	struct _node *nextseed;
 	mbedtls_ssl_context *ssl;

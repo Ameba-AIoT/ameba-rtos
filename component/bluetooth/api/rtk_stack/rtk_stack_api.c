@@ -865,13 +865,13 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 #endif
 #if defined(BT_MESH_ENABLE_DFU_INITIATOR_ROLE) && BT_MESH_ENABLE_DFU_INITIATOR_ROLE
 	case RTK_BT_LE_GP_MESH_DFU_INITIATOR_MODEL:
-		BT_LOGD("[%s] RTK_BT_LE_GP_MESH_DFU_INITIATOR_MODEL group.\r\n", __func__);
+		BT_LOGD("RTK_BT_LE_GP_MESH_DFU_INITIATOR_MODEL group");
 		bt_mesh_dfu_initiator_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE) && BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE
 	case RTK_BT_LE_GP_MESH_DFU_STANDALONE_UPDATER_MODEL:
-		BT_LOGD("[%s] RTK_BT_LE_GP_MESH_DFU_STANDALONE_UPDATER_MODEL group.\r\n", __func__);
+		BT_LOGD("RTK_BT_LE_GP_MESH_DFU_STANDALONE_UPDATER_MODEL group");
 		bt_mesh_dfu_standalone_updater_act_handle(p_cmd);
 		break;
 #endif

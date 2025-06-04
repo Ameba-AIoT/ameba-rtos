@@ -824,14 +824,17 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gatts_app_callback(uint8_t event, void
 			BT_LOGE("[APP] GATTS mtu exchange fail \r\n");
 		}
 		return RTK_BT_EVT_CB_OK;
-	}
-
-	if (RTK_BT_GATTS_EVT_CLIENT_SUPPORTED_FEATURES == event) {
+	} else if (RTK_BT_GATTS_EVT_CLIENT_SUPPORTED_FEATURES == event) {
 		rtk_bt_gatts_client_supported_features_ind_t *p_ind = (rtk_bt_gatts_client_supported_features_ind_t *)data;
 		if (p_ind->features & RTK_BT_GATTS_CLIENT_SUPPORTED_FEATURES_EATT_BEARER_BIT) {
 			BT_LOGA("[APP] Client Supported features is writed: conn_handle %d, features 0x%02x. Remote client supports EATT.\r\n",
 					p_ind->conn_handle, p_ind->features);
 		}
+		return RTK_BT_EVT_CB_OK;
+	} else if (RTK_BT_GATTS_EVT_SERVICE_CHANGED_CCCD_IND == event) {
+		rtk_bt_gatts_service_changed_cccd_ind_t *srv_change = (rtk_bt_gatts_service_changed_cccd_ind_t *)data;
+		BT_LOGA("[APP] Service Changed cccd is updated, conn_handle: %d, cccd_enable: %d\r\n",
+				srv_change->conn_handle, srv_change->cccd_enable);
 		return RTK_BT_EVT_CB_OK;
 	}
 

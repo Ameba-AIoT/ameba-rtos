@@ -166,7 +166,7 @@ void general_client_read_res_hdl(void *data)
 	uint16_t handle = 1;
 
 	if (RTK_BT_STATUS_FAIL == read_status) {
-		BT_LOGA("[APP] GATTC read failed, profile_id: %d, conn_handle: %d, type: %d, err: 0x%x\r\n",
+		BT_LOGE("[APP] GATTC read failed, profile_id: %d, conn_handle: %d, type: %d, err: 0x%x\r\n",
 				read_res->profile_id, read_res->conn_handle, read_res->type, read_res->err_code);
 		BT_AT_PRINT("+BLEGATTC:read,%d,%d,%d,0x%x\r\n",
 					read_status, read_res->conn_handle,

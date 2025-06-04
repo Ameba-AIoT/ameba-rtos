@@ -668,7 +668,7 @@ static uint16_t ble_wifimate_wifi_connect(uint16_t conn_handle, struct wifi_conn
 	ret = wifi_connect(&wifi, 1);
 	if (ret != RTK_SUCCESS) {
 		uint8_t err_code = ble_wifimate_wifi_conn_result_to_bwm_errcode(ret);
-		BT_LOGA("[APP] BLE WiFiMate server can't connect to AP, ret=%d err_code=%d\r\n", ret, err_code);
+		BT_LOGE("[APP] BLE WiFiMate server can't connect to AP, ret=%d err_code=%d\r\n", ret, err_code);
 		return ble_wifimate_server_indicate_wifi_conn_state(conn_handle, BWM_WIFI_STATE_IDLE, err_code);
 	}
 
@@ -680,7 +680,7 @@ static uint16_t ble_wifimate_wifi_connect(uint16_t conn_handle, struct wifi_conn
 	DCHP_state = LwIP_DHCP(0, DHCP_START);
 
 	if (DCHP_state != DHCP_ADDRESS_ASSIGNED) {
-		BT_LOGA("[APP] BLE WiFiMate server DHCP fail, DHCP_state=%d\r\n", DCHP_state);
+		BT_LOGE("[APP] BLE WiFiMate server DHCP fail, DHCP_state=%d\r\n", DCHP_state);
 		return ble_wifimate_server_indicate_wifi_conn_state(conn_handle, BWM_WIFI_STATE_IDLE, BWM_ERR_DHCP_ADDRESS_ASSIGN_FAIL);
 	}
 	BT_LOGA("[APP] BLE WiFiMate server wifi got IP.\r\n");
@@ -758,7 +758,7 @@ static uint16_t ble_wifimate_parse_wifi_connect_config(
 	uint16_t ret = RTK_BT_OK;
 
 	if (!conn_config || !data || !decrypt_pw) {
-		BT_LOGA("[APP] BLE WiFiMate server parse wifi connect param invalid.\r\n");
+		BT_LOGE("[APP] BLE WiFiMate server parse wifi connect param invalid.\r\n");
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
@@ -794,7 +794,7 @@ static uint16_t ble_wifimate_parse_wifi_connect_config(
 
 	if (s_decrypt.algorithm_type) {
 		if (conn_config->password_len > BLE_WIFIMATE_DECRYPT_PASSWORD_LEN_MAX) {
-			BT_LOGA("[APP] BLE WiFiMate wifi connect decrypt password len(%d) unsupport\r\n", conn_config->password_len);
+			BT_LOGE("[APP] BLE WiFiMate wifi connect decrypt password len(%d) unsupport\r\n", conn_config->password_len);
 			return RTK_BT_ERR_UNSUPPORTED;
 		}
 		if (conn_config->password_len > 0) {
@@ -810,7 +810,7 @@ static uint16_t ble_wifimate_server_write_wifi_connect_hdl(uint16_t conn_handle,
 	uint16_t ret = 0;
 
 	if (!data) {
-		BT_LOGA("[APP] BLE WiFiMate indicate wifi_scan_info value NULL %d!\r\n");
+		BT_LOGE("[APP] BLE WiFiMate indicate wifi_scan_info value NULL %d!\r\n");
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
@@ -820,7 +820,7 @@ static uint16_t ble_wifimate_server_write_wifi_connect_hdl(uint16_t conn_handle,
 		uint32_t checksum;
 
 		if (len != 7) {
-			BT_LOGA("[APP] BLE WiFiMate indicate wifi_scan_info length invalid %d!\r\n", len);
+			BT_LOGE("[APP] BLE WiFiMate indicate wifi_scan_info length invalid %d!\r\n", len);
 			return RTK_BT_ERR_PARAM_INVALID;
 		}
 
@@ -833,7 +833,7 @@ static uint16_t ble_wifimate_server_write_wifi_connect_hdl(uint16_t conn_handle,
 		if (seg_num > 0) {
 			ble_wifimate_char_multi_recv_data_init(total_len, seg_num, checksum);
 		} else {
-			BT_LOGA("[APP] BLE WiFiMate conn_handle=%d wifi connect enable invalid!\r\n", conn_handle);
+			BT_LOGE("[APP] BLE WiFiMate conn_handle=%d wifi connect enable invalid!\r\n", conn_handle);
 			return RTK_BT_FAIL;
 		}
 	} else {
@@ -859,7 +859,7 @@ static uint16_t ble_wifimate_server_write_wifi_connect_hdl(uint16_t conn_handle,
 				}
 			} else {
 				ret = RTK_BT_FAIL;
-				BT_LOGA("[APP] BLE WiFiMate conn_handle=%d wifi connect recv checksum fail!\r\n", conn_handle);
+				BT_LOGE("[APP] BLE WiFiMate conn_handle=%d wifi connect recv checksum fail!\r\n", conn_handle);
 			}
 			ble_wifimate_char_multi_recv_data_deinit();
 		}
@@ -918,7 +918,7 @@ static void ble_wifimate_server_write_hdl(void *data)
 	write_resp.type = p_write_ind->type;
 
 	if (!p_write_ind->len || !p_write_ind->value) {
-		BT_LOGA("[APP] BLE WiFiMate server write value is empty!\r\n");
+		BT_LOGE("[APP] BLE WiFiMate server write value is empty!\r\n");
 		write_resp.err_code = RTK_BT_ATT_ERR_INVALID_VALUE_SIZE;
 		goto send_write_rsp;
 	}
@@ -976,7 +976,7 @@ static void ble_wifimate_server_cccd_hdl(void *data)
 	rtk_bt_gatts_cccd_ind_t *p_cccd_ind = (rtk_bt_gatts_cccd_ind_t *)data;
 
 	if (!p_cccd_ind || p_cccd_ind->app_id != BLE_WIFIMATE_SRV_ID) {
-		BT_LOGA("[APP] BLE WiFiMate server cccd invalid\r\n");
+		BT_LOGE("[APP] BLE WiFiMate server cccd invalid\r\n");
 		return;
 	}
 

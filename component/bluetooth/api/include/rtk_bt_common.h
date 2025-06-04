@@ -341,6 +341,14 @@ typedef enum {
 	RTK_BT_LE_GAP_ACT_COC_CONN,
 	RTK_BT_LE_GAP_ACT_COC_DISCONN,
 	RTK_BT_LE_GAP_ACT_COC_SEND_DATA,
+	RTK_BT_LE_GAP_ACT_DTM_RX_TEST_V1,
+	RTK_BT_LE_GAP_ACT_DTM_RX_TEST_V2,
+	RTK_BT_LE_GAP_ACT_DTM_RX_TEST_V3,
+	RTK_BT_LE_GAP_ACT_DTM_TX_TEST_V1,
+	RTK_BT_LE_GAP_ACT_DTM_TX_TEST_V2,
+	RTK_BT_LE_GAP_ACT_DTM_TX_TEST_V3,
+	RTK_BT_LE_GAP_ACT_DTM_TX_TEST_V4,
+	RTK_BT_LE_GAP_ACT_DTM_END_TEST,
 	RTK_BT_LE_GAP_ACT_MAX,
 } rtk_bt_le_gap_act_t;
 
@@ -402,6 +410,7 @@ typedef enum {
 	RTK_BT_GATTS_ACT_INDICATE,
 	RTK_BT_GATTS_ACT_READ_RSP,
 	RTK_BT_GATTS_ACT_WRITE_RSP,
+	RTK_BT_GATTS_ACT_SERVICE_CHANGED_INDICATE,
 	RTK_BT_GATTS_ACT_MAX,
 } rtk_bt_gatts_act_t;
 
@@ -418,6 +427,7 @@ typedef enum {
 	RTK_BT_GATTS_EVT_INDICATE_COMPLETE_IND,     /*!< Indicate local server indicate remote server complete, with msg @ref rtk_bt_gatts_ntf_and_ind_ind_t */
 	RTK_BT_GATTS_EVT_NOTIFY_COMPLETE_IND,       /*!< Indicate local server notify remote server complete, with msg @ref rtk_bt_gatts_ntf_and_ind_ind_t */
 	RTK_BT_GATTS_EVT_CLIENT_SUPPORTED_FEATURES, /*!< Indicate remote client write Client Supported Features Characteristic, with msg @ref rtk_bt_gatts_client_supported_features_ind_t */
+	RTK_BT_GATTS_EVT_SERVICE_CHANGED_CCCD_IND,  /*!< Indicate remote client write Service Changed Characteristic cccd in builtin gatt service, with msg @ref rtk_bt_gatts_service_changed_cccd_ind_t */
 	RTK_BT_GATTS_EVT_MAX,
 } rtk_bt_gatts_evt_t;
 

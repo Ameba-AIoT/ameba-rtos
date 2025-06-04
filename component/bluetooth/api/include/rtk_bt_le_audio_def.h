@@ -152,6 +152,12 @@ extern "C"
 /*                                                    cap cfg end                                           */
 #endif
 
+/**
+ * @defgroup  bt_le_audio BT LE AUDIO APIs
+ * @brief     BT LE AUDIO related function APIs
+ * @ingroup   BT_APIs
+ */
+
 #ifdef __cplusplus
 }
 #endif

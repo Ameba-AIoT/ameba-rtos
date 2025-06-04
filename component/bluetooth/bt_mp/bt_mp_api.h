@@ -178,7 +178,7 @@ uint8_t rtk_bt_mp_dtm_tx_test_v1(uint8_t tx_chann, uint8_t data_len, uint8_t pkt
  * @param[in] tx_chann: Channel to transmit packets. Range: 0x00 - 0x27.
  * @param[in] data_len: Length in bytes of payload data in each packet.
  * @param[in] pkt_pl:   Contents of the payload of the test reference packets: @ref rtk_bt_mp_packet_payload_t.
- * @param[in] phy:      PHY to receive packets: @ref rtk_bt_mp_phy_tx_t.
+ * @param[in] phy:      PHY to transmit packets: @ref rtk_bt_mp_phy_tx_t.
  * @return
  *      - 0 : Failed
  *      - 1 : Succeed
@@ -190,7 +190,7 @@ uint8_t rtk_bt_mp_dtm_tx_test_v2(uint8_t tx_chann, uint8_t data_len, uint8_t pkt
  * @param[in] tx_chann: Channel to transmit packets. Range: 0x00 - 0x27.
  * @param[in] data_len: Length in bytes of payload data in each packet.
  * @param[in] pkt_pl:   Contents of the payload of the test reference packets: @ref rtk_bt_mp_packet_payload_t.
- * @param[in] phy:      PHY to receive packets: @ref rtk_bt_mp_phy_tx_t.
+ * @param[in] phy:      PHY to transmit packets: @ref rtk_bt_mp_phy_tx_t.
  * @param[in] cte_len:  Length of the Constant Tone Extensions in transmitted test reference packets.
                         Range: 0x00 (No Constant Tone Extension expected (default)) or 0x02 to 0x14.
                         Units: 8 us.
@@ -214,7 +214,7 @@ uint8_t rtk_bt_mp_dtm_tx_test_v3(uint8_t tx_chann, uint8_t data_len, uint8_t pkt
  * @param[in] tx_chann: Channel to transmit packets. Range: 0x00 - 0x27.
  * @param[in] data_len: Length in bytes of payload data in each packet.
  * @param[in] pkt_pl:   Contents of the payload of the test reference packets: @ref rtk_bt_mp_packet_payload_t.
- * @param[in] phy:      PHY to receive packets: @ref rtk_bt_mp_phy_tx_t.
+ * @param[in] phy:      PHY to transmit packets: @ref rtk_bt_mp_phy_tx_t.
  * @param[in] cte_len:  Length of the Constant Tone Extensions in transmitted test reference packets.
                         Range: 0x00 (No Constant Tone Extension expected (default)) or 0x02 to 0x14.
                         Units: 8 us.
@@ -238,7 +238,7 @@ uint8_t rtk_bt_mp_dtm_tx_test_v3(uint8_t tx_chann, uint8_t data_len, uint8_t pkt
  */
 uint8_t rtk_bt_mp_dtm_tx_test_v4(uint8_t tx_chann, uint8_t data_len, uint8_t pkt_pl, uint8_t phy,
 								 uint8_t cte_len, uint8_t cte_type, uint8_t sw_pattern_len, uint8_t *p_antenna_ids,
-								 uint8_t tx_power_level);
+								 int8_t tx_power_level);
 
 /**
  * @brief     Make test end and check packet count for Fast MP test.

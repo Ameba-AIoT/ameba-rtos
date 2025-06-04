@@ -756,7 +756,7 @@ static uint16_t app_bt_le_audio_bass_scan_report_handle(rtk_bt_le_ext_scan_res_i
 		if (!p_scan_dev_info) {
 			p_scan_dev_info = app_bt_le_audio_scan_dev_list_add(&scan_dev_info, APP_BT_LE_AUDIO_BASS_SCAN_TYPE);
 			if (!p_scan_dev_info) {
-				BT_LOGE("[APP] %s broadcast scan find new device (addr: %s, broadcast_id: %x %x %x), but add fail! \r\n", __func__, addr_str,
+				BT_LOGE("[APP] %s broadcast scan find new device (addr: %s, broadcast_id: %02x %02x %02x), but add fail! \r\n", __func__, addr_str,
 						scan_dev_info.bass_scan_info_t.broadcast_id[0],
 						scan_dev_info.bass_scan_info_t.broadcast_id[1],
 						scan_dev_info.bass_scan_info_t.broadcast_id[2]);
@@ -772,7 +772,7 @@ static uint16_t app_bt_le_audio_bass_scan_report_handle(rtk_bt_le_ext_scan_res_i
 				memcpy(p_scan_dev_info->bass_scan_info_t.broadcast_id, scan_dev_info.bass_scan_info_t.broadcast_id, RTK_BT_LE_AUDIO_BROADCAST_ID_LEN);
 			}
 		}
-		BT_LOGA("[APP] %s broadcast scan add new device in list (addr: %s, adv_sid %x, broadcast_id: %x %x %x) \r\n", __func__,
+		BT_LOGA("[APP] %s broadcast scan add new device in list (addr: %s, adv_sid %x, broadcast_id: %02x %02x %02x) \r\n", __func__,
 				addr_str,
 				p_scan_dev_info->bass_scan_info_t.adv_sid,
 				scan_dev_info.bass_scan_info_t.broadcast_id[0],
@@ -1076,7 +1076,7 @@ static rtk_bt_audio_record_t *app_bt_le_audio_record_add(rtk_bt_le_audio_cfg_cod
 
 	leaudio_record_hdl = rtk_bt_audio_record_add(RTK_BT_AUDIO_CODEC_LC3, channels, rate, buffer_bytes);
 	if (!leaudio_record_hdl) {
-		BT_LOGA("[LEA STACK] %s failed ! delete record\r\n", __func__);
+		BT_LOGE("[LEA STACK] %s failed ! delete record\r\n", __func__);
 		rtk_bt_audio_record_del(RTK_BT_AUDIO_CODEC_LC3, leaudio_record_hdl);
 		leaudio_record_hdl = NULL;
 	}
@@ -1487,7 +1487,7 @@ static void app_bt_le_audio_send_timer_update(uint32_t time_interval_us)
 	if (bt_le_audio_demo_send_timer.handler) {
 		gtimer_reload(&bt_le_audio_demo_send_timer, time_interval_us);
 	} else {
-		BT_LOGD("[APP] %s: timer not init\r\n", __func__);
+		BT_LOGE("[APP] %s: timer not init\r\n", __func__);
 	}
 #else
 	if (bt_le_audio_demo_send_timer) {
@@ -1911,7 +1911,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 	}
 
 	default:
-		BT_LOGD("[APP] default evt_code 0x%04x\r\n", evt_code);
+		BT_LOGE("[APP] default evt_code 0x%04x\r\n", evt_code);
 		break;
 	}
 
@@ -2509,7 +2509,7 @@ static rtk_bt_evt_cb_ret_t app_bt_cap_callback(uint8_t evt_code, void *data, uin
 			//muted disabled
 			BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_MICS_WRITE_MUTE_IND: set mute disabled\r\n");
 		} else {
-			BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_MICS_WRITE_MUTE_IND: mic device set mute wrong cmd !!!\r\n");
+			BT_LOGE("[APP] RTK_BT_LE_AUDIO_EVT_MICS_WRITE_MUTE_IND: mic device set mute wrong cmd !!!\r\n");
 		}
 		break;
 	}
@@ -2705,7 +2705,7 @@ static rtk_bt_evt_cb_ret_t app_bt_cap_callback(uint8_t evt_code, void *data, uin
 			break;
 		}
 		default: {
-			BT_LOGD("[APP] %s default evt_code 0x%04x\r\n", __func__, param->cp_op);
+			BT_LOGE("[APP] %s default evt_code 0x%04x\r\n", __func__, param->cp_op);
 			ret = RTK_BT_ERR_UNHANDLED;
 			break;
 		}
@@ -2765,7 +2765,7 @@ static rtk_bt_evt_cb_ret_t app_bt_cap_callback(uint8_t evt_code, void *data, uin
 	}
 #endif
 	default:
-		BT_LOGD("[APP] default evt_code 0x%04x\r\n", evt_code);
+		BT_LOGE("[APP] default evt_code 0x%04x\r\n", evt_code);
 		break;
 	}
 
@@ -2808,7 +2808,7 @@ static rtk_bt_evt_cb_ret_t app_bt_tmap_callback(uint8_t evt_code, void *data, ui
 	break;
 
 	default:
-		BT_LOGD("[APP] default evt_code 0x%04x\r\n", evt_code);
+		BT_LOGE("[APP] default evt_code 0x%04x\r\n", evt_code);
 		break;
 	}
 
@@ -3891,7 +3891,7 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 		}
 
 		default:
-			BT_LOGD("[APP] unknown role 0x%x\r\n", role);
+			BT_LOGE("[APP] unknown role 0x%x\r\n", role);
 			return -1;
 		}
 	}

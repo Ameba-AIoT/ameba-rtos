@@ -332,7 +332,7 @@ s32 wifi_start_ap(struct rtw_softap_info *softap_config)
 		PSK_INFO->security_type = softap_config->security_type;
 		memcpy(PSK_INFO->psk_essid, softap_config->ssid.val, softap_config->ssid.len);
 		memcpy(PSK_INFO->psk_passphrase, softap_config->password, softap_config->password_len);
-		rtw_psk_set_psk_info(PSK_INFO);
+		rtw_psk_set_psk_info(PSK_INFO, 0);
 	}
 
 	whc_host_api_message_send(WHC_API_WIFI_START_AP, (u8 *)param_buf, sizeof(struct rtw_softap_info) + softap_config->password_len, (u8 *)&ret, sizeof(ret));

@@ -124,7 +124,7 @@ uint8_t hci_dtm_transmitter_test_v3(uint8_t tx_chann, uint8_t data_len, uint8_t 
 
 uint8_t hci_dtm_transmitter_test_v4(uint8_t tx_chann, uint8_t data_len, uint8_t pkt_pl,
 									uint8_t phy, uint8_t cte_len, uint8_t cte_type,
-									uint8_t sw_pattern_len, uint8_t *p_antenna_ids, uint8_t tx_power_level)
+									uint8_t sw_pattern_len, uint8_t *p_antenna_ids, int8_t tx_power_level)
 {
 	/* OpCode: 0x207B, Data Len: Cmd(8+sw_pattern_len+3), Event(6) */
 	uint8_t buf_raw[RESERVE_LEN + 11 + sw_pattern_len];
@@ -144,7 +144,7 @@ uint8_t hci_dtm_transmitter_test_v4(uint8_t tx_chann, uint8_t data_len, uint8_t 
 			buf[10 + i] = p_antenna_ids[i];
 		}
 	}
-	buf[10 + i] = tx_power_level;
+	buf[10 + i] = (uint8_t)tx_power_level;
 
 	return hci_sa_send_cmd_sync(0x207B, buf, buf[2] + 3);
 }

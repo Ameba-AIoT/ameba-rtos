@@ -94,7 +94,7 @@ typedef struct {
 /**
  * @defgroup  bt_gmap BT GMAP APIs
  * @brief     BT GMAP related function APIs
- * @ingroup   BT_APIs
+ * @ingroup   bt_le_audio
  * @{
  */
 

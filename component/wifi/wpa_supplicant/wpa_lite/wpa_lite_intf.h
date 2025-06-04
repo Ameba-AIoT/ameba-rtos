@@ -67,7 +67,7 @@ void rtw_wpa_init(u8 port);
 void rtw_psk_wpa_deinit(u8 port);
 void rtw_sae_set_user_group_id(unsigned char value);
 void rtw_psk_get_psk_info(struct psk_info *psk_data);
-void rtw_psk_set_psk_info(struct psk_info *psk_data);
+void rtw_psk_set_psk_info(struct psk_info *psk_data, u8 fast_conn);
 void rtw_psk_set_pmk_from_eap(u8 *pmk, u8 *hwaddr);
 
 void rtw_psk_disconnect_hdl(u8 *buf, s32 buf_len, s32 flags, void *userdata);

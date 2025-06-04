@@ -76,14 +76,14 @@ static uint16_t ble_wifimate_aes_ecb_encrypt(uint8_t src_len, uint8_t *src, uint
 	}
 
 	if (CRYPTO_Init(NULL) != 0) {
-		BT_LOGA("crypto engine init failed\r\n");
+		BT_LOGE("crypto engine init failed\r\n");
 	} else {
 		BT_LOGA("init success\n");
 	}
 
 	/*take sema to obtain the right to crypto engine*/
 	while (IPC_SEMTake(IPC_SEM_CRYPTO, timeout) != TRUE) {
-		BT_LOGA("ipsec get hw sema fail\n");
+		BT_LOGE("ipsec get hw sema fail\n");
 	}
 	/* use a software key, it needs to be converted to little-endian format.
 	    For example, the key is 00112233445566778899aabbccddeeff, the key array should like:
@@ -215,7 +215,7 @@ static uint16_t ble_wifimate_char_multi_write_data_init(struct wifi_conn_config_
 						CHAR_WIFI_CONN_ENABLE_SEG_THIRD_ELE_LEN + CHAR_WIFI_CONN_ENABLE_SEG_FORTH_ELE_LEN + \
 						encrypt_len;
 	} else {
-		BT_LOGA("[APP] BLE WifiMate client not support encrypt algo type %d.\r\n", sp_encrypt->algorithm_type);
+		BT_LOGE("[APP] BLE WifiMate client not support encrypt algo type %d.\r\n", sp_encrypt->algorithm_type);
 		return RTK_BT_ERR_UNSUPPORTED;
 	}
 
@@ -648,7 +648,7 @@ static uint16_t ble_wifimate_client_receive_wifi_scan_info(uint16_t conn_handle,
 	uint16_t ret = RTK_BT_OK;
 
 	if (!value) {
-		BT_LOGA("[APP] BLE WiFiMate indicate wifi_scan_info value NULL %d!\r\n");
+		BT_LOGE("[APP] BLE WiFiMate indicate wifi_scan_info value NULL %d!\r\n");
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
@@ -659,7 +659,7 @@ static uint16_t ble_wifimate_client_receive_wifi_scan_info(uint16_t conn_handle,
 		uint32_t checksum;
 
 		if (len != 7) {
-			BT_LOGA("[APP] BLE WiFiMate indicate wifi_scan_info length invalid %d!\r\n", len);
+			BT_LOGE("[APP] BLE WiFiMate indicate wifi_scan_info length invalid %d!\r\n", len);
 			return RTK_BT_ERR_PARAM_INVALID;
 		}
 
@@ -676,7 +676,7 @@ static uint16_t ble_wifimate_client_receive_wifi_scan_info(uint16_t conn_handle,
 		if (seg_num > 0) {
 			ble_wifimate_char_multi_recv_data_init(total_len, seg_num, checksum);
 		} else {
-			BT_LOGA("[APP] BLE WiFiMate conn_handle=%d wifi scan failed!\r\n", conn_handle);
+			BT_LOGE("[APP] BLE WiFiMate conn_handle=%d wifi scan failed!\r\n", conn_handle);
 			return RTK_BT_FAIL;
 		}
 	} else {
@@ -694,7 +694,7 @@ static uint16_t ble_wifimate_client_receive_wifi_scan_info(uint16_t conn_handle,
 				ble_wifimate_client_print_wifi_scan_info();
 			} else {
 				ret = RTK_BT_FAIL;
-				BT_LOGA("[APP] BLE WiFiMate wifi scan info checksum fail\r\n", conn_handle);
+				BT_LOGE("[APP] BLE WiFiMate wifi scan info checksum fail\r\n", conn_handle);
 			}
 			ble_wifimate_char_multi_recv_data_deinit();
 #if defined(BT_AT_SYNC) && BT_AT_SYNC
@@ -715,12 +715,12 @@ static uint16_t ble_wifimate_client_receive_wifi_conn_state(uint16_t conn_handle
 	uint8_t err_code;
 
 	if (!value) {
-		BT_LOGA("[APP] BLE WiFiMate indicate wifi_conn_state value NULL %d!\r\n");
+		BT_LOGE("[APP] BLE WiFiMate indicate wifi_conn_state value NULL %d!\r\n");
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
 	if (len != 2) {
-		BT_LOGA("[APP] BLE WiFiMate indicate wifi_conn_state length invalid %d!\r\n", len);
+		BT_LOGE("[APP] BLE WiFiMate indicate wifi_conn_state length invalid %d!\r\n", len);
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
@@ -768,7 +768,7 @@ static void ble_wifimate_client_indicate_hdl(void *data)
 				BT_LOGD("[APP] BLE WiFiMate indicate charac wifi connect state received\r\n");
 				ble_wifimate_client_receive_wifi_conn_state(conn_handle, len, value);
 			} else {
-				BT_LOGA("[APP] BLE WiFiMate invalid indicate char index 0x%02x!\r\n", i);
+				BT_LOGE("[APP] BLE WiFiMate invalid indicate char index 0x%02x!\r\n", i);
 			}
 			break;
 		}
