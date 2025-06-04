@@ -2159,11 +2159,13 @@ static void bt_stack_le_gap_handle_dev_state_evt(T_LE_GAP_MSG *p_gap_msg)
 static void bt_stack_le_gap_handle_conn_state_evt(T_LE_GAP_MSG *p_gap_msg)
 {
 	T_GAP_CONN_STATE_CHANGE *conn_state = &(p_gap_msg->msg_data.gap_conn_state_change);
+	uint8_t i;
 	uint8_t conn_id = conn_state->conn_id;
 	uint8_t new_state = conn_state->new_state;
 	/* get the last time conn state */
 	uint8_t prev_state = bt_stack_le_link_tbl[conn_id].conn_state;
 	uint16_t disc_cause = conn_state->disc_cause;
+	uint16_t conn_handle;
 	rtk_bt_evt_t *p_evt = NULL;
 	rtk_bt_le_conn_ind_t *p_conn_ind;
 	rtk_bt_le_disconn_ind_t *p_disconn_ind;
@@ -2227,7 +2229,16 @@ static void bt_stack_le_gap_handle_conn_state_evt(T_LE_GAP_MSG *p_gap_msg)
 
 	case GAP_CONN_STATE_CONNECTED:
 		BT_LOGD("[conn_state_evt]: connected success, conn_id: %d\r\n", conn_id);
-		bt_stack_le_conn_handle[conn_id] = le_get_conn_handle(conn_id);
+		conn_handle = le_get_conn_handle(conn_id);
+		/* when conn_handle 16 first comes as conn_id 0, then disconnct; conn_handle 16 may
+		comes as conn_id 1 next time. So both bt_stack_le_conn_handle[] of 0 and 1 may record
+		the handle 16, cause the mismatch in bt_stack_le_gap_get_conn_id. Clear the old record here.*/
+		for (i = 0; i < RTK_BLE_GAP_MAX_LINKS; i++) {
+			if (bt_stack_le_conn_handle[i] == conn_handle) {
+				bt_stack_le_conn_handle[i] = 0;
+			}
+		}
+		bt_stack_le_conn_handle[conn_id] = conn_handle;
 
 		bt_stack_le_link_tbl[conn_id].is_active = 1;
 		bt_stack_le_link_num++;
