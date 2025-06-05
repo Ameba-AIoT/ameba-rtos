@@ -87,8 +87,8 @@ static int inic_cb_deinit(void);
 static int inic_cb_setup(usb_setup_req_t *req, u8 *buf);
 static int inic_cb_set_config(void);
 static int inic_cb_clear_config(void);
-static int inic_cb_received(usbd_inic_ep_t *ep, u16 len);
-static void inic_cb_transmitted(usbd_inic_ep_t *ep, u8 status);
+static int inic_cb_received(usbd_inic_ep_t *out_ep, u16 len);
+static void inic_cb_transmitted(usbd_inic_ep_t *in_ep, u8 status);
 static void inic_cb_status_changed(u8 old_status, u8 status);
 static void inic_cb_suspend(void);
 static void inic_cb_resume(void);
@@ -324,10 +324,11 @@ static int inic_cb_clear_config(void)
   * @param  len: RX data length (in bytes)
   * @retval Status
   */
-static int inic_cb_received(usbd_inic_ep_t *ep, u16 len)
+static int inic_cb_received(usbd_inic_ep_t *out_ep, u16 len)
 {
 	usbd_inic_app_t *iapp = &usbd_inic_app;
 	usbd_inic_app_ep_t *ep_in;
+	usbd_ep_t *ep = &out_ep->ep;
 	u8 ep_num;
 
 	switch (ep->addr) {
@@ -335,7 +336,7 @@ static int inic_cb_received(usbd_inic_ep_t *ep, u16 len)
 		// Loopback with EP3
 		ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN);
 		ep_in = &iapp->in_ep[ep_num];
-		usb_os_memcpy((void *)ep_in->buf, (void *)ep->buf, len);
+		usb_os_memcpy((void *)ep_in->buf, (void *)ep->xfer_buf, len);
 		ep_in->buf_len = len;
 		rtos_sema_give(inic_wifi_bulk_in_sema);
 		break;
@@ -346,8 +347,9 @@ static int inic_cb_received(usbd_inic_ep_t *ep, u16 len)
 	return HAL_OK;
 }
 
-static void inic_cb_transmitted(usbd_inic_ep_t *ep, u8 status)
+static void inic_cb_transmitted(usbd_inic_ep_t *in_ep, u8 status)
 {
+	usbd_ep_t *ep = &in_ep->ep;
 	(void)status;
 	switch (ep->addr) {
 	case USBD_WHC_WIFI_EP3_BULK_IN:

@@ -288,7 +288,22 @@ typedef struct {
   * @}
   */
 
+/** @defgroup TM_TEMP_DEFINE
+  * @{
+  */
+#define TM_POSITIVE_MIN      ((u32)0x00000)  // positive min value
+#define TM_POSITIVE_MAX      ((u32)0x3FFFF)  // positive max value
 
+#define TM_NEGATIVE_MIN      ((u32)0x40000)   // negative min value
+#define TM_NEGATIVE_MAX      ((u32)0x7FFFF)   // negative max value
+
+#define TM_INVALID_VALUE     ((u32)0x80000)  // unavailable value
+
+#define TM_IS_POSITIVE(x)    (((x) >= TM_POSITIVE_MIN) && ((x) <= TM_POSITIVE_MAX))
+#define TM_IS_NEGATIVE(x)    (((x) >= TM_NEGATIVE_MIN) && ((x) <= TM_NEGATIVE_MAX))
+/**
+  * @}
+  */
 
 /**
   * @}
@@ -303,6 +318,7 @@ _LONG_CALL_ void TM_StructInit(TM_InitTypeDef *TM_InitStruct);
 _LONG_CALL_ void TM_Init(TM_InitTypeDef *TM_InitStruct);
 _LONG_CALL_ void TM_PwrProgCmd(u32 NewState);
 _LONG_CALL_ void TM_Cmd(u32 NewState);
+_LONG_CALL_ int TM_PollDataValid(void);
 _LONG_CALL_ void TM_INTConfig(u32 TM_IT, u32 NewState);
 _LONG_CALL_ void TM_INTClear(void);
 _LONG_CALL_ void TM_INTClearPendingBits(u32 TM_IT);
@@ -313,7 +329,6 @@ _LONG_CALL_ u32 TM_GetMaxTemp(void);
 _LONG_CALL_ u32 TM_GetMinTemp(void);
 _LONG_CALL_ void TM_MaxTempClr(void);
 _LONG_CALL_ void TM_MinTempClr(void);
-_LONG_CALL_ void TM_SetLatch(u32 NewState);
 _LONG_CALL_ void TM_HighPtConfig(u16 TM_HighPtThre, u32 NewState);
 _LONG_CALL_ void TM_HighWtConfig(u16 TM_HighWtThre, u32 NewState);
 _LONG_CALL_ void TM_LowWtConfig(u16 TM_LowWtThre, u32 NewState);

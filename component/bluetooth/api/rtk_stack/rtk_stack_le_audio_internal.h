@@ -193,7 +193,7 @@ typedef struct {
 	rtk_bt_le_audio_unicast_session_qos_t session_qos;
 	uint16_t ready_conn_handle;
 	rtk_bt_le_audio_stream_state_t bap_state;
-	rtk_bt_le_audio_unicast_cfg_type_t cfg_type;
+	rtk_bt_le_audio_unicast_cfg_type_t audio_cfg_type;
 	rtk_bt_le_audio_codec_cfg_item_t codec_cfg_item;
 	rtk_bt_le_audio_ascs_ase_target_latency_t target_latency;
 	rtk_bt_le_audio_qos_cfg_type_t qos_cfg_type;

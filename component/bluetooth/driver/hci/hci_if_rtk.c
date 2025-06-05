@@ -36,7 +36,6 @@ struct tx_packet_t {
 static struct {
 	HCI_IF_CALLBACK cb;
 	uint8_t state;
-	uint32_t task_msg_num;
 	struct list_head tx_list;
 	void *tx_ind_sem;
 	void *tx_list_mtx;
@@ -140,12 +139,7 @@ static void _hci_if_send(uint8_t *buf, uint32_t len, bool from_stack)
 static bool _tx_list_add(uint8_t *buf, uint32_t len, uint8_t flag)
 {
 	bool ret = false;
-	uint32_t flags;
 	struct tx_packet_t *pkt = NULL;
-
-	flags = osif_lock();
-	hci_if_rtk.task_msg_num++;
-	osif_unlock(flags);
 
 	if (hci_if_rtk.state != HCI_IF_TASK_RUNNING && flag != FLAG_HCI_TASK_EXIT) {
 		goto end;
@@ -190,9 +184,6 @@ static bool _tx_list_add(uint8_t *buf, uint32_t len, uint8_t flag)
 	ret = true;
 
 end:
-	flags = osif_lock();
-	hci_if_rtk.task_msg_num--;
-	osif_unlock(flags);
 	return ret;
 }
 
@@ -269,16 +260,13 @@ end:
 
 bool hci_if_close(void)
 {
+	struct tx_packet_t *pkt, *n;
+
 	if (!hci_controller_is_enabled()) {
 		return true;
 	}
 
 	hci_if_rtk.state = HCI_IF_TASK_CLOSING;
-
-	/* Waiting _tx_list_add() on other tasks interrupted by deinit task to complete */
-	while (hci_if_rtk.task_msg_num) {
-		osif_delay(5);
-	}
 
 	_tx_list_add(NULL, 0, FLAG_HCI_TASK_EXIT);
 
@@ -291,6 +279,10 @@ bool hci_if_close(void)
 	osif_sem_delete(hci_if_rtk.tx_ind_sem);
 	osif_mutex_delete(hci_if_rtk.tx_list_mtx);
 	osif_msg_queue_delete(hci_if_rtk.internal_cmd);
+	/* hci_if_write_internal may add packets to list after task exit. Free those packets. */
+	list_for_each_entry_safe(pkt, n, &hci_if_rtk.tx_list, list, struct tx_packet_t) {
+		osif_mem_free(pkt);
+	}
 
 	if (hci_if_rtk.cb) {
 		hci_if_rtk.cb(HCI_IF_EVT_CLOSED, true, NULL, 0);

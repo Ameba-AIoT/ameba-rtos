@@ -53,8 +53,6 @@
 #define COMP_CDC_ACM_HS_INTR_IN_INTERVAL                 8U     /* High speed INTR IN interval */
 #define COMP_CDC_ACM_FS_INTR_IN_INTERVAL                 8U     /* Full speed INTR IN interval */
 
-#define COMP_CDC_ACM_CTRL_BUF_SIZE                       512U   /* Control buffer size */
-
 #define COMP_CDC_ACM_LINE_CODING_SIZE                    7U
 
 /* Exported types ------------------------------------------------------------*/
@@ -87,28 +85,18 @@ typedef struct {
 typedef struct {
 	usbd_composite_dev_t *cdev;
 	usbd_composite_cdc_acm_usr_cb_t *cb;
+	usbd_ep_t ep_bulk_in;
+	usbd_ep_t ep_bulk_out;
 #if CONFIG_COMP_CDC_ACM_NOTIFY
-	usbd_composite_cdc_acm_ntf_t *intr_in_buf;
+	usbd_ep_t ep_intr_in;
 #endif
-	u8 *bulk_in_buf;
-	u8 *bulk_out_buf;
-	u16 bulk_in_buf_size;
-	u16 bulk_out_buf_size;
-	__IO u8 bulk_in_state : 1;
-#if CONFIG_COMP_CDC_ACM_NOTIFY
-	__IO u8 intr_in_state : 1;
-	__IO u8 is_intr_in_busy : 1;
-#endif
-	__IO u8 is_bulk_in_busy : 1;
-	__IO u8 is_ready : 1;
-	u8 bulk_out_zlp : 1;
 } usbd_composite_cdc_acm_dev_t;
 
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported variables --------------------------------------------------------*/
 
-extern usbd_class_driver_t usbd_composite_cdc_acm_driver;
+extern const usbd_class_driver_t usbd_composite_cdc_acm_driver;
 
 /* Exported functions --------------------------------------------------------*/
 

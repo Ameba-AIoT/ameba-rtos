@@ -27,7 +27,7 @@ u8 UART_RX = _PA_5; // UART RX
 u32 UART_BAUD = 38400;
 
 GDMA_InitTypeDef GDMA_InitStruct;
-rtos_mutex_t uart_tx_mutex;
+rtos_sema_t uart_tx_sema;
 
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
@@ -66,9 +66,9 @@ static void uart_dma_free(void)
 
 u32 uart_dma_cb(void *buf)
 {
+	(void) buf;
 	uart_dma_free();
-	rtos_mem_free(buf);
-	rtos_mutex_give(uart_tx_mutex);
+	rtos_sema_give(uart_tx_sema);
 
 	return 0;
 }
@@ -77,8 +77,16 @@ void atio_uart_out_dma(char *buf, int len)
 {
 	u32 uart_idx = uart_get_idx(UART_DEV);
 	bool ret;
+	static u8 *buf_new = NULL;
 
-	u8 *buf_new = (u8 *)rtos_mem_malloc(len);
+	if (buf_new != NULL) {
+		rtos_mem_free((void *)buf_new);
+		buf_new = NULL;
+	}
+
+	u32 malloc_size = (((len >> 5) + 1) << 5);
+	buf_new = (u8 *)rtos_mem_malloc(malloc_size);
+
 	memcpy(buf_new, buf, len);
 
 	UART_TXDMAConfig(UART_DEV, DMA_TX_BURST_SIZE);
@@ -88,8 +96,7 @@ void atio_uart_out_dma(char *buf, int len)
 
 	if (!ret) {
 		RTK_LOGI(NOTAG, "%s Error(%d)\n", __FUNCTION__, ret);
-		rtos_mem_free((void *)buf_new); // to avoid memory leakage
-		rtos_mutex_give(uart_tx_mutex);
+		rtos_sema_give(uart_tx_sema);
 	}
 }
 
@@ -106,20 +113,16 @@ void atio_uart_out_polling(char *buf, int len)
 
 void atio_uart_output(char *buf, int len)
 {
-	rtos_mutex_take(uart_tx_mutex, MUTEX_WAIT_TIMEOUT);
+	rtos_sema_take(uart_tx_sema, MUTEX_WAIT_TIMEOUT);
 
-	atio_uart_out_polling(buf, len);
-	rtos_mutex_give(uart_tx_mutex);
-
-	// TODO: dma mode
-	// if (len > POLL_LEN_MAX) {
-	// 	// tx by dma
-	// 	atio_uart_out_dma(buf, len);
-	// } else {
-	// 	// tx by polling
-	// 	atio_uart_out_polling(buf, len);
-	// 	rtos_mutex_give(uart_tx_mutex);
-	// }
+	if (len > POLL_LEN_MAX) {
+		// tx by dma
+		atio_uart_out_dma(buf, len);
+	} else {
+		// tx by polling
+		atio_uart_out_polling(buf, len);
+		rtos_sema_give(uart_tx_sema);
+	}
 }
 
 u32 atio_uart_handler(void *data)
@@ -250,7 +253,7 @@ int atio_uart_init(void)
 		return -1;
 	}
 
-	rtos_mutex_create(&uart_tx_mutex);
+	rtos_sema_create(&uart_tx_sema, 1, 0xFFFF);
 
 	/* enable uart clock and function */
 	RCC_PeriphClockCmd(APBPeriph_UARTx[uart_idx], APBPeriph_UARTx_CLOCK[uart_idx], ENABLE);

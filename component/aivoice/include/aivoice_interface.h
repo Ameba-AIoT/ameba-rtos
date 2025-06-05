@@ -153,6 +153,7 @@ struct rtk_aivoice_iface {
 ////////////////////////////////////////////////////////////////////////////////
 extern const struct rtk_aivoice_iface aivoice_iface_full_flow_v1;
 extern const struct rtk_aivoice_iface aivoice_iface_afe_kws_v1;
+extern const struct rtk_aivoice_iface aivoice_iface_afe_kws_vad_v1;
 extern const struct rtk_aivoice_iface aivoice_iface_afe_v1;
 extern const struct rtk_aivoice_iface aivoice_iface_vad_v1;
 extern const struct rtk_aivoice_iface aivoice_iface_kws_v1;

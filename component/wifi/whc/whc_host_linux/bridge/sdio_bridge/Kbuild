@@ -25,4 +25,14 @@ bridge_sdio-y := \
 		../whc_bridge_host_netlink.o \
 		../sdio_bridge/whc_bridge_host_sdio.o
 
+ifeq ($(CONFIG_WHC_BRIDGE_WPA_OPS),y)
+
+ccflags-y += -I$(src)/../../bridge/bridge_wpa_ops_demo
+
+bridge_sdio-y += \
+		../bridge_wpa_ops_demo/whc_bridge_wpa_ops_custom_netlink.o \
+		../bridge_wpa_ops_demo/whc_bridge_wpa_ops_api.o \
+
+endif
+
 obj-m += bridge_sdio.o

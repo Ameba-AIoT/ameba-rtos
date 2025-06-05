@@ -180,15 +180,16 @@ static void prvInsertBlockIntoFreeList(BlockLink_t *pxBlockToInsert);
  const size_t xHeapStructSize = (sizeof(BlockLink_t) + ((size_t)(portBYTE_ALIGNMENT - 1))) & ~((size_t) portBYTE_ALIGNMENT_MASK);
 
 #if ( (defined CONFIG_HEAP_PROTECTOR ) && ( defined CONFIG_HEAP_CORRUPTION_DETECT_LITE ) )
-#define xHeadCanaryValue 0xABBA1234
-#define xTailCanaryValue 0xBAAD5678
- const size_t xHeadCanarySize = portBYTE_ALIGNMENT;
- const size_t xTailCanarySize = portBYTE_ALIGNMENT;
- const size_t xNumPadding = portBYTE_ALIGNMENT / sizeof(uint32_t);
+#define xHeadCanaryValue 0xDEADBEEF
+#define xTailCanaryValue 0xCAFEBABE
+
+const size_t xHeadCanarySize = portBYTE_ALIGNMENT;
+const size_t xTailCanarySize = portBYTE_ALIGNMENT;
+const size_t xNumPadding = portBYTE_ALIGNMENT / sizeof(uint32_t);
 
 #if ( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE )
-#define xFillAlocated   0xCE
-#define xFillFreed      0xFE
+#define xFillAlocated   0xCC
+#define xFillFreed      0xDD
 #endif /* CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE */
 
 #endif /* CONFIG_HEAP_CORRUPTION_DETECT_LITE */

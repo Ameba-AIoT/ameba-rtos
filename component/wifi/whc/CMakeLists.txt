@@ -124,6 +124,11 @@ elseif(CONFIG_WHC_BRIDGE)
             whc_dev/sdio/whc_bridge_sdio_dev.c
             whc_dev/whc_dev_app.c
         )
+        if(CONFIG_WPA_LITE_OPS)
+             ameba_list_append(private_sources
+                 whc_dev/bridge_wpa_ops_demo/wpa_lite_intf/whc_wpa_lite_app.c
+        )
+        endif()
         set(target_name wifi_fullmac_sdio_bridge_lite)
     elseif(CONFIG_WHC_INTF_SPI)
          ameba_list_append(private_sources
@@ -243,6 +248,15 @@ if(CONFIG_WHC_INTF_USB)
         ameba_list_append(private_includes ${c_CMPT_USB_DIR}/device/inic_dplus)
     elseif(CONFIG_AMEBAGREEN2)
         ameba_list_append(private_includes ${c_CMPT_USB_DIR}/device/inic)
+    endif()
+endif()
+
+
+if(CONFIG_WHC_BRIDGE)
+    if(CONFIG_WHC_INTF_SDIO)
+        if(CONFIG_WPA_LITE_OPS)
+            ameba_list_append(private_includes ${c_CMPT_WIFI_DIR}/whc/whc_dev/bridge_wpa_ops_demo)
+        endif()
     endif()
 endif()
 

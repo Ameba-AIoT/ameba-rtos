@@ -314,6 +314,7 @@ static int whc_fullmac_host_start_ap_ops(struct wiphy *wiphy, struct net_device 
 	memcpy(softAP_config->ssid.val, (u8 *)settings->ssid, settings->ssid_len);
 	softAP_config->ssid.len = settings->ssid_len;
 	softAP_config->channel = (u8) ieee80211_frequency_to_channel(settings->chandef.chan->center_freq);
+	softAP_config->hidden_ssid = settings->hidden_ssid;
 
 	dev_dbg(global_idev.fullmac_dev, "wpa_versions=%d\n", settings->crypto.wpa_versions);
 	dev_dbg(global_idev.fullmac_dev, "n_ciphers_pairwise=%d\n", settings->crypto.n_ciphers_pairwise);
@@ -325,6 +326,7 @@ static int whc_fullmac_host_start_ap_ops(struct wiphy *wiphy, struct net_device 
 	dev_dbg(global_idev.fullmac_dev, "wep_tx_key=%d\n", settings->crypto.wep_tx_key);
 #endif
 	dev_dbg(global_idev.fullmac_dev, "sae_pwd_len=%d\n", settings->crypto.sae_pwd_len);
+	dev_dbg(global_idev.fullmac_dev, "hidden_ssid=%d\n", settings->hidden_ssid);
 
 	if (settings->privacy) {
 		if (settings->crypto.n_ciphers_pairwise > 1 || settings->crypto.n_akm_suites > 1) {

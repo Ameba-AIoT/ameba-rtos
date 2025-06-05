@@ -62,7 +62,7 @@ typedef struct {
 /* Private function prototypes -----------------------------------------------*/
 static int cmd_usbd_verify_init(void);
 static int cmd_usbd_verify_deinit(void);
-static u8 *cmd_usbd_verify_get_config_desc(u16 *len);
+static u16 cmd_usbd_verify_get_config_desc(u8 *buf);
 static int cmd_usbd_verify_set_config(usb_dev_t *dev);
 static int cmd_usbd_verify_clear_config(usb_dev_t *dev);
 static int cmd_usbd_verify_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
@@ -213,13 +213,21 @@ static int cmd_usbd_verify_clear_config(usb_dev_t *pdev)
 /*
 	soc information
 */
-static u8 *cmd_usbd_verify_get_config_desc(u16 *len)
+static u16 cmd_usbd_verify_get_config_desc(u8 *buf)
 {
 	cmd_usbd_verify_ep_t *cdev = &cmd_usbd_verify_ep;
+	u8 *desc = NULL;
+	u16 len = 0;
+
 	cmd_usbd_verify_update_description();
 
-	*len = cdev->description_buf_len;
-	return cdev->description_buf;
+	len = cdev->description_buf_len;
+	desc = cdev->description_buf;
+	if (buf != NULL && desc != NULL) {
+		usb_os_memcpy((void *)buf, (void *)desc, len);
+	}
+
+	return len;
 }
 
 static int cmd_usbd_verify_handle_ep0_data_in(usb_dev_t *dev, u8 status)
@@ -258,27 +266,21 @@ static int cmd_usbd_verify_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 stat
 		if (USB_EP_IS_IN(ep_infor->ep_addr)
 			&& (ep_addr == ep_infor->ep_addr)) {
 			if (status == HAL_OK) {
-				if (ep->zlp) {
-					ep->zlp = 0;
-					//RTK_LOGS(TAG, RTK_LOG_DEBUG, "%s TX ZLP\n", usbd_verify_get_xfer_type_text(ep_infor->ep_type));
-					usbd_verify_transmit_zlp(ep_infor->ep_addr);
-				} else {
-					/*TX done*/
-					ep->done_count ++;
-					ep->state = VERIFY_TRANSFER_STATE_IDLE;
-					if ((ep_infor->ep_type == USB_CH_EP_TYPE_BULK) && (usbd_bulk_in_only)) {
-						usb_os_memset(ep->buf, (u8)(ep->buf[0] + 1), usbd_bulk_in_len);
-						ep->ep_infor.trans_len = usbd_bulk_in_len;
-						usbd_verify_transmit_data(ep);
-					} else if ((ep_infor->ep_type == USB_CH_EP_TYPE_INTR) && (usbd_intr_in_only)) {
-						usb_os_memset(ep->buf, (u8)(ep->buf[0] + 1), usbd_intr_in_len);
-						ep->ep_infor.trans_len = usbd_intr_in_len;
-						usbd_verify_transmit_data(ep);
-					} else if ((ep_infor->ep_type == USB_CH_EP_TYPE_ISOC) && (usbd_isoc_in_only)) {
-						usb_os_memset(ep->buf, (u8)(ep->buf[0] + 1), usbd_isoc_in_len);
-						ep->ep_infor.trans_len = usbd_isoc_in_len;
-						usbd_verify_transmit_data(ep);
-					}
+				/*TX done*/
+				ep->done_count ++;
+				ep->state = VERIFY_TRANSFER_STATE_IDLE;
+				if ((ep_infor->ep_type == USB_CH_EP_TYPE_BULK) && (usbd_bulk_in_only)) {
+					usb_os_memset(ep->buf, (u8)(ep->buf[0] + 1), usbd_bulk_in_len);
+					ep->ep_infor.trans_len = usbd_bulk_in_len;
+					usbd_verify_transmit_data(ep);
+				} else if ((ep_infor->ep_type == USB_CH_EP_TYPE_INTR) && (usbd_intr_in_only)) {
+					usb_os_memset(ep->buf, (u8)(ep->buf[0] + 1), usbd_intr_in_len);
+					ep->ep_infor.trans_len = usbd_intr_in_len;
+					usbd_verify_transmit_data(ep);
+				} else if ((ep_infor->ep_type == USB_CH_EP_TYPE_ISOC) && (usbd_isoc_in_only)) {
+					usb_os_memset(ep->buf, (u8)(ep->buf[0] + 1), usbd_isoc_in_len);
+					ep->ep_infor.trans_len = usbd_isoc_in_len;
+					usbd_verify_transmit_data(ep);
 				}
 			} else {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "%s TX err: %d\n", usbd_verify_get_xfer_type_text(ep_infor->ep_type), status);
@@ -693,9 +695,9 @@ void cmd_usbd_verify_ep_debug_dump(void)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "\t%s OUT(done%d)", usbd_verify_get_xfer_type_text(ep_infor->ep_type), ep->done_count);
 		}
 
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "EP%02x/%02x:mps(%d)/xlen%d/state(%d)zlp(%d)\n",
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "EP%02x/%02x:mps(%d)/xlen%d/state(%d)\n",
 				 ep_infor->ep_addr, ep_infor->match_addr,
-				 ep_infor->mps, ep_infor->trans_len, ep->state, ep->zlp);
+				 ep_infor->mps, ep_infor->trans_len, ep->state);
 	}
 
 }

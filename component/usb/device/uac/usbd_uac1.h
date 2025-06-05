@@ -20,9 +20,6 @@
 
 #define USBD_UAC_FS_ISOC_MPS                        1023   /* Full speed ISOC IN & OUT max packet size */
 
-/*  Uac ctrl buf length */
-#define USBD_UAC_CTRL_BUF_SIZE                      512U  /* CTRL buffer size */
-
 /* volume */
 /* spec 0x8001U ~ 0X7FFFU , -127dB ~ 127dB */
 /* narrow down range for linux volume range warning issue */
@@ -316,13 +313,12 @@ typedef struct {
 typedef struct {
 	usbd_uac_buf_ctrl_t uac_isoc_out;  /* isoc out */
 	usbd_uac_buf_ctrl_t uac_isoc_in;   /* isoc in  */
-
+	usbd_ep_t ep_isoc_in;
+	usbd_ep_t ep_isoc_out;
 	usb_setup_req_t ctrl_req;
 	usb_dev_t *dev;
 	usbd_uac_cb_t *cb;
-
 	u32 cur_sampling_freq;
-	u8 *ctrl_buf;
 	u16 cur_volume;
 	u8 cur_byte_width;
 	u8 cur_clk_valid;

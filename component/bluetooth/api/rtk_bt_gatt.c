@@ -96,6 +96,22 @@ uint16_t rtk_bt_gatts_write_resp(rtk_bt_gatts_write_resp_param_t *param)
 	return ret;
 }
 
+uint16_t rtk_bt_gatts_service_changed_indicate(uint16_t conn_handle, uint16_t cid,
+											   uint16_t start_handle, uint16_t end_handle)
+{
+	uint16_t ret = 0;
+	rtk_bt_gatts_service_changed_indicate_param_t param = {
+		.conn_handle = conn_handle,
+		.cid = cid,
+		.start_handle = start_handle,
+		.end_handle = end_handle,
+	};
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTS, RTK_BT_GATTS_ACT_SERVICE_CHANGED_INDICATE,
+						  &param, sizeof(rtk_bt_gatts_service_changed_indicate_param_t));
+
+	return ret;
+}
 
 /********************************* GATTC API *********************************/
 #if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB

@@ -24,7 +24,7 @@
 static int usbd_inic_set_config(usb_dev_t *dev, u8 config);
 static int usbd_inic_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static u8 *usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_type_t speed, u16 *len);
+static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
 static int usbd_inic_handle_ep0_data_out(usb_dev_t *dev);
 static int usbd_inic_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
@@ -36,7 +36,7 @@ static int usbd_inic_resume(usb_dev_t *dev);
 
 static const char *const TAG = "INIC";
 
-static u8 usbd_inic_wifi_only_mode_dev_desc[USB_LEN_DEV_DESC] USB_DMA_ALIGNED = {
+static const u8 usbd_inic_wifi_only_mode_dev_desc[USB_LEN_DEV_DESC] = {
 	USB_LEN_DEV_DESC,             // bLength
 	USB_DESC_TYPE_DEVICE,         // bDescriptorType
 	0x00,                         // bcdUSB
@@ -58,7 +58,7 @@ static u8 usbd_inic_wifi_only_mode_dev_desc[USB_LEN_DEV_DESC] USB_DMA_ALIGNED = 
 }; // usbd_inic_wifi_only_mode_dev_desc
 
 /* USB Standard Device Descriptor */
-static u8 usbd_inic_lang_id_desc[USB_LEN_LANGID_STR_DESC] USB_DMA_ALIGNED = {
+static const u8 usbd_inic_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
 	USB_LEN_LANGID_STR_DESC,
 	USB_DESC_TYPE_STRING,
 	USB_LOW_BYTE(USBD_INIC_LANGID_STRING),
@@ -66,12 +66,12 @@ static u8 usbd_inic_lang_id_desc[USB_LEN_LANGID_STR_DESC] USB_DMA_ALIGNED = {
 };
 
 /* USB Full Speed Configuration Descriptor for WiFi-only mode */
-static u8 usbd_inic_wifi_only_mode_full_speed_config_desc[USBD_WHC_WIFI_ONLY_MODE_CONFIG_DESC_SIZE] USB_DMA_ALIGNED = {
+static const u8 usbd_inic_wifi_only_mode_full_speed_config_desc[] = {
 	/* Configuration Descriptor */
 	USB_LEN_CFG_DESC,						// bLength: Configuration Descriptor size
 	USB_DESC_TYPE_CONFIGURATION,			// bDescriptorType: Configuration
-	USB_LOW_BYTE(USBD_WHC_WIFI_ONLY_MODE_CONFIG_DESC_SIZE),	// wTotalLength: number of returned bytes
-	USB_HIGH_BYTE(USBD_WHC_WIFI_ONLY_MODE_CONFIG_DESC_SIZE),
+	0x00,									// wTotalLength: number of returned bytes, runtime assigned
+	0x00,
 	0x01,									// bNumInterfaces: 1 interface
 	0x01,									// bConfigurationValue
 	0x00,									// iConfiguration
@@ -121,7 +121,7 @@ static u8 usbd_inic_wifi_only_mode_full_speed_config_desc[USBD_WHC_WIFI_ONLY_MOD
 };
 
 /* INIC Class Driver */
-usbd_class_driver_t usbd_inic_driver = {
+static const usbd_class_driver_t usbd_inic_driver = {
 	.get_descriptor = usbd_inic_get_descriptor,
 	.set_config = usbd_inic_set_config,
 	.clear_config = usbd_inic_clear_config,
@@ -140,20 +140,6 @@ static usbd_inic_dev_t usbd_inic_dev;
 /* Private functions ---------------------------------------------------------*/
 
 /**
-  * @brief  Transmit BULK IN ZLP packet
-  * @retval Status
-  */
-static int usbd_inic_transmit_zlp(u8 ep_addr)
-{
-	usbd_inic_dev_t *idev = &usbd_inic_dev;
-
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "IN EP%02X TX ZLP\n", ep_addr);
-	usbd_ep_transmit(idev->dev, ep_addr, NULL, 0);
-
-	return HAL_OK;
-}
-
-/**
   * @brief  Set class configuration for WiFi interface
   * @param  dev: USB device instance
   * @param  config: USB configuration index
@@ -162,30 +148,24 @@ static int usbd_inic_transmit_zlp(u8 ep_addr)
 static int usbd_inic_set_wifi_config(usb_dev_t *dev, u8 config)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
-	usbd_inic_ep_t *ep;
+	usbd_ep_t *ep;
 
 	UNUSED(config);
 
 	/* Init BULK IN EP3 */
-	ep = &idev->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN)];
-	ep->mps = USBD_INIC_FS_BULK_MPS;
-	ep->type = USB_CH_EP_TYPE_BULK;
-	usbd_ep_init(dev, USBD_WHC_WIFI_EP3_BULK_IN, USB_CH_EP_TYPE_BULK, ep->mps);
-	ep->state = USBD_INIC_EP_STATE_IDLE;
+	ep = &idev->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN)].ep;
+	usbd_ep_init(dev, ep);
+	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK OUT EP4 */
-	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_OUT)];
-	ep->mps = USBD_INIC_FS_BULK_MPS;
-	ep->type = USB_CH_EP_TYPE_BULK;
-	usbd_ep_init(dev, USBD_WHC_WIFI_EP4_BULK_OUT, USB_CH_EP_TYPE_BULK, ep->mps);
-	ep->state = USBD_INIC_EP_STATE_IDLE;
+	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_OUT)].ep;
+	usbd_ep_init(dev, ep);
+	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK OUT EP2 */
-	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP2_BULK_OUT)];
-	ep->mps = USBD_INIC_FS_BULK_MPS;
-	ep->type = USB_CH_EP_TYPE_BULK;
-	usbd_ep_init(dev, USBD_WHC_WIFI_EP2_BULK_OUT, USB_CH_EP_TYPE_BULK, ep->mps);
-	ep->state = USBD_INIC_EP_STATE_IDLE;
+	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP2_BULK_OUT)].ep;
+	usbd_ep_init(dev, ep);
+	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	return HAL_OK;
 }
@@ -220,24 +200,24 @@ static int usbd_inic_set_config(usb_dev_t *dev, u8 config)
 static int usbd_inic_clear_wifi_config(usb_dev_t *dev, u8 config)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
-	usbd_inic_ep_t *ep;
+	usbd_ep_t *ep;
 
 	UNUSED(config);
 
 	/* DeInit BULK IN EP3 */
-	ep = &idev->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN)];
-	ep->state = USBD_INIC_EP_STATE_IDLE;
-	usbd_ep_deinit(dev, USBD_WHC_WIFI_EP3_BULK_IN);
+	ep = &idev->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN)].ep;
+	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
+	usbd_ep_deinit(dev, ep);
 
 	/* DeInit BULK OUT EP4 */
-	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_OUT)];
-	ep->state = USBD_INIC_EP_STATE_IDLE;
-	usbd_ep_deinit(dev, USBD_WHC_WIFI_EP4_BULK_OUT);
+	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_OUT)].ep;
+	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
+	usbd_ep_deinit(dev, ep);
 
 	/* DeInit BULK OUT EP2 */
-	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP2_BULK_OUT)];
-	ep->state = USBD_INIC_EP_STATE_IDLE;
-	usbd_ep_deinit(dev, USBD_WHC_WIFI_EP2_BULK_OUT);
+	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP2_BULK_OUT)].ep;
+	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
+	usbd_ep_deinit(dev, ep);
 
 	return HAL_OK;
 }
@@ -275,16 +255,15 @@ static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	u8 alt;
 	int ret = HAL_OK;
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
-
-	//RTK_LOGD(TAG, "SETUP: bmRequestType=0x%02x bRequest=0x%02x wLength=0x%04x wValue=%x\n",
-	//		 req->bmRequestType, req->bRequest, req->wLength, req->wValue);
+	usbd_ep_t *ep0_in = &dev->ep0_in;
+	usbd_ep_t *ep0_out = &dev->ep0_out;
 
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
 	case USB_REQ_TYPE_STANDARD:
 		switch (req->bRequest) {
 		case USB_REQ_SET_INTERFACE:
 			if (dev->dev_state == USBD_STATE_CONFIGURED) {
-				alt = (u8)(req->wValue & 0xFF);
+				alt = USB_LOW_BYTE(req->wValue);
 				switch (req->wIndex) {
 				case USBD_INIC_ITF_WIFI:
 					idev->wifi_alt = alt;
@@ -307,8 +286,9 @@ static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					break;
 				}
 				if (ret == HAL_OK) {
-					idev->ctrl_buf[0] = alt;
-					usbd_ep0_transmit(dev, idev->ctrl_buf, 1U);
+					ep0_in->xfer_buf[0] = alt;
+					ep0_in->xfer_len = 1U;
+					usbd_ep_transmit(dev, ep0_in);
 				}
 			} else {
 				ret = HAL_ERR_HW;
@@ -316,9 +296,10 @@ static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			break;
 		case USB_REQ_GET_STATUS:
 			if (dev->dev_state == USBD_STATE_CONFIGURED) {
-				idev->ctrl_buf[0] = 0U;
-				idev->ctrl_buf[1] = 0U;
-				usbd_ep0_transmit(dev, idev->ctrl_buf, 2U);
+				ep0_in->xfer_buf[0] = 0U;
+				ep0_in->xfer_buf[1] = 0U;
+				ep0_in->xfer_len = 2U;
+				usbd_ep_transmit(dev, ep0_in);
 			} else {
 				ret = HAL_ERR_HW;
 			}
@@ -333,8 +314,9 @@ static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		if ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) {
 			if (req->wLength) {
 				// SETUP + DATA IN + STATUS
-				idev->cb->setup(req, idev->ctrl_buf);
-				usbd_ep0_transmit(dev, idev->ctrl_buf, req->wLength);
+				idev->cb->setup(req, ep0_in->xfer_buf);
+				ep0_in->xfer_len = req->wLength;
+				usbd_ep_transmit(dev, ep0_in);
 			} else {
 				// SETUP + ZLP IN + STATUS, invalid
 			}
@@ -342,7 +324,8 @@ static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			if (req->wLength) {
 				// SETUP + DATA OUT + STATUS, the DATA OUT phase is processed in ep0_data_out callback
 				usb_os_memcpy((void *)&idev->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
-				usbd_ep0_receive(dev, idev->ctrl_buf, req->wLength);
+				ep0_out->xfer_len = req->wLength;
+				usbd_ep_receive(dev, ep0_out);
 			} else {
 				// SETUP + STATUS
 				idev->cb->setup(req, NULL);
@@ -371,7 +354,7 @@ static int usbd_inic_handle_ep0_data_out(usb_dev_t *dev)
 	UNUSED(dev);
 
 	if (cb != NULL) {
-		ret = cb->setup(&idev->ctrl_req, idev->ctrl_buf);
+		ret = cb->setup(&idev->ctrl_req, dev->ep0_out.xfer_buf);
 	}
 
 	return ret;
@@ -387,24 +370,18 @@ static int usbd_inic_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_inic_cb_t *cb = idev->cb;
-	usbd_inic_ep_t *ep = &idev->in_ep[USB_EP_NUM(ep_addr)];
+	usbd_inic_ep_t *in_ep = &idev->in_ep[USB_EP_NUM(ep_addr)];
+	usbd_ep_t *ep = &in_ep->ep;
 	UNUSED(dev);
 
-	if (status == HAL_OK) {
-		/*TX done*/
-		if (ep->zlp) {
-			ep->zlp = 0;
-			usbd_inic_transmit_zlp(ep_addr);
-		} else {
-			ep->state = USBD_INIC_EP_STATE_IDLE;
-		}
-	} else {
+	if (status != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX err: %d\n", ep_addr, status);
-		ep->state = USBD_INIC_EP_STATE_IDLE;
 	}
 
-	if ((cb->transmitted != NULL) && (ep->state == USBD_INIC_EP_STATE_IDLE)) {
-		cb->transmitted(ep, status);
+	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
+
+	if (cb->transmitted != NULL) {
+		cb->transmitted(in_ep, status);
 	}
 
 	return HAL_OK;
@@ -420,17 +397,19 @@ static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_inic_cb_t *cb = idev->cb;
-	usbd_inic_ep_t *ep = &idev->out_ep[USB_EP_NUM(ep_addr)];
+	usbd_inic_ep_t *out_ep = &idev->out_ep[USB_EP_NUM(ep_addr)];
+	usbd_ep_t *ep = &out_ep->ep;
+	void *userdata = out_ep->userdata;
 
 	UNUSED(dev);
 
 	if ((len > 0) && (cb->received != NULL)) {
-		cb->received(ep, len);
+		cb->received(out_ep, len);
 	}
 
 	if ((len == 0) || (cb->received == NULL) ||
 		((ep_addr & (USBD_WHC_WIFI_EP2_BULK_OUT | USBD_WHC_WIFI_EP4_BULK_OUT)) == 0)) {
-		usbd_inic_receive_data(ep_addr, ep->buf, ep->buf_len, ep->userdata);
+		usbd_inic_receive_data(ep_addr, ep->xfer_buf, ep->xfer_len, userdata);
 	}
 
 	return HAL_OK;
@@ -438,61 +417,50 @@ static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 
 /**
   * @brief  Get descriptor callback
-  * @param  req: setup request
-  * @param  speed: device speed
-  * @param  len: descriptor length
-  * @retval descriptor buffer
+  * @param  dev: USB device instance
+  * @param  req: Setup request handle
+  * @param  buf: Poniter to Buffer
+  * @retval Descriptor length
   */
-static u8 *usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_type_t speed, u16 *len)
+static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 {
+	u16 len = 0;
 	UNUSED(dev);
-	UNUSED(speed);
-	u8 *buf = NULL;
-	u16 length;
-	usbd_inic_dev_t *idev = &usbd_inic_dev;
-	u8 *desc = idev->ctrl_buf;
 
-	switch ((req->wValue >> 8) & 0xFF) {
+	switch (USB_HIGH_BYTE(req->wValue)) {
 
 	case USB_DESC_TYPE_DEVICE:
-		buf = usbd_inic_wifi_only_mode_dev_desc;
-		length = USB_LEN_DEV_DESC;
-		usb_os_memcpy((void *)desc, (void *)buf, length);
-		buf = desc;
-		*len = length;
+		len = USB_LEN_DEV_DESC;
+		usb_os_memcpy((void *)buf, (void *)usbd_inic_wifi_only_mode_dev_desc, len);
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
-		buf = usbd_inic_wifi_only_mode_full_speed_config_desc;
-		length = USBD_WHC_WIFI_ONLY_MODE_CONFIG_DESC_SIZE;
-		usb_os_memcpy((void *)desc, (void *)buf, length);
-		buf = desc;
-		*len = length;
+		len = sizeof(usbd_inic_wifi_only_mode_full_speed_config_desc);
+		usb_os_memcpy((void *)buf, (void *)usbd_inic_wifi_only_mode_full_speed_config_desc, len);
+		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
+		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 		break;
 
 	case USB_DESC_TYPE_STRING:
-		switch (req->wValue & 0xFF) {
+		switch (USB_LOW_BYTE(req->wValue)) {
 		case USBD_IDX_LANGID_STR:
-			buf = usbd_inic_lang_id_desc;
-			*len = USB_LEN_LANGID_STR_DESC;
+			len = USB_LEN_LANGID_STR_DESC;
+			usb_os_memcpy((void *)buf, (void *)usbd_inic_lang_id_desc, len);
 			break;
 		case USBD_IDX_MFC_STR:
-			usbd_get_str_desc(USBD_INIC_MFG_STRING, desc, len);
-			buf = desc;
+			len = usbd_get_str_desc(USBD_INIC_MFG_STRING, buf);
 			break;
 		case USBD_IDX_PRODUCT_STR:
-			usbd_get_str_desc(USBD_INIC_PROD_STRING, desc, len);
-			buf = desc;
+			len = usbd_get_str_desc(USBD_INIC_PROD_STRING, buf);
 			break;
 		case USBD_IDX_SERIAL_STR:
-			usbd_get_str_desc(USBD_INIC_SN_STRING, desc, len);
-			buf = desc;
+			len = usbd_get_str_desc(USBD_INIC_SN_STRING, buf);
 			break;
 		case USBD_IDX_MS_OS_STR:
 			/*Not support*/
 			break;
 		default:
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid str idx %d\n", req->wValue & 0xFF);
+			//RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid str idx %d\n", USB_LOW_BYTE(req->wValue));
 			break;
 		}
 		break;
@@ -501,31 +469,36 @@ static u8 *usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_sp
 		break;
 	}
 
-	return buf;
+	return len;
 
 }
 
 static int usbd_inic_wifi_init(void)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
-	usbd_inic_ep_t *ep;
+	usbd_ep_t *ep;
 	u8 ep_num;
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN);
-	ep = &idev->in_ep[ep_num];
+	ep = &idev->in_ep[ep_num].ep;
 	ep->addr = USBD_WHC_WIFI_EP3_BULK_IN;
+	ep->mps = USBD_INIC_FS_BULK_MPS;
+	ep->type = USB_CH_EP_TYPE_BULK;
+
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_OUT);
-	ep = &idev->out_ep[ep_num];
+	ep = &idev->out_ep[ep_num].ep;
 	ep->addr = USBD_WHC_WIFI_EP4_BULK_OUT;
+	ep->mps = USBD_INIC_FS_BULK_MPS;
+	ep->type = USB_CH_EP_TYPE_BULK;
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP2_BULK_OUT);
-	ep = &idev->out_ep[ep_num];
-	ep->addr = USBD_WHC_WIFI_EP2_BULK_OUT;
+	ep = &idev->out_ep[ep_num].ep;
+	ep->mps = USBD_INIC_FS_BULK_MPS;
+	ep->type = USB_CH_EP_TYPE_BULK;
 
 	return HAL_OK;
 }
-
 
 /**
   * @brief  USB attach status change
@@ -582,13 +555,6 @@ int usbd_inic_init(usbd_inic_cb_t *cb)
 	int ret = HAL_OK;
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 
-	idev->ctrl_buf_len = USBD_INIC_CTRL_BUF_SIZE;
-	idev->ctrl_buf = (u8 *)usb_os_malloc(idev->ctrl_buf_len);
-	if (idev->ctrl_buf == NULL) {
-		ret = HAL_ERR_MEM;
-		goto init_exit;
-	}
-
 	usbd_inic_wifi_init();
 
 	if (cb != NULL) {
@@ -596,7 +562,7 @@ int usbd_inic_init(usbd_inic_cb_t *cb)
 		if (cb->init != NULL) {
 			ret = cb->init();
 			if (ret != HAL_OK) {
-				goto init_clean_ctrl_buf_exit;
+				goto init_exit;
 			}
 		}
 	}
@@ -604,10 +570,6 @@ int usbd_inic_init(usbd_inic_cb_t *cb)
 	usbd_register_class(&usbd_inic_driver);
 
 	return ret;
-
-init_clean_ctrl_buf_exit:
-	usb_os_mfree(idev->ctrl_buf);
-	idev->ctrl_buf = NULL;
 
 init_exit:
 	return ret;
@@ -631,11 +593,6 @@ int usbd_inic_deinit(void)
 
 	usbd_unregister_class();
 
-	if (idev->ctrl_buf != NULL) {
-		usb_os_mfree(idev->ctrl_buf);
-		idev->ctrl_buf = NULL;
-	}
-
 	return HAL_OK;
 }
 
@@ -643,18 +600,19 @@ int usbd_inic_transmit_ctrl_data(u8 *buf, u16 len)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usb_dev_t *dev = idev->dev;
+	usbd_ep_t *ep0_in = &dev->ep0_in;
 
 	if (!dev->is_ready) {
 		return HAL_ERR_HW;
 	}
 
-	if (len > idev->ctrl_buf_len) {
-		len = idev->ctrl_buf_len;
+	if (len > ep0_in->xfer_buf_len) {
+		len = ep0_in->xfer_buf_len;
 	}
 	RTK_LOGS(TAG, RTK_LOG_DEBUG, "CTRL TX len=%d\n", len);
-	usb_os_memcpy(idev->ctrl_buf, buf, len);
-
-	usbd_ep0_transmit(dev, idev->ctrl_buf, len);
+	usb_os_memcpy((void *)ep0_in->xfer_buf, (void *)buf, len);
+	ep0_in->xfer_len = len;
+	usbd_ep_transmit(dev, ep0_in);
 
 	return HAL_OK;
 }
@@ -665,7 +623,7 @@ int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u16 len, void *userdata)
 	u8 num = USB_EP_NUM(ep_addr);
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usb_dev_t *dev = idev->dev;
-	usbd_inic_ep_t *ep;
+	usbd_ep_t *ep;
 
 	if (USB_EP_IS_OUT(ep_addr) || (num >= USB_MAX_ENDPOINTS)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid IN EP num: 0x%02x\n", ep_addr);
@@ -676,20 +634,15 @@ int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u16 len, void *userdata)
 		return HAL_ERR_HW;
 	}
 
-	ep = &idev->in_ep[num];
+	ep = &idev->in_ep[num].ep;
 
-	if (((len % ep->mps) == 0) && (ep->type == USB_CH_EP_TYPE_BULK)) {
-		ep->zlp = 1;
-	} else {
-		ep->zlp = 0;
-	}
-
-	if (ep->state == USBD_INIC_EP_STATE_IDLE) {
+	if (ep->xfer_state == USBD_INIC_EP_STATE_IDLE) {
 		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "EP%02x TX len=%d data=%d\n", num, len, buf[0]);
-		ep->state = USBD_INIC_EP_STATE_BUSY;
-		ep->userdata = userdata;
-		ep->buf = buf;
-		usbd_ep_transmit(idev->dev, ep_addr, ep->buf, len);
+		ep->xfer_state = USBD_INIC_EP_STATE_BUSY;
+		idev->in_ep[num].userdata = userdata;
+		usb_os_memcpy((void *)ep->xfer_buf, (void *)buf, len);
+		ep->xfer_len = len;
+		usbd_ep_transmit(idev->dev, ep);
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX len=%d data=%d: BUSY\n", num, len, buf[0]);
 		ret = HAL_BUSY;
@@ -703,7 +656,7 @@ int usbd_inic_receive_data(u8 ep_addr, u8 *buf, u16 len, void *userdata)
 	u8 num = USB_EP_NUM(ep_addr);
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usb_dev_t *dev = idev->dev;
-	usbd_inic_ep_t *ep;
+	usbd_ep_t *ep;
 
 	if (USB_EP_IS_IN(ep_addr) || (num >= USB_MAX_ENDPOINTS)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid OUT EP num: 0x%02x\n", ep_addr);
@@ -715,12 +668,12 @@ int usbd_inic_receive_data(u8 ep_addr, u8 *buf, u16 len, void *userdata)
 		return HAL_ERR_HW;
 	}
 
-	ep = &idev->out_ep[num];
+	ep = &idev->out_ep[num].ep;
 
-	ep->buf = buf;
-	ep->buf_len = len;
-	ep->userdata = userdata;
-	usbd_ep_receive(idev->dev, ep_addr, ep->buf, ep->buf_len);
+	ep->xfer_buf = buf;
+	ep->xfer_len = len;
+	idev->out_ep[num].userdata = userdata;
+	usbd_ep_receive(idev->dev, ep);
 
 	return HAL_OK;
 }

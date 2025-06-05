@@ -256,7 +256,9 @@ int rtw_wiphy_init_params(struct wiphy *pwiphy)
 	pwiphy->nan_supported_bands |= BIT(NL80211_BAND_2GHZ);
 	pwiphy->nan_supported_bands |= BIT(NL80211_BAND_5GHZ);
 	pwiphy->flags |= WIPHY_FLAG_OFFCHAN_TX;
+#ifdef CONFIG_NAN_PAIRING //6.6.x linux version support NL80211_EXT_FEATURE_SECURE_NAN which is used in PASN
 	wiphy_ext_feature_set(pwiphy, NL80211_EXT_FEATURE_SECURE_NAN);
+#endif
 #endif
 #ifdef CONFIG_P2P
 	pwiphy->iface_combinations = rtw_combinations;

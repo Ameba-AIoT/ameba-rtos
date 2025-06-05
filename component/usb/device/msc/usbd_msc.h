@@ -132,6 +132,8 @@ typedef struct {
 } usbd_msc_cb_t;
 
 typedef struct {
+	usbd_ep_t ep_bulk_in;
+	usbd_ep_t ep_bulk_out;
 	usbd_msc_cbw_t *cbw;
 	usbd_msc_csw_t *csw;
 	usbd_msc_disk_ops_t disk_ops;

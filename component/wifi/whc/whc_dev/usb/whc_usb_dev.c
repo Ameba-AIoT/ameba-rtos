@@ -21,18 +21,18 @@ static usbd_config_t whc_usb_wifi_cfg = {
 };
 
 /* host->device */
-static int whc_usb_dev_rx_done_cb(usbd_inic_ep_t *ep, u16 len)
+static int whc_usb_dev_rx_done_cb(usbd_inic_ep_t *out_ep, u16 len)
 {
-	if (ep->addr == WIFI_INIC_USB_BULKOUT_1 || ep->addr == WIFI_INIC_USB_BULKOUT_2
-		|| ep->addr == WIFI_INIC_USB_BULKOUT_3) {
+	if (out_ep->ep.addr == WIFI_INIC_USB_BULKOUT_1 || out_ep->ep.addr == WIFI_INIC_USB_BULKOUT_2
+		|| out_ep->ep.addr == WIFI_INIC_USB_BULKOUT_3) {
 		if ((whc_usb_priv.irq_info.rx_ep[whc_usb_priv.irq_info.intr_widx] == NULL) &&
 			(whc_usb_priv.irq_info.len[whc_usb_priv.irq_info.intr_widx] == 0)) {
-			whc_usb_priv.irq_info.rx_ep[whc_usb_priv.irq_info.intr_widx] = (u8 *)ep;
+			whc_usb_priv.irq_info.rx_ep[whc_usb_priv.irq_info.intr_widx] = (u8 *)out_ep;
 			whc_usb_priv.irq_info.len[whc_usb_priv.irq_info.intr_widx] = len;
 			whc_usb_priv.irq_info.intr_widx = (whc_usb_priv.irq_info.intr_widx + 1) % WIFI_INIC_USB_BULKOUT_EP_NUM;
 			rtos_sema_give(whc_usb_priv.usb_irq_sema);
 		} else {
-			usbd_inic_receive_data(ep->addr, ep->buf, ep->buf_len, ep->userdata);
+			usbd_inic_receive_data(out_ep->ep.addr, out_ep->ep.xfer_buf, out_ep->ep.xfer_len, out_ep->userdata);
 			RTK_LOGS(NOTAG, RTK_LOG_WARN, "rx cb list full, drop this message!\n");
 		}
 	}
@@ -45,7 +45,7 @@ static void whc_usb_dev_irq_task(void)
 	struct sk_buff *new_skb = NULL;
 	struct sk_buff *skb_rcv = NULL;
 	struct whc_msg_info *msg_info;
-	usbd_inic_ep_t *ep = NULL;
+	usbd_inic_ep_t *inic_ep = NULL;
 	struct whc_txbuf_info_t *whc_txbuf;
 	u32 event = 0;
 	u16 len = 0;
@@ -68,10 +68,10 @@ static void whc_usb_dev_irq_task(void)
 		//rx callback
 		while ((whc_usb_priv.irq_info.rx_ep[whc_usb_priv.irq_info.task_ridx] != NULL) &&
 			   (whc_usb_priv.irq_info.len[whc_usb_priv.irq_info.task_ridx] != 0)) {
-			ep = (usbd_inic_ep_t *)whc_usb_priv.irq_info.rx_ep[whc_usb_priv.irq_info.task_ridx];
+			inic_ep = (usbd_inic_ep_t *)whc_usb_priv.irq_info.rx_ep[whc_usb_priv.irq_info.task_ridx];
 			len = whc_usb_priv.irq_info.len[whc_usb_priv.irq_info.task_ridx];
 
-			event = *(u32 *)ep->buf;
+			event = *(u32 *)inic_ep->ep.xfer_buf;
 
 			if (event != WHC_WIFI_EVT_XIMT_PKTS) {
 				buf = rtos_mem_zmalloc(len);
@@ -79,7 +79,7 @@ static void whc_usb_dev_irq_task(void)
 				if (buf == NULL) {
 					RTK_LOGE(TAG_WLAN_INIC, "%s, can't alloc buffer!!\n", __func__);
 				} else {
-					memcpy(buf, ep->buf, len);
+					memcpy(buf, inic_ep->ep.xfer_buf, len);
 					whc_usb_dev_event_int_hdl(buf, NULL);
 				}
 				/* buf will be freed later*/
@@ -93,33 +93,33 @@ static void whc_usb_dev_irq_task(void)
 #endif
 					break;
 				}
-				msg_info = (struct whc_msg_info *)ep->buf;
-				skb_rcv = (struct sk_buff *)ep->userdata;
+				msg_info = (struct whc_msg_info *)inic_ep->ep.xfer_buf;
+				skb_rcv = (struct sk_buff *)inic_ep->userdata;
 				skb_reserve(skb_rcv, sizeof(struct whc_msg_info));
 
 				skb_put(skb_rcv, msg_info->data_len);
 				skb_rcv->dev = (void *)msg_info->wlan_idx;
 				whc_usb_dev_event_int_hdl((u8 *)msg_info, skb_rcv);
-				ep->buf = new_skb->data;
-				ep->userdata = new_skb;
+				inic_ep->ep.xfer_buf = new_skb->data;
+				inic_ep->userdata = new_skb;
 			}
 
 			whc_usb_priv.irq_info.rx_ep[whc_usb_priv.irq_info.task_ridx] = NULL;
 			whc_usb_priv.irq_info.len[whc_usb_priv.irq_info.task_ridx] = 0;
 			whc_usb_priv.irq_info.task_ridx = (whc_usb_priv.irq_info.task_ridx + 1) % (WIFI_INIC_USB_BULKOUT_EP_NUM);
-			usbd_inic_receive_data(ep->addr, ep->buf, ep->buf_len, ep->userdata); //need config usb buffer after clear rx_ep list
+			usbd_inic_receive_data(inic_ep->ep.addr, inic_ep->ep.xfer_buf, inic_ep->ep.xfer_len, inic_ep->userdata); //need config usb buffer after clear rx_ep list
 		}
 
 	} while (1);
 }
 
-static void whc_usb_dev_tx_done_cb(usbd_inic_ep_t *ep, u8 status)
+static void whc_usb_dev_tx_done_cb(usbd_inic_ep_t *in_ep, u8 status)
 {
 	UNUSED(status);
 
-	if (ep->addr == WIFI_INIC_USB_BULKIN_EP) {
+	if (in_ep->ep.addr == WIFI_INIC_USB_BULKIN_EP) {
 		if (whc_usb_priv.irq_info.whc_txbuf == NULL) {
-			whc_usb_priv.irq_info.whc_txbuf = (u8 *)ep->userdata;
+			whc_usb_priv.irq_info.whc_txbuf = (u8 *)in_ep->userdata;
 			rtos_sema_give(whc_usb_priv.usb_irq_sema);
 		} else {
 			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "irq task not process last tx done!\n");

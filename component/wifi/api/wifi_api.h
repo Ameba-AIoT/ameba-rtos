@@ -67,14 +67,14 @@ s32 wifi_is_running(u8 wlan_idx);
  * @param[in]  connect_param: Pointer to a struct containing connection info (SSID, BSSID, password, etc.).
  *                          See struct rtw_network_info in wifi_api_types.h for details.
  * @param[in]  block:
- *                  - 1: Synchronous wifi connect (function returns after connection attempt completes).
- *                  - 0: Asynchronous wifi connect (function returns immediately after initiating connection).
+ *                  - 1: Synchronous Wi-Fi connect (function returns after connection attempt completes).
+ *                  - 0: Asynchronous Wi-Fi connect (function returns immediately after initiating connection).
  * @return
- *    - @ref RTK_SUCCESS : Join successfully for synchronous wifi connect,
- *  						or connect cmd is set successfully for asynchronous wifi connect.
+ *    - @ref RTK_SUCCESS : Join successfully for synchronous Wi-Fi connect,
+ *  						or connect cmd is set successfully for asynchronous Wi-Fi connect.
  *    - @ref RTK_FAIL : Driver internal error.
- *    - -@ref RTK_ERR_BUSY : Wifi connect or scan is ongoing.
- *    - -@ref RTK_ERR_NOMEM : Memory malloc fail during wifi connect.
+ *    - -@ref RTK_ERR_BUSY : Wi-Fi connect or scan is ongoing.
+ *    - -@ref RTK_ERR_NOMEM : Memory malloc fail during Wi-Fi connect.
  *    - -@ref RTK_ERR_TIMEOUT : Connection attempt exceeded ~70 seconds.
  *    - -@ref RTK_ERR_BADARG : Invalid input parameters (e.g., both `connect_param->bssid` and `connect_param->ssid` not set).
  *    - -@ref RTK_ERR_WIFI_CONN_INVALID_KEY : Incorrect password format.
@@ -87,6 +87,8 @@ s32 wifi_is_running(u8 wlan_idx);
  * @note
  *      - Ensure Wi-Fi is enabled (wifi_on()) before calling this function.
  *      - If `connect_param->bssid` is set, it takes precedence over `connect_param->ssid` for connection.
+ *      - Asynchronous Wi-Fi connect results are obtained through the event handler registered
+ *        for @ref RTW_EVENT_JOIN_STATUS (see example_wifi_event.c).
  */
 s32 wifi_connect(struct rtw_network_info *connect_param, u8 block);
 
@@ -95,12 +97,16 @@ s32 wifi_connect(struct rtw_network_info *connect_param, u8 block);
  * @return
  *    - @ref RTK_SUCCESS : The API executed successfully.
  *    - @ref RTK_FAIL : Driver internal error.
+ * @note  The return value @ref RTK_SUCCESS indicates that the disconnection request was successfully initiated,
+ *        not that the disconnection has completed. The actual disconnection time may vary depending on the
+ *        current Wi-Fi connection status. If this function is called while a Wi-Fi connection is in progress,
+ *        the disconnection will occur after the ongoing connection attempt is completed.
  */
 s32 wifi_disconnect(void);
 
 /**
- * @brief  Get join status during wifi connectection.
- * @param[out] join_status the join status during wifi connectection.
+ * @brief  Get join status during Wi-Fi connectection.
+ * @param[out] join_status the join status during Wi-Fi connectection.
  *    - @ref RTW_JOINSTATUS_UNKNOWN : Unknown.
  *    - @ref RTW_JOINSTATUS_STARTING : Connection initiation.
  *    - @ref RTW_JOINSTATUS_SCANNING : Network scanning.
@@ -125,7 +131,7 @@ s32 wifi_get_join_status(u8 *join_status);
  *             - 0: Asynchronous scan (function returns immediately).
  * @return  Number of scanned APs if successful (≥ 0), or an error code:
  *          - @ref RTK_FAIL : Driver internal error.
- *          - -@ref RTK_ERR_BUSY : Wifi connect or scan is ongoing.
+ *          - -@ref RTK_ERR_BUSY : Wi-Fi connect or scan is ongoing.
  *          - -@ref RTK_ERR_BADARG : Invalid input parameters, such as set `block` to 1 but simultaneously register
  *           `scan_param->scan_user_callback`.
  * @note

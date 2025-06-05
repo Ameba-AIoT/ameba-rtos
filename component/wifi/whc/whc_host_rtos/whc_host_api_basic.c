@@ -495,8 +495,8 @@ error:
 	if (param_buf) {
 		rtos_mem_free(param_buf);
 	}
- 	return ret;
- }
+	return ret;
+}
 
 void wifi_promisc_enable(u32 enable, struct rtw_promisc_para *para)
 {
