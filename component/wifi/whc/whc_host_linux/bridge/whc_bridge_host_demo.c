@@ -79,7 +79,7 @@ int whc_bridge_host_get_ip(uint8_t idx)
 }
 
 
-int whc_bridge_host_set_state(void)
+int whc_bridge_host_set_state(uint8_t state)
 {
 	uint8_t buf[12] = {0};
 	uint8_t *ptr = buf;
@@ -89,7 +89,11 @@ int whc_bridge_host_set_state(void)
 	*(uint32_t *)ptr = WHC_WIFI_TEST;
 	ptr += 4;
 	buf_len += 4;
-	*ptr = WHC_WIFI_TEST_SET_READY;
+	if (state) {
+		*ptr = WHC_WIFI_TEST_SET_READY;
+	} else {
+		*ptr = WHC_WIFI_TEST_SET_UNREADY;
+	}
 	ptr += 1;
 	buf_len += 1;
 
@@ -97,6 +101,34 @@ int whc_bridge_host_set_state(void)
 
 	return ret;
 
+}
+
+int whc_bridge_host_set_tickps_cmd(char *subtype)
+{
+	uint8_t buf[12] = {0};
+	uint8_t *ptr = buf;
+	uint32_t buf_len = 0;
+	int ret = 0;
+	*(uint32_t *)ptr = WHC_WIFI_TEST;
+	ptr += 4;
+	buf_len += 4;
+
+	*ptr = WHC_WIFI_TEST_SET_TICKPS_CMD;
+	ptr += 1;
+	buf_len += 1;
+
+	if (strcmp(subtype, "r") == 0) {
+		*ptr = BRIDGE_CMD_TICKPS_R;
+	} else if (strcmp(subtype, "cg") == 0) {
+		*ptr = BRIDGE_CMD_TICKPS_TYPE_CG;
+	} else if (strcmp(subtype, "pg") == 0) {
+		*ptr = BRIDGE_CMD_TICKPS_TYPE_PG;
+	}
+	ptr += 1;
+	buf_len += 1;
+
+	ret = whc_bridge_host_api_send_nl_data(buf, buf_len);
+	return ret;
 }
 
 /* below for kernel setting */
@@ -250,7 +282,15 @@ void whc_bridge_host_cmd_hdl(char *input)
 				}
 			}
 		} else if (strcmp(args[0], "setrdy") == 0) {
-			whc_bridge_host_set_state();
+			whc_bridge_host_set_state(1);
+		} else if (strcmp(args[0], "unrdy") == 0) {
+			whc_bridge_host_set_state(0);
+		} else if (strcmp(args[0], "tickps") == 0) {
+			if (arg_count < 2) {
+				printf("err: tickps cmd needed to set subtype!\n");
+			} else {
+				whc_bridge_host_set_tickps_cmd(args[1]);
+			}
 		} else if (strcmp(args[0], "setmac") == 0) {
 			if (arg_count < 3) {
 				printf("err: hw mac and wlan index are needed !\n");

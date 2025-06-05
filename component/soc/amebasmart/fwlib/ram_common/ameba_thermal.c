@@ -88,15 +88,31 @@ void TM_Cmd(u32 NewState)
 		thermal->TM_CTRL |= TM_BIT_POWCUT;
 		thermal->TM_CTRL |= TM_BIT_POW;
 		thermal->TM_CTRL |= TM_BIT_RSTB;
-		while ((thermal->TM_CTRL & TM_BIT_EN_LATCH) != 0);// polling latch signal until low
 	} else {
 		thermal->TM_CTRL &= ~TM_BIT_RSTB;
 		thermal->TM_CTRL &= ~TM_BIT_POW;
 		thermal->TM_CTRL &= ~TM_BIT_POWCUT;
 	}
-
 }
+/**
+ * @brief confirm whether thermal data is valid
+ *
+ * @return RTK_SUCCESS/RTK_FAIL
+ */
+int TM_PollDataValid(void)
+{
+	THERMAL_TypeDef *thermal = THERMAL;
+	u32 timeout = 1000000;
 
+	while (thermal->TM_CTRL & TM_BIT_EN_LATCH) {
+		timeout--;
+		if (timeout == 0) {
+			return RTK_FAIL;
+		}
+	}
+	// Data is valid when latch signal is low
+	return RTK_SUCCESS;
+}
 /**
   * @brief  ENABLE/DISABLE  the thermal interrupt bits.
   * @param  TM_IT: specifies the thermal interrupt to be setup.
@@ -163,11 +179,15 @@ u32 TM_GetISR(void)
 /**
   * @brief  Get thermal temperature result.
   * @param  None.
-  * @retval  The measured temperature.
+  * @retval TM_INVALID_VALUE, invalid value;[0, TM_INVALID_VALUE), The measured temperature.
   */
 u32 TM_GetTempResult(void)
 {
 	THERMAL_TypeDef *thermal = THERMAL;
+
+	if (TM_PollDataValid() != RTK_SUCCESS) {
+		return TM_INVALID_VALUE;
+	}
 
 	return TM_GET_OUT(thermal->TM_RESULT);
 }
@@ -175,11 +195,15 @@ u32 TM_GetTempResult(void)
 /**
   * @brief  Get thermal power on temperature result.
   * @param  None.
-  * @retval  The measured power on temperature.
+  * @retval TM_INVALID_VALUE, invalid value;[0, TM_INVALID_VALUE), The measured power on temperature.
   */
 u32 TM_GetPowOnTemp(void)
 {
 	THERMAL_TypeDef *thermal = THERMAL;
+
+	if (TM_PollDataValid() != RTK_SUCCESS) {
+		return TM_INVALID_VALUE;
+	}
 
 	return TM_GET_TEMP_OUT_POWERON(thermal->TM_OUT_PWR_ON);
 }
@@ -187,11 +211,15 @@ u32 TM_GetPowOnTemp(void)
 /**
   * @brief  Get thermal max temperature result.
   * @param  None.
-  * @retval  The measured max temperature.
+  * @retval TM_INVALID_VALUE, invalid value;[0, TM_INVALID_VALUE), the measured max temperature.
   */
 u32 TM_GetMaxTemp(void)
 {
 	THERMAL_TypeDef *thermal = THERMAL;
+
+	if (TM_PollDataValid() != RTK_SUCCESS) {
+		return TM_INVALID_VALUE;
+	}
 
 	return TM_GET_MAX(thermal->TM_MAX_CTRL);
 }
@@ -199,11 +227,15 @@ u32 TM_GetMaxTemp(void)
 /**
   * @brief  Get thermal min temperature result.
   * @param  None.
-  * @retval  The measured min temperature.
+  * @retval TM_INVALID_VALUE, invalid value;[0, TM_INVALID_VALUE), the measured min temperature.
   */
 u32 TM_GetMinTemp(void)
 {
 	THERMAL_TypeDef *thermal = THERMAL;
+
+	if (TM_PollDataValid() != RTK_SUCCESS) {
+		return TM_INVALID_VALUE;
+	}
 
 	return TM_GET_MIN(thermal->TM_MIN_CTRL);
 }
@@ -237,23 +269,6 @@ void TM_MinTempClr(void)
 }
 
 /**
-  * @brief  Enable or Disable latch function.
-  * @param  NewState: new state of the thermal latch.
-  *   			This parameter can be: ENABLE or DISABLE.
-  * @retval None
-  */
-void TM_SetLatch(u32 NewState)
-{
-	THERMAL_TypeDef *thermal = THERMAL;
-
-	if (NewState != DISABLE) {
-		thermal->TM_CTRL |= TM_BIT_EN_LATCH;
-	} else {
-		thermal->TM_CTRL &= ~TM_BIT_EN_LATCH;
-	}
-}
-
-/**
   * @brief  Enable or Disable high temperature protect function.
   * @param  NewState: new state of the thermal lathigh temperature protect functionch.
   *   			This parameter can be: ENABLE or DISABLE.
@@ -274,6 +289,9 @@ void TM_SetHighPT(u32 NewState)
   * @brief  Get Celsius Degree
   * @param  Data: TM_RESULT(Binary complement form)
   * @retval Temperature value of float type
+  * 		[0, 0x3FFFF] == > [0, 255.999], Positive temperature range.
+  * 		[0x40000, 0x7FFFF] == > [-256, -0.00097], Negative temperature range
+  * 		0x80000 ==> 256, invalid value.
   */
 float TM_GetCdegree(u32 Data)
 {
@@ -282,48 +300,34 @@ float TM_GetCdegree(u32 Data)
 	float Cdegree = 0;
 	u32 temp = 0;
 
-	if (Data >= 0x40000) {
-		temp = 0x80000 - Data;
+	if (TM_IS_NEGATIVE(Data)) {
+		temp = TM_NEGATIVE_MAX + 1 - Data;
 		integer = (int)(temp) / 1024;
 		decimal = (float)(TEMP_DECIMAL_OUT(temp)) / 1024;
 		Cdegree = 0 - (integer + decimal);
-
 	} else {
 		integer = (int)(Data) / 1024;
 		decimal = (float)(TEMP_DECIMAL_OUT(Data)) / 1024;
 		Cdegree = (integer + decimal);
-
 	}
 
 	return Cdegree;
-
 }
 
 /**
   * @brief  Get Fahrenheit Degree
   * @param  Data: TM_RESULT(Binary complement form)
   * @retval Temperature value of float type
+  * 		[0, 0x3FFFF] == > [32, 492.798], Positive temperature range.
+  * 		[0x40000, 0x7FFFF] == > [-492.8, 31.998], Negative temperature range
+  * 		0x80000 ==> 492.8, invalid degree.
   */
 float TM_GetFdegree(u32 Data)
 {
-	int integer = 0;
-	float decimal = 0;
-	float Cdegree = 0;
-	u32 temp = 0;
+	float Fdegree = 0;
 
-	if (Data >= 0x40000) {
-		temp = 0x80000 - Data;
-		integer = (int)(temp) / 1024;
-		decimal = (float)(TEMP_DECIMAL_OUT(temp)) / 1024;
-		Cdegree = 0 - (integer + decimal);
+	Fdegree = (TM_GetCdegree(Data) * 1.8) + 32;
 
-	} else {
-		integer = (int)(Data) / 1024;
-		decimal = (float)(TEMP_DECIMAL_OUT(Data)) / 1024;
-		Cdegree = (integer + decimal);
-
-	}
-
-	return ((Cdegree * 1.8f) + 32);
+	return Fdegree;
 }
 

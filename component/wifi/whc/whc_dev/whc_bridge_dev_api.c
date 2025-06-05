@@ -148,7 +148,17 @@ void whc_bridge_dev_api_set_host_state(u8 state)
 		pmu_acquire_wakelock(PMU_FULLMAC_WIFI);
 	} else {
 		pmu_release_wakelock(PMU_FULLMAC_WIFI);
+	}
+}
 
+void whc_bridge_dev_api_set_tickps_cmd(u8 subtype)
+{
+	if (subtype == BRIDGE_CMD_TICKPS_R) {
+		pmu_release_wakelock(PMU_OS);
+	} else if (subtype == BRIDGE_CMD_TICKPS_TYPE_PG) {
+		pmu_set_sleep_type(SLEEP_PG);
+	} else if (subtype == BRIDGE_CMD_TICKPS_TYPE_CG) {
+		pmu_set_sleep_type(SLEEP_CG);
 	}
 }
 

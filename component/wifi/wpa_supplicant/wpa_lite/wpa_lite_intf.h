@@ -34,20 +34,10 @@ struct psk_info {
 };
 
 /**
-  * @brief  The enum is used to indicate flash status
-  */
-enum rtw_flash_psk_info_status {
-	RTW_FLASH_PSK_INFO_INIT = 0, //deauth_info init to 0
-	RTW_FLASH_PSK_INFO_FROM_NP = 1,//flash psk info request from NP,  eg:rtw_start_clnt_join, deauth_info set to 1
-	RTW_FLASH_PSK_INFO_DONE = 2,//flash psk info done, notify NP poll
-};
-
-/**
   * @brief  The structure is used to describe the stored deauth info
   */
 struct deauth_info {
 	u8 bssid[6];
-	u8 flash_status;
 	u32  frame_len;
 	u8  frame_buf[50];
 };
@@ -67,7 +57,7 @@ void rtw_wpa_init(u8 port);
 void rtw_psk_wpa_deinit(u8 port);
 void rtw_sae_set_user_group_id(unsigned char value);
 void rtw_psk_get_psk_info(struct psk_info *psk_data);
-void rtw_psk_set_psk_info(struct psk_info *psk_data, u8 fast_conn);
+void rtw_psk_set_psk_info(struct psk_info *psk_data);
 void rtw_psk_set_pmk_from_eap(u8 *pmk, u8 *hwaddr);
 
 void rtw_psk_disconnect_hdl(u8 *buf, s32 buf_len, s32 flags, void *userdata);
@@ -100,7 +90,7 @@ void rtw_ft_auth_start(u8 *buf, s32 buf_len, s32 flags, void *userdata);/*RTW_EV
 void rtw_ft_rx_mgnt(u8 *buf, s32 buf_len, s32 flags, void *userdata);/*RTW_EVENT_FT_RX_MGNT*/
 #endif
 #endif
-void rtw_psk_deauth_info_flash(u8 *data, s32 len, s32 flags, void *userdata);/*RTW_EVENT_DEAUTH_INFO_FLASH*/
-
+void rtw_psk_deauth_info_flash_event_hdl(u8 *data, s32 len, s32 flags, void *userdata);/*RTW_EVENT_DEAUTH_INFO_FLASH*/
+void rtw_psk_deauth_info_flash(u8 *data, s32 len, s32 flags, void *userdata);
 #endif
 

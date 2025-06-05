@@ -21,6 +21,7 @@ struct PktFilterNode {
 };
 
 void whc_bridge_dev_api_set_host_state(u8 state);
+void whc_bridge_dev_api_set_tickps_cmd(u8 subtype);
 u8 whc_bridge_dev_api_get_host_rdy(void);
 
 void whc_bridge_dev_api_set_default_direction(u8 dir);
