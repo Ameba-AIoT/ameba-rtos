@@ -845,6 +845,12 @@ void at_wlstartap(void *arg)
 		goto end;
 	}
 
+	if ((security == 0) && (ap.password != NULL)) {
+		RTK_LOGW(NOTAG, "[+WLSTARTAP] err: sec is open, but password != null\r\n");
+		error_no = 2;
+		goto end;
+	}
+
 #ifdef CONFIG_LWIP_LAYER
 	dhcps_deinit();
 	ip_addr = WIFI_MAKEU32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
