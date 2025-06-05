@@ -52,6 +52,23 @@ typedef enum {
 	USBD_ATTACH_STATUS_DETACHED = 2U
 } usbd_attach_status_t;
 
+/* USB ep structure */
+typedef struct {
+	u8 *xfer_buf;               /* Pointer to transfer buffer */
+	u8 *rem_xfer_buf;           /* Pointer to remain transfer buffer */
+	u32 xfer_len;               /* transfer data length */
+	u32 rem_xfer_len;           /* remain transfer len, only for ep0 in driver */
+	u32 xfer_buf_len;           /* class transfer buffer len */
+	u16 mps;                    /* Endpoint Max packet size, 0~64KB */
+	u8 addr;                    /* Endpoint address */
+	u8 num;                     /* Endpoint number */
+	u8 type;                    /* Endpoint type, USB_EP_Type_XXX */
+	u8 binterval;               /* Endpoint binterval */
+	__IO u8 tx_zlp : 1;         /* class tz ZLP packet or not */
+	__IO u8 is_busy : 1;        /* class is busy or not */
+	__IO u8 xfer_state : 1;     /* class xfer state */
+} usbd_ep_t;
+
 /* USB configuration structure */
 typedef struct {
 	u32 nptx_max_err_cnt[USB_MAX_ENDPOINTS]; /* Max Non-Periodical TX transfer error count allowed, if transfer
@@ -82,10 +99,11 @@ struct _usbd_class_driver_t;
 
 /* USB device */
 typedef struct {
+	usbd_ep_t ep0_in;
+	usbd_ep_t ep0_out;
 	struct _usbd_class_driver_t *driver;	/* Class driver */
-	u32 ep0_xfer_total_len;					/* The total data length to transfer */
-	u32 ep0_xfer_rem_len;					/* The remain data length to transfer */
-	u32 ep0_recv_rem_len;					/* The remain data length to receive */
+	u32 ep0_out_intr;						/* EP0 old out interrupt */
+	u16 ep0_data_len;						/* EP0 data length */
 #if USBD_ISR_TASK_TIME_DEBUG
 	__IO u32 isr_func_time_cost_max;
 	__IO u32 isr_func_time_cost;
@@ -93,12 +111,9 @@ typedef struct {
 	__IO u32 isr_trigger_time_diff;
 	u32 isr_trigger_last_time;
 #endif
-	u8 *ctrl_buf;							/* Buffer for control transfer */
 	void *pcd;								/* PCD handle */
-	u16 ep0_data_len;						/* EP0 data length */
 	u8 ep0_state;							/* EP0 state */
 	u8 ep0_old_state;						/* EP0 old state */
-	u32 ep0_out_intr;						/* EP0 old out interrupt */
 	u8 dev_config;							/* Device config index */
 	u8 dev_speed;							/* Device speed, usb_speed_type_t */
 	u8 dev_state;							/* Device state, usbd_state_t */
@@ -114,8 +129,7 @@ typedef struct {
 
 /* USB class driver */
 typedef struct _usbd_class_driver_t {
-	u8 *(*get_descriptor)(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_type_t speed, u16 *len);
-
+	u16(*get_descriptor)(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
 	int(*set_config)(usb_dev_t *dev, u8 config);
 	int(*clear_config)(usb_dev_t *dev, u8 config);
 	int(*setup)(usb_dev_t *dev, usb_setup_req_t *req);
@@ -147,21 +161,16 @@ int usbd_get_bus_status(u32 *status);
 int usbd_wake_host(void);
 
 /* API for class */
-int usbd_register_class(usbd_class_driver_t *driver);
+int usbd_register_class(const usbd_class_driver_t *driver);
 int usbd_unregister_class(void);
-int usbd_ep_init(usb_dev_t *dev, u8 ep_addr, u8 ep_type, u16 ep_mps);
-int usbd_ep_deinit(usb_dev_t *dev, u8 ep_addr);
-int usbd_ep_transmit(usb_dev_t *dev, u8 ep_addr, u8 *buf, u16  len);
-int usbd_ep_receive(usb_dev_t *dev, u8 ep_addr, u8 *buf, u16  len);
-int usbd_ep_set_stall(usb_dev_t *dev, u8 ep_addr);
-int usbd_ep_clear_stall(usb_dev_t *dev, u8 ep_addr);
-int usbd_ep_is_stall(usb_dev_t *dev, u8 ep_addr);
-int usbd_ep0_transmit(usb_dev_t *dev, u8 *buf, u16 len);
-int usbd_ep0_receive(usb_dev_t *dev, u8 *buf, u16 len);
-int usbd_ep0_transmit_status(usb_dev_t *dev);
-int usbd_ep0_receive_status(usb_dev_t *dev);
-int usbd_ep0_set_stall(usb_dev_t *dev);
-void usbd_get_str_desc(const char *str, u8 *desc, u16 *len);
+int usbd_ep_init(usb_dev_t *dev, usbd_ep_t *ep);
+int usbd_ep_deinit(usb_dev_t *dev, usbd_ep_t *ep);
+int usbd_ep_transmit(usb_dev_t *dev, usbd_ep_t *ep);
+int usbd_ep_receive(usb_dev_t *dev, usbd_ep_t *ep);
+int usbd_ep_set_stall(usb_dev_t *dev, usbd_ep_t *ep);
+int usbd_ep_clear_stall(usb_dev_t *dev, usbd_ep_t *ep);
+int usbd_ep_is_stall(usb_dev_t *dev, usbd_ep_t *ep);
+u16 usbd_get_str_desc(const char *str, u8 *desc);
 
 #endif /* USBD_H */
 

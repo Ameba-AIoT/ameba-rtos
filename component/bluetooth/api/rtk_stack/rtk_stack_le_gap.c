@@ -557,7 +557,7 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 				BT_LOGE("[%s] GAP_MSG_LE_MODIFY_WHITE_LIST: api operation mismatch with callback \r\n", __func__);
 			}
 		} else {
-			BT_LOGE("[%s] GAP_MSG_LE_MODIFY_WHITE_LIST: find no pending command \r\n", __func__);
+			BT_LOGD("[%s] GAP_MSG_LE_MODIFY_WHITE_LIST: find no pending command \r\n", __func__);
 		}
 		break;
 	}
@@ -2465,7 +2465,7 @@ static void bt_stack_le_gap_handle_conn_mtu_info_evt(T_LE_GAP_MSG *p_gap_msg)
 			BT_LOGD("bt_stack_le_gap_handle_conn_mtu_info_evt: SLAVE case \r\n");
 			bt_stack_gatts_evt_indicate_mtu_exchange(conn_handle, mtu_size);
 		} else {
-			BT_LOGE("bt_stack_le_gap_handle_conn_mtu_info_evt: unknown role =  conn_info.role \r\n");
+			BT_LOGE("bt_stack_le_gap_handle_conn_mtu_info_evt: unknown role %d\r\n", conn_info.role);
 		}
 
 	}
@@ -4705,7 +4705,7 @@ static T_APP_RESULT privacy_msg_callback(uint8_t msg_type, T_LE_PRIVACY_CB_DATA 
 			p_cmd->ret = msg_data.p_le_privacy_set_mode_rsp->cause;
 			osif_sem_give(p_cmd->psem);
 		} else {
-			BT_LOGE("[%s] GAP_MSG_LE_PRIVACY_SET_MODE: find no pending command \r\n", __func__);
+			BT_LOGD("[%s] GAP_MSG_LE_PRIVACY_SET_MODE: find no pending command \r\n", __func__);
 		}
 		break;
 

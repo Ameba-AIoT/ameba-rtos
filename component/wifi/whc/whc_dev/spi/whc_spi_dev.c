@@ -325,6 +325,61 @@ u32 whc_spi_dev_interrupt_handler(void *param)
 	return 0;
 }
 
+static u32 whc_spi_dev_suspend(u32 expected_idle_time, void *param)
+{
+	UNUSED(expected_idle_time);
+	UNUSED(param);
+	if (pmu_get_sleep_type() == SLEEP_PG) {
+		InterruptDis(SPI0_IRQ);
+		InterruptUnRegister(SPI0_IRQ);
+	}
+	return TRUE;
+}
+
+static u32 whc_spi_dev_resume(u32 expected_idle_time, void *param)
+{
+	UNUSED(expected_idle_time);
+	UNUSED(param);
+
+	SSI_InitTypeDef SSI_InitStructSlave;
+	GDMA_InitTypeDef *GDMA_InitStruct = &spi_priv.SSITxGdmaInitStruct;
+	u32 index = (WHC_SPI_DEV == SPI0_DEV) ? 0 : 1;
+
+	if (pmu_get_sleep_type() == SLEEP_PG) {
+		set_dev_rxreq_pin(DEV_RX_IDLE);
+
+		/* Initialize SPI */
+		PAD_PullCtrl(_PB_26, GPIO_PuPd_UP);
+		PAD_PullCtrl(_PB_23, GPIO_PuPd_DOWN);
+
+		SSI_SetRole(WHC_SPI_DEV, SSI_SLAVE);
+		SSI_StructInit(&SSI_InitStructSlave);
+		SSI_InitStructSlave.SPI_SclkPhase = SCPH_TOGGLES_IN_MIDDLE;
+		SSI_InitStructSlave.SPI_SclkPolarity = SCPOL_INACTIVE_IS_LOW;
+		SSI_InitStructSlave.SPI_DataFrameSize = DFS_8_BITS;
+		SSI_InitStructSlave.SPI_Role = SSI_SLAVE;
+		SSI_Init(WHC_SPI_DEV, &SSI_InitStructSlave);
+
+		InterruptRegister((IRQ_FUN)whc_spi_dev_interrupt_handler, SPI0_IRQ, (u32)(&spi_priv), INT_PRI_MIDDLE);
+		InterruptEn(SPI0_IRQ, INT_PRI_MIDDLE);
+
+		/* Enable RX full interrupt */
+		SSI_INTConfig(WHC_SPI_DEV, SPI_BIT_RXFIM | SPI_BIT_SSRIM, ENABLE);
+
+		/* Configure RX DMA */
+		SSI_RXGDMA_Init(index, &spi_priv.SSIRxGdmaInitStruct, (void *)WHC_SPI_RXDMA, whc_spi_dev_rxdma_irq_handler, spi_priv.rx_skb->data, SPI_BUFSZ);
+		SSI_SetDmaEnable(WHC_SPI_DEV, ENABLE, SPI_BIT_RDMAE);
+
+		set_dev_rdy_pin(DEV_READY);
+
+		SSI_SetDmaEnable(WHC_SPI_DEV, ENABLE, SPI_BIT_TDMAE);
+		/*  Enable GDMA for TX */
+		GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
+	}
+
+	return TRUE;
+}
+
 void whc_spi_dev_init(void)
 {
 	struct whc_spi_priv_t *whc_spi_priv = &spi_priv;
@@ -410,6 +465,8 @@ void whc_spi_dev_init(void)
 	DCache_Invalidate((u32)skb->data, SPI_BUFSZ);
 	SSI_RXGDMA_Init(index, &whc_spi_priv->SSIRxGdmaInitStruct, (void *)WHC_SPI_RXDMA, whc_spi_dev_rxdma_irq_handler, skb->data, SPI_BUFSZ);
 	SSI_SetDmaEnable(WHC_SPI_DEV, ENABLE, SPI_BIT_RDMAE);
+
+	pmu_register_sleep_callback(PMU_FULLMAC_WIFI, (PSM_HOOK_FUN)whc_spi_dev_suspend, NULL, (PSM_HOOK_FUN)whc_spi_dev_resume, NULL);
 
 	/* Create irq task */
 	if (rtos_task_create(NULL, "SPI_RXDMA_IRQ_TASK", whc_spi_dev_rxdma_irq_task, (void *)whc_spi_priv, 1024 * 4, 7) != RTK_SUCCESS) {

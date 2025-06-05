@@ -248,8 +248,9 @@ u32 PLL_I2S_CLKGet(void)
   *            @arg PLL_FASTER: pll clock faster than 98.304M
   *            @arg PLL_SLOWER: pll clock slower than 98.304M
   */
-float PLL_I2S_98P304M_ClkTune(float ppm, u32 action)
+float PLL_I2S_98P304M_ClkTune(u32 pll_sel, float ppm, u32 action)
 {
+	(void)pll_sel;
 	u32 F0F_new;
 	float real_ppm = 0;
 	double step = 0.886973813872093;
@@ -286,8 +287,9 @@ float PLL_I2S_98P304M_ClkTune(float ppm, u32 action)
   *            @arg PLL_FASTER: pll clock faster than 45.1584M
   *            @arg PLL_SLOWER: pll clock slower than 45.1584M
   */
-float PLL_I2S_45P1584M_ClkTune(float ppm, u32 action)
+float PLL_I2S_45P158M_ClkTune(u32 pll_sel, float ppm, u32 action)
 {
+	(void)pll_sel;
 	u32 F0F_new;
 	float real_ppm = 0;
 	double step = 0.901052699869257;

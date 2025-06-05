@@ -248,6 +248,16 @@ uint16_t rtk_bt_le_gap_create_ext_adv(rtk_bt_le_ext_adv_param_t *p_adv_param, ui
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
+	if (p_adv_param->primary_adv_phy != RTK_BT_LE_PHYS_PRIM_ADV_1M &&
+		p_adv_param->primary_adv_phy != RTK_BT_LE_PHYS_PRIM_ADV_CODED) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	if (p_adv_param->secondary_adv_phy < RTK_BT_LE_PHYS_1M ||
+		p_adv_param->secondary_adv_phy > RTK_BT_LE_PHYS_CODED) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_CREATE_EXT_ADV, &param, sizeof(rtk_bt_le_ext_adv_create_t));
 
 	return ret;
@@ -1274,7 +1284,8 @@ bool rtk_bt_le_sm_is_device_bonded(rtk_bt_le_addr_t *paddr)
 	if (rtk_bt_le_sm_get_bond_info(bond_info, &bond_size) == RTK_BT_OK) {
 		for (i = 0; i < bond_size; i++) {
 			if (paddr->type < RTK_BT_LE_ADDR_TYPE_RPA_PUBLIC &&
-				memcmp(bond_info[i].remote_addr.addr_val, paddr->addr_val, RTK_BD_ADDR_LEN) == 0) {
+				(memcmp(bond_info[i].remote_addr.addr_val, paddr->addr_val, RTK_BD_ADDR_LEN) == 0 ||
+				 memcmp(bond_info[i].ident_addr.addr_val, paddr->addr_val, RTK_BD_ADDR_LEN) == 0)) {
 				ret = true;
 				break;
 			}

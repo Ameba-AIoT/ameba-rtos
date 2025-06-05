@@ -6,6 +6,16 @@
 #if defined(CONFIG_WHC_BRIDGE)
 
 struct genl_info wifi_event_user_genl_info;
+
+
+__attribute__((weak))  int whc_bridge_host_nl_custom_api(struct sk_buff *skb, struct genl_info *info)
+{
+	(void)skb;
+	(void)info;
+
+	return 0;
+}
+
 /* netlink cmd handler */
 static int whc_bridge_host_nl_cmd_process(struct sk_buff *skb, struct genl_info *info)
 {
@@ -78,11 +88,13 @@ static int whc_bridge_host_nl_cmd_process(struct sk_buff *skb, struct genl_info 
 	return 0;
 }
 
-static const struct nla_policy whc_bridge_nl_cmd_policy[6] = {
+static const struct nla_policy whc_bridge_nl_cmd_policy[NUM_BRIDGE_ATTR] = {
 	[BRIDGE_ATTR_API_ID] = {.type = NLA_U32},
 	[BRIDGE_ATTR_WLAN_IDX] = {.type = NLA_U8},
 	[BRIDGE_ATTR_MAC] = {.type = NLA_STRING},
 	[BRIDGE_ATTR_PAYLOAD] = {.type = NLA_BINARY},
+	[BRIDGE_ATTR_CHUNK_INDEX] = {.type = NLA_U32},
+	[BRIDGE_ATTR_LAST_CHUNK] = {.type = NLA_U8},
 };
 
 /* netlink operation definition */
@@ -90,14 +102,18 @@ static struct genl_ops whc_bridge_nl_cmd_ops[] = {
 	{
 		.cmd = BRIDGE_CMD_ECHO,
 		.doit = whc_bridge_host_nl_cmd_process,
-	}
+	},
+	{
+		.cmd = BRIDGE_CMD_CUSTOM_API,
+		.doit = whc_bridge_host_nl_custom_api,
+	},
 };
 
 /* netlink family definition */
-static struct genl_family whc_bridge_nl_family = {
+struct genl_family whc_bridge_nl_family = {
 	.name = BRIDGE_GENL_NAME,
 	.version = 1,
-	.maxattr = 6,
+	.maxattr = BRIDGE_ATTR_MAX,
 	.policy = whc_bridge_nl_cmd_policy,
 	.ops = whc_bridge_nl_cmd_ops,
 	.n_ops = ARRAY_SIZE(whc_bridge_nl_cmd_ops),

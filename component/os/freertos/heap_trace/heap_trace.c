@@ -269,7 +269,11 @@ void heap_trace_record_dump()
 		if (r_cur->address != NULL) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "%u bytes (@ 0x%08x) allocated, caller bakctrace: ", r_cur->size, r_cur->address);
 
-			for (int j = 0; j < CONFIG_HEAP_TRACE_STACK_DEPTH && r_cur->alloced_by[j] != 0; j++) {
+			// start print backtrace pc from third value, to avoid common pvPortMalloc functions.
+			for (int j = 2; j < CONFIG_HEAP_TRACE_STACK_DEPTH; j++) {
+				if (r_cur->alloced_by[j] == 0) {
+					break;
+				}
 				RTK_LOGS(NOTAG, RTK_LOG_INFO, "0x%08x ", r_cur->alloced_by[j]);
 			}
 

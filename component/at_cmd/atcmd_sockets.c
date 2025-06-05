@@ -333,6 +333,9 @@ end:
 void socket_server_udp_auto_rcv_data(void *param)
 {
 	char *read_buf = NULL;
+	struct timeval timeout;
+	fd_set read_fds;
+	int ret = 0;
 	struct sockaddr_in client_addr;
 	socklen_t addr_len = sizeof(client_addr);
 	int actual_bytes_received = 0;
@@ -344,24 +347,47 @@ void socket_server_udp_auto_rcv_data(void *param)
 		goto end;
 	}
 
+	timeout.tv_sec = RECV_SELECT_TIMEOUT_SEC;
+	timeout.tv_usec = RECV_SELECT_TIMEOUT_USEC;
+
 	while (1) {
-		actual_bytes_received = recvfrom(current_node->sockfd, read_buf, AT_SOCKET_RECEIVE_BUFFER_SIZE, 0, (struct sockaddr *)&client_addr, &addr_len);
-		if (actual_bytes_received < 0) {
-			RTK_LOGI(AT_SOCKET_TAG, "[socket_server_udp_auto_rcv_data] Failed to read() = %d\r\n", actual_bytes_received);
-			close(current_node->sockfd);
-			current_node->sockfd = INVALID_SOCKET_ID;
-			goto end;
+		if (TRUE == current_node->stop_task) {
+			break;
 		}
-		at_printf_lock();
-		at_printf_indicate("[SKT][DATA][%d][%d][%s][%d]:", current_node->link_id, actual_bytes_received, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-		at_printf_data(read_buf, (u32)actual_bytes_received);
-		at_printf("\r\n");
-		at_printf_unlock();
+		FD_ZERO(&read_fds);
+		FD_SET(current_node->sockfd, &read_fds);
+
+		ret = select(current_node->sockfd + 1, &read_fds, NULL, NULL, &timeout);
+		if (ret < 0) {
+			RTK_LOGI(AT_SOCKET_TAG, "[socket_server_udp_auto_rcv_data] Failed to select() = %d\r\n", ret);
+			continue;
+		}
+		if (ret == 0) {
+			continue;
+		}
+
+		if ((current_node->sockfd >= 0) && FD_ISSET(current_node->sockfd, &read_fds)) {
+			actual_bytes_received = recvfrom(current_node->sockfd, read_buf, AT_SOCKET_RECEIVE_BUFFER_SIZE, 0, (struct sockaddr *)&client_addr, &addr_len);
+			if (actual_bytes_received < 0) {
+				RTK_LOGI(AT_SOCKET_TAG, "[socket_server_udp_auto_rcv_data] Failed to read() = %d\r\n", actual_bytes_received);
+				close(current_node->sockfd);
+				current_node->sockfd = INVALID_SOCKET_ID;
+				goto end;
+			} else {
+				at_printf_lock();
+				at_printf_indicate("[SKT][DATA][%d][%d][%s][%d]:", current_node->link_id, actual_bytes_received, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+				at_printf_data(read_buf, (u32)actual_bytes_received);
+				at_printf("\r\n");
+				at_printf_unlock();
+			}
+		}
 	}
 
 end:
 	rtos_mem_free(read_buf);
-	current_node->auto_rcv_task = NULL;
+	read_buf = NULL;
+	RTK_LOGI(AT_SOCKET_TAG, "rtos_task_delete(socket_server_udp_auto_rcv_data)\r\n");
+	rtos_sema_give(current_node->del_task_sema);
 	rtos_task_delete(NULL);
 	return;
 }
@@ -417,16 +443,19 @@ int create_socket_server_udp(struct _node *current_node)
 	current_node->sockfd = sockfd;
 
 	if (current_node->auto_rcv == TRUE) {
-		if (rtos_task_create(&(current_node->auto_rcv_task), "socket_server_udp_auto_rcv_data", socket_server_udp_auto_rcv_data, current_node,
+		if (rtos_task_create(NULL, "socket_server_udp_auto_rcv_data", socket_server_udp_auto_rcv_data, current_node,
 							 1024 * 3, ATCMD_SOCKET_TASK_PRIORITY) != RTK_SUCCESS) {
 			RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_udp] rtos_task_create(socket_server_udp_auto_rcv_data) failed\r\n");
 			close(sockfd);
 			error_no = 5;
 			goto end;
 		}
+		rtos_sema_create_binary(&(current_node->del_task_sema));
 	}
 
-	RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_udp] The UDP server created on (port:%d) successfully\r\n", current_node->src_port);
+	struct in_addr local_addr;
+	local_addr.s_addr = current_node->src_ip;
+	RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_udp] The UDP server created on STA(%s:%d) successfully\r\n", inet_ntoa(local_addr), current_node->src_port);
 
 end:
 	if (error_no != 0) {
@@ -449,6 +478,7 @@ void socket_server_tcp_auto_rcv_client_and_data(void *param)
 	struct _node *seednode = NULL;
 	int actual_bytes_received = 0;
 	char *read_buf = NULL;
+	struct timeval timeout;
 
 	client_addr_len = sizeof(client_addr);
 	max_fd = current_node->sockfd;
@@ -461,7 +491,13 @@ void socket_server_tcp_auto_rcv_client_and_data(void *param)
 		}
 	}
 
+	timeout.tv_sec = RECV_SELECT_TIMEOUT_SEC;
+	timeout.tv_usec = RECV_SELECT_TIMEOUT_USEC;
+
 	while (1) {
+		if (TRUE == current_node->stop_task) {
+			break;
+		}
 		FD_ZERO(&read_fds);
 		FD_SET(current_node->sockfd, &read_fds);
 		seednode = current_node->nextseed;
@@ -471,9 +507,12 @@ void socket_server_tcp_auto_rcv_client_and_data(void *param)
 			}
 			seednode = seednode->nextseed;
 		}
-		ret = select(max_fd + 1, &read_fds, NULL, NULL, NULL);
+		ret = select(max_fd + 1, &read_fds, NULL, NULL, &timeout);
 		if (ret < 0) {
 			RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tcp_auto_rcv_client_and_data] Failed to select() = %d\r\n", ret);
+			continue;
+		}
+		if (ret == 0) {
 			continue;
 		}
 
@@ -545,7 +584,8 @@ end:
 		rtos_mem_free(read_buf);
 		read_buf = NULL;
 	}
-	current_node->auto_rcv_task = NULL;
+	RTK_LOGI(AT_SOCKET_TAG, "rtos_task_delete(socket_server_tcp_auto_rcv_client_and_data)\r\n");
+	rtos_sema_give(current_node->del_task_sema);
 	rtos_task_delete(NULL);
 	return;
 }
@@ -599,7 +639,7 @@ int create_socket_server_tcp(struct _node *current_node)
 
 	current_node->sockfd = sockfd;
 
-	if (rtos_task_create(&(current_node->auto_rcv_task), "socket_server_tcp_auto_rcv_client_and_data", socket_server_tcp_auto_rcv_client_and_data, current_node,
+	if (rtos_task_create(NULL, "socket_server_tcp_auto_rcv_client_and_data", socket_server_tcp_auto_rcv_client_and_data, current_node,
 						 1024 * 3, ATCMD_SOCKET_TASK_PRIORITY) != RTK_SUCCESS) {
 		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_tcp] rtos_task_create(socket_server_tcp_auto_rcv_client_and_data) failed\r\n");
 		close(sockfd);
@@ -607,9 +647,11 @@ int create_socket_server_tcp(struct _node *current_node)
 		goto end;
 	}
 
+	rtos_sema_create_binary(&(current_node->del_task_sema));
+
 	struct in_addr local_addr;
 	local_addr.s_addr = current_node->src_ip;
-	RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_tcp] The TCP server created on (%s:%d) successfully\r\n", inet_ntoa(local_addr), current_node->src_port);
+	RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_tcp] The TCP server created on STA(%s:%d) successfully\r\n", inet_ntoa(local_addr), current_node->src_port);
 
 end:
 	if (error_no != 0) {
@@ -632,6 +674,7 @@ void socket_server_tls_auto_rcv_client_and_data(void *param)
 	struct _node *seednode = NULL;
 	int actual_bytes_received = 0;
 	char *read_buf = NULL;
+	struct timeval timeout;
 	mbedtls_ssl_context *ssl = NULL;
 
 	client_addr_len = sizeof(client_addr);
@@ -645,7 +688,13 @@ void socket_server_tls_auto_rcv_client_and_data(void *param)
 		}
 	}
 
+	timeout.tv_sec = RECV_SELECT_TIMEOUT_SEC;
+	timeout.tv_usec = RECV_SELECT_TIMEOUT_USEC;
+
 	while (1) {
+		if (TRUE == current_node->stop_task) {
+			break;
+		}
 		FD_ZERO(&read_fds);
 		FD_SET(current_node->sockfd, &read_fds);
 		seednode = current_node->nextseed;
@@ -655,9 +704,13 @@ void socket_server_tls_auto_rcv_client_and_data(void *param)
 			}
 			seednode = seednode->nextseed;
 		}
-		ret = select(max_fd + 1, &read_fds, NULL, NULL, NULL);
+
+		ret = select(max_fd + 1, &read_fds, NULL, NULL, &timeout);
 		if (ret < 0) {
 			RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tls_auto_rcv_client_and_data] Failed to select() = %d\r\n", ret);
+			continue;
+		}
+		if (ret == 0) {
 			continue;
 		}
 
@@ -773,8 +826,8 @@ end:
 		rtos_mem_free(read_buf);
 		read_buf = NULL;
 	}
-
-	current_node->auto_rcv_task = NULL;
+	RTK_LOGI(AT_SOCKET_TAG, "rtos_task_delete(socket_server_tls_auto_rcv_client_and_data)\r\n");
+	rtos_sema_give(current_node->del_task_sema);
 	rtos_task_delete(NULL);
 	return;
 }
@@ -946,16 +999,18 @@ int create_socket_server_tls(struct _node *current_node)
 	}
 	current_node->sockfd = tls_server_fd.fd;
 
-	if (rtos_task_create(&(current_node->auto_rcv_task), "socket_server_tls_auto_rcv_client_and_data", socket_server_tls_auto_rcv_client_and_data, current_node,
+	if (rtos_task_create(NULL, "socket_server_tls_auto_rcv_client_and_data", socket_server_tls_auto_rcv_client_and_data, current_node,
 						 1024 * 7, ATCMD_SOCKET_TASK_PRIORITY) != RTK_SUCCESS) {
 		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_tls] rtos_task_create(socket_server_tls_auto_rcv_client_and_data) failed\r\n");
 		error_no = 12;
 		goto end;
 	}
 
+	rtos_sema_create_binary(&(current_node->del_task_sema));
+
 	struct in_addr local_addr;
 	local_addr.s_addr = current_node->src_ip;
-	RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_tls] The SSL/TLS server created on (%s:%d) successfully\r\n", inet_ntoa(local_addr), current_node->src_port);
+	RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_tls] The SSL/TLS server created on STA(%s:%d) successfully\r\n", inet_ntoa(local_addr), current_node->src_port);
 
 
 end:
@@ -1124,6 +1179,9 @@ end:
 void socket_client_udp_auto_rcv(void *param)
 {
 	char *read_buf = NULL;
+	struct timeval timeout;
+	fd_set read_fds;
+	int ret = 0;
 	struct sockaddr_in server_addr;
 	socklen_t addr_len = sizeof(server_addr);
 	int actual_bytes_received = 0;
@@ -1135,24 +1193,47 @@ void socket_client_udp_auto_rcv(void *param)
 		goto end;
 	}
 
+	timeout.tv_sec = RECV_SELECT_TIMEOUT_SEC;
+	timeout.tv_usec = RECV_SELECT_TIMEOUT_USEC;
+
 	while (1) {
-		actual_bytes_received = recvfrom(current_node->sockfd, read_buf, AT_SOCKET_RECEIVE_BUFFER_SIZE, 0, (struct sockaddr *)&server_addr, &addr_len);
-		if (actual_bytes_received < 0) {
-			RTK_LOGI(AT_SOCKET_TAG, "[socket_client_udp_auto_rcv] Failed to read() = %d\r\n", actual_bytes_received);
-			close(current_node->sockfd);
-			current_node->sockfd = INVALID_SOCKET_ID;
-			goto end;
+		if (TRUE == current_node->stop_task) {
+			break;
 		}
-		at_printf_lock();
-		at_printf_indicate("[SKT][DATA][%d][%d][%s][%d]:", current_node->link_id, actual_bytes_received, inet_ntoa(server_addr.sin_addr), ntohs(server_addr.sin_port));
-		at_printf_data(read_buf, (u32)actual_bytes_received);
-		at_printf("\r\n");
-		at_printf_unlock();
+		FD_ZERO(&read_fds);
+		FD_SET(current_node->sockfd, &read_fds);
+
+		ret = select(current_node->sockfd + 1, &read_fds, NULL, NULL, &timeout);
+		if (ret < 0) {
+			RTK_LOGI(AT_SOCKET_TAG, "[socket_client_udp_auto_rcv] Failed to select() = %d\r\n", ret);
+			continue;
+		}
+		if (ret == 0) {
+			continue;
+		}
+
+		if ((current_node->sockfd >= 0) && FD_ISSET(current_node->sockfd, &read_fds)) {
+			actual_bytes_received = recvfrom(current_node->sockfd, read_buf, AT_SOCKET_RECEIVE_BUFFER_SIZE, 0, (struct sockaddr *)&server_addr, &addr_len);
+			if (actual_bytes_received < 0) {
+				RTK_LOGI(AT_SOCKET_TAG, "[socket_client_udp_auto_rcv] Failed to read() = %d\r\n", actual_bytes_received);
+				close(current_node->sockfd);
+				current_node->sockfd = INVALID_SOCKET_ID;
+				goto end;
+			} else {
+				at_printf_lock();
+				at_printf_indicate("[SKT][DATA][%d][%d][%s][%d]:", current_node->link_id, actual_bytes_received, inet_ntoa(server_addr.sin_addr), ntohs(server_addr.sin_port));
+				at_printf_data(read_buf, (u32)actual_bytes_received);
+				at_printf("\r\n");
+				at_printf_unlock();
+			}
+		}
 	}
 
 end:
 	rtos_mem_free(read_buf);
-	current_node->auto_rcv_task = NULL;
+	read_buf = NULL;
+	RTK_LOGI(AT_SOCKET_TAG, "rtos_task_delete(socket_client_udp_auto_rcv)\r\n");
+	rtos_sema_give(current_node->del_task_sema);
 	rtos_task_delete(NULL);
 	return;
 }
@@ -1204,13 +1285,14 @@ int create_socket_client_udp(struct _node *current_node)
 	current_node->sockfd = sockfd;
 
 	if (current_node->auto_rcv == TRUE) {
-		if (rtos_task_create(&(current_node->auto_rcv_task), "socket_client_udp_auto_rcv", socket_client_udp_auto_rcv, current_node, 1024 * 3,
+		if (rtos_task_create(NULL, "socket_client_udp_auto_rcv", socket_client_udp_auto_rcv, current_node, 1024 * 3,
 							 ATCMD_SOCKET_TASK_PRIORITY) != RTK_SUCCESS) {
 			RTK_LOGI(AT_SOCKET_TAG, "[create_socket_client_udp] rtos_task_create(socket_client_udp_auto_rcv) failed\r\n");
 			close(sockfd);
 			error_no = 5;
 			goto end;
 		}
+		rtos_sema_create_binary(&(current_node->del_task_sema));
 	}
 
 end:
@@ -1224,6 +1306,9 @@ end:
 void socket_client_tcp_auto_rcv(void *param)
 {
 	char *read_buf = NULL;
+	struct timeval timeout;
+	fd_set read_fds;
+	int ret = 0;
 	int actual_bytes_received = 0;
 	struct _node *current_node = (struct _node *)param;
 
@@ -1233,29 +1318,52 @@ void socket_client_tcp_auto_rcv(void *param)
 		goto end;
 	}
 
+	timeout.tv_sec = RECV_SELECT_TIMEOUT_SEC;
+	timeout.tv_usec = RECV_SELECT_TIMEOUT_USEC;
+
 	while (1) {
-		actual_bytes_received = read(current_node->sockfd, read_buf, AT_SOCKET_RECEIVE_BUFFER_SIZE);
-		if (actual_bytes_received == 0) {
-			RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tcp_auto_rcv] read() = 0; Connection closed\r\n");
-			goto end;
-		} else if (actual_bytes_received < 0) {
-			RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tcp_auto_rcv] Failed to read() = %d\r\n", actual_bytes_received);
-			goto end;
+		if (TRUE == current_node->stop_task) {
+			break;
 		}
-		at_printf_lock();
-		at_printf_indicate("[SKT][DATA][%d][%d]:", current_node->link_id, actual_bytes_received);
-		at_printf_data(read_buf, (u32)actual_bytes_received);
-		at_printf("\r\n");
-		at_printf_unlock();
+		FD_ZERO(&read_fds);
+		FD_SET(current_node->sockfd, &read_fds);
+
+		ret = select(current_node->sockfd + 1, &read_fds, NULL, NULL, &timeout);
+		if (ret < 0) {
+			RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tcp_auto_rcv] Failed to select() = %d\r\n", ret);
+			continue;
+		}
+		if (ret == 0) {
+			continue;
+		}
+
+		if ((current_node->sockfd >= 0) && FD_ISSET(current_node->sockfd, &read_fds)) {
+			actual_bytes_received = read(current_node->sockfd, read_buf, AT_SOCKET_RECEIVE_BUFFER_SIZE);
+			if (actual_bytes_received == 0) {
+				RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tcp_auto_rcv] read() = 0; Connection closed\r\n");
+				goto end;
+			} else if (actual_bytes_received < 0) {
+				RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tcp_auto_rcv] Failed to read() = %d\r\n", actual_bytes_received);
+				goto end;
+			} else {
+				at_printf_lock();
+				at_printf_indicate("[SKT][DATA][%d][%d]:", current_node->link_id, actual_bytes_received);
+				at_printf_data(read_buf, (u32)actual_bytes_received);
+				at_printf("\r\n");
+				at_printf_unlock();
+			}
+		}
 	}
 
 end:
 	rtos_mem_free(read_buf);
+	read_buf = NULL;
 
 	close(current_node->sockfd);
 	current_node->sockfd = INVALID_SOCKET_ID;
 
-	current_node->auto_rcv_task = NULL;
+	RTK_LOGI(AT_SOCKET_TAG, "rtos_task_delete(socket_client_tcp_auto_rcv)\r\n");
+	rtos_sema_give(current_node->del_task_sema);
 	rtos_task_delete(NULL);
 	return;
 }
@@ -1297,7 +1405,7 @@ int create_socket_client_tcp(struct _node *current_node)
 	}
 
 	if ((ret = lwip_getsockname(sockfd, (struct sockaddr *)&local_addr, &addr_len)) == 0) {
-		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_client_tcp] Local client(%s:%d)\r\n", inet_ntoa(local_addr.sin_addr), ntohs(local_addr.sin_port));
+		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_client_tcp] Local client STA(%s:%d)\r\n", inet_ntoa(local_addr.sin_addr), ntohs(local_addr.sin_port));
 	} else {
 		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_client_tcp] lwip_getsockname() failed = %d\r\n", ret);
 	}
@@ -1308,13 +1416,14 @@ int create_socket_client_tcp(struct _node *current_node)
 	current_node->sockfd = sockfd;
 
 	if (current_node->auto_rcv == TRUE) {
-		if (rtos_task_create(&(current_node->auto_rcv_task), "socket_client_tcp_auto_rcv", socket_client_tcp_auto_rcv, current_node, 1024 * 3,
+		if (rtos_task_create(NULL, "socket_client_tcp_auto_rcv", socket_client_tcp_auto_rcv, current_node, 1024 * 3,
 							 ATCMD_SOCKET_TASK_PRIORITY) != RTK_SUCCESS) {
 			RTK_LOGI(AT_SOCKET_TAG, "[create_socket_client_tcp] rtos_task_create(socket_client_tcp_auto_rcv) failed\r\n");
 			close(sockfd);
 			error_no = 3;
 			goto end;
 		}
+		rtos_sema_create_binary(&(current_node->del_task_sema));
 	}
 
 end:
@@ -1328,6 +1437,9 @@ end:
 void socket_client_tls_auto_rcv(void *param)
 {
 	char *read_buf = NULL;
+	struct timeval timeout;
+	fd_set read_fds;
+	int ret = 0;
 	int actual_bytes_received = 0;
 	struct _node *current_node = (struct _node *)param;
 	mbedtls_net_context tls_client_fd;
@@ -1340,28 +1452,50 @@ void socket_client_tls_auto_rcv(void *param)
 		goto end;
 	}
 
+	timeout.tv_sec = RECV_SELECT_TIMEOUT_SEC;
+	timeout.tv_usec = RECV_SELECT_TIMEOUT_USEC;
+
 	while (1) {
-		actual_bytes_received = mbedtls_ssl_read(current_node->ssl, (unsigned char *)read_buf, AT_SOCKET_RECEIVE_BUFFER_SIZE);
-		if ((actual_bytes_received == 0) || (actual_bytes_received == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY)) {
-			RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tls_auto_rcv] mbedtls_ssl_read() = 0; Connection closed\r\n");
-			goto end;
-		} else if (actual_bytes_received < 0) {
-			if (actual_bytes_received == MBEDTLS_ERR_SSL_WANT_READ || actual_bytes_received == MBEDTLS_ERR_SSL_WANT_WRITE) {
-				RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tls_auto_rcv] MBEDTLS_ERR_SSL_WANT_READ / MBEDTLS_ERR_SSL_WANT_WRITE\r\n");
-				continue;
-			}
-			RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tls_auto_rcv] Failed to mbedtls_ssl_read() = -0x%04x\r\n", -actual_bytes_received);
-			goto end;
+		if (TRUE == current_node->stop_task) {
+			break;
 		}
-		at_printf_lock();
-		at_printf_indicate("[SKT][DATA][%d][%d]:", current_node->link_id, actual_bytes_received);
-		at_printf_data(read_buf, (u32)actual_bytes_received);
-		at_printf("\r\n");
-		at_printf_unlock();
+		FD_ZERO(&read_fds);
+		FD_SET(current_node->sockfd, &read_fds);
+
+		ret = select(current_node->sockfd + 1, &read_fds, NULL, NULL, &timeout);
+		if (ret < 0) {
+			RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tls_auto_rcv] Failed to select() = %d\r\n", ret);
+			continue;
+		}
+		if (ret == 0) {
+			continue;
+		}
+
+		if ((current_node->sockfd >= 0) && FD_ISSET(current_node->sockfd, &read_fds)) {
+			actual_bytes_received = mbedtls_ssl_read(current_node->ssl, (unsigned char *)read_buf, AT_SOCKET_RECEIVE_BUFFER_SIZE);
+			if ((actual_bytes_received == 0) || (actual_bytes_received == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY)) {
+				RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tls_auto_rcv] mbedtls_ssl_read() = 0; Connection closed\r\n");
+				goto end;
+			} else if (actual_bytes_received < 0) {
+				if (actual_bytes_received == MBEDTLS_ERR_SSL_WANT_READ || actual_bytes_received == MBEDTLS_ERR_SSL_WANT_WRITE) {
+					RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tls_auto_rcv] MBEDTLS_ERR_SSL_WANT_READ / MBEDTLS_ERR_SSL_WANT_WRITE\r\n");
+					continue;
+				}
+				RTK_LOGI(AT_SOCKET_TAG, "[socket_client_tls_auto_rcv] Failed to mbedtls_ssl_read() = -0x%04x\r\n", -actual_bytes_received);
+				goto end;
+			} else {
+				at_printf_lock();
+				at_printf_indicate("[SKT][DATA][%d][%d]:", current_node->link_id, actual_bytes_received);
+				at_printf_data(read_buf, (u32)actual_bytes_received);
+				at_printf("\r\n");
+				at_printf_unlock();
+			}
+		}
 	}
 
 end:
 	rtos_mem_free(read_buf);
+	read_buf = NULL;
 
 	mbedtls_ssl_close_notify(current_node->ssl);
 	tls_client_fd.fd = current_node->sockfd;
@@ -1394,7 +1528,8 @@ end:
 		current_node->conf = NULL;
 	}
 
-	current_node->auto_rcv_task = NULL;
+	RTK_LOGI(AT_SOCKET_TAG, "rtos_task_delete(socket_client_tls_auto_rcv)\r\n");
+	rtos_sema_give(current_node->del_task_sema);
 	rtos_task_delete(NULL);
 	return;
 }
@@ -1599,12 +1734,13 @@ int create_socket_client_tls(struct _node *current_node)
 	}
 
 	if (current_node->auto_rcv == TRUE) {
-		if (rtos_task_create(&(current_node->auto_rcv_task), "socket_client_tls_auto_rcv", socket_client_tls_auto_rcv, current_node, 1024 * 7,
+		if (rtos_task_create(NULL, "socket_client_tls_auto_rcv", socket_client_tls_auto_rcv, current_node, 1024 * 7,
 							 ATCMD_SOCKET_TASK_PRIORITY) != RTK_SUCCESS) {
 			RTK_LOGI(AT_SOCKET_TAG, "[create_socket_client_tcp] rtos_task_create(socket_client_tls_auto_rcv) failed\r\n");
 			error_no = 15;
 			goto end;
 		}
+		rtos_sema_create_binary(&(current_node->del_task_sema));
 	}
 
 	RTK_LOGI(AT_SOCKET_TAG, "[create_socket_client_tls] Connect to SSL/TLS server(%s:%s) successful\r\n", dst_addr_str, dst_port_str);
@@ -2129,16 +2265,16 @@ end:
 
 int atcmd_lwip_receive_data(struct _node *curnode, u8 *buffer, int buffer_size, int *actual_recv_size, struct sockaddr_in *skt_dst_addr)
 {
-	struct timeval tv;
+	struct timeval timeout;
 	fd_set readfds;
 	int error_no = 0, ret = 0, size = 0;
 
 	FD_ZERO(&readfds);
 	FD_SET(curnode->sockfd, &readfds);
-	tv.tv_sec = RECV_SELECT_TIMEOUT_SEC;
-	tv.tv_usec = RECV_SELECT_TIMEOUT_USEC;
+	timeout.tv_sec = RECV_SELECT_TIMEOUT_SEC;
+	timeout.tv_usec = RECV_SELECT_TIMEOUT_USEC;
 
-	ret = select(curnode->sockfd + 1, &readfds, NULL, NULL, &tv);
+	ret = select(curnode->sockfd + 1, &readfds, NULL, NULL, &timeout);
 	if (ret == 0) {
 		RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_receive_data] select() timeout\r\n");
 		error_no = 0;
@@ -2414,23 +2550,27 @@ void close_and_free_node(struct _node *freenode)
 
 	//UDP
 	if (freenode->protocol == 0) {
+		if (freenode->auto_rcv == TRUE) {
+			freenode->stop_task = TRUE;
+			rtos_sema_take(freenode->del_task_sema, 100);
+			rtos_sema_delete(freenode->del_task_sema);
+		}
+
 		if (freenode->sockfd >= 0) {
 			close(freenode->sockfd);
-		}
-		if (freenode->auto_rcv_task) {
-			rtos_task_delete(freenode->auto_rcv_task);
-			freenode->auto_rcv_task = NULL;
 		}
 	}
 	//TCP
 	else if (freenode->protocol == 1) {
 		if (freenode->role == NODE_ROLE_CLIENT) {
+			if (freenode->auto_rcv == TRUE) {
+				freenode->stop_task = TRUE;
+				rtos_sema_take(freenode->del_task_sema, 100);
+				rtos_sema_delete(freenode->del_task_sema);
+			}
+
 			if (freenode->sockfd >= 0) {
 				close(freenode->sockfd);
-			}
-			if (freenode->auto_rcv_task) {
-				rtos_task_delete(freenode->auto_rcv_task);
-				freenode->auto_rcv_task = NULL;
 			}
 		} else if (freenode->role == NODE_ROLE_SEED) {
 			prevnode = freenode->prevnode;
@@ -2439,6 +2579,8 @@ void close_and_free_node(struct _node *freenode)
 				close(freenode->sockfd);
 			}
 		} else if (freenode->role == NODE_ROLE_SERVER) {
+			freenode->stop_task = TRUE;
+			rtos_sema_take(freenode->del_task_sema, 100);
 			nextnode = freenode->nextseed;
 			while (nextnode) {
 				tempnode = nextnode->nextseed;
@@ -2448,28 +2590,31 @@ void close_and_free_node(struct _node *freenode)
 				init_single_node(nextnode);
 				nextnode = tempnode;
 			}
+
+			rtos_sema_delete(freenode->del_task_sema);
+
 			if (freenode->sockfd >= 0) {
 				close(freenode->sockfd);
-			}
-			if (freenode->auto_rcv_task) {
-				rtos_task_delete(freenode->auto_rcv_task);
-				freenode->auto_rcv_task = NULL;
 			}
 		}
 	}
 	//TLS
 	else {
 		if (freenode->role == NODE_ROLE_CLIENT) {
-			close_and_free_tls_resource(freenode);
-			if (freenode->auto_rcv_task) {
-				rtos_task_delete(freenode->auto_rcv_task);
-				freenode->auto_rcv_task = NULL;
+			if (freenode->auto_rcv == TRUE) {
+				freenode->stop_task = TRUE;
+				rtos_sema_take(freenode->del_task_sema, 100);
+				rtos_sema_delete(freenode->del_task_sema);
 			}
+
+			close_and_free_tls_resource(freenode);
 		} else if (freenode->role == NODE_ROLE_SEED) {
 			prevnode = freenode->prevnode;
 			prevnode->nextseed = freenode->nextseed;
 			close_and_free_tls_resource(freenode);
 		} else if (freenode->role == NODE_ROLE_SERVER) {
+			freenode->stop_task = TRUE;
+			rtos_sema_take(freenode->del_task_sema, 100);
 			nextnode = freenode->nextseed;
 			while (nextnode) {
 				tempnode = nextnode->nextseed;
@@ -2477,11 +2622,8 @@ void close_and_free_node(struct _node *freenode)
 				init_single_node(nextnode);
 				nextnode = tempnode;
 			}
+			rtos_sema_delete(freenode->del_task_sema);
 			close_and_free_tls_resource(freenode);
-			if (freenode->auto_rcv_task) {
-				rtos_task_delete(freenode->auto_rcv_task);
-				freenode->auto_rcv_task = NULL;
-			}
 		}
 	}
 

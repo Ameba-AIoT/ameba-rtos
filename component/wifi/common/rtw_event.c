@@ -165,7 +165,7 @@ void (*const event_internal_hdl[])(u8 *buf, s32 len, s32 flags, void *user_data)
 	rtw_ft_rx_mgnt,						/*RTW_EVENT_FT_RX_MGNT*/
 #endif
 #endif
-	rtw_psk_deauth_info_flash,			/*RTW_EVENT_DEAUTH_INFO_FLASH*/
+	rtw_psk_deauth_info_flash_event_hdl,			/*RTW_EVENT_DEAUTH_INFO_FLASH*/
 #endif
 	/*RTW_EVENT_INTERNAL_MAX*/
 };

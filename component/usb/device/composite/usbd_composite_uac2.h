@@ -397,6 +397,8 @@ typedef struct {
 typedef struct {
 	usbd_composite_uac_buf_ctrl_t uac_isoc_out;  /* isoc out */
 	usbd_composite_uac_buf_ctrl_t uac_isoc_in;   /* isoc in  */
+	usbd_ep_t ep_isoc_in;
+	usbd_ep_t ep_isoc_out;
 
 	usb_setup_req_t ctrl_req;
 	usbd_composite_dev_t *cdev;
@@ -430,7 +432,7 @@ typedef struct {
 
 /* Exported variables --------------------------------------------------------*/
 
-extern usbd_class_driver_t usbd_composite_uac_driver;
+extern const usbd_class_driver_t usbd_composite_uac_driver;
 
 /* Exported functions --------------------------------------------------------*/
 /**
@@ -494,6 +496,4 @@ u32  usbd_composite_uac_get_read_frame_time_in_us(void);
 // for USB IN tx, TODO
 // u32  usbd_uac_write(void, void *buffer, u32 size, u8 blocking);
 // u32  usbd_uac_get_write_frame_cnt(void);
-
-
 #endif // USBD_COMPOSITE_UAC_H

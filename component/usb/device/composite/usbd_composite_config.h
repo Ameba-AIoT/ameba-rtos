@@ -20,8 +20,6 @@
 #define USBD_COMP_SELF_POWERED            1U
 #define USBD_COMP_REMOTE_WAKEUP_EN        1U
 
-#define USBD_COMP_CTRL_BUF_SIZE           512U   /* Control buffer size */
-
 #define USBD_COMP_MFG_STRING              "Realtek"
 #define USBD_COMP_PROD_STRING             "Realtek Composite Device"
 #define USBD_COMP_SN_STRING               "1234567890"
@@ -127,7 +125,7 @@
 #define USBD_COMP_UAC_AC_HEADSET               0x00
 #define USBD_COMP_UAC_AS_HEADSET_HEADPHONES    0x01
 #define USBD_COMP_HID_ITF                      0x02
-#define USBD_COMP_HID_CONSUMER_ITF             0x03
+#define USBD_COMP_HID_VEND_ITF                 0x03
 
 /* Endpoints */
 #define USBD_COMP_HID_INTR_IN_EP               0x81U
@@ -140,7 +138,7 @@
 /* String indices */
 #define USBD_IDX_UAC_ITF_STR                   ((USBD_IDX_SERIAL_STR) + 1)
 #define USBD_IDX_HID_ITF_STR                   ((USBD_IDX_SERIAL_STR) + 2)
-#define USBD_IDX_HID_CONSUMER_ITF_STR          ((USBD_IDX_SERIAL_STR) + 3)
+#define USBD_IDX_HID_VEND_ITF_STR              ((USBD_IDX_SERIAL_STR) + 3)
 
 /* Strings */
 #define USBD_COMP_HID_HS_ITF_STRING            "Realtek HS HID Priv Device"
@@ -187,7 +185,6 @@ typedef struct {
 
 	usbd_composite_cb_t *cb;
 	usb_dev_t *dev;
-	u8 *ctrl_buf;
 } usbd_composite_dev_t;
 
 /* Exported macros -----------------------------------------------------------*/

@@ -217,7 +217,6 @@ static void rnat_ap_start_thread(void *param)
 	softap_config.channel = wifi_setting.channel;
 	softap_config.ssid.len = strlen((char *)wifi_setting.ssid);
 	memcpy(softap_config.ssid.val, wifi_setting.ssid, softap_config.ssid.len);
-	memcpy(rptssid, wifi_setting.ssid, softap_config.ssid.len);
 	if (rptssid == NULL) {
 		rptssid = (char *)rtos_mem_zmalloc(RTW_ESSID_MAX_SIZE + 1);
 	}

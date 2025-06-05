@@ -176,6 +176,7 @@ menu "CONFIG WHC INTF"
                 bool "FULLMAC_DEV"
             config WHC_FULLMAC_HOST
                 bool "FULLMAC_HOST"
+                select WHC_HOST
                 select CORE_AS_AP_FOR_KM4
             config WHC_BRIDGE
                 bool "BRIDGE_DEV"
@@ -183,6 +184,7 @@ menu "CONFIG WHC INTF"
                 select CORE_AS_NP_FOR_KM4
             config WHC_BRIDGE_HOST
                 bool "BRIDGE_HOST"
+                select WHC_HOST
                 select CORE_AS_AP_FOR_KM4
             #config WIFI_SINGLE_CORE_MENU
                 #bool "Single Core"
@@ -369,6 +371,8 @@ menu "CONFIG WIFI"
     config WHC_BRIDGE
         bool
     config WIFI_HOST_CONTROL
+        bool
+    config WHC_HOST
         bool
 
 endmenu

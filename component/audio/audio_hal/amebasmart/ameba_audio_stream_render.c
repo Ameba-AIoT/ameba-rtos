@@ -364,7 +364,7 @@ static void ameba_audio_stream_tx_sport_init(RenderStream **stream, StreamConfig
 		PLL_I2S_45P158M(ENABLE);
 		RCC_PeriphClockSource_SPORT(rstream->stream.sport_dev_num, CKSL_I2S_PLL45M);
 		PLL_I2S_Div(rstream->stream.sport_dev_num, Clock_Params.PLL_DIV);
-		PLL_I2S_45P158M_ClkTune(0, PLL_AUTO);
+		PLL_I2S_45P158M_ClkTune(NULL, 0, PLL_AUTO);
 		clock_mode = PLL_CLOCK_45P1584M / Clock_Params.PLL_DIV;
 		break;
 
@@ -372,7 +372,7 @@ static void ameba_audio_stream_tx_sport_init(RenderStream **stream, StreamConfig
 		PLL_I2S_98P304M(ENABLE);
 		RCC_PeriphClockSource_SPORT(rstream->stream.sport_dev_num, CKSL_I2S_PLL98M);
 		PLL_I2S_Div(rstream->stream.sport_dev_num, Clock_Params.PLL_DIV);
-		PLL_I2S_98P304M_ClkTune(0, PLL_AUTO);
+		PLL_I2S_98P304M_ClkTune(NULL, 0, PLL_AUTO);
 		clock_mode = PLL_CLOCK_98P304M / Clock_Params.PLL_DIV;
 		break;
 

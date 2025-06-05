@@ -4,7 +4,7 @@ target_sources(
     ${CURRENT_LIB_NAME} PRIVATE
     example_full_flow_offline.c
     app_example.c
-    testwav.c
+    nhxq_dkkt_nhxq_bfyy_echo_3c.c
 )
 
 target_include_directories(

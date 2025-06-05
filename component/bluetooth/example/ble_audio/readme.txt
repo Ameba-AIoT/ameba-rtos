@@ -1,6 +1,6 @@
 ﻿##################################################################################
 #                                                                                #
-#                      Generic LE Audio demo                   #
+#                      Generic LE Audio demo                                     #
 #                                                                                #
 ##################################################################################
 
@@ -38,7 +38,7 @@ Generic LE Audio demo ATCMD:
 ~~~~~~~~~~~
 1.CAP Initiator role
     1.1 enable                                      AT+BTDEMO=generic_le_audio_demo,initiator,1
-    1.2 disable                                      AT+BTDEMO=generic_le_audio_demo,initiator,0
+    1.2 disable                                     AT+BTDEMO=generic_le_audio_demo,initiator,0
     1.3 scan start                                  AT+BLEBAP=escan,1
     1.4 scan stop                                   AT+BLEBAP=escan,0
     1.5 connect                                     AT+BLEGAP=conn,<peer_addr_type>,<peer_addr>

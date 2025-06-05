@@ -203,7 +203,7 @@ def parse_project_info(path:str) -> dict:
 
 def parse_image_type(image_path:str) -> ImageType:
     image1_strs = ["image1", "boot", "ram_1"]
-    image2_strs = ["image2", "sram_2"]
+    image2_strs = ["image2", "sram_2", "ap_image_all"]
     image3_strs = ["image3", "img3"]
     app_all_strs = ["_app", "_app_ns"]
     dsp_strs = ["dsp"]

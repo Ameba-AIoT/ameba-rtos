@@ -386,6 +386,17 @@ typedef struct {
 } rtk_bt_le_iso_cig_acceptor_config_sdu_param_t;
 
 /**
+ * @typedef   rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t
+ * @brief     Bluetooth LE ISO management config CIS request action for acceptor.
+ */
+typedef enum {
+	RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_ACCEPT  = 0x00,    /**< accept CIS request when acceptor received CIS_REQUEST_IND from initiator. */
+	RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_REJECT,            /**< reject CIS request when acceptor received CIS_REQUEST_IND from initiator. */
+	RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_PENDING,           /**< pending CIS request when acceptor received CIS_REQUEST_IND from initiator, then APP need call
+                                                                    rtk_bt_le_iso_cig_acceptor_accept_cis or rtk_bt_le_iso_cig_acceptor_reject_cis according to the usage scenario. */
+} rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t;
+
+/**
  * @struct    rtk_bt_le_iso_cig_setup_data_path_done_t
  * @brief     Bluetooth BLE ISO management CIG setup data path done event definition.
  */
@@ -649,6 +660,9 @@ typedef struct {
 	uint16_t conn_handle;             /**< Connection handle.*/
 	uint8_t cig_id;                 /**< Identifier of a CIG.*/
 	uint8_t cis_id;                 /**< Identifier of a CIS.*/
+	rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t
+	cis_req_action;         /**< Action of CIS request Indicate, default is RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_ACCEPT.
+                                                                                        can be configed by @ref rtk_bt_le_iso_cig_acceptor_config_cis_req_action. */
 } rtk_bt_le_iso_cig_acceptor_request_cis_ind_t;
 
 /**
@@ -1023,6 +1037,42 @@ uint16_t rtk_bt_le_iso_cig_disconnect(uint16_t cis_conn_handle);
  *            - Others: Failed
  */
 uint16_t rtk_bt_le_iso_cig_initiator_remove_cig(uint8_t cig_id);
+
+/**
+ * @brief     Accept the request for the CIS.
+ * @param[in]   cis_conn_handle:   Connection handle of the CIS.
+ * @return
+ *            - RTK_BT_OK  : Succeed
+ *            - Others: Failed
+ */
+uint16_t rtk_bt_le_iso_cig_acceptor_accept_cis(uint16_t cis_conn_handle);
+
+/**
+ * @brief     Reject the request for the CIS..
+ * @param[in]   cis_conn_handle:  Connection handle of the CIS.
+ * @param[in]   reason:   Reason the CIS request was rejected. @ref BT_HCI_ERROR (except @ref HCI_SUCCESS)
+ * @return
+ *            - RTK_BT_OK  : Succeed
+ *            - Others: Failed
+ */
+uint16_t rtk_bt_le_iso_cig_acceptor_reject_cis(uint16_t cis_conn_handle, uint8_t reason);
+
+/**
+ * @brief     Config the acceptor action when received cis request indication. Default action is RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_ACCEPT.
+ * @param[in]   cis_req_action:   The param for config CIS param.
+ * @return
+ *            - RTK_BT_OK  : Succeed
+ *            - Others: Failed
+ */
+uint16_t rtk_bt_le_iso_cig_acceptor_config_cis_req_action(rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t cis_req_action);
+
+/**
+ * @brief     Register acceptor gap app callback.
+ * @return
+ *            - RTK_BT_OK  : Succeed
+ *            - Others: Failed
+ */
+uint16_t rtk_bt_le_iso_cig_acceptor_register_callback(void);
 
 /**
  * @brief     Remove the input and/or output data path(s) associated with CIS.

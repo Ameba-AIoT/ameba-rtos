@@ -125,6 +125,29 @@ static int atcmd_bt_gatts_indicate(int argc, char **argv)
 	return ret;
 }
 
+static int atcmd_bt_gatts_service_changed_indicate(int argc, char **argv)
+{
+	uint16_t ret = 0;
+	uint16_t conn_handle, start_handle, end_handle, cid = 0;
+
+	conn_handle = str_to_int(argv[0]);
+	start_handle = str_to_int(argv[1]);
+	end_handle = str_to_int(argv[2]);
+
+	if (argc == 4) {
+		cid = str_to_int(argv[3]);
+	}
+
+	ret = rtk_bt_gatts_service_changed_indicate(conn_handle, cid, start_handle, end_handle);
+	if (ret) {
+		BT_LOGE("GATTS service changed indicate failed! err: 0x%x\r\n", ret);
+		return -1;
+	}
+
+	BT_LOGA("GATTS service changed indicate success\r\n");
+	return 0;
+}
+
 #if ((defined(CONFIG_BT_PERIPHERAL) && CONFIG_BT_PERIPHERAL) || \
     (defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET))
 /* add for EMC test */
@@ -267,6 +290,7 @@ static int atcmd_bt_gatts_cte_set_param(int argc, char **argv)
 static const cmd_table_t gatts_cmd_table[] = {
 	{"notify",      atcmd_bt_gatts_notify,      6, 7},
 	{"indicate",    atcmd_bt_gatts_indicate,    6, 7},
+	{"srv_changed_ind", atcmd_bt_gatts_service_changed_indicate, 4, 5},
 #if ((defined(CONFIG_BT_PERIPHERAL) && CONFIG_BT_PERIPHERAL) || \
     (defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET))
 	{"loop_send",   atcmd_bt_gatts_loop_send,   2, 5},

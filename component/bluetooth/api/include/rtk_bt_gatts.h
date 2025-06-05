@@ -344,6 +344,17 @@ typedef struct {
 } rtk_bt_gatts_ntf_and_ind_param_t;
 
 /**
+ * @struct    rtk_bt_gatts_service_changed_indicate_param_t
+ * @brief     Bluetooth GATT server service changed indicate paramter definition.
+ */
+typedef struct {
+	uint16_t conn_handle;                   /*!< Connection handle for a client */
+	uint16_t cid;                           /*!< ID of L2CAP channel, 0 indicates auto-select. Ignored when RTK_BT_5_2_EATT_SUPPORT is 0. */
+	uint16_t start_handle;                  /*!< Start of affected attribute handle range */
+	uint16_t end_handle;                    /*!< End of affected attribute handle range */
+} rtk_bt_gatts_service_changed_indicate_param_t;
+
+/**
  * @struct    rtk_bt_gatt_service
  * @brief     GATT Service structure.
  */
@@ -457,6 +468,16 @@ typedef struct {
 	uint8_t features;                       /*!< Client Supported Features after writed, which is bit combination of @ref rtk_bt_gatts_client_supported_features_t. */
 } rtk_bt_gatts_client_supported_features_ind_t;
 
+/**
+ * @struct    rtk_bt_gatts_service_changed_cccd_ind_t
+ * @brief     Bluetooth GATT server's Service Changed Characteristic cccd updated event msg.
+ */
+typedef struct {
+	uint16_t conn_handle;                   /*!< Connection handle for a client */
+	uint16_t cid;                           /*!< L2CAP channel ID */
+	bool cccd_enable;                       /*!< cccd bits is enabled or disabled */
+} rtk_bt_gatts_service_changed_cccd_ind_t;
+
 /********************************* Functions Declaration *******************************/
 /**
  * @defgroup  bt_gatts BT GATT Server APIs
@@ -511,6 +532,19 @@ uint16_t rtk_bt_gatts_read_resp(rtk_bt_gatts_read_resp_param_t *param);
  *            - Others: Error code
  */
 uint16_t rtk_bt_gatts_write_resp(rtk_bt_gatts_write_resp_param_t *param);
+
+/**
+ * @brief     Server send service changed indication when builtin service is used.
+ * @param[in] conn_handle: Connection handle for a client.
+ * @param[in] cid: ID of L2CAP channel, 0 indicates auto-select. Ignored when RTK_BT_5_2_EATT_SUPPORT is 0. 
+ * @param[in] start_handle: Start of affected attribute handle range.
+ * @param[in] end_handle: End of affected attribute handle range.
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_gatts_service_changed_indicate(uint16_t conn_handle, uint16_t cid,
+											   uint16_t start_handle, uint16_t end_handle);
 
 /**
  * @}

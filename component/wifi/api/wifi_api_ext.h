@@ -38,12 +38,12 @@ extern "C" {
  ******************************************************/
 
 /**
- * @brief  Abort onoging wifi scan.
+ * @brief  Abort onoging Wi-Fi scan.
  * @return  @ref RTK_SUCCESS or @ref RTK_FAIL.
  * @note
  *	   - This will return when scan is actually aborted.
  * 	     When scan is actually aborted, the user callback registered in wifi_scan_networks()
- * 	     will be executed. If there is no wifi scan in progress, this function will just return
+ * 	     will be executed. If there is no Wi-Fi scan in progress, this function will just return
  * 	     @ref RTK_SUCCESS and user callback won't be executed.
  */
 s32 wifi_scan_abort(void);
@@ -366,7 +366,7 @@ s32 wifi_get_antdiv_info(u8 *antdiv_mode, u8 *curr_ant);
 s32 wifi_get_band_type(u8 *band_type);
 
 /**
- * @brief	Get wifi TSF register value (64-bit).
+ * @brief	Get Wi-Fi TSF register value (64-bit).
  * @param[in]	wlan_idx: @ref STA_WLAN_INDEX or @ref SOFTAP_WLAN_INDEX.
  * @param[out] tsf: Pointer to store the 64-bit TSF value.
  * @return

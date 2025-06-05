@@ -94,21 +94,16 @@ typedef struct {
 } usbd_vendor_cb_t;
 
 typedef struct {
+	usb_setup_req_t ctrl_req;
+	usbd_ep_t ep_isoc_in;
+	usbd_ep_t ep_isoc_out;
+	usbd_ep_t ep_bulk_in;
+	usbd_ep_t ep_bulk_out;
+	usbd_ep_t ep_intr_in;
+	usbd_ep_t ep_intr_out;
 	usb_dev_t *dev;
 	usbd_vendor_cb_t *cb;
-	usb_setup_req_t ctrl_req;
-	u8 *ctrl_buf;
-	u8 *bulk_out_buf;
-	u8 *bulk_in_buf;
-	u8 *intr_out_buf;
-	u8 *intr_in_buf;
-	u8 *isoc_out_buf;
-	u8 *isoc_in_buf;
 	u8  alt_setting;
-	__IO u8 bulk_in_state : 1;
-	__IO u8 ctrl_in_state : 1;
-	__IO u8 intr_in_state : 1;
-	__IO u8 bulk_in_zlp : 1;
 } usbd_vendor_dev_t;
 
 /* Exported macros -----------------------------------------------------------*/

@@ -90,7 +90,7 @@ void rtw_ft_auth_start(u8 *buf, s32 buf_len, s32 flags, void *userdata);/*RTW_EV
 void rtw_ft_rx_mgnt(u8 *buf, s32 buf_len, s32 flags, void *userdata);/*RTW_EVENT_FT_RX_MGNT*/
 #endif
 #endif
-void rtw_psk_deauth_info_flash(u8 *data, s32 len, s32 flags, void *userdata);/*RTW_EVENT_DEAUTH_INFO_FLASH*/
-
+void rtw_psk_deauth_info_flash_event_hdl(u8 *data, s32 len, s32 flags, void *userdata);/*RTW_EVENT_DEAUTH_INFO_FLASH*/
+void rtw_psk_deauth_info_flash(u8 *data, s32 len, s32 flags, void *userdata);
 #endif
 

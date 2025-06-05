@@ -64,7 +64,7 @@ int fatfs_flash_init(void)
 		res2 = f_open(&fatfs_flash_file, path, FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
 
 		if (res1 || res2) {
-			//ret = f_mkfs(fatfs_flash_param.drv, 1, 4096);
+			VFS_DBG(VFS_INFO, "Mount existed FATFS failed, try to mkfs");
 			MKFS_PARM opt;
 			opt.fmt = FM_ANY;
 			opt.au_size = 0;
