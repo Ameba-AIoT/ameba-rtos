@@ -190,7 +190,7 @@ int wifi_do_fast_connect(void)
 			return -1;
 		}
 		PSK_INFO.index = STA_WLAN_INDEX;
-		rtw_psk_set_psk_info(&PSK_INFO, 1);
+		rtw_psk_set_psk_info(&PSK_INFO);
 
 		channel = data->channel;
 		key_id = channel >> 28;

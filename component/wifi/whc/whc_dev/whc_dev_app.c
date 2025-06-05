@@ -9,6 +9,8 @@
 #define BRIDGE_WIFI_TEST_GET_MAC_ADDR 0x1
 #define BRIDGE_WIFI_TEST_GET_IP       0x2
 #define BRIDGE_WIFI_TEST_SET_READY    0x3
+#define BRIDGE_WIFI_TEST_SET_UNREADY    0x4
+#define BRIDGE_WIFI_TEST_SET_TICKPS_CMD    0x5
 
 #define BRIDGE_WIFI_TEST_BUF_SIZE     16
 
@@ -86,6 +88,11 @@ __weak void whc_bridge_dev_pkt_rx_to_user_task(void)
 					whc_bridge_dev_api_send_to_host(buf, BRIDGE_WIFI_TEST_BUF_SIZE);
 				} else if (*ptr == BRIDGE_WIFI_TEST_SET_READY) {
 					whc_bridge_dev_api_set_host_state(1);
+				} else if (*ptr == BRIDGE_WIFI_TEST_SET_UNREADY) {
+					whc_bridge_dev_api_set_host_state(0);
+				} else if (*ptr == BRIDGE_WIFI_TEST_SET_TICKPS_CMD) {
+					u8 subtype = *(ptr + 1);
+					whc_bridge_dev_api_set_tickps_cmd(subtype);
 				}
 				rtos_mem_free(buf);
 			}

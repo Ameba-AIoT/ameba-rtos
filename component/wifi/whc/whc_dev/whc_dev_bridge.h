@@ -35,6 +35,13 @@
 #define MASK_TYPE         BIT4
 #define MASK_IDX          BIT5
 
+enum bridge_tickps_cmd_subtype {
+	BRIDGE_CMD_TICKPS_R = 0,
+	BRIDGE_CMD_TICKPS_A = 1,
+	BRIDGE_CMD_TICKPS_TYPE_CG = 2,
+	BRIDGE_CMD_TICKPS_TYPE_PG = 3,
+};
+
 struct bridge_pkt_attrib {
 	u16_t protocol;
 	u16_t src_port;

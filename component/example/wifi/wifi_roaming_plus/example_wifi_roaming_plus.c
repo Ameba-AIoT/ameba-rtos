@@ -240,7 +240,7 @@ static int wlan_fast_connect(struct wifi_roaming_data *data, u8 scan_type)
 	memcpy(PSK_INFO->psk_essid, data->ap_info.psk_essid, sizeof(data->ap_info.psk_essid));
 	memcpy(PSK_INFO->psk_passphrase, data->ap_info.psk_passphrase, sizeof(data->ap_info.psk_passphrase));
 	memcpy(PSK_INFO->wpa_global_PSK, data->ap_info.wpa_global_PSK, sizeof(data->ap_info.wpa_global_PSK));
-	rtw_psk_set_psk_info(PSK_INFO, 1);
+	rtw_psk_set_psk_info(PSK_INFO);
 	rtos_mem_free(PSK_INFO);
 
 	channel = data->ap_info.channel;

@@ -29,6 +29,12 @@ enum bridge_attr_type {
 
 };
 
+enum bridge_tickps_cmd_subtype {
+	BRIDGE_CMD_TICKPS_R = 0,
+	BRIDGE_CMD_TICKPS_A = 1,
+	BRIDGE_CMD_TICKPS_TYPE_CG = 2,
+	BRIDGE_CMD_TICKPS_TYPE_PG = 3,
+};
 
 /* for test demo */
 #define WHC_WIFI_TEST 0xffa5a5a5
@@ -36,5 +42,6 @@ enum bridge_attr_type {
 #define WHC_WIFI_TEST_GET_MAC_ADDR 0x1
 #define WHC_WIFI_TEST_GET_IP       0x2
 #define WHC_WIFI_TEST_SET_READY    0x3
-
+#define WHC_WIFI_TEST_SET_UNREADY    0x4
+#define WHC_WIFI_TEST_SET_TICKPS_CMD 0x5
 #endif
