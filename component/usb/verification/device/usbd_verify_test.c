@@ -77,7 +77,7 @@ static int cmd_usbd_verify_cb_received(u8 *buf, u32 len, void *ep);
 /* Verify Device */
 static cmd_usbd_verify_ep_t cmd_usbd_verify_ep;
 
-static usbd_verify_cb_t cmd_usbd_verify_cb = {
+static const usbd_verify_cb_t cmd_usbd_verify_cb = {
 	.init = cmd_usbd_verify_init,
 	.deinit = cmd_usbd_verify_deinit,
 	.get_config_desc = cmd_usbd_verify_get_config_desc,
