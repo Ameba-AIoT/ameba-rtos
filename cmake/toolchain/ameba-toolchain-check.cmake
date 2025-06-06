@@ -47,7 +47,7 @@ if(NOT TOOLCHAIN_DIR)
 		endif()
 
 		if(ret)
-			message(FATAL_ERROR "Unzip Failed. Please Delete ${TOOLCHAINNAME} Manually and Try Again!")
+			message(FATAL_ERROR "Unzip Failed. Please unzip ${TOOLCHAINNAME} manually. If still failed, delete ${TOOLCHAINNAME} Manually and Try Again!")
 		else()
 			message("Unzip ${TOOLCHAINNAME} Success")
 		endif()
