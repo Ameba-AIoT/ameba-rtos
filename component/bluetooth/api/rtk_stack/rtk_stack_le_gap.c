@@ -1076,7 +1076,18 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 			p_cmd->ret = p_data->le_cause.cause;
 			osif_sem_give(p_cmd->psem);
 		} else {
+			// For rtk stack extended ADV:
+			// le_ext_adv_set_adv_enable_param --> le_ext_adv_start_setting --> wait GAP_MSG_LE_EXT_ADV_START_SETTING --> le_ext_adv_enable --> wait GAP_MSG_LE_EXT_ADV_ENABLE
+			// For rtk coded phy mesh stack extended ADV:
+			// le_ext_adv_set_adv_enable_param --> gap_sched_ext_adv_set_param_flag --> gap_sched_ext_adv_start --> auto enter GAP_MSG_LE_EXT_ADV_START_SETTING GAP_MSG_LE_EXT_ADV_ENABLE
+			// So when using mesh coded phy, will auto enter this case
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
+			if (!rtk_bt_mesh_is_enable()) {
+				BT_LOGE("[%s] GAP_MSG_LE_EXT_ADV_ENABLE: find no pending command \r\n", __func__);
+			}
+#else
 			BT_LOGE("[%s] GAP_MSG_LE_EXT_ADV_ENABLE: find no pending command \r\n", __func__);
+#endif
 		}
 		break;
 	}

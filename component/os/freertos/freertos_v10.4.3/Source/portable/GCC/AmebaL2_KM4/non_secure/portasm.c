@@ -238,7 +238,7 @@ void PendSV_Handler( void ) /* __attribute__ (( naked )) PRIVILEGED_FUNCTION */
 
 void vPortAllocateSecureContext( uint32_t ulSecureStackSize ) /* __attribute__ (( naked )) */
 {
-	UNUSED(ulSecureStackSize);
+	(void)(ulSecureStackSize);
 	__asm volatile
 	(
 	"	svc %0											\n" /* Secure context is allocated in the supervisor call. */
@@ -250,7 +250,7 @@ void vPortAllocateSecureContext( uint32_t ulSecureStackSize ) /* __attribute__ (
 
 void vPortFreeSecureContext( uint32_t *pulTCB ) /* __attribute__ (( naked )) PRIVILEGED_FUNCTION */
 {
-	UNUSED(pulTCB);
+	(void)(pulTCB);
 	__asm volatile
 	(
 	"	ldr r1, [r0]									\n" /* The first item in the TCB is the top of the stack. */

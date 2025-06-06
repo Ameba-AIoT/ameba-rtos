@@ -869,8 +869,9 @@ struct rtw_client_list {
 struct rtw_csa_parm {
 	u8 new_chl; /**< Target channel to switch to. */
 	u8 chl_switch_cnt; /**< Countdown to channel switch, in units of 102ms (`chl_switch_cnt`*102ms). */
-	u8 action_type;	/**< CSA action frame type: 0 - unicast, 1 - broadcast, other - disable CSA transmission. */
+	u8 action_type;	/**< CSA action frame type: 0 - unicast, 1 - broadcast, other - disable CSA action frame. */
 	u8 bc_action_cnt; /**< Number of broadcast CSA actions sent per beacon interval. Only valid when `action_type = 1`.*/
+	u8 chl_switch_mode; /**< Restrictions on connected STAs transmission until a channel switch: 1 - disable STAs from transmitting any frames; 0 - no restrictions. */
 	/** @brief Callback function invoked after channel switch completion.
 	  * @param[in] channel:  New channel number.
 	  * @param[in] ret: Result of channel switch: @ref RTK_FAIL or @ref RTK_SUCCESS.
