@@ -302,20 +302,17 @@ dl_patch_done:
 }
 
 #if defined(hci_platfrom_DOWNLOAD_PATCH_TO_SHRMEM) && hci_platfrom_DOWNLOAD_PATCH_TO_SHRMEM
-#include "mbedtls/sha256.h"
 #define BT_IMEM_HEADER_SIZE 32
+#define PATCH_IMAGE_HDR_SIZE 785
 uint8_t hci_patch_download_v3_to_share_mem(void)
 {
 	uint8_t ret = HCI_FAIL;
 	struct SECTION_NODE *node, *n;
 	uint32_t value, image_total_len = 0;
 	uint8_t *p_patch;
-	uint8_t *shrmem = 0, *header = 0;
+	uint8_t *shrmem = 0;
 	uint32_t opcode;
-	mbedtls_sha256_context ctx;
 	uint32_t *imem = (uint32_t *)BT_SHRMEM_SYSADDR_IMEM;
-
-	mbedtls_sha256_init(&ctx);
 
 	if (PATCH_VERSION_V3 != hci_patch_get_patch_version(&p_patch, NULL)) {
 		BT_LOGE("Signature check success: Merge patch v1 not support\r\n");
@@ -335,23 +332,23 @@ uint8_t hci_patch_download_v3_to_share_mem(void)
 		if (node->image_id != list_entry(node->list.prev, struct SECTION_NODE, list)->image_id) {
 			image_total_len = 0;
 			LE_TO_UINT32(value, REG_VALUE_POSITION(node->payload, PATCH_START_ADDRESS));
-			header = BT_SHRMEM_SYSADDR_IMEM + (value - (uint32_t)BT_SHRMEM_BTADDR_IMEM);
-			shrmem = header;
-			mbedtls_sha256_starts(&ctx, 0);
+			shrmem = BT_SHRMEM_SYSADDR_IMEM + (value - (uint32_t)BT_SHRMEM_BTADDR_IMEM);
+			node->payload += PATCH_IMAGE_HDR_SIZE;
+			node->length -= PATCH_IMAGE_HDR_SIZE;
 		}
 
 		/* copy payload */
-		mbedtls_sha256_update(&ctx, node->payload, node->length);
 		memcpy(shrmem, node->payload, node->length);
+		DCache_CleanInvalidate((u32)shrmem, node->length);
 		shrmem += node->length;
+		if (shrmem > BT_SHARE_MEM_PATCH_END) {
+			BT_LOGE("Patch too long!!\r\n");
+		}
 
 		/* last section with image ID, calculate HASH */
 		image_total_len += node->length;
 		if (node->image_id != list_entry(node->list.next, struct SECTION_NODE, list)->image_id) {
 			BT_LOGA("FW Image(0x%04x) Length %d\r\n", node->image_id, image_total_len);
-			memset(header, 0, 785); /* clear original patch header */
-			mbedtls_sha256_finish(&ctx, header); /* calculate 32 bytes HASH */
-			DCache_CleanInvalidate((u32)header, shrmem - header);
 			*imem |= BIT(node->image_id - IMGAE_ID_PLATFORM + 19); /* image valid bit */
 		}
 	}
@@ -362,7 +359,6 @@ uint8_t hci_patch_download_v3_to_share_mem(void)
 	ret = HCI_SUCCESS;
 
 dl_patch_done:
-	mbedtls_sha256_free(&ctx);
 	list_for_each_entry_safe(node, n, &section_head.list, list, struct SECTION_NODE) {
 		osif_mem_free(node);
 	}

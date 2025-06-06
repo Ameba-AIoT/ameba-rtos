@@ -256,7 +256,8 @@ int rtw_wiphy_init_params(struct wiphy *pwiphy)
 	pwiphy->nan_supported_bands |= BIT(NL80211_BAND_2GHZ);
 	pwiphy->nan_supported_bands |= BIT(NL80211_BAND_5GHZ);
 	pwiphy->flags |= WIPHY_FLAG_OFFCHAN_TX;
-#ifdef CONFIG_NAN_PAIRING //6.6.x linux version support NL80211_EXT_FEATURE_SECURE_NAN which is used in PASN
+#if defined(CONFIG_NAN_PAIRING) && (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0))
+	//6.6.x linux version support NL80211_EXT_FEATURE_SECURE_NAN which is used in PASN
 	wiphy_ext_feature_set(pwiphy, NL80211_EXT_FEATURE_SECURE_NAN);
 #endif
 #endif

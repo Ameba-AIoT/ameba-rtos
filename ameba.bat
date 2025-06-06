@@ -9,10 +9,10 @@ if defined RTK_TOOLCHAIN_DIR (
   set "RTK_TOOLCHAIN_DIR=C:\rtk-toolchain"
 )
 
-set "PREBUILTS_VERSION=1.0.1"
+set "PREBUILTS_VERSION=1.0.3"
 set "PREBUILTS_DIR=%RTK_TOOLCHAIN_DIR%\prebuilts-win-%PREBUILTS_VERSION%"
-set "PREBUILTS_WIN_URL=https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/prebuilts-v1.0.1/prebuilts-win-1.0.1.zip"
-set "PREBUILTS_WIN_URL_ALIYUN=https://rs-wn.oss-cn-shanghai.aliyuncs.com/prebuilts-win-1.0.1.zip"
+set "PREBUILTS_WIN_URL=https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/prebuilts-v1.0.3/prebuilts-win-1.0.3.zip"
+set "PREBUILTS_WIN_URL_ALIYUN=https://rs-wn.oss-cn-shanghai.aliyuncs.com/prebuilts-win-1.0.3.zip"
 
 set "BASE_DIR=%~dp0"
 if "%BASE_DIR:~-1%"=="\" set "BASE_DIR=%BASE_DIR:~0,-1%"

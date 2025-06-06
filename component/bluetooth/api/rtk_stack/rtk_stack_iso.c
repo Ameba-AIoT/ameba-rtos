@@ -39,7 +39,7 @@ void bt_stack_le_iso_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 
 	switch (cb_type) {
 	case BT_DIRECT_MSG_ISO_DATA_IND: {
-		BT_LOGD("BT_DIRECT_MSG_ISO_DATA_IND, conn_handle 0x%x, pkt_status_flag 0x%x, pkt_seq_num 0x%x, ts_flag 0x%x, time_stamp 0x%x,iso_sdu_len 0x%x, p_buf %08x, offset %d\r\n",
+		BT_LOGD("BT_DIRECT_MSG_ISO_DATA_IND, conn_handle 0x%x, pkt_status_flag 0x%x, pkt_seq_num 0x%x, ts_flag 0x%x, time_stamp 0x%x,iso_sdu_len 0x%x, p_buf 0x%p, offset %d\r\n",
 				p_data->p_bt_direct_iso->conn_handle, p_data->p_bt_direct_iso->pkt_status_flag,
 				p_data->p_bt_direct_iso->pkt_seq_num, p_data->p_bt_direct_iso->ts_flag,
 				(unsigned int)p_data->p_bt_direct_iso->time_stamp,
@@ -2644,7 +2644,7 @@ void bt_stack_le_iso_deinit(void)
 {
 	BT_LOGA("[ISO]bt_stack_le_iso_deinit\n");
 	if (!bt_le_iso_priv_data.init_flag) {
-		BT_LOGE("%s bt le iso stack is already disable \r\n");
+		BT_LOGE("[ISO]bt le iso stack is already disable \r\n");
 		return;
 	}
 	gap_register_direct_cb(NULL);

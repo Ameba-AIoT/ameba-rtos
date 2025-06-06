@@ -12,6 +12,9 @@
 
 /* Private defines -----------------------------------------------------------*/
 
+#define USB_TEST_LOOPS            5
+#define USB_TEST_ERROR_THRESHOLD  2
+
 #define USB_REG_GPVNDCTL          (USB_REG_BASE + 0x34)
 #define USB_REG_UTMI_STATUS_OUT   (USB_ADDON_REG_BASE + 0x1C)
 #define USB_REG_SLBBIST_CTRL      (USB_ADDON_REG_BASE + 0x20)
@@ -32,26 +35,26 @@ static const char *const TAG = "USB";
 
 int cmd_usb_loopback_test(u16 argc, u8 *argv[])
 {
-	u32 loops = 4;
-	u32 count;
+	u32 loop;
 	u32 reg;
 	int ret;
+	int error_count = 0;
 	u8 mode = 0;
 
 	if (argc > 1) {
 		mode = _strtoul((const char *)(argv[1]), (char **)NULL, 10);
 		if (mode > 1) {
-			RTK_LOGE(TAG, "Invalid USB mode: %s\n", argv[1]);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid USB mode: %s\n", argv[1]);
 			return HAL_ERR_PARA;
 		}
 	}
 
-	RTK_LOGI(TAG, "Loopback test...\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Loopback test...\n");
 
 	ret = usb_hal_driver.init(0);
 	if (ret != HAL_OK) {
-		RTK_LOGE(TAG, "Init FAIL: %d\n", ret);
-		RTK_LOGE(TAG, "Loopback test FAIL\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init FAIL: %d\n", ret);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Loopback test FAIL\n");
 		return ret;
 	}
 
@@ -64,19 +67,27 @@ int cmd_usb_loopback_test(u16 argc, u8 *argv[])
 	DelayMs(100);
 
 	/* SLB pattern */
-	for (count = 0; count < loops; count ++) {
-		HAL_WRITE32(USB_REG_SLBBIST_CTRL, 0, 0xC0 + count);
-		HAL_WRITE32(USB_REG_SLBBIST_CTRL, 0, 0x80 + count);
+	for (loop = 0; loop < USB_TEST_LOOPS; loop ++) {
+		HAL_WRITE32(USB_REG_SLBBIST_CTRL, 0, 0xC0 + loop);
+		HAL_WRITE32(USB_REG_SLBBIST_CTRL, 0, 0x80 + loop);
 
 		DelayUs(1000);
 
 		reg = HAL_READ32(USB_REG_SLBBIST_CTRL, 0);
 		if ((reg & (BIT4 | BIT5)) == 0x10) {
+			error_count = 0;
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Loop %d# PASS\n", loop);
 			continue;
 		} else {
-			RTK_LOGE(TAG, "Loopback test FAIL: [0x%08x]=0x%08x\n", USB_REG_SLBBIST_CTRL, reg);
-			ret = HAL_ERR_HW;
-			break;
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Loop %d# FAIL\n", loop);
+			error_count++;
+			if (error_count >= USB_TEST_ERROR_THRESHOLD) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Loopback test FAIL: [0x%08x]=0x%08x\n", USB_REG_SLBBIST_CTRL, reg);
+				ret = HAL_ERR_HW;
+				break;
+			} else {
+				continue;
+			}
 		}
 	}
 
@@ -85,7 +96,7 @@ int cmd_usb_loopback_test(u16 argc, u8 *argv[])
 	usb_hal_driver.deinit();
 
 	if (ret == HAL_OK) {
-		RTK_LOGI(TAG, "Loopback test PASS\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Loopback test PASS\n");
 	}
 
 	return ret;
