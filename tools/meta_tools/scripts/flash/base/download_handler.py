@@ -16,6 +16,7 @@ from .device_profile import *
 from .json_utils import *
 from .rt_settings import *
 from .spic_addr_mode import *
+from .memory_info import *
 
 _RTK_USB_VID = "0BDA"
 
@@ -50,19 +51,56 @@ class Ameba(object):
                  erase_info=None):
         self.logger = logger
         self.profile_info = profile
-        self.serial_port = serial_port
+        self.serial_port = None
+        self.serial_port_name = serial_port
+        self.is_usb = self.is_realtek_usb()
+        self.initial_serial_port()
         self.baudrate = baudrate
         self.image_path = image_path
         self.download_img_info = download_img_info
         self.chip_erase = chip_erase
         self.memory_type = memory_type
         self.setting = setting
-        self.is_usb = self.is_realtek_usb()
-        self.rom_handler = RomHandler(self)
-        self.floader_handler = FloaderHandler(self)
         self.device_info = None
         self.erase_info = erase_info
         self.is_all_ram = True
+
+        self.rom_handler = RomHandler(self)
+        self.floader_handler = FloaderHandler(self)
+
+    def __del__(self):
+        if self.serial_port:
+            if self.serial_port.is_open:
+                self.serial_port.close()
+            while self.serial_port.is_open:
+                pass
+            self.logger.info(f"{self.serial_port.port} closed.")
+
+    def initial_serial_port(self):
+        # initial serial port
+        port = None
+        try:
+            if self.is_usb:
+                self.serial_port = serial.Serial(self.serial_port_name,
+                                                 baudrate=self.profile_info.handshake_baudrate,
+                                                 parity=serial.PARITY_NONE,
+                                                 stopbits=serial.STOPBITS_ONE,
+                                                 bytesize=serial.EIGHTBITS)
+            else:
+
+                # create an empty port-object, then assign port info to object, to avoid dtr/rts level changes when open/close port
+                self.serial_port = serial.Serial()
+                self.serial_port.port = self.serial_port_name
+                self.serial_port.baudrate = self.profile_info.handshake_baudrate
+                self.serial_port.parity = serial.PARITY_NONE
+                self.serial_port.stopbits = serial.STOPBITS_ONE
+                self.serial_port.bytesize = serial.EIGHTBITS
+                self.serial_port.dtr = False
+                self.serial_port.rts = False
+                self.serial_port.open()
+        except Exception as err:
+            self.logger.error(f"Access serial port {self.serial_port_name} fail: {err}")
+            sys.exit(1)
 
     def read_bytes(self, timeout_seconds, size=1):
         ret = ErrType.OK
@@ -91,7 +129,7 @@ class Ameba(object):
     def is_realtek_usb(self):
         ports = serial.tools.list_ports.comports()
         for port, desc, hvid in sorted(ports):
-            if port == self.serial_port.port:
+            if port == self.serial_port_name:
                 # hvid: USB VID:PID=0BDA:8722 SER=5 LOCATION=1-1
                 if _RTK_USB_VID in hvid:
                     return True
@@ -223,11 +261,10 @@ class Ameba(object):
 
         return ret, is_floader
 
-    def prepare(self):
+    def prepare(self, show_device_info=True):
         ret = ErrType.OK
         floader_init_baud = self.baudrate if self.is_usb else (self.profile_info.handshake_baudrate if
-                                                               (
-                                                                       self.setting.switch_baudrate_at_floader == 1) else self.baudrate)
+                                                               (self.setting.switch_baudrate_at_floader == 1) else self.baudrate)
         boot_delay = self.setting.usb_floader_boot_delay_in_second if self.profile_info.support_usb_download else self.setting.floader_boot_delay_in_second
 
         if (not self.is_usb) and (self.setting.auto_switch_to_download_mode_with_dtr_rts != 0):
@@ -262,6 +299,9 @@ class Ameba(object):
         ret, self.device_info = self.floader_handler.query()
         if ret != ErrType.OK:
             self.logger.error(f"Query fail: {ret}")
+            return ret
+
+        if not show_device_info:
             return ret
 
         self.logger.info("Device info:")
@@ -474,7 +514,7 @@ class Ameba(object):
         if img_name.endswith(".dtb"):
             img_path_files = os.listdir(self.image_path)
             for img_f in img_path_files:
-                self.logger.info(img_f)
+                self.logger.debug(img_f)
                 if img_f.endswith(".dtb") and os.path.isfile(os.path.join(self.image_path, img_f)):
                     img_name = img_f
                     break
@@ -487,54 +527,64 @@ class Ameba(object):
         ret = ErrType.OK
         image_selected = False
 
-        if not self.download_img_info:
-            for image_info in self.profile_info.images:
-                if not image_info.mandatory:
-                    continue
+        all_images = self.profile_info.images
+        if self.download_img_info:
+            all_images = self.download_img_info
+
+        for image_info in all_images:
+            if not image_info.mandatory:
+                continue
+            if not self.download_img_info:
                 image_name = self._process_image(image_info.image_name)
                 if image_name is None:
                     self.logger.error(f"Cannot find a valid {image_name} for download")
                     ret = ErrType.SYS_PARAMETER
                     break
                 image_path = os.path.realpath(os.path.join(self.image_path, image_name))
-                if not os.path.exists(image_path):
-                    self.logger.error(f"{image_name} NOT exists: {image_path}")
-                    ret = ErrType.SYS_PARAMETER
-                    break
-                if image_info.start_address < 0:
-                    self.logger.error(f"Start address is not valid specified for image {image_name}")
-                    ret = ErrType.SYS_PARAMETER
-                    break
-                if image_info.end_address < 0:
-                    self.logger.error(f"End address is not valid specified for image {image_name}")
-                    ret = ErrType.SYS_PARAMETER
-                    break
-                if image_info.start_address >= image_info.end_address:
-                    self.logger.error(
-                        f"Invalid address range {image_info.start_address}-{image_info.end_address} for {image_name}")
-                    ret = ErrType.SYS_PARAMETER
-                    break
-                image_size = os.path.getsize(image_path)
-                if image_size > (image_info.end_address - image_info.start_address):
-                    self.logger.error(
-                        f"Image file {image_path} is too large for {image_name}, please adjust the memory layout")
-                    ret = ErrType.SYS_PARAMETER
-                    break
+            else:
+                image_name = os.path.basename(image_info.image_name)
+                image_path = image_info.image_name
 
-                is_start_address_in_ram = self.profile_info.is_ram_address(image_info.start_address)
-                is_end_address_in_ram = self.profile_info.is_ram_address(image_info.end_address)
-                if (((self.memory_type == MemoryInfo.MEMORY_TYPE_RAM) and (
-                        (not is_start_address_in_ram) or (not is_end_address_in_ram))) or
-                        ((self.memory_type == MemoryInfo.MEMORY_TYPE_RAM) and (
-                                is_start_address_in_ram or is_end_address_in_ram))):
-                    self.logger.error(
-                        f"Invalid address range {image_info.start_address}-{image_info.end_address} for {image_name}")
-                    ret = ErrType.SYS_PARAMETER
-                    break
-                if not is_start_address_in_ram:
-                    self.is_all_ram = False
+            if not os.path.exists(image_path):
+                self.logger.error(f"Image file {image_name} dose not exist: {image_path}")
+                ret = ErrType.SYS_PARAMETER
+                break
 
-                image_selected = True
+            if image_info.start_address < 0:
+                self.logger.error(f"Start address is not valid specified for image {image_name}")
+                ret = ErrType.SYS_PARAMETER
+                break
+            if image_info.end_address < 0:
+                self.logger.error(f"End address is not valid specified for image {image_name}")
+                ret = ErrType.SYS_PARAMETER
+                break
+            if image_info.start_address >= image_info.end_address:
+                self.logger.error(
+                    f"Invalid address range {image_info.start_address}-{image_info.end_address} for {image_name}")
+                ret = ErrType.SYS_PARAMETER
+                break
+            image_size = os.path.getsize(image_path)
+            if image_size > (image_info.end_address - image_info.start_address):
+                self.logger.error(
+                    f"Image file {image_path} is too large for {image_name}, please adjust the memory layout")
+                ret = ErrType.SYS_PARAMETER
+                break
+
+            is_start_address_in_ram = self.profile_info.is_ram_address(image_info.start_address)
+            is_end_address_in_ram = self.profile_info.is_ram_address(image_info.end_address)
+            if (((self.memory_type == MemoryInfo.MEMORY_TYPE_RAM) and (
+                    (not is_start_address_in_ram) or (not is_end_address_in_ram))) or
+                    ((self.memory_type == MemoryInfo.MEMORY_TYPE_RAM) and (
+                            is_start_address_in_ram or is_end_address_in_ram))):
+                self.logger.error(
+                    f"Invalid address range {image_info.start_address}-{image_info.end_address} for {image_name}")
+                ret = ErrType.SYS_PARAMETER
+                break
+            if not is_start_address_in_ram:
+                self.is_all_ram = False
+
+            image_selected = True
+        else:
             if not image_selected:
                 self.logger.warning(f"No image selected!")
                 ret = ErrType.SYS_PARAMETER
@@ -783,8 +833,8 @@ class Ameba(object):
                 ret = self.floader_handler.erase_flash(image_info.memory_type, addr, addr + block_size, block_size,
                                                        nand_erase_timeout_in_second(block_size, block_size),
                                                        sense=True)
-                if ret == ErrType.DEV_NAND_BAD_BLOCK or ret == ErrType.DEV_NAND_WORN_BLOCK:
-                    self.logger.debug(
+                if ret == ErrType.DEV_NAND_BAD_BLOCK.value or ret == ErrType.DEV_NAND_WORN_BLOCK.value:
+                    self.logger.info(
                         f"{'Bad' if ret == ErrType.DEV_NAND_BAD_BLOCK else 'Worn'} block: 0x{format(addr, '08X')}")
                     addr += self.device_info.flash_block_size()
                     next_erase_addr = addr
@@ -837,9 +887,10 @@ class Ameba(object):
                                                            nand_erase_timeout_in_second(
                                                                (image_info.end_address - next_erase_addr), block_size),
                                                            sense=True)
-                    if ret == ErrType.DEV_NAND_BAD_BLOCK or ret == ErrType.DEV_NAND_WORN_BLOCK:
+                    if ret == ErrType.DEV_NAND_BAD_BLOCK.value or ret == ErrType.DEV_NAND_WORN_BLOCK.value:
                         self.logger.debug(
                             f"{'Bad' if ret == ErrType.DEV_NAND_BAD_BLOCK else 'Worn'} block: {hex(addr)}")
+                        ret = ErrType.OK
                     elif ret != ErrType.OK:
                         self.logger.error(f"Fail to erase block {hex(addr)}:{ret}")
 
@@ -1148,10 +1199,22 @@ class Ameba(object):
 
         return ret, mode
 
-    def check_supported_flash_size(self):
+    def check_supported_flash_size(self, memory_type):
+        ret = ErrType.OK
+        reset_system = False
+
+        if memory_type == MemoryInfo.MEMORY_TYPE_NAND:
+            return ret, reset_system
+
+        self.logger.info(f"Check supported flash size...")
+        ret = self.prepare(show_device_info=False)
+        if ret != ErrType.OK:
+            self.logger.error("Prepare for check supported flash size fail")
+            return ret, reset_system
+
         ret, mode = self.get_spic_address_mode()
         if ret != ErrType.OK:
-            return ret
+            return ret, reset_system
 
         flash_size = self.device_info.flash_capacity // 1024 // 1024  # MB
         if self.setting.auto_program_spic_addr_mode_4byte == 0:
@@ -1165,8 +1228,17 @@ class Ameba(object):
             if mode == SpicAddrMode.THREE_BYTE_MODE.value and flash_size > 16:
                 self.logger.warning(f"OTP supports flash size <=16MB, tool will program OTP to support flash size >16MB")
                 ret = self.set_spic_address_mode(SpicAddrMode.FOUR_BYTE_MODE.value)
+                reset_system = True
             elif mode == SpicAddrMode.FOUR_BYTE_MODE.value and flash_size <= 16:
                 self.logger.warning(f"OTP supports flash size >16MB, tool will program OTP to support flash size <=16MB")
                 ret = self.set_spic_address_mode(SpicAddrMode.THREE_BYTE_MODE.value)
+                reset_system = True
 
-        return ret
+            if reset_system:
+                boot_delay = self.setting.usb_rom_boot_delay_in_second if self.profile_info.support_usb_download else self.setting.floader_boot_delay_in_second
+                # reset floader with next option
+                self.floader_handler.next_operation(NextOpType.REBURN, 0)
+                self.logger.info(f"Reburn delay {boot_delay}s")
+                time.sleep(boot_delay)
+
+        return ret, reset_system

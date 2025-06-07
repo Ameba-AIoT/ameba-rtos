@@ -7,7 +7,7 @@
 import os
 import sys
 import argparse
-import ast
+import base64
 
 from base import *
 import version_info
@@ -17,38 +17,24 @@ MinSupportedDeviceProfileMinorVersion = 1
 setting_file = "Setting.json"
 
 
-def sys_exit(logger, port, status, ret):
-    if port.is_open:
-        port.close()
-    while port.is_open:
-        pass
-    if not port.is_open:
-        logger.info(f"{port.port} closed.")
-
+def sys_exit(logger, status, ret):
     if status:
         logger.info(f"Finished PASS")  # customized, do not modify
         sys.exit(0)
     else:
         logger.error(f"Finished FAIL: {ret}")  # customized, do not modify
-        sys.exit(-1)
+        sys.exit(1)
 
 
-def parse_string_as_dict_list(value):
-    dict_list = []
+def decoder_partition_string(partition_table_base64):
     try:
-        parsed_value = ast.literal_eval(value)
-        if isinstance(parsed_value, list):
-            for parsed_dict in parsed_value:
-                if isinstance(parsed_dict, dict):
-                    dict_list.append(parsed_dict)
-                else:
-                    raise argparse.ArgumentTypeError(f"Expected dict element in list, got {type(parsed_dict).__name__}")
-        else:
-            raise argparse.ArgumentTypeError(f"Expected a list, got {type(parsed_value).__name__}")
-    except (ValueError, SyntaxError) as err:
-        raise argparse.ArgumentTypeError("Invalid list format") from err
-
-    return dict_list
+        if partition_table_base64 is None:
+            return None
+        partition_value = base64.b64decode(partition_table_base64).decode("utf-8")
+        partition_list = json.loads(partition_value)
+        return partition_list
+    except Exception as err:
+        raise argparse.ArgumentTypeError("Invalid partition table format with base64") from err
 
 
 def main(argc, argv):
@@ -70,7 +56,7 @@ def main(argc, argv):
 
     parser.add_argument('--chip-erase', action='store_true', help='chip erase')
     parser.add_argument('--log-level', default='info', help='log level')
-    parser.add_argument('--partition-table', type=parse_string_as_dict_list, help="layout info, list")
+    parser.add_argument('--partition-table', help="layout info, list")
 
     args = parser.parse_args()
     download = args.download
@@ -87,7 +73,7 @@ def main(argc, argv):
     end_addr = args.end_address
     size = args.size
     mem_t = args.memory_type
-    partition_table = args.partition_table
+    partition_table = decoder_partition_string(args.partition_table)
 
     if mem_t is not None:
         if mem_t == "nand":
@@ -147,7 +133,7 @@ def main(argc, argv):
     images_info = None
     if download:
         # download
-        if (image is None) and (image_dir is None):
+        if (image is None) and (image_dir is None) and (partition_table is None):
             logger.error('Invalid arguments, no image or image_dir input')
             parser.print_usage()
             sys.exit(1)
@@ -172,7 +158,7 @@ def main(argc, argv):
                 start_address = int(start_addr, 16)
             except Exception as err:
                 logger.error(f"Start address is invalid: {err}")
-                sys.exit(-1)
+                sys.exit(1)
             download_img_info.start_address = start_address
 
             if memory_type == MemoryInfo.MEMORY_TYPE_NAND:
@@ -184,20 +170,20 @@ def main(argc, argv):
                     end_address = int(end_addr, 16)
                 except Exception as err:
                     logger.error(f"End address is invalid: {err}")
-                    sys.exit(-1)
+                    sys.exit(1)
             else:
                 end_address = start_address + os.path.getsize(image)
 
             download_img_info.end_address = end_address
             download_img_info.memory_type = memory_type
+            download_img_info.mandatory = True
             images_info = [download_img_info]
-
-            logger.info(f'Image info:')
-            for img_info in images_info:
-                for key, value in img_info.__repr__().items():
-                    if key == "ImageName":
-                        key = "Image"
-                    logger.info(f'> {key}: {value}')
+        elif partition_table is not None:
+            images_info = []
+            for img_info in partition_table:
+                img_json = ImageInfo(**img_info)
+                img_json.description = os.path.basename(img_json.image_name)
+                images_info.append(img_json)
         else:
             images_info = None
             if not os.path.exists(image_dir):
@@ -205,6 +191,13 @@ def main(argc, argv):
                 sys.exit(1)
 
             logger.info(f'Image dir: {image_dir}')
+        if images_info:
+            logger.info(f'Image info:')
+            for img_info in images_info:
+                for key, value in img_info.__repr__().items():
+                    if key == "ImageName":
+                        key = "Image"
+                    logger.info(f'> {key}: {value}')
     else:
         # erase
         if all([chip_erase, erase]):
@@ -219,7 +212,7 @@ def main(argc, argv):
                 start_address = int(start_addr, 16)
             except Exception as err:
                 logger.error(f"Start address is invalid: {err}")
-                sys.exit(-1)
+                sys.exit(1)
             memory_info.start_address = start_address
 
             if memory_type is None:
@@ -235,14 +228,14 @@ def main(argc, argv):
             else:
                 if size is None:
                     logger.error(f"Erase size is required")
-                    sys.exit(-1)
+                    sys.exit(1)
 
             if end_addr:
                 try:
                     end_address = int(end_addr, 16)
                 except Exception as err:
                     logger.error(f"End address is invalid: {err}")
-                    sys.exit(-1)
+                    sys.exit(1)
             else:
                 end_address = 0
 
@@ -279,22 +272,6 @@ def main(argc, argv):
         logger.error(f"Load device profile {profile} exception: {err}")
         sys.exit(1)
 
-    # check serial port
-    try:
-        # create an empty port-object, then assign port info to object, to avoid dtr/rts level changes when open/close port
-        port = serial.Serial()
-        port.port = serial_port
-        port.baudrate = profile_info.handshake_baudrate
-        port.parity = serial.PARITY_NONE
-        port.stopbits = serial.STOPBITS_ONE
-        port.bytesize = serial.EIGHTBITS
-        port.dtr = False
-        port.rts = False
-        port.open()
-    except Exception as err:
-        logger.error(f"Access serial port {serial_port} fail: {err}")
-        sys.exit(1)
-
     # load settings
     if getattr(sys, "frozen", False):  # judge if frozen as exe
         # get exe dir
@@ -320,7 +297,7 @@ def main(argc, argv):
     except Exception as err:
         logger.debug(f"save setting.json exception: {err}")
 
-    ameba = Ameba(profile_info, port, serial_baudrate, image_dir, settings, logger,
+    ameba = Ameba(profile_info, serial_port, serial_baudrate, image_dir, settings, logger,
                   download_img_info=images_info,
                   chip_erase=chip_erase,
                   memory_type=memory_type,
@@ -329,88 +306,96 @@ def main(argc, argv):
         # download
         if not ameba.check_protocol_for_download():
             ret = ErrType.SYS_PROTO
-            sys_exit(logger, port, False, ret)
+            sys_exit(logger, False, ret)
+
+        ret, is_reburn = ameba.check_supported_flash_size(memory_type)
+        if ret != ErrType.OK:
+            logger.error(f"Check supported flash size fail")
+            sys_exit(logger, False, ret)
+
+        if is_reburn:
+            ameba.__del__()
+            ameba = Ameba(profile_info, serial_port, serial_baudrate, image_dir, settings, logger,
+                          download_img_info=images_info,
+                          chip_erase=chip_erase,
+                          memory_type=memory_type,
+                          erase_info=memory_info)
 
         logger.info(f"Image download start...")  # customized, do not modify
         ret = ameba.prepare()
         if ret != ErrType.OK:
             logger.error("Download prepare fail")
-            sys_exit(logger, port, False, ret)
-
-        ret = ameba.check_supported_flash_size()
-        if ret != ErrType.OK:
-            logger.error(f"Check supported flash size fail")
-            sys_exit(logger, port, False, ret)
+            sys_exit(logger, False, ret)
 
         ret = ameba.verify_images()
         if ret != ErrType.OK:
-            sys_exit(logger, port, False, ret)
+            sys_exit(logger, False, ret)
 
         if not ameba.is_all_ram:
             ret = ameba.post_verify_images()
             if ret != ErrType.OK:
-                sys_exit(logger, port, False, ret)
+                sys_exit(logger, False, ret)
 
         if not ameba.is_all_ram:
             flash_status = FlashBPS()
             ret = ameba.check_and_process_flash_lock(flash_status)
             if ret != ErrType.OK:
                 logger.error("Download image fail")
-                sys_exit(logger, port, False, ret)
+                sys_exit(logger, False, ret)
 
         ret = ameba.download_images()
         if ret != ErrType.OK:
             logger.error("Download image fail")
-            sys_exit(logger, port, False, ret)
+            sys_exit(logger, False, ret)
 
         if (not ameba.is_all_ram) and flash_status.need_unlock:
             logger.info("Restore the flash block protection...")
             ret = ameba.lock_flash(flash_status.protection)
             if ret != ErrType.OK:
                 logger.error(f"Fail to restore the flash block protection")
-                sys_exit(logger, port, False, ret)
+                sys_exit(logger, False, ret)
     else:
         # erase
         ret = ameba.prepare()
         if ret != ErrType.OK:
             logger.error("Erase prepare fail")
-            sys_exit(logger, port, False, ret)
+            sys_exit(logger, False, ret)
 
         if chip_erase:
             ret = ameba.erase_flash_chip()
             if ret != ErrType.OK:
                 logger.error("Chip erase fail")
-                sys_exit(logger, port, False, ret)
-            sys_exit(logger, port, True, ret)
+                sys_exit(logger, False, ret)
+            sys_exit(logger, True, ret)
 
         ret = ameba.validate_config_for_erase()
         if ret != ErrType.OK:
-            sys_exit(logger, port, False, ret)
+            sys_exit(logger, False, ret)
 
         ret = ameba.post_validate_config_for_erase()
         if ret != ErrType.OK:
-            sys_exit(logger, port, False, ret)
+            sys_exit(logger, False, ret)
 
         if (not profile_info.is_ram_address(memory_info.start_address)):
             flash_status = FlashBPS()
             ret = ameba.check_and_process_flash_lock(flash_status)
             if ret != ErrType.OK:
                 logger.error("Erase fail")
-                sys_exit(logger, port, False, ret)
+                sys_exit(logger, False, ret)
 
         ret = ameba.erase_flash()
         if ret != ErrType.OK:
             logger.error(f"Erase {mem_t} failed")
-            sys_exit(logger, port, False, ret)
+            sys_exit(logger, False, ret)
 
         if (not profile_info.is_ram_address(memory_info.start_address)) and flash_status.need_unlock:
             logger.info("Restore the flash block protection...")
             ret = ameba.lock_flash(flash_status.protection)
             if ret != ErrType.OK:
                 logger.error(f"Fail to restore the flash block protection")
-                sys_exit(logger, port, False, ret)
+                sys_exit(logger, False, ret)
 
-    sys_exit(logger, port, True, ret)
+    sys_exit(logger, True, ret)
 
 
 if __name__ == "__main__":
