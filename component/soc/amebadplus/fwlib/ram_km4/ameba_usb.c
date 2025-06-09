@@ -10,6 +10,9 @@
 
 /* Private defines -----------------------------------------------------------*/
 
+#define USB_PIN_DM                     _PA_28
+#define USB_PIN_DP                     _PA_29
+
 #define USB_UTMIFS_CLK                 48000000U
 #define USB_UTMIFS_CLK_MAX_ERROR       120000U // ±0.25% as per spec
 
@@ -45,13 +48,13 @@ int usb_chip_init(void)
 	u32 pll_clk;
 	u32 usb_clk;
 
-	PAD_PullCtrl(_PA_28, GPIO_PuPd_NOPULL);
-	PAD_PullCtrl(_PA_29, GPIO_PuPd_NOPULL);
+	PAD_PullCtrl(USB_PIN_DM, GPIO_PuPd_NOPULL);
+	PAD_PullCtrl(USB_PIN_DP, GPIO_PuPd_NOPULL);
 
 	/* rename pull resistor, whose value keep unchanged with before */
-	PAD_ResistorCtrl(_PA_29, PAD_Resistor_SMALL);
-	Pinmux_Config(_PA_29, PINMUX_FUNCTION_USB);
-	Pinmux_Config(_PA_28, PINMUX_FUNCTION_USB);
+	PAD_ResistorCtrl(USB_PIN_DP, PAD_Resistor_SMALL);
+	Pinmux_Config(USB_PIN_DP, PINMUX_FUNCTION_USB);
+	Pinmux_Config(USB_PIN_DM, PINMUX_FUNCTION_USB);
 
 	reg = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKD_GRP0);
 
@@ -97,6 +100,9 @@ int usb_chip_deinit(void)
 	reg = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_USB_CTRL);
 	reg &= ~(LSYS_USB_CTRL_BIT_FS_COMP_EN | LSYS_USB_CTRL_BIT_PWC_UAHV_EN | LSYS_USB_CTRL_BIT_UA_LV2HV_EN);
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_USB_CTRL, reg);
+
+	Pinmux_Config(USB_PIN_DP, PINMUX_FUNCTION_GPIO);
+	Pinmux_Config(USB_PIN_DM, PINMUX_FUNCTION_GPIO);
 
 	return HAL_OK;
 }
