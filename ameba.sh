@@ -1,8 +1,8 @@
-PREBUILTS_VERSION=1.0.1
-PREBUILTS_WIN_URL='https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/prebuilts-v1.0.1/prebuilts-win-1.0.1.zip'
-PREBUILTS_LINUX_URL='https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/prebuilts-v1.0.1/prebuilts-linux-1.0.1.tar.gz'
-PREBUILTS_WIN_URL_ALIYUN='https://rs-wn.oss-cn-shanghai.aliyuncs.com/prebuilts-win-1.0.1.zip'
-PREBUILTS_LINUX_URL_ALIYUN='https://rs-wn.oss-cn-shanghai.aliyuncs.com/prebuilts-linux-1.0.1.tar.gz'
+PREBUILTS_VERSION=1.0.3
+PREBUILTS_WIN_URL='https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/prebuilts-v1.0.3/prebuilts-win-1.0.3.zip'
+PREBUILTS_LINUX_URL='https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/prebuilts-v1.0.3/prebuilts-linux-1.0.3.tar.gz'
+PREBUILTS_WIN_URL_ALIYUN='https://rs-wn.oss-cn-shanghai.aliyuncs.com/prebuilts-win-1.0.3.zip'
+PREBUILTS_LINUX_URL_ALIYUN='https://rs-wn.oss-cn-shanghai.aliyuncs.com/prebuilts-linux-1.0.3.tar.gz'
 
 function get_script_dir
 {
@@ -105,6 +105,11 @@ function update_prebuilts
                 7z x $PREBUILTS_DIR.zip -o$RTK_TOOLCHAIN_DIR
                 ;;
         esac
+
+        if [ $? -ne 0 ]; then
+            echo "Unzip failed. Please unzip $PREBUILTS_DIR.zip manually"
+            return 1
+        fi
 
         source "$PREBUILTS_DIR/setenv.sh"
     else

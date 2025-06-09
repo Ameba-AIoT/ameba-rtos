@@ -39,7 +39,7 @@ extern "C"
 /* stream source config */
 #define RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT 1
 #define RTK_BLE_AUDIO_RECORD_SUPPORT 0
-#define RTK_BT_LE_AUDIO_BIRDS_SING_SAMPLING_RATE RTK_BT_LE_SAMPLING_FREQUENCY_CFG_16K
+#define RTK_BT_LE_AUDIO_BIRDS_SING_SAMPLING_RATE RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K
 /* Define Audio volume.*/
 #define RTK_BT_DEFAULT_AUDIO_TRACK_LEFT_VOLUME (0.8)
 #define RTK_BT_DEFAULT_AUDIO_TRACK_RIGHT_VOLUME (0.8)
@@ -52,8 +52,8 @@ extern "C"
 /* user session qos config */
 #define RTK_BT_LE_MEDIA_AUDIO_CFG_SUPPORT (RTK_BT_LE_UNICAST_AUDIO_CFG_1_BIT | RTK_BT_LE_UNICAST_AUDIO_CFG_6_I_BIT | \
                                            RTK_BT_LE_UNICAST_AUDIO_CFG_6_II_BIT | RTK_BT_LE_UNICAST_AUDIO_CFG_4_BIT)
-/*                                   !!!!!!!!!!!!!!!!!!!!!!!!!!!RTK_BT_LE_MEDIA_AUDIO_CFG_PREFER should be associated with RTK_BT_LE_AUDIO_DEFAULT_UNICAST_CFG_TYPE                                                               */
-/*                                   !!!!!!!!!!!!!!!!!!!!!!!!!!!RTK_BT_LE_MEDIA_CODEC_CFG_PREFER should be associated with RTK_BT_LE_AUDIO_DEFAULT_CODEC_CFG_ITEM                                                               */
+/*  !!!RTK_BT_LE_MEDIA_AUDIO_CFG_PREFER should be associated with RTK_BT_LE_AUDIO_DEFAULT_UNICAST_AUDIO_CFG   */
+/*  !!!RTK_BT_LE_MEDIA_CODEC_CFG_PREFER should be associated with RTK_BT_LE_AUDIO_DEFAULT_CODEC_CFG_ITEM   */
 #if !defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) || !RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
 #define RTK_BT_LE_MEDIA_AUDIO_CFG_PREFER RTK_BT_LE_UNICAST_AUDIO_CFG_4_BIT
 #else
@@ -63,20 +63,22 @@ extern "C"
 #undef RTK_BT_LE_MEDIA_AUDIO_CFG_PREFER
 #define RTK_BT_LE_MEDIA_AUDIO_CFG_PREFER RTK_BT_LE_UNICAST_AUDIO_CFG_4_BIT
 #endif
-#define RTK_BT_LE_MEDIA_CODEC_CFG_PREFER RTK_BT_LE_CODEC_CFG_ITEM_16_2_BIT
-#define RTK_BT_LE_AUDIO_DEFAULT_UNICAST_CFG_TYPE RTK_BT_LE_UNICAST_AUDIO_CFG_4
-#define RTK_BT_LE_AUDIO_DEFAULT_CODEC_CFG_ITEM RTK_BT_LE_CODEC_CFG_ITEM_16_2
-#define RTK_BT_LE_AUDIO_DEFAULT_QOS_CFG_TYPE RTK_BT_LE_QOS_CFG_CIS_HIG_RELIABILITY
+#define RTK_BT_LE_MEDIA_CODEC_CFG_PREFER                     RTK_BT_LE_CODEC_CFG_ITEM_48_2_BIT
+#define RTK_BT_LE_AUDIO_DEFAULT_UNICAST_AUDIO_CFG            RTK_BT_LE_UNICAST_AUDIO_CFG_4
+#define RTK_BT_LE_AUDIO_DEFAULT_CODEC_CFG_ITEM               RTK_BT_LE_CODEC_CFG_ITEM_48_2
+#define RTK_BT_LE_AUDIO_DEFAULT_QOS_CFG_TYPE                 RTK_BT_LE_QOS_CFG_CIS_LOW_LATENCY
+#define RTK_BT_LE_AUDIO_DEFAULT_UNICAST_ASE_TARGET_LATENCY   RTK_BLE_AUDIO_ASCS_ASE_TARGET_LOWER_LATENCY
 /*                                              user cfg unicast end                                      */
 /*                                              user cfg le audio ISO interval config start              */
-#define RTK_BT_ISO_INTERVAL_10_MS                         0x01
-#define RTK_BT_ISO_INTERVAL_20_MS                         0x02
-#define RTK_BT_ISO_INTERVAL_30_MS                         0x03
-#define RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG           RTK_BT_ISO_INTERVAL_10_MS
+#define RTK_BT_ISO_INTERVAL_10_MS                            0x01
+#define RTK_BT_ISO_INTERVAL_20_MS                            0x02
+#define RTK_BT_ISO_INTERVAL_30_MS                            0x03
+#define RTK_BT_LE_AUDIO_CIG_ISO_INTERVAL_CONFIG              RTK_BT_ISO_INTERVAL_10_MS
+#define RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG              RTK_BT_ISO_INTERVAL_10_MS
 /*                                              user cfg le audio ISO interval config end                */
 /*                                                user cfg broadcast start                               */
 /* broadcast init parameter */
-#define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_CODEC_CFG               RTK_BT_LE_CODEC_CFG_ITEM_16_2
+#define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_CODEC_CFG               RTK_BT_LE_CODEC_CFG_ITEM_48_2
 #define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_QOS_CFG                 RTK_BT_LE_QOS_CFG_BIS_LOW_LATENCY
 #define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_STREAM_AUDIO_CONETXTS_CFG   RTK_BT_LE_AUDIO_CONTEXT_MEDIA
 /* broadcast create parameter */
@@ -92,7 +94,7 @@ extern "C"
 #define RTK_BT_LE_AUDIO_PRIMARY_ADV_INTERVAL_MIN (48)
 /** @brief  Default maximum primary advertising interval */
 #define RTK_BT_LE_AUDIO_PRIMARY_ADV_INTERVAL_MAX (48)
-/** @brief  Default minimum periodic advertising interval when device is discoverable (units of 0.625ms, 32=20ms) */
+/** @brief  Default minimum periodic advertising interval when device is discoverable (units of 1.25 ms, 80=100ms) */
 #define RTK_BT_LE_AUDIO_PA_INTERVAL_MIN (80)
 /** @brief  Default maximum periodic advertising interval */
 #define RTK_BT_LE_AUDIO_PA_INTERVAL_MAX (80)

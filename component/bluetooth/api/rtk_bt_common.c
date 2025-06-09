@@ -41,8 +41,7 @@ static uint32_t rtk_bt_le_gap_evt_direct_calling_flag =
 	(1 << RTK_BT_LE_GAP_EVT_REMOTE_CONN_UPDATE_REQ_IND);
 static uint32_t rtk_bt_le_gatts_evt_direct_calling_flag = 0;
 static uint32_t rtk_bt_le_gattc_evt_direct_calling_flag = 0;
-static uint32_t rtk_bt_le_iso_evt_direct_calling_flag =
-	(1 << RTK_BT_LE_ISO_EVT_CIG_ACCEPTOR_REQUEST_CIS_IND);
+static uint32_t rtk_bt_le_iso_evt_direct_calling_flag = 0;
 static uint32_t rtk_bt_br_avrcp_evt_direct_calling_flag =
 	(1 << RTK_BT_AVRCP_EVT_REG_VOLUME_CHANGED);
 static uint32_t rtk_bt_br_a2dp_evt_direct_calling_flag =
@@ -79,7 +78,6 @@ static void *g_evt_task_sem = NULL;
 static void *g_evt_queue = NULL;
 static void *g_evt_task_hdl = NULL;
 bool event_task_running = false;
-uint32_t event_task_msg_num = 0;
 
 rtk_bt_evt_cb_t rtk_bt_le_evt_cb_tbl[RTK_BT_LE_GP_MAX - RTK_BT_API_LE_BASE] = {0};
 rtk_bt_evt_cb_t rtk_bt_br_evt_cb_tbl[RTK_BT_BR_GP_MAX - RTK_BT_API_BR_BASE] = {0};
@@ -330,11 +328,7 @@ uint16_t rtk_bt_evt_deinit(void)
 
 	event_task_running = false;
 
-	/* Waiting rtk_bt_evt_indicate() on other tasks interrupted by deinit task to complete */
-	while (event_task_msg_num) {
-		osif_delay(5);
-	}
-
+	/* This is the last event indicated. */
 	p_evt = rtk_bt_event_create(RTK_BT_EVENT_TASK_EXIT, 0, 0);
 	if (!p_evt) {
 		return RTK_BT_ERR_NO_MEMORY;
@@ -566,7 +560,6 @@ bool rtk_bt_check_evt_cb_direct_calling(uint8_t group, uint8_t evt_code)
 uint16_t rtk_bt_evt_indicate(void *evt, uint8_t *cb_ret)
 {
 	uint16_t ret = 0;
-	uint32_t flags = 0;
 	uint32_t msg_num = 0;
 	rtk_bt_evt_t *p_evt = (rtk_bt_evt_t *)evt;
 
@@ -584,10 +577,6 @@ uint16_t rtk_bt_evt_indicate(void *evt, uint8_t *cb_ret)
 		rtk_bt_event_free(evt);
 		return 0;
 	}
-
-	flags = osif_lock();
-	event_task_msg_num++;
-	osif_unlock(flags);
 
 	/* send EXIT as last msg to kill task */
 	if (!event_task_running && p_evt->group != RTK_BT_EVENT_TASK_EXIT) {
@@ -612,10 +601,6 @@ uint16_t rtk_bt_evt_indicate(void *evt, uint8_t *cb_ret)
 	}
 
 end:
-	flags = osif_lock();
-	event_task_msg_num--;
-	osif_unlock(flags);
-
 	if (ret) {
 		rtk_bt_event_free(evt);
 	}

@@ -1040,8 +1040,8 @@ static rtk_bt_le_audio_iso_channel_info_t *bt_stack_le_audio_handle_data_path_se
 		blocks_num = p_iso_chann->codec_data.codec_frame_blocks_per_sdu;
 	}
 	p_iso_chann->frame_num = blocks_num * chnl_cnt;
-	BT_LOGA("[LEA STACK] %s iso handle 0x%x, frame_num %d, "
-			"dir %u, sample_frequency 0x%x, audio_channel_allocation 0x%08x, presentation_delay 0x%ld \r\n", __func__,
+	BT_LOGA("[LEA STACK] %s: iso handle 0x%x, frame_num %d, dir %u, sample_frequency 0x%x, audio_channel_allocation 0x%02x, presentation_delay: %ld \r\n",
+			__func__,
 			p_iso_chann->iso_conn_handle, p_iso_chann->frame_num,
 			p_iso_chann->path_direction,
 			p_iso_chann->codec_data.sample_frequency,
