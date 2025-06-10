@@ -355,8 +355,8 @@ static uint16_t bt_stack_deinit(void)
 
 	le_get_gap_param(GAP_PARAM_DEV_STATE, &state);
 	if (state.gap_init_state == GAP_INIT_STATE_STACK_READY) {
-		bt_stack_le_gap_deinit();
 		bte_deinit();
+		bt_stack_le_gap_deinit();
 	}
 	ret = bt_stack_br_gap_deinit();
 

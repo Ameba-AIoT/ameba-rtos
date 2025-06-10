@@ -30,6 +30,8 @@ rtk_bt_le_iso_priv_t bt_le_iso_priv_data = {0};
 
 extern bool rtk_bt_check_evt_cb_direct_calling(uint8_t group, uint8_t evt_code);
 
+T_APP_RESULT g_cis_request_ind_ret = APP_RESULT_PENDING;
+
 void bt_stack_le_iso_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 {
 	rtk_bt_evt_t *p_evt = NULL;
@@ -37,7 +39,7 @@ void bt_stack_le_iso_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 
 	switch (cb_type) {
 	case BT_DIRECT_MSG_ISO_DATA_IND: {
-		BT_LOGD("BT_DIRECT_MSG_ISO_DATA_IND, conn_handle 0x%x, pkt_status_flag 0x%x, pkt_seq_num 0x%x, ts_flag 0x%x, time_stamp 0x%x,iso_sdu_len 0x%x, p_buf %08x, offset %d\r\n",
+		BT_LOGD("BT_DIRECT_MSG_ISO_DATA_IND, conn_handle 0x%x, pkt_status_flag 0x%x, pkt_seq_num 0x%x, ts_flag 0x%x, time_stamp 0x%x,iso_sdu_len 0x%x, p_buf 0x%p, offset %d\r\n",
 				p_data->p_bt_direct_iso->conn_handle, p_data->p_bt_direct_iso->pkt_status_flag,
 				p_data->p_bt_direct_iso->pkt_seq_num, p_data->p_bt_direct_iso->ts_flag,
 				(unsigned int)p_data->p_bt_direct_iso->time_stamp,
@@ -547,10 +549,29 @@ T_APP_RESULT bt_stack_le_iso_cig_initiator_cb(uint8_t cig_id, uint8_t cb_type, v
 	return result;
 }
 
+static rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t convert_stack_app_result_to_cis_req_action(T_APP_RESULT app_result)
+{
+	rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t cis_req_action = RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_ACCEPT;
+	switch (app_result) {
+	case APP_RESULT_ACCEPT:
+		cis_req_action =  RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_ACCEPT;
+		break;
+	case APP_RESULT_REJECT:
+		cis_req_action = RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_REJECT;
+		break;
+	case APP_RESULT_PENDING:
+		cis_req_action = RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_PENDING;
+		break;
+	default:
+		BT_LOGE("%s: unknown app_result(0x%x)\r\n", __func__, app_result);
+		break;
+	}
+	return cis_req_action;
+}
+
 T_APP_RESULT bt_stack_le_iso_cig_acceptor_cb(uint8_t cb_type, void *p_cb_data)
 {
 	T_APP_RESULT result = APP_RESULT_SUCCESS;
-	uint8_t cb_ret = 0;
 	T_CIG_MGR_CB_DATA *p_data = (T_CIG_MGR_CB_DATA *)p_cb_data;
 	rtk_bt_cmd_t *p_cmd = NULL;
 	rtk_bt_evt_t *p_evt = NULL;
@@ -927,31 +948,25 @@ T_APP_RESULT bt_stack_le_iso_cig_acceptor_cb(uint8_t cb_type, void *p_cb_data)
 						p_data->p_cig_mgr_cis_request_ind->cis_conn_handle,
 						p_data->p_cig_mgr_cis_request_ind->cig_id,
 						p_data->p_cig_mgr_cis_request_ind->cis_id);
-		{
-			if (false == rtk_bt_check_evt_cb_direct_calling(RTK_BT_LE_GP_ISO, RTK_BT_LE_ISO_EVT_CIG_ACCEPTOR_REQUEST_CIS_IND)) {
-				BT_LOGE("%s: RTK_BT_LE_ISO_EVT_CIG_ACCEPTOR_REQUEST_CIS_IND is not direct calling!\r\n", __func__);
-				break;
-			}
-			rtk_bt_le_iso_cig_acceptor_request_cis_ind_t *p_ind = NULL;
+		if (APP_RESULT_ACCEPT == g_cis_request_ind_ret) {
+			BT_LOGD("MSG_CIG_MGR_CIS_REQUEST_IND: Host stack accepted the request!\r\n");
+		} else if (APP_RESULT_REJECT == g_cis_request_ind_ret) {
+			BT_LOGD("MSG_CIG_MGR_CIS_REQUEST_IND: Host stack rejected the request!\r\n");
+		} else if (APP_RESULT_PENDING == g_cis_request_ind_ret) {
+			BT_LOGD("MSG_CIG_MGR_CIS_REQUEST_IND: Host stack pending the request!\r\n");
+			rtk_bt_le_iso_cig_acceptor_request_cis_ind_t *request_cis_ind = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_ISO,
 										RTK_BT_LE_ISO_EVT_CIG_ACCEPTOR_REQUEST_CIS_IND,
 										sizeof(rtk_bt_le_iso_cig_acceptor_request_cis_ind_t));
-			if (!p_evt) {
-				BT_LOGE("%s rtk_bt_event_create fail\r\n", __func__);
-				break;
-			}
-			p_ind = (rtk_bt_le_iso_cig_acceptor_request_cis_ind_t *)p_evt->data;
-			p_ind->cis_conn_handle = p_data->p_cig_mgr_cis_request_ind->cis_conn_handle;
-			p_ind->conn_handle = le_get_conn_handle(p_data->p_cig_mgr_cis_request_ind->conn_id);
-			p_ind->cig_id = p_data->p_cig_mgr_cis_request_ind->cig_id;
-			p_ind->cis_id = p_data->p_cig_mgr_cis_request_ind->cis_id;
-			rtk_bt_evt_indicate(p_evt, &cb_ret);
-			if (cb_ret == RTK_BT_EVT_CB_OK) {
-				result = APP_RESULT_ACCEPT;
-			} else {
-				result = APP_RESULT_REJECT;
-			}
+			request_cis_ind = (rtk_bt_le_iso_cig_acceptor_request_cis_ind_t *)p_evt->data;
+			request_cis_ind->cis_conn_handle = p_data->p_cig_mgr_cis_request_ind->cis_conn_handle;
+			request_cis_ind->conn_handle = le_get_conn_handle(p_data->p_cig_mgr_cis_request_ind->conn_id);
+			request_cis_ind->cig_id = p_data->p_cig_mgr_cis_request_ind->cig_id;
+			request_cis_ind->cis_id = p_data->p_cig_mgr_cis_request_ind->cis_id;
+			request_cis_ind->cis_req_action = convert_stack_app_result_to_cis_req_action(g_cis_request_ind_ret);
+			rtk_bt_evt_indicate(p_evt, NULL);
 		}
+		result = g_cis_request_ind_ret;
 	}
 	break;
 
@@ -1855,6 +1870,88 @@ static uint16_t bt_stack_le_iso_cig_initiator_remove_cig(void *data)
 	return RTK_BT_OK;
 }
 
+static uint16_t bt_stack_le_iso_cig_acceptor_accept_cis(void *data)
+{
+	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
+	uint16_t cis_conn_handle = 0;
+
+	if (!data) {
+		BT_LOGE("%s fail: param error\r\n", __func__);
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	cis_conn_handle = *(uint16_t *)data;
+
+	cause = cig_mgr_acceptor_accept_cis(cis_conn_handle);
+	if (cause) {
+		BT_LOGE("%s cig_mgr_acceptor_accept_cis fail (cause = 0x%x,cis_conn_handle = 0x%x)\r\n", __func__, cause, cis_conn_handle);
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return RTK_BT_OK;
+}
+
+static uint16_t bt_stack_le_iso_cig_acceptor_reject_cis(void *data)
+{
+	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
+	uint16_t cis_conn_handle = 0;
+	uint8_t reason = 0;
+	rtk_bt_le_iso_cig_acceptor_reject_cis_param_t *param = NULL;
+
+	if (!data) {
+		BT_LOGE("%s fail: param error\r\n", __func__);
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	param = (rtk_bt_le_iso_cig_acceptor_reject_cis_param_t *)data;
+	cis_conn_handle = param->cis_conn_handle;
+	reason = param->reason;
+
+	cause = cig_mgr_acceptor_reject_cis(cis_conn_handle, reason);
+	if (cause) {
+		BT_LOGE("%s cig_mgr_acceptor_reject_cis fail (cause = 0x%x,cis_conn_handle = 0x%x)\r\n", __func__, cause, cis_conn_handle);
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return RTK_BT_OK;
+}
+
+static uint16_t  bt_stack_le_iso_cig_acceptor_config_cis_req_action(void *data)
+{
+	rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t action = (rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t)0;
+
+	if (!data) {
+		BT_LOGE("%s fail: param error\r\n", __func__);
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	action = *(rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t *)data;
+	switch (action) {
+	case RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_ACCEPT:
+		g_cis_request_ind_ret = APP_RESULT_ACCEPT;
+		break;
+	case RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_REJECT:
+		g_cis_request_ind_ret = APP_RESULT_REJECT;
+		break;
+	case RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_PENDING:
+		g_cis_request_ind_ret = APP_RESULT_PENDING;
+		break;
+	default:
+		BT_LOGE("%s error action value (0x%x)\r\n", __func__, action);
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+	return RTK_BT_OK;
+}
+
+static uint16_t bt_stack_le_iso_cig_acceptor_register_callback(void *data)
+{
+	UNUSED(data);
+
+	cig_mgr_reg_acceptor_cb(bt_stack_le_iso_cig_acceptor_cb); //the API return void
+
+	return RTK_BT_OK;
+}
+
 static uint16_t bt_stack_le_iso_big_broadcaster_create(void *data)
 {
 	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
@@ -2367,6 +2464,26 @@ uint16_t bt_stack_le_iso_act_handle(rtk_bt_cmd_t *p_cmd)
 		bt_stack_pending_cmd_insert(p_cmd);
 		ret = bt_stack_le_iso_cig_initiator_remove_cig(p_cmd->param);
 		goto async_handle;
+	case RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_ACCEPT_CIS:
+		BT_LOGD("RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_ACCEPT_CIS \r\n");
+		p_cmd->user_data = MSG_CIG_MGR_ACCEPT_CIS_INFO;
+		bt_stack_pending_cmd_insert(p_cmd);
+		ret = bt_stack_le_iso_cig_acceptor_accept_cis(p_cmd->param);
+		goto async_handle;
+	case RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_REJECT_CIS:
+		BT_LOGD("RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_REJECT_CIS \r\n");
+		p_cmd->user_data = MSG_CIG_MGR_REJECT_CIS_INFO;
+		bt_stack_pending_cmd_insert(p_cmd);
+		ret = bt_stack_le_iso_cig_acceptor_reject_cis(p_cmd->param);
+		goto async_handle;
+	case RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_CONFIG_CIS_REQ_ACTION:
+		BT_LOGD("RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_CONFIG_CIS_REQ_ACTION \r\n");
+		ret = bt_stack_le_iso_cig_acceptor_config_cis_req_action(p_cmd->param);
+		break;
+	case RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_REGISTER_CALLBACK:
+		BT_LOGD("RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_REGISTER_CALLBACK \r\n");
+		ret = bt_stack_le_iso_cig_acceptor_register_callback(p_cmd->param);
+		break;
 	case RTK_BT_LE_ISO_ACT_BIG_BROADCASTER_CREATE:
 		BT_LOGD("RTK_BT_LE_ISO_ACT_BIG_BROADCASTER_CREATE \r\n");
 		p_cmd->user_data = MSG_BIG_MGR_ISOC_BROADCAST_STATE_CHANGE_INFO;
@@ -2527,7 +2644,7 @@ void bt_stack_le_iso_deinit(void)
 {
 	BT_LOGA("[ISO]bt_stack_le_iso_deinit\n");
 	if (!bt_le_iso_priv_data.init_flag) {
-		BT_LOGE("%s bt le iso stack is already disable \r\n");
+		BT_LOGE("[ISO]bt le iso stack is already disable \r\n");
 		return;
 	}
 	gap_register_direct_cb(NULL);

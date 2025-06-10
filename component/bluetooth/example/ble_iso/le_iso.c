@@ -937,8 +937,12 @@ static rtk_bt_evt_cb_ret_t app_bt_le_iso_cb(uint8_t evt_code, void *data, uint32
 
 	case RTK_BT_LE_ISO_EVT_CIG_ACCEPTOR_REQUEST_CIS_IND: {
 		rtk_bt_le_iso_cig_acceptor_request_cis_ind_t *param = (rtk_bt_le_iso_cig_acceptor_request_cis_ind_t *)data;
-		BT_LOGA("[APP] rtk_bt_le_iso_cig_cis_request indicate(conn_handle 0x%x, cis_conn_handle 0x%x, cig_id 0x%x, cis_id 0x%x)\r\n",
-				param->conn_handle, param->cis_conn_handle, param->cig_id, param->cis_id);
+		BT_LOGA("[APP] rtk_bt_le_iso_cig_cis_request indicate(conn_handle 0x%x, cis_conn_handle 0x%x, cig_id 0x%x, cis_id 0x%x, cis_req_action 0x%x)\r\n",
+				param->conn_handle, param->cis_conn_handle, param->cig_id, param->cis_id, param->cis_req_action);
+		if (param->cis_req_action == RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_PENDING) {
+			rtk_bt_le_iso_cig_acceptor_accept_cis(param->cis_conn_handle);//accept cis request
+			//rtk_bt_le_iso_cig_acceptor_reject_cis(param->cis_conn_handle,HCI_SUCCESS);//if you want to reject cis request
+		}
 		break;
 	}
 
@@ -1188,6 +1192,7 @@ int bt_le_iso_main(uint8_t role, uint8_t enable)
 			BT_APP_PROCESS(rtk_bt_le_gap_set_scan_rsp_data(bt_le_iso_demo_cis_acceptor_scan_rsp_data, sizeof(bt_le_iso_demo_cis_acceptor_scan_rsp_data)));
 			BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&bt_le_iso_demo_cis_acceptor_adv_param));
 #endif
+			BT_APP_PROCESS(rtk_bt_le_iso_cig_acceptor_config_cis_req_action(RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_ACCEPT));
 			iso_demo_role = role;
 			demo_init_flag = true;
 			break;

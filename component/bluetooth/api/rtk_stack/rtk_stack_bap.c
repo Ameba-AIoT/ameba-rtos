@@ -235,9 +235,12 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 			BT_LOGA("[BAP] %s: add device in group OK (group_handle=%08x, device_handle=%08x) \r\n", __func__, group_handle, device_handle);
 			/* get prefer codec cfg and prefer qos */
 			if (p_group_info) {
-				p_group_info->lea_unicast.cfg_type = RTK_BT_LE_AUDIO_DEFAULT_UNICAST_CFG_TYPE;
+				p_group_info->lea_unicast.audio_cfg_type = RTK_BT_LE_AUDIO_DEFAULT_UNICAST_AUDIO_CFG;
 				p_group_info->lea_unicast.codec_cfg_item = RTK_BT_LE_AUDIO_DEFAULT_CODEC_CFG_ITEM;
 				p_group_info->lea_unicast.qos_cfg_type = RTK_BT_LE_AUDIO_DEFAULT_QOS_CFG_TYPE;
+#if defined(RTK_BT_LE_AUDIO_CIG_ISO_INTERVAL_CONFIG) && (RTK_BT_LE_AUDIO_CIG_ISO_INTERVAL_CONFIG == RTK_BT_ISO_INTERVAL_20_MS)
+				p_group_info->lea_unicast.qos_cfg_type = RTK_BT_LE_QOS_CFG_CIS_HIG_RELIABILITY;
+#endif
 				if (false == qos_preferred_cfg_get((T_CODEC_CFG_ITEM)p_group_info->lea_unicast.codec_cfg_item,
 												   (T_QOS_CFG_TYPE)p_group_info->lea_unicast.qos_cfg_type,
 												   (T_QOS_CFG_PREFERRED *)&p_group_info->lea_unicast.preferred_qos)) {
@@ -3000,7 +3003,10 @@ void bt_stack_le_audio_group_cb(T_AUDIO_GROUP_MSG msg, T_BLE_AUDIO_GROUP_HANDLE 
 				for (int j = 0; j < session_info.dev_info[i].ase_num; j++) {
 					if (bap_unicast_audio_get_ase_qos(p_data->handle, session_info.dev_info[i].dev_handle, session_info.dev_info[i].ase_info[j].ase_id,
 													  &ase_qos_cfg)) {
-						BT_LOGA("%s: ase qos: phy 0x%x, max_sdu %d, retransmission_number %d \r\n", __func__,
+#if defined(RTK_BT_LE_AUDIO_CIG_ISO_INTERVAL_CONFIG) && (RTK_BT_LE_AUDIO_CIG_ISO_INTERVAL_CONFIG == RTK_BT_ISO_INTERVAL_20_MS)
+						ase_qos_cfg.retransmission_number = 5;
+#endif
+						BT_LOGA("%s: ase qos: phy 0x%x, max_sdu: %d, retransmission_number: %d \r\n", __func__,
 								ase_qos_cfg.phy,
 								ase_qos_cfg.max_sdu,
 								ase_qos_cfg.retransmission_number);
@@ -3339,14 +3345,14 @@ static bool bt_stack_le_audio_select_media_prefer_codec(rtk_bt_le_audio_group_in
 		}
 		while (cfg_mask) {
 			if (cfg_mask & 0x01) {
-				p_group_info->lea_unicast.cfg_type = (rtk_bt_le_audio_unicast_cfg_type_t)idx;
+				p_group_info->lea_unicast.audio_cfg_type = (rtk_bt_le_audio_unicast_cfg_type_t)idx;
 				break;
 			}
 			cfg_mask >>= 1;
 			idx++;
 		}
-		if (p_group_info->lea_unicast.cfg_type == (rtk_bt_le_audio_unicast_cfg_type_t)UNICAST_AUDIO_CFG_4 || \
-			p_group_info->lea_unicast.cfg_type == (rtk_bt_le_audio_unicast_cfg_type_t)UNICAST_AUDIO_CFG_5) {
+		if (p_group_info->lea_unicast.audio_cfg_type == (rtk_bt_le_audio_unicast_cfg_type_t)UNICAST_AUDIO_CFG_4 || \
+			p_group_info->lea_unicast.audio_cfg_type == (rtk_bt_le_audio_unicast_cfg_type_t)UNICAST_AUDIO_CFG_5) {
 			channel_count = 2;
 		}
 		sup_snk_mask = bap_pacs_get_lc3_snk_table_msk(p_group_info->lea_unicast.ready_conn_handle,
@@ -3369,9 +3375,9 @@ static bool bt_stack_le_audio_select_media_prefer_codec(rtk_bt_le_audio_group_in
 				if (sup_snk_mask & 0x01) {
 					if (codec_preferred_cfg_get((T_CODEC_CFG_ITEM)idx, &cfg)) {
 						p_group_info->lea_unicast.codec_cfg_item = (rtk_bt_le_audio_codec_cfg_item_t)idx;
-						BT_LOGA("%s: codec_preferred_cfg_get: cfg_type %d, codec_cfg_item %d, frame_duration 0x%02x, sample_frequency 0x%02x, codec_frame_blocks_per_sdu 0x%02x, octets_per_codec_frame 0x%04x, audio_channel_allocation 0x%08x\r\n",
+						BT_LOGA("%s: codec_preferred_cfg_get: audio_cfg_type: %d, codec_cfg_item: %d, frame_duration: 0x%02x, sample_frequency: 0x%02x, codec_frame_blocks_per_sdu: %d, octets_per_codec_frame: %d, audio_channel_allocation: 0x%08x\r\n",
 								__func__,
-								p_group_info->lea_unicast.cfg_type, p_group_info->lea_unicast.codec_cfg_item, cfg.frame_duration, cfg.sample_frequency, cfg.codec_frame_blocks_per_sdu,
+								p_group_info->lea_unicast.audio_cfg_type, p_group_info->lea_unicast.codec_cfg_item, cfg.frame_duration, cfg.sample_frequency, cfg.codec_frame_blocks_per_sdu,
 								cfg.octets_per_codec_frame, cfg.audio_channel_allocation);
 						return true;
 					}
@@ -3537,14 +3543,17 @@ static uint16_t bt_stack_le_audio_client_start(void *data)
 #endif
 		p_group_info->lea_unicast.bap_state = (rtk_bt_le_audio_stream_state_t)AUDIO_STREAM_STATE_IDLE;
 		p_group_info->lea_unicast.contexts_type = p_config->sink_context;
-		p_group_info->lea_unicast.target_latency = (rtk_bt_le_audio_ascs_ase_target_latency_t)ASE_TARGET_HIGHER_RELIABILITY;
+		p_group_info->lea_unicast.target_latency = RTK_BT_LE_AUDIO_DEFAULT_UNICAST_ASE_TARGET_LATENCY;
+#if defined(RTK_BT_LE_AUDIO_CIG_ISO_INTERVAL_CONFIG) && (RTK_BT_LE_AUDIO_CIG_ISO_INTERVAL_CONFIG == RTK_BT_ISO_INTERVAL_20_MS)
+		p_group_info->lea_unicast.target_latency = RTK_BLE_AUDIO_ASCS_ASE_TARGET_HIGHER_RELIABILITY;
+#endif
 	}
 	if (p_group_info->lea_unicast.bap_state == (rtk_bt_le_audio_stream_state_t)AUDIO_STREAM_STATE_IDLE) {
 		if (!bt_stack_le_audio_select_media_prefer_codec(p_group_info, p_config->sink_context)) {
 			BT_LOGE("%s: select media prefer codec fail \r\n", __func__);
 			return RTK_BT_FAIL;
 		}
-		if (!bap_unicast_audio_cfg(p_group_info->lea_unicast.session_handle, (T_UNICAST_AUDIO_CFG_TYPE)p_group_info->lea_unicast.cfg_type,
+		if (!bap_unicast_audio_cfg(p_group_info->lea_unicast.session_handle, (T_UNICAST_AUDIO_CFG_TYPE)p_group_info->lea_unicast.audio_cfg_type,
 								   p_group_info->lea_unicast.dev_num, p_group_info->lea_unicast.dev_tbl)) {
 			BT_LOGE("%s: bap unicast audio cfg fail \r\n", __func__);
 			return RTK_BT_FAIL;
