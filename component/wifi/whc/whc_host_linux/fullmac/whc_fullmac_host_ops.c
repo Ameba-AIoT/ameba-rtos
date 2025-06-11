@@ -669,6 +669,9 @@ static int whc_fullmac_host_connect_ops(struct wiphy *wiphy, struct net_device *
 
 	if (sme->crypto.akm_suites[0] ==  WIFI_AKM_SUITE_OWE) {
 		connect_param->security_type = 0;
+		/* OWE don't need the key from host, RSWLANDIOT-11824 */
+		connect_param->password = NULL;
+		connect_param->password_len = 0;
 		target_ptr = (struct element *)cfg80211_find_ext_elem(WLAN_EID_EXT_OWE_DH_PARAM, sme->ie, sme->ie_len);
 		if (target_ptr) {
 			memcpy(&owe_info, target_ptr->data + 1, target_ptr->datalen - 1);
@@ -681,13 +684,16 @@ static int whc_fullmac_host_connect_ops(struct wiphy *wiphy, struct net_device *
 				return -EINVAL;
 			}
 		}
-	}
-
-	if (sme->key_len) {
-		memcpy(ptr, (u8 *)sme->key, sme->key_len);
-		connect_param->password = (unsigned char *)ptr;
 	} else {
-		connect_param->password = NULL;
+		/* no OWE, set the key from sme->key, RSWLANDIOT-11824 */
+		if (sme->key_len) {
+			memcpy(ptr, (u8 *)sme->key, sme->key_len);
+			connect_param->password = (unsigned char *)ptr;
+		} else {
+			connect_param->password = NULL;
+		}
+		connect_param->password_len = sme->key_len;
+		connect_param->key_id = sme->key_idx;
 	}
 
 	if (sme->crypto.akm_suites[0] ==  WIFI_AKM_SUITE_SAE) {
@@ -697,8 +703,6 @@ static int whc_fullmac_host_connect_ops(struct wiphy *wiphy, struct net_device *
 		whc_fullmac_host_set_wpa_mode(RTW_WPA3_ONLY_MODE);
 	}
 
-	connect_param->password_len = sme->key_len;
-	connect_param->key_id = sme->key_idx;
 	/* set channel to let low level do scan on specific channel */
 	connect_param->channel = rtw_freq2ch(sme->channel->center_freq);
 	connect_param->pscan_option = 0x2;

@@ -615,7 +615,7 @@ static T_APP_RESULT bt_stack_le_gap_service_callback(T_SERVER_ID service_id, voi
 			}
 
 			srv_change = (rtk_bt_gatts_service_changed_cccd_ind_t *)p_evt->data;
-#if defined(F_BT_GATT_SERVER_EXT_API) && F_BT_GATT_SERVER_EXT_API
+#if (defined(F_BT_GATT_SERVER_EXT_API) && F_BT_GATT_SERVER_EXT_API) && (defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB)
 			srv_change->conn_handle = p_gap_data->conn_handle;
 			srv_change->cid = p_gap_data->cid;
 #else
