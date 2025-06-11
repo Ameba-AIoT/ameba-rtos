@@ -92,15 +92,17 @@ void whc_fullmac_host_wifi_on(void)
 int whc_fullmac_host_set_mac_addr(u32 wlan_idx, u8 *addr)
 {
 	dma_addr_t phy_addr;
+	u8 *mac_addr = NULL;
 	u32 param_buf[3];
 	int ret = 0;
 	struct device *pdev = global_idev.ipc_dev;
 
-	phy_addr = dma_map_single(pdev, addr, ETH_ALEN, DMA_TO_DEVICE);
-	if (dma_mapping_error(pdev, phy_addr)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		return -1;
+	mac_addr = rtw_malloc(ETH_ALEN, &phy_addr);
+	if (mac_addr == NULL) {
+		dev_err(global_idev.fullmac_dev, "%s: malloc error!\n", __func__);
+		return -ENOMEM;
 	}
+	memcpy(mac_addr, addr, ETH_ALEN);
 
 	param_buf[0] = wlan_idx;
 	param_buf[1] = (u32)phy_addr;
@@ -108,7 +110,7 @@ int whc_fullmac_host_set_mac_addr(u32 wlan_idx, u8 *addr)
 	param_buf[2] = 0;
 
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SET_MAC_ADDR, param_buf, 3);
-	dma_unmap_single(pdev, phy_addr, ETH_ALEN, DMA_TO_DEVICE);
+	rtw_mfree(ETH_ALEN, mac_addr, phy_addr);
 
 	return ret;
 }
@@ -898,17 +900,19 @@ int whc_fullmac_host_set_owe_param(struct rtw_owe_param_t *owe_param)
 	int ret = 0;
 	u32 param_buf[1];
 	dma_addr_t dma_data = 0;
+	struct rtw_owe_param_t *powe = NULL;
 	struct device *pdev = global_idev.ipc_dev;
 
-	dma_data = dma_map_single(pdev, owe_param, sizeof(struct rtw_owe_param_t), DMA_TO_DEVICE);
-	if (dma_mapping_error(pdev, dma_data)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		return -1;
+	powe = rtw_malloc(sizeof(struct rtw_owe_param_t), &dma_data);
+	if (powe == NULL) {
+		dev_err(global_idev.fullmac_dev, "%s: malloc error!\n", __func__);
+		return -ENOMEM;
 	}
+	memcpy(powe, owe_param, sizeof(struct rtw_owe_param_t));
 	param_buf[0] = (u32)dma_data;
 
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SET_OWE_PARAM, param_buf, 1);
-	dma_unmap_single(pdev, dma_data, sizeof(struct rtw_owe_param_t), DMA_TO_DEVICE);
+	rtw_mfree(sizeof(struct rtw_owe_param_t), powe, dma_data);
 	return ret;
 }
 

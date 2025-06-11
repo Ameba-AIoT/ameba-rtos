@@ -111,6 +111,42 @@ uint16_t rtk_bt_le_iso_cig_initiator_remove_cig(uint8_t cig_id)
 						   (void *)&cig_id, sizeof(uint8_t));
 }
 
+uint16_t rtk_bt_le_iso_cig_acceptor_accept_cis(uint16_t cis_conn_handle)
+{
+	if (!cis_conn_handle) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	return rtk_bt_send_cmd(RTK_BT_LE_GP_ISO, RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_ACCEPT_CIS,
+						   (void *)&cis_conn_handle, sizeof(uint16_t));
+}
+
+uint16_t rtk_bt_le_iso_cig_acceptor_reject_cis(uint16_t cis_conn_handle, uint8_t reason)
+{
+	rtk_bt_le_iso_cig_acceptor_reject_cis_param_t param = {0};
+
+	if (!cis_conn_handle) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	param.cis_conn_handle = cis_conn_handle;
+	param.reason = reason;
+
+	return rtk_bt_send_cmd(RTK_BT_LE_GP_ISO, RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_REJECT_CIS,
+						   (void *)&param, sizeof(rtk_bt_le_iso_cig_acceptor_reject_cis_param_t));
+}
+
+uint16_t rtk_bt_le_iso_cig_acceptor_config_cis_req_action(rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t cis_req_action)
+{
+	return rtk_bt_send_cmd(RTK_BT_LE_GP_ISO, RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_CONFIG_CIS_REQ_ACTION,
+						   (void *)&cis_req_action, sizeof(rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t));
+}
+
+uint16_t rtk_bt_le_iso_cig_acceptor_register_callback(void)
+{
+	return rtk_bt_send_cmd(RTK_BT_LE_GP_ISO, RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_REGISTER_CALLBACK, NULL, NULL);
+}
+
 uint16_t rtk_bt_le_iso_cig_setup_path(rtk_bt_le_iso_setup_path_param_t *param)
 {
 	if (!param || !param->iso_conn_handle) {

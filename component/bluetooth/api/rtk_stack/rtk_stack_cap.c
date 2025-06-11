@@ -377,9 +377,12 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 			p_group_info = bt_stack_le_audio_add_group(group_handle, 0);
 			/* get prefer codec cfg and prefer qos */
 			if (p_group_info) {
-				p_group_info->lea_unicast.cfg_type = RTK_BT_LE_AUDIO_DEFAULT_UNICAST_CFG_TYPE;
+				p_group_info->lea_unicast.audio_cfg_type = RTK_BT_LE_AUDIO_DEFAULT_UNICAST_AUDIO_CFG;
 				p_group_info->lea_unicast.codec_cfg_item = RTK_BT_LE_AUDIO_DEFAULT_CODEC_CFG_ITEM;
 				p_group_info->lea_unicast.qos_cfg_type = RTK_BT_LE_AUDIO_DEFAULT_QOS_CFG_TYPE;
+#if defined(RTK_BT_LE_AUDIO_CIG_ISO_INTERVAL_CONFIG) && (RTK_BT_LE_AUDIO_CIG_ISO_INTERVAL_CONFIG == RTK_BT_ISO_INTERVAL_20_MS)
+				p_group_info->lea_unicast.qos_cfg_type = RTK_BT_LE_QOS_CFG_CIS_HIG_RELIABILITY;
+#endif
 				if (false == qos_preferred_cfg_get((T_CODEC_CFG_ITEM)p_group_info->lea_unicast.codec_cfg_item,
 												   (T_QOS_CFG_TYPE)p_group_info->lea_unicast.qos_cfg_type,
 												   (T_QOS_CFG_PREFERRED *)&p_group_info->lea_unicast.preferred_qos)) {
@@ -449,9 +452,12 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 				p_group_info = bt_stack_le_audio_add_group(group_handle, p_read_result->mem_info.set_mem_size);
 				/* get prefer codec cfg and prefer qos */
 				if (p_group_info) {
-					p_group_info->lea_unicast.cfg_type = RTK_BT_LE_AUDIO_DEFAULT_UNICAST_CFG_TYPE;
+					p_group_info->lea_unicast.audio_cfg_type = RTK_BT_LE_AUDIO_DEFAULT_UNICAST_AUDIO_CFG;
 					p_group_info->lea_unicast.codec_cfg_item = RTK_BT_LE_AUDIO_DEFAULT_CODEC_CFG_ITEM;
 					p_group_info->lea_unicast.qos_cfg_type = RTK_BT_LE_AUDIO_DEFAULT_QOS_CFG_TYPE;
+#if defined(RTK_BT_LE_AUDIO_CIG_ISO_INTERVAL_CONFIG) && (RTK_BT_LE_AUDIO_CIG_ISO_INTERVAL_CONFIG == RTK_BT_ISO_INTERVAL_20_MS)
+					p_group_info->lea_unicast.qos_cfg_type = RTK_BT_LE_QOS_CFG_CIS_HIG_RELIABILITY;
+#endif
 					if (false == qos_preferred_cfg_get((T_CODEC_CFG_ITEM)p_group_info->lea_unicast.codec_cfg_item,
 													   (T_QOS_CFG_TYPE)p_group_info->lea_unicast.qos_cfg_type,
 													   (T_QOS_CFG_PREFERRED *)&p_group_info->lea_unicast.preferred_qos)) {

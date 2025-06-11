@@ -54,10 +54,11 @@ void whc_sdio_host_send_data(u8 *buf, u32 len, struct sk_buff *pskb)
 
 	mutex_lock(&priv->lock);
 
-	priv->tx_avail_int_triggered = 0;
-
 	// check if hardware tx fifo page is enough
 	while (priv->SdioTxBDFreeNum < 1) {
+		/* set 0 after query num < 1 */
+		/* jira: https://jira.realtek.com/browse/RSWLANDIOT-11649 */
+		priv->tx_avail_int_triggered = 0;
 #ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
 		if (try_cnt ++ > 0) {
 			if (!wait_event_timeout(priv->txbd_wq, priv->tx_avail_int_triggered == 1, msecs_to_jiffies(1000))) {
