@@ -1,5 +1,6 @@
 #Note: Previously defined variables cannot be used directly in this file
 #unless passed through -D
+cmake_minimum_required(VERSION 3.20.0)
 include(${c_CMAKE_FILES_DIR}/axf2bin.cmake)
 include(${c_CMAKE_FILES_DIR}/global_define.cmake)
 include(${c_CMAKE_FILES_DIR}/utility.cmake)

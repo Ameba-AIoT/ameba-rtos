@@ -19,7 +19,11 @@ static u8 rtw_sdio_get_tx_max_size(struct whc_sdio *priv)
 u8 rtw_sdio_query_txbd_status(struct whc_sdio *priv)
 {
 #ifdef CALCULATE_FREE_TXBD
-	u16 wptr;
+	/* tx bd may overflow if host run too fast */
+	/* in 6955, wifi dma have higher priority than other dma channel,
+	host wptr update when recvice ack from ahb bus, and maybe blocked
+	due to wifi DMA. keep wptr in host and only sync with hw when init */
+	u16 wptr = priv->txbd_wptr;
 	u16 rptr;
 
 	if (priv->txbd_size == 0) {
@@ -27,7 +31,6 @@ u8 rtw_sdio_query_txbd_status(struct whc_sdio *priv)
 		dev_dbg(&priv->func->dev, "txbd_size: %x\n", priv->txbd_size);
 	}
 
-	wptr = rtw_read8(priv, SPDIO_REG_TXBD_WPTR);
 	rptr = rtw_read8(priv, SPDIO_REG_TXBD_RPTR);
 
 	if (wptr >= rptr) {
@@ -41,7 +44,11 @@ u8 rtw_sdio_query_txbd_status(struct whc_sdio *priv)
 #ifdef GREEN2_WA
 	/* WA GREEN2 Bug, SDIO_REG_FREE_TXBD_NUM show 0 but >0 actually, and no tx bd aval int at last.
 	   JIRA: https://jira.realtek.com/browse/PRINTER-2628 */
-	u16 wptr;
+	/* tx bd may overflow if host run too fast */
+	/* in 6955, wifi dma have higher priority than other dma channel,
+	host wptr update when recvice ack from ahb bus, and maybe blocked
+	due to wifi DMA. keep wptr in host and only sync with hw when init */
+	u16 wptr = priv->txbd_wptr;
 	u16 rptr;
 
 	if (priv->txbd_size == 0) {
@@ -49,7 +56,6 @@ u8 rtw_sdio_query_txbd_status(struct whc_sdio *priv)
 		dev_dbg(&priv->func->dev, "txbd_size: %x\n", priv->txbd_size);
 	}
 
-	wptr = rtw_read8(priv, SPDIO_REG_TXBD_WPTR);
 	rptr = rtw_read8(priv, SPDIO_REG_TXBD_RPTR);
 
 	if (wptr >= rptr) {
@@ -325,6 +331,7 @@ u32 rtw_sdio_init(struct whc_sdio *priv)
 		return false;
 	}
 #endif
+	priv->txbd_wptr = (u16)rtw_read8(priv, SPDIO_REG_TXBD_WPTR);
 	rtw_sdio_query_txbd_status(priv);
 
 	if (rtw_sdio_get_tx_max_size(priv) == false) {

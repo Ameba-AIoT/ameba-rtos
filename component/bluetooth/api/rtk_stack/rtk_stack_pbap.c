@@ -38,11 +38,13 @@ static void app_pbap_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 
 	case BT_EVENT_SDP_ATTR_INFO: {
 		T_BT_SDP_ATTR_INFO *sdp_info = &param->sdp_attr_info.info;
-		BT_LOGA("app_pbap_bt_cback: BT_EVENT_SDP_ATTR_INFO \r\n");
-		if (bt_pbap_connect_req(param->sdp_attr_info.bd_addr, sdp_info->server_channel, sdp_info->supported_feat)) {
-			BT_LOGA("bt_pbap_connect_req: SUCCESS \r\n");
-		} else {
-			BT_LOGE("bt_pbap_connect_req: FAIL \r\n");
+		if (sdp_info->srv_class_uuid_type == BT_SDP_UUID16 && sdp_info->srv_class_uuid_data.uuid_16 == UUID_PBAP_PSE) {
+			BT_LOGA("app_pbap_bt_cback: BT_EVENT_SDP_ATTR_INFO \r\n");
+			if (bt_pbap_connect_req(param->sdp_attr_info.bd_addr, sdp_info->server_channel, sdp_info->supported_feat)) {
+				BT_LOGA("bt_pbap_connect_req: SUCCESS \r\n");
+			} else {
+				BT_LOGE("bt_pbap_connect_req: FAIL \r\n");
+			}
 		}
 	}
 	break;

@@ -12,7 +12,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # You may use if-else condition to set or update predefined variable above
 set(release_target_name)
 
-if(CONFIG_AS_INIC_AP AND NOT CONFIG_WHC_INTF_SPI)
+if(CONFIG_AS_INIC_AP AND CONFIG_WHC_INTF_IPC)
     if(CONFIG_MP_INCLUDED)
         if(CONFIG_MP_SHRINK)
             set(release_target_name wifi_whc_ap_mp_shrink)
@@ -24,7 +24,7 @@ if(CONFIG_AS_INIC_AP AND NOT CONFIG_WHC_INTF_SPI)
     endif()
 endif()
 
-if(CONFIG_WLAN AND CONFIG_AS_INIC_AP AND NOT CONFIG_WHC_INTF_SPI)
+if(CONFIG_WLAN AND CONFIG_AS_INIC_AP AND CONFIG_WHC_INTF_IPC)
     ameba_list_append(public_libraries
         ${c_SDK_LIB_APPLICATION_DIR}/lib_${release_target_name}.a
     )

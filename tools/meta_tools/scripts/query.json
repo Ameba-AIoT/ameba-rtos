@@ -5,12 +5,15 @@
         "os": "FreeRTOS",
         "vcs": "repo",
         "meta": "loong.py",
-        "debuggerArgs":  [
-            "-iex","set rtos-aware 0",
-            "-iex","maintenance set target-async on",
-            "-iex","set debug remote 1"
+        "debuggerArgs": [
+            "-iex",
+            "set rtos-aware 0",
+            "-iex",
+            "maintenance set target-async on",
+            "-iex",
+            "set debug remote 1"
         ],
-	"overrideLaunchCommands": [
+        "overrideLaunchCommands": [
             "mem 0xa5a5a5a4 0xa5a5a5a6 none",
             "set mem inaccessible-by-default off",
             "monitor reset 0",
@@ -22,7 +25,7 @@
     },
     "apps": {
         "include": [
-	    "component/example"
+            "component/example"
         ]
     },
     "devices": {
@@ -58,5 +61,11 @@
             "toolchain": "asdk-10.3.1",
             "jlinkScript": "utils/jlink_script/AP1_KM4.JLinkScript"
         }
-    }
+    },
+    "compatibilityInfo": [
+        {
+            "extensionId": "realtek.real-connect",
+            "minVersion": "1.0.0"
+        }
+    ]
 }

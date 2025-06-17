@@ -141,8 +141,8 @@ typedef struct {
 typedef struct {
 	u8 sdioh_bus_speed;		/*!< Specify SDIO Host bus speed, should be SD_SPEED_DS or SD_SPEED_HS*/
 	u8 sdioh_bus_width;		/*!< Specify SDIO Host bus width, should be a value of @ref SDIOH_Bus_Width */
-	u32 sdioh_cd_pin;		/*!< Specify Card Detect pin, should be a value of _PB_25/_PA_6/_PNC */
-	u32 sdioh_wp_pin;		/*!< Specify Write Protection pin, should be a value of _PB_25/_PA_6/_PNC */
+	u32 sdioh_cd_pin;		/*!< Specify Card Detect pin, should be a value of _PC_0/_PNC */
+	u32 sdioh_wp_pin;		/*!< Specify Write Protection pin, should be a value of _PB_31/_PNC */
 } SDIOHCFG_TypeDef;
 
 /**
@@ -278,7 +278,7 @@ typedef struct {
   * @{
   */
 
-_LONG_CALL_ SD_RESULT SD_Init(SDIOHCFG_TypeDef *config);
+_LONG_CALL_ SD_RESULT SD_Init(void);
 _LONG_CALL_ SD_RESULT SD_DeInit(void);
 _LONG_CALL_ void SD_CardInit(void);
 _LONG_CALL_ SD_RESULT SD_GetCapacity(u32 *sector_count);

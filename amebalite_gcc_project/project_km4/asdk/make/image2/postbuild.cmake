@@ -1,5 +1,6 @@
 #Note: Previously defined variables cannot be used directly in this file
 #unless passed through -D
+cmake_minimum_required(VERSION 3.20.0)
 include(${c_CMAKE_FILES_DIR}/axf2bin.cmake)
 include(${c_CMAKE_FILES_DIR}/utility.cmake)
 include(${c_CMAKE_FILES_DIR}/global_define.cmake)
@@ -46,9 +47,11 @@ if(CONFIG_BT)
     )
 endif()
 
-execute_process(COMMAND_ERROR_IS_FATAL ANY
-    COMMAND ${CMAKE_OBJCOPY} -j .coex_trace.text -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/COEX.trace
-)
+if(CONFIG_BT_COEXIST AND CONFIG_COEXIST_DEV)
+    execute_process(COMMAND_ERROR_IS_FATAL ANY
+        COMMAND ${CMAKE_OBJCOPY} -j .coex_trace.text -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/COEX.trace
+    )
+endif()
 
 message( "========== Image manipulating start ==========")
 

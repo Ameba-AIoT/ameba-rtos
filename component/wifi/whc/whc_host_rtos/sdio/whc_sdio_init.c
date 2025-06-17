@@ -2,13 +2,6 @@
 
 static rtos_sema_t sdio_whc_sema;
 
-static SDIOHCFG_TypeDef sdioh_config = {
-	.sdioh_bus_speed = SD_SPEED_HS,			 // SD_SPEED_DS or SD_SPEED_HS
-	.sdioh_bus_width = SDIOH_BUS_WIDTH_4BIT, // SDIOH_BUS_WIDTH_1BIT or SDIOH_BUS_WIDTH_4BIT
-	.sdioh_cd_pin = _PNC,					 // _PNC
-	.sdioh_wp_pin = _PNC,					 // _PNC
-};
-
 extern struct whc_sdio whc_sdio_priv;
 extern struct sdio_func sdio_func1;
 
@@ -73,7 +66,8 @@ void rtw_sdio_interrupt_handler(void)
 #endif
 }
 
-void whc_sdio_irq_sema_give(void)
+/* from sdio host irq */
+void SD_IRQ_NOTIFY(void)
 {
 	struct whc_sdio *priv = &whc_sdio_priv;
 #ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
@@ -98,8 +92,8 @@ static uint32_t rtw_sdio_enable_func(struct whc_sdio *priv)
 	rtos_sema_create(&sdio_whc_sema, 0, 1);
 	SD_SetSema(sdio_take_sema, sdio_give_sema);
 
-	if (SD_Init(&sdioh_config) != SD_OK) {
-		return FALSE;
+	if (SD_Init() != SD_OK) {
+		return RTK_FAIL;
 	}
 
 	//TODO set block size SDIO_BLOCK_SIZE
@@ -110,7 +104,7 @@ static uint32_t rtw_sdio_enable_func(struct whc_sdio *priv)
 	priv->tx_block_mode = 1;
 	priv->rx_block_mode = 1;
 
-	return TRUE;
+	return RTK_SUCCESS;
 }
 
 uint8_t rtw_sdio_query_txbd_status(struct whc_sdio *priv)
@@ -134,23 +128,42 @@ uint8_t rtw_sdio_query_txbd_status(struct whc_sdio *priv)
 	}
 
 #else
+#ifdef GREEN2_WA
+	uint16_t wptr;
+	uint16_t rptr;
+
+	if (priv->txbd_size == 0) {
+		priv->txbd_size = rtw_read16(priv, SPDIO_REG_TXBD_NUM);
+		RTK_LOGE(TAG_WLAN_INIC, "txbd_size: %x\n", priv->txbd_size);
+	}
+
+	wptr = rtw_read8(priv, SPDIO_REG_TXBD_WPTR);
+	rptr = rtw_read8(priv, SPDIO_REG_TXBD_RPTR);
+
+	if (wptr >= rptr) {
+		priv->SdioTxBDFreeNum = priv->txbd_size + rptr - wptr - 1;
+	} else {
+		priv->SdioTxBDFreeNum = rptr - wptr - 1;
+	}
+#else
 	priv->SdioTxBDFreeNum = rtw_read16(priv, SDIO_REG_FREE_TXBD_NUM);
 #endif
-	return TRUE;
+#endif
+	return RTK_SUCCESS;
 }
 
-static uint8_t rtw_sdio_get_tx_max_size(struct whc_sdio *priv)
+static int rtw_sdio_get_tx_max_size(struct whc_sdio *priv)
 {
-	uint8_t TxUnitCnt = 0;
+	int TxUnitCnt = 0;
 	TxUnitCnt = sdio_cmd52_read1byte_local(priv, SPDIO_REG_TXBUF_UNIT_SZ);
-	if (!TxUnitCnt) {
-		return FALSE;
+	if (TxUnitCnt == RTK_FAIL) {
+		return RTK_FAIL;
 	}
 
 	//num * unit_sz(64 bytes) -32(reserved for safety)
 	priv->SdioTxMaxSZ = TxUnitCnt * 64 - 32;
 	RTK_LOGE(TAG_WLAN_INIC, "%s: TX_UNIT_BUF_MAX_SIZE @ %d bytes\n", __FUNCTION__, priv->SdioTxMaxSZ);
-	return TRUE;
+	return RTK_SUCCESS;
 }
 
 static void rtw_sdio_init_interrupt(struct whc_sdio *priv)
@@ -236,8 +249,8 @@ uint32_t rtw_sdio_init(struct whc_sdio *priv)
 	uint8_t value;
 
 	/* enable func and set block size */
-	if (rtw_sdio_enable_func(priv) == FALSE) {
-		return FALSE;
+	if (rtw_sdio_enable_func(priv) != RTK_SUCCESS) {
+		return RTK_FAIL;
 	}
 
 	rtos_mutex_create(&(priv->lock));
@@ -262,7 +275,7 @@ uint32_t rtw_sdio_init(struct whc_sdio *priv)
 
 	if (i == 100) {
 		RTK_LOGE(TAG_WLAN_INIC, "%s: Wait Device Firmware Ready Timeout!!SDIO_REG_CPU_IND @ 0x%04x\n", __FUNCTION__, fw_ready);
-		return FALSE;
+		return RTK_FAIL;
 	}
 
 	//TODO read slave reg
@@ -277,13 +290,13 @@ uint32_t rtw_sdio_init(struct whc_sdio *priv)
 
 	rtw_sdio_query_txbd_status(priv);
 
-	if (rtw_sdio_get_tx_max_size(priv) == FALSE) {
-		return FALSE;
+	if (rtw_sdio_get_tx_max_size(priv) == RTK_FAIL) {
+		return RTK_FAIL;
 	}
 
 	rtw_sdio_init_interrupt(priv);
 
 
-	return TRUE;
+	return RTK_SUCCESS;
 }
 

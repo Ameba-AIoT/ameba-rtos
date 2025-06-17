@@ -215,16 +215,10 @@ int pmu_ready_to_dsleep(void)
 void pmu_pre_sleep_processing(uint32_t *tick_before_sleep)
 {
 	if (pmu_ready_to_dsleep()) {
-		sleep_param.sleep_time = 0;// do not wake on system schedule tick
+		sleep_param.sleep_time = pmu_get_sleep_time();// do not wake on system schedule tick
 		sleep_param.dlps_enable = ENABLE;
 	} else {
-		if (timer_max_sleep_time > timer_min_sleep_time) {
-			max_sleep_time = _rand() % (timer_max_sleep_time - timer_min_sleep_time + 1) + timer_min_sleep_time;
-		} else if (timer_min_sleep_time != 0) {
-			max_sleep_time = timer_min_sleep_time;
-		}
-		sleep_param.sleep_time = max_sleep_time;//*expected_idle_time;
-		max_sleep_time = 0;
+		sleep_param.sleep_time = pmu_get_sleep_time();//*expected_idle_time;
 		sleep_param.dlps_enable = DISABLE;
 	}
 
@@ -281,7 +275,16 @@ void pmu_set_max_sleep_time(uint32_t timer_ms)
 {
 	max_sleep_time = timer_ms;
 }
-
+uint32_t pmu_get_sleep_time(void)
+{
+	u32 time = 0;
+	if (timer_max_sleep_time > timer_min_sleep_time) {
+		time = _rand() % (timer_max_sleep_time - timer_min_sleep_time + 1) + timer_min_sleep_time;
+	} else if (timer_min_sleep_time != 0) {
+		time = timer_min_sleep_time;
+	}
+	return time;
+}
 void pmu_set_sleep_time_range(uint32_t min_time, uint32_t max_time)
 {
 	timer_min_sleep_time = min_time;

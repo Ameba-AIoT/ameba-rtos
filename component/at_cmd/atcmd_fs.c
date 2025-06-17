@@ -308,8 +308,12 @@ void at_fs(void *arg)
 
 		if (operation == 2) {
 			/*get file size*/
-			u8 size = at_fs_size(filename);
-			at_printf("+FS: %d", size);
+			int size = at_fs_size(filename);
+			if (size < 0) {
+				error_no = 2;
+			} else {
+				at_printf("+FS: %d", size);
+			}
 			goto end;
 		}
 

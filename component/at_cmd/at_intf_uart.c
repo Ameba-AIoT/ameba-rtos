@@ -135,6 +135,32 @@ u32 atio_uart_handler(void *data)
 
 	uart_lsr = UART_LineStatusGet(UART_DEV);
 
+	if (uart_lsr & RUART_BIT_TIMEOUT_INT) {
+		UART_ClearRxFifo(UART_DEV);
+		return 0;
+	}
+
+	if (uart_lsr & UART_ALL_RX_ERR) {
+		if (uart_lsr & RUART_BIT_OVR_ERR) {
+			RTK_LOGI(NOTAG, "%s: LSR over run interrupt\n", __FUNCTION__);
+		}
+
+		if (uart_lsr & RUART_BIT_PAR_ERR) {
+			RTK_LOGI(NOTAG, "%s: LSR parity error interrupt\n", __FUNCTION__);
+		}
+
+		if (uart_lsr & RUART_BIT_FRM_ERR) {
+			RTK_LOGI(NOTAG, "%s: LSR frame error(stop bit error) interrupt\n", __FUNCTION__);
+		}
+
+		if (uart_lsr & RUART_BIT_BREAK_INT) {
+			RTK_LOGI(NOTAG, "%s: LSR break error interrupt\n", __FUNCTION__);
+		}
+		/* clear Receiver Line Status */
+		UART_INT_Clear(UART_DEV, RUART_BIT_RLSICF);
+		return 0;
+	}
+
 	/* moves on only for rx data ready intr(At least one characters in the RX FIFO), in case other intr is enable in linux */
 	if (!(uart_lsr & RUART_BIT_DRDY)) {
 		return 0;

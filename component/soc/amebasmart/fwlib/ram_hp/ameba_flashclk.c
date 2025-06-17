@@ -462,7 +462,6 @@ int flash_calibration_highspeed(u8 div)
 
 	/* SPIC clock switch to PLL */
 	FLASH_ClockDiv(div);
-	RTK_LOGI(TAG, "SPIC CLK: %d Hz\n", PLL_NP_ClkGet() / (div + 1));
 
 	if (_flash_calibration_highspeed(spic_mode, div) == TRUE) {
 		/* we should open calibration new first, and then set phase index */
@@ -748,10 +747,16 @@ void flash_highspeed_setup(void)
 	u8 read_mode;
 	u8 flash_speed;
 	u8 nand_reg;
+	u8 spic_ckd;
+	u32 pll_clk = PLL_NP_ClkGet();
 
 	read_mode = flash_get_option(Flash_ReadMode, FALSE);
 	flash_speed = flash_get_option(Flash_Speed, TRUE);
-	//RTK_LOGD(TAG, "flash_speed: %lu\n", flash_speed);
+
+	spic_ckd = DIV_ROUND_UP(pll_clk, SPIC_CLK_LIMIT) - 1;
+	flash_speed = MAX(flash_speed, spic_ckd);
+	RTK_LOGI(TAG, "SPIC CLK: %d Hz\n", pll_clk / (flash_speed + 1));
+
 	__asm volatile("cpsid i");
 
 	/* SPIC stay in BUSY state when there are more than 0x1_0000 cycles between two input data.
@@ -759,6 +764,9 @@ void flash_highspeed_setup(void)
 	 */
 	SPIC_TypeDef *spi_flash = SPIC;
 	spi_flash->CTRLR0 |= BIT_SPI_DREIR_R_DIS;
+
+	/* set tSHSL (CS_H) to min 60ns (12 spic_clk) */
+	spi_flash->TPR0 = (spi_flash->TPR0 & ~MASK_CS_H_RD_DUM_LEN) | CS_H_RD_DUM_LEN(12);
 
 	if (SYSCFG_BootFromNor()) {
 		/* Get flash ID to reinitialize FLASH_InitTypeDef structure */

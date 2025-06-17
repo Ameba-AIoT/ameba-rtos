@@ -40,25 +40,25 @@ const RCC_ConfDef RCC_Config[] = {
 
 u32 Cert_PKHash_OTP_ADDR = SEC_PKKEY_PK1_0;
 
-// for km4, max 345MHz under 1.0v, max 260MHz under 0.9v
-// for km0, max 115MHz under 1.0v, max 104MHz under 0.9v
+// for km4, max 345MHz under 1.0v, max 262MHz under 0.9v
+// for km0, max 115MHz under 1.0v, max 105MHz under 0.9v
 // PLL can be 300MHz~688.128MHz
 // KM4_CKD range is [1, 8], KM0_CKD range is [1, 16] or USEXTAL
 const SocClk_Info_TypeDef SocClk_Info[] = {
-	/* PLL_CLK,		Vol_Type,		KM4_CKD,	KM0_CKD,	PSRAMC_CKD*/
+	/* PLL_CLK,     Vol_Type,      KM4_CKD,    KM0_CKD,    PSRAMC_CKD*/
 	/* This group is to reduce the impact of PSRAM on RF, the frequency is specially selected */
-	{PLL_524M,		CORE_VOL_0P9,	CLKDIV(2),	CLKDIV(5),	CLKDIV(2)},  // For SiP Psram
-	{PLL_392M,		CORE_VOL_0P9,	CLKDIV(2),	CLKDIV(4),	CLKDIV(1)},  // For SiP Psram
-	{PLL_334M,		CORE_VOL_1P0,	CLKDIV(1),	CLKDIV(3),	CLKDIV(1)},  // For SiP Psram
+	{PLL_524M,      CORE_VOL_0P9,  CLKDIV(2),  CLKDIV(5),  CLKDIV(2)},  // For SiP Psram
+	{PLL_392M,      CORE_VOL_0P9,  CLKDIV(2),  CLKDIV(4),  CLKDIV(1)},  // For SiP Psram
+	{PLL_334M,      CORE_VOL_1P0,  CLKDIV(1),  CLKDIV(3),  CLKDIV(1)},  // For SiP Psram
 	/* This group is to reduce the impact of Flash on RF, the frequency is specially selected.
-		Single die use the same settings. */
-	{PLL_512M,		CORE_VOL_0P9,	CLKDIV(2),	CLKDIV(5),	CLKDIV(2)},  // For SiP Flash or single die (No Psram)
-	{PLL_400M,		CORE_VOL_0P9,	CLKDIV(2),	CLKDIV(4),	CLKDIV(1)},  // For SiP Flash or single die (No Psram)
-	{PLL_334M,		CORE_VOL_1P0,	CLKDIV(1),	CLKDIV(3),	CLKDIV(1)},  // For SiP Flash or single die (No Psram)
+	   Single die use the same settings. */
+	{PLL_512M,      CORE_VOL_0P9,  CLKDIV(2),  CLKDIV(5),  CLKDIV(2)},  // For SiP Flash or single die (No Psram)
+	{PLL_400M,      CORE_VOL_0P9,  CLKDIV(2),  CLKDIV(4),  CLKDIV(1)},  // For SiP Flash or single die (No Psram)
+	{PLL_334M,      CORE_VOL_1P0,  CLKDIV(1),  CLKDIV(3),  CLKDIV(1)},  // For SiP Flash or single die (No Psram)
 	/* The following frequency settings are not adjustable */
-	{PLL_480M,		CORE_VOL_0P9,	CLKDIV(2),	CLKDIV(5),	CLKDIV(2)},  // 48M for usb, both For SiP Psram / SiP Flash / single die
-	{PLL_677P376M,	CORE_VOL_1P0,	CLKDIV(2),	CLKDIV(6),	CLKDIV(2)},  // Audio
-	{PLL_688P128M,	CORE_VOL_1P0,	CLKDIV(2),	CLKDIV(6),	CLKDIV(2)},  // Audio
+	{PLL_480M,      CORE_VOL_0P9,  CLKDIV(2),  CLKDIV(5),  CLKDIV(2)},  // 48M for usb, both For SiP Psram / SiP Flash / single die
+	{PLL_677P376M,  CORE_VOL_1P0,  CLKDIV(2),  CLKDIV(6),  CLKDIV(2)},  // Audio
+	{PLL_688P128M,  CORE_VOL_1P0,  CLKDIV(2),  CLKDIV(6),  CLKDIV(2)},  // Audio
 };
 
 /**

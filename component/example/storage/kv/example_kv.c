@@ -12,32 +12,34 @@ void example_kv_thread(void *param)
 	char *buffer;
 	int res = 0;
 
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: KV====================\r\n");
+
 	res = rt_kv_set(key, val, strlen(val));
 	if (res != (int)strlen(val)) {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "rt_kv_set failed\r\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "rt_kv_set() failed\r\n");
 	} else {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "rt_kv_set success, write %d letters.\r\n", strlen(val));
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "rt_kv_set() success, write %d characters:%s\r\n", strlen(val), val);
 	}
 
-	buffer = (char *)rtos_mem_malloc(strlen(val) * sizeof(char));
-	memset(buffer, 0, strlen(val));
+	buffer = (char *)rtos_mem_zmalloc(strlen(val) * sizeof(char));
+
 	res = rt_kv_get(key, buffer, strlen(val));
 
 	if (res != (int)strlen(val)) {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "rt_kv_get failed\r\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "rt_kv_get() failed\r\n");
 	} else {
 		if (memcmp(buffer, val, strlen(val)) == 0) {
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "rt_kv_get success, read %d letters.\r\n", strlen(val));
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "rt_kv_get() success, read %d characters:%s\r\n", strlen(val), buffer);
 		} else {
-			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "rt_kv_get fail, content has been changed.\r\n");
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "rt_kv_get() fail, content has been changed\r\n");
 		}
 	}
 
 	res = rt_kv_delete(key);
 	if (res) {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "rt_kv_delete failed.\r\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "rt_kv_delete() failed\r\n");
 	} else {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "rt_kv_delete success.\r\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "rt_kv_delete() success\r\n");
 	}
 
 	rtos_mem_free(buffer);

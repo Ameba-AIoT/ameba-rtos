@@ -1393,7 +1393,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 	case RTK_BT_AVRCP_EVT_ELEMENT_ATTR_INFO: {
 		uint8_t temp_buff[50];
 		const char *attr[] = {"", "Title:", "Artist:", "Album:", "Track:",
-							  "TotalTrack:", "Genre:", "PlayingTime:"
+							  "TotalTrack:", "Genre:", "PlayingTime:", "CoverArt:"
 							 };
 		rtk_bt_avrcp_element_attr_info_t *p_attr_t = (rtk_bt_avrcp_element_attr_info_t *)param;
 
@@ -1403,9 +1403,22 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 			for (uint8_t i = 0; i < p_attr_t->num_of_attr; i ++) {
 				if (p_attr_t->attr[i].length) {
 					memset((void *)temp_buff, 0, 50);
-					uint16_t len = p_attr_t->attr[i].length + strlen(attr[p_attr_t->attr[i].attribute_id]) + 1;
-					snprintf((char *)temp_buff, len, "%s%s\r\n", attr[p_attr_t->attr[i].attribute_id], p_attr_t->attr[i].p_buf);
-					BT_LOGA("[AVRCP] %s \r\n", temp_buff);
+					if (RTK_BT_AVRCP_ELEM_ATTR_DEFAULT_COVER_ART == p_attr_t->attr[i].attribute_id) {
+						uint8_t image_handle[16] = {0};
+						for (uint8_t j = 0; j < p_attr_t->attr[i].length; j++) {
+							image_handle[2 * j + 1] = p_attr_t->attr[i].p_buf[j];
+						}
+						BT_LOGA("[AVRCP] Get cover art image handle ");
+						for (uint8_t i = 0; i < 16; i ++) {
+							BT_LOGA(" 0x%02x ", image_handle[i]);
+						}
+						BT_LOGA("\r\n");
+						continue;
+					} else {
+						uint16_t len = p_attr_t->attr[i].length + strlen(attr[p_attr_t->attr[i].attribute_id]) + 1;
+						snprintf((char *)temp_buff, len, "%s%s\r\n", attr[p_attr_t->attr[i].attribute_id], p_attr_t->attr[i].p_buf);
+						BT_LOGA("[AVRCP] %s \r\n", temp_buff);
+					}
 					osif_mem_free(p_attr_t->attr[i].p_buf);
 				}
 			}
@@ -1422,8 +1435,14 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 	case RTK_BT_AVRCP_EVT_COVER_ART_DATA_IND: {
 		rtk_bt_avrcp_cover_art_data_ind_t *p_data_t = (rtk_bt_avrcp_cover_art_data_ind_t *)param;
 
+		for (uint16_t i = 0; i < p_data_t->data_len; i ++) {
+			if (i % 10 == 0) {
+				BT_LOGA("\r\n");
+			}
+			BT_LOGA(" 0x%02x ", p_data_t->p_data[i]);
+		}
 		if (p_data_t->data_end) {
-			BT_LOGA("[AVRCP] Get art cover successfully \r\n");
+			BT_LOGA("[AVRCP] Data End -> Get art cover successfully \r\n");
 		}
 		break;
 	}
@@ -2018,7 +2037,7 @@ static uint16_t rtk_bt_hfp_cvsd_parse_decoder_struct(rtk_bt_hfp_codec_t *phfp_co
 		BT_LOGE("[HFP] bt audio track add fail \r\n");
 		return 1;
 	}
-	hfp_demo_audio_record_hdl = rtk_bt_audio_record_add(RTK_BT_AUDIO_CODEC_CVSD, 1, 8000, 0);
+	hfp_demo_audio_record_hdl = rtk_bt_audio_record_add(RTK_BT_AUDIO_CODEC_CVSD, 1, 8000, 0, 0x7f);
 	if (!hfp_demo_audio_record_hdl) {
 		BT_LOGE("[HFP] bt audio record add fail \r\n");
 		rtk_bt_audio_track_del(RTK_BT_AUDIO_CODEC_CVSD, hfp_demo_audio_track_hdl);

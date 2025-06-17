@@ -210,11 +210,12 @@ rtk_bt_audio_track_t *rtk_bt_audio_track_add(uint32_t type, float left_volume, f
  * @param[in] channels: channels
  * @param[in] rate: sample rate
  * @param[in] buffer_bytes: buffer bytes per one period of record
+ * @param[in] volume: set the record get volume max 0xaf
  * @return
  *            - NULL  : Fail
  *            - others: Record Handle
  */
-rtk_bt_audio_record_t *rtk_bt_audio_record_add(uint32_t type, uint32_t channels, uint32_t rate, uint32_t buffer_bytes);
+rtk_bt_audio_record_t *rtk_bt_audio_record_add(uint32_t type, uint32_t channels, uint32_t rate, uint32_t buffer_bytes, uint32_t volume);
 
 /**
  * @brief     delete one audio track

@@ -163,6 +163,13 @@ SECTIONS
 		*(.BTTRACE)
 		__btrace_end__ = .;
 	} > BTRACE
+
+	.coex_trace.text :
+	{
+		__ctrace_start__ = .;
+		*(.COEXTRACE)
+		__ctrace_end__ = .;
+	} > CTRACE
 }
 
 ASSERT(__image2_entry_func__ == ORIGIN(KM4_IMG2_ENTRY), "__image2_entry_func__ is not KM4_IMG2_ENTRY.")

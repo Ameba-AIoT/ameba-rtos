@@ -1,6 +1,6 @@
 #include "ameba.h"
 
-BOOT_RAM_BSS_SECTION u32 g_erase_blockid;
+u32 g_erase_blockid;
 
 BOOT_RAM_TEXT_SECTION
 void RtlSpiNandInit(void)

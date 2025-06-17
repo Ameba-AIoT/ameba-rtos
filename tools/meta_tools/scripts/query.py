@@ -146,12 +146,18 @@ def do_query_info(sdkroot, cfg):
 
     print(json.dumps(info, indent=4))
 
+def do_query_compatibility(cfg):
+    # Query against configuration file
+    ret = json.dumps(cfg['compatibilityInfo'], indent=4)
+    print(ret)
+
 
 def main():
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-a', '--app', action='store_true', help='show application information')
     parser.add_argument('-d', '--device', action='store_true', help='show device information')
     parser.add_argument('-i', '--info', action='store_true', help='show repository information')
+    parser.add_argument('-c', '--compatibility', action='store_true', help='show compatibility information')
 
     args = parser.parse_args()
 
@@ -174,6 +180,8 @@ def main():
         do_query_device(cfg)
     elif args.info:
         do_query_info(sdkroot, cfg)
+    elif args.compatibility:
+        do_query_compatibility(cfg)
     else:
         parser.print_usage()
         raise RuntimeError('Warning: Invalid arguments')

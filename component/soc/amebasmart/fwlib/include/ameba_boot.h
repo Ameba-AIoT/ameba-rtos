@@ -23,7 +23,6 @@ extern u8 __ram_nocache_start__[];
 extern u8 __ram_nocache_end__[];
 extern u8 __image3_bss_start__[];
 extern u8 __image3_bss_end__[];
-extern u8 __ram_image2_text_start__[];
 extern u8 __ram_image2_text_end__[];
 
 extern u8 __ipc_table_start__[];
@@ -272,6 +271,8 @@ extern u32 HUK_Derive_En;
 #define AP_09V_CLK_LIMIT		920
 #define AP_1P0V_CLK_LIMIT_PSRAM		1200
 #define AP_1P0V_CLK_LIMIT_DDR		1320
+
+#define SPIC_CLK_LIMIT			(208 * MHZ_TICK_CNT)	/* For Flash run up to 104MHz */
 
 #define IS_FLASH_ADDR(addr)			((addr >= SPI_FLASH_BASE) && (addr <= 0x0FFFFFFF))
 #define IS_BOOT_ADDR(addr)			((addr >= HS_BOOT_ADDR_START) && (addr <= HS_BOOT_ADDR_END))

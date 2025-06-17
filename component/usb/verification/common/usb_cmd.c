@@ -29,6 +29,14 @@ static u32 usb_cmd(u16 argc, u8 *argv[]);
 
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE usb_cmd_table[] = {
+#ifdef CONFIG_SUPPORT_USB_NO_PHY
+	{
+		(const u8 *)"USB", 3, usb_cmd, (const u8 *)"\tUSB cmd:\n"
+		"\t\t usb init\n"
+		"\t\t usb deinit\n"
+		"\t\t usb status\n"
+	}
+#else
 	{
 		(const u8 *)"USB", 3, usb_cmd, (const u8 *)"\tUSB cmd:\n"
 		"\t\t usb init\n"
@@ -36,6 +44,7 @@ const COMMAND_TABLE usb_cmd_table[] = {
 		"\t\t usb status\n"
 		"\t\t usb loopback [<mode>]\n"
 	}
+#endif
 };
 
 /* Private functions ---------------------------------------------------------*/
@@ -78,8 +87,10 @@ static u32 usb_cmd(u16 argc, u8 *argv[])
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Get bus status FAIL: %d\n", ret);
 		}
+#ifndef CONFIG_SUPPORT_USB_NO_PHY
 	} else if (_stricmp(cmd, "loopback") == 0) {
 		ret = cmd_usb_loopback_test(argc, argv);
+#endif
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid USB cmd: %s\n", cmd);
 		ret = HAL_ERR_PARA;

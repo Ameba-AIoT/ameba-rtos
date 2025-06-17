@@ -66,7 +66,4 @@
 #define SHELL_ROM_DATA_SECTION
 
 #define BOOT_RAM_TEXT_SECTION				SECTION(".boot.ram.text")
-#define BOOT_RAM_RODATA_SECTION				SECTION(".boot.rodata")
-#define BOOT_RAM_DATA_SECTION				SECTION(".boot.ram.data")
-#define BOOT_RAM_BSS_SECTION				SECTION(".boot.ram.bss")
 #endif //_SECTION_CONFIG_H_
