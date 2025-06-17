@@ -1,5 +1,6 @@
 #Note: Previously defined variables cannot be used directly in this file
 #unless passed through -D
+cmake_minimum_required(VERSION 3.20.0)
 include(${c_CMAKE_FILES_DIR}/axf2bin.cmake)
 
 execute_process(COMMAND ${CMAKE_OBJCOPY} -j .ram_image1.entry  -j .ram_image1.text -j .ram_image1.data -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_loader.axf ${c_SDK_IMAGE_TARGET_DIR}/ram_1.bin)

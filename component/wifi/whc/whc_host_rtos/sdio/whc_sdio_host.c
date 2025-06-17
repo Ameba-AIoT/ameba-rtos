@@ -138,7 +138,7 @@ static uint8_t *sdio_read_rxfifo(struct whc_sdio *priv, uint32_t size)
 
 	while (1) {
 		ret = sdio_read_port(priv, SDIO_RX_FIFO_DOMAIN_ID, size, pbuf);
-		if (ret == TRUE) {
+		if (ret == RTK_SUCCESS) {
 			break;
 		} else {
 			/* retry to reduce impact of bus err */
@@ -271,7 +271,7 @@ void whc_sdio_host_init(void)
 		RTK_LOGE(TAG_WLAN_INIC, "create sdio lock fail \r\n");
 	}
 
-	if (rtw_sdio_init(priv) != TRUE) {
+	if (rtw_sdio_init(priv) != RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, "%s: initialize SDIO Failed!\n", __FUNCTION__);
 		return;
 	}

@@ -8,21 +8,21 @@ None
 
 # SW configuration
 
-1. In `/ameba<test board>/project_<core>/src/main.c` `app_filesystem_init` interface CONFIG your expected test mode.  
+1. Modify the interface function `app_filesystem_init()` located in `amebaXXX_gcc_project/project_<core>/src/main.c` to config your expected test mode.
 Test Mode: (`VFS_LITTLEFS`/`VFS_FATFS`, `VFS_INF_FLASH`/`VFS_INF_SD`)
    - For `VFS_LITTLEFS` with `VFS_INF_FLASH`:
 		```C
-		ret = vfs_user_register("lfs", VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
+		ret = vfs_user_register(VFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
 		```
 
    - For `VFS_FATFS` with `VFS_INF_FLASH`:
 		```C
-		ret = vfs_user_register("fatfs", VFS_FATFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
+		ret = vfs_user_register(VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
 		```
 
    - For `VFS_FATFS` with `VFS_INF_SD`: (Only AmebaSmart support)
 		```C
-		ret = vfs_user_register("fatfs", VFS_FATFS, VFS_INF_SD, VFS_REGION_1, VFS_RW);
+		ret = vfs_user_register(VFS_PREFIX, VFS_FATFS, VFS_INF_SD, VFS_REGION_1, VFS_RW);
 		```
 
 2. Type command `./menuconfig.py` and choose `CONFIG VFS`
@@ -52,11 +52,11 @@ Test Mode: (`VFS_LITTLEFS`/`VFS_FATFS`, `VFS_INF_FLASH`/`VFS_INF_SD`)
 
 # Expect result
 
-1. Write vfs file (file_name = vfs_key, value = VFS module works normally!!!)
+1. Write vfs file (file_name = "vfs_file_1", content = "VFS module works normally !!!") succeeded
 
-2. Read vfs file
+2. Read vfs file succeeded
 
-3. Delete vfs file
+3. Delete vfs file succeeded
 
 # Note
 
@@ -67,3 +67,4 @@ None
 - AmebaSmart
 - AmebaLite
 - AmebaDplus
+- AmebaGreen2

@@ -20,13 +20,6 @@ static rtos_mutex_t sd_mutex = NULL;
 static int init_status = 0;
 static rtos_sema_t vfs_sd_sema;
 
-static SDIOHCFG_TypeDef sd_config = {
-	.sdioh_bus_speed = SD_SPEED_HS,				//SD_SPEED_DS or SD_SPEED_HS
-	.sdioh_bus_width = SDIOH_BUS_WIDTH_4BIT, 	//SDIOH_BUS_WIDTH_1BIT or SDIOH_BUS_WIDTH_4BIT
-	.sdioh_cd_pin = _PC_0,						//_PC_0/_PNC
-	.sdioh_wp_pin = _PNC,						//_PB_31/_PNC
-};
-
 static int sd_give_sema(u32 timeout)
 {
 	UNUSED(timeout);
@@ -103,7 +96,7 @@ DSTATUS SD_disk_initialize(void)
 
 	sd_sema_init();
 	sd_lock();
-	res = SD_Init(&sd_config);
+	res = SD_Init();
 	init_status = 1;//The card is not init
 	sd_unlock();
 	return interpret_sd_status(res);

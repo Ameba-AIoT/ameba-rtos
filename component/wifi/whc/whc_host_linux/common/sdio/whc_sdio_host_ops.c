@@ -97,6 +97,8 @@ void whc_sdio_host_send_data(u8 *buf, u32 len, struct sk_buff *pskb)
 		priv->SdioTxBDFreeNum -= 1;
 	}
 
+	/* update txbd num in sw after send one pkt */
+	priv->txbd_wptr = (priv->txbd_wptr + 1) % priv->txbd_size;
 exit:
 	mutex_unlock(&priv->lock);
 

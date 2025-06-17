@@ -14,7 +14,7 @@ How to use:
 
 # Expect result
 
-1. Set key-value pair (key = TEST_FILE, value = KV module works normally!!!) success with value length = 28
+1. Set key-value pair (key = "T_FILE", value = "KV module works normally !!!") success with value length = 28
 
 2. Get key-value pair success with value length = 28
 
@@ -29,3 +29,4 @@ None
 - AmebaSmart
 - AmebaLite
 - AmebaDplus
+- AmebaGreen2

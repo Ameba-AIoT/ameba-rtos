@@ -564,15 +564,6 @@ function(ameba_global_library)
     endif()
 endfunction()
 
-function(ameba_rename_sections_xip target_library section_prepend)
-    set(rename_script "${c_CMAKE_FILES_DIR}/rename_sections.cmake")
-    add_custom_command(
-        TARGET ${target_library}
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -DLIBRARY_LOCATION=$<TARGET_FILE:${target_library}> -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY} -DCMAKE_OBJDUMP=${CMAKE_OBJDUMP} -DPREPEND=${section_prepend} -P ${rename_script}
-    )
-endfunction()
-
 ########################################################################################################
 #TODO: deprecated functions
 

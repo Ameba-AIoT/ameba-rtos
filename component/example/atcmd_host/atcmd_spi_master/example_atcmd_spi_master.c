@@ -330,6 +330,8 @@ void atcmd_spi_host_task(void)
 			spi_master_write_read_stream_dma(&spi_master, (char *)MasterTxBuf, (char *)MasterRxBuf, ATCMD_SPI_DMA_SIZE);
 			xSemaphoreTake(master_tx_done_sema, 0xFFFFFFFF);
 			xSemaphoreTake(master_rx_done_sema, 0xFFFFFFFF);
+			memset(uart_irq_buffer, 0, MAX_CMD_LEN);
+			uart_irq_count = 0;
 		} else {
 			xSemaphoreGive(tx_ringbuffer_mutex);
 			spi_master_read_stream_dma(&spi_master, (char *)MasterRxBuf, ATCMD_SPI_DMA_SIZE);

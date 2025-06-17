@@ -1,6 +1,6 @@
 @echo off
 
-SET JLinkGDBServer_Path="C:\Program Files (x86)\SEGGER\JLink\JLinkGDBServer.exe"
+SET JLinkGDBServer_Path="C:\Program Files (x86)\SEGGER\JLink\JLink.exe"
 SET JLink_Path="C:\Program Files (x86)\SEGGER\JLink\JLink.exe"
 
 IF NOT EXIST %JLinkGDBServer_Path% ( 
@@ -9,7 +9,7 @@ ECHO Jlink version with v7.22 or later is recommanded
 PAUSE && EXIT 
 )
 
-%JLinkGDBServer_Path% -select USB -device Cortex-M33 -if swd -scriptfile AP0_KM4.JLinkScript -port 2335
+%JLinkGDBServer_Path% -device Cortex-M33 -if swd -jlinkscriptfile AP0_KM4.JLinkScript
 
 if %errorlevel% == 0 (
 ECHO Close GDBServer Window manually, %errorlevel%
@@ -27,7 +27,7 @@ ECHO KR4_DMI.JLinkScript start... %ERRORLEVEL%
 
 choice /t 3 /d y /n >nul
 
-start "J-Link GDB Commander" %JLinkGDBServer_Path% -select USB -device Cortex-M33 -if swd -scriptfile AP0_KM4.JLinkScript -port 2335
+start "J-Link GDB Commander" %JLinkGDBServer_Path% -device Cortex-M33 -if swd -jlinkscriptfile AP0_KM4.JLinkScript
 choice /t 1 /d y /n >nul
 )
 

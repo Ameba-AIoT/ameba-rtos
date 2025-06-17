@@ -189,15 +189,10 @@ void I2C_SetSpeed(I2C_TypeDef *I2Cx, u32 SpdMd, u32 I2Clk, u32 I2CIPClk)
 		ICHtime = ((1000000 / I2Clk) * I2C_SS_MIN_SCL_HTIME) / (I2C_SS_MIN_SCL_HTIME + I2C_SS_MIN_SCL_LTIME);
 		ICLtime = ((1000000 / I2Clk) * I2C_SS_MIN_SCL_LTIME) / (I2C_SS_MIN_SCL_HTIME + I2C_SS_MIN_SCL_LTIME);
 
-		ICHLcnt = (ICHtime * IPClkM) / 1000;
-		if (ICHLcnt > IC_SS_SCL_HCNT_TRIM) { /*this part is according to the fine-tune result*/
-			ICHLcnt -= IC_SS_SCL_HCNT_TRIM;
-		}
-		I2Cx->IC_SS_SCL_HCNT = ICHLcnt + 1;
-		ICHLcnt = (ICLtime * IPClkM) / 1000;
-		if (ICHLcnt > IC_SS_SCL_LCNT_TRIM) { /*this part is according to the fine-tune result*/
-			ICHLcnt -= IC_SS_SCL_LCNT_TRIM;
-		}
+		ICHLcnt = (ICHtime * IPClkM + 500) / 1000;
+		I2Cx->IC_SS_SCL_HCNT = ICHLcnt;
+
+		ICHLcnt = (ICLtime * IPClkM + 500) / 1000;
 		I2Cx->IC_SS_SCL_LCNT = ICHLcnt;
 
 		break;
@@ -207,16 +202,10 @@ void I2C_SetSpeed(I2C_TypeDef *I2Cx, u32 SpdMd, u32 I2Clk, u32 I2CIPClk)
 		ICHtime = ((1000000 / I2Clk) * I2C_FS_MIN_SCL_HTIME) / (I2C_FS_MIN_SCL_HTIME + I2C_FS_MIN_SCL_LTIME);
 		ICLtime = ((1000000 / I2Clk) * I2C_FS_MIN_SCL_LTIME) / (I2C_FS_MIN_SCL_HTIME + I2C_FS_MIN_SCL_LTIME);
 
-		ICHLcnt = (ICHtime * IPClkM) / 1000;
-		if (ICHLcnt > IC_FS_SCL_HCNT_TRIM) { /*this part is according to the fine-tune result*/
-			ICHLcnt -= IC_FS_SCL_HCNT_TRIM;
-		}
-		I2Cx->IC_FS_SCL_HCNT = ICHLcnt + 1;
+		ICHLcnt = (ICHtime * IPClkM + 500) / 1000;
+		I2Cx->IC_FS_SCL_HCNT = ICHLcnt;
 
-		ICHLcnt = (ICLtime * IPClkM) / 1000;
-		if (ICHLcnt > IC_FS_SCL_LCNT_TRIM) { /*this part is according to the fine-tune result*/
-			ICHLcnt -= IC_FS_SCL_LCNT_TRIM;
-		}
+		ICHLcnt = (ICLtime * IPClkM + 500) / 1000;
 		I2Cx->IC_FS_SCL_LCNT = ICHLcnt;
 
 		break;
@@ -227,31 +216,19 @@ void I2C_SetSpeed(I2C_TypeDef *I2Cx, u32 SpdMd, u32 I2Clk, u32 I2CIPClk)
 		ICHtime = ((1000000 / 400) * I2C_FS_MIN_SCL_HTIME) / (I2C_FS_MIN_SCL_HTIME + I2C_FS_MIN_SCL_LTIME);
 		ICLtime = ((1000000 / 400) * I2C_FS_MIN_SCL_LTIME) / (I2C_FS_MIN_SCL_HTIME + I2C_FS_MIN_SCL_LTIME);
 
-		ICHLcnt = (ICHtime * IPClkM) / 1000;
-		if (ICHLcnt > IC_FS_SCL_HCNT_TRIM) { /*this part is according to the fine-tune result*/
-			ICHLcnt -= IC_FS_SCL_HCNT_TRIM;
-		}
-		I2Cx->IC_FS_SCL_HCNT = ICHLcnt + 1;
+		ICHLcnt = (ICHtime * IPClkM + 500) / 1000;
+		I2Cx->IC_FS_SCL_HCNT = ICHLcnt;
 
-		ICHLcnt = (ICLtime * IPClkM) / 1000;
-		if (ICHLcnt > IC_FS_SCL_LCNT_TRIM) { /*this part is according to the fine-tune result*/
-			ICHLcnt -= IC_FS_SCL_LCNT_TRIM;
-		}
+		ICHLcnt = (ICLtime * IPClkM + 500) / 1000;
 		I2Cx->IC_FS_SCL_LCNT = ICHLcnt;
 
 		ICHtime = ((1000000 / I2Clk) * I2C_HS_MIN_SCL_HTIME_100) / (I2C_HS_MIN_SCL_HTIME_100 + I2C_HS_MIN_SCL_LTIME_100);
 		ICLtime = ((1000000 / I2Clk) * I2C_HS_MIN_SCL_LTIME_100) / (I2C_HS_MIN_SCL_HTIME_100 + I2C_HS_MIN_SCL_LTIME_100);
 
-		ICHLcnt = (ICHtime * IPClkM) / 1000;
-		if (ICHLcnt > IC_HS_SCL_HCNT_TRIM) { /*this part is according to the fine-tune result*/
-			ICHLcnt -= IC_HS_SCL_HCNT_TRIM;
-		}
-		I2Cx->IC_HS_SCL_HCNT = ICHLcnt + 1;
+		ICHLcnt = (ICHtime * IPClkM + 500) / 1000;
+		I2Cx->IC_HS_SCL_HCNT = ICHLcnt;
 
-		ICHLcnt = (ICLtime * IPClkM) / 1000;
-		if (ICHLcnt > IC_HS_SCL_LCNT_TRIM) { /*this part is according to the fine-tune result*/
-			ICHLcnt -= IC_HS_SCL_LCNT_TRIM;
-		}
+		ICHLcnt = (ICLtime * IPClkM + 500) / 1000;
 		I2Cx->IC_HS_SCL_LCNT = ICHLcnt;
 
 		break;

@@ -40,7 +40,7 @@ void update_ota_task(void *param)
 
 	ret = ota_update_start(ctx);
 
-	ota_printf(_OTA_INFO_, "[%s] Update task exit", __FUNCTION__);
+	ota_printf(_OTA_INFO_, "[%s] Update OTA task exit", __FUNCTION__);
 	if (!ret) {
 		ota_printf(_OTA_INFO_, "[%s] Ready to reboot", __FUNCTION__);
 		rtos_time_delay_ms(20);
@@ -57,8 +57,7 @@ exit:
 
 void example_ota(void)
 {
-	rtos_task_t task;
-	if (rtos_task_create(&task, ((const char *)"update_ota_task"), update_ota_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
-		ota_printf(_OTA_ERR_, "\n\r[%s] Create update task failed", __FUNCTION__);
+	if (rtos_task_create(NULL, ((const char *)"update_ota_task"), update_ota_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
+		ota_printf(_OTA_ERR_, "\n\r[%s] Create update_ota_task failed", __FUNCTION__);
 	}
 }

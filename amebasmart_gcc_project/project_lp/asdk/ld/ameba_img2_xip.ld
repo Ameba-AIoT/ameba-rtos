@@ -73,7 +73,6 @@ SECTIONS
 	.sram_image2.text.data :
 	{
 		/* add for bootloader, because bootloader and image2 build together now.*/
-		*(.boot.ram.data*)
 		*(.timesensitive.data*)
 		*(.sram.only.data*)
 
@@ -84,9 +83,6 @@ SECTIONS
 	.ram_image2.bss (NOLOAD):
 	{
 		__bss_start__ = .;
-
-		/* add for bootloader, because bootloader and image2 build together now.*/
-		*(.boot.ram.bss*)
 
 		*(.bss*)
 		*(COMMON)

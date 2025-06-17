@@ -286,7 +286,7 @@ int atio_sdio_init(void)
 	rtos_sema_create(&atcmd_sdio_tx_sema, 0, 0xFFFF);
 	rtos_sema_create(&atcmd_sdio_tx_done_sema, 1, 0xFFFF);
 	at_sdio_rx_ring_buf = RingBuffer_Create(NULL, 4 * 1024, LOCAL_RINGBUFF, 1);
-	at_sdio_tx_ring_buf = RingBuffer_Create(NULL, 8 * 1024, LOCAL_RINGBUFF, 1);
+	at_sdio_tx_ring_buf = RingBuffer_Create(NULL, 32 * 1024, LOCAL_RINGBUFF, 1);
 
 	if (atcmd_sdio_rx_sema == NULL || atcmd_sdio_tx_sema == NULL || atcmd_sdio_tx_done_sema == NULL ||
 		at_sdio_rx_ring_buf == NULL || at_sdio_tx_ring_buf == NULL) {

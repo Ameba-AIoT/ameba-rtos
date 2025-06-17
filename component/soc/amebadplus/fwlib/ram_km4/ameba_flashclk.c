@@ -231,6 +231,9 @@ void flash_highspeed_setup(void)
 	   HW recommend: at leaset 10ns */
 	SPIC->TPR1 = (SPIC->TPR1 & ~MASK_CR_ACTIVE_SETUP) | CR_ACTIVE_SETUP(2);
 
+	/* set tSHSL (CS_H) to min 60ns (12 spic_clk) */
+	SPIC->TPR0 = (SPIC->TPR0 & ~MASK_CS_H_RD_DUM_LEN) | CS_H_RD_DUM_LEN(12);
+
 	/* Get flash ID to reinitialize FLASH_InitTypeDef structure */
 	flash_get_vendor();
 

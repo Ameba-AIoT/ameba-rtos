@@ -10,7 +10,6 @@ static const char *const TAG = "LPCAP";
 u32 ap_sleep_timeout = 0xffffffff;
 u8 ap_sleep_type;
 u32 ap_pll_backup;
-u32 APDslpEn;
 // 0x1 for core 0, 0x3 for core 0/1
 #define CORE_NUM 0x1
 void ap_power_on_ctrl(void)
@@ -106,7 +105,7 @@ void ap_power_gate(void)
 		return;
 	}
 
-	/* check core0 WFI state */
+	/* check core0 WFE state */
 	while (1) {
 		if (ca32->CA32_C0_CPU_STATUS & CA32_STANDBYWFE_CORE0) {
 			break;
@@ -115,9 +114,6 @@ void ap_power_gate(void)
 
 	ap_power_off_ctrl();
 	pmu_release_wakelock(PMU_AP_RUN);
-	if (APDslpEn) {
-		pmu_release_deepwakelock(PMU_AP_RUN);
-	}
 
 	RTK_LOGD(TAG, "APPG\n");
 }
@@ -129,7 +125,6 @@ void ap_power_on(void)
 		return;
 	}
 	pmu_acquire_wakelock(PMU_AP_RUN);
-	pmu_acquire_deepwakelock(PMU_AP_RUN);
 
 	ap_power_on_ctrl();
 
@@ -191,9 +186,6 @@ void ap_clock_gate(void)
 	/* since CA7 will be blocked even if interrupt happens, so still do clock gate here*/
 	ap_clk_gate_ctrl();
 	pmu_release_wakelock(PMU_AP_RUN);
-	if (APDslpEn) {
-		pmu_release_deepwakelock(PMU_AP_RUN);
-	}
 
 	RTK_LOGD(TAG, "APCG\n");
 
@@ -206,7 +198,6 @@ void ap_clock_on(void)
 		return;
 	}
 	pmu_acquire_wakelock(PMU_AP_RUN);
-	pmu_acquire_deepwakelock(PMU_AP_RUN);
 
 	ap_clk_wake_ctrl();
 
@@ -228,6 +219,7 @@ void ap_resume(void)
 		return;
 	}
 	pmu_acquire_wakelock(PMU_AP_RUN);
+	pmu_acquire_deepwakelock(PMU_OS);
 
 	/* check km4 state, km4 should be active before CA7 run*/
 	while (1) {
@@ -317,9 +309,7 @@ void ap_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqStat
 
 	ap_sleep_type = psleep_param->sleep_type;
 	if (psleep_param->dlps_enable) {
-		APDslpEn = TRUE;
-	} else {
-		APDslpEn = FALSE;
+		pmu_release_deepwakelock(PMU_OS);
 	}
 
 	if ((psleep_param->sleep_type == SLEEP_PG) || (psleep_param->sleep_type == SLEEP_CG)) {

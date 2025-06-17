@@ -4,6 +4,17 @@
 #if 1 //use sdk default mbedtls config, add openthread need
 
 //#include "mbedtls/mbedtls_config.h" //has include in config.h
+/*#include "build_info.h"
+#if (MBEDTLS_VERSION_NUMBER >= 0x03050000)
+#define MBEDTLS_AES_ONLY_128_BIT_KEY_LENGTH
+#endif
+#if (MBEDTLS_VERSION_NUMBER >= 0x03050000)
+#define MBEDTLS_BLOCK_CIPHER_NO_DECRYPT
+#endif
+
+#define MBEDTLS_DEPRECATED_REMOVED
+#define MBEDTLS_DEPRECATED_WARNING*/
+
 #ifndef MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
 #define MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
 #endif

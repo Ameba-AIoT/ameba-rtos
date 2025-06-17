@@ -927,7 +927,7 @@ rtk_bt_audio_track_t *rtk_bt_audio_track_add(uint32_t type, float left_volume, f
 	return ptrack;
 }
 
-rtk_bt_audio_record_t *rtk_bt_audio_record_add(uint32_t type, uint32_t channels, uint32_t rate, uint32_t buffer_bytes)
+rtk_bt_audio_record_t *rtk_bt_audio_record_add(uint32_t type, uint32_t channels, uint32_t rate, uint32_t buffer_bytes, uint32_t volume)
 {
 	struct bt_audio_intf_priv *priv = NULL;
 	rtk_bt_audio_record_t *precord = NULL;
@@ -989,7 +989,7 @@ rtk_bt_audio_record_t *rtk_bt_audio_record_add(uint32_t type, uint32_t channels,
 		osif_mutex_give(bt_audio_intf_priv_mutex);
 	}
 	rtk_bt_audio_record_set_parameters(precord->audio_record_hdl, "ch0_sel_amic=1");
-	rtk_bt_audio_record_set_capture_volume(channels, 0x7f);
+	rtk_bt_audio_record_set_capture_volume(channels, volume);
 	rtk_bt_audio_record_set_mic_bst_gain(RTK_BT_AUDIO_AMIC1, RTK_BT_AUDIO_MICBST_GAIN_40DB);
 
 	return precord;

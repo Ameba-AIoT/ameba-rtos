@@ -25,7 +25,6 @@ extern u8 __ram_nocache_start__[];
 extern u8 __ram_nocache_end__[];
 extern u8 __image3_bss_start__[];
 extern u8 __image3_bss_end__[];
-extern u8 __ram_image2_text_start__[];
 extern u8 __ram_image2_text_end__[];
 
 extern u8 __ipc_table_start__[];

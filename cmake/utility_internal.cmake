@@ -85,3 +85,11 @@ function(ameba_library_section_rename target)
         )
     endif()
 endfunction()
+
+function(ameba_library_section_prefix target prefix)
+    add_custom_command(
+        TARGET ${target} POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} --prefix-alloc-sections ${prefix} $<TARGET_FILE:${target}>
+        COMMENT "add prefix to sections of ${target} with prefix ${prefix}"
+    )
+endfunction()

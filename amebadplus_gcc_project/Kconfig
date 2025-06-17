@@ -154,7 +154,7 @@ menu "CONFIG APPLICATION"
 
     menu "AI Config"
         orsource "../component/tflite_micro/Kconfig"
-        rsource "../component/aivoice/Kconfig"
+        rsource "../component/aivoice/Kconfig.dplus"
     endmenu
 
     orsource "${RTK_APP_DIR}/Kconfig"

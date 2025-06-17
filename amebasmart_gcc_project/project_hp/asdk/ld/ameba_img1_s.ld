@@ -31,7 +31,6 @@ SECTIONS
 	.ram_image1.data . :
 	{
 		__ram_image1_data_start__ = .;
-		*(.boot.ram.data*)
 		*(.data*)
 		. = ALIGN(16);
 		__ram_image1_data_end__ = .;
@@ -42,7 +41,6 @@ SECTIONS
 	.ram_image1.bss . :
 	{
 		__image1_bss_start__ = .;
-		*(.boot.ram.bss*)
 		*(.bss*)
 		__image1_bss_end__ = .;
 	} > KM4_BOOTLOADER_RAM_S
@@ -50,7 +48,6 @@ SECTIONS
 	/* image2: normal image start */
 	.ram_image2.entry :
 	{
-		__ram_image2_text_start__ = .;
 		__image2_entry_func__ = .;
 		KEEP(*(SORT(.image2.entry.data*)))
 

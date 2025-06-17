@@ -66,7 +66,7 @@
 
 extern struct netif xnetif[NET_IF_NUM];
 extern struct netif eth_netif;
-extern signed char rltk_mii_send(struct eth_drv_sg *sg_list, int sg_len, int total_len);
+extern int rltk_mii_send(struct pbuf * p);
 
 #if defined(CONFIG_BRIDGE) && CONFIG_BRIDGE
 extern unsigned char get_bridge_portnum(void);
@@ -225,17 +225,8 @@ static err_t low_level_output_mii(struct netif *netif, struct pbuf *p)
 
 #if defined(CONFIG_ETHERNET_RMII) && CONFIG_ETHERNET_RMII
 	(void) TX_BUFFER;
-	struct eth_drv_sg sg_list[MAX_ETH_DRV_SG];
-	int sg_len = 0;
-	struct pbuf *q;
-
-	for (q = p; q != NULL && sg_len < MAX_ETH_DRV_SG; q = q->next) {
-		sg_list[sg_len].buf = (unsigned int) q->payload;
-		sg_list[sg_len++].len = q->len;
-	}
-
-	if (sg_len) {
-		if (rltk_mii_send(sg_list, sg_len, p->tot_len) != 0) {
+	if (p->tot_len) {
+		if (rltk_mii_send(p) != 0) {
 			return ERR_BUF;
 		}
 	}
@@ -300,6 +291,7 @@ void rltk_mii_recv(struct eth_drv_sg *sg_list, int sg_len)
 	}
 #endif
 }
+
 u8 rltk_mii_recv_data_check(u8 *mac)
 {
 	UNUSED(mac);
@@ -320,6 +312,55 @@ u8 rltk_mii_recv_data_check(u8 *mac)
 
 #endif
 	return check_res;
+}
+
+struct pbuf * ethernetif_rmii_buf_copy(u32 frame_len, u8 *src_buf)
+{
+#if (defined(CONFIG_ETHERNET_RMII) && CONFIG_ETHERNET_RMII)
+	struct pbuf *p, *q;
+	int sg_len = 0;
+
+	if (frame_len > MAX_BUFFER_SIZE) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "recv data len error, len=%d\n", frame_len);
+		return NULL;
+	}
+
+	// Allocate buffer to store received packet
+	p = pbuf_alloc(PBUF_RAW, frame_len, PBUF_POOL);
+	if (p == NULL) {
+		RTK_LOGW(TAG, "\n\r[%s]Cannot allocate pbuf to receive packet(%d)\n", __func__, frame_len);
+		return NULL;
+	}
+
+	for (q = p; q != NULL && sg_len < MAX_ETH_DRV_SG; q = q->next) {
+		memcpy((void *)(q->payload), src_buf, q->len);
+		src_buf += q->len;
+		sg_len++;
+	}
+
+	return p;
+#else
+	(void) frame_len;
+	(void) src_buf;
+	return NULL;
+#endif
+}
+
+void ethernetif_rmii_netif_recv(struct pbuf *p)
+{
+#if (defined(CONFIG_ETHERNET_RMII) && CONFIG_ETHERNET_RMII)
+	struct netif *netif = &eth_netif;
+
+	if (p == NULL) {
+		return;
+	}
+	// Pass received packet to the interface
+	if (ERR_OK != netif->input(p, netif)) {
+		pbuf_free(p);
+	}
+#else
+	(void) p;
+#endif
 }
 
 /* Refer to eCos eth_drv_recv to do similarly in ethernetif_input */
@@ -434,6 +475,7 @@ void ethernetif_mii_recv(u8 *buf, u32 frame_len)
 #endif
 
 }
+
 /**
  * Should be called at the beginning of the program to set up the
  * network interface. It calls the function low_level_init() to do the

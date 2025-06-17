@@ -79,7 +79,7 @@ int cmd_usb_loopback_test(u16 argc, u8 *argv[])
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Loop %d# PASS\n", loop);
 			continue;
 		} else {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Loop %d# FAIL\n", loop);
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Loop %d# FAIL\n", loop);
 			error_count++;
 			if (error_count >= USB_TEST_ERROR_THRESHOLD) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Loopback test FAIL: [0x%08x]=0x%08x\n", USB_REG_SLBBIST_CTRL, reg);

@@ -453,6 +453,27 @@ int atcmd_bt_a2dp_pbp(int argc, char *argv[])
 	return 0;
 }
 
+int bt_a2dp_hfp_pbp_main(uint8_t enable);
+int atcmd_bt_a2dp_hfp_pbp(int argc, char *argv[])
+{
+	(void)argc;
+	uint8_t op = 0;
+	char *action[] = {"disable", "enable"};
+
+	if ((op = (uint8_t)(str_to_int(argv[0]))) > 2) {
+		BT_LOGE("Error: wrong value (%d) for a2dp hfp pbp example!\r\n", op);
+		return -1;
+	}
+
+	if (bt_a2dp_hfp_pbp_main(op)) {
+		BT_LOGE("Error: a2dp hfp pbp example %s failed!\r\n", action[op]);
+		return -1;
+	}
+
+	BT_LOGA("a2dp hfp pbp example %s OK!\r\n", action[op]);
+	return 0;
+}
+
 int bt_a2dp_sink_tmap_main(uint8_t enable, uint8_t role);
 int atcmd_bt_a2dp_tmap(int argc, char *argv[])
 {

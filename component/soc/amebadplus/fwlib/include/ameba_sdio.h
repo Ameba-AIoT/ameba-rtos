@@ -20,6 +20,18 @@
 /** @defgroup SDIO_Exported_Types SDIO Exported Types
   * @{
   */
+
+/** @brief SDIO CFG Structure Definition
+ */
+typedef struct {
+	u32 sdio_clk_pin;		/*!< Specify CLK pin, refer to pinmux table */
+	u32 sdio_cmd_pin;		/*!< Specify CMD pin, refer to pinmux table */
+	u32 sdio_d0_pin;		/*!< Specify D0 pin, refer to pinmux table */
+	u32 sdio_d1_pin;		/*!< Specify D1 pin, refer to pinmux table */
+	u32 sdio_d2_pin;		/*!< Specify D2 pin, refer to pinmux table */
+	u32 sdio_d3_pin;		/*!< Specify D3 pin, refer to pinmux table */
+} SDIOCFG_TypeDef;
+
 /**
   * @brief	 SDIO Init structure definition
   */
@@ -34,9 +46,6 @@ typedef struct {
 	u32 RXBD_RING_SIZE; 	/*!< Specifies RXBD ring size, This parameter must be set to a value in the 0-0xFFFF range. */
 	u32 RXBD_FREE_TH;		/*!< the threshold of free RX BD count to trigger interrupt */
 } SDIO_InitTypeDef;
-/**
-  * @}
-  */
 
 /**
   * @brief SDIO Register Declaration

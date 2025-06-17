@@ -108,7 +108,9 @@ log_init_t log_init_table[] = {
 
 //======================================================
 #ifdef CONFIG_ATCMD_HOST_CONTROL
-
+#ifdef CONFIG_SUPPORT_SDIO_DEVICE
+extern SDIOCFG_TypeDef sdio_config;
+#endif
 RingBuffer *atcmd_tt_mode_rx_ring_buf = NULL;
 char g_tt_mode = 0;
 char g_tt_mode_check_watermark = 0;
@@ -512,7 +514,17 @@ int atcmd_host_control_config_setting(void)
 				atcmd_get_pin_from_json(spi_ob, "slave_sync_pin", &AT_SYNC_TO_MASTER_GPIO);
 			}
 		} else if (g_host_control_mode == AT_HOST_CONTROL_SDIO) {
-			// TODO: sdio interface
+#ifdef CONFIG_SUPPORT_SDIO_DEVICE
+			cJSON *sdio_ob;
+			if ((sdio_ob = cJSON_GetObjectItem(atcmd_ob, "sdio")) != NULL) {
+				atcmd_get_pin_from_json(sdio_ob, "clk", (u8 *)&sdio_config.sdio_clk_pin);
+				atcmd_get_pin_from_json(sdio_ob, "cmd", (u8 *)&sdio_config.sdio_cmd_pin);
+				atcmd_get_pin_from_json(sdio_ob, "d0", (u8 *)&sdio_config.sdio_d0_pin);
+				atcmd_get_pin_from_json(sdio_ob, "d1", (u8 *)&sdio_config.sdio_d1_pin);
+				atcmd_get_pin_from_json(sdio_ob, "d2", (u8 *)&sdio_config.sdio_d2_pin);
+				atcmd_get_pin_from_json(sdio_ob, "d3", (u8 *)&sdio_config.sdio_d3_pin);
+			}
+#endif
 		} else {
 			RTK_LOGE(TAG, "g_host_control_mode is invalid\r\n");
 		}
@@ -531,8 +543,11 @@ DEFAULT:
 		ret = atio_spi_init();
 	} else if (g_host_control_mode == AT_HOST_CONTROL_SDIO) {
 #ifdef CONFIG_SUPPORT_SDIO_DEVICE
+		RTK_LOGI(TAG, "ATCMD HOST Control Mode : SDIO, clk:%s, cmd:%s, d0:%s, d1:%s, d2:%s, d3:%s\r\n",
+				 PIN_VAL_TO_NAME_STR((int)sdio_config.sdio_clk_pin), PIN_VAL_TO_NAME_STR((int)sdio_config.sdio_cmd_pin),
+				 PIN_VAL_TO_NAME_STR((int)sdio_config.sdio_d0_pin), PIN_VAL_TO_NAME_STR((int)sdio_config.sdio_d1_pin),
+				 PIN_VAL_TO_NAME_STR((int)sdio_config.sdio_d2_pin), PIN_VAL_TO_NAME_STR((int)sdio_config.sdio_d3_pin));
 		ret = atio_sdio_init();
-		RTK_LOGI(TAG, "Confgure sdio host control mode!\r\n");
 #else
 		ret = -1;
 		RTK_LOGI(TAG, "NOT Support SDIO Interface!\r\n");

@@ -1,5 +1,5 @@
 @echo off
-SET JLinkGDBServer_Path=C:\"Program Files (x86)"\SEGGER\JLink\JLinkGDBServer.exe
+SET JLinkGDBServer_Path=C:\"Program Files (x86)"\SEGGER\JLink\JLink.exe
 
 IF NOT EXIST %JLinkGDBServer_Path% ( 
 ECHO %JLinkGDBServer_Path% is NOT EXIST, Please Check your JlinkGDBServer_Path in ca32_jlink_core1.bat
@@ -7,4 +7,4 @@ ECHO Jlink version with v7.22 or later is recommanded
 PAUSE && EXIT 
 )
 
-%JLinkGDBServer_Path% -select USB -device Cortex-A32 -if swd -scriptfile AP3_CA32_Core1.JLinkScript -port 2339 -nolocalhostonly
+%JLinkGDBServer_Path% -device Cortex-A32 -if swd -jlinkscriptfile AP3_CA32_Core1.JLinkScript

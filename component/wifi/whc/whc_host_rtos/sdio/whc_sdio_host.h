@@ -8,7 +8,14 @@
 #define DEV_DMA_ALIGN	1
 #define SDIO_INT_MODE	1
 #define SDIO_BLOCK_SIZE		256
+#ifdef CONFIG_AMEBADPLUS
 #define CALCULATE_FREE_TXBD 1 // for DP bug, comment after 7005 for tp
+#endif
+
+#ifdef CONFIG_AMEBAGREEN2
+#define GREEN2_WA
+#endif
+
 #define CONFIG_SDIO_TX_ENABLE_AVAL_INT 1
 
 #define CONFIG_WHC_BRIDGE_HOST 1

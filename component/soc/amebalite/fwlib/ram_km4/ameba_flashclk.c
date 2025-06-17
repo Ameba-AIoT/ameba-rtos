@@ -313,6 +313,9 @@ void flash_highspeed_setup(void)
 	SPIC_TypeDef *spi_flash = SPIC;
 	spi_flash->CTRLR0 |= BIT_SPI_DREIR_R_DIS;
 
+	/* set tSHSL (CS_H) to min 60ns (12 spic_clk) */
+	spi_flash->TPR0 = (spi_flash->TPR0 & ~MASK_CS_H_RD_DUM_LEN) | CS_H_RD_DUM_LEN(12);
+
 	/* if 8 auto rd wrap ever occur, and user rd + auto rd wrap is together, SPIC will return 0xFFFFFFFF only in Lite. */
 	/* Set DIS_WRAP_ALIGN = 1, SPIC will chop wrap transation into two incremental transactions to avoid corner case.*/
 	spi_flash->CTRLR2 |= BIT_DIS_WRAP_ALIGN;

@@ -19,7 +19,8 @@
 
 #define GMK_LEN					32
 #define GTK_LEN					32
-#define IGTK_LEN					16
+#define IGTK_LEN				16
+#define WPA_IGTK_MAX_LEN		32
 #define NumGroupKey				4
 #define KEY_NONCE_LEN		32
 #define KEY_RC_LEN				8
@@ -27,15 +28,20 @@
 #define KEY_RSC_LEN				8
 #define KEY_ID_LEN				8
 #define KEY_MIC_LEN				16
+#define KEY_MIC_LEN_SUITE_B_192             24
 #define KEY_MATERIAL_LEN		2
 #define PTK_LEN_EAPOLMIC        16
+#define PTK_LEN_EAPOLMIC_SUITE_B_192        24
 #define PTK_LEN_EAPOLENC        16
+#define PTK_LEN_EAPOLENC_SUITE_B_192        32
 #define PTK_LEN_TKIP           	64
 #define PTK_LEN_CCMP            48
 
-#define WPA_IGTK_MAX_LEN 32
+#define PTK_LEN_GCMP_256        88
+#define PTK_LEN_MAX             128
 
 #define EAPOLMSG_HDRLEN			95      //EAPOL-key payload length without KeyData
+#define EAPOLMSG_HDRLEN_SUITE_B_192		103  //diff=8bytes MIC(16->24)
 #define MAX_EAPOLMSG_LEN        512
 #define MAX_EAPOLKEYMSG_LEN		(MAX_EAPOLMSG_LEN-(ETH_HLEN+LIB1X_EAPOL_HDRLEN))
 
@@ -49,7 +55,9 @@
 #define KeyIDPos				69
 #define KeyMICPos				77
 #define KeyDataLenPos			93
+#define KeyDataLenPos_SUITE_B_192			101
 #define KeyDataPos				95
+#define KeyDataPos_SUITE_B_192				103
 
 #define SetSubStr(f,a,l)					memcpy(f.Octet+l,a.Octet,a.Length)
 #define GetKeyInfo0(f, mask) 				((f.Octet[KeyInfoPos + 1] & mask) ? 1 : 0)
@@ -92,6 +100,10 @@
 #define Message_KeyDataLength(f)			((unsigned short)(f.Octet[KeyDataLenPos] <<8) + (unsigned short)(f.Octet[KeyDataLenPos+1]))
 #define Message_setKeyDataLength(f, v)	(f.Octet[KeyDataLenPos] = (v&0xff00) >>8 ,  f.Octet[KeyDataLenPos+1] = (v&0x00ff))
 #define Message_setKeyData(f, v)			SetSubStr(f, v, KeyDataPos);
+
+#define Message_KeyDataLength_SUITE_B_192(f)			((unsigned short)(f.Octet[KeyDataLenPos_SUITE_B_192] <<8) + (unsigned short)(f.Octet[KeyDataLenPos_SUITE_B_192+1]))
+#define Message_setKeyDataLength_SUITE_B_192(f, v)	(f.Octet[KeyDataLenPos_SUITE_B_192] = (v&0xff00) >>8 ,  f.Octet[KeyDataLenPos_SUITE_B_192+1] = (v&0x00ff))
+#define Message_setKeyData_SUITE_B_192(f, v)			SetSubStr(f, v, KeyDataPos_SUITE_B_192);
 
 #define Message_CopyReplayCounter(f1, f2)	memcpy(f1.Octet + ReplayCounterPos, f2.Octet + ReplayCounterPos, KEY_RC_LEN)
 #define Message_DefaultReplayCounter(li)	(((li.field.HighPart == 0xffffffff) && (li.field.LowPart == 0xffffffff) ) ?1:0)
@@ -212,7 +224,7 @@ struct _LIB1X_EAPOL_KEY {
 	unsigned char		key_iv[KEY_IV_LEN];
 	unsigned char		key_rsc[KEY_RSC_LEN];
 	unsigned char		key_id[KEY_ID_LEN];
-	unsigned char		key_mic[KEY_MIC_LEN];
+	unsigned char		key_mic[KEY_MIC_LEN_SUITE_B_192];
 	unsigned char		key_data_len[KEY_MATERIAL_LEN];
 	unsigned char		*key_data;
 };
@@ -236,7 +248,6 @@ int wifi_rom_wpa_key_mgmt_sha384(int akm);
 void wifi_rom_ap_constructEAPOL_1Of4Way(struct eapol_params *params);
 u8 wifi_rom_ap_constructEAPOL_3Of4Way(struct eapol_params *params, struct eapol_params_2 *params2, u8 is_80211w);
 void wifi_rom_ap_constructEAPOL_1Of2Way(struct eapol_params *params, struct eapol_params_2 *params2, u8 is_80211w);
-u8 wifi_rom_check_append_pmkid(struct _OCTET_STRING *pEapolKeyMsgRecvd, struct _OCTET_STRING *pAuthInfoElement, u8 *pmkid, u8 is_80211w);
 void wifi_rom_check_append_rsnxe(struct _OCTET_STRING *pAuthInfoElement, u8 h2e, u8 *rsnxe_ie);
 void wifi_rom_set_playercounter(union _LARGE_INTEGER *x, unsigned long HighPart, unsigned long LowPart);
 u8 wifi_rom_equal_playercounter(union _LARGE_INTEGER *x, union _LARGE_INTEGER *y);
@@ -262,11 +273,12 @@ int wifi_rom_decrypt_WPA2keydata(struct _OCTET_STRING EAPOLMsgRecvd, struct _OCT
 int wifi_rom_decrypt_GTK(struct _OCTET_STRING EAPOLMsgRecvd, unsigned char *kek, int keklen, int keylen, unsigned char *kout, int kout_size);
 void wifi_rom_client_constructEAPOL_2Of4Way(struct _OCTET_STRING *pEapolKeyMsgSend, struct _OCTET_STRING StaInfoEapolKeyMsgRecvd,
 		struct _OCTET_STRING StaInfoSNonce);
-void wifi_rom_client_constructEAPOL_4Of4Way(struct _OCTET_STRING *pEapolKeyMsgSend, struct _OCTET_STRING StaInfoEapolKeyMsgRecvd);
-void wifi_rom_client_constructEAPOL_2Of2Way(struct _OCTET_STRING *pEapolKeyMsgSend, struct _OCTET_STRING StaInfoEapolKeyMsgRecvd, int GblInfoGN);
+void wifi_rom_client_constructEAPOL_4Of4Way(struct _OCTET_STRING *pEapolKeyMsgSend, struct _OCTET_STRING StaInfoEapolKeyMsgRecvd, u32 AuthKeyMgmt);
+void wifi_rom_client_constructEAPOL_2Of2Way(struct _OCTET_STRING *pEapolKeyMsgSend, struct _OCTET_STRING StaInfoEapolKeyMsgRecvd, int GblInfoGN,
+		u32 AuthKeyMgmt);
 void wifi_rom_client_constructEAPOL_MICof2Way(struct _OCTET_STRING *pEapolKeyMsgSend, union _LARGE_INTEGER *pStaInfoclientMICReportReplayCounter,
 		int StaInfoRSNEnabled,
-		u8 KeyDescriptorVer);
+		u8 KeyDescriptorVer, u32 AuthKeyMgmt);
 void strtopsk(u8 *des, u8 *src, u8 len);
 int rom_psk_PasswordHash(unsigned char *password, int passwordlength, unsigned char *ssid, int ssidlength, unsigned char *output);
 int wifi_rom_eapol_check_rsne_pmkid(u8 *ie, u8 ie_len, u8 *pmkid);

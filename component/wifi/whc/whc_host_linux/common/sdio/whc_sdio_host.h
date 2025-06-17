@@ -51,6 +51,7 @@ struct whc_sdio {
 	u32 		sdio_himr;
 	u32 		sdio_hisr;
 	u16			txbd_size;
+	u16			txbd_wptr;
 	u16			rxbd_num;
 	u16 		SdioTxBDFreeNum;
 	u32 		SdioTxMaxSZ; //The Size of Single Tx buf addressed by TX_BD

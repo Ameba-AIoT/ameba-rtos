@@ -46,7 +46,6 @@ SECTIONS
 	/* image2: normal image start */
 	.ram_image2.entry :
 	{
-		__ram_image2_text_start__ = .;
 		__image2_entry_func__ = .;
 		KEEP(*(SORT(.image2.entry.data*)))
 

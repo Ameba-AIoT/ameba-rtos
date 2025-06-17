@@ -93,6 +93,7 @@ int whc_fullmac_host_ndev_p2p_register(enum nl80211_iftype type, const char *nam
 	int ret = false;
 	struct net_device *ndev = NULL;
 	struct wireless_dev *wdev;
+	u8 dev_addr[ETH_ALEN] = {0};
 
 	/*step1: alloc netdev*/
 	ndev = alloc_etherdev_mq(sizeof(struct netdev_priv_t), 1);
@@ -122,8 +123,13 @@ int whc_fullmac_host_ndev_p2p_register(enum nl80211_iftype type, const char *nam
 	/* step3: special setting for netdev */
 	if (type == NL80211_IFTYPE_P2P_GO) {
 		/* set p2p mac address, otherwise the intend interface addr in GO neg will be zero*/
-		memcpy(global_idev.pndev[wlan_idx]->dev_addr, global_idev.pndev[0]->dev_addr, ETH_ALEN);
-		global_idev.pndev[wlan_idx]->dev_addr[1] = global_idev.pndev[0]->dev_addr[1] + 1;
+		memcpy(dev_addr, global_idev.pndev[0]->dev_addr, ETH_ALEN);
+		dev_addr[1] = global_idev.pndev[0]->dev_addr[1] + 1;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0))
+		memcpy((void *)global_idev.pndev[wlan_idx]->dev_addr, dev_addr, ETH_ALEN);
+#else
+		eth_hw_addr_set(global_idev.pndev[wlan_idx], dev_addr);
+#endif
 	} else if (type == NL80211_IFTYPE_P2P_CLIENT) {
 		whc_fullmac_host_init_ap();
 		global_idev.p2p_global.pd_wlan_idx = 1;

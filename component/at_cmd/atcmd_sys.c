@@ -865,6 +865,19 @@ void at_tickps(void *arg)
 	}
 
 	if (_strcmp((const char *)argv[1], "DSLP") == 0) {
+		if (argc >= 3 && argc <= 4) {
+			/*unit: ms*/
+			u32 min_time = 0, max_time = 0;
+			if (argc >= 4) {
+				max_time =  _strtoul((const char *)(argv[3]), (char **)NULL, 10);
+			}
+			if (argc >= 3) {
+				min_time =  _strtoul((const char *)(argv[2]), (char **)NULL, 10);
+			}
+
+			pmu_set_sleep_time_range(min_time, max_time);
+		}
+
 		pmu_release_wakelock(PMU_OS);
 		pmu_release_deepwakelock(PMU_OS);
 	}
