@@ -4,22 +4,23 @@ config USBH_CDC_ACM_MENU
 
 config USBH_CDC_ECM_MENU
     bool "CDC ECM"
+    depends on SUPPORT_USBH_ECM || SUPPORT_USBH_ECM_BRIDGE
     select USBH_CDC_ECM if CORE_AS_AP
 
     if USBH_CDC_ECM_MENU
         choice
             prompt "Select USB Ethernet"
-            default USBH_ECM_ETHERNE_MENU
-            config  USBH_ECM_ETHERNE_MENU
+            default USBH_ECM_ETHERNET_MENU
+            config  USBH_ECM_ETHERNET_MENU
                 bool "USB Ethernet"
-                depends on AMEBASMART||AMEBAD
-                select LWIP_USB_ETHERNET
-                select USBH_ECM_ETHERNE if CORE_AS_AP
+                depends on SUPPORT_USBH_ECM
+                select LWIP_USB_ETHERNET if CORE_AS_AP
+                select USBH_ECM_ETHERNET if CORE_AS_AP
             config  USBH_ECM_ETHERNET_BRIDGE_MENU
                 bool "USB Ethernet Bridge"
-                depends on AMEBASMART
-                select LWIP_USB_ETHERNET
-                select LWIP_USB_ETHERNET_BRIDGE
+                depends on SUPPORT_USBH_ECM_BRIDGE
+                select LWIP_USB_ETHERNET if CORE_AS_AP
+                select LWIP_USB_ETHERNET_BRIDGE if CORE_AS_AP
                 select USBH_ECM_ETHERNET_BRIDGE if CORE_AS_AP
         endchoice
     endif
@@ -27,6 +28,7 @@ config USBH_CDC_ECM_MENU
 config USBH_MSC_MENU
     bool "MSC"
     select USBH_MSC if CORE_AS_AP
+    select VFS_FATFS_INCLUDED if CORE_AS_AP
 
 config USBH_UVC_MENU
     bool "UVC"

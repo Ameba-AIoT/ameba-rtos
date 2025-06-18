@@ -74,8 +74,8 @@ static int usbd_composite_scsi_process_write(usbd_composite_msc_dev_t *mdev);
 
 /* Private variables ---------------------------------------------------------*/
 
-/* USB Mass storage Page 0 Inquiry Data */
-static const u8  Page00_Inquiry_Data[] = {
+/* MSC page 0 inquiry data */
+static const u8 usbd_composite_msc_page0_inquiry_data[] = {
 	0x00,
 	0x00,
 	0x00,
@@ -85,7 +85,8 @@ static const u8  Page00_Inquiry_Data[] = {
 	0x83
 };
 
-static const u8 Standard_Inquiry_Data[] = {
+/* MSC standard inquiry data */
+static const u8 usbd_composite_msc_standard_inquiry_data[] = {
 	0x00,          /* Direct Access Device */
 	0x80,          /* RMB = 1: Removable Medium */
 	0x02,          /* Version: No conformance claim to standard */
@@ -103,16 +104,16 @@ static const u8 Standard_Inquiry_Data[] = {
 	'1', '.', '0', ' '
 };
 
-/* USB Mass storage sense 6  Data */
-static const u8  Mode_Sense6_data[] = {
+/* MSC sense 6 data */
+static const u8 usbd_composite_msc_mode_sense6_data[] = {
 	0x03,
 	0x00,
 	0x00,
 	0x00
 };
 
-/* USB Mass storage sense 10  Data */
-static const u8  Mode_Sense10_data[] = {
+/* MSC sense 10 Data */
+static const u8 usbd_composite_msc_mode_sense10_data[] = {
 	0x00,
 	0x06,
 	0x00,
@@ -163,10 +164,10 @@ static int  usbd_composite_scsi_inquiry(usbd_composite_msc_dev_t *mdev, u8 *para
 {
 	if (params[1] & 0x01U) { /*Evpd is set*/
 		mdev->data_length = PAGE00_INQUIRY_DATA_LEN;
-		usb_os_memcpy((void *)mdev->data, (void *)Page00_Inquiry_Data, mdev->data_length);
+		usb_os_memcpy((void *)mdev->data, (void *)usbd_composite_msc_page0_inquiry_data, mdev->data_length);
 	} else {
 		mdev->data_length = MIN(params[4], STANDARD_INQUIRY_DATA_LEN);
-		usb_os_memcpy((void *)mdev->data, (void *)Standard_Inquiry_Data, mdev->data_length);
+		usb_os_memcpy((void *)mdev->data, (void *)usbd_composite_msc_standard_inquiry_data, mdev->data_length);
 	}
 
 	return 0;
@@ -252,7 +253,7 @@ static int usbd_composite_scsi_mode_sense6(usbd_composite_msc_dev_t *mdev, u8 *p
 	UNUSED(params);
 
 	mdev->data_length = MODE_SENSE6_DATA_LEN;
-	usb_os_memcpy((void *)mdev->data, (void *)Mode_Sense6_data, mdev->data_length);
+	usb_os_memcpy((void *)mdev->data, (void *)usbd_composite_msc_mode_sense6_data, mdev->data_length);
 
 	return 0;
 }
@@ -268,7 +269,7 @@ static int usbd_composite_scsi_mode_sense10(usbd_composite_msc_dev_t *mdev, u8 *
 	UNUSED(params);
 
 	mdev->data_length = MODE_SENSE10_DATA_LEN;
-	usb_os_memcpy((void *)mdev->data, (void *)Mode_Sense10_data, mdev->data_length);
+	usb_os_memcpy((void *)mdev->data, (void *)usbd_composite_msc_mode_sense10_data, mdev->data_length);
 
 	return 0;
 }

@@ -747,10 +747,16 @@ void flash_highspeed_setup(void)
 	u8 read_mode;
 	u8 flash_speed;
 	u8 nand_reg;
+	u8 spic_ckd;
+	u32 pll_clk = PLL_NP_ClkGet();
 
 	read_mode = flash_get_option(Flash_ReadMode, FALSE);
 	flash_speed = flash_get_option(Flash_Speed, TRUE);
-	//RTK_LOGD(TAG, "flash_speed: %lu\n", flash_speed);
+
+	spic_ckd = DIV_ROUND_UP(pll_clk, SPIC_CLK_LIMIT) - 1;
+	flash_speed = MAX(flash_speed, spic_ckd);
+	RTK_LOGI(TAG, "SPIC CLK: %d Hz\n", pll_clk / (flash_speed + 1));
+
 	__asm volatile("cpsid i");
 
 	/* SPIC stay in BUSY state when there are more than 0x1_0000 cycles between two input data.

@@ -104,6 +104,8 @@ typedef struct {
 } usbd_composite_msc_scsi_sense_data_t;
 
 typedef struct {
+	usbd_ep_t ep_bulk_in;
+	usbd_ep_t ep_bulk_out;
 	usb_dev_t *dev;
 	usbd_composite_dev_t *cdev;
 	usbd_composite_msc_cbw_t *cbw;
@@ -122,16 +124,14 @@ typedef struct {
 	u8 bot_status;
 	u8 scsi_sense_head;
 	u8 scsi_sense_tail;
-	__IO u8 is_ready : 1;
 	u8 is_open : 1;
 	u8 phase_error : 1;
 } usbd_composite_msc_dev_t;
 
-extern usbd_class_driver_t usbd_composite_msc_driver;
+extern const usbd_class_driver_t usbd_composite_msc_driver;
 
 int usbd_composite_msc_init(usbd_composite_dev_t *cdev);
 void usbd_composite_msc_deinit(void);
 
 int usbd_composite_msc_disk_init(void);
-
 #endif // USBD_COMPOSITE_MSC_H

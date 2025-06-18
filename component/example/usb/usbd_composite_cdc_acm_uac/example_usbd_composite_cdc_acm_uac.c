@@ -44,10 +44,13 @@ static const char *const TAG = "COMP";
 #define CONFIG_USBD_UAC_DEMUX_CH_DEBUG   1
 
 // USB speed
-#ifdef CONFIG_USB_FS
-#define CONFIG_USBD_COMPOSITE_SPEED								USB_SPEED_FULL
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
+#define CONFIG_USBD_COMPOSITE_SPEED USB_SPEED_FULL
+#elif defined(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC1)
+/* UAC 1.0 spec supports only Full Speed. */
+#define CONFIG_USBD_COMPOSITE_SPEED USB_SPEED_HIGH_IN_FULL
 #else
-#define CONFIG_USBD_COMPOSITE_SPEED								USB_SPEED_HIGH
+#define CONFIG_USBD_COMPOSITE_SPEED USB_SPEED_HIGH
 #endif
 
 // Thread priorities
@@ -63,7 +66,7 @@ static const char *const TAG = "COMP";
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
-static void composite_cb_status_changed(u8 status);
+static void composite_cb_status_changed(u8 old_status, u8 status);
 static int composite_cb_set_config(void);
 
 static int composite_cdc_acm_cb_init(void);
@@ -105,7 +108,7 @@ static usbd_composite_cdc_acm_line_coding_t composite_cdc_acm_line_coding;
 
 static u16 composite_cdc_acm_ctrl_line_state;
 
-#ifdef CONFIG_USB_FS
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
 #define COMP_USBD_AUDIO_MS_BUF_SIZE               1023U
 #else
 /* the buffer size maybe need to be changed if format( AUDIO_BYTE_WIDTH_SIZE * AUDIO_CHANNEL_NUM num * AUDIO_SAMPLING_RATE) changes */
@@ -152,9 +155,9 @@ static rtos_sema_t composite_attach_status_changed_sema;
 #endif
 
 /* Private functions ---------------------------------------------------------*/
-static void composite_cb_status_changed(u8 status)
+static void composite_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d\n", status);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
 	composite_attach_status = status;
 	rtos_sema_give(composite_attach_status_changed_sema);
@@ -389,9 +392,15 @@ static int composite_uac_cb_volume_changed(u8 volume)
 static int composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set sampling_freq %d set ch_cnt %d\n", sampling_freq, ch_cnt);
-	composite_uac_usr_cb.out.sampling_freq = sampling_freq;
-	composite_uac_usr_cb.out.ch_cnt = ch_cnt;
-	composite_uac_usr_cb.out.byte_width = byte_width;
+	if (sampling_freq != 0U) {
+		composite_uac_usr_cb.out.sampling_freq = sampling_freq;
+	}
+	if (ch_cnt != 0U) {
+		composite_uac_usr_cb.out.ch_cnt = ch_cnt;
+	}
+	if (byte_width != 0U) {
+		composite_uac_usr_cb.out.byte_width = byte_width;
+	}
 	rtos_sema_give(uac_ready_sema);
 	audio_task_stop = 1;
 

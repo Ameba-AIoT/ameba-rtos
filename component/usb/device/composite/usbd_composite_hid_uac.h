@@ -4,15 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef USBD_COMPOSITE_UAC_HID_H
-#define USBD_COMPOSITE_UAC_HID_H
+#ifndef USBD_COMPOSITE_HID_UAC_H
+#define USBD_COMPOSITE_HID_UAC_H
 
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbd.h"
 #include "usbd_composite_config.h"
 #include "usbd_composite_hid_bi_dir.h"
-#include "usbd_composite_uac.h"
+#if defined(CONFIG_USBD_COMPOSITE_HID_UAC1)
+#include "usbd_composite_uac1.h"
+#else
+#include "usbd_composite_uac2.h"
+#endif
 
 /* Exported defines ----------------------------------------------------------*/
 
@@ -29,5 +33,5 @@ int usbd_composite_init(usbd_composite_hid_usr_cb_t *hid_cb, usbd_composite_uac_
 
 void usbd_composite_deinit(void);
 
-#endif // USBD_COMPOSITE_UAC_HID_H
+#endif // USBD_COMPOSITE_HID_UAC_H
 

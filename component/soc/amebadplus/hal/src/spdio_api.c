@@ -4,6 +4,9 @@
 #include "os_wrapper.h"
 
 static const char *const TAG = "SPDIO";
+
+extern SDIOCFG_TypeDef sdio_config;
+
 /** @addtogroup Ameba_Mbed_API
  * @{
  */
@@ -108,21 +111,6 @@ PHAL_SPDIO_ADAPTER pgSPDIODev = NULL;
 /**
  * @}
  */
-
-/* group: MBED_SPDIO_Exported_Types */
-/* Since all the members in the group are static which will not be extracted to the doxygen doc,
-  no @defgroup comment is added to avoid there is nothing displayed under the group. */
-
-static const u8 SDIO_DEV_PAD[5][6] = {
-	/* CLK     CMD     D3      D2      D1      D0 */
-	{_PA_16, _PA_15, _PA_14, _PA_13, _PA_18, _PA_17}, // Group1: PA13-PA18
-	{_PA_29, _PA_28, _PA_27, _PA_26, _PA_31, _PA_30}, // Group2: PA26-PA31
-	{_PB_9,  _PB_8,  _PB_7,  _PB_6,  _PB_14, _PB_13}, // Group3: PB6-PB9, PB13-PB14, default
-	{_PB_19, _PB_18, _PB_17, _PA_12, _PB_21, _PB_20}, // Group4: PA12, PB17-PB21
-	{_PB_26, _PB_25, _PB_24, _PB_23, _PB_28, _PB_27}  // Group5: PB23-PB28
-};
-
-/* end of group */
 
 /** @defgroup MBED_SPDIO_Exported_Functions MBED_SPDIO Exported Functions
  * @{
@@ -516,19 +504,28 @@ static void SPDIO_IRQ_Handler_BH(void *pData)
 	}
 }
 
-void SPDIO_Board_Init(u8 PinGrp)
+void SPDIO_Board_Init(void)
 {
-	u8 idx;
+	Pinmux_Config(sdio_config.sdio_clk_pin, PINMUX_FUNCTION_SDIO);	/* CLK */
+	Pinmux_Config(sdio_config.sdio_cmd_pin, PINMUX_FUNCTION_SDIO);	/* CMD */
+	Pinmux_Config(sdio_config.sdio_d0_pin, PINMUX_FUNCTION_SDIO); 	/* D0 */
+	Pinmux_Config(sdio_config.sdio_d1_pin, PINMUX_FUNCTION_SDIO);	/* D1 */
+	Pinmux_Config(sdio_config.sdio_d2_pin, PINMUX_FUNCTION_SDIO);	/* D2 */
+	Pinmux_Config(sdio_config.sdio_d3_pin, PINMUX_FUNCTION_SDIO);	/* D3 */
 
-	assert_param(PinGrp <= SPDIO_PINMUX_GRPMAX);
+	PAD_PullCtrl(sdio_config.sdio_clk_pin, GPIO_PuPd_UP);	/* CLK */
+	PAD_PullCtrl(sdio_config.sdio_cmd_pin, GPIO_PuPd_UP);	/* CMD */
+	PAD_PullCtrl(sdio_config.sdio_d0_pin, GPIO_PuPd_UP); 	/* D0 */
+	PAD_PullCtrl(sdio_config.sdio_d1_pin, GPIO_PuPd_UP);	/* D1 */
+	PAD_PullCtrl(sdio_config.sdio_d2_pin, GPIO_PuPd_UP);	/* D2 */
+	PAD_PullCtrl(sdio_config.sdio_d3_pin, GPIO_PuPd_UP);	/* D3 */
 
-	/* Pinmux function and Pad control */
-	for (idx = 0; idx < 6; idx++) {
-		PAD_PullCtrl(SDIO_DEV_PAD[PinGrp][idx], GPIO_PuPd_UP);
-		Pinmux_Config(SDIO_DEV_PAD[PinGrp][idx], PINMUX_FUNCTION_SDIO);
-		RTK_LOGI(TAG, "SDIO_DEV: P%c%d\n", 'A' + PORT_NUM(SDIO_DEV_PAD[PinGrp][idx]),
-				 PIN_NUM(SDIO_DEV_PAD[PinGrp][idx]));
-	}
+	RTK_LOGI(TAG, "SDIO_CMD --> P%c%d\n", 'A' + PORT_NUM(sdio_config.sdio_clk_pin), PIN_NUM(sdio_config.sdio_clk_pin));
+	RTK_LOGI(TAG, "SDIO_CLK --> P%c%d\n", 'A' + PORT_NUM(sdio_config.sdio_cmd_pin), PIN_NUM(sdio_config.sdio_cmd_pin));
+	RTK_LOGI(TAG, "SDIO_D0 --> P%c%d\n", 'A' + PORT_NUM(sdio_config.sdio_d0_pin), PIN_NUM(sdio_config.sdio_d0_pin));
+	RTK_LOGI(TAG, "SDIO_D1 --> P%c%d\n", 'A' + PORT_NUM(sdio_config.sdio_d1_pin), PIN_NUM(sdio_config.sdio_d1_pin));
+	RTK_LOGI(TAG, "SDIO_D2 --> P%c%d\n", 'A' + PORT_NUM(sdio_config.sdio_d2_pin), PIN_NUM(sdio_config.sdio_d2_pin));
+	RTK_LOGI(TAG, "SDIO_D3 --> P%c%d\n", 'A' + PORT_NUM(sdio_config.sdio_d3_pin), PIN_NUM(sdio_config.sdio_d3_pin));
 }
 
 /**
@@ -581,7 +578,7 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 	}
 	pgSPDIODev->pRXDESCAddrAligned = (INIC_RX_DESC *)(((((u32)pgSPDIODev->pRXDESCAddr - 1) >> 2) + 1) << 2); // Make it 4-bytes aligned
 
-	SPDIO_Board_Init(SPDIO_PINMUX_GRP3);
+	SPDIO_Board_Init();
 
 	/* SDIO function enable and clock enable*/
 	RCC_PeriphClockCmd(APBPeriph_SDIO, APBPeriph_SDIO_CLOCK, ENABLE);

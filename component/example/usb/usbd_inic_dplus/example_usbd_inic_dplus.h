@@ -5,8 +5,8 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef EXAMPLE_USBD_COMPOSITE_UAC_HID_CDC_ACM_H
-#define EXAMPLE_USBD_COMPOSITE_UAC_HID_CDC_ACM_H
+#ifndef EXAMPLE_USBD_INIC_DPLUS_H
+#define EXAMPLE_USBD_INIC_DPLUS_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -18,7 +18,7 @@
 
 /* Exported functions ------------------------------------------------------- */
 
-void example_usbd_composite(void);
+void example_usbd_inic_dplus(void);
 
-#endif /* EXAMPLE_USBD_COMPOSITE_UAC_HID_CDC_ACM_H */
+#endif /* EXAMPLE_USBD_INIC_DPLUS_H */
 

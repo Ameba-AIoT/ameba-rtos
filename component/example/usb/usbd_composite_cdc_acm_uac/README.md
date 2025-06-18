@@ -9,17 +9,23 @@ None
 # SW configuration
 
 1. Menuconfig
-	Type command `./menuconfig.py` under the project directory and choose `CONFIG USB`:
+	Type command `./menuconfig.py` under the project directory and :
+	- Choose `CONFIG USB --->`:
 	```
 	[*] Enable USB
 			USB Mode (Device)  --->
 	[*] Composite
 			Select Composite Class (CDC ACM + UAC)  --->
+	- Choose UAC Version 1.0 or 2.0 :
+	(X) CDC ACM + UAC
+			Select UAC Version (UAC 2.0)  --->
 	```
-	choose `CONFIG APPLICATION` -> `Audio Config`:
+	- Choose `CONFIG APPLICATION --->` -> `Audio Config --->`:
 	```
 	[*] Enable Audio Framework
-			Select Audio Interfaces (Mixer)  --->
+			Select Audio Interfaces (PassThrough)  --->
+
+	Note: If the audio speaker is not very smooth, choose `Select Audio Interfaces (Mixer)`, check the audio composite note to get more details.
 	```
 	Save and exit.
 
@@ -40,9 +46,17 @@ None
 
 3. Launch any serial port tool (e.g. Realtek Trace Tool), open the virtual serial port against the USB port of Ameba board, send messages to the Ameba board and the board will echo back the received messages.
 
-4. Play music on a PC, if you connect a speaker to the board, sound will come out.
+4. After the USB Audio driver is successfully loaded, USB host end will recognize Ameba as an audio device.
 
-5. Reset and check the log via LOGUART console, make sure there is no error reported.
+5. Play music on a PC, if you connect a speaker to the board, sound will come out.
+   ```
+	- Open the OS Sound Bar, enable the Realtek Composite Device speaker device if it is disabled. Locate the device in the Device Manager and enable it manually.
+	- Open the OS Sound Bar, set Realtek Composite Device Speaker as default device.
+	- Open the Sound Control Panel, select the Realtek Composite Device Speaker device -- configure the speakers -- choose a specific channel setup -- finalize the configuration, and then click Test.
+	- If you connect a speaker to the board, sound will play.
+   ```
+
+6. Reset and check the log via LOGUART console, make sure there is no error reported.
 
 # Note
 

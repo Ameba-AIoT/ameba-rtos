@@ -33,7 +33,7 @@ static int usbh_uac_cb_setup(usb_host_t *host);
 static int usbh_uac_cb_sof(usb_host_t *host);
 /* Private variables ---------------------------------------------------------*/
 
-static const char *const TAG = "UAC";
+static const char *const TAG = "USBH";
 
 /* USB Standard Device Descriptor */
 static usbh_class_driver_t usbh_uac_driver = {

@@ -16,7 +16,7 @@
 #include "usbh.h"
 
 /* Private defines -----------------------------------------------------------*/
-static const char *const TAG = "EMC";
+static const char *const TAG = "USBH";
 
 /* Private types -------------------------------------------------------------*/
 
@@ -37,6 +37,7 @@ static __IO int msc_is_ready = 0;
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.dma_enable = FALSE,
+	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = 3U,
 	.isr_task_priority = 4U,
 };

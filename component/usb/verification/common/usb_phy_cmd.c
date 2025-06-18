@@ -6,13 +6,14 @@
 
 /* Includes ------------------------------------------------------------------ */
 
+#include <platform_autoconf.h>
 #include "ameba_soc.h"
-#include "usb_regs.h"
 #include "usb_hal.h"
-#include "usbd.h"
+
+#ifndef CONFIG_SUPPORT_USB_NO_PHY
 
 /* Private defines -----------------------------------------------------------*/
-static const char *const TAG = "CTS";
+static const char *const TAG = "USB";
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
@@ -25,7 +26,7 @@ static const char *const TAG = "CTS";
 
 /* Exported functions --------------------------------------------------------*/
 
-int cmd_usbd_cts_phydw(u16 argc, u8 *argv[])
+int cmd_usb_phydw(u16 argc, u8 *argv[])
 {
 	u8 addr;
 	u8 val;
@@ -33,7 +34,7 @@ int cmd_usbd_cts_phydw(u16 argc, u8 *argv[])
 
 	if (argc != 2) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid arguments, usage:\n");
-		RTK_LOGS(TAG, RTK_LOG_ERROR, " usbd phydw <address_hex>\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "  usb phydw <address_hex>\n");
 		return HAL_ERR_PARA;
 	}
 
@@ -48,7 +49,7 @@ int cmd_usbd_cts_phydw(u16 argc, u8 *argv[])
 	return ret;
 }
 
-int cmd_usbd_cts_phyew(u16 argc, u8 *argv[])
+int cmd_usb_phyew(u16 argc, u8 *argv[])
 {
 	u8 addr;
 	u8 val;
@@ -56,7 +57,7 @@ int cmd_usbd_cts_phyew(u16 argc, u8 *argv[])
 
 	if (argc != 3) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid arguments, usage:\n");
-		RTK_LOGS(TAG, RTK_LOG_ERROR, " usbd phyew <address_hex> <value_hex>\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "  usb phyew <address_hex> <value_hex>\n");
 		return HAL_ERR_PARA;
 	}
 
@@ -72,3 +73,4 @@ int cmd_usbd_cts_phyew(u16 argc, u8 *argv[])
 	return ret;
 }
 
+#endif

@@ -12,7 +12,7 @@
 #include "dlist.h"
 
 /* Exported defines ----------------------------------------------------------*/
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAL2)
+#ifdef CONFIG_SUPPORT_USBH_UVC_HW_DEC
 #define UVC_USE_HW						1	/* use uvc hw decoder */
 #else
 #define UVC_USE_HW						0

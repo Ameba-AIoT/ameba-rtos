@@ -9,7 +9,7 @@
 #include "usbd_verify.h"
 #include "usbd_chip_info.h"
 
-static const char *const TAG = "VRY";
+static const char *const TAG = "USBD";
 static volatile u8 usbd_verify_ep_status_flag = 0;
 
 /* Echo asynchronously, for transfer size larger than packet size. While fpr
@@ -62,10 +62,9 @@ typedef struct {
 /* Private function prototypes -----------------------------------------------*/
 static int cmd_usbd_verify_init(void);
 static int cmd_usbd_verify_deinit(void);
-static u8 *cmd_usbd_verify_get_config_desc(u16 *len);
+static u16 cmd_usbd_verify_get_config_desc(u8 *buf);
 static int cmd_usbd_verify_set_config(usb_dev_t *dev);
 static int cmd_usbd_verify_clear_config(usb_dev_t *dev);
-static int cmd_usbd_verify_setup(u8 cmd, u8 *buf, u16 len, u16 value);
 static int cmd_usbd_verify_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int cmd_usbd_verify_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
 static int cmd_usbd_verify_handle_ep0_data_in(usb_dev_t *dev, u8 status);
@@ -78,14 +77,13 @@ static int cmd_usbd_verify_cb_received(u8 *buf, u32 len, void *ep);
 /* Verify Device */
 static cmd_usbd_verify_ep_t cmd_usbd_verify_ep;
 
-static usbd_verify_cb_t cmd_usbd_verify_cb = {
+static const usbd_verify_cb_t cmd_usbd_verify_cb = {
 	.init = cmd_usbd_verify_init,
 	.deinit = cmd_usbd_verify_deinit,
 	.get_config_desc = cmd_usbd_verify_get_config_desc,
 
 	.set_config = cmd_usbd_verify_set_config,
 	.clear_config = cmd_usbd_verify_clear_config,
-	.setup = cmd_usbd_verify_setup,
 
 	.ep0_data_in = cmd_usbd_verify_handle_ep0_data_in,
 	.ep0_data_out = cmd_usbd_verify_handle_ep0_data_out,
@@ -105,7 +103,7 @@ static usbd_config_t cmd_usbd_verify_cfg = {
 	/*DFIFO total 1024 DWORD, resv 12 DWORD for DMA addr and EP0 fixed 32 DWORD*/
 	.rx_fifo_depth = 292U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 256U, 128U, },
-	//.ext_intr_en = USBD_EOPF_INTR,//for ISOC OUT
+	.ext_intr_en = USBD_EOPF_INTR,//for ISOC OUT
 #elif defined (CONFIG_AMEBASMARTPLUS)
 	/*DFIFO total 1280 DWORD, resv 14 DWORD for DMA addr and EP0 fixed 32 DWORD*/
 	.rx_fifo_depth = 402U,
@@ -212,26 +210,24 @@ static int cmd_usbd_verify_clear_config(usb_dev_t *pdev)
 	return HAL_OK;
 }
 
-static int cmd_usbd_verify_setup(u8 cmd, u8 *buf, u16 len, u16 value)
-{
-	UNUSED(cmd);
-	UNUSED(value);
-	// Echo back the ctrl request
-	usbd_verify_transmit_ctrl_data(buf, len);
-
-	return HAL_OK;
-}
-
 /*
 	soc information
 */
-static u8 *cmd_usbd_verify_get_config_desc(u16 *len)
+static u16 cmd_usbd_verify_get_config_desc(u8 *buf)
 {
 	cmd_usbd_verify_ep_t *cdev = &cmd_usbd_verify_ep;
+	u8 *desc = NULL;
+	u16 len = 0;
+
 	cmd_usbd_verify_update_description();
 
-	*len = cdev->description_buf_len;
-	return cdev->description_buf;
+	len = cdev->description_buf_len;
+	desc = cdev->description_buf;
+	if (buf != NULL && desc != NULL) {
+		usb_os_memcpy((void *)buf, (void *)desc, len);
+	}
+
+	return len;
 }
 
 static int cmd_usbd_verify_handle_ep0_data_in(usb_dev_t *dev, u8 status)
@@ -270,27 +266,21 @@ static int cmd_usbd_verify_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 stat
 		if (USB_EP_IS_IN(ep_infor->ep_addr)
 			&& (ep_addr == ep_infor->ep_addr)) {
 			if (status == HAL_OK) {
-				if (ep->zlp) {
-					ep->zlp = 0;
-					//RTK_LOGS(TAG, RTK_LOG_DEBUG, "%s TX ZLP\n", usbd_verify_get_xfer_type_text(ep_infor->ep_type));
-					usbd_verify_transmit_zlp(ep_infor->ep_addr);
-				} else {
-					/*TX done*/
-					ep->done_count ++;
-					ep->state = VERIFY_TRANSFER_STATE_IDLE;
-					if ((ep_infor->ep_type == USB_CH_EP_TYPE_BULK) && (usbd_bulk_in_only)) {
-						usb_os_memset(ep->buf, (u8)(ep->buf[0] + 1), usbd_bulk_in_len);
-						ep->ep_infor.trans_len = usbd_bulk_in_len;
-						usbd_verify_transmit_data(ep);
-					} else if ((ep_infor->ep_type == USB_CH_EP_TYPE_INTR) && (usbd_intr_in_only)) {
-						usb_os_memset(ep->buf, (u8)(ep->buf[0] + 1), usbd_intr_in_len);
-						ep->ep_infor.trans_len = usbd_intr_in_len;
-						usbd_verify_transmit_data(ep);
-					} else if ((ep_infor->ep_type == USB_CH_EP_TYPE_ISOC) && (usbd_isoc_in_only)) {
-						usb_os_memset(ep->buf, (u8)(ep->buf[0] + 1), usbd_isoc_in_len);
-						ep->ep_infor.trans_len = usbd_isoc_in_len;
-						usbd_verify_transmit_data(ep);
-					}
+				/*TX done*/
+				ep->done_count ++;
+				ep->state = VERIFY_TRANSFER_STATE_IDLE;
+				if ((ep_infor->ep_type == USB_CH_EP_TYPE_BULK) && (usbd_bulk_in_only)) {
+					usb_os_memset(ep->buf, (u8)(ep->buf[0] + 1), usbd_bulk_in_len);
+					ep->ep_infor.trans_len = usbd_bulk_in_len;
+					usbd_verify_transmit_data(ep);
+				} else if ((ep_infor->ep_type == USB_CH_EP_TYPE_INTR) && (usbd_intr_in_only)) {
+					usb_os_memset(ep->buf, (u8)(ep->buf[0] + 1), usbd_intr_in_len);
+					ep->ep_infor.trans_len = usbd_intr_in_len;
+					usbd_verify_transmit_data(ep);
+				} else if ((ep_infor->ep_type == USB_CH_EP_TYPE_ISOC) && (usbd_isoc_in_only)) {
+					usb_os_memset(ep->buf, (u8)(ep->buf[0] + 1), usbd_isoc_in_len);
+					ep->ep_infor.trans_len = usbd_isoc_in_len;
+					usbd_verify_transmit_data(ep);
 				}
 			} else {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "%s TX err: %d\n", usbd_verify_get_xfer_type_text(ep_infor->ep_type), status);
@@ -705,9 +695,9 @@ void cmd_usbd_verify_ep_debug_dump(void)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "\t%s OUT(done%d)", usbd_verify_get_xfer_type_text(ep_infor->ep_type), ep->done_count);
 		}
 
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "EP%02x/%02x:mps(%d)/xlen%d/state(%d)zlp(%d)\n",
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "EP%02x/%02x:mps(%d)/xlen%d/state(%d)\n",
 				 ep_infor->ep_addr, ep_infor->match_addr,
-				 ep_infor->mps, ep_infor->trans_len, ep->state, ep->zlp);
+				 ep_infor->mps, ep_infor->trans_len, ep->state);
 	}
 
 }
@@ -769,23 +759,24 @@ static void usbd_verify_xfer_dir(u8 *argv[])
 	}
 }
 
-/*
-	usbd verify test entry:
+static void usbd_verify_usage(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Invalid arguments, usage:\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify dma dis/en(default)\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify speed full/high_in_full/high(default)\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify ep_default <chiptype>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify set_ep <addr> <type> <interval> <mps> <transsize>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify loopback <ep_addr1> <ep_addr2>\n");
 
-	usbd verify dma dis/en(default)
-	usbd verify speed full/high_in_full/high(default)
-	usbd verify ep_default <chiptype> 	//default ep config group
-	usbd verify set_ep ......        	//manually set ep config
-	usbd verify loopback ep1 ep2
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify start\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify stop\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify dump\n");
 
-	usbd verify start
-	usbd verify stop
-	usbd verify dump
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify xfer bulk_out/intr_out/isoc_out <0/1>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify xfer bulk_in_len/intr_in_len/isoc_in_len <len>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify xfer bulk_in_start/intr_in_start/isoc_in_start\n");
+}
 
-	usbd verify xfer bulk_out/intr_out/isoc_out <0/1> // OUT only xfer
-	usbd verify xfer bulk_in_len/intr_in_len/isoc_in_len <len>
-	usbd verify xfer bulk_in_start/intr_in_start/isoc_in_start //prepare IN only xfer
-*/
 int cmd_usbd_verify_test_entry(
 	IN  u16 argc,
 	IN  u8  *argv[])
@@ -794,8 +785,7 @@ int cmd_usbd_verify_test_entry(
 	const char *sub_cmd;
 
 	if (argc < 2) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid arguments, usage:\n");
-		RTK_LOGS(TAG, RTK_LOG_ERROR, " usbd verify subcmd xxxx\n");
+		usbd_verify_usage();
 		return HAL_ERR_PARA;
 	}
 
@@ -880,7 +870,7 @@ int cmd_usbd_verify_test_entry(
 			usbd_verify_xfer_dir(argv);
 		}
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cmd %s\n", sub_cmd);
+		usbd_verify_usage();
 		status = HAL_ERR_PARA;
 	}
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Exit cmd\n");

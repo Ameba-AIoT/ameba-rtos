@@ -384,6 +384,11 @@ void atcmd_spi_input_handler_task(void)
 		rtos_sema_take(atcmd_spi_rx_sema, 0xFFFFFFFF);
 
 		actual_len = RingBuffer_Available(at_spi_rx_ring_buf);
+		if (actual_len == 0) {
+			continue;
+		}
+
+		actual_len = actual_len > UART_LOG_CMD_BUFLEN ? UART_LOG_CMD_BUFLEN : actual_len;
 		RingBuffer_Read(at_spi_rx_ring_buf, pShellRxBuf->UARTLogBuf, actual_len);
 
 		pShellRxBuf->BufCount = actual_len;
@@ -394,7 +399,11 @@ recv_again:
 				shell_ctl.ExecuteCmd = TRUE;
 
 				if (shell_ctl.shell_task_rdy) {
+					if (RingBuffer_Available(at_spi_rx_ring_buf) > 0) {
+						RingBuffer_Reset(at_spi_rx_ring_buf);
+					}
 					shell_ctl.GiveSema();
+					continue;
 				}
 			} else {
 				shell_array_init((u8 *)shell_ctl.pTmpLogBuf->UARTLogBuf, UART_LOG_CMD_BUFLEN, '\0');

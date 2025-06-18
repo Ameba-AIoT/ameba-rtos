@@ -46,6 +46,7 @@ sint whc_msg_enqueue(void *msg, struct __queue *p_queue)
 	/* allocate memory for message node. */
 	p_node = rtos_mem_zmalloc(sizeof(struct whc_msg_node));
 	if (p_node == NULL) {
+		dev_kfree_skb_any((struct sk_buff *)msg);
 		return RTK_FAIL;
 	}
 	p_node->msg = msg;

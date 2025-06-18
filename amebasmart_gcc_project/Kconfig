@@ -21,7 +21,31 @@ config SUPPORT_FATFS_USB
 config SUPPORT_SD_CARD
     def_bool y
 
+#
+# USB features
+#
+
+# USB function
 config SUPPORT_USB
+    def_bool y
+
+# USB shared DFIFO mode
+config SUPPORT_USB_SHARED_DFIFO
+    def_bool y
+
+# USB UAC device
+config SUPPORT_USBD_UAC
+    def_bool y
+
+# USB ECM host
+config SUPPORT_USBH_ECM
+    def_bool y
+
+# USB ECM bridge
+config SUPPORT_USBH_ECM_BRIDGE
+    def_bool y
+
+config SUPPORT_SDIOH
     def_bool y
 
 #---------- FEATURE LIST END-------------#

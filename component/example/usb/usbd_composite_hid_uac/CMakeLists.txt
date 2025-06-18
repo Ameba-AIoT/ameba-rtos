@@ -1,9 +1,9 @@
-ameba_internal_library(example_usbd_composite__uac_hid)
+ameba_internal_library(example_usbd_composite_hid_uac)
 
 target_sources(
     ${CURRENT_LIB_NAME} PRIVATE
 
-    example_usbd_composite_uac_hid.c
+    example_usbd_composite_hid_uac.c
     app_example.c
 )
 
@@ -14,7 +14,7 @@ target_include_directories(
     ${BASEDIR}/component/usb/device/core
     ${BASEDIR}/component/usb/device/composite
 
-	${BASEDIR}/component/audio/interfaces
-	${BASEDIR}/component/audio/base/osal/osal_c/interfaces
+    ${BASEDIR}/component/audio/interfaces
+    ${BASEDIR}/component/audio/base/osal/osal_c/interfaces
 )
 

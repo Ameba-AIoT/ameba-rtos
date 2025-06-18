@@ -673,6 +673,9 @@ static const cmd_table_t example_table[] = {
 #if defined(CONFIG_BT_A2DP_LE_AUDIO_PBP) && CONFIG_BT_A2DP_LE_AUDIO_PBP
 	{"a2dp_pbp",         atcmd_bt_a2dp_pbp,         2, 2},
 #endif
+#if defined(CONFIG_BT_A2DP_HFP_LE_AUDIO_PBP) && CONFIG_BT_A2DP_HFP_LE_AUDIO_PBP
+	{"a2dp_hfp_pbp",     atcmd_bt_a2dp_hfp_pbp,     2, 2},
+#endif
 #if defined(CONFIG_BT_A2DP_LE_AUDIO_TMAP) && CONFIG_BT_A2DP_LE_AUDIO_TMAP
 	{"a2dp_tmap",        atcmd_bt_a2dp_tmap,        3, 3},
 #endif

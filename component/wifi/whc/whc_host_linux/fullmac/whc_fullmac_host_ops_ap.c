@@ -205,17 +205,28 @@ static int whc_fullmac_host_probe_client(struct wiphy *wiphy, struct net_device 
 }
 #endif // CONFIG_CFG80211_SME_OFFLOAD
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0))
 static int whc_fullmac_host_change_beacon(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_beacon_data *info)
+#else
+static int whc_fullmac_host_change_beacon(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_ap_update *info)
+#endif
 {
 #ifdef CONFIG_P2P
 	struct element *target_ptr = NULL;
+	struct cfg80211_beacon_data *beacon;
 
-	target_ptr = (struct element *)cfg80211_find_vendor_ie(WLAN_OUI_MICROSOFT, WLAN_OUI_TYPE_MICROSOFT_WPS, info->beacon_ies, info->beacon_ies_len);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 7, 0))
+	beacon = &info->beacon;
+#else
+	beacon = info;
+#endif
+
+	target_ptr = (struct element *)cfg80211_find_vendor_ie(WLAN_OUI_MICROSOFT, WLAN_OUI_TYPE_MICROSOFT_WPS, beacon->beacon_ies, beacon->beacon_ies_len);
 	if (target_ptr) {
 		whc_fullmac_host_update_custom_ie((u8 *)target_ptr, (global_idev.p2p_global.beacon_wps_ie_idx + 1), (RTW_CUS_IE_BEACON | RTW_CUS_IE_PROBERSP));
 	}
 
-	target_ptr = (struct element *)cfg80211_find_vendor_ie(WLAN_OUI_WFA, WLAN_OUI_TYPE_WFA_P2P, info->beacon_ies, info->beacon_ies_len);
+	target_ptr = (struct element *)cfg80211_find_vendor_ie(WLAN_OUI_WFA, WLAN_OUI_TYPE_WFA_P2P, beacon->beacon_ies, beacon->beacon_ies_len);
 	if (target_ptr) {
 		whc_fullmac_host_update_custom_ie((u8 *)target_ptr, (global_idev.p2p_global.beacon_p2p_ie_idx + 1), (RTW_CUS_IE_BEACON | RTW_CUS_IE_PROBERSP));
 	}

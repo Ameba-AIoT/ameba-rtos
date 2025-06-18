@@ -41,7 +41,6 @@
 /* CDC ACM Device parameters */
 #define CDC_ACM_VID                                 USB_VID
 #define CDC_ACM_PID                                 USB_PID
-#define CDC_ACM_CONFIG_DESC_SIZE                    67U
 #define CDC_ACM_SELF_POWERED                        1U
 #define CDC_ACM_REMOTE_WAKEUP_EN					1U
 #define CDC_ACM_LANGID_STRING                       0x0409U
@@ -105,31 +104,18 @@ typedef struct {
 	int(* setup)(usb_setup_req_t *req, u8 *buf);
 	int(* received)(u8 *buf, u32 len);
 	void(* transmitted)(u8 status);
-	void (*status_changed)(u8 status);
+	void (*status_changed)(u8 old_status, u8 status);
 } usbd_cdc_acm_cb_t;
 
 typedef struct {
 	usb_setup_req_t ctrl_req;
+	usbd_ep_t ep_bulk_in;
+	usbd_ep_t ep_bulk_out;
+	usbd_ep_t ep_intr_in;
 	usb_dev_t *dev;
 	usbd_cdc_acm_cb_t *cb;
 #if CONFIG_CDC_ACM_NOTIFY
-	usbd_cdc_acm_ntf_t *intr_in_buf;
-#endif
-	u32 bulk_out_buf_size;
-	u32 bulk_in_buf_size;
-	u8 *bulk_out_buf;
-	u8 *bulk_in_buf;
-	u8 *ctrl_buf;
-#if CONFIG_CDC_ACM_NOTIFY
 	u16 intr_notify_idx;
-#endif
-	u8 bulk_out_zlp : 1;
-	__IO u8 is_bulk_in_busy : 1;
-	__IO u8 is_ready : 1;
-	__IO u8 bulk_in_state : 1;
-#if CONFIG_CDC_ACM_NOTIFY
-	__IO u8 is_intr_in_busy : 1;
-	__IO u8 intr_in_state : 1;
 #endif
 } usbd_cdc_acm_dev_t;
 

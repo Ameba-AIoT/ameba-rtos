@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef USBD_COMPOSITE_HID_H
-#define USBD_COMPOSITE_HID_H
+#ifndef USBD_COMPOSITE_HID_BI_DIR_H
+#define USBD_COMPOSITE_HID_BI_DIR_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -27,6 +27,12 @@
 /* wValue of HID report request */
 #define COMP_HID_DESC                                  0x21
 #define COMP_HID_REPORT_DESC                           0x22
+
+/* Report size */
+#define COMP_HID_DESC_SIZE                             9
+#define COMP_HID_DESC_ITEM_LENGTH_OFFSET               7
+#define COMP_HID_ITF_DESC_ITEM_LENGTH_OFFSET           16
+#define COMP_HID_ITF_VEND_DESC_ITEM_LENGTH_OFFSET      48
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -60,24 +66,12 @@ typedef struct {
 } usbd_composite_hid_buf_ctrl_t;
 
 typedef struct {
-	u8 *intr_in_buf;
-	u16 intr_in_buf_size;
-
-	__IO u8 intr_tx_zlp : 1;
-	__IO u8 intr_in_state : 1;
-	__IO u8 is_intr_in_busy : 1;
-} usbd_composite_hid_ep_t;
-
-typedef struct {
+	usbd_composite_hid_buf_ctrl_t hid_priv_out;
+	usbd_ep_t ep_hid_priv_in;
+	usbd_ep_t ep_hid_in;
+	usbd_ep_t ep_intr_out;
 	usbd_composite_hid_usr_cb_t *cb;
 	usbd_composite_dev_t *cdev;
-
-	usbd_composite_hid_buf_ctrl_t hid_priv_out;
-	usbd_composite_hid_ep_t hid_priv_in;
-
-	usbd_composite_hid_ep_t hid_in;
-
-	__IO u8 is_ready : 1;
 
 	/*
 	    Windows Hid Tool adds reportID for the transfer data,and the transfer len = ReportSize
@@ -90,7 +84,7 @@ typedef struct {
 
 /* Exported variables --------------------------------------------------------*/
 
-extern usbd_class_driver_t usbd_composite_hid_driver;
+extern const usbd_class_driver_t usbd_composite_hid_driver;
 
 /* Exported functions --------------------------------------------------------*/
 
@@ -103,5 +97,4 @@ int usbd_composite_hid_power_ctrl(void);
 u32 usbd_composite_hid_read(u8 *buffer, u32 size, u32 time_out_ms);
 u32 usbd_composite_hid_get_read_buf_cnt(void);
 u32 usbd_composite_hid_ring_buf_is_full(void);
-
-#endif // USBD_COMPOSITE_HID_H
+#endif // USBD_COMPOSITE_HID_BI_DIR_H

@@ -13,12 +13,15 @@
 #include "usbh.h"
 //#include "ringbuffer.h"
 #include <stdlib.h>
+/*
+//For USE_MJPEG, comment because of compile err,remove comment when fix err
 #include "basetype.h"
 #include "jpegdecapi.h"
 #include "ppapi.h"
+*/
 
 /* Private defines -----------------------------------------------------------*/
-static const char *const TAG = "UVC_TEST";
+static const char *const TAG = "USBH";
 /*Just capture and abandon frame*/
 #define USBH_UVC_APP_SIMPLE	1
 
@@ -28,12 +31,8 @@ static const char *const TAG = "UVC_TEST";
 /*Choose which application example*/
 #define CONFIG_USBH_UVC_APP  USBH_UVC_APP_SIMPLE
 
-
 #define USE_MJPEG			0
-
-#if (USE_MJPEG == 1)
 #define USE_LCDC			0
-#endif
 
 /* Private includes -------------------------------------------------------------*/
 
@@ -111,6 +110,7 @@ static usbh_config_t usbh_cfg = {
 	.ext_intr_en = USBH_SOF_INTR,
 #endif
 	.alt_max = 25,
+	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = 3U,
 	.isr_task_priority  = 4U,
 #if defined (CONFIG_AMEBAGREEN2)
@@ -1409,6 +1409,7 @@ u32 usbh_uvc_dec_dump(u16 argc, u8 *argv[])
 	return 0;
 }
 #endif
+#ifdef  AMEBAL2_BUG_FIX
 #define STATS_BUFFER_SIZE     ( 2000 )
 static char cBuffer[ STATS_BUFFER_SIZE ];
 
@@ -1434,7 +1435,7 @@ u32 usbh_task_runtime(u16 argc, u8 *argv[])
 	rtos_task_create(NULL, "vGetStatsAndPrint", vGetStatsAndPrint, NULL, 1024 * 4U, 6U);
 	return 0;
 }
-
+#endif
 u32 lcdc_test(u16 argc, u8 *argv[])
 {
 	UNUSED(argc);
@@ -1478,37 +1479,37 @@ u32 lcdc_test(u16 argc, u8 *argv[])
 	return 0;
 }
 
-/**
- * cmd: uvc instance(0 1) if_num(0 1)  format(0=mjpeg 1=h264)  width  height  fps  frame_number
- * example: uvc   0    0     0   1280    720   30    2000
- */
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE usbh_uvc_test[] = {
 	{
 		(const u8 *)"uvc", 10, usbh_uvc_dec_test, (const u8 *)"\tuvc test\n"
-		"\t\t uvc test\n"
+		"\t\t cmd: uvc instance(0 1) if_num(0 1)  format(0=mjpeg 1=h264)  width  height  fps  frame_num \n"
+		"\t\t example: uvc   0    0     0   1280    720   30    2000 \n"
 	},
 	{
-		(const u8 *)"uvc_stop", 10, usbh_uvc_stop_test, (const u8 *)"\tuvc test\n"
-		"\t\t uvc test\n"
+		(const u8 *)"uvc_stop", 10, usbh_uvc_stop_test, (const u8 *)"\tuvc test stop\n"
+		"\t\t cmd: uvc_stop \n"
 	},
 #if UVC_USE_HW
 	{
-		(const u8 *)"uvc_dump", 3, usbh_uvc_dec_dump, (const u8 *)"\tuvc test\n"
-		"\t\t uvc test\n"
+		(const u8 *)"uvc_dump", 3, usbh_uvc_dec_dump, (const u8 *)"\tuvc reg dump\n"
+		"\t\t cmd: uvc_dump \n"
+	},
+#endif
+#ifdef AMEBAL2_BUG_FIX
+	//amebaL2 compile err. remove AMEBAL2_BUG_FIX when fix err
+	{
+		(const u8 *)"uvc_runtime", 3, usbh_task_runtime, (const u8 *)"\tuvc show runtime\n"
+		"\t\t cmd: uvc_runtime \n"
 	},
 #endif
 	{
-		(const u8 *)"uvc_runtime", 3, usbh_task_runtime, (const u8 *)"\tuvc test\n"
-		"\t\t uvc test\n"
+		(const u8 *)"uvc_lcd", 3, lcdc_test, (const u8 *)"\tuvc test lcd\n"
+		"\t\t cmd: uvc_lcd \n"
 	},
 	{
-		(const u8 *)"uvc_lcd", 3, lcdc_test, (const u8 *)"\tuvc test\n"
-		"\t\t uvc test\n"
-	},
-	{
-		(const u8 *)"uvc_restart", 3, usbh_uvc_restart_test, (const u8 *)"\tuvc test\n"
-		"\t\t uvc test\n"
+		(const u8 *)"uvc_restart", 3, usbh_uvc_restart_test, (const u8 *)"\tuvc test restart\n"
+		"\t\t cmd: uvc_restart \n"
 	},
 };
 

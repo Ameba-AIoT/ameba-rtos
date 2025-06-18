@@ -21,7 +21,7 @@ static const char *const TAG = "HID";
 #define CONFIG_USBD_HID_HOTPLUG						1
 
 // USB speed
-#ifdef CONFIG_USB_FS
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
 #define CONFIG_USBD_HID_SPEED						USB_SPEED_FULL
 #else
 #define CONFIG_USBD_HID_SPEED						USB_SPEED_HIGH
@@ -66,7 +66,7 @@ static void hid_cb_transmitted(u8 status);
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 static void hid_cb_received(u8 *buf, u32 len);
 #endif
-static void hid_cb_status_changed(u8 status);
+static void hid_cb_status_changed(u8 old_status, u8 status);
 
 #if CONFIG_USBD_HID_MOUSE_CMD
 #if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
@@ -187,21 +187,15 @@ static void hid_cb_transmitted(u8 status)
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 static void hid_cb_received(u8 *buf, u32 len)
 {
-	UNUSED(buf);
-	u32 i = 0;
-	RTK_LOGS(TAG, RTK_LOG_INFO, "RX %dB\n", len);
-	for (i = 0; i < len; i++) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, " 0x%x ", buf[i]);
-		if ((i + 1) % 10 == 0) {
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
-		}
+	if (len > 0) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "RX %d byte(s): 0x%02x\n", len, buf[0]);
 	}
 }
 #endif
 
-static void hid_cb_status_changed(u8 status)
+static void hid_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d\n", status);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
 #if CONFIG_USBD_HID_HOTPLUG
 	hid_attach_status = status;
 	rtos_sema_give(hid_attach_status_changed_sema);

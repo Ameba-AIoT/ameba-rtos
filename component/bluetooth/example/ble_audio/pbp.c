@@ -1015,7 +1015,7 @@ static rtk_bt_audio_record_t *app_bt_le_audio_record_add(rtk_bt_le_audio_cfg_cod
 	record_frame_size = desired_record_period * rate / 1000;
 	//buffer_bytes = record_frame_size * channels *(2 bytes) 16_bit pcm = 16*2*2 = 64 bytes
 	buffer_bytes = record_frame_size * channels * 2;
-	leaudio_record_hdl = rtk_bt_audio_record_add(RTK_BT_AUDIO_CODEC_LC3, channels, rate, buffer_bytes);
+	leaudio_record_hdl = rtk_bt_audio_record_add(RTK_BT_AUDIO_CODEC_LC3, channels, rate, buffer_bytes, 0x7f);
 	if (!leaudio_record_hdl) {
 		BT_LOGE("[LEA STACK] %s failed ! delete record\r\n", __func__);
 		rtk_bt_audio_record_del(RTK_BT_AUDIO_CODEC_LC3, leaudio_record_hdl);
@@ -1058,6 +1058,14 @@ static uint16_t app_bt_le_audio_add_data_path(uint16_t iso_conn_handle, void *p_
 					goto error;
 				}
 			} else {
+#if defined(RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT
+				app_le_audio_data_path[i].p_track_hdl = app_bt_le_audio_track_add(&app_le_audio_data_path[i].codec_t);
+				if (!app_le_audio_data_path[i].p_track_hdl) {
+					BT_LOGE("[APP] %s track add fail \r\n", __func__);
+					app_bt_le_audio_lc3_codec_entity_remove(app_le_audio_data_path[i].p_codec_entity);
+					goto error;
+				}
+#endif
 #if defined(RTK_BLE_AUDIO_RECORD_SUPPORT) && RTK_BLE_AUDIO_RECORD_SUPPORT
 				app_le_audio_data_path[i].p_record_hdl = app_bt_le_audio_record_add(&app_le_audio_data_path[i].codec_t);
 				if (!app_le_audio_data_path[i].p_record_hdl) {
@@ -1446,6 +1454,16 @@ static void bt_le_audio_demo_encode_task_entry(void *ctx)
 								app_le_audio_data_path[i].pkt_seq_num, ret);
 						BT_DUMPD("", app_le_audio_data_path[i].p_enc_codec_buffer_t->pbuffer, app_le_audio_data_path[i].p_enc_codec_buffer_t->frame_size);
 					}
+#if defined(RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT
+					if (rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_LC3,
+												   app_le_audio_data_path[i].p_track_hdl,
+												   app_le_audio_data_path[i].p_codec_entity,
+												   app_le_audio_data_path[i].p_enc_codec_buffer_t->pbuffer,
+												   app_le_audio_data_path[i].p_enc_codec_buffer_t->frame_size,
+												   0)) {
+						BT_LOGE("[APP] %s: Stream Data Play Fail! \r\n", __func__);
+					}
+#endif
 #if defined(RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT) && RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT
 					if (app_le_audio_data_path[i].p_enc_codec_buffer_t) {
 						rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_LC3, app_le_audio_data_path[i].p_codec_entity, app_le_audio_data_path[i].p_enc_codec_buffer_t);

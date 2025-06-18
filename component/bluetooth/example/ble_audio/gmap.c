@@ -1098,7 +1098,7 @@ static rtk_bt_audio_record_t *app_bt_le_audio_record_add(rtk_bt_le_audio_cfg_cod
 	//buffer_bytes = record_frame_size * channels *(2 bytes) 16_bit pcm = 16*2*2 = 64 bytes
 	buffer_bytes = record_frame_size * channels * 2;
 
-	leaudio_record_hdl = rtk_bt_audio_record_add(RTK_BT_AUDIO_CODEC_LC3, channels, rate, buffer_bytes);
+	leaudio_record_hdl = rtk_bt_audio_record_add(RTK_BT_AUDIO_CODEC_LC3, channels, rate, buffer_bytes, 0x7f);
 	if (!leaudio_record_hdl) {
 		BT_LOGE("[LEA STACK] %s failed ! delete record\r\n", __func__);
 		rtk_bt_audio_record_del(RTK_BT_AUDIO_CODEC_LC3, leaudio_record_hdl);

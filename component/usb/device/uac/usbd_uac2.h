@@ -4,29 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef USBD_COMPOSITE_UAC_H
-#define USBD_COMPOSITE_UAC_H
+#ifndef USBD_UAC2_H
+#define USBD_UAC2_H
 
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbd.h"
-#include "usbd_composite_config.h"
 
 /* Exported defines ----------------------------------------------------------*/
-/* used for uac debug*/
+
 #define USBD_UAC_ISOC_XFER_DEBUG                    0
 
-/*
-* while the host does not send the audio data(for example: switch to next song), the usb should append zero packet to the buffer
-*
-*/
-#define USBD_UAC_ISOC_RX_APPEND_ZLP_DIFF_MAX        3
-
-/* 1ms 8 frame in high speed */
-#define USBD_UAC_HS_SOF_COUNT_PER_MS                8U
-#define USBD_UAC_ONE_KHZ                            1000U
-
-#define USBD_UAC_RX_BUF_MAX_CNT                     20
+#define USBD_UAC_RX_BUF_MAX_CNT                     10
 #define USBD_UAC_TX_BUF_MAX_CNT                     10
 
 #define USBD_UAC_HS_ISOC_MPS                        1024   /* High speed ISOC IN & OUT max packet size */
@@ -34,6 +23,7 @@
 
 /* volume */
 /* spec 0x8001U ~ 0X7FFFU , -127dB ~ 127dB */
+/* narrow down range for linux volume range warning issue */
 #define USBD_UAC_VOLUME_CTRL_MIN                    0xFF42 // -190
 #define USBD_UAC_VOLUME_CTRL_MAX                    0x00BE // 190
 
@@ -51,6 +41,11 @@
 #define USBD_UAC_DESC_TYPE_AUDIO_CS_INTERFACE       0x24U
 #define USBD_UAC_CS_ENDPOINT_DESCRIPTOR             0x25U
 #define USBD_UAC_IA_DESCRIPTOR                      0x0BU
+
+//headset
+#define USBD_UAC_IF_IDX_AC_HEADSET                  0x00U
+#define USBD_UAC_IF_IDX_AS_HEADSET_HEADPHONES       0x01U
+#define USBD_UAC_IF_IDX_AS_HEADSET_MICROPHONE       0x02U
 
 // Audio Function Category Codes (UAC2.0 Spec Appendix A.7)
 #define USBD_UAC_FUNC_CATEGORY_CODE_DESKTOP_UNDEFINED              0x00U
@@ -153,25 +148,25 @@
 #define USBD_UAC_AS_FORMAT_DESC_SLOT_SIZE_OFFSET    4U
 #define USBD_UAC_AS_FORMAT_DESC_BIT_CNT_OFFSET      5U
 #define USBD_UAC_AS_EP_DESC_MPS_OFFSET              4U
+/* sample sampling freq max count */
+#define USBD_UAC_SAMPLING_FREQ_MAX_COUNT            4U
 
+/* 1ms 8 frame in high speed */
+#define USBD_UAC_HS_SOF_COUNT_PER_MS                8U
 /* channel cnt */
 #define USBD_UAC_CH_CNT_2                           2U
 #define USBD_UAC_CH_CNT_4                           4U
 #define USBD_UAC_CH_CNT_6                           6U
 #define USBD_UAC_CH_CNT_8                           8U
 /* to do: 16 ch support */
-//#define USBD_UAC_CH_CNT_16                        16U
-
+//#define USBD_UAC_CH_CNT_16                          16U
 /* byte_width */
 #define USBD_UAC_BYTE_WIDTH_2                       2U
 #define USBD_UAC_BYTE_WIDTH_3                       3U
 /* amebasmart itself cannot play 32-bit audio data */
 #define USBD_UAC_BYTE_WIDTH_4                       4U
-
 /* bit_width */
 #define USBD_UAC_BIT_WIDTH(byte_width)              (8U * (byte_width))
-
-#define USBD_UAC_POW2(n)                            (1 << (n))
 
 /* get channel config */
 #define USBD_UAC_GET_CH_CONFIG(ch_cnt) \
@@ -180,7 +175,6 @@
      (ch_cnt) == 6 ? 0x3F : \
      (ch_cnt) == 8 ? 0xFF : \
      (ch_cnt) == 16 ? 0xFFFF : 0x03)
-
 /* get ot type */
 #define USBD_UAC_GET_OT_TYPE(ch_cnt) \
     ((ch_cnt) == 2 ? 0x0301 : \
@@ -188,11 +182,9 @@
      (ch_cnt) == 6 ? 0x0304 : \
      (ch_cnt) == 8 ? 0x0307 : \
      (ch_cnt) == 16 ? 0x0307 : 0x0301)
-
 /* input terminal */
 #define USBD_UAC_CH_CONFIG_TYPE_LOW(ch_cnt)         (USB_LOW_BYTE(USBD_UAC_GET_CH_CONFIG(ch_cnt)))
 #define USBD_UAC_CH_CONFIG_TYPE_HIGH(ch_cnt)        (USB_HIGH_BYTE(USBD_UAC_GET_CH_CONFIG(ch_cnt)))
-
 /* output terminal */
 #define USBD_UAC_OT_DESC_TYPE_LOW(ch_cnt)           (USB_LOW_BYTE(USBD_UAC_GET_OT_TYPE(ch_cnt)))
 #define USBD_UAC_OT_DESC_TYPE_HIGH(ch_cnt)          (USB_HIGH_BYTE(USBD_UAC_GET_OT_TYPE(ch_cnt)))
@@ -200,30 +192,13 @@
 /* default channel cnt */
 #define USBD_UAC_DEFAULT_CH_CNT                     USBD_UAC_CH_CNT_8
 
-/* default byte width cnt */
-#define USBD_UAC_DEFAULT_BYTE_WIDTH                 USBD_UAC_BYTE_WIDTH_2
-
-/* sample sampling_freq max count */
-#define USBD_UAC_SAMPLING_FREQ_MAX_COUNT            1U
-
-/*
-   * default isoc bInterval
-   *        ISOC
-   * FS    1-16,2^(N-1)
-   * HS    1-16,2^(N-1)
-   * for FS, use 1; for HS use 4, which will report data per second
-*/
-#define USBD_UAC_HS_DEFAULT_BINTERVAL                 1
-#define USBD_UAC_FS_DEFAULT_BINTERVAL                 1
-
 /* limit */
 #define USBD_UAC_HS_SAMPLING_FREQ_COUNT               USBD_UAC_SAMPLING_FREQ_MAX_COUNT
-
-#ifdef CONFIG_USB_FS
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
 #if USBD_UAC_DEFAULT_CH_CNT == USBD_UAC_CH_CNT_4
-#define USBD_UAC_FS_SAMPLING_FREQ_COUNT               1U
+#define USBD_UAC_FS_SAMPLING_FREQ_COUNT               3U
 #elif USBD_UAC_DEFAULT_CH_CNT == USBD_UAC_CH_CNT_6 || USBD_UAC_DEFAULT_CH_CNT == USBD_UAC_CH_CNT_8
-#define USBD_UAC_FS_SAMPLING_FREQ_COUNT               1U
+#define USBD_UAC_FS_SAMPLING_FREQ_COUNT               2U
 #endif
 #else
 #define USBD_UAC_FS_SAMPLING_FREQ_COUNT               USBD_UAC_SAMPLING_FREQ_MAX_COUNT
@@ -232,18 +207,14 @@
 
 /* AC IF header interface num */
 #define USBD_UAC_AC_IF_NUM                          2U
-
 /* AC feature uint descriptor length */
 #define USBD_UAC_AC_FU_HEAD_DESC_LEN(ch_cnt)        (USBD_UAC_LEN_FUNC_UNIT_DESC + 1 + 4 * (ch_cnt))
-
 /* AC IF header descriptor length */
 #define USBD_UAC_AC_IF_HEAD_DESC_LEN(ch_cnt) \
     (USBD_UAC_LEN_CTRL_IF_HEADER + USBD_UAC_LEN_CLK_SRC_DESC + USBD_UAC_LEN_AC_IN_TTY_DESC + \
     USBD_UAC_AC_FU_HEAD_DESC_LEN(ch_cnt) + USBD_UAC_LEN_AC_OUT_TTY_DESC)
-
 /* len of total Audio control interface */
 #define USBD_UAC_AC_IF_LEN(ch_cnt)                 (USB_LEN_IF_DESC + USBD_UAC_AC_IF_HEAD_DESC_LEN(ch_cnt))
-
 /* len of each Audio stream interface/altsetting (one EP) */
 #define USBD_UAC_AS_EIF_LEN                        (USB_LEN_IF_DESC + USBD_UAC_LEN_AS_IF_ALT_SET_DESC + USBD_UAC_LEN_AS_FRT_TYPE_ALT_SET_DESC \
                                                    + USB_LEN_EP_DESC + USBD_UAC_LEN_DATA_EP_DESC)
@@ -251,17 +222,14 @@
 /* len of total Audio stream interface */
 #define USBD_UAC_AS_TIF_LEN(alt_num) \
     (USBD_UAC_AS_EIF_LEN * (alt_num - 1) + USB_LEN_IF_DESC)
-
 /* full speed AS alt setting num */
 #define USBD_UAC_FS_AS_ALT_SETTING_NUM              5U
-
-/* high speed AS alt setting num */
+/* full speed AS alt setting num */
 #define USBD_UAC_HS_AS_ALT_SETTING_NUM              5U
 
 /* len of full speed total configuration descriptor buf */
 #define USBD_UAC_FS_CFG_DESC_BUF_LEN(ch_cnt) \
     (USB_LEN_CFG_DESC + USB_LEN_IAD_DESC  + USBD_UAC_AC_IF_LEN(ch_cnt) + USBD_UAC_AS_TIF_LEN(USBD_UAC_FS_AS_ALT_SETTING_NUM))
-
 /* len of high speed total configuration descriptor buf */
 #define USBD_UAC_HS_CFG_DESC_BUF_LEN(ch_cnt) \
     (USB_LEN_CFG_DESC + USB_LEN_IAD_DESC  + USBD_UAC_AC_IF_LEN(ch_cnt) + USBD_UAC_AS_TIF_LEN(USBD_UAC_HS_AS_ALT_SETTING_NUM))
@@ -272,14 +240,13 @@
 #define USBD_UAC_SAMPLING_FREQ_96K                              96000U
 #define USBD_UAC_SAMPLING_FREQ_192K                             192000U
 
+#define USBD_UAC_ONE_KHZ                            1000U
 /* calculate full speed MPS */
 #define USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, sampling_freq_hz) \
-    (USBD_UAC_POW2(USBD_UAC_FS_DEFAULT_BINTERVAL-1) * (ch_cnt) * (byte_width) * ((sampling_freq_hz) / USBD_UAC_ONE_KHZ + 1U))
-
+    ((ch_cnt) * (byte_width) * ((sampling_freq_hz) / USBD_UAC_ONE_KHZ + 1U))
 /* check MPS */
 #define USBD_UAC_IS_FS_MPS_VALID(ch_cnt, byte_width, sampling_freq_hz) \
     ((USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, sampling_freq_hz)) <= USBD_UAC_FS_ISOC_MPS)
-
 /* get full speed MPS, if MPS > limit, choose next lower sampling freq to calculate */
 #define USBD_UAC_GET_FS_MPS(ch_cnt, byte_width) \
     (USBD_UAC_IS_FS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_192K) ? \
@@ -293,13 +260,11 @@
 
 /* calculate high speed MPS */
 #define USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, sampling_freq_hz) \
-  (USBD_UAC_POW2(USBD_UAC_HS_DEFAULT_BINTERVAL-1) * (ch_cnt) * (byte_width) * ((sampling_freq_hz) / USBD_UAC_ONE_KHZ / USBD_UAC_HS_SOF_COUNT_PER_MS + 1U))
-
+  ((ch_cnt) * (byte_width) * ((sampling_freq_hz) / USBD_UAC_ONE_KHZ / USBD_UAC_HS_SOF_COUNT_PER_MS + 1U))
 /* check MPS */
 #define USBD_UAC_IS_HS_MPS_VALID(ch_cnt, byte_width, sampling_freq_hz) \
     ((USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, sampling_freq_hz)) <= USBD_UAC_HS_ISOC_MPS)
-
-/* get high speed MPS, if MPS > limit, choose next lower sampling freq to calculate */
+/* get high speed MPS, if MPS > limit, choose next lower sampling_freq to calculate */
 #define USBD_UAC_GET_HS_MPS(ch_cnt, byte_width) \
     (USBD_UAC_IS_HS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_192K) ? \
     USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_192K) : \
@@ -312,9 +277,9 @@
 
 #define USBD_UAC_INIT_SUB_RANGE(sub_range, min_sampling_freq, max_sampling_freq, res) \
     do {                                               \
-        (sub_range).dMIN = (min_sampling_freq);        \
-        (sub_range).dMAX = (max_sampling_freq);        \
-        (sub_range).dRES = (res);                      \
+        (sub_range).dMIN = (min_sampling_freq);                   \
+        (sub_range).dMAX = (max_sampling_freq);                   \
+        (sub_range).dRES = (res);                       \
     } while(0)
 
 /* Exported types ------------------------------------------------------------*/
@@ -324,24 +289,24 @@ typedef struct __PACKED {
 	u16 wMIN;
 	u16 wMAX;
 	u16 wRES;
-} usbd_composite_uac_ctrl_range_layout2_struct;
+} usbd_uac_ctrl_range_layout2_struct;
 
 typedef struct {
 	u32 dMIN;
 	u32 dMAX;
 	u32 dRES;
-} usbd_composite_uac_sub_range_t;
+} usbd_uac_sub_range_t;
 
 typedef struct __PACKED {
 	u16 wNumSubRanges;
-	usbd_composite_uac_sub_range_t usbd_composite_uac_sub_ranges[];
-} usbd_composite_uac_sampling_freq_ctrl_range_t;
+	usbd_uac_sub_range_t usbd_uac_sub_ranges[];
+} usbd_uac_sampling_freq_ctrl_range_t;
 
 typedef struct __PACKED {
 	u8  bNrChannels;
 	u32 bmChannelConfig;
 	u8  iChannelNames;
-} usbd_composite_uac_ac_connect_ctrl_t;
+} usbd_uac_ac_connect_ctrl_t;
 
 typedef struct {
 	u32 sampling_freq;     // 384000
@@ -358,99 +323,78 @@ typedef struct {
 	int(* deinit)(void);
 	int(* setup)(usb_setup_req_t *req, u8 *buf);
 	int(* set_config)(void);
-	int(* status_changed)(u8 status);
-	int(* mute_changed)(u8 mute);
-	int(* volume_changed)(u8 volume);
-	int(* format_changed)(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
-	int(* sof)(void);
-} usbd_composite_uac_usr_cb_t;
+	void(* status_changed)(u8 old_status, u8 status);
+	void(* mute_changed)(u8 mute);
+	void(* volume_changed)(u8 volume);
+	void(* format_changed)(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
+	void(* sof)(void);
+} usbd_uac_cb_t;
 
-struct _usbd_composite_uac_buf_t;
-typedef struct _usbd_composite_uac_buf_t {
-	struct _usbd_composite_uac_buf_t *next;
+
+typedef struct {
 	u8 *buf_raw;
 	__IO u16 buf_valid_len;
-	__IO u8 is_zero_pkt;      /* the buf is zero packet */
-} usbd_composite_uac_buf_t;
+} usbd_uac_buf_t;
 
 typedef struct {
-	usbd_composite_uac_buf_t *head;
-	usbd_composite_uac_buf_t *tail;
-	u16 count;
-} usbd_composite_uac_buf_list_t;
-
-typedef struct {
-	usbd_audio_cfg_t audio_config;  /* save the audio config */
 	rtos_sema_t uac_isoc_sema;
-	usbd_composite_uac_buf_list_t empty_list;
-	usbd_composite_uac_buf_list_t data_list;
-
-	usbd_composite_uac_buf_t *buf_list_node;
-	usbd_composite_uac_buf_t *p_cur_buf_node;
+	usbd_uac_buf_t *buf_array;
 	u8 *isoc_buf;
 
-	u64 sof_idx;
-	u64 data_idx;
+	u16 isoc_mps; //mps
+	u16 buf_array_cnt;
 
-	__IO u16 isoc_mps; //mps
-	__IO u8 uac_sema_valid : 1;
-	__IO u8 read_wait_sema : 1;
-	__IO u8 transfer_continue : 1;
-} usbd_composite_uac_buf_ctrl_t;
+	u8 uac_sema_valid;
+	__IO u8 read_wait_sema;
+	__IO u8 isoc_read_idx;  /*  */
+	__IO u8 isoc_write_idx; /* wr_idx means the next write pos, the wr_idx data is not valid */
+	__IO u8 transfer_continue;
+} usbd_uac_buf_ctrl_t;
 
 typedef struct {
-	usbd_composite_uac_buf_ctrl_t uac_isoc_out;  /* isoc out */
-	usbd_composite_uac_buf_ctrl_t uac_isoc_in;   /* isoc in  */
-
+	usbd_uac_buf_ctrl_t uac_isoc_out;  /* isoc out */
+	usbd_uac_buf_ctrl_t uac_isoc_in;   /* isoc in  */
+	usbd_ep_t ep_isoc_in;
+	usbd_ep_t ep_isoc_out;
 	usb_setup_req_t ctrl_req;
-	usbd_composite_dev_t *cdev;
-	usbd_composite_uac_usr_cb_t *cb;
+	usb_dev_t *dev;
+	usbd_uac_cb_t *cb;
 
-	__IO u32 isoc_rx_valid_cnt;
-	__IO u32 isoc_rx_len;
-
-#if USBD_UAC_ISOC_XFER_DEBUG
-	rtos_task_t uac_dump_task;
-	u32 isoc_rx_last_tick;
-	u32 isoc_timeout_max_step;
-	u32 isoc_timeout_max_value;
-
-	u32 isoc_zlp_cnt;
-	u32 isoc_rx_cnt;
-	u32 isoc_rx_zlp_cnt;
-	u32 copy_data_len;
-	__IO u32 isoc_timeout_cnt;
-	__IO u32 isoc_overwrite_cnt;
-	__IO u32 uac_dump_task_alive;
-#endif
-
+	u32 cur_sampling_freq;
 	u16 cur_volume;
+	u8 cur_byte_width;
 	u8 cur_clk_valid;
 	u8 alt_setting;
+	u8 cur_ch_cnt;
 	u8 cur_mute;
-	__IO u8 is_ready;
-} usbd_composite_uac_device_t;
+
+#if USBD_UAC_ISOC_XFER_DEBUG
+	u32 copy_data_len;
+	__IO u32 isoc_rx_cnt;
+	__IO u32 isoc_timeout_cnt;
+	__IO u32 isoc_overwrite_cnt;
+	__IO u8  isoc_dump_thread;
+#endif
+} usbd_uac_dev_t;
 
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported variables --------------------------------------------------------*/
 
-extern usbd_class_driver_t usbd_composite_uac_driver;
-
 /* Exported functions --------------------------------------------------------*/
+
 /**
   * @brief  Initialize UAC device
   * @param  cb: usbd_uac_cb_t instance passed by the upper layer
   * @retval Status : return HAL_OK success,else other value
   */
-int usbd_composite_uac_init(usbd_composite_dev_t *cdev, usbd_composite_uac_usr_cb_t *cb);
+int usbd_uac_init(usbd_uac_cb_t *cb);
 
 /**
   * @brief  DeInitialize UAC device
   * @retval Status
   */
-int usbd_composite_uac_deinit(void);
-
+int usbd_uac_deinit(void);
 
 /**
   * @brief  Set audio configuration to the UAC class
@@ -459,19 +403,19 @@ int usbd_composite_uac_deinit(void);
   * @param  flag: write buffer handle used to save the data
   * @retval Status
   */
-u8 usbd_composite_uac_config(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 flag);
+u8  usbd_uac_config(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 flag);
 
 /**
   * @brief  Usb audio start play
   * @retval Status
   */
-u32 usbd_composite_uac_start_play(void);
+u32  usbd_uac_start_play(void);
 
 /**
   * @brief  Usb audio stop play
   * @retval Status
   */
-void usbd_composite_uac_stop_play(void);
+void usbd_uac_stop_play(void);
 
 /**
   * @brief  Read the data from the ring_buffer
@@ -479,26 +423,18 @@ void usbd_composite_uac_stop_play(void);
   * @param  size: allow to write buffer size
   * @param  time_out_ms if 0 means no wait,
   *                     other value will set time_out_ms to read buffer,if read data for more than time_out_ms, it will return.
-  * @param  zero_pkt_flag: zero packet ,each bit means a zero packet
   * @retval return the read data length in bytes
   */
-u32 usbd_composite_uac_read(u8 *buffer, u32 size, u32 time_out_ms, u32 *zero_pkt_flag);
+u32  usbd_uac_read(u8 *buffer, u32 size, u32 time_out_ms);
 
 /**
-  * @brief  Get the read frame count
-  * @retval return avail frame cnt
+  * @brief  Get the read frame packet count
+  * @retval return avail packet cnt
   */
-u32  usbd_composite_uac_get_read_frame_cnt(void);
-
-/**
-  * @brief  Get the read frame count
-  * @retval return the time duration for the avail frame in us
-  */
-u32  usbd_composite_uac_get_read_frame_time_in_us(void);
+u32  usbd_uac_get_read_frame_cnt(void);
 
 // for USB IN tx, TODO
 // u32  usbd_uac_write(void, void *buffer, u32 size, u8 blocking);
 // u32  usbd_uac_get_write_frame_cnt(void);
 
-
-#endif // USBD_COMPOSITE_UAC_H
+#endif  /* USBD_UAC_H */

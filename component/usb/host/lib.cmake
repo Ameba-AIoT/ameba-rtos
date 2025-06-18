@@ -41,10 +41,6 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-if(CONFIG_AMEBAL2)
-    ameba_list_append(private_definitions CONFIG_USB_FS)
-endif()
-
 ameba_list_append(private_includes
     ../common
     core
@@ -58,6 +54,10 @@ ameba_list_append(private_sources
     core/usbh_core.c
     core/usbh_hal.c
     core/usbh_hcd.c
+)
+
+ameba_list_append_ifnot(CONFIG_SUPPORT_USB_NO_PHY private_sources
+    ../common/usb_phy.c
 )
 
 # Component private part, user config end

@@ -13,6 +13,10 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
+/* TX/RX thread priority */
+#define USBD_MSC_TX_THREAD_PRIORITY                 5U
+#define USBD_MSC_RX_THREAD_PRIORITY                 5U
+
 /* CTRL buffer size */
 #define USBD_MSC_CTRL_BUF_SIZE						512U
 
@@ -124,30 +128,37 @@ typedef struct {
 } usbd_msc_scsi_sense_data_t;
 
 typedef struct {
-	void (*status_changed)(u8 status);
+	void (*status_changed)(u8 old_status, u8 status);
 } usbd_msc_cb_t;
 
 typedef struct {
+	usbd_ep_t ep_bulk_in;
+	usbd_ep_t ep_bulk_out;
 	usbd_msc_cbw_t *cbw;
 	usbd_msc_csw_t *csw;
 	usbd_msc_disk_ops_t disk_ops;
 	usbd_msc_cb_t *cb;
 	usb_dev_t *dev;
+	rtos_task_t rx_task;
+	rtos_sema_t rx_sema;
+	rtos_task_t tx_task;
+	rtos_sema_t tx_sema;
 	usbd_msc_scsi_sense_data_t scsi_sense_data[USBD_MSC_SENSE_LIST_DEPTH];
+	u8 *data;
+	u8 *ctrl_buf;
 	u32 num_sectors;
 	u32 lba; // logic block address
 	u32 blkbits; /* bits of logical block size of bound block device */
 	u32 blksize;
 	u32 blklen;
 	u32 data_length;
-	u8 *data;
-	u8 *ctrl_buf;
+	u16 rx_data_length;
+	u8 tx_status;
 	u8 ro;
 	u8 bot_state;
 	u8 bot_status;
 	u8 scsi_sense_head;
 	u8 scsi_sense_tail;
-	__IO u8 is_ready : 1;
 	u8 is_open : 1;
 	u8 phase_error : 1;
 } usbd_msc_dev_t;

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "example_usbd_composite_uac_hid.h"
+#include "example_usbd_inic_dplus.h"
 
 void app_example(void)
 {
-	example_usbd_composite();
+	example_usbd_inic_dplus();
 }

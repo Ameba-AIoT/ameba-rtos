@@ -15,9 +15,6 @@
 #define COMP_HID_CMD_VOLUME_DOWN                            BIT1
 #define COMP_HID_CMD_POWER                                  BIT2
 
-#define COMP_HID_PRIV_REPORT_DESC_SIZE                      35
-#define COMP_HID_REPORT_DESC_SIZE                           31
-
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
@@ -25,50 +22,49 @@
 /* Private function prototypes -----------------------------------------------*/
 
 static int composite_hid_setup(usb_dev_t *dev, usb_setup_req_t *req);
+static u16 composite_hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
 static int composite_hid_sof(usb_dev_t *dev);
 static int composite_hid_set_config(usb_dev_t *dev, u8 config);
 static int composite_hid_clear_config(usb_dev_t *dev, u8 config);
 static int composite_hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int composite_hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
-static u8 *composite_hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_type_t speed, u16 *len);
 static int composite_hid_handle_ep0_data_out(usb_dev_t *dev);
-static void composite_hid_status_changed(usb_dev_t *dev, u8 status);
-
+static void composite_hid_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "COMP";
 
 /* HID interface descriptor */
-static u8 usbd_composite_hid_itf_desc[] USB_DMA_ALIGNED = {
+static const u8 usbd_composite_hid_itf_desc[] = {
 	/* HID Interface Descriptor */
-	0x09,                                /*bLength*/
-	USB_DESC_TYPE_INTERFACE,             /*bDescriptorType*/
-	USBD_COMP_HID_ITF,                   /*bInterfaceNumber*/
-	0x00,                                /*bAlternateSetting*/
-	0x02,                                /*bNumEndpoints*/
-	0x03,                                /*bInterfaceClass: HID*/
-	0x00,                                /*bInterfaceSubClass: 1=BOOT, 0=no boot*/
-	0x00,                                /*nInterfaceProtocol: 0=none, 1=keyboard, 2=mouse*/
-	USBD_IDX_HID_ITF_STR,                /*iInterface*/
+	0x09,                                        /*bLength*/
+	USB_DESC_TYPE_INTERFACE,                     /*bDescriptorType*/
+	USBD_COMP_HID_ITF,                           /*bInterfaceNumber*/
+	0x00,                                        /*bAlternateSetting*/
+	0x02,                                        /*bNumEndpoints*/
+	0x03,                                        /*bInterfaceClass: HID*/
+	0x00,                                        /*bInterfaceSubClass: 1=BOOT, 0=no boot*/
+	0x00,                                        /*nInterfaceProtocol: 0=none, 1=keyboard, 2=mouse*/
+	USBD_IDX_HID_ITF_STR,                        /*iInterface*/
 
 	/* HID Descriptor */
-	0x09,                                /*bLength*/
-	COMP_HID_DESC,                       /*bDescriptorType*/
-	0x11,                                /*bcdHID*/
+	0x09,                                        /*bLength*/
+	COMP_HID_DESC,                               /*bDescriptorType*/
+	0x11,                                        /*bcdHID*/
 	0x01,
-	0x00,                                /*bCountryCode*/
-	0x01,                                /*bNumDescriptors*/
-	COMP_HID_REPORT_DESC,                /*bDescriptorType*/
-	COMP_HID_PRIV_REPORT_DESC_SIZE,           /*wItemLength*/
+	0x00,                                        /*bCountryCode*/
+	0x01,                                        /*bNumDescriptors*/
+	COMP_HID_REPORT_DESC,                        /*bDescriptorType*/
+	0x00,                                        /*wItemLength, runtime assigned*/
 	0x00,
 
 	/* Endpoint Descriptor*/
-	0x07,                                /*bLength*/
-	USB_DESC_TYPE_ENDPOINT,              /*bDescriptorType:*/
-	USBD_COMP_HID_INTR_IN_EP,            /*bEndpointAddress*/
-	0x03,                                /*bmAttributes*/
-	USB_LOW_BYTE(USBD_COMP_HID_MAX_BUF_SIZE),
-	USB_HIGH_BYTE(USBD_COMP_HID_MAX_BUF_SIZE),    /*wMaxPacketSize*/
-	0x01,                                         /*bInterval*/
+	0x07,                                        /*bLength*/
+	USB_DESC_TYPE_ENDPOINT,                      /*bDescriptorType:*/
+	USBD_COMP_HID_INTR_IN_EP,                    /*bEndpointAddress*/
+	0x03,                                        /*bmAttributes*/
+	USB_LOW_BYTE(USBD_COMP_HID_MAX_BUF_SIZE),    /*wMaxPacketSize*/
+	USB_HIGH_BYTE(USBD_COMP_HID_MAX_BUF_SIZE),
+	0x01,                                        /*bInterval*/
 
 	/* Endpoint Descriptor*/
 	0x07,                                        /*bLength*/
@@ -77,116 +73,119 @@ static u8 usbd_composite_hid_itf_desc[] USB_DMA_ALIGNED = {
 	0x03,                                        /*bmAttributes*/
 	USB_LOW_BYTE(USBD_COMP_HID_MAX_BUF_SIZE),    /*wMaxPacketSize*/
 	USB_HIGH_BYTE(USBD_COMP_HID_MAX_BUF_SIZE),
-	0x01,                                         /*bInterval*/
+	0x01,                                        /*bInterval*/
 
 
 	/* HID Interface Descriptor */
-	0x09,                                /*bLength*/
-	USB_DESC_TYPE_INTERFACE,             /*bDescriptorType*/
-	USBD_COMP_HID_CONSUMER_ITF,          /*bInterfaceNumber*/
-	0x00,                                /*bAlternateSetting*/
-	0x01,                                /*bNumEndpoints*/
-	0x03,                                /*bInterfaceClass: HID*/
-	0x00,                                /*bInterfaceSubClass: 1=BOOT, 0=no boot*/
-	0x00,                                /*nInterfaceProtocol: 0=none, 1=keyboard, 2=mouse*/
-	USBD_IDX_HID_CONSUMER_ITF_STR,       /*iInterface*/
+	0x09,                                        /*bLength*/
+	USB_DESC_TYPE_INTERFACE,                     /*bDescriptorType*/
+	USBD_COMP_HID_VEND_ITF,                      /*bInterfaceNumber*/
+	0x00,                                        /*bAlternateSetting*/
+	0x01,                                        /*bNumEndpoints*/
+	0x03,                                        /*bInterfaceClass: HID*/
+	0x00,                                        /*bInterfaceSubClass: 1=BOOT, 0=no boot*/
+	0x00,                                        /*nInterfaceProtocol: 0=none, 1=keyboard, 2=mouse*/
+	USBD_IDX_HID_VEND_ITF_STR,                   /*iInterface*/
 
 	/* HID Descriptor */
-	0x09,                                /*bLength*/
-	COMP_HID_DESC,                       /*bDescriptorType*/
-	0x11,                                /*bcdHID*/
+	0x09,                                        /*bLength*/
+	COMP_HID_DESC,                               /*bDescriptorType*/
+	0x11,                                        /*bcdHID*/
 	0x01,
-	0x00,                                /*bCountryCode*/
-	0x01,                                /*bNumDescriptors*/
-	COMP_HID_REPORT_DESC,                /*bDescriptorType*/
-	COMP_HID_REPORT_DESC_SIZE,           /*wItemLength*/
+	0x00,                                        /*bCountryCode*/
+	0x01,                                        /*bNumDescriptors*/
+	COMP_HID_REPORT_DESC,                        /*bDescriptorType*/
+	0x00,                                        /*wItemLength, runtime assigned*/
 	0x00,
 
 	/* Endpoint Descriptor*/
-	0x07,                                /*bLength*/
-	USB_DESC_TYPE_ENDPOINT,              /*bDescriptorType:*/
-	USBD_COMP_HID_CONSUMER_INTR_IN_EP,            /*bEndpointAddress*/
-	0x03,                                /*bmAttributes*/
-	USB_LOW_BYTE(USBD_COMP_HID_MAX_BUF_SIZE),
-	USB_HIGH_BYTE(USBD_COMP_HID_MAX_BUF_SIZE),    /*wMaxPacketSize*/
-	0x01,                                         /*bInterval*/
+	0x07,                                        /*bLength*/
+	USB_DESC_TYPE_ENDPOINT,                      /*bDescriptorType:*/
+	USBD_COMP_HID_CONSUMER_INTR_IN_EP,           /*bEndpointAddress*/
+	0x03,                                        /*bmAttributes*/
+	USB_LOW_BYTE(USBD_COMP_HID_MAX_BUF_SIZE),    /*wMaxPacketSize*/
+	USB_HIGH_BYTE(USBD_COMP_HID_MAX_BUF_SIZE),
+	0x01,                                        /*bInterval*/
 };
 
 // HID descriptor
-static u8 usbd_composite_hid_priv_desc[] USB_DMA_ALIGNED = {
-	0x09,                                /*bLength: HID Descriptor size*/
-	COMP_HID_DESC,                       /*bDescriptorType: HID*/
-	0x11,                                /*bcdHID: HID Class Spec release number Byte0*/
-	0x01,                                /*bcdHID: HID Class Spec release number Byte1*/
-	0x00,                                /*bCountryCode: Hardware target country*/
-	0x01,                                /*bNumDescriptors: Number of HID class descriptors to follow*/
-	COMP_HID_REPORT_DESC,                /*bDescriptorType*/
-	COMP_HID_PRIV_REPORT_DESC_SIZE,           /*wItemLength: Total length of Report descriptor Byte0*/
-	0x00,                                /*wItemLength: Total length of Report descriptor Byte1*/
+static const u8 usbd_composite_hid_desc[] = {
+	0x09,                                        /*bLength: HID Descriptor size*/
+	COMP_HID_DESC,                               /*bDescriptorType: HID*/
+	0x11,                                        /*bcdHID: HID Class Spec release number Byte0*/
+	0x01,                                        /*bcdHID: HID Class Spec release number Byte1*/
+	0x00,                                        /*bCountryCode: Hardware target country*/
+	0x01,                                        /*bNumDescriptors: Number of HID class descriptors to follow*/
+	COMP_HID_REPORT_DESC,                        /*bDescriptorType*/
+	0x00,                                        /*wItemLength: Total length of Report descriptor, runtime assigned*/
+	0x00,
 };
 
 // HID report descriptor
-static u8 usbd_comp_hid_priv_report_desc[] USB_DMA_ALIGNED = {
-	0x05, 0x0C, /* Usage Page (Consumer Devices) */
-	0x09, 0x01, /* Usage (Consumer Control) */
-	0xA1, 0x01, /* COLLECTION (Application) */
+static const u8 usbd_comp_hid_report_desc[] = {
+	0x05, 0x0C,                                  /* Usage Page (Consumer Devices) */
+	0x09, 0x01,                                  /* Usage (Consumer Control) */
+	0xA1, 0x01,                                  /* COLLECTION (Application) */
 
-	0x85, USBD_COMP_HID_REPORT_ID, /* Report ID */
-	0x09, 0x01, /* Vendor Usage */
-	0x15, 0x00, /* Usage Minimum */
-	0x25, 0xFF, /* Usage Maximum */
-	0x75, 0x08, /* Report Size */
-	0x95, USBD_COMP_HID_TX_PKT_SIZE, /* Report Count */
-	0x81, 0x02, /* Input (Data,Var,Abs) */
+	0x85, USBD_COMP_HID_REPORT_ID,               /* Report ID */
+	0x09, 0x01,                                  /* Vendor Usage */
+	0x15, 0x00,                                  /* Usage Minimum */
+	0x25, 0xFF,                                  /* Usage Maximum */
+	0x75, 0x08,                                  /* Report Size */
+	0x95, USBD_COMP_HID_TX_PKT_SIZE,             /* Report Count */
+	0x81, 0x02,                                  /* Input (Data,Var,Abs) */
 
-	0x85, USBD_COMP_HID_REPORT_ID, /* Report ID */
-	0x09, 0x02, /* Vendor Usage */
-	0x15, 0x00, /* Usage Minimum */
-	0x25, 0xFF, /* Usage Maximum */
-	0x75, 0x08, /* Report Size */
-	0x95, USBD_COMP_HID_RX_PKT_SIZE, /* Report Count */
-	0x91, 0x02, /* Output (Data,Var,Abs) */
+	0x85, USBD_COMP_HID_REPORT_ID,               /* Report ID */
+	0x09, 0x02,                                  /* Vendor Usage */
+	0x15, 0x00,                                  /* Usage Minimum */
+	0x25, 0xFF,                                  /* Usage Maximum */
+	0x75, 0x08,                                  /* Report Size */
+	0x95, USBD_COMP_HID_RX_PKT_SIZE,             /* Report Count */
+	0x91, 0x02,                                  /* Output (Data,Var,Abs) */
 
-	0xC0        /* end Application Collection */
+	0xC0                                         /* end Application Collection */
 };
 
 // HID descriptor
-static u8 usbd_composite_hid_desc[] USB_DMA_ALIGNED = {
-	0x09,                                /*bLength: HID Descriptor size*/
-	COMP_HID_DESC,                       /*bDescriptorType: HID*/
-	0x11,                                /*bcdHID: HID Class Spec release number Byte0*/
-	0x01,                                /*bcdHID: HID Class Spec release number Byte1*/
-	0x00,                                /*bCountryCode: Hardware target country*/
-	0x01,                                /*bNumDescriptors: Number of HID class descriptors to follow*/
-	COMP_HID_REPORT_DESC,                /*bDescriptorType*/
-	COMP_HID_REPORT_DESC_SIZE,           /*wItemLength: Total length of Report descriptor Byte0*/
-	0x00,                                /*wItemLength: Total length of Report descriptor Byte1*/
+static const u8 usbd_composite_hid_vend_desc[] = {
+	0x09,                                        /*bLength: HID Descriptor size*/
+	COMP_HID_DESC,                               /*bDescriptorType: HID*/
+	0x11,                                        /*bcdHID: HID Class Spec release number Byte0*/
+	0x01,                                        /*bcdHID: HID Class Spec release number Byte1*/
+	0x00,                                        /*bCountryCode: Hardware target country*/
+	0x01,                                        /*bNumDescriptors: Number of HID class descriptors to follow*/
+	COMP_HID_REPORT_DESC,                        /*bDescriptorType*/
+	0x00,                                        /*wItemLength: Total length of Report descriptor, runtime assigned*/
+	0x00,
 };
 
 // HID report descriptor
-static u8 usbd_comp_hid_report_desc[] USB_DMA_ALIGNED = {
-	0x05, 0x0C, /* Usage Page (Consumer Devices) */
-	0x09, 0x01, /* Usage (Consumer Control) */
-	0xA1, 0x01, /* COLLECTION (Application) */
+static const u8 usbd_comp_hid_vend_report_desc[] = {
+	0x05, 0x0C,                                  /* Usage Page (Consumer Devices) */
+	0x09, 0x01,                                  /* Usage (Consumer Control) */
+	0xA1, 0x01,                                  /* COLLECTION (Application) */
 
-	0x85, USBD_COMP_HID_VOLUME_REPORT_ID, /* Report ID */
-	0x09, 0xE9,      // Usage (Volume Up)
-	0x09, 0xEA,      // Usage (Volume Down)
-	0x09, 0x30,      // Usage (Power)
-	0x15, 0x00,      // Logical Minimum (0)
-	0x25, 0x01,      // Logical Maximum (1)
-	0x75, 0x01,      // Report Size (1 bit)
-	0x95, 0x03,      // Report Count (3)
-	0x81, 0x02,      // Input (Data, Variable, Absolute)
-	0x75, 0x01,      // Report Size (1 bits)
-	0x95, 0x05,      // Report Count (5)
-	0x81, 0x03,      // Input (Constant, Variable, Absolute) - Padding for alignment
+	0x85, USBD_COMP_HID_VOLUME_REPORT_ID,        /* Report ID */
+	0x09, 0xE9,                                  /* Usage (Volume Up) */
+	0x09, 0xEA,                                  /* Usage (Volume Down) */
+	0x09, 0x30,                                  /* Usage (Power) */
+	0x15, 0x00,                                  /* Logical Minimum (0) */
+	0x25, 0x01,                                  /* Logical Maximum (1) */
+	0x75, 0x01,                                  /* Report Size (1 bit) */
+	0x95, 0x03,                                  /* Report Count (3) */
+	0x81, 0x02,                                  /* Input (Data, Variable, Absolute) */
+	0x75, 0x01,                                  /* Report Size (1 bits) */
+	0x95, 0x05,                                  /* Report Count (5) */
+	0x81, 0x03,                                  /* Input (Constant, Variable, Absolute) - Padding for alignment */
 
-	0xC0        /* end Application Collection */
+	0xC0                                         /* end Application Collection */
 };
 
+static usbd_composite_hid_device_t composite_hid_device;
 
-usbd_class_driver_t usbd_composite_hid_driver = {
+/* Exported variables --------------------------------------------------------*/
+
+const usbd_class_driver_t usbd_composite_hid_driver = {
 	.get_descriptor = composite_hid_get_descriptor,
 	.set_config = composite_hid_set_config,
 	.clear_config = composite_hid_clear_config,
@@ -198,8 +197,6 @@ usbd_class_driver_t usbd_composite_hid_driver = {
 	.status_changed = composite_hid_status_changed,
 };
 
-static usbd_composite_hid_device_t composite_hid_device;
-
 /* Private functions ---------------------------------------------------------*/
 static int usbd_composite_hid_send_data_internal(u8 *data, u16 len)
 {
@@ -207,41 +204,37 @@ static int usbd_composite_hid_send_data_internal(u8 *data, u16 len)
 	u8 offset = 0;
 	int ret = HAL_ERR_HW;
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
-	usbd_composite_hid_ep_t *phid_in = &(hid->hid_in);
+	usb_dev_t *dev = hid->cdev->dev;
+	usbd_ep_t *ep_hid_in = &(hid->ep_hid_in);
 
-	if (!hid->is_ready) {
+	if (!dev->is_ready) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX %d not ready\n", USBD_COMP_HID_CONSUMER_INTR_IN_EP, len);
 		return ret;
 	}
 
-	valid_len = phid_in->intr_in_buf_size;
+	valid_len = ep_hid_in->xfer_buf_len;
 
 	if (len > valid_len) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Data len %d > max %d\n",  len, valid_len);
 		len = valid_len;
 	}
 
-	if ((len % USBD_COMP_HID_MAX_BUF_SIZE) == 0) {
-		phid_in->intr_tx_zlp = 1;
-	} else {
-		phid_in->intr_tx_zlp = 0;
-	}
+	if (!ep_hid_in->xfer_state) {
+		if (dev->is_ready) { // In case deinit when plug out
+			ep_hid_in->is_busy = 1U;
+			ep_hid_in->xfer_state = 1U;
 
-	if (!phid_in->intr_in_state) {
-		if (hid->is_ready) { // In case deinit when plug out
-			phid_in->is_intr_in_busy = 1U;
-			phid_in->intr_in_state = 1U;
-
-			usb_os_memcpy((void *) & (phid_in->intr_in_buf[offset]), (void *)data, len); //dma cache
+			usb_os_memcpy((void *) & (ep_hid_in->xfer_buf[offset]), (void *)data, len); //dma cache
 			valid_len = len;
 
-			if (hid->is_ready) { // In case deinit when plug out
-				usbd_ep_transmit(hid->cdev->dev, USBD_COMP_HID_CONSUMER_INTR_IN_EP, phid_in->intr_in_buf, valid_len);
+			if (dev->is_ready) { // In case deinit when plug out
+				ep_hid_in->xfer_len = valid_len;
+				usbd_ep_transmit(hid->cdev->dev, ep_hid_in);
 				ret = HAL_OK;
 			} else {
-				phid_in->intr_in_state = 0U;
+				ep_hid_in->xfer_state = 0U;
 			}
-			phid_in->is_intr_in_busy = 0U;
+			ep_hid_in->is_busy = 0U;
 		} else {
 			/*TX not ready*/
 		}
@@ -259,17 +252,18 @@ static int usbd_composite_hid_priv_send_data_internal(u8 *data, u16 len, u8 repo
 	u8 offset = 0;
 	int ret = HAL_ERR_HW;
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
-	usbd_composite_hid_ep_t *phid_priv_in = &(hid->hid_priv_in);
+	usbd_ep_t *ep_hid_priv_in = &(hid->ep_hid_priv_in);
+	usb_dev_t *dev = hid->cdev->dev;
 
-	if (!hid->is_ready) {
+	if (!dev->is_ready) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX %d not ready\n", USBD_COMP_HID_INTR_IN_EP, len);
 		return ret;
 	}
 
 	if (hid->report_id_append && (with_reportid == 0)) {
-		valid_len = phid_priv_in->intr_in_buf_size - 1;
+		valid_len = ep_hid_priv_in->xfer_buf_len - 1;
 	} else {
-		valid_len = phid_priv_in->intr_in_buf_size;
+		valid_len = ep_hid_priv_in->xfer_buf_len;
 	}
 
 	if (len > valid_len) {
@@ -277,40 +271,35 @@ static int usbd_composite_hid_priv_send_data_internal(u8 *data, u16 len, u8 repo
 		len = valid_len;
 	}
 
-	if ((len % USBD_COMP_HID_MAX_BUF_SIZE) == 0) {
-		phid_priv_in->intr_tx_zlp = 1;
-	} else {
-		phid_priv_in->intr_tx_zlp = 0;
-	}
-
-	if (!phid_priv_in->intr_in_state) {
-		if (hid->is_ready) { // In case deinit when plug out
-			phid_priv_in->is_intr_in_busy = 1U;
-			phid_priv_in->intr_in_state = 1U;
+	if (!ep_hid_priv_in->xfer_state) {
+		if (dev->is_ready) { // In case deinit when plug out
+			ep_hid_priv_in->is_busy = 1U;
+			ep_hid_priv_in->xfer_state = 1U;
 
 			if (hid->report_id_append && (with_reportid == 0)) {
-				phid_priv_in->intr_in_buf[0] = reportid;
+				ep_hid_priv_in->xfer_buf[0] = reportid;
 				offset = 1;
 			}
 
-			usb_os_memcpy((void *) & (phid_priv_in->intr_in_buf[offset]), (void *)data, len); //dma cache
+			usb_os_memcpy((void *) & (ep_hid_priv_in->xfer_buf[offset]), (void *)data, len); //dma cache
 			if (hid->report_id_append && (with_reportid == 0)) {
 				if (len < USBD_COMP_HID_TX_PKT_SIZE) {
 					/* set padding to zero */
-					usb_os_memset((void *) & (phid_priv_in->intr_in_buf[offset + len]), 0x00, USBD_COMP_HID_TX_PKT_SIZE - len);
+					usb_os_memset((void *) & (ep_hid_priv_in->xfer_buf[offset + len]), 0x00, USBD_COMP_HID_TX_PKT_SIZE - len);
 				}
 				valid_len = USBD_COMP_HID_TX_PKT_SIZE + offset;
 			} else {
 				valid_len = len;
 			}
 
-			if (hid->is_ready) { // In case deinit when plug out
-				usbd_ep_transmit(hid->cdev->dev, USBD_COMP_HID_INTR_IN_EP, phid_priv_in->intr_in_buf, valid_len);
+			if (dev->is_ready) { // In case deinit when plug out
+				ep_hid_priv_in->xfer_len = valid_len;
+				usbd_ep_transmit(hid->cdev->dev, ep_hid_priv_in);
 				ret = HAL_OK;
 			} else {
-				phid_priv_in->intr_in_state = 0U;
+				ep_hid_priv_in->xfer_state = 0U;
 			}
-			phid_priv_in->is_intr_in_busy = 0U;
+			ep_hid_priv_in->is_busy = 0U;
 		} else {
 			/*TX not ready*/
 		}
@@ -343,13 +332,15 @@ static int usbd_hid_receive(void)
 {
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
 	usbd_composite_dev_t *cdev = hid->cdev;
-	usbd_composite_hid_buf_ctrl_t *pbuf_ctrl;
 	usbd_composite_hid_buf_t *p_buf = NULL;
+	usbd_ep_t *ep_intr_out = &(hid->ep_intr_out);
+	usbd_composite_hid_buf_ctrl_t *pbuf_ctrl = &(hid->hid_priv_out);
 
-	pbuf_ctrl = &(hid->hid_priv_out);
 	p_buf = &(pbuf_ctrl->buf_array[pbuf_ctrl->write_idx]);
 
-	usbd_ep_receive(cdev->dev, USBD_COMP_HID_INTR_OUT_EP, p_buf->buf_raw, pbuf_ctrl->hid_mps);
+	ep_intr_out->xfer_buf = p_buf->buf_raw;
+	ep_intr_out->xfer_len = pbuf_ctrl->hid_mps;
+	usbd_ep_receive(cdev->dev, ep_intr_out);
 
 	return HAL_OK;
 }
@@ -358,13 +349,13 @@ static int composite_hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
 	int ret = HAL_OK;
 	u16 len = 0;
-	u8 *buf = NULL;
+	u16 report_len;
 	u8 entityId;
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
 	usbd_composite_dev_t *cdev = hid->cdev;
-
-	// RTK_LOGS(TAG, RTK_LOG_DEBUG, "composite_hid_setup: bmRequestType=0x%02x bRequest=0x%02x wLength=0x%04x wValue=%x\n",
-	//          req->bmRequestType, req->bRequest, req->wLength, req->wValue);
+	usbd_ep_t *ep0_in = &dev->ep0_in;
+	usbd_ep_t *ep0_out = &dev->ep0_out;
+	u8 *buf = ep0_in->xfer_buf;
 
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
 	case USB_REQ_TYPE_STANDARD:
@@ -377,8 +368,9 @@ static int composite_hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 		case USB_REQ_GET_INTERFACE:
 			if (dev->dev_state == USBD_STATE_CONFIGURED) {
-				cdev->ctrl_buf[0] = 0U;
-				usbd_ep0_transmit(dev, cdev->ctrl_buf, 1U);
+				ep0_in->xfer_buf[0] = 0U;
+				ep0_in->xfer_len = 1U;
+				usbd_ep_transmit(dev, ep0_in);
 			} else {
 				ret = HAL_ERR_PARA;
 			}
@@ -387,26 +379,36 @@ static int composite_hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		case USB_REQ_GET_DESCRIPTOR:
 			entityId = USB_LOW_BYTE(req->wIndex);
 			if (entityId == USBD_COMP_HID_ITF) {
-				if (req->wValue >> 8 == COMP_HID_REPORT_DESC) {
-					len = MIN(COMP_HID_PRIV_REPORT_DESC_SIZE, req->wLength);
-					buf = usbd_comp_hid_priv_report_desc;
-					usbd_ep0_transmit(dev, buf, len);
-				} else if (req->wValue >> 8 == COMP_HID_DESC) {
-					len = MIN(sizeof(usbd_composite_hid_priv_desc), req->wLength);
-					buf = usbd_composite_hid_priv_desc;
-					usbd_ep0_transmit(dev, buf, len);
+				if (USB_HIGH_BYTE(req->wValue) == COMP_HID_REPORT_DESC) {
+					report_len = sizeof(usbd_comp_hid_report_desc);
+					usb_os_memcpy((void *)buf, (void *)usbd_comp_hid_report_desc, report_len);
+					ep0_in->xfer_len = MIN(report_len, req->wLength);
+					usbd_ep_transmit(dev, ep0_in);
+				} else if (USB_HIGH_BYTE(req->wValue) == COMP_HID_DESC) {
+					len = COMP_HID_DESC_SIZE;
+					report_len = sizeof(usbd_comp_hid_report_desc);
+					usb_os_memcpy((void *)buf, (void *)usbd_composite_hid_desc, len);
+					buf[COMP_HID_DESC_ITEM_LENGTH_OFFSET] = USB_LOW_BYTE(report_len);
+					buf[COMP_HID_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(report_len);
+					ep0_in->xfer_len = MIN(len, req->wLength);
+					usbd_ep_transmit(dev, ep0_in);
 				} else {
 					ret = HAL_ERR_PARA;
 				}
-			} else if (entityId == USBD_COMP_HID_CONSUMER_ITF) {
-				if (req->wValue >> 8 == COMP_HID_REPORT_DESC) {
-					len = MIN(COMP_HID_REPORT_DESC_SIZE, req->wLength);
-					buf = usbd_comp_hid_report_desc;
-					usbd_ep0_transmit(dev, buf, len);
-				} else if (req->wValue >> 8 == COMP_HID_DESC) {
-					len = MIN(sizeof(usbd_composite_hid_desc), req->wLength);
-					buf = usbd_composite_hid_desc;
-					usbd_ep0_transmit(dev, buf, len);
+			} else if (entityId == USBD_COMP_HID_VEND_ITF) {
+				if (USB_HIGH_BYTE(req->wValue) == COMP_HID_REPORT_DESC) {
+					report_len = sizeof(usbd_comp_hid_vend_report_desc);
+					usb_os_memcpy((void *)buf, (void *)usbd_comp_hid_vend_report_desc, report_len);
+					ep0_in->xfer_len = MIN(report_len, req->wLength);
+					usbd_ep_transmit(dev, ep0_in);
+				} else if (USB_HIGH_BYTE(req->wValue) == COMP_HID_DESC) {
+					len = COMP_HID_DESC_SIZE;
+					report_len = sizeof(usbd_comp_hid_vend_report_desc);
+					usb_os_memcpy((void *)buf, (void *)usbd_composite_hid_vend_desc, len);
+					buf[COMP_HID_DESC_ITEM_LENGTH_OFFSET] = USB_LOW_BYTE(report_len);
+					buf[COMP_HID_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(report_len);
+					ep0_in->xfer_len = MIN(len, req->wLength);
+					usbd_ep_transmit(dev, ep0_in);
 				} else {
 					ret = HAL_ERR_PARA;
 				}
@@ -423,16 +425,18 @@ static int composite_hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	case USB_REQ_TYPE_CLASS:
 		if (req->wLength) {
 			if ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) {
-				ret = hid->cb->setup(req, cdev->ctrl_buf);
+				ret = hid->cb->setup(req, ep0_in->xfer_buf);
 				if (ret == HAL_OK) {
-					usbd_ep0_transmit(dev, cdev->ctrl_buf, req->wLength);
+					ep0_in->xfer_len = req->wLength;
+					usbd_ep_transmit(dev, ep0_in);
 				}
 			} else {
 				usb_os_memcpy((void *)&cdev->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
-				usbd_ep0_receive(dev, cdev->ctrl_buf, req->wLength);
+				ep0_out->xfer_len = req->wLength;
+				usbd_ep_receive(dev, ep0_out);
 			}
 		} else {
-			ret = hid->cb->setup(req, cdev->ctrl_buf);
+			hid->cb->setup(req, NULL);
 		}
 		break;
 	default:
@@ -450,27 +454,31 @@ static int composite_hid_set_config(usb_dev_t *dev, u8 config)
 
 	int ret = HAL_OK;
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
+	usbd_ep_t *ep_hid_priv_in = &(hid->ep_hid_priv_in);
+	usbd_ep_t *ep_hid_in = &(hid->ep_hid_in);
+	usbd_ep_t *ep_intr_out = &(hid->ep_intr_out);
 
-	hid->hid_priv_in.intr_in_state = 0U;
-	hid->hid_in.intr_in_state = 0U;
+	ep_hid_priv_in->xfer_state = 0U;
+	ep_hid_in->xfer_state = 0U;
 
 	/* Init INTR IN EP */
-	usbd_ep_init(dev, USBD_COMP_HID_CONSUMER_INTR_IN_EP, USB_CH_EP_TYPE_INTR, USBD_COMP_HID_MAX_BUF_SIZE);
+	ep_hid_in->mps = USBD_COMP_HID_MAX_BUF_SIZE;
+	usbd_ep_init(dev, ep_hid_in);
 
 	/* Init Priv Hid command EP */
 	/* Init INTR IN EP */
-	usbd_ep_init(dev, USBD_COMP_HID_INTR_IN_EP, USB_CH_EP_TYPE_INTR, USBD_COMP_HID_MAX_BUF_SIZE);
+	ep_hid_priv_in->mps = USBD_COMP_HID_MAX_BUF_SIZE;
+	usbd_ep_init(dev, ep_hid_priv_in);
 
 	/* Init INTR OUT EP */
-	usbd_ep_init(dev, USBD_COMP_HID_INTR_OUT_EP, USB_CH_EP_TYPE_INTR, USBD_COMP_HID_MAX_BUF_SIZE);
+	ep_intr_out->mps = USBD_COMP_HID_MAX_BUF_SIZE;
+	usbd_ep_init(dev, ep_intr_out);
 	/* Prepare to receive next INTR OUT packet */
 	usbd_hid_receive();
 
 	if (hid->cb->set_config != NULL) {
 		hid->cb->set_config();
 	}
-
-	hid->is_ready = 1U;
 
 	return ret;
 }
@@ -479,19 +487,20 @@ static int composite_hid_clear_config(usb_dev_t *dev, u8 config)
 {
 	int ret = 0;
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
+	usbd_ep_t *ep_hid_priv_in = &(hid->ep_hid_priv_in);
+	usbd_ep_t *ep_hid_in = &(hid->ep_hid_in);
+	usbd_ep_t *ep_intr_out = &(hid->ep_intr_out);
 
 	UNUSED(config);
 
-	hid->is_ready = 0U;
-
 	/* DeInit INTR IN EP */
-	usbd_ep_deinit(dev, USBD_COMP_HID_INTR_IN_EP);
+	usbd_ep_deinit(dev, ep_hid_priv_in);
 
 	/* DeInit INTR OUT EP */
-	usbd_ep_deinit(dev, USBD_COMP_HID_INTR_OUT_EP);
+	usbd_ep_deinit(dev, ep_intr_out);
 
 	/* DeInit INTR IN EP */
-	usbd_ep_deinit(dev, USBD_COMP_HID_CONSUMER_INTR_IN_EP);
+	usbd_ep_deinit(dev, ep_hid_in);
 
 	return ret;
 }
@@ -499,7 +508,8 @@ static int composite_hid_clear_config(usb_dev_t *dev, u8 config)
 static int composite_hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 {
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
-	usbd_composite_hid_ep_t *phid_handle = NULL;
+	usbd_ep_t *ep_hid_priv_in = &(hid->ep_hid_priv_in);
+	usbd_ep_t *ep_hid_in = &(hid->ep_hid_in);
 
 	UNUSED(dev);
 
@@ -507,24 +517,12 @@ static int composite_hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX err: %d\n", ep_addr, status);
 	} else {
 		if (ep_addr == USBD_COMP_HID_INTR_IN_EP) { // priv hid cmmand
-			phid_handle = &(hid->hid_priv_in);
-			if (phid_handle->intr_tx_zlp) {
-				phid_handle->intr_tx_zlp = 0;
-				usbd_ep_transmit(hid->cdev->dev, USBD_COMP_HID_INTR_IN_EP, NULL, 0);
-			} else {
-				phid_handle->intr_in_state = 0U;
-				if (hid->cb->transmitted) {
-					hid->cb->transmitted(status);
-				}
+			ep_hid_priv_in->xfer_state = 0U;
+			if (hid->cb->transmitted) {
+				hid->cb->transmitted(status);
 			}
 		} else { //default hid cmmand
-			phid_handle = &(hid->hid_in);
-			if (phid_handle->intr_tx_zlp) {
-				phid_handle->intr_tx_zlp = 0;
-				usbd_ep_transmit(hid->cdev->dev, USBD_COMP_HID_CONSUMER_INTR_IN_EP, NULL, 0);
-			} else {
-				phid_handle->intr_in_state = 0U;
-			}
+			ep_hid_in->xfer_state = 0U;
 		}
 	}
 
@@ -589,10 +587,8 @@ static int composite_hid_handle_ep0_data_out(usb_dev_t *dev)
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
 	usbd_composite_dev_t *cdev = hid->cdev;
 
-	UNUSED(dev);
-
 	if (cdev->ctrl_req.bRequest != 0xFFU) {
-		hid->cb->setup(&cdev->ctrl_req, cdev->ctrl_buf);
+		hid->cb->setup(&cdev->ctrl_req, dev->ep0_in.xfer_buf);
 		cdev->ctrl_req.bRequest = 0xFFU;
 
 		ret = HAL_OK;
@@ -601,43 +597,53 @@ static int composite_hid_handle_ep0_data_out(usb_dev_t *dev)
 	return ret;
 }
 
-static u8 *composite_hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_type_t speed, u16 *len)
+/**
+  * @brief  Get descriptor callback
+  * @param  dev: USB device instance
+  * @param  req: Setup request handle
+  * @param  buf: Poniter to Buffer
+  * @retval Descriptor length
+  */
+static u16 composite_hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 {
-	u8 *buf = NULL;
+	u16 len = 0;
+	u16 report_len;
 
 	UNUSED(dev);
-	UNUSED(speed);
 
-	switch ((req->wValue >> 8) & 0xFF) {
+	switch (USB_HIGH_BYTE(req->wValue)) {
 
 	case USB_DESC_TYPE_CONFIGURATION:
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
-		buf = usbd_composite_hid_itf_desc;
-		*len = sizeof(usbd_composite_hid_itf_desc);
+		len = sizeof(usbd_composite_hid_itf_desc);
+		usb_os_memcpy((void *)buf, (void *)usbd_composite_hid_itf_desc, len);
+		report_len = sizeof(usbd_comp_hid_report_desc);
+		buf[COMP_HID_ITF_DESC_ITEM_LENGTH_OFFSET] = USB_LOW_BYTE(report_len);
+		buf[COMP_HID_ITF_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(report_len);
+		report_len = sizeof(usbd_comp_hid_vend_report_desc);
+		buf[COMP_HID_ITF_VEND_DESC_ITEM_LENGTH_OFFSET] = USB_LOW_BYTE(report_len);
+		buf[COMP_HID_ITF_VEND_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(report_len);
 		break;
 
 	default:
 		break;
 	}
 
-	return buf;
+	return len;
 }
 
 /**
   * @brief  USB attach status change
   * @param  dev: USB device instance
+  * @param  old_status: USB old attach status
   * @param  status: USB USB attach status
   * @retval void
   */
-static void composite_hid_status_changed(usb_dev_t *dev, u8 status)
+static void composite_hid_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 {
-	usbd_composite_hid_device_t *hid = &composite_hid_device;
-
 	UNUSED(dev);
-
-	if (status == USBD_ATTACH_STATUS_DETACHED) {
-		hid->is_ready = 0U;
-	}
+	UNUSED(old_status);
+	UNUSED(status);
 }
 
 /**
@@ -737,7 +743,9 @@ int usbd_composite_hid_init(usbd_composite_dev_t *cdev, usbd_composite_hid_usr_c
 {
 	int ret = HAL_OK;
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
-	usbd_composite_hid_ep_t *phid_in_handle = NULL;
+	usbd_ep_t *ep_hid_priv_in = &(hid->ep_hid_priv_in);
+	usbd_ep_t *ep_hid_in = &(hid->ep_hid_in);
+	usbd_ep_t *ep_intr_out = &(hid->ep_intr_out);
 
 	if (cb != NULL) {
 		hid->cb = cb;
@@ -751,21 +759,26 @@ int usbd_composite_hid_init(usbd_composite_dev_t *cdev, usbd_composite_hid_usr_c
 		goto usbd_hid_init_exit;
 	}
 
-	phid_in_handle = &(hid->hid_priv_in);
-	phid_in_handle->intr_in_buf_size = USBD_COMP_HID_MAX_BUF_SIZE;
-	phid_in_handle->intr_in_buf = (u8 *)usb_os_malloc(phid_in_handle->intr_in_buf_size);
-	if (phid_in_handle->intr_in_buf == NULL) {
+	ep_hid_priv_in->addr = USBD_COMP_HID_INTR_IN_EP;
+	ep_hid_priv_in->type = USB_CH_EP_TYPE_INTR;
+	ep_hid_priv_in->xfer_buf_len = USBD_COMP_HID_MAX_BUF_SIZE;
+	ep_hid_priv_in->xfer_buf = (u8 *)usb_os_malloc(ep_hid_priv_in->xfer_buf_len);
+	if (ep_hid_priv_in->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
 		goto usbd_composite_hid_priv_out_buf_exit;
 	}
 
-	phid_in_handle = &(hid->hid_in);
-	phid_in_handle->intr_in_buf_size = USBD_COMP_HID_MAX_BUF_SIZE;
-	phid_in_handle->intr_in_buf = (u8 *)usb_os_malloc(phid_in_handle->intr_in_buf_size);
-	if (phid_in_handle->intr_in_buf == NULL) {
+	ep_hid_in->addr = USBD_COMP_HID_CONSUMER_INTR_IN_EP;
+	ep_hid_in->type = USB_CH_EP_TYPE_INTR;
+	ep_hid_in->xfer_buf_len = USBD_COMP_HID_MAX_BUF_SIZE;
+	ep_hid_in->xfer_buf = (u8 *)usb_os_malloc(ep_hid_in->xfer_buf_len);
+	if (ep_hid_in->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
 		goto usbd_composite_hid_clean_priv_exit;
 	}
+
+	ep_intr_out->addr = USBD_COMP_HID_INTR_OUT_EP;
+	ep_intr_out->type = USB_CH_EP_TYPE_INTR;
 
 	if (cb->init != NULL) {
 		ret = cb->init();
@@ -779,17 +792,15 @@ int usbd_composite_hid_init(usbd_composite_dev_t *cdev, usbd_composite_hid_usr_c
 	return ret;
 
 usbd_composite_hid_clean_all_exit:
-	phid_in_handle = &(hid->hid_in);
-	if (phid_in_handle->intr_in_buf) {
-		usb_os_mfree(phid_in_handle->intr_in_buf);
-		phid_in_handle->intr_in_buf = NULL;
+	if (ep_hid_in->xfer_buf) {
+		usb_os_mfree(ep_hid_priv_in->xfer_buf);
+		ep_hid_priv_in->xfer_buf = NULL;
 	}
 
 usbd_composite_hid_clean_priv_exit:
-	phid_in_handle = &(hid->hid_priv_in);
-	if (phid_in_handle->intr_in_buf) {
-		usb_os_mfree(phid_in_handle->intr_in_buf);
-		phid_in_handle->intr_in_buf = NULL;
+	if (ep_hid_priv_in->xfer_buf) {
+		usb_os_mfree(ep_hid_priv_in->xfer_buf);
+		ep_hid_priv_in->xfer_buf = NULL;
 	}
 
 usbd_composite_hid_priv_out_buf_exit:
@@ -802,10 +813,10 @@ usbd_hid_init_exit:
 int usbd_composite_hid_deinit(void)
 {
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
+	usbd_ep_t *ep_hid_priv_in = &(hid->ep_hid_priv_in);
+	usbd_ep_t *ep_hid_in = &(hid->ep_hid_in);
 
-	hid->is_ready = 0U;
-
-	while (hid->hid_priv_in.is_intr_in_busy || hid->hid_in.is_intr_in_busy) {
+	while (ep_hid_priv_in->is_busy || ep_hid_in->is_busy) {
 		usb_os_delay_us(100);
 	}
 
@@ -813,14 +824,14 @@ int usbd_composite_hid_deinit(void)
 		hid->cb->deinit();
 	}
 
-	if (hid->hid_priv_in.intr_in_buf) {
-		usb_os_mfree(hid->hid_priv_in.intr_in_buf);
-		hid->hid_priv_in.intr_in_buf = NULL;
+	if (ep_hid_priv_in->xfer_buf) {
+		usb_os_mfree(ep_hid_priv_in->xfer_buf);
+		ep_hid_priv_in->xfer_buf = NULL;
 	}
 
-	if (hid->hid_in.intr_in_buf) {
-		usb_os_mfree(hid->hid_in.intr_in_buf);
-		hid->hid_in.intr_in_buf = NULL;
+	if (ep_hid_in->xfer_buf) {
+		usb_os_mfree(ep_hid_in->xfer_buf);
+		ep_hid_in->xfer_buf = NULL;
 	}
 
 	usbd_composite_hid_ringbuf_ctrl_deinit();
@@ -874,11 +885,11 @@ static u32 usbd_composite_hid_read_ring_buf(usbd_composite_hid_buf_ctrl_t *pdata
 		if (p_buf->buf_valid_len > 0) {
 			if (p_buf->buf_raw[0] == USBD_COMP_HID_REPORT_ID) {
 				hid->report_id_append = 1;
-				memcpy(buffer + *copy_len, p_buf->buf_raw + 1, p_buf->buf_valid_len - 1);
+				usb_os_memcpy(buffer + *copy_len, p_buf->buf_raw + 1, p_buf->buf_valid_len - 1);
 				*copy_len += p_buf->buf_valid_len - 1;
 			} else {
 				hid->report_id_append = 0;
-				memcpy(buffer + *copy_len, p_buf->buf_raw, p_buf->buf_valid_len);
+				usb_os_memcpy(buffer + *copy_len, p_buf->buf_raw, p_buf->buf_valid_len);
 				*copy_len += p_buf->buf_valid_len;
 			}
 
@@ -902,10 +913,11 @@ static u32 usbd_composite_hid_read_ring_buf(usbd_composite_hid_buf_ctrl_t *pdata
 u32 usbd_composite_hid_read(u8 *buffer, u32 size, u32 time_out_ms)
 {
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
+	usb_dev_t *dev = hid->cdev->dev;
 	usbd_composite_hid_buf_ctrl_t *pdata_ctrl = &(hid->hid_priv_out);
 	u32 copy_len = 0;
 
-	if (hid->is_ready == 0) {
+	if (dev->is_ready == 0) {
 		return 0;
 	}
 
@@ -932,7 +944,7 @@ u32 usbd_composite_hid_read(u8 *buffer, u32 size, u32 time_out_ms)
 					break;
 				}
 			}
-		} while (hid->is_ready);
+		} while (dev->is_ready);
 	}
 
 	if (copy_len > size) {

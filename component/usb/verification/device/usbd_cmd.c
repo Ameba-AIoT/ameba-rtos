@@ -9,25 +9,26 @@
 #include <platform_autoconf.h>
 #include "platform_stdlib.h"
 #include "basic_types.h"
-#include "usbd_cmd.h"
 #include "usb_regs.h"
 #include "usb_hal.h"
 #include "usbd.h"
+#include "usb_cmd.h"
+#include "usbd_cmd.h"
 
 /* Private defines -----------------------------------------------------------*/
-static const char *const TAG = "CMD";
+static const char *const TAG = "USBD";
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
 
-static u32 usbd_test(u16 argc, u8 *argv[]);
+static u32 usbd_cmd(u16 argc, u8 *argv[]);
 
 /* Private variables ---------------------------------------------------------*/
 
 static usbd_config_t usbd_cfg = {
-#ifdef CONFIG_USB_FS
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
 	.speed = USB_SPEED_FULL,
 #else
 	.speed = USB_SPEED_HIGH,
@@ -41,33 +42,35 @@ static usbd_config_t usbd_cfg = {
 /* Public variables ---------------------------------------------------------*/
 
 CMD_TABLE_DATA_SECTION
-const COMMAND_TABLE usbd_test_cmd_table[] = {
-#ifdef CONFIG_USB_FS
+const COMMAND_TABLE usbd_cmd_table[] = {
+#ifdef CONFIG_SUPPORT_USB_NO_PHY
 	{
-		(const u8 *)"USBD", 3, usbd_test, (const u8 *)"\tUSB device test cmd:\n"
+		(const u8 *)"USBD", 3, usbd_cmd, (const u8 *)"\tUSB DEVICE\n"
 		"\t\t usbd init\n"
 		"\t\t usbd deinit\n"
 		"\t\t usbd regdump\n"
 		"\t\t usbd wakehost\n"
-		"\t\t usbd verify subcmd\n"
+		"\t\t usbd acm <arguments>\n"
+		"\t\t usbd verify <arguments>\n"
 	}
 #else
 	{
-		(const u8 *)"USBD", 3, usbd_test, (const u8 *)"\tUSB device test cmd:\n"
+		(const u8 *)"USBD", 3, usbd_cmd, (const u8 *)"\tUSB DEVICE\n"
 		"\t\t usbd init\n"
 		"\t\t usbd deinit\n"
 		"\t\t usbd regdump\n"
 		"\t\t usbd wakehost\n"
 		"\t\t usbd phydw <addr_hex>\n"
 		"\t\t usbd phyew <addr_hex> <value_hex>\n"
-		"\t\t usbd verify subcmd\n"
+		"\t\t usbd acm <arguments>\n"
+		"\t\t usbd verify <arguments>\n"
 	}
 #endif
 };
 
 /* Private functions ---------------------------------------------------------*/
 
-static u32 usbd_test(u16 argc, u8 *argv[])
+static u32 usbd_cmd(u16 argc, u8 *argv[])
 {
 	int status = HAL_OK;
 	const char *cmd;
@@ -97,24 +100,21 @@ static u32 usbd_test(u16 argc, u8 *argv[])
 		usbd_wake_host();
 	} else if (_stricmp(cmd, "regdump") == 0) {
 		usb_hal_dump_registers();
-#ifndef CONFIG_USB_FS
+#ifndef CONFIG_SUPPORT_USB_NO_PHY
 	} else if (_stricmp(cmd, "phydw") == 0) {
-		status = cmd_usbd_cts_phydw(argc, argv);
+		status = cmd_usb_phydw(argc, argv);
 	} else if (_stricmp(cmd, "phyew") == 0) {
-		status = cmd_usbd_cts_phyew(argc, argv);
+		status = cmd_usb_phyew(argc, argv);
 #endif
 	} else if (_stricmp(cmd, "verify") == 0) {
 		status = cmd_usbd_verify_test_entry(argc, argv);
-	} else if (_stricmp(cmd, "bus") == 0) {
-		status = cmd_usbd_bus_cmd(argc, argv);
 	} else if (_stricmp(cmd, "acm") == 0) {
 		status = cmd_usbd_cdc_acm(argc, argv);
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Input USB cmd err %s\n", usbd_test_cmd_table[0].msg);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid USBD cmd %s\n", cmd);
 	}
 
 	return status;
 }
 
 /* Exported functions --------------------------------------------------------*/
-
