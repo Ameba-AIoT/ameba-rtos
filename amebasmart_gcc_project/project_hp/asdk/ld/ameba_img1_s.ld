@@ -49,7 +49,6 @@ SECTIONS
 	.ram_image2.entry :
 	{
 		__image2_entry_func__ = .;
-		KEEP(*(SORT(.image2.entry.data*)))
 
 	} > KM4_BD_DRAM
 }

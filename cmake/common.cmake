@@ -148,9 +148,6 @@ macro(ameba_soc_project_create name)
 
     add_library(g_PROJECT_CONFIG INTERFACE)
 
-    configure_file(${c_MENUCONFIG_DIR}/.config ${CMAKE_CURRENT_BINARY_DIR}/.config COPYONLY)
-    import_kconfig("CONFIG" ${CMAKE_CURRENT_BINARY_DIR}/.config)
-    ameba_set_if(CONFIG_MP_INCLUDED c_SDK_IMAGE_FOLDER_NAME image_mp p_ELSE image)
     ameba_set(c_SOC_PROJECT_CREATED TRUE)
 endmacro()
 
@@ -217,7 +214,6 @@ macro(ameba_mcu_project_create name mcu_type)
         message("build example for mcu ${c_MCU_TYPE_UPPER}: ${EXAMPLE}")
     endif()
 
-
     #NOTE:
     ameba_set(c_MCU_TYPE ${mcu_type})
     ameba_set_upper(c_MCU_TYPE_UPPER ${c_MCU_TYPE})
@@ -271,6 +267,7 @@ macro(ameba_mcu_project_create name mcu_type)
     ameba_reset_global_define()
     ameba_set_if(CONFIG_MP_INCLUDED BUILD_TYPE MFG p_ELSE NONE p_SCOPE both)
     ameba_set_if(CONFIG_MP_INCLUDED ANALYZE_MP_IMG 1 p_ELSE 0 p_SCOPE both)
+    ameba_set_if(CONFIG_MP_INCLUDED c_SDK_IMAGE_FOLDER_NAME image_mp p_ELSE image)
 
     # dirs define on specific conditions
     ameba_set(c_SDK_IMAGE_TARGET_DIR ${c_MCU_SDK_DIR}/${c_SDK_IMAGE_FOLDER_NAME})

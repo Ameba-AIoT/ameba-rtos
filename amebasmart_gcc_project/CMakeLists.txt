@@ -39,6 +39,11 @@ ameba_add_subdirectory(project_lp)
 
 ###############################################################################
 # Package final firmware
+#NOTE: import_kconfig is used for ameba_set_if... later
+configure_file(${c_MENUCONFIG_DIR}/.config ${CMAKE_CURRENT_BINARY_DIR}/.config COPYONLY)
+import_kconfig("CONFIG" ${CMAKE_CURRENT_BINARY_DIR}/.config)
+# ameba_set_if(CONFIG_MP_INCLUDED c_SDK_IMAGE_FOLDER_NAME image_mp p_ELSE image)
+
 if(CONFIG_LINUX_FW_EN)
     ameba_set_if(CONFIG_MP_INCLUDED app_name km0_km4_app_mp.bin p_ELSE km0_km4_app.bin)
     ameba_firmware_package(

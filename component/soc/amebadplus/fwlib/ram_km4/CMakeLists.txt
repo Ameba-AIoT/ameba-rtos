@@ -36,33 +36,11 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources
-    ameba_codec.c
-    ameba_sport.c
-    ameba_vad.c
-    ameba_vad_bt.c
-    ameba_spi.c
-    ameba_uart.c
-
-    ameba_system.c
-    ameba_pinmap.c
-    ameba_lcdc.c
-    ameba_mipi.c
-    ameba_sdio_host.c
-    ameba_sd.c
-    ameba_psram.c
-    ameba_audio_clock.c
-    ameba_ipc_toap.c
-    ameba_vad.c
-    ameba_vad_bt.c
-    ameba_vad_handler.c
-    ameba_flashclk.c
-    ameba_nandflash.c
-)
-
-ameba_list_append_ifnot(CONFIG_ARM_CORE_CA32 private_sources
     ameba_app_start.c
+    ameba_data_flash.c
+    ameba_data_flashclk.c
+    ameba_flashclk.c
     ameba_trustzone.c
-    ameba_pmc.c
 )
 
 # Component private part, user config end
@@ -71,7 +49,7 @@ ameba_list_append_ifnot(CONFIG_ARM_CORE_CA32 private_sources
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/soc
-ameba_add_internal_library(ram_hp
+ameba_add_internal_library(ram_km4
     p_SOURCES
         ${private_sources}
     p_INCLUDES

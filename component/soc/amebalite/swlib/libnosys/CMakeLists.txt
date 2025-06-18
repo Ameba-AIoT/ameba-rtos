@@ -41,12 +41,10 @@ set(private_compile_options)         #private compile_options
 ameba_list_append(private_sources
     log.c
 )
-if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
-    ameba_list_append(private_sources
-        locks.c
-        sscanf_minimal.c
-    )
-endif()
+ameba_list_append(private_sources
+    locks.c
+    sscanf_minimal.c
+)
 # Component private part, user config end
 #------------------------------#
 

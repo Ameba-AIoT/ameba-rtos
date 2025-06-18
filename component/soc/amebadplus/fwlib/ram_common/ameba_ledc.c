@@ -259,7 +259,7 @@ bool LEDC_TXGDMA_Init(
 	DCache_CleanInvalidate((u32)pTxData, Length);
 
 	// Allocate a GDMA channel for LEDC tx
-	GdmaChnl = GDMA_ChnlAlloc(0, (IRQ_FUN)CallbackFunc, (u32)CallbackData, INT_PRI5);
+	GdmaChnl = GDMA_ChnlAlloc(0, (IRQ_FUN)CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
 	if (GdmaChnl == 0xFF) { /*	No Available DMA channel */
 		return FALSE;
 	}
