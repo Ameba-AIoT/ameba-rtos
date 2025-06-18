@@ -13,16 +13,36 @@ if USBD_COMPOSITE_MENU
             select USBD_COMPOSITE_CDC_ACM_HID if CORE_AS_AP
         config USBD_COMPOSITE_CDC_ACM_MSC_MENU
             bool "CDC ACM + MSC"
-            depends on AMEBASMARTPLUS
+            depends on SUPPORT_USBD_COMPOSITE_CDC_ACM_MSC
             select USBD_COMPOSITE_CDC_ACM_MSC if CORE_AS_AP
         config USBD_COMPOSITE_CDC_ACM_UAC_MENU
             bool "CDC ACM + UAC"
-            depends on AMEBASMART||AMEBASMARTPLUS||AMEBADPLUS
+            depends on SUPPORT_USBD_UAC
             select USBD_COMPOSITE_CDC_ACM_UAC if CORE_AS_AP
+            choice
+                prompt "Select UAC Version"
+                depends on USBD_COMPOSITE_CDC_ACM_UAC_MENU
+                config USBD_COMPOSITE_CDC_ACM_UAC1_MENU
+                    bool "UAC 1.0"
+                    select USBD_COMPOSITE_CDC_ACM_UAC1 if CORE_AS_AP
+                config USBD_COMPOSITE_CDC_ACM_UAC2_MENU
+                    bool "UAC 2.0"
+                    select USBD_COMPOSITE_CDC_ACM_UAC2 if CORE_AS_AP
+            endchoice
         config USBD_COMPOSITE_HID_UAC_MENU
             bool "HID + UAC"
-            depends on AMEBASMART||AMEBADPLUS
+            depends on SUPPORT_USBD_UAC
             select USBD_COMPOSITE_HID_UAC if CORE_AS_AP
+            choice
+                prompt "Select UAC Version"
+                depends on USBD_COMPOSITE_HID_UAC_MENU
+                config USBD_COMPOSITE_HID_UAC1_MENU
+                    bool "UAC 1.0"
+                    select USBD_COMPOSITE_HID_UAC1 if CORE_AS_AP
+                config USBD_COMPOSITE_HID_UAC2_MENU
+                    bool "UAC 2.0"
+                    select USBD_COMPOSITE_HID_UAC2 if CORE_AS_AP
+            endchoice
     endchoice
 endif
 
@@ -32,15 +52,25 @@ config USBD_HID_MENU
 
 config USBD_INIC_MENU
     bool "INIC"
-    depends on AMEBADPLUS||AMEBAGREEN2
+    depends on SUPPORT_USBD_INIC
     select USBD_INIC if CORE_AS_AP
 
 config USBD_MSC_MENU
     bool "MSC"
-    depends on AMEBAD||AMEBASMART||AMEBASMARTPLUS||AMEBAGREEN2
+    depends on SUPPORT_SDIOH
     select USBD_MSC if CORE_AS_AP
 
 config USBD_UAC_MENU
     bool "UAC"
-    depends on AMEBASMART||AMEBASMARTPLUS||AMEBADPLUS
+    depends on SUPPORT_USBD_UAC
     select USBD_UAC if CORE_AS_AP
+    choice
+        prompt "Select UAC Version"
+        depends on USBD_UAC_MENU
+        config USBD_UAC1_MENU
+            bool "UAC 1.0"
+            select USBD_UAC1 if CORE_AS_AP
+        config USBD_UAC2_MENU
+            bool "UAC 2.0"
+            select USBD_UAC2 if CORE_AS_AP
+    endchoice

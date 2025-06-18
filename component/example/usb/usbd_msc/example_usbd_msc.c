@@ -26,7 +26,7 @@ static const char *const TAG = "MSC";
 #endif
 
 // USB speed
-#ifdef CONFIG_USB_FS
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
 #define CONFIG_USBD_MSC_SPEED						USB_SPEED_FULL
 #else
 #define CONFIG_USBD_MSC_SPEED						USB_SPEED_HIGH
@@ -47,7 +47,7 @@ typedef enum {
 
 /* Private function prototypes -----------------------------------------------*/
 
-static void msc_cb_status_changed(u8 status);
+static void msc_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -90,9 +90,9 @@ usbd_msc_hotplug_type_t msc_hotplug_ongoing_type;
 
 /* Private functions ---------------------------------------------------------*/
 
-static void msc_cb_status_changed(u8 status)
+static void msc_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USB status change: %d\n", status);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USB status change: %d -> %d\n", old_status, status);
 #if CONFIG_USBD_MSC_USB_HOTPLUG
 	msc_usb_attach_status = status;
 	if (msc_hotplug_ongoing_type != USBD_MSC_SD_HOTPLUG) {

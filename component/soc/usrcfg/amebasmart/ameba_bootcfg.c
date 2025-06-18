@@ -86,10 +86,9 @@ u8 Boot_MemSwr_Only = DISABLE;
 // for AP, max 1200MHz under 1.0v, max 920MHz under 0.9v
 // NP PLL can be 800MHz~1000MHz
 SocClk_Info_TypeDef SocClk_Info[] = {
-	/* NPPLL_CLK,	APPLL_Clk,			Vol_Type,	KM4_CPU_CKD,	AP_CPU_CKD*/
-	{NPPLL_1000M,	APPLL_1200M,	VOL_10,			CLKDIV(3),		CLKDIV(1) | ISAPPLL},	//best porformance
-	//{NPPLL_920M,	APPLL_NULL,		VOL_09,			CLKDIV(4),		CLKDIV(1) | ISNPPLL},
-
+	/* NPPLL_CLK,   APPLL_Clk,    Vol_Type,  KM4_CPU_CKD,  AP_CPU_CKD */
+	{NPPLL_1000M,   APPLL_1200M,  VOL_10,    CLKDIV(3),    CLKDIV(1) | ISAPPLL}, //best porformance
+	// {NPPLL_920M, APPLL_NULL,   VOL_09,    CLKDIV(4),    CLKDIV(1) | ISNPPLL},
 };
 
 /**

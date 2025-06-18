@@ -39,93 +39,9 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-if(CONFIG_AMEBAL2)
-    ameba_list_append(private_definitions CONFIG_USB_FS)
-endif()
+include(device/class.cmake)
 
-ameba_list_append(private_includes
-    common
-    device/core
-    host/core
-)
-
-if(CONFIG_USBD_CDC_ACM)
-    ameba_list_append(private_includes device/cdc_acm)
-    ameba_list_append(private_sources device/cdc_acm/usbd_cdc_acm.c)
-endif()
-
-if(CONFIG_USBD_COMPOSITE)
-    ameba_list_append(private_includes device/composite)
-    ameba_list_append(private_sources
-        device/composite/usbd_composite_cdc_acm_hid.c
-        device/composite/usbd_composite_cdc_acm.c
-        device/composite/usbd_composite_hid.c
-    )
-endif()
-
-if(CONFIG_USBD_HID)
-    ameba_list_append(private_includes device/hid)
-    ameba_list_append(private_sources device/hid/usbd_hid.c)
-endif()
-
-if(CONFIG_USBD_MSC)
-    ameba_list_append(private_includes device/msc)
-    ameba_list_append(private_sources
-        device/msc/usbd_msc.c
-        device/msc/usbd_scsi.c
-    )
-endif()
-
-if(CONFIG_USBD_UAC)
-    if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
-        if("${c_MCU_PROJECT_NAME}" STREQUAL "ap")
-            ameba_list_append(private_includes device/uac)
-            ameba_list_append(private_sources device/uac/usbd_uac.c)
-        endif()
-    endif()
-endif()
-
-if(CONFIG_USBD_VENDOR)
-    ameba_list_append(private_includes device/vendor)
-    ameba_list_append(private_sources device/vendor/usbd_vendor.c)
-endif()
-
-if(CONFIG_USBH_CDC_ACM)
-    ameba_list_append(private_includes host/cdc_acm)
-    ameba_list_append(private_sources host/cdc_acm/usbh_cdc_acm.c)
-endif()
-
-if(CONFIG_USBH_CDC_ECM)
-    ameba_list_append(private_includes host/cdc_ecm)
-    ameba_list_append(private_sources host/cdc_ecm/usbh_cdc_ecm.c host/cdc_ecm/usbh_cdc_ecm_hal.c)
-endif()
-
-
-if(CONFIG_USBH_MSC)
-    ameba_list_append(private_includes host/msc)
-
-    ameba_list_append(private_sources
-        host/msc/usbh_msc.c
-        host/msc/usbh_msc_scsi.c
-        host/msc/usbh_msc_disk.c
-    )
-
-endif()
-
-if(CONFIG_USBH_UVC)
-    ameba_list_append(private_includes host/uvc)
-    ameba_list_append(private_sources
-        host/uvc/usbh_uvc_class.c
-        host/uvc/usbh_uvc_intf.c
-        host/uvc/usbh_uvc_parse.c
-        host/uvc/usbh_uvc_stream.c
-    )
-endif()
-
-if(CONFIG_USBH_VENDOR)
-    ameba_list_append(private_includes host/vendor)
-    ameba_list_append(private_sources host/vendor/usbh_vendor.c)
-endif()
+include(host/class.cmake)
 
 # Component private part, user config end
 #------------------------------#

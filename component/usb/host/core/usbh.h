@@ -131,16 +131,18 @@ typedef struct {
 	u16 nptx_fifo_depth;                                /* npTxFIFO depth in size of dword*/
 	u16 ptx_fifo_depth;                                 /* pTxFIFO depth in size of dword*/
 
-	u8 main_task_priority;								/* USB main thread priority */
+	u8 isr_priority;									/* USB ISR priority */
 	u8 isr_task_priority;								/* USB ISR thread priority */
+	u8 main_task_priority;								/* USB main thread priority */
+
 	u8 alt_max;											/* USB support max alt setting num */
 
 	u8 speed : 2;										/* USB speed, USB_SPEED_HIGH, USB_SPEED_HIGH_IN_FULL or USB_SPEED_LOW 0~3*/
 	u8 dma_enable : 1;									/* Enable USB internal DMA mode, 0-Disable, 1-Enable */
 
 	/* 	used for get the usb host tick
-		if sof_tick_en = 1, usbh_get_current_tick will return the tick which support by sof interrupt(should enable sof interrupt)
-		if sof_tick_en = 0, usbh_get_current_tick will return the tick which got from the timestamp
+		if sof_tick_en = 1, usbh_get_tick will return the tick which support by sof interrupt(should enable sof interrupt)
+		if sof_tick_en = 0, usbh_get_tick will return the tick which got from the timestamp
 	*/
 	u8 sof_tick_en : 1;
 } usbh_config_t;
@@ -231,8 +233,10 @@ u32 usbh_get_interval(usb_host_t *host, u8 ep_type, u8 binterval);
 /* Get the tick difference */
 u32 usbh_get_elapsed_ticks(usb_host_t *host, u32 start_tick);
 
-/* Get Current time tick*/
-u32 usbh_get_current_tick(usb_host_t *host);
+/* Get current tick count, based SOF */
+u32 usbh_get_tick(usb_host_t *host);
+/* Get current timestamp in ms*/
+u32 usbh_get_timestamp(usb_host_t *host);
 
 /* Get raw configuration descriptor data */
 u8 *usbh_get_raw_configuration_descriptor(usb_host_t *host);

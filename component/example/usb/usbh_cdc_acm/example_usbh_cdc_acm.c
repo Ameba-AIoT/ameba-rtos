@@ -70,8 +70,9 @@ static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.dma_enable = 1U,
 	.ext_intr_en = USBH_SOF_INTR,
-	.main_task_priority = 4U,
+	.isr_priority = INT_PRI_MIDDLE,
 	.isr_task_priority  = 5U,
+	.main_task_priority = 4U,
 	.sof_tick_en = 1U,
 
 #if defined (CONFIG_AMEBAGREEN2)

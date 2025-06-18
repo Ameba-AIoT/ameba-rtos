@@ -12,8 +12,11 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "usbd.h"
-#include "usbd_uac.h"
-
+#if defined(CONFIG_USBD_UAC1)
+#include "usbd_uac1.h"
+#else
+#include "usbd_uac2.h"
+#endif
 /* This used to check the USB issue */
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBADPLUS)
 #define CONFIG_USBD_AUDIO_EN                          1
@@ -45,8 +48,11 @@ static const char *const TAG = "UAC";
 #define CONFIG_USBD_UAC_DEMUX_CH_DEBUG   1
 
 /* USB speed */
-#ifdef CONFIG_USB_FS
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
 #define CONFIG_USBD_UAC_SPEED USB_SPEED_FULL
+#elif defined(CONFIG_USBD_UAC1)
+/* UAC 1.0 spec supports only Full Speed. */
+#define CONFIG_USBD_UAC_SPEED USB_SPEED_HIGH_IN_FULL
 #else
 #define CONFIG_USBD_UAC_SPEED USB_SPEED_HIGH
 #endif
@@ -57,11 +63,11 @@ static const char *const TAG = "UAC";
 #define CONFIG_USBD_UAC_HOTPLUG_THREAD_PRIORITY 8U
 
 #define AUDIO_BYTE_WIDTH_SIZE                   0x02U
-#define AUDIO_SAMPLING_FREQ                     USBD_UAC_SAMPLING_FREQ_44K
+#define AUDIO_SAMPLING_FREQ                     USBD_UAC_SAMPLING_FREQ_48K
 #define AUDIO_CHANNEL_NUM                       USBD_UAC_DEFAULT_CH_CNT
 
 /* ms */
-#ifdef CONFIG_USB_FS
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
 #define USB_AUDIO_MS_BUF_SIZE               1023U
 #else
 /* the buffer size maybe need to be changed if format( AUDIO_BYTE_WIDTH_SIZE * AUDIO_CHANNEL_NUM num * AUDIO_SAMPLING_FREQ) changes */
@@ -81,10 +87,10 @@ static int uac_cb_deinit(void);
 static int uac_cb_setup(usb_setup_req_t *req, u8 *buf);
 static int uac_cb_set_config(void);
 
-static void uac_cb_status_changed(u8 status);
+static void uac_cb_status_changed(u8 old_status, u8 status);
 static void uac_cb_mute_changed(u8 mute);
 static void uac_cb_volume_changed(u8 volume);
-static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt);
+static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
 /* Private variables ---------------------------------------------------------*/
 
 #if CONFIG_USBD_UAC_HOTPLUG
@@ -185,9 +191,9 @@ static int uac_cb_set_config(void)
 	return HAL_OK;
 }
 
-static void uac_cb_status_changed(u8 status)
+static void uac_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d\n", status);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
 #if CONFIG_USBD_UAC_HOTPLUG
 	uac_attach_status = status;
 	rtos_sema_give(uac_attach_status_changed_sema);
@@ -295,10 +301,17 @@ static void uac_cb_volume_changed(u8 volume)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set volume %d\n", volume);
 }
 
-static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt)
+static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
 {
-	uac_cb.out.sampling_freq = sampling_freq;
-	uac_cb.out.ch_cnt = ch_cnt;
+	if (sampling_freq != 0U) {
+		uac_cb.out.sampling_freq = sampling_freq;
+	}
+	if (ch_cnt != 0U) {
+		uac_cb.out.ch_cnt = ch_cnt;
+	}
+	if (byte_width != 0U) {
+		uac_cb.out.byte_width = byte_width;
+	}
 	rtos_sema_give(uac_ready_sema);
 	audio_task_stop = 1;
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set sampling_freq %d set ch_cnt %d\n", sampling_freq, ch_cnt);

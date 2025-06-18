@@ -13,7 +13,7 @@
 #define CONFIG_USBH_VERIFY_HOT_PLUG_TEST 0     /* Hot plug / memory leak test */
 
 /* Private types -------------------------------------------------------------*/
-static const char *const TAG = "VFY";
+static const char *const TAG = "USBH";
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -29,8 +29,8 @@ static __IO u8 usbh_verify_ready = 0;
 static usbh_config_t cmd_usbh_verify_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.dma_enable = 1,
-	.ext_intr_en = USBH_SOF_INTR,
 	.sof_tick_en = 1,
+	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = 5U,
 	.isr_task_priority  = 6U,
 #if defined (CONFIG_AMEBAGREEN2)
@@ -434,30 +434,40 @@ static void usbh_verify_xfer_dir(u8 *argv[])
 	}
 }
 
-/*
-	  usbh verify cmd:
+static void usbh_verify_usage(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Invalid arguments, usage:\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh verify dma dis/en(default)\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh verify speed full/high(default)\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh verify loopcount <times>\n");
 
-	  usbh verify loopcount <times>
-	  usbh verify dma dis/en(default)
-	  usbh verify speed full/high(default)
-	  usbh verify init
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh verify init\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh verify stop\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh verify dump\n");
 
-	  usbh verify xfer p_loop/bulk_loop <0/1> //loopback or not, default loopback
-	  usbh verify xfer ctrl_out/bulk_out/p_out <0/1> //OUT only
-	  usbh verify xfer ctrl_in/bulk_in/p_in   <0/1> //IN only
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh verify xfer <p_loop/bulk_loop> <0/1>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh verify xfer <ctrl_out/bulk_out/p_out> <0/1>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh verify xfer <ctrl_in/bulk_in/p_in> <0/1>\n");
 
-	  usbh verify start all/bulk/isoc/... size
-	  usbh verify start mix size 2 type1 type2 <short/mps> <pktcnt>
-	  usbh verify start mix size 3 type1 type2 type3 <short/mps>
-	  usbh verify start mix size 4 <short/mps>
-	  usbh verify stop
-	  usbh verify dump
-*/
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh verify start <all/ctrl/bulk/intr/isoc> <size>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh verify start mix <size> 2 <type1> <type2> <short/mps> <pktcnt>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh verify start mix <size> 3 <type1> <type2> <type3> <short/mps>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh verify start mix <size> 4 <short/mps>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh verify start mix <size> 4 <short/mps>\n");
+}
+
 int cmd_usbh_verify_test_entry(u16 argc, u8 *argv[])
 {
 	(void) argc;	/* To avoid gcc warnings */
 	int ret = TRUE;
-	const char *sub_cmd = (const char *)argv[1];
+	const char *sub_cmd;
+
+	if (argc < 2) {
+		usbh_verify_usage();
+		return HAL_ERR_PARA;
+	}
+
+	sub_cmd = (const char *)argv[1];
 	if (sub_cmd) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Enter usbh cmd \"%s\"\n", sub_cmd);
 	}
@@ -536,7 +546,7 @@ int cmd_usbh_verify_test_entry(u16 argc, u8 *argv[])
 		RTK_LOGS(TAG, RTK_LOG_INFO, "CTRL: %d-%d\n", usbh_verify_xfer.ctrl_in_only, usbh_verify_xfer.ctrl_out_only);
 		usbh_verify_ep_debug_dump();
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Wrong cmd %s\n", sub_cmd);
+		usbh_verify_usage();
 		ret = FALSE;
 	}
 

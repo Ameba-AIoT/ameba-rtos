@@ -18,7 +18,7 @@ static const char *const TAG = "COMP";
 #define CONFIG_USBD_COMPOSITE_HOTPLUG							1
 
 // USB speed
-#ifdef CONFIG_USB_FS
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
 #define CONFIG_USBD_COMPOSITE_SPEED								USB_SPEED_FULL
 #else
 #define CONFIG_USBD_COMPOSITE_SPEED								USB_SPEED_HIGH
@@ -55,7 +55,7 @@ static int composite_cdc_acm_cb_received(u8 *buf, u32 Len);
 static void composite_hid_send_device_data(void *pdata);
 static int composite_hid_cb_setup(usb_setup_req_t *req, u8 *buf);
 
-static void composite_cb_status_changed(u8 status);
+static void composite_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -345,9 +345,9 @@ static void composite_hid_send_device_data(void *pdata)
 	usbd_composite_hid_send_data(byte, 4);
 }
 
-static void composite_cb_status_changed(u8 status)
+static void composite_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d\n", status);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
 	composite_attach_status = status;
 	rtos_sema_give(composite_attach_status_changed_sema);

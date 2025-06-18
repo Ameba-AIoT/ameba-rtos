@@ -10,7 +10,6 @@
 extern MMU_ConfDef Flash_MMU_Config[];
 extern RCC_ConfDef RCC_Config[];
 extern u8 Force_OTA1_GPIO;
-extern u8 Boot_Log_En;
 extern FuncPtr FwCheckCallback;
 extern FuncPtr OTASelectHook;
 extern u32 Cert_PKHash_OTP_ADDR;

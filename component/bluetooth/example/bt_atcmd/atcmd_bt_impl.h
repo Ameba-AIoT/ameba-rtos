@@ -71,6 +71,8 @@ int atcmd_bt_a2dp_provisioner_scatternet(int argc, char *argv[]);
 
 int atcmd_bt_a2dp_pbp(int argc, char *argv[]);
 
+int atcmd_bt_a2dp_hfp_pbp(int argc, char *argv[]);
+
 int atcmd_bt_a2dp_tmap(int argc, char *argv[]);
 
 int atcmd_bt_spp(int argc, char *argv[]);

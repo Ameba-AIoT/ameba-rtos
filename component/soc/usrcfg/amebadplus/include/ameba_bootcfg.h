@@ -29,14 +29,6 @@ extern u8 Force_OTA1_GPIO;
 
 
 /**
-* @brif  boot log enable or disable.
-* 	FALSE: disable
-*	TRUE: enable
-*/
-
-extern u8 Boot_Log_En;
-
-/**
 * @brif  Firmware verify callback handler.
 *	If users need to verify checksum/hash for image2, implement the function and assign the address
 *	to this function pointer.

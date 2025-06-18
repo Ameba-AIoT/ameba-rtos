@@ -495,7 +495,7 @@ void at_httpget(void *arg)
 		goto end;
 	}
 	if ((conn_type >= HTTP_OVER_TLS_VERIFY_SERVER) && (conn_type <= HTTP_OVER_TLS_VERIFY_BOTH)) {
-		if (strlen(argv[4]) == 0)  {
+		if (argv[4] == NULL || (strlen(argv[4]) == 0))  {
 			RTK_LOGE(AT_HTTP_TAG, "[at_httpget] Missing <cert_index> for HTTP_OVER_TLS\r\n");
 			error_no = 1;
 			goto end;
@@ -698,7 +698,7 @@ void at_httppost(void *arg)
 		goto end;
 	}
 	if ((conn_type >= HTTP_OVER_TLS_VERIFY_SERVER) && (conn_type <= HTTP_OVER_TLS_VERIFY_BOTH)) {
-		if (strlen(argv[4]) == 0)  {
+		if (argv[4] == NULL || (strlen(argv[4]) == 0))  {
 			RTK_LOGE(AT_HTTP_TAG, "[at_httppost] Missing <cert_index> for HTTP_OVER_TLS\r\n");
 			error_no = 1;
 			goto end;
@@ -859,7 +859,7 @@ void at_httpput(void *arg)
 		goto end;
 	}
 	if ((conn_type >= HTTP_OVER_TLS_VERIFY_SERVER) && (conn_type <= HTTP_OVER_TLS_VERIFY_BOTH)) {
-		if (strlen(argv[4]) == 0)  {
+		if (argv[4] == NULL || (strlen(argv[4]) == 0))  {
 			RTK_LOGE(AT_HTTP_TAG, "[at_httpput] Missing <cert_index> for HTTP_OVER_TLS\r\n");
 			error_no = 1;
 			goto end;
@@ -1019,7 +1019,7 @@ void at_httpdel(void *arg)
 		goto end;
 	}
 	if ((conn_type >= HTTP_OVER_TLS_VERIFY_SERVER) && (conn_type <= HTTP_OVER_TLS_VERIFY_BOTH)) {
-		if (strlen(argv[4]) == 0)  {
+		if (argv[4] == NULL || (strlen(argv[4]) == 0))  {
 			RTK_LOGE(AT_HTTP_TAG, "[at_httpdel] Missing <cert_index> for HTTP_OVER_TLS\r\n");
 			error_no = 1;
 			goto end;

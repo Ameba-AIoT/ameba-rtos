@@ -12,7 +12,7 @@
 
 
 /* Private defines -----------------------------------------------------------*/
-static const char *const TAG = "CTS";
+static const char *const TAG = "USBH";
 
 /* Exported defines ----------------------------------------------------------*/
 
@@ -423,6 +423,7 @@ static int usbh_cts_xfer_test_receive(u8 *buf, u32 len)
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.dma_enable = FALSE,
+	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = 8U,
 	.isr_task_priority = 9U,
 #if defined (CONFIG_AMEBAGREEN2)
@@ -511,7 +512,7 @@ int cmd_usbh_xfer_test(u16 argc, u8  *argv[])
 
 	if (argc < 2) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid arguments, usage:\n");
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "  usbh cts cmd\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "  usbh cts setp1/step2/deinit\n");
 		return HAL_ERR_PARA;
 	}
 

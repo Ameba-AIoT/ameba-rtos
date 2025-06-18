@@ -39,22 +39,22 @@ set(private_compile_options)         #private compile_options
 if(NOT CONFIG_AS_INIC_AP)
     ameba_list_append_ifnot(CONFIG_WIFI_CSI_ENABLE private_sources
         wifi_feature_dis_csi.c)
-    
+
     ameba_list_append_ifnot(CONFIG_WIFI_RADAR_ENABLE private_sources
         wifi_feature_dis_radar.c)
-    
+
     ameba_list_append_ifnot(CONFIG_WIFI_MCC_ENABLE private_sources
         wifi_feature_dis_mcc.c)
-    
+
     ameba_list_append_ifnot(CONFIG_WIFI_ANTDIV_ENABLE private_sources
         wifi_feature_dis_antdiv.c)
-    
+
     ameba_list_append_ifnot(CONFIG_WIFI_SPEAKER_ENABLE private_sources
         wifi_feature_dis_speaker.c)
-    
+
     ameba_list_append_ifnot(CONFIG_WIFI_P2P_ENABLE private_sources
         wifi_feature_dis_p2p.c)
-    
+
 endif()
 
 if(NOT (CONFIG_WIFI_11K_ENABLE AND CONFIG_WIFI_11V_ENABLE AND CONFIG_WIFI_11R_ENABLE))
@@ -71,13 +71,13 @@ if(CONFIG_AS_INIC_NP)
                     if(NOT CONFIG_ZEPHYR_SDK)
                         if(TARGET target_wifi_nouse)
                             add_custom_command(
-                                OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/wifi_intf_drv_to_app_ext_noused.c
-                                COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/gen_noused_c.py -a ${c_SDK_IMAGE_TARGET_DIR}/target_img2_otrcore.asm -c ${CMAKE_CURRENT_SOURCE_DIR}/wifi_intf_drv_to_app_ext_strong.c -r ${CMAKE_CURRENT_SOURCE_DIR}/wifi_intf_drv_to_app_ext_noused.c
+                                OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/wifi_intf_drv_to_app_ext_noused.c
+                                COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/gen_noused_c.py -a ${c_SDK_IMAGE_TARGET_DIR}/target_img2_otrcore.asm -c ${CMAKE_CURRENT_SOURCE_DIR}/wifi_intf_drv_to_app_ext_strong.c -r ${CMAKE_CURRENT_BINARY_DIR}/wifi_intf_drv_to_app_ext_noused.c
                                 # COMMAND ${CMAKE_COMMAND} -E remove ${c_SDK_IMAGE_TARGET_DIR}/target_img2_otrcore.asm
                                 DEPENDS target_wifi_nouse ${c_MCU_PROJECT_DIR}/asdk/image/target_img2_otrcore.asm
                             )
                             ameba_list_append(private_sources
-                                ${CMAKE_CURRENT_SOURCE_DIR}/wifi_intf_drv_to_app_ext_noused.c
+                                ${CMAKE_CURRENT_BINARY_DIR}/wifi_intf_drv_to_app_ext_noused.c
                             )
                         endif()
                     endif()

@@ -13,7 +13,6 @@ extern CACHETCM_TypeDef CACHETCM_Def[];
 extern GRST_ConfDef GRST_Config[];
 extern RSIP_OTFDef RSIP_OTF_Config[];
 extern u8 Force_OTA1_GPIO;
-extern u8 Boot_Log_En;
 extern u8 Boot_PSRAM_APM;
 extern FuncPtr FwCheckCallback;
 extern FuncPtr OTASelectHook;

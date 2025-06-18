@@ -277,6 +277,32 @@ float PLL_I2S_45P158M_ClkTune(float ppm, u32 action)
 }
 
 /**
+  * @brief  get nppll clk.
+  * @param  None.
+  */
+u32 PLL_NP_ClkGet(void)
+{
+	PLL_TypeDef *PLL = (PLL_TypeDef *)PLL_BASE;
+	u32 Div, FoN, FoF;
+	u32 XtalClk = XTAL_ClkGet();
+	u64 PllClk;
+
+	// Get Div value
+	Div = PLL_GET_NPLL_DIVN_SDM(PLL->PLL_NPPLL_CTRL1) + 2;
+
+	// Get FoN and FoF values
+	FoN = PLL_GET_NPLL_F0N_SDM(PLL->PLL_NPPLL_CTRL3);
+	FoF = PLL_GET_NPLL_F0F_SDM(PLL->PLL_NPPLL_CTRL3);
+
+	// Calculate PLL frequency
+	// PllClk = Div * XtalClk + (FoN + FoF >> 13) / 8 * XtalClk
+	PllClk = (u64)Div * XtalClk;
+	PllClk += ((u64)FoN * XtalClk + ((u64)FoF * XtalClk >> 13)) >> 3;
+
+	return (u32)PllClk;
+}
+
+/**
   * @brief  Set PLL clock.
   * @param  PllClk: This parameter is used to set PLL frequency, for example PllClk=600000000 means 600MHz
   */

@@ -161,6 +161,12 @@ if BT_EXAMPLE_DEMO_MENU
     endif
 
     if BT_HAS_BREDR && BT_HAS_LEAUDIO
+        config BT_A2DP_HFP_LE_AUDIO_PBP_MENU
+            bool "BT A2DP HFP and LE Audio PBP"
+            default n
+    endif
+
+    if BT_HAS_BREDR && BT_HAS_LEAUDIO
         config BT_A2DP_LE_AUDIO_TMAP_MENU
             depends on !AMEBA_RLS    #internal
             bool "BT A2DP and LE Audio TMAP"
@@ -270,6 +276,17 @@ if BT
         select BT_AUDIO_CODEC_SBC
         select BT_AUDIO_CODEC_CVSD
 
+    config BT_A2DP_HFP_LE_AUDIO_PBP_MENU
+        bool
+        select BT_A2DP_HFP_LE_AUDIO_PBP
+        select BT_A2DP_HFP_LE_AUDIO_PBP_SUPPORT
+        select BT_LE_AUDIO
+        select BT_APP_AUDIO_DATA
+        select BT_AUDIO_CODEC_SUPPORT
+        select BT_AUDIO_CODEC_LC3
+        select BT_AUDIO_CODEC_SBC
+        select BT_AUDIO_CODEC_CVSD
+
     config BT_A2DP_LE_AUDIO_TMAP_MENU
         bool
         select BT_A2DP_LE_AUDIO_TMAP
@@ -342,6 +359,10 @@ config BT_A2DP_PROVISIONER_SCATTERNET
 config BT_A2DP_LE_AUDIO_PBP
     bool
 config BT_A2DP_LE_AUDIO_PBP_SUPPORT
+    bool
+config BT_A2DP_HFP_LE_AUDIO_PBP
+    bool
+config BT_A2DP_HFP_LE_AUDIO_PBP_SUPPORT
     bool
 config BT_A2DP_LE_AUDIO_TMAP
     bool

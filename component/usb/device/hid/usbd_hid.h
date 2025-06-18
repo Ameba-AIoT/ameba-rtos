@@ -66,7 +66,9 @@
 #define USBD_HID_HS_INT_MAX_PACKET_SIZE                64
 #define USBD_HID_FS_INT_MAX_PACKET_SIZE                64
 
-#define USBD_HID_DESC_SIZE						0x9
+#define USBD_HID_DESC_SIZE						9
+#define USBD_HID_DESC_ITEM_LENGTH_OFFSET		7
+#define USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET	25
 
 // Mouse button definition
 #define USBD_HID_MOUSE_BUTTON_LEFT				0x01	// Left button. 0: release, 1: press
@@ -84,27 +86,19 @@ typedef struct {
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 	void(* received)(u8 *buf, u32 len);
 #endif
-	void (*status_changed)(u8 status);
+	void (*status_changed)(u8 old_status, u8 status);
 } usbd_hid_usr_cb_t;
 
 typedef struct {
 	usb_setup_req_t ctrl_req;
+	usbd_ep_t ep_intr_in;
+#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+	usbd_ep_t ep_intr_out;
+#endif
 	usbd_hid_usr_cb_t *cb;
 	usb_dev_t *dev;
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
-	u32 intr_out_buf_size;
-#endif
-	u8 *intr_in_buf;
-	u8 *ctrl_buf;
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
-	u8  *intr_out_buf;
-#endif
-	u16 intr_in_buf_len;
 	u8 protocol;
 	u8 idle_rate;
-	__IO u8 is_ready : 1;
-	__IO u8 is_tx_busy : 1;
-	u8 intr_in_state : 1;
 } usbd_hid_t;
 
 int usbd_hid_init(u16 tx_buf_len, usbd_hid_usr_cb_t *cb);

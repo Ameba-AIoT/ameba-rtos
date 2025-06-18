@@ -3,32 +3,33 @@ ameba_add_image(target_imgtool_floader p_EXCLUDE_FROM_ALL)
 
 ###############################  ADD COMPONENT  ###################################
 add_compile_definitions(
-    CONFIG_USB_FS
     CONFIG_FLOADER_USBD_EN
 )
-ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_download/imgtool_floader)
-ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_wrapper)
-ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})
-ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
-ameba_add_subdirectory(${c_CMPT_SOC_DIR}/lib/bootloader lib_bootloader)
+#ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_download/imgtool_floader)
+#ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_wrapper)
+#ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})
+#ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
+#ameba_add_subdirectory(${c_CMPT_SOC_DIR}/lib/bootloader lib_bootloader)
 
-target_sources(${c_CURRENT_IMAGE} PRIVATE
-    ${c_CMPT_USRCFG_DIR}/ameba_bootcfg.c
+#target_sources(${c_CURRENT_IMAGE} PRIVATE
+#    ${c_CMPT_USRCFG_DIR}/ameba_bootcfg.c
 
-    ${c_CMPT_HAL_DIR}/src/pinmap_common.c
-    ${c_CMPT_HAL_DIR}/src/pinmap.c
-    ${c_CMPT_HAL_DIR}/src/gpio_api.c
-    ${c_CMPT_HAL_DIR}/src/pwmout_api.c
+#    ${c_CMPT_HAL_DIR}/src/pinmap_common.c
+#    ${c_CMPT_HAL_DIR}/src/pinmap.c
+#    ${c_CMPT_HAL_DIR}/src/gpio_api.c
+#    ${c_CMPT_HAL_DIR}/src/pwmout_api.c
 
-    ${c_CMPT_FWLIB_DIR}/ram_common/ameba_reset.c
-    ${c_CMPT_FWLIB_DIR}/ram_common/ameba_tim.c
-    ${c_CMPT_FWLIB_DIR}/ram_common/ameba_usb.c
-    ${c_CMPT_FWLIB_DIR}/ram_km4/ameba_flashclk.c
+#    ${c_CMPT_FWLIB_DIR}/ram_common/ameba_reset.c
+#    ${c_CMPT_FWLIB_DIR}/ram_common/ameba_tim.c
+#    ${c_CMPT_FWLIB_DIR}/ram_common/ameba_usb.c
+#    ${c_CMPT_FWLIB_DIR}/ram_km4/ameba_flashclk.c
 
-    ${c_CMPT_SWLIB_DIR}/log.c
-    ${c_CMPT_USB_DIR}/common/usb_hal.c
-    ${c_CMPT_USB_DIR}/common/usb_os.c
-)
+#    ${c_CMPT_SWLIB_DIR}/log.c
+#    ${c_CMPT_USB_DIR}/common/usb_hal.c
+#    ${c_CMPT_USB_DIR}/common/usb_os.c
+#)
+
+target_include_directories(${c_CURRENT_IMAGE} PRIVATE ${c_CMPT_USB_DIR}/common)
 
 ###############################  GENERATE IMAGE  ###################################
 
