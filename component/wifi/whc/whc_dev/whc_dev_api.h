@@ -3,7 +3,7 @@
 
 /* -------------------------------- Defines --------------------------------- */
 #define CONFIG_WHC_DEV_API_PRIO 3
-#ifdef CONFIG_PHYDM_CMD/*halbb debug cmd need bigger stack size*/
+#if defined(CONFIG_PHYDM_CMD) || defined(NAN_CUSTOMER_NANDOW) /*halbb debug cmd need bigger stack size*/
 #define WHC_API_STACK 1024
 #else
 #define WHC_API_STACK 512

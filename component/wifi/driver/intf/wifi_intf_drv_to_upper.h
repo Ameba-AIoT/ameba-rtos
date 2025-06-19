@@ -68,7 +68,7 @@ extern int wifi_hal_iwpriv_command(unsigned char wlan_idx, char *cmd, int show_m
 #ifdef CONFIG_NAN
 int rtw_nan_intfs_init(void);
 void rtw_nan_intfs_deinit(void);
-void rtw_nan_start_api(u8 master_pref, u8 band_support);
+void rtw_nan_start_api(u8 master_pref, u8 band_support, u8 nan_cmd_type);
 void rtw_nan_stop_api(void);
 void rtw_nan_func_set_parameter(void *func_param, void **nan_func_pointer);
 int rtw_nan_func_add(void *func_param, void *nan_func_pointer);

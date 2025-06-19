@@ -21,7 +21,11 @@
 #define ETH_ARPHRD		1	/* ethernet hardware format */
 
 #define MINIMUM_ETHERNET_PACKET_SIZE		60		//!< Minimum Ethernet Packet Size
+#ifdef NAN_CUSTOMER_NANDOW
+#define MAXIMUM_ETHERNET_PACKET_SIZE		MAX_NANDOW_PARA_LEN	//!< Maximum Ethernet Packet Size
+#else
 #define MAXIMUM_ETHERNET_PACKET_SIZE		1514	//!< Maximum Ethernet Packet Size
+#endif
 
 #define WLAN_HDR_A4_QOS_HTC_LEN	36
 #define WLAN_MAX_IV_LEN	8

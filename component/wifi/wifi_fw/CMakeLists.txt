@@ -4,7 +4,7 @@ if(CMAKE_REFACTOR) # For temporary compatibility.
     if(CONFIG_AMEBAD)
         ameba_add_subdirectory_if(CONFIG_WIFI_FW_EN amebad)
     elseif(CONFIG_AMEBADPLUS)
-        ameba_add_subdirectory(amebadplus)
+        ameba_add_subdirectory_if(CONFIG_WIFI_FW_EN amebadplus)
     elseif(CONFIG_AMEBAGREEN2)
         ameba_add_subdirectory_if(CONFIG_WIFI_FW_EN amebagreen2)
     elseif(CONFIG_AMEBAL2)

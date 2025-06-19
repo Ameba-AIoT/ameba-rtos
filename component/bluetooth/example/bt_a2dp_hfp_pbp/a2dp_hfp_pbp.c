@@ -68,11 +68,11 @@
 /* Actual PBP broadcast TX water level length */
 #define APP_BT_PCM_DATA_QUEUE_WATER_LEVEL                       1920 * APP_LE_AUDIO_PBP_BROADCAST_TX_WATER_LEVEL_MS / 10
 /* Set enough length to store resample data.The unit is in short. 1920 bytes is equal to 48 KHz,2 channels pcm data bytes per 10 milliseconds. */
-#define APP_BT_PBP_SOURCE_PCM_DATA_MAX_LEN                      1920 * APP_LE_AUDIO_PBP_BROADCAST_TX_WATER_LEVEL_MS / 10 * 2
+#define APP_BT_PBP_SOURCE_PCM_DATA_MAX_LEN                      1920 * APP_LE_AUDIO_PBP_BROADCAST_TX_WATER_LEVEL_MS / 10 * 3
 #else
 #define APP_LE_AUDIO_PBP_BROADCAST_TX_WATER_LEVEL_MS            300
 #define APP_BT_PCM_DATA_QUEUE_WATER_LEVEL                       960 * APP_LE_AUDIO_PBP_BROADCAST_TX_WATER_LEVEL_MS / 10
-#define APP_BT_PBP_SOURCE_PCM_DATA_MAX_LEN                      960 * APP_LE_AUDIO_PBP_BROADCAST_TX_WATER_LEVEL_MS / 10 * 2
+#define APP_BT_PBP_SOURCE_PCM_DATA_MAX_LEN                      960 * APP_LE_AUDIO_PBP_BROADCAST_TX_WATER_LEVEL_MS / 10 * 3
 #endif
 /* Fixed length, used for temporary storage of audio data after resampled */
 #define APP_RESAMPLE_OUTPUT_FRAME_BUF_MAX_LEN                   480*4*4
@@ -1654,6 +1654,13 @@ static rtk_bt_evt_cb_ret_t app_bt_a2dp_callback(uint8_t evt_code, void *param, u
 				remote_bd_addr[5], remote_bd_addr[4], remote_bd_addr[3], remote_bd_addr[2], remote_bd_addr[1], remote_bd_addr[0]);
 		BT_AT_PRINT("+BTA2DP:conn,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
 					remote_bd_addr[5], remote_bd_addr[4], remote_bd_addr[3], remote_bd_addr[2], remote_bd_addr[1], remote_bd_addr[0]);
+		// set BR/EDR tpoll to 3.75ms
+		uint16_t tpoll = 0x06;
+		if (RTK_BT_OK == rtk_bt_br_gap_set_link_qos(remote_bd_addr, RTK_BT_BR_QOS_TYPE_BEST_EFFORT, tpoll)) {
+			BT_LOGA("[A2DP] set link qos with %02x:%02x:%02x:%02x:%02x:%02x success, tpoll:0x%x \r\n",
+					remote_bd_addr[5], remote_bd_addr[4], remote_bd_addr[3], remote_bd_addr[2], remote_bd_addr[1], remote_bd_addr[0],
+					tpoll);
+		}
 	}
 	break;
 
@@ -1770,6 +1777,7 @@ static rtk_bt_evt_cb_ret_t app_bt_a2dp_callback(uint8_t evt_code, void *param, u
 		BT_AT_PRINT("+BTA2DP:stop,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
 					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		a2dp_play_flag = false;
+		pbp_broadcast_dequeue_flag = false;
 		if (a2dp_audio_track_hdl) {
 			rtk_bt_audio_track_pause(a2dp_audio_track_hdl->audio_track_hdl);
 		}
@@ -1779,6 +1787,7 @@ static rtk_bt_evt_cb_ret_t app_bt_a2dp_callback(uint8_t evt_code, void *param, u
 	case RTK_BT_A2DP_EVT_STREAM_CLOSE: {
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		a2dp_play_flag = false;
+		pbp_broadcast_dequeue_flag = false;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
 		BT_LOGA("[A2DP] Stream close from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);

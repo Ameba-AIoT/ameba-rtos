@@ -653,7 +653,7 @@ void whc_event_nan_start(u32 api_id, u32 *param_buf)
 	u8 master_pref = (u8)param_buf[0];
 	u8 band_support = (u8)param_buf[1];
 
-	rtw_nan_start_api(master_pref, band_support);
+	rtw_nan_start_api(master_pref, band_support, NAN_CMD_TYPE_NATIVE_IW);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 

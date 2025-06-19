@@ -12,7 +12,11 @@
 #include "ameba.h"
 #include "wifi_api.h"
 #include "platform_autoconf.h"
+#if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_host_api.h"
+#else
+#error "Please Enable Coexist!!!"
+#endif
 
 #define HCI_PHY_EFUSE_OFFSET       0x740
 #define HCI_PHY_EFUSE_LEN          0x70
@@ -131,7 +135,7 @@ void hci_platform_bt_rf_calibration(void)
 	if (hci_phy_efuse[PEFUSE(0x741)] != 0xFF) {
 		BT_LOGA("hci_phy_efuse[PEFUSE(0x741)] = 0x%x\r\n", hci_phy_efuse[PEFUSE(0x741)]);
 	}
-
+#if defined(CONFIG_BT_COEXIST)
 	/* 0x741[2] 0 for bt dac dck valid */
 	if ((hci_phy_efuse[PEFUSE(0x741)] & BIT2) == 0) {
 		struct bt_rfk_param p_temp_pram = {0};
@@ -188,6 +192,7 @@ void hci_platform_bt_rf_calibration(void)
 
 		rtk_coex_btc_bt_rfk(&p_temp_pram, sizeof(struct bt_rfk_param));
 	}
+#endif
 }
 
 int hci_platform_get_write_phy_efuse_data(uint8_t *data, uint8_t len)
@@ -198,6 +203,7 @@ int hci_platform_get_write_phy_efuse_data(uint8_t *data, uint8_t len)
 
 int hci_platform_get_rx_adck_data(uint8_t *data, uint8_t len)
 {
+#if defined(CONFIG_BT_COEXIST)
 	struct bt_rfk_param p_temp_pram = {0};
 
 	p_temp_pram.type = BT_ADC_DCK;
@@ -207,6 +213,12 @@ int hci_platform_get_rx_adck_data(uint8_t *data, uint8_t len)
 	memcpy(data, &p_temp_pram.rfk_data1, len);
 
 	return HCI_SUCCESS;
+#else
+	(void) data;
+	(void) len;
+
+	return HCI_FAIL;
+#endif
 }
 
 static void hci_platform_read_voltage(void)

@@ -37,7 +37,7 @@ typedef struct {
 	uint8_t  hid_role;                         /*!< Default HID profile role (Only used in BR/EDR) */
 	uint32_t app_profile_support;              /*!< app profile support @ref rtk_bt_profile_t */
 	uint8_t  server_chann;                     /*!< rfc server channel */
-	uint16_t mtu_size;                         /*!< Deafult MTU config */
+	uint16_t mtu_size;                         /*!< Deafult MTU config, Max value can be set is 512 */
 	bool     master_init_mtu_req;              /*!< Whether local device as master will auto initiate exchange MTU request when connected.
                                                     If this value is false, user can use @ref rtk_bt_gattc_exchange_mtu
                                                     to initiate exchange MTU request. */
@@ -60,6 +60,7 @@ typedef struct {
                                                     cccd will be saved, and when reconnect to the bonded device, @ref RTK_BT_GATTS_EVT_CCCD_IND events
                                                     will be indicated immediately.
                                                     By default, cccd will be saved. And this value will be ignored if @ref RTK_BLE_AUDIO_SUPPORT is enabled.*/
+	bool     key_convert_le_to_bredr;          /*!< Whether convert BLE LTK(only secure connections pairing) to BR/EDR link key (This configuration can only be used in BLE-BR/EDR Dual mode) */
 #if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
 	rtk_bt_le_iso_app_conf_t le_iso_app_conf; /*!< Default configuration for le iso */
 #endif

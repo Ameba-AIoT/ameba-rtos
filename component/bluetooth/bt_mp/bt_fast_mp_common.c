@@ -8,7 +8,11 @@
 #include <atcmd_service.h>
 #include <bt_mp_api.h>
 #include "bt_fast_mp_common.h"
+#if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_host_api.h"
+#else
+#error "Please Enable Coexist!!!"
+#endif
 
 bt_fast_mp_parse_efuse_t bt_efuse = {0};
 
@@ -309,7 +313,9 @@ void bt_fast_mp_cmd_handle_api(void *arg)
 		}
 		BT_LOGA("BT power on.\n\r");
 		rtk_bt_mp_dtm_power_on();
+#if defined(CONFIG_BT_COEXIST)
 		rtk_coex_btc_set_pta(PTA_BT, PTA_HOST_BT, COMMON_ACTION);
+#endif
 		BT_LOGA("Switch GNT_BT to BT.\n\r");
 		if (strcmp(argv[2], "DUT") == 0) {
 			bt_fast_mp_test_start_dut_func(bt_channel);
@@ -319,7 +325,9 @@ void bt_fast_mp_cmd_handle_api(void *arg)
 		}
 		BT_LOGA("BT power off.\n\r");
 		rtk_bt_mp_dtm_power_off();
+#if defined(CONFIG_BT_COEXIST)
 		rtk_coex_btc_set_pta(PTA_WIFI, PTA_HOST_BT, COMMON_ACTION);
+#endif
 		BT_LOGA("Switch GNT_BT to WIFI.\n\r");
 	} else {
 		goto exit;

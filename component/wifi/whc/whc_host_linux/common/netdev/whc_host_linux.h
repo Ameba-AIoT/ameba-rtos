@@ -20,6 +20,7 @@
 
 #ifdef CONFIG_NAN
 #define CONFIG_NAN_PAIRING
+#define NAN_CUSTOMER_NANDOW
 #endif
 
 /******************************************************************/
@@ -114,6 +115,10 @@
 #include "whc_usb_host.h"
 #endif
 
+#ifdef NAN_CUSTOMER_NANDOW
+#include "WFPAL.h"
+#endif
+
 #if !defined(CONFIG_WHC_BRIDGE) && !defined(CONFIG_FULLMAC_HCI_IPC)
 #include "whc_fullmac_host_ioctl.h"
 #include "whc_fullmac_host_cust_evt.h"
@@ -133,6 +138,7 @@
 #include "whc_host_ethtool_ops.h"
 #include "whc_host_hci.h"
 #include "whc_host_function.h"
+
 
 /******************************************************************/
 /********** Definitions between Linux and FULLMAC. **************/

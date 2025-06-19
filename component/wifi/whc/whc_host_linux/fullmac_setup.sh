@@ -33,6 +33,7 @@ if [ "$#" -ge 2 ]; then
 		eval j=\$$i
 		if [ "$j" == "nan" ]; then
 			sed -i 's/CONFIG_NAN = n/CONFIG_NAN = y/g' Makefile
+#			cp ../../driver/nan/WFPAL.h ./common/include
 		elif [ "$j" == "bt" ]; then
 			sed -i 's/CONFIG_BT_INIC = n/CONFIG_BT_INIC = y/g' Makefile
 			if [ "$1" == "spi" ]; then

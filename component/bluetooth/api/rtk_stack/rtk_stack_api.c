@@ -228,6 +228,7 @@ static uint16_t bt_stack_init(void *app_config)
 		default_conf.prefer_rx_phy = papp_conf->prefer_rx_phy;
 		default_conf.max_tx_octets = papp_conf->max_tx_octets;
 		default_conf.max_tx_time = papp_conf->max_tx_time;
+		default_conf.key_convert_le_to_bredr = papp_conf->key_convert_le_to_bredr;
 #if defined(RTK_BLE_SET_TX_QUEUE_NUM) && RTK_BLE_SET_TX_QUEUE_NUM
 		if (papp_conf->max_stack_tx_pending_num != 0) {
 			default_conf.max_stack_tx_pending_num = papp_conf->max_stack_tx_pending_num;
@@ -248,6 +249,7 @@ static uint16_t bt_stack_init(void *app_config)
 		default_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
 		default_conf.max_tx_octets = 0x40;
 		default_conf.max_tx_time = 0x200;
+		default_conf.key_convert_le_to_bredr = false;
 #if defined(RTK_BLE_SET_TX_QUEUE_NUM) && RTK_BLE_SET_TX_QUEUE_NUM
 		default_conf.max_stack_tx_pending_num = RTK_BT_GATT_DEFAULT_CREDITS;
 #endif
@@ -278,6 +280,17 @@ static uint16_t bt_stack_init(void *app_config)
 #if defined(RTK_BLE_SET_TX_QUEUE_NUM) && RTK_BLE_SET_TX_QUEUE_NUM
 	if (false == gap_config_credits_num(default_conf.max_stack_tx_pending_num)) {
 		BT_LOGE("%s: gap_config_credits_num fail(%d)\r\n", __func__, default_conf.max_stack_tx_pending_num);
+	}
+#endif
+
+#if defined(F_BT_SC_LINK_CONVERT_SUPPORT) && F_BT_SC_LINK_CONVERT_SUPPORT
+	uint8_t flag = GAP_SC_KEY_CONVERT_LE_TO_BREDR_FLAG;
+	T_GAP_CAUSE cause = 0;
+	if (default_conf.key_convert_le_to_bredr) {
+		cause = gap_set_param(GAP_PARAM_BOND_LINK_KEY_CONVERT, sizeof(flag), &flag);
+		if (cause) {
+			BT_LOGE("%s, set GAP_PARAM_BOND_LINK_KEY_CONVERT failed, err: 0x%x\r\n", __func__, cause);
+		}
 	}
 #endif
 

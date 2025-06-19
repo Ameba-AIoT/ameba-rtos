@@ -15,7 +15,11 @@
 #include "wifi_api.h"
 extern int wifi_set_ips_internal(u8 enable);
 #endif
+#if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_host_api.h"
+#else
+#error "Please Enable Coexist!!!"
+#endif
 
 #define HCI_PHY_EFUSE_OFFSET       0x740
 #define HCI_PHY_EFUSE_LEN          0x70
@@ -95,6 +99,7 @@ void hci_platform_cfg_bd_addr(uint8_t *bdaddr)
 
 void hci_platform_bt_rf_calibration(void)
 {
+#if defined(CONFIG_BT_COEXIST)
 	/* DAC DCK */
 	/* 0x741[2] 0 for bt dac dck valid */
 	if ((hci_phy_efuse[PEFUSE(0x741)] & BIT2) == 0) {
@@ -142,15 +147,18 @@ void hci_platform_bt_rf_calibration(void)
 
 		rtk_coex_btc_bt_rfk(&p_temp_pram, sizeof(struct bt_rfk_param));
 	}
+#endif
 }
 
 void hci_platform_bt_rx_dck(void)
 {
+#if defined(CONFIG_BT_COEXIST)
 	struct bt_rfk_param p_temp_pram = {0};
 
 	p_temp_pram.type = BT_RX_DCK;
 
 	rtk_coex_btc_bt_rfk(&p_temp_pram, sizeof(struct bt_rfk_param));
+#endif
 }
 
 int hci_platform_get_write_phy_efuse_data(uint8_t *data, uint8_t len)

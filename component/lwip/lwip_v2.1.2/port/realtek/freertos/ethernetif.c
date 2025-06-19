@@ -297,7 +297,7 @@ u8 rltk_mii_recv_data_check(u8 *mac)
 	UNUSED(mac);
 	u8 check_res = TRUE;
 #if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
-#if defined(CONFIG_ETHERNET_BRIDGE) && CONFIG_ETHERNET_BRIDGE
+#if defined(CONFIG_LWIP_USB_ETHERNET_BRIDGE) && CONFIG_LWIP_USB_ETHERNET_BRIDGE
 	return check_res;
 #else
 	u8 *pbuf = RX_BUFFER;
