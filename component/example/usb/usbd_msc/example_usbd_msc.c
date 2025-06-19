@@ -19,7 +19,7 @@ static const char *TAG = "MSC";
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 #define CONFIG_USBD_MSC_USB_HOTPLUG					1
-#define CONFIG_USBD_MSC_SD_HOTPLUG					1
+#define CONFIG_USBD_MSC_SD_HOTPLUG					0
 
 // USB speed
 #ifdef CONFIG_USB_FS
