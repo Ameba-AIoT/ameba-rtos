@@ -36,33 +36,43 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources
-    ameba_codec.c
-    ameba_sport.c
-    ameba_vad.c
-    ameba_vad_bt.c
-    ameba_spi.c
-    ameba_uart.c
-
-    ameba_system.c
-    ameba_pinmap.c
-    ameba_lcdc.c
-    ameba_mipi.c
-    ameba_sdio_host.c
-    ameba_sd.c
-    ameba_psram.c
     ameba_audio_clock.c
-    ameba_ipc_toap.c
-    ameba_vad.c
-    ameba_vad_bt.c
-    ameba_vad_handler.c
-    ameba_flashclk.c
-    ameba_nandflash.c
-)
-
-ameba_list_append_ifnot(CONFIG_ARM_CORE_CA32 private_sources
-    ameba_app_start.c
-    ameba_trustzone.c
-    ameba_pmc.c
+    ameba_bor.c
+    ameba_clk.c
+    ameba_codec.c
+    ameba_gdma_memcpy.c
+    ameba_ir.c
+    ameba_ledc.c
+    ameba_sport.c
+    ameba_ups.c
+    ameba_adc.c
+    ameba_arch.c
+    ameba_captouch.c
+    ameba_clk.c
+    ameba_codec.c
+    ameba_comparator.c
+    ameba_fault_handle.c
+    ameba_flash_ram.c
+    ameba_gdma_ram.c
+    ameba_i2c.c
+    ameba_ipc_api.c
+    ameba_ipc_ram.c
+    ameba_keyscan.c
+    ameba_ldo.c
+    ameba_ledc.c
+    ameba_mpu_ram.c
+    ameba_pll.c
+    ameba_ppe.c
+    ameba_psram.c
+    ameba_qspi.c
+    ameba_reset.c
+    ameba_rtc.c
+    ameba_rtc_io.c
+    ameba_sdio.c
+    ameba_spi.c
+    ameba_sport.c
+    ameba_tim.c
+    ameba_uart.c
 )
 
 # Component private part, user config end
@@ -71,7 +81,7 @@ ameba_list_append_ifnot(CONFIG_ARM_CORE_CA32 private_sources
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/soc
-ameba_add_internal_library(ram_hp
+ameba_add_internal_library(ram_common
     p_SOURCES
         ${private_sources}
     p_INCLUDES

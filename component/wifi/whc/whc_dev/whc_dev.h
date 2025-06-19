@@ -63,6 +63,10 @@
 #include "whc_dev_protocal_offload.h"
 #endif
 
+#if !defined(CONFIG_FULLMAC) && defined(CONFIG_NAN)
+#include "rtw_nan_enum.h"
+#endif
+
 /* remove after rom freeze */
 #ifndef CONFIG_BUILD_ROM
 #include "bt_inic_defs.h"

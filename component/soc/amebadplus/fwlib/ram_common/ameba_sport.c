@@ -1234,7 +1234,7 @@ bool AUDIO_SP_TXGDMA_Init(
 	assert_param(GDMA_InitStruct != NULL);
 	DCache_CleanInvalidate((u32)pTXData, Length);
 	/*obtain a DMA channel and register DMA interrupt handler*/
-	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI4);
+	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
 		return FALSE;
@@ -1317,7 +1317,7 @@ bool AUDIO_SP_RXGDMA_Init(
 	DCache_CleanInvalidate((u32)pRXData, Length);
 	assert_param(GDMA_InitStruct != NULL);
 	/*obtain a DMA channel and register DMA interrupt handler*/
-	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI4);
+	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
 		return FALSE;
@@ -1445,7 +1445,7 @@ bool AUDIO_SP_LLPTXGDMA_Init(
 	u32 pTxData = Lli[0].LliEle.Sarx;
 
 	/*obtain a DMA channel and register DMA interrupt handler*/
-	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI4);
+	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
 		return FALSE;
@@ -1545,7 +1545,7 @@ bool AUDIO_SP_LLPRXGDMA_Init(
 	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
 
 	/*obtain a DMA channel and register DMA interrupt handler*/
-	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI4);
+	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
 		return FALSE;

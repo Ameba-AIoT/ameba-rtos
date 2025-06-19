@@ -2,7 +2,7 @@ if(CONFIG_ZEPHYR_SDK AND CONFIG_CORE_AS_AP)
     return()
 endif()
 
-if(CONFIG_CORE_AS_AP)
+if(CONFIG_WLAN AND CONFIG_CORE_AS_AP)
     ameba_add_subdirectory(mqtt)
     ameba_add_subdirectory(httpc)
     ameba_add_subdirectory(httpd)

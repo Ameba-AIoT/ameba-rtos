@@ -46,8 +46,11 @@ int rtw_ndev_set_mac_address(struct net_device *pnetdev, void *p)
 
 	if (ret == 0) {
 		/* Set mac address success, then change the dev_addr inside net_device. */
-		memset((void *)global_idev.pndev[rtw_netdev_idx(pnetdev)]->dev_addr, 0, ETH_ALEN);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0))
 		memcpy((void *)global_idev.pndev[rtw_netdev_idx(pnetdev)]->dev_addr, addr->sa_data, ETH_ALEN);
+#else
+		eth_hw_addr_set(global_idev.pndev[rtw_netdev_idx(pnetdev)], addr->sa_data);
+#endif
 	}
 #endif
 	return ret;
@@ -411,8 +414,8 @@ int rtw_nan_iface_alloc(struct wiphy *wiphy,
 	struct wireless_dev *wdev = NULL;
 	struct net_device *ndev = NULL;
 	int ret = 0;
-	unsigned char last;
 	int softap_addr_offset_idx = global_idev.wifi_user_config.softap_addr_offset_idx;
+	unsigned char nan_mac[ETH_ALEN];
 
 	if (global_idev.pwdev_global[2]) {
 		dev_info(global_idev.fullmac_dev, "%s: nan_wdev already exists", __func__);
@@ -447,13 +450,19 @@ int rtw_nan_iface_alloc(struct wiphy *wiphy,
 
 	netif_carrier_off(global_idev.pndev[2]);
 	/* set nan port mac address */
-	memcpy(global_idev.pndev[2]->dev_addr, global_idev.pndev[0]->dev_addr, ETH_ALEN);
+	memcpy(nan_mac, global_idev.pndev[0]->dev_addr, ETH_ALEN);
+
 	if (softap_addr_offset_idx == 0) {
-		last = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + (2 << 1);
+		nan_mac[softap_addr_offset_idx] = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + (2 << 1);
 	} else {
-		last = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + 2;
+		nan_mac[softap_addr_offset_idx] = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + 2;
 	}
-	memcpy((void *)&global_idev.pndev[2]->dev_addr[softap_addr_offset_idx], &last, 1);
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0))
+	memcpy((void *)global_idev.pndev[2]->dev_addr, nan_mac, ETH_ALEN);
+#else
+	eth_hw_addr_set(global_idev.pndev[2], nan_mac);
+#endif
 
 	ret = (register_netdevice(global_idev.pndev[2]) == 0) ? true : false;
 	if (ret != true) {

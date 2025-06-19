@@ -18,13 +18,7 @@
 
 static rtos_sema_t sd_sema;
 
-static SDIOHCFG_TypeDef sd_config = {
-	.sdioh_bus_speed = SD_SPEED_HS,				//SD_SPEED_DS or SD_SPEED_HS
-	.sdioh_bus_width = SDIOH_BUS_WIDTH_4BIT, 	//SDIOH_BUS_WIDTH_1BIT or SDIOH_BUS_WIDTH_4BIT
-	.sdioh_cd_pin = _PC_0,						//_PC_0/_PNC
-	.sdioh_wp_pin = _PNC,						//_PB_31/_PNC
-};
-
+extern SDIOHCFG_TypeDef sdioh_config;
 
 static int sd_give_sema(u32 timeout)
 {
@@ -59,7 +53,10 @@ void raw_sd_host_demo(void)
 	}
 
 	/* initialize sd host and sd memory card */
-	ret = SD_Init(&sd_config);
+	sdioh_config.sdioh_bus_speed = SD_SPEED_HS;
+	sdioh_config.sdioh_bus_width = SDIOH_BUS_WIDTH_4BIT;
+	sdioh_config.sdioh_cd_pin = _PC_0;
+	ret = SD_Init();
 	if (ret != SD_OK) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "SD Init Failed!\n");
 		return;
