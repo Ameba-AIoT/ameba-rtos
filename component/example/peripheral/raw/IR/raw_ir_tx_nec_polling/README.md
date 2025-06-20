@@ -9,8 +9,9 @@ Logic Analyzer or oscilloscope.
 
 # SW configuration
 
-1. How to compile :
-   - perform cmd: './build.py -a raw_ir_tx_nec_polling' in directory {sdk_path}/amebaXXX_gcc_project.
+1. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 2. In this example, IR as transmitter, default using `IR_PINMUX_S1_TX`.
 3. Additional configurations:
 

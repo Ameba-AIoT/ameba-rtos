@@ -13,7 +13,9 @@ None
 1. Modify the file `component/at_cmd/atcmd_service.c` by adding `#include "example_mp_app_integration.h"` and including `at_custom_init` in the `log_init_table`.
 2. Run `./menuconfig.py` in the project directory and select the following configuration:
    - Navigate to `CONFIG Mass Production` ---> Check `Enable MP` ---> Enter `MP Mode` ---> Select `expand`.
-3. Run `./build.py -a mp_app_integration` in the project directory to generate the image.
+3. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 4. Here is the usage method:
    a. After downloading the image, reset the chip. At this point, `execute_user_app()` (i.e., the customer application) will run.
    b. Enter `AT+MARKMP` to indicate that calibration and testing are required. This will set bit 0 of BKUP_REG1.

@@ -31,8 +31,9 @@ None
 	#define CONFIG_ENABLE_CAPTIVE_PORTAL  1
 	```
 
-5. How to compile:
-   - Run `./build.py -a httpd_vfs` under project path, e.g. `amebadplus_gcc_project/`, to generate images.
+5. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 6. A httpd example thread is started automatically when booting, then you need to set board as ap with the following command:
 	```

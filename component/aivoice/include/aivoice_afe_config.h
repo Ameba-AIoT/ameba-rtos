@@ -1,13 +1,13 @@
 /************************************************************************************
-File Name		:	rtk_aivoice_afe_config.h
+File Name		:	aivoice_afe_config.h
 Discription		:
 Revision		:
 Date			:
 *************************************************************************************/
 #include <stdbool.h>
 
-#ifndef RTK_AIVOICE_AFE_CONFIG_H
-#define RTK_AIVOICE_AFE_CONFIG_H
+#ifndef AIVOICE_AFE_CONFIG_H
+#define AIVOICE_AFE_CONFIG_H
 
 
 #ifdef __cplusplus
@@ -54,6 +54,9 @@ typedef enum {
 	AFE_NS_NN = 1,              // NS: NN method
 } afe_ns_mode_e;
 
+afe_ns_mode_e AFE_NS_SIGNAL_SET(void);
+afe_ns_mode_e AFE_NS_NN_SET(void);
+
 typedef enum {
 	AFE_NS_AGGR_LOW  = 0,       // NS level: weak
 	AFE_NS_AGGR_MID  = 1,       // NS level: medium
@@ -95,7 +98,7 @@ typedef struct afe_config {
 
 	// AGC module parameter
 	int agc_fixed_gain;                     // AGC fixed gain(dB) applied on AFE output, the value should be in [0, 18].
-	bool enable_adaptive_agc;               // adaptive AGC switch. Not supported in current version.
+	bool enable_adaptive_agc;               // adaptive AGC switch. Only for AFE_FOR_COM.
 
 	// SSL module parameter
 	float ssl_resolution;                   // SSL solution(degree)
@@ -103,9 +106,106 @@ typedef struct afe_config {
 	int ssl_max_hz;                         // maximum frequency(Hz) of SSL module.
 } afe_config_t;
 
-/*-------------------- Default config --------------------*/
-#define AFE_CONFIG_ASR_DEFAULT() { \
+/*-------------------- Default config for ASR --------------------*/
+#define AFE_CONFIG_ASR_DEFAULT_1MIC() { \
+    .mic_array = AFE_1MIC, \
+    .ref_num = 1, \
+    .sample_rate = 16000, \
+    .frame_size = 256,\
+    .afe_mode   = AFE_FOR_ASR, \
+    .enable_aec = true, \
+    .enable_ns  = false, \
+    .enable_agc = false, \
+    .enable_ssl = false, \
+    .aec_mode = AFE_AEC_SIGNAL, \
+    .aec_enable_threshold = 5, \
+    .enable_res = false, \
+    .aec_cost = AFE_AEC_FILTER_MID, \
+    .res_aggressive_mode = AFE_AEC_RES_MID, \
+    .ns_mode = AFE_NS_SIGNAL_SET(), \
+    .ns_cost_mode = AFE_NS_COST_HIGH, \
+    .ns_aggressive_mode = AFE_NS_AGGR_LOW, \
+    .agc_fixed_gain = 0, \
+    .enable_adaptive_agc = false, \
+}
+
+#define AFE_CONFIG_ASR_DEFAULT_2MIC30MM() { \
+    .mic_array = AFE_LINEAR_2MIC_30MM, \
+    .ref_num = 1, \
+    .sample_rate = 16000, \
+    .frame_size = 256,\
+    .afe_mode   = AFE_FOR_ASR, \
+    .enable_aec = true, \
+    .enable_ns  = false, \
+    .enable_agc = false, \
+    .enable_ssl = true, \
+    .aec_mode = AFE_AEC_SIGNAL, \
+    .aec_enable_threshold = 5, \
+    .enable_res = false, \
+    .aec_cost = AFE_AEC_FILTER_MID, \
+    .res_aggressive_mode = AFE_AEC_RES_LOW, \
+    .ns_mode = AFE_NS_SIGNAL_SET(), \
+    .ns_cost_mode = AFE_NS_COST_HIGH, \
+    .ns_aggressive_mode = AFE_NS_AGGR_LOW, \
+    .agc_fixed_gain = 0, \
+    .enable_adaptive_agc = false, \
+    .ssl_resolution = 10, \
+    .ssl_min_hz = 500, \
+    .ssl_max_hz = 3500, \
+}
+
+#define AFE_CONFIG_ASR_DEFAULT_2MIC50MM() { \
     .mic_array = AFE_LINEAR_2MIC_50MM, \
+    .ref_num = 1, \
+    .sample_rate = 16000, \
+    .frame_size = 256,\
+    .afe_mode   = AFE_FOR_ASR, \
+    .enable_aec = true, \
+    .enable_ns  = false, \
+    .enable_agc = false, \
+    .enable_ssl = true, \
+    .aec_mode = AFE_AEC_SIGNAL, \
+    .aec_enable_threshold = 5, \
+    .enable_res = false, \
+    .aec_cost = AFE_AEC_FILTER_MID, \
+    .res_aggressive_mode = AFE_AEC_RES_LOW, \
+    .ns_mode = AFE_NS_SIGNAL_SET(), \
+    .ns_cost_mode = AFE_NS_COST_HIGH, \
+    .ns_aggressive_mode = AFE_NS_AGGR_LOW, \
+    .agc_fixed_gain = 0, \
+    .enable_adaptive_agc = false, \
+    .ssl_resolution = 10, \
+    .ssl_min_hz = 300, \
+    .ssl_max_hz = 3500, \
+}
+
+#define AFE_CONFIG_ASR_DEFAULT_2MIC70MM() { \
+    .mic_array = AFE_LINEAR_2MIC_70MM, \
+    .ref_num = 1, \
+    .sample_rate = 16000, \
+    .frame_size = 256,\
+    .afe_mode   = AFE_FOR_ASR, \
+    .enable_aec = true, \
+    .enable_ns  = false, \
+    .enable_agc = false, \
+    .enable_ssl = true, \
+    .aec_mode = AFE_AEC_SIGNAL, \
+    .aec_enable_threshold = 5, \
+    .enable_res = false, \
+    .aec_cost = AFE_AEC_FILTER_MID, \
+    .res_aggressive_mode = AFE_AEC_RES_LOW, \
+    .ns_mode = AFE_NS_SIGNAL_SET(), \
+    .ns_cost_mode = AFE_NS_COST_HIGH, \
+    .ns_aggressive_mode = AFE_NS_AGGR_LOW, \
+    .agc_fixed_gain = 0, \
+    .enable_adaptive_agc = false, \
+    .ssl_resolution = 10, \
+    .ssl_min_hz = 300, \
+    .ssl_max_hz = 2200, \
+}
+
+#define AFE_CONFIG_ASR_DEFAULT_3MIC() { \
+    .mic_array = AFE_CIRCLE_3MIC_50MM, \
     .ref_num = 1, \
     .sample_rate = 16000, \
     .frame_size = 256,\
@@ -119,22 +219,20 @@ typedef struct afe_config {
     .enable_res = false, \
     .aec_cost = AFE_AEC_FILTER_MID, \
     .res_aggressive_mode = AFE_AEC_RES_LOW, \
-    .ns_mode = AFE_NS_SIGNAL, \
+    .ns_mode = AFE_NS_SIGNAL_SET(), \
     .ns_cost_mode = AFE_NS_COST_HIGH, \
     .ns_aggressive_mode = AFE_NS_AGGR_LOW, \
     .agc_fixed_gain = 0, \
     .enable_adaptive_agc = false, \
-    .ssl_resolution = 30, \
-    .ssl_min_hz = 200, \
-    .ssl_max_hz = 4000, \
 }
 
-#define AFE_CONFIG_COM_DEFAULT() { \
-    .mic_array = AFE_LINEAR_2MIC_50MM, \
+/*-------------------- Default config for COM --------------------*/
+#define AFE_CONFIG_COM_DEFAULT_1MIC() { \
+    .mic_array = AFE_1MIC, \
     .ref_num = 1, \
     .sample_rate = 16000, \
     .frame_size = 256,\
-    .afe_mode = AFE_FOR_COM, \
+    .afe_mode   = AFE_FOR_COM, \
     .enable_aec = true, \
     .enable_ns  = true, \
     .enable_agc = true, \
@@ -143,16 +241,80 @@ typedef struct afe_config {
     .aec_enable_threshold = 5, \
     .enable_res = true, \
     .aec_cost = AFE_AEC_FILTER_MID, \
-    .res_aggressive_mode = AFE_AEC_RES_HIGH, \
-    .ns_mode = AFE_NS_SIGNAL, \
+    .res_aggressive_mode = AFE_AEC_RES_MID, \
+    .ns_mode = AFE_NS_SIGNAL_SET(), \
     .ns_cost_mode = AFE_NS_COST_HIGH, \
-    .ns_aggressive_mode = AFE_NS_AGGR_HIGH, \
-    .agc_fixed_gain = 0, \
-    .enable_adaptive_agc = false, \
-    .ssl_resolution = 30, \
-    .ssl_min_hz = 200, \
-    .ssl_max_hz = 4000, \
+    .ns_aggressive_mode = AFE_NS_AGGR_MID, \
+    .agc_fixed_gain = 5, \
+    .enable_adaptive_agc = true, \
 }
+
+#define AFE_CONFIG_COM_DEFAULT_2MIC30MM() { \
+    .mic_array = AFE_LINEAR_2MIC_30MM, \
+    .ref_num = 1, \
+    .sample_rate = 16000, \
+    .frame_size = 256,\
+    .afe_mode   = AFE_FOR_COM, \
+    .enable_aec = true, \
+    .enable_ns  = true, \
+    .enable_agc = true, \
+    .enable_ssl = false, \
+    .aec_mode = AFE_AEC_SIGNAL, \
+    .aec_enable_threshold = 5, \
+    .enable_res = true, \
+    .aec_cost = AFE_AEC_FILTER_MID, \
+    .res_aggressive_mode = AFE_AEC_RES_MID, \
+    .ns_mode = AFE_NS_SIGNAL_SET(), \
+    .ns_cost_mode = AFE_NS_COST_HIGH, \
+    .ns_aggressive_mode = AFE_NS_AGGR_MID, \
+    .agc_fixed_gain = 5, \
+    .enable_adaptive_agc = true, \
+}
+
+#define AFE_CONFIG_COM_DEFAULT_2MIC50MM() { \
+    .mic_array = AFE_LINEAR_2MIC_50MM, \
+    .ref_num = 1, \
+    .sample_rate = 16000, \
+    .frame_size = 256,\
+    .afe_mode   = AFE_FOR_COM, \
+    .enable_aec = true, \
+    .enable_ns  = true, \
+    .enable_agc = true, \
+    .enable_ssl = false, \
+    .aec_mode = AFE_AEC_SIGNAL, \
+    .aec_enable_threshold = 5, \
+    .enable_res = true, \
+    .aec_cost = AFE_AEC_FILTER_MID, \
+    .res_aggressive_mode = AFE_AEC_RES_MID, \
+    .ns_mode = AFE_NS_SIGNAL_SET(), \
+    .ns_cost_mode = AFE_NS_COST_HIGH, \
+    .ns_aggressive_mode = AFE_NS_AGGR_MID, \
+    .agc_fixed_gain = 5, \
+    .enable_adaptive_agc = true, \
+}
+
+#define AFE_CONFIG_COM_DEFAULT_2MIC70MM() { \
+    .mic_array = AFE_LINEAR_2MIC_70MM, \
+    .ref_num = 1, \
+    .sample_rate = 16000, \
+    .frame_size = 256,\
+    .afe_mode   = AFE_FOR_COM, \
+    .enable_aec = true, \
+    .enable_ns  = true, \
+    .enable_agc = true, \
+    .enable_ssl = false, \
+    .aec_mode = AFE_AEC_SIGNAL, \
+    .aec_enable_threshold = 5, \
+    .enable_res = true, \
+    .aec_cost = AFE_AEC_FILTER_MID, \
+    .res_aggressive_mode = AFE_AEC_RES_MID, \
+    .ns_mode = AFE_NS_SIGNAL_SET(), \
+    .ns_cost_mode = AFE_NS_COST_HIGH, \
+    .ns_aggressive_mode = AFE_NS_AGGR_MID, \
+    .agc_fixed_gain = 5, \
+    .enable_adaptive_agc = true, \
+}
+
 
 #ifdef __cplusplus
 }

@@ -33,6 +33,7 @@ Stream *ameba_audio_stream_tx_init(uint32_t device, StreamConfig config);
 void ameba_audio_stream_tx_start(Stream *stream, int32_t state);
 int32_t ameba_audio_stream_tx_get_buffer_status(Stream *stream);
 int32_t  ameba_audio_stream_tx_write(Stream *stream, const void *data, uint32_t bytes, bool block);
+uint32_t ameba_audio_stream_tx_complete(void *data);
 void ameba_audio_stream_tx_stop(Stream *stream, int32_t state);
 void ameba_audio_stream_tx_standby(Stream *stream);
 void ameba_audio_stream_tx_close(Stream *stream);

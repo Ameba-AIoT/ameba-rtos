@@ -26,11 +26,9 @@ Taking RTL8730EA/QFN100 boards for example, the register R20 shall be parted on 
 	```
 	Save and exit.
 
-2. Build
-	Type command `./build.py -a usb_drd` under the project directory to build images.
-
-3. Download
-	Download images to board by Ameba Image Tool.
+2. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 

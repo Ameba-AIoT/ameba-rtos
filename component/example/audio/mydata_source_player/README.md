@@ -21,7 +21,9 @@ cd `amebasmart_gcc_project`: `./menuconfig.py`
     Demux  ---> Demux MP3,
     Codec  ---> Codec MP3.
 
-2. use CMD `./build.py -a mydata_source_player` to compile example
+2. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 * On AmebaLite
 1. **Enable playback configurations**:
@@ -46,7 +48,9 @@ cd `amebasmart_gcc_project`: `./menuconfig.py`
         Codec  ---> Codec MP3.
 
 
-2. use CMD `./build.py -a mydata_source_player` to compile example
+2. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 ## Usage:
 CMD

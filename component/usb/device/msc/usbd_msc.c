@@ -967,6 +967,7 @@ int usbd_msc_init(usbd_msc_cb_t *cb)
 
 	ep_bulk_in->addr = USBD_MSC_BULK_IN_EP;
 	ep_bulk_in->type = USB_CH_EP_TYPE_BULK;
+	ep_bulk_in->dis_zlp = 1;
 
 	ep_bulk_out->addr = USBD_MSC_BULK_OUT_EP;
 	ep_bulk_out->type = USB_CH_EP_TYPE_BULK;

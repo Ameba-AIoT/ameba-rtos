@@ -22,9 +22,9 @@ In this example, ADC is configured to sample data in `2 normal channels`.
 2. For more info of ADC channel pins, refer to pinmux spec.
    For example, on AmebaSmart, refer to `UM0602_RTL8730E_pinmux.xls` for more info.
 
-3. How to use:
-    * Run `./build.py -a raw_adc_sw_trig` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-    * `Download` images to board by Ameba Image Tool.
+3. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 

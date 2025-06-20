@@ -30,8 +30,9 @@ slave's GND connect to master's GND
    		If `#define I2C_RESTART_DEMO`, then slave will read ->read->write 
    		If not `#define I2C_RESTART_DEMO`, then slave will read -> write.
 
-2. How to compile :
-   		perform cmd: './build.py -a mbed_i2c_polling_slave' in directory {sdk_path}/amebaXXX_gcc_project
+2. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 3. How to modify gpio pin:
    you can also modify pinmux group settings according to correct pinmux table.

@@ -22,9 +22,9 @@ By default, `UART0` is used to generate clock source signal whose frequency is `
 1. `UART_DEV` and `OUT_CLK_HZ` can be modified to configure desired UART device and clock frequency.
 2. Accordingly, `UART_TX` and `UART_RX` in example_uart_ext.h should be updated if `UART_DEV` is modified.
    For more info of UART pins, refer to pinmux spec.
-3. How to use:
-    * Run `./build.py -a raw_uart_dma_clock` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-    * `Download` images to board by Ameba Image Tool.
+3. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 

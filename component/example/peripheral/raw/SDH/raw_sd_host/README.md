@@ -20,6 +20,10 @@ Pin defination:
 
 # SW Configuration
 
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
+
 # Expected Result
 
 This example will erase and then read blocks to check if erase succeed. Then it will write erase and then read blocks to check if write succeed.

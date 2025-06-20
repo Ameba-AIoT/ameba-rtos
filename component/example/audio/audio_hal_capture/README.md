@@ -34,6 +34,12 @@ Please see discriptions in component/soc/usrcfg/xx/include/ameba_audio_hw_usrcfg
 
 ## How to use <a name = "How to use"></a>
 
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
+
+### Note
+
 1. Use CMD `./build.py -a audio_hal_capture -p` to compile this example.
 2. Compile and run. For capture run command and parameters, please refer to app_example.c.
 3. To run the example, the default command in serial log UART is: AudioHalCapture.

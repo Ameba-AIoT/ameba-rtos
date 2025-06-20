@@ -38,9 +38,9 @@ None
 (for example: `component/wifi/driver/include/autoconf_eap.h`)
    - modify the value of `CONFIG_ENABLE_PEAP` to 1 when use PEAP
 
-6. How to use:
-   - Run `./build.py -a wifi_enterprise` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+6. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 

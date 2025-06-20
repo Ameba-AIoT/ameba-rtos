@@ -45,13 +45,12 @@ void audio_app_entry(void)
 void audio_pad_digital_demo(void)
 {
 	u8 PinName = AUDIO_PAD_PIN;
-	u32 chnmode;
 	RCC_PeriphClockCmd(APBPeriph_AUDIO, APBPeriph_CLOCK_NULL, ENABLE);
 
 #ifdef DIGIT_PATH_EN
 
 #if defined (CONFIG_AMEBASMART)
-
+	u32 chnmode;
 	/* --- digital path init begin --- */
 	if ((PinName >= APAD_MIC_PAD_START) && (PinName <= APAD_MIC_PAD_END)) {
 		/* keep audio MICBST be mute */

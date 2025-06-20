@@ -38,10 +38,11 @@ For example:
 
 # SW configuration
 
-1. How to compile :
-   - perform cmd: './build.py -a mbed_spi_multislave' in directory {sdk_path}/amebaXXX_gcc_project
-   - To build image for master device, `SPI_IS_AS_MASTER` need to be set 1
-   - To build image for slave device, `SPI_IS_AS_MASTER` need to be set 0
+1. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
+    - To build image for master device, `SPI_IS_AS_MASTER` need to be set 1
+    - To build image for slave device, `SPI_IS_AS_MASTER` need to be set 0
 2. In this example, we use config SPI_IS_AS_MASTER to decide if device is master or slave.
    - If `SPI_IS_AS_MASTER` is 1, then device is master.
    - If `SPI_IS_AS_MASTER` is 0, then device is slave.

@@ -17,18 +17,9 @@ GND <--> LED2 <---> PB_18
 
 # SW configuration
 
-How to compile :
-
-make and download new image
-
-   - in {SDK}\amebaxxx_gcc_project path, input
-   
-   ```shell
-   ./build.py -a mbed_gtimer
-   ```
-
-   - Use Realtek AmebaImageTool to download the image under auto_build folder to development board
-   - press reset/chip_en button, then example will be start running.
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 How to modify gpio pin:
 

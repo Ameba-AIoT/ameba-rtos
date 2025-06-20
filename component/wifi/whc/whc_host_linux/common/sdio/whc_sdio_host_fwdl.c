@@ -261,7 +261,7 @@ int rtw_sdio_firmware_download(struct whc_sdio *priv, u32 need_checksum)
 	s32 rtStatus = true;
 	u8 write_fw = 0;
 	u32 fwdl_start_time;
-	u8 *FwBuffer8720f = NULL;
+	u8 *FwBuffer8721f = NULL;
 	u8 *pFirmwareBuf;
 	u32 FirmwareLen;
 	u8 *fwfilepath;
@@ -287,8 +287,8 @@ int rtw_sdio_firmware_download(struct whc_sdio *priv, u32 need_checksum)
 		return true;
 	}
 
-	FwBuffer8720f = kmalloc(FW_RL005_SIZE, GFP_KERNEL);
-	if (!FwBuffer8720f) {
+	FwBuffer8721f = kmalloc(FW_RL005_SIZE, GFP_KERNEL);
+	if (!FwBuffer8721f) {
 		dev_err(&func->dev, "%s memory allocate failed\n", __FUNCTION__);
 		rtStatus = false;
 		goto exit;
@@ -298,10 +298,10 @@ dl_again:
 	// Download Image1
 	fwfilepath = rtw_fw1_path;
 	rtw_write32(priv, SDIO_REG_HIMR, 0x10000000);
-	rtStatus = rtw_sdio_retrive_from_file(fwfilepath, FwBuffer8720f, FW_RL005_SIZE);
+	rtStatus = rtw_sdio_retrive_from_file(fwfilepath, FwBuffer8721f, FW_RL005_SIZE);
 	fwdl_start_time = rtw_sdio_get_current_time();
 	FirmwareLen = rtStatus >= 0 ? rtStatus : 0;
-	pFirmwareBuf = FwBuffer8720f;
+	pFirmwareBuf = FwBuffer8721f;
 	while (!priv->bSurpriseRemoved && (write_fw++ < 3 || rtw_sdio_get_passing_time_ms(fwdl_start_time) < 5000)) {
 		// dev_info(&func->dev,"pFirmwareBuf %p, 0x%x, 0x%x\n", pFirmwareBuf, FW1_START_ADDR, FirmwareLen);
 		rtStatus = rtw_sdio_writefw(priv, pFirmwareBuf, FW1_START_ADDR, FirmwareLen);
@@ -402,8 +402,8 @@ fwdl_stat:
 
 exit:
 
-	if (FwBuffer8720f) {
-		kfree((u8 *)FwBuffer8720f);
+	if (FwBuffer8721f) {
+		kfree((u8 *)FwBuffer8721f);
 	}
 
 	return rtStatus;

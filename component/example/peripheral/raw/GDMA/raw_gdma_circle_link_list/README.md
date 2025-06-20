@@ -8,7 +8,9 @@ None.
 
 # SW configuration
 
-Run cmd: `./build.py -a raw_gdma_circle_link_list` in directory {sdk_path}/amebaXXX_gcc_project.
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 1. If `abort_trasfer = 1`, the log is displayed as:

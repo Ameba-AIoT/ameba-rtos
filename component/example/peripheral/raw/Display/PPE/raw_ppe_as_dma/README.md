@@ -21,9 +21,9 @@ For the case that carry data from memory to QSPI, user should connect QSPI pins 
 #  SW configuration
 
 1. User can choose macro ACCESS to choose these 2 case. Value MEM2MEM means case1, and value MEM2QSPI means case2.
-2. How to use:
-* Copy `main.c` to path`project\realtek_xx_va0_example\src\src_yy\`, and replace old main.c.
-* Run `make all` and `download` image to board.
+2. Build and Download:
+* Refer to the SDK Examples section of the online documentation to generate images.
+* `Download` images to board by Ameba Image Tool.
 
 #  Expect result
 

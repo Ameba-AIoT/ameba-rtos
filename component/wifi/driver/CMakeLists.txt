@@ -109,24 +109,24 @@ ameba_list_append_if(CONFIG_AMEBASMARTPLUS public_includes
 ameba_list_append_if(CONFIG_AMEBAGREEN2 public_includes
     ${c_CMPT_WIFI_DIR}/wifi_reg/rtl7005
     ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf
-    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf/rtl8720f
+    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf/rtl8721f
     ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb
-    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb/halbb_8720f
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb/halbb_8721f
     ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf
-    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8720f
-    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8720f_rom
-    ${CMAKE_CURRENT_SOURCE_DIR}/wifi_tunnel/rtl8720f
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8721f
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8721f_rom
+    ${CMAKE_CURRENT_SOURCE_DIR}/wifi_tunnel/rtl8721f
 )
 
 ameba_list_append_if(CONFIG_AMEBAPRO3 public_includes
     ${c_CMPT_WIFI_DIR}/wifi_reg/rtl7005
     ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf
-    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf/rtl8720f
+    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf/rtl8721f
     ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb
-    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb/halbb_8720f
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb/halbb_8721f
     ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf
-    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8720f
-    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8720f_rom
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8721f
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8721f_rom
 )
 
 ameba_list_append_if(CONFIG_AMEBAL2 public_includes

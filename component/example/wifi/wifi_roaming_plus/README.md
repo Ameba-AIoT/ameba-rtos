@@ -27,9 +27,9 @@ None
 
 5. IF support 5G channels. enable `SUPPORT_SCAN_5G_CHANNEL` and set the `roaming_channel_plan`.
 
-6. How to use:
-   - Run `./build.py -a wifi_roaming_plus` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+6. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 
 # Expect result

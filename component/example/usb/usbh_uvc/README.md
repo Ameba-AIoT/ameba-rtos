@@ -24,11 +24,9 @@ Taking RTL8730EA/QFN100 boards for example, the register R20 shall be parted on 
 	```
 	Save and exit.
 
-3. How to use:
-   - Run `./build.py -a usbh_uvc` under the project directory to build images.
-
-4. Download
-	Download images to board by Ameba Image Tool.
+3. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 

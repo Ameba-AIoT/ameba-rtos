@@ -20,9 +20,9 @@ None
 		#define CONFIG_ENABLE_CAPTIVE_PORTAL  1
 		```
 
-3. How to use:
-   - Run `./build.py -a captive_portal` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+3. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 
@@ -45,3 +45,4 @@ None
 - AmebaSmart
 - AmebaLite
 - AmebaDplus
+- AmebaGreen2

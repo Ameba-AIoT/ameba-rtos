@@ -9,18 +9,9 @@ None.
 
 # SW configuration
 
-How to compile :
-   
-   - make and download new image
-   
-     - in {SDK}\amebaxxx_gcc_project path, input
-   
-     ```shell
-    ./build.py -a raw_rtc
-     ```
-   
-     - Use Realtek AmebaImageTool to download the image under {SDK}\amebaxxx_gcc_project folder to development board
-     - press reset/chip_en button, then example will be start running.
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
    
 
 # Expect result

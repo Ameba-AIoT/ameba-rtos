@@ -8,13 +8,13 @@ None
 
 # SW configuration
 
-1. How to use:
-   - Run `./build.py -a coap` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+1. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 
-1. In the example, a confirmable GET request is send to test server `californium.eclipse.org` to retrieve the resource under path `/obs`. The expected return is an ACK message with payload containing the Greenwich Mean Time (GMT).
+1. In the example, a confirmable GET request is send to test server `californium.eclipseprojects.io` to retrieve the resource under path `/obs`. The expected return is an ACK message with payload containing the Greenwich Mean Time (GMT).
 
 2. In the example, you can also set a GET request sent to test server `coap.me` to retrieve the resource under path `/hello`. The expected return is an ACK message with payload `world`.
 
@@ -32,3 +32,4 @@ None
 - AmebaSmart
 - AmebaLite
 - AmebaDplus
+- AmebaGreen2

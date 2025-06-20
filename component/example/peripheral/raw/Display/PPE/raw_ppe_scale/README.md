@@ -8,9 +8,9 @@ None
 #  SW configuration
 
 1. User can choose macro PPE_MODE to choose polling mode or interrupt mode. Value POLLING_MODE means polling mode, and value INTR_MODE means interrupt mode.
-2. How to use:
-* Copy `main.c` to path`project\realtek_xx_va0_example\src\src_yy\`, and replace old main.c.
-* Run `make all` and `download` image to board.
+2. Build and Download:
+* Refer to the SDK Examples section of the online documentation to generate images.
+* `Download` images to board by Ameba Image Tool.
 
 #  Expect result
 

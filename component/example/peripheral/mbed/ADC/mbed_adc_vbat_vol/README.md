@@ -17,9 +17,9 @@ For more info of `VBAT_MEAS`, refer to EVB schematic design file.
 
 # SW Configuration
 
-How to use:
-    * Run `./build.py -a mbed_adc_vbat_vol` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-    * `Download` images to board by Ameba Image Tool.
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 

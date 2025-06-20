@@ -965,8 +965,7 @@ static void GenerateIndexHtmlPage(char *cDynamicPage, char *LocalBuf)
 #endif
 	/* ... Finally the page footer. */
 	strcat(cDynamicPage, webHTML_END);
-	//RTK_LOGI(NOTAG, "GenerateIndexHtmlPage(): %s\n", cDynamicPage);
-	RTK_LOGI(NOTAG, "GenerateIndexHtmlPage Len: %d\n", strlen(cDynamicPage));
+
 	rtos_sema_give(webs_wpage_sema);
 }
 
@@ -1113,16 +1112,9 @@ static s32 scan_result_handler(u32 scanned_AP_num, void *user_data)
 
 static int wifi_start_scan(void)
 {
-	RTK_LOGI(NOTAG, "%s\n", __func__);
+	RTK_LOGI(NOTAG, "wifi start scan\n");
 	struct rtw_scan_param scan_param;
-	char *scanned_AP_list;
 
-	scanned_AP_list = rtos_mem_malloc(2 * SCAN_AP_LIST_MAX * sizeof(struct rtw_scan_result));
-	if (!scanned_AP_list) {
-		RTK_LOGE(NOTAG, "ERROR: malloc failed!\n");
-		return -1;
-	}
-	memset(scanned_AP_list, 0, 2 * SCAN_AP_LIST_MAX * sizeof(struct rtw_scan_result));
 	memset(scan_result.ap_list, 0, 2 * SCAN_AP_LIST_MAX * sizeof(ap_list_t));
 	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
 
@@ -1299,7 +1291,7 @@ static u8_t ProcessPostMessage(struct netbuf  *pxRxBuffer, char *LocalBuf)
 	}
 	pcRxString = LocalBuf;
 	pcRxString[usLength] = '\0';
-	RTK_LOGI(NOTAG, "usLength=%d pcRxString = %s\n", usLength, pcRxString);
+	RTK_LOGI(NOTAG, "usLength = %d, pcRxString = %s\n", usLength, pcRxString);
 
 	ptr = (char *)strstr(pcRxString, "Ssid=");
 	if (ptr) {
@@ -1429,7 +1421,7 @@ static void vProcessConnection(void *param)
 	/* Load WiFi Setting*/
 	LoadWifiSetting();
 
-	RTK_LOGI(NOTAG, "%s %d, remote_port = %d\n", __func__, __LINE__, pxNetCon->conn->pcb.tcp->remote_port);
+	RTK_LOGI(NOTAG, "%s(line%d), remote_port = %d\n", __func__, __LINE__, pxNetCon->conn->pcb.tcp->remote_port);
 
 	pxNetCon->conn->recv_timeout = 500;
 
@@ -1443,17 +1435,17 @@ static void vProcessConnection(void *param)
 		//RTK_LOGI(NOTAG, "usLength=%d pcRxString = \n%s\n", usLength, pcRxString);
 		/* Is this a GET?  We don't handle anything else. */
 		if (!strncmp(pcRxString, "GET", 3)) {
-			RTK_LOGI(NOTAG, "usLength=%d pcRxString=%s \n", usLength, pcRxString);
+			RTK_LOGI(NOTAG, "usLength = %d, pcRxString=\n%s\n", usLength, pcRxString);
 
 			/* Write out the HTTP OK header. */
 			netconn_write(pxNetCon->conn, webHTTP_OK, (u16_t) strlen(webHTTP_OK), NETCONN_COPY);
 
-			RTK_LOGI(NOTAG, "%s %d \n", __func__, __LINE__);
+			RTK_LOGI(NOTAG, "Write Dynamic HTML Page\n");
 
 			/* Generate index.html page. */
 			GenerateIndexHtmlPage(cDynamicPage, LocalBuf);
 
-			RTK_LOGI(NOTAG, "cDynamicPage=%s \n", cDynamicPage);
+			RTK_LOGI(NOTAG, "cDynamicPage length = %d, cDynamicPage =\n%s\n", strlen(cDynamicPage), cDynamicPage);
 
 			/* Write out the dynamically generated page. */
 			netconn_write(pxNetCon->conn, cDynamicPage, (u16_t) strlen(cDynamicPage), NETCONN_COPY);
@@ -1556,7 +1548,7 @@ static void vCaptivePortalServer(void *pvParameters)
 	LoadWifiConfig();
 	RestartSoftAP();
 #endif
-	RTK_LOGI(NOTAG, "enter vCaptivePortalServer\n");
+	RTK_LOGI(NOTAG, "enter vCaptivePortalServer()\n");
 	RTK_LOGI(NOTAG, "MEMP_NUM_NETBUF = %d, MEMP_NUM_TCP_PCB =%d, MEMP_NUM_NETCONN = %d\n", MEMP_NUM_NETBUF, MEMP_NUM_TCP_PCB, MEMP_NUM_NETCONN);
 
 	/* Loop forever */
@@ -1614,7 +1606,8 @@ static void example_start_captive_portal(void *param)
 	/* To avoid gcc warnings */
 	(void) param;
 
-	rtos_time_delay_ms(500);
+	rtos_time_delay_ms(3000);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: captive_portal====================\r\n");
 
 #ifdef CONFIG_LWIP_LAYER
 	struct netif *pnetif = &xnetif[SOFTAP_WLAN_INDEX];
@@ -1632,8 +1625,6 @@ static void example_start_captive_portal(void *param)
 	gw = CONCAT_TO_UINT32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
 	LwIP_SetIP(SOFTAP_WLAN_INDEX, ip_addr, netmask, gw);
 #endif
-
-	RTK_LOGE(NOTAG, "Enter start captive_portal!\n");
 
 	RTK_LOGE(NOTAG, "Enable Wi-Fi with STA + AP mode\n");
 	if (wifi_on(RTW_MODE_STA) < 0) {
@@ -1655,14 +1646,14 @@ static void example_start_captive_portal(void *param)
 		RTK_LOGE(NOTAG, "wifi_start_ap failed\n");
 		return;
 	}
-	RTK_LOGI(NOTAG, "Check AP running\n");
+
 
 	while (1) {
 		struct rtw_wifi_setting setting;
 		wifi_get_setting(SOFTAP_WLAN_INDEX, &setting);
 		if (strlen((const char *)setting.ssid) > 0) {
 			if (strcmp((const char *) setting.ssid, (const char *)SOFTAP_CONFIG.ssid.val) == 0) {
-				RTK_LOGI(NOTAG, "%s started\n", SOFTAP_CONFIG.ssid.val);
+				RTK_LOGI(NOTAG, "Soft_AP(SSID:%s) is running\n", SOFTAP_SSID);
 				break;
 			}
 		}

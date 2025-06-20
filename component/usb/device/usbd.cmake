@@ -56,5 +56,6 @@ ameba_add_internal_library(usb_device
         ${private_definitions}
     p_COMPILE_OPTIONS
         ${private_compile_options}
+    p_DROP_IF_NO_SOURCES
 )
 ##########################################################################################

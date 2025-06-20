@@ -33,6 +33,13 @@ Please see discriptions in component/soc/usrcfg/xx/include/ameba_audio_hw_usrcfg
 3. Please refer to component/audio/audio_hal/xx/README.md.
 
 ## How to run <a name = "How to run"></a>
+
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
+
+### Note
+
 1. Use CMD `./build.py -a audio_hal_render -p` to compile this example.
 2. For playing run command and parameters, please refer to app_example.c.
 3. To run the example, the default command in serial log UART is: AudioHalRender

@@ -65,6 +65,7 @@ typedef struct {
 	u8 type;                    /* Endpoint type, USB_EP_Type_XXX */
 	u8 binterval;               /* Endpoint binterval */
 	__IO u8 tx_zlp : 1;         /* class tz ZLP packet or not */
+	__IO u8 dis_zlp : 1;        /* class xfer ZLP enable or disable */
 	__IO u8 is_busy : 1;        /* class is busy or not */
 	__IO u8 xfer_state : 1;     /* class xfer state */
 } usbd_ep_t;

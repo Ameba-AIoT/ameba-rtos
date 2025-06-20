@@ -61,7 +61,7 @@ static uint8_t ext_adv_data[] = {
 static rtk_bt_le_ext_adv_param_t ext_adv_param = {
 	.adv_event_prop = RTK_BT_LE_EXT_ADV_EXTENDED_ADV_CONN_UNDIRECTED,
 	.primary_adv_interval_min = 320,
-	.primary_adv_interval_max = 320,
+	.primary_adv_interval_max = 360,
 	.primary_adv_channel_map = RTK_BT_LE_ADV_CHNL_ALL,
 	.own_addr = {RTK_BT_LE_ADDR_TYPE_PUBLIC, {0}},
 	.peer_addr = {RTK_BT_LE_ADDR_TYPE_PUBLIC, {0}},//;{0x8A, 0xAA, 0xAA, 0x4C, 0xE0, 0x00},
@@ -127,6 +127,13 @@ static rtk_bt_le_security_param_t sec_param = {
 static bool privacy_enable = false;
 static bool privacy_whitelist = true;
 #endif
+
+static uint8_t s_transfer_module_enable = false;
+
+uint8_t transfer_module_is_enable(void)
+{
+	return s_transfer_module_enable;
+}
 
 uint16_t ble_transfer_module_get_dev_name(uint8_t buf_len, char *buf)
 {
@@ -619,6 +626,12 @@ int ble_transfer_module_main(uint8_t enable)
 #endif
 
 	if (1 == enable) {
+
+		if (s_transfer_module_enable) {
+			BT_LOGA("[APP] ble transfer module has already started, exit\r\n");
+			return RTK_BT_ERR_BUSY;
+		}
+		s_transfer_module_enable = true;
 		//set GAP configuration
 		bt_app_conf.app_profile_support = RTK_BT_PROFILE_GATTS | RTK_BT_PROFILE_GATTC;
 		bt_app_conf.mtu_size = 180;
@@ -704,6 +717,12 @@ int ble_transfer_module_main(uint8_t enable)
 #endif
 
 	} else if (0 == enable) {
+
+		if (!s_transfer_module_enable) {
+			BT_LOGA("[APP] ble transfer module has already stopped, exit\r\n");
+			return RTK_BT_ERR_BUSY;
+		}
+		s_transfer_module_enable = false;
 
 		BT_APP_PROCESS(ble_transfer_module_server_deinit());
 

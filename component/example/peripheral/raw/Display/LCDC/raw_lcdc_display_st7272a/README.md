@@ -26,9 +26,9 @@ Also, the other pin of LCD should be connected correctly, like GND and VCC.
 
 #  SW configuration
 
-How to use:
-    * Run `./build.py -a raw_lcdc_display_st7272a` under path `amebagreen2_gcc_project/` to generate images.
-    * `Download` images to board by Ameba Image Tool.
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 #  Expect result
 ST7272A will show RED, GREEN, BLUE in turn.
