@@ -450,20 +450,6 @@ int wifi_set_cts2self_duration_and_send(unsigned char wlan_idx, unsigned short d
 int wifi_csi_config(rtw_csi_action_parm_t *act_param);
 
 /**
- * @brief  get csi raw data and csi hdr info
- * @param[in]  buf_len: buffer size for getting csi info
- * @param[in]  csi_buf: the pointer to csi data buffer
- * @param[in]  len: the size of csi raw data
- * @note:
- *    unsigned char *csi_buf = NULL;
- *    unsigned int len;
- *    csi_buf = rtos_mem_zmalloc(buf_len);
- *    wifi_csi_report(buf_len,csi_buf,&len);
- * @return  RTW_SUCCESS or RTW_ERROR
- */
-int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
-
-/**
  * @brief  for wifi speaker setting
  * @param[in]  set_type: wifi speaker setting type
  * @param[in]  settings: A pointer to the params
