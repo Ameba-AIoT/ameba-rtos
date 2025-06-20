@@ -149,15 +149,6 @@ int wifi_csi_config(struct _rtw_csi_action_parm_t *act_param)
 	return -1;
 }
 
-int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len)
-{
-	(void)buf_len;
-	(void)csi_buf;
-	(void)len;
-	call_noused = __LINE__;
-	return -1;
-}
-
 int wifi_set_wps_phase(unsigned char is_trigger_wps)
 {
 	UNUSED(is_trigger_wps);
