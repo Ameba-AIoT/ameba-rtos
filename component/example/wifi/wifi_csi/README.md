@@ -15,9 +15,9 @@ None
 	unsigned char assoc_ap_mac = <mac address of associated AP>
 	```
 
-3. How to use:
-   - Run `./build.py -a wifi_csi` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+3. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 4. Enviornment setup: Wifi csi test need at least two device.
 	1. `DUT_IC` as softap or softap + sta mode(nolink): another board (ameba IC as sta mode or others) for slave node must be required.

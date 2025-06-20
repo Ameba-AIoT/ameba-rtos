@@ -19,7 +19,9 @@ Support up to 8*8 keyboard, and this example hardware connection is as follows:
 
 # SW configuration
 
-Run cmd: `./build.py -a raw_kscan_stuck` in directory {sdk_path}/amebaXXX_gcc_project.
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 

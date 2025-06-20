@@ -33,12 +33,14 @@ Change
 to
 #define LV_USE_DEMO_BENCHMARK 1
 
-3. make EXAMPLE=lv_demo_benchmark
+3. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 * On AmebaDPlus
 1.Disable XIP_FLASH
 cd amebadplus_gcc_project
-make menuconfig
+configure menuconfig
 CONFIG Link Option  --->
 choise PSRAM AS HEAP
 
@@ -54,7 +56,9 @@ Change
 to
 #define LV_USE_DEMO_BENCHMARK 1
 
-4. make EXAMPLE=lv_demo_benchmark
+4. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 The benchmark ui has shown in the display

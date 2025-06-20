@@ -10,9 +10,9 @@ None
 
 1. Set the `CH_NUM_PER_SCAN` and `SCAN_DELAY` as needed.
 
-2. How to use:
-   - Run `./build.py -a wifi_tdma_scan` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+2. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 
 # Expect result

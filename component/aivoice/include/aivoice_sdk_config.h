@@ -10,8 +10,8 @@ typedef enum {
 } aivoice_memory_alloc_mode_e;
 
 struct aivoice_sdk_config {
-	int no_cmd_timeout;     /* ASR exits when no command detected during timeout.
-                               Only used in full flow.
+	int no_cmd_timeout;     /* In full flow, ASR exits when no command word detected during this duration.
+                               In AFE+KWS+VAD flow, VAD works only within this duration after a keyword detected.
                                Unit: second. Recommend range [5, 60] */
 
 	aivoice_memory_alloc_mode_e memory_alloc_mode;

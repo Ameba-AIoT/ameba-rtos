@@ -28,9 +28,9 @@ By default, `UART0` is used to communicate with PC under `38400bps` by DMA befor
    For more info of UART pins, refer to pinmux spec.
 3. `RX_TO_MS` can be modified to configure UART RX timeout limit in ms. Maximum value of RX_TO_MS is `65535/UART_BAUD`(s) for AmebaSmart/AmebaLite/AmebaDplus and `6710ms` for AmebaGreen2.
 4. `SRX_BUF_SZ` can be modified to set DMA buffer size.
-5. How to use:
-    * Run `./build.py -a mbed_uart_dma_rx_fc` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-    * `Download` images to board by Ameba Image Tool.
+5. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 

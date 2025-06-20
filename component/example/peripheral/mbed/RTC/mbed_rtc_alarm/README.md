@@ -8,13 +8,9 @@ None.
 
 # SW configuration
 
-How to compile :
-
-   - in {SDK}\amebaxxx_gcc_project path, input
-   
-   ```shell
-   ./build.py -a mbed_rtc_alarm
-   ```
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 

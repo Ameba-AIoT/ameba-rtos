@@ -15,8 +15,9 @@
 
 # SW Configuration
 
-1. How to compile :
-   	perform cmd: './build.py -a raw_crypto_hmac' in directory {sdk_path}/amebaXXX_gcc_project
+1. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 

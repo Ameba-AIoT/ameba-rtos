@@ -16,9 +16,9 @@ None
 	Please use a client program to connect to server port of example thread.  
 	When using `AT+WLDISCONN` command to disconnect wifi, server thread will get select read event after keepalive timeout.
 
-2. How to use:
-   - Run `./build.py -a tcp_keepalive` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+2. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 

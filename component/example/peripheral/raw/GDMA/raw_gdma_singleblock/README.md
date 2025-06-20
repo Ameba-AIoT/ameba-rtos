@@ -8,7 +8,9 @@ None.
 
 # SW configuration
 
-Run cmd: `./build.py -a raw_gdma_singleblock` in directory {sdk_path}/amebaXXX_gcc_project.
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 
@@ -28,7 +30,7 @@ GDMA will display "DMA Copy Memory Compare OK!! " in serial port tool. Otherwise
 
 5. If AmebaLite outputs `IO Driver Parameters error! file_name:BOOT_ChipInfo_PSRAMType`, which means that the board is not configured with PSRAM. There are two solutions:
    - Modify the menuconfig:
-     - enter `make menuconfig` under the **auto_build** folder
+     - enter `./menuconfig.py` under the **{SDK}\amebaxxx_gcc_project** folder
      - set the `CONFIG LINK option` to `CodeInXip_DataHeapInSram[No_Psram]`
      - save and exit
      - Users need to select the correct **.rdev** file when downloading image

@@ -23,18 +23,9 @@ for example:
 	GND <--> LED3 <---> PB_30
 
 # SW configuration
-How to compile :
-
-make and download new image
-
-   - in {SDK}\amebaxxx_gcc_project path, input
-   
-   ```shell
-   ./build.py -a mbed_pwm
-   ```
-
-   - Use Realtek AmebaImageTool to download the image under auto_build folder to development board
-   - press reset/chip_en button, then example will be start running.
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 How to modify gpio pin:
 1. you can also modify pinmux group settings according to correct pinmux table. for example: 

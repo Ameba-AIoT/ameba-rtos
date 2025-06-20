@@ -6,9 +6,10 @@ None
 
 # SW configuration
 The steps to build RDP image are as following:
-1. Copy `copy_files\secure_src.c` to `component\soc\chipname\img3\` and override the original one.
-2. ./menuconfig.py to enable TrustZone
-3. ./build.py -a raw_rdp to rebuild project
+1. ./menuconfig.py to enable TrustZone.
+2. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 loguart output: `rdp call succeed!`

@@ -37,9 +37,9 @@
 
 # SW configuration
 
-- How to compile :
-
-  - perform cmd: './build.py -a raw_spi_dma_multi_block_rx_slave' in directory {sdk_path}/amebaXXX_gcc_project 
+- Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool. 
 - By default, this example select one pinmux group as MOSI/MISO/SCLK/CS,
 
   - you can also modify pinmux group settings according to correct pinmux table.

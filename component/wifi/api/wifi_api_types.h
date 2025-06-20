@@ -1041,6 +1041,7 @@ struct rtw_raw_frame_desc {
 	u8 ac_queue;      /**< Access Category Queue: 0/3 for BE, 1/2 for BK, 4/5 for VI, 6/7 for VO. */
 	u8 sgi : 1;       /**< Short Guard Interval: 1 to enable, 0 to disable. */
 	u8 agg_en : 1;    /**< Frame Aggregation: 1 to enable, 0 to disable for tx raw frames. */
+	u8 bw_40_en : 1;    /**< Bandwidth: 1 to 40M, 0 to 20M. */
 };
 
 /**

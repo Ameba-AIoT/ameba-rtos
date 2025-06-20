@@ -23,13 +23,9 @@ AON_WAKEPIN_WAKEUP wakeup operation:
 	* On AmebaLite, WAKEPIN_0 for PA_0, WAKEPIN_1 for PA_1
 	* On AmebaDplus, WAKEPIN_0 for PB_30, WAKEPIN_1 for PB_31
 
-3. How to compile :
-	- Run cmd: `./build.py -a raw_pmc_dslp` in directory {sdk_path}/amebaXXX_gcc_project. amebaxxx_gcc_project\project_xxx\src
-	- Copy the current file `example_xxx.c` to the amebaXXX_project/project_xxx/src path, and then include the current file in the main.c file, which can also be compiled. amebaxxx_gcc_project\project_xxx\src_xxx
-		* On AmebaSmart, src_xxx should be src_ap
-		* On AmebaLite, src_xxx should be src_KM4 if KM4 is AP core, or src_xxx should be src_KR4 if KR4 is AP core
-		* On AmebaDplus,src_xxx should be src_KM4
-
+3. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 

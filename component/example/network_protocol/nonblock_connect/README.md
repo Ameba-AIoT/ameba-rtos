@@ -15,9 +15,9 @@ None
 
 2. Modify `SERVER_IP` and `SERVER_PORT` in `example_nonblock_connect.c` for server connection
 
-3. How to use:
-   - Run `./build.py -a nonblock_connect` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+3. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 

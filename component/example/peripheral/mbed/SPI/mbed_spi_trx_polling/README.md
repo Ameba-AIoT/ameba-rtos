@@ -34,8 +34,9 @@ For example:
 
 # SW configuration
 
-- How to compile :
-  - perform cmd: './build.py -a mbed_spi_trx_polling' in directory {sdk_path}/amebaXXX_gcc_project
+- Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 - By default, this example selecets two pinmux groups as MOSI/MISO/SCLK/CS, you can also modify pinmux group settings according to correct pinmux table.
 - For example, if you want to modify pinmux group setting in AmebaSmart, then you should refer to `UM0602_RTL8730E_pinmux.xls`.
 

@@ -8,7 +8,9 @@ None
 
 # SW Configuration
 
-cmd: `./build.py -a raw_flash_read_write` to build image.
+- Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 

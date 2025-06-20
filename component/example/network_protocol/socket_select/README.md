@@ -14,9 +14,9 @@ None
 
 3. Modify `REMOTE_HOST` and `REMOTE_PORT` for remote server.
 
-4. How to use:
-   - Run `./build.py -a socket_select` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+4. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 

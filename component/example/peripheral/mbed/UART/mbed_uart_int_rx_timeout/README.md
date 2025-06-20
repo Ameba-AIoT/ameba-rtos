@@ -28,9 +28,9 @@ By default, `UART0` is used to communicate with PC under `38400bps` by interrupt
    For more info of UART pins, refer to pinmux spec.
 3. `RX_DATA_INTIME` can be modified to set desired data number to receive before timeout.
 4. `RX_TO_MS` can be modified to set rx period in ms.
-5. How to use:
-    * Run `./build.py -a mbed_uart_int_rx_timeout` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-    * `Download` images to board by Ameba Image Tool.
+5. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 

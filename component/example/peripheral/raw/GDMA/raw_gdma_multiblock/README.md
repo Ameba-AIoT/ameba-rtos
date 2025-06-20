@@ -8,7 +8,9 @@ None.
 
 # SW configuration
 
-1. Run cmd: `./build.py -a raw_gdma_multiblock` in directory {sdk_path}/amebaXXX_gcc_project.
+1. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 2. In order to deal with different situation, modify GdmaType variable, and it can be set:
    - **ReloadDst**, transfer multiple blocks from the source address to the same block at the destination address.
    - **ReloadSrc**, transfer one block from the source address to multi blocks at the destination address.
@@ -34,7 +36,7 @@ GDMA will display "DMA data complete MaxMuliBlock = x " in serial port tool.
 
 5. If AmebaLite outputs `IO Driver Parameters error! file_name:BOOT_ChipInfo_PSRAMType`, which means that the board is not configured with PSRAM. There are two solutions:
    - Modify the menuconfig:
-     - enter `make menuconfig` under the **auto_build** folder
+     - enter `./menuconfig.py` under the **{SDK}\amebaxxx_gcc_project** folder
      - set the `CONFIG LINK option` to `CodeInXip_DataHeapInSram[No_Psram]`
      - save and exit
      - Users need to select the correct **.rdev** file when downloading image.

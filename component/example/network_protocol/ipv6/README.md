@@ -72,9 +72,9 @@ Two Ameba development boards are needed. Choose one board to works as the server
 	
 	`EXAMPLE_IPV6_UDP`, `EXAMPLE_IPV6_TCP` and `EXAMPLE_IPV6_MCAST` should be enabled one at a time.
 
-3. How to use:
-   - Run `./build.py -a ipv6` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+3. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 

@@ -19,10 +19,14 @@ static const char *const TAG = "MSC";
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 #define CONFIG_USBD_MSC_USB_HOTPLUG					1
-#if defined(CONFIG_AMEBASMART)
-#define CONFIG_USBD_MSC_SD_HOTPLUG					1
-#else
 #define CONFIG_USBD_MSC_SD_HOTPLUG					0
+
+#if USBD_MSC_RAM_DISK && (CONFIG_USBD_MSC_SD_HOTPLUG == 1)
+#error "Use RAM as storage media, no hotplug"
+#endif
+
+#if !defined(CONFIG_AMEBASMART) && (CONFIG_USBD_MSC_SD_HOTPLUG == 1)
+#error "SD hotplug is not supported"
 #endif
 
 // USB speed
@@ -57,6 +61,8 @@ static usbd_config_t msc_cfg = {
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_err_cnt = {0U, 2000U, },
+	.ext_intr_en = USBD_EPMIS_INTR,
+	.nptx_max_epmis_cnt = 100U,
 #elif defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 660U,
 	.ptx_fifo_depth = {16U, 256U, 16U, 16U, 16U},
@@ -76,10 +82,6 @@ static usbd_msc_cb_t msc_cb = {
 #if CONFIG_USBD_MSC_USB_HOTPLUG
 static u8 msc_usb_attach_status;
 static rtos_sema_t msc_usb_status_changed_sema;
-#endif
-
-#if USBD_MSC_RAM_DISK && (CONFIG_USBD_MSC_SD_HOTPLUG == 1)
-#error "Use RAM as storage media, no hotplug"
 #endif
 
 #if CONFIG_USBD_MSC_SD_HOTPLUG

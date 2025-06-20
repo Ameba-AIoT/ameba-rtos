@@ -75,11 +75,11 @@
 /***************************** AmebaLite (8720E) *****************************/
 #include "autoconf_8720e.h"
 #elif defined(CONFIG_AMEBAGREEN2)
-/******************************* Amebalite2 (8720f) ******************************/
-#include "autoconf_8720f.h"
+/******************************* Amebalite2 (8721f) ******************************/
+#include "autoconf_8721f.h"
 #elif defined(CONFIG_AMEBAPRO3)
 /******************************* AmebaPro3 (8735c) ******************************/
-#include "autoconf_8720f.h"
+#include "autoconf_8721f.h"
 #elif defined(CONFIG_AMEBAL2)
 /******************************* AmebaL2 (6955) ******************************/
 #include "autoconf_amebax.h"

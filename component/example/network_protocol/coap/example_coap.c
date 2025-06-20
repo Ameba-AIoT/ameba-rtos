@@ -4,9 +4,9 @@
 #include "sn_coap_ameba_port.h"
 
 #define SERVER_HOST     "coap.me"
-#define URI_PATH        "/separate"
+#define URI_PATH        "/hello"
 //#define SERVER_HOST		"californium.eclipseprojects.io"
-//#define URI_PATH		"obs"
+//#define URI_PATH		"/obs"
 #define SERVER_PORT     5683
 #define BUF_LEN         1280 // Suggested is to keep packet size under 1280 bytes
 #define MAX_AGE         60
@@ -46,7 +46,7 @@ static void example_coap_thread(void *para)
 	// Delay to check successful WiFi connection and obtain of an IP address
 	LwIP_Check_Connectivity();
 
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nCoAP Client Example\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: CoAP====================\r\n");
 
 	// Initialize the CoAP protocol handle, pointing to local implementations on malloc/free/tx/rx functions
 	coapHandle = coap_protocol_init(&coap_tx_cb, &coap_rx_cb);
@@ -97,9 +97,10 @@ static void example_coap_thread(void *para)
 	int socket = coap_sock_open();
 
 	//send CoAP message
-	coap_send(SERVER_HOST, SERVER_PORT, socket, coap_res_ptr);
-
-	coap_free(coap_res_ptr);
+	if (coap_send(SERVER_HOST, SERVER_PORT, socket, coap_res_ptr) < 0) {
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n coap_send() failed\r\n");
+		goto exit;
+	}
 
 	//receive CoAP message
 	struct sockaddr_in from_address;
@@ -118,14 +119,23 @@ static void example_coap_thread(void *para)
 
 		sn_coap_hdr_s *parsed = sn_coap_parser(coapHandle, ret, recv_buffer, &coapVersion);
 
-		coap_print_hdr(parsed);
-
-		sn_coap_parser_release_allocated_coap_msg_mem(coapHandle, parsed);
+		if (parsed) {
+			coap_print_hdr(parsed);
+			sn_coap_parser_release_allocated_coap_msg_mem(coapHandle, parsed);
+		}
+	} else {
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n coap_recv() failed\r\n");
 	}
 
 	coap_free(recv_buffer);
 
+exit:
 	coap_sock_close(socket);
+
+	coap_free(coap_res_ptr->options_list_ptr);
+	coap_free(coap_res_ptr);
+
+	coap_free(coapHandle);
 
 	rtos_task_delete(NULL);
 }
@@ -133,7 +143,7 @@ static void example_coap_thread(void *para)
 void example_coap(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_coap_thread"), example_coap_thread, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r%s rtos_task_create(example_coap_thread) failed", __FUNCTION__);
 	}
 }
 

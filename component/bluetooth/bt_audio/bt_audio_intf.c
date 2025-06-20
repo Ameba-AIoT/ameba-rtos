@@ -967,7 +967,7 @@ rtk_bt_audio_record_t *rtk_bt_audio_record_add(uint32_t type, uint32_t channels,
 		memset((void *)precord, 0, sizeof(rtk_bt_audio_record_t));
 		INIT_LIST_HEAD(&precord->list);
 	}
-	BT_LOGE("[BT AUDIO] audio record init channels %d, rate %d , buffer_bytes %d! \r\n", (int)channels, (int)rate, (uint32_t)buffer_bytes);
+	BT_LOGA("[BT AUDIO] audio record init channels %d, rate %d , buffer_bytes %d! \r\n", (int)channels, (int)rate, (uint32_t)buffer_bytes);
 	precord->audio_record_hdl = rtk_bt_audio_record_init((uint32_t)channels, (uint32_t)rate, (uint32_t)buffer_bytes);
 	if (!precord->audio_record_hdl) {
 		BT_LOGE("[BT AUDIO] rtk_bt_audio_record_init fail \r\n");

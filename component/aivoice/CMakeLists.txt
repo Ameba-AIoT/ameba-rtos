@@ -51,6 +51,8 @@ elseif(CONFIG_AMEBASMART)
         ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/lib${KWS_RESOURCE}.a
         ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libasr.a
         ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libvad.a
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libnnns.a
+        ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/librnnoise_16k.a
         ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libtomlc99.a
         ${c_COMPONENT_DIR}/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libNE10.a
     )

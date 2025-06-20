@@ -27,9 +27,9 @@ This example describes how to use GPIO read/write in a light weight way by MBED 
 
 # SW configuration
 
-1. How to compile :
-
-   - perform cmd: './build.py -a mbed_gpio_edge_irq' in directory {sdk_path}/amebaXXX_gcc_project 
+1. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 2. `PA_12` map to `GPIOA_12`, `PB_8`  map to `GPIOB_8` and etc
 3. `GPIO_PUSHBT_PIN` as input with internal pull-high
 4. `GPIO_LED_PIN` as output

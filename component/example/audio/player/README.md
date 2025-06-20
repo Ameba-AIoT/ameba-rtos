@@ -19,7 +19,7 @@ to
        CA32_BL3_DRAM_NS (rwx) :                ORIGIN = 0x60300000, LENGTH = 0x62000000 - 0x60300000   /* CA32 BL3 DRAM NS: 4MB */
 
 2. **Enable playback configurations**:
-cd `amebasmart_gcc_project`: `make menuconfig`
+cd `amebasmart_gcc_project`:
     < MENUCONFIG FOR AP CONFIG  --->
     [*] Enable Audio Framework
     (Mixer) Select Audio Interfaces
@@ -63,11 +63,13 @@ cd `amebasmart_gcc_project`: `make menuconfig`
        #define LWIP_SOCKET_SET_ERRNO           1
     ```
 
-5. **GCC:** use CMD `make all EXAMPLE=player` to compile example
+5. **Build and Download**: 
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 * On AmebaLite
 1. **Enlarge heap** when playing two audio files at the same time.
-cd `amebalite_gcc_project`: `make menuconfig`
+cd `amebalite_gcc_project`: 
 CONFIG Link Option
 choise IMG2(Application) running on FLASH or PSRAM?
 choise CodeInPsram_DataHeapInPsram
@@ -80,7 +82,7 @@ to
 
 1. **Enable playback configurations**:
     * For player running in KR4:
-        cd `amebalite_gcc_project`: `make menuconfig`
+        cd `amebalite_gcc_project`:
         < MENUCONFIG FOR KR4 CONFIG  --->
         [*] Enable Audio Framework
         (Mixer) Select Audio Interfaces
@@ -90,7 +92,7 @@ to
         Codec  ---> choose the codecs.
 
     * For player running in KM4:
-       cd `amebalite_gcc_project`: `make menuconfig`
+       cd `amebalite_gcc_project`:
         < MENUCONFIG FOR KM4 CONFIG  --->
         [*] Enable Audio Framework
         (Mixer) Select Audio Interfaces
@@ -137,14 +139,14 @@ to
 
 4. **Config wifi**
     * For player running in KR4:
-        * cd `project/realtek_amebaLite_va0_example/GCC-RELEASE/auto_build:` `make menuconfig`
         < CONFIG WIFI  ---> [ * ] Enable Wifi, (KR4_AP_KM4_NP) Processor Role
 
     * For player running in KM4:
-        * cd `project/realtek_amebaLite_va0_example/GCC-RELEASE/auto_build`: `make menuconfig`
         < CONFIG WIFI  ---> [ * ] Enable Wifi, (KM4_AP_KR4_NP) Processor Role
 
-5. **GCC:** use CMD `make all EXAMPLE=player` to compile example
+5. **Build and Download**: 
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 ## Usage:
 **player_test [OPTION...]**

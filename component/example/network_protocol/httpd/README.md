@@ -14,9 +14,9 @@ None
 	#define USE_HTTPS    1 //for HTTPS
 	```
 
-2. How to use:
-   - Run `./build.py -a httpd` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+2. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 

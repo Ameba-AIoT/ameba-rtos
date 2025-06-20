@@ -27,8 +27,9 @@ This example describes how to use disable JTAG module and use GPIO pin to blink 
 
 # SW configuration
 
-- How to compile :
-  - perform cmd: './build.py -a mbed_gpio_jtag' in directory {sdk_path}/amebaXXX_gcc_project 
+- Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 - `PA_12` map to `GPIOA_12`, `PB_8`  map to `GPIOB_8` and etc
 - `GPIO_JTAG_ENABLE_PIN` is configured as input with internal pull-high
 - `GPIO_LED_PIN` is configured as output

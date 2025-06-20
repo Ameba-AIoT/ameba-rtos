@@ -10,9 +10,9 @@ None
 
 # SW configuration
 
-How to use:
-   - Run `./build.py -a bcast` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 
@@ -40,3 +40,4 @@ If you want to prevent the error you can add some delay time between sending pac
 - AmebaSmart
 - AmebaLite
 - AmebaDplus
+- AmebaGreen2

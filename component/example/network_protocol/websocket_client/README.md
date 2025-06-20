@@ -52,9 +52,9 @@ None
 	#define MBEDTLS_ERR_SSL_INVALID_RECORD                    -0x7200
 	```
 
-5. How to use:
-   - Run `./build.py -a websocket_client` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+5. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 

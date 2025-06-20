@@ -8,8 +8,9 @@ Logic Analyser or oscilloscope.
 
 # SW configuration
 
-1. How to compile:
-   - perform cmd: './build.py -a raw_gpio_audio_pad' in directory {sdk_path}/amebaXXX_gcc_project 
+1. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool. 
 2. If `DIGIT_PATH_EN` is defined, `AUDIO_PAD_PIN` works under digital path
 3. If `DIGIT_PATH_EN`is NOT defined, `AUDIO_PAD_PIN`works as audio pin
 4. By default, `AUDIO_PAD_PIN`works under digital path

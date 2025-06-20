@@ -13,9 +13,9 @@ None
 2. (Optional) Test for TLS1.3.  
    - Type command `./menuconfig.py` and choose `CONFIG SSL`-> `Enable TLS 1.3`
 
-3. How to use:
-   - Run `./build.py -a ssl_server` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+3. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 

@@ -8,10 +8,9 @@ Connect the rx pin to another board's tx pin defined in `ir_ext.h`.
 
 # SW configuration
 
-- How to compile :
-
-  - perform cmd: './build.py -a raw_ir_rx_learning' in directory {sdk_path}/amebaXXX_gcc_project.
-- IR learn data Flow:
+- Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.- IR learn data Flow:
 
   1. Enable IR RX mode.
   2. IR recieve data at `IR_RX_FIFO_LEVEL_INT` and store data to queue.

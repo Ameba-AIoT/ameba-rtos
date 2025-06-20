@@ -34,9 +34,9 @@ None
 	#define RESOURCE    "ota_all.bin"
 	```
 
-4. How to use:
-   - Run `./build.py -a ota` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+4. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 5. Copy the `ota_all.bin` into `tools\DownloadServer(HTTP)`, and configure the script according to `tools\DownloadServer(HTTP)\readme.txt` first then execute the script.
 
@@ -55,3 +55,4 @@ The http server script and board need to be on the same local area network.
 - AmebaSmart
 - AmebaLite
 - AmebaDplus
+- AmebaGreen2

@@ -13,9 +13,9 @@ None
 	2. choose `CONFIG LWIP`;
 	3. choose `NAT REPEATER Enable`.
 
-2. How to use:
-   - Run `./build.py -a wifi_nat_repeater -p` under project path, e.g. `amebadplus_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+2. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 

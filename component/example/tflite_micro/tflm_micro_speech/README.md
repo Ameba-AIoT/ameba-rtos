@@ -11,6 +11,9 @@ For more details, please refer to [TensorFlow Lite for Microcontrollers](https:/
 3. AmebaDplus
 
 ## Sw Configuration:
+
+
+
 * On AmebaDplus
 1. **Enable tflite_micro configurations**:
 ```./menuconfig.py```
@@ -18,7 +21,9 @@ For more details, please refer to [TensorFlow Lite for Microcontrollers](https:/
     < Audio Config  --->
     [*]  Enable TFLITE MICRO
 
-2. **GCC:** use CMD ```./build.py -a tflm_micro_speech``` to compile example
+2. **Build and Download**:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 
 ## Expected Result
