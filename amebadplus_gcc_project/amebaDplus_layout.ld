@@ -42,7 +42,7 @@
 #if defined(CONFIG_IMG1_FLASH)
 #define KM4_IMG1_SIZE 				KBYTES(4)
 #else
-#define KM4_IMG1_SIZE 				KBYTES(24)
+#define KM4_IMG1_SIZE 				KBYTES(32)
 #endif
 
 #define RAM_KM0_IMG2_SIZE				KBYTES(96)
