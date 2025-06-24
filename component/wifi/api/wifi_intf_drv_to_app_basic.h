@@ -608,6 +608,7 @@ struct raw_frame_desc_t {
 	unsigned char ac_queue;      /**< 0/3 for BE, 1/2 for BK, 4/5 for VI, 6/7 for VO */
 	unsigned char sgi : 1;       /**< 1 for enable data short */
 	unsigned char agg_en : 1;    /**< aggregation of tx_raw frames. 1:enable; 0-disable */
+	unsigned char bw_40_en : 1;    /**< Bandwidth: 1 to 40M, 0 to 20M. */
 } ;
 
 /**
