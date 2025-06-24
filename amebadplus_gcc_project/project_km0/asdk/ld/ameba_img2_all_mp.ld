@@ -1,6 +1,6 @@
 ENTRY(Reset_Handler)
 
-#include "../../../amebaDplus_layout.ld"
+#include "../../../ameba_layout.ld"
 
 
 #define OUTPUT_TEXT_SECTION 		.xip_image2.text

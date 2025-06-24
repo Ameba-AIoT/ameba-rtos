@@ -3266,6 +3266,300 @@ void AUDIO_CODEC_SetDACEQFilter(u32 da_chn, u32 band_sel, CODEC_EQFilterCoef *EQ
 
 }
 
+/**
+  * @brief  Enable or disable sidetone.
+  * @param  channel: select dac channel.
+  *			 This parameter can be one of the following values:
+  *			   @arg ST_L
+  *			   @arg ST_R
+  * @param  newstate: enable or disable sidetone.
+  *			 This parameter can be one of the following values:
+  *			   @arg ENABLE
+  *			   @arg DISABLE
+  * @return  None
+  */
+void AUDIO_CODEC_EnableSideTone(u32 channel, u32 newstate)
+{
+	assert_param(IS_CODEC_DAC_SEL(channel));
+	AUDIO_TypeDef *audio_base = AUDIO_CODEC_GetAddr();
+
+	if (channel == ST_L) {
+		if (newstate == ENABLE) {
+			audio_base->CODEC_CLOCK_CONTROL_2 |= AUD_BIT_ST_L_EN;
+		} else {
+			audio_base->CODEC_CLOCK_CONTROL_2 &= ~AUD_BIT_ST_L_EN;
+		}
+
+	} else {
+		if (newstate == ENABLE) {
+			audio_base->CODEC_CLOCK_CONTROL_2 |= AUD_BIT_ST_R_EN;
+		} else {
+			audio_base->CODEC_CLOCK_CONTROL_2 &= ~AUD_BIT_ST_R_EN;
+		}
+	}
+}
+
+/**
+  * @brief  Set per ADC channel HPF mode and select HPF FC
+  * @param  adc_sel: select adc channel.
+  *			 This parameter can be one of the following values:
+  *			   @arg ST_L
+  *			   @arg ST_R
+  * @param  fc: select high pass filter fc
+  *			 This parameter can be one of the following values:
+  *			   @arg 0：56 Hz
+  *			   @arg 1：112 Hz
+  *			   @arg 2：168 Hz
+  *			   @arg 3: 224 Hz
+  *			   @arg 4: 281 Hz
+  *			   @arg 5: 337 Hz
+  *			   @arg 6: 390 Hz
+  *			   @arg 7: 450 Hz
+  * @param  newstate: enable or disable per sidetone channel HPF mode
+  *			 This parameter can be one of the following values:
+  *			   @arg ENABLE
+  *			   @arg DISABLE
+  * @return  None
+  */
+void AUDIO_CODEC_SetSideToneHPF(u32 ch_sel, u32 fc, u32 newstate)
+{
+	AUDIO_TypeDef *audio_base = AUDIO_CODEC_GetAddr();
+	assert_param(IS_CODEC_ST_SEL(ch_sel));
+	u32 temp;
+
+	if (newstate == ENABLE) {
+		if (ch_sel == ST_L) {
+			temp = audio_base->CODEC_ST_CONTROL_0;
+			temp &= ~AUD_MASK_ST_L_HPF_FC_SEL;
+			temp |= AUD_BIT_ST_L_HPF_EN | AUD_ST_L_HPF_FC_SEL(fc);
+			audio_base->CODEC_ST_CONTROL_0 = temp;
+		} else {
+			temp = audio_base->CODEC_ST_CONTROL_1;
+			temp &= ~AUD_MASK_ST_R_HPF_FC_SEL;
+			temp |= AUD_BIT_ST_R_HPF_EN | AUD_ST_L_HPF_FC_SEL(fc);
+			audio_base->CODEC_ST_CONTROL_1 = temp;
+		}
+
+	} else {
+		if (ch_sel == ST_L) {
+			audio_base->CODEC_ST_CONTROL_0 &= ~AUD_BIT_ST_L_HPF_EN;
+		} else {
+			audio_base->CODEC_ST_CONTROL_1 &= ~AUD_BIT_ST_R_HPF_EN;
+		}
+	}
+}
+
+/**
+  * @brief  Set the gain of sidetone digital volume.
+  * @param  channel: the channel of sidetone
+  *          This parameter can be one of the following values:
+  *            @arg 0: ST_L
+  *            @arg 1: ST_R
+  * @param  Gain: the value of gain.
+  *          This parameter can be -62.625dB ~ 30dB in 0.375dB step
+  *            @arg 0x00 -65.625dB
+  *            @arg 0xff 30dB
+  * @retval None
+  */
+void AUDIO_CODEC_SetSideToneVolume(u32 channel, u32 gain)
+{
+	assert_param(IS_CODEC_ST_SEL(channel));
+	AUDIO_TypeDef *audio_base = AUDIO_CODEC_GetAddr();
+	u32 temp;
+
+	if (channel == ST_L) {
+		temp = audio_base->CODEC_ST_CONTROL_0;
+		temp &= ~ AUD_MASK_ST_L_VOL_SEL;
+		temp |= AUD_ST_L_VOL_SEL(gain);
+		audio_base->CODEC_ST_CONTROL_0 = temp;
+
+	} else {
+		temp = audio_base->CODEC_ST_CONTROL_1;
+		temp &= ~ AUD_MASK_ST_R_VOL_SEL;
+		temp |= AUD_ST_R_VOL_SEL(gain);
+		audio_base->CODEC_ST_CONTROL_1 = temp;
+
+	}
+}
+
+/**
+  * @brief  Set sidetone boost gain.
+  * @param  ch_sel: channel select
+  *          This parameter can be one of the following values:
+  *            @arg ST_L
+  *            @arg ST_R
+  * @param  gain: sidetone channel boost gain select
+  *          This parameter can be one of the following values:
+  *            @arg STBST_GAIN_0DB: 0dB
+  *            @arg STBST_GAIN_12P04DB: 12.04dB
+  * @return  None
+  */
+void AUDIO_CODEC_SetSideToneBstGain(u32 ch_sel, u32 gain)
+{
+	assert_param(IS_CODEC_ST_SEL(ch_sel));
+	assert_param(IS_CODEC_STBST_GAIN_SEL(gain));
+	AUDIO_TypeDef *audio_base = AUDIO_CODEC_GetAddr();
+
+	if (ch_sel == ST_L) {
+		if (gain == STBST_GAIN_0DB) {
+			audio_base->CODEC_ST_CONTROL_0 &= ~AUD_BIT_ST_L_BOOST_SEL;
+		} else {
+			audio_base->CODEC_ST_CONTROL_0 |= AUD_BIT_ST_L_BOOST_SEL ;
+		}
+	} else {
+		if (gain == STBST_GAIN_0DB) {
+			audio_base->CODEC_ST_CONTROL_1 &= ~AUD_BIT_ST_R_BOOST_SEL;
+		} else {
+			audio_base->CODEC_ST_CONTROL_1 |= AUD_BIT_ST_R_BOOST_SEL ;
+		}
+	}
+}
+
+/**
+  * @brief  Set sidetone channel mic source.
+  * @param  st_chn: select channel
+  *			 This parameter can be one of the following values:
+  *			   @arg ST_L
+  *			   @arg ST_R
+  * @param  mic_src: select sidetone mic source
+  *			 This parameter can be one of the following values:
+    *		   @arg ST_SRC_ADC1
+  *			   @arg ST_SRC_ADC2
+  *			   @arg ST_SRC_ADC3
+  *			   @arg ST_SRC_ADC4
+  *			   @arg ST_SRC_ADC5
+  *			   @arg ST_SRC_DMIC1
+  *			   @arg ST_SRC_DMIC2
+  *			   @arg ST_SRC_DMIC3
+  *			   @arg ST_SRC_DMIC4
+  *			   @arg ST_SRC_DMIC5
+  * @return  None
+  */
+void AUDIO_CODEC_SetSideToneMicSrc(u32 st_chn, u32 mic_src)
+{
+	assert_param(IS_CODEC_ST_SEL(st_chn));
+	assert_param(IS_CODEC_ST_MIC_SRC_SEL(mic_src));
+	AUDIO_TypeDef *audio_base = AUDIO_CODEC_GetAddr();
+	u32 temp;
+
+	if (st_chn == ST_L) {
+		temp = audio_base->CODEC_ST_CONTROL_0;
+		temp &= ~AUD_MASK_ST_L_MIC_SRC_SEL;
+		temp |= AUD_ST_L_MIC_SRC_SEL(mic_src);
+		audio_base->CODEC_ST_CONTROL_0 = temp;
+
+	} else {
+		temp = audio_base->CODEC_ST_CONTROL_1;
+		temp &= ~AUD_MASK_ST_R_MIC_SRC_SEL;
+		temp |= AUD_ST_R_MIC_SRC_SEL(mic_src);
+		audio_base->CODEC_ST_CONTROL_1 = temp;
+
+	}
+
+}
+
+/**
+  * @brief  Select sidetone source for DAC path.
+  * @param  channel: select channel.
+  *			 This parameter can be one of the following values:
+  *			   @arg ST_L
+  *			   @arg ST_R
+  * @param  newstate: enable or disable sidetone.
+  *			 This parameter can be one of the following values:
+  *			   @arg ENABLE
+  *			   @arg DISABLE
+  * @return  None
+  */
+void AUDIO_CODEC_SetSideToneSrcForDAC(u32 channel, u32 src)
+{
+	assert_param(IS_CODEC_ST_SEL(channel));
+	AUDIO_TypeDef *audio_base = AUDIO_CODEC_GetAddr();
+	u32 temp;
+
+	if (channel == ST_L) {
+		temp = audio_base->CODEC_ST_CONTROL_0;
+		temp &= ~AUD_MASK_ST_L_IN_SEL;
+		temp |= AUD_ST_L_IN_SEL(src);
+		audio_base->CODEC_ST_CONTROL_0 = temp;
+
+	} else {
+		temp = audio_base->CODEC_ST_CONTROL_1;
+		temp &= ~AUD_MASK_ST_R_IN_SEL;
+		temp |= AUD_ST_R_IN_SEL(src);
+		audio_base->CODEC_ST_CONTROL_1 = temp;
+
+	}
+}
+
+/**
+  * @brief  Set sidetone path zero detection time out select.
+  * @param  channel: select dac channel.
+  *			 This parameter can be one of the following values:
+  *			   @arg ST_L
+  *			   @arg ST_R
+  * @param  time_out: zero detection time out select select
+  *			 This parameter can be one of the following values:
+  *			   @arg 0: 1024*16*128 samples
+  *			   @arg 1: 1024*32*128 samples
+  *			   @arg 2: 1024*64*128 samples
+  *			   @arg 3: 64*128samples
+  */
+void AUDIO_CODEC_SetSideToneZDETTimeOut(u32 channel, u32 time_out)
+{
+	assert_param(IS_CODEC_ST_SEL(channel));
+	AUDIO_TypeDef *audio_base = AUDIO_CODEC_GetAddr();
+	u32 temp;
+
+	if (channel == ST_L) {
+		temp = audio_base->CODEC_ST_CONTROL_0;
+		temp &= ~AUD_MASK_ST_L_ZDET_TOUT;
+		temp |= AUD_ST_L_ZDET_TOUT(time_out);
+		audio_base->CODEC_ST_CONTROL_0 = temp;
+
+	} else {
+		temp = audio_base->CODEC_ST_CONTROL_1;
+		temp &= ~AUD_MASK_ST_R_ZDET_TOUT;
+		temp |= AUD_ST_R_ZDET_TOUT(time_out);
+		audio_base->CODEC_ST_CONTROL_1 = temp;
+
+	}
+}
+
+/**
+  * @brief  Set sidetone path zero detection function.
+  * @param  channel: select dac channel.
+  *			 This parameter can be one of the following values:
+  *			   @arg ST_L
+  *			   @arg ST_R
+  * @param  type: zero detection function select
+  *			 This parameter can be one of the following values:
+  *			   @arg IME: immediate change
+  *			   @arg ZDET_IME: zero detection & immediate change
+  *			   @arg ZDET_STEP: zdet & step
+  *			   @arg ZDET_TIMEOUT: zdet & timeout step
+  */
+void AUDIO_CODEC_SetSideToneZDET(u32 channel, u32 type)
+{
+	assert_param(IS_CODEC_ST_SEL(channel));
+	assert_param(IS_CODEC_ZDET_SEL(type));
+	AUDIO_TypeDef *audio_base = AUDIO_CODEC_GetAddr();
+	u32 temp;
+
+	if (channel == DAC_L) {
+		temp = audio_base->CODEC_ST_CONTROL_0;
+		temp &= ~AUD_MASK_ST_L_ZDET_FUNC;
+		temp |= AUD_ST_L_ZDET_FUNC(type);
+		audio_base->CODEC_ST_CONTROL_0 = temp;
+
+	} else {
+		temp = audio_base->CODEC_ST_CONTROL_1;
+		temp &= ~AUD_MASK_ST_R_ZDET_FUNC;
+		temp |= AUD_ST_R_ZDET_FUNC(type);
+		audio_base->CODEC_ST_CONTROL_1 = temp;
+
+	}
+}
+
 
 /**
   * @brief	Audio codec record flow for test.

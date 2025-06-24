@@ -8,7 +8,7 @@
 extern rtos_sema_t whc_bridge_user_rx_sema;
 extern u8 *whc_bridge_rx_msg;
 
-void whc_bridge_dev_pkt_rx_to_user_task(void)
+void whc_dev_pkt_rx_to_user_task(void)
 {
 	u8 *ptr = NULL;
 	u32 event = 0;
@@ -43,7 +43,7 @@ void whc_bridge_dev_pkt_rx_to_user_task(void)
 					ptr += 1;
 					memcpy(ptr, dev_mac.octet, 6);
 					//6+4+1=11
-					whc_bridge_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
+					whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
 				}
 			} else if (event == WHC_WPA_OPS_CUSTOM_API) {
 				buf = rtos_mem_malloc(BRIDGE_WPA_OPS_BUF_SIZE);
@@ -73,7 +73,7 @@ void whc_bridge_dev_pkt_rx_to_user_task(void)
 					*ptr = WHC_WPA_OPS_EVENT_SCANING;
 					ptr += 1;
 
-					whc_bridge_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
+					whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
 
 
 					/* get scan results and log them */
@@ -108,7 +108,7 @@ void whc_bridge_dev_pkt_rx_to_user_task(void)
 							memcpy(ptr, scanned_AP_list_index, sizeof(struct rtw_scan_result));
 							scanned_AP_list_index += 1;
 
-							whc_bridge_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
+							whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
 
 							ix -= 1;
 						}
@@ -124,7 +124,7 @@ void whc_bridge_dev_pkt_rx_to_user_task(void)
 					*ptr = WHC_WPA_OPS_EVENT_SCAN_COMPLETE;
 					ptr += 1;
 
-					whc_bridge_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
+					whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
 				}
 				if (buf != NULL) {
 					rtos_mem_free(buf);

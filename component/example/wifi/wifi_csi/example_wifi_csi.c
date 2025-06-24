@@ -7,20 +7,178 @@
 #include "example_wifi_csi.h"
 
 extern s32 wifi_csi_config(struct rtw_csi_action_parm *act_param);
-extern s32 wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
-
+struct csi_report_q_priv g_csi_rpt_q_priv;
 rtos_sema_t wc_ready_sema = NULL;
-unsigned int csi_data_len = 2048;
+
+static void wifi_csi_buffer_deinit(void)
+{
+	u8 i = 0;
+	u8 *csi_buffer = NULL;
+
+	if (g_csi_rpt_q_priv.csi_rpt_q_mutex) {
+		rtos_mutex_take(g_csi_rpt_q_priv.csi_rpt_q_mutex, MUTEX_WAIT_TIMEOUT);
+
+		for (i = 0; i < CSI_REPORT_BUF_NUM; i++) {
+			csi_buffer = g_csi_rpt_q_priv.csi_rpt_pkt[i].csi_buffer;
+			if (csi_buffer) {
+				rtos_mem_free(csi_buffer);
+				g_csi_rpt_q_priv.csi_rpt_pkt[i].csi_buffer = NULL;
+				csi_buffer = NULL;
+			}
+		}
+
+		rtos_mutex_give(g_csi_rpt_q_priv.csi_rpt_q_mutex);
+
+		rtos_mutex_delete_static(g_csi_rpt_q_priv.csi_rpt_q_mutex);
+	}
+}
+
+static s32 wifi_csi_buffer_init(void)
+{
+	u8 i = 0;
+	s32 ret = RTK_SUCCESS;
+	struct csi_report_data *csi_rpt_pkt = NULL;
+
+	rtos_mutex_create_static(&g_csi_rpt_q_priv.csi_rpt_q_mutex);
+	rtw_init_listhead(&g_csi_rpt_q_priv.idle_q);
+	rtw_init_listhead(&g_csi_rpt_q_priv.busy_q);
+
+	g_csi_rpt_q_priv.idle_q_cnt = 0;
+
+	for (i = 0; i < CSI_REPORT_BUF_NUM; i++) {
+		csi_rpt_pkt = &g_csi_rpt_q_priv.csi_rpt_pkt[i];
+		csi_rpt_pkt->csi_buffer = rtos_mem_zmalloc(CSI_REPORT_BUF_SIZE);
+		if (csi_rpt_pkt->csi_buffer) {
+			rtw_init_listhead(&csi_rpt_pkt->list);
+			rtw_list_insert_tail(&csi_rpt_pkt->list, &g_csi_rpt_q_priv.idle_q);
+			csi_rpt_pkt->length = 0;
+			g_csi_rpt_q_priv.idle_q_cnt++;
+		} else {
+			RTK_LOGA(NOTAG, "ERR: csi rpt init err: malloc fail\n");
+			ret = RTK_FAIL;
+			break;
+		}
+	}
+
+	if (RTK_SUCCESS != ret) {
+		wifi_csi_buffer_deinit();
+	}
+
+	return ret;
+}
+
+static void wifi_csi_enqueue_busy_q(struct csi_report_data *csi_rpt_pkt)
+{
+
+	if (g_csi_rpt_q_priv.csi_rpt_q_mutex) {
+
+		rtos_mutex_take(g_csi_rpt_q_priv.csi_rpt_q_mutex, MUTEX_WAIT_TIMEOUT);
+
+		rtw_init_listhead(&csi_rpt_pkt->list);
+		/* enqueue the latest first. */
+		rtw_list_insert_tail(&csi_rpt_pkt->list, &g_csi_rpt_q_priv.busy_q);
+		g_csi_rpt_q_priv.busy_q_cnt++;
+
+		rtos_mutex_give(g_csi_rpt_q_priv.csi_rpt_q_mutex);
+	}
+}
+
+static struct csi_report_data *wifi_csi_dequeue_busy_q(bool latest)
+{
+	struct csi_report_data	*csi_rpt_pkt = NULL;
+
+	if (g_csi_rpt_q_priv.csi_rpt_q_mutex) {
+
+		rtos_mutex_take(g_csi_rpt_q_priv.csi_rpt_q_mutex, MUTEX_WAIT_TIMEOUT);
+
+		if (FALSE == rtw_is_list_empty(&g_csi_rpt_q_priv.busy_q)) {
+			if (latest) {
+				csi_rpt_pkt = container_of(get_prev(&g_csi_rpt_q_priv.busy_q), struct csi_report_data, list);
+			} else {
+				csi_rpt_pkt = container_of(get_next(&g_csi_rpt_q_priv.busy_q), struct csi_report_data, list);
+			}
+			rtw_list_delete(&csi_rpt_pkt->list);
+			g_csi_rpt_q_priv.busy_q_cnt--;
+		}
+
+		rtos_mutex_give(g_csi_rpt_q_priv.csi_rpt_q_mutex);
+	}
+
+	return csi_rpt_pkt;
+}
+
+static void wifi_csi_enqueue_idle_q(struct csi_report_data *csi_rpt_pkt)
+{
+	if (g_csi_rpt_q_priv.csi_rpt_q_mutex) {
+
+		rtos_mutex_take(g_csi_rpt_q_priv.csi_rpt_q_mutex, MUTEX_WAIT_TIMEOUT);
+
+		memset(csi_rpt_pkt->csi_buffer, 0, CSI_REPORT_BUF_SIZE);
+		rtw_init_listhead(&csi_rpt_pkt->list);
+		rtw_list_insert_tail(&csi_rpt_pkt->list, &g_csi_rpt_q_priv.idle_q);
+		csi_rpt_pkt->length = 0;
+		g_csi_rpt_q_priv.idle_q_cnt++;
+
+		rtos_mutex_give(g_csi_rpt_q_priv.csi_rpt_q_mutex);
+	}
+}
+
+static struct csi_report_data *wifi_csi_dequeue_idle_q(void)
+{
+	struct csi_report_data	*csi_rpt_pkt = NULL;
+
+	if (g_csi_rpt_q_priv.csi_rpt_q_mutex) {
+
+		rtos_mutex_take(g_csi_rpt_q_priv.csi_rpt_q_mutex, MUTEX_WAIT_TIMEOUT);
+
+		if (FALSE == rtw_is_list_empty(&g_csi_rpt_q_priv.idle_q)) {
+			csi_rpt_pkt = container_of(get_next(&g_csi_rpt_q_priv.idle_q), struct csi_report_data, list);
+			rtw_list_delete(&csi_rpt_pkt->list);
+			g_csi_rpt_q_priv.idle_q_cnt--;
+		} else if (FALSE == rtw_is_list_empty(&g_csi_rpt_q_priv.busy_q)) {
+			/* drop oldest csi because of the variability of the channel */
+			csi_rpt_pkt = container_of(get_next(&g_csi_rpt_q_priv.busy_q), struct csi_report_data, list);
+			memset(csi_rpt_pkt->csi_buffer, 0, CSI_REPORT_BUF_SIZE);
+			csi_rpt_pkt->length = 0;
+			rtw_list_delete(&csi_rpt_pkt->list);
+			g_csi_rpt_q_priv.busy_q_cnt--;
+		} else {
+			RTK_LOGA(NOTAG, "WARN: lack of csi buf!\n");
+		}
+
+		rtos_mutex_give(g_csi_rpt_q_priv.csi_rpt_q_mutex);
+	}
+
+	return csi_rpt_pkt;
+}
+
+/* wifi csi report callback */
+void example_wifi_csi_report_cb(u8 *buf, s32 buf_len, s32 flags, void *userdata)
+{
+	(void) flags;
+	(void) userdata;
+	struct csi_report_data	*csi_rpt_pkt = NULL;
+
+	csi_rpt_pkt = wifi_csi_dequeue_idle_q();
+
+	if (csi_rpt_pkt && (buf_len <= CSI_REPORT_BUF_SIZE)) {
+		memcpy(csi_rpt_pkt->csi_buffer, buf, buf_len);
+		csi_rpt_pkt->length = buf_len;
+		wifi_csi_enqueue_busy_q(csi_rpt_pkt);
+		rtos_sema_give(wc_ready_sema);
+	} else {
+		RTK_LOGA(NOTAG, "ERR: csi_callback fail(null_buf or smaller size)\n");
+	}
+}
 
 static void wifi_csi_thread(void *param)
 {
 	(void)param;
 	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 	struct rtw_csi_action_parm act_param = {0};
-	u32 len;
-	u8 *csi_buf = NULL;
+	struct csi_report_data	*csi_rpt_pkt = NULL;
 	unsigned char assoc_ap_mac[6] = {0xa4, 0x39, 0xb3, 0xa4, 0xbe, 0x2d};  /* need modify to mac address of associated AP when sta mode */
-	struct rtw_client_list client_info;
+	struct rtw_client_list client_info = {0};
 	memset(&client_info, 0, sizeof(struct rtw_client_list));
 	memcpy(act_param.mac_addr, assoc_ap_mac, 6);
 
@@ -49,24 +207,29 @@ NEXT:
 	/* register wifi event callback function */
 	wifi_reg_event_handler(RTW_EVENT_CSI_DONE, example_wifi_csi_report_cb, NULL);
 
+	/* init csi report buffer pool */
+	if (wifi_csi_buffer_init() != RTK_SUCCESS) {
+		goto done;
+	}
 	/**
-	 * should use semaphore to wait wifi event happen
-	 * the following example shows that we wait for wifi csi ready
+	 * should use semaphore to wait wifi csi report happen
+	 * the following example shows that we wait for semaphore: wc_ready_sema
 	 */
 	rtos_sema_create(&wc_ready_sema, 0, 0xFFFFFFFF);
 	if (!wc_ready_sema) {
-		RTK_LOGE(NOTAG, "\r\nInit wc_ready_sema failed\r\n\n");
+		RTK_LOGA(NOTAG, "ERR: wc_ready_sema failed\r\n");
+		goto done;
 	}
 
-	/* config csi parameters and enable wifi csi */
+	/* config csi parameters and enable wifi csi for first peer device */
 	act_param.group_num = RTW_CSI_GROUP_NUM_1;
 	act_param.mode = RTW_CSI_MODE_RX_RESP;
 	act_param.accuracy = RTW_CSI_ACCU_1BYTE;
-	act_param.trig_period = 200;     /* units: 320us */
+	act_param.trig_period = 200;          /* units: 320us */
 	act_param.data_rate = RTW_RATE_6M;    /* ofdm 6 mpbs*/
-	act_param.trig_frame_mgnt = 0;   /* no need for rx resp mode, default 0*/
-	act_param.trig_frame_ctrl = 0;   /* no need for rx resp mode, default 0*/
-	act_param.trig_frame_data = 0;   /* no need for rx resp mode, default 0*/
+	act_param.trig_frame_mgnt = 0;        /* no need for rx resp mode, default 0*/
+	act_param.trig_frame_ctrl = 0;        /* no need for rx resp mode, default 0*/
+	act_param.trig_frame_data = 0;        /* no need for rx resp mode, default 0*/
 	act_param.csi_role = RTW_CSI_OP_ROLE_TRX;
 
 	/* cis cfg and csi en */
@@ -77,35 +240,55 @@ NEXT:
 	act_param.enable = 1;
 	wifi_csi_config(&act_param);
 
+	// /* config csi parameters and enable wifi csi for second peer device */
+	// act_param.xxx = xxxx;
+	// /* cis cfg and csi en */
+	// act_param.act = RTW_CSI_ACT_CFG;  /* csi cfg */
+	// wifi_csi_config(&act_param);
+
+	// act_param.act = RTW_CSI_ACT_EN;  /* csi en */
+	// act_param.enable = 1;
+	// wifi_csi_config(&act_param);
+
+	// /* config csi parameters and enable wifi csi for third peer device */
+	//.....
+
 	while (1) {
-		/* example: when wifi csi rx done, call csi report handle function. */
+		/* example: when wifi csi rx done, dequeue csi report and do some process. */
 		if (rtos_sema_take(wc_ready_sema, 0xFFFFFFFF) != RTK_SUCCESS) {
 			rtos_sema_delete(wc_ready_sema);
+			RTK_LOGA(NOTAG,  "ERR: get wc_ready_sema failed");
 
+			/* first peer device csi disable */
 			act_param.act = RTW_CSI_ACT_EN;  /* csi dis */
 			act_param.enable = 0;
 			wifi_csi_config(&act_param);
+
+			// /* second peer device csi disable */
+			//......
+
 			break;
 		}
 
-		csi_buf = rtos_mem_malloc(csi_data_len);
-		if (csi_buf != NULL) {
-			wifi_csi_report(csi_data_len, csi_buf, &len);
+		csi_rpt_pkt = wifi_csi_dequeue_busy_q(TRUE);
+		if (csi_rpt_pkt != NULL) {
 
 			/*do something for handing csi info: like show csi data */
-			wifi_csi_show(csi_buf);
+			wifi_csi_show(csi_rpt_pkt);
 
+			wifi_csi_enqueue_idle_q(csi_rpt_pkt);
+			csi_rpt_pkt = NULL;
 		} else {
-			RTK_LOGE(NOTAG, "\r\n csi_buf malloc fail\r\n");
-		}
-
-		if (csi_buf != NULL) {
-			rtos_mem_free(csi_buf);
+			RTK_LOGA(NOTAG, "WARN: deq csi_rpt_q fail\n");
 		}
 	}
 
+done:
 	/* unregister wifi event callback function */
 	wifi_unreg_event_handler(RTW_EVENT_CSI_DONE, example_wifi_csi_report_cb);
+
+	/* free csi report buffer */
+	wifi_csi_buffer_deinit();
 
 	if (wc_ready_sema) {
 		rtos_sema_delete(wc_ready_sema);
@@ -114,20 +297,9 @@ NEXT:
 	rtos_task_delete(NULL);
 }
 
-/* wifi csi report callback */
-void example_wifi_csi_report_cb(u8 *buf, s32 buf_len, s32 flags, void *userdata)
+void wifi_csi_show(struct csi_report_data *csi_rpt_pkt)
 {
-	(void)buf;
-	(void)buf_len;
-	(void)userdata;
-	rtos_sema_give(wc_ready_sema);
-	csi_data_len = flags;
-	return;
-}
-
-void wifi_csi_show(u8 *csi_buf)
-{
-	struct rtw_csi_header *csi_header = (struct rtw_csi_header *)csi_buf;
+	struct rtw_csi_header *csi_header = (struct rtw_csi_header *)csi_rpt_pkt->csi_buffer;
 	unsigned long long *buff_tmp = NULL; /* for printf csi data*/
 	unsigned char print_len = 0, i = 0;
 
@@ -149,9 +321,9 @@ void wifi_csi_show(u8 *csi_buf)
 	RTK_LOGA(NOTAG, "# rxsc             = %d\r\n", csi_header->rxsc);
 	RTK_LOGA(NOTAG, "# csi_valid        = %d\r\n", csi_header->csi_valid);
 
-	RTK_LOGA(NOTAG, "[CH INFO] csi raw data: len = %d[%d]\r\n", csi_header->csi_data_length, csi_data_len);
+	RTK_LOGA(NOTAG, "[CH INFO] csi raw data: len = %d[%d]\r\n", csi_header->csi_data_length, csi_rpt_pkt->length);
 
-	buff_tmp = (u64 *)(csi_buf + csi_header->hdr_len + 3);
+	buff_tmp = (u64 *)(csi_rpt_pkt->csi_buffer + csi_header->hdr_len + 3);
 	print_len = csi_header->csi_data_length >> 3;
 	if (csi_header->csi_data_length % 8) {
 		print_len++;

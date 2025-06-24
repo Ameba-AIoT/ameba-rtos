@@ -34,15 +34,6 @@ s32 wifi_hal_csi_en(void *b)
 	return -1;
 }
 
-s32 wifi_hal_csi_report(void *a, u32 buf_len, void *c, void *d)
-{
-	UNUSED(a);
-	UNUSED(buf_len);
-	UNUSED(c);
-	UNUSED(d);
-	return -1;
-}
-
 void wifi_hal_csi_pkt_hdl(void *b, void *c)
 {
 	UNUSED(b);

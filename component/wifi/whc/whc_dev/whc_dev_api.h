@@ -101,7 +101,7 @@ void whc_event_p2p_role(u32 api_id, u32 *param_buf);
 void whc_event_p2p_remain_on_ch(u32 api_id, u32 *param_buf);
 #endif
 
-#if !defined(CONFIG_WHC_BRIDGEB) && !defined(CONFIG_WHC_BRIDGE)
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 void whc_event_get_scan_res(u32 api_id, u32 *param_buf);
 void whc_event_wifi_get_setting(u32 api_id, u32 *param_buf);
 void whc_event_send_eapol(u32 api_id, u32 *param_buf);
@@ -110,12 +110,6 @@ void whc_event_wpa_4way_rpt(u32 api_id, u32 *param_buf);
 void whc_event_get_traffic_stats(u32 api_id, u32 *param_buf);
 #endif
 
-#if defined(CONFIG_WHC_BRIDGEB)
-void whc_event_bridge_DHCP(u32 api_id, u32 *param_buf);
-void whc_event_bridge_get_ip(u32 api_id, u32 *param_buf);
-void whc_event_bridge_get_scan_res(u32 api_id, u32 *param_buf);
-void whc_event_bridge_get_dev_mac(u32 api_id, u32 *param_buf);
-#endif
 /* ---------------------------- Public Functions ---------------------------- */
 int wext_private_command(char *cmd, int show_msg, char *user_buf);
 int wifi_set_ips_internal(u8 enable);

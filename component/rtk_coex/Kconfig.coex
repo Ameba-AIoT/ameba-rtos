@@ -1,4 +1,4 @@
-if WLAN_MENU && !FULLMAC_HOST
+if WLAN_MENU 
     menu "CONFIG COEX"
         config COEX_MENU
             bool "Enable Coex" if !AMEBA_RLS
@@ -8,12 +8,12 @@ if WLAN_MENU && !FULLMAC_HOST
             config BT_COEXIST
                 bool 
                 # AP core, Follow different scenario
-                default y if ((AS_INIC_AP && !SPI_FULLMAC_HOST) || (FULLMAC_DEV && CONFIG_BT)) && !SINGLE_CORE_WIFI
+                default y if (CORE_AS_AP && WHC_INTF_IPC)
                 # NP core, Follow WLAN
-                default y if (AS_INIC_NP || SINGLE_CORE_WIFI)
+                default y if (CORE_AS_NP)
             
-                select COEXIST_HOST if ((AS_INIC_AP && !SPI_FULLMAC_HOST) || (FULLMAC_DEV && CONFIG_BT)) && !SINGLE_CORE_WIFI
-                select COEXIST_DEV if (AS_INIC_NP || SINGLE_CORE_WIFI)
+                select COEXIST_HOST if (CORE_AS_AP && WHC_INTF_IPC)
+                select COEXIST_DEV if (CORE_AS_NP)
 
             config COEXIST_HOST
                 bool            

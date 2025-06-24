@@ -453,7 +453,7 @@ void Peripheral_Reset(void)
 	//reason: The reason for maintaining these bits is for our debugging function.
 	//issue: LSYS_PERIALL_RST_EN will reset cpu, causing loss of debug information, which is unexpected.
 	//resolve: When initializing power, at bootloader, these bits are enabled.
-	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_FEN, APBPeriph_RTC | APBPeriph_SDM | APBPeriph_OTPC | APBPeriph_LPON);
+	// HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_FEN, APBPeriph_RTC | APBPeriph_SDM | APBPeriph_OTPC | APBPeriph_LPON);
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_FEN_GRP0, APBPeriph_TRNG | APBPeriph_FLASH | APBPeriph_KM4 | APBPeriph_KM0 | APBPeriph_PLFM | APBPeriph_SOC);
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_FEN_GRP1, APBPeriph_DTIM | APBPeriph_LOGUART);
 }

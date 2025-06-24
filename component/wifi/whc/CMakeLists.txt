@@ -75,16 +75,27 @@ if(CONFIG_WIFI_HOST_CONTROL)
         whc_dev/whc_dev_trx.c
         whc_dev/whc_dev_protocal_offload.c
     )
-    ameba_list_append_ifnot(CONFIG_WHC_BRIDGE private_sources
-        whc_dev/whc_dev_api.c
-        whc_dev/whc_dev_cust_evt.c
-    )
 
     ameba_list_append_ifnot(CONFIG_FULLMAC_DEV private_sources
         whc_dev/whc_dev_bridge.c
-        whc_dev/whc_bridge_dev_api.c
     )
 endif()
+
+if(CONFIG_WHC_WIFI_API_PATH)
+    ameba_list_append(private_sources
+        whc_dev/whc_dev_api.c
+        whc_dev/whc_dev_cust_evt.c
+     )
+
+endif()
+
+if(CONFIG_WHC_CMD_PATH)
+    ameba_list_append(private_sources
+        whc_dev/whc_dev_app.c
+        whc_dev/whc_bridge_dev_api.c
+     )
+endif()
+
 if(CONFIG_AS_INIC_NP)
     if(CONFIG_WHC_INTF_SPI)
         ameba_list_append(private_sources
@@ -104,25 +115,11 @@ if(CONFIG_AS_INIC_NP)
         )
         set(target_name wifi_whc_usb_dev)
     endif()
-elseif(CONFIG_WHC_BRIDGEB)
-    if(CONFIG_WHC_INTF_SDIO)
-        ameba_list_append(private_sources
-            whc_dev/sdio/whc_sdio_drv.c
-            whc_dev/sdio/whc_fullmac_sdio_dev.c
-        )
-        set(target_name wifi_fullmac_sdio_bridge)
-    elseif(CONFIG_WHC_INTF_SPI)
-        ameba_list_append(private_sources
-            whc_dev/spi/whc_spi_dev.c
-        )
-        set(target_name wifi_fullmac_spi_bridge)
-    endif()
 elseif(CONFIG_WHC_BRIDGE)
     if(CONFIG_WHC_INTF_SDIO)
         ameba_list_append(private_sources
             whc_dev/sdio/whc_sdio_drv.c
             whc_dev/sdio/whc_bridge_sdio_dev.c
-            whc_dev/whc_dev_app.c
         )
         if(CONFIG_WPA_LITE_OPS)
              ameba_list_append(private_sources
@@ -134,7 +131,6 @@ elseif(CONFIG_WHC_BRIDGE)
          ameba_list_append(private_sources
             whc_dev/spi/whc_spi_dev.c
             whc_dev/spi/whc_bridge_spi_dev.c
-            whc_dev/whc_dev_app.c
         )
         set(target_name wifi_fullmac_spi_bridge_lite)
     endif()
@@ -170,8 +166,6 @@ elseif(CONFIG_AS_INIC_AP)
             ameba_list_append(private_sources
                 whc_host_rtos/whc_bridge_host_app.c
             )
-        else()
-
         endif()
         set(target_name wifi_whc_sdio_host)
     else()

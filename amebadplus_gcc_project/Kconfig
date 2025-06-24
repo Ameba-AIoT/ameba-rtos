@@ -244,6 +244,17 @@ menu "CONFIG WHC INTF"
         endmenu
     endif
 
+    if FULLMAC_DEV || WHC_BRIDGE
+        menu "FULLMAC config"
+        config WHC_CMD_PATH
+            default y if WHC_BRIDGE
+            bool "Support WHC CMD PATH"
+        config WHC_WIFI_API_PATH
+            default y if FULLMAC_DEV
+            bool "Support WHC WIFI API PATH"
+        endmenu
+    endif
+
     config CORE_AS_AP_FOR_KM4
         bool
     config CORE_AS_NP_FOR_KM0
@@ -252,7 +263,10 @@ menu "CONFIG WHC INTF"
         bool
     config CORE_AS_NP_FOR_KM4
         bool
-
+    config WHC_CMD_PATH
+        bool
+    config WHC_WIFI_API_PATH
+        bool
 endmenu
 
 menu "CONFIG WIFI"
@@ -292,14 +306,8 @@ menu "CONFIG WIFI"
             select FW_DRIVER_COEXIST
             select WIFI_FW_EN
             select WIFI_HOST_CONTROL
-
-        config WHC_BRIDGEB
-            bool
-            depends on CORE_AS_AP
-            select WLAN
-            select SINGLE_CORE_WIFI
-            select LWIP_LAYER
-            select WIFI_HOST_CONTROL
+            #todo remove at last
+            select WHC_WIFI_API_PATH
 
         config WHC_BRIDGE
             bool
@@ -308,6 +316,7 @@ menu "CONFIG WIFI"
             select SINGLE_CORE_WIFI
             select LWIP_LAYER
             select WIFI_HOST_CONTROL
+            select WHC_CMD_PATH
 
         config WHC_HOST
             bool

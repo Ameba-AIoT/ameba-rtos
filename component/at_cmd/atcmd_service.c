@@ -19,6 +19,7 @@
 #include "cJSON.h"
 
 #include "atcmd_sys.h"
+#include "atcmd_diag.h"
 
 #ifndef CONFIG_MP_SHRINK
 #ifdef CONFIG_WLAN
@@ -100,6 +101,7 @@ log_init_t log_init_table[] = {
 #endif
 #endif
 	at_sys_init,
+	at_diag_init,
 #ifndef CONFIG_AMEBAD
 	at_otp_init,
 #endif
@@ -107,7 +109,7 @@ log_init_t log_init_table[] = {
 
 
 //======================================================
-#ifdef CONFIG_ATCMD_HOST_CONTROL
+#if defined(CONFIG_ATCMD_HOST_CONTROL) || defined(CONFIG_WHC_BRIDGE)
 #ifdef CONFIG_SUPPORT_SDIO_DEVICE
 extern SDIOCFG_TypeDef sdio_config;
 #endif
@@ -120,7 +122,7 @@ char g_host_control_mode = AT_HOST_CONTROL_UART;
 volatile char g_tt_mode_stop_flag = 0;
 volatile u8 g_tt_mode_stop_char_cnt = 0;
 rtos_timer_t xTimers_TT_Mode;
-
+char pin_name[5];
 char global_buf[SMALL_BUF];
 /* Out callback function */
 at_write out_buffer;

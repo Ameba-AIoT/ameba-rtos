@@ -79,6 +79,7 @@ u8 whc_spi_dev_tx_path_avail(void);
 void whc_spi_dev_send_to_host(u8 *buf, u8 *buf_alloc, u16 len);
 void whc_spi_dev_trigger_rx_handle(void);
 void whc_spi_dev_send_data(u8 *buf, u32 len);
+void whc_spi_dev_send_cmd_data(u8 *buf, u32 len);
 
 #endif
 

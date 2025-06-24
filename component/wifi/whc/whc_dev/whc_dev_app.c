@@ -5,6 +5,7 @@
 #include "os_wrapper.h"
 
 #define BRIDGE_WIFI_TEST 0xffa5a5a5
+#define BRIDGE_ATCMD_TEST 0xeea5a5a5
 
 #define BRIDGE_WIFI_TEST_GET_MAC_ADDR 0x1
 #define BRIDGE_WIFI_TEST_GET_IP       0x2
@@ -19,10 +20,24 @@
 
 rtos_sema_t whc_bridge_user_rx_sema;
 u8 *whc_bridge_rx_msg = NULL;
+/* spi add header before msg, different from others */
+/* real addr needed for mem free */
+u8 *whc_bridge_rx_msg_free_addr = NULL;
+
 u16 rx_msg_size;
 
+#if defined(CONFIG_CORE_AS_AP) && defined(CONFIG_SUPPORT_ATCMD)
+rtos_sema_t whc_bridge_atcmd_rx_sema;
+
+extern volatile UART_LOG_CTL shell_ctl;
+extern UART_LOG_BUF shell_rxbuf;
+
+typedef void (*at_write)(char *buf, int len);
+extern at_write out_buffer;
+#endif
+
 /* here in sdio rx done callback */
-__weak void whc_bridge_dev_pkt_rx_to_user(u8 *rxbuf, u16 size)
+__weak void whc_dev_pkt_rx_to_user(u8 *rxbuf, u8 *real_buf, u16 size)
 {
 	while (whc_bridge_rx_msg) {
 		/* waiting last msg done */
@@ -30,15 +45,17 @@ __weak void whc_bridge_dev_pkt_rx_to_user(u8 *rxbuf, u16 size)
 	}
 
 	whc_bridge_rx_msg = rxbuf;
+	whc_bridge_rx_msg_free_addr = real_buf;
 	rx_msg_size = size;
 	rtos_sema_give(whc_bridge_user_rx_sema);
 }
 
-__weak void whc_bridge_dev_pkt_rx_to_user_task(void)
+__weak void whc_dev_pkt_rx_to_user_task(void)
 {
 	u8 *ptr = NULL;
 	u32 event = 0;
 	u8 *ip, *buf, idx = 0;
+	(void)ip;
 
 	while (1) {
 		rtos_sema_take(whc_bridge_user_rx_sema, RTOS_MAX_TIMEOUT);
@@ -69,7 +86,8 @@ __weak void whc_bridge_dev_pkt_rx_to_user_task(void)
 					ptr += 1;
 					memcpy(ptr, dev_mac.octet, 6);
 					//6+4+1=11
-					whc_bridge_dev_api_send_to_host(buf, BRIDGE_WIFI_TEST_BUF_SIZE);
+					whc_dev_api_send_to_host(buf, BRIDGE_WIFI_TEST_BUF_SIZE);
+#ifdef CONFIG_LWIP_LAYER
 				} else if (*ptr == BRIDGE_WIFI_TEST_GET_IP) {
 					idx = *(ptr + 1);
 					if (!wifi_is_running(idx)) {
@@ -85,7 +103,8 @@ __weak void whc_bridge_dev_pkt_rx_to_user_task(void)
 					ptr += 1;
 					memcpy(ptr, ip, 4);
 
-					whc_bridge_dev_api_send_to_host(buf, BRIDGE_WIFI_TEST_BUF_SIZE);
+					whc_dev_api_send_to_host(buf, BRIDGE_WIFI_TEST_BUF_SIZE);
+#endif
 				} else if (*ptr == BRIDGE_WIFI_TEST_SET_READY) {
 					whc_bridge_dev_api_set_host_state(1);
 				} else if (*ptr == BRIDGE_WIFI_TEST_SET_UNREADY) {
@@ -95,21 +114,83 @@ __weak void whc_bridge_dev_pkt_rx_to_user_task(void)
 					whc_bridge_dev_api_set_tickps_cmd(subtype);
 				}
 				rtos_mem_free(buf);
+#if defined(CONFIG_CORE_AS_AP) && defined(CONFIG_SUPPORT_ATCMD)
+			} else if (event == BRIDGE_ATCMD_TEST) {
+				rtos_sema_give(whc_bridge_atcmd_rx_sema);
+#endif
 			}
+			rtos_mem_free(whc_bridge_rx_msg_free_addr);
 			whc_bridge_rx_msg = NULL;
+			whc_bridge_rx_msg_free_addr = NULL;
 		}
 	}
 }
 
-__weak void whc_bridge_dev_init_user_task(void)
+#if defined(CONFIG_CORE_AS_AP) && defined(CONFIG_SUPPORT_ATCMD)
+void whc_bridge_atcmd_task(void)
+{
+	PUART_LOG_BUF pShellRxBuf = &shell_rxbuf;
+	u32 i = 0;
+	while (1) {
+		pShellRxBuf->BufCount = 0;
+		i = 0;
+
+		rtos_sema_take(whc_bridge_atcmd_rx_sema, 0xFFFFFFFF);
+		memcpy(pShellRxBuf->UARTLogBuf, whc_bridge_rx_msg + 4, rx_msg_size - 4);
+		pShellRxBuf->BufCount = rx_msg_size - 4;
+
+recv_again:
+		if (shell_cmd_chk(pShellRxBuf->UARTLogBuf[i++], (UART_LOG_CTL *)&shell_ctl, ENABLE) == 2) {
+			if (shell_ctl.pTmpLogBuf != NULL) {
+				shell_ctl.ExecuteCmd = TRUE;
+
+				if (shell_ctl.shell_task_rdy) {
+					shell_ctl.GiveSema();
+				}
+			} else {
+				shell_array_init((u8 *)shell_ctl.pTmpLogBuf->UARTLogBuf, UART_LOG_CMD_BUFLEN, '\0');
+			}
+		}
+
+		/* recv all data one time */
+		if ((pShellRxBuf->BufCount != i) && (pShellRxBuf->BufCount != 0)) {
+			goto recv_again;
+		}
+	}
+}
+
+void whc_dev_api_send_to_host_wrap(char *buf, int len)
+{
+	u8 *message = rtos_mem_malloc(len + 6);
+	u8 *ptr = message;
+	*(u32 *)ptr = BRIDGE_ATCMD_TEST;
+	ptr += 4;
+	*(u16 *)ptr  = (u16)len;
+	ptr += 2;
+	memcpy(ptr, buf, len);
+	whc_dev_api_send_to_host((u8 *)message, (u32)len + 6);
+	rtos_mem_free(message);
+}
+#endif
+
+__weak void whc_dev_init_cmd_path_task(void)
 {
 	/* initialize the semaphores */
 	rtos_sema_create(&whc_bridge_user_rx_sema, 0, 0xFFFFFFFF);
 
 	/* Initialize the event task */
-	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"whc_bridge_dev_pkt_rx_to_user_task", (rtos_task_function_t)whc_bridge_dev_pkt_rx_to_user_task,
+	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"whc_dev_pkt_rx_to_user_task", (rtos_task_function_t)whc_dev_pkt_rx_to_user_task,
 										NULL,
 										WHC_BRIDGE_WIFI_USER_TASK_STACK_SIZE, CONFIG_WHC_BRIDGE_WIFI_USER_TASK_PRIO)) {
-		RTK_LOGE(TAG_WLAN_INIC, "Create whc_bridge_dev_pkt_rx_to_user_task Err!!\n");
+		RTK_LOGE(TAG_WLAN_INIC, "Create whc_dev_pkt_rx_to_user_task Err!!\n");
 	}
+
+#if defined(CONFIG_CORE_AS_AP) && defined(CONFIG_SUPPORT_ATCMD)
+	rtos_sema_create(&whc_bridge_atcmd_rx_sema, 0, 0xFFFFFFFF);
+	out_buffer = whc_dev_api_send_to_host_wrap;
+
+	if (rtos_task_create(NULL, ((const char *)"whc_bridge_atcmd_task"), (rtos_task_t)whc_bridge_atcmd_task, NULL, 1024, 5) != RTK_SUCCESS) {
+		RTK_LOGE(TAG_WLAN_INIC, "Create whc_bridge_atcmd_task Err!!\n");
+	}
+#endif
 }

@@ -3,8 +3,8 @@
 #include "os_wrapper.h"
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_ipc.h"
-#include "rtw_coex_api_ext.h"
 #endif
+#include "ameba_diagnose.h"
 
 static const char *const TAG = "MAIN";
 
@@ -86,9 +86,6 @@ int main(void)
 #if defined(CONFIG_BT_COEXIST)
 	/* init coex ipc */
 	coex_ipc_entry();
-#if defined(CONFIG_COEX_EXT_CHIP_SUPPORT) && defined(CONFIG_COEXIST_DEV)
-	coex_extc_paras_config();
-#endif
 #endif
 
 #ifdef CONFIG_WLAN
@@ -108,6 +105,12 @@ int main(void)
 	LOGUART_INTCoreConfig(LOGUART_DEV, LOGUART_BIT_INTR_MASK_KM0, ENABLE);
 
 	app_IWDG_int();
+
+#if defined(CONFIG_CORE_AS_NP)
+	rtk_diag_init(RTK_DIAG_HEAP_SIZE, RTK_DIAG_SEND_BUFFER_SIZE);
+#elif defined(CONFIG_CORE_AS_AP)
+	rtk_diag_init();
+#endif
 
 	/* Execute application example */
 	app_example();

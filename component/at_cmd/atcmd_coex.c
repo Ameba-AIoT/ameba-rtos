@@ -33,12 +33,22 @@ static const char *const AT_COEX_TAG = "AT_COEX";
 // @state
 // AT+COEX=<type=state>
 //
+// @enable
+// AT+COEX=<type=enable>[,<value>]
+// <value>: 0: disable, 1: enable
+//
+// @gnt
+// AT+COEXBT=<type=gnt>,<value>
+// <value>: wifi: gnt to wifi, bt: gnt to bt, auto: gnt by auto
+//
 static void fCOMMONCOEX(void *arg)
 {
 	int argc = 0, error_no = 0;
 	char *argv[MAX_ARGC] = {0};
 	int pid = 0, vid = 0;
 	static int wl_slot = 0;
+	bool coex_is_en = false;
+	bool coex_ext_is_en = false;
 	int i = 0, j = 0;
 
 	if (!arg) {
@@ -105,7 +115,30 @@ static void fCOMMONCOEX(void *arg)
 
 	} else if (0 == strcasecmp(argv[1], "state")) {
 		rtk_coex_com_state_get();
-
+	} else if (0 == strcasecmp(argv[1], "enable")) {
+		if (argc == 2) {
+			coex_is_en = rtk_coex_com_coex_is_enabled();
+			coex_ext_is_en = rtk_coex_extc_is_ready();
+			at_printf("\r\n[coex,ext]=%d,%d\r\n", coex_is_en, coex_ext_is_en);
+		} else if (argc == 3) {
+			rtk_coex_com_coex_set_enable((atoi(argv[2]) ? 1 : 0));
+		} else {
+			RTK_LOGW(AT_COEX_TAG, "[AT%s] Wrong Params Number\r\n", CMD_NAME_COEX);
+			error_no = 22;
+			goto exit;
+		}
+	} else if (0 == strcasecmp(argv[1], "gnt")) {
+		if (argc == 3 && 0 == strcasecmp(argv[2], "wifi")) {
+			rtk_coex_btc_set_pta(PTA_WIFI, 0, 0);
+		} else if (argc == 3 && 0 == strcasecmp(argv[2], "bt")) {
+			rtk_coex_btc_set_pta(PTA_BT, 0, 0);
+		} else if (argc == 3 && 0 == strcasecmp(argv[2], "auto")) {
+			rtk_coex_btc_set_pta(PTA_AUTO, 0, 0);
+		} else {
+			RTK_LOGW(AT_COEX_TAG, "[AT%s] Invalid Params\r\n", CMD_NAME_COEX);
+			error_no = 23;
+			goto exit;
+		}
 	} else if (0 == strcasecmp(argv[1], "help")) {
 		at_printf("\r\n");
 		at_printf("AT%s=<type=vendor>,vid,<vid>,pid,<pid>\r\n", CMD_NAME_COEX);
@@ -114,6 +147,10 @@ static void fCOMMONCOEX(void *arg)
 		at_printf("AT%s=<type=wl_slot>[,<value>]\r\n", CMD_NAME_COEX);
 		at_printf("\t<value>: 0: disable, [1-100]: percent (dec)\r\n");
 		at_printf("AT%s=<type=state>\r\n", CMD_NAME_COEX);
+		at_printf("AT%s=<type=enable>[,<value>]\r\n", CMD_NAME_COEX);
+		at_printf("\t<value>: 0: disable, 1: enable\r\n");
+		at_printf("AT%s=<type=gnt>[,<value>]\r\n", CMD_NAME_COEX);
+		at_printf("\t<value>: wifi: gnt to wifi, bt: gnt to bt, auto: gnt by auto\r\n");
 	} else {
 		error_no = 21;
 	}
@@ -134,6 +171,7 @@ static void fBTCOEX(void *arg)
 
 	at_printf("%s is not supported\n", CMD_NAME_BTC);
 
+	return;
 }
 
 static void at_coexext_help(void)

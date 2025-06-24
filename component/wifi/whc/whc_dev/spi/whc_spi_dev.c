@@ -712,3 +712,32 @@ retry:
 
 	return;
 }
+
+/**
+* @brief  send buf for cmd path
+* @param  buf: data buf to be sent, must 4B aligned.
+* @param  len: data len to be sent.
+* @return none.
+*/
+void whc_spi_dev_send_cmd_data(u8 *buf, u32 len)
+{
+	u8 *txbuf = NULL;
+	u32 event = *(u32 *)buf;
+	u32 txsize = len + sizeof(struct whc_bridge_hdr);
+	struct whc_bridge_hdr *hdr = NULL;
+
+	if (event != WHC_WIFI_EVT_RECV_PKTS) {
+		txbuf = rtos_mem_zmalloc(txsize);
+		if (!txbuf) {
+			RTK_LOGE(TAG_WLAN_INIC, "allocate buffer failed when to send in spi bridge\n");
+			return;
+		}
+		hdr = (struct whc_bridge_hdr *)txbuf;
+		hdr->event = WHC_WIFI_EVT_BRIDGE;
+		hdr->len = len;
+		memcpy(txbuf + sizeof(struct whc_bridge_hdr), buf, len);
+		whc_spi_dev_send_data(txbuf, txsize);
+	} else {
+		whc_spi_dev_send_data(buf, len);
+	}
+}

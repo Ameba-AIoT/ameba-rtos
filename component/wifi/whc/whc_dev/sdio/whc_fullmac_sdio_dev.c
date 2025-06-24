@@ -15,6 +15,7 @@ void whc_fullmac_sdio_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb, u16 size)
 	struct whc_api_info *ret_msg;
 
 	switch (event) {
+#ifdef CONFIG_WHC_WIFI_API_PATH
 	case WHC_WIFI_EVT_API_CALL:
 		event_priv.rx_api_msg = rxbuf;
 		rtos_sema_give(event_priv.task_wake_sema);
@@ -33,6 +34,7 @@ void whc_fullmac_sdio_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb, u16 size)
 		}
 
 		break;
+#endif
 	case WHC_WIFI_EVT_XIMT_PKTS:
 		/* put the inic message to the queue */
 		if (whc_msg_enqueue(skb, &dev_xmit_priv.xmit_queue) == RTK_FAIL) {
@@ -43,7 +45,11 @@ void whc_fullmac_sdio_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb, u16 size)
 
 		break;
 	default:
+#ifdef CONFIG_WHC_CMD_PATH
+		whc_dev_pkt_rx_to_user(rxbuf, rxbuf, size);
+#else
 		RTK_LOGE(TAG_WLAN_INIC, "Event(%ld) unknown!\n", event);
+#endif
 		break;
 	}
 
@@ -67,6 +73,8 @@ void whc_fullmac_sdio_dev_init(void)
 	/* initialize the dev priv */
 	whc_dev_init_priv();
 
+#ifdef CONFIG_WHC_WIFI_API_PATH
 	whc_dev_api_init();
+#endif
 }
 

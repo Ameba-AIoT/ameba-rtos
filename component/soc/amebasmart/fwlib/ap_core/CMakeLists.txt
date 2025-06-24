@@ -78,7 +78,7 @@ set_source_files_properties(ameba_xlat_table.c PROPERTIES INCLUDE_DIRECTORIES
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/soc
-ameba_add_internal_library(ap_core
+ameba_add_internal_library(fwlib_ap_core
     p_SOURCES
         ${private_sources}
     p_INCLUDES

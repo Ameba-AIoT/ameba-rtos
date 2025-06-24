@@ -13,15 +13,11 @@
 #include "lwip/udp.h"
 #include "lwip_netconf.h"
 
-#ifdef CONFIG_WHC_BRIDGE
 /* set host state for dev */
 u8 whc_bridge_hostrdy;
-#endif
 
 u8 whc_bridge_default_direction = PORT_TO_HOST;
 struct list_head bridge_filter_head;
-
-#ifdef CONFIG_WHC_BRIDGE
 
 /**
  * @brief  create a node for target filter
@@ -196,10 +192,7 @@ u8  whc_bridge_dev_api_get_default_direction(void)
  * @param  len: data len to be sent.
  * @return none.
  */
-void whc_bridge_dev_api_send_to_host(u8 *data, u32 len)
+void whc_dev_api_send_to_host(u8 *data, u32 len)
 {
 	whc_dev_api_send_data(data, len);
 }
-
-#endif
-

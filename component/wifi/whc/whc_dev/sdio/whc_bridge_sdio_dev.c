@@ -11,6 +11,8 @@
 void whc_bridge_sdio_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb, u16 size)
 {
 	u32 event = *(u32 *)rxbuf;
+	struct whc_api_info *ret_msg;
+	(void) ret_msg;
 
 	switch (event) {
 	case WHC_WIFI_EVT_XIMT_PKTS:
@@ -22,9 +24,30 @@ void whc_bridge_sdio_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb, u16 size)
 		rtos_sema_give(dev_xmit_priv.xmit_sema);
 
 		break;
+#ifdef CONFIG_WHC_WIFI_API_PATH
+	case WHC_WIFI_EVT_API_CALL:
+		event_priv.rx_api_msg = rxbuf;
+		rtos_sema_give(event_priv.task_wake_sema);
+
+		break;
+	case WHC_WIFI_EVT_API_RETURN:
+		if (event_priv.b_waiting_for_ret) {
+			event_priv.rx_ret_msg = rxbuf;
+			rtos_sema_give(event_priv.api_ret_sema);
+		} else {
+			ret_msg = (struct whc_api_info *)rxbuf;
+			RTK_LOGW(TAG_WLAN_INIC, "too late to receive API ret, ID: 0x%x!\n", ret_msg->api_id);
+
+			/* free rx buffer */
+			rtos_mem_free((u8 *)ret_msg);
+		}
+
+		break;
+#endif
 	default:
-		whc_bridge_dev_pkt_rx_to_user(rxbuf, size);
-		rtos_mem_free(rxbuf);
+#ifdef CONFIG_WHC_CMD_PATH
+		whc_dev_pkt_rx_to_user(rxbuf, rxbuf, size);
+#endif
 		break;
 	}
 
@@ -41,11 +64,18 @@ void whc_bridge_sdio_dev_init(void)
 {
 	rtk_log_level_set("SPDIO", RTK_LOG_ERROR);
 
+	wifi_set_user_config();
+	init_skb_pool(wifi_user_config.skb_num_np, wifi_user_config.skb_buf_size ? wifi_user_config.skb_buf_size : MAX_SKB_BUF_SIZE, SKB_CACHE_SZ);
+
 	whc_sdio_dev_init();
 
 	whc_bridge_dev_pktfilter_init();
 
 	/* initialize the dev priv, for pkt trx */
 	whc_dev_init_priv();
+
+#ifdef CONFIG_WHC_WIFI_API_PATH
+	whc_dev_api_init();
+#endif
 }
 
