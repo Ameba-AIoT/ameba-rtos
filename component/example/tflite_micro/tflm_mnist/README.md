@@ -117,7 +117,7 @@ TfLiteStatus RegisterOps(MnistOpResolver& op_resolver) {
 Refer to https://ai.google.dev/edge/litert/microcontrollers/get_started#run_inference for more details about running inference with tflite-micro.
 
 ### Step 5. Build Example
-
+ 
 - On AmebaDplus
 
   - **Enable tflite_micro configurations**:
@@ -129,7 +129,10 @@ Refer to https://ai.google.dev/edge/litert/microcontrollers/get_started#run_infe
     < AI Config  --->
      [*]  Enable TFLITE MICRO
 
-  - **GCC:** use CMD ```./build.py -a tflm_mnist``` to compile example
+  - **Build and Download**:
+    * Refer to the SDK Examples section of the online documentation to generate images.
+    * `Download` images to board by Ameba Image Tool.
+
 
 - On AmebaLite KM4
 
@@ -142,7 +145,9 @@ Refer to https://ai.google.dev/edge/litert/microcontrollers/get_started#run_infe
     < AI Config  --->
      [*]  Enable TFLITE MICRO
 
-  - **GCC:** use CMD ```./build.py -a tflm_mnist``` to compile example
+  - **Build and Download**:
+    * Refer to the SDK Examples section of the online documentation to generate images.
+    * `Download` images to board by Ameba Image Tool.
 
 - On AmebaSmart
 
@@ -155,7 +160,9 @@ Refer to https://ai.google.dev/edge/litert/microcontrollers/get_started#run_infe
     < AI Config  --->
      [*]  Enable TFLITE MICRO
 
-  - **GCC:** use CMD ```./build.py -a tflm_mnist``` to compile example
+  - **Build and Download**:
+    * Refer to the SDK Examples section of the online documentation to generate images.
+    * `Download` images to board by Ameba Image Tool.
 
 **Expected Results:**
 

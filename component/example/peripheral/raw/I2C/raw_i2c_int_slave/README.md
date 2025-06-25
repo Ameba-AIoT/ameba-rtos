@@ -26,8 +26,9 @@ slave's GND connect to master's GND
 
 # SW Configuration
 
-1. How to compile :
-   		perform cmd: './build.py -a raw_i2c_int_slave' in directory {sdk_path}/amebaXXX_gcc_project
+1. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 2. How to modify gpio pin:
    you can also modify pinmux group settings according to correct pinmux table.

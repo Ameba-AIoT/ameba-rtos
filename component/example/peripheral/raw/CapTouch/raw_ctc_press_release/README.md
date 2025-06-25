@@ -26,9 +26,9 @@ In this example, CapTouch offers a wide range of capacitance detection.
 1. Parameters in `CTC_Ch_Config[]`, including `Diff Threshold`, `Mbias Current`, `ETC N_Nosie Threshold`, `ETC P_Noise Threshold` and `Channle Enable`, can be adjusted independently according to different applicaiton environmnet.
 2. `CTC_DATA_DBG` can be modified to configure whether to print out CapTouch sample data `periodically`.
 3. `TIM_IDX` and `TIM_PERIOD` can be modified to configure basic timer index which can be `0-7` and timer period in `ms`.
-4. How to use:
-    * Run `./build.py -a raw_ctc_press_release` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-    * `Download` images to board by Ameba Image Tool.
+4. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 

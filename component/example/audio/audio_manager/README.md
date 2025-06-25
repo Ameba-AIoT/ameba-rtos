@@ -33,5 +33,12 @@ take amebadplus for example: 48000 rate, choose PLL_688P128M. 44100 rate choose 
 2. Please refer to component/audio/audio_hal/xx/README.md.
 
 ## How to run <a name = "How to run"></a>
+
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
+
+### Note
+
 1. Use CMD `./build.py -a audio_manager -p` to compile this example.
 2. For playing run command and parameters, please refer to app_example.c.

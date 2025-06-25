@@ -16,12 +16,11 @@
 #define RTW_COEX_API_EXT_H
 
 #include <stdlib.h>
+#include <string.h>
 #include "PortNames.h"
 #include "PinNames.h"
 #include "rtw_coex_host_api.h"
 
-extern struct extchip_para_t g_extchip_para;
-extern u8 g_extchip_en;
 extern PinName port_pin(PortName port, int pin_n);
 
 static inline uint16_t uart_pinname_to_pin(char *pin_name)
@@ -36,14 +35,14 @@ static inline uint16_t uart_pinname_to_pin(char *pin_name)
 	} else if (strstr(pin_name, "PC_") != NULL) {
 		port = 2; //PORT_C
 	} else {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "!!!!!!!!!! error pin name, SHOULD be like PA_3 !!!!!!!!!!!");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[COEX][EXT] !!!!!!!!!! error pin name, SHOULD be like PA_3 !!!!!!!!!!!");
 		return 0;
 	}
 	underline = strchr(pin_name, '_');
 	pin = strtoul(underline + 1, (char **)NULL, 10);
 
 	if (pin >= 32) {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "!!!!!!!!!! error pin name, SHOULD less than 32 !!!!!!!!!!!");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[COEX][EXT] !!!!!!!!!! error pin name, SHOULD less than 32 !!!!!!!!!!!");
 		return 0;
 	}
 	pin = (uint16_t)port_pin((PortName)port, (int)pin);
@@ -53,68 +52,66 @@ static inline uint16_t uart_pinname_to_pin(char *pin_name)
 //////////////////////////////////////////////////////////////////
 /////////// called by main.c, for init parameters from menuconfig
 //////////////////////////////////////////////////////////////////
-static inline void coex_extc_paras_config(void)
+static inline void coex_extc_paras_config(struct extchip_para_t *p_extchip_para)
 {
-	g_extchip_en = true;
-
 // pta mode
 #if defined(CONFIG_EXT_PTA_MODE_SIMPLE)
-	g_extchip_para.pta_index = EXT_PTA1;
+	p_extchip_para->pta_index = EXT_PTA1;
 #else
-	g_extchip_para.pta_index = EXT_PTA2;
+	p_extchip_para->pta_index = EXT_PTA2;
 #endif
 
 // protocol
 #if defined(CONFIG_EXT_PROTOCOL_WPAN)
-	g_extchip_para.active_protocol = EXT_PTA_PROTOCOL_WPAN;
+	p_extchip_para->active_protocol = EXT_PTA_PROTOCOL_WPAN;
 #elif defined(CONFIG_EXT_PROTOCOL_BT)
-	g_extchip_para.active_protocol = EXT_PTA_PROTOCOL_BT;
+	p_extchip_para->active_protocol = EXT_PTA_PROTOCOL_BT;
 #elif defined(CONFIG_EXT_PROTOCOL_BT_WPAN)
-	g_extchip_para.active_protocol = EXT_PROTOCOL_BT_WPAN;
+	p_extchip_para->active_protocol = EXT_PROTOCOL_BT_WPAN;
 #else
-	g_extchip_para.active_protocol = EXT_PTA_PROTOCOL_UNDEF;
+	p_extchip_para->active_protocol = EXT_PTA_PROTOCOL_UNDEF;
 #endif
 
 // pri mode
 #if defined(CONFIG_EXT_PRIORITY_DIRECTIONAL)
-	g_extchip_para.pri_mode = 0;
+	p_extchip_para->pri_mode = 0;
 #else
-	g_extchip_para.pri_mode = 1;
+	p_extchip_para->pri_mode = 1;
 #endif
 
 // req polar
 #if defined(CONFIG_EXT_REQUEST_POLAR_HIGH)
-	g_extchip_para.req_polar = 1;
+	p_extchip_para->req_polar = 1;
 #else
-	g_extchip_para.req_polar = 0;
+	p_extchip_para->req_polar = 0;
 #endif
 
 // gnt polar
 #if defined(CONFIG_EXT_GNT_POLAR_LOW)
-	g_extchip_para.gnt_polar = 0;
+	p_extchip_para->gnt_polar = 0;
 #else
-	g_extchip_para.gnt_polar = 1;
+	p_extchip_para->gnt_polar = 1;
 #endif
 
 // pri_det_time
 #if defined(CONFIG_EXT_PRI_DET_TIME)
-	g_extchip_para.pri_det_time = CONFIG_EXT_PRI_DET_TIME;
+	p_extchip_para->pri_det_time = CONFIG_EXT_PRI_DET_TIME;
 #endif
 
 // trx det time
 #if defined(CONFIG_EXT_TRX_DET_TIME)
-	g_extchip_para.trx_det_time = CONFIG_EXT_TRX_DET_TIME;
+	p_extchip_para->trx_det_time = CONFIG_EXT_TRX_DET_TIME;
 #endif
 
 // pta pinmux pin set
 #if defined(CONFIG_EXT_PTA_PIN_REQ)
-	g_extchip_para.pta_pad_req = uart_pinname_to_pin(CONFIG_EXT_PTA_PIN_REQ);
+	p_extchip_para->pta_pad_req = uart_pinname_to_pin(CONFIG_EXT_PTA_PIN_REQ);
 #endif
 #if defined(CONFIG_EXT_PTA_PIN_PRI)
-	g_extchip_para.pta_pad_pri = uart_pinname_to_pin(CONFIG_EXT_PTA_PIN_PRI);
+	p_extchip_para->pta_pad_pri = uart_pinname_to_pin(CONFIG_EXT_PTA_PIN_PRI);
 #endif
 #if defined(CONFIG_EXT_PTA_PIN_GNT)
-	g_extchip_para.pta_pad_gnt = uart_pinname_to_pin(CONFIG_EXT_PTA_PIN_GNT);
+	p_extchip_para->pta_pad_gnt = uart_pinname_to_pin(CONFIG_EXT_PTA_PIN_GNT);
 #endif
 
 

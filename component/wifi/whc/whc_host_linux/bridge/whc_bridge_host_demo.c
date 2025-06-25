@@ -209,6 +209,34 @@ int whc_bridge_host_set_mac(uint8_t idx, char *mac)
 	return ret;
 }
 
+int whc_bridge_host_send_atcmd(char *data)
+{
+	int buf_len = strlen(data);
+	uint8_t buf[256] = {0};
+	uint8_t *ptr = buf;
+	int ret = 0;
+
+	printf("send atcmd(%d) : %s \r\n", buf_len, data);
+
+	if (buf_len > 250) {
+		printf("cmd len is too long!\r\n");
+	} else {
+		*(uint32_t *)ptr = WHC_ATCMD_TEST;
+		ptr += 4;
+		buf_len += 4;
+		memcpy(ptr, data, strlen(data));
+		ptr += strlen(data);
+		*ptr = '\r';
+		ptr += 1;
+		*ptr = '\n';
+		ptr += 1;
+		buf_len += 2;
+		ret = whc_bridge_host_api_send_nl_data(buf, buf_len);
+	}
+
+	return ret;
+}
+
 int whc_bridge_host_nl_init(void)
 {
 	int nl_fd;
@@ -315,6 +343,8 @@ void whc_bridge_host_cmd_hdl(char *input)
 			}
 		} else if (strcmp(args[0], "init") == 0) {
 			whc_bridge_host_nl_init();
+		} else if (strncmp(args[0], "AT", 2) == 0) {
+			whc_bridge_host_send_atcmd((char *)args[0]);
 		} else {
 			printf("No command entered.\n");
 		}
@@ -361,6 +391,12 @@ void whc_bridge_host_rx_buf_hdl(struct msgtemplate *msg)
 			default:
 				break;
 			}
+		} else if (bridge_event == WHC_ATCMD_TEST) {
+			pos = pos + sizeof(uint32_t);
+			real_len = pos[0] | (pos[1] << 8);
+			msg->buf[NLA_HDRLEN + 6 + real_len] = '\0';
+			pos += 2;
+			printf("%s", pos);
 		}
 	}
 }

@@ -141,8 +141,8 @@ static void whc_fullmac_host_event_set_netif_info(struct event_priv_t *event_pri
 {
 	int idx = (int)param_buf[0];
 	unsigned char *dev_addr = (u8 *)&param_buf[1];
-	unsigned char last;
 	int softap_addr_offset_idx = global_idev.wifi_user_config.softap_addr_offset_idx;
+	unsigned char softap_mac[ETH_ALEN];
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: set netif info.");
 
@@ -166,7 +166,11 @@ static void whc_fullmac_host_event_set_netif_info(struct event_priv_t *event_pri
 	}
 #endif
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0))
 	memcpy((void *)global_idev.pndev[idx]->dev_addr, dev_addr, ETH_ALEN);
+#else
+	eth_hw_addr_set(global_idev.pndev[idx], dev_addr);
+#endif
 	dev_dbg(global_idev.fullmac_dev, "MAC ADDR [%02x:%02x:%02x:%02x:%02x:%02x]", *global_idev.pndev[idx]->dev_addr,
 			*(global_idev.pndev[idx]->dev_addr + 1), *(global_idev.pndev[idx]->dev_addr + 2),
 			*(global_idev.pndev[idx]->dev_addr + 3), *(global_idev.pndev[idx]->dev_addr + 4),
@@ -174,14 +178,17 @@ static void whc_fullmac_host_event_set_netif_info(struct event_priv_t *event_pri
 
 	if (global_idev.pndev[0]) {
 		/*set ap port mac address*/
-		memcpy((void *)global_idev.pndev[1]->dev_addr, global_idev.pndev[0]->dev_addr, ETH_ALEN);
-
+		memcpy(softap_mac, global_idev.pndev[0]->dev_addr, ETH_ALEN);
 		if (softap_addr_offset_idx == 0) {
-			last = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + (1 << 1);
+			softap_mac[softap_addr_offset_idx] = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + (1 << 1);
 		} else {
-			last = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + 1;
+			softap_mac[softap_addr_offset_idx] = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + 1;
 		}
-		memcpy((void *)&global_idev.pndev[1]->dev_addr[softap_addr_offset_idx], &last, 1);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0))
+		memcpy((void *)global_idev.pndev[1]->dev_addr, softap_mac, ETH_ALEN);
+#else
+		eth_hw_addr_set(global_idev.pndev[1], softap_mac);
+#endif
 	}
 
 func_exit:

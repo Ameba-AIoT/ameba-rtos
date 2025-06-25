@@ -38,9 +38,9 @@ This example describes how to use GPIO Port read/write by MBED GPIO API.
 
 # SW configuration
 
-1. How to compile :
-
-   - perform cmd: './build.py -a mbed_gpio_port' in directory {sdk_path}/amebaXXX_gcc_project 
+1. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 2. Modify macro `PORT_OUTPUT_TEST` to change output/input test
    `1`: for output test
    `0`: for input test

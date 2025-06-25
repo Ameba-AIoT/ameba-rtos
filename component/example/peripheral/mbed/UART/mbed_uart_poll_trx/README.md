@@ -26,9 +26,9 @@ By default, `UART0` is used to communicate with PC under `38400bps` by polling.
 1. `UART_IDX` and `UART_BAUD` can be modified to configure desired UART device and baudrate.
 2. Accordingly, `UART_TX` and `UART_RX` in example_uart_ext.h should be updated if `UART_IDX` is modified.
    For more info of UART pins, refer to pinmux spec.
-3. How to use:
-    * Run `./build.py -a mbed_uart_polling_trx` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-    * `Download` images to board by Ameba Image Tool.
+3. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 

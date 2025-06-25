@@ -91,14 +91,14 @@ extern "C"
 #define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_FRAME_DURATION RTK_BT_LE_FRAME_DURATION_CFG_10_MS
 /* pa sync create parameter */
 #define RTK_BT_LE_AUDIO_BROADCAST_SYNC_TIMEOUT  100
-/** @brief  Default minimum primary advertising interval when device is discoverable (units of 0.625ms, 32=20ms) */
-#define RTK_BT_LE_AUDIO_PRIMARY_ADV_INTERVAL_MIN (48)
+/** @brief  Default minimum primary advertising interval when device is discoverable (units of 0.625ms, 96=60ms) */
+#define RTK_BT_LE_AUDIO_PRIMARY_ADV_INTERVAL_MIN (96)
 /** @brief  Default maximum primary advertising interval */
-#define RTK_BT_LE_AUDIO_PRIMARY_ADV_INTERVAL_MAX (48)
-/** @brief  Default minimum periodic advertising interval when device is discoverable (units of 1.25 ms, 80=100ms) */
-#define RTK_BT_LE_AUDIO_PA_INTERVAL_MIN (80)
+#define RTK_BT_LE_AUDIO_PRIMARY_ADV_INTERVAL_MAX (192)
+/** @brief  Default minimum periodic advertising interval when device is discoverable (units of 1.25 ms, 48=60ms) */
+#define RTK_BT_LE_AUDIO_PA_INTERVAL_MIN (48)
 /** @brief  Default maximum periodic advertising interval */
-#define RTK_BT_LE_AUDIO_PA_INTERVAL_MAX (80)
+#define RTK_BT_LE_AUDIO_PA_INTERVAL_MAX (96)
 /*                                              user cfg broadcast end                                   */
 /*                                             user cfg le audio combo demo configuration start          */
 #define RTK_BT_LE_AUDIO_COMPO_DEMO_AUDIO_STREAM_SAMPLE_RATE     RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K

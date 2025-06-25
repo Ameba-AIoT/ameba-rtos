@@ -34,7 +34,7 @@ void whc_bridge_dev_api_get_filter_node(struct whc_bridge_dev_pkt_filter *filter
 void whc_bridge_dev_api_send_to_host(u8 *data, u32 len);
 void whc_bridge_dev_pktfilter_init(void);
 
-void whc_bridge_dev_pkt_rx_to_user(u8 *rxbuf, u16 size);
-void whc_bridge_dev_init_user_task(void);
+void whc_dev_pkt_rx_to_user(u8 *rxbuf, u8 *real_buf, u16 size);
+void whc_dev_init_cmd_path_task(void);
 
 #endif

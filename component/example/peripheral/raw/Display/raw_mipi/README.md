@@ -5,8 +5,9 @@ This example describes how to build and use MIPI, Which shows how to display pic
 `PA_14` shall connect to LCM reset pin During the PCB design phase.
 
 # SW configuration
-- How to compile :
-  - perform cmd: './build.py -a raw_mipi' in directory {sdk_path}/amebaXXX_gcc_project
+- Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 There are five pictures on the screen that keep switching.

@@ -57,8 +57,9 @@ The built-in python HTTP server locates in [tools\DownloadServer(HTTP)](tools/Do
     static const char *host = "192.168.137.1";  //"m-apps.oss-cn-shenzhen.aliyuncs.com"
     static const char *resource = "ota_all.bin";     //"051103061600.bin"
     ```
-2. Navigate to the project directory according to the chip you use. For GCC enviornment, type command `./build.py -a wificast_ota` to compile the example.
-3. Download the image into flash for both sender and receiver.
+2. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool(Download the image into flash for both sender and receiver).
 
 ### Step 4: Run Sender and Receiver
 

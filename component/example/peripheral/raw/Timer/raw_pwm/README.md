@@ -35,18 +35,10 @@ For example:
 	GND <--> LED7 <---> PB_19
 
 # SW configuration
-1. How to compile :
+1. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
-   - make and download new image
-   
-     - in {SDK}\amebaxxx_gcc_project path, input
-   
-     ```shell
-    ./build.py -a raw_pwm
-     ```
-   
-     - Use Realtek AmebaImageTool to download the image under auto_build folder to development board
-     - press reset/chip_en button, then example will be start running.
 2. How to modify gpio pin:
    - you can also modify pinmux group settings according to correct pinmux table. For example:
     If you want to modify pinmux group setting in AmebaSmart, then you should refer to UM0602_RTL8730E_pinmux.xls

@@ -29,9 +29,9 @@ By default, `16 LEDs` will be lit in `red-off-green-off-blue-off` in turn and th
    For more info of LEDC pins, refer to pinmux spec.
 4. `LED_T1H`/`LED_T1L`/`LED_T0H`/`LED_T0L` in ledc_ext.h can be modified to configure LEDC waveform features according to LED spec.
 5. `F_INTERVAL_NS` and `LED_RST` in ledc_ext.h can be modified to set time interval between frames.
-6. How to use:
-    * Run `./build.py -a raw_ledc_ws2812` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-    * `Download` images to board by Ameba Image Tool.
+6. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 

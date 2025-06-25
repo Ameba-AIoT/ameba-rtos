@@ -88,7 +88,7 @@
 #undef CONFIG_ADDRESS_CAM
 #endif
 
-//#define CONFIG_P2P
+#define CONFIG_P2P
 
 /*enable dynamic mechanism for driver*/
 #define CONFIG_WIFI_RA

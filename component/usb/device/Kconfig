@@ -19,6 +19,7 @@ if USBD_COMPOSITE_MENU
             bool "CDC ACM + UAC"
             depends on SUPPORT_USBD_UAC
             select USBD_COMPOSITE_CDC_ACM_UAC if CORE_AS_AP
+            select AUDIO_FWK if CORE_AS_AP
             choice
                 prompt "Select UAC Version"
                 depends on USBD_COMPOSITE_CDC_ACM_UAC_MENU
@@ -33,6 +34,7 @@ if USBD_COMPOSITE_MENU
             bool "HID + UAC"
             depends on SUPPORT_USBD_UAC
             select USBD_COMPOSITE_HID_UAC if CORE_AS_AP
+            select AUDIO_FWK if CORE_AS_AP
             choice
                 prompt "Select UAC Version"
                 depends on USBD_COMPOSITE_HID_UAC_MENU
@@ -64,6 +66,7 @@ config USBD_UAC_MENU
     bool "UAC"
     depends on SUPPORT_USBD_UAC
     select USBD_UAC if CORE_AS_AP
+    select AUDIO_FWK if CORE_AS_AP
     choice
         prompt "Select UAC Version"
         depends on USBD_UAC_MENU

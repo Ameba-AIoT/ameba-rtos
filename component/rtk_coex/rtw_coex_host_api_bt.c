@@ -1,4 +1,3 @@
-#include "wifi_api.h"
 #include "rtw_coex_host_api.h"
 
 /*
@@ -44,6 +43,7 @@ __weak void rtk_coex_btc_set_pta(u8 type, u8 role, u8 process)
 /////////////////////////////////////////////////////////////////////////////
 __weak void bt_coex_send_mailbox_cmd(uint8_t *user_data, uint16_t length)
 {
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "weak bt_coex_send_mailbox_cmd, check!!!\r\n");
 	(void) user_data;
 	(void) length;
 }

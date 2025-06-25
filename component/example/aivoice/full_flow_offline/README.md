@@ -13,13 +13,14 @@ The pre-recorded audio used in this example is a 3 channel audio, channel 1 and 
 # SW Configuration
 ### AmebaSmart PSRAM
 
-1. make menuconfig  
+1. Configure menuconfig  
 ```< CONFIG BOOT OPTION  ---> [*] XIP_FLASH ```  
 ```< MENUCONFIG FOR CA32 CONFIG ---> AI Config ---> [*] Enable TFLITE MICRO```  
 ```< MENUCONFIG FOR CA32 CONFIG ---> AI Config ---> [*] Enable AIVoice  ---> Select AFE Resource (afe_res_2mic50mm)```
 
-2. cd amebasmart_gcc_project  
-```./build.py -a full_flow_offline```
+2. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 * full_flow_offline result

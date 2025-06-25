@@ -8,7 +8,11 @@
 #include <osif.h>
 #include "hci_platform.h"
 #include "rtk_coex.h"
+#if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_host_api.h"
+#else
+#error "Please Enable Coexist!!!"
+#endif
 
 #if defined(HCI_BT_COEX_ENABLE) && HCI_BT_COEX_ENABLE
 
@@ -1064,8 +1068,13 @@ void bt_coex_send_mailbox_cmd(uint8_t *user_data, uint16_t length)
 
 static void bt_coex_set_mailbox_to_wifi(uint8_t *user_data, uint16_t length)
 {
+#if defined(CONFIG_BT_COEXIST)
 	DBG_BT_COEX_DUMP("bt_coex_set_mailbox_to_wifi: pdata = ", user_data, length);
 	rtk_coex_btc_bt_hci_notify(user_data, length, COEX_H2C_BT_HCI_NOTIFY_SW_MAILBOX);
+#else
+	(void) user_data;
+	(void) length;
+#endif
 }
 
 static void bt_coex_parse_mailbox_event(uint8_t status, uint8_t mailbox_id, uint8_t payload_len, uint8_t *payload)

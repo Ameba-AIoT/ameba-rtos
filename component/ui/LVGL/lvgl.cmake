@@ -8,13 +8,6 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 #----------------------------------------#
 # Component public part, user config begin
-
-
-# You may use if-else condition to set or update predefined variable above
-ameba_list_append_if(CONFIG_GUI_EN public_libraries
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_lvgl.a
-)
-
 ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/lvgl/src
     ${CMAKE_CURRENT_SOURCE_DIR}/lvgl/src/core
@@ -24,6 +17,9 @@ ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/lvgl/src/hal
     ${CMAKE_CURRENT_SOURCE_DIR}/lvgl/src/misc
     ${CMAKE_CURRENT_SOURCE_DIR}/lvgl/src/widgets
+    ${CMAKE_CURRENT_SOURCE_DIR}/lvgl/demos/widgets
+    ${CMAKE_CURRENT_SOURCE_DIR}/lvgl/demos/stress
+    ${CMAKE_CURRENT_SOURCE_DIR}/lvgl/demos/benchmark
     ${CMAKE_CURRENT_SOURCE_DIR}/port/${c_SOC_TYPE}
 )
 
@@ -234,7 +230,7 @@ ameba_list_append(private_compile_options
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
-ameba_add_external_app_library(lvgl
+ameba_add_internal_library(lvgl
     p_SOURCES
         ${private_sources}
     p_INCLUDES

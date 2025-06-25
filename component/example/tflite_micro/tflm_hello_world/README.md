@@ -13,6 +13,7 @@ for Microcontrollers for running inference on a microcontroller.
 3. AmebaDplus
 
 ## Sw Configuration:
+
 * On AmebaDplus
 1. **Enable tflite_micro configurations**:
 ```./menuconfig.py```
@@ -20,7 +21,9 @@ for Microcontrollers for running inference on a microcontroller.
     < Audio Config  --->
     [*]  Enable TFLITE MICRO
 
-2. **GCC:** use CMD ```./build.py -a tflm_hello_world``` to compile example
+2. **Build and Download**:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 
 ## Expected Result

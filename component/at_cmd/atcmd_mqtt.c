@@ -285,8 +285,8 @@ void mqtt_main(void *param)
 	}
 
 	while (1) {
-		if (MQTT_TASK_START != mqttCb->taskState) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_main] Should stop now\r\n");
+		if (mqttCb->taskState != MQTT_TASK_START) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_main] linkid: %d, should stop now\r\n", mqttCb->linkId);
 			break;
 		}
 
@@ -295,21 +295,24 @@ void mqtt_main(void *param)
 		timeout.tv_sec = MQTT_SELECT_TIMEOUT;
 		timeout.tv_usec = 0;
 
-		if (0 <= mqttCb->network.my_socket) {
+		if (mqttCb->network.my_socket >= 0) {
 			FD_SET(mqttCb->network.my_socket, &read_fds);
 			FD_SET(mqttCb->network.my_socket, &except_fds);
 			FreeRTOS_Select(mqttCb->network.my_socket + 1, &read_fds, NULL, &except_fds, &timeout);
-			/* The my_socket may be close, then will try reopen in mqtt_clent_data_proc if STATUS set to MQTT_START */
+			/* The my_socket may be close */
 			if (FD_ISSET(mqttCb->network.my_socket, &except_fds)) {
+				RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_main] linkid: %d, except_fds is set\r\n", mqttCb->linkId);
 				MQTTSetStatus(&mqttCb->client, MQTT_START);
 			}
+		} else {
+			rtos_time_delay_ms(MQTT_SELECT_TIMEOUT * 1000);
 		}
 		/* Process the received data. */
 		mqtt_clent_data_proc(mqttCb, &read_fds);
 	}
 
 end:
-	RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_main] Stop mqtt task\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_main] linkid: %d, stop mqtt task\r\n", mqttCb->linkId);
 	mqttCb->taskState = MQTT_TASK_NOT_CREATE;
 	mqttCb->taskHandle = NULL;
 	rtos_task_delete(mqttCb->taskHandle);
@@ -406,7 +409,8 @@ static void mqtt_release_resource(MQTT_CONTROL_BLOCK *pMqttCb)
 static void mqtt_message_arrived(MessageData *data, void *param)
 {
 	MQTT_CONTROL_BLOCK *mqttCb = (MQTT_CONTROL_BLOCK *)param;
-	char *topicsrc = NULL;
+	char *topicsrc = NULL, *topicdest = NULL;
+	int topiclen = 0;
 
 	if (mqttCb == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[%s] mqttCb is null\r\n", __func__);
@@ -415,15 +419,26 @@ static void mqtt_message_arrived(MessageData *data, void *param)
 
 	if (data->topicName->cstring != NULL) {
 		topicsrc = data->topicName->cstring;
+		topiclen = strlen(topicsrc);
 	} else {
 		topicsrc = data->topicName->lenstring.data;
+		topiclen = data->topicName->lenstring.len;
 	}
 
+	topicdest = (char *)rtos_mem_zmalloc(topiclen + 1);
+	if (topicdest == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[%s] malloc failed\n", __func__);
+		return;
+	}
+	strncpy(topicdest, topicsrc, topiclen);
+
 	at_printf_lock();
-	at_printf_indicate("[MQTT][DATA][%d][%s][%d][%d]:", mqttCb->linkId, topicsrc, data->message->id, data->message->payloadlen);
+	at_printf_indicate("[MQTT][DATA][%d][%s][%d][%d]:", mqttCb->linkId, topicdest, data->message->id, data->message->payloadlen);
 	at_printf_data((char *)data->message->payload, (u32)data->message->payloadlen);
 	at_printf("\r\n");
 	at_printf_unlock();
+
+	rtos_mem_free(topicdest);
 }
 
 static MQTT_RESULT_ENUM mqtt_string_copy(char **dest, char *src, size_t sz)
@@ -1466,16 +1481,6 @@ void at_mqttreset(void *arg)
 	/* No need any other parameters. */
 	for (; MQTT_MAX_CLIENT_NUM > i; i++) {
 		mqttCb = &g_mqttCb[i];
-		/* Disconnect client. */
-		if (mqttCb->client.isconnected) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTRESET] Still connected\r\n");
-			res = MQTTDisconnect(&mqttCb->client);
-			if (0 != res) {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTRESET] Can not disconnect\r\n");
-				/* Continue to stop tasks, do not break here. */
-			}
-			mqttCb->client.isconnected = 0;
-		}
 
 		/* Stop the task. */
 		if (MQTT_TASK_START == mqttCb->taskState) {
@@ -1485,10 +1490,20 @@ void at_mqttreset(void *arg)
 			}
 		}
 
+		/* Disconnect client. */
+		if (mqttCb->client.isconnected) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTRESET] linkid: %d, still connected\r\n", mqttCb->linkId);
+			res = MQTTDisconnect(&mqttCb->client);
+			if (0 != res) {
+				RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTRESET] linkid: %d, can not disconnect\r\n", mqttCb->linkId);
+			}
+			mqttCb->client.isconnected = 0;
+		}
+
 		/* Disconnect host. */
 		if (mqttCb->networkConnect) {
 			if (NULL != mqttCb->network.disconnect) {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTRESET] Disconnect from %s\r\n", mqttCb->host);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTRESET] linkid: %d, disconnect from %s\r\n", mqttCb->linkId, mqttCb->host);
 				mqttCb->network.disconnect(&mqttCb->network);
 			}
 			mqttCb->networkConnect = 0;

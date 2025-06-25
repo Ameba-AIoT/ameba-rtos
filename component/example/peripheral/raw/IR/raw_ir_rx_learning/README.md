@@ -4,14 +4,13 @@ This example describes how to use IR receive and learn the received waveform fre
 
 # HW Configuration
 
-Connect the rx pin to another board's tx pin defined in `ir_ext.h`.
+Connect the rx pin to another board's tx pin defined in `example_ir_ext.h`.
 
 # SW configuration
 
-- How to compile :
-
-  - perform cmd: './build.py -a raw_ir_rx_learning' in directory {sdk_path}/amebaXXX_gcc_project.
-- IR learn data Flow:
+- Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.- IR learn data Flow:
 
   1. Enable IR RX mode.
   2. IR recieve data at `IR_RX_FIFO_LEVEL_INT` and store data to queue.
@@ -23,10 +22,10 @@ Connect the rx pin to another board's tx pin defined in `ir_ext.h`.
      Note: when the non-carrier symbol is large enough, there may bring caculation overflow. when this happens, force (uint64_t)detect_time or (uint64_t)frequency data type to uint64_t.
 
 - If you choose another tx signal, then this step can be ignored. As well, a tx image should be build as following:
-  - By means of example located in sdk/component/example/peripheral/raw/IR/ir_tx_nec_polling/src, some modifications are necessary:
+  - By means of example located in sdk/component/example/peripheral/raw/IR/raw_ir_tx_nec_polling/example_raw_ir_tx_nec_polling.c, some modifications are necessary:
     - Define `IR_LOOP_TEST` to  `0`
     - Define `IR_TEST_LEARNNING` to `1`
-    - Rebuild the image as descriped in sdk/component/example/peripheral/raw/IR/ir_tx_nec_polling/README.md
+    - Rebuild the image as described in sdk/component/example/peripheral/raw/IR/raw_ir_tx_nec_polling/README.md
 # Expect result
 
 This example will print out detect_time and frequency of received data.

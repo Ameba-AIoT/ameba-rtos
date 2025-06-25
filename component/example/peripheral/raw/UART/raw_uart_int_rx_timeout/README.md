@@ -35,9 +35,9 @@ For more info of UART pins, refer to pinmux spec.
 1. Open super terminal or Ameba trace tool and set baudrate to `38400bps`, `1 stopbit`, `no parity`, `no flow control`.
 2. Characters from terminal input will be received in `rx_data_ready` ISR. If accumulated received data number reaches `13` before timeout, received characters will be transmitted to PC by interrupt. However, if not enough data is transmitted to demo board, corresponding log will be printed out and no characters will be looped back to PC.
 3. Characters sent from PC will be displayed on the terminal.
-4. How to use:
-    * Run `./build.py -a raw_uart_int_rx_timeout` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-    * `Download` images to board by Ameba Image Tool.
+4. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Note
 
