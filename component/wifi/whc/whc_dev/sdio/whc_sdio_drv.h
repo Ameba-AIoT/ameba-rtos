@@ -10,6 +10,8 @@
 #define whc_dev_tx_path_avail       whc_sdio_dev_tx_path_avail
 #define whc_dev_send                whc_sdio_dev_send
 
+#define whc_sdio_dev_event_int_hdl  whc_sdio_dev_pkt_rx
+
 struct whc_sdio_priv_t {
 	struct spdio_t dev;
 
@@ -23,6 +25,8 @@ u8 whc_sdio_dev_tx_path_avail(void);
 void whc_sdio_dev_init(void);
 void whc_sdio_dev_send_data(u8 *data, u32 len);
 void whc_sdio_dev_trigger_rx_handle(void);
+
+void whc_sdio_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb, u16 size);
 
 #endif
 

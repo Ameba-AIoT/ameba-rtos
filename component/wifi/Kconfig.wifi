@@ -3,7 +3,7 @@ if FULLMAC_DEV
         config NAN
             bool "Enable NAN"
             default n
-        config P2P
+        config WIFI_P2P_ENABLE
             bool "Enable P2P"
             default n
     endmenu
@@ -14,6 +14,10 @@ if WHC_INTF_IPC_MENU || WIFI_SINGLE_CORE_MENU
         bool "Enable WPS"
         default n
 endif
+
+config WIFI_EAP_ENABLE
+    bool "Enable EAP"
+    default n
 
 config WIFI_CSI_ENABLE
     bool "Enable CSI"
@@ -46,3 +50,9 @@ config WIFI_SPEAKER_ENABLE
 config HIGH_TP_TEST
     bool "Enable HIGH TP"
     default n
+
+if LINUX_FW_EN
+    config WIFI_P2P_ENABLE
+        bool "Enable P2P"
+        default n
+endif

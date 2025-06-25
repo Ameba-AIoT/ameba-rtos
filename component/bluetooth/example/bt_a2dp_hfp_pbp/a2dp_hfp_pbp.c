@@ -1532,10 +1532,6 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 	psbc_decoder_t->min_bitpool = pa2dp_codec->sbc.min_bitpool;
 	psbc_decoder_t->max_bitpool = pa2dp_codec->sbc.max_bitpool;
 	psbc_decoder_t->sbc_dec_mode = (sbc_channel_mode_t)SBC_MODE_STANDARD;
-	/* default A2DP sink play music local */
-#if defined(RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT
-	play_flag = true;
-#endif
 	a2dp_audio_track_hdl = rtk_bt_audio_track_add(RTK_BT_AUDIO_CODEC_SBC,
 												  (float)APP_BT_DEFAULT_A2DP_PBP_AUDIO_LEFT_VOLUME,
 												  (float)APP_BT_DEFAULT_A2DP_PBP_AUDIO_RIGHT_VOLUME,
@@ -1911,6 +1907,39 @@ static uint16_t app_bt_le_audio_lc3_codec_entity_remove(void *codec_entity)
 	return rtk_bt_audio_codec_remove(RTK_BT_AUDIO_CODEC_LC3, codec_entity);
 }
 
+static rtk_bt_audio_track_t *app_bt_le_audio_track_add(rtk_bt_le_audio_cfg_codec_t *p_codec)
+{
+	float left_volume = 0.0, right_volume = 0.0;
+	uint8_t channels = 0;
+	uint32_t audio_chnl = 0;
+	uint32_t rate = 0;
+	uint32_t duration = 0;
+
+	rate = app_bt_le_audio_translate_lea_samp_fre_to_audio_samp_rate(p_codec->sample_frequency);
+	if (p_codec->frame_duration == RTK_BT_LE_FRAME_DURATION_CFG_10_MS) {
+		duration = 10000;
+	} else {
+		duration = 7500;
+	}
+#if 1
+	channels = app_bt_le_audio_get_lea_chnl_num(p_codec->audio_channel_allocation);
+	audio_chnl = app_bt_le_audio_translate_le_chnl_to_audio_chnl(p_codec->audio_channel_allocation);
+	if (audio_chnl & RTK_BT_LE_AUDIO_LOCATION_FL) {
+		left_volume = RTK_BT_DEFAULT_AUDIO_TRACK_LEFT_VOLUME;
+	}
+	if (audio_chnl & RTK_BT_LE_AUDIO_LOCATION_FR) {
+		right_volume = RTK_BT_DEFAULT_AUDIO_TRACK_RIGHT_VOLUME;
+	}
+#else
+	channels = 2;//default init two channel each track
+	left_volume = RTK_BT_DEFAULT_AUDIO_TRACK_LEFT_VOLUME;
+	right_volume = RTK_BT_DEFAULT_AUDIO_TRACK_RIGHT_VOLUME;
+#endif
+
+	return rtk_bt_audio_track_add(RTK_BT_AUDIO_CODEC_LC3, (float)left_volume, (float)right_volume,
+								  channels, rate, BT_AUDIO_FORMAT_PCM_16_BIT, duration, NULL, true);
+}
+
 static uint16_t app_bt_le_audio_add_data_path(uint16_t iso_conn_handle, void *p_iso_chann, rtk_bt_le_audio_iso_data_path_direction_t path_direction,
 											  rtk_bt_le_audio_cfg_codec_t codec_t)
 {
@@ -1927,6 +1956,14 @@ static uint16_t app_bt_le_audio_add_data_path(uint16_t iso_conn_handle, void *p_
 				BT_LOGE("[APP] %s: codec add fail \r\n", __func__);
 				goto error;
 			}
+#if defined(RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT
+			app_le_audio_data_path[i].p_track_hdl = app_bt_le_audio_track_add(&app_le_audio_data_path[i].codec_t);
+			if (!app_le_audio_data_path[i].p_track_hdl) {
+				BT_LOGE("[APP] %s track add fail \r\n", __func__);
+				app_bt_le_audio_lc3_codec_entity_remove(app_le_audio_data_path[i].p_codec_entity);
+				goto error;
+			}
+#endif
 			return 0;
 error:
 			memset((void *)&app_le_audio_data_path[i], 0, sizeof(app_bt_le_audio_data_path_t));
@@ -2199,6 +2236,16 @@ static void app_bt_pbp_bsrc_encode_task_entry(void *ctx)
 								app_le_audio_data_path[i].pkt_seq_num, ret);
 						BT_DUMPD("", app_le_audio_data_path[i].p_enc_codec_buffer_t->pbuffer, app_le_audio_data_path[i].p_enc_codec_buffer_t->frame_size);
 					}
+#if defined(RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT
+					if (rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_LC3,
+												   app_le_audio_data_path[i].p_track_hdl,
+												   app_le_audio_data_path[i].p_codec_entity,
+												   app_le_audio_data_path[i].p_enc_codec_buffer_t->pbuffer,
+												   app_le_audio_data_path[i].p_enc_codec_buffer_t->frame_size,
+												   0)) {
+						BT_LOGE("[APP] %s: Stream Data Play Fail! \r\n", __func__);
+					}
+#endif
 					if (app_le_audio_data_path[i].p_enc_codec_buffer_t) {
 						rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_LC3, app_le_audio_data_path[i].p_codec_entity, app_le_audio_data_path[i].p_enc_codec_buffer_t);
 					}

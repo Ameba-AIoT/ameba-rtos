@@ -79,10 +79,10 @@
  * @brief Clock Control Register 1
  * @{
  **/
-#define AUD_BIT_DA_L_EN                      ((u32)0x00000001 << 0)          /*!<R/W 0  DAC l channel clock enable */
-#define AUD_BIT_DA_R_EN                      ((u32)0x00000001 << 1)          /*!<R/W 0  DAC r channel clock enable */
-#define AUD_BIT_MOD_L_EN                     ((u32)0x00000001 << 2)          /*!<R/W 0  SDM l channel clock enable */
-#define AUD_BIT_MOD_R_EN                     ((u32)0x00000001 << 3)          /*!<R/W 0  SDM r channel clock enable */
+#define AUD_BIT_DA_L_EN                      ((u32)0x00000001 << 0)          /*!<R/W 0  DAC L channel clock enable */
+#define AUD_BIT_DA_R_EN                      ((u32)0x00000001 << 1)          /*!<R/W 0  DAC R channel clock enable */
+#define AUD_BIT_MOD_L_EN                     ((u32)0x00000001 << 2)          /*!<R/W 0  SDM L channel clock enable */
+#define AUD_BIT_MOD_R_EN                     ((u32)0x00000001 << 3)          /*!<R/W 0  SDM R channel clock enable */
 #define AUD_BIT_DA_ANA_CLK_EN                ((u32)0x00000001 << 4)          /*!<R/W 0  DAC/ADC analog clock enable */
 #define AUD_BIT_DA_FIFO_EN                   ((u32)0x00000001 << 5)          /*!<R/W 0  DAC FIFO clock enable */
 #define AUD_BIT_AD_0_EN                      ((u32)0x00000001 << 6)          /*!<R/W 0  ADC channel 0 clock enable */
@@ -142,7 +142,7 @@
  * @brief Clock Control Register 3
  * @{
  **/
-#define AUD_MASK_DMIC_CLK_SEL                ((u32)0x00000007 << 0)          /*!<R/W 1  Set clock of digital microphone 3'b000: 5MHz 3'b001: 2.5MHz 3'b010: 1.25MHz 3'b011: 625kHz 3'b100: 312.5kHz 3'b101: Reseved 3'b110: Reserved 3'b111: 769.2kHz */
+#define AUD_MASK_DMIC_CLK_SEL                ((u32)0x00000007 << 0)          /*!<R/W 1  Set clock of digital microphone 3'b000: 5MHz 3'b001: 2.5MHz 3'b010: 1.25MHz 3'b011: 625kHz 3'b100: 312.5kHz 3'b101: Reserved 3'b110: Reserved 3'b111: 769.2kHz */
 #define AUD_DMIC_CLK_SEL(x)                  (((u32)((x) & 0x00000007) << 0))
 #define AUD_GET_DMIC_CLK_SEL(x)              ((u32)(((x >> 0) & 0x00000007)))
 #define AUD_BIT_DMIC_CLK_EN                  ((u32)0x00000001 << 3)          /*!<R/W 0  Digital microphone clock enable */
@@ -170,31 +170,31 @@
  * @brief Clock Control Register 5
  * @{
  **/
-#define AUD_MASK_ADC_0_FS_SRC_SEL            ((u32)0x00000003 << 0)          /*!<R/W 0  Channel 0 ADC path sample rate Source selection 2'b00: Source 0 2'b01: Source 1 2'b10: Source 2 */
+#define AUD_MASK_ADC_0_FS_SRC_SEL            ((u32)0x00000003 << 0)          /*!<R/W 0  Channel 0 ADC path sample rate source selection 2'b00: Source 0 2'b01: Source 1 2'b10: Source 2 */
 #define AUD_ADC_0_FS_SRC_SEL(x)              (((u32)((x) & 0x00000003) << 0))
 #define AUD_GET_ADC_0_FS_SRC_SEL(x)          ((u32)(((x >> 0) & 0x00000003)))
-#define AUD_MASK_ADC_1_FS_SRC_SEL            ((u32)0x00000003 << 2)          /*!<R/W 0  Channel 1 ADC path sample rate Source selection 2'b00: Source 0 2'b01: Source 1 2'b10: Source 2 */
+#define AUD_MASK_ADC_1_FS_SRC_SEL            ((u32)0x00000003 << 2)          /*!<R/W 0  Channel 1 ADC path sample rate source selection 2'b00: Source 0 2'b01: Source 1 2'b10: Source 2 */
 #define AUD_ADC_1_FS_SRC_SEL(x)              (((u32)((x) & 0x00000003) << 2))
 #define AUD_GET_ADC_1_FS_SRC_SEL(x)          ((u32)(((x >> 2) & 0x00000003)))
-#define AUD_MASK_ADC_2_FS_SRC_SEL            ((u32)0x00000003 << 4)          /*!<R/W 0  Channel 2 ADC path sample rate Source selection 2'b00: Source 0 2'b01: Source 1 2'b10: Source 2 */
+#define AUD_MASK_ADC_2_FS_SRC_SEL            ((u32)0x00000003 << 4)          /*!<R/W 0  Channel 2 ADC path sample rate source selection 2'b00: Source 0 2'b01: Source 1 2'b10: Source 2 */
 #define AUD_ADC_2_FS_SRC_SEL(x)              (((u32)((x) & 0x00000003) << 4))
 #define AUD_GET_ADC_2_FS_SRC_SEL(x)          ((u32)(((x >> 4) & 0x00000003)))
-#define AUD_MASK_ADC_3_FS_SRC_SEL            ((u32)0x00000003 << 6)          /*!<R/W 0  Channel 3 ADC path sample rate Source selection 2'b00: Source 0 2'b01: Source 1 2'b10: Source 2 */
+#define AUD_MASK_ADC_3_FS_SRC_SEL            ((u32)0x00000003 << 6)          /*!<R/W 0  Channel 3 ADC path sample rate source selection 2'b00: Source 0 2'b01: Source 1 2'b10: Source 2 */
 #define AUD_ADC_3_FS_SRC_SEL(x)              (((u32)((x) & 0x00000003) << 6))
 #define AUD_GET_ADC_3_FS_SRC_SEL(x)          ((u32)(((x >> 6) & 0x00000003)))
-#define AUD_MASK_ADC_4_FS_SRC_SEL            ((u32)0x00000003 << 8)          /*!<R/W 0  Channel 4 ADC path sample rate Source selection 2'b00: Source 0 2'b01: Source 1 2'b10: Source 2 */
+#define AUD_MASK_ADC_4_FS_SRC_SEL            ((u32)0x00000003 << 8)          /*!<R/W 0  Channel 4 ADC path sample rate source selection 2'b00: Source 0 2'b01: Source 1 2'b10: Source 2 */
 #define AUD_ADC_4_FS_SRC_SEL(x)              (((u32)((x) & 0x00000003) << 8))
 #define AUD_GET_ADC_4_FS_SRC_SEL(x)          ((u32)(((x >> 8) & 0x00000003)))
-#define AUD_MASK_ADC_5_FS_SRC_SEL            ((u32)0x00000003 << 10)          /*!<R/W 0  Channel 5 ADC path sample rate Source selection 2'b00: Source 0 2'b01: Source 1 2'b10: Source 2 */
+#define AUD_MASK_ADC_5_FS_SRC_SEL            ((u32)0x00000003 << 10)          /*!<R/W 0  Channel 5 ADC path sample rate source selection 2'b00: Source 0 2'b01: Source 1 2'b10: Source 2 */
 #define AUD_ADC_5_FS_SRC_SEL(x)              (((u32)((x) & 0x00000003) << 10))
 #define AUD_GET_ADC_5_FS_SRC_SEL(x)          ((u32)(((x >> 10) & 0x00000003)))
-#define AUD_MASK_ADC_6_FS_SRC_SEL            ((u32)0x00000003 << 12)          /*!<R/W 0  Channel 6 ADC path sample rate Source selection 2'b00: Source 0 2'b01: Source 1 2'b10: Source 2 */
+#define AUD_MASK_ADC_6_FS_SRC_SEL            ((u32)0x00000003 << 12)          /*!<R/W 0  Channel 6 ADC path sample rate source selection 2'b00: Source 0 2'b01: Source 1 2'b10: Source 2 */
 #define AUD_ADC_6_FS_SRC_SEL(x)              (((u32)((x) & 0x00000003) << 12))
 #define AUD_GET_ADC_6_FS_SRC_SEL(x)          ((u32)(((x >> 12) & 0x00000003)))
-#define AUD_MASK_ADC_7_FS_SRC_SEL            ((u32)0x00000003 << 14)          /*!<R/W 0  Channel 7 ADC path sample rate Source selection 2'b00: Source 0 2'b01: Source 1 2'b10: Source 2 */
+#define AUD_MASK_ADC_7_FS_SRC_SEL            ((u32)0x00000003 << 14)          /*!<R/W 0  Channel 7 ADC path sample rate source selection 2'b00: Source 0 2'b01: Source 1 2'b10: Source 2 */
 #define AUD_ADC_7_FS_SRC_SEL(x)              (((u32)((x) & 0x00000003) << 14))
 #define AUD_GET_ADC_7_FS_SRC_SEL(x)          ((u32)(((x >> 14) & 0x00000003)))
-#define AUD_MASK_DAC_FS_SRC_SEL              ((u32)0x00000003 << 16)          /*!<R/W 0  DAC path sample rate Source selection 2'b00: Source 0 2'b01: Source 1 2'b10: Source 2 */
+#define AUD_MASK_DAC_FS_SRC_SEL              ((u32)0x00000003 << 16)          /*!<R/W 0  DAC path sample rate source selection 2'b00: Source 0 2'b01: Source 1 2'b10: Source 2 */
 #define AUD_DAC_FS_SRC_SEL(x)                (((u32)((x) & 0x00000003) << 16))
 #define AUD_GET_DAC_FS_SRC_SEL(x)            ((u32)(((x >> 16) & 0x00000003)))
 /** @} */
@@ -221,10 +221,10 @@
 #define AUD_BIT_DA_ANA_CLK_SEL               ((u32)0x00000001 << 0)          /*!<R/W 0  Set clk_da_ana phase 1'b0: Inphase 1'b1: Inverse phase */
 #define AUD_BIT_AD_ANA_CLK_SEL               ((u32)0x00000001 << 1)          /*!<R/W 0  Set clk_ad_ana phase 1'b0: Inphase 1'b1: Inverse phase */
 #define AUD_BIT_ADC_LATCH_PHASE              ((u32)0x00000001 << 2)          /*!<R/W 0  Set latch adc data phase 1'b0: Inphase 1'b1: Inverse phase */
-#define AUD_MASK_ANA_CLK_RATE_SEL            ((u32)0x00000003 << 3)          /*!<R/W 0  Set DA/AD analog clock 0: 10MHz 1: 5MHz 2: 2.5MHz 3: Reseved */
+#define AUD_MASK_ANA_CLK_RATE_SEL            ((u32)0x00000003 << 3)          /*!<R/W 0  Set DA/AD analog clock 0: 10MHz 1: 5MHz 2: 2.5MHz 3: Reserved */
 #define AUD_ANA_CLK_RATE_SEL(x)              (((u32)((x) & 0x00000003) << 3))
 #define AUD_GET_ANA_CLK_RATE_SEL(x)          ((u32)(((x >> 3) & 0x00000003)))
-#define AUD_MASK_AD_LPF_CLK_RATE_SEL         ((u32)0x00000003 << 5)          /*!<R/W 0  Set AD LPF clock 0: 10MHz 1: 5MHz 2: 2.5MHz 3: Reseved */
+#define AUD_MASK_AD_LPF_CLK_RATE_SEL         ((u32)0x00000003 << 5)          /*!<R/W 0  Set AD LPF clock 0: 10MHz 1: 5MHz 2: 2.5MHz 3: Reserved */
 #define AUD_AD_LPF_CLK_RATE_SEL(x)           (((u32)((x) & 0x00000003) << 5))
 #define AUD_GET_AD_LPF_CLK_RATE_SEL(x)       ((u32)(((x >> 5) & 0x00000003)))
 #define AUD_MASK_ADC_0_DMIC_LPF_CLK_SEL      ((u32)0x00000003 << 7)          /*!<R/W 0  Channel 0 ADC path DMIC LPF clock 2'b00: 10M 2'b01: 5M 2'b10: 2.5M 2'b11: 769.2*2K */
@@ -327,7 +327,7 @@
 #define AUD_BIT_I2S_x_INV_SCLK               ((u32)0x00000001 << 1)          /*!<R/W 0  I2S x 1'b1: I2S/PCM bit clock is inverted */
 #define AUD_BIT_I2S_x_SELF_LPBK_EN           ((u32)0x00000001 << 2)          /*!<R/W 0  I2S x 1'b1: internal loopback mode is enabled */
 #define AUD_BIT_I2S_x_SAME_LRC_EN            ((u32)0x00000001 << 3)          /*!<R/W 0  I2S x 1'b1: LRC_TX share to LRC_RX */
-#define AUD_MASK_I2S_x_TDM_MODE_RX           ((u32)0x00000003 << 4)          /*!<R/W 0  I2S x Rx channel TDM mode 0: 2 channel 1: 4 channel 2: 6 channel 3: 8 channel */
+#define AUD_MASK_I2S_x_TDM_MODE_RX           ((u32)0x00000003 << 4)          /*!<R/W 0  I2S x Rx channel TDM mode 0: 2 channels 1: 4 channels 2: 6 channels 3: 8 channels */
 #define AUD_I2S_x_TDM_MODE_RX(x)             (((u32)((x) & 0x00000003) << 4))
 #define AUD_GET_I2S_x_TDM_MODE_RX(x)         ((u32)(((x >> 4) & 0x00000003)))
 #define AUD_MASK_I2S_x_DATA_FORMAT_SEL_TX    ((u32)0x00000003 << 6)          /*!<R/W 0  I2S x Tx channel data format 2'b00: I2S 2'b01: left-justified 2'b10: PCM mode A 2'b11: PCM mode B */
@@ -351,7 +351,7 @@
 #define AUD_MASK_I2S_x_DATA_CH_SEL_TX        ((u32)0x00000003 << 18)          /*!<R/W 0  I2S x Tx channel data channel 2'b00: L/R 2'b01: R/L 2'b10: L/L 2'b11: R/R */
 #define AUD_I2S_x_DATA_CH_SEL_TX(x)          (((u32)((x) & 0x00000003) << 18))
 #define AUD_GET_I2S_x_DATA_CH_SEL_TX(x)      ((u32)(((x >> 18) & 0x00000003)))
-#define AUD_BIT_I2S_x_MASTER_SEL             ((u32)0x00000001 << 20)          /*!<R/W 0  I2S x master source sel 1'b0: sport internal 1'b1: external I2S */
+#define AUD_BIT_I2S_x_MASTER_SEL             ((u32)0x00000001 << 20)          /*!<R/W 0  I2S x master source selection 1'b0: SPORT internal 1'b1: external I2S */
 /** @} */
 
 /** @defgroup CODEC_i2s_x_control_1
@@ -382,14 +382,14 @@
 #define AUD_MASK_I2S_x_DATA_CH7_SEL_RX       ((u32)0x00000007 << 21)          /*!<R/W 0  I2S x Rx channel data channel 7 0: CH0 1: CH1 2: CH2 3: CH3 4: CH4 5: CH5 6: CH6 7: CH7 */
 #define AUD_I2S_x_DATA_CH7_SEL_RX(x)         (((u32)((x) & 0x00000007) << 21))
 #define AUD_GET_I2S_x_DATA_CH7_SEL_RX(x)     ((u32)(((x >> 21) & 0x00000007)))
-#define AUD_BIT_I2S_x_DATA_CH0_RX_DISABLE    ((u32)0x00000001 << 24)          /*!<R/W 0  I2S x Rx channel data channel 0 1: disabe 0: enable */
-#define AUD_BIT_I2S_x_DATA_CH1_RX_DISABLE    ((u32)0x00000001 << 25)          /*!<R/W 0  I2S x Rx channel data channel 1 1: disabe 0: enable */
-#define AUD_BIT_I2S_x_DATA_CH2_RX_DISABLE    ((u32)0x00000001 << 26)          /*!<R/W 0  I2S x Rx channel data channel 2 1: disabe 0: enable */
-#define AUD_BIT_I2S_x_DATA_CH3_RX_DISABLE    ((u32)0x00000001 << 27)          /*!<R/W 0  I2S x Rx channel data channel 3 1: disabe 0: enable */
-#define AUD_BIT_I2S_x_DATA_CH4_RX_DISABLE    ((u32)0x00000001 << 28)          /*!<R/W 0  I2S x Rx channel data channel 4 1: disabe 0: enable */
-#define AUD_BIT_I2S_x_DATA_CH5_RX_DISABLE    ((u32)0x00000001 << 29)          /*!<R/W 0  I2S x Rx channel data channel 5 1: disabe 0: enable */
-#define AUD_BIT_I2S_x_DATA_CH6_RX_DISABLE    ((u32)0x00000001 << 30)          /*!<R/W 0  I2S x Rx channel data channel 6 1: disabe 0: enable */
-#define AUD_BIT_I2S_x_DATA_CH7_RX_DISABLE    ((u32)0x00000001 << 31)          /*!<R/W 0  I2S x Rx channel data channel 7 1: disabe 0: enable */
+#define AUD_BIT_I2S_x_DATA_CH0_RX_DISABLE    ((u32)0x00000001 << 24)          /*!<R/W 0  I2S x Rx channel data channel 0 1: Disable 0: Enable */
+#define AUD_BIT_I2S_x_DATA_CH1_RX_DISABLE    ((u32)0x00000001 << 25)          /*!<R/W 0  I2S x Rx channel data channel 1 1: Disable 0: Enable */
+#define AUD_BIT_I2S_x_DATA_CH2_RX_DISABLE    ((u32)0x00000001 << 26)          /*!<R/W 0  I2S x Rx channel data channel 2 1: Disable 0: Enable */
+#define AUD_BIT_I2S_x_DATA_CH3_RX_DISABLE    ((u32)0x00000001 << 27)          /*!<R/W 0  I2S x Rx channel data channel 3 1: Disable 0: Enable */
+#define AUD_BIT_I2S_x_DATA_CH4_RX_DISABLE    ((u32)0x00000001 << 28)          /*!<R/W 0  I2S x Rx channel data channel 4 1: Disable 0: Enable */
+#define AUD_BIT_I2S_x_DATA_CH5_RX_DISABLE    ((u32)0x00000001 << 29)          /*!<R/W 0  I2S x Rx channel data channel 5 1: Disable 0: Enable */
+#define AUD_BIT_I2S_x_DATA_CH6_RX_DISABLE    ((u32)0x00000001 << 30)          /*!<R/W 0  I2S x Rx channel data channel 6 1: Disable 0: Enable */
+#define AUD_BIT_I2S_x_DATA_CH7_RX_DISABLE    ((u32)0x00000001 << 31)          /*!<R/W 0  I2S x Rx channel data channel 7 1: Disable 0: Enable */
 /** @} */
 
 /** @defgroup CODEC_i2s_ad_sel_control
@@ -419,7 +419,7 @@
 #define AUD_MASK_ADC_x_DMIC_LPF1ST_FC_SEL    ((u32)0x00000003 << 5)          /*!<R/W 0  Channel x DMIC path SRC 1st LPF FC */
 #define AUD_ADC_x_DMIC_LPF1ST_FC_SEL(x)      (((u32)((x) & 0x00000003) << 5))
 #define AUD_GET_ADC_x_DMIC_LPF1ST_FC_SEL(x)  ((u32)(((x >> 5) & 0x00000003)))
-#define AUD_BIT_ADC_x_DMIC_MIX_MUTE          ((u32)0x00000001 << 7)          /*!<R/W 1  Channel x DMIC input path mute 0: Un-Mute 1: Mute */
+#define AUD_BIT_ADC_x_DMIC_MIX_MUTE          ((u32)0x00000001 << 7)          /*!<R/W 1  Channel x DMIC input path mute 0: Unmute 1: Mute */
 #define AUD_MASK_ADC_x_AD_SRC_SEL            ((u32)0x00000007 << 8)          /*!<R/W 0  Channel x ANA ADC source selection 3'd0: ADC 1 3'd1: ADC 2 3'd2: ADC 3 3'd3: ADC 4 3'd4: ADC 5 */
 #define AUD_ADC_x_AD_SRC_SEL(x)              (((u32)((x) & 0x00000007) << 8))
 #define AUD_GET_ADC_x_AD_SRC_SEL(x)          ((u32)(((x >> 8) & 0x00000007)))
@@ -428,7 +428,7 @@
 #define AUD_MASK_ADC_x_AD_LPF1ST_FC_SEL      ((u32)0x00000003 << 13)          /*!<R/W 0  Channel x ADC path SRC 1st LPF FC */
 #define AUD_ADC_x_AD_LPF1ST_FC_SEL(x)        (((u32)((x) & 0x00000003) << 13))
 #define AUD_GET_ADC_x_AD_LPF1ST_FC_SEL(x)    ((u32)(((x >> 13) & 0x00000003)))
-#define AUD_BIT_ADC_x_AD_MIX_MUTE            ((u32)0x00000001 << 15)          /*!<R/W 1  Channel x ADC input path mute 0: Un-Mute 1: Mute */
+#define AUD_BIT_ADC_x_AD_MIX_MUTE            ((u32)0x00000001 << 15)          /*!<R/W 1  Channel x ADC input path mute 0: Unmute 1: Mute */
 #define AUD_MASK_ADC_x_AD_ZDET_FUNC          ((u32)0x00000003 << 16)          /*!<R/W 0x2  Channel x ADC path zero detection function select 2'b00: immediate change 2'b01: zero detection & immediate change 2'b10: zdet & step 2'b11: zdet & timeout step */
 #define AUD_ADC_x_AD_ZDET_FUNC(x)            (((u32)((x) & 0x00000003) << 16))
 #define AUD_GET_ADC_x_AD_ZDET_FUNC(x)        ((u32)(((x >> 16) & 0x00000003)))
@@ -486,22 +486,22 @@
  * @brief DAC Left Channel Control Register 1
  * @{
  **/
-#define AUD_MASK_DAC_L_DA_ZDET_FUNC          ((u32)0x00000003 << 0)          /*!<R/W 0x2  Channel L DAC path zero detection function select 2'b00: immediate change 2'b01: zero detection & immediate change 2'b10: zdet & step 2'b11: zdet & timeout step */
+#define AUD_MASK_DAC_L_DA_ZDET_FUNC          ((u32)0x00000003 << 0)          /*!<R/W 0x2  Channel L DAC path zero detection function select 2'b00: immediate change 2'b01: zero detection & immediate change 2'b10: zero detection & step 2'b11: zero detection & timeout step */
 #define AUD_DAC_L_DA_ZDET_FUNC(x)            (((u32)((x) & 0x00000003) << 0))
 #define AUD_GET_DAC_L_DA_ZDET_FUNC(x)        ((u32)(((x >> 0) & 0x00000003)))
 #define AUD_MASK_DAC_L_DA_ZDET_TOUT          ((u32)0x00000003 << 2)          /*!<R/W 0  Channel L DAC path zero detection time out select 2'b00: 1024*16 samples 2'b01: 1024*32 samples 2'b10: 1024*64 samples 2'b11: 64 samples */
 #define AUD_DAC_L_DA_ZDET_TOUT(x)            (((u32)((x) & 0x00000003) << 2))
 #define AUD_GET_DAC_L_DA_ZDET_TOUT(x)        ((u32)(((x >> 2) & 0x00000003)))
-#define AUD_BIT_DAC_L_DA_MUTE                ((u32)0x00000001 << 4)          /*!<R/W 0  Channel L DAC path dvol mute enable 1'b0: unmute 1'b1: mute */
+#define AUD_BIT_DAC_L_DA_MUTE                ((u32)0x00000001 << 4)          /*!<R/W 0  Channel L DAC path dvol mute enable 1'b0: Unmute 1'b1: Mute */
 #define AUD_BIT_DAC_L_DAHPF_EN               ((u32)0x00000001 << 5)          /*!<R/W 0  Channel L DAC path Narrow-band 1st HPF enable control 0: Disable 1: Enable */
 #define AUD_MASK_DAC_L_DA_DITHER_SEL         ((u32)0x00000003 << 6)          /*!<R/W 0  Channel L DAC path dither select 2'b00: Disable 2'b01: LSB 2'b10: LSB+1 2'b11: LSB+2 */
 #define AUD_DAC_L_DA_DITHER_SEL(x)           (((u32)((x) & 0x00000003) << 6))
 #define AUD_GET_DAC_L_DA_DITHER_SEL(x)       ((u32)(((x >> 6) & 0x00000003)))
-#define AUD_BIT_DAC_L_DMIX_MUTE_DA           ((u32)0x00000001 << 8)          /*!<R/W 0  Channel L DAC path 128fs-domain mixer da path mute enable 1'b0: unmute 1'b1: mute */
-#define AUD_BIT_DAC_L_DMIX_MUTE_SIDETONE     ((u32)0x00000001 << 9)          /*!<R/W 0  Channel L DAC path 128fs-domain mixer sidetone path mute enable 1'b0: unmute 1'b1: mute */
-#define AUD_BIT_DAC_L_DMIX_MUTE_DC           ((u32)0x00000001 << 10)          /*!<R/W 0  Channel L DAC path 128fs-domain mixer a DC from dac_l_tone_compensation_offset 1'b0: unmute 1'b1: mute */
-#define AUD_BIT_DAC_L_MUSIC_MUTE_EN          ((u32)0x00000001 << 11)          /*!<R/W 0  Channel L DAC path music output mute enable 1'b0: unmute 1'b1: mute */
-#define AUD_BIT_DAC_L_ANC_MUTE_EN            ((u32)0x00000001 << 12)          /*!<R/W 0  Channel L DAC path ANC output mute enable 1'b0: unmute 1'b1: mute */
+#define AUD_BIT_DAC_L_DMIX_MUTE_DA           ((u32)0x00000001 << 8)          /*!<R/W 0  Channel L DAC path 128fs-domain mixer da path mute enable 1'b0: Unmute 1'b1: Mute */
+#define AUD_BIT_DAC_L_DMIX_MUTE_SIDETONE     ((u32)0x00000001 << 9)          /*!<R/W 0  Channel L DAC path 128fs-domain mixer sidetone path mute enable 1'b0: Unmute 1'b1: Mute */
+#define AUD_BIT_DAC_L_DMIX_MUTE_DC           ((u32)0x00000001 << 10)          /*!<R/W 0  Channel L DAC path 128fs-domain mixer a DC from dac_l_tone_compensation_offset 1'b0: Unmute 1'b1: Mute */
+#define AUD_BIT_DAC_L_MUSIC_MUTE_EN          ((u32)0x00000001 << 11)          /*!<R/W 0  Channel L DAC path music output mute enable 1'b0: Unmute 1'b1: Mute */
+#define AUD_BIT_DAC_L_ANC_MUTE_EN            ((u32)0x00000001 << 12)          /*!<R/W 0  Channel L DAC path ANC output mute enable 1'b0: Unmute 1'b1: Mute */
 #define AUD_BIT_DAC_L_PDM_EN                 ((u32)0x00000001 << 13)          /*!<R/W 1  Channel L DAC path PDM 0: Disable 1: Enable */
 #define AUD_BIT_DAC_L_SDM_EXTEND_FB_EN       ((u32)0x00000001 << 14)          /*!<R/W 1  Channel L DAC path feedback extend (for debug purpose; default need turn on) 0: Disable 1: Enable */
 #define AUD_BIT_DAC_L_SDM_EF_EN              ((u32)0x00000001 << 15)          /*!<R/W 1  Channel L DAC path 2nd order SDM enable 0: Disable 1: Enable */
@@ -553,22 +553,22 @@
  * @brief DAC Right Channel Control Register 1
  * @{
  **/
-#define AUD_MASK_DAC_R_DA_ZDET_FUNC          ((u32)0x00000003 << 0)          /*!<R/W 0x2  Channel R DAC path zero detection function select 2'b00: immediate change 2'b01: zero detection & immediate change 2'b10: zdet & step 2'b11: zdet & timeout step */
+#define AUD_MASK_DAC_R_DA_ZDET_FUNC          ((u32)0x00000003 << 0)          /*!<R/W 0x2  Channel R DAC path zero detection function select 2'b00: immediate change 2'b01: zero detection & immediate change 2'b10: zero detection & step 2'b11: zero detection & timeout step */
 #define AUD_DAC_R_DA_ZDET_FUNC(x)            (((u32)((x) & 0x00000003) << 0))
 #define AUD_GET_DAC_R_DA_ZDET_FUNC(x)        ((u32)(((x >> 0) & 0x00000003)))
 #define AUD_MASK_DAC_R_DA_ZDET_TOUT          ((u32)0x00000003 << 2)          /*!<R/W 0  Channel R DAC path zero detection time out select 2'b00: 1024*16 samples 2'b01: 1024*32 samples 2'b10: 1024*64 samples 2'b11: 64 samples */
 #define AUD_DAC_R_DA_ZDET_TOUT(x)            (((u32)((x) & 0x00000003) << 2))
 #define AUD_GET_DAC_R_DA_ZDET_TOUT(x)        ((u32)(((x >> 2) & 0x00000003)))
-#define AUD_BIT_DAC_R_DA_MUTE                ((u32)0x00000001 << 4)          /*!<R/W 0  Channel R DAC path dvol mute enable 1'b0: unmute 1'b1: mute */
+#define AUD_BIT_DAC_R_DA_MUTE                ((u32)0x00000001 << 4)          /*!<R/W 0  Channel R DAC path dvol mute enable 1'b0: Unmute 1'b1: Mute */
 #define AUD_BIT_DAC_R_DAHPF_EN               ((u32)0x00000001 << 5)          /*!<R/W 0  Channel R DAC path Narrow-band 1st HPF enable control 0: Disable 1: Enable */
 #define AUD_MASK_DAC_R_DA_DITHER_SEL         ((u32)0x00000003 << 6)          /*!<R/W 0  Channel R DAC path dither select 2'b00: Disable 2'b01: LSB 2'b10: LSB+1 2'b11: LSB+2 */
 #define AUD_DAC_R_DA_DITHER_SEL(x)           (((u32)((x) & 0x00000003) << 6))
 #define AUD_GET_DAC_R_DA_DITHER_SEL(x)       ((u32)(((x >> 6) & 0x00000003)))
-#define AUD_BIT_DAC_R_DMIX_MUTE_DA           ((u32)0x00000001 << 8)          /*!<R/W 0  Channel R DAC path 128fs-domain mixer da path mute enable 1'b0: unmute 1'b1: mute */
-#define AUD_BIT_DAC_R_DMIX_MUTE_SIDETONE     ((u32)0x00000001 << 9)          /*!<R/W 0  Channel R DAC path 128fs-domain mixer sidetone path mute enable 1'b0: unmute 1'b1: mute */
-#define AUD_BIT_DAC_R_DMIX_MUTE_DC           ((u32)0x00000001 << 10)          /*!<R/W 0  Channel R DAC path 128fs-domain mixer a DC from dac_r_tone_compensation_offset 1'b0: unmute 1'b1: mute */
-#define AUD_BIT_DAC_R_MUSIC_MUTE_EN          ((u32)0x00000001 << 11)          /*!<R/W 0  Channel R DAC path music output mute enable 1'b0: unmute 1'b1: mute */
-#define AUD_BIT_DAC_R_ANC_MUTE_EN            ((u32)0x00000001 << 12)          /*!<R/W 0  Channel R DAC path ANC output mute enable 1'b0: unmute 1'b1: mute */
+#define AUD_BIT_DAC_R_DMIX_MUTE_DA           ((u32)0x00000001 << 8)          /*!<R/W 0  Channel R DAC path 128fs-domain mixer da path mute enable 1'b0: Unmute 1'b1: Mute */
+#define AUD_BIT_DAC_R_DMIX_MUTE_SIDETONE     ((u32)0x00000001 << 9)          /*!<R/W 0  Channel R DAC path 128fs-domain mixer sidetone path mute enable 1'b0: Unmute 1'b1: Mute */
+#define AUD_BIT_DAC_R_DMIX_MUTE_DC           ((u32)0x00000001 << 10)          /*!<R/W 0  Channel R DAC path 128fs-domain mixer a DC from dac_r_tone_compensation_offset 1'b0: Unmute 1'b1: Mute */
+#define AUD_BIT_DAC_R_MUSIC_MUTE_EN          ((u32)0x00000001 << 11)          /*!<R/W 0  Channel R DAC path music output mute enable 1'b0: Unmute 1'b1: Mute */
+#define AUD_BIT_DAC_R_ANC_MUTE_EN            ((u32)0x00000001 << 12)          /*!<R/W 0  Channel R DAC path ANC output mute enable 1'b0: Unmute 1'b1: Mute */
 #define AUD_BIT_DAC_R_PDM_EN                 ((u32)0x00000001 << 13)          /*!<R/W 1  Channel R DAC path PDM 0: Disable 1: Enable */
 #define AUD_BIT_DAC_R_SDM_EXTEND_FB_EN       ((u32)0x00000001 << 14)          /*!<R/W 1  Channel R DAC path feedback extend (for debug purpose; default need turn on) 0: Disable 1: Enable */
 #define AUD_BIT_DAC_R_SDM_EF_EN              ((u32)0x00000001 << 15)          /*!<R/W 1  Channel R DAC path 2nd order SDM enable 0: Disable 1: Enable */
@@ -636,6 +636,60 @@
 #define AUD_GET_DAC_R_SILENCE_DEBOUNCE_SEL(x) ((u32)(((x >> 4) & 0x00000007)))
 /** @} */
 
+/** @defgroup CODEC_st_control_0
+ * @brief Sidetone Left Control 0 Register
+ * @{
+ **/
+#define AUD_MASK_ST_L_MIC_SRC_SEL            ((u32)0x0000000F << 0)          /*!<R/W 0x0  Sidetone L path MIC source selection: 4'd0:adc_0_lpf 4'd1: adc_1_lpf 4'd2: adc_2_lpf 4'd3: adc_3_lpf 4'd4: adc_4_lpf 4'd5: adc_5_lpf 4'd8: dmic_0_lpf 4'd9: dmic_1_lpf 4'd10: dmic_2_lpf 4'd11: dmic_3_lpf 4'd12: dmic_4_lpf 4'd13: dmic_5_lpf */
+#define AUD_ST_L_MIC_SRC_SEL(x)              (((u32)((x) & 0x0000000F) << 0))
+#define AUD_GET_ST_L_MIC_SRC_SEL(x)          ((u32)(((x >> 0) & 0x0000000F)))
+#define AUD_BIT_ST_L_HPF_EN                  ((u32)0x00000001 << 4)          /*!<R/W 0x0  Sidetone L path HPF enable 0: disable 1: enable */
+#define AUD_MASK_ST_L_HPF_FC_SEL             ((u32)0x00000007 << 5)          /*!<R/W 0x0  Sidetone L path HPF cut-off frequency select (-6dB) 3'd0:56HZ 3'd1:112HZ 3'd2:168HZ 3'd3:224HZ 3'd4:281HZ 3'd5:337HZ 3'd6:390HZ 3'd7:450HZ */
+#define AUD_ST_L_HPF_FC_SEL(x)               (((u32)((x) & 0x00000007) << 5))
+#define AUD_GET_ST_L_HPF_FC_SEL(x)           ((u32)(((x >> 5) & 0x00000007)))
+#define AUD_MASK_ST_L_VOL_SEL                ((u32)0x000000FF << 8)          /*!<R/W 0x0  Sidetone L path volume select(0.375db/step) 8'hff : 30dB ~ 7'h00 : -65.625db */
+#define AUD_ST_L_VOL_SEL(x)                  (((u32)((x) & 0x000000FF) << 8))
+#define AUD_GET_ST_L_VOL_SEL(x)              ((u32)(((x >> 8) & 0x000000FF)))
+#define AUD_MASK_ST_L_ZDET_TOUT              ((u32)0x00000003 << 16)          /*!<R/W 0x0  Sidetone L path zero detection time out select 2'b00 : 1024*16*128 samples 2'b01 : 1024*32*128 samples 2'b10 : 1024*64*128 samples 2'b11 : 64*128 samples */
+#define AUD_ST_L_ZDET_TOUT(x)                (((u32)((x) & 0x00000003) << 16))
+#define AUD_GET_ST_L_ZDET_TOUT(x)            ((u32)(((x >> 16) & 0x00000003)))
+#define AUD_MASK_ST_L_ZDET_FUNC              ((u32)0x00000003 << 18)          /*!<R/W 0x0  Sidetone L path zero detection function select 2'b0 : immediate change 2'b01 : zero detection 2'b10 zdet step 2'b11 zdet & timeout with step change */
+#define AUD_ST_L_ZDET_FUNC(x)                (((u32)((x) & 0x00000003) << 18))
+#define AUD_GET_ST_L_ZDET_FUNC(x)            ((u32)(((x >> 18) & 0x00000003)))
+#define AUD_BIT_ST_L_BOOST_SEL               ((u32)0x00000001 << 20)          /*!<R/W 0x0  Sidetone L path boost gain select 0: 0dB 1: 12.04dB */
+#define AUD_BIT_ST_CONTROL_0_RSVD_1          ((u32)0x00000001 << 21)          /*!<R/W 0x0  Reserved */
+#define AUD_MASK_ST_L_IN_SEL                 ((u32)0x00000003 << 22)          /*!<R/W 0x0  DAC L path sidetone source select : 2'b00 :sidetone_l ; 2'b01 :sidetone_r 2'b10 :(sidetone_l+sidetone_r )/2 */
+#define AUD_ST_L_IN_SEL(x)                   (((u32)((x) & 0x00000003) << 22))
+#define AUD_GET_ST_L_IN_SEL(x)               ((u32)(((x >> 22) & 0x00000003)))
+/** @} */
+
+/** @defgroup CODEC_st_control_1
+ * @brief Sidetone Right Control 1 Register
+ * @{
+ **/
+#define AUD_MASK_ST_R_MIC_SRC_SEL            ((u32)0x0000000F << 0)          /*!<R/W 0x0  Sidetone R path MIC sorce selection : 4'd0:adc_0_lpf 4'd1: adc_1_lpf 4'd2: adc_2_lpf 4'd3: adc_3_lpf 4'd4: adc_4_lpf 4'd5: adc_5_lpf 4'd8: dmic_0_lpf 4'd9: dmic_1_lpf 4'd10: dmic_2_lpf 4'd11: dmic_3_lpf 4'd12: dmic_4_lpf 4'd13: dmic_5_lpf */
+#define AUD_ST_R_MIC_SRC_SEL(x)              (((u32)((x) & 0x0000000F) << 0))
+#define AUD_GET_ST_R_MIC_SRC_SEL(x)          ((u32)(((x >> 0) & 0x0000000F)))
+#define AUD_BIT_ST_R_HPF_EN                  ((u32)0x00000001 << 4)          /*!<R/W 0x0  Sidetone R path HPF enable 0: disable 1: enable */
+#define AUD_MASK_ST_R_HPF_FC_SEL             ((u32)0x00000007 << 5)          /*!<R/W 0x0  Sidetone R path HPF cut-off frequency select (-6dB) 3'd0:56HZ 3'd1:112HZ 3'd2:168HZ 3'd3:224HZ 3'd4:281HZ 3'd5:337HZ 3'd6:390HZ 3'd7:450HZ */
+#define AUD_ST_R_HPF_FC_SEL(x)               (((u32)((x) & 0x00000007) << 5))
+#define AUD_GET_ST_R_HPF_FC_SEL(x)           ((u32)(((x >> 5) & 0x00000007)))
+#define AUD_MASK_ST_R_VOL_SEL                ((u32)0x000000FF << 8)          /*!<R/W 0x0  Sidetone R path volume select(0.375db/step) 8'hff : 30dB ~ 7'h00 : -65.625db */
+#define AUD_ST_R_VOL_SEL(x)                  (((u32)((x) & 0x000000FF) << 8))
+#define AUD_GET_ST_R_VOL_SEL(x)              ((u32)(((x >> 8) & 0x000000FF)))
+#define AUD_MASK_ST_R_ZDET_TOUT              ((u32)0x00000003 << 16)          /*!<R/W 0x0  Sidetone R path zero detection time out select 2'b00 : 1024*16*128 samples 2'b01 : 1024*32*128 samples 2'b10 : 1024*64*128 samples 2'b11 : 64*128 samples */
+#define AUD_ST_R_ZDET_TOUT(x)                (((u32)((x) & 0x00000003) << 16))
+#define AUD_GET_ST_R_ZDET_TOUT(x)            ((u32)(((x >> 16) & 0x00000003)))
+#define AUD_MASK_ST_R_ZDET_FUNC              ((u32)0x00000003 << 18)          /*!<R/W 0x0  Sidetone R path zero detection function select 2'b0 : immediate change 2'b01 : zero detection 2'b10 zdet step 2'b11 zdet & timeout with step change */
+#define AUD_ST_R_ZDET_FUNC(x)                (((u32)((x) & 0x00000003) << 18))
+#define AUD_GET_ST_R_ZDET_FUNC(x)            ((u32)(((x >> 18) & 0x00000003)))
+#define AUD_BIT_ST_R_BOOST_SEL               ((u32)0x00000001 << 20)          /*!<R/W 0x0  Sidetone R path boost gain select 0: 0dB 1: 12.04dB */
+#define AUD_BIT_ST_CONTROL_1_RSVD_1          ((u32)0x00000001 << 21)          /*!<R/W 0x0  Reserved */
+#define AUD_MASK_ST_R_IN_SEL                 ((u32)0x00000003 << 22)          /*!<R/W 0x0  DAC L path sidetone source select : 2'b00 :sidetone_l ; 2'b01 :sidetone_r 2'b10 :(sidetone_l+sidetone_r )/2 */
+#define AUD_ST_R_IN_SEL(x)                   (((u32)((x) & 0x00000003) << 22))
+#define AUD_GET_ST_R_IN_SEL(x)               ((u32)(((x >> 22) & 0x00000003)))
+/** @} */
+
 /** @defgroup CODEC_dac_l_eq_ctrl
  * @brief DAC Left Channel EQ Control Register
  * @{
@@ -688,7 +742,7 @@
 #define AUD_GET_DAC_L_BIQUAD_A1_x(x)         ((u32)(((x >> 0) & 0x1FFFFFFF)))
 /** @} */
 
-/** @defgroup CODEC_codec_biquad_a2_x
+/** @defgroup CODEC_dac_l_biquad_a2_x
  * @brief DAC Left Channel EQ x Band Biquad A2 Register
  * @{
  **/
@@ -1186,7 +1240,7 @@
  * @brief VAD Interrupt Status Register
  * @{
  **/
-#define AUD_MASK_VAD_INTR_ST                 ((u32)0x000000FF << 0)          /*!<RW1C   Status of new vad interrupts and clear them by writing 1 */
+#define AUD_MASK_VAD_INTR_ST                 ((u32)0x000000FF << 0)          /*!<RW1C   Status of new VAD interrupts and clear them by writing 1 */
 #define AUD_VAD_INTR_ST(x)                   (((u32)((x) & 0x000000FF) << 0))
 #define AUD_GET_VAD_INTR_ST(x)               ((u32)(((x >> 0) & 0x000000FF)))
 /** @} */
@@ -1195,7 +1249,7 @@
  * @brief VAD Detection Flag Register
  * @{
  **/
-#define AUD_BIT_VAD_DET_FLAG                 ((u32)0x00000001 << 0)          /*!<R   Vad detection flag 1 */
+#define AUD_BIT_VAD_DET_FLAG                 ((u32)0x00000001 << 0)          /*!<R   VAD detection flag */
 /** @} */
 /** @} */
 
@@ -1227,11 +1281,11 @@ typedef struct {
 *****************************************************************************/
 typedef struct {
 
-	__IO uint32_t CODEC_BIQUAD_H0_x;                      /*!< DAC LEFT CHANNEL EQ x BAND BIQUAD H0 REGISTER */
-	__IO uint32_t CODEC_BIQUAD_B1_x;                      /*!< DAC LEFT CHANNEL EQ x BAND BIQUAD B1 REGISTER */
-	__IO uint32_t CODEC_BIQUAD_B2_x;                      /*!< DAC LEFT CHANNEL EQ x BAND BIQUAD B2 REGISTER */
-	__IO uint32_t CODEC_BIQUAD_A1_x;                      /*!< DAC LEFT CHANNEL EQ x BAND BIQUAD A1 REGISTER */
-	__IO uint32_t CODEC_BIQUAD_A2_x;                      /*!< DAC LEFT CHANNEL EQ x BAND BIQUAD A2 REGISTER */
+	__IO uint32_t CODEC_BIQUAD_H0_x;                /*!< DAC LEFT CHANNEL EQ x BAND BIQUAD H0 REGISTER */
+	__IO uint32_t CODEC_BIQUAD_B1_x;                /*!< DAC LEFT CHANNEL EQ x BAND BIQUAD B1 REGISTER */
+	__IO uint32_t CODEC_BIQUAD_B2_x;                /*!< DAC LEFT CHANNEL EQ x BAND BIQUAD B2 REGISTER */
+	__IO uint32_t CODEC_BIQUAD_A1_x;                /*!< DAC LEFT CHANNEL EQ x BAND BIQUAD A1 REGISTER */
+	__IO uint32_t CODEC_BIQUAD_A2_x;                /*!< DAC LEFT CHANNEL EQ x BAND BIQUAD A2 REGISTER */
 } CODEC_EQ_BAND_TypeDef;
 
 
@@ -1270,7 +1324,9 @@ typedef struct {
 	__IO uint32_t CODEC_ADC_x_SILENCE_CONTROL[8];         /*!< ADC CHANNEL x SILENCE CONTROL REGISTER,  Address offset: 0x100-0x11C */
 	__IO uint32_t CODEC_DAC_L_SILENCE_CONTROL;            /*!< DAC LEFT CHANNEL SILENCE CONTROL REGISTER,  Address offset: 0x120 */
 	__IO uint32_t CODEC_DAC_R_SILENCE_CONTROL;            /*!< DAC RIGHT CHANNEL SILENCE CONTROL REGISTER,  Address offset: 0x124 */
-	__IO uint32_t RSVD1[54];                              /*!<  Reserved,  Address offset:0x128-0x1FC */
+	__IO uint32_t CODEC_ST_CONTROL_0;                     /*!< SIDETONE LEFT CONTROL 0 REGISTER,  Address offset: 0x128 */
+	__IO uint32_t CODEC_ST_CONTROL_1;                     /*!< SIDETONE RIGHT CONTROL 1 REGISTER,  Address offset: 0x12C */
+	__IO uint32_t RSVD1[52];                              /*!<  Reserved,  Address offset:0x130-0x1FC */
 	__IO uint32_t CODEC_DAC_L_EQ_CTRL;                    /*!< DAC LEFT CHANNEL EQ CONTROL REGISTER,  Address offset: 0x200 */
 	CODEC_EQ_BAND_TypeDef CODEC_DAC_L_EQ_BAND[10];        /*!< AUDIO IP have 10 ports,  Address offset: 0x204-0x2C8 */
 	__IO uint32_t RSVD2[13];                              /*!<  Reserved,  Address offset:0x2CC-0x2FC */
@@ -1948,6 +2004,75 @@ typedef struct {
 * @}
 */
 
+/** @defgroup AUDIO_CODEC_SIDETONE_Channel
+  * @{
+  */
+#define ST_L			((u32)0x00000000)
+#define ST_R			((u32)0x00000001)
+
+#define IS_CODEC_ST_SEL(SEL) (((SEL) == ST_L) || \
+								((SEL) == ST_R))
+
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_CODEC_SIDETONE_BoostGain
+  * @{
+  */
+#define STBST_GAIN_0DB			((u32)0x00000000)
+#define STBST_GAIN_12P04DB			((u32)0x00000001)
+
+#define IS_CODEC_STBST_GAIN_SEL(SEL) (((SEL) == STBST_GAIN_0DB) || \
+							((SEL) == STBST_GAIN_12P04DB))
+
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_CODEC_SIDETONE_MIC_Src
+  * @{
+  */
+#define ST_SRC_ADC1							((u32)0x00000000)
+#define ST_SRC_ADC2							((u32)0x00000001)
+#define ST_SRC_ADC3							((u32)0x00000002)
+#define ST_SRC_ADC4							((u32)0x00000003)
+#define ST_SRC_ADC5							((u32)0x00000004)
+#define ST_SRC_DMIC1							((u32)0x00000005)
+#define ST_SRC_DMIC2							((u32)0x00000006)
+#define ST_SRC_DMIC3							((u32)0x00000007)
+#define ST_SRC_DMIC4							((u32)0x00000008)
+#define ST_SRC_DMIC5							((u32)0x00000009)
+
+#define IS_CODEC_ST_MIC_SRC_SEL(SEL) (((SEL) == ST_SRC_ADC1) || \
+								((SEL) == ST_SRC_ADC2) || \
+								((SEL) == ST_SRC_ADC3) || \
+								((SEL) == ST_SRC_ADC4)|| \
+								((SEL) == ST_SRC_ADC5) || \
+								((SEL) == ST_SRC_DMIC1) || \
+								((SEL) == ST_SRC_DMIC2)|| \
+								((SEL) == ST_SRC_DMIC3) || \
+								((SEL) == ST_SRC_DMIC4) || \
+								((SEL) == ST_SRC_DMIC5))
+/**
+* @}
+*/
+
+/** @defgroup AUDIO_CODEC_SIDETONE_SRC_FOR_DAC
+  * @{
+  */
+#define ST_SGL_L							((u32)0x00000000)
+#define ST_SGL_R							((u32)0x00000001)
+#define ST_AVG_L_ADD_R							((u32)0x00000002)
+
+#define IS_CODEC_ST_SRC_FOR_DAC_SEL(SEL) (((SEL) == ST_SGL_L) || \
+								((SEL) == ST_SGL_R) || \
+								((SEL) == ST_AVG_L_ADD_R))
+/**
+* @}
+*/
+
+
 /**
   * @}
   */
@@ -2013,6 +2138,18 @@ _LONG_CALL_ void AUDIO_CODEC_Playback(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2
 _LONG_CALL_ void AUDIO_CODEC_EnableADCFifo(u32 ad_chn, u32 newstate);
 _LONG_CALL_ void AUDIO_CODEC_EnableDACFifo(u32 newstate);
 _LONG_CALL_ u32 AUDIO_CODEC_GetHPOMode(u32 channel);
+_LONG_CALL_ void AUDIO_CODEC_EnableSideTone(u32 channel, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetSideToneHPF(u32 ch_sel, u32 fc, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetSideToneVolume(u32 channel, u32 gain);
+_LONG_CALL_ void AUDIO_CODEC_SetSideToneBstGain(u32 ch_sel, u32 gain);
+_LONG_CALL_ void AUDIO_CODEC_SetSideToneMicSrc(u32 st_chn, u32 mic_src);
+_LONG_CALL_ void AUDIO_CODEC_SetSideToneSrcForDAC(u32 channel, u32 src);
+_LONG_CALL_ void AUDIO_CODEC_SetSideToneZDETTimeOut(u32 channel, u32 time_out);
+_LONG_CALL_ void AUDIO_CODEC_SetSideToneZDET(u32 channel, u32 type);
+_LONG_CALL_ void AUDIO_CODEC_SetSideToneMute(u32 channel, u32 newstate);
+
+
+
 
 /**
   * @}

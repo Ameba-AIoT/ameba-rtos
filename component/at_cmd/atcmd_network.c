@@ -132,7 +132,7 @@ end:
 static void at_ping_help(void)
 {
 	RTK_LOGI(NOTAG, "\r\n");
-	RTK_LOGI(NOTAG, "AT+PING=<host>[,<-t>,<interval>][,<-n>,<count>][,<-l>,<size>]\r\n");
+	RTK_LOGI(NOTAG, "AT+PING=<host>[,<-t>][,<-n>,<count>][,<-l>,<size>]\r\n");
 	RTK_LOGI(NOTAG, "AT+PING=<stop>\r\n");
 	RTK_LOGI(NOTAG, "\t\tstop\t\tterminate ping\r\n");
 	RTK_LOGI(NOTAG, "\t\t-t\t#\tping the specified host until stopped\r\n");

@@ -1474,6 +1474,170 @@ end:
 }
 #endif /* CONFIG_LWIP_LAYER */
 
+#ifdef CONFIG_CSI
+static void wifi_csi_param_dump(struct rtw_csi_action_parm *csi_param)
+{
+	RTK_LOGI(NOTAG, "csi act params: grp_num = %d [0-num_1;1-num_2;2-num_4;3-num_8]\n", csi_param->group_num);
+	RTK_LOGI(NOTAG, "csi act params: accuracy = %d [0-1B;1-2B]\n", csi_param->accuracy);
+	RTK_LOGI(NOTAG, "csi act params: alg_opt = %d [0-LS;1-Smo]\n", csi_param->alg_opt);
+	RTK_LOGI(NOTAG, "csi act params: ch_opt = %d [0-legacy;1-non legacy]\n", csi_param->ch_opt);
+	RTK_LOGI(NOTAG, "csi act params: csi_role = %d[0-trx;1-tx;2-rx]\n", csi_param->csi_role);
+	RTK_LOGI(NOTAG, "csi act params: trig_frame_mgnt = 0x%x\n", csi_param->trig_frame_mgnt);
+	RTK_LOGI(NOTAG, "csi act params: trig_frame_ctrl = 0x%x\n", csi_param->trig_frame_ctrl);
+	RTK_LOGI(NOTAG, "csi act params: trig_frame_data = 0x%x\n", csi_param->trig_frame_data);
+	RTK_LOGI(NOTAG, "csi act params: multi_type = %d [0-uc csi triggering frame;1-bc csi triggering frame]\n", csi_param->multi_type);
+
+	RTK_LOGI(NOTAG, "csi act params: mode = %d [0-rx normal;1-rx ndp;2-rx rsp]\n", csi_param->mode);
+	RTK_LOGI(NOTAG, "csi act params: enable = %d [0-dis;1-en]\n", csi_param->enable);
+	RTK_LOGI(NOTAG, "csi act params: period = %d [units:320us]\n", csi_param->trig_period);
+	RTK_LOGI(NOTAG, "csi act params: rate = %d [mgn_rate]\n", csi_param->data_rate);
+	RTK_LOGI(NOTAG, "csi act params: bw = %d [0-20M;1-40M]\n", csi_param->data_bw);
+	RTK_LOGI(NOTAG, "csi act params: trig_flag = %d\n", csi_param->trig_flag);
+	RTK_LOGI(NOTAG, "csi act params: trig_addr = " MAC_FMT "\n", MAC_ARG(csi_param->mac_addr));
+}
+
+static void at_wlcsi_help(void)
+{
+	RTK_LOGI(NOTAG, "\r\n");
+	RTK_LOGI(NOTAG, "AT+WLCSI=[<type>,<value>,<type>,<value>......]\r\n");
+	RTK_LOGI(NOTAG,
+			 "\t<type>:\tA string as \"mode\",\"trig_period\",\"data_rate\",\"mac_addr\",\"trig_flag\",\"enable\",\"multi_type\",\"group_num\",\"accuracy\\r\n");
+	RTK_LOGI(NOTAG, "\t<value>:\tAny type of <mode>, <trig_period>, <data_rate>, <mac_addr>, <trig_flag>, <enable>, <multi_type>, <group_num>, <accuracy>\r\n");
+	RTK_LOGI(NOTAG, "\t<mode>:\tFor csi mode, must be 0 or 2, mandatory\r\n");
+	RTK_LOGI(NOTAG, "\t<trig_period>:\tCsi sounding peirod[units:320us], optional\r\n");
+	RTK_LOGI(NOTAG, "\t<data_rate>:\tmandatory\r\n");
+	RTK_LOGI(NOTAG, "\t<mac_addr>:\tA hex-number string with colons, e.g. 1a:2b:3c:4d:5e:6f\r\n");
+}
+
+/****************************************************************
+AT command process:
+	AT+WLCSI
+	Wifi AT Command:
+	Config and Enable WiFi CSI.
+	[+WLCSI]:OK
+****************************************************************/
+void at_wlcsi(void *arg)
+{
+	int argc = 0, ret = 0, i = 0, j = 0, k = 0;
+	int error_no = RTW_AT_OK;
+	unsigned int mac[ETH_ALEN];
+	char *argv[MAX_ARGC] = {0};
+	struct rtw_csi_action_parm csi_param = {0};
+
+	if (arg == NULL) {
+		RTK_LOGW(NOTAG, "[+WLCSI] The parameters can not be ignored\r\n");
+		error_no = RTW_AT_ERR_REQUIRED_PARAM_MISS;
+		goto end;
+	}
+
+	argc = parse_param(arg, argv);
+	if ((argc < 2) || (argc > 21)) {
+		RTK_LOGW(NOTAG, "[+WLCSI] The parameters format ERROR\r\n");
+		error_no = RTW_AT_ERR_PARAM_NUM_ERR;
+		goto end;
+	}
+
+	/* The parameters appear by pairs, so i += 2. */
+	for (i = 1; argc > i; i += 2) {
+		j = i + 1;  /* next i. */
+
+		/* group num */
+		if (0 == strcmp("group_num", argv[i])) {
+			if ((argc > j) && (strlen(argv[j]) != 0)) {
+				csi_param.group_num = (unsigned char)atoi(argv[j]);
+			}
+		}
+		/* accuracy */
+		else if (0 == strcmp("accuracy", argv[i])) {
+			if ((argc > j) && (strlen(argv[j]) != 0)) {
+				csi_param.accuracy = (unsigned char)atoi(argv[j]);
+			}
+		}
+		/* trig_period */
+		else if (0 == strcmp("trig_period", argv[i])) {
+			if ((argc > j) && (strlen(argv[j]) != 0)) {
+				csi_param.trig_period = (unsigned char)atoi(argv[j]);
+			}
+		}
+		/* mode */
+		else if (0 == strcmp("mode", argv[i])) {
+			if ((argc > j) && (strlen(argv[j]) != 0)) {
+				csi_param.mode = (unsigned char)atoi(argv[j]);
+			}
+		}
+		/* rate */
+		else if (0 == strcmp("data_rate", argv[i])) {
+			if ((argc > j) && (strlen(argv[j]) != 0)) {
+				csi_param.data_rate = (unsigned char)atoi(argv[j]);
+			}
+		}
+		/* trig_falg */
+		else if (0 == strcmp("trig_flag", argv[i])) {
+			if ((argc > j) && (strlen(argv[j]) != 0)) {
+				csi_param.trig_flag = (unsigned char)atoi(argv[j]);
+			}
+		}
+		/* mac_addr. */
+		else if (0 == strcmp("mac_addr", argv[i])) {
+			if ((argc <= j) || (strlen(argv[j]) != 17)) {
+				RTK_LOGW(NOTAG, "[+WLCSI] Invalid mac_addr\r\n");
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
+				goto end;
+			}
+			_sscanf_ss(argv[j], MAC_FMT, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+			for (k = 0; k < ETH_ALEN; k++) {
+				csi_param.mac_addr[k] = mac[k] & 0xFF;
+			}
+		}
+		/* en */
+		else if (0 == strcmp("enable", argv[i])) {
+			if ((argc > j) && (strlen(argv[j]) != 0)) {
+				csi_param.enable = (unsigned char)atoi(argv[j]);
+			}
+		}
+		/* multi_type */
+		else if (0 == strcmp("multi_type", argv[i])) {
+			if ((argc > j) && (strlen(argv[j]) != 0)) {
+				csi_param.multi_type = (unsigned char)atoi(argv[j]);
+			}
+		}
+		/* Invalid input. */
+		else {
+			RTK_LOGW(NOTAG, "[+WLCSI] Invalid parameter type\r\n");
+			error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
+			goto end;
+		}
+	}
+
+	wifi_csi_param_dump(&csi_param);
+
+	if (csi_param.enable) {
+		csi_param.act = 1;  /* csi cfg */
+		ret = wifi_csi_config(&csi_param);
+		if (ret == RTK_SUCCESS) {
+			csi_param.act = 0;  /* csi en/dis */
+			ret = wifi_csi_config(&csi_param);
+		}
+	} else {
+		csi_param.act = 0;  /* csi en/dis */
+		ret = wifi_csi_config(&csi_param);
+	}
+
+	if (ret != RTK_SUCCESS) {
+		error_no = RTW_AT_ERR_UNKNOWN_ERR;
+	}
+end:
+	if (error_no == RTW_AT_OK) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		if (error_no >= RTW_AT_ERR_REQUIRED_PARAM_MISS && error_no <= RTW_AT_ERR_PARAM_NUM_ERR) {
+			at_wlcsi_help();
+		}
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+#endif
+
 log_item_t at_wifi_items[ ] = {
 #ifndef CONFIG_WHC_BRIDGE_HOST
 #ifdef CONFIG_LWIP_LAYER
@@ -1492,6 +1656,9 @@ log_item_t at_wifi_items[ ] = {
 	{"+WLDBG", at_wldbg, {NULL, NULL}},
 #ifdef CONFIG_WPS
 	{"+WLWPS", at_wlwps, {NULL, NULL}},
+#endif
+#ifdef CONFIG_CSI
+	{"+WLCSI", at_wlcsi, {NULL, NULL}},
 #endif
 	{"+WLPS", at_wlps, {NULL, NULL}},
 #endif /* CONFIG_WLAN */

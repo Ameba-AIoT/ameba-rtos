@@ -1,4 +1,4 @@
-#include "../../../amebaDplus_layout.ld"
+#include "../../../ameba_layout.ld"
 
 #if defined(CONFIG_IMG2_FLASH)
 	#define OUTPUT_TEXT_SECTION 		.xip_image2.text

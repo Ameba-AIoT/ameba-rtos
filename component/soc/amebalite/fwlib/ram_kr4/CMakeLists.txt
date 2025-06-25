@@ -50,7 +50,7 @@ ameba_list_append(private_sources
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/soc
-ameba_add_internal_library(ram_kr4
+ameba_add_internal_library(fwlib_kr4
     p_SOURCES
         ${private_sources}
     p_INCLUDES

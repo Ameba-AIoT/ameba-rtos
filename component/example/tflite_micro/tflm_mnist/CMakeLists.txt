@@ -11,15 +11,6 @@ target_sources(
     app_example.c
 )
 
-target_include_directories(
-    ${CURRENT_LIB_NAME} PRIVATE
-
-    ${BASEDIR}/component/tflite_micro
-    ${BASEDIR}/component/tflite_micro/third_party/gemmlowp
-    ${BASEDIR}/component/tflite_micro/third_party/flatbuffers/include
-
-)
-
 target_compile_options(
     ${CURRENT_LIB_NAME} PRIVATE
     -Wno-undef

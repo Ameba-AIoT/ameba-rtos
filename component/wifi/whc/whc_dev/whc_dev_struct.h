@@ -30,12 +30,10 @@ struct whc_cust_hdr {
 	u32	len;
 };
 
-#if defined(CONFIG_WHC_BRIDGE)
 struct whc_bridge_hdr {
 	u32	event;
 	u32	len;
 };
-#endif
 
 struct whc_buf_info {
 	u32 buf_allocated; //The spdio buffer allocated address

@@ -16,7 +16,10 @@ This example describes how to use general timer TIM2&TIM3 to generation periodic
 
 	GND <--> LED1 <---> PB_17
 	GND <--> LED2 <---> PB_18
+4. If you run this example in AmebaGreen2, then connect as below
 
+	GND <--> LED1 <---> PB_17
+	GND <--> LED2 <---> PB_18
 # SW configuration
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
@@ -38,3 +41,4 @@ This example describes how to use general timer TIM2&TIM3 to generation periodic
   - AmebaSmart
   - AmebaLite
   - AmebaDplus
+  - AmebaGreen2

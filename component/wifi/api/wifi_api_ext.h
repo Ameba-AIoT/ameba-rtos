@@ -530,26 +530,6 @@ s32 wifi_set_cts2self_duration_and_send(u8 wlan_idx, u16 duration);
 s32 wifi_csi_config(struct rtw_csi_action_parm *act_param);
 
 /**
- * @brief  Get CSI raw data and header information.
- * @param[in]  buf_len: Size of the buffer to store CSI information.
- * @param[in]  csi_buf: Pointer to the CSI data buffer.
- * @param[in]  len:  Pointer to the size of CSI raw data.
- * @code
- *    u8 *csi_buf = NULL;
- *    u32 len;
- *    csi_buf = rtos_mem_zmalloc(buf_len);
- *    wifi_csi_report(buf_len,csi_buf,&len);
- * @endcode
- * @return
- *    - @ref RTK_SUCCESS : The API executed successfully.
- *    - @ref RTK_FAIL : CONFIG_CSI is not defined or driver internal error.
- *    - -@ref RTK_ERR_BADARG :
- *      - NULL pointer passed for `csi_buf`.
- *      - CSI packet length (CSI header + raw data) exceeds `buf_len`.
- */
-s32 wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
-
-/**
  * @brief  Configure Wi-Fi speaker settings for audio module.
  * @param[in]  set_type: Wi-Fi speaker setting type:
  *                - @ref RTW_SPEAKER_SET_INIT

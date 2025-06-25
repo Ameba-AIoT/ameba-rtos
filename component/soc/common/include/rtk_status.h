@@ -18,6 +18,19 @@
 #define	RTK_ERR_NOMEM   (4)	/**< No Memory. */
 #define	RTK_ERR_TIMEOUT (5)	/**< Timeout. */
 
+#define RTK_ERR_DIAG_BASE           0x60
+#define RTK_ERR_DIAG_UNINIT         (RTK_ERR_DIAG_BASE + 0x01)  // diag uninitialize
+#define RTK_ERR_DIAG_SEM_FAIL       (RTK_ERR_DIAG_BASE + 0x02)  // ipc sema get fail
+#define RTK_ERR_DIAG_MALLOC         (RTK_ERR_DIAG_BASE + 0x03)  // malloc fail
+#define RTK_ERR_DIAG_FREE           (RTK_ERR_DIAG_BASE + 0x04)  // free fail
+#define RTK_ERR_DIAG_TOO_LARGE_BUFF (RTK_ERR_DIAG_BASE + 0x05)  // Too large a buffer
+#define RTK_ERR_DIAG_TOO_SMALL_BUFF (RTK_ERR_DIAG_BASE + 0x06)  // Too small a buffer
+#define RTK_ERR_DIAG_SEND_TIMEOUT   (RTK_ERR_DIAG_BASE + 0x07)  // timeout in transfer of big event
+
+#define RTK_ERR_DIAG_EVT_ADD_FAIL   (RTK_ERR_DIAG_BASE + 0x10)  // add event fail
+#define RTK_ERR_DIAG_EVT_NO_MORE    (RTK_ERR_DIAG_BASE + 0x11)  // no more event
+#define RTK_ERR_DIAG_EVT_FIND_FAIL  (RTK_ERR_DIAG_BASE + 0x12)  // find event fail
+
 #define RTK_ERR_WIFI_BASE   0x1000
 #define	RTK_ERR_WIFI_CONN_INVALID_KEY           (RTK_ERR_WIFI_BASE + 11)	/**< Invalid key. */
 #define	RTK_ERR_WIFI_CONN_SCAN_FAIL             (RTK_ERR_WIFI_BASE + 12)

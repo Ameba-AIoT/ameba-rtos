@@ -22,7 +22,7 @@ Logic Analyzer or oscilloscope.
      - `IR_TX_DATA_INVERSE`: carrier symbol from low to high; non-carrier symbol default high
      - `IR_TX_DATA_CARRIER_NORMAL`: default carrier and non-carrier waveform
      - `IR_TX_DATA_CARRIER_INVERSE`: there is a pulse from carrier to non-carrier
-4. Other IR protocol configuration, refer to `sdk\component\soc\amebaXXXX\fwlib\ameba_ir.c`
+4. Other IR protocol configuration, refer to `ir_nec_protocol.h` located in this demo folder.
    - struct and macros:
 
      - `IR_ProtocolTypeDef`: the struct of IR protocol data format, which depends on the IR protocol custom choose
