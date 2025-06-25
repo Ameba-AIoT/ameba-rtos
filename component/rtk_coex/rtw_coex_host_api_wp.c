@@ -1,5 +1,3 @@
-
-#include "wifi_api.h"
 #include "rtw_coex_host_api.h"
 
 

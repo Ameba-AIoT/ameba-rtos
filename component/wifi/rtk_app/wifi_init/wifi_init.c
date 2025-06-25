@@ -110,7 +110,7 @@ void wifi_init_thread(void *param)
 	wifi_on(RTW_MODE_STA);
 
 #ifdef CONFIG_WHC_BRIDGE
-	whc_bridge_dev_init_user_task();
+	whc_dev_init_cmd_path_task();
 	whc_dev_init_lite();
 #endif
 

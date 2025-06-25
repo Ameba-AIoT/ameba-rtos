@@ -15,8 +15,9 @@ Master's `GND` connect to Slave's `GND`
 
 1. The codes of Master and Slave are distinguished by the value of macro 'I2C_MASTER_DEVICE' in the code.
 2. The codes of Master send Slave read mode and Master read Slave send mode are distinguished by the value of macro 'MASTER_SEND' in the code.
-3. How to compile :
-      perform cmd: './build.py -a raw_i2c_dma_mode' in directory {sdk_path}/amebaXXX_gcc_project.
+3. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 4. How to modify gpio pin:
    you can also modify pinmux group settings according to correct pinmux table.
    for example: 

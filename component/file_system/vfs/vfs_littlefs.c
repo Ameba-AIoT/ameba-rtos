@@ -198,7 +198,9 @@ int littlefs_remove(const char *name)
 	int ret = 0;
 	ret = lfs_remove(&g_lfs, name);
 
-	if (ret < 0) {
+	if (ret == LFS_ERR_NOENT) {
+		VFS_DBG(VFS_INFO, "The file to be deleted does not exist.\r\n");
+	} else if (ret < 0) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs remove error %d \r\n", ret);
 	}
 
@@ -315,6 +317,7 @@ int littlefs_closedir(vfs_file *finfo)
 	rtos_mem_free(dir);
 	if (ent != NULL) {
 		rtos_mem_free(ent);
+		ent = NULL;
 	}
 	if (ret < 0) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs Close directory fail: %d", ret);

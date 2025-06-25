@@ -50,7 +50,6 @@ if(CONFIG_USBH_UVC)
     )
     if (CONFIG_SUPPORT_USBH_UVC_HW_DEC)
         ameba_list_append(private_sources
-            ${c_CMPT_SOC_DIR}/fwlib/ram_common/ameba_uvc.c
             ${USBH_CLASS_DIR}/uvc/usbh_uvc_dec.c
         )
     endif()

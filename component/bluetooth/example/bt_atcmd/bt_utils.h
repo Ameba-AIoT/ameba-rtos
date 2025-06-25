@@ -57,20 +57,22 @@ extern "C"
 #define BT_AT_PRINTERROR(errno)     BT_AT_PRINT("ERROR:%d\r\n", errno)
 
 typedef enum {
-	BT_AT_OK                       =   0x00,   /*!< 0, means success */
-	BT_AT_FAIL                     =   0x01,   /*!< 1, means common failure */
-	BT_AT_ERR_NOT_READY            =   0x02,   /*!< 2 */
-	BT_AT_ERR_NO_MEMORY            =   0x03,   /*!< 3 */
-	BT_AT_ERR_OS_OPERATION         =   0x04,   /*!< 4 */
-	BT_AT_ERR_PARAM_INVALID        =   0x05,   /*!< 5 */
-	BT_AT_ERR_ADV_LENGTH_INVALID   =   0x06,   /*!< 6 */
-	BT_AT_ERR_NO_CONNECTION        =   0x07,   /*!< 7 */
-	BT_AT_ERR_IRK_NOT_FOUND        =   0x08,   /*!< 8 */
-	BT_AT_ERR_NO_BOND              =   0x09,   /*!< 9 */
-	BT_AT_ERR_LOWER_STACK          =   0x0A,   /*!< 10 */
-	BT_AT_ERR_CREATE_CONN_TIMEOUT  =   0x0B,   /*!< 11 */
-	BT_AT_ERR_CMD_INVALID          =   0x0C,   /*!< 12 */
-	BT_AT_ERR_CMD_TIMEOUT          =   0x0D,   /*!< 13 */
+	BT_AT_OK                            =   0x00,   /*!< 0, means success */
+	BT_AT_FAIL                          =   0x01,   /*!< 1, means common failure */
+	BT_AT_ERR_NOT_READY                 =   0x02,   /*!< 2 */
+	BT_AT_ERR_NO_MEMORY                 =   0x03,   /*!< 3 */
+	BT_AT_ERR_OS_OPERATION              =   0x04,   /*!< 4 */
+	BT_AT_ERR_PARAM_INVALID             =   0x05,   /*!< 5 */
+	BT_AT_ERR_ADV_LENGTH_INVALID        =   0x06,   /*!< 6 */
+	BT_AT_ERR_NO_CONNECTION             =   0x07,   /*!< 7 */
+	BT_AT_ERR_IRK_NOT_FOUND             =   0x08,   /*!< 8 */
+	BT_AT_ERR_NO_BOND                   =   0x09,   /*!< 9 */
+	BT_AT_ERR_LOWER_STACK               =   0x0A,   /*!< 10 */
+	BT_AT_ERR_CREATE_CONN_TIMEOUT       =   0x0B,   /*!< 11 */
+	BT_AT_ERR_CMD_INVALID               =   0x0C,   /*!< 12 */
+	BT_AT_ERR_CMD_TIMEOUT               =   0x0D,   /*!< 13 */
+	BT_AT_ERR_NO_SRV_ADD                =   0x0E,   /*!< 14 */
+	BT_AT_ERR_CHAR_ADD_EXCEED_MAX_NUM   =   0x0F,   /*!< 15 */
 } bt_at_err_t;
 
 void ble_addr_to_str(void *paddr, char *str, uint32_t len);

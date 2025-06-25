@@ -35,5 +35,11 @@ Please see discriptions in component/audio/configs/include/ameba_audio_mixer_usr
 
 ## How to run <a name = "How to run"></a>
 
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
+
+### Note
+
 1. Use CMD `./build.py -a audio_track -p` to compile this example.
 2. For playing run command and parameters, please refer to app_example.c.

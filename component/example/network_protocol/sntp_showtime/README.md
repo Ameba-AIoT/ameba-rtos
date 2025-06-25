@@ -18,9 +18,9 @@ For `SNTP_UPDATE_DELAY` to work, `SNTP_STARTUP_DELAY` should be defined
 	#define TIME_MODE    1	// for timezone with seconds, e.g. '2023-12-12 16:07:41'
 	```
 
-3. How to use:
-   - Run `./build.py -a sntp_showtime` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+3. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 

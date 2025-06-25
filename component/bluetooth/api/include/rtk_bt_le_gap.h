@@ -3587,6 +3587,9 @@ uint16_t rtk_bt_le_gap_coc_send_data(uint16_t cid, uint16_t len, uint8_t *data);
  * @brief     Set BLE receiver test parameters and start
  * @param[in] p_rx_test_param: BLE receiver test parameters
  * @param[in] rx_version:      BLE receiver test version
+ * @note      This API shall be called after BT init, and DO NOT execute ADV / Scan / Connection related actions
+ *            before calling this API. After calling this API, DO NOT execute ADV / Scan / Connection actions
+ *            UNLESS BT deinit & BT init is done again before that.
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -3597,6 +3600,9 @@ uint16_t rtk_bt_le_gap_dtm_rx_test(rtk_bt_le_dtm_rx_param_t *p_rx_param, rtk_bt_
  * @brief     Set BLE transmitter test parameters and start
  * @param[in] p_tx_test_param: BLE transmitter test parameters
  * @param[in] tx_version:      BLE transmitter test version
+ * @note      This API shall be called after BT init, and DO NOT execute ADV / Scan / Connection related actions
+ *            before calling this API. After calling this API, DO NOT execute ADV / Scan / Connection actions
+ *            UNLESS BT deinit & BT init is done again before that.
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -3606,6 +3612,9 @@ uint16_t rtk_bt_le_gap_dtm_tx_test(rtk_bt_le_dtm_tx_param_t *p_tx_param, rtk_bt_
 /**
  * @brief     Set BLE receiver or transmitter end and report number of test packets received
  * @param[out] p_num_pkts: Pointer of number of test packets received
+ * @note      This API shall be called after BT init, and DO NOT execute ADV / Scan / Connection related actions
+ *            before calling this API. After calling this API, DO NOT execute ADV / Scan / Connection actions
+ *            UNLESS BT deinit & BT init is done again before that.
  * @return
  *            - 0  : Succeed
  *            - Others: Error code

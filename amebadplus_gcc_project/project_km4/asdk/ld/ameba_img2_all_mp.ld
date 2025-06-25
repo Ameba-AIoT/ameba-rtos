@@ -142,6 +142,13 @@ SECTIONS
 		*(.BTTRACE)
 		__btrace_end__ = .;
 	} > BTRACE
+
+	.coex_trace.text :
+	{
+		__ctrace_start__ = .;
+		*(.COEXTRACE)
+		__ctrace_end__ = .;
+	} > CTRACE	
 }
 
 __bdram_heap_buffer_size__ = ORIGIN(KM4_BD_RAM_MP) + LENGTH(KM4_BD_RAM_MP) - __bdram_heap_buffer_start__;

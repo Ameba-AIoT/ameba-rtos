@@ -21,6 +21,10 @@ Pin defination:
 
 Realtek SDIO host driver should set to loopback mode. Refer to SDIO application note to get more information.
 
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
+
 #  Expect result
 
 SDIO host will send data to SDIO device, and SDIO device will check if data is correct. Then it will loop it back to SDIO host and SDIO also check the loopback data.

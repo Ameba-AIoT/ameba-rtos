@@ -1,6 +1,6 @@
 # Example Description
 
-This example demonstrates how to configure the status register of Winbond to protect all blocks by MBED API. Note that the status register should be reset if users want to reload code. 
+This example demonstrates how to configure the status register of Winbond to protect all blocks by MBED API. Note that the status register should be reset if users want to reload code.
 
 # HW Configuration
 
@@ -8,9 +8,9 @@ Winbond Nor Flash
 
 # SW Configuration
 
-Replace the original main.c under sdk project (project\realtek_amebaxxx_va0_example\src\src_xxx) with the main.c in the example directory. Then re-build project. 
-
-For AmebaSmart, please compile it in CA32(ap) core. 
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 

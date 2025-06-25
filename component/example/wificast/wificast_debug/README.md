@@ -41,8 +41,9 @@ For debug monitored mode, set WIFI_CAST_MONITORED to 1:
 
 ### Step 2: Build & Flash
 
-1. Navigate to the project directory according to the chip you use. For GCC enviornment, type command `./build.py -a wificast_debug` to compile the example.
-2. Build and download the image into flash for monitor and monitored device respectively.
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool(Build and download the image into flash for monitor and monitored device respectively).
 
 ### Step 3: Run Monitor and Monitored
 

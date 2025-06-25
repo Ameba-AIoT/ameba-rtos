@@ -6,13 +6,10 @@ This example shows how to use freertos tickless with aontimer interruptable inte
 
 
 # SW Configuration
-How to compile:
 
-1. Run cmd: `./build.py -a raw_pmc_pg` in directory {sdk_path}/amebaXXX_gcc_project.
-2. Copy the current file `example_xxx.c` to the amebaXXX_project/project_xxx/src path, and then include the current file in the main.c file, which can also be compiled. amebaxxx_gcc_project\project_xxx\src_xxx
-		* On AmebaSmart, src_xxx should be src_ap
-		* On AmebaLite, src_xxx should be src_KM4 if KM4 is AP core, or src_xxx should be src_KR4 if KR4 is AP core
-		* On AmebaDplus,src_xxx should be src_KM4
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 

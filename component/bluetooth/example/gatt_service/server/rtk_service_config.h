@@ -26,6 +26,8 @@ extern "C"  {
 #define TRANSFER_MODULE_SRV_ID              12
 #define BLE_OTA_SRV_ID                      13
 
+#define TRANSFER_MODULE_SRV_ID_BASE         0x80
+
 #ifdef __cplusplus
 }
 #endif

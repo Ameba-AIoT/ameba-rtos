@@ -17,18 +17,10 @@ for example:
    _PB_17 <--> _PB_19
 
 # SW configuration
-1. How to compile :
+1. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
-   - make and download new image
-   
-     - in {SDK}\amebaxxx_gcc_project path, input
-   
-     ```shell
-    ./build.py -a raw_tim9_capture_pulse_width_32k
-     ```
-   
-     - Use Realtek AmebaImageTool to download the image under auto_build folder to development board
-     - press reset/chip_en button, then example will be start running.
 2. How to modify gpio pin:
    - you can also modify pinmux group settings according to correct pinmux table.
      For example:

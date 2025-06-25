@@ -40,8 +40,13 @@ endif()
 
 execute_process(
     COMMAND ${CMAKE_OBJCOPY} -j .ram_retention.text -j .ram_retention.entry -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/ram_retention.bin
+)
+
+if(CONFIG_BT_COEXIST AND CONFIG_COEXIST_DEV)
+execute_process(
     COMMAND ${CMAKE_OBJCOPY} -j .coex_trace.text -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/COEX.trace
 )
+endif()
 
 message( "========== Image manipulating start ==========")
 

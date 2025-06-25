@@ -26,9 +26,9 @@ By default, BOD works `under interrupt mode`.
 
 1. `BOD_INTR_MODE` can be set to `1` or `0` to use BOD `under interrupt mode` or `under reset mode`.
 2. `BOD_FALL_THRE` and `BOD_RISE_THRE` can be modified to set falling and rising threshold, which ranges from `0x0` to `0x1F`.
-3. How to use:
-    * Run `./build.py -a raw_bod_int_reset` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-    * `Download` images to board by Ameba Image Tool.
+3. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 

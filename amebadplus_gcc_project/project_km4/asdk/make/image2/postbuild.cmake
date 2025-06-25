@@ -43,7 +43,11 @@ if(CONFIG_BT)
         COMMAND ${CMAKE_OBJCOPY} -j .bluetooth_trace.text -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/APP.trace
     )
 endif()
-
+if(CONFIG_BT_COEXIST AND CONFIG_COEXIST_DEV)
+    execute_process(
+        COMMAND ${CMAKE_OBJCOPY} -j .coex_trace.text -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/COEX.trace
+    )
+endif()
 
 message( "========== Image manipulating start ==========")
 

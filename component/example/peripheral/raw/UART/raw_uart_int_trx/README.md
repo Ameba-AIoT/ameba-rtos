@@ -30,9 +30,9 @@ By default, `UART0` is used to communicate with PC under `38400bps` by interrupt
 	- RxFifoTrigLevel: `1BYTES`
 	- RxTimeOutCnt: `64`
 	- `RUART_BIT_ERBI` | `RUART_BIT_ELSI` | `RUART_BIT_ETOI` enabled
-4. How to use:
-    * Run `./build.py -a raw_uart_int_trx` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-    * `Download` images to board by Ameba Image Tool.
+4. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 

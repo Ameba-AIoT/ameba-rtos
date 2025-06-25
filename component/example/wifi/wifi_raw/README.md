@@ -14,10 +14,12 @@ None
 	u8 addr2[6] = {0x00, 0xE0, 0x4C, 0x00, 0x02, 0xF0};		// Address 2, should be the mac address of myself as master
 	u8 addr3[6] = {0xBC, 0x46, 0x99, 0x7B, 0x48, 0x74};		// Address 3, shoule be the BSSID
 	```
+2. avoid raw tx failure caused by entering IPS When the STA is not connected:
+   - CALL wifi_set_ips_internal(0)
 
-2. How to use:
-   - Run `./build.py -a wifi_raw` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+3. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 

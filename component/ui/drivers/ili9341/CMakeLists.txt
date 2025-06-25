@@ -52,7 +52,7 @@ ameba_list_append(private_compile_options -DNDEBUG -UDEBUG -Wno-incompatible-poi
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and as part of some libs that are packaged into lib/application
-ameba_add_external_tmp_library(ili9341
+ameba_add_internal_library(ili9341
     p_SOURCES
         ${private_sources}
     p_INCLUDES

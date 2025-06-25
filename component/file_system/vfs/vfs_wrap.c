@@ -377,11 +377,11 @@ long int __wrap_ftell(FILE *stream)
 	return ret;
 }
 
-long int __wrap_ftruncate(FILE *stream, off_t length)
+int __wrap_ftruncate(int stream, off_t length)
 {
 	int ret = 0;
 	vfs_file *finfo = (vfs_file *)stream;
-	if (is_stdio(stream)) {
+	if (is_stdio((FILE *)stream)) {
 		return -1;
 	}
 

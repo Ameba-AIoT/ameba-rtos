@@ -5,16 +5,10 @@ This example describes how to use watchdog by MBED API. In this example, watchdo
 None
 
 # SW configuration
-make and download new image
 
-   - in {SDK}\amebaxxx_gcc_project path, input
-   
-   ```shell
-   ./build.py -a mbed_watchdog
-   ```
-
-   - Use Realtek AmebaImageTool to download the image under auto_build folder to development board
-   - press reset/chip_en button, then example will be start running.
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 1. After power-on and running for a period of time, the watchdog will be triggered to reset the entire SOC.

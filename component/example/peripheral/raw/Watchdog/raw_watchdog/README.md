@@ -8,13 +8,9 @@ None
 
 # SW configuration
 
-The steps to build Watchdog image are as following:
-	
-	- in {SDK}\amebaxxx_gcc_project path, input
-
-	```shell
-	./build.py -a raw_watchdog
-	```
+Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 

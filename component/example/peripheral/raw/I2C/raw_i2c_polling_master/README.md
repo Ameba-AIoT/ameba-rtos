@@ -33,8 +33,9 @@ master's GND connect to slave's GND
    		If not `#define I2C_RESTART_DEMO`, then master will write ->stop->read -> stop.
 2. In this example, we use config master_addr_retry to decide if the master will retry sending addr.
 3. In this example, we use config I2C_LOOP_TEST to decide if the master will tx and rx 3 times.
-4. How to compile :
-   		perform cmd: './build.py -a raw_i2c_polling_master' in directory {sdk_path}/amebaXXX_gcc_project
+4. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 5. How to modify gpio pin:
    you can also modify pinmux group settings according to correct pinmux table.
    for example: 

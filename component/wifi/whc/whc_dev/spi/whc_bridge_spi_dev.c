@@ -1,31 +1,5 @@
 #include "whc_dev.h"
 
-struct whc_bridge_spi_priv {
-	u8 *rxbuf;
-};
-
-
-static rtos_sema_t bridge_spi_sema;
-static struct whc_bridge_spi_priv bridge_priv = {0};
-
-static void whc_bridge_spi_dev_task(void *pData)
-{
-	struct whc_bridge_spi_priv *p = pData;
-	struct whc_bridge_hdr *hdr = NULL;
-
-	for (;;) {
-		/* Task blocked and wait the semaphore(events) here */
-		rtos_sema_take(bridge_spi_sema, RTOS_MAX_TIMEOUT);
-
-		if (p->rxbuf) {
-			hdr = (struct whc_bridge_hdr *)p->rxbuf;
-			whc_bridge_dev_pkt_rx_to_user(p->rxbuf + sizeof(struct whc_bridge_hdr), hdr->len);
-			rtos_mem_free(p->rxbuf);
-			p->rxbuf = NULL;
-		}
-	}
-}
-
 /**
  * @brief  to haddle the inic message interrupt. If the message queue is
  * 	initialized, it will enqueue the message and wake up the message
@@ -37,6 +11,7 @@ static void whc_bridge_spi_dev_task(void *pData)
 void whc_bridge_spi_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb)
 {
 	u32 event = *(u32 *)rxbuf;
+	struct whc_bridge_hdr *hdr;
 
 	switch (event) {
 	case WHC_WIFI_EVT_XIMT_PKTS:
@@ -49,12 +24,8 @@ void whc_bridge_spi_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb)
 
 		break;
 	default:
-		/* wait for last handdle */
-		while (bridge_priv.rxbuf != NULL) {
-			rtos_time_delay_ms(1);
-		}
-		bridge_priv.rxbuf = rxbuf;
-		rtos_sema_give(bridge_spi_sema);
+		hdr = (struct whc_bridge_hdr *)rxbuf;
+		whc_dev_pkt_rx_to_user(rxbuf + sizeof(struct whc_bridge_hdr), rxbuf, hdr->len);
 		break;
 	}
 
@@ -99,14 +70,6 @@ void whc_bridge_spi_dev_init(void)
 	rtk_log_level_set(TAG_WLAN_INIC, RTK_LOG_DEBUG);
 
 	whc_spi_dev_init();
-
-	bridge_priv.rxbuf = NULL;
-	rtos_sema_create(&(bridge_spi_sema), 0, RTOS_SEMA_MAX_COUNT);
-	if (rtos_task_create(NULL, "WHC_BRIDGE_SPI_DEV_TASK", whc_bridge_spi_dev_task, (void *)&bridge_priv, 1024 * 4, 7) != RTK_SUCCESS) {
-		RTK_LOGE(TAG_WLAN_INIC, "Create WHC_BRIDGE_SPI_DEV_TASK Err!!\n");
-		return;
-	}
-
 
 	whc_bridge_dev_pktfilter_init();
 

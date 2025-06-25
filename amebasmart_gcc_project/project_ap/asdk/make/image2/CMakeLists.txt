@@ -30,6 +30,7 @@ ameba_add_subdirectory(${c_CMPT_WIFI_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_APP_DIR})
 ameba_add_subdirectory(${c_CMPT_RTK_COEX_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_SOC_DIR}/verification)
+ameba_add_subdirectory_if_exist(${c_CMPT_FWLIB_DIR}/rom_hp)
 
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
 ameba_add_subdirectory(${c_CMPT_PMC_DIR})
@@ -79,6 +80,7 @@ target_link_libraries(${c_CURRENT_IMAGE}
     ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${c_SDK_VERSION}/v7-a+neon-fp16/fpu/crtbegin.o
     ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${c_SDK_VERSION}/v7-a+neon-fp16/fpu/crtend.o
     -lm -lstdc++
+	${c_LINK_ROM_LIB}
 )
 
 #--------------- POST BUILD ------------------#

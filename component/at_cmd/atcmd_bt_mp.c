@@ -13,6 +13,8 @@
 
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_host_api.h"
+#else
+#error "Please Enable Coexist!!!"
 #endif
 
 static bool open_flag = 0;
@@ -349,13 +351,19 @@ static int mp_ext2_gnt_bt(void **argv, int argc)
 
 	if (strcmp(argv[0], "wifi") == 0) {
 		MP_EXT2_PRINTF("Switch GNT_BT to WIFI.\n\r");
+#if defined(CONFIG_BT_COEXIST)
 		rtk_coex_btc_set_pta(PTA_WIFI, PTA_HOST_BT, COMMON_ACTION);
+#endif
 	} else if (strcmp(argv[0], "bt") == 0) {
 		MP_EXT2_PRINTF("Switch GNT_BT to BT.\n\r");
+#if defined(CONFIG_BT_COEXIST)
 		rtk_coex_btc_set_pta(PTA_BT, PTA_HOST_BT, COMMON_ACTION);
+#endif
 	} else if (strcmp(argv[0], "auto") == 0) {
 		MP_EXT2_PRINTF("Switch GNT_BT to AUTO.\n\r");
+#if defined(CONFIG_BT_COEXIST)
 		rtk_coex_btc_set_pta(PTA_AUTO, PTA_HOST_BT, COMMON_ACTION);
+#endif
 	}
 
 	return 0;

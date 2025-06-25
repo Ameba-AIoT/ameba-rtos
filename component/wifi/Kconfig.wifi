@@ -3,7 +3,7 @@ if FULLMAC_DEV
         config NAN
             bool "Enable NAN"
             default n
-        config P2P
+        config WIFI_P2P_ENABLE
             bool "Enable P2P"
             default n
     endmenu
@@ -46,3 +46,9 @@ config WIFI_SPEAKER_ENABLE
 config HIGH_TP_TEST
     bool "Enable HIGH TP"
     default n
+
+if LINUX_FW_EN
+    config WIFI_P2P_ENABLE
+        bool "Enable P2P"
+        default n
+endif

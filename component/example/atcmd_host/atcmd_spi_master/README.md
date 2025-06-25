@@ -12,9 +12,9 @@ None
 
 1. Modify the SPI and UART configurations in atcmd_config.json as needed. (like pins, spi clock frequence, uart baudrate).
 
-2. How to use:
-   - Run `./build.py -a atcmd_spi_master` under project path, e.g. `amebadplus_gcc_project/`, to generate images.
-   - `Download` images to board by Ameba Image Tool.
+2. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 

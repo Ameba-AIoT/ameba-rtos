@@ -18,9 +18,9 @@ For more info of `VBAT_MEAS`, refer to EVB schematic design file.
 
 1. By default, `TIMER2` with a period of `500ms` is selected to trigger ADC to sample data `periodically`.
 2. `ADC_TIM_IDX` and `PERIOD_MS` can be modified to configure desired TIMER and sample period.
-3. How to use:
-    * Run `./build.py -a raw_adc_tim_trig_vbat` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-    * `Download` images to board by Ameba Image Tool.
+3. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 

@@ -34,9 +34,9 @@ By default, `UART0` is used to transmit or receive `1000` data to or from anothe
    For more info of UART pins, refer to pinmux spec.
 3. `UART_BUF_SIZE` can be modified to set desired data number.
 4. `RxFifoTrigLevel` can be modified to configure rx fifo trigger level, refer to `UART_Rx_FIFO_Trigger_Level` for more options.
-5. How to use:
-    * Run `./build.py -a raw_uart_polling_auto_flow_ctrl` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
-    * `Download` images to board by Ameba Image Tool.
+5. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 

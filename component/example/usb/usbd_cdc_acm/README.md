@@ -17,11 +17,9 @@ None
 	```
 	Save and exit.
 
-2. Build
-	Type command `./build.py -a usbd_cdc_acm` under the project directory to build images.
-
-3. Download
-	Download images to board by Ameba Image Tool.
+2. Build and Download:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 
