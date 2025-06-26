@@ -25,10 +25,7 @@ GDMA will display "DMA data complete MaxMuliBlock = x " in serial port tool.
 
 1. If only a single block is being transferred, reference raw/single block example.
 
-2.  If the output character sequence of the serial port tool is disordered, please configure `Boot_Agg_En = TRUE` in component/soc/xx/usrcfg/ameba_bootcfg.c according to the chip ID.
-    - AmebaSmart, amebasmart/usrcfg/ameba_bootcfg.c
-    - AmebaLite, amebalite/usrcfg/ameba_bootcfg.c
-    - AmebaDplus, amebadplus/usrcfg/ameba_bootcfg.c
+2.  If the output character sequence of the serial port tool is disordered, please configure `Boot_Agg_En = TRUE` in ameba_bootcfg.c according to the chip ID.
 
 3. If the output information contains " irq[xx] priority 10 shall <= 7" , it means that the GDMA interrupt priority setting is abnormal and should be set below 7.
 

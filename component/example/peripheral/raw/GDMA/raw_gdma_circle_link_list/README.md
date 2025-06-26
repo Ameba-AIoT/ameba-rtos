@@ -43,4 +43,3 @@ Because it is a circular linked list, the transmission will not stop.
 - AmebaLite
 - AmebaSmart
 - AmebaDplus
-- AmebaGreen2

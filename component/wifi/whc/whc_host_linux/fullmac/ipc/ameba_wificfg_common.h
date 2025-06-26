@@ -16,13 +16,11 @@ struct wifi_user_conf {
 		- \b RTW_EDCCA_DISABLE: Ingore EDCCA. */
 	u8 rtw_edcca_mode;
 
-	/*!	For power limit, see Ameba Wi-Fi TX power and Country code Setup Guideline.pdf.\n
-		0: Disable, 1: Enable, 2: Depend on efuse(flash). */
-	u8 rtw_tx_pwr_lmt_enable;
-
-	/*!	For power by rate, see Ameba Wi-Fi TX power and Country code Setup Guideline.pdf.\n
-		0: Disable, 1: Enable, 2: Depend on efuse(flash). */
-	u8 rtw_tx_pwr_by_rate;
+	/*! For power by rate and power by limit table selection, refer to Ameba Wi-Fi TX Power and Country Code Setup Guideline.pdf.
+		- 0: Disable power by limit, enable power by rate;
+		- 1: Enable both power by limit and power by rate;
+		- 2: Depend on efuse (flash). */
+	u8 tx_pwr_table_selection;
 
 	/*!	Enabled during TRP TIS certification. */
 	u8 rtw_trp_tis_cert_en;
