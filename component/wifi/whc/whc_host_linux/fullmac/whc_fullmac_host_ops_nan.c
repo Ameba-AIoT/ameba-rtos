@@ -126,7 +126,9 @@ static int whc_fullmac_host_add_nan_func_ops(struct wiphy *wiphy,
 
 	printk(" => %s\n", __func__);
 
-	memcpy(&nan_param, func, sizeof(struct rtw_nan_func_info_t));
+	/* func->type is enum, which occupies 4bytes, but nan_param.type is u8 */
+	nan_param.type = func->type;
+	memcpy(&nan_param.service_id, &func->service_id, sizeof(struct rtw_nan_func_info_t) - sizeof(nan_param.type));
 
 	if (func->serv_spec_info) {
 		serv_spec_info_vir = rtw_malloc(func->serv_spec_info_len, &serv_spec_info_phy);

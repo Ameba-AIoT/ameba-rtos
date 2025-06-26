@@ -30,4 +30,3 @@ It does not match the actual number of blocks. This is normal.
 - AmebaLite
 - AmebaSmart
 - AmebaDplus
-- AmebaGreen2

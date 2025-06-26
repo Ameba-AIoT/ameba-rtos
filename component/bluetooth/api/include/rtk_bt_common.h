@@ -853,6 +853,10 @@ typedef enum {
 	RTK_BT_AVRCP_ACT_VOLUME_CHANGE_REQ,
 	RTK_BT_AVRCP_ACT_GET_ELEMENT_ATTR,
 	RTK_BT_AVRCP_ACT_CONN_COVER_ART,
+	RTK_BT_AVRCP_ACT_APP_SETTING_ATTRS_LIST,
+	RTK_BT_AVRCP_ACT_APP_SETTING_VALUES_LIST,
+	RTK_BT_AVRCP_ACT_APP_SETTING_VALUE_GET,
+	RTK_BT_AVRCP_ACT_APP_SETTING_VALUE_SET,
 	RTK_BT_AVRCP_ACT_MAX,
 } rtk_bt_avrcp_act_t;
 
@@ -868,6 +872,9 @@ typedef enum {
 	RTK_BT_AVRCP_EVT_VOLUME_DOWN,                   /*!< AVRCP volume down */
 	RTK_BT_AVRCP_EVT_REG_VOLUME_CHANGED,            /*!< AVRCP volume reg changed */
 	RTK_BT_AVRCP_EVT_ELEMENT_ATTR_INFO,             /*!< AVRCP element attr information */
+	RTK_BT_AVRCP_EVT_APP_SETTING_ATTRS_LIST_RSP,    /*!< AVRCP app settings attrs lit */
+	RTK_BT_AVRCP_EVT_APP_SETTING_VALUES_LIST_RSP,   /*!< AVRCP app values attrs lit */
+	RTK_BT_AVRCP_EVT_APP_SETTING_GET_RSP,           /*!< AVRCP app setting get response */
 	RTK_BT_AVRCP_EVT_COVER_ART_DATA_IND,            /*!< AVRCP cover art data indication */
 	RTK_BT_AVRCP_EVT_CONN_CMPL,                     /*!< AVRCP conn completion */
 	RTK_BT_AVRCP_EVT_DISCONN_CMPL,                  /*!< AVRCP disconn completion */

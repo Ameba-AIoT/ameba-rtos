@@ -63,8 +63,6 @@
 #define SUPPORT_5G_CHANNEL
 /* PHY layer band config end */
 
-/* enable 1X code in lib_wlan as default (increase 380 bytes) */
-#define CONFIG_EAP
 /* For phydm configurations */
 #define CONFIG_FW_C2H_PKT
 
@@ -88,7 +86,7 @@
 #undef CONFIG_ADDRESS_CAM
 #endif
 
-//#define CONFIG_P2P
+#define CONFIG_P2P
 
 /*enable dynamic mechanism for driver*/
 #define CONFIG_WIFI_RA

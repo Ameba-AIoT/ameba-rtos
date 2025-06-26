@@ -48,6 +48,7 @@ if(CONFIG_CORE_AS_AP AND CONFIG_SUPPORT_ATCMD)
         atcmd_bt_mp.c
         atcmd_coex.c
         atcmd_otp.c
+        atcmd_diag.c
     )
     ameba_list_append_if(CONFIG_WLAN private_sources
         atcmd_http.c

@@ -1,0 +1,57 @@
+{
+  version: 1,
+  image1: {
+    img_id: 0,
+    img_ver_major: 1,
+    img_ver_minor: 1,
+    sec_epoch: 1,
+    //hash_alg: sha256/sha384/sha512/hmac256/hmac384/hmac512
+    hash_alg: "sha256",
+    rsip_en: false,
+    //rsip_mode: 2 is GCM, 1 is XTS(CTR+ECB), 0 is CTR
+    rsip_mode: 1,
+    //gcm_tag_len: use in GCM, should be 4, 8, 16
+    gcm_tag_len: 4,
+    //rsip_key_id: 0 use (ecb_key[0], ctr_key[0]), 1 use (ecb_key[1], ctr_key[1])
+    rsip_key_id: 0,
+    rsip_iv: "0102030405060708",
+    algorithm: "ed25519",
+    private_key: "6AA34203018334474B25A0600996CA0968AA6228B886FF234B4EB9628B703C0A",
+    public_key: "E2A0D6500BBF1DD8DC212098C230EB731ECE3A81AA11D0E6E538FA36BBA4FF6E",
+    public_key_hash: "72B2E1CB0E8F715262AF38DFA0E522C95660D0EBFD920F4B1A229845E599C697",
+  },
+  // cert/app share img_id/img_ver, rdp img is in app
+  image2: {
+    img_id: 1,
+    img_ver_major: 1,
+    img_ver_minor: 1,
+    sec_epoch: 1,
+    //hash_alg: sha256/sha384/sha512/hmac256/hmac384/hmac512
+    hash_alg: "sha256",
+    rsip_en: false,
+    //rsip_mode: 2 is GCM, 1 is XTS(CTR+ECB), 0 is CTR
+    rsip_mode: 1,
+    //gcm_tag_len: use in GCM, should be 4, 8, 16
+    gcm_tag_len: 4,
+    //rsip_key_id: 0 use (ecb_key[0], ctr_key[0]), 1 use (ecb_key[1], ctr_key[1])
+    rsip_key_id: 1,
+    rsip_iv: "213253647586a7b8",
+    algorithm: "ed25519",
+    private_key: "9FC60C4CB6162E49C54FB94511497E16F5EB605167836F15DECBB8363B18E243",
+    public_key: "45BABD665908AD5576D9DA4A80287262A4CB1475ACAD543E27A9C2598579FC72",
+    public_key_hash: "1DFC2FE01CA8274F06E2E112D027C3C6FF9CED59EE79944BED46ADE35C44B422",
+  },
+  cert: {
+    algorithm: "ed25519",
+    private_key: "6AA34203018334474B25A0600996CA0968AA6228B886FF234B4EB9628B703C0A",
+    public_key: "E2A0D6500BBF1DD8DC212098C230EB731ECE3A81AA11D0E6E538FA36BBA4FF6E",
+    public_key_hash: "72B2E1CB0E8F715262AF38DFA0E522C95660D0EBFD920F4B1A229845E599C697",
+  },
+  secure_boot_en: 0,
+  hmac_key: "9874918301909234686574856692873911223344556677889900aabbccddeeff",
+  ecb_key: "E2A0D6500BBF1DD8DC212098C230EB731ECE3A81AA11D0E6E538FA36BBA4FF6E",
+  ctr_key: "6AA34203018334474B25A0600996CA0968AA6228B886FF234B4EB9628B703C0A",
+  rdp_en: false,
+  rdp_iv: "0123456789abcdef",
+  rdp_key: "11223344556677889900aabbccddeeff11223344556677889900aabbccddeeff"
+}

@@ -7,7 +7,7 @@
  *  possession or use of this module requires written permission of RealTek.
  */
 #include "whc_dev.h"
-#ifdef CONFIG_WHC_BRIDGEB
+#ifdef CONFIG_WHC_BRIDGE
 #include "lwip_netconf.h"
 #endif
 
@@ -71,19 +71,13 @@ const struct event_func_t whc_dev_api_handlers[] = {
 #endif
 	{WHC_API_WAR_OFFLOAD_CTRL, whc_event_war_offload_ctrl},
 	{WHC_API_WAR_SET_MDNS_PARA, whc_event_war_set_mdns_para},
-#if defined(CONFIG_WHC_BRIDGEB)
-	{WHC_API_BRIDGE_DHCP, whc_event_bridge_DHCP},
-	{WHC_API_BRIDGE_GET_IP, whc_event_bridge_get_ip},
-	{WHC_API_WIFI_GET_SCANNED_AP_INFO, whc_event_bridge_get_scan_res},
-	{WHC_API_WIFI_GET_MAC_ADDR, whc_event_bridge_get_dev_mac},
-#else
+
 	{WHC_API_WIFI_GET_SCANNED_AP_INFO, whc_event_get_scan_res},
 	{WHC_API_WIFI_GET_SETTING, whc_event_wifi_get_setting},
 	{WHC_API_WIFI_SEND_EAPOL, whc_event_send_eapol},
 	{WHC_API_WIFI_AP_GET_CONNECTED_CLIENTS, whc_event_wifi_ap_get_connected_clients},
 	{WHC_API_WPA_4WAY_REPORT, whc_event_wpa_4way_rpt},
 	{WHC_API_WIFI_GET_TRAFFIC_STATS, whc_event_get_traffic_stats},
-#endif
 };
 
 /**
@@ -175,7 +169,6 @@ exit:
 
 }
 
-#if !defined(CONFIG_WHC_BRIDGEB)
 void whc_event_get_scan_res(u32 api_id, u32 *param_buf)
 {
 	(void)param_buf;
@@ -301,8 +294,6 @@ void whc_event_get_traffic_stats(u32 api_id, u32 *param_buf)
 	wifi_get_traffic_stats(wlan_idx, &traffic_stats);
 	whc_send_api_ret_value(api_id, (u8 *)&traffic_stats, sizeof(union rtw_traffic_stats));
 }
-
-#endif
 
 void whc_event_wifi_connect(u32 api_id, u32 *param_buf)
 {
@@ -612,9 +603,10 @@ void whc_event_wifi_iwpriv_info(u32 api_id, u32 *param_buf)
 
 void whc_event_wifi_ip_update(u32 api_id, u32 *param_buf)
 {
-#if defined(CONFIG_WHC_BRIDGEB)
+#if defined(CONFIG_WHC_BRIDGE)
 	(void) api_id;
 	(void) param_buf;
+	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "API [%x] not supported!\n", api_id);
 #else
 	int ret = 0;
 	u8 *p_ip_addr = (u8 *)param_buf;
@@ -902,9 +894,11 @@ void whc_event_wifi_get_ant_info(u32 api_id, u32 *param_buf)
 
 void whc_event_war_offload_ctrl(u32 api_id, u32 *param_buf)
 {
-#if defined(CONFIG_WHC_BRIDGEB)
+#if defined(CONFIG_WHC_BRIDGE)
 	(void) api_id;
 	(void) param_buf;
+	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "API [%x] not supported!\n", api_id);
+
 #else
 	int ret = 0;
 
@@ -915,9 +909,10 @@ void whc_event_war_offload_ctrl(u32 api_id, u32 *param_buf)
 
 void whc_event_war_set_mdns_para(u32 api_id, u32 *param_buf)
 {
-#if defined(CONFIG_WHC_BRIDGEB)
+#if defined(CONFIG_WHC_BRIDGE)
 	(void) api_id;
 	(void) param_buf;
+	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "API [%x] not supported!\n", api_id);
 #else
 	int ret = 0;
 	u32 mdns_param_sz;
@@ -1309,67 +1304,3 @@ void whc_dev_cfg80211_indicate_channel_ready(void *scan_userdata)
 	whc_dev_api_message_send(WHC_API_CFG80211_P2P_CH_RDY, (u8 *)param_buf, sizeof(param_buf), NULL, 0);
 }
 #endif
-
-#if defined(CONFIG_WHC_BRIDGEB)
-/* for bridgeb mode */
-void whc_event_bridge_get_dev_mac(u32 api_id, u32 *param_buf)
-{
-	(void) param_buf;
-	struct rtw_mac dev_mac = {0};
-	wifi_get_mac_address(STA_WLAN_INDEX, &dev_mac, 0);
-	whc_send_api_ret_value(api_id, dev_mac.octet, 6);
-}
-
-void whc_event_bridge_DHCP(u32 api_id, u32 *param_buf)
-{
-	(void) param_buf;
-	int ret = -1;
-	LwIP_netif_set_link_up(0);
-	if (LwIP_DHCP(0, DHCP_START) == DHCP_ADDRESS_ASSIGNED) {
-		ret = 0;
-	}
-	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
-}
-
-void whc_event_bridge_get_ip(u32 api_id, u32 *param_buf)
-{
-	(void) param_buf;
-	u32 ip_ret = 0;
-	u8 *ip;
-	ip = LwIP_GetIP(0);
-	memcpy((u8 *)&ip_ret, ip, 4);
-	whc_send_api_ret_value(api_id, (u8 *)&ip_ret, sizeof(ip_ret));
-}
-
-void whc_event_bridge_get_scan_res(u32 api_id, u32 *param_buf)
-{
-	(void)param_buf;
-	struct rtw_scan_result *scanned_AP_list = NULL;
-	u32 scanned_AP_num = 0;
-	int ret = 0;
-
-	scanned_AP_num = param_buf[0];
-	if (scanned_AP_num == 0) {/* scanned no AP*/
-		goto error_exit;
-	}
-
-	scanned_AP_list = (struct rtw_scan_result *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
-	if (scanned_AP_list == NULL) {
-		goto error_exit;
-	}
-	if (wifi_get_scan_records(&scanned_AP_num, scanned_AP_list) < 0) {
-		rtos_mem_free((void *)scanned_AP_list);
-		goto error_exit;
-	} else {
-		whc_send_api_ret_value(api_id, (u8 *)scanned_AP_list, scanned_AP_num * sizeof(struct rtw_scan_result));
-		rtos_mem_free(scanned_AP_list);
-		return;
-	}
-
-error_exit:
-	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
-
-}
-#endif
-
-

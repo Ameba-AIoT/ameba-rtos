@@ -81,8 +81,10 @@ void judge_station_disconnect(void)
 
 extern void eap_peer_unregister_methods(void);
 extern void eap_sm_deinit(void);
-void eap_disconnected_hdl(void)
+
+__weak void eap_disconnected_hdl(void)
 {
+#ifdef CONFIG_ENABLE_EAP
 	if (eap_event_reg_disconn) {
 		wifi_unreg_event_handler(RTW_EVENT_WPA_EAPOL_RECVD, eap_eapol_recvd_hdl);
 		eap_event_reg_disconn = 0;
@@ -90,6 +92,7 @@ void eap_disconnected_hdl(void)
 		eap_sm_deinit();
 		//reset_config();
 	}
+#endif
 }
 
 /*
@@ -166,7 +169,7 @@ void eap_config(void){
 }
 */
 
-int eap_start(char *method)
+__weak int eap_start(char *method)
 {
 	/* To avoid gcc warnings */
 	(void) method;
@@ -278,7 +281,7 @@ void eap_autoreconnect_thread(void *method)
 	rtos_task_delete(NULL);
 }
 
-void eap_autoreconnect_hdl(u8 method_id)
+__weak void eap_autoreconnect_hdl(u8 method_id)
 {
 	/* To avoid gcc warnings */
 	(void) method_id;

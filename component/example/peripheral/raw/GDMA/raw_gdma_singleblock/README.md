@@ -20,15 +20,11 @@ GDMA will display "DMA Copy Memory Compare OK!! " in serial port tool. Otherwise
 
 1. If multi blocks is being transferred, reference raw/multi block example.
 
-2. If the output character sequence of the serial port tool is disordered, please configure `Boot_Agg_En = TRUE` in component/soc/xx/usrcfg/ameba_bootcfg.c according to the chip ID.
-   - AmebaSmart, amebasmart/usrcfg/ameba_bootcfg.c
-   - AmebaLite, amebalite/usrcfg/ameba_bootcfg.c
-   - AmebaDplus, amebadplus/usrcfg/ameba_bootcfg.c
-3. If the output information contains " irq[xx] priority 10 shall <= 7" , it means that the GDMA interrupt priority setting is abnormal and should be set below 7.
+2. If the output character sequence of the serial port tool is disordered, please configure `Boot_Agg_En = TRUE` in ameba_bootcfg.c according to the chip ID.
 
-4. Since the lp core of AmebaSmart does not compile GDMA driver code, the compilation of this example will fail on this core. But the core supports GDMA function.
+3. Since the lp core of AmebaSmart does not compile GDMA driver code, the compilation of this example will fail on this core. But the core supports GDMA function.
 
-5. If AmebaLite outputs `IO Driver Parameters error! file_name:BOOT_ChipInfo_PSRAMType`, which means that the board is not configured with PSRAM. There are two solutions:
+4. If AmebaLite outputs `IO Driver Parameters error! file_name:BOOT_ChipInfo_PSRAMType`, which means that the board is not configured with PSRAM. There are two solutions:
    - Modify the menuconfig:
      - enter `./menuconfig.py` under the **{SDK}\amebaxxx_gcc_project** folder
      - set the `CONFIG LINK option` to `CodeInXip_DataHeapInSram[No_Psram]`
@@ -40,3 +36,4 @@ GDMA will display "DMA Copy Memory Compare OK!! " in serial port tool. Otherwise
 - AmebaLite
 - AmebaSmart
 - AmebaDplus
+- AmebaGreen2

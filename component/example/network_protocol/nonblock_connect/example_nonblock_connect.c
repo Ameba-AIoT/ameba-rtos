@@ -15,7 +15,7 @@ static void example_nonblock_connect_thread(void *param)
 	// Delay to check successful WiFi connection and obtain of an IP address
 	LwIP_Check_Connectivity();
 
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: Non-blocking socket connect\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n====================Example: nonblock connect====================\n");
 
 	server_fd = socket(AF_INET, SOCK_STREAM, 0);
 	fcntl(server_fd, F_SETFL, fcntl(server_fd, F_GETFL, 0) | O_NONBLOCK);
@@ -52,6 +52,6 @@ void example_nonblock_connect(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_nonblock_connect_thread"), example_nonblock_connect_thread, NULL, 1024 * 4,
 						 1) != RTK_SUCCESS) {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(example_nonblock_connect_thread) failed", __FUNCTION__);
 	}
 }

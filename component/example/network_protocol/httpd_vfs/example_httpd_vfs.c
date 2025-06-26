@@ -1,6 +1,7 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 #include "vfs.h"
+#include "lwip_netconf.h"
 #include "httpd/httpd.h"
 #include "example_httpd_vfs.h"
 
@@ -66,15 +67,18 @@ int get_method_handler(struct httpd_conn *conn)
 		memcpy(page_path, index_page, strlen(index_page));
 		mime_type = MIME_TYPE_HTML;
 	}
-	//RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%s] page_path = %s\n", __func__, page_path);
 
 	prefix = find_vfs_tag(VFS_REGION_2);
+	if (prefix == NULL) {
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] No fatfs.bin! Please generate it according to the README.md\n", __FUNCTION__);
+		return -1;
+	}
 
 	DiagSnPrintf(path, MAX_PATH_LEN * 2, "%s:%s", prefix, page_path);
 
 	finfo = (vfs_file *)fopen(path, "r");
 	if (finfo == NULL) {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s][%d] fopen failed: %s\r\n", __FUNCTION__, __LINE__, page_path);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] fopen(%s) failed\r\n", __FUNCTION__, path);
 
 #if(defined(CONFIG_ENABLE_CAPTIVE_PORTAL) && CONFIG_ENABLE_CAPTIVE_PORTAL)
 		/* If enables captive portal, return homepage. */
@@ -84,7 +88,7 @@ int get_method_handler(struct httpd_conn *conn)
 		memcpy(page_path, index_page, strlen(index_page));
 		mime_type = MIME_TYPE_HTML;
 
-		sprintf(path, "%s:%s", prefix, page_path);
+		DiagSPrintf(path, "%s:%s", prefix, page_path);
 		finfo = (vfs_file *)fopen(path, "r");
 		if (finfo == NULL) {
 			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s][%d] fopen failed: %s\r\n", __FUNCTION__, __LINE__, page_path);
@@ -99,13 +103,13 @@ int get_method_handler(struct httpd_conn *conn)
 #endif
 	}
 
-	if (stat(path, &sbuf) < 0) {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "%s stat fail %d\r\n", page_path, page_size);
+	if ((ret = stat(path, &sbuf)) < 0) {
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "stat(%s) fail = %d\r\n", path, ret);
 		httpd_response_not_found(conn, NULL);
 		goto EXIT;
 	}
 	page_size = sbuf.st_size;
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%s] file:%s		size:%d\n", __func__, page_path, page_size);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%s] file=%s(size=%d)\n", __func__, page_path, page_size);
 
 	page_body = (char *)httpd_malloc(page_size);
 	if (page_body == NULL) {
@@ -198,13 +202,13 @@ static void example_httpd_vfs_thread(void *param)
 
 	httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
-	rtos_time_delay_ms(5000);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: httpd_vfs\n");
+	rtos_time_delay_ms(3000);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n====================Example: httpd_vfs====================\n");
 
 	struct httpd_data *hd = calloc(1, sizeof(struct httpd_data));
 	if (!hd) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Failed to allocate memory for HTTP data");
-		goto exit; ;
+		goto exit;
 	}
 	hd->hd_calls = calloc(config.max_uri_handlers, sizeof(httpd_uri_t *));
 	if (!hd->hd_calls) {
@@ -214,7 +218,7 @@ static void example_httpd_vfs_thread(void *param)
 	}
 
 	hd->config = config;
-	httpd_handle = (httpd_handle_t *)hd;
+	httpd_handle = (httpd_handle_t)hd;
 
 	httpd_register_uri_handler(&get_callback);
 	httpd_register_uri_handler(&post_callback);
@@ -232,8 +236,7 @@ exit:
 
 void example_httpd_vfs(void)
 {
-	rtos_task_t task;
-	if (rtos_task_create(&task, ((const char *)"example_httpd_vfs_thread"), example_httpd_vfs_thread, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_httpd_vfs_thread"), example_httpd_vfs_thread, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r[%s] Create example_httpd_vfs_thread task failed", __FUNCTION__);
 	}
 }

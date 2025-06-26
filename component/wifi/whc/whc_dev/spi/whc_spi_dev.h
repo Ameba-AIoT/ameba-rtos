@@ -11,6 +11,8 @@
 #define whc_dev_tx_path_avail       whc_spi_dev_tx_path_avail
 #define whc_dev_send                whc_spi_dev_send
 
+#define whc_spi_dev_event_int_hdl   whc_spi_dev_pkt_rx
+
 #define DEV_READY_PIN				_PB_9
 #define DEV_READY					1
 #define DEV_BUSY					0
@@ -79,6 +81,9 @@ u8 whc_spi_dev_tx_path_avail(void);
 void whc_spi_dev_send_to_host(u8 *buf, u8 *buf_alloc, u16 len);
 void whc_spi_dev_trigger_rx_handle(void);
 void whc_spi_dev_send_data(u8 *buf, u32 len);
+void whc_spi_dev_send_cmd_data(u8 *buf, u32 len);
+
+void whc_spi_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb);
 
 #endif
 

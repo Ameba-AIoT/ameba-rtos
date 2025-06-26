@@ -34,6 +34,12 @@ For example:
 	GND <--> LED6 <---> PB_18
 	GND <--> LED7 <---> PB_19
 
+4. If you run this example in AmebaGreen2, then connect as below
+
+	GND <--> LED0 <---> PA_6
+	GND <--> LED1 <---> PA_7
+	GND <--> LED2 <---> PA_8
+	GND <--> LED3 <---> PA_10
 # SW configuration
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
@@ -66,3 +72,4 @@ For example:
   - AmebaSmart
   - AmebaLite
   - AmebaDplus
+  - AmebaGreen2

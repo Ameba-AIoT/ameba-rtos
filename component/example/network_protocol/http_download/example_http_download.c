@@ -1,8 +1,8 @@
 #include "lwip_netconf.h"
 
-#define SERVER_HOST    "176.34.62.248"
+#define SERVER_HOST    "httpbin.org"	//"192.168.1.100"(ex: local test)
 #define SERVER_PORT    80
-#define RESOURCE       "/repository/IOT/Project_Cloud_A.bin"
+#define RESOURCE       "/image/jpeg"	//"/download.bin"(ex: local test)
 #define BUFFER_SIZE    2048
 #define RECV_TO        5000	// ms
 
@@ -17,7 +17,7 @@ static void example_http_download_thread(void *param)
 	// Delay to check successful WiFi connection and obtain of an IP address
 	LwIP_Check_Connectivity();
 
-	printf("\nExample: HTTP download\n");
+	printf("\n====================Example: http_download====================\n");
 
 	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		printf("ERROR: socket\n");
@@ -47,6 +47,8 @@ static void example_http_download_thread(void *param)
 		int pos = 0, read_size = 0, resource_size = 0, content_len = 0, header_removed = 0;
 
 		sprintf((char *)buf, "GET %s HTTP/1.1\r\nHost: %s\r\n\r\n", RESOURCE, SERVER_HOST);
+		printf("\nHTTP GET Request header:\n%s", buf);
+
 		write(server_fd, (char const *)buf, strlen((char const *)buf));
 
 		while ((read_size = read(server_fd, buf + pos, BUFFER_SIZE - pos)) > 0) {
@@ -63,7 +65,7 @@ static void example_http_download_thread(void *param)
 					body = header + strlen("\r\n\r\n");
 					*(body - 2) = 0;
 					header_removed = 1;
-					printf("\nHTTP Header: %s\n", buf);
+					printf("\nHTTP GET Response header:\n%s\n", buf);
 
 					// Remove header size to get first read size of data from body head
 					read_size = pos - ((unsigned char *) body - buf);
@@ -106,6 +108,6 @@ exit:
 void example_http_download(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_http_download_thread"), example_http_download_thread, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
-		printf("\n\r%s rtos_task_create failed", __FUNCTION__);
+		printf("\n\r%s rtos_task_create(example_http_download_thread) failed", __FUNCTION__);
 	}
 }
