@@ -140,7 +140,7 @@ void gdma_singleblock_transfer_task(void)
 	GDMA_InitStruct.GDMA_SrcAddr = (u32)(TestBuf1 + DMA_SRC_OFFSET);
 	GDMA_InitStruct.GDMA_DstAddr = (u32)(TestBuf2 + DMA_DST_OFFSET);
 
-	printf("GDMA_InitStruct->GDMA_BlockSize = %d\n", GDMA_InitStruct.GDMA_BlockSize);
+	printf("GDMA_InitStruct->GDMA_BlockSize = %ld\n", GDMA_InitStruct.GDMA_BlockSize);
 
 	GDMA_Init(GDMA_InitStruct.GDMA_Index, GDMA_InitStruct.GDMA_ChNum, &GDMA_InitStruct);
 	GDMA_Cmd(GDMA_InitStruct.GDMA_Index, GDMA_InitStruct.GDMA_ChNum, ENABLE);
