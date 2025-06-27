@@ -25,7 +25,7 @@ static void example_httpc_thread(void *param)
 	// Delay to check successful WiFi connection and obtain of an IP address
 	LwIP_Check_Connectivity();
 
-	printf("\nExample: HTTPC\n");
+	printf("\n====================Example: httpc====================\n");
 
 	/* test GET to http://httpbin.org/get?param1=test_data1&param2=test_data2 */
 #if USE_HTTPS

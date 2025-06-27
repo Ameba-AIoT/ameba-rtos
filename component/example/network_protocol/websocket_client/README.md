@@ -69,3 +69,4 @@ If using other websocket server, modify the `create_wsclient()` API and the `han
 - AmebaSmart
 - AmebaLite
 - AmebaDplus
+- AmebaGreen2

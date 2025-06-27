@@ -195,6 +195,7 @@ typedef enum {
 	IPC_SEM_FLASH,
 	IPC_SEM_OTP,
 	IPC_SEM_CRYPTO,
+	IPC_SEM_DIAGNOSE,
 	IPC_SEM_MAX = 16,			/* can't be this value, total 16 ipc semaphores*/
 } IPC_SEM_IDX;
 /** @} */
@@ -342,6 +343,7 @@ typedef enum {
 #define IPC_A2N_OTP_RX_TRAN						6
 #define IPC_A2N_LOGUART_RX_SWITCH				7	/*!<  AP -->  NP Loguart Message Exchange for Linux*/
 #define IPC_A2N_IMQ_TRX_TRAN					7	/*!<  AP -->  NP IMQ Message Exchange for RTOS*/
+#define IPC_A2N_EVENT_REQ							8	/*!<  AP -->  NP Diagnose API Message Exchange */
 #if (defined(CONFIG_ARM_CORE_CA32) && defined(CONFIG_AS_AP)) || \
 	(defined(CONFIG_ARM_CORE_CM4) && defined(CONFIG_AS_NP))
 

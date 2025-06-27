@@ -71,7 +71,7 @@
 #include "ameba_reset.h"
 #include "ameba_psram.h"
 #include "ameba_psphy.h"
-
+#include "ameba_wakepin.h"
 #include "ameba_rcc.h"
 #include "ameba_rom_patch.h"
 #include "ameba_usrcfg.h"

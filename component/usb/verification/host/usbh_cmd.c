@@ -56,6 +56,7 @@ const COMMAND_TABLE usbh_test_cmd_table[] = {
 		"\t\t usbh suspend\n"
 		"\t\t usbh xfer <arguments>\n"
 		"\t\t usbh verify <arguments>\n"
+		"\t\t usbh cg <time_ms>\n"
 	}
 #else
 	{
@@ -70,6 +71,7 @@ const COMMAND_TABLE usbh_test_cmd_table[] = {
 		"\t\t usbh suspend\n"
 		"\t\t usbh xfer <arguments>\n"
 		"\t\t usbh verify <arguments>\n"
+		"\t\t usbh cg <time_ms>\n"
 	}
 #endif
 };
@@ -138,6 +140,16 @@ static u32 usbh_test(u16 argc, u8 *argv[])
 		ret = cmd_usbh_resume_test();
 	} else if (_stricmp(cmd, "suspend") == 0) {
 		ret = cmd_usbh_suspend_test();
+	} else if (_stricmp(cmd, "cg") == 0) {
+		u32 ms = 0;//0: USB Event, !0: Anon timer event
+		if (argv[1]) {
+			ms = _strtoul((const char *)(argv[1]), (char **)NULL, 10);
+		}
+		if (usb_hal_driver.cg) {
+			usb_hal_driver.cg(ms);
+		} else {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "No USB CG callback\n");
+		}
 	} else if (_stricmp(cmd, "xfer") == 0) {
 		ret = cmd_usbh_xfer_test(argc, argv);
 	} else if (_stricmp(cmd, "verify") == 0) {

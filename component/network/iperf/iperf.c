@@ -247,34 +247,50 @@ void free_stream_data(struct iperf_data_t *stream_data)
 uint64_t km_parser(char *buf, int len)
 {
 	uint64_t ret = 0;
-	int keyword_num = 0;
+	int keyword_num = 0, num_len = 0;
 	char num_str[17] = "\0";
 	uint64_t num;
+	char unit = '\0';
 
 	if (len > 16) {
 		return ret;
 	}
 
 	while ((buf[keyword_num] != '\0') && (keyword_num < len)) {
-		if ((buf[keyword_num] == 'k') || (buf[keyword_num] == 'K')) {
-			strncpy(num_str, buf, keyword_num);
-			num = atol(num_str);
-			ret = num * KB;
-			break;
-		} else if ((buf[keyword_num] == 'm') || (buf[keyword_num] == 'M')) {
-			strncpy(num_str, buf, keyword_num);
-			num = atol(num_str);
-			ret = num * MB;
-			break;
+		if (buf[keyword_num] >= '0' && buf[keyword_num] <= '9') {
+		} else if ((unit == '\0') && (buf[keyword_num] == 'k' || buf[keyword_num] == 'K' ||
+									  buf[keyword_num] == 'm' || buf[keyword_num] == 'M')) {
+			unit = buf[keyword_num];
+		} else {
+			return 0;
 		}
 		keyword_num++;
-		if (keyword_num == len) {
-			strncpy(num_str, buf, keyword_num);
-			num = atol(num_str);
-			ret = num;
-			break;
-		}
 	}
+
+	num_len = (unit == '\0') ? keyword_num : keyword_num - 1;
+	strncpy(num_str, buf, num_len);
+	num_str[num_len] = '\0';
+
+	char *endptr;
+	num = strtoull(num_str, &endptr, 10);
+	if (*endptr != '\0' || endptr == num_str) {
+		return 0;
+	}
+
+	switch (unit) {
+	case 'k':
+	case 'K':
+		ret = num * KB;
+		break;
+	case 'm':
+	case 'M':
+		ret = num * MB;
+		break;
+	default:
+		ret = num;
+		break;
+	}
+
 	return ret;
 }
 
@@ -1007,7 +1023,7 @@ static void iperf_test_handler(void *param)
 	rtos_task_delete(NULL);
 }
 
-void cmd_iperf(int argc, char **argv)
+int cmd_iperf(int argc, char **argv)
 {
 	int argv_count = 2;
 	uint8_t stream_id;
@@ -1016,11 +1032,15 @@ void cmd_iperf(int argc, char **argv)
 	struct iperf_data_t *stream_data_list = NULL;
 	uint8_t protocol = 0;
 	int i = 0;
+	int error_no = 0;
+	char *endptr = NULL;
+	int temp = -1;
 
 	iperf_init();
 	rtos_mutex_take(g_tptest_mutex, MUTEX_WAIT_TIMEOUT);
 
 	if (argc < 2) {
+		error_no = 3;
 		goto exit;
 	}
 
@@ -1029,6 +1049,7 @@ void cmd_iperf(int argc, char **argv)
 	} else if (strncmp(argv[0], "udp", 3) == 0) {
 		protocol = 'u';
 	} else {
+		error_no = 3;
 		goto exit;
 	}
 
@@ -1039,15 +1060,21 @@ void cmd_iperf(int argc, char **argv)
 				stream_data = init_stream_data(protocol, 's');
 				if (stream_data == NULL) {
 					tptest_res_log("\n\r[ERROR] init_stream_data failed!\n\r");
+					error_no = 4;
 					goto exit;
 				}
 				argv_count++;
 			} else if (strcmp(argv[argv_count - 1], "stop") == 0) {
 				if (argc == 3) {
-					stream_id = atoi(argv[2]);
+					temp = strtol(argv[2], &endptr, 10);
+					if (*endptr != '\0' || endptr == argv[2] || temp < 0 || temp >= MULTI_STREAM_NUM) {
+						error_no = 3;
+						goto exit;
+					}
+					stream_id = (uint8_t)temp;
 					g_stream_id[stream_id].terminate = 1;
 					rtos_mutex_give(g_tptest_mutex);
-					return;
+					return error_no;
 				} else if (argc == 2) {
 					for (i = 0; i < MULTI_STREAM_NUM; i++) {
 						if (g_stream_id[i].id_used) {
@@ -1055,17 +1082,20 @@ void cmd_iperf(int argc, char **argv)
 						}
 					}
 					rtos_mutex_give(g_tptest_mutex);
-					return;
+					return error_no;
 				} else {
+					error_no = 3;
 					goto exit;
 				}
 			} else if (strcmp(argv[argv_count - 1], "-c") == 0) {
 				if (argc < (argv_count + 1)) {
+					error_no = 3;
 					goto exit;
 				}
 				stream_data = init_stream_data(protocol, 'c');
 				if (stream_data == NULL) {
 					tptest_res_log("\n\r[ERROR] init_stream_data failed!\n\r");
+					error_no = 4;
 					goto exit;
 				}
 				strncpy((char *)stream_data->server_ip, argv[2], sizeof(stream_data->server_ip) - 1);
@@ -1080,22 +1110,30 @@ void cmd_iperf(int argc, char **argv)
 						stream_data_list = stream_data_list->next;
 					}
 					rtos_mutex_give(g_tptest_mutex);
-					return;
+					return error_no;
 				} else {
+					error_no = 3;
 					goto exit;
 				}
 			} else {
+				error_no = 3;
 				goto exit;
 			}
 		} else {
 			if ((strcmp(argv[argv_count - 1], "-b") == 0)) {
 				if (argc < (argv_count + 1)) {
+					error_no = 3;
 					goto exit;
 				}
 				if (stream_data->role == 'c') {
 					stream_data->bandwidth = km_parser(argv[argv_count], strlen(argv[argv_count]));
+					if (stream_data->bandwidth == 0) {
+						error_no = 3;
+						goto exit;
+					}
 					stream_data->bandwidth = stream_data->bandwidth / 8; //bits to Bytes
 				} else {
+					error_no = 3;
 					goto exit;
 				}
 				argv_count += 2;
@@ -1104,42 +1142,68 @@ void cmd_iperf(int argc, char **argv)
 				argv_count += 1;
 			} else if (strcmp(argv[argv_count - 1], "-i") == 0) {
 				if (argc < (argv_count + 1)) {
+					error_no = 3;
 					goto exit;
 				}
-				stream_data->report_interval = (uint32_t) atoi(argv[argv_count]);
+				temp = strtol(argv[argv_count], &endptr, 10);
+				if (*endptr != '\0' || endptr == argv[argv_count] || temp <= 0) {
+					error_no = 3;
+					goto exit;
+				}
+				stream_data->report_interval = (uint32_t)temp;
 				argv_count += 2;
 			} else if (strcmp(argv[argv_count - 1], "-l") == 0) {
 				if (argc < (argv_count + 1)) {
+					error_no = 3;
 					goto exit;
 				}
-				stream_data->buf_size = atoi(argv[argv_count]);
+				temp = strtol(argv[argv_count], &endptr, 10);
+				if (*endptr != '\0' || endptr == argv[argv_count] || temp <= 0) {
+					error_no = 3;
+					goto exit;
+				}
+				stream_data->buf_size = (uint32_t)temp;
 				argv_count += 2;
 			} else if (strcmp(argv[argv_count - 1], "-n") == 0) {
 				if (argc < (argv_count + 1)) {
+					error_no = 3;
 					goto exit;
 				}
 				stream_data->time = 0;
 				stream_data->total_size = km_parser(argv[argv_count], strlen(argv[argv_count]));
+				if (stream_data->total_size == 0) {
+					error_no = 3;
+					goto exit;
+				}
 				argv_count += 2;
 			} else if (strcmp(argv[argv_count - 1], "-p") == 0) {
 				if (argc < (argv_count + 1)) {
+					error_no = 3;
 					goto exit;
 				}
-				stream_data->port = (uint16_t) atoi(argv[argv_count]);
+				temp = strtol(argv[argv_count], &endptr, 10);
+				if (*endptr != '\0' || endptr == argv[argv_count] || temp < 1 || temp > 65535) {
+					error_no = 3;
+					goto exit;
+				}
+				stream_data->port = (uint16_t)temp;
 				argv_count += 2;
 			}
 #ifdef CONFIG_WLAN
 			else if (strcmp(argv[argv_count - 1], "-S") == 0) { //for wmm test
 				if (argc < (argv_count + 1)) {
+					error_no = 3;
 					goto exit;
 				}
 				if (stream_data->role == 'c') {
 					if (atoi(argv[argv_count]) >= 0 && atoi(argv[argv_count]) <= 255) {
 						stream_data->tos_value = (uint8_t) atoi(argv[argv_count]);
 					} else {
+						error_no = 3;
 						goto exit;
 					}
 				} else {
+					error_no = 3;
 					goto exit;
 				}
 				argv_count += 2;
@@ -1147,18 +1211,26 @@ void cmd_iperf(int argc, char **argv)
 #endif
 			else if (strcmp(argv[argv_count - 1], "-t") == 0) {
 				if (argc < (argv_count + 1)) {
+					error_no = 3;
 					goto exit;
 				}
-				stream_data->time = atoi(argv[argv_count]);
+				temp = strtol(argv[argv_count], &endptr, 10);
+				if (*endptr != '\0' || endptr == argv[argv_count] || temp <= 0) {
+					error_no = 3;
+					goto exit;
+				}
+				stream_data->time = (uint32_t)temp;
 				argv_count += 2;
-			}  else if (strcmp(argv[argv_count - 1], "-B") == 0) {
+			} else if (strcmp(argv[argv_count - 1], "-B") == 0) {
 				if (argc < (argv_count + 1)) {
+					error_no = 3;
 					goto exit;
 				}
 				strncpy((char *)stream_data->mul_ip, argv[argv_count], sizeof(stream_data->mul_ip) - 1);
 				stream_data->mul_ip[sizeof(stream_data->mul_ip) - 1] = '\0';
 				argv_count += 2;
 			} else {
+				error_no = 3;
 				goto exit;
 			}
 		}
@@ -1194,44 +1266,13 @@ void cmd_iperf(int argc, char **argv)
 	}
 
 	rtos_mutex_give(g_tptest_mutex);
-	return;
+	return error_no;
 
 exit:
 	free_stream_data(stream_data);
 	free_stream_data(stream_data_s);
 	rtos_mutex_give(g_tptest_mutex);
 
-	if ((strncmp(argv[0], "tcp", 3) == 0) || (strncmp(argv[0], "udp", 3) == 0)) {
-		printf("\n\r[AT+IPERF] Command format ERROR!\n");
-		printf("\n\r[AT+IPERF] Usage: AT+IPERF=[-s|-c,host|stop],[options]\n");
-		printf("\n\r   Client/Server:\n");
-		printf("  \r	  ?     		List all stream status\n");
-		printf("  \r     stop  #        terminate specific stream id or terminate all stream if no id specified\n");
-		printf("  \r     -i    #        seconds between periodic bandwidth reports\n");
-		printf("  \r     -l    #        length of buffer to read or write (default 1460 Bytes)\n");
-		printf("  \r     -p    #        server port to listen on/connect to (default 5001)\n");
-		printf("  \r     -u    #        use UDP protocol (default TCP)\n");
-		printf("\n\r   Server specific:\n");
-		printf("  \r     -s             run in server mode\n");
-		printf("  \r     -B             bind multicast address in udp server mode\n");
-		printf("\n\r   Client specific:\n");
-		printf("  \r     -b    #[KM]    for UDP, bandwidth to send at in bits/sec (default 1 Mbit/sec)\n");
-		printf("  \r     -c    <host>   run in client mode, connecting to <host>\n");
-		printf("  \r     -d             Do a bidirectional test simultaneously\n");
-		printf("  \r     -t    #        time in seconds to transmit for (default 10 secs)\n");
-		printf("  \r     -n    #[KM]    number of bytes to transmit (instead of -t)\n");
-#ifdef CONFIG_WLAN
-		printf("  \r     -S    #        for UDP, set the IP 'type of service'\n");
-#endif
-		printf("\n\r   Example for TCP:\n");
-		printf("  \r	 AT+IPERF=-s,-p,5002\n");
-		printf("  \r	 AT+IPERF=-c,192.168.1.2,-t,100,-p,5002\n");
-		printf("\n\r   Example for UDP:\n");
-		printf("  \r     AT+IPERF=-s,-p,5002,-u\n");
-		printf("  \r     AT+IPERF=-c,192.168.1.2,-t,100,-p,5002,-u\n");
-	} else {
-		printf("\n\rAT+IPERF Command ERROR!\n");
-	}
-	return;
+	return error_no;
 }
 

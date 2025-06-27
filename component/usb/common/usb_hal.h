@@ -43,6 +43,7 @@ typedef struct {
 	void(* register_irq_handler)(void *handler, u8 priority);
 	void(* unregister_irq_handler)(void);
 	usb_cal_data_t *(* get_cal_data)(u8 mode);
+	void (*cg)(u32 ms);
 } usb_hal_driver_t;
 
 /* USB device bus state */

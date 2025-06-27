@@ -108,9 +108,8 @@ Command ID40, 挂断电话
 > **Note: This chip only supports single microphone input and does not support ASR functionality.**
 
 #### 1. Replace Test Audio
-- Use `nhxq_dkkt_gbkt_noecho_1c.wav` as the test audio file.
-- Place the audio file in the flash region using `__attribute__((section(".audio.data")))`.
-- Modify the linker script `amebadplus_gcc_project/project_km4/asdk/ld/ameba_img2_all.ld` by adding the following to the `.xip_image2.text` section:
+- Modify CMakeLists.txt to use `nhxq_dkkt_gbkt_noecho_1c.wav` as the test audio file
+- Place test audio file in the flash region using `__attribute__((section(".audio.data")))` and modify the linker script `amebadplus_gcc_project/project_km4/asdk/ld/ameba_img2_all.ld` by adding the following to `.xip_image2.text` section:
     ```ld
     .xip_image2.text :
     {
@@ -124,15 +123,7 @@ Command ID40, 挂断电话
 #### 2. Modify Code to Run afe_kws_vad Flow
 - Set the interface and parameters:
     ```c
-    #define AIVOICE_ENABLE_AFE_SSL (0)
-
-    const struct rtk_aivoice_iface *aivoice = &aivoice_iface_afe_kws_vad_v1;
-    rtk_aivoice_set_single_kws_mode();
-    struct afe_config afe_param = AFE_CONFIG_ASR_DEFAULT_1MIC();
-    afe_param.ref_num = 0;
-    config.afe = &afe_param;
-
-    int mics_num = 1;
+    #define AIVOICE_TARGET_AMEBADPLUS   (1)
     ```
 
 #### 3. Configure menuconfig

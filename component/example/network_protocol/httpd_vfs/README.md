@@ -21,7 +21,7 @@ None
 
 2. Use vfs.py (located in `tools/image_scripts/`) with following command to generate `fatfs.bin` from your html webpages directory `html_demo`. If captive portal is enabled, `html_demo` directory must include `index.html`.
 	```
-	vfs.py -t FATFS -s 512 -c 256 -dir html_demo -out fatfs.bin
+	python vfs.py -t FATFS -s 512 -c 256 -dir html_demo -out fatfs.bin
 	```
 
 3. Place `fatfs.bin` under project path, e.g. `amebadplus_gcc_project/`.
@@ -55,3 +55,4 @@ None
 - AmebaSmart
 - AmebaLite
 - AmebaDplus
+- AmebaGreen2

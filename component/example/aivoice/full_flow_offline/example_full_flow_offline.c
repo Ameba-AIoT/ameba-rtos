@@ -8,6 +8,21 @@
 #include <string.h>
 
 /*****************************************************************************/
+//            aivoice flow and afe ssl configuration
+/*****************************************************************************/
+#define AIVOICE_TARGET_AMEBADPLUS   (0)
+#if AIVOICE_TARGET_AMEBADPLUS
+#define MIC_NUM                     (1)
+#define AIVOICE_ENABLE_AFE_SSL      (0)
+#else
+#define MIC_NUM                     (2)
+#define AIVOICE_ENABLE_AFE_SSL      (1)
+#endif
+
+#if AIVOICE_ENABLE_AFE_SSL
+#include "cJSON/cJSON.h"
+#endif
+/*****************************************************************************/
 //            aivoive binary resource configuration
 /*****************************************************************************/
 #define USE_BINARY_RESOURCE (0)
@@ -19,16 +34,6 @@
 // bytes of aivoice_models.bin
 #define AIVOICE_BIN_SIZE (4*1024*1024)
 #endif
-
-/*****************************************************************************/
-//               afe ssl configuration
-/*****************************************************************************/
-#define AIVOICE_ENABLE_AFE_SSL (1)
-
-#if AIVOICE_ENABLE_AFE_SSL
-#include "cJSON/cJSON.h"
-#endif
-
 /*****************************************************************************/
 //               DSP optimization configuration
 /*****************************************************************************/
@@ -149,8 +154,14 @@ void aivoice_algo_offline_example(void)
 	 * Select the aivoice flow you want to use.
 	 * Refer to the end of aivoice_interface.h to see which flows are supported.
 	 */
+#if AIVOICE_TARGET_AMEBADPLUS
+	// amebadplus supports afe+kws+vad flow
+	const struct rtk_aivoice_iface *aivoice = &aivoice_iface_afe_kws_vad_v1;
+	rtk_aivoice_set_single_kws_mode();
+#else
 	const struct rtk_aivoice_iface *aivoice = &aivoice_iface_full_flow_v1;
 	rtk_aivoice_set_multi_kws_mode();
+#endif
 
 	/* step 2:
 	 * Modify the default configure if needed.
@@ -178,7 +189,12 @@ void aivoice_algo_offline_example(void)
 	 *
 	 * afe_config.mic_array MUST match the afe resource you linked.
 	 */
+#if AIVOICE_TARGET_AMEBADPLUS
+	struct afe_config afe_param = AFE_CONFIG_ASR_DEFAULT_1MIC();
+	afe_param.ref_num = 0;
+#else
 	struct afe_config afe_param = AFE_CONFIG_ASR_DEFAULT_2MIC50MM();
+#endif
 	config.afe = &afe_param;
 
 	// afe ssl related configurations
@@ -228,18 +244,22 @@ void aivoice_algo_offline_example(void)
 	/* when run on chips, we get online audio stream,
 	 * here we use a fix audio.
 	 * */
+	int ret = 0;
 	const char *audio = (const char *)get_test_wav();
 	int len = get_test_wav_len();
 	int audio_offset = 44;
-	int mics_num = 2;
-	int afe_frame_bytes = (mics_num + afe_param.ref_num) * afe_param.frame_size * sizeof(short);
+	int afe_frame_bytes = (MIC_NUM + afe_param.ref_num) * afe_param.frame_size * sizeof(short);
+
 	while (audio_offset <= len - afe_frame_bytes) {
 		/* step 5:
 		 * Feed the audio to the aivoice instance.
 		 * */
-		aivoice->feed(handle,
-					  (char *)audio + audio_offset,
-					  afe_frame_bytes);
+		ret = aivoice->feed(handle,
+							(char *)audio + audio_offset,
+							afe_frame_bytes);
+		if (ret != 0) {
+			break;
+		}
 
 		audio_offset += afe_frame_bytes;
 	}

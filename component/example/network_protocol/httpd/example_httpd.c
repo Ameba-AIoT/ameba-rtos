@@ -1,5 +1,6 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
+#include "lwip_netconf.h"
 #include "httpd/httpd.h"
 
 #define USE_HTTPS    0
@@ -223,7 +224,12 @@ static void example_httpd_thread(void *param)
 {
 	/* To avoid gcc warnings */
 	(void) param;
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: HTTPD\n");
+
+	// Delay to check successful WiFi connection and obtain of an IP address
+	LwIP_Check_Connectivity();
+
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n====================Example: httpd====================\n");
+
 #if USE_HTTPS
 	if (httpd_setup_cert(mbedtls_test_srv_crt, mbedtls_test_srv_key, mbedtls_test_ca_crt) != 0) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\nERROR: httpd_setup_cert\n");

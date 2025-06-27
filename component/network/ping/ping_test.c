@@ -60,8 +60,8 @@ void ping_test(void *param)
 	ping_total_time = 0;
 	ping_received_count = 0;
 
-	if (data_size > BUF_SIZE) {
-		printf("\n\r[ERROR] %s: data size error, can't exceed %d\n", __func__, BUF_SIZE);
+	if (data_size < 0 || data_size > BUF_SIZE) {
+		printf("\n\r[ERROR] %s: data size error, effective range from 0 to %d\n", __func__, BUF_SIZE);
 		goto Exit;
 	}
 
@@ -227,16 +227,19 @@ int get_ping_report(int *ping_lost)
 	return 0;
 }
 
-void cmd_ping(int argc, char **argv)
+int cmd_ping(int argc, char **argv)
 {
+	int error_no = 0;
 	int argv_count = 2;
 	int argv_count_len = 0;
 	char *host;
+	char *endptr = NULL;
 
 	g_ping_terminate = 0;
 	ping_interface = 255;
 
 	if (argc < 2) {
+		error_no = 2;
 		goto Exit;
 	}
 
@@ -247,14 +250,15 @@ void cmd_ping(int argc, char **argv)
 				if (argc == 2) {
 					g_ping_terminate = 1;
 					//rtos_time_delay_ms(100);
-					return;
+					return error_no;
 				} else {
+					error_no = 2;
 					goto Exit;
 				}
 			} else {
 				if (g_ping_task) {
 					printf("\n\rPing: Ping task is already running.\n");
-					return;
+					return error_no;
 				} else {
 					//ping cmd default value
 					infinite_loop = 0;
@@ -276,23 +280,40 @@ void cmd_ping(int argc, char **argv)
 				argv_count++;
 			} else if (strcmp(argv[argv_count - 1], "-n") == 0) {
 				if (argc < (argv_count + 1)) {
+					error_no = 2;
 					goto Exit;
 				}
-				ping_count = (int) atoi(argv[argv_count]);
+				ping_count = (int)strtol(argv[argv_count], &endptr, 10);
+				if (*endptr != '\0' || endptr == argv[argv_count] || ping_count <= 0) {
+					error_no = 2;
+					goto Exit;
+				}
 				argv_count += 2;
 			} else if (strcmp(argv[argv_count - 1], "-l") == 0) {
 				if (argc < (argv_count + 1)) {
+					error_no = 2;
 					goto Exit;
 				}
-				data_size = (int) atoi(argv[argv_count]);
+				data_size = (int)strtol(argv[argv_count], &endptr, 10);
+				if (*endptr != '\0' || endptr == argv[argv_count] || data_size < 0 || data_size > BUF_SIZE) {
+					printf("\n\r[ERROR] data size error, effective range from 0 to %d\n", BUF_SIZE);
+					error_no = 2;
+					goto Exit;
+				}
 				argv_count += 2;
 			} else if (strcmp(argv[argv_count - 1], "if") == 0) {
 				if (argc < (argv_count + 1)) {
+					error_no = 2;
 					goto Exit;
 				}
-				ping_interface = (int) atoi(argv[argv_count]);
+				ping_interface = (int)strtol(argv[argv_count], &endptr, 10);
+				if (*endptr != '\0' || endptr == argv[argv_count] || (ping_interface != 0 && ping_interface != 1)) {
+					error_no = 2;
+					goto Exit;
+				}
 				argv_count += 2;
 			} else {
+				error_no = 2;
 				goto Exit;
 			}
 		}
@@ -305,18 +326,8 @@ void cmd_ping(int argc, char **argv)
 		}
 	}
 
-	return;
-
 Exit:
-	printf("\n\r[AT+PING] Usage: AT+PING=[host],[options]\n");
-	printf("\n\r       stop      Terminate ping \n");
-	printf("  \r     -t    #   Ping the specified host until stopped\n");
-	printf("  \r     -n   #   Number of echo requests to send (default 4 times)\n");
-	printf("  \r     -l    #   Send buffer size (default 32 bytes)\n");
-	printf("  \r     if   #   only for concurrent mode, set '0' or '1' \n");
-	printf("\n\r   Example:\n");
-	printf("  \r     AT+PING=192.168.1.2,-n,100,-l,5000\n");
-	return;
+	return error_no;
 }
 
 void do_ping_test(char *ip, int size, int count, int interval)

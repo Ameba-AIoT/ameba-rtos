@@ -326,9 +326,9 @@ class secure_boot():
         privkey_hex = list_to_hex_str(privkey_bytes)
         pubkey_hex = list_to_hex_str(pubkey_bytes)
 
-        keyinfo['private key'] = privkey_hex
-        keyinfo['public key'] = pubkey_hex
-        keyinfo['public key hash'] = pubkey_hash
+        keyinfo['private_key'] = privkey_hex
+        keyinfo['public_key'] = pubkey_hex
+        keyinfo['public_key_hash'] = pubkey_hash
         return
 
     def ed25519_sign(self, privkey, pubkey, msg, mlen, sig):
@@ -510,9 +510,9 @@ class secure_boot():
         # print(pubkey_hex)
         # print(privkey_hex)
 
-        keyinfo['private key'] = privkey_hex
-        keyinfo['public key'] = pubkey_hex
-        keyinfo['public key hash'] = pubkey_hash
+        keyinfo['private_key'] = privkey_hex
+        keyinfo['public_key'] = pubkey_hex
+        keyinfo['public_key_hash'] = pubkey_hash
         return keyinfo
 
     def gen_image_hash(self, filename, imghash):

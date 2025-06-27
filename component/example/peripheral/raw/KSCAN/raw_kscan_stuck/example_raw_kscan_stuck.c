@@ -35,7 +35,8 @@ u32 keyscan_irq_handle(void *Data)
 		/*clear intr*/
 		KeyScan_ClearINT(KeyScan, KS_BIT_ALL_RELEASE_INT_CLR);
 		KeyScan_INTConfig(KeyScan, KS_BIT_ALL_RELEASE_INT_MASK | KS_BIT_SCAN_EVENT_INT_MASK, DISABLE);
-		KeyScan_INTConfig(KeyScan, KS_BIT_ALL_DEFAULT_INT_MASK | KS_BIT_STUCK_EVENT_INT_MASK, ENABLE);
+		KeyScan_INTConfig(KeyScan, KS_BIT_ALL_DEFAULT_INT_MASK, ENABLE);
+		KeyScan_SetStuckRow(KeyScan, 0);
 	}
 
 	if (intr_status & KS_BIT_ALL_DEFAULT_INT_STATUS) {
@@ -50,8 +51,7 @@ u32 keyscan_irq_handle(void *Data)
 			}
 			printf("\n");
 
-			KeyScan_INTConfig(KeyScan, KS_BIT_ALL_DEFAULT_INT_MASK | KS_BIT_STUCK_EVENT_INT_MASK, DISABLE);
-			KeyScan_SetStuckRow(KeyScan, 0);
+			KeyScan_INTConfig(KeyScan, KS_BIT_ALL_DEFAULT_INT_MASK, DISABLE);
 			KeyScan_INTConfig(KeyScan, KS_BIT_ALL_RELEASE_INT_MASK | KS_BIT_SCAN_EVENT_INT_MASK, ENABLE);
 		}
 	}
@@ -95,7 +95,7 @@ void keyscan_stuck(void)
 	KeyScan_Init(KeyScan, &KeyScan_InitStruct);
 
 	KeyScan_StuckAutoCmd(KeyScan, ENABLE);
-	KeyScan_SetStuckThreshold(KeyScan, 10);
+	KeyScan_SetStuckThreshold(KeyScan, 300);
 
 	KeyScan_StuckPeriodicalPull(KeyScan, 2000, 4000);
 

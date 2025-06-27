@@ -7,7 +7,6 @@
 #include "ameba_rtos_version.h"
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_ipc.h"
-#include "rtw_coex_api_ext.h"
 #endif
 
 static const char *const TAG = "MAIN";
@@ -77,7 +76,7 @@ void app_pmu_init(void)
 	DBG_INFO_MSG_ON(MODULE_PMC);
 	DBG_INFO_MSG_ON(MODULE_KM4);
 #ifndef CONFIG_MP_SHRINK
-	SOCPS_sleepInit();
+	SOCPS_SleepInit();
 #endif
 	/* if wake from deepsleep, that means we have released wakelock last time */
 	if (BOOT_Reason() & AON_BIT_RSTF_DSLP) {
@@ -177,9 +176,6 @@ int main(void)
 #if defined(CONFIG_BT_COEXIST)
 	/* init coex ipc */
 	coex_ipc_entry();
-#if defined(CONFIG_COEX_EXT_CHIP_SUPPORT) && defined(CONFIG_COEXIST_DEV)
-	coex_extc_paras_config();
-#endif
 #endif
 
 //only NP can init FW

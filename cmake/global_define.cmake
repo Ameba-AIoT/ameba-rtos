@@ -60,6 +60,7 @@ ameba_set(c_CMPT_WPAN_DIR         ${c_COMPONENT_DIR}/wpan)
 ameba_set(c_CMPT_CRASHDUMP_DIR    ${c_COMPONENT_DIR}/soc/common/crashdump)
 ameba_set(c_CMPT_LZMA_DIR         ${c_COMPONENT_DIR}/soc/common/lzma)
 ameba_set(c_CMPT_ED25519_DIR      ${c_COMPONENT_DIR}/soc/common/rom_ed25519)
+ameba_set(c_CMPT_DIAGNOSE_DIR     ${c_COMPONENT_DIR}/soc/common/Diagnose)
 #-------------------------#
 
 # Define dynamic dirs under component/
@@ -140,12 +141,7 @@ ameba_set(c_SDK_ROM_CODE_ANALYZE_SCRIPT)
 ameba_set(c_SDK_EXTRACT_LD_SCRIPT)
 
 #-------------------------#
-#WARNING: Using ameba_set_if(CONFIG_MP_INCLUDED c_MP y p_ELSE n) will cause CMP0054 in postbuild
-if(CONFIG_MP_INCLUDED)
-    set(c_MP y)
-else()
-    set(c_MP n)
-endif()
+ameba_set_if(CONFIG_MP_INCLUDED c_MP y p_ELSE n)
 set(c_AXF2BIN_SCRIPT        ${c_BASEDIR}/tools/scripts/axf2bin.py)
 set(c_AXF2BIN_RUN python    ${c_AXF2BIN_SCRIPT})
 set(op_USAGE                ${c_AXF2BIN_RUN} -h)
@@ -159,6 +155,7 @@ set(c_POST_BUILD_SCRIPT postbuild.cmake)
 ############################################################
 
 macro(ameba_reset_global_define)
+    ameba_set_if(CONFIG_MP_INCLUDED c_MP y p_ELSE n)
     ameba_set(c_FREERTOS_DIR ${c_COMPONENT_DIR}/os/freertos/freertos_${v_FREERTOS_VER}${c_FREERTOS_DIR_SUFFIX}/Source)
     ameba_set(c_POSIX_DIR ${c_COMPONENT_DIR}/os/freertos/freertos_posix)
     ameba_set(c_LWIP_DIR ${c_COMPONENT_DIR}/lwip/lwip_${v_LWIP_VER})

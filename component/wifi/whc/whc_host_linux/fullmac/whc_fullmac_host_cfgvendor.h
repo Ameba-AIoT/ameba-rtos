@@ -49,6 +49,11 @@ enum rtw_vendor_event {
 	NAN_EVENT_PASN_UPD_PMKID,
 };
 
+#ifdef NAN_CUSTOMER_NANDOW
+#define NANDOW_EVENTID_OFFSET 0
+#define GET_OVERALL_EVENT_ID(nandow_id) (nandow_id+NANDOW_EVENTID_OFFSET)
+#endif
+
 void whc_fullmac_host_cfgvendor_attach(struct wiphy *wiphy);
 void whc_fullmac_host_cfgvendor_detach(struct wiphy *wiphy);
 

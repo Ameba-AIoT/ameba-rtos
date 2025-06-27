@@ -22,19 +22,13 @@ void raw_pwm_demo(void)
 	/* close swdclk/swdio*/
 	Pinmux_Swdoff();
 	/* Enable TIM_PWM function & clock */
-#if defined (CONFIG_AMEBASMART)
-	RCC_PeriphClockCmd(APBPeriph_TIM8, APBPeriph_TIM8_CLOCK, ENABLE);
-#elif defined (CONFIG_AMEBALITE)
-	RCC_PeriphClockCmd(APBPeriph_TIM_PWM, APBPeriph_TIM_PWM_CLOCK, ENABLE);
-#elif defined (CONFIG_AMEBADPLUS)
-	RCC_PeriphClockCmd(APBPeriph_PWM0, APBPeriph_PWM0_CLOCK, ENABLE);
-#endif
+	RCC_PeriphClockCmd(APBPeriph_TIMx[PWM_TIMER], APBPeriph_TIMx_CLOCK[PWM_TIMER], ENABLE);
 
 	RTIM_TimeBaseStructInit(&RTIM_InitStruct);
 	RTIM_InitStruct.TIM_Idx = PWM_TIMER;
 	RTIM_InitStruct.TIM_Prescaler = PWM_PRESCALER;
 	RTIM_InitStruct.TIM_Period = PWM_PERIOD - 1;
-	RTIM_TimeBaseInit(TIMx[PWM_TIMER], (&RTIM_InitStruct), TIMER8_IRQ, NULL, NULL);
+	RTIM_TimeBaseInit(TIMx[PWM_TIMER], (&RTIM_InitStruct), TIMx_irq[PWM_TIMER], NULL, NULL);
 
 	for (pwm_chan = 0; pwm_chan < PWM_CHANNEL_MAX; pwm_chan++) {
 		RTIM_CCStructInit(&TIM_CCInitStruct);
@@ -43,6 +37,8 @@ void raw_pwm_demo(void)
 		RTIM_CCxCmd(TIMx[PWM_TIMER], pwm_chan, TIM_CCx_Enable);
 #if defined(CONFIG_AMEBASMART)
 		Pinmux_Config(PWM_GPIOx_S0[pwm_chan], PINMUX_FUNCTION_PWM);
+#elif defined(CONFIG_AMEBAGREEN2)
+		Pinmux_Config(PWM_GPIOx_S0[pwm_chan], (PINMUX_FUNCTION_TIM4_PWM0 + pwm_chan));
 #else
 		Pinmux_Config(PWM_GPIOx_S0[pwm_chan], (PINMUX_FUNCTION_PWM0 + pwm_chan));
 #endif

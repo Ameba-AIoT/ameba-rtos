@@ -34,6 +34,7 @@ ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})
 
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
 ameba_add_subdirectory(${c_CMPT_PMC_DIR})
+ameba_add_subdirectory(${c_CMPT_DIAGNOSE_DIR})
 
 ameba_add_subdirectory(${c_MCU_PROJECT_DIR}/src)
 

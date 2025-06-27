@@ -53,6 +53,30 @@
 
 #define IR_CLOCK_HZ			40000000
 
+#elif defined (CONFIG_AMEBAGREEN2)
+
+#define IR_PINMUX_S0_TX		_PA_25
+#define IR_PINMUX_S0_RX		_PA_26
+
+#define IR_PINMUX_S1_TX		_PA_26
+#define IR_PINMUX_S1_RX		_PA_25
+
+#define IR_PINMUX_S2_TX		_PB_25
+#define IR_PINMUX_S2_RX		_PB_26
+
+#define IR_PINMUX_S3_TX		_PB_26
+#define IR_PINMUX_S3_RX		_PB_25
+
+/* supported in QFN100 */
+#define IR_PINMUX_S4_TX		_PC_1
+#define IR_PINMUX_S4_RX		_PC_0
+
+/* supported in QFN100 */
+#define IR_PINMUX_S5_TX		_PC_1
+#define IR_PINMUX_S5_RX		_PC_0
+
+#define IR_CLOCK_HZ			40000000
+
 #elif defined (CONFIG_AMEBAD)
 #define PINMUX_FUNCTION_IR_TX	PINMUX_FUNCTION_IR
 #define PINMUX_FUNCTION_IR_RX	PINMUX_FUNCTION_IR

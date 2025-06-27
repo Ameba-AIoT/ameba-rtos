@@ -12,6 +12,8 @@
 - master's `SPI_GPIO_CS0` connect to slave1's `CS`
 - master's `SPI_GPIO_CS1` connect to slave2's `CS`
 
+In this way, slave2 will be selected first as software configuration.
+
 For example:
 
 - On AmebaSmart, connect as below
@@ -59,6 +61,7 @@ For example:
 
 1. Para spi_idx should be assigned first in the initialization process.
 2. SPI1 is set as Master and SPI0 is set as Slave.
+3. Connect the master separately to slave1 and slave2 for the GND (ground) connection.
 
 # Supported IC
 

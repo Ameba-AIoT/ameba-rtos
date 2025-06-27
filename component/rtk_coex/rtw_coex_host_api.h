@@ -62,6 +62,8 @@ enum coex_subtype_h2c_com {
 	COEX_H2C_COM_VENDOR_INFO_SET,
 	COEX_H2C_COM_WL_SLOT_SET,
 	COEX_H2C_COM_STATE_GET,
+	COEX_H2C_COM_SET_COEX_ENABLE,
+	COEX_H2C_COM_GET_IS_ENABLED,
 	/* end */
 	COEX_H2C_COM_INVALID = ((1 << SUBTYPE_BITS) - 1),
 };
@@ -85,6 +87,8 @@ enum coex_subtype_h2c_bt {
 enum coex_subtype_h2c_ext {
 	/* common info */
 	COEX_H2C_EXT_UNDEF = 0,
+	COEX_H2C_EXT_INIT,
+	COEX_H2C_EXT_GET_READY,
 	COEX_H2C_EXT_WL_PERFORMANCE_REQUEST,
 	/* info for WPAN*/
 	COEX_H2C_EXT_WPAN_CHANNEL,
@@ -307,6 +311,19 @@ struct extchip_para_t {
 ///////// for COMMON Function Declare
 //////////////////////////////////////////////////////////
 /**
+ * @brief      set coex enable or disable.
+ * @param[in]  enable coex enable status
+ * @return
+ *             - None.
+ */
+void rtk_coex_com_coex_set_enable(bool enable);
+/**
+ * @brief      get if coex is enabled.
+ * @return
+ *             - true: coex enabled, false: coex disabled.
+ */
+bool rtk_coex_com_coex_is_enabled(void);
+/**
  * @brief      Vendor info set.
  * @param[in]  vendor_id
  * @param[in]  product_id
@@ -368,6 +385,12 @@ void rtk_coex_btc_set_pta(u8 type, u8 role, u8 process);
 //////////////////////////////////////////////////////////
 ///////// for EXT Function Declare
 //////////////////////////////////////////////////////////
+/**
+ * @brief     is extc ready.
+ * @return
+ *            - true: ready, false: not ready.
+ */
+bool rtk_coex_extc_is_ready(void);
 /**
  * @brief     ext wpan channel notification.
  * @param[in] channel  802.15.4 channel number [11-26].

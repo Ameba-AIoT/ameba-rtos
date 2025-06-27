@@ -16,12 +16,14 @@ static void example_tcp_keepalive_thread(void *param)
 	// Delay to check successful WiFi connection and obtain of an IP address
 	LwIP_Check_Connectivity();
 
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: TCP Keepalive\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: tcp keepalive====================\r\n");
+
 #if !LWIP_TCP_KEEPALIVE
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nPlease enable LWIP_TCP_KEEPALIVE\n");
 #else
 
 #if (TEST_MODE == 0)
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nTCP client keepalive test\n");
 	int server_socket, keepalive = 1, keepalive_idle = 3, keepalive_interval = 5, keepalive_count = 3;
 	struct sockaddr_in server_addr;
 	server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -61,6 +63,7 @@ static void example_tcp_keepalive_thread(void *param)
 	}
 
 #elif (TEST_MODE == 1)
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nTCP server keepalive test\n");
 	int max_socket_fd = -1;
 	struct sockaddr_in server_addr;
 	int server_fd = -1;
@@ -95,7 +98,7 @@ static void example_tcp_keepalive_thread(void *param)
 
 	while (1) {
 		int socket_fd;
-		unsigned char buf[512];
+		unsigned char buf[512] = {0};
 		fd_set read_fds;
 		struct timeval timeout;
 
@@ -145,6 +148,7 @@ static void example_tcp_keepalive_thread(void *param)
 						int read_size = read(socket_fd, buf, sizeof(buf));
 
 						if (read_size > 0) {
+							RTK_LOGS(NOTAG, RTK_LOG_INFO, "read data(len=%d), and write back\n", read_size);
 							write(socket_fd, buf, read_size);
 						} else {
 							RTK_LOGS(NOTAG, RTK_LOG_INFO, "socket fd(%d) disconnected\n", socket_fd);
@@ -154,6 +158,8 @@ static void example_tcp_keepalive_thread(void *param)
 					}
 				}
 			}
+		} else {
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "TCP server: no data in %d seconds\n", SELECT_TIMEOUT);
 		}
 
 		rtos_time_delay_ms(10);
@@ -172,6 +178,6 @@ exit:
 void example_tcp_keepalive(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_tcp_keepalive_thread"), example_tcp_keepalive_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(example_tcp_keepalive_thread) failed", __FUNCTION__);
 	}
 }

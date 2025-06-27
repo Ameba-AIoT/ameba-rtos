@@ -154,6 +154,7 @@ def mcu_project_to_mcu_type(mcu_project:str, default:Union[str, None]='') -> Uni
 def parse_project_info(path:str) -> dict:
     if not os.path.isabs(path):
         path = os.path.abspath(path)
+    path = os.path.normpath(path).replace("\\", "/") #Transform windows style to unix style to make re working
     #NOTE: support cases:
     #      1. /path/to/amebaxxx_gcc_project                     => soc_project: amebaxxx, mcu_project: empty
     #      2. /path/to/amebaxxx_gcc_project/build               => soc_project: amebaxxx, mcu_project: empty

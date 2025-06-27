@@ -15,7 +15,7 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 
-#ifdef CONFIG_ATCMD_HOST_CONTROL
+#if defined(CONFIG_ATCMD_HOST_CONTROL)
 #include "ringbuffer.h"
 #endif
 
@@ -74,17 +74,17 @@ extern volatile u8 g_tt_mode_stop_char_cnt;
 extern rtos_timer_t xTimers_TT_Mode;
 #endif
 
+extern char pin_name[5];
 #define PIN_VAL_TO_NAME_STR(val) \
 	({ \
-		char name[5]; \
 		if (val < 0x20) { \
-			snprintf(name, 5, "%s%d", "PA", val); \
+			snprintf(pin_name, 5, "%s%d", "PA", val); \
 		} else if (val < 0x40) { \
-			snprintf(name, 5, "%s%d", "PB", val - 0x20); \
+			snprintf(pin_name, 5, "%s%d", "PB", val - 0x20); \
 		} else if (val < 0x60) { \
-			snprintf(name, 5, "%s%d", "PC", val - 0x40); \
+			snprintf(pin_name, 5, "%s%d", "PC", val - 0x40); \
 		} \
-		name;\
+		pin_name;\
 	})
 
 typedef enum {
@@ -106,7 +106,7 @@ int atcmd_get_ssl_certificate(char *buffer, CERT_TYPE cert_type, int index);
 int atcmd_get_ssl_certificate_size(CERT_TYPE cert_type, int index);
 
 /* TODO */
-#ifdef CONFIG_ATCMD_HOST_CONTROL
+#if defined(CONFIG_ATCMD_HOST_CONTROL)
 typedef void (*at_write)(char *buf, int len);
 extern uint16_t atcmd_switch;
 extern char global_buf[SMALL_BUF];

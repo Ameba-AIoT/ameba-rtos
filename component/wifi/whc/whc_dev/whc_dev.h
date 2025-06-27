@@ -43,7 +43,8 @@
 #elif defined (CONFIG_WHC_INTF_USB)
 #include "whc_usb_dev.h"
 #endif
-#if defined(CONFIG_WHC_BRIDGEB) || defined(CONFIG_WHC_BRIDGE)
+
+#ifdef CONFIG_WHC_CMD_PATH
 #include "whc_dev_bridge.h"
 #include "whc_bridge_dev_api.h"
 #endif
@@ -59,7 +60,7 @@
 #include "whc_dev_struct.h"
 #endif
 
-#if !defined(CONFIG_FULLMAC) || (defined(CONFIG_FULLMAC) && !defined(CONFIG_WHC_BRIDGEB) && !defined(CONFIG_WHC_BRIDGE))
+#if !defined(CONFIG_FULLMAC) || (defined(CONFIG_FULLMAC) && !defined(CONFIG_WHC_BRIDGE))
 #include "whc_dev_protocal_offload.h"
 #endif
 

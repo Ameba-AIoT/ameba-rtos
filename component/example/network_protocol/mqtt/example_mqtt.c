@@ -113,6 +113,11 @@ static void prvMQTTTask(void *pvParameters)
 	/* To avoid gcc warnings */
 	(void) pvParameters;
 
+	// Delay to check successful WiFi connection and obtain of an IP address
+	LwIP_Check_Connectivity();
+
+	printf("\r\n====================Example: mqtt====================\r\n");
+
 	MQTTClient client;
 	Network network;
 	static unsigned char sendbuf[MQTT_SENDBUF_LEN], readbuf[MQTT_READBUF_LEN];
@@ -128,9 +133,6 @@ static void prvMQTTTask(void *pvParameters)
 	MQTTClientInit(&client, &network, 30000, sendbuf, sizeof(sendbuf), readbuf, sizeof(readbuf));
 
 	while (1) {
-		// Delay to check successful WiFi connection and obtain of an IP address
-		LwIP_Check_Connectivity();
-
 		fd_set read_fds;
 		fd_set except_fds;
 		struct timeval timeout;
@@ -162,12 +164,14 @@ static void prvMQTTTask(void *pvParameters)
 
 void vStartMQTTTasks(uint16_t usTaskStackSize, uint32_t uxTaskPriority)
 {
-	uint32_t x = 0L;
-	printf("\nExample: Mqtt \n");
 #if defined(MQTT_TASK)
-	rtos_task_create(NULL, "MQTTTask", prvMQTTTask, (void *)x, usTaskStackSize * 4, uxTaskPriority);
+	if (rtos_task_create(NULL, "MQTTTask", prvMQTTTask, NULL, usTaskStackSize * 2, uxTaskPriority) != RTK_SUCCESS) {
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(prvMQTTTask) failed", __FUNCTION__);
+	}
 #else
-	rtos_task_create(NULL, "MQTTEcho0", prvMQTTEchoTask, (void *)x, (usTaskStackSize + 128) * 4, uxTaskPriority);
+	if (rtos_task_create(NULL, "MQTTEcho0", prvMQTTEchoTask, NULL, usTaskStackSize * 2, uxTaskPriority) != RTK_SUCCESS) {
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(prvMQTTEchoTask) failed", __FUNCTION__);
+	}
 #endif
 
 }

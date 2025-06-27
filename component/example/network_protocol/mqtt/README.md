@@ -52,3 +52,4 @@ For more details, please refer to `UM0060 Realtek Ameba-all MQTT User Guide.pdf`
 - AmebaSmart
 - AmebaLite
 - AmebaDplus
+- AmebaGreen2

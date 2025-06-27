@@ -9,7 +9,11 @@
 #ifndef TIM_EXT_H
 #define TIM_EXT_H
 #include "platform_autoconf.h"
+#if defined (CONFIG_AMEBAGREEN2)
+#define PWM_TIMER		4
+#else
 #define PWM_TIMER		8
+#endif
 #define PWM_PRESCALER	39
 #define PWM_PERIOD		20000
 #define PWM_STEP		(PWM_PERIOD / 200)  //Brightness change speed
@@ -18,7 +22,10 @@
 #define PWM_CHANNEL_MAX		6
 int pwms[PWM_CHANNEL_MAX] = {0, PWM_PERIOD / 6, PWM_PERIOD / 3, PWM_PERIOD / 2, PWM_PERIOD / 3 * 2, PWM_PERIOD / 6 * 5};
 int steps[PWM_CHANNEL_MAX] = {PWM_STEP, PWM_STEP, PWM_STEP, PWM_STEP, PWM_STEP, PWM_STEP};
-
+#elif defined (CONFIG_AMEBAGREEN2)
+#define PWM_CHANNEL_MAX		4
+int pwms[PWM_CHANNEL_MAX] = {0, PWM_PERIOD / 4, PWM_PERIOD / 2, PWM_PERIOD / 4 * 3};
+int steps[PWM_CHANNEL_MAX] = {PWM_STEP, PWM_STEP, PWM_STEP, PWM_STEP};
 #else
 #define PWM_CHANNEL_MAX		8
 int pwms[PWM_CHANNEL_MAX] = {0, PWM_PERIOD / 8, PWM_PERIOD / 4, PWM_PERIOD / 8 * 3, PWM_PERIOD / 2, PWM_PERIOD / 8 * 5, \
@@ -60,6 +67,12 @@ u8 PWM_GPIOx_S0[PWM_CHANNEL_MAX] = {
 	_PB_18,
 	_PB_19,
 
+#elif defined (CONFIG_AMEBAGREEN2)
+
+	_PA_6,
+	_PA_7,
+	_PA_8,
+	_PA_10,
 #endif
 
 };

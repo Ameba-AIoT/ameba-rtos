@@ -372,7 +372,7 @@ class ManifestManager(ABC):
         if auth_alg_id == -1:
             print("Fail to create keypair, ret: %d"%auth_alg_id)
             return Error(ErrorType.UNKNOWN_ERROR, f"Fail to create keypair for {algorithm}, ret: {auth_alg_id}")
-        key_info = {'algorithm':algorithm, 'private key':'', 'public key':'', 'public key hash':''}
+        key_info = {'algorithm':algorithm, 'private_key':'', 'public_key':'', 'public_key_hash':''}
 
         if auth_alg_id == AuthAlg.AuthID_ED25519.value:
             self.sboot.ed25519_genkey(key_info)

@@ -244,10 +244,10 @@ static void uvc_vfs_thread(void *param)
 
 		if (rtos_mutex_take(uvc_buf_mutex, RTOS_MAX_TIMEOUT) == RTK_SUCCESS) {
 			res = fwrite(uvc_buf, uvc_buf_size, 1, (FILE *)finfo);
-			if (res != 1) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "buf fwrite fail: %d\n", res);
+			if (res != uvc_buf_size) {
+				RTK_LOGS(NOTAG, RTK_LOG_ERROR, "fwrite() failed, err: %d\n", res);
 			} else {
-				//RTK_LOGS(TAG, RTK_LOG_INFO, "buf fwrite succeed\n");
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "fwrite() ok, w %d\n", uvc_buf_size);
 			}
 
 			rtos_mutex_give(uvc_buf_mutex);

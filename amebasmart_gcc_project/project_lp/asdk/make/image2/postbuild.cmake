@@ -5,6 +5,7 @@ include(${c_CMAKE_FILES_DIR}/global_define.cmake)
 include(${c_CMAKE_FILES_DIR}/axf2bin.cmake)
 include(${c_CMAKE_FILES_DIR}/utility.cmake)
 import_kconfig("CONFIG" ${c_MCU_KCONFIG_FILE})
+ameba_reset_global_define() #NOTE: Some variables like c_MP need to update after import kconfig
 set(t_USER_CUSTOM_LOG_PREFIX "LP_POSTBUILD")
 
 ameba_execute_process(

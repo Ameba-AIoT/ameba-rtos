@@ -11,7 +11,8 @@ void http_client(void)
 	struct hostent *server;
 	struct sockaddr_in serv_addr;
 	int sockfd, bytes;
-	char message[256], *response;
+	char message[256] = {0};
+	char *response;
 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) {
@@ -35,21 +36,18 @@ void http_client(void)
 
 	//send request
 	snprintf(message, sizeof(message), "%s", http_get_header((char *)host, (char *)"/"));
-	printf("\nRequest:\n%s\n", message);
+	printf("\nHTTP GET Request string:\n%s\n", message);
 	bytes = write(sockfd, (char const *)message, strlen((char const *)message));
 	if (bytes < 0) {
 		printf("[ERROR] send packet failed\n");
 	}
 
+	response = rtos_mem_zmalloc(1500 + 1);
 	//receive response
-	response = malloc(1500);
-	if (response == NULL) {
-		printf("[ERROR] malloc failed\n");
-	}
-	printf("Response:\n");
+	printf("HTTP GET Response string:\n");
 	do {
-		memset(response, 0, 1500);
-		bytes = read(sockfd, response, 1500 - 1);
+		memset(response, 0, 1500 + 1);
+		bytes = read(sockfd, response, 1500);
 		if (bytes < 0) {
 			printf("[ERROR] receive packet failed\n");
 		}
@@ -60,6 +58,7 @@ void http_client(void)
 	} while (bytes > 0);
 
 exit:
+	rtos_mem_free(response);
 	//close the socket
 	close(sockfd);
 
@@ -74,7 +73,7 @@ static void http_client_thread(void *param)
 	// Delay to check successful WiFi connection and obtain of an IP address
 	LwIP_Check_Connectivity();
 
-	printf("\nExample:  http_client\n");
+	printf("\n====================Example: http_client====================\n");
 
 	http_client();
 	rtos_task_delete(NULL);

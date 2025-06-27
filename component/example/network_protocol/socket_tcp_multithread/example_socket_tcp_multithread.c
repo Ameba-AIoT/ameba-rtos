@@ -5,7 +5,6 @@
 #define LISTEN_QLEN     2
 
 static int tx_exit = 0, rx_exit = 0;
-//static _Sema tcp_tx_rx_sema;
 static rtos_sema_t tcp_tx_rx_sema;
 
 static void tx_thread(void *param)
@@ -18,17 +17,17 @@ static void tx_thread(void *param)
 	while (1) {
 		int ret = 0;
 
-		//RtlDownSema(&tcp_tx_rx_sema);
 		rtos_sema_take(tcp_tx_rx_sema, RTOS_MAX_DELAY);
 		ret = send(client_fd, buffer, sizeof(buffer), 0);
-		//RtlUpSema(&tcp_tx_rx_sema);
 		rtos_sema_give(tcp_tx_rx_sema);
+
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "tx_thread() send data(len=%d)\n", ret);
 
 		if (ret <= 0) {
 			goto exit;
 		}
 
-		rtos_time_delay_ms(100);
+		rtos_time_delay_ms(1000);
 	}
 
 exit:
@@ -46,19 +45,17 @@ static void rx_thread(void *param)
 	while (1) {
 		int ret = 0;
 
-		//RtlDownSema(&tcp_tx_rx_sema);
 		rtos_sema_take(tcp_tx_rx_sema, RTOS_MAX_DELAY);
 		ret = recv(client_fd, buffer, sizeof(buffer), MSG_DONTWAIT);
-		//RtlUpSema(&tcp_tx_rx_sema);
 		rtos_sema_give(tcp_tx_rx_sema);
 
 		// ret == -1 and socket error == EAGAIN when no data received for nonblocking
-		if ((ret == -1) && ((errno == EAGAIN)
-							|| (errno == 0)
-						   )) {
+		if ((ret == -1) && ((errno == EAGAIN) || (errno == 0))) {
 			continue;
 		} else if (ret <= 0) {
 			goto exit;
+		} else if (ret > 0) {
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "rx_thread() recv data(len=%d)\n", ret);
 		}
 
 		rtos_time_delay_ms(10);
@@ -81,7 +78,7 @@ static void example_socket_tcp_trx_thread(void *param)
 	// Delay to check successful WiFi connection and obtain of an IP address
 	LwIP_Check_Connectivity();
 
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: socket tx/rx 1\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: socket tcp tx/rx multithread====================\r\n");
 
 	server_fd = socket(AF_INET, SOCK_STREAM, 0);
 	server_addr.sin_family = AF_INET;
@@ -105,7 +102,7 @@ static void example_socket_tcp_trx_thread(void *param)
 		if (client_fd >= 0) {
 			tx_exit = 1;
 			rx_exit = 1;
-			//RtlInitSema(&tcp_tx_rx_sema, 1);
+
 			rtos_sema_create(&tcp_tx_rx_sema, 1, RTOS_SEMA_MAX_COUNT);
 
 			if (rtos_task_create(NULL, ((const char *)"tx_thread"), tx_thread, &client_fd, 2048 * 4, 1) != RTK_SUCCESS) {
@@ -131,7 +128,6 @@ static void example_socket_tcp_trx_thread(void *param)
 				}
 			}
 
-			//RtlFreeSema(&tcp_tx_rx_sema);
 			rtos_sema_delete(tcp_tx_rx_sema);
 		}
 	}

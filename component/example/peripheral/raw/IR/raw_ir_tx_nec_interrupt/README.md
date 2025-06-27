@@ -24,7 +24,7 @@ Logic Analyser or oscilloscope.
      - `IR_TX_DATA_INVERSE`: carrier symbol from low to high; non-carrier symbol default high
      - `IR_TX_DATA_CARRIER_NORMAL`: default carrier and non-carrier waveform
      - `IR_TX_DATA_CARRIER_INVERSE`: there is a pulse from carrier to non-carrier
-4. Other IR protocol configuration, refer to `component\soc\amebasmart\verification\IR\protocol\ir_nec_protocol.c`
+4. Other IR protocol configuration, refer to `ir_nec_protocol.h` located in this demo folder.
 
    - struct and macros:
 
@@ -61,4 +61,5 @@ Logic Analyser or oscilloscope.
 
 - AmebaSmart
 - AmebaDplus
+- AmebaGreen2
 - AmebaD

@@ -52,6 +52,7 @@ const COMMAND_TABLE usbd_cmd_table[] = {
 		"\t\t usbd wakehost\n"
 		"\t\t usbd acm <arguments>\n"
 		"\t\t usbd verify <arguments>\n"
+		"\t\t usbd cg <time_ms>\n"
 	}
 #else
 	{
@@ -64,6 +65,7 @@ const COMMAND_TABLE usbd_cmd_table[] = {
 		"\t\t usbd phyew <addr_hex> <value_hex>\n"
 		"\t\t usbd acm <arguments>\n"
 		"\t\t usbd verify <arguments>\n"
+		"\t\t usbd cg <time_ms>\n"
 	}
 #endif
 };
@@ -96,7 +98,18 @@ static u32 usbd_cmd(u16 argc, u8 *argv[])
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to deinit USBD: %d\n", status);
 		}
+	} else if (_stricmp(cmd, "cg") == 0) {
+		u32 ms = 0;//0: USB Event, !0: Anon timer event
+		if (argv[1]) {
+			ms = _strtoul((const char *)(argv[1]), (char **)NULL, 10);
+		}
+		if (usb_hal_driver.cg) {
+			usb_hal_driver.cg(ms);
+		} else {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "No USB CG callback\n");
+		}
 	} else if (_stricmp(cmd, "wakehost") == 0) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "USBD remote wakeup\n");
 		usbd_wake_host();
 	} else if (_stricmp(cmd, "regdump") == 0) {
 		usb_hal_dump_registers();
