@@ -132,7 +132,7 @@ end:
 static void at_ping_help(void)
 {
 	RTK_LOGI(NOTAG, "\r\n");
-	RTK_LOGI(NOTAG, "AT+PING=<host>[,<-t>,<interval>][,<-n>,<count>][,<-l>,<size>]\r\n");
+	RTK_LOGI(NOTAG, "AT+PING=<host>[,<-t>][,<-n>,<count>][,<-l>,<size>]\r\n");
 	RTK_LOGI(NOTAG, "AT+PING=<stop>\r\n");
 	RTK_LOGI(NOTAG, "\t\tstop\t\tterminate ping\r\n");
 	RTK_LOGI(NOTAG, "\t\t-t\t#\tping the specified host until stopped\r\n");
@@ -159,7 +159,7 @@ void at_ping(void *arg)
 	argv[0] = (char *)"ping";
 	argc = parse_param(arg, argv);
 	if (argc > 1) {
-		cmd_ping(argc, argv);
+		error_no = cmd_ping(argc, argv);
 	} else {
 		RTK_LOGI(NOTAG, "PING error happend\r\n");
 		error_no = 2;
@@ -181,6 +181,7 @@ static void at_iperf_help(void)
 	RTK_LOGI(NOTAG, "AT+IPERF=<-s>[,<-p>,<port>][,<-u>]\r\n");
 	RTK_LOGI(NOTAG, "AT+IPERF=<-c>,<host|stop>[,<-i>,<periodic>][,<-l>,<size>][,<-u>][,<-b>,<bandwidth>][,<-d>][,<-t>,<transtime>][,<-n>,<count>][,<-S>]\r\n");
 	RTK_LOGI(NOTAG, "\tClient/Server:\r\n");
+	RTK_LOGI(NOTAG, "\t\t?\t\t\tList all stream status\r\n");
 	RTK_LOGI(NOTAG, "\t\tstop\t#\t\tterminate specific stream id or terminate all stream if no id specified\r\n");
 	RTK_LOGI(NOTAG, "\t\t-i\t#\t\tseconds between periodic bandwidth reports\r\n");
 	RTK_LOGI(NOTAG, "\t\t-l\t#\t\tlength of buffer to read or write (default 1460 Bytes)\r\n");
@@ -188,6 +189,7 @@ static void at_iperf_help(void)
 	RTK_LOGI(NOTAG, "\t\t-u\t#\t\tuse UDP protocol (default TCP)\r\n");
 	RTK_LOGI(NOTAG, "\tServer specific:\r\n");
 	RTK_LOGI(NOTAG, "\t\t-s\t\t\trun in server mode\r\n");
+	RTK_LOGI(NOTAG, "\t\t-B\t\t\tbind multicast address in udp server mode\n");
 	RTK_LOGI(NOTAG, "\tClient specific:\r\n");
 	RTK_LOGI(NOTAG, "\t\t-b\t#[KM]\t\tfor UDP, bandwidth to send at in bits/sec (default 1 Mbit/sec)\r\n");
 	RTK_LOGI(NOTAG, "\t\t-c\t<host>\trun in client mode, connecting to <host>\r\n");
@@ -244,7 +246,7 @@ void at_iperf(void *arg)
 
 	argc = parse_param(input, argv);
 	if (argc > 1) {
-		cmd_iperf(argc, argv);
+		error_no = cmd_iperf(argc, argv);
 	} else {
 		RTK_LOGI(NOTAG, "[+IPERF] Should be some argc\r\n");
 		error_no = 3;

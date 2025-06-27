@@ -15,7 +15,7 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 
-#if defined(CONFIG_ATCMD_HOST_CONTROL) || defined(CONFIG_WHC_BRIDGE)
+#if defined(CONFIG_ATCMD_HOST_CONTROL)
 #include "ringbuffer.h"
 #endif
 
@@ -106,7 +106,7 @@ int atcmd_get_ssl_certificate(char *buffer, CERT_TYPE cert_type, int index);
 int atcmd_get_ssl_certificate_size(CERT_TYPE cert_type, int index);
 
 /* TODO */
-#if defined(CONFIG_ATCMD_HOST_CONTROL) || defined(CONFIG_WHC_BRIDGE)
+#if defined(CONFIG_ATCMD_HOST_CONTROL)
 typedef void (*at_write)(char *buf, int len);
 extern uint16_t atcmd_switch;
 extern char global_buf[SMALL_BUF];

@@ -358,6 +358,7 @@ void whc_bridge_host_rx_buf_hdl(struct msgtemplate *msg)
 	uint32_t bridge_event;
 	size_t payload_len;
 	uint8_t *pos = NULL;
+	int real_len;
 
 	if (msg->n.nlmsg_type == NLMSG_ERROR) {
 		printf("Netlink message nlmsg_type: NLMSG_ERROR\n");

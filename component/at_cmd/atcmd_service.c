@@ -107,7 +107,7 @@ log_init_t log_init_table[] = {
 
 
 //======================================================
-#if defined(CONFIG_ATCMD_HOST_CONTROL) || defined(CONFIG_WHC_BRIDGE)
+#if defined(CONFIG_ATCMD_HOST_CONTROL)
 #ifdef CONFIG_SUPPORT_SDIO_DEVICE
 extern SDIOCFG_TypeDef sdio_config;
 #endif
@@ -670,6 +670,7 @@ void atcmd_service_init(void)
 	//initialize tt mode ring sema
 	rtos_sema_create(&atcmd_tt_mode_sema, 0, 0xFFFF);
 
+#ifndef CONFIG_WHC_BRIDGE
 	int ret = atcmd_wifi_config_setting();
 	if (ret < 0) {
 		RTK_LOGE(TAG, "atcmd wifi config setting fail\n");
@@ -682,6 +683,7 @@ void atcmd_service_init(void)
 		RTK_LOGI(TAG, "atcmd host control config setting fail\n");
 		return;
 	}
+#endif
 
 	char *path = rtos_mem_zmalloc(MAX_KEY_LENGTH);
 	char *prefix = find_vfs_tag(VFS_REGION_1);

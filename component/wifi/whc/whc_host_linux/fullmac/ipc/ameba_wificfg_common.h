@@ -5,6 +5,16 @@
 extern "C" {
 #endif
 
+/** @addtogroup WIFI_API Wi-Fi APIs
+ *  @brief      WIFI_API module
+ *  @{
+ */
+/** @addtogroup WIFI_Exported_Types Wi-Fi Exported Types
+* @{
+*/
+/** @addtogroup WIFI_Exported_Structure_Types Structure Type
+ * @{
+ */
 /**
   * @brief  The structure is used to describe the wifi user configuration, can be configured in ameba_wificfg.c.
   */
@@ -171,11 +181,13 @@ struct wifi_user_conf {
 		@note Mcc performance has limitations, please contact Realtek before use to clarify your requirements. */
 	u8 en_mcc;
 
-	/* Used for configuring mcc port1 slot ratio by user: optional values:[12,80] */
+	/*!	Used for configuring mcc port1 slot ratio by user: optional values:[12,80] */
 	unsigned char mcc_force_p1_slot_ratio;
 
+	/*!	Simplify transmit pathway for faster data frame handling. */
 	u8 tx_shortcut_enable;
 
+	/*!	Simplify receive pathway for faster data frame handling. */
 	u8 rx_shortcut_enable;
 
 	/*!	0: No probe request will be sent on passive channel;
@@ -238,6 +250,10 @@ struct wifi_user_conf {
 	/*! Max node number in R-mesh network, this is used for decide each node's beacon window.*/
 	u16 wtn_max_node_num;
 };
+
+/** @} End of WIFI_Exported_Structure_Types group*/
+/** @} End of WIFI_Exported_Types group*/
+/** @} End of WIFI_API group */
 
 extern struct wifi_user_conf wifi_user_config __attribute__((aligned(64)));
 

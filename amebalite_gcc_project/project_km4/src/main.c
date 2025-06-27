@@ -76,7 +76,7 @@ void app_pmu_init(void)
 	DBG_INFO_MSG_ON(MODULE_PMC);
 	DBG_INFO_MSG_ON(MODULE_KM4);
 #ifndef CONFIG_MP_SHRINK
-	SOCPS_sleepInit();
+	SOCPS_SleepInit();
 #endif
 	/* if wake from deepsleep, that means we have released wakelock last time */
 	if (BOOT_Reason() & AON_BIT_RSTF_DSLP) {

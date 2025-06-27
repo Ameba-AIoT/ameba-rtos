@@ -85,6 +85,7 @@ elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
         ram_common/ameba_swr_calib.c
         ram_common/ameba_psram.c
         ram_common/ameba_captouch.c
+        ram_common/ameba_wakepin.c
     )
     if("${c_MCU_PROJECT_NAME}" STREQUAL "km4")
         ameba_list_append(private_sources

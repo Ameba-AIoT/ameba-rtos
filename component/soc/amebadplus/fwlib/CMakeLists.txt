@@ -76,6 +76,7 @@ elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
         ram_common/ameba_tim.c
         ram_common/ameba_uart.c
         ram_common/ameba_ppe.c
+        ram_common/ameba_wakepin.c
     )
 
     if("${c_MCU_PROJECT_NAME}" STREQUAL "km0")
