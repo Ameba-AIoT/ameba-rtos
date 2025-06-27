@@ -49,20 +49,16 @@ static u32 usbd_bulk_in_len = 63;
 /*
 	allow to set ep infor by cmd
 */
-#define USBD_EP_COUNT_MAX (10)
 typedef struct {
 	usbd_verify_ep_t  ep_array[USBD_EP_COUNT_MAX];
 	__IO u32     ctrl_out_done_count;
 	__IO u32     ctrl_in_done_count;
-	u8 		  *description_buf;
 	u8   	  ep_count;
-	u8		  description_buf_len;
 } cmd_usbd_verify_ep_t;
 
 /* Private function prototypes -----------------------------------------------*/
 static int cmd_usbd_verify_init(void);
 static int cmd_usbd_verify_deinit(void);
-static u16 cmd_usbd_verify_get_config_desc(u8 *buf);
 static int cmd_usbd_verify_set_config(usb_dev_t *dev);
 static int cmd_usbd_verify_clear_config(usb_dev_t *dev);
 static int cmd_usbd_verify_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
@@ -80,7 +76,6 @@ static cmd_usbd_verify_ep_t cmd_usbd_verify_ep;
 static const usbd_verify_cb_t cmd_usbd_verify_cb = {
 	.init = cmd_usbd_verify_init,
 	.deinit = cmd_usbd_verify_deinit,
-	.get_config_desc = cmd_usbd_verify_get_config_desc,
 
 	.set_config = cmd_usbd_verify_set_config,
 	.clear_config = cmd_usbd_verify_clear_config,
@@ -131,48 +126,6 @@ static void cmd_usbd_verify_dump_ep_info(void)
 		usbd_verify_dump_ep(ep);
 	}
 }
-static int cmd_usbd_verify_update_ep_description(u8 *buf, usbd_verify_ep_t *ep)
-{
-	usbd_verify_ep_basic_t *ep_infor = &(ep->ep_infor);
-	buf[USBD_VERIFY_EP_ADDR_OFFSET]     = ep_infor->ep_addr;
-	buf[USBD_VERIFY_EP_TYPE_OFFSET]     = ep_infor->ep_type;
-	buf[USBD_VERIFY_EP_MPS_OFFSET + 0]  = USB_LOW_BYTE(ep_infor->mps);
-	buf[USBD_VERIFY_EP_MPS_OFFSET + 1]  = USB_HIGH_BYTE(ep_infor->mps);
-	buf[USBD_VERIFY_EP_INTERVAL_OFFSET] = ep_infor->ep_interval;
-
-	return HAL_OK;
-}
-static int cmd_usbd_verify_update_description(void)
-{
-	cmd_usbd_verify_ep_t *cdev = &cmd_usbd_verify_ep;
-	u16 buf_offset;
-	u8 ep_index;
-
-	/* Configuration Descriptor */
-	buf_offset = 0;
-	usb_os_memcpy((void *)(cdev->description_buf + buf_offset), (void *)usbd_verify_cfg_desc, USB_LEN_CFG_DESC);
-	cdev->description_buf[USBD_VERIFY_CFG_LEN_OFFSET + 0] = USB_LOW_BYTE(cdev->description_buf_len);
-	cdev->description_buf[USBD_VERIFY_CFG_LEN_OFFSET + 1] = USB_HIGH_BYTE(cdev->description_buf_len);
-
-	/* interface description */
-	buf_offset += USB_LEN_CFG_DESC;
-	usb_os_memcpy((void *)(cdev->description_buf + buf_offset), (void *)usbd_verify_if_desc, USB_LEN_IF_DESC);
-	cdev->description_buf[buf_offset + USBD_VERIFY_IF_EPNUM_OFFSET] = cdev->ep_count;
-
-	/* ep description */
-	buf_offset += USB_LEN_IF_DESC;
-	for (ep_index = 0; ep_index < cdev->ep_count; ep_index++) {
-		usb_os_memcpy((void *)(cdev->description_buf + buf_offset),
-					  (void *)usbd_verify_ep_desc, USB_LEN_EP_DESC);
-
-		//usbd_verify_dump_ep(cdev->ep_array + ep_index);
-		cmd_usbd_verify_update_ep_description(cdev->description_buf + buf_offset, cdev->ep_array + ep_index);
-
-		buf_offset += USB_LEN_EP_DESC;
-	}
-
-	return HAL_OK;
-}
 
 static int cmd_usbd_verify_set_config(usb_dev_t *pdev)
 {
@@ -210,26 +163,6 @@ static int cmd_usbd_verify_clear_config(usb_dev_t *pdev)
 	return HAL_OK;
 }
 
-/*
-	soc information
-*/
-static u16 cmd_usbd_verify_get_config_desc(u8 *buf)
-{
-	cmd_usbd_verify_ep_t *cdev = &cmd_usbd_verify_ep;
-	u8 *desc = NULL;
-	u16 len = 0;
-
-	cmd_usbd_verify_update_description();
-
-	len = cdev->description_buf_len;
-	desc = cdev->description_buf;
-	if (buf != NULL && desc != NULL) {
-		usb_os_memcpy((void *)buf, (void *)desc, len);
-	}
-
-	return len;
-}
-
 static int cmd_usbd_verify_handle_ep0_data_in(usb_dev_t *dev, u8 status)
 {
 	UNUSED(dev);
@@ -245,7 +178,6 @@ static int cmd_usbd_verify_handle_ep0_data_out(usb_dev_t *dev)
 	UNUSED(dev);
 	cmd_usbd_verify_ep_t *cdev = &cmd_usbd_verify_ep;
 	cdev->ctrl_out_done_count++;
-	//RTK_LOGD(TAG, "EP0 data out, %d %d\n", dev->ep0_data_len, dev->ep0_xfer_total_len);
 	return HAL_OK;
 }
 
@@ -331,13 +263,6 @@ static int cmd_usbd_verify_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 le
 */
 static int cmd_usbd_verify_init(void)
 {
-	cmd_usbd_verify_ep_t *cdev = &cmd_usbd_verify_ep;
-	cdev->description_buf_len = USBD_EP_DESCRIPTION_SIZE(cdev->ep_count);
-	cdev->description_buf = (u8 *)usb_os_malloc(cdev->description_buf_len);
-	if (cdev->description_buf == NULL) {
-		cdev->description_buf_len = 0;
-		return HAL_ERR_MEM;
-	}
 #if CONFIG_USBD_VERIFY_BULK_ASYNC_XFER
 	async_bulk_fifo_write = 0;
 	async_bulk_fifo_read = 0;
@@ -354,12 +279,6 @@ static int cmd_usbd_verify_init(void)
 
 static int cmd_usbd_verify_deinit(void)
 {
-	cmd_usbd_verify_ep_t *cdev = &cmd_usbd_verify_ep;
-	if (cdev->description_buf) {
-		usb_os_mfree(cdev->description_buf);
-		cdev->description_buf = NULL;
-	}
-	cdev->description_buf_len = 0;
 #if CONFIG_USBD_VERIFY_BULK_ASYNC_XFER
 	async_bulk_fifo_write = 0;
 	async_bulk_fifo_read = 0;
@@ -480,7 +399,7 @@ static void cmd_usbd_verify_in_xfer(u8 ep_type, u8 in_only, u32 in_len)
 	}
 }
 
-static int cmd_usbd_verify_add_ep(u8 epaddr, u8 type, u8 intervalue, u16 mps, u16 transsize, u8 matchep)
+static int cmd_usbd_verify_add_ep(u8 epaddr, u8 type, u8 interval, u16 mps, u16 transsize, u8 matchep)
 {
 	cmd_usbd_verify_ep_t *cdev = &cmd_usbd_verify_ep;
 
@@ -490,7 +409,7 @@ static int cmd_usbd_verify_add_ep(u8 epaddr, u8 type, u8 intervalue, u16 mps, u1
 	}
 
 	if (HAL_OK != usbd_verify_ep_init(&(cdev->ep_array[cdev->ep_count]), type,
-									  epaddr, intervalue, mps, transsize, matchep)) {
+									  epaddr, interval, mps, transsize, matchep)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init EP%x fail\n", epaddr);
 		return HAL_ERR_MEM;
 	}
@@ -820,7 +739,7 @@ int cmd_usbd_verify_test_entry(
 	} else if (_stricmp(sub_cmd, "ep_default") == 0) {
 		cmd_usbd_verify_default_ep_init((const char *)argv[2]);
 	} else if (_stricmp(sub_cmd, "set_ep") == 0) {
-		u8 type, epaddr, intervalue;
+		u8 type, epaddr, interval;
 		u16 mps, transsize;
 		if (argc < 7) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid arguments, usage:\n");
@@ -829,11 +748,11 @@ int cmd_usbd_verify_test_entry(
 		} else {
 			epaddr = _strtoul((const char *)(argv[2]), (char **)NULL, 10);
 			type = _strtoul((const char *)(argv[3]), (char **)NULL, 10);
-			intervalue = _strtoul((const char *)(argv[4]), (char **)NULL, 10);
+			interval = _strtoul((const char *)(argv[4]), (char **)NULL, 10);
 			mps = _strtoul((const char *)(argv[5]), (char **)NULL, 10);
 			transsize = _strtoul((const char *)(argv[6]), (char **)NULL, 10);
 
-			cmd_usbd_verify_add_ep(epaddr, type, intervalue, mps, transsize, USBD_VERIFY_MATCH_EP_ADDR);
+			cmd_usbd_verify_add_ep(epaddr, type, interval, mps, transsize, USBD_VERIFY_MATCH_EP_ADDR);
 		}
 	} else if (_stricmp(sub_cmd, "loopback") == 0) {
 		u8 ep1 = -1, ep2 = -1;

@@ -78,7 +78,7 @@ void app_pmu_init(void)
 	pmu_set_sleep_type(SLEEP_PG);
 	pmu_init_wakeup_timer();
 #ifndef CONFIG_MP_SHRINK
-	SOCPS_sleepInit();
+	SOCPS_SleepInit();
 #endif
 }
 

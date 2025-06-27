@@ -271,7 +271,7 @@ void SOCPS_SleepInit(void)
 		}
 
 		if (sleep_wakepin_config[i].config != DISABLE_WAKEPIN) {
-			SOCPS_SetWakepin(sleep_wakepin_config[i].wakepin, sleep_wakepin_config[i].config);
+			Wakepin_Setting(sleep_wakepin_config[i].wakepin, sleep_wakepin_config[i].config);
 		}
 
 		i++;
