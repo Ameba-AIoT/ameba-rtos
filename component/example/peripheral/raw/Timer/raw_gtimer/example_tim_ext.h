@@ -19,7 +19,7 @@
 #define GPIO_LED_PIN1		_PA_21
 #define GPIO_LED_PIN2		_PA_22
 
-#elif defined (CONFIG_AMEBADPLUS)
+#elif defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2)
 
 #define GPIO_LED_PIN1		_PB_17
 #define GPIO_LED_PIN2		_PB_18

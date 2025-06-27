@@ -1144,7 +1144,7 @@ function(ameba_execute_process)
         message(STATUS "Command output: \n${OUTPUT}")
         message(FATAL_ERROR "Command error: \n${ERROR}")
     elseif(ARG_p_SHOW_OUTPUT)
-        message(STATUS "Command output: \n${OUTPUT}")
+        message("${OUTPUT}")
     endif()
 endfunction()
 

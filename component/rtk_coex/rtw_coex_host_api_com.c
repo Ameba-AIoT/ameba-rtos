@@ -11,6 +11,17 @@ extern int rtk_coex_ipc_h2c_info_handler(u16 type, u8 *pdata, u16 data_len);
 /////////////////////////////////////////////////////////////////////////////
 /////// API for h2c (app side)
 /////////////////////////////////////////////////////////////////////////////
+__weak void rtk_coex_com_coex_set_enable(bool enable)
+{
+	rtk_coex_ipc_h2c_info_handler(COEX_COM_TYPE(COEX_H2C_COM_SET_COEX_ENABLE), (u8 *)&enable, sizeof(bool));
+}
+
+__weak bool rtk_coex_com_coex_is_enabled(void)
+{
+	int ret = rtk_coex_ipc_h2c_info_handler(COEX_COM_TYPE(COEX_H2C_COM_GET_IS_ENABLED), NULL, 0);
+
+	return (ret == 0) ? (true) : (false);
+}
 
 __weak void rtk_coex_com_vendor_info_set(u8 vendor_id, u8 product_id)
 {

@@ -8,7 +8,7 @@ None
 
 # SW configuration
 
-1. Can Modify `SNTP_SERVER_ADDRESS` and `SNTP_UPDATE_DELAY` in `sntp.c` under `component/network/sntp` for NTP time update.  
+1. Can Modify `SNTP_SERVER_ADDRESS` and `SNTP_UPDATE_DELAY` in `sntp.c` under `component/network/sntp` for NTP time update.
 For `SNTP_UPDATE_DELAY` to work, `SNTP_STARTUP_DELAY` should be defined
 
 2. Can choose the showing format of the time.
@@ -61,3 +61,4 @@ None
 - AmebaSmart
 - AmebaLite
 - AmebaDplus
+- AmebaGreen2

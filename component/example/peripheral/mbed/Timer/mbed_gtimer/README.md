@@ -14,7 +14,9 @@ GND <--> LED2 <---> PA_22
 3. If you run this example in AmebaDplus, then connect as below
 GND <--> LED1 <---> PB_17
 GND <--> LED2 <---> PB_18
-
+3. If you run this example in AmebaGreen2, then connect as below
+GND <--> LED1 <---> PA_13
+GND <--> LED2 <---> PA_14
 # SW configuration
 
 Build and Download:
@@ -37,3 +39,4 @@ none
 - AmebaSmart
 - AebaLite
 - AmebaDplus
+- AmebaGreen2

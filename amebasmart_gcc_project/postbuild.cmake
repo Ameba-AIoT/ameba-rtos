@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.20.0)
 include(${c_CMAKE_FILES_DIR}/utility.cmake)
 include(${c_CMAKE_FILES_DIR}/global_define.cmake)
 import_kconfig("CONFIG" ${c_MCU_KCONFIG_FILE})
+ameba_reset_global_define() #NOTE: Some variables like c_MP need to update after import kconfig
 
 message( "========== Image app generate start ==========")
 

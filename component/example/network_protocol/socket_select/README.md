@@ -37,3 +37,4 @@ Without network connection, will encounter TCP client connect error.
 - AmebaSmart
 - AmebaLite
 - AmebaDplus
+- AmebaGreen2

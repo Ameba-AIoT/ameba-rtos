@@ -29,7 +29,7 @@ static void example_socket_select_thread(void *param)
 	// Delay to check successful WiFi connection and obtain of an IP address
 	LwIP_Check_Connectivity();
 
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: socket select\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: socket select====================\r\n");
 
 	memset(socket_used, 0, sizeof(socket_used));
 
@@ -84,7 +84,7 @@ reconnect:
 
 	while (1) {
 		int socket_fd;
-		unsigned char buf[512];
+		char buf[512] = {0};
 		fd_set read_fds;
 		struct timeval timeout;
 
@@ -117,9 +117,11 @@ reconnect:
 						}
 					} else {
 						int read_size = recv(socket_fd, buf, sizeof(buf), MSG_DONTWAIT);
+						RTK_LOGS(NOTAG, RTK_LOG_INFO, "recv data=%s(len=%d) from socket_fd(%d)\n", buf, read_size, socket_fd);
 
 						if (read_size > 0) {
 							send(socket_fd, buf, (read_size > 512) ? 512 : read_size, MSG_DONTWAIT);
+							RTK_LOGS(NOTAG, RTK_LOG_INFO, "send data=%s(len=%d) from socket_fd(%d)\n", buf, (read_size > 512) ? 512 : read_size, socket_fd);
 						} else {
 							RTK_LOGS(NOTAG, RTK_LOG_INFO, "socket fd(%d) disconnected\n", socket_fd);
 							socket_used[socket_fd] = 0;
@@ -146,6 +148,6 @@ exit:
 void example_socket_select(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_socket_select_thread"), example_socket_select_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(example_socket_select_thread) failed", __FUNCTION__);
 	}
 }

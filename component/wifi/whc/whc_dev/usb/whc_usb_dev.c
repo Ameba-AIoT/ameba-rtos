@@ -322,6 +322,8 @@ void whc_usb_dev_init(void)
 	/* initialize the dev priv */
 	whc_dev_init_priv();
 
+#ifdef CONFIG_WHC_WIFI_API_PATH
 	whc_dev_api_init();
+#endif
 }
 

@@ -18,12 +18,14 @@
 #include "rtw_coex_ipc_def.h"
 #include "rtw_coex_ipc_cfg.h"
 #include "rtw_coex_ipc.h"
+#include "rtw_coex_host_api.h"
+#include "wifi_intf_drv_to_upper.h"
 
 /* -------------------------------- Defines --------------------------------- */
 /*host api task*/
 #define CONFIG_COEX_IPC_HOST_API_PRIO 3
 #define COEX_STACK_SIZE_IPC_HST_API (2896 + 128 + CONTEXT_SAVE_SIZE)
-
+#define COEX_STACK_SIZE_IPC_HST_SEND_API (1024*4)
 
 /* ---------------------------- Global Variables ---------------------------- */
 rtos_sema_t  g_host_coex_ipc_api_task_wake_sema = NULL;
@@ -36,9 +38,12 @@ u32	last_api_id = 0;  /*for debug*/
 IPC_MSG_STRUCT g_host_coex_ipc_api_msg __attribute__((aligned(64)));
 #endif
 
+struct extchip_para_t g_extchip_para_ap = {0};
+
 /* -------------------------- Function declaration -------------------------- */
 extern int rtk_coex_ipc_c2h_info_indicate(u16 type, u8 *pdata, u16 data_len);
 
+void rtk_coex_extc_ntfy_init(struct extchip_para_t *p_extchip_para);
 /* ---------------------------- Public Functions ---------------------------- */
 
 __weak int rtk_coex_ipc_h2c_info_handler(u16 type, u8 *pdata, u16 data_len)
@@ -240,7 +245,54 @@ void coex_ipc_host_init(void)
 	coex_ipc_api_init_host();
 }
 
-#if !defined(CONFIG_SINGLE_CORE_WIFI)
+/**
+ * @brief  auto send ipc.
+ * @param  none.
+ * @return none.
+ */
+void coex_ipc_api_host_send_task(void)
+{
+	int cnt = 0;
+
+	while (1) {
+		rtos_time_delay_ms(400);
+		// for coex-ext init
+		if (wifi_is_running(STA_WLAN_INDEX)) {
+			rtk_coex_extc_ntfy_init(&g_extchip_para_ap);
+			break;
+		}
+
+		cnt++;
+		if (cnt > 25) {
+			// task survive timeout = 10s
+			break;
+		}
+	}
+
+	if (rtk_coex_extc_is_ready()) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[COEX][EXT] READY~~~~~~~\r\n");
+	} else {
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[COEX][EXT] Init Fail, CHECK!!!(cnt=%d)\r\n", cnt);
+	}
+
+	rtos_task_delete(NULL);
+}
+
+/**
+ * @brief  to initialize the ipc host for coex-ext init.
+ * @param  none.
+ * @return none.
+ */
+void coex_ipc_api_send_init_host(void)
+{
+	/* Initialize the event task */
+	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"coex_ipc_api_host_send_task", (rtos_task_function_t)coex_ipc_api_host_send_task, NULL,
+										COEX_STACK_SIZE_IPC_HST_SEND_API, CONFIG_COEX_IPC_HOST_API_PRIO)) {
+		RTK_LOGS(TAG_WLAN_COEX, RTK_LOG_ERROR, "Create coex_ipc_api_host_send_task Err\n");
+	}
+}
+
+
 IPC_TABLE_DATA_SECTION
 const IPC_INIT_TABLE ipc_coex_api_host_table = {
 	.USER_MSG_TYPE = IPC_USER_POINT,
@@ -251,5 +303,5 @@ const IPC_INIT_TABLE ipc_coex_api_host_table = {
 	.IPC_Direction = COEX_IPC_DIR_MSG_RX,
 	.IPC_Channel = IPC_D2H_COEX_API_TRAN
 };
-#endif
+
 /* ---------------------------- Global Variables ---------------------------- */

@@ -17,7 +17,7 @@
 
 #include "wifi_intf_drv_to_app_internal.h"
 
-#ifndef CONFIG_WIFI_P2P_ENABLE
+#ifdef CONFIG_P2P
 void wifi_hal_p2p_addr_cam_init(void)
 {
 }

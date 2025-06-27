@@ -13,7 +13,7 @@
 #include "hci_common.h"
 #include "bt_inic.h"
 
-uint8_t hci_process_download_patch(uint16_t opcode);
+uint8_t hci_process(void);
 
 void bt_inic_send_cmd_complete_evt(uint16_t opcode, uint8_t status)
 {
@@ -243,8 +243,11 @@ static bool is_inic_vendor_cmd(uint16_t opcode, uint8_t *pdata)
 		param = pdata[3];
 		if (param == 0x01) {
 			hci_set_mp(true);
-			hci_transport_register(&hci_sa_cb);
-			if (!hci_process_download_patch(0xFC20)) {
+			if (hci_controller_is_enabled()) {
+				hci_controller_disable();
+				hci_controller_free();
+			}
+			if (!hci_controller_enable()) {
 				BT_LOGE("BT MP Patch download failed!\r\n");
 				status = 1; // download patch failed
 			} else {
@@ -253,8 +256,11 @@ static bool is_inic_vendor_cmd(uint16_t opcode, uint8_t *pdata)
 			hci_transport_register(&bt_inic_cb);
 		} else {
 			hci_set_mp(false);
-			hci_transport_register(&hci_sa_cb);
-			if (!hci_process_download_patch(0xFC20)) {
+			if (hci_controller_is_enabled()) {
+				hci_controller_disable();
+				hci_controller_free();
+			}
+			if (!hci_controller_enable()) {
 				BT_LOGE("BT Normal Patch download failed!\r\n");
 				status = 1; // download patch failed
 			} else {

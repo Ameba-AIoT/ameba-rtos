@@ -73,6 +73,7 @@ ameba_list_append(private_sources
     ameba_sport.c
     ameba_tim.c
     ameba_uart.c
+    ameba_wakepin.c
 )
 
 # Component private part, user config end
@@ -81,7 +82,7 @@ ameba_list_append(private_sources
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/soc
-ameba_add_internal_library(ram_common
+ameba_add_internal_library(fwlib_common
     p_SOURCES
         ${private_sources}
     p_INCLUDES

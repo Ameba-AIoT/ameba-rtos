@@ -1415,8 +1415,8 @@ static void bt_stack_le_audio_sync_cb(T_BLE_AUDIO_SYNC_HANDLE sync_handle, uint8
 					break;
 				}
 				for (uint8_t i = 0; i < bis_sync_info.bis_num; i++) {
-					if (false == ble_audio_bis_setup_data_path(sync_handle, i + 1, codec_id, controller_delay, 0, NULL)) {
-						BT_LOGE("[BAP] %s ble_audio_bis_setup_data_path fail, bis_idx: 0x%x\r\n", __func__, i + 1);
+					if (false == ble_audio_bis_setup_data_path(sync_handle, bis_sync_info.bis_info[i].bis_idx, codec_id, controller_delay, 0, NULL)) {
+						BT_LOGE("[BAP] %s ble_audio_bis_setup_data_path fail, bis_idx: 0x%x\r\n", __func__, bis_sync_info.bis_info[i].bis_idx);
 					}
 				}
 				//stop ext scan to save power when BIG sync

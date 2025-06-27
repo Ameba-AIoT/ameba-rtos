@@ -95,8 +95,8 @@ static void rtc_dslp_handler(void)
 static void wakepin_dslp_handler(void)
 {
 	u32 pinidx;
-	pinidx = SOCPS_WakePinCheck();
-	SOCPS_WakePinClearINT(pinidx);
+	pinidx = WakePin_Get_Idx();
+	WakePin_ClearINT(pinidx);
 }
 
 static void dslp_wake_handler(void)

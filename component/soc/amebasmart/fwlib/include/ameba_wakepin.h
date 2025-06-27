@@ -25,10 +25,9 @@ typedef struct {
 
 extern u8 aon_wakepin[4];
 
-extern int SOCPS_WakePinCheck(void);
-
-extern void SOCPS_SetWakepin(u32 PinIdx, u32 Polarity);
-extern void SOCPS_SetWakepinDebounce(u32 Dbnc_cycle, u32 Status);
-extern void SOCPS_WakePinClearINT(u32 wakepin);
+extern int WakePin_Get_Idx(void);
+extern void Wakepin_Setting(u32 PinIdx, u32 Polarity);
+extern void Wakepin_Debounce_Setting(u32 Dbnc_cycle, u32 Status);
+extern void WakePin_ClearINT(u32 wakepin);
 
 #endif  //_AMEBA_WAKEPIN_H_

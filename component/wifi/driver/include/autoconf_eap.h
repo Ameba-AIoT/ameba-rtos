@@ -18,9 +18,11 @@
 #ifndef AUTOCONF_EAP_H
 #define AUTOCONF_EAP_H
 
+#define CONFIG_EAP
+
 /************************ For EAP auth configurations *************************/
 /* DO NOT change the below config of EAP */
-#ifdef PRE_CONFIG_EAP
+#ifdef CONFIG_EAP
 #define CONFIG_TLS  1
 #define CONFIG_PEAP 1
 #define CONFIG_TTLS 1
@@ -30,18 +32,18 @@
 #define CONFIG_TLS  0
 #define CONFIG_PEAP 0
 #define CONFIG_TTLS 0
-#endif /* PRE_CONFIG_EAP*/
+#endif /* CONFIG_EAP */
 
 /*******************************************************************************/
 
 /**
- * For EAP configurations
+ * For EAP Method Configurations
  */
 
 // on/off specified eap method
-#define CONFIG_ENABLE_PEAP	0
-#define CONFIG_ENABLE_TLS	0
-#define CONFIG_ENABLE_TTLS	0
+#define CONFIG_ENABLE_PEAP	1
+#define CONFIG_ENABLE_TLS	1
+#define CONFIG_ENABLE_TTLS	1
 
 // optional feature: whether to verify the cert of radius server
 #define ENABLE_EAP_SSL_VERIFY_SERVER	0

@@ -1116,6 +1116,23 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 		break;
 	}
 
+	case RTK_BT_BR_GAP_ACL_SNIFF: {
+		rtk_bt_br_acl_sniff_t *p_sniff = (rtk_bt_br_acl_sniff_t *)param;
+		BT_LOGA("[BR GAP] ACL sniff mode from %02x:%02x:%02x:%02x:%02x:%02x \r\n",
+				p_sniff->bd_addr[5], p_sniff->bd_addr[4],
+				p_sniff->bd_addr[3], p_sniff->bd_addr[2],
+				p_sniff->bd_addr[1], p_sniff->bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL sniff interval 0x%x \r\n", p_sniff->interval);
+		break;
+	}
+
+	case RTK_BT_BR_GAP_ACL_ACTIVE: {
+		uint8_t *bd_addr = (uint8_t *)param;
+		BT_LOGA("[BR GAP] ACL active %02x:%02x:%02x:%02x:%02x:%02x \r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		break;
+	}
+
 	case RTK_BT_BR_GAP_LINK_KEY_REQ: {
 		uint8_t found = *(uint8_t *)param;
 		if (a2dp_bond_info_flush && found) {
@@ -1259,6 +1276,53 @@ static rtk_bt_evt_cb_ret_t app_bt_avrcp_callback(uint8_t evt_code, void *param, 
 		}
 		if (p_attr_t->num_of_attr) {
 			osif_mem_free(p_attr_t->attr);
+		}
+		break;
+	}
+
+	case RTK_BT_AVRCP_EVT_APP_SETTING_ATTRS_LIST_RSP: {
+		uint8_t temp_buff[10];
+		rtk_bt_avrcp_app_setting_attrs_list_t *p_list_t = (rtk_bt_avrcp_app_setting_attrs_list_t *)param;
+		const char *attr[] = {"", "EQ", "Repeat Mode", "Shuffle", "Scan"};
+
+		if (p_list_t->state == 0) {
+			BT_LOGA("[AVRCP] Get app settings attrs information successfully from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					p_list_t->bd_addr[5], p_list_t->bd_addr[4], p_list_t->bd_addr[3], p_list_t->bd_addr[2], p_list_t->bd_addr[1], p_list_t->bd_addr[0]);
+			for (uint8_t i = 0; i < p_list_t->num_of_attr; i ++) {
+				memset((void *)temp_buff, 0, 10);
+				snprintf((char *)temp_buff, len, "%s\r\n", attr[p_list_t->p_attr_id[i]]);
+				BT_LOGA("[AVRCP] %s \r\n", temp_buff);
+			}
+		}
+		break;
+	}
+
+	case RTK_BT_AVRCP_EVT_APP_SETTING_VALUES_LIST_RSP: {
+		rtk_bt_avrcp_app_setting_values_list_t *p_values_t = (rtk_bt_avrcp_app_setting_values_list_t *)param;
+
+		if (p_values_t->state == 0) {
+			BT_LOGA("[AVRCP] Get app settings values information successfully from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					p_values_t->bd_addr[5], p_values_t->bd_addr[4], p_values_t->bd_addr[3], p_values_t->bd_addr[2], p_values_t->bd_addr[1], p_values_t->bd_addr[0]);
+			for (uint8_t i = 0; i < p_values_t->num_of_value; i ++) {
+				BT_LOGA("[AVRCP] value 0x%02x \r\n", p_values_t->p_value[i]);
+			}
+		}
+		break;
+	}
+
+	case RTK_BT_AVRCP_EVT_APP_SETTING_GET_RSP: {
+		uint8_t temp_buff[20];
+		rtk_bt_avrcp_app_setting_get_rsp_t *p_rsp_t = (rtk_bt_avrcp_app_setting_get_rsp_t *)param;
+		const char *attr[] = {"", "EQ:", "Repeat Mode:", "Shuffle:", "Scan:"};
+
+		if (p_rsp_t->state == 0) {
+			BT_LOGA("[AVRCP] Get app settings response information successfully from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					p_rsp_t->bd_addr[5], p_rsp_t->bd_addr[4], p_rsp_t->bd_addr[3], p_rsp_t->bd_addr[2], p_rsp_t->bd_addr[1], p_rsp_t->bd_addr[0]);
+			for (uint8_t i = 0; i < p_rsp_t->num_of_attr; i ++) {
+				memset((void *)temp_buff, 0, 20);
+				snprintf((char *)temp_buff, len, "%s 0x%x\r\n", attr[p_rsp_t->p_app_setting[i].attr], p_rsp_t->p_app_setting[i].value);
+				BT_LOGA("[AVRCP] %s \r\n", temp_buff);
+			}
 		}
 		break;
 	}
@@ -1532,10 +1596,6 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 	psbc_decoder_t->min_bitpool = pa2dp_codec->sbc.min_bitpool;
 	psbc_decoder_t->max_bitpool = pa2dp_codec->sbc.max_bitpool;
 	psbc_decoder_t->sbc_dec_mode = (sbc_channel_mode_t)SBC_MODE_STANDARD;
-	/* default A2DP sink play music local */
-#if defined(RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT
-	play_flag = true;
-#endif
 	a2dp_audio_track_hdl = rtk_bt_audio_track_add(RTK_BT_AUDIO_CODEC_SBC,
 												  (float)APP_BT_DEFAULT_A2DP_PBP_AUDIO_LEFT_VOLUME,
 												  (float)APP_BT_DEFAULT_A2DP_PBP_AUDIO_RIGHT_VOLUME,
@@ -1911,6 +1971,41 @@ static uint16_t app_bt_le_audio_lc3_codec_entity_remove(void *codec_entity)
 	return rtk_bt_audio_codec_remove(RTK_BT_AUDIO_CODEC_LC3, codec_entity);
 }
 
+#if defined(RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT
+static rtk_bt_audio_track_t *app_bt_le_audio_track_add(rtk_bt_le_audio_cfg_codec_t *p_codec)
+{
+	float left_volume = 0.0, right_volume = 0.0;
+	uint8_t channels = 0;
+	uint32_t audio_chnl = 0;
+	uint32_t rate = 0;
+	uint32_t duration = 0;
+
+	rate = app_bt_le_audio_translate_lea_samp_fre_to_audio_samp_rate(p_codec->sample_frequency);
+	if (p_codec->frame_duration == RTK_BT_LE_FRAME_DURATION_CFG_10_MS) {
+		duration = 10000;
+	} else {
+		duration = 7500;
+	}
+#if 1
+	channels = app_bt_le_audio_get_lea_chnl_num(p_codec->audio_channel_allocation);
+	audio_chnl = app_bt_le_audio_translate_le_chnl_to_audio_chnl(p_codec->audio_channel_allocation);
+	if (audio_chnl & RTK_BT_LE_AUDIO_LOCATION_FL) {
+		left_volume = RTK_BT_DEFAULT_AUDIO_TRACK_LEFT_VOLUME;
+	}
+	if (audio_chnl & RTK_BT_LE_AUDIO_LOCATION_FR) {
+		right_volume = RTK_BT_DEFAULT_AUDIO_TRACK_RIGHT_VOLUME;
+	}
+#else
+	channels = 2;//default init two channel each track
+	left_volume = RTK_BT_DEFAULT_AUDIO_TRACK_LEFT_VOLUME;
+	right_volume = RTK_BT_DEFAULT_AUDIO_TRACK_RIGHT_VOLUME;
+#endif
+
+	return rtk_bt_audio_track_add(RTK_BT_AUDIO_CODEC_LC3, (float)left_volume, (float)right_volume,
+								  channels, rate, BT_AUDIO_FORMAT_PCM_16_BIT, duration, NULL, true);
+}
+#endif
+
 static uint16_t app_bt_le_audio_add_data_path(uint16_t iso_conn_handle, void *p_iso_chann, rtk_bt_le_audio_iso_data_path_direction_t path_direction,
 											  rtk_bt_le_audio_cfg_codec_t codec_t)
 {
@@ -1927,6 +2022,14 @@ static uint16_t app_bt_le_audio_add_data_path(uint16_t iso_conn_handle, void *p_
 				BT_LOGE("[APP] %s: codec add fail \r\n", __func__);
 				goto error;
 			}
+#if defined(RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT
+			app_le_audio_data_path[i].p_track_hdl = app_bt_le_audio_track_add(&app_le_audio_data_path[i].codec_t);
+			if (!app_le_audio_data_path[i].p_track_hdl) {
+				BT_LOGE("[APP] %s track add fail \r\n", __func__);
+				app_bt_le_audio_lc3_codec_entity_remove(app_le_audio_data_path[i].p_codec_entity);
+				goto error;
+			}
+#endif
 			return 0;
 error:
 			memset((void *)&app_le_audio_data_path[i], 0, sizeof(app_bt_le_audio_data_path_t));
@@ -2199,6 +2302,16 @@ static void app_bt_pbp_bsrc_encode_task_entry(void *ctx)
 								app_le_audio_data_path[i].pkt_seq_num, ret);
 						BT_DUMPD("", app_le_audio_data_path[i].p_enc_codec_buffer_t->pbuffer, app_le_audio_data_path[i].p_enc_codec_buffer_t->frame_size);
 					}
+#if defined(RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT
+					if (rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_LC3,
+												   app_le_audio_data_path[i].p_track_hdl,
+												   app_le_audio_data_path[i].p_codec_entity,
+												   app_le_audio_data_path[i].p_enc_codec_buffer_t->pbuffer,
+												   app_le_audio_data_path[i].p_enc_codec_buffer_t->frame_size,
+												   0)) {
+						BT_LOGE("[APP] %s: Stream Data Play Fail! \r\n", __func__);
+					}
+#endif
 					if (app_le_audio_data_path[i].p_enc_codec_buffer_t) {
 						rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_LC3, app_le_audio_data_path[i].p_codec_entity, app_le_audio_data_path[i].p_enc_codec_buffer_t);
 					}
@@ -2372,6 +2485,8 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 static rtk_bt_evt_cb_ret_t app_bt_le_audio_gap_app_callback(uint8_t evt_code, void *param, uint32_t len)
 {
 	(void)len;
+	char *role;
+	char le_addr[30] = {0};
 
 	switch (evt_code) {
 	case RTK_BT_LE_GAP_EVT_ADV_START_IND: {
@@ -2419,6 +2534,25 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_gap_app_callback(uint8_t evt_code, vo
 		break;
 	}
 #endif
+	case RTK_BT_LE_GAP_EVT_DATA_LEN_CHANGE_IND: {
+		rtk_bt_le_data_len_change_ind_t *data_len_change =
+			(rtk_bt_le_data_len_change_ind_t *)param;
+		BT_LOGA("[APP] Data len is updated, conn_handle: %d, "       \
+				"max_tx_octets: 0x%x, max_tx_time: 0x%x, "        \
+				"max_rx_octets: 0x%x, max_rx_time: 0x%x\r\n",
+				data_len_change->conn_handle,
+				data_len_change->max_tx_octets,
+				data_len_change->max_tx_time,
+				data_len_change->max_rx_octets,
+				data_len_change->max_rx_time);
+		BT_AT_PRINT("+BLEGAP:conn_datalen,%d,0x%x,0x%x,0x%x,0x%x\r\n",
+					data_len_change->conn_handle,
+					data_len_change->max_tx_octets,
+					data_len_change->max_tx_time,
+					data_len_change->max_rx_octets,
+					data_len_change->max_rx_time);
+		break;
+	}
 	case RTK_BT_LE_GAP_EVT_PHY_UPDATE_IND: {
 		rtk_bt_le_phy_update_ind_t *phy_update_ind =
 			(rtk_bt_le_phy_update_ind_t *)param;
@@ -2452,35 +2586,6 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_gap_app_callback(uint8_t evt_code, vo
 		break;
 	}
 
-#if defined(RTK_BLE_5_0_PA_SYNC_SUPPORT) && RTK_BLE_5_0_PA_SYNC_SUPPORT
-	case RTK_BT_LE_GAP_EVT_PA_SYNC_STATE_IND: {
-		rtk_bt_le_pa_sync_ind_t *pa_sync_ind = (rtk_bt_le_pa_sync_ind_t *)param;
-		BT_LOGA("[APP] PA sync state change: sync_id: %d, state = %d, cause: 0x%x\r\n",
-				pa_sync_ind->sync_id, pa_sync_ind->state, pa_sync_ind->cause);
-
-		if (pa_sync_ind->state == RTK_BT_LE_PA_SYNC_STATE_SYNCHRONIZED) {
-			rtk_bt_le_pa_synced_info_t *p_info = &pa_sync_ind->info;
-			rtk_bt_le_addr_to_str(&p_info->addr, le_addr, sizeof(le_addr));
-			BT_LOGA("[APP] PA SYNCHRONIZED PARAM: [Device]: %s, sync_handle:0x%x, adv_sid: %d, past_received: %d\r\n",
-					le_addr, p_info->sync_handle, p_info->adv_sid, p_info->past_received);
-			BT_AT_PRINT("+BLEGAP:pa_sync,%s,0x%x,%d,%d\r\n",
-						le_addr, p_info->sync_handle, p_info->adv_sid, p_info->past_received);
-		}
-		break;
-	}
-
-	case RTK_BT_LE_GAP_EVT_PA_ADV_REPORT_IND: {
-		rtk_bt_le_pa_adv_report_ind_t *pa_report = (rtk_bt_le_pa_adv_report_ind_t *)param;
-		BT_LOGA("[APP] PA sync ADV report: sync_id %d, sync_handle 0x%x, tx_power %d, rssi %d, cte_type %d, data_status 0x%x, data_len %d\r\n",
-				pa_report->sync_id, pa_report->sync_handle, pa_report->tx_power, pa_report->rssi,
-				pa_report->cte_type, pa_report->data_status, pa_report->data_len);
-		BT_AT_PRINT("+BLEGAP:pa_report,%d,0x%x,%d,%d,%d,0x%x,%d\r\n",
-					pa_report->sync_id, pa_report->sync_handle, pa_report->tx_power, pa_report->rssi,
-					pa_report->cte_type, pa_report->data_status, pa_report->data_len);
-		break;
-	}
-#endif
-
 #if defined(RTK_BLE_5_2_POWER_CONTROL_SUPPORT) && RTK_BLE_5_2_POWER_CONTROL_SUPPORT
 	case RTK_BT_LE_GAP_EVT_TXPOWER_REPORT_IND: {
 		rtk_bt_le_txpower_ind_t *txpower_ind = (rtk_bt_le_txpower_ind_t *)param;
@@ -2491,9 +2596,57 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_gap_app_callback(uint8_t evt_code, vo
 		break;
 	}
 #endif
+	case RTK_BT_LE_GAP_EVT_CONNECT_IND: {
+		rtk_bt_le_conn_ind_t *conn_ind = (rtk_bt_le_conn_ind_t *)param;
+		rtk_bt_le_addr_to_str(&(conn_ind->peer_addr), le_addr, sizeof(le_addr));
+		if (!conn_ind->err) {
+			role = conn_ind->role ? "slave" : "master";
+			BT_LOGA("[APP] Connected, handle: %d, role: %s, remote device: %s\r\n",
+					conn_ind->conn_handle, role, le_addr);
+		} else {
+			BT_LOGE("[APP] Connection establish failed(err: 0x%x), remote device: %s\r\n",
+					conn_ind->err, le_addr);
+		}
+		BT_AT_PRINT("+BLEGAP:conn,%d,%d,%s\r\n", (conn_ind->err == 0) ? 0 : -1, (int)conn_ind->conn_handle, le_addr);
+		break;
+	}
+
+	case RTK_BT_LE_GAP_EVT_DISCONN_IND: {
+		rtk_bt_le_disconn_ind_t *disconn_ind = (rtk_bt_le_disconn_ind_t *)param;
+		rtk_bt_le_addr_to_str(&(disconn_ind->peer_addr), le_addr, sizeof(le_addr));
+		role = disconn_ind->role ? "slave" : "master";
+		BT_LOGA("[APP] Disconnected, reason: 0x%x, handle: %d, role: %s, remote device: %s\r\n",
+				disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
+		BT_AT_PRINT("+BLEGAP:disconn,0x%x,%d,%s,%s\r\n",
+					disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
+		break;
+	}
+
+	case RTK_BT_LE_GAP_EVT_CONN_UPDATE_IND: {
+		rtk_bt_le_conn_update_ind_t *conn_update_ind =
+			(rtk_bt_le_conn_update_ind_t *)param;
+		if (conn_update_ind->err) {
+			BT_LOGE("[APP] Update conn param failed, conn_handle: %d, err: 0x%x\r\n",
+					conn_update_ind->conn_handle, conn_update_ind->err);
+			BT_AT_PRINT("+BLEGAP:conn_update,%d,-1\r\n", conn_update_ind->conn_handle);
+		} else {
+			BT_LOGA("[APP] Conn param is updated, conn_handle: %d, conn_interval: 0x%x, "       \
+					"conn_latency: 0x%x, supervision_timeout: 0x%x\r\n",
+					conn_update_ind->conn_handle,
+					conn_update_ind->conn_interval,
+					conn_update_ind->conn_latency,
+					conn_update_ind->supv_timeout);
+			BT_AT_PRINT("+BLEGAP:conn_update,%d,0,0x%x,0x%x,0x%x\r\n",
+						conn_update_ind->conn_handle,
+						conn_update_ind->conn_interval,
+						conn_update_ind->conn_latency,
+						conn_update_ind->supv_timeout);
+		}
+		break;
+	}
 
 	default:
-		BT_LOGE("[APP] Unknown gap cb evt type: %d", evt_code);
+		BT_LOGE("[APP] Unknown gap cb evt type: %d\r\n", evt_code);
 		break;
 	}
 

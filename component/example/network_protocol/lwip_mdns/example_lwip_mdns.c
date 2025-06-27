@@ -19,7 +19,7 @@ static void example_lwip_mdns_thread(void *param)
 	// Delay to check successful WiFi connection and obtain of an IP address
 	LwIP_Check_Connectivity();
 
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: LWIP mDNS\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: lwip mDNS====================\r\n");
 
 	mdns_resp_init();
 

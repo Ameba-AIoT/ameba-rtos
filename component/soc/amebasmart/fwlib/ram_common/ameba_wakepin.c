@@ -7,21 +7,6 @@
 #include "ameba_soc.h"
 
 /**
-  * @brief  get wakepin index.
-  * @param  None
-  * @retval BIT(0): wakepin0, BIT(1): wakepin1, BIT(2): wakepin2, BIT(3): wakepin3
-  */
-int SOCPS_WakePinCheck(void)
-{
-	int WakePin = 0;
-
-	WakePin = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_AON_AON_WAK_EVT);
-	WakePin = WakePin >> 4;
-
-	return WakePin;
-}
-
-/**
   * @brief  set REGU wakeup_pin (just on wakepin mux to 4 pads).
   * @param  PinMask: aon wakepin index
   *		This parameter can be one of the following values:
@@ -36,7 +21,7 @@ int SOCPS_WakePinCheck(void)
   * @note wakeup state: sleep PG & CG & deep sleep
   * @retval None
   */
-void SOCPS_SetWakepin(u32 PinIdx, u32 level)
+void Wakepin_Setting(u32 PinIdx, u32 level)
 {
 	u32 Rtemp = 0;
 
@@ -67,7 +52,7 @@ void SOCPS_SetWakepin(u32 PinIdx, u32 level)
   * @note Dbnc_cycle is valid when Status is set ENABLE.
   * @retval None
   */
-void SOCPS_SetWakepinDebounce(u32 Dbnc_cycle, u32 Status)
+void Wakepin_Debounce_Setting(u32 Dbnc_cycle, u32 Status)
 {
 	u32 Rtemp = 0;
 	u32 FEN_backup = 0;
@@ -97,10 +82,25 @@ void SOCPS_SetWakepinDebounce(u32 Dbnc_cycle, u32 Status)
 }
 
 /**
+  * @brief  get wakepin index.
+  * @param  None
+  * @retval BIT(0): wakepin0, BIT(1): wakepin1, BIT(2): wakepin2, BIT(3): wakepin3
+  */
+int WakePin_Get_Idx(void)
+{
+	int WakePin = 0;
+
+	WakePin = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_AON_AON_WAK_EVT);
+	WakePin = WakePin >> 4;
+
+	return WakePin;
+}
+
+/**
   * @brief  Clear wakepin interrupt.
   * @retval   None
   */
-void SOCPS_WakePinClearINT(u32 wakepin)
+void WakePin_ClearINT(u32 wakepin)
 {
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_AON_GPIO_WAKE_ISR, wakepin);
 }

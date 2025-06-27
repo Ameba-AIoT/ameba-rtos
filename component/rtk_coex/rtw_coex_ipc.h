@@ -22,6 +22,7 @@
 #include "platform_autoconf.h"
 #include "ameba_soc.h"
 #include "os_wrapper.h"
+#include "rtw_coex_api_ext.h"
 
 /* -------------------------------- Defines --------------------------------- */
 
@@ -58,6 +59,7 @@ void coex_ipc_dev_init(void);
 void coex_ipc_api_init_host(void);
 void coex_ipc_api_host_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum);
 int coex_ipc_api_host_message_send(u32 id, u32 *param_buf, u32 buf_len);
+void coex_ipc_api_send_init_host(void);
 
 /*for ipc dev api*/
 void coex_ipc_api_init_dev(void);
@@ -67,13 +69,38 @@ int coex_ipc_api_dev_message_send(u32 id, u32 *param_buf, u32 buf_len);
 /*for ipc init entry*/
 static inline void coex_ipc_entry(void)
 {
-#if !defined(CONFIG_SINGLE_CORE_WIFI)
+// ipc@coex init
+#if defined(CONFIG_WHC_INTF_IPC)
 #if defined(CONFIG_COEXIST_HOST)
 	coex_ipc_host_init();
 #endif
-
 #if defined(CONFIG_COEXIST_DEV)
 	coex_ipc_dev_init();
+#endif
+#endif
+
+#if defined(CONFIG_COEX_EXT_CHIP_SUPPORT)
+// ipc case-rtos:
+// ext-paras init start from ap
+#if defined(CONFIG_WHC_INTF_IPC) && defined(CONFIG_COEXIST_HOST)
+	// init from ap->np
+	extern struct extchip_para_t g_extchip_para_ap;
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[COEX][Host] Ext paras init.\r\n");
+	coex_extc_paras_config(&g_extchip_para_ap);
+	coex_ipc_api_send_init_host();
+#endif
+
+// ipc case-linux:
+// no-ipc case-fullmac/bridge/singlecore:
+// ext-paras init start from np
+#if (((defined(CONFIG_WHC_INTF_IPC) && defined(CONFIG_LINUX_FW_EN)) \
+    || (!defined(CONFIG_WHC_INTF_IPC))) && defined(CONFIG_COEXIST_DEV))
+	// ipc@coex not support, temporarily solution for smart linux
+	extern struct extchip_para_t g_extchip_para;
+	extern void rtk_coex_extc_set_enable(bool enable);
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[COEX][Dev] Ext paras init.\r\n");
+	coex_extc_paras_config(&g_extchip_para);
+	rtk_coex_extc_set_enable(true);
 #endif
 #endif
 }

@@ -27,7 +27,7 @@
 #endif
 #include "wifi_intf_drv_to_upper.h"
 
-#if defined(CONFIG_WHC_BRIDGE)
+#if defined(CONFIG_WHC_CMD_PATH)
 #include "whc_dev_bridge.h"
 #include "whc_bridge_dev_api.h"
 #endif
@@ -83,7 +83,9 @@ void wifi_init_thread(void *param)
 void wifi_init_thread(void *param)
 {
 	UNUSED(param);
-
+#ifdef CONFIG_WHC_CMD_PATH
+	whc_dev_init_cmd_path_task();
+#endif
 	whc_dev_init();
 	rtos_task_delete(NULL);
 }
@@ -103,16 +105,15 @@ void wifi_init_thread(void *param)
 	LwIP_Init();
 #endif
 
-#if defined(CONFIG_WHC_BRIDGEB)
-	whc_dev_init();
+#ifdef CONFIG_WHC_CMD_PATH
+	whc_dev_init_cmd_path_task();
+#endif
+
+#ifdef CONFIG_WHC_BRIDGE
+	whc_dev_init_lite();
 #endif
 
 	wifi_on(RTW_MODE_STA);
-
-#ifdef CONFIG_WHC_BRIDGE
-	whc_bridge_dev_init_user_task();
-	whc_dev_init_lite();
-#endif
 
 	RTK_LOGI(TAG_WLAN_DRV, "Available heap after wifi init %d\n", rtos_mem_get_free_heap_size() + WIFI_STACK_SIZE_INIT);
 

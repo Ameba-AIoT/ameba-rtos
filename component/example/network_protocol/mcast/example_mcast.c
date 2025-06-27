@@ -17,7 +17,7 @@ static void example_mcast_thread(void *param)
 	// Delay to check successful WiFi connection and obtain of an IP address
 	LwIP_Check_Connectivity();
 
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n Example: mcast \n ");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: mcast====================\r\n");
 
 	// Set NETIF_FLAG_IGMP flag for netif which should process IGMP messages
 	xnetif[0].flags |= NETIF_FLAG_IGMP;
@@ -104,6 +104,6 @@ static void example_mcast_thread(void *param)
 void example_mcast(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_mcast_thread"), example_mcast_thread, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(example_mcast_thread) failed", __FUNCTION__);
 	}
 }

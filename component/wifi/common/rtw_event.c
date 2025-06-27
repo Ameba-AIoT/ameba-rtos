@@ -18,7 +18,7 @@
 #if !defined (CONFIG_FULLMAC) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP))
 #include "wifi_api.h"
 #include "platform_stdlib.h"
-#if !defined(CONFIG_AS_INIC_NP)|| defined(CONFIG_WPA_LOCATION_DEV)
+#if !defined(CONFIG_AS_INIC_NP)|| defined(CONFIG_WPA_LOCATION_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 #include "atcmd_service.h"
 #include "wpa_lite_intf.h"
 #include <wifi_auto_reconnect.h>
@@ -31,7 +31,7 @@
 /**********************************************************************************************
  *                                          Globals
  *********************************************************************************************/
-#if !(defined CONFIG_AS_INIC_NP) || defined(CONFIG_WPA_LOCATION_DEV)
+#if !(defined CONFIG_AS_INIC_NP) || defined(CONFIG_WPA_LOCATION_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 struct event_list_elem_t {
 	void (*handler)(u8 *buf, s32 len, s32 flags, void *user_data);
 	void	*handler_user_data;
@@ -44,9 +44,7 @@ extern u8 rtw_join_status;
 extern int join_fail_reason;
 extern struct internal_block_param *join_block_param;
 extern void (*p_wifi_join_info_free)(u8 iface_type);
-#ifdef CONFIG_ENABLE_EAP
 extern void eap_disconnected_hdl(void);
-#endif
 
 /**********************************************************************************************
  *                                          Internal events
@@ -115,9 +113,7 @@ void wifi_event_join_status_internal_hdl(u8 *buf, s32 flags)
 		rtos_mem_free((u8 *)deauth_data_pre);
 #endif
 
-#ifdef CONFIG_ENABLE_EAP
 		eap_disconnected_hdl();
-#endif
 	}
 
 	if ((join_status == RTW_JOINSTATUS_DISCONNECT) || (join_status == RTW_JOINSTATUS_FAIL)) {
@@ -140,7 +136,7 @@ void wifi_event_join_status_internal_hdl(u8 *buf, s32 flags)
  * @brief internal event handle, must have same order as enum
  */
 void (*const event_internal_hdl[])(u8 *buf, s32 len, s32 flags, void *user_data) = {
-#if !defined(CONFIG_AS_INIC_NP) || defined(CONFIG_WPA_LOCATION_DEV)
+#if !defined(CONFIG_AS_INIC_NP) || defined(CONFIG_WPA_LOCATION_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 	rtw_sae_sta_rx_auth,				/*RTW_EVENT_RX_MGNT*/
 	rtw_sae_ap_rx_auth,					/*RTW_EVENT_RX_MGNT_AP*/
 	rtw_sae_sta_start,					/*RTW_EVENT_EXTERNAL_AUTH_REQ*/
@@ -268,12 +264,12 @@ void wifi_event_init(void)
 
 void wifi_indication(u32 event, u8 *buf, s32 buf_len, s32 flags)
 {
-#if defined(CONFIG_AS_INIC_NP) || defined(CONFIG_WHC_BRIDGEB)
+#if defined(CONFIG_AS_INIC_NP)
 	extern void whc_dev_wifi_event_indicate(u32 event_cmd, u8 * buf, s32 buf_len, s32 flags);
 	whc_dev_wifi_event_indicate(event, buf, buf_len, flags);
 #endif
 
-#if !(defined CONFIG_AS_INIC_NP) || defined(CONFIG_WPA_LOCATION_DEV)
+#if !(defined CONFIG_AS_INIC_NP) || defined(CONFIG_WPA_LOCATION_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 	wifi_event_handle(event, buf, buf_len, flags);
 #endif
 }

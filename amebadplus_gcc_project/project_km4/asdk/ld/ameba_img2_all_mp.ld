@@ -1,4 +1,4 @@
-#include "../../../amebaDplus_layout.ld"
+#include "../../../ameba_layout.ld"
 
 #define IMG2_LMA_REGION 			KM4_BD_RAM_MP
 #if defined(CONFIG_DATA_HEAP_PSRAM)
@@ -148,7 +148,7 @@ SECTIONS
 		__ctrace_start__ = .;
 		*(.COEXTRACE)
 		__ctrace_end__ = .;
-	} > CTRACE	
+	} > CTRACE
 }
 
 __bdram_heap_buffer_size__ = ORIGIN(KM4_BD_RAM_MP) + LENGTH(KM4_BD_RAM_MP) - __bdram_heap_buffer_start__;

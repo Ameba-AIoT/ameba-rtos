@@ -27,8 +27,8 @@ static void wakepin_dslp_handler(void)
 	u32 pinidx;
 	printf("dslp wake from wakepin\n");
 
-	pinidx = SOCPS_WakePinCheck();
-	SOCPS_WakePinClearINT(pinidx);
+	pinidx = WakePin_Get_Idx();
+	WakePin_ClearINT(pinidx);
 }
 
 static void dslp_wake_handler(void)
@@ -68,7 +68,7 @@ void pmu_init(void)
 
 	/* KM4 need do pmc init */
 #if defined (CONFIG_ARM_CORE_CM4)
-	SOCPS_sleepInit();
+	SOCPS_SleepInit();
 #endif
 
 	/*acquire wakelock to avoid AP enter sleep mode*/
@@ -103,8 +103,8 @@ void pmu_deepsleep_wakeup_task(void)
 	case AON_WAKEPIN_WAKEUP:
 		/* enable aon wakepin to wakeup in ameba_sleepcfg.c */
 		printf("set aon wakepin to wakeup\n");
-		SOCPS_SetWakepinDebounce(100, ENABLE);
-		//SOCPS_SetWakepin(AON_WAKEPIN_IDX, 1); // already done in sleepcfg, need if not config sleepcfg.c
+		Wakepin_Debounce_Setting(100, ENABLE);
+		//Wakepin_Setting(AON_WAKEPIN_IDX, 1); // already done in sleepcfg, need if not config sleepcfg.c
 		break;
 
 	default:

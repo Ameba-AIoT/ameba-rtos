@@ -34,6 +34,7 @@ transfer over
 # Note
 1. If users want to use the suspend/resume function, they need to ensure that the size of a single block is greater than 768 bytes.
 2. `gdma_dump_memory` can be used to check memory.
+3. When suspended, the actual amount of data transferred depends on the transfer speed, not the fixed 1024.
 # Supported IC
 
 - AmebaLite

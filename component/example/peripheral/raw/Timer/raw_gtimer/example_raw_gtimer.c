@@ -66,22 +66,8 @@ void raw_gtimer_demo(void)
 
 	/* If it doesn`t work, check GPIO and TIMx status in RCC_Config */
 	/* Enable TIMx function & clock, take TIM2 and TIM3 as example */
-#if defined (CONFIG_AMEBASMART)
-
-	RCC_PeriphClockCmd(APBPeriph_TIM2, APBPeriph_TIM2_CLOCK, ENABLE);
-	RCC_PeriphClockCmd(APBPeriph_TIM3, APBPeriph_TIM3_CLOCK, ENABLE);
-
-#elif defined (CONFIG_AMEBALITE)
-
-	RCC_PeriphClockCmd(APBPeriph_TIM02, APBPeriph_TIM02_CLOCK, ENABLE);
-	RCC_PeriphClockCmd(APBPeriph_TIM03, APBPeriph_TIM03_CLOCK, ENABLE);
-
-#elif defined (CONFIG_AMEBADPLUS)
-
-	RCC_PeriphClockCmd(APBPeriph_LTIM2, APBPeriph_LTIM2_CLOCK, ENABLE);
-	RCC_PeriphClockCmd(APBPeriph_LTIM3, APBPeriph_LTIM3_CLOCK, ENABLE);
-
-#endif
+	RCC_PeriphClockCmd(APBPeriph_TIMx[GTIMER_PERIOD_IDX], APBPeriph_TIMx_CLOCK[GTIMER_PERIOD_IDX], ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_TIMx[GTIMER_ONESHOT_IDX], APBPeriph_TIMx_CLOCK[GTIMER_ONESHOT_IDX], ENABLE);
 
 	//Init LED control pin
 	gpio_ctrl_led_config();
