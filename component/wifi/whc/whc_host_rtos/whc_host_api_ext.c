@@ -773,6 +773,7 @@ s32 wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc)
 	raw_para.sgi = raw_frame_desc->sgi;
 	raw_para.agg_en = raw_frame_desc->agg_en;
 	raw_para.device_id = raw_frame_desc->device_id;
+	raw_para.bw_40_en = raw_frame_desc->bw_40_en;
 
 	idx = raw_frame_desc->wlan_idx;
 

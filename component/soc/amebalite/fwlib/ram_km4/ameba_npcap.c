@@ -137,7 +137,7 @@ u32 NPWAP_INTHandler(UNUSED_WARN_DIS void *Data)
 u32 kr4_aontimer_wake_int_hdl(UNUSED_WARN_DIS void *Data)
 {
 	UNUSED(Data);
-	SOCPS_AONTimerClearINT();
+	AONTimer_ClearINT();
 	return TRUE;
 }
 
@@ -145,8 +145,8 @@ void kr4_wakeup_timer_init(uint32_t sleep_ms)
 {
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
 	SOCPS_SetAPWakeEvent_MSK1(WAKE_SRC_AON_TIM, ENABLE);
-	SOCPS_AONTimerINT_EN(ENABLE);
-	SOCPS_AONTimer(sleep_ms);
+	AONTimer_INT(ENABLE);
+	AONTimer_Setting(sleep_ms);
 	InterruptRegister(kr4_aontimer_wake_int_hdl, AON_TIM_IRQ, (u32)PMC_BASE, INT_PRI3);
 	InterruptEn(AON_TIM_IRQ, INT_PRI3);
 }
@@ -230,9 +230,9 @@ void kr4_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqSta
 	if (psleep_param->dlps_enable) {
 		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
 		if (psleep_param->sleep_time) {
-			SOCPS_AONTimerClearINT();
-			SOCPS_AONTimer(psleep_param->sleep_time);
-			SOCPS_AONTimerINT_EN(ENABLE);
+			AONTimer_ClearINT();
+			AONTimer_Setting(psleep_param->sleep_time);
+			AONTimer_INT(ENABLE);
 		}
 		SOCPS_DeepSleep_RAM();
 	}

@@ -46,9 +46,7 @@ a = Analysis(
     ['flash.py'],
     pathex=[],
     binaries=[],
-    datas=[
-	("devices/Floaders", "devices/Floaders")
-	],
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
