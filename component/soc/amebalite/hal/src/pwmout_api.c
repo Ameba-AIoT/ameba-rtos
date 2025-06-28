@@ -93,15 +93,15 @@ u32 pwmout_pin2chan(PinName pin)
   */
 static void pwmout_timer8_init(pwmout_t *obj)
 {
-	(void) obj;
-
 	RTIM_TimeBaseInitTypeDef TIM_InitStruct;
 	RTIM_TimeBaseStructInit(&TIM_InitStruct);
+	TIM_InitStruct.TIM_Period = obj->period * 40 / (prescaler + 1) - 1;
 	TIM_InitStruct.TIM_Idx = PWM_TIMER;
 
 	RCC_PeriphClockCmd(APBPeriph_TIM_PWM, APBPeriph_TIM_PWM_CLOCK, ENABLE);
 
 	RTIM_TimeBaseInit(PWM_TIM, &TIM_InitStruct, PWM_IrqNum, NULL, (u32)&TIM_InitStruct);
+	RTIM_PrescalerConfig(PWM_TIM, prescaler, TIM_PSCReloadMode_Update);
 	RTIM_Cmd(PWM_TIM, ENABLE);
 
 	timer8_start = 1;
@@ -131,14 +131,17 @@ void pwmout_init(pwmout_t *obj, PinName pin)
 	RCC_PeriphClockCmd(APBPeriph_TIM_PWM, APBPeriph_TIM_PWM_CLOCK, ENABLE);
 
 	pwm_chan = obj->pwm_idx;
-	obj->period = 0x10000 * (prescaler + 1) / 40;
-	obj->pulse = 0x1000 * (prescaler + 1) / 40;
+	if ((obj->period == 0)) {
+		obj->period = 0x10000 * (prescaler + 1) / 40;
+		obj->pulse = 0x1000 * (prescaler + 1) / 40;
+	}
 
 	if (!timer8_start) {
 		pwmout_timer8_init(obj);
 	}
 
 	RTIM_CCStructInit(&TIM_CCInitStruct);
+	TIM_CCInitStruct.TIM_OCPulse = (u32)(obj->pulse  * 40 / (prescaler + 1)) & 0x0000ffff;
 	RTIM_CCxInit(PWM_TIM, &TIM_CCInitStruct, pwm_chan);
 	RTIM_CCxCmd(PWM_TIM, pwm_chan, TIM_CCx_Enable);
 
@@ -194,7 +197,7 @@ void pwmout_write(pwmout_t *obj, float percent) //write duty-cycle
 	obj->pulse = (percent * obj->period);
 
 	ccrx = (u32)(obj->pulse  * 40 / (prescaler + 1)) & 0x0000ffff;
-
+	RCC_PeriphClockCmd(APBPeriph_TIM_PWM, APBPeriph_TIM_PWM_CLOCK, ENABLE);
 	RTIM_CCRxSet(PWM_TIM, ccrx, obj->pwm_idx);
 }
 
@@ -247,9 +250,10 @@ void pwmout_period_us(pwmout_t *obj, int us)
 	float dc = pwmout_read(obj);
 	u32 tmp = us * 40 / (prescaler + 1);
 
+	RCC_PeriphClockCmd(APBPeriph_TIM_PWM, APBPeriph_TIM_PWM_CLOCK, ENABLE);
+
 	if (tmp > 0x10000) {
 		prescaler = us * 40 / 0x10000;
-		RTIM_PrescalerConfig(PWM_TIM, prescaler, TIM_PSCReloadMode_Update);
 	}
 
 	obj->period = us;
@@ -293,6 +297,7 @@ void pwmout_pulsewidth_us(pwmout_t *obj, int us)
 
 	obj->pulse = (float)us;
 	ccrx = (u32)(obj->pulse  * 40 / (prescaler + 1)) & 0x0000ffff;
+	RCC_PeriphClockCmd(APBPeriph_TIM_PWM, APBPeriph_TIM_PWM_CLOCK, ENABLE);
 	RTIM_CCRxSet(PWM_TIM, ccrx, obj->pwm_idx);
 }
 

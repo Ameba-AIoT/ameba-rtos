@@ -47,10 +47,6 @@ extern void SOCPS_Voltage_Switch(u8 sleep);
 
 
 extern int SOCPS_AONWakeReason(void);
-extern void SOCPS_AONTimer(u32 SDuration);
-extern void SOCPS_AONTimerINT_EN(u32 Status);
-extern u32 SOCPS_AONTimerGet(void);
-extern void SOCPS_AONTimerClearINT(void);
 
 extern void SOCPS_SetNPWakeEvent_MSK0(u32 Option, u32 NewStatus);
 extern void SOCPS_SetNPWakeEvent_MSK1(u32 Option, u32 NewStatus);

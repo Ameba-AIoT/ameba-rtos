@@ -23,6 +23,12 @@
 #define ADC_PIN1	ADC_CH0_PIN
 #define ADC_PIN2	ADC_CH1_PIN
 #define PINMUX_FUNCTION_ADC PINMUX_FUNCTION_AUXIN
+
+#elif defined (CONFIG_AMEBAGREEN2)
+#define ADC_ID1		ADC_CH1
+#define ADC_ID2		ADC_CH2
+#define ADC_PIN1	ADC_CH1_PIN
+#define ADC_PIN2	ADC_CH2_PIN
 #endif
 
 extern int example_raw_adc_sw_trig(void);

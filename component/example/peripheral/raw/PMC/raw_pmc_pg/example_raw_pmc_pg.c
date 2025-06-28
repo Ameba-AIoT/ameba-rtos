@@ -39,11 +39,8 @@ u32 pmu_aontimer_int(void *Data)
 	(void)Data;
 
 	printf("aontimer handler 1: %x\n", SOCPS_AONWakeReason());
-#if defined(CONFIG_AMEBAGREEN2)
 	AONTimer_ClearINT();
-#else
-	SOCPS_AONTimerClearINT();
-#endif
+
 	printf("aontimer handler 2: %x\n", SOCPS_AONWakeReason());
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, DISABLE);
 
@@ -57,13 +54,10 @@ u32 pmu_aontimer_int(void *Data)
 void pmu_aontimer_test(void)
 {
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
-#if defined(CONFIG_AMEBAGREEN2)
+
 	AONTimer_Setting(WAKEUP_TIME);
 	AONTimer_INT(ENABLE);
-#else
-	SOCPS_AONTimer(WAKEUP_TIME);
-	SOCPS_AONTimerINT_EN(ENABLE);
-#endif
+
 	InterruptRegister((IRQ_FUN)pmu_aontimer_int, AON_TIM_IRQ, NULL, 3);
 	InterruptEn(AON_TIM_IRQ, 3);
 

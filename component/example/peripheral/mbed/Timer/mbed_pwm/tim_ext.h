@@ -30,6 +30,13 @@
 #define PWM_3       PB_19
 #define PWM_4       PB_30
 
+#elif defined (CONFIG_AMEBAGREEN2)
+
+#define PWM_1       PA_6
+#define PWM_2       PA_7
+#define PWM_3       PA_8
+#define PWM_4       PA_10
+
 #endif
 
 #endif

@@ -70,7 +70,7 @@ void wifi_init_thread(void *param)
 #ifndef CONFIG_WHC_BRIDGE_HOST
 	wifi_on(RTW_MODE_STA);
 
-	RTK_LOGI(TAG_WLAN_DRV, "Available heap after wifi init %d\n", rtos_mem_get_free_heap_size() + WIFI_STACK_SIZE_INIT);
+	RTK_LOGS(TAG_WLAN_DRV, RTK_LOG_INFO, "Available heap after wifi init %d\n", rtos_mem_get_free_heap_size() + WIFI_STACK_SIZE_INIT);
 #endif
 
 	rtos_task_delete(NULL);
@@ -115,7 +115,7 @@ void wifi_init_thread(void *param)
 
 	wifi_on(RTW_MODE_STA);
 
-	RTK_LOGI(TAG_WLAN_DRV, "Available heap after wifi init %d\n", rtos_mem_get_free_heap_size() + WIFI_STACK_SIZE_INIT);
+	RTK_LOGS(TAG_WLAN_DRV, RTK_LOG_INFO, "Available heap after wifi init %d\n", rtos_mem_get_free_heap_size() + WIFI_STACK_SIZE_INIT);
 
 	/* Kill init thread after all init tasks done */
 	rtos_task_delete(NULL);
@@ -127,7 +127,7 @@ void wifi_init(void)
 {
 	wifi_set_rom2flash();
 	if (rtos_task_create(NULL, ((const char *)"wifi_init_thread"), wifi_init_thread, NULL, WIFI_STACK_SIZE_INIT, 5) != RTK_SUCCESS) {
-		RTK_LOGE(TAG_WLAN_DRV, "wifi_init failed\n");
+		RTK_LOGS(TAG_WLAN_DRV, RTK_LOG_ERROR, "wifi_init failed\n");
 	}
 }
 #endif

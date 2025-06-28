@@ -1103,9 +1103,9 @@ void np_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqStat
 	if (pmu_ready_to_dsleep()) {
 		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
 		if (psleep_param->sleep_time) {
-			SOCPS_AONTimerClearINT();
-			SOCPS_AONTimer(psleep_param->sleep_time);
-			SOCPS_AONTimerINT_EN(ENABLE);
+			AONTimer_ClearINT();
+			AONTimer_Setting(psleep_param->sleep_time);
+			AONTimer_INT(ENABLE);
 		}
 		SWR_MEM(DISABLE);
 		SWR_AUDIO(DISABLE);

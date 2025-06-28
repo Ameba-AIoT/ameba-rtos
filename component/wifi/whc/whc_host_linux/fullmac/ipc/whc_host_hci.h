@@ -130,6 +130,7 @@ struct whc_device {
 	struct  wifi_user_conf	wifi_user_config;
 #ifdef CONFIG_P2P
 	struct p2p_priv_t		p2p_global;
+	struct work_struct		netdev_cleanup_work;
 #endif
 };
 
