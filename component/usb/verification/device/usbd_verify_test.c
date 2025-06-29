@@ -403,11 +403,13 @@ static int cmd_usbd_verify_add_ep(u8 epaddr, u8 type, u8 interval, u16 mps, u16 
 {
 	cmd_usbd_verify_ep_t *cdev = &cmd_usbd_verify_ep;
 
-	if (USBD_EP_COUNT_MAX <= 1 + cdev->ep_count) {
+	if (USBD_EP_COUNT_MAX <= (u8)(1 + cdev->ep_count)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "More than support %d EPs\n", USBD_EP_COUNT_MAX);
 		return HAL_ERR_MEM;
 	}
-
+	if (type != USB_CH_EP_TYPE_BULK) {
+		transsize = MIN(mps, transsize);//INTR/ISOC xfer noly supports short/mps in verify.
+	}
 	if (HAL_OK != usbd_verify_ep_init(&(cdev->ep_array[cdev->ep_count]), type,
 									  epaddr, interval, mps, transsize, matchep)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init EP%x fail\n", epaddr);
@@ -684,7 +686,7 @@ static void usbd_verify_usage(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify dma dis/en(default)\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify speed full/high_in_full/high(default)\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify ep_default <chiptype>\n");
-	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify set_ep <addr> <type> <interval> <mps> <transsize>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify set_ep <addr_hex> <1:isoc/2:bulk/3:intr> <interval> <mps> <transsize>\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify loopback <ep_addr1> <ep_addr2>\n");
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify start\n");
@@ -746,7 +748,7 @@ int cmd_usbd_verify_test_entry(
 			RTK_LOGS(TAG, RTK_LOG_ERROR, " usbd verify set_ep addr type interval mps transsize\n");
 			status = HAL_ERR_PARA;
 		} else {
-			epaddr = _strtoul((const char *)(argv[2]), (char **)NULL, 10);
+			epaddr = (u8)(_strtoul((const char *)(argv[2]), (char **)NULL, 16) & 0xFF);
 			type = _strtoul((const char *)(argv[3]), (char **)NULL, 10);
 			interval = _strtoul((const char *)(argv[4]), (char **)NULL, 10);
 			mps = _strtoul((const char *)(argv[5]), (char **)NULL, 10);
@@ -757,8 +759,8 @@ int cmd_usbd_verify_test_entry(
 	} else if (_stricmp(sub_cmd, "loopback") == 0) {
 		u8 ep1 = -1, ep2 = -1;
 		if (argv[2] && argv[3]) {
-			ep1 = _strtoul((const char *)(argv[2]), (char **)NULL, 16);
-			ep2 = _strtoul((const char *)(argv[3]), (char **)NULL, 16);
+			ep1 = (u8)(_strtoul((const char *)(argv[2]), (char **)NULL, 16) & 0xFF);
+			ep2 = (u8)(_strtoul((const char *)(argv[3]), (char **)NULL, 16) & 0xFF);
 		}
 		cmd_usbd_verify_add_ep_bind(ep1, ep2);
 	} else if (_stricmp(sub_cmd, "start") == 0) {

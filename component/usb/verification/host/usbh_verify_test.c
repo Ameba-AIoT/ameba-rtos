@@ -217,7 +217,7 @@ static u16 usbh_verify_get_xfer_mps_size(u8 ep_type, u16 buf_size)
 		} else if ((buf_size) && (cmd_usbh_verify_cfg.speed != (u8)USB_SPEED_HIGH)) {
 			mps_size = MIN(buf_size, 512);
 		} else {
-			mps_size = (cmd_usbh_verify_cfg.speed == (u8)USB_SPEED_HIGH) ? USB_BULK_HS_MAX_MPS : USB_BULK_FS_MAX_MPS;
+			mps_size = usbh_verify_xfer.bulk_mps;
 		}
 		break;
 	case USB_CH_EP_TYPE_INTR:
@@ -226,7 +226,7 @@ static u16 usbh_verify_get_xfer_mps_size(u8 ep_type, u16 buf_size)
 		} else if ((buf_size) && (cmd_usbh_verify_cfg.speed != (u8)USB_SPEED_HIGH)) {
 			mps_size = MIN(buf_size, USB_INTR_FS_MAX_MPS);
 		} else {
-			mps_size = (cmd_usbh_verify_cfg.speed == (u8)USB_SPEED_HIGH) ? USB_INTR_HS_MAX_MPS : USB_INTR_FS_MAX_MPS;
+			mps_size = usbh_verify_xfer.intr_mps;
 		}
 		break;
 	case USB_CH_EP_TYPE_ISOC:
@@ -235,7 +235,7 @@ static u16 usbh_verify_get_xfer_mps_size(u8 ep_type, u16 buf_size)
 		} else if ((buf_size) && (cmd_usbh_verify_cfg.speed != (u8)USB_SPEED_HIGH)) {
 			mps_size = MIN(buf_size, USB_ISOC_FS_MAX_MPS);
 		} else {
-			mps_size = (cmd_usbh_verify_cfg.speed == (u8)USB_SPEED_HIGH) ? USB_ISOC_HS_MAX_MPS : USB_ISOC_FS_MAX_MPS;
+			mps_size = usbh_verify_xfer.isoc_mps;
 		}
 		break;
 	default:

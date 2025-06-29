@@ -6,6 +6,7 @@
 
 import io
 import os
+import sys
 import time
 
 from .errno import *
@@ -264,13 +265,18 @@ class RomHandler(object):
         floader_path = None
 
         if self.profile.floader:
-            floader_path = os.path.join(os.path.abspath(os.path.dirname(os.path.dirname(__file__))), FloaderDictionary,
-                                        self.profile.floader)
+            if getattr(sys, "frozen", False):  # judge if frozen as exe
+                # get exe dir
+                floader_dir = os.path.dirname(os.path.abspath(sys.executable))
+            else:
+                # get py dir
+                floader_dir = os.path.dirname(os.path.dirname(__file__))
+            floader_path = os.path.realpath(os.path.join(os.path.abspath(floader_dir), FloaderDictionary, self.profile.floader))
 
         if floader_path is None:
             self.logger.error("Flashloader not specified in device profile")
         elif not os.path.exists(floader_path):
-            self.logger.error(f"Flashloader not found: {floader_path}")
+            self.logger.error(f"Flashloader not exists: {floader_path}")
 
         return floader_path
 
