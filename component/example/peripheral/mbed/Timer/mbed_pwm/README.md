@@ -21,6 +21,11 @@ for example:
 	GND <--> LED1 <---> PB_18
 	GND <--> LED2 <---> PB_19
 	GND <--> LED3 <---> PB_30
+4. If you run this example in AmebaGreen2, then connect as below
+	GND <--> LED0 <---> PA_6
+	GND <--> LED1 <---> PA_7
+	GND <--> LED2 <---> PA_8
+	GND <--> LED3 <---> PA_10
 
 # SW configuration
 Build and Download:
@@ -42,3 +47,4 @@ the LED would gradually become brighter and then darker with different speed.
 - AmebaSmart
 - AmebaLite
 - AmebaDplus
+- AmebaGreen2

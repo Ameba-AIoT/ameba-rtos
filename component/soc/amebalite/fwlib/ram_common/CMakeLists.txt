@@ -66,6 +66,7 @@ ameba_list_append(private_sources
     ameba_bor.c
     ameba_vad_handler.c
     ameba_wakepin.c
+    ameba_aontimer.c
 )
 
 # Component private part, user config end

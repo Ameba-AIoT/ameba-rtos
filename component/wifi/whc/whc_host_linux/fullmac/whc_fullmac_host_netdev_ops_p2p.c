@@ -179,6 +179,26 @@ dev_fail:
 
 }
 
+static void netdev_cleanup_work_func(struct work_struct *work)
+{
+	(void)work;
+	dev_dbg(global_idev.fullmac_dev, "Delayed unregister_netdevice executed for %s\n", global_idev.pndev[1]->name);
+
+	rtnl_lock();
+	unregister_netdevice(global_idev.pndev[1]);
+	kfree((u8 *)global_idev.pwdev_global[1]);
+	global_idev.pwdev_global[1] = NULL;
+	/* remove wireless_dev in ndev. */
+	global_idev.pndev[1]->ieee80211_ptr = NULL;
+	rtnl_unlock();
+}
+
+static void delayed_unregister_netdevice(void)
+{
+	INIT_WORK(&global_idev.netdev_cleanup_work, netdev_cleanup_work_func);
+	schedule_work(&global_idev.netdev_cleanup_work);
+}
+
 int whc_fullmac_host_p2p_iface_alloc(struct wiphy *wiphy, const char *name,
 									 struct wireless_dev **p2p_wdev, enum nl80211_iftype type)
 {
@@ -194,11 +214,7 @@ int whc_fullmac_host_p2p_iface_alloc(struct wiphy *wiphy, const char *name,
 		memset(&(global_idev.p2p_global), 0, sizeof(struct p2p_priv_t));
 		/*step0: unregister original softap netdev and wdev for later P2P GO usage*/
 		if (global_idev.pwdev_global[1]) {
-			unregister_netdevice(global_idev.pndev[1]);
-			kfree((u8 *)global_idev.pwdev_global[1]);
-			global_idev.pwdev_global[1] = NULL;
-			/* remove wireless_dev in ndev. */
-			global_idev.pndev[1]->ieee80211_ptr = NULL;
+			delayed_unregister_netdevice();
 		}
 		old_wdev = global_idev.p2p_global.pd_pwdev;
 	}

@@ -18,6 +18,10 @@ In this example, ADC is configured to sample data in `2 normal channels`.
 	- Connect `ADC_CH0_PIN(_PB_19)` to` to-be-measured signal`
 	- Connect `ADC_CH1_PIN(_PB_18)` to` to-be-measured signal`
 	- Connect `GND` to `GND` of to-be-measured device
+* On AmebaGreen2
+	- Connect `ADC_CH1_PIN(_PA_19)` to `to-be-measured signal`
+	- Connect `ADC_CH2_PIN(_PA_18)` to `to-be-measured signal`
+	- Connect `GND` to `GND` of to-be-measured device
 
 # SW Configuration
 
@@ -43,9 +47,12 @@ Input voltage of single-ended normal channels:
 	`0 ~ 3.3V`
 * On AmebaDplus
 	`0 ~ 3.3V`
+* On AmebaGreen2
+	`0 ~ 3.3V`
 
 # Supported IC
 
 * AmebaSmart
 * AmebaLite
 * AmebaDplus
+* AmebaGreen2

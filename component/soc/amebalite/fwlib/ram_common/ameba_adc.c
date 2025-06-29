@@ -728,6 +728,11 @@ u32 ADC_GetSampleValue(s32 VolMV)
 	kb = CalParaNorm.cal_b;
 	kc = CalParaNorm.cal_c;
 
+	/* calibrated para A may be 0 */
+	if (ka == 0) {
+		return ((VolMV << 15) - (kc << 9)) / kb;
+	}
+
 	discriminant = kb * kb + 64 * ka * VolMV - ka * kc;
 	if (discriminant >= 0) {
 		result = (sqrt((float)discriminant) - kb) * 1024 / ka;

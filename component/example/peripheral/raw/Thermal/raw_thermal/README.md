@@ -27,3 +27,4 @@ none
 
 * AmebaSmart
 * AmebaLite
+* AmebaGreen2
