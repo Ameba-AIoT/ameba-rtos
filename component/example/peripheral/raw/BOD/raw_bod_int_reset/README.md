@@ -13,8 +13,10 @@ Required Components: power supply device.
 	- Remove resistor and jumper between `VDD33` and `VDD33_S`, connect `power supply output` to chip `VDD33_S`.
 * On AmebaLite
 	- Remove resistor and jumper between `VD33` and `VD33_WL`, connect `power supply output` to chip `VD33_WL`.
-* On AmebaDPlus
+* On AmebaDplus
 	- Remove resistor and jumper between `VD1833` and `VD1833_WL`, connect `power supply output` to chip `VD1833_WL`.
+* On AmebaGreen2
+	- Remove resistor and jumper between `VD33` and `VD33_WL`, connect `power supply output` to chip `VD33_WL`.
 
 	For more info, refer to EVB schematic design file.
 
@@ -64,6 +66,17 @@ By default, BOD works `under interrupt mode`.
 	2. Change supply voltage `from 3.3V to 1.80V~2.21V`, and recover voltage to `above 2.50V` to `reset chip`.
 	3. Reset log `"KM4 BOOT Reason: 1"` is displayed, where BIT0 represents BOD reset.
 
+* On AmebaGreen2
+  - Under interrupt mode
+	1. After Boot-up, log `"Supply voltage under 2.57V triggers bod interrupt!!!"` will be displayed.
+	2. Change supply voltage `from 3.3V to 1.80V~2.57V` to `trigger bod interrupt`, and registered `"bor_irq_handler"` will be called, log "BOD interrupt" will be displayed.
+	3. Recover supply voltage to `above 2.74V` to make the circuit work properly.
+
+  - Under reset mode
+	1. After Boot-up, log `"Supply voltage under 2.57V and recover it to above 2.74V causes bod reset!!!"` will be displayed.
+	2. Change supply voltage `from 3.3V to 1.80V~2.21V`, and recover voltage to `above 2.74V` to `reset chip`.
+	3. Reset log `"AP BOOT Reason: 1"` is displayed, where BIT0 represents BOD reset.
+
 # Note
 
 1. As to corresponding voltage of threshold, refer to comment of function `BOR_ThresholdSet();`
@@ -74,3 +87,4 @@ By default, BOD works `under interrupt mode`.
 * AmebaSmart
 * AmebaLite
 * AmebaDplus
+* AmebaGreen2

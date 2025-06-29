@@ -105,6 +105,7 @@ static void pwmout_timer8_init(pwmout_t *obj)
 	RCC_PeriphClockCmd(APBPeriph_PWM0, APBPeriph_PWM0_CLOCK, ENABLE);
 
 	RTIM_TimeBaseInit(PWM_TIM, &TIM_InitStruct, PWM_IrqNum, NULL, (u32)&TIM_InitStruct);
+	RTIM_PrescalerConfig(PWM_TIM, prescaler, TIM_PSCReloadMode_Update);
 	RTIM_Cmd(PWM_TIM, ENABLE);
 
 	timer8_start = 1;
@@ -259,7 +260,6 @@ void pwmout_period_us(pwmout_t *obj, int us)
 
 	if (tmp > 0x10000) {
 		prescaler = us * 40 / 0x10000;
-		RTIM_PrescalerConfig(PWM_TIM, prescaler, TIM_PSCReloadMode_Update);
 	}
 
 	obj->period = us;

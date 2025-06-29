@@ -40,6 +40,7 @@ pwmout_t pwm_led[4];
 PinName  pwm_led_pin[4] =  {PWM_1, PWM_2, PWM_3, PWM_4};
 
 extern void RtlMsleepOS(u32 ms);
+extern u8 prescaler;
 
 void pwm_delay(void)
 {
@@ -54,7 +55,12 @@ void mbed_pwm_demo(void)
 	int i;
 
 	for (i = 0; i < 4; i++) {
-		pwm_led[i].pwm_idx = i + 1;
+#if defined CONFIG_AMEBAGREEN2
+		pwm_led[i].pwmtimer_idx = 4;
+#elif defined CONFIG_AMEBAL2
+		pwm_led[i].pwmtimer_idx = 6;
+#endif
+		pwm_led[i].pwm_idx = i;
 		pwm_led[i].period = 0;
 		pwmout_period_us(&pwm_led[i], PWM_PERIOD);
 	}
@@ -73,6 +79,8 @@ void mbed_pwm_demo(void)
 				steps[i] = PWM_STEP;
 				pwms[i] = 0.0;
 			}
+
+			pwmout_init(&pwm_led[i], pwm_led_pin[i]);
 		}
 #else
 		for (i = 0; i < 4; i++) {

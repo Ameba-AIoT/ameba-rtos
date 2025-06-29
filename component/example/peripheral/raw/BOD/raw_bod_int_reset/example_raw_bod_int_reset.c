@@ -11,8 +11,14 @@
 #include "os_wrapper.h"
 
 #define BOD_INTR_MODE	1
+
+#if defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS)
 #define BOD_FALL_THRE	0x0F
 #define BOD_RISE_THRE	0x0A
+#elif defined (CONFIG_AMEBAGREEN2)
+#define BOD_FALL_THRE	0x07
+#define BOD_RISE_THRE	0x04
+#endif
 
 static void bod_irq_handler(void)
 {
@@ -45,6 +51,8 @@ void bod_intr_test(void)
 	RTK_LOGI(NOTAG, "Supply voltage under 2.54V triggers bod interrupt!!!\n");
 #elif defined (CONFIG_AMEBADPLUS)
 	RTK_LOGI(NOTAG, "Supply voltage under 2.21V triggers bod interrupt!!!\n");
+#elif defined (CONFIG_AMEBAGREEN2)
+	RTK_LOGI(NOTAG, "Supply voltage under 2.57V triggers bod interrupt!!!\n");
 #endif
 
 	rtos_task_delete(NULL);
@@ -68,6 +76,8 @@ void bod_reset_test(void)
 	RTK_LOGI(NOTAG, "Supply voltage under 2.54V and recover it to above 2.83V causes bod reset!!!\n");
 #elif defined (CONFIG_AMEBADPLUS)
 	RTK_LOGI(NOTAG, "Supply voltage under 2.21V and recover it to above 2.50V causes bod reset!!!\n");
+#elif defined (CONFIG_AMEBAGREEN2)
+	RTK_LOGI(NOTAG, "Supply voltage under 2.57V and recover it to above 2.74V causes bod reset!!!\n");
 #endif
 
 	rtos_task_delete(NULL);

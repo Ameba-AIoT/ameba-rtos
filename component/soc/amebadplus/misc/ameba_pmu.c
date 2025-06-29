@@ -125,7 +125,7 @@ void aontimer_int(u32 Data)
 	(void)Data;
 
 	DBG_8195A("aontimer handler 1: %lx\n", SOCPS_AONWakeReason());
-	SOCPS_AONTimerClearINT();
+	AONTimer_ClearINT();
 	DBG_8195A("aontimer handler 2: %lx\n", SOCPS_AONWakeReason());
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, DISABLE);
 }
@@ -134,8 +134,8 @@ void aontimer_test()
 {
 #if defined (CONFIG_ARM_CORE_CM4)
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
-	SOCPS_AONTimer(2000);
-	SOCPS_AONTimerINT_EN(ENABLE);
+	AONTimer_Setting(2000);
+	AONTimer_INT(ENABLE);
 	InterruptRegister(aontimer_int, AON_TIM_IRQ, NULL, 3);
 	InterruptEn(AON_TIM_IRQ, 3);
 	SOCPS_SetAPWakeEvent(WAKE_SRC_AON_TIM, ENABLE);

@@ -84,7 +84,7 @@ void app_pmu_init(void)
 		u32 temp = SOCPS_AONWakeReason();
 		if (temp) {
 			if (temp & AON_BIT_TIM_ISR_EVT) {
-				SOCPS_AONTimerClearINT();
+				AONTimer_ClearINT();
 				NVIC_ClearPendingIRQ(AON_TIM_IRQ);
 				RTK_LOGI(TAG, "deepsleep clear aontimer event \n");
 			}

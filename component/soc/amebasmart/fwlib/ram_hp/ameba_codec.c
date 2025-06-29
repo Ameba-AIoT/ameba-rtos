@@ -3464,15 +3464,17 @@ void AUDIO_CODEC_SetSideToneMicSrc(u32 st_chn, u32 mic_src)
   *			 This parameter can be one of the following values:
   *			   @arg ST_L
   *			   @arg ST_R
-  * @param  newstate: enable or disable sidetone.
+  * @param  src: source
   *			 This parameter can be one of the following values:
-  *			   @arg ENABLE
-  *			   @arg DISABLE
+  *			   @arg ST_SGL_L
+  *			   @arg ST_SGL_R
+  *			   @arg ST_AVG_L_ADD_R
   * @return  None
   */
 void AUDIO_CODEC_SetSideToneSrcForDAC(u32 channel, u32 src)
 {
 	assert_param(IS_CODEC_ST_SEL(channel));
+	assert_param(IS_CODEC_ST_SRC_FOR_DAC_SEL(src));
 	AUDIO_TypeDef *audio_base = AUDIO_CODEC_GetAddr();
 	u32 temp;
 

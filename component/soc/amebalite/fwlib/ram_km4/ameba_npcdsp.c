@@ -200,9 +200,9 @@ void dsp_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqSta
 	if (psleep_param->dlps_enable) {
 		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
 		if (psleep_param->sleep_time) {
-			SOCPS_AONTimerClearINT();
-			SOCPS_AONTimer(psleep_param->sleep_time);
-			SOCPS_AONTimerINT_EN(ENABLE);
+			AONTimer_ClearINT();
+			AONTimer_Setting(psleep_param->sleep_time);
+			AONTimer_INT(ENABLE);
 		}
 		SOCPS_DeepSleep_RAM();
 	}

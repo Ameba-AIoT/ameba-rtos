@@ -18,7 +18,7 @@ static void aontimer_dslp_handler(void)
 {
 	printf("dslp wake from aontimer\n");
 
-	SOCPS_AONTimerClearINT();
+	AONTimer_ClearINT();
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, DISABLE);
 }
 
@@ -40,7 +40,7 @@ static void dslp_wake_handler(void)
 	printf("BKUP_REG1's value = 0x%08lx \n", BKUP_Read(BKUP_REG1));
 	if (BootReason & AON_BIT_TIM_ISR_EVT) {
 		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
-		SOCPS_AONTimerINT_EN(ENABLE);
+		AONTimer_INT(ENABLE);
 		InterruptRegister((IRQ_FUN)aontimer_dslp_handler, AON_TIM_IRQ, NULL, 3);
 		InterruptEn(AON_TIM_IRQ, 3);
 	}
@@ -96,8 +96,8 @@ void pmu_deepsleep_wakeup_task(void)
 	case AON_TIMER_WAKEUP:
 		printf("set aon timer to wakeup\n");
 		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
-		SOCPS_AONTimer(dslptime);
-		SOCPS_AONTimerINT_EN(ENABLE);
+		AONTimer_Setting(dslptime);
+		AONTimer_INT(ENABLE);
 		break;
 
 	case AON_WAKEPIN_WAKEUP:

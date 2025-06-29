@@ -19,11 +19,15 @@
 /* NOTE: adjust your parameters here!!! */
 const CapTouch_CHInitTypeDef CTC_Ch_Config[CT_CHANNEL_NUM] = {
 	/*DiffThreshold, MbiasCurrent, ETCNNoiseThr, ETCPNoiseThr, CHEnable*/
+#if defined (CONFIG_AMEBAGREEN2)
+	{1600,          0x800,          800,           800,           ENABLE}, /* Channel 0 */
+#else
 	{800,           0x0C,           400,           400,           ENABLE}, /* Channel 0 */
+#endif
 	{800,           0x0C,           400,           400,           DISABLE}, /* Channel 1 */
 	{800,           0x0C,           400,           400,           DISABLE}, /* Channel 2 */
 	{800,           0x0C,           400,           400,           DISABLE}, /* Channel 3 */
-#if defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBALITE)
+#if defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2)
 	{800,           0x0C,           400,           400,           DISABLE}, /* Channel 4 */
 	{800,           0x0C,           400,           400,           DISABLE}, /* Channel 5 */
 	{800,           0x0C,           400,           400,           DISABLE}, /* Channel 6 */
@@ -37,7 +41,7 @@ u8 CTC_PAD[CT_CHANNEL_NUM] = {
 	CTC_CH1_PIN, // Touch1
 	CTC_CH2_PIN, // Touch2
 	CTC_CH3_PIN, // Touch3
-#if defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBALITE)
+#if defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2)
 	CTC_CH4_PIN, // Touch4
 	CTC_CH5_PIN, // Touch5
 	CTC_CH6_PIN, // Touch6
@@ -56,7 +60,7 @@ u32 CapTouch_irq_handler(void *para)
 
 #if defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBALITE)
 	for (i = 0; i < CT_CHANNEL_NUM - 1; i++) {
-#elif defined (CONFIG_AMEBADPLUS)
+#elif defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2)
 	for (i = 0; i < CT_CHANNEL_NUM; i++) {
 #endif
 		if (IntStatus & CT_CHX_PRESS_INT(i)) {
@@ -173,10 +177,12 @@ void ctc_press_release_task(void) {
 	CapTouch_Init(CAPTOUCH_DEV, &CapTouch_InitStruct);
 	CapTouch_Cmd(CAPTOUCH_DEV, ENABLE);
 	CapTouch_INTConfig(CAPTOUCH_DEV, CT_ALL_INT_EN, ENABLE);
-#if defined (CONFIG_AMEBASMART)
+#if defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBAGREEN2)
 	CapTouch_INTConfig(CAPTOUCH_DEV, CT_BIT_SCAN_END_INTR_EN, DISABLE);
-#elif defined (CONFIG_AMEBADPLUS)
-	/* Data will be sent to FIFO automatically even when debug mode is off since BCut */
+#endif
+
+#if defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2)
+	/* AmebaDplus: Data will be sent to FIFO automatically even when debug mode is off since BCut */
 	CapTouch_INTConfig(CAPTOUCH_DEV, CT_BIT_AFIFO_OVERLVL_INTR_EN, DISABLE);
 	CapTouch_INTConfig(CAPTOUCH_DEV, CT_BIT_AFIFO_OVERFLOW_INTR_EN, DISABLE);
 #endif
