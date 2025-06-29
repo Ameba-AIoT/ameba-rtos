@@ -83,7 +83,7 @@ void _init(void) {}
 #if 0
 static void aontimer_dslp_handler(void)
 {
-	SOCPS_AONTimerClearINT();
+	AONTimer_ClearINT();
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, DISABLE);
 }
 
@@ -111,7 +111,7 @@ static void dslp_wake_handler(void)
 	if (BootReason & AON_BIT_TIM_ISR_EVT) {
 		//RTK_LOGI(TAG, "dslp from aontimer\n");
 		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
-		//SOCPS_AONTimerINT_EN_HP(ENABLE);
+		//AONTimer_INT(ENABLE);
 		InterruptRegister((IRQ_FUN)aontimer_dslp_handler, AON_TIM_IRQ, NULL, 3);
 		InterruptEn(AON_TIM_IRQ, 3);
 	}

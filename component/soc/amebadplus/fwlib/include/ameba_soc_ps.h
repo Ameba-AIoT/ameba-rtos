@@ -38,12 +38,6 @@ extern void SOCPS_SetAPWakeEvent(u32 Option, u32 NewStatus);
 
 extern int SOCPS_AONWakeReason(void);
 
-/* AON timer related */
-extern void SOCPS_AONTimer(u32 SDuration);
-extern u32 SOCPS_AONTimerGet(void);
-extern void SOCPS_AONTimerINT_EN(u32 Status);
-extern void SOCPS_AONTimerClearINT(void);
-
 extern void SOCPS_SleepInit(void);
 extern void SOCPS_DeepSleep_RAM(void);
 extern void SOCPS_SleepPG(void);

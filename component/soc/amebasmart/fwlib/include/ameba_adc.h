@@ -843,6 +843,7 @@ _LONG_CALL_ void ADC_InitCalPara(ADC_CalParaTypeDef *CalPara, u8 IsVBatChan);
 _LONG_CALL_ s32 ADC_GetVoltage(u32 chan_data);
 _LONG_CALL_ s32 ADC_GetVBATVoltage(u32 vbat_data);
 _LONG_CALL_ u32 ADC_GetInterR(void);
+_LONG_CALL_ u32 ADC_GetSampleValue(s32 VolMV, u8 IsVBatChan);
 
 /* MANUAL_GEN_END */
 

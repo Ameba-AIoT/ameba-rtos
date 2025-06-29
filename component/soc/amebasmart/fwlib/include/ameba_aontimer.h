@@ -7,9 +7,8 @@
 #ifndef _AMEBA_AONTIMER_H_
 #define _AMEBA_AONTIMER_H_
 
-extern void SOCPS_AONTimer(u32 SDuration);
-extern void SOCPS_AONTimerINT_EN(u32 Status);
-extern u32 SOCPS_AONTimerGet(void);
-extern void SOCPS_AONTimerClearINT(void);
-
+extern void AONTimer_Setting(u32 SDuration);
+extern void AONTimer_INT(u32 Status);
+extern u32 AONTimer_Get(void);
+extern void AONTimer_ClearINT(void);
 #endif  //_AMEBA_AONTIMER_H_

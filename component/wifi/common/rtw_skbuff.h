@@ -55,6 +55,7 @@ struct skb_raw_para {
 	unsigned char enable : 1;       /* indicate whether this packet is a tx_raw packet. set to 1 when tx_raw */
 	unsigned char sgi : 1;          /* 1 for enable data short */
 	unsigned char agg_en : 1;       /* aggregation of tx_raw frames. 1:enable; 0-disable */
+	unsigned char bw_40_en : 1;    	/* Bandwidth: 1 to 40M, 0 to 20M. */
 	unsigned char rom_rsvd[8];
 };
 
