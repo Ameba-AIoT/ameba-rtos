@@ -1,7 +1,0 @@
-#define UTS_VERSION "@_configuration_time@"
-#define RTL_FW_COMPILE_TIME "@_configuration_time@"
-#define RTL_FW_COMPILE_DATE "@_configuration_date@"
-#define RTL_FW_COMPILE_BY "@_user_name@"
-#define RTL_FW_COMPILE_HOST "@_host_name@"
-#define RTL_FW_COMPILE_DOMAIN "@_fqdn@"
-#define RTL_FW_COMPILER "@_compiler_name@"

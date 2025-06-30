@@ -1,4 +1,0 @@
-ameba_add_subdirectory(drivers)
-ameba_add_subdirectory_if_exist(third_party)
-ameba_add_subdirectories_if(CONFIG_EMWIN_ENABLE emWin)
-ameba_add_subdirectories_if(CONFIG_LVGL_ENABLE LVGL)

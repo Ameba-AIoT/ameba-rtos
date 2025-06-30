@@ -1,2 +1,0 @@
-ameba_add_subdirectory(MQTTClient)
-ameba_add_subdirectory(MQTTPacket)

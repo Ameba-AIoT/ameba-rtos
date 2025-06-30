@@ -1,1 +1,0 @@
-include(${c_MCU_PROJECT_NAME}.cmake)

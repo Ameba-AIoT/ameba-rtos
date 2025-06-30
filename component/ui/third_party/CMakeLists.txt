@@ -1,9 +1,0 @@
-ameba_add_subdirectories_if(CONFIG_LIBJPEG_TURBO_ENABLE
-    libjpeg-turbo
-)
-ameba_add_subdirectories_if(CONFIG_LIBPNG_ENABLE
-    libpng
-)
-ameba_add_subdirectories_if(CONFIG_ZLIB_ENABLE
-    zlib
-)
