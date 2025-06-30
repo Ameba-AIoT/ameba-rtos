@@ -948,25 +948,121 @@ static int whc_fullmac_host_external_auth_status(struct wiphy *wiphy, struct net
 }
 
 #ifdef CONFIG_CFG80211_SME_OFFLOAD
-static int whc_fullmac_host_auth(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_auth_request *req)
+static int whc_sme_host_auth(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_auth_request *req)
+{
+	struct mlme_priv_t *mlme_priv = &global_idev.mlme_priv;
+	struct rtw_sme_auth_info *data = NULL;
+	dma_addr_t data_phy;
+	const u8 *auth_data;
+	size_t auth_data_len;
+	size_t data_len;
+	int ie_len;
+	u8 *pie;
+
+	dev_dbg(global_idev.fullmac_dev, "%s(): auth_type=%d\n", __FUNCTION__, req->auth_type);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+	auth_data = req->auth_data;
+	auth_data_len = req->auth_data_len;
+#else
+	auth_data = req->sae_data;
+	auth_data_len = req->sae_data_len;
+#endif
+
+	data_len = sizeof(*data) + auth_data_len + req->ie_len;
+	data = (struct rtw_sme_auth_info *)rtw_malloc(data_len, &data_phy);
+	if (data == NULL)
+		return 0;
+
+	switch (req->auth_type) {
+	case NL80211_AUTHTYPE_OPEN_SYSTEM:
+		data->auth_alg = WLAN_AUTH_OPEN;
+		break;
+	case NL80211_AUTHTYPE_SHARED_KEY:
+		data->auth_alg = WLAN_AUTH_SHARED_KEY;
+		break;
+	case NL80211_AUTHTYPE_SAE:
+		data->auth_alg = WLAN_AUTH_SAE;
+		break;
+	case NL80211_AUTHTYPE_FT:
+		data->auth_alg = WLAN_AUTH_FT;
+		break;
+	default:
+		/*
+		 * TODO: handle the following:
+		 *    NL80211_AUTHTYPE_NETWORK_EAP
+		 */
+		return -EFAULT;
+	}
+
+	data->tx_chan = (u8)ieee80211_frequency_to_channel(req->bss->channel->center_freq);
+	memcpy(data->bssid, req->bss->bssid, ETH_ALEN);
+
+	if (req->key && req->key_len) {
+		data->key_len = req->key_len;
+		data->key_index = req->key_idx;
+		memcpy(data->key, req->key, req->key_len);
+	}
+
+	if (auth_data_len >= 4) {
+		if (req->auth_type == NL80211_AUTHTYPE_SAE) {
+			u16 *pos = (u16 *)auth_data;
+
+			data->sae_trans = le16_to_cpu(pos[0]);
+			data->sae_status = le16_to_cpu(pos[1]);
+		}
+
+		/* auth_data contains the authentication frame body (non-IE and IE data), excluding the
+			Authentication algorithm number, i.e., starting at the Authentication transaction
+			sequence number field.*/
+		memcpy(data->data, auth_data + 4, auth_data_len - 4);
+		data->data_len += auth_data_len - 4;
+	}
+
+	if (req->ie && req->ie_len) {
+		memcpy(&data->data[data->data_len], req->ie, req->ie_len);
+		data->data_len += req->ie_len;
+	}
+
+	/* get rssi, capability */
+	data->rssi = req->bss->signal;
+	data->capability = req->bss->capability;
+
+	/* get ht_info */
+	if (req->bss->beacon_ies && req->bss->beacon_ies->len) {
+		pie = rtw_get_ie(req->bss->beacon_ies->data, WLAN_EID_HT_OPERATION, &ie_len, req->bss->beacon_ies->len);
+		if ((pie == NULL || ie_len == 0) &&
+			req->bss->proberesp_ies && req->bss->proberesp_ies->len) {
+			pie = rtw_get_ie(req->bss->proberesp_ies->data, WLAN_EID_HT_OPERATION, &ie_len, req->bss->proberesp_ies->len);
+		}
+	}
+
+	if (pie && ie_len) {
+		memcpy(data->ht_info, pie + 2, *(pie + 1));
+	}
+
+	mlme_priv->cfg80211_offload_sta_sme = 1;
+
+	whc_fullmac_host_sme_auth(data_phy);
+
+	rtw_mfree(data_len, (void *)data, data_phy);
+
+	return 0;
+}
+
+static int whc_sme_host_assoc(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_assoc_request *req)
 {
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 	return 0;
 }
 
-static int whc_fullmac_host_assoc(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_assoc_request *req)
+static int whc_sme_host_deauth(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_deauth_request *req)
 {
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 	return 0;
 }
 
-static int whc_fullmac_host_deauth(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_deauth_request *req)
-{
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
-	return 0;
-}
-
-static int whc_fullmac_host_disassoc(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_disassoc_request *req)
+static int whc_sme_host_disassoc(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_disassoc_request *req)
 {
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 	return 0;
@@ -1211,10 +1307,12 @@ void whc_fullmac_host_ops_sta_init(void)
 #endif
 	ops->external_auth = whc_fullmac_host_external_auth_status;
 #ifdef CONFIG_CFG80211_SME_OFFLOAD
-	ops->auth = whc_fullmac_host_auth;
-	ops->deauth = whc_fullmac_host_deauth;
-	ops->assoc = whc_fullmac_host_assoc;
-	ops->disassoc = whc_fullmac_host_disassoc;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32))
+	ops->auth = whc_sme_host_auth;
+	ops->deauth = whc_sme_host_deauth;
+	ops->assoc = whc_sme_host_assoc;
+	ops->disassoc = whc_sme_host_disassoc;
+#endif
 #endif	/* CONFIG_CFG80211_SME_OFFLOAD */
 }
 

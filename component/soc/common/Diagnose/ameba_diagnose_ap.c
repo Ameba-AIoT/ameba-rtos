@@ -131,12 +131,14 @@ static int rtk_diag_req_low(u8 cmd, const u8 *payload, u16 payload_length)
 int rtk_diag_req_timestamp(void)
 {
 	u32 tm = rtos_time_get_current_system_time_ms();
-	return rtk_diag_req_low(0x01, (u8 *)&tm, sizeof(tm));
+	return rtk_diag_req_low(RTK_DIAG_CMD_TYPE_OSTIME, (u8 *)&tm, sizeof(tm));
 }
 
 int rtk_diag_req_version(void)
 {
-	return rtk_diag_req_low(0x05, (u8 *)"9FC60C4CB6162E49C54FB94511497E16", 32);
+	extern const char *g_rtk_diag_format_hash;
+	// return rtk_diag_req_low(RTK_DIAG_CMD_TYPE_VER, (u8 *)"9FC60C4CB6162E49C54FB94511497E16", 32);
+	return rtk_diag_req_low(RTK_DIAG_CMD_TYPE_VER, (u8 *)g_rtk_diag_format_hash, strlen(g_rtk_diag_format_hash));
 }
 
 int rtk_diag_req_set_buf_com_capacity(u16 capacity)

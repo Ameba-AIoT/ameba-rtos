@@ -25,30 +25,13 @@ static const char *const TAG = "VND";
 #endif
 
 // Loopback ISOC data in an async thread
-#if CONFIG_USBD_VENDOR_ISOC_TEST
-#define CONFIG_USBD_VENDOR_ISOC_ASYNC_XFER				1
-#else
 #define CONFIG_USBD_VENDOR_ISOC_ASYNC_XFER				0
-#endif
 
-#if CONFIG_USBD_VENDOR_INTR_TEST
 // Loopback INTR data in an async thread
 #define CONFIG_USBD_VENDOR_INTR_ASYNC_XFER				0
-// INTR IN only
-#define CONFIG_USBD_VENDOR_INTR_IN_ONLY					0
-#else
-// Loopback INTR data in an async thread
-#define CONFIG_USBD_VENDOR_INTR_ASYNC_XFER				0
-// INTR IN only
-#define CONFIG_USBD_VENDOR_INTR_IN_ONLY					0
-#endif
 
 // Loopback BULK data in an async thread
-#if CONFIG_USBD_VENDOR_BULK_TEST
-#define CONFIG_USBD_VENDOR_BULK_ASYNC_XFER				1
-#else
 #define CONFIG_USBD_VENDOR_BULK_ASYNC_XFER				0
-#endif
 
 // Thread priorities
 #define CONFIG_USBD_VENDOR_INIT_THREAD_PRIORITY			5U
@@ -66,18 +49,9 @@ static int vendor_cb_init(void);
 static int vendor_cb_deinit(void);
 static int vendor_cb_setup(usb_setup_req_t *req, u8 *buf);
 static int vendor_cb_set_config(void);
-#if CONFIG_USBD_VENDOR_BULK_TEST
 static int vendor_cb_bulk_received(u8 *buf, u32 len);
-#endif
-#if CONFIG_USBD_VENDOR_INTR_TEST
 static int vendor_cb_intr_received(u8 *buf, u32 len);
-#if CONFIG_USBD_VENDOR_INTR_IN_ONLY
-static void vendor_cb_intr_transmitted(u8 status);
-#endif
-#endif
-#if CONFIG_USBD_VENDOR_ISOC_TEST
 static int vendor_cb_isoc_received(u8 *buf, u32 len);
-#endif
 static void vendor_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
@@ -86,7 +60,27 @@ static usbd_config_t vendor_cfg = {
 	.speed = CONFIG_USBD_VENDOR_SPEED,
 	.dma_enable = 1U,
 	.isr_priority = INT_PRI_MIDDLE,
-	.ext_intr_en =  USBD_EOPF_INTR,
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAD) || defined(CONFIG_AMEBADPLUS)
+	/* EOPF for ISOC OUT */
+	.ext_intr_en = USBD_EPMIS_INTR | USBD_EOPF_INTR,
+	.nptx_max_epmis_cnt = 100U,
+	.nptx_max_err_cnt = {0U, 2000U, 0U, 2000U, 0U, 2000U},
+	/*DFIFO total 1024 DWORD, resv 8 DWORD for DMA addr*/
+#elif defined (CONFIG_AMEBAGREEN2)
+	/*DFIFO total 1024 DWORD, resv 12 DWORD for DMA addr and EP0 fixed 32 DWORD*/
+	.rx_fifo_depth = 292U,
+	.ptx_fifo_depth = {16U, 256U, 32U, 256U, 128U, },
+	.ext_intr_en = USBD_EOPF_INTR,//for ISOC OUT
+#elif defined (CONFIG_AMEBASMARTPLUS)
+	/*DFIFO total 1280 DWORD, resv 14 DWORD for DMA addr and EP0 fixed 32 DWORD*/
+	.rx_fifo_depth = 402U,
+	.ptx_fifo_depth = {256U, 256U, 32U, 256U, 32U},
+	//.ext_intr_en =  USBD_EOPF_INTR,
+#elif defined (CONFIG_AMEBAL2)
+	/*DFIFO total 1024 DWORD, resv 11 DWORD for DMA addr and EP0 fixed 32 DWORD*/
+	.rx_fifo_depth = 405U,
+	.ptx_fifo_depth = {256U, 256U, 32U, 32U},
+#endif
 	.intr_use_ptx_fifo = 0U,
 };
 
@@ -95,18 +89,9 @@ static usbd_vendor_cb_t vendor_cb = {
 	.deinit = vendor_cb_deinit,
 	.setup = vendor_cb_setup,
 	.set_config = vendor_cb_set_config,
-#if CONFIG_USBD_VENDOR_BULK_TEST
 	.bulk_received = vendor_cb_bulk_received,
-#endif
-#if CONFIG_USBD_VENDOR_ISOC_TEST
 	.isoc_received = vendor_cb_isoc_received,
-#endif
-#if CONFIG_USBD_VENDOR_INTR_TEST
 	.intr_received = vendor_cb_intr_received,
-#if CONFIG_USBD_VENDOR_INTR_IN_ONLY
-	.isoc_transmitted = vendor_cb_intr_transmitted,
-#endif
-#endif
 	.status_changed = vendor_cb_status_changed,
 };
 
@@ -120,11 +105,6 @@ static rtos_sema_t vendor_isoc_async_xfer_sema;
 static u8 *vendor_intr_tx_buf = NULL;
 static u32 vendor_intr_tx_len = 0;
 static rtos_sema_t vendor_intr_async_xfer_sema;
-#endif
-
-#if CONFIG_USBD_VENDOR_INTR_IN_ONLY
-static u8 vendor_intr_tx_num = 0;
-static u8 vendor_intr_in_buf[USBD_VENDOR_INTR_IN_BUF_SIZE];
 #endif
 
 #if CONFIG_USBD_VENDOR_BULK_ASYNC_XFER
@@ -168,21 +148,6 @@ static int vendor_cb_setup(usb_setup_req_t *req, u8 *buf)
   */
 static int vendor_cb_init(void)
 {
-#if CONFIG_USBD_VENDOR_INTR_ASYNC_XFER
-	vendor_intr_tx_buf = NULL;
-	vendor_intr_tx_len = 0;
-	rtos_sema_create(&vendor_intr_async_xfer_sema, 0U, 1U);
-#endif
-#if CONFIG_USBD_VENDOR_ISOC_ASYNC_XFER
-	vendor_isoc_tx_buf = NULL;
-	vendor_isoc_tx_len = 0;
-	rtos_sema_create(&vendor_isoc_async_xfer_sema, 0U, 1U);
-#endif
-#if CONFIG_USBD_VENDOR_BULK_ASYNC_XFER
-	vendor_bulk_tx_buf = NULL;
-	vendor_bulk_tx_len = 0;
-	rtos_sema_create(&vendor_bulk_async_xfer_sema, 0U, 1U);
-#endif
 	return HAL_OK;
 }
 
@@ -193,15 +158,6 @@ static int vendor_cb_init(void)
   */
 static int vendor_cb_deinit(void)
 {
-#if CONFIG_USBD_VENDOR_INTR_ASYNC_XFER
-	rtos_sema_delete(vendor_intr_async_xfer_sema);
-#endif
-#if CONFIG_USBD_VENDOR_ISOC_ASYNC_XFER
-	rtos_sema_delete(vendor_isoc_async_xfer_sema);
-#endif
-#if CONFIG_USBD_VENDOR_BULK_ASYNC_XFER
-	rtos_sema_delete(vendor_bulk_async_xfer_sema);
-#endif
 	return HAL_OK;
 }
 
@@ -212,15 +168,8 @@ static int vendor_cb_deinit(void)
   */
 static int vendor_cb_set_config(void)
 {
-#if CONFIG_USBD_VENDOR_INTR_IN_ONLY
-	vendor_intr_tx_num = 0;
-	memset((void *)vendor_intr_in_buf, 0, USBD_VENDOR_INTR_IN_BUF_SIZE);
-	usbd_vendor_transmit_intr_data(vendor_intr_in_buf, USBD_VENDOR_INTR_IN_BUF_SIZE);
-#endif
 	return HAL_OK;
 }
-
-#if CONFIG_USBD_VENDOR_INTR_TEST
 
 /**
   * @brief  Data received over USB INTR OUT endpoint
@@ -235,24 +184,9 @@ static int vendor_cb_intr_received(u8 *buf, u32 len)
 	vendor_intr_tx_len = len;
 	rtos_sema_give(vendor_intr_async_xfer_sema);
 #else
-	usbd_vendor_transmit_intr_data(buf, len);
+	return usbd_vendor_transmit_intr_data(buf, len);
 #endif // CONFIG_USBD_VENDOR_INTR_ASYNC_XFER
-	return usbd_vendor_receive_intr_data();
 }
-
-#if CONFIG_USBD_VENDOR_INTR_IN_ONLY
-/**
-  * @brief  Data transmitted over USB INTR IN endpoint
-  * @param  state: Transmitted status
-  * @retval Status
-  */
-static void vendor_cb_intr_transmitted(u8 status)
-{
-	UNUSED(status);
-	memset((void *)vendor_intr_in_buf, ++vendor_intr_tx_num, USBD_VENDOR_INTR_IN_BUF_SIZE);
-	usbd_vendor_transmit_intr_data(vendor_intr_in_buf, USBD_VENDOR_INTR_IN_BUF_SIZE);
-}
-#endif // CONFIG_USBD_VENDOR_INTR_IN_ONLY
 
 #if CONFIG_USBD_VENDOR_INTR_ASYNC_XFER
 static void vendor_intr_xfer_thread(void *param)
@@ -266,12 +200,11 @@ static void vendor_intr_xfer_thread(void *param)
 			}
 		}
 	}
+	rtos_task_delete(NULL);
 }
 #endif // CONFIG_USBD_VENDOR_INTR_ASYNC_XFER
 
-#endif // CONFIG_USBD_VENDOR_INTR_TEST
 
-#if CONFIG_USBD_VENDOR_ISOC_TEST
 /**
   * @brief  Data received over USB ISOC OUT endpoint
   * @param  buf: RX buffer
@@ -285,9 +218,8 @@ static int vendor_cb_isoc_received(u8 *buf, u32 len)
 	vendor_isoc_tx_len = len;
 	rtos_sema_give(vendor_isoc_async_xfer_sema);
 #else
-	usbd_vendor_transmit_isoc_data(buf, len);
+	return usbd_vendor_transmit_isoc_data(buf, len);
 #endif // CONFIG_USBD_VENDOR_ISOC_ASYNC_XFER
-	return usbd_vendor_receive_isoc_data();
 }
 
 #if CONFIG_USBD_VENDOR_ISOC_ASYNC_XFER
@@ -302,12 +234,9 @@ static void vendor_isoc_xfer_thread(void *param)
 			}
 		}
 	}
+	rtos_task_delete(NULL);
 }
 #endif // CONFIG_USBD_VENDOR_ISOC_ASYNC_XFER
-
-#endif // CONFIG_USBD_VENDOR_ISOC_TEST
-
-#if CONFIG_USBD_VENDOR_BULK_TEST
 
 /**
   * @brief  Data received over USB BULK OUT endpoint
@@ -322,9 +251,8 @@ static int vendor_cb_bulk_received(u8 *buf, u32 len)
 	vendor_bulk_tx_len = len;
 	rtos_sema_give(vendor_bulk_async_xfer_sema);
 #else
-	usbd_vendor_transmit_bulk_data(buf, len);
+	return usbd_vendor_transmit_bulk_data(buf, len);
 #endif // CONFIG_USBD_VENDOR_BULK_ASYNC_XFER
-	return usbd_vendor_receive_bulk_data();
 }
 
 #if CONFIG_USBD_VENDOR_BULK_ASYNC_XFER
@@ -339,10 +267,9 @@ static void vendor_bulk_xfer_thread(void *param)
 			}
 		}
 	}
+	rtos_task_delete(NULL);
 }
 #endif // CONFIG_USBD_VENDOR_BULK_ASYNC_XFER
-
-#endif // CONFIG_USBD_VENDOR_BULK_TEST
 
 static void vendor_cb_status_changed(u8 old_status, u8 status)
 {
@@ -411,6 +338,22 @@ static void example_usbd_vendor_thread(void *param)
 
 #if CONFIG_USBD_VENDOR_HOTPLUG
 	rtos_sema_create(&vendor_attach_status_changed_sema, 0U, 1U);
+#endif
+
+#if CONFIG_USBD_VENDOR_INTR_ASYNC_XFER
+	vendor_intr_tx_buf = NULL;
+	vendor_intr_tx_len = 0;
+	rtos_sema_create(&vendor_intr_async_xfer_sema, 0U, 1U);
+#endif
+#if CONFIG_USBD_VENDOR_ISOC_ASYNC_XFER
+	vendor_isoc_tx_buf = NULL;
+	vendor_isoc_tx_len = 0;
+	rtos_sema_create(&vendor_isoc_async_xfer_sema, 0U, 1U);
+#endif
+#if CONFIG_USBD_VENDOR_BULK_ASYNC_XFER
+	vendor_bulk_tx_buf = NULL;
+	vendor_bulk_tx_len = 0;
+	rtos_sema_create(&vendor_bulk_async_xfer_sema, 0U, 1U);
 #endif
 
 	ret = usbd_init(&vendor_cfg);
@@ -487,6 +430,15 @@ exit:
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD vendor demo stop\n");
 #if CONFIG_USBD_VENDOR_HOTPLUG
 	rtos_sema_delete(vendor_attach_status_changed_sema);
+#endif
+#if CONFIG_USBD_VENDOR_INTR_ASYNC_XFER
+	rtos_sema_delete(vendor_intr_async_xfer_sema);
+#endif
+#if CONFIG_USBD_VENDOR_ISOC_ASYNC_XFER
+	rtos_sema_delete(vendor_isoc_async_xfer_sema);
+#endif
+#if CONFIG_USBD_VENDOR_BULK_ASYNC_XFER
+	rtos_sema_delete(vendor_bulk_async_xfer_sema);
 #endif
 	rtos_task_delete(NULL);
 }

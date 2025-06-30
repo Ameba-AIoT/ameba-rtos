@@ -380,7 +380,6 @@ class secure_boot():
             use_fastecdsa = 1
         elif id == Curve.SECP224K1:
             curve = 'secp224k1'
-            use_fastecdsa = 1
         elif id == Curve.SECP256K1:
             curve = ec.SECP256K1()
         else:
@@ -408,16 +407,15 @@ class secure_boot():
             # print(list_to_hex_str(sig_bytes))
             memmove(addressof(sig), sig_bytes, csize * 2)
         elif id == Curve.SECP224K1:
-            csize = 224 // 8
+            # SECP224K1 public key is 224-bits, but signature is 225-bits
+            csize = (225 + 7) // 8
             msg_bytes = string_at(addressof(msg), mlen)
             der = mbedtls_pk_binary_to_der(privkey, string_at(addressof(pubkey), csize * 2).hex())
             key = mbedtls.pk.ECC.from_DER(der)
             sig_bytes = key.sign(msg_bytes, digestmod=self.MdType)
             r,s = ecdsa.util.sigdecode_der(sig_bytes, 0)
             r_arr = point_to_bignum_arr(r, csize, 0)
-            # print('r_arr: ', r_arr)
             s_arr = point_to_bignum_arr(s, csize, 0)
-            # print('s_arr: ', s_arr)
 
             buf_x = init_list(csize)
             mbedtls_mpi_write_binary(r_arr, buf_x, csize)
@@ -430,6 +428,7 @@ class secure_boot():
             for i in range(csize, csize * 2):
                 sigs[i] = buf_y[i - csize]
 
+            # print('sigs: ', bytes(sigs).hex())
             memmove(addressof(sig), bytes(sigs), csize * 2)
         else:
             csize = (curve.key_size + 7) // 8

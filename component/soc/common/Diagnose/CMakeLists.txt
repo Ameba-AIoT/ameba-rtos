@@ -38,10 +38,23 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
+set(fmt_head ${CMAKE_CURRENT_SOURCE_DIR}/ameba_diagnose_format.h)
+set(fmt_json ${CMAKE_CURRENT_BINARY_DIR}/tmp_ameba_diagnose_format.json)
+set(fmt_src ${CMAKE_CURRENT_BINARY_DIR}/tmp_ameba_diagnose_hash.c)
+
+add_custom_target(${c_MCU_PROJECT_NAME}_diag_fmt
+    COMMENT "generate diagnose hash"
+    COMMAND ${CMAKE_COMMAND} -Dc_DIAG_FMT_SCRIPT="${c_DIAG_FMT_SCRIPT}" -Dfmt_head=${fmt_head} -Dfmt_json=${fmt_json} -Dfmt_src=${fmt_src} -P ${CMAKE_CURRENT_SOURCE_DIR}/generate_hash.cmake
+    BYPRODUCTS ${fmt_src}
+    DEPENDS ${fmt_head} ${CMAKE_CURRENT_SOURCE_DIR}/generate_hash.cmake ${CMAKE_CURRENT_SOURCE_DIR}/ameba_diagnose_hash.c.in
+)
+set_property(TARGET ${c_MCU_PROJECT_NAME}_diag_fmt PROPERTY ADDITIONAL_CLEAN_FILES ${fmt_json} ${fmt_src})
+
 if(CONFIG_CORE_AS_NP)
     ameba_list_append(private_sources
         ameba_diagnose_np.c
         ameba_diagnose_transform.c
+        ${fmt_src}
 
         # only for np
         ameba_diagnose_protocol.c
@@ -53,6 +66,7 @@ elseif(CONFIG_CORE_AS_AP)
     ameba_list_append(private_sources
         ameba_diagnose_ap.c
         ameba_diagnose_transform.c
+        ${fmt_src}
     )
 endif()
 
@@ -80,7 +94,7 @@ ameba_add_internal_library(diagnose
     p_COMPILE_OPTIONS
         ${private_compile_options}
     p_DEPENDENCIES
-        ${c_BUILD_INFO}
+        ${c_MCU_PROJECT_NAME}_diag_fmt
     p_DROP_IF_NO_SOURCES
 )
 ##########################################################################################

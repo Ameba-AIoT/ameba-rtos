@@ -6,8 +6,6 @@
 #include "os_wrapper.h"
 
 static u8 g_initialized = 0;
-static rtos_mutex_t g_mutex;
-// static u32 g_mie;
 
 static const RtkDiagEvent_t *rtk_diag_next_event_callback(void)
 {
@@ -52,15 +50,9 @@ int rtk_diag_init(u16 heap_capacity, u16 sender_buffer_size)
 		return RTK_SUCCESS;
 	}
 
-	if (rtos_mutex_create(&g_mutex) != RTK_SUCCESS) {
-		RTK_LOGA(NOTAG, "Failed to create mutex\n");
-		return RTK_FAIL;
-	}
-
 	int res = rtk_diag_queue_init(heap_capacity, RTK_DIAG_SYS_HEAP_UPPER_LIMIT);
 	if (res) {
 		RTK_LOGA(NOTAG, "Diagnose queue initialize failed\n");
-		rtos_mutex_delete(g_mutex);
 		return res;
 	}
 
@@ -68,7 +60,6 @@ int rtk_diag_init(u16 heap_capacity, u16 sender_buffer_size)
 	if (res) {
 		RTK_LOGA(NOTAG, "Diagnose transform initialize failed\n");
 		rtk_diag_queue_deinit();
-		rtos_mutex_delete(g_mutex);
 		return res;
 	}
 	RTK_LOGA(NOTAG, "Diag np init\n");
@@ -86,7 +77,6 @@ void rtk_diag_deinit(void)
 	g_initialized = 0;
 	rtk_diag_proto_deinit();
 	rtk_diag_queue_deinit();
-	rtos_mutex_delete(g_mutex);
 }
 
 int rtk_diag_event_add(u8 evt_level, u16 evt_type, const u8 *evt_info, u16 evt_len)
@@ -150,7 +140,9 @@ int rtk_diag_req_timestamp(void)
 
 int rtk_diag_req_version(void)
 {
-	return rtk_diag_req_low(RTK_DIAG_CMD_TYPE_VER, (u8 *)"9FC60C4CB6162E49C54FB94511497E16", 32);
+	extern const char *g_rtk_diag_format_hash;
+	// return rtk_diag_req_low(RTK_DIAG_CMD_TYPE_VER, (u8 *)"9FC60C4CB6162E49C54FB94511497E16", 32);
+	return rtk_diag_req_low(RTK_DIAG_CMD_TYPE_VER, (u8 *)g_rtk_diag_format_hash, strlen(g_rtk_diag_format_hash));
 }
 
 int rtk_diag_req_set_buf_com_capacity(u16 capacity)

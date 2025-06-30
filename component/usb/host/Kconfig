@@ -33,3 +33,7 @@ config USBH_MSC_MENU
 config USBH_UVC_MENU
     bool "UVC"
     select USBH_UVC if CORE_AS_AP
+
+config USBH_VENDOR_MENU
+    bool "VENDOR"
+    select USBH_VENDOR if CORE_AS_AP
