@@ -9,7 +9,11 @@
 #include "hci_uart.h"
 #include "hci_platform.h"
 #include "bt_debug.h"
+#include "platform_autoconf.h"
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
 #include "wifi_api.h"
+extern int wifi_set_ips_internal(u8 enable);
+#endif
 
 #define HCI_PHY_EFUSE_OFFSET       0x740
 #define HCI_PHY_EFUSE_LEN          0x70
@@ -116,8 +120,6 @@ unsigned int hci_init_config_len = 0;
 
 static uint8_t  hci_cfg_bd_addr[HCI_MAC_ADDR_LEN] = {0};
 static uint32_t hci_cfg_flag                      = 0;
-
-extern int wifi_set_ips_internal(u8 enable);
 
 void hci_platform_cfg_bd_addr(uint8_t *bdaddr)
 {
