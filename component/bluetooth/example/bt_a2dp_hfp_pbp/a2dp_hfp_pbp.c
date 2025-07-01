@@ -399,6 +399,118 @@ static const uint8_t did_sdp_record[] = {
 	0x01
 };
 
+static const uint8_t avrcp_tg_sdp_record[] = {
+	//Total length
+	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	0x38,//0x46,//0x5F,
+
+	//Attribute SDP_ATTR_SRV_CLASS_ID_LIST
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	(uint8_t)(RTK_BT_SDP_ATTR_SRV_CLASS_ID_LIST >> 8),
+	(uint8_t)RTK_BT_SDP_ATTR_SRV_CLASS_ID_LIST,
+	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	0x03, //Attribute length: 6 bytes
+	//Service Class #0: A/V Remote Control Target
+	RTK_BT_SDP_UUID16_HDR,
+	(uint8_t)(RTK_BT_UUID_AV_REMOTE_CONTROL_TARGET >> 8),
+	(uint8_t)(RTK_BT_UUID_AV_REMOTE_CONTROL_TARGET),
+
+	//Attribute SDP_ATTR_PROTO_DESC_LIST
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	(uint8_t)(RTK_BT_SDP_ATTR_PROTO_DESC_LIST >> 8),
+	(uint8_t)RTK_BT_SDP_ATTR_PROTO_DESC_LIST,
+	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	0x10, //Attribute length: 12 bytes
+	//Protocol #0: L2CAP
+	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	0x06, //Element length: 3 bytes
+	RTK_BT_SDP_UUID16_HDR,
+	(uint8_t)(RTK_BT_UUID_L2CAP >> 8),
+	(uint8_t)(RTK_BT_UUID_L2CAP),
+	//Parameter #0 for Protocol #0: PSM = AVCTP
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	(uint8_t)(RTK_BT_PSM_AVCTP >> 8),
+	(uint8_t)RTK_BT_PSM_AVCTP,
+	//Protocol #1: AVCTP
+	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	0x06, //Element length: 5 bytes
+	RTK_BT_SDP_UUID16_HDR,
+	(uint8_t)(RTK_BT_UUID_AVCTP >> 8),
+	(uint8_t)(RTK_BT_UUID_AVCTP),
+	//Parameter #0 for Protocol #1: 0x0104 (v1.4)
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	(uint8_t)(0x0104 >> 8),
+	(uint8_t)(0x0104),
+
+	//Attribute SDP_ATTR_PROFILE_DESC_LIST
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	(uint8_t)(RTK_BT_SDP_ATTR_PROFILE_DESC_LIST >> 8),
+	(uint8_t)RTK_BT_SDP_ATTR_PROFILE_DESC_LIST,
+	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	0x08, //Attribute length: 8 bytes
+	//Profile #0: A/V Remote Control
+	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	0x06, //Element length: 6 bytes
+	RTK_BT_SDP_UUID16_HDR,
+	(uint8_t)(RTK_BT_UUID_AV_REMOTE_CONTROL >> 8),
+	(uint8_t)(RTK_BT_UUID_AV_REMOTE_CONTROL),
+	//Parameter #0 for Profile #0: 0x0106 (v1.6)
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	(uint8_t)(0x0106 >> 8),
+	(uint8_t)(0x0106),
+
+	//Attribute SDP_ATTR_SUPPORTED_FEATURES
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	(uint8_t)((RTK_BT_SDP_ATTR_SUPPORTED_FEATURES) >> 8),
+	(uint8_t)(RTK_BT_SDP_ATTR_SUPPORTED_FEATURES),
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	(uint8_t)(0x0002 >> 8), //Category 2 Amplifier
+	(uint8_t)(0x0002),
+
+	//Attribute SDP_ATTR_BROWSE_GROUP_LIST
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	(uint8_t)(RTK_BT_SDP_ATTR_BROWSE_GROUP_LIST >> 8),
+	(uint8_t)RTK_BT_SDP_ATTR_BROWSE_GROUP_LIST,
+	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	0x03,
+	RTK_BT_SDP_UUID16_HDR,
+	(uint8_t)(RTK_BT_UUID_PUBLIC_BROWSE_GROUP >> 8),
+	(uint8_t)RTK_BT_UUID_PUBLIC_BROWSE_GROUP
+	/*
+	    //Attribute SDP_ATTR_LANG_BASE_ATTR_ID_LIST...it is used for SDP_ATTR_SRV_NAME
+	    RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	    (uint8_t)(RTK_BT_SDP_ATTR_LANG_BASE_ATTR_ID_LIST >> 8),
+	    (uint8_t)RTK_BT_SDP_ATTR_LANG_BASE_ATTR_ID_LIST,
+	    RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	    0x09,
+	    RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	    (uint8_t)(RTK_BT_SDP_LANG_ENGLISH >> 8),
+	    (uint8_t)RTK_BT_SDP_LANG_ENGLISH,
+	    RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	    (uint8_t)(RTK_BT_SDP_CHARACTER_UTF8 >> 8),
+	    (uint8_t)RTK_BT_SDP_CHARACTER_UTF8,
+	    RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	    (uint8_t)(RTK_BT_SDP_BASE_LANG_OFFSET >> 8),
+	    (uint8_t)RTK_BT_SDP_BASE_LANG_OFFSET,
+
+	    //Attribute SDP_ATTR_PROVIDER_NAME
+	    RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	    (uint8_t)((RTK_BT_SDP_ATTR_PROVIDER_NAME + RTK_BT_SDP_BASE_LANG_OFFSET) >> 8),
+	    (uint8_t)(RTK_BT_SDP_ATTR_PROVIDER_NAME + RTK_BT_SDP_BASE_LANG_OFFSET),
+	    RTK_BT_SDP_STRING_HDR,
+	    0x07, //Attribute length: 7 bytes
+	    0x52, 0x65, 0x61, 0x6C, 0x54, 0x65, 0x6B, //RealTek
+
+	    //Attribute SDP_ATTR_SRV_NAME
+	    RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	    (uint8_t)((RTK_BT_SDP_ATTR_SRV_NAME + RTK_BT_SDP_BASE_LANG_OFFSET) >> 8),
+	    (uint8_t)(RTK_BT_SDP_ATTR_SRV_NAME + RTK_BT_SDP_BASE_LANG_OFFSET),
+	    SDP_STRING_HDR,
+	    0x08, //Attribute length: 8 bytes
+	    0x41, 0x56, 0x52, 0x43, 0x50, 0x20, 0x54, 0x47, //AVRCP TG
+	*/
+};
+
 static const uint8_t avrcp_ct_sdp_record[] = {
 	//Total length
 	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
@@ -3675,6 +3787,7 @@ int bt_a2dp_hfp_pbp_main(uint8_t enable)
 			/* a2dp sink record add */
 			BT_APP_PROCESS(rtk_sdp_record_add((void *)a2dp_sink_sdp_record, sizeof(a2dp_sink_sdp_record)));
 			BT_APP_PROCESS(rtk_sdp_record_add((void *)avrcp_ct_sdp_record, sizeof(avrcp_ct_sdp_record)));
+			BT_APP_PROCESS(rtk_sdp_record_add((void *)avrcp_tg_sdp_record, sizeof(avrcp_tg_sdp_record)));
 			/* a2dp codec add (must be invoked before rtk_bt_enable) */
 			BT_APP_PROCESS(rtk_bt_a2dp_codec_cfg((uint8_t)RTK_BT_AUDIO_CODEC_SBC, (void *)&codec_sbc, (uint32_t)sizeof(rtk_bt_a2dp_media_codec_sbc_t)));
 		}

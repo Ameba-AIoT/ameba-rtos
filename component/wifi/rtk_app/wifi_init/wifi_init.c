@@ -83,6 +83,11 @@ void wifi_init_thread(void *param)
 void wifi_init_thread(void *param)
 {
 	UNUSED(param);
+
+#if defined(CONFIG_LWIP_LAYER) && defined(CONFIG_WHC_DUAL_TCPIP)
+	LwIP_Init();
+#endif
+
 #ifdef CONFIG_WHC_CMD_PATH
 	whc_dev_init_cmd_path_task();
 #endif

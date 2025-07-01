@@ -94,7 +94,7 @@ void whc_dev_recv(int idx)
 	struct whc_msg_info *msg_info = NULL;
 	struct whc_txbuf_info_t *inic_tx;
 
-#if defined(CONFIG_WHC_BRIDGEB) || defined(CONFIG_WHC_BRIDGE)
+#if defined(CONFIG_WHC_DUAL_TCPIP)
 	if (whc_bridge_dev_recv_pkt_process((u8 *)&idx, &skb) == 0) {
 		return;
 	}

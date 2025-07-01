@@ -111,7 +111,8 @@ log_init_t log_init_table[] = {
 //======================================================
 #if defined(CONFIG_ATCMD_HOST_CONTROL)
 #ifdef CONFIG_SUPPORT_SDIO_DEVICE
-extern SDIOCFG_TypeDef sdio_config;
+extern u8 SDIO_Pin_Grp;
+extern const u8 SDIO_PAD[5][6];
 #endif
 RingBuffer *atcmd_tt_mode_rx_ring_buf = NULL;
 char g_tt_mode = 0;
@@ -517,14 +518,12 @@ int atcmd_host_control_config_setting(void)
 			}
 		} else if (g_host_control_mode == AT_HOST_CONTROL_SDIO) {
 #ifdef CONFIG_SUPPORT_SDIO_DEVICE
-			cJSON *sdio_ob;
+			cJSON *sdio_ob, *group_ob;
 			if ((sdio_ob = cJSON_GetObjectItem(atcmd_ob, "sdio")) != NULL) {
-				atcmd_get_pin_from_json(sdio_ob, "clk", (u8 *)&sdio_config.sdio_clk_pin);
-				atcmd_get_pin_from_json(sdio_ob, "cmd", (u8 *)&sdio_config.sdio_cmd_pin);
-				atcmd_get_pin_from_json(sdio_ob, "d0", (u8 *)&sdio_config.sdio_d0_pin);
-				atcmd_get_pin_from_json(sdio_ob, "d1", (u8 *)&sdio_config.sdio_d1_pin);
-				atcmd_get_pin_from_json(sdio_ob, "d2", (u8 *)&sdio_config.sdio_d2_pin);
-				atcmd_get_pin_from_json(sdio_ob, "d3", (u8 *)&sdio_config.sdio_d3_pin);
+				group_ob = cJSON_GetObjectItem(sdio_ob, "group");
+				if (group_ob) {
+					SDIO_Pin_Grp = group_ob->valueint;
+				}
 			}
 #endif
 		} else {
@@ -534,21 +533,28 @@ int atcmd_host_control_config_setting(void)
 
 DEFAULT:
 	if (g_host_control_mode == AT_HOST_CONTROL_UART) {
-		RTK_LOGI(TAG, "ATCMD HOST Control Mode : UART, tx:%s, rx:%s, baudrate:%d\r\n",
-				 PIN_VAL_TO_NAME_STR(UART_TX), PIN_VAL_TO_NAME_STR(UART_RX), (int)UART_BAUD);
+		RTK_LOGI(TAG, "ATCMD HOST Control Mode : UART, tx:%s, ", PIN_VAL_TO_NAME_STR(UART_TX));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "rx:%s, ", PIN_VAL_TO_NAME_STR(UART_RX));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "baudrate:%d\r\n", (int)UART_BAUD);
 		ret = atio_uart_init();
 	} else if (g_host_control_mode == AT_HOST_CONTROL_SPI) {
-		RTK_LOGI(TAG, "ATCMD HOST Control Mode : SPI, mosi:%s, miso:%s, clk:%s, cs:%s, master_sync_pin:%s, slave_sync_pin:%s, spi_index: %d\r\n",
-				 PIN_VAL_TO_NAME_STR(SPI0_MOSI), PIN_VAL_TO_NAME_STR(SPI0_MISO),
-				 PIN_VAL_TO_NAME_STR(SPI0_SCLK), PIN_VAL_TO_NAME_STR(SPI0_CS),
-				 PIN_VAL_TO_NAME_STR(AT_SYNC_FROM_MASTER_GPIO), PIN_VAL_TO_NAME_STR(AT_SYNC_TO_MASTER_GPIO), SPI_INDEX - MBED_SPI0);
+		RTK_LOGI(TAG, "ATCMD HOST Control Mode : SPI, mosi:%s, ", PIN_VAL_TO_NAME_STR(SPI0_MOSI));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "miso:%s, ", PIN_VAL_TO_NAME_STR(SPI0_MISO));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "clk:%s, ", PIN_VAL_TO_NAME_STR(SPI0_SCLK));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "cs:%s, ", PIN_VAL_TO_NAME_STR(SPI0_CS));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "master_sync_pin:%s, ", PIN_VAL_TO_NAME_STR(AT_SYNC_FROM_MASTER_GPIO));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "slave_sync_pin:%s, ", PIN_VAL_TO_NAME_STR(AT_SYNC_TO_MASTER_GPIO));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "spi_index:%d\r\n", SPI_INDEX - MBED_SPI0);
 		ret = atio_spi_init();
 	} else if (g_host_control_mode == AT_HOST_CONTROL_SDIO) {
 #ifdef CONFIG_SUPPORT_SDIO_DEVICE
-		RTK_LOGI(TAG, "ATCMD HOST Control Mode : SDIO, clk:%s, cmd:%s, d0:%s, d1:%s, d2:%s, d3:%s\r\n",
-				 PIN_VAL_TO_NAME_STR((int)sdio_config.sdio_clk_pin), PIN_VAL_TO_NAME_STR((int)sdio_config.sdio_cmd_pin),
-				 PIN_VAL_TO_NAME_STR((int)sdio_config.sdio_d0_pin), PIN_VAL_TO_NAME_STR((int)sdio_config.sdio_d1_pin),
-				 PIN_VAL_TO_NAME_STR((int)sdio_config.sdio_d2_pin), PIN_VAL_TO_NAME_STR((int)sdio_config.sdio_d3_pin));
+		RTK_LOGI(TAG, "ATCMD HOST Control Mode : SDIO, group:%d, ", SDIO_Pin_Grp);
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "clk:%s, ", PIN_VAL_TO_NAME_STR(SDIO_PAD[SDIO_Pin_Grp][0]));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "cmd:%s, ", PIN_VAL_TO_NAME_STR(SDIO_PAD[SDIO_Pin_Grp][1]));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "d3:%s, ", PIN_VAL_TO_NAME_STR(SDIO_PAD[SDIO_Pin_Grp][2]));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "d2:%s, ", PIN_VAL_TO_NAME_STR(SDIO_PAD[SDIO_Pin_Grp][3]));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "d1:%s, ", PIN_VAL_TO_NAME_STR(SDIO_PAD[SDIO_Pin_Grp][4]));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "d0:%s\r\n", PIN_VAL_TO_NAME_STR(SDIO_PAD[SDIO_Pin_Grp][5]));
 		ret = atio_sdio_init();
 #else
 		ret = -1;

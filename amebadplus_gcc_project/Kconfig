@@ -252,9 +252,12 @@ menu "CONFIG WHC INTF"
         config WHC_WIFI_API_PATH
             default y if FULLMAC_DEV
             bool "Support WHC WIFI API PATH"
-        config WHC_WPA_SUPPLICANT_OFFLOAD
+        config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4
             default y if WHC_BRIDGE
             bool "Support WHC SUPPLICANT OFFLOAD"
+        config WHC_DUAL_TCPIP_FOR_KM4
+            default y if WHC_BRIDGE
+            bool "Support WHC DUAL TCPIP"
         endmenu
     endif
 
@@ -270,7 +273,9 @@ menu "CONFIG WHC INTF"
         bool
     config WHC_WIFI_API_PATH
         bool
-    config WHC_WPA_SUPPLICANT_OFFLOAD
+    config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4
+        bool
+    config WHC_DUAL_TCPIP_FOR_KM4
         bool
 endmenu
 
@@ -313,6 +318,7 @@ menu "CONFIG WIFI"
             select WIFI_HOST_CONTROL
             #todo remove at last
             select WHC_WIFI_API_PATH
+            select LWIP_LAYER if WHC_DUAL_TCPIP_FOR_KM4
 
         config WHC_BRIDGE
             bool

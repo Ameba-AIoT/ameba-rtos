@@ -28,23 +28,29 @@ Taking RTL8730EA/QFN100 boards for example, the register R20 shall be parted on 
 
 1. Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
 	```
-	[VND] USBH vendor demo start
+	[VND-I] USBH vendor demo start
 	```
 2. Connect the vendor-specific USB device (e.g. another Ameba board running usbd_vendor_new application) to the USB port of the board with USB cable.
 
 3. Reset and check the test log via LOGUART console, make sure there is no error reported and the transfer success rate is reasonable, e.g.:
 	```
-	INTR test result: IN/OUT = 100/100:
-	0   1   2   3   4   5   6   7   8   9
-	...
-	90  91  92  93  94  95  96  97  98  99
-	
-	ISOC test result: IN/OUT = 90/100:
-	0   1   2   3   4   5   6   7   8   9
-	...
-	87  88  90  91  92  93  95  96  97  99
-	```
+	[VND-I] ISOC test start, times:100, size: 1024
+	[VEN-I] ISOC OUT test finish 100/100:
+	[VEN-I]   0   1   2   3   4   5   6   7   8   9
 
+	```
+	[VEN-I]  90  91  92  93  94  95  96  97  98  99
+	[VEN-I] ISOC IN test finish 100/100:
+	[VEN-I]   0   1   2   3   4   5   6   7   8   9
+
+	```
+	[VEN-I]  90  91  92  93  94  95  96  97  98  99
+	[VND-I] ISOC test PASS
+	[VND-I] BULK loopback test start, times:100, size: 512
+	[VND-I] INTR loopback test start, times:100, size: 1024
+	[VND-I] BULK loopback test PASS 100/100
+	[VND-I] INTR loopback test PASS 100/100
+	[VND-I] USBH vendor demo stop
 # Note
 
 For other chips, refer to the AN for setup guide.
