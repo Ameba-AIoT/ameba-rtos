@@ -116,8 +116,10 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 		whc_sdio_dev_event_int_hdl(pdata, rx_skb, size);
 
 #ifndef  CONFIG_WHC_BRIDGE
+#ifdef CONFIG_WHC_WIFI_API_PATH
 	} else if (event == WHC_CUST_EVT) {
 		whc_dev_recv_cust_evt(pdata);
+#endif
 	} else if (event >= WHC_BT_EVT_BASE) {
 		/* copy by bt, skb no change */
 		if (bt_inic_sdio_recv_ptr) {

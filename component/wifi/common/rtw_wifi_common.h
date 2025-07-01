@@ -8,6 +8,8 @@
 #define TAG_WLAN_COEX  "COEX"
 #define TAG_WLAN_INIC  "INIC"
 #define TAG_WLAN_NAN   "NAN"
+#define TAG_WLAN_SME   "SME"
+
 
 /*
  *	IEEE 802.3 Ethernet magic constants.  The frame sizes omit the preamble

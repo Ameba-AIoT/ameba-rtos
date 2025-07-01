@@ -5,7 +5,8 @@
 
 static const char *const TAG = "SPDIO";
 
-extern SDIOCFG_TypeDef sdio_config;
+extern u8 SDIO_Pin_Grp;
+extern const u8 SDIO_PAD[5][6];
 
 /** @addtogroup Ameba_Mbed_API
  * @{
@@ -506,26 +507,22 @@ static void SPDIO_IRQ_Handler_BH(void *pData)
 
 void SPDIO_Board_Init(void)
 {
-	Pinmux_Config(sdio_config.sdio_clk_pin, PINMUX_FUNCTION_SDIO);	/* CLK */
-	Pinmux_Config(sdio_config.sdio_cmd_pin, PINMUX_FUNCTION_SDIO);	/* CMD */
-	Pinmux_Config(sdio_config.sdio_d0_pin, PINMUX_FUNCTION_SDIO); 	/* D0 */
-	Pinmux_Config(sdio_config.sdio_d1_pin, PINMUX_FUNCTION_SDIO);	/* D1 */
-	Pinmux_Config(sdio_config.sdio_d2_pin, PINMUX_FUNCTION_SDIO);	/* D2 */
-	Pinmux_Config(sdio_config.sdio_d3_pin, PINMUX_FUNCTION_SDIO);	/* D3 */
+	u8 idx;
 
-	PAD_PullCtrl(sdio_config.sdio_clk_pin, GPIO_PuPd_UP);	/* CLK */
-	PAD_PullCtrl(sdio_config.sdio_cmd_pin, GPIO_PuPd_UP);	/* CMD */
-	PAD_PullCtrl(sdio_config.sdio_d0_pin, GPIO_PuPd_UP); 	/* D0 */
-	PAD_PullCtrl(sdio_config.sdio_d1_pin, GPIO_PuPd_UP);	/* D1 */
-	PAD_PullCtrl(sdio_config.sdio_d2_pin, GPIO_PuPd_UP);	/* D2 */
-	PAD_PullCtrl(sdio_config.sdio_d3_pin, GPIO_PuPd_UP);	/* D3 */
+	assert_param(SDIO_Pin_Grp <= 0x4);
 
-	RTK_LOGI(TAG, "SDIO_CMD --> P%c%d\n", 'A' + PORT_NUM(sdio_config.sdio_clk_pin), PIN_NUM(sdio_config.sdio_clk_pin));
-	RTK_LOGI(TAG, "SDIO_CLK --> P%c%d\n", 'A' + PORT_NUM(sdio_config.sdio_cmd_pin), PIN_NUM(sdio_config.sdio_cmd_pin));
-	RTK_LOGI(TAG, "SDIO_D0 --> P%c%d\n", 'A' + PORT_NUM(sdio_config.sdio_d0_pin), PIN_NUM(sdio_config.sdio_d0_pin));
-	RTK_LOGI(TAG, "SDIO_D1 --> P%c%d\n", 'A' + PORT_NUM(sdio_config.sdio_d1_pin), PIN_NUM(sdio_config.sdio_d1_pin));
-	RTK_LOGI(TAG, "SDIO_D2 --> P%c%d\n", 'A' + PORT_NUM(sdio_config.sdio_d2_pin), PIN_NUM(sdio_config.sdio_d2_pin));
-	RTK_LOGI(TAG, "SDIO_D3 --> P%c%d\n", 'A' + PORT_NUM(sdio_config.sdio_d3_pin), PIN_NUM(sdio_config.sdio_d3_pin));
+	/* Pinmux function and Pad control */
+	for (idx = 0; idx < 6; idx++) {
+		PAD_PullCtrl(SDIO_PAD[SDIO_Pin_Grp][idx], GPIO_PuPd_UP);
+		Pinmux_Config(SDIO_PAD[SDIO_Pin_Grp][idx], PINMUX_FUNCTION_SDIO);
+	}
+
+	RTK_LOGI(TAG, "SDIO_CLK --> P%c%d\n", 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][0]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][0]));
+	RTK_LOGI(TAG, "SDIO_CMD --> P%c%d\n", 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][1]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][1]));
+	RTK_LOGI(TAG, "SDIO_D3 --> P%c%d\n", 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][2]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][2]));
+	RTK_LOGI(TAG, "SDIO_D2 --> P%c%d\n", 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][3]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][3]));
+	RTK_LOGI(TAG, "SDIO_D1 --> P%c%d\n", 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][4]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][4]));
+	RTK_LOGI(TAG, "SDIO_D0 --> P%c%d\n", 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][5]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][5]));
 }
 
 /**

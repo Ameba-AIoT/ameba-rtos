@@ -67,7 +67,7 @@ if(CONFIG_BT_INIC)
 		ameba_list_append(private_sources bt_inic/bt_inic_h5.c)
 	elseif(CONFIG_BT_INICD_SPI OR (CONFIG_WHC_INTF_SPI AND CONFIG_BT_INIC_SHARE))
 		ameba_list_append(private_sources bt_inic/bt_inic_spi_dev.c)
-	elseif(CONFIG_BT_INICD_USB)
+	elseif(CONFIG_BT_INICD_USB OR (CONFIG_WHC_INTF_USB AND CONFIG_BT_INIC_SHARE))
 		ameba_list_append(private_sources bt_inic/bt_inic_usbd.c)
 		ameba_list_append(private_sources bt_inic/bt_inic_usb.c)
 		ameba_list_append(private_includes

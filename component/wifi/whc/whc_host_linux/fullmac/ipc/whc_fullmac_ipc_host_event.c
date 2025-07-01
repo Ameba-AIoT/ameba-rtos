@@ -180,6 +180,33 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 		whc_fullmac_host_update_owe_info_event(buf, buf_len);
 	}
 
+#ifdef CONFIG_CFG80211_SME_OFFLOAD
+	if (event == RTW_EVENT_SME_AUTH_TIMEOUT) {
+		dev_dbg(global_idev.fullmac_dev, "%s: RTW_EVENT_SME_AUTH_TIMEOUT \n", __func__);
+		cfg80211_auth_timeout(global_idev.pndev[0], buf);
+
+	} else if (event == RTW_EVENT_SME_ASSOC_TIMEOUT) {
+		dev_dbg(global_idev.fullmac_dev, "%s: RTW_EVENT_SME_ASSOC_TIMEOUT \n", __func__);
+		/* TODO */
+		//cfg80211_assoc_timeout(global_idev.pndev[0], global_idev.mlme_priv.cfg80211_assoc_bss);
+
+	} else if (event == RTW_EVENT_SME_RX_MLME_MGNT) {
+		dev_dbg(global_idev.fullmac_dev, "%s: RTW_EVENT_SME_RX_MLME_MGNT \n", __func__);
+		cfg80211_rx_mlme_mgmt(global_idev.pndev[0], buf, buf_len);
+
+	} else if (event == RTW_EVENT_SME_TX_MLME_MGNT) {
+		dev_dbg(global_idev.fullmac_dev, "%s: RTW_EVENT_SME_TX_MLME_MGNT \n", __func__);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0))
+		cfg80211_tx_mlme_mgmt(global_idev.pndev[0], buf, buf_len, false);
+#else
+		cfg80211_tx_mlme_mgmt(global_idev.pndev[0], buf, buf_len);
+#endif
+	} else if (event == RTW_EVENT_SME_RX_ASSOC_RESP) {
+		dev_dbg(global_idev.fullmac_dev, "%s: RTW_EVENT_SME_RX_ASSOC_RESP \n", __func__);
+		/* TODO */
+	}
+#endif
+
 func_exit:
 	return;
 }

@@ -768,6 +768,27 @@ struct rtw_network_info {
 };
 
 /**
+  * @brief  Stores sme auth info for STA connection (Linux host only, not needed for RTOS).
+  */
+struct rtw_sme_auth_info {
+	u16 auth_alg;
+	u16 capability;
+	u8 ht_info[22];
+
+	s32 rssi;
+	u8 bssid[ETH_ALEN];
+	u8 tx_chan;
+
+	u16 sae_trans, sae_status;
+
+	u8 key_len, key_index;
+	u8 key[13];
+
+	size_t data_len;
+	u8 data[];
+};
+
+/**
  * @brief  Defines retry limits for different connection steps: authentication, association, and key exchange.
  * @note   All retry limits are capped at 10.
  */

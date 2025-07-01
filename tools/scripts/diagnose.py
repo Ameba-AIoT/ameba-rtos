@@ -44,7 +44,7 @@ def parse_header_file(input_file):
 
         enums[enum_name] = dict(enum_values)
 
-    # Parse structs with improved array handling
+    # Parse structs with improved array and nested struct handling
     structs = {}
     struct_pattern = re.compile(r'struct\s+(?:tag)?(\w+)\s*\{([^}]*)\}\s*(?:__PACKED)?\s*;', re.DOTALL)
     for struct_match in struct_pattern.finditer(content):
@@ -66,24 +66,18 @@ def parse_header_file(input_file):
                 fields[field_name] = f"{type_name}:{bits}"
                 continue
 
-            # Handle normal fields and arrays
-            field_match = re.match(r'(\w+)\s+(\w+)(?:\s*$$(\d*)$$)?;', line)
+            # Handle normal fields, arrays, and nested structs
+            field_match = re.match(r'(struct\s+)?\s*(\w+)\s+(\w+)(?:\s*\[(\d+)\])?;', line)
             if field_match:
-                type_name = field_match.group(1)
-                field_name = field_match.group(2)
-                array_size = field_match.group(3)
+                is_struct = field_match.group(1) is not None
+                type_name = field_match.group(2)
+                field_name = field_match.group(3)
+                array_size = field_match.group(4)
 
-                if array_size is not None:
-                    if array_size == '0':  # Flexible array member
-                        fields[field_name] = f"{type_name}[]"
-                    elif array_size == '':  # Incomplete array declaration
-                        fields[field_name] = f"{type_name}[]"
-                    else:  # Fixed size array
-                        try:
-                            size = int(array_size)
-                            fields[field_name] = [type_name] * size
-                        except ValueError:
-                            fields[field_name] = f"{type_name}[{array_size}]"
+                if array_size:
+                    fields[field_name] = f"{type_name}[{array_size}]"
+                elif is_struct:
+                    fields[field_name] = f"struct {type_name}"
                 else:
                     fields[field_name] = type_name
 
@@ -150,16 +144,21 @@ def update_summary_json(json_file_path, summary_json_path):
     with open(json_file_path, 'r', encoding='utf-8') as f:
         current_content = json.load(f)
 
-    # Initialize or load the all_json file
+    # Initialize or load the summary json file
     if os.path.exists(summary_json_path):
         with open(summary_json_path, 'r', encoding='utf-8') as f:
             all_data = json.load(f)
     else:
         all_data = {
-            "version":"1.0",
+            "version": "1.0",
             "hash": {},
             "latest_hash": ""
         }
+
+    # Check if the current hash already exists
+    if current_hash in all_data["hash"]:
+        print(f"Hash {current_hash} already exists in summary. No update needed.")
+        return
 
     compatible = None
     if all_data["hash"]:
@@ -173,7 +172,7 @@ def update_summary_json(json_file_path, summary_json_path):
             elif isinstance(new, list) and isinstance(old, list):
                 return len(new) >= len(old) and all(is_superset(new[i], old[i]) for i in range(len(old)))
             else:
-                return True
+                return new == old
 
         if is_superset(current_content, latest_content):
             compatible = latest_hash
@@ -191,6 +190,8 @@ def update_summary_json(json_file_path, summary_json_path):
 
     with open(summary_json_path, 'w', encoding='utf-8') as f:
         json.dump(all_data, f, indent=2, ensure_ascii=False)
+
+    print(f"Updated summary with new hash {current_hash}")
 
 
 def main():

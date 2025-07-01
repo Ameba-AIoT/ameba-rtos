@@ -870,6 +870,16 @@ int whc_fullmac_host_set_p2p_remain_on_ch(unsigned char wlan_idx, u8 enable)
 }
 #endif
 
+#ifdef CONFIG_CFG80211_SME_OFFLOAD
+void whc_fullmac_host_sme_auth(dma_addr_t auth_data_phy)
+{
+	u32 param_buf[1];
+
+	param_buf[0] = auth_data_phy;
+	whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SME_AUTH, param_buf, 1);
+}
+#endif
+
 int whc_fullmac_host_set_pmf_mode(u8 pmf_mode)
 {
 	int ret = 0;

@@ -46,6 +46,10 @@
 #include "whc_ipc.h"
 #endif
 
+#if defined(CONFIG_AS_INIC_NP) && defined(CONFIG_WHC_DUAL_TCPIP)
+unsigned char ap_ip[4] = {192, 168, 43, 1}, ap_netmask[4] = {255, 255, 255, 0}, ap_gw[4] = {192, 168, 43, 1};
+#endif
+
 #if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
 
 struct netif eth_netif;
