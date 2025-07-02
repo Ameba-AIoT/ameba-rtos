@@ -9,48 +9,8 @@ Required Components: speaker
 
 connect the speaker to board.
 
-## Sw Configuration:
-* On AmebaSmart
-1. **Enable playback configurations**:
-cd `amebasmart_gcc_project`: `./menuconfig.py`
-    < MENUCONFIG FOR AP CONFIG  --->
-    [*] Enable Audio Framework
-    (Mixer) Select Audio Interfaces
-    < Audio Config  --->
-    [*] Enable Media Framework,
-    Demux  ---> Demux MP3,
-    Codec  ---> Codec MP3.
-
-2. Build and Download:
-   * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool.
-
-* On AmebaLite
-1. **Enable playback configurations**:
-    * For player running in KR4:
-        cd `amebalite_gcc_project`: `./menuconfig.py`
-        < MENUCONFIG FOR KR4 CONFIG  --->
-        [*] Enable Audio Framework
-        (Mixer) Select Audio Interfaces
-        < Audio Config  --->
-        [*] Enable Media Framework,
-        Demux  ---> Demux MP3,
-        Codec  ---> Codec MP3.
-
-    * For player running in KM4:
-       cd `amebalite_gcc_project`: `./menuconfig.py`
-        < MENUCONFIG FOR KM4 CONFIG  --->
-        [*] Enable Audio Framework
-        (Mixer) Select Audio Interfaces
-        < Audio Config  --->
-        [*] Enable Media Framework,
-        Demux  ---> Demux MP3,
-        Codec  ---> Codec MP3.
-
-
-2. Build and Download:
-   * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool.
+# BUILD COMMAND
+./build.py -a mydata_source_player -p
 
 ## Usage:
 CMD

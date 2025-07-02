@@ -13,6 +13,8 @@
 #ifndef _WPA_LITE_PSK_H_
 #define _WPA_LITE_PSK_H_
 
+#include "rom_wpa_lite_intf.h"
+
 #ifndef TRUE
 #define TRUE					1
 #endif
@@ -119,8 +121,8 @@ struct wpa_sta_info {
 	u8					UnicastCipher;
 	u8					*AnonceBuf;
 	u8					*SnonceBuf;
-	u8					PMK[PMK_LEN];
-	u8					PTK[PTK_LEN_TKIP];
+	u8					PMK[PMK_LEN_MAX];
+	u8					PTK[PTK_LEN_MAX];
 	u8					*eapSendBuf;
 	u8					mac_addr[6];
 	u8					port;
@@ -135,6 +137,7 @@ struct wpa_sta_info {
 	u8					b_clientHndshkProcessing : 1;
 	u8					b_clientHndshkDone : 1;
 	u8 					b_clientGkeyUpdate : 1;
+	u8					b_4way_triggered_by_join : 1;
 
 };
 
