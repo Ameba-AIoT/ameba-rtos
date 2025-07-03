@@ -990,7 +990,7 @@ rtk_bt_audio_record_t *rtk_bt_audio_record_add(uint32_t type, uint32_t channels,
 	}
 	rtk_bt_audio_record_set_parameters(precord->audio_record_hdl, "ch0_sel_amic=1");
 	rtk_bt_audio_record_set_capture_volume(channels, volume);
-	rtk_bt_audio_record_set_mic_bst_gain(RTK_BT_AUDIO_AMIC1, RTK_BT_AUDIO_MICBST_GAIN_40DB);
+	rtk_bt_audio_record_set_mic_bst_gain(RTK_BT_AUDIO_DMIC1, RTK_BT_AUDIO_MICBST_GAIN_40DB);
 
 	return precord;
 }

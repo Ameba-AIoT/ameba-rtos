@@ -25,9 +25,7 @@ extern u16 scanned_ap_cnt;
 extern u8 rtw_scan_api_inprocess;
 extern struct internal_block_param *scan_block_param;
 extern struct internal_block_param *scan_abort_block_param;
-#ifdef CONFIG_ENABLE_EAP
 extern void eap_autoreconnect_hdl(u8 method_id);
-#endif
 extern s32(*scan_user_callback_ptr)(u32, void *);
 extern s32(*scan_each_report_user_callback_ptr)(struct rtw_scan_result *, void *);
 extern void (*p_ap_channel_switch_callback)(unsigned char channel, s8 ret);
