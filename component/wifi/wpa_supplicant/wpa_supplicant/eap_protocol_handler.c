@@ -40,7 +40,7 @@ int get_eap_ctx_method(void)
 
 int set_eap_peap_method(void)
 {
-#if CONFIG_PEAP
+#if CONFIG_ENABLE_PEAP
 	int ret = eap_peer_peap_register();
 	if (ret != -1) {
 		ret = eap_peer_mschapv2_register();
@@ -61,7 +61,7 @@ int set_eap_peap_method(void)
 
 int set_eap_tls_method(void)
 {
-#if CONFIG_TLS
+#if CONFIG_ENABLE_TLS
 	int ret = eap_peer_tls_register();
 	if (ret != -1) {
 		eap = eap_peer_get_eap_method(EAP_VENDOR_IETF, EAP_TYPE_TLS);
@@ -79,7 +79,7 @@ int set_eap_tls_method(void)
 
 int set_eap_ttls_method(void)
 {
-#if CONFIG_TTLS
+#if CONFIG_ENABLE_TTLS
 	int ret = eap_peer_ttls_register();
 	if (ret != -1) {
 		eap = eap_peer_get_eap_method(EAP_VENDOR_IETF, EAP_TYPE_TTLS);
@@ -455,6 +455,7 @@ void eap_eapol_recvd(void *buf)
 			if (key_len < 1 || key == NULL) {
 				wpa_printf(MSG_INFO, "[EAP]4-way handshake key setting failed");
 			} else {
+				wpa_printf(MSG_INFO, "[EAP] key deriver done, key_len = %d\n", key_len);
 				rtw_psk_set_pmk_from_eap(key, (u8 *)buf + 6);
 				os_free(key, 0);
 			}
