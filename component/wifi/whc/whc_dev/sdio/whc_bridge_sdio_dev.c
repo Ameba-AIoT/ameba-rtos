@@ -40,6 +40,9 @@ void whc_bridge_sdio_dev_init(void)
 {
 	rtk_log_level_set("SPDIO", RTK_LOG_ERROR);
 
+	wifi_set_user_config();
+	init_skb_pool(wifi_user_config.skb_num_np, wifi_user_config.skb_buf_size ? wifi_user_config.skb_buf_size : MAX_SKB_BUF_SIZE, SKB_CACHE_SZ);
+
 	whc_sdio_dev_init();
 
 	whc_bridge_dev_pktfilter_init();

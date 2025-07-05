@@ -28,7 +28,7 @@ static void tx_thread(void *param)
 			goto exit;
 		}
 
-		rtos_time_delay_ms(100);
+		rtos_time_delay_ms(1000);
 	}
 
 exit:

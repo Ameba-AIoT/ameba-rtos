@@ -2,6 +2,8 @@
 #define _ROM_WPA_LITE_INTF_H_
 
 #define PMK_LEN					32
+#define PMK_LEN_SUITE_B_192		48
+#define PMK_LEN_MAX				64
 #define PMKID_LEN				16
 
 #define LIB1X_ETHER_EAPOL_TYPE	0x888E

@@ -10,6 +10,6 @@ from enum import Enum
 class NextOpType(Enum):
     NONE = 0  # Do nothing, hold on in download mode
     INDICATION = 1  # Indicate download result via PWM/GPIO
-    EXIT = 2  # Exit download mode
-    REBURN = 3  # Reset into download mode again
-    BOOT_RAM = 4  # Jump to Ram
+    RESET = 2  # Exit download mode
+    BOOT = 3  # Jump to Ram
+    REBURN = 4  # Reset into download mode again

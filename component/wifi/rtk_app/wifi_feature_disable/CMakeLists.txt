@@ -57,6 +57,9 @@ if(NOT CONFIG_AS_INIC_AP)
 
 endif()
 
+ameba_list_append_ifnot(CONFIG_WIFI_EAP_ENABLE private_sources
+    wifi_feature_dis_eap.c)
+
 if(NOT (CONFIG_WIFI_11K_ENABLE AND CONFIG_WIFI_11V_ENABLE AND CONFIG_WIFI_11R_ENABLE))
     ameba_list_append(private_sources
         wifi_feature_dis_kvr.c

@@ -51,8 +51,6 @@
 
 //#define SW_WEP_TKIP
 
-/* enable 1X code in lib_wlan as default (increase 380 bytes) */
-#define CONFIG_EAP
 
 //#define CONFIG_BT_COEXIST
 

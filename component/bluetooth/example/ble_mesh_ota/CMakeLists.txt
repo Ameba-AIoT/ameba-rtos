@@ -40,7 +40,7 @@ ameba_list_append(private_sources
 )
 
 ameba_list_append_if(CONFIG_AMEBALITE private_sources
-    rtk_bt_device_firmware_update_amebalite.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/platform/amebalite/rtk_bt_device_firmware_update_platform.c
 )
 
 ameba_list_append(private_includes
@@ -53,7 +53,7 @@ ameba_list_append(private_includes
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For open-source component, always build from source
-ameba_add_internal_library(ble_mesh_ota_common
+ameba_add_internal_library(ble_mesh_ota
     p_SOURCES
         ${private_sources}
     p_INCLUDES

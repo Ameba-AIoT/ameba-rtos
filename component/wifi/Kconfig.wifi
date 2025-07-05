@@ -15,6 +15,10 @@ if WHC_INTF_IPC_MENU || WIFI_SINGLE_CORE_MENU
         default n
 endif
 
+config WIFI_EAP_ENABLE
+    bool "Enable EAP"
+    default n
+
 config WIFI_CSI_ENABLE
     bool "Enable CSI"
     default n

@@ -1867,12 +1867,34 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 					(unsigned int)p_bt_direct_iso->time_stamp, p_bt_direct_iso->iso_sdu_len, p_bt_direct_iso->p_buf, p_bt_direct_iso->buf_len, p_bt_direct_iso->offset);
 #if 0
 			{
-				static uint32_t last_pkt_num = 0;
-
-				if (p_bt_direct_iso->pkt_seq_num != (last_pkt_num + 1)) {
-					BT_LOGE("[APP] data loss: pkt_seq_num: %d, last_pkt_num: %d \r\n", p_bt_direct_iso->pkt_seq_num, last_pkt_num);
+				uint16_t cur_idx = UINT16_MAX;
+				static uint16_t last_pkt_num[APP_LE_AUDIO_DEMO_DATA_PATH_NUM] = {0};
+				static uint16_t conn_hdl[APP_LE_AUDIO_DEMO_DATA_PATH_NUM] = {0};
+				for (uint16_t i = 0; i < APP_LE_AUDIO_DEMO_DATA_PATH_NUM; i++) {
+					if (conn_hdl[i] == 0) {
+						conn_hdl[i] = p_bt_direct_iso->iso_conn_handle;
+						cur_idx = i;
+						break;
+					} else if (conn_hdl[i] == p_bt_direct_iso->iso_conn_handle) {
+						cur_idx = i;
+						break;
+					}
 				}
-				last_pkt_num = p_bt_direct_iso->pkt_seq_num;
+				if (cur_idx >= APP_LE_AUDIO_DEMO_DATA_PATH_NUM) {
+					BT_LOGE("[APP] Error: No available space for conn_hdl: 0x%x\r\n",
+							p_bt_direct_iso->iso_conn_handle);
+					break;
+				}
+				uint16_t expected_seq = (last_pkt_num[cur_idx] == UINT16_MAX)
+										? 0
+										: last_pkt_num[cur_idx] + 1;
+				if (p_bt_direct_iso->pkt_seq_num != expected_seq) {
+					BT_LOGE("[APP] Data loss: conn_handle: 0x%x, cur_seq_num: %u, last_seq_num: %u\r\n",
+							p_bt_direct_iso->iso_conn_handle,
+							p_bt_direct_iso->pkt_seq_num,
+							last_pkt_num[cur_idx]);
+				}
+				last_pkt_num[cur_idx] = p_bt_direct_iso->pkt_seq_num;
 			}
 #endif
 			if (app_bt_le_audio_data_received(p_bt_direct_iso->iso_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_RX,

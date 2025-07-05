@@ -579,7 +579,7 @@ int whc_fullmac_host_get_traffic_stats(u8 wlan_idx, dma_addr_t traffic_stats_add
 	return ret;
 }
 
-int whc_fullmac_host_get_phy_stats(u8 wlan_idx, u8 *mac_addr, dma_addr_t phy_stats_addr)
+int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, dma_addr_t phy_stats_addr)
 {
 	int ret = 0;
 	u32 size, mac_len = 0;

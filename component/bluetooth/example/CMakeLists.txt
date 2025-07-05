@@ -45,7 +45,7 @@ ameba_add_subdirectory_if(CONFIG_BT_MESH_DEVICE_TEST
 
 if(CONFIG_BT_MESH_PROVISIONER_SUPPORT OR CONFIG_BT_MESH_DEVICE_SUPPORT)
     ameba_add_subdirectory(
-        ble_mesh_ota_common
+        ble_mesh_ota
     )
 endif()
 

@@ -34,17 +34,37 @@ Test ATCMD
 ~~~~~~~~~~~
 If user want to open audio local play fuction, must change the Maros in rtk_bt_le_audio_def.h before test:
     change the RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT   to  1
+
 1. A2DP sink + AVRCP + HFP handfree + PBAP + Auracast demo 
     1.1 enable: AT+BTDEMO=a2dp_hfp_pbp,1
     1.2 disable: AT+BTDEMO=a2dp_hfp_pbp,0
     1.3 use Phone to connect to the device named "A2DP HFP Auracast"
     1.4 start LE Audio PBP broadcast: AT+BLEBAP=broadcast_start
     1.5 stop LE Audio PBP broadcast: AT+BLEBAP=broadcast_stop
+
+Role switch test, idle state-->broadcast source(BMS)-->broadcast sink(BMR):
+    1.6 start LE Audio PBP broadcast: AT+BLEBAP=broadcast_start
+    1.7 stop LE Audio PBP broadcast: AT+BLEBAP=broadcast_stop  (must stop broadcast ! otherwise will caused insufficient bandwidth ! )
+    1.8 start scan: AT+BLEBAP=escan,1
+    1.9 stop scan: AT+BLEBAP=escan,0
+    1.10 create PA sync to the PBP broadcast: AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id>
+                                             e.g. AT+BLEBAP=pa_sync_create,0,00e04c8002eb,0,123abc
+    1.11 create BIG sync to the PBP broadcast: AT+BLEBAP=big_sync_create,<bd_addr type>,<bd_addr>
+
+Role switch test, idle state-->broadcast sink(BMR)-->broadcast source(BMS):
+    1.12 start scan for the PBP broadcast: AT+BLEBAP=escan,1
+    1.13 stop scan: AT+BLEBAP=escan,0
+    1.14 create PA sync to the PBP broadcast: AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id> 
+                                             e.g. AT+BLEBAP=pa_sync_create,0,00e04c8002eb,0,123abc
+    1.15 create BIG sync to the PBP broadcast: AT+BLEBAP=big_sync_create,<bd_addr type>,<bd_addr>
+    1.16 terminate BIG sync to the PBP broadcast: AT+BLEBAP=big_sync_remove,<bd_addr type>,<bd_addr>  (This step can be ignored)
+    1.17 start LE Audio PBP broadcast: AT+BLEBAP=broadcast_start
+
 For HFP HF part:
-    1.6 HFP HF call answer: AT+BTHFP=call_answer,<peer_phone_bd_addr>
-    1.7 HFP HF call terminate: AT+BTHFP=call_terminate,<peer_phone_bd_addr>
+    1.18 HFP HF call answer: AT+BTHFP=call_answer,<peer_phone_bd_addr>
+    1.19 HFP HF call terminate: AT+BTHFP=call_terminate,<peer_phone_bd_addr>
 For AVRCP part:
-    1.8 get album information, aritist name.etc: 
+    1.20 get album information, aritist name.etc: 
                 AT+BTAVRCP=element_attr,<bd_addr>,1
                 AT+BTAVRCP=element_attr,<bd_addr>,2
                 AT+BTAVRCP=element_attr,<bd_addr>,3
@@ -56,13 +76,13 @@ For AVRCP part:
                 AT+BTAVRCP=cover_art_conn,<bd_addr>
                 AT+BTAVRCP=element_attr,<bd_addr>,8
 For PBAP part:
-    1.9 connect: AT+BTPBAP=conn,<bd_addr>
-    1.10 disconnect: AT+BTPBAP=disconn,<bd_addr>
-    1.11 get phone book object: AT+BTPBAP=get_pb_size,<bd_addr>,<repository>,<phone_book_object> 
+    1.21 connect: AT+BTPBAP=conn,<bd_addr>
+    1.22 disconnect: AT+BTPBAP=disconn,<bd_addr>
+    1.23 get phone book object: AT+BTPBAP=get_pb_size,<bd_addr>,<repository>,<phone_book_object> 
                         // <repository> refer to rtk_bt_pbap_repository
                         // <phone_book_object> refer to RTK_BT_PBAP_PROPERTY_MASK
                         // For example, get local repository Main book object:  AT+BTPBAP=get_pb_size,fc5b8c1aedd8,1,0
-    1.12 get phone book detailed information: AT+BTPBAP=pull_pb,<bt_mac>,<repository>,<phone_book_object>,<offset>,<size>,<mask> 
+    1.24 get phone book detailed information: AT+BTPBAP=pull_pb,<bt_mac>,<repository>,<phone_book_object>,<offset>,<size>,<mask> 
                         // For example AT+BTPBAP=pull_pb,fc5b8c1aedd8,1,0,0,128,0x82
 
 2.PBP sink demo (peer device)

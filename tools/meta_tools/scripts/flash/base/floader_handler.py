@@ -345,7 +345,9 @@ class FloaderHandler(object):
 
         request_bytes = bytearray(request_data)
 
-        return self.send_request(request_bytes, len(request_bytes), self.setting.sync_response_timeout_in_second)
+        ret, _ = self.send_request(request_bytes, len(request_bytes), self.setting.sync_response_timeout_in_second, is_sync=False)
+
+        return ret
 
     def reset_in_download_mode(self):
         self.logger.debug(f"Reset in download mode")

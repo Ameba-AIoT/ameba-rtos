@@ -14,6 +14,7 @@
 #include "ameba_fault_handle.h"
 
 static const char *const TAG = "BOOT";
+extern SDIOCFG_TypeDef sdio_config;
 
 #define CHECK_AND_PRINT_FLAG(flagValue, bit, name) \
     do { \
@@ -435,9 +436,42 @@ void Peripheral_Reset(void)
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_FEN_GRP1, APBPeriph_DTIM | APBPeriph_LOGUART);
 }
 
+void SDIO_Pinmux_pre_init(void)
+{
+	Pinmux_Config(sdio_config.sdio_clk_pin, PINMUX_FUNCTION_SDIO);	/* CLK */
+	Pinmux_Config(sdio_config.sdio_cmd_pin, PINMUX_FUNCTION_SDIO);	/* CMD */
+	Pinmux_Config(sdio_config.sdio_d0_pin, PINMUX_FUNCTION_SDIO); 	/* D0 */
+	Pinmux_Config(sdio_config.sdio_d1_pin, PINMUX_FUNCTION_SDIO);	/* D1 */
+	Pinmux_Config(sdio_config.sdio_d2_pin, PINMUX_FUNCTION_SDIO);	/* D2 */
+	Pinmux_Config(sdio_config.sdio_d3_pin, PINMUX_FUNCTION_SDIO);	/* D3 */
+
+	PAD_PullCtrl(sdio_config.sdio_clk_pin, GPIO_PuPd_UP);	/* CLK */
+	PAD_PullCtrl(sdio_config.sdio_cmd_pin, GPIO_PuPd_UP);	/* CMD */
+	PAD_PullCtrl(sdio_config.sdio_d0_pin, GPIO_PuPd_UP); 	/* D0 */
+	PAD_PullCtrl(sdio_config.sdio_d1_pin, GPIO_PuPd_UP);	/* D1 */
+	PAD_PullCtrl(sdio_config.sdio_d2_pin, GPIO_PuPd_UP);	/* D2 */
+	PAD_PullCtrl(sdio_config.sdio_d3_pin, GPIO_PuPd_UP);	/* D3 */
+
+	/* SDIO function enable and clock enable*/
+	RCC_PeriphClockCmd(APBPeriph_SDIO, APBPeriph_SDIO_CLOCK, ENABLE);
+
+	/* CCCR Autoload done */
+	HAL_WRITE8(SDIO_REG_BASE, REG_SPDIO_CPU_IND,
+			   HAL_READ8(SDIO_REG_BASE, REG_SPDIO_CPU_IND) | BIT_SYSTEM_READEE_DONE);
+
+	/* SDIO pinmux funtion enable */
+	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_USB_SDIO_CTRL,
+				HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_USB_SDIO_CTRL) | LSYS_BIT_SDD_PMUX_FEN);
+}
+
 //3 Image 1
 void BOOT_Image1(void)
 {
+#if defined(CONFIG_WHC_INTF_SDIO)
+	/*Sdio pinmux pre init advanced to bootloader. If done too late, it may cause host side SDIO card recognition timeout, resulting in sdio power supply failure. */
+	SDIO_Pinmux_pre_init();
+#endif
+
 	PRAM_START_FUNCTION Image2EntryFun = BOOT_SectionInit();
 	//STDLIB_ENTRY_TABLE *prom_stdlib_export_func = (STDLIB_ENTRY_TABLE *)__rom_stdlib_text_start__;
 	u32 *vector_table = NULL;

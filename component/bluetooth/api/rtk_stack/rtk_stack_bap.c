@@ -1415,8 +1415,8 @@ static void bt_stack_le_audio_sync_cb(T_BLE_AUDIO_SYNC_HANDLE sync_handle, uint8
 					break;
 				}
 				for (uint8_t i = 0; i < bis_sync_info.bis_num; i++) {
-					if (false == ble_audio_bis_setup_data_path(sync_handle, i + 1, codec_id, controller_delay, 0, NULL)) {
-						BT_LOGE("[BAP] %s ble_audio_bis_setup_data_path fail, bis_idx: 0x%x\r\n", __func__, i + 1);
+					if (false == ble_audio_bis_setup_data_path(sync_handle, bis_sync_info.bis_info[i].bis_idx, codec_id, controller_delay, 0, NULL)) {
+						BT_LOGE("[BAP] %s ble_audio_bis_setup_data_path fail, bis_idx: 0x%x\r\n", __func__, bis_sync_info.bis_info[i].bis_idx);
 					}
 				}
 				//stop ext scan to save power when BIG sync
@@ -1467,6 +1467,7 @@ static void bt_stack_le_audio_sync_cb(T_BLE_AUDIO_SYNC_HANDLE sync_handle, uint8
 			p_ind->iso_chann_t.p_iso_chann = (void *)p_iso_chann;
 			p_ind->iso_chann_t.iso_conn_handle = p_iso_chann->iso_conn_handle;
 			p_ind->iso_chann_t.path_direction = RTK_BLE_AUDIO_ISO_DATA_PATH_RX;
+			p_ind->sync_handle = sync_handle;
 			if (ble_audio_sync_get_info(sync_handle, &sync_info)) {
 				base_data_get_bis_codec_cfg(sync_info.p_base_mapping, p_sync_cb->p_setup_data_path->bis_idx, (T_CODEC_CFG *)&p_ind->codec_t);
 			}
@@ -1498,6 +1499,7 @@ static void bt_stack_le_audio_sync_cb(T_BLE_AUDIO_SYNC_HANDLE sync_handle, uint8
 			p_ind->bis_conn_handle = p_sync_cb->p_remove_data_path->bis_conn_handle;
 			p_ind->cause = p_sync_cb->p_remove_data_path->cause;
 			p_ind->path_direction = RTK_BLE_AUDIO_ISO_DATA_PATH_RX;
+			p_ind->sync_handle = sync_handle;
 			/* Send event */
 			rtk_bt_evt_indicate(p_evt, NULL);
 		}
@@ -2481,6 +2483,34 @@ static uint16_t bt_stack_le_audio_broadcast_big_sync_terminate(void *param)
 	rtk_bt_le_audio_sync_dev_info_t *p_sync_dev_info = NULL;
 
 	p_sync_dev_info = bt_stack_le_audio_sync_dev_find_by_addr(paddr->addr_val, paddr->type);
+	if (!p_sync_dev_info) {
+		BT_LOGE("%s: not find device in sync list\r\n", __func__);
+		return RTK_BT_FAIL;
+	}
+
+	if (!p_sync_dev_info->sync_handle) {
+		BT_LOGE("%s: sync_handle is NULL\r\n",  __func__);
+		return RTK_BT_FAIL;
+	}
+
+	if (p_sync_dev_info->big_sync_state != BIG_SYNC_RECEIVER_SYNC_STATE_TERMINATED) {
+		if (false == ble_audio_big_terminate(p_sync_dev_info->sync_handle)) {
+			BT_LOGE("%s: ble_audio_big_terminate fail\r\n", __func__);
+			return RTK_BT_ERR_LOWER_STACK_API;
+		}
+	} else {
+		BT_LOGE("%s: big_sync_state:0x%x, has already terminated \r\n", __func__, p_sync_dev_info->big_sync_state);
+	}
+
+	return RTK_BT_OK;
+}
+
+static uint16_t bt_stack_le_audio_broadcast_big_sync_terminate_by_handle(void *param)
+{
+	rtk_bt_le_audio_sync_handle_t *sync_handle = (rtk_bt_le_audio_sync_handle_t *)param;
+	rtk_bt_le_audio_sync_dev_info_t *p_sync_dev_info = NULL;
+
+	p_sync_dev_info = bt_stack_le_audio_sync_dev_find(*sync_handle);
 	if (!p_sync_dev_info) {
 		BT_LOGE("%s: not find device in sync list\r\n", __func__);
 		return RTK_BT_FAIL;
@@ -3784,6 +3814,12 @@ uint16_t bt_stack_bap_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_LE_AUDIO_ACT_BROADCAST_BIG_SYNC_TERMINATE: {
 		BT_LOGD("RTK_BT_LE_AUDIO_ACT_BROADCAST_BIG_SYNC_TERMINATE \r\n");
 		ret = bt_stack_le_audio_broadcast_big_sync_terminate(p_cmd->param);
+		break;
+	}
+
+	case RTK_BT_LE_AUDIO_ACT_BROADCAST_BIG_SYNC_TERMINATE_BY_HANDLE: {
+		BT_LOGD("RTK_BT_LE_AUDIO_ACT_BROADCAST_BIG_SYNC_TERMINATE_BY_HANDLE \r\n");
+		ret = bt_stack_le_audio_broadcast_big_sync_terminate_by_handle(p_cmd->param);
 		break;
 	}
 

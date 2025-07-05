@@ -25,7 +25,7 @@ static int whc_host_recv_thread(void *data)
 	while (!kthread_should_stop()) {
 
 		/* wait for sema*/
-		down_interruptible(&recv_priv->rx_sema);
+		ret = down_interruptible(&recv_priv->rx_sema);
 
 		whc_host_recv_data_process(global_idev.intf_priv);
 	}

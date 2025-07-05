@@ -233,3 +233,70 @@ uint16_t rtk_bt_avrcp_cover_art_connect(uint8_t *bd_addr)
 
 	return ret;
 }
+
+uint16_t rtk_bt_avrcp_app_setting_attrs_list(uint8_t *bd_addr)
+{
+	uint16_t ret = 0;
+
+	if (!bd_addr) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	ret = rtk_bt_send_cmd(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_ACT_APP_SETTING_ATTRS_LIST,
+						  bd_addr, 6);
+
+	return ret;
+}
+
+uint16_t rtk_bt_avrcp_app_setting_values_list(uint8_t *bd_addr, uint8_t attr_id)
+{
+	uint16_t ret = 0;
+	rtk_bt_avrcp_app_setting_values_t values = {0};
+
+	if (!bd_addr) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+	memcpy((void *)&values.bd_addr, (void *)bd_addr, 6);
+	values.attr_id = attr_id;
+
+	ret = rtk_bt_send_cmd(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_ACT_APP_SETTING_VALUES_LIST,
+						  (void *)&values, sizeof(rtk_bt_avrcp_app_setting_values_t));
+
+	return ret;
+}
+
+uint16_t rtk_bt_avrcp_app_setting_value_get(uint8_t *bd_addr, uint8_t attr_num, uint8_t *attr_list)
+{
+	uint16_t ret = 0;
+	rtk_bt_avrcp_app_setting_value_get_t get = {0};
+
+	if (!bd_addr || !attr_list) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+	memcpy((void *)&get.bd_addr, (void *)bd_addr, 6);
+	get.attr_num = attr_num;
+	get.attr_list = attr_list;
+
+	ret = rtk_bt_send_cmd(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_ACT_APP_SETTING_VALUE_GET,
+						  (void *)&get, sizeof(rtk_bt_avrcp_app_setting_value_get_t));
+
+	return ret;
+}
+
+uint16_t rtk_bt_avrcp_app_setting_value_set(uint8_t *bd_addr, uint8_t attr_id, uint8_t setting)
+{
+	uint16_t ret = 0;
+	rtk_bt_avrcp_app_setting_value_set_t set = {0};
+
+	if (!bd_addr) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+	memcpy((void *)&set.bd_addr, (void *)bd_addr, 6);
+	set.attr_id = attr_id;
+	set.setting = setting;
+
+	ret = rtk_bt_send_cmd(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_ACT_APP_SETTING_VALUE_SET,
+						  (void *)&set, sizeof(rtk_bt_avrcp_app_setting_value_set_t));
+
+	return ret;
+}

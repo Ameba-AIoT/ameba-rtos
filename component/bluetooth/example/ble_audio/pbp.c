@@ -100,6 +100,7 @@ static uint8_t bap_role = RTK_BT_LE_AUDIO_BAP_ROLE_UNKNOWN;
 static uint8_t cap_role = RTK_BT_LE_AUDIO_CAP_ROLE_UNKNOWN;
 static bool demo_init_flag = false;
 static app_le_audio_list_t scan_dev_queue;
+static rtk_bt_le_audio_sync_handle_t big_sync_handle = NULL;
 static app_bt_le_audio_data_path_t app_le_audio_data_path[APP_LE_AUDIO_DEMO_DATA_PATH_NUM] = {0};
 static uint8_t bt_le_audio_demo_sink_pac_id = 0xFF;
 static uint8_t bt_le_audio_demo_source_pac_id = 0xFF;
@@ -2174,12 +2175,34 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 					(unsigned int)p_bt_direct_iso->time_stamp, p_bt_direct_iso->iso_sdu_len, p_bt_direct_iso->p_buf, p_bt_direct_iso->buf_len, p_bt_direct_iso->offset);
 #if 0
 			{
-				static uint32_t last_pkt_num = 0;
-
-				if (p_bt_direct_iso->pkt_seq_num != (last_pkt_num + 1)) {
-					BT_LOGE("[APP] data loss: pkt_seq_num: %d, last_pkt_num: %d \r\n", p_bt_direct_iso->pkt_seq_num, last_pkt_num);
+				uint16_t cur_idx = UINT16_MAX;
+				static uint16_t last_pkt_num[APP_LE_AUDIO_DEMO_DATA_PATH_NUM] = {0};
+				static uint16_t conn_hdl[APP_LE_AUDIO_DEMO_DATA_PATH_NUM] = {0};
+				for (uint16_t i = 0; i < APP_LE_AUDIO_DEMO_DATA_PATH_NUM; i++) {
+					if (conn_hdl[i] == 0) {
+						conn_hdl[i] = p_bt_direct_iso->iso_conn_handle;
+						cur_idx = i;
+						break;
+					} else if (conn_hdl[i] == p_bt_direct_iso->iso_conn_handle) {
+						cur_idx = i;
+						break;
+					}
 				}
-				last_pkt_num = p_bt_direct_iso->pkt_seq_num;
+				if (cur_idx >= APP_LE_AUDIO_DEMO_DATA_PATH_NUM) {
+					BT_LOGE("[APP] Error: No available space for conn_hdl: 0x%x\r\n",
+							p_bt_direct_iso->iso_conn_handle);
+					break;
+				}
+				uint16_t expected_seq = (last_pkt_num[cur_idx] == UINT16_MAX)
+										? 0
+										: last_pkt_num[cur_idx] + 1;
+				if (p_bt_direct_iso->pkt_seq_num != expected_seq) {
+					BT_LOGE("[APP] Data loss: conn_handle: 0x%x, cur_seq_num: %u, last_seq_num: %u\r\n",
+							p_bt_direct_iso->iso_conn_handle,
+							p_bt_direct_iso->pkt_seq_num,
+							last_pkt_num[cur_idx]);
+				}
+				last_pkt_num[cur_idx] = p_bt_direct_iso->pkt_seq_num;
 			}
 #endif
 			if (app_bt_le_audio_data_received(p_bt_direct_iso->iso_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_RX,
@@ -2233,6 +2256,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 		rtk_bt_le_audio_big_setup_data_path_ind_t *param = (rtk_bt_le_audio_big_setup_data_path_ind_t *)data;
 		BT_LOGD("[APP] broadcast sink big setup data path ind: bis_conn_handle: %08x, idx 0x%x, cause: 0x%x\r\n",
 				param->bis_conn_handle, param->bis_idx, param->cause);
+		big_sync_handle = param->sync_handle;
 		app_bt_le_audio_add_data_path(param->iso_chann_t.iso_conn_handle,
 									  param->iso_chann_t.p_iso_chann,
 									  param->iso_chann_t.path_direction,
@@ -2244,6 +2268,9 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 		rtk_bt_le_audio_big_remove_data_path_ind_t *param = (rtk_bt_le_audio_big_remove_data_path_ind_t *)data;
 		BT_LOGD("[APP] broadcast sink big setup data path ind: bis_conn_handle: %08x, idx 0x%x, cause: 0x%x\r\n",
 				param->bis_conn_handle, param->bis_idx, param->cause);
+		if (big_sync_handle && (big_sync_handle == param->sync_handle)) {
+			big_sync_handle = NULL;
+		}
 		app_bt_le_audio_remove_data_path(param->bis_conn_handle, param->path_direction);
 		break;
 	}
@@ -2312,6 +2339,10 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 
 		BT_AT_PRINT("+BLEBAP:setup path bis_idx,bis_conn_handle,cause,0x%x,0x%x,0x%x\r\n",
 					param->bis_idx, param->bis_conn_handle, param->cause);
+		/* stop BIG sync if exsit*/
+		if (big_sync_handle) {
+			rtk_bt_le_audio_broadcast_big_sync_terminate_by_handle(big_sync_handle);
+		}
 		app_bt_le_audio_add_data_path(param->iso_chann_t.iso_conn_handle,
 									  param->iso_chann_t.p_iso_chann,
 									  param->iso_chann_t.path_direction,
@@ -2663,8 +2694,14 @@ int bt_pbp_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 			char addr_str[30] = {0};
 			/* config le audio app configuration */
 			{
-				p_lea_app_conf->bap_role = RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SOUR;
-				p_lea_app_conf->cap_role = RTK_BT_LE_AUDIO_CAP_ROLE_INITIATOR;
+				p_lea_app_conf->bap_role = RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SOUR | RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK | RTK_BT_LE_AUDIO_BAP_ROLE_SCAN_DELE;
+				p_lea_app_conf->cap_role = RTK_BT_LE_AUDIO_CAP_ROLE_INITIATOR | RTK_BT_LE_AUDIO_CAP_ROLE_ACCEPTOR;
+				p_lea_app_conf->pacs_param.sink_audio_location = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
+				p_lea_app_conf->pacs_param.source_audio_location = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
+				p_lea_app_conf->pacs_param.sink_available_contexts = RTK_BT_LE_AUDIO_CONTEXT_UNSPECIFIED | RTK_BT_LE_AUDIO_CONTEXT_MEDIA;
+				p_lea_app_conf->pacs_param.sink_supported_contexts = RTK_BT_LE_AUDIO_CONTEXT_UNSPECIFIED | RTK_BT_LE_AUDIO_CONTEXT_MEDIA;
+				p_lea_app_conf->pacs_param.source_available_contexts = RTK_BT_LE_AUDIO_CONTEXT_MEDIA;
+				p_lea_app_conf->pacs_param.source_supported_contexts = RTK_BT_LE_AUDIO_CONTEXT_MEDIA;
 				memset((void *)p_lea_app_conf->device_name, 0, RTK_BT_GAP_DEVICE_NAME_LEN);
 				memcpy((void *)p_lea_app_conf->device_name, (uint8_t *)APP_LE_AUDIO_PBP_BROADCAST_SOURCE_DEVICE_NAME,
 					   strlen((const char *)APP_LE_AUDIO_PBP_BROADCAST_SOURCE_DEVICE_NAME));
@@ -2672,7 +2709,7 @@ int bt_pbp_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 			}
 			/* set GAP config */
 			{
-				bt_app_conf.app_profile_support = RTK_BT_PROFILE_LEAUDIO | RTK_BT_PROFILE_BAP | RTK_BT_PROFILE_CAP;
+				bt_app_conf.app_profile_support = RTK_BT_PROFILE_GATTS | RTK_BT_PROFILE_LEAUDIO | RTK_BT_PROFILE_BAP | RTK_BT_PROFILE_CAP;
 				bt_app_conf.mtu_size = 180;
 				bt_app_conf.master_init_mtu_req = true;
 				bt_app_conf.prefer_all_phy = 0;
@@ -2917,6 +2954,7 @@ int bt_pbp_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 			}
 			app_bt_le_audio_remove_data_path_all();
 			rtk_bt_audio_deinit();
+			big_sync_handle = NULL;
 			bap_role = RTK_BT_LE_AUDIO_BAP_ROLE_UNKNOWN;
 			cap_role = RTK_BT_LE_AUDIO_CAP_ROLE_UNKNOWN;
 			demo_init_flag = false;

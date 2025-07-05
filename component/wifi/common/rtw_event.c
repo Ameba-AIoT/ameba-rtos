@@ -44,9 +44,7 @@ extern u8 rtw_join_status;
 extern int join_fail_reason;
 extern struct internal_block_param *join_block_param;
 extern void (*p_wifi_join_info_free)(u8 iface_type);
-#ifdef CONFIG_ENABLE_EAP
 extern void eap_disconnected_hdl(void);
-#endif
 
 /**********************************************************************************************
  *                                          Internal events
@@ -115,9 +113,7 @@ void wifi_event_join_status_internal_hdl(u8 *buf, s32 flags)
 		rtos_mem_free((u8 *)deauth_data_pre);
 #endif
 
-#ifdef CONFIG_ENABLE_EAP
 		eap_disconnected_hdl();
-#endif
 	}
 
 	if ((join_status == RTW_JOINSTATUS_DISCONNECT) || (join_status == RTW_JOINSTATUS_FAIL)) {

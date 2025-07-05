@@ -10,7 +10,7 @@ None
 
 # SW configuration
 
-1. In `component/soc/amebaxxx/usrcfg/ameba_wificfg.c`.
+1. In `component/soc/usrcfg/amebaxxx/ameba_wificfg.c`.
 	```C
 	wifi_user_config.fast_reconnect_en = 0;
 	```
@@ -32,13 +32,9 @@ None
 	4. `eap_client_cert`/`eap_client_key` needed only for EAP-TLS method and that can be found from server certs.
 	5. eap_ca_cert needed to be provided from server certs if `ENABLE_EAP_SSL_VERIFY_SERVER` macro is assigned to 1 in `autoconf_eap.h`.
 
-4. Add `#define PRE_CONFIG_EAP` before using it in `component/wifi/driver/include/autoconf_eap.h`
+4. Use cmd `./menuconfig.py` and select `CONFIG WIFI`->`Enable EAP`.
 
-5. Enable specified eap method.
-(for example: `component/wifi/driver/include/autoconf_eap.h`)
-   - modify the value of `CONFIG_ENABLE_PEAP` to 1 when use PEAP
-
-6. Build and Download:
+5. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
@@ -48,15 +44,12 @@ An EAP connection thread will be started automatically when booting.
 
 # Note
 
-Please make sure the lib_wps, mbedtls, ssl_ram_map are also builded.
+Please make sure the lib_wps, lib_mbedtls are also builded.
 
 If the connection failed, you can try the following directions to make it work:
-1. If it is a release SDK, it is necessary to update related lib(eg. lib_eap.a) to enable EAP.
-2. Make sure the `mbedtls_config.h` of mbedtls include the SSL/TLS cipher suite supported by radius server.
-3. Set a larger value to `MBEDTLS_SSL_MAX_CONTENT_LEN` in `mbedtls_config.h`
-4. Try to change using SW crypto instead of HW crypto.
-
-WPA3 Enterprise is not supported.
+1. Make sure the `mbedtls_config.h` of mbedtls include the SSL/TLS cipher suite supported by radius server.
+2. Set a larger value to `MBEDTLS_SSL_MAX_CONTENT_LEN` in `mbedtls_config.h`
+3. Try to change using SW crypto instead of HW crypto.
 
 # Supported IC
 

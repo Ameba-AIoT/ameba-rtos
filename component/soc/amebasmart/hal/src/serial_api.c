@@ -478,8 +478,8 @@ void serial_init(serial_t *obj, PinName tx, PinName rx)
 	puart_adapter->UARTx = UART_DEV_TABLE[uart_idx].UARTx;
 	puart_adapter->IrqNum = UART_DEV_TABLE[uart_idx].IrqNum;
 
-	pin_function(tx, PINMUX_FUNCTION_UART);
-	pin_function(rx, PINMUX_FUNCTION_UART);
+	Pinmux_Config(tx, PINMUX_FUNCTION_UART);
+	Pinmux_Config(rx, PINMUX_FUNCTION_UART);
 	pin_mode(tx, PullUp);
 	pin_mode(rx, PullUp);
 

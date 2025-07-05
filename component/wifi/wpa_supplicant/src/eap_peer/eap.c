@@ -1227,9 +1227,9 @@ static struct wpabuf *eap_sm_buildNak(struct eap_sm *sm, int id)
 	}
 
 #ifndef CONFIG_NO_STDOUT_DEBUG
-	start =
+	start = wpabuf_put(resp, 0);
 #endif
-		wpabuf_put(resp, 0);
+
 	for (m = methods; m; m = m->next) {
 		if (m->vendor == EAP_VENDOR_IETF && m->method == sm->reqMethod) {
 			continue;    /* do not allow the current method again */
@@ -1250,7 +1250,9 @@ static struct wpabuf *eap_sm_buildNak(struct eap_sm *sm, int id)
 	if (!found) {
 		wpabuf_put_u8(resp, EAP_TYPE_NONE);
 	}
-	wpa_hexdump(MSG_DEBUG, "EAP: allowed methods", start, found);
+#ifndef CONFIG_NO_STDOUT_DEBUG
+	wpa_hexdump_key(MSG_DEBUG, "EAP: allowed methods", start, found);
+#endif
 
 	eap_update_len(resp);
 

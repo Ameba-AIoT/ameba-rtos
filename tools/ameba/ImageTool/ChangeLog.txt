@@ -151,3 +151,5 @@ ChangeLog:
 20250314  v2.8.7  Optimize request timeout
 20250408  v2.8.8  Fix nand flash download error with bad block
 20250427  v2.8.9  Fix Dplus download error with 4byte address mode
+20250527  v2.8.10 (1) Support customized DTR/RTS timing for reset/reburn
+                  (2) Fix serial port scan timeout issue

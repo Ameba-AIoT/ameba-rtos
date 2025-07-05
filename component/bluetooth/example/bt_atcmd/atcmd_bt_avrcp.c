@@ -261,6 +261,82 @@ static int atcmd_bt_avrcp_cover_art_connect(int argc, char **argv)
 	return 0;
 }
 
+static int atcmd_bt_avrcp_app_setting_attrs_list(int argc, char **argv)
+{
+	(void)argc;
+	char addr_str[30] = {0};
+	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
+
+	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
+	if (rtk_bt_avrcp_app_setting_attrs_list(bd_addr)) {
+		BT_LOGE("AVRCP list app setting attrs fail\r\n");
+		return -1;
+	}
+	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
+	BT_LOGA("AVRCP litsing app setting attrs to device %s ...\r\n", addr_str);
+
+	return 0;
+}
+
+static int atcmd_bt_avrcp_app_setting_values_list(int argc, char **argv)
+{
+	(void)argc;
+	char addr_str[30] = {0};
+	uint8_t attr_id = 0;
+	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
+
+	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
+	attr_id = (uint8_t)str_to_int(argv[1]);
+	if (rtk_bt_avrcp_app_setting_values_list(bd_addr, attr_id)) {
+		BT_LOGE("AVRCP list app setting values fail\r\n");
+		return -1;
+	}
+	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
+	BT_LOGA("AVRCP listing app setting values to device %s ...\r\n", addr_str);
+
+	return 0;
+}
+
+static int atcmd_bt_avrcp_get_app_setting(int argc, char **argv)
+{
+	(void)argc;
+	char addr_str[30] = {0};
+	uint8_t attr_id = 0;
+	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
+
+	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
+	attr_id = (uint8_t)str_to_int(argv[1]);
+	if (rtk_bt_avrcp_app_setting_value_get(bd_addr, 1, &attr_id)) {
+		BT_LOGE("AVRCP get app setting fail\r\n");
+		return -1;
+	}
+	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
+	BT_LOGA("AVRCP get app setting to device %s ...\r\n", addr_str);
+
+	return 0;
+}
+
+static int atcmd_bt_avrcp_set_app_setting(int argc, char **argv)
+{
+	(void)argc;
+	char addr_str[30] = {0};
+	uint8_t attr_id = 0;
+	uint8_t setting = 0;
+	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
+
+	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
+	attr_id = (uint8_t)str_to_int(argv[1]);
+	setting = (uint8_t)str_to_int(argv[2]);
+	if (rtk_bt_avrcp_app_setting_value_set(bd_addr, attr_id, setting)) {
+		BT_LOGE("AVRCP set app setting fail\r\n");
+		return -1;
+	}
+	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
+	BT_LOGA("AVRCP set app setting to device %s ...\r\n", addr_str);
+
+	return 0;
+}
+
 static int atcmd_bt_avrcp_disconnect(int argc, char **argv)
 {
 	(void)argc;
@@ -279,21 +355,25 @@ static int atcmd_bt_avrcp_disconnect(int argc, char **argv)
 }
 
 static const cmd_table_t avrcp_cmd_table[] = {
-	{"play",                 atcmd_bt_avrcp_play,                  2, 2},
-	{"pause",                atcmd_bt_avrcp_pause,                 2, 2},
-	{"stop",                 atcmd_bt_avrcp_stop,                  2, 2},
-	{"forward",              atcmd_bt_avrcp_forward,               2, 2},
-	{"backward",             atcmd_bt_avrcp_backward,              2, 2},
-	{"rewind_start",         atcmd_bt_avrcp_rewind_start,          2, 2},
-	{"rewind_stop",          atcmd_bt_avrcp_rewind_stop,           2, 2},
-	{"fast_forward_start",   atcmd_bt_avrcp_fast_forward_start,    2, 2},
-	{"fast_forward_stop",    atcmd_bt_avrcp_fast_forward_stop,     2, 2},
-	{"volume_set",           atcmd_bt_avrcp_volume_set,            3, 3},
-	{"volume_change_req",    atcmd_bt_avrcp_volume_change_req,     3, 3},
-	{"element_attr",         atcmd_bt_avrcp_element_attr_get,      3, 3},
-	{"conn",                 atcmd_bt_avrcp_connect,               2, 2},
-	{"cover_art_conn",       atcmd_bt_avrcp_cover_art_connect,     2, 2},
-	{"disconn",              atcmd_bt_avrcp_disconnect,            2, 2},
+	{"play",                    atcmd_bt_avrcp_play,                    2, 2},
+	{"pause",                   atcmd_bt_avrcp_pause,                   2, 2},
+	{"stop",                    atcmd_bt_avrcp_stop,                    2, 2},
+	{"forward",                 atcmd_bt_avrcp_forward,                 2, 2},
+	{"backward",                atcmd_bt_avrcp_backward,                2, 2},
+	{"rewind_start",            atcmd_bt_avrcp_rewind_start,            2, 2},
+	{"rewind_stop",             atcmd_bt_avrcp_rewind_stop,             2, 2},
+	{"fast_forward_start",      atcmd_bt_avrcp_fast_forward_start,      2, 2},
+	{"fast_forward_stop",       atcmd_bt_avrcp_fast_forward_stop,       2, 2},
+	{"volume_set",              atcmd_bt_avrcp_volume_set,              3, 3},
+	{"volume_change_req",       atcmd_bt_avrcp_volume_change_req,       3, 3},
+	{"element_attr",            atcmd_bt_avrcp_element_attr_get,        3, 3},
+	{"conn",                    atcmd_bt_avrcp_connect,                 2, 2},
+	{"cover_art_conn",          atcmd_bt_avrcp_cover_art_connect,       2, 2},
+	{"app_setting_attrs_list",  atcmd_bt_avrcp_app_setting_attrs_list,  2, 2},
+	{"app_setting_values_list", atcmd_bt_avrcp_app_setting_values_list, 3, 3},
+	{"get_app_setting",         atcmd_bt_avrcp_get_app_setting,         3, 3},
+	{"set_app_setting",         atcmd_bt_avrcp_set_app_setting,         4, 4},
+	{"disconn",                 atcmd_bt_avrcp_disconnect,              2, 2},
 	{NULL,},
 };
 

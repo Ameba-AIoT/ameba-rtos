@@ -19,9 +19,9 @@ None
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-3. suggest test with client which has both send and recv.
+3. Suggest test with client which has both send and recv.
 
-4. test with iperf client:
+4. Modify following code if test with iperf client:
 	1. modify send into non-blocking
 		```C
 		ret = send(client_fd, buffer, sizeof(buffer), MSG_DONTWAIT);

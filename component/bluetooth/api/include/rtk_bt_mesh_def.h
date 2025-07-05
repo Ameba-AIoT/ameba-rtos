@@ -77,7 +77,7 @@
 #define BT_MESH_ENABLE_LIGHT_XYL_CLIENT_MODEL                          1
 #define BT_MESH_ENABLE_LIGHT_LC_CLIENT_MODEL                           1
 #define BT_MESH_ENABLE_DFU_INITIATOR_ROLE                              0  // initiator and standalone updater can not enable at same time
-#define BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE                     0  // initiator and standalone updater can not enable at same time
+#define BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE                     1  // initiator and standalone updater can not enable at same time
 #endif
 
 #if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
@@ -117,7 +117,7 @@
 #define BT_MESH_ENABLE_LIGHT_LC_SERVER_MODEL                           1
 #define BT_MESH_ENABLE_LIGHT_LC_SETUP_SERVER_MODEL                     1
 #define BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE                            0  // distributor and target can not enable at same time
-#define BT_MESH_ENABLE_DFU_TARGET_ROLE                                 0  // distributor and target can not enable at same time
+#define BT_MESH_ENABLE_DFU_TARGET_ROLE                                 1  // distributor and target can not enable at same time
 #endif
 
 #define BT_MESH_ENABLE_DATATRANS_MODEL                                 1

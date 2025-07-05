@@ -28,6 +28,7 @@
 #include "rom_ecp.h"
 #include "rom_rtw_dh_groups.h"
 #include "rom_rtw_security.h"
-
+#include "rom_rtw_sha384.h"
+#include "rom_rtw_security_gcm.h"
 
 #endif

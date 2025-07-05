@@ -63,7 +63,7 @@ int whc_host_xmit_thread(void *data)
 	while (!kthread_should_stop()) {
 
 		/* wait for smea */
-		down_interruptible(&xmit_priv->tx_sema);
+		ret = down_interruptible(&xmit_priv->tx_sema);
 
 		/* dequeue msg node */
 		while ((!global_idev.mlme_priv.b_in_scan) && ((p_node = whc_host_dequeue_tx_packet(xmit_priv)) != NULL)) {

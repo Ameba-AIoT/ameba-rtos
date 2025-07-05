@@ -336,7 +336,7 @@ typedef struct {
 					                           depending on the GDMA data transfer direction.If this address is configured,
 					                           GDMA will move data here from source address space*/
 
-	u16	GDMA_BlockSize; 	        /*!< Specifies the GDMA block transfer size.
+	u32	GDMA_BlockSize; 	        /*!< Specifies the GDMA block transfer size.
 	                                   This parameter can be a value between 0 ~ 65535.
 					                           @note This parameter indicates the total number of single transactions for
 					                           every block transfer. The field for this parameter locates in CTLx[47:32], so
