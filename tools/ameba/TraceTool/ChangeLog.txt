@@ -71,3 +71,4 @@ ChangeLog:
                   (2) Fix read/write wifi mac/bb/rf reg issue
 20250512  v2.1.35 Fix auto script keywords false match issue
 20250605  v2.1.36 Add support for serial port hot-plug
+20250703  v2.1.37 Add support for serial port dtr/rts setting

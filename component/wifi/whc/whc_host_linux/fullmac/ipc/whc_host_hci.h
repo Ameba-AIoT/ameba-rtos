@@ -25,6 +25,11 @@
 #define RTW_IP_ADDR_LEN 4
 #define RTW_IPv6_ADDR_LEN 16
 
+#ifdef CONFIG_P2P
+#define NETDEV_REGISTER   0
+#define NETDEV_UNREGISTER 1
+#endif
+
 /* Layer 2 structs. */
 
 /* Layer 1 structs. */
@@ -98,6 +103,11 @@ struct p2p_priv_t {
 	u64						roch_cookie;
 	struct ieee80211_channel roch;
 };
+
+static struct netdev_work {
+	struct work_struct work;
+	int op;  // 0: NETDEV_REGISTER, 1: NETDEV_UNREGISTER
+};
 #endif
 
 struct whc_device {
@@ -130,7 +140,7 @@ struct whc_device {
 	struct  wifi_user_conf	wifi_user_config;
 #ifdef CONFIG_P2P
 	struct p2p_priv_t		p2p_global;
-	struct work_struct		netdev_cleanup_work;
+	struct netdev_work		netdev_work;
 #endif
 };
 

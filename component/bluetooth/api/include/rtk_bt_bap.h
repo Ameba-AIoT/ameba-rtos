@@ -862,7 +862,7 @@ typedef struct {
  */
 typedef struct {
 	uint8_t cause;                                                  /**< process result */
-	rtk_bt_le_audio_sync_handle_t sync_handle;  /**< Synchronization handle*/
+	rtk_bt_le_audio_sync_handle_t sync_handle;                      /**< Synchronization handle*/
 	uint8_t sync_state;                                             /**< PA Synchronization state. @ref rtk_bt_le_audio_pa_sync_state_t*/
 	uint16_t action;                                                /**< PA Synchronization action. @ref rtk_bt_le_audio_pa_action_t. */
 } rtk_bt_le_audio_pa_sync_state_ind_t;
@@ -877,6 +877,7 @@ typedef struct {
 	uint16_t cause;                                           /**< result */
 	rtk_bt_le_audio_iso_chann_t iso_chann_t;                  /**< iso channel struct */
 	rtk_bt_le_audio_cfg_codec_t codec_t;                      /**< codec config */
+	rtk_bt_le_audio_sync_handle_t sync_handle;                /**< Synchronization handle*/
 } rtk_bt_le_audio_big_setup_data_path_ind_t;
 
 /**
@@ -888,6 +889,7 @@ typedef struct {
 	uint16_t bis_conn_handle;                                 /**< bis connection handle */
 	uint16_t cause;                                           /**< result */
 	rtk_bt_le_audio_iso_data_path_direction_t path_direction; /**< audio path direction */
+	rtk_bt_le_audio_sync_handle_t sync_handle;                /**< Synchronization handle*/
 } rtk_bt_le_audio_big_remove_data_path_ind_t;
 
 /**
@@ -1254,6 +1256,15 @@ uint16_t rtk_bt_le_audio_broadcast_big_sync_create(rtk_bt_le_addr_t addr);
  *            - Others: Failed
  */
 uint16_t rtk_bt_le_audio_broadcast_big_sync_terminate(rtk_bt_le_addr_t addr);
+
+/**
+ * @brief     Terminate BIG sync by handle
+ * @param[in] sync_handle: target broadcast source sync handle
+ * @return
+ *            - RTK_BT_OK  : Succeed
+ *            - Others: Failed
+ */
+uint16_t rtk_bt_le_audio_broadcast_big_sync_terminate_by_handle(rtk_bt_le_audio_sync_handle_t sync_handle);
 
 /**
  * @brief     Broadcast assistant executes remote scan action for Scan Delegator.

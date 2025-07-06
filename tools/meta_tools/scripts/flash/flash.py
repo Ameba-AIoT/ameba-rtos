@@ -8,6 +8,7 @@ import os
 import sys
 import argparse
 import base64
+import re
 
 from base import *
 import version_info
@@ -15,6 +16,22 @@ import version_info
 MinSupportedDeviceProfileMajorVersion = 1
 MinSupportedDeviceProfileMinorVersion = 1
 setting_file = "Setting.json"
+
+
+def convert_mingw_path_to_windows(mingw_path):
+    drive_match = re.match(r'^/([a-zA-Z])/', mingw_path)
+    if drive_match:
+        drive_letter = drive_match.group(1).upper() + ":\\"
+        windows_path_tail = mingw_path[3:]
+    else:
+        drive_letter = ""
+        windows_path_tail = mingw_path
+
+    windows_path_tail = windows_path_tail.replace('/', '\\')
+
+    windows_path = drive_letter + windows_path_tail
+
+    return windows_path
 
 
 def sys_exit(logger, status, ret):
@@ -182,6 +199,9 @@ def main(argc, argv):
             images_info = []
             for img_info in partition_table:
                 img_json = ImageInfo(**img_info)
+                if sys.platform == "win32":
+                    img_p = convert_mingw_path_to_windows(img_json.image_name)
+                    img_json.image_name = img_p
                 img_json.description = os.path.basename(img_json.image_name)
                 images_info.append(img_json)
         else:
@@ -273,13 +293,7 @@ def main(argc, argv):
         sys.exit(1)
 
     # load settings
-    if getattr(sys, "frozen", False):  # judge if frozen as exe
-        # get exe dir
-        setting_dir = os.path.dirname(os.path.abspath(sys.executable))
-    else:
-        # get py dir
-        setting_dir = os.path.dirname(__file__)
-    setting_path = os.path.realpath(os.path.join(setting_dir, setting_file))
+    setting_path = os.path.realpath(os.path.join(RtkUtils.get_executable_root_path(), setting_file))
     logger.info(f"Setting path: {setting_path}")
     try:
         if os.path.exists(setting_path):
@@ -354,6 +368,11 @@ def main(argc, argv):
             if ret != ErrType.OK:
                 logger.error(f"Fail to restore the flash block protection")
                 sys_exit(logger, False, ret)
+
+        ret = ameba.post_process()
+        if ret != ErrType.OK:
+            logger.error("Post process fail")
+            sys_exit(logger, False, ret)
     else:
         # erase
         ret = ameba.prepare()

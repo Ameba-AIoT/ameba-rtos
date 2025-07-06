@@ -12,7 +12,10 @@
 #include "hal_platform.h"
 #include "hci_platform.h"
 #include "hci/hci_common.h"
+#include "platform_autoconf.h"
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
 #include "wifi_intf_drv_to_app_internal.h"
+#endif
 
 #define HCI_UART_DEV             (UART2_DEV)
 #define HCI_UART_IRQ             (UART2_BT_IRQ)
@@ -157,8 +160,10 @@ uint16_t hci_uart_send(uint8_t *buf, uint16_t len)
 
 	if (!HCI_BT_KEEP_WAKE) {
 		if (!hci_is_mp_mode()) {
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
 			/* trigger wifi pll ready for bt action */
 			wifi_wake_pll_rdy_in_ps_state(1);
+#endif
 		}
 		/* acquire host wake bt */
 		set_reg_value(0x41008280, BIT13, 1); /* enable HOST_WAKE_BT */
@@ -177,8 +182,10 @@ uint16_t hci_uart_send(uint8_t *buf, uint16_t len)
 		/* release host wake bt */
 		set_reg_value(0x41008280, BIT13, 0); /* disable HOST_WAKE_BT */
 		if (!hci_is_mp_mode()) {
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
 			/* wifi restore */
 			wifi_wake_pll_rdy_in_ps_state(0);
+#endif
 		}
 	}
 

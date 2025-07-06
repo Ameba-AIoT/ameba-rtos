@@ -159,13 +159,12 @@ s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 	if (block) {
 		join_block_param = block_param;
 
-#ifdef CONFIG_ENABLE_EAP
 		// for eap connection, timeout should be longer (default value in wpa_supplicant: 60s)
 		if (wifi_get_eap_phase()) {
 			timeout = 60000;
-		} else
-#endif
+		} else {
 			timeout = RTW_JOIN_TIMEOUT;
+		}
 
 		if (rtos_sema_take(block_param->sema, timeout) != RTK_SUCCESS) {
 			RTK_LOGE(TAG_WLAN_INIC, "Join bss timeout\n");
