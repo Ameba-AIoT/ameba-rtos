@@ -33,7 +33,7 @@ unsigned char ap_ip[4] = {192, 168, 43, 1}, ap_netmask[4] = {255, 255, 255, 0}, 
 #ifdef CONFIG_WLAN
 extern struct table  ip_table;
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
-extern void cmd_wps(int argc, char **argv);
+extern int cmd_wps(int argc, char **argv);
 #endif
 static struct rtw_network_info wifi = {0};
 static struct rtw_softap_info ap = {0};
@@ -719,11 +719,12 @@ void at_wlstartap(void *arg)
 		}
 		/* password */
 		else if (0 == strcmp("pw", argv[i])) {
-			if ((argc <= j) || (0 == strlen(argv[j])) || (64 < strlen(argv[j]))) {
+			if ((argc <= j) || (0 == strlen(argv[j])) || (128 < strlen(argv[j]))) {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid password\r\n");
 				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
+
 			ap.password_len = strlen(argv[j]);
 			strncpy((char *)password, argv[j], sizeof(password) - 1);
 			ap.password = password;
@@ -840,6 +841,9 @@ void at_wlstartap(void *arg)
 		if (ap.password_len <= RTW_WPA2_MAX_PSK_LEN &&
 			ap.password_len >= RTW_MIN_PSK_LEN) {
 			ap.security_type = RTW_SECURITY_WPA2_AES_PSK;
+		} else if (ap.password_len <= RTW_WPA3_MAX_PSK_LEN &&
+				   ap.password_len >= RTW_WPA2_MAX_PSK_LEN) {
+			ap.security_type = RTW_SECURITY_WPA3_AES_PSK;
 		} else if (ap.password_len == 5) {
 			ap.security_type = RTW_SECURITY_WEP_PSK;
 		} else {
@@ -1325,7 +1329,7 @@ void at_wlwps(void *arg)
 	wps_argv[0] = "wifi_wps";
 	wps_argv[1] = argv[1];
 	wps_argv[2] = argv[2];  /* Maybe NULL, but does not matter. */
-	cmd_wps(argc, wps_argv);
+	error_no = cmd_wps(argc, wps_argv);
 
 #else
 	UNUSED(arg);

@@ -17,6 +17,7 @@ from .json_utils import *
 from .rt_settings import *
 from .spic_addr_mode import *
 from .memory_info import *
+from .config_utils import *
 
 _RTK_USB_VID = "0BDA"
 
@@ -161,6 +162,7 @@ class Ameba(object):
 
                     while self.serial_port.is_open:
                         pass
+                    ret = ErrType.OK
                 except:
                     ret = ErrType.SYS_IO
 
@@ -182,6 +184,7 @@ class Ameba(object):
             for rty in range(10):
                 try:
                     self.serial_port.open()
+                    ret = ErrType.OK
                 except:
                     ret = ErrType.SYS_IO
 
@@ -457,31 +460,96 @@ class Ameba(object):
     def write_flash_status_register(self, cmd, address, status):
         return self.floader_handler.write_status_register(cmd, address, status)
 
-    def auto_enter_download_mode(self):
+    def dtr_rts_timing_mapping(self, timing_list):
         ret = ErrType.OK
+
         if not self.serial_port.is_open:
             return ErrType.SYS_IO
 
+        dtr = self.serial_port.dtr
+        rts = self.serial_port.rts
+
+        for key_val in timing_list:
+            for key, val in key_val.items():
+                if key.upper() == "DTR":
+                    self.serial_port.dtr = (val != 0)
+                elif key.upper() == "RTS":
+                    self.serial_port.rts = (val != 0)
+                elif key.upper() == "DELAY":
+                    time.sleep(val / 1000)
+                else:
+                    self.logger.error(f"Unsupport DTR/RTS timing type: [{key}: {val}]")
+
+        self.serial_port.dtr = dtr
+        self.serial_port.rts = rts
+
+        return ret
+
+    def auto_enter_download_mode(self):
+        ret = ErrType.OK
+
+        if not self.serial_port.is_open:
+            return ErrType.SYS_IO
+
+        reburn_timing_file = os.path.join(RtkUtils.get_executable_root_path(), self.setting.auto_switch_to_download_mode_with_dtr_rts_file)
+        if os.path.exists(reburn_timing_file):
+            reburn_timing = ConfigUtils.get_key_value_pairs(self.logger, reburn_timing_file)
+            try:
+                if reburn_timing:
+                    ret = self.dtr_rts_timing_mapping(reburn_timing)
+            except Exception as err:
+                self.logger.error(f"Fail to auto enter download mode: {err}")
+                ret = ErrType.SYS_IO
+        else:
+            self.logger.debug(f"{reburn_timing_file} is not exists!")
+
+        return ret
+
+    def auto_reset_device(self):
+        ret = ErrType.OK
+
+        if not self.serial_port.is_open:
+            return ErrType.SYS_IO
+
+        reset_timing_file = os.path.join(RtkUtils.get_executable_root_path(), self.setting.auto_reset_device_with_dtr_rts_file)
+        if os.path.exists(reset_timing_file):
+            reset_timing = ConfigUtils.get_key_value_pairs(self.logger, reset_timing_file)
+            try:
+                if reset_timing:
+                    ret = self.dtr_rts_timing_mapping(reset_timing)
+            except Exception as err:
+                self.logger.error(f"Fail to reset device: {err}")
+                ret = ErrType.SYS_IO
+        else:
+            self.logger.debug(f"{reset_timing_file} is not exists!")
+
+        return ret
+
+    def post_process(self):
+        ret = ErrType.OK
+
+        post_process_str = self.setting.post_process.strip().upper()
         try:
-            dtr = self.serial_port.dtr
-            rts = self.serial_port.rts
+            next_op = NextOpType[post_process_str]
+            self.logger.debug(f"Next option: {next_op}")
+        except KeyError:
+            self.logger.error(f"No matching enum found for {post_process_str}")
+            next_op = NextOpType.NONE
 
-            self.serial_port.dtr = False
-            self.serial_port.rts = True
+        if next_op != NextOpType.NONE:
+            if (next_op == NextOpType.RESET) and (not self.is_usb) and (self.setting.auto_reset_device_with_dtr_rts != 0):
+                self.logger.debug(f"Reset device with DTR/RTS...")
+                ret = self.auto_reset_device()
+                if ret != ErrType.OK:
+                    self.logger.warning(f"Reset device with DTR/RTS fail: {ret}")
+            else:
+                if next_op == NextOpType.RESET:
+                    self.logger.info(f"Reset device without DTR/RTS, may fail...")
 
-            time.sleep(0.2)
+                ret = self.floader_handler.next_operation(next_op, 0)
+                if ret != ErrType.OK:
+                    self.logger.warning(f"Next option {next_op} fail: {ret}")
 
-            self.serial_port.dtr = True
-            self.serial_port.rts = False
-
-            time.sleep(0.1)
-            self.serial_port.dtr = False
-
-            self.serial_port.dtr = dtr
-            self.serial_port.rts = rts
-        except Exception as err:
-            self.logger.error("Fail to auto enter download mode: %s" % err)
-            ret = ErrType.SYS_IO
         return ret
 
     def check_protocol(self):
@@ -574,7 +642,7 @@ class Ameba(object):
             is_end_address_in_ram = self.profile_info.is_ram_address(image_info.end_address)
             if (((self.memory_type == MemoryInfo.MEMORY_TYPE_RAM) and (
                     (not is_start_address_in_ram) or (not is_end_address_in_ram))) or
-                    ((self.memory_type == MemoryInfo.MEMORY_TYPE_RAM) and (
+                    ((self.memory_type == MemoryInfo.MEMORY_TYPE_NOR) and (
                             is_start_address_in_ram or is_end_address_in_ram))):
                 self.logger.error(
                     f"Invalid address range {image_info.start_address}-{image_info.end_address} for {image_name}")

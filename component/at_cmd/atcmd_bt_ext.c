@@ -589,7 +589,7 @@ static const cmd_table_t cmd_table[] = {
 	{CMD_NAME_BR_GAP,           atcmd_bt_br_gap,                                2, 13},
 	{CMD_NAME_SDP,              atcmd_bt_sdp_cmd,                               1, 3},
 	{CMD_NAME_A2DP,             atcmd_bt_a2dp_cmd,                              1, 8},
-	{CMD_NAME_AVRCP,            atcmd_bt_avrcp_cmd,                             1, 4},
+	{CMD_NAME_AVRCP,            atcmd_bt_avrcp_cmd,                             1, 5},
 	{CMD_NAME_SPP,              atcmd_bt_spp_cmd,                               1, 8},
 	{CMD_NAME_RFC,              atcmd_bt_rfc_cmd,                               1, 8},
 	{CMD_NAME_HID,              atcmd_bt_hid_cmd,                               1, 23},

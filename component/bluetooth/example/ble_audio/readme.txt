@@ -65,7 +65,7 @@ Generic LE Audio demo ATCMD:
     3.4 scan stop                                          AT+BLEBAP=escan,0
     3.5 connect                                            AT+BLEGAP=conn,<peer_addr_type>,<peer_addr>
     3.6 start remote scan                                  AT+BLEBAP=remote_scan,1,<group_idx>
-    3.7 start remote scan                                  AT+BLEBAP=remote_scan,1,<group_idx>
+    3.7 stop remote scan                                   AT+BLEBAP=remote_scan,0,<group_idx>
     3.8 create pa sync with broadcast source               AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id>
     3.9 terminate pa sync with broadcast source            AT+BLEBAP=pa_sync_remove,<bd_addr type>,<bd_addr>
     3.10 reception_start                                   AT+BLEBAP=reception_start,<bd_addr type>,<bd_addr>,<group_idx>

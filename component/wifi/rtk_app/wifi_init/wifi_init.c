@@ -107,12 +107,12 @@ void wifi_init_thread(void *param)
 	whc_dev_init();
 #endif
 
-	wifi_on(RTW_MODE_STA);
-
 #ifdef CONFIG_WHC_BRIDGE
 	whc_dev_init_cmd_path_task();
 	whc_dev_init_lite();
 #endif
+
+	wifi_on(RTW_MODE_STA);
 
 	RTK_LOGI(TAG_WLAN_DRV, "Available heap after wifi init %d\n", rtos_mem_get_free_heap_size() + WIFI_STACK_SIZE_INIT);
 

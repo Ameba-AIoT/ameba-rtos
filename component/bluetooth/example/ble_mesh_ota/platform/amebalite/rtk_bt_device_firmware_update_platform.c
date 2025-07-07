@@ -384,6 +384,8 @@ static bool fw_update_server_get_target_image_info(update_ota_target_hdr *hdr)
 {
 	uint32_t addr_end_max_boot, addr_end_max_app;  // the end of addr save firmware
 	update_file_img_hdr *img_hdr = NULL;
+	bool get_boot_image = false;
+	bool get_app_image = false;
 
 	BT_LOGD("[%s] Enter.\r\n", __func__);
 
@@ -399,9 +401,9 @@ static bool fw_update_server_get_target_image_info(update_ota_target_hdr *hdr)
 		if (img_hdr->ImgLen > addr_end_max_boot - target_addr_image_boot) {
 			BT_LOGE("[%s] The ota boot image len > actual flash size, fail.\r\n", __func__);
 			return false;
+		} else {
+			get_boot_image = true;
 		}
-	} else {
-		BT_LOGE("[%s] Can not get boot image header, maybe not exit in ota.bin\r\n", __func__);
 	}
 
 	// Check whether the image size on ota.bin > local max flash size
@@ -410,12 +412,17 @@ static bool fw_update_server_get_target_image_info(update_ota_target_hdr *hdr)
 		if (img_hdr->ImgLen > addr_end_max_app - target_addr_image_app) {
 			BT_LOGE("[%s] The ota app image len > actual flash size, fail.\r\n", __func__);
 			return false;
+		} else {
+			get_app_image = true;
 		}
-	} else {
-		BT_LOGE("[%s] Can not get app image header, maybe not exit in ota.bin\r\n", __func__);
 	}
 
-	return true;
+	if (get_boot_image || get_app_image) {
+		return true;
+	} else {
+		BT_LOGE("[%s] There is NO boot image or app image in header, fail.\r\n", __func__);
+		return false;
+	}
 }
 
 // Get the image id according start and end addr on ota bin
