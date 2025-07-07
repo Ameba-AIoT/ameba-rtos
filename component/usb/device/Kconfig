@@ -77,3 +77,7 @@ config USBD_UAC_MENU
             bool "UAC 2.0"
             select USBD_UAC2 if CORE_AS_AP
     endchoice
+
+config USBD_VENDOR_MENU
+    bool "VENDOR"
+    select USBD_VENDOR if CORE_AS_AP

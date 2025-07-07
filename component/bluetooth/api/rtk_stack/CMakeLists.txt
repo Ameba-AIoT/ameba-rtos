@@ -100,7 +100,7 @@ if(CONFIG_BT_HAS_MESH)
         ${c_CMPT_BLUETOOTH_DIR}/rtk_stack/src/mesh/platform
         ${c_CMPT_BLUETOOTH_DIR}/rtk_stack/src/mesh/profile
         ${c_CMPT_BLUETOOTH_DIR}/rtk_stack/src/mesh/utility
-        ${c_CMPT_BLUETOOTH_DIR}/example/ble_mesh_ota_common
+        ${c_CMPT_BLUETOOTH_DIR}/example/ble_mesh_ota
     )
 endif()
 

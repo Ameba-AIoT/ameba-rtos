@@ -1066,21 +1066,20 @@ int wps_judge_staion_disconnect(void)
 	return 0;
 }
 
-void cmd_wps(int argc, char **argv)
+int cmd_wps(int argc, char **argv)
 {
 	int ret = -1;
 	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
-	(void) ret;
 
 	if (wps_judge_staion_disconnect() != 0) {
-		return;
+		return ret;
 	}
 
 	// check if STA is conencting
 	if (wifi_get_join_status(&join_status) == RTK_SUCCESS
 		&& (join_status > RTW_JOINSTATUS_UNKNOWN) && (join_status < RTW_JOINSTATUS_SUCCESS)) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\nthere is ongoing wifi connect!");
-		return;
+		return ret;
 	}
 
 	if ((argc == 2 || argc == 3) && (argv[1] != NULL)) {
@@ -1099,6 +1098,7 @@ void cmd_wps(int argc, char **argv)
 			} else {
 				pin_val = atoi(argv[2]);
 				if (!wps_pin_valid(pin_val)) {
+					ret = 2;
 					DiagPrintf("\n\rWPS: Device pin code is invalid. Not triger WPS.\n");
 					goto exit;
 				}
@@ -1110,12 +1110,13 @@ void cmd_wps(int argc, char **argv)
 			DiagPrintf("\n\rWPS: Start WPS PBC.\n\r");
 			ret = wps_start(WPS_CONFIG_PUSHBUTTON, NULL, 0, NULL);
 		} else {
+			ret = 2;
 			DiagPrintf("\n\rWPS: Wps Method is wrong. Not triger WPS.\n");
 			goto exit;
 		}
 	}
 exit:
-	return;
+	return ret;
 }
 
 #endif //CONFIG_ENABLE_WPS

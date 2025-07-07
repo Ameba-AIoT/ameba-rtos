@@ -482,6 +482,7 @@ int whc_fullmac_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 {
 	int ret = 0;
 	u32 param_buf[3];
+	u8 *mac_addr_tmp = NULL;
 	dma_addr_t dma_addr_mac_addr = 0;
 	struct device *pdev = global_idev.ipc_dev;
 
@@ -489,11 +490,12 @@ int whc_fullmac_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 	param_buf[1] = (u32)status;
 
 	if (mac_addr) {
-		dma_addr_mac_addr = dma_map_single(pdev, mac_addr, 6, DMA_TO_DEVICE);
-		if (dma_mapping_error(pdev, dma_addr_mac_addr)) {
-			dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-			return -1;
+		mac_addr_tmp = rtw_malloc(ETH_ALEN, &dma_addr_mac_addr);
+		if (!mac_addr_tmp) {
+			dev_err(global_idev.fullmac_dev, "%s: malloc mac_addr failed!\n", __func__);
+			return -ENOMEM;
 		}
+		memcpy(mac_addr_tmp, mac_addr, ETH_ALEN);
 		param_buf[2] = (u32)dma_addr_mac_addr;
 	} else {
 		param_buf[2] = 0;
@@ -501,8 +503,8 @@ int whc_fullmac_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SAE_STATUS, param_buf, 3);
 
-	if (mac_addr) {
-		dma_unmap_single(pdev, dma_addr_mac_addr, 6, DMA_TO_DEVICE);
+	if (mac_addr_tmp) {
+		rtw_mfree(ETH_ALEN, mac_addr_tmp, dma_addr_mac_addr);
 	}
 
 	return ret;
@@ -580,7 +582,7 @@ int whc_fullmac_host_get_traffic_stats(u8 wlan_idx, dma_addr_t stats_traffic)
 	return ret;
 }
 
-int whc_fullmac_host_get_phy_stats(u8 wlan_idx, u8 *mac_addr, dma_addr_t stats_phy)
+int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, dma_addr_t stats_phy)
 {
 	int ret = 0;
 	u32 param_buf[3];
@@ -921,13 +923,15 @@ int whc_fullmac_host_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, 
 	int ret = 0;
 	u32 param_buf[4];
 	dma_addr_t dma_data = 0;
+	char *data = NULL;
 	struct device *pdev = global_idev.ipc_dev;
 
-	dma_data = dma_map_single(pdev, buf, buf_len, DMA_TO_DEVICE);
-	if (dma_mapping_error(pdev, dma_data)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		return -1;
+	data = rtw_malloc(buf_len, &dma_data);
+	if (data == NULL) {
+		dev_err(global_idev.fullmac_dev, "%s: malloc error!\n", __func__);
+		return -ENOMEM;
 	}
+	memcpy(data, buf, buf_len);
 
 	param_buf[0] = (u32)wlan_idx;
 	param_buf[1] = (u32)dma_data;
@@ -935,7 +939,7 @@ int whc_fullmac_host_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, 
 	param_buf[3] = (u32)flags;
 
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SET_GEN_IE, param_buf, 4);
-	dma_unmap_single(pdev, dma_data, buf_len, DMA_TO_DEVICE);
+	rtw_mfree(buf_len, data, dma_data);
 	return ret;
 }
 

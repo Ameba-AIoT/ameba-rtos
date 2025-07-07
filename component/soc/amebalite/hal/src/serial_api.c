@@ -511,16 +511,16 @@ void serial_init(serial_t *obj, PinName tx, PinName rx)
 
 	/* Configure UART tx pin */
 	if (uart_tx_index_get(tx) == 1 && uart_idx == 1) {
-		pin_function(tx, PINMUX_FUNCTION_UART);
+		Pinmux_Config(tx, PINMUX_FUNCTION_UART);
 	} else {
-		pin_function(tx, PinMap_UART_TX[uart_idx]);
+		Pinmux_Config(tx, PinMap_UART_TX[uart_idx]);
 	}
 
 	/* Configure UART rx pin */
 	if (uart_rx_index_get(rx) == 1 && uart_idx == 1) {
-		pin_function(rx, PINMUX_FUNCTION_UART);
+		Pinmux_Config(rx, PINMUX_FUNCTION_UART);
 	} else {
-		pin_function(rx, PinMap_UART_RX[uart_idx]);
+		Pinmux_Config(rx, PinMap_UART_RX[uart_idx]);
 	}
 
 	pin_mode(tx, PullUp);
@@ -1564,11 +1564,11 @@ void serial_set_flow_control(serial_t *obj, FlowControl type, PinName rxflow, Pi
 			}
 
 			if (uart_idx == 0) {
-				pin_function(rxflow, PINMUX_FUNCTION_UART0_RTS);
-				pin_function(txflow, PINMUX_FUNCTION_UART0_CTS);
+				Pinmux_Config(rxflow, PINMUX_FUNCTION_UART0_RTS);
+				Pinmux_Config(txflow, PINMUX_FUNCTION_UART0_CTS);
 			} else if (uart_idx == 3) {
-				pin_function(rxflow, PINMUX_FUNCTION_UART3_RTS);
-				pin_function(txflow, PINMUX_FUNCTION_UART3_CTS);
+				Pinmux_Config(rxflow, PINMUX_FUNCTION_UART3_RTS);
+				Pinmux_Config(txflow, PINMUX_FUNCTION_UART3_CTS);
 			}
 
 		} else {

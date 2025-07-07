@@ -1288,6 +1288,53 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		break;
 	}
 
+	case RTK_BT_AVRCP_EVT_APP_SETTING_ATTRS_LIST_RSP: {
+		uint8_t temp_buff[10];
+		rtk_bt_avrcp_app_setting_attrs_list_t *p_list_t = (rtk_bt_avrcp_app_setting_attrs_list_t *)param;
+		const char *attr[] = {"", "EQ", "Repeat Mode", "Shuffle", "Scan"};
+
+		if (p_list_t->state == 0) {
+			BT_LOGA("[AVRCP] Get app settings attrs information successfully from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					p_list_t->bd_addr[5], p_list_t->bd_addr[4], p_list_t->bd_addr[3], p_list_t->bd_addr[2], p_list_t->bd_addr[1], p_list_t->bd_addr[0]);
+			for (uint8_t i = 0; i < p_list_t->num_of_attr; i ++) {
+				memset((void *)temp_buff, 0, 10);
+				snprintf((char *)temp_buff, len, "%s\r\n", attr[p_list_t->p_attr_id[i]]);
+				BT_LOGA("[AVRCP] %s \r\n", temp_buff);
+			}
+		}
+		break;
+	}
+
+	case RTK_BT_AVRCP_EVT_APP_SETTING_VALUES_LIST_RSP: {
+		rtk_bt_avrcp_app_setting_values_list_t *p_values_t = (rtk_bt_avrcp_app_setting_values_list_t *)param;
+
+		if (p_values_t->state == 0) {
+			BT_LOGA("[AVRCP] Get app settings values information successfully from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					p_values_t->bd_addr[5], p_values_t->bd_addr[4], p_values_t->bd_addr[3], p_values_t->bd_addr[2], p_values_t->bd_addr[1], p_values_t->bd_addr[0]);
+			for (uint8_t i = 0; i < p_values_t->num_of_value; i ++) {
+				BT_LOGA("[AVRCP] value 0x%02x \r\n", p_values_t->p_value[i]);
+			}
+		}
+		break;
+	}
+
+	case RTK_BT_AVRCP_EVT_APP_SETTING_GET_RSP: {
+		uint8_t temp_buff[20];
+		rtk_bt_avrcp_app_setting_get_rsp_t *p_rsp_t = (rtk_bt_avrcp_app_setting_get_rsp_t *)param;
+		const char *attr[] = {"", "EQ:", "Repeat Mode:", "Shuffle:", "Scan:"};
+
+		if (p_rsp_t->state == 0) {
+			BT_LOGA("[AVRCP] Get app settings response information successfully from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					p_rsp_t->bd_addr[5], p_rsp_t->bd_addr[4], p_rsp_t->bd_addr[3], p_rsp_t->bd_addr[2], p_rsp_t->bd_addr[1], p_rsp_t->bd_addr[0]);
+			for (uint8_t i = 0; i < p_rsp_t->num_of_attr; i ++) {
+				memset((void *)temp_buff, 0, 20);
+				snprintf((char *)temp_buff, len, "%s 0x%x\r\n", attr[p_rsp_t->p_app_setting[i].attr], p_rsp_t->p_app_setting[i].value);
+				BT_LOGA("[AVRCP] %s \r\n", temp_buff);
+			}
+		}
+		break;
+	}
+
 	case RTK_BT_AVRCP_EVT_COVER_ART_DATA_IND: {
 		rtk_bt_avrcp_cover_art_data_ind_t *p_data_t = (rtk_bt_avrcp_cover_art_data_ind_t *)param;
 
@@ -1443,6 +1490,12 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		}
 		break;
 		}
+		break;
+	}
+
+	case RTK_BT_AVRCP_EVT_TRACK_CHANGED: {
+		rtk_bt_avrcp_track_changed_t *p_track_t = (rtk_bt_avrcp_track_changed_t *)param;
+		BT_LOGA("[AVRCP]: Track changed id 0x%x \r\n", p_track_t->track_id);
 		break;
 	}
 

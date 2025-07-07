@@ -27,9 +27,7 @@
 #endif
 #include "ameba_soc.h"
 
-#ifdef CONFIG_ENABLE_EAP
 extern void eap_autoreconnect_hdl(u8 method_id);
-#endif
 
 #if CONFIG_AUTO_RECONNECT
 struct rtw_auto_reconn_t  rtw_reconn;
@@ -70,13 +68,11 @@ void rtw_reconn_join_status_hdl(u8 *buf, s32 flags)
 		return;
 	}
 
-#ifdef CONFIG_ENABLE_EAP
 	if (rtw_reconn.eap_method != 0) {
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "auto reconn\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "eap auto reconn\n");
 		eap_autoreconnect_hdl(rtw_reconn.eap_method);
 		return;
 	}
-#endif
 
 	if (rtw_reconn.b_waiting) {
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "auto reconn ongoing\n");

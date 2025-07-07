@@ -188,6 +188,31 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 	}
 	break;
 
+	case BT_EVENT_AVRCP_TRACK_CHANGED: {
+		rtk_bt_avrcp_track_changed_t *p_track_t = NULL;
+
+		APP_PRINT_INFO0("BT_EVENT_AVRCP_TRACK_CHANGED");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_TRACK_CHANGED \r\n");
+		p_link = app_find_br_link(param->avrcp_track_changed.bd_addr);
+		if (p_link != NULL) {
+			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_TRACK_CHANGED, sizeof(rtk_bt_avrcp_track_changed_t));
+			if (!p_evt) {
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				handle = false;
+				break;
+			}
+			p_track_t = (rtk_bt_avrcp_track_changed_t *)p_evt->data;
+			memcpy((void *)p_track_t->bd_addr, (void *)param->avrcp_track_changed.bd_addr, 6);
+			p_track_t->track_id = param->avrcp_track_changed.track_id;
+			/* Send event */
+			if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
+				handle = false;
+				break;
+			}
+		}
+	}
+	break;
+
 	case BT_EVENT_AVRCP_PLAY: {
 		rtk_bt_avrcp_digital_interface_command_t *p_passthrough_cmd_t = NULL;
 
@@ -538,6 +563,126 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 	}
 	break;
 
+	case BT_EVENT_AVRCP_APP_SETTING_ATTRS_LIST_RSP: {
+		rtk_bt_avrcp_app_setting_attrs_list_t *p_list_t = NULL;
+
+		APP_PRINT_INFO0("BT_EVENT_AVRCP_APP_SETTING_ATTRS_LIST_RSP");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_APP_SETTING_ATTRS_LIST_RSP \r\n");
+		p_link = app_find_br_link(param->avrcp_app_setting_attrs_list_rsp.bd_addr);
+		if (p_link != NULL) {
+			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_APP_SETTING_ATTRS_LIST_RSP, sizeof(rtk_bt_avrcp_app_setting_attrs_list_t));
+			if (!p_evt) {
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				handle = false;
+				break;
+			}
+			p_list_t = (rtk_bt_avrcp_app_setting_attrs_list_t *)p_evt->data;
+			memcpy((void *)p_list_t->bd_addr, (void *)param->avrcp_app_setting_attrs_list_rsp.bd_addr, 6);
+			p_list_t->state = param->avrcp_app_setting_attrs_list_rsp.state;
+			p_list_t->num_of_attr = param->avrcp_app_setting_attrs_list_rsp.num_of_attr;
+			if (p_list_t->num_of_attr) {
+				p_list_t->p_attr_id = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, p_list_t->num_of_attr * sizeof(uint8_t));
+				if (NULL == p_list_t->p_attr_id) {
+					BT_LOGE("app_avrcp_bt_cback: app setting attrs allocate fail \r\n");
+					rtk_bt_event_free(p_evt);
+					break;
+				}
+			}
+			if (param->avrcp_app_setting_attrs_list_rsp.state == 0) {
+				for (uint8_t i = 0; i < param->avrcp_app_setting_attrs_list_rsp.num_of_attr; i++) {
+					p_list_t->p_attr_id[i] = param->avrcp_app_setting_attrs_list_rsp.p_attr_id[i];
+				}
+			}
+			p_evt->user_data = p_list_t->p_attr_id;
+			/* Send event */
+			if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
+				handle = false;
+				break;
+			}
+		}
+	}
+	break;
+
+	case BT_EVENT_AVRCP_APP_SETTING_VALUES_LIST_RSP: {
+		rtk_bt_avrcp_app_setting_values_list_t *p_values_t = NULL;
+
+		APP_PRINT_INFO0("BT_EVENT_AVRCP_APP_SETTING_VALUES_LIST_RSP");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_APP_SETTING_VALUES_LIST_RSP \r\n");
+		p_link = app_find_br_link(param->avrcp_app_setting_values_list_rsp.bd_addr);
+		if (p_link != NULL) {
+			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_APP_SETTING_VALUES_LIST_RSP, sizeof(rtk_bt_avrcp_app_setting_values_list_t));
+			if (!p_evt) {
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				handle = false;
+				break;
+			}
+			p_values_t = (rtk_bt_avrcp_app_setting_values_list_t *)p_evt->data;
+			memcpy((void *)p_values_t->bd_addr, (void *)param->avrcp_app_setting_values_list_rsp.bd_addr, 6);
+			p_values_t->state = param->avrcp_app_setting_values_list_rsp.state;
+			p_values_t->num_of_value = param->avrcp_app_setting_values_list_rsp.num_of_value;
+			if (p_values_t->num_of_value) {
+				p_values_t->p_value = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, p_values_t->num_of_value * sizeof(uint8_t));
+				if (NULL == p_values_t->p_value) {
+					BT_LOGE("app_avrcp_bt_cback: app setting values allocate fail \r\n");
+					rtk_bt_event_free(p_evt);
+					break;
+				}
+			}
+			if (param->avrcp_app_setting_values_list_rsp.state == 0) {
+				for (uint8_t i = 0; i < param->avrcp_app_setting_values_list_rsp.num_of_value; i++) {
+					p_values_t->p_value[i] = param->avrcp_app_setting_values_list_rsp.p_value[i];
+				}
+			}
+			p_evt->user_data = p_values_t->p_value;
+			/* Send event */
+			if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
+				handle = false;
+				break;
+			}
+		}
+	}
+	break;
+
+	case BT_EVENT_AVRCP_APP_SETTING_GET_RSP: {
+		rtk_bt_avrcp_app_setting_get_rsp_t *p_rsp_t = NULL;
+
+		APP_PRINT_INFO0("BT_EVENT_AVRCP_APP_SETTING_GET_RSP");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_APP_SETTING_GET_RSP \r\n");
+		p_link = app_find_br_link(param->avrcp_app_setting_get_rsp.bd_addr);
+		if (p_link != NULL) {
+			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_APP_SETTING_GET_RSP, sizeof(rtk_bt_avrcp_app_setting_get_rsp_t));
+			if (!p_evt) {
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				handle = false;
+				break;
+			}
+			p_rsp_t = (rtk_bt_avrcp_app_setting_get_rsp_t *)p_evt->data;
+			memcpy((void *)p_rsp_t->bd_addr, (void *)param->avrcp_app_setting_get_rsp.bd_addr, 6);
+			p_rsp_t->state = param->avrcp_app_setting_get_rsp.state;
+			p_rsp_t->num_of_attr = param->avrcp_app_setting_get_rsp.num_of_attr;
+			if (p_rsp_t->num_of_attr) {
+				p_rsp_t->p_app_setting = (rtk_bt_avrcp_app_setting_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, p_rsp_t->num_of_attr * sizeof(rtk_bt_avrcp_app_setting_t));
+				if (NULL == p_rsp_t->p_app_setting) {
+					BT_LOGE("app_avrcp_bt_cback: app setting allocate fail \r\n");
+					rtk_bt_event_free(p_evt);
+					break;
+				}
+			}
+			if (param->avrcp_app_setting_get_rsp.state == 0) {
+				for (uint8_t i = 0; i < param->avrcp_app_setting_get_rsp.num_of_attr; i++) {
+					memcpy((void *)&p_rsp_t->p_app_setting[i], (void *)&param->avrcp_app_setting_get_rsp.p_app_setting[i], sizeof(T_BT_AVRCP_APP_SETTING));
+				}
+			}
+			p_evt->user_data = p_rsp_t->p_app_setting;
+			/* Send event */
+			if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
+				handle = false;
+				break;
+			}
+		}
+	}
+	break;
+
 	case BT_EVENT_AVRCP_COVER_ART_DATA_IND: {
 		rtk_bt_avrcp_cover_art_data_ind_t *p_data_t = NULL;
 
@@ -757,6 +902,53 @@ static uint16_t bt_stack_avrcp_cover_art_connect(void *param)
 	return RTK_BT_FAIL;
 }
 
+static uint16_t bt_stack_avrcp_app_setting_attrs_list(void *param)
+{
+	uint8_t *bd_addr = (uint8_t *)param;
+
+	if (bt_avrcp_app_setting_attrs_list(bd_addr)) {
+		return RTK_BT_OK;
+	}
+
+	return RTK_BT_FAIL;
+}
+
+static uint16_t bt_stack_avrcp_app_setting_values_list(void *param)
+{
+	rtk_bt_avrcp_app_setting_values_t *p_values = (rtk_bt_avrcp_app_setting_values_t *)param;
+
+	if (bt_avrcp_app_setting_values_list(p_values->bd_addr, p_values->attr_id)) {
+		return RTK_BT_OK;
+	}
+
+	return RTK_BT_FAIL;
+}
+
+static uint16_t bt_stack_avrcp_app_setting_value_get(void *param)
+{
+	rtk_bt_avrcp_app_setting_value_get_t *p_get = (rtk_bt_avrcp_app_setting_value_get_t *)param;
+
+	if (bt_avrcp_app_setting_value_get(p_get->bd_addr, p_get->attr_num, p_get->attr_list)) {
+		return RTK_BT_OK;
+	}
+
+	return RTK_BT_FAIL;
+}
+
+static uint16_t bt_stack_avrcp_app_setting_value_set(void *param)
+{
+	rtk_bt_avrcp_app_setting_value_set_t *p_set = (rtk_bt_avrcp_app_setting_value_set_t *)param;
+	uint8_t attr[2] = {0};
+
+	attr[0] = p_set->attr_id;
+	attr[1] = p_set->setting;
+
+	if (bt_avrcp_app_setting_value_set(p_set->bd_addr, 1, attr)) {
+		return RTK_BT_OK;
+	}
+
+	return RTK_BT_FAIL;
+}
 
 uint16_t bt_stack_avrcp_act_handle(rtk_bt_cmd_t *p_cmd)
 {
@@ -822,6 +1014,22 @@ uint16_t bt_stack_avrcp_act_handle(rtk_bt_cmd_t *p_cmd)
 
 	case RTK_BT_AVRCP_ACT_CONN_COVER_ART:
 		ret = bt_stack_avrcp_cover_art_connect(p_cmd->param);
+		break;
+
+	case RTK_BT_AVRCP_ACT_APP_SETTING_ATTRS_LIST:
+		ret = bt_stack_avrcp_app_setting_attrs_list(p_cmd->param);
+		break;
+
+	case RTK_BT_AVRCP_ACT_APP_SETTING_VALUES_LIST:
+		ret = bt_stack_avrcp_app_setting_values_list(p_cmd->param);
+		break;
+
+	case RTK_BT_AVRCP_ACT_APP_SETTING_VALUE_GET:
+		ret = bt_stack_avrcp_app_setting_value_get(p_cmd->param);
+		break;
+
+	case RTK_BT_AVRCP_ACT_APP_SETTING_VALUE_SET:
+		ret = bt_stack_avrcp_app_setting_value_set(p_cmd->param);
 		break;
 
 	default:
