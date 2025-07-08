@@ -381,58 +381,57 @@ static uint8_t hci_platform_parse_config(void)
 static void bt_power_on(void)
 {
 	set_reg_value(0x41008200, BIT1, 1);             /* enable BT Power Cut */
-	osif_delay(5);
+	osif_delay_us(40);
 	set_reg_value(0x41008200, BIT17, 0);            /* disable ISO of BT */
-	osif_delay(5);
 	set_reg_value(0x41008208, BIT2, 1);             /* enable WL RFAFE control circuit */
-	osif_delay(5);
 	set_reg_value(0x41008480, BIT5 | BIT6, 3);      /* enable RFAFE */
-	osif_delay(5);
 	set_reg_value(0x410084A8, BIT4, 1);             /* enable WL_CKI_80M_RFC, default=1, can skip */
-	osif_delay(5);
 	set_reg_value(0x410084A8, BIT3, 0);             /* when WL RFAFE enter power off, keep WLRFC not power off */
-	osif_delay(5);
 	set_reg_value(0x41008208, BIT1, 1);             /* release BTON reset */
-	osif_delay(5);
+	osif_delay_us(100);
 	if (HCI_BT_KEEP_WAKE) {
-		set_reg_value(0x41008280, BIT13, 1);        /* HOST_WAKE_BT */
-		osif_delay(5);
+		set_reg_value(0x41008280, BIT13, 1);        /* enable HOST_WAKE_BT */
 	}
 }
 
 void bt_power_off(void)
 {
+	uint8_t retry;
+	set_reg_value(0x41008280, BIT13, 1);            /* enable HOST_WAKE_BT */
+	osif_delay(3);
+	for (retry = 0; retry < 9; retry++) {
+		osif_delay(1);
+		if ((HAL_READ32(0x41008284, 0) & (BIT3 | BIT2 | BIT1 | BIT0)) == 5) { /* polling BTPMC_PWON */
+			break;
+		}
+	}
+
+	if (retry >= 9) {
+		BT_LOGE("Timeout for waiting BT active before power off\r\n");
+	}
+
 	set_reg_value(0x41008280, BIT5, 1);             /* request poff xtal and swr */
-	osif_delay(5);
+	osif_delay_us(100);
 	set_reg_value(0x41008280, BIT5, 0);             /* disable request poff xtal and swr, for next POFF flow */
-	osif_delay(5);
 	set_reg_value(0x41008208, BIT1, 0);             /* assert BTON reset */
-	osif_delay(5);
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
 	if (!(wifi_is_running(WLAN0_IDX) || wifi_is_running(WLAN1_IDX)))
 #endif
 	{
 		set_reg_value(0x41008480, BIT5 | BIT6, 0);  /* disable RFAFE (if WIFI active, keep 2'b11) */
-		osif_delay(5);
 		set_reg_value(0x41008208, BIT2, 0);         /* disable WL RFAFE control circuit (if WIFI active, keep 1'b1) */
-		osif_delay(5);
 	}
 	set_reg_value(0x41008200, BIT17, 1);            /* enable ISO of BT */
-	osif_delay(5);
 	set_reg_value(0x41008200, BIT1, 0);             /* disable BT Power Cut */
-	osif_delay(5);
+	set_reg_value(0x41008280, BIT13, 0);            /* disable HOST_WAKE_BT */
 }
 
 void hci_platform_low_power_setting(void)
 {
 	set_reg_value(0x4100827C, 0x0007FFFF, 0x4C4F3);         /* set 0x4100827C[18:0]=4C4F3, LPS mode divisor */
-	osif_delay(5);
 	set_reg_value(0x41008280, BIT2 | BIT1 | BIT0, 2);       /* BT_SWR_STS_LPS: set SWR state2 (0.8/PC/PFM) when BT in LPS mode */
-	osif_delay(5);
 	set_reg_value(0x41008280, BIT12 | BIT11 | BIT10, 1);    /* BT_XTAL_MODE_LPS: set XTAL state (XTAL LPS, gating XTAL 40M) when BT in LPS mode */
-	osif_delay(5);
 	set_reg_value(0x41008284, BIT15, 0);                    /* BT_CKSL_CKANA */
-	osif_delay(5);
 }
 
 void hci_platform_controller_reset(void)
