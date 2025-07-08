@@ -720,11 +720,12 @@ void at_wlstartap(void *arg)
 		}
 		/* password */
 		else if (0 == strcmp("pw", argv[i])) {
-			if ((argc <= j) || (0 == strlen(argv[j])) || (64 < strlen(argv[j]))) {
+			if ((argc <= j) || (0 == strlen(argv[j])) || (128 < strlen(argv[j]))) {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid password\r\n");
 				error_no = 2;
 				goto end;
 			}
+
 			ap.password_len = strlen(argv[j]);
 			strncpy((char *)password, argv[j], sizeof(password) - 1);
 			ap.password = password;
@@ -825,6 +826,9 @@ void at_wlstartap(void *arg)
 		if (ap.password_len <= RTW_WPA2_MAX_PSK_LEN &&
 			ap.password_len >= RTW_MIN_PSK_LEN) {
 			ap.security_type = RTW_SECURITY_WPA2_AES_PSK;
+		} else if (ap.password_len <= RTW_WPA3_MAX_PSK_LEN &&
+				   ap.password_len >= RTW_WPA2_MAX_PSK_LEN) {
+			ap.security_type = RTW_SECURITY_WPA3_AES_PSK;
 		} else if (ap.password_len == 5) {
 			ap.security_type = RTW_SECURITY_WEP_PSK;
 		} else {
