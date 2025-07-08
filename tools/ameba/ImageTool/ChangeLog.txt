@@ -113,7 +113,7 @@ ChangeLog:
 20230223  v2.7.7  Auto PG eFuse to enable NOR flash 4-byte address mode as required
 20230303  v2.7.8  (1) Tune Xmodem handshake flow
                   (2) Skip the NOR flash address mode check when access address is within 16MB
-				  (3) Add handshake timeout configuration
+                  (3) Add handshake timeout configuration
 20230419  v2.7.9  (1) Tune NOR flash address mode check strategy
                   (2) Move floader files to sub-directory
 20230420  v2.7.10 Add support for combined image generation for all the SoC types
@@ -122,11 +122,34 @@ ChangeLog:
 20230817  v2.7.12 Change the rule to detect USB connections
 20230926  v2.7.13 (1) Fix NOR flash status register write error and simplify access strategy
                   (2) Verify NOR flash capacity for USB download
-				  (3) Skip floader for CDC bootloader usage
+                  (3) Skip floader for CDC bootloader usage
 20231214  v2.7.14 (1) Eliminate unnecessary read delay to speed up flash download process
-				  (2) Update floaders to sync to latest SDK
+                  (2) Update floaders to sync to latest SDK
 20240425  v2.7.15 Rename chips with SoC names
-20240611 v2.7.16  (1) Support dpuls/lite download image to sram
+20240611  v2.7.16 (1) Support dpuls/lite download image to sram
                   (2) Fix checksum error in dplus uart download mode
-20240717 v2.7.17  (1) Fix download big size to flash error
+20240717  v2.7.17 (1) Fix download big size to flash error
                   (2) Increase timeout value when erase flash
+20241119  v2.8.0  Initial support for download protocol v2.0
+20241121  v2.8.1  (1) Fix NOR flash erase failure
+                  (2) Enable log timestamp as default
+                  (3) Remove useless runtime settings
+20241203  v2.8.2  Fix flash full erase issue
+20250113  v2.8.3  (1) Add support to verify fw images
+                  (2) Fix smart/lite download address error
+                  (3) Fix ram download checksum error
+20250220  v2.8.4  (1) Add support for AmebaGreen2
+                  (2) Auto adjust rom/floader boot delay with updated device profiles to speed up download process
+                  (3) Improve NOR flash erase strategy to speed up download process
+                  (4) Tune handshake flow to speed up download process for normal scenarios
+                  (5) Add PWM/GPIO download indication back for AmebaSmart/AmebaLite/AmebaDplus
+                  (6) Tune logging strategy to fix UI thread halt issues
+                  (7) Fix chip erase issue
+                  (8) Fix form resize issue
+20250221  v2.8.5  Fix request timeout issue
+20250228  v2.8.6  Fix 1 byte otp program issue
+20250314  v2.8.7  Optimize request timeout
+20250408  v2.8.8  Fix nand flash download error with bad block
+20250427  v2.8.9  Fix Dplus download error with 4byte address mode
+20250527  v2.8.10 (1) Support customized DTR/RTS timing for reset/reburn
+                  (2) Fix serial port scan timeout issue
