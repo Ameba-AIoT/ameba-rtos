@@ -858,6 +858,7 @@ typedef enum {
 	RTK_BT_AVRCP_ACT_APP_SETTING_VALUES_LIST,
 	RTK_BT_AVRCP_ACT_APP_SETTING_VALUE_GET,
 	RTK_BT_AVRCP_ACT_APP_SETTING_VALUE_SET,
+	RTK_BT_AVRCP_ACT_GET_PLAY_STATUS_REQ,
 	RTK_BT_AVRCP_ACT_MAX,
 } rtk_bt_avrcp_act_t;
 
@@ -890,6 +891,7 @@ typedef enum {
 	RTK_BT_AVRCP_EVT_FAST_FORWARD_STOP_REQ_EVENT,   /*!< AVRCP fast forward stop request event */
 	RTK_BT_AVRCP_EVT_REWIND_START_REQ_EVENT,        /*!< AVRCP rewind start request event */
 	RTK_BT_AVRCP_EVT_REWIND_STOP_REQ_EVENT,         /*!< AVRCP rewind stop request event */
+	RTK_BT_AVRCP_EVT_GET_PLAY_STATUS_RSP_EVENT,     /*!< AVRCP get play status response event */
 	RTK_BT_AVRCP_EVT_MAX,
 } rtk_bt_avrcp_evt_t;
 

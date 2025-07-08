@@ -278,6 +278,19 @@ typedef struct {
 	uint8_t bd_addr[6];                             /*!< address */
 } rtk_bt_avrcp_disconn_cmpl_t;
 
+
+/**
+ * @struct    rtk_bt_avrcp_get_play_status_rsp_t
+ * @brief     avrcp play status response struct.
+ */
+typedef struct {
+	uint8_t  bd_addr[6];
+	uint8_t  state;
+	uint8_t  play_status;                     /*!< rtk_bt_avrcp_play_status_t */
+	uint32_t length_ms;
+	uint32_t position_ms;
+} rtk_bt_avrcp_get_play_status_rsp_t;
+
 /* ------------------------------ Functions Declaration ------------------------------ */
 /**
  * @defgroup  bt_avrcp BT AVRCP APIs
@@ -456,6 +469,15 @@ uint16_t rtk_bt_avrcp_app_setting_value_get(uint8_t *bd_addr, uint8_t attr_num, 
  *            - Others: Error code
  */
 uint16_t rtk_bt_avrcp_app_setting_value_set(uint8_t *bd_addr, uint8_t attr_id, uint8_t setting);
+
+/**
+ * @brief     send avrcp get play status req.
+ * @param[in] bd_addr: bt address
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_avrcp_get_play_status_req(uint8_t *bd_addr);
 
 /**
  * @brief     send cover art connect.

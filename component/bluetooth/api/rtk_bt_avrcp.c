@@ -300,3 +300,17 @@ uint16_t rtk_bt_avrcp_app_setting_value_set(uint8_t *bd_addr, uint8_t attr_id, u
 
 	return ret;
 }
+
+uint16_t rtk_bt_avrcp_get_play_status_req(uint8_t *bd_addr)
+{
+	uint16_t ret = 0;
+
+	if (!bd_addr) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	ret = rtk_bt_send_cmd(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_ACT_GET_PLAY_STATUS_REQ,
+						  bd_addr, 6);
+
+	return ret;
+}
