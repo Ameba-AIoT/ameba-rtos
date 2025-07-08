@@ -19,5 +19,12 @@
 			"B4":"utils/confs_daily_build/bt2.conf utils/confs_daily_build/usb.conf", 
                         "B5":"utils/confs_daily_build/bt_en.conf utils/confs_daily_build/mp_shrink.conf",
                         "B6":"utils/confs_daily_build/bt_en.conf utils/confs_daily_build/mp_expand.conf",
+                        "B7":"utils/confs_daily_build/atcmd.conf"},
+          "amebagreen2":{"B1":"utils/confs_daily_build/bt1.conf", 
+                        "B2":"utils/confs_daily_build/wifi_all.conf", 
+                        "B3":"utils/confs_daily_build/usb.conf", 
+                        "B4":"utils/confs_daily_build/atcmd.conf", 
+                        "B5":"utils/confs_daily_build/bt_en.conf utils/confs_daily_build/mp_shrink.conf",
+                        "B6":"utils/confs_daily_build/bt_en.conf utils/confs_daily_build/mp_expand.conf",
                         "B7":"utils/confs_daily_build/atcmd.conf"}
 }
