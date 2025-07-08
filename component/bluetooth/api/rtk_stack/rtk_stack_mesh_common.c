@@ -1103,6 +1103,12 @@ static void rtk_bt_mesh_stack_init(void *data)
 		mesh_node.flash_size = mesh_app_conf->bt_mesh_flash_size;
 	}
 
+#if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
+#if defined(RTK_BLE_MESH_LPN_SUPPORT) && RTK_BLE_MESH_LPN_SUPPORT
+	mesh_node.frnd_poll_times = 8;
+	mesh_node.frnd_poll_retry_times = 32;
+#endif
+#endif
 	/** create elements and register models */
 	mesh_element_create(GATT_NS_DESC_UNKNOWN);
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT

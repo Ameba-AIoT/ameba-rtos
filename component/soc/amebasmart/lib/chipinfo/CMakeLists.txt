@@ -64,6 +64,7 @@ if("${c_MCU_PROJECT_NAME}" STREQUAL "ap")
         ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_rsa.c
         ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_sha.c
         ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_spinand_rom.c
+		${c_CMPT_FWLIB_DIR}/rom_hp/ameba_ecdsa.c
     )
 endif()
 

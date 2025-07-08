@@ -64,15 +64,15 @@
 */
 #if defined(RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE) && RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE
 /* PBP broadcast source TX water level and the unit is in milliseconds. Must set an integer multiple of 10 milliseconds.*/
-#define APP_LE_AUDIO_PBP_BROADCAST_TX_WATER_LEVEL_MS            100
+#define APP_LE_AUDIO_PBP_BROADCAST_TX_WATER_LEVEL_MS            500
 /* Actual PBP broadcast TX water level length */
 #define APP_BT_PCM_DATA_QUEUE_WATER_LEVEL                       1920 * APP_LE_AUDIO_PBP_BROADCAST_TX_WATER_LEVEL_MS / 10
 /* Set enough length to store resample data.The unit is in short. 1920 bytes is equal to 48 KHz,2 channels pcm data bytes per 10 milliseconds. */
-#define APP_BT_PBP_SOURCE_PCM_DATA_MAX_LEN                      1920 * APP_LE_AUDIO_PBP_BROADCAST_TX_WATER_LEVEL_MS / 10 * 3
+#define APP_BT_PBP_SOURCE_PCM_DATA_MAX_LEN                      1920 * APP_LE_AUDIO_PBP_BROADCAST_TX_WATER_LEVEL_MS / 10
 #else
 #define APP_LE_AUDIO_PBP_BROADCAST_TX_WATER_LEVEL_MS            300
 #define APP_BT_PCM_DATA_QUEUE_WATER_LEVEL                       960 * APP_LE_AUDIO_PBP_BROADCAST_TX_WATER_LEVEL_MS / 10
-#define APP_BT_PBP_SOURCE_PCM_DATA_MAX_LEN                      960 * APP_LE_AUDIO_PBP_BROADCAST_TX_WATER_LEVEL_MS / 10 * 3
+#define APP_BT_PBP_SOURCE_PCM_DATA_MAX_LEN                      960 * APP_LE_AUDIO_PBP_BROADCAST_TX_WATER_LEVEL_MS / 10
 #endif
 /* Fixed length, used for temporary storage of audio data after resampled */
 #define APP_RESAMPLE_OUTPUT_FRAME_BUF_MAX_LEN                   480*4*4
@@ -208,6 +208,8 @@ static app_bt_queue_t app_pcm_data_mgr_queue = {
 	.queue_size = 0,
 	.queue_max_len = 0,
 };
+static bool pkt_drop_flag = false;
+static uint16_t pkt_drop_num = 0;
 static bool pbp_broadcast_dequeue_flag = false;// used to indicate LE Audio thread that the pcm data has reached sufficient number
 static bool a2dp_play_flag = false;// used for HW timer to judge whether send semaphone to wake up LE Audio TX thread
 static bool demo_init_flag = false;
@@ -1836,6 +1838,18 @@ static rtk_bt_evt_cb_ret_t app_bt_avrcp_callback(uint8_t evt_code, void *param, 
 		break;
 	}
 
+	case RTK_BT_AVRCP_EVT_GET_PLAY_STATUS_RSP_EVENT: {
+		rtk_bt_avrcp_get_play_status_rsp_t *p_rsp_t = (rtk_bt_avrcp_get_play_status_rsp_t *)param;
+
+		if (p_rsp_t->state == 0) {
+			BT_LOGA("[AVRCP] Get play status successfully from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					p_rsp_t->bd_addr[5], p_rsp_t->bd_addr[4], p_rsp_t->bd_addr[3], p_rsp_t->bd_addr[2], p_rsp_t->bd_addr[1], p_rsp_t->bd_addr[0]);
+			BT_LOGA("[AVRCP] play status is 0x%x, total song length is %d, position is %d \r\n",
+					p_rsp_t->play_status, p_rsp_t->length_ms, p_rsp_t->position_ms);
+		}
+		break;
+	}
+
 	case RTK_BT_AVRCP_EVT_ABSOLUTE_VOLUME_SET: {
 		rtk_bt_avrcp_absolute_volume_set_t *p_avrcp_absolute_volume_set_t = (rtk_bt_avrcp_absolute_volume_set_t *)param;
 		uint8_t volume = p_avrcp_absolute_volume_set_t->volume;
@@ -2707,6 +2721,9 @@ static uint16_t app_bt_le_audio_encode_data(app_bt_le_audio_data_path_t *p_iso_p
 	uint32_t encode_byte = 0, pcm_frame_size = 0;
 	uint32_t sample_rate = 0, frame_duration_us = 0;
 	rtk_bt_le_audio_cfg_codec_t *p_codec = NULL;
+	uint16_t i, j = 0;
+	int8_t drop_buf[1920] = {0};
+
 	if (!p_iso_path) {
 		BT_LOGE("[APP] %s p_iso_path is NULL\r\n", __func__);
 		return RTK_BT_FAIL;
@@ -2742,11 +2759,13 @@ static uint16_t app_bt_le_audio_encode_data(app_bt_le_audio_data_path_t *p_iso_p
 	ret = app_queue_mgr_dequeue(&app_pcm_data_mgr_queue, (int8_t *)p_iso_path->p_encode_data, encode_byte);
 	osif_mutex_give(app_pcm_data_mgr_queue.mtx);
 #if 0
-	BT_LOGD("[APP] %s: time_stamp before: %u, queue_size: %u\r\n", __func__, time_stamp_before, app_pcm_data_mgr_queue.queue_size);
+	BT_LOGA("[APP] queue_size: %u, cur_water_level:%d\r\n", app_pcm_data_mgr_queue.queue_size, app_pcm_data_mgr_queue.queue_size / 192);
 #endif
 	if (RTK_BT_OK != ret) {
 		BT_LOGE("[APP] %s: dequeue num %d is not enough, set buf default 0!\r\n", __func__, (int)encode_byte);
 		memset(p_iso_path->p_encode_data, 0, encode_byte);
+		pkt_drop_flag = true;
+		pkt_drop_num++;
 	}
 	p_iso_path->encode_byte = encode_byte;
 	/* encode */
@@ -2756,6 +2775,24 @@ static uint16_t app_bt_le_audio_encode_data(app_bt_le_audio_data_path_t *p_iso_p
 		BT_LOGE("[APP] %s rtk_bt_audio_data_encode fail\r\n", __func__);
 		return RTK_BT_FAIL;
 	}
+	/* Discard packet in order to match A2DP rx and BIS tx traffic */
+	if (pkt_drop_flag) {
+		i = pkt_drop_num;
+		for (j = 0; j < i; j++) {
+			osif_mutex_take(app_pcm_data_mgr_queue.mtx, BT_TIMEOUT_FOREVER);
+			ret = app_queue_mgr_dequeue(&app_pcm_data_mgr_queue, drop_buf, encode_byte);
+			osif_mutex_give(app_pcm_data_mgr_queue.mtx);
+			if (ret) {
+				break;
+			}
+			pkt_drop_num--;
+			BT_LOGA("[APP] %s: drop packet success, current pkt_drop_num:%d \r\n", __func__, pkt_drop_num);
+		}
+		if (0 == pkt_drop_num) {
+			pkt_drop_flag = false;
+		}
+	}
+
 	return RTK_BT_OK;
 }
 
@@ -2963,7 +3000,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 	}
 	case RTK_BT_LE_AUDIO_EVT_PA_SYNC_STATE_IND: {
 		rtk_bt_le_audio_pa_sync_state_ind_t *param = (rtk_bt_le_audio_pa_sync_state_ind_t *)data;
-		BT_LOGA("[APP] broadcast %s pa sync state change: sync_handle: %08x, sync_state 0x%x, action 0x%x, cause: 0x%x\r\n",
+		BT_LOGD("[APP] broadcast %s pa sync state change: sync_handle: %08x, sync_state 0x%x, action 0x%x, cause: 0x%x\r\n",
 				(bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK) ? "sink" : "assistant", param->sync_handle, param->sync_state, param->action, param->cause);
 		BT_AT_PRINT("+BLEBAP:broadcast,%s,sync_state,%p,0x%x,0x%x,0x%x\r\n",
 					(bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK) ? "sink" : "assistant",
@@ -2972,6 +3009,8 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 			BT_LOGA("[APP] broadcast %s pa sync synchronized\r\n", (bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK) ? "sink" : "assistant");
 		} else if (param->sync_state == RTK_BT_LE_AUDIO_PA_SYNC_STATE_SYNCHRONIZING_WAIT_SCANNING) {
 			BT_LOGA("[APP] broadcast %s pa sync synchronizing wait scanning \r\n", (bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK) ? "sink" : "assistant");
+		} else if (param->sync_state == RTK_BT_LE_AUDIO_PA_SYNC_STATE_TERMINATED) {
+			BT_LOGA("[APP] broadcast %s pa sync terminated \r\n", (bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK) ? "sink" : "assistant");
 		}
 		break;
 	}
