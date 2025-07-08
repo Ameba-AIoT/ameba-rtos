@@ -15,6 +15,9 @@ Required Components: Oscilloscope.
 * On AmebaDplus
   - Connect `UART_TX(_PA_26)` to oscilloscope
   - Connect `GND` to `GND` of oscilloscope
+* On AmebaGreen2
+  - Connect `UART_TX(_PA_18)` to oscilloscope
+  - Connect `GND` to `GND` of oscilloscope
 
 # SW Configuration
 
@@ -40,3 +43,4 @@ None
 * AmebaSmart
 * AmebaLite
 * AmebaDplus
+* AmebaGreen2

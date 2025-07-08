@@ -1,0 +1,87 @@
+{
+  "version": "1.0",
+  "hash": {
+    "38dbbbee": {
+      "compatible": [],
+      "format": {
+        "rtk_event_level": {
+          "RTK_EVENT_LEVEL_ALWAYS": 0,
+          "RTK_EVENT_LEVEL_ERROR": 1,
+          "RTK_EVENT_LEVEL_WARNING": 2,
+          "RTK_EVENT_LEVEL_INFO": 3,
+          "RTK_EVENT_LEVEL_DEBUG": 4
+        },
+        "rtk_event_type": {
+          "RTK_EVENT_TYPE_INTERNAL": 0,
+          "RTK_EVENT_TYPE_DBG_DEMO_1": 1,
+          "RTK_EVENT_TYPE_DBG_DEMO_2": 2,
+          "RTK_EVENT_TYPE_WIFI_BASE": 50000,
+          "RTK_EVENT_TYPE_CUSTOMER": 60000,
+          "RTK_EVENT_TYPE_MAX": 60001
+        },
+        "diag_evt_wifi": {
+          "DIAG_EVT_WIFI_DISCONN": "RTK_EVENT_TYPE_WIFI_BASE + 0x01",
+          "DIAG_EVT_WIFI_NO_RX": "RTK_EVENT_TYPE_WIFI_BASE + 0x02",
+          "DIAG_EVT_WIFI_NO_TX": "RTK_EVENT_TYPE_WIFI_BASE + 0x03"
+        },
+        "RtkDiagDataFrame": {
+          "header": "u16",
+          "size": "u16",
+          "cmd": "u8",
+          "payload": "u8[0]"
+        },
+        "RtkDiagEvent": {
+          "evt_type": "u16",
+          "evt_len": "u16",
+          "evt_time": "u32",
+          "evt_level": "u8",
+          "rsvd": "u8[3]",
+          "evt_info": "u8[0]"
+        },
+        "diag_evt_demo_1": {
+          "u8_data": "u8",
+          "u16_data": "u16",
+          "f_data": "float",
+          "ch_data": "char",
+          "str_data": "char[32]"
+        },
+        "diag_evt_demo_2": {
+          "dm1_data": "struct diag_evt_demo_1",
+          "i_data": "int"
+        },
+        "diag_evt_wifi_disconn": {
+          "reason": "u16"
+        },
+        "diag_evt_wifi_rxbd_t": {
+          "sw_index": "u8:4",
+          "hw_index": "u8:4"
+        },
+        "diag_evt_wifi_no_rx": {
+          "bb_cca_cck": "u8[5]",
+          "bb_cca_ofdm": "u8[5]",
+          "bb_rx_cck": "u8[5]",
+          "bb_rx_ofdm": "u8[5]",
+          "mac_rx_cck": "u8[5]",
+          "mac_rx_ofdm": "u8[5]",
+          "rxbd": "diag_evt_wifi_rxbd_t[5]",
+          "cca_th": "u8"
+        },
+        "RtkDiagDataFrame_t": {
+          "header": "u16",
+          "size": "u16",
+          "cmd": "u8",
+          "payload": "u8[0]"
+        },
+        "RtkDiagEvent_t": {
+          "evt_type": "u16",
+          "evt_len": "u16",
+          "evt_time": "u32",
+          "evt_level": "u8",
+          "rsvd": "u8[3]",
+          "evt_info": "u8[0]"
+        }
+      }
+    }
+  },
+  "latest_hash": "38dbbbee"
+}

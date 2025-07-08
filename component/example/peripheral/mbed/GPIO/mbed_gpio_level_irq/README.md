@@ -20,6 +20,10 @@ For example:
 
   - `Connect GPIO_SIGNAL_SOURCE (_PB_10)` to `GPIO_IRQ_LEVEL_PIN (_PA_12)`
 
+- On AmebaGreen2, connect as below
+
+  - `Connect GPIO_SIGNAL_SOURCE (_PA_25)` to `GPIO_IRQ_LEVEL_PIN (_PA_26)`
+
 # SW configuration
 
 1. Build and Download:
@@ -44,3 +48,4 @@ None.
 - AmebaLite
 - AmebaDplus
 - AmebaD
+- AmebaGreen2

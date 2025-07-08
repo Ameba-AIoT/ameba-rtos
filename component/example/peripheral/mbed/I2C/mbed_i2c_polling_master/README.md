@@ -55,3 +55,4 @@ This example can be tested with the i2c_polling_slave.
 * AmebaSmart
 * AmebaLite
 * AmebaDplus
+* AmebaGreen2

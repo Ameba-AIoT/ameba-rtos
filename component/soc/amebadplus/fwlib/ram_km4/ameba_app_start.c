@@ -128,7 +128,7 @@ void app_start(void)
 
 	RTK_LOGI(TAG, "VTOR: %lx, VTOR_NS:%lx\n", SCB->VTOR, SCB_NS->VTOR);
 
-#ifdef CONFIG_CORE_AS_AP
+#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 	extern bool os_heap_add(u8 * start_addr, size_t heap_size);
 #ifdef CONFIG_PSRAM_ALL_FOR_AP_HEAP
 	if (ChipInfo_PsramExists()) {

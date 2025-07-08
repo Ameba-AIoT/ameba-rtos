@@ -1,6 +1,6 @@
 #include <whc_host_linux.h>
 #include <net/genetlink.h>
-#include <whc_bridge_host_netlink.h>
+#include <whc_host_netlink.h>
 #include <whc_bridge_wpa_ops_api.h>
 #include <whc_bridge_wpa_ops_custom_netlink.h>
 
@@ -39,7 +39,7 @@ int whc_bridge_host_do_scan(struct sk_buff *skb, struct genl_info *info)
 	ptr += SIZE_TX_DESC;
 
 	memcpy(ptr, payload, payload_len);
-	whc_bridge_host_send_data_to_dev(buf, buf_len, 1);
+	whc_host_send_data_to_dev(buf, buf_len, 1);
 	kfree(buf);
 
 	//TODO Free scan_result

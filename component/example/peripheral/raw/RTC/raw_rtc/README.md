@@ -29,3 +29,4 @@ None.
 - AmebaSmart
 - AmebaLite
 - AmebaDplus
+- AmebaGreen2

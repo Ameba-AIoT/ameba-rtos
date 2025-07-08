@@ -1,6 +1,6 @@
 ENTRY(Reset_Handler)
 
-#include "../../../amebalite_layout.ld"
+#include "../../../ameba_layout.ld"
 
 #if defined(CONFIG_IMG2_FLASH)
 #define OUT_TEXT_SECTION			.xip_image2.text

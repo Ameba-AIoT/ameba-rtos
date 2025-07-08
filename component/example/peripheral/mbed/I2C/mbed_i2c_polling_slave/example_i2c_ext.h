@@ -31,6 +31,11 @@
 #define MBED_I2C_SLV_SDA    _PA_26
 #define MBED_I2C_SLV_SCL    _PA_25
 
+#elif defined (CONFIG_AMEBAGREEN2)
+
+#define MBED_I2C_SLV_SDA    _PA_26
+#define MBED_I2C_SLV_SCL    _PA_25
+
 #endif
 extern int example_mbed_i2c_polling_slave(void);
 #endif

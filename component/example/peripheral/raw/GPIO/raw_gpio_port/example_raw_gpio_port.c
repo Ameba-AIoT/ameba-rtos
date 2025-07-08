@@ -37,7 +37,7 @@ void raw_gpio_port_demo(void)
 			GPIO_PortWrite(GPIO_TEST_PORT, pin_mask, led_pattern[i]);
 			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[%d]set port: 0x%x\r\n", i, pin_mask & led_pattern[i]);
 			DelayMs(1000);
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[%d]get port: 0x%lx\r\n\n", i, GPIO_PortRead(GPIO_TEST_PORT, pin_mask));
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[%d]get port: 0x%x\r\n\n", i, GPIO_PortRead(GPIO_TEST_PORT, pin_mask));
 		}
 
 	}

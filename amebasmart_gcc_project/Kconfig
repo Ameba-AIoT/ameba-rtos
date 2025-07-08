@@ -145,14 +145,13 @@ menu "CONFIG WHC INTF"
         default WHC_INTF_IPC_MENU
         config WHC_INTF_IPC_MENU
             bool "WHC_IPC"
-            select CORE_AS_NP_FOR_KM4
-            select CORE_AS_AP_FOR_CA32
+            select WHC_DEV_FOR_KM4
+            select WHC_HOST_FOR_CA32
         # config FULLMAC_DEV
         #     bool "FULLMAC"
         config WIFI_SINGLE_CORE_MENU
             bool "SINGLE CORE"
-            select CORE_AS_NP_FOR_KM4
-            select CORE_AS_AP_FOR_KM4
+            select WHC_NONE_FOR_KM4
         # config SDIO_BRIDGE
         #     bool "SDIO_BRIDGE"
         # config SPI_FULLMAC_HOST
@@ -172,15 +171,14 @@ menu "CONFIG WHC INTF"
         endchoice
     endif
 
-    config CORE_AS_AP_FOR_CA32
+    config WHC_HOST_FOR_CA32
         bool
-    config CORE_AS_NP_FOR_KM4
+    config WHC_DEV_FOR_KM4
         bool
-    config CORE_AS_AP_FOR_KM4
+    config WHC_HOST_FOR_KM4
         bool
-    config CORE_AS_LP_FOR_KM0
+    config WHC_NONE_FOR_KM4
         bool
-        default y
 endmenu
 
 menu "CONFIG WIFI"
@@ -194,35 +192,32 @@ menu "CONFIG WIFI"
         config WHC_INTF_IPC_MENU
             bool
             select WHC_INTF_IPC
-            select WLAN if !CORE_AS_LP
-            select AS_INIC_NP if CORE_AS_NP
-            select AS_INIC_AP if CORE_AS_AP
-            select LWIP_LAYER if CORE_AS_AP && !MP_SHRINK
-            select ENABLE_WPS if CORE_AS_AP && WIFI_WPS_ENABLE_MENU
+            select WLAN if WHC_HOST||WHC_DEV
+            select AS_INIC_AP if WHC_HOST
+            select LWIP_LAYER if WHC_HOST && !MP_SHRINK
+            select ENABLE_WPS if WHC_HOST && WIFI_WPS_ENABLE_MENU
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
-            select LWIP_NETCONN_SEM_PER_THREAD if CORE_AS_AP
+            select LWIP_NETCONN_SEM_PER_THREAD if WHC_HOST
 
         config FULLMAC_DEV
             bool
-            depends on CORE_AS_NP
+            depends on WHC_DEV
             select WHC_INTF_SDIO if SDIO_FULLMAC
             select WHC_INTF_SPI if SPI_FULLMAC
             select WHC_INTF_USB if USB_FULLMAC
-            select WLAN if !CORE_AS_LP
-            select AS_INIC_NP
+            select WLAN
             select WIFI_FW_EN
 
         config SDIO_BRIDGE
             bool
-            depends on CORE_AS_AP
-            select WLAN if !CORE_AS_LP
-            select SINGLE_CORE_WIFI
+            depends on WHC_NONE
+            select WLAN
             select WHC_INTF_SDIO
             select LWIP_LAYER
 
         config SPI_FULLMAC_HOST
             bool
-            depends on CORE_AS_AP
+            depends on WHC_HOST
             select WLAN_FOR_CA32
             select WLAN_FOR_KM4
             select AS_INIC_AP_FOR_CA32
@@ -230,9 +225,9 @@ menu "CONFIG WIFI"
 
         config WIFI_SINGLE_CORE_MENU
             bool
-            depends on CORE_AS_AP
-            select WLAN if !CORE_AS_LP
-            select SINGLE_CORE_WIFI
+            depends on WHC_NONE
+            select WHC_INTF_IPC
+            select WLAN
             select LWIP_LAYER if !MP_SHRINK
             select ENABLE_WPS if WIFI_WPS_ENABLE_MENU
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
@@ -243,8 +238,8 @@ menu "CONFIG WIFI"
     if !WLAN_MENU
         config WLAN_DISABLE
             bool
-            select AS_INIC_AP if CORE_AS_AP
-            select AS_INIC_NP if CORE_AS_NP
+            select AS_INIC_AP if WHC_HOST
+            select AS_INIC_NP if WHC_DEV
     endif
 
 
@@ -265,8 +260,6 @@ menu "CONFIG WIFI"
     config WHC_INTF_USB
         bool
     config WIFI_FW_EN
-        bool
-    config SINGLE_CORE_WIFI
         bool
     config ENABLE_WPS
         bool
@@ -300,7 +293,7 @@ menu "CONFIG BT"
         endchoice
 
         config BT
-            depends on CORE_AS_AP
+            depends on WHC_HOST || WHC_NONE
             bool
             default y
             select FTL_ENABLED
@@ -373,10 +366,10 @@ endmenu
 
 comment "----- DO NOT ENTER IN THIS BUTTON ------"
 menu "MENUCONFIG FOR Private"
-config CORE_AS_AP
+config WHC_HOST
     bool "--DO NOT CHOOSE THIS CONFIG--"
-config CORE_AS_NP
+config WHC_DEV
     bool "--DO NOT CHOOSE THIS CONFIG--"
-config CORE_AS_LP
+config WHC_NONE
     bool "--DO NOT CHOOSE THIS CONFIG--"
 endmenu

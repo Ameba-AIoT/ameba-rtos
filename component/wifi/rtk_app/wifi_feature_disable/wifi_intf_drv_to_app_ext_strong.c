@@ -65,9 +65,9 @@ s32 wifi_set_tx_rate_by_tos(u8 enable, u8 tos_precedence, u8 tx_rate)
 	return -1;
 }
 
-s32 wifi_set_edca_param(u32 ac_param)
+s32 wifi_set_edca_param(struct rtw_edca_param *pedca_param)
 {
-	UNUSED(ac_param);
+	UNUSED(pedca_param);
 	call_noused = __LINE__;
 	return -1;
 }
@@ -335,10 +335,11 @@ void wifi_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way)
 	call_noused = __LINE__;
 }
 
-void wifi_wpa_add_key(struct rtw_crypt_info *crypt)
+int wifi_wpa_add_key(struct rtw_crypt_info *crypt)
 {
 	UNUSED(crypt);
 	call_noused = __LINE__;
+	return -1;
 }
 
 void wifi_promisc_enable(u32 enable, struct rtw_promisc_para *para)

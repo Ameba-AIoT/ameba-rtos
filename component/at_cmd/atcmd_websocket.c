@@ -12,6 +12,7 @@
 #include "atcmd_service.h"
 #include "atcmd_websocket.h"
 
+
 static const char *const AT_WEBSOCKET_TAG = "AT_WEBSOCKET";
 
 /* for websocket client */
@@ -521,6 +522,7 @@ static void wsclient_conn_thread(void *param)
 	}
 
 	if (wsclient) {
+		wsclient->fun_ops.client_close(wsclient);
 		ws_free(wsclient);
 		wsclient = NULL;
 	}
@@ -531,19 +533,18 @@ static void wsclient_conn_thread(void *param)
 void at_wsconn(void *arg)
 {
 	int argc = 0;
-	int error_no = 0, ret;
+	int error_no = 0, ret = 0;
 	char *argv[MAX_ARGC] = {0};
-	int link_id, port, conn_type, cert_index, size;
-	char *host, *path, *header;
-	char url[DNS_MAX_NAME_LENGTH];
-	int i, total_header_len = 0, pos = 0;
-	wsclient_context *wsclient;
+	int link_id = -1, port = 0, conn_type = 0, cert_index = 0, size = 0;
+	char *host = NULL, *path = NULL, *header = NULL;
+	char url[DNS_MAX_NAME_LENGTH] = {0};
+	int i = 0, total_header_len = 0, pos = 0;
+	wsclient_context *wsclient = NULL;
 	char *client_cert = NULL;
 	char *client_key = NULL;
 	char *ca_cert = NULL;
 
 	UNUSED(argc);
-	UNUSED(cert_index);
 
 	if (arg == NULL) {
 		at_wsconn_help();
@@ -554,7 +555,7 @@ void at_wsconn(void *arg)
 	argc = parse_param_advance(arg, argv);
 
 	link_id = atoi(argv[1]);
-	if (link_id < 0 || link_id >= MAX_WEBSOCKET_LINK_NUM) {  //todo: check link status
+	if (link_id < 0 || link_id >= MAX_WEBSOCKET_LINK_NUM) {
 		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link_id must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
 		error_no = 1;
 		goto end;
@@ -567,16 +568,25 @@ void at_wsconn(void *arg)
 	}
 
 	host = (char *)argv[2];
-	if (host == NULL) {
+	if (strlen(host) == 0) {
 		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "host is empty\r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	path = (char *)argv[3];
+	if (strlen(argv[3])) {
+		path = (char *)argv[3];
+	}
 
-	port = atoi(argv[4]);
+	if (strlen(argv[4])) {
+		port = atoi(argv[4]);
+	}
 
+	if (strlen(argv[5]) == 0) {
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "Missing <conn_type>\r\n");
+		error_no = 1;
+		goto end;
+	}
 	conn_type = atoi(argv[5]);
 	if (conn_type < WEBSOCKET_OVER_TCP || conn_type > WEBSOCKET_OVER_TLS_VERIFY_SERVER_AND_CLIENT_CERT) {
 		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "conn_type must be %d~%d\r\n", WEBSOCKET_OVER_TCP, WEBSOCKET_OVER_TLS_VERIFY_SERVER_AND_CLIENT_CERT);
@@ -594,7 +604,6 @@ void at_wsconn(void *arg)
 		error_no = 1;
 		goto end;
 #endif
-
 		if (conn_type > WEBSOCKET_OVER_TLS) {
 			if (!(argv[6] != NULL && (strlen(argv[6]) > 0))) {
 				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "cert_index is empty!\r\n");
@@ -602,8 +611,75 @@ void at_wsconn(void *arg)
 				goto end;
 			}
 			cert_index = atoi(argv[6]);
-		}
+			if (cert_index <= 0) {
+				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "cert_index must be bigger than 0!\r\n");
+				error_no = 1;
+				goto end;
+			}
 
+			if ((conn_type == WEBSOCKET_OVER_TLS_VERIFY_SERVER) || (conn_type == WEBSOCKET_OVER_TLS_VERIFY_SERVER_AND_CLIENT_CERT)) {
+				/* get ca */
+				size = atcmd_get_ssl_certificate_size(CLIENT_CA, cert_index);
+				if (size <= 0) {
+					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CA size failed, size = %d!\r\n", size);
+					error_no = 4;
+					goto end;
+				}
+				ca_cert = (char *) ws_malloc(size + 1);
+				if (ca_cert == NULL) {
+					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
+					error_no = 2;
+					goto end;
+				}
+				ret = atcmd_get_ssl_certificate(ca_cert, CLIENT_CA, cert_index);
+				if (ret <= 0) {
+					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CA failed, ret = %d!\r\n", ret);
+					error_no = 4;
+					goto end;
+				}
+			}
+			if ((conn_type == WEBSOCKET_OVER_TLS_CLIENT_CERT) || (conn_type == WEBSOCKET_OVER_TLS_VERIFY_SERVER_AND_CLIENT_CERT)) {
+				/* get client cert */
+				size = atcmd_get_ssl_certificate_size(CLIENT_CERT, cert_index);
+				if (size <= 0) {
+					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CERT size failed, size = %d!\r\n", size);
+					error_no = 4;
+					goto end;
+				}
+				client_cert = (char *) ws_malloc(size + 1);
+				if (client_cert == NULL) {
+					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
+					error_no = 2;
+					goto end;
+				}
+				ret = atcmd_get_ssl_certificate(client_cert, CLIENT_CERT, cert_index);
+				if (ret <= 0) {
+					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CERT failed, ret = %d!\r\n", ret);
+					error_no = 4;
+					goto end;
+				}
+
+				/* get client key */
+				size = atcmd_get_ssl_certificate_size(CLIENT_KEY, cert_index);
+				if (size <= 0) {
+					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_KEY size failed, size = %d!\r\n", size);
+					error_no = 4;
+					goto end;
+				}
+				client_key = (char *) ws_malloc(size + 1);
+				if (client_key == NULL) {
+					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
+					error_no = 2;
+					goto end;
+				}
+				ret = atcmd_get_ssl_certificate(client_key, CLIENT_KEY, cert_index);
+				if (ret <= 0) {
+					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_KEY failed, ret = %d!\r\n", ret);
+					error_no = 4;
+					goto end;
+				}
+			}
+		}
 		memcpy(url, "wss://", strlen("wss://"));
 		memcpy(url + strlen("wss://"), host, strlen(host));
 	}
@@ -613,19 +689,10 @@ void at_wsconn(void *arg)
 		if (ws_config[link_id].protocol != NULL) {
 			ws_handshake_header_set_protocol(wsclient, ws_config[link_id].protocol, strlen(ws_config[link_id].protocol));
 		}
-
 		if (ws_config[link_id].version != NULL) {
 			ws_handshake_header_set_version(wsclient, ws_config[link_id].version, strlen(ws_config[link_id].version));
 		}
-
-		if (ws_config[link_id].stable_buf_num > ws_config[link_id].max_queue_size) {
-			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "stable_buf_num(%d) must not exceed max_queue_size(%d)!\r\n", ws_config[link_id].stable_buf_num,
-					 ws_config[link_id].max_queue_size);
-			error_no = 1;
-			goto end;
-		} else {
-			ws_multisend_opts(wsclient, ws_config[link_id].stable_buf_num);
-		}
+		ws_multisend_opts(wsclient, ws_config[link_id].stable_buf_num);
 
 		for (i = 0; i < MAX_HEADER_NUM; i++) {
 			if (ws_config[link_id].ws_header[i]) {
@@ -640,7 +707,7 @@ void at_wsconn(void *arg)
 			if (header == NULL) {
 				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", total_header_len + 1);
 				error_no = 2;
-				goto end;
+				goto free_resource_end;
 			}
 
 			for (i = 0; i < MAX_HEADER_NUM; i++) {
@@ -652,141 +719,13 @@ void at_wsconn(void *arg)
 				}
 			}
 			ws_handshake_set_header_fields(wsclient, header, total_header_len);
+			ws_free(header);
 		}
 
-		if (conn_type == WEBSOCKET_OVER_TLS_VERIFY_SERVER) {
-			/* get ca */
-			size = atcmd_get_ssl_certificate_size(CLIENT_CA, cert_index);
-			if (size <= 0) {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CA size failed, size = %d!\r\n", size);
-				error_no = 4;
-				goto end;
-			}
-			ca_cert = (char *) ws_malloc(size + 1);
-			if (ca_cert == NULL) {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
-				error_no = 2;
-				goto end;
-			}
-			ret = atcmd_get_ssl_certificate(ca_cert, CLIENT_CA, cert_index);
-			if (ret > 0) {
-				wsclient->ca_cert = ca_cert;
-			} else {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CA failed, ret = %d!\r\n", ret);
-				error_no = 4;
-				goto end;
-			}
-		} else if (conn_type == WEBSOCKET_OVER_TLS_CLIENT_CERT) {
-			/* get client cert */
-			size = atcmd_get_ssl_certificate_size(CLIENT_CERT, cert_index);
-			if (size <= 0) {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CERT size failed, size = %d!\r\n", size);
-				error_no = 4;
-				goto end;
-			}
-			client_cert = (char *) ws_malloc(size + 1);
-			if (client_cert == NULL) {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
-				error_no = 2;
-				goto end;
-			}
-			ret = atcmd_get_ssl_certificate(client_cert, CLIENT_CERT, cert_index);
-			if (ret > 0) {
-				wsclient->client_cert = client_cert;
-			} else {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CERT failed, ret = %d!\r\n", ret);
-				error_no = 4;
-				goto end;
-			}
+		wsclient->ca_cert = ca_cert;
+		wsclient->client_cert = client_cert;
+		wsclient->client_key = client_key;
 
-			/* get client key */
-			size = atcmd_get_ssl_certificate_size(CLIENT_KEY, cert_index);
-			if (size <= 0) {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_KEY size failed, size = %d!\r\n", size);
-				error_no = 4;
-				goto end;
-			}
-			client_key = (char *) ws_malloc(size + 1);
-			if (client_key == NULL) {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
-				error_no = 2;
-				goto end;
-			}
-			ret = atcmd_get_ssl_certificate(client_key, CLIENT_KEY, cert_index);
-			if (ret > 0) {
-				wsclient->client_key = client_key;
-			} else {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_KEY failed, ret = %d!\r\n", ret);
-				error_no = 4;
-				goto end;
-			}
-		} else if (conn_type == WEBSOCKET_OVER_TLS_VERIFY_SERVER_AND_CLIENT_CERT) {
-			/* get ca */
-			size = atcmd_get_ssl_certificate_size(CLIENT_CA, cert_index);
-			if (size <= 0) {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CA size failed, size = %d!\r\n", size);
-				error_no = 4;
-				goto end;
-			}
-			ca_cert = (char *) ws_malloc(size + 1);
-			if (ca_cert == NULL) {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
-				error_no = 2;
-				goto end;
-			}
-			ret = atcmd_get_ssl_certificate(ca_cert, CLIENT_CA, cert_index);
-			if (ret > 0) {
-				wsclient->ca_cert = ca_cert;
-			} else {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CA failed, ret = %d!\r\n", ret);
-				error_no = 4;
-				goto end;
-			}
-
-			/* get client cert */
-			size = atcmd_get_ssl_certificate_size(CLIENT_CERT, cert_index);
-			if (size <= 0) {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CERT size failed, size = %d!\r\n", size);
-				error_no = 4;
-				goto end;
-			}
-			client_cert = (char *) ws_malloc(size + 1);
-			if (client_cert == NULL) {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
-				error_no = 2;
-				goto end;
-			}
-			ret = atcmd_get_ssl_certificate(client_cert, CLIENT_CERT, cert_index);
-			if (ret > 0) {
-				wsclient->client_cert = client_cert;
-			} else {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_CERT failed, ret = %d!\r\n", ret);
-				error_no = 4;
-				goto end;
-			}
-
-			/* get client key */
-			size = atcmd_get_ssl_certificate_size(CLIENT_KEY, cert_index);
-			if (size <= 0) {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_KEY size failed, size = %d!\r\n", size);
-				error_no = 4;
-				goto end;
-			}
-			client_key = (char *) ws_malloc(size + 1);
-			if (client_key == NULL) {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "Malloc(%d bytes) failed!\r\n", size + 1);
-				error_no = 2;
-				goto end;
-			}
-			ret = atcmd_get_ssl_certificate(client_key, CLIENT_KEY, cert_index);
-			if (ret > 0) {
-				wsclient->client_key = client_key;
-			} else {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "get CLIENT_KEY failed, ret = %d!\r\n", ret);
-				error_no = 4;
-				goto end;
-			}
-		}
 
 		ret = ws_connect_url(wsclient);
 		if (ret >= 0) {
@@ -806,7 +745,7 @@ void at_wsconn(void *arg)
 			if (rtos_task_create(NULL, ((const char *)"wsclient_conn_thread"), wsclient_conn_thread, &link_id, 1024 * 4, 1) != RTK_SUCCESS) {
 				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(wsclient_conn_thread) failed", __FUNCTION__);
 				error_no = 6;
-				goto end;
+				goto free_resource_end;
 			}
 		} else {
 			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "\r\nConnect to websocket server failed!\r\n");
@@ -819,32 +758,35 @@ void at_wsconn(void *arg)
 		goto end;
 	}
 
-end:
-	if (error_no == 0) {
-		at_printf(ATCMD_OK_END_STR);
-	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
+free_resource_end:
+	if (wsclient) {
+		wsclient->fun_ops.client_close(wsclient);
+	}
 
+end:
+	if (wsclient) {
+		ws_free(wsclient);
+	}
+
+	if (!wsclient) {
 		if (ca_cert) {
 			ws_free(ca_cert);
 			ca_cert = NULL;
-			wsclient->ca_cert = NULL;
 		}
 		if (client_cert) {
 			ws_free(client_cert);
 			client_cert = NULL;
-			wsclient->client_cert = NULL;
 		}
 		if (client_key) {
 			ws_free(client_key);
 			client_key = NULL;
-			wsclient->client_key = NULL;
 		}
-		if (wsclient) {
-			wsclient->fun_ops.client_close(wsclient);
-			ws_free(wsclient);
-			wsclient = NULL;
-		}
+	}
+
+	if (error_no == 0) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
 
@@ -1437,8 +1379,10 @@ void at_wssrv_handler_connect(struct wssrv_conn *conn)
 	for (i = 0; i < wssrvcfg_max_conn; i++) {
 		cli_conn = ws_server_get_conn_info(i);
 		if (cli_conn == conn) {
-			link_id = i;
-			res = 1;
+			if (conn->state == WSSRV_CONNECTED1) {
+				link_id = i;
+				res = 1;
+			}
 			break;
 		}
 	}
@@ -1457,8 +1401,10 @@ void at_wssrv_handler_disconnect(struct wssrv_conn *conn)
 	for (i = 0; i < wssrvcfg_max_conn; i++) {
 		cli_conn = ws_server_get_conn_info(i);
 		if (cli_conn == conn) {
-			link_id = i;
-			res = 1;
+			if (cli_conn->state == WSSRV_CLOSING || cli_conn->state == WSSRV_CLOSED) {
+				link_id = i;
+				res = 1;
+			}
 			break;
 		}
 	}

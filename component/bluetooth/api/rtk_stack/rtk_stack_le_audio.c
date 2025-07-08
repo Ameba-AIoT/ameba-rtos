@@ -290,7 +290,7 @@ static bool bt_stack_le_audio_big_select_bis(rtk_bt_le_audio_sync_dev_info_t *p_
 
 uint16_t bt_stack_le_audio_check_sync(rtk_bt_le_audio_sync_dev_info_t *p_sync_dev_info)
 {
-	BT_LOGA("[LEA STACK] %s: big_proc_flags 0x%x, pa_sync_state %d, big_sync_state %d\r\n", __func__,
+	BT_LOGD("[LEA STACK] %s: big_proc_flags 0x%x, pa_sync_state %d, big_sync_state %d\r\n", __func__,
 			p_sync_dev_info->big_proc_flags, p_sync_dev_info->pa_sync_state, p_sync_dev_info->big_sync_state);
 	if (p_sync_dev_info->big_proc_flags & RTK_BT_LE_AUDIO_BIG_PROC_BIG_SYNC_REQ) {
 		if (p_sync_dev_info->big_sync_state == RTK_BT_LE_AUDIO_BIG_SYNC_STATE_TERMINATED) {
@@ -319,7 +319,7 @@ uint16_t bt_stack_le_audio_check_sync(rtk_bt_le_audio_sync_dev_info_t *p_sync_de
 					if (bt_stack_le_audio_big_select_bis(p_sync_dev_info)) {
 						sync_param.num_bis = p_sync_dev_info->bis_num;
 						memcpy(sync_param.bis, p_sync_dev_info->bis_idx, sync_param.num_bis);
-						BT_LOGE("%s: encryption = %d,big_sync_timeout = %d, num_bis = %d, bis[0]= %d\r\n", __func__,
+						BT_LOGA("%s: encryption = %d,big_sync_timeout = %d, num_bis = %d, bis[0]= %d\r\n", __func__,
 								sync_param.encryption, sync_param.big_sync_timeout, sync_param.num_bis, sync_param.bis[0]);
 						if (false == ble_audio_big_sync_establish(p_sync_dev_info->sync_handle, &sync_param)) {
 							BT_LOGE("%s ble_audio_big_sync_establish fail\r\n", __func__);
@@ -403,7 +403,7 @@ uint16_t bt_stack_le_audio_bass_get_supported_bis(rtk_bt_le_audio_sync_dev_info_
 		}
 	}
 	p_sync_dev_info->support_bis_array = support_bis_array;
-	BT_LOGA("[LEA STACK] support_bis_array 0x%x\r\n", support_bis_array);
+	BT_LOGD("[LEA STACK] support_bis_array 0x%x\r\n", support_bis_array);
 
 	return 0;
 }
@@ -559,7 +559,7 @@ rtk_bt_le_audio_sync_dev_info_t *bt_stack_le_audio_sync_dev_add(void *sync_handl
 	list_add_tail(&p_sync_dev_info->list, phead);/* insert list */
 	p_list->count ++;
 	osif_mutex_give(pmtx);
-	BT_LOGA("[LEA STACK] %s sync_handle(%08x) in sync_handle list ok\r\n", __func__, sync_handle);
+	BT_LOGD("[LEA STACK] %s sync_handle(%08x) in sync_handle list ok\r\n", __func__, sync_handle);
 
 	return p_sync_dev_info;
 }
@@ -572,8 +572,6 @@ void bt_stack_le_audio_sync_list_show(void)
 	struct list_head *phead = &p_list->head;
 	struct list_head *plist = NULL, *pnext = NULL;
 	uint8_t sync_dev_num = 0;
-
-	BT_LOGA("[LEA STACK] %s sync device list: \r\n", __func__);
 	osif_mutex_take(pmtx, BT_TIMEOUT_FOREVER);
 	plist = phead->next;
 	while (plist != phead) {
@@ -590,7 +588,6 @@ void bt_stack_le_audio_sync_list_show(void)
 		plist = pnext;
 	}
 	osif_mutex_give(pmtx);
-	BT_LOGA("[LEA STACK] %s sync device list total num: %d\r\n", __func__, sync_dev_num);
 }
 
 void *bt_stack_le_audio_link_find_brs_char_by_instance_id(rtk_bt_le_audio_link_t *p_link, uint8_t instance_id)
@@ -1040,10 +1037,9 @@ static rtk_bt_le_audio_iso_channel_info_t *bt_stack_le_audio_handle_data_path_se
 		blocks_num = p_iso_chann->codec_data.codec_frame_blocks_per_sdu;
 	}
 	p_iso_chann->frame_num = blocks_num * chnl_cnt;
-	BT_LOGA("[LEA STACK] %s: iso handle 0x%x, frame_num %d, dir %u, sample_frequency 0x%x, audio_channel_allocation 0x%02x, presentation_delay: %ld \r\n",
+	BT_LOGA("[LEA STACK] %s: frame_num %d, sample_frequency 0x%x, audio_channel_allocation 0x%02x, presentation_delay: %u \r\n",
 			__func__,
-			p_iso_chann->iso_conn_handle, p_iso_chann->frame_num,
-			p_iso_chann->path_direction,
+			p_iso_chann->frame_num,
 			p_iso_chann->codec_data.sample_frequency,
 			p_iso_chann->codec_data.audio_channel_allocation,
 			p_iso_chann->presentation_delay);

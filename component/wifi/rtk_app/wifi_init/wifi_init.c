@@ -16,7 +16,7 @@
   */
 #include "ameba_soc.h"
 #ifdef CONFIG_WLAN
-#if defined(CONFIG_AS_INIC_AP) && defined(CONFIG_WHC_HOST)  && CONFIG_WHC_HOST
+#if defined(CONFIG_WHC_HOST) && !defined(CONFIG_WHC_INTF_IPC)
 #include "whc_host_api.h"
 #elif defined(CONFIG_WHC_INTF_IPC)
 #include "whc_ipc.h"
@@ -29,7 +29,7 @@
 
 #if defined(CONFIG_WHC_CMD_PATH)
 #include "whc_dev_bridge.h"
-#include "whc_bridge_dev_api.h"
+#include "whc_dev_api.h"
 #endif
 
 //todo clarify
@@ -37,11 +37,7 @@
 #if defined(CONFIG_WHC_HOST)
 #include "whc_sdio_host.h"
 #endif
-#if defined(CONFIG_WHC_BRIDGE)
-#include "whc_bridge_sdio_dev.h"
-#else
-#include "whc_fullmac_sdio_dev.h"
-#endif
+#include "whc_sdio_dev.h"
 #elif defined(CONFIG_WHC_INTF_SPI)
 #if defined(CONFIG_WHC_HOST)
 #include "whc_spi_host.h"
@@ -57,7 +53,7 @@
 /**********************************************************************************************
  *                                WHC host performs wifi init
  *********************************************************************************************/
-#if defined(CONFIG_AS_INIC_AP)
+#if defined(CONFIG_WHC_HOST)
 void wifi_init_thread(void *param)
 {
 	UNUSED(param);
@@ -79,7 +75,7 @@ void wifi_init_thread(void *param)
 /**********************************************************************************************
  *                                 WHC Device performs wifi init
  *********************************************************************************************/
-#elif defined(CONFIG_AS_INIC_NP)
+#elif defined(CONFIG_WHC_DEV)
 void wifi_init_thread(void *param)
 {
 	UNUSED(param);
@@ -98,7 +94,7 @@ void wifi_init_thread(void *param)
 /**********************************************************************************************
  *                               Single core mode performs wifi init
  *********************************************************************************************/
-#elif defined(CONFIG_SINGLE_CORE_WIFI)/*Single core processor do wifi init*/
+#elif defined(CONFIG_WHC_NONE)/*Single core processor do wifi init*/
 void wifi_init_thread(void *param)
 {
 	UNUSED(param);
@@ -115,7 +111,7 @@ void wifi_init_thread(void *param)
 #endif
 
 #ifdef CONFIG_WHC_BRIDGE
-	whc_dev_init_lite();
+	whc_dev_init();
 #endif
 
 	wifi_on(RTW_MODE_STA);

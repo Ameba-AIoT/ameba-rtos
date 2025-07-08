@@ -156,13 +156,16 @@ int rtw_netdev_probe(struct device *pdev)
 #if !defined(CONFIG_WHC_BRIDGE)
 	rtw_regd_init();
 	rtw_drv_proc_init();
+#ifdef CONFIG_IEEE80211R
+	whc_fullmac_host_ft_init();
+#endif
 #endif
 
 #ifdef CONFIG_WAR_OFFLOAD
 	rtw_proxy_init();
 #endif
-#if defined(CONFIG_WHC_BRIDGE)
-	whc_bridge_host_register_genl_family();
+#if defined(CONFIG_WHC_CMD_PATH)
+	whc_host_register_genl_family();
 #endif
 
 	return 0; /* probe success */
@@ -198,8 +201,8 @@ int rtw_netdev_remove(struct device *pdev)
 
 	pr_info("%s done\n", __func__);
 	memset(&global_idev, 0, sizeof(struct whc_device));
-#if defined(CONFIG_WHC_BRIDGE)
-	whc_bridge_host_unregister_genl_family();
+#if defined(CONFIG_WHC_CMD_PATH)
+	whc_host_unregister_genl_family();
 #endif
 	return 0;
 }

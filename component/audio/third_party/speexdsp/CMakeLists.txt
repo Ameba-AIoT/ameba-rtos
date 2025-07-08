@@ -66,6 +66,10 @@ ameba_list_append(private_definitions
 )
 ameba_list_append(private_compile_options
     -Wno-error
+    -Wno-unused-parameter
+    -Wno-sign-compare
+    -Wno-unused-variable
+    -Wno-unused-function
 )
 
 # Component private part, user config end

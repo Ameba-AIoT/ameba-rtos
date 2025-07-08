@@ -47,6 +47,10 @@ int32_t ameba_audio_get_codec_rate(uint32_t rate);
 AUDIO_SPORT_TypeDef *ameba_audio_get_sport_addr(uint32_t index);
 int32_t ameba_audio_get_i2s_pin_func(uint32_t index);
 int32_t ameba_audio_get_sport_irq(uint32_t index);
+int32_t ameba_audio_stream_get_direct_out_channel_idx(uint32_t channel);
+int32_t ameba_audio_stream_get_direct_in_channel_idx(uint32_t channel);
+int32_t ameba_audio_stream_get_direct_reg_idx(uint32_t channel);
+int32_t ameba_audio_stream_get_sp_tx_channel_idx(uint32_t channel);
 bool ameba_audio_sport_started(uint32_t index);
 
 void ameba_audio_dump_gdma_regs(u8 GDMA_ChNum);

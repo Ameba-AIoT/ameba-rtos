@@ -54,9 +54,9 @@ void rtw_reconn_join_status_hdl(u8 *buf, s32 flags)
 	}
 
 	if (join_status == RTW_JOINSTATUS_FAIL) {
-		disconn_reason = ((struct rtw_event_info_joinstatus_joinfail *)buf)->reason_or_status_code;
+		disconn_reason = ((union rtw_event_info *)buf)->join_status.reason_or_status_code;
 	} else if (join_status == RTW_JOINSTATUS_DISCONNECT) {
-		disconn_reason = ((struct rtw_event_info_joinstatus_disconn *)buf)->disconn_reason;
+		disconn_reason = ((union rtw_event_info *)buf)->join_status.disconn_reason;
 	}
 
 	if (disconn_reason >= 0 && !(disconn_reason > RTW_DISCONN_RSN_APP_BASE &&

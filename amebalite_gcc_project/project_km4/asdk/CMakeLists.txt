@@ -2,7 +2,7 @@ set(CMAKE_EXECUTABLE_SUFFIX .axf)
 
 add_compile_options(-fdata-sections -ffunction-sections)
 
-set(c_LAYOUT_LD ${c_SOC_PROJECT_DIR}/amebalite_layout.ld)
+set(c_LAYOUT_LD ${c_SOC_PROJECT_DIR}/ameba_layout.ld)
 set(c_IMG1_LD ${c_SDK_LD_DIR}/ameba_img1_all.ld)
 if(CONFIG_MP_SHRINK)
     set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all_mp.ld)

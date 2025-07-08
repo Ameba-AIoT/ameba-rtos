@@ -16,6 +16,8 @@ For example:
   - Connect `GPIO_SIGNAL_SOURCE (_PB_5)` to `GPIO_IRQ_EDGE_PIN (_PA_29)`
 - On AmebaDplus, then connect as below
   - Connect `GPIO_SIGNAL_SOURCE (_PB_10)` to `GPIO_IRQ_EDGE_PIN (_PA_12)`
+- On AmebaGreen2, then connect as below
+  - Connect `GPIO_SIGNAL_SOURCE (_PA_25)` to `GPIO_IRQ_EDGE_PIN (_PA_26)`
 
 # SW configuration
 
@@ -43,3 +45,4 @@ None.
 - AmebaLite
 - AmebaDplus
 - AmebaD
+- AmebaGreen2

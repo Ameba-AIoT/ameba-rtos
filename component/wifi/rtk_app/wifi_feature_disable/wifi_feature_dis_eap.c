@@ -88,5 +88,24 @@ void eap_disconnected_hdl(void)
 {
 }
 
+int get_eap_phase(void)
+{
+	return 0;
+}
+
+void eap_eapol_start_hdl(u8 *buf, s32 buf_len, s32 flags)
+{
+	UNUSED(buf);
+	UNUSED(buf_len);
+	UNUSED(flags);
+}
+
+void eap_eapol_recvd_hdl(u8 *buf, s32 buf_len, s32 flags)
+{
+	UNUSED(buf);
+	UNUSED(buf_len);
+	UNUSED(flags);
+}
+
 
 #endif  /* CONFIG_EAP */

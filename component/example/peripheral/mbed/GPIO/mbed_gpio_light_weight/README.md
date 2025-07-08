@@ -24,6 +24,9 @@ This example describes how to use GPIO read/write in a light weight way by MBED 
   - On AmebaDplus, connect as below
     - Connect a push button to `GPIO_PUSHBT_PIN _PA_12` and GND
     - Connect a LED to `GPIO_LED_PIN _PB_10` and GND
+  - On AmebaGreen2, connect as below
+    - Connect a push button to `GPIO_PUSHBT_PIN _PA_26` and GND
+    - Connect a LED to `GPIO_LED_PIN _PA_25` and GND
 
 # SW configuration
 
@@ -48,3 +51,4 @@ None.
 - AmebaLite
 - AmebaDplus
 - AmebaD
+- AmebaGreen2

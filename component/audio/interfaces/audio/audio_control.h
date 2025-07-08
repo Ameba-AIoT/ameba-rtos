@@ -50,20 +50,6 @@ extern "C" {
  * @version 1.0
  */
 enum {
-	/** play through speaker */
-	RTAUDIO_DEVICE_SPEAKER         = 0,
-	/** play through headphone*/
-	RTAUDIO_DEVICE_HEADPHONE       = 1,
-	RTAUDIO_DEVICE_MAX_NUM         = 2,
-};
-
-/**
- * @brief Defines all the audio microphone categories.
- *
- * @since 1.0
- * @version 1.0
- */
-enum {
 	/* [amebalite] support AMIC1-AMIC3, DMIC1-DMIC4
 	 * [amebasmart] support AMIC1-AMIC5, DMIC1-DMIC8
 	 */
@@ -237,7 +223,7 @@ bool RTAudioControl_GetPlaybackMute(void);
 /**
  * @brief Set Playback Device. Please set it before create RTAudioTrack.
  *
- * @param device_category the device of playback, maybe RTAUDIO_DEVICE_SPEAKER or RTAUDIO_DEVICE_HEADPHONE.
+ * @param device_category the device of playback, maybe RTDEVICE_OUT_SPEAKER or RTDEVICE_OUT_HEADPHONE.
  * @return Returns a value listed below: \n
  * int32_t | Description
  * ----------------------| -----------------------
@@ -251,7 +237,7 @@ int32_t RTAudioControl_SetPlaybackDevice(uint32_t device_category);
 /**
  * @brief Get Playback Device.
  *
- * @return Returns the device of playback, maybe RTAUDIO_DEVICE_SPEAKER or RTAUDIO_DEVICE_HEADPHONE.
+ * @return Returns the device of playback, maybe RTDEVICE_OUT_SPEAKER or RTDEVICE_OUT_HEADPHONE.
  *         If the value < 0, means get fail.
  * @since 1.0
  * @version 1.0

@@ -22,12 +22,12 @@
 #elif defined (CONFIG_AMEBAGREEN2)
 
 //I2C0_SEL
-#define MBED_I2C_MTR_SDA    _PB_0
-#define MBED_I2C_MTR_SCL    _PB_2
+#define MBED_I2C_MTR_SDA    _PA_26
+#define MBED_I2C_MTR_SCL    _PA_25
 
 //I2C0_SEL
-#define MBED_I2C_SLV_SDA    _PB_0
-#define MBED_I2C_SLV_SCL    _PB_2
+#define MBED_I2C_SLV_SDA    _PA_26
+#define MBED_I2C_SLV_SCL    _PA_25
 
 #elif defined (CONFIG_AMEBAD)
 

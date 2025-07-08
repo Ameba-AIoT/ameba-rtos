@@ -87,6 +87,10 @@ struct mlme_priv_t {
 
 #ifdef CONFIG_CFG80211_SME_OFFLOAD
 	int cfg80211_offload_sta_sme;
+	enum nl80211_auth_type auth_type;
+	u8 wep_key[13];
+	u8 wep_key_len, wep_key_idx;
+
 	struct cfg80211_bss *cfg80211_assoc_bss;
 #endif
 
@@ -140,6 +144,7 @@ struct whc_device {
 	u8				ip_addr[RTW_IP_ADDR_LEN];
 	u8				ipv6_addr[RTW_IPv6_ADDR_LEN];
 	u8				wowlan_state; /* 0: resume, 1: suspend */
+	bool b_in_roaming;
 
 	/* wifi user config */
 	struct  wifi_user_conf	wifi_user_config;

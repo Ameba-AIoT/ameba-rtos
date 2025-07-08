@@ -31,7 +31,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.skb_num_ap = 8; /*adjust to 8 for ping 10k*/
 	wifi_user_config.rx_ampdu_num = 4;
 #endif
-#ifdef CONFIG_SINGLE_CORE_WIFI
+#ifdef CONFIG_WHC_NONE
 	wifi_user_config.skb_num_ap = 0;
 #endif
 	wifi_user_config.skb_buf_size = 0;
@@ -40,6 +40,7 @@ _WEAK void wifi_set_user_config(void)
 	/*Regulatory related*/
 	wifi_user_config.country_code[0] = 0;
 	wifi_user_config.country_code[1] = 0;
+	wifi_user_config.freq_band_support = RTW_SUPPORT_BAND_MAX;
 	wifi_user_config.tx_pwr_table_selection = 2;
 	wifi_user_config.rtw_802_11d_en = DISABLE;
 	wifi_user_config.rtw_trp_tis_cert_en = RTW_TRP_TIS_DISABLE;

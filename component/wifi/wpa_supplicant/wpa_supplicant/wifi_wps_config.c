@@ -73,10 +73,10 @@ struct _internal_wps_scan_handler_arg {
 extern void _wifi_p2p_wps_success(const u8 *peer_addr, int registrar);
 extern void _wifi_p2p_wps_failed(void);
 #endif
-extern void wpas_wsc_sta_wps_start_hdl(u8 *buf, s32 buf_len, s32 flags, void *userdata);
-extern void wpas_wsc_wps_finish_hdl(u8 *buf, s32 buf_len, s32 flags, void *userdata);
-extern void wpas_wsc_server_wps_finish_hdl(u8 *buf, s32 buf_len, s32 flags, void *userdata);
-extern void wpas_wsc_eapol_recvd_hdl(u8 *buf, s32 buf_len, s32 flags, void *userdata);
+extern void wpas_wsc_sta_wps_start_hdl(u8 *buf, s32 buf_len, s32 flags);
+extern void wpas_wsc_wps_finish_hdl(u8 *buf, s32 buf_len, s32 flags);
+extern void wpas_wsc_server_wps_finish_hdl(u8 *buf, s32 buf_len, s32 flags);
+extern void wpas_wsc_eapol_recvd_hdl(u8 *buf, s32 buf_len, s32 flags);
 
 void wifi_p2p_wps_success(const u8 *peer_addr, int registrar)
 {
@@ -217,6 +217,12 @@ char wps_pin_code[33];
 u16 config_method;
 u8 wps_password_id;
 static unsigned char wps_stop_notified = 0;
+u8 wps_phase = 0;
+
+int get_wps_phase(void)
+{
+	return wps_phase;
+}
 
 void wps_check_and_show_connection_info(void)
 {
@@ -590,12 +596,9 @@ static int start_discovery_phase(u16 wps_config)
 		return -1;
 	}
 
-	wifi_reg_event_handler(RTW_EVENT_WPA_STA_WPS_START, wpas_wsc_sta_wps_start_hdl, NULL);
-	wifi_reg_event_handler(RTW_EVENT_WPA_WPS_FINISH, wpas_wsc_wps_finish_hdl, NULL);
-	wifi_reg_event_handler(RTW_EVENT_WPA_EAPOL_RECVD, wpas_wsc_eapol_recvd_hdl, NULL);
-
 	wpas_wps_enrollee_init_probe_ie(wps_config);
 	wpas_wps_enrollee_init_assoc_ie();
+	wps_phase = 1;
 	wifi_set_wps_phase(ENABLE);
 
 	if (wps_stop_notified) {
@@ -642,11 +645,7 @@ exit1:
 		os_xqueue_delete(queue_for_credential);
 		queue_for_credential = NULL;
 	}
-
-	wifi_unreg_event_handler(RTW_EVENT_WPA_STA_WPS_START, wpas_wsc_sta_wps_start_hdl);
-	wifi_unreg_event_handler(RTW_EVENT_WPA_WPS_FINISH, wpas_wsc_wps_finish_hdl);
-	wifi_unreg_event_handler(RTW_EVENT_WPA_EAPOL_RECVD, wpas_wsc_eapol_recvd_hdl);
-
+	wps_phase = 0;
 	wpas_wps_deinit();
 	rtos_time_delay_ms(10);
 	return ret;
@@ -914,12 +913,9 @@ int wps_start(u16 wps_config, char *pin, u8 channel, char *ssid)
 		goto exit2;
 	}
 
-	wifi_reg_event_handler(RTW_EVENT_WPA_STA_WPS_START, wpas_wsc_sta_wps_start_hdl, NULL);
-	wifi_reg_event_handler(RTW_EVENT_WPA_WPS_FINISH, wpas_wsc_wps_finish_hdl, NULL);
-	wifi_reg_event_handler(RTW_EVENT_WPA_EAPOL_RECVD, wpas_wsc_eapol_recvd_hdl, NULL);
-
 	wpas_wps_enrollee_init_probe_ie(wps_config);
 	wpas_wps_enrollee_init_assoc_ie();
+	wps_phase = 1;
 	wifi_set_wps_phase(ENABLE);
 	if (ssid)
 		/*for the customers who scan themself use wps_start to connect directly*/
@@ -1017,10 +1013,7 @@ exit1:
 		os_xqueue_delete(queue_for_credential);
 		queue_for_credential = NULL;
 	}
-
-	wifi_unreg_event_handler(RTW_EVENT_WPA_STA_WPS_START, wpas_wsc_sta_wps_start_hdl);
-	wifi_unreg_event_handler(RTW_EVENT_WPA_WPS_FINISH, wpas_wsc_wps_finish_hdl);
-	wifi_unreg_event_handler(RTW_EVENT_WPA_EAPOL_RECVD, wpas_wsc_eapol_recvd_hdl);
+	wps_phase = 0;
 	wpas_wps_deinit();
 
 exit2:
@@ -1033,7 +1026,7 @@ exit2:
 void wps_stop(void)
 {
 	wps_stop_notified = 1;
-	wpas_wsc_wps_finish_hdl(NULL, 0, 0, NULL);
+	wpas_wsc_wps_finish_hdl(NULL, 0, 0);
 }
 
 int wps_judge_staion_disconnect(void)
@@ -1051,21 +1044,20 @@ int wps_judge_staion_disconnect(void)
 	return 0;
 }
 
-void cmd_wps(int argc, char **argv)
+int cmd_wps(int argc, char **argv)
 {
 	int ret = -1;
 	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
-	(void) ret;
 
 	if (wps_judge_staion_disconnect() != 0) {
-		return;
+		return ret;
 	}
 
 	// check if STA is conencting
 	if (wifi_get_join_status(&join_status) == RTK_SUCCESS
 		&& (join_status > RTW_JOINSTATUS_UNKNOWN) && (join_status < RTW_JOINSTATUS_SUCCESS)) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\nthere is ongoing wifi connect!");
-		return;
+		return ret;
 	}
 
 	if ((argc == 2 || argc == 3) && (argv[1] != NULL)) {
@@ -1084,6 +1076,7 @@ void cmd_wps(int argc, char **argv)
 			} else {
 				pin_val = atoi(argv[2]);
 				if (!wps_pin_valid(pin_val)) {
+					ret = 2;
 					DiagPrintf("\n\rWPS: Device pin code is invalid. Not triger WPS.\n");
 					goto exit;
 				}
@@ -1095,12 +1088,13 @@ void cmd_wps(int argc, char **argv)
 			DiagPrintf("\n\rWPS: Start WPS PBC.\n\r");
 			ret = wps_start(WPS_CONFIG_PUSHBUTTON, NULL, 0, NULL);
 		} else {
+			ret = 2;
 			DiagPrintf("\n\rWPS: Wps Method is wrong. Not triger WPS.\n");
 			goto exit;
 		}
 	}
 exit:
-	return;
+	return ret;
 }
 
 #endif //CONFIG_ENABLE_WPS

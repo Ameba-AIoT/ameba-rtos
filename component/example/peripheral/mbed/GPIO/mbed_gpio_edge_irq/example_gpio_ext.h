@@ -27,6 +27,10 @@
 #define GPIO_SIGNAL_SOURCE		_PA_12
 #define GPIO_IRQ_EDGE_PIN		_PA_13
 
+#elif defined (CONFIG_AMEBAGREEN2)
+#define GPIO_SIGNAL_SOURCE		_PA_25
+#define GPIO_IRQ_EDGE_PIN		_PA_26
+
 #endif
 extern int example_mbed_gpio_edge_irq(void);
 #endif

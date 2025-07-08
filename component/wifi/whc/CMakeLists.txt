@@ -12,7 +12,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # You may use if-else condition to set or update predefined variable above
 set(release_target_name)
 
-if(CONFIG_AS_INIC_AP AND CONFIG_WHC_INTF_IPC)
+if(CONFIG_WHC_HOST AND CONFIG_WHC_INTF_IPC)
     if(CONFIG_MP_INCLUDED)
         if(CONFIG_MP_SHRINK)
             set(release_target_name wifi_whc_ap_mp_shrink)
@@ -24,7 +24,7 @@ if(CONFIG_AS_INIC_AP AND CONFIG_WHC_INTF_IPC)
     endif()
 endif()
 
-if(CONFIG_WLAN AND CONFIG_AS_INIC_AP AND CONFIG_WHC_INTF_IPC)
+if(CONFIG_WLAN AND CONFIG_WHC_HOST AND CONFIG_WHC_INTF_IPC)
     ameba_list_append(public_libraries
         ${c_SDK_LIB_APPLICATION_DIR}/lib_${release_target_name}.a
     )
@@ -83,7 +83,7 @@ if(CONFIG_WIFI_HOST_CONTROL)
 
     if(CONFIG_WHC_WIFI_API_PATH)
         ameba_list_append(private_sources
-            whc_dev/whc_dev_api.c
+            whc_dev/whc_dev_api_path.c
             whc_dev/whc_dev_cust_evt.c
         )
     endif()
@@ -91,22 +91,22 @@ if(CONFIG_WIFI_HOST_CONTROL)
     if(CONFIG_WHC_CMD_PATH)
         ameba_list_append(private_sources
             whc_dev/whc_dev_app.c
-            whc_dev/whc_bridge_dev_api.c
+            whc_dev/whc_dev_api.c
         )
     endif()
 endif()
 
-if(CONFIG_AS_INIC_NP)
+if(CONFIG_WHC_DEV)
     if(CONFIG_WHC_INTF_SPI)
         ameba_list_append(private_sources
+            whc_dev/spi/whc_spi_drv.c
             whc_dev/spi/whc_spi_dev.c
-            whc_dev/spi/whc_fullmac_spi_dev.c
         )
         set(target_name wifi_whc_spi_dev)
     elseif(CONFIG_WHC_INTF_SDIO)
         ameba_list_append(private_sources
             whc_dev/sdio/whc_sdio_drv.c
-            whc_dev/sdio/whc_fullmac_sdio_dev.c
+            whc_dev/sdio/whc_sdio_dev.c
         )
         set(target_name wifi_whc_sdio_dev)
     elseif(CONFIG_WHC_INTF_USB)
@@ -119,7 +119,7 @@ elseif(CONFIG_WHC_BRIDGE)
     if(CONFIG_WHC_INTF_SDIO)
         ameba_list_append(private_sources
             whc_dev/sdio/whc_sdio_drv.c
-            whc_dev/sdio/whc_bridge_sdio_dev.c
+            whc_dev/sdio/whc_sdio_dev.c
         )
         if(CONFIG_WPA_LITE_OPS)
              ameba_list_append(private_sources
@@ -129,12 +129,12 @@ elseif(CONFIG_WHC_BRIDGE)
         set(target_name wifi_fullmac_sdio_bridge_lite)
     elseif(CONFIG_WHC_INTF_SPI)
          ameba_list_append(private_sources
+            whc_dev/spi/whc_spi_drv.c
             whc_dev/spi/whc_spi_dev.c
-            whc_dev/spi/whc_bridge_spi_dev.c
         )
         set(target_name wifi_fullmac_spi_bridge_lite)
     endif()
-elseif(CONFIG_AS_INIC_AP)
+elseif(CONFIG_WHC_HOST)
     if(CONFIG_WHC_INTF_SPI)
         ameba_list_append(private_sources
             whc_host_rtos/whc_host_init.c

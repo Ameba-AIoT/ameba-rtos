@@ -1,5 +1,5 @@
 #include <whc_host_linux.h>
-#include <whc_bridge_host_intf.h>
+#include <whc_host_cmd_path_api.h>
 
 static void whc_bridge_host_recv_pkts(struct sk_buff *pskb)
 {
@@ -55,7 +55,7 @@ int whc_bridge_host_recv_process(struct sk_buff *pskb)
 		whc_bridge_host_recv_pkts(pskb);
 		break;
 	default:
-		whc_bridge_host_pkt_rx_to_user(pskb);
+		whc_host_cmd_data_rx_to_user(pskb);
 		kfree_skb(pskb);
 		break;
 	}

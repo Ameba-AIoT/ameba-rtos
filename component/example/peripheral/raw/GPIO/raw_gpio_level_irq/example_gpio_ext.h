@@ -26,6 +26,10 @@
 #define GPIO_SIGNAL_SOURCE		_PA_12
 #define GPIO_IRQ_LEVEL_PIN		_PA_13
 
+#elif defined (CONFIG_AMEBAGREEN2)
+#define GPIO_SIGNAL_SOURCE		_PA_25
+#define GPIO_IRQ_LEVEL_PIN		_PA_26
+
 #endif
 extern int example_raw_gpio_level_irq(void);
 #endif

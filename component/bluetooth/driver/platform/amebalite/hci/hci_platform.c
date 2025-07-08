@@ -327,46 +327,33 @@ static uint8_t hci_platform_parse_config(void)
 static void bt_power_on(void)
 {
 	set_reg_value(0x4100C200, BIT1, 1);             /* enable BT Power Cut */
-	osif_delay(5);
+	osif_delay_us(40);
 	set_reg_value(0x4100C200, BIT17, 0);            /* disable ISO of BT */
-	osif_delay(5);
 	set_reg_value(0x4100C214, BIT2, 1);             /* enable clk_osc4m_wlbt */
-	osif_delay(5);
 	set_reg_value(0x4100C208, BIT2, 1);             /* enable WL RFAFE control circuit */
-	osif_delay(5);
 	set_reg_value(0x4100C480, BIT5 | BIT6, 3);      /* enable RFAFE */
-	osif_delay(5);
 	set_reg_value(0x4100C4A8, BIT4, 1);             /* enable WL_CKI_80M_RFC, default=1, can skip */
-	osif_delay(5);
 	set_reg_value(0x4100C4A8, BIT3, 0);             /* when WL RFAFE enter power off, keep WLRFC not power off */
-	osif_delay(5);
 	set_reg_value(0x4100C208, BIT1, 1);             /* release BTON reset */
-	osif_delay(5);
+	osif_delay_us(100);
 	set_reg_value(0x4100C214, BIT2, 0);             /* disable clk_osc4m_wlbt */
-	osif_delay(5);
 	if (HCI_BT_KEEP_WAKE) {
-		set_reg_value(0x4100c280, BIT13, 1);        /* enable HOST_WAKE_BT */
-		osif_delay(5);
+		set_reg_value(0x4100C280, BIT13, 1);        /* enable HOST_WAKE_BT */
 	}
 }
 
 void bt_power_off(void)
 {
 	set_reg_value(0x4100C208, BIT1, 0);             /* BTON reset */
-	osif_delay(5);
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
 	if (!(wifi_is_running(STA_WLAN_INDEX) || wifi_is_running(SOFTAP_WLAN_INDEX)))
 #endif
 	{
 		set_reg_value(0x4100C480, BIT5 | BIT6, 0);  /* disable RFAFE (if WIFI active, keep 2'b11) */
-		osif_delay(5);
 		set_reg_value(0x4100C208, BIT2, 0);         /* disable WL RFAFE control circuit (if WIFI active, keep 1'b1) */
-		osif_delay(5);
 	}
 	set_reg_value(0x4100C200, BIT17, 1);            /* enable ISO of BT */
-	osif_delay(5);
 	set_reg_value(0x4100C200, BIT1, 0);             /* disable BT Power Cut */
-	osif_delay(5);
 }
 
 void hci_platform_controller_reset(void)

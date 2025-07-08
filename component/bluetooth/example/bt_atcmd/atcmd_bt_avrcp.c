@@ -354,6 +354,23 @@ static int atcmd_bt_avrcp_disconnect(int argc, char **argv)
 	return 0;
 }
 
+static int atcmd_bt_avrcp_get_play_status(int argc, char **argv)
+{
+	(void)argc;
+	char addr_str[30] = {0};
+	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
+
+	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
+	if (rtk_bt_avrcp_get_play_status_req(bd_addr)) {
+		BT_LOGE("AVRCP get play status fail\r\n");
+		return -1;
+	}
+	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
+	BT_LOGA("AVRCP sending get play status request to device %s ...\r\n", addr_str);
+
+	return 0;
+}
+
 static const cmd_table_t avrcp_cmd_table[] = {
 	{"play",                    atcmd_bt_avrcp_play,                    2, 2},
 	{"pause",                   atcmd_bt_avrcp_pause,                   2, 2},
@@ -373,6 +390,7 @@ static const cmd_table_t avrcp_cmd_table[] = {
 	{"app_setting_values_list", atcmd_bt_avrcp_app_setting_values_list, 3, 3},
 	{"get_app_setting",         atcmd_bt_avrcp_get_app_setting,         3, 3},
 	{"set_app_setting",         atcmd_bt_avrcp_set_app_setting,         4, 4},
+	{"get_play_status",         atcmd_bt_avrcp_get_play_status,         2, 2},
 	{"disconn",                 atcmd_bt_avrcp_disconnect,              2, 2},
 	{NULL,},
 };

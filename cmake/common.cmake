@@ -201,7 +201,7 @@ macro(ameba_mcu_project_create name mcu_type)
 
     #NOTE: Determine whether build example for this mcu project
     if(EXAMPLE) #By default, MCU as ap run example
-        if(CONFIG_CORE_AS_AP)
+        if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
             set(c_ENABLE_EXAMPLE TRUE)
         else()
             set(c_ENABLE_EXAMPLE FALSE)
@@ -350,6 +350,13 @@ function(ameba_firmware_package output_app_name)
         ameba_list_append(custom_variables -D${var}=${${var}})
     endforeach()
 
+    if (CONFIG_DSP_WITHIN_APP_IMG)
+        set(c_DSP_FILE ${c_SOC_PROJECT_DIR}/${DSP_IMAGE_TARGET_DIR}/dsp.bin)
+        if(NOT EXISTS ${c_DSP_FILE})
+            message(FATAL_ERROR "dsp file not exist: ${c_DSP_FILE}")
+        endif()
+    endif()
+
     # Merge image2/image3 to app.bin
     set(c_APP_BINARY_NAME ${output_app_name})
     ameba_get_image_output_dir(c_IMAGE_OUTPUT_DIR)
@@ -378,7 +385,7 @@ function(ameba_firmware_package output_app_name)
     string(REPLACE ";" "\\;" image1_all_files "${image1_all_files}")
     string(REPLACE ";" "\\;" image2_all_files "${image2_all_files}")
     string(REPLACE ";" "\\;" image3_all_files "${image3_all_files}")
-    ameba_info("image all list: image1: ${image1_all_files}, image2: ${image2_all_files}, image3: ${image3_all_files}")
+    ameba_info("image all list: image1: ${image1_all_files}, image2: ${image2_all_files}, image3: ${image3_all_files}, dsp: ${c_DSP_FILE}")
     add_custom_target(firmware_package ALL
         COMMAND ${CMAKE_COMMAND}
             # common variables
@@ -393,6 +400,7 @@ function(ameba_firmware_package output_app_name)
             -Dc_IMAGE1_ALL_FILES="${image1_all_files}" #NOTE: transfer as list
             -Dc_IMAGE2_ALL_FILES="${image2_all_files}" #NOTE: transfer as list
             -Dc_IMAGE3_ALL_FILES="${image3_all_files}" #NOTE: transfer as list
+            -Dc_DSP_FILE="${c_DSP_FILE}"
 
             # user's variables
             -DFINAL_IMAGE_DIR=${FINAL_IMAGE_DIR}
@@ -412,7 +420,6 @@ function(ameba_soc_project_check)
     if(NOT EXISTS ${c_AXF2BIN_SCRIPT})
         message(FATAL_ERROR "Please update $SDK/tools repo to latest")
     endif()
-
     ameba_execute_process(COMMAND ${op_USAGE})
 endfunction()
 

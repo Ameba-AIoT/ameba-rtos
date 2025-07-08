@@ -736,7 +736,7 @@ static const cmd_table_t vendor_table[] = {
 	/*{"ant",              atcmd_bt_ant,              2, 2},*/
 	{"tx_power",         atcmd_bt_set_tx_power,     4, 5},
 	{"sof",              atcmd_bt_sof_eof_ind,      2, 3},
-#if ((defined(CONFIG_BT_INIC) && CONFIG_BT_INIC))
+#if defined(CONFIG_BT_INIC) && CONFIG_BT_INIC
 	{"remote_wakeup",    atcmd_bt_remote_wakeup,    1, 1},
 #endif
 	{NULL,},
@@ -1182,7 +1182,7 @@ void print_bt_ext_at(void)
 {
 #if ((defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED) && (defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK)) || \
     ((!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) && (defined(CONFIG_BT_EXCLUDE_AT_COMMAND) && CONFIG_BT_EXCLUDE_AT_COMMAND)) || \
-    ((defined(CONFIG_BT_INIC) && CONFIG_BT_INIC))
+    (defined(CONFIG_BT_INIC) && CONFIG_BT_INIC)
 	//Print nothing
 #else
 
@@ -1210,7 +1210,7 @@ void at_bt_init(void)
 {
 #if ((defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED) && (defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK)) || \
     ((!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) && (defined(CONFIG_BT_EXCLUDE_AT_COMMAND) && CONFIG_BT_EXCLUDE_AT_COMMAND)) || \
-    ((defined(CONFIG_BT_INIC) && CONFIG_BT_INIC))
+    (defined(CONFIG_BT_INIC) && CONFIG_BT_INIC)
 	(void)at_bt_items;
 #else
 	atcmd_service_add_table(at_bt_items, sizeof(at_bt_items) / sizeof(at_bt_items[0]));

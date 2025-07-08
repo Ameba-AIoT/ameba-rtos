@@ -18,6 +18,8 @@ This example describes how to use GPIO read/write to generate a pulse and to mea
     - Connect `GPIO_IRQ_PIN (_PA_29)` to `GPIO_OUT_PIN (_PB_5)`
   - On AmebaDplus, connect as below
     - Connect `GPIO_IRQ_PIN (_PA_12)` to `GPIO_OUT_PIN (_PB_10)`
+  - On AmebaGreen2, connect as below
+    - Connect `GPIO_IRQ_PIN (_PA_26)` to `GPIO_OUT_PIN (_PA_25)`
 
 # SW configuration
 
@@ -42,3 +44,4 @@ None.
 - AmebaLite
 - AmebaDplus
 - AmebaD
+- AmebaGreen2

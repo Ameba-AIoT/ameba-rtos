@@ -78,22 +78,23 @@ enum rtw_event_id {
 /** @addtogroup WIFI_Exported_Structure_Types Structure Type
  * @{
  */
-/**
-  * @brief Data structure for @ref RTW_EVENT_JOIN_STATUS when flag is @ref RTW_JOINSTATUS_DISCONNECT.
-  */
-struct rtw_event_info_joinstatus_disconn {
-	u16 disconn_reason;      /**< Disconnect reason, refer to @ref rtw_disconn_reason. */
-	u8	bssid[6];            /**< MAC address of the AP.*/
+
+struct rtw_event_hdl_func_t {
+	u16 evt_id;
+	void (*handler)(u8 *buf, s32 len, s32 flags);
 };
 
-/**
-  * @brief Data structure for @ref RTW_EVENT_JOIN_STATUS when flag is @ref RTW_JOINSTATUS_FAIL
-  */
-struct rtw_event_info_joinstatus_joinfail {
-	s32					fail_reason;           /**< Failure reason, refer to @ref RTK_FAIL, -@ref RTK_ERR_WIFI_CONN_INVALID_KEY, etc. */
-	u16					reason_or_status_code; /**< 802.11 reason code or status code from AP.*/
-	u8					bssid[6];              /**< MAC address of the AP.*/
+union rtw_event_info {
+	struct rtw_join_status_info {
+		u8 channel;
+		u8 bssid[ETH_ALEN];  /**< MAC address of the AP.*/
+		s8 rssi;
+		s32 fail_reason;  /**< Failure reason, refer to @ref RTK_FAIL, -@ref RTK_ERR_WIFI_CONN_INVALID_KEY, etc. */
+		u16 reason_or_status_code;  /**< 802.11 reason code or status code from AP.*/
+		u16 disconn_reason;  /**< Disconnect reason, refer to @ref rtw_disconn_reason. */
+	} join_status;
 };
+
 /** @} End of WIFI_Exported_Structure_Types group*/
 /** @} End of WIFI_Exported_Types group*/
 
@@ -106,58 +107,6 @@ struct rtw_event_info_joinstatus_joinfail {
 /** @addtogroup WIFI_Exported_Event_Functions Event Functions
   * @{
   */
-
-/**
- * @brief  Registers an event listener for specific Wi-Fi events.
- * @param[in] event_id : The events from the Wi-Fi driver to listen for:
- *                    - @ref RTW_EVENT_STA_ASSOC
- *                    - @ref RTW_EVENT_STA_DISASSOC
- *                    - @ref RTW_EVENT_JOIN_STATUS
- *                    - @ref RTW_EVENT_CSI_DONE
- *                    - @ref RTW_EVENT_WPA_STA_WPS_START
- *                    - @ref RTW_EVENT_WPA_WPS_FINISH
- *                    - @ref RTW_EVENT_WPA_EAPOL_START
- *                    - @ref RTW_EVENT_WPA_EAPOL_RECVD
- * @param[in] handler_func : The callback function to process the events. It has the following parameters:
- *                    - \b buf: Event data passed from the driver to the application layer.
- *                    - \b len: Length of the `buf`.
- *                    - \b flag: Flag set by Wi-Fi driver, used in conjunction with `buf`.
- *                         The content of `buf` and meaning of `flag` depend on the `event_id`:
- *                         <table>
- *                         <tr><th>event id</th><th>buf</th><th>flag</th></tr>
- *                         <tr><td>RTW_EVENT_JOIN_STATUS</td><td>rtw_event_info_joinstatus_joinfail</td><td>RTW_JOINSTATUS_FAIL</td></tr>
- *                         <tr><td>RTW_EVENT_JOIN_STATUS</td><td>rtw_event_info_joinstatus_disconn</td><td>RTW_JOINSTATUS_DISCONNECT</td></tr>
- *                         <tr><td>RTW_EVENT_JOIN_STATUS</td><td>NULL</td><td>Other join status in @ref rtw_join_status</td></tr>
- *                         <tr><td>RTW_EVENT_CSI_DONE</td><td>NULL</td><td>CSI header and raw data length</td></tr>
- *                         <tr><td>RTW_EVENT_STA_ASSOC</td><td>Association request frame</td><td>0</td></tr>
- *                         <tr><td>RTW_EVENT_STA_DISASSOC</td><td>STA's MAC SoftAP will disassoc</td><td>0</td></tr>
- *                         <tr><td>RTW_EVENT_WPA_STA_WPS_START</td><td>Source MAC of assoc response</td><td>0</td></tr>
- *                         <tr><td>RTW_EVENT_WPA_WPS_FINISH</td><td>NULL</td><td>0</td></tr>
- *                         <tr><td>RTW_EVENT_WPA_EAPOL_START</td><td>Source MAC of assoc response</td><td>0</td></tr>
- *                         <tr><td>RTW_EVENT_WPA_EAPOL_RECVD</td><td>EAPOL message</td><td>0</td></tr>
- *                         </table>
- *                    - \b user_data: User-provided data (see `handler_user_data`).
- * @param[in] handler_user_data :  Optional user-defined data passed to the callback function. Can be NULL.
- * @return  None.
- * @note  Re-registering an `event_id` with a NULL `handler_func` will unregister that event command.
- */
-void wifi_reg_event_handler(u32 event_id, void (*handler_func)(u8 *buf, s32 len, s32 flag, void *user_data), void *handler_user_data);
-
-/**
- * @brief  Unregisters an event listener for specific Wi-Fi events.
- * @param[in] event_id : The events from the WiFi driver to stop listening for:
- *                    - @ref RTW_EVENT_STA_ASSOC
- *                    - @ref RTW_EVENT_STA_DISASSOC
- *                    - @ref RTW_EVENT_JOIN_STATUS
- *                    - @ref RTW_EVENT_CSI_DONE
- *                    - @ref RTW_EVENT_WPA_STA_WPS_START
- *                    - @ref RTW_EVENT_WPA_WPS_FINISH
- *                    - @ref RTW_EVENT_WPA_EAPOL_START
- *                    - @ref RTW_EVENT_WPA_EAPOL_RECVD
- * @param[in] handler_func : The callback function previously registered for event processing.
- * @return None.
- */
-void wifi_unreg_event_handler(u32 event_id, void (*handler_func)(u8 *buf, s32 len, s32 flag, void *user_data));
 
 /** @} End of Event_Functions group*/
 /** @} End of WIFI_Exported_Functions group*/

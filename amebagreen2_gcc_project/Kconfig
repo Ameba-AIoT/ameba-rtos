@@ -1,0 +1,592 @@
+mainmenu "AmebaGreen2 Configuration"
+
+comment "--------MENUCONFIG FOR General---------"
+
+#Release flag, set to y after release
+config AMEBA_RLS
+  def_bool y
+
+config AMEBAGREEN2
+    def_bool y
+
+#---------- FEATURE LIST START-----------#
+#All features are invisible in menuconfig
+
+config SUPPORT_NAND_FLASH
+    def_bool y
+
+config SUPPORT_SDIO_DEVICE
+    def_bool y
+
+config SUPPORT_SDIOH
+    def_bool y
+
+config SUPPORT_SD_CARD
+    def_bool y
+
+config SUPPORT_USB
+    def_bool y
+
+config SUPPORT_USBD_INIC
+    def_bool y
+
+config SUPPORT_USBH_UVC_HW_DEC
+    def_bool y
+
+config SUPPORT_HEAP_TRACE
+    def_bool y
+
+#---------- FEATURE LIST END-------------#
+
+menu "CONFIG TrustZone"
+    config TRUSTZONE
+        bool "Enable TrustZone"
+    config TRUSTZONE_EN
+        depends on TRUSTZONE
+        bool
+        default y
+endmenu
+
+menu "CONFIG Memory Arch"
+    config DISABLE_PSRAM
+        bool "DISABLE PSRAM"
+    config SECOND_FLASH_NOR
+        bool "Second flash NOR"
+    if !SECOND_FLASH_NOR
+        config SECOND_FLASH_NAND
+            bool "Second flash NAND"
+        endif
+endmenu
+
+menu "CONFIG Link Option"
+    choice
+        prompt "IMG1(Bootloader) running on FLASH or SRAM?"
+        default IMG1_FLASH
+        config IMG1_FLASH
+            bool "FLASH"
+        config IMG1_SRAM
+            bool "SRAM"
+    endchoice
+
+    choice
+        prompt "IMG2(Application) running on FLASH, SRAM, or PSRAM?"
+        default IMG2_FLASH
+        config IMG2_FLASH
+            bool "FLASH"
+        config IMG2_SRAM
+            bool "SRAM"
+        config IMG2_PSRAM
+            depends on !DISABLE_PSRAM
+            bool "PSRAM"
+            select PSRAM_USED
+    endchoice
+
+    choice
+        prompt "IMG2 Data and Heap in SRAM or PSRAM?"
+        default DATA_HEAP_SRAM
+        config DATA_HEAP_SRAM
+            bool "SRAM"
+        config DATA_HEAP_PSRAM
+            depends on !DISABLE_PSRAM
+            bool "PSRAM"
+            select PSRAM_USED
+    endchoice
+
+    if TRUSTZONE
+        choice
+            prompt "IMG3(SecureImage) running on PSRAM or SRAM?"
+            default IMG3_SRAM
+            config IMG3_PSRAM
+                depends on !DISABLE_PSRAM
+                bool "PSRAM"
+                select PSRAM_USED
+            config IMG3_SRAM
+                bool "SRAM"
+        endchoice
+    endif
+
+    config PSRAM_ALL_FOR_AP_HEAP
+        depends on !IMG2_PSRAM && !DATA_HEAP_PSRAM && !DISABLE_PSRAM
+        depends on !WIFI_HOST_CONTROL # FULLMAC_DEV or WHC_BRIDGE does not support PSRAM for now
+        bool "ALL PSRAM USED FOR APPLICATION HEAP"
+        default y
+
+    config PSRAM_USED
+        bool
+endmenu
+
+menu "CONFIG FULLMAC MODE"
+    config FULLMAC_NEW_VERSION
+        depends on WIFI_HOST_CONTROL
+        bool "Enable New FULLMAC"
+        default y
+endmenu
+
+
+menu "CONFIG Mass Production"
+    config MP_INCLUDED
+        bool "Enable MP"
+    if MP_INCLUDED
+        choice
+            prompt "MP Mode"
+            default MP_SHRINK
+            config MP_EXPAND
+                bool "expand"
+            config MP_SHRINK
+                bool "shrink"
+        endchoice
+    endif
+endmenu
+
+rsource "../component/at_cmd/Kconfig"
+
+rsource "../component/soc/common/rtk_assert/Kconfig"
+
+rsource "../component/file_system/Kconfig"
+
+rsource "../component/os/Kconfig"
+
+
+menu "CONFIG OTA OPTION"
+    config UPGRADE_BOOTLOADER
+        bool "Enable Bootloader OTA"
+    config COMPRESS_OTA_IMG
+        bool "Enable Compress APP Image"
+endmenu
+
+rsource "../component/usb/Kconfig"
+
+menu "CONFIG APPLICATION"
+
+    rsource "../component/ui/Kconfig"
+
+    rsource "../component/audio/Kconfig"
+
+    orsource "${RTK_APP_DIR}/Kconfig"
+
+endmenu
+
+
+comment "-----Connectivity config-----"
+
+menu "CONFIG WHC INTF"
+    choice
+        prompt "WHC MODE"
+        default WHC_INTF_IPC_MENU
+            config WHC_INTF_IPC_MENU
+                bool "WHC_IPC"
+            config FULLMAC_DEV
+                bool "FULLMAC_DEV"
+                select WIFI_HOST_CONTROL
+                select WHC_DEV_FOR_KM4TZ
+            config WHC_FULLMAC_HOST
+                bool "FULLMAC_HOST"
+                select WHC_FULLMAC_HOST_IMPL
+                select WHC_HOST_FOR_KM4TZ
+            config WHC_BRIDGE
+                bool "BRIDGE_DEV"
+                select WIFI_HOST_CONTROL
+                select WHC_NONE_FOR_KM4TZ
+            config WHC_BRIDGE_HOST
+                bool "BRIDGE_HOST"
+                select WHC_FULLMAC_HOST_IMPL
+                select WHC_HOST_FOR_KM4TZ
+    endchoice
+
+    if !WHC_INTF_IPC_MENU
+        choice
+           prompt "HW INTERFACE"
+           config WHC_INTF_SDIO
+                bool "WHC_INTF_SDIO"
+            config WHC_INTF_USB
+                bool "WHC_INTF_USB"
+                select USB_DEVICE_EN
+                select USBD_INIC
+            config WHC_INTF_SPI
+                bool "WHC_INTF_SPI"
+        endchoice
+    endif
+
+    if FULLMAC_DEV
+
+        #WPA Lite in dev for FULLMAC host without std wpa_supplicant
+        choice
+            prompt "WPA Lite Location"
+            default WPA_LOCATION_HOST
+            config WPA_LOCATION_HOST
+                bool "HOST"
+            config WPA_LOCATION_DEV
+                bool "DEV"
+        endchoice
+    endif
+
+    if FULLMAC_DEV || WHC_BRIDGE
+        menu "FULLMAC config"
+        config WHC_CMD_PATH
+            default y if WHC_BRIDGE
+            bool "Support WHC CMD PATH"
+        config WHC_WIFI_API_PATH
+            default y if FULLMAC_DEV
+            bool "Support WHC WIFI API PATH"
+        config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4TZ
+            default y if WHC_BRIDGE
+            bool "Support WHC SUPPLICANT OFFLOAD"
+        config WHC_DUAL_TCPIP_FOR_KM4TZ
+            default y if WHC_BRIDGE
+            bool "Support WHC DUAL TCPIP"
+
+        endmenu
+    endif
+
+
+    if WHC_BRIDGE
+
+        menu "Debug"
+
+        #choose WPA_STD will compile std supplicant in device side.
+        choice
+            prompt "WPA OPS Selection"
+            config WPA_NONE
+                bool "NONE"
+            config WPA_LITE_OPS
+                bool "WPA Lite"
+            config WPA_STD
+                bool "WPA Supplicant STD"
+        endchoice
+
+        if WPA_STD
+            menu "wpa_supplicant config"
+            config DRIVER_WEXT
+                bool "Support DRIVER WEXT"
+            config DRIVER_NL80211
+                bool "Support DRIVER NL80211"
+            config DRIVER_NL80211_REALTEK
+                bool "Support DRIVER NL80211 REALTEK"
+            config STD_PASN_NAN
+                bool "Support PASN NAN"
+            config LIBNL32
+                bool "Support LIBNL32"
+            config DRIVER_WIRED
+                bool "Support driver wired"
+            config IEEE8021X_EAPOL
+                bool "Support IEEE8021X_EAPOL"
+            config EAP_MD5
+                bool "Support EAP_MD5"
+            config EAP_MSCHAPV2
+                bool "Support EAP_MSCHAPV2"
+            config EAP_TLS
+                bool "Support EAP_TLS"
+            config EAP_PEAP
+                bool "Support EAP_PEAP"
+            config EAP_TTLS
+                bool "Support EAP_TTLS"
+            config EAP_GTC
+                bool "Support EAP_GTC"
+            config EAP_OTP
+                bool "Support EAP_OTP"
+            config EAP_LEAP
+                bool "Support EAP_LEAP"
+            config WPS
+                bool "Support WPS"
+            config WPS2
+                bool "Support WPS2"
+            config PKCS12
+                bool "Support PKCS12"
+            config SMARTCARD
+                bool "Support SMARTCARD"
+            config CTRL_IFACE
+                bool "Support CTRL_IFACE"
+            config WPA_CLI_EDIT
+                bool "Support WPA_CLI_EDIT"
+            config SAE
+                bool "Support SAE"
+            config NEED_DH_GROUPS_ALL
+                bool "Support NEED_DH_GROUPS_ALL"
+            config SUITEB
+                bool "Support SUITEB"
+            config SUITEB192
+                bool "Support SUITEB192"
+            config IEEE80211W
+                bool "Support IEEE80211W"
+            config IEEE80211R
+                bool "Support IEEE80211R"
+            config IEEE80211N
+                bool "Support IEEE80211N"
+                default y
+            config IEEE80211AC
+                bool "Support IEEE80211AC"
+                default y
+            config WNM
+                bool "Support WNM"
+            config AP
+                bool "Support AP"
+            config P2P
+                bool "Support P2P"
+            config MBO
+                bool "Support MBO"
+            config DPP
+                bool "Support DPP"
+            config WEP
+                bool "Support WEP"
+            config PASN
+                bool "Support PASN"
+            config IEEE80211AX
+                bool "Support IEEE80211AX"
+                default y
+            config NO_RANDOM_POOL
+                bool "CONFIG NO RANDOM POOL"
+                default y
+
+            endmenu
+        endif
+
+        endmenu
+    endif
+
+    if WHC_INTF_IPC_MENU
+        choice
+            prompt "Select AP Core"
+            default KM4TZ_AS_AP
+            config KM4TZ_AS_AP
+                bool "KM4TZ"
+                select WHC_HOST_FOR_KM4TZ
+                select WHC_DEV_FOR_KM4NS if WHC_INTF_IPC_MENU
+            config KM4NS_AS_AP
+                bool "KM4NS"
+                select WHC_HOST_FOR_KM4NS
+                select WHC_DEV_FOR_KM4TZ if WHC_INTF_IPC_MENU
+        endchoice
+    endif
+
+
+    config WHC_HOST_FOR_KM4TZ
+        bool
+    config WHC_DEV_FOR_KM4NS
+        bool
+    config WHC_HOST_FOR_KM4NS
+        bool
+    config WHC_DEV_FOR_KM4TZ
+        bool
+    config WHC_NONE_FOR_KM4TZ
+        bool
+endmenu
+
+menu "CONFIG WIFI"
+    config WLAN_MENU
+        bool "Enable Wifi"
+        default y
+    if WLAN_MENU
+
+        rsource "../component/wifi/Kconfig.wifi"
+
+        config WHC_INTF_IPC_MENU
+            bool
+            select WHC_INTF_IPC
+            select WLAN
+            select LWIP_LAYER if WHC_HOST && !MP_SHRINK
+            select FW_DRIVER_COEXIST if WHC_DEV
+
+        config FULLMAC_DEV
+            bool
+            depends on WHC_DEV
+            select WLAN
+            select FW_DRIVER_COEXIST
+            select WIFI_FW_EN
+            #todo remove at last
+            select WHC_WIFI_API_PATH
+            select LWIP_LAYER if WHC_DUAL_TCPIP_FOR_KM4TZ
+
+        config WHC_BRIDGE
+            bool
+            depends on WHC_NONE
+            select WLAN
+            select LWIP_LAYER
+            select FW_DRIVER_COEXIST
+            select WIFI_FW_EN
+            #todo remove at last
+            select WHC_CMD_PATH
+            select WHC_DUAL_TCPIP_FOR_KM4TZ
+            select WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4TZ
+
+        config WHC_FULLMAC_HOST_IMPL
+            bool
+            depends on WHC_HOST
+            select WLAN
+            select LWIP_LAYER
+
+        config WIFI_SINGLE_CORE_MENU
+            bool
+            depends on WHC_NONE
+            select WLAN
+            select LWIP_LAYER
+            select FW_DRIVER_COEXIST
+
+        config WIFI_FW_EN_FOR_KM4NS
+            depends on !FULLMAC_DEV && !WHC_BRIDGE
+            bool
+            default !MP_SHRINK
+    endif
+
+    config WLAN
+        bool
+    config WHC_INTF_IPC
+        bool
+    config LWIP_LAYER
+        bool
+    config FW_DRIVER_COEXIST
+        bool
+    config WHC_INTF_SDIO
+        bool
+    config WHC_INTF_SPI
+        bool
+    config WHC_INTF_USB
+        bool
+    config WIFI_FW_EN
+        bool
+    config ENABLE_WPS
+        bool
+    config ENABLE_WPS_DISCOVERY
+        bool
+    config FULLMAC_HOST
+        bool
+    config WHC_BRIDGE
+        bool
+    config WIFI_HOST_CONTROL
+        bool
+    config WHC_FULLMAC_HOST_IMPL
+        bool
+endmenu
+
+menu "CONFIG BT"
+    config  BT_MENU
+        bool "Enable BT"
+
+    if BT_MENU
+
+        choice
+            depends on FULLMAC_DEV
+            prompt "HCI Mode"
+            default BT_INIC_SHARE
+            config BT_INIC_SHARE
+                bool "Share interface with WiFi"
+            config BT_INIC_H4
+                bool "UART H4"
+            config BT_INIC_H5
+                bool "UART H5"
+            config BT_INIC_NONE
+                bool "Internal"
+        endchoice
+
+        # set this to 'y' to debug BT inic without WiFi fullmac
+        config BT_INIC_DEBUG
+            bool
+            default n
+
+        choice
+            depends on BT_INIC_DEBUG && !FULLMAC_DEV
+            prompt "iNIC debug Interface"
+            default BT_INICD_H4
+            config BT_INICD_H4
+                bool "UART H4"
+            config BT_INICD_H5
+                bool "UART H5"
+            config BT_INICD_USB
+                bool "USB"
+            config BT_INICD_SPI
+                bool "SPI"
+            config BT_INICD_SDIO
+                bool "SDIO"
+        endchoice
+
+        config BT_INIC
+            depends on BT_INIC_SHARE || BT_INIC_H4 || BT_INIC_H5 || BT_INIC_DEBUG
+            bool
+            default y
+
+        # normal case: BT is always on AP CORE
+        # wifi fullmac, BT shares interface with WiFi: BT stays with WiFi on NP CORE
+        # wifi fullmac, BT uses UART alone: BT is on AP core, BUT WHC_HOST not defined.
+        # wifi fullmac, BT normal: BT application is on AP core, BUT WHC_HOST not defined.
+        config BT
+            bool
+            default y if WHC_HOST || WHC_NONE
+            default y if BT_INIC_SHARE && WHC_DEV
+            default y if FULLMAC_DEV && !BT_INIC_SHARE && !WHC_DEV
+            select FTL_ENABLED
+
+        config FTL_ENABLED
+            bool
+
+        if !BT_INIC
+            rsource "../component/bluetooth/Kconfig"
+        endif
+
+    endif
+endmenu
+
+
+menu "CONFIG ETHERNET"
+    config ETHERNET
+        bool "Enable ETHERNET"
+		default n
+        select ETHERNET_RMII
+
+    config ETHERNET_RMII
+        bool
+endmenu
+
+rsource "../component/lwip/Kconfig"
+
+rsource "../component/ssl/Kconfig"
+
+orsource "../component/wpan/Kconfig"
+
+rsource "../component/rtk_coex/Kconfig.coex"
+
+if !AMEBA_RLS
+comment "---------Test Config---------"
+
+menu "Verification and Test"
+    rsource "../component/soc/amebagreen2/Kconfig"
+endmenu
+endif
+
+comment "--------Build Config---------"
+menu "Build Option"
+
+config FPGA
+    bool "Select FPGA"
+    depends on !AMEBA_RLS
+
+comment "Choose the build configuration"
+    choice
+        prompt "Link ROM Mode"
+        default LINK_ROM_SYMB
+        config LINK_ROM_LIB
+            bool "Link_ROM_Library"
+
+        config LINK_ROM_SYMB
+            bool "Link_ROM_Symbol"
+    endchoice
+endmenu
+
+comment "----end of MENUCONFIG FOR General------"
+
+menu "MENUCONFIG FOR KM4TZ CONFIG"
+    rsource "project_km4tz/Kconfig"
+endmenu
+
+menu "MENUCONFIG FOR KM4NS CONFIG"
+    rsource "project_km4ns/Kconfig"
+endmenu
+
+
+comment "----- DO NOT ENTER IN THIS BUTTON ------"
+menu "MENUCONFIG FOR Private"
+config WHC_HOST
+    bool "--DO NOT CHOOSE THIS CONFIG--"
+config WHC_DEV
+    bool "--DO NOT CHOOSE THIS CONFIG--"
+config WHC_NONE
+    bool "--DO NOT CHOOSE THIS CONFIG--"
+endmenu

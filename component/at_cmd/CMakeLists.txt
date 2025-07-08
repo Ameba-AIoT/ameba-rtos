@@ -40,9 +40,16 @@ set(private_compile_options)         #private compile_options
 # You may use if-else condition to set these predefined variable
 ameba_list_append(private_sources monitor.c)
 
-if(CONFIG_CORE_AS_AP AND CONFIG_SUPPORT_ATCMD)
+if(CONFIG_SUPPORT_ATCMD)
+
     ameba_list_append(private_sources
         atcmd_service.c
+        atcmd_sys_common.c
+    )
+
+if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
+
+    ameba_list_append(private_sources
         atcmd_sys.c
         atcmd_fs.c
         atcmd_bt_mp.c
@@ -72,6 +79,8 @@ if(CONFIG_CORE_AS_AP AND CONFIG_SUPPORT_ATCMD)
         )
     endif()
 endif()
+endif()
+
 # Component private part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#
 

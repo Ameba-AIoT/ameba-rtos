@@ -1,16 +1,16 @@
 menu "Audio Config"
     config AUDIO_FWK_MENU
         bool "Enable Audio Framework"
-        select AUDIO_FWK if CORE_AS_AP
+        select AUDIO_FWK if WHC_HOST || WHC_NONE
     if AUDIO_FWK_MENU
         choice
             prompt "Select Audio Interfaces"
             config AUDIO_MIXER_MENU
                 bool "Mixer"
-                select AUDIO_MIXER if CORE_AS_AP
+                select AUDIO_MIXER if WHC_HOST || WHC_NONE
             config AUDIO_PASSTHROUGH_MENU
                 bool "PassThrough"
-                select AUDIO_PASSTHROUGH if CORE_AS_AP
+                select AUDIO_PASSTHROUGH if WHC_HOST || WHC_NONE
         endchoice
     endif
 
@@ -18,7 +18,7 @@ menu "Audio Config"
         config MEDIA_PLAYER_MENU
             bool "Enable Media Framework"
             select AUDIO_FWK_MENU
-            select MEDIA_PLAYER if CORE_AS_AP
+            select MEDIA_PLAYER if WHC_HOST || WHC_NONE
 
         if MEDIA_PLAYER_MENU
             menu "Demux"
@@ -26,31 +26,31 @@ menu "Audio Config"
 
                 config MEDIA_DEMUX_WAV_MENU
                     bool "Demux WAV"
-                    select MEDIA_DEMUX_WAV if CORE_AS_AP
+                    select MEDIA_DEMUX_WAV if WHC_HOST || WHC_NONE
 
                 config MEDIA_DEMUX_MP3_MENU
                     bool "Demux MP3"
-                    select MEDIA_DEMUX_MP3 if CORE_AS_AP
+                    select MEDIA_DEMUX_MP3 if WHC_HOST || WHC_NONE
 
                 config MEDIA_DEMUX_AAC_MENU
                     bool "Demux AAC"
-                    select MEDIA_DEMUX_AAC if CORE_AS_AP
+                    select MEDIA_DEMUX_AAC if WHC_HOST || WHC_NONE
 
                 config MEDIA_DEMUX_MP4_MENU
                     bool "Demux M4A"
-                    select MEDIA_DEMUX_MP4 if CORE_AS_AP
+                    select MEDIA_DEMUX_MP4 if WHC_HOST || WHC_NONE
 
                 config MEDIA_DEMUX_FLAC_MENU
                     bool "Demux FLAC"
-                    select MEDIA_DEMUX_FLAC if CORE_AS_AP
+                    select MEDIA_DEMUX_FLAC if WHC_HOST || WHC_NONE
 
                 config MEDIA_DEMUX_OGG_MENU
                     bool "Demux OGG"
-                    select MEDIA_DEMUX_OGG if CORE_AS_AP
+                    select MEDIA_DEMUX_OGG if WHC_HOST || WHC_NONE
 
                 config MEDIA_DEMUX_AMR_MENU
                     bool "Demux AMR"
-                    select MEDIA_DEMUX_AMR if CORE_AS_AP
+                    select MEDIA_DEMUX_AMR if WHC_HOST || WHC_NONE
 
             endmenu
 
@@ -58,35 +58,35 @@ menu "Audio Config"
                 comment "    Codec"
                 config MEDIA_CODEC_PCM_MENU
                     bool "Codec PCM"
-                    select MEDIA_CODEC_PCM if CORE_AS_AP
+                    select MEDIA_CODEC_PCM if WHC_HOST || WHC_NONE
 
                 config MEDIA_CODEC_MP3_MENU
                     bool "Codec MP3"
-                    select MEDIA_CODEC_MP3 if CORE_AS_AP
+                    select MEDIA_CODEC_MP3 if WHC_HOST || WHC_NONE
 
                 config MEDIA_CODEC_HAAC_MENU
                     bool "Codec AAC"
-                    select MEDIA_CODEC_HAAC if CORE_AS_AP
+                    select MEDIA_CODEC_HAAC if WHC_HOST || WHC_NONE
 
                 config MEDIA_CODEC_VORBIS_MENU
                     bool "Codec VORBIS"
-                    select MEDIA_CODEC_VORBIS if CORE_AS_AP
+                    select MEDIA_CODEC_VORBIS if WHC_HOST || WHC_NONE
 
                 config MEDIA_CODEC_OPUS_MENU
                     bool "Codec OPUS"
-                    select MEDIA_CODEC_OPUS if CORE_AS_AP
+                    select MEDIA_CODEC_OPUS if WHC_HOST || WHC_NONE
 
                 config MEDIA_CODEC_AMR_MENU
                     bool "Codec AMR"
-                    select MEDIA_CODEC_AMR if CORE_AS_AP
+                    select MEDIA_CODEC_AMR if WHC_HOST || WHC_NONE
 
                 config MEDIA_CODEC_G711_MENU
                     bool "Codec G711"
-                    select MEDIA_CODEC_G711 if CORE_AS_AP
+                    select MEDIA_CODEC_G711 if WHC_HOST || WHC_NONE
 
                 config MEDIA_CODEC_GSM_MENU
                     bool "Codec GSM"
-                    select MEDIA_CODEC_GSM if CORE_AS_AP
+                    select MEDIA_CODEC_GSM if WHC_HOST || WHC_NONE
 
             endmenu
         endif
@@ -96,11 +96,11 @@ menu "Audio Config"
         config SPEEX_LIB_MENU
             bool "Speex"
             default n
-            select SPEEX_LIB if CORE_AS_AP
+            select SPEEX_LIB if WHC_HOST || WHC_NONE
         config OPUS_LIB_MENU
             bool "OPUS"
             default n
-            select OPUS_LIB if CORE_AS_AP
+            select OPUS_LIB if WHC_HOST || WHC_NONE
     endmenu
 
 endmenu

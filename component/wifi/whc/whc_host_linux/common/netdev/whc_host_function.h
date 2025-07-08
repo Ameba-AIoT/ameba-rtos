@@ -31,14 +31,14 @@ int whc_fullmac_host_deinit_ap(void);
 int whc_fullmac_host_start_ap(struct rtw_softap_info *softAP_config);
 int whc_fullmac_host_stop_ap(void);
 int whc_fullmac_host_add_key(struct rtw_crypt_info *crypt);
-int whc_fullmac_host_set_EDCA_params(unsigned int *AC_param);
+int whc_fullmac_host_set_EDCA_params(struct rtw_edca_param *pedca_param);
 int whc_fullmac_host_tx_mgnt(u8 wlan_idx, const u8 *buf, size_t buf_len, u8 need_wait_ack);
 int whc_fullmac_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr);
 int whc_fullmac_host_pmksa_ops(dma_addr_t pmksa_ops_addr);
 int whc_fullmac_host_channel_switch(dma_addr_t csa_param_addr);
 u32 whc_fullmac_host_update_ip_addr(void);
 int whc_fullmac_host_get_traffic_stats(u8 wlan_idx, dma_addr_t traffic_stats_addr);
-int whc_fullmac_host_get_phy_stats(u8 wlan_idx, u8 *mac_addr, dma_addr_t phy_stats_addr);
+int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, dma_addr_t phy_stats_addr);
 int whc_fullmac_host_get_setting(unsigned char wlan_idx, dma_addr_t setting_phy);
 int whc_fullmac_host_set_lps_enable(u8 enable);
 int whc_fullmac_host_mp_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_t user_addr);
@@ -92,6 +92,7 @@ void whc_fullmac_host_p2p_netdev_work_func(struct work_struct *work);
 #endif
 #ifdef CONFIG_CFG80211_SME_OFFLOAD
 void whc_fullmac_host_sme_auth(dma_addr_t auth_data_phy);
+int whc_fullmac_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len);
 #endif
 int whc_fullmac_host_set_pmf_mode(u8 pmf_mode);
 int whc_fullmac_host_set_wps_phase(u8 enable);
@@ -108,6 +109,9 @@ int whc_fullmac_host_set_country_code(char *cc);
 int whc_fullmac_host_get_country_code(struct rtw_country_code_table *table);
 int whc_fullmac_host_dev_driver_is_mp(void);
 int whc_fullmac_host_set_promisc_enable(u32 enable, u8 mode);
+#ifdef CONFIG_IEEE80211R
+int whc_fullmac_host_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 status);
+#endif
 
 void *rtw_malloc(size_t size, dma_addr_t *paddr);
 void rtw_mfree(size_t size, void *vaddr, dma_addr_t paddr);
@@ -165,11 +169,13 @@ int rtw_sdio_alloc_irq(struct whc_sdio *priv);
 
 #endif
 
-#if defined(CONFIG_WHC_BRIDGE)
-void whc_bridge_host_register_genl_family(void);
-void whc_bridge_host_unregister_genl_family(void);
+#if defined(CONFIG_WHC_CMD_PATH)
+void whc_host_register_genl_family(void);
+void whc_host_unregister_genl_family(void);
 int whc_bridge_host_recv_process(struct sk_buff *pskb);
-#else
+#endif
+
+#if !defined(CONFIG_WHC_BRIDGE)
 int whc_fullmac_host_recv_process(struct sk_buff *pskb);
 #endif
 

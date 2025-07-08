@@ -24,6 +24,12 @@ Required Components: another peer device.
 	- Connect `UART_RTS(_PB_19)` to `UART_CTS(_PB_20)` of peer device
 	- Connect `UART_CTS(_PB_20)` to `UART_RTS(_PB_19)` of peer device
 	- Connect `GND` to `GND` of peer device
+* On AmebaGreen2
+	- Connect `UART_TX(_PA_18)` to `UART_RX(_PA_19)` of peer device
+	- Connect `UART_RX(_PA_19)` to `UART_TX(_PA_18)` of peer device
+	- Connect `UART_RTS(_PA_25)` to `UART_CTS(_PA_26)` of peer device
+	- Connect `UART_CTS(_PA_26)` to `UART_RTS(_PA_25)` of peer device
+	- Connect `GND` to `GND` of peer device
 
 # SW Configuration
 
@@ -52,9 +58,12 @@ By default, `UART0` is used to transmit or receive `1000` data to or from anothe
 	- Only `UART0/3` are designed with RTS/CTS pins.
 * On AmebaDplus
 	- Only `UART0/2` are designed with RTS/CTS pins.
+* On AmebaGreen2
+	- Only `UART0/3` are designed with RTS/CTS pins.
 
 # Supported IC
 
 * AmebaSmart
 * AmebaLite
 * AmebaDplus
+* AmebaGreen2

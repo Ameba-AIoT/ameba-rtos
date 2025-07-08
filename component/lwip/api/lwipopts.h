@@ -128,7 +128,7 @@ extern unsigned int sys_now(void);
 #endif
 
 #if defined(CONFIG_HIGH_TP_TEST)
-#if defined (CONFIG_AS_INIC_AP)
+#if defined (CONFIG_WHC_HOST)
 #undef TCP_WND
 #define TCP_WND                         (16 * TCP_MSS)
 #undef TCP_SND_BUF

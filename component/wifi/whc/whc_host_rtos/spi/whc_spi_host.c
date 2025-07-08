@@ -131,7 +131,7 @@ int whc_spi_host_recv_process(void)
 	u8 *recv_msg = spi_host_priv.rx_buf;
 
 #ifdef CONFIG_WHC_BRIDGE_HOST
-	struct whc_bridge_hdr *hdr = NULL;
+	struct whc_cmd_path_hdr *hdr = NULL;
 #else
 	struct whc_api_info *ret_msg;
 	u8 *buf = NULL;
@@ -199,7 +199,7 @@ int whc_spi_host_recv_process(void)
 		RTK_LOGD(TAG_WLAN_INIC,  "%s: unknown event:%x\n", __func__, event);
 #else
 	case WHC_WIFI_EVT_BRIDGE:
-		hdr = (struct whc_bridge_hdr *)recv_msg;
+		hdr = (struct whc_cmd_path_hdr *)recv_msg;
 		whc_bridge_host_pkt_rx_to_user((u8 *)(hdr + 1), hdr->len);
 		break;
 

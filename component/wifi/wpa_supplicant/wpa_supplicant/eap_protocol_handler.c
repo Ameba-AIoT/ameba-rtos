@@ -416,7 +416,7 @@ void eap_supplicant_handle_recvd(u8 *rx_buf)
 	eap_send_packet(rx_buf, sendData);
 }
 
-//void eap_eapol_recvd(char *buf, int buf_len, int flags, void* handler_user_data )
+//void eap_eapol_recvd(char *buf, int buf_len, int flags)
 void eap_eapol_recvd(void *buf)
 {
 	struct lib1x_eapol_message_hdr *eapol_payload_hdr;
@@ -478,11 +478,10 @@ exit:
 	rtos_task_delete(eap_recvd_tsk.task);
 }
 
-void eap_eapol_recvd_hdl(u8 *buf, s32 buf_len, s32 flags, void *handler_user_data)
+__weak void eap_eapol_recvd_hdl(u8 *buf, s32 buf_len, s32 flags)
 {
 	(void)flags;
-	(void)handler_user_data;
-//	eap_eapol_recvd(buf, buf_len, flags, handler_user_data);
+//	eap_eapol_recvd(buf, buf_len, flags);
 
 	char *copy_buf = os_malloc(buf_len);
 	memcpy(copy_buf, buf, buf_len);
@@ -494,11 +493,10 @@ void eap_eapol_recvd_hdl(u8 *buf, s32 buf_len, s32 flags, void *handler_user_dat
 	}
 }
 
-void eap_eapol_start_hdl(u8 *buf, s32 buf_len, s32 flags, void *handler_user_data)
+__weak void eap_eapol_start_hdl(u8 *buf, s32 buf_len, s32 flags)
 {
 	(void)buf_len;
 	(void)flags;
-	(void)handler_user_data;
 	u8 *dst_mac = buf;
 	eap_send_eapol_start(dst_mac);
 }

@@ -5,7 +5,7 @@
  ******************************************************************************/
 #include "whc_dev.h"
 #include "whc_dev_bridge.h"
-#include "whc_bridge_dev_api.h"
+#include "whc_dev_api.h"
 
 #include "lwip/sys.h"
 #include "lwip/etharp.h"
@@ -16,16 +16,16 @@
 
 struct sk_buff *skb_transit = NULL;
 
-extern struct list_head bridge_filter_head;
+extern struct list_head whc_filter_head;
 
-u8(*whc_bridge_sdio_dev_pkt_redir_cusptr)(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib);
+u8(*whc_dev_pkt_redir_cusptr)(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib);
 
-void whc_bridge_dev_pktfilter_init(void)
+void whc_dev_pktfilter_init(void)
 {
-	rtw_init_listhead(&bridge_filter_head);
+	rtw_init_listhead(&whc_filter_head);
 }
 
-void whc_bridge_dev_packet_attrib_parse(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib)
+void whc_dev_packet_attrib_parse(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib)
 {
 	u16_t protocol, src_port = 0, dst_port = 0;
 	u8_t type = 0;
@@ -90,7 +90,7 @@ void whc_bridge_dev_packet_attrib_parse(struct sk_buff *skb, struct bridge_pkt_a
 
 }
 
-static bool whc_bridge_dev_match_filter(struct bridge_pkt_attrib *pattrib, struct whc_bridge_dev_pkt_filter *filter)
+static bool whc_dev_match_filter(struct bridge_pkt_attrib *pattrib, struct whc_dev_pkt_filter *filter)
 {
 	/* consider concurrent mode */
 	if ((filter->mask & MASK_IDX) && pattrib->port_idx != filter->index) {
@@ -122,14 +122,14 @@ static bool whc_bridge_dev_match_filter(struct bridge_pkt_attrib *pattrib, struc
 	return true;
 }
 
-u8_t whc_bridge_dev_rcvpkt_filter(struct bridge_pkt_attrib *pattrib)
+u8_t whc_dev_rcvpkt_filter(struct bridge_pkt_attrib *pattrib)
 {
 	struct list_head *plist, *phead;
 	struct PktFilterNode *target;
 
-	phead = &bridge_filter_head;
+	phead = &whc_filter_head;
 	if (list_empty(phead)) {
-		return whc_bridge_dev_api_get_default_direction();
+		return whc_dev_api_get_default_direction();
 	}
 
 	plist = get_next(phead);
@@ -137,22 +137,22 @@ u8_t whc_bridge_dev_rcvpkt_filter(struct bridge_pkt_attrib *pattrib)
 	while ((rtw_end_of_queue_search(phead, plist)) == FALSE) {
 		target = LIST_CONTAINOR(plist, struct PktFilterNode, list);
 
-		if (target && whc_bridge_dev_match_filter(pattrib, &target->filter)) {
+		if (target && whc_dev_match_filter(pattrib, &target->filter)) {
 			return target->filter.direction;
 		}
 		plist = get_next(plist);
 	}
 
-	return whc_bridge_dev_api_get_default_direction();
+	return whc_dev_api_get_default_direction();
 }
 
-u8 whc_bridge_dev_rcvpkt_redirect(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib)
+u8 whc_dev_rcvpkt_redirect(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib)
 {
 	u8 icmp_type = 0;
 	u8 type = PORT_TO_UNKNOWN;
 
-	if (whc_bridge_sdio_dev_pkt_redir_cusptr) {
-		type = whc_bridge_sdio_dev_pkt_redir_cusptr(skb, pattrib);
+	if (whc_dev_pkt_redir_cusptr) {
+		type = whc_dev_pkt_redir_cusptr(skb, pattrib);
 		if (type != PORT_TO_UNKNOWN) {
 			return type;
 		}
@@ -160,7 +160,7 @@ u8 whc_bridge_dev_rcvpkt_redirect(struct sk_buff *skb, struct bridge_pkt_attrib 
 
 #ifdef CONFIG_WHC_BRIDGE
 	/* all pkt to upper before host rdy to avoid txbd full */
-	if (!(whc_bridge_dev_api_get_host_rdy())) {
+	if (!(whc_dev_api_get_host_rdy())) {
 		return PORT_TO_UP;
 	}
 #endif
@@ -192,12 +192,12 @@ u8 whc_bridge_dev_rcvpkt_redirect(struct sk_buff *skb, struct bridge_pkt_attrib 
 		}
 	}
 
-	type = whc_bridge_dev_rcvpkt_filter(pattrib);
+	type = whc_dev_rcvpkt_filter(pattrib);
 
 	return type;
 }
 
-u8 whc_bridge_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send)
+u8 whc_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send)
 {
 	struct bridge_pkt_attrib *pattrib;
 	u8 direction = 0;
@@ -214,7 +214,7 @@ u8 whc_bridge_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send)
 	/* case2: normal netdev0 pkt*/
 	skb = wifi_if_get_recv_skb(*idx);
 	pattrib = (struct bridge_pkt_attrib *)rtos_mem_zmalloc(sizeof(struct bridge_pkt_attrib));
-	whc_bridge_dev_packet_attrib_parse(skb, pattrib);
+	whc_dev_packet_attrib_parse(skb, pattrib);
 
 
 	if (pattrib->protocol == lwip_htons(ETHTYPE_IPV6)) {
@@ -225,7 +225,7 @@ u8 whc_bridge_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send)
 
 	pattrib->port_idx = *idx;//BRIDGE_TODO: check if needed
 
-	direction = whc_bridge_dev_rcvpkt_redirect(skb, pattrib);
+	direction = whc_dev_rcvpkt_redirect(skb, pattrib);
 
 	switch (direction) {
 	case PORT_TO_BOTH:

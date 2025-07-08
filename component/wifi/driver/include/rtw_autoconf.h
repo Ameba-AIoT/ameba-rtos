@@ -32,7 +32,7 @@
 #define WIFI_LOGO_CERTIFICATION 0
 #define RX_AMSDU
 
-#if !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP))
+#if !(defined(ZEPHYR_WIFI) && defined(CONFIG_WHC_HOST))
 /* no IOT chip supports 80M now, so close it in common */
 #define CONFIG_AUTO_RECONNECT 1
 #endif
@@ -125,7 +125,7 @@
 #define CONFIG_AUTO_RECONNECT 0
 #endif
 
-#ifdef CONFIG_AS_INIC_NP
+#ifdef CONFIG_WHC_DEV
 #define WHC_SKIP_NP_MSG_TASK
 #endif
 

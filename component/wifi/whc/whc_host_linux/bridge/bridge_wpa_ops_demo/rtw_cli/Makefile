@@ -1,6 +1,6 @@
 CC=gcc
 
-CFLAGS = -I. -I.. -I../.. -I../../..
+CFLAGS = -I. -I.. -I../.. -I../../.. -I../../../common
 
 LDFLAGS = -lpthread
 

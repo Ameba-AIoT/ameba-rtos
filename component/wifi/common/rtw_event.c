@@ -15,50 +15,84 @@
   ******************************************************************************
   */
 #include "rtw_inic_common.h"
-#if !defined (CONFIG_FULLMAC) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP))
+#if !defined (CONFIG_FULLMAC) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_WHC_HOST))
 #include "wifi_api.h"
 #include "platform_stdlib.h"
-#if !defined(CONFIG_AS_INIC_NP)|| defined(CONFIG_WPA_LOCATION_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
+#if !defined(CONFIG_WHC_DEV)|| defined(CONFIG_WPA_LOCATION_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 #include "atcmd_service.h"
 #include "wpa_lite_intf.h"
 #include <wifi_auto_reconnect.h>
+#include "../wpa_supplicant/wps_protocol_handler.h"
+#include "../wpa_supplicant/eap_protocol_handler.h"
 #endif
 #if defined (CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
 #include <dhcp/dhcps.h>
 #endif
 #endif
+#include "ameba_diagnose.h"
 /**********************************************************************************************
  *                                          Globals
  *********************************************************************************************/
-#if !(defined CONFIG_AS_INIC_NP) || defined(CONFIG_WPA_LOCATION_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
-struct event_list_elem_t {
-	void (*handler)(u8 *buf, s32 len, s32 flags, void *user_data);
-	void	*handler_user_data;
-};
+#if !(defined CONFIG_WHC_DEV) || defined(CONFIG_WPA_LOCATION_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 
-#define RTW_EVENT_MAX_ROW	2
-static struct event_list_elem_t event_callback_list[RTW_EVENT_MAX][RTW_EVENT_MAX_ROW] = {0};
 extern int (*p_store_fast_connect_info)(unsigned int data1, unsigned int data2);
 extern u8 rtw_join_status;
 extern int join_fail_reason;
 extern struct internal_block_param *join_block_param;
 extern void (*p_wifi_join_info_free)(u8 iface_type);
 extern void eap_disconnected_hdl(void);
+#if !defined(CONFIG_MP_SHRINK) && defined (CONFIG_WHC_HOST)
+extern u8 wifi_cast_get_initialized(void);
+extern void wifi_cast_wifi_join_status_ev_hdl(u8 *buf, s32 buf_len, s32 flags);
+#endif
+
+/**********************************************************************************************
+ *                                          External events
+ *********************************************************************************************/
+
+/**
+ * @brief external event handle
+ */
+__weak struct rtw_event_hdl_func_t event_external_hdl[] = {
+	{RTW_EVENT_MAX,			NULL},
+};
+__weak u16 array_len_of_event_external_hdl = sizeof(event_external_hdl) / sizeof(struct rtw_event_hdl_func_t);
+
+void wifi_event_handle_external(u32 event_cmd, u8 *buf, s32 buf_len, s32 flags)
+{
+	if (!array_len_of_event_external_hdl) {
+		return;
+	}
+
+	for (u32 i = 0; i < array_len_of_event_external_hdl; i++) {
+		if (event_external_hdl[i].evt_id == event_cmd) {
+			if (event_external_hdl[i].handler == NULL) {
+				continue;
+			}
+			event_external_hdl[i].handler(buf, buf_len, flags);
+		}
+	}
+}
 
 /**********************************************************************************************
  *                                          Internal events
  *********************************************************************************************/
 
-void wifi_event_join_status_internal_hdl(u8 *buf, s32 flags)
+void wifi_event_join_status_internal_hdl(u8 *buf, s32 buf_len, s32 flags)
 {
-#if !defined(CONFIG_MP_SHRINK) && !defined(CONFIG_AS_INIC_NP)
+	UNUSED(buf_len);
+#if !defined(CONFIG_MP_SHRINK) && !defined(CONFIG_WHC_DEV)
 	struct deauth_info  *deauth_data, *deauth_data_pre;
 	u8 zero_mac[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 	u8 join_status = (u8)flags;
-	struct rtw_event_info_joinstatus_joinfail *fail_info = (struct rtw_event_info_joinstatus_joinfail *)buf;
+	union rtw_event_info *evt_info = (union rtw_event_info *)buf;
+	struct diag_evt_wifi_disconn diag_disconn;
 
+	if (buf != NULL) {
+		diag_disconn.reason = evt_info->join_status.disconn_reason;
+	}
 	rtw_join_status = join_status;
 
 	/* step 1: internal process for different status*/
@@ -88,7 +122,7 @@ void wifi_event_join_status_internal_hdl(u8 *buf, s32 flags)
 	if (join_status == RTW_JOINSTATUS_FAIL) {
 		/* if synchronous connection, up sema when connect fail*/
 		if (join_block_param) {
-			join_fail_reason = fail_info->fail_reason;
+			join_fail_reason = evt_info->join_status.fail_reason;
 			rtos_sema_give(join_block_param->sema);
 		}
 
@@ -96,18 +130,19 @@ void wifi_event_join_status_internal_hdl(u8 *buf, s32 flags)
 	}
 
 	if (join_status == RTW_JOINSTATUS_DISCONNECT) {
+		rtk_diag_event_add(RTK_EVENT_LEVEL_INFO, DIAG_EVT_WIFI_DISCONN, (u8 *)&diag_disconn, sizeof(struct diag_evt_wifi_disconn));
 		at_printf_indicate("wifi disconnected\r\n");
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 		LwIP_DHCP_stop(0);
 		LwIP_netif_set_link_down(0);
 #endif
 
-#if !defined(CONFIG_AS_INIC_NP) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP))
+#if !defined(CONFIG_WHC_DEV) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_WHC_HOST))
 		deauth_data_pre = (struct deauth_info *)rtos_mem_zmalloc(sizeof(struct deauth_info));
-		rtw_psk_deauth_info_flash((u8 *)deauth_data_pre, sizeof(struct deauth_info), FLASH_READ, NULL);
+		rtw_psk_deauth_info_flash((u8 *)deauth_data_pre, sizeof(struct deauth_info), FLASH_READ);
 		if (memcmp(deauth_data_pre->bssid, zero_mac, 6) != 0) {
 			deauth_data = (struct deauth_info *)rtos_mem_zmalloc(sizeof(struct deauth_info));
-			rtw_psk_deauth_info_flash((u8 *)deauth_data, sizeof(struct deauth_info), FLASH_WRITE, NULL);
+			rtw_psk_deauth_info_flash((u8 *)deauth_data, sizeof(struct deauth_info), FLASH_WRITE);
 			rtos_mem_free((u8 *)deauth_data);
 		}
 		rtos_mem_free((u8 *)deauth_data_pre);
@@ -119,78 +154,143 @@ void wifi_event_join_status_internal_hdl(u8 *buf, s32 flags)
 	if ((join_status == RTW_JOINSTATUS_DISCONNECT) || (join_status == RTW_JOINSTATUS_FAIL)) {
 		/*wpa lite disconnect hdl*/
 		u8 port = IFACE_PORT0;
-		rtw_psk_disconnect_hdl(buf, 0, flags, &port);
+		rtw_psk_disconnect_hdl(buf, 0, (join_status << 8) | port);
 	}
 
 #if CONFIG_AUTO_RECONNECT
 	rtw_reconn_join_status_hdl(buf, flags);
 #endif
 
+#ifdef CONFIG_WHC_HOST
+	if (wifi_cast_get_initialized()) {
+		wifi_cast_wifi_join_status_ev_hdl(buf, buf_len, flags);
+	}
+#endif
 #else
 	UNUSED(flags);
 	UNUSED(buf);
 #endif
 }
 
+void rtw_sta_assoc_hdl(u8 *buf, s32 buf_len, s32 flags)
+{
+	(void)buf_len;
+	(void)flags;
+	u8 *mac_addr = NULL;
+
+	/* softap add sta */
+	mac_addr = ((unsigned char *)((SIZE_PTR)(buf) + 10)); // GetAddr2Ptr
+	at_printf_indicate("client connected:\""MAC_FMT"\"\r\n", MAC_ARG(mac_addr));
+}
+
+void rtw_sta_disassoc_hdl(u8 *buf, s32 buf_len, s32 flags)
+{
+	u8 *mac_addr = NULL;
+
+	/* softap dis sta */
+	mac_addr = buf;
+	at_printf_indicate("client disconnected:\""MAC_FMT"\"\r\n", MAC_ARG(mac_addr));
+
+	rtw_psk_disconnect_hdl(buf, buf_len, flags);
+}
+
+void rtw_join_status_hdl(u8 *buf, s32 buf_len, s32 flags)
+{
+	(void)buf_len;
+
+	wifi_event_join_status_internal_hdl(buf, buf_len, flags);
+}
+
+void rtw_eapol_start_hdl(u8 *buf, s32 buf_len, s32 flags)
+{
+#ifdef CONFIG_ENABLE_EAP
+	if (get_eap_phase()) {
+		eap_eapol_start_hdl(buf, buf_len, flags);
+	}
+#endif
+}
+
+void rtw_eapol_recvd_hdl(u8 *buf, s32 buf_len, s32 flags)
+{
+#ifdef CONFIG_ENABLE_EAP
+	if (get_eap_phase()) {
+		eap_eapol_recvd_hdl(buf, buf_len, flags);
+	}
+#endif
+
+#if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
+	if (get_wps_phase()) {
+		wpas_wsc_eapol_recvd_hdl(buf, buf_len, flags);
+	}
+#endif
+}
+
 /**
- * @brief internal event handle, must have same order as enum
+ * @brief internal event handle
  */
-void (*const event_internal_hdl[])(u8 *buf, s32 len, s32 flags, void *user_data) = {
-#if !defined(CONFIG_AS_INIC_NP) || defined(CONFIG_WPA_LOCATION_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
-	rtw_sae_sta_rx_auth,				/*RTW_EVENT_RX_MGNT*/
-	rtw_sae_ap_rx_auth,					/*RTW_EVENT_RX_MGNT_AP*/
-	rtw_sae_sta_start,					/*RTW_EVENT_EXTERNAL_AUTH_REQ*/
-	rtw_psk_sta_start_4way,				/*RTW_EVENT_WPA_STA_4WAY_START*/
-	rtw_psk_ap_start_4way, 				/*RTW_EVENT_WPA_AP_4WAY_START*/
-	rtw_psk_sta_recv_eapol, 			/*RTW_EVENT_WPA_STA_4WAY_RECV*/
-	rtw_psk_ap_recv_eapol, 				/*RTW_EVENT_WPA_AP_4WAY_RECV*/
-	rtw_psk_set_psk_info_evt_hdl,		/*RTW_EVENT_WPA_SET_PSK_INFO*/
-	rtw_owe_start_calc,					/*RTW_EVENT_OWE_START_CALC*/
-	rtw_owe_peer_key_recv,				/*RTW_EVENT_OWE_PEER_KEY_RECV*/
+const struct rtw_event_hdl_func_t event_internal_hdl[] = {
+	{RTW_EVENT_STA_ASSOC,			rtw_sta_assoc_hdl},
+	{RTW_EVENT_STA_DISASSOC,		rtw_sta_disassoc_hdl},
+	{RTW_EVENT_JOIN_STATUS,			rtw_join_status_hdl},
+#if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
+	{RTW_EVENT_WPA_STA_WPS_START,	wpas_wsc_sta_wps_start_hdl},
+	{RTW_EVENT_WPA_WPS_FINISH,		wpas_wsc_wps_finish_hdl},
+#endif
+	{RTW_EVENT_WPA_EAPOL_START,		rtw_eapol_start_hdl},
+	{RTW_EVENT_WPA_EAPOL_RECVD,		rtw_eapol_recvd_hdl},
+	{RTW_EVENT_RX_MGNT,				rtw_sae_sta_rx_auth},
+	{RTW_EVENT_RX_MGNT_AP,			rtw_sae_ap_rx_auth},
+	{RTW_EVENT_EXTERNAL_AUTH_REQ,	rtw_sae_sta_start},
+	{RTW_EVENT_WPA_STA_4WAY_START,	rtw_psk_sta_start_4way},
+	{RTW_EVENT_WPA_AP_4WAY_START,	rtw_psk_ap_start_4way},
+	{RTW_EVENT_WPA_STA_4WAY_RECV,	rtw_psk_sta_recv_eapol},
+	{RTW_EVENT_WPA_AP_4WAY_RECV,	rtw_psk_ap_recv_eapol},
+	{RTW_EVENT_WPA_SET_PSK_INFO,	rtw_psk_set_psk_info_evt_hdl},
+	{RTW_EVENT_OWE_START_CALC,		rtw_owe_start_calc},
+	{RTW_EVENT_OWE_PEER_KEY_RECV,	rtw_owe_peer_key_recv},
 #if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K) || defined(CONFIG_IEEE80211R)
-	rtw_roam_kvr_cap_update,			/*RTW_EVENT_KVR_CAP_UPDATE*/
+	{RTW_EVENT_KVR_CAP_UPDATE,		rtw_roam_kvr_cap_update},
 #if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K)
-	rtw_roam_nb_rpt_elem_parsing,		/*RTW_EVENT_NB_RESP_RECV*/
+	{RTW_EVENT_NB_RESP_RECV,		rtw_roam_nb_rpt_elem_parsing},
 #endif
 #ifdef CONFIG_IEEE80211V
-	rtw_wnm_btm_req_process,			/*RTW_EVENT_BTM_REQ_RECV*/
-	rtw_wnm_dbg_cmd, 						/*RTW_EVENT_BTM_DEBUG_CMD*/
+	{RTW_EVENT_BTM_REQ_RECV,		rtw_wnm_btm_req_process},
+	{RTW_EVENT_BTM_DEBUG_CMD,		rtw_wnm_dbg_cmd},
 #endif
 #ifdef CONFIG_IEEE80211R
-	rtw_ft_auth_start,					/*RTW_EVENT_FT_AUTH_START*/
-	rtw_ft_rx_mgnt,						/*RTW_EVENT_FT_RX_MGNT*/
+	{RTW_EVENT_FT_AUTH_START,		rtw_ft_auth_start},
+	{RTW_EVENT_FT_RX_MGNT,			rtw_ft_rx_mgnt},
 #endif
 #endif
-	rtw_psk_deauth_info_flash_event_hdl,			/*RTW_EVENT_DEAUTH_INFO_FLASH*/
-#endif
-	/*RTW_EVENT_INTERNAL_MAX*/
+	{RTW_EVENT_DEAUTH_INFO_FLASH,	rtw_psk_deauth_info_flash_event_hdl},
 };
 
 void wifi_event_handle_internal(u32 event_cmd, u8 *buf, s32 buf_len, s32 flags)
 {
-	u8 *mac_addr = NULL;
-	/*internal only events*/
-	if (event_cmd > RTW_EVENT_INTERNAL_BASE) {
-#if !defined(CONFIG_MP_SHRINK) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP))
-		event_internal_hdl[event_cmd - RTW_EVENT_INTERNAL_BASE - 1](buf, buf_len, flags, NULL);
+#ifndef CONFIG_MP_SHRINK
+#if !(defined(ZEPHYR_WIFI) && defined(CONFIG_WHC_HOST))
+	/*internal & common events all need handle*/
 #else
-		UNUSED(buf_len);
-#endif
+	/*only common events need handle*/
+	if (event_cmd > RTW_EVENT_INTERNAL_BASE) {
 		return;
 	}
+#endif
 
-	/*some common events also need internal handle*/
-	if (event_cmd == RTW_EVENT_JOIN_STATUS) {
-		wifi_event_join_status_internal_hdl(buf, flags);
-	} else if (event_cmd == RTW_EVENT_STA_ASSOC) {
-		/* softap add sta */
-		mac_addr = ((unsigned char *)((SIZE_PTR)(buf) + 10)); // GetAddr2Ptr
-		at_printf_indicate("client connected:\""MAC_FMT"\"\r\n", MAC_ARG(mac_addr));
-	} else if (event_cmd == RTW_EVENT_STA_DISASSOC) {
-		/* softap dis sta */
-		mac_addr = buf;
-		at_printf_indicate("client disconnected:\""MAC_FMT"\"\r\n", MAC_ARG(mac_addr));
+	for (u32 i = 0; i < sizeof(event_internal_hdl) / sizeof(struct rtw_event_hdl_func_t); i++) {
+		if (event_internal_hdl[i].evt_id == event_cmd) {
+			if (event_internal_hdl[i].handler == NULL) {
+				continue;
+			}
+			event_internal_hdl[i].handler(buf, buf_len, flags);
+		}
 	}
+#else
+	UNUSED(event_cmd);
+	UNUSED(buf);
+	UNUSED(buf_len);
+	UNUSED(flags);
+#endif
 }
 
 /**********************************************************************************************
@@ -198,78 +298,32 @@ void wifi_event_handle_internal(u32 event_cmd, u8 *buf, s32 buf_len, s32 flags)
  *********************************************************************************************/
 int wifi_event_handle(u32 event_cmd, u8 *buf, s32 buf_len, s32 flags)
 {
-	void (*handle)(u8 * buf, s32 len, s32 flags, void *user_data) = NULL;
-	int i;
-
 	if ((event_cmd >= RTW_EVENT_MAX && event_cmd <= RTW_EVENT_INTERNAL_BASE) || event_cmd > RTW_EVENT_INTERNAL_MAX) {
 		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "invalid evt: %d \n", event_cmd);
 		return -RTK_ERR_BADARG;
 	}
 
 	wifi_event_handle_internal(event_cmd, buf, buf_len, flags);
-	/*user callback handle*/
-	if (event_cmd < RTW_EVENT_MAX) {
-		for (i = 0; i < RTW_EVENT_MAX_ROW; i++) {
-			handle = event_callback_list[event_cmd][i].handler;
-			if (handle == NULL) {
-				continue;
-			}
-			handle(buf, buf_len, flags, event_callback_list[event_cmd][i].handler_user_data);
-		}
-	}
+
+	wifi_event_handle_external(event_cmd, buf, buf_len, flags);
+
 	return RTK_SUCCESS;
-}
-
-void wifi_reg_event_handler(u32 event_cmds, void (*handler_func)(u8 *buf, s32 len, s32 flags, void *user_data), void *handler_user_data)
-{
-	int i = 0, j = 0;
-	if (event_cmds < RTW_EVENT_MAX) {
-		for (i = 0; i < RTW_EVENT_MAX_ROW; i++) {
-			if (event_callback_list[event_cmds][i].handler == NULL) { //there exists an empty position for new handler
-				for (j = 0; j < RTW_EVENT_MAX_ROW; j++) {
-					if (event_callback_list[event_cmds][j].handler == handler_func) { //the new handler already exists in the table
-						return;
-					}
-				}
-				event_callback_list[event_cmds][i].handler = handler_func;
-				event_callback_list[event_cmds][i].handler_user_data = handler_user_data;
-				return;
-			}
-		}
-		//there is no empty position for new handler
-		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "WifiEvtReg fail: %d %d \n", event_cmds, RTW_EVENT_MAX_ROW);
-	}
-}
-
-void wifi_unreg_event_handler(u32 event_cmds, void (*handler_func)(u8 *buf, s32 len, s32 flags, void *user_data))
-{
-	int i;
-	if (event_cmds < RTW_EVENT_MAX) {
-		for (i = 0; i < RTW_EVENT_MAX_ROW; i++) {
-			if (event_callback_list[event_cmds][i].handler == handler_func) {
-				event_callback_list[event_cmds][i].handler = NULL;
-				event_callback_list[event_cmds][i].handler_user_data = NULL;
-				return;
-			}
-		}
-	}
 }
 
 void wifi_event_init(void)
 {
 	// Nothing TODO, global BSS variable default is 0
-	// memset(event_callback_list, 0, sizeof(event_callback_list));
 }
 #endif
 
 void wifi_indication(u32 event, u8 *buf, s32 buf_len, s32 flags)
 {
-#if defined(CONFIG_AS_INIC_NP)
+#if defined(CONFIG_WHC_DEV)
 	extern void whc_dev_wifi_event_indicate(u32 event_cmd, u8 * buf, s32 buf_len, s32 flags);
 	whc_dev_wifi_event_indicate(event, buf, buf_len, flags);
 #endif
 
-#if !(defined CONFIG_AS_INIC_NP) || defined(CONFIG_WPA_LOCATION_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
+#if !(defined CONFIG_WHC_DEV) || defined(CONFIG_WPA_LOCATION_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 	wifi_event_handle(event, buf, buf_len, flags);
 #endif
 }

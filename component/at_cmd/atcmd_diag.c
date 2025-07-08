@@ -14,10 +14,19 @@ static const char *TAG = "ATCMD_DIAG";
 static void at_diag_help(void)
 {
 	RTK_LOGI(TAG, "\n");
-	// RTK_LOGI(TAG, "AT+LOG=<get_set>,<module>[,<log_level>]\n");
-	// RTK_LOGI(TAG, "\t<get_set>:\t0-get, 1-set, 2-print all, 3-clear all\n");
-	// RTK_LOGI(TAG, "\t<module>:\t*-each module, others-specific module\n");
-	// RTK_LOGI(TAG, "\t<log_level>:\t[0,5], only applicable for set mode\n");
+	RTK_LOGI(TAG, "AT+DIAG=VER: get event format hash value\n");
+	RTK_LOGI(TAG, "AT+DIAG=TM: get soc timestamp\n");
+	RTK_LOGI(TAG, "AT+DIAG=BUF_COM: set event transform buffer size\n");
+	RTK_LOGI(TAG, "AT+DIAG=BUF_EVT: set event store buffer capacity\n");
+	RTK_LOGI(TAG, "AT+DIAG=GET_EVT,<timestamp>,<offset>: get event\n");
+	RTK_LOGI(TAG, "AT+DIAG=DEL_EVT_BF,<timestamp>: delete event before <timestamp>\n");
+	RTK_LOGI(TAG, "AT+DIAG=DEL_EVT_AF,<timestamp>: delete event after <timestamp>\n");
+	RTK_LOGI(TAG, "AT+DIAG=GET_DEL: get recent deleted event\n");
+	RTK_LOGI(TAG, "AT+DIAG=LOG,<state>: enable or disable log\n");
+#ifndef CONFIG_AMEBA_RLS
+	RTK_LOGI(TAG, "AT+DIAG=DBG_ADD_EVT,<evt_level>,<data_str>: add a debug event\n");
+	RTK_LOGI(TAG, "AT+DIAG=DBG_LOG,<state>: enable or disable diag debug log\n");
+#endif
 }
 
 void at_diag(void *arg)
@@ -137,6 +146,13 @@ void at_diag(void *arg)
 			goto end;
 		}
 		rtk_diag_req_add_event_demo1(atoi(argv[2]), argv[3]);
+	} else if (strcmp(op, "DBG_LOG") == 0) {
+		if (argc != 3) {
+			RTK_LOGA(NOTAG, "[DIAG] Invalid parameter number.\n");
+			error_no = 1;
+			goto end;
+		}
+		ret = rtk_diag_req_dbg_log_enable(atoi(argv[2]));
 #endif
 	} else if (strcmp(op, "LOG") == 0) {
 		if (argc != 3) {

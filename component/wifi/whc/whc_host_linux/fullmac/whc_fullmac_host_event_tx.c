@@ -328,7 +328,7 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 
 	kfree((void *)param);
 
-		if (ret != 0) {
+	if (ret != 0) {
 		ret = -EINVAL;
 		global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
 		goto error;
@@ -478,14 +478,11 @@ int whc_fullmac_host_stop_ap(void)
 	return ret;
 }
 
-int whc_fullmac_host_set_EDCA_params(unsigned int *AC_param)
+int whc_fullmac_host_set_EDCA_params(struct rtw_edca_param *pedca_param)
 {
 	int ret = 0;
-	u32 param_buf[1] = {0};
 
-	param_buf[0] = *AC_param;
-
-	whc_fullmac_host_send_event(WHC_API_WIFI_SET_EDCA_PARAM, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
+	whc_fullmac_host_send_event(WHC_API_WIFI_SET_EDCA_PARAM, (u8 *)pedca_param, sizeof(struct rtw_edca_param), (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
@@ -585,7 +582,7 @@ int whc_fullmac_host_get_traffic_stats(u8 wlan_idx, dma_addr_t traffic_stats_add
 	return ret;
 }
 
-int whc_fullmac_host_get_phy_stats(u8 wlan_idx, u8 *mac_addr, dma_addr_t phy_stats_addr)
+int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, dma_addr_t phy_stats_addr)
 {
 	int ret = 0;
 	u32 size, mac_len = 0;
@@ -1123,4 +1120,37 @@ int whc_fullmac_host_set_promisc_enable(u32 enable, u8 mode)
 	/* Only smart customer needs promisc function in Linux.
 	 * So to set this function to null. */
 	return 0;
+}
+
+int whc_fullmac_host_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 status)
+{
+	u8 *param = NULL;
+	u32 size = 0;
+	int ret = 0;
+
+	if (kvr_param) {
+		size = sizeof(struct rtw_kvr_param_t) + sizeof(u16);
+		param = (u8 *)kzalloc(size, GFP_KERNEL);
+		if (param == NULL) {
+			dev_err(global_idev.fullmac_dev, "%s: malloc error!\n", __func__);
+			return -ENOMEM;
+		}
+		memcpy(param, kvr_param, sizeof(struct rtw_kvr_param_t));
+		memcpy(param + sizeof(struct rtw_kvr_param_t), &status, sizeof(u16));
+	} else {
+		size = sizeof(u16);
+		param = (u8 *)kzalloc(size, GFP_KERNEL);
+		if (param == NULL) {
+			dev_err(global_idev.fullmac_dev, "%s: malloc error!\n", __func__);
+			return -ENOMEM;
+		}
+		memcpy(param, &status, sizeof(u16));
+	}
+	whc_fullmac_host_send_event(WHC_API_WIFI_FT_STATUS, param, size, (u8 *)&ret, sizeof(int));
+
+	if (param) {
+		kfree((void *)param);
+	}
+
+	return ret;
 }

@@ -435,7 +435,9 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *user_data
 	struct mlme_priv_t *mlme_priv = &global_idev.mlme_priv;
 	u8 wlan_idx = 0;
 	unsigned int rtw_join_status_last = mlme_priv->rtw_join_status;
-
+#ifdef CONFIG_IEEE80211R
+	struct cfg80211_roam_info roam_info = {0};
+#endif
 	mlme_priv->rtw_join_status = join_status;
 
 	/* Merge from wifi_join_status_indicate. */
@@ -457,16 +459,18 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *user_data
 	}
 
 	if (join_status == RTW_JOINSTATUS_ASSOCIATING) {
+		user_data_len -= sizeof(union rtw_event_info);
 		if (user_data_len > 0) {
-			memcpy(mlme_priv->assoc_req_ie, (u8 *)user_data, user_data_len);
+			memcpy(mlme_priv->assoc_req_ie, (u8 *)(user_data + sizeof(union rtw_event_info)), user_data_len);
 			mlme_priv->assoc_req_ie_len = user_data_len;
 		}
 		return;
 	}
 
 	if (join_status == RTW_JOINSTATUS_ASSOCIATED) {
+		user_data_len -= sizeof(union rtw_event_info);
 		if (user_data_len > 0) {
-			memcpy(mlme_priv->assoc_rsp_ie, (u8 *)user_data, user_data_len);
+			memcpy(mlme_priv->assoc_rsp_ie, (u8 *)(user_data + sizeof(union rtw_event_info)), user_data_len);
 			mlme_priv->assoc_rsp_ie_len = user_data_len;
 			dev_dbg(global_idev.fullmac_dev, "[fullmac] --- %s --- %s success.", __func__, (*(u8 *)mlme_priv->assoc_req_ie == 0 ? "association" : "re-association"));
 #ifdef CONFIG_P2P
@@ -474,15 +478,32 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *user_data
 				wlan_idx = 1; //address match GC, then use GC's netdev
 			}
 #endif
-			/* Inform connect information. */
-			/* Different between cfg80211_connect_result and cfg80211_connect_bss are described in net/cfg80211.h. */
-			/* if connect_result warning, that means get_bss fail (need check), one reason is WPA_S calls disconnect ops, which resulting in wdev->ssid_len = 0 */
-			cfg80211_connect_result(global_idev.pndev[wlan_idx], mlme_priv->assoc_rsp_ie + 16,
-									mlme_priv->assoc_req_ie + WLAN_HDR_A3_LEN + 4/* fixed parameters */
-									+ (*(u8 *)mlme_priv->assoc_req_ie == 0 ? 0 : 6)/* re-assoc: current ap */,
-									mlme_priv->assoc_req_ie_len - WLAN_HDR_A3_LEN - 4 - (*(u8 *)mlme_priv->assoc_req_ie == 0 ? 0 : 6),
-									mlme_priv->assoc_rsp_ie + WLAN_HDR_A3_LEN + 6, mlme_priv->assoc_rsp_ie_len -  WLAN_HDR_A3_LEN - 6,
-									WLAN_STATUS_SUCCESS, GFP_ATOMIC);
+#ifdef CONFIG_IEEE80211R
+			if (global_idev.b_in_roaming) {
+
+				dev_dbg(global_idev.fullmac_dev, "[fullmac] %s roaming success.", __func__);
+				roam_info.links[0].bssid = mlme_priv->assoc_rsp_ie + 16;
+				roam_info.links[0].addr = mlme_priv->assoc_rsp_ie + 8;
+				roam_info.req_ie = mlme_priv->assoc_req_ie + WLAN_HDR_A3_LEN + 4 + (*(u8 *)mlme_priv->assoc_req_ie == 0 ? 0 : 6);
+				roam_info.req_ie_len = mlme_priv->assoc_req_ie_len - WLAN_HDR_A3_LEN - 4 - (*(u8 *)mlme_priv->assoc_req_ie == 0 ? 0 : 6);
+				roam_info.resp_ie = mlme_priv->assoc_rsp_ie + WLAN_HDR_A3_LEN + 6;
+				roam_info.resp_ie_len = mlme_priv->assoc_rsp_ie_len -  WLAN_HDR_A3_LEN - 6;
+				cfg80211_roamed(global_idev.pndev[wlan_idx], &roam_info, GFP_ATOMIC);
+				global_idev.b_in_roaming = false;
+			} else
+#endif
+			{
+				dev_dbg(global_idev.fullmac_dev, "[fullmac] %s connectting success.", __func__);
+				/* Inform connect information. */
+				/* Different between cfg80211_connect_result and cfg80211_connect_bss are described in net/cfg80211.h. */
+				/* if connect_result warning, that means get_bss fail (need check), one reason is WPA_S calls disconnect ops, which resulting in wdev->ssid_len = 0 */
+				cfg80211_connect_result(global_idev.pndev[wlan_idx], mlme_priv->assoc_rsp_ie + 16,
+										mlme_priv->assoc_req_ie + WLAN_HDR_A3_LEN + 4/* fixed parameters */
+										+ (*(u8 *)mlme_priv->assoc_req_ie == 0 ? 0 : 6)/* re-assoc: current ap */,
+										mlme_priv->assoc_req_ie_len - WLAN_HDR_A3_LEN - 4 - (*(u8 *)mlme_priv->assoc_req_ie == 0 ? 0 : 6),
+										mlme_priv->assoc_rsp_ie + WLAN_HDR_A3_LEN + 6, mlme_priv->assoc_rsp_ie_len -  WLAN_HDR_A3_LEN - 6,
+										WLAN_STATUS_SUCCESS, GFP_ATOMIC);
+			}
 			netif_carrier_on(global_idev.pndev[wlan_idx]);
 		}
 		return;
@@ -601,7 +622,7 @@ static int whc_fullmac_host_connect_ops(struct wiphy *wiphy, struct net_device *
 			sme->ssid, sme->ssid_len, sme->channel->center_freq,
 			sme->bssid[0], sme->bssid[1], sme->bssid[2], sme->bssid[3], sme->bssid[4], sme->bssid[5],
 			sme->privacy, sme->key, sme->key_len, sme->key_idx, sme->auth_type);
-	dev_dbg(global_idev.fullmac_dev, "wpa_versions=0x%x, ciphers_pairwise=0x%x, cipher_group=0x%x,, akm_suites=0x%x\n",
+	dev_dbg(global_idev.fullmac_dev, "wpa_versions=0x%x, ciphers_pairwise=0x%x, cipher_group=0x%x, akm_suites=0x%x\n",
 			sme->crypto.wpa_versions, sme->crypto.ciphers_pairwise[0], sme->crypto.cipher_group, sme->crypto.akm_suites[0]);
 
 	size = sizeof(struct rtw_network_info) + (sme->key_len ? sme->key_len : sizeof(pwd));
@@ -663,8 +684,14 @@ static int whc_fullmac_host_connect_ops(struct wiphy *wiphy, struct net_device *
 				sme->prev_bssid[0], sme->prev_bssid[1], sme->prev_bssid[2], sme->prev_bssid[3], sme->prev_bssid[4], sme->prev_bssid[5],
 				sme->bssid[0], sme->bssid[1], sme->bssid[2], sme->bssid[3], sme->bssid[4], sme->bssid[5]);
 		memcpy(connect_param->prev_bssid.octet, sme->prev_bssid, ETH_ALEN);
+#ifdef CONFIG_IEEE80211R
+		whc_fullmac_host_ft_set_bssid(sme->bssid);
+#endif
 		/* Stop upper-layer-data-queue because of re-association. */
 		netif_carrier_off(global_idev.pndev[0]);
+		global_idev.b_in_roaming = true;
+	} else {
+		global_idev.b_in_roaming = false;
 	}
 
 	if (sme->crypto.akm_suites[0] ==  WIFI_AKM_SUITE_OWE) {
@@ -805,6 +832,9 @@ static int whc_fullmac_host_disconnect_ops(struct wiphy *wiphy, struct net_devic
 
 	/* KM4 will report RTW_EVENT_DISCONNECT event to linux, after disconnect done, and b_in_disconnect can prevent a deadlock caused by an early event. */
 	global_idev.mlme_priv.b_in_disconnect = true;
+#ifdef CONFIG_IEEE80211R
+	whc_fullmac_host_ft_set_unassociated();
+#endif
 
 	ret = whc_fullmac_host_event_disconnect();
 
@@ -971,8 +1001,9 @@ static int whc_sme_host_auth(struct wiphy *wiphy, struct net_device *ndev, struc
 
 	data_len = sizeof(*data) + auth_data_len + req->ie_len;
 	data = (struct rtw_sme_auth_info *)rtw_malloc(data_len, &data_phy);
-	if (data == NULL)
+	if (data == NULL) {
 		return 0;
+	}
 
 	switch (req->auth_type) {
 	case NL80211_AUTHTYPE_OPEN_SYSTEM:
@@ -1003,6 +1034,23 @@ static int whc_sme_host_auth(struct wiphy *wiphy, struct net_device *ndev, struc
 		data->key_index = req->key_idx;
 		memcpy(data->key, req->key, req->key_len);
 	}
+
+#ifdef CONFIG_CFG80211_SME_OFFLOAD
+	/* backup auth_type for assoc */
+	mlme_priv->auth_type = req->auth_type;
+
+	if (req->key && req->key_len) {
+		/* backup wep key for assoc */
+		mlme_priv->wep_key_idx = req->key_idx;
+		mlme_priv->wep_key_len = req->key_len;
+		memcpy(mlme_priv->wep_key, req->key, req->key_len);
+	} else {
+		/* clear wep key */
+		mlme_priv->wep_key_idx = 0;
+		mlme_priv->wep_key_len = 0;
+		memset(mlme_priv->wep_key, 0, 13);
+	}
+#endif
 
 	if (auth_data_len >= 4) {
 		if (req->auth_type == NL80211_AUTHTYPE_SAE) {
@@ -1052,7 +1100,91 @@ static int whc_sme_host_auth(struct wiphy *wiphy, struct net_device *ndev, struc
 
 static int whc_sme_host_assoc(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_assoc_request *req)
 {
+	struct mlme_priv_t *mlme_priv = &global_idev.mlme_priv;
+	struct cfg80211_connect_params *conn_param;
+	size_t ssid_len = 0;
+	const u8 *ssid = NULL, *pos, *end;
+
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
+
+	conn_param = (struct cfg80211_connect_params *)kzalloc(sizeof(*conn_param), GFP_KERNEL);
+	if (conn_param == NULL) {
+		return -EFAULT;
+	}
+
+	/* prepare for translate */
+	if (req->bss->proberesp_ies && req->bss->proberesp_ies->len) {
+		ssid = rtw_get_ie(req->bss->proberesp_ies->data, WLAN_EID_SSID, &ssid_len, req->bss->proberesp_ies->len);
+	}
+	if ((ssid == NULL || ssid_len == 0) && req->bss->beacon_ies && req->bss->beacon_ies->len) {
+		ssid = rtw_get_ie(req->bss->beacon_ies->data, WLAN_EID_SSID, &ssid_len, req->bss->beacon_ies->len);
+	}
+
+	if (ssid == NULL) {
+		dev_dbg(global_idev.fullmac_dev, "%s: no ssid found\n", __func__);
+		kfree(conn_param);
+		return -EFAULT;
+	} else {
+		/* skip element_id and size */
+		ssid += 2;
+	}
+
+	dev_dbg(global_idev.fullmac_dev, "%s: parsed ssid=%s, ssid_len=%ld, wpa versions=%d\n", __func__,
+			ssid, ssid_len, req->crypto.wpa_versions);
+
+	/* translate */
+	conn_param->channel = req->bss->channel;
+	conn_param->bssid = req->bss->bssid;
+	conn_param->ssid = ssid;
+	conn_param->ssid_len = ssid_len;
+	conn_param->auth_type = mlme_priv->auth_type;	/* used by whc_fullmac_host_connect_ops() */
+	conn_param->ie = req->ie;
+	conn_param->ie_len = req->ie_len;
+	conn_param->privacy = 0;						/* don't care */
+	conn_param->mfp = NL80211_MFP_NO;				/* don't care */
+	conn_param->crypto = req->crypto;
+	conn_param->key = mlme_priv->wep_key;			/* WEP key for shared key authentication */
+	conn_param->key_len = mlme_priv->wep_key_len;	/* length of WEP key for shared key authentication */
+	conn_param->key_idx = mlme_priv->wep_key_idx;	/* index of WEP key for shared key authentication */
+	conn_param->flags = 0;							/* don't care */
+	conn_param->bg_scan_period = 0;					/* don't care */
+	conn_param->ht_capa = req->ht_capa;
+	conn_param->ht_capa_mask = req->ht_capa_mask;
+	conn_param->vht_capa = req->vht_capa;
+	conn_param->vht_capa_mask = req->vht_capa_mask;
+	conn_param->prev_bssid = req->prev_bssid;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+	conn_param->pbss = 0;		/* don't care */
+#endif
+
+	if (conn_param->crypto.n_ciphers_pairwise == 0 &&
+		conn_param->crypto.wpa_versions != 0) {
+		dev_dbg(global_idev.fullmac_dev, "%s(): target is open, but trying to connect with wpa,"
+				"set wpa_versions to 0\n", __FUNCTION__);
+		conn_param->crypto.wpa_versions = 0;
+	}
+
+	mlme_priv->cfg80211_assoc_bss = req->bss;
+
+	whc_fullmac_host_sme_set_assocreq_ie(req->ie, req->ie_len);
+
+	/*
+	 * Here we are going all the way down to
+	 * rtw_select_and_join_from_scanned_queue(). Note that rtw_joinbss_cmd()
+	 * can't be called directly here because there are I/O operations there and
+	 * doing I/O in the context of this function can cause BUG: scheduling while
+	 * atomic.
+	 */
+	if (whc_fullmac_host_connect_ops(wiphy, ndev, conn_param) < 0) {
+		dev_dbg(global_idev.fullmac_dev, "%s(): assoc failed\n", __FUNCTION__);
+		kfree(conn_param);
+		return -1;
+	}
+
+	if (conn_param) {
+		kfree(conn_param);
+	}
+
 	return 0;
 }
 
@@ -1314,5 +1446,8 @@ void whc_fullmac_host_ops_sta_init(void)
 	ops->disassoc = whc_sme_host_disassoc;
 #endif
 #endif	/* CONFIG_CFG80211_SME_OFFLOAD */
+#ifdef CONFIG_IEEE80211R
+	ops->update_ft_ies = whc_fullmac_host_update_ft_ies;
+#endif
 }
 

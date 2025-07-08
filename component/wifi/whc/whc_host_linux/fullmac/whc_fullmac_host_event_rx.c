@@ -55,7 +55,7 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 
 	if ((event == RTW_EVENT_JOIN_STATUS) && ((flags == RTW_JOINSTATUS_FAIL) || (flags == RTW_JOINSTATUS_DISCONNECT))) {
 		if (flags == RTW_JOINSTATUS_DISCONNECT) {
-			disassoc_reason = (u16)(((struct rtw_event_info_joinstatus_disconn *)buf)->disconn_reason && 0xffff);
+			disassoc_reason = (u16)(((union rtw_event_info *)buf)->join_status.disconn_reason && 0xffff);
 			dev_dbg(global_idev.fullmac_dev, "%s: disassoc_reason=%d \n", __func__, disassoc_reason);
 			whc_fullmac_host_disconnect_indicate(disassoc_reason, 1);
 		}
@@ -102,6 +102,12 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 		/*channel need get, force 6 seems ok temporary*/
 		cfg80211_rx_mgmt(wdev, rtw_ch2freq(channel), 0, buf, buf_len, 0);
 	}
+
+#ifdef CONFIG_IEEE80211R
+	if ((event == RTW_EVENT_FT_AUTH_START) || (event == RTW_EVENT_FT_RX_MGNT) || (event == RTW_EVENT_JOIN_STATUS)) {
+		whc_fullmac_host_ft_event(event, buf, buf_len, flags);
+	}
+#endif
 
 	if (event == RTW_EVENT_RX_MGNT_AP) {
 		dev_dbg(global_idev.fullmac_dev, "%s: rx mgnt \n", __func__);

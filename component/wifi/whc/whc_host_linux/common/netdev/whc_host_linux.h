@@ -96,6 +96,7 @@
 #include "whc_fullmac_ipc_host_msg.h"
 #include "whc_fullmac_ipc_host_ops.h"
 #include "whc_fullmac_ipc_host_mem.h"
+#include "whc_fullmac_ipc_host_event_test.h"
 #elif defined(CONFIG_FULLMAC_HCI_SDIO)
 #include <linux/mmc/sdio_func.h>
 #include <linux/mmc/sdio_ids.h>
@@ -128,6 +129,9 @@
 
 #ifndef CONFIG_WHC_BRIDGE
 #include "whc_fullmac_host_regd.h"
+#ifdef CONFIG_IEEE80211R
+#include "whc_fullmac_host_ft.h"
+#endif
 #include "whc_fullmac_host_cfgvendor.h"
 #include "whc_fullmac_host_proc.h"
 #include "whc_fullmac_host_acs.h"

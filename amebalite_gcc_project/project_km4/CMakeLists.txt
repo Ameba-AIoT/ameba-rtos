@@ -12,7 +12,7 @@ set(c_VERBOSE_MAKEFILE FALSE)
 
 ameba_mcu_project_create(km4 km4)
 ameba_mcu_project_check()
-if(CONFIG_AS_INIC_AP)
+if(CONFIG_WHC_HOST)
     set(AP_IMAGEDIR ${KM4_PROJECT_DIR}/asdk/image)
 else()
     set(AP_IMAGEDIR ${KR4_PROJECT_DIR}/vsdk/image)

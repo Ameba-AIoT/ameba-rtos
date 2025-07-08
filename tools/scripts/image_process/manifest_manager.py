@@ -144,6 +144,7 @@ class ManifestManager(ABC):
         else:
             context.logger.info(f"manifest file does not contains image3, will use image2 config for image3")
             self.image3 = self.image2
+        self.dsp = self.image2 #DSP use image2 config
         self.cert = ManifestImageConfig.create(self.new_json_data['cert'])
 
     def validate_config(self, data:Union[str, dict]) -> bool:

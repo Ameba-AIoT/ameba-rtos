@@ -223,7 +223,13 @@ ameba_list_append(private_definitions
 )
 ameba_list_append(private_compile_options
     -Wno-error
+    -Wno-undef
+    -Wno-stringop-overread
     -fno-math-errno
+    -Wno-unused-parameter
+    -Wno-unused-function
+    -Wno-sign-compare
+    -Wno-stringop-overflow
 )
 
 # Component private part, user config end

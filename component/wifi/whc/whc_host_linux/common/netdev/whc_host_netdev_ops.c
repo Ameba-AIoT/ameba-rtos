@@ -314,8 +314,26 @@ int rtw_ndev_open_ap(struct net_device *pnetdev)
 static int rtw_ndev_close_ap(struct net_device *pnetdev)
 {
 #ifndef CONFIG_WHC_BRIDGE
+	struct cfg80211_scan_info info;
+	int ret = 0;
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
+
+	if (!whc_fullmac_host_dev_driver_is_mp()) {
+		ret = whc_fullmac_host_scan_abort();
+		if (ret) {
+			dev_err(global_idev.fullmac_dev, "[fullmac]: %s abort wifi scan failed!\n", __func__);
+			return -EPERM;
+		}
+	}
+
+	if (global_idev.mlme_priv.pscan_req_global) {
+		memset(&info, 0, sizeof(info));
+		info.aborted = 1;
+		cfg80211_scan_done(global_idev.mlme_priv.pscan_req_global, &info);
+		global_idev.mlme_priv.pscan_req_global = NULL;
+		global_idev.mlme_priv.b_in_scan = false;
+	}
 
 	netif_tx_stop_all_queues(pnetdev);
 	netif_carrier_off(pnetdev);
