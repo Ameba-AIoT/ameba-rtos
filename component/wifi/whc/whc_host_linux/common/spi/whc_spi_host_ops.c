@@ -1,4 +1,5 @@
 #include <whc_host_linux.h>
+#include <whc_host_cmd_path_api.h>
 
 struct whc_msg_node *whc_host_dequeue_tx_packet(struct xmit_priv_t *xmit_priv);
 
@@ -147,6 +148,54 @@ exit:
 	if (spimsg) {
 		spi_message_free(spimsg);
 	}
+}
+
+void whc_host_send_cmd_data(u8 *buf, u32 len)
+{
+	struct whc_cmd_path_hdr *hdr = NULL;
+	u32 event = *(u32 *)buf;
+	u8 *txbuf = NULL;
+	u32 txsize = len + sizeof(struct whc_cmd_path_hdr);
+
+	if (event != WHC_WIFI_EVT_XIMT_PKTS) {
+		txbuf = kzalloc(txsize, GFP_KERNEL);
+		if (txbuf) {
+			hdr = (struct whc_cmd_path_hdr *)txbuf;
+			hdr->event = WHC_WIFI_EVT_BRIDGE;
+			hdr->len = len;
+			/* copy data */
+			memcpy(txbuf + sizeof(struct whc_cmd_path_hdr), buf, len);
+			whc_spi_host_send_data(txbuf, txsize, NULL);
+			kfree(txbuf);
+		} else {
+			dev_err(global_idev.fullmac_dev, "%s can't alloc spi buffer!\n", __func__);
+		}
+	} else {
+		whc_spi_host_send_data(buf, len, NULL);
+	}
+}
+
+int whc_host_cmd_data_rx_to_user(struct sk_buff *pskb)
+{
+	int ret = 0;
+	u32 event = *(u32 *)(pskb->data + SIZE_RX_DESC);
+	u32 size = 0;
+	struct whc_cmd_path_hdr *hdr = NULL;
+	u8 *rxbuf = NULL;
+
+
+	switch (event) {
+	case WHC_WIFI_EVT_BRIDGE:
+		hdr = (struct whc_cmd_path_hdr *)(pskb->data + SIZE_RX_DESC);
+		size = hdr->len;
+		rxbuf = (u8 *)pskb->data + SIZE_RX_DESC + sizeof(struct whc_cmd_path_hdr);
+		whc_host_buf_rx_to_user(rxbuf, size);
+		break;
+	default:
+		break;
+	}
+
+	return ret;
 }
 
 struct hci_ops_t whc_spi_host_intf_ops = {

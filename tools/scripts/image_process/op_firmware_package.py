@@ -18,6 +18,7 @@ class SocImageConfig:
     image1_section: Union[str, dict]    #Used for rsip: project_name:section_name
     image2_section: dict                #Used for rsip: project_name:section_name
     image3_section: Union[str, None]    #Used for rsip
+    dsp_section: Union[str, None]
 
     def section(self, image_type:Union[ImageType, str]) -> str:
         if isinstance(image_type, str):
@@ -35,7 +36,8 @@ soc_configs:Dict[str, SocImageConfig] = {
             "km0": "KM0_IMG2_XIP",
             "km4": "KM4_IMG2_XIP",
         },
-        image3_section = None #Not support rsip yet(maybe only support rdp)
+        image3_section = None, #Not support rsip yet(maybe only support rdp)
+        dsp_section = None
     ),
     "amebadplus": SocImageConfig(
         image1_section = "KM4_BOOT_XIP",
@@ -43,7 +45,8 @@ soc_configs:Dict[str, SocImageConfig] = {
             "km0": "KM0_IMG2_XIP",
             "km4": "KM4_IMG2_XIP",
         },
-        image3_section = None #Not support rsip yet(maybe only support rdp)
+        image3_section = None, #Not support rsip yet(maybe only support rdp)
+        dsp_section = None
     ),
     "amebagreen2": SocImageConfig(
         image1_section = "AP_BOOT_XIP",
@@ -51,7 +54,8 @@ soc_configs:Dict[str, SocImageConfig] = {
             "km4ns": "NP_IMG2_XIP",
             "km4tz": "AP_IMG2_XIP",
         },
-        image3_section = "AP_IMG3_XIP"
+        image3_section = "AP_IMG3_XIP",
+        dsp_section = None
     ),
     "amebaL2": SocImageConfig(
         image1_section = "KM4TZ_BOOT_XIP",
@@ -59,7 +63,8 @@ soc_configs:Dict[str, SocImageConfig] = {
             "km4ns": "KM4NS_IMG2_XIP",
             "km4tz": "KM4TZ_IMG2_XIP",
         },
-        image3_section = "KM4TZ_IMG3_XIP"
+        image3_section = "KM4TZ_IMG3_XIP",
+        dsp_section = None
     ),
     "amebalite": SocImageConfig(
         image1_section = "KM4_BOOT_XIP",
@@ -67,7 +72,8 @@ soc_configs:Dict[str, SocImageConfig] = {
             "kr4": "KR4_IMG2_XIP",
             "km4": "KM4_IMG2_XIP",
         },
-        image3_section = None #Not support rsip yet(maybe only support rdp)
+        image3_section = None, #Not support rsip yet(maybe only support rdp)
+        dsp_section = "DSP_IMG2_XIP"
     ),
     "amebasmart": SocImageConfig(
         image1_section = "KM4_BOOT_XIP",
@@ -76,7 +82,8 @@ soc_configs:Dict[str, SocImageConfig] = {
             "hp": "KM4_IMG2_XIP",
             "lp": "KM0_IMG2_XIP",
         },
-        image3_section = None #Not support rsip yet(maybe only support rdp)
+        image3_section = None, #Not support rsip yet(maybe only support rdp)
+        dsp_section = None
     ),
     "amebasmartplus": SocImageConfig(
         image1_section = "KM4_BOOT_XIP",
@@ -85,7 +92,8 @@ soc_configs:Dict[str, SocImageConfig] = {
             "hp": "KM4_IMG2_XIP",
             "lp": "KM0_IMG2_XIP",
         },
-        image3_section = None #Not support rsip yet(maybe only support rdp)
+        image3_section = None, #Not support rsip yet(maybe only support rdp)
+        dsp_section = None
     ),
 }
 
@@ -248,6 +256,8 @@ class FirmwarePackage(OperationBase):
         # │ proj3: image2_gcm_prepend.bin │  <- optional(only when proj3:image2 and image2 gcm mode enabled)
         # ├───────────────────────────────┤
         # │ proj3: image2_all.bin         │  <- optional(only when proj3:image2 enabled)
+        # ├───────────────────────────────┤
+        # │ common: dsp.bin               │  <- optional(only when CONFIG_DSP_WITHIN_APP_IMG enabled)
         # └───────────────────────────────┘
 
 
@@ -272,6 +282,8 @@ class FirmwarePackage(OperationBase):
         # │ proj3: image2_gcm_prepend.bin │  <- optional(only when proj3:image2 and image2 gcm mode enabled)
         # ├───────────────────────────────┤
         # │ proj3: image2_all_en.bin      │  <- optional(only when proj3:image2 enabled)
+        # ├───────────────────────────────┤
+        # │ common: dsp_en.bin            │  <- optional(only when CONFIG_DSP_WITHIN_APP_IMG enabled)
         # └───────────────────────────────┘
 
         #Final output non-secure file's structure
@@ -287,6 +299,8 @@ class FirmwarePackage(OperationBase):
         # │ proj2: image3_all_all.bin     │  <- optional(only when image3 enabled)
         # ├───────────────────────────────┤
         # │ proj3: image3_all_all.bin     │  <- optional(only when proj3:image2 enabled)
+        # ├───────────────────────────────┤
+        # │ common: dsp.bin               │  <- optional(only when CONFIG_DSP_WITHIN_APP_IMG enabled)
         # └───────────────────────────────┘
 
         #Step1: create encrypt file and manifest/cert file
@@ -304,6 +318,11 @@ class FirmwarePackage(OperationBase):
                 if img2_info['mcu_project'] == img3_info['mcu_project']:
                     tmp_en_file_name = modify_file_path(self.context.args.image3, suffix='_en')             #encrypted file
                     self.encrypt_and_update_manifest_source(self.context.args.image3, ImageType.IMAGE3, tmp_en_file_name, tmp_manifest_source_file)
+
+        if self.context.args.dsp:
+            tmp_en_file_name = modify_file_path(self.context.args.dsp, suffix='_en')             #encrypted file
+            self.encrypt_and_update_manifest_source(self.context.args.dsp, ImageType.DSP, tmp_en_file_name, tmp_manifest_source_file)
+
 
         manifest_file_name = os.path.join(self.output_image_dir, 'manifest_app.bin') #output manifest file
         cert_file_name = os.path.join(self.output_image_dir, 'app_cert.bin') #output cert file
@@ -349,6 +368,13 @@ class FirmwarePackage(OperationBase):
                         append_files(self.output_file, tmp_gcm_prepend_file_name)
                     append_files(self.output_file, tmp_en_file_name)
                     append_files(tmp_ns_file_name, self.context.args.image3)
+
+        if self.context.args.dsp:
+            tmp_en_file_name = modify_file_path(self.context.args.dsp, suffix='_en')             #encrypted file
+            #REVIEW: dsp support gcm?
+            append_files(self.output_file, tmp_en_file_name)
+            append_files(tmp_ns_file_name, self.context.args.dsp)
+
         return Error.success()
 
     def process_fullmac_image1(self) -> Error:

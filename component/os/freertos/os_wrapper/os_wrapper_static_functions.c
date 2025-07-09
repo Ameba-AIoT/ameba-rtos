@@ -25,11 +25,11 @@
  * __reserved_get_from_poll function to view the number of dynamic components.
  */
 #ifdef CONFIG_WLAN
-#if defined (CONFIG_AS_INIC_NP) && CONFIG_AS_INIC_NP
+#if defined (CONFIG_WHC_DEV) && CONFIG_WHC_DEV
 #define MAX_MUTEX_BUF_NUM		28
 #define MAX_SEMA_BUF_NUM		14
 #define MAX_TIMER_BUF_NUM		14
-#elif defined (CONFIG_SINGLE_CORE_WIFI) && CONFIG_SINGLE_CORE_WIFI
+#elif defined (CONFIG_WHC_NONE) && CONFIG_WHC_NONE
 #define MAX_MUTEX_BUF_NUM		31
 #define MAX_SEMA_BUF_NUM		7
 #define MAX_TIMER_BUF_NUM		15

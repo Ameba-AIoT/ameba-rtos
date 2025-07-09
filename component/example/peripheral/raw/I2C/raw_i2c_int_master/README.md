@@ -51,3 +51,4 @@ master's GND connect to slave's GND
 * AmebaSmart
 * AmebaLite
 * AmebaDplus
+* AmebaGreen2

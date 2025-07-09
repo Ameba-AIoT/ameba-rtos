@@ -15,7 +15,7 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 
-#if defined(CONFIG_ATCMD_HOST_CONTROL)
+#if (defined CONFIG_ATCMD_HOST_CONTROL && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE))
 #include "ringbuffer.h"
 #endif
 
@@ -61,7 +61,7 @@ void at_printf_unlock(void);
 #define SMALL_BUF               512
 #define MAX_BUF_LEN             20000
 
-#ifdef CONFIG_ATCMD_HOST_CONTROL
+#if (defined CONFIG_ATCMD_HOST_CONTROL && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE))
 extern char g_host_control_mode;
 extern char g_tt_mode;
 extern char g_tt_mode_check_watermark;
@@ -106,7 +106,7 @@ int atcmd_get_ssl_certificate(char *buffer, CERT_TYPE cert_type, int index);
 int atcmd_get_ssl_certificate_size(CERT_TYPE cert_type, int index);
 
 /* TODO */
-#if defined(CONFIG_ATCMD_HOST_CONTROL)
+#if (defined CONFIG_ATCMD_HOST_CONTROL && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE))
 typedef void (*at_write)(char *buf, int len);
 extern uint16_t atcmd_switch;
 extern char global_buf[SMALL_BUF];
@@ -121,7 +121,7 @@ int at_printf_indicate(const char *fmt, ...);
 #endif
 
 #ifdef CONFIG_MP_INCLUDED
-#ifdef CONFIG_AS_INIC_AP
+#ifdef CONFIG_WHC_HOST
 extern void whc_ipc_host_api_mp_command(char *token, unsigned int cmd_len, int show_msg);
 #else
 extern int wext_private_command(char *cmd, int show_msg, char *user_buf);

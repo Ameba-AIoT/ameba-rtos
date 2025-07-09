@@ -46,7 +46,7 @@ void set_eap_phase(unsigned char is_trigger_eap)
 	wifi_set_eap_phase(is_trigger_eap);
 }
 
-int get_eap_phase(void)
+__weak int get_eap_phase(void)
 {
 	return eap_phase;
 }
@@ -86,7 +86,6 @@ __weak void eap_disconnected_hdl(void)
 {
 #ifdef CONFIG_ENABLE_EAP
 	if (eap_event_reg_disconn) {
-		wifi_unreg_event_handler(RTW_EVENT_WPA_EAPOL_RECVD, eap_eapol_recvd_hdl);
 		eap_event_reg_disconn = 0;
 		//eap_peer_unregister_methods();
 		eap_sm_deinit();
@@ -219,10 +218,6 @@ __weak int eap_start(char *method)
 	//eap_config();
 
 	set_eap_phase(ENABLE);
-	wifi_reg_event_handler(RTW_EVENT_WPA_EAPOL_START, eap_eapol_start_hdl, NULL);
-	wifi_reg_event_handler(RTW_EVENT_WPA_EAPOL_RECVD, eap_eapol_recvd_hdl, NULL);
-
-
 
 	ret = connect_by_open_system(eap_target_ssid);
 
@@ -233,7 +228,6 @@ __weak int eap_start(char *method)
 	}
 #endif
 
-	wifi_unreg_event_handler(RTW_EVENT_WPA_EAPOL_START, eap_eapol_start_hdl);
 	eap_event_reg_disconn = 1;
 	set_eap_phase(DISABLE);
 

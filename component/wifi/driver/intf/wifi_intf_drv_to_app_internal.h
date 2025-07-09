@@ -279,9 +279,9 @@ void wifi_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way);
 /**
  * @brief  for wpa to set key to driver
  * @param[in]  rtw_crypt_info
- * @return  null.
+ * @return  0:success  -1:fail.
  */
-void wifi_wpa_add_key(struct rtw_crypt_info *crypt);
+int wifi_wpa_add_key(struct rtw_crypt_info *crypt);
 
 /**
  * @brief  for wpa to set/del/flush pmksa

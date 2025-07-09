@@ -34,11 +34,12 @@ set(private_compile_options)         #private compile_options
 
 #------------------------------#
 # Component private part, user config begin
-
+if(CONFIG_AMEBADPLUS)
 ameba_list_append(private_sources
     example_raw_spi_display_ili9341.c
     app_example.c
 )
+endif()
 
 # Component private part, user config end
 #------------------------------#
@@ -46,6 +47,7 @@ ameba_list_append(private_sources
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For open-source component, always build from source
+if(CONFIG_AMEBADPLUS)
 ameba_add_internal_library(example_raw_spi_display_ili9341
     p_SOURCES
         ${private_sources}
@@ -56,5 +58,6 @@ ameba_add_internal_library(example_raw_spi_display_ili9341
     p_COMPILE_OPTIONS
         ${private_compile_options}
 )
+endif()
 
 ##########################################################################################

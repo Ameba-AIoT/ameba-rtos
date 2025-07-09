@@ -31,6 +31,11 @@ For example:
   - Connect `SPI0_MISO (_PB_25)` to `SPI1_MISO (_PB_20)`
   - Connect `SPI0_SCLK (_PB_23)` to `SPI1_SCLK (_PB_18)`
   - Connect `SPI0_CS (_PB_26)` to `SPI1_CS (_PB_21)`
+- On AmebaGreen2, connect as below
+  - Connect `SPI0_MOSI (_PA_30)` to `SPI1_MOSI (_PB_30)`
+  - Connect `SPI0_MISO (_PA_31)` to `SPI1_MISO (_PB_31)`
+  - Connect `SPI0_SCLK (_PA_29)` to `SPI1_SCLK (_PB_29)`
+  - Connect `SPI0_CS (_PB_0)` to `SPI1_CS (_PC_0)`
 
 # SW configuration
 
@@ -58,3 +63,4 @@ For example:
 - AmebaLite
 - AmebaDplus
 - AmebaD
+- AmebaGreen2

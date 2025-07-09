@@ -2,7 +2,7 @@ ameba_add_image(target_img2 p_IMAGE_ALL km0_image2_all.bin)
 # Use variable c_CURRENT_IMAGE to represent full image target name
 
 ###############################  ADD COMPONENT  ###################################
-ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
+#ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
 ameba_add_subdirectory(${c_CMPT_SOC_DIR})
 ameba_add_subdirectory(${c_CMPT_SOC_DIR}/loader/bootloader)
 ameba_add_subdirectory(${c_CMPT_OS_DIR})

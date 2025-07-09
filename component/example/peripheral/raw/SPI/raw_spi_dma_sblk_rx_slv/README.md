@@ -29,7 +29,12 @@
   - Connect `SPI0_MISO (_PB_25)` to `SPI1_MISO (_PB_20)`
   - Connect `SPI0_SCLK (_PB_23)` to `SPI1_SCLK (_PB_18)`
   - Connect `SPI0_CS (_PB_26)` to `SPI1_CS (_PB_21)`
-  
+- On AmebaGreen2, connect as below
+  - Connect `SPI0_MOSI (_PA_30)` to `SPI1_MOSI (_PB_30)`
+  - Connect `SPI0_MISO (_PA_31)` to `SPI1_MISO (_PB_31)`
+  - Connect `SPI0_SCLK (_PA_29)` to `SPI1_SCLK (_PB_29)`
+  - Connect `SPI0_CS (_PB_0)` to `SPI1_CS (_PC_0)`
+
 2. If you have SPI master device, then you can ignore step2(3), and goto step3 directly.
 3. We offer another example named "`spi_dma_single_block_continue_tx_master`", it can be used for SPI master to communicate data with this example.
 4. If you use example of "`spi_dma_single_block_continue_tx_master`", then you should build its image and download into another EVB board.
@@ -61,3 +66,4 @@
 - AmebaLite
 - AmebaDplus
 - AmebaD
+- AmebaGreen2

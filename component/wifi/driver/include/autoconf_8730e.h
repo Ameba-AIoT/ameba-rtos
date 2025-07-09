@@ -74,7 +74,7 @@
 
 //#define SW_WEP_TKIP
 
-#ifdef CONFIG_AS_INIC_NP
+#ifdef CONFIG_WHC_DEV
 // customer requirement, send udp multicast frames around 1890 bytes without fragmentation
 #endif
 

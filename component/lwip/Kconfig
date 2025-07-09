@@ -1,19 +1,19 @@
 menu "CONFIG LWIP"
     config FAST_DHCP_MENU
         bool "Enable Fast DHCP"
-        select FAST_DHCP if CORE_AS_AP
+        select FAST_DHCP if WHC_HOST || WHC_NONE
 
     config IP_NAT_MENU
         bool "Enable NAT REPEATER"
-        select IP_NAT if CORE_AS_AP
+        select IP_NAT if WHC_HOST || WHC_NONE
 
     config LWIP_NETCONN_SEM_PER_THREAD_MENU
         bool "Enable LWIP NETCONN SEM PER THREAD"
-        select LWIP_NETCONN_SEM_PER_THREAD if CORE_AS_AP
+        select LWIP_NETCONN_SEM_PER_THREAD if WHC_HOST || WHC_NONE
 
     config LWIP_IPV6_MENU
         bool "Enable LWIP IPV6"
-        select LWIP_IPV6 if CORE_AS_AP
+        select LWIP_IPV6 if WHC_HOST || WHC_NONE
 
     config LWIP_USB_ETHERNET
         depends on USBH_ECM_ETHERNET_MENU||USBH_ECM_ETHERNET_BRIDGE_MENU||USBH_ECM_MENU

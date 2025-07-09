@@ -9,11 +9,13 @@ export CONFIG_FULLMAC_HCI_SPI = n
 export CONFIG_FULLMAC_HCI_USB = n
 export CONFIG_WHC_BRIDGE = n
 export CONFIG_WHC_BRIDGE_WPA_OPS = n
+export CONFIG_IEEE80211R = n
 
 ifeq ($(CONFIG_FULLMAC_HCI_IPC),y)
 
 ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
 ccflags-$(CONFIG_P2P) += -DCONFIG_P2P
+ccflags-$(CONFIG_IEEE80211R) += -DCONFIG_IEEE80211R
 ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -DCONFIG_FULLMAC
 ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/driver/include
 ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/driver/intf
@@ -42,9 +44,11 @@ fullmac-ipc-objs			:= ./common/netdev/whc_host_drv_probe.o \
 					./fullmac/whc_fullmac_host_ops_p2p.o \
 					./fullmac/whc_fullmac_host_acs.o \
 					./fullmac/whc_fullmac_host_promisc.o \
+					./fullmac/whc_fullmac_host_ft.o \
 					./fullmac/ipc/whc_fullmac_ipc_host_hci.o \
 					./fullmac/ipc/whc_fullmac_ipc_host_ops.o \
 					./fullmac/ipc/whc_fullmac_ipc_host_event.o \
+					./fullmac/ipc/whc_fullmac_ipc_host_event_test.o \
 					./fullmac/ipc/whc_fullmac_ipc_host_recv.o \
 					./fullmac/ipc/whc_fullmac_ipc_host_xmit.o \
 					./fullmac/ipc/whc_fullmac_ipc_host_msg.o \

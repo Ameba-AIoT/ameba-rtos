@@ -198,7 +198,7 @@ static void shell_task_ram(void *Data)
 		shell_loguartRx_dispatch();
 
 		if (shell_ctl.ExecuteCmd) {
-#if (defined CONFIG_SUPPORT_ATCMD) && (defined CONFIG_CORE_AS_AP)
+#if (defined CONFIG_SUPPORT_ATCMD) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 			shell_array_init((u8 *)atcmd_buf, sizeof(atcmd_buf), '\0');
 			strcpy(atcmd_buf, (const char *)pUartLogBuf->UARTLogBuf);
 			ret = atcmd_service(atcmd_buf);
@@ -225,7 +225,7 @@ static void shell_task_ram(void *Data)
 
 void shell_init_ram(void)
 {
-#if (defined CONFIG_SUPPORT_ATCMD) && (defined CONFIG_CORE_AS_AP)
+#if (defined CONFIG_SUPPORT_ATCMD) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 	atcmd_service_init();
 #endif
 

@@ -462,18 +462,14 @@ s32 wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc);
 s32 wifi_set_tx_rate_by_tos(u8 enable, u8 tos_precedence, u8 tx_rate);
 
 /**
- * @brief  Set EDCA parameters for STA.
- * @param[in]  ac_param: EDCA parameters format (as per 802.11 spec):
- * <table>
- *   <tr><th>BIT31~16</th><th>BIT15~8</th><th>BIT7~0</th></tr>
- *   <tr><td>TXOP Limit</td><td>ECWmin/ECWmax</td><td>ACI/AIFSN</td></tr>
- * </table>
+ * @brief  Set EDCA parameters for STA/SOFTAP.
+ * @param[in]  pedca_param: EDCA parameters (as per 802.11 spec):
  * @return
  *    - @ref RTK_SUCCESS : The API executed successfully.
  *    - -@ref RTK_ERR_WIFI_POWEROFF : Wi-Fi is powered off in IPS(Inactive Power Save) mode,
  *                      unable to access Wi-Fi registers.
  */
-s32 wifi_set_edca_param(u32 ac_param);
+s32 wifi_set_edca_param(struct rtw_edca_param *pedca_param);
 
 /**
  * @brief  Enable or disable CCA/EDCCA for TX.

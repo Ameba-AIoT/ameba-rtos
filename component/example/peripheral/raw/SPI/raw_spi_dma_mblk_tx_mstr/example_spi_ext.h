@@ -90,6 +90,19 @@ SPI1:
 #define SPI1_MISO  _PB_5
 #define SPI1_SCLK  _PB_6
 #define SPI1_CS    _PB_7
+
+#elif defined (CONFIG_AMEBAGREEN2)
+// SPI0 //S - Pinmux S0
+#define SPI0_MOSI  _PA_30
+#define SPI0_MISO  _PA_31
+#define SPI0_SCLK  _PA_29
+#define SPI0_CS    _PB_0
+
+// SPI1 //M - Pinmux S0
+#define SPI1_MOSI  _PB_30
+#define SPI1_MISO  _PB_31
+#define SPI1_SCLK  _PB_29
+#define SPI1_CS    _PC_0
 #endif
 
 extern int example_raw_spi_multi_dma_tx_master(void);

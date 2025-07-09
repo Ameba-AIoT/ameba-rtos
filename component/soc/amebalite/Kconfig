@@ -145,7 +145,7 @@ menu "CONFIG FUNCTION TEST"
 
         config WIFI_VERIFY_MENU
             bool "WIFI Test"
-            select WIFI_VERIFY if CORE_AS_NP
+            select WIFI_VERIFY if WHC_DEV
 
         if WIFI_VERIFY_MENU
             choice
@@ -153,16 +153,16 @@ menu "CONFIG FUNCTION TEST"
                 default WIFI_VERIFY_ASIC_MENU
                 config WIFI_VERIFY_ASIC_MENU
                     bool "WIFI_ASIC"
-                    select WIFI_VERIFY_ASIC if CORE_AS_NP
+                    select WIFI_VERIFY_ASIC if WHC_DEV
                 config MAC_LBK_MENU
                     bool "WIFI_MAC_LBK"
-                    select MAC_LBK if CORE_AS_NP
+                    select MAC_LBK if WHC_DEV
                 config WIFI_VERIFY_PSPHY_MENU
                     bool "WIFI_2MAC_WITH_PSPHY"
-                    select WIFI_VERIFY_PSPHY if CORE_AS_NP
+                    select WIFI_VERIFY_PSPHY if WHC_DEV
                 config WIFI_VERIFY_TRUEPHY_MENU
                     bool "WIFI_2MAC_WITH_TUREPHY"
-                    select WIFI_VERIFY_TRUEPHY if CORE_AS_NP
+                    select WIFI_VERIFY_TRUEPHY if WHC_DEV
             endchoice
         endif
     endif

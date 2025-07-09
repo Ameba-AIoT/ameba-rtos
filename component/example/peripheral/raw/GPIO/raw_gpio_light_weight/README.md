@@ -34,3 +34,4 @@ None.
 - AmebaLite
 - AmebaDplus
 - AmebaD
+- AmebaGreen2

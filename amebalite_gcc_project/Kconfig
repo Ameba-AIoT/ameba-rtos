@@ -30,10 +30,10 @@ menu "CONFIG DSP Enable"
 endmenu
 
 menu "CONFIG TrustZone"
-    config TRUSTZONE_FOR_KM4
+    config TRUSTZONE
         bool "Enable TrustZone"
     config TRUSTZONE_EN
-        depends on TRUSTZONE_FOR_KM4
+        depends on TRUSTZONE
         bool
         default y
 endmenu
@@ -68,10 +68,10 @@ menu "CONFIG Link Option"
             select PSRAM_USED
     endchoice
 
-    if TRUSTZONE_FOR_KM4
+    if TRUSTZONE
         choice
             prompt "IMG3(SecureImage) running on PSRAM or SRAM?"
-            default IMG3_PSRAM
+            default IMG3_SRAM
             config IMG3_PSRAM
                 bool "PSRAM"
                 select PSRAM_USED
@@ -141,14 +141,9 @@ menu "CONFIG WHC INTF"
 		default WHC_INTF_IPC_MENU
 			config WHC_INTF_IPC_MENU
 				bool "WHC_IPC"
-            # config FULLMAC_DEV
-            #     bool "FULLMAC"
+
             config WIFI_SINGLE_CORE_MENU
                 bool "SINGLE CORE"
-			# config SDIO_BRIDGE
-			# 	bool "SDIO_BRIDGE"
-			# config SPI_FULLMAC_HOST
-			# 	bool "SPI_FULLMAC_HOST"
 
 	endchoice
 
@@ -166,10 +161,10 @@ menu "CONFIG WHC INTF"
             prompt "WIFI Driver Location"
             config KR4_AS_NP
                 bool "KR4"
-                select CORE_AS_NP_FOR_KR4
+                select WHC_DEV_FOR_KR4
             config KM4_AS_NP
                 bool "KM4"
-                select CORE_AS_NP_FOR_KM4
+                select WHC_DEV_FOR_KM4
         endchoice
     endif
 
@@ -179,25 +174,29 @@ menu "CONFIG WHC INTF"
             default AP_CORE_KM4
             config AP_CORE_KM4
                 bool "KM4"
-                select CORE_AS_AP_FOR_KM4
-                select CORE_AS_NP_FOR_KR4 if WHC_INTF_IPC_MENU
-                select CORE_AS_NP_FOR_KM4 if WIFI_SINGLE_CORE_MENU
+                select WHC_HOST_FOR_KM4 if WHC_INTF_IPC_MENU
+                select WHC_DEV_FOR_KR4 if WHC_INTF_IPC_MENU
+                select WHC_NONE_FOR_KM4 if WIFI_SINGLE_CORE_MENU
             config AP_CORE_KR4
                 bool "KR4"
-                select CORE_AS_AP_FOR_KR4
-                select CORE_AS_NP_FOR_KM4 if WHC_INTF_IPC_MENU
-                select CORE_AS_NP_FOR_KR4 if WIFI_SINGLE_CORE_MENU
+                select WHC_HOST_FOR_KR4 if WHC_INTF_IPC_MENU
+                select WHC_DEV_FOR_KM4 if WHC_INTF_IPC_MENU
+                select WHC_NONE_FOR_KR4 if WIFI_SINGLE_CORE_MENU
         endchoice
     endif
 
 
-    config CORE_AS_AP_FOR_KM4
+    config WHC_HOST_FOR_KM4
         bool
-    config CORE_AS_NP_FOR_KR4
+    config WHC_DEV_FOR_KR4
         bool
-    config CORE_AS_AP_FOR_KR4
+    config WHC_HOST_FOR_KR4
         bool
-    config CORE_AS_NP_FOR_KM4
+    config WHC_DEV_FOR_KM4
+        bool
+    config WHC_NONE_FOR_KM4
+        bool
+    config WHC_NONE_FOR_KR4
         bool
 
 endmenu
@@ -214,44 +213,16 @@ menu "CONFIG WIFI"
             bool
             select WHC_INTF_IPC
             select WLAN
-            select AS_INIC_NP if CORE_AS_NP
-            select AS_INIC_AP if CORE_AS_AP
-            select LWIP_LAYER if CORE_AS_AP && !MP_SHRINK
-            select FW_DRIVER_COEXIST if CORE_AS_NP
-            select ENABLE_WPS if CORE_AS_AP && WIFI_WPS_ENABLE_MENU
+            select LWIP_LAYER if WHC_HOST && !MP_SHRINK
+            select FW_DRIVER_COEXIST if WHC_DEV
+            select ENABLE_WPS if WHC_HOST && WIFI_WPS_ENABLE_MENU
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
-
-        config FULLMAC_DEV
-            bool
-            depends on CORE_AS_NP
-            select WHC_INTF_SDIO if SDIO_FULLMAC
-            select WHC_INTF_SPI if SPI_FULLMAC
-            select WHC_INTF_USB if USB_FULLMAC
-            select WLAN
-            select AS_INIC_NP
-            select FW_DRIVER_COEXIST
-            select WIFI_FW_EN
-
-        config SDIO_BRIDGE
-            bool
-            depends on CORE_AS_AP
-            select WLAN
-            select SINGLE_CORE_WIFI
-            select WHC_INTF_SDIO
-            select LWIP_LAYER
-
-        config SPI_FULLMAC_HOST
-            bool
-            depends on CORE_AS_AP
-            select WLAN
-            select AS_INIC_AP
-            select LWIP_LAYER
 
         config WIFI_SINGLE_CORE_MENU
             bool
-            depends on CORE_AS_AP
+            depends on WHC_NONE
+            select WHC_INTF_IPC
             select WLAN
-            select SINGLE_CORE_WIFI
             select LWIP_LAYER if !MP_SHRINK
             select FW_DRIVER_COEXIST
             select ENABLE_WPS if WIFI_WPS_ENABLE_MENU
@@ -262,8 +233,8 @@ menu "CONFIG WIFI"
     if !WLAN_MENU
         config WLAN_DISABLE
             bool
-            select AS_INIC_AP if CORE_AS_AP
-            select AS_INIC_NP if CORE_AS_NP
+            select AS_INIC_AP if WHC_HOST
+            select AS_INIC_NP if WHC_DEV
     endif
 
 
@@ -286,8 +257,6 @@ menu "CONFIG WIFI"
     config WHC_INTF_USB
         bool
     config WIFI_FW_EN
-        bool
-    config SINGLE_CORE_WIFI
         bool
     config ENABLE_WPS
         bool
@@ -319,7 +288,7 @@ menu "CONFIG BT"
         endchoice
 
         config BT
-            depends on CORE_AS_AP
+            depends on WHC_HOST || WHC_NONE
             bool
             default y
             select FTL_ENABLED
@@ -380,8 +349,10 @@ endmenu
 
 comment "----- DO NOT ENTER IN THIS BUTTON ------"
 menu "MENUCONFIG FOR Private"
-config CORE_AS_AP
+config WHC_HOST
     bool "--DO NOT CHOOSE THIS CONFIG--"
-config CORE_AS_NP
+config WHC_DEV
+    bool "--DO NOT CHOOSE THIS CONFIG--"
+config WHC_NONE
     bool "--DO NOT CHOOSE THIS CONFIG--"
 endmenu

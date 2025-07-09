@@ -266,6 +266,9 @@ void BOOT_Enable_KR4(void)
 	/* Kr4 start table bacukp status Init*/
 	RRAM_DEV->kr4_BackupTbl_Done = 0;
 
+	/* reset KR4 to avoid KM4 stuck in bootloader for VSCode Debug KM4 */
+	RCC_PeriphClockCmd(APBPeriph_KR4, APBPeriph_KR4_CLOCK, DISABLE);
+
 	/* Let KR4 run */
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG, HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG) | LSYS_BIT_BOOT_KR4_RUN);
 
@@ -535,12 +538,12 @@ void BOOT_Config_PMC_Role(void)
 {
 	RRAM_TypeDef *rram = RRAM_DEV;
 
-#if defined(CONFIG_AS_INIC_NP) /*KM4 as PMC NP*/
+#if defined(CONFIG_WHC_DEV) /*KM4 as PMC NP*/
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_SYSTEM_CFG1, HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_SYSTEM_CFG1) & (~LSYS_BIT_KR4_IS_NP));
 	rram->PMC_CORE_ROLE_Flag = PMC_CORE_ROLE_AP2NP;
-#elif defined(CONFIG_AS_INIC_AP) /*KM4 as PMC AP*/
+#elif defined(CONFIG_WHC_HOST) /*KM4 as PMC AP*/
 	rram->PMC_CORE_ROLE_Flag = PMC_CORE_ROLE_AP2NP;
-#elif defined(CONFIG_SINGLE_CORE_WIFI) /*KM4 as PMC NP*/
+#elif defined(CONFIG_WHC_NONE) /*KM4 as PMC NP*/
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_SYSTEM_CFG1, HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_SYSTEM_CFG1) & (~LSYS_BIT_KR4_IS_NP));
 	rram->PMC_CORE_ROLE_Flag = PMC_CORE_ROLE_SINGLE;
 #else /*KR4 as PMC NP*/

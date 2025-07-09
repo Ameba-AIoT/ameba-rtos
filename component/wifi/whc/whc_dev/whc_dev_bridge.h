@@ -55,7 +55,7 @@ struct bridge_pkt_attrib {
 	u8_t port_idx;
 };
 
-struct whc_bridge_dev_pkt_filter {
+struct whc_dev_pkt_filter {
 	u32_t identity; // filter id, decided by user(for dele and get)
 	u8_t src_ip[4];
 	u8_t dst_ip[4];
@@ -69,8 +69,8 @@ struct whc_bridge_dev_pkt_filter {
 	u8_t rsvd[3];
 };
 
-extern u8(*whc_bridge_sdio_dev_pkt_redir_cusptr)(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib);
+extern u8(*whc_dev_pkt_redir_cusptr)(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib);
 
-u8 whc_bridge_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send);
+u8 whc_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send);
 
 #endif

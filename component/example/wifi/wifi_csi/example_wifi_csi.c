@@ -10,6 +10,11 @@ extern s32 wifi_csi_config(struct rtw_csi_action_parm *act_param);
 struct csi_report_q_priv g_csi_rpt_q_priv;
 rtos_sema_t wc_ready_sema = NULL;
 
+struct rtw_event_hdl_func_t event_external_hdl[1] = {
+	{RTW_EVENT_CSI_DONE,			example_wifi_csi_report_cb},
+};
+u16 array_len_of_event_external_hdl = sizeof(event_external_hdl) / sizeof(struct rtw_event_hdl_func_t);
+
 static void wifi_csi_buffer_deinit(void)
 {
 	u8 i = 0;
@@ -153,10 +158,9 @@ static struct csi_report_data *wifi_csi_dequeue_idle_q(void)
 }
 
 /* wifi csi report callback */
-void example_wifi_csi_report_cb(u8 *buf, s32 buf_len, s32 flags, void *userdata)
+void example_wifi_csi_report_cb(u8 *buf, s32 buf_len, s32 flags)
 {
 	(void) flags;
-	(void) userdata;
 	struct csi_report_data	*csi_rpt_pkt = NULL;
 
 	csi_rpt_pkt = wifi_csi_dequeue_idle_q();
@@ -203,9 +207,6 @@ NEXT:
 		}
 		rtos_time_delay_ms(2000);  /* 2s */
 	}
-
-	/* register wifi event callback function */
-	wifi_reg_event_handler(RTW_EVENT_CSI_DONE, example_wifi_csi_report_cb, NULL);
 
 	/* init csi report buffer pool */
 	if (wifi_csi_buffer_init() != RTK_SUCCESS) {
@@ -284,8 +285,6 @@ NEXT:
 	}
 
 done:
-	/* unregister wifi event callback function */
-	wifi_unreg_event_handler(RTW_EVENT_CSI_DONE, example_wifi_csi_report_cb);
 
 	/* free csi report buffer */
 	wifi_csi_buffer_deinit();

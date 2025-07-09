@@ -1,0 +1,146 @@
+# GDB script for loading ram.bin process
+
+source gnu_utility/gnu_script/rtl_gdb_jtag_boot_com.txt
+
+monitor reset 0
+monitor sleep 20
+monitor reset 0
+monitor sleep 20
+
+#===============================================================================
+#Macro define
+
+if ($CUT_VERSION == 1)
+	set $FLASHDATBUFSIZE = 0x800
+else
+	set $FLASHDATBUFSIZE = 0x4000
+end
+
+set $IMAGE_IMG1_BOOT = 0x001
+set $IMAGE_IMG2_ALL = 0x002
+#===============================================================================
+
+#===============================================================================
+#Load flash download file
+printf "Load flash loader.\n"
+file gnu_utility/gnu_script/target_FPGA.axf
+#Load the file
+#lo
+#restore ./image/rom.bin binary 0x0
+restore gnu_utility/gnu_script/flash_loader_ram_1.bin binary 0x3000A020
+#===============================================================================
+
+#===============================================================================
+#flash write function
+define flash_write
+	printf "flash_write FileName:%x \n", $arg0
+	printf "flash_write FileSize:%d \n", $arg1
+	printf "flash_write FlashAddrForWrite:%x \n", FlashAddrForWrite
+
+	set $FileName = $arg0
+	set $FileSize = $arg1
+	set $Loopnumber = ($FileSize / $FLASHDATBUFSIZE)
+	set $TailSize = ($FileSize % $FLASHDATBUFSIZE)
+	if ( $TailSize > 0)
+		set $Loopnumber = $Loopnumber + 0x01
+	end
+	printf "FileSize: %x\n",$FileSize
+	printf "Loopnumber = %d\n", $Loopnumber
+	printf "TailSize = %d\n", $TailSize
+	printf "global variables\n"
+
+	set $FILESTARTADDR = 0
+	set $FLASHDATSRC = FlashDatSrc
+	set FlashBlockWriteSize = $FLASHDATBUFSIZE
+	set $FILEWRITESIZE = $FLASHDATBUFSIZE
+
+	printf "FlashDatSrc:%x\n", $FLASHDATSRC
+	printf "FlashBlockWriteSize:%x\n", FlashBlockWriteSize
+	printf "FlashAddrForWrite:%x\n", FlashAddrForWrite
+
+	printf  "Flash write start...\n"
+	set $Loop = 0
+	while  ($Loop < $Loopnumber)
+		set $FILESTARTADDR = $FLASHDATBUFSIZE * $Loop
+		printf "FILESTARTADDR"
+		p /x $FILESTARTADDR
+		p /x FlashAddrForWrite
+		p /x $Loop
+
+		if ($FileSize == $FILESTARTADDR + $TailSize)
+			set FlashBlockWriteSize = $TailSize
+			set $FILEWRITESIZE = $TailSize
+		end
+
+		if ($FileName == $IMAGE_IMG2_ALL)
+    		restore ./image/amebagreen2_app.bin binary ($FLASHDATSRC-$FILESTARTADDR) $FILESTARTADDR ($FILESTARTADDR + $FILEWRITESIZE)
+		end
+		if ($FileName == $IMAGE_IMG1_BOOT)
+			restore ./image/amebagreen2_boot.bin binary ($FLASHDATSRC-$FILESTARTADDR) $FILESTARTADDR ($FILESTARTADDR + $FILEWRITESIZE)
+		end
+		c
+
+		set $Loop = $Loop + 0x01
+	end
+end
+
+#===============================================================================
+#Set rom boot BIT to flash loader
+set $Temp = 0x0
+set $Temp = {int}($SYSTEM_CTRL_BASE+$REG_LSYS_BOOT_CFG)
+p /x $Temp
+
+set $Temp = ($Temp & ~(0xFFFF << 16))
+set $Temp = ($Temp | (0x01 << 28))
+p /x $Temp
+
+set {int}($SYSTEM_CTRL_BASE+$REG_LSYS_BOOT_CFG) = $Temp
+printf "....\n"
+printf "wakeup bit(%x):%x\n", ($SYSTEM_CTRL_BASE+$REG_LSYS_BOOT_CFG), {int}($SYSTEM_CTRL_BASE+$REG_LSYS_BOOT_CFG)
+
+#===============================================================================
+#Set CPU to secure state
+set $Temp = {int}(0xE000EE08)
+p /x $Temp
+
+set $Temp = ($Temp & ~(0x01 << 17))
+set $Temp = ($Temp | (0x01 << 16))
+p /x $Temp
+
+set {int}(0xE000EE08) = $Temp
+
+b rtl_flash_download.c:81
+
+b rtl_flash_download.c:114
+
+set $pc = 0x8000
+set $sp = 0x30006FFC
+
+c
+#===============================================================================
+
+#===============================================================================
+#flash write
+set $XIPBootSize =16928
+set FlashAddrForWrite =0x00000
+flash_write $IMAGE_IMG1_BOOT $XIPBootSize
+
+set $FlashFileSize =58016
+set FlashAddrForWrite =0x14000
+flash_write $IMAGE_IMG2_ALL $FlashFileSize
+
+#Tell flashloader complete flag
+set FlashWriteComplete = 0x1
+c
+#===============================================================================
+
+#===============================================================================
+#dump image from flash
+printf "dump for check\n"
+
+
+#===============================================================================
+
+quit
+#===============================================================================
+

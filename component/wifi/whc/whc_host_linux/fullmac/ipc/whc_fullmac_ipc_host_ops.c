@@ -234,12 +234,20 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 	size_t offset = 0;
 	struct rtw_network_info *connect_param_tmp = NULL;
 
+#ifdef CONFIG_CFG80211_SME_OFFLOAD
+	/* step1: check if auth is finished */
+	if (global_idev.mlme_priv.rtw_join_status != RTW_JOINSTATUS_AUTHENTICATED) {
+		dev_err(global_idev.fullmac_dev, "[fullmac]: auth is not finished! rtw_join_status=%d\n", global_idev.mlme_priv.rtw_join_status);
+		return -EBUSY;
+	}
+#else
 	/* step1: check if there's ongoing connect*/
 	if ((global_idev.mlme_priv.rtw_join_status > RTW_JOINSTATUS_UNKNOWN)
 		&& (global_idev.mlme_priv.rtw_join_status < RTW_JOINSTATUS_SUCCESS)) {
 		dev_err(global_idev.fullmac_dev, "[fullmac]: there is ongoing wifi connect!rtw_join_status=%d\n", global_idev.mlme_priv.rtw_join_status);
 		return -EBUSY;
 	}
+#endif
 
 	/*clear for last connect status */
 	global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_STARTING;
@@ -414,15 +422,24 @@ int whc_fullmac_host_stop_ap(void)
 	return ret;
 }
 
-int whc_fullmac_host_set_EDCA_params(unsigned int *AC_param)
+int whc_fullmac_host_set_EDCA_params(struct rtw_edca_param *pedca_param)
 {
+	u32 param_buf[1];
+	dma_addr_t phy_addr;
 	int ret = 0;
-	u32 param_buf[1] = {0};
-	unsigned int ac_param = *AC_param;
+	struct device *pdev = global_idev.ipc_dev;
+	struct rtw_edca_param *pedca_param_temp;
 
-	param_buf[0] = ac_param;
+	pedca_param_temp = rtw_malloc(sizeof(struct rtw_edca_param), &phy_addr);
+	if (!pedca_param_temp) {
+		dev_err(global_idev.fullmac_dev, "%s: malloc failed!\n", __func__);
+		return -1;
+	}
+	memcpy(pedca_param_temp, pedca_param, sizeof(struct rtw_edca_param));
 
+	param_buf[0] = (u32)phy_addr;
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SET_EDCA_PARAM, param_buf, 1);
+	rtw_mfree(sizeof(struct rtw_edca_param), pedca_param_temp, phy_addr);
 
 	return ret;
 }
@@ -488,6 +505,7 @@ int whc_fullmac_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 {
 	int ret = 0;
 	u32 param_buf[3];
+	u8 *mac_addr_tmp = NULL;
 	dma_addr_t dma_addr_mac_addr = 0;
 	struct device *pdev = global_idev.ipc_dev;
 
@@ -495,11 +513,12 @@ int whc_fullmac_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 	param_buf[1] = (u32)status;
 
 	if (mac_addr) {
-		dma_addr_mac_addr = dma_map_single(pdev, mac_addr, 6, DMA_TO_DEVICE);
-		if (dma_mapping_error(pdev, dma_addr_mac_addr)) {
-			dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-			return -1;
+		mac_addr_tmp = rtw_malloc(ETH_ALEN, &dma_addr_mac_addr);
+		if (!mac_addr_tmp) {
+			dev_err(global_idev.fullmac_dev, "%s: malloc mac_addr failed!\n", __func__);
+			return -ENOMEM;
 		}
+		memcpy(mac_addr_tmp, mac_addr, ETH_ALEN);
 		param_buf[2] = (u32)dma_addr_mac_addr;
 	} else {
 		param_buf[2] = 0;
@@ -507,8 +526,8 @@ int whc_fullmac_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SAE_STATUS, param_buf, 3);
 
-	if (mac_addr) {
-		dma_unmap_single(pdev, dma_addr_mac_addr, 6, DMA_TO_DEVICE);
+	if (mac_addr_tmp) {
+		rtw_mfree(ETH_ALEN, mac_addr_tmp, dma_addr_mac_addr);
 	}
 
 	return ret;
@@ -586,7 +605,7 @@ int whc_fullmac_host_get_traffic_stats(u8 wlan_idx, dma_addr_t stats_traffic)
 	return ret;
 }
 
-int whc_fullmac_host_get_phy_stats(u8 wlan_idx, u8 *mac_addr, dma_addr_t stats_phy)
+int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, dma_addr_t stats_phy)
 {
 	int ret = 0;
 	u32 param_buf[3];
@@ -1052,6 +1071,31 @@ int whc_fullmac_host_update_custom_ie(u8 *ie, int ie_index, u8 type)
 	return ret;
 }
 
+int whc_fullmac_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len)
+{
+	u8 *buf_vir = NULL;
+	dma_addr_t buf_phy = 0;
+	u32 param_buf[2];
+	int ret = 0;
+
+	buf_vir = rtw_malloc(ie_len, &buf_phy);
+	if (!buf_vir) {
+		dev_err(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		return -ENOMEM;
+	}
+
+	memcpy(buf_vir, ie, ie_len);
+
+	param_buf[0] = (u32)buf_phy;
+	param_buf[1] = (u32)ie_len;
+
+	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SME_SET_ASSOCREQ_IE, param_buf, 2);
+
+	rtw_mfree(ie_len, buf_vir, buf_phy);
+
+	return ret;
+}
+
 int whc_fullmac_host_set_edcca_mode(u8 edcca_mode)
 {
 	int ret = 0;
@@ -1222,6 +1266,34 @@ int whc_fullmac_host_set_promisc_enable(u32 enable, u8 mode)
 	param_buf[1] = (u32)mode;
 	param_buf[2] = (u32)0xffffffff;
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_PROMISC_INIT, param_buf, 3);
+
+	return ret;
+}
+
+int whc_fullmac_host_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 status)
+{
+	dma_addr_t phy_addr = 0;
+	u8 *param = NULL;
+	u32 param_buf[2];
+	int ret = 0;
+	struct device *pdev = global_idev.ipc_dev;
+
+	if (kvr_param) {
+		param = rtw_malloc(sizeof(struct rtw_kvr_param_t), &phy_addr);
+		if (param == NULL) {
+			dev_err(global_idev.fullmac_dev, "%s: malloc error!\n", __func__);
+			return -ENOMEM;
+		}
+		memcpy(param, kvr_param, sizeof(struct rtw_kvr_param_t));
+	}
+
+	param_buf[0] = phy_addr;
+	param_buf[1] = (u32)status;
+
+	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_FT_STATUS, param_buf, 2);
+	if (phy_addr) {
+		rtw_mfree(sizeof(struct rtw_kvr_param_t), param, phy_addr);
+	}
 
 	return ret;
 }

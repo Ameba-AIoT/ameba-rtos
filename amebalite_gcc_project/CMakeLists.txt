@@ -38,6 +38,26 @@ add_subdirectory(project_km4)
 ###############################################################################
 
 ###############################################################################
+# Package final firmware
+#NOTE: import_kconfig is used for ameba_set_if... later
+configure_file(${c_MENUCONFIG_DIR}/.config ${CMAKE_CURRENT_BINARY_DIR}/.config COPYONLY)
+import_kconfig("CONFIG" ${CMAKE_CURRENT_BINARY_DIR}/.config)
+if(CONFIG_MP_INCLUDED)
+    set(app_name kr4_km4_app_mp.bin)
+elseif(CONFIG_DSP_WITHIN_APP_IMG)
+    set(app_name kr4_km4_dsp_app.bin) #FIXME: What if both MP and DSP enabled?
+else()
+    set(app_name kr4_km4_app.bin)
+endif()
+ameba_firmware_package(
+    ${app_name}         #Output app name, referred by c_APP_BINARY_NAME in postbuild.cmake
+    p_MCU_PROJECTS      #MCU project list, notice the ORDER is important which determines the image2/image3 order in final binary file
+        kr4 #kr4's image2 is in front of km4's image2/image3
+        km4
+)
+###############################################################################
+
+###############################################################################
 # Exit project
 ameba_soc_project_exit()
 ###############################################################################

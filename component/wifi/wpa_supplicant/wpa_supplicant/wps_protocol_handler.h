@@ -116,6 +116,7 @@ extern struct rtw_wps_context g_wps_context;
 
 extern xqueue_handle_t queue_for_credential;
 
+int get_wps_phase(void);
 int wpas_wps_dev_config(u8 *dev_addr, u8 bregistrar);
 int wpas_wps_init(unsigned char wlan_idx);
 void wpas_wps_deinit(void);
@@ -124,9 +125,9 @@ int wpas_wps_registrar_check_done(void);
 int wpas_wps_registrar_add_pin(const u8 *pin, size_t pin_len);
 int wpas_wps_registrar_wps_cancel(void);
 int wpas_wps_enrollee_init_assoc_ie(void);
-void wpas_wsc_sta_wps_start_hdl(u8 *buf, s32 buf_len, s32 flags, void *userdata);
-void wpas_wsc_wps_finish_hdl(u8 *buf, s32 buf_len, s32 flags, void *userdata);
-void wpas_wsc_eapol_recvd_hdl(u8 *buf, s32 buf_len, s32 flags, void *userdata);
+void wpas_wsc_sta_wps_start_hdl(u8 *buf, s32 buf_len, s32 flags);
+void wpas_wsc_wps_finish_hdl(u8 *buf, s32 buf_len, s32 flags);
+void wpas_wsc_eapol_recvd_hdl(u8 *buf, s32 buf_len, s32 flags);
 
 //#endif //CONFIG_WPS
 #endif //_WPS_PROTOCOL_HANDLER_H_

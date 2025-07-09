@@ -36,7 +36,7 @@ set(private_compile_options)         #private compile_options
 
 #------------------------------#
 # Component private part, user config begin
-if(NOT CONFIG_AS_INIC_AP)
+if(NOT CONFIG_WHC_HOST)
     ameba_list_append_ifnot(CONFIG_WIFI_CSI_ENABLE private_sources
         wifi_feature_dis_csi.c)
 
@@ -66,25 +66,19 @@ if(NOT (CONFIG_WIFI_11K_ENABLE AND CONFIG_WIFI_11V_ENABLE AND CONFIG_WIFI_11R_EN
     )
 endif()
 
-if(CONFIG_AS_INIC_NP)
+if(CONFIG_WHC_DEV AND CONFIG_WHC_INTF_IPC)
     if(NOT CONFIG_AMEBALITE)
-        if(NOT CONFIG_WHC_INTF_SDIO)
-            if(NOT CONFIG_WHC_INTF_SPI)
-                if(NOT CONFIG_WHC_INTF_USB)
-                    if(NOT CONFIG_ZEPHYR_SDK)
-                        if(TARGET target_wifi_nouse)
-                            add_custom_command(
-                                OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/wifi_intf_drv_to_app_ext_noused.c
-                                COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/gen_noused_c.py -a ${c_SDK_IMAGE_TARGET_DIR}/target_img2_otrcore.asm -c ${CMAKE_CURRENT_SOURCE_DIR}/wifi_intf_drv_to_app_ext_strong.c -r ${CMAKE_CURRENT_BINARY_DIR}/wifi_intf_drv_to_app_ext_noused.c
-                                # COMMAND ${CMAKE_COMMAND} -E remove ${c_SDK_IMAGE_TARGET_DIR}/target_img2_otrcore.asm
-                                DEPENDS target_wifi_nouse ${c_MCU_PROJECT_DIR}/asdk/image/target_img2_otrcore.asm
-                            )
-                            ameba_list_append(private_sources
-                                ${CMAKE_CURRENT_BINARY_DIR}/wifi_intf_drv_to_app_ext_noused.c
-                            )
-                        endif()
-                    endif()
-                endif()
+        if(NOT CONFIG_ZEPHYR_SDK)
+            if(TARGET target_wifi_nouse)
+                add_custom_command(
+                    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/wifi_intf_drv_to_app_ext_noused.c
+                    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/gen_noused_c.py -a ${c_SDK_IMAGE_TARGET_DIR}/target_img2_otrcore.asm -c ${CMAKE_CURRENT_SOURCE_DIR}/wifi_intf_drv_to_app_ext_strong.c -r ${CMAKE_CURRENT_BINARY_DIR}/wifi_intf_drv_to_app_ext_noused.c
+                    # COMMAND ${CMAKE_COMMAND} -E remove ${c_SDK_IMAGE_TARGET_DIR}/target_img2_otrcore.asm
+                    DEPENDS target_wifi_nouse ${c_MCU_PROJECT_DIR}/asdk/image/target_img2_otrcore.asm
+                )
+                ameba_list_append(private_sources
+                    ${CMAKE_CURRENT_BINARY_DIR}/wifi_intf_drv_to_app_ext_noused.c
+                )
             endif()
         endif()
     endif()

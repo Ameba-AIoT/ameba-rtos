@@ -8,7 +8,7 @@ set(
     ${BASEDIR}/component/wifi/wifi_fw/common
 )
 
-if(CONFIG_AS_INIC_NP)
+if(CONFIG_WHC_DEV)
     set(
         CSRC
         ${DIR}/wififw_init.c
@@ -76,7 +76,7 @@ if(CONFIG_AS_INIC_NP)
     endif()
 endif()
 
-if(CONFIG_SINGLE_CORE_WIFI)
+if(CONFIG_WHC_NONE)
     set(
        CSRC
        ${DIR}/wififw_init.c

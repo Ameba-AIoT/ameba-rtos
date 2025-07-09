@@ -1,0 +1,24 @@
+comment "----------CPU config----------"
+
+menu "CONFIG CHIP"
+    choice
+        prompt "ArmCore"
+        default ARM_CORE_CM4_KM4NS_FOR_KM4NS
+        config ARM_CORE_CM4_KM4NS_FOR_KM4NS
+            bool "ARM_CM4_KM4NS"
+    endchoice
+
+    config ARM_CORE_CM4_FOR_KM4NS
+        bool
+        default y
+
+    choice
+        prompt "Chip Version"
+        default AMEBAGREEN2_A_CUT_FOR_KM4NS
+        config AMEBAGREEN2_A_CUT_FOR_KM4NS
+            bool "AMEBAGREEN2_A_Cut"
+    endchoice
+endmenu
+
+
+

@@ -44,7 +44,7 @@ set(private_compile_options)         #private compile_options
 ameba_list_append(private_sources
     ameba_pmu.c
 )
-if (CONFIG_CORE_AS_AP)
+if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
     ameba_list_append(private_sources ameba_ota.c)
 endif()
 

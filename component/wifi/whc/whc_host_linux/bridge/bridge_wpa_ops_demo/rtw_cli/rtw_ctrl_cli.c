@@ -14,7 +14,7 @@
 #include <rtw_ctrl_api.h>
 #include <rtw_ctrl_wifi_types.h>
 #include <whc_bridge_wpa_ops_api.h>
-#include <whc_bridge_host_netlink.h>
+#include <whc_host_netlink.h>
 
 #define MAX_ARG_COUNT 5
 #define MAX_ARG_LENGTH 128
@@ -29,7 +29,8 @@ struct rtw_scan_result *scan_results = NULL;
 
 /* Define API handler */
 const struct cmd_func_t whc_bridge_api_handlers[] = {
-	{"getmac", whc_bridge_host_cmd_getmac, CMD_WIFI_SEND_BUF, WHC_WIFI_TEST, WHC_WIFI_TEST_GET_MAC_ADDR},
+	{"getmac", whc_bridge_host_cmd_getmac, CMD_WIFI_SEND_BUF, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_GET_MAC_ADDR},
+	{"set_network", whc_bridge_host_cmd_set_network, CMD_WIFI_SEND_BUF, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SET_NETWORK},
 	{"scan", whc_bridge_host_cmd_scan, CMD_WIFI_DO_SCAN, WHC_WPA_OPS_CUSTOM_API, WHC_WPA_OPS_CUSTOM_API_SCAN},
 	{"scan_result", whc_bridge_host_cmd_scan_result, CMD_WIFI_SCAN_RESULT, 0, 0},
 	{NULL, NULL, 0, 0},
@@ -112,7 +113,8 @@ void whc_bridge_host_handle_rx_payload(char *pos, int len, int api_id, int chunk
 			pos = pos + sizeof(uint32_t);
 			switch (*pos) {
 			case WHC_WIFI_TEST_GET_MAC_ADDR:
-				printf("\nMAC ADDR %02x:%02x:%02x:%02x:%02x:%02x\n", (u8)pos[1], (u8)pos[2], (u8)pos[3], (u8)pos[4], (u8)pos[5], (u8)pos[6]);
+				printf("\nMAC ADDR %02x:%02x:%02x:%02x:%02x:%02x\n",
+					   (u8)pos[1], (u8)pos[2], (u8)pos[3], (u8)pos[4], (u8)pos[5], (u8)pos[6]);
 				break;
 			case WHC_WIFI_TEST_GET_IP:
 				printf("\nIP ADDR %d.%d.%d.%d\n", pos[1], pos[2], pos[3], pos[4]);
@@ -218,7 +220,7 @@ int main(void)
 	signal(SIGINT, sigint_handler);
 
 	// Retrieve the family id
-	family_id = whc_bridge_host_api_get_family_id(sock_fd, BRIDGE_GENL_NAME);
+	family_id = whc_bridge_host_api_get_family_id(sock_fd, WHC_CMD_GENL_NAME);
 	if (family_id == 0) {
 		printf("Failed to retrieve family id\n");
 		close(sock_fd);

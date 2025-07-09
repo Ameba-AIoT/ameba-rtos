@@ -15,7 +15,7 @@
 int whc_bridge_host_send_to_user(u8 *buf, u16 size, u16 api_id);
 int whc_bridge_host_send_to_user_multi(u8 *buf, u16 size, u16 api_id, u32 chuck_index, u8 last_chuck);
 /* send pkt to device */
-void whc_bridge_host_send_data_to_dev(u8 *pbuf, u32 len, u32 with_txdesc);
+void whc_host_send_data_to_dev(u8 *pbuf, u32 len, u32 with_txdesc);
 
 int whc_bridge_host_do_scan(struct sk_buff *skb, struct genl_info *info);
 int whc_bridge_host_scan_result(void);

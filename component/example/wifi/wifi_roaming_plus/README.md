@@ -14,7 +14,7 @@ None
 
 # SW configuration
 
-1. In `component/soc/amebaxxx/usrcfg/ameba_wificfg.c`.
+1. In `component/soc/usrcfg/amebaxxx/ameba_wificfg.c`.
 	```C
 	wifi_user_config.fast_reconnect_en = 0;
 	```

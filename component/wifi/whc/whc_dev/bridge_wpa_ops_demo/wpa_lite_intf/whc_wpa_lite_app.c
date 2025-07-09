@@ -5,8 +5,56 @@
 #include "whc_wpa_ops_cmd_define.h"
 #include "whc_wpa_lite_app.h"
 
-extern rtos_sema_t whc_bridge_user_rx_sema;
-extern u8 *whc_bridge_rx_msg;
+#include "cfg_parse_config_ssid.h"
+
+extern rtos_sema_t whc_user_rx_sema;
+extern u8 *whc_rx_msg;
+
+struct wpa_ops_ssid ssid_a = {0};
+
+int whc_wpa_ops_set_network(char *ptr)
+{
+	int msg_len = 0, ret = 0;
+	char *var_name = NULL;
+	char *value = NULL;
+	char *space = NULL;
+	struct wpa_ops_ssid *ssid = &ssid_a;
+
+	msg_len = *ptr;
+	ptr += 4;
+	RTK_LOGE(TAG_WLAN_INIC, "%s, len: %d; set_network: %s\n", __func__, msg_len, ptr);
+
+	var_name = ptr;
+
+	space = memchr(ptr, ' ', msg_len);
+	if (space == NULL) {
+		return -1;
+	}
+
+	*space = '\0';
+	value = space + 1;
+
+	RTK_LOGE(TAG_WLAN_INIC, "%s, host input name: %s, value: %s\n", __func__, var_name, value);
+
+	ret = wpa_config_set(ssid, var_name, value, 0);
+	if (ret < 0) {
+		RTK_LOGE(TAG_WLAN_INIC, "CTRL_IFACE: Failed to set network "
+				 "variable '%s'\n", var_name);
+	}
+
+	if (ssid->ssid) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s, ssid: %s\n", __func__, ssid->ssid);
+	}
+	if (ssid->passphrase) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s, passphrase: %s\n", __func__, ssid->passphrase);
+	}
+	if (ssid->key_mgmt) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s, key_mgmt: %x\n", __func__, ssid->key_mgmt);
+	}
+
+	return ret;
+
+}
 
 void whc_dev_pkt_rx_to_user_task(void)
 {
@@ -15,10 +63,10 @@ void whc_dev_pkt_rx_to_user_task(void)
 	u8 *buf, idx = 0;
 
 	while (1) {
-		rtos_sema_take(whc_bridge_user_rx_sema, RTOS_MAX_TIMEOUT);
-		if (whc_bridge_rx_msg) {
-			ptr = whc_bridge_rx_msg;
-			event = *(u32 *)whc_bridge_rx_msg;
+		rtos_sema_take(whc_user_rx_sema, RTOS_MAX_TIMEOUT);
+		if (whc_rx_msg) {
+			ptr = whc_rx_msg;
+			event = *(u32 *)whc_rx_msg;
 			ptr += 4;
 
 			if (event == WHC_WPA_OPS_UTIL) {
@@ -44,6 +92,10 @@ void whc_dev_pkt_rx_to_user_task(void)
 					memcpy(ptr, dev_mac.octet, 6);
 					//6+4+1=11
 					whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
+				} else if (*ptr == WHC_WPA_OPS_UTIL_SET_NETWORK) {
+					ptr += 1;
+
+					whc_wpa_ops_set_network((char *)ptr);
 				}
 			} else if (event == WHC_WPA_OPS_CUSTOM_API) {
 				buf = rtos_mem_malloc(BRIDGE_WPA_OPS_BUF_SIZE);
@@ -130,7 +182,10 @@ void whc_dev_pkt_rx_to_user_task(void)
 					rtos_mem_free(buf);
 				}
 			}
-			whc_bridge_rx_msg = NULL;
+			if (buf != NULL) {
+				rtos_mem_free(buf);
+			}
+			whc_rx_msg = NULL;
 		}
 	}
 

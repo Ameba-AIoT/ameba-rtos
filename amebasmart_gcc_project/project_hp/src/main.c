@@ -1,7 +1,7 @@
 
 #include "ameba_soc.h"
 #include "main.h"
-#ifdef CONFIG_CORE_AS_AP
+#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 #include "vfs.h"
 #endif
 #include "os_wrapper.h"
@@ -146,7 +146,7 @@ extern int rt_kv_init(void);
 
 void app_filesystem_init(void)
 {
-#if !(defined(CONFIG_MP_INCLUDED)) && defined(CONFIG_CORE_AS_AP)
+#if !(defined(CONFIG_MP_INCLUDED)) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 	int ret = 0;
 	vfs_init();
 #ifdef CONFIG_FATFS_WITHIN_APP_IMG

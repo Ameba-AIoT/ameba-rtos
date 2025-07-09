@@ -11,8 +11,8 @@
 #include "wifi_intf_drv_to_app_internal.h"
 #include "whc_def.h"
 
-#if !defined(CONFIG_WHC_HOST) && defined(CONFIG_WHC_INTF_IPC)
-#if defined(CONFIG_AS_INIC_AP)
+#if defined(CONFIG_WHC_INTF_IPC)
+#if defined(CONFIG_WHC_HOST)
 #include "whc_ipc_host_trx.h"
 #endif
 #include "whc_ipc.h"

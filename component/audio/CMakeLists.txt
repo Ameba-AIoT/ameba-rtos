@@ -28,6 +28,7 @@ ameba_add_subdirectory_if(CONFIG_AUDIO_FWK audio_driver)
 ameba_add_subdirectory(third_party)
 
 if(CONFIG_AUDIO_FWK)
+    ameba_add_subdirectory_if_exist(foundation)
     ameba_add_subdirectory_if_exist(base)
     include(base.cmake)
 endif()

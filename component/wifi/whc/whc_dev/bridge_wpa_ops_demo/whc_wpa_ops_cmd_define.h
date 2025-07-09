@@ -14,6 +14,7 @@
 // For Utility
 #define WHC_WPA_OPS_UTIL 0xffa5a5a5
 #define WHC_WPA_OPS_UTIL_GET_MAC_ADDR 0x1
+#define WHC_WPA_OPS_UTIL_SET_NETWORK  0x2
 
 // For Custom API
 #define WHC_WPA_OPS_CUSTOM_API 0xff112255

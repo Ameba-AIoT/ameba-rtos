@@ -97,6 +97,8 @@ enum AudioHwDevice {
     AUDIO_HW_DEVICE_OUT_SPEAKER      = 0x1u,
     /** audio device i2s out */
     AUDIO_HW_DEVICE_OUT_I2S          = 0x2u,
+    /** audio device a2dp out */
+    AUDIO_HW_DEVICE_OUT_A2DP         = 0x4u,
     /** audio device microphone */
     AUDIO_HW_DEVICE_IN_MIC           = 0x8000001u,
     /** audio device digital microphone */

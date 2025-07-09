@@ -30,7 +30,8 @@ struct whc_cust_hdr {
 	u32	len;
 };
 
-struct whc_bridge_hdr {
+/* for spi only, due to full duplex communication in spi */
+struct whc_cmd_path_hdr {
 	u32	event;
 	u32	len;
 };

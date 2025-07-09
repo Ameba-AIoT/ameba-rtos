@@ -152,7 +152,7 @@ if(CONFIG_MP_INCLUDED)
     endif()
 endif()
 
-if(CONFIG_AS_INIC_NP)
+if(CONFIG_WHC_DEV)
     if(CONFIG_WHC_INTF_SDIO)
         set(release_target_name wifi_whc_sdio_np${LIB_NAME_MP_SUFFIX})
     elseif(CONFIG_WHC_INTF_SPI)
@@ -162,7 +162,7 @@ if(CONFIG_AS_INIC_NP)
     else()
         set(release_target_name wifi_whc_np${LIB_NAME_MP_SUFFIX})
     endif()
-elseif(CONFIG_SINGLE_CORE_WIFI)
+elseif(CONFIG_WHC_NONE)
     if(CONFIG_WHC_BRIDGE)
         if(CONFIG_WHC_INTF_SDIO)
             set(release_target_name wifi_sdio_bridge${LIB_NAME_MP_SUFFIX})
@@ -174,7 +174,7 @@ elseif(CONFIG_SINGLE_CORE_WIFI)
     endif()
 endif()
 
-if(CONFIG_WLAN AND (CONFIG_AS_INIC_NP OR CONFIG_SINGLE_CORE_WIFI))
+if(CONFIG_WLAN AND (CONFIG_WHC_DEV OR CONFIG_WHC_NONE))
     ameba_list_append_if(CONFIG_WLAN public_libraries
         ${c_SDK_LIB_APPLICATION_DIR}/lib_${release_target_name}.a
     )
@@ -273,7 +273,7 @@ ameba_list_append_if(CONFIG_MP_INCLUDED private_compile_options -Wno-unused-func
 #------------------------------#
 
 #WARNING: Select right API based on your component's release/not-release/standalone
-if(CONFIG_WLAN AND (CONFIG_AS_INIC_NP OR CONFIG_SINGLE_CORE_WIFI))
+if(CONFIG_WLAN AND (CONFIG_WHC_DEV OR CONFIG_WHC_NONE))
     ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
     ameba_add_external_app_library(${release_target_name}
         p_SOURCES

@@ -1928,7 +1928,8 @@ void AUDIO_SP_TXSetDirectRegStart(u32 index, u32 reg_chn, u32 NewState)
 
 /**
   * @brief  Select SPORT direct reg's source.
-  * @param  index: select SPORT.
+  * @param  dst_index: select dst SPORT.
+  * @param  src_index: unused.
   * @param  reg_chn: direct reg channel.
   *            @This parameter can be one of the following values:
   *			 @arg DIRECT_REG_0
@@ -1951,9 +1952,12 @@ void AUDIO_SP_TXSetDirectRegStart(u32 index, u32 reg_chn, u32 NewState)
   *			 @arg DIRECT_IN_CHN7
   * @retval None
   */
-void AUDIO_SP_TXDirectRegSel(u32 index, u32 reg_chn, u32 direct_in_chn)
+void AUDIO_SP_TXDirectRegSel(u32 dst_index, u32 src_index, u32 reg_chn, u32 direct_in_chn)
 {
-	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	(void)src_index;
+	assert_param(IS_SP_DIRREG_CH(reg_chn));
+	assert_param(IS_SP_DIRIN_CH(direct_in_chn));
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[dst_index].SPORTx;
 
 	switch (reg_chn) {
 	case DIRECT_REG_0:

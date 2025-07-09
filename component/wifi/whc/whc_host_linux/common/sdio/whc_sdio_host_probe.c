@@ -229,8 +229,6 @@ int whc_sdio_host_resume_common(struct whc_sdio *priv)
 
 int whc_sdio_host_resume(struct device *dev)
 {
-	int ret;
-	struct sdio_func *func = container_of(dev, struct sdio_func, dev);
 	struct whc_sdio *priv = &whc_sdio_priv;
 	u32 himr;
 	u8 value;

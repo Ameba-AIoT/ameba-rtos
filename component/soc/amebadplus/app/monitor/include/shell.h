@@ -10,7 +10,7 @@
 #ifndef _RTK_CONSOL_H_
 #define _RTK_CONSOL_H_
 
-#if (defined (CONFIG_AS_INIC_AP) || defined(CONFIG_SINGLE_CORE_WIFI))
+#if (defined (CONFIG_WHC_HOST) || defined(CONFIG_WHC_NONE))
 #define SHELL_TASK_FUNC_STACK_SIZE (4000 + 128 + CONTEXT_SAVE_SIZE)
 #else
 #define SHELL_TASK_FUNC_STACK_SIZE (632 + 128 + CONTEXT_SAVE_SIZE)	/* KM0 cost stack: max_size < 300 bytes, test by monitor cmd */

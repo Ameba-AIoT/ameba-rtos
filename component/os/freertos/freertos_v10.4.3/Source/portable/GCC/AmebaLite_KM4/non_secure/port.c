@@ -933,7 +933,7 @@ void vApplicationIdleHook(void)
 	driver_suspend_ret = wlan_driver_check_and_suspend();
 #endif
 #endif
-#if !defined(CONFIG_MP_SHRINK) && defined(CONFIG_AS_INIC_NP) && CONFIG_AS_INIC_NP
+#if !defined(CONFIG_MP_SHRINK) && defined(CONFIG_WHC_DEV) && CONFIG_WHC_DEV
 	extern void wififw_task_idle(void);
 	wififw_task_idle();
 #endif

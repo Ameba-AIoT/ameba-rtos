@@ -14,7 +14,11 @@
 #include "os_wrapper.h"
 #include <stdio.h>
 
+#if defined (CONFIG_AMEBAGREEN2)
+extern GPIO_TypeDef *GPIO_PORTx[3];
+#else
 extern GPIO_TypeDef *GPIO_PORTx[2];
+#endif
 
 /*  You can improve time cost of gpio write by import source code of
  *  function "gpio_direct_write" based on your needs.

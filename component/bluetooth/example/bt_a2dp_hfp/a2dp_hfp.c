@@ -1494,6 +1494,18 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		break;
 	}
 
+	case RTK_BT_AVRCP_EVT_GET_PLAY_STATUS_RSP_EVENT: {
+		rtk_bt_avrcp_get_play_status_rsp_t *p_rsp_t = (rtk_bt_avrcp_get_play_status_rsp_t *)param;
+
+		if (p_rsp_t->state == 0) {
+			BT_LOGA("[AVRCP] Get play status successfully from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					p_rsp_t->bd_addr[5], p_rsp_t->bd_addr[4], p_rsp_t->bd_addr[3], p_rsp_t->bd_addr[2], p_rsp_t->bd_addr[1], p_rsp_t->bd_addr[0]);
+			BT_LOGA("[AVRCP] play status is 0x%x, total song length is %d, position is %d \r\n",
+					p_rsp_t->play_status, p_rsp_t->length_ms, p_rsp_t->position_ms);
+		}
+		break;
+	}
+
 	case RTK_BT_AVRCP_EVT_ABSOLUTE_VOLUME_SET: {
 		rtk_bt_avrcp_absolute_volume_set_t *p_avrcp_absolute_volume_set_t = (rtk_bt_avrcp_absolute_volume_set_t *)param;
 		uint8_t volume = p_avrcp_absolute_volume_set_t->volume;
@@ -1634,6 +1646,12 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		}
 		break;
 		}
+		break;
+	}
+
+	case RTK_BT_AVRCP_EVT_TRACK_CHANGED: {
+		rtk_bt_avrcp_track_changed_t *p_track_t = (rtk_bt_avrcp_track_changed_t *)param;
+		BT_LOGA("[AVRCP]: Track changed id 0x%x \r\n", p_track_t->track_id);
 		break;
 	}
 

@@ -1,4 +1,4 @@
-ameba_add_image(target_img2)
+ameba_add_image(target_img2 p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_image2_all.bin)
 # variable c_CURRENT_IMAGE value is target_img2_${PROJECT_NAME}
 
 ###############################  ADD COMPONENT  ###################################
@@ -77,7 +77,7 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/target_img2.asm ${KM4_PROJECT_DIR}/asdk/image/target_img2_otrcore.asm
     COMMAND ${CMAKE_STRIP} ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf
 
-    COMMAND ${CMAKE_COMMAND} -E echo "  BIN      kr4_image2_all.bin"
+    COMMAND ${CMAKE_COMMAND} -E echo "  BIN      ${c_MCU_PROJECT_NAME}_image2_all.bin"
 
     COMMAND ${CMAKE_COMMAND}
         # common variables
@@ -85,6 +85,7 @@ add_custom_command(
         -Dc_CMAKE_FILES_DIR=${c_CMAKE_FILES_DIR} # dir of cmake scripts
         -Dc_SOC_PROJECT_DIR=${c_SOC_PROJECT_DIR} # dir of soc project
         -Dc_MCU_PROJECT_DIR=${c_MCU_PROJECT_DIR} # dir of current mcu project
+        -Dc_MCU_PROJECT_NAME=${c_MCU_PROJECT_NAME} # name of current mcu project
         -Dc_MCU_KCONFIG_FILE=${c_MCU_KCONFIG_FILE} # file of current project's kconfig file
         -Dc_SDK_IMAGE_TARGET_DIR=${c_SDK_IMAGE_TARGET_DIR} # dir of image output
 
@@ -95,14 +96,13 @@ add_custom_command(
         -DDAILY_BUILD=${DAILY_BUILD}
 
         # special variables for current image
-        -DAP_IMAGEDIR=${AP_IMAGEDIR}
 
         # cmake toolchain variables
         -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR}
         -DCMAKE_SIZE=${CMAKE_SIZE}
         -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
 
-        -P ${CMAKE_CURRENT_SOURCE_DIR}/postbuild.cmake
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/${c_POST_BUILD_SCRIPT}
     DEPENDS ${c_CURRENT_IMAGE}
 )
 

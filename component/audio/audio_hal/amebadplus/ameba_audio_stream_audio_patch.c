@@ -54,6 +54,8 @@ static void ameba_audio_stream_audio_patch_tx_sport_init(struct AmebaAudioPatchC
     AUDIO_SP_Reset(AUDIO_I2S_OUT_SPORT_INDEX);
     SP_InitTypeDef SP_InitStruct;
     AUDIO_SP_StructInit(&SP_InitStruct);
+    SP_InitStruct.SP_SelDataFormat = AUDIO_I2S_OUT_DATA_FORMAT;
+    SP_InitStruct.SP_SelI2SMonoStereo = ameba_audio_get_channel(config.channel_count);
     SP_InitStruct.SP_SelWordLen = ameba_audio_get_sp_format(config.format, STREAM_OUT);
     SP_InitStruct.SP_SR = ameba_audio_get_sp_rate(config.sample_rate);
     SP_InitStruct.SP_SelTDM = ameba_audio_get_sp_tdm(config.channel_count);
@@ -176,7 +178,7 @@ int32_t ameba_audio_stream_create_audio_patch(int32_t num_sources, struct AmebaA
                                      ameba_audio_stream_get_direct_reg_idx(i), ENABLE);
 
         /*DIRECT_IN_N->DIRECT_REG_N, DIRECT_IN_N and DIRECT_OUT_N are the same for one sport.*/
-        AUDIO_SP_TXDirectRegSel(AUDIO_I2S_OUT_SPORT_INDEX,
+        AUDIO_SP_TXDirectRegSel(AUDIO_I2S_OUT_SPORT_INDEX, AUDIO_I2S_IN_SPORT_INDEX,
           ameba_audio_stream_get_direct_reg_idx(i), ameba_audio_stream_get_direct_in_channel_idx(i));
     }
 

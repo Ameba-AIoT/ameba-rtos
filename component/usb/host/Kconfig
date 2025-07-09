@@ -1,11 +1,11 @@
 config USBH_CDC_ACM_MENU
     bool "CDC ACM"
-    select USBH_CDC_ACM if CORE_AS_AP
+    select USBH_CDC_ACM if WHC_HOST || WHC_NONE
 
 config USBH_CDC_ECM_MENU
     bool "CDC ECM"
     depends on SUPPORT_USBH_ECM || SUPPORT_USBH_ECM_BRIDGE
-    select USBH_CDC_ECM if CORE_AS_AP
+    select USBH_CDC_ECM if WHC_HOST || WHC_NONE
 
     if USBH_CDC_ECM_MENU
         choice
@@ -14,26 +14,26 @@ config USBH_CDC_ECM_MENU
             config  USBH_ECM_ETHERNET_MENU
                 bool "USB Ethernet"
                 depends on SUPPORT_USBH_ECM
-                select LWIP_USB_ETHERNET if CORE_AS_AP
-                select USBH_ECM_ETHERNET if CORE_AS_AP
+                select LWIP_USB_ETHERNET if WHC_HOST || WHC_NONE
+                select USBH_ECM_ETHERNET if WHC_HOST || WHC_NONE
             config  USBH_ECM_ETHERNET_BRIDGE_MENU
                 bool "USB Ethernet Bridge"
                 depends on SUPPORT_USBH_ECM_BRIDGE
-                select LWIP_USB_ETHERNET if CORE_AS_AP
-                select LWIP_USB_ETHERNET_BRIDGE if CORE_AS_AP
-                select USBH_ECM_ETHERNET_BRIDGE if CORE_AS_AP
+                select LWIP_USB_ETHERNET if WHC_HOST || WHC_NONE
+                select LWIP_USB_ETHERNET_BRIDGE if WHC_HOST || WHC_NONE
+                select USBH_ECM_ETHERNET_BRIDGE if WHC_HOST || WHC_NONE
         endchoice
     endif
 
 config USBH_MSC_MENU
     bool "MSC"
-    select USBH_MSC if CORE_AS_AP
-    select VFS_FATFS_INCLUDED if CORE_AS_AP
+    select USBH_MSC if WHC_HOST || WHC_NONE
+    select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
 
 config USBH_UVC_MENU
     bool "UVC"
-    select USBH_UVC if CORE_AS_AP
+    select USBH_UVC if WHC_HOST || WHC_NONE
 
 config USBH_VENDOR_MENU
     bool "VENDOR"
-    select USBH_VENDOR if CORE_AS_AP
+    select USBH_VENDOR if WHC_HOST || WHC_NONE

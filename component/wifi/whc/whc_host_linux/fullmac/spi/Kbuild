@@ -1,7 +1,9 @@
 ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
 ccflags-$(CONFIG_P2P) += -DCONFIG_P2P
+ccflags-$(CONFIG_IEEE80211R) += -DCONFIG_IEEE80211R
 ccflags-$(CONFIG_BT_INIC) += -DCONFIG_BT_INIC
 ccflags-$(CONFIG_FULLMAC_HCI_SPI) += -DCONFIG_FULLMAC_HCI_SPI
+ccflags-$(CONFIG_WHC_CMD_PATH) += -DCONFIG_WHC_CMD_PATH
 
 ccflags-y += -DCONFIG_FULLMAC
 ccflags-y += -I$(src)/../../common/netdev
@@ -21,6 +23,7 @@ fullmac_spi-$(CONFIG_FULLMAC_HCI_SPI) := \
 		../whc_fullmac_host_ops.o \
 		../whc_fullmac_host_wiphy.o \
 		../whc_fullmac_host_regd.o \
+		../whc_fullmac_host_ft.o \
 		../whc_fullmac_host_ops_ap.o \
 		../whc_fullmac_host_ops_key.o \
 		../whc_fullmac_host_ops_nan.o \
@@ -37,5 +40,11 @@ fullmac_spi-$(CONFIG_FULLMAC_HCI_SPI) := \
 		../whc_fullmac_host_acs.o
 
 fullmac_spi-$(CONFIG_BT_INIC) += rtb_spi.o
+
+ifeq ($(CONFIG_WHC_CMD_PATH), y)
+    fullmac_spi-$(CONFIG_FULLMAC_HCI_SPI) += \
+            ../../common/whc_host_netlink.o \
+            ../../common/whc_host_cmd_path_tx.o
+endif
 
 obj-m += fullmac_spi.o

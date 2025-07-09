@@ -421,6 +421,16 @@ function(ameba_build_info_gen output)
 
     configure_file(${c_CMAKE_FILES_DIR}/git_version.c.in ${output} @ONLY)
 endfunction()
+
+function(ameba_delay_second seconds)
+    if(UNIX)
+        execute_process(COMMAND sleep ${seconds})
+    elseif(WIN32)
+        execute_process(COMMAND timeout /t ${seconds} /nobreak)
+    else()
+        message(WARNING "Unsupported platform for sleep. No delay will occur.")
+    endif()
+endfunction()
 ########################################################################################################
 
 function(ameba_gen_wrap_name name result)
@@ -1203,6 +1213,7 @@ function(ameba_axf2bin_fw_pack output_file)
         p_FULLMAC_IMAGE1
         p_FULLMAC_IMAGE2
         p_IMAGE_IMGTOOL_FLOADER
+        p_DSP
     )
     set(multiValueArgs
         p_IMAGE2
@@ -1217,6 +1228,7 @@ function(ameba_axf2bin_fw_pack output_file)
     ameba_list_append_if(ARG_p_FULLMAC_IMAGE1 full_args --fullmac-image1 ${ARG_p_FULLMAC_IMAGE1})
     ameba_list_append_if(ARG_p_FULLMAC_IMAGE2 full_args --fullmac-image2 ${ARG_p_FULLMAC_IMAGE2})
     ameba_list_append_if(ARG_p_IMAGE_IMGTOOL_FLOADER full_args --imgtool-floader ${ARG_p_IMAGE_IMGTOOL_FLOADER})
+    ameba_list_append_if(ARG_p_DSP full_args --dsp ${ARG_p_DSP})
 
     ameba_execute_process(COMMAND ${op_FW_PACKAGE}
         ${full_args}

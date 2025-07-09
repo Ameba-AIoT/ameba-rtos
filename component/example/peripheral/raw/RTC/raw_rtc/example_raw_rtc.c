@@ -38,10 +38,19 @@ void raw_rtc_demo(void)
 	RTC_InitTypeDef RTC_InitStruct;
 	RTC_TimeTypeDef RTC_TimeStruct;
 
+#ifdef CONFIG_AMEBAGREEN2
+	RCC_PeriphClockCmd(NULL, APBPeriph_RTC_CLOCK, ENABLE);
+	RTC_Enable(ENABLE);
+#else
 	RCC_PeriphClockCmd(APBPeriph_RTC, APBPeriph_RTC_CLOCK, ENABLE);
+#endif
 	RTC_StructInit(&RTC_InitStruct);
 	RTC_InitStruct.RTC_HourFormat = RTC_HourFormat_24;
 	RTC_Init(&RTC_InitStruct);
+
+	/* set UTC+8 localtime */
+	setenv("TZ", "CST-8", 1);
+	tzset();
 
 	seconds = 1256729737; // Set RTC time to Wed, 28 Oct 2009 11:35:37
 	timeinfo = localtime(&seconds);
@@ -53,14 +62,20 @@ void raw_rtc_demo(void)
 	RTC_TimeStruct.RTC_Hours = timeinfo->tm_hour;
 	RTC_TimeStruct.RTC_Minutes = timeinfo->tm_min;
 	RTC_TimeStruct.RTC_Seconds = timeinfo->tm_sec;
+	RTC_TimeStruct.RTC_Year = timeinfo->tm_year + 1900;
 	RTC_SetTime(RTC_Format_BIN, &RTC_TimeStruct);
 
 	while (1) {
 		/*hour, min, sec get from RTC*/
 		RTC_GetTime(RTC_Format_BIN, &RTC_TimeStruct);
+
+		time_t seconds = time(NULL);
+		struct tm *timeinfo = localtime(&seconds);
+
 		timeinfo->tm_sec = RTC_TimeStruct.RTC_Seconds;
 		timeinfo->tm_min = RTC_TimeStruct.RTC_Minutes;
 		timeinfo->tm_hour = RTC_TimeStruct.RTC_Hours;
+		timeinfo->tm_year = RTC_TimeStruct.RTC_Year - 1900;
 
 		/* calculate how many days later from last time update rtc_timeinfo */
 		delta_days = RTC_TimeStruct.RTC_Days - timeinfo->tm_yday;

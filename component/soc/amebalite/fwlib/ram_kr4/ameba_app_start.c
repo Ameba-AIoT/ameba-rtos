@@ -25,7 +25,7 @@ void app_start(void)
 	_memset((void *) __sbss_start__, 0, (__sbss_end__ - __sbss_start__));
 	_memset((void *) __bss_start__, 0, (__bss_end__ - __bss_start__));
 
-#ifdef CONFIG_CORE_AS_AP
+#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 	extern bool os_heap_add(u8 * start_addr, size_t heap_size);
 	if (ChipInfo_GetChipSram()) {
 		os_heap_add((u8 *)__ap_sram_heap_start, (size_t) __ap_sram_heap_size);

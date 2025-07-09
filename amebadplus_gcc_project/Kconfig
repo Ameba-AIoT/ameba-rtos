@@ -92,10 +92,10 @@ menu "CONFIG Link Option"
             select PSRAM_USED
     endchoice
 
-    if TRUSTZONE_FOR_KM4
+    if TRUSTZONE
         choice
             prompt "IMG3(SecureImage) running on PSRAM or SRAM?"
-            default IMG3_PSRAM
+            default IMG3_SRAM
             config IMG3_PSRAM
                 bool "PSRAM"
                 select PSRAM_USED
@@ -170,26 +170,25 @@ menu "CONFIG WHC INTF"
         default WHC_INTF_IPC_MENU
             config WHC_INTF_IPC_MENU
                 bool "WHC_IPC"
-                select CORE_AS_NP_FOR_KM0
-                select CORE_AS_AP_FOR_KM4
+                select WHC_DEV_FOR_KM0
+                select WHC_HOST_FOR_KM4
             config FULLMAC_DEV
                 bool "FULLMAC_DEV"
+                select WHC_DEV_FOR_KM4
             config WHC_FULLMAC_HOST
                 bool "FULLMAC_HOST"
-                select WHC_HOST
-                select CORE_AS_AP_FOR_KM4
+                select WHC_FULLMAC_HOST_IMPL
+                select WHC_HOST_FOR_KM4
             config WHC_BRIDGE
                 bool "BRIDGE_DEV"
-                select CORE_AS_AP_FOR_KM4
-                select CORE_AS_NP_FOR_KM4
+                select WHC_NONE_FOR_KM4
             config WHC_BRIDGE_HOST
                 bool "BRIDGE_HOST"
-                select WHC_HOST
-                select CORE_AS_AP_FOR_KM4
+                select WHC_FULLMAC_HOST_IMPL
+                select WHC_HOST_FOR_KM4
             #config WIFI_SINGLE_CORE_MENU
-                #bool "Single Core"
-                # select CORE_AS_AP_FOR_KM4
-                # select CORE_AS_NP_FOR_KM4
+                # bool "Single Core"
+                # select WHC_NONE_FOR_KM4
     endchoice
 
     if !WHC_INTF_IPC_MENU
@@ -225,11 +224,11 @@ menu "CONFIG WHC INTF"
             default KM4_AS_NP
             config KM0_AS_NP
                 bool "KM0"
-                select CORE_AS_NP_FOR_KM0
+                select WHC_DEV_FOR_KM0
 
             config KM4_AS_NP
                 bool "KM4"
-                select CORE_AS_NP_FOR_KM4
+                select WHC_DEV_FOR_KM4
         endchoice
 
         #choose WPA_STD will compile std supplicant in device side.
@@ -261,21 +260,15 @@ menu "CONFIG WHC INTF"
         endmenu
     endif
 
-    config CORE_AS_AP_FOR_KM4
+    config WHC_HOST_FOR_KM4
         bool
-    config CORE_AS_NP_FOR_KM0
+    config WHC_DEV_FOR_KM0
         bool
-    config CORE_AS_AP_FOR_KM0
+    config WHC_HOST_FOR_KM0
         bool
-    config CORE_AS_NP_FOR_KM4
+    config WHC_DEV_FOR_KM4
         bool
-    config WHC_CMD_PATH
-        bool
-    config WHC_WIFI_API_PATH
-        bool
-    config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4
-        bool
-    config WHC_DUAL_TCPIP_FOR_KM4
+    config WHC_NONE_FOR_KM4
         bool
 endmenu
 
@@ -301,18 +294,15 @@ menu "CONFIG WIFI"
             bool
             select WHC_INTF_IPC
             select WLAN
-            select AS_INIC_NP if CORE_AS_NP
-            select AS_INIC_AP if CORE_AS_AP
-            select LWIP_LAYER if CORE_AS_AP && !MP_SHRINK && !ZEPHYR_SDK
-            select FW_DRIVER_COEXIST if CORE_AS_NP
-            select ENABLE_WPS if CORE_AS_AP && WIFI_WPS_ENABLE_MENU
+            select LWIP_LAYER if WHC_HOST && !MP_SHRINK && !ZEPHYR_SDK
+            select FW_DRIVER_COEXIST if WHC_DEV
+            select ENABLE_WPS if WHC_HOST && WIFI_WPS_ENABLE_MENU
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
 
         config FULLMAC_DEV
             bool
-            depends on CORE_AS_NP # only work in NP
+            depends on WHC_DEV # only work in NP
             select WLAN
-            select AS_INIC_NP
             select FW_DRIVER_COEXIST
             select WIFI_FW_EN
             select WIFI_HOST_CONTROL
@@ -322,25 +312,24 @@ menu "CONFIG WIFI"
 
         config WHC_BRIDGE
             bool
-            depends on CORE_AS_AP
+            depends on WHC_NONE
             select WLAN
-            select SINGLE_CORE_WIFI
             select LWIP_LAYER
             select WIFI_HOST_CONTROL
             select WHC_CMD_PATH
+            select WHC_DUAL_TCPIP_FOR_KM4
+            select WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4
 
-        config WHC_HOST
+        config WHC_FULLMAC_HOST_IMPL
             bool
-            depends on CORE_AS_AP
+            depends on WHC_HOST
             select WLAN
-            select AS_INIC_AP
             select LWIP_LAYER
 
         config WIFI_SINGLE_CORE_MENU # this case will never be selected
             bool
-            depends on CORE_AS_AP
+            depends on WHC_NONE
             select WLAN
-            select SINGLE_CORE_WIFI
             select LWIP_LAYER
             select FW_DRIVER_COEXIST
             select ENABLE_WPS if WIFI_WPS_ENABLE_MENU
@@ -356,8 +345,8 @@ menu "CONFIG WIFI"
     if !WLAN_MENU
         config WLAN_DISABLE
             bool
-            select AS_INIC_AP if CORE_AS_AP
-            select AS_INIC_NP if CORE_AS_NP
+            select AS_INIC_AP if WHC_HOST
+            select AS_INIC_NP if WHC_DEV
     endif
 
     config WLAN
@@ -380,8 +369,6 @@ menu "CONFIG WIFI"
         bool
     config WIFI_FW_EN
         bool
-    config SINGLE_CORE_WIFI
-        bool
     config ENABLE_WPS
         bool
     config ENABLE_WPS_DISCOVERY
@@ -392,7 +379,7 @@ menu "CONFIG WIFI"
         bool
     config WIFI_HOST_CONTROL
         bool
-    config WHC_HOST
+    config WHC_FULLMAC_HOST_IMPL
         bool
 
 endmenu
@@ -447,13 +434,13 @@ menu "CONFIG BT"
 
         # normal case: BT is always on AP CORE
         # wifi fullmac, BT shares interface with WiFi: BT stays with WiFi on NP CORE
-        # wifi fullmac, BT uses UART alone: BT is on AP core, BUT CORE_AS_AP not defined.
-        # wifi fullmac, BT normal: BT application is on AP core, BUT CORE_AS_AP not defined.
+        # wifi fullmac, BT uses UART alone: BT is on AP core, BUT WHC_HOST not defined.
+        # wifi fullmac, BT normal: BT application is on AP core, BUT WHC_HOST not defined.
         config BT
             bool
-            default y if CORE_AS_AP
-            default y if BT_INIC_SHARE && CORE_AS_NP
-            default y if FULLMAC_DEV && !BT_INIC_SHARE && !CORE_AS_NP
+            default y if WHC_HOST || WHC_NONE
+            default y if BT_INIC_SHARE && WHC_DEV
+            default y if FULLMAC_DEV && !BT_INIC_SHARE && !WHC_DEV
             select FTL_ENABLED
 
         config BT_ENABLE_FAST_MP
@@ -518,8 +505,10 @@ endmenu
 
 comment "----- DO NOT ENTER IN THIS BUTTON ------"
 menu "MENUCONFIG FOR Private"
-config CORE_AS_AP
+config WHC_HOST
     bool "--DO NOT CHOOSE THIS CONFIG--"
-config CORE_AS_NP
+config WHC_DEV
+    bool "--DO NOT CHOOSE THIS CONFIG--"
+config WHC_NONE
     bool "--DO NOT CHOOSE THIS CONFIG--"
 endmenu

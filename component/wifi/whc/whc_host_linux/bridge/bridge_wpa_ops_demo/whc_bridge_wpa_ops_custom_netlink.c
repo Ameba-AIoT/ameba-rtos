@@ -1,7 +1,7 @@
 #include <whc_host_linux.h>
 #include <net/genetlink.h>
-#include <whc_bridge_host_netlink.h>
-#include <whc_bridge_host_kernel_api.h>
+#include <whc_host_netlink.h>
+#include <whc_host_cmd_path_api.h>
 #include <whc_bridge_wpa_ops_api.h>
 #include <whc_bridge_wpa_ops_custom_netlink.h>
 
@@ -48,7 +48,7 @@ int whc_bridge_host_nl_custom_api(struct sk_buff *skb, struct genl_info *info)
 		ptr += SIZE_TX_DESC;
 
 		memcpy(ptr, payload, payload_len);
-		whc_bridge_host_send_data_to_dev(buf, buf_len, 1);
+		whc_host_send_data_to_dev(buf, buf_len, 1);
 		kfree(buf);
 
 	} else if (cmd == CMD_WIFI_DO_SCAN) {
@@ -76,7 +76,7 @@ int whc_bridge_host_send_to_user_multi(u8 *buf, u16 size, u16 api_id, u32 chuck_
 		return -1;
 	}
 
-	reply = genlmsg_put(skb, 0, 0, &whc_bridge_nl_family, 0, BRIDGE_CMD_EVENT);
+	reply = genlmsg_put(skb, 0, 0, &whc_nl_family, 0, WHC_CMD_EVENT);
 
 	if (reply == NULL) {
 		nlmsg_free(skb);
@@ -126,7 +126,7 @@ int whc_bridge_host_send_to_user(u8 *buf, u16 size, u16 api_id)
 		return -1;
 	}
 
-	reply = genlmsg_put(skb, 0, 0, &whc_bridge_nl_family, 0, BRIDGE_CMD_EVENT);
+	reply = genlmsg_put(skb, 0, 0, &whc_nl_family, 0, WHC_CMD_EVENT);
 
 	if (reply == NULL) {
 		nlmsg_free(skb);
@@ -153,7 +153,7 @@ int whc_bridge_host_send_to_user(u8 *buf, u16 size, u16 api_id)
 	return 0;
 }
 
-int whc_bridge_host_buf_rx_to_user(u8 *buf, u16 size)
+int whc_host_buf_rx_to_user(u8 *buf, u16 size)
 {
 	int ret = 0;
 

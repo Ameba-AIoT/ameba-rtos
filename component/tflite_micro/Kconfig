@@ -1,6 +1,6 @@
 config TFLITE_MICRO_EN_MENU
     bool "Enable TFLITE MICRO"
-    select TFLITE_MICRO_EN if CORE_AS_AP
+    select TFLITE_MICRO_EN if WHC_HOST || WHC_NONE
     default n
 config TFLITE_MICRO_EN
     bool
