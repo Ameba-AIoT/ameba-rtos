@@ -2,7 +2,7 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 #include "main.h"
-#ifdef CONFIG_CORE_AS_AP
+#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 #include "vfs.h"
 #endif
 #include "ameba_rtos_version.h"
@@ -146,7 +146,7 @@ void app_rtc_init(void)
 
 void app_filesystem_init(void)
 {
-#if !(defined(CONFIG_MP_INCLUDED)) && defined(CONFIG_CORE_AS_AP)
+#if !(defined(CONFIG_MP_INCLUDED)) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 	int ret = 0;
 	vfs_init();
 
@@ -242,9 +242,9 @@ int main(void)
 	app_rtc_init();
 #endif
 
-#if defined(CONFIG_CORE_AS_NP)
+#if defined(CONFIG_WHC_DEV) || defined(CONFIG_WHC_NONE)
 	rtk_diag_init(RTK_DIAG_HEAP_SIZE, RTK_DIAG_SEND_BUFFER_SIZE);
-#elif defined(CONFIG_CORE_AS_AP)
+#elif defined(CONFIG_WHC_HOST)
 	rtk_diag_init();
 #endif
 

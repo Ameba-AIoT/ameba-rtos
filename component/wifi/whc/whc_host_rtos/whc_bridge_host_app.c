@@ -34,7 +34,7 @@ __weak void whc_bridge_host_pkt_rx_to_user(u8 *payload, u32 len)
 	}
 }
 
-void whc_bridge_host_get_mac_addr(uint8_t idx)
+void whc_host_get_mac_addr(uint8_t idx)
 {
 	uint8_t buf[12] = {0};
 	uint8_t *ptr = buf;
@@ -53,7 +53,7 @@ void whc_bridge_host_get_mac_addr(uint8_t idx)
 	whc_bridge_host_send_to_dev(buf, buf_len);
 }
 
-void whc_bridge_host_get_ip(uint8_t idx)
+void whc_host_get_ip(uint8_t idx)
 {
 	uint8_t buf[12] = {0};
 	uint8_t *ptr = buf;
@@ -93,11 +93,11 @@ u32 cmd_bridge_test(u16 argc, u8  *argv[])
 	UNUSED(argc);
 
 	if (_strcmp((const char *)argv[0], "getmac") == 0) {
-		whc_bridge_host_get_mac_addr(0);
+		whc_host_get_mac_addr(0);
 	}
 
 	if (_strcmp((const char *)argv[0], "getip") == 0) {
-		whc_bridge_host_get_ip(0);
+		whc_host_get_ip(0);
 	}
 
 	if (_strcmp((const char *)argv[0], "setrdy") == 0) {

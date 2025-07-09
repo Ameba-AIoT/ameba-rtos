@@ -31,6 +31,7 @@ extern s32(*scan_each_report_user_callback_ptr)(struct rtw_scan_result *, void *
 extern void (*p_ap_channel_switch_callback)(unsigned char channel, s8 ret);
 extern u8(*promisc_user_callback_ptr)(void *);
 extern int dhcps_ip_in_table_check(uint8_t gate, uint8_t d);
+extern s32(*scan_acs_report_user_callback_ptr)(struct rtw_acs_mntr_rpt *acs_mntr_rpt);
 
 
 const struct event_func_t host_api_handlers[] = {

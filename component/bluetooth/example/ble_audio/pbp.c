@@ -2217,7 +2217,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 
 	case RTK_BT_LE_AUDIO_EVT_PA_SYNC_STATE_IND: {
 		rtk_bt_le_audio_pa_sync_state_ind_t *param = (rtk_bt_le_audio_pa_sync_state_ind_t *)data;
-		BT_LOGA("[APP] broadcast %s pa sync state change: sync_handle: %08x, sync_state 0x%x, action 0x%x, cause: 0x%x\r\n",
+		BT_LOGD("[APP] broadcast %s pa sync state change: sync_handle: %08x, sync_state 0x%x, action 0x%x, cause: 0x%x\r\n",
 				(bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK) ? "sink" : "assistant", param->sync_handle, param->sync_state, param->action, param->cause);
 		BT_AT_PRINT("+BLEBAP:broadcast,%s,sync_state,%p,0x%x,0x%x,0x%x\r\n",
 					(bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK) ? "sink" : "assistant",
@@ -2248,13 +2248,15 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 				}
 #endif
 			}
+		} else if (param->sync_state == RTK_BT_LE_AUDIO_PA_SYNC_STATE_TERMINATED) {
+			BT_LOGA("[APP] broadcast %s pa sync terminated \r\n", (bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK) ? "sink" : "assistant");
 		}
 		break;
 	}
 
 	case RTK_BT_LE_AUDIO_EVT_BIG_SETUP_DATA_PATH: {
 		rtk_bt_le_audio_big_setup_data_path_ind_t *param = (rtk_bt_le_audio_big_setup_data_path_ind_t *)data;
-		BT_LOGD("[APP] broadcast sink big setup data path ind: bis_conn_handle: %08x, idx 0x%x, cause: 0x%x\r\n",
+		BT_LOGA("[APP] broadcast sink big setup data path ind: bis_conn_handle: %x, idx 0x%x, cause: 0x%x\r\n",
 				param->bis_conn_handle, param->bis_idx, param->cause);
 		big_sync_handle = param->sync_handle;
 		app_bt_le_audio_add_data_path(param->iso_chann_t.iso_conn_handle,
@@ -2266,7 +2268,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 
 	case RTK_BT_LE_AUDIO_EVT_BIG_REMOVE_DATA_PATH: {
 		rtk_bt_le_audio_big_remove_data_path_ind_t *param = (rtk_bt_le_audio_big_remove_data_path_ind_t *)data;
-		BT_LOGD("[APP] broadcast sink big setup data path ind: bis_conn_handle: %08x, idx 0x%x, cause: 0x%x\r\n",
+		BT_LOGA("[APP] broadcast sink big remove data path ind: bis_conn_handle: %x, idx 0x%x, cause: 0x%x\r\n",
 				param->bis_conn_handle, param->bis_idx, param->cause);
 		if (big_sync_handle && (big_sync_handle == param->sync_handle)) {
 			big_sync_handle = NULL;

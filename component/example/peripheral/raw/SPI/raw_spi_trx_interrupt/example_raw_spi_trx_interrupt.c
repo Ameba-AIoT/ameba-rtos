@@ -14,8 +14,13 @@
 
 /* compatible pinmux_funcid_name with AmebaD */
 #ifndef CONFIG_AMEBAD
+#if defined(CONFIG_AMEBAGREEN2)
+#define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI1
+#define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPI0
+#else
 #define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI
 #define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPI
+#endif
 #endif
 
 #define DataFrameSize	8
@@ -410,4 +415,3 @@ int example_raw_spi_trx_interrupt(void)
 	// rtos_sched_start();
 	return 0;
 }
-

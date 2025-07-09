@@ -29,12 +29,12 @@ volatile u32 rx_done = 0;
 UART_InitTypeDef UART_InitStruct;
 GDMA_InitTypeDef GDMA_InitStruct;
 
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS)
+#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2)
 const u8 UART_TX_FID[MAX_UART_INDEX] = {
 	PINMUX_FUNCTION_UART0_TXD,
 	PINMUX_FUNCTION_UART1_TXD,
 	PINMUX_FUNCTION_UART2_TXD,
-#if defined (CONFIG_AMEBALITE)
+#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2)
 	PINMUX_FUNCTION_UART3_TXD
 #endif
 };
@@ -43,7 +43,7 @@ const u8 UART_RX_FID[MAX_UART_INDEX] = {
 	PINMUX_FUNCTION_UART0_RXD,
 	PINMUX_FUNCTION_UART1_RXD,
 	PINMUX_FUNCTION_UART2_RXD,
-#if defined (CONFIG_AMEBALITE)
+#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2)
 	PINMUX_FUNCTION_UART3_RXD
 #endif
 };
@@ -146,7 +146,7 @@ void uart_dma_demo(void)
 	/* Configure UART0 TX and RX pin */
 	Pinmux_Config(UART_TX, PINMUX_FUNCTION_UART);
 	Pinmux_Config(UART_RX, PINMUX_FUNCTION_UART);
-#elif defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS)
+#elif defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2)
 	/* Configure UART0 TX and RX pin */
 	Pinmux_Config(UART_TX, UART_TX_FID[uart_idx]);
 	Pinmux_Config(UART_RX, UART_RX_FID[uart_idx]);

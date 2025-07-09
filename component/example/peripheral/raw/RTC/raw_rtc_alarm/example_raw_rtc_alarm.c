@@ -35,7 +35,12 @@ void raw_rtc_alarm_demo(void)
 	RTC_TimeTypeDef RTC_TimeStruct;
 
 	/*enable RTC*/
+#ifdef CONFIG_AMEBAGREEN2
+	RCC_PeriphClockCmd(NULL, APBPeriph_RTC_CLOCK, ENABLE);
+	RTC_Enable(ENABLE);
+#else
 	RCC_PeriphClockCmd(APBPeriph_RTC, APBPeriph_RTC_CLOCK, ENABLE);
+#endif
 	RTC_StructInit(&RTC_InitStruct_temp);
 	RTC_Init(&RTC_InitStruct_temp);
 

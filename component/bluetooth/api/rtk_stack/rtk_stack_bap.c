@@ -1001,7 +1001,7 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 	case LE_AUDIO_MSG_BASS_BRS_MODIFY: {
 		T_BASS_BRS_MODIFY *p_data = (T_BASS_BRS_MODIFY *)buf;
 		APP_PRINT_INFO2("LE_AUDIO_MSG_BASS_BRS_MODIFY: sync handle %p, source_id %d", p_data->handle, p_data->source_id);
-		BT_LOGA("LE_AUDIO_MSG_BASS_BRS_MODIFY: sync handle %08x, source_id %d\r\n", p_data->handle, p_data->source_id);
+		BT_LOGD("LE_AUDIO_MSG_BASS_BRS_MODIFY: sync handle %08x, source_id %d\r\n", p_data->handle, p_data->source_id);
 		if (p_data->p_brs_data) {
 			if (p_data->p_brs_data->brs_is_used) {
 				APP_PRINT_INFO2("source_address_type 0x%02x, source_adv_sid 0x%02x",
@@ -1023,7 +1023,7 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 				}
 				p_sync_dev_info = bt_stack_le_audio_sync_dev_find(p_data->handle);
 				if (!p_sync_dev_info) {
-					BT_LOGE("[BAP] %s bt_stack_le_audio_sync_dev_find fail\r\n", __func__);
+					BT_LOGD("[BAP] %s bt_stack_le_audio_sync_dev_find fail\r\n", __func__);
 					break;
 				}
 				p_sync_dev_info->adv_sid = p_data->p_brs_data->source_adv_sid;
@@ -1061,7 +1061,7 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 				p_data->handle, p_data->source_id);
 		p_sync_dev_info = bt_stack_le_audio_sync_dev_find(p_data->handle);
 		if (!p_sync_dev_info) {
-			BT_LOGE("[APP] %s bt_stack_le_audio_sync_dev_find fail\r\n", __func__);
+			BT_LOGD("[APP] %s bt_stack_le_audio_sync_dev_find fail\r\n", __func__);
 			break;
 		}
 		p_sync_dev_info->source_id = p_data->source_id;
@@ -1229,7 +1229,7 @@ static uint16_t bt_stack_le_audio_pa_sync_state_change(T_BLE_AUDIO_SYNC_HANDLE s
 
 	switch (p_pa_sync_state->sync_state) {
 	case GAP_PA_SYNC_STATE_TERMINATED: {
-		BT_LOGA("%s GAP_PA_SYNC_STATE_TERMINATED\r\n", __func__);
+		BT_LOGD("%s GAP_PA_SYNC_STATE_TERMINATED\r\n", __func__);
 		if (p_sync_dev_info) {
 			p_sync_dev_info->big_proc_flags &= ~RTK_BT_LE_AUDIO_BIG_PROC_BIG_INFO_RECEIVED;
 			p_sync_dev_info->support_bis_array = 0;
@@ -1251,7 +1251,7 @@ static uint16_t bt_stack_le_audio_pa_sync_state_change(T_BLE_AUDIO_SYNC_HANDLE s
 		break;
 	}
 	case GAP_PA_SYNC_STATE_SYNCHRONIZED: {
-		BT_LOGA("%s GAP_PA_SYNC_STATE_SYNCHRONIZED\r\n", __func__);
+		BT_LOGD("%s GAP_PA_SYNC_STATE_SYNCHRONIZED\r\n", __func__);
 		bt_stack_le_audio_sync_list_show();
 		indicate = true;
 		break;
@@ -1361,7 +1361,7 @@ static void bt_stack_le_audio_sync_cb(T_BLE_AUDIO_SYNC_HANDLE sync_handle, uint8
 				//APP can terminate PA to save power when BIG state is BIG_SYNC_RECEIVER_SYNC_STATE_SYNCHRONIZED.
 				bool ret = false;
 				ret = ble_audio_pa_terminate(p_sync_dev_info->sync_handle);
-				BT_LOGA("[BAP] %s: PA sync terminate %s\r\n", __func__, (ret == true) ? "success" : "fail");
+				BT_LOGD("[BAP] %s: PA sync terminate %s\r\n", __func__, (ret == true) ? "success" : "fail");
 			}
 		}
 	}
@@ -1392,7 +1392,7 @@ static void bt_stack_le_audio_sync_cb(T_BLE_AUDIO_SYNC_HANDLE sync_handle, uint8
 							  p_sync_cb->p_big_sync_state->sync_state,
 							  p_sync_cb->p_big_sync_state->action,
 							  p_sync_cb->p_big_sync_state->cause);
-		BT_LOGA("MSG_BLE_AUDIO_BIG_SYNC_STATE: sync_state %d, action %d, cause 0x%x\r\n",
+		BT_LOGD("MSG_BLE_AUDIO_BIG_SYNC_STATE: sync_state %d, action %d, cause 0x%x\r\n",
 				p_sync_cb->p_big_sync_state->sync_state,
 				p_sync_cb->p_big_sync_state->action,
 				p_sync_cb->p_big_sync_state->cause);
@@ -1775,10 +1775,13 @@ static bool bt_stack_le_audio_broadcast_establish(void)
 	big_param.rtn = bt_le_audio_priv_data.bsrc.prefer_qos.retransmission_number;
 #if (RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG == RTK_BT_ISO_INTERVAL_20_MS)
 	big_param.max_transport_latency = 60;
+	BT_LOGA("[LEA STACK] %s: ISO interval=20 ms \r\n", __func__);
 #elif (RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG == RTK_BT_ISO_INTERVAL_30_MS)
 	big_param.rtn = 3;
 	big_param.max_transport_latency = 80;
+	BT_LOGA("[LEA STACK] %s: ISO interval=30 ms \r\n", __func__);
 #else
+	BT_LOGA("[LEA STACK] %s: ISO interval=10 ms \r\n", __func__);
 	//use default prefer qos value
 #endif
 	big_param.phy = RTK_BT_LE_AUDIO_BROADCAST_SOURCE_PHY;
@@ -2293,9 +2296,20 @@ static uint16_t bt_stack_le_audio_ext_scan_act(void *param)
 	T_GAP_LE_EXT_SCAN_PARAM extended_scan_param[GAP_EXT_SCAN_MAX_PHYS_NUM];
 	uint8_t scan_phys = 0;
 	T_GAP_CAUSE cause;
+	T_GAP_DEV_STATE dev_state;
 	rtk_bt_le_ext_scan_param_t *p_param = &bt_stack_le_audio_def_ext_scan_param;
 
+	cause = le_get_gap_param(GAP_PARAM_DEV_STATE, &dev_state);
+	if (cause) {
+		BT_LOGE("%s: le_get_gap_param failed \r\n", __func__);
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
 	if (enable) {
+		if (dev_state.gap_scan_state == GAP_SCAN_STATE_SCANNING) {
+			BT_LOGD("%s: has already started \r\n", __func__);
+			return RTK_BT_OK;
+		}
 		// set ext scan parameter
 		if (p_param->phys[0]) {
 			scan_phys |= GAP_EXT_SCAN_PHYS_1M_BIT;
@@ -2350,14 +2364,18 @@ static uint16_t bt_stack_le_audio_ext_scan_act(void *param)
 		// ext scan start
 		cause = le_ext_scan_start();
 		if (cause) {
-			BT_LOGE("%s: has already started \r\n", __func__);
+			BT_LOGE("%s: le_ext_scan_start failed cause:0x%x \r\n", __func__, cause);
 			return RTK_BT_ERR_LOWER_STACK_API;
 		}
 	} else {
+		if (dev_state.gap_scan_state == GAP_SCAN_STATE_IDLE) {
+			BT_LOGD("%s: scan has already stopped \r\n", __func__);
+			return RTK_BT_OK;
+		}
 		// ext scan stop
 		cause = le_ext_scan_stop();
 		if (cause) {
-			BT_LOGE("%s: has already stopped \r\n", __func__);
+			BT_LOGE("%s: le_ext_scan_stop failed cause:0x%x \r\n", __func__, cause);
 			return RTK_BT_ERR_LOWER_STACK_API;
 		}
 	}

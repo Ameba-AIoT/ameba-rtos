@@ -33,7 +33,7 @@ WakeEvent_TypeDef sleep_wevent_config[] = {
 	{WAKE_SRC_CTOUCH,						WAKEUP_NULL},
 	{WAKE_SRC_RTC,							WAKEUP_NULL},
 	{WAKE_SRC_GPIOC,						WAKEUP_NULL},
-	{WAKE_SRC_GPIOB,						WAKEUP_NULL},
+	{WAKE_SRC_GPIOB,						WAKEUP_AP},		/* Do not modify, uart rx pin is used as gpio wake source*/
 	{WAKE_SRC_GPIOA,						WAKEUP_NULL},
 	{WAKE_SRC_UART_LOG,						WAKEUP_NULL},
 	{WAKE_SRC_Timer7,						WAKEUP_NULL},
@@ -67,7 +67,6 @@ WAKEPIN_TypeDef sleep_wakepin_config[] = {
 };
 
 PSCFG_TypeDef ps_config = {
-	.km0_tickles_debug = TRUE,/* if open WIFI FW, should close it, or beacon will lost in WOWLAN */
 	.km0_pg_enable = FALSE,
 	.km0_pll_off = TRUE,
 	.km0_audio_vad_on = FALSE,

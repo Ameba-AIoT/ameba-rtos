@@ -2,13 +2,35 @@
 #include <netinet/in.h> // for AF_NETLINK
 #include <unistd.h>  // for close
 
-#include <whc_bridge_host_netlink.h>
+#include <whc_host_netlink.h>
 #include <rtw_ctrl_api.h>
 
 
 //TODO
 int event_scan_flag = 0;
 
+
+int parse_string(int index, int argc, char **argv, u8 *buf, size_t buf_size)
+{
+	int ix = 0;
+	size_t len = 0, left = 0;
+	int written = 0;
+
+	for (ix = index; ix < argc; ix++) {
+		left = buf_size - len - 1; //For '\0'
+		written = snprintf((char *)buf + len, left, "%s%s",
+						   argv[ix], (ix < argc - 1) ? " " : "");
+		if (written < 0 || (size_t)written >= left) {
+			return 0;
+		}
+		len += written;
+	}
+
+	//printf("argc: %d\n", argc);
+	//printf("buf: %s size: %ld\n", buf, strlen(buf));
+
+	return strlen(buf) + 1; // +1 for '\0'
+}
 
 /* For Event Handler */
 void event_handler_scan_complete(void)
@@ -109,6 +131,43 @@ void whc_bridge_host_cmd_getmac(int argc, char **argv, u8 api_id, u32 cmd_catego
 	printf("OK\n");
 
 }
+
+void whc_bridge_host_cmd_set_network(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id)
+{
+	struct whc_host_cli_send_string_t cmd;
+	int ret = 0;
+	int index = 0;
+	int msg_len = 0;
+
+	memset(&cmd, 0, sizeof(cmd));
+
+	cmd.category = cmd_category;
+	cmd.cmd_id = cmd_id;
+
+	index = 1;
+
+	msg_len = parse_string(index, argc, argv, cmd.message, sizeof(cmd.message));
+	if (msg_len == 0) {
+		printf("set_network variables:\n"
+			   "  ssid (network name, SSID)\n"
+			   "  psk (WPA passphrase or pre-shared key)\n"
+			   "  key_mgmt (key management protocol)\n");
+		return;
+	}
+
+	cmd.msg_len = msg_len;
+	printf("set_network: %s\n", cmd.message);
+
+	ret = whc_bridge_host_api_send_nl_data((u8 *)&cmd, sizeof(cmd), api_id);
+	if (ret < 0) {
+		printf("msg send fail\n");
+		return;
+	}
+
+	printf("OK\n");
+
+}
+
 
 
 void whc_bridge_host_cmd_scan(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id)
@@ -276,7 +335,7 @@ int whc_bridge_host_api_send_nl_data(uint8_t *buf, uint32_t buf_len, uint8_t api
 		return -1;
 	}
 
-	whc_bridge_host_fill_nlhdr(&msg, nl_family_id, 0, BRIDGE_CMD_CUSTOM_API);
+	whc_bridge_host_fill_nlhdr(&msg, nl_family_id, 0, WHC_CMD_CUSTOM_API);
 	nla_put_u32(&ptr, BRIDGE_ATTR_API_ID, api_id);
 	nla_put_payload(&ptr, BRIDGE_ATTR_PAYLOAD, buf, buf_len);
 	msg.n.nlmsg_len += ptr - msg.buf;

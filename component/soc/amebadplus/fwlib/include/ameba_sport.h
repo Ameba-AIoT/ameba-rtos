@@ -1149,6 +1149,15 @@ typedef struct {
 #define DIRECT_IN_CHN5		((u32)0x00000005)
 #define DIRECT_IN_CHN6		((u32)0x00000006)
 #define DIRECT_IN_CHN7		((u32)0x00000007)
+
+#define IS_SP_DIRIN_CH(DIRCH) (((DIRCH) == DIRECT_IN_CHN0) || \
+							((DIRCH) == DIRECT_IN_CHN1) || \
+							((DIRCH) == DIRECT_IN_CHN2) || \
+                                                        ((DIRCH) == DIRECT_IN_CHN3) || \
+							((DIRCH) == DIRECT_IN_CHN4) || \
+                                                        ((DIRCH) == DIRECT_IN_CHN5) || \
+							((DIRCH) == DIRECT_IN_CHN6) || \
+							((DIRCH) == DIRECT_IN_CHN7))
 /**
   * @}
   */
@@ -1164,6 +1173,15 @@ typedef struct {
 #define DIRECT_REG_5		((u32)0x00000005)
 #define DIRECT_REG_6		((u32)0x00000006)
 #define DIRECT_REG_7		((u32)0x00000007)
+
+#define IS_SP_DIRREG_CH(DIRREGCH) (((DIRREGCH) == DIRECT_REG_0) || \
+							((DIRREGCH) == DIRECT_REG_1) || \
+							((DIRREGCH) == DIRECT_REG_2) || \
+                                                        ((DIRREGCH) == DIRECT_REG_3) || \
+							((DIRREGCH) == DIRECT_REG_4) || \
+                                                        ((DIRREGCH) == DIRECT_REG_5) || \
+							((DIRREGCH) == DIRECT_REG_6) || \
+							((DIRREGCH) == DIRECT_REG_7))
 /**
   * @}
   */
@@ -1239,7 +1257,7 @@ _LONG_CALL_ u32 AUDIO_SP_GetRXPhaseVal(u32 index);
 _LONG_CALL_ void AUDIO_SP_SetDirectOutMode(u32 index_src, u32 index_dir);
 _LONG_CALL_ void AUDIO_SP_RXSetDirectOutStart(u32 index, u32 out_chn, u32 NewState);
 _LONG_CALL_ void AUDIO_SP_TXSetDirectRegStart(u32 index, u32 reg_chn, u32 NewState);
-_LONG_CALL_ void AUDIO_SP_TXDirectRegSel(u32 index, u32 reg_chn, u32 direct_in_chn);
+_LONG_CALL_ void AUDIO_SP_TXDirectRegSel(u32 dst_index, u32 src_index, u32 reg_chn, u32 direct_in_chn);
 _LONG_CALL_ void AUDIO_SP_Deinit(u32 index, u32 direction);
 _LONG_CALL_ void AUDIO_SP_SetTxDataFormat(u32 index, u32 format);
 _LONG_CALL_ void AUDIO_SP_SetRxDataFormat(u32 index, u32 format);

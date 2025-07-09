@@ -19,12 +19,15 @@ For example:
 - On AmebaDplus, connect as below
 
   - `Connect GPIO_SIGNAL_SOURCE (_PB_10)` to `GPIO_IRQ_LEVEL_PIN (_PA_12)`
+- On AmebaGreen2, connect as below
+
+  - `Connect GPIO_SIGNAL_SOURCE (_PA_25)` to `GPIO_IRQ_LEVEL_PIN (_PA_26)`
 
 # SW configuration
 
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool.  
+   * `Download` images to board by Ameba Image Tool.
 2. `PA_12` map to `GPIOA_12`, `PB_8`  map to `GPIOB_8` and etc.
 3. `GPIO_IRQ_LEVEL_PIN` is configured to listen to level events and irq is enabled, and can handle both high/low level events.
 4. GPIO Interrupt Polarity will inverse in ISR.
@@ -44,3 +47,4 @@ None.
 - AmebaLite
 - AmebaDplus
 - AmebaD
+- AmebaGreen2

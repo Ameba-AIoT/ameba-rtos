@@ -1,4 +1,5 @@
 #include <whc_host_linux.h>
+#include <whc_host_cmd_path_api.h>
 
 static void whc_host_recv_pkts(struct sk_buff *pskb)
 {
@@ -82,10 +83,13 @@ int whc_fullmac_host_recv_process(struct sk_buff *pskb)
 		break;
 #endif
 	default:
-#ifndef CONFIG_FULLMAC_HCI_SPI
+#if defined(CONFIG_WHC_CMD_PATH)
+		whc_host_cmd_data_rx_to_user(pskb);
+#elif !defined(CONFIG_FULLMAC_HCI_SPI)
 		dev_err(global_idev.fullmac_dev, "%s: unknown event:%d\n", __func__, event);
 #endif
 		kfree_skb(pskb);
+		break;
 	}
 
 	return ret;

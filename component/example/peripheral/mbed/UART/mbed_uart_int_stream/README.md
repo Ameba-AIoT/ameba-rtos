@@ -18,6 +18,10 @@ Required Components: USBtoTTL adapter.
 	- Connect `UART_TX(_PA_26)` to `RXD` of adapter
 	- Connect `UART_RX(_PA_27)` to `TXD` of adapter
 	- Connect `GND` to `GND` of adapter
+* On AmebaGreen2
+	- Connect `UART_TX(_PA_18)` to `RXD` of adapter
+	- Connect `UART_RX(_PA_19)` to `TXD` of adapter
+	- Connect `GND` to `GND` of adapter
 
 # SW Configuration
 
@@ -51,3 +55,4 @@ End characters CRLF(CR: "0x0D" and LF: "0x0A") will be appended to input charact
 * AmebaSmart
 * AmebaLite
 * AmebaDplus
+* AmebaGreen2

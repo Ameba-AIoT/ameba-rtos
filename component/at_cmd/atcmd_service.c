@@ -14,9 +14,12 @@
 #include "at_intf_spi.h"
 #include "at_intf_sdio.h"
 #include "atcmd_service.h"
+#include "atcmd_sys_common.h"
+#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 #include "vfs.h"
 #include "kv.h"
 #include "cJSON.h"
+#endif
 
 #include "atcmd_sys.h"
 #include "atcmd_diag.h"
@@ -60,7 +63,9 @@ rtos_mutex_t at_printf_mutex = NULL;
 static const char *const TAG = "AT";
 
 log_init_t log_init_table[] = {
+	at_sys_init_common,
 
+#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 #ifndef CONFIG_MP_SHRINK
 #ifdef CONFIG_WLAN
 	at_wifi_init,
@@ -95,6 +100,7 @@ log_init_t log_init_table[] = {
 #endif
 #endif
 
+
 #ifndef CONFIG_MP_INCLUDED
 #if defined(CONFIG_BT_COEXIST)
 	at_coex_init,
@@ -105,11 +111,12 @@ log_init_t log_init_table[] = {
 #ifndef CONFIG_AMEBAD
 	at_otp_init,
 #endif
+#endif
 };
 
 
 //======================================================
-#if defined(CONFIG_ATCMD_HOST_CONTROL)
+#if (defined CONFIG_ATCMD_HOST_CONTROL && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE))
 #ifdef CONFIG_SUPPORT_SDIO_DEVICE
 extern u8 SDIO_Pin_Grp;
 extern const u8 SDIO_PAD[5][6];
@@ -672,7 +679,9 @@ void atcmd_service_init(void)
 
 	rtos_mutex_recursive_create(&at_printf_mutex);
 
-#ifdef CONFIG_ATCMD_HOST_CONTROL
+#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
+
+#if (defined CONFIG_ATCMD_HOST_CONTROL && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE))
 	rtos_timer_create(&xTimers_TT_Mode, "TT_Mode_Timer", NULL, 30, FALSE, tt_mode_timeout_handler);
 
 	//initialize tt mode ring sema
@@ -701,6 +710,7 @@ void atcmd_service_init(void)
 
 	RTK_LOGI(TAG, ATCMD_HOST_CONTROL_INIT_STR);
 	at_printf(ATCMD_HOST_CONTROL_INIT_STR);
+#endif
 #endif
 }
 
@@ -868,13 +878,13 @@ int mp_command_handler(char *cmd)
 	int len = strlen(start);
 	if (strncmp(cmd, start, len) == 0) {
 #ifdef CONFIG_MP_INCLUDED
-#if defined(CONFIG_AS_INIC_AP)
+#if defined(CONFIG_WHC_HOST)
 		char *cmdbuf = NULL;
 		cmdbuf = rtos_mem_malloc(strlen(cmd + len) + 1);
 		strcpy(cmdbuf, (const char *)(cmd + len));
 		whc_ipc_host_api_mp_command(cmdbuf, strlen(cmd + len) + 1, 1);
 		rtos_mem_free(cmdbuf);
-#elif defined(CONFIG_SINGLE_CORE_WIFI)
+#elif defined(CONFIG_WHC_NONE)
 		wext_private_command(cmd + len, 1, NULL);
 #endif
 #endif

@@ -12,6 +12,11 @@ char *test_password = "123456789";
 static const char *const TAG = "WIFI_RECONN_EXAMPLE";
 u8 reconnect_cnt = 0;
 
+struct rtw_event_hdl_func_t event_external_hdl[1] = {
+	{RTW_EVENT_JOIN_STATUS,			user_wifi_join_status_event_hdl},
+};
+u16 array_len_of_event_external_hdl = sizeof(event_external_hdl) / sizeof(struct rtw_event_hdl_func_t);
+
 int user_wifi_connect(void)
 {
 	int ret = 0;
@@ -74,16 +79,15 @@ static void user_wifi_reconnect_task(void *param)
 	rtos_task_delete(NULL);
 }
 
-void user_wifi_join_status_event_hdl(u8 *buf, s32 buf_len, s32 flags, void *userdata)
+void user_wifi_join_status_event_hdl(u8 *buf, s32 buf_len, s32 flags)
 {
-	(void) userdata;
 	(void) buf_len;
 	u8 join_status = (u8)flags;
 	u16 disconn_reason = 0;
 
 	/*Reconnect when disconnect after connected*/
 	if (join_status == RTW_JOINSTATUS_DISCONNECT) {
-		disconn_reason = ((struct rtw_event_info_joinstatus_disconn *)buf)->disconn_reason;
+		disconn_reason = ((union rtw_event_join_status_info *)buf)->disconnect.disconn_reason;
 		/*Disconnect by APP no need do reconnect*/
 		if (disconn_reason > RTW_DISCONN_RSN_APP_BASE && disconn_reason < RTW_DISCONN_RSN_APP_BASE_END) {
 			return;
@@ -106,9 +110,6 @@ static void user_main_task(void *param)
 		rtos_time_delay_ms(1000);
 	}
 
-	/* Register join status event, trigger reconnect when disconnect happen*/
-	wifi_reg_event_handler(RTW_EVENT_JOIN_STATUS, user_wifi_join_status_event_hdl, NULL);
-
 	/* Start connect */
 	user_wifi_connect();
 
@@ -117,7 +118,7 @@ static void user_main_task(void *param)
 
 void example_wifi_user_reconnect(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"user_main_task"), user_main_task, NULL, 1024, 1) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"user_main_task"), user_main_task, NULL, 2048, 1) != RTK_SUCCESS) {
 		RTK_LOGI(TAG, "\n%s rtos_task_create failed\n", __FUNCTION__);
 	}
 }

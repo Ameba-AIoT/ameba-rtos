@@ -124,6 +124,10 @@ static usbd_config_t uac_cfg = {
 	.isr_priority = INT_PRI_MIDDLE,
 	.ext_intr_en = 0,
 	.intr_use_ptx_fifo = 0U,
+#if defined (CONFIG_AMEBAGREEN2)
+	.rx_fifo_depth = 884U,
+	.ptx_fifo_depth = {16U, 16U, 32U, 16U, 16U, },
+#endif
 };
 
 static usbd_uac_cb_t uac_cb = {
@@ -440,7 +444,7 @@ static void example_audio_track_play(void)
 		if (read_dat_len > 0) {
 			total_len += read_dat_len;
 			if (read_cnt % 200 == 0) {
-				RTK_LOGS(TAG, RTK_LOG_DEBUG, "Audio track get %d %d\n", read_dat_len, total_len);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Audio track get %d %d\n", read_dat_len, total_len);
 			}
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Audio Read Timeout\n");

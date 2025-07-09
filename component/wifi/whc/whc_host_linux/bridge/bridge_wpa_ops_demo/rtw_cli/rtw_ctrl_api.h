@@ -53,6 +53,15 @@ struct whc_host_cli_cmd_t {
 } __attribute__((packed));
 
 
+
+struct whc_host_cli_send_string_t {
+	u32 category;       // WHC_WIFI_TEST
+	u8  cmd_id;         // WHC_WIFI_CMD_SCAN
+	u32 msg_len;
+	u8  message[256];
+} __attribute__((packed));
+
+
 typedef void (*cmd_handler_t)(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id);
 
 struct cmd_func_t {
@@ -208,6 +217,7 @@ int whc_bridge_host_api_get_family_id(int fd, char *family_name);
 void whc_bridge_host_cmd_scan(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id);
 void whc_bridge_host_cmd_scan_result(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id);
 void whc_bridge_host_cmd_getmac(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id);
+void whc_bridge_host_cmd_set_network(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id);
 
 void print_scan_result(struct rtw_scan_result *record);
 void whc_bridge_host_print_scan_result(char *pos, int chunk_index, char last_chunk);

@@ -25,7 +25,7 @@ K_THREAD_STACK_DEFINE(rtk_wifi_init_stack, WIFI_STACK_SIZE_INIT);
 
 extern void wifi_set_rom2flash(void);
 
-#if defined(CONFIG_AS_INIC_AP)
+#if defined(CONFIG_WHC_HOST)
 void _init_thread(void *param)
 {
 	/* To avoid gcc warnings */
@@ -58,7 +58,7 @@ void wifi_init(void)
 					K_NO_WAIT);
 }
 
-#elif defined(CONFIG_SINGLE_CORE_WIFI)
+#elif defined(CONFIG_WHC_NONE)
 
 void _init_thread(void *param)
 {

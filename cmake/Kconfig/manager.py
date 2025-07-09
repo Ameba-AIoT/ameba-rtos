@@ -104,13 +104,12 @@ class Manager(object):
 
     def check_invalid_config(self) -> int:
         lines = self.extract_lines(self.config_in, [self.private_section_name])
-        invalid_pattern = rf'^CONFIG_CORE_AS_(.)P=y$'
+        invalid_pattern = ["CONFIG_WHC_HOST=y", "CONFIG_WHC_DEV=y", "CONFIG_WHC_NONE=y"]
         for line in lines:
             stripped_line = line.strip()
             if not stripped_line:
                 continue
-            match = re.match(invalid_pattern, line)
-            if match:
+            if stripped_line in invalid_pattern:
                 print("FATAL ERROR! Please do not select the configs in last line which signs <DO NOT ENTER IN THIS BUTTON> ")
                 return 1
         return 0
@@ -233,7 +232,7 @@ class Manager(object):
             return self.run_command('saveconfig.py --kconfig ', self.top_kconfig, ' --out ', path, ' --default ', self.default_conf)
 
     def extract_core_role(self, core:str, lines:List[str] = []) -> List[str]:
-        pattern = rf'^CONFIG_CORE_AS_(.*)(_FOR_{core.upper()})=(.*)$'
+        pattern = rf'^CONFIG_(WHC_HOST|WHC_DEV|WHC_NONE)(_FOR_{core.upper()})=(.*)$'
         configs = []
         for line in lines if lines else self.general_configs:
             stripped_line = line.strip()
@@ -242,7 +241,7 @@ class Manager(object):
 
             match = re.match(pattern, line)
             if match:
-                configs.append(f"CORE_AS_{match.group(1)}={match.group(3)}")
+                configs.append(f"{match.group(1)}={match.group(3)}")
 
         return configs
 

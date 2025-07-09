@@ -22,13 +22,13 @@ ameba_list_append(public_includes
 
 set(need_external_lib OFF)
 
-if(CONFIG_SINGLE_CORE_WIFI OR CONFIG_AS_INIC_AP)
+if(CONFIG_WHC_NONE OR CONFIG_WHC_HOST)
     if(NOT CONFIG_MP_SHRINK)
         set(need_external_lib ON)
     endif()
 endif()
 
-if(CONFIG_ZEPHYR_SDK AND CONFIG_SINGLE_CORE_WIFI)
+if(CONFIG_ZEPHYR_SDK AND CONFIG_WHC_NONE)
     set(need_external_lib ON)
 endif()
 
@@ -65,21 +65,21 @@ set(private_compile_options_open)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 if(NOT CONFIG_MP_SHRINK)
-    if(CONFIG_SINGLE_CORE_WIFI OR CONFIG_AS_INIC_AP)
+    if(CONFIG_WHC_NONE OR CONFIG_WHC_HOST)
         ameba_list_append(private_sources wifi_acs/wifi_acs.c)
     endif()
-    ameba_list_append_if(CONFIG_AS_INIC_AP private_sources wifi_cast/wifi_intf_drv_to_app_cast.c)
+    ameba_list_append_if(CONFIG_WHC_HOST private_sources wifi_cast/wifi_intf_drv_to_app_cast.c)
 endif()
 
-if(CONFIG_ZEPHYR_SDK AND CONFIG_SINGLE_CORE_WIFI)
+if(CONFIG_ZEPHYR_SDK AND CONFIG_WHC_NONE)
     ameba_list_append(private_sources wifi_init/wifi_init.c)
-    if(CONFIG_AS_INIC_AP OR CONFIG_SINGLE_CORE_WIFI)
+    if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
         ameba_list_append(private_sources wifi_auto_reconnect/wifi_auto_reconnect.c)
         ameba_list_append(private_sources wifi_fast_connect/wifi_fast_connect.c)
     endif()
 else()
     ameba_list_append(private_sources_open wifi_init/wifi_init.c)
-    if(CONFIG_AS_INIC_AP OR CONFIG_SINGLE_CORE_WIFI)
+    if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
         ameba_list_append(private_sources_open wifi_auto_reconnect/wifi_auto_reconnect.c)
         ameba_list_append(private_sources_open wifi_fast_connect/wifi_fast_connect.c)
     endif()
@@ -118,7 +118,7 @@ ameba_add_internal_library(${TARGET_LIB_OPEN}
 )
 ##########################################################################################
 
-if(CONFIG_AS_INIC_AP AND NOT CONFIG_ZEPHYR_SDK AND NOT CONFIG_MP_SHRINK)
+if(CONFIG_WHC_HOST AND NOT CONFIG_ZEPHYR_SDK AND NOT CONFIG_MP_SHRINK)
     ameba_add_subdirectory(wifi_tunnel_app)
 endif()
 ameba_add_subdirectory(wifi_feature_disable)

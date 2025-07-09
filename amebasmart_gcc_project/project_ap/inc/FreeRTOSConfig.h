@@ -130,7 +130,7 @@ extern uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK);
 /* Software timer definitions. */
 #define configUSE_TIMERS						1
 #define configTIMER_TASK_PRIORITY				( configMAX_PRIORITIES - 1 )
-#if defined(CONFIG_AS_INIC_NP) || defined(CONFIG_SINGLE_CORE_WIFI)
+#if defined(CONFIG_WHC_DEV) || defined(CONFIG_WHC_NONE)
 #define configTIMER_QUEUE_LENGTH				(5 + 64)
 #else
 #define configTIMER_QUEUE_LENGTH				15 /* Temporarily solve the ca32-smp timer Create and delete hang problem */

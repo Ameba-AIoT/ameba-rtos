@@ -1,57 +1,57 @@
-config TRUSTZONE_FOR_KM4
+config TRUSTZONE
     bool "Enable TrustZone"
     default n
     help
         Configurations for trustzone
-if TRUSTZONE_FOR_KM4
+if TRUSTZONE
     choice
         prompt "TrustZone by RDP or TFM"
-        default RDP_BASIC_FOR_KM4
-        config RDP_BASIC_FOR_KM4
+        default RDP_BASIC
+        config RDP_BASIC
             bool "RDP_BASIC"
 
-        config RDP_TFM_FOR_KM4
+        config RDP_TFM
             bool "RDP_TFM"
 
     endchoice
 
-    config TRUSTZONE_EN_FOR_KM4
+    config TRUSTZONE_EN
         bool
         default y
 
-    if RDP_TFM_FOR_KM4
-        config TFM_TEST_ENABLE_FOR_KM4
+    if RDP_TFM
+        config TFM_TEST_ENABLE
             bool "TFM Test Suite Enable"
             default n
     endif
 
-    if TFM_TEST_ENABLE_FOR_KM4
+    if TFM_TEST_ENABLE
         choice
             prompt "TFM Test Suite Select"
-            config TFM_TEST_REGRESSION_FOR_KM4
+            config TFM_TEST_REGRESSION
                 bool "Regression_Tests"
 
-            config TFM_TEST_PSA_API_FOR_KM4
+            config TFM_TEST_PSA_API
                 bool "PSA_API_Tests"
         endchoice
 
-        if TFM_TEST_REGRESSION_FOR_KM4
-            config TFM_TEST_S_FOR_KM4
+        if TFM_TEST_REGRESSION
+            config TFM_TEST_S
                 bool "TFM secure regression tests"
-            config TFM_TEST_NS_FOR_KM4
+            config TFM_TEST_NS
                 bool "TFM non-secure regression tests"
         endif
 
-        if TFM_TEST_PSA_API_FOR_KM4
+        if TFM_TEST_PSA_API
             choice
                 prompt "TEST_PSA_API Select"
-                config TEST_PSA_API_STORAGE_FOR_KM4
+                config TEST_PSA_API_STORAGE
                     bool "STORAGE"
 
-                config TEST_PSA_API_CRYPTO_FOR_KM4
+                config TEST_PSA_API_CRYPTO
                     bool "CRYPTO"
 
-                config TEST_PSA_API_INITIAL_ATTESTATION_FOR_KM4
+                config TEST_PSA_API_INITIAL_ATTESTATION
                     bool "INITIAL_ATTESTATION"
             endchoice
         endif

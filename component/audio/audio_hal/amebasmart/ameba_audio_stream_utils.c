@@ -628,6 +628,154 @@ int32_t ameba_audio_get_sport_irq(uint32_t index)
 	return irq;
 }
 
+int32_t ameba_audio_stream_get_direct_out_channel_idx(uint32_t channel)
+{
+	uint32_t direct_out_channel = HAL_OSAL_ERR_INVALID_PARAM;
+	switch (channel)
+	{
+	case 0:
+		direct_out_channel = DIRECT_OUT_CHN0;
+		break;
+	case 1:
+		direct_out_channel = DIRECT_OUT_CHN1;
+		break;
+	case 2:
+		direct_out_channel = DIRECT_OUT_CHN2;
+		break;
+	case 3:
+		direct_out_channel = DIRECT_OUT_CHN3;
+		break;
+	case 4:
+		direct_out_channel = DIRECT_OUT_CHN4;
+		break;
+	case 5:
+		direct_out_channel = DIRECT_OUT_CHN5;
+		break;
+	case 6:
+		direct_out_channel = DIRECT_OUT_CHN6;
+		break;
+	case 7:
+		direct_out_channel = DIRECT_OUT_CHN7;
+		break;
+	default:
+		HAL_AUDIO_ERROR("channel not supported for direct out:%ld", channel);
+		break;
+	}
+
+	return direct_out_channel;
+}
+
+int32_t ameba_audio_stream_get_direct_in_channel_idx(uint32_t channel)
+{
+	uint32_t direct_in_channel = HAL_OSAL_ERR_INVALID_PARAM;
+	switch (channel)
+	{
+	case 0:
+		direct_in_channel = DIRECT_IN_CHN0;
+		break;
+	case 1:
+		direct_in_channel = DIRECT_IN_CHN1;
+		break;
+	case 2:
+		direct_in_channel = DIRECT_IN_CHN2;
+		break;
+	case 3:
+		direct_in_channel = DIRECT_IN_CHN3;
+		break;
+	case 4:
+		direct_in_channel = DIRECT_IN_CHN4;
+		break;
+	case 5:
+		direct_in_channel = DIRECT_IN_CHN5;
+		break;
+	case 6:
+		direct_in_channel = DIRECT_IN_CHN6;
+		break;
+	case 7:
+		direct_in_channel = DIRECT_IN_CHN7;
+		break;
+	default:
+		HAL_AUDIO_ERROR("channel not supported for direct in:%ld", channel);
+		break;
+	}
+
+	return direct_in_channel;
+}
+
+int32_t ameba_audio_stream_get_direct_reg_idx(uint32_t channel)
+{
+	uint32_t direct_reg = HAL_OSAL_ERR_INVALID_PARAM;
+	switch (channel)
+	{
+	case 0:
+		direct_reg = DIRECT_REG_0;
+		break;
+	case 1:
+		direct_reg = DIRECT_REG_1;
+		break;
+	case 2:
+		direct_reg = DIRECT_REG_2;
+		break;
+	case 3:
+		direct_reg = DIRECT_REG_3;
+		break;
+	case 4:
+		direct_reg = DIRECT_REG_4;
+		break;
+	case 5:
+		direct_reg = DIRECT_REG_5;
+		break;
+	case 6:
+		direct_reg = DIRECT_REG_6;
+		break;
+	case 7:
+		direct_reg = DIRECT_REG_7;
+		break;
+	default:
+		HAL_AUDIO_ERROR("channel not supported for direct reg:%ld", channel);
+		break;
+	}
+
+	return direct_reg;
+}
+
+int32_t ameba_audio_stream_get_sp_tx_channel_idx(uint32_t channel)
+{
+	uint32_t sp_tx_channel = HAL_OSAL_ERR_INVALID_PARAM;
+	switch (channel)
+	{
+	case 0:
+		sp_tx_channel = TXCHN0;
+		break;
+	case 1:
+		sp_tx_channel = TXCHN1;
+		break;
+	case 2:
+		sp_tx_channel = TXCHN2;
+		break;
+	case 3:
+		sp_tx_channel = TXCHN3;
+		break;
+	case 4:
+		sp_tx_channel = TXCHN4;
+		break;
+	case 5:
+		sp_tx_channel = TXCHN5;
+		break;
+	case 6:
+		sp_tx_channel = TXCHN6;
+		break;
+	case 7:
+		sp_tx_channel = TXCHN7;
+		break;
+	default:
+		HAL_AUDIO_ERROR("channel not supported for direct reg:%ld", channel);
+		break;
+	}
+
+	return sp_tx_channel;
+}
+
 bool ameba_audio_sport_started(uint32_t index)
 {
 	AUDIO_SPORT_TypeDef *SPORTx = ameba_audio_get_sport_addr(index);

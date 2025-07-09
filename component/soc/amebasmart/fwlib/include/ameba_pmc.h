@@ -182,7 +182,6 @@ enum SLEEP_TYPE {
   */
 
 typedef struct {
-	u8 km0_tickles_debug; /* open km0 tickles log, it will encrease power consumption */
 	u8 km0_pg_enable;
 	u8 km0_pll_off;
 	u8 km0_audio_vad_on;

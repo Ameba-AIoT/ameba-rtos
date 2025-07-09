@@ -34,3 +34,4 @@ none
 # Supported IC
 
 * AmebaDplus
+* AmebaGreen2

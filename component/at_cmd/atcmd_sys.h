@@ -21,15 +21,6 @@ typedef struct {
 	u16 MajorKeyVer;
 	u16 MinorKeyVer;
 } Certificate_TypeDef;
-
-typedef enum atcmd_log_type_e {
-	atcmd_log_type_get = 0,
-	atcmd_log_type_set = 1,
-	atcmd_log_type_print_all = 2,
-	atcmd_log_type_clear_all = 3,
-	atcmd_log_type_invalid
-} atcmd_log_type;
-
 typedef enum atcmd_cpuload_type_e {
 	atcmd_cpuload_type_update = 0,
 	atcmd_cpuload_type_sema = 1,

@@ -3,6 +3,8 @@ ccflags-$(CONFIG_P2P) += -DCONFIG_P2P
 ccflags-$(CONFIG_WHC_BRIDGE) += -DCONFIG_WHC_BRIDGE
 
 ccflags-y += -DCONFIG_FULLMAC -DCONFIG_FULLMAC_HCI_SDIO
+ccflags-y += -DCONFIG_WHC_CMD_PATH
+
 ccflags-y += -I$(src)/../../common/netdev
 ccflags-y += -I$(src)/../../bridge
 ccflags-y += -I$(src)/../../common/include -I$(src)/.. -I$(src)/../../common -I$(src)/../../common/sdio -I$(src)
@@ -20,10 +22,9 @@ bridge_sdio-y := \
 		../../common/whc_host_pkt_rx.o \
 		../../common/whc_host_memory.o \
 		../../common/whc_host_hci.o \
-		../whc_bridge_host_tx.o \
+		../../common/whc_host_cmd_path_tx.o \
 		../whc_bridge_host_pkt_rx.o \
-		../whc_bridge_host_netlink.o \
-		../sdio_bridge/whc_bridge_host_sdio.o
+		../../common/whc_host_netlink.o
 
 ifeq ($(CONFIG_WHC_BRIDGE_WPA_OPS),y)
 

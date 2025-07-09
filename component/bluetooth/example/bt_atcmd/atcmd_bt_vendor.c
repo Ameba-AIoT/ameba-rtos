@@ -361,7 +361,7 @@ int atcmd_bt_sof_eof_ind(int argc, char *argv[])
 }
 #endif
 
-#if ((defined(CONFIG_BT_INIC) && CONFIG_BT_INIC))
+#if defined(CONFIG_BT_INIC) && CONFIG_BT_INIC
 #include "hci_if_inic.h"
 
 int atcmd_bt_remote_wakeup(int argc, char **argv)

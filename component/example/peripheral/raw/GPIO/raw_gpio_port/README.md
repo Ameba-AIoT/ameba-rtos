@@ -67,3 +67,4 @@ This example describes how to use GPIO Port read/write by RAW GPIO API.
 - AmebaLite
 - AmebaDplus
 - AmebaD
+- AmebaGreen2

@@ -25,7 +25,7 @@
 #include "rtw_byteorder.h"
 #include "dlist.h"
 #include "platform_stdlib.h"
-#if !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP))
+#if !(defined(ZEPHYR_WIFI) && defined(CONFIG_WHC_HOST))
 #include "os_wrapper.h"
 #include "rtw_misc.h"
 #endif
@@ -101,7 +101,7 @@ enum rtw_security_flag {
 };
 
 /**
-  * @brief  Enumerates the disconnect reasons used in @ref rtw_event_info_joinstatus_disconn
+  * @brief  Enumerates the disconnect reasons used in @ref rtw_join_status_info
   *         when a disconnect event (@ref RTW_JOINSTATUS_DISCONNECT) occurs (size: u16).
   *         The reasons include both standard 802.11 specification-based reasons and custom-defined
   *         reasons by the driver and application layers.
@@ -135,14 +135,14 @@ enum rtw_disconn_reason {
 #endif
 	/*RTK defined: Driver-detected issues causing disconnection. */
 	RTW_DISCONN_RSN_DRV_BASE                            = 60000,
-	RTW_DISCONN_RSN_DRV_AP_LOSS                         = 60001,
-	RTW_DISCONN_RSN_DRV_AP_CHANGE                       = 60002,
+	RTW_DISCONN_RSN_DRV_AP_LOSS                         = 60001, /*~DIAG: no rx for a long time*/
+	RTW_DISCONN_RSN_DRV_AP_CHANGE                       = 60002, /*~DIAG: AP change*/
 	RTW_DISCONN_RSN_DRV_BASE_END                        = 60099,
 
 	/*RTK defined: Application layer call some API to cause wifi disconnect.*/
 	RTW_DISCONN_RSN_APP_BASE                            = 60100,
-	RTW_DISCONN_RSN_APP_DISCONN                         = 60101,
-	RTW_DISCONN_RSN_APP_CONN_WITHOUT_DISCONN            = 60102,
+	RTW_DISCONN_RSN_APP_DISCONN                         = 60101, /*~DIAG: by APP*/
+	RTW_DISCONN_RSN_APP_CONN_WITHOUT_DISCONN            = 60102, /*~DIAG: before connect*/
 	RTW_DISCONN_RSN_APP_BASE_END                        = 60199,
 
 	RTW_DISCONN_RSN_MAX                                 = 65535,/*0xffff*/
@@ -151,11 +151,13 @@ enum rtw_disconn_reason {
 /**
  * @brief  Supported Wi-Fi frequency bands (size: u8).
  */
+/*TODO: rom should check because (#define BAND_CAP_2G BIT(0), #define BAND_CAP_5G BIT(1)) from rom_rtw_defs.h*/
 enum rtw_support_band {
-	RTW_SUPPORT_BAND_2_4G = 0,     /**< 2.4 GHz band. */
-	RTW_SUPPORT_BAND_5G,           /**< 5 GHz band. */
-	RTW_SUPPORT_BAND_2_4G_5G_BOTH, /**< Both 2.4 GHz and 5 GHz bands. */
-	RTW_SUPPORT_BAND_MAX            /**< Maximum band type (for bounds checking). */
+	RTW_SUPPORT_BAND_RSVD = 0,
+	RTW_SUPPORT_BAND_2_4G = BIT(0),                    /**< 2.4 GHz band. */
+	RTW_SUPPORT_BAND_5G = BIT(1),                      /**< 5 GHz band. */
+	RTW_SUPPORT_BAND_2_4G_5G_BOTH = (BIT(0) | BIT(1)), /**< Both 2.4 GHz and 5 GHz bands. */
+	RTW_SUPPORT_BAND_MAX                               /**< Maximum band type (for bounds checking). */
 };
 
 /**
@@ -705,6 +707,7 @@ struct rtw_scan_param {
 	u8                              *channel_list;      /**< List of specific channels to scan. */
 	u8                               channel_list_num;  /**< Number of channels in `channel_list`.*/
 	struct rtw_channel_scan_time     chan_scan_time;    /**< Scan duration for each channel.*/
+	u8								 probe_req_num; 	/**< Number of probe request frames to issue in an active scan channel.*/
 
 	/** Maximum number of APs to record. When set to 0, use default value 64.
 	 *  APs with the lowest RSSI are discarded if scanned APs exceed this number. */
@@ -932,6 +935,18 @@ struct rtw_promisc_para {
 	u8(*callback)(struct rtw_rx_pkt_info *pkt_info);
 };
 
+/**
+*@brief Provide necessary parameters for set EDCA
+*/
+struct rtw_edca_param {
+	u8	aci;  /**< AC_BK, AC_BE, AC_VI, AC_VO */
+	u8	aci_aifsn; /**< Arbitration inter-frame space number,specifies the inter-frame interval (waiting time) before transmission: unit: (*slot_time), + sifs*/
+	u8	cw_max; /**< Maximum contention window: unit: *slot_time */
+	u8	cw_min; /**< Minimum contention window: unit: *slot_time */
+	u16	txop_limit;/**< Indicates that a single MSDU or MMPDU in addition to a protection frame exchange can be transmitted at any rate*/
+	u8	slot_time;/**< The slot time value mentioned in 802.11 specification in units, Recommended value: 20us for 2G band, 9us for 5G band[value 0 = use internal chipset default] */
+};
+
 /**********************************************************************************************
  *                                     speaker structures
  *********************************************************************************************/
@@ -944,7 +959,6 @@ union rtw_speaker_set {
 		u8 nav_thresh;               /**< NAV (Network Allocation Vector) threshold in units of 128us. */
 		u8 relay_en : 1;             /**< Relay control. */
 		u8 b_ignore_tx_nav_done : 1; /**< Queue BKF not need to wait TX Nav finished. */
-		u8 slot_time;                /**< The slot time value mentioned in 802.11 specification in units and use with caution. */
 		u16 life_time;               /**< Packet lifetime in units of 256us. */
 	} init; /**< For Wi-Fi speaker setting case @ref RTW_SPEAKER_SET_INIT.*/
 	struct rtw_speaker_i2s {

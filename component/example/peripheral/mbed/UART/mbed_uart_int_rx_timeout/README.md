@@ -18,6 +18,10 @@ Required Components: USBtoTTL adapter.
 	- Connect `UART_TX(_PA_26)` to `RXD` of adapter
 	- Connect `UART_RX(_PA_27)` to `TXD` of adapter
 	- Connect `GND` to `GND` of adapter
+* On AmebaGreen2
+	- Connect `UART_TX(_PA_18)` to `RXD` of adapter
+	- Connect `UART_RX(_PA_19)` to `TXD` of adapter
+	- Connect `GND` to `GND` of adapter
 
 # SW Configuration
 
@@ -48,3 +52,4 @@ By default, `UART0` is used to communicate with PC under `38400bps` by interrupt
 * AmebaSmart
 * AmebaLite
 * AmebaDplus
+* AmebaGreen2

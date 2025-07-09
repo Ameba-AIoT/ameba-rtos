@@ -1,6 +1,6 @@
 #include "lwip_netconf.h"
 
-#if defined(CONFIG_AS_INIC_AP)
+#if defined(CONFIG_WHC_HOST)
 #define BSD_STACK_SIZE		    1024
 #else
 #define BSD_STACK_SIZE		    512

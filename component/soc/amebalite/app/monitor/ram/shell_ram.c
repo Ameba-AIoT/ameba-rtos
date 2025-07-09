@@ -117,6 +117,7 @@ void shell_loguratRx_Ipc_Tx(u32 ipc_dir, u32 ipc_ch)
 void shell_loguartRx_dispatch(void)
 {
 	u32 i, CpuId = 0;
+	u32 cmd_done = FALSE;
 	PUART_LOG_BUF pUartLogBuf = shell_ctl.pTmpLogBuf;
 
 	for (i = 0; i < UART_LOG_CMD_BUFLEN; i++) {
@@ -124,8 +125,7 @@ void shell_loguartRx_dispatch(void)
 			if (pUartLogBuf->UARTLogBuf[i] == '\0') {
 				CpuId = KM4_CPU_ID;
 				CONSOLE_AMEBA(); /* '\0' put # */
-				shell_array_init((u8 *)pUartLogBuf, sizeof(UART_LOG_BUF), '\0');
-				shell_ctl.ExecuteCmd = FALSE;
+				cmd_done = TRUE;
 				break;
 			}
 #ifdef CONFIG_AP_CORE_KR4
@@ -157,15 +157,19 @@ void shell_loguartRx_dispatch(void)
 
 	if (CpuId == DSP_CPU_ID) {
 		shell_loguratRx_Ipc_Tx(IPC_KM4_TO_DSP, IPC_M2D_LOGUART_RX_SWITCH);
+		cmd_done = TRUE;
 	}
 
-	if (CpuId == KR4_CPU_ID) {
+        if (CpuId == KR4_CPU_ID) {
 		shell_loguratRx_Ipc_Tx(IPC_KM4_TO_KR4, IPC_M2R_LOGUART_RX_SWITCH);
+		cmd_done = TRUE;
 	}
 
-	if (CpuId != KM4_CPU_ID) {
+	if (cmd_done) {
 		shell_array_init((u8 *)pUartLogBuf, sizeof(UART_LOG_BUF), '\0');
 		shell_ctl.ExecuteCmd = FALSE;
+	} else {
+		shell_ctl.ExecuteCmd = TRUE;
 	}
 }
 #else
@@ -217,7 +221,7 @@ static void shell_task_ram(void *Data)
 		shell_loguartRx_dispatch();
 
 		if (shell_ctl.ExecuteCmd) {
-#if (defined CONFIG_SUPPORT_ATCMD) && (defined CONFIG_CORE_AS_AP)
+#if defined(CONFIG_SUPPORT_ATCMD)
 			shell_array_init((u8 *)atcmd_buf, sizeof(atcmd_buf), '\0');
 			strcpy(atcmd_buf, (const char *)pUartLogBuf->UARTLogBuf);
 			ret = atcmd_service(atcmd_buf);
@@ -244,7 +248,7 @@ static void shell_task_ram(void *Data)
 
 void shell_init_ram(void)
 {
-#if (defined CONFIG_SUPPORT_ATCMD) && (defined CONFIG_CORE_AS_AP)
+#if defined(CONFIG_SUPPORT_ATCMD)
 	atcmd_service_init();
 #endif
 

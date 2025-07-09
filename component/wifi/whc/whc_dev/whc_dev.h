@@ -29,7 +29,7 @@
 
 #include "whc_dev_struct.h"
 
-#include "whc_dev_api.h"
+#include "whc_dev_api_path.h"
 #include "whc_dev_trx.h"
 #include "whc_dev_msg_queue.h"
 #include "whc_dev_cust_evt.h"
@@ -38,22 +38,16 @@
 #include "ameba_inic.h"
 #include "spdio_api.h"
 #include "whc_sdio_drv.h"
+#include "whc_sdio_dev.h"
 #elif defined (CONFIG_WHC_INTF_SPI)
-#include "whc_spi_dev.h"
+#include "whc_spi_drv.h"
 #elif defined (CONFIG_WHC_INTF_USB)
 #include "whc_usb_dev.h"
 #endif
 
 #ifdef CONFIG_WHC_CMD_PATH
 #include "whc_dev_bridge.h"
-#include "whc_bridge_dev_api.h"
-#endif
-
-#if defined(CONFIG_WHC_INTF_SDIO) && defined(CONFIG_WHC_BRIDGE)
-#include "whc_bridge_sdio_dev.h"
-
-#elif defined(CONFIG_WHC_INTF_SDIO)
-#include "whc_fullmac_sdio_dev.h"
+#include "whc_dev_api.h"
 #endif
 
 #else

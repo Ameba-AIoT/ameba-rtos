@@ -50,6 +50,17 @@ IRQn_Type WDG_IRQNUM = KM4_NS_WDG_IRQ;
 #endif
 
 
+#if defined (CONFIG_AMEBAGREEN2)
+#define WDG_RESET_SRC	(AON_BIT_RSTF_IWDG | AON_BIT_RSTF_WDG0_GLB | AON_BIT_RSTF_WDG1_GLB | AON_BIT_RSTF_WDG2_GLB)
+#if defined (CONFIG_ARM_CORE_CM4_KM4TZ)
+WDG_TypeDef *WDG_DEV = CPU0_NS_WDG_DEV;
+IRQn_Type WDG_IRQNUM = CPU0_NS_WDG_IRQ;
+#elif defined (CONFIG_ARM_CORE_CM4_KM4NS)
+WDG_TypeDef *WDG_DEV = CPU1_WDG_DEV;
+IRQn_Type WDG_IRQNUM = CPU1_WDG_IRQ;
+#endif
+#endif
+
 static rtos_timer_t xTimers_WDG;
 
 static u32 WDG_IrqHandler(void *Data)

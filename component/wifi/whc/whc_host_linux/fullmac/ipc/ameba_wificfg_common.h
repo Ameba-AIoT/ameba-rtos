@@ -137,6 +137,13 @@ struct wifi_user_conf {
 	/*!	Bandwidth 40MHz, some IC hardware does not support.*/
 	u8 bw_40_enable;
 
+	/*!	Support frequency band types, some IC hardware does not support 5 GHz.
+		- @ref RTW_SUPPORT_BAND_2_4G : Only support 2.4 GHz band;
+		- @ref RTW_SUPPORT_BAND_5G : Only support 5 GHz band
+		- @ref RTW_SUPPORT_BAND_2_4G_5G_BOTH : Support both 2.4 GHz and 5 GHz bands;
+		- @ref RTW_SUPPORT_BAND_MAX : Default types supported by IC hardware. */
+	u8 freq_band_support;
+
 	/*!	Refe to 802.11d spec, obtain the country code information from beacon, and set the pwr limit and channel plan.*/
 	u8 rtw_802_11d_en;
 

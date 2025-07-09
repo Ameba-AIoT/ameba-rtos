@@ -506,7 +506,9 @@ int wtn_socket_init(u8 enable, u8 rnat_ap_start)
 		}
 	} else {
 		wtn_socket_need_close = 1;
-		rtos_sema_give(wtn_socket_send_sema);/*trigger socket tx task to end*/
+		if (wtn_socket_send_sema) {
+			rtos_sema_give(wtn_socket_send_sema);/*trigger socket tx task to end*/
+		}
 	}
 
 	return RTK_SUCCESS;

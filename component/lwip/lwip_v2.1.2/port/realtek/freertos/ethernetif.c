@@ -54,7 +54,7 @@
 #include "freertos/inic_intf.h"
 #endif
 
-#if defined(CONFIG_AS_INIC_AP)
+#if defined(CONFIG_WHC_HOST)
 #if defined(CONFIG_WHC_INTF_SPI)
 #include "whc_spi_host_trx.h"
 #elif defined(CONFIG_WHC_INTF_SDIO)
@@ -156,12 +156,12 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 	struct eth_hdr *ethhdr = NULL;
 	u8 is_special_pkt = 0;
 	u8 *addr = (u8 *)p->payload;
-#if defined(CONFIG_AS_INIC_AP)
+#if defined(CONFIG_WHC_HOST)
 	int ret = 0;
 #endif
 
 #if CONFIG_WLAN
-#ifndef CONFIG_AS_INIC_AP
+#ifndef CONFIG_WHC_HOST
 	if (!wifi_is_running(netif_get_idx(netif))) {
 		return ERR_IF;
 	}
@@ -187,7 +187,7 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 
 	if (sg_len) {
 #if CONFIG_WLAN
-#if defined(CONFIG_AS_INIC_AP)
+#if defined(CONFIG_WHC_HOST)
 		ret = whc_host_send(netif_get_idx(netif), sg_list, sg_len, p->tot_len, NULL, is_special_pkt);
 		if (ret == ERR_IF) {
 			return ret;

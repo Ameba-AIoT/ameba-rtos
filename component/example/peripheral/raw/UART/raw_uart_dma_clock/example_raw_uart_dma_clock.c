@@ -16,12 +16,12 @@
 #define SRAM_LEN	100 /* 100B -> 100*5 clock periods(f=baudrate/2) */
 u8 sim_clock[SRAM_LEN];
 
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS)
+#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2)
 const u8 UART_TX_FID[MAX_UART_INDEX] = {
 	PINMUX_FUNCTION_UART0_TXD,
 	PINMUX_FUNCTION_UART1_TXD,
 	PINMUX_FUNCTION_UART2_TXD,
-#if defined (CONFIG_AMEBALITE)
+#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2)
 	PINMUX_FUNCTION_UART3_TXD
 #endif
 };
@@ -91,7 +91,7 @@ void uart_clock_init(u32 rate)
 #if defined (CONFIG_AMEBASMART)
 	/* Configure UART0 TX and RX pin */
 	Pinmux_Config(UART_TX, PINMUX_FUNCTION_UART);
-#elif defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS)
+#elif defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2)
 	/* Configure UART0 TX and RX pin */
 	Pinmux_Config(UART_TX, UART_TX_FID[uart_idx]);
 #endif

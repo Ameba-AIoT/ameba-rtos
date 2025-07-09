@@ -11,7 +11,7 @@ if(CMAKE_REFACTOR) # For temporary compatibility.
         ameba_add_subdirectory_if(CONFIG_WIFI_FW_EN rle1331)
     elseif(CONFIG_AMEBALITE)
         if(CONFIG_WLAN)
-            if(CONFIG_AS_INIC_NP OR CONFIG_SINGLE_CORE_WIFI)
+            if(CONFIG_WHC_DEV OR CONFIG_WHC_NONE)
                 ameba_add_subdirectory_ifnot(CONFIG_MP_SHRINK amebalite)
             endif()
         endif()

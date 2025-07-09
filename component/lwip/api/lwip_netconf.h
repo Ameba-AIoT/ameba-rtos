@@ -85,7 +85,7 @@ struct static_ip_config {
 };
 
 /* Extern functions ------------------------------------------------------------*/
-#ifndef CONFIG_AS_INIC_AP
+#ifndef CONFIG_WHC_HOST
 void rtw_wakelock_timeout(uint32_t timeoutms);
 #endif
 

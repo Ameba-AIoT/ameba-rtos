@@ -27,7 +27,7 @@
 #include "ethernetif.h"
 
 
-#if defined(CONFIG_AS_INIC_AP)
+#if defined(CONFIG_WHC_HOST)
 #include "whc_ipc_host_trx.h"
 #endif
 
@@ -187,4 +187,6 @@ wcast_err_t wifi_cast_send(wifi_cast_node_t *pnode, unsigned char *data, int dat
   * 		   - WIFI_CAST_ERR: failed
   */
 wcast_err_t wifi_cast_register_recv_cb(wifi_cast_recv_cb_t recv_cb);
+u8 wifi_cast_get_initialized(void);
+void wifi_cast_wifi_join_status_ev_hdl(u8 *buf, s32 buf_len, s32 flags);
 #endif

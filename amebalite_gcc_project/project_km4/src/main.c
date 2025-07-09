@@ -1,6 +1,6 @@
 #include "ameba_soc.h"
 #include "main.h"
-#ifdef CONFIG_CORE_AS_AP
+#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 #include "vfs.h"
 #include <mbedtls/platform.h>
 #endif
@@ -105,7 +105,7 @@ extern int rt_kv_init(void);
 
 void app_filesystem_init(void)
 {
-#if !(defined(CONFIG_MP_INCLUDED)) && defined(CONFIG_CORE_AS_AP)
+#if !(defined(CONFIG_MP_INCLUDED)) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 	int ret = 0;
 	vfs_init();
 
@@ -180,7 +180,7 @@ int main(void)
 
 //only NP can init FW
 #if defined(CONFIG_WLAN)
-#if !defined(CONFIG_MP_SHRINK) && defined(CONFIG_AS_INIC_NP) && CONFIG_AS_INIC_NP
+#if !defined(CONFIG_MP_SHRINK) && defined(CONFIG_WHC_DEV) && CONFIG_WHC_DEV
 	wififw_task_create();
 #endif
 

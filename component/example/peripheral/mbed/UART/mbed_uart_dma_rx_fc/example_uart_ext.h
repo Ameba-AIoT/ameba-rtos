@@ -30,6 +30,13 @@
 #define UART_RTS	_PA_28 // UART0 RTS
 #define UART_CTS	_PA_29 // UART0 CTS
 
+#elif defined (CONFIG_AMEBAGREEN2)
+/* fully programmable zone */
+#define UART_TX		_PA_18 // UART0 TX
+#define UART_RX		_PA_19 // UART0 RX
+#define UART_RTS	_PA_25 // UART0 RTS
+#define UART_CTS	_PA_26 // UART0 CTS
+
 #endif
 
 extern int example_mbed_uart_dma_rx_fc(void);

@@ -1,6 +1,6 @@
 config AIVOICE_EN_MENU
     bool "Enable AIVoice"
-    select AIVOICE_EN if CORE_AS_AP
+    select AIVOICE_EN if WHC_HOST || WHC_NONE
 
 if AIVOICE_EN_MENU
     choice
@@ -9,7 +9,7 @@ if AIVOICE_EN_MENU
 
         config AFE_RES_1MIC_MENU
             bool "afe_res_1mic"
-            select AFE_RES_1MIC if CORE_AS_AP
+            select AFE_RES_1MIC if WHC_HOST || WHC_NONE
 
     endchoice
 
@@ -19,7 +19,7 @@ if AIVOICE_EN_MENU
 
         config KWS_RES_XQXQ_MENU
             bool "kws_res_xqxq"
-            select KWS_RES_XQXQ if CORE_AS_AP
+            select KWS_RES_XQXQ if WHC_HOST || WHC_NONE
 
     endchoice
 endif

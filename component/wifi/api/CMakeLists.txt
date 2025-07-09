@@ -19,7 +19,7 @@ ameba_list_append(public_includes
     ${c_CMPT_WIFI_DIR}/wpa_supplicant/src
 )
 endif()
-if(CONFIG_ZEPHYR_SDK AND CONFIG_SINGLE_CORE_WIFI)
+if(CONFIG_ZEPHYR_SDK AND CONFIG_WHC_NONE)
     ameba_list_append(public_libraries
         ${c_SDK_LIB_APPLICATION_DIR}/lib_${TARGET_LIB}.a
     )
@@ -54,25 +54,23 @@ ameba_list_append(private_sources
     ${c_CMPT_USRCFG_DIR}/ameba_wificfg.c
 )
 
-if(CONFIG_AS_INIC_AP)
+if(CONFIG_WHC_HOST)
     ameba_list_append(private_sources
         ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant/wifi_eap_config.c
-        ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant/wifi_p2p_config.c
         ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant/wifi_wps_config.c
         ${c_CMPT_WIFI_DIR}/wpa_supplicant/src/crypto/tls_polarssl.c
     )
-elseif(CONFIG_SINGLE_CORE_WIFI)
+elseif(CONFIG_WHC_NONE)
     if(NOT (CONFIG_WHC_BRIDGE AND CONFIG_WPA_STD))
         ameba_list_append(private_sources
             ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant/wifi_eap_config.c
-            ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant/wifi_p2p_config.c
             ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant/wifi_wps_config.c
             ${c_CMPT_WIFI_DIR}/wpa_supplicant/src/crypto/tls_polarssl.c
         )
     endif()
 endif()
 
-if(NOT CONFIG_AS_INIC_AP)
+if(NOT CONFIG_WHC_HOST)
     ameba_list_append(private_sources
         ${c_CMPT_USRCFG_DIR}/ameba_wifi_power_table_usrcfg.c
         ${c_CMPT_USRCFG_DIR}/ameba_wifi_country_code_table_usrcfg.c
@@ -91,7 +89,7 @@ endif()
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 
-if(CONFIG_ZEPHYR_SDK AND CONFIG_SINGLE_CORE_WIFI)
+if(CONFIG_ZEPHYR_SDK AND CONFIG_WHC_NONE)
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
     ameba_add_external_app_library(${TARGET_LIB}
         p_SOURCES

@@ -2224,6 +2224,18 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		break;
 	}
 
+	case RTK_BT_AVRCP_EVT_GET_PLAY_STATUS_RSP_EVENT: {
+		rtk_bt_avrcp_get_play_status_rsp_t *p_rsp_t = (rtk_bt_avrcp_get_play_status_rsp_t *)param;
+
+		if (p_rsp_t->state == 0) {
+			BT_LOGA("[AVRCP] Get play status successfully from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					p_rsp_t->bd_addr[5], p_rsp_t->bd_addr[4], p_rsp_t->bd_addr[3], p_rsp_t->bd_addr[2], p_rsp_t->bd_addr[1], p_rsp_t->bd_addr[0]);
+			BT_LOGA("[AVRCP] play status is 0x%x, total song length is %d, position is %d \r\n",
+					p_rsp_t->play_status, p_rsp_t->length_ms, p_rsp_t->position_ms);
+		}
+		break;
+	}
+
 	case RTK_BT_AVRCP_EVT_ABSOLUTE_VOLUME_SET: {
 		rtk_bt_avrcp_absolute_volume_set_t *p_avrcp_absolute_volume_set_t = (rtk_bt_avrcp_absolute_volume_set_t *)param;
 		uint8_t volume = p_avrcp_absolute_volume_set_t->volume;
@@ -2364,6 +2376,12 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		}
 		break;
 		}
+		break;
+	}
+
+	case RTK_BT_AVRCP_EVT_TRACK_CHANGED: {
+		rtk_bt_avrcp_track_changed_t *p_track_t = (rtk_bt_avrcp_track_changed_t *)param;
+		BT_LOGA("[AVRCP]: Track changed id 0x%x \r\n", p_track_t->track_id);
 		break;
 	}
 
@@ -3154,16 +3172,6 @@ int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable)
 				memset((void *)&a2dp_task, 0, sizeof(struct a2dp_demo_task_t));
 			}
 		}
-		app_server_deinit();
-		BT_APP_PROCESS(general_client_delete());
-		BT_APP_PROCESS(bas_client_delete());
-		BT_APP_PROCESS(gaps_client_delete());
-		BT_APP_PROCESS(simple_ble_client_delete());
-
-		/* no need to unreg callback here, it is done in rtk_bt_disable */
-		// BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_LE_GP_GAP));
-		// BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_LE_GP_GATTS));
-		// BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_LE_GP_GATTC));
 
 		/* Disable BT */
 		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_GAP));
@@ -3179,6 +3187,12 @@ int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable)
 #endif
 		/* Disable BT */
 		BT_APP_PROCESS(rtk_bt_disable());
+
+		app_server_deinit();
+		BT_APP_PROCESS(general_client_delete());
+		BT_APP_PROCESS(bas_client_delete());
+		BT_APP_PROCESS(gaps_client_delete());
+		BT_APP_PROCESS(simple_ble_client_delete());
 		/* audio related resources release */
 		rtk_bt_audio_deinit();
 		a2dp_demo_audio_track_hdl = NULL;

@@ -42,11 +42,11 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-#ifdef CONFIG_AS_INIC_AP
+#ifdef CONFIG_WHC_HOST
 #include "whc_ipc.h"
 #endif
 
-#if defined(CONFIG_AS_INIC_NP) && defined(CONFIG_WHC_DUAL_TCPIP)
+#if defined(CONFIG_WHC_DEV) && defined(CONFIG_WHC_DUAL_TCPIP)
 unsigned char ap_ip[4] = {192, 168, 43, 1}, ap_netmask[4] = {255, 255, 255, 0}, ap_gw[4] = {192, 168, 43, 1};
 #endif
 
@@ -210,7 +210,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 		switch (DHCP_state) {
 		case DHCP_START: {
 			/*acqurie wakelock to guarantee dhcp*/
-#ifndef CONFIG_AS_INIC_AP
+#ifndef CONFIG_WHC_HOST
 			rtw_wakelock_timeout(4 * 1000);
 #endif
 

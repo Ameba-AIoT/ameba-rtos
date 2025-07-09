@@ -45,7 +45,7 @@ static void dslp_wake_handler(void)
 		InterruptEn(AON_TIM_IRQ, 3);
 	}
 
-#if defined(CONFIG_AMEBASMART)
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAGREEN2)
 	if (BootReason & (AON_BIT_GPIO_PIN0_WAKDET_EVT | AON_BIT_GPIO_PIN1_WAKDET_EVT | AON_BIT_GPIO_PIN2_WAKDET_EVT | AON_BIT_GPIO_PIN3_WAKDET_EVT))
 #else
 	if (BootReason & (AON_BIT_GPIO_PIN0_WAKDET_EVT | AON_BIT_GPIO_PIN1_WAKDET_EVT))

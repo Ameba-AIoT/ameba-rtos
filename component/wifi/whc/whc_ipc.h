@@ -33,9 +33,9 @@
 /* -------------------------------- Defines --------------------------------- */
 /*msg q task*/
 #define CONFIG_INIC_IPC_MSG_Q_PRI	(6)
-#if defined(CONFIG_AS_INIC_AP)
+#if defined(CONFIG_WHC_HOST)
 #define WIFI_STACK_SIZE_INIC_MSG_Q	(608 + 128 + CONTEXT_SAVE_SIZE) /* max 600 in smart */
-#elif defined(CONFIG_AS_INIC_NP)
+#elif defined(CONFIG_WHC_DEV)
 #define WIFI_STACK_SIZE_INIC_MSG_Q	(688 + 128 + CONTEXT_SAVE_SIZE) /* max 688 in smart */
 #endif
 

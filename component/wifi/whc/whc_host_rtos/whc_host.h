@@ -67,12 +67,10 @@ struct whc_msg_info {
 	u32	pad_len;
 };
 
-#if defined(CONFIG_WHC_BRIDGE_HOST)
-struct whc_bridge_hdr {
+struct whc_cmd_path_hdr {
 	u32	event;
 	u32	len;
 };
-#endif
 
 struct event_func_t {
 	u32 api_id;

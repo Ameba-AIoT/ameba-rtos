@@ -27,6 +27,10 @@
 #define GPIO_LED_PIN			_PB_3	// SWD_CLK
 #define GPIO_JTAG_ENABLE_PIN	_PA_13
 
+#elif defined (CONFIG_AMEBAGREEN2)
+#define GPIO_LED_PIN			_PA_18	// SWD_CLK
+#define GPIO_JTAG_ENABLE_PIN	_PA_26
+
 #endif
 extern int example_mbed_gpio_jtag(void);
 #endif

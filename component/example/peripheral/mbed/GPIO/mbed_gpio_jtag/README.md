@@ -24,6 +24,9 @@ This example describes how to use disable JTAG module and use GPIO pin to blink 
   - On AmebaDplus, connect as below
     - Connect a push button to `GPIO_JTAG_ENABLE_PIN _PA_12` and GND
     - Connect a LED to `GPIO_LED_PIN _PA_30` and GND
+  - On AmebaGreen2, connect as below
+    - Connect a push button to `GPIO_JTAG_ENABLE_PIN _PA_26` and GND
+    - Connect a LED to `GPIO_LED_PIN _PA_18` and GND
 
 # SW configuration
 
@@ -50,3 +53,4 @@ None.
 - AmebaLite
 - AmebaDplus
 - AmebaD
+- AmebaGreen2

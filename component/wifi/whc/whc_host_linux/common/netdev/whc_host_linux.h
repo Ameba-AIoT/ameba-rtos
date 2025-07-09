@@ -128,6 +128,9 @@
 
 #ifndef CONFIG_WHC_BRIDGE
 #include "whc_fullmac_host_regd.h"
+#ifdef CONFIG_IEEE80211R
+#include "whc_fullmac_host_ft.h"
+#endif
 #include "whc_fullmac_host_cfgvendor.h"
 #include "whc_fullmac_host_proc.h"
 #include "whc_fullmac_host_acs.h"

@@ -33,6 +33,14 @@ static const char *const TAG = "SPORT";
 
 SP_RegTypeDef SP_RegFlag[4] = { {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
 
+static u32 DIRECT_ABC_TABLE[4][3] = {
+	{1, 2, 3},
+	{0, 2, 3},
+	{0, 1, 3},
+	{0, 1, 2},
+};
+
+
 /**
   * @}
   */
@@ -1935,7 +1943,8 @@ void AUDIO_SP_TXSetDirectRegStart(u32 index, u32 reg_chn, u32 NewState)
 
 /**
   * @brief  Select SPORT direct reg's source.
-  * @param  index: select SPORT.
+  * @param  dst_index: select dst SPORT.
+  * @param  src_index: select src SPORT.
   * @param  reg_chn: direct reg channel.
   *            @This parameter can be one of the following values:
   *			 @arg DIRECT_REG_0
@@ -1958,42 +1967,64 @@ void AUDIO_SP_TXSetDirectRegStart(u32 index, u32 reg_chn, u32 NewState)
   *			 @arg DIRECT_IN_CHN7
   * @retval None
   */
-void AUDIO_SP_TXDirectRegSel(u32 index, u32 reg_chn, u32 direct_in_chn)
+void AUDIO_SP_TXDirectRegSel(u32 dst_index, u32 src_index, u32 reg_chn, u32 direct_in_chn)
 {
-	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	assert_param(IS_SP_DIRREG_CH(reg_chn));
+	assert_param(IS_SP_DIRIN_CH(direct_in_chn));
+
+	if (dst_index == src_index) {
+		RTK_LOGE(TAG, "dst_index(%lu) and src_index(%lu) cannot be the same!\n", dst_index, src_index);
+		return;
+	}
+
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[dst_index].SPORTx;
+
+	int32_t abc_index = -1;
+	for (u32 i = 0; i < 3; i++) {
+		if (DIRECT_ABC_TABLE[dst_index][i] == src_index) {
+			abc_index = i;
+		}
+	}
+
+	if (abc_index < 0) {
+		RTK_LOGE(TAG, "can't find abc_index for sport(%lu->%lu)\n", src_index, dst_index);
+		return;
+	}
+
+	u32 refined_direct_in_chn = abc_index * 8 + direct_in_chn;
 
 	switch (reg_chn) {
 	case DIRECT_REG_0:
 		SPORTx->SP_DIRECT_CTRL1 &= ~SP_MASK_DIRECT_REG_0_SEL;
-		SPORTx->SP_DIRECT_CTRL1 |= SP_DIRECT_REG_0_SEL(direct_in_chn);
+		SPORTx->SP_DIRECT_CTRL1 |= SP_DIRECT_REG_0_SEL(refined_direct_in_chn);
 		break;
 	case DIRECT_REG_1:
 		SPORTx->SP_DIRECT_CTRL1 &= ~SP_MASK_DIRECT_REG_1_SEL;
-		SPORTx->SP_DIRECT_CTRL1 |= SP_DIRECT_REG_1_SEL(direct_in_chn);
+		SPORTx->SP_DIRECT_CTRL1 |= SP_DIRECT_REG_1_SEL(refined_direct_in_chn);
 		break;
 	case DIRECT_REG_2:
 		SPORTx->SP_DIRECT_CTRL1 &= ~SP_MASK_DIRECT_REG_2_SEL;
-		SPORTx->SP_DIRECT_CTRL1 |= SP_DIRECT_REG_2_SEL(direct_in_chn);
+		SPORTx->SP_DIRECT_CTRL1 |= SP_DIRECT_REG_2_SEL(refined_direct_in_chn);
 		break;
 	case DIRECT_REG_3:
 		SPORTx->SP_DIRECT_CTRL1 &= ~SP_MASK_DIRECT_REG_3_SEL;
-		SPORTx->SP_DIRECT_CTRL1 |= SP_DIRECT_REG_3_SEL(direct_in_chn);
+		SPORTx->SP_DIRECT_CTRL1 |= SP_DIRECT_REG_3_SEL(refined_direct_in_chn);
 		break;
 	case DIRECT_REG_4:
 		SPORTx->SP_DIRECT_CTRL2 &= ~SP_MASK_DIRECT_REG_4_SEL;
-		SPORTx->SP_DIRECT_CTRL2 |= SP_DIRECT_REG_4_SEL(direct_in_chn);
+		SPORTx->SP_DIRECT_CTRL2 |= SP_DIRECT_REG_4_SEL(refined_direct_in_chn);
 		break;
 	case DIRECT_REG_5:
 		SPORTx->SP_DIRECT_CTRL2 &= ~SP_MASK_DIRECT_REG_5_SEL;
-		SPORTx->SP_DIRECT_CTRL2 |= SP_DIRECT_REG_5_SEL(direct_in_chn);
+		SPORTx->SP_DIRECT_CTRL2 |= SP_DIRECT_REG_5_SEL(refined_direct_in_chn);
 		break;
 	case DIRECT_REG_6:
 		SPORTx->SP_DIRECT_CTRL2 &= ~SP_MASK_DIRECT_REG_6_SEL;
-		SPORTx->SP_DIRECT_CTRL2 |= SP_DIRECT_REG_6_SEL(direct_in_chn);
+		SPORTx->SP_DIRECT_CTRL2 |= SP_DIRECT_REG_6_SEL(refined_direct_in_chn);
 		break;
 	case DIRECT_REG_7:
 		SPORTx->SP_DIRECT_CTRL2 &= ~SP_MASK_DIRECT_REG_7_SEL;
-		SPORTx->SP_DIRECT_CTRL2 |= SP_DIRECT_REG_7_SEL(direct_in_chn);
+		SPORTx->SP_DIRECT_CTRL2 |= SP_DIRECT_REG_7_SEL(refined_direct_in_chn);
 		break;
 	default:
 		RTK_LOGE(TAG, "please check direct reg value!\n");

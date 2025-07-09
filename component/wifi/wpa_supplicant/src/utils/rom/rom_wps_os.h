@@ -12,7 +12,7 @@
 #include "rtw_autoconf.h"
 
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBADPLUS) || defined(CONFIG_AMEBASMARTPLUS)
-#ifndef CONFIG_AS_INIC_AP
+#ifndef CONFIG_WHC_HOST
 #include <wifi_intf_ram_to_rom.h>
 #define os_malloc(sz) p_wifi_rom_func_map->zmalloc(sz, 1)
 #define os_free(p, sz) p_wifi_rom_func_map->mfree(p)

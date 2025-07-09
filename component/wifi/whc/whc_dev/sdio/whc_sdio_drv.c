@@ -120,7 +120,7 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 	} else if (event == WHC_CUST_EVT) {
 		whc_dev_recv_cust_evt(pdata);
 #endif
-	} else if (event >= WHC_BT_EVT_BASE) {
+	} else if (event >= WHC_BT_EVT_BASE && event <= WHC_BT_EVT_MAX) {
 		/* copy by bt, skb no change */
 		if (bt_inic_sdio_recv_ptr) {
 			bt_inic_sdio_recv_ptr(pdata, SPDIO_RX_BUFSZ);
@@ -146,7 +146,7 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 	return RTK_SUCCESS;
 }
 
-void whc_sdio_dev_init(void)
+void whc_sdio_dev_device_init(void)
 {
 	u32 i;
 	struct sk_buff *skb = NULL;

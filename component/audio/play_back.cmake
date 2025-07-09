@@ -12,7 +12,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # You may use if-else condition to set or update predefined variable above
 
 ameba_list_append_if(CONFIG_MEDIA_PLAYER public_libraries
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_play_back.a
+    ${c_SDK_LIB_APPLICATION_DIR}/lib_playback.a
 )
 
 # Component public part, user config end
@@ -46,7 +46,7 @@ set(private_compile_options)         #private compile_options
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 
-ameba_add_merge_app_library(play_back
+ameba_add_merge_app_library(playback
     audio_media_common
     audio_media_codec_omx
     audio_media_codec_common_amrnb
