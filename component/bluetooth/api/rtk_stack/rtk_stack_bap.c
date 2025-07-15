@@ -1775,10 +1775,13 @@ static bool bt_stack_le_audio_broadcast_establish(void)
 	big_param.rtn = bt_le_audio_priv_data.bsrc.prefer_qos.retransmission_number;
 #if (RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG == RTK_BT_ISO_INTERVAL_20_MS)
 	big_param.max_transport_latency = 60;
+	BT_LOGA("[LEA STACK] %s: ISO interval=20 ms \r\n", __func__);
 #elif (RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG == RTK_BT_ISO_INTERVAL_30_MS)
 	big_param.rtn = 3;
 	big_param.max_transport_latency = 80;
+	BT_LOGA("[LEA STACK] %s: ISO interval=30 ms \r\n", __func__);
 #else
+	BT_LOGA("[LEA STACK] %s: ISO interval=10 ms \r\n", __func__);
 	//use default prefer qos value
 #endif
 	big_param.phy = RTK_BT_LE_AUDIO_BROADCAST_SOURCE_PHY;

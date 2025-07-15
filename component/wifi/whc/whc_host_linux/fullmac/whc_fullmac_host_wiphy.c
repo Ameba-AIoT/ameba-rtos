@@ -322,7 +322,6 @@ int rtw_wiphy_init(void)
 #endif
 #ifdef CONFIG_P2P
 	whc_host_ops_p2p_init();
-	INIT_WORK(&global_idev.netdev_work.work, whc_fullmac_host_p2p_netdev_work_func);
 #endif
 	pwiphy = wiphy_new(&global_idev.rtw_cfg80211_ops, 0);
 	if (!pwiphy) {

@@ -4,6 +4,7 @@
 #include "basic_types.h"
 #include "audio/audio_type.h"
 #include "audio/audio_manager.h"
+#include "audio/audio_control.h"
 #include "example_audio_manager.h"
 
 #define EXAMPLE_MANAGER_DEBUG(fmt, args...)    printf("=> D/AudioManagerExample:[%s]: " fmt "\n", __func__, ## args)
@@ -31,6 +32,7 @@ void example_audio_manager_thread(void *param)
 {
 	(void) param;
 	EXAMPLE_MANAGER_DEBUG("Audio manager demo begin.");
+	rtos_time_delay_ms(500);
 
 	uint32_t format;
 	switch (g_format) {
@@ -73,6 +75,10 @@ void example_audio_manager_thread(void *param)
 		sinks[0].node.device = RTDEVICE_OUT_SPEAKER;
 
 		int32_t patch_index = RTAudioManager_CreateAudioPatch(audio_manager, 1, sources, 1, sinks);
+
+		if (sinks[0].node.device == RTDEVICE_OUT_SPEAKER) {
+			RTAudioControl_SetHardwareVolume(0.5, 0.5);
+		}
 
 #if PRESSURE_TEST
 		rtos_time_delay_ms(100000);

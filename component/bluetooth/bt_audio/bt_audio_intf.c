@@ -237,6 +237,7 @@ static void bt_audio_parsing_recv_stream(uint32_t type, rtk_bt_audio_track_t *tr
 	uint8_t codec_header_flag = 0;
 	uint32_t pcm_data_size;
 	uint16_t err = RTK_BT_AUDIO_FAIL;
+	uint16_t ret = RTK_BT_AUDIO_OK;
 
 	/* judge whether already initialized */
 	if (!bt_audio_init_flag) {
@@ -305,13 +306,15 @@ static void bt_audio_parsing_recv_stream(uint32_t type, rtk_bt_audio_track_t *tr
 						(int)param.bits);
 			} else {
 				if (track->pcm_data_cb) {
-					track->pcm_data_cb(pdecode_frame_buffer->pbuffer, pcm_data_size, (void *)entity, (void *)track);
+					ret = track->pcm_data_cb(pdecode_frame_buffer->pbuffer, pcm_data_size, (void *)entity, (void *)track);
 				}
-				if (track->audio_track_hdl) {
-					if (!track->audio_sync_flag) {
-						do_audio_track_write(track, (uint8_t *)pdecode_frame_buffer->pbuffer, (uint16_t)pcm_data_size);
-					} else {
-						do_audio_sync_flow(track, i, ts_us, (uint8_t **)&pdecode_frame_buffer->pbuffer, &pcm_data_size);
+				if (ret == RTK_BT_AUDIO_OK) {
+					if (track->audio_track_hdl) {
+						if (!track->audio_sync_flag) {
+							do_audio_track_write(track, (uint8_t *)pdecode_frame_buffer->pbuffer, (uint16_t)pcm_data_size);
+						} else {
+							do_audio_sync_flow(track, i, ts_us, (uint8_t **)&pdecode_frame_buffer->pbuffer, &pcm_data_size);
+						}
 					}
 				}
 			}

@@ -71,12 +71,13 @@ enum {
  */
 enum {
 	/** play through speaker */
-	AMEBA_AUDIO_DEVICE_SPEAKER         = 0,
-	/** play through headphone*/
-	AMEBA_AUDIO_DEVICE_HEADPHONE       = 1,
+	AMEBA_AUDIO_DEVICE_NONE            = 0,
+	/** play through speaker */
+	AMEBA_AUDIO_DEVICE_SPEAKER         = 1,
 	/** play through I2S*/
 	AMEBA_AUDIO_DEVICE_I2S             = 2,
-	AMEBA_AUDIO_DEVICE_MAX_NUM         = 3,
+	/** play through headphone*/
+	AMEBA_AUDIO_DEVICE_HEADPHONE       = 4,
 };
 
 /**
@@ -87,10 +88,9 @@ enum {
  */
 enum {
 	/** microphones */
-	AMEBA_AUDIO_IN_MIC                 = 0,
+	AMEBA_AUDIO_IN_MIC                 = 0x8000001u,
 	/** play through headphone*/
-	AMEBA_AUDIO_IN_I2S                 = 1,
-	AMEBA_AUDIO_IN_MAX_NUM             = 2,
+	AMEBA_AUDIO_IN_I2S                 = 0x8000004u,
 };
 
 /**
@@ -115,6 +115,20 @@ enum {
 enum {
 	AMEBA_AUDIO_MICBST_LINEIN    = 0,
 	AMEBA_AUDIO_MICBST_MICIN     = 1,
+};
+
+/**
+ * @brief Defines the audio patch config.
+ */
+struct AmebaAudioPatchConfig {
+	/** rate of the sample */
+	uint32_t sample_rate;
+	/** channel count of the sample */
+	uint32_t channel_count;
+	/** format of the sample */
+	int32_t format;
+	/** audio patch device */
+	int32_t device;
 };
 
 #ifdef __cplusplus

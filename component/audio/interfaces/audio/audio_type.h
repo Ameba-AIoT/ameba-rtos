@@ -93,6 +93,8 @@ enum {
     RTDEVICE_OUT_SPEAKER        = 0x1u,
     /** audio device i2s out */
     RTDEVICE_OUT_I2S            = 0x2u,
+    /** audio device i2s out */
+    RTDEVICE_OUT_HEADPHONE      = 0x4u,
     /** input device analog microphone */
     RTDEVICE_IN_MIC             = 0x8000001u,
     /** input device digital microphone */

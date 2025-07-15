@@ -62,9 +62,9 @@ void server_thread(void *param)
 	while (!g_server_terminate) {
 		rc = iperf_run_server(test);
 		if (rc < 0) {
-			iperf_err(test, "error - %s", iperf_strerror(i_errno));
+			iperf_err(test, "error - %s\n", iperf_strerror(i_errno));
 			if (rc < -1) {
-				iperf_err(test, "exiting");
+				iperf_err(test, "exiting\n");
 			}
 		}
 
@@ -72,6 +72,7 @@ void server_thread(void *param)
 		if (iperf_get_test_one_off(test)) {
 			break;
 		}
+		rtos_time_delay_ms(5);
 	}
 
 	iperf_free_test(test);
@@ -119,8 +120,10 @@ static void indicate_server(void)
 /**************************************************************************/
 
 
-void cmd_iperf3(int argc, char **argv)
+int cmd_iperf3(int argc, char **argv)
 {
+	int error_no = 0;
+
 	if (strcmp(argv[1], "stop") == 0) {
 		switch (test->role) {
 		case 's':
@@ -163,6 +166,8 @@ void cmd_iperf3(int argc, char **argv)
 		printf("\n");
 		usage_long(stdout);
 		iperf_free_test(test);
+		error_no = 2;
+		i_errno = IENONE;
 		goto Exit;
 	}
 
@@ -184,5 +189,5 @@ void cmd_iperf3(int argc, char **argv)
 		break;
 	}
 Exit:
-	return;
+	return error_no;
 }

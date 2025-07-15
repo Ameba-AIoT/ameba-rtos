@@ -18,7 +18,6 @@
 #ifndef WIFI_CONF_CAST_H
 #define WIFI_CONF_CAST_H
 
-#include "rtw_wifi_constants.h"
 #include "wifi_api.h"
 #include "wifi_intf_drv_to_app_internal.h"
 #include "os_wrapper.h"

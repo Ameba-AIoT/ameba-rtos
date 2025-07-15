@@ -30,8 +30,8 @@ static void example_wsclient_thread(void *param)
 	int ret;
 
 	//Please set MBEDTLS_SSL_MAX_CONTENT_LEN to 16384
-	//wsclient_context *wsclient = create_wsclient("wss://websocket-echo.com", 0, NULL, NULL, 1500, 3);
-	wsclient_context *wsclient = create_wsclient("ws://websocket-echo.com", 0, NULL, NULL, 1500, 3);
+	//wsclient_context *wsclient = create_wsclient("wss://websocket-echo.com", 0, NULL, NULL, 1500, 1500, 3);
+	wsclient_context *wsclient = create_wsclient("ws://websocket-echo.com", 0, NULL, NULL, 1500, 1500, 3);
 
 	if (wsclient != NULL) {
 

@@ -532,9 +532,9 @@ float ameba_audio_ctl_pll_clock_tune(StreamControl *control, uint32_t rate, floa
 	}
 
 	if (rate % 8000 == 0) {
-		tuned_ppm = PLL_I2S_98P304M_ClkTune(ppm, action);
+		tuned_ppm = PLL_I2S_98P304M_ClkTune(NULL, ppm, action);
 	} else {
-		tuned_ppm = PLL_I2S_45P158M_ClkTune(ppm, action);
+		tuned_ppm = PLL_I2S_45P158M_ClkTune(NULL, ppm, action);
 	}
 
 	return tuned_ppm;

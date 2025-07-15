@@ -709,7 +709,7 @@ int usbd_cdc_acm_init(u16 bulk_out_xfer_size, u16 bulk_in_xfer_size, usbd_cdc_ac
 	usbd_ep_t *ep_bulk_in = &cdc->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdc->ep_bulk_out;
 #if CONFIG_CDC_ACM_NOTIFY
-	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
+	usbd_ep_t *ep_intr_in = &cdc->ep_intr_in;
 #endif
 
 	ep_bulk_out->addr = CDC_ACM_BULK_OUT_EP;
@@ -735,7 +735,7 @@ int usbd_cdc_acm_init(u16 bulk_out_xfer_size, u16 bulk_in_xfer_size, usbd_cdc_ac
 #if CONFIG_CDC_ACM_NOTIFY
 	ep_intr_in->addr = CDC_ACM_INTR_IN_EP;
 	ep_intr_in->type = USB_CH_EP_TYPE_INTR;
-	ep_intr_in->xfer_buf = (usbd_cdc_acm_ntf_t *)usb_os_malloc(sizeof(usbd_cdc_acm_ntf_t));
+	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(sizeof(usbd_cdc_acm_ntf_t));
 	if (ep_intr_in->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
 		goto USBD_CDC_Init_clean_bulk_in_buf_exit;

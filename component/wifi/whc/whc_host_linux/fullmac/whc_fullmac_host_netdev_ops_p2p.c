@@ -87,34 +87,6 @@ const struct net_device_ops whc_fullmac_host_ndev_ops_p2p = {
 #endif
 };
 
-void whc_fullmac_host_p2p_netdev_work_func(struct work_struct *work)
-{
-	struct netdev_work *nw = container_of(work, struct netdev_work, work);
-
-	rtnl_lock();
-	if (nw->op == NETDEV_REGISTER) {
-		dev_dbg(global_idev.fullmac_dev,"Delayed register_netdevice executed for %s\n", global_idev.pndev[1]->name);
-		if (register_netdevice(global_idev.pndev[1]) != 0) {
-			dev_err(global_idev.fullmac_dev, "%s: register fail!\n",__func__);
-		}
-
-	} else if (nw->op == NETDEV_UNREGISTER) {
-		dev_dbg(global_idev.fullmac_dev,"Delayed unregister_netdevice executed for %s\n", global_idev.pndev[1]->name);
-		unregister_netdevice(global_idev.pndev[1]);
-		kfree((u8 *)global_idev.pwdev_global[1]);
-		global_idev.pwdev_global[1] = NULL;
-		global_idev.pndev[1]->ieee80211_ptr = NULL;
-	}
-	rtnl_unlock();
-}
-
-static void schedule_netdev_work(int op)
-{
-	cancel_work_sync(&global_idev.netdev_work.work);
-	global_idev.netdev_work.op = op;
-	schedule_work(&global_idev.netdev_work.work);
-}
-
 int whc_fullmac_host_ndev_p2p_register(enum nl80211_iftype type, const char *name, u8 wlan_idx)
 {
 	int ret = false;
@@ -170,7 +142,15 @@ int whc_fullmac_host_ndev_p2p_register(enum nl80211_iftype type, const char *nam
 		dev_err(global_idev.fullmac_dev, "dev_alloc_name, fail!\n");
 	}
 	netif_carrier_off(global_idev.pndev[wlan_idx]);
-	schedule_netdev_work(NETDEV_REGISTER);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
+	ret = (cfg80211_register_netdevice(global_idev.pndev[wlan_idx]) == 0) ? true : false;
+#else
+	ret = (register_netdevice(global_idev.pndev[wlan_idx]) == 0) ? true : false;
+#endif
+	if (ret != true) {
+		dev_err(global_idev.fullmac_dev, "netdevice register fail!\n");
+		goto dev_fail;
+	}
 
 	if (type == NL80211_IFTYPE_P2P_GO) {
 		whc_fullmac_host_set_p2p_role(P2P_ROLE_GO);
@@ -215,7 +195,15 @@ int whc_fullmac_host_p2p_iface_alloc(struct wiphy *wiphy, const char *name,
 		memset(&(global_idev.p2p_global), 0, sizeof(struct p2p_priv_t));
 		/*step0: unregister original softap netdev and wdev for later P2P GO usage*/
 		if (global_idev.pwdev_global[1]) {
-			schedule_netdev_work(NETDEV_UNREGISTER);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
+			cfg80211_unregister_netdevice(global_idev.pndev[1]);
+#else
+			unregister_netdevice(global_idev.pndev[1]);
+#endif
+			kfree((u8 *)global_idev.pwdev_global[1]);
+			global_idev.pwdev_global[1] = NULL;
+			/* remove wireless_dev in ndev. */
+			global_idev.pndev[1]->ieee80211_ptr = NULL;
 		}
 		old_wdev = global_idev.p2p_global.pd_pwdev;
 	}

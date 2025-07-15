@@ -3438,15 +3438,14 @@ int ble_mesh_provisioner_scatternet_main(uint8_t enable)
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_DFU_STANDALONE_UPDATER_MODEL, ble_mesh_device_firmware_update_standlone_role_app_callback));
 #endif
 	} else if (0 == enable) {
+		/* Disable BT */
+		BT_APP_PROCESS(rtk_bt_disable());
 
 		app_server_deinit();
 		BT_APP_PROCESS(general_client_delete());
 		BT_APP_PROCESS(bas_client_delete());
 		BT_APP_PROCESS(gaps_client_delete());
 		BT_APP_PROCESS(simple_ble_client_delete());
-
-		/* Disable BT */
-		BT_APP_PROCESS(rtk_bt_disable());
 	}
 
 	return 0;
