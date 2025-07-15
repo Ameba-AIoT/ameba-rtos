@@ -88,7 +88,6 @@ int whc_fullmac_host_p2p_iface_alloc(struct wiphy *wiphy, const char *name,
 void whc_fullmac_host_p2p_iface_free(struct wiphy *wiphy, struct wireless_dev *wdev);
 void whc_fullmac_host_p2p_pdwdev_free(void);
 int whc_fullmac_host_p2p_get_wdex_idx(struct wireless_dev *wdev);
-void whc_fullmac_host_p2p_netdev_work_func(struct work_struct *work);
 #endif
 int whc_fullmac_host_set_pmf_mode(u8 pmf_mode);
 int whc_fullmac_host_set_wps_phase(u8 enable);

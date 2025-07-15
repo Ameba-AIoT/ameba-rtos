@@ -21,17 +21,6 @@
   * @{
   */
 
-/** @brief SDIO CFG Structure Definition
- */
-typedef struct {
-	u32 sdio_clk_pin;		/*!< Specify CLK pin, refer to pinmux table */
-	u32 sdio_cmd_pin;		/*!< Specify CMD pin, refer to pinmux table */
-	u32 sdio_d0_pin;		/*!< Specify D0 pin, refer to pinmux table */
-	u32 sdio_d1_pin;		/*!< Specify D1 pin, refer to pinmux table */
-	u32 sdio_d2_pin;		/*!< Specify D2 pin, refer to pinmux table */
-	u32 sdio_d3_pin;		/*!< Specify D3 pin, refer to pinmux table */
-} SDIOCFG_TypeDef;
-
 typedef struct {
 	/* TXBD */
 	u32 TXBD_BAR;			/*!< Specifies TXBD base address */

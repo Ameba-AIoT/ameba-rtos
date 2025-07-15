@@ -93,6 +93,7 @@ static usbd_config_t cmd_usbd_verify_cfg = {
 #if defined(CONFIG_AMEBASMART)
 	/* EOPF for ISOC OUT */
 	.ext_intr_en = USBD_EOPF_INTR | USBD_EPMIS_INTR,
+	.nptx_max_epmis_cnt = 100U,
 	/*DFIFO total 1024 DWORD, resv 8 DWORD for DMA addr*/
 #elif defined (CONFIG_AMEBAGREEN2)
 	/*DFIFO total 1024 DWORD, resv 12 DWORD for DMA addr and EP0 fixed 32 DWORD*/

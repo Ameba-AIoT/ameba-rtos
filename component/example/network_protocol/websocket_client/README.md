@@ -31,7 +31,7 @@ None
 2. If using the WS server:
    - `example_websocket_client.c`
 		```C
-		wsclient_context *wsclient = create_wsclient("ws://websocket-echo.com", 0, NULL, NULL, 1500, 3);
+		wsclient_context *wsclient = create_wsclient("ws://websocket-echo.com", 0, NULL, NULL, 1500, 1500, 3);
 		```
 
 3. If using the WSS server:
@@ -43,7 +43,7 @@ None
 
    - `example_websocket_client.c`
 		```C
-		wsclient_context *wsclient = create_wsclient("wss://websocket-echo.com", 0, NULL, NULL, 1500, 3);
+		wsclient_context *wsclient = create_wsclient("wss://websocket-echo.com", 0, NULL, NULL, 1500, 1500, 3);
 		```
 
 4. If encounter the following errors in an SSL connection. Set `MBEDTLS_SSL_IN_CONTENT_LEN` by `./menuconfig.py` and choose `CONFIG SSL`-> `Maximum len of incoming fragments` -> set large size.

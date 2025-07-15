@@ -17,6 +17,25 @@
 #include <atcmd_bt_impl.h>
 #include <rtk_bt_br_gap.h>
 
+static int atcmd_bt_avrcp_play_status_change_req(int argc, char **argv)
+{
+	(void)argc;
+	char addr_str[30] = {0};
+	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
+	uint8_t status = 0;
+
+	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
+	status = (uint8_t)str_to_int(argv[1]);
+	if (rtk_bt_avrcp_play_status_change_req(bd_addr, status)) {
+		BT_LOGE("AVRCP play status change req set fail\r\n");
+		return -1;
+	}
+	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
+	BT_LOGA("AVRCP send play status change req to %s ...\r\n", addr_str);
+
+	return 0;
+}
+
 static int atcmd_bt_avrcp_play(int argc, char **argv)
 {
 	(void)argc;
@@ -372,6 +391,7 @@ static int atcmd_bt_avrcp_get_play_status(int argc, char **argv)
 }
 
 static const cmd_table_t avrcp_cmd_table[] = {
+	{"play_status_change_req",  atcmd_bt_avrcp_play_status_change_req,  3, 3},
 	{"play",                    atcmd_bt_avrcp_play,                    2, 2},
 	{"pause",                   atcmd_bt_avrcp_pause,                   2, 2},
 	{"stop",                    atcmd_bt_avrcp_stop,                    2, 2},

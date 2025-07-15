@@ -23,7 +23,7 @@ list(
     ${DIR_COMMON}/wififw_ra_ll.c
     ${DIR_COMMON}/wififw_interrupt_handle_com.c
     ${DIR_COMMON}/wififw_ra_debug.c
-    ${DIR_COMMON}/wififw_wowlan_common.c
+    ${DIR_COMMON}/wififw_ps_dbg.c
     ${DIR_COMMON}/wififw_lpsofld_common.c
     ${DIR_COMMON}/wififw_keepalive_common.c
     ${DIR_COMMON}/wififw_disconchk_common.c

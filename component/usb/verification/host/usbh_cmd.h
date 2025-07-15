@@ -30,6 +30,8 @@ int cmd_usbh_suspend_test(void);
 
 int cmd_usbh_xfer_test(u16 argc, u8  *argv[]);
 
+int cmd_usbh_cdc_acm_test(u16 argc, u8  *argv[]);
+
 int cmd_usbh_verify_test_entry(u16 argc, u8  *argv[]);
 
 #endif /* USBH_CMD_H */

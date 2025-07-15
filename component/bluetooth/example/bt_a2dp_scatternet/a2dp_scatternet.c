@@ -2790,11 +2790,10 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 	break;
 
 	case RTK_BT_A2DP_EVT_STREAM_START_RSP: {
-		rtk_bt_a2dp_stream_start_t *pa2dp_stream = (rtk_bt_a2dp_stream_start_t *)param;
+		uint8_t *bd_addr = (uint8_t *)param;
 
-		BT_LOGA("[A2DP] BT_EVENT_A2DP_STREAM_START_IND active_a2dp_idx %d, streaming_fg %d \r\n",
-				pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
-
+		BT_LOGA("[A2DP] RTK_BT_A2DP_EVT_STREAM_START_RSP from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		{
 			if (a2dp_task.hdl) {
 				BT_LOGA("[A2DP Demo] Start Test Demo \r\n");
@@ -2817,6 +2816,7 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 			}
 			app_a2dp_src_send_flag = true;
 		}
+		rtk_bt_avrcp_play_status_change_req(bd_addr, RTK_BT_AVRCP_STATUS_PLAYING);
 	}
 	break;
 
@@ -2829,6 +2829,7 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
 			app_a2dp_src_send_flag = false;
+			rtk_bt_avrcp_play_status_change_req(bd_addr, RTK_BT_AVRCP_STATUS_STOPPED);
 		}
 		if (a2dp_demo_audio_track_hdl) {
 			rtk_bt_audio_track_pause(a2dp_demo_audio_track_hdl->audio_track_hdl);
@@ -3172,16 +3173,6 @@ int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable)
 				memset((void *)&a2dp_task, 0, sizeof(struct a2dp_demo_task_t));
 			}
 		}
-		app_server_deinit();
-		BT_APP_PROCESS(general_client_delete());
-		BT_APP_PROCESS(bas_client_delete());
-		BT_APP_PROCESS(gaps_client_delete());
-		BT_APP_PROCESS(simple_ble_client_delete());
-
-		/* no need to unreg callback here, it is done in rtk_bt_disable */
-		// BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_LE_GP_GAP));
-		// BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_LE_GP_GATTS));
-		// BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_LE_GP_GATTC));
 
 		/* Disable BT */
 		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_GAP));
@@ -3197,6 +3188,12 @@ int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable)
 #endif
 		/* Disable BT */
 		BT_APP_PROCESS(rtk_bt_disable());
+
+		app_server_deinit();
+		BT_APP_PROCESS(general_client_delete());
+		BT_APP_PROCESS(bas_client_delete());
+		BT_APP_PROCESS(gaps_client_delete());
+		BT_APP_PROCESS(simple_ble_client_delete());
 		/* audio related resources release */
 		rtk_bt_audio_deinit();
 		a2dp_demo_audio_track_hdl = NULL;

@@ -56,6 +56,11 @@ ameba_list_append_if(CONFIG_AMEBADPLUS private_sources
     ${c_SOC_TYPE}/ameba_audio_stream_audio_patch.c
 )
 
+ameba_list_append_if(CONFIG_AMEBASMART private_sources
+    ${c_SOC_TYPE}/ameba_audio_stream_audio_patch.c
+)
+
+
 ameba_list_append(private_includes
     ${c_CMPT_AUDIO_DIR}/interfaces
     ${c_CMPT_AUDIO_DIR}/base/cutils/interfaces

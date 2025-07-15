@@ -452,6 +452,7 @@ static ssize_t PureDataRead(struct AudioHwStreamIn *stream, void *buffer, size_t
 		}
 		HAL_AUDIO_VERBOSE("read bytes:%u, driver_bytes:%lu", bytes, driver_bytes);
 		ret = ameba_audio_stream_rx_read(cap->in_pcm, cap->stream_buf, driver_bytes, time_out_ms);
+		ret = ret * cap->requested_channels / cap->config.channels;
 		if (ret < 0) {
 			return ret;
 		}

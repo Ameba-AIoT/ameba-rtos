@@ -77,7 +77,6 @@ static usbd_config_t cdc_acm_cfg = {
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
 	.ext_intr_en        = USBD_EPMIS_INTR,
-	.nptx_max_err_cnt   = {0U, 0U, 0U, 2000U, },
 #elif defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 644U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 16U, 16U, },

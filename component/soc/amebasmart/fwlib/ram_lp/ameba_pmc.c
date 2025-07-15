@@ -99,6 +99,58 @@ static void OTP_Raise_AonVol(u32 status)
 
 }
 /**
+ * @brief Determine whether the interrupt of uart rx pin is a real gpio interrupt
+ *
+ * @return TRUE/FALSE
+ */
+u32 SOCPS_UartRxPinIntValid(void)
+{
+	GPIO_TypeDef *GPIO;
+	u32 IrqStatus;
+	u32 valid = 0;
+	u32 port_num = PORT_NUM(UART_LOG_RXD);
+	u32 pin_num = PIN_NUM(UART_LOG_RXD);
+
+	if (port_num == GPIO_PORT_A) {
+		GPIO = GPIOA_BASE;
+	} else if (port_num == GPIO_PORT_B) {
+		GPIO = GPIOB_BASE;
+	} else {
+		GPIO = GPIOC_BASE;
+	}
+
+	IrqStatus = GPIO->GPIO_INT_STATUS;
+	valid = BIT(pin_num) & IrqStatus;
+
+	return valid;
+}
+/**
+ * @brief Enable/Disable gpio interrupt of UART rx pin
+ *
+ * @param state : ENALE/DISABLE
+ * @return None
+ */
+void SOCPS_UartRxIntEn(u8 state)
+{
+	GPIO_TypeDef *GPIO;
+	u32 port_num = PORT_NUM(UART_LOG_RXD);
+	u32 pin_num = PIN_NUM(UART_LOG_RXD);
+
+	if (port_num == GPIO_PORT_A) {
+		GPIO = GPIOA_BASE;
+	} else if (port_num == GPIO_PORT_B) {
+		GPIO = GPIOB_BASE;
+	} else {
+		GPIO = GPIOC_BASE;
+	}
+
+	if (state) {
+		GPIO->GPIO_INT_EN |= (1 << pin_num);
+	} else {
+		GPIO->GPIO_INT_EN &= ~(1 << pin_num);
+	}
+}
+/**
  * @brief set loguart rx pin as gpio waking-up
  *
  * @param status, ENABLE or DISABLE
@@ -107,11 +159,19 @@ static void OTP_Raise_AonVol(u32 status)
  */
 void SOCPS_UartRxPinWakeSet(u32 status)
 {
+	u32 int_flag = 0;
 	if (status == ENABLE) {
+		SOCPS_UartRxIntEn(ENABLE);
 		GPIO_INTConfig(UART_LOG_RXD, ENABLE);
 		Pinmux_UartLogCtrl(PINMUX_S0, OFF);
 	} else {
+		int_flag = SOCPS_UartRxPinIntValid();
+
 		Pinmux_UartLogCtrl(PINMUX_S0, ON);
+		if (!int_flag) {
+			SOCPS_UartRxIntEn(DISABLE);
+			GPIO_INTConfig(UART_LOG_RXD, DISABLE);
+		}
 	}
 }
 
@@ -165,11 +225,13 @@ void SOCPS_SleepCG(void)
 
 	/* switch IP clk to OSC4M, so that can wakeup system when need */
 	SOCPS_CLK_SwitchToLow(ENABLE);
+	SOCPS_UartRxPinWakeSet(ENABLE);
 
 	OTP_Raise_AonVol(DISABLE);
 	SOCPS_SleepCG_LIB();
 	OTP_Raise_AonVol(ENABLE);
 
+	SOCPS_UartRxPinWakeSet(DISABLE);
 	/* switch IP clk to lsbus */
 	SOCPS_CLK_SwitchToLow(DISABLE);
 
@@ -210,11 +272,13 @@ void SOCPS_SleepPG(void)
 
 	/* switch IP clk to OSC4M, so that can wakeup system when need */
 	SOCPS_CLK_SwitchToLow(ENABLE);
+	SOCPS_UartRxPinWakeSet(ENABLE);
 
 	OTP_Raise_AonVol(DISABLE);
 	SOCPS_SleepPG_LIB();
 	OTP_Raise_AonVol(ENABLE);
 
+	SOCPS_UartRxPinWakeSet(DISABLE);
 	/* switch IP clk to lsbus */
 	SOCPS_CLK_SwitchToLow(DISABLE);
 

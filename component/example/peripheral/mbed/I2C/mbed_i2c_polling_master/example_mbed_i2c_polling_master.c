@@ -18,7 +18,7 @@
 #include "i2c_ex_api.h"
 
 // RESTART verification
-#define I2C_RESTART_DEMO
+//#define I2C_RESTART_DEMO
 
 #define MBED_I2C_SLAVE_ADDR0    0x23
 #define MBED_I2C_BUS_CLK        100000  //hz

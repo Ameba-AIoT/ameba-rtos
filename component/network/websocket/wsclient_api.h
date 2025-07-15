@@ -22,12 +22,13 @@ int ws_set_fun_ops(wsclient_context *wsclient);
 ** Input          : url:websocket server's url
 **					port:websocket server's port, if not given, default 80 for "ws", 443 for "wss"
 **					origin: the address or url of your self
-**					buf_len: the length of tx/rx/received buffer. It determine the maximum bytes of data send and receive.
+**					tx_buf_len: the maximum length of tx buffer. It determine the maximum bytes of data payload(exclude header) to send
+**					rx_buf_len: the maximum length of rx buffer. It determine the maximum bytes of data payload(exclude header) to receive
 **					max_queue_size: max size of queue to buffer messages which are going to send to webserver.
 ** Return         : Created: websocket client context structure
 **					Failed:  NULL
 **************************************************************************************************/
-wsclient_context *create_wsclient(char *url, int port, char *path, char *origin, int buf_len, int max_queue_size);
+wsclient_context *create_wsclient(char *url, int port, char *path, char *origin, int tx_buf_len, int rx_buf_len, int max_queue_size);
 
 /*************************************************************************************************
 ** Function Name  : ws_connect_url
@@ -61,7 +62,7 @@ void ws_setsockopt_timeout(uint32_t recv_timeout, uint32_t send_timeout, uint32_
 /*************************************************************************************************
 ** Function Name  : ws_send
 ** Description    : Create the sending string data and copy to queue
-** Input          : message: the string that send to server(cannot exceeding the MAX_DATA_LEN
+** Input          : message: the string that send to server(cannot exceeding the global max_data_len_tx
 **					message_len: the length of the string
 **					use_mask: 0/1; 1 means using mask for bynary
 **					wsclient: the websocket client context
@@ -73,7 +74,7 @@ int ws_send(char *message, int message_len, int use_mask, wsclient_context *wscl
 /*************************************************************************************************
 ** Function Name  : ws_send_with_opcode
 ** Description    : Create the sending string data and copy to queue
-** Input          : message: the string that send to server(cannot exceeding the MAX_DATA_LEN
+** Input          : message: the string that send to server(cannot exceeding the global max_data_len_tx
 **					message_len: the length of the string
 **					use_mask: 0/1; 1 means using mask for bynary
 **					opcode: frame type
@@ -87,7 +88,7 @@ int ws_send_with_opcode(char *message, int message_len, int use_mask, uint8_t op
 /*************************************************************************************************
 ** Function Name  : ws_sendBinary
 ** Description    : Create the sending binary data and copy to queue
-** Input          : message: the binary that send to server(cannot exceeding the MAX_DATA_LEN
+** Input          : message: the binary that send to server(cannot exceeding the global max_data_len_tx
 **					message_len: the length of the binary
 **					use_mask: 0/1; 1 means using mask for bynary
 **					wsclient: the websocket client context

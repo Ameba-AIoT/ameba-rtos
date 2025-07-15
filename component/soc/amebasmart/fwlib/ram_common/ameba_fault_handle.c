@@ -131,11 +131,6 @@ void Fault_Handler(uint32_t mstack[], uint32_t pstack[], uint32_t lr_value, uint
 		regs[i] = cstack[i - REG_R0];
 	}
 
-	if (lr_value & EXC_RETURN_FTYPE) {
-		cstack += 8;/* Skip State context(R0-R3, R12, LR, PC, xSPSR). */
-	} else {
-		cstack += 26;/* Skip State context(R0-R3, R12, LR, PC, xSPSR), FP context(S0-S15, FPSCR, Reserved Reg). */
-	}
 	crash_dump((uint32_t *)cstack[REG_EPC], cstack, regs);
 
 	if (fault_id == SECUREFAULT_ID) {
@@ -226,7 +221,7 @@ void Fault_Handler(uint32_t mstack[], uint32_t pstack[], uint32_t lr_value, uint
 		regs[i] = cstack[i - REG_R0];
 	}
 
-	crash_dump((uint32_t *)cstack[REG_EPC], cstack + 8, regs);/*Skip R0-R3, R12, LR, PC, xSPSR.*/
+	crash_dump((uint32_t *)cstack[REG_EPC], cstack, regs);
 
 	RTK_LOGA(TAG, "MSP     = %p\r\n", mstack);
 	RTK_LOGA(TAG, "PSP     = %p\r\n", pstack);

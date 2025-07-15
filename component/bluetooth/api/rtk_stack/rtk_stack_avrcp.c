@@ -151,11 +151,10 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_PLAY_STATUS_CHANGED_REG_REQ \r\n");
 		p_link = app_find_br_link(param->avrcp_reg_play_status_changed.bd_addr);
 		if (p_link != NULL) {
-			if (p_link->is_streaming) {
-				bt_avrcp_play_status_change_register_rsp(p_link->bd_addr, BT_AVRCP_PLAY_STATUS_PLAYING);
-			} else {
-				bt_avrcp_play_status_change_register_rsp(p_link->bd_addr, BT_AVRCP_PLAY_STATUS_PAUSED);
-			}
+			BT_LOGA("app_avrcp_bt_cback: send reister rsp to %02x:%02x:%02x:%02x:%02x:%02x, status is 0x%02x \r\n",
+					p_link->bd_addr[5], p_link->bd_addr[4], p_link->bd_addr[3], p_link->bd_addr[2], p_link->bd_addr[1], p_link->bd_addr[0],
+					p_link->avrcp_play_status);
+			bt_avrcp_play_status_change_register_rsp(p_link->bd_addr, p_link->avrcp_play_status);
 		}
 	}
 	break;
@@ -783,6 +782,35 @@ static uint16_t bt_stack_avrcp_disconnect(void *param)
 	return RTK_BT_FAIL;
 }
 
+static uint16_t bt_stack_avrcp_play_status_change_req(void *param)
+{
+	rtk_bt_avrcp_play_status_change_req_t *p_req_t = (rtk_bt_avrcp_play_status_change_req_t *)param;
+	T_APP_BR_LINK *p_link;
+
+	p_link = app_find_br_link(p_req_t->bd_addr);
+	if (!p_link) {
+		BT_LOGE("%s: plink is NULL \r\n", __func__);
+		return RTK_BT_FAIL;
+	}
+	if (bt_avrcp_play_status_change_req(p_req_t->bd_addr, (T_BT_AVRCP_PLAY_STATUS)p_req_t->status)) {
+		p_link->avrcp_play_status = (T_BT_AVRCP_PLAY_STATUS)p_req_t->status;
+		return RTK_BT_OK;
+	}
+
+	return RTK_BT_FAIL;
+}
+
+static uint16_t bt_stack_avrcp_play_status_change_reg_rsp(void *param)
+{
+	rtk_bt_avrcp_play_status_change_reg_rsp_t *p_rsp_t = (rtk_bt_avrcp_play_status_change_reg_rsp_t *)param;
+
+	if (bt_avrcp_play_status_change_register_rsp(p_rsp_t->bd_addr, (T_BT_AVRCP_PLAY_STATUS)p_rsp_t->status)) {
+		return RTK_BT_OK;
+	}
+
+	return RTK_BT_FAIL;
+}
+
 static uint16_t bt_stack_avrcp_play(void *param)
 {
 	uint8_t *bd_addr = (uint8_t *)param;
@@ -1001,6 +1029,14 @@ uint16_t bt_stack_avrcp_act_handle(rtk_bt_cmd_t *p_cmd)
 
 	case RTK_BT_AVRCP_ACT_DISCONNECT:
 		ret = bt_stack_avrcp_disconnect(p_cmd->param);
+		break;
+
+	case RTK_BT_AVRCP_ACT_PLAY_STATUS_CHANGE_REQ:
+		ret = bt_stack_avrcp_play_status_change_req(p_cmd->param);
+		break;
+
+	case RTK_BT_AVRCP_ACT_PLAY_STATUS_CHANGE_REG_RSP:
+		ret = bt_stack_avrcp_play_status_change_reg_rsp(p_cmd->param);
 		break;
 
 	case RTK_BT_AVRCP_ACT_PLAY:

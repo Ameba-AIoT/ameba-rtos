@@ -316,6 +316,8 @@ enum {
 	IESETCLIENTAUTH = 22,   // Bad configuration of client authentication
 	IESETSERVERAUTH = 23,   // Bad configuration of server authentication
 	IEBADFORMAT = 24,	    // Bad format argument to -f
+	IEPORT = 25,            // Invalid port range. Valid range is 1~65535
+	IEPARAMFORMAT = 26,     // Bad parameter format
 	/* Test errors */
 	IENEWTEST = 100,        // Unable to create a new test (check perror)
 	IEINITTEST = 101,       // Test initialization failed (check perror)

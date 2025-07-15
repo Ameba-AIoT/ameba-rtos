@@ -96,8 +96,8 @@ static int whc_fullmac_host_start_nan(struct wiphy *wiphy,
 	printk(" => %s: master_pref = %d, bands = %d\n", __func__, conf->master_pref, conf->bands);
 
 	/* prepare neccessary parameters */
-	band_support = ((conf->bands & BIT(NL80211_BAND_2GHZ)) ? BAND_CAP_2G : 0)
-				   | ((conf->bands & BIT(NL80211_BAND_5GHZ)) ? BAND_CAP_5G : 0);
+	band_support = ((conf->bands & BIT(NL80211_BAND_2GHZ)) ? RTW_SUPPORT_BAND_2_4G : 0)
+				   | ((conf->bands & BIT(NL80211_BAND_5GHZ)) ? RTW_SUPPORT_BAND_5G : 0);
 
 	if (whc_fullmac_host_start_nan(conf->master_pref, band_support) == -1) {
 		ret = -ENOTCONN;

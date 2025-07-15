@@ -55,6 +55,7 @@ const COMMAND_TABLE usbh_test_cmd_table[] = {
 		"\t\t usbh resume\n"
 		"\t\t usbh suspend\n"
 		"\t\t usbh xfer <arguments>\n"
+		"\t\t usbh acm <arguments>\n"
 		"\t\t usbh verify <arguments>\n"
 		"\t\t usbh cg <time_ms>\n"
 	}
@@ -70,6 +71,7 @@ const COMMAND_TABLE usbh_test_cmd_table[] = {
 		"\t\t usbh resume\n"
 		"\t\t usbh suspend\n"
 		"\t\t usbh xfer <arguments>\n"
+		"\t\t usbh acm <arguments>\n"
 		"\t\t usbh verify <arguments>\n"
 		"\t\t usbh cg <time_ms>\n"
 	}
@@ -154,6 +156,8 @@ static u32 usbh_test(u16 argc, u8 *argv[])
 		ret = cmd_usbh_xfer_test(argc, argv);
 	} else if (_stricmp(cmd, "verify") == 0) {
 		ret = cmd_usbh_verify_test_entry(argc, argv);
+	} else if (_stricmp(cmd, "acm") == 0) {
+		ret = cmd_usbh_cdc_acm_test(argc, argv);
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Input cmd is err %s\n", usbh_test_cmd_table[0].msg);
 	}

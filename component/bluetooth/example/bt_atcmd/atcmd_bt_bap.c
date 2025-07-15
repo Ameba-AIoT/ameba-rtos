@@ -138,7 +138,6 @@ static int atcmd_bt_bap_broadcast_pa_sync_create(int argc, char **argv)
 		BT_LOGE("BAP broadcast pa sync create fail\r\n");
 		return -1;
 	}
-	BT_LOGA("BAP broadcast pa sync create successfully\r\n");
 
 	return 0;
 }

@@ -72,8 +72,6 @@ typedef struct {
 
 /* USB configuration structure */
 typedef struct {
-	u32 nptx_max_err_cnt[USB_MAX_ENDPOINTS]; /* Max Non-Periodical TX transfer error count allowed, if transfer
-								error count is higher than this value, the transfer status will be determined as failed */
 	u32 nptx_max_epmis_cnt;		/* Max Non-Periodical TX transfer epmis count allowed, if epmis count is higher than this
 								value, the GINTSTS.EPMis interrupt will be handled. This parameter is enabled only when
 								USBD_EPMIS_INTR is enabled in ext_intr_en. */
@@ -126,6 +124,7 @@ typedef struct {
 	u8 remote_wakeup_en : 1;					/* Remote wakeup enable or not, 0-disabled, 1-enabled */
 	u8 remote_wakeup : 1;						/* Remote wakeup */
 	u8 is_ready : 1;							/* Device ready or not, 0-disabled, 1-enabled */
+	u8 is_connected : 1;							/* Device connected or not,0-disabled, 1-enabled */
 } usb_dev_t;
 
 /* USB class driver */

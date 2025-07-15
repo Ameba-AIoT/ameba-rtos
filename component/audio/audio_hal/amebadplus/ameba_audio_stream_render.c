@@ -237,7 +237,7 @@ static void ameba_audio_stream_tx_sport_init(RenderStream **stream, StreamConfig
 			PLL_I2S1_CLK(ENABLE, 1);
 		}
 
-		//PLL_I2S_45P1584M_ClkTune(ppm, action);
+		//PLL_I2S_45P1584M_ClkTune(NULL, ppm, action);
 
 		clock_mode = PLL_CLOCK_45P1584M;
 		break;
@@ -251,7 +251,7 @@ static void ameba_audio_stream_tx_sport_init(RenderStream **stream, StreamConfig
 			PLL_I2S1_CLK(ENABLE, 0);
 		}
 
-		//PLL_I2S_98P304M_ClkTune(ppm, action);
+		//PLL_I2S_98P304M_ClkTune(NULL, ppm, action);
 
 		clock_mode = PLL_CLOCK_98P304M;
 		break;

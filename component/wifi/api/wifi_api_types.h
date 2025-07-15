@@ -151,11 +151,13 @@ enum rtw_disconn_reason {
 /**
  * @brief  Supported Wi-Fi frequency bands (size: u8).
  */
+/*TODO: rom should check because (#define BAND_CAP_2G BIT(0), #define BAND_CAP_5G BIT(1)) from rom_rtw_defs.h*/
 enum rtw_support_band {
-	RTW_SUPPORT_BAND_2_4G = 0,     /**< 2.4 GHz band. */
-	RTW_SUPPORT_BAND_5G,           /**< 5 GHz band. */
-	RTW_SUPPORT_BAND_2_4G_5G_BOTH, /**< Both 2.4 GHz and 5 GHz bands. */
-	RTW_SUPPORT_BAND_MAX            /**< Maximum band type (for bounds checking). */
+	RTW_SUPPORT_BAND_RSVD = 0,
+	RTW_SUPPORT_BAND_2_4G = BIT(0),                    /**< 2.4 GHz band. */
+	RTW_SUPPORT_BAND_5G = BIT(1),                      /**< 5 GHz band. */
+	RTW_SUPPORT_BAND_2_4G_5G_BOTH = (BIT(0) | BIT(1)), /**< Both 2.4 GHz and 5 GHz bands. */
+	RTW_SUPPORT_BAND_MAX                               /**< Maximum band type (for bounds checking). */
 };
 
 /**
