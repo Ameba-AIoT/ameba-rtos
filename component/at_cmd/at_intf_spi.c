@@ -141,8 +141,6 @@ void atcmd_spi_task(void)
 
 	spi_irq_hook(&spi_slave, (spi_irq_handler) Slave_tr_done_callback, (uint32_t)&spi_slave);
 
-
-
 	while (1) {
 		spi_flush_rx_fifo(&spi_slave);
 		gpio_write(&at_spi_slave_to_master_gpio, 0);
@@ -211,6 +209,14 @@ void atcmd_spi_task(void)
 
 			u32 space = 0;
 			if (g_tt_mode) {
+				if (recv_len > RingBuffer_Size(atcmd_tt_mode_rx_ring_buf)) {
+					g_tt_mode_stop_flag = 1;
+					g_tt_mode_stop_char_cnt = 0;
+					rtos_sema_give(atcmd_tt_mode_sema);
+					RTK_LOGE(TAG, "recv_len is larger than tt mode buffer size\n");
+					continue;
+				}
+
 				space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
 
 				/*recv stop char under tt mode*/
@@ -331,6 +337,14 @@ void atcmd_spi_task(void)
 
 			u32 space = 0;
 			if (g_tt_mode) {
+				if (recv_len > RingBuffer_Size(atcmd_tt_mode_rx_ring_buf)) {
+					g_tt_mode_stop_flag = 1;
+					g_tt_mode_stop_char_cnt = 0;
+					rtos_sema_give(atcmd_tt_mode_sema);
+					RTK_LOGE(TAG, "recv_len is larger than tt mode buffer size\n");
+					continue;
+				}
+
 				space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
 
 				/*recv stop char under tt mode*/

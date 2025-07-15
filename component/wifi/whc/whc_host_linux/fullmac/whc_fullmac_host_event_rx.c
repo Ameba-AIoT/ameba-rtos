@@ -45,6 +45,8 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 	u16 disassoc_reason;
 	int channel = 6;/*channel need get, force 6 seems ok temporary*/
 	struct wireless_dev *wdev = global_idev.pwdev_global[0];
+	struct rtw_event_join_status_info *evt_info;
+	struct rtw_event_disconnect *disconnect;
 #ifdef CONFIG_P2P
 	u16 frame_type;
 #endif
@@ -55,7 +57,9 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 
 	if ((event == RTW_EVENT_JOIN_STATUS) && ((flags == RTW_JOINSTATUS_FAIL) || (flags == RTW_JOINSTATUS_DISCONNECT))) {
 		if (flags == RTW_JOINSTATUS_DISCONNECT) {
-			disassoc_reason = (u16)(((union rtw_event_join_status_info *)buf)->disconnect.disconn_reason && 0xffff);
+			evt_info = (struct rtw_event_join_status_info *)buf;
+			disconnect = &evt_info->private.disconnect;
+			disassoc_reason = (u16)(disconnect->disconn_reason && 0xffff);
 			dev_dbg(global_idev.fullmac_dev, "%s: disassoc_reason=%d \n", __func__, disassoc_reason);
 			whc_fullmac_host_disconnect_indicate(disassoc_reason, 1);
 		}
@@ -83,14 +87,14 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 	if (event == RTW_EVENT_RX_MGNT) {
 		dev_dbg(global_idev.fullmac_dev, "%s: rx mgnt \n", __func__);
 #ifdef CONFIG_P2P
-		channel = (flags > 0) ? (flags & 0x0000FFFF) : 6;
-		frame_type = (u16)(flags >> 16);
+		channel = buf[0];
+		frame_type = buf[1];
 		if (frame_type == IEEE80211_STYPE_PROBE_REQ) {
 			if (global_idev.p2p_global.pd_pwdev && (rtw_p2p_frame_is_registered(P2P_ROLE_DEVICE, IEEE80211_STYPE_PROBE_REQ))) {//P2P_DEV intf registered probe_req
 				wdev =	global_idev.p2p_global.pd_pwdev;
 			}
 		} else if (frame_type == IEEE80211_STYPE_ACTION) {
-			if (global_idev.p2p_global.pd_pwdev && (memcmp((buf + 4), global_idev.p2p_global.pd_pwdev->address, 6) == 0)) {
+			if (global_idev.p2p_global.pd_pwdev && (memcmp((buf + 2 + 4), global_idev.p2p_global.pd_pwdev->address, 6) == 0)) {
 				if (rtw_p2p_frame_is_registered(P2P_ROLE_DEVICE, IEEE80211_STYPE_ACTION)) {
 					wdev =	global_idev.p2p_global.pd_pwdev; //DA match P2P_DEV intf, need use P2P_DEV intf to indicate
 				}
@@ -100,7 +104,7 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 		}
 #endif
 		/*channel need get, force 6 seems ok temporary*/
-		cfg80211_rx_mgmt(wdev, rtw_ch2freq(channel), 0, buf, buf_len, 0);
+		cfg80211_rx_mgmt(wdev, rtw_ch2freq(channel), 0, buf + 2, buf_len - 2, 0);
 	}
 
 #ifdef CONFIG_IEEE80211R
@@ -113,25 +117,25 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 		dev_dbg(global_idev.fullmac_dev, "%s: rx mgnt \n", __func__);
 		wdev = ndev_to_wdev(global_idev.pndev[1]);
 #ifdef CONFIG_P2P
-		channel = (flags > 0) ? (flags & 0x0000FFFF) : 6;
-		frame_type = (u16)(flags >> 16);
+		channel = buf[0];
+		frame_type = buf[1];
 		if (frame_type == IEEE80211_STYPE_PROBE_REQ) {
 			if (global_idev.p2p_global.pd_pwdev && (rtw_p2p_frame_is_registered(P2P_ROLE_DEVICE, IEEE80211_STYPE_PROBE_REQ))) {//P2P_DEV intf registered probe_req
-				cfg80211_rx_mgmt(global_idev.p2p_global.pd_pwdev, rtw_ch2freq(channel), 0, buf, buf_len, 0);
+				cfg80211_rx_mgmt(global_idev.p2p_global.pd_pwdev, rtw_ch2freq(channel), 0, buf + 2, buf_len - 2, 0);
 			}
 			if (rtw_p2p_frame_is_registered(P2P_ROLE_GO, IEEE80211_STYPE_PROBE_REQ)) {//P2P_GO intf registered probe_req
-				cfg80211_rx_mgmt(wdev, rtw_ch2freq(channel), 0, buf, buf_len, 0);
+				cfg80211_rx_mgmt(wdev, rtw_ch2freq(channel), 0, buf + 2, buf_len - 2, 0);
 			}
 			return;
 		} else if ((frame_type == IEEE80211_STYPE_ACTION)) {
 			if (rtw_p2p_frame_is_registered(P2P_ROLE_DEVICE, IEEE80211_STYPE_ACTION)) {
-				if (global_idev.p2p_global.pd_pwdev && (memcmp((buf + 4), global_idev.p2p_global.pd_pwdev->address, 6)) == 0) {
+				if (global_idev.p2p_global.pd_pwdev && (memcmp((buf + 2 + 4), global_idev.p2p_global.pd_pwdev->address, 6)) == 0) {
 					wdev =	global_idev.p2p_global.pd_pwdev; //DA match P2P_DEV intf, need use P2P_DEV intf to indicate
 				}
 			}
 		}
 #endif
-		cfg80211_rx_mgmt(wdev, rtw_ch2freq(channel), 0, buf, buf_len, 0);
+		cfg80211_rx_mgmt(wdev, rtw_ch2freq(channel), 0, buf + 2, buf_len - 2, 0);
 	}
 
 	if (event == RTW_EVENT_OWE_PEER_KEY_RECV) {

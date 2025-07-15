@@ -1,5 +1,5 @@
-#ifndef _WHC_DEV_API_H_
-#define _WHC_DEV_API_H_
+#ifndef _WHC_DEV_API_PATH_H_
+#define _WHC_DEV_API_PATH_H_
 
 /* -------------------------------- Defines --------------------------------- */
 #define CONFIG_WHC_DEV_API_PRIO 3

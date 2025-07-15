@@ -3,12 +3,33 @@ ameba_add_image(target_loader p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_boot_all.bin)
 
 ###############################  ADD COMPONENT  ###################################
 
+add_compile_definitions(
+    CONFIG_NON_OS
+)
+
 ameba_add_subdirectory(${c_CMPT_BOOTLOADER_DIR})
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
 ameba_add_subdirectory(${c_CMPT_FWLIB_DIR})
 ameba_add_subdirectory(${c_CMPT_LZMA_DIR})
 ameba_add_subdirectory(${c_CMPT_USRCFG_DIR} usrcfg)
 ameba_add_subdirectory(${c_CMPT_SOC_DIR}/lib/bootloader lib_bootloader)
+
+if(CONFIG_FULLMAC_DEV)
+    ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_wrapper)
+endif()
+
+if(CONFIG_WHC_INTF_USB)
+    target_sources(${c_CURRENT_IMAGE} PRIVATE
+        ${c_CMPT_FWLIB_DIR}/ram_common/ameba_usb.c
+
+        ${c_CMPT_USB_DIR}/common/usb_os.c
+        ${c_CMPT_USB_DIR}/common/usb_hal.c
+        ${c_CMPT_USB_DIR}/common/usb_phy.c
+    )
+    target_include_directories(${c_CURRENT_IMAGE} PRIVATE
+	${c_CMPT_USB_DIR}/common
+    )
+endif()
 
 ###############################  GENERATE IMAGE  ###################################
 

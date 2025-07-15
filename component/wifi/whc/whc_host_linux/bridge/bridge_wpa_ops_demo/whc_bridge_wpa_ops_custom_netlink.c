@@ -10,7 +10,7 @@
 static u32 whc_user_portid;
 
 /* netlink cmd handler */
-int whc_bridge_host_nl_custom_api(struct sk_buff *skb, struct genl_info *info)
+int whc_host_nl_custom_api(struct sk_buff *skb, struct genl_info *info)
 {
 	u32 cmd = nla_get_u32(info->attrs[BRIDGE_ATTR_API_ID]);
 	u8 *ptr;

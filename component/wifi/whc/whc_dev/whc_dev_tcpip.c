@@ -4,7 +4,7 @@
  *
  ******************************************************************************/
 #include "whc_dev.h"
-#include "whc_dev_bridge.h"
+#include "whc_dev_tcpip.h"
 #include "whc_dev_api.h"
 
 #include "lwip/sys.h"
@@ -18,14 +18,14 @@ struct sk_buff *skb_transit = NULL;
 
 extern struct list_head whc_filter_head;
 
-u8(*whc_dev_pkt_redir_cusptr)(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib);
+u8(*whc_dev_pkt_redir_cusptr)(struct sk_buff *skb, struct whc_pkt_attrib *pattrib);
 
 void whc_dev_pktfilter_init(void)
 {
 	rtw_init_listhead(&whc_filter_head);
 }
 
-void whc_dev_packet_attrib_parse(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib)
+void whc_dev_packet_attrib_parse(struct sk_buff *skb, struct whc_pkt_attrib *pattrib)
 {
 	u16_t protocol, src_port = 0, dst_port = 0;
 	u8_t type = 0;
@@ -90,7 +90,7 @@ void whc_dev_packet_attrib_parse(struct sk_buff *skb, struct bridge_pkt_attrib *
 
 }
 
-static bool whc_dev_match_filter(struct bridge_pkt_attrib *pattrib, struct whc_dev_pkt_filter *filter)
+static bool whc_dev_match_filter(struct whc_pkt_attrib *pattrib, struct whc_dev_pkt_filter *filter)
 {
 	/* consider concurrent mode */
 	if ((filter->mask & MASK_IDX) && pattrib->port_idx != filter->index) {
@@ -122,7 +122,7 @@ static bool whc_dev_match_filter(struct bridge_pkt_attrib *pattrib, struct whc_d
 	return true;
 }
 
-u8_t whc_dev_rcvpkt_filter(struct bridge_pkt_attrib *pattrib)
+u8_t whc_dev_rcvpkt_filter(struct whc_pkt_attrib *pattrib)
 {
 	struct list_head *plist, *phead;
 	struct PktFilterNode *target;
@@ -146,7 +146,7 @@ u8_t whc_dev_rcvpkt_filter(struct bridge_pkt_attrib *pattrib)
 	return whc_dev_api_get_default_direction();
 }
 
-u8 whc_dev_rcvpkt_redirect(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib)
+u8 whc_dev_rcvpkt_redirect(struct sk_buff *skb, struct whc_pkt_attrib *pattrib)
 {
 	u8 icmp_type = 0;
 	u8 type = PORT_TO_UNKNOWN;
@@ -199,7 +199,7 @@ u8 whc_dev_rcvpkt_redirect(struct sk_buff *skb, struct bridge_pkt_attrib *pattri
 
 u8 whc_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send)
 {
-	struct bridge_pkt_attrib *pattrib;
+	struct whc_pkt_attrib *pattrib;
 	u8 direction = 0;
 	struct sk_buff *skb_backup;
 	struct sk_buff *skb;
@@ -213,7 +213,7 @@ u8 whc_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send)
 
 	/* case2: normal netdev0 pkt*/
 	skb = wifi_if_get_recv_skb(*idx);
-	pattrib = (struct bridge_pkt_attrib *)rtos_mem_zmalloc(sizeof(struct bridge_pkt_attrib));
+	pattrib = (struct whc_pkt_attrib *)rtos_mem_zmalloc(sizeof(struct whc_pkt_attrib));
 	whc_dev_packet_attrib_parse(skb, pattrib);
 
 

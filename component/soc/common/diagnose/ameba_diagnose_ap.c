@@ -73,7 +73,7 @@ static int rtk_diag_ipc_send(u32 addr, u32 size, u8 type)
 	DCache_Clean((u32)&g_diag_ipc_msg, sizeof(RtkDiagIpcMsg_t));
 	ipc_send_message(DIAG_IPC_DIR, IPC_A2N_EVENT_REQ, &ipc_event_msg);
 	//timeout handle
-	int timeout = RTK_DIAG_IPC_WAIT_TIMEOUT;
+	u32 timeout = RTK_DIAG_IPC_WAIT_TIMEOUT;
 	int ret = RTK_ERR_TIMEOUT;
 	while (timeout--) {
 		DCache_Invalidate((u32)&g_diag_ipc_msg, sizeof(RtkDiagIpcMsg_t));
@@ -83,7 +83,7 @@ static int rtk_diag_ipc_send(u32 addr, u32 size, u8 type)
 		}
 	}
 	if (g_diag_debug_log_state) {
-		RTK_LOGA(NOTAG, "ap ipc: addr = %x, size = %d, ret = %d, timeout = %d\n", g_diag_ipc_msg.addr, g_diag_ipc_msg.size, ret, timeout);
+		RTK_LOGA(NOTAG, "ap ipc: addr = %x, size = %d, ret = %d, timeout = %u\n", g_diag_ipc_msg.addr, g_diag_ipc_msg.size, ret, timeout);
 	}
 	rtos_mutex_give(g_ipc_mutex);
 	return ret;

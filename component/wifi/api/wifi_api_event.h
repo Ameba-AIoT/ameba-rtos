@@ -84,32 +84,36 @@ struct rtw_event_hdl_func_t {
 	void (*handler)(u8 *buf, s32 len, s32 flags);
 };
 
-union rtw_event_join_status_info {
-	struct {
-		u8 channel;
-		u8 bssid[ETH_ALEN];  /**< MAC address of the AP.*/
-	} authenticating;  /* RTW_JOINSTATUS_AUTHENTICATING */
-	struct {
-		u16 reason_or_status_code;  /**< 802.11 reason code or status code from AP.*/
-	} authenticated;  /* RTW_JOINSTATUS_AUTHENTICATED */
-	struct {
-		u8 channel;
-		u8 bssid[ETH_ALEN];
-		s8 rssi;
-	} associating;  /* RTW_JOINSTATUS_ASSOCIATING */
-	struct {
-		u8 bssid[ETH_ALEN];
-		u16 reason_or_status_code;
-	} associated;  /* RTW_JOINSTATUS_ASSOCIATED */
-	struct {
-		u8 bssid[ETH_ALEN];
-		s32 fail_reason;  /**< Failure reason, refer to @ref RTK_FAIL, -@ref RTK_ERR_WIFI_CONN_INVALID_KEY, etc. */
-		u16 reason_or_status_code;
-	} fail;  /* RTW_JOINSTATUS_FAIL */
-	struct {
-		u8 bssid[ETH_ALEN];
-		u16 disconn_reason;  /**< Disconnect reason, refer to @ref rtw_disconn_reason. */
-	} disconnect;  /* RTW_JOINSTATUS_DISCONNECT */
+struct rtw_event_join_status_info {
+	/* common paras */
+	u8 status;  /* refer to @ref rtw_join_status */
+	u8 channel;
+	u8 bssid[ETH_ALEN];
+	s8 rssi;
+
+	/* private paras */
+	union {
+		struct rtw_event_authenticating {
+
+		} authenticating;  /* RTW_JOINSTATUS_AUTHENTICATING */
+		struct rtw_event_authenticated {
+			u16 reason_or_status_code;  /**< 802.11 reason code or status code from AP.*/
+		} authenticated;  /* RTW_JOINSTATUS_AUTHENTICATED */
+		struct rtw_event_associating {
+			u8 is_reassoc;
+		} associating;  /* RTW_JOINSTATUS_ASSOCIATING */
+		struct rtw_event_associated {
+			u16 reason_or_status_code;
+			u8 is_reassoc;
+		} associated;  /* RTW_JOINSTATUS_ASSOCIATED */
+		struct rtw_event_join_fail {
+			s32 fail_reason;  /**< Failure reason, refer to @ref RTK_FAIL, -@ref RTK_ERR_WIFI_CONN_INVALID_KEY, etc. */
+			u16 reason_or_status_code;
+		} fail;  /* RTW_JOINSTATUS_FAIL */
+		struct rtw_event_disconnect {
+			u16 disconn_reason;  /**< Disconnect reason, refer to @ref rtw_disconn_reason. */
+		} disconnect;  /* RTW_JOINSTATUS_DISCONNECT */
+	} private;
 };
 
 /** @} End of WIFI_Exported_Structure_Types group*/

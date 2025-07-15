@@ -94,7 +94,7 @@ void example_vfs_encrypt_thread(void *param)
 	char path[128] = {0};
 	char buffer[64] = {0};
 	char *prefix;
-	vfs_file *finfo;
+	FILE *finfo;
 	int res = 0;
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: VFS_ENCRYPT====================\r\n");
@@ -105,23 +105,23 @@ void example_vfs_encrypt_thread(void *param)
 
 	DiagSnPrintf(path, sizeof(path), "%s:%s", prefix, filename);
 
-	finfo = (vfs_file *)fopen(path, "w");
+	finfo = fopen(path, "w");
 	if (finfo == NULL) {
 		printf("[%s] fopen() failed\r\n", __FUNCTION__);
 		goto exit;
 	}
 
-	res = fwrite(content, strlen(content), 1, (FILE *)finfo);
+	res = fwrite(content, strlen(content), 1, finfo);
 	if (res != (int)(strlen(content) / 16 + 1) * 16) {
 		printf("[%s] fwrite() failed, err is %d\r\n", __FUNCTION__, res);
 	} else {
 		printf("[%s] fwrite() succeeded, write %d characters:%s\r\n", __FUNCTION__, res, content);
 	}
 
-	fclose((FILE *)finfo);
+	fclose(finfo);
 
-	finfo = (vfs_file *)fopen(path, "r");
-	res = fread(buffer, strlen(content), 1, (FILE *)finfo);
+	finfo = fopen(path, "r");
+	res = fread(buffer, strlen(content), 1, finfo);
 	if (res < 0) {
 		printf("[%s] fread() failed, err is %d\r\n", __FUNCTION__, res);
 	} else {
@@ -132,7 +132,7 @@ void example_vfs_encrypt_thread(void *param)
 		}
 	}
 
-	fclose((FILE *)finfo);
+	fclose(finfo);
 
 	res = remove(path);
 	if (res < 0) {

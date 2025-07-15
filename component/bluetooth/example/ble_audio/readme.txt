@@ -53,7 +53,7 @@ Generic LE Audio demo ATCMD:
     2.2 disable                                         AT+BTDEMO=generic_le_audio_demo,acceptor,0
     2.3 stop ext adv before ext scan                    AT+BLEGAP=eadv,0,0
     2.4 scan start                                      AT+BLEBAP=escan,1
-    2.5 create pa sync with broadcast source            AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id>
+    2.5 create pa sync with broadcast source            AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id>  e.g. AT+BLEBAP=pa_sync_create,0,00e04c8002eb,0xe,123abc
     2.6 terminate pa sync with broadcast source         AT+BLEBAP=pa_sync_remove,<bd_addr type>,<bd_addr>
     2.7 create big sync with broadcast source           AT+BLEBAP=big_sync_create,<bd_addr type>,<bd_addr>
     2.8 terminate big sync with broadcast source        AT+BLEBAP=big_sync_remove,<bd_addr type>,<bd_addr>
@@ -66,7 +66,7 @@ Generic LE Audio demo ATCMD:
     3.5 connect                                            AT+BLEGAP=conn,<peer_addr_type>,<peer_addr>
     3.6 start remote scan                                  AT+BLEBAP=remote_scan,1,<group_idx>
     3.7 stop remote scan                                   AT+BLEBAP=remote_scan,0,<group_idx>
-    3.8 create pa sync with broadcast source               AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id>
+    3.8 create pa sync with broadcast source               AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id> e.g. AT+BLEBAP=pa_sync_create,0,00e04c8002eb,0xe,123abc
     3.9 terminate pa sync with broadcast source            AT+BLEBAP=pa_sync_remove,<bd_addr type>,<bd_addr>
     3.10 reception_start                                   AT+BLEBAP=reception_start,<bd_addr type>,<bd_addr>,<group_idx>
     3.11 reception_stop                                    AT+BLEBAP=reception_stop,<bd_addr type>,<bd_addr>,<group_idx>
@@ -107,7 +107,7 @@ PBP demo ATCMD:
     2.2 disable                                            AT+BTDEMO=pbp,sink,0
     2.3 scan start                                         AT+BLEBAP=escan,1
     2.4 scan stop                                          AT+BLEBAP=escan,0
-    2.5 create pa sync with broadcast source               AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id>
+    2.5 create pa sync with broadcast source               AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id> e.g. AT+BLEBAP=pa_sync_create,0,00e04c8002eb,0xe,123abc
     2.6 terminate pa sync with broadcast source            AT+BLEBAP=pa_sync_remove,<bd_addr type>,<bd_addr>
     2.7 create big sync with broadcast source              AT+BLEBAP=big_sync_create,<bd_addr type>,<bd_addr>
     2.8 terminate big sync with broadcast source           AT+BLEBAP=big_sync_remove,<bd_addr type>,<bd_addr>
@@ -120,7 +120,7 @@ PBP demo ATCMD:
     3.5 connect                                            AT+BLEGAP=conn,<peer_addr_type>,<peer_addr>
     3.6 start remote scan                                  AT+BLEBAP=remote_scan,1,<group_idx>
     3.7 stop remote scan                                   AT+BLEBAP=remote_scan,0,<group_idx>
-    3.8 create pa sync with broadcast source               AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id>
+    3.8 create pa sync with broadcast source               AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id> e.g. AT+BLEBAP=pa_sync_create,0,00e04c8002eb,0xe,123abc
     3.9 terminate pa sync with broadcast source            AT+BLEBAP=pa_sync_remove,<bd_addr type>,<bd_addr>
     3.10 reception_start                                   AT+BLEBAP=reception_start,<bd_addr type>,<bd_addr>,<group_idx>
     3.11 reception_stop                                    AT+BLEBAP=reception_stop,<bd_addr type>,<bd_addr>,<group_idx>
@@ -234,7 +234,7 @@ TMAP demo ATCMD:
     4.1 enable                                                      AT+BTDEMO=tmap,bmr,1,<sound channel> sound_channel:{left, right, stereo}
     4.2 disable                                                     AT+BTDEMO=tmap,bmr,0
     4.3 scan broadcast source start                                 AT+BLEBAP=escan,1
-    4.4 create pa sync with broadcast source                        AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id>
+    4.4 create pa sync with broadcast source                        AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id> e.g. AT+BLEBAP=pa_sync_create,0,00e04c8002eb,0xe,123abc
     4.5 terminate pa sync with broadcast source                     AT+BLEBAP=pa_sync_remove,<bd_addr type>,<bd_addr>
     4.6 create big sync with broadcast source                       AT+BLEBAP=big_sync_create,<bd_addr type>,<bd_addr>
     4.7 terminate big sync with broadcast source                    AT+BLEBAP=big_sync_remove,<bd_addr type>,<bd_addr>
@@ -270,7 +270,7 @@ GMAP demo ATCMD:
     4.1 enable                                                      AT+BTDEMO=gmap,bgr,1,<sound channel> sound_channel:{left, right, stereo}
     4.2 disable                                                     AT+BTDEMO=gmap,bgr,0
     4.3 scan broadcast source start                                 AT+BLEBAP=escan,1
-    4.4 create pa sync with broadcast source                        AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id>
+    4.4 create pa sync with broadcast source                        AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id>  e.g. AT+BLEBAP=pa_sync_create,0,00e04c8002eb,0xe,123abc
     4.5 terminate pa sync with broadcast source                     AT+BLEBAP=pa_sync_remove,<bd_addr type>,<bd_addr>
     4.6 create big sync with broadcast source                       AT+BLEBAP=big_sync_create,<bd_addr type>,<bd_addr>
     4.7 terminate big sync with broadcast source                    AT+BLEBAP=big_sync_remove,<bd_addr type>,<bd_addr>

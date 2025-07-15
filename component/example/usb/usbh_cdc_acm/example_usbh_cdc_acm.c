@@ -162,9 +162,8 @@ static int cdc_acm_cb_receive(u8 *buf, u32 length)
 	}
 	cdc_acm_total_rx_len += length;
 
-	//transaction size > 0 and short packet
-	if ((length == 0) || ((length < usbh_cdc_acm_get_bulk_ep_mps()) && (cdc_acm_total_rx_len > 0))
-		|| (cdc_acm_total_rx_len > USBH_CDC_ACM_LOOPBACK_BUF_SIZE)) { //
+	//ZLP or short packet
+	if ((length == 0) || (length % usbh_cdc_acm_get_bulk_ep_mps())) {
 		cdc_acm_total_rx_len = 0;
 		rtos_sema_give(cdc_acm_receive_sema);
 	}

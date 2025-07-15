@@ -858,6 +858,7 @@ _LONG_CALL_ void LOGUART_TXDMACmd(LOGUART_TypeDef *UARTLOG, u32 NewState);
 _LONG_CALL_ void LOGUART_RXDMACmd(LOGUART_TypeDef *UARTLOG, u32 NewState);
 _LONG_CALL_ bool LOGUART_TXGDMA_Init(LOGUART_TypeDef *, GDMA_InitTypeDef *, void *, IRQ_FUN, u8 *, u32);
 _LONG_CALL_ bool LOGUART_RXGDMA_Init(LOGUART_TypeDef *, GDMA_InitTypeDef *, void *, IRQ_FUN, u8 *, u32);
+_LONG_CALL_ void LOGUART_PutChar_RAM(u8 c);
 
 #define DiagPutChar		LOGUART_PutChar
 #define DiagGetChar		LOGUART_GetChar

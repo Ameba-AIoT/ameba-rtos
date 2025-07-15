@@ -14,9 +14,9 @@ void exampe_wifi_join_status_event_hdl(u8 *buf, s32 buf_len, s32 flags)
 {
 	UNUSED(buf_len);
 	u8 join_status = (u8)flags;
-	union rtw_event_join_status_info *evt_info = (union rtw_event_join_status_info *)buf;
-	s32 fail_reason;
-	u16 disconn_reason;
+	struct rtw_event_join_status_info *evt_info = (struct rtw_event_join_status_info *)buf;
+	struct rtw_event_join_fail *join_fail;
+	struct rtw_event_disconnect *disconnect;
 
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
 		RTK_LOGI(TAG, "Join success\n");
@@ -25,9 +25,9 @@ void exampe_wifi_join_status_event_hdl(u8 *buf, s32 buf_len, s32 flags)
 
 	/*Get join fail reason*/
 	if (join_status == RTW_JOINSTATUS_FAIL) {/*Include 4 way handshake but not include DHCP*/
-		fail_reason = evt_info->fail.fail_reason;
-		RTK_LOGI(TAG, "Join fail, reason = %d ", fail_reason);/*definition in enum int*/
-		switch (fail_reason) {
+		join_fail = &evt_info->private.fail;
+		RTK_LOGI(TAG, "Join fail, reason = %d ", join_fail->fail_reason);/*definition in enum int*/
+		switch (join_fail->fail_reason) {
 		case -RTK_ERR_WIFI_CONN_SCAN_FAIL:
 			RTK_LOGI(NOTAG, "(Can not found target AP)\n");
 			break;
@@ -52,26 +52,26 @@ void exampe_wifi_join_status_event_hdl(u8 *buf, s32 buf_len, s32 flags)
 			break;
 		}
 		/*Get more detail fail info*/
-		if (fail_reason == -RTK_ERR_WIFI_CONN_AUTH_FAIL || fail_reason == -RTK_ERR_WIFI_CONN_ASSOC_FAIL ||
-			fail_reason == -RTK_ERR_WIFI_CONN_AUTH_PASSWORD_WRONG) {
+		if (join_fail->fail_reason == -RTK_ERR_WIFI_CONN_AUTH_FAIL || join_fail->fail_reason == -RTK_ERR_WIFI_CONN_ASSOC_FAIL ||
+			join_fail->fail_reason == -RTK_ERR_WIFI_CONN_AUTH_PASSWORD_WRONG) {
 			/*status code is valid during auth and assoc*/
-			RTK_LOGI(TAG, "status code from AP = %d\n", evt_info->fail.reason_or_status_code);
-		} else if (fail_reason == -RTK_ERR_WIFI_CONN_4WAY_HANDSHAKE_FAIL || -RTK_ERR_WIFI_CONN_4WAY_PASSWORD_WRONG) {
+			RTK_LOGI(TAG, "status code from AP = %d\n", join_fail->reason_or_status_code);
+		} else if (join_fail->fail_reason == -RTK_ERR_WIFI_CONN_4WAY_HANDSHAKE_FAIL || -RTK_ERR_WIFI_CONN_4WAY_PASSWORD_WRONG) {
 			/*reason code is valid after assoc success*/
-			RTK_LOGI(TAG, "reason code from AP = %d\n", evt_info->fail.reason_or_status_code);
+			RTK_LOGI(TAG, "reason code from AP = %d\n", join_fail->reason_or_status_code);
 		}
 		return;
 	}
 
 	/*Get disconnect reason*/
 	if (join_status == RTW_JOINSTATUS_DISCONNECT) {
-		disconn_reason = evt_info->disconnect.disconn_reason;
-		RTK_LOGI(TAG, "Disconnect, reason = %d\n", disconn_reason);
+		disconnect = &evt_info->private.disconnect;
+		RTK_LOGI(TAG, "Disconnect, reason = %d\n", disconnect->disconn_reason);
 		/*Get more detail disconnect info*/
-		if (disconn_reason < RTW_DISCONN_RSN_DRV_BASE) {
-			RTK_LOGI(TAG, "Disconnect by AP, reason code =%d\n", disconn_reason);
+		if (disconnect->disconn_reason < RTW_DISCONN_RSN_DRV_BASE) {
+			RTK_LOGI(TAG, "Disconnect by AP, reason code =%d\n", disconnect->disconn_reason);
 		} else {
-			switch (disconn_reason) {
+			switch (disconnect->disconn_reason) {
 			case RTW_DISCONN_RSN_DRV_AP_LOSS:
 				RTK_LOGI(TAG, "Disconnect by Driver, detect AP loss\n");
 				break;

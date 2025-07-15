@@ -36,11 +36,10 @@
 #define USBD_INIC_VENDOR_REQ_FW_DOWNLOAD			0xF0U
 #define USBD_INIC_VENDOR_QUERY_CMD					0x01U
 #define USBD_INIC_VENDOR_QUERY_ACK					0x81U
-#define USBD_INIC_VENDOR_RESET_CMD					0x06U
-#define USBD_INIC_VENDOR_RESET_ACK					0x86U
+#define USBD_INIC_VENDOR_RESET_CMD					0x02U
+#define USBD_INIC_VENDOR_RESET_ACK					0x82U
 
-#define USBD_INIC_FW_TYPE_ROM						0xF0U
-#define USBD_INIC_FW_TYPE_RAM						0xF1U
+#define USBD_INIC_FW_TYPE_APPLICATION				0xF2U
 
 /* Private types -------------------------------------------------------------*/
 static const char *const TAG = "INIC";
@@ -160,7 +159,7 @@ static int inic_setup_handle_query(usb_setup_req_t *req, u8 *buf)
 		pkt->pkt_type = USBD_INIC_VENDOR_QUERY_ACK;
 		pkt->xfer_status = HAL_OK;
 		pkt->rl_version = (u8)(SYSCFG_RLVersion() & 0xFF);
-		pkt->dev_mode = USBD_INIC_FW_TYPE_RAM;
+		pkt->dev_mode = USBD_INIC_FW_TYPE_APPLICATION;
 		ret = HAL_OK;
 	} else if (req->wIndex == USBD_INIC_VENDOR_RESET_CMD) {
 		pkt = (usbd_inic_query_packet_t *)buf;
@@ -169,7 +168,7 @@ static int inic_setup_handle_query(usb_setup_req_t *req, u8 *buf)
 		pkt->pkt_type = USBD_INIC_VENDOR_RESET_ACK;
 		pkt->xfer_status = HAL_OK;
 		pkt->rl_version = (u8)(SYSCFG_RLVersion() & 0xFF);
-		pkt->dev_mode = USBD_INIC_FW_TYPE_RAM;
+		pkt->dev_mode = USBD_INIC_FW_TYPE_APPLICATION;
 		rtos_sema_give(reset_sema);
 		ret = HAL_OK;
 	}

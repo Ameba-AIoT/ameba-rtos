@@ -237,6 +237,80 @@ int whc_host_send_atcmd(char *data)
 	return ret;
 }
 
+void whc_host_wifi_connect(char *ssid, char *pwd)
+{
+	uint8_t buf[128] = {0};
+	uint8_t *ptr = buf;
+	uint32_t buf_len = 0, len = 0;
+
+	int ret = 0;
+	*(uint32_t *)ptr = WHC_WIFI_TEST;
+	ptr += 4;
+
+	*ptr = WHC_WIFI_TEST_CONNECT;
+	ptr += 1;
+
+	len = strlen(ssid);
+	*ptr = len;
+	ptr += 1;
+
+	memcpy(ptr, ssid, len);
+	ptr += len;
+
+	if (pwd) {
+		len = strlen(pwd);
+		*ptr = len;
+		ptr += 1;
+
+		memcpy(ptr, pwd, len);
+		ptr += len;
+
+	} else {
+		*ptr = 0;
+		ptr += 1;
+	}
+
+	buf_len = ptr - buf;
+
+	ret = whc_host_api_send_nl_data(buf, buf_len);
+}
+
+int whc_host_wifi_scan(void)
+{
+	uint8_t buf[12] = {0};
+	uint8_t *ptr = buf;
+	uint32_t buf_len = 0;
+	int ret = 0;
+	*(uint32_t *)ptr = WHC_WIFI_TEST;
+	ptr += 4;
+	buf_len += 4;
+
+	*ptr = WHC_WIFI_TEST_SCAN;
+	ptr += 1;
+	buf_len += 1;
+
+	ret = whc_host_api_send_nl_data(buf, buf_len);
+	return ret;
+}
+
+int whc_host_wifi_dhcp(void)
+{
+	uint8_t buf[12] = {0};
+	uint8_t *ptr = buf;
+	uint32_t buf_len = 0;
+	int ret = 0;
+	*(uint32_t *)ptr = WHC_WIFI_TEST;
+	ptr += 4;
+	buf_len += 4;
+
+	*ptr = WHC_WIFI_TEST_DHCP;
+	ptr += 1;
+	buf_len += 1;
+
+	ret = whc_host_api_send_nl_data(buf, buf_len);
+	return ret;
+}
+
 int whc_host_nl_init(void)
 {
 	int nl_fd;
@@ -280,6 +354,7 @@ void whc_host_cmd_hdl(char *input)
 	int arg_count = 0;
 	uint8_t idx = 0;
 	char *token = strtok(input, " ");
+	char *pwd = NULL;
 
 	while (token != NULL) {
 		args[arg_count++] = token;
@@ -345,6 +420,15 @@ void whc_host_cmd_hdl(char *input)
 			whc_host_nl_init();
 		} else if (strncmp(args[0], "AT", 2) == 0) {
 			whc_host_send_atcmd((char *)args[0]);
+		} else if (strcmp(args[0], "connect") == 0) {
+			if (arg_count > 2) {
+				pwd = args[2];
+			}
+			whc_host_wifi_connect(args[1], pwd);
+		} else if (strcmp(args[0], "scan") == 0) {
+			whc_host_wifi_scan();
+		} else if (strcmp(args[0], "dhcp") == 0) {
+			whc_host_wifi_dhcp();
 		} else {
 			printf("No command entered.\n");
 		}

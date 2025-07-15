@@ -315,6 +315,7 @@ SECTIONS
     PROVIDE(SPIC_CALIB_PATTERN = 0xa050);
     PROVIDE(GPIO_PORTx = 0xa058);
     PROVIDE(GPIO_PORTx_S = 0xa060);
+    PROVIDE(LOG_UART_IDX_FLAG = 0xa068);
     PROVIDE(aes_set_key = 0xb035);
     PROVIDE(aes_encrypt = 0xb37d);
     PROVIDE(aes_decrypt = 0xc065);

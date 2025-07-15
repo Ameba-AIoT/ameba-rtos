@@ -1207,8 +1207,10 @@ function(ameba_axf2bin_compress output_file input_file)
 endfunction()
 
 function(ameba_axf2bin_fw_pack output_file)
+    set(options
+        p_SHOW_OUTPUT
+    )
     set(oneValueArgs
-        p_IMAGE1
         p_IMAGE3
         p_FULLMAC_IMAGE1
         p_FULLMAC_IMAGE2
@@ -1216,7 +1218,9 @@ function(ameba_axf2bin_fw_pack output_file)
         p_DSP
     )
     set(multiValueArgs
+        p_IMAGE1
         p_IMAGE2
+        p_SBOOT_FOR_IMAGE
     )
     cmake_parse_arguments(ARG "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -1229,10 +1233,13 @@ function(ameba_axf2bin_fw_pack output_file)
     ameba_list_append_if(ARG_p_FULLMAC_IMAGE2 full_args --fullmac-image2 ${ARG_p_FULLMAC_IMAGE2})
     ameba_list_append_if(ARG_p_IMAGE_IMGTOOL_FLOADER full_args --imgtool-floader ${ARG_p_IMAGE_IMGTOOL_FLOADER})
     ameba_list_append_if(ARG_p_DSP full_args --dsp ${ARG_p_DSP})
+    ameba_list_append_if(ARG_p_SBOOT_FOR_IMAGE full_args --sboot-for-image ${ARG_p_SBOOT_FOR_IMAGE})
 
-    ameba_execute_process(COMMAND ${op_FW_PACKAGE}
-        ${full_args}
-    )
+    if(ARG_p_SHOW_OUTPUT)
+        ameba_execute_process(p_SHOW_OUTPUT COMMAND ${op_FW_PACKAGE} ${full_args})
+    else()
+        ameba_execute_process(COMMAND ${op_FW_PACKAGE} ${full_args})
+    endif()
 endfunction()
 
 # get all include directories of target recursively.

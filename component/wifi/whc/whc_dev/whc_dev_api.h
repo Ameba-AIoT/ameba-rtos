@@ -8,20 +8,25 @@
 * Copyright (C) 2023, Realtek Corporation. All rights reserved.
 */
 
-#ifndef __WHC_DEV_API_EXT_H__
-#define __WHC_DEV_API_EXT_H__
+#ifndef __WHC_DEV_API_H__
+#define __WHC_DEV_API_H__
 
-#define WHC_BRIDGE_HOST_READY    1
-#define WHC_BRIDGE_HOST_UNREADY  0
+#include "whc_dev.h"
+#ifdef CONFIG_WHC_DUAL_TCPIP
+#include "whc_dev_tcpip.h"
+#endif
 
+#define WHC_HOST_READY    1
+#define WHC_HOST_UNREADY  0
 
-struct PktFilterNode {
-	struct list_head list;
-	struct whc_dev_pkt_filter filter;
+enum whc_tickps_cmd_subtype {
+	WHC_CMD_TICKPS_R = 0,
+	WHC_CMD_TICKPS_A = 1,
+	WHC_CMD_TICKPS_TYPE_CG = 2,
+	WHC_CMD_TICKPS_TYPE_PG = 3,
 };
 
-void whc_dev_api_set_host_state(u8 state);
-void whc_dev_api_set_tickps_cmd(u8 subtype);
+#ifdef CONFIG_WHC_DUAL_TCPIP
 u8 whc_dev_api_get_host_rdy(void);
 
 void whc_dev_api_set_default_direction(u8 dir);
@@ -32,6 +37,11 @@ void whc_dev_api_delete_filter_node(u32_t identity);
 void whc_dev_api_get_filter_node(struct whc_dev_pkt_filter *filter, u32_t identity);
 
 void whc_dev_pktfilter_init(void);
+
+#endif
+
+void whc_dev_api_set_host_state(u8 state);
+void whc_dev_api_set_tickps_cmd(u8 subtype);
 
 void whc_dev_pkt_rx_to_user(u8 *rxbuf, u8 *real_buf, u16 size);
 void whc_dev_init_cmd_path_task(void);

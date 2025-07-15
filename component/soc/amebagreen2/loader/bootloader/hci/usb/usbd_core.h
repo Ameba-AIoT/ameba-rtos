@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __USBD_CORE_H
-#define __USBD_CORE_H
+#ifndef _USBD_CORE_H_
+#define _USBD_CORE_H_
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -44,5 +44,5 @@ void USBD_CtlError(USBD_HandleTypeDef  *pdev, USBD_SetupReqTypedef *req);
 void USBD_GetString(u8 *desc, u8 *unicode, u16 *len);
 void USBD_IRQHandler(void);
 
-#endif /* __USBD_CORE_H */
+#endif /* _USBD_CORE_H_ */
 

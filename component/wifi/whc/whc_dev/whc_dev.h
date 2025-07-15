@@ -45,10 +45,7 @@
 #include "whc_usb_dev.h"
 #endif
 
-#ifdef CONFIG_WHC_CMD_PATH
-#include "whc_dev_bridge.h"
 #include "whc_dev_api.h"
-#endif
 
 #else
 #include "whc_dev_struct.h"

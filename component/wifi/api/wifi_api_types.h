@@ -713,6 +713,7 @@ struct rtw_scan_param {
 	 *  APs with the lowest RSSI are discarded if scanned APs exceed this number. */
 	u16                              max_ap_record_num;
 	void                            *scan_user_data;   /**< User-defined data passed to callback functions for handling scan results. */
+	u8                              rom_rsvd[8]; //resverd for next cut
 
 	/** @brief Callback for normal asynchronous mode.
 	  * @param[in] ap_num: Total number of scanned APs.

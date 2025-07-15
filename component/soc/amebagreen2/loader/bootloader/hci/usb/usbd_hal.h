@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef USBD_HAL_H
-#define USBD_HAL_H
+#ifndef _USBD_HAL_H_
+#define _USBD_HAL_H_
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -287,7 +287,7 @@ typedef struct _USBD_HandleTypeDef {
 /* Exported variables --------------------------------------------------------*/
 
 extern USBD_HandleTypeDef USBD_Device;
-extern USBD_ClassTypeDef USBD_FULLMAC;
+extern USBD_ClassTypeDef USBD_FullmacClassDriver;
 
 /* Exported functions --------------------------------------------------------*/
 
@@ -317,5 +317,5 @@ u32 USB_ReadDevAllInEpInterrupt(USB_PCD_HandleTypeDef *hpcd);
 u32 USB_ReadDevInEPInterrupt(USB_PCD_HandleTypeDef *hpcd, u8 epnum);
 void USB_ClearInterrupts(USB_PCD_HandleTypeDef *hpcd, u32 interrupt);
 
-#endif /* USBD_HAL_H */
+#endif /* _USBD_HAL_H_ */
 

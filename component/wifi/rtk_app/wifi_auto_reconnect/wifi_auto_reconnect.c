@@ -38,6 +38,9 @@ void rtw_reconn_join_status_hdl(u8 *buf, s32 flags)
 	static u8 join_status_last = RTW_JOINSTATUS_SUCCESS;
 	int disconn_reason = -1;
 	u8 need_reconn = 0;
+	struct rtw_event_join_status_info *evt_info = (struct rtw_event_join_status_info *)buf;
+	struct rtw_event_join_fail *join_fail;
+	struct rtw_event_disconnect *disconnect;
 
 	if ((join_status_last == join_status) && (join_status_last > RTW_JOINSTATUS_4WAY_HANDSHAKING)) {
 		RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "same joinstaus: %d\n", join_status);/*just for debug, delete when stable*/
@@ -54,9 +57,11 @@ void rtw_reconn_join_status_hdl(u8 *buf, s32 flags)
 	}
 
 	if (join_status == RTW_JOINSTATUS_FAIL) {
-		disconn_reason = ((union rtw_event_join_status_info *)buf)->fail.reason_or_status_code;
+		join_fail = &evt_info->private.fail;
+		disconn_reason = join_fail->reason_or_status_code;
 	} else if (join_status == RTW_JOINSTATUS_DISCONNECT) {
-		disconn_reason = ((union rtw_event_join_status_info *)buf)->disconnect.disconn_reason;
+		disconnect = &evt_info->private.disconnect;
+		disconn_reason = disconnect->disconn_reason;
 	}
 
 	if (disconn_reason >= 0 && !(disconn_reason > RTW_DISCONN_RSN_APP_BASE &&

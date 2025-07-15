@@ -64,7 +64,6 @@ static usbd_config_t vendor_cfg = {
 	/* EOPF for ISOC OUT */
 	.ext_intr_en = USBD_EPMIS_INTR | USBD_EOPF_INTR,
 	.nptx_max_epmis_cnt = 100U,
-	.nptx_max_err_cnt = {0U, 2000U, 0U, 2000U, 0U, 2000U},
 	/*DFIFO total 1024 DWORD, resv 8 DWORD for DMA addr*/
 #elif defined (CONFIG_AMEBAGREEN2)
 	/*DFIFO total 1024 DWORD, resv 12 DWORD for DMA addr and EP0 fixed 32 DWORD*/

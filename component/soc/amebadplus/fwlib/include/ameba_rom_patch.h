@@ -49,6 +49,7 @@ _LONG_CALL_ void LOGUART_INT_AP2NP(void);
 _LONG_CALL_ u8 LOGUART_Writable(void);
 _LONG_CALL_ void LOGUART_WaitBusy(void);
 _LONG_CALL_ void LOGUART_WaitTxComplete(void);
+_LONG_CALL_ void LOGUART_PutChar_RAM(u8 c);
 _LONG_CALL_ int OTP_LogicalMap_CHK(void);
 _LONG_CALL_ int TRNG_get_random_bytes(void *dst, u32 size);
 _LONG_CALL_ int TRNG_get_random_bytes_f_rng(void *p_rng, unsigned char *output, size_t output_size);

@@ -15,11 +15,6 @@
 #define RTW_IP_ADDR_LEN 4
 #define RTW_IPv6_ADDR_LEN 16
 
-#ifdef CONFIG_P2P
-#define NETDEV_REGISTER   0
-#define NETDEV_UNREGISTER 1
-#endif
-
 /* Layer 2 structs. */
 
 /* Layer 1 structs. */
@@ -133,7 +128,6 @@ struct whc_device {
 
 #ifdef CONFIG_P2P
 	struct p2p_priv_t		p2p_global;
-	struct netdev_work		netdev_work;
 #endif
 
 };

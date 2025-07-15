@@ -64,7 +64,7 @@ static int rtk_diag_proto_load_data_from_start(const RtkDiagEvent_t *event, u16 
 			}
 			g_handler->last_event = event;
 			_memcpy(g_handler->data_frame->payload + 2 + total_event_size, (void *)event, event_size);
-			RTK_LOGA(NOTAG, "load event: %p, %u, %u\n", g_handler->data_frame->payload + 2 + total_event_size, event_size, event->evt_len);
+			RTK_LOGA(NOTAG, "load evt: %p, %u, %u, %u\n", g_handler->data_frame->payload + 2 + total_event_size, event->evt_time, event_size, event->evt_len);
 			total_event_size += event_size;
 			event = g_handler->getter();
 		}
@@ -166,6 +166,11 @@ int rtk_diag_proto_set_capacity(u16 payload_capacity)
 	if (NULL == g_handler) {
 		return RTK_ERR_DIAG_UNINIT;
 	}
+
+	if (payload_capacity == g_handler->payload_capacity) {
+		return RTK_SUCCESS;
+	}
+
 	if (payload_capacity < RTK_DIAG_SEND_BUFFER_SIZE_MIN) {
 		RTK_LOGA(NOTAG, "Protocol buffer capacity must larger than %u, now is %u\n", RTK_DIAG_SEND_BUFFER_SIZE_MIN, payload_capacity);
 		return RTK_ERR_DIAG_TOO_SMALL_BUFF;

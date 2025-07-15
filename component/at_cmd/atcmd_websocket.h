@@ -43,7 +43,8 @@ struct websocket_config {
 	int ping_interval; //send interval of ping in seconds
 	uint32_t next_ping_time; // next time of sending ping in milliseconds
 	int ping_timeout; //timeout of ping in seconds
-	int buffer_size;
+	int tx_buffer_size; //set to send websocket payload(exclude header)
+	int rx_buffer_size; //set to receive websocket payload(exclude header)
 	int max_queue_size;
 	char *protocol;
 	char *version;

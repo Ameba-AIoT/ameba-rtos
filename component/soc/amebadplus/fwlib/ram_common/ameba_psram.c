@@ -236,7 +236,7 @@ void PSRAM_CTRL_Init(void)
 		psram_ctrl->DEVICE_INFO = BIT_DATA_UNIT_2B | BIT_JEDEC_P2CMF | BIT_PSRAM | ATOM_SIZE(0x1) | BIT_RD_PAGE_EN | \
 								  BIT_WR_PAGE_EN | PAGE_SIZE(PsramInfo.Psram_Page_size);
 		psram_ctrl->TPR1 &= ~(MASK_CR_IDLE_WINDOW | MASK_CR_TPWR);
-		psram_ctrl->TPR0 = (CS_TCEM(Psram_Tcem_T25 * 1000 / PsramInfo.PSRAMC_Clk_Unit / 32)) | \
+		psram_ctrl->TPR0 = (CS_TCEM(Psram_Tcem_T85 * 1000 / PsramInfo.PSRAMC_Clk_Unit / 32)) | \
 						   (CS_SEQ_TIMEOUT(Psram_Seq_timeout)) | \
 						   (CS_ACTIVE_HOLD(Psram_WB_CSH)) | \
 						   (CS_H_WR_DUM_LEN(((PsramInfo.Psram_TRWR * 1000 + PsramInfo.PSRAMC_Clk_Unit - 1) / PsramInfo.PSRAMC_Clk_Unit - 2 - 3 - 1))) | \

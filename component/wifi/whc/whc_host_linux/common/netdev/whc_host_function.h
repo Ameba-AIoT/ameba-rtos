@@ -20,7 +20,7 @@ void whc_fullmac_host_wifi_on(void);
 int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_len, u8 block);
 int whc_fullmac_host_scan_abort(void);
 int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsigned char block);
-int whc_fullmac_host_event_disconnect(void);
+int whc_fullmac_host_event_disconnect(u16 reason_code);
 int whc_fullmac_host_wifi_get_join_status(void);
 int whc_fullmac_host_set_channel(u32 wlan_idx, u8 ch);
 int whc_host_init(void);
@@ -88,11 +88,10 @@ int whc_fullmac_host_p2p_iface_alloc(struct wiphy *wiphy, const char *name,
 void whc_fullmac_host_p2p_iface_free(struct wiphy *wiphy, struct wireless_dev *wdev);
 void whc_fullmac_host_p2p_pdwdev_free(void);
 int whc_fullmac_host_p2p_get_wdex_idx(struct wireless_dev *wdev);
-void whc_fullmac_host_p2p_netdev_work_func(struct work_struct *work);
 #endif
 #ifdef CONFIG_CFG80211_SME_OFFLOAD
 void whc_fullmac_host_sme_auth(dma_addr_t auth_data_phy);
-int whc_fullmac_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len);
+int whc_fullmac_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len, u8 wpa_rsn_exist);
 #endif
 int whc_fullmac_host_set_pmf_mode(u8 pmf_mode);
 int whc_fullmac_host_set_wps_phase(u8 enable);

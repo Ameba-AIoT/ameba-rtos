@@ -37,7 +37,10 @@ class Rsip(OperationBase):
                 context.logger.fatal(f"Failed to parse addr for {section} in {layout_file}")
             lib_security = importlib.import_module('security')
             rsip = lib_security.RSIP(output_file, input_file, section_addr, image_config)
-            rsip.RSIP_ImageEncrypt()
+            if context.soc_project == "amebad":
+                rsip.RSIP_ImageEncrypt_AMEBAD()
+            else:
+                rsip.RSIP_ImageEncrypt()
         else:
             shutil.copy(input_file, output_file)
 

@@ -48,11 +48,14 @@ enum whc_tickps_cmd_subtype {
 #define WHC_WIFI_TEST 0xffa5a5a5
 #define WHC_ATCMD_TEST 0xeea5a5a5
 
-#define WHC_WIFI_TEST_GET_MAC_ADDR 0x1
-#define WHC_WIFI_TEST_GET_IP       0x2
-#define WHC_WIFI_TEST_SET_READY    0x3
+#define WHC_WIFI_TEST_GET_MAC_ADDR   0x1
+#define WHC_WIFI_TEST_GET_IP         0x2
+#define WHC_WIFI_TEST_SET_READY      0x3
 #define WHC_WIFI_TEST_SET_UNREADY    0x4
 #define WHC_WIFI_TEST_SET_TICKPS_CMD 0x5
+#define WHC_WIFI_TEST_CONNECT        0x6
+#define WHC_WIFI_TEST_SCAN           0x7
+#define WHC_WIFI_TEST_DHCP           0x8
 
 extern struct genl_family whc_nl_family;
 #endif

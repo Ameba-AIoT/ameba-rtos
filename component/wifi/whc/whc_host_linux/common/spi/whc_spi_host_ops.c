@@ -150,6 +150,7 @@ exit:
 	}
 }
 
+#ifdef CONFIG_WHC_CMD_PATH
 void whc_host_send_cmd_data(u8 *buf, u32 len)
 {
 	struct whc_cmd_path_hdr *hdr = NULL;
@@ -197,6 +198,7 @@ int whc_host_cmd_data_rx_to_user(struct sk_buff *pskb)
 
 	return ret;
 }
+#endif
 
 struct hci_ops_t whc_spi_host_intf_ops = {
 	.send_data = whc_spi_host_send_data,

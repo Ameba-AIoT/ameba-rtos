@@ -29,17 +29,6 @@ static uint8_t a2dp_remote_role;
 static uint8_t remote_addr[6] = {0};
 extern T_APP_BR_LINK *app_find_br_link(uint8_t *bd_addr);
 
-static void app_a2dp_src_set_stream_status(T_APP_BR_LINK *p_link, bool streaming)
-{
-	if (p_link->is_streaming == true && streaming == false) {
-		bt_avrcp_play_status_change_req(p_link->bd_addr, BT_AVRCP_PLAY_STATUS_PAUSED);
-	} else if (p_link->is_streaming == false && streaming == true) {
-		bt_avrcp_play_status_change_req(p_link->bd_addr, BT_AVRCP_PLAY_STATUS_PLAYING);
-	}
-
-	p_link->is_streaming = streaming;
-}
-
 static void app_a2dp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t buf_len)
 {
 	(void)buf_len;
@@ -242,7 +231,6 @@ static void app_a2dp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 
 	case BT_EVENT_A2DP_STREAM_START_RSP: {
 		APP_PRINT_INFO0("A2DP STREAM START RSP ");
-		rtk_bt_a2dp_stream_start_t *p_a2dp_stream_start = NULL;
 
 		if (a2dp_role != BT_A2DP_ROLE_SRC) {
 			BT_LOGE("app_a2dp_bt_cback: BT_EVENT_A2DP_STREAM_START_RSP Wrong A2DP Role ! \r\n");
@@ -253,17 +241,14 @@ static void app_a2dp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 			BT_LOGE("app_a2dp_bt_cback: BT_EVENT_A2DP_STREAM_START_RSP no link found \r\n");
 			break;
 		}
-		app_a2dp_src_set_stream_status(p_link, true);
 		{
-			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_A2DP, RTK_BT_A2DP_EVT_STREAM_START_RSP, sizeof(rtk_bt_a2dp_stream_start_t));
+			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_A2DP, RTK_BT_A2DP_EVT_STREAM_START_RSP, 6);
 			if (!p_evt) {
 				BT_LOGE("app_a2dp_bt_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
-			p_a2dp_stream_start = (rtk_bt_a2dp_stream_start_t *)p_evt->data;
-			p_a2dp_stream_start->active_a2dp_link_index = 0;
-			p_a2dp_stream_start->stream_cfg = p_link->streaming_fg;
+			memcpy((void *)p_evt->data, (void *)param->a2dp_stream_start_rsp.bd_addr, 6);
 			/* Send event */
 			if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
 				handle = false;
@@ -333,9 +318,6 @@ static void app_a2dp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 		APP_PRINT_INFO0("BT_EVENT_A2DP_STREAM_STOP");
 		BT_LOGA("app_a2dp_bt_cback: BT_EVENT_A2DP_STREAM_STOP \r\n");
 		p_link->streaming_fg = false;
-		if (a2dp_role == BT_A2DP_ROLE_SRC) {
-			app_a2dp_src_set_stream_status(p_link, false);
-		}
 		{
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_A2DP, RTK_BT_A2DP_EVT_STREAM_STOP, sizeof(rtk_bt_a2dp_conn_ind_t));
 			if (!p_evt) {

@@ -173,10 +173,10 @@ int pre_process_buf_data(u8 *buf, u16 size)
 			break;
 		}
 
-	} else if (bridge_event == WHC_WIFI_TEST) {
+	} else if (bridge_event == WHC_WPA_OPS_UTIL) {
 		printk("%s bridge_event: %x cmd_id: %d\n", __FUNCTION__, bridge_event, *buf_p);
 		switch (*buf_p) {
-		case WHC_WIFI_TEST_GET_MAC_ADDR:
+		case WHC_WPA_OPS_UTIL_GET_MAC_ADDR:
 			printk("%s GET MAC ADDR\n", __FUNCTION__);
 
 			buf_p += 1;

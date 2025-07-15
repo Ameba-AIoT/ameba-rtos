@@ -79,6 +79,26 @@ void app_testmode_status(void)
 	}
 }
 
+void app_bod_init(void)
+{
+	/* ONLY init bod when first power-on */
+	if (BOOT_Reason() != 0) {
+		return;
+	}
+
+	BOR_ThresholdSet(0x8, 0x5);
+	RTK_LOGI(TAG, "BOR arises when supply voltage decreases under 2.57V and recovers above 2.7V.\n");
+
+	BOR_ModeSet(BOR_RESET);
+	BOR_Enable(ENABLE);
+
+	/* To avoid unwanted extra reset. */
+	/* default debounce delay: 100us(BOR_TDBC = 0x1) */
+	/* It takes 100us for actual BOD output to sync to digital circuit. */
+	DelayUs(100);
+	RCC_PeriphClockCmd(APBPeriph_BOR, APBPeriph_CLOCK_NULL, ENABLE);
+}
+
 void app_vdd1833_detect(void)
 {
 	ADC_InitTypeDef ADC_InitStruct;
@@ -180,6 +200,8 @@ void app_start(void)
 	app_mpu_nocache_init();
 
 	app_vdd1833_detect();
+
+	app_bod_init();
 
 	/* Force SP align to 8bytes */
 	__asm(

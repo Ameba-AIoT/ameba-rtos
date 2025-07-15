@@ -6,6 +6,11 @@
 
 #include "ameba_soc.h"
 
+static LOG_UART_PORT LOG_UART_IDX_FLAG[] = {
+	{1, LOGUART_BIT_TP2F_NOT_FULL, LOGUART_BIT_TP2F_EMPTY, 52125, UART_LOG_IRQ},	/* KM0 IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
+	{0, LOGUART_BIT_TP1F_NOT_FULL, LOGUART_BIT_TP1F_EMPTY, 781875, UART_LOG_IRQ},	/* KM4 IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
+};
+
 /**
  * @brief Configure LOGUART TX DMA burst size.
  * @param UARTLOG LOGUART device.
@@ -227,6 +232,21 @@ bool LOGUART_RXGDMA_Init(
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
 	return TRUE;
+}
+
+/**
+ * @brief Transmit single byte to current tx path FIFO without appending characters.
+ * @param c Data to be transmitted.
+ * @return None
+ */
+void LOGUART_PutChar_RAM(u8 c)
+{
+	LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
+	u32 CPUID = SYS_CPUID();
+
+	LOGUART_WaitTx();
+
+	UARTLOG->LOGUART_UART_THRx[LOG_UART_IDX_FLAG[CPUID].idx] = c;
 }
 
 /**

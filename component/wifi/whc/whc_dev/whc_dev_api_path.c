@@ -407,6 +407,11 @@ void whc_event_wifi_on(u32 api_id, u32 *param_buf)
 {
 	int ret;
 	u8 mode = (u8)param_buf[0];
+
+#ifdef CONFIG_WHC_DUAL_TCPIP
+	whc_dev_api_set_host_state(WHC_HOST_READY);
+#endif
+
 	ret = wifi_on(mode);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }

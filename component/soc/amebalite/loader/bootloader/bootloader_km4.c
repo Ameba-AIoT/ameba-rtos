@@ -147,6 +147,18 @@ u32 BOOT_PSRAM_Init(void)
 
 		} else {
 			RTK_LOGI(TAG, "Init WB PSRAM\r\n");
+
+			RTK_LOGI(TAG, "*************************************************\n");
+			RTK_LOGI(TAG, "* PSRAM CRITICAL TEMPERATURE ADJUSTMENT         *\n");
+			RTK_LOGI(TAG, "*************************************************\n");
+
+			RTK_LOGI(TAG, "* When system temperature exceeds 85°C:         *\n");
+			RTK_LOGI(TAG, "*   Tcem parameter for PSRAM must be set to 1μs *\n");
+			RTK_LOGI(TAG, "*                                               *\n");
+			RTK_LOGI(TAG, "* Failure to adjust may cause:                  *\n");
+			RTK_LOGI(TAG, "*   - Timing violations                         *\n");
+			RTK_LOGI(TAG, "*   - System instability                        *\n");
+			RTK_LOGI(TAG, "*************************************************\n");
 			/* init psram device */
 			PSRAM_WB_DEVIC_Init();
 		}

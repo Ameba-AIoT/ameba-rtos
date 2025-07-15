@@ -8,8 +8,8 @@
 * Copyright (C) 2023, Realtek Corporation. All rights reserved.
 */
 
-#ifndef __WHC_SDIO_DEV_BRIDGE_H__
-#define __WHC_SDIO_DEV_BRIDGE_H__
+#ifndef __WHC_DEV_TCPIP_H__
+#define __WHC_DEV_TCPIP_H__
 
 #include "lwip/opt.h"
 #include "lwip/prot/ethernet.h"
@@ -35,14 +35,7 @@
 #define MASK_TYPE         BIT4
 #define MASK_IDX          BIT5
 
-enum bridge_tickps_cmd_subtype {
-	BRIDGE_CMD_TICKPS_R = 0,
-	BRIDGE_CMD_TICKPS_A = 1,
-	BRIDGE_CMD_TICKPS_TYPE_CG = 2,
-	BRIDGE_CMD_TICKPS_TYPE_PG = 3,
-};
-
-struct bridge_pkt_attrib {
+struct whc_pkt_attrib {
 	u16_t protocol;
 	u16_t src_port;
 	u16_t dst_port;
@@ -69,7 +62,12 @@ struct whc_dev_pkt_filter {
 	u8_t rsvd[3];
 };
 
-extern u8(*whc_dev_pkt_redir_cusptr)(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib);
+struct PktFilterNode {
+	struct list_head list;
+	struct whc_dev_pkt_filter filter;
+};
+
+extern u8(*whc_dev_pkt_redir_cusptr)(struct sk_buff *skb, struct whc_pkt_attrib *pattrib);
 
 u8 whc_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send);
 

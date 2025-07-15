@@ -23,7 +23,6 @@ set(
     ${DIR}/wififw_deltatsft_patch.c
     ${DIR}/wififw_multi_rx_bcn.c
     ${DIR}/wififw_lpsofld.c
-    ${DIR}/wififw_ps_dbg.c
     ${DIR}/wififw_gtimer.c
     ${DIR}/wififw_btcoex.c
     ${DIR}/wififw_twt_timer.c

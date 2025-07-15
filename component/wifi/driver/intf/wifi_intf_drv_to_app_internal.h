@@ -153,6 +153,7 @@ struct wpa_sae_param_t {
 	unsigned char 		self_mac[6];
 	u8					h2e;  /**< A flag indicating the use of Hash-to-Element (H2E) optimization in SAE. */
 	u8					sae_reauth_limit;
+	u8					rsn_auth_key_mgmt[4];
 };
 
 /**

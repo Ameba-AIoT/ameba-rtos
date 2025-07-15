@@ -56,6 +56,7 @@
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
+#include "float.h"
 #include <sys/time.h>
 
 #include "lwip_netconf.h" //realtek add
@@ -85,10 +86,10 @@ double atof_ss(const char *str)
 	bool is_fraction = 0;
 	int fraction_exponent = 1;
 	char c;
+	int seen_digit = 0;
 
 	// 跳过空白字符
-	c = *str;
-	while (isspace(c)) {
+	while (isspace((unsigned char)*str)) {
 		str++;
 	}
 
@@ -103,17 +104,25 @@ double atof_ss(const char *str)
 	// 转换数字
 	while (*str) {
 		c = *str;
-		if (isdigit(c)) {
+		if (isdigit((unsigned char)c)) {
+			seen_digit = 1;
 			if (is_fraction) {
 				fraction_exponent *= 10;
 			}
-			result = result * 10 + (*str - '0');
-		} else if (*str == '.') {
+			result = result * 10 + (c - '0');
+		} else if (c == '.') {
+			if (is_fraction) {
+				return DBL_MAX;
+			}
 			is_fraction = 1;
 		} else {
-			break;
+			return DBL_MAX;
 		}
 		str++;
+	}
+
+	if (!seen_digit) {
+		return DBL_MAX;
 	}
 
 #if 0
@@ -144,17 +153,17 @@ double atof_ss(const char *str)
 
 }
 
-static void atof_and_one_char(const char *str, double *float_val, char *one_char)
+static int atof_and_one_char(const char *str, double *float_val, char *one_char)
 {
 	double result = 0.0;
 	int sign = 1;
 	bool is_fraction = 0;
 	int fraction_exponent = 1;
 	char c;
+	int seen_digit = 0;
 
 	// 跳过空白字符
-	c = *str;
-	while (isspace(c)) {
+	while (isspace((unsigned char)*str)) {
 		str++;
 	}
 
@@ -169,20 +178,31 @@ static void atof_and_one_char(const char *str, double *float_val, char *one_char
 	// 转换数字
 	while (*str) {
 		c = *str;
-		if (isdigit(c)) {
+		if (isdigit((unsigned char)c)) {
+			seen_digit = 1;
 			if (is_fraction) {
 				fraction_exponent *= 10;
 			}
-			result = result * 10 + (*str - '0');
-		} else if (*str == '.') {
+			result = result * 10 + (c - '0');
+		} else if (c == '.') {
+			if (is_fraction) {
+				return -1;
+			}
 			is_fraction = 1;
-		} else {
+		} else if (isalpha((unsigned char)c) && *(str + 1) == '\0') {
 			*one_char = c;
 			break;
+		} else {
+			return -1;
 		}
 		str++;
 	}
+	if (!seen_digit) {
+		return -1;
+	}
+
 	*float_val = sign * result / fraction_exponent;
+	return 0;
 }
 
 /* -------------------------------------------------------------------
@@ -200,11 +220,14 @@ double    unit_atof(const char *s)
 
 	if (s == NULL) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s s == NULL\n", __FUNCTION__);
-		for (;;);
+		return DBL_MAX;
 	}
 
 	/* scan the number and any suffices */
-	atof_and_one_char(s, &n, &suffix);
+	if (atof_and_one_char(s, &n, &suffix) != 0) {
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s format err\n", __FUNCTION__);
+		return DBL_MAX;
+	}
 
 	/* convert according to [Tt Gg Mm Kk] */
 	switch (suffix) {
@@ -224,8 +247,10 @@ double    unit_atof(const char *s)
 	case 'K':
 		n *= KILO_UNIT;
 		break;
-	default:
+	case '\0':
 		break;
+	default:
+		return DBL_MAX;
 	}
 	return n;
 }				/* end unit_atof */
@@ -245,11 +270,14 @@ double    unit_atof_rate(const char *s)
 
 	if (s == NULL) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s s == NULL\n", __FUNCTION__);
-		for (;;);
+		return DBL_MAX;
 	}
 
 	/* scan the number and any suffices */
-	atof_and_one_char(s, &n, &suffix);
+	if (atof_and_one_char(s, &n, &suffix) != 0) {
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s format err\n", __FUNCTION__);
+		return DBL_MAX;
+	}
 
 	/* convert according to [Tt Gg Mm Kk] */
 	switch (suffix) {
@@ -269,8 +297,10 @@ double    unit_atof_rate(const char *s)
 	case 'K':
 		n *= KILO_RATE_UNIT;
 		break;
-	default:
+	case '\0':
 		break;
+	default:
+		return DBL_MAX;
 	}
 	return n;
 }				/* end unit_atof_rate */
@@ -292,11 +322,14 @@ iperf_size_t unit_atoi(const char *s)
 
 	if (s == NULL) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s s == NULL\n", __FUNCTION__);
-		for (;;);
+		return UINT64_MAX;
 	}
 
 	/* scan the number and any suffices */
-	atof_and_one_char(s, &n, &suffix);
+	if (atof_and_one_char(s, &n, &suffix) != 0) {
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s format err\n", __FUNCTION__);
+		return UINT64_MAX;
+	}
 
 	/* convert according to [Tt Gg Mm Kk] */
 	switch (suffix) {
@@ -316,8 +349,10 @@ iperf_size_t unit_atoi(const char *s)
 	case 'K':
 		n *= KILO_UNIT;
 		break;
-	default:
+	case '\0':
 		break;
+	default:
+		return UINT64_MAX;
 	}
 	return (iperf_size_t) n;
 }				/* end unit_atof */

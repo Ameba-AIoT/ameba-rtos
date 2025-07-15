@@ -12,7 +12,7 @@
 /* Private defines -----------------------------------------------------------*/
 
 /* Do USB power on flow after USB download done/aborted */
-#define USB_PWR_ON_EN	       0
+#define USB_PWR_ON_EN	       1
 #define USB_PWR_OFF_EN         1
 
 /* Enable In Token prediction debug */
@@ -801,6 +801,8 @@ HAL_Status USB_PCD_Init(USB_PCD_HandleTypeDef *hpcd)
 	if (hpcd->State == HAL_PCD_STATE_RESET) {
 		/* Allocate lock resource and initialize it */
 		hpcd->Lock = USB_HAL_UNLOCKED;
+
+		usb_hal_driver.deinit();
 
 		/* SoC specific init */
 		if (usb_hal_driver.init(USB_OTG_MODE_DEVICE) != HAL_OK) {

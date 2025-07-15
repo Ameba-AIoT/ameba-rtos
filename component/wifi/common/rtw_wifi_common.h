@@ -37,11 +37,7 @@
 #define WLAN_MAX_PROTOCOL_OVERHEAD (WLAN_HDR_A4_QOS_HTC_LEN+WLAN_MAX_IV_LEN+\
 							WLAN_SNAP_HEADER+WLAN_MAX_MIC_LEN+WLAN_MAX_ICV_LEN)/*=68*/
 
-#if WIFI_LOGO_CERTIFICATION
-#define RSNXE_MAX_LEN (257) /* https://jira.realtek.com/browse/RSWLANDIOT-9803 */
-#else
 #define RSNXE_MAX_LEN (18)/*Draft P802.11REVmd_D5.0 p1464*/
-#endif
 
 #define INFO_ELEMENT_SIZE       128 /*TODO: rom should check because moved from rom_rtw_defs.h*/
 

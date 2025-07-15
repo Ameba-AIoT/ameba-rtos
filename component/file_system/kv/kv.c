@@ -53,7 +53,7 @@ exit:
 
 int32_t rt_kv_set(const char *key, const void *val, int32_t len)
 {
-	vfs_file *finfo;
+	FILE *finfo;
 	int res = -1;
 	char *path = NULL;
 
@@ -73,17 +73,17 @@ int32_t rt_kv_set(const char *key, const void *val, int32_t len)
 	}
 
 	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:KV/%s", prefix, key);
-	finfo = (vfs_file *)fopen(path, "w");
+	finfo = fopen(path, "w");
 	if (finfo == NULL) {
 		VFS_DBG(VFS_ERROR, "fopen failed, res is %d", res);
 		goto exit;
 	}
 
-	res = fwrite(val, len, 1, (FILE *)finfo);
+	res = fwrite(val, len, 1, finfo);
 	if (res != len) {
 		VFS_DBG(VFS_ERROR, "fwrite failed,err is %d!!", res);
 	}
-	fclose((FILE *)finfo);
+	fclose(finfo);
 
 exit:
 	if (path) {
@@ -96,7 +96,7 @@ exit:
 
 int32_t rt_kv_set_offset(const char *key, const void *val, int32_t len, int32_t offset)
 {
-	vfs_file *finfo;
+	FILE *finfo;
 	int res = -1;
 	char *path = NULL;
 
@@ -116,9 +116,9 @@ int32_t rt_kv_set_offset(const char *key, const void *val, int32_t len, int32_t 
 	}
 
 	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:KV/%s", prefix, key);
-	finfo = (vfs_file *)fopen(path, "wx");
+	finfo = fopen(path, "wx");
 	if (finfo == NULL) {
-		finfo = (vfs_file *)fopen(path, "+");
+		finfo = fopen(path, "+");
 		if (finfo == NULL) {
 			VFS_DBG(VFS_ERROR, "fopen failed, res is %d", res);
 			goto exit;
@@ -126,18 +126,18 @@ int32_t rt_kv_set_offset(const char *key, const void *val, int32_t len, int32_t 
 	}
 
 	if (offset > 0) {
-		res = fseek((FILE *)finfo, offset, SEEK_SET);
+		res = fseek(finfo, offset, SEEK_SET);
 		if (res < 0) {
 			VFS_DBG(VFS_ERROR, "fseek failed,err is %d!!", res);
 			goto exit;
 		}
 	}
 
-	res = fwrite(val, len, 1, (FILE *)finfo);
+	res = fwrite(val, len, 1, finfo);
 	if (res != len) {
 		VFS_DBG(VFS_ERROR, "fwrite failed,err is %d!!", res);
 	}
-	fclose((FILE *)finfo);
+	fclose(finfo);
 
 exit:
 	if (path) {
@@ -149,7 +149,7 @@ exit:
 
 int32_t rt_kv_get(const char *key, void *buffer, int32_t len)
 {
-	vfs_file *finfo;
+	FILE *finfo;
 	int res = -1;
 	char *path = NULL;
 
@@ -169,17 +169,17 @@ int32_t rt_kv_get(const char *key, void *buffer, int32_t len)
 	}
 
 	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:KV/%s", prefix, key);
-	finfo = (vfs_file *)fopen(path, "r");
+	finfo = fopen(path, "r");
 	if (finfo == NULL) {
 		VFS_DBG(VFS_WARNING, "fopen failed ");
 		goto exit;
 	}
 
-	res = fread(buffer, len, 1, (FILE *)finfo);
+	res = fread(buffer, len, 1, finfo);
 	if (res < 0) {
 		VFS_DBG(VFS_ERROR, "fread failed,err is %d!!!", res);
 	}
-	fclose((FILE *)finfo);
+	fclose(finfo);
 
 exit:
 	if (path) {
@@ -191,7 +191,7 @@ exit:
 
 int32_t rt_kv_get_offset(const char *key, void *buffer, int32_t len, int32_t offset)
 {
-	vfs_file *finfo;
+	FILE *finfo;
 	int res = -1;
 	char *path = NULL;
 
@@ -211,25 +211,25 @@ int32_t rt_kv_get_offset(const char *key, void *buffer, int32_t len, int32_t off
 	}
 
 	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:KV/%s", prefix, key);
-	finfo = (vfs_file *)fopen(path, "r");
+	finfo = fopen(path, "r");
 	if (finfo == NULL) {
 		VFS_DBG(VFS_WARNING, "fopen failed ");
 		goto exit;
 	}
 
 	if (offset > 0) {
-		res = fseek((FILE *)finfo, offset, SEEK_SET);
+		res = fseek(finfo, offset, SEEK_SET);
 		if (res < 0) {
 			VFS_DBG(VFS_ERROR, "fseek failed,err is %d!!", res);
 			goto exit;
 		}
 	}
 
-	res = fread(buffer, len, 1, (FILE *)finfo);
+	res = fread(buffer, len, 1, finfo);
 	if (res < 0) {
 		VFS_DBG(VFS_ERROR, "fread failed,err is %d!!!", res);
 	}
-	fclose((FILE *)finfo);
+	fclose(finfo);
 
 exit:
 	if (path) {
