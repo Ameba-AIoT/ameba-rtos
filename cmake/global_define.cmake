@@ -157,6 +157,7 @@ set(op_PAD                  ${c_AXF2BIN_RUN} pad)
 set(op_FW_PACKAGE           ${c_AXF2BIN_RUN} fw_pack)
 set(op_COMPRESS             ${c_AXF2BIN_RUN} compress)
 set(op_PAD_BINARY           ${c_AXF2BIN_RUN} pad_binary)
+set(op_CUT                  ${c_AXF2BIN_RUN} cut)
 set(c_POST_BUILD_SCRIPT postbuild.cmake)
 ############################################################
 

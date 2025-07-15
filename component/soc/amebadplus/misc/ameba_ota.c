@@ -437,9 +437,9 @@ int ota_update_conn_read(ota_context *ctx, u8 *data, int data_len)
 
 int ota_update_vfs_prepare(ota_context *ctx)
 {
-	vfs_file *finfo;
+	FILE *finfo;
 
-	finfo = (vfs_file *)fopen(ctx->resource, "r");
+	finfo = fopen(ctx->resource, "r");
 	if (!finfo) {
 		ota_printf(_OTA_ERR_, "[%s] File %s not exist.\n", __FUNCTION__, ctx->resource);
 		return -1;

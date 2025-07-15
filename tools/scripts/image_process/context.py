@@ -63,7 +63,5 @@ class Context(ABC):
         self.image_output_dir = path
 
     def manifest_process(self):
-
-
         pass
 

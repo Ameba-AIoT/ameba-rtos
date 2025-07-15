@@ -83,13 +83,14 @@ void user_wifi_join_status_event_hdl(u8 *buf, s32 buf_len, s32 flags)
 {
 	(void) buf_len;
 	u8 join_status = (u8)flags;
-	u16 disconn_reason = 0;
+	struct rtw_event_join_status_info *evt_info = (struct rtw_event_join_status_info *)buf;
+	struct rtw_event_disconnect *disconnect;
 
 	/*Reconnect when disconnect after connected*/
 	if (join_status == RTW_JOINSTATUS_DISCONNECT) {
-		disconn_reason = ((union rtw_event_join_status_info *)buf)->disconnect.disconn_reason;
+		disconnect = &evt_info->private.disconnect;
 		/*Disconnect by APP no need do reconnect*/
-		if (disconn_reason > RTW_DISCONN_RSN_APP_BASE && disconn_reason < RTW_DISCONN_RSN_APP_BASE_END) {
+		if (disconnect->disconn_reason > RTW_DISCONN_RSN_APP_BASE && disconnect->disconn_reason < RTW_DISCONN_RSN_APP_BASE_END) {
 			return;
 		}
 

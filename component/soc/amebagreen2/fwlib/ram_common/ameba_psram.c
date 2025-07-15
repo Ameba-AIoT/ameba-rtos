@@ -409,7 +409,7 @@ void PSRAM_CTRL_Init(void)
 			TRWR = 35ns~ - (cmd + tcss + cs high + addr)
 			According spec, CS_H_WR_DUM_LEN = cs_high_time/Tclk - 2. So CS_H_RD_DUM_LEN = (TRWR-3T(cmd+addr)-3T(Tcs))/Tclk -2
 		*/
-		psram_ctrl->TPR0 = (CS_TCEM(Psram_Tcem_T25 * 1000 / PsramInfo.PSRAMC_Clk_Unit / 32 - 2)) | \
+		psram_ctrl->TPR0 = (CS_TCEM(Psram_Tcem_T85 * 1000 / PsramInfo.PSRAMC_Clk_Unit / 32 - 2)) | \
 						   (CS_SEQ_TIMEOUT(Psram_Seq_timeout)) | \
 						   (CS_ACTIVE_HOLD(Psram_WB_CSH)) | \
 						   (CS_H_WR_DUM_LEN(((8 * PsramInfo.PSRAMC_Clk_Unit > PsramInfo.Psram_TRWR * 1000) ? 2 : ((PsramInfo.Psram_TRWR * 1000 + PsramInfo.PSRAMC_Clk_Unit - 1) /
@@ -446,7 +446,7 @@ void PSRAM_CTRL_Init(void)
 			CS_ACTIVE_HOLD  tCHD:2ns~-
 			CS_H_WR_DUM_LEN: tCPH/Tclk-2
 		*/
-		psram_ctrl->TPR0 = (CS_TCEM(Psram_Tcem_T25_APM * 1000 / PsramInfo.PSRAMC_Clk_Unit / 32 - 2)) | \
+		psram_ctrl->TPR0 = (CS_TCEM(Psram_Tcem_T85 * 1000 / PsramInfo.PSRAMC_Clk_Unit / 32 - 2)) | \
 						   (CS_SEQ_TIMEOUT(Psram_Seq_timeout)) | \
 						   (CS_ACTIVE_HOLD(Psram_APM_CSH)) | \
 						   (CS_H_WR_DUM_LEN((PsramInfo.Psram_CSHI * 1000 / PsramInfo.PSRAMC_Clk_Unit) > 0 ? (((PsramInfo.Psram_CSHI * 1000 + PsramInfo.PSRAMC_Clk_Unit - 1) /

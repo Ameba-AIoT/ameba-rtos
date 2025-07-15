@@ -24,6 +24,7 @@
 
 #define WIFI_AKM_SUITE_PSK		0x000FAC02
 #define WIFI_AKM_SUITE_SAE		0x000FAC08
+#define WIFI_AKM_SUITE_FT_SAE		0x000FAC09
 #define WIFI_AKM_SUITE_OWE		0x000FAC12
 
 #define ASSOC_IE_MAX_LEN		500
@@ -31,6 +32,7 @@
 #define RSNXE_MAX_LEN (18)
 #define WLAN_EID_RSNX 244
 #define WLAN_EID_RSN			48
+#define WLAN_EID_WPA	0xdd
 #define WLAN_EID_EXT_OWE_DH_PARAM	32
 
 #define rtw_a_rates			(rtw_rates + 4)

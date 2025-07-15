@@ -268,11 +268,12 @@ end:
 /*
  * To aviod compile error when cmd_iperf3 is not implemented
  */
-_WEAK void cmd_iperf3(int argc, char **argv)
+_WEAK int cmd_iperf3(int argc, char **argv)
 {
 	UNUSED(argc);
 	UNUSED(argv);
 	RTK_LOGW(NOTAG, " iperf3 is not supported yet\r\n");
+	return 0;
 }
 
 static void at_iperf3_help(void)
@@ -313,7 +314,7 @@ void at_iperf3(void *arg)
 	argv[0] = (char *)"iperf3";
 	argc = parse_param(arg, argv);
 	if (argc > 1) {
-		cmd_iperf3(argc, argv);
+		error_no = cmd_iperf3(argc, argv);
 	} else {
 		RTK_LOGI(NOTAG, "[+IPERF3] Should be some argc\r\n");
 		error_no = 2;

@@ -9,18 +9,37 @@
 
 #define whc_spi_dev_event_int_hdl   whc_spi_dev_pkt_rx
 
+
+#ifdef CONFIG_AMEBAGREEN2  // need use QFN100
+#define PINMUX_FUNCTION_SPIS	    PINMUX_FUNCTION_SPI0
+#define DEV_READY_PIN				_PA_18
+#define RX_REQ_PIN					_PA_19
+#define SPI0_MOSI                   _PA_30
+#define SPI0_MISO                   _PA_31
+#define SPI0_SCLK                   _PA_29
+#define SPI0_CS                     _PB_0
+#define WHC_RECOVER_TIM_IDX			0 //todo: need check
+
+#elif defined (CONFIG_AMEBADPLUS)
+#define PINMUX_FUNCTION_SPIS	    PINMUX_FUNCTION_SPI
 #define DEV_READY_PIN				_PB_9
+#define RX_REQ_PIN					_PB_8
+#define SPI0_MOSI	                _PB_24
+#define SPI0_MISO	                _PB_25
+#define SPI0_SCLK	                _PB_23
+#define SPI0_CS		                _PB_26
+#define WHC_RECOVER_TIM_IDX			10
+#endif
+
 #define DEV_READY					1
 #define DEV_BUSY					0
 
-#define RX_REQ_PIN					_PB_8
 #define DEV_RX_REQ					1
 #define DEV_RX_IDLE					0
 
-#define WHC_SPI_DEV				SPI0_DEV
+#define WHC_SPI_DEV				    SPI0_DEV
 
-#define WHC_SPI_CLK_MHZ			20
-#define WHC_RECOVER_TIM_IDX			10
+#define WHC_SPI_CLK_MHZ			    20
 #define WHC_RECOVER_TO_US			1000
 
 #define DEV_DMA_ALIGN				4
@@ -62,12 +81,20 @@ struct whc_spi_priv_t {
 
 static inline void set_dev_rdy_pin(u8 status)
 {
+#ifdef CONFIG_AMEBAGREEN2
+	GPIO_WriteBit(DEV_READY_PIN, status);
+#else
 	GPIO_WriteBit_Critical(DEV_READY_PIN, status);
+#endif
 }
 
 static inline void set_dev_rxreq_pin(u8 status)
 {
+#ifdef CONFIG_AMEBAGREEN2
+	GPIO_WriteBit(RX_REQ_PIN, status);
+#else
 	GPIO_WriteBit_Critical(RX_REQ_PIN, status);
+#endif
 }
 
 void whc_spi_dev_device_init(void);

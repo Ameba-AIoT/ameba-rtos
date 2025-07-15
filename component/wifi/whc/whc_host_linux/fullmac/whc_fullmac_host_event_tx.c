@@ -366,9 +366,11 @@ error:
 	return ret;
 }
 
-int whc_fullmac_host_event_disconnect(void)
+int whc_fullmac_host_event_disconnect(u16 reason_code)
 {
 	int ret = 0;
+
+	(void) reason_code;
 
 	whc_fullmac_host_send_event(WHC_API_WIFI_DISCONNECT, NULL, 0, (u8 *)&ret, sizeof(int));
 

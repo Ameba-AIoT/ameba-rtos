@@ -74,10 +74,12 @@ if(CONFIG_WIFI_HOST_CONTROL)
         whc_dev/whc_dev_msg_queue.c
         whc_dev/whc_dev_trx.c
         whc_dev/whc_dev_protocal_offload.c
+        whc_dev/whc_dev_api.c
     )
+
     if(CONFIG_WHC_DUAL_TCPIP)
         ameba_list_append(private_sources
-            whc_dev/whc_dev_bridge.c
+            whc_dev/whc_dev_tcpip.c
         )
     endif()
 
@@ -91,7 +93,6 @@ if(CONFIG_WIFI_HOST_CONTROL)
     if(CONFIG_WHC_CMD_PATH)
         ameba_list_append(private_sources
             whc_dev/whc_dev_app.c
-            whc_dev/whc_dev_api.c
         )
     endif()
 endif()

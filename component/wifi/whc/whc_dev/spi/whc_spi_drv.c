@@ -349,8 +349,8 @@ static u32 whc_spi_dev_resume(u32 expected_idle_time, void *param)
 		set_dev_rxreq_pin(DEV_RX_IDLE);
 
 		/* Initialize SPI */
-		PAD_PullCtrl(_PB_26, GPIO_PuPd_UP);
-		PAD_PullCtrl(_PB_23, GPIO_PuPd_DOWN);
+		PAD_PullCtrl(SPI0_CS, GPIO_PuPd_UP);  // pull-up, default 1
+		PAD_PullCtrl(SPI0_SCLK, GPIO_PuPd_DOWN);
 
 		SSI_SetRole(WHC_SPI_DEV, SSI_SLAVE);
 		SSI_StructInit(&SSI_InitStructSlave);
@@ -419,6 +419,11 @@ void whc_spi_dev_device_init(void)
 #endif
 
 	/* Initialize Timer*/
+#ifdef CONFIG_AMEBAGREEN2
+	/* Switch clock source to 40M (default is 32768), default frequency division is 40, so acquire 1M timer (Dplus APBPeriph_HTIM0 is 1M).
+	   Can use RCC_PeriphClockDividerSet(XTAL_LTIM0, 4) to set div4, acquire 10M timer. */
+	RCC_PeriphClockSourceSet(LTIM0, XTAL);
+#endif
 	RCC_PeriphClockCmd(APBPeriph_TIMx[WHC_RECOVER_TIM_IDX], APBPeriph_TIMx_CLOCK[WHC_RECOVER_TIM_IDX], ENABLE);
 	RTIM_TimeBaseStructInit(&TIM_InitStruct);
 	TIM_InitStruct.TIM_Idx = WHC_RECOVER_TIM_IDX;
@@ -429,12 +434,12 @@ void whc_spi_dev_device_init(void)
 
 	/* Initialize SPI */
 	RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
-	Pinmux_Config(_PB_24, PINMUX_FUNCTION_SPI);//MOSI
-	Pinmux_Config(_PB_25, PINMUX_FUNCTION_SPI);//MISO
-	Pinmux_Config(_PB_23, PINMUX_FUNCTION_SPI);//CLK
-	Pinmux_Config(_PB_26, PINMUX_FUNCTION_SPI);//CS
-	PAD_PullCtrl(_PB_26, GPIO_PuPd_UP);
-	PAD_PullCtrl(_PB_23, GPIO_PuPd_DOWN);
+	Pinmux_Config(SPI0_MOSI, PINMUX_FUNCTION_SPIS);//MOSI
+	Pinmux_Config(SPI0_MISO, PINMUX_FUNCTION_SPIS);//MISO
+	Pinmux_Config(SPI0_SCLK, PINMUX_FUNCTION_SPIS);//CLK
+	Pinmux_Config(SPI0_CS, PINMUX_FUNCTION_SPIS);//CS
+	PAD_PullCtrl(SPI0_CS, GPIO_PuPd_UP);  // pull-up, default 1
+	PAD_PullCtrl(SPI0_SCLK, GPIO_PuPd_DOWN);
 
 	SSI_SetRole(WHC_SPI_DEV, SSI_SLAVE);
 	SSI_StructInit(&SSI_InitStructSlave);

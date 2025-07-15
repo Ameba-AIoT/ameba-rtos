@@ -41,6 +41,10 @@ ameba_list_append(private_sources
     mouse_des.c
 )
 
+ameba_list_append(private_includes
+    ./
+)
+
 # Component private part, user config end
 #------------------------------#
 

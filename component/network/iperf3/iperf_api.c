@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <assert.h>
+#include <float.h>
 
 #include "lwip_netconf.h" //realtek add
 
@@ -744,6 +745,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 	char *slash;
 	struct xbind_entry *xbe;
 	double farg;
+	double temp;
 
 	blksize = 0;
 	server_flag = client_flag = rate_flag = duration_flag = 0;
@@ -754,12 +756,16 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 	while ((flag = getopt_long(argc, argv, "p:f:i:D1VJvsc:ub:t:n:k:l:P:Rw:B:M:N46S:L:ZO:F:A:T:C:dI:hX:", longopts, NULL)) != -1) {
 		switch (flag) {
 		case 'p':
-			test->server_port = atoi(optarg);
+			test->server_port = strtol(optarg, &endptr, 10);
+			if (endptr == optarg || *endptr != '\0' || test->server_port < 1 || test->server_port > 65535) {
+				i_errno = IEPORT;
+				goto exit;
+			}
 			break;
 		case 'f':
 			if (!optarg) {
 				i_errno = IEBADFORMAT;
-				return -1;
+				goto exit;
 			}
 			test->settings->unit_format = *optarg;
 			if (test->settings->unit_format == 'k' ||
@@ -773,7 +779,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 				break;
 			} else {
 				i_errno = IEBADFORMAT;
-				return -1;
+				goto exit;
 			}
 			break;
 		case 'i':
@@ -782,7 +788,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 			test->stats_interval = test->reporter_interval = atof_ss(optarg);
 			if ((test->stats_interval < MIN_INTERVAL || test->stats_interval > MAX_INTERVAL) && test->stats_interval != 0) {
 				i_errno = IEINTERVAL;
-				return -1;
+				goto exit;
 			}
 			break;
 		case 'D':
@@ -802,18 +808,19 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 		case 'v':
 			RTK_LOGI("NOTAG", "%s (cJSON %s)\n%s\n%s\n", version, cJSON_Version(), get_system_info(),
 					 get_optional_features());
-			exit(0);
+			iperf_free_test(test);
+			goto exit;
 		case 's':
 			if (test->role == 'c') {
 				i_errno = IESERVCLIENT;
-				return -1;
+				goto exit;
 			}
 			iperf_set_test_role(test, 's');
 			break;
 		case 'c':
 			if (test->role == 's') {
 				i_errno = IESERVCLIENT;
-				return -1;
+				goto exit;
 			}
 			iperf_set_test_role(test, 'c');
 			iperf_set_test_server_hostname(test, optarg);
@@ -829,7 +836,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 			break;
 #else /* HAVE_SCTP */
 			i_errno = IEUNIMP;
-			return -1;
+			goto exit;
 #endif /* HAVE_SCTP */
 
 		case OPT_NUMSTREAMS:
@@ -838,50 +845,69 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 			client_flag = 1;
 #else /* linux */
 			i_errno = IEUNIMP;
-			return -1;
+			goto exit;
 #endif /* linux */
 		case 'b':
 			slash = strchr(optarg, '/');
 			if (slash) {
 				*slash = '\0';
 				++slash;
-				test->settings->burst = atoi(slash);
-				if (test->settings->burst <= 0 ||
+				test->settings->burst = strtol(slash, &endptr, 10);
+				if (endptr == slash || *endptr != '\0' ||
+					test->settings->burst <= 0 ||
 					test->settings->burst > MAX_BURST) {
 					i_errno = IEBURST;
-					return -1;
+					goto exit;
 				}
 			}
-			test->settings->rate = unit_atof_rate(optarg);
+			temp = unit_atof_rate(optarg);
+			if (temp == DBL_MAX || temp < 0) {
+				i_errno = IEPARAMFORMAT;
+				goto exit;
+			}
+			test->settings->rate = (uint64_t)temp;
 			rate_flag = 1;
 			client_flag = 1;
 			break;
 		case 't':
-			test->duration = atoi(optarg);
-			if (test->duration > MAX_TIME) {
+			test->duration = strtol(optarg, &endptr, 10);
+			if (endptr == optarg || *endptr != '\0' || test->duration <= 0 || test->duration > MAX_TIME) {
 				i_errno = IEDURATION;
-				return -1;
+				goto exit;
 			}
 			duration_flag = 1;
 			client_flag = 1;
 			break;
 		case 'n':
 			test->settings->bytes = unit_atoi(optarg);
+			if (test->settings->bytes == UINT64_MAX || test->settings->bytes == 0) {
+				i_errno = IEPARAMFORMAT;
+				goto exit;
+			}
 			client_flag = 1;
 			break;
 		case 'k':
 			test->settings->blocks = unit_atoi(optarg);
+			if (test->settings->blocks == UINT64_MAX || test->settings->blocks == 0) {
+				i_errno = IEPARAMFORMAT;
+				goto exit;
+			}
 			client_flag = 1;
 			break;
 		case 'l':
 			blksize = unit_atoi(optarg);
+			if (blksize == (int)UINT64_MAX || blksize < 0) {
+				i_errno = IEPARAMFORMAT;
+				goto exit;
+			}
 			client_flag = 1;
 			break;
 		case 'P':
-			test->num_streams = atoi(optarg);
-			if (test->num_streams > MAX_STREAMS) {
+			test->num_streams = strtol(optarg, &endptr, 10);
+			if (endptr == optarg || *endptr != '\0' ||
+				test->num_streams <= 0 || test->num_streams > MAX_STREAMS) {
 				i_errno = IENUMSTREAMS;
-				return -1;
+				goto exit;
 			}
 			client_flag = 1;
 			break;
@@ -894,9 +920,9 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 			// Do sanity checks as double-precision floating point
 			// to avoid possible integer overflows.
 			farg = unit_atof(optarg);
-			if (farg > (double) MAX_TCP_BUFFER) {
+			if (farg == DBL_MAX || farg < 0 || farg > (double) MAX_TCP_BUFFER) {
 				i_errno = IEBUFSIZE;
-				return -1;
+				goto exit;
 			}
 			test->settings->socket_bufsize = (int) farg;
 			client_flag = 1;
@@ -905,13 +931,18 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 			test->bind_address = strdup(optarg);
 			break;
 		case OPT_CLIENT_PORT:
-			test->bind_port = atoi(optarg);
+			test->bind_port = strtol(optarg, &endptr, 10);
+			if (endptr == optarg || *endptr != '\0' || test->bind_port < 1 || test->bind_port > 65535) {
+				i_errno = IEPORT;
+				goto exit;
+			}
 			break;
 		case 'M':
-			test->settings->mss = atoi(optarg);
-			if (test->settings->mss > MAX_MSS) {
+			test->settings->mss = strtol(optarg, &endptr, 10);
+			if (endptr == optarg || *endptr != '\0' ||
+				test->settings->mss <= 0 || test->settings->mss > MAX_MSS) {
 				i_errno = IEMSS;
-				return -1;
+				goto exit;
 			}
 			client_flag = 1;
 			break;
@@ -931,7 +962,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 				test->settings->tos < 0 ||
 				test->settings->tos > 255) {
 				i_errno = IEBADTOS;
-				return -1;
+				goto exit;
 			}
 			client_flag = 1;
 			break;
@@ -939,7 +970,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 			test->settings->tos = parse_qos(optarg);
 			if (test->settings->tos < 0) {
 				i_errno = IEBADTOS;
-				return -1;
+				goto exit;
 			}
 			client_flag = 1;
 			break;
@@ -949,42 +980,42 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 			if (endptr == optarg ||
 				test->settings->flowlabel < 1 || test->settings->flowlabel > 0xfffff) {
 				i_errno = IESETFLOW;
-				return -1;
+				goto exit;
 			}
 			client_flag = 1;
 #else /* HAVE_FLOWLABEL */
 			i_errno = IEUNIMP;
-			return -1;
+			goto exit;
 #endif /* HAVE_FLOWLABEL */
 			break;
 		case 'X':
 			xbe = (struct xbind_entry *)malloc(sizeof(struct xbind_entry));
 			if (!xbe) {
 				i_errno = IESETSCTPBINDX;
-				return -1;
+				goto exit;
 			}
 			memset(xbe, 0, sizeof(*xbe));
 			xbe->name = strdup(optarg);
 			if (!xbe->name) {
 				free(xbe);
 				i_errno = IESETSCTPBINDX;
-				return -1;
+				goto exit;
 			}
 			TAILQ_INSERT_TAIL(&test->xbind_addrs, xbe, link);
 			break;
 		case 'Z':
 			if (!has_sendfile()) {
 				i_errno = IENOSENDFILE;
-				return -1;
+				goto exit;
 			}
 			test->zerocopy = 1;
 			client_flag = 1;
 			break;
 		case 'O':
-			test->omit = atoi(optarg);
-			if (test->omit < 0 || test->omit > 60) {
+			test->omit = strtol(optarg, &endptr, 10);
+			if (endptr == optarg || *endptr != '\0' || test->omit < 0 || test->omit > 60) {
 				i_errno = IEOMIT;
-				return -1;
+				goto exit;
 			}
 			client_flag = 1;
 			break;
@@ -997,20 +1028,20 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 			if (endptr == optarg ||
 				test->affinity < 0 || test->affinity > 1024) {
 				i_errno = IEAFFINITY;
-				return -1;
+				goto exit;
 			}
 			comma = strchr(optarg, ',');
 			if (comma != NULL) {
 				test->server_affinity = atoi(comma + 1);
 				if (test->server_affinity < 0 || test->server_affinity > 1024) {
 					i_errno = IEAFFINITY;
-					return -1;
+					goto exit;
 				}
 				client_flag = 1;
 			}
 #else /* HAVE_CPU_AFFINITY */
 			i_errno = IEUNIMP;
-			return -1;
+			goto exit;
 #endif /* HAVE_CPU_AFFINITY */
 			break;
 		case 'T':
@@ -1023,7 +1054,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 			client_flag = 1;
 #else /* HAVE_TCP_CONGESTION */
 			i_errno = IEUNIMP;
-			return -1;
+			goto exit;
 #endif /* HAVE_TCP_CONGESTION */
 			break;
 		case 'd':
@@ -1053,7 +1084,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 			client_flag = 1;
 #else /* HAVE_SO_MAX_PACING_RATE */
 			i_errno = IEUNIMP;
-			return -1;
+			goto exit;
 #endif
 			break;
 		case OPT_FQ_RATE:
@@ -1062,7 +1093,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 			client_flag = 1;
 #else /* HAVE_SO_MAX_PACING_RATE */
 			i_errno = IEUNIMP;
-			return -1;
+			goto exit;
 #endif
 			break;
 #if defined(HAVE_SSL)
@@ -1089,10 +1120,11 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 			break;
 		case 'h':
 			usage_long(stdout);
-			exit(0);
+			iperf_free_test(test);
+			goto exit;
 		default:
-			usage_long(stderr);
-			exit(1);
+			i_errno = IEPARAMFORMAT;
+			goto exit;
 		}
 	}
 
@@ -1101,64 +1133,64 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 		test->outfile = fopen(test->logfile, "a+");
 		if (test->outfile == NULL) {
 			i_errno = IELOGFILE;
-			return -1;
+			goto exit;
 		}
 	}
 
 	/* Check flag / role compatibility. */
 	if (test->role == 'c' && server_flag) {
 		i_errno = IESERVERONLY;
-		return -1;
+		goto exit;
 	}
 	if (test->role == 's' && client_flag) {
 		i_errno = IECLIENTONLY;
-		return -1;
+		goto exit;
 	}
 
 #if defined(HAVE_SSL)
 
 	if (test->role == 's' && (client_username || client_rsa_public_key)) {
 		i_errno = IECLIENTONLY;
-		return -1;
+		goto exit;
 	} else if (test->role == 'c' && (client_username || client_rsa_public_key) &&
 			   !(client_username && client_rsa_public_key)) {
 		i_errno = IESETCLIENTAUTH;
-		return -1;
+		goto exit;
 	} else if (test->role == 'c' && (client_username && client_rsa_public_key)) {
 
 		char *client_password = NULL;
 		size_t s;
 		if (iperf_getpass(&client_password, &s, stdin) < 0) {
-			return -1;
+			goto exit;
 		}
 
 		if (strlen(client_username) > 20 || strlen(client_password) > 20) {
 			i_errno = IESETCLIENTAUTH;
-			return -1;
+			goto exit;
 		}
 
 		if (test_load_pubkey(client_rsa_public_key) < 0) {
 			i_errno = IESETCLIENTAUTH;
-			return -1;
+			goto exit;
 		}
 		encode_auth_setting(client_username, client_password, client_rsa_public_key, &test->settings->authtoken);
 	}
 
 	if (test->role == 'c' && (test->server_rsa_private_key || test->server_authorized_users)) {
 		i_errno = IESERVERONLY;
-		return -1;
+		goto exit;
 	} else if (test->role == 's' && (test->server_rsa_private_key || test->server_authorized_users) &&
 			   !(test->server_rsa_private_key && test->server_authorized_users)) {
 		i_errno = IESETSERVERAUTH;
-		return -1;
+		goto exit;
 	} else if (test->role == 's' && test->server_rsa_private_key && test_load_private_key(test->server_rsa_private_key) < 0) {
 		i_errno = IESETSERVERAUTH;
-		return -1;
+		goto exit;
 	}
 #endif //HAVE_SSL
 	if (!test->bind_address && test->bind_port) {
 		i_errno = IEBIND;
-		return -1;
+		goto exit;
 	}
 	if (blksize == 0) {
 		if (test->protocol->id == Pudp) {
@@ -1172,13 +1204,13 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 	if ((test->protocol->id != Pudp && blksize <= 0)
 		|| blksize > MAX_BLOCKSIZE) {
 		i_errno = IEBLOCKSIZE;
-		return -1;
+		goto exit;
 	}
 	if (test->protocol->id == Pudp &&
 		(blksize > 0 &&
 		 (blksize < MIN_UDP_BLOCKSIZE || blksize > MAX_UDP_BLOCKSIZE))) {
 		i_errno = IEUDPBLOCKSIZE;
-		return -1;
+		goto exit;
 	}
 	test->settings->blksize = blksize;
 
@@ -1199,18 +1231,12 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 		(duration_flag && test->settings->blocks != 0) ||
 		(test->settings->bytes != 0 && test->settings->blocks != 0)) {
 		i_errno = IEENDCONDITIONS;
-		return -1;
+		goto exit;
 	}
-
-	/* For subsequent calls to getopt */
-#ifdef __APPLE__
-	optreset = 1;
-#endif
-	optind = 0;
 
 	if ((test->role != 'c') && (test->role != 's')) {
 		i_errno = IENOROLE;
-		return -1;
+		goto exit;
 	}
 
 	if (test->json_output) {
@@ -1218,12 +1244,20 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 			if ((test->duration / test->stats_interval) > 20) {
 				RTK_LOGI("NOTAG", "need to set a proper time and interval for cJSON output because of limited  buffer\n");
 				RTK_LOGI("NOTAG", "(test->duration / test->stats_interval) <= 20\n");
-				return -1;
+				iperf_free_test(test);
+				goto exit;
 			}
 		}
 	}
 
-	return 0;
+exit:
+	/* For subsequent calls to getopt */
+#ifdef __APPLE__
+	optreset = 1;
+#endif
+	optind = 0;
+
+	return (i_errno == IENONE) ? 0 : -1;
 }
 
 int

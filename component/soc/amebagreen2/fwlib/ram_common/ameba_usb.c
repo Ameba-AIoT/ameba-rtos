@@ -33,7 +33,7 @@ static void usb_chip_enable_interrupt(u8 priority);
 static void usb_chip_disable_interrupt(void);
 static void usb_chip_register_irq_handler(void *handler, u8 priority);
 static void usb_chip_unregister_irq_handler(void);
-#ifndef CONFIG_FLOADER_USBD_EN
+#ifndef CONFIG_NON_OS
 static void usb_chip_cg(u32 ms);
 #endif
 /* Private variables ---------------------------------------------------------*/
@@ -50,7 +50,7 @@ usb_hal_driver_t usb_hal_driver = {
 	.disable_interrupt = usb_chip_disable_interrupt,
 	.register_irq_handler = usb_chip_register_irq_handler,
 	.unregister_irq_handler = usb_chip_unregister_irq_handler,
-#ifndef CONFIG_FLOADER_USBD_EN
+#ifndef CONFIG_NON_OS
 	.cg = usb_chip_cg,
 #endif
 };
@@ -337,7 +337,7 @@ static void usb_chip_unregister_irq_handler(void)
 	InterruptUnRegister(USB_IRQ);
 }
 
-#ifndef CONFIG_FLOADER_USBD_EN
+#ifndef CONFIG_NON_OS
 static void usb_chip_wake_event(u8 enable)
 {
 	if (enable) {

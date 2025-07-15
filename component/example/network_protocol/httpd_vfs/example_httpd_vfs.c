@@ -34,7 +34,7 @@ int get_method_handler(struct httpd_conn *conn)
 	int send_len = 2000;
 	int i = 0;
 	int remain_len;
-	vfs_file *finfo;
+	FILE *finfo;
 	struct stat sbuf;
 	char *prefix;
 	char path[MAX_PATH_LEN * 2] = {0};
@@ -76,7 +76,7 @@ int get_method_handler(struct httpd_conn *conn)
 
 	DiagSnPrintf(path, MAX_PATH_LEN * 2, "%s:%s", prefix, page_path);
 
-	finfo = (vfs_file *)fopen(path, "r");
+	finfo = fopen(path, "r");
 	if (finfo == NULL) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] fopen(%s) failed\r\n", __FUNCTION__, path);
 
@@ -89,7 +89,7 @@ int get_method_handler(struct httpd_conn *conn)
 		mime_type = MIME_TYPE_HTML;
 
 		DiagSPrintf(path, "%s:%s", prefix, page_path);
-		finfo = (vfs_file *)fopen(path, "r");
+		finfo = fopen(path, "r");
 		if (finfo == NULL) {
 			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s][%d] fopen failed: %s\r\n", __FUNCTION__, __LINE__, page_path);
 			httpd_response_not_found(conn, NULL);
@@ -127,7 +127,7 @@ int get_method_handler(struct httpd_conn *conn)
 		httpd_free(user_agent);
 	}
 
-	ret = fread(page_body, page_size, 1, (FILE *)finfo);
+	ret = fread(page_body, page_size, 1, finfo);
 	if (ret < 0) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] fread failed\n", __func__);
 		goto EXIT;
@@ -152,7 +152,7 @@ int get_method_handler(struct httpd_conn *conn)
 	}
 
 EXIT:
-	fclose((FILE *)finfo);
+	fclose(finfo);
 	if (page_body) {
 		httpd_free(page_body);
 	}

@@ -32,11 +32,11 @@ if(IMGTOOL_LOADER)
             ${c_SDK_IMAGE_TARGET_DIR}/ram_1_prepend.bin
     )
 else()
-    ameba_copy_file(${c_SDK_IMAGE_TARGET_DIR}/ram_1_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/km4_boot_all.bin)
+    ameba_copy_file(${c_SDK_IMAGE_TARGET_DIR}/ram_1_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/km4_boot.bin)
     ameba_axf2bin_fw_pack(
         ${c_SDK_IMAGE_TARGET_DIR}/km4_boot_all.bin
         p_IMAGE1
-            ${c_SDK_IMAGE_TARGET_DIR}/km4_boot_all.bin
+            ${c_SDK_IMAGE_TARGET_DIR}/km4_boot.bin
     )
 endif()
 

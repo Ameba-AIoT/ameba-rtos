@@ -29,6 +29,11 @@ class Encrypt(OperationBase):
         sub.add_argument('-i', '--input-file', help='Input file to be process', required=True)
         sub.add_argument('-o', '--output-file', help='Output manifest file', required=True)
 
+        #NOTE: args for sboot
+        sub = subparsers.add_parser('sboot', help='Create sboot file')
+        sub.add_argument('-i', '--input-file', help='Input file to be process', required=True)
+        sub.add_argument('-o', '--output-file', help='Output sboot file', required=True)
+
         #NOTE: args for keypair
         sub = subparsers.add_parser('keypair', help='Create manifest file')
         sub.add_argument('-a', '--algorithm', type=str, choices=ManifestManager.valid_algorithm, help='Algorithm to generate key pair', required=True)
@@ -45,6 +50,11 @@ class Encrypt(OperationBase):
             )
         elif self.context.args.sub_operation == "manifest":
             return self.create_manifest(
+                self.context.args.output_file,
+                self.context.args.input_file
+            )
+        elif self.context.args.sub_operation == "sboot":
+            return self.create_sboot(
                 self.context.args.output_file,
                 self.context.args.input_file
             )
@@ -68,6 +78,11 @@ class Encrypt(OperationBase):
     def create_manifest(self, output_file:str, input_file:str) -> Error:
         self.logger.info(f"create manifest file for {input_file}")
         return self.manifest_manager.create_manifest(output_file, input_file)
+
+    @exit_on_failure(catch_exception=True)
+    def create_sboot(self, output_file:str, input_file:str) -> Error:
+        self.logger.info(f"create sboot file for {input_file}")
+        return self.manifest_manager.create_sboot(output_file, input_file)
 
     @exit_on_failure(catch_exception=True)
     def create_keypair(self, output_file:str, algorithm:str) -> Error:

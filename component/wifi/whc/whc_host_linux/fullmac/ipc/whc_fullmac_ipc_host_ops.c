@@ -326,11 +326,40 @@ error:
 	return ret;
 }
 
-int whc_fullmac_host_event_disconnect(void)
+int whc_fullmac_host_event_disconnect(u16 reason_code)
 {
+	u8 *buf_vir = NULL;
+	dma_addr_t buf_phy = 0;
+	u32 param_buf[4];
+	u32 ie_len = 0, need_report = 0;
 	int ret = 0;
 
-	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_DISCONNECT, NULL, 0);
+#ifdef CONFIG_CFG80211_SME_OFFLOAD
+	if (global_idev.mlme_priv.deauth_ies && global_idev.mlme_priv.deauth_ie_len) {
+		ie_len = global_idev.mlme_priv.deauth_ie_len;
+		if (ie_len != 0) {
+			buf_vir = rtw_malloc(ie_len, &buf_phy);
+			if (!buf_vir) {
+				dev_err(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+				return -ENOMEM;
+			}
+
+			memcpy(buf_vir, global_idev.mlme_priv.deauth_ies, ie_len);
+		}
+	}
+	need_report = global_idev.mlme_priv.b_need_report;
+#endif
+
+	param_buf[0] = (u32)buf_phy;
+	param_buf[1] = (u32)ie_len;
+	param_buf[2] = (u32)reason_code;
+	param_buf[3] = need_report;
+
+	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_DISCONNECT, param_buf, 4);
+
+	if (buf_vir != NULL) {
+		rtw_mfree(ie_len, buf_vir, buf_phy);
+	}
 
 	return ret;
 }
@@ -1071,11 +1100,11 @@ int whc_fullmac_host_update_custom_ie(u8 *ie, int ie_index, u8 type)
 	return ret;
 }
 
-int whc_fullmac_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len)
+int whc_fullmac_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len, u8 wpa_rsn_exist)
 {
 	u8 *buf_vir = NULL;
 	dma_addr_t buf_phy = 0;
-	u32 param_buf[2];
+	u32 param_buf[3];
 	int ret = 0;
 
 	buf_vir = rtw_malloc(ie_len, &buf_phy);
@@ -1088,8 +1117,9 @@ int whc_fullmac_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len)
 
 	param_buf[0] = (u32)buf_phy;
 	param_buf[1] = (u32)ie_len;
+	param_buf[2] = (u32)wpa_rsn_exist;
 
-	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SME_SET_ASSOCREQ_IE, param_buf, 2);
+	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SME_SET_ASSOCREQ_IE, param_buf, 3);
 
 	rtw_mfree(ie_len, buf_vir, buf_phy);
 

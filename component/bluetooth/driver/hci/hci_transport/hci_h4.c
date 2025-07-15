@@ -156,11 +156,11 @@ static void h4_rx_thread(void *context)
 			}
 			break;
 		}
-
+#ifndef CONFIG_BT_INIC
 		if (!hci_is_mp_mode()) {
 			bt_coex_process_rx_frame(type, buf, hdr_len + body_len);
 		}
-
+#endif
 		if (hci_h4->cb->recv) {
 			hci_h4->cb->recv();
 		}
@@ -189,11 +189,11 @@ uint16_t hci_transport_send(uint8_t type, uint8_t *buf, uint16_t len, bool has_r
 	if (type < HCI_CMD || type > HCI_ISO) {
 		return 0;
 	}
-
+#ifndef CONFIG_BT_INIC
 	if (!hci_is_mp_mode()) {
 		bt_coex_process_tx_frame(type, buf, len);
 	}
-
+#endif
 	osif_mutex_take(hci_h4->tx_mutex, BT_TIMEOUT_FOREVER);
 	if (has_rsvd_byte) {
 		*(buf - 1) = type;
@@ -218,11 +218,11 @@ uint8_t hci_transport_open(void)
 		}
 		memset(hci_h4, 0, sizeof(struct hci_h4_t));
 	}
-
+#ifndef CONFIG_BT_INIC
 	if (!hci_is_mp_mode()) {
 		bt_coex_init();
 	}
-
+#endif
 	osif_sem_create(&hci_h4->rx_ind_sema, 0, 1);
 	osif_sem_create(&hci_h4->rx_run_sema, 0, 1);
 	osif_mutex_create(&hci_h4->tx_mutex);
@@ -242,10 +242,11 @@ void hci_transport_close(void)
 	hci_h4->rx_run = 0;
 	osif_sem_give(hci_h4->rx_ind_sema);
 	osif_sem_take(hci_h4->rx_run_sema, BT_TIMEOUT_FOREVER);
-
+#ifndef CONFIG_BT_INIC
 	if (!hci_is_mp_mode()) {
 		bt_coex_deinit();
 	}
+#endif
 }
 
 void hci_transport_free(void)

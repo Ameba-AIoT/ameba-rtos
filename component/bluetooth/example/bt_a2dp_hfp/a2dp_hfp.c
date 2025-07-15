@@ -2006,11 +2006,10 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 	break;
 
 	case RTK_BT_A2DP_EVT_STREAM_START_RSP: {
-		rtk_bt_a2dp_stream_start_t *pa2dp_stream = (rtk_bt_a2dp_stream_start_t *)param;
+		uint8_t *bd_addr = (uint8_t *)param;
 
-		BT_LOGA("[A2DP] BT_EVENT_A2DP_STREAM_START_IND active_a2dp_idx %d, streaming_fg %d \r\n",
-				pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
-
+		BT_LOGA("[A2DP] RTK_BT_A2DP_EVT_STREAM_START_RSP from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		{
 			if (a2dp_task.hdl) {
 				BT_LOGA("[A2DP Demo] Start Test Demo \r\n");
@@ -2033,6 +2032,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 			}
 			app_a2dp_src_send_flag = true;
 		}
+		rtk_bt_avrcp_play_status_change_req(bd_addr, RTK_BT_AVRCP_STATUS_PLAYING);
 	}
 	break;
 
@@ -2045,6 +2045,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
 			app_a2dp_src_send_flag = false;
+			rtk_bt_avrcp_play_status_change_req(bd_addr, RTK_BT_AVRCP_STATUS_STOPPED);
 		}
 		if (a2dp_demo_audio_track_hdl) {
 			rtk_bt_audio_track_pause(a2dp_demo_audio_track_hdl->audio_track_hdl);

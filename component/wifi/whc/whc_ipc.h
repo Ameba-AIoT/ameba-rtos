@@ -42,7 +42,7 @@
 /*host api task*/
 #define CONFIG_INIC_IPC_HOST_API_PRIO 3
 #define CONFIG_INIC_IPC_HOST_EVT_API_PRIO 3
-#define WIFI_STACK_SIZE_INIC_IPC_HST_API (200 + 128 + CONTEXT_SAVE_SIZE)	// for psp overflow when update group key: jira: https://jira.realtek.com/browse/RSWLANQC-1027
+#define WIFI_STACK_SIZE_INIC_IPC_HST_API (400 + 128 + CONTEXT_SAVE_SIZE)	// for psp overflow when update group key: jira: https://jira.realtek.com/browse/RSWLANQC-1027
 #define WIFI_STACK_SIZE_INIC_IPC_HST_EVT_API (3096 + 128 + CONTEXT_SAVE_SIZE)
 #define CONFIG_INIC_IPC_HOST_EVT_Q_DEPTH 10
 

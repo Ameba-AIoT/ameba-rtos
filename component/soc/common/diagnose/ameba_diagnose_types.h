@@ -36,7 +36,7 @@ enum rtk_diag_ipc_msg_type {
 	RTK_DIAG_IPC_MSG_TYPE_EVT_ADD   = 0x01
 };
 #define RTK_DIAG_IPC_WAIT_RESPONSE (-255)
-#define RTK_DIAG_IPC_WAIT_TIMEOUT (50000)
+#define RTK_DIAG_IPC_WAIT_TIMEOUT (1000000)
 
 typedef struct {
 	u8 type; //enum from rtk_diag_cmd_type

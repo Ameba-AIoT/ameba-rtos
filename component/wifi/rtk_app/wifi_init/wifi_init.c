@@ -28,7 +28,6 @@
 #include "wifi_intf_drv_to_upper.h"
 
 #if defined(CONFIG_WHC_CMD_PATH)
-#include "whc_dev_bridge.h"
 #include "whc_dev_api.h"
 #endif
 

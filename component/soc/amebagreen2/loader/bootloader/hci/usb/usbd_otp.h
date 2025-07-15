@@ -5,8 +5,8 @@
  *  possession or use of this module requires written permission of RealTek.
  */
 
-#ifndef USBD_OTP_H
-#define USBD_OTP_H
+#ifndef _USBD_OTP_H_
+#define _USBD_OTP_H_
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -42,5 +42,5 @@ typedef struct {
 
 u8 USB_OTP_Init(USB_OTP_TypeDef *otp);
 
-#endif  /* USBD_OTP_H */
+#endif  /* _USBD_OTP_H_ */
 

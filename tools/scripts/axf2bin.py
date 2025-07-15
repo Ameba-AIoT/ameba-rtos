@@ -35,6 +35,7 @@ from image_process.op_pad_binary import PadBinary as op_pad_binary
 from image_process.op_prepend_header import PrependHeader as op_prepend_header
 from image_process.op_rdp import Rdp as op_rdp
 from image_process.op_rsip import Rsip as op_rsip
+from image_process.op_cut import Cut as op_cut
 
 def parse_args():
     parser = argparse.ArgumentParser(description=None)

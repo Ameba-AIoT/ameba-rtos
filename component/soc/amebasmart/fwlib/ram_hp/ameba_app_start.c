@@ -126,6 +126,26 @@ static void dslp_wake_handler(void)
 }
 #endif
 
+void app_bod_init(void)
+{
+	/* ONLY init bod when first power-on */
+	if (BOOT_Reason() != 0) {
+		return;
+	}
+
+	BOR_ThresholdSet(0x10, 0xD);
+	RTK_LOGI(TAG, "BOR arises when supply voltage decreases under 2.63V and recovers above 2.74V.\n");
+
+	BOR_ModeSet(BOR_RESET);
+	BOR_Enable(ENABLE);
+
+	/* To avoid unwanted extra reset. */
+	/* default debounce delay: 100us(BOR_TDBC = 0x1) */
+	/* It takes 100us for actual BOD output to sync to digital circuit. */
+	DelayUs(100);
+	RCC_PeriphClockCmd(APBPeriph_BOR, APBPeriph_CLOCK_NULL, ENABLE);
+}
+
 // The Main App entry point
 void app_start(void)
 {
@@ -184,6 +204,8 @@ void app_start(void)
 	/*10. MPU init*/
 	mpu_init();
 	app_mpu_nocache_init();
+
+	app_bod_init();
 
 	/* Force SP align to 8bytes */
 	__asm(

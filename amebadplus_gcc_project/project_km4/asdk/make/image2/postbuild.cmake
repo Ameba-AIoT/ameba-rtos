@@ -5,6 +5,7 @@ include(${c_CMAKE_FILES_DIR}/axf2bin.cmake)
 include(${c_CMAKE_FILES_DIR}/global_define.cmake)
 include(${c_CMAKE_FILES_DIR}/utility.cmake)
 import_kconfig("CONFIG" ${c_MCU_KCONFIG_FILE})
+ameba_reset_global_define() #NOTE: Some variables like c_MP need to update after import kconfig
 
 ameba_execute_process(
 	COMMAND ${CMAKE_OBJCOPY} -j .ram_image2.entry -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/entry.bin

@@ -29,12 +29,15 @@ void at_wscfg_help(void)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO,
-			 "AT+WSCFG=<link_id>,<ping_interval>,<ping_timeout>[,<buffer_size>][,<max_queue_size>][,<protocol>][,<version>][,<stable_buf_num>]\r\n");
+			 "AT+WSCFG=<link_id>,<ping_interval>,<ping_timeout>[,<tx_buffer_size>][,<rx_buffer_size>][,<max_queue_size>][,<protocol>][,<version>][,<stable_buf_num>]\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>:\tconnect id, must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<ping_interval>:\tsend interval of ping in seconds, must be 1~%d, default is %d\r\n", MAX_PING_INTERVAL,
 			 DEFAULT_PING_INTERVAL);
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<ping_timeout>:\ttimeout of ping in seconds, must be 1~%d, default is %d\r\n", MAX_PING_TIMEOUT, DEFAULT_PING_TIMEOUT);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<buffer_size>:\tbuffer size of tx and rx, must be 1~%d, default is %d\r\n", MAX_BUFFER_SIZE, DEFAULT_BUFFER_SIZE);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<tx_buffer_size>:\tbuffer size of tx, must be %d~%d, default is %d\r\n", DEFAULT_BUFFER_SIZE, MAX_BUFFER_SIZE,
+			 DEFAULT_BUFFER_SIZE);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<rx_buffer_size>:\tbuffer size of rx, must be %d~%d, default is %d\r\n", DEFAULT_BUFFER_SIZE, MAX_BUFFER_SIZE,
+			 DEFAULT_BUFFER_SIZE);
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<max_queue_size>:\tmax size of queue, must be 1~%d, default is %d\r\n", MAX_QUEUE_SIZE, DEFAULT_MAX_QUEUE_SIZE);
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<protocol>:\tsubprotocols using the websocket protocol, default is %s\r\n",
 			 (DEFAULT_WEBSOCKET_PROTOCOL == NULL) ? "NULL" : DEFAULT_WEBSOCKET_PROTOCOL);
@@ -49,8 +52,8 @@ void at_wscfg(void *arg)
 	int argc = 0;
 	int error_no = 0;
 	char *argv[MAX_ARGC] = {0};
-	int link_id, ping_interval, ping_timeout, buffer_size, max_queue_size, stable_buf_num;
-	char *protocol, *version;
+	int link_id = -1, ping_interval = 0, ping_timeout = 0, tx_buffer_size = 0, rx_buffer_size = 0, max_queue_size = 0, stable_buf_num = 0;
+	char *protocol = NULL, *version = NULL;
 
 	UNUSED(argc);
 
@@ -76,7 +79,6 @@ void at_wscfg(void *arg)
 		error_no = 1;
 		goto end;
 	}
-	ws_config[link_id].ping_interval = ping_interval;
 
 	ping_timeout = atoi(argv[3]);
 	if (ping_timeout < 1 || ping_timeout > MAX_PING_TIMEOUT) {
@@ -84,32 +86,36 @@ void at_wscfg(void *arg)
 		error_no = 1;
 		goto end;
 	}
-	ws_config[link_id].ping_timeout = ping_timeout;
 
 	if (argv[4] != NULL && (strlen(argv[4]) > 0)) {
-		buffer_size = atoi(argv[4]);
-		if (buffer_size < 1 || buffer_size > MAX_BUFFER_SIZE) {
-			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "buffer_size must be 1~%d\r\n", MAX_BUFFER_SIZE);
+		tx_buffer_size = atoi(argv[4]);
+		if (tx_buffer_size < DEFAULT_BUFFER_SIZE || tx_buffer_size > MAX_BUFFER_SIZE) {
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "tx_buffer_size must be %d~%d\r\n", DEFAULT_BUFFER_SIZE, MAX_BUFFER_SIZE);
 			error_no = 1;
 			goto end;
 		}
-
-		ws_config[link_id].buffer_size = buffer_size;
 	}
 
 	if (argv[5] != NULL && (strlen(argv[5]) > 0)) {
-		max_queue_size = atoi(argv[5]);
+		rx_buffer_size = atoi(argv[5]);
+		if (rx_buffer_size < DEFAULT_BUFFER_SIZE || rx_buffer_size > MAX_BUFFER_SIZE) {
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "rx_buffer_size must be %d~%d\r\n", DEFAULT_BUFFER_SIZE, MAX_BUFFER_SIZE);
+			error_no = 1;
+			goto end;
+		}
+	}
+
+	if (argv[6] != NULL && (strlen(argv[6]) > 0)) {
+		max_queue_size = atoi(argv[6]);
 		if (max_queue_size < 1 || max_queue_size > MAX_QUEUE_SIZE) {
 			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "max_queue_size must be 1~%d\r\n", MAX_QUEUE_SIZE);
 			error_no = 1;
 			goto end;
 		}
-
-		ws_config[link_id].max_queue_size = max_queue_size;
 	}
 
-	if (argv[6] != NULL  && (strlen(argv[6]) > 0)) {
-		protocol = (char *)argv[6];
+	if (argv[7] != NULL  && (strlen(argv[7]) > 0)) {
+		protocol = (char *)argv[7];
 		if (ws_config[link_id].protocol != NULL) {
 			ws_free(ws_config[link_id].protocol);
 		}
@@ -119,31 +125,48 @@ void at_wscfg(void *arg)
 			error_no = 2;
 			goto end;
 		}
-		memcpy(ws_config[link_id].protocol, protocol, strlen(protocol));
 	}
 
-	if (argv[7] != NULL && (strlen(argv[7]) > 0)) {
-		version = (char *)(argv[7]);
+	if (argv[8] != NULL && (strlen(argv[8]) > 0)) {
+		version = (char *)(argv[8]);
 		if (ws_config[link_id].version != NULL) {
 			ws_free(ws_config[link_id].version);
 		}
-
 		ws_config[link_id].version = (char *) ws_malloc(strlen(version) + 1);
 		if (ws_config[link_id].version == NULL) {
 			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "malloc failed\r\n");
 			error_no = 2;
 			goto end;
 		}
-		memcpy(ws_config[link_id].version, version, strlen(version));
 	}
 
-	if (argv[8] != NULL && (strlen(argv[8]) > 0)) {
-		stable_buf_num = atoi(argv[8]);
-		if (stable_buf_num < 0 || stable_buf_num > ws_config[link_id].max_queue_size) {
+	if (argv[9] != NULL && (strlen(argv[9]) > 0)) {
+		stable_buf_num = atoi(argv[9]);
+		if (stable_buf_num < 1 || stable_buf_num > ws_config[link_id].max_queue_size) {
 			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "stable_buf_num must be 1~%d\r\n", ws_config[link_id].max_queue_size);
 			error_no = 1;
 			goto end;
 		}
+	}
+
+	ws_config[link_id].ping_interval = ping_interval;
+	ws_config[link_id].ping_timeout = ping_timeout;
+	if (tx_buffer_size) {
+		ws_config[link_id].tx_buffer_size = tx_buffer_size;
+	}
+	if (rx_buffer_size) {
+		ws_config[link_id].rx_buffer_size = rx_buffer_size;
+	}
+	if (max_queue_size) {
+		ws_config[link_id].max_queue_size = max_queue_size;
+	}
+	if (protocol) {
+		memcpy(ws_config[link_id].protocol, protocol, strlen(protocol));
+	}
+	if (version) {
+		memcpy(ws_config[link_id].version, version, strlen(version));
+	}
+	if (stable_buf_num) {
 		ws_config[link_id].stable_buf_num = stable_buf_num;
 	}
 
@@ -684,7 +707,7 @@ void at_wsconn(void *arg)
 		memcpy(url + strlen("wss://"), host, strlen(host));
 	}
 
-	wsclient = create_wsclient(url, port, path, NULL, ws_config[link_id].buffer_size, ws_config[link_id].max_queue_size);
+	wsclient = create_wsclient(url, port, path, NULL, ws_config[link_id].tx_buffer_size, ws_config[link_id].rx_buffer_size, ws_config[link_id].max_queue_size);
 	if (wsclient != NULL) {
 		if (ws_config[link_id].protocol != NULL) {
 			ws_handshake_header_set_protocol(wsclient, ws_config[link_id].protocol, strlen(ws_config[link_id].protocol));
@@ -759,27 +782,31 @@ void at_wsconn(void *arg)
 	}
 
 free_resource_end:
-	if (wsclient) {
-		wsclient->fun_ops.client_close(wsclient);
+	if (error_no != 0) {
+		if (wsclient) {
+			wsclient->fun_ops.client_close(wsclient);
+		}
 	}
 
 end:
-	if (wsclient) {
-		ws_free(wsclient);
-	}
+	if (error_no != 0) {
+		if (wsclient) {
+			ws_free(wsclient);
+		}
 
-	if (!wsclient) {
-		if (ca_cert) {
-			ws_free(ca_cert);
-			ca_cert = NULL;
-		}
-		if (client_cert) {
-			ws_free(client_cert);
-			client_cert = NULL;
-		}
-		if (client_key) {
-			ws_free(client_key);
-			client_key = NULL;
+		if (!wsclient) {
+			if (ca_cert) {
+				ws_free(ca_cert);
+				ca_cert = NULL;
+			}
+			if (client_cert) {
+				ws_free(client_cert);
+				client_cert = NULL;
+			}
+			if (client_key) {
+				ws_free(client_key);
+				client_key = NULL;
+			}
 		}
 	}
 
@@ -833,8 +860,8 @@ void at_wssend(void *arg)
 	}
 
 	length = atoi(argv[2]);
-	if (length <= 0 || length > ws_config[link_id].buffer_size) {
-		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "length must be 1~%d\r\n", ws_config[link_id].buffer_size);
+	if (length <= 0 || length > ws_config[link_id].tx_buffer_size) {
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "payload length must be 1~%d\r\n", ws_config[link_id].tx_buffer_size);
 		error_no = 1;
 		goto end;
 	}
@@ -955,8 +982,8 @@ void at_wssendraw(void *arg)
 		goto end;
 	}
 
-	if (ws_config[link_id].buffer_size < MAX_TT_BUF_LEN) {
-		if (length <= ws_config[link_id].buffer_size) {
+	if (ws_config[link_id].tx_buffer_size < MAX_TT_BUF_LEN) {
+		if (length <= ws_config[link_id].tx_buffer_size) {
 			res = atcmd_tt_mode_get((u8 *)send_buf, length);
 			if (res < 0) {
 				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
@@ -966,14 +993,14 @@ void at_wssendraw(void *arg)
 			ws_send_with_opcode(send_buf, length, use_mask, opcode, 1, ws_config[link_id].ws_client);
 		} else {
 			while (length > 0) {
-				frag_len = (length <= ws_config[link_id].buffer_size) ? length : ws_config[link_id].buffer_size;
+				frag_len = (length <= ws_config[link_id].tx_buffer_size) ? length : ws_config[link_id].tx_buffer_size;
 				res = atcmd_tt_mode_get((u8 *)send_buf, frag_len);
 				if (res < 0) {
 					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 					error_no = 4;
 					goto end;
 				}
-				if (length > ws_config[link_id].buffer_size) {
+				if (length > ws_config[link_id].tx_buffer_size) {
 					if (is_first_frag == 0) {
 						is_first_frag = 1;
 						ws_send_with_opcode(send_buf, frag_len, use_mask, opcode, 0, ws_config[link_id].ws_client);
@@ -1102,7 +1129,8 @@ void print_link_info(int link_id)
 	at_printf("status: %d\r\n", ws_config[link_id].ws_client ? ws_config[link_id].ws_client->readyState : WSC_CLOSED);
 	at_printf("ping_interval: %d\r\n", ws_config[link_id].ping_interval);
 	at_printf("ping_timeout: %d\r\n", ws_config[link_id].ping_timeout);
-	at_printf("buffer_size: %d\r\n", ws_config[link_id].buffer_size);
+	at_printf("tx_buffer_size: %d\r\n", ws_config[link_id].tx_buffer_size);
+	at_printf("rx_buffer_size: %d\r\n", ws_config[link_id].rx_buffer_size);
 	at_printf("max_queue_size: %d\r\n", ws_config[link_id].max_queue_size);
 	at_printf("protocol: %s\r\n", ws_config[link_id].protocol ? ws_config[link_id].protocol : "");
 	at_printf("version: %s\r\n", ws_config[link_id].version ? ws_config[link_id].version : "");
@@ -1960,10 +1988,12 @@ void init_websocket_struct(void)
 	for (i = 0; i < MAX_WEBSOCKET_LINK_NUM; i++) {
 		ws_config[i].ping_interval      = DEFAULT_PING_INTERVAL;
 		ws_config[i].ping_timeout       = DEFAULT_PING_TIMEOUT;
-		ws_config[i].buffer_size        = DEFAULT_BUFFER_SIZE;
+		ws_config[i].tx_buffer_size     = DEFAULT_BUFFER_SIZE;
+		ws_config[i].rx_buffer_size     = DEFAULT_BUFFER_SIZE;
 		ws_config[i].max_queue_size     = DEFAULT_MAX_QUEUE_SIZE;
 		ws_config[i].protocol           = DEFAULT_WEBSOCKET_PROTOCOL;
-		ws_config[i].version            = DEFAULT_WEBSOCKET_VERSION;
+		ws_config[i].version            = ws_malloc(strlen(DEFAULT_WEBSOCKET_VERSION) + 1);
+		memcpy(ws_config[i].version, DEFAULT_WEBSOCKET_VERSION, strlen(DEFAULT_WEBSOCKET_VERSION));
 		ws_config[i].stable_buf_num     = DEFAULT_STABLE_BUF_NUM;
 		ws_config[i].ws_client          = NULL;
 

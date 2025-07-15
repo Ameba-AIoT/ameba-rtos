@@ -49,7 +49,6 @@ static usbd_config_t usbd_msc_cfg = {
 	.speed = USB_DRD_SPEED,
 	.dma_enable = 1U,
 	.isr_priority = INT_PRI_MIDDLE,
-	.nptx_max_err_cnt = {0U, 2000U, },
 #if defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 708U,
 	.ptx_fifo_depth = {16U, 256U, },

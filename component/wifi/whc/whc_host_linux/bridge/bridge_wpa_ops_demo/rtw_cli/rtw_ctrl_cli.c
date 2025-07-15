@@ -31,6 +31,9 @@ struct rtw_scan_result *scan_results = NULL;
 const struct cmd_func_t whc_bridge_api_handlers[] = {
 	{"getmac", whc_bridge_host_cmd_getmac, CMD_WIFI_SEND_BUF, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_GET_MAC_ADDR},
 	{"set_network", whc_bridge_host_cmd_set_network, CMD_WIFI_SEND_BUF, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SET_NETWORK},
+	{"list_networks", whc_bridge_host_cmd_set_network, CMD_WIFI_SEND_BUF, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SET_NETWORK},
+	{"select_network", whc_bridge_host_cmd_set_network, CMD_WIFI_SEND_BUF, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SET_NETWORK},
+	{"disconnect", whc_bridge_host_cmd_set_network, CMD_WIFI_SEND_BUF, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SET_NETWORK},
 	{"scan", whc_bridge_host_cmd_scan, CMD_WIFI_DO_SCAN, WHC_WPA_OPS_CUSTOM_API, WHC_WPA_OPS_CUSTOM_API_SCAN},
 	{"scan_result", whc_bridge_host_cmd_scan_result, CMD_WIFI_SCAN_RESULT, 0, 0},
 	{NULL, NULL, 0, 0},
@@ -109,15 +112,18 @@ void whc_bridge_host_handle_rx_payload(char *pos, int len, int api_id, int chunk
 
 	} else {
 		bridge_event = *(uint32_t *)pos;
-		if (bridge_event == WHC_WIFI_TEST) {
+		if (bridge_event == WHC_WPA_OPS_UTIL) {
 			pos = pos + sizeof(uint32_t);
 			switch (*pos) {
-			case WHC_WIFI_TEST_GET_MAC_ADDR:
+			case WHC_WPA_OPS_UTIL_GET_MAC_ADDR:
 				printf("\nMAC ADDR %02x:%02x:%02x:%02x:%02x:%02x\n",
 					   (u8)pos[1], (u8)pos[2], (u8)pos[3], (u8)pos[4], (u8)pos[5], (u8)pos[6]);
 				break;
 			case WHC_WIFI_TEST_GET_IP:
 				printf("\nIP ADDR %d.%d.%d.%d\n", pos[1], pos[2], pos[3], pos[4]);
+				break;
+			case WHC_WPA_OPS_UTIL_LIST_NETWORK:
+				whc_cmd_handle_rx_list_network(pos);
 				break;
 			default:
 				break;
@@ -202,13 +208,12 @@ void sigint_handler(int sig)
 	exit(0);
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
-	char input_buf[MAX_INPUT_SIZE];
+	char input_buf[MAX_INPUT_SIZE] = {0};
 	struct msgtemplate msg;
 	int rx_len;
 	struct pollfd fds[2];
-	printf("Waiting for message from kernel or input command from user space\n");
 
 	// Create and bind a socket
 	sock_fd = whc_bridge_host_api_create_nl_socket(NETLINK_GENERIC, getpid());
@@ -226,6 +231,22 @@ int main(void)
 		close(sock_fd);
 		return -1;
 	}
+
+	if (argc > 1) {
+		for (int i = 1; i < argc; i++) {
+			strcat(input_buf, argv[i]);
+			if (i < argc - 1) {
+				strcat(input_buf, " ");
+			}
+		}
+
+		printf("CLI: %s\n", input_buf);
+		whc_bridge_host_cmd_hdl(input_buf);
+
+		return 0;
+	}
+
+	printf("Waiting for message from kernel or input command from user space\n");
 
 	fds[0].fd = sock_fd;
 	fds[0].events = POLLIN;  // Monitor for incoming Netlink messages

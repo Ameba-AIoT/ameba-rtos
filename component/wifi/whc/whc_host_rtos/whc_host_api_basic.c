@@ -71,7 +71,8 @@ s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 	u8 *param_buf = rtos_mem_zmalloc(sizeof(struct rtw_network_info) + connect_param->password_len);
 	u8 *ptr;
 	u8 no_need_indicate = 0;
-	union rtw_event_join_status_info evt_info = {0};
+	struct rtw_event_join_status_info evt_info = {0};
+	struct rtw_event_join_fail *join_fail;
 
 	/* check if SoftAP is running */
 	if ((wifi_user_config.concurrent_enabled == FALSE) && wifi_is_running(SOFTAP_WLAN_INDEX)) {
@@ -201,8 +202,9 @@ error:
 	}
 
 	if (rtw_join_status == RTW_JOINSTATUS_FAIL && no_need_indicate == 0) {
-		evt_info.fail.fail_reason = result;
-		wifi_indication(RTW_EVENT_JOIN_STATUS, (u8 *)&evt_info, sizeof(union rtw_event_join_status_info), RTW_JOINSTATUS_FAIL);
+		join_fail = &evt_info.private.fail;
+		join_fail->fail_reason = result;
+		wifi_indication(RTW_EVENT_JOIN_STATUS, (u8 *)&evt_info, sizeof(struct rtw_event_join_status_info), RTW_JOINSTATUS_FAIL);
 	}
 
 	return result;

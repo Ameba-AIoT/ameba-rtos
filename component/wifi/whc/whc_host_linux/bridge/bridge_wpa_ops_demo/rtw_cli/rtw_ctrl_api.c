@@ -15,6 +15,7 @@ int parse_string(int index, int argc, char **argv, u8 *buf, size_t buf_size)
 	int ix = 0;
 	size_t len = 0, left = 0;
 	int written = 0;
+	int ret = 0;
 
 	for (ix = index; ix < argc; ix++) {
 		left = buf_size - len - 1; //For '\0'
@@ -29,7 +30,9 @@ int parse_string(int index, int argc, char **argv, u8 *buf, size_t buf_size)
 	//printf("argc: %d\n", argc);
 	//printf("buf: %s size: %ld\n", buf, strlen(buf));
 
-	return strlen(buf) + 1; // +1 for '\0'
+	ret = strlen(buf);
+
+	return (ret == 0) ? 0 : (ret + 1); //+1 for '\0'
 }
 
 /* For Event Handler */
@@ -138,25 +141,30 @@ void whc_bridge_host_cmd_set_network(int argc, char **argv, u8 api_id, u32 cmd_c
 	int ret = 0;
 	int index = 0;
 	int msg_len = 0;
+	char *token = argv[0];
+	const char *cmd_set_network = "set_network";
 
 	memset(&cmd, 0, sizeof(cmd));
 
 	cmd.category = cmd_category;
 	cmd.cmd_id = cmd_id;
 
-	index = 1;
+	index = 0;
 
 	msg_len = parse_string(index, argc, argv, cmd.message, sizeof(cmd.message));
-	if (msg_len == 0) {
-		printf("set_network variables:\n"
-			   "  ssid (network name, SSID)\n"
-			   "  psk (WPA passphrase or pre-shared key)\n"
-			   "  key_mgmt (key management protocol)\n");
-		return;
+
+	if (strncmp(argv[0], cmd_set_network, strlen(cmd_set_network)) == 0) {
+		if (msg_len == 0) {
+			printf("set_network variables:\n"
+				   "  ssid (network name, SSID)\n"
+				   "  psk (WPA passphrase or pre-shared key)\n"
+				   "  key_mgmt (key management protocol)\n");
+			return;
+		}
 	}
 
 	cmd.msg_len = msg_len;
-	printf("set_network: %s\n", cmd.message);
+	printf("wpa ctrl cmd: %s %s\n", token, cmd.message);
 
 	ret = whc_bridge_host_api_send_nl_data((u8 *)&cmd, sizeof(cmd), api_id);
 	if (ret < 0) {
@@ -226,9 +234,16 @@ void whc_bridge_host_cmd_scan_result(int argc, char **argv, u8 api_id, u32 cmd_c
 
 /* For Host to SOC End */
 
+
 /* For SOC to HOST */
+void whc_cmd_handle_rx_list_network(char *pos)
+{
+	int id = 0;
 
+	printf("\nnetwork id / ssid / bssid / flags\n");
+	printf("%d   %s  \n", id, pos);
 
+}
 
 
 /* For SOC to HOST End */

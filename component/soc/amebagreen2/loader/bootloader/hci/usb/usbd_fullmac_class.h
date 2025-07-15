@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __USBD_FULLMAC_CLASS_H
-#define __USBD_FULLMAC_CLASS_H
+#ifndef _USBD_FULLMAC_CLASS_H_
+#define _USBD_FULLMAC_CLASS_H_
 
 /* Includes ------------------------------------------------------------------*/
 
+#include "hci_core.h"
 #include "usbd_hal.h"
 
 /* Exported defines ----------------------------------------------------------*/
@@ -23,32 +24,28 @@
 /* Exported types ------------------------------------------------------------*/
 
 typedef struct {
+	HCI_AdapterTypeDef *Adapter;
 	USBD_SetupReqTypedef Request;
-	u32 RxLength;
-	u8  RxBuffer[2 * 1024U];
-	u8  TxBuffer[2 * 1024U];
 	u8  Data[512U];
 	__IO u32 TxState;
 	__IO u32 RxState;
-} USBD_Class_HandleTypeDef;
+} USBD_FullmacClassHandleTypeDef;
 
 typedef struct {
-	u8(* Init)(void);
-	u8(* DeInit)(void);
-	u8(* Setup)(USBD_SetupReqTypedef *req, u8 *buf);
-	u8(* Receive)(USBD_Class_HandleTypeDef *handle);
-} USBD_ClassCallbackTypeDef;
+	u8(* Setup)(HCI_AdapterTypeDef *adapter, USBD_SetupReqTypedef *req, u8 *buf);
+	u8(* Receive)(HCI_AdapterTypeDef *adapter, u32 len);
+} USBD_FullmacClassCallbackTypeDef;
 
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported variables --------------------------------------------------------*/
 
-extern USBD_ClassTypeDef USBD_ClassCallback;
-extern USBD_Class_HandleTypeDef USBD_Class_Handle;
+extern USBD_ClassTypeDef USBD_FullmacClassDriver;
+extern USBD_FullmacClassHandleTypeDef USBD_FullmacClassHandle;
 
 /* Exported functions --------------------------------------------------------*/
 
-u8  USBD_Class_Transmit(u8 *buf, u32 len);
+u8 USBD_Class_Transmit(u8 *buf, u32 len);
 
-#endif  /* __USBD_FULLMAC_CLASS_H */
+#endif  /* _USBD_FULLMAC_CLASS_H_ */
 

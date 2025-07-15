@@ -213,8 +213,12 @@ int rtk_diag_req_get_event(u32 timestamp, u16 offset)
 
 	/*4. Send event*/
 	int res = rtk_diag_uart_send(frame);
-	RTK_LOGA(NOTAG, "req: [%u|%u], send event: fsize: %u, evt_ts: %u, evt_full_sz: %u, res: %d\n", timestamp, offset, frame->size, event->evt_time,
-			 RTK_DIAG_EVENT_STRUCTURE_REAL_SIZE(event), res);
+	if (event) {
+		RTK_LOGA(NOTAG, "req: [%u|%u], send event: fsize: %u, evt_ts: %u, evt_full_sz: %u, res: %d\n", timestamp, offset, frame->size, event->evt_time,
+				 RTK_DIAG_EVENT_STRUCTURE_REAL_SIZE(event), res);
+	} else {
+		RTK_LOGA(NOTAG, "req: [%u|%u], send event: fsize: %u, no more event, res: %d\n", timestamp, offset, frame->size, res);
+	}
 	rtk_diag_lock_release();
 	return res;
 }
@@ -350,6 +354,13 @@ static void rtk_diag_ipc_recv(void *Data, u32 IrqStatus, u32 ChanNum)
 			break;
 #ifndef CONFIG_AMEBA_RLS
 		case RTK_DIAG_CMD_TYPE_SET_DBG_LOG:
+			if (atcmd->log == 0 || atcmd->log == 1) {
+				diag_msg->flag = rtk_diag_req_dbg_log_enable(atcmd->log);
+			} else {
+				extern u8 g_diag_trans_print;
+				g_diag_trans_print = atcmd->log == 10 ? 0 : 1;
+				diag_msg->flag = RTK_SUCCESS;
+			}
 			diag_msg->flag = rtk_diag_req_dbg_log_enable(atcmd->log);
 			break;
 #endif

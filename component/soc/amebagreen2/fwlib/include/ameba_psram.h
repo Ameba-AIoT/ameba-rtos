@@ -242,7 +242,7 @@ typedef struct {
 #define PSRAM_LT_SELECT(x)				((u8)(((x) & 0x01) << 5))		//0:variable 1:fix
 #define PSRAM_Drive_Strength(x)			((u8)(((x) & 0x03) << 0))		//driving strength: "00" 25 ohms "01" 50ohms "10" 100homs "11" 200ohms
 #define PSRAM_ENABLE_SLOW_REFRESH		((u8)(0x01 << 3))				//enable slow refresh when temperature allows
-#define PSRAM_Refresh_Setting(x)		((u8)(((x) & 0x03) <<3))			//for DQ16 Refresh Frequency setting MR4[4:3]  x0: Always 4x Refresh (default) 01:Enables 1x Refresh when temperature allows (temperature<= 70��C) 11: Enable 0.5x Refresh when temperature allows (temperature<= 50��C)
+#define PSRAM_Refresh_Setting(x)		((u8)(((x) & 0x03) <<3))			//for DQ16 Refresh Frequency setting MR4[4:3]  x0: Always 4x Refresh (default) 01:Enables 1x Refresh when temperature allows (temperature<= 70C) 11: Enable 0.5x Refresh when temperature allows (temperature<= 50C)
 #define PSRAM_WRITE_LATENCY_CODE(x)		((u8)(((x) & 0x07) << 5))		//001: 200M LC=7; 101:250M LC=8
 #define PSRAM_ENBALE_DQ16				((u8)0x01 << 6)					//IO X8/X16 Mode MR8
 /**

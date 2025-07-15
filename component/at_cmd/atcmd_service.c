@@ -384,8 +384,8 @@ int atcmd_wifi_config_setting(void)
 		goto EXIT;
 	}
 
-	vfs_file *finfo;
-	finfo = (vfs_file *)fopen(path, "r");
+	FILE *finfo;
+	finfo = fopen(path, "r");
 	if (finfo == NULL) {
 		RTK_LOGI(TAG, "get wifi_config.json fail \r\n");
 		ret = -1;
@@ -395,14 +395,14 @@ int atcmd_wifi_config_setting(void)
 
 	cJSON *wifi_ob, *country_code_ob;
 	wifi_config = (char *)rtos_mem_zmalloc(stat_buf->st_size);
-	ret = fread(wifi_config, stat_buf->st_size, 1, (FILE *)finfo);
+	ret = fread(wifi_config, stat_buf->st_size, 1, finfo);
 	if (ret < 0) {
 		RTK_LOGI(TAG, "get wifi_config.json fail \r\n");
-		fclose((FILE *)finfo);
+		fclose(finfo);
 		goto EXIT;
 	}
 
-	fclose((FILE *)finfo);
+	fclose(finfo);
 
 	if ((wifi_ob = cJSON_Parse(wifi_config)) != NULL) {
 		country_code_ob = cJSON_GetObjectItem(wifi_ob, "country_code");
@@ -466,22 +466,22 @@ int atcmd_host_control_config_setting(void)
 		goto DEFAULT;
 	}
 
-	vfs_file *finfo;
-	finfo = (vfs_file *)fopen(path, "r");
+	FILE *finfo;
+	finfo = fopen(path, "r");
 	if (finfo == NULL) {
 		RTK_LOGI(TAG, "get atcmd_config.json fail \r\n");
 		goto DEFAULT;
 	}
 
 	atcmd_config = (char *)rtos_mem_zmalloc(stat_buf->st_size);
-	ret = fread(atcmd_config, stat_buf->st_size, 1, (FILE *)finfo);
+	ret = fread(atcmd_config, stat_buf->st_size, 1, finfo);
 	if (ret < 0) {
 		RTK_LOGI(TAG, "get atcmd_config.json fail \r\n");
-		fclose((FILE *)finfo);
+		fclose(finfo);
 		goto DEFAULT;
 	}
 
-	fclose((FILE *)finfo);
+	fclose(finfo);
 
 	if ((atcmd_ob = cJSON_Parse(atcmd_config)) != NULL) {
 		interface_ob = cJSON_GetObjectItem(atcmd_ob, "interface");

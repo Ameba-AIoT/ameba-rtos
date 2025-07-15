@@ -227,6 +227,16 @@ struct wps_str {
 #define _GCM_WAPI_	(_SMS4_ | BIT(3))		//_GCM_WAPI_
 #define _BIP_		0x8
 
+enum ENCRYP_PROTOCOL_E {
+	ENCRYP_PROTOCOL_OPENSYS,   //open system
+	ENCRYP_PROTOCOL_WEP,       //WEP
+	ENCRYP_PROTOCOL_WPA,       //WPA
+	ENCRYP_PROTOCOL_WPA2,      //WPA2
+	ENCRYP_PROTOCOL_WPA_WPA2,  //WPA & WPA2
+	ENCRYP_PROTOCOL_WAPI,      //WAPI: Not support in this version
+	ENCRYP_PROTOCOL_MAX
+};
+
 /******************************************************************/
 /***************** inline functions for fullmac. *****************/
 /******************************************************************/
@@ -288,6 +298,66 @@ static inline u8 *rtw_get_ie(const u8 *pbuf, int element_id, int *element_len, i
 		}
 	}
 	return NULL;
+}
+
+static inline unsigned char *rtw_get_wpa2_ie(unsigned char *pie, u32 *rsn_ie_len, int limit)
+{
+	return rtw_get_ie(pie, WLAN_EID_RSN, rsn_ie_len, limit);
+}
+
+static inline unsigned char *rtw_get_wpa_ie(unsigned char *pie, u32 *wpa_ie_len, int limit)
+{
+	u32 len;
+	u16 val16;
+	u8 *pbuf = pie;
+	int limit_new = limit;
+	const u8 RTW_WPA_OUI_TYPE[] = { 0x00, 0x50, 0xf2, 1 };
+
+	while (1) {
+		pbuf = rtw_get_ie(pbuf, WLAN_EID_WPA, &len, limit_new);
+
+		if (pbuf) {
+
+			//check if oui matches...
+			if (memcmp((pbuf + 2), (void *)RTW_WPA_OUI_TYPE, sizeof(RTW_WPA_OUI_TYPE)) != 0) {
+
+				goto check_next_ie;
+			}
+
+			//check version...
+			memcpy((u8 *)&val16, (pbuf + 6), sizeof(val16));
+
+			val16 = le16_to_cpu(val16);
+			if (val16 != 0x0001) {
+				goto check_next_ie;
+			}
+
+			*wpa_ie_len = *(pbuf + 1);
+
+			return pbuf;
+
+		} else {
+
+			*wpa_ie_len = 0;
+			return NULL;
+		}
+
+check_next_ie:
+
+		limit_new = limit - (pbuf - pie) - 2 - len;
+
+		if (limit_new <= 0) {
+			break;
+		}
+
+		pbuf += (2 + len);
+
+	}
+
+	*wpa_ie_len = 0;
+
+	return NULL;
+
 }
 
 static inline u8 rtw_get_pmf_option(const u8 *ie, u32 ie_len)

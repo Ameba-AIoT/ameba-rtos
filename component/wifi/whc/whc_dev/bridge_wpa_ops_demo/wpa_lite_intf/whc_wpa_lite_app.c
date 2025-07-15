@@ -11,17 +11,150 @@ extern rtos_sema_t whc_user_rx_sema;
 extern u8 *whc_rx_msg;
 
 struct wpa_ops_ssid ssid_a = {0};
+static struct rtw_network_info wifi = {0};
 
-int whc_wpa_ops_set_network(char *ptr)
+static void init_wifi_struct(void)
 {
-	int msg_len = 0, ret = 0;
+	memset(wifi.ssid.val, 0, sizeof(wifi.ssid.val));
+	memset(wifi.bssid.octet, 0, ETH_ALEN);
+	wifi.ssid.len = 0;
+	wifi.password = NULL;
+	wifi.password_len = 0;
+	wifi.key_id = -1;
+	wifi.channel = 0;
+	wifi.pscan_option = 0;
+	wifi.security_type = RTW_SECURITY_OPEN;
+}
+
+int whc_wpa_ops_disconnect(char *ptr, u8 *buf)
+{
+	(void)ptr;
+	(void)buf;
+	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
+	int timeout = 20, ret = 0;
+	struct rtw_wifi_setting wifi_setting = {0};
+
+
+	if (wifi_get_setting(STA_WLAN_INDEX, &wifi_setting) >= 0) {
+		if (wifi_setting.mode == RTW_MODE_AP) {
+			RTK_LOGI(TAG_WLAN_INIC, "%s, No need do disconnect for softap mode\n", __FUNCTION__);
+			goto end;
+		}
+	} else {
+		RTK_LOGI(TAG_WLAN_INIC, "%s, No need do disconnect when netif is down\n", __FUNCTION__);
+		goto end;
+	}
+
+	if (wifi_get_join_status(&join_status) != RTK_SUCCESS) {
+		RTK_LOGI(TAG_WLAN_INIC, "%s, Wifi get join status ERROR\n", __FUNCTION__);
+		goto end;
+	}
+
+	if (join_status == RTW_JOINSTATUS_UNKNOWN) {
+		RTK_LOGI(TAG_WLAN_INIC, "%s, Not connected yet\n", __FUNCTION__);
+		goto end;
+	}
+
+	/* Disconnecting ...... */
+	ret = wifi_disconnect();
+	if (ret < 0) {
+		RTK_LOGI(TAG_WLAN_INIC, "%s, Disconnect ERROR\n", __FUNCTION__);
+		goto end;
+	}
+
+	while (timeout > 0) {
+		if ((wifi_get_join_status(&join_status) == RTK_SUCCESS) && join_status != RTW_JOINSTATUS_SUCCESS) {
+			RTK_LOGI(TAG_WLAN_INIC, "%s, Disconnect Done\n", __FUNCTION__);
+			break;
+		}
+
+		/* Delay 1s */
+		rtos_time_delay_ms(1000);
+		timeout--;
+	}
+
+end:
+	init_wifi_struct();
+
+	return 0;
+
+}
+
+int whc_wpa_ops_select_network(char *ptr, u8 *buf)
+{
+	(void)ptr;
+	(void)buf;
+	struct wpa_ops_ssid *ssid = &ssid_a;
+	int ret = 0;
+
+	RTK_LOGI(TAG_WLAN_INIC, "%s\n", __func__);
+
+	if (ssid->ssid == NULL) {
+		return 0;
+	}
+
+	init_wifi_struct();
+
+	if (ssid->ssid != NULL) {
+		strncpy((char *)wifi.ssid.val, (char *)ssid->ssid, ssid->ssid_len);
+		wifi.ssid.len = ssid->ssid_len;
+	}
+
+	if (ssid->passphrase != NULL) {
+		wifi.password = (u8 *)ssid->passphrase;
+		wifi.password_len = strlen(ssid->passphrase);
+	}
+
+	//TODO key_mgmt
+
+	ret = wifi_connect(&wifi, 1);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGI(TAG_WLAN_INIC, "Fail:-0x%x", -ret);
+		if ((ret == -RTK_ERR_WIFI_CONN_INVALID_KEY)) {
+			RTK_LOGI(TAG_WLAN_INIC, "(password format wrong)\n");
+		} else if (ret == -RTK_ERR_WIFI_CONN_SCAN_FAIL) {
+			RTK_LOGI(TAG_WLAN_INIC, "(not found AP)\n");
+		} else if (ret == -RTK_ERR_BUSY) {
+			RTK_LOGI(TAG_WLAN_INIC, "(busy)\n");
+		}
+	}
+
+	return 0;
+}
+
+
+int whc_wpa_ops_list_network(char *ptr, u8 *buf)
+{
+	(void)ptr;
+	u8 *buf_p;
+	struct wpa_ops_ssid *ssid = &ssid_a;
+
+	memset(buf, 0, BRIDGE_WPA_OPS_BUF_SIZE);
+
+	buf_p = buf;
+	*(u32 *)buf_p = WHC_WPA_OPS_UTIL;
+	buf_p += 4;
+	*buf_p = WHC_WPA_OPS_UTIL_LIST_NETWORK;
+	buf_p += 1;
+
+	if (ssid->ssid != NULL) {
+		memcpy(buf_p, ssid->ssid, ssid->ssid_len);
+		whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
+	}
+
+
+	return 0;
+}
+
+int whc_wpa_ops_set_network(char *ptr, u8 *buf, int msg_len)
+{
+	int ret = 0;
 	char *var_name = NULL;
 	char *value = NULL;
 	char *space = NULL;
 	struct wpa_ops_ssid *ssid = &ssid_a;
+	(void)buf;
 
-	msg_len = *ptr;
-	ptr += 4;
 	RTK_LOGE(TAG_WLAN_INIC, "%s, len: %d; set_network: %s\n", __func__, msg_len, ptr);
 
 	var_name = ptr;
@@ -54,6 +187,45 @@ int whc_wpa_ops_set_network(char *ptr)
 
 	return ret;
 
+}
+
+int whc_wpa_ops_cli_cmd_parse(char *ptr, u8 *buf)
+{
+	int msg_len = 0;
+	char *cmd = NULL;
+	char *params = NULL;
+
+	msg_len = *ptr;
+	ptr += 4;
+
+	cmd = strtok(ptr, " ");
+	params = strtok(NULL, "");
+
+	RTK_LOGI(TAG_WLAN_INIC, "%s, cmd: %s, params: %s, msg_len: %d\n", __func__, cmd, params, msg_len);
+
+	if (!cmd) {
+		RTK_LOGI(TAG_WLAN_INIC, "%s, No command\n", __func__);
+		return 0;
+	}
+
+	if (strcmp(cmd, "set_network") == 0) {
+		if (params) {
+			whc_wpa_ops_set_network(params, buf, msg_len - strlen("set_network") - 1);
+		} else {
+			RTK_LOGI(TAG_WLAN_INIC, "%s, missing parameter\n", __func__);
+		}
+	} else if (strcmp(cmd, "disconnect") == 0) {
+		whc_wpa_ops_disconnect(params, buf);
+	} else if (strcmp(cmd, "list_networks") == 0) {
+		whc_wpa_ops_list_network(params, buf);
+	} else if (strcmp(cmd, "select_network") == 0) {
+		whc_wpa_ops_select_network(params, buf);
+	} else {
+		RTK_LOGI(TAG_WLAN_INIC, "%s, Unknown command\n", __func__);
+	}
+
+
+	return 0;
 }
 
 void whc_dev_pkt_rx_to_user_task(void)
@@ -95,7 +267,7 @@ void whc_dev_pkt_rx_to_user_task(void)
 				} else if (*ptr == WHC_WPA_OPS_UTIL_SET_NETWORK) {
 					ptr += 1;
 
-					whc_wpa_ops_set_network((char *)ptr);
+					whc_wpa_ops_cli_cmd_parse((char *)ptr, buf);
 				}
 			} else if (event == WHC_WPA_OPS_CUSTOM_API) {
 				buf = rtos_mem_malloc(BRIDGE_WPA_OPS_BUF_SIZE);

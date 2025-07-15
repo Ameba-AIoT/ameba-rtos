@@ -53,19 +53,43 @@ elseif("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz")
     )
 endif()
 
-ameba_list_append_if(CONFIG_WHC_INTF_USB private_sources
-    usb/usbd_core.c
-    usb/usbd_hal.c
-    usb/usbd_pcd.c
-    usb/usbd_fullmac_class.c
-    usb/usbd_fullmac.c
-    usb/usbd_otp.c
-)
+if(CONFIG_FULLMAC_DEV OR (CONFIG_WHC_NONE AND (NOT CONFIG_WHC_INTF_IPC)))
+  set(loader_condition TRUE)
+else()
+  set(loader_condition FALSE)
+endif()
 
-ameba_list_append(private_includes
-    ${c_CMPT_USB_DIR}/common
-    ${c_COMPONENT_DIR}/soc/common/flash_wrapper/inc
-)
+if("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz")
+    ameba_list_append_if(loader_condition private_includes
+        hci/core
+    )
+
+    ameba_list_append_if(CONFIG_WHC_INTF_USB private_includes
+        ${c_CMPT_USB_DIR}/common
+        hci/usb
+    )
+
+    ameba_list_append_if(CONFIG_WHC_INTF_SDIO private_includes
+        hci/sdio
+    )
+
+    ameba_list_append_if(loader_condition private_sources
+        hci/core/hci_core.c
+    )
+
+    ameba_list_append_if(CONFIG_WHC_INTF_USB private_sources
+        hci/usb/usbd_core.c
+        hci/usb/usbd_hal.c
+        hci/usb/usbd_pcd.c
+        hci/usb/usbd_otp.c
+        hci/usb/usbd_fullmac_class.c
+        hci/usb/usbd_intf.c
+    )
+
+    ameba_list_append_if(CONFIG_WHC_INTF_SDIO private_sources
+        hci/sdio/sdio_intf.c
+    )
+endif()
 
 # Component private part, user config end
 #------------------------------#

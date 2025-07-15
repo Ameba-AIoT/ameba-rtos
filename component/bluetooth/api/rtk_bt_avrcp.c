@@ -40,6 +40,42 @@ uint16_t rtk_bt_avrcp_disconnect(uint8_t *bd_addr)
 	return ret;
 }
 
+uint16_t rtk_bt_avrcp_play_status_change_req(uint8_t *bd_addr, uint8_t play_status)
+{
+	uint16_t ret = 0;
+	rtk_bt_avrcp_play_status_change_req_t req_t = {0};
+
+	if (!bd_addr) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	memcpy((void *)&req_t.bd_addr, (void *)bd_addr, 6);
+	req_t.status = (rtk_bt_avrcp_play_status_t)play_status;
+
+	ret = rtk_bt_send_cmd(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_ACT_PLAY_STATUS_CHANGE_REQ,
+						  (void *)&req_t, sizeof(rtk_bt_avrcp_play_status_change_req_t));
+
+	return ret;
+}
+
+uint16_t rtk_bt_avrcp_play_status_change_reg_rsp(uint8_t *bd_addr, uint8_t play_status)
+{
+	uint16_t ret = 0;
+	rtk_bt_avrcp_play_status_change_reg_rsp_t rsp_t = {0};
+
+	if (!bd_addr) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	memcpy((void *)&rsp_t.bd_addr, (void *)bd_addr, 6);
+	rsp_t.status = (rtk_bt_avrcp_play_status_t)play_status;
+
+	ret = rtk_bt_send_cmd(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_ACT_PLAY_STATUS_CHANGE_REG_RSP,
+						  (void *)&rsp_t, sizeof(rtk_bt_avrcp_play_status_change_reg_rsp_t));
+
+	return ret;
+}
+
 uint16_t rtk_bt_avrcp_play(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;

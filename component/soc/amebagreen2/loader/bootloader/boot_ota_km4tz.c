@@ -14,6 +14,9 @@
 #ifdef CONFIG_COMPRESS_OTA_IMG
 #include "ameba_boot_lzma.h"
 #endif
+#ifdef CONFIG_FULLMAC_DEV
+#include "hci_core.h"
+#endif
 
 static const char *const TAG = "BOOT";
 static Certificate_TypeDef Cert[2]; //Certificate of SlotA & SlotB
@@ -432,8 +435,49 @@ void BOOT_OTA_Extract(void)
 }
 #endif
 
+#ifdef CONFIG_FULLMAC_DEV_TODO
+
+static void Boot_ResetSystem(void)
+{
+	WDG_InitTypeDef WDG_InitStruct;
+	WDG_StructInit(&WDG_InitStruct);
+	WDG_InitStruct.Window = 65535;
+	WDG_InitStruct.Timeout = 1;
+	WDG_InitStruct.EICNT = 1;
+	WDG_InitStruct.EIMOD = 0;
+
+	WDG_Init(IWDG_DEV, &WDG_InitStruct);
+	WDG_Enable(IWDG_DEV);
+	WDG_Refresh(IWDG_DEV);
+
+	while (1);
+}
+
+#endif
+
 void Boot_Fullmac_LoadImage(void)
 {
+#ifdef CONFIG_FULLMAC_DEV_TODO
+#ifdef CONFIG_FULLMAC_DEV
+	int status;
+
+	/* Init host control interface */
+	status = HCI_Init();
+	if (status == HAL_OK) {
+		/* Wait for image2 download */
+		status = HCI_WaitForExit();
+		HCI_DeInit();
+		if (status == HAL_OK) {
+			/* Boot to image2 */
+		} else {
+			/* Abort download */
+			Boot_ResetSystem();
+		}
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "HCI init failed: %d\n", status);
+	}
+#endif
+#else
 	SubImgInfo_TypeDef SubImgInfo[3];
 	u32 LogAddr, PhyAddr, ImgAddr, TotalLen = 0;
 	u8 Cnt, i;
@@ -484,6 +528,7 @@ Fail:
 	RTK_LOGE(TAG, "FULLMAC IMG2 Load IMG Fail!\n");
 	/* stuck and clear msp if boot fail */
 	SBOOT_Validate_Fail_Stuck(FALSE);
+#endif
 }
 
 u8 BOOT_OTA_IMG(void)

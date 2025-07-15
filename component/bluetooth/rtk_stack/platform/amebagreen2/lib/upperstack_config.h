@@ -31,7 +31,7 @@
 
 //BT 4.1
 #define F_BT_LE_4_1_SUPPORT                      (F_BT_LE_SUPPORT && 1)
-#define F_BT_LE_4_1_COC_SUPPORT                  (F_BT_LE_4_1_SUPPORT && 0)
+#define F_BT_LE_4_1_COC_SUPPORT                  (F_BT_LE_4_1_SUPPORT && 1)
 
 //BT 4.2
 #define F_BT_LE_4_2_SUPPORT                      (F_BT_LE_SUPPORT && 1)

@@ -78,7 +78,7 @@ exit:
 
 int32_t at_fs_get_offset(const char *key, void *buffer, int32_t len, int32_t offset)
 {
-	vfs_file *finfo;
+	FILE *finfo;
 	int res = -1;
 	char *path = NULL;
 	char *prefix = find_vfs_tag(g_cert_fs);
@@ -99,25 +99,25 @@ int32_t at_fs_get_offset(const char *key, void *buffer, int32_t len, int32_t off
 	}
 
 	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:AT/%s", prefix, key);
-	finfo = (vfs_file *)fopen(path, "r");
+	finfo = fopen(path, "r");
 	if (finfo == NULL) {
 		RTK_LOGE(TAG, "fopen failed\r\n");
 		goto exit;
 	}
 
 	if (offset > 0) {
-		res = fseek((FILE *)finfo, offset, SEEK_SET);
+		res = fseek(finfo, offset, SEEK_SET);
 		if (res < 0) {
 			RTK_LOGE(TAG, "fseek failed,err is %d!!\r\n", res);
 			goto exit;
 		}
 	}
 
-	res = fread(buffer, len, 1, (FILE *)finfo);
+	res = fread(buffer, len, 1, finfo);
 	if (res < 0) {
 		RTK_LOGE(TAG, "fread failed,err is %d!!\r\n", res);
 	}
-	fclose((FILE *)finfo);
+	fclose(finfo);
 
 exit:
 	if (path) {
@@ -129,7 +129,7 @@ exit:
 
 int32_t at_fs_set_offset(const char *key, const void *val, int32_t len, int32_t offset)
 {
-	vfs_file *finfo;
+	FILE *finfo;
 	int res = -1;
 	char *path = NULL;
 	char *prefix = find_vfs_tag(g_cert_fs);
@@ -150,9 +150,9 @@ int32_t at_fs_set_offset(const char *key, const void *val, int32_t len, int32_t 
 	}
 
 	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:AT/%s", prefix, key);
-	finfo = (vfs_file *)fopen(path, "wx");
+	finfo = fopen(path, "wx");
 	if (finfo == NULL) {
-		finfo = (vfs_file *)fopen(path, "+");
+		finfo = fopen(path, "+");
 		if (finfo == NULL) {
 			RTK_LOGE(TAG, "fopen failed\r\n");
 			goto exit;
@@ -160,18 +160,18 @@ int32_t at_fs_set_offset(const char *key, const void *val, int32_t len, int32_t 
 	}
 
 	if (offset > 0) {
-		res = fseek((FILE *)finfo, offset, SEEK_SET);
+		res = fseek(finfo, offset, SEEK_SET);
 		if (res < 0) {
 			RTK_LOGE(TAG, "fseek failed\r\n");
 			goto exit;
 		}
 	}
 
-	res = fwrite(val, len, 1, (FILE *)finfo);
+	res = fwrite(val, len, 1, finfo);
 	if (res != len) {
 		RTK_LOGE(TAG, "fwrite failed\r\n");
 	}
-	fclose((FILE *)finfo);
+	fclose(finfo);
 
 exit:
 	if (path) {
@@ -477,7 +477,7 @@ int atcmd_get_ssl_certificate(char *buffer, CERT_TYPE cert_type, int index)
 		return -1;
 	}
 
-	vfs_file *finfo;
+	FILE *finfo;
 	struct stat stat_buf;
 	prefix = find_vfs_tag(g_cert_fs);
 	if (prefix == NULL) {
@@ -515,15 +515,15 @@ int atcmd_get_ssl_certificate(char *buffer, CERT_TYPE cert_type, int index)
 		return 0;
 	}
 
-	finfo = (vfs_file *)fopen(path, "r");
+	finfo = fopen(path, "r");
 	if (finfo == NULL) {
 		rtos_mem_free(path);
 		return -1;
 	}
 
-	ret = fread(buffer, stat_buf.st_size, 1, (FILE *)finfo);
+	ret = fread(buffer, stat_buf.st_size, 1, finfo);
 
-	fclose((FILE *)finfo);
+	fclose(finfo);
 
 	rtos_mem_free(path);
 
@@ -544,7 +544,7 @@ void at_cert(void *arg)
 	char *argv[MAX_ARGC] = {0};
 	char *path = NULL;
 	char *prefix;
-	vfs_file *finfo;
+	FILE *finfo;
 	char *buffer = NULL;
 	u8 error_no = 0, role, index;
 
@@ -576,43 +576,43 @@ void at_cert(void *arg)
 
 	DiagSnPrintf(path, PATH_MAX, "%s:CERT/%s_ca_%d.crt", prefix, role == 0 ? "client" : "server", index);
 	at_printf("%s\r\n", path);
-	finfo = (vfs_file *)fopen(path, "r");
+	finfo = fopen(path, "r");
 	if (finfo != NULL) {
-		res = fread(buffer, MAX_CERT_LEN, 1, (FILE *)finfo);
+		res = fread(buffer, MAX_CERT_LEN, 1, finfo);
 		if (res < 0) {
 			RTK_LOGW(TAG, "%s read fail \r\n", path);
 		} else {
 			at_printf("%s", buffer);
 		}
-		fclose((FILE *)finfo);
+		fclose(finfo);
 	}
 	at_printf("\r\n");
 
 	DiagSnPrintf(path, PATH_MAX, "%s:CERT/%s_key_%d.key", prefix, role == 0 ? "client" : "server", index);
 	at_printf("%s\r\n", path);
-	finfo = (vfs_file *)fopen(path, "r");
+	finfo = fopen(path, "r");
 	if (finfo != NULL) {
-		res = fread(buffer, MAX_CERT_LEN, 1, (FILE *)finfo);
+		res = fread(buffer, MAX_CERT_LEN, 1, finfo);
 		if (res < 0) {
 			RTK_LOGW(TAG, "%s read fail \r\n", path);
 		} else {
 			at_printf("%s\r\n", buffer);
 		}
-		fclose((FILE *)finfo);
+		fclose(finfo);
 	}
 	at_printf("\r\n");
 
 	DiagSnPrintf(path, PATH_MAX, "%s:CERT/%s_cert_%d.crt", prefix, role == 0 ? "client" : "server", index);
 	at_printf("%s\r\n", path);
-	finfo = (vfs_file *)fopen(path, "r");
+	finfo = fopen(path, "r");
 	if (finfo != NULL) {
-		res = fread(buffer, MAX_CERT_LEN, 1, (FILE *)finfo);
+		res = fread(buffer, MAX_CERT_LEN, 1, finfo);
 		if (res < 0) {
 			RTK_LOGW(TAG, "%s read fail \r\n", path);
 		} else {
 			at_printf("%s\r\n", buffer);
 		}
-		fclose((FILE *)finfo);
+		fclose(finfo);
 	}
 	at_printf("\r\n");
 

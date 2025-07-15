@@ -2,10 +2,12 @@ from abc import ABC
 import json5
 import json
 import importlib
+import shutil
 from ctypes import *
 from enum import Enum, unique
 from dataclasses import fields
 from typing import Union, List
+from binascii import hexlify
 
 from ameba_enums import *
 from context import Context
@@ -67,6 +69,9 @@ class Certificate_TypeDef(Structure):
               ('PKInfo',c_uint8 * sizeof(CertEntry_TypeDef) * 5),
               ('Signature',c_uint8 * SIGN_MAX_LEN)]
 
+class SB_HEADER(Structure):
+    _fields_=[('reserved', c_uint32*12),
+              ('sb_sig', c_uint8*64)]
 @dataclass(frozen=True)
 class ManifestImageConfig:
     version:Union[int, None] = None
@@ -77,6 +82,7 @@ class ManifestImageConfig:
     sec_epoch:Union[int, None] = None
 
     secure_boot_en:Union[bool, None] = None
+    secure_image2_en:Union[bool, None] = None
     hmac_key:Union[str, None] = None
     ecb_key:Union[str, List, None] = None
     ctr_key:Union[str, List, None] = None
@@ -145,7 +151,11 @@ class ManifestManager(ABC):
             context.logger.info(f"manifest file does not contains image3, will use image2 config for image3")
             self.image3 = self.image2
         self.dsp = self.image2 #DSP use image2 config
-        self.cert = ManifestImageConfig.create(self.new_json_data['cert'])
+        if 'cert' in self.new_json_data.keys():
+            self.cert = ManifestImageConfig.create(self.new_json_data['cert'])
+        else:
+            context.logger.info(f"manifest file does not contains cert, will use image2 config for cert")
+            self.cert = self.image2
 
     def validate_config(self, data:Union[str, dict]) -> bool:
         if isinstance(data, str):
@@ -178,8 +188,8 @@ class ManifestManager(ABC):
                         self.context.logger.error(f'{key} format error: should be 64 bytes')
                         return False
                 elif key in ["rsip_iv", "rdp_iv"]:
-                    if len(value) != 16:
-                        self.context.logger.error(f'{key} format error: should be 16 bytes')
+                    if len(value) != 16 and len(value) != 32:
+                        self.context.logger.error(f'{key} format error: should be 16/32 bytes: {len(value)}')
                         return False
                 elif key == "gcm_tag_len":
                     choices = [4, 8, 16]
@@ -365,6 +375,53 @@ class ManifestManager(ABC):
             new_size = ((sizeof(Manifest_TypeDef) - 1) // 4096 + 1) * 4096
             pad_count = new_size - sizeof(Manifest_TypeDef)
             f.write(b'\xFF' * pad_count)
+        return Error.success()
+
+    def create_sboot(self, output_file:str, input_file:str, image_type = ImageType.UNKNOWN) -> Error:
+        if image_type == ImageType.UNKNOWN:
+            #Detect image type by image name
+            image_type = parse_image_type(input_file)
+        image_config = self.get_image_config(image_type)
+        layout_file = self.context.layout_file
+        if image_config.secure_boot_en and image_type == ImageType.IMAGE1 or image_config.secure_image2_en:
+            lib_security = importlib.import_module('security')
+            sboot = lib_security.secure_boot()
+
+            with open(input_file, 'rb') as f:
+                content = f.read()
+            origin_size = len(content)
+            padded_size = ((origin_size - 1) // 4 + 1) * 4
+            content.ljust(padded_size, b'\xFF')
+
+            if image_config.secure_boot_en and image_type == ImageType.IMAGE1:
+                section_addr = get_layout_address(layout_file, "KM4_BOOT_XIP", "ORIGIN")
+                if section_addr == '':
+                    self.context.logger.fatal(f"Failed to parse addr for KM4_BOOT_XIP in {layout_file}")
+                addr = (int(section_addr, 16) + padded_size).to_bytes(4, 'little')
+            else: # image_config.secure_image2_en
+                if image_type == ImageType.IMAGE2:
+                    section_addr = get_layout_address(layout_file, "KM4_IMG2_XIP", "ORIGIN")
+                    if section_addr == '':
+                        self.context.logger.fatal(f"Failed to parse addr for KM4_IMG2_XIP in {layout_file}")
+                    addr = (int(section_addr, 16) + padded_size).to_bytes(4, 'little')
+                else:
+                    addr = (0xFFFFFFFF).to_bytes(4, 'little')
+            new_content = content[:0x10] + addr + content[0x14:]
+
+            sbHdr = SB_HEADER()
+            memset(addressof(sbHdr), 0xFF, sizeof(sbHdr))
+            sboot.gen_signature(AuthAlg.AuthID_ED25519.value, image_config.private_key, image_config.public_key, new_content, padded_size, sbHdr.sb_sig)
+
+            with open(output_file, 'wb') as f:
+                f.write(new_content)
+
+                f.write(string_at(addressof(sbHdr), sizeof(sbHdr)))
+                if image_type == ImageType.IMAGE2:
+                    new_size = ((padded_size + sizeof(sbHdr) - 1) // 4096 + 1) * 4096
+                    pad_count = new_size - sizeof(sbHdr) - padded_size
+                    f.write(b'\xFF' * pad_count)
+        else:
+            shutil.copy(input_file, output_file)
         return Error.success()
 
     def create_keypair(self, output_file:str, algorithm:str) -> Error:

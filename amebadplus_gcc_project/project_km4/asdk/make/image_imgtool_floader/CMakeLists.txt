@@ -3,7 +3,7 @@ ameba_add_image(target_imgtool_floader p_EXCLUDE_FROM_ALL)
 
 ###############################  ADD COMPONENT  ###################################
 add_compile_definitions(
-    CONFIG_FLOADER_USBD_EN
+    CONFIG_NON_OS
 )
 ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_download/imgtool_floader)
 ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_wrapper)
@@ -98,8 +98,7 @@ add_custom_command(TARGET ${c_CURRENT_IMAGE} POST_BUILD
 
         -P ${CMAKE_CURRENT_SOURCE_DIR}/../image1/${c_POST_BUILD_SCRIPT}
 
-    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/ram_1_prepend.bin           ${c_SDK_FLOADER_BIN_DIR}/imgtool_flashloader_raw.bin
-    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/imgtool_flashloader.bin     ${c_SDK_FLOADER_BIN_DIR}/floader_amebadplus.bin
+    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/imgtool_flashloader.bin     ${c_SDK_FLOADER_BIN_DIR}/floader_${c_SOC_TYPE}.bin
     COMMAND ${CMAKE_COMMAND} -E remove -f ${c_SDK_IMAGE_TARGET_DIR}/imgtool_flashloader.bin
 )
 

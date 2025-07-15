@@ -11,8 +11,6 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-#define DMA_TRANSFER_LARGE_DATA             0
-
 #define USB_BULK_OUT_IDLE_MAX_CNT           8000 //sof
 #define USB_BULK_IN_IDLE_MAX_CNT            100  //sof
 #define USB_INTR_BUSY_MAX_CNT               1000
@@ -411,24 +409,11 @@ static void usbh_cdc_acm_process_tx(usb_host_t *host)
 
 	switch (cdc->data_tx_state) {
 	case CDC_ACM_TRANSFER_STATE_TX:
-#if DMA_TRANSFER_LARGE_DATA
+
 		usbh_bulk_send_data(host,
 							cdc->tx_buf,
 							(u16)cdc->tx_len,
 							cdc->data_if.bulk_out_pipe);
-#else
-		if (cdc->tx_len > cdc->data_if.bulk_out_packet_size) {
-			usbh_bulk_send_data(host,
-								cdc->tx_buf,
-								cdc->data_if.bulk_out_packet_size,
-								cdc->data_if.bulk_out_pipe);
-		} else {
-			usbh_bulk_send_data(host,
-								cdc->tx_buf,
-								(u16)cdc->tx_len,
-								cdc->data_if.bulk_out_pipe);
-		}
-#endif
 		cdc->data_tx_state = CDC_ACM_TRANSFER_STATE_TX_BUSY;
 		cdc->tx_idle_tick = usbh_get_tick(host);
 		usbh_notify_class_state_change(host, 0);
@@ -437,7 +422,6 @@ static void usbh_cdc_acm_process_tx(usb_host_t *host)
 	case CDC_ACM_TRANSFER_STATE_TX_BUSY:
 		urb_state = usbh_get_urb_state(host, cdc->data_if.bulk_out_pipe);
 		if (urb_state == USBH_URB_DONE) {
-#if  DMA_TRANSFER_LARGE_DATA
 			if (cdc->tx_zlp) { //ZLP
 				cdc->tx_zlp = 0U;
 				cdc->tx_len = 0U;
@@ -449,19 +433,6 @@ static void usbh_cdc_acm_process_tx(usb_host_t *host)
 					cdc->cb->transmit(urb_state);
 				}
 			}
-#else
-			if (cdc->tx_len >= cdc->data_if.bulk_out_packet_size) {
-				cdc->tx_len -= cdc->data_if.bulk_out_packet_size;
-				cdc->tx_buf += cdc->data_if.bulk_out_packet_size;
-				cdc->data_tx_state = CDC_ACM_TRANSFER_STATE_TX;
-			} else {
-				cdc->tx_len = 0U;
-				cdc->data_tx_state = CDC_ACM_TRANSFER_STATE_IDLE;
-				if ((cdc->cb != NULL) && (cdc->cb->transmit != NULL)) {
-					cdc->cb->transmit(urb_state);
-				}
-			}
-#endif
 			usbh_notify_class_state_change(host, 0);
 		} else if (urb_state == USBH_URB_BUSY) {
 			cdc->data_tx_state = CDC_ACM_TRANSFER_STATE_TX;
@@ -498,24 +469,10 @@ static void usbh_cdc_acm_process_rx(usb_host_t *host)
 
 	switch (cdc->data_rx_state) {
 	case CDC_ACM_TRANSFER_STATE_RX:
-#if DMA_TRANSFER_LARGE_DATA
 		usbh_bulk_receive_data(host,
 							   cdc->rx_buf,
 							   (u16)cdc->rx_len,
 							   cdc->data_if.bulk_in_pipe);
-#else
-		if (cdc->rx_len > cdc->data_if.bulk_in_packet_size) {
-			usbh_bulk_receive_data(host,
-								   cdc->rx_buf,
-								   cdc->data_if.bulk_in_packet_size, //just read one MPS
-								   cdc->data_if.bulk_in_pipe);
-		} else {
-			usbh_bulk_receive_data(host,
-								   cdc->rx_buf,
-								   (u16)cdc->rx_len,
-								   cdc->data_if.bulk_in_pipe);
-		}
-#endif
 
 		cdc->data_rx_state = CDC_ACM_TRANSFER_STATE_RX_BUSY;
 		cdc->rx_idle_tick = usbh_get_tick(host);
@@ -531,12 +488,14 @@ static void usbh_cdc_acm_process_rx(usb_host_t *host)
 			}
 
 			//should handle the ZLP packet
-			if ((cdc->rx_len >= len) && (len >= cdc->data_if.bulk_in_packet_size)) {
+			if ((cdc->rx_len > len) && (cdc->rx_len > cdc->data_if.bulk_in_packet_size)) {
 				cdc->rx_len -= len;
 				cdc->rx_buf += len;
 				cdc->data_rx_state = CDC_ACM_TRANSFER_STATE_RX;
+			} else if ((cdc->rx_len > 0) && (cdc->rx_len % cdc->data_if.bulk_in_packet_size) == 0) {
+				cdc->rx_len = 0;/* Last ZLP for multi-MPS */
+				cdc->data_rx_state = CDC_ACM_TRANSFER_STATE_RX;
 			} else {
-				cdc->rx_len = 0;
 				cdc->data_rx_state = CDC_ACM_TRANSFER_STATE_IDLE;
 			}
 

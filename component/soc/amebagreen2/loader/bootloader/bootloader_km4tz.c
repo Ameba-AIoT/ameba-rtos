@@ -331,7 +331,10 @@ void BOOT_Image1(void)
 
 	_memset((void *)__image1_bss_start__, 0, (__image1_bss_end__ - __image1_bss_start__));
 	BOOT_ReasonSet();
-	if (BOOT_Reason() == 0) {
+	/* BOOT Reason: POR or BOR. */
+	/* BOD is enabled by default. BOR may arise if voltage increases slowly during POR. */
+	/* To avoid Retention RAM cannot be initialized to 0 correctly. */
+	if ((BOOT_Reason() & ~AON_BIT_RSTF_BOR) == 0) {
 		_memset(RRAM_DEV, 0, sizeof(RRAM_TypeDef));
 	}
 

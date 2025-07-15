@@ -4,7 +4,9 @@
  *
  ******************************************************************************/
 #include "whc_dev.h"
-#include "whc_dev_bridge.h"
+
+#ifdef CONFIG_WHC_DUAL_TCPIP
+#include "whc_dev_tcpip.h"
 
 #include "lwip/sys.h"
 #include "lwip/etharp.h"
@@ -133,34 +135,23 @@ void whc_dev_api_delete_filter_node(u32_t identity)
 
 /**
  * @brief  set host state, pkt to host only when host in ready state
- * @param  state: WHC_BRIDGE_HOST_READY/WHC_BRIDGE_HOST_UNREADY
+ * @param  state: WHC_HOST_READY/WHC_HOST_UNREADY
  * @return none.
  * @note: host shouldn't inform dev to set host ready until host can recv pkts.
  */
 void whc_dev_api_set_host_state(u8 state)
 {
 	whc_hostrdy = state;
-	if (state == WHC_BRIDGE_HOST_READY) {
+	if (state == WHC_HOST_READY) {
 		pmu_acquire_wakelock(PMU_FULLMAC_WIFI);
 	} else {
 		pmu_release_wakelock(PMU_FULLMAC_WIFI);
 	}
 }
 
-void whc_dev_api_set_tickps_cmd(u8 subtype)
-{
-	if (subtype == BRIDGE_CMD_TICKPS_R) {
-		pmu_release_wakelock(PMU_OS);
-	} else if (subtype == BRIDGE_CMD_TICKPS_TYPE_PG) {
-		pmu_set_sleep_type(SLEEP_PG);
-	} else if (subtype == BRIDGE_CMD_TICKPS_TYPE_CG) {
-		pmu_set_sleep_type(SLEEP_CG);
-	}
-}
-
 /**
  * @brief  get host state
- * @return WHC_BRIDGE_HOST_READY/WHC_BRIDGE_HOST_UNREADY.
+ * @return WHC_HOST_READY/WHC_HOST_UNREADY.
  */
 u8 whc_dev_api_get_host_rdy(void)
 {
@@ -185,7 +176,20 @@ u8  whc_dev_api_get_default_direction(void)
 {
 	return whc_default_direction;
 }
+#endif
 
+void whc_dev_api_set_tickps_cmd(u8 subtype)
+{
+	if (subtype == WHC_CMD_TICKPS_R) {
+		pmu_release_wakelock(PMU_OS);
+	} else if (subtype == WHC_CMD_TICKPS_TYPE_PG) {
+		pmu_set_sleep_type(SLEEP_PG);
+	} else if (subtype == WHC_CMD_TICKPS_TYPE_CG) {
+		pmu_set_sleep_type(SLEEP_CG);
+	}
+}
+
+#ifdef CONFIG_WHC_CMD_PATH
 /**
  * @brief  to send data to host
  * @param  data: data buf to be sent.
@@ -196,3 +200,4 @@ void whc_dev_api_send_to_host(u8 *data, u32 len)
 {
 	whc_dev_api_send_data(data, len);
 }
+#endif

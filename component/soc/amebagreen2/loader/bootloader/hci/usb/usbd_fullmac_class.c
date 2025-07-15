@@ -218,7 +218,7 @@ static u8 USBD_Class_WiFiOnlyMode_FullSpeedCfgDesc[USBD_WIFI_ONLY_MODE_CONFIG_DE
 };
 
 /* INIC interface class callbacks structure */
-USBD_ClassTypeDef  USBD_FULLMAC = {
+USBD_ClassTypeDef  USBD_FullmacClassDriver = {
 	.Init = USBD_Class_Init,
 	.DeInit = USBD_Class_DeInit,
 	.Setup = USBD_Class_Setup,
@@ -239,7 +239,7 @@ USBD_ClassTypeDef  USBD_FULLMAC = {
 #endif
 };
 
-USBD_Class_HandleTypeDef USBD_Class_Handle;
+USBD_FullmacClassHandleTypeDef USBD_FullmacClassHandle;
 
 /* Private functions ---------------------------------------------------------*/
 /**
@@ -252,7 +252,7 @@ USBD_Class_HandleTypeDef USBD_Class_Handle;
 static u8  USBD_Class_Init(USBD_HandleTypeDef *pdev, u8 cfgidx)
 {
 	u8 ret = 0U;
-	USBD_Class_HandleTypeDef   *hcdc;
+	USBD_FullmacClassHandleTypeDef   *hcdc;
 
 	UNUSED(cfgidx);
 
@@ -279,10 +279,7 @@ static u8  USBD_Class_Init(USBD_HandleTypeDef *pdev, u8 cfgidx)
 		pdev->ep_out[USBD_BULK_OUT_EP & 0xFU].is_used = 1U;
 	}
 
-	hcdc = (USBD_Class_HandleTypeDef *) pdev->pClassData;
-
-	/* Init  physical Interface components */
-	((USBD_ClassCallbackTypeDef *)pdev->pUserData)->Init();
+	hcdc = (USBD_FullmacClassHandleTypeDef *) pdev->pClassData;
 
 	/* Init Xfer states */
 	hcdc->TxState = 0U;
@@ -314,9 +311,6 @@ static u8  USBD_Class_DeInit(USBD_HandleTypeDef *pdev, u8 cfgidx)
 	USBD_CloseEP(pdev, USBD_BULK_OUT_EP);
 	pdev->ep_out[USBD_BULK_OUT_EP & 0xFU].is_used = 0U;
 
-	/* DeInit  physical Interface components */
-	((USBD_ClassCallbackTypeDef *)pdev->pUserData)->DeInit();
-
 	return ret;
 }
 
@@ -327,9 +321,9 @@ static u8  USBD_Class_DeInit(USBD_HandleTypeDef *pdev, u8 cfgidx)
   * @param  req: usb requests
   * @retval status
   */
-static u8  USBD_Class_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
+static u8 USBD_Class_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
-	USBD_Class_HandleTypeDef   *hcdc = (USBD_Class_HandleTypeDef *) pdev->pClassData;
+	USBD_FullmacClassHandleTypeDef *hcdc = (USBD_FullmacClassHandleTypeDef *) pdev->pClassData;
 	USBD_SetupReqTypedef *preq = &hcdc->Request;
 	u8 ifalt = 0U;
 	u16 status_info = 0U;
@@ -340,7 +334,7 @@ static u8  USBD_Class_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 	case USB_REQ_TYPE_VENDOR:
 		if (req->wLength) {
 			if (req->bmRequest & 0x80U) {
-				ret = ((USBD_ClassCallbackTypeDef *)pdev->pUserData)->Setup(req, hcdc->Data);
+				ret = ((USBD_FullmacClassCallbackTypeDef *)pdev->pUserData)->Setup(hcdc->Adapter, req, hcdc->Data);
 				if (ret == HAL_OK) {
 					USBD_CtlSendData(pdev, hcdc->Data, req->wLength);
 				}
@@ -353,7 +347,7 @@ static u8  USBD_Class_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 				USBD_CtlPrepareRx(pdev, hcdc->Data, req->wLength);
 			}
 		} else {
-			((USBD_ClassCallbackTypeDef *)pdev->pUserData)->Setup(req, NULL);
+			((USBD_FullmacClassCallbackTypeDef *)pdev->pUserData)->Setup(hcdc->Adapter, req, NULL);
 		}
 		break;
 
@@ -409,7 +403,7 @@ static u8  USBD_Class_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
   */
 static u8  USBD_Class_DataIn(USBD_HandleTypeDef *pdev, u8 epnum)
 {
-	USBD_Class_HandleTypeDef *hcdc = (USBD_Class_HandleTypeDef *)pdev->pClassData;
+	USBD_FullmacClassHandleTypeDef *hcdc = (USBD_FullmacClassHandleTypeDef *)pdev->pClassData;
 
 	if (hcdc != NULL) {
 		pdev->ep_in[epnum].total_length = 0U;
@@ -432,14 +426,12 @@ static u8 USBD_Class_DataOut(USBD_HandleTypeDef *pdev, u8 epnum, u32 len)
 {
 	UNUSED(epnum);
 	u8 ret = HAL_ERR_HW;
-	USBD_Class_HandleTypeDef *hcdc = (USBD_Class_HandleTypeDef *)pdev->pClassData;
+	USBD_FullmacClassHandleTypeDef *hcdc = (USBD_FullmacClassHandleTypeDef *)pdev->pClassData;
 
 	/* USB data will be immediately processed, this allow next USB traffic being
 	NAKed till the end of the application Xfer */
 	if ((hcdc != NULL) && (pdev->pUserData != NULL)) {
-		/* Get the received data length */
-		hcdc->RxLength = len;
-		((USBD_ClassCallbackTypeDef *)pdev->pUserData)->Receive(hcdc);//((USBD_ClassCallbackTypeDef *)pdev->pUserData)->Receive(hcdc->RxBuffer, len);
+		((USBD_FullmacClassCallbackTypeDef *)pdev->pUserData)->Receive(hcdc->Adapter, len);
 		ret = HAL_OK;
 	}
 
@@ -456,10 +448,10 @@ static u8 USBD_Class_DataOut(USBD_HandleTypeDef *pdev, u8 epnum, u32 len)
   */
 static u8  USBD_Class_EP0_RxReady(USBD_HandleTypeDef *pdev)
 {
-	USBD_Class_HandleTypeDef   *hcdc = (USBD_Class_HandleTypeDef *) pdev->pClassData;
+	USBD_FullmacClassHandleTypeDef   *hcdc = (USBD_FullmacClassHandleTypeDef *) pdev->pClassData;
 
 	if ((hcdc != NULL) && (pdev->pUserData != NULL) && (hcdc->Request.bRequest != 0xFFU)) {
-		((USBD_ClassCallbackTypeDef *)pdev->pUserData)->Setup(&hcdc->Request, hcdc->Data);
+		((USBD_FullmacClassCallbackTypeDef *)pdev->pUserData)->Setup(hcdc->Adapter, &hcdc->Request, hcdc->Data);
 		hcdc->Request.bRequest = 0xFFU;
 		return HAL_OK;
 	} else {
@@ -475,7 +467,7 @@ static u8  USBD_Class_EP0_RxReady(USBD_HandleTypeDef *pdev)
   */
 static u8 *USBD_Class_DeviceDescriptor(USBD_HandleTypeDef *pdev, u16 *length)
 {
-	USBD_Class_HandleTypeDef *hcdc = (USBD_Class_HandleTypeDef *) pdev->pClassData;
+	USBD_FullmacClassHandleTypeDef *hcdc = (USBD_FullmacClassHandleTypeDef *) pdev->pClassData;
 	USB_OTP_TypeDef *otp = &pdev->OTP;
 	u8 *desc;
 
@@ -519,7 +511,7 @@ static u8 *USBD_Class_LangIDStrDescriptor(USBD_HandleTypeDef *pdev, u16 *length)
   */
 static u8 *USBD_Class_ProductStrDescriptor(USBD_HandleTypeDef *pdev,	u16 *length)
 {
-	USBD_Class_HandleTypeDef *hcdc = (USBD_Class_HandleTypeDef *) pdev->pClassData;
+	USBD_FullmacClassHandleTypeDef *hcdc = (USBD_FullmacClassHandleTypeDef *) pdev->pClassData;
 	USB_OTP_TypeDef *otp = &pdev->OTP;
 
 	if (otp->otp_param) {
@@ -539,7 +531,7 @@ static u8 *USBD_Class_ProductStrDescriptor(USBD_HandleTypeDef *pdev,	u16 *length
   */
 static u8 *USBD_Class_ManufacturerStrDescriptor(USBD_HandleTypeDef *pdev, u16 *length)
 {
-	USBD_Class_HandleTypeDef *hcdc = (USBD_Class_HandleTypeDef *) pdev->pClassData;
+	USBD_FullmacClassHandleTypeDef *hcdc = (USBD_FullmacClassHandleTypeDef *) pdev->pClassData;
 
 	UNUSED(pdev);
 	USB_OTP_TypeDef *otp = &pdev->OTP;
@@ -562,7 +554,7 @@ static u8 *USBD_Class_ManufacturerStrDescriptor(USBD_HandleTypeDef *pdev, u16 *l
 static u8 *USBD_Class_SerialStrDescriptor(USBD_HandleTypeDef *pdev, u16 *length)
 {
 	UNUSED(pdev);
-	USBD_Class_HandleTypeDef *hcdc = (USBD_Class_HandleTypeDef *) pdev->pClassData;
+	USBD_FullmacClassHandleTypeDef *hcdc = (USBD_FullmacClassHandleTypeDef *) pdev->pClassData;
 	USB_OTP_TypeDef *otp = &pdev->OTP;
 	if (otp->otp_sn) {
 		*length = otp->sn_str_len;
@@ -584,7 +576,7 @@ static u8 *USBD_Class_GetConfigDescriptor(USBD_HandleTypeDef *pdev, u16 *length)
 	u8 *desc;
 	u16 len;
 	USB_OTP_TypeDef *otp = &pdev->OTP;
-	USBD_Class_HandleTypeDef *hcdc = (USBD_Class_HandleTypeDef *)pdev->pClassData;
+	USBD_FullmacClassHandleTypeDef *hcdc = (USBD_FullmacClassHandleTypeDef *)pdev->pClassData;
 
 	if (pdev->dev_speed == USBD_SPEED_HIGH) {
 		desc = USBD_Class_WiFiOnlyMode_CfgDesc;
@@ -623,7 +615,7 @@ static u8 *USBD_Class_GetConfigDescriptor(USBD_HandleTypeDef *pdev, u16 *length)
   */
 static u8 *USBD_Class_GetOtherSpeedConfigDescriptor(USBD_HandleTypeDef *pdev, u16 *length)
 {
-	USBD_Class_HandleTypeDef *hcdc = (USBD_Class_HandleTypeDef *) pdev->pClassData;
+	USBD_FullmacClassHandleTypeDef *hcdc = (USBD_FullmacClassHandleTypeDef *) pdev->pClassData;
 	u8 *desc;
 	u16 len;
 	USB_OTP_TypeDef *otp = &pdev->OTP;
@@ -675,11 +667,11 @@ static u8 *USBD_Class_GetDeviceQualifierDescriptor(USBD_HandleTypeDef *pdev, u16
 static u8 USBD_Class_PrepareReceive(void)
 {
 	USBD_HandleTypeDef *pdev = &USBD_Device;
-	USBD_Class_HandleTypeDef *hcdc = (USBD_Class_HandleTypeDef *) pdev->pClassData;
+	USBD_FullmacClassHandleTypeDef *hcdc = (USBD_FullmacClassHandleTypeDef *) pdev->pClassData;
 
 	/* Suspend or Resume USB Out process */
 	if (hcdc != NULL) {
-		USBD_PrepareReceive(pdev, USBD_BULK_OUT_EP, hcdc->RxBuffer, USBD_DATA_OUT_BUF_SIZE);
+		USBD_PrepareReceive(pdev, USBD_BULK_OUT_EP, hcdc->Adapter->RxBuffer, USBD_DATA_OUT_BUF_SIZE);
 		return HAL_OK;
 	} else {
 		return HAL_ERR_HW;
@@ -697,7 +689,7 @@ static u8 USBD_Class_PrepareReceive(void)
 u8 USBD_Class_Transmit(u8 *buf, u32 len)
 {
 	USBD_HandleTypeDef *pdev = &USBD_Device;
-	USBD_Class_HandleTypeDef *hcdc = (USBD_Class_HandleTypeDef *) pdev->pClassData;
+	USBD_FullmacClassHandleTypeDef *hcdc = (USBD_FullmacClassHandleTypeDef *) pdev->pClassData;
 
 	if (hcdc != NULL) {
 		if (hcdc->TxState == 0U) {

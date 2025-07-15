@@ -48,14 +48,14 @@ Role switch test, idle state-->broadcast source(BMS)-->broadcast sink(BMR):
     1.8 start scan: AT+BLEBAP=escan,1
     1.9 stop scan: AT+BLEBAP=escan,0
     1.10 create PA sync to the PBP broadcast: AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id>
-                                             e.g. AT+BLEBAP=pa_sync_create,0,00e04c8002eb,0,123abc
+                                             e.g. AT+BLEBAP=pa_sync_create,0,00e04c8002eb,0xe,123abc
     1.11 create BIG sync to the PBP broadcast: AT+BLEBAP=big_sync_create,<bd_addr type>,<bd_addr>
 
 Role switch test, idle state-->broadcast sink(BMR)-->broadcast source(BMS):
     1.12 start scan for the PBP broadcast: AT+BLEBAP=escan,1
     1.13 stop scan: AT+BLEBAP=escan,0
     1.14 create PA sync to the PBP broadcast: AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id> 
-                                             e.g. AT+BLEBAP=pa_sync_create,0,00e04c8002eb,0,123abc
+                                             e.g. AT+BLEBAP=pa_sync_create,0,00e04c8002eb,0xe,123abc
     1.15 create BIG sync to the PBP broadcast: AT+BLEBAP=big_sync_create,<bd_addr type>,<bd_addr>
     1.16 terminate BIG sync to the PBP broadcast: AT+BLEBAP=big_sync_remove,<bd_addr type>,<bd_addr>  (This step can be ignored)
     1.17 start LE Audio PBP broadcast: AT+BLEBAP=broadcast_start
@@ -90,7 +90,7 @@ For PBAP part:
     2.2 stop ext adv before ext scan: AT+BLEGAP=eadv,0,0
     2.3 scan for the PBP broadcast: AT+BLEBAP=escan,1
     2.4 create PA sync to the PBP broadcast: AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id> 
-                                             e.g. AT+BLEBAP=pa_sync_create,0,00e04c8002eb,0,123abc
+                                             e.g. AT+BLEBAP=pa_sync_create,0,00e04c8002eb,0xe,123abc
     2.5 create BIG sync to the PBP broadcast: AT+BLEBAP=big_sync_create,<bd_addr type>,<bd_addr>
 
 3. Phone 

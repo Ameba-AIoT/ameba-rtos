@@ -82,18 +82,17 @@ void wifi_event_handle_external(u32 event_cmd, u8 *buf, s32 buf_len, s32 flags)
 void wifi_event_join_status_internal_hdl(u8 *buf, s32 buf_len, s32 flags)
 {
 	UNUSED(buf_len);
-#if !defined(CONFIG_MP_SHRINK) && !defined(CONFIG_WHC_DEV)
+#if (!defined(CONFIG_MP_SHRINK) && !defined(CONFIG_WHC_DEV)) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 	struct deauth_info  *deauth_data, *deauth_data_pre;
 	u8 zero_mac[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 	u8 join_status = (u8)flags;
-	union rtw_event_join_status_info *evt_info = (union rtw_event_join_status_info *)buf;
+	struct rtw_event_join_status_info *evt_info = (struct rtw_event_join_status_info *)buf;
+	struct rtw_event_join_fail *join_fail;
+	struct rtw_event_disconnect *disconnect;
 	struct diag_evt_wifi_disconn diag_disconn;
 	struct diag_evt_wifi_join_fail diag_join_fail;
 
-	if (buf != NULL) {
-		diag_disconn.reason = evt_info->disconnect.disconn_reason;
-	}
 	rtw_join_status = join_status;
 
 	/* step 1: internal process for different status*/
@@ -121,19 +120,21 @@ void wifi_event_join_status_internal_hdl(u8 *buf, s32 buf_len, s32 flags)
 	}
 
 	if (join_status == RTW_JOINSTATUS_FAIL) {
+		join_fail = &evt_info->private.fail;
 		/* if synchronous connection, up sema when connect fail*/
 		if (join_block_param) {
-			join_fail_reason = evt_info->fail.fail_reason;
+			join_fail_reason = join_fail->fail_reason;
 			rtos_sema_give(join_block_param->sema);
 		}
-		diag_join_fail.reason = -evt_info->fail.fail_reason;
-		diag_join_fail.reason_code = evt_info->fail.reason_or_status_code;
+		diag_join_fail.reason = -join_fail->fail_reason;
+		diag_join_fail.reason_code = join_fail->reason_or_status_code;
 		rtk_diag_event_add(RTK_EVENT_LEVEL_INFO, DIAG_EVT_WIFI_JOIN_FAIL, (u8 *)&diag_join_fail, sizeof(struct diag_evt_wifi_join_fail));
 		at_printf_indicate("wifi connect failed\r\n");
 	}
 
 	if (join_status == RTW_JOINSTATUS_DISCONNECT) {
-		diag_disconn.reason = evt_info->disconnect.disconn_reason;
+		disconnect = &evt_info->private.disconnect;
+		diag_disconn.reason = disconnect->disconn_reason;
 		rtk_diag_event_add(RTK_EVENT_LEVEL_INFO, DIAG_EVT_WIFI_DISCONN, (u8 *)&diag_disconn, sizeof(struct diag_evt_wifi_disconn));
 		at_printf_indicate("wifi disconnected\r\n");
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
@@ -141,7 +142,7 @@ void wifi_event_join_status_internal_hdl(u8 *buf, s32 buf_len, s32 flags)
 		LwIP_netif_set_link_down(0);
 #endif
 
-#if !defined(CONFIG_WHC_DEV) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_WHC_HOST))
+#if (!defined(CONFIG_WHC_DEV) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_WHC_HOST))) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 		deauth_data_pre = (struct deauth_info *)rtos_mem_zmalloc(sizeof(struct deauth_info));
 		rtw_psk_deauth_info_flash((u8 *)deauth_data_pre, sizeof(struct deauth_info), FLASH_READ);
 		if (memcmp(deauth_data_pre->bssid, zero_mac, 6) != 0) {
@@ -157,11 +158,10 @@ void wifi_event_join_status_internal_hdl(u8 *buf, s32 buf_len, s32 flags)
 
 	if ((join_status == RTW_JOINSTATUS_DISCONNECT) || (join_status == RTW_JOINSTATUS_FAIL)) {
 		/*wpa lite disconnect hdl*/
-		u8 port = IFACE_PORT0;
-		rtw_psk_disconnect_hdl(buf, 0, (join_status << 8) | port);
+		rtw_psk_disconnect_hdl(evt_info->bssid, IFACE_PORT0);
 	}
 
-#if CONFIG_AUTO_RECONNECT
+#if !defined(CONFIG_WHC_DEV) && CONFIG_AUTO_RECONNECT
 	rtw_reconn_join_status_hdl(buf, flags);
 #endif
 
@@ -189,13 +189,15 @@ void rtw_sta_assoc_hdl(u8 *buf, s32 buf_len, s32 flags)
 
 void rtw_sta_disassoc_hdl(u8 *buf, s32 buf_len, s32 flags)
 {
+	(void)flags;
+	(void)buf_len;
 	u8 *mac_addr = NULL;
 
 	/* softap dis sta */
 	mac_addr = buf;
 	at_printf_indicate("client disconnected:\""MAC_FMT"\"\r\n", MAC_ARG(mac_addr));
 
-	rtw_psk_disconnect_hdl(buf, buf_len, flags);
+	rtw_psk_disconnect_hdl(mac_addr, IFACE_PORT1);
 }
 
 void rtw_join_status_hdl(u8 *buf, s32 buf_len, s32 flags)
@@ -322,7 +324,7 @@ void wifi_event_init(void)
 
 void wifi_indication(u32 event, u8 *buf, s32 buf_len, s32 flags)
 {
-#if defined(CONFIG_WHC_DEV)
+#if defined(CONFIG_WHC_DEV) && !defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 	extern void whc_dev_wifi_event_indicate(u32 event_cmd, u8 * buf, s32 buf_len, s32 flags);
 	whc_dev_wifi_event_indicate(event, buf, buf_len, flags);
 #endif

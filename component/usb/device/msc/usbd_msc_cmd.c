@@ -33,7 +33,6 @@ static usbd_config_t msc_cmd_cfg = {
 	.speed = CONFIG_USBD_MSC_SPEED,
 	.dma_enable = 1U,
 	.isr_priority = INT_PRI_MIDDLE,
-	.nptx_max_err_cnt = {0U, 2000U, },
 };
 
 static usbd_msc_cb_t msc_cmd_cb = {

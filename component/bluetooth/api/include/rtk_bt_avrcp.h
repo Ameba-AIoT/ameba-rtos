@@ -98,6 +98,24 @@ typedef enum {
 } rtk_bt_avrcp_player_scan_t;
 
 /**
+ * @struct    rtk_bt_avrcp_play_status_change_req_t
+ * @brief     Bluetooth AVRCP change play status request struct.
+ */
+typedef struct {
+	uint8_t bd_addr[6];
+	rtk_bt_avrcp_play_status_t status;
+} rtk_bt_avrcp_play_status_change_req_t;
+
+/**
+ * @struct    rtk_bt_avrcp_play_status_change_reg_rsp_t
+ * @brief     Bluetooth AVRCP change play status change register response struct.
+ */
+typedef struct {
+	uint8_t bd_addr[6];
+	rtk_bt_avrcp_play_status_t status;
+} rtk_bt_avrcp_play_status_change_reg_rsp_t;
+
+/**
  * @struct    rtk_bt_avrcp_app_setting_values_t
  * @brief     Bluetooth AVRCP application setting values struct.
  */
@@ -316,6 +334,26 @@ uint16_t rtk_bt_avrcp_connect(uint8_t *bd_addr);
  *            - Others: Error code
  */
 uint16_t rtk_bt_avrcp_disconnect(uint8_t *bd_addr);
+
+/**
+ * @brief     send avrcp play status change request.
+ * @param[in] bd_addr: bt address
+ * @param[in] play_status: play status. ref rtk_bt_avrcp_play_status_t
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_avrcp_play_status_change_req(uint8_t *bt_addr, uint8_t play_status);
+
+/**
+ * @brief     send avrcp play status change register response.
+ * @param[in] bd_addr: bt address
+ * @param[in] play_status: play status. ref rtk_bt_avrcp_play_status_t
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_avrcp_play_status_change_reg_rsp(uint8_t *bd_addr, uint8_t play_status);
 
 /**
  * @brief     send avrcp play request.

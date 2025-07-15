@@ -60,7 +60,9 @@ typedef enum
     LE_COC_SECURITY_AUTHEN_ENCRYT,     /**< Security authenticated encryption */
     LE_COC_SECURITY_UNAUTHEN_DATA_SIGN,/**< Security unauthenticated data signed */
     LE_COC_SECURITY_AUTHEN_DATA_SIGN,  /**< Security authenticated data signed */
-    LE_COC_SECURITY_AUTHOR             /**< Security authorized */
+    LE_COC_SECURITY_AUTHOR,            /**< Security authorized */
+    LE_COC_SECURITY_SC_UNAUTHEN,       /**< Security unauthenticated LE secure connection */
+    LE_COC_SECURITY_SC_AUTHEN          /**< Security LE secure connection */
 } T_LE_COC_SECURITY_MODE;
 
 typedef struct

@@ -60,7 +60,7 @@ void rtw_psk_get_psk_info(struct psk_info *psk_data);
 void rtw_psk_set_psk_info(struct psk_info *psk_data);
 void rtw_psk_set_pmk_from_eap(u8 *pmk, u8 *hwaddr);
 
-void rtw_psk_disconnect_hdl(u8 *buf, s32 buf_len, s32 flags);
+void rtw_psk_disconnect_hdl(u8 *mac_addr, u8 iface_type);
 void rtw_set_to_roam(u8 roam_try_cnt);
 u8 rtw_roam_nb_ch_num_get(void);
 u16 rtw_roam_nb_ch_get(u8 ch);

@@ -5,10 +5,12 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __USBD_FULLMAC_H
-#define __USBD_FULLMAC_H
+#ifndef _SDIO_INTF_H_
+#define _SDIO_INTF_H_
 
 /* Includes ------------------------------------------------------------------*/
+
+#include "hci_core.h"
 
 /* Exported defines ----------------------------------------------------------*/
 
@@ -20,11 +22,7 @@
 
 /* Exported functions ------------------------------------------------------- */
 
-int Fullmac_USBD_Init(void);
+extern HCI_InterfaceTypeDef SDIO_Interface;
 
-int Fullmac_USBD_DeInit(void);
-
-int Fullmac_USBD_Process(void);
-
-#endif /* __USBD_FULLMAC_H */
+#endif /* _SDIO_INTF_H_ */
 

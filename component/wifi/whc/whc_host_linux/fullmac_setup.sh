@@ -92,9 +92,11 @@ fi
 if [[ "$1" == "spi" ]]; then
 	sed -i 's/#define CONFIG_AMEBADPLUS 1/#undef CONFIG_AMEBADPLUS/g' ./common/autoconf.h
 	sed -i 's/#define CALCULATE_FREE_TXBD 1/#undef CALCULATE_FREE_TXBD/g' ./common/autoconf.h
+	sed -i 's/#define CONFIG_AMEBAGREEN2 1/#undef CONFIG_AMEBAGREEN2/g' ./common/autoconf.h
 
 	echo "choose target IC:"
 	echo "1) AMEBADPLUS"
+	echo "2) AMEBAGREEN2"
 
 	read -p "choose target IC: " choice
     case $choice in
@@ -102,6 +104,10 @@ if [[ "$1" == "spi" ]]; then
             echo "AMEBADPLUS select"
             sed -i 's/#undef CONFIG_AMEBADPLUS/#define CONFIG_AMEBADPLUS 1/g' ./common/autoconf.h
             sed -i 's/#undef CALCULATE_FREE_TXBD/#define CALCULATE_FREE_TXBD 1/g' ./common/autoconf.h
+            ;;
+        2)
+            echo "AMEBAGREEN2 select"
+            sed -i 's/#undef CONFIG_AMEBAGREEN2/#define CONFIG_AMEBAGREEN2 1/g' ./common/autoconf.h
             ;;
         *)
             echo "Invalid selection"

@@ -25,11 +25,6 @@
 #define RTW_IP_ADDR_LEN 4
 #define RTW_IPv6_ADDR_LEN 16
 
-#ifdef CONFIG_P2P
-#define NETDEV_REGISTER   0
-#define NETDEV_UNREGISTER 1
-#endif
-
 /* Layer 2 structs. */
 
 /* Layer 1 structs. */
@@ -92,6 +87,10 @@ struct mlme_priv_t {
 	u8 wep_key_len, wep_key_idx;
 
 	struct cfg80211_bss *cfg80211_assoc_bss;
+
+	u8					*deauth_ies;
+	u32					deauth_ie_len;
+	bool				b_need_report;	/* disconnect caused by deauth or disassoc? */
 #endif
 
 	/* disconnect parameters */
@@ -150,7 +149,6 @@ struct whc_device {
 	struct  wifi_user_conf	wifi_user_config;
 #ifdef CONFIG_P2P
 	struct p2p_priv_t		p2p_global;
-	struct netdev_work		netdev_work;
 #endif
 };
 

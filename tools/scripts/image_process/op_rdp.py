@@ -34,7 +34,10 @@ class Rdp(OperationBase):
         if image_config.rdp_en:
             lib_security = importlib.import_module('security')
             rdp = lib_security.RDP(output_file, input_file, mode == 'enc', image_config)
-            rdp.rdp_encrypt()
+            if context.soc_project == "amebad":
+                 rdp.rdp_encrypt_AMEBAD()
+            else:
+                 rdp.rdp_encrypt()
         else:
             shutil.copy(input_file, output_file)
         return Error.success()

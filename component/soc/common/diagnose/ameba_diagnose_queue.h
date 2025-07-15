@@ -19,7 +19,4 @@ const RtkDiagEvent_t *rtk_diag_queue_view_head(void);
 const RtkDiagEvent_t *rtk_diag_queue_view_tail(void);
 const RtkDiagEvent_t *rtk_diag_queue_find(u32 timestamp, u16 *global_offset, u16 *local_offset, int *result);
 const RtkDiagEvent_t *rtk_diag_queue_next_to_prev_find(void);
-
-
-int rtk_diag_queue_enqueue_ts(u8 evt_level, u16 evt_type, const u8 *evt_info, u16 evt_len, u32 timestamp);
 #endif

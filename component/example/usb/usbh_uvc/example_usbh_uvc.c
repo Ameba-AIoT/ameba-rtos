@@ -212,7 +212,7 @@ static void uvc_vfs_thread(void *param)
 {
 	char path[128] = {0};
 	char *prefix;
-	vfs_file *finfo;
+	FILE *finfo;
 	int res = 0;
 	char filename[64] = {0};
 	char f_num[15];
@@ -236,14 +236,14 @@ static void uvc_vfs_thread(void *param)
 		snprintf(path, sizeof(path), "%s:%s", prefix, filename);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Create image file: %s\n", path);
 
-		finfo = (vfs_file *)fopen(path, "w");
+		finfo = fopen(path, "w");
 		if (finfo == NULL) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "fopen image fail\n");
 			goto exit;
 		}
 
 		if (rtos_mutex_take(uvc_buf_mutex, RTOS_MAX_TIMEOUT) == RTK_SUCCESS) {
-			res = fwrite(uvc_buf, uvc_buf_size, 1, (FILE *)finfo);
+			res = fwrite(uvc_buf, uvc_buf_size, 1, finfo);
 			if (res != uvc_buf_size) {
 				RTK_LOGS(NOTAG, RTK_LOG_ERROR, "fwrite() failed, err: %d\n", res);
 			} else {
@@ -253,7 +253,7 @@ static void uvc_vfs_thread(void *param)
 			rtos_mutex_give(uvc_buf_mutex);
 		}
 
-		fclose((FILE *)finfo);
+		fclose(finfo);
 
 		uvc_vfs_img_file_no++;
 	}
@@ -268,7 +268,7 @@ static void uvc_vfs_thread(void *param)
 {
 	char path[128] = {0};
 	char *prefix;
-	vfs_file *finfo;
+	FILE *finfo;
 	int res = 0;
 	char filename[64] = {0};
 	u32 total_len = 0;
@@ -286,7 +286,7 @@ static void uvc_vfs_thread(void *param)
 	snprintf(path, sizeof(path), "%s:%s", prefix, filename);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Create image file: %s\n", path);
 
-	finfo = (vfs_file *)fopen(path, "wb+");
+	finfo = fopen(path, "wb+");
 	if (finfo == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "fopen image fail\n");
 		goto exit;
@@ -297,7 +297,7 @@ static void uvc_vfs_thread(void *param)
 			rtos_mutex_take(uvc_buf_mutex, RTOS_MAX_TIMEOUT);
 			RingBuffer_Read(uvc_rb, buffer_h264, USBH_UVC_VFS_WRITE_SIZE);
 			rtos_mutex_give(uvc_buf_mutex);
-			res = fwrite(buffer_h264, USBH_UVC_VFS_WRITE_SIZE, 1, (FILE *)finfo);
+			res = fwrite(buffer_h264, USBH_UVC_VFS_WRITE_SIZE, 1, finfo);
 			if (res != 1) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "buf fwrite fail: %d\n", res);
 				goto exit;
@@ -310,7 +310,7 @@ static void uvc_vfs_thread(void *param)
 
 exit:
 	uvc_vfs_is_init = 0;
-	fclose((FILE *)finfo);
+	fclose(finfo);
 	rtos_mem_free(buffer_h264);
 	RingBuffer_Destroy(uvc_rb);
 	rtos_task_delete(NULL);
