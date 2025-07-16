@@ -142,7 +142,7 @@ set(clean_files
 
 set(link_deps
     ${IMG2_LD}
-    ${c_SOC_PROJECT_DIR}/${c_SOC_TYPE}_layout.ld
+    ${c_SOC_PROJECT_DIR}/ameba_layout.ld
 )
 
 set_target_properties(${c_CURRENT_IMAGE} PROPERTIES

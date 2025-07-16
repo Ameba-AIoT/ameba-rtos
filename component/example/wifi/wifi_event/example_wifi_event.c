@@ -10,11 +10,11 @@ struct rtw_event_hdl_func_t event_external_hdl[1] = {
 };
 u16 array_len_of_event_external_hdl = sizeof(event_external_hdl) / sizeof(struct rtw_event_hdl_func_t);
 
-void exampe_wifi_join_status_event_hdl(u8 *buf, s32 buf_len, s32 flags)
+void exampe_wifi_join_status_event_hdl(u8 *buf, s32 buf_len)
 {
 	UNUSED(buf_len);
-	u8 join_status = (u8)flags;
 	struct rtw_event_join_status_info *evt_info = (struct rtw_event_join_status_info *)buf;
+	u8 join_status = evt_info->status;
 	struct rtw_event_join_fail *join_fail;
 	struct rtw_event_disconnect *disconnect;
 

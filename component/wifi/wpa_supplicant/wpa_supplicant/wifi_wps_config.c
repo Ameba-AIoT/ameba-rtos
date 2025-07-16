@@ -73,10 +73,10 @@ struct _internal_wps_scan_handler_arg {
 extern void _wifi_p2p_wps_success(const u8 *peer_addr, int registrar);
 extern void _wifi_p2p_wps_failed(void);
 #endif
-extern void wpas_wsc_sta_wps_start_hdl(u8 *buf, s32 buf_len, s32 flags);
-extern void wpas_wsc_wps_finish_hdl(u8 *buf, s32 buf_len, s32 flags);
-extern void wpas_wsc_server_wps_finish_hdl(u8 *buf, s32 buf_len, s32 flags);
-extern void wpas_wsc_eapol_recvd_hdl(u8 *buf, s32 buf_len, s32 flags);
+extern void wpas_wsc_sta_wps_start_hdl(u8 *buf, s32 buf_len);
+extern void wpas_wsc_wps_finish_hdl(u8 *buf, s32 buf_len);
+extern void wpas_wsc_server_wps_finish_hdl(u8 *buf, s32 buf_len);
+extern void wpas_wsc_eapol_recvd_hdl(u8 *buf, s32 buf_len);
 
 void wifi_p2p_wps_success(const u8 *peer_addr, int registrar)
 {
@@ -1026,7 +1026,7 @@ exit2:
 void wps_stop(void)
 {
 	wps_stop_notified = 1;
-	wpas_wsc_wps_finish_hdl(NULL, 0, 0);
+	wpas_wsc_wps_finish_hdl(NULL, 0);
 }
 
 int wps_judge_staion_disconnect(void)

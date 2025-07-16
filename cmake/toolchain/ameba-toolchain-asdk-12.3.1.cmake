@@ -29,14 +29,14 @@ if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
 		set(TOOLCHAINDIR /opt/rtk-toolchain)
 		message("Default toolchain path: ${TOOLCHAINDIR}")
 	endif()
-	set(SDK_TOOLCHAIN ${TOOLCHAINDIR}/${ToolChainVerMajor}/linux/newlib) # Note: server needs to be updated, ${ToolChainVerMajor}-${ToolChainVerMinor}
+	set(SDK_TOOLCHAIN ${TOOLCHAINDIR}/${ToolChainVerMajor}-${ToolChainVerMinor}/linux/newlib) # Note: server needs to be updated, ${ToolChainVerMajor}-${ToolChainVerMinor}
 	set(TOOLCHAINNAME ${ToolChainVerMajor}-linux-newlib-build-${ToolChainVerMinor}-x86_64.tar.bz2)
 elseif(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
 	if(NOT TOOLCHAINDIR)
 		set(TOOLCHAINDIR C:/rtk-toolchain)
 		message("Default toolchain path: ${TOOLCHAINDIR}")
 	endif()
-	set(SDK_TOOLCHAIN ${TOOLCHAINDIR}/${ToolChainVerMajor}/mingw32/newlib) # Note: server needs to be updated, ${ToolChainVerMajor}-${ToolChainVerMinor}
+	set(SDK_TOOLCHAIN ${TOOLCHAINDIR}/${ToolChainVerMajor}-${ToolChainVerMinor}/mingw32/newlib) # Note: server needs to be updated, ${ToolChainVerMajor}-${ToolChainVerMinor}
 	set(TOOLCHAINNAME ${ToolChainVerMajor}-mingw32-newlib-build-${ToolChainVerMinor}-x86_64.zip)
 else()
 	message(FATAL_ERROR "unknown host platform ")

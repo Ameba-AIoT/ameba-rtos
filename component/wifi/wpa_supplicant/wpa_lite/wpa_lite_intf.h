@@ -66,31 +66,31 @@ u8 rtw_roam_nb_ch_num_get(void);
 u16 rtw_roam_nb_ch_get(u8 ch);
 
 /*event handle functions*/
-void rtw_sae_sta_rx_auth(u8 *buf, s32 buf_len, s32 flags);/*RTW_EVENT_RX_MGNT*/
-void rtw_sae_ap_rx_auth(u8 *buf, s32 buf_len, s32 flags);/*RTW_EVENT_RX_MGNT_AP*/
-void rtw_sae_sta_start(u8 *buf, s32 buf_len, s32 flags);/*RTW_EVENT_EXTERNAL_AUTH_REQ*/
-void rtw_psk_sta_start_4way(u8 *buf, s32 buf_len, s32 flags);/*RTW_EVENT_WPA_STA_4WAY_START*/
-void rtw_psk_ap_start_4way(u8 *buf, s32 buf_len, s32 flags);/*RTW_EVENT_WPA_AP_4WAY_START*/
-void rtw_psk_sta_recv_eapol(u8 *data, s32 data_len, s32 flags);/*RTW_EVENT_WPA_STA_4WAY_RECV*/
-void rtw_psk_ap_recv_eapol(u8 *data, s32 data_len, s32 flags);/*RTW_EVENT_WPA_AP_4WAY_RECV*/
-void rtw_psk_set_psk_info_evt_hdl(u8 *buf, s32 buf_len, s32 flags);/*RTW_EVENT_WPA_SET_PSK_INFO*/
-void rtw_owe_start_calc(u8 *buf, s32 buf_len, s32 flags);/*RTW_EVENT_OWE_START_CALC*/
-void rtw_owe_peer_key_recv(u8 *buf, s32 buf_len, s32 flags);/*RTW_EVENT_OWE_PEER_KEY_RECV*/
+void rtw_sae_sta_rx_auth(u8 *buf, s32 buf_len);/*RTW_EVENT_RX_MGNT*/
+void rtw_sae_ap_rx_auth(u8 *buf, s32 buf_len);/*RTW_EVENT_RX_MGNT_AP*/
+void rtw_sae_sta_start(u8 *buf, s32 buf_len);/*RTW_EVENT_EXTERNAL_AUTH_REQ*/
+void rtw_psk_sta_start_4way(u8 *buf, s32 buf_len);/*RTW_EVENT_WPA_STA_4WAY_START*/
+void rtw_psk_ap_start_4way(u8 *buf, s32 buf_len);/*RTW_EVENT_WPA_AP_4WAY_START*/
+void rtw_psk_sta_recv_eapol(u8 *data, s32 data_len);/*RTW_EVENT_WPA_STA_4WAY_RECV*/
+void rtw_psk_ap_recv_eapol(u8 *data, s32 data_len);/*RTW_EVENT_WPA_AP_4WAY_RECV*/
+void rtw_psk_set_psk_info_evt_hdl(u8 *buf, s32 buf_len);/*RTW_EVENT_WPA_SET_PSK_INFO*/
+void rtw_owe_start_calc(u8 *buf, s32 buf_len);/*RTW_EVENT_OWE_START_CALC*/
+void rtw_owe_peer_key_recv(u8 *buf, s32 buf_len);/*RTW_EVENT_OWE_PEER_KEY_RECV*/
 #if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K) || defined(CONFIG_IEEE80211R)
-void rtw_roam_kvr_cap_update(u8 *buf, s32 buf_len, s32 flags);/*RTW_EVENT_KVR_CAP_UPDATE*/
+void rtw_roam_kvr_cap_update(u8 *buf, s32 buf_len);/*RTW_EVENT_KVR_CAP_UPDATE*/
 #if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K)
-void rtw_roam_nb_rpt_elem_parsing(u8 *buf, s32 buf_len, s32 flags);/*RTW_EVENT_NB_RESP_RECV*/
+void rtw_roam_nb_rpt_elem_parsing(u8 *buf, s32 buf_len);/*RTW_EVENT_NB_RESP_RECV*/
 #endif
 #ifdef CONFIG_IEEE80211V
-void rtw_wnm_btm_req_process(u8 *buf, s32 buf_len, s32 flags);/*RTW_EVENT_BTM_REQ_RECV*/
-void rtw_wnm_dbg_cmd(u8 *buf, s32 buf_len, s32 flags);/*RTW_EVENT_BTM_DEBUG_CMD*/
+void rtw_wnm_btm_req_process(u8 *buf, s32 buf_len);/*RTW_EVENT_BTM_REQ_RECV*/
+void rtw_wnm_dbg_cmd(u8 *buf, s32 buf_len);/*RTW_EVENT_BTM_DEBUG_CMD*/
 #endif
 #ifdef CONFIG_IEEE80211R
-void rtw_ft_auth_start(u8 *buf, s32 buf_len, s32 flags);/*RTW_EVENT_FT_AUTH_START*/
-void rtw_ft_rx_mgnt(u8 *buf, s32 buf_len, s32 flags);/*RTW_EVENT_FT_RX_MGNT*/
+void rtw_ft_auth_start(u8 *buf, s32 buf_len);/*RTW_EVENT_FT_AUTH_START*/
+void rtw_ft_rx_mgnt(u8 *buf, s32 buf_len);/*RTW_EVENT_FT_RX_MGNT*/
 #endif
 #endif
-void rtw_psk_deauth_info_flash_event_hdl(u8 *data, s32 len, s32 flags);/*RTW_EVENT_DEAUTH_INFO_FLASH*/
+void rtw_psk_deauth_info_flash_event_hdl(u8 *data, s32 len);/*RTW_EVENT_DEAUTH_INFO_FLASH*/
 void rtw_psk_deauth_info_flash(u8 *data, s32 len, s32 flags);
 #endif
 

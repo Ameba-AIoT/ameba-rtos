@@ -104,7 +104,7 @@ set(clean_files
 )
 
 set(link_deps
-    ${c_SOC_PROJECT_DIR}/${c_SOC_TYPE}_layout.ld
+    ${c_SOC_PROJECT_DIR}/ameba_layout.ld
     ${c_LINK_ROM_SYMBOL}
     ${c_SDK_LD_DIR}/ameba_img2_sram.ld
 )

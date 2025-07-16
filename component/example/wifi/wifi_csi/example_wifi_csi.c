@@ -158,9 +158,8 @@ static struct csi_report_data *wifi_csi_dequeue_idle_q(void)
 }
 
 /* wifi csi report callback */
-void example_wifi_csi_report_cb(u8 *buf, s32 buf_len, s32 flags)
+void example_wifi_csi_report_cb(u8 *buf, s32 buf_len)
 {
-	(void) flags;
 	struct csi_report_data	*csi_rpt_pkt = NULL;
 
 	csi_rpt_pkt = wifi_csi_dequeue_idle_q();

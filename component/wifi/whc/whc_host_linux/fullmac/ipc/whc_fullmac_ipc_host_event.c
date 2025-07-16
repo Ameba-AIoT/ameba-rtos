@@ -23,17 +23,21 @@ __weak u16 array_len_of_event_external_hdl = sizeof(whc_fullmac_host_event_inter
 
 static void whc_fullmac_host_external_event_handle(struct whc_ipc_dev_req_msg *p_recv_msg)
 {
-	u32 i, event = (u32)p_recv_msg->param_buf[0];
-	char *buf = llhw_ipc_fw_phy_to_virt(p_recv_msg->param_buf[1]);
-	u32 buf_len = (int)p_recv_msg->param_buf[2];
-	u32 flags = (int)p_recv_msg->param_buf[3];
+	u32 i, event, buf_len;
+	char *buf;
 
-	for (i = 0; i < sizeof(whc_fullmac_host_event_internal_hdl) / sizeof(struct rtw_event_hdl_func_t); i++) {
-		if (whc_fullmac_host_event_internal_hdl[i].evt_id == event) {
-			if (whc_fullmac_host_event_internal_hdl[i].handler == NULL) {
-				continue;
+	if (p_recv_msg->enevt_id == WHC_API_WIFI_EVENT) {
+		event = (u32)p_recv_msg->param_buf[0];
+		buf = llhw_ipc_fw_phy_to_virt(p_recv_msg->param_buf[1]);
+		buf_len = (int)p_recv_msg->param_buf[2];
+
+		for (i = 0; i < sizeof(whc_fullmac_host_event_internal_hdl) / sizeof(struct rtw_event_hdl_func_t); i++) {
+			if (whc_fullmac_host_event_internal_hdl[i].evt_id == event) {
+				if (whc_fullmac_host_event_internal_hdl[i].handler == NULL) {
+					continue;
+				}
+				whc_fullmac_host_event_internal_hdl[i].handler(buf, buf_len);
 			}
-			whc_fullmac_host_event_internal_hdl[i].handler(buf, buf_len, flags);
 		}
 	}
 }
@@ -104,13 +108,13 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 	u32 event = (u32)p_ipc_msg->param_buf[0];
 	char *buf = llhw_ipc_fw_phy_to_virt(p_ipc_msg->param_buf[1]);
 	int buf_len = (int)p_ipc_msg->param_buf[2];
-	int flags = (int)p_ipc_msg->param_buf[3];
 	struct device *pdev = NULL;
 	u16 disassoc_reason;
 	int channel = 6;/*channel need get, force 6 seems ok temporary*/
 	struct wireless_dev *wdev = global_idev.pwdev_global[0];
 	struct rtw_event_join_status_info *evt_info;
 	struct rtw_event_disconnect *disconnect;
+	unsigned int join_status = 0;
 #ifdef CONFIG_P2P
 	u16 frame_type;
 #endif
@@ -127,12 +131,13 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 	}
 
 	if (event == RTW_EVENT_JOIN_STATUS) {
-		whc_fullmac_host_connect_indicate(flags, buf, buf_len);
+		evt_info = (struct rtw_event_join_status_info *)buf;
+		join_status = evt_info->status;
+		whc_fullmac_host_connect_indicate(join_status, buf, buf_len);
 	}
 
-	if ((event == RTW_EVENT_JOIN_STATUS) && ((flags == RTW_JOINSTATUS_FAIL) || (flags == RTW_JOINSTATUS_DISCONNECT))) {
-		if (flags == RTW_JOINSTATUS_DISCONNECT) {
-			evt_info = (struct rtw_event_join_status_info *)buf;
+	if ((event == RTW_EVENT_JOIN_STATUS) && ((join_status == RTW_JOINSTATUS_FAIL) || (join_status == RTW_JOINSTATUS_DISCONNECT))) {
+		if (join_status == RTW_JOINSTATUS_DISCONNECT) {
 			disconnect = &evt_info->private.disconnect;
 			disassoc_reason = (u16)(disconnect->disconn_reason && 0xffff);
 			dev_dbg(global_idev.fullmac_dev, "%s: disassoc_reason=%d \n", __func__, disassoc_reason);
@@ -184,7 +189,7 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 
 #ifdef CONFIG_IEEE80211R
 	if ((event == RTW_EVENT_FT_AUTH_START) || (event == RTW_EVENT_FT_RX_MGNT) || (event == RTW_EVENT_JOIN_STATUS)) {
-		whc_fullmac_host_ft_event(event, buf, buf_len, flags);
+		whc_fullmac_host_ft_event(event, buf, buf_len, join_status);
 	}
 #endif
 
@@ -576,7 +581,7 @@ void whc_fullmac_host_event_task(unsigned long data)
 	case WHC_API_AP_CH_SWITCH:
 		//iiha_ap_ch_switch_hdl(event_priv, p_recv_msg);
 		break;
-	case WHC_API_HDL:
+	case WHC_API_WIFI_EVENT:
 		whc_fullmac_host_event_join_status_indicate(event_priv, p_recv_msg);
 		break;
 	case WHC_API_PROMISC_CALLBACK:

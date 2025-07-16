@@ -18,7 +18,6 @@
 #ifndef WIFI_CONF_CAST_H
 #define WIFI_CONF_CAST_H
 
-#include "rtw_wifi_constants.h"
 #include "wifi_api.h"
 #include "wifi_intf_drv_to_app_internal.h"
 #include "os_wrapper.h"
@@ -188,5 +187,5 @@ wcast_err_t wifi_cast_send(wifi_cast_node_t *pnode, unsigned char *data, int dat
   */
 wcast_err_t wifi_cast_register_recv_cb(wifi_cast_recv_cb_t recv_cb);
 u8 wifi_cast_get_initialized(void);
-void wifi_cast_wifi_join_status_ev_hdl(u8 *buf, s32 buf_len, s32 flags);
+void wifi_cast_wifi_join_status_ev_hdl(u8 *buf, s32 buf_len);
 #endif

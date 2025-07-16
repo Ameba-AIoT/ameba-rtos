@@ -26,6 +26,8 @@ enum whc_tickps_cmd_subtype {
 	WHC_CMD_TICKPS_TYPE_PG = 3,
 };
 
+void whc_dev_init_cmd_path_task(void);
+
 #ifdef CONFIG_WHC_DUAL_TCPIP
 u8 whc_dev_api_get_host_rdy(void);
 
@@ -37,14 +39,16 @@ void whc_dev_api_delete_filter_node(u32_t identity);
 void whc_dev_api_get_filter_node(struct whc_dev_pkt_filter *filter, u32_t identity);
 
 void whc_dev_pktfilter_init(void);
-
 #endif
 
 void whc_dev_api_set_host_state(u8 state);
 void whc_dev_api_set_tickps_cmd(u8 subtype);
 
+/* pkt rx: pkt from host to device */
+/* weak func in rtk code, Reimplement the function if needed */
 void whc_dev_pkt_rx_to_user(u8 *rxbuf, u8 *real_buf, u16 size);
-void whc_dev_init_cmd_path_task(void);
+
+/* pkt tx: pkt send to host from dev */
 void whc_dev_api_send_to_host(u8 *data, u32 len);
 
 #endif

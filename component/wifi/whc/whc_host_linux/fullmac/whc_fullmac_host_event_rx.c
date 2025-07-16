@@ -39,25 +39,26 @@ static void whc_fullmac_host_event_set_acs_info(u32 *param_buf)
 static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *event_priv, u32 *param_buf)
 {
 	u32 event = (u32)param_buf[0];
-	int flags = (int)param_buf[1];
-	int buf_len = (int)param_buf[2];
-	char *buf = (char *) &param_buf[3];
+	int buf_len = (int)param_buf[1];
+	char *buf = (char *) &param_buf[2];
 	u16 disassoc_reason;
 	int channel = 6;/*channel need get, force 6 seems ok temporary*/
 	struct wireless_dev *wdev = global_idev.pwdev_global[0];
 	struct rtw_event_join_status_info *evt_info;
 	struct rtw_event_disconnect *disconnect;
+	unsigned int join_status = 0;
 #ifdef CONFIG_P2P
 	u16 frame_type;
 #endif
 
 	if (event == RTW_EVENT_JOIN_STATUS) {
-		whc_fullmac_host_connect_indicate(flags, buf, buf_len);
+		evt_info = (struct rtw_event_join_status_info *)buf;
+		join_status = evt_info->status;
+		whc_fullmac_host_connect_indicate(join_status, buf, buf_len);
 	}
 
-	if ((event == RTW_EVENT_JOIN_STATUS) && ((flags == RTW_JOINSTATUS_FAIL) || (flags == RTW_JOINSTATUS_DISCONNECT))) {
-		if (flags == RTW_JOINSTATUS_DISCONNECT) {
-			evt_info = (struct rtw_event_join_status_info *)buf;
+	if ((event == RTW_EVENT_JOIN_STATUS) && ((join_status == RTW_JOINSTATUS_FAIL) || (join_status == RTW_JOINSTATUS_DISCONNECT))) {
+		if (join_status == RTW_JOINSTATUS_DISCONNECT) {
 			disconnect = &evt_info->private.disconnect;
 			disassoc_reason = (u16)(disconnect->disconn_reason && 0xffff);
 			dev_dbg(global_idev.fullmac_dev, "%s: disassoc_reason=%d \n", __func__, disassoc_reason);
@@ -109,7 +110,7 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 
 #ifdef CONFIG_IEEE80211R
 	if ((event == RTW_EVENT_FT_AUTH_START) || (event == RTW_EVENT_FT_RX_MGNT) || (event == RTW_EVENT_JOIN_STATUS)) {
-		whc_fullmac_host_ft_event(event, buf, buf_len, flags);
+		whc_fullmac_host_ft_event(event, buf, buf_len, join_status);
 	}
 #endif
 
@@ -370,7 +371,7 @@ void whc_fullmac_host_event_task(struct work_struct *data)
 	case WHC_API_WIFI_AP_CH_SWITCH:
 		//iiha_ap_ch_switch_hdl(event_priv, p_recv_msg);
 		break;
-	case WHC_API_HDL:
+	case WHC_API_WIFI_EVENT:
 		whc_fullmac_host_event_join_status_indicate(event_priv, param_buf);
 		break;
 	case WHC_API_PROMISC_CALLBACK:

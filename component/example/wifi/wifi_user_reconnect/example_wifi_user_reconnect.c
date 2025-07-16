@@ -79,11 +79,11 @@ static void user_wifi_reconnect_task(void *param)
 	rtos_task_delete(NULL);
 }
 
-void user_wifi_join_status_event_hdl(u8 *buf, s32 buf_len, s32 flags)
+void user_wifi_join_status_event_hdl(u8 *buf, s32 buf_len)
 {
 	(void) buf_len;
-	u8 join_status = (u8)flags;
 	struct rtw_event_join_status_info *evt_info = (struct rtw_event_join_status_info *)buf;
+	u8 join_status = evt_info->status;
 	struct rtw_event_disconnect *disconnect;
 
 	/*Reconnect when disconnect after connected*/
