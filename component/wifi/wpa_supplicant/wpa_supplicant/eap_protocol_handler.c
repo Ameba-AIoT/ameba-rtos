@@ -478,9 +478,8 @@ exit:
 	rtos_task_delete(eap_recvd_tsk.task);
 }
 
-__weak void eap_eapol_recvd_hdl(u8 *buf, s32 buf_len, s32 flags)
+__weak void eap_eapol_recvd_hdl(u8 *buf, s32 buf_len)
 {
-	(void)flags;
 //	eap_eapol_recvd(buf, buf_len, flags);
 
 	char *copy_buf = os_malloc(buf_len);
@@ -493,10 +492,9 @@ __weak void eap_eapol_recvd_hdl(u8 *buf, s32 buf_len, s32 flags)
 	}
 }
 
-__weak void eap_eapol_start_hdl(u8 *buf, s32 buf_len, s32 flags)
+__weak void eap_eapol_start_hdl(u8 *buf, s32 buf_len)
 {
 	(void)buf_len;
-	(void)flags;
 	u8 *dst_mac = buf;
 	eap_send_eapol_start(dst_mac);
 }

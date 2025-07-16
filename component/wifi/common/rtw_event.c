@@ -44,7 +44,7 @@ extern void (*p_wifi_join_info_free)(u8 iface_type);
 extern void eap_disconnected_hdl(void);
 #if !defined(CONFIG_MP_SHRINK) && defined (CONFIG_WHC_HOST)
 extern u8 wifi_cast_get_initialized(void);
-extern void wifi_cast_wifi_join_status_ev_hdl(u8 *buf, s32 buf_len, s32 flags);
+extern void wifi_cast_wifi_join_status_ev_hdl(u8 *buf, s32 buf_len);
 #endif
 
 /**********************************************************************************************
@@ -59,7 +59,7 @@ __weak struct rtw_event_hdl_func_t event_external_hdl[] = {
 };
 __weak u16 array_len_of_event_external_hdl = sizeof(event_external_hdl) / sizeof(struct rtw_event_hdl_func_t);
 
-void wifi_event_handle_external(u32 event_cmd, u8 *buf, s32 buf_len, s32 flags)
+void wifi_event_handle_external(u32 event_cmd, u8 *buf, s32 buf_len)
 {
 	if (!array_len_of_event_external_hdl) {
 		return;
@@ -70,7 +70,7 @@ void wifi_event_handle_external(u32 event_cmd, u8 *buf, s32 buf_len, s32 flags)
 			if (event_external_hdl[i].handler == NULL) {
 				continue;
 			}
-			event_external_hdl[i].handler(buf, buf_len, flags);
+			event_external_hdl[i].handler(buf, buf_len);
 		}
 	}
 }
@@ -79,15 +79,15 @@ void wifi_event_handle_external(u32 event_cmd, u8 *buf, s32 buf_len, s32 flags)
  *                                          Internal events
  *********************************************************************************************/
 
-void wifi_event_join_status_internal_hdl(u8 *buf, s32 buf_len, s32 flags)
+void wifi_event_join_status_internal_hdl(u8 *buf, s32 buf_len)
 {
 	UNUSED(buf_len);
 #if (!defined(CONFIG_MP_SHRINK) && !defined(CONFIG_WHC_DEV)) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 	struct deauth_info  *deauth_data, *deauth_data_pre;
 	u8 zero_mac[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-	u8 join_status = (u8)flags;
 	struct rtw_event_join_status_info *evt_info = (struct rtw_event_join_status_info *)buf;
+	u8 join_status = evt_info->status;
 	struct rtw_event_join_fail *join_fail;
 	struct rtw_event_disconnect *disconnect;
 	struct diag_evt_wifi_disconn diag_disconn;
@@ -162,24 +162,22 @@ void wifi_event_join_status_internal_hdl(u8 *buf, s32 buf_len, s32 flags)
 	}
 
 #if !defined(CONFIG_WHC_DEV) && CONFIG_AUTO_RECONNECT
-	rtw_reconn_join_status_hdl(buf, flags);
+	rtw_reconn_join_status_hdl(buf);
 #endif
 
 #ifdef CONFIG_WHC_HOST
 	if (wifi_cast_get_initialized()) {
-		wifi_cast_wifi_join_status_ev_hdl(buf, buf_len, flags);
+		wifi_cast_wifi_join_status_ev_hdl(buf, buf_len);
 	}
 #endif
 #else
-	UNUSED(flags);
 	UNUSED(buf);
 #endif
 }
 
-void rtw_sta_assoc_hdl(u8 *buf, s32 buf_len, s32 flags)
+void rtw_sta_assoc_hdl(u8 *buf, s32 buf_len)
 {
 	(void)buf_len;
-	(void)flags;
 	u8 *mac_addr = NULL;
 
 	/* softap add sta */
@@ -187,9 +185,8 @@ void rtw_sta_assoc_hdl(u8 *buf, s32 buf_len, s32 flags)
 	at_printf_indicate("client connected:\""MAC_FMT"\"\r\n", MAC_ARG(mac_addr));
 }
 
-void rtw_sta_disassoc_hdl(u8 *buf, s32 buf_len, s32 flags)
+void rtw_sta_disassoc_hdl(u8 *buf, s32 buf_len)
 {
-	(void)flags;
 	(void)buf_len;
 	u8 *mac_addr = NULL;
 
@@ -200,33 +197,33 @@ void rtw_sta_disassoc_hdl(u8 *buf, s32 buf_len, s32 flags)
 	rtw_psk_disconnect_hdl(mac_addr, IFACE_PORT1);
 }
 
-void rtw_join_status_hdl(u8 *buf, s32 buf_len, s32 flags)
+void rtw_join_status_hdl(u8 *buf, s32 buf_len)
 {
 	(void)buf_len;
 
-	wifi_event_join_status_internal_hdl(buf, buf_len, flags);
+	wifi_event_join_status_internal_hdl(buf, buf_len);
 }
 
-void rtw_eapol_start_hdl(u8 *buf, s32 buf_len, s32 flags)
+void rtw_eapol_start_hdl(u8 *buf, s32 buf_len)
 {
 #ifdef CONFIG_ENABLE_EAP
 	if (get_eap_phase()) {
-		eap_eapol_start_hdl(buf, buf_len, flags);
+		eap_eapol_start_hdl(buf, buf_len);
 	}
 #endif
 }
 
-void rtw_eapol_recvd_hdl(u8 *buf, s32 buf_len, s32 flags)
+void rtw_eapol_recvd_hdl(u8 *buf, s32 buf_len)
 {
 #ifdef CONFIG_ENABLE_EAP
 	if (get_eap_phase()) {
-		eap_eapol_recvd_hdl(buf, buf_len, flags);
+		eap_eapol_recvd_hdl(buf, buf_len);
 	}
 #endif
 
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
 	if (get_wps_phase()) {
-		wpas_wsc_eapol_recvd_hdl(buf, buf_len, flags);
+		wpas_wsc_eapol_recvd_hdl(buf, buf_len);
 	}
 #endif
 }
@@ -271,7 +268,7 @@ const struct rtw_event_hdl_func_t event_internal_hdl[] = {
 	{RTW_EVENT_DEAUTH_INFO_FLASH,	rtw_psk_deauth_info_flash_event_hdl},
 };
 
-void wifi_event_handle_internal(u32 event_cmd, u8 *buf, s32 buf_len, s32 flags)
+void wifi_event_handle_internal(u32 event_cmd, u8 *buf, s32 buf_len)
 {
 #ifndef CONFIG_MP_SHRINK
 #if !(defined(ZEPHYR_WIFI) && defined(CONFIG_WHC_HOST))
@@ -288,30 +285,29 @@ void wifi_event_handle_internal(u32 event_cmd, u8 *buf, s32 buf_len, s32 flags)
 			if (event_internal_hdl[i].handler == NULL) {
 				continue;
 			}
-			event_internal_hdl[i].handler(buf, buf_len, flags);
+			event_internal_hdl[i].handler(buf, buf_len);
 		}
 	}
 #else
 	UNUSED(event_cmd);
 	UNUSED(buf);
 	UNUSED(buf_len);
-	UNUSED(flags);
 #endif
 }
 
 /**********************************************************************************************
  *                                          Common events
  *********************************************************************************************/
-int wifi_event_handle(u32 event_cmd, u8 *buf, s32 buf_len, s32 flags)
+int wifi_event_handle(u32 event_cmd, u8 *buf, s32 buf_len)
 {
 	if ((event_cmd >= RTW_EVENT_MAX && event_cmd <= RTW_EVENT_INTERNAL_BASE) || event_cmd > RTW_EVENT_INTERNAL_MAX) {
 		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "invalid evt: %d \n", event_cmd);
 		return -RTK_ERR_BADARG;
 	}
 
-	wifi_event_handle_internal(event_cmd, buf, buf_len, flags);
+	wifi_event_handle_internal(event_cmd, buf, buf_len);
 
-	wifi_event_handle_external(event_cmd, buf, buf_len, flags);
+	wifi_event_handle_external(event_cmd, buf, buf_len);
 
 	return RTK_SUCCESS;
 }
@@ -324,13 +320,14 @@ void wifi_event_init(void)
 
 void wifi_indication(u32 event, u8 *buf, s32 buf_len, s32 flags)
 {
+	(void)flags;
 #if defined(CONFIG_WHC_DEV) && !defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
-	extern void whc_dev_wifi_event_indicate(u32 event_cmd, u8 * buf, s32 buf_len, s32 flags);
-	whc_dev_wifi_event_indicate(event, buf, buf_len, flags);
+	extern void whc_dev_wifi_event_indicate(u32 event_cmd, u8 * buf, s32 buf_len);
+	whc_dev_wifi_event_indicate(event, buf, buf_len);
 #endif
 
 #if !(defined CONFIG_WHC_DEV) || defined(CONFIG_WPA_LOCATION_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
-	wifi_event_handle(event, buf, buf_len, flags);
+	wifi_event_handle(event, buf, buf_len);
 #endif
 }
 

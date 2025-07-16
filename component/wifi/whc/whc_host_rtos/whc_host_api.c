@@ -37,7 +37,7 @@ extern s32(*scan_acs_report_user_callback_ptr)(struct rtw_acs_mntr_rpt *acs_mntr
 const struct event_func_t host_api_handlers[] = {
 	{WHC_API_SCAN_USER_CALLBACK,	whc_host_api_scan_user_callback_handler},
 	{WHC_API_SCAN_EACH_REPORT_USER_CALLBACK,	whc_host_api_scan_each_report_callback_handler},
-	{WHC_API_HDL,	whc_host_api_wifi_event_handler},
+	{WHC_API_WIFI_EVENT,	whc_host_api_wifi_event_handler},
 	{WHC_API_GET_LWIP_INFO,	whc_host_api_lwip_info_handler},
 	{WHC_API_SET_NETIF_INFO,	whc_host_api_set_netif_info_handler},
 	{WHC_API_IP_TABLE_CHK, whc_host_api_ip_table_chk},
@@ -99,11 +99,10 @@ void whc_host_api_wifi_event_handler(u32 api_id, u32 *param_buf)
 {
 	int ret = 0;
 	u32 event = (u32)param_buf[0];
-	s32 flags = (s32)param_buf[1];
-	s32 buf_len = (s32)param_buf[2];
-	u8 *buf = (u8 *)(&param_buf[3]);
+	s32 buf_len = (s32)param_buf[1];
+	u8 *buf = (u8 *)(&param_buf[2]);
 
-	wifi_indication(event, buf, buf_len, flags);
+	wifi_indication(event, buf, buf_len, 0);
 
 	whc_host_api_send_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }

@@ -66,9 +66,16 @@ void whc_fullmac_host_event_disconnect_hdl(u8 *buf, s32 buf_len)
 }
 
 /* Join status event contains all events related to join, unified into one handle func for processing */
-void whc_fullmac_host_join_status_hdl(u8 *buf, s32 buf_len, s32 flags)
+void whc_fullmac_host_join_status_hdl(u8 *buf, s32 buf_len)
 {
-	switch (flags) {
+	struct rtw_event_join_status_info *evt_info = (struct rtw_event_join_status_info *)buf;
+
+	if (evt_info == NULL) {
+		dev_err(global_idev.fullmac_dev, "Event join status err!\n");
+		return;
+	}
+
+	switch (evt_info->status) {
 	case RTW_JOINSTATUS_AUTHENTICATING:
 		whc_fullmac_host_event_auth_req(buf, buf_len);
 		break;

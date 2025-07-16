@@ -2307,7 +2307,7 @@ static uint16_t bt_stack_le_audio_ext_scan_act(void *param)
 
 	if (enable) {
 		if (dev_state.gap_scan_state == GAP_SCAN_STATE_SCANNING) {
-			BT_LOGD("%s: has already started \r\n", __func__);
+			BT_LOGA("%s: has already started \r\n", __func__);
 			return RTK_BT_OK;
 		}
 		// set ext scan parameter
@@ -2369,7 +2369,7 @@ static uint16_t bt_stack_le_audio_ext_scan_act(void *param)
 		}
 	} else {
 		if (dev_state.gap_scan_state == GAP_SCAN_STATE_IDLE) {
-			BT_LOGD("%s: scan has already stopped \r\n", __func__);
+			BT_LOGA("%s: scan has already stopped \r\n", __func__);
 			return RTK_BT_OK;
 		}
 		// ext scan stop

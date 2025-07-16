@@ -17,7 +17,7 @@
 void whc_fullmac_host_ft_init(void);
 void whc_fullmac_host_ft_set_unassociated(void);
 int whc_fullmac_host_ft_set_bssid(const u8 *target_bssid);
-int whc_fullmac_host_ft_event(u32 event, char *buf, int buf_len, int flags);
+int whc_fullmac_host_ft_event(u32 event, char *buf, int buf_len, unsigned int join_status);
 int whc_fullmac_host_update_ft_ies(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_update_ft_ies_params *ftie);
 #endif /* CONFIG_IEEE80211R */
 

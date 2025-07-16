@@ -93,7 +93,8 @@ s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 
 	/*clear for last connect status */
 	rtw_join_status = RTW_JOINSTATUS_STARTING;
-	wifi_indication(RTW_EVENT_JOIN_STATUS, NULL, 0, RTW_JOINSTATUS_STARTING);
+	evt_info.status = RTW_JOINSTATUS_STARTING;
+	wifi_indication(RTW_EVENT_JOIN_STATUS, (u8 *)&evt_info, sizeof(struct rtw_event_join_status_info), RTW_JOINSTATUS_STARTING);
 
 	/* step2: malloc and set synchronous connection related variables*/
 	if (block) {
@@ -202,6 +203,7 @@ error:
 	}
 
 	if (rtw_join_status == RTW_JOINSTATUS_FAIL && no_need_indicate == 0) {
+		evt_info.status = RTW_JOINSTATUS_FAIL;
 		join_fail = &evt_info.private.fail;
 		join_fail->fail_reason = result;
 		wifi_indication(RTW_EVENT_JOIN_STATUS, (u8 *)&evt_info, sizeof(struct rtw_event_join_status_info), RTW_JOINSTATUS_FAIL);

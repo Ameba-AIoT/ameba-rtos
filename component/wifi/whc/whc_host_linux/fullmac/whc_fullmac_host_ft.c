@@ -171,10 +171,9 @@ func_exit:
 	return ret;
 }
 
-static int _whc_fullmac_host_ft_rx_mgnt(char *buf, int buf_len, int flags)
+static int _whc_fullmac_host_ft_rx_mgnt(char *buf, int buf_len)
 {
 	struct ieee80211_mgmt *mgmt = (void *)buf;
-	(void) flags;
 	int ret = 0;
 
 	if (buf_len < 2) {
@@ -195,18 +194,18 @@ static int _whc_fullmac_host_ft_rx_mgnt(char *buf, int buf_len, int flags)
 	return ret;
 }
 
-static void _whc_fullmac_host_ft_rx_join_status(int flags)
+static void _whc_fullmac_host_ft_rx_join_status(unsigned int join_status)
 {
-	dev_dbg(global_idev.fullmac_dev, "FT join_status is changed to %d.\n", flags);
+	dev_dbg(global_idev.fullmac_dev, "FT join_status is changed to %d.\n", join_status);
 
-	switch (flags) {
+	switch (join_status) {
 	case RTW_JOINSTATUS_UNKNOWN:
 	case RTW_JOINSTATUS_FAIL:
 	case RTW_JOINSTATUS_DISCONNECT:
 		_FT_SET_STATUS(_FT_UNASSOCIATED_STA);
 		break;
 	default:
-		dev_dbg(global_idev.fullmac_dev, "FT status %d do nothing.\n", flags);
+		dev_dbg(global_idev.fullmac_dev, "FT status %d do nothing.\n", join_status);
 		break;
 	}
 }
@@ -227,7 +226,7 @@ int whc_fullmac_host_ft_set_bssid(const u8 *target_bssid)
 	return 0;
 }
 
-int whc_fullmac_host_ft_event(u32 event, char *buf, int buf_len, int flags)
+int whc_fullmac_host_ft_event(u32 event, char *buf, int buf_len, unsigned int join_status)
 {
 	int ret = 0;
 	dev_dbg(global_idev.fullmac_dev, "%s ===>\n", __func__);
@@ -237,10 +236,10 @@ int whc_fullmac_host_ft_event(u32 event, char *buf, int buf_len, int flags)
 		_whc_fullmac_host_ft_auth_start();
 		break;
 	case RTW_EVENT_FT_RX_MGNT:
-		_whc_fullmac_host_ft_rx_mgnt(buf, buf_len, flags);
+		_whc_fullmac_host_ft_rx_mgnt(buf, buf_len);
 		break;
 	case RTW_EVENT_JOIN_STATUS:
-		_whc_fullmac_host_ft_rx_join_status(flags);
+		_whc_fullmac_host_ft_rx_join_status(join_status);
 		break;
 	default:
 		ret = -EINVAL;

@@ -12,13 +12,12 @@
 
 #include <whc_host_linux.h>
 
-/* pkt from device */
+/* pkt rx: pkt from device to host kernel space, default to user space by netlink */
+/* weak func in rtk code, Reimplement the function if needed */
 int whc_host_buf_rx_to_user(u8 *buf, u16 size);
-/* send pkt to device */
-void whc_host_send_data_to_dev(u8 *pbuf, u32 len, u32 with_txdesc);
 
-/* for pkt from user space to dev by cmd path */
-void whc_host_send_cmd_data(u8 *buf, u32 len);
-int whc_host_cmd_data_rx_to_user(struct sk_buff *pskb);
+/* pkt tx: send pkt to device from host kernel space */
+/* pkt to dev need an extra size for txdesc,set 1 if size have reserved already */
+void whc_host_send_data_to_dev(u8 *pbuf, u32 len, u32 with_txdesc);
 
 #endif

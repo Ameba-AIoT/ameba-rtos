@@ -81,7 +81,7 @@ enum rtw_event_id {
 
 struct rtw_event_hdl_func_t {
 	u16 evt_id;
-	void (*handler)(u8 *buf, s32 len, s32 flags);
+	void (*handler)(u8 *buf, s32 len);
 };
 
 struct rtw_event_join_status_info {

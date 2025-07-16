@@ -1,9 +1,12 @@
 
 #include "rtw_coex_host_api.h"
+#include <string.h>
 
 static u8 last_channel = 0;
 static u8 last_wl_performance_req = EXT_PERF_INVALID;
 static u32 last_ext_bt_profile = EXT_BT_UNDEF;
+
+struct extchip_para_t g_extchip_para_ap = {0};
 
 /*
  * function extern
@@ -16,17 +19,6 @@ extern int rtk_coex_ipc_h2c_info_handler(u16 type, u8 *pdata, u16 data_len);
 ////////////////////////////////////////////////////////////////////////////////////////////
 //////////////// called by host side , for h2c
 ////////////////////////////////////////////////////////////////////////////////////////////
-__weak void rtk_coex_extc_ntfy_init(struct extchip_para_t *p_extchip_para)
-{
-	if (p_extchip_para == NULL) {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[COEX][HOST][EXT] rtk_coex_extc_ntfy_init: para NULL!!!\r\n");
-		return;
-	}
-
-	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[COEX][HOST][EXT] enter rtk_coex_extc_ntfy_init.\r\n");
-
-	rtk_coex_ipc_h2c_info_handler(COEX_EXT_TYPE(COEX_H2C_EXT_INIT), (u8 *)p_extchip_para, sizeof(struct extchip_para_t));
-}
 
 __weak bool rtk_coex_extc_is_ready(void)
 {
@@ -67,6 +59,13 @@ __weak void rtk_coex_extc_ntfy_bt_profile(u32 profile)
 //////////////// called by host side , for c2h
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO
+__weak s32 rtk_coex_extc_get_init_params(struct extchip_para_t *p_extchip_para)
+{
+	RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "[COEX][HOST][EXT] enter rtk_coex_extc_get_init_params.\r\n");
+
+	memcpy(p_extchip_para, &g_extchip_para_ap, sizeof(struct extchip_para_t));
+
+	return 0;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////

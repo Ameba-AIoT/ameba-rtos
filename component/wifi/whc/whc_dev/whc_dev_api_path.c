@@ -1041,22 +1041,21 @@ exit:
 
 }
 
-void whc_dev_wifi_event_indicate(u32 event_cmd, u8 *buf, s32 buf_len, s32 flags)
+void whc_dev_wifi_event_indicate(u32 event_cmd, u8 *buf, s32 buf_len)
 {
 	/*not indicate Beacon event since it is too frequent*/
 	/*not indicate scan event since it is handled in device*/
 	u32 size;
 	u32 *param;
 
-	size = 3 * sizeof(u32) + buf_len;
+	size = 2 * sizeof(u32) + buf_len;
 	param = (u32 *)rtos_mem_zmalloc(size);
 
 	param[0] = event_cmd;
-	param[1] = flags;
-	param[2] = buf_len;
-	memcpy((void *)(param + 3), buf, buf_len);
+	param[1] = buf_len;
+	memcpy((void *)(param + 2), buf, buf_len);
 
-	whc_dev_api_message_send(WHC_API_HDL, (u8 *)param, size, NULL, 0);
+	whc_dev_api_message_send(WHC_API_WIFI_EVENT, (u8 *)param, size, NULL, 0);
 
 	/* free buffer */
 	rtos_mem_free((u8 *)param);

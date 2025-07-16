@@ -116,7 +116,7 @@ int wext_private_command(char *cmd, int show_msg, char *user_buf);
 int wifi_set_ips_internal(u8 enable);
 
 void whc_dev_api_init(void);
-void whc_dev_wifi_event_indicate(u32 event_cmd, u8 *buf, s32 buf_len, s32 flags);
+void whc_dev_wifi_event_indicate(u32 event_cmd, u8 *buf, s32 buf_len);
 void whc_dev_scan_user_callback_indicate(unsigned int ap_num, void *user_data);
 void whc_dev_acs_info_indicate(struct rtw_acs_mntr_rpt *acs_mntr_rpt);
 void whc_dev_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data);

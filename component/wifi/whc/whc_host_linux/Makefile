@@ -48,7 +48,6 @@ fullmac-ipc-objs			:= ./common/netdev/whc_host_drv_probe.o \
 					./fullmac/ipc/whc_fullmac_ipc_host_hci.o \
 					./fullmac/ipc/whc_fullmac_ipc_host_ops.o \
 					./fullmac/ipc/whc_fullmac_ipc_host_event.o \
-					./fullmac/ipc/whc_fullmac_ipc_host_event_test.o \
 					./fullmac/ipc/whc_fullmac_ipc_host_recv.o \
 					./fullmac/ipc/whc_fullmac_ipc_host_xmit.o \
 					./fullmac/ipc/whc_fullmac_ipc_host_msg.o \

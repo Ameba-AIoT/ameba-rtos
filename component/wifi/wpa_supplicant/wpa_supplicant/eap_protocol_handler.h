@@ -40,6 +40,6 @@ int set_eap_peap_method(void);
 int set_eap_tls_method(void);
 int set_eap_ttls_method(void);
 
-void eap_eapol_start_hdl(u8 *buf, s32 buf_len, s32 flags);
-void eap_eapol_recvd_hdl(u8 *buf, s32 buf_len, s32 flags);
+void eap_eapol_start_hdl(u8 *buf, s32 buf_len);
+void eap_eapol_recvd_hdl(u8 *buf, s32 buf_len);
 #endif
