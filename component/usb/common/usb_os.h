@@ -13,19 +13,19 @@
 #include <string.h>
 #include "basic_types.h"
 #include "ameba.h"
-#ifndef CONFIG_FLOADER_USBD_EN
+#ifndef CONFIG_NON_OS
 #include "os_wrapper.h"
 #endif
 
 /* Exported defines ----------------------------------------------------------*/
 
-#ifndef CONFIG_FLOADER_USBD_EN
+#ifndef CONFIG_NON_OS
 #define USB_OS_SEMA_TIMEOUT		(RTOS_SEMA_MAX_COUNT)
 #endif
 
 /* Exported types ------------------------------------------------------------*/
 
-#ifndef CONFIG_FLOADER_USBD_EN
+#ifndef CONFIG_NON_OS
 
 typedef rtos_mutex_t usb_os_lock_t;
 
@@ -67,7 +67,7 @@ void usb_os_memset(void *buf, u8 val, u32 size);
 
 void usb_os_memcpy(void *dst, const void *src, u32 size);
 
-#ifndef CONFIG_FLOADER_USBD_EN
+#ifndef CONFIG_NON_OS
 
 void *usb_os_malloc(u32 size);
 

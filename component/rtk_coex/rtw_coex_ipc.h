@@ -79,29 +79,39 @@ static inline void coex_ipc_entry(void)
 #endif
 #endif
 
-#if defined(CONFIG_COEX_EXT_CHIP_SUPPORT)
-// ipc case-rtos:
-// ext-paras init start from ap
-#if defined(CONFIG_WHC_INTF_IPC) && defined(CONFIG_COEXIST_HOST)
-	// init from ap->np
-	extern struct extchip_para_t g_extchip_para_ap;
-	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[COEX][Host] Ext paras init.\r\n");
-	coex_extc_paras_config(&g_extchip_para_ap);
-	coex_ipc_api_send_init_host();
-#endif
-
-// ipc case-linux:
+#if !defined(CONFIG_ZEPHYR_SDK)
+// ipc case-linux:(ipc@coex not support, temporarily solution for smart linux)
+// ipc case-rtos(ap-np):
 // no-ipc case-fullmac/bridge/singlecore:
 // ext-paras init start from np
-#if (((defined(CONFIG_WHC_INTF_IPC) && defined(CONFIG_LINUX_FW_EN)) \
-    || (!defined(CONFIG_WHC_INTF_IPC))) && defined(CONFIG_COEXIST_DEV))
-	// ipc@coex not support, temporarily solution for smart linux
+#if defined(CONFIG_COEX_EXT_CHIP_SUPPORT)
+#if defined(CONFIG_COEXIST_DEV)
 	extern struct extchip_para_t g_extchip_para;
 	extern void rtk_coex_extc_set_enable(bool enable);
-	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[COEX][Dev] Ext paras init.\r\n");
+	//RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[COEX][Dev] Ext paras init.\r\n");
 	coex_extc_paras_config(&g_extchip_para);
 	rtk_coex_extc_set_enable(true);
 #endif
+#endif
+#else
+// ipc case-zephyr sdk:
+#if defined(CONFIG_WHC_INTF_IPC)
+#if defined(CONFIG_COEXIST_HOST)
+	// ext-paras store @ap
+	extern struct extchip_para_t g_extchip_para_ap;
+	//RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[COEX][Host] Ext paras init.\r\n");
+	coex_extc_paras_config(&g_extchip_para_ap);
+#endif
+#if defined(CONFIG_COEXIST_DEV)
+	// whole bin@np
+	// enable extc here
+	// get paras start np from ap later
+	//RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[COEX][Dev][Zephyr] Ext paras init.\r\n");
+	extern void rtk_coex_extc_set_enable(bool enable);
+	rtk_coex_extc_set_enable(true);
+#endif
+#endif
+
 #endif
 }
 #endif /* __RTW_COEX_IPC_H__ */

@@ -87,7 +87,6 @@ enum coex_subtype_h2c_bt {
 enum coex_subtype_h2c_ext {
 	/* common info */
 	COEX_H2C_EXT_UNDEF = 0,
-	COEX_H2C_EXT_INIT,
 	COEX_H2C_EXT_GET_READY,
 	COEX_H2C_EXT_WL_PERFORMANCE_REQUEST,
 	/* info for WPAN*/
@@ -127,6 +126,7 @@ enum coex_subtype_c2h_bt {
  */
 enum coex_subtype_c2h_ext {
 	COEX_C2H_EXT_UNDEF = 0,
+	COEX_C2H_EXT_GET_INITPARAMS,
 	/* end */
 	COEX_C2H_EXT_INVALID = ((1 << SUBTYPE_BITS) - 1),
 };
@@ -281,6 +281,7 @@ enum PTA_INDEX {
  * @brief    pta related parameter structure for extchip.
  */
 struct extchip_para_t {
+	u8 valid;
 	u8 pri_det_time;	///< T1 us
 	u8 trx_det_time;	///< T2 us
 	u8 pri_mode: 1;		///< 1: static Priority; 0: directional Priority

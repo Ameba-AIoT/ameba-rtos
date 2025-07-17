@@ -11,6 +11,7 @@
 #include <time.h>
 #include "os_wrapper.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 static const u8 dim[12] = {31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
@@ -47,7 +48,7 @@ void raw_rtc_demo(void)
 	setenv("TZ", "CST-8", 1);
 	tzset();
 
-	seconds = 1256729737; // Set RTC time to Wed, 28 Oct 2009 11:35:37
+	seconds = 1256729737; // Set RTC time to Wed, 28 Oct 2009 19:35:37
 	timeinfo = localtime(&seconds);
 
 	/*set time in RTC */
