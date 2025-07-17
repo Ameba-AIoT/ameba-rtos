@@ -511,6 +511,8 @@
 		(addr[4] == 0xff) && (addr[5] == 0xff) )  ? _TRUE : _FALSE \
 )
 
+#define RTW_RSN_SPP_AMSDU_CAPABLE		BIT(10)
+#define RTW_RSN_SPP_AMSDU_REQUIRED		BIT(11)
 #define RTW_RSN_CAPABILITY_RSVD		BIT(15)
 #define RTW_RSNX_CAPABILITY_RSVD		(BIT(6) | BIT(7))
 #define RTW_RSNX_CAPABILITY_PROTECTED_TWT	BIT(4)
