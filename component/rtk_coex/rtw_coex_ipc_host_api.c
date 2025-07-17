@@ -38,12 +38,9 @@ u32	last_api_id = 0;  /*for debug*/
 IPC_MSG_STRUCT g_host_coex_ipc_api_msg __attribute__((aligned(64)));
 #endif
 
-struct extchip_para_t g_extchip_para_ap = {0};
-
 /* -------------------------- Function declaration -------------------------- */
 extern int rtk_coex_ipc_c2h_info_indicate(u16 type, u8 *pdata, u16 data_len);
 
-void rtk_coex_extc_ntfy_init(struct extchip_para_t *p_extchip_para);
 /* ---------------------------- Public Functions ---------------------------- */
 
 __weak int rtk_coex_ipc_h2c_info_handler(u16 type, u8 *pdata, u16 data_len)
@@ -72,6 +69,8 @@ __weak int rtk_coex_ipc_h2c_info_handler(u16 type, u8 *pdata, u16 data_len)
 
 	DCache_Clean((u32)data_temp, data_len);
 	ret = coex_ipc_api_host_message_send(IPC_API_ID_COEX_H2C_INFO, param_buf, 3);
+	DCache_Invalidate((u32)data_temp, data_len);
+	memcpy(pdata, data_temp, data_len);
 
 	rtos_mem_free(data_temp);
 
@@ -244,54 +243,6 @@ void coex_ipc_host_init(void)
 {
 	coex_ipc_api_init_host();
 }
-
-/**
- * @brief  auto send ipc.
- * @param  none.
- * @return none.
- */
-void coex_ipc_api_host_send_task(void)
-{
-	int cnt = 0;
-
-	while (1) {
-		rtos_time_delay_ms(400);
-		// for coex-ext init
-		if (wifi_is_running(STA_WLAN_INDEX)) {
-			rtk_coex_extc_ntfy_init(&g_extchip_para_ap);
-			break;
-		}
-
-		cnt++;
-		if (cnt > 25) {
-			// task survive timeout = 10s
-			break;
-		}
-	}
-
-	if (rtk_coex_extc_is_ready()) {
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[COEX][EXT] READY~~~~~~~\r\n");
-	} else {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[COEX][EXT] Init Fail, CHECK!!!(cnt=%d)\r\n", cnt);
-	}
-
-	rtos_task_delete(NULL);
-}
-
-/**
- * @brief  to initialize the ipc host for coex-ext init.
- * @param  none.
- * @return none.
- */
-void coex_ipc_api_send_init_host(void)
-{
-	/* Initialize the event task */
-	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"coex_ipc_api_host_send_task", (rtos_task_function_t)coex_ipc_api_host_send_task, NULL,
-										COEX_STACK_SIZE_IPC_HST_SEND_API, CONFIG_COEX_IPC_HOST_API_PRIO)) {
-		RTK_LOGS(TAG_WLAN_COEX, RTK_LOG_ERROR, "Create coex_ipc_api_host_send_task Err\n");
-	}
-}
-
 
 IPC_TABLE_DATA_SECTION
 const IPC_INIT_TABLE ipc_coex_api_host_table = {

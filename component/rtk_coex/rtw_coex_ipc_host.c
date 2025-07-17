@@ -14,6 +14,7 @@
  *****************************************************************************/
 
 #include "rtw_coex_host_api.h"
+#include "rtw_coex_api_ext.h"
 
 /////////////////////////////////////////////////////////////////////
 //////// for COMMON
@@ -63,14 +64,21 @@ static int rtk_coex_c2h_ext_indicate(u16 type, u8 *pdata, u16 len)
 	(void) pdata;
 	(void) len;
 
+	int ret = -1;
+
 	switch (COEX_SUBTYPE_GET(type)) {
 	case COEX_C2H_EXT_UNDEF:
+		break;
+	case COEX_C2H_EXT_GET_INITPARAMS:
+		if ((len == sizeof(struct extchip_para_t)) && (pdata != NULL)) {
+			ret = rtk_coex_extc_get_init_params((struct extchip_para_t *)pdata);
+		}
 		break;
 	default:
 		break;
 	}
 
-	return 0;
+	return ret;
 }
 
 /*

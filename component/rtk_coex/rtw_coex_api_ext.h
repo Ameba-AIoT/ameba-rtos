@@ -21,6 +21,9 @@
 #include "PinNames.h"
 #include "rtw_coex_host_api.h"
 
+void rtk_coex_extc_ntfy_init(struct extchip_para_t *p_extchip_para);
+s32 rtk_coex_extc_get_init_params(struct extchip_para_t *p_extchip_para);
+
 extern PinName port_pin(PortName port, int pin_n);
 
 static inline uint16_t uart_pinname_to_pin(char *pin_name)
@@ -114,7 +117,7 @@ static inline void coex_extc_paras_config(struct extchip_para_t *p_extchip_para)
 	p_extchip_para->pta_pad_gnt = uart_pinname_to_pin(CONFIG_EXT_PTA_PIN_GNT);
 #endif
 
-
+	p_extchip_para->valid = 1;
 }
 
 
