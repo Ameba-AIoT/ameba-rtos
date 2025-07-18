@@ -2,6 +2,7 @@
 #include "os_wrapper.h"
 #include "vfs.h"
 #include "httpd/httpd.h"
+#include "dhcp/dhcps.h"
 #include "example_httpd_vfs.h"
 
 #define HTTPD_DEFAULT_CONFIG() {						\
