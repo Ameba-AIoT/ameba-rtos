@@ -1,4 +1,4 @@
-#include "../../../amebaDplus_layout.ld"
+#include "../../../ameba_layout.ld"
 
 #define IMG2_LMA_REGION 			KM4_BD_RAM_MP
 #if defined(CONFIG_PSRAM_AS_HEAP)
@@ -30,15 +30,15 @@ SECTIONS
 
 		*port.o(*.uxIdleTaskStack*)
 		*port.o(*.uxTimerTaskStack*)
-		
+
 		__flash_text_start__ = .;
 		*(.non.dram.text*)
 		__flash_text_end__ = .;
-		
+
 		__psram_image2_start__ = .;
 		PSRAM_INPUT_TEXT_SECTION
 		__psram_image2_end__ = .;
-		
+
 			__image2_backtrace_start__ = .;
 
 		*(.timesensitive.text*)
@@ -73,19 +73,19 @@ SECTIONS
 		__fini_array_start = .;
 		KEEP(*(SORT(.fini_array.*)))
 		KEEP(*(.fini_array))
-		__fini_array_end = .;	
+		__fini_array_end = .;
 
-		/*-----------------*/		
+		/*-----------------*/
 		__image2_backtrace_end__ = .;
-	
+
 		. = ALIGN (32);
 	} > KM4_BD_RAM_MP
 
 
 	/* C++ .ARM.extab/.ARM.exidx address shall same as *(.text*) */
-	.ARM.extab  : 
+	.ARM.extab  :
 	{
-		*(.ARM.extab* .gnu.linkonce.armextab.*) 
+		*(.ARM.extab* .gnu.linkonce.armextab.*)
 
 	} > IMG2_LMA_REGION
 
@@ -148,7 +148,7 @@ SECTIONS
 		__ctrace_start__ = .;
 		*(.COEXTRACE)
 		__ctrace_end__ = .;
-	} > CTRACE	
+	} > CTRACE
 }
 
 __bdram_heap_buffer_size__ = ORIGIN(KM4_BD_RAM_MP) + LENGTH(KM4_BD_RAM_MP) - __bdram_heap_buffer_start__;

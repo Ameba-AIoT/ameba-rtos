@@ -1,25 +1,25 @@
-#include "../../../amebalite_layout.ld"
+#include "../../../ameba_layout.ld"
 
 #if defined(CONFIG_CODE_XIP_DATA_SRAM)
 #define OUT_TEXT_SECTION			.xip_image2.text
 #define OUT_DATA_SECTION			.sram_image2.text.data
 #define IMG2_TEXT_LMA_REGION		KM4_IMG2_XIP
 #define IMG2_DATA_LMA_REGION		KM4_BD_RAM
-#define SRAM_INPUT_TEXT_SECTION		*(.sramdram.only.text*)	
+#define SRAM_INPUT_TEXT_SECTION		*(.sramdram.only.text*)
 #define PSRAM_INPUT_TEXT_SECTION
 #elif defined(CONFIG_CODE_XIP_DATA_PSRAM)
 #define OUT_TEXT_SECTION			.xip_image2.text
 #define OUT_DATA_SECTION			.psram_image2.text.data
 #define IMG2_TEXT_LMA_REGION		KM4_IMG2_XIP
 #define IMG2_DATA_LMA_REGION		KM4_BD_PSRAM
-#define SRAM_INPUT_TEXT_SECTION		
-#define PSRAM_INPUT_TEXT_SECTION	*(.sramdram.only.text*)	
+#define SRAM_INPUT_TEXT_SECTION
+#define PSRAM_INPUT_TEXT_SECTION	*(.sramdram.only.text*)
 #elif defined(CONFIG_CODE_PSRAM_DATA_SRAM)
 #define OUT_TEXT_SECTION			.psram_image2.text.data
 #define OUT_DATA_SECTION			.sram_image2.text.data
 #define IMG2_TEXT_LMA_REGION		KM4_BD_PSRAM
 #define IMG2_DATA_LMA_REGION		KM4_BD_RAM
-#define SRAM_INPUT_TEXT_SECTION		
+#define SRAM_INPUT_TEXT_SECTION
 #define PSRAM_INPUT_TEXT_SECTION	*(.sramdram.only.text*)
 #else
 #define OUT_TEXT_SECTION			.psram_image2.text.data
@@ -127,18 +127,18 @@ SECTIONS
 		__fini_array_start = .;
 		KEEP(*(SORT(.fini_array.*)))
 		KEEP(*(.fini_array))
-		__fini_array_end = .;	
+		__fini_array_end = .;
 
-		/*-----------------*/		
+		/*-----------------*/
 		__image2_backtrace_end__ = .;
-	
+
 		. = ALIGN (32);
 	} > IMG2_TEXT_LMA_REGION
 
 	/* C++ .ARM.extab/.ARM.exidx address shall same as *(.text*) */
-	.ARM.extab  : 
+	.ARM.extab  :
 	{
-		*(.ARM.extab* .gnu.linkonce.armextab.*) 
+		*(.ARM.extab* .gnu.linkonce.armextab.*)
 
 	} > IMG2_TEXT_LMA_REGION
 

@@ -1,5 +1,8 @@
 include_guard(GLOBAL)
 include(${CMAKE_CURRENT_LIST_DIR}/utility_base.cmake)
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/utility_internal.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/utility_internal.cmake)
+endif()
 
 # import_kconfig(<prefix> <kconfig_fragment> [<keys>] [TARGET <target>])
 #
@@ -83,61 +86,65 @@ function(import_kconfig prefix kconfig_fragment)
   endif()
 endfunction()
 
+function(ameba_add_empty_object)
+    # Empty object is added to avoid cmake error: NO SOURCE given to target...
+    # However, default empty file generates .data, .text, .rodata, .bss section, and debug related sections,
+    # which will be linked into the EMPTY SECTION (please refer to ameba_rom_bin.ld).
+    # Therefore, these sections need to be renamed ot removed.
+
+    if(${c_ISA_TYPE} STREQUAL "ARM")
+        set(att_name ".ARM.attributes")
+    elseif(${c_ISA_TYPE} STREQUAL "RISC-V")
+        set(att_name ".riscv.attributes")
+    else()
+        message(FATAL_ERROR "unknown ISA type: ${c_ISA_TYPE}")
+    endif()
+
+    ameba_gen_wrap_name(empty_obj c_EMPTY_C_OBJECT)
+    add_library(${c_EMPTY_C_OBJECT}_origin OBJECT ${c_EMPTY_C_FILE})
+    set(c_EMPTY_C_OBJECT_FILE "$<TARGET_OBJECTS:${c_EMPTY_C_OBJECT}_origin>")
+    add_custom_target(
+        ${c_EMPTY_C_OBJECT}
+        COMMAND ${CMAKE_STRIP} ${c_EMPTY_C_OBJECT_FILE}
+        COMMAND ${CMAKE_OBJCOPY} --remove-section .comment --remove-section ${att_name} ${c_EMPTY_C_OBJECT_FILE} ${c_EMPTY_C_OBJECT_FILE}
+        COMMAND ${CMAKE_OBJCOPY} --prefix-alloc-sections .rom ${c_EMPTY_C_OBJECT_FILE} ${c_EMPTY_C_OBJECT_FILE}
+        DEPENDS ${c_EMPTY_C_OBJECT}_origin
+    )
+
+    set(c_EMPTY_C_OBJECT ${c_EMPTY_C_OBJECT} PARENT_SCOPE)
+    set(c_EMPTY_C_OBJECT_FILE ${c_EMPTY_C_OBJECT_FILE} PARENT_SCOPE)
+endfunction()
+
 function(ameba_add_library name)
+    # Add linking ${c_MCU_PROJ_CONFIG}
+    list(FIND ARGN "p_LINK_LIBRARIES" _INDEX)
+    if(_INDEX GREATER -1)
+        list(INSERT ARGN ${_INDEX} ${c_MCU_PROJ_CONFIG})
+    else()
+        list(APPEND ARGN p_LINK_LIBRARIES ${c_MCU_PROJ_CONFIG})
+    endif()
+
     ameba_target_add(${name}
         p_WRAP_TARGET_NAME
         p_PREFIX lib_
         ${ARGN}
     )
     set(c_CURRENT_TARGET_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
+    set(c_CURRENT_TARGET_FILE ${c_CURRENT_TARGET_FILE} PARENT_SCOPE)
 endfunction()
 
 function(ameba_add_internal_library name)
     set(options
-        p_ADD_EMPTY_C_FILE          # If set, an empty c file is added to the target sources
-        p_ADD_BUILD_INFO            # Set target compile with build info: git version, time, etc..
         p_NO_WHOLE_ARCHIVE          # If set, the target will be linked without whole_archive options
     )
-    set(oneValueArgs
-    )
-    set(multiValueArgs
-        p_SOURCES                   # Set target source files
-        p_INCLUDES                  # Set target include directories
-        p_COMPILE_OPTIONS           # Set target compile options
-        p_DEFINITIONS               # Set target compile definitions
-        p_LINK_OPTIONS              # Set target link options
-        p_LINK_LIBRARIES            # Set target link libraries
-        p_DEPENDENCIES              # Set target dependencies
-        p_REMOVE_COMPILE_OPTIONS    # Remove compile options(maybe from global config) for the target.
-    )
-    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    set(NEW_ARGS)
-    foreach(o IN LISTS options)
-        ameba_list_append_if(ARG_${o} NEW_ARGS ${o})
-    endforeach()
+    cmake_parse_arguments(ARG "${options}" "" "" ${ARGN})
 
-    foreach(o IN LISTS multiValueArgs)
-        if (ARG_${o})
-            if("${o}" STREQUAL "p_LINK_LIBRARIES")
-                 ameba_list_append(NEW_ARGS p_LINK_LIBRARIES ${ARG_p_LINK_LIBRARIES} ${c_MCU_PROJ_CONFIG})
-            else()
-                ameba_list_append(NEW_ARGS ${o} ${ARG_${o}})
-            endif()
-        endif()
-    endforeach()
-
-    if (NOT DEFINED ARG_p_LINK_LIBRARIES)
-        ameba_list_append(NEW_ARGS p_LINK_LIBRARIES ${c_MCU_PROJ_CONFIG})
-    endif()
     if(ARG_p_NO_WHOLE_ARCHIVE)
-        list(REMOVE_ITEM NEW_ARGS p_NO_WHOLE_ARCHIVE)
+        list(REMOVE_ITEM ARGN p_NO_WHOLE_ARCHIVE)
     endif()
-    ameba_target_add(${name}
-        p_WRAP_TARGET_NAME
-        p_PREFIX lib_
-        ${NEW_ARGS}
-    )
+
+    ameba_add_library(${name} ${ARGN})
 
     if(c_CURRENT_IMAGE)
         if(ARG_p_NO_WHOLE_ARCHIVE)
@@ -149,26 +156,10 @@ function(ameba_add_internal_library name)
     endif()
 
     set(c_CURRENT_TARGET_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
+    set(c_CURRENT_TARGET_FILE ${c_CURRENT_TARGET_FILE} PARENT_SCOPE)
 endfunction()
 
 function(ameba_add_external_library name output_path output_name)
-    set(options
-        p_ADD_EMPTY_C_FILE              # If set, an empty c file is added to the target sources
-        p_ADD_BUILD_INFO                # Set target compile with build info: git version, time, etc..
-    )
-
-    set(multiValueArgs
-        p_SOURCES                   # Set target source files
-        p_INCLUDES                  # Set target include directories
-        p_COMPILE_OPTIONS           # Set target compile options
-        p_DEFINITIONS           # Set target compile definitions
-        p_LINK_OPTIONS              # Set target link options
-        p_LINK_LIBRARIES               # Set target link libraries
-        p_DEPENDENCIES              # Set target dependencies
-        p_REMOVE_COMPILE_OPTIONS    # Remove compile options(maybe from global config) for the target.
-    )
-    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
     # NOTE: A component may be compiled multiple times in an
     #       MCU project (using a wrapper based on the image name).
     #       In this case, it's okay if the output library files are
@@ -183,100 +174,37 @@ function(ameba_add_external_library name output_path output_name)
         add_library(${flag_target} INTERFACE)
     endif()
 
-    set(NEW_ARGS)
-    foreach(o IN LISTS options)
-        ameba_list_append_if(ARG_${o} NEW_ARGS ${o})
-    endforeach()
-
-    foreach(o IN LISTS multiValueArgs)
-        if (ARG_${o})
-            if("${o}" STREQUAL "p_LINK_LIBRARIES")
-                ameba_list_append(NEW_ARGS p_LINK_LIBRARIES ${ARG_p_LINK_LIBRARIES} ${c_MCU_PROJ_CONFIG})
-            else()
-                ameba_list_append(NEW_ARGS ${o} ${ARG_${o}})
-            endif()
-        endif()
-    endforeach()
-
-    if (NOT DEFINED ARG_p_LINK_LIBRARIES)
-        ameba_list_append(NEW_ARGS p_LINK_LIBRARIES ${c_MCU_PROJ_CONFIG})
-    endif()
-
-    ameba_target_add(${name}
-        p_WRAP_TARGET_NAME
+    ameba_add_library(${name}
         p_STRIP_DEBUG
         p_ENABLE_DETERMINISTIC_ARCHIVES
-        p_PREFIX lib_
         p_OUTPUT_PATH ${output_path}
         p_OUTPUT_NAME ${output_name}
-        ${NEW_ARGS}
+        ${ARGN}
     )
 
-    #REVIEW: Need to add dependency for all images or current image?
-    # get_property(img_list TARGET ${c_MCU_PROJ_CONFIG} PROPERTY image_list)
-    # foreach(image ${img_list})
-    #     add_dependencies(${image} ${c_CURRENT_TARGET_NAME})
-    # endforeach()
-
     if(TARGET ${c_CURRENT_IMAGE})
-        add_dependencies(${c_CURRENT_IMAGE} ${c_CURRENT_TARGET_NAME})
+        #NOTE: target maybe dropped by p_DROP_IF_NO_SOURCES
+        if(c_CURRENT_TARGET_NAME)
+            add_dependencies(${c_CURRENT_IMAGE} ${c_CURRENT_TARGET_NAME})
+        endif()
     else()
         ameba_warning("no current image")
     endif()
     set(c_CURRENT_TARGET_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
+    set(c_CURRENT_TARGET_FILE ${c_CURRENT_TARGET_FILE} PARENT_SCOPE)
 endfunction()
 
 
 function(ameba_add_external_tmp_library name)
-    set(options
-        p_ADD_EMPTY_C_FILE          # If set, an empty c file is added to the target sources
-        p_ADD_BUILD_INFO            # Set target compile with build info: git version, time, etc..
-    )
-    set(oneValueArgs
-    )
-    set(multiValueArgs
-        p_SOURCES                   # Set target source files
-        p_INCLUDES                  # Set target include directories
-        p_COMPILE_OPTIONS           # Set target compile options
-        p_DEFINITIONS               # Set target compile definitions
-        p_LINK_OPTIONS              # Set target link options
-        p_LINK_LIBRARIES            # Set target link libraries
-        p_DEPENDENCIES              # Set target dependencies
-        p_REMOVE_COMPILE_OPTIONS    # Remove compile options(maybe from global config) for the target.
-    )
-    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
     #NOTE: Only work before release
     if(CONFIG_AMEBA_RLS)
         return()
     endif()
 
-    set(NEW_ARGS)
-    foreach(o IN LISTS options)
-        ameba_list_append_if(ARG_${o} NEW_ARGS ${o})
-    endforeach()
-
-    foreach(o IN LISTS multiValueArgs)
-        if (ARG_${o})
-            if("${o}" STREQUAL "p_LINK_LIBRARIES")
-                 ameba_list_append(NEW_ARGS p_LINK_LIBRARIES ${ARG_p_LINK_LIBRARIES} ${c_MCU_PROJ_CONFIG})
-            else()
-                ameba_list_append(NEW_ARGS ${o} ${ARG_${o}})
-            endif()
-        endif()
-    endforeach()
-
-    if (NOT DEFINED ARG_p_LINK_LIBRARIES)
-        ameba_list_append(NEW_ARGS p_LINK_LIBRARIES ${c_MCU_PROJ_CONFIG})
-    endif()
-
-    ameba_target_add(${name}
-        p_WRAP_TARGET_NAME
-        p_PREFIX lib_
-        ${NEW_ARGS}
-    )
+    ameba_add_library(${name} ${ARGN})
 
     set(c_CURRENT_TARGET_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
+    set(c_CURRENT_TARGET_FILE ${c_CURRENT_TARGET_FILE} PARENT_SCOPE)
 endfunction()
 
 function(ameba_add_external_app_library name)
@@ -290,15 +218,15 @@ function(ameba_add_external_app_library name)
         return()
     endif()
 
-    set(tmp_argn "${ARGN}")
     if (ARG_p_OUTPUT_NAME)
-        ameba_list_remove_key_value(tmp_argn p_OUTPUT_NAME)
+        ameba_list_remove_key_value(ARGN p_OUTPUT_NAME)
     else()
         set(ARG_p_OUTPUT_NAME ${name})
     endif()
 
-    ameba_add_external_library(${name} ${c_SDK_LIB_APPLICATION_DIR} ${ARG_p_OUTPUT_NAME} ${tmp_argn})
+    ameba_add_external_library(${name} ${c_SDK_LIB_APPLICATION_DIR} ${ARG_p_OUTPUT_NAME} ${ARGN})
     set(c_CURRENT_TARGET_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
+    set(c_CURRENT_TARGET_FILE ${c_CURRENT_TARGET_FILE} PARENT_SCOPE)
 endfunction()
 
 function(ameba_add_external_soc_library name)
@@ -312,15 +240,15 @@ function(ameba_add_external_soc_library name)
         return()
     endif()
 
-    set(tmp_argn "${ARGN}")
     if (ARG_p_OUTPUT_NAME)
-        ameba_list_remove_key_value(tmp_argn p_OUTPUT_NAME)
+        ameba_list_remove_key_value(ARGN p_OUTPUT_NAME)
     else()
         set(ARG_p_OUTPUT_NAME ${name})
     endif()
 
-    ameba_add_external_library(${name} ${c_SDK_LIB_SOC_DIR} ${ARG_p_OUTPUT_NAME} ${tmp_argn})
+    ameba_add_external_library(${name} ${c_SDK_LIB_SOC_DIR} ${ARG_p_OUTPUT_NAME} ${ARGN})
     set(c_CURRENT_TARGET_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
+    set(c_CURRENT_TARGET_FILE ${c_CURRENT_TARGET_FILE} PARENT_SCOPE)
 endfunction()
 
 function(ameba_port_standalone_app_library target output_name)
@@ -331,11 +259,27 @@ function(ameba_port_standalone_app_library target output_name)
     ameba_target_get_output_info(${target} o_path o_name) #Get target's library output path and output file name
     ameba_port_library_file(${o_path}/${o_name} ${c_SDK_LIB_APPLICATION_DIR} ${output_name})
     set(c_CURRENT_TARGET_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
+    set(c_CURRENT_TARGET_FILE ${o_path}/${o_name} PARENT_SCOPE)
 endfunction()
 
 function(ameba_port_standalone_internal_library name)
+    set(options
+        p_NO_WHOLE_ARCHIVE          # If set, the target will be linked without whole_archive options
+    )
+
+    cmake_parse_arguments(ARG "${options}" "" "" ${ARGN})
+
+    if(ARG_p_NO_WHOLE_ARCHIVE)
+        list(REMOVE_ITEM ARGN p_NO_WHOLE_ARCHIVE)
+    endif()
+
     if(c_CURRENT_IMAGE)
-        set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY ${c_CURRENT_IMAGE}_libraries "${name}")
+        if(ARG_p_NO_WHOLE_ARCHIVE)
+            ameba_target_get_output_info(${name} o_path o_name)
+            set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY ${c_CURRENT_IMAGE}_no_whole_archive_libs "${o_path}/${o_name}")
+        else()
+            set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY ${c_CURRENT_IMAGE}_libraries "${name}")
+        endif()
     else()
         ameba_warning("c_CURRENT_IMAGE is unset when call ameba_port_standalone_internal_library")
     endif()
@@ -377,21 +321,21 @@ function(ameba_add_merge_library output_name output_path)
         )
     endforeach()
 
-	if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
-		set(list_cmd COMMAND ${CMAKE_COMMAND} -E chdir ${temp_dir} cmd /C "dir /b *.o > o_files.list")
-	else()
-		set(list_cmd COMMAND ls ${temp_dir}/*.o > ${temp_dir}/o_files.list)
-	endif()
+   if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
+        set(list_cmd COMMAND ${CMAKE_COMMAND} -E chdir ${temp_dir} cmd /C "dir /b *.o > o_files.list")
+   else()
+      set(list_cmd COMMAND ls ${temp_dir}/*.o > ${temp_dir}/o_files.list)
+   endif()
 
     set(full_output ${output_path}/lib_${output_name}.a)
     add_custom_command(
         OUTPUT ${full_output}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${temp_dir}
         ${unpack_commands}
-		COMMAND ${CMAKE_COMMAND} -E touch ${temp_dir}/o_files.list
-		${list_cmd}
+        COMMAND ${CMAKE_COMMAND} -E touch ${temp_dir}/o_files.list
+        ${list_cmd}
         COMMAND ${CMAKE_COMMAND} -E rm -f ${full_output}
-		COMMAND ${CMAKE_COMMAND} -E chdir ${temp_dir} ${CMAKE_AR} crs ${full_output} "@o_files.list"
+        COMMAND ${CMAKE_COMMAND} -E chdir ${temp_dir} ${CMAKE_AR} crs ${full_output} "@o_files.list"
         COMMAND ${CMAKE_OBJCOPY} -g -D ${full_output}
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${temp_dir}
         DEPENDS ${libs}
@@ -416,6 +360,7 @@ function(ameba_add_merge_library output_name output_path)
         ameba_warning("no current image")
     endif()
     set(c_CURRENT_TARGET_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
+    set(c_CURRENT_TARGET_FILE ${full_output} PARENT_SCOPE)
 endfunction()
 
 function(ameba_add_merge_app_library output_name)
@@ -426,6 +371,7 @@ function(ameba_add_merge_app_library output_name)
 
     ameba_add_merge_library(${output_name} ${c_SDK_LIB_APPLICATION_DIR} ${ARGN})
     set(c_CURRENT_TARGET_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
+    set(c_CURRENT_TARGET_FILE ${c_CURRENT_TARGET_FILE} PARENT_SCOPE)
 endfunction()
 
 function(ameba_add_merge_soc_library output_name)
@@ -435,35 +381,42 @@ function(ameba_add_merge_soc_library output_name)
     endif()
     ameba_add_merge_library(${output_name} ${c_SDK_LIB_SOC_DIR} ${ARGN})
     set(c_CURRENT_TARGET_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
+    set(c_CURRENT_TARGET_FILE ${c_CURRENT_TARGET_FILE} PARENT_SCOPE)
 endfunction()
 
 function(ameba_add_image name)
-    set(options
-        p_EXCLUDE_FROM_ALL
-    )
-    set(oneValueArgs p_TYPE)
+    set(options p_EXCLUDE_FROM_ALL)
+    set(oneValueArgs p_TYPE p_IMAGE_ALL)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "" ${ARGN})
     ameba_gen_wrap_name(${name} c_CURRENT_IMAGE)
     if(ARG_p_EXCLUDE_FROM_ALL)
-        add_executable(${c_CURRENT_IMAGE} EXCLUDE_FROM_ALL ${c_EMPTY_C_FILE})
+        add_executable(${c_CURRENT_IMAGE} EXCLUDE_FROM_ALL ${c_EMPTY_C_OBJECT_FILE})
+        add_dependencies(${c_CURRENT_IMAGE} ${c_EMPTY_C_OBJECT})
     else()
-        add_executable(${c_CURRENT_IMAGE} ${c_EMPTY_C_FILE})
+        add_executable(${c_CURRENT_IMAGE} ${c_EMPTY_C_OBJECT_FILE})
+        add_dependencies(${c_CURRENT_IMAGE} ${c_EMPTY_C_OBJECT})
     endif()
     set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY image_list "${c_CURRENT_IMAGE}")
 
-    if(TARGET rom)
-        add_dependencies(${c_CURRENT_IMAGE} rom)
-    endif()
-
     if(ARG_p_TYPE)
+        list(FIND c_VALID_IMAGE_TYPES ${ARG_p_TYPE} _INDEX)
+        if(_INDEX EQUAL -1)
+            ameba_fatal("Invalid image type: ${ARG_p_TYPE}, valid list: ${c_VALID_IMAGE_TYPES}")
+        endif()
         set(c_CURRENT_IMAGE_TYPE ${ARG_p_TYPE})
     else()
         get_filename_component(c_CURRENT_IMAGE_TYPE ${CMAKE_CURRENT_LIST_DIR} NAME)
 
-        if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image_floader")
-            set(c_CURRENT_IMAGE_TYPE floader)
+        if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image_floader" OR ${c_CURRENT_IMAGE_TYPE} STREQUAL "image_gdb_floader")
+            set(c_CURRENT_IMAGE_TYPE gdb_floader)
         elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image_imgtool_floader")
             set(c_CURRENT_IMAGE_TYPE imgtool_floader)
+        elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image_rom")
+            set(c_CURRENT_IMAGE_TYPE rom_ns)
+        elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "ns")
+            set(c_CURRENT_IMAGE_TYPE rom_ns)
+        elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "tz")
+            set(c_CURRENT_IMAGE_TYPE rom_tz)
         elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image1" OR
                ${c_CURRENT_IMAGE_TYPE} STREQUAL "image2" OR
                ${c_CURRENT_IMAGE_TYPE} STREQUAL "image3"
@@ -473,10 +426,69 @@ function(ameba_add_image name)
         endif()
     endif()
 
+    if(${c_CURRENT_IMAGE_TYPE} STREQUAL "rom_ns" OR ${c_CURRENT_IMAGE_TYPE} STREQUAL "rom_tz")
+        ameba_set(c_CURRENT_IMAGE_IS_ROM TRUE p_SCOPE both)
+    else()
+        ameba_set(c_CURRENT_IMAGE_IS_ROM FALSE p_SCOPE both)
+    endif()
+
+    if(TARGET rom)
+        if(NOT ${c_CURRENT_IMAGE_IS_ROM})
+            add_dependencies(${c_CURRENT_IMAGE} rom)
+        endif()
+    endif()
+
     #Can be used to get target name of image1/image2/image2 somewhere else
     set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY ${c_CURRENT_IMAGE_TYPE} "${c_CURRENT_IMAGE}")
+    if (ARG_p_IMAGE_ALL)
+        set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY ${c_CURRENT_IMAGE_TYPE}_all "${c_SDK_IMAGE_TARGET_DIR}/${ARG_p_IMAGE_ALL}")
+    endif()
     set(c_CURRENT_IMAGE ${c_CURRENT_IMAGE} PARENT_SCOPE)
     set(c_CURRENT_IMAGE_TYPE ${c_CURRENT_IMAGE_TYPE} PARENT_SCOPE)
+endfunction()
+
+function(ameba_get_image_target_name image_type result)
+    set(oneValueArgs
+        p_MCU_PROJECT_NAME  # Specific which mcu project you want get image from, default is current mcu project
+    )
+    cmake_parse_arguments(ARG "" "${oneValueArgs}" "" ${ARGN})
+    if(ARG_p_MCU_PROJECT_NAME)
+        get_property(mcu_config TARGET g_PROJECT_CONFIG PROPERTY ${ARG_p_MCU_PROJECT_NAME}_config)
+    else()
+        set(mcu_config ${c_MCU_PROJ_CONFIG})
+    endif()
+    if(TARGET ${mcu_config})
+        get_property(tmp_result TARGET ${mcu_config} PROPERTY ${image_type})
+        set(${result} ${tmp_result} PARENT_SCOPE)
+    else()
+        ameba_warning("mcu config: ${mcu_config} not exist")
+        unset(${result} PARENT_SCOPE)
+    endif()
+endfunction()
+
+function(ameba_get_image_all_path image_type result)
+    set(oneValueArgs
+        p_MCU_PROJECT_NAME  # Specific which mcu project you want get image from, default is current mcu project
+    )
+    cmake_parse_arguments(ARG "" "${oneValueArgs}" "" ${ARGN})
+    if(ARG_p_MCU_PROJECT_NAME)
+        get_property(mcu_config TARGET g_PROJECT_CONFIG PROPERTY ${ARG_p_MCU_PROJECT_NAME}_config)
+    else()
+        set(mcu_config ${c_MCU_PROJ_CONFIG})
+    endif()
+    if(TARGET ${mcu_config})
+        get_property(tmp_result TARGET ${mcu_config} PROPERTY ${image_type}_all)
+        set(${result} ${tmp_result} PARENT_SCOPE)
+    else()
+        ameba_warning("mcu config: ${mcu_config} not exist")
+        unset(${result} PARENT_SCOPE)
+    endif()
+endfunction()
+
+# get the main output image dir under special mcu project set when call ameba_soc_project_create
+function(ameba_get_image_output_dir result)
+    get_property(tmp_result TARGET g_PROJECT_CONFIG PROPERTY image_output_dir)
+    set(${result} ${tmp_result} PARENT_SCOPE)
 endfunction()
 
 function(ameba_add_rom name)
@@ -582,6 +594,6 @@ function(ameba_app_library name)
 endfunction()
 
 function(ameba_app_library_with_gitver name)
-    ameba_add_external_app_library(${name} p_ADD_BUILD_INFO)
+    ameba_add_external_app_library(${name})
     set(CURRENT_LIB_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
 endfunction()

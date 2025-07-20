@@ -64,7 +64,17 @@ macro(ameba_soc_project_create name)
     <FINAL_IMAGE_DIR> after building. Default final image directory is project root path, \
     where the current CMakeLists.txt is located.")
     ###############################################################################
+    set(oneValueArgs
+        p_OUTPUT_MCU_PROJECT  # Specific which mcu project you want output files
+    )
+    cmake_parse_arguments(ARG "" "${oneValueArgs}" "" ${ARGN})
+    if(ARG_p_OUTPUT_MCU_PROJECT)
+        ameba_set(c_OUTPUT_MCU_PROJECT ${ARG_p_OUTPUT_MCU_PROJECT})
+    else()
+        ameba_fatal("Output mcu project MUST be set when call ameba_soc_project_create")
+    endif()
 
+    ameba_set(c_CMAKE_BUILD_DIR ${CMAKE_BINARY_DIR})
     ameba_set(c_SOC_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
     ameba_set(c_SOC_TYPE ${name})
     ameba_set_upper(c_SOC_TYPE_UPPER ${c_SOC_TYPE})
@@ -73,6 +83,11 @@ macro(ameba_soc_project_create name)
 
     ameba_set(c_WORKING_PROJECT_DIR ${CMAKE_BINARY_DIR}/..)
     ameba_set(c_MENUCONFIG_DIR ${c_WORKING_PROJECT_DIR}/menuconfig)
+
+    ameba_set(c_OUTPUT_MCU_PROJECT_DIR ${c_SOC_PROJECT_DIR}/project_${ARG_p_OUTPUT_MCU_PROJECT})
+    if (NOT EXISTS ${c_OUTPUT_MCU_PROJECT_DIR})
+        ameba_fatal("Output mcu project not exist: ${c_OUTPUT_MCU_PROJECT_DIR}")
+    endif()
 
     ameba_set(CMAKE_BUILD_TYPE "")
 
@@ -131,6 +146,8 @@ macro(ameba_soc_project_create name)
     ameba_set_if(c_VERBOSE_MAKEFILE CMAKE_VERBOSE_MAKEFILE ON)
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+    add_library(g_PROJECT_CONFIG INTERFACE)
+
     ameba_set(c_SOC_PROJECT_CREATED TRUE)
 endmacro()
 
@@ -169,11 +186,18 @@ macro(ameba_mcu_project_create name mcu_type)
     project(${name} LANGUAGES C CXX ASM)
     ameba_set_if(c_VERBOSE_MAKEFILE CMAKE_VERBOSE_MAKEFILE ON)
 
-    ameba_info("import config: ${c_SOC_PROJECT_DIR}/menuconfig/.config_${mcu_type}")
 
-    configure_file(${c_MENUCONFIG_DIR}/.config_${mcu_type} ${CMAKE_CURRENT_BINARY_DIR}/.config_${mcu_type} COPYONLY)
-
-    import_kconfig("CONFIG" ${CMAKE_CURRENT_BINARY_DIR}/.config_${mcu_type})
+    if(EXISTS ${c_MENUCONFIG_DIR}/.config_${mcu_type})
+        configure_file(${c_MENUCONFIG_DIR}/.config_${mcu_type} ${CMAKE_CURRENT_BINARY_DIR}/.config_${mcu_type} COPYONLY)
+        ameba_set(c_MCU_KCONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/.config_${mcu_type})
+    elseif(EXISTS ${c_MENUCONFIG_DIR}/.config_${name})
+        configure_file(${c_MENUCONFIG_DIR}/.config_${name} ${CMAKE_CURRENT_BINARY_DIR}/.config_${name} COPYONLY)
+        ameba_set(c_MCU_KCONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/.config_${name})
+    else()
+        ameba_fatal("Could not find kconfig file")
+    endif()
+    ameba_info("import config: ${c_MCU_KCONFIG_FILE}")
+    import_kconfig("CONFIG" ${c_MCU_KCONFIG_FILE})
 
     #NOTE: Determine whether build example for this mcu project
     if(EXAMPLE) #By default, MCU as ap run example
@@ -202,7 +226,6 @@ macro(ameba_mcu_project_create name mcu_type)
     ameba_set(c_MCU_PROJECT_NAME ${PROJECT_NAME})
     ameba_set_upper(c_MCU_PROJECT_NAME_UPPER ${PROJECT_NAME})
     ameba_set(c_MCU_PROJECT_CREATED TRUE)
-    ameba_set(c_MCU_KCONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/.config_${mcu_type})
 
     ameba_set(c_SDK_VERSION ${v_${c_SDK_NAME_UPPER}_VER})
 
@@ -220,13 +243,20 @@ macro(ameba_mcu_project_create name mcu_type)
     ameba_set(c_SDK_FLOADER_BIN_DIR     ${c_SDK_IMGTOOL_FLOADER_DIR}/${c_SOC_TYPE}_acut)
     ameba_set(c_SDK_IMAGE_DIR           ${c_MCU_SDK_DIR}/image)
     ameba_set(c_SDK_IMAGE_MP_DIR        ${c_MCU_SDK_DIR}/image_mp)
-    ameba_set(c_SDK_IMAGE_UTILITY_DIR   ${c_MCU_SDK_DIR}/image_utility)
+    ameba_set(c_SDK_IMAGE_UTILITY_DIR   ${c_MCU_SDK_DIR}/img_utility)
     ameba_set(c_SDK_LD_DIR              ${c_MCU_SDK_DIR}/ld)
     ameba_set(c_SDK_LD_NS_DIR           ${c_MCU_SDK_DIR}/ld_ns)
     ameba_set(c_SDK_LIB_DIR             ${c_MCU_SDK_DIR}/lib)
     ameba_set(c_SDK_LIB_APPLICATION_DIR ${c_MCU_SDK_DIR}/lib/application)
     ameba_set(c_SDK_LIB_APP_DIR         ${c_MCU_SDK_DIR}/lib/application)
     ameba_set(c_SDK_LIB_SOC_DIR         ${c_MCU_SDK_DIR}/lib/soc)
+
+    ameba_set(c_SDK_ROM_SYMBOL_GEN_SCRIPT       ${c_SDK_IMAGE_UTILITY_DIR}/export_rom_symbol.py)
+    ameba_set(c_SDK_ROM_SYMBOL_S_GEN_SCRIPT     ${c_SDK_IMAGE_UTILITY_DIR}/export_rom_symbol_s.py)
+    ameba_set(c_SDK_ROM_TOTAL_SIZE_SCRIPT       ${c_SDK_IMAGE_UTILITY_DIR}/total_rom_size.py)
+    ameba_set(c_SDK_ROM_CODE_ANALYZE_SCRIPT     ${c_SDK_IMAGE_UTILITY_DIR}/code_analyze.py)
+    ameba_set(c_SDK_EXTRACT_LD_SCRIPT           ${c_SDK_IMAGE_UTILITY_DIR}/extract_ld_vars.sh)
+    ameba_set(c_SDK_ROM_WIFI_SYMBOL_GEN_SCRIPT  ${c_SDK_IMAGE_UTILITY_DIR}/export_rom_wifi_symbol.py)
 
     if (CONFIG_CA32_FREERTOS_V10_2_1_SMP)
         set(v_FREERTOS_VER v10.2.1)
@@ -239,11 +269,18 @@ macro(ameba_mcu_project_create name mcu_type)
     ameba_reset_global_define()
     ameba_set_if(CONFIG_MP_INCLUDED BUILD_TYPE MFG p_ELSE NONE p_SCOPE both)
     ameba_set_if(CONFIG_MP_INCLUDED ANALYZE_MP_IMG 1 p_ELSE 0 p_SCOPE both)
+    ameba_set_if(CONFIG_MP_INCLUDED c_SDK_IMAGE_FOLDER_NAME image_mp p_ELSE image)
 
     # dirs define on specific conditions
-    ameba_set_if(CONFIG_MP_INCLUDED c_SDK_IMAGE_FOLDER_NAME image_mp p_ELSE image)
     ameba_set(c_SDK_IMAGE_TARGET_DIR ${c_MCU_SDK_DIR}/${c_SDK_IMAGE_FOLDER_NAME})
 
+    if(EXISTS ${c_SDK_IMAGE_TARGET_DIR})
+        file(GLOB FILES_TO_REMOVE "${c_SDK_IMAGE_TARGET_DIR}/*")
+        if(FILES_TO_REMOVE)
+            ameba_info("clear old files in ${c_SDK_IMAGE_TARGET_DIR}")
+            file(REMOVE_RECURSE ${FILES_TO_REMOVE})
+        endif()
+    endif()
 
     # Handle compile configs
     include(${c_CMAKE_FILES_DIR}/flags/common/compile_options.cmake)
@@ -269,6 +306,7 @@ macro(ameba_mcu_project_create name mcu_type)
 
     set(c_MCU_PROJ_CONFIG g_PUBLIC_BUILD_INTERFACE_${c_MCU_PROJECT_NAME_UPPER})
     add_library(${c_MCU_PROJ_CONFIG} INTERFACE)
+    set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY project_dir "${c_MCU_PROJECT_DIR}")
 
     target_link_options(${c_MCU_PROJ_CONFIG} INTERFACE
         ${c_GLOBAL_COMMON_LINK_OPTIONS}     #defined in cmake/flags/common/link_options.cmake
@@ -279,8 +317,11 @@ macro(ameba_mcu_project_create name mcu_type)
         ${c_GLOBAL_MCU_INCLUDE_DIRECTORIES}
     )
 
-    #REVIEW: Register mcu config's name to g_PROJECT_CONFIG, necessary?
-    # set_target_properties(g_PROJECT_CONFIG PROPERTIES ${c_MCU_PROJECT_NAME}_config "${c_MCU_PROJ_CONFIG}")
+    set_property(TARGET g_PROJECT_CONFIG APPEND PROPERTY mcu_project_list ${c_MCU_PROJECT_NAME})
+    set_property(TARGET g_PROJECT_CONFIG APPEND PROPERTY ${c_MCU_PROJECT_NAME}_config "${c_MCU_PROJ_CONFIG}")
+    if (${c_MCU_PROJECT_NAME} STREQUAL ${c_OUTPUT_MCU_PROJECT})
+        set_property(TARGET g_PROJECT_CONFIG APPEND PROPERTY image_output_dir "${c_SDK_IMAGE_TARGET_DIR}")
+    endif()
 
     set(c_BUILD_INFO build_info_${PROJECT_NAME})
     add_custom_target(
@@ -291,10 +332,97 @@ macro(ameba_mcu_project_create name mcu_type)
         BYPRODUCTS ${c_MCU_INC_DIR}/build_info.h
     )
     set_property(TARGET ${c_BUILD_INFO} PROPERTY ADDITIONAL_CLEAN_FILES ${c_MCU_PROJECT_DIR}/inc/build_info.h)
+    set(c_CURRENT_IMAGE_IS_ROM FALSE) #Flag to identify whether current image is rom, updated in ameba_add_image
+    ameba_add_empty_object()
 endmacro()
+
+function(ameba_firmware_package output_app_name)
+    if (CONFIG_WIFI_HOST_CONTROL)
+        ameba_info("Skip firmware package when CONFIG_WIFI_HOST_CONTROL enabled")
+        return()
+    endif()
+    set(multiValueArgs
+        p_CUSTOM_VARIABLES #Variables to be transformed to postbuild.cmake directly
+        p_MCU_PROJECTS
+    )
+
+    cmake_parse_arguments(ARG "" "" "${multiValueArgs}" ${ARGN})
+    set(custom_variables)
+    foreach(var ${ARG_p_CUSTOM_VARIABLES})
+        ameba_list_append(custom_variables -D${var}=${${var}})
+    endforeach()
+
+    if (CONFIG_DSP_WITHIN_APP_IMG)
+        set(c_DSP_FILE ${c_SOC_PROJECT_DIR}/${DSP_IMAGE_TARGET_DIR}/dsp.bin)
+        if(NOT EXISTS ${c_DSP_FILE})
+            message(FATAL_ERROR "dsp file not exist: ${c_DSP_FILE}")
+        endif()
+    endif()
+
+    # Merge image2/image3 to app.bin
+    set(c_APP_BINARY_NAME ${output_app_name})
+    ameba_get_image_output_dir(c_IMAGE_OUTPUT_DIR)
+
+    set(postbuild_targets)
+    set(image1_all_files)
+    set(image2_all_files)
+    set(image3_all_files)
+    foreach(mcu_proj ${ARG_p_MCU_PROJECTS})
+        ameba_get_image_target_name(image2 target_name p_MCU_PROJECT_NAME ${mcu_proj})
+        ameba_list_append_if(target_name postbuild_targets ${target_name}_postbuild)
+
+        ameba_get_image_target_name(image3 target_name p_MCU_PROJECT_NAME ${mcu_proj})
+        ameba_list_append_if(target_name postbuild_targets ${target_name}_postbuild)
+
+        ameba_get_image_all_path(image1 all_name p_MCU_PROJECT_NAME ${mcu_proj})
+        ameba_list_append_if(all_name image1_all_files ${all_name})
+
+        ameba_get_image_all_path(image2 all_name p_MCU_PROJECT_NAME ${mcu_proj})
+        ameba_list_append_if(all_name image2_all_files ${all_name})
+
+        ameba_get_image_all_path(image3 all_name p_MCU_PROJECT_NAME ${mcu_proj})
+        ameba_list_append_if(all_name image3_all_files ${all_name})
+    endforeach()
+
+    string(REPLACE ";" "\\;" image1_all_files "${image1_all_files}")
+    string(REPLACE ";" "\\;" image2_all_files "${image2_all_files}")
+    string(REPLACE ";" "\\;" image3_all_files "${image3_all_files}")
+    ameba_info("image all list: image1: ${image1_all_files}, image2: ${image2_all_files}, image3: ${image3_all_files}, dsp: ${c_DSP_FILE}")
+    add_custom_target(firmware_package ALL
+        COMMAND ${CMAKE_COMMAND}
+            # common variables
+            -Dc_BASEDIR=${c_BASEDIR}  # dir of sdk's root
+            -Dc_CMAKE_FILES_DIR=${c_CMAKE_FILES_DIR} # dir of cmake scripts
+            -Dc_MCU_KCONFIG_FILE=${CMAKE_CURRENT_BINARY_DIR}/.config
+            -Dc_SOC_PROJECT_DIR=${c_SOC_PROJECT_DIR} # dir of soc project
+            -Dc_SDK_IMAGE_TARGET_DIR=${c_SDK_IMAGE_TARGET_DIR} # dir of image output
+            -Dc_IMAGE_OUTPUT_DIR=${c_IMAGE_OUTPUT_DIR}
+            -Dc_APP_BINARY_NAME=${c_APP_BINARY_NAME}
+            -Dc_SDK_IMAGE_FOLDER_NAME=${c_SDK_IMAGE_FOLDER_NAME}
+            -Dc_IMAGE1_ALL_FILES="${image1_all_files}" #NOTE: transfer as list
+            -Dc_IMAGE2_ALL_FILES="${image2_all_files}" #NOTE: transfer as list
+            -Dc_IMAGE3_ALL_FILES="${image3_all_files}" #NOTE: transfer as list
+            -Dc_DSP_FILE="${c_DSP_FILE}"
+
+            # user's variables
+            -DFINAL_IMAGE_DIR=${FINAL_IMAGE_DIR}
+            -DANALYZE_MP_IMG=${ANALYZE_MP_IMG}
+
+            # special variables for current image
+            ${custom_variables}
+
+            -P ${c_SOC_PROJECT_DIR}/postbuild.cmake
+        DEPENDS
+            ${postbuild_targets}
+    )
+endfunction()
 
 function(ameba_soc_project_check)
     ameba_info("soc project : ${PROJECT_NAME}, soc type: ${c_SOC_TYPE}|${c_SOC_TYPE_CAMEL}")
+    if(NOT EXISTS ${c_AXF2BIN_SCRIPT})
+        message(FATAL_ERROR "Please update $SDK/tools repo to latest")
+    endif()
+    ameba_execute_process(COMMAND ${op_USAGE})
 endfunction()
 
 function(ameba_mcu_project_check)

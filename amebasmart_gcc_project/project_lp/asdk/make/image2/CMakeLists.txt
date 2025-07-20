@@ -1,4 +1,4 @@
-ameba_add_image(target_img2)
+ameba_add_image(target_img2 p_IMAGE_ALL km0_image2_all.bin)
 # Use variable c_CURRENT_IMAGE to represent full image target name
 
 ###############################  ADD COMPONENT  ###################################
@@ -78,7 +78,6 @@ add_custom_command(
         -DDAILY_BUILD=${DAILY_BUILD}
 
         # special variables for current image
-        -DKM4_PROJECT_DIR=${HP_PROJECT_DIR}
 
         # cmake toolchain variables
         -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR}
@@ -103,8 +102,9 @@ set(clean_files
 )
 
 set(link_deps
+    ${c_SOC_PROJECT_DIR}/ameba_layout.ld
+    ${c_LINK_ROM_SYMBOL}
     ${c_SDK_LD_DIR}/ameba_img2_sram.ld
-    ${c_SOC_PROJECT_DIR}/${c_SOC_TYPE}_layout.ld
 )
 
 set_target_properties(${c_CURRENT_IMAGE} PROPERTIES

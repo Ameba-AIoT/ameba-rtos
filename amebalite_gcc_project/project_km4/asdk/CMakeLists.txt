@@ -2,7 +2,7 @@ set(CMAKE_EXECUTABLE_SUFFIX .axf)
 
 add_compile_options(-fdata-sections -ffunction-sections)
 
-set(c_LAYOUT_LD ${c_SOC_PROJECT_DIR}/amebalite_layout.ld)
+set(c_LAYOUT_LD ${c_SOC_PROJECT_DIR}/ameba_layout.ld)
 set(c_IMG1_LD ${c_SDK_LD_DIR}/ameba_img1_all.ld)
 if(CONFIG_MP_SHRINK)
     set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all_mp.ld)
@@ -63,8 +63,8 @@ add_custom_target(
 
 add_custom_target(
     gen_imgtool_floader
-    COMMAND ${CMAKE_COMMAND} -DFILEPATH=${c_SDK_FLOADER_BIN_DIR}/imgtool_flashloader_raw.bin -P${c_CMAKE_FILES_DIR}/checkexists.cmake
-    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_FLOADER_BIN_DIR}/imgtool_flashloader_raw.bin ${c_SDK_IMAGE_TARGET_DIR}/ram_1_prepend.bin
-    COMMAND ${IMAGETOOL} ${c_SDK_IMAGE_TARGET_DIR}/ram_1_prepend.bin ${BUILD_TYPE}
-    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/imgtool_flashloader.bin ${c_SDK_FLOADER_BIN_DIR}/floader_amebalite.bin
+    COMMAND ${CMAKE_COMMAND} -DFILEPATH=${c_SDK_FLOADER_BIN_DIR}/floader_${c_SOC_TYPE}.bin -P${c_CMAKE_FILES_DIR}/checkexists.cmake
+    COMMAND ${op_CUT} -i ${c_SDK_FLOADER_BIN_DIR}/floader_${c_SOC_TYPE}.bin -o ${c_SDK_IMAGE_TARGET_DIR}/ram_1_prepend.bin -l 4096 -B
+    COMMAND ${op_FW_PACKAGE} --imgtool-floader ${c_SDK_IMAGE_TARGET_DIR}/ram_1_prepend.bin -o ${c_SDK_IMAGE_TARGET_DIR}/imgtool_flashloader.bin
+    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/imgtool_flashloader.bin ${c_SDK_FLOADER_BIN_DIR}/floader_${c_SOC_TYPE}.bin
 )

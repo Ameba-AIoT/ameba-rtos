@@ -1,4 +1,4 @@
-ameba_add_image(target_loader)
+ameba_add_image(target_loader p_IMAGE_ALL km4_boot_all.bin)
 # Use variable c_CURRENT_IMAGE to represent full image target name
 
 ###############################  ADD COMPONENT  ###################################
@@ -74,7 +74,7 @@ add_custom_command(TARGET ${c_CURRENT_IMAGE} POST_BUILD
         -DCMAKE_SIZE=${CMAKE_SIZE}
         -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
 
-        -P ${CMAKE_CURRENT_SOURCE_DIR}/postbuild.cmake
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/${c_POST_BUILD_SCRIPT}
 )
 
 

@@ -1,12 +1,12 @@
 ENTRY(Reset_Handler)
 
-#include "../../../amebalite_layout.ld"
+#include "../../../ameba_layout.ld"
 
 #define OUT_TEXT_SECTION			.xip_image2.text
 #define OUT_DATA_SECTION			.sram_image2.text.data
 #define IMG2_TEXT_LMA_REGION		KR4_BD_RAM_MP
 #define IMG2_DATA_LMA_REGION		KR4_BD_RAM_MP
-#define SRAM_INPUT_TEXT_SECTION		*(.sramdram.only.text*)	
+#define SRAM_INPUT_TEXT_SECTION		*(.sramdram.only.text*)
 #define PSRAM_INPUT_TEXT_SECTION
 
 SECTIONS
@@ -125,12 +125,12 @@ SECTIONS
 		*(.srodata.cst2)
 		*(.srodata .srodata.*)
 		*(.sdata .sdata.* .gnu.linkonce.s.*)
-		
+
 		__sdata_end__ = .;
 		. = ALIGN(4);
 	} > IMG2_DATA_LMA_REGION
 
-	.ram_image2.sbss (NOLOAD): 
+	.ram_image2.sbss (NOLOAD):
 	{
 		__sbss_start__ = .;
 

@@ -1,12 +1,12 @@
 ENTRY(Reset_Handler)
 
-#include "../../../amebaDplus_layout.ld"
+#include "../../../ameba_layout.ld"
 
 #if defined(CONFIG_IMG2_PSRAM)
 #define OUTPUT_TEXT_SECTION 		.psram_image2.text.data
 #define IMG2_LMA_REGION 			KM0_BD_PSRAM
-#define SRAM_INPUT_TEXT_SECTION		
-#define PSRAM_INPUT_TEXT_SECTION	*(.sramdram.only.text*)		
+#define SRAM_INPUT_TEXT_SECTION
+#define PSRAM_INPUT_TEXT_SECTION	*(.sramdram.only.text*)
 #elif defined(CONFIG_IMG2_FLASH)
 	#define OUTPUT_TEXT_SECTION 		.xip_image2.text
 	#define IMG2_LMA_REGION 			KM0_IMG2_XIP
@@ -111,9 +111,9 @@ SECTIONS
 	} > IMG2_LMA_REGION
 
 	/* C++ .ARM.extab/.ARM.exidx address shall same as *(.text*) */
-	.ARM.extab  : 
+	.ARM.extab  :
 	{
-		*(.ARM.extab* .gnu.linkonce.armextab.*) 
+		*(.ARM.extab* .gnu.linkonce.armextab.*)
 
 	} > IMG2_LMA_REGION
 
