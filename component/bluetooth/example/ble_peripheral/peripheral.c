@@ -993,13 +993,11 @@ int ble_peripheral_main(uint8_t enable)
 #if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
 		bt_power_test_deinit();
 #endif
-		app_server_deinit();
-
-		/* no need to unreg callback here, it is done in rtk_bt_disable */
-		// BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_LE_GP_GATTS));
 
 		/* Disable BT */
 		BT_APP_PROCESS(rtk_bt_disable());
+
+		app_server_deinit();
 	}
 
 	return 0;
