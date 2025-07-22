@@ -14,7 +14,7 @@ if(CONFIG_LINK_ROM_SYMB)
     ameba_set(c_LINK_ROM_SYMBOL    ${c_SDK_LD_DIR}/ameba_rom_symbol_acut.ld)
 else()
     ameba_set(c_LINK_ROM_LIB ${ROM_LIB_DIR}/rom.a)
-    ameba_set(c_LINK_ROM_SYMBOL ${c_SDK_LD_DIR}/ameba_rom_symbol_empty.a)
+    ameba_set(c_LINK_ROM_SYMBOL ${c_SDK_LD_DIR}/ameba_rom_symbol_empty.ld)
 endif()
 
 ameba_add_subdirectory(make/image2)

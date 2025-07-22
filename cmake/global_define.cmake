@@ -23,8 +23,14 @@ ameba_set_if_unset(v_GIC_VER 2)
 
 ameba_set_basedir(c_BASEDIR)
 ameba_set(c_CMAKE_FILES_DIR ${CMAKE_CURRENT_LIST_DIR})
+ameba_set(c_CMAKE_BUILD_DIR)
 ameba_set(c_COMPONENT_DIR ${c_BASEDIR}/component)
 ameba_set(c_EMPTY_C_FILE ${CMAKE_CURRENT_LIST_DIR}/empty_file.c)
+ameba_set(c_VALID_IMAGE_TYPES image1 image2 image3 gdb_floader imgtool_floader rom_ns rom_tz)
+
+#An empty object library with empty_file.c but remove or rename some sections
+ameba_set(c_EMPTY_C_OBJECT)         # File used like empty_file.c
+ameba_set(c_EMPTY_C_OBJECT_FILE)    # File used like empty_file.c
 
 #-------------------------#
 
@@ -53,6 +59,8 @@ ameba_set(c_CMPT_WPAN_DIR         ${c_COMPONENT_DIR}/wpan)
 
 ameba_set(c_CMPT_CRASHDUMP_DIR    ${c_COMPONENT_DIR}/soc/common/crashdump)
 ameba_set(c_CMPT_LZMA_DIR         ${c_COMPONENT_DIR}/soc/common/lzma)
+ameba_set(c_CMPT_ED25519_DIR      ${c_COMPONENT_DIR}/soc/common/rom_ed25519)
+ameba_set(c_CMPT_DIAGNOSE_DIR     ${c_COMPONENT_DIR}/soc/common/diagnose)
 #-------------------------#
 
 # Define dynamic dirs under component/
@@ -76,6 +84,7 @@ ameba_set(c_CMPT_SWLIB_DIR)
 ameba_set(c_CMPT_USRCFG_DIR)
 ameba_set(c_CMPT_VECTOR_DIR)
 ameba_set(c_CMPT_VERIFICATION_DIR)
+ameba_set(c_CMPT_XMODEM_DIR)
 
 #-------------------------#
 
@@ -125,15 +134,45 @@ ameba_set(c_SDK_LIB_SOC_DIR)
 ameba_set(c_SDK_IMAGE_FOLDER_NAME)
 ameba_set(c_SDK_IMAGE_TARGET_DIR)
 
+# scripts in ${c_SDK_IMAGE_UTILITY_DIR}
+ameba_set(c_SDK_ROM_SYMBOL_GEN_SCRIPT)
+ameba_set(c_SDK_ROM_SYMBOL_S_GEN_SCRIPT)
+ameba_set(c_SDK_ROM_TOTAL_SIZE_SCRIPT)
+ameba_set(c_SDK_ROM_CODE_ANALYZE_SCRIPT)
+ameba_set(c_SDK_EXTRACT_LD_SCRIPT)
+ameba_set(c_SDK_ROM_WIFI_SYMBOL_GEN_SCRIPT)
+
+#-------------------------#
+ameba_set_if(CONFIG_MP_INCLUDED c_MP y p_ELSE n)
+set(c_AXF2BIN_SCRIPT        ${c_BASEDIR}/tools/scripts/axf2bin.py)
+set(c_AXF2BIN_RUN python    ${c_AXF2BIN_SCRIPT})
+if(EXISTS ${c_BASEDIR}/tools/scripts/diagnose_format.py)
+  set(c_DIAG_FMT_SCRIPT       ${c_BASEDIR}/tools/scripts/diagnose_format.py)
+else()
+  set(c_DIAG_FMT_SCRIPT       ${c_BASEDIR}/tools/scripts/diagnose.py)
+endif()
+set(c_DIAG_FMT_RUN python   ${c_DIAG_FMT_SCRIPT})
+set(op_USAGE                ${c_AXF2BIN_RUN} -h)
+set(op_PREPEND_HEADER       ${c_AXF2BIN_RUN} prepend_header)
+set(op_OTA_PREPEND_HEADER   ${c_AXF2BIN_RUN} ota_prepend_header )
+set(op_PAD                  ${c_AXF2BIN_RUN} pad)
+set(op_FW_PACKAGE           ${c_AXF2BIN_RUN} fw_pack)
+set(op_COMPRESS             ${c_AXF2BIN_RUN} compress)
+set(op_PAD_BINARY           ${c_AXF2BIN_RUN} pad_binary)
+set(op_CUT                  ${c_AXF2BIN_RUN} cut)
+set(c_POST_BUILD_SCRIPT postbuild.cmake)
 ############################################################
 
 macro(ameba_reset_global_define)
+    ameba_set_if(CONFIG_MP_INCLUDED c_MP y p_ELSE n)
     ameba_set(c_FREERTOS_DIR ${c_COMPONENT_DIR}/os/freertos/freertos_${v_FREERTOS_VER}${c_FREERTOS_DIR_SUFFIX}/Source)
+    ameba_set(c_POSIX_DIR ${c_COMPONENT_DIR}/os/freertos/freertos_posix)
     ameba_set(c_LWIP_DIR ${c_COMPONENT_DIR}/lwip/lwip_${v_LWIP_VER})
     ameba_set(c_MBEDTLS_DIR ${c_COMPONENT_DIR}/ssl/mbedtls-${v_MBEDTLS_VER})
 
     #Dirs below depend on ${c_CMPT_SOC_DIR}, which is set after sco project is created
     ameba_set(c_CMPT_BOOTLOADER_DIR ${c_CMPT_SOC_DIR}/bootloader)
+    ameba_set(c_CMPT_GDB_FLOADER_DIR ${c_CMPT_SOC_DIR}/loader/gdb_floader)
     ameba_set(c_CMPT_CMSIS_DIR ${c_CMPT_SOC_DIR}/cmsis)
     ameba_set(c_CMPT_CMSIS_DSP_DIR ${c_CMPT_SOC_DIR}/cmsis-dsp)
     ameba_set(c_CMPT_FWLIB_DIR ${c_CMPT_SOC_DIR}/fwlib)
@@ -146,7 +185,18 @@ macro(ameba_reset_global_define)
     ameba_set(c_CMPT_VERIFICATION_DIR ${c_CMPT_SOC_DIR}/verification)
     ameba_set(c_CMPT_CHIPINFO_DIR ${c_CMPT_SOC_DIR}/lib/chipinfo)
     ameba_set(c_CMPT_MONITOR_DIR ${c_CMPT_SOC_DIR}/app/monitor)
+    ameba_set(c_CMPT_DOWNLOAD_XMODEM_DIR ${c_CMPT_SOC_DIR}/rom/download/xmodem)
+    ameba_set(c_CMPT_DOWNLOAD_USB_DIR ${c_CMPT_SOC_DIR}/rom/download/usb)
     ameba_set(c_CMPT_PMC_DIR ${c_CMPT_SOC_DIR}/lib/pmc)
+    ameba_set(c_CMPT_ROM_DIR ${c_CMPT_SOC_DIR}/rom)
+
+    set(c_AXF2BIN_RUN python    ${c_BASEDIR}/tools/scripts/axf2bin.py --mp ${c_MP})
+    set(op_PREPEND_HEADER       ${c_AXF2BIN_RUN} prepend_header)
+    set(op_OTA_PREPEND_HEADER   ${c_AXF2BIN_RUN} ota_prepend_header )
+    set(op_PAD                  ${c_AXF2BIN_RUN} pad)
+    set(op_FW_PACKAGE           ${c_AXF2BIN_RUN} fw_pack)
+    set(op_COMPRESS             ${c_AXF2BIN_RUN} compress)
+    set(op_PAD_BINARY           ${c_AXF2BIN_RUN} pad_binary)
 endmacro()
 
 ############################################################

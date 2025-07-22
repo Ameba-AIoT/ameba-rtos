@@ -46,7 +46,6 @@ macro(ameba_fatal msg)
     endif()
 endmacro()
 
-
 macro(ameba_option var description value)
     option(${var} ${description} "${value}")
 endmacro()
@@ -330,6 +329,64 @@ macro(ameba_normalize_path output_path input_path)
         get_filename_component(${output_path} ${${output_path}} ABSOLUTE)
     endif()
 endmacro()
+
+function(ameba_modify_file_path original_path output_var)
+    set(oneValueArgs
+        p_PREFIX
+        p_BODY
+        p_SUFFIX
+        p_NEW_DIRECTORY
+    )
+    cmake_parse_arguments(ARG "" "${oneValueArgs}" "" ${ARGN})
+
+    get_filename_component(original_directory "${original_path}" DIRECTORY)
+    get_filename_component(filename "${original_path}" NAME)
+
+    get_filename_component(name "${filename}" NAME_WE)
+    get_filename_component(ext "${filename}" EXT)
+
+    if(ARG_p_BODY)
+        set(new_name "${ARG_p_BODY}")
+    else()
+        set(new_name "${name}")
+    endif()
+
+    set(new_filename "${ARG_p_PREFIX}${new_name}${ARG_p_SUFFIX}${ext}")
+
+    if(ARG_p_NEW_DIRECTORY)
+        set(output_directory "${ARG_p_NEW_DIRECTORY}")
+    else()
+        set(output_directory "${original_directory}")
+    endif()
+    ameba_set_if(output_directory new_path "${output_directory}/${new_filename}" p_ELSE ${new_filename})
+    set(${output_var} "${new_path}" PARENT_SCOPE)
+endfunction()
+
+function(ameba_file_append output_file)
+    ameba_modify_file_path(${output_file} output_file_tmp p_SUFFIX _tmp p_PREFIX ameba_file_append_)
+    ameba_execute_process(
+        COMMAND ${CMAKE_COMMAND} -E rename ${output_file} ${output_file_tmp}
+    )
+    ameba_execute_process(
+        COMMAND ${CMAKE_COMMAND} -E cat ${output_file_tmp} ${ARGN}
+        OUTPUT_FILE ${output_file}
+    )
+    ameba_execute_process(
+        COMMAND ${CMAKE_COMMAND} -E remove ${output_file_tmp}
+    )
+endfunction()
+
+function(ameba_copy_file src_file dst_file)
+    ameba_execute_process(
+        COMMAND ${CMAKE_COMMAND} -E copy ${src_file} ${dst_file}
+    )
+endfunction()
+
+function(ameba_remove_file)
+    ameba_execute_process(
+        COMMAND ${CMAKE_COMMAND} -E remove ${ARGN}
+    )
+endfunction()
 ########################################################################################################
 # Usage:
 #   ameba_build_info_gen(<output> <var> [<value> ...] [p_LIB_NAME <libname>])
@@ -363,6 +420,16 @@ function(ameba_build_info_gen output)
     string(TIMESTAMP _configuration_time "%Y/%m/%d-%H:%M:%S")
 
     configure_file(${c_CMAKE_FILES_DIR}/git_version.c.in ${output} @ONLY)
+endfunction()
+
+function(ameba_delay_second seconds)
+    if(UNIX)
+        execute_process(COMMAND sleep ${seconds})
+    elseif(WIN32)
+        execute_process(COMMAND timeout /t ${seconds} /nobreak)
+    else()
+        message(WARNING "Unsupported platform for sleep. No delay will occur.")
+    endif()
 endfunction()
 ########################################################################################################
 
@@ -1056,14 +1123,123 @@ endfunction()
 
 # Usage:
 #   ameba_execute([<cmd> ...])
-function(ameba_execute)
-    foreach(cmd IN LISTS ARGN)
-        execute_process(COMMAND "${cmd}"
-            OUTPUT_VARIABLE output
-            ERROR_VARIABLE error
-        )
-        message("execute: ${cmd}, ${output}, ${error}")
+function(ameba_execute_process)
+    set(options
+        p_SHOW_OUTPUT
+    )
+
+    cmake_parse_arguments(ARG "${options}" "" "" ${ARGN})
+    if(ARG_p_SHOW_OUTPUT)
+        list(REMOVE_ITEM ARGN p_SHOW_OUTPUT)
+    endif()
+    execute_process(${ARGN}
+        RESULT_VARIABLE RESULT
+        RESULTS_VARIABLE RESULTS
+        OUTPUT_VARIABLE OUTPUT
+        ERROR_VARIABLE ERROR
+    )
+
+    set(COMMAND_FAILED FALSE)
+    set(COMMAND_FAILED_CODE FALSE)
+    foreach(RES ${RESULTS})
+        if(NOT RES EQUAL 0)
+            set(COMMAND_FAILED TRUE)
+            set(COMMAND_FAILED_CODE ${RES})
+            break()
+        endif()
     endforeach()
+
+    if(COMMAND_FAILED)
+        message(STATUS "Command >>${ARGN}<< failed with result: ${COMMAND_FAILED_CODE}")
+        message(STATUS "Command output: \n${OUTPUT}")
+        message(FATAL_ERROR "Command error: \n${ERROR}")
+    elseif(ARG_p_SHOW_OUTPUT)
+        message("${OUTPUT}")
+    endif()
+endfunction()
+
+function(ameba_axf2bin_pad input_file length)
+    ameba_execute_process(COMMAND ${op_PAD}
+        -i ${input_file}
+        -l ${length}
+    )
+endfunction()
+
+function(ameba_axf2bin_prepend_head output_file input_file symbol map_file)
+    set(oneValueArgs
+        p_BOOT_INDEX
+    )
+    cmake_parse_arguments(ARG "" "${oneValueArgs}" "" ${ARGN})
+    if (ARG_p_BOOT_INDEX)
+        ameba_execute_process(COMMAND ${op_PREPEND_HEADER}
+            -o ${output_file}
+            -i ${input_file}
+            -s ${symbol}
+            -m ${map_file}
+            --boot-index ${ARG_p_BOOT_INDEX}
+        )
+    else()
+        ameba_execute_process(COMMAND ${op_PREPEND_HEADER}
+            -o ${output_file}
+            -i ${input_file}
+            -s ${symbol}
+            -m ${map_file}
+        )
+    endif()
+endfunction()
+
+# Usage:
+#   ameba_axf2bin_ota_prepend_head(<output_file> [<input_file> ...])
+function(ameba_axf2bin_ota_prepend_head output_file)
+    ameba_execute_process(
+        COMMAND ${op_OTA_PREPEND_HEADER}
+            -i ${ARGN}
+            -o ${output_file}
+    )
+endfunction()
+
+function(ameba_axf2bin_compress output_file input_file)
+    ameba_execute_process(
+        COMMAND ${op_COMPRESS}
+            -i ${input_file}
+            -o ${output_file}
+    )
+endfunction()
+
+function(ameba_axf2bin_fw_pack output_file)
+    set(options
+        p_SHOW_OUTPUT
+    )
+    set(oneValueArgs
+        p_IMAGE3
+        p_FULLMAC_IMAGE1
+        p_FULLMAC_IMAGE2
+        p_IMAGE_IMGTOOL_FLOADER
+        p_DSP
+    )
+    set(multiValueArgs
+        p_IMAGE1
+        p_IMAGE2
+        p_SBOOT_FOR_IMAGE
+    )
+    cmake_parse_arguments(ARG "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    set(full_args -o ${output_file})
+
+    ameba_list_append_if(ARG_p_IMAGE1 full_args --image1 ${ARG_p_IMAGE1})
+    ameba_list_append_if(ARG_p_IMAGE2 full_args --image2 ${ARG_p_IMAGE2})
+    ameba_list_append_if(ARG_p_IMAGE3 full_args --image3 ${ARG_p_IMAGE3})
+    ameba_list_append_if(ARG_p_FULLMAC_IMAGE1 full_args --fullmac-image1 ${ARG_p_FULLMAC_IMAGE1})
+    ameba_list_append_if(ARG_p_FULLMAC_IMAGE2 full_args --fullmac-image2 ${ARG_p_FULLMAC_IMAGE2})
+    ameba_list_append_if(ARG_p_IMAGE_IMGTOOL_FLOADER full_args --imgtool-floader ${ARG_p_IMAGE_IMGTOOL_FLOADER})
+    ameba_list_append_if(ARG_p_DSP full_args --dsp ${ARG_p_DSP})
+    ameba_list_append_if(ARG_p_SBOOT_FOR_IMAGE full_args --sboot-for-image ${ARG_p_SBOOT_FOR_IMAGE})
+
+    if(ARG_p_SHOW_OUTPUT)
+        ameba_execute_process(p_SHOW_OUTPUT COMMAND ${op_FW_PACKAGE} ${full_args})
+    else()
+        ameba_execute_process(COMMAND ${op_FW_PACKAGE} ${full_args})
+    endif()
 endfunction()
 
 # get all include directories of target recursively.
@@ -1471,7 +1647,8 @@ function(ameba_target_add name)
 
     if (ARG_p_DROP_IF_NO_SOURCES)
         if(NOT ARG_p_ADD_EMPTY_C_FILE AND NOT ARG_p_SOURCES AND NOT srcs_from_libs)
-            ameba_warning("target ${c_CURRENT_TARGET_NAME} has no source, abort")
+            ameba_warning("Target ${c_CURRENT_TARGET_NAME} dropped: no source given")
+            unset(c_CURRENT_TARGET_NAME PARENT_SCOPE)
             return()
         endif()
     endif()
@@ -1614,6 +1791,8 @@ function(ameba_target_add name)
             set_property(GLOBAL APPEND PROPERTY ${prop} ${c_CURRENT_TARGET_NAME})
         endforeach()
     endif()
+    ameba_target_get_output_info(${c_CURRENT_TARGET_NAME} o_path o_name)
+    set(${c_CURRENT_TARGET_FILE} ${o_path}/${o_name} PARENT_SCOPE)
     #TODO: why not create target and call ameba_target_set?
 endfunction()
 

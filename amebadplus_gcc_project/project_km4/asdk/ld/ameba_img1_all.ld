@@ -1,6 +1,6 @@
 ENTRY(Reset_Handler)
 
-#include "../../../amebaDplus_layout.ld"
+#include "../../../ameba_layout.ld"
 #include "project_km4/platform_autoconf.h"
 /* define common load memory address */
 #ifdef  GENERATE_FLOADER_LD

@@ -337,6 +337,7 @@ void bt_stack_hid_deinit(void)
 	bt_hid_deinit();
 	if (pdescriptor) {
 		osif_mem_free((void *)pdescriptor);
+		pdescriptor = NULL;
 	}
 }
 
