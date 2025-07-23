@@ -1,4 +1,4 @@
-ameba_add_image(target_img2)
+ameba_add_image(target_img2 p_IMAGE_ALL ap_image_all.bin)
 # Use variable c_CURRENT_IMAGE to represent full image target name
 # set(c_CURRENT_IMAGE_TYPE "image2") #TODO: remove this line if ameba_add_image() above is uncommented
 
@@ -39,10 +39,14 @@ ameba_add_subdirectory(${c_MCU_PROJECT_DIR}/src)
 # TODO: need to catch the error
 add_custom_target(atf ALL
     COMMAND ${CMAKE_COMMAND} -E echo "Building atf project"
-    # COMMAND ${CMAKE_COMMAND} -E make_directory ${c_SDK_IMAGE_TARGET_DIR}
     COMMAND make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${c_SOC_PROJECT_DIR}/project_ap BUILD_BASE=${CMAKE_BINARY_DIR} -C ${c_CMPT_SOC_DIR}/atf all
     WORKING_DIRECTORY ${c_CMPT_SOC_DIR}/atf
     COMMENT "Building atf project using make"
+)
+
+set_target_properties(atf PROPERTIES
+    ADDITIONAL_CLEAN_FILES
+        ${CMAKE_BINARY_DIR}/project_ap/asdk/make/atf
 )
 
 ameba_target_depend(${c_CURRENT_IMAGE} atf)
@@ -103,6 +107,7 @@ add_custom_command(
         -Dc_CMAKE_FILES_DIR=${c_CMAKE_FILES_DIR} # dir of cmake scripts
         -Dc_SOC_PROJECT_DIR=${c_SOC_PROJECT_DIR} # dir of soc project
         -Dc_MCU_PROJECT_DIR=${c_MCU_PROJECT_DIR} # dir of current mcu project
+        -Dc_MCU_PROJECT_NAME=${c_MCU_PROJECT_NAME} # name of current mcu project
         -Dc_SDK_IMAGE_TARGET_DIR=${c_SDK_IMAGE_TARGET_DIR} # dir of image output
         -DBUILD_BASE=${CMAKE_BINARY_DIR}
         -Dc_MCU_KCONFIG_FILE=${c_MCU_KCONFIG_FILE}
@@ -115,7 +120,6 @@ add_custom_command(
         -DDAILY_BUILD=${DAILY_BUILD}
 
         # special variables for current image
-        -DKM4_PROJECT_DIR=${HP_PROJECT_DIR}
 
         # cmake toolchain variables
         -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR}
@@ -123,7 +127,7 @@ add_custom_command(
         -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
         -DCROSS_COMPILE=${CROSS_COMPILE}
 
-        -P ${CMAKE_CURRENT_SOURCE_DIR}/postbuild.cmake
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/${c_POST_BUILD_SCRIPT}
     DEPENDS ${c_CURRENT_IMAGE}
     COMMENT "${c_CURRENT_IMAGE} post handle"
 )
@@ -143,12 +147,11 @@ add_custom_target(
 
 set(clean_files
     ${c_SDK_IMAGE_TARGET_DIR}
-    ${c_MCU_PROJECT_DIR}/asdk/build/atf
 )
 
 set(link_deps
     ${IMG2_LD}
-    ${c_SOC_PROJECT_DIR}/${c_SOC_TYPE}_layout.ld
+    ${c_SOC_PROJECT_DIR}/ameba_layout.ld
 )
 
 set_target_properties(${c_CURRENT_IMAGE} PROPERTIES

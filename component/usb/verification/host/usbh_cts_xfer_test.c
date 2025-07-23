@@ -512,7 +512,7 @@ int cmd_usbh_xfer_test(u16 argc, u8  *argv[])
 
 	if (argc < 2) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid arguments, usage:\n");
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "  usbh cts setp1/step2/deinit\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "  usbh xfer setp1/step2/deinit\n");
 		return HAL_ERR_PARA;
 	}
 

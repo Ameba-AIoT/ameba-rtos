@@ -1,6 +1,6 @@
 ENTRY(Reset_Handler)
 
-#include "../../../amebaDplus_layout.ld"
+#include "../../../ameba_layout.ld"
 #include "project_km4/platform_autoconf.h"
 #ifdef CONFIG_IMG3_SRAM
 	#define LMA_TZ_NSC 		KM4_BD_RAM_TZ_NSC

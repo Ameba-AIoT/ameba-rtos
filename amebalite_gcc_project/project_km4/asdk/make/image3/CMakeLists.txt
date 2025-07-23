@@ -1,4 +1,4 @@
-ameba_add_image(target_img3)
+ameba_add_image(target_img3 p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_image3_all.bin)
 # variable c_CURRENT_IMAGE value is target_img3_km4
 
 ###############################  ADD COMPONENT  ###################################
@@ -56,20 +56,26 @@ add_custom_command(
     COMMAND ${CMAKE_READELF} -s ${c_SDK_IMAGE_TARGET_DIR}/cmse_implib.lib > ${c_SDK_IMAGE_TARGET_DIR}/cmse_implib.txt
     COMMAND ${CMAKE_OBJDUMP} -j .gnu.sgstubs -d ${c_SDK_IMAGE_TARGET_DIR}/target_img3.axf > ${c_SDK_IMAGE_TARGET_DIR}/cmse_implib.asm
 
-    COMMAND ${CMAKE_COMMAND} -E echo "  BIN      km4_image3_all.bin"
+    COMMAND ${CMAKE_COMMAND} -E echo "  BIN      ${c_MCU_PROJECT_NAME}_image3_all.bin"
     COMMAND ${CMAKE_OBJCOPY}  -j .ram_image3.text -j .ram_image3.data -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img3.axf ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s.bin
     COMMAND ${CMAKE_OBJCOPY}  -j .gnu.sgstubs -j .ram_image3.entry -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img3.axf ${c_SDK_IMAGE_TARGET_DIR}/ram_3_nsc.bin
 
     COMMAND ${CMAKE_COMMAND} -E echo "========== Image manipulating start =========="
-    COMMAND ${PADTOOL} ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s.bin 32
-    COMMAND ${PADTOOL} ${c_SDK_IMAGE_TARGET_DIR}/ram_3_nsc.bin 32
+    COMMAND ${op_PAD} -i ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s.bin -l 32
+    COMMAND ${op_PAD} -i ${c_SDK_IMAGE_TARGET_DIR}/ram_3_nsc.bin -l 32
 
-    COMMAND ${PREPENDTOOL} ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s.bin  __ram_image3_text_start__  ${c_SDK_IMAGE_TARGET_DIR}/target_img3.map
-    COMMAND ${PREPENDTOOL} ${c_SDK_IMAGE_TARGET_DIR}/ram_3_nsc.bin  __ram_image3_nsc_start__  ${c_SDK_IMAGE_TARGET_DIR}/target_img3.map
+    COMMAND ${op_PREPEND_HEADER}
+        -o ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s_prepend.bin
+        -i ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s.bin
+        -s __ram_image3_text_start__
+        -m ${c_SDK_IMAGE_TARGET_DIR}/target_img3.map
+    COMMAND ${op_PREPEND_HEADER}
+        -o ${c_SDK_IMAGE_TARGET_DIR}/ram_3_nsc_prepend.bin
+        -i ${c_SDK_IMAGE_TARGET_DIR}/ram_3_nsc.bin
+        -s __ram_image3_nsc_start__
+        -m ${c_SDK_IMAGE_TARGET_DIR}/target_img3.map
 
-    COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/ram_3_nsc_prepend.bin > ${c_SDK_IMAGE_TARGET_DIR}/km4_image3_all.bin
-
-    COMMAND ${IMAGETOOL} ${c_SDK_IMAGE_TARGET_DIR}/km4_image3_all.bin ${BUILD_TYPE}
+    COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/ram_3_nsc_prepend.bin > ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_image3_all.bin
 
     DEPENDS ${c_CURRENT_IMAGE}
     WORKING_DIRECTORY ${c_SOC_PROJECT_DIR}

@@ -1,4 +1,4 @@
-ameba_add_image(target_loader)
+ameba_add_image(target_loader p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_boot_all.bin)
 # variable c_CURRENT_IMAGE value is target_loader_${PROJECT_NAME}
 
 ###############################  ADD COMPONENT  ###################################
@@ -50,7 +50,7 @@ add_custom_command(TARGET ${c_CURRENT_IMAGE} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/target_loader.axf ${c_SDK_IMAGE_TARGET_DIR}/target_pure_loader.axf
     COMMAND ${CMAKE_STRIP} ${c_SDK_IMAGE_TARGET_DIR}/target_pure_loader.axf
 
-    COMMAND ${CMAKE_COMMAND} -E echo "  BIN      km4_boot_all.bin"
+    COMMAND ${CMAKE_COMMAND} -E echo "  BIN      ${c_MCU_PROJECT_NAME}_boot_all.bin"
 
     COMMAND ${CMAKE_COMMAND}
         # common variables
@@ -58,6 +58,7 @@ add_custom_command(TARGET ${c_CURRENT_IMAGE} POST_BUILD
         -Dc_CMAKE_FILES_DIR=${c_CMAKE_FILES_DIR} # dir of cmake scripts
         -Dc_SOC_PROJECT_DIR=${c_SOC_PROJECT_DIR} # dir of soc project
         -Dc_MCU_PROJECT_DIR=${c_MCU_PROJECT_DIR} # dir of current mcu project
+        -Dc_MCU_PROJECT_NAME=${c_MCU_PROJECT_NAME} # name of current mcu project
         -Dc_MCU_KCONFIG_FILE=${c_MCU_KCONFIG_FILE} # file of current project's kconfig file
         -Dc_SDK_IMAGE_TARGET_DIR=${c_SDK_IMAGE_TARGET_DIR} # dir of image output
 
@@ -72,12 +73,12 @@ add_custom_command(TARGET ${c_CURRENT_IMAGE} POST_BUILD
         -DCMAKE_SIZE=${CMAKE_SIZE}
         -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
 
-        -P ${CMAKE_CURRENT_SOURCE_DIR}/postbuild.cmake
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/${c_POST_BUILD_SCRIPT}
 )
 ################################  EXTRA PROCESS  ###################################
 set(clean_files
     ${c_SDK_IMAGE_TARGET_DIR}
-    ${FINAL_IMAGE_DIR}/km4_boot_all.bin
+    ${FINAL_IMAGE_DIR}/${c_MCU_PROJECT_NAME}_boot_all.bin
 )
 
 set(link_deps

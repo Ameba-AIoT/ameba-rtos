@@ -3677,9 +3677,10 @@ int bt_gmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 				} else if ((RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR) == sound_channel) {
 #if defined(RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT
 					p_lea_app_conf->cap_param.csis_param.csis_cfg = RTK_BT_LEA_CSIS_CFG_RANK_1;
-					p_lea_app_conf->cap_param.csis_param.csis_size = 1,
+					p_lea_app_conf->cap_param.csis_param.csis_size = 1;
+					memset(p_lea_app_conf->cap_param.csis_param.csis_sirk, 0, RTK_BT_LE_CSIS_SIRK_LEN);
 #endif
-									p_lea_app_conf->pacs_param.sink_audio_location = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
+					p_lea_app_conf->pacs_param.sink_audio_location = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
 					p_lea_app_conf->pacs_param.source_audio_location = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
 					channel[0] = 'S';
 				} else {
@@ -3855,9 +3856,10 @@ int bt_gmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 				} else if ((RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR) == sound_channel) {
 #if defined(RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT
 					p_lea_app_conf->cap_param.csis_param.csis_cfg = RTK_BT_LEA_CSIS_CFG_RANK_1;
-					p_lea_app_conf->cap_param.csis_param.csis_size = 1,
+					p_lea_app_conf->cap_param.csis_param.csis_size = 1;
+					memset(p_lea_app_conf->cap_param.csis_param.csis_sirk, 0, RTK_BT_LE_CSIS_SIRK_LEN);
 #endif
-									p_lea_app_conf->pacs_param.sink_audio_location = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
+					p_lea_app_conf->pacs_param.sink_audio_location = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
 					p_lea_app_conf->pacs_param.source_audio_location = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
 					channel[0] = 'S';
 				} else {

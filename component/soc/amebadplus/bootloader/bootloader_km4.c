@@ -464,11 +464,6 @@ void SDIO_Pinmux_pre_init(void)
 //3 Image 1
 void BOOT_Image1(void)
 {
-#if defined(CONFIG_WHC_INTF_SDIO)
-	/*Sdio pinmux pre init advanced to bootloader. If done too late, it may cause host side SDIO card recognition timeout, resulting in sdio power supply failure. */
-	SDIO_Pinmux_pre_init();
-#endif
-
 	PRAM_START_FUNCTION Image2EntryFun = BOOT_SectionInit();
 	//STDLIB_ENTRY_TABLE *prom_stdlib_export_func = (STDLIB_ENTRY_TABLE *)__rom_stdlib_text_start__;
 	u32 *vector_table = NULL;
@@ -476,6 +471,12 @@ void BOOT_Image1(void)
 	RRAM_TypeDef *rram = RRAM_DEV;
 
 	_memset((void *) __image1_bss_start__, 0, (__image1_bss_end__ - __image1_bss_start__));
+
+#if defined(CONFIG_WHC_INTF_SDIO)
+	/*Sdio pinmux pre init advanced to bootloader. If done too late, it may cause host side SDIO card recognition timeout, resulting in sdio power supply failure. */
+	SDIO_Pinmux_pre_init();
+#endif
+
 	BOOT_ReasonSet();
 
 	Peripheral_Reset();

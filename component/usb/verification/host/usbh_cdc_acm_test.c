@@ -173,13 +173,18 @@ static int cdc_acm_cb_transmit(usbh_urb_state_t state)
 static int cdc_acm_cb_receive(u8 *buf, u32 length)
 {
 	UNUSED(buf);
+	u16 bulk_in_mps = usbh_cdc_acm_get_bulk_ep_mps();
+
 	//limited the copy length
 	if ((length > 0) && ((usbh_cdc.total_rx_len + length) <= usbh_cdc.xfer_size)) {
 		//memcpy(usbh_cdc.rx_buf + usbh_cdc.total_rx_len, buf, length);//rm memcpy for high TP
 	}
 	usbh_cdc.total_rx_len += length;
+
 	//ZLP or short packet
-	if ((length == 0) || (length % usbh_cdc_acm_get_bulk_ep_mps())) {
+	if ((length == 0) || (length % bulk_in_mps)
+		|| ((length % bulk_in_mps == 0) && (length < usbh_cdc.xfer_size))
+		|| usbh_cdc.total_rx_len > usbh_cdc.xfer_size) {
 		usbh_cdc.total_rx_len = 0;
 		rtos_sema_give(usbh_cdc.rx_sema);
 	}

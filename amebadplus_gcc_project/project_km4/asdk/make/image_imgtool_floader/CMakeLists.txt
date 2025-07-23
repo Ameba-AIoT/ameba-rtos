@@ -78,6 +78,7 @@ add_custom_command(TARGET ${c_CURRENT_IMAGE} POST_BUILD
         -Dc_CMAKE_FILES_DIR=${c_CMAKE_FILES_DIR} # dir of cmake scripts
         -Dc_SOC_PROJECT_DIR=${c_SOC_PROJECT_DIR} # dir of soc project
         -Dc_MCU_PROJECT_DIR=${c_MCU_PROJECT_DIR} # dir of current mcu project
+        -Dc_MCU_PROJECT_NAME=${c_MCU_PROJECT_NAME} # name of current mcu project
         -Dc_MCU_KCONFIG_FILE=${c_MCU_KCONFIG_FILE} # file of current project's kconfig file
         -Dc_SDK_IMAGE_TARGET_DIR=${c_SDK_IMAGE_TARGET_DIR} # dir of image output
 
@@ -95,10 +96,9 @@ add_custom_command(TARGET ${c_CURRENT_IMAGE} POST_BUILD
         -DCMAKE_SIZE=${CMAKE_SIZE}
         -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
 
-        -P ${CMAKE_CURRENT_SOURCE_DIR}/../image1/postbuild.cmake
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/../image1/${c_POST_BUILD_SCRIPT}
 
-    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/ram_1_prepend.bin           ${c_SDK_FLOADER_BIN_DIR}/imgtool_flashloader_raw.bin
-    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/imgtool_flashloader.bin     ${c_SDK_FLOADER_BIN_DIR}/floader_amebadplus.bin
+    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/imgtool_flashloader.bin     ${c_SDK_FLOADER_BIN_DIR}/floader_${c_SOC_TYPE}.bin
     COMMAND ${CMAKE_COMMAND} -E remove -f ${c_SDK_IMAGE_TARGET_DIR}/imgtool_flashloader.bin
 )
 

@@ -2342,6 +2342,7 @@ static rtk_bt_evt_cb_ret_t app_bt_a2dp_callback(uint8_t evt_code, void *param, u
 				pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
 		BT_AT_PRINT("+BTA2DP:start,%d,%d\r\n",
 					pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
+		a2dp_play_flag = true;
 		if (a2dp_audio_track_hdl) {
 			rtk_bt_audio_track_resume(a2dp_audio_track_hdl->audio_track_hdl);
 		}
@@ -2512,7 +2513,6 @@ static uint16_t app_bt_le_audio_lc3_codec_entity_remove(void *codec_entity)
 	return rtk_bt_audio_codec_remove(RTK_BT_AUDIO_CODEC_LC3, codec_entity);
 }
 
-#if defined(RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT
 static rtk_bt_audio_track_t *app_bt_le_audio_track_add(rtk_bt_le_audio_cfg_codec_t *p_codec)
 {
 	float left_volume = 0.0, right_volume = 0.0;
@@ -2545,7 +2545,6 @@ static rtk_bt_audio_track_t *app_bt_le_audio_track_add(rtk_bt_le_audio_cfg_codec
 	return rtk_bt_audio_track_add(RTK_BT_AUDIO_CODEC_LC3, (float)left_volume, (float)right_volume,
 								  channels, rate, BT_AUDIO_FORMAT_PCM_16_BIT, duration, NULL, true);
 }
-#endif
 
 static uint16_t app_bt_le_audio_add_data_path(uint16_t iso_conn_handle, void *p_iso_chann, rtk_bt_le_audio_iso_data_path_direction_t path_direction,
 											  rtk_bt_le_audio_cfg_codec_t codec_t)
@@ -2563,14 +2562,23 @@ static uint16_t app_bt_le_audio_add_data_path(uint16_t iso_conn_handle, void *p_
 				BT_LOGE("[APP] %s: codec add fail \r\n", __func__);
 				goto error;
 			}
+			if (RTK_BLE_AUDIO_ISO_DATA_PATH_RX == app_le_audio_data_path[i].path_direction) {
+				app_le_audio_data_path[i].p_track_hdl = app_bt_le_audio_track_add(&app_le_audio_data_path[i].codec_t);
+				if (!app_le_audio_data_path[i].p_track_hdl) {
+					BT_LOGE("[APP] %s track add fail \r\n", __func__);
+					app_bt_le_audio_lc3_codec_entity_remove(app_le_audio_data_path[i].p_codec_entity);
+					goto error;
+				}
+			} else {
 #if defined(RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT
-			app_le_audio_data_path[i].p_track_hdl = app_bt_le_audio_track_add(&app_le_audio_data_path[i].codec_t);
-			if (!app_le_audio_data_path[i].p_track_hdl) {
-				BT_LOGE("[APP] %s track add fail \r\n", __func__);
-				app_bt_le_audio_lc3_codec_entity_remove(app_le_audio_data_path[i].p_codec_entity);
-				goto error;
-			}
+				app_le_audio_data_path[i].p_track_hdl = app_bt_le_audio_track_add(&app_le_audio_data_path[i].codec_t);
+				if (!app_le_audio_data_path[i].p_track_hdl) {
+					BT_LOGE("[APP] %s track add fail \r\n", __func__);
+					app_bt_le_audio_lc3_codec_entity_remove(app_le_audio_data_path[i].p_codec_entity);
+					goto error;
+				}
 #endif
+			}
 			return 0;
 error:
 			memset((void *)&app_le_audio_data_path[i], 0, sizeof(app_bt_le_audio_data_path_t));
@@ -3022,11 +3030,14 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 				last_pkt_num[cur_idx] = p_bt_direct_iso->pkt_seq_num;
 			}
 #endif
-			if (app_bt_le_audio_data_received(p_bt_direct_iso->iso_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_RX,
-											  p_bt_direct_iso->p_buf + p_bt_direct_iso->offset,
-											  p_bt_direct_iso->iso_sdu_len)) {
-				BT_LOGE("[APP] %s app le audio data parsing fail \r\n", __func__);
-				break;
+			// BIS sink play suspend when A2DP local play
+			if (!a2dp_play_flag) {
+				if (app_bt_le_audio_data_received(p_bt_direct_iso->iso_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_RX,
+												  p_bt_direct_iso->p_buf + p_bt_direct_iso->offset,
+												  p_bt_direct_iso->iso_sdu_len)) {
+					BT_LOGE("[APP] %s app le audio data parsing fail \r\n", __func__);
+					break;
+				}
 			}
 		}
 		break;
@@ -3052,6 +3063,11 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 		rtk_bt_le_audio_big_setup_data_path_ind_t *param = (rtk_bt_le_audio_big_setup_data_path_ind_t *)data;
 		BT_LOGA("[APP] broadcast sink big setup data path ind: bis_conn_handle: %08x, idx 0x%x, cause: 0x%x\r\n",
 				param->bis_conn_handle, param->bis_idx, param->cause);
+		// A2DP local play suspend
+		if (a2dp_audio_track_hdl) {
+			rtk_bt_audio_track_pause(a2dp_audio_track_hdl->audio_track_hdl);
+			rtk_bt_avrcp_pause(remote_bd_addr);
+		}
 		big_sync_handle = param->sync_handle;
 		app_bt_le_audio_add_data_path(param->iso_chann_t.iso_conn_handle,
 									  param->iso_chann_t.p_iso_chann,
@@ -3089,6 +3105,8 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 
 		BT_AT_PRINT("+BLEBAP:setup path bis_idx,bis_conn_handle,cause,0x%x,0x%x,0x%x\r\n",
 					param->bis_idx, param->bis_conn_handle, param->cause);
+		/* stop escan previously to avoid insufficent RF bandwidth */
+		rtk_bt_le_audio_ext_scan_act(false);
 		/* stop BIG sync if exsit*/
 		if (big_sync_handle) {
 			rtk_bt_le_audio_broadcast_big_sync_terminate_by_handle(big_sync_handle);
@@ -3611,6 +3629,8 @@ static rtk_bt_evt_cb_ret_t app_bt_hfp_callback(uint8_t evt_code, void *param, ui
 		BT_AT_PRINT("+BTHFP:sco_conn,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
 					phfp_codec->bd_addr[5], phfp_codec->bd_addr[4], phfp_codec->bd_addr[3],
 					phfp_codec->bd_addr[2], phfp_codec->bd_addr[1], phfp_codec->bd_addr[0]);
+		/* stop escan previously to avoid insufficent RF bandwidth */
+		rtk_bt_le_audio_ext_scan_act(false);
 		/* pause a2dp firstly */
 		if (a2dp_audio_track_hdl) {
 			rtk_bt_avrcp_pause(remote_bd_addr);
@@ -4054,8 +4074,6 @@ int bt_a2dp_hfp_pbp_main(uint8_t enable)
 			hfp_task.sem = NULL;
 			rtk_bt_audio_codec_remove(audio_hfp_codec_conf.codec_index, hfp_codec_entity);
 		}
-		/* Disable BT */
-		BT_APP_PROCESS(rtk_bt_disable());
 		/* LE Audio APP data path remove */
 		app_bt_le_audio_remove_data_path_all();
 		/* Deinitialize Scan list */
@@ -4069,8 +4087,13 @@ int bt_a2dp_hfp_pbp_main(uint8_t enable)
 			INIT_LIST_HEAD(&scan_dev_queue.head);
 		}
 		/* APP Audio deinit */
-		call_curr_status = 0;
 		rtk_bt_audio_deinit();
+		/* Disable BT */
+		BT_APP_PROCESS(rtk_bt_disable());
+		lea_broadcast_start = false;
+		pbp_broadcast_dequeue_flag = false;
+		a2dp_play_flag = false;
+		call_curr_status = 0;
 		a2dp_audio_track_hdl = NULL;
 		big_sync_handle = NULL;
 		a2dp_codec_entity = NULL;

@@ -1,6 +1,6 @@
 /* ENTRY(Reset_Handler) */
 
-INCLUDE "../../amebalite_layout.ld"
+INCLUDE "../../ameba_layout.ld"
 
 /* just build stdlib_link.c to link all stdlib funtions like printf/scanf/.... */
 SECTIONS

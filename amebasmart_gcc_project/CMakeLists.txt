@@ -17,7 +17,7 @@ set(v_MBEDTLS_VER 3.6.2)
 set(v_AMEBA_LOG_LEVEL ${c_AMEBA_LOG_LEVEL_INFO})
 set(c_VERBOSE_MAKEFILE FALSE)
 ###############################################################################
-ameba_soc_project_create(amebasmart)
+ameba_soc_project_create(amebasmart p_OUTPUT_MCU_PROJECT hp)
 
 #WARNING: project MUST be called after ameba_soc_project_create()
 project(${c_SOC_TYPE} LANGUAGES C CXX ASM)
@@ -35,6 +35,33 @@ set(LP_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/project_lp)
 ameba_add_subdirectory(project_ap)
 ameba_add_subdirectory(project_hp)
 ameba_add_subdirectory(project_lp)
+###############################################################################
+
+###############################################################################
+# Package final firmware
+#NOTE: import_kconfig is used for ameba_set_if... later
+configure_file(${c_MENUCONFIG_DIR}/.config ${CMAKE_CURRENT_BINARY_DIR}/.config COPYONLY)
+import_kconfig("CONFIG" ${CMAKE_CURRENT_BINARY_DIR}/.config)
+# ameba_set_if(CONFIG_MP_INCLUDED c_SDK_IMAGE_FOLDER_NAME image_mp p_ELSE image)
+
+if(CONFIG_LINUX_FW_EN)
+    ameba_set_if(CONFIG_MP_INCLUDED app_name km0_km4_app_mp.bin p_ELSE km0_km4_app.bin)
+    ameba_firmware_package(
+        ${app_name}     #Output app name, referred by c_APP_BINARY_NAME in postbuild.cmake
+        p_MCU_PROJECTS  #MCU project list, notice the ORDER is important which determines the image2/image3 order in final binary file
+            lp
+            hp
+    )
+else()
+    ameba_set_if(CONFIG_MP_INCLUDED app_name km0_km4_ca32_app_mp.bin p_ELSE km0_km4_ca32_app.bin)
+    ameba_firmware_package(
+        ${app_name}     #Output app name, referred by c_APP_BINARY_NAME in postbuild.cmake
+        p_MCU_PROJECTS  #MCU project list, notice the ORDER is important which determines the image2/image3 order in final binary file
+            lp
+            hp
+            ap
+    )
+endif()
 ###############################################################################
 
 ###############################################################################
