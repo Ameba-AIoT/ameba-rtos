@@ -818,6 +818,10 @@ int ble_central_main(uint8_t enable)
 #if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
 		bt_power_test_deinit();
 #endif
+
+		/* Disable BT */
+		BT_APP_PROCESS(rtk_bt_disable());
+
 		BT_APP_PROCESS(general_client_delete());
 		BT_APP_PROCESS(bas_client_delete());
 		BT_APP_PROCESS(gaps_client_delete());
@@ -825,13 +829,6 @@ int ble_central_main(uint8_t enable)
 #if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 		BT_APP_PROCESS(cte_client_delete());
 #endif
-
-		/* no need to unreg callback here, it is done in rtk_bt_disable */
-		// BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_LE_GP_GAP));
-		// BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_LE_GP_GATTC));
-
-		/* Disable BT */
-		BT_APP_PROCESS(rtk_bt_disable());
 	}
 
 	return 0;
