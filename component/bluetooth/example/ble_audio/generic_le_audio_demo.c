@@ -336,7 +336,7 @@ static rtk_bt_le_create_conn_param_t bt_le_audio_demo_conn_param = {
 };
 
 #define APP_LE_AUDIO_EXT_SCAN_TIMER_INTERVAL 1000
-#define APP_LE_AUDIO_EXT_SCAN_TIMER_COUNT 10
+#define APP_LE_AUDIO_EXT_SCAN_TIMER_COUNT 8
 
 static void *bt_le_audio_demo_ext_scan_timer = NULL;
 static int16_t bt_le_audio_demo_ext_scan_time_remaining;
@@ -3659,9 +3659,10 @@ int bt_generic_le_audio_demo_main(uint8_t role, uint8_t enable, uint32_t sound_c
 				} else if ((RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR) == sound_channel) {
 #if defined(RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT
 					p_lea_app_conf->cap_param.csis_param.csis_cfg = RTK_BT_LEA_CSIS_CFG_RANK_1;
-					p_lea_app_conf->cap_param.csis_param.csis_size = 1,
+					p_lea_app_conf->cap_param.csis_param.csis_size = 1;
+					memset(p_lea_app_conf->cap_param.csis_param.csis_sirk, 0, RTK_BT_LE_CSIS_SIRK_LEN);
 #endif
-									p_lea_app_conf->pacs_param.sink_audio_location = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
+					p_lea_app_conf->pacs_param.sink_audio_location = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
 					p_lea_app_conf->pacs_param.source_audio_location = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
 					channel[0] = 'S';
 				} else {

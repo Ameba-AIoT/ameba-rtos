@@ -86,6 +86,8 @@ menu "CONFIG USB"
         bool
     config USBH_MSC
         bool
+    config USBH_UAC
+        bool
     config USBH_UVC
         bool
     config USBH_VENDOR

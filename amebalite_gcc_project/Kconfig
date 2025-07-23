@@ -198,7 +198,8 @@ menu "CONFIG WHC INTF"
         bool
     config WHC_NONE_FOR_KR4
         bool
-
+    config WHC_WIFI_API_PATH
+        bool
 endmenu
 
 menu "CONFIG WIFI"
@@ -212,6 +213,7 @@ menu "CONFIG WIFI"
         config WHC_INTF_IPC_MENU
             bool
             select WHC_INTF_IPC
+            select WHC_WIFI_API_PATH
             select WLAN
             select LWIP_LAYER if WHC_HOST && !MP_SHRINK
             select FW_DRIVER_COEXIST if WHC_DEV

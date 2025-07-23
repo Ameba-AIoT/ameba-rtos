@@ -8,7 +8,7 @@ import_kconfig("CONFIG" ${c_MCU_KCONFIG_FILE})
 ameba_reset_global_define() #NOTE: Some variables like c_MP need to update after import kconfig
 set(t_USER_CUSTOM_LOG_PREFIX "HP_IMG2_POSTBUILD")
 
-execute_process(
+ameba_execute_process(
     COMMAND ${CMAKE_OBJCOPY} -j .sram_image2.text.data -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/sram_2.bin
 )
 
@@ -24,12 +24,12 @@ string(REPLACE " " ";" match_line "${result}")
 list(GET match_line 0 ARMExAddr)
 
 if(0x${ARMExAddr} GREATER 0x60000000)
-    execute_process(
+    ameba_execute_process(
         COMMAND ${CMAKE_OBJCOPY} -j .psram_image2.text.data -j .ARM.extab -j .ARM.exidx -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/psram_2.bin
         COMMAND ${CMAKE_OBJCOPY} -j .xip_image2.text -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/xip_image2.bin
     )
 else()
-    execute_process(
+    ameba_execute_process(
         COMMAND ${CMAKE_OBJCOPY} -j .psram_image2.text.data -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/psram_2.bin
         COMMAND ${CMAKE_OBJCOPY} -j .xip_image2.text -j .ARM.extab -j .ARM.exidx -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/xip_image2.bin
     )
@@ -37,13 +37,13 @@ endif()
 
 
 if(CONFIG_BT)
-    execute_process(
+    ameba_execute_process(
         COMMAND ${CMAKE_OBJCOPY} -j .bluetooth_trace.text -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/APP.trace
     )
 endif()
 
 if(CONFIG_BT_COEXIST AND CONFIG_COEXIST_DEV)
-    execute_process(
+    ameba_execute_process(
         COMMAND ${CMAKE_OBJCOPY} -j .coex_trace.text -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/COEX.trace
     )
 endif()
@@ -71,18 +71,18 @@ ameba_axf2bin_prepend_head(
     ${c_SDK_IMAGE_TARGET_DIR}/target_img2.map
 )
 
-execute_process(
+ameba_execute_process(
     COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_DIR}/xip_image2_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/sram_2_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/psram_2_prepend.bin
     OUTPUT_FILE ${c_SDK_IMAGE_TARGET_DIR}/km4_image2_all.bin
 )
 
 if(NOT CONFIG_AMEBA_RLS)
     message("========== Image analyze start ==========")
-    execute_process(
+    ameba_execute_process(p_SHOW_OUTPUT
         COMMAND ${CODE_ANALYZE_PYTHON} ${ANALYZE_MP_IMG} ${DAILY_BUILD}
         WORKING_DIRECTORY ${c_MCU_PROJECT_DIR}/asdk
     )
-    execute_process(
+    ameba_execute_process(p_SHOW_OUTPUT
         COMMAND ${STATIC_ANALYZE_PYTHON} ${DAILY_BUILD}
         WORKING_DIRECTORY ${c_MCU_PROJECT_DIR}/asdk
     )

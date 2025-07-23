@@ -332,7 +332,7 @@ int whc_bridge_host_api_send_to_kernel(int fd, char *buf, int buflen)
 	return 0;
 }
 
-// BRIDGE_ATTR_PAYLOAD: size(4B) + payload
+// WHC_ATTR_PAYLOAD: size(4B) + payload
 int whc_bridge_host_api_send_nl_data(uint8_t *buf, uint32_t buf_len, uint8_t api_id)
 {
 	int nl_fd;
@@ -351,8 +351,8 @@ int whc_bridge_host_api_send_nl_data(uint8_t *buf, uint32_t buf_len, uint8_t api
 	}
 
 	whc_bridge_host_fill_nlhdr(&msg, nl_family_id, 0, WHC_CMD_CUSTOM_API);
-	nla_put_u32(&ptr, BRIDGE_ATTR_API_ID, api_id);
-	nla_put_payload(&ptr, BRIDGE_ATTR_PAYLOAD, buf, buf_len);
+	nla_put_u32(&ptr, WHC_ATTR_API_ID, api_id);
+	nla_put_payload(&ptr, WHC_ATTR_PAYLOAD, buf, buf_len);
 	msg.n.nlmsg_len += ptr - msg.buf;
 	ret = whc_bridge_host_api_send_to_kernel(nl_fd, (char *)&msg, msg.n.nlmsg_len);
 	if (ret < 0) {

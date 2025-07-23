@@ -297,18 +297,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 					/* Stop DHCP */
 					netifapi_dhcp_stop(pnetif);
 
-					/* Static address used */
-
-					IP4_ADDR(ip_2_ip4(&ipaddr), STATIC_IP_ADDR0, STATIC_IP_ADDR1, STATIC_IP_ADDR2, STATIC_IP_ADDR3);
-					IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-					IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-					netifapi_netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
-					iptab[0] = STATIC_IP_ADDR3;
-					iptab[1] = STATIC_IP_ADDR2;
-					iptab[2] = STATIC_IP_ADDR1;
-					iptab[3] = STATIC_IP_ADDR0;
 					at_printf_indicate("wifi got ip timeout\r\n");
-					RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rStatic IP address : %d.%d.%d.%d", iptab[3], iptab[2], iptab[1], iptab[0]);
 
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 					if (p_store_fast_connect_info) {

@@ -12,7 +12,7 @@ static u32 whc_user_portid;
 /* netlink cmd handler */
 int whc_host_nl_custom_api(struct sk_buff *skb, struct genl_info *info)
 {
-	u32 cmd = nla_get_u32(info->attrs[BRIDGE_ATTR_API_ID]);
+	u32 cmd = nla_get_u32(info->attrs[WHC_ATTR_API_ID]);
 	u8 *ptr;
 	u8 *buf;
 	u8 *payload;
@@ -21,7 +21,7 @@ int whc_host_nl_custom_api(struct sk_buff *skb, struct genl_info *info)
 
 	whc_user_portid = info->snd_portid;
 
-	if (!info->attrs[BRIDGE_ATTR_API_ID]) {
+	if (!info->attrs[WHC_ATTR_API_ID]) {
 		printk("Missing required attributes in Netlink message\n");
 		return -EINVAL;
 	}
@@ -29,11 +29,11 @@ int whc_host_nl_custom_api(struct sk_buff *skb, struct genl_info *info)
 	printk("%s cmd: %x\n", __FUNCTION__, cmd);
 
 	if (cmd == CMD_WIFI_SEND_BUF) {
-		if (!info->attrs[BRIDGE_ATTR_PAYLOAD]) {
+		if (!info->attrs[WHC_ATTR_PAYLOAD]) {
 			printk("Missing required payload in Netlink message\n");
 			return -EINVAL;
 		}
-		payload = (char *)nla_data(info->attrs[BRIDGE_ATTR_PAYLOAD]);
+		payload = (char *)nla_data(info->attrs[WHC_ATTR_PAYLOAD]);
 		payload_len = *(u32 *)payload;
 		buf_len += payload_len;
 		payload += 4;
@@ -83,12 +83,12 @@ int whc_bridge_host_send_to_user_multi(u8 *buf, u16 size, u16 api_id, u32 chuck_
 		return -1;
 	}
 
-	nla_put_u32(skb, BRIDGE_ATTR_API_ID, api_id);
-	nla_put_u32(skb, BRIDGE_ATTR_CHUNK_INDEX, chuck_index);
-	nla_put_u8(skb, BRIDGE_ATTR_LAST_CHUNK, last_chuck);
+	nla_put_u32(skb, WHC_ATTR_API_ID, api_id);
+	nla_put_u32(skb, WHC_ATTR_CHUNK_INDEX, chuck_index);
+	nla_put_u8(skb, WHC_ATTR_LAST_CHUNK, last_chuck);
 
 
-	if (nla_put(skb, BRIDGE_ATTR_PAYLOAD, size, buf)) {
+	if (nla_put(skb, WHC_ATTR_PAYLOAD, size, buf)) {
 		nlmsg_free(skb);
 		printk("%s fail\n", __FUNCTION__);
 		return -EMSGSIZE;
@@ -133,10 +133,10 @@ int whc_bridge_host_send_to_user(u8 *buf, u16 size, u16 api_id)
 		return -1;
 	}
 
-	nla_put_u32(skb, BRIDGE_ATTR_API_ID, api_id);
+	nla_put_u32(skb, WHC_ATTR_API_ID, api_id);
 
 
-	if (nla_put(skb, BRIDGE_ATTR_PAYLOAD, size, buf)) {
+	if (nla_put(skb, WHC_ATTR_PAYLOAD, size, buf)) {
 		nlmsg_free(skb);
 		printk("%s fail\n", __FUNCTION__);
 		return -EMSGSIZE;

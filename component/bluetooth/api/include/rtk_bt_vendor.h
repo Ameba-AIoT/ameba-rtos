@@ -9,6 +9,7 @@
 #define __RTK_BT_VENDOR_H__
 
 #include <rtk_bt_def.h>
+#include <bt_api_config.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -62,6 +63,24 @@ typedef enum {
 	SUB_CMD_SET_ADV_TX_POWER  = 0x00,
 	SUB_CMD_SET_CONN_TX_POWER = 0x0c,
 } rtk_bt_vendor_tx_power_subcmd_type_t;
+
+typedef struct {
+	uint64_t host_free_run_clock[3];
+	uint64_t controller_free_run_clock[3];
+	int64_t hc_clock_offset[3];
+	void *sem;
+	uint8_t index;
+	bool enable;
+} rtk_bt_vendor_free_run_clock_t;
+
+/**
+ * @typedef   rtk_bt_vendor_free_run_clock_latch_subcmd_type_t
+ * @brief     Free run clock latch subcmd type.
+ */
+typedef enum {
+	SUB_CMD_FREE_RUN_CLOCK_LATCH_ENABLE = 0x00,
+	SUB_CMD_FREE_RUN_CLOCK_LATCH        = 0x01,
+} rtk_bt_vendor_free_run_clock_latch_subcmd_type_t;
 
 /**
  * @defgroup  bt_vendor BT Vendor APIs
@@ -150,6 +169,21 @@ void rtk_bt_sleep_mode(unsigned int mode);
  *            - Others: Error code
  */
 uint16_t rtk_bt_set_tx_power(rtk_bt_vendor_tx_power_param_t *tx_power);
+
+#if defined(RTK_BT_HC_CLOCK_OFFSET_SUPPORT) && RTK_BT_HC_CLOCK_OFFSET_SUPPORT
+
+rtk_bt_vendor_free_run_clock_t *rtk_bt_get_hc_free_run_clock(void);
+
+/**
+ * @brief      Get the free run clock offset between BT host & controller.
+ * @param[out] offset: The free run clock offset.
+ * @note       This API shall NOT be called in bt_api_task.
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_get_hc_clock_offset(int64_t *offset);
+#endif
 
 /**
  * @brief     BT LE SOF and EOF interrupt indication enable or disable. This API is only useable for AmebaSmart Platform.

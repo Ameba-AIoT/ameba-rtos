@@ -71,7 +71,7 @@ s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 	u8 *param_buf = rtos_mem_zmalloc(sizeof(struct rtw_network_info) + connect_param->password_len);
 	u8 *ptr;
 	u8 no_need_indicate = 0;
-	struct rtw_event_join_status_info evt_info = {0};
+	struct rtw_event_join_status_info join_status_info;
 	struct rtw_event_join_fail *join_fail;
 
 	/* check if SoftAP is running */
@@ -93,8 +93,9 @@ s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 
 	/*clear for last connect status */
 	rtw_join_status = RTW_JOINSTATUS_STARTING;
-	evt_info.status = RTW_JOINSTATUS_STARTING;
-	wifi_indication(RTW_EVENT_JOIN_STATUS, (u8 *)&evt_info, sizeof(struct rtw_event_join_status_info), RTW_JOINSTATUS_STARTING);
+	memset(&join_status_info, 0, sizeof(struct rtw_event_join_status_info));
+	join_status_info.status = RTW_JOINSTATUS_STARTING;
+	wifi_indication(RTW_EVENT_JOIN_STATUS, (u8 *)&join_status_info, sizeof(struct rtw_event_join_status_info));
 
 	/* step2: malloc and set synchronous connection related variables*/
 	if (block) {
@@ -203,10 +204,10 @@ error:
 	}
 
 	if (rtw_join_status == RTW_JOINSTATUS_FAIL && no_need_indicate == 0) {
-		evt_info.status = RTW_JOINSTATUS_FAIL;
-		join_fail = &evt_info.private.fail;
+		join_status_info.status = RTW_JOINSTATUS_FAIL;
+		join_fail = &join_status_info.priv.fail;
 		join_fail->fail_reason = result;
-		wifi_indication(RTW_EVENT_JOIN_STATUS, (u8 *)&evt_info, sizeof(struct rtw_event_join_status_info), RTW_JOINSTATUS_FAIL);
+		wifi_indication(RTW_EVENT_JOIN_STATUS, (u8 *)&join_status_info, sizeof(struct rtw_event_join_status_info));
 	}
 
 	return result;

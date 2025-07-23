@@ -27,6 +27,11 @@ extern int wifi_set_ips_internal(u8 enable);
 static bool need_restore = false;
 #endif
 
+#if defined(RTK_BT_HC_CLOCK_OFFSET_SUPPORT) && RTK_BT_HC_CLOCK_OFFSET_SUPPORT
+#include "ameba_soc.h"
+static rtk_bt_vendor_free_run_clock_t hc_free_run_clock = {0};
+#endif
+
 _WEAK void hci_platform_external_fw_log_pin(void)
 {
 	BT_LOGE("External fw log pin is not supported!\r\n");
@@ -191,6 +196,123 @@ uint16_t rtk_bt_set_tx_power(rtk_bt_vendor_tx_power_param_t *tx_power)
 	return RTK_BT_FAIL;
 #endif
 }
+
+#if defined(RTK_BT_HC_CLOCK_OFFSET_SUPPORT) && RTK_BT_HC_CLOCK_OFFSET_SUPPORT
+void bt_vendor_process_tx_frame(uint8_t type, uint8_t *pdata, uint16_t len)
+{
+#if defined(VENDOR_CMD_FREE_RUN_CLOCK_LATCH_SUPPORT) && VENDOR_CMD_FREE_RUN_CLOCK_LATCH_SUPPORT
+	if (!hc_free_run_clock.enable) {
+		return;
+	}
+
+	if (type != 0x01/*HCI_CMD*/ || !pdata || len != 4) {
+		return;
+	}
+
+	uint16_t opcode = (uint16_t)((pdata[1] << 8) | pdata[0]);
+	uint8_t subcode = pdata[3];
+	if (VENDOR_CMD_FREE_RUN_CLOCK_LATCH_OPCODE == opcode && SUB_CMD_FREE_RUN_CLOCK_LATCH == subcode) {
+		BT_LOGD("Get host free run clock\r\n");
+		hc_free_run_clock.host_free_run_clock[hc_free_run_clock.index] = (uint64_t)DTimestamp_Get();
+	}
+#else
+	(void)type;
+	(void)pdata;
+	(void)len;
+#endif
+}
+
+rtk_bt_vendor_free_run_clock_t *rtk_bt_get_hc_free_run_clock(void)
+{
+	return &hc_free_run_clock;
+}
+
+static int64_t _get_middle(int64_t a, int64_t b, int64_t c)
+{
+	return (a > b) ? (b > c ? b : (a > c ? c : a)) : (a > c ? a : (b > c ? c : b));
+}
+
+uint16_t rtk_bt_get_hc_clock_offset(int64_t *p_offset)
+{
+#if defined(VENDOR_CMD_FREE_RUN_CLOCK_LATCH_SUPPORT) && VENDOR_CMD_FREE_RUN_CLOCK_LATCH_SUPPORT
+	if (!p_offset) {
+		BT_LOGE("p_offset is NULL!\r\n");
+		return RTK_BT_FAIL;
+	}
+
+	uint8_t data[2] = {0};
+	rtk_bt_gap_vendor_cmd_param_t param;
+	uint16_t ret = 0;
+
+	data[0] = SUB_CMD_FREE_RUN_CLOCK_LATCH_ENABLE;
+	data[1] = 0x1;
+
+	param.op = VENDOR_CMD_FREE_RUN_CLOCK_LATCH_OPCODE;
+	param.len = 2;
+	param.cmd_param = data;
+
+	memset(&hc_free_run_clock, 0, sizeof(rtk_bt_vendor_free_run_clock_t));
+
+	if (false == osif_sem_create(&hc_free_run_clock.sem, 0, 1)) {
+		BT_LOGE("hc_free_run_clock.sem create fail!\r\n");
+		return RTK_BT_FAIL;
+	}
+	hc_free_run_clock.enable = true;
+
+	BT_LOGD("Free run clock latch enable\r\n");
+	ret = rtk_bt_gap_vendor_cmd_req(&param);
+	if (ret) {
+		BT_LOGE("rtk_bt_gap_vendor_cmd_req fail!\r\n");
+		ret = RTK_BT_FAIL;
+		goto out;
+	}
+
+	if (osif_sem_take(hc_free_run_clock.sem, 0xFFFFFFFF) == false) {
+		BT_LOGE("hc_free_run_clock.sem take fail!\r\n");
+		ret = RTK_BT_FAIL;
+		goto out;
+	}
+
+	if (hc_free_run_clock.index != 2) {
+		BT_LOGE("hc_free_run_clock.index != 2!\r\n");
+		ret = RTK_BT_FAIL;
+		goto out;
+	}
+
+	if (hc_free_run_clock.host_free_run_clock[1] < hc_free_run_clock.host_free_run_clock[0]) {                    //host_free_run_clock[1] overflow
+		hc_free_run_clock.host_free_run_clock[1] += 0xFFFFFFFF;
+		hc_free_run_clock.host_free_run_clock[2] += 0xFFFFFFFF;
+	} else if (hc_free_run_clock.host_free_run_clock[2] < hc_free_run_clock.host_free_run_clock[1]) {             //host_free_run_clock[2] overflow
+		hc_free_run_clock.host_free_run_clock[2] += 0xFFFFFFFF;
+	}
+
+	if (hc_free_run_clock.controller_free_run_clock[1] < hc_free_run_clock.controller_free_run_clock[0]) {        //controller_free_run_clock[1] overflow
+		hc_free_run_clock.controller_free_run_clock[1] += 0xFFFFFFFF;
+		hc_free_run_clock.controller_free_run_clock[2] += 0xFFFFFFFF;
+	} else if (hc_free_run_clock.controller_free_run_clock[2] < hc_free_run_clock.controller_free_run_clock[1]) { //controller_free_run_clock[2] overflow
+		hc_free_run_clock.controller_free_run_clock[2] += 0xFFFFFFFF;
+	}
+
+	for (uint8_t i = 0; i < 3; i++) {
+		hc_free_run_clock.hc_clock_offset[i] = hc_free_run_clock.host_free_run_clock[i] - hc_free_run_clock.controller_free_run_clock[i];
+	}
+
+	*p_offset = _get_middle(hc_free_run_clock.hc_clock_offset[0], hc_free_run_clock.hc_clock_offset[1], hc_free_run_clock.hc_clock_offset[2]);
+
+	ret = RTK_BT_OK;
+
+out:
+	hc_free_run_clock.enable = false;
+	osif_sem_delete(hc_free_run_clock.sem);
+
+	return ret;
+#else
+	(void)p_offset;
+	BT_LOGE("Get host controller free run clock offset is not supported!\r\n");
+	return RTK_BT_FAIL;
+#endif
+}
+#endif
 
 #if defined(RTK_BLE_TX_SOF_EOF_INDICATION) && RTK_BLE_TX_SOF_EOF_INDICATION
 uint16_t rtk_bt_le_sof_eof_ctrl(uint16_t conn_handle, uint8_t enable)

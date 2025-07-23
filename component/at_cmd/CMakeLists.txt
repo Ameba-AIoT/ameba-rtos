@@ -73,10 +73,19 @@ if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
         ameba_list_append_if(CONFIG_SUPPORT_SDIO_DEVICE private_sources
             at_intf_sdio.c
         )
+        ameba_list_append_if(CONFIG_SUPPORT_USB private_sources
+            at_intf_usbd.c
+        )
         ameba_list_append(private_sources
             at_intf_uart.c
             at_intf_spi.c
         )
+        ameba_list_append_if(CONFIG_SUPPORT_USB private_includes
+            ${c_CMPT_USB_DIR}/common
+            ${c_CMPT_USB_DIR}/device/core
+            ${c_CMPT_USB_DIR}/device/cdc_acm
+        )
+
     endif()
 endif()
 endif()

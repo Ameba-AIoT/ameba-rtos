@@ -17,6 +17,9 @@ menu "CONFIG CHIP"
         default AMEBAGREEN2_A_CUT_FOR_KM4TZ
         config AMEBAGREEN2_A_CUT_FOR_KM4TZ
             bool "AMEBAGREEN2_A_Cut"
+
+        config AMEBAGREEN2_B_CUT_FOR_KM4TZ
+            bool "AMEBAGREEN2_B_Cut"
     endchoice
 endmenu
 

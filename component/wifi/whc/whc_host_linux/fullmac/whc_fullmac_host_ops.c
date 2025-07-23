@@ -430,11 +430,12 @@ static int whc_fullmac_host_leave_ibss(struct wiphy *wiphy, struct net_device *n
 	return 0;
 }
 
-void whc_fullmac_host_connect_indicate(unsigned int join_status, void *user_data, size_t user_data_len)
+void whc_fullmac_host_connect_indicate(unsigned int join_status, void *evt_info)
 {
 	struct mlme_priv_t *mlme_priv = &global_idev.mlme_priv;
 	u8 wlan_idx = 0;
 	unsigned int rtw_join_status_last = mlme_priv->rtw_join_status;
+	struct rtw_event_join_status_info *join_status_info = (struct rtw_event_join_status_info *)evt_info;
 #ifdef CONFIG_IEEE80211R
 	struct cfg80211_roam_info roam_info = {0};
 #endif
@@ -459,19 +460,17 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *user_data
 	}
 
 	if (join_status == RTW_JOINSTATUS_ASSOCIATING) {
-		user_data_len -= sizeof(struct rtw_event_join_status_info);
-		if (user_data_len > 0) {
-			memcpy(mlme_priv->assoc_req_ie, (u8 *)(user_data + sizeof(struct rtw_event_join_status_info)), user_data_len);
-			mlme_priv->assoc_req_ie_len = user_data_len;
+		if (join_status_info->frame_len > 0) {
+			memcpy(mlme_priv->assoc_req_ie, (u8 *)(join_status_info->frame), join_status_info->frame_len);
+			mlme_priv->assoc_req_ie_len = join_status_info->frame_len;
 		}
 		return;
 	}
 
 	if (join_status == RTW_JOINSTATUS_ASSOCIATED) {
-		user_data_len -= sizeof(struct rtw_event_join_status_info);
-		if (user_data_len > 0) {
-			memcpy(mlme_priv->assoc_rsp_ie, (u8 *)(user_data + sizeof(struct rtw_event_join_status_info)), user_data_len);
-			mlme_priv->assoc_rsp_ie_len = user_data_len;
+		if (join_status_info->frame_len > 0) {
+			memcpy(mlme_priv->assoc_rsp_ie, (u8 *)(join_status_info->frame), join_status_info->frame_len);
+			mlme_priv->assoc_rsp_ie_len = join_status_info->frame_len;
 			dev_dbg(global_idev.fullmac_dev, "[fullmac] --- %s --- %s success.", __func__, (*(u8 *)mlme_priv->assoc_req_ie == 0 ? "association" : "re-association"));
 #ifdef CONFIG_P2P
 			if ((global_idev.p2p_global.pd_wlan_idx == 1) && (memcmp(mlme_priv->assoc_rsp_ie + 4, global_idev.pndev[1]->dev_addr, 6) == 0)) {
@@ -548,10 +547,10 @@ void whc_fullmac_host_disconnect_indicate(u16 reason, u8 locally_generated)
 	}
 }
 
-void whc_fullmac_host_external_auth_request(char *buf, int buf_len)
+void whc_fullmac_host_external_auth_request(char *evt_info)
 {
 	struct cfg80211_external_auth_params *auth_ext_para = &global_idev.mlme_priv.auth_ext_para;
-	struct wpa_sae_param_t *wpa_sae_param = (struct wpa_sae_param_t *)buf;
+	struct wpa_sae_param_t *wpa_sae_param = (struct wpa_sae_param_t *)evt_info;
 
 	auth_ext_para->action = NL80211_EXTERNAL_AUTH_START;
 	memcpy(auth_ext_para->bssid, wpa_sae_param->peer_mac, ETH_ALEN);
@@ -562,10 +561,10 @@ void whc_fullmac_host_external_auth_request(char *buf, int buf_len)
 	dev_dbg(global_idev.fullmac_dev, "%s, ssid=%s, len=%d\n", __func__, auth_ext_para->ssid.ssid, auth_ext_para->ssid.ssid_len);
 }
 
-void whc_fullmac_host_update_owe_info_event(char *buf, int buf_len)
+void whc_fullmac_host_update_owe_info_event(char *evt_info)
 {
 	struct cfg80211_update_owe_info owe_info;
-	struct rtw_owe_param_t *owe_param = (struct rtw_owe_param_t *)buf;
+	struct rtw_owe_param_t *owe_param = (struct rtw_owe_param_t *)evt_info;
 	char owe_ie[RTW_OWE_KEY_LEN + 5];
 
 	owe_ie[0] = WLAN_EID_EXTENSION;
@@ -978,10 +977,10 @@ static int whc_fullmac_host_external_auth_status(struct wiphy *wiphy, struct net
 	return 0;
 }
 
-#ifdef CONFIG_CFG80211_SME_OFFLOAD
+#ifdef CONFIG_SUPPLICANT_SME
 static int whc_sme_host_auth(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_auth_request *req)
 {
-	struct mlme_priv_t *mlme_priv = &global_idev.mlme_priv;
+	struct sme_priv_t *sme_priv = &global_idev.sme_priv;
 	struct rtw_sme_auth_info *data = NULL;
 	dma_addr_t data_phy;
 	const u8 *auth_data;
@@ -1037,18 +1036,18 @@ static int whc_sme_host_auth(struct wiphy *wiphy, struct net_device *ndev, struc
 	}
 
 	/* backup auth_type for assoc */
-	mlme_priv->auth_type = req->auth_type;
+	sme_priv->auth_type = req->auth_type;
 
 	if (req->key && req->key_len) {
 		/* backup wep key for assoc */
-		mlme_priv->wep_key_idx = req->key_idx;
-		mlme_priv->wep_key_len = req->key_len;
-		memcpy(mlme_priv->wep_key, req->key, req->key_len);
+		sme_priv->wep_key_idx = req->key_idx;
+		sme_priv->wep_key_len = req->key_len;
+		memcpy(sme_priv->wep_key, req->key, req->key_len);
 	} else {
 		/* clear wep key */
-		mlme_priv->wep_key_idx = 0;
-		mlme_priv->wep_key_len = 0;
-		memset(mlme_priv->wep_key, 0, 13);
+		sme_priv->wep_key_idx = 0;
+		sme_priv->wep_key_len = 0;
+		memset(sme_priv->wep_key, 0, 13);
 	}
 
 	if (auth_data_len >= 4) {
@@ -1088,8 +1087,6 @@ static int whc_sme_host_auth(struct wiphy *wiphy, struct net_device *ndev, struc
 		memcpy(data->ht_info, pie + 2, *(pie + 1));
 	}
 
-	mlme_priv->cfg80211_offload_sta_sme = 1;
-
 	whc_fullmac_host_sme_auth(data_phy);
 
 	rtw_mfree(data_len, (void *)data, data_phy);
@@ -1099,7 +1096,7 @@ static int whc_sme_host_auth(struct wiphy *wiphy, struct net_device *ndev, struc
 
 static int whc_sme_host_assoc(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_assoc_request *req)
 {
-	struct mlme_priv_t *mlme_priv = &global_idev.mlme_priv;
+	struct sme_priv_t *sme_priv = &global_idev.sme_priv;
 	struct cfg80211_connect_params *conn_param;
 	size_t ssid_len = 0, rsn_len = 0, wpa_len = 0;
 	const u8 *ssid = NULL, *pos, *end, *rsn = NULL, *wpa = NULL;
@@ -1137,15 +1134,15 @@ static int whc_sme_host_assoc(struct wiphy *wiphy, struct net_device *ndev, stru
 	conn_param->bssid = req->bss->bssid;
 	conn_param->ssid = ssid;
 	conn_param->ssid_len = ssid_len;
-	conn_param->auth_type = mlme_priv->auth_type;	/* used by whc_fullmac_host_connect_ops() */
+	conn_param->auth_type = sme_priv->auth_type;	/* used by whc_fullmac_host_connect_ops() */
 	conn_param->ie = req->ie;
 	conn_param->ie_len = req->ie_len;
 	conn_param->privacy = 0;						/* don't care */
 	conn_param->mfp = NL80211_MFP_NO;				/* don't care */
 	conn_param->crypto = req->crypto;
-	conn_param->key = mlme_priv->wep_key;			/* WEP key for shared key authentication */
-	conn_param->key_len = mlme_priv->wep_key_len;	/* length of WEP key for shared key authentication */
-	conn_param->key_idx = mlme_priv->wep_key_idx;	/* index of WEP key for shared key authentication */
+	conn_param->key = sme_priv->wep_key;			/* WEP key for shared key authentication */
+	conn_param->key_len = sme_priv->wep_key_len;	/* length of WEP key for shared key authentication */
+	conn_param->key_idx = sme_priv->wep_key_idx;	/* index of WEP key for shared key authentication */
 	conn_param->flags = 0;							/* don't care */
 	conn_param->bg_scan_period = 0;					/* don't care */
 	conn_param->ht_capa = req->ht_capa;
@@ -1164,20 +1161,20 @@ static int whc_sme_host_assoc(struct wiphy *wiphy, struct net_device *ndev, stru
 		conn_param->crypto.wpa_versions = 0;
 	}
 
-	if (mlme_priv->cfg80211_assoc_bss) {
+	if (sme_priv->cfg80211_assoc_bss) {
 		/* there's an ongoing assoc req, finish it */
 		dev_dbg(global_idev.fullmac_dev, "%s(): free existing assoc\n", __FUNCTION__);
 
 		struct cfg80211_assoc_failure *passocfail_data = (struct cfg80211_assoc_failure *)kzalloc(sizeof(struct cfg80211_assoc_failure), GFP_KERNEL);
-		passocfail_data->bss[0] = mlme_priv->cfg80211_assoc_bss;
+		passocfail_data->bss[0] = sme_priv->cfg80211_assoc_bss;
 		passocfail_data->timeout = 1;
 
 		cfg80211_assoc_failure(global_idev.pndev[0], passocfail_data);
 		kfree(passocfail_data);
 
-		mlme_priv->cfg80211_assoc_bss = NULL;
+		sme_priv->cfg80211_assoc_bss = NULL;
 	}
-	mlme_priv->cfg80211_assoc_bss = req->bss;
+	sme_priv->cfg80211_assoc_bss = req->bss;
 
 	/* check if rsn/wpa IE exist */
 	if (req->bss->beacon_ies && req->bss->beacon_ies->len) {
@@ -1229,41 +1226,41 @@ static int whc_sme_host_assoc(struct wiphy *wiphy, struct net_device *ndev, stru
 
 static int whc_sme_host_deauth(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_deauth_request *req)
 {
-	struct mlme_priv_t *mlme_priv = &global_idev.mlme_priv;
+	struct sme_priv_t *sme_priv = &global_idev.sme_priv;
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
-	mlme_priv->deauth_ies = req->ie;
-	mlme_priv->deauth_ie_len = req->ie_len;
-	mlme_priv->b_need_report = 0;
+	sme_priv->deauth_ies = req->ie;
+	sme_priv->deauth_ie_len = req->ie_len;
+	sme_priv->b_need_report = 0;
 
 	whc_fullmac_host_disconnect_ops(wiphy, ndev, req->reason_code);
 
-	mlme_priv->deauth_ies = NULL;
-	mlme_priv->deauth_ie_len = 0;
+	sme_priv->deauth_ies = NULL;
+	sme_priv->deauth_ie_len = 0;
 
 	return 0;
 }
 
 static int whc_sme_host_disassoc(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_disassoc_request *req)
 {
-	struct mlme_priv_t *mlme_priv = &global_idev.mlme_priv;
+	struct sme_priv_t *sme_priv = &global_idev.sme_priv;
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
-	mlme_priv->deauth_ies = req->ie;
-	mlme_priv->deauth_ie_len = req->ie_len;
-	mlme_priv->b_need_report = 1;
+	sme_priv->deauth_ies = req->ie;
+	sme_priv->deauth_ie_len = req->ie_len;
+	sme_priv->b_need_report = 1;
 
 	whc_fullmac_host_disconnect_ops(wiphy, ndev, req->reason_code);
 
-	mlme_priv->deauth_ies = NULL;
-	mlme_priv->deauth_ie_len = 0;
-	mlme_priv->b_need_report = 0;
+	sme_priv->deauth_ies = NULL;
+	sme_priv->deauth_ie_len = 0;
+	sme_priv->b_need_report = 0;
 
 	return 0;
 }
-#endif	/* CONFIG_CFG80211_SME_OFFLOAD */
+#endif	/* CONFIG_SUPPLICANT_SME */
 
 static s32 whc_fullmac_host_remain_on_channel(struct wiphy *wiphy, struct wireless_dev *wdev, struct ieee80211_channel *channel, unsigned int duration,
 		u64 *cookie)
@@ -1502,14 +1499,14 @@ void whc_fullmac_host_ops_sta_init(void)
 	ops->update_mgmt_frame_registrations = whc_fullmac_host_update_mgmt_frame_register;
 #endif
 	ops->external_auth = whc_fullmac_host_external_auth_status;
-#ifdef CONFIG_CFG80211_SME_OFFLOAD
+#ifdef CONFIG_SUPPLICANT_SME
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32))
 	ops->auth = whc_sme_host_auth;
 	ops->deauth = whc_sme_host_deauth;
 	ops->assoc = whc_sme_host_assoc;
 	ops->disassoc = whc_sme_host_disassoc;
 #endif
-#endif	/* CONFIG_CFG80211_SME_OFFLOAD */
+#endif	/* CONFIG_SUPPLICANT_SME */
 #ifdef CONFIG_IEEE80211R
 	ops->update_ft_ies = whc_fullmac_host_update_ft_ies;
 #endif

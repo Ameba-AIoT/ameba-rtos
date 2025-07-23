@@ -139,3 +139,10 @@ _WEAK void wifi_set_user_config(void)
 	}
 }
 
+/**
+ * @brief external event handle, customer can add handle functions for wifi events @ref rtw_event_id
+ */
+__weak struct rtw_event_hdl_func_t event_external_hdl[1] = {
+	{RTW_EVENT_MAX,			NULL},
+};
+__weak u16 array_len_of_event_external_hdl = sizeof(event_external_hdl) / sizeof(struct rtw_event_hdl_func_t);

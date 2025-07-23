@@ -10,11 +10,10 @@ struct rtw_event_hdl_func_t event_external_hdl[1] = {
 };
 u16 array_len_of_event_external_hdl = sizeof(event_external_hdl) / sizeof(struct rtw_event_hdl_func_t);
 
-void exampe_wifi_join_status_event_hdl(u8 *buf, s32 buf_len)
+void exampe_wifi_join_status_event_hdl(u8 *evt_info)
 {
-	UNUSED(buf_len);
-	struct rtw_event_join_status_info *evt_info = (struct rtw_event_join_status_info *)buf;
-	u8 join_status = evt_info->status;
+	struct rtw_event_join_status_info *join_status_info = (struct rtw_event_join_status_info *)evt_info;
+	u8 join_status = join_status_info->status;
 	struct rtw_event_join_fail *join_fail;
 	struct rtw_event_disconnect *disconnect;
 
@@ -25,7 +24,7 @@ void exampe_wifi_join_status_event_hdl(u8 *buf, s32 buf_len)
 
 	/*Get join fail reason*/
 	if (join_status == RTW_JOINSTATUS_FAIL) {/*Include 4 way handshake but not include DHCP*/
-		join_fail = &evt_info->private.fail;
+		join_fail = &join_status_info->priv.fail;
 		RTK_LOGI(TAG, "Join fail, reason = %d ", join_fail->fail_reason);/*definition in enum int*/
 		switch (join_fail->fail_reason) {
 		case -RTK_ERR_WIFI_CONN_SCAN_FAIL:
@@ -65,7 +64,7 @@ void exampe_wifi_join_status_event_hdl(u8 *buf, s32 buf_len)
 
 	/*Get disconnect reason*/
 	if (join_status == RTW_JOINSTATUS_DISCONNECT) {
-		disconnect = &evt_info->private.disconnect;
+		disconnect = &join_status_info->priv.disconnect;
 		RTK_LOGI(TAG, "Disconnect, reason = %d\n", disconnect->disconn_reason);
 		/*Get more detail disconnect info*/
 		if (disconnect->disconn_reason < RTW_DISCONN_RSN_DRV_BASE) {

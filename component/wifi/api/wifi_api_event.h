@@ -70,7 +70,8 @@ enum rtw_event_id {
 	RTW_EVENT_WPA_STA_WPS_START,      /**< STA mode: WPS procedure started */
 	RTW_EVENT_WPA_WPS_FINISH,         /**< STA mode: WPS procedure completed */
 	RTW_EVENT_WPA_EAPOL_START,        /**< STA mode: WPA enterprise authentication started */
-	RTW_EVENT_WPA_EAPOL_RECVD,        /**< STA mode: EAPOL packet received during WPA enterprise authentication */
+	RTW_EVENT_WPA_EAPOL_RECVD,        /**< STA mode: EAPOL packet received during WPA enterprise authentication  */
+
 	RTW_EVENT_MAX,
 };
 /** @} End of WIFI_Exported_Enumeration_Types group*/
@@ -81,16 +82,10 @@ enum rtw_event_id {
 
 struct rtw_event_hdl_func_t {
 	u16 evt_id;
-	void (*handler)(u8 *buf, s32 len);
+	void (*handler)(u8 *evt_info);
 };
 
 struct rtw_event_join_status_info {
-	/* common paras */
-	u8 status;  /* refer to @ref rtw_join_status */
-	u8 channel;
-	u8 bssid[ETH_ALEN];
-	s8 rssi;
-
 	/* private paras */
 	union {
 		struct rtw_event_authenticating {
@@ -113,8 +108,65 @@ struct rtw_event_join_status_info {
 		struct rtw_event_disconnect {
 			u16 disconn_reason;  /**< Disconnect reason, refer to @ref rtw_disconn_reason. */
 		} disconnect;  /* RTW_JOINSTATUS_DISCONNECT */
-	} private;
+	} priv;
+
+	/* common paras */
+	u8 status;  /* refer to @ref rtw_join_status */
+	u8 channel;
+	u8 bssid[ETH_ALEN];
+	s8 rssi;
+	/* At the same time as reporting event info, frame content needs to be reported, which will be followed by event info. */
+	u32 frame_len;  /* 0: there is no frame followed; larger than 0: there is frame_len bytes of frame followed*/
+	u8 frame[];  /* if there is frame followed, point to head address */
 };
+
+struct rtw_event_sta_assoc {
+	u8 sta_mac[ETH_ALEN];
+	u32 frame_len;
+	u8 frame[];
+};
+
+struct rtw_event_sta_disassoc {
+	u8 sta_mac[ETH_ALEN];
+};
+
+struct rtw_event_wpa_eapol_start {
+	u8 dst_mac[ETH_ALEN];
+};
+
+struct rtw_event_wpa_sta_wps_start {
+	u8 peer_mac[ETH_ALEN];
+};
+
+#pragma pack(1) /* csi report info should be 1 byte alignment */
+/**
+ * @brief  Layout of CSI report info.
+ */
+
+struct rtw_event_csi_report_info {
+	u16 csi_signature;          /**< Unique pattern (0xABCD) to detect a new CSI packet. */
+	u8 mac_addr[6];	            /**< MAC address of transmitter (Active CSI) or receiver (Passive CSI) for CSI triggering frame. */
+	u8 trig_addr[6];	        /**< MAC address of destination (Active CSI) or source (Passive CSI) for CSI triggering frame (Reserved in METHOD4). */
+	u32 hw_assigned_timestamp;  /**< CSI timestamp, unit: us. */
+	u32 csi_sequence;           /**< CSI data sequence number. */
+	u8 csi_valid;               /**< Indicates if current CSI raw data is valid. */
+	u8 channel;                 /**< Operation channel. */
+	u8 bandwidth;               /**< Operating bandwidth (0: 20MHz, 1: 40MHz). */
+	u8 rx_rate;                 /**< RX packet rate used to obtain CSI info. */
+	u8 protocol_mode;           /**< Protocol mode of response packet (0: OFDM, 1: HT, 2: VHT, 3: HE). */
+	u16 num_sub_carrier;        /**< Number of subcarriers in CSI raw data */
+	u8 num_bit_per_tone;        /**< CSI data word length (sum of I and Q). E.g., if using @ref RTW_CSI_ACCU_1BYTE accuracy (S(8,X)), num_bit_per_tone = 16. */
+	s8 rssi[2];                 /**< rssi[0]: dBm, rssi[1]: reserved */
+	s8 evm[2];                  /**< Error Vector Magnitude in dB (Reserved). */
+	u8 rxsc;                    /**< Sub-20MHz channel used for packet transmission. */
+	u8 n_rx;                    /**< Reserved. */
+	u8 n_sts;                   /**< Reserved. */
+	u8 trig_flag;               /**< CSI trigger source indicator (valid only in METHOD4, 0 if `trig_addr` valid) */
+	u8 rsvd[6];                 /**< Ensure the total sizes of struct is 4-byte alignment */
+	u32 csi_data_length;        /**< CSI raw data length, unit: byte. */
+	u8 csi_data[];              /**< CSI raw data head address */
+};
+#pragma pack()
 
 /** @} End of WIFI_Exported_Structure_Types group*/
 /** @} End of WIFI_Exported_Types group*/

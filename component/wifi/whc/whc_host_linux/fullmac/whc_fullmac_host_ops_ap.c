@@ -191,12 +191,12 @@ static int whc_fullmac_host_set_txq_params(struct wiphy *wiphy, struct net_devic
 	return ret;
 }
 
-#ifdef CONFIG_CFG80211_SME_OFFLOAD
+#ifdef CONFIG_SUPPLICANT_SME
 static int whc_fullmac_host_probe_client(struct wiphy *wiphy, struct net_device *ndev, const u8 *peer, u64 *cookie)
 {
 	return 0;
 }
-#endif // CONFIG_CFG80211_SME_OFFLOAD
+#endif // CONFIG_SUPPLICANT_SME
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0))
 static int whc_fullmac_host_change_beacon(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_beacon_data *info)
@@ -519,7 +519,7 @@ void whc_fullmac_host_ops_ap_init(void)
 	ops->change_bss = whc_fullmac_host_change_bss;
 	ops->set_txq_params = whc_fullmac_host_set_txq_params;
 	ops->dump_survey = whc_fullmac_host_dump_survey_params;
-#ifdef CONFIG_CFG80211_SME_OFFLOAD
+#ifdef CONFIG_SUPPLICANT_SME
 	/*
 	 * This is required by AP SAE, otherwise wpa_driver_nl80211_capa() would
 	 * set use_monitor to 1 because poll_command_supported is false and
@@ -527,5 +527,5 @@ void whc_fullmac_host_ops_ap_init(void)
 	 * (which SAE AP shall use).
 	 */
 	ops->probe_client = whc_fullmac_host_probe_client;
-#endif	/* CONFIG_CFG80211_SME_OFFLOAD */
+#endif	/* CONFIG_SUPPLICANT_SME */
 }
