@@ -93,6 +93,16 @@ bool rtk_bt_dfu_distributor_block_data(uint16_t block_num, uint8_t *pdata, uint3
 	}
 }
 
+bool rtk_bt_dfu_distributor_blob_max_size(uint32_t *size)
+{
+	if (dfu_distributor_if.mesh_dfu_distributor_blob_max_size) {
+		return dfu_distributor_if.mesh_dfu_distributor_blob_max_size(size);
+	} else {
+		BT_LOGE("[%s] The current platform do not support mesh dfu.\r\n", __func__);
+		return false;
+	}
+}
+
 #endif  // BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE
 
 bool rtk_bt_dfu_load_data_from_flash(uint32_t addr, uint32_t len, uint8_t *pout)
@@ -184,6 +194,16 @@ bool rtk_bt_dfu_updater_server_verify(void)
 {
 	if (dfu_update_server_if.mesh_dfu_fw_update_server_verify) {
 		return dfu_update_server_if.mesh_dfu_fw_update_server_verify();
+	} else {
+		BT_LOGE("[%s] The current platform do not support mesh dfu.\r\n", __func__);
+		return false;
+	}
+}
+
+bool rtk_bt_dfu_updater_server_blob_max_size(uint32_t *size)
+{
+	if (dfu_update_server_if.mesh_dfu_fw_update_server_blob_max_size) {
+		return dfu_update_server_if.mesh_dfu_fw_update_server_blob_max_size(size);
 	} else {
 		BT_LOGE("[%s] The current platform do not support mesh dfu.\r\n", __func__);
 		return false;

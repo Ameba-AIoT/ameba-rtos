@@ -26,6 +26,7 @@ struct mesh_dfu_standalone_updater_opts {
 struct mesh_dfu_distributor_opts {
 	bool (*mesh_dfu_distributor_load_data_flash)(uint32_t addr, uint32_t len, uint8_t *pout);
 	bool (*mesh_dfu_distributor_block_data)(uint16_t block_num, uint8_t *pdata, uint32_t data_len);
+	bool (*mesh_dfu_distributor_blob_max_size)(uint32_t *size);
 };
 #endif  // BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE
 
@@ -35,6 +36,7 @@ struct mesh_dfu_fw_update_server_opts {
 	bool (*mesh_dfu_fw_update_server_apply)(void);
 	bool (*mesh_dfu_fw_update_server_block_data)(uint16_t block_num, uint8_t *pdata, uint16_t data_len);
 	bool (*mesh_dfu_fw_update_server_verify)(void);
+	bool (*mesh_dfu_fw_update_server_blob_max_size)(uint32_t *size);
 };
 #endif  // BT_MESH_ENABLE_DFU_TARGET_ROLE
 
@@ -48,6 +50,8 @@ bool rtk_bt_dfu_distributor_resource_init(void);
 
 bool rtk_bt_dfu_distributor_block_data(uint16_t block_num, uint8_t *pdata, uint32_t data_len);
 
+bool rtk_bt_dfu_distributor_blob_max_size(uint32_t *size);
+
 bool rtk_bt_dfu_target_resource_init(void);
 
 bool rtk_bt_dfu_updater_server_start(uint8_t fw_image_idx);
@@ -57,5 +61,7 @@ bool rtk_bt_dfu_updater_server_apply(void);
 bool rtk_bt_dfu_updater_server_block_data(uint16_t block_num, uint8_t *pdata, uint16_t data_len);
 
 bool rtk_bt_dfu_updater_server_verify(void);
+
+bool rtk_bt_dfu_updater_server_blob_max_size(uint32_t *size);
 
 #endif  // _RTK_BT_DEVICE_FIRMWARE_UPDATE_INTERFACE_H

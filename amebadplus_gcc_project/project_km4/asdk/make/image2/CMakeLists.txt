@@ -1,4 +1,4 @@
-ameba_add_image(target_img2)
+ameba_add_image(target_img2 p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_image2_all.bin)
 # variable c_CURRENT_IMAGE value is ${c_CURRENT_IMAGE}
 ###############################  ADD COMPONENT  ###################################
 
@@ -36,13 +36,6 @@ ameba_add_subdirectory(${c_CMPT_WIFI_DIR})
 ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_fw)
 
 ameba_add_subdirectory(${c_MCU_PROJECT_DIR}/src)
-
-# return()
-
-#unhandled add_subdirectory
-# add_subdirectory(test)
-# add_subdirectory(application)
-
 ###############################  GENERATE IMAGE  ###################################
 #---------------- PRE LINK -------------------#
 
@@ -95,13 +88,14 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/target_img2.asm ${KM0_PROJECT_DIR}/asdk/image/target_img2_otrcore.asm
     COMMAND ${CMAKE_STRIP} ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf
 
-    COMMAND ${CMAKE_COMMAND} -E echo "  BIN      km4_image2_all.bin"
+    COMMAND ${CMAKE_COMMAND} -E echo "  BIN      ${c_MCU_PROJECT_NAME}_image2_all.bin"
 
     COMMAND ${CMAKE_COMMAND}
         -Dc_BASEDIR=${c_BASEDIR}
         -Dc_CMAKE_FILES_DIR=${c_CMAKE_FILES_DIR}
         -Dc_SOC_PROJECT_DIR=${c_SOC_PROJECT_DIR}
         -Dc_MCU_PROJECT_DIR=${c_MCU_PROJECT_DIR}
+        -Dc_MCU_PROJECT_NAME=${c_MCU_PROJECT_NAME} # name of current mcu project
         -Dc_MCU_KCONFIG_FILE=${c_MCU_KCONFIG_FILE}
         -Dc_SDK_IMAGE_TARGET_DIR=${c_SDK_IMAGE_TARGET_DIR}
 
@@ -115,7 +109,7 @@ add_custom_command(
         -DCMAKE_SIZE=${CMAKE_SIZE}
         -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
 
-        -P ${CMAKE_CURRENT_SOURCE_DIR}/postbuild.cmake
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/${c_POST_BUILD_SCRIPT}
     DEPENDS ${c_CURRENT_IMAGE}
 )
 

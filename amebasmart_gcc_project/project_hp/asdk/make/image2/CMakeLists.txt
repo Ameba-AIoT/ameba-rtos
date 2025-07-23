@@ -1,4 +1,4 @@
-ameba_add_image(target_img2)
+ameba_add_image(target_img2 p_IMAGE_ALL km4_image2_all.bin)
 # Use variable c_CURRENT_IMAGE to represent full image target name
 # set(c_CURRENT_IMAGE_TYPE "image2") #TODO: remove this line if ameba_add_image() above is uncommented
 
@@ -80,9 +80,8 @@ target_link_libraries(${c_CURRENT_IMAGE}
 )
 
 #--------------- POST BUILD ------------------#
-
 add_custom_command(
-    TARGET ${c_CURRENT_IMAGE} POST_BUILD
+    OUTPUT ${c_SDK_IMAGE_TARGET_DIR}/target_img2.axf
     COMMAND ${CMAKE_COMMAND} -E make_directory ${c_SDK_IMAGE_TARGET_DIR}
     COMMAND ${CMAKE_COMMAND} -E touch ${c_SDK_IMAGE_TARGET_DIR}/.gitignore
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/text.map ${c_SDK_IMAGE_TARGET_DIR}/text_image2_ns.map
@@ -101,6 +100,7 @@ add_custom_command(
         -Dc_CMAKE_FILES_DIR=${c_CMAKE_FILES_DIR} # dir of cmake scripts
         -Dc_SOC_PROJECT_DIR=${c_SOC_PROJECT_DIR} # dir of soc project
         -Dc_MCU_PROJECT_DIR=${c_MCU_PROJECT_DIR} # dir of current mcu project
+        -Dc_MCU_PROJECT_NAME=${c_MCU_PROJECT_NAME} # name of current mcu project
         -Dc_MCU_KCONFIG_FILE=${c_MCU_KCONFIG_FILE} # file of current project's kconfig file
         -Dc_SDK_IMAGE_TARGET_DIR=${c_SDK_IMAGE_TARGET_DIR} # dir of image output
 
@@ -111,18 +111,22 @@ add_custom_command(
         -DDAILY_BUILD=${DAILY_BUILD}
 
         # special variables for current image
-        -DKM4_PROJECT_DIR=${HP_PROJECT_DIR}
 
         # cmake toolchain variables
         -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR}
         -DCMAKE_SIZE=${CMAKE_SIZE}
         -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
 
-        -P ${CMAKE_CURRENT_SOURCE_DIR}/postbuild.cmake
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/${c_POST_BUILD_SCRIPT}
 
     COMMENT "${c_CURRENT_IMAGE} post build"
+    DEPENDS ${c_CURRENT_IMAGE}
 )
-
+add_custom_target(
+    ${c_CURRENT_IMAGE}_postbuild
+    ALL
+    DEPENDS ${c_SDK_IMAGE_TARGET_DIR}/target_img2.axf
+)
 #------------- EXTRA PROCESS -----------------#
 set(clean_files
     ${c_SDK_IMAGE_TARGET_DIR}
@@ -136,7 +140,7 @@ set(clean_files
 
 set(link_deps
     ${IMG2_LD}
-    ${c_SOC_PROJECT_DIR}/${c_SOC_TYPE}_layout.ld
+    ${c_SOC_PROJECT_DIR}/ameba_layout.ld
 )
 
 set_target_properties(${c_CURRENT_IMAGE} PROPERTIES

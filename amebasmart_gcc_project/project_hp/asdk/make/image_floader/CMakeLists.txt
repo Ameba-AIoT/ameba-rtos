@@ -67,7 +67,7 @@ add_custom_command(TARGET ${c_CURRENT_IMAGE} POST_BUILD
         -DCMAKE_SIZE=${CMAKE_SIZE}
         -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
 
-        -P ${CMAKE_CURRENT_SOURCE_DIR}/../image1/postbuild.cmake
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/../image1/${c_POST_BUILD_SCRIPT}
 
     COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/target_loader.axf   ${c_SDK_GNU_UTILITY_DIR}/gnu_script/acut_loader/target_FPGA.axf
     COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/ram_1.bin           ${c_SDK_GNU_UTILITY_DIR}/gnu_script/acut_loader/flash_loader_ram_1.bin

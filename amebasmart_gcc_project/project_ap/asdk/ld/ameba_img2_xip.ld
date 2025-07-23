@@ -1,4 +1,4 @@
-#include "../../../amebasmart_layout.ld"
+#include "../../../ameba_layout.ld"
 
 /* Linker script to place sections and symbol values. Should be used together
  * with other linker script that defines memory regions FLASH and RAM.

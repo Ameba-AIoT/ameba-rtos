@@ -1,5 +1,5 @@
 
-#include "../../../amebasmart_layout.ld"
+#include "../../../ameba_layout.ld"
 
 SECTIONS
 {

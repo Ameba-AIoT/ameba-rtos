@@ -1,4 +1,4 @@
-ameba_add_image(target_img2)
+ameba_add_image(target_img2 p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_image2_all.bin)
 # variable c_CURRENT_IMAGE value is ${c_CURRENT_IMAGE}
 ###############################  ADD COMPONENT  ###################################
 
@@ -58,12 +58,6 @@ target_link_libraries(${c_CURRENT_IMAGE}
 )
 
 #--------------- POST BUILD ------------------#
-
-if(TARGET target_img2_km4_postbuild)
-    #avoid making bin files in parallel
-    set(DEP_KM4 target_img2_km4_postbuild)
-endif()
-
 add_custom_command(
     OUTPUT ${c_SDK_IMAGE_TARGET_DIR}/target_img2.axf
     # TARGET ${c_CURRENT_IMAGE} POST_BUILD
@@ -78,13 +72,14 @@ add_custom_command(
     COMMAND ${CMAKE_STRIP} ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf
     COMMAND ${CMAKE_NM} ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf | sort > ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.map
 
-    COMMAND ${CMAKE_COMMAND} -E echo "  BIN      km0_image2_all.bin"
+    COMMAND ${CMAKE_COMMAND} -E echo "  BIN      ${c_MCU_PROJECT_NAME}_image2_all.bin"
 
     COMMAND ${CMAKE_COMMAND}
         -Dc_BASEDIR=${c_BASEDIR}
         -Dc_CMAKE_FILES_DIR=${c_CMAKE_FILES_DIR}
         -Dc_SOC_PROJECT_DIR=${c_SOC_PROJECT_DIR}
         -Dc_MCU_PROJECT_DIR=${c_MCU_PROJECT_DIR}
+        -Dc_MCU_PROJECT_NAME=${c_MCU_PROJECT_NAME} # name of current mcu project
         -Dc_MCU_KCONFIG_FILE=${c_MCU_KCONFIG_FILE}
         -Dc_SDK_IMAGE_TARGET_DIR=${c_SDK_IMAGE_TARGET_DIR}
 
@@ -98,9 +93,9 @@ add_custom_command(
         -DCMAKE_SIZE=${CMAKE_SIZE}
         -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
 
-        -P ${CMAKE_CURRENT_SOURCE_DIR}/postbuild.cmake
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/${c_POST_BUILD_SCRIPT}
 
-    DEPENDS ${c_CURRENT_IMAGE} ${DEP_KM4}
+    DEPENDS ${c_CURRENT_IMAGE}
 )
 
 add_custom_target(
