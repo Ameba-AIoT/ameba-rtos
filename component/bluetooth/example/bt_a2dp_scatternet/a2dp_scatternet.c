@@ -3108,16 +3108,6 @@ int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable)
 				memset((void *)&a2dp_task, 0, sizeof(struct a2dp_demo_task_t));
 			}
 		}
-		app_server_deinit();
-		BT_APP_PROCESS(general_client_delete());
-		BT_APP_PROCESS(bas_client_delete());
-		BT_APP_PROCESS(gaps_client_delete());
-		BT_APP_PROCESS(simple_ble_client_delete());
-
-		/* no need to unreg callback here, it is done in rtk_bt_disable */
-		// BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_LE_GP_GAP));
-		// BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_LE_GP_GATTS));
-		// BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_LE_GP_GATTC));
 
 		/* Disable BT */
 		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_GAP));
@@ -3133,6 +3123,12 @@ int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable)
 #endif
 		/* Disable BT */
 		BT_APP_PROCESS(rtk_bt_disable());
+
+		app_server_deinit();
+		BT_APP_PROCESS(general_client_delete());
+		BT_APP_PROCESS(bas_client_delete());
+		BT_APP_PROCESS(gaps_client_delete());
+		BT_APP_PROCESS(simple_ble_client_delete());
 		/* audio related resources release */
 		rtk_bt_audio_deinit();
 		a2dp_demo_audio_track_hdl = NULL;
