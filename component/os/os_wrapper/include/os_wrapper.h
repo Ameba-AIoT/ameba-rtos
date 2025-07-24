@@ -31,6 +31,7 @@ extern "C" {
 #include "os_wrapper_time.h"
 #include "os_wrapper_timer.h"
 #include "os_wrapper_static_functions.h"
+#include "os_wrapper_event_groups.h"
 
 #ifdef __cplusplus
 }

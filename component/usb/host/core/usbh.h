@@ -137,14 +137,14 @@ typedef struct {
 
 	u8 alt_max;											/* USB support max alt setting num */
 
-	u8 speed : 2;										/* USB speed, USB_SPEED_HIGH, USB_SPEED_HIGH_IN_FULL or USB_SPEED_LOW 0~3*/
-	u8 dma_enable : 1;									/* Enable USB internal DMA mode, 0-Disable, 1-Enable */
+	u8 speed;										/* USB speed, USB_SPEED_HIGH, USB_SPEED_HIGH_IN_FULL or USB_SPEED_LOW 0~3*/
+	u8 dma_enable;									/* Enable USB internal DMA mode, 0-Disable, 1-Enable */
 
 	/* 	used for get the usb host tick
 		if sof_tick_en = 1, usbh_get_tick will return the tick which support by sof interrupt(should enable sof interrupt)
 		if sof_tick_en = 0, usbh_get_tick will return the tick which got from the timestamp
 	*/
-	u8 sof_tick_en : 1;
+	u8 sof_tick_en;
 } usbh_config_t;
 
 struct _usb_host_t;

@@ -15,6 +15,7 @@ u32 np_flash_phase_shift_idx = 0;
 u32 np_flash_FLASH_rd_sample_phase_cal = 0;
 u32 np_flash_FLASH_rd_sample_phase = 0;
 //u32 mem_type = 0;
+u32 np_dslp_en = 0;
 
 SRAM_ONLY_TEXT_SECTION
 u32 FLASH_CalibrationNewCmd(u32 NewStatus)
@@ -1063,7 +1064,10 @@ void np_resume(void)
 	}
 
 	pmu_acquire_wakelock(PMU_KM4_RUN);
-	pmu_acquire_deepwakelock(PMU_KM4_RUN);
+
+	if (np_dslp_en) {
+		pmu_acquire_deepwakelock(PMU_OS);
+	}
 
 	if (np_sleep_type == SLEEP_CG) {
 		np_clock_on();
@@ -1089,8 +1093,10 @@ void np_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqStat
 	DCache_Invalidate((u32)psleep_param, sizeof(SLEEP_ParamDef));
 
 	if (psleep_param->dlps_enable) {
-		pmu_release_deepwakelock(PMU_KM4_RUN);
+		np_dslp_en = 1;
 		pmu_release_deepwakelock(PMU_OS);
+	} else {
+		np_dslp_en = 0;
 	}
 
 	//set dlps

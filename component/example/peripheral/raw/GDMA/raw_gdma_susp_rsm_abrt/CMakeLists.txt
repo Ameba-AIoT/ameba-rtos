@@ -1,12 +1,3 @@
-ameba_internal_library(example_raw_gdma_suspend_resume_abort)
-
-<<<<<<< HEAD:component/example/peripheral/raw/GDMA/raw_gdma_suspend_resume_abort/CMakeLists.txt
-target_sources(
-    ${CURRENT_LIB_NAME} PRIVATE
-    example_raw_gdma_suspend_resume_abort.c
-    app_example.c
-)
-=======
 set(public_includes)                #public include directories, NOTE: relative path is OK
 set(public_definitions)             #public definitions
 set(public_libraries)               #public libraries(files), NOTE: linked with whole-archive options
@@ -63,4 +54,3 @@ ameba_add_internal_library(example_gdma
 )
 
 ##########################################################################################
->>>>>>> a5ae06da66 ([common][example] shorten some example names):component/example/peripheral/raw/GDMA/raw_gdma_susp_rsm_abrt/CMakeLists.txt
