@@ -139,6 +139,7 @@ ameba_set(c_SDK_ROM_SYMBOL_S_GEN_SCRIPT)
 ameba_set(c_SDK_ROM_TOTAL_SIZE_SCRIPT)
 ameba_set(c_SDK_ROM_CODE_ANALYZE_SCRIPT)
 ameba_set(c_SDK_EXTRACT_LD_SCRIPT)
+ameba_set(c_SDK_ROM_WIFI_SYMBOL_GEN_SCRIPT)
 
 #-------------------------#
 ameba_set_if(CONFIG_MP_INCLUDED c_MP y p_ELSE n)

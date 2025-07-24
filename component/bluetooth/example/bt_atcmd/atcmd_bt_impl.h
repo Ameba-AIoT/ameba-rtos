@@ -110,13 +110,7 @@ int atcmd_bt_debug_port(int argc, char *argv[]);
 
 int atcmd_bt_gpio(int argc, char *argv[]);
 
-int atcmd_bt_sleep_mode(int argc, char *argv[]);
-
-/*int atcmd_bt_ant(int argc, char *argv[]);*/
-
 int atcmd_bt_set_tx_power(int argc, char *argv[]);
-
-int atcmd_bt_sof_eof_ind(int argc, char *argv[]);
 
 #if defined(CONFIG_BT_INIC) && CONFIG_BT_INIC
 int atcmd_bt_remote_wakeup(int argc, char **argv);

@@ -83,6 +83,7 @@ static void fw_update_server_read_flash(uint32_t addr, uint8_t *p, uint32_t len)
     defined(BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE) && BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE || \
     defined(BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE) && BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE
 static uint32_t start_addr_save_new_firmware = 0, end_addr_save_new_firmware = 0;
+#define MESH_DFU_IMAGE_STORE_SKIP_HEADER_LENGTH           0x2000
 
 static bool initiator_or_standalone_updater_or_distributor_resource_init(void)
 {
@@ -95,7 +96,7 @@ static bool initiator_or_standalone_updater_or_distributor_resource_init(void)
 	}
 
 	// On OTA area for save new image, skip the Certificate(4K) + Manifest(4K) for save the new firmware
-	start_addr_save_new_firmware = addr + 0x2000;
+	start_addr_save_new_firmware = addr + MESH_DFU_IMAGE_STORE_SKIP_HEADER_LENGTH;
 
 	BT_LOGD("[%s] Set flash addr from 0x%08x to 0x%08x for save new firmware image.\r\n", __func__, (unsigned int)start_addr_save_new_firmware,
 			(unsigned int)end_addr_save_new_firmware);
@@ -257,6 +258,46 @@ static void distributor_or_target_write_data_to_flash(uint32_t addr, uint8_t *p,
 	}
 #endif
 }
+
+// Save ota header info to ram
+static uint8_t *distributor_or_target_save_header_info_to_ram(update_ota_target_hdr *hdr, uint8_t *p, uint32_t len)
+{
+	uint32_t hdr_num;
+	uint8_t *p1 = p;
+
+	if (!hdr || !p1) {
+		BT_LOGE("[%s] Input param is NULL, hdr:0x%x, p1:0x%x, fail.\r\n", __func__, hdr, p1);
+		return NULL;
+	}
+
+	BT_LOGD("[%s] Get ota file header info.\r\n", __func__);
+	memcpy(&hdr->FileHdr, p1, sizeof(update_file_hdr));
+	p1 += sizeof(update_file_hdr);
+	if ((uint32_t)(p1 - p) > len) {
+		BT_LOGE("[%s] Extend the max len:%d, fail.\r\n", __func__, len);
+		return NULL;
+	}
+
+	// The header number should only be 1,2
+	hdr_num = hdr->FileHdr.HdrNum;
+	if (1 != hdr_num) {
+		BT_LOGE("[%s] The image header number should only be 1, but actual is:%d, do not cover this situation, fail.\r\n", __func__, hdr_num);
+		return NULL;
+	}
+
+	for (uint32_t i = 0; i < hdr_num; i++) {
+		memcpy(&hdr->FileImgHdr[i], p1, sizeof(update_file_img_hdr));
+		update_file_img_hdr *p_hdr = &hdr->FileImgHdr[i];
+		BT_LOGD("[%s] Index:%d, get a ota image header (checksum:0x%x, image len:0x%x, image id:%d).\r\n", __func__, i, p_hdr->Checksum, p_hdr->ImgLen, p_hdr->ImgID);
+		p1 += sizeof(update_file_img_hdr);
+		if ((uint32_t)(p1 - p) > len) {
+			BT_LOGE("[%s] Extend the max len:%d.\r\n", __func__, len);
+			return NULL;
+		}
+	}
+
+	return p1;
+}
 #endif  // BT_MESH_ENABLE_DFU_TARGET_ROLE or BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE
 
 #if defined(BT_MESH_ENABLE_DFU_INITIATOR_ROLE) && BT_MESH_ENABLE_DFU_INITIATOR_ROLE
@@ -284,9 +325,36 @@ bool mesh_dfu_standalone_updater_resource_init(struct mesh_dfu_standalone_update
 #endif  // BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE
 
 #if defined(BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE) && BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE
+//check whether fw distribution server have space to store ota.bin
+static bool fw_distribution_server_image_size_check(update_ota_target_hdr *hdr, uint8_t *pdata, uint32_t data_len)
+{
+	uint8_t *p = pdata;
+	p = distributor_or_target_save_header_info_to_ram(hdr, p, data_len);
+	if (!p) {
+		BT_LOGE("[%s] Read ota file header fail.\r\n", __func__);
+		return false;
+	}
+
+	uint32_t image_len = 0;
+	image_len += sizeof(update_file_hdr);
+
+	for (int i = 0; i < MAX_IMG_NUM; i++) {
+		image_len += hdr->FileImgHdr[i].ImgLen;
+		image_len += hdr->FileImgHdr[i].ImgHdrLen;
+	}
+
+	if (image_len > end_addr_save_new_firmware - start_addr_save_new_firmware) {
+		BT_LOGE("[%s] The ota app image len > actual flash size, fail.\r\n", __func__);
+		return false;
+	}
+
+	return true;
+}
+
 static bool distributor_receive_block_data(uint16_t block_num, uint8_t *pdata, uint32_t data_len)
 {
 	static uint32_t offset = 0;
+	update_ota_target_hdr ota_hdr = {0};  // Firmware file header
 
 	if (!start_addr_save_new_firmware) {
 		BT_LOGE("[%s] Addr for save new firmware is 0, fail.\r\n", __func__);
@@ -296,8 +364,21 @@ static bool distributor_receive_block_data(uint16_t block_num, uint8_t *pdata, u
 	if (0 == block_num) {
 		BT_LOGD("[%s] Receive data from initiator, start erase flash from 0x%08x to 0x%08x for save new image.\r\n", __func__, start_addr_save_new_firmware,
 				end_addr_save_new_firmware);
-		distributor_or_target_erase_flash(start_addr_save_new_firmware, end_addr_save_new_firmware);
-		offset = 0;
+		memset(&ota_hdr, 0, sizeof(update_ota_target_hdr));
+		if (sizeof(update_file_hdr) + sizeof(update_file_img_hdr) <= data_len) {
+			if (fw_distribution_server_image_size_check(&ota_hdr, pdata, data_len)) {
+				distributor_or_target_erase_flash(start_addr_save_new_firmware, end_addr_save_new_firmware);
+				offset = 0;
+			} else {
+				BT_LOGE("[%s] The length of OTA image > current flash image size, fail.\r\n", __func__);
+				return false;
+			}
+		} else {
+			// todo, maybe never enter this case
+			BT_LOGE("[%s] The block size is %d < header len %d, can not get the complete firmware image header. Do not cover this situation temp.\r\n", __func__, data_len,
+					sizeof(update_file_hdr) + sizeof(update_file_img_hdr));
+			return false;
+		}
 	}
 
 	BT_LOGD("[%s][%d] address:0x%08x, len:%d.\r\n", __func__, __LINE__, start_addr_save_new_firmware + offset, data_len);
@@ -309,6 +390,23 @@ static bool distributor_receive_block_data(uint16_t block_num, uint8_t *pdata, u
 	return true;
 }
 
+static bool distributor_get_blob_max_size(uint32_t *size)
+{
+	uint32_t start_addr, end_addr = 0;
+
+	if (!mesh_dfu_get_target_addr_by_img_id(OTA_IMGID_APP, &start_addr, &end_addr)) {
+		BT_LOGE("[%s] Get image addr fail.\r\n", __func__);
+		return false;
+	}
+
+	// On OTA area for save new image, skip the Certificate(4K) + Manifest(4K) for save the new firmware
+	start_addr += MESH_DFU_IMAGE_STORE_SKIP_HEADER_LENGTH;
+	*size = end_addr - start_addr;
+
+	BT_LOGD("[%s] Get blob max size %d for save new firmware image.\r\n", __func__, *(unsigned int *)size);
+	return true;
+}
+
 bool mesh_dfu_distributor_resource_init(struct mesh_dfu_distributor_opts *p_if)
 {
 	if (!initiator_or_standalone_updater_or_distributor_resource_init()) {
@@ -317,6 +415,7 @@ bool mesh_dfu_distributor_resource_init(struct mesh_dfu_distributor_opts *p_if)
 	}
 	p_if->mesh_dfu_distributor_load_data_flash = initiator_or_standalone_updater_or_distributor_load_data_from_flash;
 	p_if->mesh_dfu_distributor_block_data = distributor_receive_block_data;
+	p_if->mesh_dfu_distributor_blob_max_size = distributor_get_blob_max_size;
 	return true;
 }
 #endif  // BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE
@@ -772,46 +871,6 @@ static bool dfu_fw_update_server_apply(void)
 	return true;
 }
 
-// Save ota header info to ram
-static uint8_t *fw_update_server_save_header_info_to_ram(update_ota_target_hdr *hdr, uint8_t *p, uint32_t len)
-{
-	uint32_t hdr_num;
-	uint8_t *p1 = p;
-
-	if (!hdr || !p1) {
-		BT_LOGE("[%s] Input param is NULL, hdr:0x%x, p1:0x%x, fail.\r\n", __func__, hdr, p1);
-		return NULL;
-	}
-
-	BT_LOGD("[%s] Get ota file header info.\r\n", __func__);
-	memcpy(&hdr->FileHdr, p1, sizeof(update_file_hdr));
-	p1 += sizeof(update_file_hdr);
-	if ((uint32_t)(p1 - p) > len) {
-		BT_LOGE("[%s] Extend the max len:%d, fail.\r\n", __func__, len);
-		return NULL;
-	}
-
-	// The header number should only be 1,2
-	hdr_num = hdr->FileHdr.HdrNum;
-	if (1 != hdr_num) {
-		BT_LOGE("[%s] The image header number should only be 1, but actual is:%d, do not cover this situation, fail.\r\n", __func__, hdr_num);
-		return NULL;
-	}
-
-	for (uint32_t i = 0; i < hdr_num; i++) {
-		memcpy(&hdr->FileImgHdr[i], p1, sizeof(update_file_img_hdr));
-		update_file_img_hdr *p_hdr = &hdr->FileImgHdr[i];
-		BT_LOGD("[%s] Index:%d, get a ota image header (checksum:0x%x, image len:0x%x, image id:%d).\r\n", __func__, i, p_hdr->Checksum, p_hdr->ImgLen, p_hdr->ImgID);
-		p1 += sizeof(update_file_img_hdr);
-		if ((uint32_t)(p1 - p) > len) {
-			BT_LOGE("[%s] Extend the max len:%d.\r\n", __func__, len);
-			return NULL;
-		}
-	}
-
-	return p1;
-}
-
 static bool dfu_fw_update_server_block_data(uint16_t block_num, uint8_t *pdata, uint16_t data_len)
 {
 	static update_ota_target_hdr ota_hdr = {0};  // Firmware file header
@@ -826,7 +885,7 @@ static bool dfu_fw_update_server_block_data(uint16_t block_num, uint8_t *pdata, 
 		memset(&ota_hdr, 0, sizeof(update_ota_target_hdr));
 		if (sizeof(update_file_hdr) + sizeof(update_file_img_hdr) <= data_len) {
 			BT_LOGD("[%s] Save the ota header info.\r\n", __func__);
-			p = fw_update_server_save_header_info_to_ram(&ota_hdr, p, data_len);
+			p = distributor_or_target_save_header_info_to_ram(&ota_hdr, p, data_len);
 			if (!p) {
 				BT_LOGE("[%s] Read ota file header fail.\r\n", __func__);
 				return false;
@@ -868,6 +927,21 @@ static bool dfu_fw_update_server_verify(void)
 	return check_sum_result;
 }
 
+static bool dfu_fw_update_server_get_blob_max_size(uint32_t *size)
+{
+	uint32_t start_addr, end_addr = 0;
+
+	if (!mesh_dfu_get_target_addr_by_img_id(OTA_IMGID_APP, &start_addr, &end_addr)) {
+		BT_LOGE("[%s] Get image addr fail.\r\n", __func__);
+		return false;
+	}
+
+	*size = end_addr - start_addr;
+
+	BT_LOGD("[%s] Get blob max size %d for save new firmware image.\r\n", __func__, *(unsigned int *)size);
+	return true;
+}
+
 bool mesh_dfu_fw_updater_server_resource_init(struct mesh_dfu_fw_update_server_opts *p_if)
 {
 	BT_LOGD("[%s][%d] Enter.\r\n", __func__, __LINE__);
@@ -875,6 +949,7 @@ bool mesh_dfu_fw_updater_server_resource_init(struct mesh_dfu_fw_update_server_o
 	p_if->mesh_dfu_fw_update_server_apply = dfu_fw_update_server_apply;
 	p_if->mesh_dfu_fw_update_server_block_data = dfu_fw_update_server_block_data;
 	p_if->mesh_dfu_fw_update_server_verify = dfu_fw_update_server_verify;
+	p_if->mesh_dfu_fw_update_server_blob_max_size = dfu_fw_update_server_get_blob_max_size;
 	return true;
 }
 

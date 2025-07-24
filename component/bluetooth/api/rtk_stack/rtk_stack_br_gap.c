@@ -219,6 +219,7 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 	break;
 
 	case BT_EVENT_LINK_USER_CONFIRMATION_REQ: {
+		BT_LOGA("BT_EVENT_LINK_USER_CONFIRMATION_REQ \r\n");
 		gap_br_user_cfm_req_cfm(param->link_user_confirmation_req.bd_addr, GAP_CFM_CAUSE_ACCEPT);
 	}
 	break;
@@ -251,6 +252,33 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 	}
 	break;
 
+	case BT_EVENT_ACL_CONN_FAIL: {
+		rtk_bt_br_acl_conn_fail_t *p_fail_rsp = NULL;
+		BT_LOGA("BT_EVENT_ACL_CONN_FAIL \r\n");
+		{
+			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_ACL_CONN_FAIL, sizeof(rtk_bt_br_acl_conn_fail_t));
+			if (!p_evt) {
+				BT_LOGE("bt_stack_mgr_cback: evt_t allocate fail \r\n");
+				handle = false;
+				break;
+			}
+			p_fail_rsp = (rtk_bt_br_acl_conn_fail_t *)p_evt->data;
+			memcpy((void *)p_fail_rsp, (void *)&param->acl_conn_fail, sizeof(rtk_bt_br_acl_conn_fail_t));
+			/* Send event */
+			if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
+				handle = false;
+				break;
+			}
+		}
+	}
+	break;
+
+	case BT_EVENT_ACL_AUTHEN_FAIL: {
+		BT_LOGA("BT_EVENT_ACL_AUTHEN_FAIL \r\n");
+		gap_br_set_radio_mode(GAP_RADIO_MODE_NONE_DISCOVERABLE, true, 0);
+	}
+	break;
+
 	case BT_EVENT_ACL_CONN_SNIFF: {
 		T_APP_BR_LINK *p_link = NULL;
 		p_link = app_find_br_link(param->acl_conn_sniff.bd_addr);
@@ -277,6 +305,16 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 				break;
 			}
 		}
+	}
+	break;
+
+	case BT_EVENT_ACL_ROLE_MASTER: {
+		BT_LOGA("BT_EVENT_ACL_ROLE_MASTER \r\n");
+	}
+	break;
+
+	case BT_EVENT_ACL_ROLE_SLAVE: {
+		BT_LOGA("BT_EVENT_ACL_ROLE_SLAVE \r\n");
 	}
 	break;
 

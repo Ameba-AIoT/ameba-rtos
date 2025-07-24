@@ -135,6 +135,15 @@ typedef struct {
 	uint16_t            version;
 } rtk_sdp_did_attr_info;
 
+/**
+ * @struct    rtk_sdp_discov_cmpl
+ * @brief     sdp discovery completion info.
+ */
+typedef struct {
+	uint8_t             bd_addr[6];
+	uint16_t            cause;
+} rtk_sdp_discov_cmpl;
+
 /* ------------------------- Functions Declaration ------------------------- */
 /**
  * @defgroup  bt_sdp_api BT SDP APIs

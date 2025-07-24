@@ -175,6 +175,8 @@ menu "CONFIG WHC INTF"
         default WHC_INTF_IPC_MENU
             config WHC_INTF_IPC_MENU
                 bool "WHC_IPC"
+            config WIFI_SINGLE_CORE_MENU
+                bool "SINGLE CORE"
             config FULLMAC_DEV
                 bool "FULLMAC_DEV"
                 select WIFI_HOST_CONTROL
@@ -193,7 +195,7 @@ menu "CONFIG WHC INTF"
                 select WHC_HOST_FOR_KM4TZ
     endchoice
 
-    if !WHC_INTF_IPC_MENU
+    if !WHC_INTF_IPC_MENU && !WIFI_SINGLE_CORE_MENU
         choice
            prompt "HW INTERFACE"
            config WHC_INTF_SDIO
@@ -343,18 +345,20 @@ menu "CONFIG WHC INTF"
         endmenu
     endif
 
-    if WHC_INTF_IPC_MENU
+    if WHC_INTF_IPC_MENU || WIFI_SINGLE_CORE_MENU
         choice
             prompt "Select AP Core"
             default KM4TZ_AS_AP
             config KM4TZ_AS_AP
                 bool "KM4TZ"
-                select WHC_HOST_FOR_KM4TZ
+                select WHC_HOST_FOR_KM4TZ if WHC_INTF_IPC_MENU
                 select WHC_DEV_FOR_KM4NS if WHC_INTF_IPC_MENU
+                select WHC_NONE_FOR_KM4TZ if WIFI_SINGLE_CORE_MENU
             config KM4NS_AS_AP
                 bool "KM4NS"
-                select WHC_HOST_FOR_KM4NS
+                select WHC_HOST_FOR_KM4NS if WHC_INTF_IPC_MENU
                 select WHC_DEV_FOR_KM4TZ if WHC_INTF_IPC_MENU
+                select WHC_NONE_FOR_KM4NS if WIFI_SINGLE_CORE_MENU
         endchoice
     endif
 
@@ -369,6 +373,8 @@ menu "CONFIG WHC INTF"
         bool
     config WHC_NONE_FOR_KM4TZ
         bool
+    config WHC_WIFI_API_PATH
+        bool
 endmenu
 
 menu "CONFIG WIFI"
@@ -382,6 +388,7 @@ menu "CONFIG WIFI"
         config WHC_INTF_IPC_MENU
             bool
             select WHC_INTF_IPC
+            select WHC_WIFI_API_PATH
             select WLAN
             select LWIP_LAYER if WHC_HOST && !MP_SHRINK
             select FW_DRIVER_COEXIST if WHC_DEV
@@ -392,8 +399,6 @@ menu "CONFIG WIFI"
             select WLAN
             select FW_DRIVER_COEXIST
             select WIFI_FW_EN
-            #todo remove at last
-            select WHC_WIFI_API_PATH
             select LWIP_LAYER if WHC_DUAL_TCPIP_FOR_KM4TZ
 
         config WHC_BRIDGE
@@ -419,6 +424,7 @@ menu "CONFIG WIFI"
             depends on WHC_NONE
             select WLAN
             select LWIP_LAYER
+            select WIFI_FW_EN
             select FW_DRIVER_COEXIST
 
         config WIFI_FW_EN_FOR_KM4NS

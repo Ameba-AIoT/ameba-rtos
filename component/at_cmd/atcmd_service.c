@@ -13,12 +13,15 @@
 #include "at_intf_uart.h"
 #include "at_intf_spi.h"
 #include "at_intf_sdio.h"
+#include "at_intf_usbd.h"
 #include "atcmd_service.h"
 #include "atcmd_sys_common.h"
 #if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 #include "vfs.h"
 #include "kv.h"
+#ifndef CONFIG_ZEPHYR_SDK
 #include "cJSON.h"
+#endif
 #endif
 
 #include "atcmd_sys.h"
@@ -296,10 +299,10 @@ int atcmd_tt_mode_start(u32 len)
 		return -1;
 	}
 
-	g_tt_mode = 1;
-	RTK_LOGI(TAG, "enter tt mode\n");
 	// info HOST we enter tt mode now
 	at_printf(ATCMD_ENTER_TT_MODE_STR);
+	g_tt_mode = 1;
+	RTK_LOGI(TAG, "enter tt mode\n");
 
 	return 0;
 }
@@ -493,6 +496,8 @@ int atcmd_host_control_config_setting(void)
 				g_host_control_mode = AT_HOST_CONTROL_SPI;
 			} else if (strncmp(interface_ob->valuestring, "sdio", strlen(interface_ob->valuestring)) == 0) {
 				g_host_control_mode = AT_HOST_CONTROL_SDIO;
+			} else if (strncmp(interface_ob->valuestring, "usb", strlen(interface_ob->valuestring)) == 0) {
+				g_host_control_mode = AT_HOST_CONTROL_USB;
 			}
 		} else {
 			goto DEFAULT;
@@ -533,6 +538,8 @@ int atcmd_host_control_config_setting(void)
 				}
 			}
 #endif
+		} else if (g_host_control_mode == AT_HOST_CONTROL_USB) {
+			// nothing to config
 		} else {
 			RTK_LOGE(TAG, "g_host_control_mode is invalid\r\n");
 		}
@@ -566,6 +573,14 @@ DEFAULT:
 #else
 		ret = -1;
 		RTK_LOGI(TAG, "NOT Support SDIO Interface!\r\n");
+#endif
+	} else if (g_host_control_mode == AT_HOST_CONTROL_USB) {
+#ifdef CONFIG_SUPPORT_USB
+		RTK_LOGI(TAG, "ATCMD HOST Control Mode : USB");
+		ret = atio_usbd_init();
+#else
+		ret = -1;
+		RTK_LOGI(TAG, "NOT Support USB Interface!\r\n");
 #endif
 	} else {
 		RTK_LOGE(TAG, "g_host_control_mode is invalid\r\n");

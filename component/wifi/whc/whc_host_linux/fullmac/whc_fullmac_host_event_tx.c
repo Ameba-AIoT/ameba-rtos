@@ -260,7 +260,7 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 
 	/*clear for last connect status */
 	global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_STARTING;
-	whc_fullmac_host_connect_indicate(RTW_JOINSTATUS_STARTING, NULL, 0);
+	whc_fullmac_host_connect_indicate(RTW_JOINSTATUS_STARTING, NULL);
 
 	/* step2: malloc and set synchronous connection related variables*/
 	if (block) {
@@ -360,7 +360,7 @@ error:
 	}
 
 	if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_FAIL) {
-		whc_fullmac_host_connect_indicate(RTW_JOINSTATUS_FAIL, NULL, 0);
+		whc_fullmac_host_connect_indicate(RTW_JOINSTATUS_FAIL, NULL);
 	}
 
 	return ret;
@@ -746,36 +746,124 @@ int whc_fullmac_host_stop_nan(void)
 	return ret;
 }
 
-int whc_fullmac_host_add_nan_func(struct rtw_nan_func_info_t *func, void *nan_func_pointer)
+int whc_fullmac_host_add_nan_func(struct rtw_nan_func_t *func, void *nan_func_pointer)
 {
 	int ret = 0;
 	u32 size;
+	u64 func_pointer_addr;
 	u8 *ptr, *param;
 
-	size = sizeof(struct rtw_nan_func_info_t) + func->serv_spec_info_len + func->srf_bf_len + func->srf_num_macs * sizeof(struct mac_address)
-		   + (func->num_tx_filters + func->num_rx_filters) * sizeof(struct cfg80211_nan_func_filter) + sizeof(void *);
+	size = sizeof(func->type) +
+		   sizeof(func->service_id) +
+		   sizeof(func->publish_type) +
+		   sizeof(func->close_range) +
+		   sizeof(func->publish_bcast) +
+		   sizeof(func->subscribe_active) +
+		   sizeof(func->followup_id) +
+		   sizeof(func->followup_reqid) +
+		   sizeof(func->followup_dest) +
+		   sizeof(func->ttl) +
+		   sizeof(func->serv_spec_info_len) + func->serv_spec_info_len +
+		   sizeof(func->srf_include) +
+		   sizeof(func->srf_bf_len) + func->srf_bf_len +
+		   sizeof(func->srf_bf_idx) +
+		   sizeof(func->srf_num_macs) + (func->srf_num_macs * sizeof(struct rtw_mac)) +
+		   sizeof(func->num_rx_filters) + (func->num_rx_filters * sizeof(struct rtw_nan_func_filter)) +
+		   sizeof(func->num_tx_filters) + (func->num_tx_filters * sizeof(struct rtw_nan_func_filter)) +
+		   sizeof(func->instance_id) +
+		   sizeof(func->cookie) +
+		   sizeof(u64);
+
 	param = (u8 *)kzalloc(size, GFP_KERNEL);
+	if (!param) {
+		return -ENOMEM;
+	}
 	ptr = param;
 
-	memcpy(ptr, func, sizeof(struct rtw_nan_func_info_t));
-	ptr += sizeof(struct rtw_nan_func_info_t);
+	memcpy(ptr, &func->type, sizeof(func->type));
+	ptr += sizeof(func->type);
 
-	memcpy(ptr, func->serv_spec_info, func->serv_spec_info_len);
-	ptr += func->serv_spec_info_len;
+	memcpy(ptr, func->service_id, sizeof(func->service_id));
+	ptr += sizeof(func->service_id);
 
-	memcpy(ptr, func->srf_bf, func->srf_bf_len);
-	ptr += func->srf_bf_len;
+	memcpy(ptr, &func->publish_type, sizeof(func->publish_type));
+	ptr += sizeof(func->publish_type);
 
-	memcpy(ptr, func->srf_macs, func->srf_num_macs * sizeof(struct mac_address));
-	ptr += func->srf_num_macs * sizeof(struct mac_address);
+	memcpy(ptr, &func->close_range, sizeof(func->close_range));
+	ptr += sizeof(func->close_range);
 
-	memcpy(ptr, func->tx_filters, func->num_tx_filters * sizeof(struct cfg80211_nan_func_filter));
-	ptr += func->num_tx_filters * sizeof(struct cfg80211_nan_func_filter);
+	memcpy(ptr, &func->publish_bcast, sizeof(func->publish_bcast));
+	ptr += sizeof(func->publish_bcast);
 
-	memcpy(ptr, func->rx_filters, func->num_rx_filters * sizeof(struct cfg80211_nan_func_filter));
-	ptr += func->num_rx_filters * sizeof(struct cfg80211_nan_func_filter);
+	memcpy(ptr, &func->subscribe_active, sizeof(func->subscribe_active));
+	ptr += sizeof(func->subscribe_active);
 
-	memcpy(ptr, &nan_func_pointer, sizeof(nan_func_pointer));
+	memcpy(ptr, &func->followup_id, sizeof(func->followup_id));
+	ptr += sizeof(func->followup_id);
+
+	memcpy(ptr, &func->followup_reqid, sizeof(func->followup_reqid));
+	ptr += sizeof(func->followup_reqid);
+
+	memcpy(ptr, &func->followup_dest, sizeof(func->followup_dest));
+	ptr += sizeof(func->followup_dest);
+
+	memcpy(ptr, &func->ttl, sizeof(func->ttl));
+	ptr += sizeof(func->ttl);
+
+	memcpy(ptr, &func->serv_spec_info_len, sizeof(func->serv_spec_info_len));
+	ptr += sizeof(func->serv_spec_info_len);
+
+	memcpy(ptr, &func->srf_include, sizeof(func->srf_include));
+	ptr += sizeof(func->srf_include);
+
+	memcpy(ptr, &func->srf_bf_len, sizeof(func->srf_bf_len));
+	ptr += sizeof(func->srf_bf_len);
+
+	memcpy(ptr, &func->srf_bf_idx, sizeof(func->srf_bf_idx));
+	ptr += sizeof(func->srf_bf_idx);
+
+	memcpy(ptr, &func->srf_num_macs, sizeof(func->srf_num_macs));
+	ptr += sizeof(func->srf_num_macs);
+
+	memcpy(ptr, &func->num_rx_filters, sizeof(func->num_rx_filters));
+	ptr += sizeof(func->num_rx_filters);
+
+	memcpy(ptr, &func->num_tx_filters, sizeof(func->num_tx_filters));
+	ptr += sizeof(func->num_tx_filters);
+
+	memcpy(ptr, &func->instance_id, sizeof(func->instance_id));
+	ptr += sizeof(func->instance_id);
+
+	memcpy(ptr, &func->cookie, sizeof(func->cookie));
+	ptr += sizeof(func->cookie);
+
+	if (func->serv_spec_info_len && func->serv_spec_info) {
+		memcpy(ptr, func->serv_spec_info, func->serv_spec_info_len);
+		ptr += func->serv_spec_info_len;
+	}
+
+	if (func->srf_bf_len && func->srf_bf) {
+		memcpy(ptr, func->srf_bf, func->srf_bf_len);
+		ptr += func->srf_bf_len;
+	}
+
+	if (func->srf_num_macs && func->srf_macs) {
+		memcpy(ptr, func->srf_macs, func->srf_num_macs * sizeof(struct rtw_mac));
+		ptr += func->srf_num_macs * sizeof(struct rtw_mac);
+	}
+
+	if (func->num_rx_filters && func->rx_filters) {
+		memcpy(ptr, func->rx_filters, func->num_rx_filters * sizeof(struct rtw_nan_func_filter));
+		ptr += func->num_rx_filters * sizeof(struct rtw_nan_func_filter);
+	}
+
+	if (func->num_tx_filters && func->tx_filters) {
+		memcpy(ptr, func->tx_filters, func->num_tx_filters * sizeof(struct rtw_nan_func_filter));
+		ptr += func->num_tx_filters * sizeof(struct rtw_nan_func_filter);
+	}
+
+	func_pointer_addr = (u64)(uintptr_t)nan_func_pointer;
+	memcpy(ptr, &func_pointer_addr, sizeof(u64));
 
 	whc_fullmac_host_send_event(WHC_API_NAN_ADD_FUNC, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 

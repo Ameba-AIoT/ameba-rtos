@@ -347,9 +347,9 @@ int ble_throughput_main(uint8_t enable)
 		bt_app_conf.mtu_size = 0xF7;
 		bt_app_conf.master_init_mtu_req = true;
 		bt_app_conf.slave_init_mtu_req = false;
-		bt_app_conf.prefer_all_phy = 0;
-		bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
-		bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
+		bt_app_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
+		bt_app_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
+		bt_app_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 		bt_app_conf.max_tx_octets = 0x40;
 		bt_app_conf.max_tx_time = 0x200;
 		bt_app_conf.user_def_service = false;

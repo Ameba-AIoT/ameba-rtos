@@ -72,10 +72,6 @@
 #define whc_dev_cfg80211_cfgvendor_send_cmd_reply        whc_ipc_dev_cfg80211_cfgvendor_send_cmd_reply
 #endif
 
-#ifdef CONFIG_P2P
-#define whc_dev_cfg80211_indicate_channel_ready          whc_ipc_dev_cfg80211_indicate_channel_ready
-#endif
-
 #ifdef CONFIG_WIFI_TUNNEL
 #define whc_dev_wtn_rnat_ap_init                         whc_ipc_dev_wtn_rnat_ap_init
 #ifdef CONFIG_WTN_SOCKET_APP
@@ -173,7 +169,7 @@ void whc_ipc_dev_trx_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum);
 /*for ipc dev api*/
 void whc_ipc_dev_api_init(void);
 void whc_ipc_dev_api_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum);
-void whc_ipc_dev_wifi_event_indicate(u32 event_cmd, u8 *buf, s32 buf_len);
+void whc_ipc_dev_wifi_event_indicate(u32 event_cmd, u8 *evt_info, s32 evt_len);
 void whc_ipc_dev_scan_user_callback_indicate(unsigned int ap_num, void *user_data);
 void whc_ipc_dev_acs_info_indicate(struct rtw_acs_mntr_rpt *acs_mntr_rpt);
 void whc_ipc_dev_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data);

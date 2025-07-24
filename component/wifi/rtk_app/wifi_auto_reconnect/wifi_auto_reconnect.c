@@ -32,13 +32,13 @@ extern void eap_autoreconnect_hdl(u8 method_id);
 #if CONFIG_AUTO_RECONNECT
 struct rtw_auto_reconn_t  rtw_reconn;
 
-void rtw_reconn_join_status_hdl(u8 *buf)
+void rtw_reconn_join_status_hdl(u8 *evt_info)
 {
 	static u8 join_status_last = RTW_JOINSTATUS_SUCCESS;
 	int disconn_reason = -1;
 	u8 need_reconn = 0;
-	struct rtw_event_join_status_info *evt_info = (struct rtw_event_join_status_info *)buf;
-	u8 join_status = evt_info->status;
+	struct rtw_event_join_status_info *join_status_info = (struct rtw_event_join_status_info *)evt_info;
+	u8 join_status = join_status_info->status;
 	struct rtw_event_join_fail *join_fail;
 	struct rtw_event_disconnect *disconnect;
 
@@ -57,10 +57,10 @@ void rtw_reconn_join_status_hdl(u8 *buf)
 	}
 
 	if (join_status == RTW_JOINSTATUS_FAIL) {
-		join_fail = &evt_info->private.fail;
+		join_fail = &join_status_info->priv.fail;
 		disconn_reason = join_fail->reason_or_status_code;
 	} else if (join_status == RTW_JOINSTATUS_DISCONNECT) {
-		disconnect = &evt_info->private.disconnect;
+		disconnect = &join_status_info->priv.disconnect;
 		disconn_reason = disconnect->disconn_reason;
 	}
 

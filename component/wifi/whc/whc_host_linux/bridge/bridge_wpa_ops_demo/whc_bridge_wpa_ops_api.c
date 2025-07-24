@@ -18,11 +18,11 @@ int whc_bridge_host_do_scan(struct sk_buff *skb, struct genl_info *info)
 	u32 payload_len;
 	u8 *ptr;
 
-	if (!info->attrs[BRIDGE_ATTR_PAYLOAD]) {
+	if (!info->attrs[WHC_ATTR_PAYLOAD]) {
 		printk("Missing required payload in Netlink message\n");
 		return -EINVAL;
 	}
-	payload = (char *)nla_data(info->attrs[BRIDGE_ATTR_PAYLOAD]);
+	payload = (char *)nla_data(info->attrs[WHC_ATTR_PAYLOAD]);
 
 	payload_len = *(u32 *)payload;
 	buf_len += payload_len;

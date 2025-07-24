@@ -200,6 +200,36 @@ typedef enum {
 	RTK_BT_LE_PHYS_PRIM_ADV_1M      = 1, /**<  Primary advertisement PHY is LE 1M */
 	RTK_BT_LE_PHYS_PRIM_ADV_CODED   = 3  /**<  Primary advertisement PHY is LE Coded */
 } rtk_bt_le_phy_prim_adv_t;
+
+/**
+ * @typedef   rtk_bt_le_all_phy_prefer_t
+ * @brief     Bluetooth LE ALL_PHYs prefer bit field.
+ */
+typedef enum {
+	RTK_BT_LE_PHYS_PREFER_ALL    = 0,
+	RTK_BT_LE_PHYS_NO_PREFER_TX  = (1 << 0), /**< The Host has no preference among the transmitter PHYs supported by the Controller */
+	RTK_BT_LE_PHYS_NO_PREFER_RX  = (1 << 1), /**< The Host has no preference among the receiver PHYs supported by the Controller */
+} rtk_bt_le_all_phy_prefer_t;
+
+/**
+ * @typedef   rtk_bt_le_trx_phy_prefer_t
+ * @brief     Bluetooth LE TX_PHYs or RX_PHYs prefer bit field.
+ */
+typedef enum {
+	RTK_BT_LE_PHYS_PREFER_1M     = (1 << 0), /**< The Host prefers to use the LE 1M transmitter PHY (possibly among others) */
+	RTK_BT_LE_PHYS_PREFER_2M     = (1 << 1), /**< The Host prefers to use the LE 2M transmitter PHY (possibly among others) */
+	RTK_BT_LE_PHYS_PREFER_CODED  = (1 << 2), /**< The Host prefers to use the LE Coded transmitter PHY (possibly among others) */
+} rtk_bt_le_trx_phy_prefer_t;
+
+/**
+ * @typedef   rtk_bt_le_phy_option_t
+ * @brief     Bluetooth LE PHY options.
+ */
+typedef enum {
+	RTK_BT_LE_PHYS_OPTIONS_CODED_PREFER_NO = 0x0, /**< Host has no preferred coding when transmitting on the LE Coded PHY */
+	RTK_BT_LE_PHYS_OPTIONS_CODED_PREFER_S2 = 0x1, /**< Host prefers that S=2 coding be used when transmitting on the LE Coded PHY */
+	RTK_BT_LE_PHYS_OPTIONS_CODED_PREFER_S8 = 0x2, /**< Host prefers that S=8 coding be used when transmitting on the LE Coded PHY */
+} rtk_bt_le_phy_option_t;
 #endif
 
 #if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
@@ -225,7 +255,7 @@ typedef enum {
 
 /**
  * @typedef   rtk_bt_le_adv_ch_map_t
- * @brief     Bluetooth LE GAP adv type definition.
+ * @brief     Bluetooth LE GAP adv channel map definition.
  */
 typedef enum {
 	RTK_BT_LE_ADV_CHNL_37               = 0x01, /*!< 0x01, Channel 37 shall be used */
@@ -1076,10 +1106,10 @@ typedef struct {
  */
 typedef struct {
 	uint16_t conn_handle;       /*!< connection handle */
-	uint8_t all_phys;           /*!< preferred all phys */
-	uint8_t tx_phys;            /*!< preferred tx phys */
-	uint8_t rx_phys;            /*!< preferred rx phys */
-	uint16_t phy_options;       /*!< preferred phy options*/
+	uint8_t all_phys;           /*!< preferred all phys, @ref rtk_bt_le_all_phy_prefer_t */
+	uint8_t tx_phys;            /*!< preferred tx phys, @ref rtk_bt_le_trx_phy_prefer_t */
+	uint8_t rx_phys;            /*!< preferred rx phys, @ref rtk_bt_le_trx_phy_prefer_t */
+	uint16_t phy_options;       /*!< preferred phy options, @ref rtk_bt_le_phy_option_t */
 } rtk_bt_le_set_phy_param_t;
 
 /**
@@ -1885,20 +1915,9 @@ typedef struct {
 } rtk_bt_le_txpower_ind_t;
 #endif
 
-#if defined(RTK_BLE_TX_SOF_EOF_INDICATION) && RTK_BLE_TX_SOF_EOF_INDICATION
-/**
- * @enum      rtk_bt_le_sof_eof_ind_t
- * @brief     Bluetooth LE SOF and EOF indication.
- */
-typedef enum {
-	RTK_BT_LE_TX_SOF        = 0x01, /*!< Start of frame. */
-	RTK_BT_LE_TX_EOF        = 0x02, /*!< End of frame. */
-} rtk_bt_le_sof_eof_ind_t;
-#endif
-
 #if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
 typedef enum {
-	RTK_BT_LE_COC_SEC_NONE,                 /**< Security None */ 
+	RTK_BT_LE_COC_SEC_NONE,                 /**< Security None */
 	RTK_BT_LE_COC_SEC_UNAUTHEN_ENCRYPT,     /**< Security unauthenticated encryption */
 	RTK_BT_LE_COC_SEC_AUTHEN_ENCRYPT,       /**< Security authenticated encryption */
 	RTK_BT_LE_COC_SEC_UNAUTHEN_DATA_SIGN,   /**< Security unauthenticated data signed */

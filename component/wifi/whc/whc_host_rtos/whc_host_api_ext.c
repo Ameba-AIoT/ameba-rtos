@@ -434,15 +434,14 @@ int wifi_set_eap_phase(unsigned char is_trigger_eap)
 #endif
 }
 
-unsigned char wifi_get_eap_phase(void)
+unsigned char wifi_get_eap_phase(u8 *eap_phase)
 {
 #ifdef CONFIG_EAP
-	unsigned char eap_phase = 0;
-
-	whc_host_api_message_send(WHC_API_WIFI_GET_EAP_PHASE, NULL, 0, &eap_phase, sizeof(eap_phase));
-	return eap_phase;
+	int ret = 0;
+	whc_host_api_message_send(WHC_API_WIFI_GET_EAP_PHASE, NULL, 0, (u8 *)eap_phase, sizeof(u8));
+	return ret;
 #else
-	return 0;
+	return -1;
 #endif
 }
 

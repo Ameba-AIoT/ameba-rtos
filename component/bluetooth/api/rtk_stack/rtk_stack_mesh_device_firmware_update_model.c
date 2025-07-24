@@ -25,7 +25,6 @@
 #include <firmware_update.h>
 #include <firmware_distribution.h>
 
-#define BLOB_SERVER_SUPPORT_MAX_BLOB_TRANSFER_SIZE  1500000  // The max image size of target role or distributor role
 #define DISTRIBUTION_SERVER_SUPPORT_MAX_FW_IMAGE_LIST_SIZE  5  // The max image list size for distributor role, means the distributor can save the number of images
 
 #if defined(BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE) && BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE || \
@@ -36,7 +35,13 @@ static void rtk_stack_blob_transfer_server_set_capability(void)
 {
 	blob_server_capabilities_t cap = {0};
 	cap = blob_transfer_server_caps_get();
-	cap.max_blob_size = BLOB_SERVER_SUPPORT_MAX_BLOB_TRANSFER_SIZE;  // means the max image size
+	uint32_t blob_size = 0;
+#if defined(BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE) && BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE
+	rtk_bt_dfu_distributor_blob_max_size(&blob_size);
+#else
+	rtk_bt_dfu_updater_server_blob_max_size(&blob_size);
+#endif
+	cap.max_blob_size = blob_size;  // means the max image size
 	blob_transfer_server_caps_set(&cap);
 }
 #endif
@@ -597,7 +602,8 @@ bool rtk_stack_dfu_distributor_init(void)
 	rtk_stack_blob_transfer_server_set_capability();
 
 	// Set distributor server capability, the defualt value of stack is not enough
-	uint32_t image_size = BLOB_SERVER_SUPPORT_MAX_BLOB_TRANSFER_SIZE;
+	uint32_t image_size;
+	rtk_bt_dfu_distributor_blob_max_size(&image_size);
 	fw_dist_caps_t dist_cap;
 	dist_cap = fw_dist_server_caps_get();
 	dist_cap.max_fw_images_list_size = DISTRIBUTION_SERVER_SUPPORT_MAX_FW_IMAGE_LIST_SIZE;

@@ -171,19 +171,20 @@ func_exit:
 	return ret;
 }
 
-static int _whc_fullmac_host_ft_rx_mgnt(char *buf, int buf_len)
+static int _whc_fullmac_host_ft_rx_mgnt(char *evt_info)
 {
-	struct ieee80211_mgmt *mgmt = (void *)buf;
+	struct rtw_event_report_frame *evt_rpt_frm = (struct rtw_event_report_frame *)evt_info;
+	struct ieee80211_mgmt *mgmt = (void *)(evt_rpt_frm->frame);
 	int ret = 0;
 
-	if (buf_len < 2) {
+	if (evt_rpt_frm->frame_len < 2) {
 		dev_err(global_idev.fullmac_dev, "%s, FT length of frame < 2.\n", __func__);
 		return -EINVAL;
 	}
 
 	dev_dbg(global_idev.fullmac_dev, "%s===>\n", __func__);
 	if (ieee80211_is_auth(mgmt->frame_control)) {
-		ret = _whc_fullmac_host_ft_auth_rx(buf, buf_len);
+		ret = _whc_fullmac_host_ft_auth_rx(evt_rpt_frm->frame, evt_rpt_frm->frame_len);
 	} else if (ieee80211_is_assoc_resp(mgmt->frame_control) || \
 			   ieee80211_is_reassoc_resp(mgmt->frame_control)) {
 		_FT_SET_STATUS(_FT_ASSOCIATED_STA);
@@ -226,7 +227,7 @@ int whc_fullmac_host_ft_set_bssid(const u8 *target_bssid)
 	return 0;
 }
 
-int whc_fullmac_host_ft_event(u32 event, char *buf, int buf_len, unsigned int join_status)
+int whc_fullmac_host_ft_event(u32 event, char *evt_info, unsigned int join_status)
 {
 	int ret = 0;
 	dev_dbg(global_idev.fullmac_dev, "%s ===>\n", __func__);
@@ -236,7 +237,7 @@ int whc_fullmac_host_ft_event(u32 event, char *buf, int buf_len, unsigned int jo
 		_whc_fullmac_host_ft_auth_start();
 		break;
 	case RTW_EVENT_FT_RX_MGNT:
-		_whc_fullmac_host_ft_rx_mgnt(buf, buf_len);
+		_whc_fullmac_host_ft_rx_mgnt(evt_info);
 		break;
 	case RTW_EVENT_JOIN_STATUS:
 		_whc_fullmac_host_ft_rx_join_status(join_status);

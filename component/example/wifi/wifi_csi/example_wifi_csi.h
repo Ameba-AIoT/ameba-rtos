@@ -33,7 +33,7 @@ struct csi_report_q_priv {
 	u32 busy_q_cnt;
 };
 
-void example_wifi_csi_report_cb(u8 *buf, s32 buf_len);
+void example_wifi_csi_report_cb(u8 *evt_info);
 void wifi_csi_show(struct csi_report_data *csi_rpt_pkt);
 void example_wifi_csi(void);
 

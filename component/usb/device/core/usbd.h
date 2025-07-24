@@ -64,10 +64,10 @@ typedef struct {
 	u8 num;                     /* Endpoint number */
 	u8 type;                    /* Endpoint type, USB_EP_Type_XXX */
 	u8 binterval;               /* Endpoint binterval */
-	__IO u8 tx_zlp : 1;         /* class tz ZLP packet or not */
-	__IO u8 dis_zlp : 1;        /* class xfer ZLP enable or disable */
-	__IO u8 is_busy : 1;        /* class is busy or not */
-	__IO u8 xfer_state : 1;     /* class xfer state */
+	__IO u8 xfer_state;         /* class xfer state */
+	__IO u8 tx_zlp;             /* class tz ZLP packet or not */
+	__IO u8 dis_zlp;            /* class xfer ZLP enable or disable */
+	__IO u8 is_busy;            /* class is busy or not */
 } usbd_ep_t;
 
 /* USB configuration structure */
@@ -89,9 +89,9 @@ typedef struct {
 							   	USB_SPEED_HIGH_IN_FULL: USB 2.0 PHY in full speed mode, e.g. AmebaD/AmebaSmart.
 							   	USB_SPEED_FULL: USB 1.1 transceiver, e.g. AmebaDPlus. */
 	u8 isr_priority;			/* USB ISR priority */
-	u8 isr_in_critical : 1;		/* Process USB ISR in critical state. */
-	u8 dma_enable : 1;			/* Enable USB internal DMA mode, 0-Disable, 1-Enable. */
-	u8 intr_use_ptx_fifo : 1;	/* Use Periodic TX FIFO for INTR IN transfer, only for shared TxFIFO mode. */
+	u8 isr_in_critical;			/* Process USB ISR in critical state. */
+	u8 dma_enable;				/* Enable USB internal DMA mode, 0-Disable, 1-Enable. */
+	u8 intr_use_ptx_fifo;		/* Use Periodic TX FIFO for INTR IN transfer, only for shared TxFIFO mode. */
 } usbd_config_t;
 
 struct _usbd_class_driver_t;
@@ -120,11 +120,11 @@ typedef struct {
 	u8 dev_attach_status;					/* Device attach status, usbd_attach_status_t */
 	u8 dev_old_attach_status;				/* Device old attach status, usbd_attach_status_t */
 	u8 test_mode;							/* Test mode */
-	u8 self_powered : 1;						/* Self powered or not, 0-bus powered, 1-self powered */
-	u8 remote_wakeup_en : 1;					/* Remote wakeup enable or not, 0-disabled, 1-enabled */
-	u8 remote_wakeup : 1;						/* Remote wakeup */
-	u8 is_ready : 1;							/* Device ready or not, 0-disabled, 1-enabled */
-	u8 is_connected : 1;							/* Device connected or not,0-disabled, 1-enabled */
+	u8 self_powered;						/* Self powered or not, 0-bus powered, 1-self powered */
+	u8 remote_wakeup_en;					/* Remote wakeup enable or not, 0-disabled, 1-enabled */
+	u8 remote_wakeup;						/* Remote wakeup */
+	u8 is_ready;							/* Device ready or not, 0-disabled, 1-enabled */
+	u8 is_connected;						/* Device connected or not,0-disabled, 1-enabled */
 } usb_dev_t;
 
 /* USB class driver */

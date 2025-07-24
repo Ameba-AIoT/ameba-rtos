@@ -29,7 +29,7 @@
 #define IPC_N2A_WIFI_FW_INFO				2	/*!<  NP -->  AP FW Info*/
 #define IPC_N2A_FLASHPG_REQ				3	/*!<  NP -->  AP Flash Program REQUEST*/
 #define IPC_N2A_LOGUART_RX_SWITCH		4	/*!<  NP -->  AP Loguart Rx Switch*/
-#define IPC_N2A_BT_API_TRAN				5	/*!<  NP -->  AP BT API Exchange */
+#define IPC_N2A_COEX_API_TRAN				5	/*!<  NP -->  AP COEX API Exchange */
 // #define IPC_N2A_BT_DATA_TRAN			5	/*!<  NP -->  AP BT DATA Exchange */
 #define IPC_N2A_WIFI_TRX_TRAN				6	/*!<  NP -->  AP WIFI Message Exchange */
 #define IPC_N2A_WIFI_API_TRAN				7	/*!<  NP -->  AP API WIFI Message Exchange */
@@ -54,7 +54,7 @@
 #define IPC_A2N_WAKE_AP							2	/*!<  AP -->  NP Wakeup*/
 #define IPC_A2N_LOGUART_RX_SWITCH				3	/*!<  AP -->  NP Loguart Rx Switch*/
 #define IPC_A2N_FLASHPG_REQ						4	/*!<  AP -->  NP IFlash Program Request*/
-#define IPC_A2N_BT_API_TRAN						5	/*!<  AP -->  NP BT API Exchange */
+#define IPC_A2N_COEX_API_TRAN						5	/*!<  AP -->  NP COEX API Exchange */
 // #define IPC_A2N_BT_DATA_TRAN					5	/*!<  AP -->  NP BT DATA Exchange */
 #define IPC_A2N_WIFI_TRX_TRAN						6	/*!<  AP -->  NP WIFI Message Exchange */
 #define IPC_A2N_WIFI_API_TRAN						7	/*!<  AP -->  NP WIFI API Message Exchange */

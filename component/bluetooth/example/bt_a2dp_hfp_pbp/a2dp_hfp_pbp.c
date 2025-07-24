@@ -11,6 +11,7 @@
 #include <osif.h>
 #include <rtk_bt_common.h>
 #include <rtk_bt_device.h>
+#include <rtk_bt_le_gap.h>
 #include <rtk_bt_gattc.h>
 #include <rtk_bt_gatts.h>
 #include <rtk_bt_le_audio_def.h>
@@ -1630,6 +1631,14 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 		break;
 	}
 
+	case RTK_BT_BR_GAP_ACL_CONN_FAIL: {
+		rtk_bt_br_acl_conn_fail_t *p_fail_rsp = (rtk_bt_br_acl_conn_fail_t *)param;
+		BT_LOGA("[BR GAP] ACL connection fail with %02x:%02x:%02x:%02x:%02x:%02x, cause is 0x%x \r\n",
+				p_fail_rsp->bd_addr[5], p_fail_rsp->bd_addr[4], p_fail_rsp->bd_addr[3], p_fail_rsp->bd_addr[2], p_fail_rsp->bd_addr[1], p_fail_rsp->bd_addr[0],
+				p_fail_rsp->cause);
+		break;
+	}
+
 	case RTK_BT_BR_GAP_ACL_SNIFF: {
 		rtk_bt_br_acl_sniff_t *p_sniff = (rtk_bt_br_acl_sniff_t *)param;
 		BT_LOGA("[BR GAP] ACL sniff mode from %02x:%02x:%02x:%02x:%02x:%02x \r\n",
@@ -1727,6 +1736,12 @@ static rtk_bt_evt_cb_ret_t app_bt_sdp_callback(uint8_t evt_code, void *param, ui
 				p_info->vendor_src,
 				p_info->product_id,
 				p_info->version);
+		break;
+	}
+
+	case RTK_BT_SDP_EVT_DISCOV_CMPL: {
+		rtk_sdp_discov_cmpl *p_info = (rtk_sdp_discov_cmpl *)param;
+		BT_LOGA("[SDP] discovery complete cause 0x%x \r\n", p_info->cause);
 		break;
 	}
 
@@ -3107,10 +3122,6 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 					param->bis_idx, param->bis_conn_handle, param->cause);
 		/* stop escan previously to avoid insufficent RF bandwidth */
 		rtk_bt_le_audio_ext_scan_act(false);
-		/* stop BIG sync if exsit*/
-		if (big_sync_handle) {
-			rtk_bt_le_audio_broadcast_big_sync_terminate_by_handle(big_sync_handle);
-		}
 		lea_broadcast_start = true;
 		app_bt_le_audio_add_data_path(param->iso_chann_t.iso_conn_handle,
 									  param->iso_chann_t.p_iso_chann,
@@ -3863,9 +3874,9 @@ int bt_a2dp_hfp_pbp_main(uint8_t enable)
 											  RTK_BT_PROFILE_CAP;
 			bt_app_conf.mtu_size = 180;
 			bt_app_conf.master_init_mtu_req = true;
-			bt_app_conf.prefer_all_phy = 0;
-			bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
-			bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
+			bt_app_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
+			bt_app_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
+			bt_app_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 			bt_app_conf.max_tx_octets = 0x40;
 			bt_app_conf.max_tx_time = 0x200;
 			bt_app_conf.a2dp_role = RTK_BT_A2DP_ROLE_SNK;

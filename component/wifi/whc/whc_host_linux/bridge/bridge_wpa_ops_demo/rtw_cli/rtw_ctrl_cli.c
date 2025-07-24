@@ -166,20 +166,20 @@ void whc_bridge_host_rx_buf_hdl(struct msgtemplate *msg)
 
 	while (nla_ok(nla, remaining)) {
 		switch (nla->nla_type) {
-		case BRIDGE_ATTR_API_ID: {
+		case WHC_ATTR_API_ID: {
 			api_id = *(uint32_t *)NLA_DATA(nla);
-			//printf("BRIDGE_ATTR_API_ID = %u\n", api_id);
+			//printf("WHC_ATTR_API_ID = %u\n", api_id);
 		}
 		break;
-		case BRIDGE_ATTR_CHUNK_INDEX: {
+		case WHC_ATTR_CHUNK_INDEX: {
 			chunk_index = *(uint32_t *)NLA_DATA(nla);
 		}
 		break;
-		case BRIDGE_ATTR_LAST_CHUNK: {
+		case WHC_ATTR_LAST_CHUNK: {
 			last_chuck = *(uint8_t *)NLA_DATA(nla);
 		}
 		break;
-		case BRIDGE_ATTR_PAYLOAD: {
+		case WHC_ATTR_PAYLOAD: {
 			len = nla_len(nla);
 			payload = NLA_DATA(nla);
 

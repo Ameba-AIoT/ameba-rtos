@@ -124,6 +124,8 @@ static int vendor_cb_setup(void)
 
 static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len)
 {
+	u16 vendor_bulk_in_mps = usbh_vendor_get_bulk_ep_mps();
+	u16 vendor_intr_in_mps = usbh_vendor_get_intr_ep_mps();
 	switch (ep_type) {
 	case USB_CH_EP_TYPE_BULK:
 		//limited the copy len
@@ -131,10 +133,10 @@ static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len)
 			memcpy(vendor_bulk_loopback_rx_buf + vendor_bulk_total_rx_len, buf, len);
 		}
 		vendor_bulk_total_rx_len += len;
-
-		//transaction size > 0 and short packet
-		if ((len == 0) || ((len < usbh_vendor_get_bulk_ep_mps()) && (vendor_bulk_total_rx_len > 0))
-			|| (vendor_bulk_total_rx_len > USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE)) { //
+		//ZLP or short packet
+		if ((len == 0) || (len % vendor_bulk_in_mps)
+			|| ((len % vendor_bulk_in_mps == 0) && (len < USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE))
+			|| (vendor_bulk_total_rx_len > USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE)) {
 			vendor_bulk_total_rx_len = 0;
 			rtos_sema_give(vendor_bulk_receive_sema);
 		}
@@ -147,7 +149,7 @@ static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len)
 		vendor_intr_total_rx_len += len;
 
 		//transaction size > 0 and short packet
-		if ((len == 0) || ((len < usbh_vendor_get_intr_ep_mps()) && (vendor_intr_total_rx_len > 0))
+		if ((len == 0) || ((len < vendor_intr_in_mps) && (vendor_intr_total_rx_len > 0))
 			|| (vendor_intr_total_rx_len > USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE)) { //
 			vendor_intr_total_rx_len = 0;
 			rtos_sema_give(vendor_intr_receive_sema);
