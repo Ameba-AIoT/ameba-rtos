@@ -19,6 +19,14 @@ class Cut(OperationBase):
         parser.add_argument('-O', '--offset', type=int, help='Offset bytes from the cutting direction, default=0', default=0)
 
     @staticmethod
+    def require_manifest_file(context:Context) -> bool:
+        return False
+
+    @staticmethod
+    def require_layout_file(context:Context) -> bool:
+        return False
+
+    @staticmethod
     def execute(context: Context, input_file: str, output_file: str, length: int, backward: bool = False, offset: int = 0) -> Error:
         # Cut from the head:
         # ├────────┤──────────────────┤─────────┤

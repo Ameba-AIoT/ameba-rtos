@@ -16,6 +16,14 @@ class Pad(OperationBase):
         parser.add_argument('-l', '--length', type=int, help='Pad length in bytes', required=True)
         parser.add_argument('-i', '--input-file', help='Input file to be process', required=True)
 
+    @staticmethod
+    def require_manifest_file(context:Context) -> bool:
+        return False
+
+    @staticmethod
+    def require_layout_file(context:Context) -> bool:
+        return False
+
     # @exit_on_failure(catch_exception=True)
     @staticmethod
     def execute(context:Context, input_file:str, length:int):

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __USB_AUDIO_H
-#define __USB_AUDIO_H
+#ifndef USB_UAC1_H
+#define USB_UAC1_H
 
 #ifdef CONFIG_USBH_UAC
 
@@ -258,7 +258,6 @@ struct uac_feature_unit_descriptor_0 {
 } __attribute__((packed));
 
 /* 4.3.2.3 Mixer Unit Descriptor */
-// fongpin modify
 #define MIXER_UNIT_CONNECTED 2 // BBRRO DEFINE
 struct uac_mixer_unit_descriptor {
 	uint8_t bLength;
@@ -276,7 +275,6 @@ struct uac_mixer_unit_descriptor {
 } __attribute__((packed));
 
 /* 4.3.2.4 Selector Unit Descriptor */
-// fongpin modify
 struct uac_selector_unit_descriptor {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
@@ -371,7 +369,7 @@ struct uac1_status_word {
 } __attribute__((packed));
 #pragma pack(pop)
 
-#endif //CONFIG_USBH_AUDIO
+#endif //CONFIG_USBH_UAC
 
-#endif // __USB_AUDIO_H
+#endif // USB_UAC1_H
 
