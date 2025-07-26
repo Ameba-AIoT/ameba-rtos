@@ -14,6 +14,23 @@ class OperationBase(metaclass=BaseMeta):
         self.logger = context.logger
         self.context = context
 
+    def execute_all(self) -> Error:
+        res = self.pre_process()
+        if res:
+            self.context.logger.fatal(f'operation pre_process failed: {self.cmd_promote}, {res}')
+            return res
+
+        res = self.process()
+        if res:
+            self.context.logger.fatal(f'operation process failed: {self.cmd_promote}, {res}')
+            return res
+
+        res = self.post_process()
+        if res:
+            self.context.logger.fatal('operation post_process failed: {self.cmd_promote}, {res}')
+            return res
+        return Error.success()
+
     @abstractmethod
     def pre_process(self) -> Error:...
 
@@ -22,3 +39,11 @@ class OperationBase(metaclass=BaseMeta):
 
     @abstractmethod
     def post_process(self) -> Error:...
+
+    @staticmethod
+    @abstractmethod
+    def require_manifest_file(context:Context) -> bool:...
+
+    @staticmethod
+    @abstractmethod
+    def require_layout_file(context:Context) -> bool:...

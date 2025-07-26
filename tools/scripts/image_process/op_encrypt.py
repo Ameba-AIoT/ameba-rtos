@@ -13,7 +13,8 @@ class Encrypt(OperationBase):
 
     def __init__(self, context:Context) -> None:
         super().__init__(context)
-        self.manifest_manager = ManifestManager(context)
+        if self.context.args.sub_operation != 'keypair':
+            self.manifest_manager = ManifestManager(context)
 
     @staticmethod
     def register_args(parser) -> None:
@@ -35,9 +36,17 @@ class Encrypt(OperationBase):
         sub.add_argument('-o', '--output-file', help='Output sboot file', required=True)
 
         #NOTE: args for keypair
-        sub = subparsers.add_parser('keypair', help='Create manifest file')
+        sub = subparsers.add_parser('keypair', help='Create encrypt key pair')
         sub.add_argument('-a', '--algorithm', type=str, choices=ManifestManager.valid_algorithm, help='Algorithm to generate key pair', required=True)
         sub.add_argument('-o', '--output-file', help='Output key pair file', required=True)
+
+    @staticmethod
+    def require_manifest_file(context:Context) -> bool:
+        return context.args.sub_operation != "keypair"
+
+    @staticmethod
+    def require_layout_file(context:Context) -> bool:
+        return False
 
     def pre_process(self) -> Error:
         return Error.success()
@@ -87,4 +96,4 @@ class Encrypt(OperationBase):
     @exit_on_failure(catch_exception=True)
     def create_keypair(self, output_file:str, algorithm:str) -> Error:
         self.logger.info(f"create keypair file for {algorithm}")
-        return self.manifest_manager.create_keypair(output_file, algorithm)
+        return ManifestManager.create_keypair(self.context, output_file, algorithm)
