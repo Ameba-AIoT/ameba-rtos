@@ -251,6 +251,7 @@ void pmu_pre_sleep_processing(uint32_t *tick_before_sleep)
 		sleep_param.dlps_enable = DISABLE;
 	}
 	sleep_param.sleep_type = sleep_type;
+	DCache_CleanInvalidate((u32)&sleep_param, sizeof(SLEEP_ParamDef));
 
 	/*  Store gtimer timestamp before sleep */
 	*tick_before_sleep = SYSTIMER_TickGet();
@@ -284,7 +285,7 @@ void pmu_pre_sleep_processing(uint32_t *tick_before_sleep)
 	}
 
 	sleep_param.sleep_type = sleep_type;
-
+	DCache_CleanInvalidate((u32)&sleep_param, sizeof(SLEEP_ParamDef));
 	/*  Store gtimer timestamp before sleep */
 	*tick_before_sleep = SYSTIMER_TickGet();
 	sysactive_timeout_flag = 1;

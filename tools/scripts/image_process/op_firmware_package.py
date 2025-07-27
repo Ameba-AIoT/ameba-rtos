@@ -49,12 +49,12 @@ soc_configs:Dict[str, SocImageConfig] = {
         dsp_section = None
     ),
     "amebagreen2": SocImageConfig(
-        image1_section = "AP_BOOT_XIP",
+        image1_section = "KM4TZ_BOOT_XIP",
         image2_section = {
-            "km4ns": "NP_IMG2_XIP",
-            "km4tz": "AP_IMG2_XIP",
+            "km4ns": "KM4NS_IMG2_XIP",
+            "km4tz": "KM4TZ_IMG2_XIP",
         },
-        image3_section = "AP_IMG3_XIP",
+        image3_section = "KM4TZ_IMG3_XIP",
         dsp_section = None
     ),
     "amebaL2": SocImageConfig(
@@ -106,13 +106,10 @@ class FirmwarePackage(OperationBase):
         self.config:SocImageConfig = soc_configs[context.soc_project]
 
         #init in pre_process
-        self.output_project = ''
         self.output_image_dir = ''
         self.output_file = ''
 
-
         self.manifest_manager = ManifestManager(context)
-        self.encrypt_handler = Encrypt(context)
 
     @staticmethod
     def register_args(parser) -> None:
@@ -134,6 +131,14 @@ class FirmwarePackage(OperationBase):
         parser.add_argument('--output-project', type=str, help='Output project name') #if not set, output project is decided by output_file
 
         parser.add_argument('--sboot-for-image', type=int, nargs='+', help="generate sboot for given index image") #only for amebad yet
+
+    @staticmethod
+    def require_manifest_file(context:Context) -> bool:
+        return True
+
+    @staticmethod
+    def require_layout_file(context:Context) -> bool:
+        return True
 
     def pre_process(self) -> Error:
         if not self.context.soc_project:
@@ -157,23 +162,9 @@ class FirmwarePackage(OperationBase):
                 self.logger.fatal(f'Only support processing image1 or image2/image3 at once')
                 return Error(ErrorType.INVALID_INPUT)
 
-        if self.context.args.output_project:
-            self.output_project = self.context.args.output_project
-        else:
-            info = parse_project_info(self.context.args.output_file)
-            self.output_project = info['mcu_project']
-            if info['mcu_project'] == "":
-                self.logger.fatal(f'Failed determine output project by output file: {self.context.args.output_file}')
-                return Error(ErrorType.INVALID_INPUT)
-
-        if self.output_project == "":
-            return Error(ErrorType.INVALID_INPUT, "Failed determine output project")
-
-        self.output_image_dir = self.context.get_image_target_dir(self.output_project)
-        if file_has_path(self.context.args.output_file):
-            self.output_file = self.context.args.output_file
-        else:
-            self.output_file = os.path.join(self.output_image_dir, self.context.args.output_file)
+        self.output_image_dir = get_file_dir(self.context.args.output_file)
+        self.output_file = self.context.args.output_file
+        self.context.logger.info(f"image output dir: {self.output_image_dir}")
 
         return Error.success()
 
@@ -522,8 +513,8 @@ class FirmwarePackage(OperationBase):
         return Error.success()
 
     def encrypt_and_update_manifest_source(self, input_file:str, image_type, output_encrypt_file:str, manifest_source_file:Union[str, None], sboot:bool = False) -> Error:
-        info = parse_project_info(input_file)
-        if info['mcu_project'] != self.output_project:
+        input_file_dir = get_file_dir(input_file)
+        if input_file_dir != self.output_image_dir:
             # copy input file to output_image_dir if not in
             shutil.copy(input_file, self.output_image_dir)
             input_file = modify_file_path(input_file, new_directory=self.output_image_dir)
@@ -546,6 +537,7 @@ class FirmwarePackage(OperationBase):
 
         #Step1: create encrypt file and manifest file
         if manifest_config.rsip_en:
+            info = parse_project_info(input_file)
             section = self.config.section(image_type)
             if isinstance(section, dict):
                 #WARNING: Here image1/image2's section is get by it's belonging project

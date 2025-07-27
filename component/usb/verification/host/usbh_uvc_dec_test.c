@@ -31,6 +31,11 @@ static const char *const TAG = "USBH";
 /*Choose which application example*/
 #define CONFIG_USBH_UVC_APP  USBH_UVC_APP_SIMPLE
 
+#if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_SIMPLE)
+/*Just capture frame and save length*/
+#define USBH_UVC_CAL_TP 	1
+#endif
+
 #define USE_MJPEG			0
 #define USE_LCDC			0
 
@@ -80,34 +85,39 @@ static u32 uvc_frame_num1;
 
 static rtos_sema_t uvc_conn_sema;
 static rtos_sema_t uvc_disconn_sema;
-//static rtos_mutex_t uvc_buf_mutex_mjpeg = NULL;
-//static rtos_mutex_t uvc_buf_mutex_h264 = NULL;
+#if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
+static rtos_mutex_t uvc_buf_mutex_mjpeg = NULL;
+static rtos_mutex_t uvc_buf_mutex_h264 = NULL;
+#endif
 static u32 uvc_stop_capture = 0;
 static u32 uvc_restart = 0;
 #if USE_MJPEG
 static u32 switch_pic = 0;
 #endif
-static u32 total_len = 0;
+
 static u8 *psram_copy_addr = (u8 *) 0x60200000;
+static u32 rx_total_H;
+static u32 rx_total_L;
+static u32 rx_start;
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
 static rtos_sema_t uvc_vfs_save_img_sema_mjpeg = NULL;
+static int uvc_vfs_is_init;
 static int uvc_vfs_is_init_mjpeg = 0;
 static int uvc_vfs_is_init_h264 = 0;
 static int uvc_vfs_img_file_no_mjpeg = 0;
 static int uvc_buf_size_mjpeg = 0;
 static RingBuffer *uvc_rb;
+static u8 uvc_buf_h264[USBH_UVC_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
+static u8 uvc_buf_mjpeg[USBH_UVC_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 #endif
-
-
-//static u8 uvc_buf_h264[USBH_UVC_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
-//static u8 uvc_buf_mjpeg[USBH_UVC_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.dma_enable = 1,
 #if UVC_USE_SOF
 	.ext_intr_en = USBH_SOF_INTR,
+	.sof_tick_en = 1,
 #endif
 	.alt_max = 25,
 	.isr_priority = INT_PRI_MIDDLE,
@@ -139,7 +149,6 @@ static usbh_uvc_cb_t uvc_cb = {
 };
 
 /* Private functions ---------------------------------------------------------*/
-
 
 static int uvc_cb_init(void)
 {
@@ -733,25 +742,32 @@ static void uvc_img_prepare_h264(uvc_frame_t *frame)
 
 	len = frame->byteused;
 	DCache_Invalidate((u32)frame->buf, len);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "[h264] Capture len=%d\n", len);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "[h264] addr %x len=%d\n", frame->buf, len);
 	if (len > USBH_UVC_BUF_SIZE) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[h264] Image len overflow!\n");
 		return;
 	}
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_SIMPLE)
-
+#if USBH_UVC_CAL_TP
+	/* Just add length without any further processing */
+	if (rx_total_L > (rx_total_L + len)) {
+		rx_total_H ++;//u32-u32: rx_total_H - rx_total_L
+	}
+	rx_total_L += len;
+#else
 	/* just copy data without any further processing */
 	memcpy(psram_copy_addr, (void *)(frame->buf), len);
-	total_len += len;
+	rx_total_L += len;
 	psram_copy_addr += len;
+
 	if ((u32)psram_copy_addr > 0x60300000) {
 		//uvc_stop_capture = 1;
-		RTK_LOGS(TAG, RTK_LOG_INFO, "[UVC-h264] total Capture len=%x now_len=%x\n", total_len, (u32)psram_copy_addr - 0x60200000);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "[UVC-h264] total Capture len=%x now_len=%x\n", rx_total_L, (u32)psram_copy_addr - 0x60200000);
 		psram_copy_addr = (u8 *) 0x60200000;
 	}
 #endif
-
+#endif
 #if ( CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
 	if (rtos_mutex_take(uvc_buf_mutex_h264, 1000 / 30 / 2) == RTK_SUCCESS) {
 		if (RingBuffer_Space(uvc_rb) > frame->byteused) {
@@ -776,7 +792,15 @@ static void uvc_img_prepare_yuv(uvc_frame_t *frame)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[yuv] Image len overflow!\n");
 		return;
 	}
+#if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_SIMPLE)
+	/* Just add length without any further processing */
+	if (rx_total_L > (rx_total_L + len)) {
+		rx_total_H ++;
+	}
+	rx_total_L += len;
+#endif
 }
+
 static void uvc_img_prepare_mjpeg(uvc_frame_t *frame)
 {
 	u32 len = 0;
@@ -788,6 +812,7 @@ static void uvc_img_prepare_mjpeg(uvc_frame_t *frame)
 	len = frame->byteused;
 	DCache_Invalidate((u32)frame->buf, len);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "[mjpeg] addr=%x len=%d\n", frame->buf, len);
+
 	if (len > USBH_UVC_BUF_SIZE) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mjpeg] Image len overflow!\n");
 		return;
@@ -820,6 +845,10 @@ static void uvc_img_prepare_mjpeg(uvc_frame_t *frame)
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_SIMPLE)
 	/* just copy data without any further processing */
 	//memcpy(uvc_buf_mjpeg, (void *)(frame->buf), len);
+	if (rx_total_L > (rx_total_L + len)) {
+		rx_total_H ++;
+	}
+	rx_total_L += len;
 #endif
 
 #if ( CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
@@ -830,7 +859,28 @@ static void uvc_img_prepare_mjpeg(uvc_frame_t *frame)
 		rtos_sema_give(uvc_vfs_save_img_sema_mjpeg);
 	}
 #endif
+}
 
+static void uvc_calculate_tp(u32 loop)
+{
+	u32 rx_elapse;
+	u32 rx_perf;
+	u32 rx_fps;
+	u32 rx_perf_total;
+
+	rx_elapse = SYSTIMER_GetPassTime(rx_start);
+
+	rx_fps = loop * 1000 / rx_elapse;
+	rx_perf = rx_total_L / 1024 * 1000 / rx_elapse;//KB/S
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "TP %d KB/s @ %d ms, fps %d/s\n", rx_perf, rx_elapse, rx_fps);
+
+	rx_perf = rx_perf * 10 / 1024;
+	rx_perf_total = rx_perf + ((rx_total_H * 10000 << 12) / rx_elapse);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "TP %d.%d MB/s-%d (%d_%d/%d)\n", rx_perf_total / 10, rx_perf_total % 10, rx_perf, rx_total_H, rx_total_L, loop);
+
+	rx_total_L = 0;
+	rx_total_H = 0;
 }
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
@@ -1091,7 +1141,7 @@ static void usbh_uvc_instance1_test(void *param)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INS1: Stop capturing images\n");
 	usbh_uvc_stream_off(uvc_if1);
 
-	//RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap 0x%x bytes\n",  rtos_mem_get_free_heap_size());
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap 0x%x bytes\n",  rtos_mem_get_free_heap_size());
 exit2:
 exit1:
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INS1: USBH UVC demo stop\n");
@@ -1183,6 +1233,7 @@ restart:
 		goto exit2;
 	}
 	//rtos_time_delay_ms(3000);
+	rx_start = SYSTIMER_TickGet();
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
 	while (uvc_vfs_is_init && img_cnt < uvc_frame_num0) {
 #else
@@ -1222,35 +1273,37 @@ restart:
 		}
 	}
 
+	uvc_calculate_tp(img_cnt);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INS0: Stop capturing images\n");
 	usbh_uvc_stream_off(uvc_if0);
 
 	RTK_LOGI(TAG, "[UVC-INS0] Free heap size: %d\n", rtos_mem_get_free_heap_size());
 
 	if (uvc_restart == 1) {
-
 		//RTK_LOGI(TAG,"[UVC-INS0]t1\n");
 		temp1 = _rand() % 3000;
 		temp2 = 10 + (_rand() % 100);
 
 		RTK_LOGI(TAG, "[UVC-INS0]taskdelay %dms, new capture frame num = %d\n", temp1, temp2);
 		rtos_time_delay_ms(temp1);
+		usbh_uvc_stream_off(uvc_if0);
 		uvc_frame_num0 = temp2;
+		RTK_LOGI(TAG, "[UVC-INS0]new loop = %d\n", uvc_frame_num0);
 		goto restart;
 	}
 
-	//RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap 0x%x bytes\n",  rtos_mem_get_free_heap_size());
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap 0x%x bytes\n",  rtos_mem_get_free_heap_size());
 
 exit2:
-	//usbh_uvc_deinit();
+	usbh_uvc_deinit();
 exit1:
 	//rtos_mutex_delete(uvc_buf_mutex);
-	//rtos_sema_delete(uvc_conn_sema);
-	//rtos_sema_delete(uvc_disconn_sema);
+	rtos_sema_delete(uvc_conn_sema);
+	rtos_sema_delete(uvc_disconn_sema);
 
 exit:
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH UVC demo stop\n");
-	//usbh_deinit();
+	RTK_LOGS(TAG, RTK_LOG_INFO, "INS0: USBH UVC demo stop\n");
+	usbh_deinit();
 	rtos_task_delete(NULL);
 }
 
@@ -1283,7 +1336,7 @@ u32 usbh_uvc_dec_test(u16 argc, u8 *argv[])
 		uvc_fps0 = _strtoul((const char *)(argv[5]), (char **)NULL, 10);
 		uvc_frame_num0 = _strtoul((const char *)(argv[6]), (char **)NULL, 10);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "INS0: %d %d %d %d %d %d\n", uvc_if0, uvc_formart0, uvc_width0, uvc_height0, uvc_fps0, uvc_frame_num0);
-		rtos_task_create(NULL, "example_usbh_uvc_thread", usbh_uvc_instance0_test, NULL, 1024 * 16U, 1U);
+		rtos_task_create(NULL, "example_usbh_uvc_thread0", usbh_uvc_instance0_test, NULL, 1024 * 16U, 1U);
 	} else {
 		uvc_if1 = _strtoul((const char *)(argv[1]), (char **)NULL, 10);
 		uvc_formart1 = _strtoul((const char *)(argv[2]), (char **)NULL, 10);
@@ -1292,7 +1345,7 @@ u32 usbh_uvc_dec_test(u16 argc, u8 *argv[])
 		uvc_fps1 = _strtoul((const char *)(argv[5]), (char **)NULL, 10);
 		uvc_frame_num1 = _strtoul((const char *)(argv[6]), (char **)NULL, 10);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "INS1: %d %d %d %d %d %d\n", uvc_if1, uvc_formart1, uvc_width1, uvc_height1, uvc_fps1, uvc_frame_num1);
-		rtos_task_create(NULL, "example_usbh_uvc_thread", usbh_uvc_instance1_test, NULL, 1024 * 16U, 1U);
+		rtos_task_create(NULL, "example_usbh_uvc_thread1", usbh_uvc_instance1_test, NULL, 1024 * 16U, 1U);
 	}
 	return 0;
 }
@@ -1309,20 +1362,19 @@ void usbh_access_otg(void *para)
 {
 	UNUSED(para);
 	u32 reg;
+	u32 val;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "start access usb reg\n");
 
 	while (1) {
-		HAL_WRITE32(0x40080550, 0x60, 0x00080400);
-		reg = HAL_READ32(0x40080550, 0x60);
-		//RTK_LOGI(TAG, "reg:%x\n", HAL_READ32(0x40080550, 0x60));
-		if (reg != 0x00080400) {
-			while (1) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "error:%x %x\n", HAL_READ32(0x40080550, 0x60), 0x00080400);
-			}
+		val = _rand() % 0xFFFFFFFF;
+		HAL_WRITE32(USB_REG_BASE, 0x60 + 0x550, val);
+		reg = HAL_READ32(USB_REG_BASE, 0x60 + 0x550);
+		if (reg != val) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Reg err:%x %x\n", HAL_READ32(USB_REG_BASE, 0x60 + 0x550), val);
+			uvc_stop_capture = 1;
 		}
 		DelayUs(100);
-
 	}
 }
 
@@ -1331,11 +1383,12 @@ u32 usbh_uvc_restart_test(u16 argc, u8 *argv[])
 	UNUSED(argc);
 	uvc_restart = _strtoul((const char *)(argv[0]), (char **)NULL, 10);
 
-	if (_strtoul((const char *)(argv[0]), (char **)NULL, 10) == 1) {
-		rtos_task_create(NULL, "usbh_access_otg", usbh_access_otg, NULL, 1024 * 4U, 1U);
+	if (uvc_restart == 1) {
+		rtos_task_create(NULL, "usbh_access_otg", usbh_access_otg, NULL, 1024 * 2U, 1U);
 	}
 	return 0;
 }
+
 #if UVC_USE_HW
 u32 usbh_uvc_dec_dump(u16 argc, u8 *argv[])
 {
@@ -1483,7 +1536,7 @@ CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE usbh_uvc_test[] = {
 	{
 		(const u8 *)"uvc", 10, usbh_uvc_dec_test, (const u8 *)"\tuvc test\n"
-		"\t\t cmd: uvc instance(0 1) if_num(0 1)  format(0=mjpeg 1=h264)  width  height  fps  frame_num \n"
+		"\t\t cmd: uvc instance(0 1) if_num(0 1)  format(0=mjpeg 1=h264 2=yuv)  width  height  fps  frame_num \n"
 		"\t\t example: uvc   0    0     0   1280    720   30    2000 \n"
 	},
 	{

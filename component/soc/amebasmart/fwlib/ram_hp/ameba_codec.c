@@ -1227,30 +1227,29 @@ void AUDIO_CODEC_SetMicBstPowerMode(u32 amic_num, u32 powermode)
 	}
 }
 
-
 /**
   * @brief Audio Codec micbias pcut power on or power down.
-  * @param  amic_num: select amic channel
+  * @param  micbias_num: select micbias channel
   *			 This parameter can be one of the following values:
-  *			   @arg AMIC1
-  *			   @arg AMIC2
-  *			   @arg AMIC3
-  *			   @arg AMIC4
-  *			   @arg AMIC5
+  *			   @arg MICBIAS1
+  *			   @arg MICBIAS2
+  *			   @arg MICBIAS3
+  *			   @arg MICBIAS4
+  *			   @arg MICBIAS5
   * @param	micbias_mode: micbias power on or power down
   * 		 This parameter can be one of the following values:
   * 		   @arg POWER_ON:
   * 		   @arg POWER_DOWN:
   * @return  None
   */
-void AUDIO_CODEC_SetMicBiasPCUTMode(u32 amic_num, u32 pcut_mode)
+void AUDIO_CODEC_SetMicBiasPCUTMode(u32 micbias_num, u32 pcut_mode)
 {
-	assert_param(IS_CODEC_AMIC_SEL(amic_num));
+	assert_param(IS_CODEC_MICBIAS_SEL(micbias_num));
 	assert_param(IS_CODEC_POWER_SEL(pcut_mode));
 	AUD_TypeDef *AUD = AUDIO_AUD_GetAddr();
 
-	switch (amic_num) {
-	case AMIC1:
+	switch (micbias_num) {
+	case MICBIAS1:
 		if (pcut_mode == POWER_ON) {
 			AUD->AUD_MICBIAS_CTL0 &= ~AUD_BIT_MICBIAS1_PCUT1_EN;
 		} else {
@@ -1259,7 +1258,7 @@ void AUDIO_CODEC_SetMicBiasPCUTMode(u32 amic_num, u32 pcut_mode)
 		}
 		break;
 
-	case AMIC2:
+	case MICBIAS2:
 		if (pcut_mode == POWER_ON) {
 			AUD->AUD_MICBIAS_CTL0 &= ~AUD_BIT_MICBIAS1_PCUT2_EN;
 		} else {
@@ -1268,7 +1267,7 @@ void AUDIO_CODEC_SetMicBiasPCUTMode(u32 amic_num, u32 pcut_mode)
 		}
 		break;
 
-	case AMIC3:
+	case MICBIAS3:
 		if (pcut_mode == POWER_ON) {
 			AUD->AUD_MICBIAS_CTL0 &= ~AUD_BIT_MICBIAS1_PCUT3_EN;
 		} else {
@@ -1277,7 +1276,7 @@ void AUDIO_CODEC_SetMicBiasPCUTMode(u32 amic_num, u32 pcut_mode)
 		}
 		break;
 
-	case AMIC4:
+	case MICBIAS4:
 		if (pcut_mode == POWER_ON) {
 			AUD->AUD_MICBIAS_CTL0 &= ~AUD_BIT_MICBIAS1_PCUT4_EN;
 		} else {
@@ -1285,7 +1284,7 @@ void AUDIO_CODEC_SetMicBiasPCUTMode(u32 amic_num, u32 pcut_mode)
 			AUD->AUD_MICBIAS_CTL0 |= AUD_BIT_MICBIAS1_PCUT4_EN;
 		}
 		break;
-	case AMIC5:
+	case MICBIAS5:
 		if (pcut_mode == POWER_ON) {
 			AUD->AUD_MICBIAS_CTL0 &= ~AUD_BIT_MICBIAS1_PCUT5_EN;
 		} else {
@@ -1295,7 +1294,6 @@ void AUDIO_CODEC_SetMicBiasPCUTMode(u32 amic_num, u32 pcut_mode)
 		break;
 	}
 }
-
 
 /**
   * @brief  Set per micbst mute or unmute.
@@ -3363,8 +3361,8 @@ void AUDIO_CODEC_Record(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct)
 			AUDIO_CODEC_SetADCANASrc(ADCHN2, AMIC2);
 			AUDIO_CODEC_SetMicBstPowerMode(AMIC1, NORMALPOWER);
 			AUDIO_CODEC_SetMicBstPowerMode(AMIC2, NORMALPOWER);
-			AUDIO_CODEC_SetMicBiasPCUTMode(AMIC1, POWER_ON);
-			AUDIO_CODEC_SetMicBiasPCUTMode(AMIC2, POWER_ON);
+			AUDIO_CODEC_SetMicBiasPCUTMode(MICBIAS1, POWER_ON);
+			AUDIO_CODEC_SetMicBiasPCUTMode(MICBIAS2, POWER_ON);
 			AUDIO_CODEC_SetMicBstChnMute(AMIC1, MICIN, UNMUTE);
 			AUDIO_CODEC_SetMicBstChnMute(AMIC2, MICIN, UNMUTE);
 			AUDIO_CODEC_SetMicBstInputMode(AMIC1, DIFF);
@@ -3385,8 +3383,8 @@ void AUDIO_CODEC_Record(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct)
 			AUDIO_CODEC_SetADCANASrc(ADCHN4, AMIC4);
 			AUDIO_CODEC_SetMicBstPowerMode(AMIC3, NORMALPOWER);
 			AUDIO_CODEC_SetMicBstPowerMode(AMIC4, NORMALPOWER);
-			AUDIO_CODEC_SetMicBiasPCUTMode(AMIC3, POWER_ON);
-			AUDIO_CODEC_SetMicBiasPCUTMode(AMIC4, POWER_ON);
+			AUDIO_CODEC_SetMicBiasPCUTMode(MICBIAS3, POWER_ON);
+			AUDIO_CODEC_SetMicBiasPCUTMode(MICBIAS4, POWER_ON);
 			AUDIO_CODEC_SetMicBstChnMute(AMIC3, MICIN, UNMUTE);
 			AUDIO_CODEC_SetMicBstChnMute(AMIC4, MICIN, UNMUTE);
 			AUDIO_CODEC_SetMicBstInputMode(AMIC3, DIFF);
@@ -3403,7 +3401,7 @@ void AUDIO_CODEC_Record(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct)
 			AUDIO_CODEC_SetADCANAFilter(ADC5, ENABLE);
 			AUDIO_CODEC_SetADCANASrc(ADCHN5, AMIC5);
 			AUDIO_CODEC_SetMicBstPowerMode(AMIC5, NORMALPOWER);
-			AUDIO_CODEC_SetMicBiasPCUTMode(AMIC5, POWER_ON);
+			AUDIO_CODEC_SetMicBiasPCUTMode(MICBIAS5, POWER_ON);
 			AUDIO_CODEC_SetMicBstChnMute(AMIC5, MICIN, UNMUTE);
 			AUDIO_CODEC_SetMicBstInputMode(AMIC5, DIFF);
 			AUDIO_CODEC_SetMicBstGain(AMIC5, MICBST_GAIN_0DB);

@@ -169,6 +169,29 @@ static void ameba_audio_stream_rx_codec_adc_reset(void)
 	}
 }
 
+static void ameba_audio_stream_rx_mic_bias_power_cut_configure(void)
+{
+#if AUDIO_MICBIAS_1_ENABLE
+	AUDIO_CODEC_SetMicBiasPCUTMode(MICBIAS1, POWER_ON);
+#endif
+
+#if AUDIO_MICBIAS_2_ENABLE
+	AUDIO_CODEC_SetMicBiasPCUTMode(MICBIAS2, POWER_ON);
+#endif
+
+#if AUDIO_MICBIAS_3_ENABLE
+	AUDIO_CODEC_SetMicBiasPCUTMode(MICBIAS3, POWER_ON);
+#endif
+
+#if AUDIO_MICBIAS_4_ENABLE
+	AUDIO_CODEC_SetMicBiasPCUTMode(MICBIAS4, POWER_ON);
+#endif
+
+#if AUDIO_MICBIAS_5_ENABLE
+	AUDIO_CODEC_SetMicBiasPCUTMode(MICBIAS5, POWER_ON);
+#endif
+}
+
 static void ameba_audio_stream_rx_adc_mic_configure(StreamConfig config)
 {
 	StreamControl *dc = ameba_audio_get_ctl();
@@ -253,7 +276,6 @@ common_amic_set:
 			AUDIO_CODEC_SetADCANAFilter(adc_idx, ENABLE);
 			AUDIO_CODEC_SetADCANASrc(adc_chn_idx, mic_idx);
 			AUDIO_CODEC_SetMicBstPowerMode(mic_idx, NORMALPOWER);
-			AUDIO_CODEC_SetMicBiasPCUTMode(mic_idx, POWER_ON);
 			AUDIO_CODEC_SetMicBstChnMute(mic_idx, MICIN, dc->mute_for_mic_bst[dc->mic_category_for_adc[i - 1]] ? MUTE : UNMUTE);
 			AUDIO_CODEC_SetMicBstInputMode(mic_idx, DIFF);
 			AUDIO_CODEC_SetMicBstGain(mic_idx, ameba_audio_get_ctl()->gain_for_micbst[mic_idx - 1]);
@@ -297,6 +319,9 @@ common_dmic_set:
 		}
 
 	}
+
+	ameba_audio_stream_rx_mic_bias_power_cut_configure();
+
 }
 
 

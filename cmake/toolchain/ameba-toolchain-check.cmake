@@ -1,61 +1,59 @@
 include(${CMAKE_CURRENT_LIST_DIR}/ameba-toolchain-common.cmake)
 
-if(NOT TOOLCHAIN_DIR)
-	if (EXISTS ${SDK_TOOLCHAIN})
-		# message("ToolChain Had Existed")
+if (EXISTS ${SDK_TOOLCHAIN})
+	# message("ToolChain Had Existed")
+else()
+	message("Download Toolchain And Extract To ${TOOLCHAINDIR}. Only Download And Extract Once")
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${TOOLCHAINDIR}
+		RESULT_VARIABLE ret
+		OUTPUT_VARIABLE stdoutput
+		)
+	if(ret)
+		message(FATAL_ERROR "${stdoutput} Create Toolchain Dir Failed. May Not Have Permission!")
 	else()
-		message("Download Toolchain And Extract To ${TOOLCHAINDIR}. Only Download And Extract Once")
+		message("Create Toolchain Dir ${TOOLCHAINDIR} Success")
+	endif()
+
+	if (EXISTS ${TOOLCHAINDIR}/${TOOLCHAINNAME})
+		message("${TOOLCHAINNAME} Had Existed")
+	else()
+		message("Download ${TOOLCHAINNAME} ...")
 		execute_process(
-			COMMAND ${CMAKE_COMMAND} -E make_directory ${TOOLCHAINDIR}
+			COMMAND wget -P ${TOOLCHAINDIR} ${TOOLCHAINURL}/${TOOLCHAINNAME}
 			RESULT_VARIABLE ret
 			OUTPUT_VARIABLE stdoutput
-			)
+		)
 		if(ret)
-			message(FATAL_ERROR "${stdoutput} Create Toolchain Dir Failed. May Not Have Permission!")
+			message(FATAL_ERROR "Download Failed. Please Check If Wget Is Installed And Network Connection Is Accessible!")
 		else()
-			message("Create Toolchain Dir ${TOOLCHAINDIR} Success")
+			message("Download ${TOOLCHAINNAME} Success")
 		endif()
-
-		if (EXISTS ${TOOLCHAINDIR}/${TOOLCHAINNAME})
-			message("${TOOLCHAINNAME} Had Existed")
-		else()
-			message("Download ${TOOLCHAINNAME} ...")
-			execute_process(
-				COMMAND wget -P ${TOOLCHAINDIR} ${TOOLCHAINURL}/${TOOLCHAINNAME}
-				RESULT_VARIABLE ret
-				OUTPUT_VARIABLE stdoutput
-			)
-			if(ret)
-				message(FATAL_ERROR "Download Failed. Please Check If Wget Is Installed And Network Connection Is Accessible!")
-			else()
-				message("Download ${TOOLCHAINNAME} Success")
-			endif()
-		endif()
-
-		message("unzip ${TOOLCHAINNAME} ...")
-
-		if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
-			execute_process(
-				COMMAND tar -jxf ${TOOLCHAINDIR}/${TOOLCHAINNAME} -C ${TOOLCHAINDIR}
-				RESULT_VARIABLE ret
-			)
-		else()
-			execute_process(
-				COMMAND 7z x ${TOOLCHAINDIR}/${TOOLCHAINNAME} -o${TOOLCHAINDIR}
-				RESULT_VARIABLE ret
-			)
-		endif()
-
-		if(ret)
-			message(FATAL_ERROR "Unzip Failed. Please unzip ${TOOLCHAINNAME} manually. If still failed, delete ${TOOLCHAINNAME} Manually and Try Again!")
-		else()
-			message("Unzip ${TOOLCHAINNAME} Success")
-		endif()
-		execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${TOOLCHAINDIR}/${ToolChainVerMajor}-${ToolChainVerMinor})
-		execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory ${TOOLCHAINDIR}/${ToolChainVerMajor} ${TOOLCHAINDIR}/${ToolChainVerMajor}-${ToolChainVerMinor})
-		execute_process(COMMAND ${CMAKE_COMMAND} -E remove_directory ${TOOLCHAINDIR}/${ToolChainVerMajor})
-		message("INSTALL SUCCESS")
 	endif()
+
+	message("unzip ${TOOLCHAINNAME} ...")
+
+	if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
+		execute_process(
+			COMMAND tar -jxf ${TOOLCHAINDIR}/${TOOLCHAINNAME} -C ${TOOLCHAINDIR}
+			RESULT_VARIABLE ret
+		)
+	else()
+		execute_process(
+			COMMAND 7z x ${TOOLCHAINDIR}/${TOOLCHAINNAME} -o${TOOLCHAINDIR}
+			RESULT_VARIABLE ret
+		)
+	endif()
+
+	if(ret)
+		message(FATAL_ERROR "Unzip Failed. Please unzip ${TOOLCHAINNAME} manually. If still failed, delete ${TOOLCHAINNAME} Manually and Try Again!")
+	else()
+		message("Unzip ${TOOLCHAINNAME} Success")
+	endif()
+	execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${TOOLCHAINDIR}/${ToolChainVerMajor}-${ToolChainVerMinor})
+	execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory ${TOOLCHAINDIR}/${ToolChainVerMajor} ${TOOLCHAINDIR}/${ToolChainVerMajor}-${ToolChainVerMinor})
+	execute_process(COMMAND ${CMAKE_COMMAND} -E remove_directory ${TOOLCHAINDIR}/${ToolChainVerMajor})
+	message("INSTALL SUCCESS")
 endif()
 
 execute_process(

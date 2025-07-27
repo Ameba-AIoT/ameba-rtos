@@ -545,7 +545,6 @@ static void wsclient_conn_thread(void *param)
 	}
 
 	if (wsclient) {
-		wsclient->fun_ops.client_close(wsclient);
 		ws_free(wsclient);
 		wsclient = NULL;
 	}
@@ -1404,10 +1403,12 @@ void at_wssrv_handler_connect(struct wssrv_conn *conn)
 	int i, link_id;
 	int res = 0;
 
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "at_wssrv_handler_connect() conn->state=%d\r\n", conn->state);
+
 	for (i = 0; i < wssrvcfg_max_conn; i++) {
 		cli_conn = ws_server_get_conn_info(i);
 		if (cli_conn == conn) {
-			if (conn->state == WSSRV_CONNECTED1) {
+			if ((conn->state == WSSRV_CONNECTED1) || (conn->state == WSSRV_CONNECTED2)) {
 				link_id = i;
 				res = 1;
 			}
@@ -1425,6 +1426,7 @@ void at_wssrv_handler_disconnect(struct wssrv_conn *conn)
 	struct wssrv_conn *cli_conn;
 	int i, link_id;
 	int res = 0;
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "at_wssrv_handler_disconnect() conn->state=%d\r\n", conn->state);
 
 	for (i = 0; i < wssrvcfg_max_conn; i++) {
 		cli_conn = ws_server_get_conn_info(i);

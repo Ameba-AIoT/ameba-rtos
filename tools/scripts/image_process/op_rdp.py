@@ -20,6 +20,14 @@ class Rdp(OperationBase):
         parser.add_argument('-i', '--input-file', help='Input file to be process', required=True)
         parser.add_argument('-o', '--output-file', help='Output encrypted file', required=True)
 
+    @staticmethod
+    def require_manifest_file(context:Context) -> bool:
+        return True
+
+    @staticmethod
+    def require_layout_file(context:Context) -> bool:
+        return False
+
     # @exit_on_failure(catch_exception=True)
     @staticmethod
     def execute(context:Context, output_file:str, input_file:str, mode = 'enc', image_type:ImageType = ImageType.UNKNOWN):

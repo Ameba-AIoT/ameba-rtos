@@ -424,19 +424,22 @@ class ManifestManager(ABC):
             shutil.copy(input_file, output_file)
         return Error.success()
 
-    def create_keypair(self, output_file:str, algorithm:str) -> Error:
-        self.context.logger.info(f"create keypair file for {algorithm}")
-        auth_alg_id = self.sboot.gen_auth_id(algorithm)
+    @staticmethod
+    def create_keypair(context:Context, output_file:str, algorithm:str) -> Error:
+        context.logger.info(f"create keypair file for {algorithm}")
+        lib_security = importlib.import_module('security')
+        sboot = lib_security.secure_boot()
+        auth_alg_id = sboot.gen_auth_id(algorithm)
         if auth_alg_id == -1:
             print("Fail to create keypair, ret: %d"%auth_alg_id)
             return Error(ErrorType.UNKNOWN_ERROR, f"Fail to create keypair for {algorithm}, ret: {auth_alg_id}")
         key_info = {'algorithm':algorithm, 'private_key':'', 'public_key':'', 'public_key_hash':''}
 
         if auth_alg_id == AuthAlg.AuthID_ED25519.value:
-            self.sboot.ed25519_genkey(key_info)
+            sboot.ed25519_genkey(key_info)
         else:
-            curve = self.sboot.get_supported_curve(auth_alg_id)
-            self.sboot.ecdsa_genkey(curve, key_info)
+            curve = sboot.get_supported_curve(auth_alg_id)
+            sboot.ecdsa_genkey(curve, key_info)
 
         with open(output_file, 'w') as f:
             json.dump(key_info, f, indent=2)

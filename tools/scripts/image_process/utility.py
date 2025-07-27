@@ -288,3 +288,6 @@ def get_file_md5sum(file_path):
         file_hash = hashlib.md5()
         file_hash.update(f.read())
     return file_hash.hexdigest()
+
+def get_file_dir(file_path):
+    return os.path.dirname(os.path.abspath(file_path))
