@@ -14,7 +14,7 @@
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_host_api.h"
 #else
-#error "Please Enable Coexist!!!"
+//#error "Please Enable Coexist!!!"
 #endif
 
 static bool open_flag = 0;

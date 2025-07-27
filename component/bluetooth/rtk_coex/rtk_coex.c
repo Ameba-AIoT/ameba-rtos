@@ -11,7 +11,7 @@
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_host_api.h"
 #else
-#error "Please Enable Coexist!!!"
+//#error "Please Enable Coexist!!!"
 #endif
 
 #if defined(HCI_BT_COEX_ENABLE) && HCI_BT_COEX_ENABLE

@@ -49,41 +49,31 @@ def parse_args():
     for name, obj in globals().items():
         if not name.startswith('op_'): continue
         sub = subparsers.add_parser(
-            name = getattr(obj, "cmd_promote"),
-            help = getattr(obj, "cmd_help_msg")
+            name = obj.cmd_promote,
+            help = obj.cmd_help_msg
         )
-        getattr(obj, "register_args")(sub)
+        obj.register_args(sub)
 
     args = parser.parse_args()
     return args
 
 def main():
     args = parse_args()
+    obj = globals()[f'op_{args.operation}']
 
     try:
-        context = Context(args)
+        context = Context(args, obj)
     except Exception as e:
         default_logger.error(f"context init failed: {e}")
         sys.exit(1)
 
-    operator = globals()[f'op_{args.operation}'](context)
-    res = operator.pre_process()
+    operator = obj(context)
+    res = operator.execute_all()
     if res:
-        context.logger.fatal(f'operation pre_process failed: {args.operation}, {res}')
+        context.logger.fatal(f'operation execute failed: {args.operation}, {res}')
         sys.exit(1)
-
-    res = operator.process()
-    if res:
-        context.logger.fatal(f'operation process failed: {args.operation}, {res}')
-        sys.exit(1)
-
-    res = operator.post_process()
-    if res:
-        context.logger.fatal('operation post_process failed: {args.operation}, {res}')
-        sys.exit(1)
-
-    context.logger.info('operation finish successfully')
-    sys.exit(0)
+    else:
+        sys.exit(0)
 
 if __name__ == '__main__':
     main()
