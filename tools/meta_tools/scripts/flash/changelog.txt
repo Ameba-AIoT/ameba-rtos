@@ -17,3 +17,4 @@ ChangeLog:
 20250605  v1.0.2.0  Seperate flashloaders from flash.exe
 20250701  v1.0.3.0  (1) Support compatibility with MinGW path format
                     (2) Support customized DTR/RTS timing for reset/reburn
+20250703  v1.1.0.0  Support 1-N download/erase
