@@ -9,6 +9,8 @@ import sys
 import argparse
 import base64
 import re
+import threading
+from copy import deepcopy
 
 from base import *
 import version_info
@@ -54,11 +56,123 @@ def decoder_partition_string(partition_table_base64):
         raise argparse.ArgumentTypeError("Invalid partition table format with base64") from err
 
 
+def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, settings, images_info,
+                        chip_erase,
+                        memory_type, memory_info, download,
+                        log_level, log_f):
+    logger = create_logger(serial_port, log_level=log_level, file=log_f)
+
+    ameba = Ameba(profile_info, serial_port, serial_baudrate, image_dir, settings, logger,
+                  download_img_info=images_info,
+                  chip_erase=chip_erase,
+                  memory_type=memory_type,
+                  erase_info=memory_info)
+    if download:
+        # download
+        if not ameba.check_protocol_for_download():
+            ret = ErrType.SYS_PROTO
+            sys_exit(logger, False, ret)
+
+        ret, is_reburn = ameba.check_supported_flash_size(memory_type)
+        if ret != ErrType.OK:
+            logger.error(f"Check supported flash size fail")
+            sys_exit(logger, False, ret)
+
+        if is_reburn:
+            ameba.__del__()
+            ameba = Ameba(profile_info, serial_port, serial_baudrate, image_dir, settings, logger,
+                          download_img_info=images_info,
+                          chip_erase=chip_erase,
+                          memory_type=memory_type,
+                          erase_info=memory_info)
+
+        logger.info(f"Image download start...")  # customized, do not modify
+        ret = ameba.prepare()
+        if ret != ErrType.OK:
+            logger.error("Download prepare fail")
+            sys_exit(logger, False, ret)
+
+        ret = ameba.verify_images()
+        if ret != ErrType.OK:
+            sys_exit(logger, False, ret)
+
+        if not ameba.is_all_ram:
+            ret = ameba.post_verify_images()
+            if ret != ErrType.OK:
+                sys_exit(logger, False, ret)
+
+        if not ameba.is_all_ram:
+            flash_status = FlashBPS()
+            ret = ameba.check_and_process_flash_lock(flash_status)
+            if ret != ErrType.OK:
+                logger.error("Download image fail")
+                sys_exit(logger, False, ret)
+
+        ret = ameba.download_images()
+        if ret != ErrType.OK:
+            logger.error("Download image fail")
+            sys_exit(logger, False, ret)
+
+        if (not ameba.is_all_ram) and flash_status.need_unlock:
+            logger.info("Restore the flash block protection...")
+            ret = ameba.lock_flash(flash_status.protection)
+            if ret != ErrType.OK:
+                logger.error(f"Fail to restore the flash block protection")
+                sys_exit(logger, False, ret)
+
+        ret = ameba.post_process()
+        if ret != ErrType.OK:
+            logger.error("Post process fail")
+            sys_exit(logger, False, ret)
+    else:
+        # erase
+        ret = ameba.prepare()
+        if ret != ErrType.OK:
+            logger.error("Erase prepare fail")
+            sys_exit(logger, False, ret)
+
+        if chip_erase:
+            ret = ameba.erase_flash_chip()
+            if ret != ErrType.OK:
+                logger.error("Chip erase fail")
+                sys_exit(logger, False, ret)
+            sys_exit(logger, True, ret)
+
+        ret = ameba.validate_config_for_erase()
+        if ret != ErrType.OK:
+            sys_exit(logger, False, ret)
+
+        ret = ameba.post_validate_config_for_erase()
+        if ret != ErrType.OK:
+            sys_exit(logger, False, ret)
+
+        if (not profile_info.is_ram_address(memory_info.start_address)):
+            flash_status = FlashBPS()
+            ret = ameba.check_and_process_flash_lock(flash_status)
+            if ret != ErrType.OK:
+                logger.error("Erase fail")
+                sys_exit(logger, False, ret)
+
+        ret = ameba.erase_flash()
+        if ret != ErrType.OK:
+            logger.error(f"Erase {memory_type} failed")
+            sys_exit(logger, False, ret)
+
+        if (not profile_info.is_ram_address(memory_info.start_address)) and flash_status.need_unlock:
+            logger.info("Restore the flash block protection...")
+            ret = ameba.lock_flash(flash_status.protection)
+            if ret != ErrType.OK:
+                logger.error(f"Fail to restore the flash block protection")
+                sys_exit(logger, False, ret)
+
+    sys_exit(logger, True, ret)
+
+
 def main(argc, argv):
     parser = argparse.ArgumentParser(description=None)
-    parser.add_argument('-d', '--download', action='store_true', help='start address, hex')
+    parser.add_argument('-d', '--download', action='store_true', help='download images')
     parser.add_argument('-f', '--profile', type=str, help='device profile')
-    parser.add_argument('-p', '--port', help='serial port')
+    parser.add_argument('-p', '--port', nargs="+", help='serial port')
     parser.add_argument('-b', '--baudrate', type=int, help='serial port baud rate')
     parser.add_argument('-i', '--image', type=str, help='single image')
     parser.add_argument('-r', '--image-dir', type=str, help='image directory')
@@ -81,7 +195,7 @@ def main(argc, argv):
     image = args.image
     image_dir = args.image_dir
     chip_erase = args.chip_erase
-    serial_port = args.port
+    serial_ports = args.port
     serial_baudrate = args.baudrate
     log_level = args.log_level.upper()
     log_file = args.log_file
@@ -112,7 +226,7 @@ def main(argc, argv):
             log_f = os.path.join(os.getcwd(), log_file)
     else:
         log_f = None
-    logger = create_logger("flash", log_level=log_level, file=log_f)
+    logger = create_logger("main", log_level=log_level, file=log_f)
     if log_file is not None:
         logger.info(f"Log file: {log_file}")
 
@@ -128,11 +242,11 @@ def main(argc, argv):
         sys.exit(1)
     logger.info(f'Device profile: {profile}')
 
-    if serial_port is None:
+    if serial_ports is None:
         logger.error('Invalid arguments, no serial port specified')
         parser.print_usage()
         sys.exit(1)
-    logger.info(f'Serial port: {serial_port}')
+    logger.info(f'Serial port: {serial_ports}')
 
     if serial_baudrate is None:
         logger.error('Invalid arguments, no serial baudrate specified')
@@ -311,110 +425,19 @@ def main(argc, argv):
     except Exception as err:
         logger.debug(f"save setting.json exception: {err}")
 
-    ameba = Ameba(profile_info, serial_port, serial_baudrate, image_dir, settings, logger,
-                  download_img_info=images_info,
-                  chip_erase=chip_erase,
-                  memory_type=memory_type,
-                  erase_info=memory_info)
-    if download:
-        # download
-        if not ameba.check_protocol_for_download():
-            ret = ErrType.SYS_PROTO
-            sys_exit(logger, False, ret)
+    threads_list = []
 
-        ret, is_reburn = ameba.check_supported_flash_size(memory_type)
-        if ret != ErrType.OK:
-            logger.error(f"Check supported flash size fail")
-            sys_exit(logger, False, ret)
+    for sp in serial_ports:
+        flash_thread = threading.Thread(target=flash_process_entry, args=(
+        profile_info, sp, serial_baudrate, image_dir, settings, deepcopy(images_info), chip_erase,
+        memory_type, memory_info, download, log_level, log_f))
+        threads_list.append(flash_thread)
+        flash_thread.start()
 
-        if is_reburn:
-            ameba.__del__()
-            ameba = Ameba(profile_info, serial_port, serial_baudrate, image_dir, settings, logger,
-                          download_img_info=images_info,
-                          chip_erase=chip_erase,
-                          memory_type=memory_type,
-                          erase_info=memory_info)
+    for thred in threads_list:
+        thred.join()
 
-        logger.info(f"Image download start...")  # customized, do not modify
-        ret = ameba.prepare()
-        if ret != ErrType.OK:
-            logger.error("Download prepare fail")
-            sys_exit(logger, False, ret)
-
-        ret = ameba.verify_images()
-        if ret != ErrType.OK:
-            sys_exit(logger, False, ret)
-
-        if not ameba.is_all_ram:
-            ret = ameba.post_verify_images()
-            if ret != ErrType.OK:
-                sys_exit(logger, False, ret)
-
-        if not ameba.is_all_ram:
-            flash_status = FlashBPS()
-            ret = ameba.check_and_process_flash_lock(flash_status)
-            if ret != ErrType.OK:
-                logger.error("Download image fail")
-                sys_exit(logger, False, ret)
-
-        ret = ameba.download_images()
-        if ret != ErrType.OK:
-            logger.error("Download image fail")
-            sys_exit(logger, False, ret)
-
-        if (not ameba.is_all_ram) and flash_status.need_unlock:
-            logger.info("Restore the flash block protection...")
-            ret = ameba.lock_flash(flash_status.protection)
-            if ret != ErrType.OK:
-                logger.error(f"Fail to restore the flash block protection")
-                sys_exit(logger, False, ret)
-
-        ret = ameba.post_process()
-        if ret != ErrType.OK:
-            logger.error("Post process fail")
-            sys_exit(logger, False, ret)
-    else:
-        # erase
-        ret = ameba.prepare()
-        if ret != ErrType.OK:
-            logger.error("Erase prepare fail")
-            sys_exit(logger, False, ret)
-
-        if chip_erase:
-            ret = ameba.erase_flash_chip()
-            if ret != ErrType.OK:
-                logger.error("Chip erase fail")
-                sys_exit(logger, False, ret)
-            sys_exit(logger, True, ret)
-
-        ret = ameba.validate_config_for_erase()
-        if ret != ErrType.OK:
-            sys_exit(logger, False, ret)
-
-        ret = ameba.post_validate_config_for_erase()
-        if ret != ErrType.OK:
-            sys_exit(logger, False, ret)
-
-        if (not profile_info.is_ram_address(memory_info.start_address)):
-            flash_status = FlashBPS()
-            ret = ameba.check_and_process_flash_lock(flash_status)
-            if ret != ErrType.OK:
-                logger.error("Erase fail")
-                sys_exit(logger, False, ret)
-
-        ret = ameba.erase_flash()
-        if ret != ErrType.OK:
-            logger.error(f"Erase {mem_t} failed")
-            sys_exit(logger, False, ret)
-
-        if (not profile_info.is_ram_address(memory_info.start_address)) and flash_status.need_unlock:
-            logger.info("Restore the flash block protection...")
-            ret = ameba.lock_flash(flash_status.protection)
-            if ret != ErrType.OK:
-                logger.error(f"Fail to restore the flash block protection")
-                sys_exit(logger, False, ret)
-
-    sys_exit(logger, True, ret)
+    logger.info(f"All flash threads have completed")
 
 
 if __name__ == "__main__":

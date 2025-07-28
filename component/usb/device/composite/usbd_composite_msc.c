@@ -101,7 +101,7 @@ static const u8 usbd_composite_msc_fs_itf_desc[] = {
 static usbd_composite_msc_dev_t usbd_composite_msc_dev;
 
 #if !COMP_MSC_RAM_DISK
-#if defined(CONFIG_AMEBASMART)
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAGREEN2)
 static int usbd_composite_msc_sd_init_status = 0;
 static rtos_sema_t usbd_composite_msc_sd_sema;
 
@@ -134,7 +134,6 @@ static u8 *usbd_composite_msc_ram_disk_buf;
 static int RAM_init(void)
 {
 	int result = SD_OK;
-	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
 
 	usbd_composite_msc_ram_disk_buf = (u8 *)usb_os_malloc(COMP_MSC_RAM_DISK_SIZE);
 	if (usbd_composite_msc_ram_disk_buf == NULL) {
@@ -183,7 +182,7 @@ static int RAM_WriteBlocks(u32 sector, const u8 *data, u32 count)
 
 #else
 
-#if defined(CONFIG_AMEBASMART)
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAGREEN2)
 
 static int usbd_composite_msc_sd_give_sema(u32 timeout)
 {
@@ -352,7 +351,6 @@ static void usbd_composite_msc_abort(usb_dev_t *dev)
   */
 static int usbd_composite_msc_set_config(usb_dev_t *dev, u8 config)
 {
-	u16 ep_mps;
 	int ret = HAL_OK;
 	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
 	usbd_ep_t *ep_bulk_out = &mdev->ep_bulk_out;
@@ -421,12 +419,10 @@ static int usbd_composite_msc_clear_config(usb_dev_t *dev, u8 config)
 static int usbd_composite_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
 	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
-	usbd_composite_dev_t *cdev = mdev->cdev;
 	usbd_ep_t *ep0_in = &dev->ep0_in;
 	usbd_ep_t *ep_bulk_out = &mdev->ep_bulk_out;
 	usbd_ep_t *ep_bulk_in = &mdev->ep_bulk_in;
 	int ret = HAL_OK;
-	u16 ep_mps;
 	u8 ep_addr;
 
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
@@ -443,9 +439,9 @@ static int usbd_composite_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			}
 
 			if ((((u8)req->wIndex) & USB_REQ_DIR_MASK) == USB_D2H) {
-				usbd_ep_init(ep_bulk_in);
+				usbd_ep_init(dev, ep_bulk_in);
 			} else {
-				usbd_ep_init(ep_bulk_out);
+				usbd_ep_init(dev, ep_bulk_out);
 			}
 
 			/* Handle BOT error */
@@ -633,21 +629,21 @@ static u16 usbd_composite_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *re
 	switch (USB_HIGH_BYTE(req->wValue)) {
 	case USB_DESC_TYPE_CONFIGURATION:
 		if (speed == USB_SPEED_HIGH) {
-			desc = usbd_composite_msc_hs_itf_desc;
-			*len = sizeof(usbd_composite_msc_hs_itf_desc);
+			desc = (u8 *)usbd_composite_msc_hs_itf_desc;
+			len = sizeof(usbd_composite_msc_hs_itf_desc);
 		} else {
-			desc = usbd_composite_msc_fs_itf_desc;
-			*len = sizeof(usbd_composite_msc_fs_itf_desc);
+			desc = (u8 *)usbd_composite_msc_fs_itf_desc;
+			len = sizeof(usbd_composite_msc_fs_itf_desc);
 		}
 		usb_os_memcpy((void *)buf, (void *)desc, len);
 		break;
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		if (speed == USB_SPEED_HIGH) {
-			desc = usbd_composite_msc_fs_itf_desc;
-			*len = sizeof(usbd_composite_msc_fs_itf_desc);
+			desc = (u8 *)usbd_composite_msc_fs_itf_desc;
+			len = sizeof(usbd_composite_msc_fs_itf_desc);
 		} else {
-			desc = usbd_composite_msc_hs_itf_desc;
-			*len = sizeof(usbd_composite_msc_hs_itf_desc);
+			desc = (u8 *)usbd_composite_msc_hs_itf_desc;
+			len = sizeof(usbd_composite_msc_hs_itf_desc);
 		}
 		usb_os_memcpy((void *)buf, (void *)desc, len);
 		break;
@@ -665,7 +661,7 @@ int usbd_composite_msc_disk_init(void)
 #if COMP_MSC_RAM_DISK
 	ret = RAM_init();
 #else
-#if defined(CONFIG_AMEBASMART)
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAGREEN2)
 	ret = usbd_composite_msc_sd_init();
 #else
 	ret = SD_Init();
@@ -682,7 +678,7 @@ int usbd_composite_msc_disk_deinit(void)
 #if COMP_MSC_RAM_DISK
 	ret = RAM_deinit();
 #else
-#if defined(CONFIG_AMEBASMART)
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAGREEN2)
 	ret = usbd_composite_msc_sd_deinit();
 #else
 	ret = SD_DeInit();
@@ -721,7 +717,7 @@ int usbd_composite_msc_init(usbd_composite_dev_t *cdev)
 	ops->disk_read = RAM_ReadBlocks;
 	ops->disk_write = RAM_WriteBlocks;
 #else
-#if defined(CONFIG_AMEBASMART)
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAGREEN2)
 	ops->disk_getcapacity = usbd_composite_msc_sd_getcapacity;
 	ops->disk_read = usbd_composite_msc_sd_readblocks;
 	ops->disk_write = usbd_composite_msc_sd_writeblocks;
@@ -737,6 +733,7 @@ int usbd_composite_msc_init(usbd_composite_dev_t *cdev)
 
 	ep_bulk_in->addr = USBD_COMP_MSC_BULK_IN_EP;
 	ep_bulk_in->type = USB_CH_EP_TYPE_BULK;
+	ep_bulk_in->dis_zlp = 1;
 
 	mdev->data = (u8 *)usb_os_malloc(COMP_MSC_BUFLEN);
 	if (mdev->data == NULL) {
@@ -822,7 +819,6 @@ int usbd_composite_msc_bulk_transmit(usb_dev_t *dev, u8 *buf, u16 len)
 		ep_bulk_in->xfer_buf = buf;
 		ep_bulk_in->xfer_len = len;
 		ret = usbd_ep_transmit(dev, ep_bulk_in);
-		usb_hal_dump_registers();
 	}
 
 	return ret;
@@ -861,10 +857,8 @@ void usbd_composite_msc_send_csw(usb_dev_t *dev, u8 status)
 	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
 	usbd_composite_msc_cbw_t *cbw = mdev->cbw;
 	usbd_composite_msc_csw_t *csw = mdev->csw;
-	usbd_ep_t *ep_bulk_out = &mdev->ep_bulk_out;
-
 #if COMP_MSC_FIX_CV_TEST_ISSUE
-	u16 ep_mps;
+	usbd_ep_t *ep_bulk_out = &mdev->ep_bulk_out;
 #endif
 
 	csw->dCSWSignature = COMP_MSC_CS_SIGN;

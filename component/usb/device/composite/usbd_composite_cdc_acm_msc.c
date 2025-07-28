@@ -26,7 +26,7 @@ static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 static int usbd_composite_handle_ep0_data_out(usb_dev_t *dev);
 static int usbd_composite_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_composite_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
-static void usbd_composite_status_changed(usb_dev_t *dev, u8 status);
+static void usbd_composite_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -150,7 +150,6 @@ static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 	usbd_ep_t *ep0_in = &dev->ep0_in;
-	usbd_ep_t *ep0_out = &dev->ep0_out;
 	int ret = HAL_OK;
 
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
@@ -279,14 +278,14 @@ static int usbd_composite_handle_ep0_data_out(usb_dev_t *dev)
   * @param  status: USB attach status
   * @retval void
   */
-static void usbd_composite_status_changed(usb_dev_t *dev, u8 status)
+static void usbd_composite_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 
 	UNUSED(dev);
 
 	if (cdev->cb->status_changed) {
-		cdev->cb->status_changed(status);
+		cdev->cb->status_changed(old_status, status);
 	}
 }
 
@@ -435,8 +434,6 @@ int usbd_composite_init(u16 cdc_bulk_out_xfer_size, u16 cdc_bulk_in_xfer_size, u
   */
 void usbd_composite_deinit(void)
 {
-	usbd_composite_dev_t *cdev = &usbd_composite_dev;
-
 	usbd_unregister_class();
 
 	usbd_composite_msc_deinit();

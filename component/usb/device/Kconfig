@@ -13,7 +13,7 @@ if USBD_COMPOSITE_MENU
             select USBD_COMPOSITE_CDC_ACM_HID if CORE_AS_AP
         config USBD_COMPOSITE_CDC_ACM_MSC_MENU
             bool "CDC ACM + MSC"
-            depends on SUPPORT_USBD_COMPOSITE_CDC_ACM_MSC
+            depends on SUPPORT_SDIOH
             select USBD_COMPOSITE_CDC_ACM_MSC if CORE_AS_AP
         config USBD_COMPOSITE_CDC_ACM_UAC_MENU
             bool "CDC ACM + UAC"
