@@ -11,12 +11,13 @@ ameba-rtos是瑞昱官方推出的物联网开发框架，同时支持Linux和Wi
 |AmebaSmart   |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
 |AmebaLite    |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
 |AmebaDplus   |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+|AmebaGreen2  |![alt text][supported] |                        |                        |
 
 [supported]: https://img.shields.io/badge/-supported-green "supported"
 
 # 相关文档
 
-最新版的文档: https://github.com/Ameba-AIoT/ameba-iot-docs ，根据所使用的芯片类型点击README中的URL查看相应的应用指南。
+最新版的文档: [RealMCU](https://aiot.realmcu.com/docs/cn/latest/index.html) ，在菜单栏中选择产品来查看具体芯片的文档和手册。
 
 **注意:** 不同系列的芯片都有其相对应的文档，请根据特定的芯片名称查找文档。
 
