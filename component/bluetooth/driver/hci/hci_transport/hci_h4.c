@@ -25,6 +25,13 @@ static struct hci_h4_t {
 	struct hci_transport_cb *cb;
 } *hci_h4 = NULL;
 
+_WEAK void bt_vendor_process_tx_frame(uint8_t type, uint8_t *pdata, uint16_t len)
+{
+	(void)type;
+	(void)pdata;
+	(void)len;
+}
+
 static uint8_t h4_recv_ind(void)
 {
 	if (!hci_h4->rx_run) {
@@ -192,6 +199,7 @@ uint16_t hci_transport_send(uint8_t type, uint8_t *buf, uint16_t len, bool has_r
 #ifndef CONFIG_BT_INIC
 	if (!hci_is_mp_mode()) {
 		bt_coex_process_tx_frame(type, buf, len);
+		bt_vendor_process_tx_frame(type, buf, len);
 	}
 #endif
 	osif_mutex_take(hci_h4->tx_mutex, BT_TIMEOUT_FOREVER);

@@ -79,49 +79,9 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WPA_4WAY_REPORT, whc_event_wpa_4way_rpt},
 	{WHC_API_WIFI_GET_TRAFFIC_STATS, whc_event_get_traffic_stats},
 	{WHC_API_WIFI_START_JOIN_CMD, whc_event_start_join_cmd},
+	{WHC_API_WIFI_GET_EAP_PHASE, whc_event_get_eap_phase},
 
 };
-
-/**
- * @brief  handle the inic message.
- * @param  none.
- * @return none.
- */
-void whc_dev_api_task(void)
-{
-	struct whc_api_info *p_recv_msg;
-	u32 *param_buf;
-	void (*api_hdl)(u32 api_id, u32 * param_buf);
-	u32 i = 0;
-
-	do {
-		rtos_sema_take(event_priv.task_wake_sema, 0xFFFFFFFF);
-
-		p_recv_msg = (struct whc_api_info *)event_priv.rx_api_msg;
-		param_buf = (u32 *)(p_recv_msg + 1);
-
-		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "Host CALL API(%x)\n", p_recv_msg->api_id);
-
-		api_hdl = NULL;
-		for (i = 0; i < sizeof(whc_dev_api_handlers) / sizeof(struct event_func_t); i++) {
-			if (whc_dev_api_handlers[i].api_id == p_recv_msg->api_id) {
-				api_hdl = whc_dev_api_handlers[i].func;
-				break;
-			}
-		}
-
-		if (api_hdl != NULL) {
-			api_hdl(p_recv_msg->api_id, param_buf);
-		} else {
-			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Host Unknown API(%x)\n", p_recv_msg->api_id);
-		}
-
-		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "Host CALL API(%x) done\n", p_recv_msg->api_id);
-
-		/* free rx_api_msg */
-		rtos_mem_free((u8 *)p_recv_msg);
-	} while (1);
-}
 
 void whc_send_api_ret_value(u32 api_id, u8 *pbuf, u32 len)
 {
@@ -169,6 +129,57 @@ exit:
 	}
 	return;
 
+}
+
+/**
+ * @brief  handle the inic message.
+ * @param  none.
+ * @return none.
+ */
+void whc_dev_api_task(void)
+{
+	struct whc_api_info *p_recv_msg;
+	u32 *param_buf;
+	void (*api_hdl)(u32 api_id, u32 * param_buf);
+	u32 i = 0;
+	int ret = RTK_FAIL;
+
+	do {
+		rtos_sema_take(event_priv.task_wake_sema, 0xFFFFFFFF);
+
+		p_recv_msg = (struct whc_api_info *)event_priv.rx_api_msg;
+		param_buf = (u32 *)(p_recv_msg + 1);
+
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "Host CALL API(%x)\n", p_recv_msg->api_id);
+
+		api_hdl = NULL;
+		for (i = 0; i < sizeof(whc_dev_api_handlers) / sizeof(struct event_func_t); i++) {
+			if (whc_dev_api_handlers[i].api_id == p_recv_msg->api_id) {
+				api_hdl = whc_dev_api_handlers[i].func;
+				break;
+			}
+		}
+
+		if (api_hdl != NULL) {
+			api_hdl(p_recv_msg->api_id, param_buf);
+		} else {
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Host Unknown API(%x)\n", p_recv_msg->api_id);
+			whc_send_api_ret_value(p_recv_msg->api_id, (u8 *)&ret, sizeof(ret));
+		}
+
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "Host CALL API(%x) done\n", p_recv_msg->api_id);
+
+		/* free rx_api_msg */
+		rtos_mem_free((u8 *)p_recv_msg);
+	} while (1);
+}
+
+void whc_event_get_eap_phase(u32 api_id, u32 *param_buf)
+{
+	(void)param_buf;
+	int ret = 0;
+	ret = wifi_get_eap_phase(NULL);
+	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
 void whc_event_get_scan_res(u32 api_id, u32 *param_buf)
@@ -676,10 +687,94 @@ void whc_event_nan_stop(u32 api_id, u32 *param_buf)
 void whc_event_add_nan_func(u32 api_id, u32 *param_buf)
 {
 	int ret = 0;
-	void *nan_func_pointer;
+	u64 nan_func_pointer = 0;
+	u8 *ptr = (u8 *)param_buf;
+	struct rtw_nan_func_t func_info = {0};
 
-	rtw_nan_func_set_parameter((void *)param_buf, &nan_func_pointer);
-	ret = rtw_nan_func_add((void *)param_buf, nan_func_pointer);
+	memcpy(&func_info.type, ptr, sizeof(func_info.type));
+	ptr += sizeof(func_info.type);
+
+	memcpy(func_info.service_id, ptr, sizeof(func_info.service_id));
+	ptr += sizeof(func_info.service_id);
+
+	memcpy(&func_info.publish_type, ptr, sizeof(func_info.publish_type));
+	ptr += sizeof(func_info.publish_type);
+
+	memcpy(&func_info.close_range, ptr, sizeof(func_info.close_range));
+	ptr += sizeof(func_info.close_range);
+
+	memcpy(&func_info.publish_bcast, ptr, sizeof(func_info.publish_bcast));
+	ptr += sizeof(func_info.publish_bcast);
+
+	memcpy(&func_info.subscribe_active, ptr, sizeof(func_info.subscribe_active));
+	ptr += sizeof(func_info.subscribe_active);
+
+	memcpy(&func_info.followup_id, ptr, sizeof(func_info.followup_id));
+	ptr += sizeof(func_info.followup_id);
+
+	memcpy(&func_info.followup_reqid, ptr, sizeof(func_info.followup_reqid));
+	ptr += sizeof(func_info.followup_reqid);
+
+	memcpy(&func_info.followup_dest, ptr, sizeof(func_info.followup_dest));
+	ptr += sizeof(func_info.followup_dest);
+
+	memcpy(&func_info.ttl, ptr, sizeof(func_info.ttl));
+	ptr += sizeof(func_info.ttl);
+
+	memcpy(&func_info.serv_spec_info_len, ptr, sizeof(func_info.serv_spec_info_len));
+	ptr += sizeof(func_info.serv_spec_info_len);
+
+	memcpy(&func_info.srf_include, ptr, sizeof(func_info.srf_include));
+	ptr += sizeof(func_info.srf_include);
+
+	memcpy(&func_info.srf_bf_len, ptr, sizeof(func_info.srf_bf_len));
+	ptr += sizeof(func_info.srf_bf_len);
+
+	memcpy(&func_info.srf_bf_idx, ptr, sizeof(func_info.srf_bf_idx));
+	ptr += sizeof(func_info.srf_bf_idx);
+
+	memcpy(&func_info.srf_num_macs, ptr, sizeof(func_info.srf_num_macs));
+	ptr += sizeof(func_info.srf_num_macs);
+
+	memcpy(&func_info.num_rx_filters, ptr, sizeof(func_info.num_rx_filters));
+	ptr += sizeof(func_info.num_rx_filters);
+
+	memcpy(&func_info.num_tx_filters, ptr, sizeof(func_info.num_tx_filters));
+	ptr += sizeof(func_info.num_tx_filters);
+
+	memcpy(&func_info.instance_id, ptr, sizeof(func_info.instance_id));
+	ptr += sizeof(func_info.instance_id);
+
+	memcpy(&func_info.cookie, ptr, sizeof(func_info.cookie));
+	ptr += sizeof(func_info.cookie);
+
+	if (func_info.serv_spec_info_len) {
+		func_info.serv_spec_info = ptr;
+		ptr += func_info.serv_spec_info_len;
+	}
+
+	if (func_info.srf_bf_len) {
+		func_info.srf_bf = ptr;
+		ptr += func_info.srf_bf_len;
+	}
+
+	if (func_info.srf_num_macs) {
+		func_info.srf_macs = (struct rtw_mac *)ptr;
+		ptr += func_info.srf_num_macs * sizeof(struct rtw_mac);
+	}
+
+	if (func_info.num_rx_filters) {
+		func_info.rx_filters = (struct rtw_nan_func_filter *)ptr;
+		ptr += func_info.num_rx_filters * sizeof(struct rtw_nan_func_filter);
+	}
+
+	if (func_info.num_tx_filters) {
+		func_info.tx_filters = (struct rtw_nan_func_filter *)ptr;
+		ptr += func_info.num_tx_filters * sizeof(struct rtw_nan_func_filter);
+	}
+	memcpy(&nan_func_pointer, ptr, sizeof(u64));
+
+	ret = rtw_nan_func_add(&func_info, nan_func_pointer);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
@@ -951,7 +1046,7 @@ void whc_event_wifi_driver_is_mp(u32 api_id, u32 *param_buf)
 	(void)param_buf;
 	int ret = 0;
 
-	ret = wifi_driver_is_mp();
+	ret = wifi_driver_is_mp(NULL);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
@@ -1041,24 +1136,39 @@ exit:
 
 }
 
-void whc_dev_wifi_event_indicate(u32 event_cmd, u8 *buf, s32 buf_len)
+/**
+ * @brief  wifi_event_indicate.
+ * @param[in]  event_cmd: event id. Especially bit31 has a special purpose.
+ *                 bit31 - 1: no need malloc(has already malloced in wifi_indication_ext).
+ *                 bit31 - 0: need malloc.
+ */
+void whc_dev_wifi_event_indicate(u32 event_cmd, u8 *evt_info, s32 evt_len)
 {
 	/*not indicate Beacon event since it is too frequent*/
 	/*not indicate scan event since it is handled in device*/
 	u32 size;
 	u32 *param;
+	u8 no_need_malloc = (event_cmd >> 31) & 1;
 
-	size = 2 * sizeof(u32) + buf_len;
-	param = (u32 *)rtos_mem_zmalloc(size);
+	if (no_need_malloc) {
+		param = (u32 *)evt_info;
+		size = evt_len;
+		event_cmd &= ~((u32)1 << 31);  /* clear bit13 */
+	} else {
+		size = 2 * sizeof(u32) + evt_len;
+		param = (u32 *)rtos_mem_zmalloc(size);
 
-	param[0] = event_cmd;
-	param[1] = buf_len;
-	memcpy((void *)(param + 2), buf, buf_len);
+		param[0] = event_cmd;
+		param[1] = evt_len;
+		memcpy((void *)(param + 2), evt_info, evt_len);
+	}
 
 	whc_dev_api_message_send(WHC_API_WIFI_EVENT, (u8 *)param, size, NULL, 0);
 
-	/* free buffer */
-	rtos_mem_free((u8 *)param);
+	if (!no_need_malloc) {
+		/* free buffer */
+		rtos_mem_free((u8 *)param);
+	}
 
 }
 
@@ -1250,8 +1360,9 @@ void whc_dev_cfg80211_nan_func_free(u64 data)
 		return;
 	}
 
-	u64 param_buf[1];
-	param_buf[0] = data;
+	u32 param_buf[2];
+	param_buf[0] = (u32)(data & 0xFFFFFFFF);
+	param_buf[1] = (u32)((data >> 32) & 0xFFFFFFFF);
 
 	whc_dev_api_message_send(WHC_API_CFG80211_NAN_DEL_FUNC, (u8 *)param_buf, sizeof(param_buf), NULL, 0);
 }
@@ -1301,20 +1412,5 @@ void whc_dev_cfg80211_cfgvendor_send_cmd_reply(void *data, int len)
 	/* free buffer */
 	rtos_mem_free((u8 *)param);
 
-}
-#endif
-
-#ifdef CONFIG_P2P
-void whc_dev_cfg80211_indicate_channel_ready(void *scan_userdata)
-{
-	if (!wifi_user_config.cfg80211) {
-		return;
-	}
-
-	/* record wlan_idx directly in scan userdata, and use it for search wdev when indicate */
-	u32 param_buf[1];
-	param_buf[0] = (u32)scan_userdata;
-
-	whc_dev_api_message_send(WHC_API_CFG80211_P2P_CH_RDY, (u8 *)param_buf, sizeof(param_buf), NULL, 0);
 }
 #endif

@@ -38,6 +38,15 @@ if(CONFIG_USBH_MSC)
     )
 endif()
 
+if(CONFIG_USBH_UAC)
+    ameba_list_append(private_includes
+        ${USBH_CLASS_DIR}/uac
+    )
+    ameba_list_append(private_sources
+        ${USBH_CLASS_DIR}/uac/usbh_uac1.c
+    )
+endif()
+
 if(CONFIG_USBH_UVC)
     ameba_list_append(private_includes
         ${USBH_CLASS_DIR}/uvc

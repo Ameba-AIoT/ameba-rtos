@@ -42,9 +42,9 @@ typedef struct {
                                                     If this value is false, user can use @ref rtk_bt_gattc_exchange_mtu
                                                     to initiate exchange MTU request. */
 	bool     slave_init_mtu_req;               /*!< Whether local device as slave will auto initiate exchange MTU request when connected. */
-	uint8_t  prefer_all_phy;                   /*!< Deafult PHY config: preferred all phy */
-	uint8_t  prefer_tx_phy;                    /*!< Deafult PHY config: preferred tx phy */
-	uint8_t  prefer_rx_phy;                    /*!< Deafult PHY config: preferred rx phy */
+	uint8_t  prefer_all_phy;                   /*!< Deafult PHY config: preferred all phy @ref rtk_bt_le_all_phy_prefer_t */
+	uint8_t  prefer_tx_phy;                    /*!< Deafult PHY config: preferred tx phy @ref rtk_bt_le_trx_phy_prefer_t */
+	uint8_t  prefer_rx_phy;                    /*!< Deafult PHY config: preferred rx phy @ref rtk_bt_le_trx_phy_prefer_t */
 	uint16_t max_tx_octets;                    /*!< Default data len config: Max tx octects */
 	uint16_t max_tx_time;                      /*!< Default data len config: Max tx time */
 #if defined(RTK_BLE_SET_TX_QUEUE_NUM) && RTK_BLE_SET_TX_QUEUE_NUM

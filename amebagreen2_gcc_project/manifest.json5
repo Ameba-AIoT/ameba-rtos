@@ -1,74 +1,73 @@
+/*
+ * This manifest.json5 script configures firmware security features including secure boot (sboot) and image encryption (RSIP/RDP).
+ * It employs a hierarchical configuration mechanism: firmware-specific settings override global configurations when defined,
+ * while inheriting outer-layer settings when undefined, enabling flexible security policy management.
+ */
+
 {
   version: 1,
   image1: {
     img_id: 0,
     img_ver_major: 1,
     img_ver_minor: 1,
-    sec_epoch: 1,
-    //hash_alg: sha256/sha384/sha512/hmac256/hmac384/hmac512
-    hash_alg: "sha256",
-    rsip_en: false,
-    //rsip_mode: 2 is GCM, 1 is XTS(CTR+ECB), 0 is CTR
-    rsip_mode: 1,
-    //gcm_tag_len: use in GCM, should be 4, 8, 16
-    gcm_tag_len: 4,
-    //rsip_key_id: 0 use (ecb_key[0], ctr_key[0]), 1 use (ecb_key[1], ctr_key[1])
-    rsip_key_id: 0,
+    huk_epoch: 1,
+    /* rsip_key_group valid option: "rsip_xts_g0", "rsip_xts_g1", "rsip_gcm_g0", "rsip_gcm_g1", "rsip_ctr_g0", "rsip_ctr_g1" */
+    rsip_key_group: "rsip_xts_g0",
     rsip_iv: "0102030405060708",
-    algorithm: "ed25519",
-    private_key: "6AA34203018334474B25A0600996CA0968AA6228B886FF234B4EB9628B703C0A",
-    public_key: "E2A0D6500BBF1DD8DC212098C230EB731ECE3A81AA11D0E6E538FA36BBA4FF6E",
-    public_key_hash: "72B2E1CB0E8F715262AF38DFA0E522C95660D0EBFD920F4B1A229845E599C697",
+    sboot_private_key: "6AA34203018334474B25A0600996CA0968AA6228B886FF234B4EB9628B703C0A",
+    sboot_public_key: "E2A0D6500BBF1DD8DC212098C230EB731ECE3A81AA11D0E6E538FA36BBA4FF6E",
+    sboot_public_key_hash: "72B2E1CB0E8F715262AF38DFA0E522C95660D0EBFD920F4B1A229845E599C697",
   },
-  // cert/app share img_id/img_ver, rdp img is in app
+
+  /* cert/image2 share img_id/img_ver, cert and image3 img are packed in amebaxxx_app.bin */
+  cert: {
+    sboot_private_key: "6AA34203018334474B25A0600996CA0968AA6228B886FF234B4EB9628B703C0A",
+    sboot_public_key: "E2A0D6500BBF1DD8DC212098C230EB731ECE3A81AA11D0E6E538FA36BBA4FF6E",
+    sboot_public_key_hash: "72B2E1CB0E8F715262AF38DFA0E522C95660D0EBFD920F4B1A229845E599C697",
+  },
   image2: {
     img_id: 1,
     img_ver_major: 1,
     img_ver_minor: 1,
-    sec_epoch: 1,
-    //hash_alg: sha256/sha384/sha512/hmac256/hmac384/hmac512
-    hash_alg: "sha256",
-    rsip_en: false,
-    //rsip_mode: 2 is GCM, 1 is XTS(CTR+ECB), 0 is CTR
-    rsip_mode: 1,
-    //gcm_tag_len: use in GCM, should be 4, 8, 16
-    gcm_tag_len: 4,
-    //rsip_key_id: 0 use (ecb_key[0], ctr_key[0]), 1 use (ecb_key[1], ctr_key[1])
-    rsip_key_id: 1,
+    huk_epoch: 1,
+    /* rsip_key_group valid option: "rsip_xts_g0", "rsip_xts_g1", "rsip_gcm_g0", "rsip_gcm_g1", "rsip_ctr_g0", "rsip_ctr_g1" */
+    rsip_key_group: "rsip_xts_g1",
     rsip_iv: "213253647586a7b8",
-    algorithm: "ed25519",
-    private_key: "9FC60C4CB6162E49C54FB94511497E16F5EB605167836F15DECBB8363B18E243",
-    public_key: "45BABD665908AD5576D9DA4A80287262A4CB1475ACAD543E27A9C2598579FC72",
-    public_key_hash: "1DFC2FE01CA8274F06E2E112D027C3C6FF9CED59EE79944BED46ADE35C44B422",
+    sboot_private_key: "9FC60C4CB6162E49C54FB94511497E16F5EB605167836F15DECBB8363B18E243",
+    sboot_public_key: "45BABD665908AD5576D9DA4A80287262A4CB1475ACAD543E27A9C2598579FC72",
+    sboot_public_key_hash: "1DFC2FE01CA8274F06E2E112D027C3C6FF9CED59EE79944BED46ADE35C44B422",
   },
   image3: {
-    rsip_en: false,
-    //rsip_mode: 2 is GCM, 1 is XTS(CTR+ECB), 0 is CTR
-    rsip_mode: 1,
-    //gcm_tag_len: use in GCM, should be 4, 8, 16
-    gcm_tag_len: 4,
-    //rsip_key_id: 0 use (ecb_key[0], ctr_key[0]), 1 use (ecb_key[1], ctr_key[1])
-    rsip_key_id: 0,
-    rsip_iv: "213253647586a7b8",
+    inherit_from: "image1",
   },
-  cert: {
-    algorithm: "ed25519",
-    private_key: "6AA34203018334474B25A0600996CA0968AA6228B886FF234B4EB9628B703C0A",
-    public_key: "E2A0D6500BBF1DD8DC212098C230EB731ECE3A81AA11D0E6E538FA36BBA4FF6E",
-    public_key_hash: "72B2E1CB0E8F715262AF38DFA0E522C95660D0EBFD920F4B1A229845E599C697",
-  },
-  secure_boot_en: 0,
-  hmac_key: "9874918301909234686574856692873911223344556677889900aabbccddeeff",
-  ecb_key: [
-    "E2A0D6500BBF1DD8DC212098C230EB731ECE3A81AA11D0E6E538FA36BBA4FF6E",
-    "c9a8b1f4e7d293b6a5d8f009be6c3d21e4a7b8f5d3b901a984087844c2f7b6e0",
-  ],
-  //ctr_key[1] keep same as HMAC_KEY
-  ctr_key: [
-    "6AA34203018334474B25A0600996CA0968AA6228B886FF234B4EB9628B703C0A",
-    "9874918301909234686574856692873911223344556677889900aabbccddeeff",
-  ],
-  rdp_en: false,
-  rdp_iv: "0123456789abcdef",
-  rdp_key: "11223344556677889900aabbccddeeff11223344556677889900aabbccddeeff"
+
+  /* ============================ Secure Boot globle settings ============================ */
+  sboot_enable: false,
+  /* sboot_algorithm valid option: "ed25519"/"secp192r1"/"secp224r1"/"secp256r1"/"bp256r1"/"secp192k1"/"secp224k1"/"secp256k1" */
+  sboot_algorithm: "ed25519",
+  /* sboot_hash_alg valid option: "sha256"/"sha384"/"sha512"/"hmac256"/"hmac384"/"hmac512" */
+  sboot_hash_alg: "sha256",
+  /* sboot_hmac_key shares OTP key wite rsip_xts_g1, thus these two keys must be same */
+  sboot_hmac_key: "otp_key_0x220",
+
+  /* ================================ RSIP globle settings =============================== */
+  rsip_enable: false,
+  /* rsip_mode valid option: 2 (GCM), 1 (XTS), 0 (CTR) */
+  rsip_mode: 1,
+  /* rsip_gcm_tag_len valid option: 4 / 8 / 16 (bytes) */
+  rsip_gcm_tag_len: 4,
+  /* rsip key group define, uses do not modify */
+  rsip_xts_g0: ["otp_key_0x2C0", "otp_key_0x2E0"], //first ecb, second ctr
+  rsip_xts_g1: ["otp_key_0x200", "otp_key_0x220"], //first ecb, second ctr
+  rsip_gcm_g0: ["otp_key_0x2E0"],
+  rsip_gcm_g1: ["otp_key_0x220"],
+  /* ctr mode not recommend */
+  rsip_ctr_g0: ["otp_key_0x2E0"],
+  rsip_ctr_g1: ["otp_key_0x220"],
+
+  /* =================================== OTP key value =================================== */
+  otp_key_0x2C0: "E2A0D6500BBF1DD8DC212098C230EB731ECE3A81AA11D0E6E538FA36BBA4FF6E",
+  otp_key_0x2E0: "6AA34203018334474B25A0600996CA0968AA6228B886FF234B4EB9628B703C0A",
+  otp_key_0x200: "c9a8b1f4e7d293b6a5d8f009be6c3d21e4a7b8f5d3b901a984087844c2f7b6e0",
+  otp_key_0x220: "9874918301909234686574856692873911223344556677889900aabbccddeeff",
 }

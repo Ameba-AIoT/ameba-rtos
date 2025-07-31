@@ -191,12 +191,12 @@ static int whc_fullmac_host_set_txq_params(struct wiphy *wiphy, struct net_devic
 	return ret;
 }
 
-#ifdef CONFIG_CFG80211_SME_OFFLOAD
+#ifdef CONFIG_SUPPLICANT_SME
 static int whc_fullmac_host_probe_client(struct wiphy *wiphy, struct net_device *ndev, const u8 *peer, u64 *cookie)
 {
 	return 0;
 }
-#endif // CONFIG_CFG80211_SME_OFFLOAD
+#endif // CONFIG_SUPPLICANT_SME
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0))
 static int whc_fullmac_host_change_beacon(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_beacon_data *info)
@@ -289,6 +289,7 @@ static int whc_fullmac_host_start_ap_ops(struct wiphy *wiphy, struct net_device 
 	char fake_pwd[] = "12345678";
 	u8 elem_num = 0;
 	const struct element *elem, **pelem;
+	u8 is_mp = 0;
 #ifdef CONFIG_P2P
 	struct element *target_ptr = NULL;
 	u8 P2P_OUI[4] = {0x50, 0x6f, 0x9a, 0x09};
@@ -296,7 +297,8 @@ static int whc_fullmac_host_start_ap_ops(struct wiphy *wiphy, struct net_device 
 #endif
 	dev_dbg(global_idev.fullmac_dev, "=>"FUNC_NDEV_FMT" - Start Softap\n", FUNC_NDEV_ARG(ndev));
 
-	if (whc_fullmac_host_dev_driver_is_mp()) {
+	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	if (is_mp == 1) {
 		return -EPERM;
 	}
 
@@ -430,9 +432,11 @@ static int whc_fullmac_host_stop_ap_ops(struct wiphy *wiphy, struct net_device *
 									   )
 {
 	int ret = 0;
+	u8 is_mp = 0;
 	dev_dbg(global_idev.fullmac_dev, "=>"FUNC_NDEV_FMT" - Stop Softap\n", FUNC_NDEV_ARG(ndev));
 
-	if (whc_fullmac_host_dev_driver_is_mp()) {
+	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	if (is_mp == 1) {
 		return -EPERM;
 	}
 
@@ -451,10 +455,12 @@ int whc_fullmac_host_ap_scan(struct wiphy *wiphy, struct cfg80211_scan_request *
 	int ret = 0;
 	struct rtw_scan_param scan_param = {0};
 	struct cfg80211_scan_info info;
+	u8 is_mp = 0;
 
 	dev_dbg(global_idev.fullmac_dev, "whc_fullmac_host_scan enter\n");
 
-	if (whc_fullmac_host_dev_driver_is_mp()) {
+	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	if (is_mp == 1) {
 		return -EPERM;
 	}
 
@@ -519,7 +525,7 @@ void whc_fullmac_host_ops_ap_init(void)
 	ops->change_bss = whc_fullmac_host_change_bss;
 	ops->set_txq_params = whc_fullmac_host_set_txq_params;
 	ops->dump_survey = whc_fullmac_host_dump_survey_params;
-#ifdef CONFIG_CFG80211_SME_OFFLOAD
+#ifdef CONFIG_SUPPLICANT_SME
 	/*
 	 * This is required by AP SAE, otherwise wpa_driver_nl80211_capa() would
 	 * set use_monitor to 1 because poll_command_supported is false and
@@ -527,5 +533,5 @@ void whc_fullmac_host_ops_ap_init(void)
 	 * (which SAE AP shall use).
 	 */
 	ops->probe_client = whc_fullmac_host_probe_client;
-#endif	/* CONFIG_CFG80211_SME_OFFLOAD */
+#endif	/* CONFIG_SUPPLICANT_SME */
 }

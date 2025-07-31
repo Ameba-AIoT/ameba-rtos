@@ -5,6 +5,7 @@
 u8 tx_buf[fix_tx_buf_num][4 + SIZE_TX_DESC + MAX_SKB_BUF_SIZE_NORMAL] = {0};
 u8 used_buf_num = 0;
 extern struct whc_sdio whc_sdio_priv;
+extern struct event_priv_t event_priv;
 
 /* host tx */
 int whc_sdio_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
@@ -13,9 +14,15 @@ int whc_sdio_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	(void)raw_para;
 	(void)is_special_pkt;
 	struct eth_drv_sg *psg_list;
-	int ret = 0, i = 0;
+	int ret = RTK_SUCCESS, i = 0;
 	int len_send = 0;
 	struct whc_msg_info *msg;
+
+	if (!event_priv.host_init_done) {
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Host trx err: wifi not init\n");
+		return -RTK_ERR_WIFI_NOT_INIT;
+	}
+
 	rtos_mutex_take(whc_sdio_priv.host_send, 0xFFFFFFFF);
 
 	uint8_t *ptr = &(tx_buf[used_buf_num][0]);
@@ -23,12 +30,12 @@ int whc_sdio_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 
 	if (*ptr != 0) {
 		RTK_LOGE(TAG_WLAN_INIC, "%s fail buf busy !\n\r", __func__);
-		return -1;
+		return -RTK_ERR_WIFI_TX_BUF_FULL;
 	}
 
 	if (total_len > MAX_SKB_BUF_SIZE_NORMAL) {
 		RTK_LOGE(TAG_WLAN_INIC, "%s: len(%d) > MAXIMUM_ETHERNET_PACKET_SIZE !\n\r", __func__, total_len);
-		return -1;
+		return -RTK_ERR_BUFFER_OVERFLOW;
 	}
 
 	/* buf to sdio send */

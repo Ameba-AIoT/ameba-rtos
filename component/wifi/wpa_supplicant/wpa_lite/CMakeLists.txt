@@ -16,7 +16,7 @@ ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/rom
 )
 
-ameba_list_append_if(CONFIG_WPA_LITE_OPS public_includes
+ameba_list_append_if(CONFIG_RTW_CLI public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/wpa_ops_cfg_parse
 )
 

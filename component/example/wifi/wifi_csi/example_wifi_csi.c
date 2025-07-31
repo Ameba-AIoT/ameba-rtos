@@ -158,15 +158,17 @@ static struct csi_report_data *wifi_csi_dequeue_idle_q(void)
 }
 
 /* wifi csi report callback */
-void example_wifi_csi_report_cb(u8 *buf, s32 buf_len)
+void example_wifi_csi_report_cb(u8 *evt_info)
 {
+	struct rtw_event_csi_report_info *csi_rpt_info = (struct rtw_event_csi_report_info *)evt_info;
+	u32 rpt_len = sizeof(struct rtw_event_csi_report_info) + csi_rpt_info->csi_data_length;
 	struct csi_report_data	*csi_rpt_pkt = NULL;
 
 	csi_rpt_pkt = wifi_csi_dequeue_idle_q();
 
-	if (csi_rpt_pkt && (buf_len <= CSI_REPORT_BUF_SIZE)) {
-		memcpy(csi_rpt_pkt->csi_buffer, buf, buf_len);
-		csi_rpt_pkt->length = buf_len;
+	if (csi_rpt_pkt && (rpt_len <= CSI_REPORT_BUF_SIZE)) {
+		memcpy(csi_rpt_pkt->csi_buffer, evt_info, rpt_len);
+		csi_rpt_pkt->length = rpt_len;
 		wifi_csi_enqueue_busy_q(csi_rpt_pkt);
 		rtos_sema_give(wc_ready_sema);
 	} else {
@@ -297,33 +299,33 @@ done:
 
 void wifi_csi_show(struct csi_report_data *csi_rpt_pkt)
 {
-	struct rtw_csi_header *csi_header = (struct rtw_csi_header *)csi_rpt_pkt->csi_buffer;
+	struct rtw_event_csi_report_info *csi_rpt_info = (struct rtw_event_csi_report_info *)csi_rpt_pkt->csi_buffer;
 	unsigned long long *buff_tmp = NULL; /* for printf csi data*/
 	unsigned char print_len = 0, i = 0;
 
 	RTK_LOGA(NOTAG, "[CH INFO] csi header info:\r\n");
-	RTK_LOGA(NOTAG, "# sta_mac_addr     = " MAC_FMT "\r\n", MAC_ARG(csi_header->mac_addr));
-	RTK_LOGA(NOTAG, "# trigger_mac_addr = " MAC_FMT "\r\n", MAC_ARG(csi_header->trig_addr));
-	RTK_LOGA(NOTAG, "# trigger_flag     = %d\r\n", csi_header->trig_flag);
-	RTK_LOGA(NOTAG, "# timestamp        = %lu us\r\n", csi_header->hw_assigned_timestamp);
-	RTK_LOGA(NOTAG, "# csi_data_len     = %lu\r\n", csi_header->csi_data_length);
-	RTK_LOGA(NOTAG, "# csi_sequence     = %lu\r\n", csi_header->csi_sequence);
-	RTK_LOGA(NOTAG, "# channel          = %d\r\n", csi_header->channel);
-	RTK_LOGA(NOTAG, "# bandwidth        = %d\r\n", csi_header->bandwidth);
-	RTK_LOGA(NOTAG, "# rx_rate          = %d\r\n", csi_header->rx_rate);
-	RTK_LOGA(NOTAG, "# protocol_mode    = %d [ofdm(0)/ht(1)/vht(2)/he(3)]\r\n", csi_header->protocol_mode);
-	RTK_LOGA(NOTAG, "# num_sub_carrier  = %d\r\n", csi_header->num_sub_carrier);
-	RTK_LOGA(NOTAG, "# num_bit_per_tone = %d [I:%d bits; Q:%d bits]\r\n", csi_header->num_bit_per_tone, csi_header->num_bit_per_tone / 2,
-			 csi_header->num_bit_per_tone / 2);
-	RTK_LOGA(NOTAG, "# rssi[0]          = %d dbm\r\n", csi_header->rssi[0]);
-	RTK_LOGA(NOTAG, "# rxsc             = %d\r\n", csi_header->rxsc);
-	RTK_LOGA(NOTAG, "# csi_valid        = %d\r\n", csi_header->csi_valid);
+	RTK_LOGA(NOTAG, "# sta_mac_addr     = " MAC_FMT "\r\n", MAC_ARG(csi_rpt_info->mac_addr));
+	RTK_LOGA(NOTAG, "# trigger_mac_addr = " MAC_FMT "\r\n", MAC_ARG(csi_rpt_info->trig_addr));
+	RTK_LOGA(NOTAG, "# trigger_flag     = %d\r\n", csi_rpt_info->trig_flag);
+	RTK_LOGA(NOTAG, "# timestamp        = %lu us\r\n", csi_rpt_info->hw_assigned_timestamp);
+	RTK_LOGA(NOTAG, "# csi_data_len     = %lu\r\n", csi_rpt_info->csi_data_length);
+	RTK_LOGA(NOTAG, "# csi_sequence     = %lu\r\n", csi_rpt_info->csi_sequence);
+	RTK_LOGA(NOTAG, "# channel          = %d\r\n", csi_rpt_info->channel);
+	RTK_LOGA(NOTAG, "# bandwidth        = %d\r\n", csi_rpt_info->bandwidth);
+	RTK_LOGA(NOTAG, "# rx_rate          = %d\r\n", csi_rpt_info->rx_rate);
+	RTK_LOGA(NOTAG, "# protocol_mode    = %d [ofdm(0)/ht(1)/vht(2)/he(3)]\r\n", csi_rpt_info->protocol_mode);
+	RTK_LOGA(NOTAG, "# num_sub_carrier  = %d\r\n", csi_rpt_info->num_sub_carrier);
+	RTK_LOGA(NOTAG, "# num_bit_per_tone = %d [I:%d bits; Q:%d bits]\r\n", csi_rpt_info->num_bit_per_tone, csi_rpt_info->num_bit_per_tone / 2,
+			 csi_rpt_info->num_bit_per_tone / 2);
+	RTK_LOGA(NOTAG, "# rssi[0]          = %d dbm\r\n", csi_rpt_info->rssi[0]);
+	RTK_LOGA(NOTAG, "# rxsc             = %d\r\n", csi_rpt_info->rxsc);
+	RTK_LOGA(NOTAG, "# csi_valid        = %d\r\n", csi_rpt_info->csi_valid);
 
-	RTK_LOGA(NOTAG, "[CH INFO] csi raw data: len = %d[%d]\r\n", csi_header->csi_data_length, csi_rpt_pkt->length);
+	RTK_LOGA(NOTAG, "[CH INFO] csi raw data: len = %d[%d]\r\n", csi_rpt_info->csi_data_length, csi_rpt_pkt->length);
 
-	buff_tmp = (u64 *)(csi_rpt_pkt->csi_buffer + csi_header->hdr_len + 3);
-	print_len = csi_header->csi_data_length >> 3;
-	if (csi_header->csi_data_length % 8) {
+	buff_tmp = (u64 *)(csi_rpt_info->csi_data);
+	print_len = csi_rpt_info->csi_data_length >> 3;
+	if (csi_rpt_info->csi_data_length % 8) {
 		print_len++;
 	}
 

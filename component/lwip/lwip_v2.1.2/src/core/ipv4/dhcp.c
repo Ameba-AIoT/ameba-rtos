@@ -182,6 +182,8 @@ static u8_t xid_initialised;
 #ifdef CONFIG_FAST_DHCP
 static u8_t is_fast_dhcp = 0;
 #endif
+#define DHCP_MAX_RTO 8
+#define DHCP_MAX_RTO_TIME 3
 /* Added by Realtek end*/
 
 #define dhcp_option_given(dhcp, idx)          (dhcp_rx_options_given[idx] != 0)
@@ -433,7 +435,9 @@ dhcp_select(struct netif *netif)
   if (dhcp->tries < 255) {
     dhcp->tries++;
   }
-  msecs = (u16_t)((dhcp->tries < 6 ? 1 << dhcp->tries : 60) * 1000);
+  /* modify by realtek : The maximum DHCP retransmission interval is reduced to 8 seconds. */
+  msecs = (u16_t)((dhcp->tries < DHCP_MAX_RTO_TIME ? 1 << dhcp->tries : DHCP_MAX_RTO) * 1000);
+  /* modify by realtek end */
   dhcp->request_timeout = (u16_t)((msecs + DHCP_FINE_TIMER_MSECS - 1) / DHCP_FINE_TIMER_MSECS);
   LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_STATE, ("dhcp_select(): set request timeout %"U16_F" msecs\n", msecs));
   return result;
@@ -1092,7 +1096,9 @@ dhcp_discover(struct netif *netif)
     autoip_start(netif);
   }
 #endif /* LWIP_DHCP_AUTOIP_COOP */
-  msecs = (u16_t)((dhcp->tries < 6 ? 1 << dhcp->tries : 60) * 1000);
+  /* modify by realtek : The maximum DHCP retransmission interval is reduced to 8 seconds. */
+  msecs = (u16_t)((dhcp->tries < DHCP_MAX_RTO_TIME ? 1 << dhcp->tries : DHCP_MAX_RTO) * 1000);
+  /* modify by realtek end */
   dhcp->request_timeout = (u16_t)((msecs + DHCP_FINE_TIMER_MSECS - 1) / DHCP_FINE_TIMER_MSECS);
   LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE, ("dhcp_discover(): set request timeout %"U16_F" msecs\n", msecs));
   return result;

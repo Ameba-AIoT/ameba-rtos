@@ -80,6 +80,8 @@ enum  {
 	RTW_EVENT_SME_TX_MLME_MGNT			= 121,
 	RTW_EVENT_SME_RX_ASSOC_RESP			= 122,
 
+	RTW_EVENT_WPA_P2P_CHANNEL_RDY		= 123, /**< STA mode: inform host channel switch ready */
+
 	RTW_EVENT_INTERNAL_MAX,
 };
 
@@ -186,6 +188,42 @@ struct rtw_kvr_param_t {
 #endif
 };
 
+struct rtw_event_deauth_info_flash {
+	struct deauth_info *deauth_data;
+	u32 deauth_date_len;
+	u8 flash_operation;  /* FLASH_READ or FLASH_WRITE */
+};
+
+struct rtw_event_sme_auth_timeout {
+	u8 bssid[6];
+};
+
+/* Structs for events which need report both info and frame at the same time */
+struct rtw_event_sme_rx_assoc_resp {
+	u8 uapsd_ac_enable;
+	u32 frame_len;
+	u8 frame[];
+};
+
+struct rtw_event_rx_mgnt {
+	u8 channel;
+	u8 frame_type;
+	u32 frame_len;
+	u8 frame[];
+};
+
+struct rtw_event_nb_resp_recv {
+	u8 from_btm;
+	u32 frame_len;
+	u8 frame[];
+};
+
+/* Structs for events which only need report frame */
+struct rtw_event_report_frame {
+	u32 frame_len;
+	u8 frame[];
+};
+
 #ifndef CONFIG_FULLMAC
 /**
  * @brief  The structure is join block param.
@@ -230,6 +268,48 @@ struct _raw_data_desc_t {
 	unsigned short		buf_len;      /**< The length of raw data.*/
 	unsigned short		flags;        /**< Send options.*/
 };
+
+#ifdef CONFIG_NAN
+#define MAX_MATCHING_FILTERS           (16)
+#define MAX_MATCHING_FILTER_LEN        (32)
+/**
+ * @brief Describes a NAN function Rx / Tx filter.
+ */
+struct rtw_nan_func_filter {
+	u8 filter[MAX_MATCHING_FILTER_LEN]; /**  the content of the filter. */
+	u8 len; /** the length of the filter. */
+};
+
+/**
+ * @brief Describes a NAN function corresponding to struct cfg80211_nan_func.
+ */
+struct rtw_nan_func_t {
+	u8 type;
+	u8 service_id[6];
+	u8 publish_type;
+	bool close_range;
+	bool publish_bcast;
+	bool subscribe_active;
+	u8 followup_id;
+	u8 followup_reqid;
+	struct rtw_mac followup_dest;
+	u32 ttl;
+	const u8 *serv_spec_info;
+	u8 serv_spec_info_len;
+	bool srf_include;
+	const u8 *srf_bf;
+	u8 srf_bf_len;
+	u8 srf_bf_idx;
+	struct rtw_mac *srf_macs;
+	int srf_num_macs;
+	struct rtw_nan_func_filter *rx_filters;
+	struct rtw_nan_func_filter *tx_filters;
+	u8 num_tx_filters;
+	u8 num_rx_filters;
+	u8 instance_id;
+	u64 cookie;
+};
+#endif
 
 /**
  * @brief  Set the current Media Access Control (MAC) address
@@ -377,11 +457,12 @@ int wifi_set_eap_phase(unsigned char is_trigger_eap);
 
 /**
  * @brief  get the current eap phase from wifi driver
- * @param[in]  None
- * @return  1: eap_phase is equal to 1, indicate 802.1X EAP is triggered
- * @return  0: eap_phase is equal to 0, indicate 802.1X EAP is not triggered
+ * @param[in]  eap_phase: Pointer to store the eap phase
+ * 1: indicate 802.1X EAP is triggered
+ * 0: indicate 802.1X EAP is not triggered
+ * @return    RTK_SUCCESS or RTK_FAIL
  */
-unsigned char wifi_get_eap_phase(void);
+int wifi_get_eap_phase(u8 *eap_phase);
 
 /**
  * @brief  Set the current eap authentication method to wifi driver
@@ -440,7 +521,8 @@ int _wifi_off_ap(void);
 int wifi_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags);
 
 void wifi_event_init(void);
-void wifi_indication(u32 event, u8 *buf, s32 buf_len, s32 flags);
+void wifi_indication(u32 event, u8 *evt_info, s32 evt_len);
+void wifi_indication_ext(u32 event, u8 *info_buf, s32 info_len, u8 *frame_buf, s32 frame_len);
 
 #ifdef __cplusplus
 }

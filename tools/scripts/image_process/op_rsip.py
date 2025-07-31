@@ -20,6 +20,14 @@ class Rsip(OperationBase):
         parser.add_argument('-o', '--output-file', help='Output encrypted file', required=True)
         parser.add_argument('-s', '--section', help='Section in layout file', required=True)
 
+    @staticmethod
+    def require_manifest_file(context:Context) -> bool:
+        return True
+
+    @staticmethod
+    def require_layout_file(context:Context) -> bool:
+        return True
+
     # @exit_on_failure(catch_exception=True)
     @staticmethod
     def execute(context:Context, output_file:str, input_file:str, section:str, image_type:ImageType = ImageType.UNKNOWN):
@@ -31,10 +39,11 @@ class Rsip(OperationBase):
             #Detect image type by image name
             image_type = parse_image_type(input_file)
         image_config = manifest_manager.get_image_config(image_type)
-        if image_config.rsip_en:
+        if image_config.rsip_enable:
             section_addr = get_layout_address(layout_file, section, "ORIGIN")
             if section_addr == '':
                 context.logger.fatal(f"Failed to parse addr for {section} in {layout_file}")
+                return Error(ErrorType.INVALID_ARGS, f"Failed to parse addr for {section} in {layout_file}")
             lib_security = importlib.import_module('security')
             rsip = lib_security.RSIP(output_file, input_file, section_addr, image_config)
             if context.soc_project == "amebad":

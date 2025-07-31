@@ -992,36 +992,6 @@ struct rtw_speaker_read_latch_rpt {
 /**********************************************************************************************
  *                                     csi structures
  *********************************************************************************************/
-#pragma pack(1) /* csi report header should be 1 byte alignment */
-/**
- * @brief  Layout of CSI report header.
- */
-
-struct rtw_csi_header {
-	u16 csi_signature;          /**< Unique pattern (0xABCD) to detect a new CSI packet. */
-	u8 hdr_len;                 /**< Length of CSI header excluding `csi_signature` and `hdr_len` (i.e., 3 bytes). */
-	u8 mac_addr[6];	            /**< MAC address of transmitter (Active CSI) or receiver (Passive CSI) for CSI triggering frame. */
-	u8 trig_addr[6];	        /**< MAC address of destination (Active CSI) or source (Passive CSI) for CSI triggering frame (Reserved in METHOD4). */
-	u32 hw_assigned_timestamp;  /**< CSI timestamp, unit: us. */
-	u32 csi_sequence;           /**< CSI data sequence number. */
-	u32 csi_data_length;        /**< CSI raw data length, unit: byte. */
-	u8 csi_valid;               /**< Indicates if current CSI raw data is valid. */
-	u8 channel;                 /**< Operation channel. */
-	u8 bandwidth;               /**< Operating bandwidth (0: 20MHz, 1: 40MHz). */
-	u8 rx_rate;                 /**< RX packet rate used to obtain CSI info. */
-	u8 protocol_mode;           /**< Protocol mode of response packet (0: OFDM, 1: HT, 2: VHT, 3: HE). */
-	u16 num_sub_carrier;        /**< Number of subcarriers in CSI raw data */
-	u8 num_bit_per_tone;        /**< CSI data word length (sum of I and Q). E.g., if using @ref RTW_CSI_ACCU_1BYTE accuracy (S(8,X)), num_bit_per_tone = 16. */
-	s8 rssi[2];                 /**< rssi[0]: dBm, rssi[1]: reserved */
-	s8 evm[2];                  /**< Error Vector Magnitude in dB (Reserved). */
-	u8 rxsc;                    /**< Sub-20MHz channel used for packet transmission. */
-	u8 n_rx;                    /**< Reserved. */
-	u8 n_sts;                   /**< Reserved. */
-	u8 trig_flag;               /**< CSI trigger source indicator (valid only in METHOD4, 0 if `trig_addr` valid) */
-	u8 rsvd[5];
-};
-#pragma pack()
-
 /**
   * @brief  Configuration parameters used for csi report.
   * @note  The mac_addr if not specified, the default value must be 0.

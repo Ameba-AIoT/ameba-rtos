@@ -3,6 +3,7 @@
 #include "vfs.h"
 #include "lwip_netconf.h"
 #include "httpd/httpd.h"
+#include "dhcp/dhcps.h"
 #include "example_httpd_vfs.h"
 
 #define HTTPD_DEFAULT_CONFIG() {						\
@@ -88,7 +89,7 @@ int get_method_handler(struct httpd_conn *conn)
 		memcpy(page_path, index_page, strlen(index_page));
 		mime_type = MIME_TYPE_HTML;
 
-		DiagSPrintf(path, "%s:%s", prefix, page_path);
+		DiagSPrintf((u8 *)path, "%s:%s", prefix, page_path);
 		finfo = fopen(path, "r");
 		if (finfo == NULL) {
 			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s][%d] fopen failed: %s\r\n", __FUNCTION__, __LINE__, page_path);

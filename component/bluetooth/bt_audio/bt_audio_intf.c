@@ -991,9 +991,17 @@ rtk_bt_audio_record_t *rtk_bt_audio_record_add(uint32_t type, uint32_t channels,
 		priv->curr_record_num ++;
 		osif_mutex_give(bt_audio_intf_priv_mutex);
 	}
-	rtk_bt_audio_record_set_parameters(precord->audio_record_hdl, "ch0_sel_amic=1");
+	if (channels == 3) { // for noise cancel
+		rtk_bt_audio_record_set_parameters(precord->audio_record_hdl, "cap_mode=no_afe_pure_data");
+		rtk_bt_audio_record_set_channel_mic_category(0, RTK_BT_AUDIO_DMIC1);
+		rtk_bt_audio_record_set_channel_mic_category(1, RTK_BT_AUDIO_DMIC2);
+		rtk_bt_audio_record_set_channel_mic_category(2, RTK_BT_AUDIO_AMIC5);
+		rtk_bt_audio_record_set_mic_bst_gain(RTK_BT_AUDIO_AMIC5, RTK_BT_AUDIO_MICBST_GAIN_0DB);
+	} else {
+		rtk_bt_audio_record_set_parameters(precord->audio_record_hdl, "ch0_sel_amic=1");
+		rtk_bt_audio_record_set_mic_bst_gain(RTK_BT_AUDIO_AMIC1, RTK_BT_AUDIO_MICBST_GAIN_40DB);
+	}
 	rtk_bt_audio_record_set_capture_volume(channels, volume);
-	rtk_bt_audio_record_set_mic_bst_gain(RTK_BT_AUDIO_DMIC1, RTK_BT_AUDIO_MICBST_GAIN_40DB);
 
 	return precord;
 }

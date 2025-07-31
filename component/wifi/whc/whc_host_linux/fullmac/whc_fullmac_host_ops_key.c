@@ -43,9 +43,11 @@ static int whc_fullmac_host_add_key_ops(struct wiphy *wiphy, struct net_device *
 	struct rtw_crypt_info *crypt;
 	int ret = 0;
 	struct xmit_priv_t *xmit_priv = &global_idev.xmit_priv;
+	u8 is_mp = 0;
 
 	dev_dbg(global_idev.fullmac_dev, "--- %s ---", __func__);
-	if (whc_fullmac_host_dev_driver_is_mp()) {
+	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	if (is_mp == 1) {
 		return -EPERM;
 	}
 
@@ -166,10 +168,12 @@ static int whc_fullmac_host_set_pmksa(struct wiphy *wiphy, struct net_device *nd
 {
 	struct rtw_pmksa_ops_t *pmksa_ops_vir = NULL;
 	dma_addr_t		pmksa_ops_phy;
+	u8 is_mp = 0;
 
 	dev_dbg(global_idev.fullmac_dev, "--- %s ---", __func__);
 
-	if (whc_fullmac_host_dev_driver_is_mp()) {
+	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	if (is_mp == 1) {
 		return -EPERM;
 	}
 
@@ -204,10 +208,12 @@ static int whc_fullmac_host_del_pmksa(struct wiphy *wiphy, struct net_device *nd
 {
 	struct rtw_pmksa_ops_t	*pmksa_ops_vir = NULL;
 	dma_addr_t		pmksa_ops_phy;
+	u8 is_mp = 0;
 
 	dev_dbg(global_idev.fullmac_dev, "--- %s ---", __func__);
 
-	if (whc_fullmac_host_dev_driver_is_mp()) {
+	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	if (is_mp == 1) {
 		return -EPERM;
 	}
 
@@ -241,10 +247,12 @@ static int whc_fullmac_host_flush_pmksa(struct wiphy *wiphy, struct net_device *
 {
 	struct rtw_pmksa_ops_t *pmksa_ops_vir = NULL;
 	dma_addr_t		pmksa_ops_phy;
+	u8 is_mp = 0;
 
 	dev_dbg(global_idev.fullmac_dev, "--- %s --- ", __func__);
 
-	if (whc_fullmac_host_dev_driver_is_mp()) {
+	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	if (is_mp == 1) {
 		return -EPERM;
 	}
 

@@ -351,19 +351,19 @@ void wifi_raw_tx_thread(void *param)
 			tx_raw_data_desc.wlan_idx = STA_WLAN_INDEX;
 			tx_raw_data_desc.buf = mgnt_frame;
 			tx_raw_data_desc.buf_len = RAW_TX_MGNT_FRAME_LEN;
-			tx_raw_data_desc.tx_rate = RTW_RATE_1M;
+			tx_raw_data_desc.tx_rate = RTW_RATE_6M;
 		} else {
 			wifi_raw_tx_construct_data(data_frame);
 			tx_raw_data_desc.wlan_idx = STA_WLAN_INDEX;
 			tx_raw_data_desc.buf = data_frame;
 			tx_raw_data_desc.buf_len = RAW_TX_DATA_FRAME_LEN;
-			tx_raw_data_desc.tx_rate = RTW_RATE_6M;
+			tx_raw_data_desc.tx_rate = RTW_RATE_54M;
 		}
 
-		if (wifi_send_raw_frame(&tx_raw_data_desc) < 0) {
-			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "%s failed!\n", __func__);
+		if (wifi_send_raw_frame(&tx_raw_data_desc) == -RTK_ERR_WIFI_TX_BUF_FULL) {
+			RTK_LOGS(NOTAG, RTK_LOG_WARN, "%s failed!\n", __func__);
+			rtos_time_delay_ms(5);
 		}
-		rtos_time_delay_ms(100);
 	}
 
 err:

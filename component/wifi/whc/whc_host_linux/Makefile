@@ -8,14 +8,17 @@ export CONFIG_FULLMAC_HCI_SDIO = n
 export CONFIG_FULLMAC_HCI_SPI = n
 export CONFIG_FULLMAC_HCI_USB = n
 export CONFIG_WHC_BRIDGE = n
-export CONFIG_WHC_BRIDGE_WPA_OPS = n
 export CONFIG_IEEE80211R = n
+export CONFIG_SUPPLICANT_SME = n
+export CONFIG_WHC_CMD_PATH = n
+export CONFIG_WHC_WPA_OPS = n
 
 ifeq ($(CONFIG_FULLMAC_HCI_IPC),y)
 
 ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
 ccflags-$(CONFIG_P2P) += -DCONFIG_P2P
 ccflags-$(CONFIG_IEEE80211R) += -DCONFIG_IEEE80211R
+ccflags-$(CONFIG_SUPPLICANT_SME) += -DCONFIG_SUPPLICANT_SME
 ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -DCONFIG_FULLMAC
 ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/driver/include
 ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/driver/intf

@@ -47,7 +47,7 @@ static void example_wsclient_thread(void *param)
 			ws_dispatch(handle_message);
 			while (wsclient->readyState != WSC_CLOSED) {
 
-				ws_poll(0, &wsclient);
+				ws_poll(100, &wsclient);
 			}
 		} else {
 			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\r\nConnect to websocket server failed!\r\n");

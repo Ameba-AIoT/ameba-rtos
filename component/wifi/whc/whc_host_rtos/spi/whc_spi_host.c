@@ -365,9 +365,9 @@ static void whc_spi_host_setup_gpio(void)
 	GPIO_UserRegIrq(GPIO_InitStruct.GPIO_Pin, whc_spi_host_devrdy_handler, &GPIO_InitStruct);
 	GPIO_INTConfig(GPIO_InitStruct.GPIO_Pin, ENABLE);
 
-	//	Pinmux_Config(_PB_26, PINMUX_FUNCTION_SPI);//CS
-	//	PAD_PullCtrl(_PB_26, GPIO_PuPd_UP);
-	GPIO_InitStruct.GPIO_Pin = _PB_26;
+	//	Pinmux_Config(HOST_READY_PIN, PINMUX_FUNCTION_SPIM);//CS
+	//	PAD_PullCtrl(HOST_READY_PIN, GPIO_PuPd_UP);
+	GPIO_InitStruct.GPIO_Pin = HOST_READY_PIN;
 	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_Init(&GPIO_InitStruct);
@@ -477,12 +477,12 @@ static void whc_spi_host_spi_init(void)
 	u8 index = (WHC_SPI_DEV == SPI0_DEV) ? 0 : 1;
 
 	RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
-	Pinmux_Config(_PB_24, PINMUX_FUNCTION_SPI);//MOSI
-	Pinmux_Config(_PB_25, PINMUX_FUNCTION_SPI);//MISO
-	Pinmux_Config(_PB_23, PINMUX_FUNCTION_SPI);//CLK
-//	Pinmux_Config(_PB_26, PINMUX_FUNCTION_SPI);//CS
-//	PAD_PullCtrl(_PB_26, GPIO_PuPd_UP);
-	PAD_PullCtrl(_PB_23, GPIO_PuPd_DOWN);
+	Pinmux_Config(SPI1_MOSI, PINMUX_FUNCTION_SPIM);//MOSI
+	Pinmux_Config(SPI1_MISO, PINMUX_FUNCTION_SPIM);//MISO
+	Pinmux_Config(SPI1_SCLK, PINMUX_FUNCTION_SPIM);//CLK
+	//Pinmux_Config(SPI1_CS, PINMUX_FUNCTION_SPIM);//CS
+	//PAD_PullCtrl(SPI1_CS, GPIO_PuPd_UP);  // pull-up, default 1
+	PAD_PullCtrl(SPI1_SCLK, GPIO_PuPd_DOWN);
 
 	SSI_SetRole(WHC_SPI_DEV, SSI_MASTER);
 	SSI_StructInit(&SSI_InitStructMaster);
@@ -762,6 +762,7 @@ void whc_spi_host_init(void)
 	/* init spi */
 	whc_spi_host_spi_init();
 
+	event_priv.host_init_done = 1;
 }
 
 

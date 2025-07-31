@@ -565,7 +565,9 @@ uint16_t rtk_bt_le_audio_mcs_server_send_data(uint16_t char_uuid, void *p_param)
 	}
 
 	info.char_uuid = char_uuid;
-	memcpy(&info.param, p_param, sizeof(info.param));
+	if (p_param) {
+		memcpy(&info.param, p_param, sizeof(info.param));
+	}
 
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_CAP, RTK_BT_LE_AUDIO_ACT_MCP_SERVER_SEND_DATA,
 						   (void *)&info, sizeof(rtk_bt_le_audio_mcp_server_send_data_param_t));

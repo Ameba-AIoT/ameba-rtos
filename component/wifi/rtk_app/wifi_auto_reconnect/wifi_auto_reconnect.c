@@ -32,44 +32,13 @@ extern void eap_autoreconnect_hdl(u8 method_id);
 #if CONFIG_AUTO_RECONNECT
 struct rtw_auto_reconn_t  rtw_reconn;
 
-void rtw_reconn_join_status_hdl(u8 *buf)
+void rtw_reconn_timer_start(void)
 {
-	static u8 join_status_last = RTW_JOINSTATUS_SUCCESS;
-	int disconn_reason = -1;
-	u8 need_reconn = 0;
-	struct rtw_event_join_status_info *evt_info = (struct rtw_event_join_status_info *)buf;
-	u8 join_status = evt_info->status;
-	struct rtw_event_join_fail *join_fail;
-	struct rtw_event_disconnect *disconnect;
-
-	if ((join_status_last == join_status) && (join_status_last > RTW_JOINSTATUS_4WAY_HANDSHAKING)) {
-		RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "same joinstaus: %d\n", join_status);/*just for debug, delete when stable*/
-	}
-	join_status_last = join_status;
-
 	if (rtw_reconn.b_enable == 0) {
 		return;
 	}
 
-	if (join_status == RTW_JOINSTATUS_SUCCESS) {
-		rtw_reconn.cnt = 0;
-		return;
-	}
-
-	if (join_status == RTW_JOINSTATUS_FAIL) {
-		join_fail = &evt_info->private.fail;
-		disconn_reason = join_fail->reason_or_status_code;
-	} else if (join_status == RTW_JOINSTATUS_DISCONNECT) {
-		disconnect = &evt_info->private.disconnect;
-		disconn_reason = disconnect->disconn_reason;
-	}
-
-	if (disconn_reason >= 0 && !(disconn_reason > RTW_DISCONN_RSN_APP_BASE &&
-								 disconn_reason < RTW_DISCONN_RSN_APP_BASE_END)) {/*disconnect by APP no need do reconnect*/
-		need_reconn = 1;
-	}
-
-	if (need_reconn == 0) {
+	if (rtw_reconn.b_disconn_by_app == 1) {
 		return;
 	}
 
@@ -94,6 +63,36 @@ void rtw_reconn_join_status_hdl(u8 *buf)
 		rtw_wakelock_timeout(wifi_user_config.auto_reconnect_interval * 1000 + 10);
 		rtos_timer_start(rtw_reconn.timer, 1000);
 	}
+}
+
+void rtw_reconn_dhcp_status_hdl(u8 *evt_info)
+{
+	struct rtw_event_dhcp_status *dhcp_info = (struct rtw_event_dhcp_status *)evt_info;
+	u8 dhcp_state = dhcp_info->dhcp_status;
+
+	if (DHCP_ADDRESS_ASSIGNED == dhcp_state) {
+		rtw_reconn.cnt = 0;
+		return;
+	}
+
+	rtw_reconn_timer_start();
+}
+
+void rtw_reconn_join_status_hdl(u8 *evt_info)
+{
+	int disconn_reason = -1;
+	struct rtw_event_join_status_info *join_status_info = (struct rtw_event_join_status_info *)evt_info;
+	u8 join_status = join_status_info->status;
+
+	if (join_status == RTW_JOINSTATUS_DISCONNECT) {
+		disconn_reason = join_status_info->priv.disconnect.disconn_reason;
+	}
+
+	if ((join_status < RTW_JOINSTATUS_FAIL) || (disconn_reason == RTW_DISCONN_RSN_APP_CONN_WITHOUT_DISCONN)) {
+		return;
+	}
+
+	rtw_reconn_timer_start();
 }
 
 void rtw_reconn_task_hdl(void *param)
@@ -159,6 +158,7 @@ void rtw_reconn_new_conn(struct rtw_network_info *connect_param)
 		rtos_timer_stop(rtw_reconn.timer, 1000);/*cancel ongoing reconnect*/
 		rtw_reconn.b_waiting = 0;
 		rtw_reconn.cnt = 0;
+		rtw_reconn.b_disconn_by_app = 0;
 	}
 }
 
@@ -168,6 +168,7 @@ int wifi_stop_autoreconnect(void)
 		rtos_timer_stop(rtw_reconn.timer, 1000);
 		rtw_reconn.b_waiting = 0;
 		rtw_reconn.cnt = 0;
+		rtw_reconn.b_disconn_by_app = 1;
 	}
 	return RTK_SUCCESS;
 }

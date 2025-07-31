@@ -89,7 +89,8 @@ int whc_host_api_send_to_kernel(int fd, char *buf, int buflen)
 	return 0;
 }
 
-// BRIDGE_ATTR_PAYLOAD: size(4B) + payload
+
+// WHC_ATTR_PAYLOAD: size(4B) + payload
 int whc_host_api_send_nl_data(uint8_t *buf, uint32_t buf_len)
 {
 	int nl_fd;
@@ -114,8 +115,8 @@ int whc_host_api_send_nl_data(uint8_t *buf, uint32_t buf_len)
 	}
 
 	whc_host_fill_nlhdr(&msg, nl_family_id, 0, WHC_CMD_ECHO);
-	nla_put_u32(&ptr, BRIDGE_ATTR_API_ID, CMD_WIFI_SEND_BUF);
-	nla_put_payload(&ptr, BRIDGE_ATTR_PAYLOAD, buf, buf_len);
+	nla_put_u32(&ptr, WHC_ATTR_API_ID, CMD_WIFI_SEND_BUF);
+	nla_put_payload(&ptr, WHC_ATTR_PAYLOAD, buf, buf_len);
 	msg.n.nlmsg_len += ptr - msg.buf;
 	ret = whc_host_api_send_to_kernel(nl_fd, (char *)&msg, msg.n.nlmsg_len);
 	if (ret < 0) {
