@@ -57,7 +57,7 @@ Role switch test, idle state-->broadcast sink(BMR)-->broadcast source(BMS):
     1.14 create PA sync to the PBP broadcast: AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id> 
                                              e.g. AT+BLEBAP=pa_sync_create,0,00e04c8002eb,0xe,123abc
     1.15 create BIG sync to the PBP broadcast: AT+BLEBAP=big_sync_create,<bd_addr type>,<bd_addr>
-    1.16 terminate BIG sync to the PBP broadcast: AT+BLEBAP=big_sync_remove,<bd_addr type>,<bd_addr>  (This step can be ignored)
+    1.16 terminate BIG sync to the PBP broadcast: AT+BLEBAP=big_sync_remove,<bd_addr type>,<bd_addr>  (must terminate BIG sync before start broadcast!)
     1.17 start LE Audio PBP broadcast: AT+BLEBAP=broadcast_start
 
 For HFP HF part:

@@ -764,7 +764,7 @@ s32 wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc)
 	int sg_len = 0;
 
 	if (raw_frame_desc == NULL) {
-		return -1;
+		return -RTK_ERR_BADARG;
 	}
 
 	raw_para.rate = raw_frame_desc->tx_rate;

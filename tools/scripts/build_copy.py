@@ -9,7 +9,7 @@ import shutil
 import argparse
 import json
 
-FILES_TO_COPY = ['manifest.json', '../tools/scripts/build.py', '../tools/scripts/menuconfig.py']
+FILES_TO_COPY = ['manifest.json5', '../tools/scripts/build.py', '../tools/scripts/menuconfig.py']
 
 def copy_files(file_list, target_dir):
     for file in file_list:

@@ -902,7 +902,7 @@ SD_RESULT SD_GetEXTCSD(u8 *pbuf)
 	cmd_attr.rsp_type = SDIOH_RSP_6B;
 	cmd_attr.rsp_crc_chk = ENABLE;
 	cmd_attr.data_present = SDIOH_DATA_EXIST;
-	ret = SDIOH_SendCommand(&cmd_attr, 100);
+	ret = SDIOH_SendCommand(&cmd_attr, 0);
 	if (ret != HAL_OK) {
 		RTK_LOGE(TAG, "Send CMD8 error !!\r\n");
 		return (SD_RESULT)ret;
@@ -1641,7 +1641,7 @@ SD_RESULT SD_GetCapacity(u32 *sector_count)
 #if defined(SDIO) && (SDIO == EMMC)
 		u8 *EXT_CSD = rtos_mem_malloc(512 + 31);
 		EXT_CSD = (u8 *)(((((u32)EXT_CSD - 1) >> 5) + 1) << 5); /*next 32-byte aligned*/
-		SD_GetEXTCSD(EXT_CSD,);
+		SD_GetEXTCSD(EXT_CSD);
 		card_info.capaticy = (EXT_CSD[215] << 24 | EXT_CSD[214] << 16 | EXT_CSD[213] << 8 | EXT_CSD[212]) / 2;
 
 		rtos_mem_free(EXT_CSD);

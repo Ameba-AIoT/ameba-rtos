@@ -40,6 +40,7 @@
 #ifndef AMEBA_FWK_MEDIA_PLAYBACK_MEDIA_RTPLAYER_H
 #define AMEBA_FWK_MEDIA_PLAYBACK_MEDIA_RTPLAYER_H
 
+#include "parcel.h"
 #include "rtdata_source.h"
 #include "rtplayer_common.h"
 
@@ -49,6 +50,7 @@ extern "C" {
 
 typedef struct RTPlayer RTPlayer;
 typedef struct RTPlayerCallback RTPlayerCallback;
+typedef enum AudioSinkTypes AudioSinkTypes;
 
 /**
  * @brief Provides calback interfaces.
@@ -98,6 +100,16 @@ struct RTPlayerCallback {
  * @version 1.0
  */
 RTPlayer *RTPlayer_Create(void);
+
+/**
+ * @brief Creates RTPlayer with sink type.
+ *
+ * @param type The sink type, one of {@link AudioSinkTypes}
+ * @return a new RTPlayer object pointer.
+ * @since 1.0
+ * @version 1.0
+ */
+RTPlayer *RTPlayer_CreateEx(AudioSinkTypes type);
 
 /**
  * @brief Destory RTPlayer.
@@ -361,6 +373,22 @@ int32_t RTPlayer_SetVolume(RTPlayer *player, float left, float right);
  * @version 1.0
  */
 int32_t RTPlayer_SetSpeed(RTPlayer *player, float speed, float pitch);
+
+/**
+ * @brief Invokes player request.
+ *
+ * @param request The request parcel object pointer.
+ * @param reply The reply parcel object pointer..
+ * @return Returns a value listed below: \n
+ * int32_t | Description
+ * ----------------------| -----------------------
+ * AUDIO_OK | the operation is successful.
+ * AUDIO_ERR_INVALID_OPERATION | playback is not in idle state.
+ * AUDIO_ERR_UNKNOWN_ERROR | operation is failed.
+ * @since 1.0
+ * @version 1.0
+ */
+int32_t RTPlayer_Invoke(RTPlayer *player, Parcel *request, Parcel *reply);
 
 #ifdef __cplusplus
 }
