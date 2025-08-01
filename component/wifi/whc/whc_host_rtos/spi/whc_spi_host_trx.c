@@ -62,7 +62,7 @@ int whc_spi_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	(void)raw_para;
 	(void)is_special_pkt;
 	struct eth_drv_sg *psg_list;
-	int ret = 0, i = 0;
+	int ret = RTK_SUCCESS, i = 0;
 	int pad_len = 0;
 	struct whc_msg_info *msg;
 	struct whc_txbuf_info_t *inic_tx = rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
@@ -72,12 +72,12 @@ int whc_spi_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 
 	if (*ptr != 0) {
 		RTK_LOGE(TAG_WLAN_INIC, "%s fail buf busy !\n\r", __func__);
-		return -1;
+		return -RTK_ERR_WIFI_TX_BUF_FULL;
 	}
 
 	if (total_len > MAXIMUM_ETHERNET_PACKET_SIZE) {
 		RTK_LOGE(TAG_WLAN_INIC, "%s: len(%d) > MAXIMUM_ETHERNET_PACKET_SIZE !\n\r", __func__, total_len);
-		return -1;
+		return -RTK_ERR_BUFFER_OVERFLOW;
 	}
 
 	ptr += 4;

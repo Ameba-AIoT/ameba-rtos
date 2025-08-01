@@ -94,6 +94,34 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 					}
 				}
 			}
+		} else {
+			if (UUID_HANDSFREE_AUDIO_GATEWAY == sdp_info->srv_class_uuid_data.uuid_16) {
+				bt_hfp_connect_req(param->sdp_attr_info.bd_addr, sdp_info->server_channel, true);
+				{
+					p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_SDP_ATTR_INFO, sizeof(rtk_bt_hfp_sdp_attr_info_t));
+					if (!p_evt) {
+						BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
+						handle = false;
+						break;
+					}
+					p_info = (rtk_bt_hfp_sdp_attr_info_t *)p_evt->data;
+					memcpy((void *)&p_info->bd_addr, (void *)&param->sdp_attr_info.bd_addr, 6);
+					p_info->srv_class_uuid_type = (br_gap_uuid_type_t)sdp_info->srv_class_uuid_type;
+					memcpy((void *)&p_info->srv_class_uuid_data, (void *)&sdp_info->srv_class_uuid_data, sizeof(T_GAP_UUID_DATA));
+					p_info->profile_version = sdp_info->profile_version;
+					p_info->protocol_version = sdp_info->protocol_version;
+					p_info->server_channel = sdp_info->server_channel;
+					p_info->supported_feat = sdp_info->supported_feat;
+					p_info->l2c_psm = sdp_info->l2c_psm;
+					p_info->supported_repos = sdp_info->supported_repos;
+					p_info->pbap_supported_feat = sdp_info->pbap_supported_feat;
+					/* Send event */
+					if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
+						handle = false;
+						break;
+					}
+				}
+			}
 		}
 	}
 	break;

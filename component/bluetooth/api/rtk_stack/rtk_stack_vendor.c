@@ -66,6 +66,25 @@ T_GAP_CAUSE le_vendor_set_mesh_packet_priority(T_GAP_LE_MESH_PACKET_PRIORITY pri
 }
 #endif
 
+#if defined(VENDOR_CMD_FREE_RUN_CLOCK_LATCH_SUPPORT) && VENDOR_CMD_FREE_RUN_CLOCK_LATCH_SUPPORT
+T_GAP_CAUSE le_vendor_free_run_clock_latch(void)
+{
+	uint8_t param[1];
+	param[0] = SUB_CMD_FREE_RUN_CLOCK_LATCH;
+
+	return gap_vendor_cmd_req(VENDOR_CMD_FREE_RUN_CLOCK_LATCH_OPCODE, 1, param);
+}
+
+T_GAP_CAUSE le_vendor_free_run_clock_latch_enable(uint8_t op)
+{
+	uint8_t param[2];
+	param[0] = SUB_CMD_FREE_RUN_CLOCK_LATCH_ENABLE;
+	param[1] = op;
+
+	return gap_vendor_cmd_req(VENDOR_CMD_FREE_RUN_CLOCK_LATCH_OPCODE, 2, param);
+}
+#endif
+
 void bt_stack_vendor_callback(uint8_t cb_type, void *p_cb_data)
 {
 	T_GAP_VENDOR_CB_DATA cb_data;
@@ -140,6 +159,63 @@ void bt_stack_vendor_callback(uint8_t cb_type, void *p_cb_data)
 				}
 			}
 #endif
+#endif
+		}
+		break;
+#endif
+#if defined(VENDOR_CMD_FREE_RUN_CLOCK_LATCH_SUPPORT) && VENDOR_CMD_FREE_RUN_CLOCK_LATCH_SUPPORT
+		case VENDOR_CMD_FREE_RUN_CLOCK_LATCH_OPCODE: {
+#if defined(RTK_BT_HC_CLOCK_OFFSET_SUPPORT) && RTK_BT_HC_CLOCK_OFFSET_SUPPORT
+			rtk_bt_vendor_free_run_clock_t *p_hc_free_run_clock = rtk_bt_get_hc_free_run_clock();
+			if (p_hc_free_run_clock && p_hc_free_run_clock->enable) {
+				if (cmd_rsp->param_len >= 1 && SUB_CMD_FREE_RUN_CLOCK_LATCH_ENABLE == cmd_rsp->param[0]) {
+					if (cmd_rsp->cause) {
+						BT_LOGE("[%s] Free run clock latch enable fail, cause:0x%x.\r\n", __func__, cmd_rsp->cause);
+						osif_sem_give(p_hc_free_run_clock->sem);
+					} else {
+						if (p_hc_free_run_clock->index == 0) {        //Enable free run clock FW latch function
+							BT_LOGD("Free run clock latch %d\r\n", p_hc_free_run_clock->index);
+							if (le_vendor_free_run_clock_latch() != GAP_CAUSE_SUCCESS) {
+								BT_LOGE("[%s] le_vendor_free_run_clock_latch fail\r\n", __func__);
+								osif_sem_give(p_hc_free_run_clock->sem);
+							}
+						} else if (p_hc_free_run_clock->index == 2) { //Disable free run clock FW latch function
+							osif_sem_give(p_hc_free_run_clock->sem);
+						} else {
+							BT_LOGE("[%s] Free run clock latch flow error\r\n", __func__);
+							osif_sem_give(p_hc_free_run_clock->sem);
+						}
+					}
+				} else if (cmd_rsp->param_len >= 5 && SUB_CMD_FREE_RUN_CLOCK_LATCH == cmd_rsp->param[0]) {
+					if (cmd_rsp->cause) {
+						BT_LOGE("[%s] Free run clock latch fail, cause:0x%x.\r\n", __func__, cmd_rsp->cause);
+						osif_sem_give(p_hc_free_run_clock->sem);
+					} else {
+						BT_LOGD("Get controller free run clock\r\n");
+						memcpy(&p_hc_free_run_clock->controller_free_run_clock[p_hc_free_run_clock->index], &cmd_rsp->param[1], sizeof(uint32_t));
+						if (p_hc_free_run_clock->index < 2) {
+							p_hc_free_run_clock->index++;
+							BT_LOGD("Free run clock latch %d\r\n", p_hc_free_run_clock->index);
+							if (le_vendor_free_run_clock_latch() != GAP_CAUSE_SUCCESS) {
+								BT_LOGE("[%s] le_vendor_free_run_clock_latch fail\r\n", __func__);
+								osif_sem_give(p_hc_free_run_clock->sem);
+							}
+						} else if (p_hc_free_run_clock->index == 2) {
+							BT_LOGD("Free run clock latch disable\r\n");
+							if (le_vendor_free_run_clock_latch_enable(0) != GAP_CAUSE_SUCCESS) {
+								BT_LOGE("[%s] le_vendor_free_run_clock_latch_enable fail\r\n", __func__);
+								osif_sem_give(p_hc_free_run_clock->sem);
+							}
+						} else {
+							BT_LOGE("[%s] Free run clock latch flow error\r\n", __func__);
+							osif_sem_give(p_hc_free_run_clock->sem);
+						}
+					}
+				} else {
+					BT_LOGE("[%s] Free run clock latch response error\r\n", __func__);
+					osif_sem_give(p_hc_free_run_clock->sem);
+				}
+			}
 #endif
 		}
 		break;

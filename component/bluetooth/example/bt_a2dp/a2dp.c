@@ -12,6 +12,7 @@
 #include <rtk_bt_device.h>
 #include <rtk_bt_common.h>
 #include <bt_api_config.h>
+#include <rtk_bt_le_gap.h>
 #include <rtk_bt_br_gap.h>
 #include <rtk_bt_sdp.h>
 #include <rtk_bt_avrcp.h>
@@ -1124,6 +1125,14 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 		break;
 	}
 
+	case RTK_BT_BR_GAP_ACL_CONN_FAIL: {
+		rtk_bt_br_acl_conn_fail_t *p_fail_rsp = (rtk_bt_br_acl_conn_fail_t *)param;
+		BT_LOGA("[BR GAP] ACL connection fail with %02x:%02x:%02x:%02x:%02x:%02x, cause is 0x%x \r\n",
+				p_fail_rsp->bd_addr[5], p_fail_rsp->bd_addr[4], p_fail_rsp->bd_addr[3], p_fail_rsp->bd_addr[2], p_fail_rsp->bd_addr[1], p_fail_rsp->bd_addr[0],
+				p_fail_rsp->cause);
+		break;
+	}
+
 	case RTK_BT_BR_GAP_ACL_SNIFF: {
 		rtk_bt_br_acl_sniff_t *p_sniff = (rtk_bt_br_acl_sniff_t *)param;
 		BT_LOGA("[BR GAP] ACL sniff mode from %02x:%02x:%02x:%02x:%02x:%02x \r\n",
@@ -1221,6 +1230,12 @@ static rtk_bt_evt_cb_ret_t rtk_bt_sdp_app_callback(uint8_t evt_code, void *param
 				p_info->vendor_src,
 				p_info->product_id,
 				p_info->version);
+		break;
+	}
+
+	case RTK_BT_SDP_EVT_DISCOV_CMPL: {
+		rtk_sdp_discov_cmpl *p_info = (rtk_sdp_discov_cmpl *)param;
+		BT_LOGA("[SDP] discovery complete cause 0x%x \r\n", p_info->cause);
 		break;
 	}
 
@@ -2040,9 +2055,9 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
 											RTK_BT_PROFILE_AVRCP | \
 											RTK_BT_PROFILE_SDP;
 		bt_app_conf.mtu_size = 180;
-		bt_app_conf.prefer_all_phy = 0;
-		bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
-		bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
+		bt_app_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
+		bt_app_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
+		bt_app_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 		bt_app_conf.max_tx_octets = 0x40;
 		bt_app_conf.max_tx_time = 0x200;
 		bt_app_conf.a2dp_role = role;

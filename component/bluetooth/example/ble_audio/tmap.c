@@ -339,7 +339,7 @@ static rtk_bt_le_create_conn_param_t bt_le_audio_demo_conn_param = {
 };
 
 #define APP_LE_AUDIO_EXT_SCAN_TIMER_INTERVAL 1000
-#define APP_LE_AUDIO_EXT_SCAN_TIMER_COUNT 10
+#define APP_LE_AUDIO_EXT_SCAN_TIMER_COUNT 8
 
 static void *bt_le_audio_demo_ext_scan_timer = NULL;
 static int16_t bt_le_audio_demo_ext_scan_time_remaining;
@@ -3465,9 +3465,9 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 				bt_app_conf.app_profile_support = RTK_BT_PROFILE_GATTC | RTK_BT_PROFILE_LEAUDIO | RTK_BT_PROFILE_BAP | RTK_BT_PROFILE_CAP | RTK_BT_PROFILE_TMAP;
 				bt_app_conf.mtu_size = 180;
 				bt_app_conf.master_init_mtu_req = true;
-				bt_app_conf.prefer_all_phy = 0;
-				bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
-				bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
+				bt_app_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
+				bt_app_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
+				bt_app_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 				bt_app_conf.max_tx_octets = 0x40;
 				bt_app_conf.max_tx_time = 0x200;
 				memcpy((void *)&bt_app_conf.le_audio_app_conf, (void *)p_lea_app_conf, sizeof(rtk_bt_le_audio_app_conf_t));
@@ -3577,9 +3577,9 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 				bt_app_conf.app_profile_support = RTK_BT_PROFILE_GATTS | RTK_BT_PROFILE_LEAUDIO | RTK_BT_PROFILE_BAP | RTK_BT_PROFILE_CAP | RTK_BT_PROFILE_TMAP;
 				bt_app_conf.mtu_size = 180;
 				bt_app_conf.master_init_mtu_req = true;
-				bt_app_conf.prefer_all_phy = 0;
-				bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
-				bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
+				bt_app_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
+				bt_app_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
+				bt_app_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 				bt_app_conf.max_tx_octets = 0x40;
 				bt_app_conf.max_tx_time = 0x200;
 				memcpy((void *)&bt_app_conf.le_audio_app_conf, (void *)p_lea_app_conf, sizeof(rtk_bt_le_audio_app_conf_t));
@@ -3649,9 +3649,9 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 												  RTK_BT_PROFILE_TMAP;
 				bt_app_conf.mtu_size = 180;
 				bt_app_conf.master_init_mtu_req = true;
-				bt_app_conf.prefer_all_phy = 0;
-				bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
-				bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
+				bt_app_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
+				bt_app_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
+				bt_app_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 				bt_app_conf.max_tx_octets = 0x40;
 				bt_app_conf.max_tx_time = 0x200;
 				memcpy((void *)&bt_app_conf.le_audio_app_conf, (void *)p_lea_app_conf, sizeof(rtk_bt_le_audio_app_conf_t));
@@ -3751,9 +3751,9 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 												  RTK_BT_PROFILE_TMAP;
 				bt_app_conf.mtu_size = 180;
 				bt_app_conf.master_init_mtu_req = true;
-				bt_app_conf.prefer_all_phy = 0;
-				bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
-				bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
+				bt_app_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
+				bt_app_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
+				bt_app_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 				bt_app_conf.max_tx_octets = 0x40;
 				bt_app_conf.max_tx_time = 0x200;
 				memcpy((void *)&bt_app_conf.le_audio_app_conf, (void *)p_lea_app_conf, sizeof(rtk_bt_le_audio_app_conf_t));

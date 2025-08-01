@@ -9,6 +9,7 @@
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
 #include <rtk_stack_config.h>
+#include <rtk_bt_le_gap.h>
 #include <rtk_bt_att_defs.h>
 #include <rtk_bt_gatts.h>
 #include <rtk_bt_gattc.h>
@@ -244,9 +245,9 @@ static uint16_t bt_stack_init(void *app_config)
 		default_conf.mtu_size = 180;
 		default_conf.master_init_mtu_req = true;
 		default_conf.slave_init_mtu_req = false;
-		default_conf.prefer_all_phy = 0;
-		default_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
-		default_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
+		default_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
+		default_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
+		default_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 		default_conf.max_tx_octets = 0x40;
 		default_conf.max_tx_time = 0x200;
 		default_conf.key_convert_le_to_bredr = false;

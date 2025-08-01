@@ -407,6 +407,7 @@ function(ameba_firmware_package output_app_name)
             # user's variables
             -DFINAL_IMAGE_DIR=${FINAL_IMAGE_DIR}
             -DANALYZE_MP_IMG=${ANALYZE_MP_IMG}
+            -DEXTERN_DIR=${EXTERN_DIR}
 
             # special variables for current image
             ${custom_variables}

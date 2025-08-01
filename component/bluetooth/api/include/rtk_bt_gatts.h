@@ -536,7 +536,7 @@ uint16_t rtk_bt_gatts_write_resp(rtk_bt_gatts_write_resp_param_t *param);
 /**
  * @brief     Server send service changed indication when builtin service is used.
  * @param[in] conn_handle: Connection handle for a client.
- * @param[in] cid: ID of L2CAP channel, 0 indicates auto-select. Ignored when RTK_BT_5_2_EATT_SUPPORT is 0. 
+ * @param[in] cid: ID of L2CAP channel, 0 indicates auto-select. Ignored when RTK_BT_5_2_EATT_SUPPORT is 0.
  * @param[in] start_handle: Start of affected attribute handle range.
  * @param[in] end_handle: End of affected attribute handle range.
  * @return

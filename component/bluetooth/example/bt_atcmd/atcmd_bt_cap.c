@@ -26,14 +26,64 @@
 static int atcmd_bt_mcp_media_send(int argc, char **argv)
 {
 	uint16_t char_uuid = 0;
-	int32_t track_value = 0;
+	void *p_param = NULL;
+	int32_t track_duration, track_position = 0;
+	rtk_bt_le_audio_mcp_server_media_play_name_t play_name = {0};
+	rtk_bt_le_audio_mcp_server_track_title_t track_title = {0};
 
 	char_uuid = (uint16_t)str_to_int(argv[0]);
-	if (argc == 2) {
-		track_value = (int32_t)str_to_int(argv[1]);
+
+	switch (char_uuid) {
+	case RTK_BT_LE_AUDIO_MCS_UUID_CHAR_MEDIA_PLAYER_NAME: {
+		if (argc == 2) {
+			play_name.p_media_player_name = (uint8_t *)argv[1];
+			play_name.media_player_name_len = strlen(argv[1]);
+			p_param = &play_name;
+		} else {
+			BT_LOGE("%s: wrong input argc:%d \r\n", __func__, argc);
+			return -1;
+		}
+	}
+	break;
+
+	case RTK_BT_LE_AUDIO_MCS_UUID_CHAR_TRACK_TITLE: {
+		if (argc == 2) {
+			track_title.p_track_title = (uint8_t *)argv[1];
+			track_title.track_title_len = strlen(argv[1]);
+			p_param = &track_title;
+		} else {
+			BT_LOGE("%s: wrong input argc:%d \r\n", __func__, argc);
+			return -1;
+		}
+	}
+	break;
+
+	case RTK_BT_LE_AUDIO_MCS_UUID_CHAR_TRACK_CHANGED: {
+		/*do nothing*/
+	}
+	break;
+
+	case RTK_BT_LE_AUDIO_MCS_UUID_CHAR_TRACK_DURATION: {
+		if (argc == 2) {
+			track_duration = (int32_t)str_to_int(argv[1]);
+			p_param = &track_duration;
+		}
+	}
+	break;
+	case RTK_BT_LE_AUDIO_MCS_UUID_CHAR_TRACK_POSITION: {
+		if (argc == 2) {
+			track_position = (int32_t)str_to_int(argv[1]);
+			p_param = &track_position;
+		}
+	}
+	break;
+
+	default:
+		BT_LOGE("%s: wrong input char_uuid:%x \r\n", __func__, char_uuid);
+		break;
 	}
 
-	if (rtk_bt_le_audio_mcs_server_send_data(char_uuid, &track_value)) {
+	if (rtk_bt_le_audio_mcs_server_send_data(char_uuid, p_param)) {
 		BT_LOGE("mcp media send fail\r\n");
 		return -1;
 	}

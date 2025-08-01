@@ -2950,6 +2950,8 @@ static uint16_t bt_stack_mcs_server_init(void *le_audio_app_conf)
 	p_mcs_param = &p_le_audio_app_conf->cap_param.mcs_param;
 	reg_param.gmcs = p_mcs_param->general_mcs;
 	reg_param.char_media_control_point.support = p_mcs_param->char_media_control_point_support;
+	reg_param.char_media_player_name.optional_property_notify = p_mcs_param->char_media_player_name_optional_property_notify;
+	reg_param.char_track_title.optional_property_notify = p_mcs_param->char_track_title_optional_property_notify;
 	reg_param.char_track_duration.optional_property_notify = p_mcs_param->char_track_duration_optional_property_notify;
 	reg_param.char_track_position.optional_property_notify = p_mcs_param->char_track_position_optional_property_notify;
 	p_mcp->gmcs_id = mcp_server_reg_srv(&reg_param);

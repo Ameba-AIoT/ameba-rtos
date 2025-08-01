@@ -1444,6 +1444,12 @@ void at_wssrv_handler_disconnect(struct wssrv_conn *conn)
 	}
 }
 
+void at_wssrv_handler_stop(void)
+{
+	at_printf_indicate("[WSSRV][EVENT]:stop\r\n");
+	wssrv_is_running = 0;
+}
+
 void at_wssrvstart_help(void)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
@@ -1596,6 +1602,7 @@ void at_wssrvstart(void *arg)
 	ws_server_dispatch(at_wssrv_handler_data);
 	ws_server_dispatch_connect(at_wssrv_handler_connect);
 	ws_server_dispatch_disconnect(at_wssrv_handler_disconnect);
+	ws_server_dispatch_stop(at_wssrv_handler_stop);
 
 	ws_server_setup_tx_rx_size(wssrvcfg_tx_size, wssrvcfg_rx_size);
 
@@ -1646,10 +1653,6 @@ void at_wssrvstop(void *arg)
 	}
 
 	ws_server_stop();
-
-	at_printf("[WSSRV][EVENT]:stop\r\n");
-
-	wssrv_is_running = 0;
 
 	at_printf(ATCMD_OK_END_STR);
 }

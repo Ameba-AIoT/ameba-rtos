@@ -14,6 +14,10 @@ struct aivoice_config {
 	struct kws_config *kws;
 	struct asr_config *asr;
 	struct aivoice_sdk_config *common;
+	const char *resource;   /* memory start address of aivoice binary resources,
+                                which MUST be 16 bytes aligned.
+                                Since aivoice does not do any resource copying work internally,
+                                users need to load resource from flash to memory first. */
 };
 
 enum aivoice_out_event_type {
@@ -153,6 +157,7 @@ struct rtk_aivoice_iface {
 ////////////////////////////////////////////////////////////////////////////////
 extern const struct rtk_aivoice_iface aivoice_iface_full_flow_v1;
 extern const struct rtk_aivoice_iface aivoice_iface_afe_kws_v1;
+extern const struct rtk_aivoice_iface aivoice_iface_afe_kws_vad_v1;
 extern const struct rtk_aivoice_iface aivoice_iface_afe_v1;
 extern const struct rtk_aivoice_iface aivoice_iface_vad_v1;
 extern const struct rtk_aivoice_iface aivoice_iface_kws_v1;

@@ -294,7 +294,7 @@ class FirmwarePackage(OperationBase):
             tmp_en_file_name = modify_file_path(input_file, suffix='_en', new_directory=self.output_image_dir)             #encrypted file
             tmp_gcm_prepend_file_name = modify_file_path(tmp_en_file_name, suffix='_tag_prepend')   #prepend gcm tag file
             manifest_config = self.manifest_manager.image1
-            gcm_enable = manifest_config.rsip_en and manifest_config.rsip_mode == 2
+            gcm_enable = manifest_config.rsip_enable and manifest_config.rsip_mode == 2
 
             if os.path.exists(tmp_manifest_source_file): os.remove(tmp_manifest_source_file)
 
@@ -473,11 +473,11 @@ class FirmwarePackage(OperationBase):
         #Step2: merge final output file
         img2_manifest_config = self.manifest_manager.image2
         img3_manifest_config = self.manifest_manager.image3
-        img2_gcm_enable = img2_manifest_config.rsip_en and img2_manifest_config.rsip_mode == 2
+        img2_gcm_enable = img2_manifest_config.rsip_enable and img2_manifest_config.rsip_mode == 2
         if img3_manifest_config == None: #NOTE: manifest maybe not contain image3
             img3_gcm_enable = False
         else:
-            img3_gcm_enable = img3_manifest_config.rsip_en and img3_manifest_config.rsip_mode == 2
+            img3_gcm_enable = img3_manifest_config.rsip_enable and img3_manifest_config.rsip_mode == 2
 
         tmp_ns_file_name = modify_file_path(self.output_file, suffix='_ns')# non-secure app file
         merge_files(tmp_ns_file_name, cert_file_name, manifest_file_name)  # merge_files api will overwrite output_file file
@@ -520,7 +520,7 @@ class FirmwarePackage(OperationBase):
             input_file = modify_file_path(input_file, new_directory=self.output_image_dir)
 
         manifest_config = self.manifest_manager.get_image_config(image_type)
-        gcm_enable = manifest_config.rsip_en and manifest_config.rsip_mode == 2
+        gcm_enable = manifest_config.rsip_enable and manifest_config.rsip_mode == 2
 
         tmp_en_file_name = output_encrypt_file           #encrypted file
         tmp_gcm_file_name = modify_file_path(tmp_en_file_name, suffix='_tag')   #gcm tag file, file name role in security.py
@@ -536,7 +536,7 @@ class FirmwarePackage(OperationBase):
             tmp_en_src_file_name = tmp_sb_file_name # Use sboot file encrypt
 
         #Step1: create encrypt file and manifest file
-        if manifest_config.rsip_en:
+        if manifest_config.rsip_enable:
             info = parse_project_info(input_file)
             section = self.config.section(image_type)
             if isinstance(section, dict):
@@ -551,10 +551,10 @@ class FirmwarePackage(OperationBase):
                 PrependHeader.execute(self.context, tmp_gcm_prepend_file_name, tmp_gcm_file_name)
                 #NOTE: manifest file should contains gcm info
                 if manifest_source_file: append_files(manifest_source_file, tmp_gcm_prepend_file_name)
-        elif manifest_config.rdp_en:
+        elif manifest_config.rdp_enable:
             Rdp.execute(self.context, tmp_en_file_name, tmp_en_src_file_name, 'enc', ImageType.IMAGE1)
         else:
-            self.logger.warning(f"Both rsip and rdp are not enabled for {image_type.name.lower()}")
+            self.logger.info(f"Both rsip and rdp are not enabled for {image_type.name.lower()}")
             shutil.copy(tmp_en_src_file_name, tmp_en_file_name)
         if manifest_source_file: append_files(manifest_source_file, tmp_en_src_file_name)
         return Error.success()

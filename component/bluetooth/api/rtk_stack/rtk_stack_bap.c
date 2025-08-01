@@ -3137,6 +3137,11 @@ void bt_stack_le_audio_group_cb(T_AUDIO_GROUP_MSG msg, T_BLE_AUDIO_GROUP_HANDLE 
 			BT_LOGE("[BAP] %s: unmatch session_handle\r\n", __func__);
 			break;
 		}
+		/* if session stream remove is initiated proactively, retain group. Otherwise release group */
+		if (true == p_group_info->lea_unicast.release_req) {
+			p_group_info->lea_unicast.release_req = false;
+			break;
+		}
 		for (uint8_t i = 0; i < p_group_info->lea_unicast.dev_num; i++) {
 			if (false == ble_audio_group_del_dev(handle, &p_group_info->lea_unicast.dev_tbl[i])) {
 				BT_LOGE("AUDIO_GROUP_MSG_BAP_SESSION_REMOVE: ble_audio_group_del_dev failed! \r\n");

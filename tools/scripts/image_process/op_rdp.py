@@ -39,7 +39,7 @@ class Rdp(OperationBase):
 
         manifest_manager = ManifestManager(context)
         image_config = manifest_manager.get_image_config(image_type)
-        if image_config.rdp_en:
+        if image_config.rdp_enable:
             lib_security = importlib.import_module('security')
             rdp = lib_security.RDP(output_file, input_file, mode == 'enc', image_config)
             if context.soc_project == "amebad":
