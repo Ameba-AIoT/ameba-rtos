@@ -2,7 +2,7 @@
 #include "lwip/prot/dhcp.h"
 #include "lwip_netconf.h"
 #include "atcmd_service.h"
-#include "wifi_api.h"
+#include "wifi_intf_drv_to_upper.h"
 
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 #include "wifi_fast_connect.h"
@@ -250,11 +250,13 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 		case DHCP_WAIT_ADDRESS: {
 			/* If DHCP stopped by wifi_disconn_hdl*/
 			if ((dhcp_state_enum_t)dhcp->state == DHCP_STATE_OFF) {
+				DHCP_state = DHCP_STOP;
 				IP4_ADDR(ip_2_ip4(&ipaddr), IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
 				IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
 				IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 				netifapi_netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
 				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rLwIP_DHCP: dhcp stop.");
+				wifi_indication(RTW_EVENT_DHCP_STATUS, &DHCP_state, sizeof(uint8_t));
 				return DHCP_STOP;
 			}
 
@@ -289,6 +291,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 					p_wifi_join_info_free(IFACE_PORT0);
 				}
 #endif
+				wifi_indication(RTW_EVENT_DHCP_STATUS, &DHCP_state, sizeof(uint8_t));
 				return DHCP_ADDRESS_ASSIGNED;
 			} else {
 				/* DHCP timeout */
@@ -297,18 +300,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 					/* Stop DHCP */
 					netifapi_dhcp_stop(pnetif);
 
-					/* Static address used */
-
-					IP4_ADDR(ip_2_ip4(&ipaddr), STATIC_IP_ADDR0, STATIC_IP_ADDR1, STATIC_IP_ADDR2, STATIC_IP_ADDR3);
-					IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-					IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-					netifapi_netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
-					iptab[0] = STATIC_IP_ADDR3;
-					iptab[1] = STATIC_IP_ADDR2;
-					iptab[2] = STATIC_IP_ADDR1;
-					iptab[3] = STATIC_IP_ADDR0;
 					at_printf_indicate("wifi got ip timeout\r\n");
-					RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rStatic IP address : %d.%d.%d.%d", iptab[3], iptab[2], iptab[1], iptab[0]);
 
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 					if (p_store_fast_connect_info) {
@@ -325,6 +317,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 						netifapi_netif_set_up(pnetif);
 					}
 #endif
+					wifi_indication(RTW_EVENT_DHCP_STATUS, &DHCP_state, sizeof(uint8_t));
 					return DHCP_TIMEOUT;
 				}
 			}
@@ -587,11 +580,9 @@ void LwIP_AUTOIP_STOP(uint8_t idx)
 /* Get IPv6 address with lwip 1.5.0 */
 void LwIP_AUTOIP_IPv6(struct netif *pnetif)
 {
-	uint8_t *ipv6 = (uint8_t *) netif_ip6_addr(pnetif, 0)->addr;
 	netif_create_ip6_linklocal_address(pnetif, 1);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nIPv6 link-local address: %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x\n",
-			 ipv6[0], ipv6[1],  ipv6[2],  ipv6[3],  ipv6[4],  ipv6[5],  ipv6[6], ipv6[7],
-			 ipv6[8], ipv6[9], ipv6[10], ipv6[11], ipv6[12], ipv6[13], ipv6[14], ipv6[15]);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nIPv6 link-local address: ");
+	LwIP_DUMP_IPV6_ADDRESS(netif_ip6_addr(pnetif, 0)->addr);
 }
 #endif
 

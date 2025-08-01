@@ -487,15 +487,16 @@ static void usbh_cdc_acm_process_rx(usb_host_t *host)
 				cdc->cb->receive(cdc->rx_buf, len);
 			}
 
-			//should handle the ZLP packet
-			if ((cdc->rx_len > len) && (cdc->rx_len > cdc->data_if.bulk_in_packet_size)) {
-				cdc->rx_len -= len;
-				cdc->rx_buf += len;
-				cdc->data_rx_state = CDC_ACM_TRANSFER_STATE_RX;
-			} else if ((cdc->rx_len > 0) && (cdc->rx_len % cdc->data_if.bulk_in_packet_size) == 0) {
-				cdc->rx_len = 0;/* Last ZLP for multi-MPS */
-				cdc->data_rx_state = CDC_ACM_TRANSFER_STATE_RX;
-			} else {
+			if ((len > 0) && ((len % cdc->data_if.bulk_in_packet_size) == 0)) { //N*MPS
+				if (cdc->rx_len > len) {
+					cdc->data_rx_state = CDC_ACM_TRANSFER_STATE_IDLE;//Premature ZLP
+				} else if ((cdc->rx_len == len)) {
+					cdc->rx_len = 0;/* Last ZLP for multi-MPS */
+					cdc->data_rx_state = CDC_ACM_TRANSFER_STATE_RX;
+				} else {
+					cdc->data_rx_state = CDC_ACM_TRANSFER_STATE_IDLE;
+				}
+			} else {//ZLP or short
 				cdc->data_rx_state = CDC_ACM_TRANSFER_STATE_IDLE;
 			}
 

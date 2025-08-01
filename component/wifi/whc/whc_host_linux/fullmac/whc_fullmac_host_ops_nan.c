@@ -117,8 +117,11 @@ static int whc_fullmac_host_add_nan_func_ops(struct wiphy *wiphy,
 		struct wireless_dev *wdev,
 		struct cfg80211_nan_func *func)
 {
+	u8 i = 0;
 	int ret = 0;
-	struct rtw_nan_func_info_t nan_param = {0};
+	struct rtw_nan_func_t nan_param = {0};
+	struct cfg80211_nan_func_filter filter_src;
+	struct rtw_nan_func_filter *filter_dest = NULL;
 	u8 *serv_spec_info_vir = NULL, *srf_bf_vir = NULL, *srf_macs_vir = NULL;
 	dma_addr_t serv_spec_info_phy, srf_bf_phy, srf_macs_phy;
 	u8 *rx_filters_vir = NULL, *tx_filters_vir = NULL;
@@ -128,7 +131,16 @@ static int whc_fullmac_host_add_nan_func_ops(struct wiphy *wiphy,
 
 	/* func->type is enum, which occupies 4bytes, but nan_param.type is u8 */
 	nan_param.type = func->type;
-	memcpy(&nan_param.service_id, &func->service_id, sizeof(struct rtw_nan_func_info_t) - sizeof(nan_param.type));
+	memcpy(&nan_param.service_id, &func->service_id, sizeof(nan_param.service_id));
+	nan_param.publish_type = func->publish_type;
+	nan_param.close_range = func->close_range;
+	nan_param.publish_bcast = func->publish_bcast;
+	nan_param.subscribe_active = func->subscribe_active;
+	nan_param.followup_id = func->followup_id;
+	nan_param.followup_reqid = func->followup_reqid;
+
+	memcpy(&nan_param.followup_dest, &func->followup_dest, sizeof(nan_param.followup_dest));
+	nan_param.ttl = func->ttl;
 
 	if (func->serv_spec_info) {
 		serv_spec_info_vir = rtw_malloc(func->serv_spec_info_len, &serv_spec_info_phy);
@@ -140,7 +152,9 @@ static int whc_fullmac_host_add_nan_func_ops(struct wiphy *wiphy,
 		memcpy(serv_spec_info_vir, func->serv_spec_info, func->serv_spec_info_len);
 		nan_param.serv_spec_info = (const u8 *)serv_spec_info_phy;
 	}
+	nan_param.serv_spec_info_len = func->serv_spec_info_len;
 
+	nan_param.srf_include = func->srf_include;
 	if (func->srf_bf) {
 		srf_bf_vir = rtw_malloc(func->srf_bf_len, &srf_bf_phy);
 		if (!srf_bf_vir) {
@@ -151,40 +165,57 @@ static int whc_fullmac_host_add_nan_func_ops(struct wiphy *wiphy,
 		memcpy(srf_bf_vir, func->srf_bf, func->srf_bf_len);
 		nan_param.srf_bf = (const u8 *)srf_bf_phy;
 	}
+	nan_param.srf_bf_len = func->srf_bf_len;
+	nan_param.srf_bf_idx = func->srf_bf_idx;
 
 	if (func->srf_macs) {
-		srf_macs_vir = rtw_malloc(func->srf_num_macs * sizeof(struct mac_address), &srf_macs_phy);
+		srf_macs_vir = rtw_malloc(func->srf_num_macs * sizeof(struct rtw_mac), &srf_macs_phy);
 		if (!srf_macs_vir) {
 			dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 			ret = -ENOMEM;
 			goto exit;
 		}
-		memcpy(srf_macs_vir, func->srf_macs, func->srf_num_macs * sizeof(struct mac_address));
-		nan_param.srf_macs = (struct mac_address *)srf_macs_phy;
+		memcpy(srf_macs_vir, func->srf_macs, func->srf_num_macs * sizeof(struct rtw_mac));
+		nan_param.srf_macs = (struct rtw_mac *)srf_macs_phy;
 	}
+	nan_param.srf_num_macs = func->srf_num_macs;
 
+	nan_param.num_tx_filters = func->num_tx_filters;
+	nan_param.num_rx_filters = func->num_rx_filters;
 	if (func->rx_filters) {
-		rx_filters_vir = rtw_malloc(func->num_rx_filters * sizeof(struct cfg80211_nan_func_filter), &rx_filters_phy);
+		rx_filters_vir = rtw_malloc(func->num_rx_filters * sizeof(struct rtw_nan_func_filter), &rx_filters_phy);
 		if (!rx_filters_vir) {
 			dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 			ret = -ENOMEM;
 			goto exit;
 		}
-		memcpy(rx_filters_vir, func->rx_filters, func->num_rx_filters * sizeof(struct cfg80211_nan_func_filter));
-		nan_param.rx_filters = (struct cfg80211_nan_func_filter *)rx_filters_phy;
+		for (i = 0; i < func->num_rx_filters; i++) {
+			filter_src = (struct cfg80211_nan_func_filter)func->rx_filters[i];
+			filter_dest = (struct rtw_nan_func_filter *)(rx_filters_vir + i * sizeof(struct rtw_nan_func_filter));
+			filter_dest->len = filter_src.len > MAX_MATCHING_FILTER_LEN ? MAX_MATCHING_FILTER_LEN : filter_src.len;
+			memcpy(filter_dest->filter, filter_src.filter, filter_dest->len);
+		}
+		nan_param.rx_filters = (struct rtw_nan_func_filter *)rx_filters_phy;
 	}
 
 	if (func->tx_filters) {
-		tx_filters_vir = rtw_malloc(func->num_tx_filters * sizeof(struct cfg80211_nan_func_filter), &tx_filters_phy);
+		tx_filters_vir = rtw_malloc(func->num_tx_filters * sizeof(struct rtw_nan_func_filter), &tx_filters_phy);
 		if (!tx_filters_vir) {
 			dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 			ret = -ENOMEM;
 			goto exit;
 		}
-		memcpy(tx_filters_vir, func->tx_filters, func->num_tx_filters * sizeof(struct cfg80211_nan_func_filter));
-		nan_param.tx_filters = (struct cfg80211_nan_func_filter *)tx_filters_phy;
+		for (i = 0; i < func->num_tx_filters; i++) {
+			filter_src = (struct cfg80211_nan_func_filter)func->tx_filters[i];
+			filter_dest = (struct rtw_nan_func_filter *)(tx_filters_vir + i * sizeof(struct rtw_nan_func_filter));
+			filter_dest->len = filter_src.len > MAX_MATCHING_FILTER_LEN ? MAX_MATCHING_FILTER_LEN : filter_src.len;
+			memcpy(filter_dest->filter, filter_src.filter, filter_dest->len);
+		}
+		nan_param.tx_filters = (struct rtw_nan_func_filter *)tx_filters_phy;
 	}
 
+	nan_param.instance_id = func->instance_id;
+	nan_param.cookie = func->cookie;
 	func->instance_id = whc_fullmac_host_add_nan_func(&nan_param, func);
 
 	whc_fullmac_host_dump_nan_func(func);
@@ -197,13 +228,13 @@ exit:
 		rtw_mfree(func->srf_bf_len, srf_bf_vir, srf_bf_phy);
 	}
 	if (srf_macs_vir) {
-		rtw_mfree(func->srf_num_macs, srf_macs_vir, srf_macs_phy);
+		rtw_mfree(func->srf_num_macs * sizeof(struct rtw_mac), srf_macs_vir, srf_macs_phy);
 	}
 	if (rx_filters_vir) {
-		rtw_mfree(func->num_rx_filters, rx_filters_vir, rx_filters_phy);
+		rtw_mfree(func->num_rx_filters * sizeof(struct rtw_nan_func_filter), rx_filters_vir, rx_filters_phy);
 	}
 	if (tx_filters_vir) {
-		rtw_mfree(func->num_tx_filters, tx_filters_vir, tx_filters_phy);
+		rtw_mfree(func->num_tx_filters * sizeof(struct rtw_nan_func_filter), tx_filters_vir, tx_filters_phy);
 	}
 
 	return ret;

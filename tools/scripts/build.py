@@ -24,7 +24,7 @@ def main():
         return
 
 
-    cmd = 'python ' + os.path.join(project_dir, 'build.py ') + ' '.join(sys.argv[1:]) + ' -a ' + os.getcwd() + ' -d ' + os.path.join(os.getcwd(), 'build')
+    cmd = 'python ' + os.path.join(project_dir, 'build.py ') + ' '.join(sys.argv[1:]) + ' -a ' + os.getcwd() + ' -d ' + os.path.join(os.getcwd(), 'build') + ' -D EXTERN_DIR:STRING=' + os.getcwd()
     print(cmd)
     os.system(cmd)
 

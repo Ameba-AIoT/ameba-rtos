@@ -10,6 +10,8 @@ menu "CONFIG AT CMD"
             config ATCMD_HOST_CONTROL
                 bool "Host Control Mode"
                 select LONGER_CMD
+                select USB_OTG_EN_MENU if SUPPORT_USB
+                select USBD_CDC_ACM_MENU if SUPPORT_USB
         endchoice
         config LONGER_CMD
             bool "Enable Longer CMD"

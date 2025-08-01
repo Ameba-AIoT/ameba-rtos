@@ -18,7 +18,7 @@ extern int wifi_set_ips_internal(u8 enable);
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_host_api.h"
 #else
-#error "Please Enable Coexist!!!"
+//#error "Please Enable Coexist!!!"
 #endif
 
 #define HCI_PHY_EFUSE_OFFSET       0x740

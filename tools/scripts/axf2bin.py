@@ -40,50 +40,40 @@ from image_process.op_cut import Cut as op_cut
 def parse_args():
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('--mp', choices=['y', 'n'], default='n', help='Mass production')
-    parser.add_argument('--soc-project', help='SOC project name')
-    parser.add_argument('--mcu-project', help='MCU project name')
-    parser.add_argument('--mcu-project-dir', help='MCU project dir')
+    parser.add_argument('--post-build-dir', help='Post Build dir')
+    parser.add_argument('--log-level', choices=['DEBUG', 'INFO', 'WARNING'], default='WARNING', help='Logging level')
+    parser.add_argument('--extern-dir', help='External Project Directory')
 
     subparsers = parser.add_subparsers(dest='operation', help='Available operations', required=True)
 
     for name, obj in globals().items():
         if not name.startswith('op_'): continue
         sub = subparsers.add_parser(
-            name = getattr(obj, "cmd_promote"),
-            help = getattr(obj, "cmd_help_msg")
+            name = obj.cmd_promote,
+            help = obj.cmd_help_msg
         )
-        getattr(obj, "register_args")(sub)
+        obj.register_args(sub)
 
     args = parser.parse_args()
     return args
 
 def main():
     args = parse_args()
+    obj = globals()[f'op_{args.operation}']
 
     try:
-        context = Context(args)
+        context = Context(args, obj)
     except Exception as e:
         default_logger.error(f"context init failed: {e}")
         sys.exit(1)
 
-    operator = globals()[f'op_{args.operation}'](context)
-    res = operator.pre_process()
+    operator = obj(context)
+    res = operator.execute_all()
     if res:
-        context.logger.fatal(f'operation pre_process failed: {args.operation}, {res}')
+        context.logger.fatal(f'operation execute failed: {args.operation}, {res}')
         sys.exit(1)
-
-    res = operator.process()
-    if res:
-        context.logger.fatal(f'operation process failed: {args.operation}, {res}')
-        sys.exit(1)
-
-    res = operator.post_process()
-    if res:
-        context.logger.fatal('operation post_process failed: {args.operation}, {res}')
-        sys.exit(1)
-
-    context.logger.info('operation finish successfully')
-    sys.exit(0)
+    else:
+        sys.exit(0)
 
 if __name__ == '__main__':
     main()

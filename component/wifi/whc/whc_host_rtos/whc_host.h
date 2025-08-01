@@ -88,6 +88,7 @@ struct event_priv_t {
 	u8 *rx_ret_msg;
 
 	u8 b_waiting_for_ret: 1;
+	u8 host_init_done: 1;
 };
 
 struct whc_buf_info {

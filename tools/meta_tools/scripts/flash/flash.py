@@ -170,7 +170,7 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
 
 def main(argc, argv):
     parser = argparse.ArgumentParser(description=None)
-    parser.add_argument('-d', '--download', action='store_true', help='start address, hex')
+    parser.add_argument('-d', '--download', action='store_true', help='download images')
     parser.add_argument('-f', '--profile', type=str, help='device profile')
     parser.add_argument('-p', '--port', nargs="+", help='serial port')
     parser.add_argument('-b', '--baudrate', type=int, help='serial port baud rate')

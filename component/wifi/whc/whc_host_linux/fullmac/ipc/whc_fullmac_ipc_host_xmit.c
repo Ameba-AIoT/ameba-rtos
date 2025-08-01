@@ -52,6 +52,11 @@ int whc_host_xmit_entry(int idx, struct sk_buff *pskb)
 	struct whc_ipc_ex_msg ipc_msg = {0};
 	int skb_num_ap = global_idev.wifi_user_config.skb_num_ap;
 
+	if (!global_idev.host_init_done) {
+		dev_err(global_idev.fullmac_dev, "Host xmit err: wifi not init\n");
+		return -1;
+	}
+
 	/*s1. check free skb num*/
 	if (atomic_read(&global_idev.xmit_priv.skb_free_num) < QUEUE_STOP_THRES) {
 		netif_tx_stop_all_queues(pndev);//, skb_get_queue_mapping(pskb));

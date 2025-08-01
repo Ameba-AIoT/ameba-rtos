@@ -134,15 +134,18 @@ int whc_host_init(void)
 
 	wifi_set_user_config();
 	memcpy(&global_idev.wifi_user_config, &wifi_user_config, sizeof(struct wifi_user_conf));
-	ret = whc_fullmac_host_set_user_config(&global_idev.wifi_user_config);
-	if (ret < 0) {
-		dev_err(global_idev.fullmac_dev, "set wifi user config failed.(%d).\n", ret);
-		goto ipc_deinit;
-	}
 
 	ret = whc_host_xmit_init();
 	if (ret < 0) {
 		dev_err(global_idev.fullmac_dev, "malloc ipc xmit memory failed.(%d).\n", ret);
+		goto ipc_deinit;
+	}
+
+	global_idev.host_init_done = 1;
+
+	ret = whc_fullmac_host_set_user_config(&global_idev.wifi_user_config);
+	if (ret < 0) {
+		dev_err(global_idev.fullmac_dev, "set wifi user config failed.(%d).\n", ret);
 		goto ipc_deinit;
 	}
 

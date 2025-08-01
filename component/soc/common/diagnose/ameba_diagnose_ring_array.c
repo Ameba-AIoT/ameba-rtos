@@ -54,17 +54,19 @@ int rtk_diag_ring_array_clear(RtkDiagRingArrayHandler_t *handler)
 
 void rtk_diag_ring_array_emplace_back(RtkDiagRingArrayHandler_t *handler, const void *origin_data)
 {
-	if (handler == NULL || handler->emplace == NULL) {
+	if (handler == NULL) {
 		return;
 	}
-
 	if (handler->count == handler->capacity) {
 		handler->head = (handler->head + 1) % handler->capacity;
 	} else {
 		handler->count++;
 	}
-
-	handler->emplace(handler->data + (handler->tail * handler->element_size), origin_data);
+	if (handler->emplace) {
+		handler->emplace(handler->data + (handler->tail * handler->element_size), origin_data);
+	} else {
+		_memcpy(handler->data + (handler->tail * handler->element_size), &origin_data, handler->element_size);
+	}
 	handler->tail = (handler->tail + 1) % handler->capacity;
 }
 
@@ -76,13 +78,34 @@ u32 rtk_diag_ring_array_size(const RtkDiagRingArrayHandler_t *handler)
 	return handler->count;
 }
 
+void *rtk_diag_ring_array_at(RtkDiagRingArrayHandler_t *handler, u32 index)
+{
+	if (handler == NULL || index >= handler->count) {
+		return NULL;
+	}
+	void *element_address = handler->data + (((handler->head + index) % handler->capacity) * handler->element_size);
+	if (handler->emplace) {
+		return element_address;
+	} else {
+		void *result;
+		_memcpy(&result, element_address, sizeof(void *));
+		return result;
+	}
+}
+
 const void *rtk_diag_ring_array_view(const RtkDiagRingArrayHandler_t *handler, u32 index)
 {
 	if (handler == NULL || index >= handler->count) {
 		return NULL;
 	}
-	u32 physical_index = (handler->head + index) % handler->capacity;
-	return handler->data + (physical_index * handler->element_size);
+	const void *element_address = handler->data + (((handler->head + index) % handler->capacity) * handler->element_size);
+	if (handler->emplace) {
+		return element_address;
+	} else {
+		void *result;
+		_memcpy(&result, element_address, sizeof(void *));
+		return result;
+	}
 }
 
 void *rtk_diag_ring_array_pop(RtkDiagRingArrayHandler_t *handler)
@@ -96,5 +119,11 @@ void *rtk_diag_ring_array_pop(RtkDiagRingArrayHandler_t *handler)
 	handler->head = (handler->head + 1) % handler->capacity;
 	handler->count--;
 
-	return element_address;
+	if (handler->emplace) {
+		return element_address;
+	} else {
+		void *result;
+		_memcpy(&result, element_address, sizeof(void *));
+		return result;
+	}
 }

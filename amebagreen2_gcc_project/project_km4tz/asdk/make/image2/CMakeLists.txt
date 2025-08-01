@@ -107,6 +107,7 @@ add_custom_command(
         -DBUILD_TYPE=${BUILD_TYPE}
         -DANALYZE_MP_IMG=${ANALYZE_MP_IMG}
         -DDAILY_BUILD=${DAILY_BUILD}
+        -DEXTERN_DIR=${EXTERN_DIR}
 
         # special variables for current image
         -DKM4TZ_PROJECT_DIR=${KM4TZ_PROJECT_DIR}

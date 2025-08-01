@@ -26,6 +26,7 @@
 
 #define fix_tx_buf_num	2
 extern struct whc_spi_host_priv_t spi_host_priv;
+extern struct event_priv_t event_priv;
 u8 tx_buf[fix_tx_buf_num][4 + SPI_BUFSZ] = {0};
 u8 used_buf_num = 0;
 
@@ -62,22 +63,28 @@ int whc_spi_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	(void)raw_para;
 	(void)is_special_pkt;
 	struct eth_drv_sg *psg_list;
-	int ret = 0, i = 0;
+	int ret = RTK_SUCCESS, i = 0;
 	int pad_len = 0;
 	struct whc_msg_info *msg;
 	struct whc_txbuf_info_t *inic_tx = rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
+
+	if (!event_priv.host_init_done) {
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Host trx err: wifi not init\n");
+		return -RTK_ERR_WIFI_NOT_INIT;
+	}
+
 	rtos_mutex_take(spi_host_priv.host_send, 0xFFFFFFFF);
 
 	u8 *ptr = &(tx_buf[used_buf_num][0]);
 
 	if (*ptr != 0) {
 		RTK_LOGE(TAG_WLAN_INIC, "%s fail buf busy !\n\r", __func__);
-		return -1;
+		return -RTK_ERR_WIFI_TX_BUF_FULL;
 	}
 
 	if (total_len > MAXIMUM_ETHERNET_PACKET_SIZE) {
 		RTK_LOGE(TAG_WLAN_INIC, "%s: len(%d) > MAXIMUM_ETHERNET_PACKET_SIZE !\n\r", __func__, total_len);
-		return -1;
+		return -RTK_ERR_BUFFER_OVERFLOW;
 	}
 
 	ptr += 4;

@@ -49,6 +49,21 @@ The example thread will be started automatically when booting.
 
 Ensure that the countermeasure equipment is on the same channel (e.g. fast connect may cause channel changes).
 
+Troubleshooting "wifi_raw_tx_thread failed!" Error:
+1. Disable Wi-Fi Power Save
+   * Confirm Wi-Fi IPS is disabled (refer to Step 2 above).
+
+2. Check TX packet rate and length: `packet airtime(us) ≈ len(bytes) * 8 / PHY rate(Mbps)`
+   * Excessive airtime may overfill limited HW buffers causing failures.
+
+3. Assess RF Environment
+   * Other Wi-Fi traffic reduces transmission opportunities: Contention fail -> HW Buffer overfill -> Failures.
+
+Solution
+* Test in RF-clean environments (minimize interference)
+* Increase packet PHY rate
+* Increase packet intervals (reduce TX bursts)
+
 # Supported IC
 
 - AmebaSmart

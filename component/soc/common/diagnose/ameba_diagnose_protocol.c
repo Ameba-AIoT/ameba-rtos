@@ -205,7 +205,7 @@ const RtkDiagDataFrame_t *rtk_diag_proto_pack_error(u8 cmd_type, u8 error)
 		g_handler->error_frame->cmd = (~BIT7) & cmd_type;
 	}
 	g_handler->error_frame->payload[0] = error;
-	g_handler->error_frame->payload[1] = error + g_handler->error_frame->cmd; //calculate crc
+	g_handler->error_frame->payload[1] = error ^ g_handler->error_frame->cmd; //calculate crc
 	return g_handler->error_frame;
 }
 
@@ -229,7 +229,7 @@ const RtkDiagDataFrame_t *rtk_diag_proto_pack_data(const RtkDiagEvent_t *event, 
 	}
 	u8 check_sum = g_handler->data_frame->cmd;
 	for (int i = 0; i < g_handler->data_frame->size - 1; i++) {
-		check_sum += g_handler->data_frame->payload[i];
+		check_sum ^= g_handler->data_frame->payload[i];
 	}
 	g_handler->data_frame->payload[g_handler->data_frame->size - 1] = check_sum; //set crc
 

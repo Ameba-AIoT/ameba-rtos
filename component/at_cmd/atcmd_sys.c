@@ -10,6 +10,7 @@
 
 #include "at_intf_spi.h"
 #include "at_intf_sdio.h"
+#include "at_intf_usbd.h"
 #include "ameba_ota.h"
 
 #include "atcmd_service.h"
@@ -159,6 +160,8 @@ void at_test(void *arg)
 			malloc_size = ATCMD_SPI_DMA_SIZE - 8;
 		} else if (g_host_control_mode == AT_HOST_CONTROL_SDIO) {
 			malloc_size = ATCMD_SDIO_MAX_SIZE;
+		} else if (g_host_control_mode == AT_HOST_CONTROL_USB) {
+			malloc_size = ATCMD_USBD_MAX_SIZE;
 		}
 #endif
 		buffer = (u8 *)rtos_mem_malloc(malloc_size);

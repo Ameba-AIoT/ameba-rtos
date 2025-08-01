@@ -35,7 +35,7 @@
 /************************* Default Values of User Configure *****************************/
 #define MACID_HW_MAX_NUM		16
 /************************* Default Values of User Configure End***************************/
-//#define CONFIG_CFG80211_SME_OFFLOAD
+//#define CONFIG_SUPPLICANT_SME
 
 #ifdef CONFIG_NAN
 #define CONFIG_NAN_PAIRING

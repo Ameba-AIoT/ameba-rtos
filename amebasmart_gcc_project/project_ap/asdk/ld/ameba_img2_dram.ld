@@ -167,8 +167,6 @@ SECTIONS
 	{
 		__mmu_tbl_start = .;
 		*(.mmu_tbl)
-		*(base_xlat_table)
-		*(xlat_table)
 		__mmu_tbl_end = .;
 	} > CA32_BL3_DRAM_NS
 
@@ -178,8 +176,12 @@ SECTIONS
 		*(.bss)
 		*(.bss.*)
 		*(COMMON)
+		. = ALIGN(16);
+		*(base_xlat_table)
 		__bss_end__ = .;
 	} > CA32_BL3_DRAM_NS
+
+	.xlat_table (NOLOAD) : { *(xlat_table) } > CA32_BL3_DRAM_NS
 
 	.heap (NOLOAD) :
 	{

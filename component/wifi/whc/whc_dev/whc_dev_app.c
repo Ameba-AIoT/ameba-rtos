@@ -15,6 +15,7 @@
 #define WHC_CMD_TEST_CONNECT        0x6
 #define WHC_CMD_TEST_SCAN           0x7
 #define WHC_CMD_TEST_DHCP           0x8
+#define WHC_CMD_TEST_WIFION         0x9
 
 #define WHC_CMD_TEST_BUF_SIZE     16
 
@@ -43,6 +44,16 @@ extern at_write out_buffer;
 #endif
 
 #define at_printf(fmt, args...)    RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, fmt, ##args)
+
+__weak int whc_dev_ip_in_table_indicate(u8 gate, u8 ip)
+{
+	(void)gate;
+	(void)ip;
+
+	//return 1 to forward all pkt now.
+	return 1;
+	//todo
+}
 
 void whc_dev_cmd_scan(void)
 {
@@ -218,6 +229,11 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 				} else if (*ptr == WHC_CMD_TEST_SET_TICKPS_CMD) {
 					u8 subtype = *(ptr + 1);
 					whc_dev_api_set_tickps_cmd(subtype);
+				} else if (*ptr == WHC_CMD_TEST_WIFION) {
+#ifdef CONFIG_WHC_DUAL_TCPIP
+					whc_dev_api_set_host_state(WHC_HOST_READY);
+#endif
+					wifi_on(RTW_MODE_STA);
 				}
 				rtos_mem_free(buf);
 #if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE) && defined(CONFIG_SUPPORT_ATCMD)

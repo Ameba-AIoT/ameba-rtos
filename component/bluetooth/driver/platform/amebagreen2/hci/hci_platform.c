@@ -18,7 +18,7 @@ extern int wifi_set_ips_internal(u8 enable);
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_host_api.h"
 #else
-#error "Please Enable Coexist!!!"
+//#error "Please Enable Coexist!!!"
 #endif
 
 #define HCI_PHY_EFUSE_OFFSET       0x740
@@ -65,14 +65,14 @@ unsigned char hci_init_config[] = {
 	/* Host Wake BT */
 	0x43, 0x00, 0x01, 0x07,
 
-	/* RF: phy_flow_ctrl_para(1), iqm_txgaink_module(1), iqm_txgain_flatk_module(4), iqm_txgain_10dBm_raw_index(1), lbt_ant_gain(1) */
-	0x78, 0x02, 0x08, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3D, 0x07,
+	/* RF(unit:0.5dbm): phy_flow_ctrl_para(1), module_txgaink(1), module_txgain_flatk(4), lbt_threshold_ant_out(1), lbt_ant_gain(1) */
+	0x78, 0x02, 0x08, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x00,
 
-	/* RF: iqm_max_txgain_LE1M(1), iqm_max_txgain_LE2M(1), iqm_max_txgain_LE1M_adv(1), iqm_max_txgain_LE2M_adv(1), iqm_max_txgain_LR(1)*/
-	0x85, 0x02, 0x05, 0x39, 0x39, 0x39, 0x39, 0x39,
+	/* RF(unit:0.5dbm): iqm_max_txpower_LE1M(1), iqm_max_txpower_LE2M(1), iqm_max_txpower_LE1M_adv(1), iqm_max_txpower_LE2M_adv(1), iqm_max_txpower_LR(1)*/
+	0x85, 0x02, 0x05, 0x10, 0x10, 0x10, 0x10, 0x10,
 
-	/* RF: iqm_max_txgain_LE1M_2402(1), iqm_max_txgain_LE1M_2480(1), iqm_max_txgain_LE2M_2402(1), iqm_max_txgain_LE2M_2480(1)*/
-	0x8A, 0x02, 0x04, 0x39, 0x39, 0x39, 0x39
+	/* RF(unit:0.5dbm): iqm_max_txpower_LE1M_2402(1), iqm_max_txpower_LE1M_2480(1), iqm_max_txpower_LE2M_2402(1), iqm_max_txpower_LE2M_2480(1)*/
+	0x8A, 0x02, 0x04, 0x10, 0x10, 0x10, 0x10
 };
 
 static uint8_t  hci_cfg_bd_addr[HCI_MAC_ADDR_LEN] = {0};

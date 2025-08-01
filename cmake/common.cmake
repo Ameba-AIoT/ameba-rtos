@@ -255,6 +255,7 @@ macro(ameba_mcu_project_create name mcu_type)
     ameba_set(c_SDK_ROM_TOTAL_SIZE_SCRIPT       ${c_SDK_IMAGE_UTILITY_DIR}/total_rom_size.py)
     ameba_set(c_SDK_ROM_CODE_ANALYZE_SCRIPT     ${c_SDK_IMAGE_UTILITY_DIR}/code_analyze.py)
     ameba_set(c_SDK_EXTRACT_LD_SCRIPT           ${c_SDK_IMAGE_UTILITY_DIR}/extract_ld_vars.sh)
+    ameba_set(c_SDK_ROM_WIFI_SYMBOL_GEN_SCRIPT  ${c_SDK_IMAGE_UTILITY_DIR}/export_rom_wifi_symbol.py)
 
     if (CONFIG_CA32_FREERTOS_V10_2_1_SMP)
         set(v_FREERTOS_VER v10.2.1)
@@ -405,6 +406,7 @@ function(ameba_firmware_package output_app_name)
             # user's variables
             -DFINAL_IMAGE_DIR=${FINAL_IMAGE_DIR}
             -DANALYZE_MP_IMG=${ANALYZE_MP_IMG}
+            -DEXTERN_DIR=${EXTERN_DIR}
 
             # special variables for current image
             ${custom_variables}

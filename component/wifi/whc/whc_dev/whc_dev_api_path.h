@@ -109,6 +109,7 @@ void whc_event_wifi_ap_get_connected_clients(u32 api_id, u32 *param_buf);
 void whc_event_wpa_4way_rpt(u32 api_id, u32 *param_buf);
 void whc_event_get_traffic_stats(u32 api_id, u32 *param_buf);
 void whc_event_start_join_cmd(u32 api_id, u32 *param_buf);
+void whc_event_get_eap_phase(u32 api_id, u32 *param_buf);
 #endif
 
 /* ---------------------------- Public Functions ---------------------------- */
@@ -116,7 +117,7 @@ int wext_private_command(char *cmd, int show_msg, char *user_buf);
 int wifi_set_ips_internal(u8 enable);
 
 void whc_dev_api_init(void);
-void whc_dev_wifi_event_indicate(u32 event_cmd, u8 *buf, s32 buf_len);
+void whc_dev_wifi_event_indicate(u32 event_cmd, u8 *evt_info, s32 evt_len);
 void whc_dev_scan_user_callback_indicate(unsigned int ap_num, void *user_data);
 void whc_dev_acs_info_indicate(struct rtw_acs_mntr_rpt *acs_mntr_rpt);
 void whc_dev_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data);
@@ -131,9 +132,6 @@ void whc_dev_cfg80211_indicate_nan_match(u8 type, u8 inst_id, u8 peer_inst_id, u
 void whc_dev_cfg80211_nan_func_free(u64 data);
 void whc_dev_cfg80211_nan_cfgvendor_event_report(u16 event_id, void *event, int event_len);
 void whc_dev_cfg80211_cfgvendor_send_cmd_reply(void *data, int len);
-#endif
-#ifdef CONFIG_P2P
-void whc_dev_cfg80211_indicate_channel_ready(void *scan_userdata);
 #endif
 
 int whc_dev_ip_in_table_indicate(u8 gate, u8 ip);

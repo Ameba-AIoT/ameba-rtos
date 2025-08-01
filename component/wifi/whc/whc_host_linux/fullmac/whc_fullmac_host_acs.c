@@ -25,7 +25,10 @@ struct rtw_acs_mntr_rpt acs_mntr_rpt_tbl[MAX_CHANNEL_NUM] = {0};
 
 int whc_fullmac_host_dump_survey_params(struct wiphy *wiphy, struct net_device *netdev, int idx, struct survey_info *info)
 {
-	if (whc_fullmac_host_dev_driver_is_mp()) {
+	u8 is_mp = 0;
+
+	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	if (is_mp == 1) {
 		return -ENOENT;
 	}
 

@@ -30,6 +30,11 @@ config USBH_MSC_MENU
     select USBH_MSC if WHC_HOST || WHC_NONE
     select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
 
+config USBH_UAC_MENU
+    bool "UAC"
+    select USBH_UAC  if WHC_HOST || WHC_NONE
+    select AUDIO_FWK if WHC_HOST || WHC_NONE
+
 config USBH_UVC_MENU
     bool "UVC"
     select USBH_UVC if WHC_HOST || WHC_NONE

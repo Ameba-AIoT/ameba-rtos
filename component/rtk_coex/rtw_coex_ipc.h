@@ -74,15 +74,15 @@ static inline void coex_ipc_entry(void)
 #if defined(CONFIG_COEXIST_HOST)
 	coex_ipc_host_init();
 #endif
-#if defined(CONFIG_COEXIST_DEV)
+#if defined(CONFIG_COEXIST_DEV) && (!defined(CONFIG_WHC_NONE))
 	coex_ipc_dev_init();
 #endif
 #endif
 
 #if !defined(CONFIG_ZEPHYR_SDK)
-// ipc case-linux:(ipc@coex not support, temporarily solution for smart linux)
-// ipc case-rtos(ap-np):
-// no-ipc case-fullmac/bridge/singlecore:
+// #1.ipc case-linux:(ipc@coex not support, temporarily solution for smart linux)
+// #2.ipc case-rtos(ap-np):
+// #3.no-ipc case-fullmac/bridge/singlecore:
 // ext-paras init start from np
 #if defined(CONFIG_COEX_EXT_CHIP_SUPPORT)
 #if defined(CONFIG_COEXIST_DEV)
@@ -97,17 +97,18 @@ static inline void coex_ipc_entry(void)
 // ipc case-zephyr sdk:
 #if defined(CONFIG_WHC_INTF_IPC)
 #if defined(CONFIG_COEXIST_HOST)
-	// ext-paras store @ap
 	extern struct extchip_para_t g_extchip_para_ap;
 	//RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[COEX][Host] Ext paras init.\r\n");
 	coex_extc_paras_config(&g_extchip_para_ap);
 #endif
 #if defined(CONFIG_COEXIST_DEV)
-	// whole bin@np
-	// enable extc here
-	// get paras start np from ap later
+	// #1. case ap/np: whole bin@np, get paras start np from ap later
 	//RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[COEX][Dev][Zephyr] Ext paras init.\r\n");
 	extern void rtk_coex_extc_set_enable(bool enable);
+#if defined(CONFIG_WHC_NONE)
+	// #2. case singlecore: ext-paras init start from np
+	coex_extc_paras_config(&g_extchip_para);
+#endif
 	rtk_coex_extc_set_enable(true);
 #endif
 #endif

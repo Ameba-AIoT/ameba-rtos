@@ -24,10 +24,9 @@ u8 rtw_check_peer_kvr_cap(void *a)
 	return 0;
 }
 
-void rtw_roam_kvr_cap_update(u8 *buf, s32 buf_len)
+void rtw_roam_kvr_cap_update(u8 *evt_info)
 {
-	UNUSED(buf);
-	UNUSED(buf_len);
+	UNUSED(evt_info);
 }
 #endif
 
@@ -75,10 +74,9 @@ void rtw_rrm_dbg_cmd(char *s)
 #endif
 
 #ifndef CONFIG_WIFI_11V_ENABLE
-void rtw_wnm_btm_req_process(u8 *buf, s32 buf_len)
+void rtw_wnm_btm_req_process(u8 *evt_info)
 {
-	UNUSED(buf);
-	UNUSED(buf_len);
+	UNUSED(evt_info);
 }
 
 void rtw_wnm_btm_flags_set(u8 flags)
@@ -86,18 +84,16 @@ void rtw_wnm_btm_flags_set(u8 flags)
 	UNUSED(flags);
 }
 
-void rtw_wnm_dbg_cmd(u8 *buf, s32 buf_len)
+void rtw_wnm_dbg_cmd(u8 *evt_info)
 {
-	UNUSED(buf);
-	UNUSED(buf_len);
+	UNUSED(evt_info);
 }
 #endif
 
 #if !defined(CONFIG_WIFI_11K_ENABLE) && !defined(CONFIG_WIFI_11V_ENABLE)
-void rtw_roam_nb_rpt_elem_parsing(u8 *buf, s32 buf_len)
+void rtw_roam_nb_rpt_elem_parsing(u8 *evt_info)
 {
-	UNUSED(buf);
-	UNUSED(buf_len);
+	UNUSED(evt_info);
 }
 
 void rtw_roam_nb_cap_update(u8 enable)
@@ -151,16 +147,14 @@ void rtw_ft_cap_update(void *a)
 	UNUSED(a);
 }
 
-void rtw_ft_rx_mgnt(u8 *buf, s32 buf_len)
+void rtw_ft_rx_mgnt(u8 *evt_info)
 {
-	UNUSED(buf);
-	UNUSED(buf_len);
+	UNUSED(evt_info);
 }
 
-void rtw_ft_auth_start(u8 *buf, s32 buf_len)
+void rtw_ft_auth_start(u8 *evt_info)
 {
-	UNUSED(buf);
-	UNUSED(buf_len);
+	UNUSED(evt_info);
 }
 
 int rtw_ft_ptk_derive(u8 *sa, u8 *ssid)

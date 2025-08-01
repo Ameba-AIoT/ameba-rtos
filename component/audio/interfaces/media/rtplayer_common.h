@@ -42,6 +42,21 @@ extern "C" {
 #endif
 
 /**
+ * @brief Defines the sink types of a player.
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+enum AudioSinkTypes {
+	/** Audio is played in local. */
+	AUDIO_SINK_TYPE_LOCAL = 0,
+	/** Audio is played via bluetooth. */
+	AUDIO_SINK_TYPE_BT = 1,
+	/** Audio is played via uac. */
+	AUDIO_SINK_TYPE_UAC = 2,
+};
+
+/**
  * @brief Defines all the player status.
  *
  * @since 1.0

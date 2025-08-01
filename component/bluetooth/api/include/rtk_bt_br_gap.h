@@ -310,6 +310,15 @@ typedef struct {
 	uint8_t     name[RTK_BT_GAP_DEVICE_NAME_LEN];
 } rtk_bt_br_remote_name_rsp_t;
 
+/**
+ * @struct    rtk_bt_br_acl_conn_fail_t
+ * @brief     Bluetooth BR/EDR ACL connection fail event
+ */
+typedef struct {
+	uint8_t     bd_addr[6];
+	uint16_t    cause;
+} rtk_bt_br_acl_conn_fail_t;
+
 /* ------------------------------ Functions Declaration ------------------------------ */
 /**
  * @defgroup  bt_br_gap BT BR GAP APIs

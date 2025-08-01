@@ -129,7 +129,7 @@ static int rtk_diag_req_low(u8 cmd, const u8 *payload, u16 payload_length)
 	_memcpy(frame->payload, payload, payload_length);
 	u8 check_sum = frame->cmd;
 	for (int i = 0; i < frame->size - 1; i++) {
-		check_sum += frame->payload[i];
+		check_sum ^= frame->payload[i];
 	}
 	frame->payload[frame->size - 1] = check_sum;
 	int res = rtk_diag_uart_send(frame);

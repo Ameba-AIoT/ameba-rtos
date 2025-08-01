@@ -265,11 +265,13 @@ static int rtw_ndev_close(struct net_device *pnetdev)
 #ifndef CONFIG_WHC_BRIDGE
 	struct cfg80211_scan_info info;
 	int ret = 0;
+	u8 is_mp = 0;
 #endif
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 #ifndef CONFIG_WHC_BRIDGE
-	if (!whc_fullmac_host_dev_driver_is_mp()) {
+	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	if (is_mp != 1) {
 		ret = whc_fullmac_host_scan_abort();
 		if (ret) {
 			dev_err(global_idev.fullmac_dev, "[fullmac]: %s abort wifi scan failed!\n", __func__);
@@ -295,12 +297,14 @@ static int rtw_ndev_close(struct net_device *pnetdev)
 int rtw_ndev_open_ap(struct net_device *pnetdev)
 {
 #ifndef CONFIG_WHC_BRIDGE
+	u8 is_mp = 0;
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 
 	rtw_netdev_priv_is_on(pnetdev) = true;
 
-	if (!whc_fullmac_host_dev_driver_is_mp()) {
+	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	if (is_mp != 1) {
 		/* if2 init(SW + part of HW) */
 		whc_fullmac_host_init_ap();
 	}
@@ -316,10 +320,12 @@ static int rtw_ndev_close_ap(struct net_device *pnetdev)
 #ifndef CONFIG_WHC_BRIDGE
 	struct cfg80211_scan_info info;
 	int ret = 0;
+	u8 is_mp = 0;
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 
-	if (!whc_fullmac_host_dev_driver_is_mp()) {
+	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	if (is_mp != 1) {
 		ret = whc_fullmac_host_scan_abort();
 		if (ret) {
 			dev_err(global_idev.fullmac_dev, "[fullmac]: %s abort wifi scan failed!\n", __func__);
@@ -338,7 +344,7 @@ static int rtw_ndev_close_ap(struct net_device *pnetdev)
 	netif_tx_stop_all_queues(pnetdev);
 	netif_carrier_off(pnetdev);
 
-	if (!whc_fullmac_host_dev_driver_is_mp()) {
+	if (is_mp != 1) {
 		/* if2 deinit (SW) */
 		whc_fullmac_host_deinit_ap();
 	}

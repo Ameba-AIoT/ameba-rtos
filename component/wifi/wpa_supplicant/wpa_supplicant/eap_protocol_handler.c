@@ -492,9 +492,9 @@ __weak void eap_eapol_recvd_hdl(u8 *buf, s32 buf_len)
 	}
 }
 
-__weak void eap_eapol_start_hdl(u8 *buf, s32 buf_len)
+__weak void eap_eapol_start_hdl(u8 *evt_info)
 {
-	(void)buf_len;
-	u8 *dst_mac = buf;
-	eap_send_eapol_start(dst_mac);
+	struct rtw_event_wpa_eapol_start *eapol_start_info = (struct rtw_event_wpa_eapol_start *)evt_info;
+
+	eap_send_eapol_start(eapol_start_info->dst_mac);
 }

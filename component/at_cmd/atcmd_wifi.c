@@ -349,9 +349,13 @@ void at_wlconn(void *arg)
 
 #ifdef CONFIG_LWIP_LAYER
 	/* Start DHCPClient */
-	LwIP_DHCP(0, DHCP_START);
+	ret = LwIP_DHCP(0, DHCP_START);
 	tick3 = rtos_time_get_current_system_time_ms();
-	RTK_LOGI(NOTAG, "\r\n[+WLCONN] Got IP after %d ms.\r\n", (unsigned int)(tick3 - tick1));
+	if (DHCP_ADDRESS_ASSIGNED == ret) {
+		RTK_LOGI(NOTAG, "\r\n[+WLCONN] Got IP after %d ms.\r\n", (unsigned int)(tick3 - tick1));
+	} else {
+		RTK_LOGI(NOTAG, "\r\n[+WLCONN] NOT Got IP after %d ms.\r\n", (unsigned int)(tick3 - tick1));
+	}
 #endif
 
 end:
@@ -759,11 +763,11 @@ void at_wlstartap(void *arg)
 		else if (0 == strcmp("band", argv[i])) {
 			if (argc > j) {
 				if (0 == strcmp("2g", argv[j])) {
-					acs_config.band = 0;
+					acs_config.band = RTW_SUPPORT_BAND_2_4G;
 				} else if (0 == strcmp("5g", argv[j])) {
-					acs_config.band = 1;
+					acs_config.band = RTW_SUPPORT_BAND_5G;
 				} else if (0 == strcmp("2g_5g", argv[j])) {
-					acs_config.band = 2;
+					acs_config.band = RTW_SUPPORT_BAND_2_4G_5G_BOTH;
 				} else {
 					RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid band value\r\n");
 					error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
@@ -888,10 +892,10 @@ void at_wlstartap(void *arg)
 	if (ap.channel == 0) {
 		ret = wifi_acs_find_ideal_channel(&acs_config, &ap.channel);
 		if (ret != RTK_SUCCESS) {
-			RTK_LOGW(NOTAG, "[+WLSTARTAP] Auto channel select fail, use default channel 1\r\n");
-			ap.channel = 1;
+			ap.channel = (acs_config.band == RTW_SUPPORT_BAND_2_4G) ? 6 : 36;
+			RTK_LOGW(NOTAG, "[+WLSTARTAP] Auto channel select fail, use default channel %d\r\n", ap.channel);
 		} else {
-			RTK_LOGW(NOTAG, "[+WLSTARTAP] Auto channel select %d\r\n", ap.channel);
+			RTK_LOGI(NOTAG, "[+WLSTARTAP] Auto channel select %d\r\n", ap.channel);
 		}
 	}
 

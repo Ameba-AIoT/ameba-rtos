@@ -35,6 +35,14 @@ class OtaPrependHeader(OperationBase):
         parser.add_argument('-i', '--input-file', nargs='+', help='Input file to be process', required=True)
         parser.add_argument('-o', '--output-file', help='Output processed file', required=True)
 
+    @staticmethod
+    def require_manifest_file(context:Context) -> bool:
+        return False
+
+    @staticmethod
+    def require_layout_file(context:Context) -> bool:
+        return False
+
     def pre_process(self) -> Error:
         for i in self.context.args.input_file:
             # check image file existence

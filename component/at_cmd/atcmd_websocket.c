@@ -545,7 +545,6 @@ static void wsclient_conn_thread(void *param)
 	}
 
 	if (wsclient) {
-		wsclient->fun_ops.client_close(wsclient);
 		ws_free(wsclient);
 		wsclient = NULL;
 	}
@@ -1404,10 +1403,12 @@ void at_wssrv_handler_connect(struct wssrv_conn *conn)
 	int i, link_id;
 	int res = 0;
 
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "at_wssrv_handler_connect() conn->state=%d\r\n", conn->state);
+
 	for (i = 0; i < wssrvcfg_max_conn; i++) {
 		cli_conn = ws_server_get_conn_info(i);
 		if (cli_conn == conn) {
-			if (conn->state == WSSRV_CONNECTED1) {
+			if ((conn->state == WSSRV_CONNECTED1) || (conn->state == WSSRV_CONNECTED2)) {
 				link_id = i;
 				res = 1;
 			}
@@ -1425,6 +1426,7 @@ void at_wssrv_handler_disconnect(struct wssrv_conn *conn)
 	struct wssrv_conn *cli_conn;
 	int i, link_id;
 	int res = 0;
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "at_wssrv_handler_disconnect() conn->state=%d\r\n", conn->state);
 
 	for (i = 0; i < wssrvcfg_max_conn; i++) {
 		cli_conn = ws_server_get_conn_info(i);
@@ -1440,6 +1442,12 @@ void at_wssrv_handler_disconnect(struct wssrv_conn *conn)
 	if (res > 0) {
 		at_printf_indicate("[WSSRV][EVENT]:linkid:%d, disconnected, reason:%d\r\n", link_id, ws_server_get_close_reason(cli_conn));
 	}
+}
+
+void at_wssrv_handler_stop(void)
+{
+	at_printf_indicate("[WSSRV][EVENT]:stop\r\n");
+	wssrv_is_running = 0;
 }
 
 void at_wssrvstart_help(void)
@@ -1594,6 +1602,7 @@ void at_wssrvstart(void *arg)
 	ws_server_dispatch(at_wssrv_handler_data);
 	ws_server_dispatch_connect(at_wssrv_handler_connect);
 	ws_server_dispatch_disconnect(at_wssrv_handler_disconnect);
+	ws_server_dispatch_stop(at_wssrv_handler_stop);
 
 	ws_server_setup_tx_rx_size(wssrvcfg_tx_size, wssrvcfg_rx_size);
 
@@ -1644,10 +1653,6 @@ void at_wssrvstop(void *arg)
 	}
 
 	ws_server_stop();
-
-	at_printf("[WSSRV][EVENT]:stop\r\n");
-
-	wssrv_is_running = 0;
 
 	at_printf(ATCMD_OK_END_STR);
 }

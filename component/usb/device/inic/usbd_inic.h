@@ -43,7 +43,48 @@
 #define USBD_INIC_EP_STATE_IDLE							0U
 #define USBD_INIC_EP_STATE_BUSY							1U
 
+// Vendor requests
+#define USBD_INIC_VENDOR_REQ_BT_HCI_CMD					0x00U
+#define USBD_INIC_VENDOR_REQ_FW_DOWNLOAD				0xF0U
+#define USBD_INIC_VENDOR_QUERY_CMD						0x01U
+#define USBD_INIC_VENDOR_QUERY_ACK						0x81U
+#define USBD_INIC_VENDOR_RESET_CMD						0x02U
+#define USBD_INIC_VENDOR_RESET_ACK						0x82U
+
+#define USBD_INIC_FW_TYPE_APPLICATION					0xF2U
+
+#define USBD_INIC_RESET_THREAD_PRIORITY					6
+
 /* Exported types ------------------------------------------------------------*/
+
+typedef struct {
+	// DWORD 0
+	u32	data_len: 16;		// Data payload length
+	u32	data_offset: 8;		// Data payload offset i.e. header length
+	u32	data_checksum: 8;	// Checksum of the data payload
+
+	// DWORD 1
+	u32	pkt_type: 8;		// Packet type
+	u32	xfer_status: 8;		// Xfer status
+	u32	rl_version: 8;		// RL Version
+	u32	dev_mode: 8;		// Device mode
+
+	// DWORD 2
+	u32	mem_addr;			// Memory address
+
+	// DWORD 3
+	u32	mem_size;			// Memory size
+
+	// DWORD 4
+	union {
+		u32	d32;
+		u16	d16[2];
+		u8	d8[4];
+	} value;				// Target value
+
+	// DWORD 5
+	u32	reserved;
+} usbd_inic_query_packet_t;
 
 typedef struct {
 	usbd_ep_t ep;
@@ -71,12 +112,16 @@ typedef struct {
 	usb_dev_t *dev;
 	usbd_inic_cb_t *cb;
 	usb_setup_req_t ctrl_req;
+	rtos_task_t reset_task;
+	rtos_sema_t reset_sema;
 	u8  bt_alt;
 	u8  bt_sco_alt;
 	u8  wifi_alt;
 } usbd_inic_dev_t;
 
 /* Exported macros -----------------------------------------------------------*/
+
+#define	USBD_INIC_QUERY_PACKET_SIZE			(sizeof(usbd_inic_query_packet_t))
 
 /* Exported variables --------------------------------------------------------*/
 

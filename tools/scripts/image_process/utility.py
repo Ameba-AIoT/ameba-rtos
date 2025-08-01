@@ -179,28 +179,38 @@ def parse_project_info(path:str) -> dict:
         soc_project = ''
         mcu_project = ''
 
-    if mcu_project and path.endswith(".bin"):
-        #Avoid file project and location mismatch
+    if path.endswith(".bin"):
         file_body = os.path.splitext(os.path.basename(path))[0]
-        if 'all' in file_body and ('image2' in file_body or 'image3' in file_body):
-            if mcu_project not in file_body:
-                mcu_dicts = {'ap': 'ca32', 'hp': 'km4', 'lp': 'km0'}
-                if mcu_project in mcu_dicts.keys() and mcu_dicts[mcu_project] in file_body:
-                    pass
-                else:
-                    default_logger.warning(f"File maybe not in right location: file name: {os.path.basename(path)}, mcu project from path: {mcu_project}")
-        # if mcu_project in os.path.splitext(os.path.basename(path))[0].split(' '):
+        mcu_dicts = {'ap': 'ca32', 'hp': 'km4', 'lp': 'km0'}
+        if mcu_project:
+            #Avoid file project and location mismatch
+            if 'all' in file_body and ('image2' in file_body or 'image3' in file_body):
+                if mcu_project not in file_body:
+                    if mcu_project in mcu_dicts.keys() and mcu_dicts[mcu_project] in file_body:
+                        pass
+                    else:
+                        default_logger.warning(f"File maybe not in right location: file name: {os.path.basename(path)}, mcu project from path: {mcu_project}")
+        else: # add for zephyr build
+            mcu_same_list=['km0', 'km4', 'ca32', 'kr4']
+            for mcu in mcu_same_list:
+                if mcu in file_body:
+                    mcu_project = mcu.lower()
+                    break
+            for key, value in mcu_dicts.items():
+                if key in file_body:
+                    mcu_project = key.lower()
+                    break
+            if mcu_project == '':
+                default_logger.fatal(f"Failed to get mcu project from file name: {os.path.basename(path)}")
 
-    mcu_type = mcu_project_to_mcu_type(mcu_project, default='' if mcu_project == '' else None)
-    if mcu_type is None:
-        mcu_type = ''
-        default_logger.error(f'Failed to get mcu type for {soc_project}:{mcu_project} from {path}')
+    # mcu_type = mcu_project_to_mcu_type(mcu_project, default='')
+    # if not mcu_type:
+    #     default_logger.error(f'Failed to get mcu type for {soc_project}:{mcu_project} from {path}')
 
     result = {
         "soc_dir": soc_dir,
         "soc_project": soc_project,
         "mcu_project": mcu_project,
-        "mcu_type": mcu_type
     }
 
     return result
@@ -288,3 +298,6 @@ def get_file_md5sum(file_path):
         file_hash = hashlib.md5()
         file_hash.update(f.read())
     return file_hash.hexdigest()
+
+def get_file_dir(file_path):
+    return os.path.dirname(os.path.abspath(file_path))

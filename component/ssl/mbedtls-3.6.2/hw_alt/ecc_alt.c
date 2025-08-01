@@ -145,7 +145,7 @@ int mbedtls_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *s,
 
 	int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
 	pke_ecp_group pke_grp;
-	size_t precise_byte = (grp->pbits + 7 ) / 8;
+	size_t precise_byte = (grp->nbits + 7 ) / 8;
 	uint8_t *hash_buf = mbedtls_calloc(blen, 1);
 	uint8_t *rand_buf = mbedtls_calloc(precise_byte, 1);
 	uint8_t *res_sign_r_buf = mbedtls_calloc(precise_byte, 1);

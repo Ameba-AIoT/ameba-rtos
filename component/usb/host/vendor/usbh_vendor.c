@@ -636,15 +636,20 @@ static void usbh_vendor_bulk_process_rx(usb_host_t *host)
 				vendor->cb->receive(in_xfer->ep_type, in_xfer->xfer_buf, rx_len);
 			}
 
-			if ((in_xfer->xfer_len >= rx_len) && (in_xfer->xfer_len >= in_xfer->ep_mps)) {
-				in_xfer->xfer_len -= rx_len;
-				in_xfer->xfer_buf += rx_len;
-				in_xfer->ep_state = USBH_VENDOR_RX;
-			} else {
-				if (in_xfer->xfer_len % in_xfer->ep_mps != 0 || in_xfer->xfer_len == 0) {
+			if ((rx_len > 0) && ((rx_len % in_xfer->ep_mps) == 0)) { //N*MPS
+				if (in_xfer->xfer_len > rx_len) {
 					in_xfer->xfer_cnt++;
+					in_xfer->ep_state = USBH_VENDOR_IDLE;//Premature ZLP
+					vendor->ep_mask &= ~(in_xfer->test_mask);
+				} else if ((in_xfer->xfer_len == rx_len)) {
+					in_xfer->xfer_len = 0;/* Last ZLP for multi-MPS */
+					in_xfer->ep_state = USBH_VENDOR_RX;
+				} else {
+					in_xfer->ep_state = USBH_VENDOR_IDLE;
+					vendor->ep_mask &= ~(in_xfer->test_mask);
 				}
-				in_xfer->xfer_len = 0;
+			} else {//ZLP or short
+				in_xfer->xfer_cnt++;
 				in_xfer->ep_state = USBH_VENDOR_IDLE;
 				vendor->ep_mask &= ~(in_xfer->test_mask);
 			}

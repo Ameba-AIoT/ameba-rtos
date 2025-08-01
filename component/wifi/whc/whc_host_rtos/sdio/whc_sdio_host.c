@@ -278,6 +278,8 @@ void whc_sdio_host_init(void)
 
 	/* init sdio */
 	whc_sdio_host_init_drv();
+
+	event_priv.host_init_done = 1;
 }
 
 void rtw_sdio_send_data(uint8_t *buf, uint32_t len, void *pskb)

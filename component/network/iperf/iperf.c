@@ -1,5 +1,7 @@
 #include "lwip_netconf.h"
 
+#define IPERF_PRIORITY_OFFSET	4
+
 #if defined(CONFIG_WHC_HOST)
 #define BSD_STACK_SIZE		    1024
 #else
@@ -1238,7 +1240,7 @@ int cmd_iperf(int argc, char **argv)
 
 	if (stream_data->role == 's') {
 		if (rtos_task_create(&stream_data->task, "iperf_test_handler", iperf_test_handler, (void *) stream_data, BSD_STACK_SIZE * 4,
-							 2 + 4) != RTK_SUCCESS) {
+							 2 + IPERF_PRIORITY_OFFSET) != RTK_SUCCESS) {
 			tptest_res_log("UDP ERROR: Create UDP server task failed.\n\r");
 			goto exit;
 		}
@@ -1250,13 +1252,13 @@ int cmd_iperf(int argc, char **argv)
 				goto exit;
 			}
 			if (rtos_task_create(&stream_data_s->task, "iperf_test_handler", iperf_test_handler, (void *) stream_data_s, BSD_STACK_SIZE * 4,
-								 2 + 4) != RTK_SUCCESS) {
+								 2 + IPERF_PRIORITY_OFFSET) != RTK_SUCCESS) {
 				tptest_res_log("UDP ERROR: Create UDP server task failed.\n\r");
 				goto exit;
 			}
 		}
 		if (rtos_task_create(&stream_data->task, "iperf_test_handler", iperf_test_handler, (void *) stream_data, BSD_STACK_SIZE * 4,
-							 1 + 4) != RTK_SUCCESS) {
+							 1 + IPERF_PRIORITY_OFFSET) != RTK_SUCCESS) {
 			tptest_res_log("UDP ERROR: Create UDP client task failed.\n\r");
 			if (stream_data_s != NULL) {
 				rtos_task_delete(stream_data_s->task);

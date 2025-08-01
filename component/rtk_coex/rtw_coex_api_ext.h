@@ -17,39 +17,42 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "PortNames.h"
-#include "PinNames.h"
 #include "rtw_coex_host_api.h"
 
 void rtk_coex_extc_ntfy_init(struct extchip_para_t *p_extchip_para);
 s32 rtk_coex_extc_get_init_params(struct extchip_para_t *p_extchip_para);
 
-extern PinName port_pin(PortName port, int pin_n);
-
-static inline uint16_t uart_pinname_to_pin(char *pin_name)
+/*
+* ret: -1: fail; 0: success
+*/
+static inline struct port_pin_t get_port_pin_from_name(char *pin_name)
 {
 	uint16_t port, pin;
 	char *underline;
+	struct port_pin_t pad_port = {.port = PAD_PORT_A, .pin = 0};
 
 	if (strstr(pin_name, "PA_") != NULL) {
-		port = 0; //PORT_A
+		port = PAD_PORT_A; //PORT_A
 	} else if (strstr(pin_name, "PB_") != NULL) {
-		port = 1; //PORT_B
+		port = PAD_PORT_B; //PORT_B
 	} else if (strstr(pin_name, "PC_") != NULL) {
-		port = 2; //PORT_C
+		port = PAD_PORT_C; //PORT_C
 	} else {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[COEX][EXT] !!!!!!!!!! error pin name, SHOULD be like PA_3 !!!!!!!!!!!");
-		return 0;
+		return pad_port;
 	}
 	underline = strchr(pin_name, '_');
 	pin = strtoul(underline + 1, (char **)NULL, 10);
 
 	if (pin >= 32) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[COEX][EXT] !!!!!!!!!! error pin name, SHOULD less than 32 !!!!!!!!!!!");
-		return 0;
+		return pad_port;
 	}
-	pin = (uint16_t)port_pin((PortName)port, (int)pin);
-	return pin;
+
+	pad_port.port = port;
+	pad_port.pin = pin;
+
+	return pad_port;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -57,6 +60,8 @@ static inline uint16_t uart_pinname_to_pin(char *pin_name)
 //////////////////////////////////////////////////////////////////
 static inline void coex_extc_paras_config(struct extchip_para_t *p_extchip_para)
 {
+	struct port_pin_t pad_port;
+	(void) pad_port;
 // pta mode
 #if defined(CONFIG_EXT_PTA_MODE_SIMPLE)
 	p_extchip_para->pta_index = EXT_PTA1;
@@ -108,13 +113,16 @@ static inline void coex_extc_paras_config(struct extchip_para_t *p_extchip_para)
 
 // pta pinmux pin set
 #if defined(CONFIG_EXT_PTA_PIN_REQ)
-	p_extchip_para->pta_pad_req = uart_pinname_to_pin(CONFIG_EXT_PTA_PIN_REQ);
+	pad_port = get_port_pin_from_name(CONFIG_EXT_PTA_PIN_REQ);
+	memcpy(&p_extchip_para->port_req, &pad_port, sizeof(struct port_pin_t));
 #endif
 #if defined(CONFIG_EXT_PTA_PIN_PRI)
-	p_extchip_para->pta_pad_pri = uart_pinname_to_pin(CONFIG_EXT_PTA_PIN_PRI);
+	pad_port = get_port_pin_from_name(CONFIG_EXT_PTA_PIN_PRI);
+	memcpy(&p_extchip_para->port_pri, &pad_port, sizeof(struct port_pin_t));
 #endif
 #if defined(CONFIG_EXT_PTA_PIN_GNT)
-	p_extchip_para->pta_pad_gnt = uart_pinname_to_pin(CONFIG_EXT_PTA_PIN_GNT);
+	pad_port = get_port_pin_from_name(CONFIG_EXT_PTA_PIN_GNT);
+	memcpy(&p_extchip_para->port_gnt, &pad_port, sizeof(struct port_pin_t));
 #endif
 
 	p_extchip_para->valid = 1;

@@ -214,11 +214,17 @@ int wifi_set_mac_address(int idx, unsigned char *mac, u8 efuse)
 	return ret;
 }
 //----------------------------------------------------------------------------//
-u8 wifi_driver_is_mp(void)
+s32 wifi_driver_is_mp(u8 *is_mp)
 {
 	int ret = 0;
 
 	whc_host_api_message_send(WHC_API_WIFI_DRIVE_IS_MP, NULL, 0, (u8 *)&ret, sizeof(ret));
+	if (ret < 0) {
+		*is_mp = 0;
+	} else {
+		*is_mp = ret;
+		ret = 0;
+	}
 	return ret;
 }
 
@@ -434,15 +440,21 @@ int wifi_set_eap_phase(unsigned char is_trigger_eap)
 #endif
 }
 
-unsigned char wifi_get_eap_phase(void)
+int wifi_get_eap_phase(u8 *eap_phase)
 {
 #ifdef CONFIG_EAP
-	unsigned char eap_phase = 0;
+	int ret = 0;
 
-	whc_host_api_message_send(WHC_API_WIFI_GET_EAP_PHASE, NULL, 0, &eap_phase, sizeof(eap_phase));
-	return eap_phase;
+	whc_host_api_message_send(WHC_API_WIFI_GET_EAP_PHASE, NULL, 0, (u8 *)&ret, sizeof(ret));
+	if (ret < 0) {
+		*eap_phase = 0;
+	} else {
+		*eap_phase = ret;
+		ret = 0;
+	}
+	return ret;
 #else
-	return 0;
+	return -1;
 #endif
 }
 
@@ -780,7 +792,7 @@ s32 wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc)
 	int sg_len = 0;
 
 	if (raw_frame_desc == NULL) {
-		return -1;
+		return -RTK_ERR_BADARG;
 	}
 
 	raw_para.rate = raw_frame_desc->tx_rate;

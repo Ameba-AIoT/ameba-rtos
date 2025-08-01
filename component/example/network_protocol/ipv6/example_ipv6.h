@@ -8,9 +8,10 @@
  *
  ******************************************************************************/
 
-#define EXAMPLE_IPV6_UDP    1
-#define EXAMPLE_IPV6_TCP    0
+#define EXAMPLE_IPV6_UDP    0
+#define EXAMPLE_IPV6_TCP    1
 #define EXAMPLE_IPV6_MCAST  0
+
 #if EXAMPLE_IPV6_UDP
 #define UDP_SERVER          1
 #elif EXAMPLE_IPV6_TCP
@@ -33,6 +34,6 @@
 #define IPV6_SEMA_TIMEOUT 15000
 
 void example_ipv6(void);
-void example_ipv6_callback(char *buf, int buf_len, int flags, void *userdata);
+
 
 #endif //#ifndef __EXAMPLE_IPV6_H__

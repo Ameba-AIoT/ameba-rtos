@@ -47,6 +47,15 @@ ifeq ($(CONFIG_WHC_CMD_PATH), y)
     fullmac_sdio-$(CONFIG_FULLMAC_HCI_SDIO) += \
             ../../common/whc_host_netlink.o \
             ../../common/whc_host_cmd_path_tx.o
+
+    ifeq ($(CONFIG_WHC_WPA_OPS),y)
+        ccflags-y += -I$(src)/../../common/wpa_ops_demo
+
+        fullmac_sdio-$(CONFIG_FULLMAC_HCI_SDIO) += \
+               ../../common/wpa_ops_demo/whc_wpa_ops_custom_netlink.o \
+               ../../common/wpa_ops_demo/whc_wpa_ops_api.o
+    endif
+
 endif
 
 fullmac_sdio-$(CONFIG_BT_INIC) += rtb_sdio.o

@@ -100,6 +100,7 @@ enum {
 	AT_HOST_CONTROL_UART = 1,
 	AT_HOST_CONTROL_SPI,
 	AT_HOST_CONTROL_SDIO,
+	AT_HOST_CONTROL_USB,
 };
 
 int atcmd_get_ssl_certificate(char *buffer, CERT_TYPE cert_type, int index);

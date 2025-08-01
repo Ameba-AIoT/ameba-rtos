@@ -74,6 +74,7 @@ add_custom_command(OUTPUT ${c_SDK_IMAGE_TARGET_DIR}/embedded_bin.o
         -DBUILD_TYPE=${BUILD_TYPE}
         -DANALYZE_MP_IMG=${ANALYZE_MP_IMG}
         -DDAILY_BUILD=${DAILY_BUILD}
+        -DEXTERN_DIR=${EXTERN_DIR}
 
         -DIMGTOOL_LOADER=y
 
