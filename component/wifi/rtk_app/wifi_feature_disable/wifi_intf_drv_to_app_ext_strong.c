@@ -173,8 +173,9 @@ int wifi_set_eap_method(unsigned char eap_method)
 	return -1;
 }
 
-u8 wifi_driver_is_mp(void)
+s32 wifi_driver_is_mp(u8 *is_mp)
 {
+	UNUSED(is_mp);
 	call_noused = __LINE__;
 	return 0;
 }

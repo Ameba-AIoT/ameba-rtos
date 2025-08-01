@@ -94,6 +94,18 @@ if(CONFIG_WIFI_HOST_CONTROL)
         ameba_list_append(private_sources
             whc_dev/whc_dev_app.c
         )
+        if(CONFIG_RTW_CLI AND CONFIG_WPA_LITE)
+            ameba_list_append(private_sources
+                whc_dev/bridge_wpa_ops_demo/whc_wpa_ops_cmd_parse.c
+                whc_dev/bridge_wpa_ops_demo/wpa_lite_intf/whc_wpa_lite_app.c
+            )
+        elseif(CONFIG_RTW_CLI AND CONFIG_WPA_STD)
+            ameba_list_append(private_sources
+                whc_dev/bridge_wpa_ops_demo/whc_wpa_ops_cmd_parse.c
+                whc_dev/bridge_wpa_ops_demo/wpas_std_intf/whc_wpas_std_app.c
+            )
+        endif()
+
     endif()
 endif()
 
@@ -122,11 +134,6 @@ elseif(CONFIG_WHC_BRIDGE)
             whc_dev/sdio/whc_sdio_drv.c
             whc_dev/sdio/whc_sdio_dev.c
         )
-        if(CONFIG_WPA_LITE_OPS)
-             ameba_list_append(private_sources
-                 whc_dev/bridge_wpa_ops_demo/wpa_lite_intf/whc_wpa_lite_app.c
-        )
-        endif()
         set(target_name wifi_fullmac_sdio_bridge_lite)
     elseif(CONFIG_WHC_INTF_SPI)
          ameba_list_append(private_sources
@@ -247,9 +254,9 @@ if(CONFIG_WHC_INTF_USB)
 endif()
 
 
-if(CONFIG_WHC_BRIDGE)
-    if(CONFIG_WHC_INTF_SDIO)
-        if(CONFIG_WPA_LITE_OPS)
+if(CONFIG_WIFI_HOST_CONTROL)
+    if(CONFIG_WHC_CMD_PATH)
+        if(CONFIG_RTW_CLI)
             ameba_list_append(private_includes ${c_CMPT_WIFI_DIR}/whc/whc_dev/bridge_wpa_ops_demo)
         endif()
     endif()

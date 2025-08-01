@@ -131,7 +131,7 @@ u32 atio_uart_handler(void *data)
 
 	PUART_LOG_BUF pShellRxBuf;
 	u32 uart_lsr, uart_ier;
-	u8 i = 0;
+	u32 i = 0;
 
 	uart_lsr = UART_LineStatusGet(UART_DEV);
 

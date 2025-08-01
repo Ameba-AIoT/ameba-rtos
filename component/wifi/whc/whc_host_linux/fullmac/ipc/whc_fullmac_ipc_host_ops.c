@@ -16,6 +16,12 @@ int whc_fullmac_ipc_host_send_msg(u32 id, u32 *param_buf, u32 buf_len)
 	int ret = 0;
 	int cnt = 120000;
 
+	if (!global_idev.host_init_done) {
+		dev_err(global_idev.fullmac_dev, "Host api err: wifi not init\n");
+		ret = -1;
+		goto func_exit;
+	}
+
 	if (!global_idev.event_ch) {
 		dev_err(global_idev.fullmac_dev, "%s: event ch is NULL when to send msg!\n",  "event");
 		ret = -1;
@@ -234,9 +240,11 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 	size_t offset = 0;
 	struct rtw_network_info *connect_param_tmp = NULL;
 
-#ifdef CONFIG_CFG80211_SME_OFFLOAD
+#ifdef CONFIG_SUPPLICANT_SME
 	/* step1: check if auth is finished */
-	if (global_idev.mlme_priv.rtw_join_status != RTW_JOINSTATUS_AUTHENTICATED) {
+	if ((global_idev.mlme_priv.rtw_join_status > RTW_JOINSTATUS_UNKNOWN)
+		&& (global_idev.mlme_priv.rtw_join_status < RTW_JOINSTATUS_SUCCESS)
+		&& (global_idev.mlme_priv.rtw_join_status != RTW_JOINSTATUS_AUTHENTICATED)) {
 		dev_err(global_idev.fullmac_dev, "[fullmac]: auth is not finished! rtw_join_status=%d\n", global_idev.mlme_priv.rtw_join_status);
 		return -EBUSY;
 	}
@@ -251,7 +259,7 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 
 	/*clear for last connect status */
 	global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_STARTING;
-	whc_fullmac_host_connect_indicate(RTW_JOINSTATUS_STARTING, NULL, 0);
+	whc_fullmac_host_connect_indicate(RTW_JOINSTATUS_STARTING, NULL);
 
 	/* step2: malloc and set synchronous connection related variables*/
 	if (block) {
@@ -318,7 +326,7 @@ error:
 	}
 
 	if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_FAIL) {
-		whc_fullmac_host_connect_indicate(RTW_JOINSTATUS_FAIL, NULL, 0);
+		whc_fullmac_host_connect_indicate(RTW_JOINSTATUS_FAIL, NULL);
 	}
 	if (buf_vir) {
 		rtw_mfree(size, buf_vir, buf_phy);
@@ -331,12 +339,12 @@ int whc_fullmac_host_event_disconnect(u16 reason_code)
 	u8 *buf_vir = NULL;
 	dma_addr_t buf_phy = 0;
 	u32 param_buf[4];
-	u32 ie_len = 0, need_report = 0;
+	u32 ie_len = 0;
 	int ret = 0;
 
-#ifdef CONFIG_CFG80211_SME_OFFLOAD
-	if (global_idev.mlme_priv.deauth_ies && global_idev.mlme_priv.deauth_ie_len) {
-		ie_len = global_idev.mlme_priv.deauth_ie_len;
+#ifdef CONFIG_SUPPLICANT_SME
+	if (global_idev.sme_priv.deauth_ies && global_idev.sme_priv.deauth_ie_len) {
+		ie_len = global_idev.sme_priv.deauth_ie_len;
 		if (ie_len != 0) {
 			buf_vir = rtw_malloc(ie_len, &buf_phy);
 			if (!buf_vir) {
@@ -344,18 +352,16 @@ int whc_fullmac_host_event_disconnect(u16 reason_code)
 				return -ENOMEM;
 			}
 
-			memcpy(buf_vir, global_idev.mlme_priv.deauth_ies, ie_len);
+			memcpy(buf_vir, global_idev.sme_priv.deauth_ies, ie_len);
 		}
 	}
-	need_report = global_idev.mlme_priv.b_need_report;
 #endif
 
 	param_buf[0] = (u32)buf_phy;
 	param_buf[1] = (u32)ie_len;
 	param_buf[2] = (u32)reason_code;
-	param_buf[3] = need_report;
 
-	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_DISCONNECT, param_buf, 4);
+	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_DISCONNECT, param_buf, 3);
 
 	if (buf_vir != NULL) {
 		rtw_mfree(ie_len, buf_vir, buf_phy);
@@ -837,25 +843,27 @@ int whc_fullmac_host_stop_nan(void)
 	return ret;
 }
 
-int whc_fullmac_host_add_nan_func(struct rtw_nan_func_info_t *func, void *nan_func_pointer)
+int whc_fullmac_host_add_nan_func(struct rtw_nan_func_t *func, void *nan_func_pointer)
 {
 	int ret = 0;
-	u32 param_buf[3];
+	u32 param_buf[4];
+	u64 func_pointer_addr = (u64)(uintptr_t)nan_func_pointer;
 	dma_addr_t dma_addr_func = 0;
 	struct device *pdev = global_idev.ipc_dev;
 
-	dma_addr_func = dma_map_single(pdev, func, sizeof(struct rtw_nan_func_info_t), DMA_TO_DEVICE);
+	dma_addr_func = dma_map_single(pdev, func, sizeof(struct rtw_nan_func_t), DMA_TO_DEVICE);
 	if (dma_mapping_error(pdev, dma_addr_func)) {
 		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
 		return -1;
 	}
 
 	param_buf[0] = (u32)dma_addr_func;
-	param_buf[1] = (u32)nan_func_pointer;
-	param_buf[2] = (u32)sizeof(struct rtw_nan_func_info_t);
+	param_buf[1] = (u32)(func_pointer_addr & 0xFFFFFFFF);
+	param_buf[2] = (u32)((func_pointer_addr >> 32) & 0xFFFFFFFF);
+	param_buf[3] = (u32)sizeof(struct rtw_nan_func_t);
 
-	ret = whc_fullmac_ipc_host_send_msg(WHC_API_NAN_ADD_FUNC, param_buf, 3);
-	dma_unmap_single(pdev, dma_addr_func, sizeof(struct rtw_nan_func_info_t), DMA_TO_DEVICE);
+	ret = whc_fullmac_ipc_host_send_msg(WHC_API_NAN_ADD_FUNC, param_buf, 4);
+	dma_unmap_single(pdev, dma_addr_func, sizeof(struct rtw_nan_func_t), DMA_TO_DEVICE);
 	return ret;
 }
 
@@ -918,7 +926,7 @@ int whc_fullmac_host_set_p2p_remain_on_ch(unsigned char wlan_idx, u8 enable)
 }
 #endif
 
-#ifdef CONFIG_CFG80211_SME_OFFLOAD
+#ifdef CONFIG_SUPPLICANT_SME
 void whc_fullmac_host_sme_auth(dma_addr_t auth_data_phy)
 {
 	u32 param_buf[1];
@@ -1282,9 +1290,18 @@ int whc_fullmac_host_get_country_code(struct rtw_country_code_table *table)
 	return ret;
 }
 
-int whc_fullmac_host_dev_driver_is_mp(void)
+int whc_fullmac_host_dev_driver_is_mp(u8 *is_mp)
 {
-	return whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_DRIVE_IS_MP, NULL, 0);
+	int ret = 0;
+
+	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_DRIVE_IS_MP, NULL, 0);
+	if (ret < 0) {
+		*is_mp = 0;
+	} else {
+		*is_mp = ret;
+		ret = 0;
+	}
+	return ret;
 }
 
 int whc_fullmac_host_set_promisc_enable(u32 enable, u8 mode)

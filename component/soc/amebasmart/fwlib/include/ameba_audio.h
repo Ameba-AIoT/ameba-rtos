@@ -1571,6 +1571,24 @@ typedef struct {
   * @}
   */
 
+/** @defgroup AUDIO_CODEC_MICBIAS
+  * @{
+  */
+#define MICBIAS1							((u32)0x00000001)
+#define MICBIAS2							((u32)0x00000002)
+#define MICBIAS3							((u32)0x00000003)
+#define MICBIAS4							((u32)0x00000004)
+#define MICBIAS5							((u32)0x00000005)
+
+#define IS_CODEC_MICBIAS_SEL(SEL) (((SEL) == MICBIAS1) || \
+							((SEL) == MICBIAS2) || \
+							((SEL) == MICBIAS3) || \
+							((SEL) == MICBIAS4) || \
+							((SEL) == MICBIAS5))
+/**
+  * @}
+  */
+
 /** @defgroup AUDIO_CODEC_ADC
   * @{
   */
@@ -2103,7 +2121,7 @@ _LONG_CALL_ void AUDIO_CODEC_SetADCANASrc(u32 ad_chn, u32 amic_num);
 _LONG_CALL_ void AUDIO_CODEC_SetADCANAFilter(u32 adc_num, u32 newstate);
 _LONG_CALL_ void AUDIO_CODEC_SetMicBiasPowerMode(u32 powermode);
 _LONG_CALL_ void AUDIO_CODEC_SetMicBstPowerMode(u32 amic_num, u32 powermode);
-_LONG_CALL_ void AUDIO_CODEC_SetMicBiasPCUTMode(u32 amic_num, u32 pcut_mode);
+_LONG_CALL_ void AUDIO_CODEC_SetMicBiasPCUTMode(u32 micbias_num, u32 pcut_mode);
 _LONG_CALL_ void AUDIO_CODEC_SetMicBstChnMute(u32 amic_sel, u32 type, u32 newstate);
 _LONG_CALL_ void AUDIO_CODEC_SetMicBstInputMode(u32 amic_num, u32 mode);
 _LONG_CALL_ void AUDIO_CODEC_SetMicBstGain(u32 amic_sel, u32 gain);

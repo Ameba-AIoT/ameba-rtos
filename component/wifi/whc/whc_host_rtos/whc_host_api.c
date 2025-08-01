@@ -99,10 +99,10 @@ void whc_host_api_wifi_event_handler(u32 api_id, u32 *param_buf)
 {
 	int ret = 0;
 	u32 event = (u32)param_buf[0];
-	s32 buf_len = (s32)param_buf[1];
-	u8 *buf = (u8 *)(&param_buf[2]);
+	s32 evt_len = (s32)param_buf[1];
+	u8 *evt_info = (u8 *)(&param_buf[2]);
 
-	wifi_indication(event, buf, buf_len, 0);
+	wifi_indication(event, evt_info, evt_len);
 
 	whc_host_api_send_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
@@ -206,6 +206,11 @@ void whc_host_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 re
 	struct whc_api_info *info;
 	struct whc_api_info *ret_msg;
 	struct whc_txbuf_info_t *inic_tx;
+
+	if (!event_priv.host_init_done) {
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Host api err: wifi not init\n");
+		return -RTK_ERR_WIFI_NOT_INIT;
+	}
 
 	RTK_LOGD(TAG_WLAN_INIC, "Host Call API %d %x \n", id, __builtin_return_address(0));
 
@@ -344,6 +349,7 @@ void whc_host_api_task(void)
 	u32 *param_buf;
 	void (*api_hdl)(u32 api_id, u32 * param_buf);
 	u32 i = 0;
+	int ret = RTK_FAIL;
 
 	do {
 		rtos_sema_take(event_priv.task_wake_sema, 0xFFFFFFFF);
@@ -366,6 +372,7 @@ void whc_host_api_task(void)
 			api_hdl(p_recv_msg->api_id, param_buf);
 		} else {
 			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Host Unknown API(%x)\n", p_recv_msg->api_id);
+			whc_host_api_send_ret_value(p_recv_msg->api_id, (u8 *)&ret, sizeof(ret));
 		}
 
 		RTK_LOGD(TAG_WLAN_INIC, "Host CALL API(%x) done\n", p_recv_msg->api_id);

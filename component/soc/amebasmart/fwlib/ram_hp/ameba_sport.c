@@ -355,7 +355,7 @@ void AUDIO_SP_SetTXClkDiv(u32 index, u32 clock, u32 sr, u32 tdm, u32 chn_len)
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 
 	if (!(clock % 40000000)) {
-		if (!(sr % 4000)) {
+		if ((!(sr % 4000)) && (sr != SP_352P8K)) {
 			MI = 1250;
 			NI = (chn_len / 4) * (tdm + 1) * (sr / 4000);
 		} else {
@@ -456,7 +456,7 @@ void AUDIO_SP_SetRXClkDiv(u32 index, u32 clock, u32 sr, u32 tdm, u32 chn_len)
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 
 	if (!(clock % 40000000)) {
-		if (!(sr % 4000)) {
+		if ((!(sr % 4000)) && (sr != SP_352P8K)) {
 			MI = 1250;
 			NI = (chn_len / 4) * (tdm + 1) * (sr / 4000);
 		} else {

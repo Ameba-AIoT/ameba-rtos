@@ -59,6 +59,7 @@ struct host_priv {
 	u32 tx_bytes; /* xmit bytes */
 	u32 tx_pkts; /* xmit number of packets */
 	u32 tx_drop_pkts;
+	u8 host_init_done: 1;
 };
 
 #define whc_host_send       whc_ipc_host_send

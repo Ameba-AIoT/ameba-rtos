@@ -73,8 +73,8 @@ struct _internal_wps_scan_handler_arg {
 extern void _wifi_p2p_wps_success(const u8 *peer_addr, int registrar);
 extern void _wifi_p2p_wps_failed(void);
 #endif
-extern void wpas_wsc_sta_wps_start_hdl(u8 *buf, s32 buf_len);
-extern void wpas_wsc_wps_finish_hdl(u8 *buf, s32 buf_len);
+extern void wpas_wsc_sta_wps_start_hdl(u8 *evt_info);
+extern void wpas_wsc_wps_finish_hdl(u8 *evt_info);
 extern void wpas_wsc_server_wps_finish_hdl(u8 *buf, s32 buf_len);
 extern void wpas_wsc_eapol_recvd_hdl(u8 *buf, s32 buf_len);
 
@@ -373,7 +373,7 @@ static int wps_connect_to_AP_by_certificate(struct rtw_network_info *wifi)
 		ret = wifi_connect(wifi, 1);
 		if (ret == RTK_SUCCESS) {
 			if (retry_count == wifi_user_config.wps_retry_count) {
-				rtos_time_delay_ms(1000);    //When start wps with OPEN AP, AP will send a disassociate frame after STA connected, need reconnect here.
+				rtos_time_delay_ms(6000);    //When start wps with OPEN AP, AP will send a disassociate frame after STA connected, need reconnect here.
 			}
 			if (wifi_get_join_status(&join_status) == RTK_SUCCESS && join_status == RTW_JOINSTATUS_SUCCESS) {
 				wps_check_and_show_connection_info();
@@ -993,9 +993,6 @@ int wps_start(u16 wps_config, char *pin, u8 channel, char *ssid)
 	if (dev_cred[select_index].ssid[0] != 0 && dev_cred[select_index].ssid_len <= 32) {
 		wps_config_wifi_setting(&wifi, &dev_cred[select_index]);
 		wifi_set_wps_phase(DISABLE);
-		if (autoreconn_en) {
-			wifi_set_autoreconnect(1);
-		}
 		ret = wps_connect_to_AP_by_certificate(&wifi);
 		os_free(dev_cred, 0);
 		goto exit1;
@@ -1015,7 +1012,7 @@ exit1:
 	}
 	wps_phase = 0;
 	wpas_wps_deinit();
-
+	return ret;
 exit2:
 	if (autoreconn_en) {
 		wifi_set_autoreconnect(1);
@@ -1026,7 +1023,7 @@ exit2:
 void wps_stop(void)
 {
 	wps_stop_notified = 1;
-	wpas_wsc_wps_finish_hdl(NULL, 0);
+	wpas_wsc_wps_finish_hdl(NULL);
 }
 
 int wps_judge_staion_disconnect(void)

@@ -16,15 +16,10 @@
 #include "rtk_bt_vendor.h"
 #include "rtk_bt_le_gap.h"
 #include "bt_debug.h"
-#if defined(RTK_BLE_TX_SOF_EOF_INDICATION) && RTK_BLE_TX_SOF_EOF_INDICATION
-#include "wifi_reg_page0.h"
-#include "ameba_soc.h"
-#define BT_SCB_IRQ_PRIO   3
-typedef void(*p_func_cb)(uint8_t ind);
-static p_func_cb g_rtk_bt_scoreboard_isr_cb = NULL;
 
-extern int wifi_set_ips_internal(u8 enable);
-static bool need_restore = false;
+#if defined(RTK_BT_HC_CLOCK_OFFSET_SUPPORT) && RTK_BT_HC_CLOCK_OFFSET_SUPPORT
+#include "ameba_soc.h"
+static rtk_bt_vendor_free_run_clock_t hc_free_run_clock = {0};
 #endif
 
 _WEAK void hci_platform_external_fw_log_pin(void)
@@ -136,28 +131,6 @@ void rtk_bt_gpio_enable(uint8_t bt_gpio, char *pad)
 	hci_platform_gpio_enable(bt_gpio, pad);
 }
 
-void rtk_bt_sleep_mode(unsigned int mode)
-{
-#if defined(VENDOR_CMD_BT_SLEEP_MODE_SUPPORT) && VENDOR_CMD_BT_SLEEP_MODE_SUPPORT
-	uint8_t data[4] = {0};
-	rtk_bt_gap_vendor_cmd_param_t param;
-
-	data[0] = mode & 0xFF;          //0:lps, 1:dlps, 2:active
-	data[1] = (mode >> 8) & 0xFF;   //0:log off, 1:log on
-	data[2] = (mode >> 16) & 0xFF;  //minimum adv slot[LSB] to enter sleep
-	data[3] = (mode >> 24) & 0xFF;  //minimum adv slot[MSB] to enter sleep
-
-	param.op = VENDOR_CMD_BT_SLEEP_MODE_OPCODE;
-	param.len = 4;
-	param.cmd_param = data;
-
-	rtk_bt_gap_vendor_cmd_req(&param);
-#else
-	(void)mode;
-	BT_LOGE("Set sleep mode is not supported!\r\n");
-#endif
-}
-
 uint16_t rtk_bt_set_tx_power(rtk_bt_vendor_tx_power_param_t *tx_power)
 {
 #if defined(VENDOR_CMD_SET_TX_POWER_SUPPORT) && VENDOR_CMD_SET_TX_POWER_SUPPORT
@@ -192,211 +165,119 @@ uint16_t rtk_bt_set_tx_power(rtk_bt_vendor_tx_power_param_t *tx_power)
 #endif
 }
 
-#if defined(RTK_BLE_TX_SOF_EOF_INDICATION) && RTK_BLE_TX_SOF_EOF_INDICATION
-uint16_t rtk_bt_le_sof_eof_ctrl(uint16_t conn_handle, uint8_t enable)
+#if defined(RTK_BT_HC_CLOCK_OFFSET_SUPPORT) && RTK_BT_HC_CLOCK_OFFSET_SUPPORT
+void bt_vendor_process_tx_frame(uint8_t type, uint8_t *pdata, uint16_t len)
 {
-#if defined(VENDOR_CMD_SOF_EOF_CTRL_SUPPORT) && VENDOR_CMD_SOF_EOF_CTRL_SUPPORT
-	uint8_t data[3] = {0};
-	rtk_bt_gap_vendor_cmd_param_t param = {0};
+#if defined(VENDOR_CMD_FREE_RUN_CLOCK_LATCH_SUPPORT) && VENDOR_CMD_FREE_RUN_CLOCK_LATCH_SUPPORT
+	if (!hc_free_run_clock.enable) {
+		return;
+	}
 
-	data[0] = enable;           //0:disable, 1:enable
-	data[1] = (conn_handle) & 0xFF;
-	data[2] = (conn_handle >> 8) & 0xFF;
+	if (type != 0x01/*HCI_CMD*/ || !pdata || len != 4) {
+		return;
+	}
 
-	param.op = VENDOR_CMD_SOF_EOF_CTRL_OPCODE;
-	param.len = 3;
-	param.cmd_param = data;
-
-	return rtk_bt_gap_vendor_cmd_req(&param);
+	uint16_t opcode = (uint16_t)((pdata[1] << 8) | pdata[0]);
+	uint8_t subcode = pdata[3];
+	if (VENDOR_CMD_FREE_RUN_CLOCK_LATCH_OPCODE == opcode && SUB_CMD_FREE_RUN_CLOCK_LATCH == subcode) {
+		BT_LOGD("Get host free run clock\r\n");
+		hc_free_run_clock.host_free_run_clock[hc_free_run_clock.index] = (uint64_t)DTimestamp_Get();
+	}
 #else
-	(void)conn_handle;
-	(void)enable;
-	BT_LOGE("SOF and EOF control is not supported!\r\n");
-	return RTK_BT_FAIL;
+	(void)type;
+	(void)pdata;
+	(void)len;
 #endif
 }
 
-void rtk_bt_scoreboard_isr_handler(void)
+rtk_bt_vendor_free_run_clock_t *rtk_bt_get_hc_free_run_clock(void)
 {
-	rtk_bt_le_sof_eof_ind_t ind = RTK_BT_LE_TX_SOF;
-	uint32_t value = 0;
-	if (HAL_READ32(WIFI_REG_BASE, REG_FSISR_V1) & BIT_FS_BTON_STS_UPDATE_INT) {
-		//Clear BT dedicated SCB int ISR, MAC Reg 0x44[0]
-		HAL_WRITE32(WIFI_REG_BASE, REG_FSISR_V1, BIT_FS_BTON_STS_UPDATE_INT);
-		value = HAL_READ32(WIFI_REG_BASE, REG_SCOREBOARD_RD_BT2WL);
-		//SCOREBOARD: bit 17: 0:SOF, 1:EOF; bit 17 is valid when bit 18 is 1
-		//            bit 18: 0:disable, 1:enable
-		//BT_LOGA("[KM4] BT2WL dedicated SCB int data is: 0x%x\r\n", value);
-		if (value & BIT18) {
-			if (value & BIT17) {
-				ind = RTK_BT_LE_TX_EOF;
-			} else {
-				ind = RTK_BT_LE_TX_SOF;
-			}
-			if (g_rtk_bt_scoreboard_isr_cb) {
-				g_rtk_bt_scoreboard_isr_cb((uint8_t)ind);
-			} else {
-				BT_LOGE("g_rtk_bt_scoreboard_isr_cb is not defined\r\n");
-			}
-		}
-	}
+	return &hc_free_run_clock;
 }
 
-static bool PeriphClockReq(u32 APBPeriph_in, u32 APBPeriph_Clock_in)
+static int64_t _get_middle(int64_t a, int64_t b, int64_t c)
 {
-	u32 ClkRegIndx = (APBPeriph_Clock_in >> 30) & 0x03;
-	u32 APBPeriph_Clock = APBPeriph_Clock_in & (~(BIT(31) | BIT(30)));
-
-	u32 FuncRegIndx = (APBPeriph_in >> 30) & 0x03;
-	u32 APBPeriph = APBPeriph_in & (~(BIT(31) | BIT(30)));
-
-	u32 Reg = 0;
-
-	//clock
-	switch (ClkRegIndx) {
-	case 0x0:
-		Reg = REG_LSYS_CKE_GRP0;
-		break;
-	case 0x1:
-		Reg = REG_LSYS_CKE_GRP1;
-		break;
-	case 0x2:
-		Reg = REG_LSYS_CKE_GRP2;
-		break;
-	case 0x3:
-		Reg = REG_AON_CLK;
-		break;
-	}
-
-	if (APBPeriph_Clock_in != APBPeriph_CLOCK_NULL) {
-		//BT_LOGA("reg = 0x%x bit= 0x%x read reg = 0x%x &_reg = 0x%x !!_reg = 0x%x\r\n",Reg, APBPeriph_Clock, HAL_READ32(SYSTEM_CTRL_BASE_LP, Reg),(HAL_READ32(SYSTEM_CTRL_BASE_LP, Reg) & APBPeriph_Clock),!!(HAL_READ32(SYSTEM_CTRL_BASE_LP, Reg) & APBPeriph_Clock));
-		return !!(HAL_READ32(SYSTEM_CTRL_BASE_LP, Reg) & APBPeriph_Clock);
-	}
-
-	//function
-	switch (FuncRegIndx) {
-	case 0x0:
-		Reg = REG_LSYS_FEN_GRP0;
-		break;
-	case 0x1:
-		Reg = REG_LSYS_FEN_GRP1;
-		break;
-	case 0x2:
-		Reg = REG_LSYS_FEN_GRP2;
-		break;
-	case 0x3:
-		Reg = REG_AON_FEN;
-		break;
-	}
-
-	if (APBPeriph_in != APBPeriph_NULL) {
-		//BT_LOGA("reg = 0x%x bit= 0x%x read reg = 0x%x &_reg = 0x%x !!_reg = 0x%x\r\n",Reg, APBPeriph, HAL_READ32(SYSTEM_CTRL_BASE_LP, Reg),(HAL_READ32(SYSTEM_CTRL_BASE_LP, Reg) & APBPeriph),!!(HAL_READ32(SYSTEM_CTRL_BASE_LP, Reg) & APBPeriph));
-		return !!(HAL_READ32(SYSTEM_CTRL_BASE_LP, Reg) & APBPeriph);
-	}
-
-	return false;
+	return (a > b) ? (b > c ? b : (a > c ? c : a)) : (a > c ? a : (b > c ? c : b));
 }
 
-static bool rtk_bt_scoreboard_isr_enable(void)
+uint16_t rtk_bt_get_hc_clock_offset(int64_t *p_offset)
 {
-	bool wmac_clk_on = false, wl_on = false;
-	/****BT_SCB_IRQ (67# NP/AP INT VECTOR)*****/
-	if (false == InterruptRegister((IRQ_FUN)rtk_bt_scoreboard_isr_handler, BT_SCB_IRQ, (uint32_t)NULL, BT_SCB_IRQ_PRIO)) {
-		BT_LOGE("InterruptRegister for BT_SCB_IRQ fail\r\n");
-		return false;
-	}
-	InterruptEn(BT_SCB_IRQ, BT_SCB_IRQ_PRIO);
-
-	wmac_clk_on = PeriphClockReq(APBPeriph_NULL, APBPeriph_WMAC_CLOCK);
-	wl_on = PeriphClockReq(APBPeriph_WLON, APBPeriph_CLOCK_NULL);
-
-	//maybe use b_mac_pwr_ctrl_on related api later
-	//scoreboard_isr need wl on and wmac clk on
-	if (wmac_clk_on == false || wl_on == false) {
-		wifi_set_ips_internal(FALSE);
-		need_restore = true;
-	}
-
-	//Clear BT dedicated SCB int ISR, MAC Reg 0x44[0]
-	HAL_WRITE32(WIFI_REG_BASE, REG_FSISR_V1, BIT_FS_BTON_STS_UPDATE_INT);
-	BT_LOGA("Clear BT dedicated SCB int ISR\r\n");
-
-	//Enable BT dedicated SCB int IMR, MAC Reg 0x40[0]
-	HAL_WRITE32(WIFI_REG_BASE, REG_FSIMR_V1, HAL_READ32(WIFI_REG_BASE, REG_FSIMR_V1) | BIT_FS_BTON_STS_UPDATE_INT_EN);
-	BT_LOGA("Enable BT dedicated SCB int IMR\r\n");
-
-	return true;
-}
-
-static bool rtk_bt_scoreboard_isr_disable(void)
-{
-	InterruptDis(BT_SCB_IRQ);
-	InterruptUnRegister(BT_SCB_IRQ);
-
-	//Clear BT dedicated SCB int ISR, MAC Reg 0x44[0]
-	HAL_WRITE32(WIFI_REG_BASE, REG_FSISR_V1, BIT_FS_BTON_STS_UPDATE_INT);
-	BT_LOGA("Clear BT dedicated SCB int ISR\r\n");
-
-	//Disable BT dedicated SCB int IMR, MAC Reg 0x40[0] = 0
-	HAL_WRITE32(WIFI_REG_BASE, REG_FSIMR_V1, HAL_READ32(WIFI_REG_BASE, REG_FSIMR_V1) & ~BIT_FS_BTON_STS_UPDATE_INT_EN);
-	BT_LOGA("Disable BT dedicated SCB int IMR\r\n");
-
-	if (need_restore) {
-		wifi_set_ips_internal(TRUE);
-	}
-
-	return true;
-}
-
-uint16_t rtk_bt_le_sof_eof_ind(uint16_t conn_handle, uint8_t enable, void *cb)
-{
-	uint16_t ret = RTK_BT_OK;
-	uint8_t conn_id = 0;
-
-	if (0 != rtk_bt_le_gap_get_conn_id(conn_handle, &conn_id)) {
-		BT_LOGE("%s: conn_handle %d is not connect!\r\n", __func__, conn_handle);
+#if defined(VENDOR_CMD_FREE_RUN_CLOCK_LATCH_SUPPORT) && VENDOR_CMD_FREE_RUN_CLOCK_LATCH_SUPPORT
+	if (!p_offset) {
+		BT_LOGE("p_offset is NULL!\r\n");
 		return RTK_BT_FAIL;
 	}
 
-	if (enable == 1) {
-		if (g_rtk_bt_scoreboard_isr_cb) {
-			BT_LOGE("bt_scoreboard_isr is enabled!\r\n");
-			return RTK_BT_OK;
-		}
-		//enable bt scoreboard isr
-		if (false == rtk_bt_scoreboard_isr_enable()) {
-			return RTK_BT_FAIL;
-		}
+	uint8_t data[2] = {0};
+	rtk_bt_gap_vendor_cmd_param_t param;
+	uint16_t ret = 0;
 
-		//save the callback function
-		g_rtk_bt_scoreboard_isr_cb = (p_func_cb)cb;
+	data[0] = SUB_CMD_FREE_RUN_CLOCK_LATCH_ENABLE;
+	data[1] = 0x1;
 
-	} else if (enable == 0) {
-		if (g_rtk_bt_scoreboard_isr_cb == NULL) {
-			BT_LOGE("bt_scoreboard_isr not enable!\r\n");
-			return RTK_BT_OK;
-		}
+	param.op = VENDOR_CMD_FREE_RUN_CLOCK_LATCH_OPCODE;
+	param.len = 2;
+	param.cmd_param = data;
 
-		//clear the callback function
-		g_rtk_bt_scoreboard_isr_cb = NULL;
+	memset(&hc_free_run_clock, 0, sizeof(rtk_bt_vendor_free_run_clock_t));
 
-		//disable bt scoreboard isr
-		if (false == rtk_bt_scoreboard_isr_disable()) {
-			return RTK_BT_FAIL;
-		}
-	} else {
-		BT_LOGE("%s unsupport value %d!\r\n", __func__, enable);
-		return RTK_BT_ERR_PARAM_INVALID;
+	if (false == osif_sem_create(&hc_free_run_clock.sem, 0, 1)) {
+		BT_LOGE("hc_free_run_clock.sem create fail!\r\n");
+		return RTK_BT_FAIL;
+	}
+	hc_free_run_clock.enable = true;
+
+	BT_LOGD("Free run clock latch enable\r\n");
+	ret = rtk_bt_gap_vendor_cmd_req(&param);
+	if (ret) {
+		BT_LOGE("rtk_bt_gap_vendor_cmd_req fail!\r\n");
+		ret = RTK_BT_FAIL;
+		goto out;
 	}
 
-	//set the vendor cmd to inform fw start indicate sof and eof
-	ret = rtk_bt_le_sof_eof_ctrl(conn_handle, enable);
-	if (ret != RTK_BT_OK) {
-		BT_LOGE("%s rtk_bt_le_sof_eof_ctrl fail, ret = 0x%x\r\n", __func__, ret);
-		return ret;
+	if (osif_sem_take(hc_free_run_clock.sem, 0xFFFFFFFF) == false) {
+		BT_LOGE("hc_free_run_clock.sem take fail!\r\n");
+		ret = RTK_BT_FAIL;
+		goto out;
 	}
 
-	return RTK_BT_OK;
+	if (hc_free_run_clock.index != 2) {
+		BT_LOGE("hc_free_run_clock.index != 2!\r\n");
+		ret = RTK_BT_FAIL;
+		goto out;
+	}
+
+	if (hc_free_run_clock.host_free_run_clock[1] < hc_free_run_clock.host_free_run_clock[0]) {                    //host_free_run_clock[1] overflow
+		hc_free_run_clock.host_free_run_clock[1] += 0xFFFFFFFF;
+		hc_free_run_clock.host_free_run_clock[2] += 0xFFFFFFFF;
+	} else if (hc_free_run_clock.host_free_run_clock[2] < hc_free_run_clock.host_free_run_clock[1]) {             //host_free_run_clock[2] overflow
+		hc_free_run_clock.host_free_run_clock[2] += 0xFFFFFFFF;
+	}
+
+	if (hc_free_run_clock.controller_free_run_clock[1] < hc_free_run_clock.controller_free_run_clock[0]) {        //controller_free_run_clock[1] overflow
+		hc_free_run_clock.controller_free_run_clock[1] += 0xFFFFFFFF;
+		hc_free_run_clock.controller_free_run_clock[2] += 0xFFFFFFFF;
+	} else if (hc_free_run_clock.controller_free_run_clock[2] < hc_free_run_clock.controller_free_run_clock[1]) { //controller_free_run_clock[2] overflow
+		hc_free_run_clock.controller_free_run_clock[2] += 0xFFFFFFFF;
+	}
+
+	for (uint8_t i = 0; i < 3; i++) {
+		hc_free_run_clock.hc_clock_offset[i] = hc_free_run_clock.host_free_run_clock[i] - hc_free_run_clock.controller_free_run_clock[i];
+	}
+
+	*p_offset = _get_middle(hc_free_run_clock.hc_clock_offset[0], hc_free_run_clock.hc_clock_offset[1], hc_free_run_clock.hc_clock_offset[2]);
+
+	ret = RTK_BT_OK;
+
+out:
+	hc_free_run_clock.enable = false;
+	osif_sem_delete(hc_free_run_clock.sem);
+
+	return ret;
+#else
+	(void)p_offset;
+	BT_LOGE("Get host controller free run clock offset is not supported!\r\n");
+	return RTK_BT_FAIL;
+#endif
 }
-
 #endif

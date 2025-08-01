@@ -14,6 +14,8 @@ enum whc_cmd_api_id {
 	CMD_WIFI_CUSTOM_BASE,
 	CMD_WIFI_DO_SCAN,
 	CMD_WIFI_SCAN_RESULT,
+	CMD_WIFI_MP,
+	CMD_WIFI_DBG,
 };
 
 enum whc_cmd_type {
@@ -25,16 +27,16 @@ enum whc_cmd_type {
 };
 
 enum whc_attr_type {
-	BRIDGE_ATTR_UNSPEC,
-	BRIDGE_ATTR_API_ID,
-	BRIDGE_ATTR_WLAN_IDX,
-	BRIDGE_ATTR_MAC,
-	BRIDGE_ATTR_PAYLOAD,
-	BRIDGE_ATTR_CHUNK_INDEX,
-	BRIDGE_ATTR_LAST_CHUNK,
-	BRIDGE_ATTR_AFTER_LAST,
-	NUM_BRIDGE_ATTR = BRIDGE_ATTR_AFTER_LAST,
-	BRIDGE_ATTR_MAX = BRIDGE_ATTR_AFTER_LAST - 1,
+	WHC_ATTR_UNSPEC,
+	WHC_ATTR_API_ID,
+	WHC_ATTR_WLAN_IDX,
+	WHC_ATTR_STRING,
+	WHC_ATTR_PAYLOAD,
+	WHC_ATTR_CHUNK_INDEX,
+	WHC_ATTR_LAST_CHUNK,
+	WHC_ATTR_AFTER_LAST,
+	NUM_WHC_ATTR = WHC_ATTR_AFTER_LAST,
+	WHC_ATTR_MAX = WHC_ATTR_AFTER_LAST - 1,
 };
 
 enum whc_tickps_cmd_subtype {
@@ -56,6 +58,10 @@ enum whc_tickps_cmd_subtype {
 #define WHC_WIFI_TEST_CONNECT        0x6
 #define WHC_WIFI_TEST_SCAN           0x7
 #define WHC_WIFI_TEST_DHCP           0x8
+#define WHC_WIFI_TEST_WIFION         0x9
+
+// todo: need sync, default 4k, however max buf in sdio & spi < 1.5k
+#define WHC_WIFI_MP_MSG_BUF_SIZE (4096)
 
 extern struct genl_family whc_nl_family;
 #endif

@@ -20,6 +20,14 @@ class Compress(OperationBase):
         parser.add_argument('-i', '--input-file', help='Input file to be process', required=True)
         parser.add_argument('-o', '--output-file', help='Output processed file', required=True)
 
+    @staticmethod
+    def require_manifest_file(context:Context) -> bool:
+        return True
+
+    @staticmethod
+    def require_layout_file(context:Context) -> bool:
+        return False
+
     def pre_process(self) -> Error:
         file_path = self.context.args.input_file
         if not os.path.exists(file_path):
@@ -81,5 +89,3 @@ class Compress(OperationBase):
 
     def post_process(self) -> Error:
         return Error.success()
-
-

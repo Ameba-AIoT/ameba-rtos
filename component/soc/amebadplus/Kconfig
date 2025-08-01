@@ -74,6 +74,16 @@ menu "CONFIG FUNCTION TEST"
         bool "I2C_Verify_Mode"
         config PMC_VERIFY
         bool "PMC_Verify_Mode"
+        config POWER_VERIFY
+        bool "POWER_Verify_Mode"
+        if POWER_VERIFY
+            choice
+                prompt "POWER_ITEM"
+                default WFI_NOP_PWR
+                config WFI_NOP_PWR
+                    bool "WFI_NOP_PWR"
+            endchoice
+        endif
         config SGPIO_VERIFY
         bool "SGPIO_Verify_Mode"
         config PSRAM_VERIFY

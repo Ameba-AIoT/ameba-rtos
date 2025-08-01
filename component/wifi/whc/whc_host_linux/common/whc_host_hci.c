@@ -36,12 +36,14 @@ int whc_host_init(void)
 	}
 #endif
 
+	whc_host_xmit_init();
+
+	global_idev.host_init_done = 1;
+
 	memset(&global_idev.wifi_user_config, 0, sizeof(struct wifi_user_conf));
 #if !defined(CONFIG_WHC_BRIDGE)
 	whc_fullmac_host_set_user_config(&global_idev.wifi_user_config);
 #endif
-
-	whc_host_xmit_init();
 
 #if !defined(CONFIG_WHC_BRIDGE)
 	/* tell KM4 to open wifi */

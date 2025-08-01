@@ -68,6 +68,8 @@ static void example_ipv6_udp_server(void)
 
 	char send_data[MAX_SEND_SIZE] = "Hi client!";
 	char recv_data[MAX_RECV_SIZE];
+	int ret = 0;
+
 
 	//create socket
 	if ((server_fd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
@@ -92,14 +94,17 @@ static void example_ipv6_udp_server(void)
 
 	while (1) {
 		memset(recv_data, 0, MAX_RECV_SIZE);
-		if (recvfrom(server_fd, recv_data, MAX_RECV_SIZE, 0, (struct sockaddr *)&client_addr, &addrlen) > 0) {
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive data : %s\n", recv_data);
+		if ((ret = recvfrom(server_fd, recv_data, MAX_RECV_SIZE, 0, (struct sockaddr *)&client_addr, &addrlen)) >= 0) {
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive (len=%d) data=%s from client ipv6 address=", ret, recv_data);
+			LwIP_DUMP_IPV6_ADDRESS(client_addr.sin6_addr.s6_addr);
 			//Send Response
-			if (sendto(server_fd, send_data, MAX_SEND_SIZE, 0, (struct sockaddr *)&client_addr, addrlen) == -1) {
+			if (sendto(server_fd, send_data, strlen(send_data), 0, (struct sockaddr *)&client_addr, addrlen) < 0) {
 				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Send data failed\n");
 			} else {
 				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Send data successfully\n");
 			}
+		} else {
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] recvfrom() failed\n");
 		}
 	}
 
@@ -154,9 +159,11 @@ static void example_ipv6_udp_client(void)
 		}
 	}
 
+	int ret = 0;
+
 	while (1) {
 		//Send data to server
-		if (sendto(client_fd, send_data, MAX_SEND_SIZE, 0, (struct sockaddr *)&ser_addr, sizeof(ser_addr)) == -1) {
+		if (sendto(client_fd, send_data, strlen(send_data), 0, (struct sockaddr *)&ser_addr, sizeof(ser_addr)) < 0) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Send data failed\n");
 		} else {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Send data to server successfully\n");
@@ -164,10 +171,11 @@ static void example_ipv6_udp_client(void)
 
 		//Receive data from server response
 		memset(recv_data, 0, MAX_RECV_SIZE);
-		if (recvfrom(client_fd, recv_data, MAX_RECV_SIZE, 0, (struct sockaddr *)&ser_addr, &addrlen) <= 0) {
+		if ((ret = recvfrom(client_fd, recv_data, MAX_RECV_SIZE, 0, (struct sockaddr *)&ser_addr, &addrlen)) < 0) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Receive data timeout\n");
 		} else {
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive from server: %s\n", recv_data);
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive (len=%d) data=%s from server ipv6 address=", ret, recv_data);
+			LwIP_DUMP_IPV6_ADDRESS(ser_addr.sin6_addr.s6_addr);
 		}
 		rtos_time_delay_ms(1000);
 	}
@@ -185,7 +193,7 @@ static void example_ipv6_tcp_server(void)
 	u32_t addrlen = sizeof(struct sockaddr_in6);
 
 	char send_data[MAX_SEND_SIZE] = "Hi client!!";
-	char recv_data[MAX_RECV_SIZE];
+	char recv_data[MAX_RECV_SIZE] = {0};
 
 	//create socket
 	if ((server_fd = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP)) == -1) {
@@ -223,18 +231,23 @@ static void example_ipv6_tcp_server(void)
 		closesocket(client_fd);
 		return;
 	}
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Accept connection successfully\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Accept connection successfully from client ipv6 address=");
+	LwIP_DUMP_IPV6_ADDRESS(client_addr.sin6_addr.s6_addr);
 
 	while (1) {
 		memset(recv_data, 0, MAX_RECV_SIZE);
 		if (recv(client_fd, recv_data, MAX_RECV_SIZE, 0) > 0) {
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive data : %s\n", recv_data);
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive (len=%d) data : %s\n", strlen(recv_data), recv_data);
 			//Send Response
-			if (send(client_fd, send_data, MAX_SEND_SIZE, 0) == -1) {
+			if (send(client_fd, send_data, strlen(send_data), 0) <= 0) {
 				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Send data failed\n");
+				break;
 			} else {
 				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Send data successfully\n");
 			}
+		} else {
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Receive data failed\n");
+			break;
 		}
 	}
 	closesocket(client_fd);
@@ -249,7 +262,7 @@ static void example_ipv6_tcp_client(void)
 	struct sockaddr_in6 src_addr6;
 	ip6_addr_t dest_addr6;
 
-	char recv_data[MAX_RECV_SIZE];
+	char recv_data[MAX_RECV_SIZE] = {0};
 	char send_data[MAX_SEND_SIZE] = "Hi Server!!";
 
 	//create socket
@@ -285,21 +298,26 @@ static void example_ipv6_tcp_client(void)
 	if (connect(client_fd, (struct sockaddr *)&ser_addr, sizeof(ser_addr)) == -1) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Connect to server failed\n");
 	}
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "[INFO] Connect to server successfully\n");
+
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "[INFO] Connect successfully to server ipv6 address=");
+	LwIP_DUMP_IPV6_ADDRESS(ser_addr.sin6_addr.s6_addr);
 
 	while (1) {
 		//Send data to server
-		if (send(client_fd, send_data, MAX_SEND_SIZE, 0) == -1) {
+		if (send(client_fd, send_data, strlen(send_data), 0) <= 0) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Send data failed\n");
+			break;
 		} else {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Send data to server successfully\n");
 		}
 
+		memset(recv_data, 0, MAX_RECV_SIZE);
 		//Receive data from server response
 		if (recv(client_fd, recv_data, MAX_RECV_SIZE, 0) <= 0) {
-			//RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Receive data failed\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Receive data failed\n");
+			break;
 		} else {
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive from server: %s\n", recv_data);
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive (len=%d) from server: %s\n", strlen(recv_data), recv_data);
 		}
 		rtos_time_delay_ms(1000);
 	}
@@ -340,7 +358,9 @@ static void example_ipv6_mcast_server(void)
 	u32_t addrlen = sizeof(struct sockaddr_in6);
 
 	char send_data[MAX_SEND_SIZE] = "Hi client!";
-	char recv_data[MAX_RECV_SIZE];
+	char recv_data[MAX_RECV_SIZE] = {0};
+	int ret = 0;
+
 
 	//Register to multicast group membership
 	ip6_addr_t mcast_addr;
@@ -374,14 +394,17 @@ static void example_ipv6_mcast_server(void)
 
 	while (1) {
 		memset(recv_data, 0, MAX_RECV_SIZE);
-		if (recvfrom(server_fd, recv_data, MAX_RECV_SIZE, 0, (struct sockaddr *)&client_addr, &addrlen) > 0) {
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive data : %s\n", recv_data);
+		if ((ret = recvfrom(server_fd, recv_data, MAX_RECV_SIZE, 0, (struct sockaddr *)&client_addr, &addrlen)) > 0) {
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive (len=%d) data=%s from client ipv6 address=", ret, recv_data);
+			LwIP_DUMP_IPV6_ADDRESS(client_addr.sin6_addr.s6_addr);
 			//Send Response
-			if (sendto(server_fd, send_data, MAX_SEND_SIZE, 0, (struct sockaddr *)&client_addr, addrlen) == -1) {
+			if (sendto(server_fd, send_data, strlen(send_data), 0, (struct sockaddr *)&client_addr, addrlen) < 0) {
 				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Send data failed\n");
 			} else {
 				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Send data successfully\n");
 			}
+		} else {
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] recvfrom() failed\n");
 		}
 	}
 	closesocket(server_fd);
@@ -399,7 +422,7 @@ static void example_ipv6_mcast_client(void)
 	u32_t addrlen = sizeof(struct sockaddr_in6);
 	struct timeval recv_timeout;
 
-	char recv_data[MAX_RECV_SIZE];
+	char recv_data[MAX_RECV_SIZE] = {0};
 	char send_data[MAX_SEND_SIZE] = "Hi Server!!";
 
 	//create socket
@@ -435,9 +458,11 @@ static void example_ipv6_mcast_client(void)
 		}
 	}
 
+	int ret = 0;
+
 	while (1) {
 		//Send data to server
-		if (sendto(client_fd, send_data, MAX_SEND_SIZE, 0, (struct sockaddr *)&ser_addr, sizeof(ser_addr)) == -1) {
+		if (sendto(client_fd, send_data, strlen(send_data), 0, (struct sockaddr *)&ser_addr, sizeof(ser_addr)) < 0) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Send data failed\n");
 		} else {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Send data to server successfully\n");
@@ -445,15 +470,17 @@ static void example_ipv6_mcast_client(void)
 
 		//Receive data from server response
 		memset(recv_data, 0, MAX_RECV_SIZE);
-		if (recvfrom(client_fd, recv_data, MAX_RECV_SIZE, 0, (struct sockaddr *)&ser_addr, &addrlen) <= 0) {
+		if ((ret = recvfrom(client_fd, recv_data, MAX_RECV_SIZE, 0, (struct sockaddr *)&ser_addr, &addrlen)) < 0) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Receive data timeout\n");
 		} else {
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive from server: %s\n", recv_data);
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[INFO] Receive (len=%d) data=%s from server ipv6 address=", ret, recv_data);
+			LwIP_DUMP_IPV6_ADDRESS(ser_addr.sin6_addr.s6_addr);
 		}
 		rtos_time_delay_ms(1000);
 	}
 	closesocket(client_fd);
 	return;
+
 }
 
 static void example_ipv6_udp_server_thread(void *param)
@@ -536,7 +563,7 @@ static void example_ipv6_thread(void *param)
 	// Delay to check successful WiFi connection and obtain of an IP address
 	LwIP_Check_Connectivity();
 
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: IPV6 \n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: ipv6====================\r\n");
 
 	LwIP_AUTOIP_IPv6(&xnetif[0]);
 	//Wait for ipv6 addr process conflict done

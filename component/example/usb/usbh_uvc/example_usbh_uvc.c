@@ -30,6 +30,7 @@ static const char *const TAG = "UVC";
 
 #define CONFIG_USBH_UVC_CHECK_IMAGE_DATA  0
 
+#define CONFIG_USBH_UVC_LOOP  200
 /* Private includes -------------------------------------------------------------*/
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
@@ -49,8 +50,8 @@ static const char *const TAG = "UVC";
 #define USBH_UVC_BUF_SIZE       UVC_VIDEO_FRAME_SIZE   // Frame buffer size, resident in PSRAM, depends on format type
 //resolution and compression ratio
 #define USBH_UVC_FORMAT_TYPE    UVC_FORMAT_MJPEG
-#define USBH_UVC_WIDTH          160
-#define USBH_UVC_HEIGHT         120
+#define USBH_UVC_WIDTH          640
+#define USBH_UVC_HEIGHT         480
 #define USBH_UVC_FRAME_RATE     30
 
 #define USBH_UVC_IF_NUM_0                0     // most cameras have only one video stream interface
@@ -82,6 +83,10 @@ static rtos_sema_t uvc_conn_sema;
 static rtos_sema_t uvc_disconn_sema;
 static rtos_mutex_t uvc_buf_mutex = NULL;
 static uvc_config_t uvc_ctx;
+
+static u32 rx_total_H;
+static u32 rx_total_L;
+static u32 rx_start;
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
 static rtos_sema_t uvc_vfs_save_img_sema = NULL;
@@ -162,6 +167,28 @@ static int uvc_cb_detach(void)
 	return HAL_OK;
 }
 
+static void uvc_calculate_tp(u32 loop)
+{
+	u32 rx_elapse;
+	u32 rx_perf;
+	u32 rx_fps;
+	u32 rx_perf_total;
+
+	rx_elapse = SYSTIMER_GetPassTime(rx_start);
+
+	rx_fps = loop * 1000 / rx_elapse;
+	rx_perf = rx_total_L / 1024 * 1000 / rx_elapse;//KB/S
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "TP %d KB/s @ %d ms, fps %d/s\n", rx_perf, rx_elapse, rx_fps);
+
+	rx_perf = rx_perf * 10 / 1024;
+	rx_perf_total = rx_perf + ((rx_total_H * 10000 << 12) / rx_elapse);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "TP %d.%d MB/s-%d (%d_%d/%d)\n", rx_perf_total / 10, rx_perf_total % 10, rx_perf, rx_total_H, rx_total_L, loop);
+
+	rx_total_L = 0;
+	rx_total_H = 0;
+}
+
 static void uvc_img_prepare(uvc_frame_t *frame)
 {
 	u32 len = 0;
@@ -176,10 +203,21 @@ static void uvc_img_prepare(uvc_frame_t *frame)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Image len overflow!\n");
 		return;
 	}
+#if CONFIG_USBH_UVC_CHECK_IMAGE_DATA
+	if (frame->buf[0] != 0xff || frame->buf[1] != 0xd8 || frame->buf[len - 2] != 0xff || frame->buf[len - 1] != 0xd9) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mjpeg] image error: %x %x %x %x\n", frame->buf[0], frame->buf[1], frame->buf[2], frame->buf[3]);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mjpeg] image error: %x %x %x %x\n", frame->buf[len - 4], frame->buf[len - 3], frame->buf[len - 2], frame->buf[len - 1]);
+		return;
+	}
+#endif
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_SIMPLE)
 	/* just copy data without any further processing */
-	memcpy(uvc_buf, (void *)(frame->buf), len);
+	//memcpy(uvc_buf, (void *)(frame->buf), len);
+	if (rx_total_L > (rx_total_L + len)) {
+		rx_total_H ++;
+	}
+	rx_total_L += len;
 #endif
 
 #if ((CONFIG_USBH_UVC_APP == USBH_UVC_APP_HTTPC) || (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS))
@@ -643,7 +681,8 @@ static void example_usbh_uvc_task(void *param)
 #elif (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
 	while (uvc_vfs_is_init) {
 #else
-	while (1) {
+	rx_start = SYSTIMER_TickGet();
+	while (img_cnt < CONFIG_USBH_UVC_LOOP) {
 #endif
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Get frame %d\n", img_cnt);
 		buf = usbh_uvc_get_frame(USBH_UVC_IF_NUM_0);
@@ -668,10 +707,12 @@ static void example_usbh_uvc_task(void *param)
 		img_cnt ++;
 	}
 
+	uvc_calculate_tp(img_cnt);
+
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Stop capturing images\n");
 	usbh_uvc_stream_off(USBH_UVC_IF_NUM_0);
 
-	//RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap 0x%x bytes\n",  rtos_mem_get_free_heap_size());
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap 0x%x bytes\n",  rtos_mem_get_free_heap_size());
 
 exit2:
 	usbh_uvc_deinit();

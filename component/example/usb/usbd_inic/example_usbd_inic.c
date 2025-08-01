@@ -29,48 +29,9 @@
 #define CONFIG_USBD_INIC_INIT_THREAD_PRIORITY		5
 #define CONFIG_USBD_INIC_HOTPLUG_THREAD_PRIORITY	8
 #define CONFIG_USBD_INIC_XFER_THREAD_PRIORITY		6
-#define CONFIG_USBD_INIC_RESET_THREAD_PRIORITY		6
-
-// Vendor requests
-#define USBD_INIC_VENDOR_REQ_BT_HCI_CMD				0x00U
-#define USBD_INIC_VENDOR_REQ_FW_DOWNLOAD			0xF0U
-#define USBD_INIC_VENDOR_QUERY_CMD					0x01U
-#define USBD_INIC_VENDOR_QUERY_ACK					0x81U
-#define USBD_INIC_VENDOR_RESET_CMD					0x02U
-#define USBD_INIC_VENDOR_RESET_ACK					0x82U
-
-#define USBD_INIC_FW_TYPE_APPLICATION				0xF2U
 
 /* Private types -------------------------------------------------------------*/
 static const char *const TAG = "INIC";
-typedef struct {
-	// DWORD 0
-	u32	data_len: 16;		// Data payload length
-	u32	data_offset: 8;		// Data payload offset i.e. header length
-	u32	data_checksum: 8;	// Checksum of the data payload
-
-	// DWORD 1
-	u32	pkt_type: 8;		// Packet type
-	u32	xfer_status: 8;		// Xfer status
-	u32	rl_version: 8;		// RL Version
-	u32	dev_mode: 8;		// Device mode
-
-	// DWORD 2
-	u32	mem_addr;			// Memory address
-
-	// DWORD 3
-	u32	mem_size;			// Memory size
-
-	// DWORD 4
-	union {
-		u32	d32;
-		u16	d16[2];
-		u8	d8[4];
-	} value;				// Target value
-
-	// DWORD 5
-	u32	reserved;
-} usbd_inic_query_packet_t;
 
 typedef struct {
 	u8 *buf;
@@ -81,8 +42,6 @@ typedef struct {
 	usbd_inic_app_ep_t in_ep[USB_MAX_ENDPOINTS];
 	usbd_inic_app_ep_t out_ep[USB_MAX_ENDPOINTS];
 } usbd_inic_app_t;
-
-#define	USBD_INIC_QUERY_PACKET_SIZE			(sizeof(usbd_inic_query_packet_t))
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -128,7 +87,6 @@ static usbd_inic_cb_t inic_cb = {
 static usbd_inic_app_t usbd_inic_app;
 static rtos_sema_t inic_wifi_bulk_in_sema;
 static rtos_sema_t inic_bt_bulk_in_sema;
-static rtos_sema_t reset_sema;
 
 #if CONFIG_USBD_INIC_HOTPLUG
 static u8 inic_attach_status;
@@ -136,70 +94,6 @@ static rtos_sema_t inic_attach_status_changed_sema;
 #endif
 
 /* Private functions ---------------------------------------------------------*/
-
-static u8 inic_setup_handle_hci_cmd(usb_setup_req_t *req, u8 *buf)
-{
-	UNUSED(req);
-	UNUSED(buf);
-
-	// Handle BT HCI commands
-
-	return HAL_OK;
-}
-
-static int inic_setup_handle_query(usb_setup_req_t *req, u8 *buf)
-{
-	int ret = HAL_ERR_PARA;
-	usbd_inic_query_packet_t *pkt;
-
-	if (req->wIndex == USBD_INIC_VENDOR_QUERY_CMD) {
-		pkt = (usbd_inic_query_packet_t *)buf;
-		pkt->data_len = 0;
-		pkt->data_offset = USBD_INIC_QUERY_PACKET_SIZE;
-		pkt->pkt_type = USBD_INIC_VENDOR_QUERY_ACK;
-		pkt->xfer_status = HAL_OK;
-		pkt->rl_version = (u8)(SYSCFG_RLVersion() & 0xFF);
-		pkt->dev_mode = USBD_INIC_FW_TYPE_APPLICATION;
-		ret = HAL_OK;
-	} else if (req->wIndex == USBD_INIC_VENDOR_RESET_CMD) {
-		pkt = (usbd_inic_query_packet_t *)buf;
-		pkt->data_len = 0;
-		pkt->data_offset = USBD_INIC_QUERY_PACKET_SIZE;
-		pkt->pkt_type = USBD_INIC_VENDOR_RESET_ACK;
-		pkt->xfer_status = HAL_OK;
-		pkt->rl_version = (u8)(SYSCFG_RLVersion() & 0xFF);
-		pkt->dev_mode = USBD_INIC_FW_TYPE_APPLICATION;
-		rtos_sema_give(reset_sema);
-		ret = HAL_OK;
-	}
-
-	return ret;
-}
-
-/**
-  * @brief  Handle the inic class control requests
-  * @param  cmd: Command code
-  * @param  buf: Buffer containing command data (request parameters)
-  * @param  len: Number of data to be sent (in bytes)
-  * @param  value: Value for the command code
-  * @retval Status
-  */
-static int inic_cb_setup(usb_setup_req_t *req, u8 *buf)
-{
-	int ret = HAL_ERR_PARA;
-	switch (req->bRequest) {
-	case USBD_INIC_VENDOR_REQ_BT_HCI_CMD:
-		ret = inic_setup_handle_hci_cmd(req, buf);
-		break;
-	case USBD_INIC_VENDOR_REQ_FW_DOWNLOAD:
-		ret = inic_setup_handle_query(req, buf);
-		break;
-	default:
-		break;
-	}
-
-	return ret;
-}
 
 static void inic_wifi_deinit(void)
 {
@@ -253,6 +147,14 @@ static void inic_bt_deinit(void)
 		usb_os_mfree(ep->buf);
 		ep->buf = NULL;
 	}
+}
+
+static int inic_cb_setup(usb_setup_req_t *req, u8 *buf)
+{
+	UNUSED(req);
+	UNUSED(buf);
+
+	return HAL_OK;
 }
 
 static int inic_wifi_init(void)
@@ -391,7 +293,6 @@ static int inic_cb_init(void)
 	}
 	rtos_sema_create(&inic_bt_bulk_in_sema, 0, 1);
 	rtos_sema_create(&inic_wifi_bulk_in_sema, 0, 1);
-	rtos_sema_create(&reset_sema, 0, 1);
 
 	return HAL_OK;
 
@@ -410,7 +311,6 @@ static int inic_cb_deinit(void)
 {
 	rtos_sema_delete(inic_wifi_bulk_in_sema);
 	rtos_sema_delete(inic_bt_bulk_in_sema);
-	rtos_sema_delete(reset_sema);
 
 	inic_wifi_deinit();
 
@@ -576,18 +476,6 @@ static void inic_cb_resume(void)
 	// TODO: Unmark suspend status, re-start USB transfer
 }
 
-static void inic_reset_thread(void *param)
-{
-	UNUSED(param);
-
-	for (;;) {
-		if (rtos_sema_take(reset_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-			rtos_time_delay_ms(500); // Wait reset request done
-			System_Reset();
-		}
-	}
-}
-
 #if CONFIG_USBD_INIC_HOTPLUG
 static void inic_hotplug_thread(void *param)
 {
@@ -634,7 +522,6 @@ static void example_usbd_inic_thread(void *param)
 #endif
 	rtos_task_t wifi_bulk_in_task;
 	rtos_task_t bt_bulk_in_task;
-	rtos_task_t reset_task;
 
 	UNUSED(param);
 
@@ -662,15 +549,10 @@ static void example_usbd_inic_thread(void *param)
 		goto clear_wifi_bulk_in_task;
 	}
 
-	ret = rtos_task_create(&reset_task, "inic_reset_thread", inic_reset_thread, NULL, 1024, CONFIG_USBD_INIC_RESET_THREAD_PRIORITY);
-	if (ret != RTK_SUCCESS) {
-		goto clear_bt_bulk_in_task;
-	}
-
 #if CONFIG_USBD_INIC_HOTPLUG
 	ret = rtos_task_create(&hotplug_task, "inic_hotplug_thread", inic_hotplug_thread, NULL, 1024, CONFIG_USBD_INIC_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
-		goto clear_reset_task;
+		goto clear_bt_bulk_in_task;
 	}
 #endif // CONFIG_USBD_INIC_HOTPLUG
 
@@ -681,11 +563,6 @@ static void example_usbd_inic_thread(void *param)
 	rtos_task_delete(NULL);
 
 	return;
-
-#if CONFIG_USBD_INIC_HOTPLUG
-clear_reset_task:
-	rtos_task_delete(reset_task);
-#endif
 
 clear_bt_bulk_in_task:
 	rtos_task_delete(bt_bulk_in_task);

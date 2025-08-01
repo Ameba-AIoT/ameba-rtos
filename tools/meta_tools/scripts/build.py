@@ -117,12 +117,6 @@ def main(argc, argv):
     else:
         toolchain_path = os.path.join(toolchain_dir, toolchain, 'linux', 'newlib')
 
-    if os.path.exists(toolchain_path):
-        pass
-    else:
-        print('Error: Toolchain "' + toolchain_path + '" does not exist')
-        sys.exit(1)
-
     target_script = os.path.join(device_dir, "build.py")
     arguments = [
         '--app', args.app,

@@ -41,9 +41,9 @@ Two Ameba development boards are needed. Choose one board to works as the server
 		#define UDP_SERVER          0
 		```
 
-	- Test IPV6 UDP:
+	- Test IPV6 TCP:
 		```C
-		#define EXAMPLE_IPV6_UDP    1
+		#define EXAMPLE_IPV6_TCP    1
 		```
 		for server:
 
@@ -69,7 +69,7 @@ Two Ameba development boards are needed. Choose one board to works as the server
 		```C
 		#define MCAST_SERVER        0
 		```
-	
+
 	`EXAMPLE_IPV6_UDP`, `EXAMPLE_IPV6_TCP` and `EXAMPLE_IPV6_MCAST` should be enabled one at a time.
 
 3. Build and Download:
@@ -93,3 +93,4 @@ Modify `UDP_SERVER_IP` and `TCP_SERVER_IP` for client example according to serve
 - AmebaSmart
 - AmebaLite
 - AmebaDplus
+- AmebaGreen2

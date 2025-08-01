@@ -604,15 +604,11 @@ class RSIP():
         iv_counter = '0000000000000000'
         iv = self.image_config.rsip_iv + iv_counter
         iv = [int(i) for i in bytes.fromhex(iv)]
-        if isinstance(self.image_config.ctr_key, str):
-            ctrkey_bytes = bytes.fromhex(self.image_config.ctr_key)
+        if self.image_config.rsip_mode == 1:
+            ctrkey_bytes = bytes.fromhex(self.image_config.rsip_key[1])
+            ecbkey_bytes = bytes.fromhex(self.image_config.rsip_key[0])
         else:
-            ctrkey_bytes = bytes.fromhex(self.image_config.ctr_key[self.image_config.rsip_key_id])
-        if isinstance(self.image_config.ecb_key, str):
-            ecbkey_bytes = bytes.fromhex(self.image_config.ecb_key)
-        else:
-            ecbkey_bytes = bytes.fromhex(self.image_config.ecb_key[self.image_config.rsip_key_id])
-
+            ctrkey_bytes = bytes.fromhex(self.image_config.rsip_key[0])
 
         init_val = [0x2, 0x3]
         i = 0
@@ -661,7 +657,7 @@ class RSIP():
                     result = [a ^ b for a, b in zip(encount_buf_i, enbuf_i)]
                     enbuf = bytes(result)
                 elif self.image_config.rsip_mode == 2:
-                    gcm_cryptor = AES.new(ctrkey_bytes, AES.MODE_GCM, nonce=bytes(iv[0:12]), mac_len=self.image_config.gcm_tag_len)
+                    gcm_cryptor = AES.new(ctrkey_bytes, AES.MODE_GCM, nonce=bytes(iv[0:12]), mac_len=self.image_config.rsip_gcm_tag_len)
                     enbuf, tag = gcm_cryptor.encrypt_and_digest(buf)
                     fw_tag.write(tag)
 

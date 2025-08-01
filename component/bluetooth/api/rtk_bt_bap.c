@@ -90,6 +90,12 @@ uint16_t rtk_bt_le_audio_broadcast_big_sync_create(rtk_bt_le_addr_t addr)
 						   (void *)&addr, sizeof(rtk_bt_le_addr_t));
 }
 
+uint16_t rtk_bt_le_audio_broadcast_big_sync_create_by_handle(rtk_bt_le_audio_sync_handle_t sync_handle)
+{
+	return rtk_bt_send_cmd(RTK_BT_LE_GP_BAP, RTK_BT_LE_AUDIO_ACT_BROADCAST_BIG_SYNC_CREATE_BY_HANDLE,
+						   (void *)&sync_handle, sizeof(rtk_bt_le_audio_sync_handle_t));
+}
+
 uint16_t rtk_bt_le_audio_broadcast_big_sync_terminate(rtk_bt_le_addr_t addr)
 {
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_BAP, RTK_BT_LE_AUDIO_ACT_BROADCAST_BIG_SYNC_TERMINATE,

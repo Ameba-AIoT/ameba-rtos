@@ -1024,6 +1024,48 @@ static int usbd_inic_clear_config(usb_dev_t *dev, u8 config)
 }
 
 /**
+  * @brief  Handle the inic class control requests
+  * @param  cmd: Command code
+  * @param  buf: Buffer containing command data (request parameters)
+  * @param  len: Number of data to be sent (in bytes)
+  * @param  value: Value for the command code
+  * @retval Status
+  */
+static int usbd_inic_handle_setup(usb_setup_req_t *req, u8 *buf)
+{
+	int ret = HAL_ERR_PARA;
+	usbd_inic_query_packet_t *pkt;
+	usbd_inic_dev_t *idev = &usbd_inic_dev;
+
+	if (req->bRequest == USBD_INIC_VENDOR_REQ_FW_DOWNLOAD) {
+		if (req->wIndex == USBD_INIC_VENDOR_QUERY_CMD) {
+			pkt = (usbd_inic_query_packet_t *)buf;
+			pkt->data_len = 0;
+			pkt->data_offset = USBD_INIC_QUERY_PACKET_SIZE;
+			pkt->pkt_type = USBD_INIC_VENDOR_QUERY_ACK;
+			pkt->xfer_status = HAL_OK;
+			pkt->rl_version = (u8)(SYSCFG_RLVersion() & 0xFF);
+			pkt->dev_mode = USBD_INIC_FW_TYPE_APPLICATION;
+			ret = HAL_OK;
+		} else if (req->wIndex == USBD_INIC_VENDOR_RESET_CMD) {
+			pkt = (usbd_inic_query_packet_t *)buf;
+			pkt->data_len = 0;
+			pkt->data_offset = USBD_INIC_QUERY_PACKET_SIZE;
+			pkt->pkt_type = USBD_INIC_VENDOR_RESET_ACK;
+			pkt->xfer_status = HAL_OK;
+			rtos_sema_give(idev->reset_sema);
+			ret = HAL_OK;
+		}
+	} else {
+		if ((idev->cb != NULL) && (idev->cb->setup != NULL)) {
+			idev->cb->setup(req, buf);
+		}
+	}
+
+	return ret;
+}
+
+/**
   * @brief  Handle INIC specific CTRL requests
   * @param  dev: USB device instance
   * @param  req: USB CTRL requests
@@ -1105,7 +1147,7 @@ static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		if ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) {
 			if (req->wLength) {
 				// SETUP + DATA IN + STATUS
-				idev->cb->setup(req, ep0_in->xfer_buf);
+				usbd_inic_handle_setup(req, ep0_in->xfer_buf);
 				ep0_in->xfer_len = req->wLength;
 				usbd_ep_transmit(dev, ep0_in);
 			} else {
@@ -1119,7 +1161,7 @@ static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				usbd_ep_receive(dev, ep0_out);
 			} else {
 				// SETUP + STATUS
-				idev->cb->setup(req, NULL);
+				usbd_inic_handle_setup(req, NULL);
 			}
 		}
 		break;
@@ -1200,7 +1242,7 @@ static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 	}
 
 	if ((len == 0) || (cb->received == NULL) ||
-		((ep_addr & (USBD_WHC_WIFI_EP5_BULK_OUT | USBD_WHC_WIFI_EP6_BULK_OUT | USBD_WHC_WIFI_EP7_BULK_OUT)) == 0)) {
+		((ep_addr != USBD_WHC_WIFI_EP5_BULK_OUT) && (ep_addr != USBD_WHC_WIFI_EP6_BULK_OUT) && (ep_addr != USBD_WHC_WIFI_EP7_BULK_OUT))) {
 		usbd_inic_receive_data(ep_addr, ep->xfer_buf, ep->xfer_len, userdata);
 	}
 
@@ -1461,6 +1503,20 @@ static int usbd_inic_resume(usb_dev_t *dev)
 	return HAL_OK;
 }
 
+static void usbd_inic_reset_thread(void *param)
+{
+	usbd_inic_dev_t *idev = &usbd_inic_dev;
+
+	UNUSED(param);
+
+	for (;;) {
+		if (rtos_sema_take(idev->reset_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			rtos_time_delay_ms(500); // Wait reset request done
+			System_Reset();
+		}
+	}
+}
+
 /* Exported functions --------------------------------------------------------*/
 
 /**
@@ -1493,11 +1549,30 @@ int usbd_inic_init(usbd_inic_cb_t *cb)
 		}
 	}
 
+	rtos_sema_create(&idev->reset_sema, 0, 1);
+
+	ret = rtos_task_create(&idev->reset_task, "usbd_inic_reset_thread", usbd_inic_reset_thread, NULL, 1024, USBD_INIC_RESET_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		goto init_clean_all;
+	}
+
 	usbd_register_class(&usbd_inic_driver);
 
 	return ret;
 
+init_clean_all:
+	rtos_sema_delete(idev->reset_sema);
+
+	if (idev->cb != NULL) {
+		if (idev->cb->deinit != NULL) {
+			idev->cb->deinit();
+		}
+		idev->cb = NULL;
+	}
+
 init_exit:
+	usbd_otp_deinit(otp);
+
 	return ret;
 }
 
@@ -1511,6 +1586,8 @@ int usbd_inic_deinit(void)
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_otp_t *otp = &idev->otp;
 
+	rtos_task_delete(idev->reset_task);
+
 	if (idev->cb != NULL) {
 		if (idev->cb->deinit != NULL) {
 			idev->cb->deinit();
@@ -1519,6 +1596,8 @@ int usbd_inic_deinit(void)
 	}
 
 	usbd_unregister_class();
+
+	rtos_sema_delete(idev->reset_sema);
 
 	usbd_otp_deinit(otp);
 

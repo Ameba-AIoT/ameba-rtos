@@ -18,6 +18,8 @@
 #define MAX_ARG_LENGTH 128
 #define MAX_INPUT_SIZE 640
 
+void whc_host_rx_buf_hdl(struct msgtemplate *msg);
+
 void parse_arguments(char *input, char args[MAX_ARG_COUNT][MAX_ARG_LENGTH], int *arg_count)
 {
 	char *token;
@@ -156,8 +158,8 @@ int whc_host_set_netif_on(uint8_t idx)
 	}
 
 	whc_host_fill_nlhdr(&msg, nl_family_id, 0, WHC_CMD_ECHO);
-	nla_put_u32(&ptr, BRIDGE_ATTR_API_ID, CMD_WIFI_NETIF_ON);
-	nla_put_u8(&ptr, BRIDGE_ATTR_WLAN_IDX, idx);
+	nla_put_u32(&ptr, WHC_ATTR_API_ID, CMD_WIFI_NETIF_ON);
+	nla_put_u8(&ptr, WHC_ATTR_WLAN_IDX, idx);
 	msg.n.nlmsg_len += ptr - msg.buf;
 	ret = whc_host_api_send_to_kernel(nl_fd, (char *)&msg, msg.n.nlmsg_len);
 	if (ret < 0) {
@@ -194,9 +196,97 @@ int whc_host_set_mac(uint8_t idx, char *mac)
 	}
 
 	whc_host_fill_nlhdr(&msg, nl_family_id, 0, WHC_CMD_ECHO);
-	nla_put_u32(&ptr, BRIDGE_ATTR_API_ID, CMD_WIFI_SET_MAC);
-	nla_put_u8(&ptr, BRIDGE_ATTR_WLAN_IDX, idx);
-	nla_put_string(&ptr, BRIDGE_ATTR_MAC, mac);
+	nla_put_u32(&ptr, WHC_ATTR_API_ID, CMD_WIFI_SET_MAC);
+	nla_put_u8(&ptr, WHC_ATTR_WLAN_IDX, idx);
+	nla_put_string(&ptr, WHC_ATTR_STRING, mac);
+	msg.n.nlmsg_len += ptr - msg.buf;
+
+	ret = whc_host_api_send_to_kernel(nl_fd, (char *)&msg, msg.n.nlmsg_len);
+	if (ret < 0) {
+		printf("msg send fail\n");
+	}
+
+	close(nl_fd);
+
+	return ret;
+}
+
+/* msg to kernel, call api for dbg and mp */
+int whc_host_wifi_mp(char *input)
+{
+	//rm header "mp"
+	char *buf = input + 3;
+
+	int nl_fd;
+	int nl_family_id = 0;
+	struct msgtemplate msg;
+	int ret = 0;
+	unsigned char *ptr = msg.buf;
+	struct msgtemplate ans;
+
+	/* initialize socket */
+	nl_fd = whc_host_api_create_nl_socket(NETLINK_GENERIC, getpid());
+	if (nl_fd < 0) {
+		fprintf(stderr, "failed to create netlink socket\n");
+		return 0;
+	}
+
+	/* get family id */
+	nl_family_id = whc_host_api_get_family_id(nl_fd, WHC_CMD_GENL_NAME);
+	if (!nl_family_id) {
+		fprintf(stderr, "Failed to get family id, errno %d\n", errno);
+		close(nl_fd);
+		return -1;
+	}
+
+	whc_host_fill_nlhdr(&msg, nl_family_id, 0, WHC_CMD_ECHO);
+	nla_put_u32(&ptr, WHC_ATTR_API_ID, CMD_WIFI_MP);
+	nla_put_string(&ptr, WHC_ATTR_STRING, buf);
+	msg.n.nlmsg_len += ptr - msg.buf;
+
+	ret = whc_host_api_send_to_kernel(nl_fd, (char *)&msg, msg.n.nlmsg_len);
+	if (ret < 0) {
+		printf("msg send fail\n");
+	}
+
+	int rep_len = recv(nl_fd, &ans, sizeof(ans), 0);
+	whc_host_rx_buf_hdl(&ans);
+
+	close(nl_fd);
+
+	return ret;
+}
+
+/* msg to kernel, call api for dbg and mp */
+int whc_host_wifi_dbg(char *input)
+{
+	//rm header "dbg"
+	char *buf = input + 4;
+
+	int nl_fd;
+	int nl_family_id = 0;
+	struct msgtemplate msg;
+	int ret = 0;
+	unsigned char *ptr = msg.buf;
+
+	/* initialize socket */
+	nl_fd = whc_host_api_create_nl_socket(NETLINK_GENERIC, getpid());
+	if (nl_fd < 0) {
+		fprintf(stderr, "failed to create netlink socket\n");
+		return 0;
+	}
+
+	/* get family id */
+	nl_family_id = whc_host_api_get_family_id(nl_fd, WHC_CMD_GENL_NAME);
+	if (!nl_family_id) {
+		fprintf(stderr, "Failed to get family id, errno %d\n", errno);
+		close(nl_fd);
+		return -1;
+	}
+
+	whc_host_fill_nlhdr(&msg, nl_family_id, 0, WHC_CMD_ECHO);
+	nla_put_u32(&ptr, WHC_ATTR_API_ID, CMD_WIFI_DBG);
+	nla_put_string(&ptr, WHC_ATTR_STRING, buf);
 	msg.n.nlmsg_len += ptr - msg.buf;
 
 	ret = whc_host_api_send_to_kernel(nl_fd, (char *)&msg, msg.n.nlmsg_len);
@@ -293,6 +383,24 @@ int whc_host_wifi_scan(void)
 	return ret;
 }
 
+int whc_host_wifi_on(void)
+{
+	uint8_t buf[12] = {0};
+	uint8_t *ptr = buf;
+	uint32_t buf_len = 0;
+	int ret = 0;
+	*(uint32_t *)ptr = WHC_WIFI_TEST;
+	ptr += 4;
+	buf_len += 4;
+
+	*ptr = WHC_WIFI_TEST_WIFION;
+	ptr += 1;
+	buf_len += 1;
+
+	ret = whc_host_api_send_nl_data(buf, buf_len);
+	return ret;
+}
+
 int whc_host_wifi_dhcp(void)
 {
 	uint8_t buf[12] = {0};
@@ -335,7 +443,7 @@ int whc_host_nl_init(void)
 	}
 
 	whc_host_fill_nlhdr(&msg, nl_family_id, 0, WHC_CMD_ECHO);
-	nla_put_u32(&ptr, BRIDGE_ATTR_API_ID, CMD_WIFI_INFO_INIT);
+	nla_put_u32(&ptr, WHC_ATTR_API_ID, CMD_WIFI_INFO_INIT);
 	msg.n.nlmsg_len += ptr - msg.buf;
 
 	ret = whc_host_api_send_to_kernel(nl_fd, (char *)&msg, msg.n.nlmsg_len);
@@ -353,9 +461,14 @@ void whc_host_cmd_hdl(char *input)
 	char *args[MAX_INPUT_SIZE / 2];
 	int arg_count = 0;
 	uint8_t idx = 0;
-	char *token = strtok(input, " ");
+	char *token;
 	char *pwd = NULL;
+	char backup[MAX_INPUT_SIZE] = {0};
 
+	/* backup original string before strtok */
+	memcpy(backup, input, strlen(input));
+
+	token = strtok(input, " ");
 	while (token != NULL) {
 		args[arg_count++] = token;
 		token = strtok(NULL, " ");
@@ -429,6 +542,12 @@ void whc_host_cmd_hdl(char *input)
 			whc_host_wifi_scan();
 		} else if (strcmp(args[0], "dhcp") == 0) {
 			whc_host_wifi_dhcp();
+		} else if (strcmp(args[0], "mp") == 0) {
+			whc_host_wifi_mp(backup);
+		} else if (strcmp(args[0], "dbg") == 0) {
+			whc_host_wifi_dbg(backup);
+		} else if (strcmp(args[0], "wifion") == 0) {
+			whc_host_wifi_on();
 		} else {
 			printf("No command entered.\n");
 		}
@@ -497,6 +616,8 @@ int main(void)
 	printf("Waiting for message from kernel or input command from user space\n");
 
 	while (1) {
+		memset(input_buf, 0, MAX_INPUT_SIZE);
+
 		// Create and bind a socket
 		sock_fd = whc_host_api_create_nl_socket(NETLINK_GENERIC, getpid());
 		if (sock_fd < 0) {

@@ -52,11 +52,11 @@ void whc_fullmac_host_ops_sta_init(void);
 void whc_fullmac_host_ops_ap_init(void);
 void whc_fullmac_host_ops_key_init(void);
 void whc_fullmac_host_inform_bss(u32 channel, u32 frame_is_bcn, s32 rssi, u8 *mac_addr, u8 *IEs, u32 ie_len);
-void whc_fullmac_host_disconnect_indicate(u16 reason, u8 locally_generated);
+void whc_fullmac_host_disconnect_indicate(u16 reason, u8 locally_generated, u8 *bssid);
 void whc_fullmac_host_sta_assoc_indicate(char *buf, int buf_len);
-void whc_fullmac_host_external_auth_request(char *buf, int buf_len);
-void whc_fullmac_host_update_owe_info_event(char *buf, int buf_len);
-void whc_fullmac_host_connect_indicate(unsigned int join_status, void *user_data, size_t user_data_len);
+void whc_fullmac_host_external_auth_request(char *evt_info);
+void whc_fullmac_host_update_owe_info_event(char *evt_info);
+void whc_fullmac_host_connect_indicate(unsigned int join_status, void *evt_info);
 int whc_fullmac_host_scan_done_indicate(unsigned int scanned_AP_num, void *user_data);
 u64 whc_fullmac_host_get_tsft(u8 iface_type);
 void rtw_reg_notifier(struct wiphy *wiphy, struct regulatory_request *request);
@@ -71,7 +71,7 @@ int whc_fullmac_host_init_nan(void);
 int whc_fullmac_host_deinit_nan(void);
 int whc_fullmac_host_start_nan(u8 master_pref, u8 band_support);
 int whc_fullmac_host_stop_nan(void);
-int whc_fullmac_host_add_nan_func(struct rtw_nan_func_info_t *func, void *nan_func_pointer);
+int whc_fullmac_host_add_nan_func(struct rtw_nan_func_t *func, void *nan_func_pointer);
 int whc_fullmac_host_del_nan_func(u64 cookie);
 int rtw_nan_iface_alloc(struct wiphy *wiphy, const char *name, struct wireless_dev **nan_wdev, struct vif_params *params);
 void rtw_nan_iface_free(struct wiphy *wiphy);
@@ -89,7 +89,7 @@ void whc_fullmac_host_p2p_iface_free(struct wiphy *wiphy, struct wireless_dev *w
 void whc_fullmac_host_p2p_pdwdev_free(void);
 int whc_fullmac_host_p2p_get_wdex_idx(struct wireless_dev *wdev);
 #endif
-#ifdef CONFIG_CFG80211_SME_OFFLOAD
+#ifdef CONFIG_SUPPLICANT_SME
 void whc_fullmac_host_sme_auth(dma_addr_t auth_data_phy);
 int whc_fullmac_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len, u8 wpa_rsn_exist);
 #endif
@@ -106,7 +106,7 @@ int whc_fullmac_host_get_edcca_mode(u8 *edcca_mode);
 int whc_fullmac_host_get_ant_info(u8 *antdiv_mode, u8 *curr_ant);
 int whc_fullmac_host_set_country_code(char *cc);
 int whc_fullmac_host_get_country_code(struct rtw_country_code_table *table);
-int whc_fullmac_host_dev_driver_is_mp(void);
+int whc_fullmac_host_dev_driver_is_mp(u8 *is_mp);
 int whc_fullmac_host_set_promisc_enable(u32 enable, u8 mode);
 #ifdef CONFIG_IEEE80211R
 int whc_fullmac_host_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 status);

@@ -334,7 +334,7 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 		T_CSIS_CLIENT_DIS_DONE *p_dis_done = (T_CSIS_CLIENT_DIS_DONE *)buf;
 		APP_PRINT_INFO4("LE_AUDIO_MSG_CSIS_CLIENT_DIS_DONE: conn_handle 0x%x, is_found %d, load_from_ftl %d, srv_num %d",
 						p_dis_done->conn_handle, p_dis_done->is_found, p_dis_done->load_from_ftl, p_dis_done->srv_num);
-		BT_LOGD("LE_AUDIO_MSG_CSIS_CLIENT_DIS_DONE: conn_handle 0x%x, is_found %d, load_from_ftl %d, srv_num %d \r\n",
+		BT_LOGA("LE_AUDIO_MSG_CSIS_CLIENT_DIS_DONE: conn_handle 0x%x, is_found %d, load_from_ftl %d, srv_num %d \r\n",
 				p_dis_done->conn_handle, p_dis_done->is_found, p_dis_done->load_from_ftl, p_dis_done->srv_num);
 		if (p_dis_done->is_found) {
 			break;
@@ -430,9 +430,9 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 						p_read_result->mem_info.srv_instance_id, p_read_result->mem_info.char_exit, p_read_result->mem_info.srv_uuid,
 						p_read_result->mem_info.rank, p_read_result->mem_info.set_mem_size, p_read_result->mem_info.sirk_type,
 						TRACE_BINARY(RTK_BT_LE_CSIS_SIRK_LEN, p_read_result->mem_info.sirk));
-		BT_LOGD("LE_AUDIO_MSG_CSIS_CLIENT_READ_RESULT: cause 0x%x, conn_handle 0x%x, group_handle 0x%08x, dev_handle 0x%08x\r\n",
+		BT_LOGA("LE_AUDIO_MSG_CSIS_CLIENT_READ_RESULT: cause 0x%x, conn_handle 0x%x, group_handle 0x%08x, dev_handle 0x%08x\r\n",
 				p_read_result->cause, p_read_result->conn_handle, p_read_result->group_handle, p_read_result->dev_handle);
-		BT_LOGD("LE_AUDIO_MSG_CSIS_CLIENT_READ_RESULT: srv_instance_id %d, char_exit 0x%x, srv_uuid 0x%x, rank %d, set_mem_size %d\r\n",
+		BT_LOGA("LE_AUDIO_MSG_CSIS_CLIENT_READ_RESULT: srv_instance_id %d, char_exit 0x%x, srv_uuid 0x%x, rank %d, set_mem_size %d\r\n",
 				p_read_result->mem_info.srv_instance_id, p_read_result->mem_info.char_exit, p_read_result->mem_info.srv_uuid,
 				p_read_result->mem_info.rank, p_read_result->mem_info.set_mem_size);
 		p_link = bt_stack_le_audio_find_link_by_conn_handle(p_read_result->conn_handle);
@@ -2950,6 +2950,8 @@ static uint16_t bt_stack_mcs_server_init(void *le_audio_app_conf)
 	p_mcs_param = &p_le_audio_app_conf->cap_param.mcs_param;
 	reg_param.gmcs = p_mcs_param->general_mcs;
 	reg_param.char_media_control_point.support = p_mcs_param->char_media_control_point_support;
+	reg_param.char_media_player_name.optional_property_notify = p_mcs_param->char_media_player_name_optional_property_notify;
+	reg_param.char_track_title.optional_property_notify = p_mcs_param->char_track_title_optional_property_notify;
 	reg_param.char_track_duration.optional_property_notify = p_mcs_param->char_track_duration_optional_property_notify;
 	reg_param.char_track_position.optional_property_notify = p_mcs_param->char_track_position_optional_property_notify;
 	p_mcp->gmcs_id = mcp_server_reg_srv(&reg_param);

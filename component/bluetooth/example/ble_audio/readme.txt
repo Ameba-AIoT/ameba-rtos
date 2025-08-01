@@ -176,10 +176,10 @@ TMAP demo ATCMD:
     1.19 vocs client write output description                       AT+BLECAP=commander,vocs,wdes,<conn_handle>,<srv instance id>,<des_str>
     1.20 vocs client write opcode: Set Volume Offset                AT+BLECAP=commander,vocs,write,<conn_handle>,<srv instance id>,<cp_op>,<volume_offset>
     1.21 vocs client write opcode by group: Set Volume Offset       AT+BLECAP=commander,vocs,gwrite,<group_index>,<srv instance id>,<cp_op>,<volume_offset>
-    1.22 mcs server send data：MEDIA_PLAYER_NAME                    AT+BLECAP=initiator,mcp,send,<uuid>,{<value>}
-    1.23 mcs server send data：TRACK_TITLE                          AT+BLECAP=initiator,mcp,send,<uuid>,{<value>}
-    1.24 mcs server send data：TRACK_DURATION                       AT+BLECAP=initiator,mcp,send,<uuid>,{<value>}
-    1.25 mcs server send data：TRACK_POSITION                       AT+BLECAP=initiator,mcp,send,<uuid>,{<value>}
+    1.22 mcs server send data：MEDIA_PLAYER_NAME                    AT+BLECAP=initiator,mcp,send,0x2B93,{<name>}  e.g. AT+BLECAP=initiator,mcp,send,0x2B93,rtk_player
+    1.23 mcs server send data：TRACK_TITLE                          AT+BLECAP=initiator,mcp,send,0x2B97,{<title>}  e.g. AT+BLECAP=initiator,mcp,send,0x2B97,rtk_title
+    1.24 mcs server send data：TRACK_DURATION                       AT+BLECAP=initiator,mcp,send,0x2B98,<value>
+    1.25 mcs server send data：TRACK_POSITION                       AT+BLECAP=initiator,mcp,send,0x2B99,<value>
     1.26 mcs server send data：TRACK_CHANGED                        AT+BLECAP=initiator,mcp,send,0x2B96
 
 2.TMAP unicast media receiver

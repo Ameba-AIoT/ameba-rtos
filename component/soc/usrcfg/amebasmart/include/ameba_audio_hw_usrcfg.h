@@ -10,23 +10,23 @@
 /*
  *Audio amplifier pin, if your board has no audio amplifier pin , please set it as -1.
  */
-#define AUDIO_HW_AMPLIFIER_PIN          _PB_19 /*_PB_31 for old board*/
+#define AUDIO_HW_AMPLIFIER_PIN             _PB_19 /*_PB_31 for old board*/
 
 /*
  * See amplifier types defined in: component/audio/audio_driver/amp_manager/interfaces/amp_manager.h
  * enum AMP_TYPE. for example: dummy = 0.
  */
-#define AUDIO_HW_AMPLIFIER_TYPE         0
+#define AUDIO_HW_AMPLIFIER_TYPE            0
 
 /*
  *After enable amplifer, it need some time to be steady. For d2 demo board, it's 90ms.
  */
-#define AUDIO_HW_AMPLIFIER_ENABLE_TIME  90
+#define AUDIO_HW_AMPLIFIER_ENABLE_TIME     90
 
 /*
  *After disable amplifer, it need some time to be steady. For d2 demo board, it's 1ms.
  */
-#define AUDIO_HW_AMPLIFIER_DISABLE_TIME 1
+#define AUDIO_HW_AMPLIFIER_DISABLE_TIME    1
 
 /*
  * Set 1 to let hal control amplifier's enable and disable automatically.
@@ -40,55 +40,85 @@
  *For d2 and lite demo board, our hardware design makes sure aec noise acceptable, if
  *amplifier stays unmute, so it can be set 0.
  */
-#define AUDIO_HW_AMPLIFIER_MUTE_ENABLE  0
+#define AUDIO_HW_AMPLIFIER_MUTE_ENABLE     0
+
+/*
+ *Set 1 if user's hardware board connects amic with MICBIAS1 power.
+ *Set 0 if not used.
+ */
+#define AUDIO_MICBIAS_1_ENABLE             1
+
+/*
+ *Set 1 if user's hardware boar connects amic with MICBIAS2 power.
+ *Set 0 if not used.
+ */
+#define AUDIO_MICBIAS_2_ENABLE             1
+
+/*
+ *Set 1 if user's hardware boar connects amic with MICBIAS3 power.
+ *Set 0 if not used.
+ */
+#define AUDIO_MICBIAS_3_ENABLE             1
+
+/*
+ *Set 1 if user's hardware boar connects amic with MICBIAS4 power.
+ *Set 0 if not used.
+ */
+#define AUDIO_MICBIAS_4_ENABLE             1
+
+/*
+ *Set 1 if user's hardware boar connects amic with MICBIAS5 power.
+ *Set 0 if not used.
+ */
+#define AUDIO_MICBIAS_5_ENABLE             1
 
 /*
  *DMIC clock and data pins.
  */
-#define AUDIO_HW_DMIC_CLK_PIN           _PB_22
-#define AUDIO_HW_DMIC_DATA0_PIN         _PB_21
-#define AUDIO_HW_DMIC_DATA1_PIN         _PB_18
-#define AUDIO_HW_DMIC_DATA2_PIN         _PB_17
-#define AUDIO_HW_DMIC_DATA3_PIN         _PB_16
+#define AUDIO_HW_DMIC_CLK_PIN             _PB_22
+#define AUDIO_HW_DMIC_DATA0_PIN           _PB_21
+#define AUDIO_HW_DMIC_DATA1_PIN           _PB_18
+#define AUDIO_HW_DMIC_DATA2_PIN           _PB_17
+#define AUDIO_HW_DMIC_DATA3_PIN           _PB_16
 
 /*
  *After dmic clock enable, it need some time to be steady. For d2 demo board, it's 100ms.
  *For customer's board, need to check with customer.
  */
-#define AUDIO_HW_DMIC_STEADY_TIME       100
+#define AUDIO_HW_DMIC_STEADY_TIME         100
 
 /*
  *Sport counter max irq X, when sport delivered X frames, there will be one interrupt.
  */
-#define AUDIO_HW_MAX_SPORT_IRQ_X        134217727
+#define AUDIO_HW_MAX_SPORT_IRQ_X          134217727
 
 /*
  *0: using xtal 40M.
  *1: using PLL, mclk is mulitiplier of fs.
  *2: using PLL, mclk is fixed value.
  */
-#define AUDIO_HW_OUT_SPORT_CLK_TYPE     0
+#define AUDIO_HW_OUT_SPORT_CLK_TYPE       0
 
 /*
  *Define whether the external audio codec need MCLK from soc.
  */
-#define AUDIO_I2S_OUT_NEED_MCLK_OUT     1
+#define AUDIO_I2S_OUT_NEED_MCLK_OUT      1
 
 /*
  *If using pll, mclk is mulitiplier of fs. Set mulitiplier here.
  */
-#define AUDIO_HW_OUT_MCLK_MULITIPLIER   256
+#define AUDIO_HW_OUT_MCLK_MULITIPLIER    256
 
 /*
  *If using pll, mclk is fixed value. Set mclk value here.
  */
-#define AUDIO_HW_OUT_FIXED_MCLK         20000000
+#define AUDIO_HW_OUT_FIXED_MCLK          20000000
 
 /*
  *Define I2S out sport index, for example, if I2S in using sport3, set 3 as value here.
  *For I2S out, soc always works as master.
  */
-#define AUDIO_I2S_OUT_SPORT_INDEX       0
+#define AUDIO_I2S_OUT_SPORT_INDEX        0
 
 /*
  *Define I2S out's data format
@@ -193,6 +223,6 @@
  *Set 0 to use other time for timestamp.
  *Please always use 1.
  */
-#define AUDIO_USING_NATIVE_TIME                 1
+#define AUDIO_USING_NATIVE_TIME          1
 
 #endif

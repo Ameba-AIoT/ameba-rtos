@@ -813,7 +813,7 @@ void CapTouch_DbgDumpETC(CAPTOUCH_TypeDef *CapTouch, u32 ch)
 
 	RTK_LOGI(TAG, "\nCH[%lu] ETC: ChDiffThres:%08lX (%lu) \n", ch, DiffThres, DiffThres);
 	RTK_LOGI(TAG, "CH[%lu] ETC: Baseline:%08lX (%lu) \n", ch, Baseline, Baseline);
-	RTK_LOGI(TAG, "CH[%lu] ETC: RawAveData:%08lX (%lu) Diff:%lu \n", ch, AveData, AveData, AveData - Baseline);
+	RTK_LOGI(TAG, "CH[%lu] ETC: RawAveData:%08lX (%lu) Diff:%ld \n", ch, AveData, AveData, AveData - Baseline);
 	RTK_LOGI(TAG, "CH[%lu] ETC: NoiseThres P:%08lX (%lu) \n", ch, NoiseThresP, NoiseThresP);
 	RTK_LOGI(TAG, "CH[%lu] ETC: NoiseThres N:%08lX (%lu) \n", ch, NoiseThresN, NoiseThresN);
 	RTK_LOGI(TAG, "CH[%lu] ETC: AbsoThres:%08lX (%lu) \n", ch, AbsoThres, AbsoThres);

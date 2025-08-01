@@ -29,7 +29,7 @@
 #define IPC_N2A_WIFI_FW_INFO				2	/*!<  KM0 -->  KM4 FW Info*/
 #define IPC_N2A_FLASHPG_REQ				3	/*!<  KM0 -->  KM4 Flash Program REQUEST*/
 #define IPC_N2A_LOGUART_RX_SWITCH			4	/*!<  KM0 -->  KM4 Loguart Rx Switch*/
-#define IPC_N2A_BT_API_TRAN				5	/*!<  KM0 -->  KM4 BT API Exchange */
+#define IPC_N2A_COEX_API_TRAN				5	/*!<  KM0 -->  KM4 COEX API Exchange */
 // #define IPC_N2A_BT_DATA_TRAN			5	/*!<  KM0 -->  KM4 BT DATA Exchange */
 #define IPC_N2A_WIFI_TRX_TRAN				6	/*!<  KM0 -->  KM4 WIFI Message Exchange */
 #define IPC_N2A_WIFI_API_TRAN				7	/*!<  KM0 -->  KM4 API WIFI Message Exchange */
@@ -53,7 +53,7 @@
 #define IPC_A2N_WAKE_AP							2	/*!<  KM4 -->  KM0 Wakeup*/
 //#define IPC_A2N_Channel3						3
 #define IPC_A2N_FLASHPG_REQ						4	/*!<  KM4 -->  KM0 IFlash Program Request*/
-#define IPC_A2N_BT_API_TRAN						5	/*!<  KM4 -->  KM0 BT API Exchange */
+#define IPC_A2N_COEX_API_TRAN						5	/*!<  KM4 -->  KM0 COEX API Exchange */
 // #define IPC_A2N_BT_DATA_TRAN					5	/*!<  KM4 -->  KM0 BT DATA Exchange */
 #define IPC_A2N_WIFI_TRX_TRAN						6	/*!<  KM4 -->  KM0WIFI Message Exchange */
 #define IPC_A2N_WIFI_API_TRAN						7	/*!<  KM4 -->  KM0 WIFI API Message Exchange */

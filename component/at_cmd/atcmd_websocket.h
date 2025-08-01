@@ -132,6 +132,7 @@ extern int ws_server_start(uint16_t port, uint8_t max_conn, uint32_t stack_bytes
 extern void ws_server_dispatch(void (*callback)(struct wssrv_conn *, int, enum opcode_type));
 extern void ws_server_dispatch_connect(void (*callback)(struct wssrv_conn *));
 extern void ws_server_dispatch_disconnect(void (*callback)(struct wssrv_conn *));
+extern void ws_server_dispatch_stop(void (*callback)(void));
 extern void ws_server_stop(void);
 extern int ws_server_setup_cert(const char *server_cert, const char *server_key, const char *ca_certs);
 extern struct wssrv_conn *ws_server_get_conn_info(int conn_no);

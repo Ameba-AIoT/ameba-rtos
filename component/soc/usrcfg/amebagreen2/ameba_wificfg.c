@@ -31,6 +31,11 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.skb_num_np = 20;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 	wifi_user_config.skb_num_ap = 0;
 	wifi_user_config.rx_ampdu_num = 8;
+#elif defined(CONFIG_WHC_INTF_SPI)
+	skb_num_np_rsvd = 7; /*4 for rx_ring_buffer + 2 for mgnt trx + 1 for spi rx_dma_buffer */
+	wifi_user_config.skb_num_np = 14;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
+	wifi_user_config.skb_num_ap = 0;
+	wifi_user_config.rx_ampdu_num = 4;
 #else
 	skb_num_np_rsvd = 6; /* 4 for rx_ring_buffer + 2 for mgnt trx */
 #ifdef CONFIG_HIGH_TP_TEST /*enable high tp in make menuconfig*/
@@ -114,3 +119,10 @@ _WEAK void wifi_set_user_config(void)
 	}
 }
 
+/**
+ * @brief external event handle, customer can add handle functions for wifi events @ref rtw_event_id
+ */
+__weak struct rtw_event_hdl_func_t event_external_hdl[1] = {
+	{RTW_EVENT_MAX,			NULL},
+};
+__weak u16 array_len_of_event_external_hdl = sizeof(event_external_hdl) / sizeof(struct rtw_event_hdl_func_t);

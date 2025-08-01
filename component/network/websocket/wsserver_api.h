@@ -300,6 +300,13 @@ void ws_server_dispatch_connect(void (*callback)(ws_conn *)) ;
 void ws_server_dispatch_disconnect(void (*callback)(ws_conn *)) ;
 
 /**
+ * @brief	  This function is the callback function when the server stop completely.
+ * @param[in] callback: function that indicate the stop event.
+ * @return	  None
+ */
+void ws_server_dispatch_stop(void (*callback)(void)) ;
+
+/**
  * @brief	  This function is used to set close reason of the websocket client connection.
  * @param[in] ws_conn: the websocket connection
  * @param[in] reason: the close reason

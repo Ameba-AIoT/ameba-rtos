@@ -408,7 +408,7 @@ static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 	}
 
 	if ((len == 0) || (cb->received == NULL) ||
-		((ep_addr & (USBD_WHC_WIFI_EP2_BULK_OUT | USBD_WHC_WIFI_EP4_BULK_OUT)) == 0)) {
+		((ep_addr != USBD_WHC_WIFI_EP2_BULK_OUT) && (ep_addr != USBD_WHC_WIFI_EP4_BULK_OUT))) {
 		usbd_inic_receive_data(ep_addr, ep->xfer_buf, ep->xfer_len, userdata);
 	}
 

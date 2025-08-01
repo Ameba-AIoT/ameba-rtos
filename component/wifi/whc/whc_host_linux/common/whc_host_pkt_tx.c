@@ -103,6 +103,11 @@ int whc_host_xmit_entry(int idx, struct sk_buff *pskb)
 	struct whc_msg_node *p_node = NULL;
 	u32 need_headroom, pad_len;
 
+	if (!global_idev.host_init_done) {
+		dev_err(global_idev.fullmac_dev, "Host xmit err: wifi not init\n");
+		return -1;
+	}
+
 	if (whc_host_xmit_pending_q_num() >= QUEUE_STOP_THRES) {
 		netif_tx_stop_all_queues(pndev);
 		if (whc_host_xmit_pending_q_num() >= PKT_DROP_THRES) {

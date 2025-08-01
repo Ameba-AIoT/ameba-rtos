@@ -16,6 +16,11 @@
 #define hci_platform_MP_RESET_BAUDRATE 1
 #define hci_platform_START_RX_DCK         1
 #define hci_platform_WRITE_RX_ADCK        1
+#define hci_platform_WRITE_PHY_EFUSE      1
+
+#if defined(hci_platform_WRITE_PHY_EFUSE) && hci_platform_WRITE_PHY_EFUSE
+#define HCI_WRITE_PHY_EFUSE_LEN    0x70
+#endif
 
 #define HCI_PATCH_FLASH_ADDRESS    0x080F8000    /* Temp value, need sync flash layout with platform owner if use this function */
 

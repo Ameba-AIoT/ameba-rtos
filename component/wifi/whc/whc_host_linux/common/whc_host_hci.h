@@ -129,7 +129,7 @@ struct whc_device {
 #ifdef CONFIG_P2P
 	struct p2p_priv_t		p2p_global;
 #endif
-
+	u8 host_init_done: 1;
 };
 
 extern struct whc_device global_idev;

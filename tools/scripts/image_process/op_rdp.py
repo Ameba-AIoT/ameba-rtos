@@ -20,6 +20,14 @@ class Rdp(OperationBase):
         parser.add_argument('-i', '--input-file', help='Input file to be process', required=True)
         parser.add_argument('-o', '--output-file', help='Output encrypted file', required=True)
 
+    @staticmethod
+    def require_manifest_file(context:Context) -> bool:
+        return True
+
+    @staticmethod
+    def require_layout_file(context:Context) -> bool:
+        return False
+
     # @exit_on_failure(catch_exception=True)
     @staticmethod
     def execute(context:Context, output_file:str, input_file:str, mode = 'enc', image_type:ImageType = ImageType.UNKNOWN):
@@ -31,7 +39,7 @@ class Rdp(OperationBase):
 
         manifest_manager = ManifestManager(context)
         image_config = manifest_manager.get_image_config(image_type)
-        if image_config.rdp_en:
+        if image_config.rdp_enable:
             lib_security = importlib.import_module('security')
             rdp = lib_security.RDP(output_file, input_file, mode == 'enc', image_config)
             if context.soc_project == "amebad":

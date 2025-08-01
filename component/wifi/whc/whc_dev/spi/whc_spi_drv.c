@@ -43,7 +43,9 @@ int whc_spi_dev_dma_rx_done_cb(void *param)
 	/* receives XMIT_PKTS */
 	if (event == WHC_WIFI_EVT_XIMT_PKTS) {
 retry:
-		/* alloc new skb, blocked if no skb */
+		/* alloc new skb, blocked if no skb.
+		block value <= wifi_user_config.skb_num_np - (rx_ring_buffer + wifi_user_config.rx_ampdu_num + 1 for spi rx_dma_buffer)
+		e.g. 3 <= 14 - (4 + 4 + 1)*/
 		if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 3) ||
 			((new_skb = dev_alloc_skb(SPI_BUFSZ, SPI_SKB_RSVD_LEN)) == NULL)) {
 			spi_priv->wait_for_txbuf = TRUE;

@@ -12,7 +12,7 @@
 /* Private defines -----------------------------------------------------------*/
 
 /* Do USB power on flow after USB download done/aborted */
-#define USB_PWR_ON_EN	       1
+#define USB_PWR_ON_EN	       0
 #define USB_PWR_OFF_EN         1
 
 /* Enable In Token prediction debug */

@@ -8,12 +8,17 @@
 #define USBD_CDC_ACM_H
 
 /* Includes ------------------------------------------------------------------*/
-
+#include "platform_autoconf.h"
 #include "usbd.h"
 
 /* Exported defines ----------------------------------------------------------*/
 
+#ifdef CONFIG_ATCMD_HOST_CONTROL
+#define CONFIG_CDC_ACM_NOTIFY                       1
+#else
 #define CONFIG_CDC_ACM_NOTIFY                       0
+#endif
+
 #define CONFIG_CDC_ACM_NOTIFY_LOOP_TEST             0
 
 /*  CDC definitions */

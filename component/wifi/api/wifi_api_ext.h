@@ -277,12 +277,12 @@ void wifi_promisc_enable(u32 enable, struct rtw_promisc_para *para);
 
 /**
  * @brief  Check if the Wi-Fi driver is in Mass Production (MP) mode.
+ * @param[out]  is_mp: 1 indicate driver is MP mode, 0 indicate driver is not MP mode.
  * @note  MP mode is used for Wi-Fi & Bluetooth performance verification and parameter calibration during mass production.
  * @return
- *        - 1: Driver is MP mode.
- *        - 0: Driver is not in MP mode.
+ *    - @ref RTK_SUCCESS : The API executed successfully.
  */
-u8 wifi_driver_is_mp(void);
+s32 wifi_driver_is_mp(u8 *is_mp);
 
 /**
  * @brief  Get CCMP unicast and group keys.
@@ -443,7 +443,8 @@ s32 wifi_del_custom_ie(u8 wlan_idx);
  *             details such as raw data pointer and transmission rate.
  * @return
  *    - @ref RTK_SUCCESS : The API executed successfully.
- *    - @ref RTK_FAIL : Driver internal error.
+ *    - -@ref RTK_ERR_WIFI_TX_BUF_FULL : HW & SW tx buffer full, please wait for a while.
+ *    - -@ref RTK_ERR_BUFFER_OVERFLOW : The packet length exceeds the SW per buf size.
  *    - -@ref RTK_ERR_BADARG : NULL pointer passed for `raw_frame_desc`.
  * @note  For unassociated peer devices in RX mode, only unencrypted frames are currently supported.
  */

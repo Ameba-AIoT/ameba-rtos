@@ -732,10 +732,7 @@ static const cmd_table_t vendor_table[] = {
 	{"hci_debug_enable", atcmd_bt_hci_debug_enable, 1, 1},
 	{"bt_debug_port",    atcmd_bt_debug_port,       4, 6},
 	{"bt_gpio",          atcmd_bt_gpio,             2, 3},
-	{"sleep",            atcmd_bt_sleep_mode,       2, 2},
-	/*{"ant",              atcmd_bt_ant,              2, 2},*/
 	{"tx_power",         atcmd_bt_set_tx_power,     4, 5},
-	{"sof",              atcmd_bt_sof_eof_ind,      2, 3},
 #if defined(CONFIG_BT_INIC) && CONFIG_BT_INIC
 	{"remote_wakeup",    atcmd_bt_remote_wakeup,    1, 1},
 #endif

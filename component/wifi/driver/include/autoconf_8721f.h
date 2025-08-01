@@ -61,10 +61,8 @@
 
 //#define CONFIG_BT_COEXIST
 
-#if WIFI_LOGO_CERTIFICATION == 0
-#define RX_SHORTCUT /*there's no reoder in rx short right now, wifi logo need ping 10k which needs reorder*/
-#define TX_SHORTCUT /*there's no sw encrypt in tx short right now, wifi logo need htc which needs sw encrypt*/
-#endif
+#define RX_SHORTCUT /*there's no reoder in rx short right now, wifi logo need ping 10k which needs reorder, g2 has fixed*/
+#define TX_SHORTCUT /*there's no sw encrypt in tx short right now, wifi logo need htc which needs sw encrypt, g2 has fixed*/
 
 #define CONFIG_80211AC_VHT
 #ifdef CONFIG_80211AC_VHT

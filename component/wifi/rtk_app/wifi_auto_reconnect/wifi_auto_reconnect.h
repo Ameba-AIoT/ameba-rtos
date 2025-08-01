@@ -27,6 +27,7 @@ struct rtw_auto_reconn_t {
 	u8                  b_infinite: 1;
 	u8                  b_enable: 1;
 	u8                  b_waiting: 1;
+	u8                  b_disconn_by_app: 1;
 };
 
 #define WIFI_STACK_SIZE_AUTO_RECONN_TASKLET	(2744 + 128 + CONTEXT_SAVE_SIZE + 300)	/* max 1056 in lite */
@@ -34,7 +35,8 @@ struct rtw_auto_reconn_t {
 extern struct rtw_auto_reconn_t  rtw_reconn;
 int wifi_stop_autoreconnect(void);
 void rtw_reconn_new_conn(struct rtw_network_info *connect_param);
-void rtw_reconn_join_status_hdl(u8 *buf);
+void rtw_reconn_dhcp_status_hdl(u8 *evt_info);
+void rtw_reconn_join_status_hdl(u8 *evt_info);
 #endif
 
 #endif

@@ -93,10 +93,9 @@ int get_eap_phase(void)
 	return 0;
 }
 
-void eap_eapol_start_hdl(u8 *buf, s32 buf_len)
+void eap_eapol_start_hdl(u8 *evt_info)
 {
-	UNUSED(buf);
-	UNUSED(buf_len);
+	UNUSED(evt_info);
 }
 
 void eap_eapol_recvd_hdl(u8 *buf, s32 buf_len)

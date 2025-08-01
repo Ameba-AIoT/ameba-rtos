@@ -74,6 +74,7 @@ void bt_inic_send_to_host(u8 type, u8 *pdata, u32 len)
 		if (rxbd_free_num <= 1) {
 			BT_LOGE("No available RX BD, r_ptr:%d, w_ptr:%d\r\n",
 					g_bt_inic_sdio.rxbd_r_ptr, g_bt_inic_sdio.rxbd_w_ptr);
+			osif_mutex_give(g_bt_inic_sdio.rxbd_mutex);
 			return;
 		}
 	}

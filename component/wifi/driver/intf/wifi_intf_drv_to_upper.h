@@ -70,8 +70,7 @@ int rtw_nan_intfs_init(void);
 void rtw_nan_intfs_deinit(void);
 void rtw_nan_start_api(u8 master_pref, u8 band_support, u8 nan_cmd_type);
 void rtw_nan_stop_api(void);
-void rtw_nan_func_set_parameter(void *func_param, void **nan_func_pointer);
-int rtw_nan_func_add(void *func_param, void *nan_func_pointer);
+int rtw_nan_func_add(struct rtw_nan_func_t *func_param, u64 nan_func_pointer);
 int rtw_nan_func_del(u64 cookie);
 void rtw_cfgvendor_cmd_process(u16 vendor_cmd, void *data, u32 len);
 #endif

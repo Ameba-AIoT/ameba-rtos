@@ -52,5 +52,14 @@ void wifi_hal_antdiv_get_evm_info(bool a, u8 b)
 	UNUSED(b);
 }
 
+void wifi_hal_antdiv_set_ant(u8 target_ant)
+{
+	UNUSED(target_ant);
+}
+
+void wifi_hal_antdiv_update_rx_idle_ant(u8 ant)
+{
+	UNUSED(ant);
+}
 #endif /* CONFIG_WIFI_ANTDIV */
 

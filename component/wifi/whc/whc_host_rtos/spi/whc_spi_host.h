@@ -4,15 +4,32 @@
 #include "spi_api.h"
 #include "spi_ex_api.h"
 
+#ifdef CONFIG_AMEBAGREEN2  // need use QFN100
+#define PINMUX_FUNCTION_SPIM	    PINMUX_FUNCTION_SPI0
+#define DEV_READY_PIN				_PA_18
+#define RX_REQ_PIN					_PA_19
+#define SPI1_MOSI                   _PA_30
+#define SPI1_MISO                   _PA_31
+#define SPI1_SCLK                   _PA_29
+#define HOST_READY_PIN              _PB_0 //cs
+
+#elif defined (CONFIG_AMEBADPLUS)
+#define PINMUX_FUNCTION_SPIM	    PINMUX_FUNCTION_SPI
 #define DEV_READY_PIN				_PB_9
+#define RX_REQ_PIN					_PB_8
+#define SPI1_MOSI	                _PB_24
+#define SPI1_MISO	                _PB_25
+#define SPI1_SCLK	                _PB_23
+#define HOST_READY_PIN		        _PB_26  //cs
+#endif
+
+
 #define DEV_READY					1
 #define DEV_BUSY					0
 
-#define RX_REQ_PIN					_PB_8
 #define DEV_RX_REQ					1
 #define DEV_RX_IDLE					0
 
-#define HOST_READY_PIN				_PB_26
 #define HOST_READY					1
 #define HOST_BUSY					0
 

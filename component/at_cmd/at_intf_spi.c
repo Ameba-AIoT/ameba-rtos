@@ -466,6 +466,7 @@ void atio_spi_output(char *buf, int len)
 		} else if (space > 0) {
 			RingBuffer_Write(at_spi_tx_ring_buf, (u8 *)buf, space);
 			send_len -= space;
+			buf += space;
 		}
 
 		rtos_time_delay_ms(1);

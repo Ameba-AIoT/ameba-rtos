@@ -104,6 +104,7 @@ add_custom_command(OUTPUT ${c_SDK_IMAGE_TARGET_DIR}/fullmac_ram_1_prepend.bin
         -DBUILD_TYPE=${BUILD_TYPE}
         -DANALYZE_MP_IMG=${ANALYZE_MP_IMG}
         -DDAILY_BUILD=${DAILY_BUILD}
+        -DEXTERN_DIR=${EXTERN_DIR}
 
         # cmake toolchain variables
         -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR}

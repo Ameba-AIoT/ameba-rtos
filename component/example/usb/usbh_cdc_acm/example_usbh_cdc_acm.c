@@ -156,14 +156,17 @@ static int cdc_acm_cb_notify(u8 *buf, u32 length)
 
 static int cdc_acm_cb_receive(u8 *buf, u32 length)
 {
+	u16 cdc_acm_bulk_in_mps = usbh_cdc_acm_get_bulk_ep_mps();
+
 	//limited the copy length
 	if ((length > 0) && ((cdc_acm_total_rx_len + length) <= USBH_CDC_ACM_LOOPBACK_BUF_SIZE)) {
 		memcpy(cdc_acm_loopback_rx_buf + cdc_acm_total_rx_len, buf, length);
 	}
 	cdc_acm_total_rx_len += length;
-
 	//ZLP or short packet
-	if ((length == 0) || (length % usbh_cdc_acm_get_bulk_ep_mps())) {
+	if ((length == 0) || (length % cdc_acm_bulk_in_mps)
+		|| ((length % cdc_acm_bulk_in_mps == 0) && (length < USBH_CDC_ACM_LOOPBACK_BUF_SIZE))
+		|| (cdc_acm_total_rx_len > USBH_CDC_ACM_LOOPBACK_BUF_SIZE)) {
 		cdc_acm_total_rx_len = 0;
 		rtos_sema_give(cdc_acm_receive_sema);
 	}

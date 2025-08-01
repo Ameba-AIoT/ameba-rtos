@@ -12,6 +12,12 @@
 #define __WHC_WPA_LITE_APP_H__
 
 
-#define BRIDGE_WPA_OPS_BUF_SIZE     1024
+int whc_wpa_ops_disconnect(char *ptr, u8 *buf);
+int whc_wpa_ops_select_network(char *ptr, u8 *buf);
+int whc_wpa_ops_list_network(char *ptr, u8 *buf);
+int whc_wpa_ops_set_network(char *ptr, u8 *buf, int msg_len);
+int whc_wpa_ops_get_macaddr(u8 *ptr, u8 *buf);
+int whc_wpa_ops_do_scan(u8 *input, u8 *buf);
+
 
 #endif

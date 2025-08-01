@@ -125,8 +125,8 @@ int wpas_wps_registrar_check_done(void);
 int wpas_wps_registrar_add_pin(const u8 *pin, size_t pin_len);
 int wpas_wps_registrar_wps_cancel(void);
 int wpas_wps_enrollee_init_assoc_ie(void);
-void wpas_wsc_sta_wps_start_hdl(u8 *buf, s32 buf_len);
-void wpas_wsc_wps_finish_hdl(u8 *buf, s32 buf_len);
+void wpas_wsc_sta_wps_start_hdl(u8 *evt_info);
+void wpas_wsc_wps_finish_hdl(u8 *evt_info);
 void wpas_wsc_eapol_recvd_hdl(u8 *buf, s32 buf_len);
 
 //#endif //CONFIG_WPS
