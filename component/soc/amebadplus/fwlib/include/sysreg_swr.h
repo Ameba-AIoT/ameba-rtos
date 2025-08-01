@@ -145,9 +145,11 @@
  * @brief
  * @{
  **/
-#define SWR_MASK_NULL0                  ((u32)0x000000FF << 24)          /*!<R/W 0   */
-#define SWR_NULL0(x)                    (((u32)((x) & 0x000000FF) << 24))
-#define SWR_GET_NULL0(x)                ((u32)(((x >> 24) & 0x000000FF)))
+#define SWR_BIT_ZCDBIAS_MINUS_PFM       ((u32)0x00000001 << 31)          /*!<R/W 0   */
+#define SWR_BIT_ZCDC_MUX_SEL_PFM        ((u32)0x00000001 << 30)          /*!<R/W 0   */
+#define SWR_MASK_NULL0                  ((u32)0x0000003F << 24)          /*!<R/W 0   */
+#define SWR_NULL0(x)                    (((u32)((x) & 0x0000003F) << 24))
+#define SWR_GET_NULL0(x)                ((u32)(((x >> 24) & 0x0000003F)))
 #define SWR_MASK_BOD1_VL_SEL            ((u32)0x0000001F << 19)          /*!<R/W 11011   */
 #define SWR_BOD1_VL_SEL(x)              (((u32)((x) & 0x0000001F) << 19))
 #define SWR_GET_BOD1_VL_SEL(x)          ((u32)(((x >> 19) & 0x0000001F)))
@@ -169,9 +171,20 @@
  * @brief
  * @{
  **/
-#define SWR_MASK_NULL1                  ((u32)0xFFFFFFFF << 0)          /*!<R/W 00000   */
-#define SWR_NULL1(x)                    (((u32)((x) & 0xFFFFFFFF) << 0))
-#define SWR_GET_NULL1(x)                ((u32)(((x >> 0) & 0xFFFFFFFF)))
+#define SWR_BIT_ZCDBIAS_PLUS_PFM        ((u32)0x00000001 << 0)          /*!<R/W 0   */
+#define SWR_BIT_EN_HLOAD_PFM            ((u32)0x00000001 << 1)          /*!<R/W 0   */
+#define SWR_MASK_OCP_L1_PFM             ((u32)0x00000007 << 2)          /*!<R/W 0   */
+#define SWR_OCP_L1_PFM(x)               (((u32)((x) & 0x00000007) << 2))
+#define SWR_GET_OCP_L1_PFM(x)           ((u32)(((x >> 2) & 0x00000007)))
+#define SWR_MASK_NULL1_PRE              ((u32)0x0000007F << 5)          /*!<R/W 00000   */
+#define SWR_NULL1_PRE(x)                (((u32)((x) & 0x0000007F) << 5))
+#define SWR_GET_NULL1_PRE(x)            ((u32)(((x >> 5) & 0x0000007F)))
+#define SWR_MASK_ZCD_VTUNE              ((u32)0x0000000F << 12)          /*!<R/W 0   */
+#define SWR_ZCD_VTUNE(x)                (((u32)((x) & 0x0000000F) << 12))
+#define SWR_GET_ZCD_VTUNE(x)            ((u32)(((x >> 12) & 0x0000000F)))
+#define SWR_MASK_NULL1                  ((u32)0x0000FFFF << 16)          /*!<R/W 00000   */
+#define SWR_NULL1(x)                    (((u32)((x) & 0x0000FFFF) << 16))
+#define SWR_GET_NULL1(x)                ((u32)(((x >> 16) & 0x0000FFFF)))
 /** @} */
 
 /** @defgroup SWR_ANAPARSW_MAC_ON_5
