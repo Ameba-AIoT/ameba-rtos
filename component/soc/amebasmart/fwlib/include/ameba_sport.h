@@ -952,6 +952,8 @@ typedef struct {
 #define SP_88P2K		(88200)
 #define SP_22P05K		(22050)
 #define SP_176P4K		(176400)
+#define SP_384K		(384000)
+#define SP_352P8K		(352800)
 /**
   * @}
   */

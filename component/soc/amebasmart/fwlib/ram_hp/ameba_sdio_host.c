@@ -102,6 +102,7 @@ u32 SDIOH_WaitDMADone(u32 timeout_us)
 {
 	SDIOH_TypeDef *psdioh = SDIOH_BASE;
 
+#if defined(SDIO) &&(SDIO == SD)
 	/*If scheduling has already started, wait for sema to obtain the DMA done signal.*/
 	if ((CPU_InInterrupt() == 0) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (sd_sema_take_fn != NULL)) {
 
@@ -115,6 +116,7 @@ u32 SDIOH_WaitDMADone(u32 timeout_us)
 
 		SDIOH_INTConfig(SDIOH_DMA_CTL_INT_EN, DISABLE);
 	}
+#endif
 
 	/*If scheduling has already started, poll transfer status; otherwise, poll transfer and DMA_ Xfree status.*/
 	do {

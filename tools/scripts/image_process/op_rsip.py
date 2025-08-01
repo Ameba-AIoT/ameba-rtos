@@ -39,7 +39,7 @@ class Rsip(OperationBase):
             #Detect image type by image name
             image_type = parse_image_type(input_file)
         image_config = manifest_manager.get_image_config(image_type)
-        if image_config.rsip_en:
+        if image_config.rsip_enable:
             section_addr = get_layout_address(layout_file, section, "ORIGIN")
             if section_addr == '':
                 context.logger.fatal(f"Failed to parse addr for {section} in {layout_file}")

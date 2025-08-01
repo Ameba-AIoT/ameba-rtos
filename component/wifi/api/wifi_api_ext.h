@@ -431,7 +431,8 @@ s32 wifi_del_custom_ie(u8 wlan_idx);
  *             details such as raw data pointer and transmission rate.
  * @return
  *    - @ref RTK_SUCCESS : The API executed successfully.
- *    - @ref RTK_FAIL : Driver internal error.
+ *    - -@ref RTK_ERR_WIFI_TX_BUF_FULL : HW & SW tx buffer full, please wait for a while.
+ *    - -@ref RTK_ERR_BUFFER_OVERFLOW : The packet length exceeds the SW per buf size.
  *    - -@ref RTK_ERR_BADARG : NULL pointer passed for `raw_frame_desc`.
  * @note  For unassociated peer devices in RX mode, only unencrypted frames are currently supported.
  */

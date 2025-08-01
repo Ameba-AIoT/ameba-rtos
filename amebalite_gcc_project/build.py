@@ -15,7 +15,7 @@ project_dir = os.path.dirname(os.path.abspath(__file__))
 
 gdb_script_dir = os.path.join(project_dir, 'utils/jlink_script/gdb.py')
 
-copy_script_dir = os.path.join(project_dir, '../tools/scripts/copy.py')
+copy_script_dir = os.path.join(project_dir, '../tools/scripts/build_copy.py')
 
 
 def main(argc, argv):

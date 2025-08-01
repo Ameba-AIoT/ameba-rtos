@@ -323,7 +323,7 @@ typedef enum {
 #define IPC_R2M_IMQ_TRX_TRAN				4	/*!<  KR4 -->  KM4 IMQ Message Exchange */
 //#define IPC_R2M_Channel4				4
 //#define IPC_R2M_Channel5				5
-#define IPC_R2M_BT_API_TRAN					2	/*!<  KR4 -->  KM4 BT API Exchange */
+#define IPC_R2M_COEX_API_TRAN				2	/*!<  KR4 -->  KM4 COEX API Exchange */
 #define IPC_R2M_BT_DRC_TRAN					5	/*!<  KR4 -->  KM4 BT DATA Exchange */
 #define IPC_R2M_WIFI_TRX_TRAN				6	/*!<  KR4 -->  KM4 WIFI Message Exchange */
 #define IPC_R2M_WIFI_API_TRAN				7	/*!<  KR4 -->  KM4 API WIFI Message Exchange */
@@ -350,7 +350,7 @@ typedef enum {
 #define IPC_M2R_LOGUART_RX_SWITCH				3	/*!<  KM4 -->  KR4 Loguart Rx Switch*/
 #define IPC_M2R_IMQ_TRX_TRAN					4	/*!<  KM4 -->  KR4 IMQ Message Exchange */
 //#define IPC_M2R_Channel5						5
-#define IPC_M2R_BT_API_TRAN						1	/*!<  KM4 -->  KR4 BT API Exchange */
+#define IPC_M2R_COEX_API_TRAN					1	/*!<  KM4 -->  KR4 COEX API Exchange */
 #define IPC_M2R_BT_DRC_TRAN						5	/*!<  KM4 -->  KR4 BT DATA Exchange */
 #define IPC_M2R_WIFI_TRX_TRAN						6	/*!<  KM4 -->  KR4 WIFI Message Exchange */
 #define IPC_M2R_WIFI_API_TRAN						7	/*!<  KM4 -->  KR4 WIFI API Message Exchange */

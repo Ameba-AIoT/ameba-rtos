@@ -89,6 +89,14 @@ menu "Audio Config"
                     select MEDIA_CODEC_GSM if CORE_AS_AP
 
             endmenu
+
+            menu "Sink"
+                comment "    Sink"
+                config MEDIA_SINK_BT_AND_UAC_MENU
+                    bool "BT & UAC"
+                    select MEDIA_SINK_BT_AND_UAC if CORE_AS_AP
+
+            endmenu
         endif
 
 
@@ -161,6 +169,9 @@ config MEDIA_CODEC_G711
 bool
 
 config MEDIA_CODEC_GSM
+bool
+
+config MEDIA_SINK_BT_AND_UAC
 bool
 
 config SPEEX_LIB

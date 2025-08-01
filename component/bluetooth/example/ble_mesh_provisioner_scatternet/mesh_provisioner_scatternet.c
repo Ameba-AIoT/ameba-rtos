@@ -3322,9 +3322,9 @@ int ble_mesh_provisioner_scatternet_main(uint8_t enable)
 		bt_app_conf.bt_mesh_app_conf.bt_mesh_role = RTK_BT_MESH_ROLE_PROVISIONER;
 		bt_app_conf.mtu_size = 180;
 		bt_app_conf.master_init_mtu_req = true;
-		bt_app_conf.prefer_all_phy = 0;
-		bt_app_conf.prefer_tx_phy = 1 | 1 << 2;
-		bt_app_conf.prefer_rx_phy = 1 | 1 << 2;
+		bt_app_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
+		bt_app_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_CODED;
+		bt_app_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_CODED;
 		bt_app_conf.max_tx_octets = 0x40;
 		bt_app_conf.max_tx_time = 0x200;
 

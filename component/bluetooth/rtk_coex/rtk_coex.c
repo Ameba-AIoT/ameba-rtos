@@ -7,6 +7,7 @@
 #include <string.h>
 #include <osif.h>
 #include "hci_platform.h"
+#include "rtk_bt_gap.h"
 #include "rtk_coex.h"
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_host_api.h"
@@ -17,8 +18,6 @@
 #if defined(HCI_BT_COEX_ENABLE) && HCI_BT_COEX_ENABLE
 
 struct rtk_bt_coex_priv_t *p_rtk_bt_coex_priv = NULL;
-
-extern bool hci_if_write_internal(uint8_t *buf, uint32_t len);
 
 static struct rtk_bt_coex_conn_t  *bt_coex_find_link_by_handle(uint16_t conn_handle)
 {
@@ -49,16 +48,16 @@ static struct rtk_bt_coex_conn_t  *bt_coex_find_link_by_handle(uint16_t conn_han
 static void bt_coex_send_vendor_cmd(uint16_t cmd_id, uint8_t *pbuf, uint8_t len)
 {
 	DBG_BT_COEX("bt_coex_send_vendor_cmd -----> cmd_id 0x%x\r\n", cmd_id);
-
-	pbuf[0] = HCI_CMD;
-	pbuf[1] = cmd_id & 0xFF;
-	pbuf[2] = (cmd_id >> 8) & 0xFF;
-	pbuf[3] = len - 4;
+	rtk_bt_gap_vendor_cmd_param_t param = {
+		.op = cmd_id,
+		.len = len,
+		.cmd_param = pbuf
+	};
 
 	DBG_BT_COEX("bt_coex_send_vendor_cmd: len = %d\r\n", len);
 	DBG_BT_COEX_DUMP("bt_coex_send_vendor_cmd: pbuf = ", pbuf, len);
 
-	hci_if_write_internal(pbuf, len);
+	rtk_bt_gap_vendor_cmd_req(&param);
 
 	DBG_BT_COEX("bt_coex_send_vendor_cmd <----- \r\n");
 }
@@ -90,13 +89,12 @@ static void bt_coex_set_profile_info_to_fw(void)
 		handle_number ++;    /* profile 0x00 should be reported to bt fw */
 	}
 
-	pbuf = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, (1 + handle_number * 6) + 4);
+	pbuf = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, (1 + handle_number * 6));
 	if (!pbuf) {
 		return;
 	}
 
-	/* the first 4 byte reserved for header */
-	pbuf[offset + 4] = handle_number;
+	pbuf[offset] = handle_number;
 	offset ++;
 
 	plist = NULL;
@@ -108,11 +106,11 @@ static void bt_coex_set_profile_info_to_fw(void)
 						p_conn->profile_status_bitmap);
 			if (p_conn->profile_bitmap != 0) {
 				report_number++;
-				memcpy(pbuf + offset + 4, &p_conn->conn_handle, 2);
+				memcpy(pbuf + offset, &p_conn->conn_handle, 2);
 				offset += 2;
-				memcpy(pbuf + offset + 4, &p_conn->profile_bitmap, 2);
+				memcpy(pbuf + offset, &p_conn->profile_bitmap, 2);
 				offset += 2;
-				memcpy(pbuf + offset + 4, &p_conn->profile_status_bitmap, 2);
+				memcpy(pbuf + offset, &p_conn->profile_status_bitmap, 2);
 				offset += 2;
 			}
 			plist = plist->next;
@@ -122,9 +120,9 @@ static void bt_coex_set_profile_info_to_fw(void)
 		}
 	}
 
-	/* DBG_BT_COEX_DUMP("", pbuf, offset + 4); */
+	/* DBG_BT_COEX_DUMP("", pbuf, offset); */
 
-	bt_coex_send_vendor_cmd(HCI_VENDOR_SET_PROFILE_REPORT_COMMAND, pbuf, offset + 4);
+	bt_coex_send_vendor_cmd(HCI_VENDOR_SET_PROFILE_REPORT_COMMAND, pbuf, offset);
 
 	osif_mem_free(pbuf);
 }
@@ -855,10 +853,9 @@ static void bt_coex_handle_handle_l2cap_dis_conn_req(struct rtk_bt_coex_conn_t *
 
 static void bt_coex_set_bitpool_to_fw(uint8_t *user_data, uint16_t length)
 {
-#define HCI_VENDOR_SET_BITPOOL_LENGTH  5
 	struct sbc_frame_hdr *sbc_header = NULL;
 	struct rtp_header *rtph = NULL;
-	uint8_t hci_buf[HCI_VENDOR_SET_BITPOOL_LENGTH] = {0};
+	uint8_t hci_buf[1] = {0};
 
 	/* We assume it is SBC if the packet length
 	    * is bigger than 100 bytes
@@ -873,13 +870,13 @@ static void bt_coex_set_bitpool_to_fw(uint8_t *user_data, uint16_t length)
 
 		/* point to the sbc frame header */
 		sbc_header = (struct sbc_frame_hdr *)user_data;
-		hci_buf[HCI_VENDOR_SET_BITPOOL_LENGTH - 1] = (uint8_t)sbc_header->bitpool;
+		hci_buf[0] = (uint8_t)sbc_header->bitpool;
 
 		DBG_BT_COEX("bt_coex_set_bitpool_to_fw bitpool %d channel_mode %d sampling_frequency %d\r\n", sbc_header->bitpool, sbc_header->channel_mode,
 					sbc_header->sampling_frequency);
 
 		/* the first 4 byte reserved for header */
-		bt_coex_send_vendor_cmd(HCI_VENDOR_SET_BITPOOL, hci_buf, HCI_VENDOR_SET_BITPOOL_LENGTH);
+		bt_coex_send_vendor_cmd(HCI_VENDOR_SET_BITPOOL, hci_buf, 1);
 	}
 }
 
@@ -1049,18 +1046,18 @@ void bt_coex_send_mailbox_cmd(uint8_t *user_data, uint16_t length)
 	uint8_t *pbuf = NULL;
 	uint8_t offset = 0;
 
-	pbuf = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, 1 + length + 4);
+	pbuf = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, 1 + length);
 	if (!pbuf) {
 		return;
 	}
 
 	/* the first 4 byte reserved for header */
-	pbuf[offset + 4] = length;
+	pbuf[offset] = length;
 	offset ++;
-	memcpy(pbuf + offset + 4, user_data, length);
+	memcpy(pbuf + offset, user_data, length);
 
 	/* the first 4 byte reserved for header */
-	bt_coex_send_vendor_cmd(HCI_VENDOR_MAILBOX_CMD, pbuf, offset + 4);
+	bt_coex_send_vendor_cmd(HCI_VENDOR_MAILBOX_CMD, pbuf, offset);
 
 	osif_mem_free(pbuf);
 }

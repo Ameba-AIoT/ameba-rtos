@@ -68,7 +68,7 @@ static void app_sdp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->did_attr_info.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_DID_ATTR_INFO");
-			BT_LOGE("app_sdp_bt_cback: BT_EVENT_DID_ATTR_INFO \r\n");
+			BT_LOGA("app_sdp_bt_cback: BT_EVENT_DID_ATTR_INFO \r\n");
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_SDP, RTK_BT_SDP_EVT_DID_ATTR_INFO, sizeof(rtk_sdp_did_attr_info));
 				if (!p_evt) {
@@ -83,6 +83,36 @@ static void app_sdp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 				p_info->vendor_src = param->did_attr_info.vendor_src;
 				p_info->product_id = param->did_attr_info.product_id;
 				p_info->version = param->did_attr_info.version;
+				/* Send event */
+				if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
+					handle = false;
+					break;
+				}
+			}
+		} else {
+			APP_PRINT_INFO0("SDP p_link is NULL");
+			BT_LOGE("app_sdp_bt_cback: SDP p_link is NULL \r\n");
+		}
+	}
+	break;
+
+	case BT_EVENT_SDP_DISCOV_CMPL: {
+		rtk_sdp_discov_cmpl *p_info = NULL;
+
+		p_link = app_find_br_link(param->sdp_discov_cmpl.bd_addr);
+		if (p_link != NULL) {
+			APP_PRINT_INFO0("BT_EVENT_SDP_DISCOV_CMPL");
+			BT_LOGA("app_sdp_bt_cback: BT_EVENT_SDP_DISCOV_CMPL \r\n");
+			{
+				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_SDP, RTK_BT_SDP_EVT_DISCOV_CMPL, sizeof(rtk_sdp_discov_cmpl));
+				if (!p_evt) {
+					BT_LOGE("app_sdp_bt_cback: evt_t allocate fail \r\n");
+					handle = false;
+					break;
+				}
+				p_info = (rtk_sdp_discov_cmpl *)p_evt->data;
+				memcpy((void *)p_info->bd_addr, (void *)p_link->bd_addr, 6);
+				p_info->cause = param->sdp_discov_cmpl.cause;
 				/* Send event */
 				if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
 					handle = false;

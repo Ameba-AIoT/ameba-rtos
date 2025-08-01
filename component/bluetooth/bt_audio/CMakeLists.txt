@@ -13,6 +13,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/bt_codec
+    ${CMAKE_CURRENT_SOURCE_DIR}/audio_noise_cancellation
 )
 
 # Component public part, user config end
@@ -58,6 +59,7 @@ ameba_list_append(private_includes
 	${c_CMPT_BLUETOOTH_DIR}/rtk_stack/example/ble_audio
 	${c_CMPT_BLUETOOTH_DIR}/rtk_stack/inc/bluetooth/leaudio
 	audio_sync
+	audio_noise_cancellation
 	bt_codec/sbc/decoder/include
 	bt_codec/sbc/encoder/include
 	bt_codec/lc3/include
@@ -83,5 +85,7 @@ ameba_add_internal_library(bt_audio
 
 ameba_add_subdirectory(bt_codec)
 ameba_add_subdirectory(audio_sync)
-
+if(CONFIG_AMEBASMART)
+    ameba_add_subdirectory_if(CONFIG_ARM_CORE_CA32 audio_noise_cancellation)
+endif()
 ##########################################################################################
