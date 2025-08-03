@@ -236,7 +236,6 @@ int wifi_rom_wpa_key_mgmt_sha384(int akm);
 void wifi_rom_ap_constructEAPOL_1Of4Way(struct eapol_params *params);
 u8 wifi_rom_ap_constructEAPOL_3Of4Way(struct eapol_params *params, struct eapol_params_2 *params2, u8 is_80211w);
 void wifi_rom_ap_constructEAPOL_1Of2Way(struct eapol_params *params, struct eapol_params_2 *params2, u8 is_80211w);
-u8 wifi_rom_check_append_pmkid(struct _OCTET_STRING *pEapolKeyMsgRecvd, struct _OCTET_STRING *pAuthInfoElement, u8 *pmkid, u8 is_80211w);
 void wifi_rom_check_append_rsnxe(struct _OCTET_STRING *pAuthInfoElement, u8 h2e, u8 *rsnxe_ie);
 void wifi_rom_set_playercounter(union _LARGE_INTEGER *x, unsigned long HighPart, unsigned long LowPart);
 u8 wifi_rom_equal_playercounter(union _LARGE_INTEGER *x, union _LARGE_INTEGER *y);
