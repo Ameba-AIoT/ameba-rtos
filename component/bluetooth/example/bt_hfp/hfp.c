@@ -32,9 +32,9 @@
 #else
 #define AUDIO_RECORD_CHANNELS (1)
 #define AUDIO_RECORD_SAMPLERATE (8000)
-#define RECORD_FRAME_SAMPLES_PER_CHANNLE (30)
+#define RECORD_FRAME_SAMPLES_PER_CHANNLE (60)
 #endif
-#define BT_ENCODE_FRAME_BYTES (60)
+#define BT_ENCODE_FRAME_BYTES (120)
 
 /* -------------------------------- Defines --------------------------------- */
 #define RTK_BT_DEV_NAME "RTK_BT_HFP_HF"

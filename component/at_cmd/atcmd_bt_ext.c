@@ -547,8 +547,12 @@ static int atcmd_bt_vendor_help(int argc, char *argv[])
 #define CMD_NAME_TMAP            "+BLETMAP"
 #define CMD_NAME_GMAP            "+BLEGMAP"
 #endif /* RTK_BLE_AUDIO_SUPPORT */
+#if defined(CONFIG_BT_SDN_VERIFY) && CONFIG_BT_SDN_VERIFY
+#define CMD_NAME_BT_SDN_VERIFY    "+BTSDN"
+#endif /* CONFIG_BT_SDN_VERIFY */
 
 static const cmd_table_t cmd_table[] = {
+	{CMD_NAME_BT_DEMO,          atcmd_bt_example,                               2, 14},
 	{CMD_NAME_BLE_GAP,          atcmd_bt_le_gap,                                2, 21},
 #if defined(RTK_BLE_GATTS) && RTK_BLE_GATTS
 	{CMD_NAME_GATTS,            atcmd_bt_gatts,                                 3, 16},
@@ -584,7 +588,7 @@ static const cmd_table_t cmd_table[] = {
 	{CMD_NAME_MESH_SBR,         atcmd_bt_mesh_sbr,                              4, 9},
 	{CMD_NAME_MESH_PRB,         atcmd_bt_mesh_prb,                              4, 6},
 	{CMD_NAME_MESH_DFU,         atcmd_bt_mesh_device_firmware_update,           3, 11},
-#endif  // end of RTK_BLE_MESH_SUPPORT
+#endif /* end of RTK_BLE_MESH_SUPPORT */
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 	{CMD_NAME_BR_GAP,           atcmd_bt_br_gap,                                2, 13},
 	{CMD_NAME_SDP,              atcmd_bt_sdp_cmd,                               1, 3},
@@ -609,132 +613,9 @@ static const cmd_table_t cmd_table[] = {
 	{CMD_NAME_GMAP,             atcmd_bt_gmap_cmd,                              3, 10},
 #endif
 #endif
-	{NULL,},
-};
-
-static const cmd_table_t example_table[] = {
-#if defined(BT_ATCMD_HELP) && BT_ATCMD_HELP
-	{"help",             atcmd_bt_example_help,     1, 3},
-#endif
-#if defined(CONFIG_BT_AUDIO_MP_TEST) && CONFIG_BT_AUDIO_MP_TEST
-	{"bt_audio_mp_test", atcmd_bt_audio_mp_test,    2, 2},
-#endif
-#if defined(CONFIG_BT_PERIPHERAL) && CONFIG_BT_PERIPHERAL
-	{"peripheral",       atcmd_bt_peripheral,       2, 2},
-#endif
-#if defined(CONFIG_BT_HOGP) && CONFIG_BT_HOGP
-	{"hogp",       atcmd_bt_hogp_gamepad,           2, 2},
-#endif
-#if defined(CONFIG_BT_CENTRAL) && CONFIG_BT_CENTRAL
-	{"central",          atcmd_bt_central,          2, 2},
-#endif
-#if defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET
-	{"scatternet",       atcmd_bt_scatternet,       2, 2},
-#endif
-#if defined(CONFIG_BT_THROUGHPUT) && CONFIG_BT_THROUGHPUT
-	{"throughput",       atcmd_bt_throughput,       2, 13},
-#endif
-#if defined(CONFIG_BT_OTA_CENTRAL) && CONFIG_BT_OTA_CENTRAL
-	{"ota_central",      atcmd_bt_ota_central,      2, 2},
-#endif
-#if defined(CONFIG_BT_OTA_PERIPHERAL) && CONFIG_BT_OTA_PERIPHERAL
-	{"ota_peripheral",   atcmd_bt_ota_peripheral,   2, 2},
-#endif
-#if defined(CONFIG_BT_MESH_PROVISIONER) && CONFIG_BT_MESH_PROVISIONER
-	{"provisioner",      atcmd_bt_mesh_provisioner, 2, 2},
-#endif
-#if defined(CONFIG_BT_MESH_DEVICE) && CONFIG_BT_MESH_DEVICE
-	{"device",           atcmd_bt_mesh_device,      2, 2},
-#endif
-#if defined(CONFIG_BT_MESH_PROVISIONER_SCATTERNET) && CONFIG_BT_MESH_PROVISIONER_SCATTERNET
-	{"provisioner_scatternet", atcmd_bt_mesh_provisioner_scatternet, 2, 2},
-#endif
-#if defined(CONFIG_BT_MESH_DEVICE_SCATTERNET) && CONFIG_BT_MESH_DEVICE_SCATTERNET
-	{"device_scatternet", atcmd_bt_mesh_device_scatternet, 2, 2},
-#endif
-#if defined(CONFIG_BT_MESH_PROVISIONER_TEST) && CONFIG_BT_MESH_PROVISIONER_TEST
-	{"provisioner_test", atcmd_bt_mesh_provisioner_test, 2, 9},
-#endif
-#if defined(CONFIG_BT_MESH_DEVICE_TEST) && CONFIG_BT_MESH_DEVICE_TEST
-	{"device_test", atcmd_bt_mesh_device_test, 2, 2},
-#endif
-#if defined(CONFIG_BT_ISO_TEST) && CONFIG_BT_ISO_TEST
-	{"iso",              atcmd_ble_iso,             4, 4},
-#endif
-#if defined(CONFIG_BT_A2DP) && CONFIG_BT_A2DP
-	{"a2dp",             atcmd_bt_a2dp,             3, 3},
-#endif
-#if defined(CONFIG_BT_A2DP_SCATTERNET) && CONFIG_BT_A2DP_SCATTERNET
-	{"a2dp_scatternet",  atcmd_bt_a2dp_scatternet,  3, 3},
-#endif
-#if defined(CONFIG_BT_A2DP_PROVISIONER_SCATTERNET) && CONFIG_BT_A2DP_PROVISIONER_SCATTERNET
-	{"a2dp_provisioner_scatternet",  atcmd_bt_a2dp_provisioner_scatternet,  3, 3},
-#endif
-#if defined(CONFIG_BT_A2DP_LE_AUDIO_PBP) && CONFIG_BT_A2DP_LE_AUDIO_PBP
-	{"a2dp_pbp",         atcmd_bt_a2dp_pbp,         2, 2},
-#endif
-#if defined(CONFIG_BT_A2DP_HFP_LE_AUDIO_PBP) && CONFIG_BT_A2DP_HFP_LE_AUDIO_PBP
-	{"a2dp_hfp_pbp",     atcmd_bt_a2dp_hfp_pbp,     2, 2},
-#endif
-#if defined(CONFIG_BT_A2DP_LE_AUDIO_TMAP) && CONFIG_BT_A2DP_LE_AUDIO_TMAP
-	{"a2dp_tmap",        atcmd_bt_a2dp_tmap,        3, 3},
-#endif
-#if defined(CONFIG_BT_SPP) && CONFIG_BT_SPP
-	{"spp",              atcmd_bt_spp,              3, 6},
-#endif
-#if defined(CONFIG_BT_RFC) && CONFIG_BT_RFC
-	{"rfc",              atcmd_bt_rfc,              2, 3},
-#endif
-#if defined(CONFIG_BT_HID) && CONFIG_BT_HID
-	{"hid",              atcmd_bt_hid,              2, 3},
-#endif
-#if defined(CONFIG_BT_HFP) && CONFIG_BT_HFP
-	{"hfp",              atcmd_bt_hfp,              3, 3},
-#endif
-#if defined(CONFIG_BT_A2DP_HFP) && CONFIG_BT_A2DP_HFP
-	{"a2dp_hfp",         atcmd_bt_a2dp_hfp,         3, 3},
-#endif
-#if defined(CONFIG_BT_LE_AUDIO_GENERIC_DEMO) && CONFIG_BT_LE_AUDIO_GENERIC_DEMO
-	{"generic_le_audio_demo", atcmd_bt_generic_le_audio_demo, 3, 4},
-#endif
-#if defined(CONFIG_BT_PBP) && CONFIG_BT_PBP
-	{"pbp",              atcmd_bt_pbp,              3, 4},
-#endif
-#if defined(CONFIG_BT_TMAP) && CONFIG_BT_TMAP
-	{"tmap",             atcmd_bt_tmap,             3, 4},
-#endif
-#if defined(CONFIG_BT_GMAP) && CONFIG_BT_GMAP
-	{"gmap",             atcmd_bt_gmap,             3, 4},
-#endif
-#if defined(CONFIG_BT_PTS) && CONFIG_BT_PTS
-	{"pts",              atcmd_bt_pts,              2, 4},
-#endif
-	// {"demo",             atcmd_bt_demo,             1, 1},
-#if defined(CONFIG_BT_TRANSFER_MODULE) && CONFIG_BT_TRANSFER_MODULE
-	{"transfer_module",  atcmd_bt_transfer_module,  2, 6},
-#endif
-#if defined(CONFIG_BT_WIFIMATE_DEVICE) && CONFIG_BT_WIFIMATE_DEVICE
-	{"ble_wifimate_device", atcmd_bt_wifimate_device, 2, 3},
-#endif
-#if defined(CONFIG_BT_WIFIMATE_CONFIGURATOR) && CONFIG_BT_WIFIMATE_CONFIGURATOR
-	{"ble_wifimate_configurator", atcmd_bt_wifimate_configurator, 2, 6},
-#endif
-	{NULL,},
-};
-
-static const cmd_table_t vendor_table[] = {
-#if defined(BT_ATCMD_HELP) && BT_ATCMD_HELP
-	{"help",             atcmd_bt_vendor_help,      1, 3},
-#endif
-	{"bt_enable",        atcmd_bt_enable,           2, 2},
-	{"bt_power",         atcmd_bt_power,            2, 2},
-	{"tx_power_gain",    atcmd_bt_tx_power_gain,    2, 5},
-	{"hci_debug_enable", atcmd_bt_hci_debug_enable, 1, 1},
-	{"bt_debug_port",    atcmd_bt_debug_port,       4, 6},
-	{"bt_gpio",          atcmd_bt_gpio,             2, 3},
-	{"tx_power",         atcmd_bt_set_tx_power,     4, 5},
-#if defined(CONFIG_BT_INIC) && CONFIG_BT_INIC
-	{"remote_wakeup",    atcmd_bt_remote_wakeup,    1, 1},
+	{CMD_NAME_BT_VENDOR,        atcmd_bt_vendor,                                2, 7},
+#if defined(CONFIG_BT_SDN_VERIFY) && CONFIG_BT_SDN_VERIFY
+	{CMD_NAME_BT_SDN_VERIFY,    atcmd_bt_sdn_verify_cmd,                        2, 10},
 #endif
 	{NULL,},
 };
@@ -770,44 +651,9 @@ exit:
 	BT_AT_PRINTERROR(BT_AT_ERR_PARAM_INVALID);
 }
 
-static inline int atcmd_bt_example(int argc, char *argv[])
-{
-	return atcmd_bt_excute(argc, argv, example_table, "[AT+BTDEMO]");
-}
-
-static inline int atcmd_bt_vendor(int argc, char *argv[])
-{
-	return atcmd_bt_excute(argc, argv, vendor_table, "[AT+BTVENDOR]");
-}
-
 static void fBTDEMO(void *arg)
 {
-	int argc = 0;
-	char *argv[MAX_ARGC] = {0};
-	int ret = 0;
-
-	if (!arg) {
-		BT_LOGE("[AT+BTDEMO] Error: No input args number!\r\n");
-		goto exit;
-	}
-
-	argc = parse_param(arg, argv);
-	if (argc < 2) {
-		BT_LOGE("[AT+BTDEMO] Error: Wrong input args number!\r\n");
-		goto exit;
-	}
-
-	ret = atcmd_bt_example(argc - 1, &argv[1]);
-	if (ret == 0) {
-		BT_AT_PRINTOK();
-	} else {
-		BT_AT_PRINTERROR(ret);
-	}
-	return;
-
-exit:
-	BT_LOGA("[AT+BTDEMO] Info: Use 'AT+BTDEMO=help' to help\r\n");
-	BT_AT_PRINTERROR(BT_AT_ERR_PARAM_INVALID);
+	atcmd_bt_cmd(arg, CMD_NAME_BT_DEMO, "[AT+BTDEMO]");
 }
 
 static inline void fBLEGAP(void *arg)
@@ -1078,33 +924,15 @@ static inline void fBTCMDHELP(void *arg)
 
 static void fBTVENDOR(void *arg)
 {
-	int argc = 0;
-	char *argv[MAX_ARGC] = {0};
-	int ret = 0;
-
-	if (!arg) {
-		BT_LOGE("[AT+BTVENDOR] Error: No input args number!\r\n");
-		goto exit;
-	}
-
-	argc = parse_param(arg, argv);
-	if (argc < 2) {
-		BT_LOGE("[AT+BTVENDOR] Error: Wrong input args number!\r\n");
-		goto exit;
-	}
-
-	ret = atcmd_bt_vendor(argc - 1, &argv[1]);
-	if (ret == 0) {
-		BT_AT_PRINTOK();
-	} else {
-		BT_AT_PRINTERROR(ret);
-	}
-	return;
-
-exit:
-	BT_LOGA("[AT+BTVENDOR] Info: Use 'AT+BTVENDOR=help' to help\r\n");
-	BT_AT_PRINTERROR(BT_AT_ERR_PARAM_INVALID);
+	atcmd_bt_cmd(arg, CMD_NAME_BT_VENDOR, "[AT+BTVENDOR]");
 }
+
+#if defined(CONFIG_BT_SDN_VERIFY) && CONFIG_BT_SDN_VERIFY
+static inline void fBTSDNVERIFY(void *arg)
+{
+	atcmd_bt_cmd(arg, CMD_NAME_BT_SDN_VERIFY, "[AT+BTSDN]");
+}
+#endif
 
 static log_item_t at_bt_items[] = {
 	{CMD_NAME_BT_DEMO,          fBTDEMO,              {NULL, NULL}},
@@ -1172,6 +1000,9 @@ static log_item_t at_bt_items[] = {
 	{CMD_NAME_MESH_DFU,         fBLEMESHDFU,          {NULL, NULL}},
 #endif /* RTK_BLE_MESH_SUPPORT */
 	{CMD_NAME_BT_VENDOR,        fBTVENDOR,            {NULL, NULL}},
+#if defined(CONFIG_BT_SDN_VERIFY) && CONFIG_BT_SDN_VERIFY
+	{CMD_NAME_BT_SDN_VERIFY,    fBTSDNVERIFY,          {NULL, NULL}},
+#endif /* CONFIG_BT_SDN_VERIFY */
 };
 
 /* BT atcmd as a part of AT command "AT+LIST". */

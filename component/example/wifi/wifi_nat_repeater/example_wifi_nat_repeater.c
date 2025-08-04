@@ -338,6 +338,10 @@ static void example_wlan_repeater_thread(void *param)
 
 void example_nat_repeater(void)
 {
+	while (wifi_is_running(STA_WLAN_INDEX) == FALSE) {
+		rtos_time_delay_ms(1000);
+	}
+
 	wifi_repeater_ap_config_complete = 0;
 
 	if (rtos_task_create(NULL, ((const char *)"example_wlan_repeater_thread"), example_wlan_repeater_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
