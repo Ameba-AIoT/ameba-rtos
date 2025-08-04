@@ -1343,7 +1343,7 @@ Redo:
 			return;
 		}
 		if (rtsp_ctx->interface <= 1) {
-			if (wifi_is_running(0) > 0) {
+			if (wifi_is_running(0) == TRUE) {
 				wifi_get_setting(STA_WLAN_INDEX, &setting);
 				wifi_get_join_status(&join_status);
 				mode = setting.mode;
@@ -1754,7 +1754,7 @@ Redo:
 							goto out;
 						}
 					} else if (mode == RTW_MODE_AP) {
-						if (wifi_is_running(STA_WLAN_INDEX) == 0) {
+						if (wifi_is_running(STA_WLAN_INDEX) == FALSE) {
 							goto out;
 						}
 					} else {
@@ -1794,7 +1794,7 @@ out:
 					goto Redo;
 				}
 			} else if (mode == RTW_MODE_AP) {
-				if (wifi_is_running(STA_WLAN_INDEX) == 0) {
+				if (wifi_is_running(STA_WLAN_INDEX) == FALSE) {
 					RTSP_DBG_ERROR("wifi Tx/Rx broke! rtsp service cannot stream");
 					close(rtsp_ctx->connect_ctx.socket_id);
 					RTSP_DBG_ERROR("RTSP Reconnect!");

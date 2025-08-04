@@ -1,3 +1,8 @@
+config BT_SDN_VERIFY
+    depends on AMEBAL2 && !AMEBA_RLS    #internal
+    bool "SDN Verification"
+    default n
+
 config BT_ADVANCED_FEATURE_MENU
     bool "BT Advanced Feature"
     default n

@@ -205,6 +205,10 @@ exit:
 
 void example_wifi_tdma_scan(void)
 {
+	while (wifi_is_running(STA_WLAN_INDEX) == FALSE) {
+		rtos_time_delay_ms(1000);
+	}
+
 	if (rtos_task_create(NULL, ((const char *)"wifi_tdma_scan_thread"), wifi_tdma_scan_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGA(NOTAG, "\n\r%s rtos_task_create(wifi_tdma_scan_thread) failed", __FUNCTION__);
 	}

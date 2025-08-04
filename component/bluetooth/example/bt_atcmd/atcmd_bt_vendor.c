@@ -308,3 +308,25 @@ int atcmd_bt_remote_wakeup(int argc, char **argv)
 	return 0;
 }
 #endif
+
+static const cmd_table_t vendor_table[] = {
+#if defined(BT_ATCMD_HELP) && BT_ATCMD_HELP
+	{"help",             atcmd_bt_vendor_help,      1, 3},
+#endif
+	{"bt_enable",        atcmd_bt_enable,           2, 2},
+	{"bt_power",         atcmd_bt_power,            2, 2},
+	{"tx_power_gain",    atcmd_bt_tx_power_gain,    2, 5},
+	{"hci_debug_enable", atcmd_bt_hci_debug_enable, 1, 1},
+	{"bt_debug_port",    atcmd_bt_debug_port,       4, 6},
+	{"bt_gpio",          atcmd_bt_gpio,             2, 3},
+	{"tx_power",         atcmd_bt_set_tx_power,     4, 5},
+#if defined(CONFIG_BT_INIC) && CONFIG_BT_INIC
+	{"remote_wakeup",    atcmd_bt_remote_wakeup,    1, 1},
+#endif
+	{NULL,},
+};
+
+int atcmd_bt_vendor(int argc, char *argv[])
+{
+	return atcmd_bt_excute(argc, argv, vendor_table, "[AT+BTVENDOR]");
+}

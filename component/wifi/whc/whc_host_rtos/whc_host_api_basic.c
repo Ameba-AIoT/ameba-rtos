@@ -368,7 +368,7 @@ s32 wifi_stop_ap(void)
 {
 	int ret = 0;
 
-	if (wifi_is_running(SOFTAP_WLAN_INDEX) == 0) {
+	if (wifi_is_running(SOFTAP_WLAN_INDEX) == FALSE) {
 		RTK_LOGA(TAG_WLAN_INIC, "WIFI no run\n");
 		return 0;
 	}

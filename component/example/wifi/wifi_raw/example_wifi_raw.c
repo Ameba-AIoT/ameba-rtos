@@ -381,6 +381,11 @@ err:
 void wifi_raw_init_thread(void *param)
 {
 	UNUSED(param);
+
+	while (wifi_is_running(STA_WLAN_INDEX) == FALSE) {
+		rtos_time_delay_ms(1000);
+	}
+
 	wifi_set_channel(STA_WLAN_INDEX, WIFI_RAW_CH);
 
 	if (rtos_task_create(NULL, ((const char *)"wifi_raw_tx_"), wifi_raw_tx_thread, NULL, 1024 * 4, 2) != RTK_SUCCESS) {

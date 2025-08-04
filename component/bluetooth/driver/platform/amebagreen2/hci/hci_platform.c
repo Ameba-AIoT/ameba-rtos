@@ -276,12 +276,7 @@ static uint8_t hci_platform_parse_config(void)
 					p[5], p[4], p[3], p[2], p[1], p[0]);
 			break;
 		case 0x0278:
-			if (hci_lgc_efuse[LEFUSE(0x1be)] == 0xff) {
-				if (!(hci_phy_efuse[2] & BIT0)) {
-
-				}
-				break;
-			} else {
+			if (hci_lgc_efuse[LEFUSE(0x1be)] != 0xff) {
 				p[0] = hci_lgc_efuse[LEFUSE(0x1be)];
 				if (hci_lgc_efuse[LEFUSE(0x1be)] & BIT1) {
 					p[1] = hci_lgc_efuse[LEFUSE(0x1bf)];
@@ -292,10 +287,6 @@ static uint8_t hci_platform_parse_config(void)
 					p[3] = hci_lgc_efuse[LEFUSE(0x1c1)];
 					p[4] = hci_lgc_efuse[LEFUSE(0x1c2)];
 					p[5] = hci_lgc_efuse[LEFUSE(0x1c3)];
-				} else {
-					if (!(hci_phy_efuse[2] & BIT0)) {
-
-					}
 				}
 
 				if (hci_lgc_efuse[LEFUSE(0x1be)] & BIT5) {
@@ -304,14 +295,14 @@ static uint8_t hci_platform_parse_config(void)
 				}
 			}
 			break;
-		case 0x0282:
+		case 0x0285:
 			for (i = 0; i < entry_len; i++) {
 				if (bt_manual_tx_power_gain_enable) {
-					BT_LOGA("gain %02x ", bt_manual_gain_index);
+					BT_LOGA("0x285 gain 0x%02x\r\n", bt_manual_gain_index);
 					p[i] = bt_manual_gain_index;
 				} else {
-					if (hci_lgc_efuse[LEFUSE(0x1c8 + i)] != 0xff) {
-						p[i] = hci_lgc_efuse[LEFUSE(0x1c8 + i)];
+					if (hci_lgc_efuse[LEFUSE(0x1c7 + i)] != 0xff) {
+						p[i] = hci_lgc_efuse[LEFUSE(0x1c7 + i)];
 					}
 				}
 			}
@@ -319,11 +310,11 @@ static uint8_t hci_platform_parse_config(void)
 		case 0x028a:
 			for (i = 0; i < entry_len; i++) {
 				if (bt_manual_tx_power_gain_enable) {
-					BT_LOGA("gain %02x ", bt_manual_gain_index);
+					BT_LOGA("0x28a gain 0x%02x\r\n", bt_manual_gain_index);
 					p[i] = bt_manual_gain_index;
 				} else {
-					if (hci_lgc_efuse[LEFUSE(0x1d0 + i)] != 0xff) {
-						p[i] = hci_lgc_efuse[LEFUSE(0x1d0 + i)];
+					if (hci_lgc_efuse[LEFUSE(0x1cc + i)] != 0xff) {
+						p[i] = hci_lgc_efuse[LEFUSE(0x1cc + i)];
 					}
 				}
 			}
