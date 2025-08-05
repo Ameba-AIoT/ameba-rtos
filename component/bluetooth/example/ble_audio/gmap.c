@@ -2339,6 +2339,12 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 		break;
 	}
 
+	case RTK_BT_LE_AUDIO_EVT_BIG_INFO_ADV_REPORT: {
+		//rtk_bt_le_audio_big_info_adv_report_t *param = (rtk_bt_le_audio_big_info_adv_report_t *)data;
+		BT_LOGD("[APP] RTK_BT_LE_AUDIO_EVT_BIG_INFO_ADV_REPORT\r\n");
+		break;
+	}
+
 	case RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND: {
 		rtk_bt_le_audio_direct_iso_data_ind_t *p_bt_direct_iso = (rtk_bt_le_audio_direct_iso_data_ind_t *)data;
 		if (p_bt_direct_iso->iso_sdu_len) {

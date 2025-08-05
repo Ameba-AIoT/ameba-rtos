@@ -17,27 +17,14 @@
 #include "wifi_intf_drv_to_app_internal.h"
 #endif
 
+#define HCI_UART_IDX             (2)
 #define HCI_UART_DEV             (UART2_DEV)
 #define HCI_UART_IRQ             (UART2_BT_IRQ)
 #define HCI_UART_IRQ_PRIO        (INT_PRI_LOWEST)
-#define HCI_UART_RX_FIFO_SIZE    (32)
-#define HCI_UART_RX_BUF_SIZE     (0x2000)   /* RX buffer size 8K */
-#define HCI_UART_RX_ENABLE_SIZE  (512)      /* Only 512 left to read */
-#define HCI_UART_RX_DISABLE_SIZE (128)      /* Only 128 left to write */
 
 static struct hci_uart_t {
 	/* UART */
 	UART_InitTypeDef UART_InitStruct;
-
-	/* UART RX RingBuf */
-	uint8_t         *ring;
-	uint32_t         ring_size;
-	uint32_t         write_ptr;
-	uint32_t         read_ptr;
-	uint8_t          rx_disabled;
-
-	/* UART RX Indication */
-	HCI_RECV_IND     rx_ind;
 
 	/* UART TX */
 	uint8_t         *tx_buf;
@@ -50,22 +37,6 @@ uint8_t hci_uart_set_bdrate(uint32_t baudrate)
 	UART_SetBaud(HCI_UART_DEV, baudrate);
 	BT_LOGA("Set baudrate to %d success!\r\n", baudrate);
 	return HCI_SUCCESS;
-}
-
-uint8_t hci_uart_set_rx_ind(HCI_RECV_IND rx_ind)
-{
-	g_uart->rx_ind = rx_ind;
-	return HCI_SUCCESS;
-}
-
-static inline uint16_t _rx_to_read_space(void)
-{
-	return (g_uart->write_ptr + g_uart->ring_size - g_uart->read_ptr) % g_uart->ring_size;
-}
-
-static inline uint16_t _rx_to_write_space(void)
-{
-	return (g_uart->read_ptr + g_uart->ring_size - g_uart->write_ptr - 1) % g_uart->ring_size;
 }
 
 static inline void transmit_chars(void)
@@ -88,25 +59,7 @@ static inline void transmit_chars(void)
 
 static inline void receive_chars(void)
 {
-	uint8_t ch;
-	uint16_t write_len = _rx_to_write_space();
-	uint16_t max_count = (write_len > HCI_UART_RX_FIFO_SIZE) ? HCI_UART_RX_FIFO_SIZE : write_len;
-
-	while (UART_Readable(HCI_UART_DEV) && max_count-- > 0) {
-		UART_CharGet(HCI_UART_DEV, &ch);
-		g_uart->ring[g_uart->write_ptr++] = ch;
-		g_uart->write_ptr %= g_uart->ring_size;
-	}
-
-	if (!g_uart->rx_disabled && _rx_to_write_space() < HCI_UART_RX_DISABLE_SIZE) {
-		UART_INTConfig(HCI_UART_DEV, RUART_BIT_ERBI | RUART_BIT_ETOI, DISABLE);
-		g_uart->rx_disabled = 1;
-		BT_LOGA("g_uart rx disable!\r\n");
-	}
-
-	if (g_uart->rx_ind) {
-		g_uart->rx_ind();
-	}
+	hci_uart_rx_irq_handler();
 }
 
 static uint32_t _uart_irq(void *data)
@@ -115,29 +68,24 @@ static uint32_t _uart_irq(void *data)
 	uint32_t reg_lsr = UART_LineStatusGet(HCI_UART_DEV);
 	uint32_t reg_ier = HCI_UART_DEV->IER;
 
-	if (reg_lsr & RUART_BIT_RXND_INT) {
-		UART_INT_Clear(HCI_UART_DEV, RUART_BIT_RXNDICF);
-	}
-
-	if (reg_lsr & RUART_BIT_MONITOR_DONE_INT) {
-		UART_INT_Clear(HCI_UART_DEV, RUART_BIT_MDICF);
-	}
-
-	if (reg_lsr & RUART_BIT_MODEM_INT) {
-		UART_INT_Clear(HCI_UART_DEV, RUART_BIT_MICF);
+	if (UART_Readable(HCI_UART_DEV)) {
+		receive_chars();
 	}
 
 	if ((reg_lsr & RUART_BIT_TX_EMPTY) && (reg_ier & RUART_BIT_ETBEI)) {
 		transmit_chars();
 	}
 
-	if (reg_lsr & RUART_BIT_RXFIFO_INT) {
-		receive_chars();
+	if (reg_lsr & RUART_BIT_RXND_INT) {
+		UART_INT_Clear(HCI_UART_DEV, RUART_BIT_RXNDICF);
 	}
 
-	if (reg_lsr & RUART_BIT_TIMEOUT_INT) {
+	if (reg_lsr & RUART_BIT_MODEM_INT) {
+		UART_INT_Clear(HCI_UART_DEV, RUART_BIT_MICF);
+	}
+
+	if ((reg_lsr & RUART_BIT_TIMEOUT_INT) && (!UART_Readable(HCI_UART_DEV))) {
 		UART_INT_Clear(HCI_UART_DEV, RUART_BIT_TOICF);
-		receive_chars();
 	}
 
 	if ((reg_lsr & UART_ALL_RX_ERR)) {
@@ -195,28 +143,16 @@ uint16_t hci_uart_send(uint8_t *buf, uint16_t len)
 
 uint16_t hci_uart_read(uint8_t *buf, uint16_t len)
 {
-	uint16_t read_len = _rx_to_read_space();
-	read_len = (read_len > len) ? len : read_len;
-
-	if (0 == read_len) {
-		return 0;
+	if (len) {
+		return UART_ReceiveDataTO(HCI_UART_DEV, buf, len, 0);
 	}
 
-	if (read_len > g_uart->ring_size - g_uart->read_ptr) {
-		read_len = g_uart->ring_size - g_uart->read_ptr;
-	}
+	return 0;
+}
 
-	memcpy(buf, &g_uart->ring[g_uart->read_ptr], read_len);
-	g_uart->read_ptr += read_len;
-	g_uart->read_ptr %= g_uart->ring_size;
-
-	if (g_uart->rx_disabled && _rx_to_read_space() < HCI_UART_RX_ENABLE_SIZE) {
-		UART_INTConfig(HCI_UART_DEV, RUART_BIT_ERBI | RUART_BIT_ETOI, ENABLE);
-		g_uart->rx_disabled = 0;
-		BT_LOGA("g_uart rx enable!\r\n");
-	}
-
-	return read_len;
+void hci_uart_rx_irq(bool enable)
+{
+	UART_INTConfig(HCI_UART_DEV, RUART_BIT_ERBI | RUART_BIT_ETOI, enable ? ENABLE : DISABLE);
 }
 
 void hci_uart_force_rts(bool op)
@@ -243,18 +179,6 @@ uint8_t hci_uart_open(void)
 		}
 		memset(g_uart, 0, sizeof(struct hci_uart_t));
 	}
-	if (!g_uart->ring) {
-		g_uart->ring = (uint8_t *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, HCI_UART_RX_BUF_SIZE, 4);
-		if (!g_uart->ring) {
-			BT_LOGE("g_uart->ring is NULL!\r\n");
-			return HCI_FAIL;
-		}
-		memset(g_uart->ring, 0, sizeof(HCI_UART_RX_BUF_SIZE));
-	}
-	g_uart->ring_size = HCI_UART_RX_BUF_SIZE;
-	g_uart->read_ptr = 0;
-	g_uart->write_ptr = 0;
-	g_uart->rx_disabled = 0;
 
 	if (osif_sem_create(&g_uart->tx_done_sem, 0, 1) == false) {
 		BT_LOGE("g_uart->tx_done_sem create fail!\r\n");
@@ -262,7 +186,7 @@ uint8_t hci_uart_open(void)
 	}
 
 	/* Enable Clock */
-	RCC_PeriphClockCmd(APBPeriph_UART2, APBPeriph_UART2_CLOCK, ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_UARTx[HCI_UART_IDX], APBPeriph_UARTx_CLOCK[HCI_UART_IDX], ENABLE);
 
 	/* Enable UART
 	 * Use Flow Control (When rx FIFO reaches level, RTS will be pulled high)
@@ -318,11 +242,6 @@ uint8_t hci_uart_free(void)
 	if (g_uart->tx_done_sem) {
 		osif_sem_delete(g_uart->tx_done_sem);
 		g_uart->tx_done_sem = NULL;
-	}
-
-	/* Deinit UART Ringbuf */
-	if (g_uart->ring) {
-		osif_mem_aligned_free(g_uart->ring);
 	}
 
 	osif_mem_free(g_uart);

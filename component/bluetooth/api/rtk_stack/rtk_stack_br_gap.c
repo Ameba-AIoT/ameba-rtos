@@ -275,7 +275,6 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 
 	case BT_EVENT_ACL_AUTHEN_FAIL: {
 		BT_LOGA("BT_EVENT_ACL_AUTHEN_FAIL \r\n");
-		gap_br_set_radio_mode(GAP_RADIO_MODE_NONE_DISCOVERABLE, true, 0);
 	}
 	break;
 

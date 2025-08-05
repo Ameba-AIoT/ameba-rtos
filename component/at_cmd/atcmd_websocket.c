@@ -197,6 +197,7 @@ void at_wsglcfg(void *arg)
 	int argc = 0;
 	int error_no = 0;
 	char *argv[MAX_ARGC] = {0};
+	uint32_t keepalive_idle = 0, keepalive_interval = 0, keepalive_count = 0;
 
 	UNUSED(argc);
 
@@ -225,31 +226,35 @@ void at_wsglcfg(void *arg)
 	}
 
 	if (argv[5] != NULL && (strlen(argv[5]) > 0)) {
-		wsclient_keepalive_idle = atoi(argv[5]);
-		if (wsclient_keepalive_idle < 1 || wsclient_keepalive_idle > MAX_KEEPALIVE_IDLE) {
-			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "wsclient_keepalive_idle must be 1~%d\r\n", MAX_KEEPALIVE_IDLE);
+		keepalive_idle = atoi(argv[5]);
+		if (keepalive_idle < 1 || keepalive_idle > MAX_KEEPALIVE_IDLE) {
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "keepalive_idle must be 1~%d\r\n", MAX_KEEPALIVE_IDLE);
 			error_no = 1;
 			goto end;
 		}
 	}
 
 	if (argv[6] != NULL && (strlen(argv[6]) > 0)) {
-		wsclient_keepalive_interval = atoi(argv[6]);
-		if (wsclient_keepalive_interval < 1 || wsclient_keepalive_interval > MAX_KEEPALIVE_INTERVAL) {
-			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "wsclient_keepalive_interval must be 1~%d\r\n", MAX_KEEPALIVE_INTERVAL);
+		keepalive_interval = atoi(argv[6]);
+		if (keepalive_interval < 1 || keepalive_interval > MAX_KEEPALIVE_INTERVAL) {
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "keepalive_interval must be 1~%d\r\n", MAX_KEEPALIVE_INTERVAL);
 			error_no = 1;
 			goto end;
 		}
 	}
 
 	if (argv[7] != NULL && (strlen(argv[7]) > 0)) {
-		wsclient_keepalive_count = atoi(argv[7]);
-		if (wsclient_keepalive_count < 1 || wsclient_keepalive_count > MAX_KEEPALIVE_COUNT) {
-			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "wsclient_keepalive_count must be 1~%d\r\n", MAX_KEEPALIVE_COUNT);
+		keepalive_count = atoi(argv[7]);
+		if (keepalive_count < 1 || keepalive_count > MAX_KEEPALIVE_COUNT) {
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "keepalive_count must be 1~%d\r\n", MAX_KEEPALIVE_COUNT);
 			error_no = 1;
 			goto end;
 		}
 	}
+
+	wsclient_keepalive_idle = keepalive_idle;
+	wsclient_keepalive_interval = keepalive_interval;
+	wsclient_keepalive_count = keepalive_count;
 
 end:
 	if (error_no == 0) {
@@ -359,7 +364,7 @@ void at_wsheadraw(void *arg)
 	char *argv[MAX_ARGC] = {0};
 	int link_id;
 	u32 header_len;
-	int i, res;
+	int i, res, tt_get_len;
 
 	UNUSED(argc);
 
@@ -406,10 +411,11 @@ void at_wsheadraw(void *arg)
 					error_no = 3;
 					goto end;
 				}
-				res = atcmd_tt_mode_get((u8 *)ws_config[link_id].ws_header[i], header_len);
-				if (res < 0) {
+				tt_get_len = atcmd_tt_mode_get((u8 *)ws_config[link_id].ws_header[i], header_len);
+				if (tt_get_len == 0) {
 					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 					error_no = 3;
+					atcmd_tt_mode_end();
 					goto end;
 				}
 				atcmd_tt_mode_end();
@@ -916,7 +922,7 @@ void at_wssendraw(void *arg)
 	char *argv[MAX_ARGC] = {0};
 	int link_id, length, opcode, use_mask;
 	char *send_buf = NULL;
-	int frag_len, res;
+	int frag_len, res, tt_get_len;
 	uint8_t is_first_frag = 0;
 
 	UNUSED(argc);
@@ -983,20 +989,22 @@ void at_wssendraw(void *arg)
 
 	if (ws_config[link_id].tx_buffer_size < MAX_TT_BUF_LEN) {
 		if (length <= ws_config[link_id].tx_buffer_size) {
-			res = atcmd_tt_mode_get((u8 *)send_buf, length);
-			if (res < 0) {
+			tt_get_len = atcmd_tt_mode_get((u8 *)send_buf, length);
+			if (tt_get_len == 0) {
 				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 				error_no = 4;
+				atcmd_tt_mode_end();
 				goto end;
 			}
 			ws_send_with_opcode(send_buf, length, use_mask, opcode, 1, ws_config[link_id].ws_client);
 		} else {
 			while (length > 0) {
 				frag_len = (length <= ws_config[link_id].tx_buffer_size) ? length : ws_config[link_id].tx_buffer_size;
-				res = atcmd_tt_mode_get((u8 *)send_buf, frag_len);
-				if (res < 0) {
+				tt_get_len = atcmd_tt_mode_get((u8 *)send_buf, frag_len);
+				if (tt_get_len == 0) {
 					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 					error_no = 4;
+					atcmd_tt_mode_end();
 					goto end;
 				}
 				if (length > ws_config[link_id].tx_buffer_size) {
@@ -1016,20 +1024,22 @@ void at_wssendraw(void *arg)
 		}
 	} else {
 		if (length <= MAX_TT_BUF_LEN) {
-			res = atcmd_tt_mode_get((u8 *)send_buf, length);
-			if (res < 0) {
+			tt_get_len = atcmd_tt_mode_get((u8 *)send_buf, length);
+			if (tt_get_len == 0) {
 				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 				error_no = 4;
+				atcmd_tt_mode_end();
 				goto end;
 			}
 			ws_send_with_opcode(send_buf, length, use_mask, opcode, 1, ws_config[link_id].ws_client);
 		} else {
 			while (length > 0) {
 				frag_len = (length <= MAX_TT_BUF_LEN) ? length : MAX_TT_BUF_LEN;
-				res = atcmd_tt_mode_get((u8 *)send_buf, frag_len);
-				if (res < 0) {
+				tt_get_len = atcmd_tt_mode_get((u8 *)send_buf, frag_len);
+				if (tt_get_len == 0) {
 					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 					error_no = 4;
+					atcmd_tt_mode_end();
 					goto end;
 				}
 				if (length > MAX_TT_BUF_LEN) {
@@ -1813,7 +1823,7 @@ void at_wssrvsendraw(void *arg)
 	size_t length;
 	uint8_t *send_buf = NULL;
 	struct wssrv_conn *cli_conn;
-	int frag_len, res;
+	int frag_len, res, tt_get_len;
 	uint8_t is_first_frag = 0;
 
 	UNUSED(argc);
@@ -1875,20 +1885,22 @@ void at_wssrvsendraw(void *arg)
 
 	if (wssrvcfg_tx_size < MAX_TT_BUF_LEN) {
 		if (length <= wssrvcfg_tx_size) {
-			res = atcmd_tt_mode_get(send_buf, length);
-			if (res < 0) {
+			tt_get_len = atcmd_tt_mode_get(send_buf, length);
+			if (tt_get_len == 0) {
 				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 				error_no = 3;
+				atcmd_tt_mode_end();
 				goto end;
 			}
 			ws_server_sendData(opcode, length, send_buf, 0, 1, 1, cli_conn);
 		} else {
 			while (length > 0) {
 				frag_len = (length <= wssrvcfg_tx_size) ? length : wssrvcfg_tx_size;
-				res = atcmd_tt_mode_get(send_buf, frag_len);
-				if (res < 0) {
+				tt_get_len = atcmd_tt_mode_get(send_buf, frag_len);
+				if (tt_get_len == 0) {
 					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 					error_no = 3;
+					atcmd_tt_mode_end();
 					goto end;
 				}
 				if (length > wssrvcfg_tx_size) {
@@ -1908,20 +1920,22 @@ void at_wssrvsendraw(void *arg)
 		}
 	} else {
 		if (length <= MAX_TT_BUF_LEN) {
-			res = atcmd_tt_mode_get(send_buf, length);
-			if (res < 0) {
+			tt_get_len = atcmd_tt_mode_get(send_buf, length);
+			if (tt_get_len == 0) {
 				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 				error_no = 3;
+				atcmd_tt_mode_end();
 				goto end;
 			}
 			ws_server_sendData(opcode, length, send_buf, 0, 1, 1, cli_conn);
 		} else {
 			while (length > 0) {
 				frag_len = (length <= MAX_TT_BUF_LEN) ? length : MAX_TT_BUF_LEN;
-				res = atcmd_tt_mode_get(send_buf, frag_len);
-				if (res < 0) {
+				tt_get_len = atcmd_tt_mode_get(send_buf, frag_len);
+				if (tt_get_len == 0) {
 					RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "atcmd_tt_mode_get failed, stop tt mode\r\n");
 					error_no = 3;
+					atcmd_tt_mode_end();
 					goto end;
 				}
 				if (length > MAX_TT_BUF_LEN) {
