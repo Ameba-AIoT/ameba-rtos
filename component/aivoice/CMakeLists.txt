@@ -47,6 +47,7 @@ if(CONFIG_AMEBADPLUS)
         ${c_CMPT_AIVOICE_DIR}/prebuilts/lib/rtl8721dx_km4/libvad.a
         ${c_CMPT_AIVOICE_DIR}/prebuilts/lib/rtl8721dx_km4/libtomlc99.a
         ${c_CMPT_AIVOICE_DIR}/prebuilts/lib/rtl8721dx_km4/libkissfft.a
+        ${c_CMPT_AIVOICE_DIR}/prebuilts/lib/rtl8721dx_km4/libaivoice_hal.a
     )
 elseif(CONFIG_AMEBASMART)
     ameba_list_append(public_libraries
@@ -62,6 +63,7 @@ elseif(CONFIG_AMEBASMART)
         ${c_CMPT_AIVOICE_DIR}/prebuilts/lib/rtl8730e_ca32_freertos/librnnoise_16k.a
         ${c_CMPT_AIVOICE_DIR}/prebuilts/lib/rtl8730e_ca32_freertos/libtomlc99.a
         ${c_CMPT_AIVOICE_DIR}/prebuilts/lib/rtl8730e_ca32_freertos/libNE10.a
+        ${c_CMPT_AIVOICE_DIR}/prebuilts/lib/rtl8730e_ca32_freertos/libaivoice_hal.a
     )
 endif()
 

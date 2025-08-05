@@ -1,6 +1,13 @@
 #ifndef _AIVOICE_KWS_CONFIG_H
 #define _AIVOICE_KWS_CONFIG_H
 
+// KWS mode (single or multi)
+typedef enum {
+	KWS_INVALID_MODE = -1,
+	KWS_SINGLE_MODE = 0,
+	KWS_MULTI_MODE = 1,
+} KWS_MODE_E;
+
 // KWS Sensitivity
 // The higher, easier to wake up but also more false alarm
 typedef enum {
@@ -15,12 +22,25 @@ struct kws_config {
 	float thresholds[MAX_KWS_KEYWORD_NUMS];     /* thresholds for wake up, range: [0,1].
                                                    set to 0 to use sensitivity with predefined thresholds */
 	kws_sensitivity_e sensitivity;
+	KWS_MODE_E mode;
+
+	bool enable_age_gender;
 };
 
 #define KWS_CONFIG_DEFAULT() {\
     .keywords = {"xiao-qiang-xiao-qiang", "ni-hao-xiao-qiang"},\
-    .thresholds = {0, 0},\
+    .thresholds = {0.0, 0.0},\
     .sensitivity = KWS_SENSITIVITY_MID,\
+    .mode = KWS_SINGLE_MODE,\
+    .enable_age_gender = false,\
+};
+
+#define KWS_CONFIG_EN_DEFAULT() {\
+    .keywords = {"HH-EY1-R-IY1-L-T-EH2-K", "HH-AY1-R-IY1-L-T-EH2-K"},\
+    .thresholds = {0.0, 0.0},\
+    .sensitivity = KWS_SENSITIVITY_MID,\
+    .mode = KWS_SINGLE_MODE,\
+    .enable_age_gender = false,\
 };
 
 

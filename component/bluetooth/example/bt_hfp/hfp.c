@@ -25,7 +25,7 @@
 #include <cvsd_codec_entity.h>
 #include <bt_utils.h>
 
-#if defined (CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
+#if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
 #define AUDIO_RECORD_CHANNELS (3)
 #define AUDIO_RECORD_SAMPLERATE (16000)
 #define RECORD_FRAME_SAMPLES_PER_CHANNLE (256)
@@ -96,7 +96,7 @@ static rtk_bt_hfp_ag_indicators_status_t demo_ag_call_status_t = {
 	.batt_chg_indicator = 5,
 };
 
-#if defined (CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
+#if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
 /* for noise cancellation */
 struct nc_task_t {
 	void *hdl;
@@ -593,7 +593,7 @@ static uint16_t rtk_bt_hfp_cvsd_parse_decoder_struct(rtk_bt_hfp_codec_t *phfp_co
 	return 0;
 }
 
-#if defined (CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
+#if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
 static int16_t record_buffer[RECORD_FRAME_SAMPLES_PER_CHANNLE * AUDIO_RECORD_CHANNELS] = {0};
 static int16_t nc_buffer[RECORD_FRAME_SAMPLES_PER_CHANNLE * AUDIO_RECORD_CHANNELS] = {0};
 
@@ -933,7 +933,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 		/* config audio record thread */
 		{
 			BT_LOGA("[HFP Demo] Create Record Demo \r\n");
-#if defined (CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
+#if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
 			rtk_bt_audio_noise_cancellation_new();
 			/* create noise cancellation thread */
 			if (false == osif_sem_create(&nc_task.sem, 0, 1)) {
@@ -981,7 +981,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		BT_AT_PRINT("+BTHFP:sco_disconn,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
 					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
-#if defined (CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
+#if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
 		nc_task.run = 0;
 		if (false == osif_sem_take(nc_task.sem, 0xffffffffUL)) {
 			return 1;
@@ -1004,7 +1004,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 		hfp_demo_audio_record_hdl = NULL;
 		hfp_demo_codec_entity = NULL;
 		call_curr_status = 0;
-#if defined (CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
+#if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
 		rtk_bt_audio_noise_cancellation_destroy();
 #endif
 	}
@@ -1307,7 +1307,7 @@ int bt_hfp_main(uint8_t role, uint8_t enable)
 		/* stop outband ring alert */
 		app_hfp_ring_alert_stop();
 		/* audio related resources release */
-#if defined (CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
+#if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
 		if (nc_task.run) {
 			nc_task.run = 0;
 			if (false == osif_sem_take(nc_task.sem, 0xffffffffUL)) {
