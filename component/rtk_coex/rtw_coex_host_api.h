@@ -275,6 +275,22 @@ enum PTA_INDEX {
 	EXT_PTA2 = 1,
 	EXT_PTA_INVALID,
 };
+/**
+ * @brief   The enumeration lists pinmux port index.
+ */
+enum PORT_e {
+	PAD_PORT_A = 0,
+	PAD_PORT_B = 1,
+	PAD_PORT_C = 2,
+};
+/**
+ * @struct   port_pin_t
+ * @brief    pinmux port define.
+ */
+struct port_pin_t {
+	u8 port;
+	u8 pin;
+};
 
 /**
  * @struct   extchip_para_t
@@ -290,9 +306,9 @@ struct extchip_para_t {
 	u8 pta_index: 1;	///< 1: extbt; 0: extwpan
 	u8 rsvd : 4;		///< rsvd
 	enum EXT_PROTOCOL active_protocol;	///< -> enum EXT_PROTOCOL
-	u8 pta_pad_req;		///< pinmux pad define
-	u8 pta_pad_pri;		///< pinmux pad define
-	u8 pta_pad_gnt;		///< pinmux pad define
+	struct port_pin_t port_req;			///< pinmux pad define, port(PORT_A,PORT_B,PORT_C,...) + pin(0...31)
+	struct port_pin_t port_pri;			///< pinmux pad define, port(PORT_A,PORT_B,PORT_C,...) + pin(0...31)
+	struct port_pin_t port_gnt;			///< pinmux pad define, port(PORT_A,PORT_B,PORT_C,...) + pin(0...31)
 };
 
 //////////////////////////////////////////////////////////

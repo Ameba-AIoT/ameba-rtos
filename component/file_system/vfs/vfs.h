@@ -85,7 +85,7 @@ struct dirent {
 	long d_off;
 
 	/* Structure size */
-	unsigned short d_reclen;
+	unsigned int d_reclen;
 
 	/* Length of name without \0 */
 	size_t d_namlen;

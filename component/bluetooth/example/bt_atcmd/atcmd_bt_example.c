@@ -944,6 +944,7 @@ int atcmd_bt_gmap(int argc, char *argv[])
 	return 0;
 }
 
+int atcmd_bt_pts_cmd(int argc, char *argv[]);
 int bt_pts_main(uint8_t enable);
 int atcmd_bt_pts(int argc, char *argv[])
 {
@@ -1042,4 +1043,119 @@ int atcmd_bt_wifimate_configurator(int argc, char *argv[])
 		ret = atcmd_bt_wifimate_configurator_cmd(argc, argv);
 	}
 	return ret;
+}
+
+static const cmd_table_t example_table[] = {
+#if defined(BT_ATCMD_HELP) && BT_ATCMD_HELP
+	{"help",             atcmd_bt_example_help,     1, 3},
+#endif
+#if defined(CONFIG_BT_AUDIO_MP_TEST) && CONFIG_BT_AUDIO_MP_TEST
+	{"bt_audio_mp_test", atcmd_bt_audio_mp_test,    2, 2},
+#endif
+#if defined(CONFIG_BT_PERIPHERAL) && CONFIG_BT_PERIPHERAL
+	{"peripheral",       atcmd_bt_peripheral,       2, 2},
+#endif
+#if defined(CONFIG_BT_HOGP) && CONFIG_BT_HOGP
+	{"hogp",       atcmd_bt_hogp_gamepad,           2, 2},
+#endif
+#if defined(CONFIG_BT_CENTRAL) && CONFIG_BT_CENTRAL
+	{"central",          atcmd_bt_central,          2, 2},
+#endif
+#if defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET
+	{"scatternet",       atcmd_bt_scatternet,       2, 2},
+#endif
+#if defined(CONFIG_BT_THROUGHPUT) && CONFIG_BT_THROUGHPUT
+	{"throughput",       atcmd_bt_throughput,       2, 13},
+#endif
+#if defined(CONFIG_BT_OTA_CENTRAL) && CONFIG_BT_OTA_CENTRAL
+	{"ota_central",      atcmd_bt_ota_central,      2, 2},
+#endif
+#if defined(CONFIG_BT_OTA_PERIPHERAL) && CONFIG_BT_OTA_PERIPHERAL
+	{"ota_peripheral",   atcmd_bt_ota_peripheral,   2, 2},
+#endif
+#if defined(CONFIG_BT_MESH_PROVISIONER) && CONFIG_BT_MESH_PROVISIONER
+	{"provisioner",      atcmd_bt_mesh_provisioner, 2, 2},
+#endif
+#if defined(CONFIG_BT_MESH_DEVICE) && CONFIG_BT_MESH_DEVICE
+	{"device",           atcmd_bt_mesh_device,      2, 2},
+#endif
+#if defined(CONFIG_BT_MESH_PROVISIONER_SCATTERNET) && CONFIG_BT_MESH_PROVISIONER_SCATTERNET
+	{"provisioner_scatternet", atcmd_bt_mesh_provisioner_scatternet, 2, 2},
+#endif
+#if defined(CONFIG_BT_MESH_DEVICE_SCATTERNET) && CONFIG_BT_MESH_DEVICE_SCATTERNET
+	{"device_scatternet", atcmd_bt_mesh_device_scatternet, 2, 2},
+#endif
+#if defined(CONFIG_BT_MESH_PROVISIONER_TEST) && CONFIG_BT_MESH_PROVISIONER_TEST
+	{"provisioner_test", atcmd_bt_mesh_provisioner_test, 2, 9},
+#endif
+#if defined(CONFIG_BT_MESH_DEVICE_TEST) && CONFIG_BT_MESH_DEVICE_TEST
+	{"device_test", atcmd_bt_mesh_device_test, 2, 2},
+#endif
+#if defined(CONFIG_BT_ISO_TEST) && CONFIG_BT_ISO_TEST
+	{"iso",              atcmd_ble_iso,             4, 4},
+#endif
+#if defined(CONFIG_BT_A2DP) && CONFIG_BT_A2DP
+	{"a2dp",             atcmd_bt_a2dp,             3, 3},
+#endif
+#if defined(CONFIG_BT_A2DP_SCATTERNET) && CONFIG_BT_A2DP_SCATTERNET
+	{"a2dp_scatternet",  atcmd_bt_a2dp_scatternet,  3, 3},
+#endif
+#if defined(CONFIG_BT_A2DP_PROVISIONER_SCATTERNET) && CONFIG_BT_A2DP_PROVISIONER_SCATTERNET
+	{"a2dp_provisioner_scatternet",  atcmd_bt_a2dp_provisioner_scatternet,  3, 3},
+#endif
+#if defined(CONFIG_BT_A2DP_LE_AUDIO_PBP) && CONFIG_BT_A2DP_LE_AUDIO_PBP
+	{"a2dp_pbp",         atcmd_bt_a2dp_pbp,         2, 2},
+#endif
+#if defined(CONFIG_BT_A2DP_HFP_LE_AUDIO_PBP) && CONFIG_BT_A2DP_HFP_LE_AUDIO_PBP
+	{"a2dp_hfp_pbp",     atcmd_bt_a2dp_hfp_pbp,     2, 2},
+#endif
+#if defined(CONFIG_BT_A2DP_LE_AUDIO_TMAP) && CONFIG_BT_A2DP_LE_AUDIO_TMAP
+	{"a2dp_tmap",        atcmd_bt_a2dp_tmap,        3, 3},
+#endif
+#if defined(CONFIG_BT_SPP) && CONFIG_BT_SPP
+	{"spp",              atcmd_bt_spp,              3, 6},
+#endif
+#if defined(CONFIG_BT_RFC) && CONFIG_BT_RFC
+	{"rfc",              atcmd_bt_rfc,              2, 3},
+#endif
+#if defined(CONFIG_BT_HID) && CONFIG_BT_HID
+	{"hid",              atcmd_bt_hid,              2, 3},
+#endif
+#if defined(CONFIG_BT_HFP) && CONFIG_BT_HFP
+	{"hfp",              atcmd_bt_hfp,              3, 3},
+#endif
+#if defined(CONFIG_BT_A2DP_HFP) && CONFIG_BT_A2DP_HFP
+	{"a2dp_hfp",         atcmd_bt_a2dp_hfp,         3, 3},
+#endif
+#if defined(CONFIG_BT_LE_AUDIO_GENERIC_DEMO) && CONFIG_BT_LE_AUDIO_GENERIC_DEMO
+	{"generic_le_audio_demo", atcmd_bt_generic_le_audio_demo, 3, 4},
+#endif
+#if defined(CONFIG_BT_PBP) && CONFIG_BT_PBP
+	{"pbp",              atcmd_bt_pbp,              3, 4},
+#endif
+#if defined(CONFIG_BT_TMAP) && CONFIG_BT_TMAP
+	{"tmap",             atcmd_bt_tmap,             3, 4},
+#endif
+#if defined(CONFIG_BT_GMAP) && CONFIG_BT_GMAP
+	{"gmap",             atcmd_bt_gmap,             3, 4},
+#endif
+#if defined(CONFIG_BT_PTS) && CONFIG_BT_PTS
+	{"pts",              atcmd_bt_pts,              2, 4},
+#endif
+	// {"demo",             atcmd_bt_demo,             1, 1},
+#if defined(CONFIG_BT_TRANSFER_MODULE) && CONFIG_BT_TRANSFER_MODULE
+	{"transfer_module",  atcmd_bt_transfer_module,  2, 6},
+#endif
+#if defined(CONFIG_BT_WIFIMATE_DEVICE) && CONFIG_BT_WIFIMATE_DEVICE
+	{"ble_wifimate_device", atcmd_bt_wifimate_device, 2, 3},
+#endif
+#if defined(CONFIG_BT_WIFIMATE_CONFIGURATOR) && CONFIG_BT_WIFIMATE_CONFIGURATOR
+	{"ble_wifimate_configurator", atcmd_bt_wifimate_configurator, 2, 6},
+#endif
+	{NULL,},
+};
+
+int atcmd_bt_example(int argc, char *argv[])
+{
+	return atcmd_bt_excute(argc, argv, example_table, "[AT+BTDEMO]");
 }

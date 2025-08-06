@@ -110,6 +110,10 @@ void hci_controller_free(void);
 bool hci_controller_is_enabled(void);
 /**********************************************/
 
+/********** APIs called by hci uart ***********/
+uint8_t hci_uart_rx_irq_handler(void);
+/**********************************************/
+
 #if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
 #if defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK
 #define hci_is_mp_mode() true
