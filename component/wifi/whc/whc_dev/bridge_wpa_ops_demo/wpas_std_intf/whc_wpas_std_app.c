@@ -14,3 +14,13 @@ int whc_wpa_ops_init_wpas_std(u8 *ptr, u8 *buf)
 
 	return 0;
 }
+
+
+int whc_wpa_ops_get_status(char *ptr, u8 *buf)
+{
+	(void)ptr;
+	(void)buf;
+
+	return 0;
+}
+

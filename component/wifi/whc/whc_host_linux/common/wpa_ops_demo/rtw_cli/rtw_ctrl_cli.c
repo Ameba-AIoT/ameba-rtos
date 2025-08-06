@@ -30,6 +30,7 @@ const struct cmd_func_t whc_bridge_api_handlers[] = {
 	{"list_networks",   whc_bridge_host_cmd_set_network, CMD_WIFI_SEND_BUF, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SET_NETWORK},
 	{"select_network",  whc_bridge_host_cmd_set_network, CMD_WIFI_SEND_BUF, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SET_NETWORK},
 	{"disconnect",      whc_bridge_host_cmd_set_network, CMD_WIFI_SEND_BUF, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SET_NETWORK},
+	{"status",          whc_bridge_host_cmd_set_network, CMD_WIFI_SEND_BUF, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SET_NETWORK},
 	{"scan",            whc_bridge_host_cmd_scan, CMD_WIFI_DO_SCAN, WHC_WPA_OPS_CUSTOM_API, WHC_WPA_OPS_CUSTOM_API_SCAN},
 	{"scan_result",     whc_bridge_host_cmd_scan_result, CMD_WIFI_SCAN_RESULT, 0, 0},
 	{"wpason",          whc_host_cli_cmd_wpas_on, CMD_WIFI_SEND_BUF, WHC_WPA_OPS_CUSTOM_API, WHC_WPA_OPS_CUSTOM_API_INIT_WPAS_STD},
@@ -124,6 +125,9 @@ void whc_bridge_host_handle_rx_payload(char *pos, int len, int api_id, int chunk
 				break;
 			case WHC_WPA_OPS_UTIL_LIST_NETWORK:
 				whc_cmd_handle_rx_list_network(pos);
+				break;
+			case WHC_WPA_OPS_UTIL_GET_STATUS:
+				whc_cmd_handle_rx_get_status(pos);
 				break;
 			default:
 				break;

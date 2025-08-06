@@ -26,6 +26,7 @@ enum aivoice_out_event_type {
 	AIVOICE_EVOUT_ASR_RESULT,       // callcack message type: char *json
 	AIVOICE_EVOUT_AFE,              // callback message type: struct aivoice_evout_afe
 	AIVOICE_EVOUT_ASR_REC_TIMEOUT,  // callback message is NULL
+	AIVOICE_EVOUT_AGE_GENDER_RESULT,// callback message type: char *json
 };
 
 struct aivoice_evout_vad {
@@ -112,19 +113,6 @@ typedef int (*prtk_aivoice_feed)(void *handle, char *input_data, int length);
 void rtk_aivoice_register_callback(void *handle,
 								   aivoice_callback_handler user_callback_func,
 								   void *user_data);
-
-/**
- * @brief set kws mode
- *
- * Multi mode improves kws and asr accuracy compared to single mode,
- * while also increases computation consumption.
- *
- * you MUST set kws mode before prtk_aivoice_create in these flows:
- *      aivoice_iface_full_flow_v1
- *      aivoice_iface_afe_kws_v1
- */
-void rtk_aivoice_set_single_kws_mode(void);
-void rtk_aivoice_set_multi_kws_mode(void);
 
 /**
  * @brief Trigger SSL to get the voice angle.
