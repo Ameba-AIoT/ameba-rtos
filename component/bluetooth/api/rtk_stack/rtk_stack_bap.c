@@ -1372,6 +1372,7 @@ static void bt_stack_le_audio_sync_cb(T_BLE_AUDIO_SYNC_HANDLE sync_handle, uint8
 							  p_sync_cb->p_le_biginfo_adv_report_info->num_bis);
 		BT_LOGD("MSG_BLE_AUDIO_PA_BIGINFO: num_bis %d\r\n",
 				p_sync_cb->p_le_biginfo_adv_report_info->num_bis);
+		T_LE_BIGINFO_ADV_REPORT_INFO *p_info = p_sync_cb->p_le_biginfo_adv_report_info;
 		if (bt_le_audio_priv_data.bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK) {
 			p_sync_dev_info = bt_stack_le_audio_sync_dev_find(sync_handle);
 			if (!p_sync_dev_info) {
@@ -1382,6 +1383,34 @@ static void bt_stack_le_audio_sync_cb(T_BLE_AUDIO_SYNC_HANDLE sync_handle, uint8
 				p_sync_dev_info->big_proc_flags |= RTK_BT_LE_AUDIO_BIG_PROC_BIG_INFO_RECEIVED;
 				p_sync_dev_info->encryption = p_sync_cb->p_le_biginfo_adv_report_info->encryption;
 				bt_stack_le_audio_check_sync(p_sync_dev_info);
+			}
+			{
+				rtk_bt_le_audio_big_info_adv_report_t *p_report = NULL;
+				p_evt = rtk_bt_event_create(RTK_BT_LE_GP_BAP,
+											RTK_BT_LE_AUDIO_EVT_BIG_INFO_ADV_REPORT,
+											sizeof(rtk_bt_le_audio_big_info_adv_report_t));
+				if (!p_evt) {
+					BT_LOGE("%s rtk_bt_event_create fail\r\n", __func__);
+					break;
+				}
+				p_report = (rtk_bt_le_audio_big_info_adv_report_t *)p_evt->data;
+				p_report->sync_id = p_info->sync_id;
+				p_report->sync_handle = p_info->sync_handle;
+				p_report->num_bis = p_info->num_bis;
+				p_report->nse = p_info->nse;
+				p_report->iso_interval = p_info->iso_interval;
+				p_report->bn = p_info->bn;
+				p_report->pto = p_info->pto;
+				p_report->irc = p_info->irc;
+				p_report->max_pdu = p_info->max_pdu;
+				p_report->sdu_interval = p_info->sdu_interval;
+				p_report->max_sdu = p_info->max_sdu;
+				p_report->phy = p_info->phy;
+				p_report->framing = p_info->framing;
+				p_report->encryption = p_info->encryption;
+				p_report->cb_sync_handle = sync_handle;
+				/* Send event */
+				rtk_bt_evt_indicate(p_evt, NULL);
 			}
 		}
 	}
@@ -2479,6 +2508,29 @@ static uint16_t bt_stack_le_audio_broadcast_big_sync_create(void *param)
 	rtk_bt_le_audio_sync_dev_info_t *p_sync_dev_info = NULL;
 
 	p_sync_dev_info = bt_stack_le_audio_sync_dev_find_by_addr(paddr->addr_val, paddr->type);
+	if (!p_sync_dev_info) {
+		BT_LOGE("%s: not find device in sync list, please do PA sync before BIG sync\r\n", __func__);
+		return RTK_BT_FAIL;
+	}
+	p_sync_dev_info->big_proc_flags |= RTK_BT_LE_AUDIO_BIG_PROC_BIG_SYNC_REQ;
+	if (bt_stack_le_audio_bass_get_supported_bis(p_sync_dev_info)) {
+		p_sync_dev_info->big_proc_flags &= ~RTK_BT_LE_AUDIO_BIG_PROC_BIG_SYNC_REQ;
+		BT_LOGE("%s: bt_stack_le_audio_bass_get_supported_bis failed\r\n", __func__);
+		return RTK_BT_FAIL;
+	}
+
+	bt_stack_le_audio_check_sync(p_sync_dev_info);
+
+	return RTK_BT_OK;
+}
+
+static uint16_t bt_stack_le_audio_broadcast_big_sync_create_by_handle(void *param)
+{
+	rtk_bt_le_audio_sync_handle_t *sync_handle = (rtk_bt_le_audio_sync_handle_t *)param;
+	rtk_bt_le_audio_sync_dev_info_t *p_sync_dev_info = NULL;
+
+
+	p_sync_dev_info = bt_stack_le_audio_sync_dev_find(*sync_handle);
 	if (!p_sync_dev_info) {
 		BT_LOGE("%s: not find device in sync list, please do PA sync before BIG sync\r\n", __func__);
 		return RTK_BT_FAIL;
@@ -3861,6 +3913,12 @@ uint16_t bt_stack_bap_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_LE_AUDIO_ACT_BROADCAST_BIG_SYNC_CREATE: {
 		BT_LOGD("RTK_BT_LE_AUDIO_ACT_BROADCAST_BIG_SYNC_CREATE \r\n");
 		ret = bt_stack_le_audio_broadcast_big_sync_create(p_cmd->param);
+		break;
+	}
+
+	case RTK_BT_LE_AUDIO_ACT_BROADCAST_BIG_SYNC_CREATE_BY_HANDLE: {
+		BT_LOGD("RTK_BT_LE_AUDIO_ACT_BROADCAST_BIG_SYNC_CREATE_BY_HANDLE \r\n");
+		ret = bt_stack_le_audio_broadcast_big_sync_create_by_handle(p_cmd->param);
 		break;
 	}
 

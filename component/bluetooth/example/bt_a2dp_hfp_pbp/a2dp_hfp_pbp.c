@@ -47,9 +47,9 @@
 #else
 #define AUDIO_RECORD_CHANNELS (1)
 #define AUDIO_RECORD_SAMPLERATE (8000)
-#define RECORD_FRAME_SAMPLES_PER_CHANNLE (30)
+#define RECORD_FRAME_SAMPLES_PER_CHANNLE (60)
 #endif
-#define BT_ENCODE_FRAME_BYTES (60)
+#define BT_ENCODE_FRAME_BYTES (120)
 
 #if defined(RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE) && RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE
 #define APP_BT_A2DP_PBP_DEMO_OUPUT_CHANNEL_NUM          2
@@ -3126,6 +3126,15 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 		}
 		break;
 	}
+
+	case RTK_BT_LE_AUDIO_EVT_BIG_INFO_ADV_REPORT: {
+		rtk_bt_le_audio_big_info_adv_report_t *param = (rtk_bt_le_audio_big_info_adv_report_t *)data;
+		BT_LOGD("[APP] RTK_BT_LE_AUDIO_EVT_BIG_INFO_ADV_REPORT\r\n");
+		/* create BIG sync here*/
+		rtk_bt_le_audio_broadcast_big_sync_create_by_handle(param->cb_sync_handle);
+		break;
+	}
+
 	case RTK_BT_LE_AUDIO_EVT_PA_SYNC_STATE_IND: {
 		rtk_bt_le_audio_pa_sync_state_ind_t *param = (rtk_bt_le_audio_pa_sync_state_ind_t *)data;
 		BT_LOGD("[APP] broadcast %s pa sync state change: sync_handle: %08x, sync_state 0x%x, action 0x%x, cause: 0x%x\r\n",

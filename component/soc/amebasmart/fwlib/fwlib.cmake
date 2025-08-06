@@ -186,7 +186,7 @@ elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
 
                 ${c_CMPT_MISC_DIR}/ameba_pmu.c
             )
-            ameba_list_append_if(CONFIG_AS_INIC_AP private_sources
+            ameba_list_append_if(CONFIG_CORE_AS_AP private_sources
                 ${c_CMPT_MISC_DIR}/ameba_ota.c
             )
             ameba_list_append(private_sources

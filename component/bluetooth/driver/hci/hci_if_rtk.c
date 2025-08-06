@@ -39,65 +39,34 @@ static struct {
 	void *task_hdl;
 } hci_if_rtk;
 
-static uint8_t _rx_offset(uint8_t type)
+static void rtk_stack_recv(struct hci_rx_packet_t *pkt)
 {
-	uint8_t offset = H4_HDR_LEN;
+	uint8_t *buf, offset = H4_HDR_LEN;
 
-	if (type == HCI_ACL || type == HCI_ISO) {
-		offset += HCI_H4_RX_ACL_PKT_BUF_OFFSET;
-	} else if (type == HCI_SCO) {
-		offset += HCI_H4_RX_SCO_PKT_BUF_OFFSET;
-	}
-
-	return offset;
-}
-
-static uint16_t new_packet_buflen = 0;
-static uint8_t *new_packet_buf = NULL;
-
-static uint8_t *rtk_stack_get_buf(uint8_t type, void *hdr, uint16_t len, uint32_t timeout)
-{
-	(void)timeout;
-	(void)hdr;
-	uint8_t *buf = NULL;
-	uint8_t offset = _rx_offset(type);
-
-	new_packet_buflen = len + offset;
-
-	buf = (uint8_t *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, new_packet_buflen, 4);
-	memset(buf, 0, new_packet_buflen);
-	buf[0] = type;
-
-	new_packet_buf = buf;
-
-	return buf + offset;
-}
-
-static void rtk_stack_cancel(void)
-{
-	osif_mem_aligned_free(new_packet_buf);
-	new_packet_buf = NULL;
-}
-
-static void rtk_stack_recv(void)
-{
-	uint8_t *buf = new_packet_buf;
-
-	if (!buf || !hci_if_rtk.cb) {
+	if (!pkt || !hci_if_rtk.cb) {
 		return;
 	}
 
+	if (pkt->type == HCI_ACL || pkt->type == HCI_ISO) {
+		offset += HCI_H4_RX_ACL_PKT_BUF_OFFSET;
+	} else if (pkt->type == HCI_SCO) {
+		offset += HCI_H4_RX_SCO_PKT_BUF_OFFSET;
+	}
+
+	buf = (uint8_t *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, pkt->len + offset, 4);
+
+	memset(buf, 0, offset);
+	buf[0] = pkt->type;
+	memcpy(buf + offset, pkt->buf, pkt->len);
+
 	/* If indicate OK, stack will call hci_if_confirm when process of the packet is completed. */
-	if (!hci_if_rtk.cb(HCI_IF_EVT_DATA_IND, true, buf, new_packet_buflen)) {
+	if (!hci_if_rtk.cb(HCI_IF_EVT_DATA_IND, true, buf, pkt->len + offset)) {
 		osif_mem_aligned_free(buf);
-		new_packet_buf = NULL;
 	}
 }
 
 static struct hci_transport_cb rtk_stack_cb = {
-	.get_buf = rtk_stack_get_buf,
 	.recv = rtk_stack_recv,
-	.cancel = rtk_stack_cancel,
 };
 
 static void _hci_if_send(uint8_t *buf, uint32_t len)

@@ -44,7 +44,7 @@ set(private_compile_options)         #private compile_options
 ameba_list_append(private_sources
     ameba_pmu.c
 )
-if (CONFIG_AS_INIC_AP OR CONFIG_SINGLE_CORE_WIFI)
+if (CONFIG_CORE_AS_AP OR CONFIG_SINGLE_CORE_WIFI)
     ameba_list_append(private_sources ameba_ota.c)
 endif()
 

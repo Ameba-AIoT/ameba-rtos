@@ -4,35 +4,21 @@
  *******************************************************************************
  */
 #include <osif.h>
+#include <string.h>
 #include "hci/hci_transport.h"
 #include "hci/hci_common.h"
 
 static void *recv_sem = NULL;
 static uint8_t *hci_buf;
 
-uint8_t *hci_sa_recv_get_buf(uint8_t type, void *hdr, uint16_t len, uint32_t timeout)
+void hci_sa_recv(struct hci_rx_packet_t *pkt)
 {
-	(void)timeout;
-	(void)hdr;
-	(void)len;
-
-	if (HCI_EVT != type) {
-		return NULL;
-	}
-
-	/* Use Send Buf as Recv Buf */
-	return hci_buf;
-}
-
-void hci_sa_recv(void)
-{
+	memcpy(hci_buf, pkt->buf, pkt->len);
 	osif_sem_give(recv_sem);
 }
 
 struct hci_transport_cb hci_sa_cb = {
-	.get_buf = hci_sa_recv_get_buf,
 	.recv = hci_sa_recv,
-	.cancel = NULL,
 };
 
 uint8_t hci_sa_send(uint8_t type, uint8_t *buf, uint16_t len, bool is_sync)

@@ -881,6 +881,41 @@ typedef struct {
 } rtk_bt_le_audio_big_setup_data_path_ind_t;
 
 /**
+ * @typedef    rtk_bt_le_audio_big_info_adv_report_t
+ * @brief     Bluetooth LE audio big info adv report.
+ */
+typedef struct {
+	uint8_t sync_id;         /**< Identify the periodic advertising train. */
+	uint16_t sync_handle;   /**< Sync_Handle identifying the periodic advertising train. */
+	uint8_t num_bis;         /**< The number of BISes in the BIG. */
+	uint8_t nse;             /**< The number of subevents per BIS in each BIG event. */
+	uint16_t iso_interval;   /**< Value of the ISO_Interval subfield of the BIGInfo field.
+                                Time between two adjacent BIG anchor points, in units of 1.25 ms.
+                                The value shall be between 4 and 3200 (i.e. 5 ms to 4 s).*/
+	uint8_t bn;              /**< Value of the BN subfield of the BIGInfo field.
+                                Burst Number contains the number of new payloads for each BIS in a BIS event. */
+	uint8_t pto;             /**< Value of the PTO subfield of the BIGInfo field.
+                                Pre_Transmission_Offset contains the offset in number of ISO_Intervals for
+                                pre transmissions of data packets. */
+	uint8_t irc;             /**< Value of the IRC subfield of the BIGInfo field.
+                                Immediate Repetition Count contains the number of times the scheduled
+                                data packet is transmitted. */
+	uint16_t max_pdu;        /**< The maximum number of data octets (excluding the MIC, if any) that can be
+                                carried in each BIS Data PDU in the BIG. */
+	uint32_t sdu_interval;   /**< Value of the SDU_Interval subfield of the BIGInfo field.
+                                The time interval, in microseconds, of the periodic SDUs. */
+	uint16_t max_sdu;        /**< The maximum size, in octets, of an SDU. */
+	uint8_t phy;             /**< Indicate the PHY used by the BIG. @ref T_GAP_PHYS_TYPE. */
+	uint8_t framing;         /**< Indicate whether the BIG carries framed or unframed data.
+                                0x00: Unframed
+                                0x01: Framed */
+	uint8_t encryption;      /**< Indicate whether the BIG is encrypted or not.
+                                0x00: BIG carries unencrypted data
+                                0x01: BIG carries encrypted data */
+	rtk_bt_le_audio_sync_handle_t cb_sync_handle;                /**< Synchronization handle*/
+} rtk_bt_le_audio_big_info_adv_report_t;
+
+/**
  * @typedef    rtk_bt_le_audio_big_remove_data_path_ind_t
  * @brief     Bluetooth LE audio remove data path indication infomation.
  */
@@ -1247,6 +1282,15 @@ uint16_t rtk_bt_le_audio_broadcast_pa_sync_terminate(rtk_bt_le_addr_t addr);
  *            - Others: Failed
  */
 uint16_t rtk_bt_le_audio_broadcast_big_sync_create(rtk_bt_le_addr_t addr);
+
+/**
+ * @brief     Create BIG sync by sync handle
+ * @param[in] sync_handle: target broadcast source sync handle
+ * @return
+ *            - RTK_BT_OK  : Succeed
+ *            - Others: Failed
+ */
+uint16_t rtk_bt_le_audio_broadcast_big_sync_create_by_handle(rtk_bt_le_audio_sync_handle_t sync_handle);
 
 /**
  * @brief     Terminate BIG sync
