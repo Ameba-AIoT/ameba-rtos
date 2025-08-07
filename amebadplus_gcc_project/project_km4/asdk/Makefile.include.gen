@@ -311,13 +311,11 @@ GLOBAL_CFLAGS += -nostdlib
 GLOBAL_CFLAGS += -fno-builtin-printf
 GLOBAL_CFLAGS += -Wall
 GLOBAL_CFLAGS += -Wpointer-arith
-ifneq ($(CONFIG_MATTER_EN),y)
-GLOBAL_CFLAGS += -Wstrict-prototypes
-GLOBAL_CFLAGS += -Wundef
-endif
 GLOBAL_CFLAGS += -Wno-write-strings
 GLOBAL_CFLAGS += -Wno-maybe-uninitialized
 ifneq ($(CONFIG_MATTER_EN),y)
+GLOBAL_CFLAGS += -Wstrict-prototypes
+GLOBAL_CFLAGS += -Wundef
 GLOBAL_CFLAGS += --save-temps
 endif
 GLOBAL_CFLAGS += -c

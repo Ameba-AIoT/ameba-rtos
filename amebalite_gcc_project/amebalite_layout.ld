@@ -14,7 +14,7 @@
 #define TZ_NSC_SIZE 	 			(4)
 #define TZ_ENTRY_SIZE 				(16)
 #if defined(CONFIG_MATTER_SECURE_EN)
-#define TZ_S_SIZE 					(140)
+#define TZ_S_SIZE 					(96)
 #else
 #define TZ_S_SIZE 					(44)
 #endif

@@ -16,10 +16,6 @@
 #include "atcmd_wifi.h"
 #endif
 
-#if defined(CONFIG_MATTER) && CONFIG_MATTER
-extern void at_matter_init(void);
-#endif
-
 //======================================================
 struct list_head log_hash[ATC_INDEX_NUM];
 
@@ -52,9 +48,6 @@ log_init_t log_init_table[] = {
 
 #ifdef CONFIG_ATCMD_IO_UART
 	atio_uart_init,
-#endif
-#if defined(CONFIG_MATTER) && CONFIG_MATTER
-	at_matter_init,
 #endif
 };
 

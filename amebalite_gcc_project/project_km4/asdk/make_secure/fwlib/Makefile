@@ -35,6 +35,10 @@ CSRC =	$(DIR)/ameba_trustzone.c \
 		$(DIR_COM)/ameba_otp.c \
 		$(DIR_COM)/ameba_swr_calib.c \
 
+ifeq ($(CONFIG_MATTER_SECURE_EN),y)
+CSRC += $(DIR_COM)/ameba_pll.c
+endif
+
 CSRC += $(LOGDIR)/log.c \
 #*****************************************************************************#
 #                               Object FILE LIST                              #

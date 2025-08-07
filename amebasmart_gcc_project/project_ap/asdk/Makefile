@@ -98,6 +98,13 @@ endif
 ifeq ($(findstring y, $(CONFIG_USB_DRD_EN)), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_usb.a
 endif
+ifeq ($(CONFIG_MATTER_EN), y)
+ifeq ($(CONFIG_CORE_NUM),1)
+LINK_APP_LIB += $(ROOTDIR)/lib/soc/matter/lib_freertos_smp_sc.a
+else
+LINK_APP_LIB += $(ROOTDIR)/lib/soc/matter/lib_freertos_smp.a
+endif
+else
 ifeq ($(CONFIG_MP_SHRINK), y)
 ifeq ($(CONFIG_CORE_NUM),1)
 LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_freertos_smp_sc_mp.a
@@ -106,14 +113,7 @@ LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_freertos_smp_mp.a
 endif
 else
 ifeq ($(CONFIG_CORE_NUM),1)
-ifeq ($(CONFIG_MATTER_EN), y)
-LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_freertos_smp_sc_matter.a
-else
 LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_freertos_smp_sc.a
-endif
-else
-ifeq ($(CONFIG_MATTER_EN), y)
-LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_freertos_smp_matter.a
 else
 LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_freertos_smp.a
 endif

@@ -81,9 +81,6 @@ mainmenu_option next_comment
 comment '< CONFIG BT'
 bool "Enable BT"														CONFIG_BT_MENU
 if [ "$CONFIG_BT_MENU" = "y" ]; then
-	if [ "$CONFIG_MATTER_EN" = "y" ]; then
-		bool "BLE_Matter_Adapter"	CONFIG_BLE_MATTER_ADAPTER
-	fi
 	if [ "$CONFIG_AP_CORE_CA32" = "y" ]; then
 		define_bool CONFIG_BT_FOR_AP y
 		define_bool CONFIG_FTL_ENABLED_FOR_AP y
@@ -108,6 +105,9 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 		fi
 		bool "BT Example Demo"											CONFIG_BT_EXAMPLE_DEMO_MENU
 		if [ "$CONFIG_BT_EXAMPLE_DEMO_MENU" = "y" ]; then
+			if [ "$CONFIG_MATTER_EN" = "y" ]; then
+				bool "  BLE_Matter_Adapter"	CONFIG_BLE_MATTER_ADAPTER
+			fi
 			bool "  BLE Peripheral"										CONFIG_BT_PERIPHERAL
 			bool "  BLE Central"										CONFIG_BT_CENTRAL
 			bool "  BLE Scatternet"										CONFIG_BT_SCATTERNET
