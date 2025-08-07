@@ -11,7 +11,7 @@
 #if defined(CONFIG_BT_AUDIO_DEBUG) && CONFIG_BT_AUDIO_DEBUG
 #define _dbgdump    BT_LOGA("\n\r"); BT_LOGA
 #define PREFIX  "[BT_AUDIO] "
-#if defined (_dbgdump)
+#if defined(_dbgdump)
 #undef DBG_BAD
 #define DBG_BAD(...)     do {\
         _dbgdump(PREFIX __VA_ARGS__);\

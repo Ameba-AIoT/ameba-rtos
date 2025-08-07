@@ -9,7 +9,7 @@
 
 #define SRC_MIN_RATIO_DIFF      (1e-20)
 
-#if defined (RTK_BT_AUDIO_RESAMPLE_TPDF_DITHER) && RTK_BT_AUDIO_RESAMPLE_TPDF_DITHER
+#if defined(RTK_BT_AUDIO_RESAMPLE_TPDF_DITHER) && RTK_BT_AUDIO_RESAMPLE_TPDF_DITHER
 static uint32_t *tpdf_generators;
 #endif
 
@@ -24,7 +24,7 @@ static inline double fmod_one(double x)
 	return res;
 }
 
-#if defined (RTK_BT_AUDIO_RESAMPLE_TPDF_DITHER) && RTK_BT_AUDIO_RESAMPLE_TPDF_DITHER
+#if defined(RTK_BT_AUDIO_RESAMPLE_TPDF_DITHER) && RTK_BT_AUDIO_RESAMPLE_TPDF_DITHER
 static void tpdf_dither_init(int channels)
 {
 	int generator_bytes = channels * sizeof(uint32_t);
@@ -83,7 +83,7 @@ rtk_bt_audio_resample_t *rtk_bt_audio_resample_alloc(float in_rate, float out_ra
 	presample->input_samples = input_frames;
 	presample->src_ratio = (double)(out_rate / in_rate);
 	presample->last_ratio = presample->src_ratio;
-#if defined (RTK_BT_AUDIO_RESAMPLE_TPDF_DITHER) && RTK_BT_AUDIO_RESAMPLE_TPDF_DITHER
+#if defined(RTK_BT_AUDIO_RESAMPLE_TPDF_DITHER) && RTK_BT_AUDIO_RESAMPLE_TPDF_DITHER
 	tpdf_dither_init(channels);
 #endif
 
@@ -97,7 +97,7 @@ void rtk_bt_audio_resample_free(rtk_bt_audio_resample_t *presample)
 		return;
 	}
 	osif_mem_free(presample);
-#if defined (RTK_BT_AUDIO_RESAMPLE_TPDF_DITHER) && RTK_BT_AUDIO_RESAMPLE_TPDF_DITHER
+#if defined(RTK_BT_AUDIO_RESAMPLE_TPDF_DITHER) && RTK_BT_AUDIO_RESAMPLE_TPDF_DITHER
 	tpdf_dither_free();
 #endif
 }
@@ -459,8 +459,8 @@ static void bt_audio_input_data_channel_convert(rtk_bt_audio_resample_t *presamp
 uint32_t rtk_bt_audio_resample_entry(rtk_bt_audio_resample_t *presample, rtk_bt_audio_biquad_t *bq_t, uint8_t *input, uint32_t input_frames_num,
 									 uint8_t *output, uint32_t in_rate, uint32_t out_rate)
 {
-#if !defined (RTK_BT_AUDIO_RESAMPLE_PRE_FILTER) || !RTK_BT_AUDIO_RESAMPLE_PRE_FILTER && \
-    !defined (RTK_BT_AUDIO_RESAMPLE_POST_FILTER) || !RTK_BT_AUDIO_RESAMPLE_POST_FILTER
+#if (!defined(RTK_BT_AUDIO_RESAMPLE_PRE_FILTER) || !RTK_BT_AUDIO_RESAMPLE_PRE_FILTER) && \
+    (!defined(RTK_BT_AUDIO_RESAMPLE_POST_FILTER) || !RTK_BT_AUDIO_RESAMPLE_POST_FILTER)
 	(void)bq_t;
 #endif
 	uint32_t out_frames = 0;
@@ -470,14 +470,14 @@ uint32_t rtk_bt_audio_resample_entry(rtk_bt_audio_resample_t *presample, rtk_bt_
 	memset((void *)out_buffer, 0, sizeof(out_buffer));
 	/* convert to 32-bit float and do channels re-allocation */
 	bt_audio_input_data_short_to_float(presample, (short *)input, in_buffer, input_frames_num);
-#if defined (RTK_BT_AUDIO_RESAMPLE_PRE_FILTER) && RTK_BT_AUDIO_RESAMPLE_PRE_FILTER
+#if defined(RTK_BT_AUDIO_RESAMPLE_PRE_FILTER) && RTK_BT_AUDIO_RESAMPLE_PRE_FILTER
 	/* do pre filter */
 	for (uint8_t i = 0; i < presample->out_channels; i ++) {
 		rtk_bt_audio_biquad_apply(bq_t, in_buffer + i, input_frames_num, presample->out_channels);
 	}
 #endif
 	out_frames = resample_process_f32(presample, (float *)in_buffer, (float *)out_buffer, in_rate, out_rate, input_frames_num, presample->out_channels);
-#if defined (RTK_BT_AUDIO_RESAMPLE_POST_FILTER) && RTK_BT_AUDIO_RESAMPLE_POST_FILTER
+#if defined(RTK_BT_AUDIO_RESAMPLE_POST_FILTER) && RTK_BT_AUDIO_RESAMPLE_POST_FILTER
 	/* do post filter */
 	for (uint8_t i = 0; i < presample->out_channels; i ++) {
 		rtk_bt_audio_biquad_apply(bq_t, out_buffer + i, out_frames, presample->out_channels);
