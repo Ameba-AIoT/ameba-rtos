@@ -49,8 +49,4 @@ _LONG_CALL_ void IPC_patch_function(void (*pfunc1)(void), void (*pfunc2)(void));
   * @}
   */
 
-#if defined(CONFIG_MATTER) && CONFIG_MATTER
-#define rtw_get_random_bytes TRNG_get_random_bytes
-#endif
-
 #endif /* _AMEBA_ROM_PATCH_H_ */

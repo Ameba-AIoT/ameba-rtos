@@ -87,7 +87,7 @@ extern uint32_t SystemCoreClock;
 #define configMAX_TASK_NAME_LEN							( 24 )
 
 #if defined(CONFIG_MATTER_SECURE) && CONFIG_MATTER_SECURE
-#define secureconfigTOTAL_SRAM_HEAP_SIZE			( ( ( size_t ) ( 20 * 1024 ) ) )
+#define secureconfigTOTAL_SRAM_HEAP_SIZE			( ( ( size_t ) ( 16 * 1024 ) ) )
 #else
 #define secureconfigTOTAL_SRAM_HEAP_SIZE			( ( ( size_t ) ( 6 * 1024 ) ) )
 #endif
@@ -137,8 +137,6 @@ extern uint32_t SystemCoreClock;
 #define INCLUDE_vTaskDelayUntil							1
 #define INCLUDE_vTaskDelay								1
 #define INCLUDE_pcTaskGetTaskName       				1
-#define INCLUDE_uxTaskGetStackSize						1
-#define INCLUDE_uxTaskGetFreeStackSize					1
 #define INCLUDE_uxTaskGetStackHighWaterMark				0
 #define INCLUDE_xTaskGetIdleTaskHandle					0
 #define INCLUDE_eTaskGetState							1

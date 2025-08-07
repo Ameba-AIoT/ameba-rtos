@@ -51,7 +51,6 @@ endif
 #*****************************************************************************#
 #                               VARIABLES	                              #
 #*****************************************************************************#
-ifneq ($(CONFIG_MATTER_EN),y)
 DIR = $(BASEDIR)/component/example
 RM_DIRS = 'example/audio_mp3|example/audio_amr|example/audio_helix_aac|example/audio_helix_mp3|example/audio_m4a_selfparse|example/audio_m4a|example/audio_pcm_upload|example/audio_hls'
 
@@ -70,7 +69,6 @@ endif
 
 ifneq ($(EXAMPLE),)
 CSRC = $(wildcard $(TARGET_DIR)/*.c)
-endif
 endif
 
 #*****************************************************************************#

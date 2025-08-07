@@ -1536,14 +1536,6 @@ UBaseType_t uxTaskGetStackHighWaterMark(TaskHandle_t xTask) PRIVILEGED_FUNCTION;
  */
 configSTACK_DEPTH_TYPE uxTaskGetStackHighWaterMark2(TaskHandle_t xTask) PRIVILEGED_FUNCTION;
 
-/**
- * Added for Matter software diagnostics
- * uxTaskGetStackSize
- * uxTaskGetFreeStackSize
- */
-uint32_t uxTaskGetStackSize( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
-uint32_t uxTaskGetFreeStackSize( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
-
 /* When using trace macros it is sometimes necessary to include task.h before
  * FreeRTOS.h.  When this is done TaskHookFunction_t will not yet have been defined,
  * so the following two prototypes will cause a compilation error.  This can be

@@ -791,12 +791,6 @@ enum rtw_event_indicate {
 	/* csi rx done event */
 	WIFI_EVENT_CSI_DONE,
 
-	/* matter modifications*/
-#if defined(CONFIG_MATTER) && CONFIG_MATTER
-	WIFI_EVENT_MATTER_STA_CONN,
-	WIFI_EVENT_MATTER_STA_DISCONN,
-	WIFI_EVENT_DHCP6_DONE,
-#endif
 	/* flash event */
 	WIFI_EVENT_DEAUTH_INFO_FLASH,
 	WIFI_EVENT_MAX,

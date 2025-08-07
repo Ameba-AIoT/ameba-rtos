@@ -306,13 +306,6 @@ size_t xPortGetMinimumEverFreeHeapSize(void)
 }
 /*-----------------------------------------------------------*/
 
-size_t xPortGetTotalHeapSize( void )
-{
-	extern uint32_t total_heap_size;
-	return total_heap_size;
-}
-/*-----------------------------------------------------------*/
-
 void xPortResetHeapMinimumEverFreeHeapSize(void)
 {
     taskENTER_CRITICAL();

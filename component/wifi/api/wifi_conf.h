@@ -21,8 +21,4 @@
 #include "wifi_intf_drv_to_app_basic.h"
 #include "wifi_intf_drv_to_app_ext.h"
 #include "wifi_intf_drv_to_app_internal.h"
-#if defined(CONFIG_MATTER) && CONFIG_MATTER
-#include "wifi_ind.h"
-#include "wifi_intf_drv_to_upper.h"
-#endif
 #endif

@@ -20,24 +20,6 @@ ifeq ($(CONFIG_MATTER_SECURE_EN),y)
 BASEDIR           = ../../../..
 MATTER_DIR        = $(BASEDIR)/component/application/matter
 MATTER_BUILDDIR   = $(MATTER_DIR)/project/amebasmart
-MATTER_MBEDTLSDIR = $(MATTER_DIR)/common/mbedtls
-ifeq ($(MBEDTLS_MATTER_ENABLE),y)
-ifeq ($(MATTER_V_1_3_EN),y)
-MBEDTLS_DIR	      = $(MATTER_MBEDTLSDIR)/mbedtls-2.28.1
-else ifeq ($(MATTER_V_1_4_EN),y)
-ifeq ($(MBEDTLS_MATTER_V_2_28_1_ENABLE),y)
-MBEDTLS_DIR	      = $(MATTER_MBEDTLSDIR)/mbedtls-2.28.1
-else ifeq ($(MBEDTLS_MATTER_V_3_6_1_ENABLE),y)
-MBEDTLS_DIR	      = $(MATTER_MBEDTLSDIR)/mbedtls-3.6.1
-endif #MBEDTLS_MATTER_V_X_X_X_ENABLE
-endif #MATTER_V_1_X_EN
-else
-ifeq ($(MBEDTLS_V_2_16_9_ENABLE), y)
-MBEDTLS_DIR	 = $(BASEDIR)/component/ssl/mbedtls-2.16.9
-else ifeq ($(MBEDTLS_V_3_4_1_ENABLE), y)
-MBEDTLS_DIR	 = $(BASEDIR)/component/ssl/mbedtls-3.4.1
-endif #MBEDTLS_V_X_X_X_ENABLE
-endif #MBEDTLS_MATTER_ENABLE
 endif #CONFIG_MATTER_SECURE_EN
 
 ifeq ($(COMPILEOS),$(LINUX_OS))
