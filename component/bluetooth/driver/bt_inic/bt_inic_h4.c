@@ -27,13 +27,13 @@
 #define UART_RX     _PA_29
 #define UART_CTS    _PA_30
 #define UART_RTS    _PA_31
-#elif defined (CONFIG_AMEBADPLUS)
+#elif defined(CONFIG_AMEBADPLUS)
 #define UART_INDEX  0
 #define UART_TX     _PA_26
 #define UART_RX     _PA_27
 #define UART_CTS    _PB_22
 #define UART_RTS    _PA_30
-#elif defined (CONFIG_AMEBAGREEN2)
+#elif defined(CONFIG_AMEBAGREEN2)
 #define UART_INDEX  0
 #define UART_TX     _PA_4
 #define UART_RX     _PA_5
@@ -248,13 +248,13 @@ void bt_inic_h4_init(void)
 	/* enable uart clock and function */
 	RCC_PeriphClockCmd(APBPeriph_UARTx[UART_INDEX], APBPeriph_UARTx_CLOCK[UART_INDEX], ENABLE);
 
-#if defined (CONFIG_AMEBASMART)
+#if defined(CONFIG_AMEBASMART)
 	/* Configure UART TX and RX pin */
 	Pinmux_Config(UART_TX, PINMUX_FUNCTION_UART);
 	Pinmux_Config(UART_RX, PINMUX_FUNCTION_UART);
 	Pinmux_Config(UART_CTS, PINMUX_FUNCTION_UART_RTSCTS);
 	Pinmux_Config(UART_RTS, PINMUX_FUNCTION_UART_RTSCTS);
-#elif defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2)
+#elif defined(CONFIG_AMEBALITE) || defined(CONFIG_AMEBADPLUS) || defined(CONFIG_AMEBAGREEN2)
 	/* Configure UART TX and RX pin */
 	Pinmux_Config(UART_TX, UART_FUNCID(TXD, UART_INDEX));
 	Pinmux_Config(UART_RX, UART_FUNCID(RXD, UART_INDEX));
@@ -271,7 +271,7 @@ void bt_inic_h4_init(void)
 	 */
 	UART_StructInit(&UART_InitStruct);
 	UART_InitStruct.Parity = RUART_PARITY_DISABLE;
-#if defined (CONFIG_AMEBASMART)
+#if defined(CONFIG_AMEBASMART)
 	UART_InitStruct.RxFifoTrigLevel = UART_RX_FIFOTRIG_LEVEL_32BYTES;
 #else
 	UART_InitStruct.RxFifoTrigLevel = UART_RX_FIFOTRIG_LEVEL_HALF;

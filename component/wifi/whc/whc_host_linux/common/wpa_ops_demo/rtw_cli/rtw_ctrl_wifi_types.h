@@ -112,6 +112,13 @@ enum rtw_wireless_mode {
 	RTW_80211_MAX     = (RTW_80211_24G_MIX | RTW_80211_5G_MIX),
 };
 
+
+struct whc_rtw_cli_wifi_status {
+	u8              ssid[33];
+	u8              bssid[6];
+	u8              channel;
+};
+
 #endif
 
 
