@@ -19,7 +19,7 @@ extern "C"
 {
 #endif
 
-#if (defined(RTK_BLE_AUDIO_TMAP_SUPPORT) && RTK_BLE_AUDIO_TMAP_SUPPORT)
+#if defined(RTK_BLE_AUDIO_TMAP_SUPPORT) && RTK_BLE_AUDIO_TMAP_SUPPORT
 /* ---------------------------------- Date Types ------------------------------------- */
 /**
  * @typedef    rtk_bt_le_audio_tmap_role_t

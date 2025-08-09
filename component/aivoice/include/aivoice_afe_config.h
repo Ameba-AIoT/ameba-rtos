@@ -21,7 +21,7 @@ typedef enum {
 	AFE_LINEAR_2MIC_30MM = 1,     // 2 microphones, distance = 30mm
 	AFE_LINEAR_2MIC_50MM = 2,     // 2 microphones, distance = 50mm
 	AFE_LINEAR_2MIC_70MM = 3,     // 2 microphones, distance = 70mm
-	AFE_CIRCLE_3MIC_50MM = 4,     // 3 microphones, Circle, diameter = 50mm
+	AFE_CIRCLE_3MIC_50MM = 4,     // 3 microphones, Circle, diameter = 50mm, the angle corresponding to [mic1,mic2,mic3] = [0,120,240] (Cartesian coordinate)
 } afe_mic_geometry_e;
 
 // AFE mode, ASR and Communication
@@ -77,7 +77,7 @@ typedef struct afe_config {
 	int sample_rate;                        // sampling rate(Hz), must be 16000
 	int frame_size;                         // frame length(samples), must be 256
 
-	afe_mode_e afe_mode;                    // AFE mode, for ASR or voice communication. Only support AFE for ASR in current version.
+	afe_mode_e afe_mode;                    // AFE mode, for ASR or voice communication.
 	bool enable_aec;                        // AEC(Acoustic Echo Cancellation) module switch
 	bool enable_ns;                         // NS(Noise Suppression) module switch
 	bool enable_agc;                        // AGC(Automation Gain Control) module switch
@@ -92,13 +92,13 @@ typedef struct afe_config {
 	afe_aec_res_aggressive_mode_e res_aggressive_mode;  // higher mode means more residual echo suppression but more distortion
 
 	// NS module parameter
-	afe_ns_mode_e ns_mode;                  // NS mode, signal process or NN method. NN method is not supported in current version.
+	afe_ns_mode_e ns_mode;                  // NS mode, signal process or NN method. NN method is only supports voice communication mode.
 	afe_ns_cost_mode_e ns_cost_mode;        // low cost mode means 1channel NR and poorer noise reduction effect
 	afe_ns_aggressive_mode_e ns_aggressive_mode;        // higher mode means more stationary noise suppression but more distortion
 
 	// AGC module parameter
 	int agc_fixed_gain;                     // AGC fixed gain(dB) applied on AFE output, the value should be in [0, 18].
-	bool enable_adaptive_agc;               // adaptive AGC switch. Only for AFE_FOR_COM.
+	bool enable_adaptive_agc;               // adaptive AGC switch. Only supports voice communication mode.
 
 	// SSL module parameter
 	float ssl_resolution;                   // SSL solution(degree)
@@ -115,7 +115,7 @@ typedef struct afe_config {
     .afe_mode   = AFE_FOR_ASR, \
     .enable_aec = true, \
     .enable_ns  = false, \
-    .enable_agc = false, \
+    .enable_agc = true, \
     .enable_ssl = false, \
     .aec_mode = AFE_AEC_SIGNAL, \
     .aec_enable_threshold = 5, \
@@ -125,7 +125,7 @@ typedef struct afe_config {
     .ns_mode = AFE_NS_SIGNAL_SET(), \
     .ns_cost_mode = AFE_NS_COST_HIGH, \
     .ns_aggressive_mode = AFE_NS_AGGR_LOW, \
-    .agc_fixed_gain = 0, \
+    .agc_fixed_gain = 15, \
     .enable_adaptive_agc = false, \
 }
 
@@ -137,7 +137,7 @@ typedef struct afe_config {
     .afe_mode   = AFE_FOR_ASR, \
     .enable_aec = true, \
     .enable_ns  = false, \
-    .enable_agc = false, \
+    .enable_agc = true, \
     .enable_ssl = true, \
     .aec_mode = AFE_AEC_SIGNAL, \
     .aec_enable_threshold = 5, \
@@ -147,7 +147,7 @@ typedef struct afe_config {
     .ns_mode = AFE_NS_SIGNAL_SET(), \
     .ns_cost_mode = AFE_NS_COST_HIGH, \
     .ns_aggressive_mode = AFE_NS_AGGR_LOW, \
-    .agc_fixed_gain = 0, \
+    .agc_fixed_gain = 15, \
     .enable_adaptive_agc = false, \
     .ssl_resolution = 10, \
     .ssl_min_hz = 500, \
@@ -162,7 +162,7 @@ typedef struct afe_config {
     .afe_mode   = AFE_FOR_ASR, \
     .enable_aec = true, \
     .enable_ns  = false, \
-    .enable_agc = false, \
+    .enable_agc = true, \
     .enable_ssl = true, \
     .aec_mode = AFE_AEC_SIGNAL, \
     .aec_enable_threshold = 5, \
@@ -172,7 +172,7 @@ typedef struct afe_config {
     .ns_mode = AFE_NS_SIGNAL_SET(), \
     .ns_cost_mode = AFE_NS_COST_HIGH, \
     .ns_aggressive_mode = AFE_NS_AGGR_LOW, \
-    .agc_fixed_gain = 0, \
+    .agc_fixed_gain = 15, \
     .enable_adaptive_agc = false, \
     .ssl_resolution = 10, \
     .ssl_min_hz = 300, \
@@ -187,7 +187,7 @@ typedef struct afe_config {
     .afe_mode   = AFE_FOR_ASR, \
     .enable_aec = true, \
     .enable_ns  = false, \
-    .enable_agc = false, \
+    .enable_agc = true, \
     .enable_ssl = true, \
     .aec_mode = AFE_AEC_SIGNAL, \
     .aec_enable_threshold = 5, \
@@ -197,7 +197,7 @@ typedef struct afe_config {
     .ns_mode = AFE_NS_SIGNAL_SET(), \
     .ns_cost_mode = AFE_NS_COST_HIGH, \
     .ns_aggressive_mode = AFE_NS_AGGR_LOW, \
-    .agc_fixed_gain = 0, \
+    .agc_fixed_gain = 15, \
     .enable_adaptive_agc = false, \
     .ssl_resolution = 10, \
     .ssl_min_hz = 300, \
@@ -212,8 +212,8 @@ typedef struct afe_config {
     .afe_mode   = AFE_FOR_ASR, \
     .enable_aec = true, \
     .enable_ns  = false, \
-    .enable_agc = false, \
-    .enable_ssl = false, \
+    .enable_agc = true, \
+    .enable_ssl = true, \
     .aec_mode = AFE_AEC_SIGNAL, \
     .aec_enable_threshold = 5, \
     .enable_res = false, \
@@ -222,8 +222,11 @@ typedef struct afe_config {
     .ns_mode = AFE_NS_SIGNAL_SET(), \
     .ns_cost_mode = AFE_NS_COST_HIGH, \
     .ns_aggressive_mode = AFE_NS_AGGR_LOW, \
-    .agc_fixed_gain = 0, \
+    .agc_fixed_gain = 15, \
     .enable_adaptive_agc = false, \
+    .ssl_resolution = 10, \
+    .ssl_min_hz = 300, \
+    .ssl_max_hz = 3500, \
 }
 
 /*-------------------- Default config for COM --------------------*/

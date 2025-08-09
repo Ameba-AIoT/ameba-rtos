@@ -139,15 +139,14 @@ Command ID40, 挂断电话
 #### Expected Result
 * full_flow_offline result
 ```
-[AIVOICE] set single kws mode
-[AIVOICE] rtk_aivoice version: v1.5.0#Sdbbdbb0#N1ed33d6#A6c25e38
-[AIVOICE] rtk_aivoice_model afe version: afe_1mic_asr_v0.1_AfePara_1mic_ASR_v0.0_20240626_COM_v0.
+[AIVOICE] rtk_aivoice version: v1.5.1#S32da26d#Nf0eb5ca#A6f74d23
+[AIVOICE] rtk_aivoice_model afe version: afe_1mic_asr_v1.1_AfePara_1mic_ASR_v0.0_20240626_COM_v0.3_20250528
 [AIVOICE] rtk_aivoice_model vad version: vad_v8_opt
 [AIVOICE] rtk_aivoice_model kws version: kws_xqxq_v5_opt
 [AIVOICE] rtk_aivoice_log_format version: v2
 [user] afe output 1 channels raw audio, others: 
-[AIVOICE] [KWS] result: {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.62354159355163574}
-[user] wakeup. {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.62354159355163574}
+[AIVOICE] [KWS] result: {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.63414132595062256}
+[user] wakeup. {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.63414132595062256}
 [user] vad. status = 1, offset = 1185
 [user] vad. status = 0, offset = 2625
 [user] vad. status = 1, offset = 3885

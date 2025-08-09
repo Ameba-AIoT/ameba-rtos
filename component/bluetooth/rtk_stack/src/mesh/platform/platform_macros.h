@@ -37,13 +37,13 @@ extern "C"  {
 #endif
 
 #ifndef __INLINE
-#if   defined ( __CC_ARM )
+#if   defined(__CC_ARM)
 #define __INLINE            __inline
-#elif defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
 #define __INLINE            __inline
-#elif defined ( __GNUC__ )
+#elif defined(__GNUC__)
 #define __INLINE            __inline
-#elif defined( __ICCARM__ )
+#elif defined(__ICCARM__)
 #define __INLINE            inline
 #endif
 #endif
@@ -190,10 +190,10 @@ extern "C"  {
 #error "Unsupported ARM compiler version"
 #define __get_lr()              0
 #endif
-#elif defined (__GNUC__)
+#elif defined(__GNUC__)
 //#include "cmsis_gcc.h"
 #define __get_lr()              0//((uint32_t)__builtin_return_address(0))
-#elif defined (__ICCARM__)
+#elif defined(__ICCARM__)
 #include "cmsis_iccarm.h"
 #define __get_lr()              (__get_LR())
 #else
