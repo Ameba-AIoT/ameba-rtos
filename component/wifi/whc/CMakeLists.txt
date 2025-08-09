@@ -258,6 +258,13 @@ if(CONFIG_WIFI_HOST_CONTROL)
     if(CONFIG_WHC_CMD_PATH)
         if(CONFIG_RTW_CLI)
             ameba_list_append(private_includes ${c_CMPT_WIFI_DIR}/whc/whc_dev/bridge_wpa_ops_demo)
+
+            if(CONFIG_WPA_LITE)
+                ameba_list_append(private_includes ${c_CMPT_WIFI_DIR}/whc/whc_dev/bridge_wpa_ops_demo/wpa_lite_intf)
+            elseif(CONFIG_WPA_STD)
+                ameba_list_append(private_includes ${c_CMPT_WIFI_DIR}/whc/whc_dev/bridge_wpa_ops_demo/wpas_std_intf)
+            endif()
+
         endif()
     endif()
 endif()

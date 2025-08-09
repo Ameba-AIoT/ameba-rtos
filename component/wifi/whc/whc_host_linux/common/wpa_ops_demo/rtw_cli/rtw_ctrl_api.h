@@ -234,5 +234,6 @@ void print_scan_result(struct rtw_scan_result *record);
 void whc_bridge_host_print_scan_result(char *pos, int chunk_index, char last_chunk);
 void event_handler_scan_complete(void);
 void whc_cmd_handle_rx_list_network(char *pos);
+void whc_cmd_handle_rx_get_status(char *pos);
 
 #endif
