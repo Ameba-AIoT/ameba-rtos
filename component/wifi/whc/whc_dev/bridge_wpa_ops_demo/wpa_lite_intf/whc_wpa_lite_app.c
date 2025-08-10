@@ -24,12 +24,54 @@ static void init_wifi_struct(void)
 	wifi.security_type = RTW_SECURITY_OPEN;
 }
 
+int whc_wpa_ops_get_status(char *ptr, u8 *buf)
+{
+	(void)ptr;
+	struct rtw_wifi_setting *p_wifi_setting = NULL;
+	struct whc_rtw_cli_wifi_status *p_wifi_status = NULL;
+	u8 *buf_p = NULL;
+
+	p_wifi_setting = (struct rtw_wifi_setting *)rtos_mem_zmalloc(sizeof(struct rtw_wifi_setting));
+	if (p_wifi_setting == NULL) {
+		RTK_LOGI(TAG_WLAN_INIC, "%s, alloc p_wifi_setting fail\n", __FUNCTION__);
+		return 0;
+	}
+
+	//TODO default set STA 0
+	wifi_get_setting(0, p_wifi_setting);
+
+	p_wifi_status = (struct whc_rtw_cli_wifi_status *)rtos_mem_zmalloc(sizeof(struct whc_rtw_cli_wifi_status));
+	if (p_wifi_status == NULL) {
+		RTK_LOGI(TAG_WLAN_INIC, "%s, alloc p_wifi_status fail\n", __FUNCTION__);
+		rtos_mem_free((void *)p_wifi_setting);
+		return 0;
+	}
+
+	memcpy(p_wifi_status->ssid, p_wifi_setting->ssid, sizeof(p_wifi_status->ssid));
+	memcpy(p_wifi_status->bssid, p_wifi_setting->bssid, sizeof(p_wifi_status->bssid));
+	p_wifi_status->channel = p_wifi_setting->channel;
+
+	memset(buf, 0, BRIDGE_WPA_OPS_BUF_SIZE);
+	buf_p = buf;
+	*(u32 *)buf_p = WHC_WPA_OPS_UTIL;
+	buf_p += 4;
+	*buf_p = WHC_WPA_OPS_UTIL_GET_STATUS;
+	buf_p += 1;
+
+	memcpy(buf_p, p_wifi_status, sizeof(struct whc_rtw_cli_wifi_status));
+	whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
+
+	rtos_mem_free((void *)p_wifi_setting);
+	rtos_mem_free((void *)p_wifi_status);
+
+	return 0;
+}
+
 int whc_wpa_ops_disconnect(char *ptr, u8 *buf)
 {
 	(void)ptr;
 	(void)buf;
-	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
-	int timeout = 20, ret = 0;
+	int ret = 0;
 	struct rtw_wifi_setting wifi_setting = {0};
 
 
@@ -43,16 +85,6 @@ int whc_wpa_ops_disconnect(char *ptr, u8 *buf)
 		goto end;
 	}
 
-	if (wifi_get_join_status(&join_status) != RTK_SUCCESS) {
-		RTK_LOGI(TAG_WLAN_INIC, "%s, Wifi get join status ERROR\n", __FUNCTION__);
-		goto end;
-	}
-
-	if (join_status == RTW_JOINSTATUS_UNKNOWN) {
-		RTK_LOGI(TAG_WLAN_INIC, "%s, Not connected yet\n", __FUNCTION__);
-		goto end;
-	}
-
 	/* Disconnecting ...... */
 	ret = wifi_disconnect();
 	if (ret < 0) {
@@ -60,16 +92,6 @@ int whc_wpa_ops_disconnect(char *ptr, u8 *buf)
 		goto end;
 	}
 
-	while (timeout > 0) {
-		if ((wifi_get_join_status(&join_status) == RTK_SUCCESS) && join_status != RTW_JOINSTATUS_SUCCESS) {
-			RTK_LOGI(TAG_WLAN_INIC, "%s, Disconnect Done\n", __FUNCTION__);
-			break;
-		}
-
-		/* Delay 1s */
-		rtos_time_delay_ms(1000);
-		timeout--;
-	}
 
 end:
 	init_wifi_struct();
@@ -214,22 +236,17 @@ int whc_wpa_ops_get_macaddr(u8 *ptr, u8 *buf)
 
 }
 
-int whc_wpa_ops_do_scan(u8 *input, u8 *buf)
+s32 whc_rtw_cli_scan_callback(u32 scanned_AP_num, void *data)
 {
-	struct rtw_scan_result *scanned_AP_list = NULL;
-	struct rtw_scan_param scan_param;
-	int ret = 0;
-	u32 scanned_AP_num = 0;
+	u8 *buf = NULL;
 	u8 *ptr = NULL;
+	struct rtw_scan_result *scanned_AP_list = NULL;
+	(void)data;
 
-	(void) input;
-
-	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
-
-	RTK_LOGE(TAG_WLAN_INIC, "%s, Scan!!!!!!\n", __func__);
-	ret = wifi_scan_networks(&scan_param, 1);
-	if (ret < RTK_SUCCESS) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s, wifi_scan_networks ERROR\n", __func__);
+	buf = rtos_mem_malloc(BRIDGE_WPA_OPS_BUF_SIZE);
+	if (!buf) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s, can't alloc buffer!!\n", __func__);
+		return 0;
 	}
 
 	//Return Scan done
@@ -237,14 +254,11 @@ int whc_wpa_ops_do_scan(u8 *input, u8 *buf)
 	ptr = buf;
 	*(u32 *)ptr = WHC_WPA_OPS_EVENT;
 	ptr += 4;
-	*ptr = WHC_WPA_OPS_EVENT_SCANING;
+	*ptr = WHC_WPA_OPS_EVENT_SCAN_COMPLETE;
 	ptr += 1;
 
 	whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
 
-
-	/* get scan results and log them */
-	scanned_AP_num = ret;
 
 	if (scanned_AP_num != 0) {
 		scanned_AP_list = (struct rtw_scan_result *)
@@ -283,15 +297,41 @@ int whc_wpa_ops_do_scan(u8 *input, u8 *buf)
 		rtos_mem_free((void *)scanned_AP_list);
 	}
 
-	//Return Scan done
+	if (buf != NULL) {
+		rtos_mem_free(buf);
+	}
+
+	return 0;
+
+}
+
+
+int whc_wpa_ops_do_scan(u8 *input, u8 *buf)
+{
+	struct rtw_scan_param scan_param;
+	int ret = 0;
+	u8 *ptr = NULL;
+
+	(void) input;
+
+	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
+	scan_param.scan_user_callback = whc_rtw_cli_scan_callback;
+
+	RTK_LOGE(TAG_WLAN_INIC, "%s, Scan!!!!!!\n", __func__);
+	ret = wifi_scan_networks(&scan_param, 0);
+	if (ret < RTK_SUCCESS) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s, wifi_scan_networks ERROR\n", __func__);
+	}
+
 	memset(buf, 0, BRIDGE_WPA_OPS_BUF_SIZE);
 	ptr = buf;
 	*(u32 *)ptr = WHC_WPA_OPS_EVENT;
 	ptr += 4;
-	*ptr = WHC_WPA_OPS_EVENT_SCAN_COMPLETE;
+	*ptr = WHC_WPA_OPS_EVENT_SCANING;
 	ptr += 1;
 
 	whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
+
 
 	return 0;
 

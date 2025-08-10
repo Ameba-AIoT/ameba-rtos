@@ -171,7 +171,7 @@ void bt_inic_spi_recv_from_host(u8 *buf, uint16_t len)
 }
 #else /* #if defined(CONFIG_WHC_INTF_SPI) && CONFIG_WHC_INTF_SPI */
 
-#if defined (CONFIG_AMEBASMART)
+#if defined(CONFIG_AMEBASMART)
 /* SPI0 */
 /* both EV30EL0 and EV30EA0 support */
 #define SPI0_MOSI  _PA_13
@@ -187,7 +187,7 @@ void bt_inic_spi_recv_from_host(u8 *buf, uint16_t len)
 
 #define CACHE_LINE_SIZE CACHE_L1_DCACHE_LINE_SIZE
 
-#elif defined (CONFIG_AMEBALITE)
+#elif defined(CONFIG_AMEBALITE)
 /* SPI1 */
 #define SPI1_MOSI   _PB_3
 #define SPI1_MISO   _PB_4
@@ -199,7 +199,7 @@ void bt_inic_spi_recv_from_host(u8 *buf, uint16_t len)
 #define SPI0_SCLK   _PA_28
 #define SPI0_CS     _PA_31
 
-#elif defined (CONFIG_AMEBADPLUS)
+#elif defined(CONFIG_AMEBADPLUS)
 /* SPI1 FID=8 & Fully PG */
 #define SPI1_MOSI   _PB_19
 #define SPI1_MISO   _PB_20
