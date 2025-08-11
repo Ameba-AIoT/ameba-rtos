@@ -324,6 +324,23 @@ void whc_cmd_handle_rx_list_network(char *pos)
 }
 
 
+void whc_cmd_handle_rx_get_status(char *pos)
+{
+	struct whc_rtw_cli_wifi_status *info;
+	pos += 1;
+
+	info = (struct whc_rtw_cli_wifi_status *)pos;
+
+	printf("\n");
+	printf("bssid=%02x:%02x:%02x:%02x:%02x:%02x\n", info->bssid[0],
+		   info->bssid[1], info->bssid[2], info->bssid[3],
+		   info->bssid[4], info->bssid[5]);
+	printf("channel=%d\n", info->channel);
+	printf("ssid=%s\n", info->ssid);
+
+}
+
+
 /* For SOC to HOST End */
 
 /*

@@ -1368,7 +1368,7 @@ uint16_t bt_stack_le_audio_init(rtk_bt_app_conf_t *papp_conf, void *io_msg_q, vo
 	bt_le_audio_priv_data.lea_source_available_contexts = p_le_audio_app_conf->pacs_param.source_available_contexts;
 	bt_le_audio_priv_data.lea_sink_supported_contexts = p_le_audio_app_conf->pacs_param.sink_supported_contexts;
 	bt_le_audio_priv_data.lea_source_supported_contexts = p_le_audio_app_conf->pacs_param.source_supported_contexts;
-#if defined (RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT
+#if defined(RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT
 	bt_le_audio_priv_data.csis_cfg = p_le_audio_app_conf->cap_param.csis_param.csis_cfg;
 	/* memcpy csis_sirk */
 	memcpy((void *)bt_le_audio_priv_data.lea_csis_sirk, (void *)p_le_audio_app_conf->cap_param.csis_param.csis_sirk, RTK_BT_LE_CSIS_SIRK_LEN);

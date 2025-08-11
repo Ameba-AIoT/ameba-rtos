@@ -34,6 +34,10 @@ echo Cloning tflite-micro repo to "${TEMP_DIR}"
 git clone --depth 1 --single-branch "https://github.com/tensorflow/tflite-micro.git"
 cd tflite-micro
 
+# Record git commit ID to version.txt
+echo "TFLM version information:" > "${TFLITE_LIB_DIR}/versions.txt"
+git rev-parse HEAD >> "${TFLITE_LIB_DIR}/versions.txt"
+
 # Create the TFLM base tree
 echo create_tflm_tree...
 python3 tensorflow/lite/micro/tools/project_generation/create_tflm_tree.py \
@@ -43,8 +47,10 @@ echo update tflm...
 # Backup `micro/ameba-iot` `micro/kernels/ameba-iot` directory to new tree
 cp -r "${TFLITE_LIB_DIR}"/tensorflow/lite/micro/ameba-aiot \
   "${TEMP_DIR}"/tflm-out/tensorflow/lite/micro/
+cp -r "${TFLITE_LIB_DIR}"/tensorflow/lite/micro/kernels/ameba-aiot \
+  "${TEMP_DIR}"/tflm-out/tensorflow/lite/micro/kernels/
 
-cp -r "${TFLITE_LIB_DIR}"/tensorflow/lite/micro/kernels/{ameba-aiot,cmsis_nn,xtensa} \
+cp -r "${TEMP_DIR}"/tflite-micro/tensorflow/lite/micro/kernels/{cmsis_nn,xtensa} \
   "${TEMP_DIR}"/tflm-out/tensorflow/lite/micro/kernels/
 
 cd "${TFLITE_LIB_DIR}"
@@ -52,6 +58,16 @@ rm -rf tensorflow
 rm -rf third_party
 rm -rf signal
 mv "${TEMP_DIR}/tflm-out/tensorflow" tensorflow
+
+# update tflm_unittest
+echo update tflm_unittest...
+./sync/extract_tflm_unittest_srcs.sh "${TEMP_DIR}"/tflite-micro tflm_unittest_new/
+
+cp -r "${TFLITE_LIB_DIR}"/tflm_unittest/tensorflow/lite/micro/kernels/ameba-aiot "${TFLITE_LIB_DIR}"/tflm_unittest_new/tensorflow/lite/micro/kernels/
+cp -r "${TFLITE_LIB_DIR}"/tflm_unittest/tensorflow/lite/micro/testing/ameba-aiot "${TFLITE_LIB_DIR}"/tflm_unittest_new/tensorflow/lite/micro/testing/
+
+rm -rf tflm_unittest
+mv tflm_unittest_new tflm_unittest
 
 # For this repo we are forking both the models and the examples.
 rm -rf tensorflow/lite/micro/models
