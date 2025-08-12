@@ -179,16 +179,6 @@ uint16_t rtk_bt_get_hc_clock_offset(int64_t *offset);
 #endif
 
 /**
- * @brief     BT LE SOF and EOF interrupt indication enable or disable. This API is only useable for AmebaSmart Platform.
- * @param[in] conn_handle: Connection handle.
- * @param[in] enable: 0 for disable, 1 for enable.
- * @param[in] cb: SOF and EOF interrupt callback.
- * @return
- *            - 0  : Succeed
- *            - Others: Error code
- */
-uint16_t rtk_bt_le_sof_eof_ind(uint16_t conn_handle, uint8_t enable, void *cb);
-/**
  * @}
  */
 
