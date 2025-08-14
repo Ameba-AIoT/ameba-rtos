@@ -185,12 +185,9 @@ static const usbd_class_driver_t usbd_msc_driver = {
 static usbd_msc_dev_t usbd_msc_dev;
 
 #if !USBD_MSC_RAM_DISK
-
 static int usbd_msc_sd_init_status = 0;
-
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS) || defined(CONFIG_AMEBAGREEN2)
 static rtos_sema_t usbd_msc_sd_sema;
-
 static SDIOHCFG_TypeDef sd_config = {
 	.sdioh_bus_speed = SD_SPEED_HS,				//SD_SPEED_DS or SD_SPEED_HS
 	.sdioh_bus_width = SDIOH_BUS_WIDTH_4BIT, 	//SDIOH_BUS_WIDTH_1BIT or SDIOH_BUS_WIDTH_4BIT
@@ -198,6 +195,8 @@ static SDIOHCFG_TypeDef sd_config = {
 	.sdioh_wp_pin = _PNC,						//_PB_31/_PNC
 };
 
+/* Add lock to avoid msc tx_thread preempts msc rx_thread when read SD-card*/
+static usb_os_lock_t usbd_msc_sd_lock = NULL;
 #endif
 #endif
 
@@ -636,6 +635,9 @@ static void usbd_msc_tx_process(void)
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usb_dev_t *dev = cdev->dev;
 
+#if !USBD_MSC_RAM_DISK
+	usb_os_lock(usbd_msc_sd_lock);
+#endif
 	if (cdev->tx_status == HAL_OK) {
 		switch (cdev->bot_state) {
 		case USBD_MSC_DATA_IN:
@@ -660,6 +662,10 @@ static void usbd_msc_tx_process(void)
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX err: %d\n", cdev->tx_status);
 	}
+
+#if !USBD_MSC_RAM_DISK
+	usb_os_unlock(usbd_msc_sd_lock);
+#endif
 }
 
 /**
@@ -692,6 +698,9 @@ static void usbd_msc_rx_process(void)
 	usbd_msc_csw_t *csw = cdev->csw;
 	usb_dev_t *dev = cdev->dev;
 
+#if !USBD_MSC_RAM_DISK
+	usb_os_lock(usbd_msc_sd_lock);
+#endif
 	switch (cdev->bot_state) {
 	case USBD_MSC_IDLE:
 		/* Decode the CBW command */
@@ -746,6 +755,10 @@ static void usbd_msc_rx_process(void)
 	default:
 		break;
 	}
+
+#if !USBD_MSC_RAM_DISK
+	usb_os_unlock(usbd_msc_sd_lock);
+#endif
 }
 
 /**
@@ -937,6 +950,7 @@ int usbd_msc_init(usbd_msc_cb_t *cb)
 	ops->disk_getcapacity = usbd_msc_sd_getcapacity;
 	ops->disk_read = usbd_msc_sd_readblocks;
 	ops->disk_write = usbd_msc_sd_writeblocks;
+	usb_os_lock_create(&usbd_msc_sd_lock);
 #endif
 
 	cdev->data = (u8 *)usb_os_malloc(USBD_MSC_BUFLEN);
@@ -1037,6 +1051,12 @@ void usbd_msc_deinit(void)
 		usb_os_mfree(cdev->data);
 		cdev->data = NULL;
 	}
+#if !USBD_MSC_RAM_DISK
+	if (usbd_msc_sd_lock != NULL) {
+		usb_os_lock_delete(usbd_msc_sd_lock);
+		usbd_msc_sd_lock = NULL;
+	}
+#endif
 }
 
 /**
