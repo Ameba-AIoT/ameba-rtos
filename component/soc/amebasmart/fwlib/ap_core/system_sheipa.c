@@ -28,7 +28,8 @@ uint64_t vGetGenericTimerFreq(void)
 	if (SYSCFG_CHIPType_Get() == CHIP_TYPE_FPGA) {
 		return 12500000;
 	} else {
-		return 50000000;
+		/* Systick clock source is APB clock, which is half of AHB clock */
+		return PLL_GetHBUSClk() / 2;
 	}
 }
 

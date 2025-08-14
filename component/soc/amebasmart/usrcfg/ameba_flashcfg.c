@@ -95,10 +95,10 @@ FlashLayoutInfo_TypeDef Flash_Layout_Nor[] = {
 	/*Region_Type,		[StartAddr,	EndAddr]		*/
 	{IMG_BOOT, 			0x08000000, 0x0801FFFF}, //Boot Manifest(4K) + KM4 Bootloader(124K)
 	//Users should modify below according to their own memory
-	{IMG_APP_OTA1, 		0x08020000, 0x082FFFFF}, //Certificate(4K) + Manifest(4K) + KR4 & KM4 Application OTA1 + Manifest(4K) + RDP IMG OTA1
+	{IMG_APP_OTA1, 		0x08020000, 0x082FFFFF}, //Certificate(4K) + Manifest(4K) + KM0 & KM4 & CA32 Application OTA1 + RDP IMG OTA1
 	// + AP IMG OTA1
 	{IMG_BOOT_OTA2, 	0x08300000, 0x0833FFFF}, //Boot Manifest(4K) + KM4 Bootloader(252K) OTA
-	{IMG_APP_OTA2, 		0x08340000, 0x0861FFFF}, //Certificate(4K) + Manifest(4K) + KR4 & KM4 Application OTA2 + Manifest(4K) + RDP IMG OTA2
+	{IMG_APP_OTA2, 		0x08340000, 0x0861FFFF}, //Certificate(4K) + Manifest(4K) + KM0 & KM4 & CA32 Application OTA2 + RDP IMG OTA2
 	// + AP IMG OTA2
 	{FTL,				0x08620000, 0x08622FFF}, //FTL for BT(>=12K), The start offset of flash pages which is allocated to FTL physical map.
 	{VFS1, 				0x08623000, 0x08642FFF}, //VFS region 1 (128K)
@@ -115,10 +115,10 @@ FlashLayoutInfo_TypeDef Flash_Layout_Nand[] = {
 	/*Region_Type,		[StartAddr,	EndAddr]		*/
 	{IMG_BOOT, 			0x08000000, 0x0801FFFF}, //Boot Manifest(4K) + KM4 Bootloader(124K)
 	//Users should modify below according to their own memory
-	{IMG_APP_OTA1, 		0x08020000, 0x082FFFFF}, //Certificate(4K) + Manifest(4K) + KR4 & KM4 Application OTA1 + Manifest(4K) + RDP IMG OTA1
+	{IMG_APP_OTA1, 		0x08020000, 0x082FFFFF}, //Certificate(4K) + Manifest(4K) + KM0 & KM4 & CA32 Application OTA1 + RDP IMG OTA1
 	// + AP IMG OTA1
 	{IMG_BOOT_OTA2, 	0x08300000, 0x0833FFFF}, //Boot Manifest(4K) + KM4 Bootloader(252K) OTA
-	{IMG_APP_OTA2, 		0x08340000, 0x0861FFFF}, //Certificate(4K) + Manifest(4K) + KR4 & KM4 Application OTA2 + Manifest(4K) + RDP IMG OTA2
+	{IMG_APP_OTA2, 		0x08340000, 0x0861FFFF}, //Certificate(4K) + Manifest(4K) + KM0 & KM4 & CA32 Application OTA2 + RDP IMG OTA2
 	// + AP IMG OTA2
 	{FTL,				0x0C400000, 0x0C45FFFF}, //FTL for BT(>=384K), The start offset of flash pages which is allocated to FTL physical map.
 	{VFS1, 				0x0C460000, 0x0C55FFFF}, //VFS region 1(1024K)
@@ -135,11 +135,11 @@ FlashLayoutInfo_TypeDef Flash_Layout_Nor_Linux[] = {
 	/*Region_Type,		[StartAddr,	EndAddr]		*/
 	{IMG_BOOT, 			0x08000000, 0x0801FFFF}, //Boot Manifest(4K) + KM4 Bootloader(124K)
 	//Users should modify below according to their own memory
-	{IMG_APP_OTA1, 		0x08020000, 0x0813FFFF}, //Certificate(4K) + Manifest(4K) + KR4 & KM4 Application OTA1 + Manifest(4K) + RDP IMG OTA1
+	{IMG_APP_OTA1, 		0x08020000, 0x0813FFFF}, //Certificate(4K) + Manifest(4K) + KM0 & KM4 & CA32 Application OTA1 + RDP IMG OTA1
 	{IMG_APIMG_OTA1,	0x08140000, 0x082BFFFF}, //Manifest(4K)+ AP IMG OTA1
 
 	{IMG_BOOT_OTA2, 	0x082C0000, 0x082FFFFF}, //Boot Manifest(4K) + KM4 Bootloader(252K) OTA
-	{IMG_APP_OTA2, 		0x08300000, 0x0841FFFF}, //Certificate(4K) + Manifest(4K) + KR4 & KM4 Application OTA2 + Manifest(4K) + RDP IMG OTA2
+	{IMG_APP_OTA2, 		0x08300000, 0x0841FFFF}, //Certificate(4K) + Manifest(4K) + KM0 & KM4 & CA32 Application OTA2 + RDP IMG OTA2
 	{IMG_APIMG_OTA2,	0x08420000, 0x0859FFFF}, //Manifest(4K)+ AP IMG OTA2
 
 	{FTL,				0x08620000, 0x08622FFF}, //FTL for BT(>=12K), The start offset of flash pages which is allocated to FTL physical map.
@@ -157,11 +157,11 @@ FlashLayoutInfo_TypeDef Flash_Layout_Nand_Linux[] = {
 	/*Region_Type,		[StartAddr,	EndAddr]		*/
 	{IMG_BOOT, 			0x08000000, 0x0801FFFF}, //Boot Manifest(4K) + KM4 Bootloader(124K)
 	//Users should modify below according to their own memory
-	{IMG_APP_OTA1, 		0x08020000, 0x0813FFFF}, //Certificate(4K) + Manifest(4K) + KR4 & KM4 Application OTA1 + Manifest(4K) + RDP IMG OTA1
+	{IMG_APP_OTA1, 		0x08020000, 0x0813FFFF}, //Certificate(4K) + Manifest(4K) + KM0 & KM4 & CA32 Application OTA1 + RDP IMG OTA1
 	{IMG_APIMG_OTA1, 	0x08140000, 0x082BFFFF}, //Manifest(4K)+ AP IMG OTA1
 
 	{IMG_BOOT_OTA2, 	0x082C0000, 0x082FFFFF}, //Boot Manifest(4K) + KM4 Bootloader(252K) OTA
-	{IMG_APP_OTA2, 		0x08300000, 0x0841FFFF}, //Certificate(4K) + Manifest(4K) + KR4 & KM4 Application OTA2 + Manifest(4K) + RDP IMG OTA2
+	{IMG_APP_OTA2, 		0x08300000, 0x0841FFFF}, //Certificate(4K) + Manifest(4K) + KM0 & KM4 & CA32 Application OTA2 + RDP IMG OTA2
 	{IMG_APIMG_OTA2, 	0x08420000, 0x0859FFFF}, //Manifest(4K)+ AP IMG OTA2
 
 	{FTL,				0x0C400000, 0x0C45FFFF}, //FTL for BT(>=384K), The start offset of flash pages which is allocated to FTL physical map.
