@@ -217,8 +217,8 @@ extern "C"
 #error "Please choose a correct platform"
 #endif
 
-#if (defined(RTK_BLE_5_2_SUPPORT) && RTK_BLE_5_2_SUPPORT)
-#if (defined(CONFIG_BT_ISO_TEST) && CONFIG_BT_ISO_TEST)
+#if defined(RTK_BLE_5_2_SUPPORT) && RTK_BLE_5_2_SUPPORT
+#if defined(CONFIG_BT_ISO_TEST) && CONFIG_BT_ISO_TEST
 #define RTK_BLE_ISO_SUPPORT                 1
 #endif
 #if defined(CONFIG_BT_LE_AUDIO) && CONFIG_BT_LE_AUDIO
@@ -307,8 +307,7 @@ extern "C"
 #else
 #define RTK_BLE_MESH_DEVICE_SUPPORT         0
 #endif
-#if (defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT) && \
-    (defined(CONFIG_BT_MESH_BASED_ON_CODED_PHY) && CONFIG_BT_MESH_BASED_ON_CODED_PHY)
+#if (defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT) && (defined(CONFIG_BT_MESH_BASED_ON_CODED_PHY) && CONFIG_BT_MESH_BASED_ON_CODED_PHY)
 #define RTK_BLE_MESH_BASED_ON_CODED_PHY     1
 #undef RTK_BLE_5_0_AE_ADV_SUPPORT
 #define RTK_BLE_5_0_AE_ADV_SUPPORT          1

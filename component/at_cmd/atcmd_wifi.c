@@ -644,7 +644,7 @@ void at_wlstartap_help(void)
 	RTK_LOGI(NOTAG, "\t<type>:\tA string as \"ssid\",\"ch\",\"pw\",\"sec\"\r\n");
 	RTK_LOGI(NOTAG, "\t<value>:\tAny type of <ssid>, <ch>, <pw>, <sec>\r\n");
 	RTK_LOGI(NOTAG, "\t<ssid>:\tThe ssid of AP, could not be empty\r\n");
-	RTK_LOGI(NOTAG, "\t<ch>:\t[1,11]\r\n");
+	RTK_LOGI(NOTAG, "\t<ch>:\t2G:scope is [1,14], step is 1,5G:scope is [36,177],step is 4.it depends on selected channel plan\r\n");
 	RTK_LOGI(NOTAG, "\t<sec>:\topen/wep/tkip/wpa2/wpa3\r\n");
 	RTK_LOGI(NOTAG, "\t<pw>:\tWith length in [8,64]\r\n");
 #ifdef CONFIG_LWIP_LAYER

@@ -257,6 +257,7 @@ _LONG_CALL_ void PLL_AP_ClkTune(u32 Option);
   * @{
   */
 _LONG_CALL_ void HBUS_ClkSet(u32 Source);
+_LONG_CALL_ u32 PLL_GetHBUSClk(void);
 /**
   * @}
   */

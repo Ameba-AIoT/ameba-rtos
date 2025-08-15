@@ -477,6 +477,31 @@ void PLL_AP_ClkTune(u32 Option)
 	// Wait ready
 	while (!(apll->APLL_CTRL1 & APLL_BIT_CK_RDY));
 }
+
+/**
+  * @brief  Acquire Hbus clock.
+  * @param  none
+  * @retval  ipclk, units Hz.
+  */
+u32 PLL_GetHBUSClk(void)
+{
+	u32 reg_temp;
+	u32 hbus_div, ip_clk;
+
+	/* indirectly get np_pll clock according to CPU_ClkGet() in ameba_rom_patch.c */
+	u32 Div, np_pll;
+	PLL_TypeDef *pll = (PLL_TypeDef *)PLL_BASE;
+
+	Div = PLL_GET_NPLL_DIVN_SDM(pll->PLL_NPPLL_CTRL1) + 2;
+	np_pll = 40000000 * Div;
+
+	/* get hbus_div to calculate hbus_clk, which is equal spi ipclk */
+	reg_temp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0);
+	hbus_div = LSYS_GET_CKD_HBUS(reg_temp) + 1;
+	ip_clk = np_pll / hbus_div;
+
+	return ip_clk;
+}
 /**@}*/
 /**@}*/
 /**@}*/

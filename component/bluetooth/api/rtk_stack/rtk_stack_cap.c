@@ -2895,19 +2895,19 @@ static uint16_t bt_stack_vc_mic_init(void *le_audio_app_conf)
 }
 #endif
 
-#if (defined (RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) || \
+#if (defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) || \
     (defined(RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT)
 uint16_t bt_stack_csis_cap_init(uint8_t csip_role, T_CAP_INIT_PARAMS *p_param, rtk_bt_le_audio_csis_init_param_t *p_csis_param)
 {
 	char *role[] = {"Set Coordinator", "Set Member"};
 
 	BT_LOGA("[CAP] bt_stack_csis_cap_init, role %s \n", role[csip_role]);
-#if defined (RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
+#if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
 	if (RTK_BT_CSIP_ROLE_SET_COORDINATOR == csip_role) {
 		p_param->csip_set_coordinator = true;
 	}
 #endif
-#if defined (RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT
+#if defined(RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT
 	if (RTK_BT_CSIP_ROLE_SET_MEMBER == csip_role) {
 		memcpy(bt_le_audio_priv_data.lea_csis_sirk, default_csis_sirk, RTK_BT_LE_CSIS_SIRK_LEN);
 		p_param->csis_num = p_csis_param->csis_num;
@@ -3007,7 +3007,7 @@ void bt_stack_mcp_server_cap_deinit(void)
 }
 #endif
 
-#if defined (RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT
+#if defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT
 uint16_t bt_stack_mcp_client_cap_init(T_CAP_INIT_PARAMS *p_param)
 {
 	BT_LOGA("[CAP] bt_stack_mcp_client_cap_init\n");
@@ -3054,13 +3054,13 @@ uint16_t bt_stack_cap_init(void *p_conf)
 	if (RTK_BT_LE_AUDIO_CAP_ROLE_INITIATOR & p_le_audio_app_conf->cap_role) {
 		cap_init_param.cap_role |= CAP_INITIATOR_ROLE;
 		cap_init_param.cas_client = true;
-#if defined (RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
+#if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
 		bt_stack_csis_cap_init(RTK_BT_CSIP_ROLE_SET_COORDINATOR, &cap_init_param, &p_le_audio_app_conf->cap_param.csis_param);
 #endif
-#if defined (RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT) && RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT
+#if defined(RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT) && RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT
 		cap_init_param.vcp_micp.vcp_vcs_client = true;
 #endif
-#if defined (RTK_BLE_AUDIO_MICP_MIC_CONTROLLER_SUPPORT) && RTK_BLE_AUDIO_MICP_MIC_CONTROLLER_SUPPORT
+#if defined(RTK_BLE_AUDIO_MICP_MIC_CONTROLLER_SUPPORT) && RTK_BLE_AUDIO_MICP_MIC_CONTROLLER_SUPPORT
 		cap_init_param.vcp_micp.micp_mic_controller = true;
 #endif
 #if defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT
@@ -3071,13 +3071,13 @@ uint16_t bt_stack_cap_init(void *p_conf)
 	if (RTK_BT_LE_AUDIO_CAP_ROLE_COMMANDER & p_le_audio_app_conf->cap_role) {
 		cap_init_param.cap_role |= CAP_COMMANDER_ROLE;
 		cap_init_param.cas_client = true;
-#if defined (RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
+#if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
 		bt_stack_csis_cap_init(RTK_BT_CSIP_ROLE_SET_COORDINATOR, &cap_init_param, &p_le_audio_app_conf->cap_param.csis_param);
 #endif
-#if defined (RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT) && RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT
+#if defined(RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT) && RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT
 		cap_init_param.vcp_micp.vcp_vcs_client = true;
 #endif
-#if defined (RTK_BLE_AUDIO_MICP_MIC_CONTROLLER_SUPPORT) && RTK_BLE_AUDIO_MICP_MIC_CONTROLLER_SUPPORT
+#if defined(RTK_BLE_AUDIO_MICP_MIC_CONTROLLER_SUPPORT) && RTK_BLE_AUDIO_MICP_MIC_CONTROLLER_SUPPORT
 		cap_init_param.vcp_micp.micp_mic_controller = true;
 #endif
 #if defined(RTK_BLE_AUDIO_AICS_SUPPORT) && RTK_BLE_AUDIO_AICS_SUPPORT

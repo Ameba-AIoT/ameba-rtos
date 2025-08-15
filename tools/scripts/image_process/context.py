@@ -27,7 +27,7 @@ class Context(ABC):
                 with open(info_json, 'r') as jsonfile:
                     config = json.load(jsonfile)
                 proj_dir = config.get('Paths', {}).get('gcc_project_dir')
-                proj_info = parse_project_info(proj_dir)
+                proj_info = parse_project_info(os.path.abspath(os.path.join(args.extern_dir, proj_dir)))
                 self.external_soc_dir = args.extern_dir
         else:
             proj_info = parse_project_info(args.post_build_dir if args.post_build_dir else os.getcwd())

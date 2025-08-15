@@ -7,8 +7,8 @@
 /*============================================================================*
  *               Define to prevent recursive inclusion
  *============================================================================*/
-#if ! defined (__CRC16BTX_H)
-#define       __CRC16BTX_H
+#if !defined(__CRC16BTX_H)
+#define      __CRC16BTX_H
 
 /*============================================================================*
  *                               Header Files
@@ -60,7 +60,7 @@ extern bool btx_vendor_get_response(uint8_t *data, uint8_t len);
 
 /** @} */ /* End of group CRC_FCS */
 
-#endif  /**< #if ! defined (__CRC16BTX_H) */
+#endif  /**< #if !defined(__CRC16BTX_H) */
 
 /** End of CRC16BTX.H */
 

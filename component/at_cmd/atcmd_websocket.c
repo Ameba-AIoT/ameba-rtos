@@ -1436,14 +1436,19 @@ void at_wssrv_handler_disconnect(struct wssrv_conn *conn)
 	struct wssrv_conn *cli_conn;
 	int i, link_id;
 	int res = 0;
+	int server_close_reason = 0;
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "at_wssrv_handler_disconnect() conn->state=%d\r\n", conn->state);
 
 	for (i = 0; i < wssrvcfg_max_conn; i++) {
 		cli_conn = ws_server_get_conn_info(i);
 		if (cli_conn == conn) {
 			if (cli_conn->state == WSSRV_CLOSING || cli_conn->state == WSSRV_CLOSED) {
-				link_id = i;
-				res = 1;
+				server_close_reason = ws_server_get_close_reason(cli_conn);
+				if (((server_close_reason >= WSS_READ_DATA_FAIL) && (server_close_reason <= WSS_SEND_PONG_FAILED)) || (server_close_reason == WSS_RECEIVE_CLIENT_CLOSE) ||
+					(server_close_reason == WSS_SERVER_SEND_CLOSE)) {
+					link_id = i;
+					res = 1;
+				}
 			}
 			break;
 		}

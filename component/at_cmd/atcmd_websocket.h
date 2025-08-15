@@ -12,6 +12,7 @@
 #include "wifi_api.h"
 #include "wsclient_api.h"
 
+
 /* for websocket client */
 #define MAX_WEBSOCKET_LINK_NUM      3
 #define MAX_PING_INTERVAL           7200
@@ -124,6 +125,14 @@ struct wssrv_conn {
 	struct task_struct task;        /*!< Connection task context */
 };
 
+#define WSS_RECEIVE_CLIENT_CLOSE	3 		/*!< Receive close from client*/
+#define WSS_SERVER_SEND_CLOSE	4 			/*!< Server send close to client*/
+#define WSS_READ_DATA_FAIL	10 				/*!< Server read data fail*/
+#define WSS_SEND_DATA_FAIL	11 				/*!< Server send data fail*/
+#define WSS_SET_SOCKET_OPTION_FAIL	12 		/*!< Set socket option fail*/
+#define WSS_NOT_GET_PONG	13 				/*!< Get pong timeout */
+#define WSS_IDLE_TIMEOUT	14 				/*!< Idle timeout*/
+#define WSS_SEND_PONG_FAILED	15			/*!< Server send PONG failed*/
 
 extern void ws_server_setup_ping_interval(uint32_t interval_ms);
 extern void ws_server_setup_idle_timeout(uint32_t timeout_ms);
@@ -142,6 +151,7 @@ extern void ws_server_sendClose(struct wssrv_conn *conn);
 extern void ws_server_sendData(uint8_t type, size_t message_size, uint8_t *message, int useMask, uint8_t send_mode, uint8_t fin_flag, struct wssrv_conn *conn);
 extern int ws_server_get_close_reason(struct wssrv_conn *conn);
 extern void ws_server_set_close_reason(struct wssrv_conn *conn, int reason);
+
 
 void print_websocket_at(void);
 void at_websocket_init(void);

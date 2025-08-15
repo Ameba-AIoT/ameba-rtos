@@ -90,11 +90,17 @@ menu "Audio Config"
 
             endmenu
 
-            menu "Sink"
-                comment "    Sink"
-                config MEDIA_SINK_BT_AND_UAC_MENU
-                    bool "BT & UAC"
-                    select MEDIA_SINK_BT_AND_UAC if CORE_AS_AP
+            menu "Audio Output"
+                comment "    Audio Output"
+                config MEDIA_SINK_BT_MENU
+                    bool "Bluetooth A2DP Output"
+                    select SPEEX_LIB_MENU
+                    select MEDIA_SINK_BT if CORE_AS_AP
+
+                config MEDIA_SINK_UAC_MENU
+                    bool "Usb Audio Output"
+                    select SPEEX_LIB_MENU
+                    select MEDIA_SINK_UAC if CORE_AS_AP
 
             endmenu
         endif
@@ -171,7 +177,10 @@ bool
 config MEDIA_CODEC_GSM
 bool
 
-config MEDIA_SINK_BT_AND_UAC
+config MEDIA_SINK_BT
+bool
+
+config MEDIA_SINK_UAC
 bool
 
 config SPEEX_LIB
