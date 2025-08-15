@@ -6,7 +6,7 @@
 
 #include "platform_autoconf.h"
 #include <bt_api_config.h>
-#if (defined(RTK_BLE_AUDIO_TMAP_SUPPORT) && RTK_BLE_AUDIO_TMAP_SUPPORT)
+#if defined(RTK_BLE_AUDIO_TMAP_SUPPORT) && RTK_BLE_AUDIO_TMAP_SUPPORT
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

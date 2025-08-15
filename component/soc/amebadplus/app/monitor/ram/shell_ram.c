@@ -207,7 +207,7 @@ void shell_init_ram(void)
 	rtos_sema_create_binary(&shell_sema);
 
 	/* KM0 cost stack: max_size < 300 bytes, test by monitor cmd */
-	if (RTK_SUCCESS != rtos_task_create(NULL, "shell_task", shell_task_ram, NULL, SHELL_TASK_FUNC_STACK_SIZE, 5)) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, "shell_task", shell_task_ram, NULL, SHELL_TASK_FUNC_STACK_SIZE, 2)) {
 		RTK_LOGE(TAG, "Create Log UART Task Err!!\n");
 	}
 	//CONSOLE_AMEBA();

@@ -40,6 +40,8 @@ set(private_compile_options)         #private compile_options
 ameba_list_append(private_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/configs/ameba_media_extractor_usrcfg.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/configs/ameba_media_decoder_usrcfg.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/configs/ameba_media_audio_output_usrcfg.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/configs/ameba_media_source_usrcfg.cpp
 )
 ameba_list_append(private_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/configs/include
@@ -152,6 +154,24 @@ endif()
 if(CONFIG_MEDIA_CODEC_GSM)
     ameba_list_append(private_definitions
         MEDIA_CODEC_GSM
+    )
+endif()
+
+if(CONFIG_MEDIA_SINK_BT)
+    ameba_list_append(private_definitions
+        MEDIA_SINK_BT
+    )
+endif()
+
+if(CONFIG_MEDIA_SINK_UAC)
+    ameba_list_append(private_definitions
+        MEDIA_SINK_UAC
+    )
+endif()
+
+if(CONFIG_WLAN)
+    ameba_list_append(private_definitions
+        MEDIA_SOURCE_HTTP
     )
 endif()
 

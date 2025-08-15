@@ -78,17 +78,17 @@ void uart_stream_dma(void)
 
 	while (1) {
 		if (rx_done) {
-			rx_buf[len] = 0; // end of string
-			DCache_Clean((u32)rx_buf, SRX_BUF_SZ);
-
 			uart_send_string(&sobj, rx_buf);
 			rx_done = 0;
 
 			/* data size: 2Byte ~ 33Byte */
-			len = i % CACHE_LINE_SIZE_ + 2;
-			i++;
+			len = i++ % CACHE_LINE_SIZE_ + 2;
 
-			/* Wait for inputing [len] characters to initiate DMA. */
+			/* initialize rx_buf to 0 before next rx_process */
+			_memset(rx_buf, 0x0, SRX_BUF_SZ);
+			DCache_Clean((u32)rx_buf, SRX_BUF_SZ);
+
+			/* Wait for inputting [len] characters to initiate DMA. */
 			RTK_LOGI(NOTAG, "Ready to receive %d-byte-data...\n", len);
 
 			ret = serial_recv_stream_dma(&sobj, rx_buf, len);
