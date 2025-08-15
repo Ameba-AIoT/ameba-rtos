@@ -252,7 +252,7 @@ bool hci_if_open(HCI_IF_CALLBACK callback)
 	INIT_LIST_HEAD(&hci_if_rtk.tx_list);
 	osif_sem_create(&hci_if_rtk.tx_ind_sem, 0, 1);
 	osif_mutex_create(&hci_if_rtk.tx_list_mtx);
-	osif_msg_queue_create(&hci_if_rtk.internal_cmd, sizeof(uint16_t), 10);
+	osif_msg_queue_create(&hci_if_rtk.internal_cmd, 10, sizeof(uint16_t));
 	osif_task_create(&hci_if_rtk.task_hdl, "hci_if_task", hci_if_task,
 					 0, HCI_IF_TASK_SIZE, HCI_IF_TASK_PRIO);
 	hci_if_rtk.state = HCI_IF_TASK_RUNNING;
