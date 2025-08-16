@@ -18,8 +18,10 @@
 
 
 static u8 PIX_DATA[MEM_SIZE] __attribute__((aligned(64)));
-static u8 DST[MEM_SIZE] __attribute__((aligned(64)));
 
+#if (ACCESS == MEM2MEM)
+static u8 DST[MEM_SIZE] __attribute__((aligned(64)));
+#endif
 
 
 #if (ACCESS == MEM2QSPI)

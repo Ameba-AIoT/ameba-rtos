@@ -169,6 +169,7 @@ class ManifestManager(ABC):
         else:
             context.logger.info(f"manifest file does not contains cert, will use image2 config for cert")
             self.cert = self.image2
+        self.app_all = self.image2 #NOTE: APP_ALL used in compress image
 
     def validate_config(self, data:Union[str, dict]) -> bool:
         if isinstance(data, str):
@@ -322,8 +323,9 @@ class ManifestManager(ABC):
 
     def create_manifest(self, output_file:str, input_file:str, img_type = ImageType.UNKNOWN, compress = False) -> Error:
         image_type = img_type if img_type != ImageType.UNKNOWN else parse_image_type(input_file)
-        if image_type not in [ImageType.IMAGE1, ImageType.IMAGE2]:
-            return Error(ErrorType.INVALID_ARGS, f"create manifest only for image1 or image2: {image_type}")
+        valid_type = [ImageType.IMAGE1, ImageType.IMAGE2, ImageType.APP_ALL]
+        if image_type not in valid_type: #NOTE: APP_ALL used in compress image
+            return Error(ErrorType.INVALID_ARGS, f"create manifest only for {valid_type}: {image_type}")
 
         if compress:
             global ImagePattern

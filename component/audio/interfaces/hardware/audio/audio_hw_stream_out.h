@@ -36,6 +36,7 @@
 #define AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_OUT_H
 
 #include <sys/types.h>
+#include <time.h>
 
 #include "hardware/audio/audio_hw_stream.h"
 
