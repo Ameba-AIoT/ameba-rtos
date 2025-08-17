@@ -38,6 +38,11 @@ set(private_includes)                #private include directories, NOTE: relativ
 set(private_definitions)             #private definitions
 set(private_compile_options)         #private compile_options
 
+# Enable definition of various functions used throughout the testsuite
+# (gethostname, strdup, fileno...) even when compiling with -std=c99. Harmless
+# on non-POSIX platforms.
+add_definitions("-D_POSIX_C_SOURCE=199309")
+
 #------------------------------#
 # Component private part, user config begin
 
@@ -46,12 +51,19 @@ set(private_compile_options)         #private compile_options
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 
+ameba_list_append(private_includes
+    ${c_POSIX_DIR}/include
+    ${c_POSIX_DIR}/include/FreeRTOS_POSIX
+    ${c_POSIX_DIR}/FreeRTOS-Plus-POSIX/include
+    ${c_POSIX_DIR}/FreeRTOS-Plus-POSIX/include/portable/realtek
+)
+
 ameba_add_merge_app_library(base
-   audio_base_audio_utils
-   audio_base_cutils_src
-   audio_base_libs
-   audio_base_log
-   audio_base_osal
-   audio_base_osal_cxx
+    audio_base_audio_utils
+    audio_base_cutils_src
+    audio_base_libs
+    audio_base_log
+    audio_base_osal
+    audio_base_osal_cxx
 )
 ##########################################################################################
