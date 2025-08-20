@@ -91,7 +91,6 @@ static int atcmd_bt_hid_data_send(int argc, char **argv)
 	return 0;
 }
 
-#if defined(CONFIG_BT_HID) && CONFIG_BT_HID
 uint16_t rtk_bt_hid_mouse_control(rtk_bt_hid_mouse_report_t *pmouse_t);
 static int atcmd_bt_hid_mouse(int argc, char **argv)
 {
@@ -143,17 +142,14 @@ static int atcmd_bt_hid_gamepad(int argc, char **argv)
 
 	return 0;
 }
-#endif
 
 static const cmd_table_t hid_cmd_table[] = {
 	{"conn",                atcmd_bt_hid_connect,                2, 2},
 	{"disconn",             atcmd_bt_hid_disconnect,             2, 2},
 	{"get_report_rsp",      atcmd_bt_hid_get_report_rsp,         2, 2},
 	{"data_send",           atcmd_bt_hid_data_send,              2, 22},
-#if defined(CONFIG_BT_HID) && CONFIG_BT_HID
 	{"mouse",               atcmd_bt_hid_mouse,                  7, 7},
 	{"gamepad",             atcmd_bt_hid_gamepad,                12, 12},
-#endif
 	{NULL,},
 };
 

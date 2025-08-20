@@ -13,32 +13,27 @@
  * limitations under the License.
  */
 
-#ifndef AMEBA_FWK_MEDIA_PLAYBACK_CONFIG_MEDIA_CONFIG_MEDIA_SOURCE_CONFIG_H
-#define AMEBA_FWK_MEDIA_PLAYBACK_CONFIG_MEDIA_CONFIG_MEDIA_SOURCE_CONFIG_H
+#ifndef AMEBA_AUDIO_AUDIO_HAL_AMEBASMART_A2DP_AUDIO_HW_CARD_H
+#define AMEBA_AUDIO_AUDIO_HAL_AMEBASMART_A2DP_AUDIO_HW_CARD_H
 
-#include <stdint.h>
+#include <stdio.h>
+
+#include "hardware/audio/audio_hw_card.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// ----------------------------------------------------------------------
-//MediaSourceConfig
-#ifdef MEDIA_PLAYER
-typedef void *(*CreateAudioSourceFunc)(const char *);
+// A2dpAudioHwCard
+struct A2dpAudioHwCard {
+    struct AudioHwCard card;
 
-typedef struct MediaSourceConfig {
-    const char *name;
-    int prefix_num;
-    CreateAudioSourceFunc audio_source_func;
-} MediaSourceConfig;
-
-extern MediaSourceConfig kMediaSourceConfigs[];
-extern size_t kNumMediaSourceConfigs;
-#endif
+    rtos_mutex_t lock;
+    struct A2dpAudioHwStreamOut *output;
+    struct A2dpAudioHwStreamIn *input;
+};
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif  // AMEBA_FWK_MEDIA_PLAYBACK_CONFIG_MEDIA_CONFIG_MEDIA_SOURCE_CONFIG_H
+#endif //AMEBA_AUDIO_AUDIO_HAL_AMEBASMART_PRIMARY_AUDIO_HW_CARD_H

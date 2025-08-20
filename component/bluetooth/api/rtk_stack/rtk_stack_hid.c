@@ -60,7 +60,7 @@ static void app_hid_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			APP_PRINT_INFO0("HID p_link confirmed");
 			BT_LOGA("app_hid_bt_cback: HID p_link confirmed \r\n");
 			{
-				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HID, RTK_BT_HID_EVT_CONN_CMPL, sizeof(rtk_bt_hid_conn_ind_t));
+				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HID, RTK_BT_HID_EVT_CONN_IND, sizeof(rtk_bt_hid_conn_ind_t));
 				if (!p_evt) {
 					BT_LOGE("app_hid_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
@@ -89,7 +89,7 @@ static void app_hid_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		if (p_link != NULL) {
 			memcpy((void *)remote_addr, (void *)param->hid_conn_cmpl.bd_addr, 6);
 			{
-				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HID, RTK_BT_A2DP_EVT_CONN_CMPL, sizeof(rtk_bt_hid_conn_ind_t));
+				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HID, RTK_BT_HID_EVT_CONN_CMPL, sizeof(rtk_bt_hid_conn_ind_t));
 				if (!p_evt) {
 					BT_LOGE("app_hid_bt_cback: evt_t allocate fail \r\n");
 					handle = false;

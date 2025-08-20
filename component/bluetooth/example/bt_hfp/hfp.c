@@ -1096,6 +1096,15 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	}
 	break;
 
+	case RTK_BT_HFP_EVT_UNKNOWN_EVENT_IND: {
+		rtk_bt_hfp_unknown_at_event_t *p_hfp_event_ind = (rtk_bt_hfp_unknown_at_event_t *)param;
+		BT_LOGA("[HFP] Receive unknown event from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+				p_hfp_event_ind->bd_addr[5], p_hfp_event_ind->bd_addr[4], p_hfp_event_ind->bd_addr[3], p_hfp_event_ind->bd_addr[2], p_hfp_event_ind->bd_addr[1],
+				p_hfp_event_ind->bd_addr[0]);
+		BT_LOGA(" %s \r\n", p_hfp_event_ind->at_cmd);
+	}
+	break;
+
 	default: {
 		BT_LOGE("[HFP]: default evt_code 0x%04x \r\n", evt_code);
 	}
@@ -1238,16 +1247,13 @@ int bt_hfp_main(uint8_t role, uint8_t enable)
 		//set GAP configuration
 		if (RTK_BT_AUDIO_HFP_ROLE_HF == role) {
 			bt_app_conf.app_profile_support =   RTK_BT_PROFILE_HFP | \
-												RTK_BT_PROFILE_SDP | \
-												RTK_BT_PROFILE_PBAP;
+												RTK_BT_PROFILE_PBAP | \
+												RTK_BT_PROFILE_SDP;
 		} else {
 			bt_app_conf.app_profile_support =   RTK_BT_PROFILE_HFP | \
 												RTK_BT_PROFILE_SDP;
 		}
 		bt_app_conf.mtu_size = 180;
-		bt_app_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
-		bt_app_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
-		bt_app_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 		bt_app_conf.max_tx_octets = 0x40;
 		bt_app_conf.max_tx_time = 0x200;
 		bt_app_conf.hfp_role = role;

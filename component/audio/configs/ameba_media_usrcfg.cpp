@@ -13,13 +13,76 @@
  * limitations under the License.
  */
 
-#include <cstddef>
+#include "include/ameba_media_usrcfg.h"
 
-#include "include/ameba_media_decoder_usrcfg.h"
+// ----------------------------------------------------------------------
+//MediaSourceConfig
+extern void *CreateBufferSource(const char *url);
+extern void *CreateFileSource(const char *url);
+extern void *CreateHTTPSource(const char *url);
+
+#ifdef MEDIA_PLAYER
+MediaSourceConfig kMediaSourceConfigs[] = {
+    { "buffer://", 9, CreateBufferSource },
+    { "lfs://", 6, CreateFileSource },
+    { "vfs://", 6, CreateFileSource },
+    { "fat://", 6, CreateFileSource },
+#if defined(MEDIA_SOURCE_HTTP)
+    { "http://", 7, CreateHTTPSource },
+    { "https://", 8, CreateHTTPSource },
+#endif
+};
+
+size_t kNumMediaSourceConfigs =
+    sizeof(kMediaSourceConfigs) / sizeof(kMediaSourceConfigs[0]);
+#endif
+
+
+// ----------------------------------------------------------------------
+//MediaExtractorConfig
+extern void* GetWAVExtractor();
+extern void* GetMP3Extractor();
+extern void* GetAACExtractor();
+extern void* GetMPEG4Extractor();
+extern void* GetFLACExtractor();
+extern void* GetOGGExtractor();
+extern void* GetAMRExtractor();
+
+#ifdef MEDIA_PLAYER
+MediaExtractorConfig kMediaExtractorConfigs[] = {
+#if defined(MEDIA_DEMUX_WAV)
+    { "wav", GetWAVExtractor() },
+#endif
+#if defined(MEDIA_DEMUX_AAC)
+    { "aac", GetAACExtractor() },
+#endif
+#if defined(MEDIA_DEMUX_MP4)
+    { "mp4", GetMPEG4Extractor() },
+#endif
+#if defined(MEDIA_DEMUX_MP3)
+    { "mp3", GetMP3Extractor() },
+#endif
+#if defined(MEDIA_DEMUX_FLAC)
+    { "flac", GetFLACExtractor() },
+#endif
+#if defined(MEDIA_DEMUX_OGG)
+    { "ogg-vorbis", GetOGGExtractor() },
+#endif
+#if defined(MEDIA_DEMUX_OGG)
+    { "ogg-opus", GetOGGExtractor() },
+#endif
+#if defined(MEDIA_DEMUX_AMR)
+    { "amr", GetAMRExtractor() },
+#endif
+};
+
+size_t kNumMediaExtractorConfigs =
+    sizeof(kMediaExtractorConfigs) / sizeof(kMediaExtractorConfigs[0]);
+#endif
+
 
 // ----------------------------------------------------------------------
 //MediaDecoderConfig
-#if defined MEDIA_PLAYER || defined WIFI_AUDIO
 void *CreatePCMDec(
         const char *name, const void *callbacks,
         void *appData, void **component);
@@ -60,6 +123,7 @@ void *CreateSwG711Dec(
         const char *name, const void *callbacks,
         void *app_data, void **component);
 
+#ifdef MEDIA_PLAYER
 MediaDecoderConfig kMediaDecoderConfigs[] = {
 #if defined(MEDIA_CODEC_PCM)
     { "wav", CreatePCMDec },
@@ -109,40 +173,21 @@ size_t kNumMediaDecoderConfigs =
     sizeof(kMediaDecoderConfigs) / sizeof(kMediaDecoderConfigs[0]);
 #endif
 
-
 // ----------------------------------------------------------------------
-//MediaLiteDecoderConfig
-#ifdef MEDIA_LITE_PLAYER
-extern "C" {
-void *CreatePCMLiteDec(const char *name);
-void *CreateMP3LiteDec(const char *name);
-void *CreateHAACLiteDec(const char *name);
-}
+//MediaAudioOutputConfig
+extern void *CreateBTOutput();
+extern void *CreateUACOutput();
 
-MediaLiteDecoderConfig kMediaLiteDecoderConfigs[] = {
-#if defined(MEDIA_LITE_CODEC_PCM)
-    { "wav", CreatePCMLiteDec },
+#ifdef MEDIA_PLAYER
+MediaAudioOutputConfig kMediaAudioOutputConfigs[] = {
+#if defined(MEDIA_SINK_BT)
+    { "a2dp", CreateBTOutput },
 #endif
-#if defined(MEDIA_LITE_CODEC_MP3)
-    { "mp3", CreateMP3LiteDec },
-#endif
-#if defined(MEDIA_LITE_CODEC_HAAC)
-    { "aac", CreateHAACLiteDec },
-#endif
-#if defined(MEDIA_LITE_CODEC_HAAC)
-    { "mp4", CreateHAACLiteDec },
-#endif
-#if defined(MEDIA_LITE_CODEC_FLAC)
-    { "flac", NULL },
-#endif
-#if defined(MEDIA_LITE_CODEC_VORBIS)
-    { "ogg-vorbis", NULL },
-#endif
-#if defined(MEDIA_LITE_CODEC_OPUS)
-    { "ogg-opus", NULL },
+#if defined(MEDIA_SINK_UAC)
+    { "uac", CreateUACOutput },
 #endif
 };
 
-size_t kNumMediaLiteDecoderConfigs =
-    sizeof(kMediaLiteDecoderConfigs) / sizeof(kMediaLiteDecoderConfigs[0]);
+size_t kNumMediaAudioOutputConfigs =
+    sizeof(kMediaAudioOutputConfigs) / sizeof(kMediaAudioOutputConfigs[0]);
 #endif

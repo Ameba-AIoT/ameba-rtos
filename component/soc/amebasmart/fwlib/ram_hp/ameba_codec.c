@@ -494,6 +494,66 @@ void AUDIO_CODEC_SetLDOMode(u32 powermode)
 	}
 }
 
+static u32 AUDIO_CODEC_GetAdFifoEnBitForCh(u32 ad_chn)
+{
+	u32 en_bit = 0;
+	switch (ad_chn)
+	{
+	case ADCHN1:
+		en_bit = AUD_BIT_AD_0_FIFO_EN;
+		break;
+	case ADCHN2:
+		en_bit = AUD_BIT_AD_1_FIFO_EN;
+		break;
+	case ADCHN3:
+		en_bit = AUD_BIT_AD_2_FIFO_EN;
+		break;
+	case ADCHN4:
+		en_bit = AUD_BIT_AD_3_FIFO_EN;
+		break;
+	case ADCHN5:
+		en_bit = AUD_BIT_AD_4_FIFO_EN;
+		break;
+	case ADCHN6:
+		en_bit = AUD_BIT_AD_5_FIFO_EN;
+		break;
+	case ADCHN7:
+		en_bit = AUD_BIT_AD_6_FIFO_EN;
+		break;
+	case ADCHN8:
+		en_bit = AUD_BIT_AD_7_FIFO_EN;
+		break;
+	default:
+		break;
+	}
+
+	return en_bit;
+}
+
+/**
+  * @brief  Enable per AD and AD fifo channel clock by mask.
+  * @param  ad_chn_mask: ad channel mask.
+  * The correspondence between bits and channels is as follows:
+  * bit7   bit6   bit5   bit4   bit3   bit2   bit1   bit0
+  *   |     |      |      |      |      |      |      |
+  * ADCHN8 ADCHN7 ADCHN6 ADCHN5 ADCHN4 ADCHN3 ADCHN2 ADCHN1
+  * @return  None
+  */
+void AUDIO_CODEC_EnableADCFifoForMask(u32 ad_chn_mask)
+{
+	AUDIO_TypeDef *audio_base = AUDIO_CODEC_GetAddr();
+
+	u32 or_tmp = 0;
+
+	for (u32 i = ADCHN1; i < (ADCHN8 + 1); i++) {
+		if ((ad_chn_mask >> (i - 1)) & 1) {
+			or_tmp |= AUDIO_CODEC_GetAdFifoEnBitForCh(i);
+		}
+	}
+
+	audio_base->CODEC_CLOCK_CONTROL_1 |= or_tmp;
+}
+
 /**
   * @brief  Enable or disable per AD and AD fifo channel clock.
   * @param  ad_chn: select ad channel.
@@ -585,6 +645,67 @@ void AUDIO_CODEC_EnableADCFifo(u32 ad_chn, u32 newstate)
 	}
 }
 
+static u32 AUDIO_CODEC_GetAdEnBitForCh(u32 ad_chn)
+{
+	u32 en_bit = 0;
+	switch (ad_chn)
+	{
+	case ADCHN1:
+		en_bit = AUD_BIT_AD_0_EN;
+		break;
+	case ADCHN2:
+		en_bit = AUD_BIT_AD_1_EN;
+		break;
+	case ADCHN3:
+		en_bit = AUD_BIT_AD_2_EN;
+		break;
+	case ADCHN4:
+		en_bit = AUD_BIT_AD_3_EN;
+		break;
+	case ADCHN5:
+		en_bit = AUD_BIT_AD_4_EN;
+		break;
+	case ADCHN6:
+		en_bit = AUD_BIT_AD_5_EN;
+		break;
+	case ADCHN7:
+		en_bit = AUD_BIT_AD_6_EN;
+		break;
+	case ADCHN8:
+		en_bit = AUD_BIT_AD_7_EN;
+		break;
+	default:
+		break;
+	}
+
+	return en_bit;
+}
+
+/**
+  * @brief  Enable per AD and AD fifo channel clock by mask.
+  * @param  ad_chn_mask: ad channel mask.
+  * The correspondence between bits and channels is as follows:
+  * bit7   bit6   bit5   bit4   bit3   bit2   bit1   bit0
+  *   |     |      |      |      |      |      |      |
+  * ADCHN8 ADCHN7 ADCHN6 ADCHN5 ADCHN4 ADCHN3 ADCHN2 ADCHN1
+  *
+  * @return  None
+  */
+void AUDIO_CODEC_EnableADCForMask(u32 ad_chn_mask)
+{
+	AUDIO_TypeDef *audio_base = AUDIO_CODEC_GetAddr();
+
+	u32 or_tmp = 0;
+
+	for (u32 i = ADCHN1; i < (ADCHN8 + 1); i++) {
+		if ((ad_chn_mask >> (i - 1)) & 1) {
+			or_tmp |= AUDIO_CODEC_GetAdEnBitForCh(i);
+		}
+	}
+
+	audio_base->CODEC_CLOCK_CONTROL_1 |= or_tmp;
+
+}
 
 /**
   * @brief  Enable or disable per AD and AD fifo channel clock.

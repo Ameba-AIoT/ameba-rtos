@@ -334,12 +334,9 @@ int bt_rfc_main(uint8_t enable)
 	if (1 == enable) {
 		bt_app_conf.server_chann = RTK_BT_RFC_DEMO_CHANN_NUM;
 		//set GAP configuration
-		bt_app_conf.app_profile_support = RTK_BT_PROFILE_SDP | \
-										  RTK_BT_PROFILE_RFC;
+		bt_app_conf.app_profile_support = RTK_BT_PROFILE_RFC | \
+										  RTK_BT_PROFILE_SDP;
 		bt_app_conf.mtu_size = 180;
-		bt_app_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
-		bt_app_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
-		bt_app_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 		bt_app_conf.max_tx_octets = 0x40;
 		bt_app_conf.max_tx_time = 0x200;
 

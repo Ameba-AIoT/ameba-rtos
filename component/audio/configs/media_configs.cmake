@@ -38,10 +38,7 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/configs/ameba_media_extractor_usrcfg.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/configs/ameba_media_decoder_usrcfg.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/configs/ameba_media_audio_output_usrcfg.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/configs/ameba_media_source_usrcfg.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/configs/ameba_media_usrcfg.cpp
 )
 ameba_list_append(private_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/configs/include

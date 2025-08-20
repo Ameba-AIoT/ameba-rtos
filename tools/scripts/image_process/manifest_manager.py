@@ -113,7 +113,7 @@ class ManifestImageConfig:
                         self.rdp_key = config[config["rdp_key"]]
 
         #SBOOT:
-        if image_type == ImageType.IMAGE1 or image_type == ImageType.IMAGE2:  #image3 is not required
+        if image_type in [ImageType.IMAGE1, ImageType.IMAGE2, ImageType.CERT]:  #image3 is not required
             self.sboot_enable:bool = config.get("sboot_enable", config.get("secure_boot_en", False))
             if self.sboot_enable:
                 self.sboot_algorithm:str = config["sboot_algorithm"] if "sboot_algorithm" in config else config["algorithm"]

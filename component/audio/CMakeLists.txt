@@ -17,11 +17,13 @@ if(CONFIG_AUDIO_FWK)
     ameba_add_subdirectory_if_exist(audio_effect)
     ameba_add_subdirectory_if_exist(audio_control)
     ameba_add_subdirectory_if_exist(audio_stream)
+    ameba_add_subdirectory_if_exist(audio_policy)
     include(configs/audio_configs.cmake)
     include(audio_mixer.cmake)
     include(audio_passthrough.cmake)
 endif()
 
+ameba_add_subdirectory_if(CONFIG_AUDIO_FWK audio_cmds)
 ameba_add_subdirectory_if(CONFIG_AUDIO_FWK audio_hal)
 ameba_add_subdirectory_if(CONFIG_AUDIO_FWK audio_driver)
 

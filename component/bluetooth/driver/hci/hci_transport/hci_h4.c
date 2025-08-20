@@ -62,8 +62,12 @@ _WEAK void bt_vendor_process_tx_frame(uint8_t type, uint8_t *pdata, uint16_t len
 	(void)len;
 }
 
-uint8_t hci_uart_rx_irq_handler(void)
+void hci_uart_rx_irq_handler(void)
 {
+	if (h4->rx_disabled) {
+		return;
+	}
+
 	switch (h4->state) {
 	case ST_IDLE: { /* Read H4 Type */
 		h4->discardable = false;
@@ -148,8 +152,6 @@ uint8_t hci_uart_rx_irq_handler(void)
 	default:
 		break;
 	}
-
-	return 0;
 }
 
 static void rx_thread(void *context)
@@ -177,8 +179,8 @@ static void rx_thread(void *context)
 		if (h4->rx_disabled) {
 			h4->rx_disabled = false;
 			BT_LOGA("Uart Rx recover.\r\n");
-			hci_uart_rx_irq(true);
 			hci_uart_rx_irq_handler(); /* just in case the paused packet has no body */
+			hci_uart_rx_irq(true);
 		}
 	}
 

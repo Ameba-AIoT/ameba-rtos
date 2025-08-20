@@ -59,5 +59,9 @@ ameba_add_merge_app_library(audio_mixer
     audio_stream_core
     audio_stream_local
     audio_stream_services
+    audio_policy_common
+    audio_policy_impl
+    audio_policy_coodinator
+    audio_policy_strategy
 )
 ##########################################################################################

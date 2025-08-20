@@ -104,7 +104,7 @@ static int32_t generic_default_transition_time_server_data(const mesh_model_info
 		if (p_get_data) {
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL, RTK_BT_MESH_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL_SET,
-										sizeof(generic_default_transition_time_server_get_t));
+										sizeof(generic_default_transition_time_server_set_t));
 			memcpy(p_evt->data, p_get_data, sizeof(generic_default_transition_time_server_set_t));
 			rtk_bt_evt_indicate(p_evt, NULL);
 		}

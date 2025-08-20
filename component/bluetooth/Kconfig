@@ -141,11 +141,11 @@ if BT_EXAMPLE_DEMO_MENU
             bool "BT A2DP and BT HFP"
             default n
 
-        config BT_SPP
+        config BT_SPP_MENU
             bool "BT SPP"
             default n
 
-        config BT_RFC
+        config BT_RFC_MENU
             bool "BT RFC"
             default n
 
@@ -158,20 +158,16 @@ if BT_EXAMPLE_DEMO_MENU
             default n
     endif
 
-    if BT_HAS_BREDR && BT_HAS_LEAUDIO
+    if BT_HAS_LEAUDIO && BT_HAS_BREDR
         config BT_A2DP_LE_AUDIO_PBP_MENU
             depends on !AMEBA_RLS    #internal
             bool "BT A2DP and LE Audio PBP"
             default n
-    endif
 
-    if BT_HAS_BREDR && BT_HAS_LEAUDIO
         config BT_A2DP_HFP_LE_AUDIO_PBP_MENU
             bool "BT A2DP HFP and LE Audio PBP"
             default n
-    endif
 
-    if BT_HAS_BREDR && BT_HAS_LEAUDIO
         config BT_A2DP_LE_AUDIO_TMAP_MENU
             depends on !AMEBA_RLS    #internal
             bool "BT A2DP and LE Audio TMAP"
@@ -240,6 +236,9 @@ if BT
         select BT_APP_AUDIO_DATA
         select BT_AUDIO_CODEC_SUPPORT
         select BT_AUDIO_CODEC_SBC
+        select BT_PROFILE_A2DP_SUPPORT
+        select BT_PROFILE_AVRCP_SUPPORT
+        select BT_PROFILE_SDP_SUPPORT
 
     config BT_HFP_MENU
         bool
@@ -247,6 +246,9 @@ if BT
         select BT_APP_AUDIO_DATA
         select BT_AUDIO_CODEC_SUPPORT
         select BT_AUDIO_CODEC_CVSD
+        select BT_PROFILE_HFP_SUPPORT
+        select BT_PROFILE_PBAP_SUPPORT
+        select BT_PROFILE_SDP_SUPPORT
 
     config BT_A2DP_HFP_MENU
         bool
@@ -255,6 +257,23 @@ if BT
         select BT_AUDIO_CODEC_SUPPORT
         select BT_AUDIO_CODEC_SBC
         select BT_AUDIO_CODEC_CVSD
+        select BT_PROFILE_A2DP_SUPPORT
+        select BT_PROFILE_AVRCP_SUPPORT
+        select BT_PROFILE_HFP_SUPPORT
+        select BT_PROFILE_PBAP_SUPPORT
+        select BT_PROFILE_SDP_SUPPORT
+
+    config BT_SPP_MENU
+        bool
+        select BT_SPP
+        select BT_PROFILE_SPP_SUPPORT
+        select BT_PROFILE_SDP_SUPPORT
+
+    config BT_RFC_MENU
+        bool
+        select BT_RFC
+        select BT_PROFILE_RFC_SUPPORT
+        select BT_PROFILE_SDP_SUPPORT
 
     config BT_AUDIO_MP_TEST_MENU
         bool
@@ -263,6 +282,12 @@ if BT
         select BT_AUDIO_CODEC_SUPPORT
         select BT_AUDIO_CODEC_SBC
         select BT_AUDIO_CODEC_CVSD
+        select BT_PROFILE_A2DP_SUPPORT
+        select BT_PROFILE_AVRCP_SUPPORT
+        select BT_PROFILE_HFP_SUPPORT
+        select BT_PROFILE_PBAP_SUPPORT
+        select BT_PROFILE_SPP_SUPPORT
+        select BT_PROFILE_SDP_SUPPORT
 
     config BT_A2DP_SCATTERNET_MENU
         bool
@@ -270,38 +295,47 @@ if BT
         select BT_APP_AUDIO_DATA
         select BT_AUDIO_CODEC_SUPPORT
         select BT_AUDIO_CODEC_SBC
+        select BT_PROFILE_A2DP_SUPPORT
+        select BT_PROFILE_AVRCP_SUPPORT
+        select BT_PROFILE_SDP_SUPPORT
 
     config BT_A2DP_LE_AUDIO_PBP_MENU
         bool
         select BT_A2DP_LE_AUDIO_PBP
-        select BT_A2DP_LE_AUDIO_PBP_SUPPORT
         select BT_LE_AUDIO
         select BT_AUDIO_CODEC_SUPPORT
         select BT_AUDIO_CODEC_LC3
         select BT_AUDIO_CODEC_SBC
-        select BT_AUDIO_CODEC_CVSD
+        select BT_PROFILE_A2DP_SUPPORT
+        select BT_PROFILE_AVRCP_SUPPORT
+        select BT_PROFILE_SDP_SUPPORT
 
     config BT_A2DP_HFP_LE_AUDIO_PBP_MENU
         bool
         select BT_A2DP_HFP_LE_AUDIO_PBP
-        select BT_A2DP_HFP_LE_AUDIO_PBP_SUPPORT
         select BT_LE_AUDIO
         select BT_APP_AUDIO_DATA
         select BT_AUDIO_CODEC_SUPPORT
         select BT_AUDIO_CODEC_LC3
         select BT_AUDIO_CODEC_SBC
         select BT_AUDIO_CODEC_CVSD
+        select BT_PROFILE_A2DP_SUPPORT
+        select BT_PROFILE_AVRCP_SUPPORT
+        select BT_PROFILE_HFP_SUPPORT
+        select BT_PROFILE_PBAP_SUPPORT
+        select BT_PROFILE_SDP_SUPPORT
 
     config BT_A2DP_LE_AUDIO_TMAP_MENU
         bool
         select BT_A2DP_LE_AUDIO_TMAP
-        select BT_A2DP_LE_AUDIO_TMAP_SUPPORT
         select BT_TMAP_SUPPORT
         select BT_LE_AUDIO
         select BT_AUDIO_CODEC_SUPPORT
         select BT_AUDIO_CODEC_LC3
         select BT_AUDIO_CODEC_SBC
-        select BT_AUDIO_CODEC_CVSD
+        select BT_PROFILE_A2DP_SUPPORT
+        select BT_PROFILE_AVRCP_SUPPORT
+        select BT_PROFILE_SDP_SUPPORT
 
     config BT_A2DP_PROVISIONER_SCATTERNET_MENU
         bool
@@ -310,16 +344,15 @@ if BT
         select BT_APP_AUDIO_DATA
         select BT_AUDIO_CODEC_SUPPORT
         select BT_AUDIO_CODEC_SBC
+        select BT_PROFILE_A2DP_SUPPORT
+        select BT_PROFILE_AVRCP_SUPPORT
+        select BT_PROFILE_SDP_SUPPORT
 endif
 
 # Only select item needs following
 config BT_MESH_PROVISIONER
     bool
-config BT_MESH_PROVISIONER_SUPPORT
-    bool
 config BT_MESH_DEVICE
-    bool
-config BT_MESH_DEVICE_SUPPORT
     bool
 config BT_MESH_PROVISIONER_SCATTERNET
     bool
@@ -331,45 +364,61 @@ config BT_MESH_DEVICE_TEST
     bool
 config BT_LE_AUDIO
     bool
+config BT_TMAP
+    bool
+config BT_GMAP
+    bool
+config BT_A2DP
+    bool
+config BT_HFP
+    bool
+config BT_A2DP_HFP
+    bool
+config BT_SPP
+    bool
+config BT_RFC
+    bool
+config BT_AUDIO_MP_TEST
+    bool
+config BT_A2DP_SCATTERNET
+    bool
+config BT_A2DP_LE_AUDIO_PBP
+    bool
+config BT_A2DP_HFP_LE_AUDIO_PBP
+    bool
+config BT_A2DP_LE_AUDIO_TMAP
+    bool
+config BT_A2DP_PROVISIONER_SCATTERNET
+    bool
+config BT_MESH_PROVISIONER_SUPPORT
+    bool
+config BT_MESH_DEVICE_SUPPORT
+    bool
+config BT_TMAP_SUPPORT
+    bool
+config BT_GMAP_SUPPORT
+    bool
 config BT_APP_AUDIO_DATA
     bool
 config BT_AUDIO_CODEC_SUPPORT
     bool
 config BT_AUDIO_CODEC_LC3
     bool
-config BT_TMAP
-    bool
-config BT_TMAP_SUPPORT
-    bool
-config BT_GMAP
-    bool
-config BT_GMAP_SUPPORT
-    bool
-config BT_A2DP
-    bool
 config BT_AUDIO_CODEC_SBC
-    bool
-config BT_HFP
     bool
 config BT_AUDIO_CODEC_CVSD
     bool
-config BT_A2DP_HFP
+config BT_PROFILE_A2DP_SUPPORT
     bool
-config BT_AUDIO_MP_TEST
+config BT_PROFILE_AVRCP_SUPPORT
     bool
-config BT_A2DP_SCATTERNET
+config BT_PROFILE_HFP_SUPPORT
     bool
-config BT_A2DP_PROVISIONER_SCATTERNET
+config BT_PROFILE_PBAP_SUPPORT
     bool
-config BT_A2DP_LE_AUDIO_PBP
+config BT_PROFILE_SPP_SUPPORT
     bool
-config BT_A2DP_LE_AUDIO_PBP_SUPPORT
+config BT_PROFILE_RFC_SUPPORT
     bool
-config BT_A2DP_HFP_LE_AUDIO_PBP
-    bool
-config BT_A2DP_HFP_LE_AUDIO_PBP_SUPPORT
-    bool
-config BT_A2DP_LE_AUDIO_TMAP
-    bool
-config BT_A2DP_LE_AUDIO_TMAP_SUPPORT
+config BT_PROFILE_SDP_SUPPORT
     bool

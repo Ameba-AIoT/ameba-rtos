@@ -24,12 +24,6 @@ typedef struct {
 	uint16_t argc_max;
 } cmd_table_t;
 
-typedef struct cmd_help_tbl {
-	const char *name;
-	const char *descriptor;
-	struct cmd_help_tbl *sub_tbl;
-} cmd_help_table_t;
-
 int atcmd_bt_excute(int argc, char *argv[], const cmd_table_t *cmd_table, const char *tag);
 
 /* bt example cmd implementation */
