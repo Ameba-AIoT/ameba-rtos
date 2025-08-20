@@ -723,7 +723,7 @@ static int atcmd_cte_client_write_charac(int argc, char **argv)
 }
 #endif/* RTK_BLE_5_1_CTE_SUPPORT  */
 
-#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_SCATTERNET */
+#endif
 
 static const cmd_table_t gattc_cmd_table[] = {
 	{"exch_mtu", atcmd_bt_gattc_exchange_mtu, 2, 2},
@@ -760,7 +760,7 @@ static const cmd_table_t gattc_cmd_table[] = {
 #endif
 	{"cte_write",       atcmd_cte_client_write_charac, 5, 5},
 #endif
-#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_SCATTERNET */
+#endif
 
 	{NULL,},
 };

@@ -178,7 +178,7 @@ int32_t RTAudioTrack_Write(struct RTAudioTrack *track, const void *buffer, size_
  * ----------------------| -----------------------
  * RTAUDIO_CATEGORY_MEDIA | the data stream is music.
  * RTAUDIO_CATEGORY_COMMUNICATION | the data stream is call.
- * RTAUDIO_CATEGORY_SPEECH | the data stream is voice recognition.
+ * RTAUDIO_CATEGORY_TTS | the data stream is voice recognition.
  * RTAUDIO_CATEGORY_BEEP | the data stream is beep.
  * @param sample_rate is the samplerate of RTAudioTrack.
  * @param format can be a value listed below: \n

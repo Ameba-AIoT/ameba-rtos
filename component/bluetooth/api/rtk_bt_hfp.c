@@ -253,3 +253,25 @@ uint16_t rtk_bt_hfp_microphone_gain_report(uint8_t *bd_addr, uint8_t gain)
 
 	return ret;
 }
+
+uint16_t rtk_bt_hfp_send_vnd_at_cmd_req(uint8_t *bd_addr, const char *at_cmd, uint16_t len)
+{
+	uint16_t ret = 0;
+	rtk_bt_hfp_vnd_at_cmd_t vnd_cmd = {0};
+
+	if (!bd_addr || !at_cmd) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+	if (len > RTK_BT_HFP_MAX_ATCMD_LENGTH) {
+		BT_LOGE("%s: At cmd len is over flow \r\n", __func__);
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	memcpy((void *)vnd_cmd.bd_addr, (void *)bd_addr, 6);
+	memcpy((void *)vnd_cmd.at_cmd, (void *)at_cmd, len);
+	vnd_cmd.len = len;
+	ret = rtk_bt_send_cmd(RTK_BT_BR_GP_HFP, RTK_BT_HFP_ACT_VND_CMD_REQ,
+						  (uint8_t *)&vnd_cmd, sizeof(rtk_bt_hfp_vnd_at_cmd_t));
+
+	return ret;
+}

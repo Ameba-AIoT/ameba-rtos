@@ -89,6 +89,7 @@
 #endif
 /* Fixed length, used for temporary storage of audio data after resampled */
 #define APP_RESAMPLE_OUTPUT_FRAME_BUF_MAX_LEN                   480*4*4
+#define APP_DEQUEUE_BUF_MAX_LEN                                 1920
 #define APP_BT_DEFAULT_PAGESCAN_WINDOW                          0x48
 #define APP_A2DP_SINK_HFP_HF_PBP_DEVICE_NAME                    "A2DP HFP Auracast"
 #define APP_BT_LE_AUDIO_BASS_SCAN_TYPE                          2
@@ -100,7 +101,7 @@
 #define APP_BT_DEFAULT_A2DP_PBP_AUDIO_RIGHT_VOLUME              0.8
 #define APP_BT_A2DP_SRC_STREAM_MAX_CREDITS                      2
 #define APP_BT_PBP_BROADCAST_SOURCE_ENCODE_TASK_PRIO            5
-#define APP_BT_PBP_BROADCAST_SOURCE_ENCODE_TASK_STACK_SIZE     (1024 * 5)
+#define APP_BT_PBP_BROADCAST_SOURCE_ENCODE_TASK_STACK_SIZE     (1024 * 6)
 #define RTK_COMPANY_ID                                          0x005D
 #define APP_BT_VOL_MAX                                          0x7f
 #define APP_BT_VOL_MIN                                          0x00
@@ -229,6 +230,8 @@ static app_bt_queue_t app_pcm_data_mgr_queue = {
 	.queue_size = 0,
 	.queue_max_len = 0,
 };
+static rtk_bt_le_audio_cfg_codec_t lea_codec_t = {0};
+static int8_t dequeue_buf[APP_DEQUEUE_BUF_MAX_LEN] = {0};
 /* used to drop packet in pcm data fifo for balance A2DP rx and BIS tx */
 static void *pkt_drop_mtx = NULL;
 static bool pkt_drop_flag = false;
@@ -1284,7 +1287,7 @@ static void app_bt_handle_packet_drop_number_count(void)
 	osif_mutex_give(pkt_drop_mtx);
 }
 
-static void app_bt_handle_packet_discarding(uint32_t encode_byte)
+static void app_bt_handle_packet_discarding(uint32_t dequeue_bytes)
 {
 	if (!pkt_drop_flag) {
 		return;
@@ -1297,7 +1300,7 @@ static void app_bt_handle_packet_discarding(uint32_t encode_byte)
 	i = pkt_drop_num;
 	for (j = 0; j < i; ++j) {
 		osif_mutex_take(app_pcm_data_mgr_queue.mtx, BT_TIMEOUT_FOREVER);
-		ret = app_queue_mgr_dequeue(&app_pcm_data_mgr_queue, drop_buf, encode_byte);
+		ret = app_queue_mgr_dequeue(&app_pcm_data_mgr_queue, drop_buf, dequeue_bytes);
 		osif_mutex_give(app_pcm_data_mgr_queue.mtx);
 		if (RTK_BT_OK != ret) {
 			break;
@@ -2826,41 +2829,125 @@ static void app_bt_le_audio_pbp_bsrc_send_timer_deinit(void)
 #endif
 }
 
-static bool p_flag = false;
-static bool app_bt_le_audio_iso_prepare_zero_packet(app_bt_le_audio_data_path_t *p_iso_path, uint32_t encode_byte)
+static bool app_bt_le_audio_queue_water_level_is_enough(void)
 {
-
+	bool flag = true;
 	if (app_pcm_data_mgr_queue.queue_size <= APP_BT_PCM_DATA_QUEUE_WATER_LEVEL / 10) {
-		p_flag = true;
+		flag = false;
 		BT_LOGA("[APP] %s: cur_water_level: %d \r\n", __func__, app_pcm_data_mgr_queue.queue_size / 192);
 	} else if (app_pcm_data_mgr_queue.queue_size >= APP_BT_PCM_DATA_QUEUE_WATER_LEVEL) {
-		p_flag = false;
-		return false;
+		flag = true;
 	}
-	if (p_flag) {
-		memset(p_iso_path->p_encode_data, 0, encode_byte);
-		p_iso_path->encode_byte = encode_byte;
-		p_iso_path->p_enc_codec_buffer_t = rtk_bt_audio_data_encode(RTK_BT_AUDIO_CODEC_LC3, p_iso_path->p_codec_entity, p_iso_path->p_encode_data,
-																	p_iso_path->encode_byte);
-		if (!p_iso_path->p_enc_codec_buffer_t) {
-			BT_LOGE("[APP] %s: rtk_bt_audio_data_encode fail\r\n", __func__);
-		}
-		return true;
-	}
-	return false;
+	return flag;
 }
 
-static uint16_t app_bt_le_audio_encode_data(app_bt_le_audio_data_path_t *p_iso_path, uint8_t out_channels)
+static uint16_t app_bt_le_audio_parse_two_chnl_pcm_data_to_one_chnl(short *in_buf, uint32_t pcm_in_len, short *out_buf, uint32_t pcm_out_len,
+																	uint32_t audio_channel_allocation)
 {
-#if 0
-	uint32_t time_stamp_before;
-#endif
+	uint8_t bytes_per_num = APP_LE_AUDIO_DEFAULT_PCM_BIT_WIDTH / 8;
+	uint32_t p_read, p_write = 0;
+	if (!in_buf || !out_buf) {
+		BT_LOGE("[APP] %s: in_buf or out buf is NULL!! \r\n", __func__);
+		return RTK_BT_FAIL;
+	}
+	if (pcm_out_len < pcm_in_len / 2) {
+		BT_LOGE("[APP] %s: pcm out length is too short!! \r\n", __func__);
+		return RTK_BT_FAIL;
+	}
+	if (audio_channel_allocation != RTK_BT_LE_AUDIO_LOCATION_FL && audio_channel_allocation != RTK_BT_LE_AUDIO_LOCATION_FR) {
+		BT_LOGE("[APP] %s: wrong audio channel allocation !! \r\n", __func__);
+		return RTK_BT_FAIL;
+	}
+	p_read = 0;
+	p_write = 0;
+	while (p_read < pcm_in_len && p_write < pcm_out_len) {
+		//parse 2-channel pcm data ==> left channel
+		if (audio_channel_allocation == RTK_BT_LE_AUDIO_LOCATION_FL) {
+			if (p_read % 2 == 0) {
+				memcpy(out_buf + p_write, in_buf + p_read, bytes_per_num);
+				p_write++;
+			}
+			//parse 2-channel pcm data ==> right channel
+		} else if (audio_channel_allocation == RTK_BT_LE_AUDIO_LOCATION_FR) {
+			if (p_read % 2 == 1) {
+				memcpy(out_buf + p_write, in_buf + p_read, bytes_per_num);
+				p_write++;
+			}
+		} else {
+			BT_LOGE("[APP] %s: wrong audio channel allocation !! \r\n", __func__);
+		}
+		p_read++;
+	}
+	return RTK_BT_OK;
+}
+
+static uint32_t app_bt_le_audio_calculate_dequeue_bytes(rtk_bt_le_audio_cfg_codec_t *p_codec)
+{
+	uint8_t bytes_per_num = (APP_LE_AUDIO_DEFAULT_PCM_BIT_WIDTH / 8);
+	uint32_t dequeue_byte = 0, pcm_frame_size = 0;
+	uint32_t sample_rate = 0, frame_duration_us = 0;
+
+	if (!p_codec) {
+		BT_LOGE("[APP] %s: p_codec is null !! \r\n", __func__);
+	}
+
+	sample_rate = app_bt_le_audio_translate_lea_samp_fre_to_audio_samp_rate(p_codec->sample_frequency); // default 48K
+	frame_duration_us = (p_codec->frame_duration == RTK_BT_LE_FRAME_DURATION_CFG_10_MS) ? 10000 : 7500;
+	pcm_frame_size = sample_rate * frame_duration_us / 1000 / 1000;
+	dequeue_byte = pcm_frame_size * APP_BT_A2DP_PBP_DEMO_OUPUT_CHANNEL_NUM * bytes_per_num;
+
+	return dequeue_byte;
+}
+
+static uint16_t app_bt_le_audio_pcm_data_dequeue(int8_t *output_data, uint32_t dequeue_len)
+{
+	uint8_t ret = RTK_BT_OK;
+
+	/* dequeue from pcm data queue */
+	if (NULL == app_pcm_data_mgr_queue.mtx) {
+		BT_LOGE("[APP] %s: mtx is NULL\r\n", __func__);
+		return RTK_BT_FAIL;
+	}
+	osif_mutex_take(app_pcm_data_mgr_queue.mtx, BT_TIMEOUT_FOREVER);
+	ret = app_queue_mgr_dequeue(&app_pcm_data_mgr_queue, output_data, dequeue_len);
+	osif_mutex_give(app_pcm_data_mgr_queue.mtx);
+
+	return ret;
+}
+
+static uint16_t app_bt_le_audio_prepare_pcm_data_from_queue(void *p_data, uint32_t *p_len, rtk_bt_le_audio_cfg_codec_t *p_codec)
+{
+	uint8_t ret = RTK_BT_OK;
+	uint32_t dequeue_len = 0;
+
+	dequeue_len = app_bt_le_audio_calculate_dequeue_bytes(p_codec);
+	if (dequeue_len > APP_DEQUEUE_BUF_MAX_LEN) {
+		BT_LOGE("[APP] %s: dequeue_len %d exceed the max length!\r\n", __func__, (int)dequeue_len);
+		return RTK_BT_FAIL;
+	}
+	if (!app_bt_le_audio_queue_water_level_is_enough()) {
+		memset((void *)p_data, 0, dequeue_len);
+	} else {
+		ret = app_bt_le_audio_pcm_data_dequeue((int8_t *)p_data, dequeue_len);
+		if (ret) {
+			BT_LOGE("[APP] %s: dequeue bytes %d is not enough, set buf default 0!\r\n", __func__, (int)dequeue_len);
+			memset((void *)p_data, 0, dequeue_len);
+			app_bt_handle_packet_drop_number_count();
+		}
+	}
+	*p_len = dequeue_len;
+
+	return ret;
+}
+
+static uint16_t app_bt_le_audio_encode_data(app_bt_le_audio_data_path_t *p_iso_path, uint8_t out_channels, int8_t *input_data, uint32_t input_len)
+{
 	uint8_t ret = RTK_BT_OK;
 	uint8_t bytes_per_num = (APP_LE_AUDIO_DEFAULT_PCM_BIT_WIDTH / 8);
 	uint32_t encode_byte = 0, pcm_frame_size = 0;
 	uint32_t sample_rate = 0, frame_duration_us = 0;
+	uint32_t audio_channel_allocation = 0;
 	rtk_bt_le_audio_cfg_codec_t *p_codec = NULL;
-
 	if (!p_iso_path) {
 		BT_LOGE("[APP] %s p_iso_path is NULL\r\n", __func__);
 		return RTK_BT_FAIL;
@@ -2884,47 +2971,38 @@ static uint16_t app_bt_le_audio_encode_data(app_bt_le_audio_data_path_t *p_iso_p
 		}
 		memset(p_iso_path->p_encode_data, 0, encode_byte);
 	}
-#if 0
-	time_stamp_before = osif_sys_time_get();
-#endif
-	/* BIS tx zero packets to wait for AVDTP packet compensate audio water level */
-	if (true == app_bt_le_audio_iso_prepare_zero_packet(p_iso_path, encode_byte)) {
-		return RTK_BT_OK;
-	}
-	/* dequeue from pcm data queue */
-	if (NULL == app_pcm_data_mgr_queue.mtx) {
-		BT_LOGE("[APP] %s: mtx is NULL\r\n", __func__);
+	/* parsing pcm data */
+	if (out_channels == APP_BT_A2DP_PBP_DEMO_OUPUT_CHANNEL_NUM) {
+		/* no need to parse */
+		memcpy(p_iso_path->p_encode_data, input_data, encode_byte);
+	} else if (APP_BT_A2DP_PBP_DEMO_OUPUT_CHANNEL_NUM == 2 && out_channels == 1) {
+		/* parsing from pcm data*/
+		audio_channel_allocation = app_bt_le_audio_translate_le_chnl_to_audio_chnl(p_codec->audio_channel_allocation);
+		app_bt_le_audio_parse_two_chnl_pcm_data_to_one_chnl((short *)input_data, input_len / 2,
+															p_iso_path->p_encode_data, encode_byte / 2,
+															audio_channel_allocation);
+	} else {
+		BT_LOGE("[APP] %s: wrong encode channels number:%d !\r\n", __func__, out_channels);
 		return RTK_BT_FAIL;
 	}
-	osif_mutex_take(app_pcm_data_mgr_queue.mtx, BT_TIMEOUT_FOREVER);
-	ret = app_queue_mgr_dequeue(&app_pcm_data_mgr_queue, (int8_t *)p_iso_path->p_encode_data, encode_byte);
-	osif_mutex_give(app_pcm_data_mgr_queue.mtx);
-#if 0
-	BT_LOGA("[APP] queue_size: %u, cur_water_level:%d\r\n", app_pcm_data_mgr_queue.queue_size, app_pcm_data_mgr_queue.queue_size / 192);
-#endif
-	if (RTK_BT_OK != ret) {
-		BT_LOGE("[APP] %s: dequeue num %d is not enough, set buf default 0!\r\n", __func__, (int)encode_byte);
-		memset(p_iso_path->p_encode_data, 0, encode_byte);
-		app_bt_handle_packet_drop_number_count();
-	}
-	p_iso_path->encode_byte = encode_byte;
 	/* encode */
+	p_iso_path->encode_byte = encode_byte;
 	p_iso_path->p_enc_codec_buffer_t = rtk_bt_audio_data_encode(RTK_BT_AUDIO_CODEC_LC3, p_iso_path->p_codec_entity, p_iso_path->p_encode_data,
 																p_iso_path->encode_byte);
 	if (!p_iso_path->p_enc_codec_buffer_t) {
 		BT_LOGE("[APP] %s rtk_bt_audio_data_encode fail\r\n", __func__);
 		return RTK_BT_FAIL;
 	}
-	/* Discard packet in order to match A2DP rx and BIS tx traffic */
-	app_bt_handle_packet_discarding(encode_byte);
 
-	return RTK_BT_OK;
+	return ret;
 }
 
 static void app_bt_pbp_bsrc_encode_task_entry(void *ctx)
 {
 	(void)ctx;
 	uint16_t ret = RTK_BT_FAIL;
+	uint32_t output_len = 0;
+
 	app_bt_pbp_bsrc_encode_task.run = 1;
 	//give sem each 10ms in
 	while (app_bt_pbp_bsrc_encode_task.run) {
@@ -2932,6 +3010,10 @@ static void app_bt_pbp_bsrc_encode_task_entry(void *ctx)
 			osif_sem_take(g_pbp_brc_encode_data_sem, BT_TIMEOUT_FOREVER);
 		}
 		BT_LOGD("[APP] %s sys_time %d\r\n", __func__, (int)osif_sys_time_get());
+		/* dequeue from pcm data queue */
+		if (app_bt_le_audio_prepare_pcm_data_from_queue((void *)dequeue_buf, &output_len, &lea_codec_t)) {
+			BT_LOGE("[APP] %s app_bt_le_audio_prepare_pcm_data_from_queue failed %d\r\n", __func__);
+		}
 		/* foreach iso tx app data path */
 		for (uint16_t i = 0; i < APP_LE_AUDIO_DEMO_DATA_PATH_NUM; i ++) {
 			if (app_le_audio_data_path[i].used && (app_le_audio_data_path[i].path_direction == RTK_BLE_AUDIO_ISO_DATA_PATH_TX)) {
@@ -2944,12 +3026,16 @@ static void app_bt_pbp_bsrc_encode_task_entry(void *ctx)
 					} else {
 						output_channels = 1;
 					}
-					if (RTK_BT_OK != app_bt_le_audio_encode_data(&app_le_audio_data_path[i], output_channels)) {
+					if (RTK_BT_OK != app_bt_le_audio_encode_data(&app_le_audio_data_path[i], output_channels, dequeue_buf, output_len)) {
 						BT_LOGE("[APP] %s app_bt_le_audio_encode_data fail\r\n", __func__);
 						continue;
 					}
 				}
 			}
+		}
+		/* Discard packet in order to match A2DP rx and BIS tx traffic */
+		{
+			app_bt_handle_packet_discarding(output_len);
 		}
 		/* send flow (seperate encode and send flow is for decreasing time offset between different iso path ,caused by encoding time cost) */
 		for (uint16_t i = 0; i < APP_LE_AUDIO_DEMO_DATA_PATH_NUM; i ++) {
@@ -3198,6 +3284,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 
 		BT_AT_PRINT("+BLEBAP:setup path bis_idx,bis_conn_handle,cause,0x%x,0x%x,0x%x\r\n",
 					param->bis_idx, param->bis_conn_handle, param->cause);
+		lea_codec_t = param->codec_t;
 		/* stop escan previously to avoid insufficent RF bandwidth */
 		rtk_bt_le_audio_ext_scan_act(false);
 		lea_broadcast_start = true;
@@ -3223,6 +3310,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 			app_bt_le_audio_encode_data_control(false);
 		}
 		app_bt_le_audio_remove_data_path(param->bis_conn_handle, param->path_direction);
+		memset((void *)&lea_codec_t, 0, sizeof(rtk_bt_le_audio_cfg_codec_t));
 		/* flush pcm data queue */
 		{
 			osif_mutex_take(app_pcm_data_mgr_queue.mtx, BT_TIMEOUT_FOREVER);
@@ -3887,6 +3975,15 @@ static rtk_bt_evt_cb_ret_t app_bt_hfp_callback(uint8_t evt_code, void *param, ui
 	}
 	break;
 
+	case RTK_BT_HFP_EVT_UNKNOWN_EVENT_IND: {
+		rtk_bt_hfp_unknown_at_event_t *p_hfp_event_ind = (rtk_bt_hfp_unknown_at_event_t *)param;
+		BT_LOGA("[HFP] Receive unknown event from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+				p_hfp_event_ind->bd_addr[5], p_hfp_event_ind->bd_addr[4], p_hfp_event_ind->bd_addr[3], p_hfp_event_ind->bd_addr[2], p_hfp_event_ind->bd_addr[1],
+				p_hfp_event_ind->bd_addr[0]);
+		BT_LOGA(" %s \r\n", p_hfp_event_ind->at_cmd);
+	}
+	break;
+
 	default: {
 		BT_LOGE("[HFP]: default evt_code 0x%04x \r\n", evt_code);
 	}
@@ -4026,11 +4123,11 @@ int bt_a2dp_hfp_pbp_main(uint8_t enable)
 		/* set GAP config */
 		{
 			bt_app_conf.app_profile_support = RTK_BT_PROFILE_GATTS | \
-											  RTK_BT_PROFILE_SDP | \
 											  RTK_BT_PROFILE_A2DP | \
+											  RTK_BT_PROFILE_AVRCP | \
 											  RTK_BT_PROFILE_HFP | \
 											  RTK_BT_PROFILE_PBAP | \
-											  RTK_BT_PROFILE_AVRCP | \
+											  RTK_BT_PROFILE_SDP | \
 											  RTK_BT_PROFILE_LEAUDIO | \
 											  RTK_BT_PROFILE_BAP | \
 											  RTK_BT_PROFILE_CAP;

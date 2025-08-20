@@ -1374,7 +1374,6 @@ void bt_stack_le_gap_set_config(void *app_conf)
 	rtk_bt_app_conf_t *papp_conf = (rtk_bt_app_conf_t *)app_conf;
 	uint8_t master_init_mtu_req = (uint8_t)papp_conf->master_init_mtu_req;
 	uint8_t slave_init_mtu_req = (uint8_t)papp_conf->slave_init_mtu_req;
-	uint8_t irk_auto_gen = (uint8_t)papp_conf->irk_auto_gen;
 
 	/* le_set_gap_param() shall be after bte_init() */
 	le_set_gap_param(GAP_PARAM_MASTER_INIT_GATT_MTU_REQ, sizeof(master_init_mtu_req), &master_init_mtu_req);
@@ -1391,6 +1390,7 @@ void bt_stack_le_gap_set_config(void *app_conf)
 #endif
 
 #if (defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT) && (defined(F_BT_LE_PRIVACY_SUPPORT) && F_BT_LE_PRIVACY_SUPPORT)
+	uint8_t irk_auto_gen = (uint8_t)papp_conf->irk_auto_gen;
 	if (irk_auto_gen) {
 		le_bond_set_param(GAP_PARAM_BOND_GEN_LOCAL_IRK_AUTO, sizeof(irk_auto_gen), &irk_auto_gen);
 	} else {

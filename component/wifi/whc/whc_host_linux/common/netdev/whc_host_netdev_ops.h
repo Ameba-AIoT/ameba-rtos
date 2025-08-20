@@ -8,11 +8,13 @@ struct netdev_priv_t {
 	u32 label;
 	u32 wlan_idx;
 	bool priv_is_on;
+	unsigned int flags;
 };
 
 #define rtw_netdev_priv_is_on(netdev) (((struct netdev_priv_t *)netdev_priv(netdev))->priv_is_on)
 #define rtw_netdev_idx(netdev) (((struct netdev_priv_t *)netdev_priv(netdev))->wlan_idx)
 #define rtw_netdev_label(netdev) (((struct netdev_priv_t *)netdev_priv(netdev))->label)
+#define rtw_netdev_flags(netdev) (((struct netdev_priv_t *)netdev_priv(netdev))->flags)
 #define wdev_to_ndev(w) ((w)->netdev)
 #define ndev_to_wdev(n) ((n)->ieee80211_ptr)
 

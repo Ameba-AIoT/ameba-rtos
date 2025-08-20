@@ -236,6 +236,30 @@ static int atcmd_bt_hfp_microphone_gain_report(int argc, char **argv)
 	return 0;
 }
 
+static int atcmd_bt_hfp_vendor_cmd(int argc, char **argv)
+{
+	(void)argc;
+	char addr_str[30] = {0};
+	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
+	char string[20] = {0};
+
+	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
+	if (strlen(argv[1]) > 19) {
+		BT_LOGE("at cmd length is overflow \r\n");
+		return -1;
+	}
+	strcpy(string, argv[1]);
+	string[strlen(argv[1])] = '\r';
+	if (rtk_bt_hfp_send_vnd_at_cmd_req(bd_addr, (const char *)string, strlen(argv[1]) + 1)) {
+		BT_LOGE("HFP send vnd at cmd req fail\r\n");
+		return -1;
+	}
+	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
+	BT_LOGA("HFP send vnd at cmd req to device %s ...\r\n", addr_str);
+
+	return 0;
+}
+
 static const cmd_table_t hfp_cmd_table[] = {
 	{"conn",                    atcmd_bt_hfp_connect,                  2, 2},
 	{"disconn",                 atcmd_bt_hfp_disconnect,               2, 2},
@@ -249,6 +273,7 @@ static const cmd_table_t hfp_cmd_table[] = {
 	{"batt_level_report",       atcmd_bt_hfp_batt_level_report,        3, 3},
 	{"speaker_gain_report",     atcmd_bt_hfp_speaker_gain_report,      3, 3},
 	{"microphone_gain_report",  atcmd_bt_hfp_microphone_gain_report,   3, 3},
+	{"vendor_cmd",              atcmd_bt_hfp_vendor_cmd,               3, 3},
 	{NULL,},
 };
 

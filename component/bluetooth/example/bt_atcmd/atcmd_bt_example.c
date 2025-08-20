@@ -1046,9 +1046,6 @@ int atcmd_bt_wifimate_configurator(int argc, char *argv[])
 }
 
 static const cmd_table_t example_table[] = {
-#if defined(BT_ATCMD_HELP) && BT_ATCMD_HELP
-	{"help",             atcmd_bt_example_help,     1, 3},
-#endif
 #if defined(CONFIG_BT_AUDIO_MP_TEST) && CONFIG_BT_AUDIO_MP_TEST
 	{"bt_audio_mp_test", atcmd_bt_audio_mp_test,    2, 2},
 #endif

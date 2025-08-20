@@ -1025,6 +1025,7 @@ typedef enum {
 	RTK_BT_HFP_ACT_REPORT_BATT_LEVEL,
 	RTK_BT_HFP_ACT_REPORT_SPEAKER_GAIN,
 	RTK_BT_HFP_ACT_REPORT_MICROPHONE_GAIN,
+	RTK_BT_HFP_ACT_VND_CMD_REQ,
 	RTK_BT_HFP_ACT_MAX,
 } rtk_bt_hfp_act_t;
 
@@ -1056,6 +1057,7 @@ typedef enum {
 	RTK_BT_HFP_EVT_AG_CALL_ANSWER_REQ,                 /*!< HFP ag call answer request */
 	RTK_BT_HFP_EVT_AG_CALL_TERMINATE_REQ,              /*!< HFP ag call terminate request */
 	RTK_BT_HFP_EVT_AG_CALL_STATUS,                     /*!< HFP ag call status incoming */
+	RTK_BT_HFP_EVT_UNKNOWN_EVENT_IND,                  /*!< HFP unknown event indication */
 	RTK_BT_HFP_EVT_MAX,
 } rtk_bt_hfp_evt_t;
 

@@ -39,6 +39,7 @@ set(private_compile_options)         #private compile_options
 
 ameba_list_append(private_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/configs/ameba_audio_mixer_usrcfg.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/configs/audio_policy/${c_SOC_TYPE}/ameba_audio_policy_configs.c
 )
 ameba_list_append(private_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/configs/include

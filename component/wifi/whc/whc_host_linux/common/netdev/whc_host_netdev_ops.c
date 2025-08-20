@@ -368,12 +368,18 @@ func_exit:
 static void rtw_set_rx_mode(struct net_device *dev)
 {
 #ifndef CONFIG_WHC_BRIDGE
-	if (dev->flags & IFF_PROMISC) {
-		dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s enable promisc mode!\n", __func__);
-		whc_fullmac_host_set_promisc_enable(1, RTW_PROMISC_FILTER_ALL_PKT);
-	} else {
-		dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s disable promisc mode!\n", __func__);
-		whc_fullmac_host_set_promisc_enable(0, RTW_PROMISC_FILTER_ALL_PKT);
+	if ((rtw_netdev_flags(dev) ^ dev->flags) & IFF_PROMISC) {
+		if (dev->flags & IFF_PROMISC) {
+			dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s enable promisc mode!\n", __func__);
+			whc_fullmac_host_set_promisc_enable(1, RTW_PROMISC_FILTER_ALL_PKT);
+		} else {
+			dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s disable promisc mode!\n", __func__);
+			whc_fullmac_host_set_promisc_enable(0, RTW_PROMISC_FILTER_ALL_PKT);
+		}
+	}
+
+	if (rtw_netdev_flags(dev) ^ dev->flags) {
+		rtw_netdev_flags(dev) = dev->flags;
 	}
 #endif
 }
@@ -578,6 +584,7 @@ int rtw_ndev_alloc(void)
 		global_idev.pndev[i] = ndev;
 		rtw_netdev_idx(ndev) = i;
 		rtw_netdev_label(ndev) = WIFI_FULLMAC_LABEL;
+		rtw_netdev_flags(ndev) = ndev->flags;
 #ifdef CONFIG_WHC_BRIDGE
 		ndev->netdev_ops = &rtw_ndev_ops;
 #else

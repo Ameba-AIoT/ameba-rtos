@@ -55,8 +55,8 @@ enum {
     RTAUDIO_CATEGORY_MEDIA         = 0,
     /** category type of track, for calls*/
     RTAUDIO_CATEGORY_COMMUNICATION = 1,
-    /** category type of track, for voice recognition */
-    RTAUDIO_CATEGORY_SPEECH        = 2,
+    /** category type of track, for tts */
+    RTAUDIO_CATEGORY_TTS        = 2,
     /** category type of track, for beep sound, some as key tone */
     RTAUDIO_CATEGORY_BEEP          = 3,
     /** total category type number of track */
@@ -95,6 +95,10 @@ enum {
     RTDEVICE_OUT_I2S            = 0x2u,
     /** audio device i2s out */
     RTDEVICE_OUT_HEADPHONE      = 0x4u,
+    /** audio device a2dp out */
+    RTDEVICE_OUT_A2DP           = 0x8u,
+    /** audio device usb out */
+    RTDEVICE_OUT_USB            = 0x10u,
     /** input device analog microphone */
     RTDEVICE_IN_MIC             = 0x8000001u,
     /** input device digital microphone */

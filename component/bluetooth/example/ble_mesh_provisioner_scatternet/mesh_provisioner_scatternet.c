@@ -3357,11 +3357,12 @@ int ble_mesh_provisioner_scatternet_main(uint8_t enable)
 		BT_APP_PROCESS(gaps_client_add());
 		BT_APP_PROCESS(simple_ble_client_add());
 
+		// the mesh multiple user ADV start success event will report through RTK_BT_LE_GP_MESH_STACK group callback, so shold regist callback before call start ADV API
+		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_STACK, ble_mesh_stack_app_callback));
 		BT_APP_PROCESS(rtk_bt_le_gap_set_adv_data(adv_data, sizeof(adv_data)));
 		BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&adv_param));
 
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GAP, ble_mesh_gap_app_callback));
-		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_STACK, ble_mesh_stack_app_callback));
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_CONFIG_CLIENT_MODEL, ble_mesh_config_client_model_app_callback));
 #if defined(BT_MESH_ENABLE_GENERIC_ON_OFF_CLIENT_MODEL) && BT_MESH_ENABLE_GENERIC_ON_OFF_CLIENT_MODEL
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_GENERIC_ONOFF_CLIENT_MODEL, ble_mesh_generic_onoff_client_model_app_callback));
