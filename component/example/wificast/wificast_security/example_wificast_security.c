@@ -5,7 +5,7 @@ static const char *pers = "wifi_cast_sec";
 
 static serial_t g_uart_obj;
 static rtos_queue_t g_scan_report_q;
-static rtos_queue_t g_pubkey_exchange_q;
+static rtos_queue_t g_sec_recv_cb_q;
 static struct example_scan_info *g_info_list = NULL;
 static struct example_node_list g_node_list = {0};
 static struct example_keypair g_keypair;
@@ -164,62 +164,69 @@ static void example_security_pubkey_exchange_response_cb(u8 *src_mac, u8 *pubkey
 	}
 }
 
+static void example_recv_cb_task(void *param)
+{
+	(void)param;
+	struct example_cb_recv_data *recv_data = NULL;
+	static u32 count = 0;
+
+	while (1) {
+		if (RTK_SUCCESS == rtos_queue_receive(g_sec_recv_cb_q, &recv_data, 10)) {
+			struct example_frame_head *hdr = (struct example_frame_head *)recv_data->data;
+			RTK_LOGD(TAG, MAC_FMT", len: %d, type: %x\n", MAC_ARG(recv_data->mac), recv_data->data_len, hdr->type);
+			if (hdr->type & WIFI_CAST_UART_DATA) {
+				RTK_LOGI(TAG, MAC_FMT", recv count: %d, size: %d, data: %s\n",
+						MAC_ARG(recv_data->mac), ++count, hdr->len, recv_data->data + sizeof(struct example_frame_head));
+			} else if (hdr->type & WIFI_CAST_SCAN_REQUEST) {
+				example_security_scan_request_cb(recv_data->mac);
+			} else if (hdr->type & WIFI_CAST_SCAN_RESPONSE) {
+				example_security_scan_response_cb(recv_data->data + sizeof(struct example_frame_head));
+			} else if (hdr->type & WIFI_CAST_SEC_PUBKEY_EXCHANGE_REQUEST) {
+				example_security_pubkey_exchange_request_cb(recv_data->mac, recv_data->data + sizeof(struct example_frame_head), hdr->len);
+			} else if (hdr->type & WIFI_CAST_SEC_PUBKEY_EXCHANGE_RESPONSE) {
+				example_security_pubkey_exchange_response_cb(recv_data->mac, recv_data->data + sizeof(struct example_frame_head), hdr->len);
+			}
+			rtos_mem_free(recv_data->data);
+			rtos_mem_free(recv_data);
+		}
+	}
+	rtos_task_delete(NULL);
+}
+
 static void example_recv_callback(wifi_cast_node_t *pnode, unsigned char *buf, unsigned int len, signed char rssi)
 {
-	static u32 count = 0;
 	if (len < sizeof(struct example_frame_head)) {
 		return;
 	}
+	RTK_LOGD(TAG, MAC_FMT", len: %d, rssi: %d\n", MAC_ARG(pnode->mac), len, rssi);
 
-	struct example_frame_head *hdr = (struct example_frame_head *)buf;
-	if (hdr->type & WIFI_CAST_UART_DATA) {
-		RTK_LOGI(TAG, MAC_FMT", rssi: %d, recv count: %d, size: %d, data: %s\n",
-				 MAC_ARG(pnode->mac), rssi, ++count, hdr->len, buf + sizeof(struct example_frame_head));
-	} else if (hdr->type & WIFI_CAST_SCAN_REQUEST) {
-		example_security_scan_request_cb(pnode->mac);
-	} else if (hdr->type & WIFI_CAST_SCAN_RESPONSE) {
-		example_security_scan_response_cb(buf + sizeof(struct example_frame_head));
-	} else if (hdr->type & WIFI_CAST_SEC_PUBKEY_EXCHANGE_REQUEST ||
-			   hdr->type & WIFI_CAST_SEC_PUBKEY_EXCHANGE_RESPONSE) {
-		struct pubkey_exchange_info *info = NULL;
-		info = (struct pubkey_exchange_info *)rtos_mem_zmalloc(sizeof(struct pubkey_exchange_info));
-		if (!info) {
-			RTK_LOGE(TAG, "%s, pubkey_exchange_info malloc failed\n", __func__);
+	struct example_cb_recv_data *recv_data = NULL;
+	recv_data = (struct example_cb_recv_data *)rtos_mem_zmalloc(sizeof(struct example_cb_recv_data));
+	if (!recv_data) {
+		RTK_LOGE(TAG, "%s, recv_data malloc failed\n", __func__);
+		return;
+	}
+	recv_data->data = (u8 *)rtos_mem_zmalloc(len);
+	if (!recv_data->data) {
+		rtos_mem_free(recv_data);
+		RTK_LOGE(TAG, "%s, recv_data malloc failed\n", __func__);
+		return;
+	}
+	recv_data->data_len = len;
+	memcpy(recv_data->mac, pnode->mac, ETH_ALEN);
+	memcpy(recv_data->data, buf, len);
+
+	if (g_sec_recv_cb_q) {
+		if (RTK_SUCCESS != rtos_queue_send(g_sec_recv_cb_q, &recv_data, 0)) {
+			RTK_LOGD(TAG, "%s, send queue failed\n", __func__);
+			rtos_mem_free(recv_data->data);
+			rtos_mem_free(recv_data);
 			return;
 		}
-		info->type = hdr->type;
-		info->pubkey_len = hdr->len;
-		memcpy(info->mac, pnode->mac, 6);
-		memcpy(info->pubkey, buf + sizeof(struct example_frame_head), hdr->len);
-		if (g_pubkey_exchange_q) {
-			if (RTK_SUCCESS != rtos_queue_send(g_pubkey_exchange_q, &info, 0)) {
-				RTK_LOGE(TAG, "%s, send queue failed\n", __func__);
-				rtos_mem_free(info);
-				return;
-			}
-		} else {
-			rtos_mem_free(info);
-		}
+	} else {
+		rtos_mem_free(recv_data->data);
+		rtos_mem_free(recv_data);
 	}
-}
-
-static void pubkey_exchange_task(void *param)
-{
-	(void)param;
-	struct pubkey_exchange_info *info = NULL;
-
-	while (1) {
-		if (RTK_SUCCESS == rtos_queue_receive(g_pubkey_exchange_q, &info, 0)) {
-			if (info->type & WIFI_CAST_SEC_PUBKEY_EXCHANGE_REQUEST) {
-				example_security_pubkey_exchange_request_cb(info->mac, info->pubkey, info->pubkey_len);
-			} else if (info->type & WIFI_CAST_SEC_PUBKEY_EXCHANGE_RESPONSE) {
-				example_security_pubkey_exchange_response_cb(info->mac, info->pubkey, info->pubkey_len);
-			}
-			rtos_mem_free(info);
-		}
-		rtos_time_delay_ms(10);
-	}
-	rtos_task_delete(NULL);
 }
 
 static void task_yield(void)
@@ -520,10 +527,10 @@ static void example_main_task(void *param)
 
 	example_uart_init();
 	rtos_queue_create(&g_scan_report_q, 16, sizeof(struct example_scan_info));
-	rtos_queue_create(&g_pubkey_exchange_q, 16, sizeof(struct pubkey_exchange_info *));
+	rtos_queue_create(&g_sec_recv_cb_q, 16, sizeof(struct example_cb_recv_data *));
 
-	if (rtos_task_create(NULL, ((const char *)"pubkey_exchange_task"), pubkey_exchange_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
-		RTK_LOGE(TAG, "Failed to create pubkey_exchange_task\n\r");
+	if (rtos_task_create(NULL, ((const char *)"example_recv_cb_task"), example_recv_cb_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
+		RTK_LOGE(TAG, "Failed to create example_recv_cb_task\n\r");
 	}
 
 	rtos_task_delete(NULL);

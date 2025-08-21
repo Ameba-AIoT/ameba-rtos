@@ -43,4 +43,13 @@ struct example_node_list {
 	struct example_scan_info info[MAX_NODE_NUM]; /* scan list */
 };
 
+/**
+ * @brief Receive data from wifi cast device
+ */
+struct example_cb_recv_data {
+	u32 data_len;      /* receive data length */
+	u8 mac[ETH_ALEN];  /* receive src mac address */
+	u8 *data;          /* receive data body */
+} __attribute__((packed));
+
 #endif

@@ -4,11 +4,11 @@ This example demonstrates how to use the WIFI-CAST data to help upgrading other 
 
 ## Functionality
 
-One device upgrade firmware through the HTTP server and help to upgrade other devices through WIFI-CAST data. When finish the upgradation, all the devices will reset to the new firmware.
+One device upgrade image through the HTTP server and help to upgrade other devices through WIFI-CAST data. When finish the upgradation, all the devices will reset to the new image.
 
 ## Setup Enviornment
 
-At least two Ameba development boards are needed. Choose one board to upgrade through HTTP server and works as the sender, and another board works as the receiver.
+At least two same Ameba development boards are needed. Choose one board to upgrade through HTTP server and works as the sender, and another board works as the receiver.
 
 One PC which can run the HTTP server and one router which all the development boards and PC will connect to are needed. 
 
@@ -33,7 +33,7 @@ Config the user-defined data header in User Payload field.
 
 ### Step 1: Connect the Router
 
-Connect the PC and development boards to the router.
+Connect the PC to the router.
 
 ### Step 2: Run the HTTP Server
 
@@ -52,35 +52,62 @@ The built-in python HTTP server locates in [tools\DownloadServer(HTTP)](tools/Do
 
 ### Step 3: Build & Flash
 
-1. Change the IP address and resource according to the HTTP server.
+1. Disable wifi fast connection in component/soc/usrcfg/xxxx/ameba_wificfg.c
     ```
-    static const char *host = "192.168.137.1";  //"m-apps.oss-cn-shenzhen.aliyuncs.com"
-    static const char *resource = "ota_all.bin";     //"051103061600.bin"
+    wifi_user_config.fast_reconnect_en = 0;
     ```
-2. Build and Download:
-   * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool(Download the image into flash for both sender and receiver).
+2. Choose one board as sender:
+    * Change the IP address and resource according to the HTTP server.
+        ```
+        static const char *host = "192.168.137.1";  //"m-apps.oss-cn-shenzhen.aliyuncs.com"
+        static const char *resource = "ota_all.bin";     //"051103061600.bin"
+        ```
+    * Change the role to sender:
+        ```
+        static u8 ota_role = WIFI_CAST_OTA_SENDER;
+        ```
+    * Build by command `./build.py -a wificast_ota` and download images to sender's board by Ameba Image Tool.
+
+3. Choose another board as receiver:
+    * Change the role to receiver:
+        ```
+        static u8 ota_role = WIFI_CAST_OTA_RECEIVER;
+        ```
+    * Build by command `./build.py -a wificast_ota` and download images to receiver's board by Ameba Image Tool.
 
 ### Step 4: Run Sender and Receiver
 
 1. Reset both sender and receiver.
-2. Then sender inputs shell command to start download new firmware from HTTP server and then send the downloaded firmware to other boards.
+    * Output sample from the sender:
+    ```
+    [13:43:14:827][example_main-I] ------------->start, ota role: 1
+    ```
+    * Output sample from the receiver:
+    ```
+    [13:43:14:827][example_main-I] ------------->start, ota role: 2
+    ```
+2. Connect sender to the router which the PC connected.
+    ```
+    AT+WLCONN=ssid,xxx,pw,xxxxxxxxxxx
+    ```
+3. Then sender inputs shell command to start download new image from HTTP server and then send the downloaded image to other boards.
     ```
     wificast download
     ```
     * Output sample from the sender:
     ```
     [13:56:53:239][OTA-I] host: 192.168.137.1(8082), resource: ota_all.bin
-    [13:56:53:589][OTA-I] [ota_update_http_recv_response] Download new firmware begin, total size : 836768
-    [13:57:13:329][example_main-I] example_firmware_download, server firmware download is finished, spend time: 12154 ms, total size: 836736
+    [13:56:53:589][OTA-I] [ota_update_http_recv_response] Download new image begin, total size : 836768
+    [13:57:13:329][example_main-I] example_image_download, server image download is finished, spend time: 12154 ms, total size: 836736
     [13:57:16:789][example_main-I] example_ota_task, scan info num: 1
     [13:57:16:790][WIFI CAST-I] wifi_cast_add_node, node: 00:e0:4c:00:03:c2, set encrypt: 0
     [13:57:16:792][WIFI CAST-I] wifi_cast_add_node, 00:e0:4c:00:03:c2 add success
-    [13:57:16:819][example_main-I] example_ota_task, start send firmware, total_size: 836736 bytes, packet_num: 3269
+    [13:57:16:819][example_main-I] example_ota_task, start send image, total_size: 836736 bytes, packet_num: 3269
     [13:57:23:895][example_main-I] example_ota_request_status, send ota request
     [13:57:23:900][example_main-I] example_ota_status_response_cb, recv status response from00:e0:4c:00:03:c2
     [13:57:23:900][example_main-I] example_ota_request_status, recv ota req response, written_size: 654208, progress_index: 0
-    [13:57:24:593][example_main-I] example_firmware_send, all devices upgrade done, successed_num: 1, spend time: 7758 ms
+    [13:57:24:593][example_main-I] example_image_send, round: 20
+    [13:57:24:593][example_main-I] example_image_send, devices upgrade completed, unfinished_num: 0, successed_num: 1, spend time: 67540 ms
     ```
     * Output sample from the receiver:
     ```
@@ -91,12 +118,9 @@ The built-in python HTTP server locates in [tools\DownloadServer(HTTP)](tools/Do
     [13:57:22:220][example_main-I] example_ota_status_request_cb, send status response, total_size: 836736, written_size: 0, progress_index: 0
     [13:57:23:881][example_main-I] example_ota_status_request_cb, recv status request from00:e0:4c:00:03:5d
     [13:57:23:882][example_main-I] example_ota_status_request_cb, ota status, image_id: 1, image_addr: 0x214000, total_size: 836736 bytes, written_size: 654208 bytes, packet_num: 3269
-    [13:57:24:570][example_main-I] example_ota_status_request_cb, upgrade done, spend time: 2568 ms
+    [13:57:24:570][example_main-I] example_ota_status_request_cb, upgrade done, spend time: 58849 ms
     ```
-3. The sender and receiver will reset to the new firmware after the upgradation finished.
+4. The receiver will reset to the new image after the upgradation finished.
     ```
     [13:57:24:575][SYS-A] [sys_clear_ota_signature] IMGID: 1, current OTA1 Address: 0x00014000, target OTA2 Address: 0x00214000
     ```
-
-## Note
-The role of `sender` and `receiver` will be on the devices at the same time. When run `wificast download` on one device, this device acts as sender and sends data to other devices. The device receives the data will act as receiver.
