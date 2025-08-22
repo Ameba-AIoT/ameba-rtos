@@ -188,15 +188,10 @@ static usbd_msc_dev_t usbd_msc_dev;
 static int usbd_msc_sd_init_status = 0;
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS) || defined(CONFIG_AMEBAGREEN2)
 static rtos_sema_t usbd_msc_sd_sema;
-static SDIOHCFG_TypeDef sd_config = {
-	.sdioh_bus_speed = SD_SPEED_HS,				//SD_SPEED_DS or SD_SPEED_HS
-	.sdioh_bus_width = SDIOH_BUS_WIDTH_4BIT, 	//SDIOH_BUS_WIDTH_1BIT or SDIOH_BUS_WIDTH_4BIT
-	.sdioh_cd_pin = _PC_0,						//_PC_0/_PNC
-	.sdioh_wp_pin = _PNC,						//_PB_31/_PNC
-};
 
 /* Add lock to avoid msc tx_thread preempts msc rx_thread when read SD-card*/
 static usb_os_lock_t usbd_msc_sd_lock = NULL;
+
 #endif
 #endif
 
@@ -292,11 +287,7 @@ static int usbd_msc_sd_init(void)
 	usbd_msc_sd_sema_init();
 #endif
 
-#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS) || defined(CONFIG_AMEBAGREEN2)
-	ret = SD_Init(&sd_config);
-#else
 	ret = SD_Init();
-#endif
 	if (ret == SD_OK) {
 		usbd_msc_sd_init_status = 1;
 	} else {

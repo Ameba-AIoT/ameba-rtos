@@ -12,7 +12,7 @@ static SD_CardInfo card_info;
 int (*sd_sema_take_fn)(u32);
 int (*sd_sema_give_isr_fn)(u32);
 static void (*cd_cb)(SD_RESULT);
-static SDIOHCFG_TypeDef *sdioh_config;
+extern SDIOHCFG_TypeDef sdioh_config;
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -38,7 +38,7 @@ static void SDIOH_Pinmux(void)
 	PAD_PullCtrl(_PB_28, GPIO_PuPd_UP);
 	PAD_PullCtrl(_PB_29, GPIO_PuPd_UP);
 
-	if (sdioh_config->sdioh_bus_width == SDIOH_BUS_WIDTH_4BIT) {
+	if (sdioh_config.sdioh_bus_width == SDIOH_BUS_WIDTH_4BIT) {
 		Pinmux_Config(_PB_25, PINMUX_FUNCTION_SDIOH);	/* D2 */
 		Pinmux_Config(_PB_26, PINMUX_FUNCTION_SDIOH);	/* D3 */
 		Pinmux_Config(_PB_30, PINMUX_FUNCTION_SDIOH);	/* D1 */
@@ -48,14 +48,14 @@ static void SDIOH_Pinmux(void)
 		PAD_PullCtrl(_PB_30, GPIO_PuPd_UP);
 	}
 
-	if (sdioh_config->sdioh_cd_pin != _PNC) {			/* CD */
-		Pinmux_Config((u8)sdioh_config->sdioh_cd_pin, PINMUX_FUNCTION_SDIOH);
-		PAD_PullCtrl((u8)sdioh_config->sdioh_cd_pin, GPIO_PuPd_UP);
+	if (sdioh_config.sdioh_cd_pin != _PNC) {			/* CD */
+		Pinmux_Config((u8)sdioh_config.sdioh_cd_pin, PINMUX_FUNCTION_SDIOH);
+		PAD_PullCtrl((u8)sdioh_config.sdioh_cd_pin, GPIO_PuPd_UP);
 	}
 
-	if (sdioh_config->sdioh_wp_pin != _PNC) {			/* WP */
-		Pinmux_Config((u8)sdioh_config->sdioh_wp_pin, PINMUX_FUNCTION_SDIOH);
-		PAD_PullCtrl((u8)sdioh_config->sdioh_wp_pin, GPIO_PuPd_UP);
+	if (sdioh_config.sdioh_wp_pin != _PNC) {			/* WP */
+		Pinmux_Config((u8)sdioh_config.sdioh_wp_pin, PINMUX_FUNCTION_SDIOH);
+		PAD_PullCtrl((u8)sdioh_config.sdioh_wp_pin, GPIO_PuPd_UP);
 	}
 }
 
@@ -1713,14 +1713,14 @@ void SD_CardInit(void)
 			break;
 		}
 
-		if (sdioh_config->sdioh_bus_width == SDIOH_BUS_WIDTH_4BIT) {
+		if (sdioh_config.sdioh_bus_width == SDIOH_BUS_WIDTH_4BIT) {
 			ret = SD_SetBusWidth(SDIOH_BUS_WIDTH_4BIT);
 			if (ret != HAL_OK) {
 				break;
 			}
 		}
 
-		if (sdioh_config->sdioh_bus_speed == SD_SPEED_HS) {
+		if (sdioh_config.sdioh_bus_speed == SD_SPEED_HS) {
 			ret = SD_SwitchBusSpeed(SD_SPEED_HS);
 			if (ret != HAL_OK) {
 				break;
@@ -1744,7 +1744,7 @@ void SD_CardInit(void)
   *  @retval  SD_OK: Initialize SD card successfully
   *			Others: Fail to initialize SD card
   */
-SD_RESULT SD_Init(SDIOHCFG_TypeDef *config)
+SD_RESULT SD_Init(void)
 {
 	IRQn_Type IrqNum;
 
@@ -1754,8 +1754,6 @@ SD_RESULT SD_Init(SDIOHCFG_TypeDef *config)
 	IrqNum = SDIO_HOST_IRQ;
 #endif
 
-	sdioh_config = config;
-
 	_memset(&card_info, 0, sizeof(SD_CardInfo));
 	card_info.sd_status = SD_NODISK;
 
@@ -1763,7 +1761,7 @@ SD_RESULT SD_Init(SDIOHCFG_TypeDef *config)
 	SDIOH_Pinmux();
 
 	/* Initialize SDIOH */
-	SDIOH_Init(sdioh_config->sdioh_bus_width);
+	SDIOH_Init(sdioh_config.sdioh_bus_width);
 #if defined(SDIO) &&(SDIO == EMMC)
 	card_info.sd_status = SD_INSERT;
 #else
@@ -1815,8 +1813,6 @@ SD_RESULT SD_DeInit(void)
 	RCC_PeriphClockCmd(APBPeriph_SDH, APBPeriph_SDH_CLOCK, DISABLE);
 	InterruptUnRegister(IrqNum);
 	InterruptDis(IrqNum);
-
-	sdioh_config = NULL;
 
 	return SD_OK;
 }

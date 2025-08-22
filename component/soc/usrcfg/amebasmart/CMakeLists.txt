@@ -46,6 +46,7 @@ ameba_list_append(private_sources
     ameba_flashcfg.c
     ameba_sleepcfg.c
     ameba_pinmapcfg.c
+    ameba_intfcfg.c
 )
 
 # Component private part, user config end(DO NOT remove this line)
