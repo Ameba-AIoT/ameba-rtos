@@ -9,8 +9,8 @@
 
 #define UART_IDX  0
 #define UART_BAUD_RATE 1500000
-#define UART_TX_PIN    PA_28
-#define UART_RX_PIN    PA_29
+#define UART_TX_PIN    PA_26
+#define UART_RX_PIN    PA_27
 
 #define UART_RX_BUF_SZ	200
 

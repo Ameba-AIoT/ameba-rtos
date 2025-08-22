@@ -6,7 +6,7 @@ This example describes how to implement high/low level trigger on a gpio pin by 
 
 Connect wires:
 
-- Connect `GPIO_IRQ_LEVEL_PIN` to `GPIO_SIGNAL_SOURCE` defined in `gpio_ext.h`
+- Connect `GPIO_IRQ_LEVEL_PIN` to `GPIO_SIGNAL_SOURCE` defined in the current example's header file
 
 For example:
 

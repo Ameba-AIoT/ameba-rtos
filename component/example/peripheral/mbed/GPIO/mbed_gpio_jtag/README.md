@@ -10,8 +10,8 @@ This example describes how to use disable JTAG module and use GPIO pin to blink 
   - a push button
 - Connect wires:
 
-  - Connect a push button to `GPIO_JTAG_ENABLE_PIN` defined in `gpio_ext.h` and GND
-  - Connect a LED to `GPIO_LED_PIN` defined in `gpio_ext.h` and GND
+  - Connect a push button to `GPIO_JTAG_ENABLE_PIN` defined in the current example's header file and GND
+  - Connect a LED to `GPIO_LED_PIN` defined in the current example's header file and GND
 
   For example:
 

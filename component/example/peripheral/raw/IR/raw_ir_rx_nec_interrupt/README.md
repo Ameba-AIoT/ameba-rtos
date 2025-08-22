@@ -5,16 +5,15 @@
 
 # HW Configuration
 
-Connect the rx pin to another board's tx pin defined in `example_ir_ext.h`.
+Connect the rx pin to another board's tx pin defined in the current example's header file.
 
 # SW configuration
 
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
-2. In this example, IR as recivier, defualt using `IR_PINMUX_S1_RX`.
+2. In this example, the IR functions as a receiver and uses `IR_PINMUX_S1_RX` by default.
 3. Additional configurations:
-
    - data waveform reverse
      reverse lR output idle level by modifying `IR_InitStruct->IR_TxIdleLevel ` to `IR_IDLE_OUTPUT_LOW `or `IR_IDLE_OUTPUT_HIGH`
    - revsese IR carrier and non-carrier level by modifying `IR_InitStruct->IR_TxInverse` to following optional value:
@@ -40,7 +39,7 @@ Connect the rx pin to another board's tx pin defined in `example_ir_ext.h`.
 
 # Expect result
 
-   This example will print out data received.
+This example will print out data received.
 
 # Note
 
