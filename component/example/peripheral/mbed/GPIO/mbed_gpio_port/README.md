@@ -12,7 +12,7 @@ This example describes how to use GPIO Port read/write by MBED GPIO API.
   When test GPIO port output:
 
   - GPIO ports as output pins connect to the LED long leg, and the LED short leg connect to GND
-  - Selected pins are decided by both `GPIO_TEST_PORT` and `pin_mask` defined in gpio_ext.h
+  - Selected pins are decided by both `GPIO_TEST_PORT` and `pin_mask` defined in the current example's header file
 
     - About macro `GPIO_TEST_PORT`:
 

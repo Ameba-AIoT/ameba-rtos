@@ -35,7 +35,7 @@
 #define OTA_IMGID_APIMG		2
 #define OTA_IMGID_MAX		3
 
-#define MAX_IMG_NUM			OTA_IMGID_MAX
+#define MAX_IMG_NUM			2
 
 /* OTA download type */
 #define OTA_USER			0

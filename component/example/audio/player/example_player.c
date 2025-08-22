@@ -13,6 +13,8 @@
 
 #include "example_player.h"
 
+//#define USE_CACHE
+
 #define MAX_URL_SIZE 1024
 static char g_url[MAX_URL_SIZE];
 float g_volume = 1.0;
@@ -178,6 +180,21 @@ int player_test(const char *url)
 	Parcel_WriteFloat(request, g_volume);
 	RTPlayer_Invoke(g_player, request, NULL);
 	Parcel_Destroy(request);
+
+#ifdef USE_CACHE
+	int32_t cache_enable = 1;
+	char *prefix = "fat://";
+	char *cache_dir = "cache";
+	int32_t max_cache_count = 100;
+	Parcel *cache_request = Parcel_Create();
+	Parcel_WriteInt32(cache_request, 4);
+	Parcel_WriteInt32(cache_request, cache_enable);
+	Parcel_WriteCString(cache_request, prefix);
+	Parcel_WriteCString(cache_request, cache_dir);
+	Parcel_WriteInt32(cache_request, max_cache_count);
+	RTPlayer_Invoke(g_player, cache_request, NULL);
+	Parcel_Destroy(cache_request);
+#endif
 
 	StartPlay(g_player, url);
 

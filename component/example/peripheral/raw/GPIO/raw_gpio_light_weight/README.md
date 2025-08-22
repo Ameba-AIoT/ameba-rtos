@@ -8,8 +8,8 @@ This example describes how to use GPIO read/write in a light weight way by RAW G
   - a LED
   - a push button
 - Connect wires:
-  - Connect a push button to `GPIO_PUSHBT_PIN` defined in gpio_ext.h and GND
-  - connect a LED to `GPIO_LED_PIN` defined in gpio_ext.h and GND
+  - Connect a push button to `GPIO_PUSHBT_PIN` defined in the current example's header file and GND
+  - connect a LED to `GPIO_LED_PIN` defined in the current example's header file and GND
 
 # SW configuration
 

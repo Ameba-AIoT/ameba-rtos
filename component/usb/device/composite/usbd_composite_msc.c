@@ -215,7 +215,7 @@ static int usbd_composite_msc_sd_init(void)
 
 	usbd_composite_msc_sd_sema_init();
 
-	ret = SD_Init(&usbd_composite_sd_config);
+	ret = SD_Init((SDIOHCFG_TypeDef *)&usbd_composite_sd_config);
 	if (ret == SD_OK) {
 		usbd_composite_msc_sd_init_status = 1;
 	} else {

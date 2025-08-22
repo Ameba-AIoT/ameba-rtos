@@ -40,6 +40,10 @@ Sw Configuration:
 
 3. **GCC:** use CMD `./build.py -a player -p` to compile example
 
+4. If you want to use the functionality of caching files to flash
+   **Modify** example_player.c
+   //#define USE_CACHE to #define USE_CACHE
+
 ## Usage:
 **player_test [OPTION...]**
 [-F audio_path]          An audio file path to play
