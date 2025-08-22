@@ -259,7 +259,7 @@ ASM_FLAGS += $(MODULE_IFLAGS)
 #*****************************************************************************#
 #                           ARM COMPILATION FLAGS
 #*****************************************************************************#
-GLOBAL_CFLAGS += -O2 -g 
+GLOBAL_CFLAGS += -Os -g
 #avoid compile optimize based on undefined behavior
 ifneq ($(CONFIG_MATTER_EN),y)
 GLOBAL_CFLAGS += -fno-strict-aliasing -fno-strict-overflow -fno-delete-null-pointer-checks
@@ -343,7 +343,7 @@ LD_ARG += -L$(ROOTDIR)/lib/
 LD_ARG += -T$(BUILD_TARGET_FOLDER)/rlx8721d.ld 
 
 #LD_ARG += -u _printf_float -u _scanf_float 
-LD_ARG += -O2  
+LD_ARG += -Os
 LD_ARG += -mcpu=cortex-a32 -mfpu=vfpv4 -mfloat-abi=hard 
 #LD_ARG += -mthumb 
 #LD_ARG += -mcmse 

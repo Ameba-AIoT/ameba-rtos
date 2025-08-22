@@ -294,7 +294,7 @@ GLOBAL_CFLAGS += -g
 GLOBAL_CFLAGS += -gdwarf-3
 GLOBAL_CFLAGS += -nodefaultlibs
 GLOBAL_CFLAGS += -nostdlib
-GLOBAL_CFLAGS += -O2
+GLOBAL_CFLAGS += -Os
 #avoid compile optimize based on undefined behavior
 ifneq ($(CONFIG_MATTER_EN),y)
 GLOBAL_CFLAGS += -fno-strict-aliasing -fno-strict-overflow -fno-delete-null-pointer-checks
@@ -386,7 +386,7 @@ LD_ARG += -L$(ASDK_TOOLCHAIN)/lib/gcc/arm-none-eabi/$(ASDK_VER)/thumb/v8-m.main+
 LD_ARG += -L$(ROOTDIR)/lib/
 LD_ARG += -T$(BUILD_TARGET_FOLDER)/rlx8721d.ld
 
-LD_ARG += -O2
+LD_ARG += -Os
 LD_ARG += -march=armv8.1-m.main+dsp
 LD_ARG += -mthumb
 LD_ARG += -mcmse
