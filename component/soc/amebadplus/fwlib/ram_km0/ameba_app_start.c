@@ -21,12 +21,12 @@ u32 app_mpu_nocache_init(void)
 	mpu_region_config mpu_cfg;
 	u32 mpu_entry = 0;
 
-	/* close rom cache */
+	/* ROM Code inside CPU does not enter Cache, Set to RO for NULL ptr access error */
 	mpu_entry = mpu_entry_alloc();
 	mpu_cfg.region_base = 0x00000000;
 	mpu_cfg.region_size = 0x00020000;
 	mpu_cfg.xn = MPU_EXEC_ALLOW;
-	mpu_cfg.ap = MPU_UN_PRIV_RW;
+	mpu_cfg.ap = MPU_UN_PRIV_RO;
 	mpu_cfg.sh = MPU_NON_SHAREABLE;
 	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
 	mpu_region_cfg(mpu_entry, &mpu_cfg);

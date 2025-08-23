@@ -12,7 +12,10 @@ static SD_CardInfo card_info;
 int (*sd_sema_take_fn)(u32);
 int (*sd_sema_give_isr_fn)(u32);
 static void (*cd_cb)(SD_RESULT);
-static SDIOHCFG_TypeDef *sdioh_config;
+extern SDIOHCFG_TypeDef sdioh_config;
+#if defined(SDIO) &&(SDIO == SD)
+extern u32 wait_for_sema;
+#endif
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -38,7 +41,7 @@ static void SDIOH_Pinmux(void)
 	PAD_PullCtrl(_PB_28, GPIO_PuPd_UP);
 	PAD_PullCtrl(_PB_29, GPIO_PuPd_UP);
 
-	if (sdioh_config->sdioh_bus_width == SDIOH_BUS_WIDTH_4BIT) {
+	if (sdioh_config.sdioh_bus_width == SDIOH_BUS_WIDTH_4BIT) {
 		Pinmux_Config(_PB_25, PINMUX_FUNCTION_SDIOH);	/* D2 */
 		Pinmux_Config(_PB_26, PINMUX_FUNCTION_SDIOH);	/* D3 */
 		Pinmux_Config(_PB_30, PINMUX_FUNCTION_SDIOH);	/* D1 */
@@ -48,15 +51,26 @@ static void SDIOH_Pinmux(void)
 		PAD_PullCtrl(_PB_30, GPIO_PuPd_UP);
 	}
 
-	if (sdioh_config->sdioh_cd_pin != _PNC) {			/* CD */
-		Pinmux_Config((u8)sdioh_config->sdioh_cd_pin, PINMUX_FUNCTION_SDIOH);
-		PAD_PullCtrl((u8)sdioh_config->sdioh_cd_pin, GPIO_PuPd_UP);
+	if (sdioh_config.sdioh_cd_pin != _PNC) {			/* CD */
+		Pinmux_Config((u8)sdioh_config.sdioh_cd_pin, PINMUX_FUNCTION_SDIOH);
+		PAD_PullCtrl((u8)sdioh_config.sdioh_cd_pin, GPIO_PuPd_UP);
 	}
 
-	if (sdioh_config->sdioh_wp_pin != _PNC) {			/* WP */
-		Pinmux_Config((u8)sdioh_config->sdioh_wp_pin, PINMUX_FUNCTION_SDIOH);
-		PAD_PullCtrl((u8)sdioh_config->sdioh_wp_pin, GPIO_PuPd_UP);
+	if (sdioh_config.sdioh_wp_pin != _PNC) {			/* WP */
+		Pinmux_Config((u8)sdioh_config.sdioh_wp_pin, PINMUX_FUNCTION_SDIOH);
+		PAD_PullCtrl((u8)sdioh_config.sdioh_wp_pin, GPIO_PuPd_UP);
 	}
+}
+
+static void SDIOH_PreDMATrans(void)
+{
+#if defined(SDIO) &&(SDIO == SD)
+	if ((CPU_InInterrupt() == 0) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (sd_sema_take_fn != NULL)) {
+
+		wait_for_sema = 1;
+		SDIOH_INTConfig(SDIOH_DMA_CTL_INT_EN, ENABLE);
+	}
+#endif
 }
 
 /**
@@ -409,6 +423,8 @@ static u32 SD_GetCID(void)
 	dma_cfg.type = SDIOH_DMA_R2;
 	SDIOH_DMAConfig(&dma_cfg);
 
+	SDIOH_PreDMATrans();
+
 	cmd_attr.arg = 0;
 	cmd_attr.idx = SD_CMD_AllSendCid;
 	cmd_attr.rsp_type = SDIOH_RSP_17B;
@@ -421,6 +437,7 @@ static u32 SD_GetCID(void)
 
 	ret = SDIOH_WaitDMADone(SDIOH_XFER_CPLT_TIMEOUT);
 	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s WaitDMADone error !!\r\n", __FUNCTION__);
 		return ret;
 	}
 
@@ -507,6 +524,8 @@ static u32 SD_GetCSD(void)
 	dma_cfg.type = SDIOH_DMA_R2;
 	SDIOH_DMAConfig(&dma_cfg);
 
+	SDIOH_PreDMATrans();
+
 	cmd_attr.arg = (card_info.rca) << 16;
 	cmd_attr.idx = SD_CMD_SendCsd;
 	cmd_attr.rsp_type = SDIOH_RSP_17B;
@@ -519,6 +538,7 @@ static u32 SD_GetCSD(void)
 
 	ret = SDIOH_WaitDMADone(SDIOH_XFER_CPLT_TIMEOUT);
 	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s WaitDMADone error !!\r\n", __FUNCTION__);
 		return ret;
 	}
 
@@ -715,6 +735,8 @@ static u32 SD_GetSCR(void)
 	dma_cfg.type = SDIOH_DMA_64B;
 	SDIOH_DMAConfig(&dma_cfg);
 
+	SDIOH_PreDMATrans();
+
 	cmd_attr.arg = 0;
 	cmd_attr.idx = SD_CMD_SendScr;
 	cmd_attr.rsp_type = SDIOH_RSP_6B;
@@ -727,9 +749,10 @@ static u32 SD_GetSCR(void)
 
 	ret = SDIOH_WaitDMADone(SDIOH_XFER_CPLT_TIMEOUT);
 	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s WaitDMADone error !!\r\n", __FUNCTION__);
 		ret = SD_StopTransfer();
 		if (ret != HAL_OK) {
-			RTK_LOGE(TAG, "Stop transmission error !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "%s Stop transmission error !!\r\n", __FUNCTION__);
 		}
 
 		return HAL_ERR_UNKNOWN;
@@ -798,6 +821,8 @@ static u32 SD_SwitchFunction(u8 mode, u8 speed, u8 *buf_32align)
 	dma_cfg.type = SDIOH_DMA_64B;
 	SDIOH_DMAConfig(&dma_cfg);
 
+	SDIOH_PreDMATrans();
+
 	cmd_attr.arg = (mode << 31) | (0xF << 20) | (0xF << 16) | (0xF << 12) | (0xF << 8) | (0xF << 4) | speed;
 	cmd_attr.idx = SD_CMD_SwitchFunc;
 	cmd_attr.rsp_type = SDIOH_RSP_6B;
@@ -810,9 +835,10 @@ static u32 SD_SwitchFunction(u8 mode, u8 speed, u8 *buf_32align)
 
 	ret = SDIOH_WaitDMADone(SDIOH_XFER_CPLT_TIMEOUT);
 	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s WaitDMADone error !!\r\n", __FUNCTION__);
 		ret = SD_StopTransfer();
 		if (ret != HAL_OK) {
-			RTK_LOGE(TAG,  "Stop transmission error !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "%s Stop transmission error !!\r\n", __FUNCTION__);
 		}
 
 		return HAL_ERR_UNKNOWN;
@@ -897,6 +923,8 @@ SD_RESULT SD_GetEXTCSD(u8 *pbuf)
 	dma_cfg.type = SDIOH_DMA_NORMAL;
 	SDIOH_DMAConfig(&dma_cfg);
 
+	SDIOH_PreDMATrans();
+
 	cmd_attr.arg = 0;
 	cmd_attr.idx = EMMC_CMD_SendExtCsd;
 	cmd_attr.rsp_type = SDIOH_RSP_6B;
@@ -911,9 +939,10 @@ SD_RESULT SD_GetEXTCSD(u8 *pbuf)
 	ret = SDIOH_WaitDMADone(SDIOH_READ_TIMEOUT);
 
 	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s WaitDMADone error !!\r\n", __FUNCTION__);
 		ret = SD_StopTransfer();
 		if (ret != HAL_OK) {
-			RTK_LOGE(TAG, "Stop transmission error !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "%s Stop transmission error !!\r\n", __FUNCTION__);
 		}
 
 		return (SD_RESULT)HAL_ERR_UNKNOWN;
@@ -956,6 +985,8 @@ u32 SD_ReadBlock(uint8_t *readbuff, uint32_t BlockIdx)
 	dma_cfg.type = SDIOH_DMA_NORMAL;
 	SDIOH_DMAConfig(&dma_cfg);
 
+	SDIOH_PreDMATrans();
+
 	cmd_attr.arg = start;
 	cmd_attr.idx = SD_CMD_RdSingleBlk;
 	cmd_attr.rsp_type = SDIOH_RSP_6B;
@@ -970,9 +1001,10 @@ u32 SD_ReadBlock(uint8_t *readbuff, uint32_t BlockIdx)
 	ret = SDIOH_WaitDMADone(SDIOH_READ_TIMEOUT);
 
 	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s WaitDMADone error !!\r\n", __FUNCTION__);
 		ret = SD_StopTransfer();
 		if (ret != HAL_OK) {
-			RTK_LOGE(TAG, "Stop transmission error !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "%s Stop transmission error !!\r\n", __FUNCTION__);
 		}
 
 		return HAL_ERR_UNKNOWN;
@@ -1017,6 +1049,8 @@ u32 SD_ReadMultiBlocks(uint8_t *readbuff, uint32_t BlockIdx, uint32_t NumberOfBl
 	dma_cfg.type = SDIOH_DMA_NORMAL;
 	SDIOH_DMAConfig(&dma_cfg);
 
+	SDIOH_PreDMATrans();
+
 	cmd_attr.arg = start;
 	cmd_attr.idx = SD_CMD_RdMulBlk;
 	cmd_attr.rsp_type = SDIOH_RSP_6B;
@@ -1029,6 +1063,7 @@ u32 SD_ReadMultiBlocks(uint8_t *readbuff, uint32_t BlockIdx, uint32_t NumberOfBl
 
 	ret = SDIOH_WaitDMADone(SDIOH_READ_TIMEOUT * NumberOfBlocks);
 	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s WaitDMADone error !!\r\n", __FUNCTION__);
 		return ret;
 	}
 
@@ -1069,6 +1104,8 @@ u32 SD_WriteBlock(uint8_t *writebuff, uint32_t BlockIdx)
 	dma_cfg.type = SDIOH_DMA_NORMAL;
 	SDIOH_DMAConfig(&dma_cfg);
 
+	SDIOH_PreDMATrans();
+
 	cmd_attr.arg = start;
 	cmd_attr.idx = SD_CMD_WrBlk;
 	cmd_attr.rsp_type = SDIOH_RSP_6B;
@@ -1081,9 +1118,10 @@ u32 SD_WriteBlock(uint8_t *writebuff, uint32_t BlockIdx)
 
 	ret = SDIOH_WaitDMADone(SDIOH_WRITE_TIMEOUT);
 	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s WaitDMADone error !!\r\n", __FUNCTION__);
 		ret = SD_StopTransfer();
 		if (ret != HAL_OK) {
-			RTK_LOGE(TAG, "Stop transmission error !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "%s Stop transmission error !!\r\n", __FUNCTION__);
 		}
 
 		return HAL_ERR_UNKNOWN;
@@ -1161,6 +1199,8 @@ u32 SD_WriteMultiBlocks(uint8_t *writebuff, uint32_t BlockIdx, uint32_t NumberOf
 	dma_cfg.type = SDIOH_DMA_NORMAL;
 	SDIOH_DMAConfig(&dma_cfg);
 
+	SDIOH_PreDMATrans();
+
 	cmd_attr.arg = start;
 	cmd_attr.idx = SD_CMD_WrMulBlk;
 	cmd_attr.rsp_type = SDIOH_RSP_6B;
@@ -1173,6 +1213,7 @@ u32 SD_WriteMultiBlocks(uint8_t *writebuff, uint32_t BlockIdx, uint32_t NumberOf
 
 	ret = SDIOH_WaitDMADone(SDIOH_WRITE_TIMEOUT * NumberOfBlocks);
 	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s WaitDMADone error !!\r\n", __FUNCTION__);
 		return ret;
 	}
 
@@ -1336,6 +1377,8 @@ u32 SD_GetSDStatus(u8 *buf_32align)
 	dma_cfg.type = SDIOH_DMA_64B;
 	SDIOH_DMAConfig(&dma_cfg);
 
+	SDIOH_PreDMATrans();
+
 	cmd_attr.arg = 0;
 	cmd_attr.idx = SD_CMD_SendSts;
 	cmd_attr.rsp_type = SDIOH_RSP_6B;
@@ -1348,9 +1391,10 @@ u32 SD_GetSDStatus(u8 *buf_32align)
 
 	ret = SDIOH_WaitDMADone(SDIOH_XFER_CPLT_TIMEOUT);
 	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s WaitDMADone error !!\r\n", __FUNCTION__);
 		ret = SD_StopTransfer();
 		if (ret != HAL_OK) {
-			RTK_LOGE(TAG, "Stop transmission error !!\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "%s Stop transmission error !!\r\n", __FUNCTION__);
 		}
 
 		return HAL_ERR_UNKNOWN;
@@ -1713,14 +1757,14 @@ void SD_CardInit(void)
 			break;
 		}
 
-		if (sdioh_config->sdioh_bus_width == SDIOH_BUS_WIDTH_4BIT) {
+		if (sdioh_config.sdioh_bus_width == SDIOH_BUS_WIDTH_4BIT) {
 			ret = SD_SetBusWidth(SDIOH_BUS_WIDTH_4BIT);
 			if (ret != HAL_OK) {
 				break;
 			}
 		}
 
-		if (sdioh_config->sdioh_bus_speed == SD_SPEED_HS) {
+		if (sdioh_config.sdioh_bus_speed == SD_SPEED_HS) {
 			ret = SD_SwitchBusSpeed(SD_SPEED_HS);
 			if (ret != HAL_OK) {
 				break;
@@ -1744,7 +1788,7 @@ void SD_CardInit(void)
   *  @retval  SD_OK: Initialize SD card successfully
   *			Others: Fail to initialize SD card
   */
-SD_RESULT SD_Init(SDIOHCFG_TypeDef *config)
+SD_RESULT SD_Init(void)
 {
 	IRQn_Type IrqNum;
 
@@ -1754,8 +1798,6 @@ SD_RESULT SD_Init(SDIOHCFG_TypeDef *config)
 	IrqNum = SDIO_HOST_IRQ;
 #endif
 
-	sdioh_config = config;
-
 	_memset(&card_info, 0, sizeof(SD_CardInfo));
 	card_info.sd_status = SD_NODISK;
 
@@ -1763,7 +1805,7 @@ SD_RESULT SD_Init(SDIOHCFG_TypeDef *config)
 	SDIOH_Pinmux();
 
 	/* Initialize SDIOH */
-	SDIOH_Init(sdioh_config->sdioh_bus_width);
+	SDIOH_Init(sdioh_config.sdioh_bus_width);
 #if defined(SDIO) &&(SDIO == EMMC)
 	card_info.sd_status = SD_INSERT;
 #else
@@ -1815,8 +1857,6 @@ SD_RESULT SD_DeInit(void)
 	RCC_PeriphClockCmd(APBPeriph_SDH, APBPeriph_SDH_CLOCK, DISABLE);
 	InterruptUnRegister(IrqNum);
 	InterruptDis(IrqNum);
-
-	sdioh_config = NULL;
 
 	return SD_OK;
 }
