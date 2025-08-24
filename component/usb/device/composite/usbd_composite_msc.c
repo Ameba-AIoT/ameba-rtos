@@ -105,13 +105,6 @@ static usbd_composite_msc_dev_t usbd_composite_msc_dev;
 static int usbd_composite_msc_sd_init_status = 0;
 static rtos_sema_t usbd_composite_msc_sd_sema;
 
-static const SDIOHCFG_TypeDef usbd_composite_sd_config = {
-	.sdioh_bus_speed = SD_SPEED_HS,				//SD_SPEED_DS or SD_SPEED_HS
-	.sdioh_bus_width = SDIOH_BUS_WIDTH_4BIT, 	//SDIOH_BUS_WIDTH_1BIT or SDIOH_BUS_WIDTH_4BIT
-	.sdioh_cd_pin = _PC_0,						//_PC_0/_PNC
-	.sdioh_wp_pin = _PNC,						//_PB_31/_PNC
-};
-
 #endif
 #endif
 
@@ -215,7 +208,7 @@ static int usbd_composite_msc_sd_init(void)
 
 	usbd_composite_msc_sd_sema_init();
 
-	ret = SD_Init((SDIOHCFG_TypeDef *)&usbd_composite_sd_config);
+	ret = SD_Init();
 	if (ret == SD_OK) {
 		usbd_composite_msc_sd_init_status = 1;
 	} else {
