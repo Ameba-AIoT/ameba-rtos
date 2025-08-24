@@ -1969,6 +1969,7 @@ _LONG_CALL_ void AUDIO_CODEC_SetDACSRSrc(u32 src, u32 sr);
 _LONG_CALL_ void AUDIO_CODEC_DisPAD(u32 path);
 _LONG_CALL_ void AUDIO_CODEC_SetLDOMode(u32 powermode);
 _LONG_CALL_ void AUDIO_CODEC_EnableADC(u32 ad_chn, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_EnableADCForMask(u32 ad_chn_mask);
 _LONG_CALL_ void AUDIO_CODEC_SetADCVolume(u32 adc_sel, u32 gain);
 _LONG_CALL_ void AUDIO_CODEC_SetADCHPF(u32 adc_sel, u32 fc, u32 newstate);
 _LONG_CALL_ void AUDIO_CODEC_SetADCASRC(u32 i2s_sel, u32 adc_sel, u32 sr, u32 newstate);
@@ -2011,6 +2012,7 @@ _LONG_CALL_ void AUDIO_CODEC_SetADCZDETTimeOut(u32 adc_sel, u32 time_out);
 _LONG_CALL_ void AUDIO_CODEC_Record(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct);
 _LONG_CALL_ void AUDIO_CODEC_Playback(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct);
 _LONG_CALL_ void AUDIO_CODEC_EnableADCFifo(u32 ad_chn, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_EnableADCFifoForMask(u32 ad_chn_mask);
 _LONG_CALL_ void AUDIO_CODEC_EnableDACFifo(u32 newstate);
 _LONG_CALL_ u32 AUDIO_CODEC_GetHPOMode(u32 channel);
 
