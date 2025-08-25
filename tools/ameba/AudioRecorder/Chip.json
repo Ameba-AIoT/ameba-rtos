@@ -1,0 +1,34 @@
+[
+  {
+    "ChipID": "AmebaD",
+    "BaudRate": 2000000,
+    "AmicNum": 2,
+    "DmicNum": 3,
+    "MinRefNum": 1,
+    "MaxRefNum": 1
+  },
+  {
+    "ChipID": "AmebaLite",
+    "BaudRate": 2000000,
+    "AmicNum": 3,
+    "DmicNum": 4,
+    "MinRefNum": 1,
+    "MaxRefNum": 2
+  },
+  {
+    "ChipID": "AmebaSmart",
+    "BaudRate": 2000000,
+    "AmicNum": 5,
+    "DmicNum": 8,
+    "MinRefNum": 0,
+    "MaxRefNum": 2
+  },
+  {
+    "ChipID": "AmebaDplus",
+    "BaudRate": 2000000,
+    "AmicNum": 0,
+    "DmicNum": 2,
+    "MinRefNum": 0,
+    "MaxRefNum": 1
+  }
+]

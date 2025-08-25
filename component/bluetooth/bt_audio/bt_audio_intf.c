@@ -704,19 +704,23 @@ uint16_t rtk_bt_audio_recvd_data_in(uint32_t type, rtk_bt_audio_track_t *track, 
 		BT_LOGE("[BT AUDIO] %s Codec entity not match \r\n", __func__);
 		goto exit;
 	}
-	/* memcpying data if receiving data from ipc helps to free ipc resources */
-	pdata_buffer = osif_mem_alloc(RAM_TYPE_DATA_ON, len);
-	if (!pdata_buffer) {
-		goto exit;
-	} else {
-		memset((void *)pdata_buffer, 0, len);
+	if (pdata) {
+		/* memcpying data if receiving data from ipc helps to free ipc resources */
+		pdata_buffer = osif_mem_alloc(RAM_TYPE_DATA_ON, len);
+		if (!pdata_buffer) {
+			goto exit;
+		} else {
+			memset((void *)pdata_buffer, 0, len);
+		}
+		memcpy((void *)pdata_buffer, (void *)pdata, len);
 	}
-	memcpy((void *)pdata_buffer, (void *)pdata, len);
 	if (ts_us && !track->audio_sync_flag) {
 		track->audio_sync_flag = true;
 	}
 	if (bt_audio_msg_send(type, track, pentity, pdata_buffer, len, ts_us)) {
-		osif_mem_free(pdata_buffer);
+		if (pdata_buffer) {
+			osif_mem_free(pdata_buffer);
+		}
 		goto exit;
 	}
 	return RTK_BT_AUDIO_OK;

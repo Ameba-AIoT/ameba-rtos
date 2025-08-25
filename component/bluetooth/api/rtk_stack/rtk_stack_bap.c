@@ -3986,10 +3986,6 @@ void bt_stack_le_audio_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 			BT_DUMPD("", p_data->p_bt_direct_iso->p_buf + p_data->p_bt_direct_iso->offset, p_data->p_bt_direct_iso->iso_sdu_len);
 			BT_LOGD("%s pkt_seq_num=%d\r\n", __func__, p_data->p_bt_direct_iso->pkt_seq_num);
 		}
-		if (p_data->p_bt_direct_iso->pkt_status_flag != ISOCH_DATA_PKT_STATUS_VALID_DATA) {
-			gap_iso_data_cfm(p_data->p_bt_direct_iso->p_buf);
-			break;
-		}
 		/* Send event */
 		if (false == rtk_bt_check_evt_cb_direct_calling(RTK_BT_LE_GP_BAP, RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND)) {
 			BT_LOGE("%s: RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND is not direct calling!\r\n", __func__);
@@ -4022,15 +4018,19 @@ void bt_stack_le_audio_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 			direct_iso_data_ind->ts_flag = p_data->p_bt_direct_iso->ts_flag;
 			direct_iso_data_ind->time_stamp = p_data->p_bt_direct_iso->time_stamp;
 			direct_iso_data_ind->buf_len = p_data->p_bt_direct_iso->offset + p_data->p_bt_direct_iso->iso_sdu_len;
-			direct_iso_data_ind->p_buf = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, direct_iso_data_ind->buf_len);
-			if (!direct_iso_data_ind->p_buf) {
-				BT_LOGE("direct_iso_data_ind->p_buf alloc fail, len = %d\r\n", direct_iso_data_ind->buf_len);
-				bt_stack_le_audio_release_iso_chann(p_iso_chann);
-				rtk_bt_event_free(p_evt);
-				break;
+			if (direct_iso_data_ind->iso_sdu_len) {
+				direct_iso_data_ind->p_buf = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, direct_iso_data_ind->buf_len);
+				if (!direct_iso_data_ind->p_buf) {
+					BT_LOGE("direct_iso_data_ind->p_buf alloc fail, len = %d\r\n", direct_iso_data_ind->buf_len);
+					bt_stack_le_audio_release_iso_chann(p_iso_chann);
+					rtk_bt_event_free(p_evt);
+					break;
+				}
+				memset(direct_iso_data_ind->p_buf, 0, direct_iso_data_ind->buf_len);
+				memcpy((void *)direct_iso_data_ind->p_buf, (void *)p_data->p_bt_direct_iso->p_buf, direct_iso_data_ind->buf_len);
+			} else {
+				direct_iso_data_ind->p_buf = NULL;
 			}
-			memset(direct_iso_data_ind->p_buf, 0, direct_iso_data_ind->buf_len);
-			memcpy((void *)direct_iso_data_ind->p_buf, (void *)p_data->p_bt_direct_iso->p_buf, direct_iso_data_ind->buf_len);
 			/*  user_data point to the memory alloced for 2nd level ptr, so it's convenient
 			    to free it when free p_evt */
 			p_evt->user_data = direct_iso_data_ind->p_buf;
