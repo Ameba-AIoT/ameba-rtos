@@ -1,10 +1,16 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef _AMEBA_SDIO_SD_H
 #define _AMEBA_SDIO_SD_H
 
 /* Includes ------------------------------------------------------------------*/
 #include "ameba_sd_host.h"
 
-/** @addtogroup STM32F4xx_HAL_Driver
+/** @addtogroup Ameba_Mbed_API
   * @{
   */
 
@@ -18,7 +24,6 @@
   * @{
   */
 
-/* copied from amebad/fwlib/include/ameba_sd.h */
 /** @defgroup SD_Result
   * @{
   */
@@ -37,7 +42,6 @@ typedef enum {
 /**
   * @brief  HAL Lock structures definition
   */
-/* copied from stm32f4xx_hal_def.h */
 typedef enum {
 	HAL_UNLOCKED = 0x00U,
 	HAL_LOCKED   = 0x01U
@@ -274,7 +278,6 @@ typedef struct {
 /** @defgroup SD_Exported_Constansts_Group4 SDIO CMD Argument
   * @{
   */
-/* added by kw: copied from esp32\components\sdmmc\include\sd_protocol_defs.h */
 
 /* R4 response (IO OCR) */
 #define SD_RESP_R4_MEM_READY             (1<<31)

@@ -4,6 +4,7 @@ ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
 ccflags-$(CONFIG_P2P) += -DCONFIG_P2P
 ccflags-$(CONFIG_IEEE80211R) += -DCONFIG_IEEE80211R
 ccflags-$(CONFIG_FULLMAC_HCI_USB) += -DCONFIG_FULLMAC_HCI_USB
+ccflags-$(CONFIG_WHC_WIFI_API_PATH) += -DCONFIG_WHC_WIFI_API_PATH
 
 ccflags-y += -DCONFIG_FULLMAC
 ccflags-y += -I$(src)/../../common/netdev

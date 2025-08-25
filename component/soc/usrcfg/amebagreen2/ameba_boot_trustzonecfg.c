@@ -1,14 +1,14 @@
 /*
-* Copyright (c) 2024 Realtek Semiconductor Corp.
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "ameba_soc.h"
 
 #ifdef CONFIG_TRUSTZONE
 
-#if defined (CONFIG_IMG3_SRAM)
+#if defined (CONFIG_IMG3_SRAM) || defined (CONFIG_IMG3_FLASH)
 #define TZ_NSC_START  	(u32)__km4tz_tz_nsc_start__
 #define TZ_ENTRY_START	(u32)__km4tz_tz_entry_start__
 #define TZ_ENTRY_END	(u32)__km4tz_tz_entry_end__

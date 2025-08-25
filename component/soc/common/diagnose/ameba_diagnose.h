@@ -1,12 +1,7 @@
-/**
- * @file ameba_diagnose.h
- * @author your name (you@domain.com)
- * @brief
- * @version 0.1
- * @date 2025-05-27
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
  *
- * @copyright Copyright (c) 2025
- *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef _AMEBA_DIAGNOSE_H_
@@ -42,33 +37,21 @@
 //NOTE: Porting ipc for each ic
 #if defined(CONFIG_AMEBAD)
 #define DIAG_IPC_DIR NULL
-#define DIAG_IPC_DEV IPCM0_DEV
-#define DIAG_IPC_TX_CHANNEL_SHIFT (0)
+#define DIAG_IPC_CHANNEL 0 //TODO:
 #elif defined(CONFIG_AMEBADPLUS)
 #define DIAG_IPC_DIR IPC_KM4_TO_KM0
-#define DIAG_IPC_DEV IPCKM0_DEV
-#define DIAG_IPC_TX_CHANNEL_SHIFT IPC_TX_CHANNEL_SHIFT
-#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAL2) || defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)
+#define DIAG_IPC_CHANNEL IPC_A2N_EVENT_REQ
+#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAL2) || defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS) || defined(CONFIG_AMEBAPRO3) || defined(CONFIG_RTL8720F)
 #define DIAG_IPC_DIR IPC_AP_TO_NP
-#define DIAG_IPC_DEV IPCNP_DEV
-#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)
-#define DIAG_IPC_TX_CHANNEL_SHIFT (0)
-#else
-#define DIAG_IPC_TX_CHANNEL_SHIFT IPC_TX_CHANNEL_SHIFT
-#endif
+#define DIAG_IPC_CHANNEL IPC_A2N_EVENT_REQ
 #elif defined(CONFIG_AMEBALITE)
 #define DIAG_IPC_DIR IPC_KM4_TO_KR4
-#define DIAG_IPC_DEV IPCKR4_DEV
-#define DIAG_IPC_TX_CHANNEL_SHIFT (0) //FIXME: modify to the right value
+#define DIAG_IPC_CHANNEL IPC_M2R_EVENT_REQ
 #else
 #error no ic defined
 #endif
 
-#if (defined CONFIG_WHC_DEV || defined CONFIG_WHC_NONE)
 int rtk_diag_init(u16 heap_capacity, u16 sender_buffer_size);
-#else //CONFIG_WHC_HOST
-int rtk_diag_init(void);
-#endif
 void rtk_diag_deinit(void);
 int rtk_diag_event_add(u8 evt_level, u16 evt_type, const u8 *evt_info, u16 evt_len);
 
@@ -87,7 +70,7 @@ int rtk_diag_req_log_enable(u8 state); //设置开启或关闭log
 
 
 //for debug
-#ifndef CONFIG_AMEBA_RLS
+#ifdef DIAG_DEBUG_TEST
 int rtk_diag_req_add_event_demo1(u8 evt_level, const char *data);
 int rtk_diag_req_dbg_log_enable(u8 state);
 #endif

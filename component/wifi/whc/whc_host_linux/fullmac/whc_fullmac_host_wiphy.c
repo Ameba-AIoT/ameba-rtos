@@ -271,7 +271,29 @@ int rtw_wiphy_init_params(struct wiphy *pwiphy)
 #endif
 
 	/* Support for AP mode. */
-	pwiphy->flags |= (WIPHY_FLAG_HAVE_AP_SME | WIPHY_FLAG_HAS_CHANNEL_SWITCH);
+#ifdef CONFIG_SUPPLICANT_SME
+	dev_info(global_idev.fullmac_dev, "Set offload AP mode SME\n");
+
+	/*
+	 * This is required by AP SAE, otherwise wpa_driver_nl80211_capa() would
+	 * set use_monitor to 1 because data_tx_status is false and
+	 * hostap::nl80211_setup_ap would not call nl80211_mgmt_subscribe_ap()
+	 * (which SAE AP shall use).
+	 */
+	pwiphy->features |= NL80211_FEATURE_SK_TX_STATUS;
+
+	/*
+	 * If we offload AP SME, we should not do Access Control.
+	 */
+	pwiphy->max_acl_mac_addrs = 0;
+
+	/* Required for AP SAE, otheriwse nl80211_register_beacons() would fail */
+	pwiphy->flags |= WIPHY_FLAG_REPORTS_OBSS;
+#else
+	pwiphy->flags |= WIPHY_FLAG_HAVE_AP_SME;
+#endif
+
+	pwiphy->flags |= WIPHY_FLAG_HAS_CHANNEL_SWITCH;
 	pwiphy->mgmt_stypes = rtw_cfg80211_default_mgmt_stypes;
 
 	ret = rtw_wiphy_band_init(pwiphy, NL80211_BAND_2GHZ);

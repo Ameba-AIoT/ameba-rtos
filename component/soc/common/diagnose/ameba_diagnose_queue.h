@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 
 #ifndef _AMEBA_DIAGNOSE_QUEUE_H_
 #define _AMEBA_DIAGNOSE_QUEUE_H_
@@ -15,8 +21,6 @@ int rtk_diag_queue_del_before(u32 timestamp, u16 *count); //including the event 
 int rtk_diag_queue_del_after(u32 timestamp, u16 *count);  //not including the event with exact timestamp
 const RtkDiagRingArrayHandler_t *rtk_diag_queue_get_del_list(void);
 int rtk_diag_queue_clr_del_list(void);
-const RtkDiagEvent_t *rtk_diag_queue_view_head(void);
-const RtkDiagEvent_t *rtk_diag_queue_view_tail(void);
 const RtkDiagEvent_t *rtk_diag_queue_find(u32 timestamp, u16 *global_offset, u16 *local_offset, int *result);
 const RtkDiagEvent_t *rtk_diag_queue_next_to_prev_find(void);
 #endif

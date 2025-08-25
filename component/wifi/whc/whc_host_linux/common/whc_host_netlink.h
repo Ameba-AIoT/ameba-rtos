@@ -16,6 +16,7 @@ enum whc_cmd_api_id {
 	CMD_WIFI_SCAN_RESULT,
 	CMD_WIFI_MP,
 	CMD_WIFI_DBG,
+	CMD_WIFI_GET_JOIN_EVENT,
 };
 
 enum whc_cmd_type {
@@ -39,6 +40,10 @@ enum whc_attr_type {
 	WHC_ATTR_MAX = WHC_ATTR_AFTER_LAST - 1,
 };
 
+enum nl80211_multicast_groups {
+	WHC_MCGRP_EVENT,
+};
+
 enum whc_tickps_cmd_subtype {
 	WHC_CMD_TICKPS_R = 0,
 	WHC_CMD_TICKPS_A = 1,
@@ -59,6 +64,7 @@ enum whc_tickps_cmd_subtype {
 #define WHC_WIFI_TEST_SCAN           0x7
 #define WHC_WIFI_TEST_DHCP           0x8
 #define WHC_WIFI_TEST_WIFION         0x9
+#define WHC_WIFI_TEST_SCAN_RESULT    0xA
 
 // todo: need sync, default 4k, however max buf in sdio & spi < 1.5k
 #define WHC_WIFI_MP_MSG_BUF_SIZE (4096)

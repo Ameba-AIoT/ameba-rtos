@@ -42,7 +42,7 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources
-    hci/hci_process/hci_process.c
+	hci/hci_process/hci_process.c
 	hci/hci_process/hci_download_v1.c
 	hci/hci_process/hci_download_v2.c
 	hci/hci_process/hci_download_v3.c
@@ -53,10 +53,10 @@ ameba_list_append(private_sources
 )
 
 ameba_list_append(private_sources
-    platform/${c_SOC_TYPE}/hci/bt_mp_patch.c
-    platform/${c_SOC_TYPE}/hci/bt_normal_patch.c
-    platform/${c_SOC_TYPE}/hci/hci_platform.c
-    platform/${c_SOC_TYPE}/hci/hci_uart.c
+	platform/${c_SOC_TYPE}/hci/bt_mp_patch.c
+	platform/${c_SOC_TYPE}/hci/bt_normal_patch.c
+	platform/${c_SOC_TYPE}/hci/hci_platform.c
+	platform/${c_SOC_TYPE}/hci/hci_uart.c
 )
 
 if(CONFIG_BT_INIC)
@@ -80,13 +80,15 @@ if(CONFIG_BT_INIC)
 		ameba_list_append_if(CONFIG_AMEBAGREEN2 private_sources bt_inic/bt_inic_sdio.c)
 	endif()
 elseif(CONFIG_BT_ZEPHYR)
-	ameba_list_append(private_sources hci/hci_if_zephyr.c)
+	if(CONFIG_BT_SDN_VERIFY)
+		ameba_list_append(private_sources vhci/hci_if_vhci.c)
+	else()
+		ameba_list_append(private_sources hci/hci_if_zephyr.c)
+	endif()
 	ameba_list_append(private_includes
 		 ${c_CMPT_BLUETOOTH_DIR}/zephyr/include
 		 ${c_CMPT_BLUETOOTH_DIR}/zephyr/port
 	)
-elseif(CONFIG_BT_SDN_VERIFY)
-	ameba_list_append(private_sources vhci/hci_if_virtual.c)
 else()
 	ameba_list_append(private_sources hci/hci_if_rtk.c)
 endif()

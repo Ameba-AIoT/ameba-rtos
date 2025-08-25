@@ -16,6 +16,10 @@
 #include "hal_platform.h"
 
 #include "cmsis_cpu.h"
+#ifdef CONFIG_ARM_CORE_CM4
+#include "mpu_config.h"
+#include "ameba_cache.h"
+#endif
 
 #include "ameba_vector.h"
 #include "ameba_gdma.h"

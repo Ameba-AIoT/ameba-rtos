@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /* 7zTypes.h -- Basic types
 2018-08-04 : Igor Pavlov : Public domain */
 

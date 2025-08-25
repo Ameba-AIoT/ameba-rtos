@@ -18,17 +18,18 @@
 #include "ameba_audio_policy_configs.h"
 
 void
-GetAudioConfigHwModules(int32_t *hw_modules_num, AudioConfigHwModule **modules) {
-    static struct AudioConfigHwModule hw_modules[] = {
+GetAudioConfigHwCards(int32_t *hw_cards_num, AudioConfigHwCard **modules) {
+    static struct AudioConfigHwCard hw_cards[] = {
         {
             .name = "primary",
             .audio_global_config = {
-                    .attached_output_devices = AUDIO_HW_DEVICE_OUT_SPEAKER | AUDIO_HW_DEVICE_OUT_I2S,
+                    .attached_output_devices = AUDIO_HW_DEVICE_OUT_SPEAKER,
                     .default_output_device = AUDIO_HW_DEVICE_OUT_SPEAKER
                 },
             .device_ports = {
                 {
                     .name = "Speaker",
+                    .role = AUDIO_CONFIG_PORT_ROLE_SINK,
                     .type = AUDIO_HW_DEVICE_OUT_SPEAKER,
                     .supported_rates = {16000, 44100, 48000, 96000, 192000},
                     .supported_rates_num = 5,
@@ -40,6 +41,7 @@ GetAudioConfigHwModules(int32_t *hw_modules_num, AudioConfigHwModule **modules) 
                 },
                 {
                     .name = "I2SOut",
+                    .role = AUDIO_CONFIG_PORT_ROLE_SINK,
                     .type = AUDIO_HW_DEVICE_OUT_I2S,
                     .supported_rates = {16000, 44100, 48000, 96000, 192000},
                     .supported_rates_num = 5,
@@ -54,10 +56,11 @@ GetAudioConfigHwModules(int32_t *hw_modules_num, AudioConfigHwModule **modules) 
             .mix_ports = {
                 {
                     .name = "primary output",
-                    .rate = 44100,
+                    .role = AUDIO_CONFIG_PORT_ROLE_SOURCE,
+                    .rate = 48000,
                     .channels = 2,
                     .format = AUDIO_HW_FORMAT_PCM_16_BIT,
-                    .flags = AUDIO_HW_OUTPUT_FLAG_NONE,
+                    .flags = AUDIO_HW_OUTPUT_FLAG_PRIMARY,
                 }
             },
             .mix_ports_num = 1,
@@ -72,6 +75,7 @@ GetAudioConfigHwModules(int32_t *hw_modules_num, AudioConfigHwModule **modules) 
             .device_ports = {
                 {
                     .name = "A2dp Out Device",
+                    .role = AUDIO_CONFIG_PORT_ROLE_SINK,
                     .type = AUDIO_HW_DEVICE_OUT_A2DP,
                     .supported_rates = {44100},
                     .supported_rates_num = 1,
@@ -85,6 +89,7 @@ GetAudioConfigHwModules(int32_t *hw_modules_num, AudioConfigHwModule **modules) 
             .mix_ports = {
                 {
                     .name = "a2dp output",
+                    .role = AUDIO_CONFIG_PORT_ROLE_SOURCE,
                     .rate = 44100,
                     .channels = 2,
                     .format = AUDIO_HW_FORMAT_PCM_16_BIT,
@@ -99,6 +104,6 @@ GetAudioConfigHwModules(int32_t *hw_modules_num, AudioConfigHwModule **modules) 
         }
     };
 
-    *hw_modules_num = 2;
-    *modules = hw_modules;
+    *hw_cards_num = 2;
+    *modules = hw_cards;
 }

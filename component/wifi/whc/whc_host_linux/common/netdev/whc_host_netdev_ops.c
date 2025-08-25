@@ -288,6 +288,7 @@ static int rtw_ndev_close(struct net_device *pnetdev)
 	}
 #endif
 	netif_tx_stop_all_queues(pnetdev);
+	netif_dormant_on(pnetdev);
 	netif_carrier_off(pnetdev);
 	rtw_netdev_priv_is_on(pnetdev) = false;
 
@@ -374,12 +375,18 @@ func_exit:
 static void rtw_set_rx_mode(struct net_device *dev)
 {
 #ifndef CONFIG_WHC_BRIDGE
-	if (dev->flags & IFF_PROMISC) {
-		dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s enable promisc mode!\n", __func__);
-		whc_fullmac_host_set_promisc_enable(1, RTW_PROMISC_FILTER_ALL_PKT);
-	} else {
-		dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s disable promisc mode!\n", __func__);
-		whc_fullmac_host_set_promisc_enable(0, RTW_PROMISC_FILTER_ALL_PKT);
+	if ((rtw_netdev_flags(dev) ^ dev->flags) & IFF_PROMISC) {
+		if (dev->flags & IFF_PROMISC) {
+			dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s enable promisc mode!\n", __func__);
+			whc_fullmac_host_set_promisc_enable(1, RTW_PROMISC_FILTER_ALL_PKT);
+		} else {
+			dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s disable promisc mode!\n", __func__);
+			whc_fullmac_host_set_promisc_enable(0, RTW_PROMISC_FILTER_ALL_PKT);
+		}
+	}
+
+	if (rtw_netdev_flags(dev) ^ dev->flags) {
+		rtw_netdev_flags(dev) = dev->flags;
 	}
 #endif
 }
@@ -584,6 +591,7 @@ int rtw_ndev_alloc(void)
 		global_idev.pndev[i] = ndev;
 		rtw_netdev_idx(ndev) = i;
 		rtw_netdev_label(ndev) = WIFI_FULLMAC_LABEL;
+		rtw_netdev_flags(ndev) = ndev->flags;
 #ifdef CONFIG_WHC_BRIDGE
 		ndev->netdev_ops = &rtw_ndev_ops;
 #else
@@ -649,6 +657,9 @@ int rtw_ndev_register(void)
 		netdev_set_default_ethtool_ops(global_idev.pndev[i], &global_idev.rtw_ethtool_ops);
 		if (dev_alloc_name(global_idev.pndev[i], wlan_name) < 0) {
 			dev_err(global_idev.fullmac_dev, "dev_alloc_name, fail!\n");
+		}
+		if (i == WHC_STA_PORT) {
+			netif_dormant_on(global_idev.pndev[i]);
 		}
 		netif_carrier_off(global_idev.pndev[i]);
 		if (register_netdev(global_idev.pndev[i]) != 0) {

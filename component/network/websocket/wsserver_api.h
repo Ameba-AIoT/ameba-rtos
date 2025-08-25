@@ -127,6 +127,7 @@ enum opcode_type {
 #define WSS_SET_SOCKET_OPTION_FAIL	12 		/*!< Set socket option fail*/
 #define WSS_NOT_GET_PONG	13 				/*!< Get pong timeout */
 #define WSS_IDLE_TIMEOUT	14 				/*!< Idle timeout*/
+#define WSS_SEND_PONG_FAILED	15			/*!< Server send PONG failed*/
 
 /***************************************************************************/
 

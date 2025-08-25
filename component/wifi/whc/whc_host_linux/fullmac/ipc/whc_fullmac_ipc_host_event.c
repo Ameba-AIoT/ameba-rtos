@@ -288,6 +288,11 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 		} else {
 			dev_dbg(global_idev.fullmac_dev, "%s(): RX assocrsp but no corresponding bss recorded\n", __FUNCTION__);
 		}
+	} else if (event == RTW_EVENT_SME_RX_UNPROT_MLME_MGMT) {
+		rx_mgnt_info = (struct rtw_event_rx_mgnt *)evt_info;
+
+		dev_dbg(global_idev.fullmac_dev, "%s: rx unprot mlme mgnt \n", __func__);
+		cfg80211_rx_unprot_mlme_mgmt(global_idev.pndev[0], rx_mgnt_info->frame, rx_mgnt_info->frame_len);
 	}
 #endif
 
@@ -449,7 +454,7 @@ func_exit:
 static void whc_fullmac_host_event_promisc_pkt_hdl(struct event_priv_t *event_priv, struct whc_ipc_dev_req_msg *p_ipc_msg)
 {
 	struct device *pdev = NULL;
-	struct rtw_rx_pkt_info *ppktinfo = (struct rtw_rx_pkt_info *)phys_to_virt(p_ipc_msg->param_buf[0]);
+	struct rtw_rx_pkt_info *ppktinfo = NULL;
 	dma_addr_t phy_pkt = 0, phy_buf = 0;
 	uint8_t *buf = NULL;
 
@@ -459,24 +464,11 @@ static void whc_fullmac_host_event_promisc_pkt_hdl(struct event_priv_t *event_pr
 		goto func_exit;
 	}
 
-	phy_pkt = dma_map_single(pdev, ppktinfo, sizeof(struct rtw_rx_pkt_info), DMA_FROM_DEVICE);
-	if (dma_mapping_error(pdev, phy_pkt)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping rtw_rx_pkt_info dma error!\n", __func__);
-		goto func_exit;
-	}
+	ppktinfo = llhw_ipc_fw_phy_to_virt(p_ipc_msg->param_buf[0]);
+	buf = llhw_ipc_fw_phy_to_virt(ppktinfo->buf);
 
-	buf = phys_to_virt(ppktinfo->buf);
-	phy_buf = dma_map_single(pdev, buf, ppktinfo->len, DMA_FROM_DEVICE);
-	if (dma_mapping_error(pdev, phy_buf)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping buf dma error!\n", __func__);
-		dma_unmap_single(pdev, phy_pkt, sizeof(struct rtw_rx_pkt_info), DMA_FROM_DEVICE);
-		goto func_exit;
-	}
 	ppktinfo->buf = buf;
 	rtw_promisc_rx(ppktinfo);
-
-	dma_unmap_single(pdev, phy_buf, ppktinfo->len, DMA_FROM_DEVICE);
-	dma_unmap_single(pdev, phy_pkt, sizeof(struct rtw_rx_pkt_info), DMA_FROM_DEVICE);
 func_exit:
 	return;
 }

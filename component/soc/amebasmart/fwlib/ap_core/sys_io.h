@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef CORTEX_A_SYS_IO_H
 #define CORTEX_A_SYS_IO_H
 

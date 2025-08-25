@@ -30,7 +30,7 @@
 #endif
 
 #ifdef CONFIG_WHC_BRIDGE_HOST
-#include "whc_bridge_host_app.h"
+#include "whc_host_app.h"
 #endif
 
 #include "bt_inic_defs.h"

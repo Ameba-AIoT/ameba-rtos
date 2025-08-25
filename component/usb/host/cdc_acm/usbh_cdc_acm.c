@@ -323,9 +323,13 @@ static int usbh_cdc_acm_process(usb_host_t *host, u32 msg)
 		break;
 
 	case CDC_ACM_STATE_TRANSFER:
-		usbh_cdc_acm_process_tx(host);
-		usbh_cdc_acm_process_rx(host);
-		usbh_cdc_acm_process_intr_rx(host);
+		if (msg == cdc->data_if.bulk_out_pipe) {
+			usbh_cdc_acm_process_tx(host);
+		} else if (msg == cdc->data_if.bulk_in_pipe) {
+			usbh_cdc_acm_process_rx(host);
+		} else if (msg == cdc->comm_if.intr_in_pipe) {
+			usbh_cdc_acm_process_intr_rx(host);
+		}
 		break;
 
 	case CDC_ACM_STATE_ERROR:
@@ -416,7 +420,7 @@ static void usbh_cdc_acm_process_tx(usb_host_t *host)
 							cdc->data_if.bulk_out_pipe);
 		cdc->data_tx_state = CDC_ACM_TRANSFER_STATE_TX_BUSY;
 		cdc->tx_idle_tick = usbh_get_tick(host);
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify_class_state_change(host, cdc->data_if.bulk_out_pipe);
 		break;
 
 	case CDC_ACM_TRANSFER_STATE_TX_BUSY:
@@ -433,21 +437,21 @@ static void usbh_cdc_acm_process_tx(usb_host_t *host)
 					cdc->cb->transmit(urb_state);
 				}
 			}
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, cdc->data_if.bulk_out_pipe);
 		} else if (urb_state == USBH_URB_BUSY) {
 			cdc->data_tx_state = CDC_ACM_TRANSFER_STATE_TX;
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, cdc->data_if.bulk_out_pipe);
 		} else if (urb_state == USBH_URB_ERROR) {
 			cdc->data_tx_state = CDC_ACM_TRANSFER_STATE_IDLE;
 			if ((cdc->cb != NULL) && (cdc->cb->transmit != NULL)) {
 				cdc->cb->transmit(urb_state);
 			}
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, cdc->data_if.bulk_out_pipe);
 		} else if (urb_state == USBH_URB_IDLE) {
 			if (usbh_get_elapsed_ticks(host, cdc->tx_idle_tick) >= USB_BULK_OUT_IDLE_MAX_CNT) {
 				cdc->data_tx_state = CDC_ACM_TRANSFER_STATE_TX;
 			}
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, cdc->data_if.bulk_out_pipe);
 		}
 		break;
 
@@ -500,12 +504,12 @@ static void usbh_cdc_acm_process_rx(usb_host_t *host)
 				cdc->data_rx_state = CDC_ACM_TRANSFER_STATE_IDLE;
 			}
 
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, cdc->data_if.bulk_in_pipe);
 		} else if (urb_state == USBH_URB_IDLE) {
 			if (usbh_get_elapsed_ticks(host, cdc->rx_idle_tick) >= USB_BULK_IN_IDLE_MAX_CNT) {
 				cdc->data_rx_state = CDC_ACM_TRANSFER_STATE_RX;
 			}
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, cdc->data_if.bulk_in_pipe);
 		}
 		break;
 
@@ -535,7 +539,7 @@ static void usbh_cdc_acm_process_intr_rx(usb_host_t *host)
 							   cdc->comm_if.intr_in_pipe);
 		cdc->intr_in_idle_tick = usbh_get_tick(host);
 		cdc->intr_in_busy_tick = usbh_get_tick(host);
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify_class_state_change(host, cdc->comm_if.intr_in_pipe);
 		break;
 
 	case CDC_ACM_TRANSFER_STATE_NOTIFY_RX_BUSY:
@@ -555,11 +559,11 @@ static void usbh_cdc_acm_process_intr_rx(usb_host_t *host)
 			cdc->intr_data_rx_state = CDC_ACM_TRANSFER_STATE_NOTIFY_RX;
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR in failed %d\n", urb_state);
 		} else if (urb_state == USBH_URB_IDLE) {
-			if (usbh_get_elapsed_ticks(host, cdc->intr_in_idle_tick) >= cdc->comm_if.intr_in_ep_interval) { //
+			if (usbh_get_elapsed_ticks(host, cdc->intr_in_idle_tick) >= cdc->comm_if.intr_in_ep_interval) {
 				cdc->intr_data_rx_state = CDC_ACM_TRANSFER_STATE_NOTIFY_RX;
 			}
 		}
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify_class_state_change(host, cdc->comm_if.intr_in_pipe);
 		break;
 
 	default:
@@ -732,7 +736,7 @@ int usbh_cdc_acm_transmit(u8 *buf, u32 len)
 		}
 		cdc->state = CDC_ACM_STATE_TRANSFER;
 		cdc->data_tx_state = CDC_ACM_TRANSFER_STATE_TX;
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify_class_state_change(host, cdc->data_if.bulk_out_pipe);
 		ret = HAL_OK;
 	}
 
@@ -757,7 +761,7 @@ int usbh_cdc_acm_receive(u8 *buf, u32 len)
 			cdc->rx_len = len;
 			cdc->state = CDC_ACM_STATE_TRANSFER;
 			cdc->data_rx_state = CDC_ACM_TRANSFER_STATE_RX;
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, cdc->data_if.bulk_in_pipe);
 			ret = HAL_OK;
 		}
 	}
@@ -789,7 +793,7 @@ int usbh_cdc_acm_notify_receive(u8 *buf, u32 len)
 
 		cdc->state = CDC_ACM_STATE_TRANSFER;
 		cdc->intr_data_rx_state = CDC_ACM_TRANSFER_STATE_NOTIFY_RX;
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify_class_state_change(host, cdc->comm_if.intr_in_pipe);
 		ret = HAL_OK;
 	}
 

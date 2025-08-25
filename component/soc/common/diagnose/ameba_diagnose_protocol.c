@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "ameba_diagnose_types.h"
 #include "ameba_diagnose_protocol.h"
 
@@ -64,7 +70,6 @@ static int rtk_diag_proto_load_data_from_start(const RtkDiagEvent_t *event, u16 
 			}
 			g_handler->last_event = event;
 			_memcpy(g_handler->data_frame->payload + 2 + total_event_size, (void *)event, event_size);
-			RTK_LOGA(NOTAG, "load evt: %p, %u, %u, %u\n", g_handler->data_frame->payload + 2 + total_event_size, event->evt_time, event_size, event->evt_len);
 			total_event_size += event_size;
 			event = g_handler->getter();
 		}
@@ -80,7 +85,6 @@ static int rtk_diag_proto_load_data_from_middle(const RtkDiagEvent_t *event, u16
 	if (g_handler->last_event_state == RTK_DIAG_TRANSFORM_COMPLETE) {
 		if (g_handler->last_event == event) {
 			//重传某一片数据
-			RTK_LOGA(NOTAG, "Maybe data lost, retransform from offset: %u\n", local_offset);
 		} else {
 			//重传的片和上次记录的event不一样? 不应该进入这里
 			assert_param(1);
@@ -112,24 +116,24 @@ int rtk_diag_proto_init(u16 payload_capacity, rtk_diag_queue_next_event_getter_t
 {
 	//init queue handler
 	if (payload_capacity < RTK_DIAG_SEND_BUFFER_SIZE_MIN) {
-		RTK_LOGA(NOTAG, "Protocol buffer capacity must larger than %u, now is %u\n", RTK_DIAG_SEND_BUFFER_SIZE_MIN, payload_capacity);
+		RTK_LOGA("DIAG", "buffer cap(%u) must larger than %u\n", payload_capacity, RTK_DIAG_SEND_BUFFER_SIZE_MIN);
 		return RTK_ERR_DIAG_TOO_SMALL_BUFF;
 	}
 
 	g_handler = (RtkDiagTransformHandler_t *)rtos_mem_malloc(sizeof(RtkDiagTransformHandler_t));
 	if (NULL == g_handler) {
-		RTK_LOGA(NOTAG, "Failed to allocate memory for RtkDiagTransformHandler_t\n");
+		RTK_LOGA("DIAG", "Malloc failed\n");
 		return RTK_ERR_DIAG_MALLOC;
 	}
 	g_handler->data_frame = (RtkDiagDataFrame_t *)rtos_mem_malloc(sizeof(RtkDiagDataFrame_t) + payload_capacity);
 	if (NULL == g_handler->data_frame) {
-		RTK_LOGA(NOTAG, "Failed to allocate memory for RtkDiagDataFrame_t\n");
+		RTK_LOGA("DIAG", "Malloc failed\n");
 		rtos_mem_free(g_handler);
 		return RTK_ERR_DIAG_MALLOC;
 	}
 	g_handler->error_frame = (RtkDiagDataFrame_t *)rtos_mem_malloc(sizeof(RtkDiagDataFrame_t) + 2); //2 is 1bytes error and 1 byte crc
 	if (NULL == g_handler->error_frame) {
-		RTK_LOGA(NOTAG, "Failed to allocate memory for RtkDiagDataFrame_t\n");
+		RTK_LOGA("DIAG", "Malloc failed\n");
 		rtos_mem_free(g_handler->data_frame);
 		rtos_mem_free(g_handler);
 		return RTK_ERR_DIAG_MALLOC;
@@ -172,13 +176,13 @@ int rtk_diag_proto_set_capacity(u16 payload_capacity)
 	}
 
 	if (payload_capacity < RTK_DIAG_SEND_BUFFER_SIZE_MIN) {
-		RTK_LOGA(NOTAG, "Protocol buffer capacity must larger than %u, now is %u\n", RTK_DIAG_SEND_BUFFER_SIZE_MIN, payload_capacity);
+		RTK_LOGA("DIAG", "Protocol buffer capacity(%u) must larger than %u\n", payload_capacity, RTK_DIAG_SEND_BUFFER_SIZE_MIN);
 		return RTK_ERR_DIAG_TOO_SMALL_BUFF;
 	}
 
 	RtkDiagDataFrame_t *new_frame = (RtkDiagDataFrame_t *)rtos_mem_malloc(sizeof(RtkDiagDataFrame_t) + payload_capacity);
 	if (NULL == new_frame) {
-		RTK_LOGA(NOTAG, "Failed to allocate memory for RtkDiagDataFrame_t\n");
+		RTK_LOGA("DIAG", "Malloc failed\n");
 		return RTK_ERR_DIAG_MALLOC;
 	}
 	rtos_mem_free(g_handler->data_frame);

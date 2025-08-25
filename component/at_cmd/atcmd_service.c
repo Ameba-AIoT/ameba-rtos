@@ -14,6 +14,7 @@
 #include "at_intf_spi.h"
 #include "at_intf_sdio.h"
 #include "at_intf_usbd.h"
+#include "at_intf_usbh.h"
 #include "atcmd_service.h"
 #include "atcmd_sys_common.h"
 #if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
@@ -48,7 +49,7 @@
 #endif
 #endif
 
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 #if defined(CONFIG_BT_COEXIST)
 #include "atcmd_coex.h"
 #endif
@@ -104,7 +105,7 @@ log_init_t log_init_table[] = {
 #endif
 
 
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 #if defined(CONFIG_BT_COEXIST)
 	at_coex_init,
 #endif
@@ -130,6 +131,7 @@ char g_tt_mode_check_watermark = 0;
 char g_tt_mode_indicate_high_watermark = 0;
 char g_tt_mode_indicate_low_watermark = 1;
 char g_host_control_mode = AT_HOST_CONTROL_UART;
+char atcmd_usb_mode = 0;
 volatile char g_tt_mode_stop_flag = 0;
 volatile u8 g_tt_mode_stop_char_cnt = 0;
 rtos_timer_t xTimers_TT_Mode;
@@ -539,7 +541,15 @@ int atcmd_host_control_config_setting(void)
 			}
 #endif
 		} else if (g_host_control_mode == AT_HOST_CONTROL_USB) {
-			// nothing to config
+#ifdef CONFIG_SUPPORT_USB
+			cJSON *usb_ob, *mode_ob;
+			if ((usb_ob = cJSON_GetObjectItem(atcmd_ob, "usb")) != NULL) {
+				mode_ob = cJSON_GetObjectItem(usb_ob, "mode");
+				if (mode_ob) {
+					atcmd_usb_mode = mode_ob->valueint;
+				}
+			}
+#endif
 		} else {
 			RTK_LOGE(TAG, "g_host_control_mode is invalid\r\n");
 		}
@@ -577,7 +587,19 @@ DEFAULT:
 	} else if (g_host_control_mode == AT_HOST_CONTROL_USB) {
 #ifdef CONFIG_SUPPORT_USB
 		RTK_LOGI(TAG, "ATCMD HOST Control Mode : USB");
-		ret = atio_usbd_init();
+		if (atcmd_usb_mode) {
+#ifdef CONFIG_USB_HOST_EN
+			ret = atio_usbh_init();
+#else
+			RTK_LOGI(TAG, "NOT Support USB HOST Interface!\r\n");
+#endif
+		} else {
+#ifdef CONFIG_USB_DEVICE_EN
+			ret = atio_usbd_init();
+#else
+			RTK_LOGI(TAG, "USB Mode Config Error!\r\n");
+#endif
+		}
 #else
 		ret = -1;
 		RTK_LOGI(TAG, "NOT Support USB Interface!\r\n");

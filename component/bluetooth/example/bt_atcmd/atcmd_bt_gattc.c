@@ -407,8 +407,7 @@ static int atcmd_bt_gattc_disable_cccd(int argc, char **argv)
 }
 
 
-#if (defined(CONFIG_BT_CENTRAL) && CONFIG_BT_CENTRAL) || \
-    (defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET)
+#if (defined(CONFIG_BT_CENTRAL) && CONFIG_BT_CENTRAL) || (defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET)
 /**************************** GATTC client loop send related *****************************/
 struct gattc_tx_loop_param {
 	uint16_t conn_handle;
@@ -724,7 +723,7 @@ static int atcmd_cte_client_write_charac(int argc, char **argv)
 }
 #endif/* RTK_BLE_5_1_CTE_SUPPORT  */
 
-#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_SCATTERNET */
+#endif
 
 static const cmd_table_t gattc_cmd_table[] = {
 	{"exch_mtu", atcmd_bt_gattc_exchange_mtu, 2, 2},
@@ -733,8 +732,7 @@ static const cmd_table_t gattc_cmd_table[] = {
 	{"write",   atcmd_bt_gattc_write,        6, 6},
 	{"en_cccd",    atcmd_bt_gattc_enable_cccd,    5, 5},
 	{"dis_cccd",    atcmd_bt_gattc_disable_cccd,    5, 5},
-#if (defined(CONFIG_BT_CENTRAL) && CONFIG_BT_CENTRAL) || \
-    (defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET)
+#if (defined(CONFIG_BT_CENTRAL) && CONFIG_BT_CENTRAL) || (defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET)
 	{"loop_send",  atcmd_bt_gattc_loop_send,      2, 5},
 	/* bas client related */
 #if !defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB
@@ -762,7 +760,7 @@ static const cmd_table_t gattc_cmd_table[] = {
 #endif
 	{"cte_write",       atcmd_cte_client_write_charac, 5, 5},
 #endif
-#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_SCATTERNET */
+#endif
 
 	{NULL,},
 };

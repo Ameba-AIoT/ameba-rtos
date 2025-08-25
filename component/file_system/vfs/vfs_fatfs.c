@@ -499,26 +499,28 @@ int fatfs_ummount(int interface)
 }
 
 vfs_opt fatfs_drv = {
+#if !FF_FS_READONLY
+	.write = fatfs_write,
+	.fflush = fatfs_fflush,
+	.remove = fatfs_remove,
+	.rename = fatfs_rename,
+	.ftruncate = fatfs_ftruncate,
+	.mkdir = fatfs_mkdir,
+	.rmdir = fatfs_rmdir,
+#endif
 	.open = fatfs_open,
 	.read = fatfs_read,
-	.write = fatfs_write,
 	.close = fatfs_close,
 	.seek  = fatfs_seek,
 	.rewind = fatfs_rewind,
 	.fgetpos = fatfs_fgetops,
 	.fsetpos = fatfs_fsetops,
-	.fflush = fatfs_fflush,
-	.remove = fatfs_remove,
-	.rename = fatfs_rename,
 	.eof   = fatfs_feof,
 	.error = fatfs_ferror, //ferror
 	.tell  = fatfs_ftell,
-	.ftruncate = fatfs_ftruncate,
 	.opendir = fatfs_opendir,
 	.readdir = fatfs_readdir,
 	.closedir = fatfs_closedir,
-	.mkdir = fatfs_mkdir,
-	.rmdir = fatfs_rmdir,
 	.stat = fatfs_stat,
 	.access = fatfs_access,
 	.mount = fatfs_mount,

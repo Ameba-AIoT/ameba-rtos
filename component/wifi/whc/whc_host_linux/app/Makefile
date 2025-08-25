@@ -4,7 +4,7 @@ CFLAGS = -I. -I.. -I../.. -I../common
 
 LDFLAGS = -lpthread
 
-SRC_FILES = whc_host_app_api.c whc_host_demo.c
+SRC_FILES = whc_host_app_api.c whc_host_app.c
 
 OBJ_FILES = $(SRC_FILES:.c=.o)
 

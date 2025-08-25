@@ -88,6 +88,8 @@ menu "CONFIG FUNCTION TEST"
         bool "I2C_Verify_Mode"
 		config PSEUDO_I2C_VERIFY
         bool "PSEUDO_I2C_Verify_Mode"
+		config RMII_VERIFY
+        bool "RMII_TEST_Mode"
 		config RF_TEST_VERIFY
         bool "RF_TEST_Verify_Mode"
         config PMC_VERIFY

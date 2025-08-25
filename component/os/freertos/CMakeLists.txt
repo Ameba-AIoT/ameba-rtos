@@ -135,7 +135,7 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
                 ${portable_soc_mcu_dir}/portASM.S #OPTIMIZE: change name to portasm.c?
             )
         endif()
-    elseif(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2)
+    elseif(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2 OR CONFIG_RTL8720F)
         ameba_list_append(private_sources
             ${portable_soc_mcu_dir}/non_secure/port.c
             ${portable_soc_mcu_dir}/non_secure/portasm.c

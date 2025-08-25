@@ -120,6 +120,10 @@ static int aivoice_callback_process(void *userdata,
 		printf("[usr] asr timeout\n");
 		break;
 
+	case AIVOICE_EVOUT_AGE_GENDER_RESULT:
+		printf("[user] age_gender. %.*s\n", len, (char *)msg);
+		break;
+
 	case AIVOICE_EVOUT_AFE:
 		afe_out = (struct aivoice_evout_afe *)msg;
 
@@ -157,10 +161,8 @@ void aivoice_algo_offline_example(void)
 #if AIVOICE_TARGET_AMEBADPLUS
 	// amebadplus supports afe+kws+vad flow
 	const struct rtk_aivoice_iface *aivoice = &aivoice_iface_afe_kws_vad_v1;
-	rtk_aivoice_set_single_kws_mode();
 #else
 	const struct rtk_aivoice_iface *aivoice = &aivoice_iface_full_flow_v1;
-	rtk_aivoice_set_multi_kws_mode();
 #endif
 
 	/* step 2:
@@ -210,13 +212,16 @@ void aivoice_algo_offline_example(void)
 	 * it is recommend to use the default configure,
 	 * if you do not know the meaning of these configure parameters.
 	 */
+#if AIVOICE_TARGET_AMEBADPLUS // amebadplus support kws single mode only
+	struct kws_config kws_param = KWS_CONFIG_DEFAULT();
+	config.kws = &kws_param;    // can be NULL
+	config.kws->mode = KWS_SINGLE_MODE;
+#endif
+
 #if 0
 	struct vad_config vad_param = VAD_CONFIG_DEFAULT();
 	vad_param.left_margin = 300; // you can change the configure if needed
 	config.vad = &vad_param;    // can be NULL
-
-	struct kws_config kws_param = KWS_CONFIG_DEFAULT();
-	config.kws = &kws_param;    // can be NULL
 
 	struct asr_config asr_param = ASR_CONFIG_DEFAULT();
 	config.asr = &asr_param;    // can be NULL

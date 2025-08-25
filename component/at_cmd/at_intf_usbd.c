@@ -13,6 +13,7 @@
 #include "atcmd_service.h"
 #include "at_intf_usbd.h"
 
+#ifdef CONFIG_USB_DEVICE_EN
 /* Private defines -----------------------------------------------------------*/
 
 // This configuration is used to enable a thread to check hotplug event
@@ -537,4 +538,4 @@ int atio_usbd_init(void)
 
 	return 0;
 }
-
+#endif

@@ -29,10 +29,6 @@ static const char *const TAG = "SERIAL";
 #define SERIAL_TX_DMA_EN	0x01
 #define SERIAL_RX_DMA_EN	0x02
 
-//#define UART_USE_GTIMER_TO		1
-#define UART_TIMER_ID		1
-#define UART_TIMER_TO		5000
-
 #define CONFIG_GDMA_EN		1
 
 /* Used in func serial_recv_stream_dma_timeout */
@@ -82,15 +78,15 @@ typedef struct {
 } MBED_UART_ADAPTER, *PMBED_UART_ADAPTER;
 /** @}*/
 
-static uint32_t serial_irq_ids[UART_NUM] = {0, 0, 0};
+static uint32_t serial_irq_ids[UART_NUM] = {0};
 
 static uart_irq_handler irq_handler[UART_NUM];
-static uint32_t serial_irq_en[UART_NUM] = {0, 0, 0};
+static uint32_t serial_irq_en[UART_NUM] = {0};
 
 static int current_baudrate;
 
 #ifdef CONFIG_GDMA_EN
-static uint32_t serial_dma_en[UART_NUM] = {0, 0, 0};
+static uint32_t serial_dma_en[UART_NUM] = {0};
 #endif
 
 static MBED_UART_ADAPTER uart_adapter[UART_NUM];
@@ -100,10 +96,6 @@ static u8 rx_dma_timeout = 0;
 #ifdef CONFIG_MBED_ENABLED
 int stdio_uart_inited = 0;
 serial_t stdio_uart;
-#endif
-
-#ifdef UART_USE_GTIMER_TO
-static void uart_gtimer_deinit(void);
 #endif
 
 static const u32 PinMap_UART_TX[UART_NUM] = {
@@ -160,12 +152,6 @@ static u32 uart_dmarecv_complete(void *Data)
 	PGDMA_InitTypeDef GDMA_InitStruct;
 	GDMA_InitStruct = &puart_adapter->UARTRxGdmaInitStruct;
 
-#ifdef UART_USE_GTIMER_TO
-	RTIM_Cmd(TIMx[UART_TIMER_ID], DISABLE);
-
-	uart_gtimer_deinit();
-#endif
-
 	if (serial_dma_en[puart_adapter->UartIndex] & SERIAL_RX_DMA_EN) {
 		GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		if (!rx_dma_timeout) {
@@ -178,9 +164,7 @@ static u32 uart_dmarecv_complete(void *Data)
 	}
 
 	/*disable UART RX DMA*/
-	if (!rx_dma_timeout) {
-		UART_RXDMACmd(puart_adapter->UARTx, DISABLE);
-	}
+	UART_RXDMACmd(puart_adapter->UARTx, DISABLE);
 
 	UART_SetRxFlag(puart_adapter->UartIndex, 0);
 
@@ -370,86 +354,6 @@ static u32 uart_irqhandler(void *Data)
 	return 0;
 }
 
-#ifdef UART_USE_GTIMER_TO
-static void uart_gtimer_handle(void *Data)
-{
-	PMBED_UART_ADAPTER puart_adapter = (PMBED_UART_ADAPTER)Data;
-	PGDMA_InitTypeDef GDMA_InitStruct;
-	u32 TransCnt = 0;
-
-	GDMA_InitStruct = &puart_adapter->UARTRxGdmaInitStruct;
-
-	RTIM_INTClear(TIMx[UART_TIMER_ID]);
-
-	if (UART_GetRxFlag(puart_adapter->UartIndex) == STATERX_DMA) {
-		u32 Current_Addr = GDMA_GetDstAddr(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-		u32 data_in_fifo = UART_Readable(puart_adapter->UARTx);
-
-		/* have Rx some data */
-		if ((Current_Addr != (u32)(puart_adapter->pRxBuf)) || data_in_fifo) {
-			/* not increase for 5ms */
-			if (puart_adapter->last_dma_addr == Current_Addr) {
-				/* rx stop 5ms, packet complete */
-				RTIM_Cmd(TIMx[UART_TIMER_ID], DISABLE);
-
-				//RTK_LOGI(NOTAG, "%s:UART DMA TO Current_Addr:%x start_addr:%x RxCount: %d\n",
-				//	__func__, Current_Addr, puart_adapter->pRxBuf, puart_adapter->RxCount);
-
-				puart_adapter->RxCount = puart_adapter->RxCount - (Current_Addr - (u32)puart_adapter->pRxBuf);
-				puart_adapter->pRxBuf = (u8 *)Current_Addr;
-
-				TransCnt = UART_ReceiveDataTO(puart_adapter->UARTx, puart_adapter->pRxBuf,
-											  puart_adapter->RxCount, 1);
-				puart_adapter->RxCount -= TransCnt;
-				puart_adapter->pRxBuf += TransCnt;
-
-				uart_dmarecv_complete(puart_adapter);
-
-				GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
-
-				//RTK_LOGI(NOTAG, "UART DMA TO RxCount: %d\n", puart_adapter->RxCount);
-			} else {
-				puart_adapter->last_dma_addr = Current_Addr;
-			}
-		} else { /* rx not start */
-			puart_adapter->last_dma_addr = (u32)(puart_adapter->pRxBuf);
-		}
-	}
-}
-
-/**
- * @brief Initialize the timer which is used for the UART_Rx DMA timeout.
- * @param puart_adapter Pointer to a MBED_UART_ADAPTER.
- * @param PeriodUs Desired timeout value in unit of us.
- * @return None
- */
-static void uart_gtimer_init(PMBED_UART_ADAPTER puart_adapter, u32 PeriodUs)
-{
-	RTIM_TimeBaseInitTypeDef TIM_InitStructTmp;
-
-	RTIM_TimeBaseStructInit(&TIM_InitStructTmp);
-	TIM_InitStructTmp.TIM_Idx = UART_TIMER_ID;
-	TIM_InitStructTmp.TIM_Prescaler = 0x00;
-	TIM_InitStructTmp.TIM_Period = (PeriodUs / 31 - 1);
-	TIM_InitStructTmp.TIM_UpdateEvent = ENABLE; /* UEV enable */
-	TIM_InitStructTmp.TIM_UpdateSource = TIM_UpdateSource_Overflow;
-	TIM_InitStructTmp.TIM_ARRProtection = DISABLE;
-
-	RTIM_TimeBaseInit(TIMx[UART_TIMER_ID], &TIM_InitStructTmp,
-					  TIMx_irq[UART_TIMER_ID], (IRQ_FUN)uart_gtimer_handle,
-					  (u32)puart_adapter);
-	RTIM_INTConfig(TIMx[UART_TIMER_ID], TIM_IT_Update, ENABLE);
-}
-
-static void uart_gtimer_deinit(void)
-{
-	InterruptDis(TIMx_irq[UART_TIMER_ID]);
-	InterruptUnRegister(TIMx_irq[UART_TIMER_ID]);
-
-	RTIM_DeInit(TIMx[UART_TIMER_ID]);
-}
-#endif
-
 /**
  * @brief Initialize the UART device, including clock, function, interrupt and
  * UART registers.
@@ -512,14 +416,10 @@ void serial_free(serial_t *obj)
 	InterruptDis(puart_adapter->IrqNum);
 	InterruptUnRegister(puart_adapter->IrqNum);
 
-#ifdef UART_USE_GTIMER_TO
-	uart_gtimer_deinit();
-#endif
-
 #ifdef CONFIG_GDMA_EN
 	if (serial_dma_en[obj->uart_idx] & SERIAL_RX_DMA_EN) {
 		GDMA_ClearINT(puart_adapter->UARTRxGdmaInitStruct.GDMA_Index, puart_adapter->UARTRxGdmaInitStruct.GDMA_ChNum);
-		/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
+		/* note: Disabling GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
 		GDMA_Abort(puart_adapter->UARTRxGdmaInitStruct.GDMA_Index, puart_adapter->UARTRxGdmaInitStruct.GDMA_ChNum);
 		GDMA_ChnlFree(puart_adapter->UARTRxGdmaInitStruct.GDMA_Index, puart_adapter->UARTRxGdmaInitStruct.GDMA_ChNum);
 		serial_dma_en[obj->uart_idx] &= ~SERIAL_RX_DMA_EN;
@@ -528,7 +428,7 @@ void serial_free(serial_t *obj)
 
 	if (serial_dma_en[obj->uart_idx] & SERIAL_TX_DMA_EN) {
 		GDMA_ClearINT(puart_adapter->UARTTxGdmaInitStruct.GDMA_Index, puart_adapter->UARTTxGdmaInitStruct.GDMA_ChNum);
-		/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
+		/* note: Disabling GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
 		GDMA_Abort(puart_adapter->UARTTxGdmaInitStruct.GDMA_Index, puart_adapter->UARTTxGdmaInitStruct.GDMA_ChNum);
 		GDMA_ChnlFree(puart_adapter->UARTTxGdmaInitStruct.GDMA_Index, puart_adapter->UARTTxGdmaInitStruct.GDMA_ChNum);
 		serial_dma_en[obj->uart_idx] &= ~SERIAL_TX_DMA_EN;
@@ -991,6 +891,8 @@ int32_t serial_recv_stream_dma(serial_t *obj, char *prxbuf, uint32_t len)
 
 	// Disable Rx interrupt
 	UART_INTConfig(puart_adapter->UARTx, (RUART_BIT_ERBI | RUART_BIT_ELSI | RUART_BIT_ETOI), DISABLE);
+	/* Disable rx_empty_timeout int */
+	UART_INTConfig(puart_adapter->UARTx, RUART_BIT_ERETI, DISABLE);
 
 	ret1 = UART_RXGDMA_Init(puart_adapter->UartIndex, &puart_adapter->UARTRxGdmaInitStruct,
 							puart_adapter, uart_dmarecv_irqhandler,
@@ -1006,11 +908,6 @@ int32_t serial_recv_stream_dma(serial_t *obj, char *prxbuf, uint32_t len)
 
 	UART_RXDMAConfig(puart_adapter->UARTx, 1);
 	UART_RXDMACmd(puart_adapter->UARTx, ENABLE);
-
-#ifdef UART_USE_GTIMER_TO
-	uart_gtimer_init(puart_adapter, UART_TIMER_TO);
-	RTIM_Cmd(TIMx[UART_TIMER_ID], ENABLE);
-#endif
 
 	return (ret);
 }
@@ -1090,7 +987,7 @@ int32_t serial_send_stream_abort(serial_t *obj)
 
 			if (serial_dma_en[obj->uart_idx] & SERIAL_TX_DMA_EN) {
 				GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-				/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
+				/* note: Disabling GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
 				GDMA_Abort(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 				GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 				serial_dma_en[obj->uart_idx] &= ~SERIAL_TX_DMA_EN;
@@ -1141,7 +1038,7 @@ int32_t serial_recv_stream_abort(serial_t *obj)
 
 			if (serial_dma_en[obj->uart_idx] & SERIAL_RX_DMA_EN) {
 				GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-				/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
+				/* note: Disabling GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
 				GDMA_Abort(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 				GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 				serial_dma_en[obj->uart_idx] &= ~SERIAL_RX_DMA_EN;
@@ -1417,7 +1314,7 @@ int32_t serial_recv_stream_dma_timeout(serial_t *obj,
 
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
 	HAL_Status ret = HAL_OK;
-	u32 regval, ret1;
+	u32 regval;
 	u32 timeout_cnt;
 
 	if (uart_config[obj->uart_idx].LOW_POWER_RX_ENABLE && current_baudrate <= 115200) {
@@ -1426,46 +1323,22 @@ int32_t serial_recv_stream_dma_timeout(serial_t *obj,
 		timeout_cnt = RX_CLK_XTAL40M / 1000 * timeout_ms;
 	}
 
-	assert_param(prxbuf != NULL);
 	assert_param(timeout_cnt > 0 && timeout_cnt < 0xFFFFFFF);
-
-	if (UART_GetRxFlag(puart_adapter->UartIndex)) {
-		RTK_LOGW(TAG, "uart dma rx: busy\n");
-		return HAL_BUSY;
-	}
-
-	puart_adapter->pRxBuf = (uint8_t *)prxbuf;
-	puart_adapter->last_dma_addr = (u32)prxbuf;
 
 	regval = puart_adapter->UARTx->TH_RETI;
 	regval &= ~RUART_MASK_TH_RETI;
 	regval |= RUART_TH_RETI(timeout_cnt);
 	puart_adapter->UARTx->TH_RETI = regval;
 
-	UART_SetRxFlag(puart_adapter->UartIndex, STATERX_DMA);
-
-	// Disable Rx interrupt
-	UART_INTConfig(puart_adapter->UARTx, RUART_BIT_ERBI | RUART_BIT_ELSI, DISABLE);
-	UART_INTConfig(puart_adapter->UARTx, RUART_BIT_ERETI, ENABLE);
-
 	UART_RxByteCntClear(puart_adapter->UARTx);
 
-	ret1 = UART_RXGDMA_Init(puart_adapter->UartIndex, &puart_adapter->UARTRxGdmaInitStruct,
-							puart_adapter, uart_dmarecv_irqhandler,
-							puart_adapter->pRxBuf, len);
+	ret = serial_recv_stream_dma(obj, prxbuf, len);
 
-	if ((serial_dma_en[obj->uart_idx] & SERIAL_RX_DMA_EN) == 0) {
-		if (ret1 == TRUE) {
-			serial_dma_en[obj->uart_idx] |= SERIAL_RX_DMA_EN;
-		} else {
-			return HAL_BUSY;
-		}
-	}
+	/* Enable rx_empty_timeout interrupt */
+	/* MUST be executed after serial_recv_stream_dma */
+	UART_INTConfig(puart_adapter->UARTx, RUART_BIT_ERETI, ENABLE);
 
-	UART_RXDMAConfig(puart_adapter->UARTx, 1);
-	UART_RXDMACmd(puart_adapter->UARTx, ENABLE);
-
-	return (ret);
+	return ret;
 }
 
 /**

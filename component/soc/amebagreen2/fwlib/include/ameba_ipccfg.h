@@ -33,7 +33,6 @@
 // #define IPC_N2A_BT_DATA_TRAN			5	/*!<  NP -->  AP BT DATA Exchange */
 #define IPC_N2A_WIFI_TRX_TRAN				6	/*!<  NP -->  AP WIFI Message Exchange */
 #define IPC_N2A_WIFI_API_TRAN				7	/*!<  NP -->  AP API WIFI Message Exchange */
-#define IPC_A2N_EVENT_REQ						8	/*!<  AP -->  NP Diagnose API Message Exchange */
 //#define IPC_N2A_Channel8				8
 //#define IPC_N2A_Channel9				9
 //#define IPC_N2A_Channel10				10
@@ -58,7 +57,7 @@
 // #define IPC_A2N_BT_DATA_TRAN					5	/*!<  AP -->  NP BT DATA Exchange */
 #define IPC_A2N_WIFI_TRX_TRAN						6	/*!<  AP -->  NP WIFI Message Exchange */
 #define IPC_A2N_WIFI_API_TRAN						7	/*!<  AP -->  NP WIFI API Message Exchange */
-//#define IPC_A2N_Channel8						8
+#define IPC_A2N_EVENT_REQ								8	/*!<  AP -->  NP Diagnose API Message Exchange */
 //#define IPC_A2N_Channel9						9
 //#define IPC_A2N_Channel10						10
 //#define IPC_A2N_Channel11						11

@@ -148,8 +148,7 @@ static int atcmd_bt_gatts_service_changed_indicate(int argc, char **argv)
 	return 0;
 }
 
-#if ((defined(CONFIG_BT_PERIPHERAL) && CONFIG_BT_PERIPHERAL) || \
-    (defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET))
+#if ((defined(CONFIG_BT_PERIPHERAL) && CONFIG_BT_PERIPHERAL) || (defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET))
 /* add for EMC test */
 struct gatts_tx_loop_param {
 	uint16_t conn_handle;
@@ -291,8 +290,7 @@ static const cmd_table_t gatts_cmd_table[] = {
 	{"notify",      atcmd_bt_gatts_notify,      6, 7},
 	{"indicate",    atcmd_bt_gatts_indicate,    6, 7},
 	{"srv_changed_ind", atcmd_bt_gatts_service_changed_indicate, 4, 5},
-#if ((defined(CONFIG_BT_PERIPHERAL) && CONFIG_BT_PERIPHERAL) || \
-    (defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET))
+#if ((defined(CONFIG_BT_PERIPHERAL) && CONFIG_BT_PERIPHERAL) || (defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET))
 	{"loop_send",   atcmd_bt_gatts_loop_send,   2, 5},
 #if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 	{"cte_set_param",   atcmd_bt_gatts_cte_set_param,   3, 15},

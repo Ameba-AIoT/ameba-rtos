@@ -106,7 +106,9 @@ static int whc_fullmac_host_add_key_ops(struct wiphy *wiphy, struct net_device *
 #endif
 
 	ret = whc_fullmac_host_add_key(crypt);
-exit:
+	if ((rtw_netdev_idx(ndev) == WHC_STA_PORT) && (ret == 0) && netif_dormant(ndev)) {
+		netif_dormant_off(ndev);
+	}exit:
 
 	kfree(crypt);
 	return ret;
@@ -133,6 +135,9 @@ static int whc_fullmac_host_del_key(struct wiphy *wiphy, struct net_device *ndev
 
 {
 	dev_dbg(global_idev.fullmac_dev, "--- %s --- !!!!!!!!!!!!", __func__);
+	if ((rtw_netdev_idx(ndev) == WHC_STA_PORT) && !netif_dormant(ndev)) {
+		netif_dormant_on(ndev);
+	}
 	return 0;
 }
 

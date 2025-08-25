@@ -17,7 +17,7 @@ ameba_list_append(public_includes
 )
 
 ameba_list_append_if(CONFIG_RTW_CLI public_includes
-    ${CMAKE_CURRENT_SOURCE_DIR}/wpa_ops_cfg_parse
+    ${CMAKE_CURRENT_SOURCE_DIR}/rtw_cli_cfg_parse
 )
 
 set(TARGET_LIB wpa_lite)

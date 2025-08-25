@@ -45,10 +45,25 @@
 extern "C" {
 #endif
 
+typedef enum RTAudioDeviceState {
+    RTAUDIO_DEVICE_STATE_UNAVAILABLE,
+    RTAUDIO_DEVICE_STATE_AVAILABLE,
+} RTAudioDeviceState;
+
+typedef struct RTAudioDeviceConfig {
+    int32_t rate;
+    int32_t channels;
+    int32_t format;
+} RTAudioDeviceConfig;
+
 /**
 * @brief Init RTAudioService.
 */
 void RTAudioService_Init(void);
+
+int32_t RTAudioService_SetDeviceState(int32_t device, RTAudioDeviceState state, const char *device_name, RTAudioDeviceConfig *config);
+
+RTAudioDeviceState RTAudioService_GetDeviceState(int32_t device);
 
 #ifdef __cplusplus
 }

@@ -859,6 +859,37 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 	}
 	break;
 
+	case BT_EVENT_HFP_UNKNOW_AT_EVENT: {
+		rtk_bt_hfp_unknown_at_event_t *p_hfp_event_ind = NULL;
+
+		p_link = app_find_br_link(param->hfp_unknow_at_event.bd_addr);
+		if (p_link != NULL) {
+			APP_PRINT_INFO0("BT_EVENT_HFP_UNKNOW_AT_EVENT");
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_HFP_UNKNOW_AT_EVENT len is %d \r\n", param->hfp_unknow_at_event.at_len);
+			{
+				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_UNKNOWN_EVENT_IND, sizeof(rtk_bt_hfp_unknown_at_event_t));
+				if (!p_evt) {
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					handle = false;
+					break;
+				}
+				p_hfp_event_ind = (rtk_bt_hfp_unknown_at_event_t *)p_evt->data;
+				memcpy((void *)p_hfp_event_ind->bd_addr, (void *)p_link->bd_addr, 6);
+				memcpy((void *)p_hfp_event_ind->at_cmd, (void *)param->hfp_unknow_at_event.at_cmd, param->hfp_unknow_at_event.at_len);
+				p_hfp_event_ind->len = param->hfp_unknow_at_event.at_len;
+				/* Send event */
+				if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
+					handle = false;
+					break;
+				}
+			}
+		} else {
+			APP_PRINT_INFO0("HFP p_link is NULL");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+		}
+	}
+	break;
+
 	default: {
 		APP_PRINT_INFO1("app_hfp_bt_cback: default event_type 0x%04x", event_type);
 		// BT_LOGE("app_hfp_bt_cback: default event_type 0x%04x \r\n", event_type);
@@ -1081,6 +1112,18 @@ static uint16_t bt_stack_hfp_report_microphone_gain(void *param)
 	return RTK_BT_FAIL;
 }
 
+static uint16_t bt_stack_hfp_send_vnd_at_cmd_req(void *param)
+{
+	rtk_bt_hfp_vnd_at_cmd_t *p_param_t = (rtk_bt_hfp_vnd_at_cmd_t *)param;
+
+	if (bt_hfp_send_vnd_at_cmd_req(p_param_t->bd_addr, p_param_t->at_cmd)) {
+		return RTK_BT_OK;
+	}
+	BT_LOGE("bt_hfp_send_vnd_at_cmd_req fail \r\n");
+
+	return RTK_BT_FAIL;
+}
+
 uint16_t bt_stack_hfp_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = 0;
@@ -1137,6 +1180,10 @@ uint16_t bt_stack_hfp_act_handle(rtk_bt_cmd_t *p_cmd)
 
 	case RTK_BT_HFP_ACT_REPORT_MICROPHONE_GAIN:
 		ret = bt_stack_hfp_report_microphone_gain(p_cmd->param);
+		break;
+
+	case RTK_BT_HFP_ACT_VND_CMD_REQ:
+		ret = bt_stack_hfp_send_vnd_at_cmd_req(p_cmd->param);
 		break;
 
 	default:

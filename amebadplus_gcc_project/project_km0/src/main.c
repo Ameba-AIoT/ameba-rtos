@@ -106,11 +106,7 @@ int main(void)
 
 	app_IWDG_int();
 
-#if defined(CONFIG_WHC_DEV)
 	rtk_diag_init(RTK_DIAG_HEAP_SIZE, RTK_DIAG_SEND_BUFFER_SIZE);
-#elif (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
-	rtk_diag_init();
-#endif
 
 	/* Execute application example */
 	app_example();

@@ -85,7 +85,7 @@ typedef struct {
 	uint8_t brs_char_num;
 	rtk_bt_le_audio_bass_broadcast_source_data_t *brs_char_tbl;
 	rtk_bt_le_audio_ase_t lea_ase_tbl[RTK_BT_LE_AUDIO_DEMO_ASE_MAX_NUM];
-#if defined (RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT) && RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT
+#if defined(RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT) && RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT
 	uint8_t volume_setting;
 	uint8_t mute;
 #endif
@@ -229,7 +229,7 @@ typedef struct {
 	uint8_t gmap_role;
 #endif
 	rtk_bt_le_audio_app_conf_t lea_app_conf;
-#if defined (RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT
+#if defined(RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT
 	rtk_bt_le_audio_csis_cfg_t csis_cfg;
 	uint8_t lea_csis_sirk[RTK_BT_LE_CSIS_SIRK_LEN];
 #endif
@@ -244,7 +244,7 @@ typedef struct {
 	rtk_bt_le_audio_list_t sync_handle_queue;
 	rtk_bt_le_audio_list_t group_info_queue;
 	rtk_bt_le_audio_broadcast_source_cb_t bsrc;
-#if defined (RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT
+#if defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT
 	rtk_bt_le_audio_mcp_t mcp;
 #endif
 } rtk_bt_le_audio_priv_t;

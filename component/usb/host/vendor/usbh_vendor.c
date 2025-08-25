@@ -699,7 +699,7 @@ static void usbh_vendor_bulk_process_tx(usb_host_t *host)
 	usbh_xfer_func xfer_func = usbh_get_xfer_func(out_xfer);
 
 	if ((out_xfer->test_mask & vendor->ep_mask) == 0) {
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify_class_state_change(host, out_xfer->pipe_num);
 		return;
 	}
 
@@ -728,10 +728,10 @@ static void usbh_vendor_bulk_process_tx(usb_host_t *host)
 					vendor->cb->transmit(out_xfer->ep_type);
 				}
 			}
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, out_xfer->pipe_num);
 		} else if ((urb_state == USBH_URB_ERROR) || (urb_state == USBH_URB_STALL)) {
 			out_xfer->ep_state = USBH_VENDOR_IDLE;
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, out_xfer->pipe_num);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "bulk tx%d err\n", out_xfer->xfer_cnt);
 		} else if ((urb_state == USBH_URB_BUSY) || (urb_state == USBH_URB_IDLE)) {
 			if (usbh_get_elapsed_ticks(host, out_xfer->tick) >= 8000) {
@@ -744,7 +744,7 @@ static void usbh_vendor_bulk_process_tx(usb_host_t *host)
 					RTK_LOGS(TAG, RTK_LOG_INFO, "bulk tx%d timeout\n", out_xfer->xfer_cnt);
 				}
 			}
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, out_xfer->pipe_num);
 		}
 		break;
 
@@ -768,7 +768,7 @@ static void usbh_vendor_intr_process_rx(usb_host_t *host)
 	int status;
 
 	if ((in_xfer->test_mask & vendor->ep_mask) == 0) {
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify_class_state_change(host, in_xfer->pipe_num);
 		return;
 	}
 
@@ -806,7 +806,7 @@ static void usbh_vendor_intr_process_rx(usb_host_t *host)
 				vendor->ep_mask &= ~(in_xfer->test_mask);
 			}
 
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, in_xfer->pipe_num);
 		} else if ((urb_state == USBH_URB_BUSY) || (urb_state == USBH_URB_IDLE)) {
 			if (usbh_get_elapsed_ticks(host, in_xfer->tick) > in_xfer->ep_interval) {
 				in_xfer->retry_time++;
@@ -818,11 +818,11 @@ static void usbh_vendor_intr_process_rx(usb_host_t *host)
 					RTK_LOGS(TAG, RTK_LOG_INFO, "intr rx%d timeout\n", in_xfer->xfer_cnt);
 				}
 			}
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, in_xfer->pipe_num);
 		} else if ((urb_state == USBH_URB_ERROR) || (urb_state == USBH_URB_STALL)) {
 			in_xfer->state = VENDOR_STATE_IDLE;
 			RTK_LOGS(TAG, RTK_LOG_INFO, "intr rx%d err\n", in_xfer->xfer_cnt);
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, in_xfer->pipe_num);
 		}
 		break;
 
@@ -846,7 +846,7 @@ static void usbh_vendor_intr_process_tx(usb_host_t *host)
 	int status;
 
 	if ((out_xfer->test_mask & vendor->ep_mask) == 0) {
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify_class_state_change(host, out_xfer->pipe_num);
 		return;
 	}
 
@@ -876,10 +876,10 @@ static void usbh_vendor_intr_process_tx(usb_host_t *host)
 					vendor->cb->transmit(out_xfer->ep_type);
 				}
 			}
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, out_xfer->pipe_num);
 		} else if ((urb_state == USBH_URB_ERROR) || (urb_state == USBH_URB_STALL)) {
 			out_xfer->ep_state = USBH_VENDOR_IDLE;
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, out_xfer->pipe_num);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "intr tx%d err\n", out_xfer->xfer_cnt);
 		} else if ((urb_state == USBH_URB_BUSY) || (urb_state == USBH_URB_IDLE)) {
 			if (usbh_get_elapsed_ticks(host, out_xfer->tick) > out_xfer->ep_interval) {
@@ -893,7 +893,7 @@ static void usbh_vendor_intr_process_tx(usb_host_t *host)
 					RTK_LOGS(TAG, RTK_LOG_INFO, "intr tx%d timeout\n", out_xfer->xfer_cnt);
 				}
 			}
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, out_xfer->pipe_num);
 		}
 		break;
 
@@ -917,7 +917,7 @@ static void usbh_vendor_isoc_process_rx(usb_host_t *host)
 	int status;
 
 	if ((in_xfer->test_mask & vendor->ep_mask) == 0) {
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify_class_state_change(host, in_xfer->pipe_num);
 		return;
 	}
 
@@ -952,10 +952,10 @@ static void usbh_vendor_isoc_process_rx(usb_host_t *host)
 				vendor->ep_mask &= ~(in_xfer->test_mask);
 				usbh_vendor_next_xfer(in_xfer);
 			}
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, in_xfer->pipe_num);
 		} else if ((urb_state == USBH_URB_ERROR) || (urb_state == USBH_URB_STALL)) {
 			in_xfer->ep_state = USBH_VENDOR_IDLE;
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, in_xfer->pipe_num);
 		} else if ((urb_state == USBH_URB_BUSY) || (urb_state == USBH_URB_IDLE)) {
 			/* ISOC not support retry */
 			if (usbh_get_elapsed_ticks(host, in_xfer->tick) > 100) {
@@ -986,7 +986,7 @@ static void usbh_vendor_isoc_process_tx(usb_host_t *host)
 	int status;
 
 	if ((out_xfer->test_mask & vendor->ep_mask) == 0) {
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify_class_state_change(host, out_xfer->pipe_num);
 		return;
 	}
 
@@ -1005,7 +1005,7 @@ static void usbh_vendor_isoc_process_tx(usb_host_t *host)
 		if (status == HAL_OK) {
 			out_xfer->ep_state = USBH_VENDOR_TX_BUSY;
 		}
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify_class_state_change(host, out_xfer->pipe_num);
 		break;
 
 	case USBH_VENDOR_TX_BUSY:
@@ -1028,10 +1028,10 @@ static void usbh_vendor_isoc_process_tx(usb_host_t *host)
 					out_xfer->ep_state = USBH_VENDOR_TX_WAIT_SOF;
 				}
 			}
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, out_xfer->pipe_num);
 		} else if ((urb_state == USBH_URB_ERROR) || (urb_state == USBH_URB_STALL)) {
 			out_xfer->ep_state = USBH_VENDOR_IDLE;
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, out_xfer->pipe_num);
 		} else if ((urb_state == USBH_URB_BUSY) || (urb_state == USBH_URB_IDLE)) {
 			/* ISOC not support retry */
 		}
@@ -1050,21 +1050,25 @@ static int usbh_vendor_process(usb_host_t *host, u32 msg)
 {
 	usbh_vendor_host_t *vendor = &usbh_vendor_host;
 
-	UNUSED(msg);
-
 	switch (vendor->state) {
 
 	case VENDOR_STATE_IDLE:
 		break;
 
 	case VENDOR_STATE_XFER:
-		usbh_vendor_bulk_process_rx(host);
-		usbh_vendor_bulk_process_tx(host);
-		usbh_vendor_intr_process_rx(host);
-		usbh_vendor_intr_process_tx(host);
-		usbh_vendor_isoc_process_rx(host);
-		usbh_vendor_isoc_process_tx(host);
-
+		if (msg == vendor->bulk_in_xfer.pipe_num) {
+			usbh_vendor_bulk_process_rx(host);
+		} else if (msg == vendor->bulk_out_xfer.pipe_num) {
+			usbh_vendor_bulk_process_tx(host);
+		} else if (msg == vendor->intr_in_xfer.pipe_num) {
+			usbh_vendor_intr_process_rx(host);
+		} else if (msg == vendor->intr_out_xfer.pipe_num) {
+			usbh_vendor_intr_process_tx(host);
+		} else if (msg == vendor->isoc_in_xfer.pipe_num) {
+			usbh_vendor_isoc_process_rx(host);
+		} else if (msg == vendor->isoc_out_xfer.pipe_num) {
+			usbh_vendor_isoc_process_tx(host);
+		}
 		vendor->ep_mask = USBH_VENDOR_MASK_ALL_EPS;
 		vendor->isoc_in_xfer.test_mask  = USBH_VENDOR_MASK_ISOC_IN;
 		vendor->isoc_out_xfer.test_mask = USBH_VENDOR_MASK_ISOC_OUT;
@@ -1154,7 +1158,7 @@ int usbh_vendor_bulk_transmit(u8 *buf, u32 len, u32 test_cnt)
 		out_xfer->test_mask = USBH_VENDOR_MASK_BULK_OUT;
 		vendor->state = VENDOR_STATE_XFER;
 		out_xfer->ep_state = USBH_VENDOR_TX;
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify_class_state_change(host, out_xfer->pipe_num);
 		ret = HAL_OK;
 	}
 
@@ -1184,7 +1188,7 @@ int usbh_vendor_bulk_receive(u8 *buf, u32 len, u32 test_cnt)
 			in_xfer->test_mask = USBH_VENDOR_MASK_BULK_IN;
 			vendor->state = VENDOR_STATE_XFER;
 			in_xfer->ep_state = USBH_VENDOR_RX;
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, in_xfer->pipe_num);
 			ret = HAL_OK;
 		}
 	}
@@ -1215,7 +1219,7 @@ int usbh_vendor_intr_transmit(u8 *buf, u32 len, u32 test_cnt)
 		out_xfer->test_mask = USBH_VENDOR_MASK_INTR_OUT;
 		vendor->state = VENDOR_STATE_XFER;
 		out_xfer->ep_state = USBH_VENDOR_TX;
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify_class_state_change(host, out_xfer->pipe_num);
 		ret = HAL_OK;
 	}
 
@@ -1245,7 +1249,7 @@ int usbh_vendor_intr_receive(u8 *buf, u32 len, u32 test_cnt)
 			in_xfer->test_mask = USBH_VENDOR_MASK_INTR_IN;
 			vendor->state = VENDOR_STATE_XFER;
 			in_xfer->ep_state = USBH_VENDOR_RX;
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, in_xfer->pipe_num);
 			ret = HAL_OK;
 		}
 	}
@@ -1279,7 +1283,7 @@ int usbh_vendor_isoc_transmit(u8 *buf, u32 len, u32 test_cnt)
 		out_xfer->xfer_max_cnt = test_cnt;
 		vendor->state = VENDOR_STATE_XFER;
 		out_xfer->ep_state = USBH_VENDOR_TX;
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify_class_state_change(host, out_xfer->pipe_num);
 		ret = HAL_OK;
 	}
 
@@ -1314,7 +1318,7 @@ int usbh_vendor_isoc_receive(u8 *buf, u32 len, u32 test_cnt)
 			in_xfer->xfer_max_cnt = test_cnt;
 			vendor->state = VENDOR_STATE_XFER;
 			in_xfer->ep_state = USBH_VENDOR_RX;
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, in_xfer->pipe_num);
 			ret = HAL_OK;
 		}
 	}

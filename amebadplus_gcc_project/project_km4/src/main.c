@@ -6,6 +6,9 @@
 #include "vfs.h"
 #endif
 #include "ameba_rtos_version.h"
+#ifdef CONFIG_MBEDTLS_ENABLED
+#include "ssl_rom_to_ram_map.h"
+#endif
 //#include "wifi_fast_connect.h"
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_ipc.h"
@@ -47,31 +50,15 @@ void app_init_debug(void)
 	LOG_MASK(LEVEL_TRACE, debug[LEVEL_TRACE]);
 }
 
-static void *app_mbedtls_calloc_func(size_t nelements, size_t elementSize)
-{
-	size_t size;
-	void *ptr = NULL;
-
-	size = nelements * elementSize;
-	ptr = rtos_mem_malloc(size);
-
-	if (ptr) {
-		memset(ptr, 0, size);
-	}
-
-	return ptr;
-}
-
-static void app_mbedtls_free_func(void *buf)
-{
-	rtos_mem_free(buf);
-}
-
+#ifdef CONFIG_MBEDTLS_ENABLED
 void app_mbedtls_rom_init(void)
 {
-	mbedtls_platform_set_calloc_free(app_mbedtls_calloc_func, app_mbedtls_free_func);
+	ssl_function_map.ssl_calloc = (void *(*)(unsigned int, unsigned int))rtos_mem_calloc;
+	ssl_function_map.ssl_free = (void (*)(void *))rtos_mem_free;
+	ssl_function_map.ssl_printf = (long unsigned int (*)(const char *, ...))DiagPrintf;
+	ssl_function_map.ssl_snprintf = (int (*)(char *s, size_t n, const char *format, ...))DiagSnPrintf;
 }
-
+#endif
 
 void app_pmu_init(void)
 {
@@ -146,7 +133,7 @@ void app_rtc_init(void)
 
 void app_filesystem_init(void)
 {
-#if !(defined(CONFIG_MP_INCLUDED)) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
+#if !(defined(CONFIG_MP_SHRINK)) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 	int ret = 0;
 	vfs_init();
 
@@ -242,11 +229,7 @@ int main(void)
 	app_rtc_init();
 #endif
 
-#if defined(CONFIG_WHC_DEV) || defined(CONFIG_WHC_NONE)
 	rtk_diag_init(RTK_DIAG_HEAP_SIZE, RTK_DIAG_SEND_BUFFER_SIZE);
-#elif defined(CONFIG_WHC_HOST)
-	rtk_diag_init();
-#endif
 
 	/* Execute application example */
 	app_example();

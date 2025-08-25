@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "ameba_diagnose_types.h"
 #include "ameba_diagnose_heap.h"
 
@@ -20,37 +26,16 @@ struct tagRtkDiagHeapHandler_t {
 	u8 heap_pool[0];  // Flexible array member for heap
 } ;
 
-void debug_print(const char *tag, const RtkDiagHeapHandler_t *handler)
-{
-	RTK_LOGA(NOTAG, "--------------\n");
-	RTK_LOGA(NOTAG, "    %s\n", tag);
-	RTK_LOGA(NOTAG, "    pool: %p\n", handler->heap_pool);
-	RTK_LOGA(NOTAG, "    capacity: %u\n", handler->capacity);
-	RTK_LOGA(NOTAG, "    head_begin: %u\n", handler->head_begin);
-	RTK_LOGA(NOTAG, "    head_end: %u\n", handler->head_end);
-	RTK_LOGA(NOTAG, "    tail_begin: %u\n", handler->tail_begin);
-	RTK_LOGA(NOTAG, "    tail_end: %u\n", handler->tail_end);
-	RTK_LOGA(NOTAG, "    used_size: %u\n", handler->used_size);
-	// RTK_LOGA(NOTAG, "    cavity_start: %u\n", handler->cavity_start);
-	RTK_LOGA(NOTAG, "--------------\n");
-
-	if (handler->head_begin == handler->tail_begin) { //head_overlap_tail
-		assert_param(handler->used_size == (handler->tail_end - handler->tail_begin));
-	} else {
-		assert_param(handler->used_size == (handler->tail_end - handler->tail_begin) + (handler->head_end - handler->head_begin));
-	}
-}
-
 RtkDiagHeapHandler_t *rtk_diag_heap_create(u32 capacity, rtk_diag_heap_length_getter_t getter, rtk_diag_heap_release_notice_t notice)
 {
 	if (capacity < RTK_DIAG_HEAP_SIZE_MIN) {
-		RTK_LOGA(NOTAG, "Failed init heap: capacity must larger than %u, now is %u\n", RTK_DIAG_HEAP_SIZE_MIN, capacity);
+		RTK_LOGA("DIAG", "Failed init heap: cap(%u) must larger than %u\n", capacity, RTK_DIAG_HEAP_SIZE_MIN);
 		return NULL;
 	}
 
 	RtkDiagHeapHandler_t *handler = (RtkDiagHeapHandler_t *)rtos_mem_malloc(sizeof(RtkDiagHeapHandler_t) + capacity);
 	if (NULL == handler) {
-		RTK_LOGA(NOTAG, "Failed to allocate memory for RtkDiagHeapHandler_t\n");
+		RTK_LOGA("DIAG", "Malloc failed\n");
 		return NULL;
 	}
 
@@ -130,7 +115,7 @@ static void *rtk_diag_heap_malloc_normal(RtkDiagHeapHandler_t *handler, u32 leng
 void *rtk_diag_heap_malloc(RtkDiagHeapHandler_t *handler, u32 length)
 {
 	if (length > handler->capacity) {
-		RTK_LOGA(NOTAG, "Failed to allocate memory, greeter than capacity: %u > %u\n", length, handler->capacity);
+		RTK_LOGA("DIAG", "Evt malloc failed, too large: %u > %u\n", length, handler->capacity);
 		return NULL;
 	}
 	void *result = NULL;
@@ -174,7 +159,7 @@ void *rtk_diag_heap_malloc(RtkDiagHeapHandler_t *handler, u32 length)
 		 *      │      │
 		 * tail_begin tail_end
 		 */
-		// RTK_LOGA(NOTAG, "DBG: %u %u %u %u\n", handler->head_begin, handler->head_end, handler->tail_begin, handler->tail_end);
+		// RTK_LOGA("DIAG", "DBG: %u %u %u %u\n", handler->head_begin, handler->head_end, handler->tail_begin, handler->tail_end);
 		assert_param(handler->tail_begin == 0);
 		assert_param(handler->tail_end > handler->tail_begin);
 		assert_param(handler->head_begin >= handler->tail_end);
@@ -233,7 +218,6 @@ u32 rtk_diag_heap_free(RtkDiagHeapHandler_t *handler)
 		u8 is_head_overlap_tail = handler->head_begin == handler->tail_begin;
 		// handler->notice(handler->heap_pool + handler->head_begin); //通知用户要释放的数据块
 		current_head_data_length = handler->getter(handler->heap_pool + handler->head_begin); //获取待释放的数据块大小
-		// RTK_LOGA(NOTAG, "DBG Free2: %p\n", handler->heap_pool + handler->head_begin);
 		handler->used_size -= current_head_data_length;
 		handler->head_begin += current_head_data_length; //指向下一个数据块
 		if (handler->head_begin >= handler->head_end) {

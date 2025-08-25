@@ -62,6 +62,7 @@ if(NOT TARGET diag_fmt)
 endif()
 
 if(CONFIG_WHC_DEV OR CONFIG_WHC_NONE)
+    #Core as NP(maybe also as AP: single core)
     ameba_list_append(private_sources
         ameba_diagnose_np.c
         ameba_diagnose_transform.c
@@ -74,10 +75,16 @@ if(CONFIG_WHC_DEV OR CONFIG_WHC_NONE)
         ameba_diagnose_heap.c
     )
 elseif(CONFIG_WHC_HOST)
+    #Core as AP
     ameba_list_append(private_sources
         ameba_diagnose_ap.c
         ameba_diagnose_transform.c
         ${fmt_src}
+    )
+else()
+    #Core neither as AP nor as NP, add an empty function to uniform code in project
+    ameba_list_append(private_sources
+        ameba_diagnose_none.c
     )
 endif()
 

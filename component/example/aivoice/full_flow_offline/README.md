@@ -33,7 +33,7 @@ The pre-recorded audio used in this example is a 3 channel audio, channel 1 and 
 #### Expected Result
 * full_flow_offline result
 ```
-[AIVOICE] set multi kws mode
+[AFE] multi-kws-beam = 0, 1, 2
 ---------------------SPEECH COMMANDS---------------------
 Command ID1, 打开空调
 Command ID2, 关闭空调
@@ -77,8 +77,8 @@ Command ID39, 接听电话
 Command ID40, 挂断电话
 ---------------------------------------------------------
 
-[AIVOICE] rtk_aivoice version: v1.5.0#S0825120#N1ed33d6#A6c25e38
-[AIVOICE] rtk_aivoice_model afe version: afe_2mic_asr_v1.3.1_AfePara_2mic50_v2.0_bf_v0.0_20250401
+[AIVOICE] rtk_aivoice version: v1.5.2#S6b1c736#N89da3ed#A6f74d23
+[AIVOICE] rtk_aivoice_model afe version: afe_2mic_asr_v1.4_AfePara_2mic50_v2.0_bf_v0.0_20250401
 [AIVOICE] rtk_aivoice_model vad version: vad_v7_opt
 [AIVOICE] rtk_aivoice_model kws version: kws_xqxq_v4.1_opt
 [AIVOICE] rtk_aivoice_model asr version: asr_cn_v8_opt
@@ -87,7 +87,7 @@ Command ID40, 挂断电话
 [AIVOICE] [KWS] result: {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.7746397852897644}
 [user] wakeup. {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.7746397852897644}
 [user] voice angle 90.0
-[user] vad. status = 1, offset = 385
+[user] vad. status = 1, offset = 405
 [user] vad. status = 0, offset = 1865
 [AIVOICE] [ASR] result: {"type":0,"commands":[{"rec":"打开空调","id":1}]}
 [user] asr. {"type":0,"commands":[{"rec":"打开空调","id":1}]}
@@ -96,7 +96,7 @@ Command ID40, 挂断电话
 [AIVOICE] [KWS] result: {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.750707507133484}
 [user] wakeup. {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.750707507133484}
 [user] voice angle 90.0
-[user] vad. status = 1, offset = 445
+[user] vad. status = 1, offset = 465
 [user] vad. status = 0, offset = 1765
 [AIVOICE] [ASR] result: {"type":0,"commands":[{"rec":"播放音乐","id":37}]}
 [user] asr. {"type":0,"commands":[{"rec":"播放音乐","id":37}]}
@@ -114,7 +114,7 @@ Command ID40, 挂断电话
     .xip_image2.text :
     {
         __flash_text_start__ = .;
-        *(.audio.data*);
+        *(.audio.data*)
         *(.non.dram.text*)
         __flash_text_end__ = .;
     } > KM4_IMG2_XIP
@@ -139,15 +139,14 @@ Command ID40, 挂断电话
 #### Expected Result
 * full_flow_offline result
 ```
-[AIVOICE] set single kws mode
-[AIVOICE] rtk_aivoice version: v1.5.0#Sdbbdbb0#N1ed33d6#A6c25e38
-[AIVOICE] rtk_aivoice_model afe version: afe_1mic_asr_v0.1_AfePara_1mic_ASR_v0.0_20240626_COM_v0.
+[AIVOICE] rtk_aivoice version: v1.5.2#S6b1c736#N89da3ed#A6f74d23
+[AIVOICE] rtk_aivoice_model afe version: afe_1mic_asr_v1.1_AfePara_1mic_ASR_v0.0_20240626_COM_v0.3_20250528
 [AIVOICE] rtk_aivoice_model vad version: vad_v8_opt
 [AIVOICE] rtk_aivoice_model kws version: kws_xqxq_v5_opt
 [AIVOICE] rtk_aivoice_log_format version: v2
 [user] afe output 1 channels raw audio, others: 
-[AIVOICE] [KWS] result: {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.62354159355163574}
-[user] wakeup. {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.62354159355163574}
+[AIVOICE] [KWS] result: {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.63414132595062256}
+[user] wakeup. {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.63414132595062256}
 [user] vad. status = 1, offset = 1185
 [user] vad. status = 0, offset = 2625
 [user] vad. status = 1, offset = 3885

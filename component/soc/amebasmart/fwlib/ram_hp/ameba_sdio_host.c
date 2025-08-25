@@ -7,6 +7,9 @@
 #include "ameba_soc.h"
 static const char *const TAG = "SDIO";
 SDIOH_InitTypeDef sdioh_init_para;
+#if defined(SDIO) &&(SDIO == SD)
+u32 wait_for_sema = 0;
+#endif
 extern int (*sd_sema_take_fn)(u32);
 
 /**
@@ -104,14 +107,14 @@ u32 SDIOH_WaitDMADone(u32 timeout_us)
 
 #if defined(SDIO) &&(SDIO == SD)
 	/*If scheduling has already started, wait for sema to obtain the DMA done signal.*/
-	if ((CPU_InInterrupt() == 0) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (sd_sema_take_fn != NULL)) {
-
-		SDIOH_INTConfig(SDIOH_DMA_CTL_INT_EN, ENABLE);
-
-		if (sd_sema_take_fn(MAX(timeout_us / 1000, SD_SEMA_MAX_DELAY)) != RTK_SUCCESS) {
-			SDIOH_INTConfig(SDIOH_DMA_CTL_INT_EN, DISABLE);
-			RTK_LOGS(TAG, RTK_LOG_ERROR, " SD Get Semaphore Timeout\r\n");
-			return HAL_TIMEOUT;
+	if (wait_for_sema == 1) {
+		wait_for_sema = 0;
+		if ((CPU_InInterrupt() == 0) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (sd_sema_take_fn != NULL)) {
+			if (sd_sema_take_fn(MAX(timeout_us / 1000, SD_SEMA_MAX_DELAY)) != RTK_SUCCESS) {
+				SDIOH_INTConfig(SDIOH_DMA_CTL_INT_EN, DISABLE);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, " SD Get Semaphore Timeout\r\n");
+				return HAL_TIMEOUT;
+			}
 		}
 
 		SDIOH_INTConfig(SDIOH_DMA_CTL_INT_EN, DISABLE);

@@ -44,12 +44,7 @@ An EAP connection thread will be started automatically when booting.
 
 # Note
 
-Please make sure the lib_wps, lib_mbedtls are also builded.
-
-If the connection failed, you can try the following directions to make it work:
-1. Make sure the `mbedtls_config.h` of mbedtls include the SSL/TLS cipher suite supported by radius server.
-2. Set a larger value to `MBEDTLS_SSL_MAX_CONTENT_LEN` in `mbedtls_config.h`
-3. Try to change using SW crypto instead of HW crypto.
+None
 
 # Supported IC
 

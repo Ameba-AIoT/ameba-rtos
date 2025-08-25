@@ -17,6 +17,8 @@ extern struct whc_device global_idev;
 static struct proc_dir_entry *rtw_proc = NULL;
 static struct proc_dir_entry *rtw_sta_proc = NULL;
 static struct proc_dir_entry *rtw_ap_proc = NULL;
+static char rtw_proc_sta_name[IFNAMSIZ];
+static char rtw_proc_softap_name[IFNAMSIZ];
 
 inline struct proc_dir_entry *get_rtw_drv_proc(void)
 {
@@ -667,8 +669,11 @@ int rtw_drv_proc_init(void)
 		}
 	}
 
-	rtw_ndev_sta_proc_init(global_idev.pndev[STA_WLAN_INDEX]->name);
-	rtw_ndev_ap_proc_init(global_idev.pndev[SOFTAP_WLAN_INDEX]->name);
+	memcpy(rtw_proc_sta_name, global_idev.pndev[STA_WLAN_INDEX]->name, IFNAMSIZ);
+	memcpy(rtw_proc_softap_name, global_idev.pndev[SOFTAP_WLAN_INDEX]->name, IFNAMSIZ);
+
+	rtw_ndev_sta_proc_init(rtw_proc_sta_name);
+	rtw_ndev_ap_proc_init(rtw_proc_softap_name);
 
 	ret = 1;
 
@@ -684,8 +689,8 @@ void rtw_drv_proc_deinit(void)
 		return;
 	}
 
-	rtw_ndev_ap_proc_deinit(global_idev.pndev[SOFTAP_WLAN_INDEX]->name);
-	rtw_ndev_sta_proc_deinit(global_idev.pndev[STA_WLAN_INDEX]->name);
+	rtw_ndev_ap_proc_deinit(rtw_proc_softap_name);
+	rtw_ndev_sta_proc_deinit(rtw_proc_sta_name);
 
 	if (drv_proc_hdls_num > 0) {
 		for (i = 0; i < drv_proc_hdls_num; i++) {

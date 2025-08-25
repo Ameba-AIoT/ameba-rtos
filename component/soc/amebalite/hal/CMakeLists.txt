@@ -66,6 +66,7 @@ ameba_list_append(private_sources
 
 ameba_list_append(private_includes
     ${c_MBEDTLS_DIR}/include
+    ${c_MBEDTLS_DIR}/hw_alt_legacy
 )
 # Component private part, user config end
 #------------------------------#

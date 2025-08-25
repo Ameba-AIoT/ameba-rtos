@@ -1,10 +1,7 @@
 /*
- *  Routines to access hardware
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
  *
- *  Copyright (c) 2013 Realtek Semiconductor Corp.
- *
- *  This module is a confidential and proprietary property of RealTek and
- *  possession or use of this module requires written permission of RealTek.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "ameba_soc.h"
@@ -131,7 +128,7 @@ u32 BOOT_PSRAM_Init(void)
 	PSPHY_InitTypeDef PSPHY_InitStruct;
 	PSRAM_INFO_Update();
 
-	if (PsramInfo.Psram_Vendor != PSRAM_VENDOR_NONE) {
+	if (PsramInfo.Psram_Vendor != MCM_PSRAM_VENDOR_NOTCARE) {
 		PSRAM_CTRL_SPU(ENABLE);
 		RCC_PeriphClockCmd(APBPeriph_PSRAM, APBPeriph_PSRAM_CLOCK, ENABLE);
 
@@ -140,7 +137,7 @@ u32 BOOT_PSRAM_Init(void)
 		PSRAM_PHY_Init(&PSPHY_InitStruct);
 		PSRAM_CTRL_Init();
 
-		if (PsramInfo.Psram_Vendor == PSRAM_VENDOR_APM) {
+		if (PsramInfo.Psram_Vendor == MCM_PSRAM_VENDOR_APM) {
 			RTK_LOGI(TAG, "Init APM PSRAM\r\n");
 			/* init psram device */
 			PSRAM_APM_DEVIC_Init();
@@ -355,8 +352,10 @@ void BOOT_WakeFromPG(void)
   */
 u32 BOOT_ChipInfo_PSRAMType(void)
 {
-	u32 memoryinfo = ChipInfo_PSRAMType();
-	u32 Psram_clk_Max = PSRAM_CLK_LIMIT_GET(memoryinfo);
+	MCM_MemTypeDef meminfo = ChipInfo_MCMInfo();
+	ChipInfo_InitPsramInfoFromMemInfo(&meminfo, &PsramInfo);
+
+	u32 Psram_clk_Max = PsramInfo.Psram_Clk_Limit;
 	SocClk_Info_TypeDef *pSocClk_Info;
 	u32 PsramSetClk = 0;
 	u32 ret;
@@ -407,8 +406,6 @@ void BOOT_SOC_ClkChk(SocClk_Info_TypeDef *pSocClk_Info)
 	u32 PllMClk = pSocClk_Info->PLLM_CLK;
 	u32 PllDClk = pSocClk_Info->PLLD_CLK;
 
-	u32 chipinfo = ChipInfo_PSRAMType();
-	PsramInfo.Psram_Vendor = PSRAM_VENDOR_GET(chipinfo);
 	assert_param(PllMClk <= PLL_600M);
 	assert_param(PllMClk >= PLL_330M);
 	assert_param(PllDClk <= PLL_600M);
@@ -438,7 +435,7 @@ void BOOT_SOC_ClkChk(SocClk_Info_TypeDef *pSocClk_Info)
 	assert_param(PsramClk <= PSRAMC_CLK_LIMIT);
 	RTK_LOGI(TAG, "KM4 CPU CLK: %lu Hz \n", CpuClk);
 	RTK_LOGI(TAG, "KR4 CPU CLK: %lu Hz \n", CpuClk);
-	if (PsramInfo.Psram_Vendor != PSRAM_VENDOR_NONE) {
+	if (PsramInfo.Psram_Vendor != MCM_PSRAM_VENDOR_NOTCARE) {
 		RTK_LOGI(TAG, "PSRAM Ctrl CLK: %lu Hz \n", PsramClk);
 	}
 

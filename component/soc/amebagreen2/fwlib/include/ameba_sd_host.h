@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef _RL7005_SDIOHOST_H_
 #define _RL7005_SDIOHOST_H_
 
@@ -1393,7 +1399,6 @@ typedef struct adma_descriptor_line_s {
 
 #define SDIO_ERR_FLAG	(SDIO_CMD_ERR | SDIO_DAT_ERR)
 
-/* copied from ameba_sd_hal_sdiohost.c which includes pro2 driver and constants */
 #if defined(CONFIG_FPGA) && (CONFIG_FPGA == 1)
 #define SDIO_CMD_TIMEOUT_US 100000
 #define SDIO_DATA_TIMEOUT_US 500000

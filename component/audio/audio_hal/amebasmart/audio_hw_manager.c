@@ -26,6 +26,7 @@
 // ----------------------------------------------------------------------------
 // AudioHwManager
 extern void DestroyAudioHwCard(struct AudioHwCard *card);
+extern void DestroyA2dpAudioHwCard(struct AudioHwCard *card);
 
 static struct AudioHwPort gPrimaryAudioHwPort[2] = {
 	//this could be also separated to different ports according to none or direct flags;
@@ -39,24 +40,20 @@ static const enum AudioHwDevice gPrimaryAudioHwDevices =
 	| AUDIO_HW_DEVICE_IN_MIC | AUDIO_HW_DEVICE_IN_DMIC_REF_AMIC
 	| AUDIO_HW_DEVICE_IN_I2S;
 
+static struct AudioHwPort gA2dpAudioHwPort[2] = {
+	{ 0, AUDIO_HW_PORT_ROLE_OUT, { AUDIO_HW_OUTPUT_FLAG_NONE | AUDIO_HW_OUTPUT_FLAG_NOIRQ }, AUDIO_HW_DEVICE_OUT_A2DP, 1},
+};
+
+static const enum AudioHwDevice gA2dpAudioHwDevices =
+	AUDIO_HW_DEVICE_OUT_A2DP;
+
 static struct AudioHwCardDescriptor gAudioHwCardDescs[] = {
-	{ AUDIO_HW_CARD_TYPE_PRIMARY, gPrimaryAudioHwPort, 2, gPrimaryAudioHwDevices, 5}
+	{ AUDIO_HW_CARD_TYPE_PRIMARY, gPrimaryAudioHwPort, 2, gPrimaryAudioHwDevices, 5},
+	{ AUDIO_HW_CARD_TYPE_A2DP, gA2dpAudioHwPort, 1, gA2dpAudioHwDevices, 1}
 };
 
 static const int32_t CARD_DESCRIPTER_COUNT =
 	(sizeof(gAudioHwCardDescs) / sizeof(gAudioHwCardDescs[0]));
-
-static int32_t ClosePrimaryAudioHwCard(struct AudioHwCard *card)
-{
-	DestroyAudioHwCard(card);
-
-	return 0;
-}
-
-static struct AudioHwCard *CreatePrimaryAudioHwCard(void)
-{
-	return CreateAudioHwCard();
-}
 
 static int32_t AmebaGetCardsCount(struct AudioHwManager *manager)
 {
@@ -78,13 +75,18 @@ static struct AudioHwCard *AmebaOpenCard(struct AudioHwManager *manager, const s
 		return NULL;
 	}
 
-	if (desc->type == AUDIO_HW_CARD_TYPE_PRIMARY) {
-		HAL_AUDIO_VERBOSE("OpenCard(type:%d) %s", desc->type, ret ? "failed" : "success");
-		return CreatePrimaryAudioHwCard();
-	} else {
-		HAL_AUDIO_WARN("OpenCard: unsupported card(type:%d)", desc->type);
-		return NULL;
+    switch (desc->type)
+	{
+	case AUDIO_HW_CARD_TYPE_PRIMARY:
+		return CreateAudioHwCard();
+	case AUDIO_HW_CARD_TYPE_A2DP:
+		return CreateA2dpAudioHwCard();
+	default:
+	    HAL_AUDIO_ERROR("Unsupported card type");
+		break;
 	}
+
+	return NULL;
 }
 
 static void AmebaCloseCard(struct AudioHwManager *manager, struct AudioHwCard *card, const struct AudioHwCardDescriptor *desc)
@@ -95,9 +97,18 @@ static void AmebaCloseCard(struct AudioHwManager *manager, struct AudioHwCard *c
 		return;
 	}
 
-	if (desc->type == AUDIO_HW_CARD_TYPE_PRIMARY) {
-		ClosePrimaryAudioHwCard(card);
-		HAL_AUDIO_VERBOSE("CloseCard(type:%d)", desc->type);
+	switch (desc->type)
+	{
+	case AUDIO_HW_CARD_TYPE_PRIMARY:
+		DestroyAudioHwCard(card);
+		break;
+	case AUDIO_HW_CARD_TYPE_A2DP:
+	    DestroyA2dpAudioHwCard(card);
+		break;
+
+	default:
+	    HAL_AUDIO_ERROR("Unknown type:%d", desc->type);
+		break;
 	}
 }
 

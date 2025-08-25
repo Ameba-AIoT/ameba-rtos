@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /* Precomp.h -- StdAfx
 2013-11-12 : Igor Pavlov : Public domain */
 

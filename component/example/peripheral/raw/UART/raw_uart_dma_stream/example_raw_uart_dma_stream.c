@@ -20,6 +20,17 @@
 #define CACHE_LINE_SIZE_	32
 /* NOTE: DMA buffer size must be a multiple of 32 bytes with D-Cache enabled */
 #define SRX_BUF_SZ			2 *(CACHE_LINE_SIZE_)
+
+// #define UART_USE_GTIMER_TO		1
+
+#ifdef UART_USE_GTIMER_TO
+#define UART_TIMER_ID	1 // TIM1
+#define UART_TIMER_TO	2000000 // 2s
+static u32 LastDatCnt = 0xFFFFFFFF;
+#endif
+
+static u8 rx_dma_timeout = 0;
+
 /* NOTE: DMA buffer must be 32-byte aligned with D-Cache enabled */
 char rx_buf[SRX_BUF_SZ]__attribute__((aligned(32))) = {0};
 
@@ -49,6 +60,79 @@ const u8 UART_RX_FID[MAX_UART_INDEX] = {
 };
 #endif
 
+u32 uart_recv_string_done(void *data);
+
+#ifdef UART_USE_GTIMER_TO
+static void uart_gtimer_deinit(void);
+
+static u32 uart_gtimer_handle(void *Data)
+{
+	u32 len = (u32)Data;
+
+	u32 TransCnt = 0;
+
+	RTIM_INTClear(TIMx[UART_TIMER_ID]);
+
+	u32 ByteGot = UART_RxByteCntGet(UART_DEV);
+	u32 DataInFifo = UART_Readable(UART_DEV);
+
+	/* have Rx some data */
+	if ((ByteGot != 0) || (DataInFifo != 0)) {
+		if (LastDatCnt == ByteGot) {
+			rx_dma_timeout = 1;
+
+			RTIM_Cmd(TIMx[UART_TIMER_ID], DISABLE);
+
+			DCache_Invalidate((u32)rx_buf, ByteGot);
+
+			TransCnt = UART_ReceiveDataTO(UART_DEV, (u8 *)(rx_buf + ByteGot), len - ByteGot, 1);
+
+			RTK_LOGI(NOTAG, "Rx hang! Got %dByte(s) actually\n\n", ByteGot + TransCnt);
+
+			(void)uart_recv_string_done(NULL);
+
+			rx_dma_timeout = 0;
+
+		} else {
+			LastDatCnt = ByteGot;
+		}
+	} else { /* rx not start */
+		LastDatCnt = 0;
+	}
+
+	/* make sure all intr pending bits cleared ok, to avoid timeout is not enough in rom code */
+	RTIM_INTClear(TIMx[UART_TIMER_ID]);
+
+	return 0;
+}
+
+static void uart_gtimer_init(u32 PeriodUs, u32 len)
+{
+	RCC_PeriphClockCmd(APBPeriph_TIMx[UART_TIMER_ID], APBPeriph_TIMx_CLOCK[UART_TIMER_ID], ENABLE);
+
+	RTIM_TimeBaseInitTypeDef TIM_InitStructTmp;
+
+	RTIM_TimeBaseStructInit(&TIM_InitStructTmp);
+	TIM_InitStructTmp.TIM_Idx = UART_TIMER_ID;
+	TIM_InitStructTmp.TIM_Period = (PeriodUs / 31 - 1);
+	TIM_InitStructTmp.TIM_UpdateEvent = ENABLE; /* UEV enable */
+	TIM_InitStructTmp.TIM_UpdateSource = TIM_UpdateSource_Overflow;
+	TIM_InitStructTmp.TIM_ARRProtection = DISABLE;
+
+	RTIM_TimeBaseInit(TIMx[UART_TIMER_ID], &TIM_InitStructTmp,
+					  TIMx_irq[UART_TIMER_ID], (IRQ_FUN) uart_gtimer_handle, len);
+	RTIM_INTConfig(TIMx[UART_TIMER_ID], TIM_IT_Update, ENABLE);
+}
+
+static void uart_gtimer_deinit(void)
+{
+	InterruptDis(TIMx_irq[UART_TIMER_ID]);
+	InterruptUnRegister(TIMx_irq[UART_TIMER_ID]);
+
+	RTIM_DeInit(TIMx[UART_TIMER_ID]);
+}
+#endif
+
 u32 uart_get_idx(UART_TypeDef *UartDEV)
 {
 	u32 i;
@@ -64,7 +148,14 @@ u32 uart_get_idx(UART_TypeDef *UartDEV)
 
 void dma_free(void)
 {
-	GDMA_Cmd(GDMA_InitStruct.GDMA_Index, GDMA_InitStruct.GDMA_ChNum, DISABLE);
+#ifdef UART_USE_GTIMER_TO
+	uart_gtimer_deinit();
+#endif
+	if (!rx_dma_timeout) {
+		GDMA_Cmd(GDMA_InitStruct.GDMA_Index, GDMA_InitStruct.GDMA_ChNum, DISABLE);
+	} else {
+		GDMA_Abort(GDMA_InitStruct.GDMA_Index, GDMA_InitStruct.GDMA_ChNum);
+	}
 	GDMA_ClearINT(GDMA_InitStruct.GDMA_Index, GDMA_InitStruct.GDMA_ChNum);
 	GDMA_ChnlFree(GDMA_InitStruct.GDMA_Index, GDMA_InitStruct.GDMA_ChNum);
 	UART_TXDMACmd(UART_DEV, DISABLE);
@@ -116,6 +207,17 @@ bool uart_dma_recv(char *pstr, u32 len)
 	UART_RXDMACmd(UART_DEV, ENABLE);
 
 	ret = UART_RXGDMA_Init(uart_idx, &GDMA_InitStruct, UART_DEV, (IRQ_FUN)uart_recv_string_done, (u8 *)pstr, len);
+
+	if (!ret) {
+		return ret;
+	}
+
+#ifdef UART_USE_GTIMER_TO
+	UART_RxByteCntClear(UART_DEV);
+	uart_gtimer_init(UART_TIMER_TO, len);
+	RTIM_Cmd(TIMx[UART_TIMER_ID], ENABLE);
+#endif
+
 	return ret;
 }
 
@@ -175,15 +277,16 @@ void uart_dma_demo(void)
 		if (rx_done) {
 			rx_done = 0;
 
-			rx_buf[len] = 0;
-			DCache_Clean((u32)rx_buf, SRX_BUF_SZ);
-
 			uart_send_string(rx_buf);
 			while (tx_busy);
 
 			/* data size: 2Byte ~ 33Byte */
-			len = i % CACHE_LINE_SIZE_ + 2;
-			i++;
+			len = i++ % CACHE_LINE_SIZE_ + 2;
+
+			/* initialize rx_buf to 0 before next rx_process */
+			_memset(rx_buf, 0x0, SRX_BUF_SZ);
+			DCache_Clean((u32)rx_buf, SRX_BUF_SZ);
+
 			RTK_LOGI(NOTAG, "Ready to receive %d-byte-data\n", len);
 			ret = uart_dma_recv(rx_buf, len);
 

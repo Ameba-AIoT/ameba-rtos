@@ -293,8 +293,8 @@
 #define TRNG_REG_BASE                      0x41001000        /* ID:S5-1, Inter. Type:APB4, Top Address:0x41001FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
 #define RXI300_REG_BASE                    0x41002000        /* ID:S5-2, Inter. Type:APB4, Top Address:0x41003FFF, Size(KB):8K, Clk Domain:PERI_LCLK */
 #define RSIP_REG_BASE                      0x41004000        /* ID:S5-3, Inter. Type:APB4, Top Address:0x41004FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
-#define CAN0_REG_BASE                      0x41005000        /* ID:S5-4, Inter. Type:APB4, Top Address:0x41005FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
-#define CAN1_REG_BASE                      0x41006000        /* ID:S5-5, Inter. Type:APB4, Top Address:0x41006FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
+#define A2C0_REG_BASE                      0x41005000        /* ID:S5-4, Inter. Type:APB4, Top Address:0x41005FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
+#define A2C1_REG_BASE                      0x41006000        /* ID:S5-5, Inter. Type:APB4, Top Address:0x41006FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
 #define IR_REG_BASE                        0x41007000        /* ID:S5-6, Inter. Type:APB4, Top Address:0x41007FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
 #define I2C0_REG_BASE                      0x41008000        /* ID:S5-7, Inter. Type:APB4, Top Address:0x41008FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
 #define I2C1_REG_BASE                      0x41009000        /* ID:S5-8, Inter. Type:APB4, Top Address:0x41009FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
@@ -383,8 +383,8 @@
 #define MPC3_BASE_S                        0x51002400        /* ID:S5-2, Inter. Type:APB4, Top Address:0x41003FFF, Size(KB):8K, Clk Domain:PERI_LCLK */
 #define PPC_BASE_S                         0x51002500        /* ID:S5-2, Inter. Type:APB4, Top Address:0x41003FFF, Size(KB):8K, Clk Domain:PERI_LCLK */
 #define RSIP_REG_BASE_S                    0x51004000        /* ID:S5-3, Inter. Type:APB4, Top Address:0x41004FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
-#define CAN0_REG_BASE_S                    0x51005000        /* ID:S5-4, Inter. Type:APB4, Top Address:0x41005FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
-#define CAN1_REG_BASE_S                    0x51006000        /* ID:S5-5, Inter. Type:APB4, Top Address:0x41006FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
+#define A2C0_REG_BASE_S                    0x51005000        /* ID:S5-4, Inter. Type:APB4, Top Address:0x41005FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
+#define A2C1_REG_BASE_S                    0x51006000        /* ID:S5-5, Inter. Type:APB4, Top Address:0x41006FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
 #define IR_REG_BASE_S                      0x51007000        /* ID:S5-6, Inter. Type:APB4, Top Address:0x41007FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
 #define I2C0_REG_BASE_S                    0x51008000        /* ID:S5-7, Inter. Type:APB4, Top Address:0x41008FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
 #define I2C1_REG_BASE_S                    0x51009000        /* ID:S5-8, Inter. Type:APB4, Top Address:0x41009FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
@@ -394,6 +394,7 @@
 /* AUTO_GEN_END */
 /** @} End of group AmebaD_Address_Map */
 #define DATA_FLASH_BASE                    0x60000000
+#define PMC_BASE_S                         0x5080A300
 
 #define TZ_IDAU_SEC_OFFSET                 0x10000000
 #define KBYTES(x)                          ((x) << 10)
@@ -515,10 +516,10 @@
 #define UVC					((UVC_TypeDef			*) UVC_REG_BASE)
 #define PPE					((PPE_TypeDef			*) PPE_REG_BASE)
 
-#define RCAN0					((RCAN_TypeDef			*) CAN0_REG_BASE)
-#define RCAN1					((RCAN_TypeDef			*) CAN1_REG_BASE)
-#define RCAN0_S				((RCAN_TypeDef			*) CAN0_REG_BASE_S)
-#define RCAN1_S				((RCAN_TypeDef			*) CAN1_REG_BASE_S)
+#define A2C0					((A2C_TypeDef			*) A2C0_REG_BASE)
+#define A2C1					((A2C_TypeDef			*) A2C1_REG_BASE)
+#define A2C0_S				((A2C_TypeDef			*) A2C0_REG_BASE_S)
+#define A2C1_S				((A2C_TypeDef			*) A2C1_REG_BASE_S)
 
 /* syson related ip*/
 #define LDO_BASE      ((LDO_TypeDef *)  (LDO_REG_BASE))

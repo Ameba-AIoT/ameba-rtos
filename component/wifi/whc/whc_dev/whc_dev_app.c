@@ -5,7 +5,6 @@
 #include "os_wrapper.h"
 
 #define WHC_CMD_TEST 0xffa5a5a5
-#define WHC_ATCMD_TEST 0xeea5a5a5
 
 #define WHC_CMD_TEST_GET_MAC_ADDR   0x1
 #define WHC_CMD_TEST_GET_IP         0x2
@@ -16,6 +15,7 @@
 #define WHC_CMD_TEST_SCAN           0x7
 #define WHC_CMD_TEST_DHCP           0x8
 #define WHC_CMD_TEST_WIFION         0x9
+#define WHC_CMD_TEST_SCAN_RESULT    0xA
 
 #define WHC_CMD_TEST_BUF_SIZE     16
 
@@ -31,18 +31,6 @@ u8 *whc_rx_msg_free_addr = NULL;
 u16 rx_msg_size;
 static struct rtw_network_info wifi = {0};
 
-#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE) && defined(CONFIG_SUPPORT_ATCMD)
-rtos_sema_t whc_atcmd_rx_sema;
-
-extern volatile UART_LOG_CTL shell_ctl;
-extern UART_LOG_BUF shell_rxbuf;
-
-#ifdef CONFIG_ATCMD_HOST_CONTROL
-typedef void (*at_write)(char *buf, int len);
-extern at_write out_buffer;
-#endif
-#endif
-
 #define at_printf(fmt, args...)    RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, fmt, ##args)
 
 __weak int whc_dev_ip_in_table_indicate(u8 gate, u8 ip)
@@ -55,59 +43,138 @@ __weak int whc_dev_ip_in_table_indicate(u8 gate, u8 ip)
 	//todo
 }
 
+static void rtw_scan_result_to_string(struct rtw_scan_result *result, u8 *buffer, size_t buffer_size)
+{
+	char bssid_str[18];
+	char security[36] = {0} ;
+	snprintf(bssid_str, sizeof(bssid_str), "%02X:%02X:%02X:%02X:%02X:%02X",
+			 result->bssid.octet[0], result->bssid.octet[1],
+			 result->bssid.octet[2], result->bssid.octet[3],
+			 result->bssid.octet[4], result->bssid.octet[5]);
+
+	snprintf(security, sizeof(security), "[%s]", (result->security == RTW_SECURITY_OPEN) ? "Open" :
+			 (result->security == RTW_SECURITY_WEP_PSK) ? "WEP" :
+			 (result->security == RTW_SECURITY_WPA_TKIP_PSK) ? "WPA TKIP" :
+			 (result->security == RTW_SECURITY_WPA_AES_PSK) ? "WPA AES" :
+			 (result->security == RTW_SECURITY_WPA_MIXED_PSK) ? "WPA Mixed" :
+			 (result->security == RTW_SECURITY_WPA2_AES_PSK) ? "WPA2 AES" :
+			 (result->security == RTW_SECURITY_WPA2_TKIP_PSK) ? "WPA2 TKIP" :
+			 (result->security == RTW_SECURITY_WPA2_MIXED_PSK) ? "WPA2 Mixed" :
+			 (result->security == RTW_SECURITY_WPA_WPA2_TKIP_PSK) ? "WPA/WPA2 TKIP" :
+			 (result->security == RTW_SECURITY_WPA_WPA2_AES_PSK) ? "WPA/WPA2 AES" :
+			 (result->security == RTW_SECURITY_WPA_WPA2_MIXED_PSK) ? "WPA/WPA2 Mixed" :
+			 (result->security == (RTW_SECURITY_WPA_TKIP_PSK | ENTERPRISE_ENABLED)) ? "WPA TKIP Enterprise" :
+			 (result->security == (RTW_SECURITY_WPA_AES_PSK | ENTERPRISE_ENABLED)) ? "WPA AES Enterprise" :
+			 (result->security == (RTW_SECURITY_WPA_MIXED_PSK | ENTERPRISE_ENABLED)) ? "WPA Mixed Enterprise" :
+			 (result->security == (RTW_SECURITY_WPA2_TKIP_PSK | ENTERPRISE_ENABLED)) ? "WPA2 TKIP Enterprise" :
+			 (result->security == (RTW_SECURITY_WPA2_AES_PSK | ENTERPRISE_ENABLED)) ? "WPA2 AES Enterprise" :
+			 (result->security == (RTW_SECURITY_WPA2_MIXED_PSK | ENTERPRISE_ENABLED)) ? "WPA2 Mixed Enterprise" :
+			 (result->security == (RTW_SECURITY_WPA_WPA2_TKIP_PSK | ENTERPRISE_ENABLED)) ? "WPA/WPA2 TKIP Enterprise" :
+			 (result->security == (RTW_SECURITY_WPA_WPA2_AES_PSK | ENTERPRISE_ENABLED)) ? "WPA/WPA2 AES Enterprise" :
+			 (result->security == (RTW_SECURITY_WPA_WPA2_MIXED_PSK | ENTERPRISE_ENABLED)) ? "WPA/WPA2 Mixed Enterprise" :
+#ifdef CONFIG_SAE_SUPPORT
+			 (result->security == RTW_SECURITY_WPA3_AES_PSK) ? "WPA3-SAE AES" :
+			 (result->security == RTW_SECURITY_WPA2_WPA3_MIXED) ? "WPA2/WPA3-SAE AES" :
+#endif
+			 (result->security == (WPA2_SECURITY | WPA3_SECURITY | ENTERPRISE_ENABLED)) ? "WPA2/WPA3 Enterprise" :
+			 (result->security == (WPA3_SECURITY | ENTERPRISE_ENABLED)) ? "WPA3 Enterprise" :
+#ifdef CONFIG_OWE_SUPPORT
+			 (result->security == RTW_SECURITY_WPA3_OWE) ? "WPA3-OWE" :
+#endif
+			 "Unknown");
+
+	snprintf((char *)buffer, buffer_size, "%s %d %03u %.*s %.*s\r\n",
+			 bssid_str,
+			 result->signal_strength,
+			 (unsigned int)result->channel,
+			 (int)strlen(security), security,
+			 (int)result->ssid.len, result->ssid.val);
+}
+
+s32 whc_dev_scan_callback(u32 scanned_AP_num, void *data)
+{
+	(void)data;
+	struct rtw_scan_result *scanned_AP_list = NULL;
+	u32 ap_num = scanned_AP_num;
+	struct rtw_scan_result *scanned_AP_list_index;
+	u32 idx = 1;
+	/* set 1k temp, for ap info possible needed in host */
+	u32 buf_size = 1024;
+	u8 *result_buf;
+	u8 *ptr;
+
+	if (ap_num) {
+		scanned_AP_list = (struct rtw_scan_result *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
+		result_buf = rtos_mem_zmalloc(buf_size);
+		if (wifi_get_scan_records(&ap_num, scanned_AP_list) < 0) {
+			RTK_LOGE(TAG_WLAN_INIC, "%s, ERROR: Get result failed\n", __func__);
+			rtos_mem_free((void *)scanned_AP_list);
+		}
+
+		scanned_AP_list_index = scanned_AP_list;
+		while (ap_num > 0) {
+			memset(result_buf, 0, buf_size);
+			ptr = result_buf;
+			*(u32 *)ptr = WHC_CMD_TEST;
+			ptr += 4;
+			*ptr = WHC_CMD_TEST_SCAN_RESULT;
+			ptr += 1;
+			*ptr = idx;
+			ptr += 1;
+
+			/* wrap to 4B aligned */
+			ptr += 2;
+
+			rtw_scan_result_to_string(scanned_AP_list_index, ptr, buf_size - 8);
+			scanned_AP_list_index += 1;
+
+			whc_dev_api_send_to_host(result_buf, buf_size);
+			ap_num -= 1;
+		}
+
+		memset(result_buf, 0, buf_size);
+		ptr = result_buf;
+		*(u32 *)ptr = WHC_CMD_TEST;
+		ptr += 4;
+		*ptr = WHC_CMD_TEST_SCAN_RESULT;
+		ptr += 1;
+		/* 0 means end */
+		*ptr = 0;
+		ptr += 1;
+		whc_dev_api_send_to_host(result_buf, buf_size);
+
+		rtos_mem_free(result_buf);
+		rtos_mem_free(scanned_AP_list);
+	}
+
+	return 0;
+}
+
 void whc_dev_cmd_scan(void)
 {
 	struct rtw_scan_param *scan_param;
 	scan_param = rtos_mem_zmalloc(sizeof(struct rtw_scan_param));
-	struct rtw_scan_result *scanned_AP_info;
 	int ret;
-	u32 scanned_AP_num, i;
-	struct rtw_scan_result *scanned_AP_list = NULL;
 
 	if (scan_param == NULL) {
 		RTK_LOGE(TAG_WLAN_INIC, "%s mem fail!\n", __func__);
 		return;
 	}
-	ret = wifi_scan_networks(scan_param, 1);
+
+	scan_param->scan_user_callback = whc_dev_scan_callback;
+	ret = wifi_scan_networks(scan_param, 0);
 
 	if (ret < RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, " wifi_scan_networks ERROR!\n");
 		goto end;
 	}
 
-	/* get scan results and log them */
-	scanned_AP_num = ret;
-
-	if (scanned_AP_num != 0) {
-		scanned_AP_list = (struct rtw_scan_result *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
-		if (scanned_AP_list == NULL) {
-			RTK_LOGE(TAG_WLAN_INIC, "%s mem fail!\n", __func__);
-			goto end;
-		}
-
-		if (wifi_get_scan_records(&scanned_AP_num, scanned_AP_list) < 0) {
-			RTK_LOGE(TAG_WLAN_INIC, "Get result failed\r\n");
-			goto end;
-		}
-
-		for (i = 0; i < scanned_AP_num; i++) {
-			at_printf("%2d, ", (i + 1));
-
-			scanned_AP_info = &scanned_AP_list[i];
-			scanned_AP_info->ssid.val[scanned_AP_info->ssid.len] = 0; /* Ensure the SSID is null terminated */
-
-			//print_scan_result(scanned_AP_info);
-		}
-	}
 
 end:
 	if (scan_param) {
 		rtos_mem_free(scan_param);
 	}
 
-	if (scanned_AP_list) {
-		rtos_mem_free(scanned_AP_list);
-	}
 }
 
 /* here in sdio rx done callback */
@@ -236,10 +303,6 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					wifi_on(RTW_MODE_STA);
 				}
 				rtos_mem_free(buf);
-#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE) && defined(CONFIG_SUPPORT_ATCMD)
-			} else if (event == WHC_ATCMD_TEST) {
-				rtos_sema_give(whc_atcmd_rx_sema);
-#endif
 			}
 			rtos_mem_free(whc_rx_msg_free_addr);
 			whc_rx_msg = NULL;
@@ -247,53 +310,6 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 		}
 	}
 }
-
-#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE) && defined(CONFIG_SUPPORT_ATCMD)
-void whc_atcmd_task(void)
-{
-	PUART_LOG_BUF pShellRxBuf = &shell_rxbuf;
-	u32 i = 0;
-	while (1) {
-		pShellRxBuf->BufCount = 0;
-		i = 0;
-
-		rtos_sema_take(whc_atcmd_rx_sema, 0xFFFFFFFF);
-		memcpy(pShellRxBuf->UARTLogBuf, whc_rx_msg + 4, rx_msg_size - 4);
-		pShellRxBuf->BufCount = rx_msg_size - 4;
-
-recv_again:
-		if (shell_cmd_chk(pShellRxBuf->UARTLogBuf[i++], (UART_LOG_CTL *)&shell_ctl, ENABLE) == 2) {
-			if (shell_ctl.pTmpLogBuf != NULL) {
-				shell_ctl.ExecuteCmd = TRUE;
-
-				if (shell_ctl.shell_task_rdy) {
-					shell_ctl.GiveSema();
-				}
-			} else {
-				shell_array_init((u8 *)shell_ctl.pTmpLogBuf->UARTLogBuf, UART_LOG_CMD_BUFLEN, '\0');
-			}
-		}
-
-		/* recv all data one time */
-		if ((pShellRxBuf->BufCount != i) && (pShellRxBuf->BufCount != 0)) {
-			goto recv_again;
-		}
-	}
-}
-
-void whc_dev_api_send_to_host_wrap(char *buf, int len)
-{
-	u8 *message = rtos_mem_malloc(len + 6);
-	u8 *ptr = message;
-	*(u32 *)ptr = WHC_ATCMD_TEST;
-	ptr += 4;
-	*(u16 *)ptr  = (u16)len;
-	ptr += 2;
-	memcpy(ptr, buf, len);
-	whc_dev_api_send_to_host((u8 *)message, (u32)len + 6);
-	rtos_mem_free(message);
-}
-#endif
 
 __weak void whc_dev_init_cmd_path_task(void)
 {
@@ -307,15 +323,4 @@ __weak void whc_dev_init_cmd_path_task(void)
 		RTK_LOGE(TAG_WLAN_INIC, "Create whc_dev_pkt_rx_to_user_task Err!!\n");
 	}
 
-#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE) && defined(CONFIG_SUPPORT_ATCMD)
-	rtos_sema_create(&whc_atcmd_rx_sema, 0, 0xFFFFFFFF);
-
-#ifdef CONFIG_ATCMD_HOST_CONTROL
-	out_buffer = whc_dev_api_send_to_host_wrap;
-#endif
-
-	if (rtos_task_create(NULL, ((const char *)"whc_atcmd_task"), (rtos_task_t)whc_atcmd_task, NULL, 1024, 5) != RTK_SUCCESS) {
-		RTK_LOGE(TAG_WLAN_INIC, "Create whc_atcmd_task Err!!\n");
-	}
-#endif
 }

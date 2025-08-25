@@ -369,7 +369,7 @@ static int mp_ext2_gnt_bt(void **argv, int argc)
 	return 0;
 }
 
-#if defined (CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)
 static int mp_ext2_ant(void **argv, int argc)
 {
 	(void)argc;
@@ -392,7 +392,7 @@ at_mp_ext_item_t at_mp_ext2_items[] = {
 	{"bridge",      mp_ext2_uart_bridge,        UART_BRIDGE_USAGE},
 	{"bt_power",    mp_ext2_bt_power,           BT_POWER_USAGE},
 	{"gnt_bt",      mp_ext2_gnt_bt,             GNT_BT_USAGE},
-#if defined (CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)
 	{"ant",         mp_ext2_ant,                SELECTION_BT_ANTENNA},
 #endif /* CONFIG_AMEBASMART || CONFIG_AMEBASMARTPLUS */
 };

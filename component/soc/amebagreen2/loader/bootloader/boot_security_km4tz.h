@@ -1,19 +1,9 @@
-/**
-  ******************************************************************************
-  * @file    boot_security_boot.h
-  * @author
-  * @version V1.0.0
-  * @date    2024-01-09
-  * @brief   This file contains security verification content
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2024, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef _AMEBA_SECURITY_AP_H_
 #define _AMEBA_SECURITY_AP_H_
 

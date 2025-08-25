@@ -9,6 +9,12 @@
 #define ETHERNET_IDX       2
 #define WLAN_IDX 0
 
+enum prehandler_ret {
+	UNUPLOAD_TO_LWIP = 0x0,
+	UPLOAD_TO_LWIP = 0x1,
+};
+
+
 enum ext_clk_sel {
 	EXT_CLK_50M = 0xb,
 	EXT_CLK_25M = 0xc,

@@ -127,6 +127,9 @@ menu "CONFIG APPLICATION"
 
     menu "AI Config"
         orsource "../component/tflite_micro/Kconfig"
+        if DSP_EN
+            orsource "../component/aivoice/Kconfig.dsp"
+        endif
     endmenu
 
     orsource "${RTK_APP_DIR}/Kconfig"

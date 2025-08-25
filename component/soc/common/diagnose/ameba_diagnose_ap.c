@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "ameba_diagnose.h"
 #include "ameba_diagnose_transform.h"
 
@@ -11,19 +17,21 @@ u8 g_diag_debug_log_state;
 SRAM_NOCACHE_DATA_SECTION
 static volatile RtkDiagIpcMsg_t g_diag_ipc_msg = {0};
 
-int rtk_diag_init(void)
+int rtk_diag_init(u16 heap_capacity, u16 sender_buffer_size)
 {
+	//NOTE: These two parameter work in NP side, here just for using uniform API
+	UNUSED(heap_capacity);
+	UNUSED(sender_buffer_size);
 #ifdef DIAG_DEBUG_TEST
 	void rtk_diag_debug_create_task(void);
 	rtk_diag_debug_create_task();
 #endif
 	if (g_initialized == 1) {
-		RTK_LOGA(NOTAG, "Diagnose already initialized\n");
 		return RTK_SUCCESS;
 	}
 
 	if (rtos_mutex_create(&g_ipc_mutex) != RTK_SUCCESS) {
-		RTK_LOGA(NOTAG, "Failed to create queue for receiving events from AP\n");
+		RTK_LOGA("DIAG", "Failed to create mutex in AP\n");
 		return RTK_FAIL;
 	}
 	g_diag_debug_log_state = DISABLE;
@@ -33,7 +41,6 @@ int rtk_diag_init(void)
 void rtk_diag_deinit(void)
 {
 	if (g_initialized == 0) {
-		RTK_LOGA(NOTAG, "Diagnose already deinitialized\n");
 		return;
 	}
 	rtos_mutex_delete(g_ipc_mutex);
@@ -71,7 +78,7 @@ static int rtk_diag_ipc_send(u32 addr, u32 size, u8 type)
 
 	rtk_diag_ipc_status_set(RTK_DIAG_IPC_WAIT_RESPONSE);
 	DCache_Clean((u32)&g_diag_ipc_msg, sizeof(RtkDiagIpcMsg_t));
-	ipc_send_message(DIAG_IPC_DIR, IPC_A2N_EVENT_REQ, &ipc_event_msg);
+	ipc_send_message(DIAG_IPC_DIR, DIAG_IPC_CHANNEL, &ipc_event_msg);
 	//timeout handle
 	u32 timeout = RTK_DIAG_IPC_WAIT_TIMEOUT;
 	int ret = RTK_ERR_TIMEOUT;
@@ -83,7 +90,7 @@ static int rtk_diag_ipc_send(u32 addr, u32 size, u8 type)
 		}
 	}
 	if (g_diag_debug_log_state) {
-		RTK_LOGA(NOTAG, "ap ipc: addr = %x, size = %d, ret = %d, timeout = %u\n", g_diag_ipc_msg.addr, g_diag_ipc_msg.size, ret, timeout);
+		RTK_LOGA("DIAG", "ap ipc: addr = %x, size = %d, ret = %d, timeout = %u\n", g_diag_ipc_msg.addr, g_diag_ipc_msg.size, ret, timeout);
 	}
 	rtos_mutex_give(g_ipc_mutex);
 	return ret;
@@ -91,7 +98,13 @@ static int rtk_diag_ipc_send(u32 addr, u32 size, u8 type)
 
 int rtk_diag_event_add(u8 evt_level, u16 evt_type, const u8 *evt_info, u16 evt_len)
 {
-#ifdef CONFIG_AMEBADPLUS
+#ifdef CONFIG_AMEBAD
+	UNUSED(evt_level);
+	UNUSED(evt_type);
+	UNUSED(evt_info);
+	UNUSED(evt_len);
+	return RTK_SUCCESS;
+#else
 	u32 ts = rtos_time_get_current_system_time_ms();//get ts as quick as possible
 
 	RtkDiagEvent_t *event = (RtkDiagEvent_t *)rtos_mem_malloc(sizeof(RtkDiagEvent_t) + evt_len);
@@ -107,12 +120,6 @@ int rtk_diag_event_add(u8 evt_level, u16 evt_type, const u8 *evt_info, u16 evt_l
 	int ret = rtk_diag_ipc_send((u32)event, sizeof(RtkDiagEvent_t) + evt_len, RTK_DIAG_IPC_MSG_TYPE_EVT_ADD);
 	rtos_mem_free(event);
 	return ret;
-#else
-	UNUSED(evt_level);
-	UNUSED(evt_type);
-	UNUSED(evt_info);
-	UNUSED(evt_len);
-	return RTK_SUCCESS;
 #endif
 }
 
@@ -120,7 +127,6 @@ static int rtk_diag_req_low(u8 cmd, const u8 *payload, u16 payload_length)
 {
 	RtkDiagDataFrame_t *frame = (RtkDiagDataFrame_t *)rtos_mem_malloc(sizeof(RtkDiagDataFrame_t) + payload_length + 1);
 	if (NULL == frame) {
-		RTK_LOGA(NOTAG, "Failed to allocate memory for RtkDiagDataFrame_t\n");
 		return RTK_ERR_DIAG_MALLOC;
 	}
 	frame->header = RTK_DIAG_FRAME_HEADER;
@@ -146,7 +152,6 @@ int rtk_diag_req_timestamp(void)
 int rtk_diag_req_version(void)
 {
 	extern const char *g_rtk_diag_format_hash;
-	// return rtk_diag_req_low(RTK_DIAG_CMD_TYPE_VER, (u8 *)"9FC60C4CB6162E49C54FB94511497E16", 32);
 	return rtk_diag_req_low(RTK_DIAG_CMD_TYPE_VER, (u8 *)g_rtk_diag_format_hash, strlen(g_rtk_diag_format_hash));
 }
 
@@ -217,7 +222,7 @@ int rtk_diag_req_log_enable(u8 state)
 	return rtk_diag_ipc_send((u32)&g_at_cmd, sizeof(RtkDiagAtCmd_t), RTK_DIAG_IPC_MSG_TYPE_ATCMD);
 }
 
-#ifndef CONFIG_AMEBA_RLS
+#ifdef DIAG_DEBUG_TEST
 int rtk_diag_req_add_event_demo1(u8 evt_level, const char *data)
 {
 	struct diag_evt_demo_1 demo = {

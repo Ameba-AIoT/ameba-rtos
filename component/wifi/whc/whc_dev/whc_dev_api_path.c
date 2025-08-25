@@ -1062,7 +1062,15 @@ void whc_dev_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret
 	struct whc_api_info *info;
 	struct whc_api_info *ret_msg;
 	struct whc_txbuf_info_t *inic_tx;
-
+#if defined(CONFIG_WHC_INTF_USB) && defined(CONFIG_USBD_WHC_HOTPLUG)
+	/* Since device not attached to host, USB data transmission is unavailable.
+	   Calling whc_dev_send will cause to hang waiting for api_ret_sema. */
+	extern u8 wifi_whc_usb_status;
+	if (wifi_whc_usb_status == WIFI_WHC_USB_STATUS_DISABLED) {
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "Detached with host, not send api %d\n", id);
+		goto exit;
+	}
+#endif
 	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "Device Call API %ld\n", id);
 
 	rtos_mutex_take(event_priv.send_mutex, MUTEX_WAIT_TIMEOUT);

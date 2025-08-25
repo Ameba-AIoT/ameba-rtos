@@ -1,40 +1,8 @@
-/*------------------------------------------------------------------------------
---         Copyright (c) 2015, VeriSilicon Inc. All rights reserved           --
---         Copyright (c) 2011-2014, Google Inc. All rights reserved.          --
---         Copyright (c) 2007-2010, Hantro OY. All rights reserved.           --
---                                                                            --
--- This software is confidential and proprietary and may be used only as      --
---   expressly authorized by VeriSilicon in a written licensing agreement.    --
---                                                                            --
---         This entire notice must be reproduced on all copies                --
---                       and may not be removed.                              --
---                                                                            --
---------------------------------------------------------------------------------
--- Redistribution and use in source and binary forms, with or without         --
--- modification, are permitted provided that the following conditions are met:--
---   * Redistributions of source code must retain the above copyright notice, --
---       this list of conditions and the following disclaimer.                --
---   * Redistributions in binary form must reproduce the above copyright      --
---       notice, this list of conditions and the following disclaimer in the  --
---       documentation and/or other materials provided with the distribution. --
---   * Neither the names of Google nor the names of its contributors may be   --
---       used to endorse or promote products derived from this software       --
---       without specific prior written permission.                           --
---------------------------------------------------------------------------------
--- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"--
--- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  --
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE --
--- ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE  --
--- LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR        --
--- CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF       --
--- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS   --
--- INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN    --
--- CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)    --
--- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE --
--- POSSIBILITY OF SUCH DAMAGE.                                                --
---------------------------------------------------------------------------------
-------------------------------------------------------------------------------*/
-
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "basetype.h"
 #include "dwl_defs.h"
@@ -61,27 +29,27 @@ static const int DecHwId[] = {
 void PrintIrqType(u32 isPP, u32 coreID, u32 status)
 {
 	if (isPP) {
-		RTK_LOGD(TAG, "PP[%d] IRQ %s\n", coreID,
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "PP[%d] IRQ %s\n", coreID,
 				 status & PP_IRQ_RDY ? "READY" : "BUS ERROR");
 	} else {
 		if (status & DEC_IRQ_ABORT) {
-			RTK_LOGD(TAG, "DEC[%d] IRQ ABORT\n", coreID);
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "DEC[%d] IRQ ABORT\n", coreID);
 		} else if (status & DEC_IRQ_RDY) {
-			RTK_LOGD(TAG, "DEC[%d] IRQ READY\n", coreID);
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "DEC[%d] IRQ READY\n", coreID);
 		} else if (status & DEC_IRQ_BUS) {
-			RTK_LOGD(TAG, "DEC[%d] IRQ BUS ERROR\n", coreID);
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "DEC[%d] IRQ BUS ERROR\n", coreID);
 		} else if (status & DEC_IRQ_BUFFER) {
-			RTK_LOGD(TAG, "DEC[%d] IRQ BUFFER\n", coreID);
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "DEC[%d] IRQ BUFFER\n", coreID);
 		} else if (status & DEC_IRQ_ASO) {
-			RTK_LOGD(TAG, "DEC[%d] IRQ ASO\n", coreID);
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "DEC[%d] IRQ ASO\n", coreID);
 		} else if (status & DEC_IRQ_ERROR) {
-			RTK_LOGD(TAG, "DEC[%d] IRQ STREAM ERROR\n", coreID);
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "DEC[%d] IRQ STREAM ERROR\n", coreID);
 		} else if (status & DEC_IRQ_SLICE) {
-			RTK_LOGD(TAG, "DEC[%d] IRQ SLICE\n", coreID);
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "DEC[%d] IRQ SLICE\n", coreID);
 		} else if (status & DEC_IRQ_TIMEOUT) {
-			RTK_LOGD(TAG, "DEC[%d] IRQ TIMEOUT\n", coreID);
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "DEC[%d] IRQ TIMEOUT\n", coreID);
 		} else {
-			RTK_LOGD(TAG, "DEC[%d] IRQ UNKNOWN 0x%08x\n", coreID, status);
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "DEC[%d] IRQ UNKNOWN 0x%08x\n", coreID, status);
 		}
 	}
 }
@@ -95,14 +63,14 @@ static void ReleaseDecoder(hx170dec_t *dev, int core)
 
 	/* make sure HW is disabled */
 	if (status & HX170_DEC_E) {
-		RTK_LOGI(TAG, "DEC still enabled -> reset\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "DEC still enabled -> reset\n");
 
 		while (status & HX170_DEC_E) {
-			RTK_LOGI(TAG, "Killed, wait for HW finish\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Killed, wait for HW finish\n");
 			status = HAL_READ32(dev->hwregs[0], HX170_IRQ_STAT_DEC_OFF);
 			DelayMs(1000);
 			if (++counter > 5) {
-				RTK_LOGI(TAG, "Killed, timeout\n", core);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Killed, timeout\n", core);
 				break;
 			}
 		}
@@ -119,7 +87,7 @@ static void ReleasePostProcessor(hx170dec_t *dev, int core)
 
 	/* make sure HW is disabled */
 	if (status & HX170_PP_E) {
-		RTK_LOGI(TAG, "PP still enabled -> reset\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "PP still enabled -> reset\n");
 
 		/* disable IRQ */
 		status |= HX170_PP_IRQ_DISABLE;
@@ -440,17 +408,17 @@ void dump_regs(hx170dec_t *dev)
 	u32 i;
 	int c;
 
-	RTK_LOGI(TAG, "Reg Dump Start\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Reg Dump Start\n");
 	for (c = 0; c < dev->cores; c++) {
 		for (i = 0; i < dev->iosize; i += 4 * 4) {
-			RTK_LOGI(TAG, "\toffset %04X: %08X  %08X  %08X  %08X\n", i,
+			RTK_LOGS(TAG, RTK_LOG_INFO, "\toffset %04X: %08X  %08X  %08X  %08X\n", i,
 					 HAL_READ32(dev->hwregs[c], i),
 					 HAL_READ32(dev->hwregs[c], i + 4),
 					 HAL_READ32(dev->hwregs[c], i + 16),
 					 HAL_READ32(dev->hwregs[c], i + 24));
 		}
 	}
-	RTK_LOGI(TAG, "Reg Dump End\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Reg Dump End\n");
 }
 
 static int CheckHwId(hx170dec_t *dev)
@@ -464,19 +432,19 @@ static int CheckHwId(hx170dec_t *dev)
 	for (i = 0; i < dev->cores; i++) {
 		if (dev->hwregs[i] != NULL) {
 			hwid = HAL_READ32(dev->hwregs[i], 0);
-			RTK_LOGD(TAG, "hx170dec: Core %d HW ID=0x%08lx\n", i, hwid);
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "hx170dec: Core %d HW ID=0x%08lx\n", i, hwid);
 			hwid = (hwid >> 16) & 0xFFFF; /* product version only */
 
 			while (numHw--) {
 				if (hwid == DecHwId[numHw]) {
-					RTK_LOGD(TAG, "hx170dec: Supported HW found at 0x%16lx\n",
+					RTK_LOGS(TAG, RTK_LOG_DEBUG, "hx170dec: Supported HW found at 0x%16lx\n",
 							 multicorebase[i]);
 					found++;
 					break;
 				}
 			}
 			if (!found) {
-				RTK_LOGD(TAG, "hx170dec: Unknown HW found at 0x%16lx\n",
+				RTK_LOGS(TAG, RTK_LOG_DEBUG, "hx170dec: Unknown HW found at 0x%16lx\n",
 						 multicorebase[i]);
 				return DWL_OK;
 			}
@@ -495,7 +463,7 @@ static int SetIO(void)
 	}
 
 	if (hx170dec_data.hwregs[0] == NULL) {
-		RTK_LOGE(TAG, "hx170dec: failed to ioremap HW regs\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "hx170dec: failed to ioremap HW regs\n");
 		return DWL_ERROR;
 	}
 
@@ -516,7 +484,7 @@ u32 hx170dec_isr(void *dev_id)
 	u32 irq_status_dec;
 	u32 irq_status_pp;
 
-	RTK_LOGD(TAG, "hx170dec_isr\n");
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "hx170dec_isr\n");
 
 	for (i = 0; i < dev->cores; i++) {
 		volatile u8 *hwregs = dev->hwregs[i];
@@ -529,7 +497,7 @@ u32 hx170dec_isr(void *dev_id)
 			irq_status_dec &= (~HX170_DEC_IRQ);
 			HAL_WRITE32(hwregs, HX170_IRQ_STAT_DEC_OFF, irq_status_dec);
 
-			RTK_LOGD(TAG, "decoder IRQ received! core %d\n", i);
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "decoder IRQ received! core %d\n", i);
 
 			rtos_sema_give(dec_wait_sema);
 			handled++;
@@ -545,14 +513,14 @@ u32 hx170dec_isr(void *dev_id)
 		irq_status_pp &= (~HX170_PP_IRQ);
 		HAL_WRITE32(hwregs, HX170_IRQ_STAT_PP_OFF, irq_status_pp);
 
-		RTK_LOGD(TAG, "post-processor IRQ received!\n");
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "post-processor IRQ received!\n");
 
 		rtos_sema_give(pp_wait_sema);
 		handled++;
 	}
 
 	if (!handled) {
-		RTK_LOGD(TAG, "IRQ received, but not x170's!\n");
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "IRQ received, but not x170's!\n");
 	}
 
 	return DWL_OK;
@@ -568,11 +536,11 @@ int hx170dec_init(void)
 
 	hx170_init_flag = 1;
 
-	RTK_LOGD(TAG, "hx170dec init\n");
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "hx170dec init\n");
 
 	multicorebase[0] = MJPEG_REG_BASE;
 
-	RTK_LOGD(TAG, "hx170dec: Init single core at 0x%16lx IRQ=%i\n",
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "hx170dec: Init single core at 0x%16lx IRQ=%i\n",
 			 multicorebase[0], DEC_IRQ);
 
 	hx170dec_data.iosize = DEC_IO_SIZE;
@@ -595,11 +563,11 @@ int hx170dec_init(void)
 	InterruptRegister((IRQ_FUN)hx170dec_isr, DEC_IRQ, (u32) &hx170dec_data, 3);
 	InterruptEn(DEC_IRQ, 3);
 
-	RTK_LOGD(TAG, "hx170dec init OK\n");
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "hx170dec init OK\n");
 
 	return DWL_OK;
 err:
-	RTK_LOGE(TAG, "hx170dec init fail\n");
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "hx170dec init fail\n");
 	hx170_init_flag = 0;
 	return result;
 }
@@ -622,7 +590,7 @@ void hx170dec_deinit(void)
 		InterruptUnRegister(dev->irq);
 	}
 
-	RTK_LOGD(TAG, "hx170dec deinit\n");
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "hx170dec deinit\n");
 }
 
 static int DecFlushRegs(hx170dec_t *dev, struct core_desc *core)
@@ -639,7 +607,7 @@ static int DecFlushRegs(hx170dec_t *dev, struct core_desc *core)
 	/* write the status register, which may start the decoder */
 	HAL_WRITE32(dev->hwregs[id], 4, core->regs[1]);
 
-	RTK_LOGD(TAG, "flushed registers on core %d\n", id);
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "flushed registers on core %d\n", id);
 
 	return DWL_OK;
 }
@@ -704,7 +672,7 @@ int WaitPPReadyAndRefreshRegs(hx170dec_t *dev, struct core_desc *core)
 {
 	u32 id = core->id;
 
-	RTK_LOGD(TAG, "wait_event_interruptible PP[%d]\n", id);
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "wait_event_interruptible PP[%d]\n", id);
 
 	rtos_sema_take(pp_wait_sema, RTOS_MAX_TIMEOUT);
 
@@ -716,7 +684,7 @@ int WaitDecReadyAndRefreshRegs(hx170dec_t *dev, struct core_desc *core)
 {
 	u32 id = core->id;
 
-	RTK_LOGD(TAG, "wait_event_interruptible DEC[%d]\n", id);
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "wait_event_interruptible DEC[%d]\n", id);
 	rtos_sema_take(dec_wait_sema, RTOS_MAX_TIMEOUT);
 
 	/* refresh registers */
@@ -737,10 +705,10 @@ const void *DWLInit(DWLInitParam_t *param)
 	dec_dwl = (hX170dwl_t *) rtos_mem_calloc(1, sizeof(hX170dwl_t));
 	dec_dwl->numCores = HXDEC_MAX_CORES;
 
-	RTK_LOGD(TAG, "DWLInit start\n");
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "DWLInit start\n");
 
 	if (dec_dwl == NULL) {
-		RTK_LOGE(TAG, "failed to alloc hX170dwl_t struct\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "failed to alloc hX170dwl_t struct\n");
 		return NULL;
 	}
 
@@ -748,21 +716,21 @@ const void *DWLInit(DWLInitParam_t *param)
 
 	switch (dec_dwl->clientType) {
 	case DWL_CLIENT_TYPE_JPEG_DEC:
-		RTK_LOGD(TAG, "JPEG type\n");
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "JPEG type\n");
 		break;
 	case DWL_CLIENT_TYPE_PP:
-		RTK_LOGD(TAG, "PP type\n");
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "PP type\n");
 		break;
 	default:
-		RTK_LOGD(TAG, "Unknown client type no. %d\n", dec_dwl->clientType);
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Unknown client type no. %d\n", dec_dwl->clientType);
 		goto err;
 	}
 
-	RTK_LOGD(TAG, "DWLInit SUCCESS\n");
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "DWLInit SUCCESS\n");
 
 	return dec_dwl;
 err:
-	RTK_LOGE(TAG, "DWLInit FAILED\n");
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "DWLInit FAILED\n");
 	DWLRelease(dec_dwl);
 
 	return NULL;
@@ -784,7 +752,7 @@ i32 DWLRelease(const void *instance)
 
 	rtos_mem_free(dec_dwl);
 
-	RTK_LOGD(TAG, "DWLRelease SUCCESS\n");
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "DWLRelease SUCCESS\n");
 
 	return (DWL_OK);
 }
@@ -804,7 +772,7 @@ i32 DWLReserveHwPipe(const void *instance, i32 *coreID)
 	assert_param(dec_dwl != NULL);
 	assert_param(dec_dwl->clientType != DWL_CLIENT_TYPE_PP);
 
-	RTK_LOGD(TAG, "Try Reserve Pipe\n");
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Try Reserve Pipe\n");
 
 	rtos_mutex_take(dec_lock, RTOS_MAX_TIMEOUT);
 	/* reserve PP */
@@ -812,7 +780,7 @@ i32 DWLReserveHwPipe(const void *instance, i32 *coreID)
 
 	dec_dwl->bPPReserved = 1;
 
-	RTK_LOGD(TAG, "Reserved Pipe\n");
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Reserved Pipe\n");
 
 	return DWL_OK;
 }
@@ -834,7 +802,7 @@ i32 DWLReserveHw(const void *instance, i32 *coreID)
 
 	isPP = dec_dwl->clientType == DWL_CLIENT_TYPE_PP ? 1 : 0;
 
-	RTK_LOGD(TAG, "Try reserve %s\n", isPP ? "PP" : "DEC");
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Try reserve %s\n", isPP ? "PP" : "DEC");
 
 	if (isPP) {
 		rtos_mutex_take(pp_lock, RTOS_MAX_TIMEOUT);
@@ -842,7 +810,7 @@ i32 DWLReserveHw(const void *instance, i32 *coreID)
 		rtos_mutex_take(dec_lock, RTOS_MAX_TIMEOUT);
 	}
 
-	RTK_LOGD(TAG, "Reserved %s\n", isPP ? "PP" : "DEC");
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Reserved %s\n", isPP ? "PP" : "DEC");
 
 	return DWL_OK;
 }
@@ -868,7 +836,7 @@ void DWLReleaseHw(const void *instance, i32 coreID)
 		return;
 	}
 
-	RTK_LOGD(TAG, "Release %s\n", isPP ? "PP" : "DEC");
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Release %s\n", isPP ? "PP" : "DEC");
 
 	if (isPP) {
 		assert_param(coreID == 0);
@@ -877,7 +845,7 @@ void DWLReleaseHw(const void *instance, i32 coreID)
 	} else {
 		if (dec_dwl->bPPReserved) {
 			/* decoder has reserved PP also => release it */
-			RTK_LOGD(TAG, "DEC released PP core %d\n", coreID);
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "DEC released PP core %d\n", coreID);
 
 			dec_dwl->bPPReserved = 0;
 
@@ -982,7 +950,7 @@ i32 DWLMallocLinear(const void *instance, u32 size, DWLLinearMem_t *info)
 {
 	UNUSED(instance);
 
-	RTK_LOGD(TAG, "Malloc Linear\t%8d bytes\n", size);
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Malloc Linear\t%8d bytes\n", size);
 
 	info->size = size;
 	info->virtualAddress = rtos_mem_malloc(size);
@@ -1084,7 +1052,7 @@ void DWLEnableHW(const void *instance, i32 coreID, u32 offset, u32 value)
 
 	DWLWriteReg(dec_dwl, coreID, offset, value);
 
-	RTK_LOGD(TAG, "%s enabled by previous DWLWriteReg\n",
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "%s enabled by previous DWLWriteReg\n",
 			 isPP ? "PP" : "DEC");
 
 	core.id = coreID;
@@ -1118,7 +1086,7 @@ void DWLDisableHW(const void *instance, i32 coreID, u32 offset, u32 value)
 
 	DWLWriteReg(dec_dwl, coreID, offset, value);
 
-	RTK_LOGD(TAG, "%s %d disabled by previous DWLWriteReg\n",
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "%s %d disabled by previous DWLWriteReg\n",
 			 isPP ? "PP" : "DEC", coreID);
 
 	core.id = coreID;
@@ -1159,7 +1127,7 @@ i32 DWLWaitHwReady(const void *instance, i32 coreID, u32 timeout)
 
 	isPP = dec_dwl->clientType == DWL_CLIENT_TYPE_PP ? 1 : 0;
 
-	RTK_LOGD(TAG, "%s %d\n", isPP ? "PP" : "DEC", coreID);
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "%s %d\n", isPP ? "PP" : "DEC", coreID);
 
 	core.id = coreID;
 	core.regs = dwlShadowRegs[coreID];
@@ -1168,12 +1136,12 @@ i32 DWLWaitHwReady(const void *instance, i32 coreID, u32 timeout)
 #ifdef DWL_USE_DEC_IRQ
 	if (isPP) {
 		if (WaitPPReadyAndRefreshRegs(&hx170dec_data, &core)) {
-			RTK_LOGE(TAG, "ioctl HX170DEC_IOCG_*_WAIT failed\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "ioctl HX170DEC_IOCG_*_WAIT failed\n");
 			ret = DWL_HW_WAIT_ERROR;
 		}
 	} else {
 		if (WaitDecReadyAndRefreshRegs(&hx170dec_data, &core)) {
-			RTK_LOGE(TAG, "ioctl HX170DEC_IOCG_*_WAIT failed\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "ioctl HX170DEC_IOCG_*_WAIT failed\n");
 			ret = DWL_HW_WAIT_ERROR;
 		}
 	}
@@ -1207,7 +1175,7 @@ i32 DWLWaitHwReady(const void *instance, i32 coreID, u32 timeout)
 	} while (max_wait_time > 0);
 #endif
 
-	RTK_LOGD(TAG, "%s done\n", isPP ? "PP" : "DEC");
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "%s done\n", isPP ? "PP" : "DEC");
 	return ret;
 }
 
@@ -1223,7 +1191,7 @@ i32 DWLWaitHwReady(const void *instance, i32 coreID, u32 timeout)
 ------------------------------------------------------------------------------*/
 void *DWLmalloc(u32 n)
 {
-	RTK_LOGD(TAG, "DWLmalloc\t%8d bytes\n", n);
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "DWLmalloc\t%8d bytes\n", n);
 	return rtos_mem_malloc((size_t) n);
 }
 
@@ -1257,7 +1225,7 @@ void DWLfree(void *p)
 ------------------------------------------------------------------------------*/
 void *DWLcalloc(u32 n, u32 s)
 {
-	RTK_LOGD(TAG, "DWLcalloc\t%8d bytes\n", n * s);
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "DWLcalloc\t%8d bytes\n", n * s);
 	void *p = NULL;
 
 	p = rtos_mem_calloc((n), (s));

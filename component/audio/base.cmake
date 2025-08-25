@@ -59,11 +59,11 @@ ameba_list_append(private_includes
 )
 
 ameba_add_merge_app_library(base
-    audio_base_audio_utils
-    audio_base_cutils_src
-    audio_base_libs
+    audio_base_xlib
     audio_base_log
+    audio_base_cutils_src
     audio_base_osal
     audio_base_osal_cxx
+    audio_base_audio_utils
 )
 ##########################################################################################

@@ -113,7 +113,7 @@ class ManifestImageConfig:
                         self.rdp_key = config[config["rdp_key"]]
 
         #SBOOT:
-        if image_type == ImageType.IMAGE1 or image_type == ImageType.IMAGE2:  #image3 is not required
+        if image_type in [ImageType.IMAGE1, ImageType.IMAGE2, ImageType.CERT]:  #image3 is not required
             self.sboot_enable:bool = config.get("sboot_enable", config.get("secure_boot_en", False))
             if self.sboot_enable:
                 self.sboot_algorithm:str = config["sboot_algorithm"] if "sboot_algorithm" in config else config["algorithm"]
@@ -169,6 +169,7 @@ class ManifestManager(ABC):
         else:
             context.logger.info(f"manifest file does not contains cert, will use image2 config for cert")
             self.cert = self.image2
+        self.app_all = self.image2 #NOTE: APP_ALL used in compress image
 
     def validate_config(self, data:Union[str, dict]) -> bool:
         if isinstance(data, str):
@@ -322,8 +323,9 @@ class ManifestManager(ABC):
 
     def create_manifest(self, output_file:str, input_file:str, img_type = ImageType.UNKNOWN, compress = False) -> Error:
         image_type = img_type if img_type != ImageType.UNKNOWN else parse_image_type(input_file)
-        if image_type not in [ImageType.IMAGE1, ImageType.IMAGE2]:
-            return Error(ErrorType.INVALID_ARGS, f"create manifest only for image1 or image2: {image_type}")
+        valid_type = [ImageType.IMAGE1, ImageType.IMAGE2, ImageType.APP_ALL]
+        if image_type not in valid_type: #NOTE: APP_ALL used in compress image
+            return Error(ErrorType.INVALID_ARGS, f"create manifest only for {valid_type}: {image_type}")
 
         if compress:
             global ImagePattern

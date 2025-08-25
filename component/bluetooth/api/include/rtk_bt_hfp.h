@@ -20,6 +20,7 @@ extern "C"
 #define RTK_BT_RFC_HFP_AG_CHANN_NUM            23
 #define RTK_BT_HFP_MAX_SCO_DATA_LENGTH         1024
 #define RTK_BT_HFP_MAX_PHONE_NUMBER            20
+#define RTK_BT_HFP_MAX_ATCMD_LENGTH            40
 /* BT HFP AG Supported Local Feature */
 #define RTK_BT_HFP_AG_LOCAL_CAPABILITY_3WAY                   (1 << 0)
 #define RTK_BT_HFP_AG_LOCAL_CAPABILITY_EC_NR                  (1 << 1)
@@ -191,6 +192,16 @@ typedef struct {
 	uint8_t bd_addr[6];                             /*!< Remote BT address */
 	uint8_t gain;                                   /*!< level The current battery level, range from 0 to 100. */
 } rtk_bt_hfp_microphone_gain_t;
+
+/**
+ * @struct    rtk_bt_hfp_vnd_at_cmd_t
+ * @brief     hfp vendor at cmd.
+ */
+typedef struct {
+	uint8_t bd_addr[6];                             /*!< Remote BT address */
+	const char at_cmd[RTK_BT_HFP_MAX_ATCMD_LENGTH]; /*!< at cmd */
+	uint16_t len;                                   /*!< at cmd length */
+} rtk_bt_hfp_vnd_at_cmd_t;
 
 /**
  * @struct    rtk_bt_hfp_speaker_gain_t
@@ -409,6 +420,16 @@ typedef struct {
 	uint8_t bd_addr[6];                                 /*!< address */
 } rtk_bt_hfp_ag_call_terminate_req_ind_t;
 
+/**
+ * @struct    rtk_bt_hfp_unknown_at_event_t
+ * @brief     unknown at cmd event .
+ */
+typedef struct {
+	uint8_t bd_addr[6];                             /*!< Remote BT address */
+	const char at_cmd[RTK_BT_HFP_MAX_ATCMD_LENGTH]; /*!< at cmd */
+	uint16_t len;                                   /*!< at cmd length */
+} rtk_bt_hfp_unknown_at_event_t;
+
 /* ------------------------------ Functions Declaration ------------------------------ */
 /**
  * @defgroup  bt_hfp BT HFP APIs
@@ -551,6 +572,17 @@ uint16_t rtk_bt_hfp_speaker_gain_report(uint8_t *bd_addr, uint8_t gain);
  *            - Others: Error code
  */
 uint16_t rtk_bt_hfp_microphone_gain_report(uint8_t *bd_addr, uint8_t gain);
+
+/**
+ * @brief     hfp send vendor at cmd request.
+ * @param[in] bd_addr: bt address
+ * @param[in] at_cmd: at cmd. End with "\r"
+ * @param[in] len: at cmd length
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_hfp_send_vnd_at_cmd_req(uint8_t *bd_addr, const char *at_cmd, uint16_t len);
 
 /**
  * @}

@@ -200,7 +200,7 @@ int whc_spi_host_recv_process(void)
 #else
 	case WHC_WIFI_EVT_BRIDGE:
 		hdr = (struct whc_cmd_path_hdr *)recv_msg;
-		whc_bridge_host_pkt_rx_to_user((u8 *)(hdr + 1), hdr->len);
+		whc_host_pkt_rx_to_user((u8 *)(hdr + 1), hdr->len);
 		break;
 
 	default:

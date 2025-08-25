@@ -71,9 +71,11 @@ static uint32_t cmd_string2uint32(char *p)
 rtk_bt_app_conf_t app_conf = {
 	.app_profile_support = RTK_BT_PROFILE_GATTS,
 	.mtu_size = 180,
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 	.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL,
 	.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED,
 	.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED,
+#endif
 	.max_tx_octets = 0x40,
 	.max_tx_time = 0x200,
 };
@@ -310,9 +312,6 @@ int atcmd_bt_remote_wakeup(int argc, char **argv)
 #endif
 
 static const cmd_table_t vendor_table[] = {
-#if defined(BT_ATCMD_HELP) && BT_ATCMD_HELP
-	{"help",             atcmd_bt_vendor_help,      1, 3},
-#endif
 	{"bt_enable",        atcmd_bt_enable,           2, 2},
 	{"bt_power",         atcmd_bt_power,            2, 2},
 	{"tx_power_gain",    atcmd_bt_tx_power_gain,    2, 5},
