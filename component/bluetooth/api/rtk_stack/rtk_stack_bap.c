@@ -1498,7 +1498,10 @@ static void bt_stack_le_audio_sync_cb(T_BLE_AUDIO_SYNC_HANDLE sync_handle, uint8
 			p_ind->iso_chann_t.path_direction = RTK_BLE_AUDIO_ISO_DATA_PATH_RX;
 			p_ind->sync_handle = sync_handle;
 			if (ble_audio_sync_get_info(sync_handle, &sync_info)) {
+				p_ind->iso_chann_t.iso_interval = sync_info.big_info.iso_interval;
 				base_data_get_bis_codec_cfg(sync_info.p_base_mapping, p_sync_cb->p_setup_data_path->bis_idx, (T_CODEC_CFG *)&p_ind->codec_t);
+			} else {
+				BT_LOGE("%s ble_audio_sync_get_info fail\r\n", __func__);
 			}
 			/* Send event */
 			rtk_bt_evt_indicate(p_evt, NULL);
@@ -1959,6 +1962,7 @@ static void bt_stack_le_audio_broadcast_source_cb(T_BROADCAST_SOURCE_HANDLE hand
 	case MSG_BROADCAST_SOURCE_SETUP_DATA_PATH: {
 		rtk_bt_le_audio_iso_channel_info_t *p_iso_chann = NULL;
 		rtk_bt_le_audio_bis_conn_handle_info_t bis_info = {0};
+		T_BROADCAST_SOURCE_INFO src_info = {0};
 		APP_PRINT_INFO2("MSG_BROADCAST_SOURCE_SETUP_DATA_PATH: bis_idx %d, cause 0x%x",
 						p_sm_data->p_setup_data_path->bis_idx,
 						p_sm_data->p_setup_data_path->cause);
@@ -1988,6 +1992,11 @@ static void bt_stack_le_audio_broadcast_source_cb(T_BROADCAST_SOURCE_HANDLE hand
 		ind->iso_chann_t.p_iso_chann = (void *)p_iso_chann;
 		ind->iso_chann_t.iso_conn_handle = p_iso_chann->iso_conn_handle;
 		ind->iso_chann_t.path_direction = RTK_BLE_AUDIO_ISO_DATA_PATH_TX;
+		if (broadcast_source_get_info(bt_le_audio_priv_data.bsrc.source_handle, &src_info)) {
+			ind->iso_chann_t.iso_interval = src_info.big_iso_interval;
+		} else {
+			BT_LOGE("%s broadcast_source_get_info fail\r\n", __func__);
+		}
 		memcpy((void *)&ind->codec_t, &bt_le_audio_priv_data.bsrc.codec_cfg, sizeof(rtk_bt_le_audio_cfg_codec_t));
 		/* Send event */
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -3986,10 +3995,6 @@ void bt_stack_le_audio_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 			BT_DUMPD("", p_data->p_bt_direct_iso->p_buf + p_data->p_bt_direct_iso->offset, p_data->p_bt_direct_iso->iso_sdu_len);
 			BT_LOGD("%s pkt_seq_num=%d\r\n", __func__, p_data->p_bt_direct_iso->pkt_seq_num);
 		}
-		if (p_data->p_bt_direct_iso->pkt_status_flag != ISOCH_DATA_PKT_STATUS_VALID_DATA) {
-			gap_iso_data_cfm(p_data->p_bt_direct_iso->p_buf);
-			break;
-		}
 		/* Send event */
 		if (false == rtk_bt_check_evt_cb_direct_calling(RTK_BT_LE_GP_BAP, RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND)) {
 			BT_LOGE("%s: RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND is not direct calling!\r\n", __func__);
@@ -4022,20 +4027,24 @@ void bt_stack_le_audio_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 			direct_iso_data_ind->ts_flag = p_data->p_bt_direct_iso->ts_flag;
 			direct_iso_data_ind->time_stamp = p_data->p_bt_direct_iso->time_stamp;
 			direct_iso_data_ind->buf_len = p_data->p_bt_direct_iso->offset + p_data->p_bt_direct_iso->iso_sdu_len;
-			direct_iso_data_ind->p_buf = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, direct_iso_data_ind->buf_len);
-			if (!direct_iso_data_ind->p_buf) {
-				BT_LOGE("direct_iso_data_ind->p_buf alloc fail, len = %d\r\n", direct_iso_data_ind->buf_len);
-				bt_stack_le_audio_release_iso_chann(p_iso_chann);
-				rtk_bt_event_free(p_evt);
-				break;
+			if (direct_iso_data_ind->iso_sdu_len) {
+				direct_iso_data_ind->p_buf = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, direct_iso_data_ind->buf_len);
+				if (!direct_iso_data_ind->p_buf) {
+					BT_LOGE("direct_iso_data_ind->p_buf alloc fail, len = %d\r\n", direct_iso_data_ind->buf_len);
+					bt_stack_le_audio_release_iso_chann(p_iso_chann);
+					rtk_bt_event_free(p_evt);
+					break;
+				}
+				memset(direct_iso_data_ind->p_buf, 0, direct_iso_data_ind->buf_len);
+				memcpy((void *)direct_iso_data_ind->p_buf, (void *)p_data->p_bt_direct_iso->p_buf, direct_iso_data_ind->buf_len);
+			} else {
+				direct_iso_data_ind->p_buf = NULL;
 			}
-			memset(direct_iso_data_ind->p_buf, 0, direct_iso_data_ind->buf_len);
-			memcpy((void *)direct_iso_data_ind->p_buf, (void *)p_data->p_bt_direct_iso->p_buf, direct_iso_data_ind->buf_len);
 			/*  user_data point to the memory alloced for 2nd level ptr, so it's convenient
 			    to free it when free p_evt */
 			p_evt->user_data = direct_iso_data_ind->p_buf;
-			rtk_bt_evt_indicate(p_evt, NULL);
 			gap_iso_data_cfm(p_data->p_bt_direct_iso->p_buf);
+			rtk_bt_evt_indicate(p_evt, NULL);
 			bt_stack_le_audio_release_iso_chann(p_iso_chann);
 		}
 	}

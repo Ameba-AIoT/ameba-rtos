@@ -19,7 +19,7 @@ ameba_list_append(public_includes
     ${c_CMPT_WIFI_DIR}/wpa_supplicant/src
 )
 endif()
-if(CONFIG_ZEPHYR_SDK AND CONFIG_WHC_NONE)
+if(CONFIG_ZEPHYR_SDK)
     ameba_list_append(public_libraries
         ${c_SDK_LIB_APPLICATION_DIR}/lib_${TARGET_LIB}.a
     )
@@ -89,7 +89,7 @@ endif()
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 
-if(CONFIG_ZEPHYR_SDK AND CONFIG_WHC_NONE)
+if(CONFIG_ZEPHYR_SDK)
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
     ameba_add_external_app_library(${TARGET_LIB}
         p_SOURCES

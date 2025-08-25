@@ -166,9 +166,7 @@ static void PrimaryDestroyStreamOut(struct AudioHwCard *card, struct AudioHwStre
 {
 	(void) card;
 	DestroyAudioHwStreamOut(stream_out);
-
 }
-
 
 static struct AudioHwStreamIn *PrimaryCreateStreamIn(
 	struct AudioHwCard *card,

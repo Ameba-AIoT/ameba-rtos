@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "ameba_diagnose_types.h"
 #include "ameba_diagnose.h"
 #include "ameba_soc.h"
@@ -67,9 +73,9 @@ void test_rtk_diag_multi_task2(void *pv_parameters)
 void rtk_diag_debug_create_task(void)
 {
 	if (rtos_task_create(NULL, "diag_debug_task1", (rtos_task_t)test_rtk_diag_multi_task1, NULL, (3072), (1)) != RTK_SUCCESS) {
-		RTK_LOGA(NOTAG, "Cannot create power_ppe demo task\n");
+		RTK_LOGA("DIAG", "Cannot create power_ppe demo task\n");
 	}
 	if (rtos_task_create(NULL, "diag_debug_task2", (rtos_task_t)test_rtk_diag_multi_task2, NULL, (3072), (1)) != RTK_SUCCESS) {
-		RTK_LOGA(NOTAG, "Cannot create power_ppe demo task\n");
+		RTK_LOGA("DIAG", "Cannot create power_ppe demo task\n");
 	}
 }

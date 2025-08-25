@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2020 Realtek Semiconductor Corp.	All rights reserved.
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
  *
- * Author: PSP Software Group
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdio.h>
@@ -28,7 +28,8 @@ uint64_t vGetGenericTimerFreq(void)
 	if (SYSCFG_CHIPType_Get() == CHIP_TYPE_FPGA) {
 		return 12500000;
 	} else {
-		return 50000000;
+		/* Systick clock source is APB clock, which is half of AHB clock */
+		return PLL_GetHBUSClk() / 2;
 	}
 }
 

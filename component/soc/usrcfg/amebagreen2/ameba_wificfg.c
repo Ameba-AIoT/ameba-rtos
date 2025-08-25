@@ -1,8 +1,8 @@
 /*
-* Copyright (c) 2024 Realtek Semiconductor Corp.
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "platform_autoconf.h"
 #include <wifi_api.h>
@@ -88,6 +88,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.check_dest_address_en = (u8)TRUE;
 	wifi_user_config.ap_compatibilty_enabled = 0x0B;
 	wifi_user_config.set_channel_api_do_rfk = 1;
+	wifi_user_config.dpk_peak_limit = 0;
 	wifi_user_config.rf_calibration_disable = 0;
 	wifi_user_config.tx_shortcut_enable = 1;
 	wifi_user_config.rx_shortcut_enable = 1;
@@ -104,7 +105,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wtn_strong_rssi_thresh = -50;
 	wifi_user_config.wtn_father_refresh_timeout = 3000;
 	wifi_user_config.wtn_child_refresh_timeout = 4000;
-	wifi_user_config.wtn_max_node_num = 15;
+	wifi_user_config.wtn_max_node_num = 32;
 
 	/* ensure skb_num_np >= rx_ampdu_num + skb_num_np_rsvd */
 	if (wifi_user_config.skb_num_np < wifi_user_config.rx_ampdu_num + skb_num_np_rsvd) {

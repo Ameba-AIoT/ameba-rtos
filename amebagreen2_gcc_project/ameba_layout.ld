@@ -12,12 +12,15 @@
 /* layout configuration */
 #define TZ_NSC_SIZE                  (4)
 #define TZ_ENTRY_SIZE                (16)
-
+#define TZ_S_SIZE                    (44)
+#if defined(CONFIG_IMG3_FLASH)
+#define TZ_S_BSS_SIZE                (16)
+#endif
 
 #if defined(CONFIG_IMG3_SRAM)
 #define RAM_TZ_NSC_SIZE              KBYTES(TZ_NSC_SIZE)
 #define RAM_TZ_ENTRY_SIZE            KBYTES(TZ_ENTRY_SIZE)
-#define RAM_KM4TZ_IMG3_SIZE          KBYTES(44)
+#define RAM_KM4TZ_IMG3_SIZE          KBYTES(TZ_S_SIZE)
 #define PSRAM_TZ_NSC_SIZE            KBYTES(0)
 #define PSRAM_TZ_ENTRY_SIZE          KBYTES(0)
 #define PSRAM_KM4TZ_IMG3_SIZE        KBYTES(0)
@@ -27,7 +30,14 @@
 #define RAM_KM4TZ_IMG3_SIZE          KBYTES(0)
 #define PSRAM_TZ_NSC_SIZE            KBYTES(TZ_NSC_SIZE)
 #define PSRAM_TZ_ENTRY_SIZE          KBYTES(TZ_ENTRY_SIZE)
-#define PSRAM_KM4TZ_IMG3_SIZE        KBYTES(128)
+#define PSRAM_KM4TZ_IMG3_SIZE        KBYTES(TZ_S_SIZE)
+#elif defined(CONFIG_IMG3_FLASH)
+#define RAM_TZ_NSC_SIZE              KBYTES(TZ_NSC_SIZE)
+#define RAM_TZ_ENTRY_SIZE            KBYTES(TZ_ENTRY_SIZE)
+#define RAM_KM4TZ_IMG3_SIZE          KBYTES(TZ_S_BSS_SIZE)
+#define PSRAM_TZ_NSC_SIZE            KBYTES(0)
+#define PSRAM_TZ_ENTRY_SIZE          KBYTES(0)
+#define PSRAM_KM4TZ_IMG3_SIZE        KBYTES(0)
 #else /* undefine trustzone */
 #define RAM_TZ_NSC_SIZE              KBYTES(0)
 #define RAM_TZ_ENTRY_SIZE            KBYTES(0)

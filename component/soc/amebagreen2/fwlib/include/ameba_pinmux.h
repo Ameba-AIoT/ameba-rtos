@@ -1,8 +1,8 @@
 /*
-* Copyright (c) 2024 Realtek Semiconductor Corp.
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _AMEBA_PINMUX_H_
 #define _AMEBA_PINMUX_H_
@@ -274,10 +274,10 @@
 #define PINMUX_FUNCTION_UART3_RXD           104
 #define PINMUX_FUNCTION_UART3_CTS           105
 #define PINMUX_FUNCTION_UART3_RTS           106
-#define PINMUX_FUNCTION_CAN0_TX             107
-#define PINMUX_FUNCTION_CAN0_RX             108
-#define PINMUX_FUNCTION_CAN1_TX             109
-#define PINMUX_FUNCTION_CAN1_RX             110
+#define PINMUX_FUNCTION_A2C0_TX             107
+#define PINMUX_FUNCTION_A2C0_RX             108
+#define PINMUX_FUNCTION_A2C1_TX             109
+#define PINMUX_FUNCTION_A2C1_RX             110
 #define PINMUX_FUNCTION_TIM4_PWM0           111
 #define PINMUX_FUNCTION_TIM4_PWM1           112
 #define PINMUX_FUNCTION_TIM4_PWM2           113

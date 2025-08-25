@@ -7,6 +7,7 @@
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_ipc.h"
 #endif
+#include "ameba_diagnose.h"
 
 static const char *const TAG = "MAIN";
 u32 use_hw_crypto_func;
@@ -98,7 +99,7 @@ extern int rt_kv_init(void);
 
 void app_filesystem_init(void)
 {
-#if !(defined(CONFIG_MP_INCLUDED)) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
+#if !(defined(CONFIG_MP_SHRINK)) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 	int ret = 0;
 	vfs_init();
 
@@ -188,6 +189,8 @@ int main(void)
 #endif
 
 	app_IWDG_int();
+
+	rtk_diag_init(RTK_DIAG_HEAP_SIZE, RTK_DIAG_SEND_BUFFER_SIZE);
 
 	/* Execute application example */
 	app_example();

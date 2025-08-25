@@ -23,6 +23,15 @@
 #define WIFI_CAST_OTA_GET_BITS(data, bits)        ( (((uint8_t *)(data))[(bits) >> 0x3]) & ( 1 << ((bits) & 0x7)) )
 #define WIFI_CAST_OTA_SET_BITS(data, bits)        do { (((uint8_t *)(data))[(bits) >> 0x3]) |= ( 1 << ((bits) & 0x7)); } while(0);
 
+#if defined(CONFIG_AMEBASMART)
+#define WIFI_CAST_OTA_IC   0x1
+#elif defined(CONFIG_AMEBALITE)
+#define WIFI_CAST_OTA_IC   0x2
+#elif defined (CONFIG_AMEBADPLUS)
+#define WIFI_CAST_OTA_IC   0x3
+#else
+#define WIFI_CAST_OTA_IC   0x4
+#endif
 /**
  * @brief OTA packet head
  */
@@ -39,8 +48,9 @@ struct example_ota_status {
 	u16 image_id;		/* upgrade image id */
 	u32 checksum;		/* upgrade image checksum */
 	u32 image_addr;		/* upgrade image address */
-	u32 total_size;		/* upgrade firmware total size */
-	u32 written_size;	/* upgrade firmware size has been written into flash */
+	u32 total_size;		/* upgrade image total size */
+	u32 written_size;	/* upgrade image size has been written into flash */
+	u8 ic_index;		/* upgrade IC index */
 	u8 progress_index;	/* upgrade process bitmap */
 	u8 progress_array[0][WIFI_CAST_OTA_PROGRESS_MAX]; /* upgrade process bitmap */
 } __attribute__((packed));
@@ -52,14 +62,5 @@ struct example_ota_result {
 	u32 unfinished_num; /* upgrade total device number */
 	u32 successed_num;  /* upgrade successed device number */
 };
-
-/**
- * @brief Receive data from wifi cast device
- */
-struct example_cb_recv_data {
-	u32 data_len;      /* receive data length */
-	u8 mac[ETH_ALEN];  /* receive src mac address */
-	u8 *data;          /* receive data body */
-} __attribute__((packed));
 
 #endif /* _EXAMPLE_WIFICAST_OTA_H_ */

@@ -16,9 +16,11 @@
 #include "vfs.h"
 #endif
 #include "os_wrapper.h"
+#include "ssl_rom_to_ram_map.h"
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_ipc.h"
 #endif
+#include "ameba_diagnose.h"
 
 static const char *const TAG = "MAIN";
 
@@ -42,27 +44,14 @@ void app_ftl_init(void)
 #endif
 
 
-static void *app_mbedtls_calloc_func(size_t nelements, size_t elementSize)
-{
-	size_t size;
-	void *ptr = NULL;
-	size = nelements * elementSize;
-	ptr = rtos_mem_malloc(size);
-	if (ptr) {
-		memset(ptr, 0, size);
-	}
-	return ptr;
-}
-
-static void app_mbedtls_free_func(void *buf)
-{
-	rtos_mem_free(buf);
-}
-
 void app_mbedtls_rom_init(void)
 {
-	mbedtls_platform_set_calloc_free(app_mbedtls_calloc_func, app_mbedtls_free_func);
+	ssl_function_map.ssl_calloc = (void *(*)(unsigned int, unsigned int))rtos_mem_calloc;
+	ssl_function_map.ssl_free = (void (*)(void *))rtos_mem_free;
+	ssl_function_map.ssl_printf = (long unsigned int (*)(const char *, ...))DiagPrintf;
+	ssl_function_map.ssl_snprintf = (int (*)(char *s, size_t n, const char *format, ...))DiagSnPrintf;
 }
+
 /*
  * This function will be replaced when Sdk example is compiled using CMD "make all EXAMPLE=xxx" or "make xip EXAMPLE=xxx"
  * To aviod compile error when example is not compiled
@@ -87,7 +76,7 @@ extern int rt_kv_init(void);
 
 void app_filesystem_init(void)
 {
-#if !(defined(CONFIG_MP_INCLUDED)) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
+#if !(defined(CONFIG_MP_SHRINK)) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 	int ret = 0;
 	vfs_init();
 #ifdef CONFIG_FATFS_WITHIN_APP_IMG
@@ -198,6 +187,8 @@ int main(void)
 	/* init console */
 	shell_init_rom(0, 0);
 	shell_init_ram();
+
+	rtk_diag_init(RTK_DIAG_HEAP_SIZE, RTK_DIAG_SEND_BUFFER_SIZE);
 
 	/* Execute application example */
 	app_example();

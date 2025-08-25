@@ -66,6 +66,15 @@ soc_configs:Dict[str, SocImageConfig] = {
         image3_section = "KM4TZ_IMG3_XIP",
         dsp_section = None
     ),
+    "RTL8720F": SocImageConfig(
+        image1_section = "KM4TZ_BOOT_XIP",
+        image2_section = {
+            "km4ns": "KM4NS_IMG2_XIP",
+            "km4tz": "KM4TZ_IMG2_XIP",
+        },
+        image3_section = "KM4TZ_IMG3_XIP",
+        dsp_section = None
+    ),
     "amebalite": SocImageConfig(
         image1_section = "KM4_BOOT_XIP",
         image2_section = {

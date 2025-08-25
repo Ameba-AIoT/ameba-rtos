@@ -31,9 +31,9 @@ extern "C"
 #define RTK_BT_HC_CLOCK_OFFSET_SUPPORT      1
 #define RTK_BLE_SET_TX_QUEUE_NUM            0
 
-#define RTK_BLE_GATTS                       1
-#define RTK_BLE_GATTC                       1
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
+#define RTK_BLE_GATTS_SUPPORT               1
+#define RTK_BLE_GATTC_SUPPORT               1
 #define RTK_BLE_4_0_SUPPORT                 1
 #define RTK_BLE_4_2_SUPPORT                 1
 #define RTK_BLE_5_0_SUPPORT                 1
@@ -83,9 +83,9 @@ extern "C"
 #define RTK_BT_POWER_CONTROL_SUPPORT        1
 #define RTK_BT_HC_CLOCK_OFFSET_SUPPORT      1
 
-#define RTK_BLE_GATTS                       1
-#define RTK_BLE_GATTC                       1
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
+#define RTK_BLE_GATTS_SUPPORT               1
+#define RTK_BLE_GATTC_SUPPORT               1
 #define RTK_BLE_4_0_SUPPORT                 1
 #define RTK_BLE_4_2_SUPPORT                 1
 #define RTK_BLE_5_0_SUPPORT                 1
@@ -121,35 +121,6 @@ extern "C"
 #endif /* RTK_BLE_5_2_SUPPORT */
 
 /*
- * AmebaPro2
- */
-#elif defined(CONFIG_8735B) && CONFIG_8735B
-#define RTK_BLE_GAP_MAX_LINKS               4
-#define RTK_BLE_SUPPORT                     1
-
-#define RTK_BLE_GATTS                       1
-#define RTK_BLE_GATTC                       1
-#if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
-#define RTK_BLE_4_0_SUPPORT                 1
-#define RTK_BLE_4_2_SUPPORT                 1
-#define RTK_BLE_5_0_SUPPORT                 1
-#define RTK_BLE_5_1_SUPPORT                 1
-#define RTK_BLE_5_2_SUPPORT                 0
-#define RTK_BLE_SMP_OOB_SUPPORT             1
-#endif /* RTK_BLE_SUPPORT */
-
-#if defined(RTK_BLE_4_2_SUPPORT) && RTK_BLE_4_2_SUPPORT
-#define RTK_BLE_PRIVACY_SUPPORT             1
-#define RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT    1
-#endif /* RTK_BLE_4_2_SUPPORT */
-
-#if defined(RTK_BLE_5_0_SUPPORT) && RTK_BLE_5_0_SUPPORT
-#define RTK_BLE_5_0_SET_PHYS_SUPPORT        1
-#define RTK_BLE_5_0_AE_ADV_SUPPORT          0
-#define RTK_BLE_5_0_AE_SCAN_SUPPORT         0
-#endif /* RTK_BLE_5_0_SUPPORT */
-
-/*
  * AmebaDplus
  */
 #elif defined(CONFIG_AMEBADPLUS) && CONFIG_AMEBADPLUS
@@ -157,9 +128,9 @@ extern "C"
 #define RTK_BLE_SUPPORT                     1
 #define RTK_BT_POWER_CONTROL_SUPPORT        1
 
-#define RTK_BLE_GATTS                       1
-#define RTK_BLE_GATTC                       1
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
+#define RTK_BLE_GATTS_SUPPORT               1
+#define RTK_BLE_GATTC_SUPPORT               1
 #define RTK_BLE_4_0_SUPPORT                 1
 #define RTK_BLE_4_2_SUPPORT                 1
 #define RTK_BLE_5_0_SUPPORT                 1
@@ -188,9 +159,9 @@ extern "C"
 #define RTK_BLE_SUPPORT                     1
 #define RTK_BT_POWER_CONTROL_SUPPORT        1
 
-#define RTK_BLE_GATTS                       1
-#define RTK_BLE_GATTC                       1
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
+#define RTK_BLE_GATTS_SUPPORT               1
+#define RTK_BLE_GATTC_SUPPORT               1
 #define RTK_BLE_4_0_SUPPORT                 1
 #define RTK_BLE_4_2_SUPPORT                 1
 #define RTK_BLE_5_0_SUPPORT                 1
@@ -218,9 +189,9 @@ extern "C"
 #define RTK_BLE_SUPPORT                     1
 #define RTK_BT_POWER_CONTROL_SUPPORT        1
 
-#define RTK_BLE_GATTS                       1
-#define RTK_BLE_GATTC                       1
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
+#define RTK_BLE_GATTS_SUPPORT               1
+#define RTK_BLE_GATTC_SUPPORT               1
 #define RTK_BLE_4_0_SUPPORT                 1
 #define RTK_BLE_4_2_SUPPORT                 1
 #define RTK_BLE_5_0_SUPPORT                 1
@@ -230,7 +201,11 @@ extern "C"
 #endif /* RTK_BLE_SUPPORT */
 
 #if defined(RTK_BLE_4_2_SUPPORT) && RTK_BLE_4_2_SUPPORT
+#if defined(CONFIG_BT_SDN_VERIFY) && CONFIG_BT_SDN_VERIFY
+#define RTK_BLE_PRIVACY_SUPPORT             0
+#else
 #define RTK_BLE_PRIVACY_SUPPORT             1
+#endif
 #define RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT    1
 #endif /* RTK_BLE_4_2_SUPPORT */
 
@@ -255,9 +230,9 @@ extern "C"
 #define RTK_BT_POWER_CONTROL_SUPPORT        1
 #define RTK_BLE_SET_TX_QUEUE_NUM            0
 
-#define RTK_BLE_GATTS                       1
-#define RTK_BLE_GATTC                       1
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
+#define RTK_BLE_GATTS_SUPPORT               1
+#define RTK_BLE_GATTC_SUPPORT               1
 #define RTK_BLE_4_0_SUPPORT                 1
 #define RTK_BLE_4_2_SUPPORT                 1
 #define RTK_BLE_5_0_SUPPORT                 1
@@ -299,8 +274,35 @@ extern "C"
 #error "Please choose a correct platform"
 #endif
 
-#if (defined(RTK_BLE_5_2_SUPPORT) && RTK_BLE_5_2_SUPPORT)
-#if (defined(CONFIG_BT_ISO_TEST) && CONFIG_BT_ISO_TEST)
+#if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
+#if defined(CONFIG_BT_PROFILE_A2DP_SUPPORT) && CONFIG_BT_PROFILE_A2DP_SUPPORT
+#define RTK_BT_PROFILE_A2DP_SUPPORT         1
+#endif
+#if defined(CONFIG_BT_PROFILE_AVRCP_SUPPORT) && CONFIG_BT_PROFILE_AVRCP_SUPPORT
+#define RTK_BT_PROFILE_AVRCP_SUPPORT        1
+#endif
+#if defined(CONFIG_BT_PROFILE_HFP_SUPPORT) && CONFIG_BT_PROFILE_HFP_SUPPORT
+#define RTK_BT_PROFILE_HFP_SUPPORT          1
+#endif
+#if defined(CONFIG_BT_PROFILE_PBAP_SUPPORT) && CONFIG_BT_PROFILE_PBAP_SUPPORT
+#define RTK_BT_PROFILE_PBAP_SUPPORT         1
+#endif
+#if defined(CONFIG_BT_PROFILE_SPP_SUPPORT) && CONFIG_BT_PROFILE_SPP_SUPPORT
+#define RTK_BT_PROFILE_SPP_SUPPORT          1
+#endif
+#if defined(CONFIG_BT_PROFILE_RFC_SUPPORT) && CONFIG_BT_PROFILE_RFC_SUPPORT
+#define RTK_BT_PROFILE_RFC_SUPPORT          1
+#endif
+#if defined(CONFIG_BT_PROFILE_HID_SUPPORT) && CONFIG_BT_PROFILE_HID_SUPPORT
+#define RTK_BT_PROFILE_HID_SUPPORT          1
+#endif
+#if defined(CONFIG_BT_PROFILE_SDP_SUPPORT) && CONFIG_BT_PROFILE_SDP_SUPPORT
+#define RTK_BT_PROFILE_SDP_SUPPORT          1
+#endif
+#endif
+
+#if defined(RTK_BLE_5_2_SUPPORT) && RTK_BLE_5_2_SUPPORT
+#if defined(CONFIG_BT_ISO_TEST) && CONFIG_BT_ISO_TEST
 #define RTK_BLE_ISO_SUPPORT                 1
 #endif
 #if defined(CONFIG_BT_LE_AUDIO) && CONFIG_BT_LE_AUDIO
@@ -389,8 +391,7 @@ extern "C"
 #else
 #define RTK_BLE_MESH_DEVICE_SUPPORT         0
 #endif
-#if (defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT) && \
-    (defined(CONFIG_BT_MESH_BASED_ON_CODED_PHY) && CONFIG_BT_MESH_BASED_ON_CODED_PHY)
+#if (defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT) && (defined(CONFIG_BT_MESH_BASED_ON_CODED_PHY) && CONFIG_BT_MESH_BASED_ON_CODED_PHY)
 #define RTK_BLE_MESH_BASED_ON_CODED_PHY     1
 #undef RTK_BLE_5_0_AE_ADV_SUPPORT
 #define RTK_BLE_5_0_AE_ADV_SUPPORT          1

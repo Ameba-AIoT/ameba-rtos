@@ -42,7 +42,10 @@ static void sd_lock(void)
 	if (sd_mutex == NULL) {
 		rtos_mutex_create(&sd_mutex);
 	}
-	rtos_mutex_take(sd_mutex, MUTEX_WAIT_TIMEOUT);
+
+	if (RTK_FAIL == rtos_mutex_take(sd_mutex, MUTEX_WAIT_TIMEOUT)) {
+		RTK_LOGE(NOTAG, "%s take mutex fail!\n");
+	}
 }
 
 static void sd_unlock(void)
@@ -161,6 +164,7 @@ DRESULT SD_disk_ioctl(BYTE cmd, void *buff)
 {
 	DRESULT res = RES_ERROR;
 	SD_RESULT result;
+	sd_lock();
 
 	switch (cmd) {
 	/* Generic command (used by FatFs) */
@@ -208,6 +212,9 @@ DRESULT SD_disk_ioctl(BYTE cmd, void *buff)
 		res = RES_PARERR;
 		break;
 	}
+
+	sd_unlock();
+
 	return res;
 }
 #endif

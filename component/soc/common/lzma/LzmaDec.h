@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /* LzmaDec.h -- LZMA Decoder
 2018-04-21 : Igor Pavlov : Public domain */
 

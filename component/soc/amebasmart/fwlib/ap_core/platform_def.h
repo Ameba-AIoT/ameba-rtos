@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2019, Realtek Semiconductor Corp. All rights reserved.
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
  *
- * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef PLATFORM_DEF_H

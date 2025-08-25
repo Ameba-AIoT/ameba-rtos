@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Realtek, LLC.
+ * Copyright (c) 2025 Realtek, LLC.
  * All rights reserved.
  *
  * Licensed under the Realtek License, Version 1.0 (the "License");
@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 
-#ifndef AMEBA_BASE_CUTILS_INTERFACES_CUTILS_PARCEL_H
-#define AMEBA_BASE_CUTILS_INTERFACES_CUTILS_PARCEL_H
+#ifndef AMEBA_AUDIO_BASE_CUTILS_INCLUDE_CUTILS_PARCEL_H
+#define AMEBA_AUDIO_BASE_CUTILS_INCLUDE_CUTILS_PARCEL_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,7 +26,7 @@ extern "C" {
 typedef struct Parcel Parcel;
 
 Parcel *Parcel_Create(void);
-int32_t Parcel_Destroy(Parcel *parcel);
+void Parcel_Destroy(Parcel *parcel);
 
 bool Parcel_WriteBool(Parcel *parcel, bool value);
 bool Parcel_ReadBool(Parcel *parcel);
@@ -60,4 +61,4 @@ char *Parcel_ReadCString(Parcel *parcel);
 }
 #endif
 
-#endif // AMEBA_BASE_CUTILS_INTERFACES_CUTILS_PARCEL_H
+#endif // AMEBA_AUDIO_BASE_CUTILS_INCLUDE_CUTILS_PARCEL_H

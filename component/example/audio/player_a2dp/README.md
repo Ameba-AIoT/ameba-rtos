@@ -45,9 +45,7 @@ Required Components: another AmebaSmart device as bluetooth sink device
 			[*] Enable Media Framework
 				Demux  --->selected supported demux
 				Codec  --->selected supported codec
-				Sink   --->[*] BT & UAC
-			Third Party Lib  --->
-				[*] Speex
+				Audio Output  --->[*] Bluetooth A2DP Output
 
 	CONFIG BT  --->
 		[*] Enable BT

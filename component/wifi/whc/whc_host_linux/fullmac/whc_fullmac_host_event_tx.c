@@ -3,6 +3,7 @@
 
 void whc_fullmac_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 {
+#ifdef CONFIG_WHC_WIFI_API_PATH
 	struct event_priv_t *event_priv = &global_idev.event_priv;
 	struct whc_api_info *ret_msg;
 	struct whc_api_info *api_info;
@@ -84,7 +85,13 @@ exit:
 	mutex_unlock(&(event_priv->send_mutex));
 
 	dev_dbg(global_idev.fullmac_dev, "-----HOST API %x CALLING DONE\n", id);
-
+#else
+	(void)id;
+	(void)param;
+	(void)param_len;
+	(void)ret;
+	(void)ret_len;
+#endif
 }
 
 int whc_fullmac_host_set_user_config(struct wifi_user_conf *pwifi_usrcfg)

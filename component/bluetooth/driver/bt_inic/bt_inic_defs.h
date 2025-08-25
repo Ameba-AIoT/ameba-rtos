@@ -12,4 +12,9 @@ enum INIC_BT_ID_TYPE {
 
 #define HCI_SPI_PKT_HDR_LEN             8
 
+#define HCI_SDIO_PKT_EVENT_FIELD        4
+#define HCI_SDIO_PKT_LEN_FIELD          2
+#define HCI_SDIO_PKT_SERVICE_ID_FIELD   1
+#define HCI_SDIO_PKT_HDR_LEN            (HCI_SDIO_PKT_EVENT_FIELD + HCI_SDIO_PKT_LEN_FIELD + HCI_SDIO_PKT_SERVICE_ID_FIELD)
+
 #endif /* __BT_INIC_DEFS_H__ */

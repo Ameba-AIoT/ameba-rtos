@@ -1272,6 +1272,7 @@ _LONG_CALL_ u32 FLASH_Read_DataIsRight(u32 pattern_addr);
 
 _LONG_CALL_ int FLASH_WriteStream(u32 address, u32 len, u8 *data);
 _LONG_CALL_ void FLASH_DeepSleep_PDEX(u32 NewState);
+_LONG_CALL_ void FLASH_DeepSleep_PDEX_Patch(u32 NewState);
 /** @} */
 
 /** @defgroup FLASH_XIP_Functions FLASH XIP Functions

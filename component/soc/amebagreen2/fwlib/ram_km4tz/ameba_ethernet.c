@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include "ameba_soc.h"
 
 static const char *const TAG = "ETH";

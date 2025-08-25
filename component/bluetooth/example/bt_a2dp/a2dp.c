@@ -2055,9 +2055,6 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
 											RTK_BT_PROFILE_AVRCP | \
 											RTK_BT_PROFILE_SDP;
 		bt_app_conf.mtu_size = 180;
-		bt_app_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
-		bt_app_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
-		bt_app_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 		bt_app_conf.max_tx_octets = 0x40;
 		bt_app_conf.max_tx_time = 0x200;
 		bt_app_conf.a2dp_role = role;

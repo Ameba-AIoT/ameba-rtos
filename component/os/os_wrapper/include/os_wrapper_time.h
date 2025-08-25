@@ -41,7 +41,7 @@ uint32_t rtos_time_get_current_system_time_ms(void);
 uint64_t rtos_time_get_current_system_time_ms_64bit(void);
 
 /**
- * @brief  Get the count of pended ticks since rtos_sched_start was called, and convert the return value to milliseconds.
+ * @brief  Get the count of pended ticks since rtos_sched_suspend was called, and convert the return value to milliseconds.
  */
 uint32_t rtos_time_get_current_pended_time_ms(void);
 

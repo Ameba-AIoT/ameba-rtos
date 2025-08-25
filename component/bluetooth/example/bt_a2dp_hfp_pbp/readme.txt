@@ -7,20 +7,25 @@
 Test Configuration
 ~~~~~~~~~~~
 1. BIS num 1 + Sample rate 16kHz + 2-channel + ISO interval 20 ms 
-    1.1 Config the following Macros in app_bt_le_audio_common.h
+    1.1 Config the following Macros in rtk_bt_le_audio_def.h
             change   RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG               to         RTK_BT_ISO_INTERVAL_20_MS
             change   RTK_BT_LE_AUDIO_COMPO_DEMO_AUDIO_STREAM_SAMPLE_RATE   to         RTK_BT_LE_SAMPLING_FREQUENCY_CFG_16K
             change   RTK_BT_LE_AUDIO_COMPO_DEMO_DEFAULT_BIS_CODEC_CFG      to         RTK_BT_LE_CODEC_CFG_ITEM_16_2
-            change   RTK_BT_LE_AUDIO_BIRDS_SING_SAMPLING_RATE              to         RTK_BT_LE_SAMPLING_FREQUENCY_CFG_8K
+
 2. BIS num 1 + Sample rate 48kHz + 1-channel + ISO interval 20 ms
     2.1 Config the following Macros in rtk_bt_le_audio_def.h
             change   RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG               to         RTK_BT_ISO_INTERVAL_20_MS
             change   RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE                to         0
-            change   RTK_BT_LE_AUDIO_BIRDS_SING_SAMPLING_RATE              to         RTK_BT_LE_SAMPLING_FREQUENCY_CFG_8K
+
 3. BIS num 1 + Sample rate 48kHz + 2-channel + ISO interval 30 ms 
-    3.1 Config the following Macros in app_bt_le_audio_common.h
+    3.1 Config the following Macros in rtk_bt_le_audio_def.h
             change   RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG               to         RTK_BT_ISO_INTERVAL_30_MS
-            change   RTK_BT_LE_AUDIO_BIRDS_SING_SAMPLING_RATE              to         RTK_BT_LE_SAMPLING_FREQUENCY_CFG_8K
+
+4. BIS num 2 + Sample rate 48kHz + 2-channel + ISO interval 30 ms 
+    3.1 Config the following Macros in rtk_bt_le_audio_def.h
+            change   RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_NUM              to         2
+            change   RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG               to         RTK_BT_ISO_INTERVAL_30_MS
+
 GCC menuconfig 
 ~~~~~~~~~~~
 1. BT Related:

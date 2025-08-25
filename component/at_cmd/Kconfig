@@ -11,7 +11,9 @@ menu "CONFIG AT CMD"
                 bool "Host Control Mode"
                 select LONGER_CMD
                 select USB_OTG_EN_MENU if SUPPORT_USB
-                select USBD_CDC_ACM_MENU if SUPPORT_USB
+                select USB_DEVICE_EN if !USB_HOST_EN_MENU
+                select USBD_CDC_ACM if !USB_HOST_EN_MENU
+                select USBH_CDC_ACM if USB_HOST_EN_MENU
         endchoice
         config LONGER_CMD
             bool "Enable Longer CMD"

@@ -6,15 +6,6 @@
 
 
 /**
- * @brief Receive data from wifi cast device
- */
-struct example_cb_recv_data {
-	u32 data_len;      /* receive data length */
-	u8 mac[ETH_ALEN];  /* receive src mac address */
-	u8 *data;          /* receive data body */
-} __attribute__((packed));
-
-/**
  * @brief Console command
  */
 struct command_arg_s {

@@ -441,6 +441,7 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *evt_info)
 #ifdef CONFIG_IEEE80211R
 	struct cfg80211_roam_info roam_info = {0};
 #endif
+	struct ieee80211_mgmt *mgmt = NULL;
 	mlme_priv->rtw_join_status = join_status;
 
 	/* Merge from wifi_join_status_indicate. */
@@ -506,6 +507,12 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *evt_info)
 										WLAN_STATUS_SUCCESS, GFP_ATOMIC);
 			}
 			netif_carrier_on(global_idev.pndev[wlan_idx]);
+			if (wlan_idx == WHC_STA_PORT) {
+				mgmt = (struct ieee80211_mgmt *)mlme_priv->assoc_rsp_ie;
+				if (!(mgmt->u.assoc_resp.capab_info & WLAN_CAPABILITY_PRIVACY)) {
+					netif_dormant_off(global_idev.pndev[wlan_idx]);
+				}
+			}
 		}
 		return;
 	}
@@ -528,6 +535,10 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *evt_info)
 		} else {
 			cfg80211_connect_result(global_idev.pndev[wlan_idx], NULL, NULL, 0, NULL, 0, WLAN_STATUS_UNSPECIFIED_FAILURE, GFP_ATOMIC);
 		}
+		if ((wlan_idx == WHC_STA_PORT) && !netif_dormant(global_idev.pndev[wlan_idx])) {
+			netif_dormant_on(global_idev.pndev[wlan_idx]);
+		}
+		netif_carrier_off(global_idev.pndev[wlan_idx]);
 		return;
 	}
 }
@@ -569,6 +580,9 @@ void whc_fullmac_host_disconnect_indicate(u16 reason, u8 locally_generated, u8 *
 
 	if (global_idev.pndev[wlan_idx] != NULL) {
 		/* Do it first for tx broadcast pkt after disconnection issue! */
+		if (wlan_idx == WHC_STA_PORT) {
+			netif_dormant_on(global_idev.pndev[wlan_idx]);
+		}
 		netif_carrier_off(global_idev.pndev[wlan_idx]);
 		dev_dbg(global_idev.fullmac_dev, "%s reason:%d\n", __func__, reason);
 		cfg80211_disconnected(global_idev.pndev[wlan_idx], reason, NULL, 0, locally_generated, GFP_ATOMIC);
@@ -582,7 +596,7 @@ void whc_fullmac_host_external_auth_request(char *evt_info)
 
 	auth_ext_para->action = NL80211_EXTERNAL_AUTH_START;
 	memcpy(auth_ext_para->bssid, wpa_sae_param->peer_mac, ETH_ALEN);
-	auth_ext_para->key_mgmt_suite = be32_to_cpu(*(__be32 *)wpa_sae_param->rsn_auth_key_mgmt);
+	auth_ext_para->key_mgmt_suite = le32_to_cpu(*(__le32 *)wpa_sae_param->rsn_auth_key_mgmt);
 
 	/*ap mode doesn't need call this ops, sta will trigger auth*/
 	cfg80211_external_auth_request(global_idev.pndev[0], auth_ext_para, GFP_ATOMIC);
@@ -717,7 +731,7 @@ static int whc_fullmac_host_connect_ops(struct wiphy *wiphy, struct net_device *
 		whc_fullmac_host_ft_set_bssid(sme->bssid);
 #endif
 		/* Stop upper-layer-data-queue because of re-association. */
-		netif_carrier_off(global_idev.pndev[0]);
+		netif_carrier_off(global_idev.pndev[WHC_STA_PORT]);
 		global_idev.b_in_roaming = true;
 	} else {
 		global_idev.b_in_roaming = false;
@@ -871,6 +885,11 @@ static int whc_fullmac_host_disconnect_ops(struct wiphy *wiphy, struct net_devic
 	ret = whc_fullmac_host_event_disconnect(reason_code);
 
 	wait_for_completion_interruptible(&global_idev.mlme_priv.disconnect_done_sema);
+
+	if ((rtw_netdev_idx(ndev) == WHC_STA_PORT) && (ret == 0) && !netif_dormant(ndev)) {
+		netif_dormant_on(ndev);
+	}
+	netif_carrier_off(ndev);
 
 	return ret;
 }
@@ -1269,7 +1288,7 @@ static int whc_sme_host_deauth(struct wiphy *wiphy, struct net_device *ndev, str
 {
 	struct sme_priv_t *sme_priv = &global_idev.sme_priv;
 
-	if ((global_idev.mlme_priv.rtw_join_status <= RTW_JOINSTATUS_UNKNOWN) || 
+	if ((global_idev.mlme_priv.rtw_join_status <= RTW_JOINSTATUS_UNKNOWN) ||
 		(global_idev.mlme_priv.rtw_join_status > RTW_JOINSTATUS_SUCCESS)) {
 		return 0;
 	}
@@ -1295,8 +1314,8 @@ static int whc_sme_host_disassoc(struct wiphy *wiphy, struct net_device *ndev, s
 {
 	struct sme_priv_t *sme_priv = &global_idev.sme_priv;
 
-	if ((global_idev.mlme_priv.rtw_join_status <= RTW_JOINSTATUS_UNKNOWN) || 
-			(global_idev.mlme_priv.rtw_join_status > RTW_JOINSTATUS_SUCCESS)) {
+	if ((global_idev.mlme_priv.rtw_join_status <= RTW_JOINSTATUS_UNKNOWN) ||
+		(global_idev.mlme_priv.rtw_join_status > RTW_JOINSTATUS_SUCCESS)) {
 		return 0;
 	}
 
@@ -1464,8 +1483,8 @@ static int whc_fullmac_host_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wd
 	}
 #endif
 	else {
+		/* deauth etc */
 		dev_dbg(global_idev.fullmac_dev, "mgmt tx frame_type:0x%x\n", frame_styp);
-		return ret;
 	}
 dump:
 #ifdef CONFIG_P2P
@@ -1473,6 +1492,8 @@ dump:
 		need_wait_ack = 1;
 	}
 #endif
+
+	//print_hex_dump_bytes("auth frame: ", DUMP_PREFIX_NONE, buf, len);
 
 	/*ignore tx_ch/ no_cck/ wait_ack temporary*/
 	whc_fullmac_host_tx_mgnt(wlan_idx, buf, len, need_wait_ack);

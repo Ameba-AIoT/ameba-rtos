@@ -21,6 +21,7 @@ set(
     ${DIR}/wififw_gtimer.c
     ${DIR}/wififw_btcoex.c
     ${DIR}/wififw_ps_twt.c
+    ${DIR}/wififw_twt_timer.c
     ${DIR}/wififw_txrpt.c
 )
 

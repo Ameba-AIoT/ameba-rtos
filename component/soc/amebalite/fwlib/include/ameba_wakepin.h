@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #ifndef _AMEBA_WAKEPIN_H_
 #define _AMEBA_WAKEPIN_H_
 

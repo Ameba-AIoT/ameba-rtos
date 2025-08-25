@@ -12,20 +12,10 @@
 
 #define UART_IDX  0
 #define UART_BAUD_RATE 1500000
-#define UART_TX_PIN    PA_28
-#define UART_RX_PIN    PA_29
+#define UART_TX_PIN    PA_26
+#define UART_RX_PIN    PA_27
 
 #define UART_RX_BUF_SZ	200
-
-/**
- * @brief Public key exchange info
- */
-struct pubkey_exchange_info {
-	u16 type;                          /* application message type */
-	u8 mac[6];                         /* device mac address */
-	u8 pubkey[MBEDTLS_ECP_MAX_PT_LEN]; /* ecdh public key */
-	int pubkey_len;                    /* ecdh public key length */
-} __attribute__((packed));
 
 /**
  * @brief Keypair info

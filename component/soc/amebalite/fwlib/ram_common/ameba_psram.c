@@ -48,21 +48,78 @@ static u32 PSRAM_CALIB_PATTERN[6] = {
 	0x69969669,
 };
 
-const PSRAM_Latency Psram_latency[] = {
-	//Clk limit	  latency	   psram type
-	{104,			4,			NULL},
-	{133,			5,			NULL},
-	{166,			6,			NULL},
-	{200,			7,			NULL},
-	{250,			7,			PSRAM_VENDOR_WB | PSRAM_SIZE_256Mb},
-	{250,			8, 			PSRAM_VENDOR_APM},
-	{250,			10,			PSRAM_VENDOR_WB | PSRAM_SIZE_128Mb},
-	{0xFF,			0xFF,		0xFFFF},
-};
-
 PSRAMINFO_TypeDef PsramInfo;
 
 u16 psram_type = 0;
+
+/**
+ * @brief  Initialize PSRAMINFO_TypeDef according to the memory configuration from MCM_MemTypeDef.
+ * @param  meminfo [in]  Pointer to MCM_MemTypeDef structure (typically from ChipInfo_MCMInfo()).
+ * @param  info    [out] Pointer to PSRAMINFO_TypeDef structure to fill in.
+ * @return None
+ * @note
+ */
+void ChipInfo_InitPsramInfoFromMemInfo(const MCM_MemTypeDef *meminfo, PSRAMINFO_TypeDef *info)
+{
+	_memset(info, 0, sizeof(PSRAMINFO_TypeDef));
+	info->Psram_Page_size = 0;
+	info->Psram_Clk_Limit = 0;
+	info->Psram_Type      = 0;
+
+	if (meminfo == NULL || info == NULL) {
+		return;
+	}
+
+	if (meminfo->mem_type == MCM_TYPE_PSRAM) {
+		switch (meminfo->dram_info.model) {
+		case MCM_PSRAM_VENDOR_WB:
+			info->Psram_Vendor = MCM_PSRAM_VENDOR_WB;
+			switch (meminfo->dram_info.density) {
+			case MCM_PSRAM_SIZE_32Mb:
+				info->Psram_Size	   = 4 * 1024 * 1024;
+				info->Psram_Page_size  = PSRAM_PAGE128;
+				info->Psram_Clk_Limit  = PSRAM_DEVICE_CLK_200;
+				info->Psram_Type       = PSRAM_TYPE_WB955;
+				break;
+			case MCM_PSRAM_SIZE_128Mb:
+				info->Psram_Size	   = 16 * 1024 * 1024;
+				info->Psram_Page_size  = PSRAM_PAGE2048;
+				info->Psram_Clk_Limit  = PSRAM_DEVICE_CLK_250;
+				info->Psram_Type       = PSRAM_TYPE_WB957;
+				break;
+			case MCM_PSRAM_SIZE_256Mb:
+				info->Psram_Size	   = 32 * 1024 * 1024;
+				info->Psram_Page_size  = PSRAM_PAGE1024;
+				info->Psram_Clk_Limit  = PSRAM_DEVICE_CLK_250;
+				info->Psram_Type       = PSRAM_TYPE_WB958;
+				break;
+			default:
+				break;
+			}
+			break;
+		case MCM_PSRAM_VENDOR_APM:
+			info->Psram_Vendor = MCM_PSRAM_VENDOR_APM;
+			switch (meminfo->dram_info.density) {
+			case MCM_PSRAM_SIZE_64Mb:
+				info->Psram_Size	   = 8 * 1024 * 1024;
+				info->Psram_Page_size  = PSRAM_PAGE1024;
+				info->Psram_Clk_Limit  = PSRAM_DEVICE_CLK_200;
+				info->Psram_Type       = PSRAM_TYPE_APM64;
+				break;
+			default:
+				break;
+			}
+			break;
+
+		default:
+			info->Psram_Vendor = MCM_PSRAM_VENDOR_NOTCARE;
+			break;
+		}
+	} else {
+		info->Psram_Vendor = MCM_PSRAM_VENDOR_NOTCARE;
+	}
+}
+
 
 /**
   * @brief get psram info
@@ -71,7 +128,9 @@ u16 psram_type = 0;
   */
 void PSRAM_INFO_Update(void)
 {
-	u32 chipinfo = ChipInfo_PSRAMType();
+	MCM_MemTypeDef meminfo = ChipInfo_MCMInfo();
+	ChipInfo_InitPsramInfoFromMemInfo(&meminfo, &PsramInfo);
+
 	u32 PsramClk = 0;
 	u32 PLLCLk, Div;
 	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0);
@@ -79,11 +138,9 @@ void PSRAM_INFO_Update(void)
 	u32 LBusSrc = LSYS_GET_CKSL_LBUS(Temp);
 	RRAM_TypeDef *rram = RRAM_DEV;
 
-	PsramInfo.Psram_Vendor = PSRAM_VENDOR_GET(chipinfo);
-
 	// return if mcm flash
-	if (PsramInfo.Psram_Vendor == PSRAM_VENDOR_NONE) {
-		rram->PSRAM_TYPE = PSRAM_TYPE_NONE;
+	if (PsramInfo.Psram_Vendor == MCM_PSRAM_VENDOR_NOTCARE) {
+		rram->PSRAM_TYPE = MCM_PSRAM_VENDOR_NOTCARE;
 		return;
 	}
 
@@ -114,24 +171,13 @@ void PSRAM_INFO_Update(void)
 	}
 
 	PsramInfo.Psram_Clk_Set = PsramClk / 2;
-	PsramInfo.Psram_Clk_Limit = PSRAM_CLK_LIMIT_GET(chipinfo);
-	PsramInfo.Psram_Size = PSRAM_SIZE_GET(chipinfo);
-	PsramInfo.Psram_Page_size = PSRAM_PAGE_SIZE_GET(chipinfo);
 	PsramInfo.PSRAMC_Clk_Unit = 1000000000000 / PsramClk;//unit ps
 	PsramInfo.Psram_Resume_Cnt = Psram_RESUME_TIME * 1000 / (PsramInfo.PSRAMC_Clk_Unit);
 
 	rram->PSRAM_RESUMECNT_BOOT = PsramInfo.Psram_Resume_Cnt;		//for nonsecure world
 
-	if (PsramInfo.Psram_Vendor == PSRAM_VENDOR_WB) {
+	if (PsramInfo.Psram_Vendor == MCM_PSRAM_VENDOR_WB) {
 		rram->PSRAM_TYPE = PSRAM_TYPE_WB;
-		if ((PsramInfo.Psram_Page_size == PSRAM_PAGE2048) && (PsramInfo.Psram_Size == PSRAM_SIZE_128Mb)) {
-			PsramInfo.Psram_Type = PSRAM_TYPE_WB957;
-		} else if ((PsramInfo.Psram_Page_size == PSRAM_PAGE1024) && (PsramInfo.Psram_Size == PSRAM_SIZE_256Mb)) {
-			PsramInfo.Psram_Type = PSRAM_TYPE_WB958;
-		} else {
-			PsramInfo.Psram_Type = PSRAM_TYPE_WB955;
-		}
-
 		if (PsramInfo.Psram_Clk_Set <= 104000000) {
 			PsramInfo.Psram_Latency_Set = 4;
 			PsramInfo.Psram_TRWR = Psram_WB_TRWR133;
@@ -274,7 +320,7 @@ void PSRAM_InfoDump(void)
 	u8 psramcr0[2] = {0, 0};
 	u8 psramcr1[2] = {0, 0};
 
-	RTK_LOGI(TAG, "psram type is 0x%x\n", ChipInfo_PSRAMType());
+	RTK_LOGI(TAG, "psram type is 0x%x\n", PsramInfo.Psram_Type);
 
 	RTK_LOGI(TAG, "SSIENR\t0x%x=0x%x\n", &psram_ctrl->SSIENR, psram_ctrl->SSIENR);
 	RTK_LOGI(TAG, "CTRLR0\t0x%x=0x%x\n", &psram_ctrl->CTRLR0, psram_ctrl->CTRLR0);
@@ -332,7 +378,7 @@ void PSRAM_CTRL_Init(void)
 
 	//psram_ctrl->CTRLR2 &= ~BIT_FULL_WR;  //bit 13 = 0 need to disable,default = 0
 
-	if (PsramInfo.Psram_Vendor == PSRAM_VENDOR_WB) {
+	if (PsramInfo.Psram_Vendor == MCM_PSRAM_VENDOR_WB) {
 		//0x110
 		psram_ctrl->CTRLR2 = BIT_SO_DNUM | TX_FIFO_ENTRY(0x5) | RX_FIFO_ENTRY(0x5) | BIT_DM_ACT | BIT_DIS_DM_CA | \
 							 WR_VL_EN(!PSRAMC_WR_FIX_LATENCY) | RD_VL_EN(!PSRAMC_RD_FIX_LATENCY) | RD_WEIGHT(0x2);
@@ -381,7 +427,7 @@ void PSRAM_CTRL_Init(void)
 
 
 	if (PSRAMC_WR_FIX_LATENCY) {
-		if (PsramInfo.Psram_Vendor == PSRAM_VENDOR_WB) {
+		if (PsramInfo.Psram_Vendor == MCM_PSRAM_VENDOR_WB) {
 			psram_ctrl->AUTO_LENGTH2 = WR_DUMMY_LENGTH(2 * 2 * PsramInfo.Psram_Latency_Set - 2);
 		} else {
 			psram_ctrl->AUTO_LENGTH2 = WR_DUMMY_LENGTH(2 * PsramInfo.Psram_Latency_Set - 2);

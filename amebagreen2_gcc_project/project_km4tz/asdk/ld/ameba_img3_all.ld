@@ -2,14 +2,21 @@ ENTRY(Reset_Handler)
 
 #include "../../../ameba_layout.ld"
 #include "project_km4tz/platform_autoconf.h"
-#ifdef CONFIG_IMG3_PSRAM
-	#define LMA_TZ_NSC 	 KM4TZ_BD_PSRAM_TZ_NSC
-	#define LMA_TZ_ENTRY  KM4TZ_BD_PSRAM_TZ_ENTRY
-	#define LMA_TZ_S	 KM4TZ_BD_PSRAM_TZ_S
+#if defined CONFIG_IMG3_PSRAM
+	#define LMA_TZ_NSC        KM4TZ_BD_PSRAM_TZ_NSC
+	#define LMA_TZ_ENTRY      KM4TZ_BD_PSRAM_TZ_ENTRY
+	#define LMA_TZ_S_TEXT_RO  KM4TZ_BD_PSRAM_TZ_S
+	#define LMA_TZ_S_BSS      KM4TZ_BD_PSRAM_TZ_S
+#elif defined CONFIG_IMG3_FLASH
+	#define LMA_TZ_NSC        KM4TZ_BD_RAM_TZ_NSC
+	#define LMA_TZ_ENTRY      KM4TZ_BD_RAM_TZ_ENTRY
+	#define LMA_TZ_S_TEXT_RO  KM4TZ_IMG3_XIP
+	#define LMA_TZ_S_BSS      KM4TZ_BD_RAM_TZ_S
 #else
-	#define LMA_TZ_NSC 	 KM4TZ_BD_RAM_TZ_NSC
-	#define LMA_TZ_ENTRY  KM4TZ_BD_RAM_TZ_ENTRY
-	#define LMA_TZ_S	 KM4TZ_BD_RAM_TZ_S
+	#define LMA_TZ_NSC        KM4TZ_BD_RAM_TZ_NSC
+	#define LMA_TZ_ENTRY      KM4TZ_BD_RAM_TZ_ENTRY
+	#define LMA_TZ_S_TEXT_RO  KM4TZ_BD_RAM_TZ_S
+	#define LMA_TZ_S_BSS      KM4TZ_BD_RAM_TZ_S
 #endif
 
 SECTIONS
@@ -33,7 +40,7 @@ SECTIONS
 		*(.text*)
 		*(.rodata*)
 		. = ALIGN(32);
-	} > LMA_TZ_S
+	} > LMA_TZ_S_TEXT_RO
 
 	.ram_image3.data :
 	{
@@ -43,7 +50,7 @@ SECTIONS
 
 		. = ALIGN(32);
 		__ram_image3_text_end__ = .;
-	} > LMA_TZ_S
+	} > LMA_TZ_S_TEXT_RO
 
 	.ram_image3.bss (NOLOAD):
 	{
@@ -53,6 +60,6 @@ SECTIONS
 		__image3_bss_end__ = .;
 		end = .;
 		. = . + 4096;
-	} > LMA_TZ_S
+	} > LMA_TZ_S_BSS
 
 }

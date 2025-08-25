@@ -41,9 +41,22 @@ For debug monitored mode, set WIFI_CAST_MONITORED to 1:
 
 ### Step 2: Build & Flash
 
-Build and Download:
-   * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool(Build and download the image into flash for monitor and monitored device respectively).
+1. Disable wifi fast connection in component/soc/usrcfg/xxxx/ameba_wificfg.c
+    ```
+    wifi_user_config.fast_reconnect_en = 0;
+    ```
+2. Choose one board as monitor:
+    * set WIFI_CAST_MONITORED to 0:
+        ```
+        #define WIFI_CAST_MONITORED      0
+        ```
+    * Build by command `./build.py -a wificast_debug` and download images to monitor's board by Ameba Image Tool.
+3. Choose one board as monitored:
+    * set WIFI_CAST_MONITORED to 1:
+        ```
+        #define WIFI_CAST_MONITORED      1
+        ```
+    * Build by command `./build.py -a wificast_debug` and download images to monitored's board by Ameba Image Tool.
 
 ### Step 3: Run Monitor and Monitored
 

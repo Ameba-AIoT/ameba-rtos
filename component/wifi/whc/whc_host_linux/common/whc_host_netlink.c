@@ -116,6 +116,10 @@ static const struct nla_policy whc_nl_cmd_policy[NUM_WHC_ATTR] = {
 	[WHC_ATTR_LAST_CHUNK] = {.type = NLA_U8},
 };
 
+static const struct genl_multicast_group whc_mcgrps[] = {
+	[WHC_MCGRP_EVENT] = { .name = "whc_event" },
+};
+
 /* netlink operation definition */
 static struct genl_ops whc_nl_cmd_ops[] = {
 	{
@@ -136,6 +140,8 @@ struct genl_family whc_nl_family = {
 	.policy = whc_nl_cmd_policy,
 	.ops = whc_nl_cmd_ops,
 	.n_ops = ARRAY_SIZE(whc_nl_cmd_ops),
+	.mcgrps = whc_mcgrps,
+	.n_mcgrps = ARRAY_SIZE(whc_mcgrps),
 	.netnsok = true,
 	.module = THIS_MODULE,
 };

@@ -43,7 +43,7 @@ AON_WAKEPIN_WAKEUP wakeup operation:
 
 # Note
 
-1. if AON wakepin is wakeup source, sleep_wakepin_config[] in ameba_sleepcfg.c and pmap_func in ameba_pimapcfg.c also need be set.
+1. if AON wakepin is wakeup source, sleep_wakepin_config[] in ameba_sleepcfg.c and pmap_func in ameba_pinmapcfg.c also need be set.
   - for wakepin high level wakeup
 
   	* set "config" attribute of corresponding wakepin to HIGH_LEVEL_WAKEUP in sleep_wakepin_config[]

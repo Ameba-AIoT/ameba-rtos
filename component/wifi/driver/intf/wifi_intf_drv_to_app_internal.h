@@ -79,8 +79,9 @@ enum  {
 	RTW_EVENT_SME_RX_MLME_MGNT			= 120,
 	RTW_EVENT_SME_TX_MLME_MGNT			= 121,
 	RTW_EVENT_SME_RX_ASSOC_RESP			= 122,
+	RTW_EVENT_SME_RX_UNPROT_MLME_MGMT	= 123,
 
-	RTW_EVENT_WPA_P2P_CHANNEL_RDY		= 123, /**< STA mode: inform host channel switch ready */
+	RTW_EVENT_WPA_P2P_CHANNEL_RDY		= 124, /**< STA mode: inform host channel switch ready */
 
 	RTW_EVENT_INTERNAL_MAX,
 };

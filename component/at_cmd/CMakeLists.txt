@@ -76,6 +76,11 @@ if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
         ameba_list_append_if(CONFIG_SUPPORT_USB private_sources
             at_intf_usbd.c
         )
+        if(CONFIG_SUPPORT_USB)
+            ameba_list_append_ifnot(CONFIG_SUPPORT_USB_DEVICE_ONLY private_sources
+                at_intf_usbh.c
+            )
+        endif()
         ameba_list_append(private_sources
             at_intf_uart.c
             at_intf_spi.c
@@ -84,6 +89,8 @@ if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
             ${c_CMPT_USB_DIR}/common
             ${c_CMPT_USB_DIR}/device/core
             ${c_CMPT_USB_DIR}/device/cdc_acm
+            ${c_CMPT_USB_DIR}/host/core
+            ${c_CMPT_USB_DIR}/host/cdc_acm
         )
 
     endif()

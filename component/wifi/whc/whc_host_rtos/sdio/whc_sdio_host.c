@@ -113,7 +113,7 @@ int sdio_recv_process(uint8_t *pbuf)
 	default:
 		/* RX DESC first 16bits for size */
 		size = *(u16 *)pbuf;
-		whc_bridge_host_pkt_rx_to_user(pbuf + SIZE_RX_DESC, (u32)size);
+		whc_host_pkt_rx_to_user(pbuf + SIZE_RX_DESC, (u32)size);
 		rtos_mem_free(pbuf);
 		break;
 #endif

@@ -37,9 +37,11 @@ Connect a LED with this GPIO to show the status.
 
 ### Step 2: Build & Flash
 
-Build and Download:
-   * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool(Download the image into flash both controller and responser).
+1. Disable wifi fast connection in component/soc/usrcfg/xxxx/ameba_wificfg.c
+    ```
+    wifi_user_config.fast_reconnect_en = 0;
+    ```
+2. Build images by command `./build.py -a wificast_control` and download images to board by Ameba Image Tool for both controller and responser.
 
 ### Step 3: Run Controller and Responser
 

@@ -35,7 +35,7 @@
 #define MAX(x, y)			(((x) > (y)) ? (x) : (y))
 #endif
 
-#define DIV_ROUND_UP(X, Y) (((X) + (Y) -1) / (Y))
+#define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
 
 #ifndef UNUSED
 #define UNUSED(X)      (void)X

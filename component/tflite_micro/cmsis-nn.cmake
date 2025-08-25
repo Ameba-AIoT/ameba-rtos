@@ -2,14 +2,15 @@ include(FetchContent)
 
 set(cmsis_nn_dir ${download_dir}/cmsis_nn)
 set(cmsis_nn_zip ${download_dir}/cmsis_nn.zip)
-set(ZIP_PREFIX_NN "f2cb41ca1450a4eb4307b2779dd5aae9028285a5")
-set(CMSIS_NN_MD5 "4d0e623432d6f8d3b201cbcd89218adf")
+set(ZIP_PREFIX_NN "e096196a0c49f065abc03d943c583cd50de424ba")
+set(CMSIS_NN_MD5 "d2a6bc4330fed5653c74fc5dae31fd3a")
 
 FetchContent_Declare(
   cmsis_nn
   SOURCE_DIR ${cmsis_nn_dir}
   URL      "http://github.com/ARM-software/CMSIS-NN/archive/${ZIP_PREFIX_NN}.zip"
   URL_HASH MD5=${CMSIS_NN_MD5}
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 
 FetchContent_MakeAvailable(cmsis_nn)

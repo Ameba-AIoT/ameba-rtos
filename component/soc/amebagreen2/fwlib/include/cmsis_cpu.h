@@ -36,9 +36,6 @@
 #include <arm_cmse.h>
 #endif /* __ARM_FEATURE_CMSE */
 
-#include "mpu_config.h"
-#include "ameba_cache.h"
-
 #endif
 
 #endif /* __CMSIS_CPU_H__ */

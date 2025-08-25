@@ -94,7 +94,7 @@ menu "CONFIG Link Option"
 
     if TRUSTZONE
         choice
-            prompt "IMG3(SecureImage) running on PSRAM or SRAM?"
+            prompt "IMG3(SecureImage) running on SRAM, PSRAM or FLASH?"
             default IMG3_SRAM
             config IMG3_PSRAM
                 depends on !DISABLE_PSRAM
@@ -102,6 +102,8 @@ menu "CONFIG Link Option"
                 select PSRAM_USED
             config IMG3_SRAM
                 bool "SRAM"
+            config IMG3_FLASH
+                bool "FLASH"
         endchoice
     endif
 
@@ -386,6 +388,16 @@ menu "CONFIG WIFI"
         default y
     if WLAN_MENU
 
+        choice
+            depends on !AMEBA_RLS
+            prompt "SDK MODE"
+            default NORMAL_SDK
+            config NORMAL_SDK
+                bool "NORMAL_INIC"
+            config ZEPHYR_SDK
+                bool "ZEPHYR_INIC"
+        endchoice
+
         rsource "../component/wifi/Kconfig.wifi"
 
         config WHC_INTF_IPC_MENU
@@ -393,8 +405,10 @@ menu "CONFIG WIFI"
             select WHC_INTF_IPC
             select WHC_WIFI_API_PATH
             select WLAN
-            select LWIP_LAYER if WHC_HOST && !MP_SHRINK
+            select LWIP_LAYER if WHC_HOST && !MP_SHRINK && !ZEPHYR_SDK
             select FW_DRIVER_COEXIST if WHC_DEV
+            select ENABLE_WPS if WHC_HOST && WIFI_WPS_ENABLE_MENU
+            select ENABLE_WPS_DISCOVERY if ENABLE_WPS
 
         config FULLMAC_DEV
             bool
@@ -429,6 +443,8 @@ menu "CONFIG WIFI"
             select LWIP_LAYER
             select WIFI_FW_EN
             select FW_DRIVER_COEXIST
+            select ENABLE_WPS if WIFI_WPS_ENABLE_MENU
+            select ENABLE_WPS_DISCOVERY if ENABLE_WPS
 
         config WIFI_FW_EN_FOR_KM4NS
             depends on !FULLMAC_DEV && !WHC_BRIDGE

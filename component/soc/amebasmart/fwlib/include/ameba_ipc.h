@@ -338,12 +338,13 @@ typedef enum {
 #define IPC_A2N_WIFI_API_TRAN					1	/*!<  AP -->  NP WIFI API Message Exchange */
 #define IPC_A2N_FLASHPG_REQ						2	/*!<  AP -->  NP Flash Program Request*/
 #define IPC_A2N_COEX_API_TRAN					3	/*!<  AP -->  NP COEX API Exchange */
-#define IPC_A2N_BT_DRC_TRAN						4	/*!<  AP -->  NP BT DATA Message Exchange */
-#define IPC_A2N_802154_TRAN						5
+#define IPC_A2N_EVENT_REQ							4	/*!<  AP -->  NP Diagnose API Message Exchange */
+//#define IPC_A2N_Channel5						5
+// #define IPC_A2N_BT_DRC_TRAN						4	/*!<  Recycled: AP -->  NP BT DATA Message Exchange */
+// #define IPC_A2N_802154_TRAN						5 /*!<  Recycled */
 #define IPC_A2N_OTP_RX_TRAN						6
 #define IPC_A2N_LOGUART_RX_SWITCH				7	/*!<  AP -->  NP Loguart Message Exchange for Linux*/
 #define IPC_A2N_IMQ_TRX_TRAN					7	/*!<  AP -->  NP IMQ Message Exchange for RTOS*/
-#define IPC_A2N_EVENT_REQ							8	/*!<  AP -->  NP Diagnose API Message Exchange */
 #if (defined(CONFIG_ARM_CORE_CA32) && defined(CONFIG_AS_AP)) || \
 	(defined(CONFIG_ARM_CORE_CM4) && defined(CONFIG_AS_NP))
 

@@ -85,8 +85,8 @@
 #define APBPeriph_SPORT  ((u32)(0 << 30) | (0x00000001<< 20)) /*!< R/W 0x0  1: enable SPORT function 0: disable DD_SEC: bpc_audio*/
 #define APBPeriph_GMAC   ((u32)(0 << 30) | (0x00000001<< 19)) /*!< R/W 0x0  1: enable ppe module 0: reset No use DD_SEC: bpc_gmac*/
 #define APBPeriph_TRNG   ((u32)(0 << 30) | (0x00000001<< 18)) /*!< R/W 0x0  1: enable TRNG function 0: disable DD_SEC: bpc_trng*/
-#define APBPeriph_CAN0   ((u32)(0 << 30) | (0x00000001<< 16)) /*!< R/W 0x0  1: enable can0/1 module 0: reset No use DD_SEC: bpc_can*/
-#define APBPeriph_CAN1   ((u32)(0 << 30) | (0x00000001<< 17)) /*!< R/W 0x0  1: enable can0/1 module 0: reset No use DD_SEC: bpc_can*/
+#define APBPeriph_A2C0   ((u32)(0 << 30) | (0x00000001<< 16)) /*!< R/W 0x0  1: enable a2c0/1 module 0: reset No use DD_SEC: bpc_a2c*/
+#define APBPeriph_A2C1   ((u32)(0 << 30) | (0x00000001<< 17)) /*!< R/W 0x0  1: enable a2c0/1 module 0: reset No use DD_SEC: bpc_a2c*/
 #define APBPeriph_SPI0   ((u32)(0 << 30) | (0x00000001<< 14)) /*!< R/W 0x0  1: enable SPI1 function 0: disable DD_SEC: bpc_spi*/
 #define APBPeriph_SPI1   ((u32)(0 << 30) | (0x00000001<< 15)) /*!< R/W 0x0  1: enable SPI1 function 0: disable DD_SEC: bpc_spi*/
 #define APBPeriph_PSRAM  ((u32)(0 << 30) | (0x00000001<< 13)) /*!< R/W 0x0  1: enable PSRAM function 0: disable DD_SEC: bpc_psram*/
@@ -150,8 +150,8 @@
 #define APBPeriph_SPORT_CLOCK  ((u32)(0 << 30) | (0x00000001<< 20)) /*!< R/W 0x0  1: Enable sport clock 0: Disable DD_SEC: bpc_audio*/
 #define APBPeriph_MJPEG_CLOCK  ((u32)(0 << 30) | (0x00000001<< 19)) /*!< R/W 0x0  1: Enable mjpeg clock 0: Disable DD_SEC: bpc_mjpeg*/
 #define APBPeriph_TRNG_CLOCK   ((u32)(0 << 30) | (0x00000001<< 18)) /*!< R/W 0x0  1: Enable trng bus clock 0: Disable DD_SEC: bpc_trng*/
-#define APBPeriph_CAN0_CLOCK   ((u32)(0 << 30) | (0x00000001<< 16)) /*!< R/W 0x0  1: Enable can0/1 bus clock 0: Disable DD_SEC: bpc_can*/
-#define APBPeriph_CAN1_CLOCK   ((u32)(0 << 30) | (0x00000001<< 17)) /*!< R/W 0x0  1: Enable can0/1 bus clock 0: Disable DD_SEC: bpc_can*/
+#define APBPeriph_A2C0_CLOCK   ((u32)(0 << 30) | (0x00000001<< 16)) /*!< R/W 0x0  1: Enable a2c0/1 bus clock 0: Disable DD_SEC: bpc_a2c*/
+#define APBPeriph_A2C1_CLOCK   ((u32)(0 << 30) | (0x00000001<< 17)) /*!< R/W 0x0  1: Enable a2c0/1 bus clock 0: Disable DD_SEC: bpc_a2c*/
 #define APBPeriph_SPI0_CLOCK   ((u32)(0 << 30) | (0x00000001<< 14)) /*!< R/W 0x0  1: Enable spi clock 0: Disable DD_SEC: bpc_spi*/
 #define APBPeriph_SPI1_CLOCK   ((u32)(0 << 30) | (0x00000001<< 15)) /*!< R/W 0x0  1: Enable spi clock 0: Disable DD_SEC: bpc_spi*/
 #define APBPeriph_PSRAM_CLOCK  ((u32)(0 << 30) | (0x00000001<< 13)) /*!< R/W 0x0  1: Enable PSRAM pll divider clock 0: Disable DD_SEC: bpc_psram*/
@@ -222,7 +222,7 @@
 /** @} */
 
 /** @defgroup REG_LSYS_CKSL_GRP0
-  * @brief  Name: SDH / I2S / GMAC / VO / CAN / SHPERI / PSRAM / SPIC / HPERI / OTPC / LPERI / HP
+  * @brief  Name: SDH / I2S / GMAC / VO / A2C / SHPERI / PSRAM / SPIC / HPERI / OTPC / LPERI / HP
   * @{
   */
 #define CKSL_SDH_XTAL 0x0
@@ -237,9 +237,9 @@
 #define CKSL_VO_XTAL 0x0
 #define CKSL_VO_USB_PLL 0x1
 #define CKSL_VO_SYS_PLL 0x3
-#define CKSL_CAN_XTAL 0x0
-#define CKSL_CAN_USB_PLL 0x1
-#define CKSL_CAN_SYS_PLL 0x3
+#define CKSL_A2C_XTAL 0x0
+#define CKSL_A2C_USB_PLL 0x1
+#define CKSL_A2C_SYS_PLL 0x3
 #define CKSL_SHPERI_XTAL 0x0
 #define CKSL_SHPERI_USB_PLL 0x1
 #define CKSL_SHPERI_SYS_PLL 0x3
@@ -275,10 +275,10 @@
 #define LSYS_CKSL_VO(x)         (((u32)((x) & 0x00000003) << 14))
 #define REG_LSYS_CKSL_VO        REG_LSYS_CKSL_GRP0
 #define LSYS_GET_CKSL_VO(x)     ((u32)(((x >> 14) & 0x00000003)))
-#define LSYS_MASK_CKSL_CAN      ((u32)0x00000003 << 12)           /*!< R/W 0x1  can clock select ##x0: xtal ##01: usb_pll ##11: sys_pll DD_SEC: bpc_can*/
-#define LSYS_CKSL_CAN(x)        (((u32)((x) & 0x00000003) << 12))
-#define REG_LSYS_CKSL_CAN       REG_LSYS_CKSL_GRP0
-#define LSYS_GET_CKSL_CAN(x)    ((u32)(((x >> 12) & 0x00000003)))
+#define LSYS_MASK_CKSL_A2C      ((u32)0x00000003 << 12)           /*!< R/W 0x1  a2c clock select ##x0: xtal ##01: usb_pll ##11: sys_pll DD_SEC: bpc_a2c*/
+#define LSYS_CKSL_A2C(x)        (((u32)((x) & 0x00000003) << 12))
+#define REG_LSYS_CKSL_A2C       REG_LSYS_CKSL_GRP0
+#define LSYS_GET_CKSL_A2C(x)    ((u32)(((x >> 12) & 0x00000003)))
 #define LSYS_MASK_CKSL_SHPERI   ((u32)0x00000003 << 10)           /*!< R/W 0x1  peri_shclk clock select ##x0: xtal ##01: usb_pll ##11: sys_pll DD_SEC: bpc_cpu0*/
 #define LSYS_CKSL_SHPERI(x)     (((u32)((x) & 0x00000003) << 10))
 #define REG_LSYS_CKSL_SHPERI    REG_LSYS_CKSL_GRP0
@@ -480,14 +480,14 @@
 /** @} */
 
 /** @defgroup REG_LSYS_CKD_FEN_USB_PLL
-  * @brief  Name: USB_PLL_SDH / USB_PLL_I2S / USB_PLL_GMAC / USB_PLL_VO / USB_PLL_CAN / USB_PLL_SHPERI / USB_PLL_PSRAM / USB_PLL_SPIC / USB_PLL_HPERI / USB_PLL_HP
+  * @brief  Name: USB_PLL_SDH / USB_PLL_I2S / USB_PLL_GMAC / USB_PLL_VO / USB_PLL_A2C / USB_PLL_SHPERI / USB_PLL_PSRAM / USB_PLL_SPIC / USB_PLL_HPERI / USB_PLL_HP
   * @{
   */
 #define LSYS_BIT_FEN_USB_PLL_SDH       ((u32)0x00000001 << 9)           /*!< R/W 0h  usb_pll_divider for sdh enable 1:enable 0:disable DD_SEC: bpc_sdio*/
 #define LSYS_FEN_USB_PLL_SDH(x)        ((u32)(((x) & 0x00000001) << 9))
 #define REG_LSYS_CKD_FEN_USB_PLL_SDH   REG_LSYS_CKD_FEN_USB_PLL
 #define LSYS_GET_FEN_USB_PLL_SDH(x)    ((u32)(((x >> 9) & 0x00000001)))
-#define LSYS_BIT_FEN_USB_PLL_I2S       ((u32)0x00000001 << 8)           /*!< R/W 0h  usb_pll_divider for i2s enable 1:enable 0:disable DD_SEC: bpc_gmac*/
+#define LSYS_BIT_FEN_USB_PLL_I2S       ((u32)0x00000001 << 8)           /*!< R/W 0h  usb_pll_divider for i2s enable 1:enable 0:disable DD_SEC: bpc_audio*/
 #define LSYS_FEN_USB_PLL_I2S(x)        ((u32)(((x) & 0x00000001) << 8))
 #define REG_LSYS_CKD_FEN_USB_PLL_I2S   REG_LSYS_CKD_FEN_USB_PLL
 #define LSYS_GET_FEN_USB_PLL_I2S(x)    ((u32)(((x >> 8) & 0x00000001)))
@@ -499,10 +499,10 @@
 #define LSYS_FEN_USB_PLL_VO(x)         ((u32)(((x) & 0x00000001) << 6))
 #define REG_LSYS_CKD_FEN_USB_PLL_VO    REG_LSYS_CKD_FEN_USB_PLL
 #define LSYS_GET_FEN_USB_PLL_VO(x)     ((u32)(((x >> 6) & 0x00000001)))
-#define LSYS_BIT_FEN_USB_PLL_CAN       ((u32)0x00000001 << 5)           /*!< R/W 0h  usb_pll_divider for can 1:enable 0:disable DD_SEC: bpc_can*/
-#define LSYS_FEN_USB_PLL_CAN(x)        ((u32)(((x) & 0x00000001) << 5))
-#define REG_LSYS_CKD_FEN_USB_PLL_CAN   REG_LSYS_CKD_FEN_USB_PLL
-#define LSYS_GET_FEN_USB_PLL_CAN(x)    ((u32)(((x >> 5) & 0x00000001)))
+#define LSYS_BIT_FEN_USB_PLL_A2C       ((u32)0x00000001 << 5)           /*!< R/W 0h  usb_pll_divider for a2c 1:enable 0:disable DD_SEC: bpc_a2c*/
+#define LSYS_FEN_USB_PLL_A2C(x)        ((u32)(((x) & 0x00000001) << 5))
+#define REG_LSYS_CKD_FEN_USB_PLL_A2C   REG_LSYS_CKD_FEN_USB_PLL
+#define LSYS_GET_FEN_USB_PLL_A2C(x)    ((u32)(((x >> 5) & 0x00000001)))
 #define LSYS_BIT_FEN_USB_PLL_SHPERI    ((u32)0x00000001 << 4)           /*!< R/W 1h  usb_pll_divider for shperi enable 1:enable 0:disable DD_SEC: S*/
 #define LSYS_FEN_USB_PLL_SHPERI(x)     ((u32)(((x) & 0x00000001) << 4))
 #define REG_LSYS_CKD_FEN_USB_PLL_SHPERI REG_LSYS_CKD_FEN_USB_PLL
@@ -526,14 +526,14 @@
 /** @} */
 
 /** @defgroup REG_LSYS_CKD_FEN_SYS_PLL
-  * @brief  Name: SYS_PLL_SDH / SYS_PLL_I2S / SYS_PLL_GMAC / SYS_PLL_VO / SYS_PLL_CAN / SYS_PLL_SHPERI / SYS_PLL_PSRAM / SYS_PLL_SPIC / SYS_PLL_HPERI / SYS_PLL_HP
+  * @brief  Name: SYS_PLL_SDH / SYS_PLL_I2S / SYS_PLL_GMAC / SYS_PLL_VO / SYS_PLL_A2C / SYS_PLL_SHPERI / SYS_PLL_PSRAM / SYS_PLL_SPIC / SYS_PLL_HPERI / SYS_PLL_HP
   * @{
   */
 #define LSYS_BIT_FEN_SYS_PLL_SDH       ((u32)0x00000001 << 9)           /*!< R/W 0h  sys_pll_divider for sdh enable 1:enable 0:disable DD_SEC: bpc_sdio*/
 #define LSYS_FEN_SYS_PLL_SDH(x)        ((u32)(((x) & 0x00000001) << 9))
 #define REG_LSYS_CKD_FEN_SYS_PLL_SDH   REG_LSYS_CKD_FEN_SYS_PLL
 #define LSYS_GET_FEN_SYS_PLL_SDH(x)    ((u32)(((x >> 9) & 0x00000001)))
-#define LSYS_BIT_FEN_SYS_PLL_I2S       ((u32)0x00000001 << 8)           /*!< R/W 0h  sys_pll_divider for i2s enable 1:enable 0:disable DD_SEC: bpc_gmac*/
+#define LSYS_BIT_FEN_SYS_PLL_I2S       ((u32)0x00000001 << 8)           /*!< R/W 0h  sys_pll_divider for i2s enable 1:enable 0:disable DD_SEC: bpc_audio*/
 #define LSYS_FEN_SYS_PLL_I2S(x)        ((u32)(((x) & 0x00000001) << 8))
 #define REG_LSYS_CKD_FEN_SYS_PLL_I2S   REG_LSYS_CKD_FEN_SYS_PLL
 #define LSYS_GET_FEN_SYS_PLL_I2S(x)    ((u32)(((x >> 8) & 0x00000001)))
@@ -545,10 +545,10 @@
 #define LSYS_FEN_SYS_PLL_VO(x)         ((u32)(((x) & 0x00000001) << 6))
 #define REG_LSYS_CKD_FEN_SYS_PLL_VO    REG_LSYS_CKD_FEN_SYS_PLL
 #define LSYS_GET_FEN_SYS_PLL_VO(x)     ((u32)(((x >> 6) & 0x00000001)))
-#define LSYS_BIT_FEN_SYS_PLL_CAN       ((u32)0x00000001 << 5)           /*!< R/W 0h  sys_pll_divider for can 1:enable 0:disable DD_SEC: bpc_can*/
-#define LSYS_FEN_SYS_PLL_CAN(x)        ((u32)(((x) & 0x00000001) << 5))
-#define REG_LSYS_CKD_FEN_SYS_PLL_CAN   REG_LSYS_CKD_FEN_SYS_PLL
-#define LSYS_GET_FEN_SYS_PLL_CAN(x)    ((u32)(((x >> 5) & 0x00000001)))
+#define LSYS_BIT_FEN_SYS_PLL_A2C       ((u32)0x00000001 << 5)           /*!< R/W 0h  sys_pll_divider for a2c 1:enable 0:disable DD_SEC: bpc_a2c*/
+#define LSYS_FEN_SYS_PLL_A2C(x)        ((u32)(((x) & 0x00000001) << 5))
+#define REG_LSYS_CKD_FEN_SYS_PLL_A2C   REG_LSYS_CKD_FEN_SYS_PLL
+#define LSYS_GET_FEN_SYS_PLL_A2C(x)    ((u32)(((x >> 5) & 0x00000001)))
 #define LSYS_BIT_FEN_SYS_PLL_SHPERI    ((u32)0x00000001 << 4)           /*!< R/W 1h  sys_pll_divider for shperi enable 1:enable 0:disable DD_SEC: S*/
 #define LSYS_FEN_SYS_PLL_SHPERI(x)     ((u32)(((x) & 0x00000001) << 4))
 #define REG_LSYS_CKD_FEN_SYS_PLL_SHPERI REG_LSYS_CKD_FEN_SYS_PLL
@@ -572,13 +572,13 @@
 /** @} */
 
 /** @defgroup REG_LSYS_CKD_USB_PLL_GRP0
-  * @brief  Name: USB_PLL_CAN / USB_PLL_SHPERI / USB_PLL_PSRAM / USB_PLL_SPIC / USB_PLL_HPERI / USB_PLL_HP
+  * @brief  Name: USB_PLL_A2C / USB_PLL_SHPERI / USB_PLL_PSRAM / USB_PLL_SPIC / USB_PLL_HPERI / USB_PLL_HP
   * @{
   */
-#define LSYS_MASK_CKD_USB_PLL_CAN      ((u32)0x0000000F << 20)           /*!< R/WPD 4'd7  usb_pll divider for can 0: div1 1: div2 ... Note: default 960M/8=120M DIV_MIN:0 DD_SEC: bpc_can*/
-#define LSYS_CKD_USB_PLL_CAN(x)        (((u32)((x) & 0x0000000F) << 20))
-#define REG_LSYS_CKD_USB_PLL_CAN       REG_LSYS_CKD_USB_PLL_GRP0
-#define LSYS_GET_CKD_USB_PLL_CAN(x)    ((u32)(((x >> 20) & 0x0000000F)))
+#define LSYS_MASK_CKD_USB_PLL_A2C      ((u32)0x0000000F << 20)           /*!< R/WPD 4'd7  usb_pll divider for a2c 0: div1 1: div2 ... Note: default 960M/8=120M DIV_MIN:0 DD_SEC: bpc_a2c*/
+#define LSYS_CKD_USB_PLL_A2C(x)        (((u32)((x) & 0x0000000F) << 20))
+#define REG_LSYS_CKD_USB_PLL_A2C       REG_LSYS_CKD_USB_PLL_GRP0
+#define LSYS_GET_CKD_USB_PLL_A2C(x)    ((u32)(((x >> 20) & 0x0000000F)))
 #define LSYS_MASK_CKD_USB_PLL_SHPERI   ((u32)0x0000000F << 16)           /*!< R/WPD 4h  usb_pll divider for shperi 0: div1 1: div2 ... DIV_MIN:0 DD_SEC: S*/
 #define LSYS_CKD_USB_PLL_SHPERI(x)     (((u32)((x) & 0x0000000F) << 16))
 #define REG_LSYS_CKD_USB_PLL_SHPERI    REG_LSYS_CKD_USB_PLL_GRP0
@@ -624,13 +624,13 @@
 /** @} */
 
 /** @defgroup REG_LSYS_CKD_SYS_PLL_GRP0
-  * @brief  Name: SYS_PLL_CAN / SYS_PLL_SHPERI / SYS_PLL_PSRAM / SYS_PLL_SPIC / SYS_PLL_HPERI / SYS_PLL_HP
+  * @brief  Name: SYS_PLL_A2C / SYS_PLL_SHPERI / SYS_PLL_PSRAM / SYS_PLL_SPIC / SYS_PLL_HPERI / SYS_PLL_HP
   * @{
   */
-#define LSYS_MASK_CKD_SYS_PLL_CAN      ((u32)0x0000000F << 20)           /*!< R/WPD 4'd3  sys_pll divider for can 0: div1 1: div2 ... Note: default 400M/4=100M DIV_MIN:0 DD_SEC: bpc_can*/
-#define LSYS_CKD_SYS_PLL_CAN(x)        (((u32)((x) & 0x0000000F) << 20))
-#define REG_LSYS_CKD_SYS_PLL_CAN       REG_LSYS_CKD_SYS_PLL_GRP0
-#define LSYS_GET_CKD_SYS_PLL_CAN(x)    ((u32)(((x >> 20) & 0x0000000F)))
+#define LSYS_MASK_CKD_SYS_PLL_A2C      ((u32)0x0000000F << 20)           /*!< R/WPD 4'd3  sys_pll divider for a2c 0: div1 1: div2 ... Note: default 400M/4=100M DIV_MIN:0 DD_SEC: bpc_a2c*/
+#define LSYS_CKD_SYS_PLL_A2C(x)        (((u32)((x) & 0x0000000F) << 20))
+#define REG_LSYS_CKD_SYS_PLL_A2C       REG_LSYS_CKD_SYS_PLL_GRP0
+#define LSYS_GET_CKD_SYS_PLL_A2C(x)    ((u32)(((x >> 20) & 0x0000000F)))
 #define LSYS_MASK_CKD_SYS_PLL_SHPERI   ((u32)0x0000000F << 16)           /*!< R/WPD 1h  sys_pll divider for shperi 0: div1 1: div2 ... DIV_MIN:0 DD_SEC: S*/
 #define LSYS_CKD_SYS_PLL_SHPERI(x)     (((u32)((x) & 0x0000000F) << 16))
 #define REG_LSYS_CKD_SYS_PLL_SHPERI    REG_LSYS_CKD_SYS_PLL_GRP0
@@ -850,9 +850,9 @@
 #define LSYS_BIT_BPC_AUDIO      ((u32)0x00000001 << 25)           /*!< R/W 0x1  Select IP controller source : audio 1:control by nonsec zone 0:control by secure zone DD_SEC: S*/
 #define LSYS_BPC_AUDIO(x)       ((u32)(((x) & 0x00000001) << 25))
 #define LSYS_GET_BPC_AUDIO(x)   ((u32)(((x >> 25) & 0x00000001)))
-#define LSYS_BIT_BPC_CAN        ((u32)0x00000001 << 24)           /*!< R/W 0x1  Select IP controller source : can 1:control by nonsec zone 0:control by secure zone DD_SEC: S*/
-#define LSYS_BPC_CAN(x)         ((u32)(((x) & 0x00000001) << 24))
-#define LSYS_GET_BPC_CAN(x)     ((u32)(((x >> 24) & 0x00000001)))
+#define LSYS_BIT_BPC_A2C        ((u32)0x00000001 << 24)           /*!< R/W 0x1  Select IP controller source : a2c 1:control by nonsec zone 0:control by secure zone DD_SEC: S*/
+#define LSYS_BPC_A2C(x)         ((u32)(((x) & 0x00000001) << 24))
+#define LSYS_GET_BPC_A2C(x)     ((u32)(((x >> 24) & 0x00000001)))
 #define LSYS_BIT_BPC_GMAC       ((u32)0x00000001 << 23)           /*!< R/W 0x1  Select IP controller source : gmac 1:control by nonsec zone 0:control by secure zone DD_SEC: S*/
 #define LSYS_BPC_GMAC(x)        ((u32)(((x) & 0x00000001) << 23))
 #define LSYS_GET_BPC_GMAC(x)    ((u32)(((x >> 23) & 0x00000001)))
@@ -1447,6 +1447,9 @@
 #define LSYS_MASK_AIP_CTRL_RSVD1   ((u32)0x000000FF << 16)           /*!< R/W 0xf0  reserved for aip info indication*/
 #define LSYS_AIP_CTRL_RSVD1(x)     (((u32)((x) & 0x000000FF) << 16))
 #define LSYS_GET_AIP_CTRL_RSVD1(x) ((u32)(((x >> 16) & 0x000000FF)))
+#define LSYS_BIT_OTPC_DSLP_TRIG    ((u32)0x00000001 << 4)            /*!< WA0 0x0  It can trig OTP to accelerate power-off.*/
+#define LSYS_OTPC_DSLP_TRIG(x)     ((u32)(((x) & 0x00000001) << 4))
+#define LSYS_GET_OTPC_DSLP_TRIG(x) ((u32)(((x >> 4) & 0x00000001)))
 /** @} */
 
 /*==========LSYS Register Address Definition==========*/
@@ -1499,8 +1502,8 @@
 #define REG_LSYS_LXBUS_DBG_CTRL                  0x2E0
 #define REG_LSYS_GMAC_LX_TIMEOUT_CTRL            0x2E4
 #define REG_LSYS_GMAC_LX_TIMEOUT_STATUS          0x2E8
-#define REG_LSYS_BOOT_ADDR_TZ                0x2F0
-#define REG_LSYS_BOOT_ADDR_NS                0x2F4
+#define REG_LSYS_BOOT_ADDR_TZ                    0x2F0
+#define REG_LSYS_BOOT_ADDR_NS                    0x2F4
 #define REG_LSYS_DUMMY_09                        0x2F8
 #define REG_LSYS_DUMMY_10                        0x2FC
 
@@ -1513,10 +1516,10 @@
 *
 * Periph_Name: Clk_Source_1 / Clk_Source_2 / Clk_Source_3
 * -------------------------------------------------------------
+* A2C: XTAL / USB_PLL / SYS_PLL
 * ADC4M: OSC4M / XTAL
 * ADC: BUS_CLK / IP_CLK
 * BT_32K: OSC131K / XTAL312P5K
-* CAN: XTAL / USB_PLL / SYS_PLL
 * DTIM: SDM32K / XTAL
 * GMAC: EXT50M / USB_PLL / SYS_PLL
 * GPIO4M: SDM32K / OSC4M
@@ -1560,7 +1563,7 @@
 *
 * Periph_Name
 * -------------------------------------------------------------
-* ADC4M / ADC / BT_32K / CAN / DTIM / GMAC / GPIO4M / GPIO
+* A2C / ADC4M / ADC / BT_32K / DTIM / GMAC / GPIO4M / GPIO
 * HP / HPERI / I2S / LOGUART / LPERI / LTIM0 / LTIM1 / LTIM2
 * LTIM3 / OTPC / PSRAM / SDH / SHPERI / SPIC / SYS_32K / UART0
 * UART1 / UART2 / UART3 / VO
@@ -1579,7 +1582,7 @@
 * -------------------------------------------------------------
 * ROM: 1 - 4
 * SRAM: 1 - 4
-* SYS_PLL_CAN: 1 - 16
+* SYS_PLL_A2C: 1 - 16
 * SYS_PLL_GMAC: 8
 * SYS_PLL_HP: 1 - 16
 * SYS_PLL_HPERI: 4
@@ -1589,7 +1592,7 @@
 * SYS_PLL_SHPERI: 1 - 16
 * SYS_PLL_SPIC: 1 - 16
 * SYS_PLL_VO: 1 - 64
-* USB_PLL_CAN: 1 - 16
+* USB_PLL_A2C: 1 - 16
 * USB_PLL_GMAC: 1 - 32
 * USB_PLL_HP: 2 - 16
 * USB_PLL_HPERI: 2 - 16
@@ -1625,8 +1628,8 @@
 *
 *  Div_Name: min_div - max_div
 * -------------------------------------------------------------
-* ROM / SRAM / SYS_PLL_CAN / SYS_PLL_GMAC / SYS_PLL_HP / SYS_PLL_HPERI / SYS_PLL_I2S / SYS_PLL_PSRAM
-* SYS_PLL_SDH / SYS_PLL_SHPERI / SYS_PLL_SPIC / SYS_PLL_VO / USB_PLL_CAN / USB_PLL_GMAC / USB_PLL_HP / USB_PLL_HPERI
+* ROM / SRAM / SYS_PLL_A2C / SYS_PLL_GMAC / SYS_PLL_HP / SYS_PLL_HPERI / SYS_PLL_I2S / SYS_PLL_PSRAM
+* SYS_PLL_SDH / SYS_PLL_SHPERI / SYS_PLL_SPIC / SYS_PLL_VO / USB_PLL_A2C / USB_PLL_GMAC / USB_PLL_HP / USB_PLL_HPERI
 * USB_PLL_I2S / USB_PLL_PSRAM / USB_PLL_SDH / USB_PLL_SHPERI / USB_PLL_SPIC / USB_PLL_VO / XTAL_ADC / XTAL_DTIM
 * XTAL_LTIM0 / XTAL_LTIM1 / XTAL_LTIM2 / XTAL_LTIM3
 * -------------------------------------------------------------
@@ -1639,8 +1642,8 @@
 * @brief  Enable / Disable Periph Clock Divider
 * Supported DivFen_Name listed as flows:
 * -------------------------------------------------------------
-* SYS_PLL_CAN / SYS_PLL_GMAC / SYS_PLL_HP / SYS_PLL_HPERI / SYS_PLL_I2S / SYS_PLL_PSRAM / SYS_PLL_SDH / SYS_PLL_SHPERI
-* SYS_PLL_SPIC / SYS_PLL_VO / USB_PLL_CAN / USB_PLL_GMAC / USB_PLL_HP / USB_PLL_HPERI / USB_PLL_I2S / USB_PLL_PSRAM
+* SYS_PLL_A2C / SYS_PLL_GMAC / SYS_PLL_HP / SYS_PLL_HPERI / SYS_PLL_I2S / SYS_PLL_PSRAM / SYS_PLL_SDH / SYS_PLL_SHPERI
+* SYS_PLL_SPIC / SYS_PLL_VO / USB_PLL_A2C / USB_PLL_GMAC / USB_PLL_HP / USB_PLL_HPERI / USB_PLL_I2S / USB_PLL_PSRAM
 * USB_PLL_SDH / USB_PLL_SHPERI / USB_PLL_SPIC / USB_PLL_VO / XTAL_ADC / XTAL_DTIM / XTAL_LTIM
 * -------------------------------------------------------------
 * @param  DivFen_Name: As listed in the table above, brief "Name" at group REG_LSYS_CKD_FEN_XXX
@@ -1659,8 +1662,8 @@
 * @brief  Get Periph Clock Divider status
 * Supported DivFen_Name listed as flows:
 * -------------------------------------------------------------
-* SYS_PLL_CAN / SYS_PLL_GMAC / SYS_PLL_HP / SYS_PLL_HPERI / SYS_PLL_I2S / SYS_PLL_PSRAM / SYS_PLL_SDH / SYS_PLL_SHPERI
-* SYS_PLL_SPIC / SYS_PLL_VO / USB_PLL_CAN / USB_PLL_GMAC / USB_PLL_HP / USB_PLL_HPERI / USB_PLL_I2S / USB_PLL_PSRAM
+* SYS_PLL_A2C / SYS_PLL_GMAC / SYS_PLL_HP / SYS_PLL_HPERI / SYS_PLL_I2S / SYS_PLL_PSRAM / SYS_PLL_SDH / SYS_PLL_SHPERI
+* SYS_PLL_SPIC / SYS_PLL_VO / USB_PLL_A2C / USB_PLL_GMAC / USB_PLL_HP / USB_PLL_HPERI / USB_PLL_I2S / USB_PLL_PSRAM
 * USB_PLL_SDH / USB_PLL_SHPERI / USB_PLL_SPIC / USB_PLL_VO / XTAL_ADC / XTAL_DTIM / XTAL_LTIM
 * -------------------------------------------------------------
 * @param  DivFen_Name: As listed in the table above, brief "Name" at group REG_LSYS_CKD_FEN_XXX

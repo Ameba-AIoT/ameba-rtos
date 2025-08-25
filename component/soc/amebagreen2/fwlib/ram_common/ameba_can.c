@@ -6,829 +6,829 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "CAN";
+static const char *TAG = "A2C";
 
-const struct CAN_DevTable CAN_DEV_TABLE[2] = {
-	{RCAN0, CAN0_IRQ, GDMA_HANDSHAKE_INTERFACE_CAN0_RX},
-	{RCAN1, CAN1_IRQ, GDMA_HANDSHAKE_INTERFACE_CAN1_RX},
+const struct A2C_DevTable A2C_DEV_TABLE[2] = {
+	{A2C0, A2C0_IRQ, GDMA_HANDSHAKE_INTERFACE_A2C0_RX},
+	{A2C1, A2C1_IRQ, GDMA_HANDSHAKE_INTERFACE_A2C1_RX},
 };
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
 
-/** @defgroup CAN
-* @brief CAN driver modules
+/** @defgroup A2C
+* @brief A2C driver modules
 * @{
 */
 
 /* Exported functions --------------------------------------------------------*/
-/** @defgroup CAN_Exported_Functions CAN Exported Functions
+/** @defgroup A2C_Exported_Functions A2C Exported Functions
   * @{
   */
 
 /**
-  * @brief  Fills each RCAN_InitStruct member with its default value.
-  * @param  RCAN_InitStruct: pointer to an RCAN_InitTypeDef structure which will be initialized.
+  * @brief  Fills each A2C_InitStruct member with its default value.
+  * @param  A2C_InitStruct: pointer to an A2C_InitTypeDef structure which will be initialized.
   * @retval   None
   */
-void RCAN_StructInit(RCAN_InitTypeDef *RCAN_InitStruct)
+void A2C_StructInit(A2C_InitTypeDef *A2C_InitStruct)
 {
-	RCAN_InitStruct->CAN_AutoReTxEn = DISABLE;
-	RCAN_InitStruct->CAN_BitPrescaler = 2; //256;
-	RCAN_InitStruct->CAN_ErrCntThreshold = 64;
-	RCAN_InitStruct->CAN_RxFifoEn = DISABLE;
-	RCAN_InitStruct->CAN_SJW = 1; //8;
-	RCAN_InitStruct->CAN_TimStampDiv = 128;
-	RCAN_InitStruct->CAN_TimStampEn = ENABLE;
-	RCAN_InitStruct->CAN_TriSampleEn = DISABLE;
-	RCAN_InitStruct->CAN_TSEG1 = 15; //16;
-	RCAN_InitStruct->CAN_TSEG2 = 4; //16;
-	RCAN_InitStruct->CAN_WorkMode = RCAN_NORMAL_MODE;
+	A2C_InitStruct->A2C_AutoReTxEn = DISABLE;
+	A2C_InitStruct->A2C_BitPrescaler = 2; //256;
+	A2C_InitStruct->A2C_ErrCntThreshold = 64;
+	A2C_InitStruct->A2C_RxFifoEn = DISABLE;
+	A2C_InitStruct->A2C_SJW = 1; //8;
+	A2C_InitStruct->A2C_TimStampDiv = 128;
+	A2C_InitStruct->A2C_TimStampEn = ENABLE;
+	A2C_InitStruct->A2C_TriSampleEn = DISABLE;
+	A2C_InitStruct->A2C_TSEG1 = 15; //16;
+	A2C_InitStruct->A2C_TSEG2 = 4; //16;
+	A2C_InitStruct->A2C_WorkMode = A2C_NORMAL_MODE;
 }
 
 /**
-  * @brief    Initializes the CAN peripheral according to the specified
-  *               parameters in the RCAN_InitStruct.
-  * @param  RCANx: where RCANx can be RCAN.
-  * @param  RCAN_InitStruct: pointer to a RCAN_InitTypeDef structure that contains
-  *              the configuration information for the specified CAN peripheral.
+  * @brief    Initializes the A2C peripheral according to the specified
+  *               parameters in the A2C_InitStruct.
+  * @param  A2Cx: where A2Cx can be A2C.
+  * @param  A2C_InitStruct: pointer to a A2C_InitTypeDef structure that contains
+  *              the configuration information for the specified A2C peripheral.
   * @retval None
   */
-void RCAN_Init(RCAN_TypeDef *RCANx, RCAN_InitTypeDef *RCAN_InitStruct)
+void A2C_Init(A2C_TypeDef *A2Cx, A2C_InitTypeDef *A2C_InitStruct)
 {
-	u32 can_ctrl = 0;
-	u32 can_bit_timing = 0;
-	u32 can_error_cnt_ctl = 0;
-	u32 can_time_stamp = 0;
-	u32 can_test = 0;
+	u32 a2c_ctrl = 0;
+	u32 a2c_bit_timing = 0;
+	u32 a2c_error_cnt_ctl = 0;
+	u32 a2c_time_stamp = 0;
+	u32 a2c_test = 0;
 
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
-	can_ctrl = RCANx->CAN_CTL;
-	can_bit_timing = RCANx->CAN_BIT_TIMING;
-	can_error_cnt_ctl = RCANx->CAN_ERR_CNT_CTL;
-	can_time_stamp = RCANx->CAN_TIME_STAMP;
-	can_test = RCANx->CAN_TEST;
-	/* 1.CAN 2.0 A/B bit prescaler*/
-	can_bit_timing &= ~(CAN_MASK_BRP | CAN_MASK_SJW | CAN_MASK_TSEG2 | CAN_MASK_TSEG1);
-	can_bit_timing |= CAN_BRP(RCAN_InitStruct->CAN_BitPrescaler - 1) |
-					  CAN_SJW(RCAN_InitStruct->CAN_SJW) |
-					  CAN_TSEG2(RCAN_InitStruct->CAN_TSEG2 - 1) |
-					  CAN_TSEG1(RCAN_InitStruct->CAN_TSEG1 - 1);
+	a2c_ctrl = A2Cx->A2C_CTL;
+	a2c_bit_timing = A2Cx->A2C_BIT_TIMING;
+	a2c_error_cnt_ctl = A2Cx->A2C_ERR_CNT_CTL;
+	a2c_time_stamp = A2Cx->A2C_TIME_STAMP;
+	a2c_test = A2Cx->A2C_TEST;
+	/* 1.A2C 2.0 A/B bit prescaler*/
+	a2c_bit_timing &= ~(A2C_MASK_BRP | A2C_MASK_SJW | A2C_MASK_TSEG2 | A2C_MASK_TSEG1);
+	a2c_bit_timing |= A2C_BRP(A2C_InitStruct->A2C_BitPrescaler - 1) |
+					  A2C_SJW(A2C_InitStruct->A2C_SJW) |
+					  A2C_TSEG2(A2C_InitStruct->A2C_TSEG2 - 1) |
+					  A2C_TSEG1(A2C_InitStruct->A2C_TSEG1 - 1);
 
 	/*tripple sample*/
-	if (RCAN_InitStruct->CAN_TriSampleEn) {
-		can_ctrl |= CAN_BIT_TRI_SAMPLE;
+	if (A2C_InitStruct->A2C_TriSampleEn) {
+		a2c_ctrl |= A2C_BIT_TRI_SAMPLE;
 	} else {
-		can_ctrl &= ~ CAN_BIT_TRI_SAMPLE;
+		a2c_ctrl &= ~ A2C_BIT_TRI_SAMPLE;
 	}
 	/*auto tx trans*/
-	if (RCAN_InitStruct->CAN_AutoReTxEn) {
-		can_ctrl |= CAN_BIT_AUTO_RE_TX_EN;
+	if (A2C_InitStruct->A2C_AutoReTxEn) {
+		a2c_ctrl |= A2C_BIT_AUTO_RE_TX_EN;
 	} else {
-		can_ctrl &= ~ CAN_BIT_AUTO_RE_TX_EN;
+		a2c_ctrl &= ~ A2C_BIT_AUTO_RE_TX_EN;
 	}
 	/*fifo mode*/
-	if (RCAN_InitStruct->CAN_RxFifoEn) {
-		can_ctrl |= CAN_BIT_RX_FIFO_EN;
+	if (A2C_InitStruct->A2C_RxFifoEn) {
+		a2c_ctrl |= A2C_BIT_RX_FIFO_EN;
 	} else {
-		can_ctrl &= ~ CAN_BIT_RX_FIFO_EN;
+		a2c_ctrl &= ~ A2C_BIT_RX_FIFO_EN;
 	}
 
 	/* 2. work mode or test mode*/
-	if (RCAN_InitStruct->CAN_WorkMode == RCAN_NORMAL_MODE) {
-		can_ctrl &= ~ CAN_BIT_TEST_MODE_EN;
+	if (A2C_InitStruct->A2C_WorkMode == A2C_NORMAL_MODE) {
+		a2c_ctrl &= ~ A2C_BIT_TEST_MODE_EN;
 	} else {
 		/* test mdoe */
-		can_ctrl |= CAN_BIT_TEST_MODE_EN;
-		can_test &= ~ CAN_MASK_TEST_CFG;
-		can_test |= CAN_TEST_CFG(RCAN_InitStruct->CAN_WorkMode);
+		a2c_ctrl |= A2C_BIT_TEST_MODE_EN;
+		a2c_test &= ~ A2C_MASK_TEST_CFG;
+		a2c_test |= A2C_TEST_CFG(A2C_InitStruct->A2C_WorkMode);
 	}
 
 	/* 3. Error count threshold*/
-	can_error_cnt_ctl &= ~CAN_MASK_ERROR_WARN_TH;
-	can_error_cnt_ctl |= CAN_ERROR_WARN_TH(RCAN_InitStruct->CAN_ErrCntThreshold);
+	a2c_error_cnt_ctl &= ~A2C_MASK_ERROR_WARN_TH;
+	a2c_error_cnt_ctl |= A2C_ERROR_WARN_TH(A2C_InitStruct->A2C_ErrCntThreshold);
 
 	/* 4. Stamp timer*/
-	if (RCAN_InitStruct->CAN_TimStampEn) {
-		can_time_stamp &= ~(CAN_MASK_TIME_STAMP_DIV | CAN_BIT_TIME_STAMP_EN);
-		can_time_stamp |= CAN_TIME_STAMP_DIV(RCAN_InitStruct->CAN_TimStampDiv);
-		can_time_stamp |= CAN_BIT_TIME_STAMP_EN;
+	if (A2C_InitStruct->A2C_TimStampEn) {
+		a2c_time_stamp &= ~(A2C_MASK_TIME_STAMP_DIV | A2C_BIT_TIME_STAMP_EN);
+		a2c_time_stamp |= A2C_TIME_STAMP_DIV(A2C_InitStruct->A2C_TimStampDiv);
+		a2c_time_stamp |= A2C_BIT_TIME_STAMP_EN;
 	} else {
-		can_time_stamp &= (~CAN_BIT_TIME_STAMP_EN);
+		a2c_time_stamp &= (~A2C_BIT_TIME_STAMP_EN);
 	}
 
-	RCANx->CAN_CTL = can_ctrl;
-	RCANx->CAN_BIT_TIMING = can_bit_timing;
-	RCANx->CAN_ERR_CNT_CTL = can_error_cnt_ctl;
-	RCANx->CAN_TIME_STAMP = can_time_stamp;
-	RCANx->CAN_TEST = can_test;
+	A2Cx->A2C_CTL = a2c_ctrl;
+	A2Cx->A2C_BIT_TIMING = a2c_bit_timing;
+	A2Cx->A2C_ERR_CNT_CTL = a2c_error_cnt_ctl;
+	A2Cx->A2C_TIME_STAMP = a2c_time_stamp;
+	A2Cx->A2C_TEST = a2c_test;
 }
 
 /**
   * @brief  wake filter configuration and enable
-  * @param  RCANx: where RCANx can be RCAN.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  FltNum: filter threshold.
   * @retval None
   */
-void RCAN_WakeFilterConfig(RCAN_TypeDef *RCANx, u32 FltNum)
+void A2C_WakeFilterConfig(A2C_TypeDef *A2Cx, u32 FltNum)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
-	RCANx->CAN_SLEEP_MODE &= ~CAN_MASK_WAKEPIN_FLT_LENGTH;
-	RCANx->CAN_SLEEP_MODE |= CAN_WAKEPIN_FLT_LENGTH(FltNum);
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
+	A2Cx->A2C_SLEEP_MODE &= ~A2C_MASK_WAKEPIN_FLT_LENGTH;
+	A2Cx->A2C_SLEEP_MODE |= A2C_WAKEPIN_FLT_LENGTH(FltNum);
 
 }
 /**
   * @brief    Low power filter ENABLE or DISABLE.
-  * @param  RCANx: where RCANx can be RCAN.
-  * @param  NewState: where RCANx can be ENABLE or DISABLE.
+  * @param  A2Cx: where A2Cx can be A2C.
+  * @param  NewState: where A2Cx can be ENABLE or DISABLE.
   * @retval None
   */
-void RCAN_LpFilterCmd(RCAN_TypeDef *RCANx, u32 NewState)
+void A2C_LpFilterCmd(A2C_TypeDef *A2Cx, u32 NewState)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
 	if (NewState == ENABLE) {
-		RCANx->CAN_SLEEP_MODE |= CAN_BIT_WAKEPIN_FLT_EN;
+		A2Cx->A2C_SLEEP_MODE |= A2C_BIT_WAKEPIN_FLT_EN;
 	} else {
-		RCANx->CAN_SLEEP_MODE &= (~CAN_BIT_WAKEPIN_FLT_EN);
+		A2Cx->A2C_SLEEP_MODE &= (~A2C_BIT_WAKEPIN_FLT_EN);
 	}
 }
 
-void RCAN_RequestSleepOrWake(RCAN_TypeDef *RCANx, bool sleep)
+void A2C_RequestSleepOrWake(A2C_TypeDef *A2Cx, bool sleep)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 	if (sleep) {
-		RCANx->CAN_SLEEP_MODE |= CAN_BIT_SLEEP_EN;
+		A2Cx->A2C_SLEEP_MODE |= A2C_BIT_SLEEP_EN;
 	} else {
-		RCANx->CAN_SLEEP_MODE &= ~CAN_BIT_SLEEP_EN;
+		A2Cx->A2C_SLEEP_MODE &= ~A2C_BIT_SLEEP_EN;
 	}
 }
 
-u32 RCAN_SleepStatusGet(RCAN_TypeDef *RCANx)
+u32 A2C_SleepStatusGet(A2C_TypeDef *A2Cx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
-	return (RCANx->CAN_SLEEP_MODE & CAN_BIT_SLEEP_STATE);
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
+	return (A2Cx->A2C_SLEEP_MODE & A2C_BIT_SLEEP_STATE);
 }
 
 /**
   * @brief    bus request ENABLE or DISABLE.
-  * @param  RCANx: where RCANx can be RCAN.
-  * @param  NewState: where RCANx can be ENABLE or DISABLE.
+  * @param  A2Cx: where A2Cx can be A2C.
+  * @param  NewState: where A2Cx can be ENABLE or DISABLE.
   * @retval None
   */
-void RCAN_BusCmd(RCAN_TypeDef *RCANx, u32 NewState)
+void A2C_BusCmd(A2C_TypeDef *A2Cx, u32 NewState)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
 	if (NewState == ENABLE) {
-		RCANx->CAN_CTL |= CAN_BIT_BUS_ON_REQ;
+		A2Cx->A2C_CTL |= A2C_BIT_BUS_ON_REQ;
 	} else {
-		RCANx->CAN_CTL &= (~CAN_BIT_BUS_ON_REQ);
+		A2Cx->A2C_CTL &= (~A2C_BIT_BUS_ON_REQ);
 	}
 }
 /**
-  * @brief    CAN ENABLE or DISABLE.
-  * @param  RCANx: where RCANx can be RCAN.
-  * @param  NewState: where RCANx can be ENABLE or DISABLE.
+  * @brief    A2C ENABLE or DISABLE.
+  * @param  A2Cx: where A2Cx can be A2C.
+  * @param  NewState: where A2Cx can be ENABLE or DISABLE.
   * @retval None
   */
-void RCAN_Cmd(RCAN_TypeDef *RCANx, u32 NewState)
+void A2C_Cmd(A2C_TypeDef *A2Cx, u32 NewState)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
 	if (NewState == ENABLE) {
-		RCANx->CAN_CTL |= CAN_BIT_EN;
+		A2Cx->A2C_CTL |= A2C_BIT_EN;
 	} else {
-		RCANx->CAN_CTL &= (~CAN_BIT_EN);
+		A2Cx->A2C_CTL &= (~A2C_BIT_EN);
 	}
 }
 
 /**
-  * @brief    get CAN bus status.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief    get A2C bus status.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @retval bus status
   --1: on
   --0: off
   */
-u32 RCAN_BusStatusGet(RCAN_TypeDef *RCANx)
+u32 A2C_BusStatusGet(A2C_TypeDef *A2Cx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
-	return (RCANx->CAN_STS & CAN_BIT_BUS_ON_STATE);
+	return (A2Cx->A2C_STS & A2C_BIT_BUS_ON_STATE);
 }
 
 /**
-  * @brief    get CAN fifo status.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief    get A2C fifo status.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @retval fifo status, this value can be:
---RCAN_FIFO_MSG_FULL
---RCAN_FIFO_MSG_EMTY
---RCAN_FIFO_MSG_OVERFLW
+--A2C_FIFO_MSG_FULL
+--A2C_FIFO_MSG_EMTY
+--A2C_FIFO_MSG_OVERFLW
   */
-u32 RCAN_FifoStatusGet(RCAN_TypeDef *RCANx)
+u32 A2C_FifoStatusGet(A2C_TypeDef *A2Cx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
-	return (RCANx->CAN_FIFO_STS & (CAN_BIT_FIFO_MSG_OVERFLOW | CAN_BIT_FIFO_MSG_EMPTY | CAN_BIT_FIFO_MSG_FULL));
+	return (A2Cx->A2C_FIFO_STS & (A2C_BIT_FIFO_MSG_OVERFLOW | A2C_BIT_FIFO_MSG_EMPTY | A2C_BIT_FIFO_MSG_FULL));
 }
 
 /**
-  * @brief    get CAN fifo level.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief    get A2C fifo level.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @retval rx fifo level
   */
-u32 RCAN_FifoLvlGet(RCAN_TypeDef *RCANx)
+u32 A2C_FifoLvlGet(A2C_TypeDef *A2Cx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
-	return CAN_GET_FIFO_MSG_LVL(RCANx->CAN_FIFO_STS);
+	return A2C_GET_FIFO_MSG_LVL(A2Cx->A2C_FIFO_STS);
 }
 
 /**
   * @brief    Read Rx message from FIFO.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  RxMsg: rx message pointer.
   * @retval rx fifo level
   */
-void RCAN_ReadRxMsgFromFifo(RCAN_TypeDef *RCANx, RCAN_RxMsgTypeDef *RxMsg)
+void A2C_ReadRxMsgFromFifo(A2C_TypeDef *A2Cx, A2C_RxMsgTypeDef *RxMsg)
 {
-	RxMsg->MsgBufferIdx = RCAN_RX_FIFO_READ_MSG_IDX;
+	RxMsg->MsgBufferIdx = A2C_RX_FIFO_READ_MSG_IDX;
 
-	RCAN_ReadMsg(RCANx, RxMsg);
+	A2C_ReadMsg(A2Cx, RxMsg);
 }
 
 /**
-  * @brief    get CAN tx error counter.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief    get A2C tx error counter.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @retval tx error counter
   */
-u32 RCAN_TXErrCntGet(RCAN_TypeDef *RCANx)
+u32 A2C_TXErrCntGet(A2C_TypeDef *A2Cx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
-	return CAN_GET_TEC(RCANx->CAN_ERR_CNT_STS);
+	return A2C_GET_TEC(A2Cx->A2C_ERR_CNT_STS);
 }
 
 /**
-  * @brief    get CAN rx error counter.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief    get A2C rx error counter.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @retval rx error counter
   */
-u32 RCAN_RXErrCntGet(RCAN_TypeDef *RCANx)
+u32 A2C_RXErrCntGet(A2C_TypeDef *A2Cx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
-	return CAN_GET_REC(RCANx->CAN_ERR_CNT_STS);
+	return A2C_GET_REC(A2Cx->A2C_ERR_CNT_STS);
 }
 
 /**
-  * @brief    CAN tx error counter clear.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief    A2C tx error counter clear.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @retval none
   */
-void RCAN_TXErrCntClear(RCAN_TypeDef *RCANx)
+void A2C_TXErrCntClear(A2C_TypeDef *A2Cx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
-	RCANx->CAN_ERR_CNT_CTL |= CAN_BIT_TX_ERR_CNT_CLR;
+	A2Cx->A2C_ERR_CNT_CTL |= A2C_BIT_TX_ERR_CNT_CLR;
 }
 
 /**
-  * @brief    CAN rx error counter clear.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief    A2C rx error counter clear.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @retval none
   */
-void RCAN_RXErrCntClear(RCAN_TypeDef *RCANx)
+void A2C_RXErrCntClear(A2C_TypeDef *A2Cx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
-	RCANx->CAN_ERR_CNT_CTL |= CAN_BIT_RX_ERR_CNT_CLR;
+	A2Cx->A2C_ERR_CNT_CTL |= A2C_BIT_RX_ERR_CNT_CLR;
 }
 
 /**
-  * @brief    CAN rx error counter clear.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief    A2C rx error counter clear.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @retval error counter status
---RCAN_TX_ERR_PASSIVE
---RCAN_TX_ERR_BUSOFF
---RCAN_TX_ERR_WARNING
+--A2C_TX_ERR_PASSIVE
+--A2C_TX_ERR_BUSOFF
+--A2C_TX_ERR_WARNING
   */
-u32 RCAN_RXErrCntSTS(RCAN_TypeDef *RCANx)
+u32 A2C_RXErrCntSTS(A2C_TypeDef *A2Cx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
-	return (RCANx->CAN_ERR_CNT_STS & (CAN_BIT_ERROR_WARNING | CAN_BIT_ERROR_BUSOFF | CAN_BIT_ERROR_PASSIVE));
+	return (A2Cx->A2C_ERR_CNT_STS & (A2C_BIT_ERROR_WARNING | A2C_BIT_ERROR_BUSOFF | A2C_BIT_ERROR_PASSIVE));
 }
 
 /**
   * @brief  write frame to message ram buffer.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  TxMsg: tx message pointer.
   * @retval none
   */
-void RCAN_WriteMsg(RCAN_TypeDef *RCANx, RCAN_TxMsgTypeDef *TxMsg)
+void A2C_WriteMsg(A2C_TypeDef *A2Cx, A2C_TxMsgTypeDef *TxMsg)
 {
-	u32 can_ram_arb = 0;
-	u32 can_ram_cmd = 0;
-	u32 can_ram_cs = 0;
+	u32 a2c_ram_arb = 0;
+	u32 a2c_ram_cmd = 0;
+	u32 a2c_ram_cs = 0;
 	u32 i;
 
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
-	assert_param(IS_RCAN_FRAME_TYPE(TxMsg->RTR));
-	assert_param(IS_RCAN_ID_TYPE(TxMsg->IDE));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
+	assert_param(IS_A2C_FRAME_TYPE(TxMsg->RTR));
+	assert_param(IS_A2C_ID_TYPE(TxMsg->IDE));
 	assert_param(TxMsg->DLC <= 64);
 	assert_param(TxMsg->MsgBufferIdx <= 15);
 
 	/*configure cmd register, enable access*/
-	can_ram_cmd |= (CAN_BIT_RAM_BUFFER_EN | CAN_BIT_RAM_ACC_ARB | CAN_BIT_RAM_ACC_CS | CAN_BIT_RAM_ACC_MASK | \
-					CAN_BIT_RAM_ACC_DATA_MASK | CAN_BIT_RAM_DIR);
-	can_ram_cmd |= TxMsg->MsgBufferIdx;
-	RCANx->CAN_RAM_CMD = can_ram_cmd;
+	a2c_ram_cmd |= (A2C_BIT_RAM_BUFFER_EN | A2C_BIT_RAM_ACC_ARB | A2C_BIT_RAM_ACC_CS | A2C_BIT_RAM_ACC_MASK | \
+					A2C_BIT_RAM_ACC_DATA_MASK | A2C_BIT_RAM_DIR);
+	a2c_ram_cmd |= TxMsg->MsgBufferIdx;
+	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
 
 	/*configure frame ARB register*/
-	can_ram_arb = RCANx->CAN_RAM_ARB;
-	can_ram_arb &= (~(CAN_BIT_RAM_RTR | CAN_BIT_RAM_IDE | CAN_MASK_RAM_ID));
-	can_ram_arb |= TxMsg->RTR;
-	can_ram_arb |= TxMsg->IDE;
+	a2c_ram_arb = A2Cx->A2C_RAM_ARB;
+	a2c_ram_arb &= (~(A2C_BIT_RAM_RTR | A2C_BIT_RAM_IDE | A2C_MASK_RAM_ID));
+	a2c_ram_arb |= TxMsg->RTR;
+	a2c_ram_arb |= TxMsg->IDE;
 
-	if (TxMsg->IDE == RCAN_STANDARD_FRAME) {
-		can_ram_arb |= ((TxMsg->StdId & 0x7ff) << 18);
+	if (TxMsg->IDE == A2C_STANDARD_FRAME) {
+		a2c_ram_arb |= ((TxMsg->StdId & 0x7ff) << 18);
 	} else {
-		can_ram_arb |= TxMsg->ExtId;
+		a2c_ram_arb |= TxMsg->ExtId;
 	}
-	RCANx->CAN_RAM_ARB = can_ram_arb;
+	A2Cx->A2C_RAM_ARB = a2c_ram_arb;
 
 	/*configure CS register*/
-	can_ram_cs = RCANx->CAN_RAM_CS;
-	can_ram_cs &= (~(CAN_MASK_RAM_DLC | CAN_BIT_RAM_AUTOREPLY | CAN_BIT_RAM_EDL | CAN_BIT_RAM_BRS | CAN_BIT_RAM_ESI));
-	can_ram_cs |= TxMsg->DLC;
-	can_ram_cs |= CAN_BIT_RAM_RXTX;
-	RCANx->CAN_RAM_CS = can_ram_cs;
+	a2c_ram_cs = A2Cx->A2C_RAM_CS;
+	a2c_ram_cs &= (~(A2C_MASK_RAM_DLC | A2C_BIT_RAM_AUTOREPLY | A2C_BIT_RAM_EDL | A2C_BIT_RAM_BRS | A2C_BIT_RAM_ESI));
+	a2c_ram_cs |= TxMsg->DLC;
+	a2c_ram_cs |= A2C_BIT_RAM_RXTX;
+	A2Cx->A2C_RAM_CS = a2c_ram_cs;
 
 	/*fill data, can2.0 8 bytes, can fd 64 bytes*/
-	if (TxMsg->RTR == RCAN_DATA_FRAME) {
+	if (TxMsg->RTR == A2C_DATA_FRAME) {
 		for (i = 0; i < 16; i++) {
-			HAL_WRITE32(&RCANx->CAN_RAM_FDDATA_x[i], 0, *(u32 *)(&TxMsg->Data[(16 - i - 1) * 4]));
+			HAL_WRITE32(&A2Cx->A2C_RAM_FDDATA_x[i], 0, *(u32 *)(&TxMsg->Data[(16 - i - 1) * 4]));
 		}
 	}
 
 	/*finally, operate cmd register to write frame info in register into the ram message buffer*/
-	can_ram_cmd |= CAN_BIT_RAM_START;
-	RCANx->CAN_RAM_CMD = can_ram_cmd;
-	while (RCANx->CAN_RAM_CMD & CAN_BIT_RAM_START);
+	a2c_ram_cmd |= A2C_BIT_RAM_START;
+	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
+	while (A2Cx->A2C_RAM_CMD & A2C_BIT_RAM_START);
 }
 
 /**
   * @brief    set rx message ram buffer.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  RxMsg: rx message pointer.
   * @retval none
   */
-void RCAN_SetRxMsgBuf(RCAN_TypeDef *RCANx, RCAN_RxMsgTypeDef *RxMsg)
+void A2C_SetRxMsgBuf(A2C_TypeDef *A2Cx, A2C_RxMsgTypeDef *RxMsg)
 {
-	u32 can_ram_arb = 0;
-	u32 can_ram_cmd = 0;
-	u32 can_ram_mask = 0;
+	u32 a2c_ram_arb = 0;
+	u32 a2c_ram_cmd = 0;
+	u32 a2c_ram_mask = 0;
 
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
-	assert_param(IS_RCAN_FRAME_TYPE(RxMsg->RTR));
-	assert_param(IS_RCAN_ID_TYPE(RxMsg->IDE));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
+	assert_param(IS_A2C_FRAME_TYPE(RxMsg->RTR));
+	assert_param(IS_A2C_ID_TYPE(RxMsg->IDE));
 	assert_param(RxMsg->MsgBufferIdx <= 15);
 
 	/*configure cmd register, enable access*/
-	can_ram_cmd |= (CAN_BIT_RAM_BUFFER_EN | CAN_BIT_RAM_ACC_ARB | CAN_BIT_RAM_ACC_CS | CAN_BIT_RAM_ACC_MASK | \
-					CAN_BIT_RAM_ACC_DATA_MASK | CAN_BIT_RAM_DIR);
-	can_ram_cmd |= RxMsg->MsgBufferIdx;
+	a2c_ram_cmd |= (A2C_BIT_RAM_BUFFER_EN | A2C_BIT_RAM_ACC_ARB | A2C_BIT_RAM_ACC_CS | A2C_BIT_RAM_ACC_MASK | \
+					A2C_BIT_RAM_ACC_DATA_MASK | A2C_BIT_RAM_DIR);
+	a2c_ram_cmd |= RxMsg->MsgBufferIdx;
 
 	/*configure frame ARB register*/
-	can_ram_arb |= RxMsg->RTR;
-	can_ram_arb |= RxMsg->IDE;
+	a2c_ram_arb |= RxMsg->RTR;
+	a2c_ram_arb |= RxMsg->IDE;
 
-	if (RxMsg->IDE == RCAN_STANDARD_FRAME) {
-		can_ram_arb |= CAN_RAM_ID((RxMsg->StdId & 0x7ff) << 18);
+	if (RxMsg->IDE == A2C_STANDARD_FRAME) {
+		a2c_ram_arb |= A2C_RAM_ID((RxMsg->StdId & 0x7ff) << 18);
 	} else {
-		can_ram_arb |= CAN_RAM_ID(RxMsg->ExtId);
+		a2c_ram_arb |= A2C_RAM_ID(RxMsg->ExtId);
 	}
-	RCANx->CAN_RAM_ARB = can_ram_arb;
+	A2Cx->A2C_RAM_ARB = a2c_ram_arb;
 
 
 	/*configure MASK ID register*/
-	can_ram_mask |= CAN_RAM_ID_MASK(RxMsg->ID_MASK);
-	can_ram_mask |= RxMsg->IDE_Mask;
-	can_ram_mask |= RxMsg->RTR_Mask;
-	RCANx->CAN_RAM_MASK = can_ram_mask;
+	a2c_ram_mask |= A2C_RAM_ID_MASK(RxMsg->ID_MASK);
+	a2c_ram_mask |= RxMsg->IDE_Mask;
+	a2c_ram_mask |= RxMsg->RTR_Mask;
+	A2Cx->A2C_RAM_MASK = a2c_ram_mask;
 
 	/*finally, operate cmd register to write RX setting info in register into the ram message buffer*/
-	can_ram_cmd |= CAN_BIT_RAM_START;
-	RCANx->CAN_RAM_CMD = can_ram_cmd;
-	while (RCANx->CAN_RAM_CMD & CAN_BIT_RAM_START);
+	a2c_ram_cmd |= A2C_BIT_RAM_START;
+	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
+	while (A2Cx->A2C_RAM_CMD & A2C_BIT_RAM_START);
 }
 
 /**
   * @brief    read frame from message ram buffer.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  RxMsg: rx message pointer.
   * @retval none
   */
-void RCAN_ReadMsg(RCAN_TypeDef *RCANx, RCAN_RxMsgTypeDef *RxMsg)
+void A2C_ReadMsg(A2C_TypeDef *A2Cx, A2C_RxMsgTypeDef *RxMsg)
 {
-	u32 can_ram_arb = 0;
-	u32 can_ram_cmd = 0;
-	u32 can_ram_cs = 0;
-	u32 can_ram_mask = 0;
+	u32 a2c_ram_arb = 0;
+	u32 a2c_ram_cmd = 0;
+	u32 a2c_ram_cs = 0;
+	u32 a2c_ram_mask = 0;
 	u32 i;
 
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 	assert_param(RxMsg->MsgBufferIdx <= 15);
 
 	/*configure cmd register, enable access*/
-	can_ram_cmd |= (CAN_BIT_RAM_BUFFER_EN | CAN_BIT_RAM_ACC_ARB | CAN_BIT_RAM_ACC_CS | CAN_BIT_RAM_ACC_MASK | CAN_BIT_RAM_ACC_DATA_MASK);
-	can_ram_cmd |= RxMsg->MsgBufferIdx;
-	can_ram_cmd |= CAN_BIT_RAM_START;
-	RCANx->CAN_RAM_CMD = can_ram_cmd;/*firstly, operate cmd register to read frame into register from ram message buffer*/
-	while (RCANx->CAN_RAM_CMD & CAN_BIT_RAM_START);
+	a2c_ram_cmd |= (A2C_BIT_RAM_BUFFER_EN | A2C_BIT_RAM_ACC_ARB | A2C_BIT_RAM_ACC_CS | A2C_BIT_RAM_ACC_MASK | A2C_BIT_RAM_ACC_DATA_MASK);
+	a2c_ram_cmd |= RxMsg->MsgBufferIdx;
+	a2c_ram_cmd |= A2C_BIT_RAM_START;
+	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;/*firstly, operate cmd register to read frame into register from ram message buffer*/
+	while (A2Cx->A2C_RAM_CMD & A2C_BIT_RAM_START);
 
 	/*read ARB register*/
-	can_ram_arb = RCANx->CAN_RAM_ARB;
-	if (can_ram_arb & CAN_BIT_RAM_RTR) {
-		RxMsg->RTR = RCAN_REMOTE_FRAME;
+	a2c_ram_arb = A2Cx->A2C_RAM_ARB;
+	if (a2c_ram_arb & A2C_BIT_RAM_RTR) {
+		RxMsg->RTR = A2C_REMOTE_FRAME;
 	} else {
-		RxMsg->RTR = RCAN_DATA_FRAME;
+		RxMsg->RTR = A2C_DATA_FRAME;
 	}
-	if (can_ram_arb & CAN_BIT_RAM_IDE) {
-		RxMsg->IDE = RCAN_EXTEND_FRAME;
+	if (a2c_ram_arb & A2C_BIT_RAM_IDE) {
+		RxMsg->IDE = A2C_EXTEND_FRAME;
 	} else {
-		RxMsg->IDE = RCAN_STANDARD_FRAME;
+		RxMsg->IDE = A2C_STANDARD_FRAME;
 	}
 
-	if (RxMsg->IDE == RCAN_STANDARD_FRAME) {
-		RxMsg->StdId = CAN_GET_RAM_ID(can_ram_arb) >> 18;
+	if (RxMsg->IDE == A2C_STANDARD_FRAME) {
+		RxMsg->StdId = A2C_GET_RAM_ID(a2c_ram_arb) >> 18;
 	} else {
-		RxMsg->ExtId = CAN_GET_RAM_ID(can_ram_arb);
+		RxMsg->ExtId = A2C_GET_RAM_ID(a2c_ram_arb);
 	}
 
 	/*read CS register*/
-	can_ram_cs = RCANx->CAN_RAM_CS;
-	RxMsg->RxTimStamp = CAN_GET_RAM_TIMESTAMP(can_ram_cs);
-	if (can_ram_cs & CAN_BIT_RAM_LOST) {
+	a2c_ram_cs = A2Cx->A2C_RAM_CS;
+	RxMsg->RxTimStamp = A2C_GET_RAM_TIMESTAMP(a2c_ram_cs);
+	if (a2c_ram_cs & A2C_BIT_RAM_LOST) {
 		RxMsg->RxLost = 1;
 	} else {
 		RxMsg->RxLost = 0;
 	}
-	RxMsg->DLC = CAN_GET_RAM_DLC(can_ram_cs);
+	RxMsg->DLC = A2C_GET_RAM_DLC(a2c_ram_cs);
 
 	/*read mask ID*/
-	can_ram_mask = RCANx->CAN_RAM_MASK;
-	RxMsg->ID_MASK = CAN_GET_RAM_ID_MASK(can_ram_mask);
-	RxMsg->IDE_Mask = (can_ram_mask & CAN_BIT_RAM_IDE_MASK);
-	RxMsg->RTR_Mask = (can_ram_mask & CAN_BIT_RAM_RTR_MASK);
+	a2c_ram_mask = A2Cx->A2C_RAM_MASK;
+	RxMsg->ID_MASK = A2C_GET_RAM_ID_MASK(a2c_ram_mask);
+	RxMsg->IDE_Mask = (a2c_ram_mask & A2C_BIT_RAM_IDE_MASK);
+	RxMsg->RTR_Mask = (a2c_ram_mask & A2C_BIT_RAM_RTR_MASK);
 
 	/*configure DATA register: can2.0 8 bytes, can fd 64 bytes*/
-	if (RxMsg->RTR == RCAN_DATA_FRAME) {
+	if (RxMsg->RTR == A2C_DATA_FRAME) {
 		for (i = 0; i < 16; i++) {
-			*((u32 *)(&RxMsg->Data[(16 - i - 1) * 4])) = HAL_READ32(&RCANx->CAN_RAM_FDDATA_x[i], 0);
+			*((u32 *)(&RxMsg->Data[(16 - i - 1) * 4])) = HAL_READ32(&A2Cx->A2C_RAM_FDDATA_x[i], 0);
 		}
 	}
 }
 
 /**
   * @brief    send auto reply message.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  TxMsg: tx message pointer.
   * @retval none
   */
-void RCAN_TxAutoReply(RCAN_TypeDef *RCANx, RCAN_TxMsgTypeDef *TxMsg)
+void A2C_TxAutoReply(A2C_TypeDef *A2Cx, A2C_TxMsgTypeDef *TxMsg)
 {
-	u32 can_ram_arb;
-	u32 can_ram_cmd = 0;
-	u32 can_ram_cs;
+	u32 a2c_ram_arb;
+	u32 a2c_ram_cmd = 0;
+	u32 a2c_ram_cs;
 	u32 i;
 
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
-	assert_param(IS_RCAN_FRAME_TYPE(TxMsg->RTR));
-	assert_param(IS_RCAN_ID_TYPE(TxMsg->IDE));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
+	assert_param(IS_A2C_FRAME_TYPE(TxMsg->RTR));
+	assert_param(IS_A2C_ID_TYPE(TxMsg->IDE));
 	assert_param(TxMsg->DLC <= 64);
 	assert_param(TxMsg->MsgBufferIdx <= 15);
 
 	/*configure cmd register, enable access*/
-	can_ram_cmd |= (CAN_BIT_RAM_BUFFER_EN | CAN_BIT_RAM_ACC_ARB | CAN_BIT_RAM_ACC_CS | CAN_BIT_RAM_ACC_MASK | \
-					CAN_BIT_RAM_ACC_DATA_MASK | CAN_BIT_RAM_DIR);
-	can_ram_cmd |= TxMsg->MsgBufferIdx;
-	RCANx->CAN_RAM_CMD = can_ram_cmd;
+	a2c_ram_cmd |= (A2C_BIT_RAM_BUFFER_EN | A2C_BIT_RAM_ACC_ARB | A2C_BIT_RAM_ACC_CS | A2C_BIT_RAM_ACC_MASK | \
+					A2C_BIT_RAM_ACC_DATA_MASK | A2C_BIT_RAM_DIR);
+	a2c_ram_cmd |= TxMsg->MsgBufferIdx;
+	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
 
 	/*configure frame ARB register*/
-	can_ram_arb = RCANx->CAN_RAM_ARB;
-	can_ram_arb &= (~(CAN_BIT_RAM_RTR | CAN_BIT_RAM_IDE | CAN_MASK_RAM_ID));
-	can_ram_arb |= TxMsg->RTR;
-	can_ram_arb |= TxMsg->IDE;
+	a2c_ram_arb = A2Cx->A2C_RAM_ARB;
+	a2c_ram_arb &= (~(A2C_BIT_RAM_RTR | A2C_BIT_RAM_IDE | A2C_MASK_RAM_ID));
+	a2c_ram_arb |= TxMsg->RTR;
+	a2c_ram_arb |= TxMsg->IDE;
 
-	if (TxMsg->IDE == RCAN_STANDARD_FRAME) {
-		can_ram_arb |= ((TxMsg->StdId & 0x7ff) << 18);
+	if (TxMsg->IDE == A2C_STANDARD_FRAME) {
+		a2c_ram_arb |= ((TxMsg->StdId & 0x7ff) << 18);
 	} else {
-		can_ram_arb |= TxMsg->ExtId;
+		a2c_ram_arb |= TxMsg->ExtId;
 	}
-	RCANx->CAN_RAM_ARB = can_ram_arb;
+	A2Cx->A2C_RAM_ARB = a2c_ram_arb;
 
 	/*configure CS register*/
-	can_ram_cs = RCANx->CAN_RAM_CS;
-	can_ram_cs &= (~(CAN_MASK_RAM_DLC | CAN_BIT_RAM_AUTOREPLY | CAN_BIT_RAM_ESI | CAN_BIT_RAM_BRS | CAN_BIT_RAM_EDL));
+	a2c_ram_cs = A2Cx->A2C_RAM_CS;
+	a2c_ram_cs &= (~(A2C_MASK_RAM_DLC | A2C_BIT_RAM_AUTOREPLY | A2C_BIT_RAM_ESI | A2C_BIT_RAM_BRS | A2C_BIT_RAM_EDL));
 
-	can_ram_cs |= TxMsg->DLC;
+	a2c_ram_cs |= TxMsg->DLC;
 	/*enable auto-reply*/
-	can_ram_cs |= CAN_BIT_RAM_RXTX | CAN_BIT_RAM_AUTOREPLY;
+	a2c_ram_cs |= A2C_BIT_RAM_RXTX | A2C_BIT_RAM_AUTOREPLY;
 
-	RCANx->CAN_RAM_CS = can_ram_cs;
+	A2Cx->A2C_RAM_CS = a2c_ram_cs;
 
 	/*configure DATA register: can2.0 8 bytes, can fd 64 bytes*/
-	if (TxMsg->RTR == RCAN_DATA_FRAME) {
+	if (TxMsg->RTR == A2C_DATA_FRAME) {
 		for (i = 0; i < 16; i++) {
-			RCANx->CAN_RAM_FDDATA_x[i] = TxMsg->Data[(16 - i - 1) * 4];
+			A2Cx->A2C_RAM_FDDATA_x[i] = TxMsg->Data[(16 - i - 1) * 4];
 		}
 	}
 
 	/*finally, operate cmd register to write frame info in register into the ram message buffer*/
-	can_ram_cmd |= CAN_BIT_RAM_START;
-	RCANx->CAN_RAM_CMD = can_ram_cmd;
-	while (RCANx->CAN_RAM_CMD & CAN_BIT_RAM_START);
+	a2c_ram_cmd |= A2C_BIT_RAM_START;
+	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
+	while (A2Cx->A2C_RAM_CMD & A2C_BIT_RAM_START);
 }
 
 /**
   * @brief    receive auto reply message.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  TxMsg: tx message pointer.
   * @retval none
   */
-void RCAN_RxAutoReply(RCAN_TypeDef *RCANx, RCAN_RxMsgTypeDef *RxMsg)
+void A2C_RxAutoReply(A2C_TypeDef *A2Cx, A2C_RxMsgTypeDef *RxMsg)
 {
-	u32 can_ram_arb;
-	u32 can_ram_cmd = 0;
-	u32 can_ram_cs;
-	u32 can_ram_mask;
+	u32 a2c_ram_arb;
+	u32 a2c_ram_cmd = 0;
+	u32 a2c_ram_cs;
+	u32 a2c_ram_mask;
 
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
-	assert_param(IS_RCAN_FRAME_TYPE(RxMsg->RTR));
-	assert_param(IS_RCAN_ID_TYPE(RxMsg->IDE));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
+	assert_param(IS_A2C_FRAME_TYPE(RxMsg->RTR));
+	assert_param(IS_A2C_ID_TYPE(RxMsg->IDE));
 	assert_param(RxMsg->MsgBufferIdx <= 15);
 
 	/*configure cmd register, enable access*/
-	can_ram_cmd |= (CAN_BIT_RAM_BUFFER_EN | CAN_BIT_RAM_ACC_ARB | CAN_BIT_RAM_ACC_CS | CAN_BIT_RAM_ACC_MASK | \
-					CAN_BIT_RAM_ACC_DATA_MASK | CAN_BIT_RAM_DIR);
-	can_ram_cmd |= RxMsg->MsgBufferIdx;
-	//RCANx->CAN_RAM_CMD = can_ram_cmd;
+	a2c_ram_cmd |= (A2C_BIT_RAM_BUFFER_EN | A2C_BIT_RAM_ACC_ARB | A2C_BIT_RAM_ACC_CS | A2C_BIT_RAM_ACC_MASK | \
+					A2C_BIT_RAM_ACC_DATA_MASK | A2C_BIT_RAM_DIR);
+	a2c_ram_cmd |= RxMsg->MsgBufferIdx;
+	//A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
 
 	/*configure frame ARB register*/
-	can_ram_arb = RCANx->CAN_RAM_ARB;
-	can_ram_arb &= (~(CAN_BIT_RAM_RTR | CAN_BIT_RAM_IDE | CAN_MASK_RAM_ID));
-	can_ram_arb |= RxMsg->RTR;
-	can_ram_arb |= RxMsg->IDE;
+	a2c_ram_arb = A2Cx->A2C_RAM_ARB;
+	a2c_ram_arb &= (~(A2C_BIT_RAM_RTR | A2C_BIT_RAM_IDE | A2C_MASK_RAM_ID));
+	a2c_ram_arb |= RxMsg->RTR;
+	a2c_ram_arb |= RxMsg->IDE;
 
-	if (RxMsg->IDE == RCAN_STANDARD_FRAME) {
-		can_ram_arb |= ((RxMsg->StdId & 0x7ff) << 18);
+	if (RxMsg->IDE == A2C_STANDARD_FRAME) {
+		a2c_ram_arb |= ((RxMsg->StdId & 0x7ff) << 18);
 	} else {
-		can_ram_arb |= RxMsg->ExtId;
+		a2c_ram_arb |= RxMsg->ExtId;
 	}
-	RCANx->CAN_RAM_ARB = can_ram_arb;
+	A2Cx->A2C_RAM_ARB = a2c_ram_arb;
 
 	/*configure CS register*/
-	can_ram_cs = RCANx->CAN_RAM_CS;
-	can_ram_cs &= (~(CAN_BIT_RAM_RXTX | CAN_BIT_RAM_AUTOREPLY | CAN_BIT_RAM_ESI | CAN_BIT_RAM_BRS | CAN_BIT_RAM_BRS));
+	a2c_ram_cs = A2Cx->A2C_RAM_CS;
+	a2c_ram_cs &= (~(A2C_BIT_RAM_RXTX | A2C_BIT_RAM_AUTOREPLY | A2C_BIT_RAM_ESI | A2C_BIT_RAM_BRS | A2C_BIT_RAM_BRS));
 	/*enable auto-reply*/
-	can_ram_cs |= CAN_BIT_RAM_AUTOREPLY;
+	a2c_ram_cs |= A2C_BIT_RAM_AUTOREPLY;
 
-	RCANx->CAN_RAM_CS = can_ram_cs;
+	A2Cx->A2C_RAM_CS = a2c_ram_cs;
 
 	/*configure MASK ID register*/
-	can_ram_mask = RCANx->CAN_RAM_MASK;
-	can_ram_mask &= (~CAN_MASK_RAM_ID_MASK | CAN_BIT_RAM_IDE_MASK | CAN_BIT_RAM_RTR_MASK);
-	can_ram_mask |= RxMsg->ID_MASK;
-	can_ram_mask |= RxMsg->IDE_Mask;
-	can_ram_mask |= RxMsg->RTR_Mask;
-	RCANx->CAN_RAM_MASK = can_ram_mask;
+	a2c_ram_mask = A2Cx->A2C_RAM_MASK;
+	a2c_ram_mask &= (~A2C_MASK_RAM_ID_MASK | A2C_BIT_RAM_IDE_MASK | A2C_BIT_RAM_RTR_MASK);
+	a2c_ram_mask |= RxMsg->ID_MASK;
+	a2c_ram_mask |= RxMsg->IDE_Mask;
+	a2c_ram_mask |= RxMsg->RTR_Mask;
+	A2Cx->A2C_RAM_MASK = a2c_ram_mask;
 
 	/*finally, operate cmd register to write RX setting info in register into the ram message buffer*/
-	can_ram_cmd |= CAN_BIT_RAM_START;
-	RCANx->CAN_RAM_CMD = can_ram_cmd;
-	while (RCANx->CAN_RAM_CMD & CAN_BIT_RAM_START);
+	a2c_ram_cmd |= A2C_BIT_RAM_START;
+	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
+	while (A2Cx->A2C_RAM_CMD & A2C_BIT_RAM_START);
 }
 
 /**
-  * @brief  Enables or disables the specified CAN interrupts.
-  * @param  RCANx: where RCANx can be RCAN.
-  * @param  RCAN_IT: specifies the CAN interrupts sources to be enabled or disabled.
+  * @brief  Enables or disables the specified A2C interrupts.
+  * @param  A2Cx: where A2Cx can be A2C.
+  * @param  A2C_IT: specifies the A2C interrupts sources to be enabled or disabled.
   *   This parameter can be any combination of the following values:
-  *     @arg RCAN_TX_INT
-  *     @arg RCAN_RX_INT
-  *     @arg RCAN_ERR_INT
-  *     @arg RCAN_WKUP_INT
-  *     @arg RCAN_BUSOFF_INT
-  * @param  NewState: new state of the specified CAN interrupts.
+  *     @arg A2C_TX_INT
+  *     @arg A2C_RX_INT
+  *     @arg A2C_ERR_INT
+  *     @arg A2C_WKUP_INT
+  *     @arg A2C_BUSOFF_INT
+  * @param  NewState: new state of the specified A2C interrupts.
   *   This parameter can be: ENABLE or DISABLE.
   * @retval None
   */
-void RCAN_INTConfig(RCAN_TypeDef *RCANx, u32 RCAN_IT, u32 NewState)
+void A2C_INTConfig(A2C_TypeDef *A2Cx, u32 A2C_IT, u32 NewState)
 {
 	/*check the parameters*/
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
 	if (NewState != DISABLE) {
-		/* Enable the selected CAN interrupts */
-		RCANx->CAN_INT_EN |= RCAN_IT;
+		/* Enable the selected A2C interrupts */
+		A2Cx->A2C_INT_EN |= A2C_IT;
 	} else {
-		/* Disable the selected CAN interrupts */
-		RCANx->CAN_INT_EN &= (~RCAN_IT);
+		/* Disable the selected A2C interrupts */
+		A2Cx->A2C_INT_EN &= (~A2C_IT);
 	}
 }
 
 /**
-  * @brief  Get CAN interrupt status.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief  Get A2C interrupt status.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @retval interrupt status
   */
-u32 RCAN_GetINTStatus(RCAN_TypeDef *RCANx)
+u32 A2C_GetINTStatus(A2C_TypeDef *A2Cx)
 {
 	/*check the parameters*/
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
-	return RCANx->CAN_INT_FLAG;
+	return A2Cx->A2C_INT_FLAG;
 }
 
 /**
-  * @brief  Clears the CAN interrupt pending bits.
-  * @param  RCANx: where RCANx can be RCAN.
-  * @param  RCAN_IT: specifies the interrupt to be cleared.
+  * @brief  Clears the A2C interrupt pending bits.
+  * @param  A2Cx: where A2Cx can be A2C.
+  * @param  A2C_IT: specifies the interrupt to be cleared.
   * @retval None
   */
-void RCAN_ClearINT(RCAN_TypeDef *RCANx, u32 RCAN_IT)
+void A2C_ClearINT(A2C_TypeDef *A2Cx, u32 A2C_IT)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
-	assert_param(IS_RCAN_CLEAR_IT(RCAN_IT));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
+	assert_param(IS_A2C_CLEAR_IT(A2C_IT));
 
 	/*clear the specified interrupt*/
-	RCANx->CAN_INT_FLAG = RCAN_IT;
+	A2Cx->A2C_INT_FLAG = A2C_IT;
 }
 
 /**
-  * @brief  Clears the CAN interrupt pending bits.
-  * @param  RCANx: where RCANx can be RCAN.
-  * @param  RCAN_IT: specifies the interrupt to be cleared.
+  * @brief  Clears the A2C interrupt pending bits.
+  * @param  A2Cx: where A2Cx can be A2C.
+  * @param  A2C_IT: specifies the interrupt to be cleared.
   * @retval None
   */
-void RCAN_ClearAllINT(RCAN_TypeDef *RCANx)
+void A2C_ClearAllINT(A2C_TypeDef *A2Cx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
-	RCANx->CAN_INT_FLAG = 0xFFFFFFFF;
+	A2Cx->A2C_INT_FLAG = 0xFFFFFFFF;
 }
 
 /**
-  * @brief  Get the CAN error status.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief  Get the A2C error status.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @retval error status
   */
-u32 RCAN_GetErrStatus(RCAN_TypeDef *RCANx)
+u32 A2C_GetErrStatus(A2C_TypeDef *A2Cx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
-	return (RCANx->CAN_ERR_STATUS);
+	return (A2Cx->A2C_ERR_STATUS);
 }
 
 /**
-  * @brief  Clears the CAN error pending bits.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief  Clears the A2C error pending bits.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  ERR_STS: specifies the error status to be cleared.
   * @retval None
   */
-void RCAN_ClearErrStatus(RCAN_TypeDef *RCANx, u32 ERR_STS)
+void A2C_ClearErrStatus(A2C_TypeDef *A2Cx, u32 ERR_STS)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
 	/*clear the specified error status*/
-	RCANx->CAN_ERR_STATUS = ERR_STS;
+	A2Cx->A2C_ERR_STATUS = ERR_STS;
 }
 
 /**
-  * @brief  Enables or disables the specified CAN Rx message buffer interrupts.
-  * @param  RCANx: where RCANx can be RCAN.
-  * @param  RCAN_IT: specifies the CAN interrupts sources to be enabled or disabled.
-   * @param  NewState: new state of the specified CAN interrupts.
+  * @brief  Enables or disables the specified A2C Rx message buffer interrupts.
+  * @param  A2Cx: where A2Cx can be A2C.
+  * @param  A2C_IT: specifies the A2C interrupts sources to be enabled or disabled.
+   * @param  NewState: new state of the specified A2C interrupts.
   *   This parameter can be: ENABLE or DISABLE.
   * @retval None
   */
-void RCAN_RxMsgBufINTConfig(RCAN_TypeDef *RCANx, u32 BUF_IT, u32 NewState)
+void A2C_RxMsgBufINTConfig(A2C_TypeDef *A2Cx, u32 BUF_IT, u32 NewState)
 {
 	/*check the parameters*/
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
 	if (NewState != DISABLE) {
-		/* Enable the selected CAN rx msg buffer interrupts */
-		RCANx->CAN_MB_RXINT_EN |= BUF_IT;
+		/* Enable the selected A2C rx msg buffer interrupts */
+		A2Cx->A2C_MB_RXINT_EN |= BUF_IT;
 	} else {
-		/* Disable the selected CAN rx msg buffer interrupts */
-		RCANx->CAN_MB_RXINT_EN &= (~BUF_IT);
+		/* Disable the selected A2C rx msg buffer interrupts */
+		A2Cx->A2C_MB_RXINT_EN &= (~BUF_IT);
 	}
 }
 
 /**
-  * @brief  Enables or disables the specified CAN Tx message buffer interrupts.
-  * @param  RCANx: where RCANx can be RCAN.
-  * @param  RCAN_IT: specifies the CAN interrupts sources to be enabled or disabled.
-   * @param  NewState: new state of the specified CAN interrupts.
+  * @brief  Enables or disables the specified A2C Tx message buffer interrupts.
+  * @param  A2Cx: where A2Cx can be A2C.
+  * @param  A2C_IT: specifies the A2C interrupts sources to be enabled or disabled.
+   * @param  NewState: new state of the specified A2C interrupts.
   *   This parameter can be: ENABLE or DISABLE.
   * @retval None
   */
-void RCAN_TxMsgBufINTConfig(RCAN_TypeDef *RCANx, u32 BUF_IT, u32 NewState)
+void A2C_TxMsgBufINTConfig(A2C_TypeDef *A2Cx, u32 BUF_IT, u32 NewState)
 {
 	/*check the parameters*/
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
 	if (NewState != DISABLE) {
-		/* Enable the selected CAN tx msg buffer interrupts */
-		RCANx->CAN_MB_TXINT_EN |= BUF_IT;
+		/* Enable the selected A2C tx msg buffer interrupts */
+		A2Cx->A2C_MB_TXINT_EN |= BUF_IT;
 	} else {
-		/* Disable the selected CAN tx msg buffer interrupts */
-		RCANx->CAN_MB_TXINT_EN &= (~BUF_IT);
+		/* Disable the selected A2C tx msg buffer interrupts */
+		A2Cx->A2C_MB_TXINT_EN &= (~BUF_IT);
 	}
 }
 
 /**
   * @brief  get tx message buffer error status.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @retval tx message error status
   */
-u32 RCAN_TxMsgBufErrGet(RCAN_TypeDef *RCANx)
+u32 A2C_TxMsgBufErrGet(A2C_TypeDef *A2Cx)
 {
 	/*check the parameters*/
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
-	return (RCANx->CAN_TX_ERROR_FLAG);
+	return (A2Cx->A2C_TX_ERROR_FLAG);
 }
 
 /**
   * @brief  clear tx message buffer error status.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  ERR: the specified interrupt source.
   * @retval None
   */
-void RCAN_TxMsgBufErrClear(RCAN_TypeDef *RCANx, u32 ERR_FLAG)
+void A2C_TxMsgBufErrClear(A2C_TypeDef *A2Cx, u32 ERR_FLAG)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
 	/*clear the specified msg buffer error*/
-	RCANx->CAN_TX_ERROR_FLAG = ERR_FLAG;
+	A2Cx->A2C_TX_ERROR_FLAG = ERR_FLAG;
 }
 
 /**
   * @brief  get message buffer status register value.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  MsgBufIdx: message buffer index.
   * @retval register value
   */
-u32 RCAN_MsgBufStatusRegGet(RCAN_TypeDef *RCANx, u32 MsgBufIdx)
+u32 A2C_MsgBufStatusRegGet(A2C_TypeDef *A2Cx, u32 MsgBufIdx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 	assert_param(MsgBufIdx <= 15);
 
-	return (RCANx->CAN_MBx_STS[MsgBufIdx]);
+	return (A2Cx->A2C_MBx_STS[MsgBufIdx]);
 }
 
 /**
   * @brief  get message buffer status register value.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  MsgBufIdx: message buffer index.
   * @retval status, can be the following values:
-	--RCAN_FRAME_PENDING_TX
-	--RCAN_FRAME_FINISAH_TX
-	--RCAN_FRAME_OVWRITR_SEND_TX
-	--RCAN_FRAME_PENDING_RX
-	--RCAN_FRAME_FINISH_RX
+	--A2C_FRAME_PENDING_TX
+	--A2C_FRAME_FINISAH_TX
+	--A2C_FRAME_OVWRITR_SEND_TX
+	--A2C_FRAME_PENDING_RX
+	--A2C_FRAME_FINISH_RX
   */
-u32 RCAN_MsgBufStatusGet(RCAN_TypeDef *RCANx, u32 MsgBufIdx)
+u32 A2C_MsgBufStatusGet(A2C_TypeDef *A2Cx, u32 MsgBufIdx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 	assert_param(MsgBufIdx <= 15);
 
-	return (RCANx->CAN_MBx_STS[MsgBufIdx] & 0xf);
+	return (A2Cx->A2C_MBx_STS[MsgBufIdx] & 0xf);
 }
 
 /**
   * @brief  check message buffer available or not.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  MsgBufIdx: message buffer index.
   * @retval status, can be the following values:
 	--1: available
 	--0: not available
   */
-u32 RCAN_CheckMsgBufAvailable(RCAN_TypeDef *RCANx, u32 MsgBufIdx)
+u32 A2C_CheckMsgBufAvailable(A2C_TypeDef *A2Cx, u32 MsgBufIdx)
 {
 	u32 Temp;
 
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
-	Temp = (RCANx->CAN_MBx_STS[MsgBufIdx] & 0xf);
+	Temp = (A2Cx->A2C_MBx_STS[MsgBufIdx] & 0xf);
 
-	if ((Temp != RCAN_FRAME_PENDING_TX) && (Temp != RCAN_FRAME_PENDING_RX)) {
+	if ((Temp != A2C_FRAME_PENDING_TX) && (Temp != A2C_FRAME_PENDING_RX)) {
 		return 1;
 	} else {
 		return 0;
@@ -836,31 +836,31 @@ u32 RCAN_CheckMsgBufAvailable(RCAN_TypeDef *RCANx, u32 MsgBufIdx)
 }
 
 /**
-  * @brief  get CAN tx done status.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief  get A2C tx done status.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  MsgBufIdx: message buffer index.
   * @retval None
   */
-u32 RCAN_TxDoneStatusGet(RCAN_TypeDef *RCANx)
+u32 A2C_TxDoneStatusGet(A2C_TypeDef *A2Cx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
-	return (RCANx->CAN_TX_DONE);
+	return (A2Cx->A2C_TX_DONE);
 }
 
 /**
   * @brief  get message buffer tx done status.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  MsgBufIdx: message buffer index.
   * @retval status, can be the following values:
 	--1: tx complete
 	--0: tx pending
   */
-u32 RCAN_MsgBufTxDoneStatusGet(RCAN_TypeDef *RCANx, u32 MsgBufIdx)
+u32 A2C_MsgBufTxDoneStatusGet(A2C_TypeDef *A2Cx, u32 MsgBufIdx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
-	if ((RCANx->CAN_TX_DONE) & BIT(MsgBufIdx)) {
+	if ((A2Cx->A2C_TX_DONE) & BIT(MsgBufIdx)) {
 		return 1;
 	} else {
 		return 0;
@@ -868,30 +868,30 @@ u32 RCAN_MsgBufTxDoneStatusGet(RCAN_TypeDef *RCANx, u32 MsgBufIdx)
 }
 
 /**
-  * @brief  get CAN rx done status.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief  get A2C rx done status.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  MsgBufIdx: message buffer index.
   * @retval None
   */
-u32 RCAN_RxDoneStatusGet(RCAN_TypeDef *RCANx)
+u32 A2C_RxDoneStatusGet(A2C_TypeDef *A2Cx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
-	return (RCANx->CAN_RX_DONE);
+	return (A2Cx->A2C_RX_DONE);
 }
 /**
   * @brief  wait message buffer rx done.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  MsgBufIdx: message buffer index.
   * @retval status, can be the following values:
 	--1: rx complete
 	--0: rx pending
   */
-u32 RCAN_MsgBufRxDoneStatusGet(RCAN_TypeDef *RCANx, u32 MsgBufIdx)
+u32 A2C_MsgBufRxDoneStatusGet(A2C_TypeDef *A2Cx, u32 MsgBufIdx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
-	if ((RCANx->CAN_RX_DONE) & BIT(MsgBufIdx)) {
+	if ((A2Cx->A2C_RX_DONE) & BIT(MsgBufIdx)) {
 		return 1;
 	} else {
 		return 0;
@@ -899,179 +899,179 @@ u32 RCAN_MsgBufRxDoneStatusGet(RCAN_TypeDef *RCANx, u32 MsgBufIdx)
 }
 
 /**
-  * @brief  clear CAN tx done status.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief  clear A2C tx done status.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  Status: clear status.
   * @retval None
   */
-void RCAN_TxDoneStatusClear(RCAN_TypeDef *RCANx, u32 Status)
+void A2C_TxDoneStatusClear(A2C_TypeDef *A2Cx, u32 Status)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
 	/*clear the specified msg buffer tx done status*/
-	RCANx->CAN_TX_DONE = Status;
+	A2Cx->A2C_TX_DONE = Status;
 }
 
 /**
-  * @brief  clear CAN tx done message buffer status.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief  clear A2C tx done message buffer status.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  MsgBufIdx: message buffer index.
   * @retval None
   */
-void RCAN_MsgBufTxDoneStatusClear(RCAN_TypeDef *RCANx, u32 MsgBufIdx)
+void A2C_MsgBufTxDoneStatusClear(A2C_TypeDef *A2Cx, u32 MsgBufIdx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
 	/*clear the specified msg buffer tx done status*/
-	RCANx->CAN_TX_DONE = BIT(MsgBufIdx);
+	A2Cx->A2C_TX_DONE = BIT(MsgBufIdx);
 }
 
 /**
-  * @brief  clear CAN rx done status.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief  clear A2C rx done status.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  Status: clear status.
   * @retval None
   */
-void RCAN_RxDoneStatusClear(RCAN_TypeDef *RCANx, u32 Status)
+void A2C_RxDoneStatusClear(A2C_TypeDef *A2Cx, u32 Status)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
 	/*clear the specified msg buffer tx done status*/
-	RCANx->CAN_RX_DONE = Status;
+	A2Cx->A2C_RX_DONE = Status;
 }
 
 /**
-  * @brief  clear CAN rx done message buffer status.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief  clear A2C rx done message buffer status.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  MsgBufIdx: message buffer index.
   * @retval None
   */
-void RCAN_MsgBufRxDoneStatusClear(RCAN_TypeDef *RCANx, u32 MsgBufIdx)
+void A2C_MsgBufRxDoneStatusClear(A2C_TypeDef *A2Cx, u32 MsgBufIdx)
 {
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 
 	/*clear the specified msg buffer tx done status*/
-	RCANx->CAN_RX_DONE = BIT(MsgBufIdx);
+	A2Cx->A2C_RX_DONE = BIT(MsgBufIdx);
 }
 
 
 /**
-  * @brief    CAN TX message trigger ENABLE or DISABLE.
-  * @param  RCANx: where RCANx can be RCAN.
-  * @param  State: where RCANx can be ENABLE or DISABLE.
+  * @brief    A2C TX message trigger ENABLE or DISABLE.
+  * @param  A2Cx: where A2Cx can be A2C.
+  * @param  State: where A2Cx can be ENABLE or DISABLE.
   * @retval None
   */
-void RCAN_TxMsgTriggerCmd(RCAN_TypeDef *RCANx, u32 State)
+void A2C_TxMsgTriggerCmd(A2C_TypeDef *A2Cx, u32 State)
 {
 	if (State == DISABLE) {
-		RCANx->CAN_MB_TRIGGER &= ~CAN_BIT_TX_TRIGGER_EN;
+		A2Cx->A2C_MB_TRIGGER &= ~A2C_BIT_TX_TRIGGER_EN;
 	} else {
-		RCANx->CAN_MB_TRIGGER |= CAN_BIT_TX_TRIGGER_EN;
+		A2Cx->A2C_MB_TRIGGER |= A2C_BIT_TX_TRIGGER_EN;
 	}
 }
 
 /**
-  * @brief    CAN TX message trigger configure.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief    A2C TX message trigger configure.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  CloseOffset: close offset.
   * @param  Begin: trigger begin.
   * @retval None
   */
-void RCAN_TxMsgTriggerConfig(RCAN_TypeDef *RCANx, u32 CloseOffset, u32 Begin)
+void A2C_TxMsgTriggerConfig(A2C_TypeDef *A2Cx, u32 CloseOffset, u32 Begin)
 {
 	u32 MbTrigger;
 
-	MbTrigger = RCANx->CAN_MB_TRIGGER;
+	MbTrigger = A2Cx->A2C_MB_TRIGGER;
 
-	MbTrigger &= (~(CAN_MASK_TX_TRIGGER_CLOSE_OFFSET | CAN_MASK_TX_TRIGGER_BEGIN));
+	MbTrigger &= (~(A2C_MASK_TX_TRIGGER_CLOSE_OFFSET | A2C_MASK_TX_TRIGGER_BEGIN));
 
-	MbTrigger |= (Begin | CAN_TX_TRIGGER_CLOSE_OFFSET(CloseOffset));
+	MbTrigger |= (Begin | A2C_TX_TRIGGER_CLOSE_OFFSET(CloseOffset));
 
-	RCANx->CAN_MB_TRIGGER = MbTrigger;
+	A2Cx->A2C_MB_TRIGGER = MbTrigger;
 }
 
 /**
-  * @brief    CAN DMA destination base address configure.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief    A2C DMA destination base address configure.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  Addr: base address.
   * @retval None
   */
-void RCAN_RxDmaDestBaseAddrConfig(RCAN_TypeDef *RCANx, u32 Addr)
+void A2C_RxDmaDestBaseAddrConfig(A2C_TypeDef *A2Cx, u32 Addr)
 {
-	RCANx->CAN_RXDMA_CFG = Addr;
+	A2Cx->A2C_RXDMA_CFG = Addr;
 }
 
 /**
-  * @brief    CAN get RX DMA data.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief    A2C get RX DMA data.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @retval DMA data
   */
-u32 RCAN_GetRxDmaData(RCAN_TypeDef *RCANx)
+u32 A2C_GetRxDmaData(A2C_TypeDef *A2Cx)
 {
-	return RCANx->CAN_RX_DMA_DATA;
+	return A2Cx->A2C_RX_DMA_DATA;
 }
 
 /**
-  * @brief    CAN control register configure.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief    A2C control register configure.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  MsgIdx: message buffer index.
   * @param  RxDmaEn: RX DMA enable.
   * @param  RxDmaOffset: RX DMA offset.
   * @retval none
   */
-void RCAN_MsgCtrlRegConfig(RCAN_TypeDef *RCANx, u32 MsgIdx, u32 RxDmaEn, u32 DmaOffset)
+void A2C_MsgCtrlRegConfig(A2C_TypeDef *A2Cx, u32 MsgIdx, u32 RxDmaEn, u32 DmaOffset)
 {
 	u32 MsgBufferCtrl;
 
-	MsgBufferCtrl = RCANx->CAN_MBx_CTRL[MsgIdx];
+	MsgBufferCtrl = A2Cx->A2C_MBx_CTRL[MsgIdx];
 
-	MsgBufferCtrl &= (~(CAN_BIT_MSGx_RXDMA_EN | CAN_MASK_MSGx_BA));
+	MsgBufferCtrl &= (~(A2C_BIT_MSGx_RXDMA_EN | A2C_MASK_MSGx_BA));
 
 	if (RxDmaEn == DISABLE) {
-		MsgBufferCtrl &= (~CAN_BIT_MSGx_RXDMA_EN);
+		MsgBufferCtrl &= (~A2C_BIT_MSGx_RXDMA_EN);
 	} else {
-		MsgBufferCtrl |= CAN_BIT_MSGx_RXDMA_EN;
+		MsgBufferCtrl |= A2C_BIT_MSGx_RXDMA_EN;
 	}
 
 	MsgBufferCtrl |= (DmaOffset << 10);
-	RCANx->CAN_MBx_CTRL[MsgIdx] = MsgBufferCtrl;
+	A2Cx->A2C_MBx_CTRL[MsgIdx] = MsgBufferCtrl;
 }
 
 /**
-  * @brief    CAN control register configure.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief    A2C control register configure.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  MsgIdx: message buffer index.
   * @param  BaseAddr: message buffer base address.
   * @retval none
   */
-void RCAN_MsgBaseAddrConfig(RCAN_TypeDef *RCANx, u32 MsgIdx, u32 BaseAddr)
+void A2C_MsgBaseAddrConfig(A2C_TypeDef *A2Cx, u32 MsgIdx, u32 BaseAddr)
 {
 	u32 MsgBufferCtrl;
 
-	MsgBufferCtrl = RCANx->CAN_MBx_CTRL[MsgIdx];
+	MsgBufferCtrl = A2Cx->A2C_MBx_CTRL[MsgIdx];
 
-	MsgBufferCtrl &= ~(CAN_MASK_MSGx_BA);
+	MsgBufferCtrl &= ~(A2C_MASK_MSGx_BA);
 
-	MsgBufferCtrl |= CAN_MSGx_BA(BaseAddr);
+	MsgBufferCtrl |= A2C_MSGx_BA(BaseAddr);
 
-	RCANx->CAN_MBx_CTRL[MsgIdx] = MsgBufferCtrl;
+	A2Cx->A2C_MBx_CTRL[MsgIdx] = MsgBufferCtrl;
 }
 
 /**
-  * @brief    CAN message buffer end address.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @brief    A2C message buffer end address.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  EndAddr: message buffer end address.
   * @retval none
   */
-void RCAN_MsgBaseAddrEndReg(RCAN_TypeDef *RCANx, u32 EndAddr)
+void A2C_MsgBaseAddrEndReg(A2C_TypeDef *A2Cx, u32 EndAddr)
 {
-	RCANx->CAN_MB_BA_END &= (~(CAN_MASK_MSG_BA_END));
+	A2Cx->A2C_MB_BA_END &= (~(A2C_MASK_MSG_BA_END));
 
-	RCANx->CAN_MB_BA_END |= CAN_MSG_BA_END(EndAddr);
+	A2Cx->A2C_MB_BA_END |= A2C_MSG_BA_END(EndAddr);
 }
 
 /**
-  * @brief    Init and Enable CAN RX GDMA.
+  * @brief    Init and Enable A2C RX GDMA.
   * @param  UartIndex: 0 or 1.
   * @param  GDMA_InitStruct: pointer to a GDMA_InitTypeDef structure that contains
   *         the configuration information for the GDMA peripheral.
@@ -1079,7 +1079,7 @@ void RCAN_MsgBaseAddrEndReg(RCAN_TypeDef *RCANx, u32 EndAddr)
   * @param  CallbackFunc: GDMA callback function.
   * @retval   TRUE/FLASE
   */
-bool RCAN_RXGDMA_Init(
+bool A2C_RXGDMA_Init(
 	u8 Index,
 	GDMA_InitTypeDef *GDMA_InitStruct,
 	void *CallbackData,
@@ -1102,11 +1102,11 @@ bool RCAN_RXGDMA_Init(
 	GDMA_InitStruct->GDMA_Index = 0;
 	GDMA_InitStruct->GDMA_ChNum = GdmaChnl;
 	GDMA_InitStruct->GDMA_DIR = TTFCPeriToMem;
-	GDMA_InitStruct->GDMA_SrcAddr = CAN_DEV_TABLE[Index].RCANx->CAN_RX_DMA_DATA;
+	GDMA_InitStruct->GDMA_SrcAddr = A2C_DEV_TABLE[Index].A2Cx->A2C_RX_DMA_DATA;
 	GDMA_InitStruct->GDMA_DstAddr = (u32)pRxBuf;
 	GDMA_InitStruct->GDMA_DstInc = IncType;
 	GDMA_InitStruct->GDMA_SrcInc = NoChange;
-	GDMA_InitStruct->GDMA_SrcHandshakeInterface = CAN_DEV_TABLE[Index].Rx_HandshakeInterface;
+	GDMA_InitStruct->GDMA_SrcHandshakeInterface = A2C_DEV_TABLE[Index].Rx_HandshakeInterface;
 	GDMA_InitStruct->GDMA_IsrType = (BlockType | TransferType | ErrType);
 	GDMA_InitStruct->GDMA_SrcMsize = MsizeOne;
 	GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthFourBytes;
@@ -1131,84 +1131,84 @@ bool RCAN_RXGDMA_Init(
 
 /**
   * @brief    write frame to dma message ram buffer.
-  * @param  RCANxBufer: where RCANxBufer can be dma ram buffer.
+  * @param  A2CxBufer: where A2CxBufer can be dma ram buffer.
   * @param  TxMsg: tx message pointer.
   * @retval none
   */
-void RCAN_FillTXDmaBuffer(RCAN_TypeDef *RCANx, RCAN_TxMsgTypeDef *TxMsg)
+void A2C_FillTXDmaBuffer(A2C_TypeDef *A2Cx, A2C_TxMsgTypeDef *TxMsg)
 {
-	u32 can_ram_arb;
-	u32 can_ram_cmd = 0;
-	u32 can_ram_cs;
+	u32 a2c_ram_arb;
+	u32 a2c_ram_cmd = 0;
+	u32 a2c_ram_cs;
 	u32 i;
 
-	assert_param(IS_RCAN_ALL_PERIPH(RCANx));
-	assert_param(IS_RCAN_FRAME_TYPE(TxMsg->RTR));
-	assert_param(IS_RCAN_ID_TYPE(TxMsg->IDE));
+	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
+	assert_param(IS_A2C_FRAME_TYPE(TxMsg->RTR));
+	assert_param(IS_A2C_ID_TYPE(TxMsg->IDE));
 	assert_param(TxMsg->DLC <= 64);
 	assert_param(TxMsg->MsgBufferIdx <= 15);
 
 	/*configure cmd register, enable access*/
-	can_ram_cmd |= (CAN_BIT_RAM_BUFFER_EN | CAN_BIT_RAM_ACC_ARB | CAN_BIT_RAM_ACC_CS | CAN_BIT_RAM_ACC_MASK | \
-					/* RCAN_RAM_ACC_DAT_MASK  | */ CAN_BIT_RAM_DIR);
-	can_ram_cmd |= TxMsg->MsgBufferIdx;
-	RCANx->CAN_RAM_CMD = can_ram_cmd;
+	a2c_ram_cmd |= (A2C_BIT_RAM_BUFFER_EN | A2C_BIT_RAM_ACC_ARB | A2C_BIT_RAM_ACC_CS | A2C_BIT_RAM_ACC_MASK | \
+					/* A2C_RAM_ACC_DAT_MASK  | */ A2C_BIT_RAM_DIR);
+	a2c_ram_cmd |= TxMsg->MsgBufferIdx;
+	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
 
 	/*configure frame ARB register*/
-	can_ram_arb = RCANx->CAN_RAM_ARB;
-	can_ram_arb &= (~(CAN_BIT_RAM_RTR | CAN_BIT_RAM_IDE | CAN_MASK_RAM_ID));
-	can_ram_arb |= TxMsg->RTR;
-	can_ram_arb |= TxMsg->IDE;
+	a2c_ram_arb = A2Cx->A2C_RAM_ARB;
+	a2c_ram_arb &= (~(A2C_BIT_RAM_RTR | A2C_BIT_RAM_IDE | A2C_MASK_RAM_ID));
+	a2c_ram_arb |= TxMsg->RTR;
+	a2c_ram_arb |= TxMsg->IDE;
 
-	if (TxMsg->IDE == RCAN_STANDARD_FRAME) {
-		can_ram_arb |= ((TxMsg->StdId & 0x7ff) << 18);
+	if (TxMsg->IDE == A2C_STANDARD_FRAME) {
+		a2c_ram_arb |= ((TxMsg->StdId & 0x7ff) << 18);
 	} else {
-		can_ram_arb |= TxMsg->ExtId;
+		a2c_ram_arb |= TxMsg->ExtId;
 	}
-	RCANx->CAN_RAM_ARB = can_ram_arb;
+	A2Cx->A2C_RAM_ARB = a2c_ram_arb;
 
 	/*configure CS register*/
-	can_ram_cs = RCANx->CAN_RAM_CS;
-	can_ram_cs &= (~(CAN_MASK_RAM_DLC | CAN_BIT_RAM_AUTOREPLY | CAN_BIT_RAM_EDL | CAN_BIT_RAM_BRS | CAN_BIT_RAM_ESI));
-	if (TxMsg->RTR == RCAN_DATA_FRAME) {
-		can_ram_cs |= TxMsg->DLC;
+	a2c_ram_cs = A2Cx->A2C_RAM_CS;
+	a2c_ram_cs &= (~(A2C_MASK_RAM_DLC | A2C_BIT_RAM_AUTOREPLY | A2C_BIT_RAM_EDL | A2C_BIT_RAM_BRS | A2C_BIT_RAM_ESI));
+	if (TxMsg->RTR == A2C_DATA_FRAME) {
+		a2c_ram_cs |= TxMsg->DLC;
 	}
-	can_ram_cs |= CAN_BIT_RAM_RXTX;
+	a2c_ram_cs |= A2C_BIT_RAM_RXTX;
 
-	RCANx->CAN_RAM_CS = can_ram_cs;
+	A2Cx->A2C_RAM_CS = a2c_ram_cs;
 
 	/*fill data, can2.0 8 bytes, can fd 64 bytes*/
-	if (TxMsg->RTR == RCAN_DATA_FRAME) {
+	if (TxMsg->RTR == A2C_DATA_FRAME) {
 		for (i = 0; i < 2; i++) {
-			// RCANx->CAN_RAM_FDDATA_x[i] = TxMsg->Data[(16 - i - 1) * 4];
-			RCANx->CAN_RAM_FDDATA_x[i] = TxMsg->Data[(2 - i - 1) * 4];
+			// A2Cx->A2C_RAM_FDDATA_x[i] = TxMsg->Data[(16 - i - 1) * 4];
+			A2Cx->A2C_RAM_FDDATA_x[i] = TxMsg->Data[(2 - i - 1) * 4];
 		}
 	}
 
 	/*finally, operate cmd register to write frame info in register into the ram message buffer*/
-	can_ram_cmd |= CAN_BIT_RAM_START;
-	RCANx->CAN_RAM_CMD = can_ram_cmd;
-	//while(RCANxBufer->CAN_RAM_CMD&CAN_BIT_RAM_START);
+	a2c_ram_cmd |= A2C_BIT_RAM_START;
+	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
+	//while(A2CxBufer->A2C_RAM_CMD&A2C_BIT_RAM_START);
 }
 
 
 /**
   * @brief    configure ram buffer mapping.
-  * @param  RCANx: where RCANx can be RCAN.
+  * @param  A2Cx: where A2Cx can be A2C.
   * @param  pPara: mapping parameters.
   * @retval DMA data
   */
-void RCAN_RamBufferMapConfig(RCAN_TypeDef *RCANx, u32 *pPara)
+void A2C_RamBufferMapConfig(A2C_TypeDef *A2Cx, u32 *pPara)
 {
 	u32 i;
 
 	/*message buffer address*/
-	for (i = 0; i < RCAN_MESSAGE_BUFFER_SIZE; i++) {
-		RCAN_MsgBaseAddrConfig(RCANx, i, *(pPara + i));
+	for (i = 0; i < A2C_MESSAGE_BUFFER_SIZE; i++) {
+		A2C_MsgBaseAddrConfig(A2Cx, i, *(pPara + i));
 	}
 
 	/*end address*/
-	RCAN_MsgBaseAddrEndReg(RCANx, *(pPara + RCAN_MESSAGE_BUFFER_SIZE));
+	A2C_MsgBaseAddrEndReg(A2Cx, *(pPara + A2C_MESSAGE_BUFFER_SIZE));
 }
 
 /**

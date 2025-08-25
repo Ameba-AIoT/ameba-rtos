@@ -138,7 +138,7 @@ void at_diag(void *arg)
 			goto end;
 		}
 		ret = rtk_diag_req_clr_del_events();
-#ifndef CONFIG_AMEBA_RLS
+#ifdef DIAG_DEBUG_TEST
 	} else if (strcmp(op, "DBG_ADD_EVT") == 0) {
 		if (argc != 4) {
 			RTK_LOGA(NOTAG, "[DIAG] Invalid parameter number.\n");

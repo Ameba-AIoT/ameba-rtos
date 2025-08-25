@@ -1,8 +1,7 @@
 /*
- * Copyright(c) 2020, Realtek Semiconductor Corp. All rights reserved.
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
  *
- * Author: CTC PSP Software
- *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef RV32_BACKTRACE_H

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Realtek, LLC.
+ * Copyright (c) 2025 Realtek, LLC.
  * All rights reserved.
  *
  * Licensed under the Realtek License, Version 1.0 (the "License");
@@ -30,6 +30,11 @@ extern "C" {
 #define MAX_ROUTES_NUM       10
 #define MAX_HW_MODULES_NUM   10
 
+enum AudioConfigPortRole {
+    AUDIO_CONFIG_PORT_ROLE_SOURCE = 0x1u,
+    AUDIO_CONFIG_PORT_ROLE_SINK   = 0x2u,
+};
+
 typedef struct AudioConfigGlobalDevices {
     int32_t attached_output_devices;
     int32_t default_output_device;
@@ -37,6 +42,7 @@ typedef struct AudioConfigGlobalDevices {
 
 typedef struct AudioConfigDevicePort {
     char *name;
+    int32_t role;
     int32_t type;
     int32_t supported_rates[MAX_RATES_NUM];
     int32_t supported_rates_num;
@@ -48,6 +54,7 @@ typedef struct AudioConfigDevicePort {
 
 typedef struct AudioConfigMixPort {
     char *name;
+    int32_t role;
     int32_t rate;
     int32_t channels;
     int32_t format;
@@ -59,7 +66,7 @@ typedef struct AudioConfigRoute {
     char *sink_name;
 } AudioConfigRoute;
 
-typedef struct AudioConfigHwModule {
+typedef struct AudioConfigHwCard {
     char *name;
     AudioConfigGlobalDevices audio_global_config;
     AudioConfigDevicePort device_ports[MAX_DEVICE_PORTS_NUM];
@@ -68,9 +75,9 @@ typedef struct AudioConfigHwModule {
     int32_t mix_ports_num;
     AudioConfigRoute audio_routes[MAX_ROUTES_NUM];
     int32_t audio_routes_num;
-} AudioConfigHwModule;
+} AudioConfigHwCard;
 
-void GetAudioConfigHwModules(int32_t *hw_modules_num, AudioConfigHwModule **modules);
+void GetAudioConfigHwCards(int32_t *hw_cards_num, AudioConfigHwCard **modules);
 
 #ifdef __cplusplus
 }

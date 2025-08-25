@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #ifndef _AMEBA_SECURITY_BOOT_H_
 #define _AMEBA_SECURITY_BOOT_H_
 

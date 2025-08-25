@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 Realtek Semiconductor Corp.	All rights reserved.
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
  *
- * Author: PSP Software Group
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef CPU_H

@@ -247,8 +247,8 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
 #else
 // RTK porting:for report cmd list info event
 #define USER_CMD_LIST_MAX_LEN    1024
-// max of user cmd list for provisioner : 190 + N(provisioned device num)*24 + 2(IPC align)
-// Provisioner list info len with 20 device : 190+20*24 + 2 = 672 bytes
+#define USER_CMD_LIST_TEMP_DATA_MAX_LEN  100
+
 static void copy_data_to_memory_byte_by_byte(uint32_t val, uint8_t *p, uint8_t data_len)
 {
 	// Copy a val to memory using little endian
@@ -262,89 +262,89 @@ static void copy_data_to_memory_byte_by_byte(uint32_t val, uint8_t *p, uint8_t d
 	return true;
 }
 
+#define BT_MESH_LIST_INFO_ADD_ELEMENT_PROCESS(func)                                \
+    do {                                                    \
+        if (false == func) {                      \
+            BT_LOGE("[%s][%d] BT mesh list info add element failed!\r\n", __func__, __LINE__);   \
+            return USER_CMD_RESULT_ERROR;                                      \
+        }                                                   \
+    } while (0)
+
+// type(1 byte) + length(1 byte) + value(n bytes) + type + len + val ......
+static bool common_add_list_element_to_temp_list_data(uint8_t *p_dst, uint32_t *p_offset_dst, rtk_bt_mesh_stack_user_list_type_t type_src, const uint8_t *p_src, uint32_t len_src)
+{
+	uint32_t offset_dst;
+
+	if (!p_dst || !p_offset_dst || !p_src) {
+		BT_LOGE("[%s] Input param is NULL, fail.\r\n", __func__);
+		return false;
+	}
+
+	if (len_src > USER_CMD_LIST_TEMP_DATA_MAX_LEN) {
+		BT_LOGE("[%s] The length of data for temp array(%d) > max val(%d), maybe have already cause the destruction.\r\n", __func__, len_src, USER_CMD_LIST_TEMP_DATA_MAX_LEN);
+		return false;
+	}
+
+	offset_dst = *p_offset_dst;
+	// type(1 byte) + len (1 byte) + value(len_src bytes)
+	if (offset_dst + 2 + len_src > USER_CMD_LIST_MAX_LEN) {
+		BT_LOGE("[%s] The sum of list info size(%d) > max capability(%d), save data fail.\r\n", __func__, offset_dst + len_src, USER_CMD_LIST_MAX_LEN);
+		return false;
+	} else {
+		*(p_dst + offset_dst) = type_src;
+		*(p_dst + offset_dst + 1) = len_src;
+		memcpy(p_dst + offset_dst + 2, p_src, len_src);
+		*p_offset_dst += len_src + 2;
+		return true;
+	}
+}
+
+// Indicate event data struct : type(1 byte) + length(1 byte) + value(n bytes) + type +len + val ......
 user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
 {
     UNUSED(pparse_value);
-	uint8_t list_copy[USER_CMD_LIST_MAX_LEN];
-	uint8_t *p_data = (uint8_t *)list_copy;
-	uint32_t offset = 0;
-	// BT_LOGA("MeshState:\t%d\r\n", mesh_node.node_state);
-	// Indicate event data struct : type(1 byte) + length(1 byte) + value(n bytes) + type +len + val ......
-	// Add mesh state
-	*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_MESH_STATE;
-	offset++;
-	*(p_data + offset) = 1;
-	offset++;
-	*(p_data + offset) = mesh_node.node_state;
-	offset ++;
-	// BT_LOGA("DevUUID:\t");
-	// data_uart_dump(mesh_node.dev_uuid, 16);
-	// Add device uuid 16 bytes
-	*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_DEV_UUID;
-	offset++;
-	*(p_data + offset) = 16;
-	offset++;
-	memcpy(p_data + offset, mesh_node.dev_uuid, 16);
-	offset += 16;
-    uint8_t bt_addr[6];
-    gap_get_param(GAP_PARAM_BD_ADDR, bt_addr);
-	// BT_LOGA("BTAddr:\t\t0x%02x%02x%02x%02x%02x%02x\r\n",
-	// 	   bt_addr[5], bt_addr[4], bt_addr[3], bt_addr[2], bt_addr[1], bt_addr[0]);
-	// Add bt address
-	*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_DEV_ADDR;
-	offset++;
-	*(p_data + offset) = 6;
-	offset++;
-	memcpy(p_data + offset, bt_addr, 6);
-	offset += 6;
+	uint8_t list_copy[USER_CMD_LIST_MAX_LEN], temp_data[USER_CMD_LIST_TEMP_DATA_MAX_LEN];
+	uint32_t offset = 0, temp_offset;
+
+	// Add mesh state(1 byte)
+	BT_MESH_LIST_INFO_ADD_ELEMENT_PROCESS(common_add_list_element_to_temp_list_data(list_copy, &offset, RTK_BT_MESH_STACK_USER_LIST_MESH_STATE, (uint8_t *)&mesh_node.node_state, 1));
+	// Add device uuid(16 bytes)
+	BT_MESH_LIST_INFO_ADD_ELEMENT_PROCESS(common_add_list_element_to_temp_list_data(list_copy, &offset, RTK_BT_MESH_STACK_USER_LIST_DEV_UUID, (uint8_t *)&mesh_node.dev_uuid, 16));
+
+	// Add bt address(6 bytes)
+	uint8_t bt_addr[6];
+	gap_get_param(GAP_PARAM_BD_ADDR, bt_addr);
+	BT_MESH_LIST_INFO_ADD_ELEMENT_PROCESS(common_add_list_element_to_temp_list_data(list_copy, &offset, RTK_BT_MESH_STACK_USER_LIST_DEV_ADDR, bt_addr, 6));
+
 	for (uint16_t index = 0; index < mesh_node.dev_key_num; index++) {
 		if (mesh_node.dev_key_list[index].used && mesh_node.dev_key_list[index].element_num != 0) {
-			// BT_LOGA("DevKey:\t\t%d-0x%04x-%d-", index, mesh_node.dev_key_list[index].unicast_addr,
-			// 	   mesh_node.dev_key_list[index].element_num);
-			// data_uart_dump(mesh_node.dev_key_list[index].dev_key, 16);
-			// Add bt dev key
-			*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_DEV_KEY;
-			offset++;
-			*(p_data + offset) = 20;  // Len:20
-			offset++;
-			memcpy(p_data + offset, &index, 1);  // offset:0  type:uint8_t
-			offset++;
-			copy_data_to_memory_byte_by_byte(mesh_node.dev_key_list[index].unicast_addr, p_data + offset, 2);  // offset:1  type:uint16_t
-			offset += 2;
-			memcpy(p_data + offset, &(mesh_node.dev_key_list[index].element_num), 1);  // offset:1  type:uint8_t
-			offset++;
-			memcpy(p_data + offset, mesh_node.dev_key_list[index].dev_key, 16);
-			offset += 16;
+			// Add bt dev key(20 bytes):index(1 byte) + unicast addr(2 bytes) + element num(1 byte) + device key(16 bytes)
+			temp_offset = 0;
+			temp_data[temp_offset++] = index;
+			copy_data_to_memory_byte_by_byte(mesh_node.dev_key_list[index].unicast_addr, temp_data + temp_offset, 2);
+			temp_offset += 2;
+			temp_data[temp_offset++] = mesh_node.dev_key_list[index].element_num;
+			memcpy(temp_data + temp_offset, mesh_node.dev_key_list[index].dev_key, 16);
+			temp_offset += 16;
+			BT_MESH_LIST_INFO_ADD_ELEMENT_PROCESS(common_add_list_element_to_temp_list_data(list_copy, &offset, RTK_BT_MESH_STACK_USER_LIST_DEV_KEY, temp_data, temp_offset));
         }
     }
 	for (uint16_t index = 0; index < mesh_node.app_key_num; index++) {
 		if (mesh_node.app_key_list[index].key_state != MESH_KEY_STATE_INVALID) {
-			// BT_LOGA("AppKey:\t\t%d-0x%04x-%d-%d-%d\r\n", index,
-			// 	   mesh_node.app_key_list[index].app_key_index_g, mesh_node.app_key_list[index].key_state,
-			// 	   key_state_to_tx_loop(mesh_node.app_key_list[index].key_state),
-			// 	   mesh_node.app_key_list[index].net_key_binding);
 			for (uint8_t loop = 0; loop < 2; loop++) {
 				if (mesh_node.app_key_list[index].papp_key[loop] != NULL) {
-					// BT_LOGA("\t\t");
-					// data_uart_dump(mesh_node.app_key_list[index].papp_key[loop]->app_key, 16);
-					// Add bt app key
-					*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_APP_KEY;
-					offset++;
-					*(p_data + offset) = 23;  // len:23
-					offset++;
-					memcpy(p_data + offset, &index, 1);  // offset:0  type:uint8_t
-					offset++;
-					copy_data_to_memory_byte_by_byte(mesh_node.app_key_list[index].app_key_index_g, p_data + offset, 2);  // offset:1  type:uint16_t
-					offset += 2;
-					memcpy(p_data + offset, &(mesh_node.app_key_list[index].key_state), 1);  // offset:3  type:uint8_t
-					offset++;
-					uint8_t val = key_state_to_tx_loop(mesh_node.app_key_list[index].key_state);
-					memcpy(p_data + offset, &val, 1);  // offset:4  type:uint8_t
-					offset++;
-					copy_data_to_memory_byte_by_byte(mesh_node.app_key_list[index].net_key_binding, p_data + offset, 2);  // offset:1  type:uint16_t
-					offset += 2;
-					memcpy(p_data + offset, &(mesh_node.app_key_list[index].papp_key[loop]->app_key), 16);
-					offset += 16;
+					// Add bt app key(23 bytes):index(1 byte) + app_key_index_g(2 bytes) + key_state(1 byte) + loop_val(1 byte) + net_key_binding(2 bytes) + app_key(16 bytes)
+					temp_offset = 0;
+					temp_data[temp_offset++] = index;
+					copy_data_to_memory_byte_by_byte(mesh_node.app_key_list[index].app_key_index_g, temp_data + temp_offset, 2);
+					temp_offset += 2;
+					temp_data[temp_offset++] = mesh_node.app_key_list[index].key_state;
+					temp_data[temp_offset++] = key_state_to_tx_loop(mesh_node.app_key_list[index].key_state);
+					copy_data_to_memory_byte_by_byte(mesh_node.app_key_list[index].net_key_binding, temp_data + temp_offset, 2);
+					temp_offset += 2;
+					memcpy(temp_data + temp_offset, &(mesh_node.app_key_list[index].papp_key[loop]->app_key), 16);
+					temp_offset += 16;
+					BT_MESH_LIST_INFO_ADD_ELEMENT_PROCESS(common_add_list_element_to_temp_list_data(list_copy, &offset, RTK_BT_MESH_STACK_USER_LIST_APP_KEY, temp_data, temp_offset));
                 }
             }
         }
@@ -373,112 +373,74 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
             default:
                 break;
             }
-            // data_uart_debug("%d-0x%04x-%d-%d-%d\r\n", index,
-            //                 mesh_node.net_key_list[index].net_key_index_g, mesh_node.net_key_list[index].key_state,
-            //                 key_state_to_tx_loop(mesh_node.net_key_list[index].key_state),
-            //                 key_state_to_key_refresh_phase(mesh_node.net_key_list[index].key_state));
             if (NET_KEY_TYPE_MASTER == net_key_type_get(index))
             {
                 for (uint8_t loop = 0; loop < 2; loop++)
                 {
                     if (mesh_node.net_key_list[index].pnet_key[loop] != NULL)
                     {
-                        // data_uart_debug("\t\t");
-                        // data_uart_dump(mesh_node.net_key_list[index].pnet_key[loop]->net_key, 16);
-                        // Add bt net key
-                        *(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_NET_KEY;
-                        offset++;
-                        *(p_data + offset) = 23;  // len:23
-                        offset++;
-                        memcpy(p_data + offset, &type, 1); // offset:0  type:uint8_t
-                        offset++;
-                        memcpy(p_data + offset, &index, 1);  // offset:1  type:uint8_t
-                        offset++;
-                        copy_data_to_memory_byte_by_byte(mesh_node.net_key_list[index].net_key_index_g, p_data + offset, 2);  // offset:2  type:uint16_t
-                        offset += 2;
-                        memcpy(p_data + offset, &(mesh_node.net_key_list[index].key_state), 1);  // offset:4  type:uint8_t
-                        offset++;
-                        uint8_t val = key_state_to_tx_loop(mesh_node.net_key_list[index].key_state);
-                        memcpy(p_data + offset, &val, 1);  // offset:5  type:uint8_t
-                        offset++;
-                        val = key_state_to_key_refresh_phase(mesh_node.net_key_list[index].key_state);
-                        memcpy(p_data + offset, &val, 1);  // offset:6  type:uint8_t
-                        offset++;
-                        memcpy(p_data + offset, &(mesh_node.net_key_list[index].pnet_key[loop]->net_key), 16);
-                        offset += 16;
+                        // Add bt net key(23 bytes):type(1 byte) + index(1) + net_key_index_g(2) + key_state(1) + loop key_state(1) + key refresh(1) + net key(16)
+						temp_offset = 0;
+						temp_data[temp_offset++] = type;
+						temp_data[temp_offset++] = index;
+						copy_data_to_memory_byte_by_byte(mesh_node.net_key_list[index].net_key_index_g, temp_data + temp_offset, 2);
+						temp_offset += 2;
+						temp_data[temp_offset++] = mesh_node.net_key_list[index].key_state;
+						temp_data[temp_offset++] = key_state_to_tx_loop(mesh_node.net_key_list[index].key_state);
+						temp_data[temp_offset++] = key_state_to_key_refresh_phase(mesh_node.net_key_list[index].key_state);
+						memcpy(temp_data + temp_offset, &(mesh_node.net_key_list[index].pnet_key[loop]->net_key), 16);
+						temp_offset += 16;
+						BT_MESH_LIST_INFO_ADD_ELEMENT_PROCESS(common_add_list_element_to_temp_list_data(list_copy, &offset, RTK_BT_MESH_STACK_USER_LIST_NET_KEY, temp_data, temp_offset));
                     }
                 }
             } else {
-                // Add bt net key
-                *(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_NET_KEY;
-                offset++;
-                *(p_data + offset) = 7;  // len:7
-                offset++;
-                memcpy(p_data + offset, &type, 1); // offset:0  type:uint8_t
-                offset++;
-                memcpy(p_data + offset, &index, 1);  // offset:1  type:uint8_t
-                offset++;
-                copy_data_to_memory_byte_by_byte(mesh_node.net_key_list[index].net_key_index_g, p_data + offset, 2);  // offset:2  type:uint16_t
-                offset += 2;
-                memcpy(p_data + offset, &(mesh_node.net_key_list[index].key_state), 1);  // offset:4  type:uint8_t
-                offset++;
-                uint8_t val = key_state_to_tx_loop(mesh_node.net_key_list[index].key_state);
-                memcpy(p_data + offset, &val, 1);  // offset:5  type:uint8_t
-                offset++;
-                val = key_state_to_key_refresh_phase(mesh_node.net_key_list[index].key_state);
-                memcpy(p_data + offset, &val, 1);  // offset:6  type:uint8_t
-                offset++;
+                // Add bt net key(7 bytes):type(1) + index(1) + net_key_index_g(2) + key_state(1) + key loop(1) + key refresh(1)
+				temp_offset = 0;
+				temp_data[temp_offset++] = type;
+				temp_data[temp_offset++] = index;
+				copy_data_to_memory_byte_by_byte(mesh_node.net_key_list[index].net_key_index_g, temp_data + temp_offset, 2);
+				temp_offset += 2;
+				temp_data[temp_offset++] = mesh_node.net_key_list[index].key_state;
+				temp_data[temp_offset++] = key_state_to_tx_loop(mesh_node.net_key_list[index].key_state);
+				temp_data[temp_offset++] = key_state_to_key_refresh_phase(mesh_node.net_key_list[index].key_state);
+				BT_MESH_LIST_INFO_ADD_ELEMENT_PROCESS(common_add_list_element_to_temp_list_data(list_copy, &offset, RTK_BT_MESH_STACK_USER_LIST_NET_KEY, temp_data, temp_offset));
             }
         }
     }
-	// BT_LOGA("IVindex:\t%d-0x%x\r\n", mesh_node.iv_update_flag, (unsigned int)mesh_node.iv_index);
-	// BT_LOGA("Seq:\t\t0x%06x\r\n", (unsigned int)mesh_node.seq);
-	// BT_LOGA("NodeAddr:\t0x%04x-%d-%d\r\n", mesh_node.unicast_addr,
-	// 	   (int)mesh_node.element_queue.count, mesh_node.model_num);
-	// Add bt normal vals
-	*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_NORMAL_VALS;
-	offset++;
-	*(p_data + offset) = 16;  // Len:16
-	offset++;
-	*(p_data + offset) = mesh_node.iv_update_flag;  // offset:0  type:uint8_t
-	offset++;
-	copy_data_to_memory_byte_by_byte(mesh_node.iv_index, p_data + offset, 4);  // offset:1  type:uint32_t
-	offset += 4;
-	copy_data_to_memory_byte_by_byte(mesh_node.seq, p_data + offset, 4);  // offset:5  type:uint32_t
-	offset += 4;
-	copy_data_to_memory_byte_by_byte(mesh_node.unicast_addr, p_data + offset, 2);  // offset:9  type:uint16_t
-	offset += 2;
-	copy_data_to_memory_byte_by_byte(mesh_node.element_queue.count, p_data + offset, 4);  // offset:11  type:uint32_t
-	offset += 4;
-	*(p_data + offset) = mesh_node.model_num;  // offset:15  type:uint8_t
-	offset++;
+
+	// Add bt normal vals(16 bytes):iv_update_flag(1) + iv_index(4) + seq(4) + unicast_addr(2) + element count(4) + model num(1)
+	temp_offset = 0;
+	temp_data[temp_offset++] = mesh_node.iv_update_flag;
+	copy_data_to_memory_byte_by_byte(mesh_node.iv_index, temp_data + temp_offset, 4);
+	temp_offset += 4;
+	copy_data_to_memory_byte_by_byte(mesh_node.seq, temp_data + temp_offset, 4);
+	temp_offset += 4;
+	copy_data_to_memory_byte_by_byte(mesh_node.unicast_addr, temp_data + temp_offset, 2);
+	temp_offset += 2;
+	copy_data_to_memory_byte_by_byte(mesh_node.element_queue.count, temp_data + temp_offset, 4);
+	temp_offset += 4;
+	temp_data[temp_offset++] = mesh_node.model_num;
+	BT_MESH_LIST_INFO_ADD_ELEMENT_PROCESS(common_add_list_element_to_temp_list_data(list_copy, &offset, RTK_BT_MESH_STACK_USER_LIST_NORMAL_VALS, temp_data, temp_offset));
+
     mesh_element_p pelement = (mesh_element_p)mesh_node.element_queue.pfirst;
 	while (pelement != NULL) {
-		// BT_LOGA("Element:\t%d-%d\r\n", pelement->element_index, (int)pelement->model_queue.count);
-		// Add mesh element info
-		*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_ELEMENT_INFO;
-		offset++;
-		*(p_data + offset) = 5;  // Len:5
-		offset++;
-		*(p_data + offset) = pelement->element_index;  // offset:0  type:uint8_t
-		offset++;
-		copy_data_to_memory_byte_by_byte(pelement->model_queue.count, p_data + offset, 4);  // offset:1  type:uint32_t
-		offset += 4;
+		// Add mesh element info(5 bytes):element index(1) + model count(4)
+		temp_offset = 0;
+		temp_data[temp_offset++] = pelement->element_index;
+		copy_data_to_memory_byte_by_byte(pelement->model_queue.count, temp_data + temp_offset, 4);
+		temp_offset += 4;
+		BT_MESH_LIST_INFO_ADD_ELEMENT_PROCESS(common_add_list_element_to_temp_list_data(list_copy, &offset, RTK_BT_MESH_STACK_USER_LIST_ELEMENT_INFO, temp_data, temp_offset));
+
         mesh_model_p pmodel = (mesh_model_p)pelement->model_queue.pfirst;
 		while (pmodel != NULL) {
-			// BT_LOGA("Model:\t\t%d-%d-0x%08x", pmodel->pmodel_info->model_index,
-			// 	   pmodel->model_index, (unsigned int)pmodel->pmodel_info->model_id);
-			// Add mesh model info
-			*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_MODEL_INFO;
-			offset++;
-			*(p_data + offset) = 6;  // Len:6
-			offset++;
-			*(p_data + offset) = pmodel->pmodel_info->model_index;  // offset:0  type:uint8_t
-			offset++;
-			*(p_data + offset) = pmodel->model_index;  // offset:1  type:uint8_t
-			offset++;
-			copy_data_to_memory_byte_by_byte(pmodel->pmodel_info->model_id, p_data + offset, 4);  // offset:2  type:uint32_t
-			offset += 4;
+			// Add mesh model info(6 bytes):model index(1) + model index(1) + model id(4)
+			temp_offset = 0;
+			temp_data[temp_offset++] = pmodel->pmodel_info->model_index;
+			temp_data[temp_offset++] = pmodel->model_index;
+			copy_data_to_memory_byte_by_byte(pmodel->pmodel_info->model_id, temp_data + temp_offset, 4);
+			temp_offset += 4;
+			BT_MESH_LIST_INFO_ADD_ELEMENT_PROCESS(common_add_list_element_to_temp_list_data(list_copy, &offset, RTK_BT_MESH_STACK_USER_LIST_MODEL_INFO, temp_data, temp_offset));
+
             uint8_t key_flag = true;
 			for (uint16_t index = 0; index < mesh_node.app_key_num; index++) {
                 if (plt_bit_pool_get(pmodel->app_key_binding, index) &&
@@ -489,13 +451,8 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
 					} else {
 						// BT_LOGA("-%d", index);
                     }
-					// Add mesh model app key
-					*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_MODEL_APP_KEY;
-					offset++;
-					*(p_data + offset) = 1;
-					offset++;
-					*(p_data + offset) = index;
-					offset++;
+					// Add mesh model app key(1byte)
+					BT_MESH_LIST_INFO_ADD_ELEMENT_PROCESS(common_add_list_element_to_temp_list_data(list_copy, &offset, RTK_BT_MESH_STACK_USER_LIST_MODEL_APP_KEY, (uint8_t *)&index, 1));
                     }
                 }
 			if (!key_flag) {
@@ -507,37 +464,23 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
 #endif
                )
             {
-				// BT_LOGA("-(pub:0x%04x-%d-%d)", pmodel->pub_params.pub_addr, pmodel->pub_params.pub_ttl,
-				// 	   pmodel->pub_params.pub_key_info.app_key_index);
-				// Add mesh model pub info
-				*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_MODEL_PUB_INFO;
-				offset++;
+				// Add mesh model pub info(6 or 5 bytes):pub_addr(2) + pub ttl(1) + app key index(1) + pub policy
+				temp_offset = 0;
+				copy_data_to_memory_byte_by_byte(pmodel->pub_params.pub_addr, temp_data + temp_offset, 2);
+				temp_offset += 2;
+				temp_data[temp_offset++] = pmodel->pub_params.pub_ttl;
+				copy_data_to_memory_byte_by_byte(pmodel->pub_params.pub_key_info.app_key_index, temp_data + temp_offset, 2);
+				temp_offset += 2;
 #if F_BT_MESH_1_1_DF_SUPPORT
-                // data_uart_debug("-%d", pmodel->pub_params.pub_policy);
-                *(p_data + offset) = 6;  // len:6
-#else
-                *(p_data + offset) = 5;  // len:5
+				temp_data[temp_offset++] = pmodel->pub_params.pub_policy;
 #endif
-				offset++;
-				copy_data_to_memory_byte_by_byte(pmodel->pub_params.pub_addr, p_data + offset, 2);  // offset:0  type:uint16_t
-				offset += 2;
-				*(p_data + offset) = pmodel->pub_params.pub_ttl;  // offset:2  type:uint8_t
-				offset++;
-				copy_data_to_memory_byte_by_byte(pmodel->pub_params.pub_key_info.app_key_index, p_data + offset, 2);  // offset:3  type:uint16_t
-				offset += 2;
-#if F_BT_MESH_1_1_DF_SUPPORT
-                // data_uart_debug("-%d", pmodel->pub_params.pub_policy);
-                *(p_data + offset) = pmodel->pub_params.pub_policy;  // offset:4  type:uint8_t
-				offset++;
-#endif
-                // data_uart_debug(")");
+				BT_MESH_LIST_INFO_ADD_ELEMENT_PROCESS(common_add_list_element_to_temp_list_data(list_copy, &offset, RTK_BT_MESH_STACK_USER_LIST_MODEL_PUB_INFO, temp_data, temp_offset));
             }
             mesh_model_p pmodelb = pmodel;
 			while (pmodelb->pmodel_info->pmodel_bound != NULL) {
                 pmodelb = (mesh_model_p)pmodelb->pmodel_info->pmodel_bound->pmodel;
             }
             mesh_addr_member_p paddr_element = (mesh_addr_member_p)pmodelb->sub_queue.pfirst;
-            uint16_t len_offset = 0;
 			while (paddr_element != NULL) {
 				if (paddr_element == (mesh_addr_member_p)pmodelb->sub_queue.pfirst) {
 					if (pmodelb != pmodel) {
@@ -545,21 +488,11 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
                         //                 ((mesh_model_p)pmodel->pmodel_info->pmodel_bound->pmodel)->model_index,
                         //                 pmodelb->model_index, paddr_element->mesh_addr);
 					} else {
-						// BT_LOGA("-(sub:0x%04x", paddr_element->mesh_addr);
-						// Add mesh model sub info
-						*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_MODEL_SUB_INFO;
-						offset++;
-						*(p_data + offset) = 2;  // len:2
-                        len_offset = offset;
-						offset++;
-						memcpy(p_data + offset, &paddr_element->mesh_addr, 2);  // offset:0  type:uint16_t
-						offset += 2;
+						// Add mesh model sub info(2 bytes)
+						BT_MESH_LIST_INFO_ADD_ELEMENT_PROCESS(common_add_list_element_to_temp_list_data(list_copy, &offset, RTK_BT_MESH_STACK_USER_LIST_MODEL_SUB_INFO, (uint8_t *)&paddr_element->mesh_addr, 2));
                     }
 				} else {
 					// BT_LOGA("-0x%04x", paddr_element->mesh_addr);
-                    *(p_data + len_offset) += 2;  // len = len+2
-                    memcpy(p_data + offset, &paddr_element->mesh_addr, 2);  // type:uint16_t
-					offset += 2;
                 }
                 paddr_element = paddr_element->pnext;
 				if (paddr_element == NULL) {
@@ -579,25 +512,20 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
         ptable = subnet_bridge_table_get_by_index(i);
         if (ptable->used)
         {
-            // data_uart_debug("Bridge:\t\t%d-%d-0x%04x-0x%04x-0x%04x-0x%04x\r\n", i, ptable->directions,
-            //                 ptable->net_key_index1, ptable->net_key_index2, ptable->addr1, ptable->addr2);
-            *(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_SUBNET_BRIDGE_INFO;
-            offset++;
-
-            *(p_data + offset) = 11;  // len:11
-            offset++;
-            copy_data_to_memory_byte_by_byte(i, p_data + offset, 2);  // offset:0  type:uint16_t
-            offset += 2;
-            *(p_data + offset) = ptable->directions;    // offset:2  type:uint8_t
-            offset++;
-            copy_data_to_memory_byte_by_byte(ptable->net_key_index1, p_data + offset, 2);  // offset:3  type:uint16_t
-            offset += 2;
-            copy_data_to_memory_byte_by_byte(ptable->net_key_index2, p_data + offset, 2);  // offset:5  type:uint16_t
-            offset += 2;
-            copy_data_to_memory_byte_by_byte(ptable->addr1, p_data + offset, 2);  // offset:7  type:uint16_t
-            offset += 2;
-            copy_data_to_memory_byte_by_byte(ptable->addr2, p_data + offset, 2);  // offset:9  type:uint16_t
-            offset += 2;
+			// sum len(11 bytes):i(2) + directions(1) + net_key_index1(2) + net_key_index2(2) + addr1(2) + addr2(2)
+			temp_offset = 0;
+            copy_data_to_memory_byte_by_byte(i, temp_data + temp_offset, 2);
+			temp_offset += 2;
+			temp_data[temp_offset++] = ptable->directions;
+            copy_data_to_memory_byte_by_byte(ptable->net_key_index1, temp_data + temp_offset, 2);
+			temp_offset += 2;
+            copy_data_to_memory_byte_by_byte(ptable->net_key_index2, temp_data + temp_offset, 2);
+			temp_offset += 2;
+            copy_data_to_memory_byte_by_byte(ptable->addr1, temp_data + temp_offset, 2);
+			temp_offset += 2;
+            copy_data_to_memory_byte_by_byte(ptable->addr2, temp_data + temp_offset, 2);
+			temp_offset += 2;
+			BT_MESH_LIST_INFO_ADD_ELEMENT_PROCESS(common_add_list_element_to_temp_list_data(list_copy, &offset, RTK_BT_MESH_STACK_USER_LIST_SUBNET_BRIDGE_INFO, temp_data, temp_offset));
         }
     }
 #endif
@@ -605,104 +533,63 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
     forwarding_table_t *ptable_f = (forwarding_table_t *)forwarding_table_list.pfirst;
     while (NULL != ptable_f)
     {
-        *(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_DF_PATH_INFO;
-        offset++;
-
-        uint16_t df_temp_offset = 0;
-        df_temp_offset = offset; //for df len
-
-        uint8_t df_len = 0;
-        offset++;
-        // data_uart_debug("DF-Path:\t%d-%d-%d-%d-%d-%d-0x%04x-0x%04x\r\n\t\t0x%04x(%d)",
-        //                 ptable_f->df_key_index, ptable_f->master_key_index,
-        //                 ptable_f->entry.fixed_path, ptable_f->entry.backward_path_valid,
-        //                 ptable_f->entry.forwarding_num, ptable_f->entry.lane_counter,
-        //                 ptable_f->entry.bearer_toward_path_origin, ptable_f->entry.bearer_toward_path_target,
-        //                 ptable_f->entry.origin_addr, ptable_f->entry.origin_secondary_elem_num); 2+2+1+1+1+1+2+2+2+1
-        copy_data_to_memory_byte_by_byte(ptable_f->df_key_index, p_data + offset, 2);
-        offset += 2;
-        copy_data_to_memory_byte_by_byte(ptable_f->master_key_index, p_data + offset, 2);
-        offset += 2;
-        *(p_data + offset) = ptable_f->entry.fixed_path;
-        offset++;
-        *(p_data + offset) = ptable_f->entry.backward_path_valid;
-        offset++;
-        *(p_data + offset) = ptable_f->entry.forwarding_num;
-        offset++;
-        *(p_data + offset) = ptable_f->entry.lane_counter;
-        offset++;
-        copy_data_to_memory_byte_by_byte(ptable_f->entry.bearer_toward_path_origin, p_data + offset, 2);
-        offset += 2;
-        copy_data_to_memory_byte_by_byte(ptable_f->entry.bearer_toward_path_target, p_data + offset, 2);
-        offset += 2;
-        copy_data_to_memory_byte_by_byte(ptable_f->entry.origin_addr, p_data + offset, 2);
-        offset += 2;
-        *(p_data + offset) = ptable_f->entry.origin_secondary_elem_num;
-        offset++;
-        df_len += 15;
+		temp_offset = 0;
+		copy_data_to_memory_byte_by_byte(ptable_f->df_key_index, temp_data + temp_offset, 2);
+		temp_offset += 2;
+        copy_data_to_memory_byte_by_byte(ptable_f->master_key_index, temp_data + temp_offset, 2);
+		temp_offset += 2;
+		temp_data[temp_offset++] = ptable_f->entry.fixed_path;
+		temp_data[temp_offset++] = ptable_f->entry.backward_path_valid;
+		temp_data[temp_offset++] = ptable_f->entry.forwarding_num;
+		temp_data[temp_offset++] = ptable_f->entry.lane_counter;
+        copy_data_to_memory_byte_by_byte(ptable_f->entry.bearer_toward_path_origin, temp_data + temp_offset, 2);
+		temp_offset += 2;
+        copy_data_to_memory_byte_by_byte(ptable_f->entry.bearer_toward_path_target, temp_data + temp_offset, 2);
+		temp_offset += 2;
+        copy_data_to_memory_byte_by_byte(ptable_f->entry.origin_addr, temp_data + temp_offset, 2);
+		temp_offset += 2;
+		temp_data[temp_offset++] = ptable_f->entry.origin_secondary_elem_num;
 
         df_dependent_addr_t *paddr = (df_dependent_addr_t *)ptable_f->entry.dependent_origin_list.pfirst;
-        
+
         uint8_t origin_dependent_count = 0; // 0 means no dependent
-        uint16_t df_temp_offset_for_ori_dep = offset; // for store origin dependent count
-        df_len++;
-        offset++;
-        
+		uint16_t df_temp_offset_for_ori_dep = temp_offset++; // for store origin dependent count
         while (NULL != paddr)
         {
             origin_dependent_count++;
-            // data_uart_debug("-<0x%04x(%d)>", paddr->primary_addr, paddr->secondary_elem_num);
-            df_len += 3;
-            copy_data_to_memory_byte_by_byte(paddr->primary_addr, p_data + offset, 2);
-            offset += 2;
-            *(p_data + offset) = paddr->secondary_elem_num;
-            offset++;
+			copy_data_to_memory_byte_by_byte(paddr->primary_addr, temp_data + temp_offset, 2);
+			temp_offset += 2;
+			temp_data[temp_offset++] = paddr->secondary_elem_num;
             paddr = paddr->pnext;
         }
-        *(p_data + df_temp_offset_for_ori_dep) = origin_dependent_count;
-        // data_uart_debug("\r\n\t\t----->\r\n\t\t0x%04x(%d)", ptable_f->entry.target_addr,
-        //                 ptable_f->entry.target_secondary_elem_num);
-        copy_data_to_memory_byte_by_byte(ptable_f->entry.target_addr, p_data + offset, 2);
-        offset += 2;
-        *(p_data + offset) = ptable_f->entry.target_secondary_elem_num;
-        offset++;
+		temp_data[df_temp_offset_for_ori_dep] = origin_dependent_count;
+		copy_data_to_memory_byte_by_byte(ptable_f->entry.target_addr, temp_data + temp_offset, 2);
+		temp_offset += 2;
+		temp_data[temp_offset++] = ptable_f->entry.target_secondary_elem_num;
 
-        df_len += 3;
         paddr = (df_dependent_addr_t *)ptable_f->entry.dependent_target_list.pfirst;
         uint8_t target_dependent_count = 0; // 0 means no dependent
-        uint16_t df_temp_offset_for_tar_dep = offset; // for store origin dependent count
-        df_len++;
-        offset++;
+        uint16_t df_temp_offset_for_tar_dep = temp_offset++; // for store origin dependent count
         while (NULL != paddr)
         {
-            // data_uart_debug("-<0x%04x(%d)>", paddr->primary_addr, paddr->secondary_elem_num);
             target_dependent_count++;
-            df_len += 3;
-            copy_data_to_memory_byte_by_byte(paddr->primary_addr, p_data + offset, 2);
-            offset += 2;
-            *(p_data + offset) = paddr->secondary_elem_num;
-            offset++;
+            copy_data_to_memory_byte_by_byte(paddr->primary_addr, temp_data + temp_offset, 2);
+			temp_offset += 2;
+			temp_data[temp_offset++] = paddr->secondary_elem_num;
             paddr = paddr->pnext;
         }
-        *(p_data + df_temp_offset_for_tar_dep) = target_dependent_count;
-        data_uart_debug("\r\n");
+		temp_data[df_temp_offset_for_tar_dep] = target_dependent_count;
+		BT_MESH_LIST_INFO_ADD_ELEMENT_PROCESS(common_add_list_element_to_temp_list_data(list_copy, &offset, RTK_BT_MESH_STACK_USER_LIST_DF_PATH_INFO, temp_data, temp_offset));
         ptable_f = ptable_f->pnext;
-        *(p_data + df_temp_offset) = df_len;
     }
 #endif
-	if (offset > USER_CMD_LIST_MAX_LEN) {
-		// BT_LOGA("[%s] Len %d of copy data extend the max val:%d\r\n", __func__, (int)offset, USER_CMD_LIST_MAX_LEN);
-		// Indicate event to app
-		rtk_bt_evt_t *p_evt = NULL;
-		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_LIST_INFO, 0);
-		rtk_bt_evt_indicate(p_evt, NULL);
-	} else {
-		// Indicate event to app
-		rtk_bt_evt_t *p_evt = NULL;
-		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_LIST_INFO, offset);
-		memcpy(p_evt->data, list_copy, offset);
-		rtk_bt_evt_indicate(p_evt, NULL);
-	}
+
+	// Indicate event to app
+	rtk_bt_evt_t *p_evt = NULL;
+	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_LIST_INFO, offset);
+	memcpy(p_evt->data, list_copy, offset);
+	rtk_bt_evt_indicate(p_evt, NULL);
+
     return USER_CMD_RESULT_OK;
 }
 #endif

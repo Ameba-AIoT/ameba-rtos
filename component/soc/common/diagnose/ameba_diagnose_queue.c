@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "ameba_diagnose_types.h"
 #include "ameba_diagnose_queue.h"
 #include "ameba_diagnose_heap.h"
@@ -9,7 +15,6 @@ typedef struct {
 	RtkDiagRingArrayHandler_t *deleted_evt_arr;
 	RtkDiagRingArrayHandler_t *evt_node_arr;
 	u16 prev_find_node;
-	u32 overwrite_count;
 	u16 total_size; //total_size should be equal or less total_capacity
 	u16 total_capacity;
 } RtkDiagQueueHandler_t;
@@ -33,9 +38,7 @@ static void rtk_diag_heap_element_remove_callback(void *data)
 	//  1. rtk_diag_heap_malloc触发: 小事件的heap满了, 要overwrite event了, 此时需要从queue中将其及其之前的event都删掉, 此时其前面的event理论上应该都是big event
 	//  2. rtk_diag_heap_free触发: enqueue时总内存使用达到了total_capacity, 需要持续释放空间直到足够添加新event, 此时是由rtk_diag_heap_free
 	//  正常情况下队列中一定有该event, 且该event前面的节点存储的一定是big event
-	RTK_LOGA(NOTAG, "Event overwrite\n");
 	RtkDiagEvent_t *tmp_evt;
-	// RTK_LOGA(NOTAG, "DBG2 %d, %p\n", __LINE__, event);
 	while (1) {
 		tmp_evt = rtk_diag_ring_array_pop(g_handler->evt_node_arr);
 		rtk_diag_ring_array_emplace_back(g_handler->deleted_evt_arr, tmp_evt);
@@ -43,7 +46,6 @@ static void rtk_diag_heap_element_remove_callback(void *data)
 			g_handler->total_size -= RTK_DIAG_EVENT_STRUCTURE_REAL_SIZE(tmp_evt);
 			rtos_mem_free(tmp_evt);
 		}
-		g_handler->overwrite_count++;
 		if (tmp_evt == event) {
 			break;
 		}
@@ -64,7 +66,7 @@ int rtk_diag_queue_init(u16 heap_capacity, u16 total_capacity)
 	//init queue handler
 	g_handler = (RtkDiagQueueHandler_t *)rtos_mem_malloc(sizeof(RtkDiagQueueHandler_t));
 	if (NULL == g_handler) {
-		RTK_LOGA(NOTAG, "Failed to allocate memory for RtkDiagQueueHandler_t\n");
+		RTK_LOGA("DIAG", "Malloc failed\n");
 		return RTK_ERR_DIAG_MALLOC;
 	}
 
@@ -73,7 +75,6 @@ int rtk_diag_queue_init(u16 heap_capacity, u16 total_capacity)
 							  rtk_diag_element_length_callback,
 							  rtk_diag_heap_element_remove_callback);
 	if (NULL == g_handler->heap_handler) {
-		RTK_LOGA(NOTAG, "Failed to init diag heap\n");
 		rtos_mem_free(g_handler);
 		g_handler = NULL;
 		return RTK_ERR_DIAG_UNINIT;
@@ -84,7 +85,6 @@ int rtk_diag_queue_init(u16 heap_capacity, u16 total_capacity)
 								 sizeof(RtkDiagDeletedEvent_t),
 								 rtk_diag_deleted_event_emplace_callback);
 	if (NULL == g_handler->deleted_evt_arr) {
-		RTK_LOGA(NOTAG, "Failed to init diag ring array\n");
 		rtk_diag_heap_destroy(g_handler->heap_handler);
 		rtos_mem_free(g_handler);
 		g_handler = NULL;
@@ -94,7 +94,6 @@ int rtk_diag_queue_init(u16 heap_capacity, u16 total_capacity)
 	g_handler->evt_node_arr = rtk_diag_ring_array_create(total_capacity / sizeof(RtkDiagEvent_t),
 							  sizeof(RtkDiagEvent_t *), NULL);
 	if (NULL == g_handler->evt_node_arr) {
-		RTK_LOGA(NOTAG, "Failed to init event node array\n");
 		rtk_diag_ring_array_destroy(g_handler->deleted_evt_arr);
 		rtk_diag_heap_destroy(g_handler->heap_handler);
 		rtos_mem_free(g_handler);
@@ -102,7 +101,6 @@ int rtk_diag_queue_init(u16 heap_capacity, u16 total_capacity)
 		return RTK_ERR_DIAG_UNINIT;
 	}
 
-	g_handler->overwrite_count = 0;
 	g_handler->total_size = heap_capacity; //小事件的固定heap整个大小计入统计
 	g_handler->total_capacity = total_capacity; //事件总内存使用上限
 	return RTK_SUCCESS;
@@ -113,8 +111,6 @@ void rtk_diag_queue_deinit(void)
 	if (NULL == g_handler) {
 		return;
 	}
-	RTK_LOGA(NOTAG, "Overwrite %u data totally\n", g_handler->overwrite_count);
-
 	//destroy g_handler
 	rtk_diag_queue_clear();
 	rtk_diag_ring_array_destroy(g_handler->deleted_evt_arr);
@@ -128,11 +124,11 @@ int rtk_diag_queue_set_total_capacity(u16 total_capacity)
 {
 	if (total_capacity > rtk_diag_heap_get_capacity(g_handler->heap_handler) + RTK_DIAG_LITTLE_EVENT_THRESHOLD + sizeof(RtkDiagEvent_t)) {
 		//WARNING: MUST larger than fix-sized heap capacity + one big event(smallest)
-		RTK_LOGA(NOTAG, "Change total capacity from %u to %u\n", g_handler->total_capacity, total_capacity);
+		RTK_LOGA("DIAG", "Change total capacity from %u to %u\n", g_handler->total_capacity, total_capacity);
 		g_handler->total_capacity = total_capacity;
 		return RTK_SUCCESS;
 	}
-	RTK_LOGA(NOTAG, "Invalid total capacity %u\n", total_capacity);
+	RTK_LOGA("DIAG", "Invalid total capacity %u\n", total_capacity);
 	return RTK_ERR_BADARG;
 }
 
@@ -145,7 +141,7 @@ u16 rtk_diag_queue_get_total_capacity(void)
 int rtk_diag_queue_enqueue(u32 timestamp, u8 evt_level, u16 evt_type, const u8 *evt_info, u16 evt_len)
 {
 	if (g_diag_debug_log_state) {
-		RTK_LOGA(NOTAG, "Diag event add: %u, %u, %u\n", timestamp, evt_level, evt_type);
+		RTK_LOGA("DIAG", "Diag event add: %u, %u, %u\n", timestamp, evt_level, evt_type);
 	}
 
 	if (evt_len > RTK_DIAG_BIT_EVENT_THRESHOLD) {
@@ -172,7 +168,7 @@ int rtk_diag_queue_enqueue(u32 timestamp, u8 evt_level, u16 evt_type, const u8 *
 	}
 
 	if (evt_len > RTK_DIAG_LITTLE_EVENT_THRESHOLD && g_handler->total_size + event_len > g_handler->total_capacity) {
-		RTK_LOGA(NOTAG, "Failed to add event, sys heap limit: %u + %u > %u\n", g_handler->total_size, event_len, g_handler->total_capacity);
+		RTK_LOGA("DIAG", "Failed to add event, sys heap limit: %u + %u > %u\n", g_handler->total_size, event_len, g_handler->total_capacity);
 		return RTK_ERR_DIAG_EVT_ADD_FAIL;
 	}
 
@@ -185,10 +181,9 @@ int rtk_diag_queue_enqueue(u32 timestamp, u8 evt_level, u16 evt_type, const u8 *
 	}
 
 	if (NULL == event) {
-		RTK_LOGA(NOTAG, "Failed to allocate memory for RtkDiagEvent_t\n");
+		RTK_LOGA("DIAG", "Malloc failed\n");
 		return RTK_ERR_DIAG_MALLOC;
 	}
-	// RTK_LOGA(NOTAG, "DBG2 %d, [%p]\n", __LINE__, event);
 
 	event->evt_type = evt_type;
 	event->evt_len = evt_len;
@@ -295,15 +290,6 @@ const RtkDiagRingArrayHandler_t *rtk_diag_queue_get_del_list(void)
 int rtk_diag_queue_clr_del_list(void)
 {
 	return rtk_diag_ring_array_clear(g_handler->deleted_evt_arr);
-}
-
-const RtkDiagEvent_t *rtk_diag_queue_view_head(void)
-{
-	return rtk_diag_ring_array_view(g_handler->evt_node_arr, 0);
-}
-const RtkDiagEvent_t *rtk_diag_queue_view_tail(void)
-{
-	return rtk_diag_ring_array_view(g_handler->evt_node_arr, rtk_diag_ring_array_size(g_handler->evt_node_arr) - 1);
 }
 
 //入参*offset是timestamp下所有数据拼接起来的offset, 也是数据传输协议中的offset

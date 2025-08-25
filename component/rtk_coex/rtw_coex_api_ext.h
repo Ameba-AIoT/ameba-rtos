@@ -58,7 +58,7 @@ static inline struct port_pin_t get_port_pin_from_name(char *pin_name)
 //////////////////////////////////////////////////////////////////
 /////////// called by main.c, for init parameters from menuconfig
 //////////////////////////////////////////////////////////////////
-static inline void coex_extc_paras_config(struct extchip_para_t *p_extchip_para)
+static inline void coex_extc_paras_config(struct extchip_para_t *p_extchip_para, bool enable)
 {
 	struct port_pin_t pad_port;
 	(void) pad_port;
@@ -125,7 +125,7 @@ static inline void coex_extc_paras_config(struct extchip_para_t *p_extchip_para)
 	memcpy(&p_extchip_para->port_gnt, &pad_port, sizeof(struct port_pin_t));
 #endif
 
-	p_extchip_para->valid = 1;
+	p_extchip_para->valid = enable;
 }
 
 

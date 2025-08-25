@@ -117,10 +117,10 @@ typedef struct {
 /** @defgroup CACHE_Way_define
   * @{
   */
-#define CACHE_WWR_1WAY			((u32)0x00000000)
-#define CACHE_WWR_2WAY			((u32)0x00000001)
-#define CACHE_WWR_3WAY			((u32)0x00000002)
-#define CACHE_WWR_4WAY			((u32)0x00000003)
+#define CACHE_WWR_1WAY			((uint32_t)0x00000000)
+#define CACHE_WWR_2WAY			((uint32_t)0x00000001)
+#define CACHE_WWR_3WAY			((uint32_t)0x00000002)
+#define CACHE_WWR_4WAY			((uint32_t)0x00000003)
 /**
   * @}
   */
@@ -140,9 +140,9 @@ typedef struct {
   * @note: This function can only be called under secure world
   */
 __STATIC_INLINE
-void DCache_Way_Set(u32 Dcwrr_base, u32 Dcwrr_top, u32 way_restrict)
+void DCache_Way_Set(uint32_t Dcwrr_base, uint32_t Dcwrr_top, uint32_t way_restrict)
 {
-	u32 temp;
+	uint32_t temp;
 
 	temp = SCnSCB->ACTLR;
 
@@ -168,9 +168,9 @@ void DCache_Way_Set(u32 Dcwrr_base, u32 Dcwrr_top, u32 way_restrict)
   * @note: This function can only be called under secure world
   */
 __STATIC_INLINE
-void ICache_Way_Set(u32 Icwrr_base, u32 Icwrr_top, u32 way_restrict)
+void ICache_Way_Set(uint32_t Icwrr_base, uint32_t Icwrr_top, uint32_t way_restrict)
 {
-	u32 temp;
+	uint32_t temp;
 
 	temp = SCnSCB->ACTLR;
 

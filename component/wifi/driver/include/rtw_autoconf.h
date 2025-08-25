@@ -32,9 +32,12 @@
 #define WIFI_LOGO_CERTIFICATION 0
 #define RX_AMSDU
 
-#if !(defined(ZEPHYR_WIFI) && defined(CONFIG_WHC_HOST))
+#if !(defined(CONFIG_ZEPHYR_SDK)) && !defined(ZEPHYR_TODO)
 /* no IOT chip supports 80M now, so close it in common */
 #define CONFIG_AUTO_RECONNECT 1
+#else
+#define CONFIG_AUTO_RECONNECT 0
+
 #endif
 
 /* For WPA3 */

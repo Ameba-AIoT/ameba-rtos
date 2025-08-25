@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 
 #include "ameba_diagnose_ring_array.h"
 
@@ -17,7 +23,7 @@ RtkDiagRingArrayHandler_t *rtk_diag_ring_array_create(u32 capacity, u32 element_
 {
 	RtkDiagRingArrayHandler_t *handler = (RtkDiagRingArrayHandler_t *)rtos_mem_malloc(sizeof(RtkDiagRingArrayHandler_t) + capacity * element_size);
 	if (NULL == handler) {
-		RTK_LOGA(NOTAG, "Failed to allocate memory for RtkDiagHeapHandler_t\n");
+		RTK_LOGA("DIAG", "Malloc failed\n");
 		return NULL;
 	}
 
@@ -33,7 +39,6 @@ RtkDiagRingArrayHandler_t *rtk_diag_ring_array_create(u32 capacity, u32 element_
 int rtk_diag_ring_array_destroy(RtkDiagRingArrayHandler_t *handler)
 {
 	if (NULL == handler) {
-		RTK_LOGA(NOTAG, "RtkDiagRingArrayHandler_t null\n");
 		return RTK_ERR_BADARG;
 	}
 	rtos_mem_free(handler);
@@ -43,7 +48,6 @@ int rtk_diag_ring_array_destroy(RtkDiagRingArrayHandler_t *handler)
 int rtk_diag_ring_array_clear(RtkDiagRingArrayHandler_t *handler)
 {
 	if (NULL == handler) {
-		RTK_LOGA(NOTAG, "RtkDiagRingArrayHandler_t null\n");
 		return RTK_ERR_BADARG;
 	}
 	handler->head = 0;

@@ -12,6 +12,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 ameba_list_append(public_includes
     misc
     ${c_MBEDTLS_DIR}/include
+    ${c_MBEDTLS_DIR}/hw_alt_legacy
     ${c_BASEDIR}/component/soc/common/include
     ${c_BASEDIR}/component/soc/common/lzma
 )

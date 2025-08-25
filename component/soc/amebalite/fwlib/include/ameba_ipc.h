@@ -209,7 +209,7 @@ typedef enum {
 	IPC_SEM_OTP,
 	IPC_SEM_CRYPTO,
 	IPC_SEM_GDMA = IPC_SEM_CRYPTO,/* gdma and crypto share the idx*/
-	IPC_SEM_DIAGNOSE,
+	IPC_SEM_DIAGNOSE = IPC_SEM_OTP,/* diagnose and otp share the idx*/
 	IPC_SEM_MAX,			/* can't be this value, total 4 ipc semaphores*/
 } IPC_SEM_IDX;
 
@@ -352,10 +352,10 @@ typedef enum {
 #define IPC_M2R_IMQ_TRX_TRAN					4	/*!<  KM4 -->  KR4 IMQ Message Exchange */
 //#define IPC_M2R_Channel5						5
 #define IPC_M2R_COEX_API_TRAN					1	/*!<  KM4 -->  KR4 COEX API Exchange */
-#define IPC_M2R_BT_DRC_TRAN						5	/*!<  KM4 -->  KR4 BT DATA Exchange */
+#define IPC_M2R_BT_DRC_TRAN						5	/*!<  Recycled: KM4 -->  KR4 BT DATA Exchange */
 #define IPC_M2R_WIFI_TRX_TRAN						6	/*!<  KM4 -->  KR4 WIFI Message Exchange */
 #define IPC_M2R_WIFI_API_TRAN						7	/*!<  KM4 -->  KR4 WIFI API Message Exchange */
-#define IPC_A2N_EVENT_REQ						8	/*!<  KM4 -->  KR4 Diagnose API Message Exchange */
+#define IPC_M2R_EVENT_REQ						5	/*!<  KM4 -->  KR4 Diagnose API Message Exchange */
 
 #define IPC_M2D_WAKE_DSP						0	/*!<  KM4 -->  DSP Wakeup */
 //#define IPC_M2D_Channel1							1

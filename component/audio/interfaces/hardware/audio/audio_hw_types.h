@@ -75,6 +75,10 @@ enum AudioHwFormat {
 enum AudioHwCardType {
     /** audio card type primary*/
     AUDIO_HW_CARD_TYPE_PRIMARY = 0x0u,
+    /** audio card type a2dp*/
+    AUDIO_HW_CARD_TYPE_A2DP    = 0x1u,
+    /** audio card type usb*/
+    AUDIO_HW_CARD_TYPE_USB     = 0x2u,
 };
 
 /**
@@ -97,8 +101,12 @@ enum AudioHwDevice {
     AUDIO_HW_DEVICE_OUT_SPEAKER      = 0x1u,
     /** audio device i2s out */
     AUDIO_HW_DEVICE_OUT_I2S          = 0x2u,
+    /** audio device i2s out */
+    AUDIO_HW_DEVICE_OUT_HEADPHONE    = 0x4u,
     /** audio device a2dp out */
-    AUDIO_HW_DEVICE_OUT_A2DP         = 0x4u,
+    AUDIO_HW_DEVICE_OUT_A2DP         = 0x8u,
+    /** audio device usb out */
+    AUDIO_HW_DEVICE_OUT_USB          = 0x10u,
     /** audio device microphone */
     AUDIO_HW_DEVICE_IN_MIC           = 0x8000001u,
     /** audio device digital microphone */
@@ -115,6 +123,8 @@ enum AudioHwOutputFlag {
     AUDIO_HW_OUTPUT_FLAG_NONE         = 0x0u,
     /** audio output for no irq of dma */
     AUDIO_HW_OUTPUT_FLAG_NOIRQ        = 0x1u,
+    /** this is primary output */
+    AUDIO_HW_OUTPUT_FLAG_PRIMARY      = 0x2u,
 };
 
 /**

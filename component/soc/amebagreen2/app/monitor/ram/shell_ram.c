@@ -1,10 +1,7 @@
 /*
- *  Routines to access hardware
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
  *
- *  Copyright (c) 2013 Realtek Semiconductor Corp.
- *
- *  This module is a confidential and proprietary property of RealTek and
- *  possession or use of this module requires written permission of RealTek.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "ameba_soc.h"
@@ -243,12 +240,12 @@ void shell_init_ram(void)
 
 #if defined (CONFIG_ARM_CORE_CM4_KM4TZ) || defined (CONFIG_WHC_HOST)
 	if (RTK_SUCCESS != rtos_task_create(NULL, "shell_task", shell_task_ram, NULL, 1024 * 4,
-										5)) {
+										2)) {
 		DiagPrintf("Create Log UART Task Err!!\n");
 	}
 #else
 	if (RTK_SUCCESS != rtos_task_create(NULL, "shell_task", shell_task_ram, NULL, 1024 * 1,
-										5)) {
+										2)) {
 		DiagPrintf("Create Log UART Task Err!!\n");
 	}
 #endif

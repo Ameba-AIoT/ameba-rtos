@@ -49,11 +49,20 @@ extern int lwip_init_done;
 
 static rtos_sema_t mii_linkup_sema;
 static rtos_sema_t mii_rx_sema;
-static rtos_sema_t ethernet_init_done;
+rtos_sema_t ethernet_init_done;
 u8 mac_id[6] = {0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC};
 
 extern u8 ETHERNET_Pin_Grp;
 extern const u8 ETHERNET_PAD[4][11];
+
+typedef enum prehandler_ret(*prehandler_func_t)(struct pbuf **p, u8 *buf, u32 len);
+
+prehandler_func_t rmii_rx_prehandler = NULL;
+
+void mii_patch_function(prehandler_func_t (*pfunc1))
+{
+	rmii_rx_prehandler = pfunc1;
+}
 
 void mii_rx_thread(void *param)
 {
@@ -61,6 +70,7 @@ void mii_rx_thread(void *param)
 	u32 len = 0;
 	struct pbuf *p = NULL;
 	u8 *buf = NULL;
+	enum prehandler_ret ret;
 
 	while (1) {
 		if (rtos_sema_take(mii_rx_sema, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
@@ -71,9 +81,22 @@ void mii_rx_thread(void *param)
 		while (1) {
 			buf = Ethernet_GetRXPktInfo(&eth_initstruct, &len);
 			if (len > 2) {
-				p = ethernetif_rmii_buf_copy(len - 2, buf);
+				if (rmii_rx_prehandler) {
+					ret = rmii_rx_prehandler(&p, buf, len);
+					if (ret == UPLOAD_TO_LWIP && p != NULL) {
+						ethernetif_rmii_netif_recv(p);
+					} else if (p != NULL) {
+						pbuf_free(p); // 释放未上传的 pbuf
+						p = NULL;
+					}
+				} else {
+					p = ethernetif_rmii_buf_copy(len - 2, buf);
+					if (p != NULL) {
+						ethernetif_rmii_netif_recv(p);
+					}
+				}
 				Ethernet_UpdateRXDESC(&eth_initstruct);
-				ethernetif_rmii_netif_recv(p);
+
 			} else if (len == 0) {
 				break;
 			}
@@ -177,10 +200,11 @@ void ethernet_demo(void *param)
 
 	/* Initilaize the LwIP stack */
 	// can not init twice
+#ifndef CONFIG_RMII_VERIFY
 	if (!lwip_init_done) {
 		LwIP_Init();
 	}
-
+#endif
 	Ethernet_StructInit(&eth_initstruct);
 
 	/*ethernet_irq_hook*/
@@ -226,7 +250,9 @@ void ethernet_demo(void *param)
 	rtos_sema_create_binary(&mii_rx_sema);
 	rtos_mutex_create(&rmii_tx_mutex);
 
+#ifndef CONFIG_RMII_VERIFY
 	netif_set_up(&eth_netif);
+#endif
 
 	rtos_sema_give(ethernet_init_done);
 
@@ -338,16 +364,16 @@ void ethernet_mii_init(void)
 	// RCC_PeriphClockSourceSet(GMAC, SYS_PLL);
 	ethernet_setclk_to_50m();
 
-
 	// set the ethernet interface as default
 	ethernet_if_default = 1;
 	rtos_sema_create_binary(&ethernet_init_done);
 	rtos_sema_create_binary(&mii_linkup_sema);
 
+#ifndef CONFIG_RMII_VERIFY
 	if (RTK_SUCCESS != rtos_task_create(NULL, "DHCP_START_MII", mii_intr_thread, NULL, 2048, 3)) {
 		RTK_LOGE(TAG, "\n\r%s Create simulation_task Err!");
 	}
-
+#endif
 	if (RTK_SUCCESS != rtos_task_create(NULL, "ETHERNET DEMO", ethernet_demo, NULL, 2048, 2)) {
 		RTK_LOGE(TAG, "\n\r%s Create simulation_task Err!!");
 	}

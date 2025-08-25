@@ -102,6 +102,12 @@ static int whc_fullmac_host_del_station(struct wiphy *wiphy, struct net_device *
 		/*null means delete all sta, not implement right now*/
 		return ret;
 	}
+
+#ifdef CONFIG_SUPPLICANT_SME
+	dev_dbg(global_idev.fullmac_dev, "%s(): not to del sta when AP SME is offloaded\n", __func__);
+	return 0;
+#endif
+
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]:%s %x:%x:%x:%x:%x:%x", __func__,
 			params->mac[0], params->mac[1], params->mac[2], params->mac[3], params->mac[4], params->mac[5]);
 	mac_vir = rtw_malloc(6, &mac_phy);
