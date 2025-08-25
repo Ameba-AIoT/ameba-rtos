@@ -445,7 +445,7 @@ int  wifi_write_ap_info_to_flash(unsigned int offer_ip, unsigned int server_ip)
 	//check is common info changed? Is this a new channel?
 	if (read_data->num) {
 		/*check if ap info {ssid/password/security_type} has changed*/
-		if (memcmp((u8 *)fast_connect_info.psk_essid, (u8 *)fast_connect_info.psk_essid, 32)) {
+		if (memcmp((u8 *)fast_connect_info.psk_essid, (u8 *)(read_data->ap_info.psk_essid), 32)) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus]: ap ssid change\n");
 			ap_change = 1;
 		} else if (memcmp((u8 *)fast_connect_info.psk_passphrase, (u8 *)(read_data->ap_info.psk_passphrase), 32)) {
