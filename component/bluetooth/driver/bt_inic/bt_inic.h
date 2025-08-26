@@ -5,7 +5,7 @@
 
 void bt_usbd_inic_init(void);
 
-void bt_inic_usb_init(void);
+int bt_inic_usb_init(void);
 void bt_inic_usb_deinit(void);
 uint8_t bt_inic_usb_hci_cmd_hdl(uint8_t *buf, uint16_t len);
 uint8_t bt_inic_usb_hci_acl_hdl(uint8_t *buf, uint16_t len);
@@ -14,6 +14,7 @@ void bt_inic_usb_evt_txdone_cb(u8 *buf);
 void bt_inic_usb_acl_txdone_cb(u8 *buf);
 void bt_inic_usb_resume_cb(void);
 void bt_inic_status_change_cb(uint8_t status);
+void bt_inic_set_config(void);
 
 void bt_inic_sdio_init(void);
 

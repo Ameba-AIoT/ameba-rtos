@@ -5,37 +5,15 @@
 #include "bt_inic.h"
 #include "bt_debug.h"
 
+#if !(defined(CONFIG_WHC_INTF_USB) && CONFIG_WHC_INTF_USB)
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 #define CONFIG_USBD_INIC_HOTPLUG                        0
-
-#define USBD_INIC_BT_EP1_INTR_IN_BUF_SIZE               256U   /* BT EP1 INTR IN buffer size */
-#define USBD_INIC_BT_EP2_BULK_IN_BUF_SIZE               512U  /* BT EP2 BULK IN buffer size */
-#define USBD_INIC_BT_EP2_BULK_OUT_BUF_SIZE              512U  /* BT EP2 BULK OUT buffer size */
 
 // Thread priorities
 #define CONFIG_USBD_INIC_INIT_THREAD_PRIORITY       5
 #define CONFIG_USBD_INIC_HOTPLUG_THREAD_PRIORITY    8
 #define CONFIG_USBD_INIC_XFER_THREAD_PRIORITY       6
-#define CONFIG_USBD_INIC_RESET_THREAD_PRIORITY      6
-
-
-#define USBD_INIC_FW_TYPE_ROM                       0xF0U
-#define USBD_INIC_FW_TYPE_RAM                       0xF1U
-
-
-typedef struct {
-	u8 *buf;
-	u16 buf_len;
-} usbd_inic_app_ep_t;
-
-typedef struct {
-	usbd_inic_app_ep_t in_ep[USB_MAX_ENDPOINTS];
-	usbd_inic_app_ep_t out_ep[USB_MAX_ENDPOINTS];
-} usbd_inic_app_t;
-
-#define USBD_INIC_QUERY_PACKET_SIZE         (sizeof(usbd_inic_query_packet_t))
-
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
@@ -76,54 +54,12 @@ static usbd_inic_cb_t inic_cb = {
 	.resume = inic_cb_resume,
 };
 
-/* INIC Device */
-static usbd_inic_app_t usbd_inic_app;
-static void *reset_sema;
-
 #if CONFIG_USBD_INIC_HOTPLUG
 static u8 inic_attach_status;
 static void *inic_attach_status_changed_sema;
 #endif
 
 /* Private functions ---------------------------------------------------------*/
-
-static u8 inic_setup_handle_hci_cmd(usb_setup_req_t *req, u8 *buf)
-{
-	// Handle BT HCI commands
-	bt_inic_usb_hci_cmd_hdl(buf, req->wLength);
-
-	return HAL_OK;
-}
-
-static int inic_setup_handle_query(usb_setup_req_t *req, u8 *buf)
-{
-	int ret = HAL_ERR_PARA;
-	usbd_inic_query_packet_t *pkt;
-
-	if (req->wIndex == USBD_INIC_VENDOR_QUERY_CMD) {
-		pkt = (usbd_inic_query_packet_t *)buf;
-		pkt->data_len = 0;
-		pkt->data_offset = USBD_INIC_QUERY_PACKET_SIZE;
-		pkt->pkt_type = USBD_INIC_VENDOR_QUERY_ACK;
-		pkt->xfer_status = HAL_OK;
-		pkt->rl_version = (u8)(SYSCFG_RLVersion() & 0xFF);
-		pkt->dev_mode = USBD_INIC_FW_TYPE_RAM;
-		ret = HAL_OK;
-	} else if (req->wIndex == USBD_INIC_VENDOR_RESET_CMD) {
-		pkt = (usbd_inic_query_packet_t *)buf;
-		pkt->data_len = 0;
-		pkt->data_offset = USBD_INIC_QUERY_PACKET_SIZE;
-		pkt->pkt_type = USBD_INIC_VENDOR_RESET_ACK;
-		pkt->xfer_status = HAL_OK;
-		pkt->rl_version = (u8)(SYSCFG_RLVersion() & 0xFF);
-		pkt->dev_mode = USBD_INIC_FW_TYPE_RAM;
-		osif_sem_give(reset_sema);
-		ret = HAL_OK;
-	}
-
-	return ret;
-}
-
 /**
   * @brief  Handle the inic class control requests
   * @param  cmd: Command code
@@ -137,89 +73,12 @@ static int inic_cb_setup(usb_setup_req_t *req, u8 *buf)
 	int ret = HAL_ERR_PARA;
 	switch (req->bRequest) {
 	case USBD_INIC_VENDOR_REQ_BT_HCI_CMD:
-		ret = inic_setup_handle_hci_cmd(req, buf);
-		break;
-	case USBD_INIC_VENDOR_REQ_FW_DOWNLOAD:
-		ret = inic_setup_handle_query(req, buf);
+		ret = bt_inic_usb_hci_cmd_hdl(buf, req->wLength);
 		break;
 	default:
 		break;
 	}
 
-	return ret;
-}
-
-static void inic_bt_deinit(void)
-{
-	usbd_inic_app_t *iapp = &usbd_inic_app;
-	usbd_inic_app_ep_t *ep;
-
-	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN)];
-	if (ep->buf != NULL) {
-		usb_os_mfree(ep->buf);
-		ep->buf = NULL;
-	}
-
-	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN)];
-	if (ep->buf != NULL) {
-		usb_os_mfree(ep->buf);
-		ep->buf = NULL;
-	}
-
-	ep = &iapp->out_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT)];
-	if (ep->buf != NULL) {
-		usb_os_mfree(ep->buf);
-		ep->buf = NULL;
-	}
-}
-
-static int inic_bt_init(void)
-{
-	int ret = HAL_OK;
-	usbd_inic_app_t *iapp = &usbd_inic_app;
-	usbd_inic_app_ep_t *ep;
-	u8 ep_num;
-
-	ep_num = USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN);
-	ep = &iapp->in_ep[ep_num];
-	ep->buf_len = USBD_INIC_BT_EP1_INTR_IN_BUF_SIZE;
-	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
-	if (ep->buf == NULL) {
-		ret = HAL_ERR_MEM;
-		goto bt_init_exit;
-	}
-
-	ep_num = USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN);
-	ep = &iapp->in_ep[ep_num];
-	ep->buf_len = USBD_INIC_BT_EP2_BULK_IN_BUF_SIZE;
-	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
-	if (ep->buf == NULL) {
-		ret = HAL_ERR_MEM;
-		goto bt_init_clean_ep1_intr_in_buf_exit;
-	}
-
-	ep_num = USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT);
-	ep = &iapp->out_ep[ep_num];
-	ep->buf_len = USBD_INIC_BT_EP2_BULK_OUT_BUF_SIZE;
-	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
-	if (ep->buf == NULL) {
-		ret = HAL_ERR_MEM;
-		goto bt_init_clean_ep2_bulk_in_buf_exit;
-	}
-
-	return HAL_OK;
-
-bt_init_clean_ep2_bulk_in_buf_exit:
-	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN)];
-	usb_os_mfree(ep->buf);
-	ep->buf = NULL;
-
-bt_init_clean_ep1_intr_in_buf_exit:
-	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN)];
-	usb_os_mfree(ep->buf);
-	ep->buf = NULL;
-
-bt_init_exit:
 	return ret;
 }
 
@@ -233,18 +92,12 @@ static int inic_cb_init(void)
 	int ret = HAL_OK;
 
 	if (usbd_inic_is_bt_en()) {
-		ret = inic_bt_init();
-		if (ret != HAL_OK) {
-			goto init_exit;
-		}
-		bt_inic_usb_init();
+		ret = bt_inic_usb_init();
 	}
-	osif_sem_create(&reset_sema, 0, 1);
 
-	return HAL_OK;
-init_exit:
 	return ret;
 }
+
 
 /**
   * @brief  DeInitializes inic application layer
@@ -253,11 +106,8 @@ init_exit:
   */
 static int inic_cb_deinit(void)
 {
-	osif_sem_delete(reset_sema);
-
 	if (usbd_inic_is_bt_en()) {
 		bt_inic_usb_deinit();
-		inic_bt_deinit();
 	}
 	return HAL_OK;
 }
@@ -269,17 +119,11 @@ static int inic_cb_deinit(void)
   */
 static int inic_cb_set_config(void)
 {
-	usbd_inic_app_t *iapp = &usbd_inic_app;
-	usbd_inic_app_ep_t *ep;
+	bt_inic_set_config();
 
-	// Prepare to RX
-
-	if (usbd_inic_is_bt_en()) {
-		ep = &iapp->out_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT)];
-		usbd_inic_receive_data(USBD_INIC_BT_EP2_BULK_OUT, ep->buf, ep->buf_len, NULL);
-	}
 	return HAL_OK;
 }
+
 
 /**
   * @brief  Clear config callback
@@ -346,15 +190,6 @@ static void inic_cb_resume(void)
 	bt_inic_usb_resume_cb();
 }
 
-static void inic_reset_thread(void *param)
-{
-	UNUSED(param);
-	while (osif_sem_take(reset_sema, BT_TIMEOUT_FOREVER)) {
-		osif_delay(500); // Wait reset request done
-		System_Reset();
-	}
-}
-
 #if CONFIG_USBD_INIC_HOTPLUG
 static void inic_hotplug_thread(void *param)
 {
@@ -401,7 +236,6 @@ static void bt_usbd_inic_thread(void *param)
 #if CONFIG_USBD_INIC_HOTPLUG
 	void *hotplug_task = NULL;
 #endif
-	void *reset_task = NULL;
 
 #if CONFIG_USBD_INIC_HOTPLUG
 	osif_sem_create(&inic_attach_status_changed_sema, 0, 1);
@@ -417,15 +251,10 @@ static void bt_usbd_inic_thread(void *param)
 		goto clear_usb_driver_exit;
 	}
 
-	if (!osif_task_create(&reset_task, "inic_reset_thread", inic_reset_thread, NULL, 1024, CONFIG_USBD_INIC_RESET_THREAD_PRIORITY)) {
-		BT_LOGE("Create inic_reset_thread Err!!\n");
-		goto clear_class_exit;
-	}
-
 #if CONFIG_USBD_INIC_HOTPLUG
 	if (!osif_task_create(&hotplug_task, "inic_hotplug_thread", inic_hotplug_thread, NULL, 1024, CONFIG_USBD_INIC_HOTPLUG_THREAD_PRIORITY)) {
 		BT_LOGE("Create inic_hotplug_thread Err!!\n");
-		goto clear_reset_task;
+		goto clear_class_exit;
 	}
 #endif // CONFIG_USBD_INIC_HOTPLUG
 
@@ -438,12 +267,9 @@ static void bt_usbd_inic_thread(void *param)
 	return;
 
 #if CONFIG_USBD_INIC_HOTPLUG
-clear_reset_task:
-	osif_task_delete(reset_task);
-#endif
-
 clear_class_exit:
 	usbd_inic_deinit();
+#endif
 
 clear_usb_driver_exit:
 	usbd_deinit();
@@ -456,14 +282,19 @@ exit:
 
 	osif_task_delete(NULL);
 }
+#endif
 
 /* Exported functions --------------------------------------------------------*/
 
 void bt_usbd_inic_init(void)
 {
+#if defined(CONFIG_WHC_INTF_USB) && CONFIG_WHC_INTF_USB
+	BT_LOGA("BT USBD INIC demo start\n");
+#else
 	if (!osif_task_create(NULL, "bt_usbd_inic_thread", bt_usbd_inic_thread, NULL, 1024 * 4, CONFIG_USBD_INIC_INIT_THREAD_PRIORITY)) {
 		BT_LOGE("Create bt_usbd_inic_thread Err!!\n");
 		return;
 	}
+#endif
 	return;
 }
