@@ -11,7 +11,8 @@
 #include "usbh.h"
 #include "usb_ch9.h"
 #include "usb_uac1.h"
-
+#include <dlist.h>
+#include "os_wrapper.h"
 /* Exported defines ----------------------------------------------------------*/
 #define USBH_UAC_ISOC_OUT_IDX          0
 #define USBH_UAC_ISOC_IN_IDX           1
@@ -33,7 +34,7 @@ typedef enum {
 	UAC_STATE_CTRL_SETTING,
 	UAC_STATE_TRANSFER,
 	UAC_STATE_ERROR
-} usbh_uac_state_t;
+} usbh_uac_xfer_state_t;
 
 typedef enum {
 	UAC_STATE_CTRL_IDLE = 0U,
@@ -53,10 +54,47 @@ typedef enum {
 
 /* States for transfer */
 typedef enum {
-	UAC_TRANSFER_STATE_IDLE = 0U,
-	UAC_TRANSFER_STATE_PROCESS,
-	UAC_TRANSFER_STATE_PROCESS_BUSY,
-} usbh_uac_transfer_state_t;
+	USBH_UAC_EP_IDLE = 0U,
+	USBH_UAC_TX,
+	USBH_UAC_TX_BUSY,
+	USBH_UAC_RX,
+	USBH_UAC_RX_BUSY,
+} usbh_uac_ep_trx_state_t;
+
+typedef enum {
+	USBH_UAC_IDLE = 0U,
+	USBH_UAC_DETACHED,
+	USBH_UAC_ATTACH,
+	USBH_UAC_SETUP,
+	USBH_UAC_MAX,
+} usbh_uac_state_t;
+
+typedef struct usbh_uac_buf_t {
+	struct list_head list;
+	u8 *buf;
+	__IO u16 buf_len;// buf valid len
+} usbh_uac_buf_t;
+
+typedef struct {
+	struct list_head list;
+	usb_os_lock_t lock;
+} usbh_uac_lock_list_head_t;
+typedef struct {
+	usbh_uac_lock_list_head_t free_buf_lock_list;
+	usbh_uac_lock_list_head_t ready_buf_lock_list;
+	rtos_sema_t isoc_sema;
+	usbh_uac_buf_t *buf_list_node;
+	usbh_uac_buf_t *p_buf;
+	u32 free_buf_lock_valid;
+	u32 ready_buf_lock_valid;
+	u32 remain_size;
+	u8 *isoc_buf;
+	u16 frame_cnt;
+	__IO u16 mps;
+	__IO u8 sema_valid;
+	__IO u8 write_wait_sema;
+	__IO u8 transfer_continue;
+} usbh_uac_buf_ctrl_t;
 
 /* Vendor user callback interface */
 typedef struct {
@@ -66,7 +104,7 @@ typedef struct {
 	int(* detach)(void);
 	int(* setup)(void);
 	int(* isoc_transmitted)(usbh_urb_state_t state);
-	int(* isoc_received)(u8 *buf, u32 length);
+	int(* isoc_received)(u8 *buf, u32 len);
 } usbh_uac_cb_t;
 
 /*uac descriptor struct*/
@@ -98,29 +136,30 @@ typedef struct {
 
 /*descriptor tree*/
 typedef struct {
-	usbh_uac_ac_t ac_intf;
 	usbh_uac_as_t as_intf[USBH_UAC_ISOC_NUM];
-	u8 as_count;
+	usbh_uac_ac_t ac_intf;
 	u8 cur_as_index[USBH_UAC_ISOC_NUM];
+	u8 as_count;
 } usbh_uac_cfg_t;
 
 typedef struct {
+	usbh_uac_buf_t *p_buf;
 	u8 *isoc_buf;
 	u32 isoc_len;
-	u32  isoc_interval;
+	u32 isoc_interval;
 	__IO u32 isoc_tick;
-	usbh_uac_transfer_state_t isoc_state;
+	usbh_uac_ep_trx_state_t isoc_state;
 	u16 isoc_packet_size;
-	u8  isoc_pipe;
-	u8  isoc_ep_addr;
+	u8 isoc_pipe;
+	u8 isoc_ep_addr;
 } usbh_uac_ep_cfg_t;
 
 typedef struct {
-	u8 format_type; // audio support PCM/ ?
+	u8 format_freq[USBH_UAC_FREQ_FORMAT_MAX][3];
+	u8 format_type;
 	u8 bit_width;
 	u8 channels;
 	u8 sam_freq_type;
-	u8 format_freq[USBH_UAC_FREQ_FORMAT_MAX][3];
 } usbh_uac_format_cfg_t;
 
 typedef struct {
@@ -134,15 +173,17 @@ typedef struct {
 
 /* Vendor host */
 typedef struct {
+	usbh_uac_buf_ctrl_t uac_isoc_out;  /* isoc out */
+	usbh_uac_buf_t *tx_buf;
 	usbh_uac_cfg_t uac_desc;
 	usbh_uac_setting_t cur_setting[USBH_UAC_ISOC_NUM]; // cur alt
-	int setting_count[USBH_UAC_ISOC_NUM]; // alt count
-	usbh_uac_state_t state;
+	usbh_uac_state_t usbh_state;
+	usbh_uac_xfer_state_t state;
 	usbh_uac_ctrl_state_t sub_state;
 	usbh_uac_cb_t *cb;
 	usb_host_t *host;
-	u8 next_transfor;/*send next event flag*/
 	__IO u32 cur_frame;
+	u8 next_xfer;/*send next event flag*/
 } usbh_uac_host_t;
 
 /* Exported macros -----------------------------------------------------------*/
@@ -151,16 +192,16 @@ typedef struct {
 
 /* Exported functions --------------------------------------------------------*/
 
-int usbh_uac_init(usbh_uac_cb_t *cb);
+int usbh_uac_init(usbh_uac_cb_t *cb, int frame_cnt);
 int usbh_uac_deinit(void);
-int usbh_uac_isoc_transmit(u8 *buf, u32 len);
-int usbh_uac_isoc_receive(u8 *buf, u32 len);
-
 int usbh_uac_setup_out(u8 id);
 int usbh_uac_setup_in(u8 id);
-int usbh_uac_set_alt_setting(u8 intf_idx, u8 channels, u8 byte_width, u32 sampling_freq);
-const usbh_uac_alt_t *usbh_uac_get_alt_setting(u8 intf_idx, u8 *alt_num);
-u32 usbh_uac_get_frame_size(u8 intf_idx);
+int usbh_uac_find_intf_idx_by_dir(int dir, int *intf_idx);
+int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 byte_width, u32 sampling_freq);
+const usbh_uac_alt_t *usbh_uac_get_alt_setting(u8 dir, u8 *alt_num);
+u32 usbh_uac_get_frame_size(u8 dir);
+u32 usbh_uac_write(u8 *buffer, u32 size, u32 timeout_ms);
+void usbh_uac_start_play(void);
 void usbh_uac_stop_play(void);
 #endif  /* USBH_UAC1_H */
 

@@ -14,6 +14,8 @@
 #ifndef _PLATFORM_MACROS_H_
 #define _PLATFORM_MACROS_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C"  {
 #endif      /* __cplusplus */
@@ -25,10 +27,15 @@ extern "C"  {
 /** @defgroup Platform_Macros_Exported_Macros Exported Macros
   * @{
   */
-#undef _PACKED4_
-#undef _SHORT_ENUM_
-#define _PACKED4_            __attribute__ ((packed))
-#define _SHORT_ENUM_        __attribute__ ((packed))
+
+#ifndef _PACKED4_
+#define _PACKED4_  __attribute__ ((packed))
+#endif
+
+#ifndef _SHORT_ENUM_
+#define _SHORT_ENUM_  __attribute__ ((packed))
+#endif
+
 #ifndef __INLINE
 #if   defined(__CC_ARM)
 #define __INLINE            __inline
@@ -169,6 +176,30 @@ extern "C"  {
 
 #ifndef UNUSED
 #define UNUSED(x) ((void)(x))
+#endif
+
+#ifndef __get_lr
+#if defined(__ARMCC_VERSION)    /* armcc, armclang */
+#if __ARMCC_VERSION >= 6000000
+#include "cmsis_armclang.h"
+#define __get_lr()              ((uint32_t)__builtin_return_address(0))
+#elif __ARMCC_VERSION >= 5000000
+#include "cmsis_armcc.h"
+#define __get_lr()              (__return_address())
+#else
+#error "Unsupported ARM compiler version"
+#define __get_lr()              0
+#endif
+#elif defined(__GNUC__)
+//#include "cmsis_gcc.h"
+#define __get_lr()              0//((uint32_t)__builtin_return_address(0))
+#elif defined(__ICCARM__)
+#include "cmsis_iccarm.h"
+#define __get_lr()              (__get_LR())
+#else
+#error "Unsupported compiler"
+#define __get_lr()              0
+#endif
 #endif
 
 /** @} */

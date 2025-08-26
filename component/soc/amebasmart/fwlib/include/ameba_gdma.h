@@ -603,7 +603,7 @@ _LONG_CALL_ u32	 GDMA_GetDstAddr(u8 GDMA_Index, u8 GDMA_ChNum);
 _LONG_CALL_ void GDMA_SetDstAddr(u8 GDMA_Index, u8 GDMA_ChNum, u32 DstAddr);
 _LONG_CALL_ void GDMA_SetBlkSize(u8 GDMA_Index, u8 GDMA_ChNum, u32 BlkSize);
 _LONG_CALL_ u32	 GDMA_GetBlkSize(u8 GDMA_Index, u8 GDMA_ChNum);
-
+_LONG_CALL_ u8   GDMA_ChnlFIFOIsEmpty(u8 GDMA_Index, u8 GDMA_ChNum);
 _LONG_CALL_ u8	 GDMA_ChnlAlloc(u32 GDMA_Index, IRQ_FUN IrqFun, u32 IrqData, u32 IrqPriority);
 _LONG_CALL_ u8   GDMA_ChnlFree(u8 GDMA_Index, u8 GDMA_ChNum);
 _LONG_CALL_ u8	 GDMA_GetIrqNum(u8 GDMA_Index, u8 GDMA_ChNum);

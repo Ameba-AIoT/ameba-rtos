@@ -146,6 +146,7 @@ BEGIN_DECLS
 #define MESH_TRANS_TX_QUEUE_SIZE                3
 #define MESH_TRANS_RX_CTX_COUNT                 2
 #define MESH_TRANS_SEG_ACK_DELAY_DV             30 //!< in units of millisecond
+#define MESH_TRANS_TX_SEG_CREDIT                3
 
 /** FN parameters */
 #define MESH_FRIENDSHIP_SUB_LIST_SIZE           10

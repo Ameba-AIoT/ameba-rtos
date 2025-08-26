@@ -691,6 +691,8 @@ typedef struct {
 typedef struct {
 	void *p_iso_chann;                                           /**< iso channel handle */
 	uint16_t iso_conn_handle;
+	uint16_t iso_interval;                                       /**< Value of the ISO_Interval in units of 1.25 ms.
+                                                                     The value shall be between 4 and 3200 (i.e. 5 ms to 4 s).*/
 	rtk_bt_le_audio_iso_data_path_direction_t path_direction;    /**< audio path direction */
 } rtk_bt_le_audio_iso_chann_t;
 

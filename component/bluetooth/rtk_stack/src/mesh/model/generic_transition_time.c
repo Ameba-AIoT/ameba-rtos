@@ -233,7 +233,10 @@ static void trans_time_timeout_handle(void)
     }
 
     /* remove expired transition */
-    while (trans_time_remove_head());
+    while (trans_time_remove_head())
+    {
+
+    }
 
 #if MODEL_ENABLE_MULTI_THREAD
     plt_mutex_give(trans_mutex);

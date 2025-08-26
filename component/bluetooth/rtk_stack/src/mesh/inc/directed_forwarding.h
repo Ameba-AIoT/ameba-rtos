@@ -368,10 +368,11 @@ df_result_t df_path_discovery(uint16_t master_key_index, uint16_t target_addr,
  *
  * @param[in] type: PATH_DEPENDENT_NODE_UPDATE_TYPE_REMOVE or PATH_DEPENDENT_NODE_UPDATE_TYPE_ADD
  * @param[in] endpoint_addr: origin address or target address
- * @param[in] pdependent_addr: dependent address
+ * @param[in] dependent_node_addr: dependent node address
+ * @param[in] dependent_node_elem_num: dependent node element number
  */
 void df_path_dependents_update(uint8_t type, uint16_t endpoint_addr,
-                               mesh_addr_range_t *pdependent_addr);
+                               uint16_t dependent_node_addr, uint8_t dependent_node_elem_num);
 
 /**
  * @brief directed forwarding solicitation

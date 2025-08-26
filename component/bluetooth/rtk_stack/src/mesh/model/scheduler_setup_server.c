@@ -31,11 +31,6 @@ typedef struct
 
 static bool scheduler_check_parameter(const scheduler_register_t *pscheduler)
 {
-    if (!IS_SCHEDULER_INDEX_VALID(pscheduler->index))
-    {
-        return FALSE;
-    }
-
     if (!IS_SCHEDULER_YEAR_VALID(pscheduler->year))
     {
         return FALSE;
