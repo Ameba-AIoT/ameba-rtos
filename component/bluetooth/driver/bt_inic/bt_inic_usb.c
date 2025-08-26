@@ -14,6 +14,10 @@
 
 #define DEV_DMA_ALIGN                   4
 
+#define USBD_INIC_BT_EP1_INTR_IN_BUF_SIZE               256U   /* BT EP1 INTR IN buffer size */
+#define USBD_INIC_BT_EP2_BULK_IN_BUF_SIZE               512U  /* BT EP2 BULK IN buffer size */
+#define USBD_INIC_BT_EP2_BULK_OUT_BUF_SIZE              512U  /* BT EP2 BULK OUT buffer size */
+
 struct bt_inic_usb_priv {
 	void *rx_queue;
 	u8 rx_req_flag;
@@ -23,6 +27,16 @@ struct bt_inic_usb_priv {
 	void *acl_tx_done_sema;
 };
 
+typedef struct {
+	u8 *buf;
+	u16 buf_len;
+} usbd_inic_app_ep_t;
+
+typedef struct {
+	usbd_inic_app_ep_t in_ep[USB_MAX_ENDPOINTS];
+	usbd_inic_app_ep_t out_ep[USB_MAX_ENDPOINTS];
+} usbd_inic_app_t;
+
 enum {
 	USB_CLOSED = 0,  /* BT host uart is closed. */
 	USB_RUNNING,     /* BT host uart is running. */
@@ -31,6 +45,8 @@ enum {
 
 static struct bt_inic_usb_priv usb_priv = {0};
 static u8 bt_inic_usb_status = BT_INIC_USB_STATUS_ACTIVE;
+/* INIC Device */
+static usbd_inic_app_t usbd_inic_app;
 
 void bt_inic_usb_tx_data(u8 type, u8 *data, u32 len)
 {
@@ -199,6 +215,80 @@ static void _usb_rx_queue_deinit(void)
 	usb_priv.rx_queue = NULL;
 }
 
+static int _usb_trx_buf_init(void)
+{
+	int ret = HAL_OK;
+	usbd_inic_app_t *iapp = &usbd_inic_app;
+	usbd_inic_app_ep_t *ep;
+	u8 ep_num;
+
+	ep_num = USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN);
+	ep = &iapp->in_ep[ep_num];
+	ep->buf_len = USBD_INIC_BT_EP1_INTR_IN_BUF_SIZE;
+	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
+	if (ep->buf == NULL) {
+		ret = HAL_ERR_MEM;
+		goto bt_init_exit;
+	}
+
+	ep_num = USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN);
+	ep = &iapp->in_ep[ep_num];
+	ep->buf_len = USBD_INIC_BT_EP2_BULK_IN_BUF_SIZE;
+	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
+	if (ep->buf == NULL) {
+		ret = HAL_ERR_MEM;
+		goto bt_init_clean_ep1_intr_in_buf_exit;
+	}
+
+	ep_num = USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT);
+	ep = &iapp->out_ep[ep_num];
+	ep->buf_len = USBD_INIC_BT_EP2_BULK_OUT_BUF_SIZE;
+	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
+	if (ep->buf == NULL) {
+		ret = HAL_ERR_MEM;
+		goto bt_init_clean_ep2_bulk_in_buf_exit;
+	}
+
+	return HAL_OK;
+
+bt_init_clean_ep2_bulk_in_buf_exit:
+	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN)];
+	usb_os_mfree(ep->buf);
+	ep->buf = NULL;
+
+bt_init_clean_ep1_intr_in_buf_exit:
+	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN)];
+	usb_os_mfree(ep->buf);
+	ep->buf = NULL;
+
+bt_init_exit:
+	return ret;
+}
+
+static void _usb_trx_buf_deinit(void)
+{
+	usbd_inic_app_t *iapp = &usbd_inic_app;
+	usbd_inic_app_ep_t *ep;
+
+	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN)];
+	if (ep->buf != NULL) {
+		usb_os_mfree(ep->buf);
+		ep->buf = NULL;
+	}
+
+	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN)];
+	if (ep->buf != NULL) {
+		usb_os_mfree(ep->buf);
+		ep->buf = NULL;
+	}
+
+	ep = &iapp->out_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT)];
+	if (ep->buf != NULL) {
+		usb_os_mfree(ep->buf);
+		ep->buf = NULL;
+	}
+}
+
 void bt_inic_usb_evt_txdone_cb(u8 *buf)
 {
 	osif_mem_free(buf);
@@ -211,8 +301,15 @@ void bt_inic_usb_acl_txdone_cb(u8 *buf)
 	osif_sem_give(usb_priv.acl_tx_done_sema);
 }
 
-void bt_inic_usb_init(void)
+int bt_inic_usb_init(void)
 {
+	int ret = HAL_OK;
+
+	ret = _usb_trx_buf_init();
+	if (ret != HAL_OK) {
+		goto init_exit;
+	}
+
 	_usb_rx_queue_init();
 	osif_mutex_create(&usb_priv.evt_tx_lock);
 	osif_mutex_create(&usb_priv.acl_tx_lock);
@@ -221,6 +318,8 @@ void bt_inic_usb_init(void)
 	osif_sem_give(usb_priv.evt_tx_done_sema);
 	osif_sem_give(usb_priv.acl_tx_done_sema);
 	BT_LOGA("USB device init done!\n");
+init_exit:
+	return ret;
 }
 
 void bt_inic_usb_deinit(void)
@@ -234,5 +333,18 @@ void bt_inic_usb_deinit(void)
 	usb_priv.evt_tx_lock = NULL;
 	osif_mutex_delete(usb_priv.acl_tx_lock);
 	usb_priv.acl_tx_lock = NULL;
+	_usb_trx_buf_deinit();
 	BT_LOGA("USB device deinit done!\n");
+}
+
+void bt_inic_set_config(void)
+{
+	usbd_inic_app_t *iapp = &usbd_inic_app;
+	usbd_inic_app_ep_t *ep;
+	// Prepare to RX
+
+	if (usbd_inic_is_bt_en()) {
+		ep = &iapp->out_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT)];
+		usbd_inic_receive_data(USBD_INIC_BT_EP2_BULK_OUT, ep->buf, ep->buf_len, NULL);
+	}
 }
