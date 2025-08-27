@@ -16,9 +16,7 @@
 #define USB_DT_CS_INTERFACE            		0x24
 #define USB_DT_CS_ENDPOINT             		0x25
 
-#define ENABLE_DUMP_DESCRIPYOT_PARSE (1)
-//#undef ENABLE_DUMP_DESCRIPYOT_PARSE
-
+#define USBH_UAC_DEBUG                      0
 typedef struct {
 	u8  bLength;
 	u8  bDescriptorType;
@@ -37,7 +35,7 @@ static int usbh_uac_process_set_out_freq(usb_host_t *host);
 static void usbh_uac_deinit_all_pipe(void);
 /* Private variables ---------------------------------------------------------*/
 
-static const char *const TAG = "USBH";
+static const char *const TAG = "UAC";
 
 /* USB Standard Device Descriptor */
 static usbh_class_driver_t usbh_uac_driver = {
@@ -51,9 +49,70 @@ static usbh_class_driver_t usbh_uac_driver = {
 
 static usbh_uac_host_t usbh_uac_host;
 
+#if USBH_UAC_DEBUG
+static int usbh_uac_count_list_blocks(struct list_head *head)
+{
+	int cnt = 0;
+	struct list_head *pos;
+	list_for_each(pos, head) {
+		cnt++;
+	}
+	return cnt;
+}
+
+static void usbh_uac_debug_print_status(void)
+{
+	usbh_uac_host_t *uac = &usbh_uac_host;
+	//usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->uac_isoc_out);
+	int free_cnt  = usbh_uac_count_list_blocks(&uac->uac_isoc_out.free_buf_lock_list.list);
+	int ready_cnt = usbh_uac_count_list_blocks(&uac->uac_isoc_out.ready_buf_lock_list.list);
+
+	int busy_cnt = (uac->tx_buf != NULL) ? 1 : 0;
+	int total_cnt = free_cnt + ready_cnt + busy_cnt;
+	RTK_LOGS(TAG, RTK_LOG_INFO, "BUF DEBUG: free=%d ready=%d busy=%d total=%d\n", free_cnt, ready_cnt, busy_cnt, total_cnt);
+}
+#endif
+
+static void usbh_uac_lock_list_init(usbh_uac_lock_list_head_t *llist)
+{
+	INIT_LIST_HEAD(&(llist->list));
+	usb_os_lock_create(&(llist->lock));
+}
+
+static void usbh_uac_lock_list_deinit(usbh_uac_lock_list_head_t *llist)
+{
+	if (llist->lock != NULL) {
+		usb_os_lock_delete(llist->lock);
+		llist->lock = NULL;
+	}
+
+	INIT_LIST_HEAD(&(llist->list));
+}
+
+static void usbh_uac_lock_list_add_tail(struct list_head *node, usbh_uac_lock_list_head_t *llist)
+{
+	usb_os_lock(llist->lock);
+	list_add_tail(node, &llist->list);
+	usb_os_unlock(llist->lock);
+}
+
+static usbh_uac_buf_t *usbh_uac_lock_list_remove_head(usbh_uac_lock_list_head_t *llist)
+{
+	usb_os_lock(llist->lock);
+
+	usbh_uac_buf_t *node = NULL;
+	if (!list_empty(&llist->list)) {
+		node = list_first_entry(&llist->list, usbh_uac_buf_t, list);
+		list_del(&node->list);
+	}
+
+	usb_os_unlock(llist->lock);
+	return node;
+}
+
 static void usbh_uac_dump_cfgdesc(void)
 {
-#ifdef ENABLE_DUMP_DESCRIPYOT_PARSE
+#ifdef USBH_UAC_DEBUG
 	int i, j, k;
 	usbh_uac_host_t *uac = &usbh_uac_host;
 	usbh_uac_cfg_t *puacdesc = &uac->uac_desc;
@@ -87,7 +146,7 @@ static void usbh_uac_dump_cfgdesc(void)
 
 static void usbh_uac_dump_cur_setting_cfgdesc(void)
 {
-#ifdef ENABLE_DUMP_DESCRIPYOT_PARSE
+#ifdef USBH_UAC_DEBUG
 	int i;
 	usbh_uac_host_t *uac = &usbh_uac_host;
 
@@ -119,6 +178,17 @@ static void usbh_uac_deinit_all_pipe(void)
 	}
 }
 
+static int usbh_uac_usb_status_check(void)
+{
+	usbh_uac_host_t *uac = &usbh_uac_host;
+
+	if (uac->usbh_state < USBH_UAC_SETUP) {
+		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Device disconnected,wait\n");
+		return HAL_BUSY;
+	}
+
+	return HAL_OK;
+}
 
 /**
   * @brief	Find next standard descriptor
@@ -430,6 +500,21 @@ static int usbh_uac_process_set_in_freq(usb_host_t *host)
 	return usbh_ctrl_request(host, &setup, uac->cur_setting[USBH_UAC_ISOC_IN_IDX].format_info.format_freq[id]);
 }
 
+static void usbh_uac_isoc_out_release_free_buf(usbh_uac_buf_t *p_buf)
+{
+	usbh_uac_host_t *uac = &usbh_uac_host;
+	usbh_uac_buf_ctrl_t *pdata_ctrl = &(uac->uac_isoc_out);
+
+	if (p_buf) {
+		usb_os_memset(p_buf->buf, 0x00, p_buf->buf_len);
+		p_buf->buf_len = 0;
+		usbh_uac_lock_list_add_tail(&p_buf->list, &(pdata_ctrl->free_buf_lock_list));
+		// notify audio write continue
+		rtos_sema_give(pdata_ctrl->isoc_sema);
+	}
+
+}
+
 /**
   * @brief  Iso in test
   * @param  host: Host handle
@@ -442,8 +527,9 @@ static void usbh_uac_isoc_in_process(usb_host_t *host)
 	usbh_urb_state_t urb_state = USBH_URB_IDLE;
 	u32 len;
 
+	//rx to do
 	switch (ep->isoc_state) {
-	case UAC_TRANSFER_STATE_PROCESS:
+	case USBH_UAC_RX:
 		if ((host->tick - ep->isoc_tick) >= ep->isoc_interval) {
 			ep->isoc_tick = host->tick;
 			usbh_isoc_receive_data(host,
@@ -451,21 +537,21 @@ static void usbh_uac_isoc_in_process(usb_host_t *host)
 								   ep->isoc_packet_size,
 								   ep->isoc_pipe);
 
-			ep->isoc_state = UAC_TRANSFER_STATE_PROCESS_BUSY;
+			ep->isoc_state = USBH_UAC_RX_BUSY;
 		}
 		usbh_notify_class_state_change(host, 0);
 		break;
 
-	case UAC_TRANSFER_STATE_PROCESS_BUSY:
+	case USBH_UAC_RX_BUSY:
 		urb_state = usbh_get_urb_state(host, ep->isoc_pipe);
 		if (urb_state == USBH_URB_DONE) {
 			len = usbh_get_last_transfer_size(host, ep->isoc_pipe);
 			if ((uac->cb != NULL) && (uac->cb->isoc_received != NULL)) {
 				uac->cb->isoc_received(ep->isoc_buf, len);
 			}
-			ep->isoc_state = UAC_TRANSFER_STATE_IDLE;
+			ep->isoc_state = USBH_UAC_EP_IDLE;
 		} else if (urb_state == USBH_URB_ERROR) {
-			ep->isoc_state = UAC_TRANSFER_STATE_PROCESS;
+			ep->isoc_state = USBH_UAC_RX;
 		}
 		usbh_notify_class_state_change(host, 0);
 		break;
@@ -485,60 +571,60 @@ static void usbh_uac_isoc_out_process(usb_host_t *host)
 	usbh_uac_host_t *uac = &usbh_uac_host;
 	usbh_uac_ep_cfg_t *ep = &(uac->cur_setting[USBH_UAC_ISOC_OUT_IDX].ep_info);
 	usbh_urb_state_t urb_state = USBH_URB_IDLE;
+	usbh_uac_buf_ctrl_t *pdata_ctrl = &(uac->uac_isoc_out);
+	usbh_uac_buf_t *p_buf = NULL;
+	int cur_frame;
 
-	int cur_frame = usbh_get_current_frame(host);
-	if (uac->cur_frame == 0) {
-		uac->cur_frame = cur_frame;
+	if (pdata_ctrl->transfer_continue == 0) {
+		return;
 	}
+
 	switch (ep->isoc_state) {
-	case UAC_TRANSFER_STATE_PROCESS:
-		if ((cur_frame - uac->cur_frame) % ep->isoc_interval == 0) {
-			if (ep->isoc_len > ep->isoc_packet_size) {
-				usbh_isoc_send_data(host,
-									ep->isoc_buf,
-									ep->isoc_packet_size,
-									ep->isoc_pipe);
-			} else {
+	case USBH_UAC_TX:
+		if (!list_empty(&(pdata_ctrl->ready_buf_lock_list.list))) {
+			// check valid data
+			p_buf = usbh_uac_lock_list_remove_head(&(pdata_ctrl->ready_buf_lock_list));
+			if (p_buf && p_buf->buf_len > 0) {
+
+				ep->isoc_buf = p_buf->buf;
+				ep->isoc_len = p_buf->buf_len;
 				usbh_isoc_send_data(host,
 									ep->isoc_buf,
 									(u16)ep->isoc_len,
 									ep->isoc_pipe);
+
+				uac->tx_buf = p_buf;
+				uac->next_xfer = 1;
+				//isoc tx in next frame
+				uac->cur_frame = usbh_get_current_frame(host);
+				ep->isoc_state = USBH_UAC_TX_BUSY;
 			}
-			uac->next_transfor = 1;
-			uac->cur_frame = cur_frame;
-			ep->isoc_state = UAC_TRANSFER_STATE_PROCESS_BUSY;
 		}
+
 		break;
 
-	case UAC_TRANSFER_STATE_PROCESS_BUSY:
+	case USBH_UAC_TX_BUSY:
 		urb_state = usbh_get_urb_state(host, ep->isoc_pipe);
 		if (urb_state == USBH_URB_DONE) {
-			if (ep->isoc_len > ep->isoc_packet_size) {
-				ep->isoc_len -= ep->isoc_packet_size;
-				ep->isoc_buf += ep->isoc_packet_size;
-			} else {
-				ep->isoc_len = 0U;
-			}
-
-			if (ep->isoc_len > 0U) {
-				ep->isoc_state = UAC_TRANSFER_STATE_PROCESS;
-				uac->next_transfor = 1;
-			} else {
-				ep->isoc_state = UAC_TRANSFER_STATE_IDLE;
-
-				if ((uac->cb != NULL) && (uac->cb->isoc_transmitted != NULL)) {
-					uac->cb->isoc_transmitted(urb_state);
-				}
-			}
+			usbh_uac_isoc_out_release_free_buf(uac->tx_buf);
+			uac->tx_buf = NULL;
+			ep->isoc_state = USBH_UAC_TX;
+			uac->next_xfer = 1;
 		} else if (urb_state == USBH_URB_ERROR) {
-			ep->isoc_state = UAC_TRANSFER_STATE_IDLE;
+			usbh_uac_isoc_out_release_free_buf(uac->tx_buf);
+			uac->tx_buf = NULL;
+			ep->isoc_state = USBH_UAC_TX;
+			uac->next_xfer = 1;
 			if ((uac->cb != NULL) && (uac->cb->isoc_transmitted != NULL)) {
 				uac->cb->isoc_transmitted(urb_state);
 			}
 		} else if (urb_state == USBH_URB_IDLE) {
-			if ((cur_frame - uac->cur_frame) >= ep->isoc_interval) {
-				ep->isoc_state = UAC_TRANSFER_STATE_PROCESS;
-				uac->next_transfor = 1;
+			cur_frame = usbh_get_current_frame(host);
+			if (((cur_frame - uac->cur_frame) > ep->isoc_interval) && (uac->tx_buf != NULL)) {
+				usbh_uac_isoc_out_release_free_buf(uac->tx_buf);
+				uac->tx_buf = NULL;
+				ep->isoc_state = USBH_UAC_TX;
+				uac->next_xfer = 1;
 				if ((uac->cb != NULL) && (uac->cb->isoc_transmitted != NULL)) {
 					uac->cb->isoc_transmitted(USBH_URB_BUSY);
 				}
@@ -560,11 +646,11 @@ static void usbh_uac_isoc_out_process(usb_host_t *host)
 static int usbh_uac_cb_attach(usb_host_t *host)
 {
 	usbh_uac_host_t *uac = &usbh_uac_host;
-	usbh_uac_setting_t *cur_setting = NULL;
 	usbh_uac_format_cfg_t *format = NULL;
 	usbh_uac_alt_t *cur_alt = NULL;
 	usbh_cfg_desc_t *desc = NULL;
 	usbh_uac_ep_cfg_t *ep = NULL;
+
 	int status = HAL_ERR_UNKNOWN;
 	int j, k;
 	u32 ep_size, cur_ep_size = 0;
@@ -573,6 +659,7 @@ static int usbh_uac_cb_attach(usb_host_t *host)
 	//u32 rx_fifo_size = host->config.rx_fifo_size;
 
 	uac->host = host;
+	uac->usbh_state = USBH_UAC_ATTACH;
 
 	if (host->config.speed == USB_SPEED_HIGH) {
 		max_ep_size = 1024;
@@ -580,7 +667,6 @@ static int usbh_uac_cb_attach(usb_host_t *host)
 		max_ep_size = 1023;
 	}
 	//max_ep_size = max_ep_size > rx_fifo_size ? rx_fifo_size : max_ep_size;
-
 	status = usbh_uac_parse_cfgdesc(host);
 	if (status) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Cfg parse fail\n");
@@ -599,11 +685,12 @@ static int usbh_uac_cb_attach(usb_host_t *host)
 	intf_num = (desc->bNumInterfaces - 1) > USBH_UAC_ISOC_NUM ? USBH_UAC_ISOC_NUM : (desc->bNumInterfaces - 1);
 
 	for (j = 0; j < intf_num; j++) { // fixed
-		cur_setting = &uac->cur_setting[j];
-		cur_setting->cur_alt_setting = &uac->uac_desc.as_intf[j].alt_setting[uac->uac_desc.cur_as_index[j]];
+		usbh_uac_setting_t temp_setting = {0};
+		usbh_uac_setting_t *cur_setting = &temp_setting;
+		cur_alt = &uac->uac_desc.as_intf[j].alt_setting[uac->uac_desc.cur_as_index[j]];
 		ep = &cur_setting->ep_info;
 		format = &cur_setting->format_info;
-		cur_alt = cur_setting->cur_alt_setting;
+		cur_setting->cur_alt_setting = cur_alt;
 
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Index=%d,num=%d,alts=%d,type=%d\n\n",
 				 uac->uac_desc.cur_as_index[j],
@@ -636,7 +723,15 @@ static int usbh_uac_cb_attach(usb_host_t *host)
 			ep->isoc_ep_addr = cur_alt->audio_ep->bEndpointAddress;
 			ep->isoc_packet_size = cur_alt->audio_ep->wMaxPacketSize;
 			ep->isoc_interval = cur_alt->audio_ep->bInterval;
-			ep->isoc_state = UAC_TRANSFER_STATE_IDLE;
+			ep->isoc_state = USBH_UAC_EP_IDLE;
+
+			if (USB_EP_IS_IN(ep->isoc_ep_addr)) {
+				uac->cur_setting[USBH_UAC_ISOC_IN_IDX] = temp_setting;
+				RTK_LOGS(TAG, RTK_LOG_INFO, "EP add 0x%x, put in \n", ep->isoc_ep_addr);
+			} else {
+				uac->cur_setting[USBH_UAC_ISOC_OUT_IDX] = temp_setting;
+				RTK_LOGS(TAG, RTK_LOG_INFO, "EP add 0x%x, put out \n", ep->isoc_ep_addr);
+			}
 		}
 	}
 
@@ -674,8 +769,7 @@ static int usbh_uac_cb_detach(usb_host_t *host)
 	UNUSED(host);
 
 	uac->state = UAC_STATE_IDLE;
-
-	usbh_uac_deinit_all_pipe();
+	uac->usbh_state = USBH_UAC_DETACHED;
 
 	if ((uac->cb != NULL) && (uac->cb->detach != NULL)) {
 		uac->cb->detach();
@@ -694,7 +788,7 @@ static int usbh_uac_cb_setup(usb_host_t *host)
 	usbh_uac_host_t *uac = &usbh_uac_host;
 
 	UNUSED(host);
-
+	uac->usbh_state = USBH_UAC_SETUP;
 	if ((uac->cb != NULL) && (uac->cb->setup != NULL)) {
 		uac->cb->setup();
 	}
@@ -710,6 +804,15 @@ static int usbh_uac_cb_setup(usb_host_t *host)
 static int usbh_uac_cb_sof(usb_host_t *host)
 {
 	UNUSED(host);
+
+	usbh_uac_host_t *uac = &usbh_uac_host;
+	usbh_uac_ep_cfg_t *ep = &(uac->cur_setting[USBH_UAC_ISOC_OUT_IDX].ep_info);
+	usbh_uac_buf_ctrl_t *pdata_ctrl = &(uac->uac_isoc_out);
+
+	if (pdata_ctrl->transfer_continue == 1) {
+		usbh_notify_class_state_change(host, ep->isoc_pipe);
+	}
+
 	return HAL_OK;
 }
 
@@ -785,8 +888,6 @@ static int usbh_uac_cb_process(usb_host_t *host, u32 msg)
 {
 	usbh_uac_host_t *uac = &usbh_uac_host;
 	int ret = HAL_OK;
-	UNUSED(host);
-	UNUSED(msg);
 
 	switch (uac->state) {
 	case UAC_STATE_CTRL_SETTING:
@@ -799,15 +900,15 @@ static int usbh_uac_cb_process(usb_host_t *host, u32 msg)
 
 	case UAC_STATE_TRANSFER:
 		if (msg == uac->cur_setting[USBH_UAC_ISOC_OUT_IDX].ep_info.isoc_pipe) {
-			uac->next_transfor = 0;
+			uac->next_xfer = 0;
 			usbh_uac_isoc_out_process(host);
-			if (uac->next_transfor) {
+			if (uac->next_xfer) {
 				usbh_notify_class_state_change(host, uac->cur_setting[USBH_UAC_ISOC_OUT_IDX].ep_info.isoc_pipe);
 			}
 		} else if (msg == uac->cur_setting[USBH_UAC_ISOC_IN_IDX].ep_info.isoc_pipe) {
-			uac->next_transfor = 0;
+			uac->next_xfer = 0;
 			usbh_uac_isoc_in_process(host);
-			if (uac->next_transfor) {
+			if (uac->next_xfer) {
 				usbh_notify_class_state_change(host, uac->cur_setting[USBH_UAC_ISOC_IN_IDX].ep_info.isoc_pipe);
 			}
 		}
@@ -830,6 +931,178 @@ static int usbh_uac_cb_process(usb_host_t *host, u32 msg)
 	return ret;
 }
 
+/**
+  * @brief  Write data to a USB audio ring buffer
+  * @param  pdata_ctrl: Pointer to the buffer control structure
+  * @param  buffer: Pointer to Data buffer
+  * @param  size: Data length
+  * @param  written_len: Copy length
+  * @param  pkt_cnt: Write packet count
+  * @retval Status 0 means get enought data, 1 means should continue to write the pkt
+  */
+static int usbh_uac_write_ring_buf(usbh_uac_buf_ctrl_t *pdata_ctrl, u8 *buffer, u32 size, u32 *written_len, u16 *pkt_cnt)
+{
+	usbh_uac_buf_t *p_buf = NULL;
+	u32 mps = pdata_ctrl->mps;
+	u32 offset = 0;
+	u32 remain_size = pdata_ctrl->remain_size;
+
+	if (remain_size > 0 && pdata_ctrl->p_buf) {
+		u32 can_copy = mps - remain_size;
+		u32 copy_len = size < can_copy ? size : can_copy;
+
+		usb_os_memcpy(pdata_ctrl->p_buf->buf + remain_size, buffer + offset, copy_len);
+
+		pdata_ctrl->remain_size += copy_len;
+		offset += copy_len;
+		size -= copy_len;
+		*written_len += copy_len;
+
+		if (pdata_ctrl->remain_size == mps) {
+			pdata_ctrl->p_buf->buf_len = mps;
+			usbh_uac_lock_list_add_tail(&pdata_ctrl->p_buf->list, &pdata_ctrl->ready_buf_lock_list);
+			if (pkt_cnt) {
+				(*pkt_cnt)++;
+			}
+			pdata_ctrl->p_buf = NULL;
+			pdata_ctrl->remain_size = 0;
+		} else {
+			return 0;
+		}
+	}
+
+	while (size >= mps) {
+		p_buf = usbh_uac_lock_list_remove_head(&pdata_ctrl->free_buf_lock_list);
+		if (!p_buf || !p_buf->buf) {
+			return 1;
+		}
+		usb_os_memcpy(p_buf->buf, buffer + offset, mps);
+
+		p_buf->buf_len = mps;
+		usbh_uac_lock_list_add_tail(&p_buf->list, &pdata_ctrl->ready_buf_lock_list);
+
+		if (pkt_cnt) {
+			(*pkt_cnt)++;
+		}
+		*written_len += mps;
+		size -= mps;
+		offset += mps;
+	}
+
+	if (size > 0) {
+		p_buf = usbh_uac_lock_list_remove_head(&pdata_ctrl->free_buf_lock_list);
+		if (!p_buf || !p_buf->buf) {
+			return 1;
+		}
+		usb_os_memcpy(p_buf->buf, buffer + offset, size);
+		//RTK_LOGS(TAG, RTK_LOG_INFO, "remain %d\n", size);
+		pdata_ctrl->p_buf = p_buf;
+		pdata_ctrl->remain_size = size;
+		*written_len += size;
+	}
+	return 0;
+}
+
+/**
+  * @brief  Deinitialize UAC endpoint buffer control structure
+  * @param  buf_ctrl: Pointer to the UAC buffer control structure
+  * @retval void
+  */
+static void usbh_uac_ep_buf_ctrl_deinit(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_uac_ep_cfg_t *ep)
+{
+	UNUSED(ep);
+
+	buf_ctrl->mps = 0;
+	buf_ctrl->transfer_continue = 0;
+
+	if (buf_ctrl->sema_valid) {
+		buf_ctrl->sema_valid = 0;
+
+		if (buf_ctrl->write_wait_sema) {
+			rtos_sema_give(buf_ctrl->isoc_sema);
+		}
+		do {
+			usb_os_delay_us(100U);
+		} while (buf_ctrl->write_wait_sema);
+
+		rtos_sema_delete(buf_ctrl->isoc_sema);
+	}
+
+	if (buf_ctrl->isoc_buf != NULL) {
+		usb_os_mfree(buf_ctrl->isoc_buf);
+		buf_ctrl->isoc_buf = NULL;
+	}
+
+	if (buf_ctrl->buf_list_node != NULL) {
+		usb_os_mfree(buf_ctrl->buf_list_node);
+		buf_ctrl->buf_list_node = NULL;
+	}
+
+	usbh_uac_lock_list_deinit(&(buf_ctrl->free_buf_lock_list));
+	usbh_uac_lock_list_deinit(&(buf_ctrl->ready_buf_lock_list));
+}
+
+/**
+  * @brief  Initialize UAC endpoint buffer control structure
+  * @param  buf_ctrl: Pointer to the UAC buffer control structure
+  * @param  ep: Pointer to ep parameters structure
+  * @retval Status
+  */
+static int usbh_uac_ep_buf_ctrl_init(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_uac_ep_cfg_t *ep)
+{
+	usbh_uac_buf_t *pbuf_data;
+	int ret = HAL_ERR_MEM;
+	u32 block_size;
+	u16 buf_list_cnt, idx;
+
+	buf_list_cnt = buf_ctrl->frame_cnt;
+	buf_ctrl->mps = ep->isoc_packet_size;
+
+	if (buf_list_cnt == 0 || buf_ctrl->mps == 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Err param: cnt=%d, mps=%d\n", buf_list_cnt, buf_ctrl->mps);
+		return ret;
+	}
+
+	block_size = CACHE_LINE_ALIGMENT(buf_ctrl->mps);
+
+	buf_ctrl->remain_size = 0;
+
+	buf_ctrl->isoc_buf = (u8 *)usb_os_malloc(block_size * buf_list_cnt);
+	if (buf_ctrl->isoc_buf == NULL) {
+		return ret;
+	}
+
+	buf_ctrl->buf_list_node = (usbh_uac_buf_t *)usb_os_malloc(sizeof(usbh_uac_buf_t) * buf_list_cnt);
+	if (buf_ctrl->buf_list_node == NULL) {
+		usb_os_mfree(buf_ctrl->isoc_buf);
+		return ret;
+	}
+
+	usbh_uac_lock_list_init(&(buf_ctrl->free_buf_lock_list));
+	usbh_uac_lock_list_init(&(buf_ctrl->ready_buf_lock_list));
+
+	for (idx = 0; idx < buf_list_cnt; idx++) {
+		pbuf_data = &(buf_ctrl->buf_list_node[idx]);
+		pbuf_data->buf_len = 0;
+		pbuf_data->buf = buf_ctrl->isoc_buf + block_size * idx;
+		INIT_LIST_HEAD(&pbuf_data->list);
+		usbh_uac_lock_list_add_tail(&pbuf_data->list, &(buf_ctrl->free_buf_lock_list));
+	}
+
+	// check
+	if (list_empty(&buf_ctrl->free_buf_lock_list.list)) {
+		usb_os_mfree(buf_ctrl->isoc_buf);
+		usb_os_mfree(buf_ctrl->buf_list_node);
+		return ret;
+	}
+
+	rtos_sema_create(&(buf_ctrl->isoc_sema), 0U, 1U);
+	buf_ctrl->sema_valid = 1;
+
+	ret = HAL_OK;
+	return ret;
+}
+
 /* Exported functions --------------------------------------------------------*/
 
 /**
@@ -837,12 +1110,14 @@ static int usbh_uac_cb_process(usb_host_t *host, u32 msg)
   * @param  cb: User callback
   * @retval Status
   */
-int usbh_uac_init(usbh_uac_cb_t *cb)
+int usbh_uac_init(usbh_uac_cb_t *cb, int frame_cnt)
 {
 	int ret;
 	usbh_uac_host_t *uac = &usbh_uac_host;
+	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->uac_isoc_out);
 
 	usb_os_memset(uac, 0x00, sizeof(usbh_uac_host_t));
+	buf_ctrl->frame_cnt = frame_cnt;
 
 	if (cb != NULL) {
 		uac->cb = cb;
@@ -856,7 +1131,7 @@ int usbh_uac_init(usbh_uac_cb_t *cb)
 	}
 
 	usbh_register_class(&usbh_uac_driver);
-
+	uac->usbh_state = USBH_UAC_IDLE;
 	return HAL_OK;
 }
 
@@ -868,106 +1143,90 @@ int usbh_uac_deinit(void)
 {
 	int ret = HAL_OK;
 	usbh_uac_host_t *uac = &usbh_uac_host;
+	usbh_uac_ep_cfg_t *ep = &uac->cur_setting[USBH_UAC_ISOC_OUT_IDX].ep_info;
 
-	usbh_uac_deinit_all_pipe();
+	usbh_unregister_class(&usbh_uac_driver);
+	uac->usbh_state = USBH_UAC_IDLE;
+	usbh_uac_stop_play();
 
 	if ((uac->cb != NULL) && (uac->cb->deinit != NULL)) {
 		uac->cb->deinit();
 	}
 
-	usbh_unregister_class(&usbh_uac_driver);
+	usbh_uac_deinit_all_pipe();
+	usbh_uac_ep_buf_ctrl_deinit(&(uac->uac_isoc_out), ep);
 
 	return ret;
 }
 
 /**
-  * @brief  Start to transfer ISOC data
-  * @param  buf: Data buffer
-  * @param  len: Data length
-  * @retval Status
+  * @brief  Get index of audio interface by direction.
+  * @param  dir: 0 for OUT, non-zero for IN.
+  * @param  intf_idx: Output pointer for interface index.
+  * @retval HAL_OK if found, HAL_ERR_PARA otherwise.
   */
-int usbh_uac_isoc_transmit(u8 *buf, u32 len)
+int usbh_uac_find_intf_idx_by_dir(int dir, int *intf_idx)
 {
-	int ret = HAL_BUSY;
 	usbh_uac_host_t *uac = &usbh_uac_host;
-	usb_host_t *host = uac->host;
-	usbh_uac_ep_cfg_t *ep = &(uac->cur_setting[USBH_UAC_ISOC_OUT_IDX].ep_info);
+	usbh_uac_as_t *as_intf;
+	int i;
 
-	if ((uac->state == UAC_STATE_IDLE) || (uac->state == UAC_STATE_TRANSFER)) {
-		if (ep->isoc_state == UAC_TRANSFER_STATE_IDLE) {
-			ep->isoc_buf = buf;
-			ep->isoc_len = len;
-			ep->isoc_state = UAC_TRANSFER_STATE_PROCESS;
-			uac->state = UAC_STATE_TRANSFER;
-			usbh_notify_class_state_change(host, ep->isoc_pipe);
-			ret = HAL_OK;
-		} else {
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "ISOC OUT busy %d\n", ep->isoc_state);
+	if (intf_idx != NULL) {
+		for (i = 0; i < USBH_UAC_ISOC_NUM; i++) {
+			as_intf = &uac->uac_desc.as_intf[i];
+
+			if (((dir == 0) && (as_intf->msg_type == USBH_UAC_ISOC_OUT_IDX)) ||
+				((dir != 0) && (as_intf->msg_type == USBH_UAC_ISOC_IN_IDX))) {
+				*intf_idx = i;
+				return HAL_OK;
+			}
 		}
-	} else {
 	}
 
-	return ret;
-}
-
-/**
-  * @brief  Start to receive ISOC data
-  * @param  buf: Data buffer
-  * @param  len: Data length
-  * @retval Status
-  */
-int usbh_uac_isoc_receive(u8 *buf, u32 len)
-{
-	int ret = HAL_BUSY;
-	usbh_uac_host_t *uac = &usbh_uac_host;
-	usb_host_t *host = uac->host;
-	usbh_uac_ep_cfg_t *ep = &(uac->cur_setting[USBH_UAC_ISOC_IN_IDX].ep_info);
-	UNUSED(len);
-	if ((uac->state == UAC_STATE_IDLE) || (uac->state == UAC_STATE_TRANSFER)) {
-		if (ep->isoc_state == UAC_TRANSFER_STATE_IDLE) {
-			ep->isoc_buf = buf;
-			ep->isoc_len = ep->isoc_packet_size;
-			ep->isoc_state = UAC_TRANSFER_STATE_PROCESS;
-			uac->state = UAC_STATE_TRANSFER;
-			usbh_notify_class_state_change(host, ep->isoc_pipe);
-			ret = HAL_OK;
-		} else {
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "ISOC IN busy %d\n", ep->isoc_state);
-			ret = HAL_BUSY;
-		}
-	} else {
-		ret = HAL_BUSY;
-	}
-
-	return ret;
+	return HAL_ERR_PARA;
 }
 
 /**
   * @brief  Set a matched alt_setting
-  * @param  intf_idx: Index of the audio interface
+  * @param  dir: Dir of the audio interface, 0 menas out interface, 1 means in interface
   * @param  channels: Channels
   * @param  byte_width: byte_width
   * @param  sampling_freq: sampling_freq
   * @retval Status
   */
-int usbh_uac_set_alt_setting(u8 intf_idx, u8 channels, u8 byte_width, u32 sampling_freq)
+int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 byte_width, u32 sampling_freq)
 {
-	usbh_uac_host_t *uac = &usbh_uac_host;
-	struct uac_format_type_i_discrete_descriptor *fmt;
-	usbh_uac_as_t *as_intf = &uac->uac_desc.as_intf[intf_idx];
 	struct usb_audio_endpoint_descriptor *audio_ep = NULL;
+	struct uac_format_type_i_discrete_descriptor *fmt;
+	usbh_uac_setting_t *cur_setting = NULL;
+	usbh_uac_host_t *uac = &usbh_uac_host;
+	usbh_uac_as_t *as_intf = NULL;
 	usbh_uac_ep_cfg_t *ep = NULL;
 	usb_host_t *host = uac->host;
-	int i, j;
+	int ret = HAL_ERR_PARA;
 	int set_flag = 0;
-	int ret;
 	int frame_ms;
+	int intf_idx;
+	int i, j;
 	u32 freq;
-	//get ep interface id and alt num
-	u8 intf_num = uac->uac_desc.as_intf[intf_idx].intf_num;
-	u8 alt_num = uac->uac_desc.as_intf[intf_idx].alt_count;
+	u8 intf_num, alt_num;
 
+	//find matched as interface idx
+	ret = usbh_uac_find_intf_idx_by_dir(dir, &intf_idx);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Find intr err\n");
+		return ret;
+	}
 
+	as_intf = &uac->uac_desc.as_intf[intf_idx];
+	if (as_intf == NULL || as_intf->alt_setting == NULL) {
+		ret = HAL_ERR_PARA;
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Find as err\n");
+		return ret;
+	}
+
+	intf_num = as_intf->intf_num;
+	alt_num = as_intf->alt_count;
 	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Search alt %d/%d\n", intf_num, alt_num);
 
 	//actuaclly search from alt 1
@@ -975,7 +1234,7 @@ int usbh_uac_set_alt_setting(u8 intf_idx, u8 channels, u8 byte_width, u32 sampli
 		fmt = as_intf->alt_setting[i].format;
 
 		// Check format type, channels, and sample frequency
-		if (fmt->bBitResolution != byte_width || fmt->bNrChannels != channels) {
+		if (!fmt || fmt->bBitResolution != byte_width || fmt->bNrChannels != channels) {
 			continue;
 		}
 
@@ -985,7 +1244,7 @@ int usbh_uac_set_alt_setting(u8 intf_idx, u8 channels, u8 byte_width, u32 sampli
 				   (fmt->tSamFreq[j][1] << 8) |
 				   fmt->tSamFreq[j][0];
 			if (freq == sampling_freq) {
-				RTK_LOGS(TAG, RTK_LOG_DEBUG, "Alt found %d/%d %d\n",
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Alt found %d/%d %d\n",
 						 intf_num,
 						 i + 1,
 						 j);
@@ -999,15 +1258,19 @@ int usbh_uac_set_alt_setting(u8 intf_idx, u8 channels, u8 byte_width, u32 sampli
 		}
 	}
 
+	cur_setting = &(uac->cur_setting[dir]);
 	if (set_flag) {
 		//update cur_setting
-		uac->cur_setting[intf_idx].freq_id = j;
-		uac->cur_setting[intf_idx].intf_num = intf_num;
-		uac->cur_setting[intf_idx].alt_setting = (i + 1);
+		cur_setting->freq_id = j;
+		cur_setting->intf_num = intf_num;
+		cur_setting->alt_setting = (i + 1);
 
 		//update ep_info
-		ep = &uac->cur_setting[intf_idx].ep_info;
+		ep = &cur_setting->ep_info;
 		audio_ep = as_intf->alt_setting[i].audio_ep;
+		if (!audio_ep) {
+			return ret;
+		}
 
 		ep->isoc_ep_addr = audio_ep->bEndpointAddress;
 		ep->isoc_interval = audio_ep->bInterval;
@@ -1020,17 +1283,28 @@ int usbh_uac_set_alt_setting(u8 intf_idx, u8 channels, u8 byte_width, u32 sampli
 		} else {
 			// device ep des error, stop transfer
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "MPS error: %d < %d\n", audio_ep->wMaxPacketSize, frame_ms);
-			ret = HAL_ERR_PARA;
 			return ret;
 		}
 
-		// reinit isoc out pipe
+		usbh_uac_stop_play();
+		//reinit pipe
 		usbh_uac_deinit_all_pipe();
 		ep->isoc_pipe = usbh_alloc_pipe(host, ep->isoc_ep_addr);
 		usbh_open_pipe(host, ep->isoc_pipe, ep->isoc_ep_addr, USB_CH_EP_TYPE_ISOC, ep->isoc_packet_size);
 
+		// reinit ring buf
+		if (dir == USBH_UAC_ISOC_OUT_IDX) {
+			usbh_uac_ep_buf_ctrl_deinit(&(uac->uac_isoc_out), ep);
+			ret = usbh_uac_ep_buf_ctrl_init(&(uac->uac_isoc_out), ep);
+		}
+
+		if (ret != HAL_OK) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Buf init fail");
+			return ret;
+		}
+
 		uac->state = UAC_STATE_CTRL_SETTING;
-		if (intf_idx == USBH_UAC_ISOC_OUT_IDX) {
+		if (dir == USBH_UAC_ISOC_OUT_IDX) {
 			uac->sub_state = UAC_STATE_SET_OUT_ALT;
 		} else {
 			uac->sub_state = UAC_STATE_SET_IN_ALT;
@@ -1049,15 +1323,21 @@ int usbh_uac_set_alt_setting(u8 intf_idx, u8 channels, u8 byte_width, u32 sampli
 
 /**
   * @brief  Get alt setting structure and alt settings num for an interface.
-  * @param  intf_idx: Index of the audio interface
+  * @param  dir: Dir of the audio interface, 0 menas out interface, 1 means in interface
   * @param  alt_num: Number of alt settings
   * @retval Pointer to alt setting structure
   */
-const usbh_uac_alt_t *usbh_uac_get_alt_setting(u8 intf_idx, u8 *alt_num)
+const usbh_uac_alt_t *usbh_uac_get_alt_setting(u8 dir, u8 *alt_num)
 {
 	usbh_uac_host_t *uac = &usbh_uac_host;
-	usbh_uac_as_t *as_intf = &uac->uac_desc.as_intf[intf_idx];
+	usbh_uac_as_t *as_intf = NULL;
+	int intf_idx = -1;
 
+	if (usbh_uac_find_intf_idx_by_dir(dir, &intf_idx) != HAL_OK) {
+		return NULL;
+	}
+
+	as_intf = &uac->uac_desc.as_intf[intf_idx];
 	if (alt_num) {
 		*alt_num = as_intf->alt_count;
 	}
@@ -1070,22 +1350,113 @@ const usbh_uac_alt_t *usbh_uac_get_alt_setting(u8 intf_idx, u8 *alt_num)
   * @param  intf_idx: Index of the audio interface
   * @retval frame size
   */
-u32 usbh_uac_get_frame_size(u8 intf_idx)
+u32 usbh_uac_get_frame_size(u8 dir)
 {
 	usbh_uac_host_t *uac = &usbh_uac_host;
-	usbh_uac_ep_cfg_t *ep = &uac->cur_setting[intf_idx].ep_info;
+	usbh_uac_ep_cfg_t *ep = &uac->cur_setting[dir].ep_info;
+
 	return ep->isoc_packet_size;
 }
 
 /**
-  * @brief  Stop play
-  * @retval Status
+  * @brief  Write Audio data
+  * @param  buffer: Pointer to data buffer
+  * @param  size: Data length
+  * @param  timeout_ms: Time out
+  * @retval written len
+  */
+u32 usbh_uac_write(u8 *buffer, u32 size, u32 timeout_ms)
+{
+	usbh_uac_host_t *uac = &usbh_uac_host;
+	usbh_uac_buf_ctrl_t *pdata_ctrl = &(uac->uac_isoc_out);
+	u32 written_len = 0;
+	u32 try_len, just_written;
+	u16 pkt_cnt = 0;
+
+	if (pdata_ctrl->mps == 0 || !pdata_ctrl->sema_valid) {
+		return 0;
+	}
+
+	if (pdata_ctrl->transfer_continue == 0) {
+		return 0;
+	}
+
+	if (usbh_uac_usb_status_check() != HAL_OK) {
+		return 0;
+	}
+
+	while ((written_len < size) && (pdata_ctrl->transfer_continue)) {
+		if (list_empty(&pdata_ctrl->free_buf_lock_list.list)) {
+			if (timeout_ms) {
+				// wait write_wait_sema
+				pdata_ctrl->write_wait_sema = 1;
+				if (rtos_sema_take(pdata_ctrl->isoc_sema, timeout_ms) != RTK_SUCCESS) {
+					pdata_ctrl->write_wait_sema = 0;
+					break;
+				}
+				pdata_ctrl->write_wait_sema = 0;
+			} else {
+				break;
+			}
+		}
+		try_len = size - written_len;
+		just_written = 0;
+		pkt_cnt = 0;
+		usbh_uac_write_ring_buf(pdata_ctrl, buffer + written_len, try_len, &just_written, &pkt_cnt);
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Want %d write %d\n", try_len, just_written);
+		if (just_written == 0) {
+			break;
+		}
+		written_len += just_written;
+	}
+
+	if (written_len > size) {
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Pls check the uac write cfg\n");
+	}
+
+	return written_len;
+}
+
+/**
+  * @brief  Start UAC device play
+  * @param  void
+  * @retval void
+  */
+void usbh_uac_start_play(void)
+{
+	usbh_uac_host_t *uac = &usbh_uac_host;
+	usb_host_t *host = uac->host;
+	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->uac_isoc_out);
+	usbh_uac_ep_cfg_t *ep = &(uac->cur_setting[USBH_UAC_ISOC_OUT_IDX].ep_info);
+
+	buf_ctrl->transfer_continue = 1;
+	uac->state = UAC_STATE_TRANSFER;
+	ep->isoc_state = USBH_UAC_TX;
+	usbh_notify_class_state_change(host, ep->isoc_pipe);
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC START\n");
+}
+
+/**
+  * @brief  Stop UAC device play
+  * @param  void
+  * @retval void
   */
 void usbh_uac_stop_play(void)
 {
 	usbh_uac_host_t *uac = &usbh_uac_host;
-	usb_host_t *host = uac->host;
+	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->uac_isoc_out);
+
+	buf_ctrl->transfer_continue = 0;
 
 	uac->state = UAC_STATE_IDLE;
-	usbh_notify_class_state_change(host, 0);
+
+	//dorp fragment data
+	if (buf_ctrl->remain_size != 0) {
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Drop remain\n");
+		buf_ctrl->p_buf = NULL;
+		buf_ctrl->remain_size = 0;
+	}
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC stop\n");
 }

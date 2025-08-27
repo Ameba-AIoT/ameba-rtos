@@ -139,7 +139,9 @@ s32 wifi_ap_switch_chl_and_inform(struct rtw_csa_parm *csa_param);
   * @brief  Toggle whether SoftAP can be discovered.
   * @param[in]  enable: 1-invisible, 0-visible.
   * @return  None
-  * @note  SoftAP becomes invisible by pausing tx beacon and not responsing to probe request.
+  * @note
+  *    - SoftAP becomes invisible by pausing tx beacon and not responsing to probe request.
+  *    - Should be deauth all associted STAs[ref wifi_ap_del_client()] when set ap invisible.
   */
 void wifi_ap_set_invisible(u8 enable);
 

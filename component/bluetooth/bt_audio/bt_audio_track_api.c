@@ -56,7 +56,7 @@ void *rtk_bt_audio_track_init(uint32_t channels,
 		/* mixer period size is config within ameba_audio_mixer_usrcfg.cpp */
 		/* passthrough has no period size concept */
 		if (duration) {
-			track_buf_size = duration * (rate * channels * (bits / 8)) / 1000000;
+			track_buf_size = (duration * (rate * channels * (bits / 8)) / 1000000) * 2.5;
 		} else {
 			track_buf_size = RTAudioTrack_GetMinBufferBytes(audio_track, RTAUDIO_CATEGORY_MEDIA, rate, format, channels) * 3;
 		}

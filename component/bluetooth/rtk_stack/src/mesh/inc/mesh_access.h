@@ -29,20 +29,13 @@ BEGIN_DECLS
   * @{
   */
 
-/** @brief the length includes the length of the access opcode
-  * @{
-  */
+/** the length includes the length of the access opcode */
 #define ACCESS_PAYLOAD_UNSEG_MAX_SIZE           11
 #define ACCESS_PAYLOAD_SEG_ONE_MAX_SIZE         8
 #define ACCESS_PAYLOAD_SEG_TWO_MAX_SIZE         20
 #define ACCESS_PAYLOAD_SEG_THREE_MAX_SIZE       32
 #define ACCESS_PAYLOAD_MAX_SIZE                 380 //!< segmented
-/** @} */
 
-/** @defgroup Access_Opcode Access Opcode
-  * @brief
-  * @{
-  */
 /** #pragma diag_suppress 175 */
 #define ACCESS_OPCODE_SIZE(opcode)              ((opcode) >= 0xc00000 ? 3 : ((opcode) >= 0x8000 ? 2 : 1))
 #define ACCESS_OPCODE_BYTE(pbuffer, opcode)\
@@ -64,8 +57,6 @@ BEGIN_DECLS
             *((uint8_t *)(pbuffer) + 2) = (opcode) & 0xff;\
         }\
     } while(0)
-/** @} End of Access_Opcode */
-
 /** @} */
 
 /** @defgroup Mesh_Access_Exported_Types Exported Types
@@ -144,7 +135,7 @@ typedef enum
     MESH_MSG_SEND_CAUSE_INVALID_ACCESS_PARAMETER
 } mesh_msg_send_cause_t;
 
-/** @brief asynchronized callback value after sending a mesh message */
+/** @brief asynchronous callback value after sending a mesh message */
 typedef enum _mesh_msg_send_stat_t
 {
     MESH_MSG_SEND_STAT_FAIL,

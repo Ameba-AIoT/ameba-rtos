@@ -13,11 +13,11 @@
 
 /* Add Includes here */
 #include <string.h>
-// RTK porting: add related head file to call event to app layer
-#include <stdio.h>
 #include "mesh_api.h"
 #include "configuration.h"
-#include "mesh_data_dump.h"
+// RTK porting: add related head file to call event to app layer
+#include <stdio.h>
+#include <mesh_data_dump.h>
 #include <rtk_stack_mesh_internal.h>
 #include <rtk_bt_mesh_config_client_model.h>
 
@@ -620,7 +620,7 @@ compo_data_end:
             }
         }
         break;
-	case MESH_MSG_CFG_DEFAULT_TTL_STAT:
+    case MESH_MSG_CFG_DEFAULT_TTL_STAT:
         {
             // RTK porting:call event to app
             rtk_bt_mesh_config_client_model_indicate_event(RTK_BT_MESH_CONFIG_MODEL_DEFAULT_TTL_STAT,
@@ -642,29 +642,29 @@ compo_data_end:
 		//	BT_LOGA("proxy state: %d\r\n", pmsg->state);
         }
         break;
-	case MESH_MSG_CFG_RELAY_STAT:
+    case MESH_MSG_CFG_RELAY_STAT:
         {
+            parse = TRUE;
             // RTK porting:call event to app
             rtk_bt_mesh_config_client_model_indicate_event(RTK_BT_MESH_CONFIG_MODEL_RELAY_STAT,
                     (uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_CFG_RELAY_STAT),
                     sizeof(cfg_relay_stat_t) - ACCESS_OPCODE_SIZE(MESH_MSG_CFG_RELAY_STAT));
-            parse = TRUE;
 		// cfg_relay_stat_t *pmsg = (cfg_relay_stat_t *)pbuffer;
 		// BT_LOGA("relay state: %d, count = %d step = %d\r\n", pmsg->state, pmsg->count, pmsg->steps);
         }
         break;
-	case MESH_MSG_CFG_NET_TRANS_STAT:
+    case MESH_MSG_CFG_NET_TRANS_STAT:
         {
+            parse = TRUE;
             // RTK porting:call event to app
             rtk_bt_mesh_config_client_model_indicate_event(RTK_BT_MESH_CONFIG_MODEL_NET_TRANSMIT_STAT,
                     (uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_CFG_NET_TRANS_STAT),
                     sizeof(cfg_net_transmit_stat_t) - ACCESS_OPCODE_SIZE(MESH_MSG_CFG_NET_TRANS_STAT));
-            parse = TRUE;
 		// cfg_net_transmit_stat_t *pmsg = (cfg_net_transmit_stat_t *)pbuffer;
 		// BT_LOGA("net transmit state: count = %d step = %d\r\n", pmsg->count, pmsg->steps);
         }
         break;
-	case MESH_MSG_CFG_MODEL_PUB_STAT:
+    case MESH_MSG_CFG_MODEL_PUB_STAT:
         {
             // RTK porting:call event to app
             rtk_bt_mesh_config_client_model_indicate_event(RTK_BT_MESH_CONFIG_MODEL_MODEL_PUB_STAT,
@@ -682,7 +682,7 @@ compo_data_end:
             }
         }
         break;
-	case MESH_MSG_CFG_MODEL_SUB_STAT:
+    case MESH_MSG_CFG_MODEL_SUB_STAT:
         {
             // RTK porting:call event to app
             rtk_bt_mesh_config_client_model_indicate_event(RTK_BT_MESH_CONFIG_MODEL_MODEL_SUB_STAT,
@@ -754,7 +754,7 @@ compo_data_end:
             }
         }
         break;
-	case MESH_MSG_CFG_NET_KEY_STAT:
+    case MESH_MSG_CFG_NET_KEY_STAT:
         {
             // RTK porting:call event to app
             rtk_bt_mesh_config_client_model_indicate_event(RTK_BT_MESH_CONFIG_MODEL_NET_KEY_STAT,

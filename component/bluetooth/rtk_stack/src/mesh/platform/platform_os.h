@@ -59,12 +59,12 @@ plt_mutex_t plt_mutex_create(void);
   * @brief heap memory management
   * @{
   */
-void *plt_os_mem_zalloc(RAM_TYPE ram_type, uint32_t size, const char *pfunc, uint32_t file_line);
+void *plt_os_mem_zalloc(RAM_TYPE ram_type, uint32_t size);
 void plt_os_mem_free(void *p);
 void plt_os_mem_clear(void);
 #define RAM_TYPE_DATA_OFF                                           RAM_TYPE_DATA_ON
-#define plt_malloc(size, ram_type)                                  plt_os_mem_zalloc(ram_type, size, __func__, __LINE__)
-#define plt_zalloc(size, ram_type)                                  plt_os_mem_zalloc(ram_type, size, __func__, __LINE__)
+#define plt_malloc(size, ram_type)                                  plt_os_mem_zalloc(ram_type, size)
+#define plt_zalloc(size, ram_type)                                  plt_os_mem_zalloc(ram_type, size)
 #define plt_free(p, ram_type)                                       plt_os_mem_free(p)
 /** @} */
 
@@ -82,7 +82,6 @@ plt_os_queue_handle_t plt_os_queue_create(uint32_t item_num, uint32_t item_size)
 /** @defgroup SW Timer
   * @{
   */
-#define PLT_TIMER_ACCURACY                  1 //!< sw timer accuracy in unit of ms
 typedef void *plt_timer_t;
 plt_timer_t plt_timer_create(const char *name, uint32_t period_ms, bool reload, uint32_t timer_id,
                              void (*pf_cb)(void *));
@@ -114,15 +113,7 @@ void plt_delay_us(uint32_t t);
 #define plt_time_read_us()                                          0//((VENDOR_READ(0x17C) & 0x3FFFFFF)/40)
 
 /* precision: 10ms, range: 0 ~ 49 day*/
-#define plt_time_read_ms()                                          ((uint32_t) os_sys_time_get())
-
-/**
-  * @brief diff the time get by @ref plt_time_read_ms
-  * @param[in] begin_ms: the ms-level begin time
-  * @param[in] end_ms: the ms-level end time
-  * @return time elapsed in unit of ms
-  */
-#define plt_time_diff_ms(begin_ms, end_ms)    ((end_ms) < (begin_ms) ? (0xffffffff - (begin_ms)) + (end_ms) + 1 : (end_ms) - (begin_ms))
+#define plt_time_read_ms()                                          os_sys_time_get()
 
 /**
   * @brief diff the time with high precision as much as possible
@@ -135,7 +126,6 @@ void plt_delay_us(uint32_t t);
   * @return time elapsed (bit31 indicates the unit of return value: 1 - us, 0 - ms.)
   */
 uint32_t plt_time_diff(uint32_t begin_ms, uint32_t begin_us, uint32_t end_ms, uint32_t end_us);
-
 /** @} */
 /** @} */
 
