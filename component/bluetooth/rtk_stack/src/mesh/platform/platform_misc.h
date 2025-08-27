@@ -17,6 +17,7 @@
 
 /* Add Includes here */
 #include <string.h>
+#include "platform_macros.h"
 #include "platform_types.h"
 //#include "rtl876x_wdg.h"
 

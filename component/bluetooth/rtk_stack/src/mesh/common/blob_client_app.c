@@ -312,7 +312,7 @@ bool active_blob_recvs_node_delete_by_addr(uint16_t addr)
 extern uint16_t bt_stack_msg_send(uint16_t type, uint16_t subtype, void *msg);
 void blob_client_procedure_timeout(void *pargs)
 {
-    /* avoid gcc compile warning */
+    // RTK porting:avoid compile warning
     (void)pargs;
 	bt_stack_msg_send(IO_MSG_TYPE_LE_MESH, RTK_BT_MESH_IO_MSG_SUBTYPE_BLOB_CLIENT_PROCEDURE, NULL);
 }
@@ -358,10 +358,9 @@ void blob_client_procedure_timer_stop(void)
     }
 }
 
-// RTK porting:call common API for send T_IO_MSG msg to app main task and process msg through app main task
 void blob_client_retry_timeout(void *pargs)
 {
-    /* avoid gcc compile warning */
+    // RTK porting:call common API for send T_IO_MSG msg to app main task and process msg through app main task and avoid compile warning
     (void)pargs;
 	bt_stack_msg_send(IO_MSG_TYPE_LE_MESH, RTK_BT_MESH_IO_MSG_SUBTYPE_BLOB_CLIENT_RETRY, NULL);
 }
@@ -1204,21 +1203,19 @@ void blob_client_data_send(void)
 void blob_client_transfer_status_determine(uint16_t multicast_addr, uint8_t app_key_index,
                                            uint8_t transfer_ttl, uint16_t *punicast_addr, uint8_t unicast_addr_num)
 {
-    // RTK porting:avoid compile warning
-    (void)multicast_addr;
-    (void)app_key_index;
-    (void)transfer_ttl;
-    (void)punicast_addr;
-    (void)unicast_addr_num;
+    UNUSED(multicast_addr);
+    UNUSED(app_key_index);
+    UNUSED(transfer_ttl);
+    UNUSED(punicast_addr);
+    UNUSED(unicast_addr_num);
     return;
 }
 
 bool blob_client_transfer_cancel(uint16_t *punicast_addr, uint8_t unicast_addr_num,
                                  uint8_t blob_id[8])
 {
-    // RTK porting:avoid compile warning
-    (void)punicast_addr;
-    (void)unicast_addr_num;
+    UNUSED(punicast_addr);
+    UNUSED(unicast_addr_num);
     if (memcmp(blob_id, blob_client_ctx.blob_id, 8) != 0)
     {
         printe("blob_client_transfer_cancel: wrong blob id");
@@ -1734,8 +1731,7 @@ void blob_client_handle_retry_timeout(void)
 
 int32_t blob_client_app_handle_data(const mesh_model_info_p pmodel_info, uint32_t type, void *pargs)
 {
-    // RTK porting:avoid compile warning
-    (void)pmodel_info;
+    UNUSED(pmodel_info);
     blob_recvs_node_p pnode = NULL;
     switch (type)
     {

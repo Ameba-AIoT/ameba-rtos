@@ -15,7 +15,7 @@
 #include "app_mesh_flags.h"
 // RTK porting:call event to app
 #include <rtk_stack_mesh_internal.h>
-#include "rtk_bt_mesh_private_beacon_model.h"
+#include <rtk_bt_mesh_private_beacon_model.h>
 
 #if F_BT_MESH_1_1_PRB_SUPPORT
 

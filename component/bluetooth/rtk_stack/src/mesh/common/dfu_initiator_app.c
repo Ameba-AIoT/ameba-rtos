@@ -89,8 +89,7 @@ static bool dfu_init_blob_transfer(void)
 
 int32_t dfu_init_dist_client_data(const mesh_model_info_p pmodel_info, uint32_t type, void *pargs)
 {
-    // RTK porting:avoid compile warning
-    (void)pmodel_info;
+    UNUSED(pmodel_info);
     switch (type)
     {
     case FW_DIST_CLIENT_RECVS_STATUS:
@@ -158,6 +157,7 @@ int32_t dfu_init_dist_client_data(const mesh_model_info_p pmodel_info, uint32_t 
 extern uint16_t bt_stack_msg_send(uint16_t type, uint16_t subtype, void *msg);
 static void dfu_init_timeout(void *ptimer)
 {
+    // RTK porting:call common API for send app msg to app main task and process msg through app main task
     bt_stack_msg_send(IO_MSG_TYPE_LE_MESH, RTK_BT_MESH_IO_MSG_SUBTYPE_DFU_INIT_APP_TIMEOUT_MSG, ptimer);
 }
 

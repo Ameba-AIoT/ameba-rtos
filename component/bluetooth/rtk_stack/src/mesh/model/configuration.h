@@ -571,8 +571,7 @@ typedef struct
     uint8_t state;
 } _PACKED4_ cfg_key_refresh_phase_stat_t, *cfg_key_refresh_phase_stat_p;
 
-/********new struct for callback src***********/
-//RTK porting:add new structure for call app layer
+//RTK porting:add new structure for call app layer and callback src
 typedef struct {
 	uint8_t opcode[ACCESS_OPCODE_SIZE(MESH_MSG_CFG_KEY_REFRESH_PHASE_STAT)];
 	mesh_msg_stat_t stat;

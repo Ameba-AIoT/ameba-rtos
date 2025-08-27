@@ -140,7 +140,8 @@ static bool health_client_receive(mesh_msg_p pmesh_msg)
         if (pmesh_msg->msg_len == sizeof(health_attn_stat_t))
         {
             health_attn_stat_p pmsg = (health_attn_stat_p)pbuffer;
-            health_client_status_attention_t status_attn = {pmsg->attn};
+            health_client_status_attention_t status_attn;
+            status_attn.attention = pmsg->attn;
             if (NULL != pmodel_info->model_data_cb)
             {
                 pmodel_info->model_data_cb(pmodel_info, HEALTH_CLIENT_STATUS_ATTENTION, &status_attn);
@@ -150,8 +151,11 @@ static bool health_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_HEALTH_CURT_STAT:
         {
             health_curt_stat_p pmsg = (health_curt_stat_p)pbuffer;
-            // RTK porting:avoid compile error
-            health_client_status_t status_data = {pmesh_msg->src, pmsg->test_id, pmsg->company_id, pmsg->fault_array, 0};
+            health_client_status_t status_data;
+            status_data.src = pmesh_msg->src;
+            status_data.test_id = pmsg->test_id;
+            status_data.company_id = pmsg->company_id;
+            status_data.fault_array = pmsg->fault_array;
             status_data.fault_array_len = pmesh_msg->msg_len - MEMBER_OFFSET(health_curt_stat_t, fault_array);
             if (NULL != pmodel_info->model_data_cb)
             {
@@ -159,12 +163,14 @@ static bool health_client_receive(mesh_msg_p pmesh_msg)
             }
         }
         break;
-
     case MESH_MSG_HEALTH_FAULT_STAT:
         {
             health_fault_stat_p pmsg = (health_fault_stat_p)pbuffer;
-            // RTK porting:avoid compile error
-            health_client_status_t status_data = {pmesh_msg->src, pmsg->test_id, pmsg->company_id, pmsg->fault_array, 0};
+            health_client_status_t status_data;
+            status_data.src = pmesh_msg->src;
+            status_data.test_id = pmsg->test_id;
+            status_data.company_id = pmsg->company_id;
+            status_data.fault_array = pmsg->fault_array;
             status_data.fault_array_len = pmesh_msg->msg_len - MEMBER_OFFSET(health_fault_stat_t, fault_array);
             if (NULL != pmodel_info->model_data_cb)
             {
@@ -176,7 +182,8 @@ static bool health_client_receive(mesh_msg_p pmesh_msg)
         if (pmesh_msg->msg_len == sizeof(health_period_stat_t))
         {
             health_period_stat_p pmsg = (health_period_stat_p)pbuffer;
-            health_client_status_period_t status_period = {pmsg->fast_period_divisor};
+            health_client_status_period_t status_period;
+            status_period.fast_period_divisor = pmsg->fast_period_divisor;
             if (NULL != pmodel_info->model_data_cb)
             {
                 pmodel_info->model_data_cb(pmodel_info, HEALTH_CLIENT_STATUS_PERIOD, &status_period);

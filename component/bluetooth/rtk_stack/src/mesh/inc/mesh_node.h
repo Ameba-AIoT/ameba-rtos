@@ -591,6 +591,7 @@ typedef struct
     uint32_t trans_seg_delay_time_min; //!< ms, default value 0ms
     uint32_t trans_seg_delay_time_max; //!< ms, default value 0ms, shall not less than trans_seg_delay_time_min
     uint16_t tsmc_size; //!< trans seg msg cache size default value @ref MESH_TRANS_SEG_MSG_CACHE_SIZE
+    uint8_t trans_tx_seg_credit; //!< trans tx seg credit, valid when GAP_SCHED_ADV_PARALLEL on, default value @ref MESH_TRANS_TX_SEG_CREDIT
     /** friendship parameters */
     uint8_t frnd_rx_window; //!< range: 0x01-0xFF ms (default 20ms), set by the fn
     uint8_t frnd_rx_delay; //!< range: 0x0A-0xFF ms (default 10ms), set by the lpn
@@ -949,6 +950,9 @@ void rpl_clear_per_loop(uint8_t rpl_loop);
  */
 void rpl_set_seq(uint16_t src, uint32_t seq, uint8_t rpl_loop);
 
+#define MESH_RPL_TYPE_CHECK_FAIL  0x00
+#define MESH_RPL_TYPE_ADD_ENTRY   0x01
+
 typedef enum
 {
     MESH_RPL_LOWER_SEQ,
@@ -956,18 +960,31 @@ typedef enum
     MESH_RPL_LIST_FULL,
 } mesh_rpl_fail_type_t;
 
+typedef struct
+{
+    mesh_rpl_fail_type_t type;  // fail type
+    uint8_t rpl_loop;           // loop of rpl list
+    uint16_t src;               // mesh address in received msg
+    uint32_t iv_index;          // iv index in received msg
+    uint32_t rpl_seq;           // seq stored in rpl list
+    uint32_t seq;               // seq used in received msg
+    bool *p_ignore;             // ignore rpl check, true: ignore rpl check fail, receive message normally; false: don't receive the message
+} rpl_check_fail_t;
+
+typedef struct
+{
+    uint8_t rpl_loop;           // loop of rpl list
+    uint16_t src;               // mesh address in received msg
+    uint32_t seq;               // seq used in received msg
+    uint16_t remain_entry_num;  // remain entry count
+} rpl_add_entry_t;
+
 /**
  * @brief rpl function type definition
- * @param[in] type:       fail type
- * @param[in] rpl_loop:   loop of rpl list
- * @param[in] src:        mesh address in received msg
- * @param[in] iv_index:   iv index in received msg
- * @param[in] rpl_seq:    seq stored in rpl list
- * @param[in] seq:        seq used in received msg
- * @return ignore rpl check, true: ignore rpl check fail, receive message normally; false: don't receive the message
+ * @param[in] type:    rpl callback type
+ * @param[in] pdata:   pointer to rpl callback data
  */
-typedef bool (*rpl_cb_t)(mesh_rpl_fail_type_t type, uint8_t rpl_loop, uint16_t src,
-                         uint32_t iv_index, uint32_t rpl_seq, uint32_t seq);
+typedef void (*rpl_cb_t)(uint8_t type, void *pdata);
 
 /**
  * @brief register rpl callback

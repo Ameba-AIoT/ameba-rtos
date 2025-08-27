@@ -1498,7 +1498,10 @@ static void bt_stack_le_audio_sync_cb(T_BLE_AUDIO_SYNC_HANDLE sync_handle, uint8
 			p_ind->iso_chann_t.path_direction = RTK_BLE_AUDIO_ISO_DATA_PATH_RX;
 			p_ind->sync_handle = sync_handle;
 			if (ble_audio_sync_get_info(sync_handle, &sync_info)) {
+				p_ind->iso_chann_t.iso_interval = sync_info.big_info.iso_interval;
 				base_data_get_bis_codec_cfg(sync_info.p_base_mapping, p_sync_cb->p_setup_data_path->bis_idx, (T_CODEC_CFG *)&p_ind->codec_t);
+			} else {
+				BT_LOGE("%s ble_audio_sync_get_info fail\r\n", __func__);
 			}
 			/* Send event */
 			rtk_bt_evt_indicate(p_evt, NULL);
@@ -1959,6 +1962,7 @@ static void bt_stack_le_audio_broadcast_source_cb(T_BROADCAST_SOURCE_HANDLE hand
 	case MSG_BROADCAST_SOURCE_SETUP_DATA_PATH: {
 		rtk_bt_le_audio_iso_channel_info_t *p_iso_chann = NULL;
 		rtk_bt_le_audio_bis_conn_handle_info_t bis_info = {0};
+		T_BROADCAST_SOURCE_INFO src_info = {0};
 		APP_PRINT_INFO2("MSG_BROADCAST_SOURCE_SETUP_DATA_PATH: bis_idx %d, cause 0x%x",
 						p_sm_data->p_setup_data_path->bis_idx,
 						p_sm_data->p_setup_data_path->cause);
@@ -1988,6 +1992,11 @@ static void bt_stack_le_audio_broadcast_source_cb(T_BROADCAST_SOURCE_HANDLE hand
 		ind->iso_chann_t.p_iso_chann = (void *)p_iso_chann;
 		ind->iso_chann_t.iso_conn_handle = p_iso_chann->iso_conn_handle;
 		ind->iso_chann_t.path_direction = RTK_BLE_AUDIO_ISO_DATA_PATH_TX;
+		if (broadcast_source_get_info(bt_le_audio_priv_data.bsrc.source_handle, &src_info)) {
+			ind->iso_chann_t.iso_interval = src_info.big_iso_interval;
+		} else {
+			BT_LOGE("%s broadcast_source_get_info fail\r\n", __func__);
+		}
 		memcpy((void *)&ind->codec_t, &bt_le_audio_priv_data.bsrc.codec_cfg, sizeof(rtk_bt_le_audio_cfg_codec_t));
 		/* Send event */
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -4034,8 +4043,8 @@ void bt_stack_le_audio_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 			/*  user_data point to the memory alloced for 2nd level ptr, so it's convenient
 			    to free it when free p_evt */
 			p_evt->user_data = direct_iso_data_ind->p_buf;
-			rtk_bt_evt_indicate(p_evt, NULL);
 			gap_iso_data_cfm(p_data->p_bt_direct_iso->p_buf);
+			rtk_bt_evt_indicate(p_evt, NULL);
 			bt_stack_le_audio_release_iso_chann(p_iso_chann);
 		}
 	}

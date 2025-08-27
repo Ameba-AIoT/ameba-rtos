@@ -15,5 +15,7 @@ menu "CONFIG VFS"
         endchoice
         config FATFS_WITHIN_APP_IMG
             bool "FATFS within APP Image"
+        config FATFS_READ_ONLY
+            bool "FATFS Read Only"
     endif
 endmenu

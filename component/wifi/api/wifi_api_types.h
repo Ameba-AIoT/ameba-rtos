@@ -921,9 +921,12 @@ struct rtw_promisc_para {
  */
 union rtw_speaker_set {
 	struct rtw_speaker_init {
-		u8 mode;              /**< 0 for slave, 1 for master. */
-		u8 nav_thresh;        /**< NAV (Network Allocation Vector) threshold in units of 128us. */
-		u8 relay_en;          /**< Relay control. */
+		u8 mode;                     /**< 0 for slave, 1 for master. */
+		u8 nav_thresh;               /**< NAV (Network Allocation Vector) threshold in units of 128us. */
+		u8 relay_en : 1;             /**< Relay control. */
+		u8 b_ignore_tx_nav_done : 1; /**< Queue BKF not need to wait TX Nav finished. */
+		u8 slot_time;                /**< The slot time value mentioned in 802.11 specification in units and use with caution. */
+		u16 life_time;               /**< Packet lifetime in units of 256us. */
 	} init; /**< For Wi-Fi speaker setting case @ref RTW_SPEAKER_SET_INIT.*/
 	struct rtw_speaker_i2s {
 		u8 port;           /**< Port selection for TSFT trigger: 0 for port 0, 1 for port 1. */
