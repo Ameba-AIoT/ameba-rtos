@@ -136,15 +136,7 @@ static int whc_fullmac_host_change_bss(struct wiphy *wiphy, struct net_device *n
 static int whc_fullmac_host_set_txq_params(struct wiphy *wiphy, struct net_device *ndev, struct ieee80211_txq_params *params)
 {
 	int ret = 0;
-	/*
-	 * @AC_param: format is shown as in below ,
-	 * +--------------------------+-------------+-------------+
-	 * |        TXOP Limit        |ECWmin/ECWmax|  ACI/AIFSN  |
-	 * +--------------------------+-------------+-------------+
-	 * 	BIT31~16 corresponding to TXOP Limit, BIT15~8 corresponding
-	 * 	to ECWmin/ECWmax, BIT7~0 corresponding to ACI/AIFSN.
-	*/
-	unsigned int AC_param = 0;
+	struct rtw_edca_param edca_param = {0};
 	u8	shift_count = 0;
 	u8 aifsn, aci = 0, ECWMin, ECWMax;
 	u16 TXOP;
@@ -188,12 +180,13 @@ static int whc_fullmac_host_set_txq_params(struct wiphy *wiphy, struct net_devic
 	TXOP = params->txop;
 	aifsn = params->aifs;
 
-	AC_param = (aifsn & 0xf) | ((aci & 0x3) << 5) | ((ECWMin & 0xf) << 8) | ((ECWMax & 0xf) << 12) | ((TXOP & 0xffff) << 16);
+	edca_param.aci = aci;
+	edca_param.aci_aifsn = aifsn;
+	edca_param.cw_max = ECWMax;
+	edca_param.cw_min = ECWMin;
+	edca_param.txop_limit = TXOP;
 
-	dev_dbg(global_idev.fullmac_dev, "=>"FUNC_NDEV_FMT" - Set TXQ params: aifsn=%d aci=%d ECWmin=%d, ECWmax=%d, TXOP=%d, AC_param=0x%x\n",
-			FUNC_NDEV_ARG(ndev), aifsn, aci, ECWMin, ECWMax, TXOP, AC_param);
-
-	ret = whc_fullmac_host_set_EDCA_params(&AC_param);
+	ret = whc_fullmac_host_set_EDCA_params(&edca_param);
 
 	return ret;
 }

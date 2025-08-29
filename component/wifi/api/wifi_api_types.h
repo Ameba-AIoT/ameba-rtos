@@ -913,6 +913,18 @@ struct rtw_promisc_para {
 	u8(*callback)(struct rtw_rx_pkt_info *pkt_info);
 };
 
+/**
+*@brief Provide necessary parameters for set EDCA
+*/
+struct rtw_edca_param {
+	u8	aci;  /**< AC_BK, AC_BE, AC_VI, AC_VO */
+	u8	aci_aifsn; /**< Arbitration inter-frame space number,specifies the inter-frame interval (waiting time) before transmission: unit: (*slot_time), + sifs*/
+	u8	cw_max; /**< Maximum contention window: unit: *slot_time */
+	u8	cw_min; /**< Minimum contention window: unit: *slot_time */
+	u16	txop_limit;/**< Indicates that a single MSDU or MMPDU in addition to a protection frame exchange can be transmitted at any rate*/
+	u8	slot_time;/**< The slot time value mentioned in 802.11 specification in units, Recommended value: 20us for 2G band, 9us for 5G band[value 0 = use internal chipset default] */
+};
+
 /**********************************************************************************************
  *                                     speaker structures
  *********************************************************************************************/
@@ -925,7 +937,6 @@ union rtw_speaker_set {
 		u8 nav_thresh;               /**< NAV (Network Allocation Vector) threshold in units of 128us. */
 		u8 relay_en : 1;             /**< Relay control. */
 		u8 b_ignore_tx_nav_done : 1; /**< Queue BKF not need to wait TX Nav finished. */
-		u8 slot_time;                /**< The slot time value mentioned in 802.11 specification in units and use with caution. */
 		u16 life_time;               /**< Packet lifetime in units of 256us. */
 	} init; /**< For Wi-Fi speaker setting case @ref RTW_SPEAKER_SET_INIT.*/
 	struct rtw_speaker_i2s {

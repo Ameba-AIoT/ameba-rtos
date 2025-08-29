@@ -612,6 +612,14 @@ void whc_dev_spi_wait_dev_idle(void)
 	spi_priv.wait_tx = FALSE;
 }
 
+u8 whc_bridge_spi_dev_bus_is_idle(void)
+{
+	if (spi_priv.rx_req || spi_priv.dev_status != DEV_STS_IDLE || SSI_Busy(WHC_SPI_DEV)) {
+		return FALSE;
+	}
+	return TRUE;
+}
+
 /**
 * @brief  send buf from upper, used by BT without struct whc_buf_info.
 * @param  buf: data buf to be sent, must 4B aligned.
