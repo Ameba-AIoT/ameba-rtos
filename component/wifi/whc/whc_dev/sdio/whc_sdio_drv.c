@@ -269,3 +269,9 @@ void whc_sdio_dev_send(struct spdio_buf_t *pbuf)
 	return;
 }
 
+
+u8 whc_bridge_sdio_dev_bus_is_idle(void)
+{
+	/*Not yet implemented*/
+	return TRUE;
+}

@@ -5,9 +5,6 @@
 
 static const char *const TAG = "SPDIO";
 
-extern u8 SDIO_Pin_Grp;
-extern const u8 SDIO_PAD[5][6];
-
 /** @addtogroup Ameba_Mbed_API
  * @{
  */
@@ -508,6 +505,8 @@ static void SPDIO_IRQ_Handler_BH(void *pData)
 void SPDIO_Board_Init(void)
 {
 	u8 idx;
+	/* Be consistent with order of SDIO_PAD[][]. */
+	char *sdio_pin[] = {"CLK", "CMD", "D0", "D1", "D2", "D3"};
 
 	assert_param(SDIO_Pin_Grp <= 0x4);
 
@@ -515,14 +514,8 @@ void SPDIO_Board_Init(void)
 	for (idx = 0; idx < 6; idx++) {
 		PAD_PullCtrl(SDIO_PAD[SDIO_Pin_Grp][idx], GPIO_PuPd_UP);
 		Pinmux_Config(SDIO_PAD[SDIO_Pin_Grp][idx], PINMUX_FUNCTION_SDIO);
+		RTK_LOGI(TAG, "SDIO_%s --> P%c%d\n", sdio_pin[idx], 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][idx]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][idx]));
 	}
-
-	RTK_LOGI(TAG, "SDIO_CLK --> P%c%d\n", 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][0]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][0]));
-	RTK_LOGI(TAG, "SDIO_CMD --> P%c%d\n", 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][1]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][1]));
-	RTK_LOGI(TAG, "SDIO_D3 --> P%c%d\n", 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][2]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][2]));
-	RTK_LOGI(TAG, "SDIO_D2 --> P%c%d\n", 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][3]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][3]));
-	RTK_LOGI(TAG, "SDIO_D1 --> P%c%d\n", 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][4]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][4]));
-	RTK_LOGI(TAG, "SDIO_D0 --> P%c%d\n", 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][5]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][5]));
 }
 
 /**

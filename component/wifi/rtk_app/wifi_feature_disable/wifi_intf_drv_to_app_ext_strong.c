@@ -65,9 +65,9 @@ s32 wifi_set_tx_rate_by_tos(u8 enable, u8 tos_precedence, u8 tx_rate)
 	return -1;
 }
 
-s32 wifi_set_edca_param(u32 ac_param)
+s32 wifi_set_edca_param(struct rtw_edca_param *pedca_param)
 {
-	UNUSED(ac_param);
+	UNUSED(pedca_param);
 	call_noused = __LINE__;
 	return -1;
 }

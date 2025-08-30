@@ -12,7 +12,6 @@ static SD_CardInfo card_info;
 int (*sd_sema_take_fn)(u32);
 int (*sd_sema_give_isr_fn)(u32);
 static void (*cd_cb)(SD_RESULT);
-extern SDIOHCFG_TypeDef sdioh_config;
 #if defined(SDIO) &&(SDIO == SD)
 extern u32 wait_for_sema;
 #endif

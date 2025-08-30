@@ -620,13 +620,18 @@ s32 wifi_set_tx_rate_by_tos(u8 enable, u8 tos_precedence, u8 tx_rate)
 	return ret;
 }
 
-s32 wifi_set_edca_param(u32 ac_param)
+s32 wifi_set_edca_param(struct rtw_edca_param *pedca_param)
 {
 	int ret = 0;
-	u32 param_buf[1];
+	u32 *param_buf;
+	int size = sizeof(struct rtw_edca_param);
 
-	param_buf[0] = ac_param;
-	whc_host_api_message_send(WHC_API_WIFI_SET_EDCA_PARAM, (u8 *)param_buf, 4, (u8 *)&ret, sizeof(ret));
+	param_buf = (u32 *)rtos_mem_zmalloc(size);
+	if (param_buf) {
+		memcpy((void *)param_buf, (void *)pedca_param, size);
+		whc_host_api_message_send(WHC_API_WIFI_SET_EDCA_PARAM, (u8 *)param_buf, size, (u8 *)&ret, sizeof(ret));
+		rtos_mem_free(param_buf);
+	}
 	return ret;
 }
 
