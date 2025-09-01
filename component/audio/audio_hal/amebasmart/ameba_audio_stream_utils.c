@@ -555,7 +555,7 @@ void ameba_audio_dump_codec_regs(void)
 
 int64_t ameba_audio_get_now_ns(void)
 {
-	return rtos_time_get_current_system_time_us() * 1000LL;
+	return rtos_time_get_current_system_time_ns();
 }
 
 AUDIO_SPORT_TypeDef *ameba_audio_get_sport_addr(uint32_t index)
