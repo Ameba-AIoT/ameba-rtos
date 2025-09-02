@@ -41,8 +41,6 @@ void ap_clock_gate(void)
 
 	RCC_PeriphClockCmd(APBPeriph_NULL, APBPeriph_CPU1_CLOCK, DISABLE);
 
-	SOCPS_AP_suspend_config(ENABLE);
-
 	pmu_release_wakelock(PMU_CPU1_RUN);
 	pmu_release_wakelock(PMU_OS);
 }
@@ -99,8 +97,6 @@ void ap_resume(void)
 	}
 
 	pmu_acquire_wakelock(PMU_CPU1_RUN);
-
-	SOCPS_AP_resume_config(ENABLE);
 
 #if !defined(CONFIG_MP_SHRINK) && defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
 	extern void wifi_hal_system_resume_wlan(void);

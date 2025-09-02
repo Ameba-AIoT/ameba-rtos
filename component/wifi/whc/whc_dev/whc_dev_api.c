@@ -143,9 +143,9 @@ void whc_dev_api_set_host_state(u8 state)
 {
 	whc_hostrdy = state;
 	if (state == WHC_HOST_READY) {
-		pmu_acquire_wakelock(PMU_FULLMAC_WIFI);
+		pmu_acquire_wakelock(PMU_WHC_WIFI);
 	} else {
-		pmu_release_wakelock(PMU_FULLMAC_WIFI);
+		pmu_release_wakelock(PMU_WHC_WIFI);
 	}
 }
 
@@ -201,3 +201,13 @@ void whc_dev_api_send_to_host(u8 *data, u32 len)
 	whc_dev_api_send_data(data, len);
 }
 #endif
+
+/**
+ * @brief  Check if the bus is currently idle
+ * @return  TRUE if bus is idle, FALSE otherwise.
+ * @note  Only SPI implements this function
+ */
+u8 whc_dev_api_bus_is_idle(void)
+{
+	return _whc_dev_api_bus_is_idle();
+}

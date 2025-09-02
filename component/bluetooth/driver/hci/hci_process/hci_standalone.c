@@ -15,11 +15,23 @@ void hci_sa_recv(struct hci_rx_packet_t *pkt)
 {
 	memcpy(hci_buf, pkt->buf, pkt->len);
 	osif_sem_give(recv_sem);
+	hci_rx_pkt_free(pkt);
 }
 
 struct hci_transport_cb hci_sa_cb = {
 	.recv = hci_sa_recv,
 };
+
+void hci_standalone_open(void)
+{
+	osif_sem_create(&recv_sem, 0, 1);
+}
+
+void hci_standalone_close(void)
+{
+	osif_sem_delete(recv_sem);
+	recv_sem = NULL;
+}
 
 uint8_t hci_sa_send(uint8_t type, uint8_t *buf, uint16_t len, bool is_sync)
 {
@@ -31,7 +43,6 @@ uint8_t hci_sa_send(uint8_t type, uint8_t *buf, uint16_t len, bool is_sync)
 		return HCI_SUCCESS;
 	}
 
-	osif_sem_create(&recv_sem, 0, 1);
 	hci_buf = buf;
 
 	if (len != hci_transport_send(type, buf, len, true)) {
@@ -39,8 +50,6 @@ uint8_t hci_sa_send(uint8_t type, uint8_t *buf, uint16_t len, bool is_sync)
 	}
 
 	osif_sem_take(recv_sem, BT_TIMEOUT_FOREVER);
-	osif_sem_delete(recv_sem);
-	recv_sem = NULL;
 	hci_buf = NULL;
 
 	/* Then We can process Response */

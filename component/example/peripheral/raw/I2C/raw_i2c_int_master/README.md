@@ -27,6 +27,11 @@ master's GND connect to slave's GND
   - master's `SCL (_PB_16)` connect to slave's `SCL` 
   - master's `GND` connect to slave's `GND` 
 
+* On AMEBADGREEN2
+  - master's`SDA (_PA_26)` connect to slave's `SDA`
+  - master's `SCL (_PA_25)` connect to slave's `SCL`
+  - master's `GND` connect to slave's `GND`
+
 # SW Configuration
 
 1. Build and Download:

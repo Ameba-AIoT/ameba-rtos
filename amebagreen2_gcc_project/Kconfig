@@ -242,6 +242,15 @@ menu "CONFIG WHC INTF"
         endmenu
     endif
 
+    if WHC_FULLMAC_HOST && !WHC_INTF_IPC_MENU
+        menu "FULLMAC HOST config"
+        config WHC_CMD_PATH
+            default y
+            bool "Support WHC CMD PATH"
+        config WHC_WIFI_API_PATH
+            bool "Support WHC WIFI API PATH"
+        endmenu
+    endif
 
     if FULLMAC_DEV && WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4TZ
 

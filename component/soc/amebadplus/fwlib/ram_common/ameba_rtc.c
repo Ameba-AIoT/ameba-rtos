@@ -1369,6 +1369,14 @@ u32 RTC_SmoothCalibConfig(u32 CalibSign, u32 Value, u32 CalibPeriod, u32 Calib_E
 }
 
 /**
+  * @brief  This function is meaningless, only for compatibility with Zephyr.
+  */
+void RTC_Enable(u8 NewState)
+{
+	UNUSED(NewState);
+}
+
+/**
   * @}
   */
 

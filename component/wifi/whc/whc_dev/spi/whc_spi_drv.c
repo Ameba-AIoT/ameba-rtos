@@ -473,7 +473,7 @@ void whc_spi_dev_device_init(void)
 	SSI_RXGDMA_Init(index, &whc_spi_priv->SSIRxGdmaInitStruct, (void *)WHC_SPI_RXDMA, whc_spi_dev_rxdma_irq_handler, skb->data, SPI_BUFSZ);
 	SSI_SetDmaEnable(WHC_SPI_DEV, ENABLE, SPI_BIT_RDMAE);
 
-	pmu_register_sleep_callback(PMU_FULLMAC_WIFI, (PSM_HOOK_FUN)whc_spi_dev_suspend, NULL, (PSM_HOOK_FUN)whc_spi_dev_resume, NULL);
+	pmu_register_sleep_callback(PMU_WHC_WIFI, (PSM_HOOK_FUN)whc_spi_dev_suspend, NULL, (PSM_HOOK_FUN)whc_spi_dev_resume, NULL);
 
 	/* Create irq task */
 	if (rtos_task_create(NULL, "SPI_RXDMA_IRQ_TASK", whc_spi_dev_rxdma_irq_task, (void *)whc_spi_priv, 1024 * 4, 7) != RTK_SUCCESS) {
@@ -605,18 +605,37 @@ u8 whc_spi_dev_tx_path_avail(void)
 	return ret;
 }
 
-void whc_dev_spi_wait_dev_idle(void)
+s8 whc_dev_spi_wait_dev_idle(void)
 {
+	s8 ret = 0;
+
 	/* Wait for last SPI transaction done, including stages:
 		1) trigger RX_REQ to host, wait for host to initiate SPI transfer (spi_priv.rx_req=TRUE)
 		2) host initiates SPI transfer ~ device respond to RXF interrupt (SSI_Busy)
 		3) device respond to RXF interrupt ~ device TRXDMA done (spi_priv.dev_status != DEV_STS_IDLE)*/
 	while (spi_priv.rx_req || spi_priv.dev_status != DEV_STS_IDLE || SSI_Busy(WHC_SPI_DEV)) {
 		spi_priv.wait_tx = TRUE;
-		rtos_sema_take(spi_priv.spi_transfer_done_sema, 0xFFFFFFFF);
+		if (rtos_sema_take(spi_priv.spi_transfer_done_sema, WHC_DEV_SPI_TRANSFER_TIMEOUT) == RTK_FAIL) {
+			RTK_LOGE(TAG_WLAN_INIC, "take sema fail,dev_sts:%d,rx_req:%d, SSI_Busy:%d\n",
+					 spi_priv.dev_status, spi_priv.rx_req, SSI_Busy(WHC_SPI_DEV));
+#ifdef CONFIG_WHC_DUAL_TCPIP
+			whc_dev_api_set_host_state(WHC_HOST_UNREADY);
+#endif
+			ret = -1;
+			break;
+		}
 	}
 
 	spi_priv.wait_tx = FALSE;
+	return ret;
+}
+
+u8 whc_spi_dev_bus_is_idle(void)
+{
+	if (spi_priv.rx_req || spi_priv.dev_status != DEV_STS_IDLE || SSI_Busy(WHC_SPI_DEV)) {
+		return FALSE;
+	}
+	return TRUE;
 }
 
 /**
@@ -673,6 +692,8 @@ void whc_spi_dev_send_data(u8 *buf, u32 len)
 
 void whc_spi_dev_send(struct whc_buf_info *pbuf)
 {
+	s8 ret = 0;
+	struct whc_txbuf_info_t *inic_tx = NULL;
 	GDMA_InitTypeDef *GDMA_InitStruct = &spi_priv.SSITxGdmaInitStruct;
 	u32 index = (WHC_SPI_DEV == SPI0_DEV) ? 0 : 1;
 
@@ -683,7 +704,10 @@ void whc_spi_dev_send(struct whc_buf_info *pbuf)
 
 retry:
 	/* check dev is idle */
-	whc_dev_spi_wait_dev_idle();
+	ret = whc_dev_spi_wait_dev_idle();
+	if (ret < 0) {
+		goto drop_send;
+	}
 
 	/* Initialize or Restart TXDMA */
 	if (!spi_priv.txdma_initialized) {
@@ -718,6 +742,19 @@ retry:
 	rtos_mutex_give(spi_priv.tx_lock);
 
 	return;
+
+drop_send: {
+		inic_tx = container_of(pbuf, struct whc_txbuf_info_t, txbuf_info);
+		/* Dev drop tx, free tx skb or buffer */
+		if (inic_tx->is_skb) {
+			dev_kfree_skb_any((struct sk_buff *) inic_tx->ptr);
+		} else {
+			rtos_mem_free((u8 *)inic_tx->ptr);
+		}
+		rtos_mem_free((u8 *)inic_tx);
+
+		rtos_mutex_give(spi_priv.tx_lock);
+	}
 }
 
 /**

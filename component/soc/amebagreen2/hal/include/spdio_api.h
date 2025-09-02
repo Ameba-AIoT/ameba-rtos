@@ -54,47 +54,16 @@
  * @{
  */
 
-/** @defgroup MBED_SPDIO_Enumeration_Type Enumeration Type
- * @{
- */
-
-/*Don't modify this enum table*/
-enum spdio_rx_data_t {
-	SPDIO_RX_DATA_NULL = 0x00,
-	SPDIO_RX_DATA_ETH = 0x83, //an ethernet packet received
-	SPDIO_RX_DATA_ATCMD = 0x11, //an AT command packet received
-	SPDIO_RX_DATA_USER = 0x41, //defined by user
-};
-
-enum spdio_tx_data_t {
-	SPDIO_TX_DATA_NULL = 0x00,
-	SPDIO_TX_DATA_ETH = 0x82, //an ethernet packet sent
-	SPDIO_TX_DATA_ATCMDRSP = 0x10, //an AT command response packet sent
-	SPDIO_TX_DATA_USER = 0x40, // defined by user
-};
-
-/** @}*/
-
 /** @defgroup MBED_SPDIO_Structure_Type Structure Type
  * @{
  */
 
-struct spdio_buf_t {
-	void *priv; //priv data from user
-	u32 buf_allocated; //The spdio buffer allocated address
-	u16 size_allocated; //The actual allocated size
-	u32 buf_addr; //The spdio buffer physical address, it must be 4-bytes aligned
-	u16 buf_size;
-	u8 type; //The type of the data which this buffer carries, spdio_rx_data_t and spdio_tx_data_t
-	u8 reserved;
-};
-
 struct spdio_t {
 	void *priv; //not used by user
-	u32 tx_bd_num; //for spdio send data to host, 2 bd for one packet, so this value must be rounded to 2
-	u32 rx_bd_num; //for spdio receive data from host
-	u32 rx_bd_bufsz; //buffer size = desired packet length + 24(spdio header info), must be rounded to 64
-	struct spdio_buf_t *rx_buf; //buffer array for spdio receive assigned by user, rx_bd_bufsz * rx_bd_num
+	u32 host_rx_bd_num; //for spdio send data to host, 2 bd for one packet, so this value must be rounded to 2
+	u32 host_tx_bd_num; //for spdio receive data from host
+	u32 device_rx_bufsz; //buffer size = desired packet length + 24(spdio header info), must be rounded to 64
+	struct spdio_buf_t *rx_buf; //buffer array for spdio receive assigned by user, device_rx_bufsz * host_tx_bd_num
 
 	/**
 	 * @brief Callback function defined by user, called by spdio when one packet is received.
@@ -105,7 +74,7 @@ struct spdio_t {
 	 * @param type Received packet type, which should be a value of @ref spdio_rx_data_t.
 	 * @retval RTK_SUCCESS or RTK_FAIL.
 	 */
-	char (*rx_done_cb)(void *priv, void *pbuf, u8 *pdata, u16 size, u8 type);
+	char (*device_rx_done_cb)(void *priv, void *pbuf, u8 *pdata, u16 size, u8 type);
 
 	/**
 	 * @brief Callback function defined by user, called by spdio when one packet is sent.
@@ -113,10 +82,10 @@ struct spdio_t {
 	 * @param pbuf Pointer to spdio_buf_t structure which carries the transmit packet.
 	 * @retval RTK_SUCCESS or RTK_FAIL.
 	 */
-	char (*tx_done_cb)(void *priv, void *pbuf);
+	char (*device_tx_done_cb)(void *priv, void *pbuf);
 
 	/**
-	 * @brief Callback function defined by user.
+	 * @brief Callback function defined by user to response rpwm from host.
 	 * @param priv Pointer to spdio_t structure which is used to initialize spdio interface.
 	 * @param value RPWM2 value.
 	 * @retval RTK_SUCCESS or RTK_FAIL.

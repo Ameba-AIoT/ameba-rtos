@@ -548,7 +548,7 @@ typedef struct {
 
 /** @} */
 
-
+_LONG_CALL_ void RTC_Enable(u8 NewState);
 _LONG_CALL_ u32 RTC_BypassShadowCmd(u32 NewState);
 _LONG_CALL_ void RTC_StructInit(RTC_InitTypeDef *RTC_InitStruct);
 _LONG_CALL_ u32 RTC_Init(RTC_InitTypeDef *RTC_InitStruct);

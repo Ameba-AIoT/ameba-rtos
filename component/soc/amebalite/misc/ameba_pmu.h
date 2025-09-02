@@ -15,8 +15,11 @@ enum PMU_DEVICE {
 	PMU_DSP_RUN,
 	PMU_WLAN_FW_DEVICE,
 	PMU_BT_DEVICE,
+#if defined(CONFIG_STANDARD_TICKLESS) && defined(CONFIG_LWIP_LAYER)
+	PMU_LWIP_STACK,
+#endif
 
-	PMU_DEV_USER_BASE		= 7, /*number 7 ~ 31 is reserved for customer use*/
+	PMU_DEV_USER_BASE, /* reserved for customer use */
 	PMU_MAX			= 31,
 };
 

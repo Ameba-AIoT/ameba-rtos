@@ -18,8 +18,6 @@
 
 static rtos_sema_t sd_sema;
 
-extern SDIOHCFG_TypeDef sdioh_config;
-
 static int sd_give_sema(u32 timeout)
 {
 	UNUSED(timeout);

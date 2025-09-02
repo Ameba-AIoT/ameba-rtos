@@ -7,9 +7,15 @@
 
 This test needs two demo board, one as master and the other as slave.
 
-Master board I2C0 SDA (`PB_15`) to Slave board I2C0 SDA (`PB_15`) pin,
-Master board I2C0 SCL (`PB_16`) to Slave board I2C0 SCL (`PB_16`) pin.
-Master's `GND` connect to Slave's `GND` 
+* On AMEBADPLUS
+  - Master board I2C0 SDA (`PB_15`) to Slave board I2C0 SDA (`PB_15`) pin,
+  - Master board I2C0 SCL (`PB_16`) to Slave board I2C0 SCL (`PB_16`) pin.
+  - Master's `GND` connect to Slave's `GND`
+
+* On AMEBADGREEN2
+  - Master board I2C0 SDA (`_PA_26`) to Slave board I2C0 SDA (`_PA_26`) pin,
+  - Master board I2C0 SCL (`_PA_25`) to Slave board I2C0 SCL (`_PA_25`) pin.
+  - Master's `GND` connect to Slave's `GND`
 
 # SW Configuration
 

@@ -703,8 +703,8 @@ int atcmd_ble_iso(int argc, char **argv)
 	return 0;
 }
 
-int bt_generic_le_audio_demo_main(uint8_t role, uint8_t enable, uint32_t sound_channel);
-int atcmd_bt_generic_le_audio_demo(int argc, char *argv[])
+int bt_le_audio_generic_demo_main(uint8_t role, uint8_t enable, uint32_t sound_channel);
+int atcmd_bt_le_audio_generic_demo(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t role;
@@ -750,7 +750,7 @@ int atcmd_bt_generic_le_audio_demo(int argc, char *argv[])
 			return -1;
 		}
 	}
-	if (bt_generic_le_audio_demo_main(role, op, channel)) {
+	if (bt_le_audio_generic_demo_main(role, op, channel)) {
 		BT_LOGE("Error: cap example %s failed!\r\n", action[op]);
 		return -1;
 	}
@@ -1100,13 +1100,13 @@ static const cmd_table_t example_table[] = {
 #if defined(CONFIG_BT_A2DP_PROVISIONER_SCATTERNET) && CONFIG_BT_A2DP_PROVISIONER_SCATTERNET
 	{"a2dp_provisioner_scatternet",  atcmd_bt_a2dp_provisioner_scatternet,  3, 3},
 #endif
-#if defined(CONFIG_BT_A2DP_LE_AUDIO_PBP) && CONFIG_BT_A2DP_LE_AUDIO_PBP
+#if defined(CONFIG_BT_A2DP_PBP) && CONFIG_BT_A2DP_PBP
 	{"a2dp_pbp",         atcmd_bt_a2dp_pbp,         2, 2},
 #endif
-#if defined(CONFIG_BT_A2DP_HFP_LE_AUDIO_PBP) && CONFIG_BT_A2DP_HFP_LE_AUDIO_PBP
+#if defined(CONFIG_BT_A2DP_HFP_PBP) && CONFIG_BT_A2DP_HFP_PBP
 	{"a2dp_hfp_pbp",     atcmd_bt_a2dp_hfp_pbp,     2, 2},
 #endif
-#if defined(CONFIG_BT_A2DP_LE_AUDIO_TMAP) && CONFIG_BT_A2DP_LE_AUDIO_TMAP
+#if defined(CONFIG_BT_A2DP_TMAP) && CONFIG_BT_A2DP_TMAP
 	{"a2dp_tmap",        atcmd_bt_a2dp_tmap,        3, 3},
 #endif
 #if defined(CONFIG_BT_SPP) && CONFIG_BT_SPP
@@ -1125,7 +1125,7 @@ static const cmd_table_t example_table[] = {
 	{"a2dp_hfp",         atcmd_bt_a2dp_hfp,         3, 3},
 #endif
 #if defined(CONFIG_BT_LE_AUDIO_GENERIC_DEMO) && CONFIG_BT_LE_AUDIO_GENERIC_DEMO
-	{"generic_le_audio_demo", atcmd_bt_generic_le_audio_demo, 3, 4},
+	{"le_audio_generic_demo", atcmd_bt_le_audio_generic_demo, 3, 4},
 #endif
 #if defined(CONFIG_BT_PBP) && CONFIG_BT_PBP
 	{"pbp",              atcmd_bt_pbp,              3, 4},

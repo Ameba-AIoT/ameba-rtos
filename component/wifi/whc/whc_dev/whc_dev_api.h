@@ -51,4 +51,5 @@ void whc_dev_pkt_rx_to_user(u8 *rxbuf, u8 *real_buf, u16 size);
 /* pkt tx: pkt send to host from dev */
 void whc_dev_api_send_to_host(u8 *data, u32 len);
 
+u8 whc_dev_api_bus_is_idle(void);
 #endif

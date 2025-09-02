@@ -27,7 +27,7 @@
 #endif
 #include "wifi_intf_drv_to_upper.h"
 
-#if defined(CONFIG_WHC_CMD_PATH)
+#if defined(CONFIG_WHC_CMD_PATH) && !defined(CONFIG_WHC_HOST)
 #include "whc_dev_api.h"
 #endif
 
@@ -62,7 +62,7 @@ void wifi_init_thread(void *param)
 
 	whc_host_init();
 
-#ifndef CONFIG_WHC_BRIDGE_HOST
+#ifdef CONFIG_WHC_WIFI_API_PATH
 	wifi_on(RTW_MODE_STA);
 
 	RTK_LOGS(TAG_WLAN_DRV, RTK_LOG_INFO, "Available heap after wifi init %d\n", rtos_mem_get_free_heap_size() + WIFI_STACK_SIZE_INIT);

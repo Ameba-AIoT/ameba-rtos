@@ -9,6 +9,10 @@
 #include "whc_wpa_lite_app.h"
 #endif
 
+#ifdef CONFIG_WPA_STD
+#include "whc_wpas_std_app.h"
+#endif
+
 
 extern rtos_sema_t whc_user_rx_sema;
 extern u8 *whc_rx_msg;
@@ -117,6 +121,8 @@ int whc_wpa_ops_cli_cmd_parse(char *ptr, u8 *buf)
 		whc_wpa_ops_select_network(params, buf);
 	} else if (strcmp(cmd, "status") == 0) {
 		whc_wpa_ops_get_status(params, buf);
+	} else if (strcmp(cmd, "wpas_cmd") == 0) {
+		whc_dev_rtw_cli_wpas_test(params, buf, msg_len - strlen("wpas_cmd") - 1);
 	} else {
 		RTK_LOGI(TAG_WLAN_INIC, "%s, Unknown command\n", __func__);
 	}
@@ -176,7 +182,9 @@ void whc_dev_pkt_rx_to_user_task(void)
 				rtos_mem_free(buf);
 			}
 
+			rtos_mem_free(whc_rx_msg_free_addr);
 			whc_rx_msg = NULL;
+			whc_rx_msg_free_addr = NULL;
 		}
 	}
 

@@ -11,9 +11,6 @@
 #ifdef CONFIG_COMPRESS_OTA_IMG
 #include "ameba_boot_lzma.h"
 #endif
-#ifdef CONFIG_FULLMAC_DEV
-#include "hci_core.h"
-#endif
 
 static const char *const TAG = "BOOT";
 static Certificate_TypeDef Cert[2]; //Certificate of SlotA & SlotB
@@ -432,64 +429,15 @@ void BOOT_OTA_Extract(void)
 }
 #endif
 
-#ifdef CONFIG_FULLMAC_DEV_TODO
-
-static void Boot_ResetSystem(void)
+u32 Boot_Fullmac_XipEn(void)
 {
-	WDG_InitTypeDef WDG_InitStruct;
-	WDG_StructInit(&WDG_InitStruct);
-	WDG_InitStruct.Window = 65535;
-	WDG_InitStruct.Timeout = 1;
-	WDG_InitStruct.EICNT = 1;
-	WDG_InitStruct.EIMOD = 0;
+	u32 LogAddr, PhyAddr, ImgAddr;
 
-	WDG_Init(IWDG_DEV, &WDG_InitStruct);
-	WDG_Enable(IWDG_DEV);
-	WDG_Refresh(IWDG_DEV);
-
-	while (1);
-}
-
-#endif
-
-void Boot_Fullmac_LoadImage(void)
-{
-#ifdef CONFIG_FULLMAC_DEV_TODO
-#ifdef CONFIG_FULLMAC_DEV
-	int status;
-
-	/* Init host control interface */
-	status = HCI_Init();
-	if (status == HAL_OK) {
-		/* Wait for image2 download */
-		status = HCI_WaitForExit();
-		HCI_DeInit();
-		if (status == HAL_OK) {
-			/* Boot to image2 */
-		} else {
-			/* Abort download */
-			Boot_ResetSystem();
-		}
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "HCI init failed: %d\n", status);
-	}
-#endif
-#else
-	SubImgInfo_TypeDef SubImgInfo[3];
-	u32 LogAddr, PhyAddr, ImgAddr, TotalLen = 0;
-	u8 Cnt, i;
-	FIH_DECLARE(fih_rc, FIH_FAILURE);
-
-	char *ApLabel[] = {"AP XIP IMG", "AP SRAM", "AP PSRAM"};
-
-	// 1. for sram recycle, manifest is locate after image bin.
-	// 2. Do not support RSIP-OTF, manifest cannot be found for image Header is encrypted.
+	// Do not support RSIP-OTF, manifest cannot be found for image Header is encrypted.
 	assert_param(SYSCFG_OTP_BootFromNor());
 
-	/* step 1: init OTA region */
+	/* Note: remove BOOT_OTA_Region_Init later and set PhyAddr directly */
 	BOOT_OTA_Region_Init();
-
-	/* remap AP XIP image */
 	PhyAddr = OTA_Region[IMG_CERT][0];
 	LogAddr = (u32)__km4tz_flash_text_start__ - IMAGE_HEADER_LEN;
 
@@ -497,22 +445,37 @@ void Boot_Fullmac_LoadImage(void)
 	RSIP_MMU_Cmd(MMU_ID2, ENABLE);
 	RSIP_MMU_Cache_Clean();
 
-	Cnt = sizeof(ApLabel) / sizeof(char *);
 	ImgAddr = SYSCFG_OTP_BootFromNor() ? LogAddr : PhyAddr;
+	return ImgAddr;
+}
+
+void Boot_Fullmac_LoadImage(void)
+{
+	SubImgInfo_TypeDef SubImgInfo[3];
+	u32 ImgAddr, TotalLen = 0;
+	u8 Cnt, i;
+	FIH_DECLARE(fih_rc, FIH_FAILURE);
+
+	char *ApLabel[] = {"AP XIP IMG", "AP SRAM", "AP PSRAM"};
+
+	// 1. for sram recycle, manifest is locate after image bin.
+	ImgAddr = Boot_Fullmac_XipEn();
+
+	Cnt = sizeof(ApLabel) / sizeof(char *);
 	if (BOOT_LoadSubImage(&SubImgInfo[0], ImgAddr, Cnt, ApLabel, TRUE) == FALSE) {
 		goto Fail;
 	}
 
 	assert_param(SubImgInfo[1].Addr == ((u32)__image2_entry_func__ - IMAGE_HEADER_LEN));
-	assert_param(SubImgInfo[2].Len == IMAGE_HEADER_LEN);
 
 	for (i = 0; i < Cnt; i++) {
 		TotalLen += SubImgInfo[i].Len;
 	}
-	PhyAddr += TotalLen;
+	/* Here LogAddr is same as PhyAddr */
+	ImgAddr += TotalLen;
 
 	/* 2. locate manifest */
-	BOOT_ImgCopy((void *)&Manifest[0], (void *)PhyAddr, sizeof(Manifest_TypeDef));
+	BOOT_ImgCopy((void *)&Manifest[0], (void *)ImgAddr, sizeof(Manifest_TypeDef));
 
 	/* 3. verify signature */
 	assert_param(Cnt <= sizeof(SubImgInfo) / sizeof(SubImgInfo_TypeDef));
@@ -525,7 +488,6 @@ Fail:
 	RTK_LOGE(TAG, "FULLMAC IMG2 Load IMG Fail!\n");
 	/* stuck and clear msp if boot fail */
 	SBOOT_Validate_Fail_Stuck(FALSE);
-#endif
 }
 
 u8 BOOT_OTA_IMG(void)

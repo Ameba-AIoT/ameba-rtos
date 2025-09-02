@@ -62,6 +62,9 @@ ameba_list_append_if(CONFIG_AMEBASMART private_sources
     ${c_SOC_TYPE}/ameba_audio_stream_audio_patch.c
 )
 
+ameba_list_append_if(CONFIG_AMEBALITE private_sources
+    ${c_SOC_TYPE}/ameba_audio_stream_audio_patch.c
+)
 
 ameba_list_append(private_includes
     ${c_CMPT_AUDIO_DIR}/interfaces
@@ -73,6 +76,7 @@ ameba_list_append(private_includes
     ${c_CMPT_BLUETOOTH_DIR}/osif
     ${c_CMPT_BLUETOOTH_DIR}/bt_audio/bt_codec/sbc/decoder/include
     ${c_CMPT_BLUETOOTH_DIR}/bt_audio/bt_codec/sbc/encoder/include
+    ${c_CMPT_BLUETOOTH_DIR}/bt_audio/bt_codec
 )
 
 ameba_list_append(private_definitions

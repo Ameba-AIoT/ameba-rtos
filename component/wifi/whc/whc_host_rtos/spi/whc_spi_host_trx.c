@@ -29,6 +29,7 @@ extern struct whc_spi_host_priv_t spi_host_priv;
 extern struct event_priv_t event_priv;
 u8 tx_buf[fix_tx_buf_num][4 + SPI_BUFSZ] = {0};
 u8 used_buf_num = 0;
+extern int whc_host_init_done;
 
 /* -------------------------------- spi --------------------------------- */
 /**
@@ -68,7 +69,7 @@ int whc_spi_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	struct whc_msg_info *msg;
 	struct whc_txbuf_info_t *inic_tx = rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
 
-	if (!event_priv.host_init_done) {
+	if (!whc_host_init_done) {
 		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Host trx err: wifi not init\n");
 		return -RTK_ERR_WIFI_NOT_INIT;
 	}
@@ -126,7 +127,7 @@ int whc_spi_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 * @param  len: real buf address, to be freed after sent.
 * @return none.
 */
-void whc_bridge_spi_host_send_to_dev(u8 *buf, u32 len)
+void whc_spi_host_send_to_dev(u8 *buf, u32 len)
 {
 	struct whc_cmd_path_hdr *hdr = NULL;
 	u8 *txbuf = NULL;

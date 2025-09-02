@@ -3,6 +3,7 @@
 struct whc_spi_host_priv_t spi_host_priv = {0};
 
 extern struct event_priv_t event_priv;
+int whc_host_init_done;
 
 extern void whc_host_api_task(void);
 void(*bt_inic_spi_recv_host_ptr)(uint8_t *buffer, uint16_t len);
@@ -130,9 +131,11 @@ int whc_spi_host_recv_process(void)
 	GDMA_InitTypeDef *GDMA_InitStruct = &(spi_host_priv.SSIRxGdmaInitStruct);
 	u8 *recv_msg = spi_host_priv.rx_buf;
 
-#ifdef CONFIG_WHC_BRIDGE_HOST
+#ifdef CONFIG_WHC_CMD_PATH
 	struct whc_cmd_path_hdr *hdr = NULL;
-#else
+#endif
+
+#ifdef CONFIG_WHC_WIFI_API_PATH
 	struct whc_api_info *ret_msg;
 	u8 *buf = NULL;
 	int counter = 0;
@@ -149,7 +152,7 @@ int whc_spi_host_recv_process(void)
 	case WHC_WIFI_EVT_RECV_PKTS:
 		whc_spi_host_rx_handler(recv_msg);
 		break;
-#ifndef CONFIG_WHC_BRIDGE_HOST
+#ifdef CONFIG_WHC_WIFI_API_PATH
 	case WHC_WIFI_EVT_API_CALL:
 		buf = rtos_mem_zmalloc(SPI_BUFSZ);
 		memcpy(buf, recv_msg, SPI_BUFSZ);
@@ -189,6 +192,15 @@ int whc_spi_host_recv_process(void)
 	case WHC_CUST_EVT:
 		whc_host_recv_cust_evt(spi_host_priv.rx_buf + SIZE_RX_DESC);
 		break;
+#endif
+
+#ifdef CONFIG_WHC_CMD_PATH
+	case WHC_WIFI_EVT_BRIDGE:
+		hdr = (struct whc_cmd_path_hdr *)recv_msg;
+		whc_host_pkt_rx_to_user((u8 *)(hdr + 1), hdr->len);
+		break;
+#endif
+
 	default:
 		if (event >= WHC_BT_EVT_BASE) {
 			/* copy by bt, skb no change */
@@ -197,15 +209,7 @@ int whc_spi_host_recv_process(void)
 			}
 		}
 		RTK_LOGD(TAG_WLAN_INIC,  "%s: unknown event:%x\n", __func__, event);
-#else
-	case WHC_WIFI_EVT_BRIDGE:
-		hdr = (struct whc_cmd_path_hdr *)recv_msg;
-		whc_host_pkt_rx_to_user((u8 *)(hdr + 1), hdr->len);
 		break;
-
-	default:
-		break;
-#endif
 	}
 
 	rtos_mem_free(recv_msg);
@@ -617,7 +621,7 @@ bool whc_spi_host_txdma_init(
 * @param  buf_alloc: real buf address, to be freed after sent.
 * @return none.
 */
-void whc_spi_host_send_to_dev(u8 *buf, u8 *buf_alloc, u16 len)
+void whc_spi_host_send_to_dev_internal(u8 *buf, u8 *buf_alloc, u16 len)
 {
 	struct whc_txbuf_info_t *inic_tx;
 
@@ -730,7 +734,7 @@ static void whc_spi_host_drv_init(void)
 		RTK_LOGE(TAG_WLAN_INIC, "!!!dev busy\n");
 	}
 
-#ifndef CONFIG_WHC_BRIDGE_HOST
+#ifdef CONFIG_WHC_WIFI_API_PATH
 	/* init event priv */
 	rtos_sema_create(&(event_priv.task_wake_sema), 0, 0xFFFFFFFF);
 	rtos_sema_create(&(event_priv.api_ret_sema), 0, 0xFFFFFFFF);
@@ -762,7 +766,7 @@ void whc_spi_host_init(void)
 	/* init spi */
 	whc_spi_host_spi_init();
 
-	event_priv.host_init_done = 1;
+	whc_host_init_done = 1;
 }
 
 

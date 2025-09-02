@@ -69,7 +69,7 @@ set(private_compile_options)         #private compile_options
 set(is_internal_library TRUE)
 set(target_name)
 
-if(CONFIG_WIFI_HOST_CONTROL)
+if(CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF_IPC)
     ameba_list_append(private_sources
         whc_dev/whc_dev_msg_queue.c
         whc_dev/whc_dev_trx.c
@@ -97,7 +97,7 @@ if(CONFIG_WIFI_HOST_CONTROL)
         if(CONFIG_RTW_CLI AND CONFIG_WPA_LITE)
             ameba_list_append(private_sources
                 whc_dev/whc_dev_rtw_cli/whc_dev_rtw_cli_cmd_parse.c
-		whc_dev/whc_dev_rtw_cli/whc_dev_rtw_cli_common.c
+                whc_dev/whc_dev_rtw_cli/whc_dev_rtw_cli_common.c
                 whc_dev/whc_dev_rtw_cli/wpa_lite_intf/whc_wpa_lite_app.c
             )
         elseif(CONFIG_RTW_CLI AND CONFIG_WPA_STD)
@@ -108,6 +108,24 @@ if(CONFIG_WIFI_HOST_CONTROL)
             )
         endif()
 
+    endif()
+endif()
+
+
+if(CONFIG_WHC_HOST AND NOT CONFIG_WHC_INTF_IPC)
+    if(CONFIG_WHC_CMD_PATH)
+        ameba_list_append(private_sources
+        whc_host_rtos/whc_host_app.c
+        )
+    endif()
+
+    if(CONFIG_WHC_WIFI_API_PATH)
+        ameba_list_append(private_sources
+            whc_host_rtos/whc_host_api.c
+            whc_host_rtos/whc_host_api_basic.c
+            whc_host_rtos/whc_host_api_ext.c
+            whc_host_rtos/whc_host_cust_evt.c
+        )
     endif()
 endif()
 
@@ -151,18 +169,7 @@ elseif(CONFIG_WHC_HOST)
             whc_host_rtos/spi/whc_spi_host.c
             whc_host_rtos/spi/whc_spi_host_trx.c
         )
-        if(CONFIG_WHC_BRIDGE_HOST)
-            ameba_list_append(private_sources
-            whc_host_rtos/whc_host_app.c
-            )
-        else()
-            ameba_list_append(private_sources
-                whc_host_rtos/whc_host_api.c
-                whc_host_rtos/whc_host_api_basic.c
-                whc_host_rtos/whc_host_api_ext.c
-                whc_host_rtos/whc_host_cust_evt.c
-            )
-        endif()
+
         set(target_name wifi_whc_spi_host)
     elseif(CONFIG_WHC_INTF_SDIO)
         ameba_list_append(private_sources
@@ -172,11 +179,6 @@ elseif(CONFIG_WHC_HOST)
             whc_host_rtos/sdio/whc_sdio_host_trx.c
             whc_host_rtos/sdio/whc_sdio_init.c
         )
-        if(CONFIG_WHC_BRIDGE_HOST)
-            ameba_list_append(private_sources
-                whc_host_rtos/whc_host_app.c
-            )
-        endif()
         set(target_name wifi_whc_sdio_host)
     else()
         ameba_list_append(private_sources
@@ -256,7 +258,7 @@ if(CONFIG_WHC_INTF_USB)
 endif()
 
 
-if(CONFIG_WIFI_HOST_CONTROL)
+if(CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF_IPC)
     if(CONFIG_WHC_CMD_PATH)
         if(CONFIG_RTW_CLI)
             ameba_list_append(private_includes ${c_CMPT_WIFI_DIR}/whc/whc_dev/whc_dev_rtw_cli)

@@ -60,7 +60,7 @@ static usbd_config_t msc_cfg = {
 	.dma_enable = 1U,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
-	.ext_intr_en = USBD_EPMIS_INTR,
+	.ext_intr_enable = USBD_EPMIS_INTR,
 	.nptx_max_epmis_cnt = 100U,
 #elif defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 660U,

@@ -3328,6 +3328,8 @@ int ble_mesh_provisioner_scatternet_main(uint8_t enable)
 		bt_app_conf.max_tx_octets = 0x40;
 		bt_app_conf.max_tx_time = 0x200;
 
+		// the mesh multiple user ADV start success event will report through RTK_BT_LE_GP_MESH_STACK group callback, so shold regist callback before call start ADV API
+		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_STACK, ble_mesh_stack_app_callback));
 		/* Enable BT */
 		BT_APP_PROCESS(rtk_bt_enable(&bt_app_conf));
 
@@ -3357,8 +3359,6 @@ int ble_mesh_provisioner_scatternet_main(uint8_t enable)
 		BT_APP_PROCESS(gaps_client_add());
 		BT_APP_PROCESS(simple_ble_client_add());
 
-		// the mesh multiple user ADV start success event will report through RTK_BT_LE_GP_MESH_STACK group callback, so shold regist callback before call start ADV API
-		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_STACK, ble_mesh_stack_app_callback));
 		BT_APP_PROCESS(rtk_bt_le_gap_set_adv_data(adv_data, sizeof(adv_data)));
 		BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&adv_param));
 

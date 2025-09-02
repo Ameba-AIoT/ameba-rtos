@@ -34,6 +34,7 @@ const struct cmd_func_t rtw_cli_cmd_handlers[] = {
 	{"select_network",  rtw_cli_cmd_set_network, CMD_WIFI_SEND_BUF, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SET_NETWORK},
 	{"disconnect",      rtw_cli_cmd_set_network, CMD_WIFI_SEND_BUF, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SET_NETWORK},
 	{"status",          rtw_cli_cmd_set_network, CMD_WIFI_SEND_BUF, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SET_NETWORK},
+	{"wpas_cmd",        rtw_cli_cmd_set_network, CMD_WIFI_SEND_BUF, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SET_NETWORK},
 	{"scan",            rtw_cli_cmd_scan, CMD_WIFI_DO_SCAN, WHC_WPA_OPS_CUSTOM_API, WHC_WPA_OPS_CUSTOM_API_SCAN},
 	{"scan_result",     rtw_cli_cmd_scan_result, CMD_WIFI_SCAN_RESULT, 0, 0},
 	{"join_event",      rtw_cli_cmd_get_join_status, CMD_WIFI_GET_JOIN_EVENT, 0, 0},

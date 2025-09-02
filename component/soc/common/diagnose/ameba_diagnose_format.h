@@ -87,7 +87,7 @@ enum diag_evt_wifi {
 };
 
 struct diag_evt_wifi_disconn { /*DIAG_EVT_WIFI_DISCONN*/
-	u16 reason;/*enum rtw_disconn_rsn in wifi_api_types.h*/
+	u16 reason;/*enum rtw_disconn_reason in wifi_api_types.h*/
 } __PACKED;
 
 struct diag_evt_wifi_join_fail { /*DIAG_EVT_WIFI_JOIN_FAIL*/

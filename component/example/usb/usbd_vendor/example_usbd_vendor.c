@@ -62,19 +62,19 @@ static usbd_config_t vendor_cfg = {
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAD) || defined(CONFIG_AMEBADPLUS)
 	/* EOPF for ISOC OUT */
-	.ext_intr_en = USBD_EPMIS_INTR | USBD_EOPF_INTR,
+	.ext_intr_enable = USBD_EPMIS_INTR | USBD_EOPF_INTR,
 	.nptx_max_epmis_cnt = 100U,
 	/*DFIFO total 1024 DWORD, resv 8 DWORD for DMA addr*/
 #elif defined (CONFIG_AMEBAGREEN2)
 	/*DFIFO total 1024 DWORD, resv 12 DWORD for DMA addr and EP0 fixed 32 DWORD*/
 	.rx_fifo_depth = 292U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 256U, 128U, },
-	.ext_intr_en = USBD_EOPF_INTR,//for ISOC OUT
+	.ext_intr_enable = USBD_EOPF_INTR,//for ISOC OUT
 #elif defined (CONFIG_AMEBASMARTPLUS)
 	/*DFIFO total 1280 DWORD, resv 14 DWORD for DMA addr and EP0 fixed 32 DWORD*/
 	.rx_fifo_depth = 402U,
 	.ptx_fifo_depth = {256U, 256U, 32U, 256U, 32U},
-	//.ext_intr_en =  USBD_EOPF_INTR,
+	//.ext_intr_enable =  USBD_EOPF_INTR,
 #elif defined (CONFIG_AMEBAL2)
 	/*DFIFO total 1024 DWORD, resv 11 DWORD for DMA addr and EP0 fixed 32 DWORD*/
 	.rx_fifo_depth = 405U,

@@ -1511,12 +1511,12 @@ typedef struct {
 
 /* MMC commands */                              /* response type */
 #define SDMMC_GO_IDLE_STATE               0       /* R0 */
-#define SDMMC_SEND_OP_COND                1       /* R3 */
+#define SDMMC_SEND_OP_COND                1       /* R3, for MMC */
 #define SDMMC_ALL_SEND_CID                2       /* R2 */
 #define SDMMC_SET_RELATIVE_ADDR           3       /* R1 */
 #define SDMMC_SWITCH                      6       /* R1B */
 #define SDMMC_SELECT_CARD                 7       /* R1 */
-#define SDMMC_SEND_EXT_CSD                8       /* R1 */
+#define SDMMC_SEND_EXT_CSD                8       /* R1, for MMC */
 #define SDMMC_SEND_CSD                    9       /* R2 */
 #define SDMMC_SEND_CID                    10      /* R1 */
 #define SDMMC_READ_DAT_UNTIL_STOP         11      /* R1 */
@@ -1634,10 +1634,15 @@ typedef struct {
  * @brief Definitions of SD timeout
  */
 #define SDMMC_WAIT_FOREVER (0xFFFFFFFFU)
-#define SDMMC_CMD_TIMEOUT 5000000U // Command send and response timeout(us)
-#define SDMMC_DAT_TIMEOUT 5000000U // Hardware Data timeout(us)
-#define SDMMC_ERASE_TIMEOUT 63000000U // Max erase timeout(us): 63s
-#define SDMMC_STOP_TRANS_TIMEOUT 100000000U // STOP TRANSMISSION command timeout(us): 100s
+
+#define SDMMC_CMD_TIMEOUT 5000U // Command send and response timeout(us): 5ms
+#define SDMMC_DAT_TIMEOUT 1000000U // Hardware Data timeout(us): 1s
+
+#define SDMMC_READ_TIMEOUT 100000U // Read timeout(us): 100ms
+#define SDMMC_WRITE_TIMEOUT 500000U // Write timeout(us): 500ms
+#define SDMMC_STOP_TRANS_TIMEOUT 500000U // STOP TRANSMISSION command timeout(us): 500ms
+#define SDMMC_ERASE_TIMEOUT 250000U // Erase timeout(us): 250ms
+
 #define SDMMC_MAX_VOLT_TRIAL 0x0000FFFFU
 
 /**
@@ -1950,7 +1955,7 @@ u32 SDMMC_CmdWriteSingleBlock(SDIOHOST_TypeDef *SDIOx, u32 WriteAdd);
 u32 SDMMC_CmdWriteMultiBlock(SDIOHOST_TypeDef *SDIOx, u32 WriteAdd);
 u32 SDMMC_CmdSDEraseStartAdd(SDIOHOST_TypeDef *SDIOx, u32 StartAdd);
 u32 SDMMC_CmdSDEraseEndAdd(SDIOHOST_TypeDef *SDIOx, u32 EndAdd);
-u32 SDMMC_CmdErase(SDIOHOST_TypeDef *SDIOx);
+u32 SDMMC_CmdErase(SDIOHOST_TypeDef *SDIOx, u32 BlockCnt);
 u32 SDMMC_CmdStopTransfer(SDIOHOST_TypeDef *SDIOx);
 u32 SDMMC_CmdSelDesel(SDIOHOST_TypeDef *SDIOx, u32 Addr);
 u32 SDMMC_CmdGoIdleState(SDIOHOST_TypeDef *SDIOx);
@@ -1965,9 +1970,7 @@ u32 SDMMC_CmdSendCSD(SDIOHOST_TypeDef *SDIOx, u32 Argument);
 u32 SDMMC_CmdSetRelAdd(SDIOHOST_TypeDef *SDIOx, u16 *pRCA);
 u32 SDMMC_CmdSendStatus(SDIOHOST_TypeDef *SDIOx, u32 Argument);
 u32 SDMMC_CmdStatusRegister(SDIOHOST_TypeDef *SDIOx);
-u32 SDMMC_CmdOpCondition(SDIOHOST_TypeDef *SDIOx, u32 Argument);
 u32 SDMMC_CmdSwitch(SDIOHOST_TypeDef *SDIOx, u32 Argument);
-u32 SDMMC_CmdSendEXTCSD(SDIOHOST_TypeDef *SDIOx, u32 Argument);
 
 /* SDMMC Commands management functions */
 u32 SDIO_CmdSendOpCond(SDIOHOST_TypeDef *SDIOx, u32 Ocr);
@@ -1976,7 +1979,7 @@ u32 SDIO_CmdRWExtended(SDIOHOST_TypeDef *SDIOx, u32 Argument);
 
 /* SDMMC Responses management functions */
 u32 SDMMC_GetCmdError(SDIOHOST_TypeDef *SDIOx);
-u32 SDMMC_GetCmdResp1(SDIOHOST_TypeDef *SDIOx, u32 Timeout);
+u32 SDMMC_GetCmdResp1(SDIOHOST_TypeDef *SDIOx);
 u32 SDMMC_GetCmdResp1B(SDIOHOST_TypeDef *SDIOx, u32 Timeout);
 u32 SDMMC_GetCmdResp2(SDIOHOST_TypeDef *SDIOx);
 u32 SDMMC_GetCmdResp3(SDIOHOST_TypeDef *SDIOx);

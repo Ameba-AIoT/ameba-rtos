@@ -90,10 +90,10 @@ struct spdio_buf_t {
 
 struct spdio_t {
 	void *priv; //not used by user
-	u32 tx_bd_num; //for spdio send data to host, 2 bd for one packet, so this value must be rounded to 2
-	u32 rx_bd_num; //for spdio receive data from host
-	u32 rx_bd_bufsz; //buffer size = desired packet length + 24(spdio header info), must be rounded to 64
-	struct spdio_buf_t *rx_buf; //buffer array for spdio receive assigned by user, rx_bd_bufsz * rx_bd_num
+	u32 host_rx_bd_num; //for spdio send data to host, 2 bd for one packet, so this value must be rounded to 2
+	u32 host_tx_bd_num; //for spdio receive data from host
+	u32 device_rx_bufsz; //buffer size = desired packet length + 24(spdio header info), must be rounded to 64
+	struct spdio_buf_t *rx_buf; //buffer array for spdio receive assigned by user, device_rx_bufsz * host_tx_bd_num
 
 	/**
 	 * @brief Callback function defined by user, called by spdio when one packet is received.
@@ -104,7 +104,7 @@ struct spdio_t {
 	 * @param type Received packet type, which should be a value of @ref spdio_rx_data_t.
 	 * @retval RTK_SUCCESS or RTK_FAIL.
 	 */
-	char (*rx_done_cb)(void *priv, void *pbuf, u8 *pdata, u16 size, u8 type);
+	char (*device_rx_done_cb)(void *priv, void *pbuf, u8 *pdata, u16 size, u8 type);
 
 	/**
 	 * @brief Callback function defined by user, called by spdio when one packet is sent.
@@ -112,7 +112,7 @@ struct spdio_t {
 	 * @param pbuf Pointer to spdio_buf_t structure which carries the transmit packet.
 	 * @retval RTK_SUCCESS or RTK_FAIL.
 	 */
-	char (*tx_done_cb)(void *priv, void *pbuf);
+	char (*device_tx_done_cb)(void *priv, void *pbuf);
 
 	/**
 	 * @brief Callback function defined by user.

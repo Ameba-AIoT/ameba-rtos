@@ -445,6 +445,12 @@ void whc_usb_dev_send(struct whc_buf_info *pbuf)
 	return;
 }
 
+u8 whc_usb_dev_bus_is_idle(void)
+{
+	/*Not yet implemented*/
+	return TRUE;
+}
+
 u8 whc_usb_dev_tx_path_avail(void)
 {
 	u32 delay_cnt = 0;

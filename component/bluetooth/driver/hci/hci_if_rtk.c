@@ -25,6 +25,8 @@
 #define HCI_IF_TASK_RUNNING 1
 #define HCI_IF_TASK_CLOSING 2
 
+#define IS_ALIGNED(ptr, align) (((uintptr_t)(ptr)) % (align) == 0)
+
 struct tx_packet_t {
 	uint8_t *buf;
 	uint32_t len;
@@ -39,10 +41,14 @@ static struct {
 
 static void rtk_stack_recv(struct hci_rx_packet_t *pkt)
 {
-	uint8_t *buf, offset = H4_HDR_LEN;
+	uint8_t offset = H4_HDR_LEN;
 
-	if (!pkt || !hci_if_rtk.cb) {
+	if (!pkt) {
 		return;
+	}
+
+	if (!hci_if_rtk.cb) {
+		goto fail;
 	}
 
 	if (pkt->type == HCI_ACL || pkt->type == HCI_ISO) {
@@ -51,16 +57,27 @@ static void rtk_stack_recv(struct hci_rx_packet_t *pkt)
 		offset += HCI_H4_RX_SCO_PKT_BUF_OFFSET;
 	}
 
-	buf = (uint8_t *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, pkt->len + offset, 4);
+	if (!IS_ALIGNED(pkt->buf, 4)) {
+		BT_LOGE("rx buf not aligned\r\n");
+		goto fail;
+	}
+	if (pkt->len + offset > hci_rx_buf_size(pkt->type)) {
+		BT_LOGE("rx buf will overflow\r\n");
+		goto fail;
+	}
 
-	memset(buf, 0, offset);
-	buf[0] = pkt->type;
-	memcpy(buf + offset, pkt->buf, pkt->len);
+	memmove(pkt->buf + offset, pkt->buf, pkt->len);
+	memset(pkt->buf, 0, offset);
+	pkt->buf[0] = pkt->type;
 
 	/* If indicate OK, stack will call hci_if_confirm when process of the packet is completed. */
-	if (!hci_if_rtk.cb(HCI_IF_EVT_DATA_IND, true, buf, pkt->len + offset)) {
-		osif_mem_aligned_free(buf);
+	if (!hci_if_rtk.cb(HCI_IF_EVT_DATA_IND, true, pkt->buf, pkt->len + offset)) {
+		goto fail;
 	}
+	return;
+
+fail:
+	hci_rx_pkt_free(pkt);
 }
 
 static struct hci_transport_cb rtk_stack_cb = {
@@ -198,6 +215,5 @@ bool hci_if_write(uint8_t *buf, uint32_t len)
 
 bool hci_if_confirm(uint8_t *buf)
 {
-	osif_mem_aligned_free(buf);
-	return true;
+	return hci_rx_buf_find_free(buf);
 }

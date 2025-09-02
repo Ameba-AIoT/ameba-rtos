@@ -125,6 +125,7 @@ static int32_t PrimaryCreateAudioPatch(struct AudioHwCard *card,
 	(void) sources;
 	(void) num_sinks;
 	(void) sinks;
+	HAL_AUDIO_ERROR("chip only has one i2s, audio patch unsupported");
 	return 0;
 }
 
@@ -132,6 +133,7 @@ static int32_t PrimaryReleaseAudioPatch(struct AudioHwCard *card, int32_t patch_
 {
 	(void) card;
 	(void) patch_index;
+	HAL_AUDIO_ERROR("chip only has one i2s, audio patch unsupported");
 	return 0;
 }
 

@@ -142,7 +142,7 @@ enum rtw_disconn_reason {
 	/*RTK defined: Application layer call some API to cause wifi disconnect.*/
 	RTW_DISCONN_RSN_APP_BASE                            = 60100,
 	RTW_DISCONN_RSN_APP_DISCONN                         = 60101, /*~DIAG: by APP*/
-	RTW_DISCONN_RSN_APP_CONN_WITHOUT_DISCONN            = 60102, /*~DIAG: before connect*/
+	RTW_DISCONN_RSN_APP_CONN_WITHOUT_DISCONN            = 60102, /*~DIAG: disconnect before connecting*/
 	RTW_DISCONN_RSN_APP_BASE_END                        = 60199,
 
 	RTW_DISCONN_RSN_MAX                                 = 65535,/*0xffff*/
@@ -472,7 +472,8 @@ enum rtw_scan_type {
 	RTW_SCAN_PASSIVE        = 0x02,  /**< Passive scan*/
 	RTW_SCAN_NO_HIDDEN_SSID = 0x04,  /**< Filter out hidden SSID APs*/
 	RTW_SCAN_REPORT_EACH    = 0x08,  /**< Report each found AP immediately */
-	RTW_SCAN_WITH_P2P       = 0x10   /**< For P2P usage */
+	RTW_SCAN_WITH_P2P       = 0x10,  /**< For P2P usage */
+	RTW_SCAN_FOR_ZRPP       = 0x20,  /**< For Zero R-mesh Provisioning Protocol usage */
 };
 
 /**
@@ -940,12 +941,22 @@ struct rtw_promisc_para {
 *@brief Provide necessary parameters for set EDCA
 */
 struct rtw_edca_param {
-	u8	aci;  /**< AC_BK, AC_BE, AC_VI, AC_VO */
+	u8	aci;  /**< AC_BE[0], AC_BK[1], AC_VI[2], AC_VO[3] */
 	u8	aci_aifsn; /**< Arbitration inter-frame space number,specifies the inter-frame interval (waiting time) before transmission: unit: (*slot_time), + sifs*/
 	u8	cw_max; /**< Maximum contention window: unit: *slot_time */
 	u8	cw_min; /**< Minimum contention window: unit: *slot_time */
 	u16	txop_limit;/**< Indicates that a single MSDU or MMPDU in addition to a protection frame exchange can be transmitted at any rate*/
 	u8	slot_time;/**< The slot time value mentioned in 802.11 specification in units, Recommended value: 20us for 2G band, 9us for 5G band[value 0 = use internal chipset default] */
+};
+
+/**
+*@brief Provide optional parameters for improving tx performance in special scenario
+*/
+struct rtw_tx_advanced_cfg {
+	u16 pkt_lifetime_bebk;        /**< Packet lifetime in units of 256us for AC_BE/AC_BK. */
+	u16 pkt_lifetime_vivo;        /**< Packet lifetime in units of 256us for AC_VI/AC_VO. */
+	u8 nav_update_th;             /**< Rx NAV (Network Allocation Vector) update threshold in units of 128us[can not tx during Rx NAV]. */
+	u8 b_ignore_tx_nav_done : 1;  /**< Queue BKF not need to wait TX Nav finished. */
 };
 
 /**********************************************************************************************
@@ -957,10 +968,7 @@ struct rtw_edca_param {
 union rtw_speaker_set {
 	struct rtw_speaker_init {
 		u8 mode;                     /**< 0 for slave, 1 for master. */
-		u8 nav_thresh;               /**< NAV (Network Allocation Vector) threshold in units of 128us. */
 		u8 relay_en : 1;             /**< Relay control. */
-		u8 b_ignore_tx_nav_done : 1; /**< Queue BKF not need to wait TX Nav finished. */
-		u16 life_time;               /**< Packet lifetime in units of 256us. */
 	} init; /**< For Wi-Fi speaker setting case @ref RTW_SPEAKER_SET_INIT.*/
 	struct rtw_speaker_i2s {
 		u8 port;           /**< Port selection for TSFT trigger: 0 for port 0, 1 for port 1. */

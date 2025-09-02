@@ -251,6 +251,28 @@ function(ameba_add_external_soc_library name)
     set(c_CURRENT_TARGET_FILE ${c_CURRENT_TARGET_FILE} PARENT_SCOPE)
 endfunction()
 
+function(ameba_add_external_module_library name output_path)
+    set(oneValueArgs
+        p_OUTPUT_NAME               # Set target output name, default: ${name}
+    )
+    cmake_parse_arguments(ARG "" "${oneValueArgs}" "" ${ARGN})
+
+    #NOTE: Only work before release
+    if(CONFIG_AMEBA_RLS)
+        return()
+    endif()
+
+    if (ARG_p_OUTPUT_NAME)
+        ameba_list_remove_key_value(ARGN p_OUTPUT_NAME)
+    else()
+        set(ARG_p_OUTPUT_NAME ${name})
+    endif()
+
+    ameba_add_external_library(${name} ${output_path} ${ARG_p_OUTPUT_NAME} ${ARGN})
+    set(c_CURRENT_TARGET_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
+    set(c_CURRENT_TARGET_FILE ${c_CURRENT_TARGET_FILE} PARENT_SCOPE)
+endfunction()
+
 function(ameba_port_standalone_app_library target output_name)
     #NOTE: Only work before release
     if(CONFIG_AMEBA_RLS)
@@ -379,6 +401,16 @@ function(ameba_add_merge_soc_library output_name)
         return()
     endif()
     ameba_add_merge_library(${output_name} ${c_SDK_LIB_SOC_DIR} ${ARGN})
+    set(c_CURRENT_TARGET_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
+    set(c_CURRENT_TARGET_FILE ${c_CURRENT_TARGET_FILE} PARENT_SCOPE)
+endfunction()
+
+function(ameba_add_merge_module_library output_name output_path)
+    #NOTE: Only work before release
+    if(CONFIG_AMEBA_RLS)
+        return()
+    endif()
+    ameba_add_merge_library(${output_name} ${output_path} ${ARGN})
     set(c_CURRENT_TARGET_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
     set(c_CURRENT_TARGET_FILE ${c_CURRENT_TARGET_FILE} PARENT_SCOPE)
 endfunction()

@@ -37,8 +37,8 @@
   - Connect `SPI0_CS (_PB_0)` to `SPI1_CS (_PC_0)`
 
 2. If you have SPI master device, then you can ignore step2(3), and goto step3 directly.
-3. We offer another example named "spi_dma_multi_block_continue_tx_master", it can be used for SPI master to communicate data with this example.
-4. If you use example of "spi_dma_multi_block_continue_tx_master", then you should build its image and download into another EVB board.
+3. We offer another example named "raw_spi_dma_mblk_tx_mstr", it can be used for SPI master to communicate data with this example.
+4. If you use example of "raw_spi_dma_mblk_tx_mstr", then you should build its image and download into another EVB board.
 
 # SW configuration
 

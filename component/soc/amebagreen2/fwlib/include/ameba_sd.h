@@ -91,14 +91,8 @@ typedef u32 SD_CardStateTypeDef;
 typedef struct {
 	u8 sdioh_bus_speed;		/*!< Specify SD Host bus speed, should be SD_SPEED_DS or SD_SPEED_HS*/
 	u8 sdioh_bus_width;		/*!< Specify SD Host bus width, should be a value of @ref SD_Bus_Width */
-	u32 sdioh_clk_pin;		/*!< Specify CLK pin, refer to pinmux table */
-	u32 sdioh_cmd_pin;		/*!< Specify CMD pin, refer to pinmux table */
-	u32 sdioh_d0_pin;		/*!< Specify D0 pin, refer to pinmux table */
-	u32 sdioh_d1_pin;		/*!< Specify D1 pin, refer to pinmux table */
-	u32 sdioh_d2_pin;		/*!< Specify D2 pin, refer to pinmux table */
-	u32 sdioh_d3_pin;		/*!< Specify D3 pin, refer to pinmux table */
-	u32 sdioh_cd_pin;		/*!< Specify Card Detect pin, should be a value of _PNC or useful gpio */
-	u32 sdioh_wp_pin;		/*!< Specify Write Protection pin, should be a value of _PNC or useful gpio */
+	u32 sdioh_cd_pin;		/*!< Specify Card Detect pin, should be a value of _PNC or available gpio pad */
+	u32 sdioh_wp_pin;		/*!< Specify Write Protection pin, should be a value of _PNC or available gpio pad */
 } SDIOHCFG_TypeDef;
 
 /**

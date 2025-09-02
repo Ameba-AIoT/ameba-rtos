@@ -37,11 +37,11 @@ static char whc_sdio_dev_rpwm_cb(void *priv, u16 value)
 
 	if (value & RPWM2_CG_BIT) {
 		SDIO_SetReady(SDIO_WIFI, DISABLE);
-		pmu_release_wakelock(PMU_FULLMAC_WIFI);
+		pmu_release_wakelock(PMU_WHC_WIFI);
 	}
 
 	if (value & RPWM2_ACT_BIT) {
-		pmu_acquire_wakelock(PMU_FULLMAC_WIFI);
+		pmu_acquire_wakelock(PMU_WHC_WIFI);
 		SDIO_SetReady(SDIO_WIFI, ENABLE);
 #if defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
 		extern void wifi_hal_system_resume_wlan(void);
@@ -91,7 +91,7 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 		rx_skb = (struct sk_buff *)rx_buf->priv;
 
 		if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 5) ||
-			((new_skb = dev_alloc_skb(SPDIO_RX_BUFSZ, SPDIO_SKB_RSVD_LEN)) == NULL)) {
+			((new_skb = dev_alloc_skb(SPDIO_DEVICE_RX_BUFSZ, SPDIO_SKB_RSVD_LEN)) == NULL)) {
 #ifndef CONFIG_WHC_BRIDGE
 			/* resume pending queue to release skb */
 			rtw_pending_q_resume();
@@ -101,7 +101,7 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 
 		/* assign new buffer for SPDIO RX ring */
 		rx_buf->buf_allocated = rx_buf->buf_addr = (u32) new_skb->data;
-		rx_buf->size_allocated = sdio_priv.dev.rx_bd_bufsz;
+		rx_buf->size_allocated = sdio_priv.dev.device_rx_bufsz;
 		rx_buf->priv = new_skb;
 
 		/* handle buf data */
@@ -123,7 +123,7 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 	} else if (event >= WHC_BT_EVT_BASE && event <= WHC_BT_EVT_MAX) {
 		/* copy by bt, skb no change */
 		if (bt_inic_sdio_recv_ptr) {
-			bt_inic_sdio_recv_ptr(pdata, SPDIO_RX_BUFSZ);
+			bt_inic_sdio_recv_ptr(pdata, SPDIO_DEVICE_RX_BUFSZ);
 		}
 #endif
 
@@ -153,22 +153,22 @@ void whc_sdio_dev_device_init(void)
 	struct spdio_t *dev = &sdio_priv.dev;
 
 	dev->priv = NULL;
-	dev->rx_bd_num = SPDIO_RX_BD_NUM;
-	dev->tx_bd_num = SPDIO_TX_BD_NUM;
-	dev->rx_bd_bufsz = SPDIO_RX_BUFSZ;
+	dev->host_tx_bd_num = SPDIO_HOST_TX_BD_NUM;
+	dev->host_rx_bd_num = SPDIO_HOST_RX_BD_NUM;
+	dev->device_rx_bufsz = SPDIO_DEVICE_RX_BUFSZ;
 
-	dev->rx_buf = (struct spdio_buf_t *)rtos_mem_zmalloc(dev->rx_bd_num * sizeof(struct spdio_buf_t));
+	dev->rx_buf = (struct spdio_buf_t *)rtos_mem_zmalloc(dev->host_tx_bd_num * sizeof(struct spdio_buf_t));
 	if (!dev->rx_buf) {
 		RTK_LOGE(TAG_WLAN_INIC, "malloc failed for spdio buffer structure!\n");
 		return;
 	}
-	//DiagPrintf("%s %d %d %d dev->rx_bd_num: %d\r\n", __func__, __LINE__, SPDIO_RX_BUFSZ, SPDIO_SKB_RSVD_LEN, dev->rx_bd_num);
+	//DiagPrintf("%s %d %d %d dev->host_tx_bd_num: %d\r\n", __func__, __LINE__, SPDIO_DEVICE_RX_BUFSZ, SPDIO_SKB_RSVD_LEN, dev->host_tx_bd_num);
 
-	for (i = 0; i < dev->rx_bd_num; i++) {
-		skb = dev_alloc_skb(SPDIO_RX_BUFSZ, SPDIO_SKB_RSVD_LEN);
+	for (i = 0; i < dev->host_tx_bd_num; i++) {
+		skb = dev_alloc_skb(SPDIO_DEVICE_RX_BUFSZ, SPDIO_SKB_RSVD_LEN);
 
 		dev->rx_buf[i].buf_allocated = dev->rx_buf[i].buf_addr = (u32) skb->data;
-		dev->rx_buf[i].size_allocated = dev->rx_bd_bufsz;
+		dev->rx_buf[i].size_allocated = dev->device_rx_bufsz;
 		dev->rx_buf[i].priv = skb;
 
 		// this buffer must be 4 byte alignment
@@ -178,8 +178,8 @@ void whc_sdio_dev_device_init(void)
 		}
 	}
 
-	dev->rx_done_cb = whc_sdio_dev_rx_done_cb;
-	dev->tx_done_cb = whc_sdio_dev_tx_done_cb;
+	dev->device_rx_done_cb = whc_sdio_dev_rx_done_cb;
+	dev->device_tx_done_cb = whc_sdio_dev_tx_done_cb;
 	dev->rpwm_cb = whc_sdio_dev_rpwm_cb;
 
 	rtos_mutex_create_static(&sdio_priv.tx_lock);
@@ -189,10 +189,10 @@ void whc_sdio_dev_device_init(void)
 
 #ifndef CONFIG_WHC_BRIDGE
 	/* take lock after host ready in bridge mode */
-	pmu_acquire_wakelock(PMU_FULLMAC_WIFI);
+	pmu_acquire_wakelock(PMU_WHC_WIFI);
 #endif
 
-	pmu_register_sleep_callback(PMU_FULLMAC_WIFI, (PSM_HOOK_FUN)whc_sdio_dev_suspend, NULL, (PSM_HOOK_FUN)whc_sdio_dev_resume, NULL);
+	pmu_register_sleep_callback(PMU_WHC_WIFI, (PSM_HOOK_FUN)whc_sdio_dev_suspend, NULL, (PSM_HOOK_FUN)whc_sdio_dev_resume, NULL);
 
 	RTK_LOGI(TAG_WLAN_INIC, "SDIO device init done!\n");
 
@@ -269,6 +269,12 @@ void whc_sdio_dev_send(struct spdio_buf_t *pbuf)
 	rtos_mutex_give(sdio_priv.tx_lock);
 
 	return;
+}
+
+u8 whc_sdio_dev_bus_is_idle(void)
+{
+	/*Not yet implemented*/
+	return TRUE;
 }
 
 /**

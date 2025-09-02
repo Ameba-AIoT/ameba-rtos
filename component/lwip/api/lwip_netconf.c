@@ -3,6 +3,9 @@
 #include "lwip_netconf.h"
 #include "atcmd_service.h"
 #include "wifi_intf_drv_to_upper.h"
+#ifdef CONFIG_STANDARD_TICKLESS
+#include "ameba_pmu.h"
+#endif
 
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 #include "wifi_fast_connect.h"
@@ -140,6 +143,9 @@ void LwIP_Init(void)
 #endif
 
 	lwip_init_done = 1;
+#ifdef CONFIG_STANDARD_TICKLESS
+	pmu_register_sleep_callback(PMU_LWIP_STACK, (PSM_HOOK_FUN)lwip_rm_unneeded_tmr, NULL, NULL, NULL);
+#endif
 	RTK_LOGS(TAG_WLAN_DRV, RTK_LOG_INFO, "LWIP consume heap %d\n", heap - rtos_mem_get_free_heap_size() - 4 * TCPIP_THREAD_STACKSIZE);
 }
 
@@ -597,4 +603,23 @@ void LwIP_Check_Connectivity(void)
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Please use AT+WLCONN to connect AP first time\n");
 		rtos_time_delay_ms(2000);
 	}
+}
+
+/**
+  * @brief  For sta get ipv4(dhcp) and ipv6 address
+  * @param  None
+  * @retval -1 for failed
+  */
+
+uint8_t LwIP_IP_Address_Request(void)
+{
+	uint8_t ret = -1;
+#if LWIP_IPV6
+	struct netif *pnetif = &xnetif[STA_WLAN_INDEX];
+	LwIP_AUTOIP_IPv6(pnetif);
+#endif
+#if LWIP_IPV4
+	ret = LwIP_DHCP(STA_WLAN_INDEX, DHCP_START);
+#endif
+	return ret;
 }

@@ -823,6 +823,7 @@ static void ameba_audio_stream_rx_start_in_irq_mode(Stream *stream)
 		}
 
 		AUDIO_SP_RXStart(cstream->stream.sport_dev_num, ENABLE);
+		cstream->stream.trigger_tstamp = ameba_audio_get_now_ns();
 
 		cstream->stream.start_gdma = true;
 	}
@@ -836,6 +837,8 @@ static void ameba_audio_stream_rx_start_in_irq_mode(Stream *stream)
 	}
 	ameba_audio_dump_codec_regs();
 #endif
+
+	HAL_AUDIO_INFO("rx start at:%lldns", cstream->stream.trigger_tstamp);
 
 }
 

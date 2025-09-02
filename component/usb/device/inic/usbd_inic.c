@@ -1587,6 +1587,9 @@ int usbd_inic_deinit(void)
 	usbd_otp_t *otp = &idev->otp;
 
 	rtos_task_delete(idev->reset_task);
+	rtos_sema_delete(idev->reset_sema);
+
+	usbd_unregister_class();
 
 	if (idev->cb != NULL) {
 		if (idev->cb->deinit != NULL) {
@@ -1594,10 +1597,6 @@ int usbd_inic_deinit(void)
 		}
 		idev->cb = NULL;
 	}
-
-	usbd_unregister_class();
-
-	rtos_sema_delete(idev->reset_sema);
 
 	usbd_otp_deinit(otp);
 

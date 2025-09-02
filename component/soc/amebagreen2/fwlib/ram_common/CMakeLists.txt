@@ -63,7 +63,7 @@ ameba_list_append(private_sources
     ameba_pmu.c
     ameba_gdma_ram.c
     ameba_ppe.c
-    ameba_can.c
+    ameba_a2c.c
     ameba_captouch.c
     ameba_thermal.c
     ameba_sd_host.c
@@ -77,6 +77,7 @@ ameba_list_append(private_sources
     ameba_loguart.c
     ameba_audio_clock.c
     ameba_pmc_com.c
+    ameba_sdio_device.c
 )
 
 ameba_list_append(private_includes

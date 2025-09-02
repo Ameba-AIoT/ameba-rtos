@@ -92,8 +92,25 @@ typedef struct {
   * @{
   */
 
-/* Macro to calculate actual density in Mb */
-#define MCM_MEM_SIZE_MBITS_CALC(code)	((code) == 0 ? 0 : 32 << ((code) - 1))
+/*
+ * Calculate the actual memory size in Megabits (Mb).
+ * If code is 0, it represents a size of 0 Mbits.
+ * Otherwise, the size is calculated as 4 << (code - 1).
+ * Example: For a code of 0x4, this calculates to 32 Mbits.
+ */
+#define MCM_MEM_SIZE_MBITS_CALC(code)		((code) == 0 ? 0 : 4 << ((code) - 1))
+
+/*
+ * Convert memory size from Megabits (Mb) to Bytes.
+ * Example: If the code is 0x4, indecating in 32 Mbits, the conversion yields 0x400000 Bytes.
+ */
+#define MCM_MEM_SIZE_IN_BYTES(code)			(MCM_MEM_SIZE_MBITS_CALC(code) * 1024 * 1024 / 8)
+
+/*
+ * Convert memory size from Megabits (Mb) to KBytes.
+ * Example: If the code is 0x4, indecating in 32 Mbits, the conversion yields 4096 KBytes.
+ */
+#define MCM_MEM_SIZE_IN_KBYTES(code)		(MCM_MEM_SIZE_MBITS_CALC(code) * 1024 * 1024 / 8 / 1024)
 
 /******************* PSRAM Information Start *******************/
 
@@ -104,11 +121,14 @@ typedef struct {
 
 /* PSRAM Size Definitions */
 #define MCM_PSRAM_SIZE_UNKNOWN     0x0  /* Unknown size */
-#define MCM_PSRAM_SIZE_32Mb        0x1  /* 32 << 0 */
-#define MCM_PSRAM_SIZE_64Mb        0x2  /* 32 << 1 */
-#define MCM_PSRAM_SIZE_128Mb       0x3  /* 32 << 2 */
-#define MCM_PSRAM_SIZE_256Mb       0x4  /* 32 << 3 */
-#define MCM_PSRAM_SIZE_512Mb       0x5  /* 32 << 4 */
+#define MCM_PSRAM_SIZE_4Mb         0x1  /* 4 << 0 */
+#define MCM_PSRAM_SIZE_8Mb         0x2  /* 4 << 1 */
+#define MCM_PSRAM_SIZE_16Mb        0x3  /* 4 << 2 */
+#define MCM_PSRAM_SIZE_32Mb        0x4  /* 4 << 3 */
+#define MCM_PSRAM_SIZE_64Mb        0x5  /* 4 << 4 */
+#define MCM_PSRAM_SIZE_128Mb       0x6  /* 4 << 5 */
+#define MCM_PSRAM_SIZE_256Mb       0x7  /* 4 << 6 */
+#define MCM_PSRAM_SIZE_512Mb       0x8  /* 4 << 7 */
 
 /* PSRAM DQ Types */
 #define MCM_PSRAM_DQ_INVALID       0x0  /* Invalid or unspecified data width */
@@ -121,9 +141,9 @@ typedef struct {
 
 /* DDR Size Definitions */
 #define MCM_DDR_SIZE_UNKNOWN       0x0  /* Unknown size */
-#define MCM_DDR_SIZE_512Mb         0x5  /* 32 << 4 */
-#define MCM_DDR_SIZE_1Gb           0x6  /* 32 << 5 */
-#define MCM_DDR_SIZE_2Gb           0x7  /* 32 << 6 */
+#define MCM_DDR_SIZE_512Mb         0x8  /* 4 << 7 */
+#define MCM_DDR_SIZE_1Gb           0x9  /* 4 << 8 */
+#define MCM_DDR_SIZE_2Gb           0xA  /* 4 << 9 */
 
 /* DDR Model Types */
 #define MCM_DDR_TYPE_INVALID       0x0  /* Invalid or unspecified DDR type */
@@ -144,14 +164,17 @@ typedef struct {
 #define MCM_FLASH_SIZE_UNKNOWN     0x0  /* Unknown size */
 
 /* NOR Flash Size Definitions */
-#define MCM_NOR_FLASH_SIZE_32Mb    0x1  /* 32 << 0 */
-#define MCM_NOR_FLASH_SIZE_64Mb    0x2  /* 32 << 1 */
-#define MCM_NOR_FLASH_SIZE_128Mb   0x3  /* 32 << 2 */
-#define MCM_NOR_FLASH_SIZE_256Mb   0x4  /* 32 << 3 */
+#define MCM_NOR_FLASH_SIZE_4Mb     0x1  /* 4 << 0 */
+#define MCM_NOR_FLASH_SIZE_8Mb     0x2  /* 4 << 1 */
+#define MCM_NOR_FLASH_SIZE_16Mb    0x3  /* 4 << 2 */
+#define MCM_NOR_FLASH_SIZE_32Mb    0x4  /* 4 << 3 */
+#define MCM_NOR_FLASH_SIZE_64Mb    0x5  /* 4 << 4 */
+#define MCM_NOR_FLASH_SIZE_128Mb   0x6  /* 4 << 5 */
+#define MCM_NOR_FLASH_SIZE_256Mb   0x7  /* 4 << 6 */
 
 /* NAND Flash Size Definitions */
-#define MCM_NAND_FLASH_SIZE_1Gb    0x6  /* 32 << 5 */
-#define MCM_NAND_FLASH_SIZE_2Gb    0x7  /* 32 << 6 */
+#define MCM_NAND_FLASH_SIZE_1Gb    0x9  /* 4 << 8 */
+#define MCM_NAND_FLASH_SIZE_2Gb    0xA  /* 4 << 9 */
 
 /* Flash Types */
 #define MCM_FLASH_TYPE_INVALID     0x0  /* Invalid or unspecified flash type */
@@ -305,7 +328,6 @@ _LONG_CALL_ u32 ChipInfo_PsramBoundary(void);
 _LONG_CALL_ void EFUSE_GetUUID(u32 *UUID);
 _LONG_CALL_ u8 ChipInfo_Get(void);
 _LONG_CALL_ u16 ChipInfo_BDNum(void);
-_LONG_CALL_ u32 ChipInfo_PSRAMType(void);
 _LONG_CALL_ void ChipInfo_GetSocName_ToBuf(char *buf, size_t buflen);
 _LONG_CALL_ bool ChipInfo_GetChipSram(void);
 _LONG_CALL_ MCM_MemTypeDef ChipInfo_MCMInfo(void);

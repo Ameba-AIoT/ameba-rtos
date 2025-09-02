@@ -337,3 +337,12 @@ int whc_wpa_ops_do_scan(u8 *input, u8 *buf)
 
 }
 
+//Dummy function for wpa_supplicant_std
+int whc_dev_rtw_cli_wpas_test(char *ptr, u8 *buf, int msg_len)
+{
+	(void)ptr;
+	(void)buf;
+	(void)msg_len;
+
+	return 0;
+}

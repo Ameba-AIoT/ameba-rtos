@@ -88,6 +88,7 @@ if("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz")
 
     ameba_list_append_if(CONFIG_WHC_INTF_SDIO private_sources
         hci/sdio/sdio_intf.c
+        hci/sdio/sdio_hal.c
     )
 endif()
 

@@ -557,6 +557,7 @@ _LONG_CALL_ void RTC_Enable(u8 NewState);
 _LONG_CALL_ void RTC_ClkSource_Select(u8 CLK_Source);
 _LONG_CALL_ u32 Get_OSC131_STATE(void);
 _LONG_CALL_ void Set_OSC131_STATE(u32 temp);
+_LONG_CALL_ u32 RTC_GetDetintr(void);
 _LONG_CALL_ void RTC_ClearDetINT(void);
 _LONG_CALL_ u32 RTC_BypassShadowCmd(u32 NewState);
 _LONG_CALL_ void RTC_StructInit(RTC_InitTypeDef *RTC_InitStruct);

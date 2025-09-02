@@ -41,6 +41,7 @@
 
 #define WHC_SPI_CLK_MHZ			    20
 #define WHC_RECOVER_TO_US			1000
+#define WHC_DEV_SPI_TRANSFER_TIMEOUT	1000
 
 #define DEV_DMA_ALIGN				4
 
