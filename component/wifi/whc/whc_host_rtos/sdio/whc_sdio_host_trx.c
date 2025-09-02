@@ -6,6 +6,7 @@ u8 tx_buf[fix_tx_buf_num][4 + SIZE_TX_DESC + MAX_SKB_BUF_SIZE_NORMAL] = {0};
 u8 used_buf_num = 0;
 extern struct whc_sdio whc_sdio_priv;
 extern struct event_priv_t event_priv;
+extern int whc_host_init_done;
 
 /* host tx */
 int whc_sdio_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
@@ -18,7 +19,7 @@ int whc_sdio_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	int len_send = 0;
 	struct whc_msg_info *msg;
 
-	if (!event_priv.host_init_done) {
+	if (!whc_host_init_done) {
 		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Host trx err: wifi not init\n");
 		return -RTK_ERR_WIFI_NOT_INIT;
 	}
@@ -73,7 +74,7 @@ int whc_sdio_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 * @param  len: real buf address, to be freed after sent.
 * @return none.
 */
-void whc_bridge_sdio_host_send_to_dev(u8 *buf, u32 len)
+void whc_sdio_host_send_to_dev(u8 *buf, u32 len)
 {
 	u8 *txbuf = NULL;
 	u32 txsize = len + SIZE_TX_DESC;

@@ -24,6 +24,11 @@ master's GND connect to slave's GND
   - master's `SCL (_PB_16)` connect to slave's `SCL` 
   - master's `GND` connect to slave's `GND` 
 
+* On AMEBADGREEN2
+  - master's`SDA (_PA_26)` connect to slave's `SDA`
+  - master's `SCL (_PA_25)` connect to slave's `SCL`
+  - master's `GND` connect to slave's `GND`
+
 # SW Configuration
 
 1. In this example, we use config I2C_RESTART_DEMO to decide if the master will generate a restart condition.

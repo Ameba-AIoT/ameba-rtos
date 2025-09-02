@@ -11,8 +11,6 @@
 #include "ameba_fault_handle.h"
 
 static const char *const TAG = "BOOT";
-extern u8 SDIO_Pin_Grp;
-extern const u8 SDIO_PAD[5][6];
 
 #define CHECK_AND_PRINT_FLAG(flagValue, bit, name) \
     do { \

@@ -17,5 +17,4 @@ void BOOT_CFG_CORE_Vol(void);
 void BOOT_VerCheck(void);
 void Boot_SDIO_Pinmux_init(void);
 void Boot_Fullmac_LoadIMGAll(void);
-void Boot_SDIO_ImgDownload(void);
 #endif

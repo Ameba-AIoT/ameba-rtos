@@ -242,6 +242,9 @@ bool hci_controller_enable(void)
 		goto fail;
 	}
 
+	/* HCI StandAlone */
+	hci_standalone_open();
+
 	/* HCI Transport Bridge to StandAlone */
 	hci_transport_register(&hci_sa_cb);
 
@@ -263,6 +266,7 @@ fail:
 void hci_controller_disable(void)
 {
 	hci_platform_deinit();  /* Platform Deinit First */
+	hci_standalone_close(); /* HCI StandAlone Close */
 	hci_transport_close();  /* HCI Transport Close */
 
 	_controller_is_enabled = false;

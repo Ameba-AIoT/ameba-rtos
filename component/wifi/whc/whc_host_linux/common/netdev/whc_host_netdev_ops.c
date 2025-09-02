@@ -467,6 +467,7 @@ int rtw_nan_iface_alloc(struct wiphy *wiphy,
 	}
 	global_idev.pndev[2] = ndev;
 	rtw_netdev_idx(ndev) = 2;
+	rtw_netdev_label(ndev) = WIFI_FULLMAC_LABEL;
 	ndev->netdev_ops = &rtw_ndev_ops_nan;
 	ndev->watchdog_timeo = HZ * 3; /* 3 second timeout */
 #ifndef CONFIG_FULLMAC_HCI_IPC

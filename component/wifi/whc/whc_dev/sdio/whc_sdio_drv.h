@@ -1,8 +1,8 @@
 #ifndef _WHC_SDIO_DRV_H_
 #define _WHC_SDIO_DRV_H_
 
-#define SPDIO_TX_BD_NUM	8	//n*2, 2 bd for one transaction
-#define SPDIO_RX_BD_NUM	4
+#define SPDIO_HOST_RX_BD_NUM	8	//n*2, 2 bd for one transaction
+#define SPDIO_HOST_TX_BD_NUM	4
 
 #define DEV_DMA_ALIGN	SPDIO_DMA_ALIGN_4
 

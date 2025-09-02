@@ -8,15 +8,15 @@
 
 void BOOT_SOC_ClkChk(const SocClk_Info_TypeDef *pSocClk_Info)
 {
-	u32 cpu_clk = pSocClk_Info->USBPLL_CLK / pSocClk_Info->CPU_CKD;
+	u32 cpu_clk;
 
 	assert_param(IS_USB_PLL_RANGE(pSocClk_Info->USBPLL_CLK));
 	assert_param(IS_SYS_PLL_RANGE(pSocClk_Info->SYSPLL_CLK));
-	assert_param(IS_CPU_CLK_DIV_RANGE(pSocClk_Info->CPU_CKD));
+	assert_param(IS_CPU_CLK_DIV_RANGE(pSocClk_Info->CPU_CKD & (~IS_SYS_PLL)));
 	assert_param(IS_SOC_CORE_VOLTAGE(pSocClk_Info->Vol_Type));
 
-	if (pSocClk_Info->CPU_CKD & SYS_PLL) {
-		cpu_clk = pSocClk_Info->SYSPLL_CLK / (pSocClk_Info->CPU_CKD & (~SYS_PLL));
+	if (pSocClk_Info->CPU_CKD & IS_SYS_PLL) {
+		cpu_clk = pSocClk_Info->SYSPLL_CLK / (pSocClk_Info->CPU_CKD & (~IS_SYS_PLL));
 	} else {
 		cpu_clk = pSocClk_Info->USBPLL_CLK / pSocClk_Info->CPU_CKD;
 	}

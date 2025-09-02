@@ -139,7 +139,9 @@ s32 wifi_ap_switch_chl_and_inform(struct rtw_csa_parm *csa_param);
   * @brief  Toggle whether SoftAP can be discovered.
   * @param[in]  enable: 1-invisible, 0-visible.
   * @return  None
-  * @note  SoftAP becomes invisible by pausing tx beacon and not responsing to probe request.
+  * @note
+  *    - SoftAP becomes invisible by pausing tx beacon and not responsing to probe request.
+  *    - Should be deauth all associted STAs[ref wifi_ap_del_client()] when set ap invisible.
   */
 void wifi_ap_set_invisible(u8 enable);
 
@@ -590,6 +592,16 @@ void wifi_set_conn_step_try_limit(struct rtw_conn_step_retries *conn_step_retrie
   *      - Get acs report fail
   */
 s32 wifi_acs_find_ideal_channel(struct rtw_acs_config *acs_config, u8 *ideal_ch);
+
+/**
+ * @brief  Configure Wi-Fi tx advanced settings for special scenario.
+ * @param[in]  tx_setting: A pointer to specific parameters.
+ * @return
+ *    - @ref RTK_SUCCESS : The API executed successfully.
+ *    - -@ref RTK_ERR_WIFI_POWEROFF : Wi-Fi is powered off in IPS(Inactive Power Save) mode,
+ *                      unable to access Wi-Fi registers.
+ */
+s32 wifi_set_tx_advanced_config(struct rtw_tx_advanced_cfg *tx_setting);
 
 /** @} End of Extended_Functions group */
 /** @} End of WIFI_Exported_Functions group*/

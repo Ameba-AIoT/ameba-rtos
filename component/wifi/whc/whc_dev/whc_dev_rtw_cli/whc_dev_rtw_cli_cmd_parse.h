@@ -13,6 +13,7 @@
 
 #define BRIDGE_WPA_OPS_BUF_SIZE     1024
 
+extern u8 *whc_rx_msg_free_addr;
 
 #endif //__WHC_DEV_RTW_CLI_CMD_PARSE_H__
 

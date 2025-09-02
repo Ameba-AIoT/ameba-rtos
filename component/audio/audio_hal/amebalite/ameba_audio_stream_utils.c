@@ -566,3 +566,229 @@ bool ameba_audio_sport_started(uint32_t index)
 	return (((SPORTx->SP_CTRL0 & SP_BIT_TX_DISABLE) == 0)
 		&& ((SPORTx->SP_CTRL0 & SP_BIT_START_TX) != 0)) ? true : false;
 }
+
+int32_t ameba_audio_stream_get_direct_out_channel_idx(uint32_t channel)
+{
+	uint32_t direct_out_channel = HAL_OSAL_ERR_INVALID_PARAM;
+	switch (channel)
+	{
+	case 0:
+		direct_out_channel = DIRECT_OUT_CHN0;
+		break;
+	case 1:
+		direct_out_channel = DIRECT_OUT_CHN1;
+		break;
+	case 2:
+		direct_out_channel = DIRECT_OUT_CHN2;
+		break;
+	case 3:
+		direct_out_channel = DIRECT_OUT_CHN3;
+		break;
+	case 4:
+		direct_out_channel = DIRECT_OUT_CHN4;
+		break;
+	case 5:
+		direct_out_channel = DIRECT_OUT_CHN5;
+		break;
+	case 6:
+		direct_out_channel = DIRECT_OUT_CHN6;
+		break;
+	case 7:
+		direct_out_channel = DIRECT_OUT_CHN7;
+		break;
+	default:
+		HAL_AUDIO_ERROR("channel not supported for direct out:%ld", channel);
+		break;
+	}
+
+	return direct_out_channel;
+}
+
+int32_t ameba_audio_stream_get_direct_in_channel_idx(uint32_t channel)
+{
+	uint32_t direct_in_channel = HAL_OSAL_ERR_INVALID_PARAM;
+	switch (channel)
+	{
+	case 0:
+		direct_in_channel = DIRECT_IN_CHN0;
+		break;
+	case 1:
+		direct_in_channel = DIRECT_IN_CHN1;
+		break;
+	case 2:
+		direct_in_channel = DIRECT_IN_CHN2;
+		break;
+	case 3:
+		direct_in_channel = DIRECT_IN_CHN3;
+		break;
+	case 4:
+		direct_in_channel = DIRECT_IN_CHN4;
+		break;
+	case 5:
+		direct_in_channel = DIRECT_IN_CHN5;
+		break;
+	case 6:
+		direct_in_channel = DIRECT_IN_CHN6;
+		break;
+	case 7:
+		direct_in_channel = DIRECT_IN_CHN7;
+		break;
+	default:
+		HAL_AUDIO_ERROR("channel not supported for direct in:%ld", channel);
+		break;
+	}
+
+	return direct_in_channel;
+}
+
+int32_t ameba_audio_stream_get_direct_reg_idx(uint32_t channel)
+{
+	uint32_t direct_reg = HAL_OSAL_ERR_INVALID_PARAM;
+	switch (channel)
+	{
+	case 0:
+		direct_reg = DIRECT_REG_0;
+		break;
+	case 1:
+		direct_reg = DIRECT_REG_1;
+		break;
+	case 2:
+		direct_reg = DIRECT_REG_2;
+		break;
+	case 3:
+		direct_reg = DIRECT_REG_3;
+		break;
+	case 4:
+		direct_reg = DIRECT_REG_4;
+		break;
+	case 5:
+		direct_reg = DIRECT_REG_5;
+		break;
+	case 6:
+		direct_reg = DIRECT_REG_6;
+		break;
+	case 7:
+		direct_reg = DIRECT_REG_7;
+		break;
+	default:
+		HAL_AUDIO_ERROR("channel not supported for direct reg:%ld", channel);
+		break;
+	}
+
+	return direct_reg;
+}
+
+int32_t ameba_audio_stream_get_sp_tx_channel_idx(uint32_t channel)
+{
+	uint32_t sp_tx_channel = HAL_OSAL_ERR_INVALID_PARAM;
+	switch (channel)
+	{
+	case 0:
+		sp_tx_channel = TXCHN0;
+		break;
+	case 1:
+		sp_tx_channel = TXCHN1;
+		break;
+	case 2:
+		sp_tx_channel = TXCHN2;
+		break;
+	case 3:
+		sp_tx_channel = TXCHN3;
+		break;
+	case 4:
+		sp_tx_channel = TXCHN4;
+		break;
+	case 5:
+		sp_tx_channel = TXCHN5;
+		break;
+	case 6:
+		sp_tx_channel = TXCHN6;
+		break;
+	case 7:
+		sp_tx_channel = TXCHN7;
+		break;
+	default:
+		HAL_AUDIO_ERROR("channel not supported for direct reg:%ld", channel);
+		break;
+	}
+
+	return sp_tx_channel;
+}
+
+void ameba_audio_stream_rx_reset_i2s_pin(void)
+{
+	Pinmux_Config(AUDIO_I2S_IN_MCLK_PIN, PINMUX_FUNCTION_GPIO);
+	Pinmux_Config(AUDIO_I2S_IN_BCLK_PIN, PINMUX_FUNCTION_GPIO);
+	Pinmux_Config(AUDIO_I2S_IN_LRCLK_PIN, PINMUX_FUNCTION_GPIO);
+	Pinmux_Config(AUDIO_I2S_IN_DATA0_PIN, PINMUX_FUNCTION_GPIO);
+	if (AUDIO_I2S_IN_MULTIIO_EN) {
+		Pinmux_Config(AUDIO_I2S_IN_DATA1_PIN, PINMUX_FUNCTION_GPIO);
+		Pinmux_Config(AUDIO_I2S_IN_DATA2_PIN, PINMUX_FUNCTION_GPIO);
+		Pinmux_Config(AUDIO_I2S_IN_DATA3_PIN, PINMUX_FUNCTION_GPIO);
+	}
+}
+
+void ameba_audio_stream_rx_set_i2s_pin(uint32_t index)
+{
+	switch (index) {
+	case 0:
+		Pinmux_Config(AUDIO_I2S_IN_MCLK_PIN, PINMUX_FUNCTION_I2S0_MCLK);
+		Pinmux_Config(AUDIO_I2S_IN_BCLK_PIN, PINMUX_FUNCTION_I2S0_BCLK);
+		Pinmux_Config(AUDIO_I2S_IN_LRCLK_PIN, PINMUX_FUNCTION_I2S0_WS);
+		ameba_audio_set_sp_data_in(0);
+		Pinmux_Config(AUDIO_I2S_IN_DATA0_PIN, PINMUX_FUNCTION_I2S0_DIO0);
+		if (AUDIO_I2S_IN_MULTIIO_EN) {
+			Pinmux_Config(AUDIO_I2S_IN_DATA1_PIN, PINMUX_FUNCTION_I2S0_DIO1);
+			Pinmux_Config(AUDIO_I2S_IN_DATA2_PIN, PINMUX_FUNCTION_I2S0_DIO2);
+			Pinmux_Config(AUDIO_I2S_IN_DATA3_PIN, PINMUX_FUNCTION_I2S0_DIO3);
+		}
+		break;
+	case 1:
+		Pinmux_Config(AUDIO_I2S_IN_MCLK_PIN, PINMUX_FUNCTION_I2S1_MCLK);
+		Pinmux_Config(AUDIO_I2S_IN_BCLK_PIN, PINMUX_FUNCTION_I2S1_BCLK);
+		Pinmux_Config(AUDIO_I2S_IN_LRCLK_PIN, PINMUX_FUNCTION_I2S1_WS);
+		ameba_audio_set_sp_data_in(1);
+		Pinmux_Config(AUDIO_I2S_IN_DATA0_PIN, PINMUX_FUNCTION_I2S1_DIO0);
+		if (AUDIO_I2S_IN_MULTIIO_EN) {
+			Pinmux_Config(AUDIO_I2S_IN_DATA1_PIN, PINMUX_FUNCTION_I2S1_DIO1);
+			Pinmux_Config(AUDIO_I2S_IN_DATA2_PIN, PINMUX_FUNCTION_I2S1_DIO2);
+			Pinmux_Config(AUDIO_I2S_IN_DATA3_PIN, PINMUX_FUNCTION_I2S1_DIO3);
+		}
+		break;
+	default:
+		break;
+	}
+
+}
+
+void ameba_audio_stream_tx_set_i2s_pin(uint32_t index)
+{
+	switch (index) {
+	case 0:
+		Pinmux_Config(AUDIO_I2S_OUT_MCLK_PIN, PINMUX_FUNCTION_I2S0_MCLK);
+		Pinmux_Config(AUDIO_I2S_OUT_BCLK_PIN, PINMUX_FUNCTION_I2S0_BCLK);
+		Pinmux_Config(AUDIO_I2S_OUT_LRCLK_PIN, PINMUX_FUNCTION_I2S0_WS);
+		ameba_audio_set_sp_data_out(0);
+		Pinmux_Config(AUDIO_I2S_OUT_DATA0_PIN, PINMUX_FUNCTION_I2S0_DIO3);
+		if (AUDIO_I2S_OUT_MULTIIO_EN == 1) {
+			Pinmux_Config(AUDIO_I2S_OUT_DATA1_PIN, PINMUX_FUNCTION_I2S0_DIO2);
+			Pinmux_Config(AUDIO_I2S_OUT_DATA2_PIN, PINMUX_FUNCTION_I2S0_DIO1);
+			Pinmux_Config(AUDIO_I2S_OUT_DATA3_PIN, PINMUX_FUNCTION_I2S0_DIO0);
+		}
+		break;
+	case 1:
+		Pinmux_Config(AUDIO_I2S_OUT_MCLK_PIN, PINMUX_FUNCTION_I2S1_MCLK);
+		Pinmux_Config(AUDIO_I2S_OUT_BCLK_PIN, PINMUX_FUNCTION_I2S1_BCLK);
+		Pinmux_Config(AUDIO_I2S_OUT_LRCLK_PIN, PINMUX_FUNCTION_I2S1_WS);
+		ameba_audio_set_sp_data_out(1);
+		Pinmux_Config(AUDIO_I2S_OUT_DATA0_PIN, PINMUX_FUNCTION_I2S1_DIO3);
+		if (AUDIO_I2S_OUT_MULTIIO_EN == 1) {
+			Pinmux_Config(AUDIO_I2S_OUT_DATA1_PIN, PINMUX_FUNCTION_I2S1_DIO2);
+			Pinmux_Config(AUDIO_I2S_OUT_DATA2_PIN, PINMUX_FUNCTION_I2S1_DIO1);
+			Pinmux_Config(AUDIO_I2S_OUT_DATA3_PIN, PINMUX_FUNCTION_I2S1_DIO0);
+		}
+		break;
+	default:
+		break;
+	}
+}

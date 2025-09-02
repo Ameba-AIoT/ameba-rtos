@@ -31,7 +31,7 @@
 static const char *const TAG = "HCI";
 
 HCI_AdapterTypeDef HCI_Adapter;
-
+IMAGE_HEADER EmptyImgHdr;
 /* Private functions ---------------------------------------------------------*/
 
 /**
@@ -44,6 +44,11 @@ HCI_AdapterTypeDef HCI_Adapter;
 static int HCI_WriteImage(u32 addr, const u8 *src, u32 size)
 {
 	u32 i;
+
+	/* Host Send empty img header with addr == 0xFFFFFFFF */
+	if ((addr == 0xFFFFFFFF) && (size == IMAGE_HEADER_LEN)) {
+		addr = (u32)&EmptyImgHdr;
+	}
 
 	if (IS_FLASH_ADDR(addr)) {
 		if (!IS_FLASH_ADDR(addr + size - 1)) {
@@ -86,6 +91,11 @@ static int HCI_CalculateChecksum(u32 addr, u32 size, u32 *result)
 	u32 checksum = 0;
 	u32 data;
 	u32 i;
+
+	/* Host Send empty img header with addr == 0xFFFFFFFF */
+	if ((addr == 0xFFFFFFFF) && (size == IMAGE_HEADER_LEN)) {
+		addr = (u32)&EmptyImgHdr;
+	}
 
 	if (IS_FLASH_ADDR(addr)) {
 		if (!IS_FLASH_ADDR(addr + size - 1)) {
@@ -173,11 +183,11 @@ static void HCI_GetDeviceInfo(HCI_AdapterTypeDef *adapter)
 
 	deviceInfo->ChipId = HCI_CHIP_ID;
 	deviceInfo->CutVersion = EFUSE_GetChipVersion();
-	deviceInfo->MemType = ChipInfo_MemoryType();
 	deviceInfo->ProtocolVersion = HCI_PROTOCOL_VERSION;
 	deviceInfo->SramSizeInKB = HCI_SRAM_SIZE_IN_KB;
+	u32 MemType = ChipInfo_MemoryType();
 
-	if (deviceInfo->MemType == MEMORY_MCM_PSRAM)  {
+	if (MemType == MEMORY_MCM_PSRAM)  {
 		chipinfo = ChipInfo_MemoryInfo();
 		switch (PSRAM_SIZE_GET(chipinfo)) {
 		case PSRAM_SIZE_32Mb:
@@ -194,7 +204,7 @@ static void HCI_GetDeviceInfo(HCI_AdapterTypeDef *adapter)
 			break;
 		}
 		deviceInfo->PramSizeInKB = sizeInKB;
-	} else if ((deviceInfo->MemType == MEMORY_ONE_FLASH) || (deviceInfo->MemType == MEMORY_TWO_FLASH)) {
+	} else if ((MemType == MEMORY_ONE_FLASH) || (MemType == MEMORY_TWO_FLASH)) {
 		nor_ftl_init(&flashInfo);
 		deviceInfo->FlashSizeInKB = flashInfo.capacity / 1024;
 	}

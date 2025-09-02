@@ -159,16 +159,16 @@ if BT_EXAMPLE_DEMO_MENU
     endif
 
     if BT_HAS_LEAUDIO && BT_HAS_BREDR
-        config BT_A2DP_LE_AUDIO_PBP_MENU
+        config BT_A2DP_PBP_MENU
             depends on !AMEBA_RLS    #internal
             bool "BT A2DP and LE Audio PBP"
             default n
 
-        config BT_A2DP_HFP_LE_AUDIO_PBP_MENU
+        config BT_A2DP_HFP_PBP_MENU
             bool "BT A2DP HFP and LE Audio PBP"
             default n
 
-        config BT_A2DP_LE_AUDIO_TMAP_MENU
+        config BT_A2DP_TMAP_MENU
             depends on !AMEBA_RLS    #internal
             bool "BT A2DP and LE Audio TMAP"
             default n
@@ -299,9 +299,9 @@ if BT
         select BT_PROFILE_AVRCP_SUPPORT
         select BT_PROFILE_SDP_SUPPORT
 
-    config BT_A2DP_LE_AUDIO_PBP_MENU
+    config BT_A2DP_PBP_MENU
         bool
-        select BT_A2DP_LE_AUDIO_PBP
+        select BT_A2DP_PBP
         select BT_LE_AUDIO
         select BT_AUDIO_CODEC_SUPPORT
         select BT_AUDIO_CODEC_LC3
@@ -310,9 +310,9 @@ if BT
         select BT_PROFILE_AVRCP_SUPPORT
         select BT_PROFILE_SDP_SUPPORT
 
-    config BT_A2DP_HFP_LE_AUDIO_PBP_MENU
+    config BT_A2DP_HFP_PBP_MENU
         bool
-        select BT_A2DP_HFP_LE_AUDIO_PBP
+        select BT_A2DP_HFP_PBP
         select BT_LE_AUDIO
         select BT_APP_AUDIO_DATA
         select BT_AUDIO_CODEC_SUPPORT
@@ -325,9 +325,9 @@ if BT
         select BT_PROFILE_PBAP_SUPPORT
         select BT_PROFILE_SDP_SUPPORT
 
-    config BT_A2DP_LE_AUDIO_TMAP_MENU
+    config BT_A2DP_TMAP_MENU
         bool
-        select BT_A2DP_LE_AUDIO_TMAP
+        select BT_A2DP_TMAP
         select BT_TMAP_SUPPORT
         select BT_LE_AUDIO
         select BT_AUDIO_CODEC_SUPPORT
@@ -382,11 +382,11 @@ config BT_AUDIO_MP_TEST
     bool
 config BT_A2DP_SCATTERNET
     bool
-config BT_A2DP_LE_AUDIO_PBP
+config BT_A2DP_PBP
     bool
-config BT_A2DP_HFP_LE_AUDIO_PBP
+config BT_A2DP_HFP_PBP
     bool
-config BT_A2DP_LE_AUDIO_TMAP
+config BT_A2DP_TMAP
     bool
 config BT_A2DP_PROVISIONER_SCATTERNET
     bool

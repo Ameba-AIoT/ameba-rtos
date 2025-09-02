@@ -14,7 +14,10 @@ typedef enum {
 	PMU_AP_RUN	= 3,
 	PMU_BT_DEVICE	= 4,
 	PMU_VAD_DEVICE	= 5,
-	PMU_DEV_USER_BASE	= 6, /*number 6 ~ 31 is reserved for customer use*/
+#if defined(CONFIG_STANDARD_TICKLESS) && defined(CONFIG_LWIP_LAYER)
+	PMU_LWIP_STACK,
+#endif
+	PMU_DEV_USER_BASE, /* reserved for customer use */
 	PMU_MAX,
 } PMU_DEVICE;
 

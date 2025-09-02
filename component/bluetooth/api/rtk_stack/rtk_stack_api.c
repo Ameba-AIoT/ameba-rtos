@@ -318,6 +318,8 @@ static uint16_t bt_stack_init(void *app_config)
 	gap_config_le_sec_entry_num(GAP_MAX_LE_SEC_ENTRY_NUM);
 #endif
 
+	gap_config_max_attribute_table_count(RTK_BT_GATTS_SERVICE_NUM);
+
 	//BT Stack init
 	b_bte_init_ret = bte_init();
 	if (false == b_bte_init_ret) {

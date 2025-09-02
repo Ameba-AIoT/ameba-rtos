@@ -65,7 +65,7 @@ void Set_OSC131_STATE(u32 temp)
   */
 u32 RTC_GetDetintr(void)
 {
-	u32 temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_RTC_DET_CTRL1);
+	u32 temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_RTC_DET_CTRL1) & AON_BIT_RTC_DET_INTR;
 	return temp;
 }
 

@@ -14,12 +14,12 @@ extern "C"
 #endif
 
 #if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
-#define RTK_BLE_CIG_MAX_NUM 2
+#define RTK_BLE_CIG_MAX_NUM 1
 /* due to bt stack restrict, CIS ID need to be different even within different CIG Group */
 /* so current CIG Group Num Should be 2, each group contains 2 cis number*/
 /* CIG 1 -> CIS 1 and CIS 2
    CIG 2 -> CIS 3 and CIS 4 */
-#define RTK_BLE_CIS_MAX_NUM 4
+#define RTK_BLE_CIS_MAX_NUM 2
 #define RTK_BLE_BIG_MAX_NUM 1
 #define RTK_BLE_BIS_MAX_NUM 1
 #define RTK_BLE_ISO_DEFAULT_PHY_1M (1) /**< bit 0:LE PHY 1M used. */

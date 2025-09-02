@@ -19,6 +19,8 @@ Ameba audio project can achieve:
 
 ## Supported IC <a name = "supported-ic"></a>
 1. AmebaDplus(only support passthrough architecture)
+2. AmebaLite(only support passthrough architecture)
+3. AmebaSmart(only support passthrough architecture)
 
 ## Configurations <a name = "configurations"></a>
 

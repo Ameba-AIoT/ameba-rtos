@@ -22,6 +22,9 @@
 #include "whc_host_api.h"
 #endif
 #endif
+#if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
+#include "lwip/lwip_ip6_rlocal.h"
+#endif
 
 #ifdef CONFIG_LWIP_LAYER
 struct static_ip_config user_static_ip;
@@ -259,6 +262,14 @@ void at_wlconn(void *arg)
 		goto end;
 	}
 
+#ifdef CONFIG_WIFI_TUNNEL
+	if (0 == strcmp("zrpp", argv[1])) {
+		extern void wtn_zrpp_start(void);
+		wtn_zrpp_start();
+		goto end;
+	}
+#endif
+
 	/* The parameters appear by pairs, so i += 2. */
 	for (i = 1; argc > i; i += 2) {
 		j = i + 1;  /* next i. */
@@ -348,8 +359,7 @@ void at_wlconn(void *arg)
 	}
 
 #ifdef CONFIG_LWIP_LAYER
-	/* Start DHCPClient */
-	ret = LwIP_DHCP(0, DHCP_START);
+	ret = LwIP_IP_Address_Request();
 	tick3 = rtos_time_get_current_system_time_ms();
 	if (DHCP_ADDRESS_ASSIGNED == ret) {
 		RTK_LOGI(NOTAG, "\r\n[+WLCONN] Got IP after %d ms.\r\n", (unsigned int)(tick3 - tick1));
@@ -1073,7 +1083,6 @@ void at_wlstate(void *arg)
 	at_printf("GW  => %d.%d.%d.%d\r\n\r\n", gw[0], gw[1], gw[2], gw[3]);
 #endif /* CONFIG_LWIP_LAYER */
 #endif /* CONFIG_LWIP_USB_ETHERNET || CONFIG_ETHERNET */
-
 	rtos_mem_free((void *)p_wifi_setting);
 
 #if defined(CONFIG_IP_NAT) && (CONFIG_IP_NAT == 1)
@@ -1647,7 +1656,7 @@ end:
 #endif
 
 log_item_t at_wifi_items[ ] = {
-#ifndef CONFIG_WHC_BRIDGE_HOST
+#if !(!defined(CONFIG_WHC_INTF_IPC) && !defined(CONFIG_WHC_WIFI_API_PATH))
 #ifdef CONFIG_LWIP_LAYER
 	{"+WLSTATICIP", at_wlstaticip, {NULL, NULL}},
 #endif /* CONFIG_LWIP_LAYER */

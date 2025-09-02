@@ -201,9 +201,9 @@ else()
 endif()
 
 # build example test
-if (CMAKE_CHIP_TARGET MATCHES "linux$")
-  add_subdirectory("examples/hello_world")
-  add_subdirectory("examples/micro_speech")
+if (CMAKE_CHIP_TARGET MATCHES "^x86_linux$")
+  add_subdirectory("examples/tflm_hello_world")
+  add_subdirectory("examples/tflm_micro_speech")
   add_subdirectory("examples/tflm_mnist")
   add_subdirectory("examples/tflm_unittest")
 endif()

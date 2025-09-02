@@ -376,7 +376,7 @@ typedef struct {
 /* SPDIO_CCPWM2 bit definition */
 #define CPWM2_ACT_BIT					(BIT0)	// Active
 #define CPWM2_DSTANDBY_BIT				(BIT1)	// Deep Standby
-#define CPWM2_FBOOT_BIT					(BIT2)	// fast reboot
+#define CPWM2_IMG1_BIT					(BIT2)	// bootloader
 #define CPWM2_INIC_FW_RDY_BIT			(BIT3)	// is the iNIC FW(1) or Boot FW(0)
 #define CPWM2_TOGGLE_BIT				(BIT15)	// Toggle bit
 

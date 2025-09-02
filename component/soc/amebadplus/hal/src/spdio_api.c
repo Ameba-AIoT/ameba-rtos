@@ -5,9 +5,6 @@
 
 static const char *const TAG = "SPDIO";
 
-extern u8 SDIO_Pin_Grp;
-extern const u8 SDIO_PAD[5][6];
-
 /** @addtogroup Ameba_Mbed_API
  * @{
  */
@@ -22,10 +19,10 @@ extern const u8 SDIO_PAD[5][6];
  */
 
 #define SPDIO_IRQ_PRIORITY			INT_PRI_MIDDLE
-#define SPDIO_TX_BUF_SZ_UNIT		64
-#define RX_BD_FREE_TH				5
-#define MIN_RX_BD_SEND_PKT			2
-#define MAX_RX_BD_BUF_SIZE			16380	// the Maximum size for a RX_BD point to, make it 4-bytes aligned
+#define SPDIO_TX_BD_BUF_SZ_UNIT		64
+#define SPDIO_RX_BD_FREE_TH				5
+#define SPDIO_MIN_RX_BD_SEND_PKT			2
+#define SPDIO_MAX_RX_BD_BUF_SIZE			16380	// the Maximum size for a RX_BD point to, make it 4-bytes aligned
 
 /** @}*/
 
@@ -90,7 +87,7 @@ typedef struct {
 	rtos_sema_t IrqSema;					/* Semaphore for SDIO RX, use to wakeup the SDIO RX task */
 	rtos_task_t xSDIOIrqTaskHandle;	/* The handle of the SDIO Task speical for RX, can be used to delte the task */
 
-	u8 WaitForTxbuf;
+	u8 WaitForDeviceRxbuf;
 } HAL_SPDIO_ADAPTER, *PHAL_SPDIO_ADAPTER;
 
 /**
@@ -117,7 +114,7 @@ PHAL_SPDIO_ADAPTER pgSPDIODev = NULL;
  * @{
  */
 
-static s8 spdio_rx_done_cb(void *padapter, void *data, u16 offset, u16 pktsize, u8 type)
+static s8 spdio_device_rx_done_cb(void *padapter, void *data, u16 offset, u16 pktsize, u8 type)
 {
 	struct spdio_buf_t *buf = (struct spdio_buf_t *)data;
 	struct spdio_t *obj = (struct spdio_t *)padapter;
@@ -125,19 +122,19 @@ static s8 spdio_rx_done_cb(void *padapter, void *data, u16 offset, u16 pktsize, 
 	DCache_Invalidate((u32)buf->buf_addr, pktsize);
 
 	if (obj) {
-		return obj->rx_done_cb(obj, buf, (u8 *)(buf->buf_addr + offset), pktsize, type);
+		return obj->device_rx_done_cb(obj, buf, (u8 *)(buf->buf_addr + offset), pktsize, type);
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "spdio rx done callback function is null!");
 	}
 	return RTK_SUCCESS;
 }
 
-static s8 spdio_tx_done_cb(void *padapter, IN u8 *data)
+static s8 spdio_device_tx_done_cb(void *padapter, IN u8 *data)
 {
 	struct spdio_t *obj = (struct spdio_t *)padapter;
 	struct spdio_buf_t *buf = (struct spdio_buf_t *)data;
 	if (obj) {
-		return obj->tx_done_cb(obj, buf);
+		return obj->device_tx_done_cb(obj, buf);
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "spdio tx done callback function is null!");
 	}
@@ -180,14 +177,14 @@ s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 #endif
 	/* check if RX_BD available */
 #if defined(SDIO_RX_PKT_SIZE_OVER_16K) && SDIO_RX_PKT_SIZE_OVER_16K
-	needed_rxbd_num = ((pbuf->buf_size - 1) / MAX_RX_BD_BUF_SIZE) + MIN_RX_BD_SEND_PKT;
+	needed_rxbd_num = ((pbuf->buf_size - 1) / SPDIO_MAX_RX_BD_BUF_SIZE) + SPDIO_MIN_RX_BD_SEND_PKT;
 #endif
 	if (RxBdRdPtr != pgSDIODev->RXBDWPtr) {
 		if (pgSDIODev->RXBDWPtr > RxBdRdPtr) {
 #if defined(SDIO_RX_PKT_SIZE_OVER_16K) && SDIO_RX_PKT_SIZE_OVER_16K
-			if ((pgSDIODev->RXBDWPtr - RxBdRdPtr) >= (u16)(obj->tx_bd_num - needed_rxbd_num))
+			if ((pgSDIODev->RXBDWPtr - RxBdRdPtr) >= (u16)(obj->host_rx_bd_num - needed_rxbd_num))
 #else
-			if ((pgSDIODev->RXBDWPtr - RxBdRdPtr) >= (u16)(obj->tx_bd_num - (u32)MIN_RX_BD_SEND_PKT))
+			if ((pgSDIODev->RXBDWPtr - RxBdRdPtr) >= (u16)(obj->host_rx_bd_num - (u32)SPDIO_MIN_RX_BD_SEND_PKT))
 #endif
 			{
 				RTK_LOGS(TAG, RTK_LOG_WARN, "SDIO_Return_Rx_Data: No Available RX_BD, ReadPtr=%d WritePtr=%d\n", \
@@ -198,7 +195,7 @@ s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 #if defined(SDIO_RX_PKT_SIZE_OVER_16K) && SDIO_RX_PKT_SIZE_OVER_16K
 			if ((RxBdRdPtr - pgSDIODev->RXBDWPtr) <= (u16)needed_rxbd_num)
 #else
-			if ((RxBdRdPtr - pgSDIODev->RXBDWPtr) <= (u16)MIN_RX_BD_SEND_PKT)
+			if ((RxBdRdPtr - pgSDIODev->RXBDWPtr) <= (u16)SPDIO_MIN_RX_BD_SEND_PKT)
 #endif
 			{
 				RTK_LOGS(TAG, RTK_LOG_WARN, "SDIO_Return_Rx_Data: No Available RX_BD, ReadPtr=%d WritePtr=%d\n", RxBdRdPtr, pgSDIODev->RXBDWPtr);
@@ -233,8 +230,8 @@ s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 	pRxBdHdl->isPktEnd = 0;
 
 	pgSDIODev->RXBDWPtr += 1;
-	if (pgSDIODev->RXBDWPtr >= obj->tx_bd_num) {
-		pgSDIODev->RXBDWPtr -= obj->tx_bd_num;
+	if (pgSDIODev->RXBDWPtr >= obj->host_rx_bd_num) {
+		pgSDIODev->RXBDWPtr -= obj->host_rx_bd_num;
 	}
 
 	RxBdWrite++;
@@ -249,20 +246,20 @@ s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 		pRXBD->FS = 0;
 		pRXBD->PhyAddr = (u32)((u8 *)pbuf->buf_addr + Offset);
 #if defined(SDIO_RX_PKT_SIZE_OVER_16K) && SDIO_RX_PKT_SIZE_OVER_16K
-		if ((pkt_size - Offset) <= MAX_RX_BD_BUF_SIZE) {
+		if ((pkt_size - Offset) <= SPDIO_MAX_RX_BD_BUF_SIZE) {
 			pRXBD->BuffSize = pkt_size - Offset;
 			pRxBdHdl->isPktEnd = 1;
 		} else {
-			pRXBD->BuffSize = MAX_RX_BD_BUF_SIZE;
+			pRXBD->BuffSize = SPDIO_MAX_RX_BD_BUF_SIZE;
 			pRxBdHdl->isPktEnd = 0;
 			RTK_LOGS(TAG, RTK_LOG_INFO, "SDIO_Return_Rx_Data: Split RX_BD, Offset=%d PktSize=%d\n", \
 					 Offset, pkt_size);
 		}
 #else
-		if (pkt_size > MAX_RX_BD_BUF_SIZE) {
+		if (pkt_size > SPDIO_MAX_RX_BD_BUF_SIZE) {
 			// if come to here, please enable "SDIO_RX_PKT_SIZE_OVER_16K"
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "SDIO_Return_Rx_Data: The Packet Size bigger than 16K\n");
-			pkt_size = MAX_RX_BD_BUF_SIZE;
+			pkt_size = SPDIO_MAX_RX_BD_BUF_SIZE;
 		}
 		pRXBD->BuffSize = pkt_size;
 		pRxBdHdl->priv = (void *)pbuf;
@@ -272,8 +269,8 @@ s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 		// Move the RX_BD Write pointer forward
 		RxBdWrite++;
 		pgSDIODev->RXBDWPtr += 1;
-		if (pgSDIODev->RXBDWPtr >= obj->tx_bd_num) {
-			pgSDIODev->RXBDWPtr -= obj->tx_bd_num;
+		if (pgSDIODev->RXBDWPtr >= obj->host_rx_bd_num) {
+			pgSDIODev->RXBDWPtr -= obj->host_rx_bd_num;
 		}
 
 		if (Offset >= pkt_size) {
@@ -298,13 +295,13 @@ s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
  */
 void spdio_structinit(struct spdio_t *obj)
 {
-	obj->rx_bd_bufsz = SPDIO_RX_BUFSZ_ALIGN(2048 + 24); // extra 24 bytes for sdio header
-	obj->rx_bd_num = 24;
-	obj->tx_bd_num = 24;
+	obj->device_rx_bufsz = SPDIO_RX_BUFSZ_ALIGN(2048 + 24); // extra 24 bytes for sdio header
+	obj->host_tx_bd_num = 24;
+	obj->host_rx_bd_num = 24;
 	obj->priv = NULL;
 	obj->rx_buf = NULL;
-	obj->rx_done_cb = NULL;
-	obj->tx_done_cb = NULL;
+	obj->device_rx_done_cb = NULL;
+	obj->device_tx_done_cb = NULL;
 }
 
 /**
@@ -312,7 +309,7 @@ void spdio_structinit(struct spdio_t *obj)
  */
 void spdio_trigger_rx_handle(void)
 {
-	if (pgSPDIODev->WaitForTxbuf) {
+	if (pgSPDIODev->WaitForDeviceRxbuf) {
 		rtos_sema_give(pgSPDIODev->IrqSema);
 	}
 }
@@ -324,7 +321,7 @@ void spdio_trigger_rx_handle(void)
  * @param pSPDIODev Pointer to a SDIO device data structure.
  * @return None
  */
-void SPDIO_TX_FIFO_DataReady(IN PHAL_SPDIO_ADAPTER pSPDIODev)
+void SPDIO_TxBd_DataReady_DeviceRx(IN PHAL_SPDIO_ADAPTER pSPDIODev)
 {
 	SPDIO_TX_BD_HANDLE *pTxBdHdl;
 	PINIC_TX_DESC pTxDesc;
@@ -363,14 +360,14 @@ void SPDIO_TX_FIFO_DataReady(IN PHAL_SPDIO_ADAPTER pSPDIODev)
 
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "SDIO_TX_DataReady: PktSz=%d Offset=%d\n", pTxDesc->txpktsize, pTxDesc->offset);
 
-		if ((pTxDesc->txpktsize + pTxDesc->offset) <= obj->rx_bd_bufsz) {
+		if ((pTxDesc->txpktsize + pTxDesc->offset) <= obj->device_rx_bufsz) {
 			// use the callback function to fordward this packet to target(WLan) driver
-			ret = spdio_rx_done_cb(obj, (u8 *)pTxBdHdl->priv, pTxDesc->offset, pTxDesc->txpktsize, pTxDesc->type);
+			ret = spdio_device_rx_done_cb(obj, (u8 *)pTxBdHdl->priv, pTxDesc->offset, pTxDesc->txpktsize, pTxDesc->type);
 			if (ret == RTK_FAIL) {
-				pSPDIODev->WaitForTxbuf = TRUE;
-				RTK_LOGS(TAG, RTK_LOG_DEBUG, "spdio_rx_done_cb return fail!\n");
+				pSPDIODev->WaitForDeviceRxbuf = TRUE;
+				RTK_LOGS(TAG, RTK_LOG_DEBUG, "spdio_device_rx_done_cb return fail!\n");
 			} else {
-				pSPDIODev->WaitForTxbuf = FALSE;
+				pSPDIODev->WaitForDeviceRxbuf = FALSE;
 			}
 			pTXBD->Address = obj->rx_buf[pSPDIODev->TXBDRPtr].buf_addr;
 			DCache_CleanInvalidate((u32)pTXBD->Address, obj->rx_buf[pSPDIODev->TXBDRPtr].size_allocated);
@@ -386,7 +383,7 @@ void SPDIO_TX_FIFO_DataReady(IN PHAL_SPDIO_ADAPTER pSPDIODev)
 			break; // break the while loop
 		} else {
 			pSPDIODev->TXBDRPtr++;
-			if (pSPDIODev->TXBDRPtr >= obj->rx_bd_num) {
+			if (pSPDIODev->TXBDRPtr >= obj->host_tx_bd_num) {
 				RPTR_FLAG = BIT_SPDIO_TXBD_H2C_RPTR_WRAP & SDIO_TXBD_RPTR_Get(SDIO_WIFI);
 				if (RPTR_FLAG) {
 					RPTR_FLAG = 0;
@@ -440,12 +437,12 @@ static void SPDIO_Recycle_Rx_BD(IN PHAL_SPDIO_ADAPTER pgSPDIODev)
 			RTK_LOGS(TAG, RTK_LOG_WARN, "SDIO_Recycle_Rx_BD: Warring, Recycle a Free RX_BD,RXBDRPtr=%d\n", pgSPDIODev->RXBDRPtr);
 		}
 		pgSPDIODev->RXBDRPtr++;
-		if (pgSPDIODev->RXBDRPtr >= obj->tx_bd_num) {
-			pgSPDIODev->RXBDRPtr -= obj->tx_bd_num;
+		if (pgSPDIODev->RXBDRPtr >= obj->host_rx_bd_num) {
+			pgSPDIODev->RXBDRPtr -= obj->host_rx_bd_num;
 		}
 
 		if (isPktEnd) {
-			spdio_tx_done_cb(obj, (u8 *)(pRxBdHdl->priv));
+			spdio_device_tx_done_cb(obj, (u8 *)(pRxBdHdl->priv));
 		}
 	}
 	RTK_LOGS(TAG, RTK_LOG_DEBUG, "<==SDIO_Recycle_Rx_BD(%u)\n", FreeCnt);
@@ -494,8 +491,8 @@ static void SPDIO_IRQ_Handler_BH(void *pData)
 			spdio_rpwm_cb((struct spdio_t *)pgSPDIODev->spdio_priv);
 		}
 
-		if (IntStatus & BIT_H2C_DMA_OK || pgSPDIODev->WaitForTxbuf) {
-			SPDIO_TX_FIFO_DataReady(pgSPDIODev);
+		if (IntStatus & BIT_H2C_DMA_OK || pgSPDIODev->WaitForDeviceRxbuf) {
+			SPDIO_TxBd_DataReady_DeviceRx(pgSPDIODev);
 		}
 		if (IntStatus & BIT_TXFIFO_H2C_OVF) {
 			pgSPDIODev->TxOverFlow = 1;
@@ -508,6 +505,8 @@ static void SPDIO_IRQ_Handler_BH(void *pData)
 void SPDIO_Board_Init(void)
 {
 	u8 idx;
+	/* Be consistent with order of SDIO_PAD[][]. */
+	char *sdio_pin[] = {"CLK", "CMD", "D0", "D1", "D2", "D3"};
 
 	assert_param(SDIO_Pin_Grp <= 0x4);
 
@@ -515,14 +514,8 @@ void SPDIO_Board_Init(void)
 	for (idx = 0; idx < 6; idx++) {
 		PAD_PullCtrl(SDIO_PAD[SDIO_Pin_Grp][idx], GPIO_PuPd_UP);
 		Pinmux_Config(SDIO_PAD[SDIO_Pin_Grp][idx], PINMUX_FUNCTION_SDIO);
+		RTK_LOGI(TAG, "SDIO_%s --> P%c%d\n", sdio_pin[idx], 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][idx]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][idx]));
 	}
-
-	RTK_LOGI(TAG, "SDIO_CLK --> P%c%d\n", 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][0]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][0]));
-	RTK_LOGI(TAG, "SDIO_CMD --> P%c%d\n", 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][1]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][1]));
-	RTK_LOGI(TAG, "SDIO_D3 --> P%c%d\n", 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][2]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][2]));
-	RTK_LOGI(TAG, "SDIO_D2 --> P%c%d\n", 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][3]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][3]));
-	RTK_LOGI(TAG, "SDIO_D1 --> P%c%d\n", 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][4]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][4]));
-	RTK_LOGI(TAG, "SDIO_D0 --> P%c%d\n", 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][5]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][5]));
 }
 
 /**
@@ -554,21 +547,21 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 	obj->priv = (void *)pgSPDIODev;
 
 	// initial TX BD and RX BD
-	pgSPDIODev->pTXBDAddr = rtos_mem_malloc((obj->rx_bd_num * sizeof(SPDIO_TX_BD)) + 3);
+	pgSPDIODev->pTXBDAddr = rtos_mem_malloc((obj->host_tx_bd_num * sizeof(SPDIO_TX_BD)) + 3);
 	if (NULL == pgSPDIODev->pTXBDAddr) {
 		RTK_LOGE(TAG, "SDIO_Device_Init: Malloc for TX_BD Err!!\n");
 		goto SDIO_INIT_ERR;
 	}
 	pgSPDIODev->pTXBDAddrAligned = (SPDIO_TX_BD *)(((((u32)pgSPDIODev->pTXBDAddr - 1) >> 2) + 1) << 2); // Make it 4-bytes aligned
 
-	pgSPDIODev->pRXBDAddr = rtos_mem_malloc((obj->tx_bd_num * sizeof(SPDIO_RX_BD)) + 7);
+	pgSPDIODev->pRXBDAddr = rtos_mem_malloc((obj->host_rx_bd_num * sizeof(SPDIO_RX_BD)) + 7);
 	if (NULL == pgSPDIODev->pRXBDAddr) {
 		RTK_LOGE(TAG, "SDIO_Device_Init: Malloc for RX_BD Err!!\n");
 		goto SDIO_INIT_ERR;
 	}
 	pgSPDIODev->pRXBDAddrAligned = (SPDIO_RX_BD *)(((((u32)pgSPDIODev->pRXBDAddr - 1) >> 3) + 1) << 3); // Make it 8-bytes aligned
 
-	pgSPDIODev->pRXDESCAddr = rtos_mem_zmalloc((obj->tx_bd_num * sizeof(INIC_RX_DESC)) + 3);
+	pgSPDIODev->pRXDESCAddr = rtos_mem_zmalloc((obj->host_rx_bd_num * sizeof(INIC_RX_DESC)) + 3);
 	if (NULL == pgSPDIODev->pRXDESCAddr) {
 		RTK_LOGE(TAG, "SDIO_Device_Init: Malloc for RX_DESC Err!!\n");
 		goto SDIO_INIT_ERR;
@@ -582,11 +575,11 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 
 	SDIO_StructInit(&SDIO_InitStruct);
 	SDIO_InitStruct.TXBD_BAR = (u32)pgSPDIODev->pTXBDAddrAligned;
-	SDIO_InitStruct.TXBD_RING_SIZE = obj->rx_bd_num; // SDIO_TX_BD_NUM;
-	SDIO_InitStruct.TX_BUFFER_SIZE = ((((obj->rx_bd_bufsz - 1) / SPDIO_TX_BUF_SZ_UNIT) + 1) & 0xff);
+	SDIO_InitStruct.TXBD_RING_SIZE = obj->host_tx_bd_num; // SDIO_TX_BD_NUM;
+	SDIO_InitStruct.TX_BUFFER_SIZE = ((((obj->device_rx_bufsz - 1) / SPDIO_TX_BD_BUF_SZ_UNIT) + 1) & 0xff);
 	SDIO_InitStruct.RXBD_BAR = (u32)pgSPDIODev->pRXBDAddrAligned;
-	SDIO_InitStruct.RXBD_RING_SIZE = obj->tx_bd_num;
-	SDIO_InitStruct.RXBD_FREE_TH = RX_BD_FREE_TH;
+	SDIO_InitStruct.RXBD_RING_SIZE = obj->host_rx_bd_num;
+	SDIO_InitStruct.RXBD_FREE_TH = SPDIO_RX_BD_FREE_TH;
 
 	SDIO_Init(SDIO_WIFI, (&SDIO_InitStruct));
 
@@ -598,13 +591,13 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 
 	RTK_LOGI(TAG, "TXBDWPtr=0x%x TXBDRPtr=0x%x\n", pgSPDIODev->TXBDWPtr, pgSPDIODev->TXBDRPtr);
 
-	pgSPDIODev->pTXBDHdl = (SPDIO_TX_BD_HANDLE *)rtos_mem_zmalloc(obj->rx_bd_num * sizeof(SPDIO_TX_BD_HANDLE));
+	pgSPDIODev->pTXBDHdl = (SPDIO_TX_BD_HANDLE *)rtos_mem_zmalloc(obj->host_tx_bd_num * sizeof(SPDIO_TX_BD_HANDLE));
 	if (NULL == pgSPDIODev->pTXBDHdl) {
 		RTK_LOGE(TAG, "SDIO_Device_Init: Malloc for TX_BD Handle Err!!\n");
 		goto SDIO_INIT_ERR;
 	}
 
-	for (i = 0; i < obj->rx_bd_num; i++) {
+	for (i = 0; i < obj->host_tx_bd_num; i++) {
 		pTxBdHdl = pgSPDIODev->pTXBDHdl + i;
 		pTxBdHdl->pTXBD = pgSPDIODev->pTXBDAddrAligned + i;
 		// Pre-allocate buffer by User
@@ -624,13 +617,13 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 		RTK_LOGI(TAG, "TX_BD%lu @ %p %p\n", i, pTxBdHdl, pTxBdHdl->pTXBD);
 	}
 
-	pgSPDIODev->pRXBDHdl = (SPDIO_RX_BD_HANDLE *)rtos_mem_zmalloc(obj->tx_bd_num * sizeof(SPDIO_RX_BD_HANDLE));
+	pgSPDIODev->pRXBDHdl = (SPDIO_RX_BD_HANDLE *)rtos_mem_zmalloc(obj->host_rx_bd_num * sizeof(SPDIO_RX_BD_HANDLE));
 	if (NULL == pgSPDIODev->pRXBDHdl) {
 		RTK_LOGE(TAG, "SDIO_Device_Init: Malloc for RX_BD Handle Err!!\n");
 		goto SDIO_INIT_ERR;
 	}
 
-	for (i = 0; i < obj->tx_bd_num; i++) {
+	for (i = 0; i < obj->host_rx_bd_num; i++) {
 		pRxBdHdl = pgSPDIODev->pRXBDHdl + i;
 		pRxBdHdl->pRXBD = pgSPDIODev->pRXBDAddrAligned + i;
 		pRxBdHdl->pRXDESC = pgSPDIODev->pRXDESCAddrAligned + i;
@@ -684,7 +677,7 @@ SDIO_INIT_ERR:
 	}
 
 	if ((pgSPDIODev->pTXBDHdl)) {
-		for (i = 0; i < obj->rx_bd_num; i++) {
+		for (i = 0; i < obj->host_tx_bd_num; i++) {
 			pTxBdHdl = pgSPDIODev->pTXBDHdl + i;
 			if (pTxBdHdl->pTXBD->Address) {
 				pTxBdHdl->pTXBD->Address = (u32)NULL;
@@ -739,7 +732,7 @@ void SPDIO_Device_DeInit(void)
 	}
 
 	/* Free TX FIFO Buffer */
-	for (i = 0; i < obj->rx_bd_num; i++) {
+	for (i = 0; i < obj->host_tx_bd_num; i++) {
 		pTXBD = (SPDIO_TX_BD *)(pgSPDIODev->pTXBDAddrAligned + i);
 		pTxBdHdl = pgSPDIODev->pTXBDHdl + i;
 		if (pTXBD->Address) {
@@ -748,7 +741,7 @@ void SPDIO_Device_DeInit(void)
 	}
 
 	if ((pgSPDIODev->pTXBDHdl)) {
-		for (i = 0; i < obj->rx_bd_num; i++) {
+		for (i = 0; i < obj->host_tx_bd_num; i++) {
 			pTxBdHdl = pgSPDIODev->pTXBDHdl + i;
 			if (pTxBdHdl->pTXBD->Address) {
 				pTxBdHdl->pTXBD->Address = (u32)NULL;
@@ -795,9 +788,9 @@ void SPDIO_Device_DeInit(void)
  * @brief Initialize spdio interface.
  * @param obj Pointer to a spdio_t structure which should be initialized by user,
  * 		and which will be used to initialize spdio interface.
- * 		- obj->tx_bd_num: spdio write bd number, needs 2 bd for one transaction.
- * 		- obj->rx_bd_num: spdio read bd number.
- * 		- obj->rx_bd_bufsz: spdio read buffer size.
+ * 		- obj->host_rx_bd_num: spdio write bd number, needs 2 bd for one transaction.
+ * 		- obj->host_tx_bd_num: spdio read bd number.
+ * 		- obj->device_rx_bufsz: spdio read buffer size.
  * 		- obj->rx_buf: spdio read buffer array.
  * @return None
  */
@@ -808,8 +801,8 @@ void spdio_init(struct spdio_t *obj)
 		return;
 	}
 
-	if ((obj->rx_bd_num == 0) || (obj->rx_bd_bufsz == 0) || (obj->rx_bd_bufsz % 64)
-		|| (obj->tx_bd_num == 0) || (obj->tx_bd_num % 2) || (obj->rx_buf == NULL)) {
+	if ((obj->host_tx_bd_num == 0) || (obj->device_rx_bufsz == 0) || (obj->device_rx_bufsz % 64)
+		|| (obj->host_rx_bd_num == 0) || (obj->host_rx_bd_num % 2) || (obj->rx_buf == NULL)) {
 		RTK_LOGE(TAG, "spdio obj resource isn't correctly inited, spdio init failed!\n");
 		return;
 	}

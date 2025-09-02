@@ -236,21 +236,21 @@ void bt_inic_sdio_init(void)
 	struct spdio_t *dev = &sdio_priv.dev;
 
 	dev->priv = NULL;
-	dev->rx_bd_num = BT_INIC_SDIO_TX_BD_NUM;
-	dev->tx_bd_num = BT_INIC_SDIO_RX_BD_NUM;
-	dev->rx_bd_bufsz = BT_INIC_SDIO_TX_BUFSZ;
-	dev->rx_buf = (struct spdio_buf_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, dev->rx_bd_num * sizeof(struct spdio_buf_t));
+	dev->host_tx_bd_num = BT_INIC_SDIO_TX_BD_NUM;
+	dev->host_rx_bd_num = BT_INIC_SDIO_RX_BD_NUM;
+	dev->device_rx_bufsz = BT_INIC_SDIO_TX_BUFSZ;
+	dev->rx_buf = (struct spdio_buf_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, dev->host_tx_bd_num * sizeof(struct spdio_buf_t));
 
 	if (!dev->rx_buf) {
 		RTK_LOGE("BT_INIC", "malloc failed for spdio buffer structure!\n");
 		return;
 	}
 
-	for (i = 0; i < dev->rx_bd_num; i++) {
+	for (i = 0; i < dev->host_tx_bd_num; i++) {
 		buf = osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, BT_INIC_SDIO_TX_BUFSZ, DEV_DMA_ALIGN);
 
 		dev->rx_buf[i].buf_allocated = dev->rx_buf[i].buf_addr = (u32) buf;
-		dev->rx_buf[i].size_allocated = dev->rx_buf[i].buf_size = dev->rx_bd_bufsz;
+		dev->rx_buf[i].size_allocated = dev->rx_buf[i].buf_size = dev->device_rx_bufsz;
 		dev->rx_buf[i].priv = buf;
 
 		// this buffer must be 4 byte alignment
@@ -260,8 +260,8 @@ void bt_inic_sdio_init(void)
 		}
 	}
 
-	dev->rx_done_cb = inic_sdio_dev_rx_done_cb;
-	dev->tx_done_cb = inic_sdio_dev_tx_done_cb;
+	dev->device_rx_done_cb = inic_sdio_dev_rx_done_cb;
+	dev->device_tx_done_cb = inic_sdio_dev_tx_done_cb;
 	dev->rpwm_cb = inic_sdio_dev_rpwm_cb;
 
 	osif_mutex_create(&sdio_priv.tx_lock);

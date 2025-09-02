@@ -33,7 +33,6 @@ void ameba_audio_stream_rx_close(Stream *stream);
 int32_t ameba_audio_stream_rx_get_position(Stream *stream, uint64_t *captured_frames, struct timespec *tstamp);
 int32_t ameba_audio_stream_rx_get_time(Stream *stream, int64_t *now_ns, int64_t *audio_ns);
 int64_t ameba_audio_stream_rx_get_trigger_time(Stream *stream);
-void ameba_audio_stream_rx_set_i2s_pin(uint32_t index);
 void ameba_audio_stream_rx_mask_gdma_irq(Stream *stream);
 void ameba_audio_stream_rx_unmask_gdma_irq(Stream *stream);
 

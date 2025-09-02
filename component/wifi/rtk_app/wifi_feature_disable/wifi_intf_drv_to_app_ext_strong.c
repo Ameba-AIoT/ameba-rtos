@@ -381,3 +381,10 @@ int wifi_wake_pll_rdy_in_ps_state(u8 need)
 	call_noused = __LINE__;
 	return -1;
 }
+
+s32 wifi_set_tx_advanced_config(struct rtw_tx_advanced_cfg *tx_setting)
+{
+	UNUSED(tx_setting);
+	call_noused = __LINE__;
+	return -1;
+}

@@ -115,7 +115,7 @@ void rtw_reconn_task_hdl(void *param)
 
 #ifdef CONFIG_LWIP_LAYER
 	if (ret == RTK_SUCCESS) {
-		LwIP_DHCP(0, DHCP_START);
+		LwIP_IP_Address_Request();
 	}
 #endif
 	rtos_task_delete(NULL);

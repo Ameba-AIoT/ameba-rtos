@@ -8,6 +8,7 @@
 
 #include "sdio_intf.h"
 #include "hci_core.h"
+#include "sdio_hal.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -40,9 +41,7 @@ HCI_InterfaceTypeDef SDIO_Interface = {
   */
 static int SDIO_Intf_Init(HCI_AdapterTypeDef *adapter)
 {
-	UNUSED(adapter);
-
-	/* TODO */
+	SPDIO_HAL_Init(adapter);
 
 	return HAL_OK;
 }
@@ -56,7 +55,7 @@ static void SDIO_Intf_DeInit(HCI_AdapterTypeDef *adapter)
 {
 	UNUSED(adapter);
 
-	/* TODO */
+	SPDIO_HAL_DeInit();
 }
 
 /**
@@ -69,10 +68,7 @@ static void SDIO_Intf_DeInit(HCI_AdapterTypeDef *adapter)
 static int SDIO_Intf_Transmit(HCI_AdapterTypeDef *adapter, u8 *buf, u32 size)
 {
 	UNUSED(adapter);
-	UNUSED(buf);
-	UNUSED(size);
-
-	/* TODO */
+	SPDIO_HAL_Transmit(buf, size);
 
 	return HAL_OK;
 }

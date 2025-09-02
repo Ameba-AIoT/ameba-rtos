@@ -15,10 +15,13 @@
 #include "i2c_api.h"
 #include "pinmap.h"
 #include <stdio.h>
-//#include "ex_api.h"
 
 // RESTART verification
 //#define I2C_RESTART_DEMO
+
+#ifdef I2C_RESTART_DEMO
+#include "i2c_ex_api.h"
+#endif
 
 #define MBED_I2C_SLAVE_ADDR0    0x23
 #define MBED_I2C_BUS_CLK        100000  //hz

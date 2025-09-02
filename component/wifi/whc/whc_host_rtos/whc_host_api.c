@@ -32,6 +32,7 @@ extern void (*p_ap_channel_switch_callback)(unsigned char channel, s8 ret);
 extern u8(*promisc_user_callback_ptr)(void *);
 extern int dhcps_ip_in_table_check(uint8_t gate, uint8_t d);
 extern s32(*scan_acs_report_user_callback_ptr)(struct rtw_acs_mntr_rpt *acs_mntr_rpt);
+extern int whc_host_init_done;
 
 
 const struct event_func_t host_api_handlers[] = {
@@ -207,9 +208,9 @@ void whc_host_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 re
 	struct whc_api_info *ret_msg;
 	struct whc_txbuf_info_t *inic_tx;
 
-	if (!event_priv.host_init_done) {
+	if (!whc_host_init_done) {
 		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Host api err: wifi not init\n");
-		return -RTK_ERR_WIFI_NOT_INIT;
+		return;
 	}
 
 	RTK_LOGD(TAG_WLAN_INIC, "Host Call API %d %x \n", id, __builtin_return_address(0));

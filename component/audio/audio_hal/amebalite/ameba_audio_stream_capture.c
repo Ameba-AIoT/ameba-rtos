@@ -355,52 +355,6 @@ HAL_AUDIO_WEAK int32_t ameba_audio_stream_rx_get_time(Stream *stream, int64_t *n
 	return 0;
 }
 
-void ameba_audio_stream_rx_reset_i2s_pin(void)
-{
-	Pinmux_Config(AUDIO_I2S_IN_MCLK_PIN, PINMUX_FUNCTION_GPIO);
-	Pinmux_Config(AUDIO_I2S_IN_BCLK_PIN, PINMUX_FUNCTION_GPIO);
-	Pinmux_Config(AUDIO_I2S_IN_LRCLK_PIN, PINMUX_FUNCTION_GPIO);
-	Pinmux_Config(AUDIO_I2S_IN_DATA0_PIN, PINMUX_FUNCTION_GPIO);
-	if (AUDIO_I2S_IN_MULTIIO_EN) {
-		Pinmux_Config(AUDIO_I2S_IN_DATA1_PIN, PINMUX_FUNCTION_GPIO);
-		Pinmux_Config(AUDIO_I2S_IN_DATA2_PIN, PINMUX_FUNCTION_GPIO);
-		Pinmux_Config(AUDIO_I2S_IN_DATA3_PIN, PINMUX_FUNCTION_GPIO);
-	}
-}
-
-void ameba_audio_stream_rx_set_i2s_pin(uint32_t index)
-{
-	switch (index) {
-	case 0:
-		Pinmux_Config(AUDIO_I2S_IN_MCLK_PIN, PINMUX_FUNCTION_I2S0_MCLK);
-		Pinmux_Config(AUDIO_I2S_IN_BCLK_PIN, PINMUX_FUNCTION_I2S0_BCLK);
-		Pinmux_Config(AUDIO_I2S_IN_LRCLK_PIN, PINMUX_FUNCTION_I2S0_WS);
-		ameba_audio_set_sp_data_in(0);
-		Pinmux_Config(AUDIO_I2S_IN_DATA0_PIN, PINMUX_FUNCTION_I2S0_DIO0);
-		if (AUDIO_I2S_IN_MULTIIO_EN) {
-			Pinmux_Config(AUDIO_I2S_IN_DATA1_PIN, PINMUX_FUNCTION_I2S0_DIO1);
-			Pinmux_Config(AUDIO_I2S_IN_DATA2_PIN, PINMUX_FUNCTION_I2S0_DIO2);
-			Pinmux_Config(AUDIO_I2S_IN_DATA3_PIN, PINMUX_FUNCTION_I2S0_DIO3);
-		}
-		break;
-	case 1:
-		Pinmux_Config(AUDIO_I2S_IN_MCLK_PIN, PINMUX_FUNCTION_I2S1_MCLK);
-		Pinmux_Config(AUDIO_I2S_IN_BCLK_PIN, PINMUX_FUNCTION_I2S1_BCLK);
-		Pinmux_Config(AUDIO_I2S_IN_LRCLK_PIN, PINMUX_FUNCTION_I2S1_WS);
-		ameba_audio_set_sp_data_in(1);
-		Pinmux_Config(AUDIO_I2S_IN_DATA0_PIN, PINMUX_FUNCTION_I2S1_DIO0);
-		if (AUDIO_I2S_IN_MULTIIO_EN) {
-			Pinmux_Config(AUDIO_I2S_IN_DATA1_PIN, PINMUX_FUNCTION_I2S1_DIO1);
-			Pinmux_Config(AUDIO_I2S_IN_DATA2_PIN, PINMUX_FUNCTION_I2S1_DIO2);
-			Pinmux_Config(AUDIO_I2S_IN_DATA3_PIN, PINMUX_FUNCTION_I2S1_DIO3);
-		}
-		break;
-	default:
-		break;
-	}
-
-}
-
 Stream *ameba_audio_stream_rx_init(uint32_t device, StreamConfig config)
 {
 	CaptureStream *cstream;

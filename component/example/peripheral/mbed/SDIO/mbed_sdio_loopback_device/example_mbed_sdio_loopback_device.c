@@ -73,8 +73,8 @@ char ex_spdio_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size, u8 type)
 	rtos_mem_free((char *)rx_buf->buf_allocated);
 
 	// assign new buffer for SPDIO RX
-	rx_buf->buf_allocated = (u32)rtos_mem_malloc(obj->rx_bd_bufsz + SPDIO_DMA_ALIGN_4);
-	rx_buf->size_allocated = obj->rx_bd_bufsz + SPDIO_DMA_ALIGN_4;
+	rx_buf->buf_allocated = (u32)rtos_mem_malloc(obj->device_rx_bufsz + SPDIO_DMA_ALIGN_4);
+	rx_buf->size_allocated = obj->device_rx_bufsz + SPDIO_DMA_ALIGN_4;
 
 	// this buffer must be 4 byte alignment
 	rx_buf->buf_addr = (u32)N_BYTE_ALIGMENT((u32)(rx_buf->buf_allocated), SPDIO_DMA_ALIGN_4);
@@ -100,29 +100,29 @@ void ex_spdio_thread(void *param)
 	u32 i;
 
 	spdio_dev.priv = NULL;
-	spdio_dev.rx_bd_num = EX_SPDIO_RX_BD_NUM;
-	spdio_dev.tx_bd_num = EX_SPDIO_TX_BD_NUM;
-	spdio_dev.rx_bd_bufsz = EX_SPDIO_RX_BUFSZ;
+	spdio_dev.host_tx_bd_num = EX_SPDIO_RX_BD_NUM;
+	spdio_dev.host_rx_bd_num = EX_SPDIO_TX_BD_NUM;
+	spdio_dev.device_rx_bufsz = EX_SPDIO_RX_BUFSZ;
 
-	spdio_dev.rx_buf = (struct spdio_buf_t *)rtos_mem_malloc(spdio_dev.rx_bd_num * sizeof(struct spdio_buf_t));
+	spdio_dev.rx_buf = (struct spdio_buf_t *)rtos_mem_malloc(spdio_dev.host_tx_bd_num * sizeof(struct spdio_buf_t));
 	if (!spdio_dev.rx_buf) {
 		RTK_LOGE(NOTAG, "malloc failed for spdio buffer structure!\n");
 		return;
 	}
 
-	for (i = 0; i < spdio_dev.rx_bd_num; i++) {
-		spdio_dev.rx_buf[i].buf_allocated = (u32)rtos_mem_malloc(spdio_dev.rx_bd_bufsz + SPDIO_DMA_ALIGN_4);
+	for (i = 0; i < spdio_dev.host_tx_bd_num; i++) {
+		spdio_dev.rx_buf[i].buf_allocated = (u32)rtos_mem_malloc(spdio_dev.device_rx_bufsz + SPDIO_DMA_ALIGN_4);
 		if (!spdio_dev.rx_buf[i].buf_allocated) {
 			RTK_LOGE(NOTAG, "malloc failed for spdio buffer!\n");
 			return;
 		}
-		spdio_dev.rx_buf[i].size_allocated = spdio_dev.rx_bd_bufsz + SPDIO_DMA_ALIGN_4;
+		spdio_dev.rx_buf[i].size_allocated = spdio_dev.device_rx_bufsz + SPDIO_DMA_ALIGN_4;
 		// this buffer must be 4 byte alignment
 		spdio_dev.rx_buf[i].buf_addr = (u32)N_BYTE_ALIGMENT((u32)(spdio_dev.rx_buf[i].buf_allocated), SPDIO_DMA_ALIGN_4);
 	}
 
-	spdio_dev.rx_done_cb = ex_spdio_rx_done_cb;
-	spdio_dev.tx_done_cb = ex_spdio_tx_done_cb;
+	spdio_dev.device_rx_done_cb = ex_spdio_rx_done_cb;
+	spdio_dev.device_tx_done_cb = ex_spdio_tx_done_cb;
 
 	spdio_init(&spdio_dev);
 	RTK_LOGI(NOTAG, "SDIO device starts loopback!\n");

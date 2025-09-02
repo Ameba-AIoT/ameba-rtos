@@ -371,10 +371,6 @@ void BOOT_Image1(void)
 
 	flash_highspeed_setup();
 	BOOT_LoadImages();
-
-#else /* CONFIG_WIFI_HOST_CONTROL */
-	BOOT_Share_Cache_To_TCM();
-	Boot_Fullmac_LoadIMGAll();
 #endif /* CONFIG_WIFI_HOST_CONTROL */
 
 	/* Config Non-Security World Registers
@@ -389,7 +385,10 @@ void BOOT_Image1(void)
 #ifndef CONFIG_WIFI_HOST_CONTROL
 	/*NP shall wait MPC setting for non-secure access*/
 	BOOT_Enable_NP();
-#endif
+#else
+	BOOT_Share_Cache_To_TCM();
+	Boot_Fullmac_LoadIMGAll();
+#endif /* CONFIG_WIFI_HOST_CONTROL */
 
 	/*switch shell control to NP, disable loguart interrupt to avoid loguart irq not assigned in non-secure world */
 	LOGUART_INTCoreConfig(LOGUART_DEV, LOGUART_BIT_INTR_MASK_AP, DISABLE);

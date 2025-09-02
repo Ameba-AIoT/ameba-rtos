@@ -371,7 +371,7 @@ u32 BOOT_ChipInfo_PSRAMType(void)
 		}
 	}
 
-	/* Boot_Clk_Config_Level shall get from ChipInfo_PSRAMType() */
+	/* Boot_Clk_Config_Level should consider the PSRAM clock settings */
 	if (Psram_clk_Max == 0) { //None PSRAM
 #ifdef CONFIG_PSRAM_USED
 		assert_param(0);//Code shall XIP in no psram chip

@@ -131,6 +131,7 @@ void LwIP_AUTOIP_IPv6(struct netif *pnetif);
 #endif
 int netif_get_idx(struct netif *pnetif);
 void LwIP_Check_Connectivity(void);
+uint8_t LwIP_IP_Address_Request(void);
 
 #ifdef __cplusplus
 }

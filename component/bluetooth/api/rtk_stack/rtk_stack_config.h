@@ -43,7 +43,7 @@ extern "C" {
 #define RTK_BT_GATTC_APP_NUM        16
 #define RTK_BT_GATTC_SUBS_NUM       10
 
-#define RTK_BT_GATTS_SERVICE_NUM    12
+#define RTK_BT_GATTS_SERVICE_NUM    24
 #define RTK_BT_GATTS_CCCD_NUM       10
 
 #define RTK_BT_STACK_LOG_CONFIG     0

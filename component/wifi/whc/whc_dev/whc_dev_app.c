@@ -17,6 +17,9 @@
 #define WHC_CMD_TEST_WIFION         0x9
 #define WHC_CMD_TEST_SCAN_RESULT    0xA
 
+/* for rtos host only */
+#define WHC_CMD_TEST_SET_HOST_RTOS  0xFF
+
 #define WHC_CMD_TEST_BUF_SIZE     16
 
 #define WHC_WHC_CMD_USER_TASK_STACK_SIZE		4096
@@ -119,7 +122,7 @@ s32 whc_dev_scan_callback(u32 scanned_AP_num, void *data)
 			ptr += 4;
 			*ptr = WHC_CMD_TEST_SCAN_RESULT;
 			ptr += 1;
-			*ptr = idx;
+			*ptr = idx++;
 			ptr += 1;
 
 			/* wrap to 4B aligned */
@@ -301,7 +304,10 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					whc_dev_api_set_host_state(WHC_HOST_READY);
 #endif
 					wifi_on(RTW_MODE_STA);
+				} else if (*ptr == WHC_CMD_TEST_SET_HOST_RTOS) {
+					wifi_user_config.cfg80211 = 0;
 				}
+
 				rtos_mem_free(buf);
 			}
 			rtos_mem_free(whc_rx_msg_free_addr);

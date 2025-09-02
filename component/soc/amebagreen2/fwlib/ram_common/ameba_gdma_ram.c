@@ -728,7 +728,32 @@ GDMA_ChnlFree(u8 GDMA_Index, u8 GDMA_ChNum)
 	ret = TRUE;
 	return ret;
 }
+/**
+ * @brief Get whether the fifo is empty
+ *
+ * @param  GDMA_Index: 0.
+ * @param  GDMA_ChNum: 0 ~ 7.
+ * @retval TRUE/FALSE
+ */
+__weak u8
+GDMA_ChnlFIFOIsEmpty(u8 GDMA_Index, u8 GDMA_ChNum)
+{
+	GDMA_TypeDef *GDMA = ((GDMA_TypeDef *) GDMA_BASE);
+	u8 ret = FALSE;
+	/* Check the parameters */
+	assert_param(IS_GDMA_Index(GDMA_Index));
+	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
 
+	if (TrustZone_IsSecure()) {
+		GDMA = ((GDMA_TypeDef *) GDMA0_REG_BASE_S);
+	}
+
+	if (GDMA->CH[GDMA_ChNum].GDMA_CFGx_L & GDMA_BIT_CFGx_L_FIFO_EMPTY) {
+		ret = TRUE;
+	}
+
+	return ret;
+}
 /**
   * @brief  Get irq number for a channel.
   * @param  GDMA_Index: 0.

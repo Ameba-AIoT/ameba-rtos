@@ -52,6 +52,10 @@
 
 #include "platform_autoconf.h"
 
+#if defined(CONFIG_STANDARD_TICKLESS) && defined(CONFIG_LWIP_LAYER)
+extern void lwip_update_internal_counter(uint32_t ms);
+#endif
+
 #if( configENABLE_TRUSTZONE == 1 )
 /* Secure components includes. */
 #include "secure_context.h"
@@ -1024,6 +1028,9 @@ void pmu_post_sleep_processing(uint32_t *expected_idle_time)
 	/* update sleepwakelock_timeout if sysactive_timeout_temp not 0 */
 	sysactive_timeout_flag = 0;
 	pmu_set_sysactive_time(0);
+#if defined(CONFIG_STANDARD_TICKLESS) && defined(CONFIG_LWIP_LAYER)
+	lwip_update_internal_counter(ms_passed);
+#endif
 
 	RTK_LOGD(NOTAG, "%s sleeped:[%lu] ms\n", "KM4", ms_passed);	
 
@@ -1055,7 +1062,7 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
                its own wait for interrupt or wait for event instruction, and so wfi
                should not be executed again.  However, the original expected idle
                time variable must remain unmodified, so a copy is taken. */
-               //xModifiableIdleTime = (uint32_t)xExpectedIdleTime;
+               xModifiableIdleTime = (uint32_t)xExpectedIdleTime;
                configPRE_SLEEP_PROCESSING(xModifiableIdleTime);
                configPOST_SLEEP_PROCESSING(xModifiableIdleTime);
        } else {

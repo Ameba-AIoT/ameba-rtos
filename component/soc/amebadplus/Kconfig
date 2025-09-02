@@ -91,11 +91,8 @@ menu "CONFIG FUNCTION TEST"
         config AUDIO_VERIFY
         bool "AUDIO_Verify_Mode"
         if AUDIO_VERIFY
-            choice
-                prompt "AUDIO Verify Type"
-                config AUDIO_SNR_VERIFY
-                    bool "AUDIO_SNR_VERIFY"
-            endchoice
+            config AUDIO_SNR_VERIFY
+                bool "AUDIO_SNR_VERIFY"
         endif
         config SOC_PS_VERIFY
         bool "SOC_PS_Verify_Mode"

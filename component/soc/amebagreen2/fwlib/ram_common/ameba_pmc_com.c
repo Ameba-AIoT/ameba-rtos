@@ -333,6 +333,10 @@ void SOCPS_PowerManage(u8 regu_state)
 		LDO->LDO_DUMMY = reg_temp;
 		SOCPS_ReguDelayAdjust(REGU_DELAY_1MS);
 	}
+	/*Modify the LDO dummy load to 2mA*/
+	reg_temp = LDO->LDO_RFAFE_1209;
+	reg_temp &= ~(LDO_BIT_REG_DMYLOAD_X3_L_1209 | LDO_BIT_REG_DMYLOAD_X2_L_1209);
+	LDO->LDO_RFAFE_1209 = reg_temp;
 }
 
 u32 SOCPS_CPURoleGet(void)

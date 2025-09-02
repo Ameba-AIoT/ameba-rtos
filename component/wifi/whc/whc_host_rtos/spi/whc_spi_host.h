@@ -96,7 +96,7 @@ static inline void set_host_rdy_pin(u8 status)
 }
 
 void whc_spi_host_send_data(struct whc_buf_info *pbuf);
-void whc_spi_host_send_to_dev(u8 *buf, u8 *buf_alloc, u16 len);
+void whc_spi_host_send_to_dev_internal(u8 *buf, u8 *buf_alloc, u16 len);
 void whc_spi_host_init(void);
 
 #endif

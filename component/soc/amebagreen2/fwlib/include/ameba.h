@@ -50,6 +50,7 @@
 #include "ameba_chipinfo.h"
 #include "ameba_sdio_bt.h"
 #include "ameba_sdio_wifi.h"
+#include "ameba_sdio_device.h"
 #include "ameba_aontimer.h"
 #include "ameba_wakepin.h"
 #include "ameba_crypto.h"
@@ -96,7 +97,7 @@
 #include "ameba_reset.h"
 #include "ameba_psram.h"
 #include "ameba_psphy.h"
-#include "ameba_can.h"
+#include "ameba_a2c.h"
 #include "ameba_pmctimer.h"
 #include "ameba_thermal.h"
 

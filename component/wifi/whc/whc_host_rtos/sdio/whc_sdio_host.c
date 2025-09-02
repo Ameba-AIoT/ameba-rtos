@@ -2,6 +2,7 @@
 #include "lwip/pbuf.h"
 
 struct whc_sdio whc_sdio_priv = {0};
+int whc_host_init_done;
 
 extern struct event_priv_t event_priv;
 #define WIFI_STACK_SIZE_API_TASK (4096)
@@ -59,9 +60,11 @@ int sdio_recv_process(uint8_t *pbuf)
 	int ret = 0;
 	uint32_t event = *(uint32_t *)(pbuf + SIZE_RX_DESC);
 	//dump_buf("sdio recv", pbuf + 16, 32);
-#ifdef CONFIG_WHC_BRIDGE_HOST
+#ifdef CONFIG_WHC_CMD_PATH
 	u16 size;
-#else
+#endif
+
+#ifdef CONFIG_WHC_WIFI_API_PATH
 	struct whc_api_info *ret_msg;
 	int counter = 0;
 #endif
@@ -70,7 +73,7 @@ int sdio_recv_process(uint8_t *pbuf)
 	case WHC_WIFI_EVT_RECV_PKTS:
 		whc_sdio_host_rx_handler(pbuf);
 		break;
-#ifndef CONFIG_WHC_BRIDGE_HOST
+#ifdef CONFIG_WHC_WIFI_API_PATH
 	case WHC_WIFI_EVT_API_CALL:
 		while (event_priv.rx_api_msg) {
 			vTaskDelay(1);
@@ -105,6 +108,9 @@ int sdio_recv_process(uint8_t *pbuf)
 			rtos_mem_free(pbuf);
 		}
 		break;
+#endif
+
+#ifndef CONFIG_WHC_CMD_PATH
 	default:
 		RTK_LOGE(TAG_WLAN_INIC, "%s: unknown event:%d\n", __func__, event);
 		rtos_mem_free(pbuf);
@@ -231,7 +237,7 @@ void whc_sdio_host_init_drv(void)
 		RTK_LOGE(TAG_WLAN_INIC, "create rtw_sdio_recv_data_process fail \n");
 	}
 
-#ifndef CONFIG_WHC_BRIDGE_HOST
+#ifdef CONFIG_WHC_WIFI_API_PATH
 	/* init event priv */
 	rtos_sema_create(&(event_priv.api_ret_sema), 0, 0xFFFFFFFF);
 	rtos_mutex_create(&(event_priv.send_mutex));
@@ -279,7 +285,7 @@ void whc_sdio_host_init(void)
 	/* init sdio */
 	whc_sdio_host_init_drv();
 
-	event_priv.host_init_done = 1;
+	whc_host_init_done = 1;
 }
 
 void rtw_sdio_send_data(uint8_t *buf, uint32_t len, void *pskb)

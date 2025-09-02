@@ -8,16 +8,6 @@
 #include "ameba_soc.h"
 #include "log.h"
 
-#ifdef CONFIG_ARM_CORE_CA32
-/* include apcore/spinlock.h for padding a cache line fully*/
-#include "spinlock.h"
-/**
- * @brief The CA32 has two cores that need to be locked
- * when printing to avoid interrupting each other
- */
-static spinlock_t print_lock;
-#endif
-
 static const char *const TAG = "LOG";
 /* Define default log-display level*/
 rtk_log_level_t rtk_log_default_level = RTK_LOG_DEFAULT_LEVEL;
@@ -273,7 +263,8 @@ void rtk_log_write(rtk_log_level_t level, const char *tag, const char letter, co
 			return;
 		}
 #ifdef CONFIG_ARM_CORE_CA32
-		u32 isr_status = spin_lock_irqsave(&print_lock);
+		/* The CA32 has two cores that need to be locked when printing to avoid interrupting each other */
+		rtos_critical_enter(RTOS_CRITICAL_LOG);
 #endif
 		if (tag[0] != '#') {
 			DiagPrintf("[%s-%c] ", tag, letter);
@@ -282,7 +273,7 @@ void rtk_log_write(rtk_log_level_t level, const char *tag, const char letter, co
 		DiagVprintf(fmt, ap);
 		va_end(ap);
 #ifdef CONFIG_ARM_CORE_CA32
-		spin_unlock_irqrestore(&print_lock, isr_status);
+		rtos_critical_exit(RTOS_CRITICAL_LOG);
 #endif
 	}
 }
@@ -296,7 +287,8 @@ void rtk_log_write_nano(rtk_log_level_t level, const char *tag, const char lette
 			return;
 		}
 #ifdef CONFIG_ARM_CORE_CA32
-		u32 isr_status = spin_lock_irqsave(&print_lock);
+		/* The CA32 has two cores that need to be locked when printing to avoid interrupting each other */
+		rtos_critical_enter(RTOS_CRITICAL_LOG);
 #endif
 		if (tag[0] != '#') {
 			DiagPrintfNano("[%s-%c] ", tag, letter);
@@ -305,7 +297,7 @@ void rtk_log_write_nano(rtk_log_level_t level, const char *tag, const char lette
 		DiagVprintfNano(fmt, ap);
 		va_end(ap);
 #ifdef CONFIG_ARM_CORE_CA32
-		spin_unlock_irqrestore(&print_lock, isr_status);
+		rtos_critical_exit(RTOS_CRITICAL_LOG);
 #endif
 	}
 }

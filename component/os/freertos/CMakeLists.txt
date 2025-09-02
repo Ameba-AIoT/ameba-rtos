@@ -173,6 +173,7 @@ elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image3")
         ${portable_soc_mcu_dir}/secure/secure_context_port.c
         ${portable_soc_mcu_dir}/secure/secure_heap.c
         ${portable_soc_mcu_dir}/secure/secure_init.c
+        os_wrapper/os_wrapper_memory.c
     )
     ameba_list_append(private_compile_options
         -O0

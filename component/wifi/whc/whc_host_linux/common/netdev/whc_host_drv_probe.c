@@ -50,7 +50,7 @@ static int rtw_inetaddr_notifier_call(struct notifier_block *nb, unsigned long a
 	return NOTIFY_DONE;
 }
 
-#ifdef CONFIG_IPV6
+#if IS_ENABLED(CONFIG_IPV6)
 static int rtw_inet6addr_notifier_call(struct notifier_block *nb, unsigned long action, void *data)
 {
 	struct inet6_ifaddr *inet6_ifa = (struct inet6_ifaddr *)data;
@@ -69,6 +69,7 @@ static int rtw_inet6addr_notifier_call(struct notifier_block *nb, unsigned long 
 	switch (action) {
 	case NETDEV_UP:
 		memcpy(global_idev.ipv6_addr, &inet6_ifa->addr, RTW_IPv6_ADDR_LEN);
+		whc_fullmac_host_update_ip_addr();
 		dev_dbg(global_idev.fullmac_dev, "%s: up IP: [%pI6]\n", __func__, global_idev.ipv6_addr);
 		break;
 	case NETDEV_DOWN:
@@ -87,7 +88,7 @@ static struct notifier_block rtw_inetaddr_notifier = {
 	.notifier_call = rtw_inetaddr_notifier_call
 };
 
-#ifdef CONFIG_IPV6
+#if IS_ENABLED(CONFIG_IPV6)
 static struct notifier_block rtw_inet6addr_notifier = {
 	.notifier_call = rtw_inet6addr_notifier_call
 };
@@ -96,7 +97,7 @@ static struct notifier_block rtw_inet6addr_notifier = {
 void rtw_inetaddr_notifier_register(void)
 {
 	register_inetaddr_notifier(&rtw_inetaddr_notifier);
-#ifdef CONFIG_IPV6
+#if IS_ENABLED(CONFIG_IPV6)
 	register_inet6addr_notifier(&rtw_inet6addr_notifier);
 #endif
 }
@@ -104,7 +105,7 @@ void rtw_inetaddr_notifier_register(void)
 void rtw_inetaddr_notifier_unregister(void)
 {
 	unregister_inetaddr_notifier(&rtw_inetaddr_notifier);
-#ifdef CONFIG_IPV6
+#if IS_ENABLED(CONFIG_IPV6)
 	unregister_inet6addr_notifier(&rtw_inet6addr_notifier);
 #endif
 }

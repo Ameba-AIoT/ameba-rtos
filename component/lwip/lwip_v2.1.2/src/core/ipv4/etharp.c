@@ -57,6 +57,12 @@
 
 #include <string.h>
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+#include "ameba_soc.h"
+extern SLEEP_ParamDef sleep_param;
+#endif
+
 #ifdef LWIP_HOOK_FILENAME
 #include LWIP_HOOK_FILENAME
 #endif
@@ -1238,5 +1244,62 @@ etharp_request(struct netif *netif, const ip4_addr_t *ipaddr)
   LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_request: sending ARP request.\n"));
   return etharp_request_dst(netif, ipaddr, &ethbroadcast);
 }
+
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+/*
+Called in post sleep process to compenstate the arp ctime
+ */
+void comp_arp_ctime(u32_t ms)
+{
+  int i;
+
+  for (i = 0; i < ARP_TABLE_SIZE; ++i) {
+    u8_t state = arp_table[i].state;
+    if (state != ETHARP_STATE_EMPTY
+#if ETHARP_SUPPORT_STATIC_ENTRIES
+        && (state != ETHARP_STATE_STATIC)
+#endif /* ETHARP_SUPPORT_STATIC_ENTRIES */
+       ) {
+      arp_table[i].ctime += ms / ARP_TMR_INTERVAL;
+    }
+  }
+}
+
+/*
+Check whether etharp_tmr can be removed before enter sleep
+return 0: no, 1: yes
+ */
+u8_t check_etharp_tmr_removable(void)
+{
+  u8_t ret = 1;
+  int i;
+  u32_t max_sleep_time = 0;
+
+  for (i = 0; i < ARP_TABLE_SIZE; ++i) {
+    u8_t state = arp_table[i].state;
+    if (state != ETHARP_STATE_EMPTY
+#if ETHARP_SUPPORT_STATIC_ENTRIES
+        && (state != ETHARP_STATE_STATIC)
+#endif /* ETHARP_SUPPORT_STATIC_ENTRIES */
+       ) {
+      if (state != ETHARP_STATE_STABLE) {
+        ret = 0;
+        break;
+      } else if (arp_table[i].ctime >= ARP_MAXAGE) {
+        ret = 0;
+        break;
+      } else {
+        max_sleep_time = (ARP_MAXAGE - (u32_t)arp_table[i].ctime) * ARP_TMR_INTERVAL;
+        if (sleep_param.sleep_time > max_sleep_time || sleep_param.sleep_time == 0) {
+          sleep_param.sleep_time = max_sleep_time;
+        }
+      }
+    }
+  }
+
+  return ret;
+}
+#endif
 
 #endif /* LWIP_IPV4 && LWIP_ARP */

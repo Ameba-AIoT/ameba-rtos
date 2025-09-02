@@ -842,5 +842,18 @@ void wifi_set_owe_param(struct rtw_owe_param_t *owe_param)
 #endif
 }
 
+s32 wifi_set_tx_advanced_config(struct rtw_tx_advanced_cfg *tx_setting)
+{
+	int ret = 0;
+	u32 param_buf[1] = {0};
+
+	DCache_Clean((u32)tx_setting, sizeof(struct rtw_tx_advanced_cfg));
+	param_buf[0] = (u32)tx_setting;
+	whc_host_api_message_send(WHC_API_WIFI_SET_TX_ADVANCED_CFG, (u8 *)param_buf, 4, (u8 *)&ret, sizeof(ret));
+
+	rtos_mem_free((u8 *)settings_temp);
+	return ret;
+}
+
 #endif	//#if CONFIG_WLAN
 

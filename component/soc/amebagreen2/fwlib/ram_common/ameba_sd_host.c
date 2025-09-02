@@ -665,7 +665,7 @@ u32 SDMMC_CmdBlockLength(SDIOHOST_TypeDef *SDIOx, u32 BlockSize)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_TIMEOUT);
+	errorstate = SDMMC_GetCmdResp1(SDIOx);
 
 	return errorstate;
 }
@@ -689,7 +689,7 @@ u32 SDMMC_CmdReadSingleBlock(SDIOHOST_TypeDef *SDIOx, u32 ReadAdd)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_TIMEOUT);
+	errorstate = SDMMC_GetCmdResp1(SDIOx);
 
 	return errorstate;
 }
@@ -713,7 +713,7 @@ u32 SDMMC_CmdReadMultiBlock(SDIOHOST_TypeDef *SDIOx, u32 ReadAdd)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_TIMEOUT);
+	errorstate = SDMMC_GetCmdResp1(SDIOx);
 
 	return errorstate;
 }
@@ -737,7 +737,7 @@ u32 SDMMC_CmdWriteSingleBlock(SDIOHOST_TypeDef *SDIOx, u32 WriteAdd)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_TIMEOUT);
+	errorstate = SDMMC_GetCmdResp1(SDIOx);
 
 	return errorstate;
 }
@@ -761,7 +761,7 @@ u32 SDMMC_CmdWriteMultiBlock(SDIOHOST_TypeDef *SDIOx, u32 WriteAdd)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_TIMEOUT);
+	errorstate = SDMMC_GetCmdResp1(SDIOx);
 
 	return errorstate;
 }
@@ -785,7 +785,7 @@ u32 SDMMC_CmdSDEraseStartAdd(SDIOHOST_TypeDef *SDIOx, u32 StartAdd)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_TIMEOUT);
+	errorstate = SDMMC_GetCmdResp1(SDIOx);
 
 	return errorstate;
 }
@@ -809,7 +809,7 @@ u32 SDMMC_CmdSDEraseEndAdd(SDIOHOST_TypeDef *SDIOx, u32 EndAdd)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_TIMEOUT);
+	errorstate = SDMMC_GetCmdResp1(SDIOx);
 
 	return errorstate;
 }
@@ -817,9 +817,10 @@ u32 SDMMC_CmdSDEraseEndAdd(SDIOHOST_TypeDef *SDIOx, u32 EndAdd)
 /**
  * @brief  Send the Erase command and check the response
  * @param  SDIOx: Pointer to SDIO register base
+ * @param  BlockCnt: Count of blocks to be erased.
  * @retval HAL status
  */
-u32 SDMMC_CmdErase(SDIOHOST_TypeDef *SDIOx)
+u32 SDMMC_CmdErase(SDIOHOST_TypeDef *SDIOx, u32 BlockCnt)
 {
 	SDIO_CmdInitTypeDef sdmmc_cmdinit;
 	u32 errorstate;
@@ -833,7 +834,7 @@ u32 SDMMC_CmdErase(SDIOHOST_TypeDef *SDIOx)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1B(SDIOx, SDMMC_ERASE_TIMEOUT);
+	errorstate = SDMMC_GetCmdResp1B(SDIOx, SDMMC_ERASE_TIMEOUT * BlockCnt);
 
 	return errorstate;
 }
@@ -877,12 +878,21 @@ u32 SDMMC_CmdSelDesel(SDIOHOST_TypeDef *SDIOx, u32 Addr)
 	sdmmc_cmdinit.Argument = Addr;
 	sdmmc_cmdinit.CmdIndex = SDMMC_SELECT_CARD; // 7
 	sdmmc_cmdinit.CmdType = SDMMC_CMD_NORMAL;
-	sdmmc_cmdinit.RespType = SDMMC_RSP_R1B;
 	sdmmc_cmdinit.DataPresent = SDIO_TRANS_NO_DATA;
+	if (Addr != 0x0) {
+		sdmmc_cmdinit.RespType = SDMMC_RSP_R1B;
+	} else {
+		/* deselect card */
+		sdmmc_cmdinit.RespType = SDMMC_RSP_R1;
+	}
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_TIMEOUT);
+	if (Addr != 0x0) {
+		errorstate = SDMMC_GetCmdResp1B(SDIOx, SDMMC_DAT_TIMEOUT);
+	} else {
+		errorstate = SDMMC_GetCmdResp1(SDIOx);
+	}
 
 	return errorstate;
 }
@@ -962,7 +972,7 @@ u32 SDMMC_CmdAppCommand(SDIOHOST_TypeDef *SDIOx, u32 Argument)
 	/* If there is a HAL_ERR_PARA, it is a MMC card, else
 	it is a SD card: SD card 2.0 (voltage range mismatch)
 	   or SD card 1.x */
-	errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_TIMEOUT);
+	errorstate = SDMMC_GetCmdResp1(SDIOx);
 
 	return errorstate;
 }
@@ -1011,7 +1021,7 @@ u32 SDMMC_CmdBusWidth(SDIOHOST_TypeDef *SDIOx, u32 BusWidth)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_TIMEOUT);
+	errorstate = SDMMC_GetCmdResp1(SDIOx);
 
 	return errorstate;
 }
@@ -1035,7 +1045,7 @@ u32 SDMMC_CmdSetWrBlkEraseCnt(SDIOHOST_TypeDef *SDIOx, u32 BlockCnt)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_TIMEOUT);
+	errorstate = SDMMC_GetCmdResp1(SDIOx);
 
 	return errorstate;
 }
@@ -1059,7 +1069,7 @@ u32 SDMMC_CmdSendSCR(SDIOHOST_TypeDef *SDIOx)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_TIMEOUT);
+	errorstate = SDMMC_GetCmdResp1(SDIOx);
 
 	return errorstate;
 }
@@ -1157,7 +1167,7 @@ u32 SDMMC_CmdSendStatus(SDIOHOST_TypeDef *SDIOx, u32 Argument)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_TIMEOUT);
+	errorstate = SDMMC_GetCmdResp1(SDIOx);
 
 	return errorstate;
 }
@@ -1180,32 +1190,7 @@ u32 SDMMC_CmdStatusRegister(SDIOHOST_TypeDef *SDIOx)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_TIMEOUT);
-
-	return errorstate;
-}
-
-/**
- * @brief  Sends host capacity support information and activates the card's
- *         initialization process. Send MMC_SEND_OP_COND command
- * @param  SDIOx: Pointer to SDIO register base
- * @parame Argument: Argument used for the command
- * @retval HAL status
- */
-u32 SDMMC_CmdOpCondition(SDIOHOST_TypeDef *SDIOx, u32 Argument)
-{
-	SDIO_CmdInitTypeDef sdmmc_cmdinit;
-	u32 errorstate;
-
-	sdmmc_cmdinit.Argument = Argument;
-	sdmmc_cmdinit.CmdIndex = SDMMC_SEND_OP_COND; // CMD1
-	sdmmc_cmdinit.CmdType = SDMMC_CMD_NORMAL;
-	sdmmc_cmdinit.RespType = SDMMC_RSP_R2;
-	sdmmc_cmdinit.DataPresent = SDIO_TRANS_NO_DATA;
-	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-
-	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp3(SDIOx);
+	errorstate = SDMMC_GetCmdResp1(SDIOx);
 
 	return errorstate;
 }
@@ -1232,32 +1217,7 @@ u32 SDMMC_CmdSwitch(SDIOHOST_TypeDef *SDIOx, u32 Argument)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_TIMEOUT);
-
-	return errorstate;
-}
-
-/**
- * @brief  Send the Send EXT_CSD command and check the response.
- * @param  SDIOx Pointer to SDIO host
- * @param  Argument Command Argument
- * @retval HAL status
- */
-u32 SDMMC_CmdSendEXTCSD(SDIOHOST_TypeDef *SDIOx, u32 Argument)
-{
-	SDIO_CmdInitTypeDef sdmmc_cmdinit;
-	u32 errorstate;
-
-	/* Send CMD9 SEND_CSD */
-	sdmmc_cmdinit.Argument = Argument;
-	sdmmc_cmdinit.CmdIndex = SDMMC_SEND_EXT_CSD; // cmd8 SD CARD
-	sdmmc_cmdinit.CmdType = SDMMC_CMD_NORMAL;
-	sdmmc_cmdinit.RespType = SDMMC_RSP_R2;
-	sdmmc_cmdinit.DataPresent = SDIO_TRANS_NO_DATA;
-	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-
-	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_TIMEOUT);
+	errorstate = SDMMC_GetCmdResp1(SDIOx);
 
 	return errorstate;
 }
@@ -1269,16 +1229,17 @@ u32 SDMMC_CmdSendEXTCSD(SDIOHOST_TypeDef *SDIOx, u32 Argument)
  */
 u32 SDMMC_GetCmdError(SDIOHOST_TypeDef *SDIOx)
 {
-	/* 8 is the number of required instruction cycles for the below loop
-	statement. The SDMMC_CMD_TIMEOUT is expressed in us */
-	u32 count = SDMMC_CMD_TIMEOUT * (SystemCoreClock / 8U / 1000000U);
+	u32 count = 0;
 
-	do {
-		if (count-- == 0U) {
+	while (!(SDIO_GetNormSts(SDIOx) & SDIOHOST_BIT_CMD_COMPLETE)) {
+		if (count++ >= SDMMC_CMD_TIMEOUT) {
+			RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
 			return SD_ERROR_TIMEOUT;
 		}
 
-	} while (!(SDIO_GetNormSts(SDIOx) & SDIOHOST_BIT_CMD_COMPLETE));
+		/* exit while-loop ASAP */
+		DelayUs(1);
+	}
 
 	SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
 
@@ -1288,25 +1249,30 @@ u32 SDMMC_GetCmdError(SDIOHOST_TypeDef *SDIOx)
 /**
  * @brief  Checks for error conditions for R1 response.
  * @param  SDIOx Pointer to SDIO host
- * @param  Timeout: Timoout value in ms.
  * @retval SD Card error state
  */
-u32 SDMMC_GetCmdResp1(SDIOHOST_TypeDef *SDIOx, u32 Timeout)
+u32 SDMMC_GetCmdResp1(SDIOHOST_TypeDef *SDIOx)
 {
 	u32 response_r0;
+	u32 count = 0;
 	u32 norm_int, err_int;
 
-	/* 8 is the number of required instruction cycles for the below loop
-	statement. The Timeout is expressed in us */
-	u32 count = Timeout * (SystemCoreClock / 8U / 1000000U);
-
-	do {
-		if (count-- == 0U) {
-			return SD_ERROR_TIMEOUT;
-		}
+	while (1) {
 		norm_int = SDIO_GetNormSts(SDIOx);
 		err_int = SDIO_GetErrSts(SDIOx);
-	} while (!(norm_int & SDIOHOST_BIT_CMD_COMPLETE || err_int & SDIO_CMD_ERR));
+
+		if ((norm_int & SDIOHOST_BIT_CMD_COMPLETE) || (err_int & SDIO_CMD_ERR)) {
+			break;
+		}
+
+		if (count++ >= SDMMC_CMD_TIMEOUT) {
+			RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
+			return SD_ERROR_TIMEOUT;
+		}
+
+		/* exit while-loop ASAP */
+		DelayUs(1);
+	}
 
 	if (norm_int & SDIOHOST_BIT_CMD_COMPLETE) {
 		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
@@ -1317,7 +1283,7 @@ u32 SDMMC_GetCmdResp1(SDIOHOST_TypeDef *SDIOx, u32 Timeout)
 		if (err_int & SDIOHOST_BIT_CMD_TIMEOUT_ERR) {
 			return SD_ERROR_CMD_RSP_TIMEOUT;
 		} else {
-			return SD_ERROR_CMD_CRC_FAIL;
+			return SD_ERROR_GENERAL_UNKNOWN_ERR;
 		}
 	}
 
@@ -1370,30 +1336,43 @@ u32 SDMMC_GetCmdResp1(SDIOHOST_TypeDef *SDIOx, u32 Timeout)
 /**
  * @brief  Checks for error conditions for R1 response.
  * @param  SDIOx Pointer to SDIO host
- * @param  Timeout: Timoout value in ms.
+ * @param  Timeout: Timeout value in us.
  * @retval SD Card error state
  */
 u32 SDMMC_GetCmdResp1B(SDIOHOST_TypeDef *SDIOx, u32 Timeout)
 {
 	u32 response_r0;
+	u32 count = 0;
 	u32 norm_int, err_int;
 
-	/* 8 is the number of required instruction cycles for the below loop
-	statement. The Timeout is expressed in us */
-	u32 count = Timeout * (SystemCoreClock / 8U / 1000000U);
-
-	do {
-		if (count-- == 0U) {
-			return SD_ERROR_TIMEOUT;
-		}
+	while (1) {
 		norm_int = SDIO_GetNormSts(SDIOx);
 		err_int = SDIO_GetErrSts(SDIOx);
-		/* KW: SDIOHOST_BIT_XFER_COMPLETE is set when a command with busy is completed */
-		/* KW: SDIOHOST_BIT_DATA_TIMEOUT_ERR is set when busy timeout for r1b,r5b type */
-	} while (!(norm_int & SDIOHOST_BIT_XFER_COMPLETE || err_int & (SDIO_CMD_ERR | SDIOHOST_BIT_DATA_TIMEOUT_ERR)));
+
+		if ((norm_int & SDIOHOST_BIT_XFER_COMPLETE) || (err_int & (SDIO_CMD_ERR | SDIOHOST_BIT_DATA_TIMEOUT_ERR))) {
+			break;
+		}
+
+		if (count++ >= Timeout) {
+			RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
+			return SD_ERROR_TIMEOUT;
+		}
+
+		/* exit while-loop ASAP */
+		DelayUs(1);
+	}
 
 	if (norm_int & SDIOHOST_BIT_CMD_COMPLETE) {
 		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
+	}
+
+	if (norm_int & SDIOHOST_BIT_XFER_COMPLETE) {
+		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_XFER_COMPLETE);
+	}
+
+	if (!(norm_int & SDIOHOST_BIT_XFER_COMPLETE) && (err_int & SDIOHOST_BIT_DATA_TIMEOUT_ERR)) {
+		RTK_LOGE(TAG, "%s busy\n", __FUNCTION__);
+		return SD_ERROR_BUSY;
 	}
 
 	if (err_int & SDIO_CMD_ERR) {
@@ -1401,7 +1380,7 @@ u32 SDMMC_GetCmdResp1B(SDIOHOST_TypeDef *SDIOx, u32 Timeout)
 		if (err_int & SDIOHOST_BIT_CMD_TIMEOUT_ERR) {
 			return SD_ERROR_CMD_RSP_TIMEOUT;
 		} else {
-			return SD_ERROR_CMD_CRC_FAIL;
+			return SD_ERROR_GENERAL_UNKNOWN_ERR;
 		}
 	}
 
@@ -1458,18 +1437,25 @@ u32 SDMMC_GetCmdResp1B(SDIOHOST_TypeDef *SDIOx, u32 Timeout)
  */
 u32 SDMMC_GetCmdResp2(SDIOHOST_TypeDef *SDIOx)
 {
+	u32 count = 0;
 	u32 norm_int, err_int;
-	/* 8 is the number of required instruction cycles for the below loop
-	statement. The SDMMC_CMD_TIMEOUT is expressed in us */
-	u32 count = SDMMC_CMD_TIMEOUT * (SystemCoreClock / 8U / 1000000U);
 
-	do {
-		if (count-- == 0U) {
-			return SD_ERROR_TIMEOUT;
-		}
+	while (1) {
 		norm_int = SDIO_GetNormSts(SDIOx);
 		err_int = SDIO_GetErrSts(SDIOx);
-	} while (!(norm_int & SDIOHOST_BIT_CMD_COMPLETE || err_int & SDIO_CMD_ERR));
+
+		if ((norm_int & SDIOHOST_BIT_CMD_COMPLETE) || (err_int & SDIO_CMD_ERR)) {
+			break;
+		}
+
+		if (count++ >= SDMMC_CMD_TIMEOUT) {
+			RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
+			return SD_ERROR_TIMEOUT;
+		}
+
+		/* exit while-loop ASAP */
+		DelayUs(1);
+	}
 
 	if (norm_int & SDIOHOST_BIT_CMD_COMPLETE) {
 		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
@@ -1480,7 +1466,7 @@ u32 SDMMC_GetCmdResp2(SDIOHOST_TypeDef *SDIOx)
 		if (err_int & SDIOHOST_BIT_CMD_TIMEOUT_ERR) {
 			return SD_ERROR_CMD_RSP_TIMEOUT;
 		} else {
-			return SD_ERROR_CMD_CRC_FAIL;
+			return SD_ERROR_GENERAL_UNKNOWN_ERR;
 		}
 	}
 
@@ -1494,18 +1480,25 @@ u32 SDMMC_GetCmdResp2(SDIOHOST_TypeDef *SDIOx)
  */
 u32 SDMMC_GetCmdResp3(SDIOHOST_TypeDef *SDIOx)
 {
+	u32 count = 0;
 	u32 norm_int, err_int;
-	/* 8 is the number of required instruction cycles for the below loop
-	statement. The SDMMC_CMD_TIMEOUT is expressed in us */
-	u32 count = SDMMC_CMD_TIMEOUT * (SystemCoreClock / 8U / 1000000U);
 
-	do {
-		if (count-- == 0U) {
-			return SD_ERROR_TIMEOUT;
-		}
+	while (1) {
 		norm_int = SDIO_GetNormSts(SDIOx);
 		err_int = SDIO_GetErrSts(SDIOx);
-	} while (!(norm_int & SDIOHOST_BIT_CMD_COMPLETE || err_int & SDIO_CMD_ERR));
+
+		if ((norm_int & SDIOHOST_BIT_CMD_COMPLETE) || (err_int & SDIO_CMD_ERR)) {
+			break;
+		}
+
+		if (count++ >= SDMMC_CMD_TIMEOUT) {
+			RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
+			return SD_ERROR_TIMEOUT;
+		}
+
+		/* exit while-loop ASAP */
+		DelayUs(1);
+	}
 
 	if (norm_int & SDIOHOST_BIT_CMD_COMPLETE) {
 		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
@@ -1515,6 +1508,8 @@ u32 SDMMC_GetCmdResp3(SDIOHOST_TypeDef *SDIOx)
 		SDIO_ClearErrSts(SDIOx, SDIO_CMD_ERR);
 		if (err_int & SDIOHOST_BIT_CMD_TIMEOUT_ERR) {
 			return SD_ERROR_CMD_RSP_TIMEOUT;
+		} else {
+			return SD_ERROR_GENERAL_UNKNOWN_ERR;
 		}
 	}
 
@@ -1528,18 +1523,25 @@ u32 SDMMC_GetCmdResp3(SDIOHOST_TypeDef *SDIOx)
  */
 u32 SDMMC_GetCmdResp4(SDIOHOST_TypeDef *SDIOx)
 {
+	u32 count = 0;
 	u32 norm_int, err_int;
-	/* 8 is the number of required instruction cycles for the below loop
-	statement. The SDMMC_CMD_TIMEOUT is expressed in us */
-	u32 count = SDMMC_CMD_TIMEOUT * (SystemCoreClock / 8U / 1000000U);
 
-	do {
-		if (count-- == 0U) {
-			return SD_ERROR_TIMEOUT;
-		}
+	while (1) {
 		norm_int = SDIO_GetNormSts(SDIOx);
 		err_int = SDIO_GetErrSts(SDIOx);
-	} while (!(norm_int & SDIOHOST_BIT_CMD_COMPLETE || err_int & SDIO_CMD_ERR));
+
+		if ((norm_int & SDIOHOST_BIT_CMD_COMPLETE) || (err_int & SDIO_CMD_ERR)) {
+			break;
+		}
+
+		if (count++ >= SDMMC_CMD_TIMEOUT) {
+			RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
+			return SD_ERROR_TIMEOUT;
+		}
+
+		/* exit while-loop ASAP */
+		DelayUs(1);
+	}
 
 	if (norm_int & SDIOHOST_BIT_CMD_COMPLETE) {
 		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
@@ -1549,6 +1551,8 @@ u32 SDMMC_GetCmdResp4(SDIOHOST_TypeDef *SDIOx)
 		SDIO_ClearErrSts(SDIOx, SDIO_CMD_ERR);
 		if (err_int & SDIOHOST_BIT_CMD_TIMEOUT_ERR) {
 			return SD_ERROR_CMD_RSP_TIMEOUT;
+		} else {
+			return SD_ERROR_GENERAL_UNKNOWN_ERR;
 		}
 	}
 
@@ -1563,19 +1567,25 @@ u32 SDMMC_GetCmdResp4(SDIOHOST_TypeDef *SDIOx)
 u32 SDMMC_GetCmdResp5(SDIOHOST_TypeDef *SDIOx)
 {
 	u32 response_r0;
+	u32 count = 0;
 	u32 norm_int, err_int;
 
-	/* 8 is the number of required instruction cycles for the below loop
-	statement. The SDMMC_CMD_TIMEOUT is expressed in us */
-	u32 count = SDMMC_CMD_TIMEOUT * (SystemCoreClock / 8U / 1000000U);
-
-	do {
-		if (count-- == 0U) {
-			return SD_ERROR_TIMEOUT;
-		}
+	while (1) {
 		norm_int = SDIO_GetNormSts(SDIOx);
 		err_int = SDIO_GetErrSts(SDIOx);
-	} while (!(norm_int & SDIOHOST_BIT_CMD_COMPLETE || err_int & SDIO_CMD_ERR));
+
+		if ((norm_int & SDIOHOST_BIT_CMD_COMPLETE) || (err_int & SDIO_CMD_ERR)) {
+			break;
+		}
+
+		if (count++ >= SDMMC_CMD_TIMEOUT) {
+			RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
+			return SD_ERROR_TIMEOUT;
+		}
+
+		/* exit while-loop ASAP */
+		DelayUs(1);
+	}
 
 	if (norm_int & SDIOHOST_BIT_CMD_COMPLETE) {
 		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
@@ -1586,7 +1596,7 @@ u32 SDMMC_GetCmdResp5(SDIOHOST_TypeDef *SDIOx)
 		if (err_int & SDIOHOST_BIT_CMD_TIMEOUT_ERR) {
 			return SD_ERROR_CMD_RSP_TIMEOUT;
 		} else {
-			return SD_ERROR_CMD_CRC_FAIL;
+			return SD_ERROR_GENERAL_UNKNOWN_ERR;
 		}
 	}
 
@@ -1617,19 +1627,25 @@ u32 SDMMC_GetCmdResp5(SDIOHOST_TypeDef *SDIOx)
 u32 SDMMC_GetCmdResp6(SDIOHOST_TypeDef *SDIOx, u16 *pRCA)
 {
 	u32 response_r0;
+	u32 count = 0;
 	u32 norm_int, err_int;
 
-	/* 8 is the number of required instruction cycles for the below loop
-	statement. The SDMMC_CMD_TIMEOUT is expressed in us */
-	u32 count = SDMMC_CMD_TIMEOUT * (SystemCoreClock / 8U / 1000000U);
-
-	do {
-		if (count-- == 0U) {
-			return SD_ERROR_TIMEOUT;
-		}
+	while (1) {
 		norm_int = SDIO_GetNormSts(SDIOx);
 		err_int = SDIO_GetErrSts(SDIOx);
-	} while (!(norm_int & SDIOHOST_BIT_CMD_COMPLETE || err_int & SDIO_CMD_ERR));
+
+		if ((norm_int & SDIOHOST_BIT_CMD_COMPLETE) || (err_int & SDIO_CMD_ERR)) {
+			break;
+		}
+
+		if (count++ >= SDMMC_CMD_TIMEOUT) {
+			RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
+			return SD_ERROR_TIMEOUT;
+		}
+
+		/* exit while-loop ASAP */
+		DelayUs(1);
+	}
 
 	if (norm_int & SDIOHOST_BIT_CMD_COMPLETE) {
 		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
@@ -1640,7 +1656,7 @@ u32 SDMMC_GetCmdResp6(SDIOHOST_TypeDef *SDIOx, u16 *pRCA)
 		if (err_int & SDIOHOST_BIT_CMD_TIMEOUT_ERR) {
 			return SD_ERROR_CMD_RSP_TIMEOUT;
 		} else {
-			return SD_ERROR_CMD_CRC_FAIL;
+			return SD_ERROR_GENERAL_UNKNOWN_ERR;
 		}
 	}
 
@@ -1668,18 +1684,25 @@ u32 SDMMC_GetCmdResp6(SDIOHOST_TypeDef *SDIOx, u16 *pRCA)
  */
 u32 SDMMC_GetCmdResp7(SDIOHOST_TypeDef *SDIOx)
 {
+	u32 count = 0;
 	u32 norm_int, err_int;
-	/* 8 is the number of required instruction cycles for the below loop
-	statement. The SDMMC_CMD_TIMEOUT is expressed in us */
-	u32 count = SDMMC_CMD_TIMEOUT * (SystemCoreClock / 8U / 1000000U);
 
-	do {
-		if (count-- == 0U) {
-			return SD_ERROR_TIMEOUT;
-		}
+	while (1) {
 		norm_int = SDIO_GetNormSts(SDIOx);
 		err_int = SDIO_GetErrSts(SDIOx);
-	} while (!(norm_int & SDIOHOST_BIT_CMD_COMPLETE || err_int & SDIO_CMD_ERR));
+
+		if ((norm_int & SDIOHOST_BIT_CMD_COMPLETE) || (err_int & SDIO_CMD_ERR)) {
+			break;
+		}
+
+		if (count++ >= SDMMC_CMD_TIMEOUT) {
+			RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
+			return SD_ERROR_TIMEOUT;
+		}
+
+		/* exit while-loop ASAP */
+		DelayUs(1);
+	}
 
 	if (norm_int & SDIOHOST_BIT_CMD_COMPLETE) {
 		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
@@ -1691,7 +1714,7 @@ u32 SDMMC_GetCmdResp7(SDIOHOST_TypeDef *SDIOx)
 		if (err_int & SDIOHOST_BIT_CMD_TIMEOUT_ERR) {
 			return SD_ERROR_CMD_RSP_TIMEOUT;
 		} else {
-			return SD_ERROR_CMD_CRC_FAIL;
+			return SD_ERROR_GENERAL_UNKNOWN_ERR;
 		}
 	}
 

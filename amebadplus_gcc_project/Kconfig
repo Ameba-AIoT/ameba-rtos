@@ -260,6 +260,16 @@ menu "CONFIG WHC INTF"
         endmenu
     endif
 
+    if WHC_FULLMAC_HOST && !WHC_INTF_IPC_MENU
+        menu "FULLMAC HOST config"
+        config WHC_CMD_PATH
+            default y
+            bool "Support WHC CMD PATH"
+        config WHC_WIFI_API_PATH
+            bool "Support WHC WIFI API PATH"
+        endmenu
+    endif
+
     config WHC_HOST_FOR_KM4
         bool
     config WHC_DEV_FOR_KM0
@@ -272,7 +282,12 @@ menu "CONFIG WHC INTF"
         bool
     config WHC_WIFI_API_PATH
         bool
-
+    config WHC_CMD_PATH
+        bool
+    config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4
+        bool
+    config WHC_DUAL_TCPIP_FOR_KM4
+        bool
 endmenu
 
 menu "CONFIG WIFI"

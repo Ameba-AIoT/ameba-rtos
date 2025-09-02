@@ -9,7 +9,8 @@
 static const char *const TAG = "SD";
 
 SD_HdlTypeDef hsd0;
-extern SDIOHCFG_TypeDef sdioh_config;
+
+static u32 wait_for_sema = 0;
 
 /* 32-Byte aligned for cache maintenance */
 static u8 scratch[SD_BLOCK_SIZE]__attribute__((aligned(32))) = {0};
@@ -75,40 +76,35 @@ static void SD_CardDetectHdl(u32 id, u32 event)
 static void SDIOH_Pinmux(void)
 {
 	GPIO_InitTypeDef GPIO_InitStruct_CD;
+	u8 idx;
 	u8 port_num;
+
+	/* Be consistent with order of SDIO_PAD[][]. */
+	char *sdh_pin[] = {"CLK", "CMD", "D0", "D1", "D2", "D3"};
 	IRQn_Type GPIO_IRQ[3] = {
 		GPIOA_IRQ,
 		GPIOB_IRQ,
 		GPIOC_IRQ
 	};
 
-	Pinmux_Config(sdioh_config.sdioh_cmd_pin, PINMUX_FUNCTION_SDIO_MST);	/* CMD */
-	Pinmux_Config(sdioh_config.sdioh_clk_pin, PINMUX_FUNCTION_SDIO_MST);	/* CLK */
-	Pinmux_Config(sdioh_config.sdioh_d0_pin, PINMUX_FUNCTION_SDIO_MST); 	/* D0/DATA */
-	Pinmux_Config(sdioh_config.sdioh_d1_pin, PINMUX_FUNCTION_SDIO_MST); 	/* D1/IRQ */
-
-	PAD_PullCtrl(sdioh_config.sdioh_cmd_pin, GPIO_PuPd_UP);
-	PAD_PullCtrl(sdioh_config.sdioh_clk_pin, GPIO_PuPd_UP);
-	PAD_PullCtrl(sdioh_config.sdioh_d0_pin, GPIO_PuPd_UP);
-	PAD_PullCtrl(sdioh_config.sdioh_d1_pin, GPIO_PuPd_UP);
-
-	RTK_LOGI(TAG, "P%c%d <-- SDH_CMD\n", 'A' + PORT_NUM(sdioh_config.sdioh_cmd_pin), PIN_NUM(sdioh_config.sdioh_cmd_pin));
-	RTK_LOGI(TAG, "P%c%d <-- SDH_CLK\n", 'A' + PORT_NUM(sdioh_config.sdioh_clk_pin), PIN_NUM(sdioh_config.sdioh_clk_pin));
-	RTK_LOGI(TAG, "P%c%d <-- SDH_D0/DATA\n", 'A' + PORT_NUM(sdioh_config.sdioh_d0_pin), PIN_NUM(sdioh_config.sdioh_d0_pin));
-	RTK_LOGI(TAG, "P%c%d <-- SDH_D1/IRQ\n", 'A' + PORT_NUM(sdioh_config.sdioh_d1_pin), PIN_NUM(sdioh_config.sdioh_d1_pin));
-
-	if (sdioh_config.sdioh_bus_width == SDIOH_BUS_WIDTH_4BIT) {
-		Pinmux_Config(sdioh_config.sdioh_d2_pin, PINMUX_FUNCTION_SDIO_MST);	/* D2 */
-		Pinmux_Config(sdioh_config.sdioh_d3_pin, PINMUX_FUNCTION_SDIO_MST);	/* D3 */
-
-		PAD_PullCtrl(sdioh_config.sdioh_d2_pin, GPIO_PuPd_UP);
-		PAD_PullCtrl(sdioh_config.sdioh_d3_pin, GPIO_PuPd_UP);
-
-		RTK_LOGI(TAG, "P%c%d <-- SDH_D2\n", 'A' + PORT_NUM(sdioh_config.sdioh_d2_pin), PIN_NUM(sdioh_config.sdioh_d2_pin));
-		RTK_LOGI(TAG, "P%c%d <-- SDH_D3\n", 'A' + PORT_NUM(sdioh_config.sdioh_d3_pin), PIN_NUM(sdioh_config.sdioh_d3_pin));
+	/* CLK & CMD & D0 & D1 */
+	for (idx = 0; idx < 4; idx++) {
+		Pinmux_Config(SDIO_PAD[SDH_Pin_Grp][idx], PINMUX_FUNCTION_SDIO_MST);
+		PAD_PullCtrl(SDIO_PAD[SDH_Pin_Grp][idx], GPIO_PuPd_UP);
+		RTK_LOGI(TAG, "SD_%s --> P%c%d\n", sdh_pin[idx], 'A' + PORT_NUM(SDIO_PAD[SDH_Pin_Grp][idx]), PIN_NUM(SDIO_PAD[SDH_Pin_Grp][idx]));
 	}
 
-	if (sdioh_config.sdioh_cd_pin != _PNC) {			/* CD */
+	/* D2 & D3 */
+	if (sdioh_config.sdioh_bus_width == SDIOH_BUS_WIDTH_4BIT) {
+		for (idx = 4; idx < 6; idx++) {
+			Pinmux_Config(SDIO_PAD[SDH_Pin_Grp][idx], PINMUX_FUNCTION_SDIO_MST);
+			PAD_PullCtrl(SDIO_PAD[SDH_Pin_Grp][idx], GPIO_PuPd_UP);
+			RTK_LOGI(TAG, "SDH_%s --> P%c%d\n", sdh_pin[idx], 'A' + PORT_NUM(SDIO_PAD[SDH_Pin_Grp][idx]), PIN_NUM(SDIO_PAD[SDH_Pin_Grp][idx]));
+		}
+	}
+
+	/* CD */
+	if (sdioh_config.sdioh_cd_pin != _PNC) {
 		port_num = PORT_NUM(sdioh_config.sdioh_cd_pin);
 		GPIO_INTConfig(sdioh_config.sdioh_cd_pin, DISABLE);
 
@@ -123,11 +119,20 @@ static void SDIOH_Pinmux(void)
 
 		GPIO_UserRegIrq(sdioh_config.sdioh_cd_pin, (void *)SD_CardDetectHdl, (void *)NULL);
 		GPIO_INTConfig(sdioh_config.sdioh_cd_pin, ENABLE);
-		RTK_LOGI(TAG, "P%c%d <-- SDH_CD\n", 'A' + port_num, PIN_NUM(sdioh_config.sdioh_cd_pin));
+		RTK_LOGI(TAG, "SDH_CD --> P%c%d\n", 'A' + port_num, PIN_NUM(sdioh_config.sdioh_cd_pin));
 	}
 
-	if (sdioh_config.sdioh_wp_pin != _PNC) {			/* WP */
+	/* WP */
+	if (sdioh_config.sdioh_wp_pin != _PNC) {
 		RTK_LOGI(TAG, "SDH WP is not supported.\n");
+	}
+}
+
+static void SD_PreDMATrans(SD_HdlTypeDef *hsd)
+{
+	if ((CPU_InInterrupt() == 0) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (sd_sema_take_fn != NULL)) {
+		wait_for_sema = 1;
+		SDIO_ConfigNormIntSig(hsd->Instance, SDIOHOST_BIT_XFER_COMPLETE_SIGNAL_EN, ENABLE);
 	}
 }
 
@@ -507,8 +512,6 @@ static SD_RESULT SD_InitCard(SD_HdlTypeDef *hsd)
 		hsd->ErrorCode |= errorstate;
 		return SD_ERROR;
 	}
-	/* Trans_Complete_BIT will be set when busy is de-asserted. */
-	SD_WaitTransDone(hsd, SDMMC_DAT_TIMEOUT);
 
 	/* All cards are initialized */
 	return SD_OK;
@@ -628,6 +631,7 @@ SD_RESULT SD_IO_RW_Direct(SD_HdlTypeDef *hsd, u8 RWFlag, u8 Func, u32 Addr, u8 I
 
 		return SD_OK;
 	} else {
+		RTK_LOGW(TAG, "%s SDH NOT READY!\n", __FUNCTION__);
 		return SD_ERROR;
 	}
 }
@@ -686,6 +690,8 @@ SD_RESULT SD_IO_RW_Extended(SD_HdlTypeDef *hsd, u8 RWFlag, u8 Func, u8 OpCode,
 		arg |= Addr << SD_ARG_CMD53_ADDR_SHIFT;
 		arg |= Cnt << SD_ARG_CMD53_COUNT_SHIFT;
 
+		SD_PreDMATrans(hsd);
+
 		errorstate = SDIO_CmdRWExtended(SDIOx, arg);
 		if (errorstate != SD_ERROR_NONE) {
 			hsd->ErrorCode |= errorstate;
@@ -694,6 +700,7 @@ SD_RESULT SD_IO_RW_Extended(SD_HdlTypeDef *hsd, u8 RWFlag, u8 Func, u8 OpCode,
 		}
 
 		if (SD_WaitTransDone(hsd, SDMMC_DAT_TIMEOUT) != HAL_OK) {
+			RTK_LOGE(TAG, "%s WaitTransDone error!\n", __FUNCTION__);
 			return SD_ERROR;
 		}
 
@@ -706,6 +713,7 @@ SD_RESULT SD_IO_RW_Extended(SD_HdlTypeDef *hsd, u8 RWFlag, u8 Func, u8 OpCode,
 
 		return SD_OK;
 	} else {
+		RTK_LOGW(TAG, "%s SDH NOT READY!\n", __FUNCTION__);
 		return SD_ERROR;
 	}
 }
@@ -872,6 +880,7 @@ SD_RESULT SD_ReadBlocks_PIO(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 Num
 
 		return SD_OK;
 	} else {
+		RTK_LOGW(TAG, "%s SDH NOT READY!\n", __FUNCTION__);
 		hsd->ErrorCode |= SD_ERROR_BUSY;
 		return SD_ERROR;
 	}
@@ -1027,6 +1036,7 @@ SD_RESULT SD_WriteBlocks_PIO(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 Nu
 
 		return SD_OK;
 	} else {
+		RTK_LOGW(TAG, "%s SDH NOT READY!\n", __FUNCTION__);
 		hsd->ErrorCode |= SD_ERROR_BUSY;
 		return SD_ERROR;
 	}
@@ -1078,6 +1088,8 @@ SD_RESULT SD_ReadBlocks_IT(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 Numb
 			add *= SD_BLOCK_SIZE;
 		}
 
+		SD_PreDMATrans(hsd);
+
 		/* Read Blocks in IT mode */
 		if (NumberOfBlocks > 1U) {
 			hsd->Context = (SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_IT);
@@ -1101,6 +1113,7 @@ SD_RESULT SD_ReadBlocks_IT(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 Numb
 		}
 
 		if (SD_WaitTransDone(hsd, SDMMC_DAT_TIMEOUT) != HAL_OK) {
+			RTK_LOGE(TAG, "%s WaitTransDone error!\n", __FUNCTION__);
 			return SD_ERROR;
 		}
 
@@ -1108,6 +1121,7 @@ SD_RESULT SD_ReadBlocks_IT(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 Numb
 
 		return SD_OK;
 	} else {
+		RTK_LOGW(TAG, "%s SDH NOT READY!\n", __FUNCTION__);
 		return SD_ERROR;
 	}
 }
@@ -1173,10 +1187,14 @@ SD_RESULT SD_WriteBlocks_IT(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 Num
 				return errorstate;
 			}
 
+			SD_PreDMATrans(hsd);
+
 			/* Write Multi Block command */
 			errorstate = SDMMC_CmdWriteMultiBlock(SDIOx, add);
 		} else {
 			hsd->Context = (SD_CONTEXT_WRITE_SINGLE_BLOCK | SD_CONTEXT_IT);
+
+			SD_PreDMATrans(hsd);
 
 			/* Write Single Block command */
 			errorstate = SDMMC_CmdWriteSingleBlock(SDIOx, add);
@@ -1192,6 +1210,7 @@ SD_RESULT SD_WriteBlocks_IT(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 Num
 		}
 
 		if (SD_WaitTransDone(hsd, SDMMC_DAT_TIMEOUT) != HAL_OK) {
+			RTK_LOGE(TAG, "%s WaitTransDone error!\n", __FUNCTION__);
 			return SD_ERROR;
 		}
 
@@ -1199,6 +1218,7 @@ SD_RESULT SD_WriteBlocks_IT(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 Num
 
 		return SD_OK;
 	} else {
+		RTK_LOGW(TAG, "%s SDH NOT READY!\n", __FUNCTION__);
 		return SD_ERROR;
 	}
 }
@@ -1250,6 +1270,8 @@ SD_RESULT SD_ReadBlocks_DMA(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 Num
 			add *= SD_BLOCK_SIZE;
 		}
 
+		SD_PreDMATrans(hsd);
+
 		/* Read Blocks in DMA mode */
 		if (NumberOfBlocks > 1U) {
 			hsd->Context = (SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_DMA);
@@ -1271,7 +1293,8 @@ SD_RESULT SD_ReadBlocks_DMA(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 Num
 			return SD_ERROR;
 		}
 
-		if (SD_WaitTransDone(hsd, SDMMC_DAT_TIMEOUT) != HAL_OK) {
+		if (SD_WaitTransDone(hsd, SDMMC_READ_TIMEOUT * NumberOfBlocks) != HAL_OK) {
+			RTK_LOGE(TAG, "%s WaitTransDone error!\n", __FUNCTION__);
 			return SD_ERROR;
 		}
 
@@ -1279,6 +1302,7 @@ SD_RESULT SD_ReadBlocks_DMA(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 Num
 
 		return SD_OK;
 	} else {
+		RTK_LOGW(TAG, "%s SDH NOT READY!\n", __FUNCTION__);
 		return SD_ERROR;
 	}
 }
@@ -1346,10 +1370,14 @@ SD_RESULT SD_WriteBlocks_DMA(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 Nu
 				return errorstate;
 			}
 
+			SD_PreDMATrans(hsd);
+
 			/* Write Multi Block command */
 			errorstate = SDMMC_CmdWriteMultiBlock(SDIOx, add);
 		} else {
 			hsd->Context = (SD_CONTEXT_WRITE_SINGLE_BLOCK | SD_CONTEXT_DMA);
+
+			SD_PreDMATrans(hsd);
 
 			/* Write Single Block command */
 			errorstate = SDMMC_CmdWriteSingleBlock(SDIOx, add);
@@ -1364,7 +1392,8 @@ SD_RESULT SD_WriteBlocks_DMA(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 Nu
 			return SD_ERROR;
 		}
 
-		if (SD_WaitTransDone(hsd, SDMMC_DAT_TIMEOUT) != HAL_OK) {
+		if (SD_WaitTransDone(hsd, SDMMC_WRITE_TIMEOUT * NumberOfBlocks) != HAL_OK) {
+			RTK_LOGE(TAG, "%s WaitTransDone error!\n", __FUNCTION__);
 			return SD_ERROR;
 		}
 
@@ -1372,6 +1401,7 @@ SD_RESULT SD_WriteBlocks_DMA(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 Nu
 
 		return SD_OK;
 	} else {
+		RTK_LOGW(TAG, "%s SDH NOT READY!\n", __FUNCTION__);
 		return SD_ERROR;
 	}
 }
@@ -1452,6 +1482,8 @@ SD_RESULT SD_ReadBlocks_ADMA(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 *p
 			add *= SD_BLOCK_SIZE;
 		}
 
+		SD_PreDMATrans(hsd);
+
 		/* Read Blocks in DMA mode */
 		if (blockcnt > 1U) {
 			hsd->Context = (SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_DMA);
@@ -1474,7 +1506,8 @@ SD_RESULT SD_ReadBlocks_ADMA(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 *p
 			return SD_ERROR;
 		}
 
-		if (SD_WaitTransDone(hsd, SDMMC_DAT_TIMEOUT) != HAL_OK) {
+		if (SD_WaitTransDone(hsd, SDMMC_READ_TIMEOUT * blockcnt) != HAL_OK) {
+			RTK_LOGE(TAG, "%s WaitTransDone error!\n", __FUNCTION__);
 			return SD_ERROR;
 		}
 
@@ -1482,6 +1515,7 @@ SD_RESULT SD_ReadBlocks_ADMA(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 *p
 
 		return SD_OK;
 	} else {
+		RTK_LOGW(TAG, "%s SDH NOT READY!\n", __FUNCTION__);
 		return SD_ERROR;
 	}
 }
@@ -1557,10 +1591,14 @@ SD_RESULT SD_WriteBlocks_ADMA(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 *
 				return errorstate;
 			}
 
+			SD_PreDMATrans(hsd);
+
 			/* Write Multi Block command */
 			errorstate = SDMMC_CmdWriteMultiBlock(SDIOx, add);
 		} else {
 			hsd->Context = (SD_CONTEXT_WRITE_SINGLE_BLOCK | SD_CONTEXT_DMA);
+
+			SD_PreDMATrans(hsd);
 
 			/* Write Single Block command */
 			errorstate = SDMMC_CmdWriteSingleBlock(SDIOx, add);
@@ -1575,7 +1613,8 @@ SD_RESULT SD_WriteBlocks_ADMA(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 *
 			return SD_ERROR;
 		}
 
-		if (SD_WaitTransDone(hsd, SDMMC_DAT_TIMEOUT) != HAL_OK) {
+		if (SD_WaitTransDone(hsd, SDMMC_WRITE_TIMEOUT * blockcnt) != HAL_OK) {
+			RTK_LOGE(TAG, "%s WaitTransDone error!\n", __FUNCTION__);
 			return SD_ERROR;
 		}
 
@@ -1583,6 +1622,7 @@ SD_RESULT SD_WriteBlocks_ADMA(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 *
 
 		return SD_OK;
 	} else {
+		RTK_LOGW(TAG, "%s SDH NOT READY!\n", __FUNCTION__);
 		return SD_ERROR;
 	}
 }
@@ -1665,7 +1705,7 @@ SD_RESULT SD_Erase(SD_HdlTypeDef *hsd, u32 BlockStartAdd, u32 BlockEndAdd)
 		}
 
 		/* Send CMD38 ERASE */
-		errorstate = SDMMC_CmdErase(SDIOx);
+		errorstate = SDMMC_CmdErase(SDIOx, end_add - start_add + 1);
 		if (errorstate != SD_ERROR_NONE) {
 			/* Clear all the static flags */
 			SDIO_ClearErrSts(SDIOx, SDIO_ERR_FLAG);
@@ -1674,15 +1714,11 @@ SD_RESULT SD_Erase(SD_HdlTypeDef *hsd, u32 BlockStartAdd, u32 BlockEndAdd)
 			return SD_ERROR;
 		}
 
-		/* Trans_Complete_BIT will be set when busy is de-asserted. */
-		if (SD_WaitTransDone(hsd, SDMMC_ERASE_TIMEOUT) != HAL_OK) {
-			return SD_ERROR;
-		}
-
 		SDIO_ConfigNormIntSig(SDIOx, SDIOHOST_BIT_CARD_INT_SIGNAL_EN, ENABLE);
 
 		return SD_OK;
 	} else {
+		RTK_LOGW(TAG, "%s SDH NOT READY!\n", __FUNCTION__);
 		return SD_ERROR;
 	}
 }
@@ -1741,8 +1777,6 @@ static u32 SD_IRQHandler(void *pData)
 		} else {
 			/* Nothing to do */
 		}
-		hsd->State = SD_STATE_READY;
-		hsd->Context = SD_CONTEXT_NONE;
 
 		if (sd_sema_give_isr_fn != NULL) {
 			sd_sema_give_isr_fn(SD_SEMA_MAX_DELAY);
@@ -2203,6 +2237,8 @@ SD_RESULT SD_SwitchFunction(SD_HdlTypeDef *hsd, u8 mode, u8 grp, u8 func, u8 *pD
 	arg |= func << grp_shift;
 	arg |= mode << 31;
 
+	SD_PreDMATrans(hsd);
+
 	/* Send CMD6 */
 	errorstate = SDMMC_CmdSwitch(SDIOx, arg);
 	if (errorstate != SD_ERROR_NONE) {
@@ -2212,6 +2248,7 @@ SD_RESULT SD_SwitchFunction(SD_HdlTypeDef *hsd, u8 mode, u8 grp, u8 func, u8 *pD
 	}
 
 	if (SD_WaitTransDone(hsd, SDMMC_DAT_TIMEOUT) != HAL_OK) {
+		RTK_LOGE(TAG, "%s WaitTransDone error!\n", __FUNCTION__);
 		return SD_ERROR;
 	}
 
@@ -2539,7 +2576,7 @@ static u32 SD_GetCardSCR(SD_HdlTypeDef *hsd)
 
 	config.TransType = SDIO_TRANS_SINGLE_BLK;
 	config.TransDir = SDIO_TRANS_CARD_TO_HOST;
-	config.BlockSize = 64U;
+	config.BlockSize = 8U; // 64bit/8
 	config.BlockCnt = 0U; // DON'T CARE when TRANS_SINGLE_BLK
 	config.AutoCmdEn = SDIO_TRANS_AUTO_DIS;
 	config.DmaEn = SDIO_TRANS_DMA_DIS;
@@ -2695,45 +2732,42 @@ u32 SD_WaitTransDone(SD_HdlTypeDef *hsd, u32 timeout_us)
 	u32 context = hsd->Context;
 	u32 errorstate;
 
-	/* If scheduling has already started,
-		wait for sema to obtain the trans done signal .*/
-	if ((CPU_InInterrupt() == 0) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (sd_sema_take_fn != NULL)) {
-
-		SDIO_ConfigNormIntSig(SDIOx, SDIOHOST_BIT_XFER_COMPLETE_SIGNAL_EN, ENABLE);
-
-		if (sd_sema_take_fn(MAX(timeout_us / 1000, SD_SEMA_MAX_DELAY)) != RTK_SUCCESS) {
-			SDIO_ConfigNormIntSig(SDIOx, SDIOHOST_BIT_XFER_COMPLETE_SIGNAL_EN, DISABLE);
-			RTK_LOGE(TAG, "SD Get Semaphore Timeout\n");
-			return HAL_TIMEOUT;
-		}
-
-		SDIO_ConfigNormIntSig(SDIOx, SDIOHOST_BIT_XFER_COMPLETE_SIGNAL_EN, DISABLE);
-	} else {
-		do {
-			if (SDIO_GetNormSts(SDIOx) & SDIOHOST_BIT_XFER_COMPLETE) {
-				SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_XFER_COMPLETE);
-				if ((context & SD_CONTEXT_IT) != 0U || (context & SD_CONTEXT_DMA) != 0U) {
-
-					if (((context & SD_CONTEXT_READ_MULTIPLE_BLOCK) != 0U) ||
-						((context & SD_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0U)) {
-						errorstate = SDMMC_CmdStopTransfer(SDIOx);
-						if (errorstate != SD_ERROR_NONE) {
-							hsd->ErrorCode |= errorstate;
-						}
-					}
-
-				}
-
+	/* If scheduling has already started, wait for sema to obtain the trans done signal. */
+	if (wait_for_sema == 1) {
+		wait_for_sema = 0;
+		if ((CPU_InInterrupt() == 0) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (sd_sema_take_fn != NULL)) {
+			if (sd_sema_take_fn(MAX(timeout_us / 1000, SD_SEMA_MAX_DELAY)) != RTK_SUCCESS) {
+				SDIO_ConfigNormIntSig(SDIOx, SDIOHOST_BIT_XFER_COMPLETE_SIGNAL_EN, DISABLE);
+				RTK_LOGE(TAG, "SD Get Semaphore Timeout\n");
+				return HAL_TIMEOUT;
+			} else {
+				SDIO_ConfigNormIntSig(SDIOx, SDIOHOST_BIT_XFER_COMPLETE_SIGNAL_EN, DISABLE);
 				hsd->State = SD_STATE_READY;
 				hsd->Context = SD_CONTEXT_NONE;
 				return HAL_OK;
 			}
-
-			DelayUs(1);
-		} while (timeout_us-- != 0);
-		return HAL_TIMEOUT;
+		}
 	}
 
+	while (!(SDIO_GetNormSts(SDIOx) & SDIOHOST_BIT_XFER_COMPLETE)) {
+		if (timeout_us-- == 0) {
+			return HAL_TIMEOUT;
+		}
+		DelayUs(1);
+	}
+	SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_XFER_COMPLETE);
+
+	if ((context & SD_CONTEXT_IT) != 0U || (context & SD_CONTEXT_DMA) != 0U) {
+		if ((context & SD_CONTEXT_READ_MULTIPLE_BLOCK) || (context & SD_CONTEXT_WRITE_MULTIPLE_BLOCK)) {
+			errorstate = SDMMC_CmdStopTransfer(SDIOx);
+			if (errorstate != SD_ERROR_NONE) {
+				hsd->ErrorCode |= errorstate;
+			}
+		}
+	}
+
+	hsd->State = SD_STATE_READY;
+	hsd->Context = SD_CONTEXT_NONE;
 	return HAL_OK;
 }
 

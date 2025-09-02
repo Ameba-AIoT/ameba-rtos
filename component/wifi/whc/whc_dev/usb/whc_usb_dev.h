@@ -7,6 +7,7 @@
 #define whc_dev_send             whc_usb_dev_send
 #define whc_dev_init             whc_usb_dev_init
 #define whc_dev_trigger_rx_handle   whc_usb_dev_trigger_rx_handle
+#define _whc_dev_api_bus_is_idle       whc_usb_dev_bus_is_idle
 
 #define DEV_DMA_ALIGN			CACHE_LINE_SIZE
 #define USB_DMA_ALIGN(x)	(((x + CACHE_LINE_SIZE - 1) / CACHE_LINE_SIZE) * CACHE_LINE_SIZE)
@@ -73,7 +74,7 @@ void whc_usb_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb);
 void whc_usb_dev_send(struct whc_buf_info *pbuf);
 u8 whc_usb_dev_tx_path_avail(void);
 void whc_usb_dev_trigger_rx_handle(void);
-
+u8 whc_usb_dev_bus_is_idle(void);
 
 #endif
 

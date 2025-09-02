@@ -81,7 +81,7 @@ typedef struct {
 	// DWORD 0
 	u32 ChipId: 16;
 	u32 CutVersion: 8;
-	u32 MemType: 8;
+	u32 RSVD0: 8; // MemType
 
 	// DWORD 1
 	u32 ProtocolVersion: 16;

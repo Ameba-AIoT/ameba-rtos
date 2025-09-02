@@ -22,6 +22,7 @@
 
 #include "audio_hw_debug.h"
 #include "audio_hw_osal_errnos.h"
+#include "ameba_audio_stream_audio_patch.h"
 
 #include "primary_audio_hw_card.h"
 
@@ -116,6 +117,43 @@ static size_t PrimaryGetCardInputBufferSize(const struct AudioHwCard *card, cons
 	return GetHwInputBufferSize(config->sample_rate, config->format, config->channel_count);
 }
 
+static int32_t PrimaryCreateAudioPatch(struct AudioHwCard *card,
+											int32_t num_sources, struct AudioHwPatchConfig *sources,
+											int32_t num_sinks, struct AudioHwPatchConfig *sinks)
+{
+	(void) card;
+	struct AmebaAudioPatchConfig ameba_sources[num_sources];
+	struct AmebaAudioPatchConfig ameba_sinks[num_sinks];
+	for (int32_t i = 0; i < num_sources; i++) {
+		ameba_sources[i].sample_rate = sources[i].sample_rate;
+		ameba_sources[i].channel_count = sources[i].channel_count;
+		ameba_sources[i].format = sources[i].format;
+		ameba_sources[i].device = sources[i].node.device;
+		if (sources[i].type != AUDIO_HW_PATCH_NODE_DEVICE) {
+			HAL_AUDIO_ERROR("direct patch only support device patch now.");
+			return HAL_OSAL_ERR_INVALID_PARAM;
+		}
+	}
+	for (int32_t i = 0; i < num_sinks; i++) {
+		ameba_sinks[i].sample_rate = sinks[i].sample_rate;
+		ameba_sinks[i].channel_count = sinks[i].channel_count;
+		ameba_sinks[i].format = sinks[i].format;
+		ameba_sinks[i].device = sinks[i].node.device;
+		if (sinks[i].type != AUDIO_HW_PATCH_NODE_DEVICE) {
+			HAL_AUDIO_ERROR("direct patch only support device patch now.");
+			return HAL_OSAL_ERR_INVALID_PARAM;
+		}
+	}
+
+	return ameba_audio_stream_create_audio_patch(num_sources, ameba_sources, num_sinks, ameba_sinks);
+}
+
+static int32_t PrimaryReleaseAudioPatch(struct AudioHwCard *card, int32_t patch_index)
+{
+	(void) card;
+	return ameba_audio_stream_release_audio_patch(patch_index);
+}
+
 static struct AudioHwStreamOut *PrimaryCreateStreamOut(
 	struct AudioHwCard *card,
 	const struct AudioHwPathDescriptor *desc,
@@ -167,6 +205,8 @@ struct AudioHwCard *CreateAudioHwCard()
 	pri_card->card.SetCaptureMute = PrimarySetCaptureMute;
 	pri_card->card.GetCaptureMute = PrimaryGetCaptureMute;
 	pri_card->card.GetInputBufferSize = PrimaryGetCardInputBufferSize;
+	pri_card->card.CreateAudioPatch = PrimaryCreateAudioPatch;
+	pri_card->card.ReleaseAudioPatch = PrimaryReleaseAudioPatch;
 	pri_card->card.CreateStreamOut = PrimaryCreateStreamOut;
 	pri_card->card.DestroyStreamOut = PrimaryDestroyStreamOut;
 	pri_card->card.CreateStreamIn = PrimaryCreateStreamIn;

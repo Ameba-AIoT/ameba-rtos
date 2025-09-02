@@ -29,7 +29,7 @@
 #include <dhcp/dhcps.h>
 #endif
 
-#ifdef CONFIG_WHC_BRIDGE_HOST
+#if defined(CONFIG_WHC_CMD_PATH) && defined(CONFIG_WHC_HOST)
 #include "whc_host_app.h"
 #endif
 
@@ -88,7 +88,6 @@ struct event_priv_t {
 	u8 *rx_ret_msg;
 
 	u8 b_waiting_for_ret: 1;
-	u8 host_init_done: 1;
 };
 
 struct whc_buf_info {

@@ -23,6 +23,7 @@ if(CONFIG_USBH_CDC_ECM)
     ameba_list_append(private_sources
         ${USBH_CLASS_DIR}/cdc_ecm/usbh_cdc_ecm.c
         ${USBH_CLASS_DIR}/cdc_ecm/usbh_cdc_ecm_hal.c
+        ${USBH_CLASS_DIR}/cdc_ecm/usbh_cdc_ecm_appx.c
     )
 endif()
 

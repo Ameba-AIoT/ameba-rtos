@@ -106,6 +106,12 @@ void   igmp_tmr(void);
  */
 #define netif_igmp_data(netif) ((struct igmp_group *)netif_get_client_data(netif, LWIP_NETIF_CLIENT_DATA_INDEX_IGMP))
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+void comp_igmp_time(u32_t ms);
+u8_t check_igmp_tmr_removable(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
