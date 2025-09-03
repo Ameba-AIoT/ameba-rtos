@@ -408,15 +408,24 @@ int whc_fullmac_host_stop_ap(void)
 	return ret;
 }
 
-int whc_fullmac_host_set_EDCA_params(unsigned int *AC_param)
+int whc_fullmac_host_set_EDCA_params(struct rtw_edca_param *pedca_param)
 {
+	u32 param_buf[1];
+	dma_addr_t phy_addr;
 	int ret = 0;
-	u32 param_buf[1] = {0};
-	unsigned int ac_param = *AC_param;
+	struct device *pdev = global_idev.ipc_dev;
+	struct rtw_edca_param *pedca_param_temp;
 
-	param_buf[0] = ac_param;
+	pedca_param_temp = rtw_malloc(sizeof(struct rtw_edca_param), &phy_addr);
+	if (!pedca_param_temp) {
+		dev_err(global_idev.fullmac_dev, "%s: malloc failed!\n", __func__);
+		return -1;
+	}
+	memcpy(pedca_param_temp, pedca_param, sizeof(struct rtw_edca_param));
 
+	param_buf[0] = (u32)phy_addr;
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SET_EDCA_PARAM, param_buf, 1);
+	rtw_mfree(sizeof(struct rtw_edca_param), pedca_param_temp, phy_addr);
 
 	return ret;
 }

@@ -201,5 +201,14 @@ void whc_bridge_dev_api_send_to_host(u8 *data, u32 len)
 	whc_dev_api_send_data(data, len);
 }
 
+/**
+ * @brief  Check if the bus is currently idle
+ * @return  TRUE if bus is idle, FALSE otherwise.
+ * @note  Only SPI implements this function
+ */
+u8 whc_bridge_dev_api_bus_is_idle(void)
+{
+	return whc_dev_api_bus_is_idle();
+}
 #endif
 

@@ -10,3 +10,4 @@ windows-curses==2.4.0 ; platform_system == "Windows"
 littlefs-python==0.13.3
 pyfatfs==1.1.0
 json5==0.12.0
+colorama==0.4.6
