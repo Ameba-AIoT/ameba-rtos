@@ -97,6 +97,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.tx_shortcut_enable = 1;
 	wifi_user_config.rx_shortcut_enable = 1;
 	wifi_user_config.keepalive_interval = 20;
+	wifi_user_config.rx_cca_thresh = 0;
 
 	/* WPS */
 	wifi_user_config.wps_retry_count = 4;
