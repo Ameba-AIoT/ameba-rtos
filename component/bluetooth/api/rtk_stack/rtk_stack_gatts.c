@@ -1308,6 +1308,22 @@ uint16_t bt_stack_gatts_service_changed_indicate(void *param)
 	return RTK_BT_OK;
 }
 
+uint16_t bt_stack_gatts_get_attribute_handle(void *param)
+{
+	rtk_bt_gatts_get_attr_handle_param_t *get_handle = (rtk_bt_gatts_get_attr_handle_param_t *)param;
+	struct rtk_bt_gatt_service *p_srv_node = NULL;
+
+	p_srv_node = bt_stack_gatts_find_service_node_by_app_id(get_handle->app_id);
+	if (!p_srv_node) {
+		return RTK_BT_ERR_NO_ENTRY;
+	}
+
+	*get_handle->attr_handle = server_get_start_handle((T_SERVER_ID)p_srv_node->server_info)
+							   + get_handle->attr_index;
+
+	return RTK_BT_OK;
+}
+
 extern bool bt_stack_profile_check(rtk_bt_profile_t profile);
 uint16_t bt_stack_gatts_act_handle(rtk_bt_cmd_t *p_cmd)
 {
@@ -1336,6 +1352,9 @@ uint16_t bt_stack_gatts_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 	case RTK_BT_GATTS_ACT_SERVICE_CHANGED_INDICATE:
 		ret = bt_stack_gatts_service_changed_indicate(p_cmd->param);
+		break;
+	case RTK_BT_GATTS_ACT_GET_ATTR_HANDLE:
+		ret = bt_stack_gatts_get_attribute_handle(p_cmd->param);
 		break;
 	default:
 		BT_LOGE("bt_stack_le_act_handle:unknown act: %d \r\n", p_cmd->act);

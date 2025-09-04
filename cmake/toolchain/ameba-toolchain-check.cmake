@@ -20,7 +20,7 @@ else()
 	else()
 		message("Download ${TOOLCHAINNAME} ...")
 		execute_process(
-			COMMAND wget -P ${TOOLCHAINDIR} ${TOOLCHAINURL}/${TOOLCHAINNAME}
+			COMMAND wget --progress=bar:force -P ${TOOLCHAINDIR} ${TOOLCHAINURL}/${TOOLCHAINNAME}
 			RESULT_VARIABLE ret
 			OUTPUT_VARIABLE stdoutput
 		)

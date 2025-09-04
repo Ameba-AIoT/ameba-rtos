@@ -18,7 +18,7 @@ extern "C"
 #define RTK_BT_RFC_HSP_CHANN_NUM               2
 #define RTK_BT_RFC_HSP_AG_CHANN_NUM            22
 #define RTK_BT_RFC_HFP_AG_CHANN_NUM            23
-#define RTK_BT_HFP_MAX_SCO_DATA_LENGTH         1024
+#define RTK_BT_HFP_MAX_SCO_DATA_LENGTH         120
 #define RTK_BT_HFP_MAX_PHONE_NUMBER            20
 #define RTK_BT_HFP_MAX_ATCMD_LENGTH            40
 /* BT HFP AG Supported Local Feature */

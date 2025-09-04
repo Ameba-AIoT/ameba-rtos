@@ -355,6 +355,16 @@ typedef struct {
 } rtk_bt_gatts_service_changed_indicate_param_t;
 
 /**
+ * @struct    rtk_bt_gatts_get_attr_handle_param_t
+ * @brief     Bluetooth GATT server get attribute handle paramter definition.
+ */
+typedef struct {
+	uint16_t app_id;                        /*!< Every service has a app_id */
+	uint16_t attr_index;                    /*!< Attribute index in a service */
+	uint16_t *attr_handle;                  /*!< Handle of attribute */
+} rtk_bt_gatts_get_attr_handle_param_t;
+
+/**
  * @struct    rtk_bt_gatt_service
  * @brief     GATT Service structure.
  */
@@ -545,6 +555,17 @@ uint16_t rtk_bt_gatts_write_resp(rtk_bt_gatts_write_resp_param_t *param);
  */
 uint16_t rtk_bt_gatts_service_changed_indicate(uint16_t conn_handle, uint16_t cid,
 											   uint16_t start_handle, uint16_t end_handle);
+
+/**
+ * @brief     Server get attribute handle.
+ * @param[in] app_id: Every service has a app_id.
+ * @param[in] attr_index: Attribute index in a service.
+ * @param[out] attr_handle: Handle of attribute.
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_gatts_get_attribute_handle(uint16_t app_id, uint16_t attr_index, uint16_t *attr_handle);
 
 /**
  * @}

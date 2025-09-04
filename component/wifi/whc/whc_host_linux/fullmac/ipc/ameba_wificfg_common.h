@@ -233,6 +233,11 @@ struct wifi_user_conf {
 	/*! STA mode will periodically send null packet to AP to keepalive, unit: second. */
 	u8 keepalive_interval;
 
+	/*! Configure Wi-Fi minimum receivable signal strength, unit: dBm.
+		- 0: Rsvd, will use internal dynamic mechanism of the RTK driver determines the received power threshold.
+		- [-100, 0): Specify the minimum received power threshold, Wi-Fi can only receive the packets with rssi greater than this thresh. */
+	s8 rx_cca_thresh;
+
 	/*! 0: Disable R-mesh function, 1: Enable R-mesh function.*/
 	u8 wtn_en;
 

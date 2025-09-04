@@ -302,6 +302,7 @@ static void SOCPS_SwitchWakeSrc(void)
 void SOCPS_SleepInit(void)
 {
 	int i = 0;
+	u32 wakepin_evt = 0;
 	static u32 km0cg_pwrmgt_config_val;
 	/*replace wdg1~wdg4 wake-up source with timer10-timer13*/
 	SOCPS_SwitchWakeSrc();
@@ -332,6 +333,13 @@ void SOCPS_SleepInit(void)
 		/*	Check if search to end */
 		if (sleep_wakepin_config[i].wakepin == 0xFFFFFFFF) {
 			break;
+		}
+
+		wakepin_evt = (u32)WakePin_Get_Idx();
+		/*If the current wakepin has an interrupt event, no reconfiguration is required.*/
+		if (wakepin_evt == BIT(sleep_wakepin_config[i].wakepin)) {
+			i++;
+			continue;
 		}
 
 		if (sleep_wakepin_config[i].config != DISABLE_WAKEPIN) {

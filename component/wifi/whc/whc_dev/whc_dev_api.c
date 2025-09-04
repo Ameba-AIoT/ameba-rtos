@@ -593,9 +593,9 @@ void whc_event_wifi_send_mgnt(u32 api_id, u32 *param_buf)
 void whc_event_wifi_set_EDCA_param(u32 api_id, u32 *param_buf)
 {
 	int ret;
-	unsigned int ac_param = param_buf[0];
+	struct rtw_edca_param *pedca_param = (struct rtw_edca_param *)param_buf[0];
 
-	ret = wifi_set_edca_param(ac_param);
+	ret = wifi_set_edca_param(pedca_param);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 

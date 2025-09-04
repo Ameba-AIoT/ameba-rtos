@@ -36,7 +36,7 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append_if(CONFIG_BT_LE_AUDIO_GENERIC_DEMO private_sources
-    generic_le_audio_demo.c
+    le_audio_generic_demo.c
 )
 ameba_list_append_if(CONFIG_BT_PBP private_sources
     pbp.c

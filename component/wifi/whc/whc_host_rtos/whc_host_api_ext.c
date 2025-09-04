@@ -620,13 +620,18 @@ s32 wifi_set_tx_rate_by_tos(u8 enable, u8 tos_precedence, u8 tx_rate)
 	return ret;
 }
 
-s32 wifi_set_edca_param(u32 ac_param)
+s32 wifi_set_edca_param(struct rtw_edca_param *pedca_param)
 {
 	int ret = 0;
-	u32 param_buf[1];
+	u32 *param_buf;
+	int size = sizeof(struct rtw_edca_param);
 
-	param_buf[0] = ac_param;
-	whc_host_api_message_send(WHC_API_WIFI_SET_EDCA_PARAM, (u8 *)param_buf, 4, (u8 *)&ret, sizeof(ret));
+	param_buf = (u32 *)rtos_mem_zmalloc(size);
+	if (param_buf) {
+		memcpy((void *)param_buf, (void *)pedca_param, size);
+		whc_host_api_message_send(WHC_API_WIFI_SET_EDCA_PARAM, (u8 *)param_buf, size, (u8 *)&ret, sizeof(ret));
+		rtos_mem_free(param_buf);
+	}
 	return ret;
 }
 
@@ -812,6 +817,19 @@ void wifi_set_owe_param(struct rtw_owe_param_t *owe_param)
 #else
 	UNUSED(owe_param);
 #endif
+}
+
+s32 wifi_set_tx_advanced_config(struct rtw_tx_advanced_cfg *tx_setting)
+{
+	int ret = 0;
+	u32 param_buf[1] = {0};
+
+	DCache_Clean((u32)tx_setting, sizeof(struct rtw_tx_advanced_cfg));
+	param_buf[0] = (u32)tx_setting;
+	whc_host_api_message_send(WHC_API_WIFI_SET_TX_ADVANCED_CFG, (u8 *)param_buf, 4, (u8 *)&ret, sizeof(ret));
+
+	rtos_mem_free((u8 *)settings_temp);
+	return ret;
 }
 
 #endif	//#if CONFIG_WLAN

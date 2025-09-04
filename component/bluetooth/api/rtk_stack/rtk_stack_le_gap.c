@@ -2733,7 +2733,7 @@ void bt_stack_le_gap_handle_io_msg(uint16_t gap_type, void *gap_msg)
 		break;
 #endif
 	default:
-		BT_LOGE("unknown GAP msg type: 0x%x \r\n", gap_type);
+		BT_LOGD("unknown GAP msg type: 0x%x \r\n", gap_type);
 		break;
 	}
 

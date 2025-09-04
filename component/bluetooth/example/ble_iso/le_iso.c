@@ -228,7 +228,7 @@ rtk_bt_le_iso_setup_path_param_t le_iso_demo_setup_path_param = {
 
 /* iso demo send data */
 #define APP_LE_ISO_USE_HW_GTIMER 1
-#define APP_LE_ISO_DATA_SEND_PATH_NUM 3 // 1 cis initiator + 1 cis acceptor + 1 broadcaster source
+#define APP_LE_ISO_DATA_SEND_PATH_NUM 4
 #define APP_LE_ISO_DATA_SEND_TASK_PRIO 5
 #define APP_LE_ISO_DATA_SEND_TASK_STACK_SIZE (1024*5)
 #define APP_LE_ISO_DEFAULT_SDU_INTERVAL_M_S_US RTK_BLE_ISO_DEFAULT_SDU_INTERVAL_M_S_US //units: us
@@ -260,6 +260,19 @@ static struct le_iso_demo_task_t bt_le_iso_demo_data_send_task = {
 };
 static app_bt_le_iso_data_path_t app_le_iso_data_path[APP_LE_ISO_DATA_SEND_PATH_NUM] = {0};
 static uint32_t bt_le_iso_demo_send_timer_interval_us = APP_LE_ISO_DEFAULT_SDU_INTERVAL_M_S_US;
+
+static uint8_t app_bt_le_iso_find_total_path_num(void)
+{
+	uint8_t path_num = 0;
+
+	for (uint16_t i = 0; i < APP_LE_ISO_DATA_SEND_PATH_NUM; i ++) {
+		if (app_le_iso_data_path[i].used) {
+			path_num ++;
+		}
+	}
+
+	return path_num;
+}
 
 static uint16_t app_bt_le_iso_add_data_path(uint16_t iso_conn_handle)
 {
@@ -316,7 +329,7 @@ static void bt_le_iso_demo_data_send_task_entry(void *ctx)
 				app_le_iso_data_path[i].iso_data_t.ts_flag = false;
 				app_le_iso_data_path[i].iso_data_t.time_stamp = 0;
 				app_le_iso_data_path[i].iso_data_t.pkt_seq_num++;
-				app_le_iso_data_path[i].iso_data_t.data_len = 128;
+				app_le_iso_data_path[i].iso_data_t.data_len = 40;
 				app_le_iso_data_path[i].iso_data_t.p_data = iso_demo_data;
 				ret = rtk_bt_le_iso_data_send(&app_le_iso_data_path[i].iso_data_t);
 				// BT_LOGA("DATA SEND ISO handle 0x%x pkt 0x%x systime (%d) \r\n", app_le_iso_data_path[i].iso_data_t.iso_conn_handle,
@@ -918,7 +931,9 @@ static rtk_bt_evt_cb_ret_t app_bt_le_iso_cb(uint8_t evt_code, void *data, uint32
 		if (!param->cause && (RTK_BLE_ISO_DATA_PATH_ADD_INPUT == param->data_path_direction)) {
 			/* add app le iso data send path */
 			app_bt_le_iso_add_data_path(param->cis_conn_handle);
-			app_bt_le_iso_send_data_control(true);
+			if (bt_le_iso_demo_app_conf.cis_num == app_bt_le_iso_find_total_path_num()) {
+				app_bt_le_iso_send_data_control(true);
+			}
 		}
 		break;
 	}
@@ -930,7 +945,9 @@ static rtk_bt_evt_cb_ret_t app_bt_le_iso_cb(uint8_t evt_code, void *data, uint32
 		if (!param->cause && (RTK_BLE_ISO_DATA_PATH_ADD_INPUT == param->data_path_direction)) {
 			/* remove app le iso data send path */
 			app_bt_le_iso_remove_data_path(param->cis_conn_handle);
-			app_bt_le_iso_send_data_control(false);
+			if (bt_le_iso_demo_app_conf.cis_num == app_bt_le_iso_find_total_path_num()) {
+				app_bt_le_iso_send_data_control(false);
+			}
 		}
 		break;
 	}
@@ -1019,7 +1036,9 @@ static rtk_bt_evt_cb_ret_t app_bt_le_iso_cb(uint8_t evt_code, void *data, uint32
 		if (!param->cause && (RTK_BLE_ISO_DATA_PATH_ADD_INPUT == param->data_path_direction)) {
 			/* add app le iso data send path */
 			app_bt_le_iso_add_data_path(param->bis_conn_handle);
-			app_bt_le_iso_send_data_control(true);
+			if (bt_le_iso_demo_app_conf.bis_num == app_bt_le_iso_find_total_path_num()) {
+				app_bt_le_iso_send_data_control(true);
+			}
 		}
 		break;
 	}
@@ -1031,7 +1050,9 @@ static rtk_bt_evt_cb_ret_t app_bt_le_iso_cb(uint8_t evt_code, void *data, uint32
 		if (!param->cause && (RTK_BLE_ISO_DATA_PATH_ADD_INPUT == param->data_path_direction)) {
 			/* add app le iso data send path */
 			app_bt_le_iso_remove_data_path(param->bis_conn_handle);
-			app_bt_le_iso_send_data_control(false);
+			if (bt_le_iso_demo_app_conf.bis_num == app_bt_le_iso_find_total_path_num()) {
+				app_bt_le_iso_send_data_control(false);
+			}
 		}
 		break;
 	}

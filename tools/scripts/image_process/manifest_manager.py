@@ -118,7 +118,10 @@ class ManifestImageConfig:
             if self.sboot_enable:
                 self.sboot_algorithm:str = config["sboot_algorithm"] if "sboot_algorithm" in config else config["algorithm"]
                 self.sboot_hash_alg:str = config["sboot_hash_alg"] if "sboot_hash_alg" in config else config["hash_alg"]
-                self.sboot_hmac_key:str = config["sboot_hmac_key"] if "sboot_hmac_key" in config else config["hmac_key"]
+                if "sboot_hmac_key" in config:
+                    self.sboot_hmac_key:str = config[config["sboot_hmac_key"]] if config["sboot_hmac_key"] in config else config["sboot_hmac_key"]
+                else:
+                    self.sboot_hmac_key:str = config["hmac_key"]
                 self.sboot_private_key:str = config["sboot_private_key"] if "sboot_private_key" in config else config["private_key"]
                 self.sboot_public_key:str = config["sboot_public_key"] if "sboot_public_key" in config else config["public_key"]
             self.sboot_public_key_hash:str = config["sboot_public_key_hash"] if "sboot_public_key_hash" in config else config["public_key_hash"]

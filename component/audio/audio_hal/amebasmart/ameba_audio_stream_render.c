@@ -827,6 +827,8 @@ HAL_AUDIO_WEAK void ameba_audio_stream_tx_start(Stream *stream, int32_t state)
 
 	rstream->stream.state = state;
 
+	HAL_AUDIO_INFO("tx start at:%lldns", rstream->stream.trigger_tstamp);
+
 }
 
 HAL_AUDIO_WEAK void ameba_audio_stream_tx_stop(Stream *stream, int32_t state)

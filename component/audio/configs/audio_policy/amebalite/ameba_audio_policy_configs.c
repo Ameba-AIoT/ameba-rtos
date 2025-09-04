@@ -23,7 +23,7 @@ GetAudioConfigHwCards(int32_t *hw_cards_num, AudioConfigHwCard **modules) {
         {
             .name = "primary",
             .audio_global_config = {
-                    .attached_output_devices = AUDIO_HW_DEVICE_OUT_SPEAKER | AUDIO_HW_DEVICE_OUT_I2S,
+                    .attached_output_devices = AUDIO_HW_DEVICE_OUT_SPEAKER,
                     .default_output_device = AUDIO_HW_DEVICE_OUT_SPEAKER
                 },
             .device_ports = {
@@ -57,7 +57,7 @@ GetAudioConfigHwCards(int32_t *hw_cards_num, AudioConfigHwCard **modules) {
                 {
                     .name = "primary output",
                     .role = AUDIO_CONFIG_PORT_ROLE_SOURCE,
-                    .rate = 44100,
+                    .rate = 48000,
                     .channels = 2,
                     .format = AUDIO_HW_FORMAT_PCM_16_BIT,
                     .flags = AUDIO_HW_OUTPUT_FLAG_PRIMARY,

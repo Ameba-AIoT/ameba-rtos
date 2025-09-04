@@ -7,15 +7,15 @@ ameba_add_subdirectory_if(CONFIG_BT_LE_AUDIO
     ble_audio
 )
 
-ameba_add_subdirectory_if(CONFIG_BT_A2DP_LE_AUDIO_PBP
+ameba_add_subdirectory_if(CONFIG_BT_A2DP_PBP
     bt_a2dp_pbp
 )
 
-ameba_add_subdirectory_if(CONFIG_BT_A2DP_HFP_LE_AUDIO_PBP
+ameba_add_subdirectory_if(CONFIG_BT_A2DP_HFP_PBP
     bt_a2dp_hfp_pbp
 )
 
-ameba_add_subdirectory_if(CONFIG_BT_A2DP_LE_AUDIO_TMAP
+ameba_add_subdirectory_if(CONFIG_BT_A2DP_TMAP
     bt_a2dp_tmap
 )
 

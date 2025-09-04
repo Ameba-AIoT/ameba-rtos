@@ -354,7 +354,7 @@ int32_t ameba_audio_stream_create_audio_patch(int32_t num_sources, struct AmebaA
 
 int32_t ameba_audio_stream_release_audio_patch(int32_t patch_index)
 {
-    HAL_AUDIO_INFO("release patch %ld\n", patch_index);
+    (void) patch_index;
     AUDIO_SP_TXStart(AUDIO_I2S_OUT_SPORT_INDEX, DISABLE);
     AUDIO_SP_Deinit(AUDIO_I2S_OUT_SPORT_INDEX, SP_DIR_TX);
     AUDIO_SP_TXStart(AUDIO_I2S_IN_SPORT_INDEX, DISABLE);

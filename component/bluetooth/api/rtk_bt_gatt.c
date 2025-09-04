@@ -113,6 +113,21 @@ uint16_t rtk_bt_gatts_service_changed_indicate(uint16_t conn_handle, uint16_t ci
 	return ret;
 }
 
+uint16_t rtk_bt_gatts_get_attribute_handle(uint16_t app_id, uint16_t attr_index, uint16_t *attr_handle)
+{
+	uint16_t ret = 0;
+	rtk_bt_gatts_get_attr_handle_param_t param = {
+		.app_id = app_id,
+		.attr_index = attr_index,
+		.attr_handle = attr_handle,
+	};
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTS, RTK_BT_GATTS_ACT_GET_ATTR_HANDLE,
+						  &param, sizeof(rtk_bt_gatts_get_attr_handle_param_t));
+
+	return ret;
+}
+
 /********************************* GATTC API *********************************/
 #if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
 uint16_t rtk_bt_gattc_register_profile(uint16_t profile_id, rtk_bt_gattc_uuid_t srv_uuid)
