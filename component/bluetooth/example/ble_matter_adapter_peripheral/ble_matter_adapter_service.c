@@ -3,7 +3,8 @@
  * Copyright(c) 2022, Realtek Semiconductor Corporation. All rights reserved.
  *******************************************************************************
  */
-#if defined(CONFIG_PLATFORM_AMEBADPLUS) || defined(CONFIG_PLATFORM_AMEBASMART) || defined(CONFIG_PLATFORM_AMEBALITE)
+#include <platform_autoconf.h>
+#if defined(CONFIG_AMEBADPLUS) || defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBALITE)
 #include <stdio.h>
 #include <string.h>
 #include <osif.h>
