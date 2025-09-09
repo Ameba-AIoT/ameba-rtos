@@ -1,0 +1,49 @@
+name: Sync to Gitee 
+on:
+  pull_request:
+    branches: [ release/v1.1 ]
+    types: [closed]
+
+jobs:
+  sync:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Mirror to Gitee
+      env:
+        GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+      run: |
+        git remote add gitee https://ameba-aiot:${GITEE_TOKEN}@gitee.com/ameba-aiot/ameba-rtos.git
+        git push --mirror gitee
+
+    - name: Push to Gitee only
+      env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+      run: git clone https://ameba-aiot:${GITEE_TOKEN}@gitee.com/ameba-aiot/ameba-rtos.git gitee_repo
+    - name: Patch cmake if needed
+      run: |
+          cd gitee_repo
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git checkout remotes/origin/release/v1.1 -b release/v1.1
+          need_commit=0
+          if ! grep -q 'if(1)' cmake/toolchain/ameba-toolchain-asdk-10.3.1.cmake; then
+            sed -i 's/if(USE_ALIYUN_URL)/if(1)/g' cmake/toolchain/ameba-toolchain-asdk-10.3.1.cmake
+            git add cmake/toolchain/ameba-toolchain-asdk-10.3.1.cmake
+            need_commit=1
+          fi
+          if ! grep -q 'if(1)' cmake/toolchain/ameba-toolchain-asdk-12.3.1.cmake; then
+            sed -i 's/if(USE_ALIYUN_URL)/if(1)/g' cmake/toolchain/ameba-toolchain-asdk-12.3.1.cmake
+            git add cmake/toolchain/ameba-toolchain-asdk-12.3.1.cmake
+            need_commit=1
+          fi
+
+          if [ "$need_commit" -eq 1 ] ; then
+            git commit -m "automated sync from github"
+          fi
+
+          git push origin release/v1.1 

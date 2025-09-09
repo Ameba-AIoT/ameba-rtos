@@ -89,7 +89,7 @@ jobs:
       run: |
         echo "Build Current shell is ${{ matrix.shell }}"
         cd ${{ inputs.ic_name }}_gcc_project
-        if [ "${{ inputs.build_stage_name }}" == "B3" || "${{ inputs.build_stage_name }}" == "B5" ]; then 
+        if [ "${{ inputs.build_stage_name }}" == "B3" ] || [ "${{ inputs.build_stage_name }}" == "B5" ]; then 
           python build.py -D USE_ALIYUN_URL=True
         else
           python build.py
