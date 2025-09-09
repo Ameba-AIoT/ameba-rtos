@@ -7,11 +7,13 @@ menu "CONFIG VFS"
     if VFS_FATFS_INCLUDED
         choice
             prompt "FATFS Memory Type"
-            config FATFS_DISK_FLASH
+            config FATFS_DISK_FLASH_MENU
                 bool "FLASH"
-            config FATFS_DISK_SD   #amebasmart  green2 smartplus
+                select FATFS_DISK_FLASH
+            config FATFS_DISK_SD_MENU   #amebasmart  green2 smartplus
                 bool "SD"
                 depends on SUPPORT_NAND_FLASH
+                select FATFS_DISK_SD
         endchoice
         config FATFS_WITHIN_APP_IMG
             bool "FATFS within APP Image"
@@ -19,3 +21,9 @@ menu "CONFIG VFS"
             bool "FATFS Read Only"
     endif
 endmenu
+
+config FATFS_DISK_FLASH
+bool
+
+config FATFS_DISK_SD
+bool

@@ -472,14 +472,11 @@ int whc_fullmac_host_stop_ap(void)
 	return ret;
 }
 
-int whc_fullmac_host_set_EDCA_params(unsigned int *AC_param)
+int whc_fullmac_host_set_EDCA_params(struct rtw_edca_param *pedca_param)
 {
 	int ret = 0;
-	u32 param_buf[1] = {0};
 
-	param_buf[0] = *AC_param;
-
-	whc_fullmac_host_send_event(WHC_API_WIFI_SET_EDCA_PARAM, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
+	whc_fullmac_host_send_event(WHC_API_WIFI_SET_EDCA_PARAM, (u8 *)pedca_param, sizeof(struct rtw_edca_param), (u8 *)&ret, sizeof(int));
 
 	return ret;
 }

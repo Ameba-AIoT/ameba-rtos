@@ -240,6 +240,13 @@ struct AudioHwCard *CreateAudioHwCard(void);
  */
 struct AudioHwCard *CreateA2dpAudioHwCard(void);
 
+/**
+ * @brief Creates AudioHwCard.
+ *
+ * @return Returns pointer of the AudioHwCard created.
+ */
+struct AudioHwCard *CreateUsbAudioHwCard(void);
+
 #ifdef __cplusplus
 }
 #endif

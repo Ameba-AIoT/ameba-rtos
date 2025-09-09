@@ -15,8 +15,7 @@ extern u32 IMG_ADDR[][2];
 extern const FlashInfo_TypeDef Flash_AVL[];
 extern const FlashInfo_TypeDef NAND_AVL[];
 
-extern FlashLayoutInfo_TypeDef Flash_Layout_Nor[];
-extern FlashLayoutInfo_TypeDef Flash_Layout_Nand[];
+extern FlashLayoutInfo_TypeDef Flash_Layout[];
 extern FlashLayoutInfo_TypeDef Flash_Layout_Nor_Linux[];
 extern FlashLayoutInfo_TypeDef Flash_Layout_Nand_Linux[];
 

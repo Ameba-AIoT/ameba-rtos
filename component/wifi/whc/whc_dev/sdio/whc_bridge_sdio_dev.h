@@ -4,10 +4,11 @@
 #define whc_sdio_dev_event_int_hdl  whc_bridge_sdio_dev_pkt_rx
 #define whc_dev_init_lite           whc_bridge_sdio_dev_init
 #define whc_dev_api_send_data       whc_sdio_dev_send_data
+#define whc_dev_api_bus_is_idle       whc_bridge_sdio_dev_bus_is_idle
 
 void whc_bridge_sdio_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb, u16 size);
 void whc_bridge_sdio_dev_send_to_host(u8 *data, u32 len, u8 need_free);
 void whc_bridge_sdio_dev_init(void);
-
+u8 whc_bridge_sdio_dev_bus_is_idle(void);
 #endif
 

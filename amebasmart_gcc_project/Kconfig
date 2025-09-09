@@ -48,6 +48,14 @@ config SUPPORT_USBH_ECM_BRIDGE
 config SUPPORT_SDIOH
     def_bool y
 
+#
+# Audio features
+#
+
+# audio device function
+config SUPPORT_AUDIO_DEVICE
+    def_bool y
+
 #---------- FEATURE LIST END-------------#
 
 menu "CONFIG BOOT OPTION"

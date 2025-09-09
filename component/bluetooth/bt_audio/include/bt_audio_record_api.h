@@ -44,6 +44,24 @@ typedef enum {
 	RTK_BT_AUDIO_MIC_MAX_NUM   = 13,
 } rtk_bt_audio_mic_t;
 
+typedef enum {
+	RTK_BT_AUDIO_AMIC,
+	RTK_BT_AUDIO_DMIC,
+} rtk_bt_audio_mic_type_t;
+
+typedef struct {
+	uint8_t mic_channel_index;
+	rtk_bt_audio_mic_t mic_category;
+	uint32_t gain;
+} rtk_bt_audio_record_config_t;
+
+typedef struct {
+	const char *strs;
+	rtk_bt_audio_mic_type_t mic_type;
+	uint8_t record_nums;
+	rtk_bt_audio_record_config_t config[RTK_BT_AUDIO_MIC_MAX_NUM + 1];
+} rtk_bt_audio_record_config_table_t;
+
 /********************************* Functions Declaration *******************************/
 /**
  * @defgroup  bt_audio_record BT Audio Record APIs
@@ -57,11 +75,12 @@ typedef enum {
  * @param[in]                   channels: audio channel
  * @param[in]                   rate: audio rate
  * @param[in]                   buffer_bytes: buffer bytes per one period of record
+ * @param[in]                   mic_type: mic type, ref rtk_bt_audio_mic_type_t
  * @return
  *                              - NULL  : Fail
  *                              - record_hdl: Success
  */
-void *rtk_bt_audio_record_init(uint32_t channels, uint32_t rate, uint32_t buffer_bytes);
+void *rtk_bt_audio_record_init(uint32_t channels, uint32_t rate, uint32_t buffer_bytes, rtk_bt_audio_mic_type_t mic_type);
 
 /**
  * @brief     bt audio record deinit
@@ -129,15 +148,7 @@ uint32_t rtk_bt_audio_record_get_channel_count(void *record_hdl);
 /**
  * @brief     bt audio set record parameters
  * @param[in] record_hdl: audio record handle
- * @param[in] strs: supports AMIC settings like:"ch0_sel_amic=1;ch1_sel_amic=2;ch2_sel_amic=3"
- * The meaning for the string: it means the channel 0 gets data from amic1.
- * channel 1 gets data from amic2, channel 2 gets data from amic3.
- * [amebalite]: 4 channels settings most.
- *              The default setting is :ch0_sel_amic=1;ch1_sel_amic=2;ch2_sel_amic=3;ch3_sel_amic=4.
- * [amebaSmart]: 8 channels settings most.
- *              The default setting is :ch0_sel_amic=1;ch1_sel_amic=2;ch2_sel_amic=3;ch3_sel_amic=4;
- *              ch4_sel_amic=4;ch5_sel_amic=4;ch6_sel_amic=4;ch7_sel_amic=4;
- * strs also supports audio capture mode settings like "cap_mode=no_afe_pure_data".
+ * @param[in] strs supports audio capture mode settings like "cap_mode=no_afe_pure_data".
  * The meaning of the string is to choose "no_afe_pure_data" mode for audio capture.
  * [amebalite] & [amebaSmart]: There are 4 modes, all take the default above amic setting for example,
  *              the data stucture is as follows:

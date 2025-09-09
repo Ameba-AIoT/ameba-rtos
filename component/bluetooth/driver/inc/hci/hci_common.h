@@ -116,12 +116,15 @@ void hci_uart_rx_irq_handler(void);
 
 #if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
 #if defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK
-#define hci_is_mp_mode() true
-#else
-#define hci_is_mp_mode hci_check_mp
-#endif
+#define hci_is_mp_mode()            true
+#define hci_is_wifi_need_leave_ps() false    /* WiFi will not enter ps in MP shrink mode, no need to leave */
+#else /* CONFIG_MP_SHRINK */
+#define hci_is_mp_mode              hci_check_mp
+#define hci_is_wifi_need_leave_ps() true
+#endif /* CONFIG_MP_SHRINK */
 #else /* CONFIG_MP_INCLUDED */
-#define hci_is_mp_mode() false
+#define hci_is_mp_mode()            false
+#define hci_is_wifi_need_leave_ps() true
 #endif /* CONFIG_MP_INCLUDED */
 
 #endif /* _HCI_COMMON_H_ */

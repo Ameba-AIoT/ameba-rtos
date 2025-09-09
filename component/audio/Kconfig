@@ -12,6 +12,20 @@ menu "Audio Config"
                 bool "PassThrough"
                 select AUDIO_PASSTHROUGH if CORE_AS_AP
         endchoice
+
+        if SUPPORT_AUDIO_DEVICE
+            menu "Audio Devices"
+                    comment "    Audio Devices"
+
+                    config AUDIO_DEVICE_A2DP_MENU
+                        bool "Bluetooth A2DP Device"
+                        select AUDIO_DEVICE_A2DP if CORE_AS_AP
+
+                    config AUDIO_DEVICE_USB_MENU
+                        bool "Usb Device"
+                        select AUDIO_DEVICE_USB if CORE_AS_AP
+            endmenu
+        endif
     endif
 
 
@@ -127,6 +141,12 @@ config AUDIO_MIXER
 bool
 
 config AUDIO_PASSTHROUGH
+bool
+
+config AUDIO_DEVICE_A2DP
+bool
+
+config AUDIO_DEVICE_USB
 bool
 
 config MEDIA_PLAYER

@@ -18,14 +18,15 @@ static const char *const TAG = "DDR";
 u8 ddr_init_index(void)
 {
 	u32 DDRType = DDR_PHY_ChipInfo_ddrtype();
-	u32 MemorySize = ChipInfo_MemorySize();
+	MCM_MemTypeDef memInfo = ChipInfo_MCMInfo();
+	u32 MemorySize = memInfo.dram_info.density;
 
-	if (DDRType == DDR_Type_DDR3L) {
+	if (DDRType == MCM_DDR3L) {
 		return 3;//rxi316_dram_info_m_ddr3_dev
-	} else if (DDRType == DDR_Type_DDR2) {
-		if (MemorySize == DDR_Size_512M) {
+	} else if (DDRType == MCM_DDR2) {
+		if (MemorySize == MCM_DDR_SIZE_512Mb) {
 			return 1; //rxi316_dram_info_m_ddr2_dev_512m
-		} else if (MemorySize == DDR_Size_1G) {
+		} else if (MemorySize == MCM_DDR_SIZE_1Gb) {
 			return 0; //rxi316_dram_info_m_ddr2_dev
 		}
 	}
@@ -913,7 +914,7 @@ gp_reg_config:
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098, (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098)  | LSYS_BIT_PWDPAD15N_DQ | LSYS_BIT_PWDPAD15N_CA));
 
 		/* release rst and tcke for controller */
-		if (ddr_type == DDR_Type_DDR2) {
+		if (ddr_type == MCM_DDR2) {
 			ddr_phy->DDRPHY_CRT_CTL = 0x44000103; //according to ddr3 type
 
 		} else {

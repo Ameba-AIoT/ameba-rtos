@@ -42,7 +42,7 @@ int wifi_check_fast_connect_data(struct wlan_fast_reconnect *data);
 *       wifi profile in flash
 */
 
-int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int server_ip)
+__weak int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int server_ip)
 {
 	/* To avoid gcc warnings */
 #if(!defined(CONFIG_FAST_DHCP) || (!CONFIG_FAST_DHCP))
@@ -134,7 +134,7 @@ int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int server_
 *       This function read previous saved wlan profile in flash and execute connection.
 *
 */
-int wifi_do_fast_connect(void)
+__weak int wifi_do_fast_connect(void)
 {
 	struct wlan_fast_reconnect *data;
 	uint32_t	channel;

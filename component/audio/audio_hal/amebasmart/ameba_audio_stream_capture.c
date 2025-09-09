@@ -172,22 +172,27 @@ static void ameba_audio_stream_rx_codec_adc_reset(void)
 static void ameba_audio_stream_rx_mic_bias_power_cut_configure(void)
 {
 #if AUDIO_MICBIAS_1_ENABLE
+	AUDIO_CODEC_DisPAD(PAD_MICBIAS1);
 	AUDIO_CODEC_SetMicBiasPCUTMode(MICBIAS1, POWER_ON);
 #endif
 
 #if AUDIO_MICBIAS_2_ENABLE
+	AUDIO_CODEC_DisPAD(PAD_MICBIAS2);
 	AUDIO_CODEC_SetMicBiasPCUTMode(MICBIAS2, POWER_ON);
 #endif
 
 #if AUDIO_MICBIAS_3_ENABLE
+	AUDIO_CODEC_DisPAD(PAD_MICBIAS3);
 	AUDIO_CODEC_SetMicBiasPCUTMode(MICBIAS3, POWER_ON);
 #endif
 
 #if AUDIO_MICBIAS_4_ENABLE
+	AUDIO_CODEC_DisPAD(PAD_MICBIAS4);
 	AUDIO_CODEC_SetMicBiasPCUTMode(MICBIAS4, POWER_ON);
 #endif
 
 #if AUDIO_MICBIAS_5_ENABLE
+	AUDIO_CODEC_DisPAD(PAD_MICBIAS5);
 	AUDIO_CODEC_SetMicBiasPCUTMode(MICBIAS5, POWER_ON);
 #endif
 }
@@ -817,6 +822,7 @@ static void ameba_audio_stream_rx_start_in_irq_mode(Stream *stream)
 		}
 
 		AUDIO_SP_RXStart(cstream->stream.sport_dev_num, ENABLE);
+		cstream->stream.trigger_tstamp = ameba_audio_get_now_ns();
 
 		cstream->stream.start_gdma = true;
 	}
@@ -830,6 +836,8 @@ static void ameba_audio_stream_rx_start_in_irq_mode(Stream *stream)
 	}
 	ameba_audio_dump_codec_regs();
 #endif
+
+	HAL_AUDIO_INFO("rx start at:%lldns", cstream->stream.trigger_tstamp);
 
 }
 

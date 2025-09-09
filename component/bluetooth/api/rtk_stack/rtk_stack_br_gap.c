@@ -232,7 +232,7 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 			break;
 		}
 		APP_PRINT_INFO0("link alloc success");
-		BT_LOGA("bt_stack_mgr_cback: link alloc success, hadnle 0x%x \r\n", param->acl_conn_success.handle);
+		BT_LOGA("bt_stack_mgr_cback: link alloc success, handle 0x%x \r\n", param->acl_conn_success.handle);
 		gap_br_set_radio_mode(GAP_RADIO_MODE_NONE_DISCOVERABLE, false, 0);
 		memcpy((void *)&p_link->handle, (void *)&param->acl_conn_success.handle, sizeof(uint16_t));
 		{

@@ -16,6 +16,7 @@
 #include <bt_audio_codec_wrapper.h>
 #include <bt_audio_debug.h>
 #include <bt_audio_sync.h>
+#include <bt_audio_noise_cancellation.h>
 
 /* -------------------------------- Defines --------------------------------- */
 #define RTK_BT_AUDIO_STREAM_HANDLE_TASK_EXIT    0xFF
@@ -63,6 +64,23 @@ static void                         *audio_stream_q = NULL;
 #if defined(AUDIO_RENDER_BUFFER_FLAG) && AUDIO_RENDER_BUFFER_FLAG
 static uint8_t render_buffer_flag = 0;
 #endif
+#if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
+static uint16_t cvsd_one_to_two_channel_buff[120] = {0};
+#endif
+
+static rtk_bt_audio_record_config_table_t bt_audio_record_table = {
+	.strs = NULL,
+	.mic_type = RTK_BT_AUDIO_DMIC,
+	.record_nums = 1,
+	/* 1 record */
+	{
+		{
+			.mic_channel_index = 0,
+			.mic_category = RTK_BT_AUDIO_DMIC1,
+			.gain = RTK_BT_AUDIO_MICBST_GAIN_0DB
+		}
+	}
+};
 
 static struct bt_audio_intf_priv *get_audio_intf_priv_data(uint32_t type)
 {
@@ -285,6 +303,13 @@ static void bt_audio_parsing_recv_stream(uint32_t type, rtk_bt_audio_track_t *tr
 				bt_audio_free_decode_buffer(entity, pdecode_frame_buffer);
 				continue;
 			}
+#if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
+			if (RTK_BT_AUDIO_CODEC_CVSD == type) {
+				/* copy left channel to right channel
+				bt audio noise cancellation mic loop back need right channel */
+				param.channel_allocation = 3;
+			}
+#endif
 			pdecode_frame_buffer->actual_write_size = pcm_data_size;
 			pdecode_frame_buffer->type = type;
 			private_param.channels = track->channels;
@@ -311,7 +336,19 @@ static void bt_audio_parsing_recv_stream(uint32_t type, rtk_bt_audio_track_t *tr
 				if (ret == RTK_BT_AUDIO_OK) {
 					if (track->audio_track_hdl) {
 						if (!track->audio_sync_flag) {
+#if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
+							if (RTK_BT_AUDIO_CODEC_CVSD == type) {
+								for (uint16_t i = 0; i < pcm_data_size / 2; i ++) {
+									cvsd_one_to_two_channel_buff[i * 2] = pdecode_frame_buffer->pbuffer[i];
+									cvsd_one_to_two_channel_buff[i * 2 + 1] = pdecode_frame_buffer->pbuffer[i];
+								}
+								do_audio_track_write(track, (uint8_t *)cvsd_one_to_two_channel_buff, (uint16_t)(pcm_data_size * 2));
+							} else {
+								do_audio_track_write(track, (uint8_t *)pdecode_frame_buffer->pbuffer, (uint16_t)pcm_data_size);
+							}
+#else
 							do_audio_track_write(track, (uint8_t *)pdecode_frame_buffer->pbuffer, (uint16_t)pcm_data_size);
+#endif
 						} else {
 							do_audio_sync_flow(track, i, ts_us, (uint8_t **)&pdecode_frame_buffer->pbuffer, &pcm_data_size);
 						}
@@ -934,6 +971,17 @@ rtk_bt_audio_track_t *rtk_bt_audio_track_add(uint32_t type, float left_volume, f
 	return ptrack;
 }
 
+uint16_t rtk_bt_audio_record_config(rtk_bt_audio_record_config_table_t *p_table)
+{
+	if (!p_table) {
+		BT_LOGE("[BT_AUDIO] bt audio record config fail: p_table is NULL \r\n");
+		return RTK_BT_AUDIO_FAIL;
+	}
+	memcpy((void *)&bt_audio_record_table, (void *)p_table, sizeof(rtk_bt_audio_record_config_table_t));
+
+	return RTK_BT_AUDIO_OK;
+}
+
 rtk_bt_audio_record_t *rtk_bt_audio_record_add(uint32_t type, uint32_t channels, uint32_t rate, uint32_t buffer_bytes, uint32_t volume)
 {
 	struct bt_audio_intf_priv *priv = NULL;
@@ -975,7 +1023,7 @@ rtk_bt_audio_record_t *rtk_bt_audio_record_add(uint32_t type, uint32_t channels,
 		INIT_LIST_HEAD(&precord->list);
 	}
 	BT_LOGA("[BT AUDIO] audio record init channels %d, rate %d , buffer_bytes %d! \r\n", (int)channels, (int)rate, (uint32_t)buffer_bytes);
-	precord->audio_record_hdl = rtk_bt_audio_record_init((uint32_t)channels, (uint32_t)rate, (uint32_t)buffer_bytes);
+	precord->audio_record_hdl = rtk_bt_audio_record_init((uint32_t)channels, (uint32_t)rate, (uint32_t)buffer_bytes, bt_audio_record_table.mic_type);
 	if (!precord->audio_record_hdl) {
 		BT_LOGE("[BT AUDIO] rtk_bt_audio_record_init fail \r\n");
 		osif_mem_free(precord);
@@ -995,15 +1043,24 @@ rtk_bt_audio_record_t *rtk_bt_audio_record_add(uint32_t type, uint32_t channels,
 		priv->curr_record_num ++;
 		osif_mutex_give(bt_audio_intf_priv_mutex);
 	}
-	if (channels == 3) { // for noise cancel
-		rtk_bt_audio_record_set_parameters(precord->audio_record_hdl, "cap_mode=no_afe_pure_data");
-		rtk_bt_audio_record_set_channel_mic_category(0, RTK_BT_AUDIO_DMIC1);
-		rtk_bt_audio_record_set_channel_mic_category(1, RTK_BT_AUDIO_DMIC2);
-		rtk_bt_audio_record_set_channel_mic_category(2, RTK_BT_AUDIO_AMIC5);
-		rtk_bt_audio_record_set_mic_bst_gain(RTK_BT_AUDIO_AMIC5, RTK_BT_AUDIO_MICBST_GAIN_0DB);
+	if (RTK_BT_AUDIO_AMIC == bt_audio_record_table.mic_type) {
+		for (uint8_t record_index = 0; record_index < bt_audio_record_table.record_nums; record_index ++) {
+			rtk_bt_audio_record_set_channel_mic_category(bt_audio_record_table.config[record_index].mic_channel_index,
+														 bt_audio_record_table.config[record_index].mic_category);
+			rtk_bt_audio_record_set_mic_bst_gain(bt_audio_record_table.config[record_index].mic_category, bt_audio_record_table.config[record_index].gain);
+			BT_LOGA("[BT_AUDIO] %s add record type is %s, index is %d, gain is %d \r\n", __func__, "AMIC", (int)record_index,
+					(int)bt_audio_record_table.config[record_index].gain);
+		}
+	} else if (RTK_BT_AUDIO_DMIC == bt_audio_record_table.mic_type) {
+		for (uint8_t record_index = 0; record_index < bt_audio_record_table.record_nums; record_index ++) {
+			rtk_bt_audio_record_set_channel_mic_category(bt_audio_record_table.config[record_index].mic_channel_index,
+														 bt_audio_record_table.config[record_index].mic_category);
+			BT_LOGA("[BT_AUDIO] %s add record type is %s, index is %d, gain is %d \r\n", __func__, "DMIC", (int)record_index);
+		}
 	} else {
-		rtk_bt_audio_record_set_parameters(precord->audio_record_hdl, "ch0_sel_amic=1");
-		rtk_bt_audio_record_set_mic_bst_gain(RTK_BT_AUDIO_AMIC1, RTK_BT_AUDIO_MICBST_GAIN_40DB);
+		BT_LOGE("[BT_AUDIO] %s mic type 0x%02x is invalid \r\n",
+				__func__,
+				bt_audio_record_table.mic_type);
 	}
 	rtk_bt_audio_record_set_capture_volume(channels, volume);
 

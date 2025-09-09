@@ -31,6 +31,9 @@ Linux)
 
     if [ -n "$RTK_TOOLCHAIN_DIR" ]; then
         RTK_TOOLCHAIN_DIR="$RTK_TOOLCHAIN_DIR"
+        if [[ "${RTK_TOOLCHAIN_DIR:0:1}" == "~" ]]; then
+            RTK_TOOLCHAIN_DIR="$HOME${RTK_TOOLCHAIN_DIR:1}"
+        fi
     else
         RTK_TOOLCHAIN_DIR=/opt/rtk-toolchain
     fi
@@ -42,7 +45,9 @@ Linux)
     DOWNLOAD_URL=$PREBUILTS_LINUX_URL
     DOWNLOAD_URL_ALIYUN=$PREBUILTS_LINUX_URL_ALIYUN
     alias menuconfig.py='python menuconfig.py'
-
+	alias build.py='python build.py'
+	alias flash.py='python flash.py'
+	alias monitor.py='python monitor.py'
     ;;
 *_NT*)
 
@@ -60,12 +65,14 @@ Linux)
     DOWNLOAD_URL_ALIYUN=$PREBUILTS_WIN_URL_ALIYUN
 
     alias menuconfig.py='winpty python menuconfig.py'
-
+	alias build.py='winpty python build.py'
+	alias flash.py='winpty python flash.py'
+	alias monitor.py='winpty python monitor.py'
     ;;
 esac
 
 
-alias build.py='python build.py'
+
 
 function update_prebuilts
 {
@@ -133,15 +140,19 @@ else
 
 fi
 
-if [ -d "$BASE_DIR/.venv" ]; then
-    eval $ACTIVE_CMD
-else
-    echo python virtual environment is not detected, it will be installed automatically...
-	eval $VENV_CMD
-	eval $ACTIVE_CMD
-	pip install -r $BASE_DIR/tools/requirements.txt
-	echo "These python modules are installed:"
-	pip list
+
+EXPECTED_VENV_PATH="$BASE_DIR/.venv"
+if [ -z "$VIRTUAL_ENV" ] || [ "$VIRTUAL_ENV" != "$EXPECTED_VENV_PATH" ]; then
+    if [ -d "$EXPECTED_VENV_PATH" ]; then
+        eval $ACTIVE_CMD
+    else
+        echo "python virtual environment is not detected, it will be installed automatically..."
+        eval $VENV_CMD
+        eval $ACTIVE_CMD
+        pip install -r $BASE_DIR/tools/requirements.txt
+        echo "These python modules are installed:"
+        pip list
+    fi
 fi
 
 python $BASE_DIR/tools/scripts/check_requirements.py
@@ -153,11 +164,13 @@ fi
 info1="First choose IC platform : cd [IC]_gcc_project"
 info2="Configure command: menuconfig.py"
 info3="Build command: build.py"
+info4="Flash command:  flash.py -p COMx"
+info5="Monitor command:  monitor.py -p COMx"
 
 echo "================================================================================"
-echo
 echo "|  $info1"
 echo "|  $info2"
 echo "|  $info3"
-echo
+echo "|  $info4"
+echo "|  $info5"
 echo "================================================================================"

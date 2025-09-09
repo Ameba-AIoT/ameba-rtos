@@ -10,7 +10,7 @@
 #include "audio/audio_record.h"
 #include "audio/audio_control.h"
 
-void *rtk_bt_audio_record_init(uint32_t channels, uint32_t rate, uint32_t buffer_bytes)
+void *rtk_bt_audio_record_init(uint32_t channels, uint32_t rate, uint32_t buffer_bytes, rtk_bt_audio_mic_type_t mic_type)
 {
 	uint32_t format = RTAUDIO_FORMAT_PCM_16_BIT;
 	struct RTAudioRecord *audio_record = NULL;
@@ -26,7 +26,17 @@ void *rtk_bt_audio_record_init(uint32_t channels, uint32_t rate, uint32_t buffer
 		record_config.sample_rate = rate;
 		record_config.format = format;
 		record_config.channel_count = channels;
-		record_config.device = RTDEVICE_IN_DMIC_REF_AMIC;
+		if (RTK_BT_AUDIO_AMIC == mic_type) {
+			record_config.device = RTDEVICE_IN_MIC;
+		} else if (RTK_BT_AUDIO_DMIC == mic_type) {
+			record_config.device = RTDEVICE_IN_DMIC_REF_AMIC;
+		} else {
+			BT_LOGE("%s :unknown record type 0x%02x \r\n", __func__, mic_type);
+			RTAudioRecord_Stop(audio_record);
+			RTAudioRecord_Destroy(audio_record);
+			return NULL;
+		}
+		BT_LOGA("%s: mic type is %s \r\n", __func__, (RTK_BT_AUDIO_AMIC == mic_type) ? "AMIC" : "DMIC");
 		// record_frame = buffer_bytes / channels / 2 bytes(16 bit pcm)
 		record_config.buffer_bytes = buffer_bytes * 2; // 0 means default period bytes
 		RTAudioRecord_Init(audio_record, &record_config, RTAUDIO_INPUT_FLAG_NONE);

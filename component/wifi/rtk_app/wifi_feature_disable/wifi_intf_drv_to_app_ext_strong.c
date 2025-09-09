@@ -65,9 +65,9 @@ s32 wifi_set_tx_rate_by_tos(u8 enable, u8 tos_precedence, u8 tx_rate)
 	return -1;
 }
 
-s32 wifi_set_edca_param(u32 ac_param)
+s32 wifi_set_edca_param(struct rtw_edca_param *pedca_param)
 {
-	UNUSED(ac_param);
+	UNUSED(pedca_param);
 	call_noused = __LINE__;
 	return -1;
 }
@@ -376,6 +376,13 @@ void wifi_ap_set_invisible(u8 enable)
 int wifi_wake_pll_rdy_in_ps_state(u8 need)
 {
 	UNUSED(need);
+	call_noused = __LINE__;
+	return -1;
+}
+
+s32 wifi_set_tx_advanced_config(struct rtw_tx_advanced_cfg *tx_setting)
+{
+	UNUSED(tx_setting);
 	call_noused = __LINE__;
 	return -1;
 }
