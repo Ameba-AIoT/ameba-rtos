@@ -208,7 +208,7 @@ void DDR_PHY_DLL_CLK_DIV(u32 DDR_Freq)
 	ddr_phy->DDRPHY_PLL_CTL4 = ddr_phy->DDRPHY_PLL_CTL4 & (~DDRPHY_MASK_DPI_DLY_SEL); // ALL 0 or 0x10
 
 	/*TX/RX FIFO threshold setting*/
-	if (DDR_PHY_ChipInfo_ddrtype() == DDR_Type_DDR2) {
+	if (DDR_PHY_ChipInfo_ddrtype() == MCM_DDR2) {
 		ddr_phy->DDRPHY_AFIFO_STR_2 = 0x00000033; // for DDR2
 	} else {
 		ddr_phy->DDRPHY_AFIFO_STR_2 = 0x00000022; // for real DDR3
@@ -237,13 +237,13 @@ void DDR_PHY_DLL_CLK_DIV(u32 DDR_Freq)
 
 	/* force rst to 1 and tcke to low before controller ready */
 	if (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_CFG) & LSYS_BIT_BOOT_WAKE_FROM_PS_HS) {
-		if (DDR_PHY_ChipInfo_ddrtype() == DDR_Type_DDR2) {
+		if (DDR_PHY_ChipInfo_ddrtype() == MCM_DDR2) {
 			ddr_phy->DDRPHY_CRT_CTL = 0x4C000903; //according to ddr2 type
 		} else {
 			ddr_phy->DDRPHY_CRT_CTL = 0x4C000821;
 		}
 	} else {
-		if (DDR_PHY_ChipInfo_ddrtype() == DDR_Type_DDR2) {
+		if (DDR_PHY_ChipInfo_ddrtype() == MCM_DDR2) {
 			ddr_phy->DDRPHY_CRT_CTL = 0x40000103; //according to ddr2 type
 		} else {
 			ddr_phy->DDRPHY_CRT_CTL = 0x40000021; //according to ddr3 type
@@ -449,7 +449,7 @@ void DDR_PHY_DELAY_TAP_SET(void)
 	ddr_phy->DDRPHY_CMD_DLY_1 = 0x88888888;
 
 	/*geardown*/
-	if (DDR_PHY_ChipInfo_ddrtype() == DDR_Type_DDR2) {
+	if (DDR_PHY_ChipInfo_ddrtype() == MCM_DDR2) {
 #if SUPPORT_DYNAMIC_POWEROFF
 		if (ddr_phy->DDRPHY_AFIFO_STR_SEL != 0x0) {
 			ddr_phy->DDRPHY_CMD_ADR_PH = 0x7c032323;

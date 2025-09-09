@@ -383,7 +383,7 @@ void np_power_gate_ctrl(void)
 	//Rtemp |= HSYS_BIT_SHARE_BT_MEM | HSYS_BIT_SHARE_WL_MEM;
 	//HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HPLAT_CTRL, Rtemp);
 
-	if (rram->MEM_TYPE == Memory_Type_DDR) {
+	if (rram->MEM_TYPE == MCM_TYPE_DDR) {
 		np_set_ddr_sre();
 
 		/* MP ECO, shutdown pad, immedately after SRE */
@@ -406,7 +406,7 @@ void np_power_gate_ctrl(void)
 			RTK_LOGW(TAG, "MEM PFM fail\r\n");
 		}
 
-	} else if (rram->MEM_TYPE == Memory_Type_PSRAM) {
+	} else if (rram->MEM_TYPE == MCM_TYPE_PSRAM) {
 
 		/* MP ECO */
 		np_set_psram_sleep_mode(ENABLE);
@@ -519,7 +519,7 @@ void np_power_wake_ctrl(void)
 	/* sys req pwm mode before power on km4 */
 	SWR_PFM_MODE_Set(DISABLE);
 
-	if (rram->MEM_TYPE == Memory_Type_PSRAM) {
+	if (rram->MEM_TYPE == MCM_TYPE_PSRAM) {
 
 		// enable BG here to save time
 		if (ps_config.km0_pll_off == TRUE) {
@@ -654,7 +654,7 @@ void np_clk_gate_ctrl(void)
 	PLL_TypeDef *PLL = (PLL_TypeDef *)PLL_BASE;
 	RRAM_TypeDef *rram = RRAM;
 
-	if (rram->MEM_TYPE == Memory_Type_DDR) {
+	if (rram->MEM_TYPE == MCM_TYPE_DDR) {
 
 		np_set_ddr_sre();
 
@@ -694,7 +694,7 @@ void np_clk_gate_ctrl(void)
 			RTK_LOGW(TAG, "MEM PFM fail\r\n");
 		}
 
-	} else if (rram->MEM_TYPE == Memory_Type_PSRAM) {
+	} else if (rram->MEM_TYPE == MCM_TYPE_PSRAM) {
 
 		/* MP ECO */
 		if (ps_config.km0_config_psram) {
@@ -832,7 +832,7 @@ void np_clk_wake_ctrl(void)
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKSL_GRP0, Rtemp);
 	}
 
-	if (rram->MEM_TYPE == Memory_Type_PSRAM) {
+	if (rram->MEM_TYPE == MCM_TYPE_PSRAM) {
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098, (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098)  | (LSYS_BIT_PWDPAD15N_DQ)));
 		/* MP ECO */
 		RCC_PeriphClockCmd(APBPeriph_PSRAM, APBPeriph_PSRAM_CLOCK, ENABLE);
@@ -841,7 +841,7 @@ void np_clk_wake_ctrl(void)
 			np_set_psram_sleep_mode(DISABLE);
 		}
 
-	} else if (rram->MEM_TYPE == Memory_Type_DDR) {
+	} else if (rram->MEM_TYPE == MCM_TYPE_DDR) {
 		//switch swr_mem to PWM mode
 		if (SWR_MEM_Mode_Set(SWR_PWM)) {
 			RTK_LOGW(TAG, "MEM PWM fail\r\n");

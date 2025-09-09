@@ -94,7 +94,6 @@ extern uint32_t offer_ip;
 #endif
 
 static int  wifi_write_ap_info_to_flash_ext(u8 *data, u32 len);
-int  wifi_write_ap_info_to_flash(unsigned int offer_ip, unsigned int server_ip);
 
 static void generate_ping_echo(unsigned char *buf, int size)
 {
@@ -207,7 +206,7 @@ static int roaming_ping_test(u32_t ip_addr)
 
 static int wlan_fast_connect(struct wifi_roaming_data *data, u8 scan_type)
 {
-	ROAMING_DBG("%s()", __func__);
+	ROAMING_DBG("%s()\n", __func__);
 	unsigned long tick1 = rtos_time_get_current_system_time_ms();
 	unsigned long tick2, tick3, tick4, tick5;
 
@@ -240,6 +239,7 @@ static int wlan_fast_connect(struct wifi_roaming_data *data, u8 scan_type)
 	memcpy(PSK_INFO->psk_essid, data->ap_info.psk_essid, sizeof(data->ap_info.psk_essid));
 	memcpy(PSK_INFO->psk_passphrase, data->ap_info.psk_passphrase, sizeof(data->ap_info.psk_passphrase));
 	memcpy(PSK_INFO->wpa_global_PSK, data->ap_info.wpa_global_PSK, sizeof(data->ap_info.wpa_global_PSK));
+	PSK_INFO->security_type = data->ap_info.security_type;
 	rtw_psk_set_psk_info(PSK_INFO);
 	rtos_mem_free(PSK_INFO);
 
@@ -375,7 +375,7 @@ static int  wifi_write_ap_info_to_flash_ext(u8 *data, u32 len)
 	return 0;
 }
 
-int  wifi_write_ap_info_to_flash(unsigned int offer_ip, unsigned int server_ip)
+int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int server_ip)
 {
 
 	/* To avoid gcc warnings */
@@ -483,7 +483,7 @@ int  wifi_write_ap_info_to_flash(unsigned int offer_ip, unsigned int server_ip)
 	return 0;
 }
 
-int wifi_init_done_callback_roaming(void)
+int wifi_do_fast_connect(void)
 {
 	struct wifi_roaming_data read_data = {0};
 
@@ -500,16 +500,6 @@ int wifi_init_done_callback_roaming(void)
 	}
 	return 0;
 }
-
-void example_wifi_roaming_plus_init(void)
-{
-	// Call back from wlan driver after wlan init done
-	p_wifi_do_fast_connect = wifi_init_done_callback_roaming;
-
-	// Call back from application layer after wifi_connection success
-	p_store_fast_connect_info = wifi_write_ap_info_to_flash;
-}
-
 
 static u32 wifi_roaming_plus_find_ap_from_scan_buf(char *target_ssid, void *user_data, int ap_num)
 {

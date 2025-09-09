@@ -11,7 +11,9 @@
 #include "usbd_scsi.h"
 #include "os_wrapper.h"
 #include "ameba_sd.h"
-
+#if !USBD_MSC_RAM_DISK
+#include "vfs_fatfs.h"
+#endif
 /* Private defines -----------------------------------------------------------*/
 
 /* Private types -------------------------------------------------------------*/
@@ -184,16 +186,8 @@ static const usbd_class_driver_t usbd_msc_driver = {
 // physical disk access methods
 static usbd_msc_dev_t usbd_msc_dev;
 
-#if !USBD_MSC_RAM_DISK
-static int usbd_msc_sd_init_status = 0;
-#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS) || defined(CONFIG_AMEBAGREEN2)
-static rtos_sema_t usbd_msc_sd_sema;
-
 /* Add lock to avoid msc tx_thread preempts msc rx_thread when read SD-card*/
 static usb_os_lock_t usbd_msc_sd_lock = NULL;
-
-#endif
-#endif
 
 /* Private functions ---------------------------------------------------------*/
 #if USBD_MSC_RAM_DISK
@@ -201,12 +195,12 @@ static u8 *usbd_msc_ram_disk_buf;
 
 static int RAM_init(void)
 {
-	int result = SD_OK;
+	int result = HAL_OK;
 
 	usbd_msc_ram_disk_buf = (u8 *)usb_os_malloc(USBD_MSC_RAM_DISK_SIZE);
 	if (usbd_msc_ram_disk_buf == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc RAM disk buf fail");
-		result = SD_NODISK;
+		result = HAL_ERR_MEM;
 	}
 
 	return result;
@@ -250,142 +244,33 @@ static int RAM_WriteBlocks(u32 sector, const u8 *data, u32 count)
 
 #else
 
-#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS) || defined(CONFIG_AMEBAGREEN2)
-
-static int usbd_msc_sd_give_sema(u32 timeout)
-{
-	UNUSED(timeout);
-	return rtos_sema_give(usbd_msc_sd_sema);
-}
-
-static int usbd_msc_sd_take_sema(u32 timeout)
-{
-	return rtos_sema_take(usbd_msc_sd_sema, timeout);
-}
-
-static void usbd_msc_sd_sema_init(void)
-{
-	rtos_sema_create(&usbd_msc_sd_sema, 0U, 1U);
-	SD_SetSema(usbd_msc_sd_take_sema, usbd_msc_sd_give_sema);
-}
-
-static void usbd_msc_sd_sema_deinit(void)
-{
-	rtos_sema_delete(usbd_msc_sd_sema);
-	SD_SetSema(NULL, NULL);
-}
-
-#endif // defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS) || defined(CONFIG_AMEBAGREEN2)
-
 static int usbd_msc_sd_init(void)
 {
-	SD_RESULT ret;
-
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SD init\n");
 
-#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS) || defined(CONFIG_AMEBAGREEN2)
-	usbd_msc_sd_sema_init();
-#endif
-
-	ret = SD_Init();
-	if (ret == SD_OK) {
-		usbd_msc_sd_init_status = 1;
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to init SD: %d\n", ret);
-	}
-
-	return ret;
+	return SD_disk_Driver.disk_initialize();
 }
 
 static int usbd_msc_sd_deinit(void)
 {
-	SD_RESULT ret;
-
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SD deinit\n");
 
-	usbd_msc_sd_init_status = 0;
-	ret = SD_DeInit();
-	if (ret != SD_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to deinit SD: %d\n", ret);
-	}
-
-#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS) || defined(CONFIG_AMEBAGREEN2)
-	usbd_msc_sd_sema_deinit();
-#endif
-
-	return ret;
+	return SD_disk_Driver.disk_deinitialize();
 }
 
 static int usbd_msc_sd_getcapacity(u32 *sector_count)
 {
-	u32 retry = 0U;
-	SD_RESULT ret;
-
-	do {
-		if (usbd_msc_sd_init_status == 0U) {
-			ret = SD_NODISK;
-			break;
-		}
-
-		ret = SD_GetCapacity(sector_count);
-		if (ret == SD_OK) {
-			break;
-		}
-	} while (++retry <= USBD_MSC_SD_ACCESS_RETRY);
-
-	if (ret != SD_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to get SD capacity: %d\n", ret);
-	}
-
-	return ret;
+	return SD_disk_Driver.disk_ioctl(GET_SECTOR_COUNT, sector_count);
 }
 
 static int usbd_msc_sd_readblocks(u32 sector, u8 *data, u32 count)
 {
-	u32 retry = 0U;
-	SD_RESULT ret;
-
-	do {
-		if (usbd_msc_sd_init_status == 0U) {
-			ret = SD_NODISK;
-			break;
-		}
-
-		ret = SD_ReadBlocks(sector, data, count);
-		if (ret == SD_OK) {
-			break;
-		}
-	} while (++retry <= USBD_MSC_SD_ACCESS_RETRY);
-
-	if (ret != SD_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to R SD blocks: %d\n", ret);
-	}
-
-	return ret;
+	return SD_disk_Driver.disk_read(data, sector, count);
 }
 
 static int usbd_msc_sd_writeblocks(u32 sector, const u8 *data, u32 count)
 {
-	u32 retry = 0U;
-	SD_RESULT ret;
-
-	do {
-		if (usbd_msc_sd_init_status == 0U) {
-			ret = SD_NODISK;
-			break;
-		}
-
-		ret = SD_WriteBlocks(sector, data, count);
-		if (ret == SD_OK) {
-			break;
-		}
-	} while (++retry <= USBD_MSC_SD_ACCESS_RETRY);
-
-	if (ret != SD_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to W SD blocks: %d\n", ret);
-	}
-
-	return ret;
+	return SD_disk_Driver.disk_write(data, sector, count);
 }
 
 #endif // USBD_MSC_RAM_DISK
@@ -626,9 +511,8 @@ static void usbd_msc_tx_process(void)
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usb_dev_t *dev = cdev->dev;
 
-#if !USBD_MSC_RAM_DISK
 	usb_os_lock(usbd_msc_sd_lock);
-#endif
+
 	if (cdev->tx_status == HAL_OK) {
 		switch (cdev->bot_state) {
 		case USBD_MSC_DATA_IN:
@@ -654,9 +538,7 @@ static void usbd_msc_tx_process(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX err: %d\n", cdev->tx_status);
 	}
 
-#if !USBD_MSC_RAM_DISK
 	usb_os_unlock(usbd_msc_sd_lock);
-#endif
 }
 
 /**
@@ -689,9 +571,8 @@ static void usbd_msc_rx_process(void)
 	usbd_msc_csw_t *csw = cdev->csw;
 	usb_dev_t *dev = cdev->dev;
 
-#if !USBD_MSC_RAM_DISK
 	usb_os_lock(usbd_msc_sd_lock);
-#endif
+
 	switch (cdev->bot_state) {
 	case USBD_MSC_IDLE:
 		/* Decode the CBW command */
@@ -747,9 +628,7 @@ static void usbd_msc_rx_process(void)
 		break;
 	}
 
-#if !USBD_MSC_RAM_DISK
 	usb_os_unlock(usbd_msc_sd_lock);
-#endif
 }
 
 /**
@@ -890,7 +769,7 @@ static void usbd_msc_tx_thread(void *param)
 
 int usbd_msc_disk_init(void)
 {
-	SD_RESULT ret;
+	int ret;
 
 #if USBD_MSC_RAM_DISK
 	ret = RAM_init();
@@ -903,7 +782,7 @@ int usbd_msc_disk_init(void)
 
 int usbd_msc_disk_deinit(void)
 {
-	SD_RESULT ret;
+	int ret;
 
 #if USBD_MSC_RAM_DISK
 	ret = RAM_deinit();
@@ -941,8 +820,9 @@ int usbd_msc_init(usbd_msc_cb_t *cb)
 	ops->disk_getcapacity = usbd_msc_sd_getcapacity;
 	ops->disk_read = usbd_msc_sd_readblocks;
 	ops->disk_write = usbd_msc_sd_writeblocks;
-	usb_os_lock_create(&usbd_msc_sd_lock);
 #endif
+
+	usb_os_lock_create(&usbd_msc_sd_lock);
 
 	cdev->data = (u8 *)usb_os_malloc(USBD_MSC_BUFLEN);
 	if (cdev->data == NULL) {
@@ -1042,12 +922,11 @@ void usbd_msc_deinit(void)
 		usb_os_mfree(cdev->data);
 		cdev->data = NULL;
 	}
-#if !USBD_MSC_RAM_DISK
+
 	if (usbd_msc_sd_lock != NULL) {
 		usb_os_lock_delete(usbd_msc_sd_lock);
 		usbd_msc_sd_lock = NULL;
 	}
-#endif
 }
 
 /**

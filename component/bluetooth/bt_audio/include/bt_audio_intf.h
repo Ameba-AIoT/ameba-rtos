@@ -205,6 +205,15 @@ rtk_bt_audio_track_t *rtk_bt_audio_track_add(uint32_t type, float left_volume, f
 											 uint32_t duration, pcm_data_cb cb, bool play_flag);
 
 /**
+ * @brief     config bt audio record parameter
+ * @param[in] p_table: configuration table
+ * @return
+ *            - 0  : Succeed
+ *            - others: Error code
+ */
+uint16_t rtk_bt_audio_record_config(rtk_bt_audio_record_config_table_t *p_table);
+
+/**
  * @brief     add one audio record(Audio mix support multiple stream/ Passthrough only one)
  * @param[in] type: audio data codec type
  * @param[in] channels: channels

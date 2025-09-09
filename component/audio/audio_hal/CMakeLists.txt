@@ -50,8 +50,6 @@ ameba_list_append(private_sources
     ${c_SOC_TYPE}/audio_hw_params_handle.c
     ${c_SOC_TYPE}/audio_hw_manager.c
     ${c_SOC_TYPE}/audio_hw_control.c
-    a2dp/a2dp_audio_hw_card.c
-    a2dp/a2dp_audio_hw_stream_out.c
 )
 
 ameba_list_append_if(CONFIG_AMEBADPLUS private_sources
@@ -62,6 +60,19 @@ ameba_list_append_if(CONFIG_AMEBASMART private_sources
     ${c_SOC_TYPE}/ameba_audio_stream_audio_patch.c
 )
 
+ameba_list_append_if(CONFIG_AMEBALITE private_sources
+    ${c_SOC_TYPE}/ameba_audio_stream_audio_patch.c
+)
+
+ameba_list_append_if(CONFIG_AUDIO_DEVICE_A2DP private_sources
+    a2dp/a2dp_audio_hw_card.c
+    a2dp/a2dp_audio_hw_stream_out.c
+)
+
+ameba_list_append_if(CONFIG_AUDIO_DEVICE_USB private_sources
+    usb/usb_audio_hw_card.c
+    usb/usb_audio_hw_stream_out.c
+)
 
 ameba_list_append(private_includes
     ${c_CMPT_AUDIO_DIR}/interfaces
@@ -69,15 +80,33 @@ ameba_list_append(private_includes
     ${c_CMPT_AUDIO_DIR}/base/osal/osal_c/include
     ${c_CMPT_AUDIO_DIR}/audio_driver/include
     ${c_CMPT_BLUETOOTH_DIR}/api/include
-    ${c_CMPT_BLUETOOTH_DIR}/bt_audio/include
     ${c_CMPT_BLUETOOTH_DIR}/osif
+)
+
+ameba_list_append_if(CONFIG_AUDIO_DEVICE_A2DP private_includes
+    ${c_CMPT_BLUETOOTH_DIR}/bt_audio/include
     ${c_CMPT_BLUETOOTH_DIR}/bt_audio/bt_codec/sbc/decoder/include
     ${c_CMPT_BLUETOOTH_DIR}/bt_audio/bt_codec/sbc/encoder/include
+    ${c_CMPT_BLUETOOTH_DIR}/bt_audio/bt_codec
+)
+
+ameba_list_append_if(CONFIG_AUDIO_DEVICE_USB private_includes
+    ${c_COMPONENT_DIR}/usb/common
+    ${c_COMPONENT_DIR}/usb/host/core
+    ${c_COMPONENT_DIR}/usb/host/uac
 )
 
 ameba_list_append(private_definitions
     __RTOS__
     NDEBUG
+)
+
+ameba_list_append_if(CONFIG_AUDIO_DEVICE_A2DP private_definitions
+    AUDIO_DEVICE_A2DP
+)
+
+ameba_list_append_if(CONFIG_AUDIO_DEVICE_USB private_definitions
+    AUDIO_DEVICE_USB
 )
 
 ameba_list_append(private_compile_options

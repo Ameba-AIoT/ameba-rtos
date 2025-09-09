@@ -3646,7 +3646,7 @@ static void app_bt_le_audio_ext_adv_deinit(void)
 	app_bt_le_audio_adv_data_len = APP_LE_AUDIO_ADV_START_PARSING_IDX;
 }
 
-int bt_generic_le_audio_demo_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
+int bt_le_audio_generic_demo_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 {
 	if (1 == enable) {
 		if (demo_init_flag) {

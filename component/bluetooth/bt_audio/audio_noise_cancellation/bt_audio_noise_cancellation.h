@@ -12,7 +12,7 @@
 
 /*-------------------------------------------Notice !!!----------------------------------*/
 /* the following menuconfig should be set when enable CONFIG_BT_AUDIO_NOISE_CANCELLATION */
-/*         ./menuconfig.py -> CONFIG APPLICATION -> AI Config -> Enable AIVoice          */
+/*         ./menuconfig.py -> CONFIG APPLICATION -> AI Config -> Enable AIVoice -> Select AFE Resource (afe_res_1mic)         */
 #define CONFIG_BT_AUDIO_NOISE_CANCELLATION 0
 
 #ifdef __cplusplus
@@ -22,12 +22,12 @@ extern "C"
 
 /**
  * @brief     create new audio noise cancellation interface.
- * @param[in] none
+ * @param[in] channels: audio channel
  * @return
  *            - 0  : do presentation
  *            - 1: no need to do presentation
  */
-uint16_t rtk_bt_audio_noise_cancellation_new(void);
+uint16_t rtk_bt_audio_noise_cancellation_new(uint32_t channels);
 
 /**
  * @brief     feed voice data to ai voice noise cancellation interface.

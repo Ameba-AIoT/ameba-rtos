@@ -34,4 +34,6 @@ if(CONFIG_AUDIO_FWK)
     include(base.cmake)
 endif()
 
-
+if(CONFIG_AUDIO_DEVICE_USB)
+    ameba_add_subdirectory(usb_audio)
+endif()

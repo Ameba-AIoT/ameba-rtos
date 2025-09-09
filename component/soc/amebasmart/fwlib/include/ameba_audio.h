@@ -1886,6 +1886,11 @@ typedef struct {
 #define PAD_MIC3 ((u32)0x00000004)
 #define PAD_MIC4 ((u32)0x00000005)
 #define PAD_MIC5 ((u32)0x00000006)
+#define PAD_MICBIAS1 ((u32)0x00000007)
+#define PAD_MICBIAS2 ((u32)0x00000008)
+#define PAD_MICBIAS3 ((u32)0x00000009)
+#define PAD_MICBIAS4 ((u32)0x0000000A)
+#define PAD_MICBIAS5 ((u32)0x0000000B)
 /**
   * @}
   */

@@ -61,6 +61,8 @@ config USBD_MSC_MENU
     bool "MSC"
     depends on SUPPORT_SDIOH
     select USBD_MSC if CORE_AS_AP
+    select VFS_FATFS_INCLUDED if CORE_AS_AP
+    select FATFS_DISK_SD if CORE_AS_AP
 
 config USBD_UAC_MENU
     bool "UAC"

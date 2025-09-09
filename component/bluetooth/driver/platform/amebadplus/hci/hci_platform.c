@@ -456,7 +456,7 @@ bool rtk_bt_pre_enable(void)
 		return false;
 	}
 
-	if (!hci_is_mp_mode()) {
+	if (hci_is_wifi_need_leave_ps()) {
 		wifi_set_lps_enable(FALSE);
 		wifi_set_ips_internal(FALSE);
 	}
@@ -468,7 +468,7 @@ bool rtk_bt_pre_enable(void)
 void rtk_bt_post_enable(void)
 {
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
-	if (!hci_is_mp_mode()) {
+	if (hci_is_wifi_need_leave_ps()) {
 		wifi_set_lps_enable(wifi_user_config.lps_enable);
 		wifi_set_ips_internal(wifi_user_config.ips_enable);
 	}

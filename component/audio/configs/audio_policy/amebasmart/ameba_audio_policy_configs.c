@@ -101,9 +101,41 @@ GetAudioConfigHwCards(int32_t *hw_cards_num, AudioConfigHwCard **modules) {
                 {"a2dp output", "A2dp Out Device"},
             },
             .audio_routes_num = 1,
+        },
+        {
+            .name = "usb",
+            .device_ports = {
+                {
+                    .name = "USB Out Device",
+                    .role = AUDIO_CONFIG_PORT_ROLE_SINK,
+                    .type = AUDIO_HW_DEVICE_OUT_USB,
+                    .supported_rates = {44100},
+                    .supported_rates_num = 1,
+                    .supported_channels = {2},
+                    .supported_channels_num = 1,
+                    .supported_formats = {AUDIO_HW_FORMAT_PCM_16_BIT},
+                    .supported_formats_num = 1,
+                }
+            },
+            .device_ports_num = 1,
+            .mix_ports = {
+                {
+                    .name = "usb output",
+                    .role = AUDIO_CONFIG_PORT_ROLE_SOURCE,
+                    .rate = 44100,
+                    .channels = 2,
+                    .format = AUDIO_HW_FORMAT_PCM_16_BIT,
+                    .flags = AUDIO_HW_OUTPUT_FLAG_NONE,
+                }
+            },
+            .mix_ports_num = 1,
+            .audio_routes = {
+                {"usb output", "USB Out Device"},
+            },
+            .audio_routes_num = 1,
         }
     };
 
-    *hw_cards_num = 2;
+    *hw_cards_num = 3;
     *modules = hw_cards;
 }

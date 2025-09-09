@@ -28,6 +28,8 @@ static struct aivoice gaivoice = {
 	.afe_rbuffer = NULL,
 };
 
+static uint8_t record_channel = 0;
+
 int aivoice_downsample_16k_to_8k(const short *input, short *output, int input_samples)
 {
 	int output_samples = input_samples / 2;
@@ -79,7 +81,7 @@ uint32_t rtk_bt_audio_noise_cancellation_data_get(void *buffer, uint32_t size)
 	return read_size;
 }
 
-uint16_t rtk_bt_audio_noise_cancellation_new(void)
+uint16_t rtk_bt_audio_noise_cancellation_new(uint32_t channels)
 {
 	if (gaivoice.iface) {
 		BT_LOGE("[BT AUDIO] aivoice ns is alreadly exist \r\n");
@@ -89,8 +91,23 @@ uint16_t rtk_bt_audio_noise_cancellation_new(void)
 	const struct rtk_aivoice_iface *aivoice = &aivoice_iface_afe_v1;
 	struct aivoice_config config;
 	memset(&config, 0, sizeof(config));
+	struct afe_config afe_param = {0};
 
-	struct afe_config afe_param = AFE_CONFIG_COM_DEFAULT_2MIC50MM();
+	switch (channels) {
+	case 2: {
+		struct afe_config temp_afe = AFE_CONFIG_COM_DEFAULT_1MIC();
+		memcpy((void *)&afe_param, (void *)&temp_afe, sizeof(struct afe_config));
+	}
+	break;
+	case 3: {
+		struct afe_config temp_afe = AFE_CONFIG_COM_DEFAULT_2MIC50MM();
+		memcpy((void *)&afe_param, (void *)&temp_afe, sizeof(struct afe_config));
+	}
+	break;
+	default:
+		BT_LOGE("[BT AUDIO] rtk_bt_audio_noise_cancellation_new invalid channels %d \r\n", (int)channels);
+		return 1;
+	}
 	config.afe = &afe_param;
 
 	gaivoice.frame_bytes_per_channel = afe_param.frame_size * sizeof(short);
@@ -112,16 +129,17 @@ uint16_t rtk_bt_audio_noise_cancellation_new(void)
 	gaivoice.afe_out_8k_buffer = (void *)osif_mem_alloc(RAM_TYPE_DATA_ON, gaivoice.frame_bytes_per_channel / 2);
 	gaivoice.iface = aivoice;
 	gaivoice.handle = handle;
-	BT_LOGE("[BT AUDIO] aivoice instance is created \r\n");
+	record_channel = channels;
+	BT_LOGA("[BT AUDIO] aivoice instance is created, channels is %d \r\n", (int)channels);
 
 	return 0;
 }
 
 int rtk_bt_audio_noise_cancellation_feed(void *data, uint32_t bytes)
 {
-	if (bytes != gaivoice.frame_bytes_per_channel * 3) {
+	if (bytes != gaivoice.frame_bytes_per_channel * record_channel) {
 		BT_LOGE("[BT AUDIO] feed size error. expect=%d, real=%d \r\n",
-				gaivoice.frame_bytes_per_channel * 3, bytes);
+				gaivoice.frame_bytes_per_channel * record_channel, bytes);
 		return -1;
 	}
 
@@ -130,8 +148,8 @@ int rtk_bt_audio_noise_cancellation_feed(void *data, uint32_t bytes)
 
 uint16_t rtk_bt_audio_noise_cancellation_destroy(void)
 {
-	BT_LOGE("[BT AUDIO] entry %s \r\n", __func__);
-
+	BT_LOGA("[BT AUDIO] entry %s \r\n", __func__);
+	record_channel = 0;
 	if (gaivoice.iface) {
 		gaivoice.iface->destroy(gaivoice.handle);
 		gaivoice.iface = NULL;

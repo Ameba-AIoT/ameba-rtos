@@ -3,6 +3,7 @@
 #include "lwip_netconf.h"
 #include "atcmd_service.h"
 #include "wifi_api.h"
+#include "ameba_pmu.h"
 
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 #include "wifi_fast_connect.h"
@@ -157,6 +158,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 	uint8_t DHCP_state;
 	struct netif *pnetif = NULL;
 	struct dhcp *dhcp = NULL;
+	uint8_t ret = 0;
 
 	DHCP_state = dhcp_state;
 
@@ -201,14 +203,12 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 		netifapi_netif_set_up(pnetif);
 	}
 
+	/*acqurie wakelock to guarantee dhcp*/
+	pmu_acquire_wakelock(PMU_DHCP_PROCESS);
 	for (;;) {
 		//RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r ========DHCP_state:%d============\n\r",DHCP_state);
 		switch (DHCP_state) {
 		case DHCP_START: {
-			/*acqurie wakelock to guarantee dhcp*/
-#ifndef CONFIG_AS_INIC_AP
-			rtw_wakelock_timeout(4 * 1000);
-#endif
 
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 			if (check_is_the_same_ap()) {
@@ -217,7 +217,8 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 						dhcp = (struct dhcp *)mem_malloc(sizeof(struct dhcp));
 						if (dhcp == NULL) {
 							RTK_LOGS(NOTAG, RTK_LOG_ERROR, "dhcp_start(): could not allocate dhcp\n");
-							return -1;
+							ret = DHCP_STOP;
+							goto exit;
 						}
 					}
 					memset(dhcp, 0, sizeof(struct dhcp));
@@ -249,7 +250,8 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 				IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 				netifapi_netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
 				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rLwIP_DHCP: dhcp stop.");
-				return DHCP_STOP;
+				ret = DHCP_STOP;
+				goto exit;
 			}
 
 			/* Read the new IP address */
@@ -283,7 +285,8 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 					p_wifi_join_info_free(IFACE_PORT0);
 				}
 #endif
-				return DHCP_ADDRESS_ASSIGNED;
+				ret = DHCP_ADDRESS_ASSIGNED;
+				goto exit;
 			} else {
 				/* DHCP timeout */
 				if (dhcp->tries > MAX_DHCP_TRIES) {
@@ -319,7 +322,8 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 						netifapi_netif_set_up(pnetif);
 					}
 #endif
-					return DHCP_TIMEOUT;
+					ret = DHCP_TIMEOUT;
+					goto exit;
 				}
 			}
 		}
@@ -327,17 +331,25 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 		case DHCP_RELEASE_IP:
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rLwIP_DHCP: Release ip");
 			netifapi_dhcp_release(pnetif);
-			return DHCP_RELEASE_IP;
+			ret = DHCP_RELEASE_IP;
+			goto exit;
 		case DHCP_STOP:
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rLwIP_DHCP: dhcp stop.");
 			LwIP_DHCP_stop(idx);
-			return DHCP_STOP;
+			ret = DHCP_STOP;
+			goto exit;
 		default:
-			break;
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\rLwIP_DHCP: invalid dhcp state\n");
+			ret = DHCP_STOP;
+			goto exit;
 		}
-		/* wait 250 ms */
+		/* wait 10 ms */
 		rtos_time_delay_ms(10);
 	}
+
+exit:
+	pmu_release_wakelock(PMU_DHCP_PROCESS);
+	return ret;
 }
 
 void LwIP_ReleaseIP(uint8_t idx)

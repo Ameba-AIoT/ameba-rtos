@@ -26,7 +26,12 @@
 // ----------------------------------------------------------------------------
 // AudioHwManager
 extern void DestroyAudioHwCard(struct AudioHwCard *card);
+#ifdef AUDIO_DEVICE_A2DP
 extern void DestroyA2dpAudioHwCard(struct AudioHwCard *card);
+#endif
+#ifdef AUDIO_DEVICE_USB
+extern void DestroyUsbAudioHwCard(struct AudioHwCard *card);
+#endif
 
 static struct AudioHwPort gPrimaryAudioHwPort[2] = {
 	//this could be also separated to different ports according to none or direct flags;
@@ -40,16 +45,32 @@ static const enum AudioHwDevice gPrimaryAudioHwDevices =
 	| AUDIO_HW_DEVICE_IN_MIC | AUDIO_HW_DEVICE_IN_DMIC_REF_AMIC
 	| AUDIO_HW_DEVICE_IN_I2S;
 
+#ifdef AUDIO_DEVICE_A2DP
 static struct AudioHwPort gA2dpAudioHwPort[2] = {
 	{ 0, AUDIO_HW_PORT_ROLE_OUT, { AUDIO_HW_OUTPUT_FLAG_NONE | AUDIO_HW_OUTPUT_FLAG_NOIRQ }, AUDIO_HW_DEVICE_OUT_A2DP, 1},
 };
 
 static const enum AudioHwDevice gA2dpAudioHwDevices =
 	AUDIO_HW_DEVICE_OUT_A2DP;
+#endif
+
+#ifdef AUDIO_DEVICE_USB
+static struct AudioHwPort gUsbAudioHwPort[2] = {
+	{ 0, AUDIO_HW_PORT_ROLE_OUT, { AUDIO_HW_OUTPUT_FLAG_NONE | AUDIO_HW_OUTPUT_FLAG_NOIRQ }, AUDIO_HW_DEVICE_OUT_USB, 1},
+};
+
+static const enum AudioHwDevice gUsbAudioHwDevices =
+	AUDIO_HW_DEVICE_OUT_USB;
+#endif
 
 static struct AudioHwCardDescriptor gAudioHwCardDescs[] = {
 	{ AUDIO_HW_CARD_TYPE_PRIMARY, gPrimaryAudioHwPort, 2, gPrimaryAudioHwDevices, 5},
-	{ AUDIO_HW_CARD_TYPE_A2DP, gA2dpAudioHwPort, 1, gA2dpAudioHwDevices, 1}
+#ifdef AUDIO_DEVICE_A2DP
+	{ AUDIO_HW_CARD_TYPE_A2DP, gA2dpAudioHwPort, 1, gA2dpAudioHwDevices, 1},
+#endif
+#ifdef AUDIO_DEVICE_USB
+	{ AUDIO_HW_CARD_TYPE_USB, gUsbAudioHwPort, 1, gUsbAudioHwDevices, 1}
+#endif
 };
 
 static const int32_t CARD_DESCRIPTER_COUNT =
@@ -79,8 +100,14 @@ static struct AudioHwCard *AmebaOpenCard(struct AudioHwManager *manager, const s
 	{
 	case AUDIO_HW_CARD_TYPE_PRIMARY:
 		return CreateAudioHwCard();
+#ifdef AUDIO_DEVICE_A2DP
 	case AUDIO_HW_CARD_TYPE_A2DP:
 		return CreateA2dpAudioHwCard();
+#endif
+#ifdef AUDIO_DEVICE_USB
+	case AUDIO_HW_CARD_TYPE_USB:
+		return CreateUsbAudioHwCard();
+#endif
 	default:
 	    HAL_AUDIO_ERROR("Unsupported card type");
 		break;
@@ -102,9 +129,16 @@ static void AmebaCloseCard(struct AudioHwManager *manager, struct AudioHwCard *c
 	case AUDIO_HW_CARD_TYPE_PRIMARY:
 		DestroyAudioHwCard(card);
 		break;
+#ifdef AUDIO_DEVICE_A2DP
 	case AUDIO_HW_CARD_TYPE_A2DP:
 	    DestroyA2dpAudioHwCard(card);
 		break;
+#endif
+#ifdef AUDIO_DEVICE_USB
+	case AUDIO_HW_CARD_TYPE_USB:
+	    DestroyUsbAudioHwCard(card);
+		break;
+#endif
 
 	default:
 	    HAL_AUDIO_ERROR("Unknown type:%d", desc->type);

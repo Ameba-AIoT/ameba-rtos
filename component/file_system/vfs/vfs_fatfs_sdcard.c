@@ -37,6 +37,12 @@ static void sd_sema_init(void)
 	SD_SetSema(sd_take_sema, sd_give_sema);
 }
 
+static void sd_sema_deinit(void)
+{
+	rtos_sema_delete(vfs_sd_sema);
+	SD_SetSema(NULL, NULL);
+}
+
 static void sd_lock(void)
 {
 	if (sd_mutex == NULL) {
@@ -112,6 +118,7 @@ DSTATUS SD_disk_deinitialize(void)
 	init_status = 0;//The card is not init
 	res = SD_DeInit();
 	sd_unlock();
+	sd_sema_deinit();
 	return interpret_sd_status(res);
 }
 
