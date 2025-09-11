@@ -789,6 +789,16 @@ void BOOT_Log_Init(void)
 	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_2, ENABLE);
 }
 
+/* To avoid RRAM holding incorrect data, incorporate a MAGIC_NUMBER for verification. */
+static bool BOOT_RRAM_InfoValid(void)
+{
+	if (RRAM->MAGIC_NUMBER != 0x6969A5A5) {
+		return FALSE;
+	} else {
+		return TRUE;
+	}
+}
+
 //3 Image 1
 BOOT_RAM_TEXT_SECTION
 void BOOT_Image1(void)
@@ -803,10 +813,10 @@ void BOOT_Image1(void)
 
 	BOOT_ReasonSet();
 
-	if (BOOT_Reason() == 0) {
+	if ((BOOT_Reason() == 0) || (!BOOT_RRAM_InfoValid())) {
 		_memset(RRAM, 0, sizeof(RRAM_TypeDef));
+		RRAM->MAGIC_NUMBER = 0x6969A5A5;
 	}
-
 
 	BOOT_VerCheck();
 

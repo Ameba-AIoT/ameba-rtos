@@ -82,7 +82,7 @@ void i2c_dual_master_task(void)
 #endif
 
 	// Master write - Slave read
-	RTK_LOGE(TAG, "\r\nMaster write>>>\n");
+	RTK_LOGE(TAG, "Master write>>>\n");
 #ifdef I2C_RESTART_DEMO
 	i2c_write(&i2cmaster, MBED_I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], 1, 0);
 	i2c_write(&i2cmaster, MBED_I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[1], (I2C_DATA_LENGTH - 1), 1);
@@ -91,10 +91,11 @@ void i2c_dual_master_task(void)
 #endif
 
 	// Master read - Slave write
-	RTK_LOGE(TAG, "Master read>>>\n");
 #ifdef I2C_RESTART_DEMO
+	RTK_LOGE(TAG, "Master write>>>\n");
 	i2c_write(&i2cmaster, MBED_I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], 1, 0);
 #endif
+	RTK_LOGE(TAG, "Master read>>>\n");
 	i2c_read(&i2cmaster, MBED_I2C_SLAVE_ADDR0, (char *)&i2cdatarddst[0], I2C_DATA_LENGTH, 1);
 
 	i2c_master_rx_check();

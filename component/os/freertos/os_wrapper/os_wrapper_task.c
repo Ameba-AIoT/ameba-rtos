@@ -94,6 +94,11 @@ int rtos_task_yield(void)
 	return RTK_SUCCESS;
 }
 
+const char *rtos_task_get_name(rtos_task_t p_handle)
+{
+	return pcTaskGetName((TaskHandle_t)p_handle);
+}
+
 rtos_task_t rtos_task_handle_get(void)
 {
 	return (rtos_task_t)xTaskGetCurrentTaskHandle();

@@ -27,8 +27,8 @@ master's GND connect to slave's GND
 # SW Configuration
 
 1. In this example, we use config I2C_RESTART_DEMO to decide if the master will generate a restart condition.
-	If I`2C_RESTART_DEMO` is 1, then master will write ->restart->write -> stop ->write -> restart -> read -> stop.
-	If `I2C_RESTART_DEMO` is 0, then master will write ->stop->read -> stop.
+	If I`2C_RESTART_DEMO` is 1, then master will write ->write ->read.
+	If `I2C_RESTART_DEMO` is 0, then master will write ->read.
 
 2. In this example, we use config master_addr_retry to decide if the master will retry sending addr.
 

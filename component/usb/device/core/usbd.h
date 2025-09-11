@@ -74,8 +74,8 @@ typedef struct {
 typedef struct {
 	u32 nptx_max_epmis_cnt;		/* Max Non-Periodical TX transfer epmis count allowed, if epmis count is higher than this
 								value, the GINTSTS.EPMis interrupt will be handled. This parameter is enabled only when
-								USBD_EPMIS_INTR is enabled in ext_intr_en. */
-	u32 ext_intr_en;			/* Enable extra interrupts:
+								USBD_EPMIS_INTR is enabled in ext_intr_enable. */
+	u32 ext_intr_enable;			/* Enable extra interrupts:
 								USBD_SOF_INTR: used for timing synchronization with SOF.
 								USBD_EOPF_INTR: used to toggle frame parity for ISOC transfers, only for slave mode.
 								USBD_EPMIS_INTR: used to re-activate the transfers of multiple non-periodic endpoints when

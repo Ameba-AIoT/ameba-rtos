@@ -90,7 +90,7 @@ static usbd_config_t composite_cfg = {
 	.isr_priority = INT_PRI_MIDDLE,
 	.intr_use_ptx_fifo = 0U,
 #if defined (CONFIG_AMEBASMART)
-	.ext_intr_en = USBD_EPMIS_INTR,
+	.ext_intr_enable = USBD_EPMIS_INTR,
 	.nptx_max_epmis_cnt = 100U,
 #endif
 };

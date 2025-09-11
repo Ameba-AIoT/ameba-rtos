@@ -246,6 +246,7 @@ typedef struct {
 #define	PSRAM_TYPE_WB955	0x0
 #define	PSRAM_TYPE_WB957	0x1
 #define	PSRAM_TYPE_WB958	0x2
+#define PSRAM_TYPE_APM64	0x3
 
 /**
   * @}
@@ -269,14 +270,13 @@ typedef struct {
 /** @defgroup PSRAM_Size_define
  * @{
  */
-enum PSRAM_Size_Info {
-	PSRAM_SIZE_32Mb = 0x100,
-	PSRAM_SIZE_64Mb = 0x200,
-	PSRAM_SIZE_128Mb = 0x300,
-	PSRAM_SIZE_256Mb = 0x400,
-	PSRAM_SIZE_512Mb = 0x500,
 
-};
+#define PSRAM_SIZE_32Mb			0x400000
+#define PSRAM_SIZE_64Mb			0x600000
+#define PSRAM_SIZE_128Mb		0x1000000
+#define PSRAM_SIZE_256Mb		0x2000000
+#define PSRAM_SIZE_512Mb		0x4000000
+
 /**
   * @}
   */
@@ -381,7 +381,7 @@ _LONG_CALL_ void set_psram_sleep_mode(u32 type);
 _LONG_CALL_ void set_psram_wakeup_mode(u32 type);
 
 _LONG_CALL_ void PSRAM_CTRL_SPU(u32 state);
-
+_LONG_CALL_ void ChipInfo_InitPsramInfoFromMemInfo(const MCM_MemTypeDef *meminfo, PSRAMINFO_TypeDef *info);
 _LONG_CALL_ void set_psram_suspend(void);
 _LONG_CALL_ void set_psram_resume(void);
 
@@ -428,11 +428,6 @@ _LONG_CALL_ void set_psram_resume(void);
 #define Psram_WB_TRWR166		36
 #define Psram_WB_TRWR200		35
 #define Psram_WB_TRWR250		35
-
-
-#define PSRAM_TYPE_APM			0
-#define PSRAM_TYPE_WB				1
-#define PSRAM_TYPE_NONE			0xFF
 
 #define Psram_Tcem_T25	4000	//unit ns, (tcem*32)*busclk.
 #define Psram_Tcem_T85	1000	//unit us, (tcem*32)*busclk.

@@ -53,6 +53,15 @@ menu "CONFIG TrustZone"
     rsource "project_km4/Kconfig.tz"
 endmenu
 
+menu "CONFIG Memory Arch"
+    config DISABLE_PSRAM
+        bool "DISABLE PSRAM"
+    if DISABLE_PSRAM
+        config SECOND_FLASH_NOR
+            bool "Second flash NOR"
+    endif
+endmenu
+
 menu "CONFIG Link Option"
     choice
         prompt "IMG1(Bootloader) running on FLASH or SRAM?"

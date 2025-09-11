@@ -15,6 +15,8 @@ if USBD_COMPOSITE_MENU
             bool "CDC ACM + MSC"
             depends on SUPPORT_SDIOH
             select USBD_COMPOSITE_CDC_ACM_MSC if CORE_AS_AP
+            select VFS_FATFS_INCLUDED if CORE_AS_AP
+            select FATFS_DISK_SD if CORE_AS_AP
         config USBD_COMPOSITE_CDC_ACM_UAC_MENU
             bool "CDC ACM + UAC"
             depends on SUPPORT_USBD_UAC

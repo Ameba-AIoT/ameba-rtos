@@ -13,7 +13,9 @@
 #include "usbd_composite_scsi.h"
 #include "os_wrapper.h"
 #include "ameba_sd.h"
-
+#if !COMP_MSC_RAM_DISK
+#include "vfs_fatfs.h"
+#endif
 /* Private defines -----------------------------------------------------------*/
 
 /* Private types -------------------------------------------------------------*/
@@ -100,13 +102,8 @@ static const u8 usbd_composite_msc_fs_itf_desc[] = {
 // physical disk access methods
 static usbd_composite_msc_dev_t usbd_composite_msc_dev;
 
-#if !COMP_MSC_RAM_DISK
-#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAGREEN2)
-static int usbd_composite_msc_sd_init_status = 0;
-static rtos_sema_t usbd_composite_msc_sd_sema;
-
-#endif
-#endif
+/* Add lock to avoid msc tx_thread preempts msc rx_thread when read SD-card*/
+static usb_os_lock_t usbd_composite_msc_sd_lock = NULL;
 
 /* Exported variables --------------------------------------------------------*/
 
@@ -177,138 +174,37 @@ static int RAM_WriteBlocks(u32 sector, const u8 *data, u32 count)
 
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAGREEN2)
 
-static int usbd_composite_msc_sd_give_sema(u32 timeout)
-{
-	UNUSED(timeout);
-	return rtos_sema_give(usbd_composite_msc_sd_sema);
-}
-
-static int usbd_composite_msc_sd_take_sema(u32 timeout)
-{
-	return rtos_sema_take(usbd_composite_msc_sd_sema, timeout);
-}
-
-static void usbd_composite_msc_sd_sema_init(void)
-{
-	rtos_sema_create(&usbd_composite_msc_sd_sema, 0U, 1U);
-	SD_SetSema(usbd_composite_msc_sd_take_sema, usbd_composite_msc_sd_give_sema);
-}
-
-static void usbd_composite_msc_sd_sema_deinit(void)
-{
-	rtos_sema_delete(usbd_composite_msc_sd_sema);
-	SD_SetSema(NULL, NULL);
-}
-
 static int usbd_composite_msc_sd_init(void)
 {
-	SD_RESULT ret;
 
-	RTK_LOGS(TAG,  RTK_LOG_DEBUG, "SD init\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "SD init\n");
 
-	usbd_composite_msc_sd_sema_init();
-
-	ret = SD_Init();
-	if (ret == SD_OK) {
-		usbd_composite_msc_sd_init_status = 1;
-	} else {
-		RTK_LOGS(TAG,  RTK_LOG_ERROR, "Fail to init SD: %d\n", ret);
-	}
-
-	return ret;
+	return SD_disk_Driver.disk_initialize();
 }
 
 static int usbd_composite_msc_sd_deinit(void)
 {
-	SD_RESULT ret;
+	RTK_LOGS(TAG, RTK_LOG_INFO, "SD deinit\n");
 
-	RTK_LOGS(TAG,  RTK_LOG_DEBUG, "SD deinit\n");
-
-	usbd_composite_msc_sd_init_status = 0;
-	ret = SD_DeInit();
-	if (ret != SD_OK) {
-		RTK_LOGS(TAG,  RTK_LOG_WARN, "Fail to deinit SD: %d\n", ret);
-	}
-
-	usbd_composite_msc_sd_sema_deinit();
-
-	return ret;
+	return SD_disk_Driver.disk_deinitialize();
 }
 
 static int usbd_composite_msc_sd_getcapacity(u32 *sector_count)
 {
-	u32 retry = 0U;
-	SD_RESULT ret;
-
-	do {
-		if (usbd_composite_msc_sd_init_status == 0U) {
-			ret = SD_NODISK;
-			break;
-		}
-
-		ret = SD_GetCapacity(sector_count);
-		if (ret == SD_OK) {
-			break;
-		}
-	} while (++retry <= COMP_MSC_SD_ACCESS_RETRY);
-
-	if (ret != SD_OK) {
-		RTK_LOGS(TAG,  RTK_LOG_WARN, "Fail to get SD capacity: %d\n", ret);
-	}
-
-	return ret;
+	return SD_disk_Driver.disk_ioctl(GET_SECTOR_COUNT, sector_count);
 }
 
 static int usbd_composite_msc_sd_readblocks(u32 sector, u8 *data, u32 count)
 {
-	u32 retry = 0U;
-	SD_RESULT ret;
-
-	do {
-		if (usbd_composite_msc_sd_init_status == 0U) {
-			ret = SD_NODISK;
-			break;
-		}
-
-		ret = SD_ReadBlocks(sector, data, count);
-		if (ret == SD_OK) {
-			break;
-		}
-	} while (++retry <= COMP_MSC_SD_ACCESS_RETRY);
-
-	if (ret != SD_OK) {
-		RTK_LOGS(TAG,  RTK_LOG_WARN, "Fail to R SD blocks: %d\n", ret);
-	}
-
-	return ret;
+	return SD_disk_Driver.disk_read(data, sector, count);
 }
 
 static int usbd_composite_msc_sd_writeblocks(u32 sector, const u8 *data, u32 count)
 {
-	u32 retry = 0U;
-	SD_RESULT ret;
-
-	do {
-		if (usbd_composite_msc_sd_init_status == 0U) {
-			ret = SD_NODISK;
-			break;
-		}
-
-		ret = SD_WriteBlocks(sector, data, count);
-		if (ret == SD_OK) {
-			break;
-		}
-	} while (++retry <= COMP_MSC_SD_ACCESS_RETRY);
-
-	if (ret != SD_OK) {
-		RTK_LOGS(TAG,  RTK_LOG_WARN, "Fail to W SD blocks: %d\n", ret);
-	}
-
-	return ret;
+	return SD_disk_Driver.disk_write(data, sector, count);
 }
 
 #endif // CONFIG_AMEBASMART
-
 #endif // COMP_MSC_RAM_DISK
 
 /**
@@ -501,10 +397,28 @@ static int usbd_composite_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 static int usbd_composite_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 {
 	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
-
+	UNUSED(dev);
 	UNUSED(ep_addr);
 
-	if (status == HAL_OK) {
+	mdev->tx_status = status;
+	rtos_sema_give(mdev->tx_sema);
+
+	return HAL_OK;
+}
+
+
+/**
+  * @brief  RX process
+  * @retval Status
+  */
+static void usbd_composite_msc_tx_process(void)
+{
+	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
+	usb_dev_t *dev = mdev->dev;
+
+	usb_os_lock(usbd_composite_msc_sd_lock);
+
+	if (mdev->tx_status == HAL_OK) {
 		switch (mdev->bot_state) {
 		case COMP_MSC_DATA_IN:
 			if (usbd_composite_scsi_process_cmd(mdev, &mdev->cbw->CBWCB[0]) < 0) {
@@ -526,10 +440,10 @@ static int usbd_composite_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 s
 			break;
 		}
 	} else {
-		RTK_LOGS(TAG,  RTK_LOG_WARN, "EP%02x TX err: %d\n", ep_addr, status);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX err: %d\n", mdev->tx_status);
 	}
 
-	return HAL_OK;
+	usb_os_unlock(usbd_composite_msc_sd_lock);
 }
 
 /**
@@ -541,10 +455,28 @@ static int usbd_composite_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 s
 static int usbd_composite_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 {
 	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
+	UNUSED(dev);
+	UNUSED(ep_addr);
+
+	mdev->rx_data_length = len;
+	rtos_sema_give(mdev->rx_sema);
+
+	return HAL_OK;
+}
+
+
+/**
+  * @brief  RX process
+  * @retval void
+  */
+static void usbd_composite_msc_rx_process(void)
+{
+	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
 	usbd_composite_msc_cbw_t *cbw = mdev->cbw;
 	usbd_composite_msc_csw_t *csw = mdev->csw;
+	usb_dev_t *dev = mdev->dev;
 
-	UNUSED(ep_addr);
+	usb_os_lock(usbd_composite_msc_sd_lock);
 
 	switch (mdev->bot_state) {
 	case COMP_MSC_IDLE:
@@ -552,7 +484,7 @@ static int usbd_composite_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16
 		csw->dCSWTag = cbw->dCBWTag;
 		csw->dCSWDataResidue = cbw->dCBWDataTransferLength;
 
-		if ((len != COMP_MSC_CB_WRAP_LEN) ||
+		if ((mdev->rx_data_length != COMP_MSC_CB_WRAP_LEN) ||
 			(cbw->dCBWSignature != COMP_MSC_CB_SIGN) ||
 			(cbw->bCBWLUN > 1U) ||
 			(cbw->bCBWCBLength < 1U) || (cbw->bCBWCBLength > 16U)) {
@@ -586,8 +518,6 @@ static int usbd_composite_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16
 				} else {
 					usbd_composite_msc_abort(dev);
 				}
-			} else {
-				return HAL_OK;
 			}
 		}
 		break;
@@ -603,7 +533,7 @@ static int usbd_composite_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16
 		break;
 	}
 
-	return HAL_OK;
+	usb_os_unlock(usbd_composite_msc_sd_lock);
 }
 
 /**
@@ -645,6 +575,32 @@ static u16 usbd_composite_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *re
 	}
 
 	return len;
+}
+
+static void usbd_composite_msc_rx_thread(void *param)
+{
+	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
+
+	UNUSED(param);
+
+	for (;;) {
+		if (rtos_sema_take(mdev->rx_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			usbd_composite_msc_rx_process();
+		}
+	}
+}
+
+static void usbd_composite_msc_tx_thread(void *param)
+{
+	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
+
+	UNUSED(param);
+
+	for (;;) {
+		if (rtos_sema_take(mdev->tx_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			usbd_composite_msc_tx_process();
+		}
+	}
 }
 
 int usbd_composite_msc_disk_init(void)
@@ -695,13 +651,7 @@ int usbd_composite_msc_init(usbd_composite_dev_t *cdev)
 	usbd_ep_t *ep_bulk_in = &mdev->ep_bulk_in;
 	int ret = HAL_OK;
 
-	RTK_LOGS(TAG,  RTK_LOG_DEBUG, "MSC Init\n");
-
-	ret = usbd_composite_msc_disk_init();
-	if (ret != HAL_OK) {
-		RTK_LOGS(TAG,  RTK_LOG_ERROR, "Disk init error: %d\n", ret);
-		return ret;
-	}
+	RTK_LOGS(TAG,  RTK_LOG_INFO, "Init\n");
 
 	mdev->cdev = cdev;
 
@@ -721,12 +671,7 @@ int usbd_composite_msc_init(usbd_composite_dev_t *cdev)
 #endif
 #endif
 
-	ep_bulk_out->addr = USBD_COMP_MSC_BULK_OUT_EP;
-	ep_bulk_out->type = USB_CH_EP_TYPE_BULK;
-
-	ep_bulk_in->addr = USBD_COMP_MSC_BULK_IN_EP;
-	ep_bulk_in->type = USB_CH_EP_TYPE_BULK;
-	ep_bulk_in->dis_zlp = 1;
+	usb_os_lock_create(&usbd_composite_msc_sd_lock);
 
 	mdev->data = (u8 *)usb_os_malloc(COMP_MSC_BUFLEN);
 	if (mdev->data == NULL) {
@@ -746,12 +691,41 @@ int usbd_composite_msc_init(usbd_composite_dev_t *cdev)
 		goto csw_fail;
 	}
 
+	rtos_sema_create(&mdev->rx_sema, 0U, 1U);
+	rtos_sema_create(&mdev->tx_sema, 0U, 1U);
+
+	ret = rtos_task_create(&mdev->rx_task, "usbd_composite_msc_rx_thread", usbd_composite_msc_rx_thread, NULL, 1024U, COMP_MSC_RX_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create RX thread fail\n");
+		goto create_rx_thread_fail;
+	}
+
+	ret = rtos_task_create(&mdev->tx_task, "usbd_composite_msc_tx_thread", usbd_composite_msc_tx_thread, NULL, 1024U, COMP_MSC_TX_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create TX thread fail\n");
+		goto create_tx_thread_fail;
+	}
+
 	mdev->blkbits = COMP_MSC_BLK_BITS;
 	mdev->blksize = COMP_MSC_BLK_SIZE;
+
+	ep_bulk_out->addr = USBD_COMP_MSC_BULK_OUT_EP;
+	ep_bulk_out->type = USB_CH_EP_TYPE_BULK;
+
+	ep_bulk_in->addr = USBD_COMP_MSC_BULK_IN_EP;
+	ep_bulk_in->type = USB_CH_EP_TYPE_BULK;
+	ep_bulk_in->dis_zlp = 1;
 
 	usbd_register_class(&usbd_composite_msc_driver);
 
 	return HAL_OK;
+
+create_tx_thread_fail:
+	rtos_task_delete(mdev->rx_task);
+
+create_rx_thread_fail:
+	rtos_sema_delete(mdev->tx_sema);
+	rtos_sema_delete(mdev->rx_sema);
 
 csw_fail:
 	usb_os_mfree(mdev->cbw);
@@ -773,11 +747,15 @@ void usbd_composite_msc_deinit(void)
 {
 	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
 
-	RTK_LOGS(TAG,  RTK_LOG_DEBUG, "Deinit\n");
+	RTK_LOGS(TAG,  RTK_LOG_INFO, "Deinit\n");
+
+	rtos_task_delete(mdev->tx_task);
+	rtos_task_delete(mdev->rx_task);
+
+	rtos_sema_delete(mdev->tx_sema);
+	rtos_sema_delete(mdev->rx_sema);
 
 	usbd_unregister_class();
-
-	usbd_composite_msc_disk_deinit();
 
 	if (mdev->csw != NULL) {
 		usb_os_mfree(mdev->csw);
@@ -792,6 +770,11 @@ void usbd_composite_msc_deinit(void)
 	if (mdev->data != NULL) {
 		usb_os_mfree(mdev->data);
 		mdev->data = NULL;
+	}
+
+	if (usbd_composite_msc_sd_lock != NULL) {
+		usb_os_lock_delete(usbd_composite_msc_sd_lock);
+		usbd_composite_msc_sd_lock = NULL;
 	}
 }
 

@@ -465,7 +465,7 @@ static u8 usbh_uvc_parse_vs(u8 *pbuf, u32 *length)
 int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 {
 	int ret = HAL_OK;
-	uvc_desc_header_t *desc = (uvc_desc_header_t *)usbh_get_raw_configuration_descriptor(host);
+	uvc_desc_header_t *desc = (uvc_desc_header_t *)usbh_get_active_raw_configuration_descriptor(host);
 	u32 cfglen = (u32)((usbh_cfg_desc_t *) desc)->wTotalLength;
 	usbh_if_desc_t *pbuf = (usbh_if_desc_t *) desc;
 	u32 len;
