@@ -66,7 +66,7 @@ static usbd_config_t uac_cfg = {
 	.speed = CONFIG_USBD_UAC_SPEED,
 	.dma_enable = 1U,
 	.isr_priority = INT_PRI_MIDDLE,
-	.ext_intr_en = 0,
+	.ext_intr_enable = 0,
 	.intr_use_ptx_fifo = 0U,
 };
 

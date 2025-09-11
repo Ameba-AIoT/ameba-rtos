@@ -131,7 +131,7 @@ u32 BOOT_PSRAM_Init(void)
 	PSPHY_InitTypeDef PSPHY_InitStruct;
 	PSRAM_INFO_Update();
 
-	if (PsramInfo.Psram_Vendor != PSRAM_VENDOR_NONE) {
+	if (PsramInfo.Psram_Vendor != MCM_PSRAM_VENDOR_NOTCARE) {
 		PSRAM_CTRL_SPU(ENABLE);
 		RCC_PeriphClockCmd(APBPeriph_PSRAM, APBPeriph_PSRAM_CLOCK, ENABLE);
 
@@ -140,13 +140,25 @@ u32 BOOT_PSRAM_Init(void)
 		PSRAM_PHY_Init(&PSPHY_InitStruct);
 		PSRAM_CTRL_Init();
 
-		if (PsramInfo.Psram_Vendor == PSRAM_VENDOR_APM) {
+		if (PsramInfo.Psram_Vendor == MCM_PSRAM_VENDOR_APM) {
 			RTK_LOGI(TAG, "Init APM PSRAM\r\n");
 			/* init psram device */
 			PSRAM_APM_DEVIC_Init();
 
 		} else {
 			RTK_LOGI(TAG, "Init WB PSRAM\r\n");
+
+			RTK_LOGI(TAG, "*************************************************\n");
+			RTK_LOGI(TAG, "* PSRAM CRITICAL TEMPERATURE ADJUSTMENT         *\n");
+			RTK_LOGI(TAG, "*************************************************\n");
+
+			RTK_LOGI(TAG, "* When system temperature exceeds 85°C:         *\n");
+			RTK_LOGI(TAG, "*   Tcem parameter for PSRAM must be set to 1μs *\n");
+			RTK_LOGI(TAG, "*                                               *\n");
+			RTK_LOGI(TAG, "* Failure to adjust may cause:                  *\n");
+			RTK_LOGI(TAG, "*   - Timing violations                         *\n");
+			RTK_LOGI(TAG, "*   - System instability                        *\n");
+			RTK_LOGI(TAG, "*************************************************\n");
 			/* init psram device */
 			PSRAM_WB_DEVIC_Init();
 		}
@@ -340,8 +352,10 @@ void BOOT_WakeFromPG(void)
   */
 u32 BOOT_ChipInfo_PSRAMType(void)
 {
-	u32 memoryinfo = ChipInfo_PSRAMType();
-	u32 Psram_clk_Max = PSRAM_CLK_LIMIT_GET(memoryinfo);
+	MCM_MemTypeDef meminfo = ChipInfo_MCMInfo();
+	ChipInfo_InitPsramInfoFromMemInfo(&meminfo, &PsramInfo);
+
+	u32 Psram_clk_Max = PsramInfo.Psram_Clk_Limit;
 	SocClk_Info_TypeDef *pSocClk_Info;
 	u32 PsramSetClk = 0;
 	u32 ret;
@@ -392,8 +406,6 @@ void BOOT_SOC_ClkChk(SocClk_Info_TypeDef *pSocClk_Info)
 	u32 PllMClk = pSocClk_Info->PLLM_CLK;
 	u32 PllDClk = pSocClk_Info->PLLD_CLK;
 
-	u32 chipinfo = ChipInfo_PSRAMType();
-	PsramInfo.Psram_Vendor = PSRAM_VENDOR_GET(chipinfo);
 	assert_param(PllMClk <= PLL_600M);
 	assert_param(PllMClk >= PLL_330M);
 	assert_param(PllDClk <= PLL_600M);
@@ -423,7 +435,7 @@ void BOOT_SOC_ClkChk(SocClk_Info_TypeDef *pSocClk_Info)
 	assert_param(PsramClk <= PSRAMC_CLK_LIMIT);
 	RTK_LOGI(TAG, "KM4 CPU CLK: %lu Hz \n", CpuClk);
 	RTK_LOGI(TAG, "KR4 CPU CLK: %lu Hz \n", CpuClk);
-	if (PsramInfo.Psram_Vendor != PSRAM_VENDOR_NONE) {
+	if (PsramInfo.Psram_Vendor != MCM_PSRAM_VENDOR_NOTCARE) {
 		RTK_LOGI(TAG, "PSRAM Ctrl CLK: %lu Hz \n", PsramClk);
 	}
 
@@ -633,6 +645,16 @@ void Peripheral_Reset(void)
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_FEN_GRP1, APBPeriph_THM | APBPeriph_DTIM | APBPeriph_LOGUART);
 }
 
+/* To avoid RRAM holding incorrect data, incorporate a MAGIC_NUMBER for verification. */
+static bool BOOT_RRAM_InfoValid(void)
+{
+	if (RRAM_DEV->MAGIC_NUMBER != 0x6969A5A5) {
+		return FALSE;
+	} else {
+		return TRUE;
+	}
+}
+
 //3 Image 1
 void BOOT_Image1(void)
 {
@@ -648,8 +670,9 @@ void BOOT_Image1(void)
 
 	Peripheral_Reset();
 
-	if (BOOT_Reason() == 0) {
+	if ((BOOT_Reason() == 0) || (!BOOT_RRAM_InfoValid())) {
 		_memset(RRAM_DEV, 0, sizeof(RRAM_TypeDef));
+		RRAM_DEV->MAGIC_NUMBER = 0x6969A5A5;
 	}
 
 	/* enable IPC first for otp read */

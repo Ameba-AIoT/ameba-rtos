@@ -14,9 +14,11 @@
 #include "usb_hal.h"
 
 /* Exported defines ----------------------------------------------------------*/
-#define USBH_DEFAULT_MAX_ALT_NUM			3
-#define USBH_MAX_CLASSES_NUM				1
+#define USBH_DEFAULT_MAX_ALT_NUM            3
+#define USBH_MAX_CLASS_NUM                  1
+#define USBH_DEFAULT_ERR_TRY_MAX_CNT        15
 
+#define USBH_MAX_HUB_PORT                   32
 
 /* USB Host interrupt enable flag*/
 /* GINTSTS */
@@ -30,12 +32,14 @@ typedef enum {
 	USBH_WAIT_DEV_ATTACH,
 	USBH_DEV_ATTACHED,
 	USBH_DEV_DETACHED,
-	USBH_ENUMERATION,
-	USBH_CLASS_REQUEST,
+	USBH_HUB_HANDLE,
+	USBH_HUB_PORT_HANDLE,
+	USBH_DEVICE_ENUMERATION,
 	USBH_USER_SET_CONFIG,
 	USBH_SET_CONFIG,
 	USBH_SET_WAKEUP_FEATURE,
 	USBH_CLASS_PROBE,
+	USBH_CLASS_REQUEST,
 	USBH_CLASS_READY,
 	USBH_ABORTED,
 } usbh_state_t;
@@ -77,6 +81,14 @@ typedef struct {
 	u8  bNumConfigurations; 							/* Number of possible configurations */
 } usbh_dev_desc_t;
 
+/* USB BOS descriptor */
+typedef struct {
+	u8  bLength;
+	u8  bDescriptorType;
+	u16 wTotalLength;									/* USB specification version which device complies to */
+	u8  bNumDeviceCaps;									/* Class code (assigned by USB Org) */
+} usbh_dev_bos_t;
+
 /* USB endpoint descriptor */
 typedef struct {
 	u8  bLength;
@@ -117,6 +129,31 @@ typedef struct {
 							   								:bAlternateSetting define the alternate setting Id.*/
 } usbh_cfg_desc_t;
 
+/* USB HUB descriptor 11.23.2.1 Hub Descriptor */
+typedef struct {
+	u8  bLength;
+	u8  bDescriptorType;
+	u8  bNbrPorts;									/* Number of downstream facing ports that this hub supports */
+	u16 wHubCharacteristics;						/*  D1...D0: Logical Power Switching Mode
+														D2: Identifies a Compound Device
+														D4...D3: Over-current Protection Mode
+														D6...D5: TT Think TIme
+														D7: Port Indicators Supported
+														D15...D8: Reserved*/
+	u8  bPwrOn2PwrGood;								/* Time (in 2 ms intervals) from the time the power-on
+														sequence begins on a port until power is good on that port.*/
+	u8  bHubContrCurrent;							/* Maximum current requirements of the Hub Controller electronics in mA. */
+
+	/* add 1 bit for hub status change; round to bytes */
+	u8  DeviceRemovable[(USBH_MAX_HUB_PORT + 1 + 7) / 8];		/* Indicates if a port has a removable device attached.
+																Bit 0: Reserved for future use.
+																Bit 1: Port 1
+																Bit n: Port n (implementation-dependent, up to a maximum of 255 ports). */
+	u8  PortPwrCtrlMask[(USBH_MAX_HUB_PORT + 1 + 7) / 8];		/* This field exists for reasons of compatibility with software written for 1.0 compliant devices.
+																All bits in this field should be set to 1B. This field has one bit for each port on the hub with additional pad bits,
+																if necessary, to make the number of bits in the field an integer multiple of 8.*/
+} usbh_hub_desc_t;
+
 /* USB setup request */
 typedef union {
 	u32 d32[2];
@@ -125,7 +162,7 @@ typedef union {
 
 /* USB user configuration */
 typedef struct {
-	u32 ext_intr_en;                                    /* allow class to enable some interrupts*/
+	u32 ext_intr_enable;                                    /* allow class to enable some interrupts*/
 
 	u16 rx_fifo_depth;                                  /* RxFIFO depth in size of dword*/
 	u16 nptx_fifo_depth;                                /* npTxFIFO depth in size of dword*/
@@ -135,16 +172,20 @@ typedef struct {
 	u8 isr_task_priority;								/* USB ISR thread priority */
 	u8 main_task_priority;								/* USB main thread priority */
 
-	u8 alt_max;											/* USB support max alt setting num */
+	u8 alt_max_cnt;										/* USB support max alt setting num */
+
+	u8 transfer_retry_max_cnt;							/* USB transfer retry max count */
 
 	u8 speed;										/* USB speed, USB_SPEED_HIGH, USB_SPEED_HIGH_IN_FULL or USB_SPEED_LOW 0~3*/
 	u8 dma_enable;									/* Enable USB internal DMA mode, 0-Disable, 1-Enable */
 
 	/* 	used for get the usb host tick
-		if sof_tick_en = 1, usbh_get_tick will return the tick which support by sof interrupt(should enable sof interrupt)
-		if sof_tick_en = 0, usbh_get_tick will return the tick which got from the timestamp
+		if sof_tick_enable = 1, usbh_get_tick will return the tick which support by sof interrupt(should enable sof interrupt)
+		if sof_tick_enable = 0, usbh_get_tick will return the tick which got from the timestamp
 	*/
-	u8 sof_tick_en;
+	u8 sof_tick_enable;
+
+	u8 hub_enable;									/* Support 1-level HUB, 0-Disable, 1-Enable */
 } usbh_config_t;
 
 struct _usb_host_t;
@@ -162,12 +203,20 @@ typedef struct {
 
 /* USB host user callback */
 typedef struct {
-	int(*process)(struct _usb_host_t *host, u8 id);		/* Allow usesr to handle class-independent events in application level */
+	int(*process)(struct _usb_host_t *host, u8 id);			/* Allow usesr to handle class-independent events in application level */
+
+	/*
+		This callback is used to choose the right device while multiple devices are connected to a hub,
+		the class can get all the config descriptor and check the interface class
+		if find the device, return HAL_OK, the enum process will use this device as the target device
+		else return !HAL_OK, the enum process will discard this device, and switch to check next hub port
+	*/
+	int(*validate)(struct _usb_host_t *host, u8 cfg_max);
 } usbh_user_cb_t;
 
 /* USB host */
 typedef struct _usb_host_t {
-	usbh_class_driver_t  *class_driver[USBH_MAX_CLASSES_NUM];	/* Class drivers */
+	usbh_class_driver_t  *class_driver[USBH_MAX_CLASS_NUM];	/* Class drivers */
 	usbh_config_t         config;          				/* User configuration  */
 
 	usbh_class_driver_t  *active_class_driver;			/* Active class driver */
@@ -239,7 +288,8 @@ u32 usbh_get_tick(usb_host_t *host);
 u32 usbh_get_timestamp(usb_host_t *host);
 
 /* Get raw configuration descriptor data */
-u8 *usbh_get_raw_configuration_descriptor(usb_host_t *host);
+u8 *usbh_get_active_raw_configuration_descriptor(usb_host_t *host);
+u8 *usbh_get_raw_configuration_descriptor(usb_host_t *host, u8 idx);
 
 /* Get device descriptor data */
 usbh_dev_desc_t *usbh_get_device_descriptor(usb_host_t *host);
@@ -274,7 +324,11 @@ int usbh_intr_send_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
 int usbh_isoc_receive_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
 int usbh_isoc_send_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
 u32 usbh_get_last_transfer_size(usb_host_t *host, u8 pipe);
-u32 usbh_get_dev_address(void);
+
+int usbh_enable_nak_interrupt(usb_host_t *host, u8 pipe_num);
+int usbh_check_nak_timeout(usb_host_t *host, u8 pipe_num, u8 tick_cnt);
+int usbh_increase_busy_cnt(usb_host_t *host, u8 pipe_num, u8 step);
+int usbh_prepare_retransfer(usb_host_t *host, u8 pipe_num);
 
 /* Usbh CTS test operations */
 int usbh_enter_suspend(u8 suspend);

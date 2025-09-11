@@ -14,7 +14,7 @@ Taking RTL8730EA/QFN100 boards for example, the register R20 shall be parted on 
 # SW configuration
 
 1. Pre-configuration
-   Adjust `USBH_UAC_INTR_BUF_SIZE` and `USBH_UAC_ISOC_BUF_SIZE` to sync with the settings of USB vendor-specific UAC device.
+   Adjust `USBH_UAC_ISOC_BUF_SIZE` to sync with the settings of USB vendor-specific UAC device.
 
 2. Menuconfig
 	Type command `./menuconfig.py` under the project directory:
@@ -23,10 +23,6 @@ Taking RTL8730EA/QFN100 boards for example, the register R20 shall be parted on 
 	[*] Enable USB
 			USB Mode (Host)  --->
 	[*] 	UAC
-	```
-	- Choose `CONFIG VFS --->`:
-	```
-	[*] Enable VFS FATFS
 	```
 	Save and exit.
 
@@ -43,7 +39,7 @@ USB UAC specific log will be printed on loguart console, make sure there is no e
 
 # Note
 
-Please contact with USB SW RD.
+For other chips, refer to the AN for setup guide.
 
 # Supported IC
 

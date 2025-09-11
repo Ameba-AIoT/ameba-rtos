@@ -12,8 +12,7 @@
 #include "usbh.h"
 #include "usbh_cdc_ecm_hal.h"
 
-/* ecm callback will call lwip APIs, they are in one task */
-#define ECM_LWIP_TASK_IN_COUPLE                                 1
+#define ECM_ENABLE_DUMP_DESCRIPYOT_PARSE                        0
 
 /* Macro defines -----------------------------------------------------------*/
 #define ECM_ENABLE_PACKETFILTER                                 0
@@ -35,14 +34,13 @@
 #define CDC_ECM_MUTICAST_FILTER_STR_LEN                         (20)
 
 #define USBH_CDC_ECM_BULK_BUF_MAX_SIZE                          (512*3)
-#if !ECM_LWIP_TASK_IN_COUPLE
-#define USBH_CDC_ECM_BULK_BUF_MAX_CNT                           (20)
-#endif
 
 /* CDC Class Codes */
 #define CDC_CLASS_CODE                                          0x02U
-#define CDC_COMM_INTERFACE_CLASS_CODE                           0x02U
-#define CDC_DATA_INTERFACE_CLASS_CODE                           0x0AU
+#define CDC_IF_CDC_CTRL_CODE                            0x02U
+#define CDC_IF_CDC_CTRL_SUB_CLASS_ECM_CODE              0x06U
+#define CDC_IF_CDC_DATA_CODE                            0x0AU
+#define CDC_IF_CDC_DATA_SUB_CLASS_DATA_CODE             0x00U
 
 /* CDC Communication sub class codes */
 #define CDC_RESERVED                                            0x00U
@@ -69,20 +67,25 @@
 #define CDC_ECM_NETWORK_FUNC_DESCRIPTOR                         0x0FU
 
 /* Exported types ------------------------------------------------------------*/
-typedef int (*usb_timer_func)(void);
+
+#define  USBH_ECM_FREE_MEM(x)  if(x){ usb_os_mfree(x); x = NULL;}
 
 /* USB Host Status */
 typedef enum {
-	USBH_CDC_ECM_TYPE_INTR = 0U,
+	USBH_CDC_ECM_TYPE_UNDEF = 0U,
+	USBH_CDC_ECM_TYPE_INTR,
 	USBH_CDC_ECM_TYPE_BULK_IN,
-	USBH_CDC_ECM_TYPE_BULK_OUT,
+	USBH_CDC_ECM_TYPE_BULK_OUT, //ecm
+	USBH_CDC_ECM_APP_TYPE_INTR,
+	USBH_CDC_ECM_APP_TYPE_BULK_IN,
+	USBH_CDC_ECM_APP_TYPE_BULK_OUT, //acm
 	USBH_CDC_ECM_TYPE_MAX,
 } usbh_ecm_xter_type_t;
 
 typedef struct {
 	u8 pipe_id;
 	usbh_ecm_xter_type_t type;
-	u32 check_interval;   //const
+	u32 check_interval;
 	u32 last_check_time;  //last update time
 	usb_timer_func func;
 } usbh_cdc_ecm_time_t;
@@ -159,70 +162,34 @@ typedef enum {
 
 /* CDC ECM state */
 typedef enum {
-	CDC_ECM_STATE_CTRL_IDLE = 0U,
-	CDC_ECM_STATE_CTRL_ALT_SETTING,
-#if ECM_ENABLE_PACKETFILTER
-	CDC_ECM_STATE_CTRL_SET_ETHERNET_MULTICAST_FILTER,
-	CDC_ECM_STATE_CTRL_SET_ETHERNET_PACKET_FILTER,
-	CDC_ECM_STATE_CTRL_GET_ETHERNET_STATISTIC,
-#endif
-
-#if ECM_ENABLE_RCR_CONFIGURATION
-	CDC_ECM_STATE_CTRL_RCR_GET, //RTL8156,
-	CDC_ECM_STATE_CTRL_RCR_SET,
-#endif
-
-#if ECM_ENABLE_FIFO_FLOW_CTRL
-	CDC_ECM_STATE_FLOW_CTRL1, //RTL8152,
-	CDC_ECM_STATE_FLOW_CTRL2,
-#endif
-
-	//RTL8152, set mac address
-	CDC_ECM_STATE_CTRL_MAC_GET_LOCK,
-	CDC_ECM_STATE_CTRL_MAC_DISABLE_LOCK,
-	CDC_ECM_STATE_CTRL_MAC_SET_MAC1,
-	CDC_ECM_STATE_CTRL_MAC_SET_MAC2,
-	CDC_ECM_STATE_CTRL_MAC_ENABLE_LOCK,
-
-	CDC_ECM_STATE_CTRL_LED_COLOR_SET,
-
-	CDC_ECM_STATE_CTRL_MAX,
-} usbh_cdc_ecm_ctrl_state_t;
-
-/* CDC ECM state */
-typedef enum {
 	CDC_ECM_STATE_IDLE = 0U,
 	CDC_ECM_STATE_PRE_SETTING,
 	CDC_ECM_STATE_TRANSFER,
 	CDC_ECM_STATE_ERROR,
 } usbh_cdc_ecm_state_t;
 
-typedef enum {
-	CDC_ECM_MAC_UNINIT = 0U,
-	CDC_ECM_MAC_DONGLE_SUPPLY,
-	CDC_ECM_MAC_UPPER_LAYER_SET,
-	CDC_ECM_MAC_RANDOM_SET,
-	CDC_ECM_MAC_TYPE_MAX,
-} usbh_cdc_ecm_dongle_mac_type_t;
-
-
-/* CDC ECM communication interface */
+/* cdc ecm ep struct */
 typedef struct {
-	u32 intr_ep_interval;
-	u16 intr_in_packet_size;
-	u8  intr_in_pipe;
-	u8  intr_in_ep;
-} usbh_cdc_ecm_comm_if_t ;
+	u8                              *xfer_buf;
 
-/* CDC ECM data interface */
+	__IO u32                        busy_tick;    /* busy tick */
+	__IO u32                        idle_tick;    /* idle tick*/
+#if ECM_STATE_DEBUG_ENABLE
+	__IO u32                        trigger_cnt;
+#endif
+	u32                             ep_interval;
+	u16                             xfer_len;
+	u16                             ep_mps;
+	u8                              ep_addr;
+	u8                              pipe_id;
+	__IO u8                         xfer_state;
+	u8                              ep_out_zlp;
+} usbh_cdc_ecm_ep_t;
+
 typedef struct {
-	u16 bulk_in_packet_size;
-	u16 bulk_out_packet_size;
-	u8  bulk_in_pipe;
-	u8  bulk_in_ep;
-	u8  bulk_out_pipe;
-	u8  bulk_out_ep;
-} usbh_cdc_ecm_data_if_t ;
+	u8  bLength;
+	u8  bDescriptorType;
+} usb_ecm_descriptor_header;
 
 /*
 	Ethernet Networking Functional Descriptor
@@ -246,117 +213,40 @@ typedef struct {
 	int(* attach)(void);
 	int(* detach)(void);
 	int(* setup)(void);
-#if ECM_LWIP_TASK_IN_COUPLE
 	int(* bulk_received)(u8 *buf, u32 len);
-#endif
 	int(* bulk_send)(usbh_urb_state_t state);
 	int(* intr_received)(u8 *buf, u32 len);
 } usbh_cdc_ecm_state_cb_t;
 
-#if !ECM_LWIP_TASK_IN_COUPLE
-struct _usbh_cdc_ecm_buf_t;
-typedef struct _usbh_cdc_ecm_buf_t {
-	struct _usbh_cdc_ecm_buf_t *next;
-	u8 *buf_raw;
-	__IO u16 buf_valid_len;
-} usbh_cdc_ecm_buf_t;
-
-typedef struct {
-	usbh_cdc_ecm_buf_t *head;
-	usbh_cdc_ecm_buf_t *tail;
-	volatile u16 count;
-	usb_os_sema_t list_sema;
-} usbh_cdc_ecm_buf_list_t;
-
-typedef struct {
-	/* ecm data ringbuf issue  */
-	usbh_cdc_ecm_buf_list_t empty_list;
-	usbh_cdc_ecm_buf_list_t data_list;
-	usbh_cdc_ecm_buf_t *buf_list_node;
-	usbh_cdc_ecm_buf_t *p_cur_buf_node;
-	u8 *ecm_rx_buf;
-
-	usb_os_sema_t ecm_rx_sema;
-
-	__IO u8 ecm_sema_valid : 1;
-	__IO u8 read_wait_sema : 1;
-
-	__IO u8 read_continue : 1;
-} usbh_cdc_ecm_rx_buf_list_t;
-#endif
-
 /* CDC ECM host */
 typedef struct {
-	usbh_cdc_ecm_comm_if_t              comm_if;          /* intr ep struct*/
-	usbh_cdc_ecm_data_if_t              data_if;          /* bulk ep struct*/
-	usbh_cdc_ecm_network_func_t         func_if;          /* network struct*/
-	usbh_cdc_ecm_speed_change_t         user_speed_info;  /* ecm dongle speed struct*/
-
-	/* array */
-	u8                                  host_pipe[USB_MAX_PIPES];      /*  */
-	u8                                  muticast_filter[CDC_ECM_MUTICAST_FILTER_STR_LEN];
-	u8                                  mac[CDC_ECM_MAC_STR_LEN];                     /* mac info */
-	u8                                  mac_ctrl_lock[CDC_ECM_MAC_CTRL_REG_LEN];      /* for 8152 change mac */
-#if ECM_ENABLE_FIFO_FLOW_CTRL
-	u8                                  flow_ctrl[CDC_ECM_MAC_CTRL_REG_LEN];          /* 8152 */
-#endif
-#if ECM_ENABLE_RCR_CONFIGURATION
-	u8                                  rcr[CDC_ECM_MAC_CTRL_REG_LEN];                /* 8156 */
-#endif
-
-#if ECM_LWIP_TASK_IN_COUPLE
-	u8                                  *bulk_data_in_buf;    /* bulk in buffer */
-#else
-	usbh_cdc_ecm_rx_buf_list_t          rx_list;
-#endif
+	usbh_cdc_ecm_ep_t                   ecm_report_ep;
+	usbh_cdc_ecm_ep_t                   ecm_tx_ep;
+	usbh_cdc_ecm_ep_t                   ecm_rx_ep;
 
 	/* u32 */
 	usbh_cdc_ecm_state_cb_t             *cb;
 	usb_host_t                          *host;
-	u16                                 *led_array;           /* led array */
-
-	u8                                  *dongle_ctrl_buf;     /* used for transfer, cache line align */
-
-	u8                                  *intr_in_buf;         /* intr in buffer */
-	u8                                  *bulk_data_out_buf;   /* bulk out buffer */
-
-	u32                                 eth_statistic_count;  /* feature select params */
-	volatile u32                        intr_in_busy_tick;    /* intr in busy tick */
-	volatile u32                        intr_in_idle_tick;    /* intr in idle tick*/
-
-	volatile u32                        bulk_data_out_len;    /* bluk out data length */
-	volatile u32                        bulk_out_idle_tick;   /* bulk out idle tick */
-
-	volatile u32                        bulk_in_busy_tick;    /* bulk in busy tick */
-	volatile u32                        bulk_in_idle_tick;    /* bulk in idle tick */
-
-#if ECM_STATE_DEBUG_ENABLE
-	volatile u32                        bulk_in;
-	volatile u32                        bulk_out;
-	volatile u32                        intr_in;
-#endif
 
 	/* u16 */
 	u16                                 vid;
 	u16                                 pid;
-	u16                                 feature_selector;    /* feature select params */
-	u16                                 packet_filter;       /* packet filter params */
-	u16                                 muticast_filter_len; /* multicast filter params length */
 
 	/* u8 */
-	u8                                  led_cnt;             /* led cnt */
-	u8                                  mac_valid;           /* mac valid */
-	u8                                  mac_src_type;        /* ecm dongle mac source type : usbh_cdc_ecm_dongle_mac_type_t */
-	u8                                  state;               /*usb process status : usbh_cdc_ecm_state_t*/
-	u8                                  sub_state;           /*usb ctrl process status : usbh_cdc_ecm_ctrl_state_t*/
-	u8                                  usbh_state;          /*usb host connect status : usbh_ecm_state_t*/
-	u8                                  bulk_data_in_state;  /*bulk in  transfer status : usbh_cdc_ecm_transfer_state_t*/
-	u8                                  bulk_data_out_state; /*bulk out transfer status : usbh_cdc_ecm_transfer_state_t*/
-	u8                                  intr_in_state;       /*Intr in  transfer status : usbh_cdc_ecm_transfer_state_t*/
-	u8                                  bulk_out_zlp;        /*bulk out packet length is multiple of MPS,should send ZLP*/
-	u8                                  next_transfor;       /*send next event flag*/
-} usbh_cdc_ecm_host_t;
+	u8                                  ecm_if;   /* Interface number */
+	u8                                  ecm_alt;  /* Value used to select alternative setting */
 
+	u8                                  state;               /*usb process status : usbh_cdc_ecm_state_t*/
+	u8                                  usbh_state;          /*usb host connect status : usbh_ecm_state_t*/
+	u8                                  next_transfer;       /*send next event flag*/
+
+	/*
+		this means that the ecm transfer can begin
+		some ecm dongles, such as 4G dongle, need to make some prepare(send AT CMD to the dongle) before transfer ethernet packet
+		all ethernet transfer requests should be discarded before this param is set to true
+	*/
+	u8                                  allow_ecm_xfer;
+} usbh_cdc_ecm_host_t;
 
 /* Exported macros -----------------------------------------------------------*/
 
@@ -365,23 +255,23 @@ typedef struct {
 /* Exported functions --------------------------------------------------------*/
 int usbh_cdc_ecm_init(usbh_cdc_ecm_state_cb_t *cb);
 int usbh_cdc_ecm_deinit(void);
+int usbh_ecm_timer_register(u8 pipe, u32 time_value, usb_timer_func fn, u8 type);
 
 int usbh_cdc_ecm_choose_config(usb_host_t *host);
+int usbh_cdc_ecm_check_config_desc(usb_host_t *host, u8 cfg_max);
+
+int usbh_cdc_ecm_check_enum_status(void);
 
 int usbh_cdc_ecm_bulk_send(u8 *buf, u32 len);
-
-#if !ECM_LWIP_TASK_IN_COUPLE
-usbh_cdc_ecm_buf_t *usbh_cdc_ecm_read(u32 time_out_ms);
-void usbh_cdc_ecm_read_done(usbh_cdc_ecm_buf_t *p_buf);
-#endif
-u32 usbh_cdc_ecm_get_read_frame_cnt(void);
+int usbh_cdc_ecm_appx_send(u8 *buf, u32 len, usbh_cdc_ecm_ep_t *tx_ep);
+int usbh_cdc_ecm_hand_appx_rx(usbh_cdc_ecm_ep_t  *ep);
 
 u16 usbh_cdc_ecm_get_usbin_mps(void);
 u32 usbh_cdc_ecm_get_intr_interval(void);
-
-void usbh_cdc_ecm_set_dongle_led_array(u16 *led, u8 len);
-void usbh_cdc_ecm_set_dongle_mac(u8 *mac);
-
-usbh_cdc_ecm_time_t *usbh_ecm_get_timer_handle(u8 idx);
+u16 usbh_cdc_ecm_get_device_vid_info(void);
+u16 usbh_cdc_ecm_get_device_pid_info(void);
+u8 usbh_cdc_ecm_get_ecm_itf_ifnum(void);
+u8 usbh_cdc_ecm_get_ecm_itf_alt(void);
+u8 usbh_cdc_ecm_trx_prepare_done(void);
 
 #endif  /* USBD_CDC_ECM_H */

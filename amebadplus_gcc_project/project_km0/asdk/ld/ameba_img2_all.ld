@@ -188,7 +188,7 @@ ASSERT( __flash_text_start__ == ORIGIN(KM0_IMG2_XIP), "__flash_text_start__ is c
 ASSERT(__sram_image2_start__ == ORIGIN(KM0_BD_RAM), "__sram_image2_start__ is changed.")
 
 __bdram_heap_buffer_size__ = ORIGIN(KM0_BD_RAM) + LENGTH(KM0_BD_RAM) - __bdram_heap_buffer_start__;
-#if defined(CONFIG_IMG2_FLASH) && !defined(CONFIG_PSRAM_AS_HEAP)
+#if (defined(CONFIG_IMG2_FLASH) && !defined(CONFIG_PSRAM_AS_HEAP)) || defined(CONFIG_DISABLE_PSRAM)
 __psram_image2_start__ = .;
 
 __psram_heap_buffer_start__ = .;

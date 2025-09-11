@@ -1223,7 +1223,7 @@ enum CORE_Vol_TYPE {
  *****************************************************************************/
 typedef struct {
 	__IO u8 RRAM_SYS_RSVD[256];/* resvd for system */
-	__IO u32 Memory_Type;
+	__IO u32 MAGIC_NUMBER;
 	__IO u32 psram_backup[6];
 	__IO u8 AP_WAKEUP_STATUS;
 
@@ -1232,9 +1232,11 @@ typedef struct {
 	__IO u8 SWRCALIB_PWM_135;
 	__IO u8 SWRCALIB_CORE_LDO_10;
 	__IO u8 SWRCALIB_PWM_10;
+	__IO u8 PSRAM_TYPE;
+	__IO u8 Memory_Type;
 
 
-	u8 RRAM_USER_RSVD[222];
+	u8 RRAM_USER_RSVD[220];
 } RRAM_TypeDef;
 
 Compile_Assert(sizeof(RRAM_TypeDef) == 512, "RRAM_TypeDef size shall be 512");

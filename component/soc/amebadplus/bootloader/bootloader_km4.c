@@ -16,7 +16,7 @@
 static const char *const TAG = "BOOT";
 extern u8 SDIO_Pin_Grp;
 extern const u8 SDIO_PAD[5][6];
-
+extern PSRAMINFO_TypeDef PsramInfo;
 #define CHECK_AND_PRINT_FLAG(flagValue, bit, name) \
     do { \
         if ((flagValue) & (bit)) { \
@@ -135,7 +135,10 @@ void BOOT_Data_Flash_Init(void)
 #ifndef CONFIG_IMG2_FLASH
 	assert_param(0); /*Code Can only XIP When No Psram*/
 #endif
+
+#if defined(CONFIG_SECOND_FLASH_NOR)
 	Combo_SPIC_Init();
+#endif
 }
 
 u32 BOOT_ChipInfo_ClkInfoIdx(void)
@@ -159,6 +162,12 @@ void BOOT_PSRAM_Init(void)
 {
 	u8 pinname;
 	PSPHY_InitTypeDef PSPHY_InitStruct;
+
+	/* return directly to save code size*/
+#if defined(CONFIG_DISABLE_PSRAM)
+	RTK_LOGI(TAG, "CONFIG_DISABLE_PSRAM\r\n");
+	return;
+#endif
 
 	//reset psram device
 	RCC_PeriphClockCmd(APBPeriph_PSRAM, APBPeriph_PSRAM_CLOCK, DISABLE);
@@ -187,7 +196,7 @@ void BOOT_PSRAM_Init(void)
 	PSRAM_PHY_StructInit(&PSPHY_InitStruct);
 	PSRAM_PHY_Init(&PSPHY_InitStruct);
 
-	if (IS_MCM_PSRAM_APM(RRAM_DEV->Memory_Type)) {
+	if (PsramInfo.Psram_Vendor == MCM_PSRAM_VENDOR_APM) {
 
 		RTK_LOGI(TAG, "Init APM PSRAM\r\n");
 		/* init psram controller */
@@ -432,7 +441,7 @@ void Peripheral_Reset(void)
 	//reason: The reason for maintaining these bits is for our debugging function.
 	//issue: LSYS_PERIALL_RST_EN will reset cpu, causing loss of debug information, which is unexpected.
 	//resolve: When initializing power, at bootloader, these bits are enabled.
-	// HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_FEN, APBPeriph_SDM | APBPeriph_OTPC | APBPeriph_LPON);
+	// HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_FEN, APBPeriph_RTC | APBPeriph_SDM | APBPeriph_OTPC | APBPeriph_LPON);
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_FEN_GRP0, APBPeriph_TRNG | APBPeriph_FLASH | APBPeriph_KM4 | APBPeriph_KM0 | APBPeriph_PLFM | APBPeriph_SOC);
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_FEN_GRP1, APBPeriph_DTIM | APBPeriph_LOGUART);
 }
@@ -461,30 +470,40 @@ void SDIO_Pinmux_pre_init(void)
 				HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_USB_SDIO_CTRL) | LSYS_BIT_SDD_PMUX_FEN);
 }
 
+/* To avoid RRAM holding incorrect data, incorporate a MAGIC_NUMBER for verification. */
+static bool BOOT_RRAM_InfoValid(void)
+{
+	if (RRAM_DEV->MAGIC_NUMBER != 0x6969A5A5) {
+		return FALSE;
+	} else {
+		return TRUE;
+	}
+}
+
 //3 Image 1
 void BOOT_Image1(void)
 {
-	PRAM_START_FUNCTION Image2EntryFun = BOOT_SectionInit();
-	//STDLIB_ENTRY_TABLE *prom_stdlib_export_func = (STDLIB_ENTRY_TABLE *)__rom_stdlib_text_start__;
-	u32 *vector_table = NULL;
-	u32 sip_memory;
-	RRAM_TypeDef *rram = RRAM_DEV;
-
-	_memset((void *) __image1_bss_start__, 0, (__image1_bss_end__ - __image1_bss_start__));
-
 #if defined(CONFIG_WHC_INTF_SDIO)
 	/*Sdio pinmux pre init advanced to bootloader. If done too late, it may cause host side SDIO card recognition timeout, resulting in sdio power supply failure. */
 	SDIO_Pinmux_pre_init();
 #endif
 
+	PRAM_START_FUNCTION Image2EntryFun = BOOT_SectionInit();
+	//STDLIB_ENTRY_TABLE *prom_stdlib_export_func = (STDLIB_ENTRY_TABLE *)__rom_stdlib_text_start__;
+	u32 *vector_table = NULL;
+	RRAM_TypeDef *rram = RRAM_DEV;
+
+	_memset((void *) __image1_bss_start__, 0, (__image1_bss_end__ - __image1_bss_start__));
 	BOOT_ReasonSet();
 
 	Peripheral_Reset();
 
-	if (BOOT_Reason() == 0) {
+	if ((BOOT_Reason() == 0) || (!BOOT_RRAM_InfoValid())) {
 		/*reset osc 131k counter, only for RTL6845*/
 		OSC131K_Reset();
+
 		_memset(RRAM_DEV, 0, sizeof(RRAM_TypeDef));
+		RRAM_DEV->MAGIC_NUMBER = 0x6969A5A5;
 	}
 
 	BOOT_SOC_ClkSet();
@@ -518,18 +537,18 @@ void BOOT_Image1(void)
 	/* If No PLL CLK, ComboSPIC cant not glitch-free mux to XTAL */
 	BOOT_ComboSpic_PLL_Open();
 
-	sip_memory = MEMORY_VENDOR_GET(ChipInfo_MemoryInfo());
-	rram->Memory_Type = sip_memory;
-	if (IS_SIP_PSRAM(sip_memory)) {
+	MCM_MemTypeDef meminfo = ChipInfo_MCMInfo();
+	rram->Memory_Type = meminfo.mem_type;
+	if (meminfo.mem_type == MCM_TYPE_PSRAM) {
 		BOOT_PSRAM_Init();
 		/* PA5 is psram cs pin, need PU for sleep power consideration */
 		PAD_PullCtrl(_PA_5, GPIO_PuPd_UP);
 		PAD_SleepPullCtrl(_PA_5, GPIO_PuPd_UP);
-	} else if (IS_SIP_FLASH(sip_memory)) {
-		if (IS_TWO_FLASH(sip_memory)) {
-			/* init Combo SPIC use default parameter in bootrom */
-			BOOT_Data_Flash_Init();
-		}
+	} else if (meminfo.mem_type == MCM_TYPE_NOR_FLASH) {
+#ifdef CONFIG_PSRAM_USED
+		assert_param(0); /*Code Can only XIP When No Psram*/
+#endif
+		BOOT_Data_Flash_Init();
 
 		/* PA5 is flash clk pin, need PD for sleep power consideration */
 		PAD_PullCtrl(_PA_5, GPIO_PuPd_DOWN);
@@ -605,4 +624,3 @@ RAM_FUNCTION_START_TABLE RamStartTable = {
 	.FlashStartFun = BOOT_Image1,
 	.ExportTable = &boot_export_symbol
 };
-

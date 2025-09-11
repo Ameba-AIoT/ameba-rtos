@@ -6,6 +6,7 @@
 #endif
 #include "os_wrapper.h"
 #include "ameba_rtos_version.h"
+#include "ssl_rom_to_ram_map.h"
 //#include "wifi_fast_connect.h"
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_ipc.h"
@@ -55,29 +56,14 @@ void app_init_debug(void)
 	LOG_MASK(LEVEL_TRACE, debug[LEVEL_TRACE]);
 }
 
-static void *app_mbedtls_calloc_func(size_t nelements, size_t elementSize)
-{
-	size_t size;
-	void *ptr = NULL;
-
-	size = nelements * elementSize;
-	ptr = rtos_mem_malloc(size);
-
-	if (ptr) {
-		memset(ptr, 0, size);
-	}
-
-	return ptr;
-}
-
-static void app_mbedtls_free_func(void *buf)
-{
-	rtos_mem_free(buf);
-}
-
 void app_mbedtls_rom_init(void)
 {
-	mbedtls_platform_set_calloc_free(app_mbedtls_calloc_func, app_mbedtls_free_func);
+	CRYPTO_Init(NULL);
+	CRYPTO_SHA_Init(NULL);
+	ssl_function_map.ssl_calloc = (void *(*)(unsigned int, unsigned int))rtos_mem_calloc;
+	ssl_function_map.ssl_free = (void (*)(void *))rtos_mem_free;
+	ssl_function_map.ssl_printf = (long unsigned int (*)(const char *, ...))DiagPrintf;
+	ssl_function_map.ssl_snprintf = (int (*)(char *s, size_t n, const char *format, ...))DiagSnPrintf;
 }
 
 

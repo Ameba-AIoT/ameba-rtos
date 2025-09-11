@@ -1249,7 +1249,7 @@ int mbedtls_rsa_check_pub_priv(const mbedtls_rsa_context *pub,
 /*
  * Do an RSA public key operation
  */
-#ifdef RTK_LALU_MBEDTLS_RSA_CACULATION_ALT
+#if defined(RTK_LALU_MBEDTLS_RSA_CACULATION_ALT) || defined(RTK_LEGACY_MBEDTLS_RSA_CACULATION_ALT)
 int mbedtls_rsa_public(mbedtls_rsa_context *ctx,
                        const unsigned char *input,
                        unsigned char *output);
@@ -1302,7 +1302,7 @@ cleanup:
 }
 #endif
 
-#ifdef RTK_LALU_MBEDTLS_RSA_CACULATION_ALT
+#if defined(RTK_LALU_MBEDTLS_RSA_CACULATION_ALT) || defined(RTK_LEGACY_MBEDTLS_RSA_CACULATION_ALT)
 int mbedtls_rsa_private(mbedtls_rsa_context *ctx,
                         int (*f_rng)(void *, unsigned char *, size_t),
                         void *p_rng,

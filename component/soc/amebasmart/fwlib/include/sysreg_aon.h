@@ -548,6 +548,7 @@
 typedef struct {
 	__IO u8 RRAM_SYS_RSVD[256];             /* Rsvd for system */
 
+	__IO u32 MAGIC_NUMBER;
 	__IO u32 IMQ_HEAP_ADDR;
 	__IO u32 IMQ_HEAP_SIZE;
 	__IO u32 IMQ_INIT_DONE;
@@ -556,7 +557,7 @@ typedef struct {
 	__IO u8 MEM_TYPE;
 	__IO u8 CHIP_INFO;
 	__IO u8 PSRAM_LATENCY;
-	__IO u8 RRAM_USER_RSVD[111];            /* Rsvd for user */
+	__IO u8 RRAM_USER_RSVD[107];            /* Rsvd for user */
 
 	__IO u8 RRAM_PCR_RSVD[128];             /* Rsvd for PCR */
 } RRAM_TypeDef;
