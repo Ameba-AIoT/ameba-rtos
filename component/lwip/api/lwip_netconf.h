@@ -88,10 +88,6 @@ struct static_ip_config {
 	uint32_t gw;
 };
 
-/* Extern functions ------------------------------------------------------------*/
-#ifndef CONFIG_AS_INIC_AP
-void rtw_wakelock_timeout(uint32_t timeoutms);
-#endif
 /** Release a DHCP lease. */
 err_t dhcp_release_unicast(struct netif *netif);
 
