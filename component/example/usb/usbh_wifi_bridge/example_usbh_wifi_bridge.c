@@ -40,9 +40,20 @@ int dhcp_done = 0;
 extern struct netif xnetif[NET_IF_NUM];
 extern struct netif eth_netif;
 
-u8 cdc_ecm_do_init(void)
+void cdc_ecm_do_init(void)
 {
-	return usbh_cdc_ecm_do_init(ethernetif_mii_recv, NULL);
+	usbh_cdc_ecm_do_init(ethernetif_mii_recv, NULL);
+
+	do {
+		if (usbh_cdc_ecm_usb_is_ready()) {
+			break;
+		}
+		rtos_time_delay_ms(1000);
+	} while (1); //wait usb init success
+
+	usbh_cdc_ecm_prepare_done();
+
+	printf("Example Pid 0x%x/Vid 0x%x\n", usbh_cdc_ecm_get_device_vid(), usbh_cdc_ecm_get_device_pid());
 }
 
 

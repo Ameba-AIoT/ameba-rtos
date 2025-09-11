@@ -116,10 +116,10 @@ static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.dma_enable = 1,
 #if UVC_USE_SOF
-	.ext_intr_en = USBH_SOF_INTR,
-	.sof_tick_en = 1,
+	.ext_intr_enable = USBH_SOF_INTR,
+	.sof_tick_enable = 1,
 #endif
-	.alt_max = 25,
+	.alt_max_cnt = 25,
 	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = 3U,
 	.isr_task_priority  = 4U,

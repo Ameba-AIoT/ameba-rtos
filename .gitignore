@@ -9,9 +9,13 @@
 /**/image/*
 /**/image_mp/*
 /**/build/*
-!/**/image/.gitignore
-!/**/image_mp/.gitignore
-!/**/build/.gitignore
+# !/**/image/.gitignore
+# !/**/image_mp/.gitignore
+# !/**/build/.gitignore
+
+# python intermediate files
+/**/__pycache__/
+*.pyc
 
 # all bin files
 *.bin

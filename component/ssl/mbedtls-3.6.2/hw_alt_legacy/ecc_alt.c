@@ -1,5 +1,3 @@
-<<<<<<< HEAD   (398069 [common][usbd] fix vfs play fail when msc read SD card)
-=======
 /**
  * @brief  PKE hardware API for Mbedtls ECC caculation
  *
@@ -21,26 +19,9 @@
 #include "mbedtls/bignum.h"
 #include "mbedtls/platform.h"
 
-#define PKE_MONTGOMERY_DECODE_SCALAR_25519(k_list)  \
-do {                                            \
-    uint8_t *list = (uint8_t *)k_list;          \
-    (list)[0] &= 248;                           \
-    (list)[31] &= 127;                          \
-    (list)[31] |= 64;                           \
-} while (0)
-
-/*X25519 (but not X448) MUST mask the most significant bit in the final byte.
-Here, the "bits" parameter should be set to 255 for X25519 and 448 for X448 */
-#define PKE_MONTGOMERY_DECODE_U_COORDINATE(u_list, bits)   \
-do {                                                   \
-    uint8_t *list = (uint8_t *)u_list;                 \
-    int bytes = ((bits) + 7) / 8;                      \
-    if ((bits) % 8) {                                  \
-        (list)[bytes - 1] &= (1 << ((bits) % 8)) - 1;  \
-    }                                                  \
-} while (0)
-
-
+/* define it in mbedtls_config_xxx.h */
+#if defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT) || defined(MBEDTLS_ECDH_COMPUTE_SHARED_ALT) || \
+     defined(MBEDTLS_ECDSA_VERIFY_ALT) || defined(MBEDTLS_ECDSA_SIGN_ALT) || defined(MBEDTLS_ECDSA_GENKEY_ALT)
 
 ecdsa_ecp_group_id get_curve_id_from_mbedtls(mbedtls_ecp_group *grp)
 {
@@ -67,11 +48,10 @@ ecdsa_ecp_group_id get_curve_id_from_mbedtls(mbedtls_ecp_group *grp)
         mbedtls_printf("unsupport curve. %s \n", __func__);
         while(1);
     }
-
     return curve_id;
 }
 
-
+#endif
 
 #if defined(MBEDTLS_ECDSA_SIGN_ALT)
 int mbedtls_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *s,
@@ -168,7 +148,6 @@ int mbedtls_ecdsa_genkey(mbedtls_ecdsa_context *ctx,
     uint8_t Q_x[32] = {0};
     uint8_t Q_y[32] = {0};
 
-
     if (ctx == NULL || f_rng == NULL) {
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
@@ -184,11 +163,6 @@ int mbedtls_ecdsa_genkey(mbedtls_ecdsa_context *ctx,
 
     const int curve_id = get_curve_id_from_mbedtls(&ctx->grp);
 
-    if (ctx->grp.id == MBEDTLS_ECP_DP_CURVE25519) {
-        PKE_MONTGOMERY_DECODE_SCALAR_25519(d_buf);
-        PKE_MONTGOMERY_DECODE_U_COORDINATE(Q_x, 255);
-    }
-
     if ((ret = ECDSA_KeyGen(ECDSA, curve_id, d_buf, Q_x, Q_y, 0)) != 0) {
         printf("ECDSA_KeyGen failed: 0x%X\n", ret);
         goto cleanup;
@@ -203,10 +177,11 @@ cleanup:
 }
 #endif
 
+
 #if defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT)
-int mbedtls_ecdh_gen_public_hw(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_point *Q,
-                               int (*f_rng)(void *, unsigned char *, size_t),
-                               void *p_rng)
+int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_point *Q,
+                            int (*f_rng)(void *, unsigned char *, size_t),
+                            void *p_rng)
 {
 #if defined(MBEDTLS_ECP_RESTARTABLE)
 #error "MBEDTLS_ECDH_GEN_PUBLIC_ALT do not support MBEDTLS_ECP_RESTARTABLE"
@@ -229,33 +204,18 @@ int mbedtls_ecdh_gen_public_hw(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_e
     MBEDTLS_MPI_CHK(mbedtls_ecp_gen_privkey(grp, d, f_rng, p_rng));
     key_len = (grp->pbits + 7) / 8;;
 
-    if (key_len > sizeof(d_buf)) {
-        return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-    }
-
     MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(d, d_buf, key_len));
-
-    if (grp->id == MBEDTLS_ECP_DP_CURVE25519) {
-        PKE_MONTGOMERY_DECODE_SCALAR_25519(d_buf);
-        // PKE_MONTGOMERY_DECODE_U_COORDINATE(Q_x, 255);
-    }
 
     reverse_bytes(d_buf, key_len);
 
     ret = ECDSA_KeyGen(ECDSA, get_curve_id_from_mbedtls(grp), d_buf, Q_x, Q_y, otpkey);
-
     if (ret != 0) {
         printf("ECDSA_KeyGen failed: %d\n", ret);
         goto cleanup;
     }
 
     MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary_le(&Q->X, Q_x, key_len));
-
-    if (grp->id != MBEDTLS_ECP_DP_CURVE25519) {
-        MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&Q->Y, Q_y, key_len));
-    } else {
-        MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&Q->Y, 0));
-    }
+    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary_le(&Q->Y, Q_y,  key_len));
     MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&Q->Z, 1));
 
 cleanup:
@@ -264,10 +224,10 @@ cleanup:
 #endif
 
 #if defined(MBEDTLS_ECDH_COMPUTE_SHARED_ALT)
-int mbedtls_ecdh_compute_shared_hw(mbedtls_ecp_group *grp, mbedtls_mpi *z,
-                                   const mbedtls_ecp_point *Q, const mbedtls_mpi *d,
-                                   int (*f_rng)(void *, unsigned char *, size_t),
-                                   void *p_rng)
+int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z,
+                                const mbedtls_ecp_point *Q, const mbedtls_mpi *d,
+                                int (*f_rng)(void *, unsigned char *, size_t),
+                                void *p_rng)
 {
     UNUSED(f_rng);
     UNUSED(p_rng);
@@ -290,27 +250,12 @@ int mbedtls_ecdh_compute_shared_hw(mbedtls_ecp_group *grp, mbedtls_mpi *z,
 
     size_t priv_len =(grp->pbits + 7) / 8;;
 
-    if (priv_len > sizeof(d_buf)) {
-        return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-    }
-
     MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&Q->X, Q_x, priv_len));
-    if (grp->id != MBEDTLS_ECP_DP_CURVE25519) {
-        MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&Q->Y, Q_y, priv_len));
-    } else {
-        memset(Q_y, 0, priv_len);
-    }
+    MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&Q->Y, Q_y, priv_len));
     MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(d, d_buf, priv_len));
 
-    if (grp->id == MBEDTLS_ECP_DP_CURVE25519) {
-        PKE_MONTGOMERY_DECODE_SCALAR_25519(d_buf);
-        // PKE_MONTGOMERY_DECODE_U_COORDINATE(Q_x, 255);
-    }
-
     reverse_bytes(Q_x, priv_len);
-    if (grp->id != MBEDTLS_ECP_DP_CURVE25519) {
-        reverse_bytes(Q_y, priv_len);
-    }
+    reverse_bytes(Q_y, priv_len);
     reverse_bytes(d_buf, priv_len);
 
     ret = ECDSA_ECDH_Compute_Shared(ECDSA, get_curve_id_from_mbedtls(grp), Z, Z+priv_len, Q_x, Q_y, d_buf, otpkey);
@@ -326,4 +271,3 @@ cleanup:
     return ret;
 }
 #endif
->>>>>>> CHANGE (1b5d15 [amebadplus][ssl] update hw_alt for ssl)

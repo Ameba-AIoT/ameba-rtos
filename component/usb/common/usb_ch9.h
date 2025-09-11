@@ -13,9 +13,16 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
+/* USB Version */
+#define USB_VERSION_ID_0201                            0x0201 /*USB Specification version 2.01*/
+
+/* USB device class type  */
+#define USB_CLASS_HUB                                  0x09U
+
 /* USB descriptor length */
 #define USB_LEN_DEV_QUALIFIER_DESC                     0x0AU
 #define USB_LEN_DEV_DESC                               0x12U
+#define USB_LEN_BOS_DESC                               0x05U
 #define USB_LEN_CFG_DESC                               0x09U
 #define USB_LEN_IAD_DESC                               0x08U
 #define USB_LEN_IF_DESC                                0x09U
@@ -70,6 +77,8 @@
 #define USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION        0x07U
 #define USB_DESC_TYPE_INTERFACE_POWER                  0x08U
 #define USB_DESC_TYPE_IAD                              0x0BU
+#define USB_DESC_TYPE_BOS                              0x0FU
+#define USB_DESC_TYPE_HUB                              0x29U
 
 #define USB_DESC_DEVICE                                ((USB_DESC_TYPE_DEVICE << 8) & 0xFF00U)
 #define USB_DESC_CONFIGURATION                         ((USB_DESC_TYPE_CONFIGURATION << 8) & 0xFF00U)
@@ -79,6 +88,52 @@
 #define USB_DESC_DEVICE_QUALIFIER                      ((USB_DESC_TYPE_DEVICE_QUALIFIER << 8) & 0xFF00U)
 #define USB_DESC_OTHER_SPEED_CONFIGURATION             ((USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION << 8) & 0xFF00U)
 #define USB_DESC_INTERFACE_POWER                       ((USB_DESC_TYPE_INTERFACE_POWER << 8) & 0xFF00U)
+#define USB_DESC_BOS                                   ((USB_DESC_TYPE_BOS << 8) & 0xFF00U)
+#define USB_DESC_HUB_DESC                              ((USB_DESC_TYPE_HUB << 8) & 0xFF00U)
+
+/*************************************************************************
+ * Hub defines
+ */
+
+/*
+ * Port feature numbers
+ */
+#define USB_PORT_FEAT_CONNECTION     0
+#define USB_PORT_FEAT_ENABLE         1
+#define USB_PORT_FEAT_SUSPEND        2
+#define USB_PORT_FEAT_OVER_CURRENT   3
+#define USB_PORT_FEAT_RESET          4
+#define USB_PORT_FEAT_POWER          8
+#define USB_PORT_FEAT_LOWSPEED       9
+#define USB_PORT_FEAT_HIGHSPEED      10
+
+#define USB_PORT_FEAT_C_CONNECTION   16
+#define USB_PORT_FEAT_C_ENABLE       17
+#define USB_PORT_FEAT_C_SUSPEND      18
+#define USB_PORT_FEAT_C_OVER_CURRENT 19
+#define USB_PORT_FEAT_C_RESET        20
+
+/* wPortStatus bits */
+#define USB_PORT_STAT_CONNECTION    0x0001
+#define USB_PORT_STAT_ENABLE        0x0002
+#define USB_PORT_STAT_SUSPEND       0x0004
+#define USB_PORT_STAT_OVERCURRENT   0x0008
+#define USB_PORT_STAT_RESET         0x0010
+#define USB_PORT_STAT_POWER         0x0100
+#define USB_PORT_STAT_LOW_SPEED     0x0200
+#define USB_PORT_STAT_HIGH_SPEED    0x0400	/* support for EHCI */
+#define USB_PORT_STAT_SUPER_SPEED   0x0600	/* faking support to XHCI */
+#define USB_PORT_STAT_SPEED_MASK	(USB_PORT_STAT_LOW_SPEED | USB_PORT_STAT_HIGH_SPEED)
+
+/* wPortChange bits */
+#define USB_PORT_STAT_C_CONNECTION  0x0001
+#define USB_PORT_STAT_C_ENABLE      0x0002
+#define USB_PORT_STAT_C_SUSPEND     0x0004
+#define USB_PORT_STAT_C_OVERCURRENT 0x0008
+#define USB_PORT_STAT_C_RESET       0x0010
+
+/* Hub defines end
+*************************************************************************/
 
 /* Configuration descriptor offset */
 #define USB_CFG_DESC_OFFSET_TYPE                       1U

@@ -13,6 +13,7 @@ ameba_list_append(public_includes
     cmsis
     misc
     ${c_MBEDTLS_DIR}/include
+    ${c_MBEDTLS_DIR}/hw_alt_legacy
     ${c_BASEDIR}/component/soc/common/include
     ${c_BASEDIR}/component/soc/common/lzma
 )

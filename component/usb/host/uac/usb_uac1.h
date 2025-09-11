@@ -13,7 +13,7 @@
 #define UAC_VERSION_2                   0x20
 
 /* Audio Class Codes */
-#define USB_CLASS_AUDIO					0x01U
+#define USB_CLASS_AUDIO                 0x01U
 
 
 /* A.2 Audio Interface Subclass Codes */

@@ -157,7 +157,7 @@ static usbd_config_t composite_usbd_cfg = {
 	.isr_priority = INT_PRI_HIGHEST,
 	.isr_in_critical = 0,
 	.intr_use_ptx_fifo = 0U,
-	.ext_intr_en        = USBD_EPMIS_INTR | USBD_EOPF_INTR,
+	.ext_intr_enable        = USBD_EPMIS_INTR | USBD_EOPF_INTR,
 	.nptx_max_epmis_cnt = 100U,
 };
 

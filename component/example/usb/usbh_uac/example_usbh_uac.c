@@ -14,18 +14,31 @@
 #include "usbh.h"
 
 /* Private defines -----------------------------------------------------------*/
-static const char *const TAG = "UAC";
-#define CONFIG_USBH_UAC_HOT_PLUG_TEST 1     /* Hot plug / memory leak test */
+#define USBH_UAC_HOT_PLUG_TEST        1     /* Hot plug / memory leak test */
 
 #define USBH_UAC_ISOC_BUF_SIZE        1000    /* Buffer size for ISOC uac test, which should match with device ISOC uac buffer size */
-#define USBH_UAC_ISOC_RX_PASS_CNT     3     /* Loopback ISOC test pass threshold */
-#define USBH_UAC_TEST_CNT             3
+#define USBH_UAC_TEST_CNT             10
 
 #define USBH_UAC_CHANNELS             2
 #define USBH_UAC_BITWIDTH             16
 #define USBH_UAC_SAMPLING_FREQ        48000
 
-#define USBH_UAC_FRAME_CNT            10
+#define USBH_UAC_ISOC_TEST_THREAD_PRIORITY    4
+#define USBH_UAC_MAIN_THREAD_PRIORITY         5
+#define USBH_UAC_ISR_THREAD_PRIORITY          6
+#define USBH_UAC_HOTPLUG_THREAD_PRIORITY      7
+
+#define USBH_UAC_FRAME_CNT            20
+
+#define USBH_UAC_XFER_CHECK           0   /* used to check the trx data valid */
+
+#if USBH_UAC_XFER_CHECK
+#define  USBH_UAC_OUT_DATA                0x88
+static u32 usbh_uac_data_len = 1200;
+static unsigned char usbh_uac_audio_data[1200] = {0,};
+#else
+#include "example_usbh_uac_audio_data.h"
+#endif
 
 /* Private types -------------------------------------------------------------*/
 
@@ -33,35 +46,35 @@ static const char *const TAG = "UAC";
 
 /* Private function prototypes -----------------------------------------------*/
 
-static int uac_cb_init(void);
-static int uac_cb_deinit(void);
-static int uac_cb_attach(void);
-static int uac_cb_detach(void);
-static int uac_cb_setup(void);
-static int uac_cb_isoc_transmitted(usbh_urb_state_t state);
-static int uac_cb_process(usb_host_t *host, u8 id);
+static int usbh_uac_cb_init(void);
+static int usbh_uac_cb_deinit(void);
+static int usbh_uac_cb_attach(void);
+static int usbh_uac_cb_detach(void);
+static int usbh_uac_cb_setup(void);
+static int usbh_uac_cb_isoc_transmitted(usbh_urb_state_t state);
+static int usbh_uac_cb_process(usb_host_t *host, u8 id);
 /* Private variables ---------------------------------------------------------*/
+static const char *const TAG = "UAC";
 
-#define  USB_OUT_DATA (0x88)
-#define  USB_IN_DATA  (0x22)
+static rtos_sema_t usbh_uac_detach_sema;
+static rtos_sema_t usbh_uac_attach_sema;
+static rtos_sema_t usbh_uac_isoc_start_sema;
 
-static u8 uac_isoc_tx_buf[USBH_UAC_ISOC_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
+static u8 usbh_uac_isoc_tx_buf[USBH_UAC_ISOC_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 
-static rtos_sema_t uac_detach_sema;
-static rtos_sema_t uac_attach_sema;
-static rtos_sema_t uac_isoc_start_sema;
+static __IO int usbh_uac_is_ready = 0;
+static int usbh_uac_busy_count;
+static int usbh_uac_err_count;
 
-static __IO int uac_is_ready = 0;
-static volatile u8 audio_task_stop = 0;
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_FULL,
 	.dma_enable = 1U,
-	.ext_intr_en = USBH_SOF_INTR,
+	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
-	.isr_task_priority  = 4U,
-	.main_task_priority = 3U,
-	.sof_tick_en = 1U,
-	.alt_max = 6,
+	.isr_task_priority  = USBH_UAC_ISR_THREAD_PRIORITY,
+	.main_task_priority = USBH_UAC_MAIN_THREAD_PRIORITY,
+	.sof_tick_enable = 1U,
+	.alt_max_cnt = 10U,
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,
@@ -80,65 +93,64 @@ static usbh_config_t usbh_cfg = {
 #endif
 };
 
-static usbh_uac_cb_t uac_usr_cb = {
-	.init = uac_cb_init,
-	.deinit = uac_cb_deinit,
-	.attach = uac_cb_attach,
-	.detach = uac_cb_detach,
-	.setup = uac_cb_setup,
-	.isoc_transmitted = uac_cb_isoc_transmitted,
+static usbh_uac_cb_t usbh_uac_cfg = {
+	.init = usbh_uac_cb_init,
+	.deinit = usbh_uac_cb_deinit,
+	.attach = usbh_uac_cb_attach,
+	.detach = usbh_uac_cb_detach,
+	.setup = usbh_uac_cb_setup,
+	.isoc_transmitted = usbh_uac_cb_isoc_transmitted,
 };
 
 static usbh_user_cb_t usbh_usr_cb = {
-	.process = uac_cb_process
+	.process = usbh_uac_cb_process
 };
 
-static int busy_count, err_count;
 /* Private functions ---------------------------------------------------------*/
 
-static int uac_cb_init(void)
+static int usbh_uac_cb_init(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
 	return HAL_OK;
 }
 
-static int uac_cb_deinit(void)
+static int usbh_uac_cb_deinit(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DEINIT\n");
 	return HAL_OK;
 }
 
-static int uac_cb_attach(void)
+static int usbh_uac_cb_attach(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
-	rtos_sema_give(uac_attach_sema);
+	rtos_sema_give(usbh_uac_attach_sema);
 	return HAL_OK;
 }
 
-static int uac_cb_detach(void)
+static int usbh_uac_cb_detach(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
-#if CONFIG_USBH_UAC_HOT_PLUG_TEST
-	rtos_sema_give(uac_detach_sema);
+#if USBH_UAC_HOT_PLUG_TEST
+	rtos_sema_give(usbh_uac_detach_sema);
 #endif
-	uac_is_ready = 0;
+	usbh_uac_is_ready = 0;
 	return HAL_OK;
 }
 
-static int uac_cb_setup(void)
+static int usbh_uac_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
-	uac_is_ready = 1;
-	rtos_sema_give(uac_isoc_start_sema);
+	usbh_uac_is_ready = 1;
+	rtos_sema_give(usbh_uac_isoc_start_sema);
 	return HAL_OK;
 }
 
-static int uac_cb_isoc_transmitted(usbh_urb_state_t state)
+static int usbh_uac_cb_isoc_transmitted(usbh_urb_state_t state)
 {
 	if (state == USBH_URB_DONE) {
 		/*TX ok*/
 	} else if (state == USBH_URB_BUSY) {
-		busy_count++;
+		usbh_uac_busy_count++;
 	} else {
 		//RTK_LOGS(TAG, RTK_LOG_ERROR, "TX fail: %d\n", state);
 	}
@@ -146,13 +158,13 @@ static int uac_cb_isoc_transmitted(usbh_urb_state_t state)
 	return HAL_OK;
 }
 
-static int uac_cb_process(usb_host_t *host, u8 id)
+static int usbh_uac_cb_process(usb_host_t *host, u8 id)
 {
 	UNUSED(host);
 
 	switch (id) {
 	case USBH_MSG_DISCONNECTED:
-		uac_is_ready = 0;
+		usbh_uac_is_ready = 0;
 		break;
 
 	case USBH_MSG_CONNECTED:
@@ -165,21 +177,20 @@ static int uac_cb_process(usb_host_t *host, u8 id)
 	return HAL_OK;
 }
 
-static void uac_isoc_test(void *param)
+static void usbh_uac_isoc_test(void *param)
 {
-	int i;
-	u32 ret;
-	u32 total_len;
-	u32 offset;
-	u32 send_len;
-	u32 frame_size;
-	u32 my_data_len = 1200;
-	char my_data[my_data_len];
+	const unsigned char *usbh_uac_audio_data_handle = usbh_uac_audio_data;
+	u32 audio_total_data_len = usbh_uac_data_len;
 	u8 send_frame_cnt = 2;
+	u32 frame_size;
+	u32 total_len;
+	u32 send_len;
+	u32 offset;
+	u32 ret;
+	u32 i;
 
 	UNUSED(param);
-	usb_os_memset((void *)my_data, USB_OUT_DATA, my_data_len);
-	if (rtos_sema_take(uac_isoc_start_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+	if (rtos_sema_take(usbh_uac_isoc_start_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 		// idx 0 means isoc out
 		if (usbh_uac_set_alt_setting(0, USBH_UAC_CHANNELS, USBH_UAC_BITWIDTH, USBH_UAC_SAMPLING_FREQ) != HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "No suitable interface/altsettinfg, return\n");
@@ -190,58 +201,63 @@ static void uac_isoc_test(void *param)
 		frame_size = usbh_uac_get_frame_size(0);
 		rtos_time_delay_ms(100);
 
-		RTK_LOGS(TAG, RTK_LOG_INFO, "ISOC uac test %d start, test_cnt %d, size %d, frame %d\n", i, USBH_UAC_TEST_CNT, my_data_len, frame_size);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "ISOC uac test %d start, test_cnt %d, size %d, frame %d\n", i, USBH_UAC_TEST_CNT, audio_total_data_len, frame_size);
 
-		for (i = 0; i < USBH_UAC_TEST_CNT; i++) {
-			busy_count = 0;
-			err_count = 0;
-			if (!uac_is_ready) {
+		for (i = 0; i < (u32)USBH_UAC_TEST_CNT; i++) {
+			usbh_uac_busy_count = 0;
+			usbh_uac_err_count = 0;
+			if (!usbh_uac_is_ready) {
 				rtos_time_delay_ms(500);
 				RTK_LOGS(TAG, RTK_LOG_WARN, "Device disconnect, test abort\n");
 				break;
 			}
-
-			total_len = my_data_len;
+#if USBH_UAC_XFER_CHECK
+			memset(usbh_uac_audio_data, USBH_UAC_OUT_DATA, usbh_uac_data_len);
+#endif
+			total_len = audio_total_data_len;
 			offset = 0;
 			usbh_uac_start_play();
 			while (offset < total_len) {
 
-				send_len = send_frame_cnt * frame_size - 2;
+				send_len = send_frame_cnt * frame_size;
 				if (offset + send_len > total_len) {
 					send_len = total_len - offset;
 				}
-				usb_os_memcpy(uac_isoc_tx_buf, my_data + offset, send_len);
+				memcpy(usbh_uac_isoc_tx_buf, usbh_uac_audio_data_handle + offset, send_len);
 
 				if (send_len < send_frame_cnt * frame_size) {
-					usb_os_memset(uac_isoc_tx_buf + send_len, 0, send_frame_cnt * frame_size - send_len);
+					memset(usbh_uac_isoc_tx_buf + send_len, 0, send_frame_cnt * frame_size - send_len);
 				}
 
-				ret = usbh_uac_write(uac_isoc_tx_buf, send_len, 10);
-				if (ret == 0) {
-					err_count++;
+				ret = usbh_uac_write(usbh_uac_isoc_tx_buf, send_len, 10);
+				if (ret != send_len) {
+					usbh_uac_err_count++;
 					continue;
 				}
 
 				offset += ret;
 			}
-			RTK_LOGS(TAG, RTK_LOG_INFO, "%d Send finished. Total bytes sent: %u, err count %d, busy count %d\n", i, offset, err_count, busy_count);
+
+			usbh_uac_stop_play();
+			RTK_LOGS(TAG, RTK_LOG_INFO, "%d Send finished. Total bytes sent: %u, err count %d, busy count %d\n", i, offset, usbh_uac_err_count, usbh_uac_busy_count);
 		}
-		usbh_uac_stop_play();
 	}
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Test done\n");
+	rtos_time_delay_ms(1000);
 
 	rtos_task_delete(NULL);
 }
 
-
-#if CONFIG_USBH_UAC_HOT_PLUG_TEST
-static void uac_hotplug_thread(void *param)
+#if USBH_UAC_HOT_PLUG_TEST
+static void usbh_uac_hotplug_thread(void *param)
 {
 	int ret = 0;
 
 	UNUSED(param);
 
 	for (;;) {
-		if (rtos_sema_take(uac_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+		if (rtos_sema_take(usbh_uac_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			rtos_time_delay_ms(100);
 			usbh_uac_deinit();
 			usbh_deinit();
@@ -253,7 +269,7 @@ static void uac_hotplug_thread(void *param)
 				break;
 			}
 
-			ret = usbh_uac_init(&uac_usr_cb, USBH_UAC_FRAME_CNT);
+			ret = usbh_uac_init(&usbh_uac_cfg, USBH_UAC_FRAME_CNT);
 			if (ret < 0) {
 				usbh_deinit();
 				break;
@@ -269,40 +285,35 @@ static void example_usbh_uac_thread(void *param)
 {
 	int status;
 	rtos_task_t isoc_task;
-#if CONFIG_USBH_UAC_HOT_PLUG_TEST
+#if USBH_UAC_HOT_PLUG_TEST
 	rtos_task_t hotplug_task;
 #endif
 
 	UNUSED(param);
 
-	rtos_sema_create(&uac_detach_sema, 0U, 1U);
-	rtos_sema_create(&uac_attach_sema, 0U, 1U);
-	rtos_sema_create(&uac_isoc_start_sema, 0U, 1U);
+	rtos_sema_create(&usbh_uac_detach_sema, 0U, 1U);
+	rtos_sema_create(&usbh_uac_attach_sema, 0U, 1U);
+	rtos_sema_create(&usbh_uac_isoc_start_sema, 0U, 1U);
 
 	status = usbh_init(&usbh_cfg, &usbh_usr_cb);
 	if (status != HAL_OK) {
 		goto free_sema_exit;
 	}
 
-	status = usbh_uac_init(&uac_usr_cb, USBH_UAC_FRAME_CNT);  /*0 means use default transfer size, and it can not exceed 65536*/
+	status = usbh_uac_init(&usbh_uac_cfg, USBH_UAC_FRAME_CNT);  /*0 means use default transfer size, and it can not exceed 65536*/
 	if (status != HAL_OK) {
 		goto usb_deinit_exit;
 	}
 
-#if CONFIG_USBH_UAC_HOT_PLUG_TEST
-	status = rtos_task_create(&hotplug_task, "uac_hotplug_thread", uac_hotplug_thread, NULL, 1024U * 2, 4U);
+#if USBH_UAC_HOT_PLUG_TEST
+	status = rtos_task_create(&hotplug_task, "usbh_uac_hotplug_thread", usbh_uac_hotplug_thread, NULL, 1024U * 2, USBH_UAC_HOTPLUG_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		goto usbh_uac_deinit_exit;
 	}
 #endif
 
-	if (rtos_sema_take(uac_attach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-		status = usbh_uac_setup_out(0);
-		if (status != HAL_OK) {
-			goto delete_hotplug_task_exit;
-		}
-
-		status = rtos_task_create(&isoc_task, "uac_isoc_test", uac_isoc_test, NULL, 1024U * 2, 3U);
+	if (rtos_sema_take(usbh_uac_attach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+		status = rtos_task_create(&isoc_task, "usbh_uac_isoc_test", usbh_uac_isoc_test, NULL, 1024U * 2, USBH_UAC_ISOC_TEST_THREAD_PRIORITY);
 		if (status != RTK_SUCCESS) {
 			goto delete_hotplug_task_exit;
 		}
@@ -311,11 +322,11 @@ static void example_usbh_uac_thread(void *param)
 	goto example_exit;
 
 delete_hotplug_task_exit:
-#if CONFIG_USBH_UAC_HOT_PLUG_TEST
+#if USBH_UAC_HOT_PLUG_TEST
 	rtos_task_delete(hotplug_task);
 #endif
 
-#if CONFIG_USBH_UAC_HOT_PLUG_TEST
+#if USBH_UAC_HOT_PLUG_TEST
 usbh_uac_deinit_exit:
 #endif
 	usbh_uac_deinit();
@@ -324,9 +335,9 @@ usb_deinit_exit:
 	usbh_deinit();
 
 free_sema_exit:
-	rtos_sema_delete(uac_detach_sema);
-	rtos_sema_delete(uac_attach_sema);
-	rtos_sema_delete(uac_isoc_start_sema);
+	rtos_sema_delete(usbh_uac_detach_sema);
+	rtos_sema_delete(usbh_uac_attach_sema);
+	rtos_sema_delete(usbh_uac_isoc_start_sema);
 
 example_exit:
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH UAC demo stop\n");
@@ -334,7 +345,6 @@ example_exit:
 }
 
 /* Exported functions --------------------------------------------------------*/
-
 void example_usbh_uac(void)
 {
 	int status;
@@ -342,7 +352,7 @@ void example_usbh_uac(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH UAC demo start\n");
 
-	status = rtos_task_create(&task, "example_usbh_uac_thread", example_usbh_uac_thread, NULL, 1024U * 2, 1U);
+	status = rtos_task_create(&task, "example_usbh_uac_thread", example_usbh_uac_thread, NULL, 1024U * 2, 2U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}

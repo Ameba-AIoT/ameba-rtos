@@ -14,6 +14,10 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
+/* TX/RX thread priority */
+#define COMP_MSC_TX_THREAD_PRIORITY                 5U
+#define COMP_MSC_RX_THREAD_PRIORITY                 5U
+
 /* MSC Endpoint parameters */
 #define COMP_MSC_HS_MAX_PACKET_SIZE				256U   /* High speed BULK IN & OUT packet size */
 #define COMP_MSC_FS_MAX_PACKET_SIZE				64U    /* Full speed BULK IN & OUT packet size */
@@ -63,9 +67,6 @@
 /* Sense */
 #define COMP_MSC_SENSE_LIST_DEPTH               4U
 
-/* SD access retry */
-#define COMP_MSC_SD_ACCESS_RETRY				3U
-
 typedef struct {
 	int(*disk_getcapacity)(u32 *sectors);
 	int(*disk_read)(u32 sector, u8 *buffer, u32 count);
@@ -112,12 +113,18 @@ typedef struct {
 	usbd_composite_msc_csw_t *csw;
 	usbd_composite_msc_disk_ops_t disk_ops;
 	usbd_composite_msc_scsi_sense_data_t scsi_sense_data[COMP_MSC_SENSE_LIST_DEPTH];
+	rtos_task_t rx_task;
+	rtos_sema_t rx_sema;
+	rtos_task_t tx_task;
+	rtos_sema_t tx_sema;
 	u32 num_sectors;
 	u32 lba; // logic block address
 	u32 blkbits; /* bits of logical block size of bound block device */
 	u32 blksize;
 	u32 blklen;
 	u32 data_length;
+	u16 rx_data_length;
+	u8 tx_status;
 	u8 *data;
 	u8 ro;
 	u8 bot_state;
@@ -134,4 +141,5 @@ int usbd_composite_msc_init(usbd_composite_dev_t *cdev);
 void usbd_composite_msc_deinit(void);
 
 int usbd_composite_msc_disk_init(void);
+int usbd_composite_msc_disk_deinit(void);
 #endif // USBD_COMPOSITE_MSC_H

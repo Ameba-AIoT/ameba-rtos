@@ -31,6 +31,8 @@
 #if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAL2)
 #include "ameba.h"
 #include "mbedtls/mbedtls_config_green2.h"
+#elif defined(CONFIG_AMEBALITE) || defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBADPLUS)
+#include "mbedtls/mbedtls_config_legacy.h"
 #else
 #include "mbedtls/mbedtls_config.h"
 #endif

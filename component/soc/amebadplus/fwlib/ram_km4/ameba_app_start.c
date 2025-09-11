@@ -153,11 +153,7 @@ void app_start(void)
 	RTK_LOGI(TAG, "VTOR: %lx, VTOR_NS:%lx\n", SCB->VTOR, SCB_NS->VTOR);
 
 	app_testmode_status();
-
-	if (IS_TWO_FLASH(MEMORY_VENDOR_GET(ChipInfo_MemoryInfo()))) {
-		data_flash_highspeed_setup();
-	}
-
+	data_flash_highspeed_setup();
 	cmse_address_info_t cmse_address_info = cmse_TT((void *)app_start);
 	RTK_LOGI(TAG, "IMG2 SECURE STATE: %d\n", cmse_address_info.flags.secure);
 
