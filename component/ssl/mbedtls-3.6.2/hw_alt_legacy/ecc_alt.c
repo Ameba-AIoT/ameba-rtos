@@ -210,7 +210,7 @@ int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_
 
     ret = ECDSA_KeyGen(ECDSA, get_curve_id_from_mbedtls(grp), d_buf, Q_x, Q_y, otpkey);
     if (ret != 0) {
-        printf("ECDSA_KeyGen failed: %d\n", ret);
+        mbedtls_printf("ECDSA_KeyGen failed: %d\n", ret);
         goto cleanup;
     }
 
@@ -244,7 +244,7 @@ int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z,
 
     if (grp == NULL || z == NULL || Q == NULL || d == NULL) {
         ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-        printf("MBEDTLS_ERR_ECP_BAD_INPUT_DATA\n");
+        mbedtls_printf("MBEDTLS_ERR_ECP_BAD_INPUT_DATA\n");
         goto cleanup;
     }
 
@@ -260,7 +260,7 @@ int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z,
 
     ret = ECDSA_ECDH_Compute_Shared(ECDSA, get_curve_id_from_mbedtls(grp), Z, Z+priv_len, Q_x, Q_y, d_buf, otpkey);
     if (ret != 0) {
-        printf("ECDSA_ECDH_Compute_Shared failed: %d\n", ret);
+        mbedtls_printf("ECDSA_ECDH_Compute_Shared failed: %d\n", ret);
         goto cleanup;
     }
 

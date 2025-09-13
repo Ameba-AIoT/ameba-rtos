@@ -109,7 +109,7 @@ int mbedtls_sha256_finish(mbedtls_sha256_context *ctx,
                           unsigned char *output)
 {
     if(output == NULL || ctx == NULL) {
-        printf("output == NULL || ctx == NULL\n");
+        mbedtls_printf("output == NULL || ctx == NULL\n");
         return MBEDTLS_ERR_SHA256_BAD_INPUT_DATA;
     }
     int ret;
