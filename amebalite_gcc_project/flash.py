@@ -10,11 +10,6 @@ import argparse
 import base64
 import json
 import subprocess
-import logging
-from colorama import Fore, Style, init
-
-# init Colorama
-init(autoreset=True)
 
 
 PROJECT_ROOT_DIR = os.path.realpath(os.path.dirname(os.path.abspath(__file__)))

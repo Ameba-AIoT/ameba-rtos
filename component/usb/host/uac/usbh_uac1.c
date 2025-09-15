@@ -619,6 +619,9 @@ static void usbh_uac_isoc_out_process(usb_host_t *host)
 									(u16)ep->isoc_len,
 									ep->isoc_pipe);
 
+				if (uac->tx_buf) {
+					usbh_uac_isoc_out_release_free_buf(uac->tx_buf);
+				}
 				uac->tx_buf = p_buf;
 				uac->next_xfer = 1;
 				//isoc tx in next frame
@@ -1553,7 +1556,10 @@ void usbh_uac_stop_play(void)
 	//dorp fragment data
 	if (buf_ctrl->remain_size != 0) {
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Drop remain\n");
-		buf_ctrl->p_buf = NULL;
+		if (buf_ctrl->p_buf) {
+			usbh_uac_lock_list_add_tail(&buf_ctrl->p_buf->list, &buf_ctrl->free_buf_lock_list);
+			buf_ctrl->p_buf = NULL;
+		}
 		buf_ctrl->remain_size = 0;
 	}
 
