@@ -16,8 +16,8 @@ u8 UART_TX = _PA_28; // UART TX
 u8 UART_RX = _PA_29; // UART RX
 #elif defined (CONFIG_AMEBADPLUS)
 /* fully programmable zone */
-u8 UART_TX = _PA_26; // UART TX
-u8 UART_RX = _PA_27; // UART RX
+u8 UART_TX = _PA_31; // UART TX
+u8 UART_RX = _PA_30; // UART RX
 #elif defined (CONFIG_AMEBAGREEN2)
 /* fully programmable zone */
 u8 UART_TX = _PA_4; // UART TX

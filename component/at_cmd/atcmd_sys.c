@@ -7,7 +7,7 @@
 #include "sys_api.h"
 #include "ameba_rtos_version.h"
 #include "build_info.h"
-
+#include "kv.h"
 #include "at_intf_spi.h"
 #include "at_intf_sdio.h"
 #include "ameba_ota.h"
@@ -68,6 +68,9 @@ typedef struct status_cmd_para_s {
 } status_cmd_para_t;
 #endif /* configGENERATE_RUN_TIME_STATS */
 #endif /* CONFIG_INIC_NO_FLASH */
+#ifdef CONFIG_ATCMD_HOST_CONTROL
+#include "at_intf_uart.h"
+#endif
 
 #ifdef CONFIG_MP_INCLUDED
 #if defined(configUSE_TRACE_FACILITY) && (configUSE_TRACE_FACILITY == 1) && (configUSE_STATS_FORMATTING_FUNCTIONS == 1)
@@ -922,6 +925,48 @@ void at_tickps(void *arg)
 	}
 }
 
+#ifdef CONFIG_ATCMD_HOST_CONTROL
+/****************************************************************
+AT command process:
+	AT+UART
+	+UART:<store in flash>,<baudrate>
+	[+UART]: OK
+****************************************************************/
+void at_uart(void *arg)
+{
+	u8 error_no = 0;
+	int argc = 0, mode = 0, baudrate = 0;
+	char *argv[MAX_ARGC] = {0};
+
+	argc = parse_param(arg, argv);
+
+	if (argc != 3) {
+		error_no = 1;
+		goto end;
+	}
+
+	mode = (int)atoi(argv[1]);
+	baudrate = (int)atoi(argv[2]);
+
+	if (mode == 1) {
+		rt_kv_set("atcmd_uart_baudrate", (uint8_t *) &baudrate, 4);
+	}
+
+	if (baudrate >= 4800 && baudrate <= 6000000) {
+		UART_SetBaud(UART_DEV, baudrate);
+	} else {
+		error_no = 1;
+	}
+end:
+
+	if (error_no == 0) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+#endif
+
 log_item_t at_sys_items[] = {
 #ifndef CONFIG_INIC_NO_FLASH
 	{"+OTACLEAR", at_otaclear, {NULL, NULL}},
@@ -939,6 +984,9 @@ log_item_t at_sys_items[] = {
 	{"+RREG", at_rreg, {NULL, NULL}},
 	{"+WREG", at_wreg, {NULL, NULL}},
 	{"+TICKPS", at_tickps, {NULL, NULL}},
+#ifdef CONFIG_ATCMD_HOST_CONTROL
+	{"+UART", at_uart, {NULL, NULL}},
+#endif
 };
 
 void print_system_at(void)

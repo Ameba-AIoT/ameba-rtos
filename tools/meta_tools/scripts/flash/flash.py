@@ -56,17 +56,21 @@ def decoder_partition_string(partition_table_base64):
         raise argparse.ArgumentTypeError("Invalid partition table format with base64") from err
 
 
+# --- add remote server params ---
 def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, settings, images_info,
                         chip_erase,
                         memory_type, memory_info, download,
-                        log_level, log_f):
+                        log_level, log_f,
+                        remote_server=None, remote_port=None):
     logger = create_logger(serial_port, log_level=log_level, file=log_f)
 
     ameba = Ameba(profile_info, serial_port, serial_baudrate, image_dir, settings, logger,
                   download_img_info=images_info,
                   chip_erase=chip_erase,
                   memory_type=memory_type,
-                  erase_info=memory_info)
+                  erase_info=memory_info,
+                  remote_server=remote_server,
+                  remote_port=remote_port)
     if download:
         # download
         if not ameba.check_protocol_for_download():
@@ -80,11 +84,14 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
 
         if is_reburn:
             ameba.__del__()
+            # reset with remote params
             ameba = Ameba(profile_info, serial_port, serial_baudrate, image_dir, settings, logger,
                           download_img_info=images_info,
                           chip_erase=chip_erase,
                           memory_type=memory_type,
-                          erase_info=memory_info)
+                          erase_info=memory_info,
+                          remote_server=remote_server,
+                          remote_port=remote_port)
 
         logger.info(f"Image download start...")  # customized, do not modify
         ret = ameba.prepare()
@@ -189,6 +196,9 @@ def main(argc, argv):
     parser.add_argument('--log-level', default='info', help='log level')
     parser.add_argument('--partition-table', help="layout info, list")
 
+    parser.add_argument('--remote-server', type=str, help='remote serial server IP address')
+    parser.add_argument('--remote-port', type=int, help='remote serial server port (default: 58916)')
+
     args = parser.parse_args()
     download = args.download
     profile = args.profile
@@ -205,6 +215,17 @@ def main(argc, argv):
     size = args.size
     mem_t = args.memory_type
     partition_table = decoder_partition_string(args.partition_table)
+
+    remote_server = args.remote_server
+    remote_port = args.remote_port
+
+    # --- check remote server params ---
+    if remote_server and not remote_port:
+        logger.error("Remote port is required when using remote server")
+        sys.exit(1)
+    if remote_port and not remote_server:
+        logger.error("Remote server IP is required when using remote port")
+        sys.exit(1)
 
     if mem_t is not None:
         if mem_t == "nand":
@@ -231,6 +252,9 @@ def main(argc, argv):
         logger.info(f"Log file: {log_file}")
 
     logger.info(f"Flash Version: {version_info.version}")
+
+    if remote_server:
+        logger.info(f"Using remote serial server: {remote_server}:{remote_port}")
 
     if profile is None:
         logger.error('Invalid arguments, no device profile specified')
@@ -312,7 +336,7 @@ def main(argc, argv):
         elif partition_table is not None:
             images_info = []
             for img_info in partition_table:
-                img_json = ImageInfo(**img_info)
+                img_json = ImageInfo(** img_info)
                 if sys.platform == "win32":
                     img_p = convert_mingw_path_to_windows(img_json.image_name)
                     img_json.image_name = img_p
@@ -412,13 +436,13 @@ def main(argc, argv):
     try:
         if os.path.exists(setting_path):
             dt = JsonUtils.load_from_file(setting_path, need_decrypt=False)
-            settings = RtSettings(**dt)
+            settings = RtSettings(** dt)
         else:
             logger.debug(f"Setting.json not exists!")
             settings = RtSettings(**{})
     except Exception as err:
         logger.error(f"Load settings exception: {err}")
-        settings = RtSettings(**{})
+        settings = RtSettings(** {})
     # save Setting.json
     try:
         JsonUtils.save_to_file(setting_path, settings.__repr__())
@@ -430,7 +454,8 @@ def main(argc, argv):
     for sp in serial_ports:
         flash_thread = threading.Thread(target=flash_process_entry, args=(
         profile_info, sp, serial_baudrate, image_dir, settings, deepcopy(images_info), chip_erase,
-        memory_type, memory_info, download, log_level, log_f))
+        memory_type, memory_info, download, log_level, log_f,
+        remote_server, remote_port))
         threads_list.append(flash_thread)
         flash_thread.start()
 

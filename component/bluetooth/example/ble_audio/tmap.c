@@ -86,6 +86,7 @@ typedef struct {
 		struct {
 			uint8_t adv_sid;
 			uint8_t broadcast_id[RTK_BT_LE_AUDIO_BROADCAST_ID_LEN];
+			uint8_t broadcast_name[APP_BT_LE_EXT_ADV_MAX_LOCAL_NAME_LENGTH];
 		} bass_scan_info_t;
 	};
 } app_bt_le_audio_scan_dev_info_t;
@@ -651,12 +652,14 @@ static void app_bt_le_audio_scan_parse_report(uint8_t report_data_len, uint8_t *
 }
 
 static bool app_bt_le_audio_adv_filter_service_data(uint8_t report_data_len, uint8_t *p_report_data,
-													uint16_t uuid, uint8_t **pp_service_data, uint16_t *p_data_len)
+													uint16_t uuid, uint8_t **pp_service_data, uint16_t *p_data_len,
+													app_bt_le_audio_scan_dev_info_t *p_scan_dev_info)
 {
 	uint8_t *p_buffer = NULL;
 	uint8_t pos = 0;
 	uint16_t length = 0;
 	uint8_t type = 0;
+	bool is_found = false;
 
 	while (pos < report_data_len) {
 		/* Length of the AD structure. */
@@ -681,10 +684,18 @@ static bool app_bt_le_audio_adv_filter_service_data(uint8_t report_data_len, uin
 					if (p_data_len != NULL) {
 						*p_data_len = length - 3;
 					}
-					return true;
+					is_found = true;
 				}
 			}
 			break;
+
+			case RTK_BT_LE_GAP_ADTYPE_BROADCAST_NAME: {
+				if (length <= (APP_BT_LE_EXT_ADV_MAX_LOCAL_NAME_LENGTH + 1)) {
+					memcpy((void *)p_scan_dev_info->bass_scan_info_t.broadcast_name, (void *)p_buffer, length - 1);
+				}
+			}
+			break;
+
 			default:
 				break;
 			}
@@ -692,7 +703,7 @@ static bool app_bt_le_audio_adv_filter_service_data(uint8_t report_data_len, uin
 		pos += length;
 	}
 
-	return false;
+	return is_found;
 }
 
 static uint16_t app_bt_le_audio_common_scan_report_handle(rtk_bt_le_ext_scan_res_ind_t *scan_res_ind)
@@ -747,7 +758,8 @@ static uint16_t app_bt_le_audio_bass_scan_report_handle(rtk_bt_le_ext_scan_res_i
 												scan_res_ind->data,
 												RTK_BT_LE_BROADCAST_AUDIO_ANNOUNCEMENT_SRV_UUID,
 												&p_service_data,
-												&service_data_len)) {
+												&service_data_len,
+												&scan_dev_info)) {
 		scan_dev_info.scan_type = APP_BT_LE_AUDIO_BASS_SCAN_TYPE;
 		scan_dev_info.bass_scan_info_t.adv_sid = scan_res_ind->adv_sid;
 		memcpy(&scan_dev_info.scan_res_ind, scan_res_ind, sizeof(rtk_bt_le_ext_scan_res_ind_t));
@@ -772,12 +784,13 @@ static uint16_t app_bt_le_audio_bass_scan_report_handle(rtk_bt_le_ext_scan_res_i
 				memcpy(p_scan_dev_info->bass_scan_info_t.broadcast_id, scan_dev_info.bass_scan_info_t.broadcast_id, RTK_BT_LE_AUDIO_BROADCAST_ID_LEN);
 			}
 		}
-		BT_LOGA("[APP] %s broadcast scan add new device in list (addr: %s, adv_sid %x, broadcast_id: %02x %02x %02x) \r\n", __func__,
+		BT_LOGA("[APP] %s broadcast scan add new device in list (addr: %s, adv_sid %x, broadcast_id: %02x %02x %02x, broadcast_name: %s) \r\n", __func__,
 				addr_str,
 				p_scan_dev_info->bass_scan_info_t.adv_sid,
 				scan_dev_info.bass_scan_info_t.broadcast_id[0],
 				scan_dev_info.bass_scan_info_t.broadcast_id[1],
-				scan_dev_info.bass_scan_info_t.broadcast_id[2]);
+				scan_dev_info.bass_scan_info_t.broadcast_id[2],
+				scan_dev_info.bass_scan_info_t.broadcast_name);
 		BT_AT_PRINT("+BLEBAP:broadcast,sink,escan,%s,%x,%x %x %x\r\n",
 					addr_str,
 					p_scan_dev_info->bass_scan_info_t.adv_sid,

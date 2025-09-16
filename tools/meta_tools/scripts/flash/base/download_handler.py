@@ -18,6 +18,11 @@ from .rt_settings import *
 from .spic_addr_mode import *
 from .memory_info import *
 from .config_utils import *
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../base'))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+from remote_serial import RemoteSerial
+from typing import Optional, Dict, Any
 
 _RTK_USB_VID = "0BDA"
 
@@ -49,12 +54,16 @@ class Ameba(object):
                  download_img_info=None,
                  chip_erase=False,
                  memory_type=None,
-                 erase_info=None):
+                 erase_info=None,
+                 remote_server: Optional[str] = None,
+                 remote_port: Optional[int] = None):
         self.logger = logger
         self.profile_info = profile
         self.serial_port = None
         self.serial_port_name = serial_port
-        self.is_usb = self.is_realtek_usb()
+        self.remote_server = remote_server
+        self.remote_port = remote_port
+        self.is_usb = self.is_realtek_usb() if not remote_server else False
         self.initial_serial_port()
         self.baudrate = baudrate
         self.image_path = image_path
@@ -72,6 +81,7 @@ class Ameba(object):
     def __del__(self):
         if self.serial_port:
             if self.serial_port.is_open:
+                self.logger.info(f"{self.serial_port.port} try to close.")
                 self.serial_port.close()
             while self.serial_port.is_open:
                 pass
@@ -79,29 +89,106 @@ class Ameba(object):
 
     def initial_serial_port(self):
         # initial serial port
-        port = None
         try:
-            if self.is_usb:
-                self.serial_port = serial.Serial(self.serial_port_name,
-                                                 baudrate=self.profile_info.handshake_baudrate,
-                                                 parity=serial.PARITY_NONE,
-                                                 stopbits=serial.STOPBITS_ONE,
-                                                 bytesize=serial.EIGHTBITS)
-            else:
-
-                # create an empty port-object, then assign port info to object, to avoid dtr/rts level changes when open/close port
-                self.serial_port = serial.Serial()
-                self.serial_port.port = self.serial_port_name
-                self.serial_port.baudrate = self.profile_info.handshake_baudrate
-                self.serial_port.parity = serial.PARITY_NONE
-                self.serial_port.stopbits = serial.STOPBITS_ONE
-                self.serial_port.bytesize = serial.EIGHTBITS
-                self.serial_port.dtr = False
-                self.serial_port.rts = False
+            # determine whether to use a remote serial port
+            self.logger.debug(f"Remote server： self.logger type={type(self.logger)}，value={self.logger}")
+            if self.remote_server and self.remote_port:
+                self.logger.info(f"Connect to remote serial server: {self.remote_server}:{self.remote_port} (Serial port: {self.serial_port_name})")
+                # initialize remote serial port
+                self.serial_port = RemoteSerial(
+                    remote_server=self.remote_server,
+                    remote_port=self.remote_port,
+                    port=self.serial_port_name,
+                    baudrate=self.profile_info.handshake_baudrate,
+                    logger=self.logger
+                )
                 self.serial_port.open()
+            else:
+                # initialize local serial port
+                if self.is_usb:
+                    self.serial_port = serial.Serial(self.serial_port_name,
+                                                     baudrate=self.profile_info.handshake_baudrate,
+                                                     parity=serial.PARITY_NONE,
+                                                     stopbits=serial.STOPBITS_ONE,
+                                                     bytesize=serial.EIGHTBITS)
+                else:
+                    self.serial_port = serial.Serial()
+                    self.serial_port.port = self.serial_port_name
+                    self.serial_port.baudrate = self.profile_info.handshake_baudrate
+                    self.serial_port.parity = serial.PARITY_NONE
+                    self.serial_port.stopbits = serial.STOPBITS_ONE
+                    self.serial_port.bytesize = serial.EIGHTBITS
+                    self.serial_port.dtr = False
+                    self.serial_port.rts = False
+                    self.serial_port.open()
         except Exception as err:
-            self.logger.error(f"Access serial port {self.serial_port_name} fail: {err}")
+            self.logger.error(f"Initialize serial port failed: {err}")
             sys.exit(1)
+
+    # --- check if serial port is open (remote/local compatible) ---
+    def is_open(self) -> bool:
+        if isinstance(self.serial_port, RemoteSerial):
+            return self.serial_port.is_open
+        elif isinstance(self.serial_port, serial.Serial):
+            return self.serial_port.is_open
+        return False
+
+    def switch_baudrate(self, baud, delay_s, force=False):
+        ret = ErrType.OK
+
+        if (baud == self.serial_port.baudrate) and (not force):
+            self.logger.debug(f"Don't need to switch baudrate: {baud}")
+            return ret
+
+        self.logger.debug(f"Switch baudrate: {self.serial_port.baudrate} -> {baud}")
+
+        try:
+            # remote serial port: close and reopen (no dynamic switching supported yet)
+            if isinstance(self.serial_port, RemoteSerial):
+                self.serial_port.close()
+                #time.sleep(delay_s)
+                self.serial_port.baudrate = baud
+                self.serial_port.open()
+            else:
+                # local serial port
+                if self.is_usb:
+                    for retry in range(10):
+                        try:
+                            if self.serial_port.is_open:
+                                self.serial_port.close()
+                            while self.serial_port.is_open:
+                                pass
+                            ret = ErrType.OK
+                            break
+                        except:
+                            ret = ErrType.SYS_IO
+                        time.sleep(0.1)
+                    if ret != ErrType.OK:
+                        self.logger.warning(f"Close serial port failed")
+                    time.sleep(delay_s)
+
+                if self.serial_port.baudrate != baud:
+                    self.serial_port.baudrate = baud
+
+                if self.is_usb:
+                    for rty in range(10):
+                        try:
+                            self.serial_port.open()
+                            ret = ErrType.OK
+                            break
+                        except:
+                            ret = ErrType.SYS_IO
+                        time.sleep(0.1)
+        except Exception as e:
+            self.logger.error(f"An exception occurs when switching baudrate: {str(e)}")
+            ret = ErrType.SYS_IO
+
+        if ret == ErrType.OK:
+            self.logger.debug(f"Switch baudrate success: {baud}")
+        else:
+            self.logger.debug(f"Switch baudrate failed")
+
+        return ret
 
     def read_bytes(self, timeout_seconds, size=1):
         ret = ErrType.OK
@@ -109,6 +196,7 @@ class Ameba(object):
 
         start_time = datetime.now()
         while self.serial_port.inWaiting() < size:
+            time.sleep(0.001) # avoid waiting idly and improve efficiency.
             if (datetime.now() - start_time).seconds >= timeout_seconds:
                 return ErrType.DEV_TIMEOUT, None
 
@@ -128,6 +216,8 @@ class Ameba(object):
         self.serial_port.write(bytes_array)
 
     def is_realtek_usb(self):
+        if self.remote_server:
+            return False
         ports = serial.tools.list_ports.comports()
         for port, desc, hvid in sorted(ports):
             if port == self.serial_port_name:
@@ -137,7 +227,7 @@ class Ameba(object):
         else:
             return False
 
-    def switch_baudrate(self, baud, delay_s, force=False):
+    def switch_baudrate_old(self, baud, delay_s, force=False):
         ret = ErrType.OK
 
         if (baud == self.serial_port.baudrate) and (not force):
@@ -549,6 +639,16 @@ class Ameba(object):
                 ret = self.floader_handler.next_operation(next_op, 0)
                 if ret != ErrType.OK:
                     self.logger.warning(f"Next option {next_op} fail: {ret}")
+
+        # should close serial port
+        if self.serial_port and self.is_open():
+            try:
+                self.logger.info(f"close {self.serial_port.port}...")
+                self.serial_port.close()
+                self.logger.info(f"{self.serial_port.port} close done")
+            except Exception as e:
+                self.logger.error(f"close error: {e}", exc_info=True)
+        self.serial_port = None
 
         return ret
 

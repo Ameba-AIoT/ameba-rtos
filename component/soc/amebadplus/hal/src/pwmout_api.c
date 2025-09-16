@@ -105,6 +105,7 @@ static void pwmout_timer8_init(pwmout_t *obj)
 	RCC_PeriphClockCmd(APBPeriph_PWM0, APBPeriph_PWM0_CLOCK, ENABLE);
 
 	RTIM_TimeBaseInit(PWM_TIM, &TIM_InitStruct, PWM_IrqNum, NULL, (u32)&TIM_InitStruct);
+	RTIM_PrescalerConfig(PWM_TIM, prescaler, TIM_PSCReloadMode_Update);
 	RTIM_Cmd(PWM_TIM, ENABLE);
 
 	timer8_start = 1;
@@ -123,7 +124,6 @@ static void pwmout_timer8_init(pwmout_t *obj)
 void pwmout_init(pwmout_t *obj, PinName pin)
 {
 	u32 pwm_chan;
-	TIM_CCInitTypeDef TIM_CCInitStruct;
 
 	assert_param(obj->pwm_idx < PWM_CHANNEL_MAX);
 #if 0
@@ -146,9 +146,6 @@ void pwmout_init(pwmout_t *obj, PinName pin)
 		pwmout_timer8_init(obj);
 	}
 
-	RTIM_CCStructInit(&TIM_CCInitStruct);
-	TIM_CCInitStruct.TIM_OCPulse = (u32)(obj->pulse  * 40 / (prescaler + 1)) & 0x0000ffff;
-	RTIM_CCxInit(PWM_TIM, &TIM_CCInitStruct, pwm_chan);
 	RTIM_CCxCmd(PWM_TIM, pwm_chan, TIM_CCx_Enable);
 
 	Pinmux_Config(pin, PinMap_PWM[pwm_chan]);
@@ -259,7 +256,6 @@ void pwmout_period_us(pwmout_t *obj, int us)
 
 	if (tmp > 0x10000) {
 		prescaler = us * 40 / 0x10000;
-		RTIM_PrescalerConfig(PWM_TIM, prescaler, TIM_PSCReloadMode_Update);
 	}
 
 	obj->period = us;

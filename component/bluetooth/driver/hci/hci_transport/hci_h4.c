@@ -93,7 +93,7 @@ void hci_uart_rx_irq_handler(void)
 
 		if (h4->remain == 0) {
 			h4->body_len = hci_get_body_len(h4->hdr, h4->type);
-			if (h4->body_len > CONFIG_HCI_RX_BUF_LEN) {
+			if ((h4->body_len + h4->hlen) > CONFIG_HCI_RX_BUF_LEN) {
 				BT_LOGE("ERROR!!!, type %d, len %d\r\n", h4->type, h4->body_len);
 				h4->remain = h4->body_len;
 				h4->state = ST_DISCARD;

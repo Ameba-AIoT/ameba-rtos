@@ -854,19 +854,19 @@ static void bt_coex_handle_handle_l2cap_dis_conn_req(struct rtk_bt_coex_conn_t *
 static void bt_coex_set_bitpool_to_fw(uint8_t *user_data, uint16_t length)
 {
 	struct sbc_frame_hdr *sbc_header = NULL;
-	struct rtp_header *rtph = NULL;
+	struct rtp_header rtph ;
 	uint8_t hci_buf[1] = {0};
 
 	/* We assume it is SBC if the packet length
 	    * is bigger than 100 bytes
 	    */
 	if (length > 100) {
-		rtph = (struct rtp_header *)user_data;
+		memcpy(&rtph, user_data, sizeof(struct rtp_header));
 
-		DBG_BT_COEX("bt_coex_set_bitpool_to_fw rtp: v 0x%x, cc 0x%x, pt 0x%x \r\n", rtph->v, rtph->cc, rtph->pt);
+		DBG_BT_COEX("bt_coex_set_bitpool_to_fw rtp: v 0x%x, cc 0x%x, pt 0x%x \r\n", rtph.v, rtph.cc, rtph.pt);
 
 		/* move forward */
-		user_data += sizeof(struct rtp_header) + rtph->cc * 4 + 1;
+		user_data += sizeof(struct rtp_header) + rtph.cc * 4 + 1;
 
 		/* point to the sbc frame header */
 		sbc_header = (struct sbc_frame_hdr *)user_data;
