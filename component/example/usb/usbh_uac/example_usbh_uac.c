@@ -17,7 +17,8 @@
 #define USBH_UAC_HOT_PLUG_TEST        1     /* Hot plug / memory leak test */
 
 #define USBH_UAC_ISOC_BUF_SIZE        1000    /* Buffer size for ISOC uac test, which should match with device ISOC uac buffer size */
-#define USBH_UAC_TEST_CNT             10
+#define USBH_UAC_FRAME_CNT            20
+#define USBH_UAC_TEST_CNT             60
 
 #define USBH_UAC_CHANNELS             2
 #define USBH_UAC_BITWIDTH             16
@@ -28,7 +29,6 @@
 #define USBH_UAC_ISR_THREAD_PRIORITY          6
 #define USBH_UAC_HOTPLUG_THREAD_PRIORITY      7
 
-#define USBH_UAC_FRAME_CNT            20
 
 #define USBH_UAC_XFER_CHECK           0   /* used to check the trx data valid */
 

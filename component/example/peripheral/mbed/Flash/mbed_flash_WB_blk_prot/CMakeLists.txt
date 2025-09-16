@@ -36,7 +36,7 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources
-    example_mbed_flash_winbond_block_protect.c
+    example_mbed_flash_WB_blk_prot.c
     app_example.c
 )
 
@@ -46,7 +46,7 @@ ameba_list_append(private_sources
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For open-source component, always build from source
-ameba_add_internal_library(example_mbed_flash_winbond_block_protect
+ameba_add_internal_library(example_mbed_flash_WB_blk_prot
     p_SOURCES
         ${private_sources}
     p_INCLUDES

@@ -10,12 +10,6 @@ import argparse
 import base64
 import json
 import subprocess
-import logging
-from colorama import Fore, Style, init
-
-# init Colorama
-init(autoreset=True)
-
 
 PROJECT_ROOT_DIR = os.path.realpath(os.path.dirname(os.path.abspath(__file__)))
 PROFILE = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/ameba/ImageTool/Devices/Profiles/AmebaLite_FreeRTOS_NOR.rdev"))
@@ -29,7 +23,7 @@ class MemoryInfo:
 
 
 def run_flash(argv):
-    cmds = ['python3', FLASH_TOOL] + argv
+    cmds = [sys.executable, FLASH_TOOL] + argv
     result = subprocess.run(cmds)
     if result.returncode != 0:
         sys.exit(1)
@@ -47,6 +41,9 @@ def main():
                         help="user define image layout")
     parser.add_argument('-o', '--log-file', type=str, help='output log file with path')
 
+    parser.add_argument('--remote-server', type=str, help='remote serial server IP address')
+    parser.add_argument('--remote-port', type=int, help='remote serial server port (default: 58916)')
+
     parser.add_argument('--chip-erase', action='store_true', help='chip erase')
     parser.add_argument('--log-level', default='info', help='log level')
 
@@ -59,6 +56,12 @@ def main():
     log_file = args.log_file
     log_level = args.log_level.upper()
 
+    remote_server = args.remote_server
+    remote_port = args.remote_port
+
+    if (remote_server and not remote_port) or (not remote_server and remote_port):
+        raise ValueError("Both --remote-server and --remote-port must be provided together")
+
     cmds = ["--download", "--profile", PROFILE]
 
     if log_file is not None:
@@ -70,7 +73,8 @@ def main():
         else:
             log_f = os.path.join(os.getcwd(), log_file)
 
-        cmds.extend(["--log-file", log_f])
+        cmds.append("--log-file")
+        cmds.append(log_f)
     else:
         log_f = None
 
@@ -79,15 +83,25 @@ def main():
 
     cmds.append("--port")
     cmds.extend(ports)
-    cmds.extend(["--baudrate", f"{serial_baudrate}"])
-    cmds.extend(["--memory-type", f"{mem_t}"])
-    cmds.extend(["--log-level", f"{log_level}"])
+    cmds.append(f"--baudrate")
+    cmds.append(f"{serial_baudrate}")
+    cmds.append(f"--memory-type")
+    cmds.append(f"{mem_t}")
+    cmds.append(f"--log-level")
+    cmds.append(f"{log_level}")
+
+    if remote_server and remote_port:
+        cmds.append("--remote-server")
+        cmds.append(remote_server)
+        cmds.append("--remote-port")
+        cmds.append(str(remote_port))
 
     if args.chip_erase:
         cmds.append("--chip-erase")
 
     if not images:
-        cmds.extend(["--image-dir", PROJECT_ROOT_DIR])
+        cmds.append(f"--image-dir")
+        cmds.append(PROJECT_ROOT_DIR)
     else:
         partition_table = []
 
@@ -133,7 +147,8 @@ def main():
         # 4. Base64 encode bytes
         partition_table_base64 = base64.b64encode(partition_table_bytes).decode('utf-8')
 
-        cmds.extend(["--partition-table", f"{partition_table_base64}"])
+        cmds.append(f"--partition-table")
+        cmds.append(f"{partition_table_base64}")
 
     run_flash(cmds)
 

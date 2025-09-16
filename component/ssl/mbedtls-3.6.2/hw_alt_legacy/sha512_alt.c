@@ -107,7 +107,7 @@ int mbedtls_sha512_finish(mbedtls_sha512_context *ctx,
                           unsigned char *output)
 {
     if(output == NULL || ctx == NULL) {
-        printf("output == NULL || ctx == NULL\n");
+        mbedtls_printf("output == NULL || ctx == NULL\n");
         return MBEDTLS_ERR_SHA512_BAD_INPUT_DATA;
     }
     int ret;

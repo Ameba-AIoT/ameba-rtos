@@ -126,6 +126,7 @@ char global_buf[SMALL_BUF];
 /* Out callback function */
 at_write out_buffer;
 rtos_sema_t atcmd_tt_mode_sema;
+char at_config_file_exist = 0;
 
 extern s32 wifi_set_countrycode(u8 *cntcode);
 
@@ -529,10 +530,20 @@ int atcmd_host_control_config_setting(void)
 		}
 	}
 
+	at_config_file_exist = 1;
+
 DEFAULT:
 	if (g_host_control_mode == AT_HOST_CONTROL_UART) {
 		RTK_LOGI(TAG, "ATCMD HOST Control Mode : UART, tx:%s, ", PIN_VAL_TO_NAME_STR(UART_TX));
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "rx:%s, ", PIN_VAL_TO_NAME_STR(UART_RX));
+		if (at_config_file_exist == 0) {
+			u32 atcmd_uart_baudrate = 0;
+			if (rt_kv_get("atcmd_uart_baudrate", (uint8_t *) &atcmd_uart_baudrate, 4) == 4) {
+				if (atcmd_uart_baudrate >= 4800 && atcmd_uart_baudrate <= 6000000) {
+					UART_BAUD = atcmd_uart_baudrate;
+				}
+			}
+		}
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "baudrate:%d\r\n", (int)UART_BAUD);
 		ret = atio_uart_init();
 	} else if (g_host_control_mode == AT_HOST_CONTROL_SPI) {

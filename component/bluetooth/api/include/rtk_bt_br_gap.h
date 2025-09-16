@@ -51,6 +51,11 @@ extern "C"
 
 /* ------------------------------- Data Types ------------------------------- */
 typedef enum {
+	RTK_BT_BR_GAP_ROLE_MASTER  = 0,
+	RTK_BT_BR_GAP_ROLE_SLAVE,
+} rtk_bt_br_role_t;
+
+typedef enum {
 	RTK_BT_BR_GAP_PAGE_SCAN_TYPE_STANDARD  = 0,/*!< BR/EDR page scan type standard. */
 	RTK_BT_BR_GAP_PAGE_SCAN_TYPE_INTERLACED,   /*!< BR/EDR page scan type interlaced. */
 } rtk_bt_br_page_scan_t;
@@ -95,6 +100,8 @@ typedef struct {
 	void                *timer_handle_later_avrcp;
 	uint8_t             bd_addr[6];
 	bool                used;
+	bool                acl_conn_ind;
+	uint8_t             role;
 	uint8_t             id;
 	void                *a2dp_track_handle;
 	void                *sco_track_handle;
