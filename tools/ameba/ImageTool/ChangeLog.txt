@@ -153,3 +153,5 @@ ChangeLog:
 20250427  v2.8.9  Fix Dplus download error with 4byte address mode
 20250527  v2.8.10 (1) Support customized DTR/RTS timing for reset/reburn
                   (2) Fix serial port scan timeout issue
+                  (3) Fix RTL8721F download fail issue
+                  (4) Fix nand flash download fail issue
