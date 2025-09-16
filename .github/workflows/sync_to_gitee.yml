@@ -17,13 +17,14 @@ jobs:
       env:
         GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
       run: |
-        git remote add gitee https://ameba-aiot:${GITEE_TOKEN}@gitee.com/ameba-aiot/ameba-rtos.git
+        git remote remove gitee || true
+        git remote add gitee https://gloria-chen:${GITEE_TOKEN}@gitee.com/ameba-aiot/ameba-rtos.git
         git push --mirror gitee
 
     - name: Push to Gitee only
       env:
           GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
-      run: git clone https://ameba-aiot:${GITEE_TOKEN}@gitee.com/ameba-aiot/ameba-rtos.git gitee_repo
+      run: git clone https://gloria-chen:${GITEE_TOKEN}@gitee.com/ameba-aiot/ameba-rtos.git gitee_repo
     - name: Patch cmake if needed
       run: |
           cd gitee_repo
