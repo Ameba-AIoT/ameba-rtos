@@ -32,7 +32,13 @@ jobs:
           cd gitee_repo
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git checkout remotes/origin/master -b master
+          if git show-ref --verify --quiet refs/heads/master; then
+              echo "master exists"
+              git checkout master
+          else
+              git checkout remotes/origin/master -b master
+              echo "create master from origin/master"
+          fi
           need_commit=0
           if ! grep -q 'if(1)' cmake/toolchain/ameba-toolchain-asdk-10.3.1.cmake; then
             sed -i 's/if(USE_ALIYUN_URL)/if(1)/g' cmake/toolchain/ameba-toolchain-asdk-10.3.1.cmake
