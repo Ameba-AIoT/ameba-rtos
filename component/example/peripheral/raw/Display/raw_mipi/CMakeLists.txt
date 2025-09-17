@@ -34,19 +34,20 @@ set(private_compile_options)         #private compile_options
 
 #------------------------------#
 # Component private part, user config begin
-
+if(CONFIG_AMEBASMART)
 ameba_list_append(private_sources
     example_raw_mipi.c
     ameba_mipi_show.c
     app_example.c
 )
-
+endif()
 # Component private part, user config end
 #------------------------------#
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For open-source component, always build from source
+if(CONFIG_AMEBASMART)
 ameba_add_internal_library(example_raw_mipi
     p_SOURCES
         ${private_sources}
@@ -57,5 +58,5 @@ ameba_add_internal_library(example_raw_mipi
     p_COMPILE_OPTIONS
         ${private_compile_options}
 )
-
+endif()
 ##########################################################################################
