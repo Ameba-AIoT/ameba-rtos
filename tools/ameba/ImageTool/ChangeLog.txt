@@ -155,3 +155,4 @@ ChangeLog:
                   (2) Fix serial port scan timeout issue
                   (3) Fix RTL8721F download fail issue
                   (4) Fix nand flash download fail issue
+                  (5) Support RTL8721F nand flash download
