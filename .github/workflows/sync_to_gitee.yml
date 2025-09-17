@@ -1,23 +1,25 @@
 name: Sync to Gitee 
 on:
-  pull_request:
-    branches: [ master ]
-    types: [closed]
+  push:
+    branches:
+      - master
 
 jobs:
   sync:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+    - name: Debug GITEE_TOKEN
+      run: echo "TOKEN_LENGTH=${#GITEE_TOKEN}"
+      env:
+        GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
     - name: Mirror to Gitee
       env:
         GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
       run: |
-        git remote remove gitee || true
         git remote add gitee https://gloria-chen:${GITEE_TOKEN}@gitee.com/ameba-aiot/ameba-rtos.git
         git push --mirror gitee
 
