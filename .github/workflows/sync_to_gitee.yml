@@ -1,8 +1,8 @@
 name: Sync to Gitee 
 on:
-  pull_request:
-    branches: [ release/v1.1 ]
-    types: [closed]
+  push:
+    branches:
+      - release/v1.1
 
 jobs:
   sync:
@@ -13,23 +13,33 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+    - name: Debug GITEE_TOKEN
+      run: echo "TOKEN_LENGTH=${#GITEE_TOKEN}"
+      env:
+        GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
     - name: Mirror to Gitee
       env:
         GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
       run: |
-        git remote add gitee https://ameba-aiot:${GITEE_TOKEN}@gitee.com/ameba-aiot/ameba-rtos.git
+        git remote add gitee https://gloria-chen:${GITEE_TOKEN}@gitee.com/ameba-aiot/ameba-rtos.git
         git push --mirror gitee
 
     - name: Push to Gitee only
       env:
           GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
-      run: git clone https://ameba-aiot:${GITEE_TOKEN}@gitee.com/ameba-aiot/ameba-rtos.git gitee_repo
+      run: git clone https://gloria-chen:${GITEE_TOKEN}@gitee.com/ameba-aiot/ameba-rtos.git gitee_repo
     - name: Patch cmake if needed
       run: |
           cd gitee_repo
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git checkout remotes/origin/release/v1.1 -b release/v1.1
+          if git show-ref --verify --quiet refs/heads/release/v1.1; then
+              echo "release/v1.1 exists"
+              git checkout release/v1.1
+          else
+              git checkout remotes/origin/release/v1.1 -b release/v1.1
+              echo "create release/v1.1 from origin/release/v1.1"
+          fi
           need_commit=0
           if ! grep -q 'if(1)' cmake/toolchain/ameba-toolchain-asdk-10.3.1.cmake; then
             sed -i 's/if(USE_ALIYUN_URL)/if(1)/g' cmake/toolchain/ameba-toolchain-asdk-10.3.1.cmake
