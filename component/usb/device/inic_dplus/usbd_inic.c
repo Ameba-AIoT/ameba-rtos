@@ -494,6 +494,7 @@ static int usbd_inic_wifi_init(void)
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP2_BULK_OUT);
 	ep = &idev->out_ep[ep_num].ep;
+	ep->addr = USBD_WHC_WIFI_EP2_BULK_OUT;
 	ep->mps = USBD_INIC_FS_BULK_MPS;
 	ep->type = USB_CH_EP_TYPE_BULK;
 
@@ -584,14 +585,14 @@ int usbd_inic_deinit(void)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 
+	usbd_unregister_class();
+
 	if (idev->cb != NULL) {
 		if (idev->cb->deinit != NULL) {
 			idev->cb->deinit();
 		}
 		idev->cb = NULL;
 	}
-
-	usbd_unregister_class();
 
 	return HAL_OK;
 }

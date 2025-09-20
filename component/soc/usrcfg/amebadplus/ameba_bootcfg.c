@@ -45,20 +45,20 @@ u32 Cert_PKHash_OTP_ADDR = SEC_PKKEY_PK1_0;
 // PLL can be 300MHz~688.128MHz
 // KM4_CKD range is [1, 8], KM0_CKD range is [1, 16] or USEXTAL
 const SocClk_Info_TypeDef SocClk_Info[] = {
-    /* PLL_CLK,     Vol_Type,      KM4_CKD,    KM0_CKD,    PSRAMC_CKD*/
-    /* This group is to reduce the impact of PSRAM on RF, the frequency is specially selected */
-    {PLL_524M,      CORE_VOL_0P9,  CLKDIV(2),  CLKDIV(5),  CLKDIV(2)},  // For SiP Psram
-    {PLL_392M,      CORE_VOL_0P9,  CLKDIV(2),  CLKDIV(4),  CLKDIV(1)},  // For SiP Psram
-    {PLL_334M,      CORE_VOL_1P0,  CLKDIV(1),  CLKDIV(3),  CLKDIV(1)},  // For SiP Psram
-    /* This group is to reduce the impact of Flash on RF, the frequency is specially selected.
-       Single die use the same settings. */
-    {PLL_512M,      CORE_VOL_0P9,  CLKDIV(2),  CLKDIV(5),  CLKDIV(2)},  // For SiP Flash or single die (No Psram)
-    {PLL_400M,      CORE_VOL_0P9,  CLKDIV(2),  CLKDIV(4),  CLKDIV(1)},  // For SiP Flash or single die (No Psram)
-    {PLL_334M,      CORE_VOL_1P0,  CLKDIV(1),  CLKDIV(3),  CLKDIV(1)},  // For SiP Flash or single die (No Psram)
-    /* The following frequency settings are not adjustable */
-    {PLL_480M,      CORE_VOL_0P9,  CLKDIV(2),  CLKDIV(5),  CLKDIV(2)},  // 48M for usb, both For SiP Psram / SiP Flash / single die
-    {PLL_677P376M,  CORE_VOL_1P0,  CLKDIV(2),  CLKDIV(6),  CLKDIV(2)},  // Audio
-    {PLL_688P128M,  CORE_VOL_1P0,  CLKDIV(2),  CLKDIV(6),  CLKDIV(2)},  // Audio
+	/* PLL_CLK,     Vol_Type,      KM4_CKD,    KM0_CKD,    PSRAMC_CKD*/
+	/* This group is to reduce the impact of PSRAM on RF, the frequency is specially selected */
+	{PLL_524M,      CORE_VOL_0P9,  CLKDIV(2),  CLKDIV(5),  CLKDIV(2)},  // For SiP Psram
+	{PLL_392M,      CORE_VOL_0P9,  CLKDIV(2),  CLKDIV(4),  CLKDIV(1)},  // For SiP Psram
+	{PLL_334M,      CORE_VOL_1P0,  CLKDIV(1),  CLKDIV(3),  CLKDIV(1)},  // For SiP Psram
+	/* This group is to reduce the impact of Flash on RF, the frequency is specially selected.
+	   Single die use the same settings. */
+	{PLL_512M,      CORE_VOL_0P9,  CLKDIV(2),  CLKDIV(5),  CLKDIV(2)},  // For SiP Flash or single die (No Psram)
+	{PLL_400M,      CORE_VOL_0P9,  CLKDIV(2),  CLKDIV(4),  CLKDIV(1)},  // For SiP Flash or single die (No Psram)
+	{PLL_334M,      CORE_VOL_1P0,  CLKDIV(1),  CLKDIV(3),  CLKDIV(1)},  // For SiP Flash or single die (No Psram)
+	/* The following frequency settings are not adjustable */
+	{PLL_480M,      CORE_VOL_0P9,  CLKDIV(2),  CLKDIV(5),  CLKDIV(2)},  // 48M for usb, both For SiP Psram / SiP Flash / single die
+	{PLL_677P376M,  CORE_VOL_1P0,  CLKDIV(2),  CLKDIV(6),  CLKDIV(2)},  // Audio
+	{PLL_688P128M,  CORE_VOL_1P0,  CLKDIV(2),  CLKDIV(6),  CLKDIV(2)},  // Audio
 };
 
 /**
@@ -66,7 +66,7 @@ const SocClk_Info_TypeDef SocClk_Info[] = {
 * Boot_SocClk_Info_Idx is [0, sizeof(SocClk_Info)), Soc will set socclk by SocClk_Info[Boot_SocClk_Info_Idx]
 */
 #ifdef CONFIG_USB_DEVICE_EN
-u8 Boot_SocClk_Info_Idx = 3; /* Make sure the PLL_CLK for USB is an integer multiple of 48MHz */
+u8 Boot_SocClk_Info_Idx = 6; /* Make sure the PLL_CLK for USB is an integer multiple of 48MHz */
 #else
 u8 Boot_SocClk_Info_Idx = 0;
 #endif
