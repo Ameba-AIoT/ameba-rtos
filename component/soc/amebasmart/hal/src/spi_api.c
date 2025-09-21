@@ -524,6 +524,7 @@ void spi_free(spi_t *obj)
 		/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
 		GDMA_Abort(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+		ssi_adapter->dma_en &= ~SPI_DMA_RX_EN;
 	}
 
 	if (ssi_adapter->dma_en & SPI_DMA_TX_EN) {
@@ -538,6 +539,7 @@ void spi_free(spi_t *obj)
 		/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
 		GDMA_Abort(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+		ssi_adapter->dma_en &= ~SPI_DMA_TX_EN;
 	}
 
 	obj->state = 0;
