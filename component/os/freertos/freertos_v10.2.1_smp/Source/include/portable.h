@@ -173,6 +173,7 @@ void *pvPortCalloc(size_t xWantedCnt, size_t xWantedSize) PRIVILEGED_FUNCTION;
 void vPortInitialiseBlocks( void ) PRIVILEGED_FUNCTION;
 size_t xPortGetFreeHeapSize( void ) PRIVILEGED_FUNCTION;
 size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION;
+void xPortResetHeapMinimumEverFreeHeapSize(void) PRIVILEGED_FUNCTION;
 
 /*
  * Setup the hardware ready for the scheduler to take control.  This generally

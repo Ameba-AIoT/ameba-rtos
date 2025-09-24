@@ -64,7 +64,6 @@ static u32 usb_uac_get_enough_write_bytes(void)
 
 static usbd_config_t uac_cfg = {
 	.speed = CONFIG_USBD_UAC_SPEED,
-	.dma_enable = 1U,
 	.isr_priority = INT_PRI_MIDDLE,
 	.ext_intr_enable = 0,
 	.intr_use_ptx_fifo = 0U,
@@ -317,7 +316,7 @@ bool demo_usb_deinit(void)
 #else
 #define DEMO_UART_RX_DISABLE_SIZE (128)      /* Only 128 left to write */
 #endif
-#define DEMO_UART_READ_THRESHOLD  (1024)
+#define DEMO_UART_READ_THRESHOLD  (2560)
 #define DEMO_UART_DMA_TX_BURST_SIZE 8
 #define DEMO_UART_DMA_RX_BURST_SIZE 16 // RX_BURST_SIZE >= RX GDMA_SrcMsize
 #define DEMO_UART_RX_TO_BIT 10

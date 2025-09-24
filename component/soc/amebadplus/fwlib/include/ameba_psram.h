@@ -166,15 +166,6 @@ typedef struct {
   * @}
   */
 
-/** @defgroup APM_PSRAM_Init_Latency
-  * @{
-  */
-#define PSRAM_PAGE_SIZE_GET(x)		(x & 0xFF)
-#define PSRAM_SIZE_GET(x)			(x & 0xFF00)
-#define PSRAM_CLK_LIMIT_GET(x)		(x & 0xFF000000)
-/**
-  * @}
-  */
 /** @defgroup PSRAM_Clk_Limit_define
  * @{
  */
@@ -182,21 +173,6 @@ enum PSRAM_PAGE_SIZE {
 	PSRAM_PAGE128 = 0x7,
 	PSRAM_PAGE1024 = 0xa,
 	PSRAM_PAGE2048 = 0xb,
-};
-/**
-  * @}
-  */
-
-/** @defgroup PSRAM_Size_define
- * @{
- */
-enum PSRAM_Size_Info {
-	PSRAM_SIZE_32Mb = 0x100,
-	PSRAM_SIZE_64Mb = 0x200,
-	PSRAM_SIZE_128Mb = 0x300,
-	PSRAM_SIZE_256Mb = 0x400,
-	PSRAM_SIZE_512Mb = 0x500,
-
 };
 /**
   * @}
@@ -260,7 +236,31 @@ enum PSRAM_Size_Info {
   * @}
   */
 
+/** @defgroup PSRAM_Clk_Limit_define
+  * @{
+  */
+enum PSRAM_CLK_LIMIT {
+	PSRAM_DEVICE_CLK_166 = 0x1000000,
+	PSRAM_DEVICE_CLK_200 = 0x2000000,
+	PSRAM_DEVICE_CLK_250 = 0x3000000,
+	PSRAM_DEVICE_CLK_NotClear = 0xFF000000,
+};
+/**
+  * @}
+  */
 
+/** @defgroup PSRAM_Type
+  * @{
+  */
+
+#define	PSRAM_TYPE_WB955	0x0
+#define	PSRAM_TYPE_WB957	0x1
+#define	PSRAM_TYPE_WB958	0x2
+#define	PSRAM_TYPE_APM64	0x3
+
+/**
+* @}
+*/
 
 /** @defgroup WB_Deep_Power_Down
   * @{
@@ -333,13 +333,17 @@ enum PSRAM_Size_Info {
   */
 typedef struct {
 	u32 Psram_Clk_Set;
+	u32 Psram_Clk_Limit;
 	u32 PSRAMC_Clk_Unit; // unit ps
 	u32 Psram_Latency_Set;
-	u32 Psram_Page_size;
 	u32 Psram_CSHI;			//cs high between cmd, only for apm
 	u32 Psram_TRWR;			//cmd + tcss + cs high + addr
 	u32 Psram_Latency_Code;	//CR0 [4:7]
-	u32 Psram_Vendor;
+	u32 Psram_Size;
+	u8 Psram_Vendor;
+	u8 Psram_Type;
+	u8 Psram_Page_size;
+	u8 rsvd;
 } PSRAMINFO_TypeDef;
 /**
   * @}
@@ -358,16 +362,16 @@ _LONG_CALL_ void PSRAM_PHY_StructInit(PSPHY_InitTypeDef *PSPHY_InitStruct);
 _LONG_CALL_ void PSRAM_PHY_Init(PSPHY_InitTypeDef *PSPHY_InitStruct);
 _LONG_CALL_ void PSRAM_InfoDump(void);
 _LONG_CALL_ void PSRAM_CTRL_Init(void);
-_LONG_CALL_ void PSRAM_REG_Read(u32 type, u32 addr, u32 read_len, u8 *read_data, u32 CR);
-_LONG_CALL_ void PSRAM_REG_Write(u32 type, u32 addr, u32 write_len, u8 *write_data);
+_LONG_CALL_ void PSRAM_REG_Read(u8 type, u32 addr, u32 read_len, u8 *read_data, u32 CR);
+_LONG_CALL_ void PSRAM_REG_Write(u8 type, u32 addr, u32 write_len, u8 *write_data);
 _LONG_CALL_ void PSRAM_MEM_Write(u8 cmd, u32 addr, u32 write_len, u8 *write_data);
 _LONG_CALL_ bool PSRAM_calibration(u32 log_en);
 _LONG_CALL_ void PSRAM_WB_REG_Write(u32 regnum, u32 write_len, u8 *write_data);
 _LONG_CALL_ void PSRAM_WB_REG_Read(u32 regnum, u32 read_len, u8 *read_data, u32 CR);
 _LONG_CALL_ void PSRAM_APM_DEVIC_Init(void);
 _LONG_CALL_ void PSRAM_WB_DEVIC_Init(void);
-_LONG_CALL_ void set_psram_sleep_mode(u32 type);
-_LONG_CALL_ void set_psram_wakeup_mode(u32 type);
+_LONG_CALL_ void set_psram_sleep_mode(void);
+_LONG_CALL_ void set_psram_wakeup_mode(void);
 _LONG_CALL_ void PSRAM_CLK_Update(void);
 
 /**
@@ -388,10 +392,6 @@ _LONG_CALL_ void PSRAM_CLK_Update(void);
 #define PSRAM_WB_IR1		0x1
 #define PSRAM_WB_CR0		0x0
 #define PSRAM_WB_CR1		0x1
-
-#define PSRAM_TYPE_APM		0
-#define PSRAM_TYPE_WB		1
-#define PSRAM_TYPE_NONE			0xFF
 
 #define Psram_WB_TRWR133		38//ns
 #define Psram_WB_TRWR166		36//ns

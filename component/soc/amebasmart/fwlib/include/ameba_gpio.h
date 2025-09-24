@@ -442,7 +442,7 @@ _LONG_CALL_ void GPIO_UserRegIrq(u32 GPIO_Pin, void *IrqHandler, void *IrqData);
 _LONG_CALL_ void GPIO_INTMode(u32 GPIO_Pin, u32 NewState, u32 GPIO_ITTrigger, u32 GPIO_ITPolarity, u32 GPIO_ITDebounce);
 _LONG_CALL_ void GPIO_INTConfig(u32 GPIO_Pin, u32 NewState);
 _LONG_CALL_ void GPIO_Init(GPIO_InitTypeDef  *GPIO_InitStruct);
-_LONG_CALL_ u32 GPIO_INTHandler(IN void *pData);
+_LONG_CALL_ u32 GPIO_INTHandler(void *pData);
 _LONG_CALL_ void GPIO_Direction(u32 GPIO_Pin, u32 data_direction);
 _LONG_CALL_ u32 GPIO_PortRead(u32 GPIO_Port, u32 GPIO_Mask);
 _LONG_CALL_ void GPIO_PortWrite(u32 GPIO_Port, u32 GPIO_Mask, u32 Port_State);

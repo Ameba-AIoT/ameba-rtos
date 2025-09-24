@@ -65,6 +65,7 @@ void ChipInfo_InitPsramInfoFromMemInfo(const MCM_MemTypeDef *meminfo, PSRAMINFO_
 	info->Psram_Page_size = 0;
 	info->Psram_Clk_Limit = 0;
 	info->Psram_Type      = 0;
+	RRAM_TypeDef *rram = RRAM_DEV;
 
 	if (meminfo == NULL || info == NULL) {
 		return;
@@ -118,6 +119,7 @@ void ChipInfo_InitPsramInfoFromMemInfo(const MCM_MemTypeDef *meminfo, PSRAMINFO_
 	} else {
 		info->Psram_Vendor = MCM_PSRAM_VENDOR_NOTCARE;
 	}
+	rram->PSRAM_TYPE = info->Psram_Vendor;
 }
 
 
@@ -177,7 +179,6 @@ void PSRAM_INFO_Update(void)
 	rram->PSRAM_RESUMECNT_BOOT = PsramInfo.Psram_Resume_Cnt;		//for nonsecure world
 
 	if (PsramInfo.Psram_Vendor == MCM_PSRAM_VENDOR_WB) {
-		rram->PSRAM_TYPE = PSRAM_TYPE_WB;
 		if (PsramInfo.Psram_Clk_Set <= 104000000) {
 			PsramInfo.Psram_Latency_Set = 4;
 			PsramInfo.Psram_TRWR = Psram_WB_TRWR133;
@@ -204,7 +205,6 @@ void PSRAM_INFO_Update(void)
 		}
 
 	} else {
-		rram->PSRAM_TYPE = PSRAM_TYPE_APM;
 		if (PsramInfo.Psram_Clk_Set <= 104000000) {
 			PsramInfo.Psram_Latency_Set = 4;
 			PsramInfo.Psram_CSHI = Psram_APM_CSHI133;
@@ -451,8 +451,8 @@ void PSRAM_APM_DEVIC_Init(void)
 	mr0[1] = mr0[0];
 	mr4[1] = mr4[0];
 
-	PSRAM_REG_Write(0, 0x0, 2, mr0);
-	PSRAM_REG_Write(0, 0x4, 2, mr4);
+	PSRAM_REG_Write(MCM_PSRAM_VENDOR_APM, 0x0, 2, mr0);
+	PSRAM_REG_Write(MCM_PSRAM_VENDOR_APM, 0x4, 2, mr4);
 }
 
 void PSRAM_WB_DEVIC_Init(void)
@@ -481,7 +481,7 @@ void PSRAM_WB_DEVIC_Init(void)
 				  PSRAM_WB_INIT_LATENCY(WB_WR_INIT_LATENCY_SPEC[PsramInfo.Psram_Latency_Set - 3]);
 	}
 
-	PSRAM_REG_Write(1, PSRAM_WB_CR0, 2, data);
+	PSRAM_REG_Write(MCM_PSRAM_VENDOR_WB, PSRAM_WB_CR0, 2, data);
 }
 
 
@@ -519,7 +519,7 @@ void PSRAM_REG_Read(u32 type, u32 addr, u32 read_len, u8 *read_data, u32 CR)
 	//RTK_LOGD(TAG, "CTRLR0 = %p %lx\n", &(psram_ctrl->CTRLR0), psram_ctrl->CTRLR0);
 
 	/* set flash_cmd: write cmd to fifo */
-	if (type == PSRAM_TYPE_APM) {
+	if (type == MCM_PSRAM_VENDOR_APM) {
 		psram_ctrl->DR[0].BYTE = 0x40;
 		psram_ctrl->DR[0].BYTE = 0x40;
 	} else {
@@ -563,7 +563,7 @@ void PSRAM_REG_Read(u32 type, u32 addr, u32 read_len, u8 *read_data, u32 CR)
 
 /**
   * @brief set APM/Winbond PSRAM register value
-  * @param  type: APM :0 Winbond:1
+  * @param  type: MCM_PSRAM_VENDOR_WB/MCM_PSRAM_VENDOR_APM
   * @param  addr: PSRAM register addr
   * @param  write_len: write data length
   * @param  write_data: write data buf
@@ -593,7 +593,7 @@ void PSRAM_REG_Write(u32 type, u32 addr, u32 write_len, u8 *write_data)
 	psram_ctrl->TX_NDF = TX_NDF(write_len);
 
 	/* set flash_cmd: write cmd to fifo */
-	if (type == PSRAM_TYPE_APM) {
+	if (type == MCM_PSRAM_VENDOR_APM) {
 
 		psram_ctrl->DR[0].BYTE = 0xc0;
 		psram_ctrl->DR[0].BYTE = 0xc0;
@@ -867,11 +867,11 @@ void set_psram_sleep_mode(u32 type)
 	// 50ns will be enough, check if need
 	DelayUs(1);
 
-	if (type == PSRAM_TYPE_APM) {
+	if (type == MCM_PSRAM_VENDOR_APM) {
 		psram_halfsleep[0] = 0xF0;
 		psram_halfsleep[1] = 0xF0;
 
-		PSRAM_REG_Write(0, 0x06, 2, psram_halfsleep);
+		PSRAM_REG_Write(type, 0x06, 2, psram_halfsleep);
 
 	} else {
 
@@ -883,7 +883,7 @@ void set_psram_sleep_mode(u32 type)
 			psram_halfsleep[0] = 0xFF;
 			psram_halfsleep[1] = 0xE1;
 		}
-		PSRAM_REG_Write(1, 0x1, 2, psram_halfsleep);
+		PSRAM_REG_Write(type, 0x1, 2, psram_halfsleep);
 
 	}
 
@@ -917,9 +917,9 @@ void set_psram_wakeup_mode(u32 type)
 	temp = psram_phy->PSPHY_PHY_INFO;
 	psram_phy->PSPHY_PHY_INFO = temp;
 	/* 3. waiting for a while. */
-	if (type == PSRAM_TYPE_APM) {
+	if (type == MCM_PSRAM_VENDOR_APM) {
 		DelayUs(150);
-	} else  if (type == PSRAM_TYPE_WB) {
+	} else  if (type == MCM_PSRAM_VENDOR_WB) {
 		DelayUs(100);
 	}
 	/* 4. Read again */
@@ -951,7 +951,7 @@ void set_psram_suspend(void)
 	RRAM_TypeDef *rram = RRAM_DEV;
 	u32 Rtemp = 0;
 
-	if (rram->PSRAM_TYPE == PSRAM_TYPE_APM || rram->PSRAM_TYPE == PSRAM_TYPE_WB) {
+	if (rram->PSRAM_TYPE == MCM_PSRAM_VENDOR_APM || rram->PSRAM_TYPE == MCM_PSRAM_VENDOR_WB) {
 		/* psram shutdown */
 		set_psram_sleep_mode(rram->PSRAM_TYPE);
 
@@ -972,7 +972,7 @@ void set_psram_resume(void)
 	RRAM_TypeDef *rram = RRAM_DEV;
 	u32 Rtemp = 0;
 
-	if (rram->PSRAM_TYPE == PSRAM_TYPE_APM || rram->PSRAM_TYPE == PSRAM_TYPE_WB) {
+	if (rram->PSRAM_TYPE == MCM_PSRAM_VENDOR_APM || rram->PSRAM_TYPE == MCM_PSRAM_VENDOR_WB) {
 
 		/* psram re-enable */
 		//open psram pad

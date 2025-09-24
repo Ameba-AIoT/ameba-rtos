@@ -62,6 +62,10 @@ static void init_retarget_locks(void)
 
 void __retarget_lock_init(_LOCK_T *lock_ptr)
 {
+	if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
+		return;
+	}
+
 	if (*lock_ptr) {
 		/* Lock already initialized */
 		RTK_LOGS(TAG, RTK_LOG_INFO, "%s, lock_ptr %p is already initialized!!!\n", __func__, *lock_ptr);
@@ -77,6 +81,10 @@ void __retarget_lock_init(_LOCK_T *lock_ptr)
 
 void __retarget_lock_init_recursive(_LOCK_T *lock_ptr)
 {
+	if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
+		return;
+	}
+
 	if (*lock_ptr) {
 		/* Lock already initialized */
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s, lock_ptr %p is already initialized!!!\n", __func__, *lock_ptr);
@@ -111,19 +119,19 @@ void __retarget_lock_acquire(_LOCK_T lock)
 	BaseType_t ret;
 	BaseType_t task_woken = pdFALSE;
 
-	if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
-		return;
-	}
-
 	if (!lock) {
+		if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
+			return;
+		}
 		__retarget_lock_init(&lock);
+		rtk_assert(lock);
 	}
 
 	if (rtos_critical_is_in_interrupt()) {
 		ret = xSemaphoreTakeFromISR(lock, &task_woken);
 		if (ret != pdTRUE) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "%s, lock %p acquire from isr failed!!!\n", __func__, lock);
-			return;
+			rtk_assert(0);
 		}
 		portEND_SWITCHING_ISR(task_woken);
 	} else {
@@ -137,17 +145,18 @@ void __retarget_lock_acquire(_LOCK_T lock)
 void __retarget_lock_acquire_recursive(_LOCK_T lock)
 {
 	BaseType_t ret;
-	if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
-		// DiagPrintf("scheduler not start\n");
-		return;
+
+	if (!lock) {
+		if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
+			// DiagPrintf("scheduler not start\n");
+			return;
+		}
+		__retarget_lock_init_recursive(&lock);
+		rtk_assert(lock);
 	}
 
 	if (rtos_critical_is_in_interrupt()) {
-		return;
-	}
-
-	if (!lock) {
-		__retarget_lock_init_recursive(&lock);
+		rtk_assert(0);
 	}
 
 	ret = xSemaphoreTakeRecursive((QueueHandle_t)lock, portMAX_DELAY);
@@ -161,21 +170,19 @@ int __retarget_lock_try_acquire(_LOCK_T lock)
 	BaseType_t ret;
 	BaseType_t task_woken = pdFALSE;
 
-	if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
-		return 0;
-	}
-
 	if (!lock) {
+		if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
+			return 0;
+		}
 		__retarget_lock_init(&lock);
+		rtk_assert(lock);
 	}
 
 	if (rtos_critical_is_in_interrupt()) {
 		ret = xSemaphoreTakeFromISR(lock, &task_woken);
-		if (ret != pdTRUE) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "%s, lock %p acquire from isr failed!!!\n", __func__, lock);
-			return -1;
+		if (task_woken) {
+			portEND_SWITCHING_ISR(task_woken);
 		}
-		portEND_SWITCHING_ISR(task_woken);
 	} else {
 		ret = xSemaphoreTake((QueueHandle_t)lock, 0);
 		if (ret != pdTRUE) {
@@ -190,16 +197,16 @@ int __retarget_lock_try_acquire_recursive(_LOCK_T lock)
 {
 	BaseType_t ret;
 
-	if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
-		return 0;
+	if (!lock) {
+		if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
+			return 0;
+		}
+		__retarget_lock_init_recursive(&lock);
+		rtk_assert(lock);
 	}
 
 	if (rtos_critical_is_in_interrupt()) {
-		return 0;
-	}
-
-	if (!lock) {
-		__retarget_lock_init_recursive(&lock);
+		rtk_assert(0);
 	}
 
 	ret = xSemaphoreTakeRecursive((QueueHandle_t)lock, 0);
@@ -214,21 +221,15 @@ void __retarget_lock_release(_LOCK_T lock)
 	BaseType_t ret;
 	BaseType_t task_woken = pdFALSE;
 
-	if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
-		return;
-	}
-
 	if (!lock) {
 		return;
 	}
 
 	if (rtos_critical_is_in_interrupt()) {
-		ret = xSemaphoreGiveFromISR(lock, &task_woken);
-		if (ret != pdTRUE) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "%s, lock %p release from isr failed!!!\n", __func__, lock);
-			return;
+		xSemaphoreGiveFromISR(lock, &task_woken);
+		if (task_woken) {
+			portEND_SWITCHING_ISR(task_woken);
 		}
-		portEND_SWITCHING_ISR(task_woken);
 	} else {
 		ret = xSemaphoreGive(lock);
 		if (ret != pdTRUE) {
@@ -240,16 +241,13 @@ void __retarget_lock_release(_LOCK_T lock)
 void __retarget_lock_release_recursive(_LOCK_T lock)
 {
 	BaseType_t ret;
-	if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
+
+	if (!lock) {
 		return;
 	}
 
 	if (rtos_critical_is_in_interrupt()) {
-		return;
-	}
-
-	if (!lock) {
-		return;
+		rtk_assert(0);
 	}
 
 	ret = xSemaphoreGiveRecursive((QueueHandle_t)lock);

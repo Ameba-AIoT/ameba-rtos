@@ -6,7 +6,9 @@ This example describes how to implement high/low level trigger on a gpio pin by 
 
 Connect wires:
 
-- Connect `GPIO_IRQ_LEVEL_PIN` to `GPIO_SIGNAL_SOURCE` defined in `gpio_ext.h`
+- Connect `GPIO_IRQ_LEVEL_PIN` to `GPIO_SIGNAL_SOURCE` (as defined in the header file of the current example)
+  - The relevant header file can be found in the directory:
+    `component/example/peripheral/{mebd|raw}/{peripheral_name}/{example_folder_name}/`
 
 For example:
 

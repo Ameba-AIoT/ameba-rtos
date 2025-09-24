@@ -942,7 +942,7 @@ struct rtw_promisc_para {
 */
 struct rtw_edca_param {
 	u8	aci;  /**< AC_BE[0], AC_BK[1], AC_VI[2], AC_VO[3] */
-	u8	aci_aifsn; /**< Arbitration inter-frame space number,specifies the inter-frame interval (waiting time) before transmission: unit: (*slot_time), + sifs*/
+	u8	aifsn; /**< Arbitration inter-frame space number,specifies the inter-frame interval (waiting time) before transmission: unit: (*slot_time), + sifs*/
 	u8	cw_max; /**< Maximum contention window: unit: *slot_time */
 	u8	cw_min; /**< Minimum contention window: unit: *slot_time */
 	u16	txop_limit;/**< Indicates that a single MSDU or MMPDU in addition to a protection frame exchange can be transmitted at any rate*/

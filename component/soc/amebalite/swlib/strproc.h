@@ -16,14 +16,14 @@ extern _LONG_CALL_ size_t _strlen(const char *s);
 extern _LONG_CALL_ int _strcmp(const char *cs, const char *ct);
 extern _LONG_CALL_ size_t _strlen(const char *s);
 extern _LONG_CALL_ int _stricmp(const char *str1, const char *str2);
-extern _LONG_CALL_ u8 *_strupr(IN  u8  *string);
+extern _LONG_CALL_ u8 *_strupr(u8  *string);
 extern _LONG_CALL_ unsigned long _strtoul(const char *cp, char **endp, int base);
 extern _LONG_CALL_ char *_strncpy(char *dst0, const char *src0, size_t count);
 
 extern  int __wrap_strcmp(const char *cs, const char *ct);
 extern  size_t __wrap_strlen(const char *s);
 extern  int __wrap_stricmp(const char *str1, const char *str2);
-extern  u8 *__wrap_strupr(IN  u8  *string);
+extern  u8 *__wrap_strupr(u8  *string);
 extern  unsigned long __wrap_strtoul(const char *cp, char **endp, int base);
 
 extern _LONG_CALL_ u8 _char2num(u8 ch);

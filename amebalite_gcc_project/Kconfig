@@ -89,18 +89,6 @@ menu "CONFIG Link Option"
         bool
 endmenu
 
-menu "CONFIG Mass Production"
-    config MP_INCLUDED
-        bool "Enable MP"
-    if MP_INCLUDED
-        choice
-            prompt "MP Mode"
-            default MP_EXPAND
-            config MP_EXPAND
-                bool "expand"
-        endchoice
-    endif
-endmenu
 
 rsource "../component/at_cmd/Kconfig"
 
@@ -119,9 +107,9 @@ endmenu
 
 menu "CONFIG APPLICATION"
 
-    rsource "../component/ui/Kconfig"
+    orsource "../component/ui/Kconfig"
 
-    rsource "../component/audio/Kconfig"
+    orsource "../component/audio/Kconfig"
 
     rsource "../component/utils/ipc/Kconfig"
 
@@ -133,6 +121,10 @@ menu "CONFIG APPLICATION"
     endmenu
 
     orsource "${RTK_APP_DIR}/Kconfig"
+
+    orsource "../component/application/matter/project/cmake/Kconfig"
+
+    rsource "../component/soc/common/diagnose/Kconfig"
 
 endmenu
 

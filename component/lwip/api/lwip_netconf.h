@@ -18,6 +18,7 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "lwipconf.h"
 
+extern struct netif xnetif[];
 #if LWIP_IPV6
 #define LwIP_DUMP_IPV6_ADDRESS(addr) do { \
 	uint8_t *ipv6 = (uint8_t *)addr; \
@@ -92,10 +93,6 @@ struct static_ip_config {
 	uint32_t gw;
 };
 
-/* Extern functions ------------------------------------------------------------*/
-#ifndef CONFIG_WHC_HOST
-void rtw_wakelock_timeout(uint32_t timeoutms);
-#endif
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/

@@ -21,7 +21,7 @@
 
 /* define it in mbedtls_config_xxx.h */
 #if defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT) || defined(MBEDTLS_ECDH_COMPUTE_SHARED_ALT) || \
-	defined(MBEDTLS_ECDSA_VERIFY_ALT) || defined(MBEDTLS_ECDSA_SIGN_ALT) || defined(MBEDTLS_ECDSA_GENKEY_ALT)
+     defined(MBEDTLS_ECDSA_VERIFY_ALT) || defined(MBEDTLS_ECDSA_SIGN_ALT) || defined(MBEDTLS_ECDSA_GENKEY_ALT)
 
 ecdsa_ecp_group_id get_curve_id_from_mbedtls(mbedtls_ecp_group *grp)
 {
@@ -135,15 +135,15 @@ cleanup:
 #endif
 
 #if defined(MBEDTLS_ECDSA_GENKEY_ALT)
-int mbedtls_ecdsa_genkey(mbedtls_ecdsa_context *ctx, 
-                        mbedtls_ecp_group_id gid,
-                        int (*f_rng)(void *, unsigned char *, size_t),
-                        void *p_rng)
+int mbedtls_ecdsa_genkey(mbedtls_ecdsa_context *ctx,
+                         mbedtls_ecp_group_id gid,
+                         int (*f_rng)(void *, unsigned char *, size_t),
+                         void *p_rng)
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     ECDSA_TypeDef *ECDSA = (ECDSA_TypeDef *)ECDSA_REG_BASE;
     size_t key_len;
-    
+
     uint8_t d_buf[32] = {0};
     uint8_t Q_x[32] = {0};
     uint8_t Q_y[32] = {0};
@@ -153,16 +153,16 @@ int mbedtls_ecdsa_genkey(mbedtls_ecdsa_context *ctx,
     }
 
     MBEDTLS_MPI_CHK(mbedtls_ecp_group_load(&ctx->grp, gid));
-    
+
     key_len = (ctx->grp.pbits + 7) / 8;
 
     MBEDTLS_MPI_CHK(mbedtls_ecp_gen_privkey(&ctx->grp, &ctx->d, f_rng, p_rng));
-    
+
     MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&ctx->d, d_buf, key_len));
     reverse_bytes(d_buf, key_len);
-    
+
     const int curve_id = get_curve_id_from_mbedtls(&ctx->grp);
-    
+
     if ((ret = ECDSA_KeyGen(ECDSA, curve_id, d_buf, Q_x, Q_y, 0)) != 0) {
         printf("ECDSA_KeyGen failed: 0x%X\n", ret);
         goto cleanup;
@@ -210,13 +210,13 @@ int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_
 
     ret = ECDSA_KeyGen(ECDSA, get_curve_id_from_mbedtls(grp), d_buf, Q_x, Q_y, otpkey);
     if (ret != 0) {
-        printf("ECDSA_KeyGen failed: %d\n", ret);
+        mbedtls_printf("ECDSA_KeyGen failed: %d\n", ret);
         goto cleanup;
     }
 
     MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary_le(&Q->X, Q_x, key_len));
     MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary_le(&Q->Y, Q_y,  key_len));
-    MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&Q->Z, 1)); 
+    MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&Q->Z, 1));
 
 cleanup:
     return ret;
@@ -230,7 +230,7 @@ int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z,
                                 void *p_rng)
 {
     UNUSED(f_rng);
-	UNUSED(p_rng);
+    UNUSED(p_rng);
 
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     u32 otpkey = 0;
@@ -244,11 +244,11 @@ int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z,
 
     if (grp == NULL || z == NULL || Q == NULL || d == NULL) {
         ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-		printf("MBEDTLS_ERR_ECP_BAD_INPUT_DATA\n");
+        mbedtls_printf("MBEDTLS_ERR_ECP_BAD_INPUT_DATA\n");
         goto cleanup;
     }
 
-	size_t priv_len =(grp->pbits + 7) / 8;;
+    size_t priv_len =(grp->pbits + 7) / 8;;
 
     MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&Q->X, Q_x, priv_len));
     MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&Q->Y, Q_y, priv_len));
@@ -260,7 +260,7 @@ int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z,
 
     ret = ECDSA_ECDH_Compute_Shared(ECDSA, get_curve_id_from_mbedtls(grp), Z, Z+priv_len, Q_x, Q_y, d_buf, otpkey);
     if (ret != 0) {
-        printf("ECDSA_ECDH_Compute_Shared failed: %d\n", ret);
+        mbedtls_printf("ECDSA_ECDH_Compute_Shared failed: %d\n", ret);
         goto cleanup;
     }
 

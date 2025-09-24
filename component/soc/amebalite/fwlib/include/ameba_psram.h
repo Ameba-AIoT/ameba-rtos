@@ -429,11 +429,6 @@ _LONG_CALL_ void set_psram_resume(void);
 #define Psram_WB_TRWR200		35
 #define Psram_WB_TRWR250		35
 
-
-#define PSRAM_TYPE_APM			0
-#define PSRAM_TYPE_WB				1
-#define PSRAM_TYPE_NONE			0xFF
-
 #define Psram_Tcem_T25	4000	//unit ns, (tcem*32)*busclk.
 #define Psram_Tcem_T85	1000	//unit us, (tcem*32)*busclk.
 

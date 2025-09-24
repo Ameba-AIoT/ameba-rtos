@@ -846,24 +846,57 @@ int whc_fullmac_host_stop_nan(void)
 int whc_fullmac_host_add_nan_func(struct rtw_nan_func_t *func, void *nan_func_pointer)
 {
 	int ret = 0;
+	size_t size = 0;
+	size_t offset = 0;
 	u32 param_buf[4];
 	u64 func_pointer_addr = (u64)(uintptr_t)nan_func_pointer;
-	dma_addr_t dma_addr_func = 0;
-	struct device *pdev = global_idev.ipc_dev;
+	struct rtw_nan_func_t *nan_param = NULL;
+	u8 *buf_vir = NULL;
+	dma_addr_t buf_phy = 0;
 
-	dma_addr_func = dma_map_single(pdev, func, sizeof(struct rtw_nan_func_t), DMA_TO_DEVICE);
-	if (dma_mapping_error(pdev, dma_addr_func)) {
+	size = sizeof(struct rtw_nan_func_t) + func->serv_spec_info_len + func->srf_bf_len +
+		   (func->srf_num_macs * sizeof(struct rtw_mac)) +
+		   (func->num_rx_filters * sizeof(struct rtw_nan_func_filter)) +
+		   (func->num_tx_filters * sizeof(struct rtw_nan_func_filter));
+
+	buf_vir = rtw_malloc(size, &buf_phy);
+	if (!buf_vir) {
 		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
 		return -1;
 	}
+	memcpy(buf_vir, func, size);
+	nan_param = (struct rtw_nan_func_t *)buf_vir;
+	offset += sizeof(struct rtw_nan_func_t);
+	if (func->serv_spec_info_len) {
+		func->serv_spec_info = (unsigned char *)(buf_phy + offset);
+		offset += func->serv_spec_info_len;
+	}
+	if (func->srf_bf_len) {
+		func->srf_bf = (unsigned char *)(buf_phy + offset);
+		offset += func->srf_bf_len;
+	}
+	if (func->srf_macs) {
+		nan_param->srf_macs = (struct rtw_mac *)(buf_phy + offset);
+		offset += func->srf_num_macs * sizeof(struct rtw_mac);
+	}
+	if (func->rx_filters) {
+		nan_param->rx_filters = (struct rtw_nan_func_filter *)(buf_phy + offset);
+		offset += func->num_rx_filters * sizeof(struct rtw_nan_func_filter);
+	}
+	if (func->tx_filters) {
+		nan_param->tx_filters = (struct rtw_nan_func_filter *)(buf_phy + offset);
+		offset += func->num_tx_filters * sizeof(struct rtw_nan_func_filter);
+	}
 
-	param_buf[0] = (u32)dma_addr_func;
+	param_buf[0] = (u32)buf_phy;
 	param_buf[1] = (u32)(func_pointer_addr & 0xFFFFFFFF);
 	param_buf[2] = (u32)((func_pointer_addr >> 32) & 0xFFFFFFFF);
-	param_buf[3] = (u32)sizeof(struct rtw_nan_func_t);
+	param_buf[3] = (u32)size;
 
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_NAN_ADD_FUNC, param_buf, 4);
-	dma_unmap_single(pdev, dma_addr_func, sizeof(struct rtw_nan_func_t), DMA_TO_DEVICE);
+	if (buf_vir) {
+		rtw_mfree(size, buf_vir, buf_phy);
+	}
 	return ret;
 }
 
@@ -883,21 +916,23 @@ int whc_fullmac_host_nan_cfgvendor_cmd(u16 vendor_cmd, const void *data, int len
 {
 	int ret = 0;
 	u32 param_buf[3];
+	void *data_vir = NULL;
 	dma_addr_t dma_data = 0;
 	struct device *pdev = global_idev.ipc_dev;
 
-	dma_data = dma_map_single(pdev, data, len, DMA_TO_DEVICE);
-	if (dma_mapping_error(pdev, dma_data)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		return -1;
+	data_vir = rtw_malloc(len, &dma_data);
+	if (data_vir == NULL) {
+		dev_err(global_idev.fullmac_dev, "%s: malloc error!\n", __func__);
+		return -ENOMEM;
 	}
+	memcpy(data_vir, data, len);
 
 	param_buf[0] = (u32)vendor_cmd;
 	param_buf[1] = (u32)dma_data;
 	param_buf[2] = (u32)len;
 
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_NAN_CFGVENFOR, param_buf, 3);
-	dma_unmap_single(pdev, dma_data, len, DMA_TO_DEVICE);
+	rtw_mfree(len, data_vir, dma_data);
 	return ret;
 }
 #endif
@@ -934,6 +969,33 @@ void whc_fullmac_host_sme_auth(dma_addr_t auth_data_phy)
 	param_buf[0] = auth_data_phy;
 	whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SME_AUTH, param_buf, 1);
 }
+
+int whc_fullmac_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len, u8 wpa_rsn_exist)
+{
+	u8 *buf_vir = NULL;
+	dma_addr_t buf_phy = 0;
+	u32 param_buf[3];
+	int ret = 0;
+
+	buf_vir = rtw_malloc(ie_len, &buf_phy);
+	if (!buf_vir) {
+		dev_err(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		return -ENOMEM;
+	}
+
+	memcpy(buf_vir, ie, ie_len);
+
+	param_buf[0] = (u32)buf_phy;
+	param_buf[1] = (u32)ie_len;
+	param_buf[2] = (u32)wpa_rsn_exist;
+
+	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SME_SET_ASSOCREQ_IE, param_buf, 3);
+
+	rtw_mfree(ie_len, buf_vir, buf_phy);
+
+	return ret;
+}
+
 #endif
 
 int whc_fullmac_host_set_pmf_mode(u8 pmf_mode)
@@ -1104,32 +1166,6 @@ int whc_fullmac_host_update_custom_ie(u8 *ie, int ie_index, u8 type)
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_CUS_IE, param_buf, 4);
 
 	rtw_mfree(size, buf_vir, buf_phy);
-
-	return ret;
-}
-
-int whc_fullmac_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len, u8 wpa_rsn_exist)
-{
-	u8 *buf_vir = NULL;
-	dma_addr_t buf_phy = 0;
-	u32 param_buf[3];
-	int ret = 0;
-
-	buf_vir = rtw_malloc(ie_len, &buf_phy);
-	if (!buf_vir) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
-		return -ENOMEM;
-	}
-
-	memcpy(buf_vir, ie, ie_len);
-
-	param_buf[0] = (u32)buf_phy;
-	param_buf[1] = (u32)ie_len;
-	param_buf[2] = (u32)wpa_rsn_exist;
-
-	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SME_SET_ASSOCREQ_IE, param_buf, 3);
-
-	rtw_mfree(ie_len, buf_vir, buf_phy);
 
 	return ret;
 }

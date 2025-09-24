@@ -18,6 +18,7 @@ extern "C"
 
 #define RTK_BT_AUDIO_SYNC_MAX_GAP_NS 2500000
 #define RTK_BT_AUDIO_SYNC_PPM_STEMP 1.03481
+#define audio_delta(a, b) ((a > b) ? (a - b) : (b - a))
 
 /**
  * @typedef   bt_audio_pres_act_t
@@ -38,7 +39,7 @@ typedef enum {
  *            - 0  : do presentation
  *            - 1: no need to do presentation
  */
-uint16_t rtk_bt_audio_handle_xrun(rtk_bt_audio_track_t *track, uint8_t *data, uint16_t size);
+uint16_t rtk_bt_audio_handle_xrun(rtk_bt_audio_track_t *track, uint8_t *data, uint32_t size);
 
 /**
  * @brief     do audio presentation compenstaion check.
@@ -50,7 +51,7 @@ uint16_t rtk_bt_audio_handle_xrun(rtk_bt_audio_track_t *track, uint8_t *data, ui
  *            - 0  : do presentation
  *            - 1: no need to do presentation
  */
-uint16_t rtk_bt_audio_presentation_compensation(rtk_bt_audio_track_t *track, uint32_t ts_us, uint8_t **ppdata, uint32_t *pdata_size);
+uint16_t rtk_bt_audio_presentation_compensation(rtk_bt_audio_track_t *track, uint8_t packet_index, uint32_t ts_us, uint8_t **ppdata, uint32_t *pdata_size);
 
 /**
  * @}

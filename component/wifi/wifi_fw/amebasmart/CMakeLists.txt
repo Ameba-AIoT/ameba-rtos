@@ -1,6 +1,10 @@
 set(DIR ${WIFIFWDIR}/amebasmart/ram)
 
-set(TARGET_LIB wifi_fw)
+if(CONFIG_MP_INCLUDED AND CONFIG_MP_EXPAND)
+    set(TARGET_LIB wifi_fw_mp)
+else()
+    set(TARGET_LIB wifi_fw)
+endif()
 
 if(CONFIG_WIFI_FW_EN)
     set(
@@ -51,7 +55,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 if("${c_MCU_PROJECT_NAME}" STREQUAL "lp")
     #WARNING: for lp, lib_wifi_fw.a is required even CONFIG_WLAN is unset
     ameba_list_append_if(CONFIG_WIFI_FW_EN public_libraries
-        ${c_SDK_LIB_APPLICATION_DIR}/lib_wifi_fw.a
+        ${c_SDK_LIB_APPLICATION_DIR}/lib_${TARGET_LIB}.a
     )
 endif()
 

@@ -99,7 +99,7 @@ uint32_t checksum_32_spi(uint32_t start_value, uint8_t *data, int len)
 	return checksum32;
 }
 
-void at_spi_master_to_slave_irq_handler(uint32_t id, gpio_irq_event event)
+void at_spi_master_to_slave_irq_handler(uint32_t id, uint32_t event)
 {
 	(void)id;
 	(void)event;

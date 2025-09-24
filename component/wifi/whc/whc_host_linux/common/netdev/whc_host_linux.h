@@ -20,7 +20,7 @@
 
 #ifdef CONFIG_NAN
 #define CONFIG_NAN_PAIRING
-#define NAN_CUSTOMER_NANDOW
+// #define NAN_CUSTOMER_NANDOW
 #endif
 
 /******************************************************************/
@@ -119,12 +119,11 @@
 #include "WFPAL.h"
 #endif
 
-#if !defined(CONFIG_WHC_BRIDGE) && !defined(CONFIG_FULLMAC_HCI_IPC)
+#if !defined(CONFIG_FULLMAC_HCI_IPC)
 #include "whc_fullmac_host_ioctl.h"
 #include "whc_fullmac_host_cust_evt.h"
 #endif
 
-#ifndef CONFIG_WHC_BRIDGE
 #include "whc_fullmac_host_regd.h"
 #ifdef CONFIG_IEEE80211R
 #include "whc_fullmac_host_ft.h"
@@ -133,7 +132,6 @@
 #include "whc_fullmac_host_proc.h"
 #include "whc_fullmac_host_acs.h"
 #include "whc_fullmac_host_promisc.h"
-#endif
 
 #include "whc_host_event.h"
 #include "whc_host_drv_probe.h"
@@ -151,11 +149,8 @@
 #define FUNC_NDEV_FMT			"%s(%s)"
 #define FUNC_NDEV_ARG(ndev)		__func__, ndev->name
 #define WHC_HOST_NAME "whc_fullmac"
-#if defined(CONFIG_WHC_BRIDGE)
-#define WHC_HOST_PORT_NAME "eth_sta%d"
-#else
+
 #define WHC_HOST_PORT_NAME "wlan%d"
-#endif
 
 #ifdef CONFIG_FULLMAC_HCI_SDIO
 #define CONFIG_WOWLAN

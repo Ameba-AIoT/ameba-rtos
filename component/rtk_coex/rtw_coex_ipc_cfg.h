@@ -128,7 +128,15 @@
 #endif
 #endif
 
+#elif defined(CONFIG_AMEBAD)
+// add for compile, no actual use
+#define COEX_IPC_DIR_MSG_RX 0
+#define COEX_IPC_DIR_MSG_TX 0
+#define IPC_H2D_COEX_API_TRAN	0
+#define IPC_D2H_COEX_API_TRAN	0
 
+#else
+#error "Please Add Proper Platform Setting!!!"
 #endif
 
 /* -------------------------------- Macros ---------------------------------- */

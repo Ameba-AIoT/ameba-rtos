@@ -48,6 +48,9 @@ extern void wifi_cast_wifi_join_status_ev_hdl(u8 *evt_info);
 #endif
 extern struct rtw_event_hdl_func_t event_external_hdl[];
 extern u16 array_len_of_event_external_hdl;
+#ifdef CONFIG_WIFI_TUNNEL
+extern void wtn_zrpp_get_ap_info_evt_hdl(u8 *evt_info);
+#endif
 
 /**********************************************************************************************
  *                                          External events
@@ -81,10 +84,11 @@ void wifi_event_join_status_internal_hdl(u8 *evt_info)
 	struct rtw_event_join_status_info *join_status_info = (struct rtw_event_join_status_info *)evt_info;
 	u8 join_status = join_status_info->status;
 	struct rtw_event_join_fail *join_fail;
+#if defined(CONFIG_WHC_INTF_IPC)
 	struct rtw_event_disconnect *disconnect;
 	struct diag_evt_wifi_disconn diag_disconn;
 	struct diag_evt_wifi_join_fail diag_join_fail;
-
+#endif
 	rtw_join_status = join_status;
 
 	/* step 1: internal process for different status*/
@@ -118,16 +122,20 @@ void wifi_event_join_status_internal_hdl(u8 *evt_info)
 			join_fail_reason = join_fail->fail_reason;
 			rtos_sema_give(join_block_param->sema);
 		}
+#if defined(CONFIG_WHC_INTF_IPC)
 		diag_join_fail.reason = -join_fail->fail_reason;
 		diag_join_fail.reason_code = join_fail->reason_or_status_code;
 		rtk_diag_event_add(RTK_EVENT_LEVEL_INFO, DIAG_EVT_WIFI_JOIN_FAIL, (u8 *)&diag_join_fail, sizeof(struct diag_evt_wifi_join_fail));
+#endif
 		at_printf_indicate("wifi connect failed\r\n");
 	}
 
 	if (join_status == RTW_JOINSTATUS_DISCONNECT) {
+#if defined(CONFIG_WHC_INTF_IPC)
 		disconnect = &join_status_info->priv.disconnect;
 		diag_disconn.reason = disconnect->disconn_reason;
 		rtk_diag_event_add(RTK_EVENT_LEVEL_INFO, DIAG_EVT_WIFI_DISCONN, (u8 *)&diag_disconn, sizeof(struct diag_evt_wifi_disconn));
+#endif
 		at_printf_indicate("wifi disconnected\r\n");
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 		LwIP_DHCP_stop(0);
@@ -279,6 +287,9 @@ const struct rtw_event_hdl_func_t event_internal_hdl[] = {
 	{RTW_EVENT_WPA_P2P_CHANNEL_RDY,	rtw_p2p_channel_switch_ready},
 #endif
 	{RTW_EVENT_DEAUTH_INFO_FLASH,	rtw_psk_deauth_info_flash_event_hdl},
+#ifdef CONFIG_WIFI_TUNNEL
+	{RTW_EVENT_WTN_ZRPP_GET_AP_INFO, wtn_zrpp_get_ap_info_evt_hdl},
+#endif
 };
 
 void wifi_event_handle_internal(u32 event_cmd, u8 *evt_info)

@@ -143,13 +143,13 @@ static u8 ota_status_validate(struct example_ota_status *status)
 	/* 2. Exceed layout is invalid */
 	if ((end_addr - target_image_addr) < status->total_size) {
 		RTK_LOGI(TAG, "OTA%d start addr: 0x%08X, end addr: 0x%08X, OTA image Length(%d) > Layout(%d)!!!\n",
-					target_idx + 1, (unsigned int)target_image_addr, (unsigned int)end_addr, status->total_size,
-					(end_addr - target_image_addr));
+				 target_idx + 1, (unsigned int)target_image_addr, (unsigned int)end_addr, status->total_size,
+				 (end_addr - target_image_addr));
 		return 0;
 	}
 	if (status->image_addr != target_image_addr) {
 		RTK_LOGI(TAG, "%s, ota status, image_id: %d, recv_image_addr: 0x%x, target_image_addr: 0x%x\n",
-			 __func__, status->image_id, status->image_addr, target_image_addr);
+				 __func__, status->image_id, status->image_addr, target_image_addr);
 		status->image_addr = target_image_addr;
 	}
 	return 1;
@@ -174,7 +174,7 @@ static void example_ota_status_request_cb(u8 *src_mac, u8 *data)
 		}
 	}
 
-	/* If OTA is ongoing but checksum is not the same, means 
+	/* If OTA is ongoing but checksum is not the same, means
 		upgrade bin is not the name bin, should reset the status, otherwise just goto response */
 	if (g_ota_status->status == WIFI_CAST_OTA_ONGOING) {
 		if (g_ota_status->checksum != recv_status->checksum) {
@@ -453,7 +453,7 @@ static void	example_ota_request_status(u8(*progress_array)[WIFI_CAST_OTA_PROGRES
 						memset(progress_array, 0x0, status->packet_num / 8 + 1);
 					} else {
 						for (int i = 0; i < WIFI_CAST_OTA_PROGRESS_MAX
-							&& (recv_status->progress_index * WIFI_CAST_OTA_PROGRESS_MAX  + i) * 8 < status->packet_num; i++) {
+							 && (recv_status->progress_index * WIFI_CAST_OTA_PROGRESS_MAX  + i) * 8 < status->packet_num; i++) {
 							progress_array[recv_status->progress_index][i] &= recv_status->progress_array[0][i];
 						}
 					}
@@ -502,10 +502,10 @@ static void example_image_send(struct example_ota_status *status, struct example
 
 	if (result->successed_num == 0) {
 		RTK_LOGI(TAG, "%s, devices upgrade failed, unfinished_num: %d, spend time: %d ms\n",
-				__func__, result->unfinished_num, rtos_time_get_current_system_time_ms() - start_tick);
+				 __func__, result->unfinished_num, rtos_time_get_current_system_time_ms() - start_tick);
 	} else {
 		RTK_LOGI(TAG, "%s, devices upgrade completed, unfinished_num: %d, successed_num: %d, spend time: %d ms\n",
-				__func__, result->unfinished_num, result->successed_num, rtos_time_get_current_system_time_ms() - start_tick);
+				 __func__, result->unfinished_num, result->successed_num, rtos_time_get_current_system_time_ms() - start_tick);
 	}
 	rtos_mem_free(progress_array);
 	rtos_mem_free(data);
@@ -602,8 +602,8 @@ void WifiCastTestApp(u8  *argv[])
 
 u32
 CmdWifiCastTest(
-	IN u16 argc,
-	IN u8  *argv[]
+	u16 argc,
+	u8  *argv[]
 )
 {
 	if (argc > 0) {

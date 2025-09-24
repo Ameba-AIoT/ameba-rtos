@@ -632,6 +632,15 @@ void data_flash_highspeed_setup(void)
 	u8 read_mode, flash_speed;
 	u32 spic_ckd, pll_clk = PLL_ClkGet();
 
+#if !defined(CONFIG_SECOND_FLASH_NOR)
+	UNUSED(FLASH_InitStruct);
+	UNUSED(read_mode);
+	UNUSED(flash_speed);
+	UNUSED(spic_ckd);
+	UNUSED(pll_clk);
+	return;
+#endif
+
 	DATA_FLASH_StructInit(FLASH_InitStruct);
 	FLASH_InitStruct->FLASH_baud_rate = 1;
 	FLASH_InitStruct->FLASH_baud_boot = 1;

@@ -1,6 +1,10 @@
 set(DIR ${WIFIFWDIR}/amebagreen2/ram)
 
-set(TARGET_LIB wifi_fw)
+if(CONFIG_MP_INCLUDED AND CONFIG_MP_EXPAND)
+    set(TARGET_LIB wifi_fw_mp)
+else()
+    set(TARGET_LIB wifi_fw)
+endif()
 
 set(
     CSRC
@@ -52,7 +56,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # You may use if-else condition to set or update predefined variable above
 
 ameba_list_append(public_libraries
-    ${c_SDK_LIB_APP_DIR}/lib_wifi_fw.a
+    ${c_SDK_LIB_APP_DIR}/lib_${TARGET_LIB}.a
 )
 
 # Component public part, user config end
@@ -89,7 +93,7 @@ ameba_list_append(private_sources ${CSRC})
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
-ameba_add_external_app_library(wifi_fw
+ameba_add_external_app_library(${TARGET_LIB}
     p_SOURCES
         ${private_sources}
     p_INCLUDES

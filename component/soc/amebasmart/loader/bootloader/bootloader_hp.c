@@ -274,7 +274,7 @@ void BOOT_PSRAM_Init(void)
 
 	PSRAM_CTRL_Init();
 
-	if (ChipInfo_MemoryVendor() == Vendor_PSRAM_A) {
+	if (PsramInfo.Psram_Vendor == MCM_PSRAM_VENDOR_APM) {
 		//RTK_LOGD(TAG, "Init APM\r\n");
 		PSRAM_APM_DEVIC_Init();
 	} else {
@@ -479,6 +479,7 @@ void BOOT_SOC_ClkSet(void)
 {
 	u32 temp;
 	u32 PsramDiv, HBusDiv, HPeriDiV;
+	MCM_MemTypeDef meminfo = ChipInfo_MCMInfo();
 
 	u32 APCLK = BOOT_AP_Clk_Get();
 	u32 NPCLK = SocClk_Info->NPPLL_CLK / SocClk_Info->KM4_CPU_CKD;
@@ -500,7 +501,7 @@ void BOOT_SOC_ClkSet(void)
 		RRAM->VOL_TYPE = VOL_10;
 		assert_param(NPCLK <= KM4_1P0V_CLK_LIMIT);
 		if (Boot_AP_Enbale == ENABLE) {
-			if (ChipInfo_MemoryType() == Memory_Type_PSRAM) {
+			if ((meminfo.mem_type & MCM_TYPE_PSRAM) == MCM_TYPE_PSRAM) {
 				assert_param(APCLK <= AP_1P0V_CLK_LIMIT_PSRAM);
 			} else {
 				assert_param(APCLK <= AP_1P0V_CLK_LIMIT_DDR);
@@ -662,7 +663,8 @@ void BOOT_WakeFromPG(void)
 	/* Initial TRNG*/
 	TRNG_Init();
 
-	if (ChipInfo_MemoryType() == Memory_Type_DDR) {
+	MCM_MemTypeDef meminfo = ChipInfo_MCMInfo();
+	if (meminfo.mem_type & MCM_TYPE_DDR) {
 		RTK_LOGI(TAG, "ReInit DDR\r\n");
 
 		RCC_PeriphClockCmd(APBPeriph_DDRP, APBPeriph_DDRP_CLOCK, ENABLE);
@@ -780,6 +782,16 @@ void BOOT_Log_Init(void)
 	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_2, ENABLE);
 }
 
+/* To avoid RRAM holding incorrect data, incorporate a MAGIC_NUMBER for verification. */
+static bool BOOT_RRAM_InfoValid(void)
+{
+	if (RRAM->MAGIC_NUMBER != 0x6969A5A5) {
+		return FALSE;
+	} else {
+		return TRUE;
+	}
+}
+
 //3 Image 1
 BOOT_RAM_TEXT_SECTION
 void BOOT_Image1(void)
@@ -794,8 +806,9 @@ void BOOT_Image1(void)
 
 	BOOT_ReasonSet();
 
-	if (BOOT_Reason() == 0) {
+	if ((BOOT_Reason() == 0) || (!BOOT_RRAM_InfoValid())) {
 		_memset(RRAM, 0, sizeof(RRAM_TypeDef));
+		RRAM->MAGIC_NUMBER = 0x6969A5A5;
 	}
 
 
@@ -825,11 +838,13 @@ void BOOT_Image1(void)
 	BOOT_GRstConfig();
 
 	/* need about 100-300us, need sync */
-	if (ChipInfo_MemoryType() == Memory_Type_PSRAM) {
+	MCM_MemTypeDef meminfo = ChipInfo_MCMInfo();
+	RTK_LOGI(TAG, "meminfo.mem_type=0x%x\n", meminfo.mem_type);
+	if ((meminfo.mem_type & MCM_TYPE_PSRAM) == MCM_TYPE_PSRAM) {
 		/* off ddrphy BG for psram chip, open by USB AND MIPI when need */
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_AIP_CTRL1, HAL_READ32(SYSTEM_CTRL_BASE_LP,
 					REG_LSYS_AIP_CTRL1) & (~(LSYS_BIT_BG_PWR | LSYS_BIT_BG_ON_MIPI | LSYS_BIT_BG_ON_USB2)));
-		rram->MEM_TYPE = Memory_Type_PSRAM;
+		rram->MEM_TYPE = MCM_TYPE_PSRAM;
 		RCC_PeriphClockCmd(APBPeriph_PSRAM, APBPeriph_PSRAM_CLOCK, ENABLE);
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098, (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098) | LSYS_BIT_PWDPAD15N_DQ));
 
@@ -837,7 +852,7 @@ void BOOT_Image1(void)
 		/* off USB AND MIPI by default, open in IP */
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_AIP_CTRL1, HAL_READ32(SYSTEM_CTRL_BASE_LP,
 					REG_LSYS_AIP_CTRL1) & (~(LSYS_BIT_BG_ON_MIPI | LSYS_BIT_BG_ON_USB2)));
-		rram->MEM_TYPE = Memory_Type_DDR;
+		rram->MEM_TYPE = MCM_TYPE_DDR;
 		RCC_PeriphClockCmd(APBPeriph_DDRP, APBPeriph_DDRP_CLOCK, ENABLE);
 		RCC_PeriphClockCmd(APBPeriph_DDRC, APBPeriph_DDRC_CLOCK, ENABLE);
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098, (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098)  | LSYS_BIT_PWDPAD15N_DQ | LSYS_BIT_PWDPAD15N_CA));
@@ -871,8 +886,9 @@ void BOOT_Image1(void)
 	RRAM->IMQ_INIT_DONE = 0;
 
 	flash_highspeed_setup();
+	RTK_LOGI(TAG, "(meminfo.mem_type==0x%x\n", meminfo.mem_type);
 
-	if (ChipInfo_MemoryType() == Memory_Type_PSRAM) {
+	if ((meminfo.mem_type & MCM_TYPE_PSRAM) == MCM_TYPE_PSRAM) {
 		RTK_LOGI(TAG, "Init PSRAM\r\n");
 		PSRAM_INFO_Update(); //only when boot
 		BOOT_PSRAM_Init();
@@ -889,7 +905,7 @@ void BOOT_Image1(void)
 				DelayMs(5000);
 			}
 		}
-		if (ChipInfo_DDRType() == DDR_Type_DDR2) {
+		if (ChipInfo_DDRType() == MCM_DDR2) {
 			RTK_LOGI(TAG, "Init DDR2\r\n");
 		} else {
 			RTK_LOGI(TAG, "Init DDR3\r\n");

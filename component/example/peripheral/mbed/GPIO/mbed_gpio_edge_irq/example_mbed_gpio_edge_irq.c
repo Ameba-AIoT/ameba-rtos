@@ -18,7 +18,7 @@
 gpio_irq_t gpio_edge;
 int current_edge = IRQ_FALL;
 
-void gpio_edge_irq_handler(uint32_t id, gpio_irq_event event)
+void gpio_edge_irq_handler(uint32_t id, uint32_t event)
 {
 	(void)event;
 	gpio_irq_event *edge = (gpio_irq_event *) id;

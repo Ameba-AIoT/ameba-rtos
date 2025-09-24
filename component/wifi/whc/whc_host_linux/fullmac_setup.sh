@@ -1,7 +1,6 @@
 #!/bin/bash
 
 sed -i 's/CONFIG_FULLMAC_HCI_IPC = y/CONFIG_FULLMAC_HCI_IPC = n/g' Makefile
-sed -i 's/CONFIG_WHC_BRIDGE = y/CONFIG_WHC_BRIDGE = n/g' Makefile
 
 if [ "$1" == "spi" ]; then
 	sed -i 's/CONFIG_FULLMAC_HCI_SDIO = y/CONFIG_FULLMAC_HCI_SDIO = n/g' Makefile
@@ -21,19 +20,11 @@ if [ "$#" -ge 2 ]; then
 	for ((i=2;i<=$#;i++))
 	do
 		eval j=\$$i
-		if [ "$j" == "bridge" ]; then
-			sed -i 's/CONFIG_WHC_BRIDGE = n/CONFIG_WHC_BRIDGE = y/g' Makefile
-		fi
-	done
-fi
-
-if [ "$#" -ge 2 ]; then
-	for ((i=2;i<=$#;i++))
-	do
-		eval j=\$$i
 		if [ "$j" == "nan" ]; then
 			sed -i 's/CONFIG_NAN = n/CONFIG_NAN = y/g' Makefile
 #			cp ../../driver/nan/WFPAL.h ./common/include
+		elif [ "$j" == "p2p" ]; then
+			sed -i 's/CONFIG_P2P = n/CONFIG_P2P = y/g' Makefile
 		elif [ "$j" == "bt" ]; then
 			sed -i 's/CONFIG_BT_INIC = n/CONFIG_BT_INIC = y/g' Makefile
 			if [ "$1" == "spi" ]; then
@@ -154,5 +145,6 @@ cp ../../driver/intf/wifi_intf_drv_to_app_internal.h ./common/include
 cp ../../../soc/usrcfg/common/ameba_wificfg_common.h ./common/include
 cp ../../../soc/amebadplus/fwlib/include/ameba_inic.h ./common/include
 cp ../../../bluetooth/driver/bt_inic/bt_inic_defs.h ./common/include
+cp ../whc_dev/whc_dev_tcpip.h ./common/include
 
 echo "Fullmac setup complete"

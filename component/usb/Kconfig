@@ -84,6 +84,14 @@ menu "CONFIG USB"
         bool
     config USBH_ECM_ETHERNET_BRIDGE
         bool
+    config USB_UAC
+        bool
+    config USBH_COMPOSITE
+        bool
+    config USBH_COMPOSITE_HID_UAC
+        bool
+    config USBH_COMPOSITE_HID_UAC1
+        bool
     config USBH_MSC
         bool
     config USBH_UAC

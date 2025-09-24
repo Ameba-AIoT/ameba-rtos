@@ -1,5 +1,5 @@
-#ifndef __WHC_BRIDGE_HOST_APP_H__
-#define __WHC_BRIDGE_HOST_APP_H__
+#ifndef __WHC_HOST_APP_H__
+#define __WHC_HOST_APP_H__
 /* -------------------------------- Includes -------------------------------- */
 /* external head files */
 #include "rtw_wifi_common.h"
@@ -24,4 +24,4 @@ void whc_host_pkt_rx_to_user(u8 *payload, u32 len);
 /* for rtos host only */
 #define WHC_WIFI_TEST_SET_HOST_RTOS  0xFF
 
-#endif /* __WHC_BRIDGE_HOST_APP_H__ */
+#endif /* __WHC_HOST_APP_H__ */

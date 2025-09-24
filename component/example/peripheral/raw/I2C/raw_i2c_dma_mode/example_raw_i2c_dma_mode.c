@@ -66,7 +66,7 @@ int length = 255;
 
 u32
 I2CTXGDMAISRHandle(
-	IN  void *Data
+	void *Data
 )
 {
 
@@ -128,7 +128,7 @@ I2CTXGDMAISRHandle(
 /*Uesd for data length large than 4095*/
 u32
 I2CRXGDMAISRHandle(
-	IN  void *Data
+	void *Data
 )
 {
 	i2c_dma_t *obj = (i2c_dma_t *)Data;
@@ -176,7 +176,7 @@ I2CRXGDMAISRHandle(
 
 static HAL_Status
 RtkI2CSendDmaMaster(
-	IN  i2c_dma_t *obj
+	i2c_dma_t *obj
 )
 {
 	RTK_LOGI(TAG, "%s\n", __func__);
@@ -204,7 +204,7 @@ RtkI2CSendDmaMaster(
 
 static HAL_Status
 RtkI2CSendDmaSlave(
-	IN i2c_dma_t *obj
+	i2c_dma_t *obj
 )
 {
 	uint32_t i2c_idx = obj->I2Cint.i2c_idx;
@@ -267,7 +267,7 @@ RtkI2CDmaSend(i2c_dma_t *obj, uint16_t devaddr)
 
 static HAL_Status
 RtkI2CReceiveDmaMaster(
-	IN  i2c_dma_t *obj
+	i2c_dma_t *obj
 )
 {
 	uint32_t i2c_idx = obj->I2Cint.i2c_idx;
@@ -297,7 +297,7 @@ RtkI2CReceiveDmaMaster(
 
 HAL_Status
 RtkI2CReceiveDmaSlave(
-	IN i2c_dma_t *obj
+	i2c_dma_t *obj
 )
 {
 	uint32_t i2c_idx = obj->I2Cint.i2c_idx;
@@ -329,7 +329,7 @@ RtkI2CReceiveDmaSlave(
 	return HAL_OK;
 }
 
-HAL_Status RtkI2CDmaReceive(IN i2c_dma_t *obj, uint16_t devaddr)
+HAL_Status RtkI2CDmaReceive(i2c_dma_t *obj, uint16_t devaddr)
 {
 	uint32_t i2c_idx = obj->I2Cint.i2c_idx;
 	I2C_InitTypeDef   *I2C_InitStruct = &I2CInitData[i2c_idx];

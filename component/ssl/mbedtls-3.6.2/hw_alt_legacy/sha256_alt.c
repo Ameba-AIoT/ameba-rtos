@@ -54,6 +54,7 @@ void mbedtls_sha256_clone(mbedtls_sha256_context *dst,
  */
 int mbedtls_sha256_starts(mbedtls_sha256_context *ctx, int is224)
 {
+    mbedtls_sha256_init(ctx);
     u8 SHA_MODE = 0;
     int ret = 0;
 #if defined(MBEDTLS_SHA224_C) && defined(MBEDTLS_SHA256_C)
@@ -107,9 +108,17 @@ int mbedtls_sha256_update(mbedtls_sha256_context *ctx,
 int mbedtls_sha256_finish(mbedtls_sha256_context *ctx,
                           unsigned char *output)
 {
+    if(output == NULL || ctx == NULL) {
+        mbedtls_printf("output == NULL || ctx == NULL\n");
+        return MBEDTLS_ERR_SHA256_BAD_INPUT_DATA;
+    }
     int ret;
+    unsigned char output_buf[32] ALIGNMTO(CACHE_LINE_SIZE);
+
+    u32 output_len = ctx->sha2type==SHA2_224 ? 28 : 32;
     IPC_SEMTake(IPC_SEM_CRYPTO, 0xffffffff);
-    ret = rtl_crypto_sha2_final(output,ctx);
+    ret = rtl_crypto_sha2_final(output_buf,ctx);
+    _memcpy(output, output_buf, output_len);
     IPC_SEMFree(IPC_SEM_CRYPTO);
 
     return ret;

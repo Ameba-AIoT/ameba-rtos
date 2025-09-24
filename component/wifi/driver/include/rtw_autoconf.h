@@ -136,4 +136,9 @@
 #define MAX_NANDOW_PARA_LEN 2600
 #endif
 
+/* When using supplicant SME, 11R is supported by default, instead of reuse the path of RTOS 11R */
+#ifdef CONFIG_SUPPLICANT_SME
+#undef CONFIG_IEEE80211R
+#endif
+
 #endif //WLANCONFIG_H

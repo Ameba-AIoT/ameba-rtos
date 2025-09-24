@@ -31,6 +31,9 @@ Linux)
 
     if [ -n "$RTK_TOOLCHAIN_DIR" ]; then
         RTK_TOOLCHAIN_DIR="$RTK_TOOLCHAIN_DIR"
+        if [[ "${RTK_TOOLCHAIN_DIR:0:1}" == "~" ]]; then
+            RTK_TOOLCHAIN_DIR="$HOME${RTK_TOOLCHAIN_DIR:1}"
+        fi
     else
         RTK_TOOLCHAIN_DIR=/opt/rtk-toolchain
     fi
@@ -42,7 +45,9 @@ Linux)
     DOWNLOAD_URL=$PREBUILTS_LINUX_URL
     DOWNLOAD_URL_ALIYUN=$PREBUILTS_LINUX_URL_ALIYUN
     alias menuconfig.py='python menuconfig.py'
-
+	alias build.py='python build.py'
+	alias flash.py='python flash.py'
+	alias monitor.py='python monitor.py'
     ;;
 *_NT*)
 
@@ -60,12 +65,14 @@ Linux)
     DOWNLOAD_URL_ALIYUN=$PREBUILTS_WIN_URL_ALIYUN
 
     alias menuconfig.py='winpty python menuconfig.py'
-
+	alias build.py='winpty python build.py'
+	alias flash.py='winpty python flash.py'
+	alias monitor.py='winpty python monitor.py'
     ;;
 esac
 
 
-alias build.py='python build.py'
+
 
 function update_prebuilts
 {
@@ -133,31 +140,82 @@ else
 
 fi
 
-if [ -d "$BASE_DIR/.venv" ]; then
-    eval $ACTIVE_CMD
-else
-    echo python virtual environment is not detected, it will be installed automatically...
-	eval $VENV_CMD
-	eval $ACTIVE_CMD
-	pip install -r $BASE_DIR/tools/requirements.txt
-	echo "These python modules are installed:"
-	pip list
+
+EXPECTED_VENV_PATH="$BASE_DIR/.venv"
+if [ -z "$VIRTUAL_ENV" ] || [ "$VIRTUAL_ENV" != "$EXPECTED_VENV_PATH" ]; then
+    if [ -d "$EXPECTED_VENV_PATH" ]; then
+        eval $ACTIVE_CMD
+    else
+        echo "python virtual environment is not detected, it will be installed automatically..."
+        eval $VENV_CMD
+        eval $ACTIVE_CMD
+        pip install -r $BASE_DIR/tools/requirements.txt
+        echo "These python modules are installed:"
+        pip list
+    fi
 fi
 
 python $BASE_DIR/tools/scripts/check_requirements.py
 
 if [ "$(uname)" = "Linux" ]; then
-    chmod -R +x $PREBUILTS_DIR
+    echo "Process all .sh scripts only in specific directories..."
+
+    # Define the base directories to scan for script files.
+    SCAN_DIRS=()
+    # add ./*_gcc_project directories (current directory only)
+    for d in ./*_gcc_project; do
+        [ -d "$d" ] && SCAN_DIRS+=("$d")
+    done
+    # add ./tools directory
+    [ -d "./tools" ] && SCAN_DIRS+=("./tools")
+    # Example: To add a new directory in the future, add as follows:
+    # SCAN_DIRS+=("./new_directory")
+
+    # Define the file patterns to process (expandable), separated by spaces
+    FILE_PATTERNS=("*.sh")
+
+    # Search and set execute permission for script files in specified directories only
+    for base in "${SCAN_DIRS[@]}"; do
+        for pattern in "${FILE_PATTERNS[@]}"; do
+            find "$base" -type f -name "$pattern" -print0
+        done
+    done | while IFS= read -r -d '' file; do
+        if [ ! -x "$file" ]; then
+            chmod +x "$file" 2>/dev/null
+            if [ $? -ne 0 ]; then
+                echo "[WARNING] Failed to add execute permission: $file. Please check permissions or ownership." >&2
+            fi
+        fi
+    done
+
+    # Fix execute permissions for non-extension executables in PREBUILTS_DIR only
+    if [ -d "$PREBUILTS_DIR" ]; then
+        echo "Scanning for executable binary files with no extension in: $PREBUILTS_DIR ..."
+        find "$PREBUILTS_DIR" -type f ! -name "*.*" -print0 | while IFS= read -r -d '' file; do
+            if file "$file" | grep -q 'executable'; then
+                if [ ! -x "$file" ]; then
+                    chmod +x "$file" 2>/dev/null
+                    if [ $? -ne 0 ]; then
+                        echo "[WARNING] Failed to add execute permission to binary: $file. Please check permissions or ownership." >&2
+                    fi
+                fi
+            fi
+        done
+    else
+        echo "[WARNING] PREBUILTS_DIR not found: $PREBUILTS_DIR" >&2
+    fi
 fi
 
 info1="First choose IC platform : cd [IC]_gcc_project"
 info2="Configure command: menuconfig.py"
 info3="Build command: build.py"
+info4="Flash command:  flash.py -p COMx"
+info5="Monitor command:  monitor.py -p COMx"
 
 echo "================================================================================"
-echo
 echo "|  $info1"
 echo "|  $info2"
 echo "|  $info3"
-echo
+echo "|  $info4"
+echo "|  $info5"
 echo "================================================================================"

@@ -338,6 +338,11 @@ void AUDIO_CODEC_SetDACSRSrc(u32 src, u32 sr)
   *			   @arg PAD_MIC3
   *			   @arg PAD_MIC4
   *			   @arg PAD_MIC5
+  *			   @arg PAD_MICBIAS1
+  *			   @arg PAD_MICBIAS2
+  *			   @arg PAD_MICBIAS3
+  *			   @arg PAD_MICBIAS4
+  *			   @arg PAD_MICBIAS5
   * @return  None
   */
 void AUDIO_CODEC_DisPAD(u32 path)
@@ -366,40 +371,65 @@ void AUDIO_CODEC_DisPAD(u32 path)
 
 		Pinmux_Config(_PA_20, PINMUX_FUNCTION_AUDIO);
 		Pinmux_Config(_PA_21, PINMUX_FUNCTION_AUDIO);
-		Pinmux_Config(_PA_30, PINMUX_FUNCTION_AUDIO);
-		Tmp &= ~(BIT(2) | BIT(3) | BIT(12));
+		Tmp &= ~(BIT(2) | BIT(3));
 		break;
 
 	case PAD_MIC2:
 
 		Pinmux_Config(_PA_22, PINMUX_FUNCTION_AUDIO);
 		Pinmux_Config(_PA_23, PINMUX_FUNCTION_AUDIO);
-		Pinmux_Config(_PA_31, PINMUX_FUNCTION_AUDIO);
-		Tmp &= ~(BIT(4) | BIT(5) | BIT(13));
+		Tmp &= ~(BIT(4) | BIT(5));
 		break;
 
 	case PAD_MIC3:
 
 		Pinmux_Config(_PA_24, PINMUX_FUNCTION_AUDIO);
 		Pinmux_Config(_PA_25, PINMUX_FUNCTION_AUDIO);
-		Pinmux_Config(_PB_0, PINMUX_FUNCTION_AUDIO);
-		Tmp &= ~(BIT(6) | BIT(7) | BIT(14));
+		Tmp &= ~(BIT(6) | BIT(7));
 		break;
 
 	case PAD_MIC4:
 
 		Pinmux_Config(_PA_26, PINMUX_FUNCTION_AUDIO);
 		Pinmux_Config(_PA_27, PINMUX_FUNCTION_AUDIO);
-		Pinmux_Config(_PB_1, PINMUX_FUNCTION_AUDIO);
-		Tmp &= ~(BIT(8) | BIT(9) | BIT(15));
+		Tmp &= ~(BIT(8) | BIT(9));
 		break;
 
 	case PAD_MIC5:
 
 		Pinmux_Config(_PA_28, PINMUX_FUNCTION_AUDIO);
 		Pinmux_Config(_PA_29, PINMUX_FUNCTION_AUDIO);
+		Tmp &= ~(BIT(10) | BIT(11));
+		break;
+
+	case PAD_MICBIAS1:
+
+		Pinmux_Config(_PA_30, PINMUX_FUNCTION_AUDIO);
+		Tmp &= ~BIT(12);
+		break;
+
+	case PAD_MICBIAS2:
+
+		Pinmux_Config(_PA_31, PINMUX_FUNCTION_AUDIO);
+		Tmp &= ~BIT(13);
+		break;
+
+	case PAD_MICBIAS3:
+
+		Pinmux_Config(_PB_0, PINMUX_FUNCTION_AUDIO);
+		Tmp &= ~BIT(14);
+		break;
+
+	case PAD_MICBIAS4:
+
+		Pinmux_Config(_PB_1, PINMUX_FUNCTION_AUDIO);
+		Tmp &= ~BIT(15);
+		break;
+
+	case PAD_MICBIAS5:
+
 		Pinmux_Config(_PB_2, PINMUX_FUNCTION_AUDIO);
-		Tmp &= ~(BIT(10) | BIT(11) | BIT(16));
+		Tmp &= ~BIT(16);
 		break;
 	}
 
@@ -497,8 +527,7 @@ void AUDIO_CODEC_SetLDOMode(u32 powermode)
 static u32 AUDIO_CODEC_GetAdFifoEnBitForCh(u32 ad_chn)
 {
 	u32 en_bit = 0;
-	switch (ad_chn)
-	{
+	switch (ad_chn) {
 	case ADCHN1:
 		en_bit = AUD_BIT_AD_0_FIFO_EN;
 		break;
@@ -648,8 +677,7 @@ void AUDIO_CODEC_EnableADCFifo(u32 ad_chn, u32 newstate)
 static u32 AUDIO_CODEC_GetAdEnBitForCh(u32 ad_chn)
 {
 	u32 en_bit = 0;
-	switch (ad_chn)
-	{
+	switch (ad_chn) {
 	case ADCHN1:
 		en_bit = AUD_BIT_AD_0_EN;
 		break;
@@ -3803,6 +3831,8 @@ void AUDIO_CODEC_Record(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct)
 
 			AUDIO_CODEC_DisPAD(PAD_MIC1);
 			AUDIO_CODEC_DisPAD(PAD_MIC2);
+			AUDIO_CODEC_DisPAD(PAD_MICBIAS1);
+			AUDIO_CODEC_DisPAD(PAD_MICBIAS2);
 			AUDIO_CODEC_SetADCMixMute(ADC1, ANAAD, UNMUTE);
 			AUDIO_CODEC_SetADCMixMute(ADC2, ANAAD, UNMUTE);
 			AUDIO_CODEC_SetADCANAFilter(ADC1, ENABLE);
@@ -3825,6 +3855,8 @@ void AUDIO_CODEC_Record(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct)
 
 			AUDIO_CODEC_DisPAD(PAD_MIC3);
 			AUDIO_CODEC_DisPAD(PAD_MIC4);
+			AUDIO_CODEC_DisPAD(PAD_MICBIAS3);
+			AUDIO_CODEC_DisPAD(PAD_MICBIAS4);
 			AUDIO_CODEC_SetADCMixMute(ADC3, ANAAD, UNMUTE);
 			AUDIO_CODEC_SetADCMixMute(ADC4, ANAAD, UNMUTE);
 			AUDIO_CODEC_SetADCANAFilter(ADC3, ENABLE);
@@ -3847,6 +3879,7 @@ void AUDIO_CODEC_Record(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct)
 		if (I2S_InitStruct->CODEC_SelRxI2STdm == I2S_TDM6 || I2S_InitStruct->CODEC_SelRxI2STdm == I2S_TDM8) {
 
 			AUDIO_CODEC_DisPAD(PAD_MIC5);
+			AUDIO_CODEC_DisPAD(PAD_MICBIAS5);
 			AUDIO_CODEC_SetADCMixMute(ADC5, ANAAD, UNMUTE);
 			AUDIO_CODEC_SetADCANAFilter(ADC5, ENABLE);
 			AUDIO_CODEC_SetADCANASrc(ADCHN5, AMIC5);

@@ -1041,6 +1041,10 @@ netif_set_link_down(struct netif *netif)
       etharp_cleanup_netif(netif);
     }
 #endif /* LWIP_ARP */
+
+#if LWIP_IPV6
+    nd6_cleanup_netif(netif);
+#endif /* LWIP_IPV6 */
 /* Added by Realtek end */
     NETIF_LINK_CALLBACK(netif);
 #if LWIP_NETIF_EXT_STATUS_CALLBACK
@@ -1513,8 +1517,13 @@ netif_create_ip6_linklocal_address(struct netif *netif, u8_t from_mac_48bit)
 
   LWIP_ASSERT("netif_create_ip6_linklocal_address: invalid netif", netif != NULL);
 
+#if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
+  /* Uni-local prefix. */
+  ip_2_ip6(&netif->ip6_addr[0])->addr[0] = PP_HTONL(0xfd000000ul);
+#else
   /* Link-local prefix. */
   ip_2_ip6(&netif->ip6_addr[0])->addr[0] = PP_HTONL(0xfe800000ul);
+#endif
   ip_2_ip6(&netif->ip6_addr[0])->addr[1] = 0;
 
   /* Generate interface ID. */

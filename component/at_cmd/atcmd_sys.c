@@ -7,7 +7,7 @@
 #include "sys_api.h"
 #include "ameba_rtos_version.h"
 #include "build_info.h"
-
+#include "kv.h"
 #include "at_intf_spi.h"
 #include "at_intf_sdio.h"
 #include "at_intf_usbd.h"
@@ -40,6 +40,10 @@
 #include "FreeRTOS.h"
 #if (configGENERATE_RUN_TIME_STATS == 1)
 #include "task.h"
+#endif
+
+#ifdef CONFIG_ATCMD_HOST_CONTROL
+#include "at_intf_uart.h"
 #endif
 
 #ifdef CONFIG_MP_INCLUDED
@@ -340,6 +344,49 @@ void at_gmr(void *arg)
 	at_printf(ATCMD_OK_END_STR);
 }
 
+#ifdef CONFIG_ATCMD_HOST_CONTROL
+/****************************************************************
+AT command process:
+	AT+UART
+	+UART:<store in flash>,<baudrate>
+	[+UART]: OK
+****************************************************************/
+void at_uart(void *arg)
+{
+	u8 error_no = 0;
+	int argc = 0, mode = 0, baudrate = 0;
+	char *argv[MAX_ARGC] = {0};
+
+	argc = parse_param(arg, argv);
+
+	if (argc != 3) {
+		error_no = 1;
+		goto end;
+	}
+
+	mode = (int)atoi(argv[1]);
+	baudrate = (int)atoi(argv[2]);
+
+	if (mode == 1) {
+		rt_kv_set("atcmd_uart_baudrate", (uint8_t *) &baudrate, 4);
+	}
+
+	if (baudrate >= 4800 && baudrate <= 6000000) {
+		UART_SetBaud(UART_DEV, baudrate);
+	} else {
+		error_no = 1;
+	}
+
+end:
+
+	if (error_no == 0) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+#endif
+
 log_item_t at_sys_items[] = {
 #ifndef CONFIG_INIC_NO_FLASH
 	{"+OTACLEAR", at_otaclear, {NULL, NULL}},
@@ -348,6 +395,9 @@ log_item_t at_sys_items[] = {
 	{"+TEST", at_test, {NULL, NULL}},
 	{"+LIST", at_list, {NULL, NULL}},
 	{"+GMR", at_gmr, {NULL, NULL}},
+#ifdef CONFIG_ATCMD_HOST_CONTROL
+	{"+UART", at_uart, {NULL, NULL}},
+#endif
 };
 
 void print_system_at(void)

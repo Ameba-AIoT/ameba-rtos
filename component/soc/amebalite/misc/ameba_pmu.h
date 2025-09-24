@@ -15,9 +15,8 @@ enum PMU_DEVICE {
 	PMU_DSP_RUN,
 	PMU_WLAN_FW_DEVICE,
 	PMU_BT_DEVICE,
-#if defined(CONFIG_STANDARD_TICKLESS) && defined(CONFIG_LWIP_LAYER)
+	PMU_DHCP_PROCESS,
 	PMU_LWIP_STACK,
-#endif
 
 	PMU_DEV_USER_BASE, /* reserved for customer use */
 	PMU_MAX			= 31,
@@ -26,7 +25,7 @@ enum PMU_DEVICE {
 // default locked by OS and not to sleep until OS release wakelock in somewhere
 #define DEFAULT_WAKELOCK		(BIT(PMU_OS))
 #define DEFAULT_DEEP_WAKELOCK		(BIT(PMU_OS))
-#define SLEEP_MAX_DELAY		(u32) 0xffffffffUL
+#define PMU_SLEEP_FOREVER		(uint32_t) 0xffffffffUL
 
 typedef uint32_t (*PSM_HOOK_FUN)(uint32_t, void *param_ptr);
 

@@ -17,7 +17,7 @@
 #	  Fix changes cannot be obtained issue when users commit from customized local branch @ neo_liu
 # 	  Apply style to all 9.x branch
 
-ignore_repo_list="azure|benchmark|clintwood|demoui|wifi-audio|wigadget|wms|misc_tools|ameba_tools|image_scripts|meta_tools|flash|monitor"
+ignore_repo_list="azure|benchmark|clintwood|demoui|wifi-audio|wigadget|wms|misc_tools|ameba_tools|image_scripts|meta_tools|flash|monitor|audio|lvgl|ui"
 ignore_component_list="RTX|SEGGER|efm32|emwin|LittlevGL|3rdparty|trusted-firmware-m|emWin|lvgl|third_party|wpa_supplicant_std"
 
 cur_path=$PWD
@@ -31,7 +31,8 @@ fi
 
 proj_name=${repo_url#*29418/}
 cur_dirs=`repo list | grep $proj_name | cut -d':' -f 1`
-if [ $cur_dirs = "." ]; then
+cur_dirs=$(echo "$cur_dirs" | xargs)
+if [ "$cur_dirs" = "." ]; then
 	cur_dir=$cur_dirs
 else
 	cur_dir=""
@@ -158,7 +159,7 @@ if [ "$repo_name" = "loong" ]; then
 fi
 
 # check include FreeRTOS.h
-if [ "$repo_name" = "loong" ] || [ "$repo_name" = "wifi-audio" ] || [ "$repo_name" = "audio" ]; then
+if [ "$repo_name" = "loong" ] || [ "$repo_name" = "wifi-audio" ] || [ "$repo_name" = "audio" ] || [ "$repo_name" = "ameba_aivoice" ]; then
 	freertos_h_new_include=`git diff-index --patch-with-stat --cached $against | grep -E '\+ *#include *[<"]FreeRTOS.h[>"]'`
 	if [ -n "$freertos_h_new_include" ]; then
 	    echo "Warning: New include of FreeRTOS.h is not allowed"

@@ -53,9 +53,6 @@ typedef	signed int		        sint;
 #define s64                     int64_t
 #define u64                     uint64_t
 
-#define IN
-#define OUT
-#define INOUT
 #define NDIS_OID uint
 #define NDIS_STATUS uint
 

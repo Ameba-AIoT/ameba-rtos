@@ -168,6 +168,7 @@ u32 rtc_irq_init(void *Data)
 	SDM32K_Enable();
 	SYSTIMER_Init(); /* 0.2ms */
 	RCC_PeriphClockCmd(NULL, APBPeriph_RTC_CLOCK, ENABLE);
+	RTC_ClkSource_Select(SDM32K);
 
 	if ((Get_OSC131_STATE() & RTC_BIT_FIRST_PON) == 0) {
 		app_rtc_init();
@@ -180,8 +181,6 @@ u32 rtc_irq_init(void *Data)
 			OSC131K_Calibration(30000); /* PPM=30000=3% *//* 7.5ms */
 		}
 	}
-
-	RTC_ClkSource_Select(SDM32K);
 
 	return 0;
 }
@@ -258,6 +257,12 @@ int main(void)
 #endif
 
 	app_pmu_init();
+
+	/*this means osc131k is ready*/
+	if ((Get_OSC131_STATE() & RTC_BIT_FIRST_PON) == 1) {
+		SDM32K_Enable();
+		SYSTIMER_Init(); /* 0.2ms */
+	}
 
 	/*Register RTC_DET_IRQ callback function */
 	InterruptRegister((IRQ_FUN) rtc_irq_init, RTC_DET_IRQ, (u32)NULL, INT_PRI_LOWEST);

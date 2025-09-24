@@ -35,10 +35,14 @@ static int32_t health_client_data(const mesh_model_info_p pmodel_info, uint32_t 
 		rtk_bt_evt_t *p_evt = NULL;
 		health_client_status_t *pdata = (health_client_status_t *)pargs;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL, RTK_BT_MESH_HEALTH_CLIENT_MODEL_CURT_STATUS,
-									sizeof(health_client_status_t) + pdata->fault_array_len);
-		memcpy(p_evt->data, pargs, 5);
-		memcpy((uint8_t *)p_evt->data + 5, & pdata->fault_array_len, 1);
-		memcpy((uint8_t *)p_evt->data + 6, pdata->fault_array, pdata->fault_array_len);
+									sizeof(rtk_bt_mesh_health_client_status_t) + pdata->fault_array_len);
+		rtk_bt_mesh_health_client_status_t *p_data = (rtk_bt_mesh_health_client_status_t *)p_evt->data;
+		p_data->src = pdata->src;
+		p_data->test_id = pdata->test_id;
+		p_data->company_id = pdata->company_id;
+		p_data->fault_array_len = pdata->fault_array_len;
+		p_data->fault_array = pdata->fault_array;
+		memcpy((uint8_t *)p_evt->data + sizeof(rtk_bt_mesh_health_client_status_t), pdata->fault_array, pdata->fault_array_len);
 		rtk_bt_evt_indicate(p_evt, NULL);
 	}
 	break;
@@ -46,10 +50,14 @@ static int32_t health_client_data(const mesh_model_info_p pmodel_info, uint32_t 
 		rtk_bt_evt_t *p_evt = NULL;
 		health_client_status_t *pdata = (health_client_status_t *)pargs;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL, RTK_BT_MESH_HEALTH_CLIENT_MODEL_FAULT_STATUS,
-									sizeof(health_client_status_t) + pdata->fault_array_len);
-		memcpy(p_evt->data, pargs, 5);
-		memcpy((uint8_t *)p_evt->data + 5, & pdata->fault_array_len, 1);
-		memcpy((uint8_t *)p_evt->data + 6, pdata->fault_array, pdata->fault_array_len);
+									sizeof(rtk_bt_mesh_health_client_status_t) + pdata->fault_array_len);
+		rtk_bt_mesh_health_client_status_t *p_data = (rtk_bt_mesh_health_client_status_t *)p_evt->data;
+		p_data->src = pdata->src;
+		p_data->test_id = pdata->test_id;
+		p_data->company_id = pdata->company_id;
+		p_data->fault_array_len = pdata->fault_array_len;
+		p_data->fault_array = pdata->fault_array;
+		memcpy((uint8_t *)p_evt->data + sizeof(rtk_bt_mesh_health_client_status_t), pdata->fault_array, pdata->fault_array_len);
 		rtk_bt_evt_indicate(p_evt, NULL);
 	}
 	break;

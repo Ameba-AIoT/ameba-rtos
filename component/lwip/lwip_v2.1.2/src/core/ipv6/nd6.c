@@ -507,6 +507,13 @@ nd6_input(struct pbuf *p, struct netif *inp)
           }
         }
       }
+#if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
+      /* when recv dad delete the neighbor */
+      i = nd6_find_neighbor_cache_entry(&target_address);
+      if(i >= 0) {
+        nd6_free_neighbor_cache_entry(i);
+      }
+#endif
     } else {
       /* Sender is trying to resolve our address. */
       /* Verify that they included their own link-layer address. */
@@ -1568,6 +1575,15 @@ nd6_free_neighbor_cache_entry(s8_t i)
     nd6_free_q(neighbor_cache[i].q);
     neighbor_cache[i].q = NULL;
   }
+
+#if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
+  struct nd6_ipq_entry *r;
+  while (neighbor_cache[i].ipq != NULL) {
+    r = neighbor_cache[i].ipq;
+    neighbor_cache[i].ipq = r->next;
+    free(r);
+  }
+#endif
 
   neighbor_cache[i].state = ND6_NO_ENTRY;
   neighbor_cache[i].isrouter = 0;

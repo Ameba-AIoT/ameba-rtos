@@ -77,11 +77,11 @@ extern rtos_timer_t xTimers_TT_Mode;
 extern char pin_name[5];
 #define PIN_VAL_TO_NAME_STR(val) \
 	({ \
-		if (val < 0x20) { \
+		if (val < 0x20 && val > 0) { \
 			snprintf(pin_name, 5, "%s%d", "PA", val); \
-		} else if (val < 0x40) { \
+		} else if (val < 0x40 && val >= 0x20) { \
 			snprintf(pin_name, 5, "%s%d", "PB", val - 0x20); \
-		} else if (val < 0x60) { \
+		} else if (val < 0x60 && val >= 0x40) { \
 			snprintf(pin_name, 5, "%s%d", "PC", val - 0x40); \
 		} \
 		pin_name;\

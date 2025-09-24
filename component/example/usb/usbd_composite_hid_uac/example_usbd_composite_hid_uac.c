@@ -153,7 +153,6 @@ static usbd_composite_cb_t composite_usbd_cb = {
 
 static usbd_config_t composite_usbd_cfg = {
 	.speed = CONFIG_USBD_COMPOSITE_SPEED,
-	.dma_enable = 1U,
 	.isr_priority = INT_PRI_HIGHEST,
 	.isr_in_critical = 0,
 	.intr_use_ptx_fifo = 0U,

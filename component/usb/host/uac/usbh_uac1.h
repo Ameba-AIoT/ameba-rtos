@@ -14,18 +14,23 @@
 #include <dlist.h>
 #include "os_wrapper.h"
 /* Exported defines ----------------------------------------------------------*/
+
+#define USBH_UAC_DEBUG                 0
+
 #define USBH_UAC_ISOC_OUT_IDX          0
 #define USBH_UAC_ISOC_IN_IDX           1
 #define USBH_UAC_ISOC_NUM              2
 
-#define USBH_UAC_ALT_SETTING_MAX       6
+#define USBH_UAC_ALT_SETTING_MAX       10
 #define USBH_UAC_FREQ_FORMAT_MAX       6
 
 #define USBH_UAC_SAMPLING_FREQ_CONTROL 0x100
 #define USBH_UAC_VERSION_01_10         0x110
 
+#define UBSH_UAC_AUDIO_FMT_FREQ_LEN    32
 #define UBSH_UAC_ALIGN4(x)             (((x) + 3) & ~3)
 #define UBSH_UAC_CAL_FRAME(n, d)       UBSH_UAC_ALIGN4((((n) + (d) - 1) / (d)))
+
 /* Exported types ------------------------------------------------------------*/
 
 /* States for class */
@@ -173,16 +178,23 @@ typedef struct {
 
 /* Vendor host */
 typedef struct {
-	usbh_uac_buf_ctrl_t uac_isoc_out;  /* isoc out */
-	usbh_uac_buf_t *tx_buf;
-	usbh_uac_cfg_t uac_desc;
 	usbh_uac_setting_t cur_setting[USBH_UAC_ISOC_NUM]; // cur alt
-	usbh_uac_state_t usbh_state;
-	usbh_uac_xfer_state_t state;
-	usbh_uac_ctrl_state_t sub_state;
+	usbh_uac_buf_ctrl_t isoc_out;  /* isoc out */
+	usbh_uac_cfg_t uac_desc;
+	usbh_uac_buf_t *tx_buf;
 	usbh_uac_cb_t *cb;
 	usb_host_t *host;
+	u8 *audio_fmt_ctrl_buf;
 	__IO u32 cur_frame;
+
+#if USBH_UAC_DEBUG
+	rtos_task_t dump_status_task;
+	__IO u8 dump_status_task_alive;
+#endif
+
+	usbh_uac_state_t state;
+	__IO usbh_uac_xfer_state_t xfer_state;
+	usbh_uac_ctrl_state_t ctrl_state;
 	u8 next_xfer;/*send next event flag*/
 } usbh_uac_host_t;
 

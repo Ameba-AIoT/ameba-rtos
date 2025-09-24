@@ -4,6 +4,7 @@ ameba_add_image(target_imgtool_floader p_EXCLUDE_FROM_ALL)
 ###############################  ADD COMPONENT  ###################################
 add_compile_definitions(
     CONFIG_NON_OS
+    CONFIG_NAND_DOWNLOAD_EN
 )
 
 ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_download/imgtool_floader)
@@ -76,6 +77,7 @@ add_custom_command(TARGET ${c_CURRENT_IMAGE} POST_BUILD
         -Dc_MCU_PROJECT_NAME=${c_MCU_PROJECT_NAME} # name of current mcu project
         -Dc_MCU_KCONFIG_FILE=${c_MCU_KCONFIG_FILE} # file of current project's kconfig file
         -Dc_SDK_IMAGE_TARGET_DIR=${c_SDK_IMAGE_TARGET_DIR} # dir of image output
+        -Dc_BOOT_BINARY_NAME=${boot_name} # name of boot image
 
         # user's variables
         -DFINAL_IMAGE_DIR=${FINAL_IMAGE_DIR}

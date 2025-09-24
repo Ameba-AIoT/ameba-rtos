@@ -14,6 +14,7 @@ extern "C"
 #endif
 
 #define RTK_BT_DEFAULT_ABSOLUTE_VOLUME 0x64
+#define RTK_BT_AVRCP_ELEM_ATTR_MAX_NUM 8
 /* ------------------------------- Data Types ------------------------------- */
 
 /**
@@ -187,7 +188,7 @@ typedef struct {
 	uint8_t bd_addr[6];
 	uint8_t state;
 	uint8_t num_of_attr;
-	rtk_bt_avrcp_element_attr *attr;
+	rtk_bt_avrcp_element_attr attr[RTK_BT_AVRCP_ELEM_ATTR_MAX_NUM];
 } rtk_bt_avrcp_element_attr_info_t;
 
 /**

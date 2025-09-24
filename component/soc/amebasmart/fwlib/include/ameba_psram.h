@@ -152,6 +152,7 @@ typedef struct {
 	u32 Psram_Latency_Set;
 	u32 Psram_CSHI;			//cs high between cmd
 	u32 Psram_Resume_Cnt;	//for autogating phy resume
+	u32 Psram_Type;
 } PSRAMINFO_TypeDef;
 /**
   * @}

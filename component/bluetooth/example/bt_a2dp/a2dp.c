@@ -25,6 +25,7 @@
 #include "kv.h"
 #include <dlist.h>
 #include <bt_utils.h>
+#include <bt_audio_resample.h>
 
 /* -------------------------------- Defines --------------------------------- */
 #define RTK_BT_DEV_NAME                      "RTK_BT_AUDIO_DEVICE"
@@ -38,6 +39,9 @@
 #define RTK_BT_A2DP_SRC_STREAM_MAX_CREDITS   2
 #define RTK_BT_DEMO_RECONNECT_TIMER_INTERVAL 5000
 #define RTK_BT_DEMO_RECONNECT_COUNT          3
+#define RTK_BT_A2DP_SRC_DEMO_SEND_DATA_SIZE  1280
+#define RTK_BT_A2DP_SRC_DEMO_MAX_SEND_DATA_SIZE (8 * 16 * 2 * RT_BT_DEMO_SBC_NUM_FRAME) * (48000 / 16000) // the maximum sbc input pcm size (int16_t) (MAX_SUBBANDS * MAX_BLOCKS * MAX_NUM * RT_BT_DEMO_SBC_NUM_FRAME)
+// 48000 / 16000 means the max ratio for sbc
 /* ------------------------------- Company ID ------------------------------- */
 #define RTK_COMPANY_ID 0x005D
 /* ----------------------------- Avrcp Related ------------------------------ */
@@ -55,6 +59,13 @@ static void *a2dp_demo_codec_entity = NULL;
 static uint8_t a2dp_demo_role;
 static uint8_t src_a2dp_credits = RTK_BT_A2DP_SRC_STREAM_MAX_CREDITS;
 static rtk_bt_audio_codec_conf_t audio_codec_conf = {0};
+static uint32_t demo_in_rate = 48000;
+static uint8_t demo_in_channels = 2;
+#if !defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) || !CONFIG_BT_AUDIO_SOURCE_OUTBAND
+static rtk_bt_audio_biquad_t bq_t = {0};
+static rtk_bt_audio_resample_t *g_audio_resample_t = NULL;
+static uint32_t resample_out_frames, resample_in_frames;
+#endif
 static rtk_bt_sbc_codec_t sbc_codec_t = {
 	{
 		.sbc_enc_mode = (sbc_channel_mode_t)SBC_MODE_STANDARD,
@@ -137,7 +148,10 @@ typedef struct {
 static a2dp_demo_bond_info_t a2dp_demo_bond_table[A2DP_DEMO_MAX_BOND_NUM] = {0};
 /* ------------------------------------ End -------------------------------------- */
 /* class of device */
-static uint32_t cod = (0x18 | (0x04 << 8) | (0x24 << 16));
+static uint32_t cod_for_snk = (0x04 | (0x04 << 8) | (0x24 <<
+													 16)); // MAJOR_DEVICE_CLASS_AUDIO + MINOR_DEVICE_CLASS_HEADSET + SERVICE_CLASS_AUDIO + SERVICE_CLASS_RENDERING
+static uint32_t cod_for_src = (0x0C | (0x02 << 8) | (0x64 <<
+													 16)); // MINOR_DEVICE_CLASS_SMART_PHONE + MAJOR_DEVICE_CLASS_PHONE + SERVICE_CLASS_AUDIO + SERVICE_CLASS_RENDERING
 /* supervision_timeout */
 static uint16_t superv_time = (0x1f40);
 
@@ -700,20 +714,20 @@ static rtk_bt_a2dp_media_codec_sbc_t codec_sbc = {
 // };
 
 #if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
-static int16_t pcm_buffer[512] = {0};
+static int16_t pcm_buffer[RTK_BT_A2DP_SRC_DEMO_SEND_DATA_SIZE] = {0};
 static uint16_t a2dp_demo_send_data_seq = 0;
 #if defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB
 static void app_a2dp_src_send_data(void)
 {
-	rtk_bt_a2dp_stream_data_send_t data_send_t = {0};
+	static rtk_bt_a2dp_stream_data_send_t data_send_t = {0};
 	struct enc_codec_buffer *penc_codec_buffer_t = NULL;
 
 	if (src_a2dp_credits) {
-		if (!demo_usb_read_buffer((uint8_t *)pcm_buffer, (uint16_t)1024)) {
+		if (!demo_usb_read_buffer((uint8_t *)pcm_buffer, (uint16_t)(RTK_BT_A2DP_SRC_DEMO_SEND_DATA_SIZE * 2))) {
 			// BT_LOGA("[A2DP SRC Demo]: uart buffer read success \r\n");
-			penc_codec_buffer_t = rtk_bt_audio_data_encode(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, (int16_t *)pcm_buffer, (uint32_t)1024);
+			penc_codec_buffer_t = rtk_bt_audio_data_encode(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, (int16_t *)pcm_buffer,
+														   (uint32_t)(RTK_BT_A2DP_SRC_DEMO_SEND_DATA_SIZE * 2));
 			if (penc_codec_buffer_t) {
-				memset((void *)&data_send_t, 0, sizeof(rtk_bt_a2dp_stream_data_send_t));
 				memcpy((void *)data_send_t.bd_addr, (void *)remote_bd_addr, 6);
 				data_send_t.seq_num = a2dp_demo_send_data_seq++;
 				data_send_t.frame_buf = (uint8_t *)penc_codec_buffer_t->pbuffer;
@@ -740,15 +754,15 @@ static void app_a2dp_src_send_data(void)
 #else
 static void app_a2dp_src_send_data(void)
 {
-	rtk_bt_a2dp_stream_data_send_t data_send_t = {0};
+	static rtk_bt_a2dp_stream_data_send_t data_send_t = {0};
 	struct enc_codec_buffer *penc_codec_buffer_t = NULL;
 
 	if (src_a2dp_credits) {
 		if (demo_uart_read((uint8_t *)pcm_buffer)) {
 			// BT_LOGA("[A2DP SRC Demo]: uart buffer read success \r\n");
-			penc_codec_buffer_t = rtk_bt_audio_data_encode(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, (int16_t *)pcm_buffer, (uint32_t)1024);
+			penc_codec_buffer_t = rtk_bt_audio_data_encode(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, (int16_t *)pcm_buffer,
+														   (uint32_t)(RTK_BT_A2DP_SRC_DEMO_SEND_DATA_SIZE * 2));
 			if (penc_codec_buffer_t) {
-				memset((void *)&data_send_t, 0, sizeof(rtk_bt_a2dp_stream_data_send_t));
 				memcpy((void *)data_send_t.bd_addr, (void *)remote_bd_addr, 6);
 				data_send_t.seq_num = a2dp_demo_send_data_seq++;
 				data_send_t.frame_buf = (uint8_t *)penc_codec_buffer_t->pbuffer;
@@ -767,70 +781,6 @@ static void app_a2dp_src_send_data(void)
 			}
 		} else {
 			// BT_LOGE("[A2DP SRC Demo]: uart buffer length is not enough \r\n");
-		}
-	} else {
-		// BT_LOGE("[A2DP] waiting src_a2dp_credits \r\n");
-	}
-}
-#endif
-#else
-static uint32_t pcm_offset = 0;
-static uint16_t a2dp_demo_send_data_seq = 0;
-
-static void app_a2dp_src_send_data(void)
-{
-	rtk_bt_a2dp_stream_data_send_t data_send_t = {0};
-	struct enc_codec_buffer *penc_codec_buffer_t = NULL;
-	short *pdata = NULL;
-
-	if (src_a2dp_credits) {
-		if (pcm_offset < (birds_sing_size / 2)) {
-			if (pcm_offset + 512 < birds_sing_size / 2) {
-				pdata = (short *)(birds_sing + pcm_offset);
-				penc_codec_buffer_t = rtk_bt_audio_data_encode(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, pdata, 1024);
-				if (penc_codec_buffer_t) {
-					memset((void *)&data_send_t, 0, sizeof(rtk_bt_a2dp_stream_data_send_t));
-					memcpy((void *)data_send_t.bd_addr, (void *)remote_bd_addr, 6);
-					data_send_t.seq_num = a2dp_demo_send_data_seq++;
-					data_send_t.frame_buf = (uint8_t *)penc_codec_buffer_t->pbuffer;
-					data_send_t.frame_num = (uint8_t)penc_codec_buffer_t->frame_num;
-					data_send_t.time_stamp += data_send_t.frame_num * sbc_codec_t.encoder_t.subbands * sbc_codec_t.encoder_t.blocks;
-					data_send_t.len = (uint16_t)(penc_codec_buffer_t->frame_num * penc_codec_buffer_t->frame_size);
-					data_send_t.flush = false;
-					if (rtk_bt_a2dp_data_send(&data_send_t)) {
-						BT_LOGE("[A2DP] data send fail \r\n");
-					} else {
-						src_a2dp_credits --;
-					}
-					rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, penc_codec_buffer_t);
-				} else {
-					BT_LOGE("[A2DP SRC Demo]: Encode fail \r\n");
-				}
-			} else {
-				pdata = (short *)(birds_sing + pcm_offset);
-				penc_codec_buffer_t = rtk_bt_audio_data_encode(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, pdata, ((birds_sing_size / 2) - pcm_offset) * 2);
-				if (penc_codec_buffer_t) {
-					memset((void *)&data_send_t, 0, sizeof(rtk_bt_a2dp_stream_data_send_t));
-					memcpy((void *)data_send_t.bd_addr, (void *)remote_bd_addr, 6);
-					data_send_t.seq_num = a2dp_demo_send_data_seq++;
-					data_send_t.frame_buf = (uint8_t *)penc_codec_buffer_t->pbuffer;
-					data_send_t.frame_num = (uint8_t)penc_codec_buffer_t->frame_num;
-					data_send_t.time_stamp += data_send_t.frame_num * sbc_codec_t.encoder_t.subbands * sbc_codec_t.encoder_t.blocks;
-					data_send_t.len = (uint16_t)(penc_codec_buffer_t->frame_num * penc_codec_buffer_t->frame_size);
-					data_send_t.flush = false;
-					if (rtk_bt_a2dp_data_send(&data_send_t)) {
-						BT_LOGE("[A2DP] data send fail \r\n");
-					} else {
-						src_a2dp_credits --;
-					}
-					rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, penc_codec_buffer_t);
-				} else {
-					BT_LOGE("[A2DP SRC Demo]: Encode fail \r\n");
-				}
-			}
-			pcm_offset += 512;
-		} else {
-			pcm_offset = 0;
 		}
 	} else {
 		// BT_LOGE("[A2DP] waiting src_a2dp_credits \r\n");
@@ -840,19 +790,105 @@ static void app_a2dp_src_send_data(void)
 
 static void a2dp_task_entry(void *ctx)
 {
+	uint32_t a2dp_src_data_send_interval = 0;
 	(void)ctx;
 	osif_sem_give(a2dp_task.sem);
+
+	a2dp_src_data_send_interval = (RTK_BT_A2DP_SRC_DEMO_SEND_DATA_SIZE * 2 * 1000) / (demo_in_rate * demo_in_channels * (16 / 8));
+	BT_LOGA("[A2DP Demo] a2dp_task_entry send interval is %d \r\n", a2dp_src_data_send_interval);
 
 	while (a2dp_task.run) {
 		if (app_a2dp_src_send_flag) {
 			app_a2dp_src_send_data();
 		}
-		osif_delay(3);
+		osif_delay(a2dp_src_data_send_interval);
 	}
 
 	osif_sem_give(a2dp_task.sem);
 	osif_task_delete(NULL);
 }
+
+#else
+static uint32_t pcm_offset = 0;
+static uint16_t a2dp_demo_send_data_seq = 0;
+static uint32_t demo_read_size = 0;
+static int16_t in_frame_buf[RTK_BT_A2DP_SRC_DEMO_MAX_SEND_DATA_SIZE] = {0};
+static uint8_t out_frame_buf[RTK_BT_A2DP_SRC_DEMO_SEND_DATA_SIZE * 2] = {0}; // cause the max samplerate is 48000 Hz and length is RTK_BT_A2DP_SRC_DEMO_SEND_DATA_SIZE
+static void app_a2dp_src_send_data(void)
+{
+	static rtk_bt_a2dp_stream_data_send_t data_send_t = {0};
+	struct enc_codec_buffer *penc_codec_buffer_t = NULL;
+	short *pdata = NULL;
+	uint32_t out_frames = 0;
+
+	if (src_a2dp_credits) {
+		if (pcm_offset < (birds_sing_size / 2)) {
+			pdata = (short *)(birds_sing + pcm_offset);
+			if ((pcm_offset + (demo_read_size / 2)) < birds_sing_size / 2) {
+				out_frames = rtk_bt_audio_resample_entry(g_audio_resample_t, &bq_t,
+														 (uint8_t *)pdata,
+														 resample_in_frames,
+														 (uint8_t *)out_frame_buf,
+														 demo_in_rate,
+														 sbc_codec_t.encoder_t.sample_rate);
+				pcm_offset += (demo_read_size / 2);
+			} else {
+				memset((void *)in_frame_buf, 0, demo_read_size);
+				memcpy((void *)in_frame_buf, (void *)pdata, ((birds_sing_size / 2) - pcm_offset) * 2);
+				out_frames = rtk_bt_audio_resample_entry(g_audio_resample_t, &bq_t,
+														 (uint8_t *)in_frame_buf,
+														 resample_in_frames,
+														 (uint8_t *)out_frame_buf,
+														 demo_in_rate,
+														 sbc_codec_t.encoder_t.sample_rate);
+				pcm_offset = 0;
+			}
+			penc_codec_buffer_t = rtk_bt_audio_data_encode(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, (int16_t *)out_frame_buf,
+														   out_frames * g_audio_resample_t->out_frame_size);
+			if (penc_codec_buffer_t) {
+				memcpy((void *)data_send_t.bd_addr, (void *)remote_bd_addr, 6);
+				data_send_t.seq_num = a2dp_demo_send_data_seq++;
+				data_send_t.frame_buf = (uint8_t *)penc_codec_buffer_t->pbuffer;
+				data_send_t.frame_num = (uint8_t)penc_codec_buffer_t->frame_num;
+				data_send_t.time_stamp += data_send_t.frame_num * sbc_codec_t.encoder_t.subbands * sbc_codec_t.encoder_t.blocks;
+				data_send_t.len = (uint16_t)(penc_codec_buffer_t->frame_num * penc_codec_buffer_t->frame_size);
+				data_send_t.flush = false;
+				if (rtk_bt_a2dp_data_send(&data_send_t)) {
+					BT_LOGE("[A2DP] data send fail \r\n");
+				} else {
+					src_a2dp_credits --;
+				}
+				rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, penc_codec_buffer_t);
+			} else {
+				BT_LOGE("[A2DP SRC Demo]: Encode fail \r\n");
+			}
+		}
+	} else {
+		// BT_LOGE("[A2DP] waiting src_a2dp_credits \r\n");
+	}
+}
+
+static void a2dp_task_entry(void *ctx)
+{
+	uint32_t a2dp_src_data_send_interval = 0;
+	(void)ctx;
+	osif_sem_give(a2dp_task.sem);
+
+	a2dp_src_data_send_interval = ((resample_in_frames * demo_in_channels * 16 / 8) * 1000) / (demo_in_rate * demo_in_channels * (16 / 8));
+	BT_LOGA("[A2DP Demo] a2dp_task_entry send interval is %d \r\n", a2dp_src_data_send_interval);
+
+	while (a2dp_task.run) {
+		if (app_a2dp_src_send_flag) {
+			app_a2dp_src_send_data();
+		}
+		osif_delay(a2dp_src_data_send_interval);
+	}
+
+	osif_sem_give(a2dp_task.sem);
+	osif_task_delete(NULL);
+}
+
+#endif
 
 static a2dp_demo_bond_info_t *a2dp_demo_find_bond_info_by_mac_addr(uint8_t *bd_addr)
 {
@@ -1290,15 +1326,11 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 						snprintf((char *)temp_buff, len, "%s%s\r\n", attr[p_attr_t->attr[i].attribute_id], p_attr_t->attr[i].p_buf);
 						BT_LOGA("[AVRCP] %s \r\n", temp_buff);
 					}
-					osif_mem_free(p_attr_t->attr[i].p_buf);
 				}
 			}
 		} else {
 			BT_LOGA("[AVRCP] Get element attr information fail from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 					p_attr_t->bd_addr[5], p_attr_t->bd_addr[4], p_attr_t->bd_addr[3], p_attr_t->bd_addr[2], p_attr_t->bd_addr[1], p_attr_t->bd_addr[0]);
-		}
-		if (p_attr_t->num_of_attr) {
-			osif_mem_free(p_attr_t->attr);
 		}
 		break;
 	}
@@ -1737,6 +1769,8 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 	}
 	psbc_encoder_t->bitpool = pa2dp_codec->sbc.max_bitpool;
 	psbc_encoder_t->sbc_enc_mode = (sbc_channel_mode_t)SBC_MODE_STANDARD;
+	BT_LOGA("[A2DP] Parsing encode struct:subbands is %d, blocks is %d, channesl is %d \r\n", psbc_encoder_t->subbands, psbc_encoder_t->blocks,
+			psbc_encoder_t->channel_mode);
 
 	return 0;
 }
@@ -1796,6 +1830,31 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 
 //  return 0;
 // }
+
+#if !defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) || !CONFIG_BT_AUDIO_SOURCE_OUTBAND
+static uint16_t app_bt_pcm_data_resample_engine_alloc(rtk_bt_audio_resample_t **pp_sample_t, uint32_t sample_rate_in, uint8_t in_channels,
+													  uint32_t sample_rate_out, uint8_t out_channels)
+{
+	double sample_ratio;
+
+	sample_ratio = (double)sample_rate_out / (double)sample_rate_in;
+	//calculate the expected input and output according to the sample rate
+	/* resample out frames should be matched with the sbc encode size */
+	resample_out_frames = (sbc_codec_t.encoder_t.blocks * sbc_codec_t.encoder_t.subbands * out_channels * RT_BT_DEMO_SBC_NUM_FRAME) * 2 / (16 / 8 * out_channels);
+	resample_in_frames = (uint32_t)(resample_out_frames * (float)sample_rate_in / (float)sample_rate_out);
+	/* init bq filter */
+	rtk_bt_audio_bq_config(&bq_t, RTK_BT_AUDIO_LPF, 1.0, (unsigned long)((1.0 / sample_ratio / 2) * (double)sample_rate_in),
+						   (unsigned long)sample_rate_in, 0.2);
+	/* init sinc resample */
+	*pp_sample_t = rtk_bt_audio_resample_alloc((float)sample_rate_in, (float)sample_rate_out, in_channels, out_channels, resample_in_frames);
+	demo_read_size = resample_in_frames * in_channels * 16 / 8;
+	BT_LOGA("[A2DP] Resample allocate: rate in is %d, channel is %d, rate out is %d, channel is %d \r\n", sample_rate_in, in_channels, sample_rate_out,
+			out_channels);
+	BT_LOGA("[A2DP] resample_out_frames is %d, resample_in_frames is %d, demo_read_size is %d \r\n", resample_out_frames, resample_in_frames, demo_read_size);
+
+	return RTK_BT_OK;
+}
+#endif
 
 static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *param, uint32_t len)
 {
@@ -1897,6 +1956,11 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 				audio_codec_conf.param = (void *)&sbc_codec_t;
 				audio_codec_conf.param_len = sizeof(sbc_codec_t);
 			}
+#if !defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) || !CONFIG_BT_AUDIO_SOURCE_OUTBAND
+			/* default audio stream source is 48000 sample rate, 2 channels */
+			app_bt_pcm_data_resample_engine_alloc(&g_audio_resample_t, demo_in_rate, demo_in_channels, sbc_codec_t.encoder_t.sample_rate,
+												  ((sbc_codec_t.encoder_t.channel_mode != 0) ? 2 : 1));
+#endif
 		}
 		a2dp_demo_codec_entity = rtk_bt_audio_codec_add(&audio_codec_conf);
 		// bt_a2dp_sink_event_handle(A2DP_SINK_STREAM_DATA_HANDLE_INIT, A2DP_SBC_CODEC, 0, NULL);
@@ -1915,6 +1979,16 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 					p_stream_open_t->bd_addr[5], p_stream_open_t->bd_addr[4], p_stream_open_t->bd_addr[3],
 					p_stream_open_t->bd_addr[2], p_stream_open_t->bd_addr[1], p_stream_open_t->bd_addr[0],
 					(int)p_stream_open_t->max_pkt_len);
+		if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
+			// set BR/EDR tpoll to 3.75ms
+			uint16_t tpoll = 0x06;
+			if (RTK_BT_OK == rtk_bt_br_gap_set_link_qos(p_stream_open_t->bd_addr, RTK_BT_BR_QOS_TYPE_BEST_EFFORT, tpoll)) {
+				BT_LOGA("[A2DP] set link qos with %02x:%02x:%02x:%02x:%02x:%02x success, tpoll:0x%x \r\n",
+						p_stream_open_t->bd_addr[5], p_stream_open_t->bd_addr[4], p_stream_open_t->bd_addr[3], p_stream_open_t->bd_addr[2], p_stream_open_t->bd_addr[1],
+						p_stream_open_t->bd_addr[0],
+						tpoll);
+			}
+		}
 	}
 	break;
 
@@ -1925,8 +1999,32 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 				pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
 		BT_AT_PRINT("+BTA2DP:start,%d,%d\r\n",
 					pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
-		if (a2dp_demo_audio_track_hdl) {
-			rtk_bt_audio_track_resume(a2dp_demo_audio_track_hdl->audio_track_hdl);
+		if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SNK) {
+			if (a2dp_demo_audio_track_hdl) {
+				rtk_bt_audio_track_resume(a2dp_demo_audio_track_hdl->audio_track_hdl);
+			}
+		} else if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
+			if (a2dp_task.hdl) {
+				BT_LOGA("[A2DP Demo] Start Test Demo \r\n");
+			} else {
+				BT_LOGA("[A2DP Demo] Create Test Demo \r\n");
+				if (false == osif_sem_create(&a2dp_task.sem, 0, 1)) {
+					BT_LOGE("[A2DP Demo] Create a2dp_task.sem fail \r\n");
+					break;
+				}
+				a2dp_task.run = 1;
+				if (false == osif_task_create(&a2dp_task.hdl, "a2dp_task",
+											  a2dp_task_entry, NULL,
+											  2048, 4)) {
+					osif_sem_delete(a2dp_task.sem);
+					a2dp_task.run = 0;
+					BT_LOGE("[A2DP Demo] Create a2dp_task fail \r\n");
+					break;
+				}
+				osif_sem_take(a2dp_task.sem, 0xffffffff);
+			}
+			app_a2dp_src_send_flag = true;
+			rtk_bt_avrcp_play_status_change_req(bd_addr, RTK_BT_AVRCP_STATUS_PLAYING);
 		}
 	}
 	break;
@@ -2063,8 +2161,6 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
 
 		dft_param.mtu_size = 180;
 		BT_APP_PROCESS(rtk_bt_br_gap_set_default_param(&dft_param));
-		/* set class of device */
-		BT_APP_PROCESS(rtk_bt_br_gap_set_cod(&cod));
 		/* set supervision_timeout */
 		BT_APP_PROCESS(rtk_bt_br_gap_set_supvisiontimeout(&superv_time));
 		BT_APP_PROCESS(rtk_bt_br_gap_set_inquiry_param(&inquiry_param));
@@ -2072,9 +2168,13 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
 		/* sdp record add (must be invoked before rtk_bt_enable) */
 		BT_APP_PROCESS(rtk_sdp_record_add((void *)did_sdp_record, sizeof(did_sdp_record)));
 		if (RTK_BT_A2DP_ROLE_SNK == role) {
+			/* set class of device */
+			BT_APP_PROCESS(rtk_bt_br_gap_set_cod(&cod_for_snk));
 			BT_APP_PROCESS(rtk_sdp_record_add((void *)a2dp_sink_sdp_record, sizeof(a2dp_sink_sdp_record)));
 			a2dp_demo_role = RTK_BT_A2DP_ROLE_SNK;
 		} else if (RTK_BT_A2DP_ROLE_SRC == role) {
+			/* set class of device */
+			BT_APP_PROCESS(rtk_bt_br_gap_set_cod(&cod_for_src));
 			BT_APP_PROCESS(rtk_sdp_record_add((void *)a2dp_src_sdp_record, sizeof(a2dp_src_sdp_record)));
 			a2dp_demo_role = RTK_BT_A2DP_ROLE_SRC;
 		} else {

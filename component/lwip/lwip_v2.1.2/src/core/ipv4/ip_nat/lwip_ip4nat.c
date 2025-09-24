@@ -285,8 +285,8 @@ static struct nat_table *ip_nat_entry_search(u8_t proto, u32_t addr, u16_t port,
 
 	LWIP_DEBUGF(IPNAT_DEBUG, ("searching in table %s: %"U16_F".%"U16_F".%"U16_F".%"U16_F", port: %d, mport: %d\n",
 							  (dest ? "dest" : "src"),
-							  ip4_addr1_16((ip_addr_t *)&addr), ip4_addr2_16((ip_addr_t *)&addr),
-							  ip4_addr3_16((ip_addr_t *)&addr), ip4_addr4_16((ip_addr_t *)&addr),
+							  ip4_addr1_16((ip4_addr_t *)&addr), ip4_addr2_16((ip4_addr_t *)&addr),
+							  ip4_addr3_16((ip4_addr_t *)&addr), ip4_addr4_16((ip4_addr_t *)&addr),
 							  PP_HTONS(port),
 							  PP_HTONS(portmap)));
 

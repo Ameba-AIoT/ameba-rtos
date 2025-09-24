@@ -63,8 +63,6 @@ static rtk_bt_le_audio_csis_sirk_type_t default_csis_sirk_type = RTK_BT_LE_CSIS_
 uint16_t default_csis_size = RTK_BT_LE_CSIS_SIRK_LEN;
 #endif
 
-extern bool rtk_bt_check_evt_cb_direct_calling(uint8_t group, uint8_t evt_code);
-
 #if defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT
 static uint16_t rtk_stack_mcp_client_read_result_handle(T_MCP_CLIENT_READ_RESULT *p_read_result)
 {
@@ -73,9 +71,22 @@ static uint16_t rtk_stack_mcp_client_read_result_handle(T_MCP_CLIENT_READ_RESULT
 	uint8_t  *data_ptr =  NULL;
 	rtk_bt_le_audio_mcp_client_read_result_ind_t *p_read_result_ind = NULL;
 
+	switch (p_read_result->char_uuid) {
+	case MCS_UUID_CHAR_MEDIA_PLAYER_NAME:
+		data_len = p_read_result->data.media_player_name.media_player_name_len + 1;
+		data_ptr = p_read_result->data.media_player_name.p_media_player_name;
+		break;
+	case MCS_UUID_CHAR_TRACK_TITLE:
+		data_len = p_read_result->data.track_title.track_title_len + 1;
+		data_ptr = p_read_result->data.track_title.p_track_title;
+		break;
+	default:
+		break;
+	}
+
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_CAP,
 								RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_READ_RESULT_IND,
-								sizeof(rtk_bt_le_audio_mcp_client_read_result_ind_t));
+								sizeof(rtk_bt_le_audio_mcp_client_read_result_ind_t) + data_len);
 	if (!p_evt) {
 		BT_LOGE("%s rtk_bt_event_create fail\r\n", __func__);
 		return RTK_BT_FAIL;
@@ -90,40 +101,23 @@ static uint16_t rtk_stack_mcp_client_read_result_handle(T_MCP_CLIENT_READ_RESULT
 	BT_LOGD("LE_AUDIO_MSG_MCP_CLIENT_READ_RESULT char_uuid=0x%x\r\n", p_read_result->char_uuid);
 	switch (p_read_result->char_uuid) {
 	case MCS_UUID_CHAR_MEDIA_PLAYER_NAME:
-		data_len = p_read_result->data.media_player_name.media_player_name_len + 1;
-		data_ptr = p_read_result->data.media_player_name.p_media_player_name;
-		break;
-	case MCS_UUID_CHAR_TRACK_TITLE:
-		data_len = p_read_result->data.track_title.track_title_len + 1;
-		data_ptr = p_read_result->data.track_title.p_track_title;
-		break;
-	default:
-		break;
-	}
-	if (data_len) {
-		p_evt->user_data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, data_len);
-		if (!p_evt->user_data) {
-			BT_LOGE("p_evt->user_data alloc fail, len = %d\r\n", data_len);
-			return RTK_BT_ERR_NO_MEMORY;
-		}
-		memset(p_evt->user_data, 0, data_len);
-		memcpy((void *)p_evt->user_data, (void *)data_ptr, data_len - 1);
-	}
-	switch (p_read_result->char_uuid) {
-	case MCS_UUID_CHAR_MEDIA_PLAYER_NAME:
 		if (data_len != 0) {
 			APP_PRINT_INFO1("rtk_stack_mcp_client_read_result_handle: player_name %s", TRACE_STRING(data_ptr));
 			BT_LOGD("rtk_stack_mcp_client_read_result_handle: player_name %s\r\n", data_ptr);
-			p_read_result_ind->data.media_player_name.p_media_player_name = p_evt->user_data;
+			p_read_result_ind->data.media_player_name.p_media_player_name =
+				BT_STRUCT_TAIL(p_read_result_ind, rtk_bt_le_audio_mcp_client_read_result_ind_t);
 			p_read_result_ind->data.media_player_name.media_player_name_len = data_len;
+			memcpy(p_read_result_ind->data.media_player_name.p_media_player_name, data_ptr, data_len - 1);
 		}
 		break;
 	case MCS_UUID_CHAR_TRACK_TITLE:
 		if (data_len != 0) {
 			APP_PRINT_INFO1("rtk_stack_mcp_client_read_result_handle: title_url %s", TRACE_STRING(data_ptr));
 			BT_LOGD("rtk_stack_mcp_client_read_result_handle: title_url %s\r\n", data_ptr);
-			p_read_result_ind->data.track_title.p_track_title = p_evt->user_data;
+			p_read_result_ind->data.track_title.p_track_title =
+				BT_STRUCT_TAIL(p_read_result_ind, rtk_bt_le_audio_mcp_client_read_result_ind_t);
 			p_read_result_ind->data.track_title.track_title_len = data_len;
+			memcpy(p_read_result_ind->data.track_title.p_track_title, data_ptr, data_len - 1);
 		}
 		break;
 	default:
@@ -143,19 +137,6 @@ static uint16_t rtk_stack_mcp_client_notify_handle(T_MCP_CLIENT_NOTIFY *p_notify
 	uint8_t  *data_ptr =  NULL;
 	rtk_bt_le_audio_mcp_client_notify_ind_t *p_notify_result_ind = NULL;
 
-	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_CAP,
-								RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_NOTIFY_IND,
-								sizeof(rtk_bt_le_audio_mcp_client_notify_ind_t));
-	if (!p_evt) {
-		BT_LOGE("%s rtk_bt_event_create fail\r\n", __func__);
-		return RTK_BT_FAIL;
-	}
-	p_notify_result_ind = (rtk_bt_le_audio_mcp_client_notify_ind_t *)p_evt->data;
-	p_notify_result_ind->conn_handle = p_notify_result->conn_handle;
-	p_notify_result_ind->general_mcs = p_notify_result->gmcs;
-	p_notify_result_ind->srv_instance_id = p_notify_result->srv_instance_id;
-	p_notify_result_ind->char_uuid = p_notify_result->char_uuid;
-	BT_LOGD("LE_AUDIO_MSG_MCP_CLIENT_NOTIFY char_uuid=0x%x\r\n", p_notify_result->char_uuid);
 	switch (p_notify_result->char_uuid) {
 	case MCS_UUID_CHAR_MEDIA_PLAYER_NAME:
 		data_len = p_notify_result->data.media_player_name.media_player_name_len + 1;
@@ -168,30 +149,40 @@ static uint16_t rtk_stack_mcp_client_notify_handle(T_MCP_CLIENT_NOTIFY *p_notify
 	default:
 		break;
 	}
-	if (data_len) {
-		p_evt->user_data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, data_len);
-		if (!p_evt->user_data) {
-			BT_LOGE("p_evt->user_data alloc fail, len = %d\r\n", data_len);
-			return RTK_BT_ERR_NO_MEMORY;
-		}
-		memset(p_evt->user_data, 0, data_len);
-		memcpy((void *)p_evt->user_data, (void *)data_ptr, data_len - 1);
+
+	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_CAP,
+								RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_NOTIFY_IND,
+								sizeof(rtk_bt_le_audio_mcp_client_notify_ind_t) + data_len);
+	if (!p_evt) {
+		BT_LOGE("%s rtk_bt_event_create fail\r\n", __func__);
+		return RTK_BT_FAIL;
 	}
+	p_notify_result_ind = (rtk_bt_le_audio_mcp_client_notify_ind_t *)p_evt->data;
+	p_notify_result_ind->conn_handle = p_notify_result->conn_handle;
+	p_notify_result_ind->general_mcs = p_notify_result->gmcs;
+	p_notify_result_ind->srv_instance_id = p_notify_result->srv_instance_id;
+	p_notify_result_ind->char_uuid = p_notify_result->char_uuid;
+	BT_LOGD("LE_AUDIO_MSG_MCP_CLIENT_NOTIFY char_uuid=0x%x\r\n", p_notify_result->char_uuid);
+
 	switch (p_notify_result->char_uuid) {
 	case MCS_UUID_CHAR_MEDIA_PLAYER_NAME:
 		if (data_len != 0) {
 			APP_PRINT_INFO1("rtk_stack_mcs_client_read_result_handle: player_name %s", TRACE_STRING(data_ptr));
 			BT_LOGD("rtk_stack_mcs_client_read_result_handle: player_name %s\r\n", data_ptr);
-			p_notify_result_ind->data.media_player_name.p_media_player_name = p_evt->user_data;
+			p_notify_result_ind->data.media_player_name.p_media_player_name =
+				BT_STRUCT_TAIL(p_notify_result_ind, rtk_bt_le_audio_mcp_client_notify_ind_t);
 			p_notify_result_ind->data.media_player_name.media_player_name_len = data_len;
+			memcpy(p_notify_result_ind->data.media_player_name.p_media_player_name, data_ptr, data_len - 1);
 		}
 		break;
 	case MCS_UUID_CHAR_TRACK_TITLE:
 		if (data_len != 0) {
 			APP_PRINT_INFO1("rtk_stack_mcs_client_read_result_handle: title_url %s", TRACE_STRING(data_ptr));
 			BT_LOGD("rtk_stack_mcs_client_read_result_handle: title_url %s\r\n", data_ptr);
-			p_notify_result_ind->data.track_title.p_track_title = p_evt->user_data;
+			p_notify_result_ind->data.track_title.p_track_title =
+				BT_STRUCT_TAIL(p_notify_result_ind, rtk_bt_le_audio_mcp_client_notify_ind_t);
 			p_notify_result_ind->data.track_title.track_title_len = data_len;
+			memcpy(p_notify_result_ind->data.track_title.p_track_title, data_ptr, data_len - 1);
 		}
 		break;
 	default:
@@ -680,10 +671,6 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 			p_read_ind->char_uuid == MCS_UUID_CHAR_TRACK_DURATION || p_read_ind->char_uuid == MCS_UUID_CHAR_TRACK_POSITION ||
 			p_read_ind->char_uuid == MCS_UUID_CHAR_CONTENT_CONTROL_ID) {
 			rtk_bt_le_audio_mcp_server_read_ind_t *p_ind = NULL;
-			if (false == rtk_bt_check_evt_cb_direct_calling(RTK_BT_LE_GP_CAP, RTK_BT_LE_AUDIO_EVT_MCP_SERVER_READ_IND)) {
-				BT_LOGE("%s: RTK_BT_LE_AUDIO_EVT_MCP_SERVER_READ_IND is not direct calling!\r\n", __func__);
-				break;
-			}
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_CAP,
 										RTK_BT_LE_AUDIO_EVT_MCP_SERVER_READ_IND,
 										sizeof(rtk_bt_le_audio_mcp_server_read_ind_t));
@@ -895,14 +882,18 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 
 	case LE_AUDIO_MSG_VOCS_CLIENT_NOTIFY: {
 		T_VOCS_CLIENT_NOTIFY *notify_data = (T_VOCS_CLIENT_NOTIFY *)buf;
+		uint32_t data_len = 0;
 		APP_PRINT_INFO3("LE_AUDIO_MSG_VOCS_CLIENT_NOTIFY: conn_handle 0x%x, srv_instance_id %d, type=%d",
 						notify_data->conn_handle, notify_data->srv_instance_id, notify_data->type);
 		BT_LOGD("LE_AUDIO_MSG_VOCS_CLIENT_NOTIFY: conn_handle 0x%x, srv_instance_id %d, type=%d\r\n",
 				notify_data->conn_handle, notify_data->srv_instance_id, notify_data->type);
 		rtk_bt_le_audio_vocs_client_notify_ind_t *p_ind = NULL;
+		if (RTK_BT_LE_AUDIO_VOCS_CHAR_AUDIO_OUTPUT_DESC == (rtk_bt_le_audio_vocs_char_type_t)notify_data->type) {
+			data_len = notify_data->data.output_des.output_des_len + 1;
+		}
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_CAP,
 									RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_NOTIFY_IND,
-									sizeof(rtk_bt_le_audio_vocs_client_notify_ind_t));
+									sizeof(rtk_bt_le_audio_vocs_client_notify_ind_t) + data_len);
 		if (!p_evt) {
 			BT_LOGE("%s rtk_bt_event_create fail\r\n", __func__);
 			break;
@@ -920,16 +911,9 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 			p_ind->data.audio_location = notify_data->data.audio_location;
 			break;
 		case RTK_BT_LE_AUDIO_VOCS_CHAR_AUDIO_OUTPUT_DESC:
-			p_ind->data.output_des.output_des_len = notify_data->data.output_des.output_des_len + 1;
-			p_ind->data.output_des.p_output_des = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, p_ind->data.output_des.output_des_len);
-			if (!p_ind->data.output_des.p_output_des) {
-				BT_LOGE("p_ind->p_data alloc fail, len = %d\r\n", p_ind->data.output_des.output_des_len);
-				rtk_bt_event_free(p_evt);
-				break;
-			}
-			memset(p_ind->data.output_des.p_output_des, 0, p_ind->data.output_des.output_des_len);
-			memcpy((void *)p_ind->data.output_des.p_output_des, (void *)notify_data->data.output_des.p_output_des, notify_data->data.output_des.output_des_len);
-			p_evt->user_data = p_ind->data.output_des.p_output_des;
+			p_ind->data.output_des.output_des_len = data_len;
+			p_ind->data.output_des.p_output_des = BT_STRUCT_TAIL(p_ind, rtk_bt_le_audio_vocs_client_notify_ind_t);
+			memcpy((void *)p_ind->data.output_des.p_output_des, (void *)notify_data->data.output_des.p_output_des, data_len - 1);
 			BT_LOGD("vocs char output des: srv_instance_id %d, output_des_len %d, p_output_des %s\r\n",
 					p_ind->srv_instance_id, p_ind->data.output_des.output_des_len, p_ind->data.output_des.p_output_des);
 			break;
@@ -944,14 +928,18 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 
 	case LE_AUDIO_MSG_VOCS_CLIENT_READ_RESULT: {
 		T_VOCS_CLIENT_READ_RESULT *read_result = (T_VOCS_CLIENT_READ_RESULT *)buf;
+		uint32_t data_len = 0;
 		APP_PRINT_INFO4("LE_AUDIO_MSG_VOCS_CLIENT_READ_RESULT: conn_handle %d,srv_instance_id %d, type %d, cause 0x%x",
 						read_result->conn_handle, read_result->srv_instance_id, read_result->type, read_result->cause);
 		BT_LOGD("LE_AUDIO_MSG_VOCS_CLIENT_READ_RESULT: conn_handle %d,srv_instance_id %d, type %d, cause 0x%x\r\n",
 				read_result->conn_handle, read_result->srv_instance_id, read_result->type, read_result->cause);
 		rtk_bt_le_audio_vocs_client_read_result_ind_t *p_ind = NULL;
+		if (RTK_BT_LE_AUDIO_VOCS_CHAR_AUDIO_OUTPUT_DESC == (rtk_bt_le_audio_vocs_char_type_t)read_result->type) {
+			data_len = read_result->data.output_des.output_des_len + 1;
+		}
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_CAP,
 									RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_READ_RESULT_IND,
-									sizeof(rtk_bt_le_audio_vocs_client_read_result_ind_t));
+									sizeof(rtk_bt_le_audio_vocs_client_read_result_ind_t) + data_len);
 		if (!p_evt) {
 			BT_LOGE("%s rtk_bt_event_create fail\r\n", __func__);
 			break;
@@ -969,16 +957,9 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 			p_ind->data.audio_location = read_result->data.audio_location;
 			break;
 		case RTK_BT_LE_AUDIO_VOCS_CHAR_AUDIO_OUTPUT_DESC:
-			p_ind->data.output_des.output_des_len = read_result->data.output_des.output_des_len + 1;
-			p_ind->data.output_des.p_output_des = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, p_ind->data.output_des.output_des_len);
-			if (!p_ind->data.output_des.p_output_des) {
-				BT_LOGE("p_ind->p_data alloc fail, len = %d\r\n", p_ind->data.output_des.output_des_len);
-				rtk_bt_event_free(p_evt);
-				break;
-			}
-			memset(p_ind->data.output_des.p_output_des, 0, p_ind->data.output_des.output_des_len);
-			memcpy((void *)p_ind->data.output_des.p_output_des, (void *)read_result->data.output_des.p_output_des, read_result->data.output_des.output_des_len);
-			p_evt->user_data = p_ind->data.output_des.p_output_des;
+			p_ind->data.output_des.output_des_len = data_len;
+			p_ind->data.output_des.p_output_des = BT_STRUCT_TAIL(p_ind, rtk_bt_le_audio_vocs_client_read_result_ind_t);
+			memcpy((void *)p_ind->data.output_des.p_output_des, (void *)read_result->data.output_des.p_output_des, data_len - 1);
 			break;
 		default:
 			BT_LOGE("%s RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_READ_RESULT_IND type (%d) error\r\n", __func__, p_ind->type);
@@ -1044,14 +1025,18 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 
 	case LE_AUDIO_MSG_AICS_CLIENT_NOTIFY: {
 		T_AICS_CLIENT_NOTIFY *notify = (T_AICS_CLIENT_NOTIFY *)buf;
+		uint32_t data_len = 0;
 		APP_PRINT_INFO3("LE_AUDIO_MSG_AICS_CLIENT_NOTIFY: conn_handle %d,srv_instance_id %d, type %d",
 						notify->conn_handle, notify->srv_instance_id, notify->type);
 		BT_LOGD("LE_AUDIO_MSG_AICS_CLIENT_NOTIFY: conn_handle %d,srv_instance_id %d, type %d\r\n",
 				notify->conn_handle, notify->srv_instance_id, notify->type);
 		rtk_bt_le_audio_aics_client_notify_ind_t *p_ind = NULL;
+		if (RTK_BT_LE_AUDIO_AICS_CHAR_INPUT_DES == (rtk_bt_le_audio_aics_char_type_t)notify->type) {
+			data_len = notify->data.input_des.input_des_len + 1;
+		}
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_CAP,
 									RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_NOTIFY_IND,
-									sizeof(rtk_bt_le_audio_aics_client_notify_ind_t));
+									sizeof(rtk_bt_le_audio_aics_client_notify_ind_t) + data_len);
 		if (!p_evt) {
 			BT_LOGE("%s rtk_bt_event_create fail\r\n", __func__);
 			break;
@@ -1074,16 +1059,9 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 			p_ind->data.input_status = notify->data.input_status;
 			break;
 		case RTK_BT_LE_AUDIO_AICS_CHAR_INPUT_DES:
-			p_ind->data.input_des.input_des_len = notify->data.input_des.input_des_len + 1;
-			p_ind->data.input_des.p_input_des = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, notify->data.input_des.input_des_len);
-			if (!p_ind->data.input_des.p_input_des) {
-				BT_LOGE("p_ind->p_data alloc fail, len = %d\r\n", p_ind->data.input_des.input_des_len);
-				rtk_bt_event_free(p_evt);
-				break;
-			}
-			memset(p_ind->data.input_des.p_input_des, 0, p_ind->data.input_des.input_des_len);
-			memcpy((void *)p_ind->data.input_des.p_input_des, (void *)notify->data.input_des.p_input_des, notify->data.input_des.input_des_len);
-			p_evt->user_data = p_ind->data.input_des.p_input_des;
+			p_ind->data.input_des.input_des_len = data_len;
+			p_ind->data.input_des.p_input_des = BT_STRUCT_TAIL(p_ind, rtk_bt_le_audio_aics_client_notify_ind_t);
+			memcpy((void *)p_ind->data.input_des.p_input_des, (void *)notify->data.input_des.p_input_des, data_len - 1);
 			break;
 		default:
 			BT_LOGE("%s RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_READ_RESULT_IND type (%d) error\r\n", __func__, p_ind->type);
@@ -1096,14 +1074,18 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 
 	case LE_AUDIO_MSG_AICS_CLIENT_READ_RESULT: {
 		T_AICS_CLIENT_READ_RESULT *read_result = (T_AICS_CLIENT_READ_RESULT *)buf;
+		uint32_t data_len = 0;
 		APP_PRINT_INFO4("LE_AUDIO_MSG_AICS_CLIENT_READ_RESULT: conn_handle %d,srv_instance_id %d, type %d, cause 0x%x",
 						read_result->conn_handle, read_result->srv_instance_id, read_result->type, read_result->cause);
 		BT_LOGD("LE_AUDIO_MSG_AICS_CLIENT_READ_RESULT: conn_handle %d,srv_instance_id %d, type %d, cause 0x%x\r\n",
 				read_result->conn_handle, read_result->srv_instance_id, read_result->type, read_result->cause);
 		rtk_bt_le_audio_aics_client_read_result_ind_t *p_ind = NULL;
+		if (RTK_BT_LE_AUDIO_AICS_CHAR_INPUT_DES == (rtk_bt_le_audio_aics_char_type_t)read_result->type) {
+			data_len = read_result->data.input_des.input_des_len + 1;
+		}
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_CAP,
 									RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_READ_RESULT_IND,
-									sizeof(rtk_bt_le_audio_aics_client_read_result_ind_t));
+									sizeof(rtk_bt_le_audio_aics_client_read_result_ind_t) + data_len);
 		if (!p_evt) {
 			BT_LOGE("%s rtk_bt_event_create fail\r\n", __func__);
 			break;
@@ -1126,16 +1108,9 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 			p_ind->data.input_status = read_result->data.input_status;
 			break;
 		case RTK_BT_LE_AUDIO_AICS_CHAR_INPUT_DES:
-			p_ind->data.input_des.input_des_len = read_result->data.input_des.input_des_len + 1;
-			p_ind->data.input_des.p_input_des = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, p_ind->data.input_des.input_des_len);
-			if (!p_ind->data.input_des.p_input_des) {
-				BT_LOGE("p_ind->p_data alloc fail, len = %d\r\n", p_ind->data.input_des.input_des_len);
-				rtk_bt_event_free(p_evt);
-				break;
-			}
-			memset(p_ind->data.input_des.p_input_des, 0, p_ind->data.input_des.input_des_len);
-			memcpy((void *)p_ind->data.input_des.p_input_des, (void *)read_result->data.input_des.p_input_des, read_result->data.input_des.input_des_len);
-			p_evt->user_data = p_ind->data.input_des.p_input_des;
+			p_ind->data.input_des.input_des_len = data_len;
+			p_ind->data.input_des.p_input_des = BT_STRUCT_TAIL(p_ind, rtk_bt_le_audio_aics_client_read_result_ind_t);
+			memcpy((void *)p_ind->data.input_des.p_input_des, (void *)read_result->data.input_des.p_input_des, data_len - 1);
 			BT_LOGD("aics char input des: srv_instance_id %d, input_des_len %d, p_input_des %s\r\n",
 					p_ind->srv_instance_id, p_ind->data.input_des.input_des_len, p_ind->data.input_des.p_input_des);
 			break;
@@ -1315,7 +1290,7 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 		rtk_bt_le_audio_aics_write_input_des_ind_t *p_ind = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_CAP,
 									RTK_BT_LE_AUDIO_EVT_AICS_WRITE_INPUT_DES_IND,
-									sizeof(rtk_bt_le_audio_aics_write_input_des_ind_t));
+									sizeof(rtk_bt_le_audio_aics_write_input_des_ind_t) + p_input_des->input_des.input_des_len + 1);
 		if (!p_evt) {
 			BT_LOGE("%s rtk_bt_event_create fail\r\n", __func__);
 			break;
@@ -1323,15 +1298,8 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 		p_ind = (rtk_bt_le_audio_aics_write_input_des_ind_t *)p_evt->data;
 		p_ind->srv_instance_id = p_input_des->srv_instance_id;
 		p_ind->input_des.input_des_len = p_input_des->input_des.input_des_len + 1;
-		p_ind->input_des.p_input_des = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, p_ind->input_des.input_des_len);
-		if (!p_ind->input_des.p_input_des) {
-			BT_LOGE("p_ind->p_data alloc fail, len = %d\r\n", p_ind->input_des.input_des_len);
-			rtk_bt_event_free(p_evt);
-			break;
-		}
-		memset(p_ind->input_des.p_input_des, 0, p_ind->input_des.input_des_len);
+		p_ind->input_des.p_input_des = BT_STRUCT_TAIL(p_ind, rtk_bt_le_audio_aics_write_input_des_ind_t);
 		memcpy((void *)p_ind->input_des.p_input_des, (void *)p_input_des->input_des.p_input_des, p_input_des->input_des.input_des_len);
-		p_evt->user_data = p_ind->input_des.p_input_des;
 
 		/* Send event */
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -1392,7 +1360,7 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 		rtk_bt_le_audio_vocs_write_output_des_ind_t *p_ind = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_CAP,
 									RTK_BT_LE_AUDIO_EVT_VOCS_WRITE_OUTPUT_DES_IND,
-									sizeof(rtk_bt_le_audio_vocs_write_output_des_ind_t));
+									sizeof(rtk_bt_le_audio_vocs_write_output_des_ind_t) + p_des->output_des.output_des_len + 1);
 		if (!p_evt) {
 			BT_LOGE("%s rtk_bt_event_create fail\r\n", __func__);
 			break;
@@ -1401,15 +1369,8 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 		p_ind->conn_handle = p_des->conn_handle;
 		p_ind->srv_instance_id = p_des->srv_instance_id;
 		p_ind->output_des.output_des_len = p_des->output_des.output_des_len + 1;
-		p_ind->output_des.p_output_des = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, p_ind->output_des.output_des_len);
-		if (!p_ind->output_des.p_output_des) {
-			BT_LOGE("p_ind->p_data alloc fail, len = %d\r\n", p_ind->output_des.output_des_len);
-			rtk_bt_event_free(p_evt);
-			break;
-		}
-		memset(p_ind->output_des.p_output_des, 0, p_ind->output_des.output_des_len);
+		p_ind->output_des.p_output_des = BT_STRUCT_TAIL(p_ind, rtk_bt_le_audio_vocs_write_output_des_ind_t);
 		memcpy((void *)p_ind->output_des.p_output_des, (void *)p_des->output_des.p_output_des, p_des->output_des.output_des_len);
-		p_evt->user_data = p_ind->output_des.p_output_des;
 		/* Send event */
 		rtk_bt_evt_indicate(p_evt, NULL);
 	}

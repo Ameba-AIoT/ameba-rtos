@@ -123,3 +123,4 @@ ameba_add_internal_library(lwip
 )
 ##########################################################################################
 ameba_add_subdirectory(lwip_${v_LWIP_VER}/src/core/ipv4/ip_nat)
+ameba_add_subdirectory(lwip_${v_LWIP_VER}/src/core/ipv6/ip6_rlocal)

@@ -40,10 +40,10 @@ extern "C" {
   */
 
 typedef enum {
-	UART_0 = (int)UART0_DEV,
-	UART_1 = (int)UART1_DEV,
-	UART_2 = (int)UART2_DEV,
-	UART_3 = (int)UART3_DEV,
+	UART_0 = 0,
+	UART_1,
+	UART_2,
+	UART_3,
 } UARTName;
 /** @}*/
 /** @}*/
@@ -86,8 +86,8 @@ typedef enum {
   * @{
   */
 typedef enum {
-	SPI_0 = (int)SPI0_DEV,
-	SPI_1 = (int)SPI1_DEV,
+	SPI_0 = 0,
+	SPI_1,
 } SPIName;
 /** @}*/
 /** @}*/
@@ -107,8 +107,8 @@ typedef enum {
   * @{
   */
 typedef enum {
-	I2C_0 = (int)I2C0_DEV,
-	I2C_1 = (int)I2C1_DEV,
+	I2C_0 = 0,
+	I2C_1,
 } I2CName;
 /** @}*/
 /** @}*/

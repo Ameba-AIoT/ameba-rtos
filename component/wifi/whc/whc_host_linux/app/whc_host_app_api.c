@@ -5,6 +5,7 @@
 #include <whc_host_netlink.h>
 #include <whc_host_app_api.h>
 
+extern struct whc_netlink whc_netlink_info;
 /*
  * Create a raw netlink socket and bind
  */
@@ -93,37 +94,18 @@ int whc_host_api_send_to_kernel(int fd, char *buf, int buflen)
 // WHC_ATTR_PAYLOAD: size(4B) + payload
 int whc_host_api_send_nl_data(uint8_t *buf, uint32_t buf_len)
 {
-	int nl_fd;
-	int nl_family_id = 0;
 	int ret = 0;
 	struct msgtemplate msg;
 	unsigned char *ptr = msg.buf;
 
-	/* initialize socket */
-	nl_fd = whc_host_api_create_nl_socket(NETLINK_GENERIC, getpid());
-	if (nl_fd < 0) {
-		fprintf(stderr, "failed to create netlink socket\n");
-		return 0;
-	}
-
-	/* get family id */
-	nl_family_id = whc_host_api_get_family_id(nl_fd, WHC_CMD_GENL_NAME);
-	if (!nl_family_id) {
-		fprintf(stderr, "Failed to get family id, errno %d\n", errno);
-		close(nl_fd);
-		return -1;
-	}
-
-	whc_host_fill_nlhdr(&msg, nl_family_id, 0, WHC_CMD_ECHO);
+	whc_host_fill_nlhdr(&msg, whc_netlink_info.family_id, 0, WHC_CMD_ECHO);
 	nla_put_u32(&ptr, WHC_ATTR_API_ID, CMD_WIFI_SEND_BUF);
 	nla_put_payload(&ptr, WHC_ATTR_PAYLOAD, buf, buf_len);
 	msg.n.nlmsg_len += ptr - msg.buf;
-	ret = whc_host_api_send_to_kernel(nl_fd, (char *)&msg, msg.n.nlmsg_len);
+	ret = whc_host_api_send_to_kernel(whc_netlink_info.sockfd, (char *)&msg, msg.n.nlmsg_len);
 	if (ret < 0) {
 		printf("msg send fail\n");
 	}
-
-	close(nl_fd);
 
 	return ret;
 

@@ -126,7 +126,7 @@ static void uart_gtimer_deinit(void);
 
 static u32
 uart_dmasend_complete(
-	IN void *Data
+	void *Data
 )
 {
 	PMBED_UART_ADAPTER puart_adapter = (PMBED_UART_ADAPTER) Data;
@@ -158,7 +158,7 @@ uart_dmasend_complete(
 
 static u32
 uart_dmarecv_complete(
-	IN void *Data
+	void *Data
 )
 {
 	PMBED_UART_ADAPTER puart_adapter = (PMBED_UART_ADAPTER) Data;
@@ -204,7 +204,7 @@ uart_dmarecv_complete(
 
 static u32
 uart_dmarecv_irqhandler(
-	IN void *Data
+	void *Data
 )
 {
 	PMBED_UART_ADAPTER puart_adapter = (PMBED_UART_ADAPTER) Data;
@@ -241,7 +241,7 @@ static void uart_rxdone_callback(void *pAdapter)
 
 static void
 uart_intrecv_complete(
-	IN PMBED_UART_ADAPTER puart_adapter
+	PMBED_UART_ADAPTER puart_adapter
 )
 {
 	//volatile u8 LineStatus;
@@ -262,7 +262,7 @@ uart_intrecv_complete(
 
 static void
 uart_intsend_complete(
-	IN PMBED_UART_ADAPTER puart_adapter
+	PMBED_UART_ADAPTER puart_adapter
 )
 {
 	// Disable Tx FIFO empty interrupt
@@ -278,7 +278,7 @@ uart_intsend_complete(
 
 static u32
 uart_irqhandler(
-	IN void *Data
+	void *Data
 )
 {
 	PMBED_UART_ADAPTER puart_adapter = (PMBED_UART_ADAPTER) Data;

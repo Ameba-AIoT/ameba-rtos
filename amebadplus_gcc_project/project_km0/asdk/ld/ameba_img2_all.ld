@@ -194,7 +194,7 @@ __bdram_heap_buffer_size__ = 0;
 #endif
 
 
-#if defined(CONFIG_PSRAM_ALL_FOR_AP_HEAP)
+#if defined(CONFIG_PSRAM_ALL_FOR_AP_HEAP) || defined(CONFIG_DISABLE_PSRAM)
 __psram_heap_buffer_start__ = .;
 __psram_heap_buffer_size__ = 0;
 

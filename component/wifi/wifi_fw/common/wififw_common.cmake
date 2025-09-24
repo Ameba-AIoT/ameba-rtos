@@ -25,6 +25,7 @@ list(
     ${DIR_COMMON}/wififw_txrpt_common.c
     ${DIR_COMMON}/wififw_bcnrxwindow_adjust_com.c
     ${DIR_COMMON}/wififw_wowlan_common.c
+    ${DIR_COMMON}/wififw_mp.c
 )
 
 #FIXME: These source are not add for amebaL2, add them will cause some compile error

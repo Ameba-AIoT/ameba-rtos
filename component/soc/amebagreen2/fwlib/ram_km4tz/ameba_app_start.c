@@ -14,6 +14,10 @@ extern int main(void);
 extern void NS_ENTRY BOOT_IMG3(void);
 extern void SOCPS_WakeFromPG_AP(void);
 
+#if defined(CONFIG_PLATFORM_FREERTOS) && defined(CONFIG_TRUSTZONE)
+SRAM_ONLY_DATA_SECTION
+HAL_VECTOR_FUN RamVectorTable[95] ALIGNMTO(512) = {0};
+#endif
 u32 app_mpu_nocache_check(u32 mem_addr)
 {
 	mpu_region_config mpu_cfg;
@@ -126,9 +130,16 @@ void app_start(void)
 	_memset((void *) __bss_start__, 0, (__bss_end__ - __bss_start__));
 
 	RBSS_UDELAY_DIV = 5;
-
+#if defined(CONFIG_PLATFORM_FREERTOS) && defined(CONFIG_TRUSTZONE)
+	/*When using RAM OS and trustzone is enabled, the non secure image should use non_secure stack*/
+	_memset(RamVectorTable, 0, sizeof(RamVectorTable));
+	_memcpy(RamVectorTable, RomVectorTable, sizeof(RamVectorTable));
+	RamVectorTable[0] = (HAL_VECTOR_FUN)MSP_RAM_HP_NS;
+	SCB->VTOR = (u32)RamVectorTable;
+#else
 	/* When TZ not enabled, re-init pendsv/svcall/systick in the non-secure vector table for OS.*/
 	SCB->VTOR = (u32)RomVectorTable;
+#endif
 
 #ifdef CONFIG_TRUSTZONE
 	BOOT_IMG3();

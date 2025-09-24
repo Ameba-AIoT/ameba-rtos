@@ -126,6 +126,11 @@ if BT_EXAMPLE_DEMO_MENU
                 bool "BLE Audio Gaming Audio Profile"
                 default n
         endif
+
+        config BT_LE_AUDIO_GENERIC_DEMO_PERIPHERAL_MENU
+            depends on AMEBASMART && !AMEBA_RLS    #internal amebasmart
+            bool "BT LE Audio Generic Demo and BLE Peripheral"
+            default n
     endif
 
     if BT_HAS_BREDR
@@ -229,6 +234,14 @@ if BT
         bool
         select BT_GMAP
         select BT_GMAP_SUPPORT
+
+    config BT_LE_AUDIO_GENERIC_DEMO_PERIPHERAL_MENU
+        bool
+        select BT_LE_AUDIO_GENERIC_DEMO_PERIPHERAL
+        select BT_LE_AUDIO
+        select BT_APP_AUDIO_DATA
+        select BT_AUDIO_CODEC_SUPPORT
+        select BT_AUDIO_CODEC_LC3
 
     config BT_A2DP_MENU
         bool
@@ -363,6 +376,8 @@ config BT_MESH_PROVISIONER_TEST
 config BT_MESH_DEVICE_TEST
     bool
 config BT_LE_AUDIO
+    bool
+config BT_LE_AUDIO_GENERIC_DEMO_PERIPHERAL
     bool
 config BT_TMAP
     bool

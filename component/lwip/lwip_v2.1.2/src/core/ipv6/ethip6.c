@@ -55,6 +55,9 @@
 #include "netif/ethernet.h"
 
 #include <string.h>
+#if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
+#include "lwip/lwip_ip6_rlocal.h"
+#endif
 
 /**
  * Resolve and fill-in Ethernet address header for outgoing IPv6 packet.
@@ -96,7 +99,23 @@ ethip6_output(struct netif *netif, struct pbuf *q, const ip6_addr_t *ip6addr)
     dest.addr[3] = ((const u8_t *)(&(ip6addr->addr[3])))[1];
     dest.addr[4] = ((const u8_t *)(&(ip6addr->addr[3])))[2];
     dest.addr[5] = ((const u8_t *)(&(ip6addr->addr[3])))[3];
-
+    
+#if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
+    struct ip6_hdr *ip6hdr;
+    ip_addr_t current_iphdr_src;
+    ip6hdr = (struct ip6_hdr *)q->payload;
+    ip_addr_copy_from_ip6_packed(current_iphdr_src, ip6hdr->src);
+    // when sta ap and netif is sta and pkt from sta-ap
+    if(is_sta_ap()&&(netif == xnetif)&&(ip6_addr_cmp_zoneless((const ip6_addr_t *)&current_iphdr_src, netif_ip6_addr(netif, 0))))
+    {
+      struct netif *outap = &xnetif[1];
+      result = ethernet_output(&xnetif[1], q, (const struct eth_addr*)(outap->hwaddr), &dest, ETHTYPE_IPV6);
+      pbuf_remove_header(q, SIZEOF_ETH_HDR);
+      if(ERR_OK != result) {
+        return result;
+      }
+    }
+#endif
     /* Send out. */
     return ethernet_output(netif, q, (const struct eth_addr*)(netif->hwaddr), &dest, ETHTYPE_IPV6);
   }

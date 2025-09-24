@@ -129,7 +129,7 @@ static s8 spdio_device_rx_done_cb(void *padapter, void *data, u16 offset, u16 pk
 	return RTK_SUCCESS;
 }
 
-static s8 spdio_device_tx_done_cb(void *padapter, IN u8 *data)
+static s8 spdio_device_tx_done_cb(void *padapter, u8 *data)
 {
 	struct spdio_t *obj = (struct spdio_t *)padapter;
 	struct spdio_buf_t *buf = (struct spdio_buf_t *)data;
@@ -321,7 +321,7 @@ void spdio_trigger_rx_handle(void)
  * @param pSPDIODev Pointer to a SDIO device data structure.
  * @return None
  */
-void SPDIO_TxBd_DataReady_DeviceRx(IN PHAL_SPDIO_ADAPTER pSPDIODev)
+void SPDIO_TxBd_DataReady_DeviceRx(PHAL_SPDIO_ADAPTER pSPDIODev)
 {
 	SPDIO_TX_BD_HANDLE *pTxBdHdl;
 	PINIC_TX_DESC pTxDesc;
@@ -412,7 +412,7 @@ exit:
 	return;
 }
 
-static void SPDIO_Recycle_Rx_BD(IN PHAL_SPDIO_ADAPTER pgSPDIODev)
+static void SPDIO_Recycle_Rx_BD(PHAL_SPDIO_ADAPTER pgSPDIODev)
 {
 	SPDIO_RX_BD_HANDLE *pRxBdHdl;
 	SPDIO_RX_BD *pRXBD;

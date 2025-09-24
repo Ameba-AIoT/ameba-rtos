@@ -22,12 +22,16 @@ struct hci_transport_cb hci_sa_cb = {
 	.recv = hci_sa_recv,
 };
 
-void hci_standalone_open(void)
+uint8_t hci_sa_open(void)
 {
-	osif_sem_create(&recv_sem, 0, 1);
+	if (false == osif_sem_create(&recv_sem, 0, 1)) {
+		return HCI_FAIL;
+	}
+
+	return HCI_SUCCESS;
 }
 
-void hci_standalone_close(void)
+void hci_sa_free(void)
 {
 	osif_sem_delete(recv_sem);
 	recv_sem = NULL;

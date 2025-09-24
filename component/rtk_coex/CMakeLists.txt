@@ -1,8 +1,6 @@
-if(NOT CONFIG_AMEBAD)
-    #FIXME: amebad not not support rtk_coex_api?
-    if (CONFIG_COEXIST_HOST)
-        include(rtk_coex_api.cmake)
-    endif()
+
+if (CONFIG_COEXIST_HOST)
+    include(rtk_coex_api.cmake)
 endif()
 
 if (CONFIG_COEXIST_DEV)

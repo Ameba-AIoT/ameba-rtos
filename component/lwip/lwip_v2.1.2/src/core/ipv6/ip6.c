@@ -60,6 +60,10 @@
 #include "lwip/debug.h"
 #include "lwip/stats.h"
 
+#if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
+#include "lwip/lwip_ip6_rlocal.h"
+#endif
+
 #ifdef LWIP_HOOK_FILENAME
 #include LWIP_HOOK_FILENAME
 #endif
@@ -679,6 +683,9 @@ netif_found:
     goto ip6_input_cleanup;
   }
 
+#if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
+    handle_ip6(p, ip6hdr, inp);
+#endif
   /* packet not for us? */
   if (netif == NULL) {
     /* packet not for us, route or discard */

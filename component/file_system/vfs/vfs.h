@@ -196,7 +196,7 @@ enum {
 
 #define VFS_DBG_LEVEL VFS_ERROR
 
-#define VFS_DBG_ON	1
+#define VFS_DBG_ON	0
 #if VFS_DBG_ON
 #define VFS_DBG(level, fmt, arg...)     \
 do {\

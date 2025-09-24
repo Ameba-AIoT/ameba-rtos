@@ -17,12 +17,26 @@
 #include <bsec_svc.h>
 #include <rtk_svc_setup.h>
 
+#define __weak __attribute__((weak))
+
 /* Setup smc Standard Services, set if need */
 static int32_t rtk_smc_setup(void)
 {
 	/*
 	 * set if need.
 	 */
+	return 0;
+}
+
+/*
+ * Weak Matter Secure Service SMC handler symbol.
+ */
+__weak int matter_secure_smc_handler(uint32_t matter_secure_fid,
+                              u_register_t x1,
+                              u_register_t x2,
+                              u_register_t x3)
+{
+	printf("Enable Secure Matter on AmebaSmart!!!\n");
 	return 0;
 }
 
@@ -49,6 +63,9 @@ static uintptr_t rtk_smc_handler(uint32_t smc_fid,
 
 		ret1 = rtk_secure_service(x1, x2, x3, &ret2);
 		SMC_RET2(handle, ret1, ret2);
+		break;
+	case RTK_SMC_MATTER_SECURE:
+		ret1 = matter_secure_smc_handler(x1, x2, x3, x4);
 		break;
 
 	default:

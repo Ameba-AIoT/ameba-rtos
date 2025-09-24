@@ -158,13 +158,6 @@ u8 whc_dev_rcvpkt_redirect(struct sk_buff *skb, struct whc_pkt_attrib *pattrib)
 		}
 	}
 
-#ifdef CONFIG_WHC_BRIDGE
-	/* all pkt to upper before host rdy to avoid txbd full */
-	if (!(whc_dev_api_get_host_rdy())) {
-		return PORT_TO_UP;
-	}
-#endif
-
 	if (pattrib->protocol == lwip_htons(ETHTYPE_ARP)) {
 		return PORT_TO_BOTH;
 	}
@@ -223,7 +216,7 @@ u8 whc_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send)
 		return 0;
 	}
 
-	pattrib->port_idx = *idx;//BRIDGE_TODO: check if needed
+	pattrib->port_idx = *idx;//check if needed
 
 	direction = whc_dev_rcvpkt_redirect(skb, pattrib);
 

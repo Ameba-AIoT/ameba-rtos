@@ -18,6 +18,7 @@
 #if defined(HCI_BT_COEX_ENABLE) && HCI_BT_COEX_ENABLE
 
 struct rtk_bt_coex_priv_t *p_rtk_bt_coex_priv = NULL;
+bool bt_coex_initialized = false;
 
 static struct rtk_bt_coex_conn_t  *bt_coex_find_link_by_handle(uint16_t conn_handle)
 {
@@ -355,6 +356,8 @@ static void bt_coex_le_connect_complete_evt(uint8_t enhance, uint8_t *pdata)
 	memset(p_conn->profile_refcount, 0, PROFILE_MAX);
 	p_conn->type = HCI_CONN_TYPE_LE;
 
+	p_conn->connect_interval = interval;
+
 	bt_coex_update_profile_info(p_conn, PROFILE_HID, true);
 	if (interval < BT_LE_BUSY_CONN_INTERVAL) {
 		p_conn->profile_status_bitmap |= BIT(PROFILE_HID);
@@ -379,6 +382,8 @@ static void bt_coex_le_update_connection_evt(uint8_t *pdata)
 	if ((p_conn->profile_bitmap & BIT(PROFILE_HID)) == 0) {
 		return;
 	}
+
+	p_conn->connect_interval = interval;
 
 	if (interval < BT_LE_BUSY_CONN_INTERVAL) {
 		if ((p_conn->profile_bitmap & BIT(PROFILE_HID_INTERVAL)) == 0) {
@@ -587,6 +592,8 @@ static void bt_coex_handle_mode_change_evt(uint8_t *pdata)
 	if ((p_conn->profile_bitmap & BIT(PROFILE_HID)) == 0) {
 		return;
 	}
+
+	p_conn->connect_interval = interval;
 
 	if (interval < BT_HID_BUSY_INTERVAL) {
 		if ((p_conn->profile_bitmap & BIT(PROFILE_HID_INTERVAL)) == 0) {
@@ -1041,32 +1048,109 @@ static void bt_coex_monitor_timer_handler(void *arg)
 }
 
 #if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
-void bt_coex_send_mailbox_cmd(uint8_t *user_data, uint16_t length)
+static void bt_coex_send_to_coex_driver(void);
+static void bt_coex_setup_link_timer_handler(void *arg)
 {
-	uint8_t *pbuf = NULL;
-	uint8_t offset = 0;
+	(void)arg;
 
-	pbuf = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, 1 + length);
-	if (!pbuf) {
+	if (!bt_coex_initialized) {
 		return;
 	}
 
-	/* the first 4 byte reserved for header */
-	pbuf[offset] = length;
-	offset ++;
-	memcpy(pbuf + offset, user_data, length);
-
-	/* the first 4 byte reserved for header */
-	bt_coex_send_vendor_cmd(HCI_VENDOR_MAILBOX_CMD, pbuf, offset);
-
-	osif_mem_free(pbuf);
+	p_rtk_bt_coex_priv->bt_info_cur.le_setup_link = 0;
+	DBG_BT_COEX("setup_link_timer done\r\n");
+	bt_coex_send_to_coex_driver();
 }
 
+static uint16_t bt_coex_count_setup_link_timeout(uint16_t conn_intvl)
+{
+	//CONFIG_COEX_BT_CONNING_TIMER_THR 1000 // unit:1ms
+	//transmitWindowDelay_max: 3.75ms, 3*1.25ms
+	//transmitWindowoffset_max: conn_interval
+	//transmitWindowSize_max: 10ms, 8*1.25ms
+	//connecting_timer min: transmitWindowDelay_max+transmitWindowoffset_max+transmitWindowSize_max+(connInterval)*6 = 3+conn_interval+8+conn_interval*6
+	//connecting_timer max: CONFIG_COEX_BT_CONNING_TIMER_THR
+	// conn_intvl ----- timeout
+	//   6(7.5ms) ----- 66.25ms
+	//  24(30ms) ------ 223.75ms
+	// 120(150ms) ----- 1063.75ms
+	uint16_t timeout = (((conn_intvl * 7) + 11) * 5) >> 2; // unit: ms
 
-static void bt_coex_set_mailbox_to_wifi(uint8_t *user_data, uint16_t length)
+	if (conn_intvl == 0) {
+		return 0;
+	}
+
+	if (timeout > 1000) {
+		timeout = 1000;
+	}
+
+	return timeout;
+
+}
+
+static uint16_t bt_coex_get_max_connect_intvl(void)
+{
+	uint16_t connect_interval = 0;
+	struct list_head *plist = NULL;
+	struct rtk_bt_coex_conn_t *p_conn = NULL;
+
+	if (!list_empty(&p_rtk_bt_coex_priv->conn_list)) {
+		plist = p_rtk_bt_coex_priv->conn_list.next;
+		while (plist != &p_rtk_bt_coex_priv->conn_list) {
+			p_conn = (struct rtk_bt_coex_conn_t *)plist;
+			if (p_conn->connect_interval > connect_interval) {
+				connect_interval = p_conn->connect_interval;
+			}
+			plist = plist->next;
+		}
+	}
+
+	return connect_interval;
+}
+
+static uint8_t bt_coex_count_link(void)
+{
+	uint8_t link_cnt = 0;
+	struct list_head *plist = NULL;
+
+	if (!list_empty(&p_rtk_bt_coex_priv->conn_list)) {
+		plist = p_rtk_bt_coex_priv->conn_list.next;
+		while (plist != &p_rtk_bt_coex_priv->conn_list) {
+			link_cnt++;
+			plist = plist->next;
+		}
+	}
+
+	return link_cnt;
+}
+
+static uint8_t bt_coex_link_status(void)
+{
+	enum LE_CONNECT_STATUS_e link_status = LE_CONNECT_NONE;
+	struct list_head *plist = NULL;
+	struct rtk_bt_coex_conn_t *p_conn = NULL;
+
+	if (!list_empty(&p_rtk_bt_coex_priv->conn_list)) {
+		plist = p_rtk_bt_coex_priv->conn_list.next;
+		while (plist != &p_rtk_bt_coex_priv->conn_list) {
+			p_conn = (struct rtk_bt_coex_conn_t *)plist;
+			if (p_conn->connect_interval < BT_LE_BUSY_CONN_INTERVAL) {
+				link_status = LE_CONNECT_BUSY;
+				break;
+			} else {
+				link_status = LE_CONNECT_IDLE;
+			}
+			plist = plist->next;
+		}
+	}
+
+	return link_status;
+}
+
+static void bt_coex_send_b2w_sw_mailbox(uint8_t *user_data, uint16_t length)
 {
 #if defined(CONFIG_BT_COEXIST)
-	DBG_BT_COEX_DUMP("bt_coex_set_mailbox_to_wifi: pdata = ", user_data, length);
+	DBG_BT_COEX_DUMP("bt_coex_send_b2w_sw_mailbox: pdata = ", user_data, length);
 	rtk_coex_btc_bt_hci_notify(user_data, length, COEX_H2C_BT_HCI_NOTIFY_SW_MAILBOX);
 #else
 	(void) user_data;
@@ -1074,181 +1158,455 @@ static void bt_coex_set_mailbox_to_wifi(uint8_t *user_data, uint16_t length)
 #endif
 }
 
-static void bt_coex_parse_mailbox_event(uint8_t status, uint8_t mailbox_id, uint8_t payload_len, uint8_t *payload)
+static void bt_coex_send_construct_mp_report(uint8_t mailbox_id, uint8_t mp_op_code, uint8_t scan_type)
 {
-	uint8_t *pdata = NULL;
-	uint8_t data_len = 0;
-	DBG_BT_COEX("bt_coex_parse_mailbox_event status %d mailbox_id 0x%x\r\n", status, mailbox_id);
+	/* B0: mailbox_id; B1: seq; B2: opcode; ...*/
+	union rtk_coex_b2w_sw_mailbox_bt_mp_report mailbox_para = {0};
+	if (RTK_COEX_MAILBOX_MP_REPORT_OPCODE_GET_BT_LE_SCAN_TYPE == mp_op_code) {
+		/* B3: [b7:b4],len;[b3:b0],status; B4: data1 */
+		osif_mutex_take(p_rtk_bt_coex_priv->info_paras_mutex, 0xFFFFFFFFUL);
+		mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_type.id = mailbox_id;
+		mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_type.subid = mp_op_code;
+		mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_type.len = 1;
+		mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_type.status = 0;
+		mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_type.le_bg_scan = 0;
+		mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_type.le_init_scan = (p_rtk_bt_coex_priv->bt_info_cur.le_scan_type == LE_SCAN_INIT);
+		mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_type.le_scan = (p_rtk_bt_coex_priv->bt_info_cur.le_scan_type == LE_SCAN_NORMAL);
+		osif_mutex_give(p_rtk_bt_coex_priv->info_paras_mutex);
 
+		bt_coex_send_b2w_sw_mailbox((uint8_t *)&mailbox_para, sizeof(union rtk_coex_b2w_sw_mailbox_bt_mp_report));
+	} else if (RTK_COEX_MAILBOX_MP_REPORT_OPCODE_GET_BT_LE_SCAN_PARA == mp_op_code) {
+		/* B3: [b7:b4],len;[b3:b0],status; B4: data0; B5: data1; B6: data2; B7: data3 */
+		osif_mutex_take(p_rtk_bt_coex_priv->info_paras_mutex, 0xFFFFFFFFUL);
+		mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_para.id = mailbox_id;
+		mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_para.subid = mp_op_code;
+		mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_para.len = 4;
+		mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_para.status = 0;
+		if (scan_type == LE_SCAN_INIT) {
+			mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_para.scan_window_low = p_rtk_bt_coex_priv->bt_info_cur.le_scan_init_window & 0xFF;
+			mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_para.scan_window_high = p_rtk_bt_coex_priv->bt_info_cur.le_scan_init_window >> 8;
+			mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_para.scan_intvl_low = p_rtk_bt_coex_priv->bt_info_cur.le_scan_init_intvl & 0xFF;
+			mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_para.scan_intvl_high = p_rtk_bt_coex_priv->bt_info_cur.le_scan_init_intvl >> 8;
+		} else if (scan_type == LE_SCAN_NORMAL) {
+			mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_para.scan_window_low = p_rtk_bt_coex_priv->bt_info_cur.le_scan_window & 0xFF;
+			mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_para.scan_window_high = p_rtk_bt_coex_priv->bt_info_cur.le_scan_window >> 8;
+			mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_para.scan_intvl_low = p_rtk_bt_coex_priv->bt_info_cur.le_scan_intvl & 0xFF;
+			mailbox_para.rtk_coex_b2w_sw_mailbox_le_scan_para.scan_intvl_high = p_rtk_bt_coex_priv->bt_info_cur.le_scan_intvl >> 8;
+		}
+		osif_mutex_give(p_rtk_bt_coex_priv->info_paras_mutex);
+
+		bt_coex_send_b2w_sw_mailbox((uint8_t *)&mailbox_para, sizeof(union rtk_coex_b2w_sw_mailbox_bt_mp_report));
+	}
+}
+static void bt_coex_send_construct_bt_info(uint8_t mailbox_id)
+{
+	/* B0: mailbox_id; B1: mailbox_len; B2: LB2; B3: LB3; B4: hb0; B5: hb1; B6: hb2; B7: hb3*/
+	struct rtk_coex_b2w_sw_mailbox_bt_info_report_by_itself mailbox_para = {0};
+	osif_mutex_take(p_rtk_bt_coex_priv->info_paras_mutex, 0xFFFFFFFFUL);
+	mailbox_para.id = mailbox_id;
+	mailbox_para.len = 6;
+	mailbox_para.hid = (p_rtk_bt_coex_priv->bt_info_cur.le_connect == LE_CONNECT_BUSY);
+	mailbox_para.le_link = (p_rtk_bt_coex_priv->bt_info_cur.le_connect != LE_CONNECT_NONE);
+	mailbox_para.multi_link = (p_rtk_bt_coex_priv->bt_info_cur.le_link_cnt > 1);
+	mailbox_para.ble_scan_en = (p_rtk_bt_coex_priv->bt_info_cur.le_scan_type != LE_SCAN_NONE);
+	osif_mutex_give(p_rtk_bt_coex_priv->info_paras_mutex);
+
+	bt_coex_send_b2w_sw_mailbox((uint8_t *)&mailbox_para, sizeof(struct rtk_coex_b2w_sw_mailbox_bt_info_report_by_itself));
+}
+static void bt_coex_send_construct_extra_bt_info(uint8_t mailbox_id, uint8_t setup_link)
+{
+	/* B0: mailbox_id; B1: mailbox_len; B2: LB2; B3: LB3; B4: hb0; B5: hb1; B6: hb2; B7: hb3*/
+	struct rtk_coex_b2w_sw_mailbox_bt_extra_info_report_by_itself mailbox_para = {0};
+	mailbox_para.id = mailbox_id;
+	mailbox_para.len = 6;
+	mailbox_para.le_setup_link = setup_link;
+
+	bt_coex_send_b2w_sw_mailbox((uint8_t *)&mailbox_para, sizeof(struct rtk_coex_b2w_sw_mailbox_bt_extra_info_report_by_itself));
+}
+static void bt_coex_send_construct_scan_start_end(uint8_t mailbox_id)
+{
+	/* B0: mailbox_id; B1: mailbox_len; B2: LB2; B3: LB3; B4: hb0; B5: hb1; B6: hb2*/
+	struct rtk_coex_b2w_sw_mailbox_bt_le_init_scan_start_end mailbox_para = {0};
+	osif_mutex_take(p_rtk_bt_coex_priv->info_paras_mutex, 0xFFFFFFFFUL);
+	mailbox_para.id = mailbox_id;
+	mailbox_para.len = 6;
+	mailbox_para.scan_window_low = p_rtk_bt_coex_priv->bt_info_cur.le_scan_init_window & 0xFF;
+	mailbox_para.scan_window_high = p_rtk_bt_coex_priv->bt_info_cur.le_scan_init_window >> 8;
+	mailbox_para.scan_intvl_low = p_rtk_bt_coex_priv->bt_info_cur.le_scan_init_intvl & 0xFF;
+	mailbox_para.scan_intvl_high = p_rtk_bt_coex_priv->bt_info_cur.le_scan_init_intvl >> 8;
+	osif_mutex_give(p_rtk_bt_coex_priv->info_paras_mutex);
+
+	bt_coex_send_b2w_sw_mailbox((uint8_t *)&mailbox_para, sizeof(struct rtk_coex_b2w_sw_mailbox_bt_le_init_scan_start_end));
+}
+
+static void bt_coex_send_to_coex_driver(void)
+{
+	if (!bt_coex_initialized) {
+		return;
+	}
+
+	if (0 == memcmp(&p_rtk_bt_coex_priv->bt_info_prev, &p_rtk_bt_coex_priv->bt_info_cur, sizeof(struct rtk_coex_bt_info_t))) {
+		return;
+	}
+
+	// mailbox_id = 0x30, subid = 0x2d
+	if (p_rtk_bt_coex_priv->bt_info_cur.le_scan_type != p_rtk_bt_coex_priv->bt_info_prev.le_scan_type) {
+		// mailbox_id = 0x49, send scan intvl/window
+		if (p_rtk_bt_coex_priv->bt_info_cur.le_scan_type == LE_SCAN_INIT) {
+			//DBG_BT_COEX("send mailbox_id=0x49\r\n");
+			bt_coex_send_construct_scan_start_end(RTK_COEX_MAILBOX_BT_SCAN_START_END);
+		}
+		// mailbox_id = 0x30, subid = 0x2d, send scan type
+		// mailbox_id = 0x30, subid = 0x2e, send scan intvl/window
+		//DBG_BT_COEX("send mailbox_id=0x30,subid=0x2d\r\n");
+		bt_coex_send_construct_mp_report(RTK_COEX_MAILBOX_BT_MP_REPORT, RTK_COEX_MAILBOX_MP_REPORT_OPCODE_GET_BT_LE_SCAN_TYPE, 0);
+		if (p_rtk_bt_coex_priv->bt_info_cur.le_scan_type == LE_SCAN_NORMAL) {
+			//DBG_BT_COEX("send mailbox_id=0x30,subid=0x2e\r\n");
+			bt_coex_send_construct_mp_report(RTK_COEX_MAILBOX_BT_MP_REPORT, RTK_COEX_MAILBOX_MP_REPORT_OPCODE_GET_BT_LE_SCAN_PARA, LE_SCAN_NORMAL);
+		}
+	}
+
+	// mailbox_id = 0x47
+	if ((p_rtk_bt_coex_priv->bt_info_cur.le_setup_link != p_rtk_bt_coex_priv->bt_info_prev.le_setup_link)) {
+		//DBG_BT_COEX("send mailbox_id=0x47\r\n");
+		bt_coex_send_construct_extra_bt_info(RTK_COEX_MAILBOX_BT_LE_EXTRA_INFO_BY_ITSELF, p_rtk_bt_coex_priv->bt_info_cur.le_setup_link);
+	}
+
+	// mailbox_id = 0x27
+	if ((p_rtk_bt_coex_priv->bt_info_cur.le_scan_type != p_rtk_bt_coex_priv->bt_info_prev.le_scan_type)
+		|| (p_rtk_bt_coex_priv->bt_info_cur.le_connect != p_rtk_bt_coex_priv->bt_info_prev.le_connect)
+		|| (p_rtk_bt_coex_priv->bt_info_cur.le_link_cnt != p_rtk_bt_coex_priv->bt_info_prev.le_link_cnt)) {
+		//DBG_BT_COEX("send mailbox_id=0x27\r\n");
+		bt_coex_send_construct_bt_info(RTK_COEX_MAILBOX_BT_INFO_REPORT_BY_ITSELF);
+	}
+
+	// backup
+	memcpy(&p_rtk_bt_coex_priv->bt_info_prev, &p_rtk_bt_coex_priv->bt_info_cur, sizeof(struct rtk_coex_bt_info_t));
+
+	// debug print
+	DBG_BT_COEX("bt_info:iscan_i/w/scan_i/w/scan_t/con/setup/link=%d/%d/%d/%d/%d/%d/%d/%d\r\n", p_rtk_bt_coex_priv->bt_info_cur.le_scan_init_intvl,
+				p_rtk_bt_coex_priv->bt_info_cur.le_scan_init_window,
+				p_rtk_bt_coex_priv->bt_info_cur.le_scan_intvl,
+				p_rtk_bt_coex_priv->bt_info_cur.le_scan_window,
+				p_rtk_bt_coex_priv->bt_info_cur.le_scan_type,
+				p_rtk_bt_coex_priv->bt_info_cur.le_connect,
+				p_rtk_bt_coex_priv->bt_info_cur.le_setup_link,
+				p_rtk_bt_coex_priv->bt_info_cur.le_link_cnt);
+}
+
+void bt_coex_send_w2b_sw_mailbox(uint8_t *user_data, uint16_t length)
+{
+	// AMEBAD: use hci driver auto report, ignore coex driver trigger action
+#if 0
+	uint8_t mailbox_id = 0, subid = 0, scan_type = 0;
+
+	if (length == 0 || user_data == NULL) {
+		return;
+	}
+
+	if (!bt_coex_initialized) {
+		return;
+	}
+
+	DBG_BT_COEX_DUMP("bt_coex_send_w2b_sw_mailbox: pdata = ", user_data, length);
+
+	mailbox_id = user_data[0];
+	subid = user_data[2];
+	scan_type = user_data[3];
 	switch (mailbox_id) {
 	case RTK_COEX_MAILBOX_BT_IGNORE_WLAN_ACT:
+		/* B0: mailbox_id; B1: mailbox_len; B2: enable; */
 		break;
-	case RTK_COEX_MAILBOX_BT_MP_REPORT:
+	case RTK_COEX_MAILBOX_WL_OP_MODE:
+		/* B0: mailbox_id; B1: mailbox_len; B2: opcode; B3:channel_idx; B4:bw*/
 		break;
 	case RTK_COEX_MAILBOX_BT_INFO_REPORT:
-	case RTK_COEX_MAILBOX_BT_INFO_REPORT_BY_ITSELF:
-		if (status == 0) {
-			pdata = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, 1 + payload_len);
-			if (!pdata || payload_len == 0) {
-				return;
+		/* B0: mailbox_id; B1: mailbox_len; B2: trigger*/
+		bt_coex_send_construct_bt_info(RTK_COEX_MAILBOX_BT_INFO_REPORT);
+		break;
+	case RTK_COEX_MAILBOX_BT_MP_REPORT:
+		/* B0: mailbox_id; B1: mailbox_len; B2: opcode; ...*/
+		if (RTK_COEX_MAILBOX_MP_REPORT_OPCODE_GET_BT_LE_SCAN_TYPE == subid) {
+			bt_coex_send_construct_mp_report(RTK_COEX_MAILBOX_BT_MP_REPORT, RTK_COEX_MAILBOX_MP_REPORT_OPCODE_GET_BT_LE_SCAN_TYPE, 0);
+		} else if (RTK_COEX_MAILBOX_MP_REPORT_OPCODE_GET_BT_LE_SCAN_PARA == subid) {
+			// user_data[3]: 1: le bg scan; 2: init scan; 4: le scan
+			if (scan_type == 2) {
+				bt_coex_send_construct_mp_report(RTK_COEX_MAILBOX_BT_MP_REPORT, RTK_COEX_MAILBOX_MP_REPORT_OPCODE_GET_BT_LE_SCAN_PARA, LE_SCAN_INIT);
 			}
-			pdata[0] = mailbox_id;
-			memcpy(pdata + 1, payload, payload_len);
-			data_len = payload_len + 1;
-			DBG_BT_COEX_DUMP("bt_coex_set_mailbox_to_wifi: pdata = ", pdata, data_len);
-			bt_coex_set_mailbox_to_wifi(pdata, data_len);
-			osif_mem_free(pdata);
+			if (scan_type == 4) {
+				bt_coex_send_construct_mp_report(RTK_COEX_MAILBOX_BT_MP_REPORT, RTK_COEX_MAILBOX_MP_REPORT_OPCODE_GET_BT_LE_SCAN_PARA, LE_SCAN_NORMAL);
+			}
 		}
 		break;
-
+	case RTK_COEX_MAILBOX_BT_LE_EXTRA_INFO:
+		/* B0: mailbox_id; B1: mailbox_len; B2: trigger*/
+		bt_coex_send_construct_extra_bt_info(RTK_COEX_MAILBOX_BT_LE_EXTRA_INFO, p_rtk_bt_coex_priv->bt_info_cur.le_setup_link);
+		break;
 	default:
 		break;
+#else
+	(void) user_data;
+	(void) length;
+#endif
 	}
-}
-#endif
 
-void bt_coex_evt_notify(uint8_t *pdata, uint16_t len)
-{
-	uint8_t evt = pdata[0];
-	switch (evt) {
-	case HCI_EV_CMD_COMPLETE: {
-		/* B0: event code, B1: length, B2: Num_HCI_Command_Packets, B3&B4: Command_Opcode: B5: cmd_status */
-		uint16_t cmd_opcode = (uint16_t)((pdata[4] << 8) | pdata[3]);
-		uint8_t length = pdata[1];
-		uint8_t status = pdata[5];
-		switch (cmd_opcode) {
-#if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
-		case HCI_VENDOR_MAILBOX_CMD: {
-			uint8_t mailbox_id = pdata[1];
-			uint8_t payload_len = length - 5;
-			uint8_t *payload = pdata + 7;
-			bt_coex_parse_mailbox_event(status, mailbox_id, payload_len, payload);
-			break;
+	static void bt_coex_process_cmd(uint8_t *pdata, uint16_t len)
+	{
+		/* B0&B1:opcode; B2: len; B3~:data*/
+		uint16_t hci_op = 0;
+		uint8_t scan_en = 0;
+		uint16_t scan_win = 0, scan_intvl = 0;
+
+		(void)len;
+
+		if (!bt_coex_initialized) {
+			return;
 		}
-#endif
+
+		hci_op = (pdata[1] << 8) + pdata[0];
+
+		switch (hci_op) {
+		case BT_HCI_OP_LE_SET_SCAN_PARAM:
+			scan_intvl = (pdata[5] << 8) + pdata[4];
+			scan_win = (pdata[7] << 8) + pdata[6];
+			osif_mutex_take(p_rtk_bt_coex_priv->info_paras_mutex, 0xFFFFFFFFUL);
+			p_rtk_bt_coex_priv->bt_info_cur.le_scan_window = scan_win;
+			p_rtk_bt_coex_priv->bt_info_cur.le_scan_intvl = scan_intvl;
+			osif_mutex_give(p_rtk_bt_coex_priv->info_paras_mutex);
+			break;
+		case BT_HCI_OP_LE_SET_SCAN_ENABLE:
+			scan_en = pdata[3];
+			osif_mutex_take(p_rtk_bt_coex_priv->info_paras_mutex, 0xFFFFFFFFUL);
+			if (scan_en == 1) {
+				p_rtk_bt_coex_priv->bt_info_cur.le_scan_type = LE_SCAN_NORMAL;
+			} else if (scan_en == 0) {
+				p_rtk_bt_coex_priv->bt_info_cur.le_scan_type = LE_SCAN_NONE;
+			}
+			osif_mutex_give(p_rtk_bt_coex_priv->info_paras_mutex);
+			break;
+		case BT_HCI_OP_LE_CREATE_CONN:
+			scan_en = 1;
+			scan_intvl = (pdata[4] << 8) + pdata[3];
+			scan_win = (pdata[6] << 8) + pdata[5];
+			osif_mutex_take(p_rtk_bt_coex_priv->info_paras_mutex, 0xFFFFFFFFUL);
+			p_rtk_bt_coex_priv->bt_info_cur.le_scan_init_window = scan_win;
+			p_rtk_bt_coex_priv->bt_info_cur.le_scan_init_intvl = scan_intvl;
+			p_rtk_bt_coex_priv->bt_info_cur.le_scan_type = LE_SCAN_INIT;
+			p_rtk_bt_coex_priv->bt_info_cur.le_setup_link = 1;
+			osif_mutex_give(p_rtk_bt_coex_priv->info_paras_mutex);
+			break;
+		case BT_HCI_OP_LE_CREATE_CONN_CANCEL:
+			osif_mutex_take(p_rtk_bt_coex_priv->info_paras_mutex, 0xFFFFFFFFUL);
+			p_rtk_bt_coex_priv->bt_info_cur.le_scan_type = LE_SCAN_NONE;
+			p_rtk_bt_coex_priv->bt_info_cur.le_setup_link = 0;
+			osif_mutex_give(p_rtk_bt_coex_priv->info_paras_mutex);
+			break;
 		default:
-			(void) length;
-			(void) status;
 			break;
 		}
-		break;
-	}
-
-#if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
-	case HCI_EV_VENDOR_SPECIFIC: { /* fix me, test in amebad */
-		/* B0: event code, B1: length, B2: sub event code, B3: cmd_status, B4&B11 coex info */
-		uint8_t length = pdata[1];
-		uint8_t sub_event_code = pdata[2];
-		uint8_t status = pdata[3];
-		uint8_t payload_len = length - 2;
-		uint8_t *payload = pdata + 4;
-		if (sub_event_code == RTK_COEX_MAILBOX_BT_INFO_REPORT_BY_ITSELF) {
-			bt_coex_parse_mailbox_event(status, sub_event_code, payload_len, payload);
-		}
-		break;
 	}
 #endif
 
-	default:
-		(void) len;
-		break;
-	}
-}
+	void bt_coex_evt_notify(uint8_t *pdata, uint16_t len)
+	{
+		uint8_t evt = pdata[0];
 
-void bt_coex_process_rx_frame(uint8_t type, uint8_t *pdata, uint16_t len)
-{
-	if (!pdata) {
-		return;
-	}
-
-	if (type == HCI_EVT) {
-		bt_coex_process_evt(pdata);
-		bt_coex_evt_notify(pdata, len);
-	}
-
-	if (type == HCI_ACL) {
-		bt_coex_process_acl_data(pdata, len, DIR_IN);
-	}
-}
-
-void bt_coex_process_tx_frame(uint8_t type, uint8_t *pdata, uint16_t len)
-{
-	if (!pdata) {
-		return;
-	}
-
-	if (type == HCI_ACL) {
-		bt_coex_process_acl_data(pdata, len, DIR_OUT);
-	}
-}
-
-void bt_coex_init(void)
-{
-	DBG_BT_COEX("Init \r\n");
-	p_rtk_bt_coex_priv = (struct rtk_bt_coex_priv_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct rtk_bt_coex_priv_t));
-	if (!p_rtk_bt_coex_priv) {
-		return;
-	}
-	memset(p_rtk_bt_coex_priv, 0, sizeof(struct rtk_bt_coex_priv_t));
-	INIT_LIST_HEAD(&p_rtk_bt_coex_priv->conn_list);
-	INIT_LIST_HEAD(&p_rtk_bt_coex_priv->monitor_list);
-	if (false == osif_mutex_create(&p_rtk_bt_coex_priv->monitor_mutex)) {
-		return;
-	}
-
-	if (true == osif_timer_create(&p_rtk_bt_coex_priv->monitor_timer, "bt_coex_monitor_timer", NULL, BT_COEX_MONITOR_INTERVAL, true,
-								  bt_coex_monitor_timer_handler)) {
-		osif_timer_start(&p_rtk_bt_coex_priv->monitor_timer);
-	}
-}
-
-void bt_coex_deinit(void)
-{
-	struct list_head *plist = NULL;
-	struct rtk_bt_coex_monitor_node_t *p_monitor = NULL;
-	struct rtk_bt_coex_conn_t *p_conn = NULL;
-
-	DBG_BT_COEX("Deinit \r\n");
-	osif_timer_stop(&p_rtk_bt_coex_priv->monitor_timer);
-
-	osif_mutex_take(p_rtk_bt_coex_priv->monitor_mutex, 0xFFFFFFFFUL);
-	if (!list_empty(&p_rtk_bt_coex_priv->monitor_list)) {
-		plist = p_rtk_bt_coex_priv->monitor_list.next;
-		while (plist != &p_rtk_bt_coex_priv->monitor_list) {
-			p_monitor = (struct rtk_bt_coex_monitor_node_t *)plist;
-			plist = plist->next;
-			list_del(&p_monitor->list);
-			osif_mem_free(p_monitor);
+		if (!bt_coex_initialized) {
+			return;
 		}
-	}
-	osif_mutex_give(p_rtk_bt_coex_priv->monitor_mutex);
 
-	plist = NULL;
-	if (!list_empty(&p_rtk_bt_coex_priv->conn_list)) {
-		plist = p_rtk_bt_coex_priv->conn_list.next;
-		while (plist != &p_rtk_bt_coex_priv->conn_list) {
-			p_conn = (struct rtk_bt_coex_conn_t *)plist;
-			plist = plist->next;
-			list_del(&p_conn->list);
-			{
-				struct list_head *p_profile_list = NULL;
-				struct rtk_bt_coex_profile_info_t *p_profile = NULL;
-				p_profile_list = p_conn->profile_list.next;
-				while (p_profile_list != &p_conn->profile_list) {
-					p_profile = (struct rtk_bt_coex_profile_info_t *)p_profile_list;
-					p_profile_list = p_profile_list->next;
-					list_del(&p_profile->list);
-					osif_mem_free(p_profile);
+		switch (evt) {
+#if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
+		case HCI_EV_LE_META: {
+			/* B0: event code, B1: length, B2: subevent_code, ... */
+			uint8_t sub_evt = pdata[2];
+			uint8_t status = pdata[3];
+			uint16_t connect_timeout = 0;
+			switch (sub_evt) {
+			// case init scan done event
+			// p_rtk_bt_coex_priv->bt_info_cur.le_scan_type = LE_SCAN_NONE;
+			case HCI_EV_LE_CONN_COMPLETE:
+			/* B3: status; B4&B5: connect_handle; ... B14&B15:connection_interval; ...*/
+			case HCI_EV_LE_ENHANCED_CONN_COMPLETE:
+				/* B3: status; B4&B5: connect_handle; ... B26&B27:connection_interval; ...*/
+				osif_mutex_take(p_rtk_bt_coex_priv->info_paras_mutex, 0xFFFFFFFFUL);
+				p_rtk_bt_coex_priv->bt_info_cur.le_link_cnt = bt_coex_count_link();
+				p_rtk_bt_coex_priv->bt_info_cur.le_connect = bt_coex_link_status();
+				osif_mutex_give(p_rtk_bt_coex_priv->info_paras_mutex);
+				if (status == 0) {
+					osif_mutex_take(p_rtk_bt_coex_priv->info_paras_mutex, 0xFFFFFFFFUL);
+					p_rtk_bt_coex_priv->bt_info_cur.le_scan_type = LE_SCAN_NONE;
+					p_rtk_bt_coex_priv->bt_info_cur.le_setup_link = 1;
+					osif_mutex_give(p_rtk_bt_coex_priv->info_paras_mutex);
+					if (sub_evt != HCI_EV_LE_CONN_UPDATE_COMPLETE) {
+						// delay to set setup_link = 0
+						connect_timeout = bt_coex_count_setup_link_timeout(bt_coex_get_max_connect_intvl());
+						DBG_BT_COEX("setup_link_timer start(conn_to=%d)\r\n", connect_timeout);
+						if ((p_rtk_bt_coex_priv->setup_link_timer == NULL) && (connect_timeout > 0)) {
+							if (true == osif_timer_create(&p_rtk_bt_coex_priv->setup_link_timer, "bt_coex_setup_link_timer", NULL, connect_timeout, false,
+														  bt_coex_setup_link_timer_handler)) {
+								osif_timer_start(&p_rtk_bt_coex_priv->setup_link_timer);
+							} else {
+								DBG_BT_COEX("bt_coex_evt_notify: setup_link_timer create fail!!!\r\n");
+							}
+						} else if (connect_timeout > 0) {
+							osif_timer_restart(&p_rtk_bt_coex_priv->setup_link_timer, connect_timeout);
+						}
+					}
+				} else {
+					osif_mutex_take(p_rtk_bt_coex_priv->info_paras_mutex, 0xFFFFFFFFUL);
+					p_rtk_bt_coex_priv->bt_info_cur.le_scan_type = LE_SCAN_NONE;
+					p_rtk_bt_coex_priv->bt_info_cur.le_setup_link = 0;
+					osif_mutex_give(p_rtk_bt_coex_priv->info_paras_mutex);
 				}
+				break;
+
+			case HCI_EV_LE_CONN_UPDATE_COMPLETE:
+				/* B3: status; B4&B5: connect_handle; B6&B7:connection_interval; ...*/
+				p_rtk_bt_coex_priv->bt_info_cur.le_connect = bt_coex_link_status();
+			default:
+				break;
 			}
-			osif_mem_free(p_conn);
+			break;
+		}
+		case HCI_EV_DISCONN_COMPLETE: {
+			/* B0: event code, B1: length, B2: status, B3&B4: connect_handle, B5: Reason */
+			uint8_t status = pdata[2];
+			if (status == 0) {
+				osif_mutex_take(p_rtk_bt_coex_priv->info_paras_mutex, 0xFFFFFFFFUL);
+				p_rtk_bt_coex_priv->bt_info_cur.le_link_cnt = bt_coex_count_link();
+				p_rtk_bt_coex_priv->bt_info_cur.le_connect = bt_coex_link_status();
+				osif_mutex_give(p_rtk_bt_coex_priv->info_paras_mutex);
+			}
+			break;
+		}
+#endif
+
+		default:
+			(void) len;
+			break;
 		}
 	}
 
-	osif_mutex_delete(p_rtk_bt_coex_priv->monitor_mutex);
-	osif_timer_delete(&p_rtk_bt_coex_priv->monitor_timer);
-	osif_mem_free(p_rtk_bt_coex_priv);
-}
+	void bt_coex_process_rx_frame(uint8_t type, uint8_t *pdata, uint16_t len)
+	{
+		if (!pdata) {
+			return;
+		}
+
+		if (type == HCI_EVT) {
+			bt_coex_process_evt(pdata);
+			bt_coex_evt_notify(pdata, len);
+		}
+
+		if (type == HCI_ACL) {
+			bt_coex_process_acl_data(pdata, len, DIR_IN);
+		}
+
+#if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
+		// auto report
+		bt_coex_send_to_coex_driver();
+#endif
+	}
+
+	void bt_coex_process_tx_frame(uint8_t type, uint8_t *pdata, uint16_t len)
+	{
+		if (!pdata) {
+			return;
+		}
+
+		if (type == HCI_ACL) {
+			bt_coex_process_acl_data(pdata, len, DIR_OUT);
+		}
+
+#if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
+		if (type == HCI_CMD) {
+			bt_coex_process_cmd(pdata, len);
+		}
+#endif
+	}
+
+	void bt_coex_init(void)
+	{
+		DBG_BT_COEX("Init \r\n");
+		p_rtk_bt_coex_priv = (struct rtk_bt_coex_priv_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct rtk_bt_coex_priv_t));
+		if (!p_rtk_bt_coex_priv) {
+			return;
+		}
+		memset(p_rtk_bt_coex_priv, 0, sizeof(struct rtk_bt_coex_priv_t));
+		INIT_LIST_HEAD(&p_rtk_bt_coex_priv->conn_list);
+		INIT_LIST_HEAD(&p_rtk_bt_coex_priv->monitor_list);
+		if (false == osif_mutex_create(&p_rtk_bt_coex_priv->monitor_mutex)) {
+			return;
+		}
+
+		if (true == osif_timer_create(&p_rtk_bt_coex_priv->monitor_timer, "bt_coex_monitor_timer", NULL, BT_COEX_MONITOR_INTERVAL, true,
+									  bt_coex_monitor_timer_handler)) {
+			osif_timer_start(&p_rtk_bt_coex_priv->monitor_timer);
+		}
+
+#if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
+		if (false == osif_mutex_create(&p_rtk_bt_coex_priv->info_paras_mutex)) {
+			DBG_BT_COEX("pinfo_paras_mutex create fail.\r\n");
+		}
+#endif
+
+		bt_coex_initialized = true;
+	}
+
+	void bt_coex_deinit(void)
+	{
+		struct list_head *plist = NULL;
+		struct rtk_bt_coex_monitor_node_t *p_monitor = NULL;
+		struct rtk_bt_coex_conn_t *p_conn = NULL;
+
+		DBG_BT_COEX("Deinit \r\n");
+		bt_coex_initialized = false;
+
+		osif_timer_stop(&p_rtk_bt_coex_priv->monitor_timer);
+
+		osif_mutex_take(p_rtk_bt_coex_priv->monitor_mutex, 0xFFFFFFFFUL);
+		if (!list_empty(&p_rtk_bt_coex_priv->monitor_list)) {
+			plist = p_rtk_bt_coex_priv->monitor_list.next;
+			while (plist != &p_rtk_bt_coex_priv->monitor_list) {
+				p_monitor = (struct rtk_bt_coex_monitor_node_t *)plist;
+				plist = plist->next;
+				list_del(&p_monitor->list);
+				osif_mem_free(p_monitor);
+			}
+		}
+		osif_mutex_give(p_rtk_bt_coex_priv->monitor_mutex);
+
+		plist = NULL;
+		if (!list_empty(&p_rtk_bt_coex_priv->conn_list)) {
+			plist = p_rtk_bt_coex_priv->conn_list.next;
+			while (plist != &p_rtk_bt_coex_priv->conn_list) {
+				p_conn = (struct rtk_bt_coex_conn_t *)plist;
+				plist = plist->next;
+				list_del(&p_conn->list);
+				{
+					struct list_head *p_profile_list = NULL;
+					struct rtk_bt_coex_profile_info_t *p_profile = NULL;
+					p_profile_list = p_conn->profile_list.next;
+					while (p_profile_list != &p_conn->profile_list) {
+						p_profile = (struct rtk_bt_coex_profile_info_t *)p_profile_list;
+						p_profile_list = p_profile_list->next;
+						list_del(&p_profile->list);
+						osif_mem_free(p_profile);
+					}
+				}
+				osif_mem_free(p_conn);
+			}
+		}
+
+		osif_mutex_delete(p_rtk_bt_coex_priv->monitor_mutex);
+		osif_timer_delete(&p_rtk_bt_coex_priv->monitor_timer);
+#if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
+		osif_mutex_delete(p_rtk_bt_coex_priv->info_paras_mutex);
+		osif_timer_delete(&p_rtk_bt_coex_priv->setup_link_timer);
+#endif
+		osif_mem_free(p_rtk_bt_coex_priv);
+	}
 
 #else /* defined(HCI_BT_COEX_ENABLE) && HCI_BT_COEX_ENABLE */
 

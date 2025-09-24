@@ -21,4 +21,7 @@ struct axi_drv_priv {
 #define RTW_SCAN_ABORT_TIMEOUT	20
 #define DEV_REQ_NETWORK_INFO_MAX_LEN	6
 
+#define SIZE_RX_DESC 0
+#define SIZE_TX_DESC 0
+
 #endif /* __RTW_LLHW_OPS_H__ */

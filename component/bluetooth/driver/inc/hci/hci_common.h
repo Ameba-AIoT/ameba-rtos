@@ -25,6 +25,7 @@
 
 /* hci event */
 #define BT_HCI_EVT_CMD_COMPLETE                 0x0e
+#define BT_HCI_EVT_CMD_STATUS                   0x0f
 #define BT_HCI_EVT_LE_META_EVENT                0x3e
 #define BT_HCI_EVT_LE_ADVERTISING_REPORT        0x02
 #define BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT    0x0d
@@ -104,24 +105,27 @@ uint8_t hci_get_hdr_len(uint8_t type);
 uint16_t hci_get_body_len(const void *hdr, uint8_t type);
 
 /********** APIs called by hci driver *********/
-bool hci_controller_enable(void);
-void hci_controller_disable(void);
+bool hci_controller_open(void);
+void hci_controller_close(void);
 void hci_controller_free(void);
-bool hci_controller_is_enabled(void);
+bool hci_controller_is_opened(void);
 /**********************************************/
 
 /********** APIs called by hci uart ***********/
-void hci_uart_rx_irq_handler(void);
+void hci_uart_rx_irq_handler(bool from_irq);
 /**********************************************/
 
 #if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
 #if defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK
-#define hci_is_mp_mode() true
-#else
-#define hci_is_mp_mode hci_check_mp
-#endif
+#define hci_is_mp_mode()            true
+#define hci_is_wifi_need_leave_ps() false    /* WiFi will not enter ps in MP shrink mode, no need to leave */
+#else /* CONFIG_MP_SHRINK */
+#define hci_is_mp_mode              hci_check_mp
+#define hci_is_wifi_need_leave_ps() true
+#endif /* CONFIG_MP_SHRINK */
 #else /* CONFIG_MP_INCLUDED */
-#define hci_is_mp_mode() false
+#define hci_is_mp_mode()            false
+#define hci_is_wifi_need_leave_ps() true
 #endif /* CONFIG_MP_INCLUDED */
 
 #endif /* _HCI_COMMON_H_ */

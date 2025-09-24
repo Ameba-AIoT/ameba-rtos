@@ -12,18 +12,6 @@
   * @{
   */
 
-/*
- * Note: The meaning of this array member has changed.
- * It is scheduled for deletion and will be replaced by the `CHIPINFO_MEMTypeDef` structure.
- */
-typedef struct {
-	u8 sub_num;
-	u8 package_num;
-	u16 bd_num;
-	u32 psram_type;
-} CHIPINFO_TypeDef;
-
-
 /** @defgroup CHIPINFO_MEMINFO_Structure_Type Structure Type
   * @{
   */

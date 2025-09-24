@@ -42,7 +42,7 @@ else()
         OUTPUT_FILE ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_boot_all.bin
     )
     ameba_axf2bin_fw_pack(
-        ${c_SDK_IMAGE_TARGET_DIR}/amebagreen2_boot.bin
+        ${c_SDK_IMAGE_TARGET_DIR}/${c_BOOT_BINARY_NAME}
         p_IMAGE1
             ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_boot_all.bin
     )
@@ -51,7 +51,7 @@ endif()
 message( "========== Image manipulating end ==========")
 
 if (FINAL_IMAGE_DIR)
-    set(AP_BOOT_ALL ${c_SDK_IMAGE_TARGET_DIR}/amebagreen2_boot.bin)
+    set(AP_BOOT_ALL ${c_SDK_IMAGE_TARGET_DIR}/${c_BOOT_BINARY_NAME})
     if(EXISTS ${AP_BOOT_ALL})
         ameba_execute_process(
             COMMAND ${CMAKE_COMMAND} -E copy ${AP_BOOT_ALL} ${FINAL_IMAGE_DIR}

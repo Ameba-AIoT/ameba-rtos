@@ -496,6 +496,7 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *evt_info)
 #endif
 			{
 				dev_dbg(global_idev.fullmac_dev, "[fullmac] %s connectting success.", __func__);
+#ifndef CONFIG_SUPPLICANT_SME /* no need to report connect_result when using userspace sme */
 				/* Inform connect information. */
 				/* Different between cfg80211_connect_result and cfg80211_connect_bss are described in net/cfg80211.h. */
 				/* if connect_result warning, that means get_bss fail (need check), one reason is WPA_S calls disconnect ops, which resulting in wdev->ssid_len = 0 */
@@ -505,6 +506,7 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *evt_info)
 										mlme_priv->assoc_req_ie_len - WLAN_HDR_A3_LEN - 4 - (*(u8 *)mlme_priv->assoc_req_ie == 0 ? 0 : 6),
 										mlme_priv->assoc_rsp_ie + WLAN_HDR_A3_LEN + 6, mlme_priv->assoc_rsp_ie_len -  WLAN_HDR_A3_LEN - 6,
 										WLAN_STATUS_SUCCESS, GFP_ATOMIC);
+#endif
 			}
 			netif_carrier_on(global_idev.pndev[wlan_idx]);
 			if (wlan_idx == WHC_STA_PORT) {
@@ -1158,9 +1160,14 @@ static int whc_sme_host_assoc(struct wiphy *wiphy, struct net_device *ndev, stru
 {
 	struct sme_priv_t *sme_priv = &global_idev.sme_priv;
 	struct cfg80211_connect_params *conn_param;
-	size_t ssid_len = 0, rsn_len = 0, wpa_len = 0;
-	const u8 *ssid = NULL, *pos, *end, *rsn = NULL, *wpa = NULL;
+	u32 rsn_len = 0, wpa_len = 0;
+	int ssid_len = 0;
+	const u8 *ssid = NULL, *rsn = NULL, *wpa = NULL;
 	u8 wpa_rsn_exist = 0;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+	struct cfg80211_assoc_failure *passocfail_data;
+#endif
+
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
@@ -1186,7 +1193,7 @@ static int whc_sme_host_assoc(struct wiphy *wiphy, struct net_device *ndev, stru
 		ssid += 2;
 	}
 
-	dev_dbg(global_idev.fullmac_dev, "%s: parsed ssid=%s, ssid_len=%ld, wpa versions=%d\n", __func__,
+	dev_dbg(global_idev.fullmac_dev, "%s: parsed ssid=%s, ssid_len=%d, wpa versions=%d\n", __func__,
 			ssid, ssid_len, req->crypto.wpa_versions);
 
 	/* translate */
@@ -1225,28 +1232,31 @@ static int whc_sme_host_assoc(struct wiphy *wiphy, struct net_device *ndev, stru
 		/* there's an ongoing assoc req, finish it */
 		dev_dbg(global_idev.fullmac_dev, "%s(): free existing assoc\n", __FUNCTION__);
 
-		struct cfg80211_assoc_failure *passocfail_data = (struct cfg80211_assoc_failure *)kzalloc(sizeof(struct cfg80211_assoc_failure), GFP_KERNEL);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+		passocfail_data = (struct cfg80211_assoc_failure *)kzalloc(sizeof(struct cfg80211_assoc_failure), GFP_KERNEL);
 		passocfail_data->bss[0] = sme_priv->cfg80211_assoc_bss;
 		passocfail_data->timeout = 1;
 
-		cfg80211_assoc_failure(global_idev.pndev[0], passocfail_data);
+		cfg80211_assoc_failure(ndev, passocfail_data);
 		kfree(passocfail_data);
-
+#else
+		cfg80211_assoc_timeout(ndev, sme_priv->cfg80211_assoc_bss);
+#endif
 		sme_priv->cfg80211_assoc_bss = NULL;
 	}
 	sme_priv->cfg80211_assoc_bss = req->bss;
 
 	/* check if rsn/wpa IE exist */
 	if (req->bss->beacon_ies && req->bss->beacon_ies->len) {
-		rsn = rtw_get_wpa2_ie(req->bss->beacon_ies->data, &rsn_len, req->bss->beacon_ies->len);
-		wpa = rtw_get_wpa_ie(req->bss->beacon_ies->data, &wpa_len, req->bss->beacon_ies->len);
+		rsn = rtw_get_wpa2_ie((u8*)(req->bss->beacon_ies->data), &rsn_len, req->bss->beacon_ies->len);
+		wpa = rtw_get_wpa_ie((u8*)(req->bss->beacon_ies->data), &wpa_len, req->bss->beacon_ies->len);
 	}
 	if (req->bss->proberesp_ies && req->bss->proberesp_ies->len) {
 		if (rsn == NULL || rsn_len == 0) {
-			rsn = rtw_get_wpa2_ie(req->bss->proberesp_ies->data, &rsn_len, req->bss->proberesp_ies->len);
+			rsn = rtw_get_wpa2_ie((u8*)(req->bss->proberesp_ies->data), &rsn_len, req->bss->proberesp_ies->len);
 		}
 		if (wpa == NULL || wpa_len == 0) {
-			wpa = rtw_get_wpa_ie(req->bss->proberesp_ies->data, &wpa_len, req->bss->proberesp_ies->len);
+			wpa = rtw_get_wpa_ie((u8*)(req->bss->proberesp_ies->data), &wpa_len, req->bss->proberesp_ies->len);
 		}
 	}
 
@@ -1262,7 +1272,7 @@ static int whc_sme_host_assoc(struct wiphy *wiphy, struct net_device *ndev, stru
 		}
 	}
 
-	whc_fullmac_host_sme_set_assocreq_ie(req->ie, req->ie_len, wpa_rsn_exist);
+	whc_fullmac_host_sme_set_assocreq_ie((u8*)(req->ie), req->ie_len, wpa_rsn_exist);
 
 	/*
 	 * Here we are going all the way down to
@@ -1297,7 +1307,7 @@ static int whc_sme_host_deauth(struct wiphy *wiphy, struct net_device *ndev, str
 
 	sme_priv->deauth_from_wpas = 1;
 
-	sme_priv->deauth_ies = req->ie;
+	sme_priv->deauth_ies = (u8*)req->ie;
 	sme_priv->deauth_ie_len = req->ie_len;
 
 	whc_fullmac_host_disconnect_ops(wiphy, ndev, req->reason_code);
@@ -1321,7 +1331,7 @@ static int whc_sme_host_disassoc(struct wiphy *wiphy, struct net_device *ndev, s
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
-	sme_priv->deauth_ies = req->ie;
+	sme_priv->deauth_ies = (u8*)req->ie;
 	sme_priv->deauth_ie_len = req->ie_len;
 
 	whc_fullmac_host_disconnect_ops(wiphy, ndev, req->reason_code);

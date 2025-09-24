@@ -309,7 +309,6 @@ uint32_t rtw_sdio_init(struct whc_sdio *priv);
 void whc_host_api_task(void);
 s32 wifi_on(uint8_t mode);
 void whc_sdio_host_init(void);
-int wifi_sdio_bridge_get_ip(uint8_t *ip);
 
 //#define whc_host_send_data       whc_sdio_host_send_data
 #define whc_host_init            whc_sdio_host_init

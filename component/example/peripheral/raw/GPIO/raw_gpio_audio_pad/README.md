@@ -19,7 +19,9 @@ Logic Analyser or oscilloscope.
 
 1. If `AUDIO_PAD_PIN` works under digital path:
    - `AUDIO_PAD_PIN` is configured as gpio in `digit_app_entry()`.
-   - In this example, when LA or oscilloscope is connected to `AUDIO_PAD_PIN` defined in gpio_ext.h, output level varies between high and low every 500ms.
+   - In this example, when LA or oscilloscope is connected to `AUDIO_PAD_PIN` (as defined in the header file of the current example), output level varies between high and low every 500ms.
+     - The relevant header file can be found in the directory:
+        `component/example/peripheral/{mebd|raw}/{peripheral_name}/{example_folder_name}/`
 2. If `AUDIO_PAD_PIN`works as audio pin:
    Specific applicaion can be realized in `audio_app_entry().`
 

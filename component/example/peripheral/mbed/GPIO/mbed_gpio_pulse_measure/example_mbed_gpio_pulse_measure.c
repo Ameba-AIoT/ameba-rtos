@@ -20,7 +20,7 @@ gpio_t gpio_out;
 gpio_irq_t gpio_irq;
 volatile char irq_rise;
 
-void gpio_demo_irq_handler(uint32_t id, gpio_irq_event event)
+void gpio_demo_irq_handler(uint32_t id, uint32_t event)
 {
 	UNUSED(id);
 	UNUSED(event);

@@ -263,12 +263,22 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 	u32 size;
 	u8 *param, *ptr;
 
+#ifdef CONFIG_SUPPLICANT_SME
+	/* step1: check if auth is finished */
+	if ((global_idev.mlme_priv.rtw_join_status > RTW_JOINSTATUS_UNKNOWN)
+		&& (global_idev.mlme_priv.rtw_join_status < RTW_JOINSTATUS_SUCCESS)
+		&& (global_idev.mlme_priv.rtw_join_status != RTW_JOINSTATUS_AUTHENTICATED)) {
+		dev_err(global_idev.fullmac_dev, "[fullmac]: auth is not finished! rtw_join_status=%d\n", global_idev.mlme_priv.rtw_join_status);
+		return -EBUSY;
+	}
+#else
 	/* step1: check if there's ongoing connect*/
 	if ((global_idev.mlme_priv.rtw_join_status > RTW_JOINSTATUS_UNKNOWN)
 		&& (global_idev.mlme_priv.rtw_join_status < RTW_JOINSTATUS_SUCCESS)) {
 		dev_err(global_idev.fullmac_dev, "[fullmac]: there is ongoing wifi connect!rtw_join_status=%d\n", global_idev.mlme_priv.rtw_join_status);
 		return -EBUSY;
 	}
+#endif
 
 	/*clear for last connect status */
 	global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_STARTING;
@@ -380,11 +390,31 @@ error:
 
 int whc_fullmac_host_event_disconnect(u16 reason_code)
 {
+	u32 ie_len = 0, size;
+	u32 *param;
+	u8 *ie = NULL;
 	int ret = 0;
 
-	(void) reason_code;
+#ifdef CONFIG_SUPPLICANT_SME
+	if (global_idev.sme_priv.deauth_ies && global_idev.sme_priv.deauth_ie_len) {
+		ie_len = global_idev.sme_priv.deauth_ie_len;
+		ie = global_idev.sme_priv.deauth_ies;
+	}
+#endif
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_DISCONNECT, NULL, 0, (u8 *)&ret, sizeof(int));
+	size = 2 * sizeof(u32) + ie_len;
+	param = (u32 *)kzalloc(size, GFP_KERNEL);
+
+	param[0] = (u32)ie_len;
+	param[1] = (u32)reason_code;
+
+	if (ie != NULL && ie_len != 0) {
+		memcpy((void *)(param + 2), (void *)ie, ie_len);
+	}
+
+	whc_fullmac_host_send_event(WHC_API_WIFI_DISCONNECT, (u8 *)param, size, (u8 *)&ret, sizeof(int));
+
+	kfree((void *)param);
 
 	return ret;
 }
@@ -911,6 +941,35 @@ int whc_fullmac_host_nan_cfgvendor_cmd(u16 vendor_cmd, const void *data, int len
 	memcpy((void *)(param + 2), data, len);
 
 	whc_fullmac_host_send_event(WHC_API_NAN_CFGVENFOR, (u8 *)param, size, (u8 *)&ret, sizeof(int));
+
+	kfree((void *)param);
+
+	return ret;
+}
+#endif
+
+#ifdef CONFIG_SUPPLICANT_SME
+void whc_fullmac_host_sme_auth(dma_addr_t auth_data_phy)
+{
+	struct rtw_sme_auth_info *auth_info = (struct rtw_sme_auth_info *)auth_data_phy;
+
+	whc_fullmac_host_send_event(WHC_API_WIFI_SME_AUTH, (u8 *)auth_data_phy, sizeof(struct rtw_sme_auth_info) + auth_info->data_len, NULL, 0);
+}
+
+int whc_fullmac_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len, u8 wpa_rsn_exist)
+{
+	int ret = 0;
+	u32 size;
+	u32 *param;
+
+	size = 2 * sizeof(u32) + ie_len;
+	param = (u32 *)kzalloc(size, GFP_KERNEL);
+
+	param[0] = (u32)ie_len;
+	param[1] = (u32)wpa_rsn_exist;
+	memcpy((void *)(param + 2), (void *)ie, ie_len);
+
+	whc_fullmac_host_send_event(WHC_API_WIFI_SME_SET_ASSOCREQ_IE, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
 

@@ -1,7 +1,7 @@
 #ifndef _WHC_USB_DEV_H_
 #define _WHC_USB_DEV_H_
 
-#define CONFIG_USBD_WHC_HOTPLUG					          0
+//#define CONFIG_USBD_WHC_HOTPLUG
 
 #define whc_dev_tx_path_avail    whc_usb_dev_tx_path_avail
 #define whc_dev_send             whc_usb_dev_send
@@ -63,7 +63,7 @@ struct whc_usb_priv_t {
 	rtos_mutex_t tx_lock;
 	rtos_sema_t usb_tx_sema;
 	rtos_sema_t usb_irq_sema;
-#if defined (CONFIG_USBD_WHC_HOTPLUG)
+#if defined(CONFIG_USBD_WHC_HOTPLUG)
 	rtos_sema_t usb_attach_status_sema;
 #endif
 };

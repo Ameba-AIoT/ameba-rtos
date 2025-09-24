@@ -18,7 +18,7 @@ static const char *const TAG = "AT_SDIO-D";
 #define SDIO_RX_BD_NUM	10
 #define SDIO_RX_BUFSZ	(SPDIO_RX_BUFSZ_ALIGN(2048+24)) //n*64, must be rounded to 64, extra 24 bytes for spdio header info
 
-struct spdio_t spdio_dev;
+struct spdio_t spdio_dev = {0};
 
 rtos_sema_t atcmd_sdio_rx_sema;
 rtos_sema_t atcmd_sdio_tx_sema;
@@ -185,6 +185,7 @@ void ex_spdio_thread(void *param)
 		spdio_dev.rx_buf[i].buf_addr = (u32)N_BYTE_ALIGMENT((u32)(spdio_dev.rx_buf[i].buf_allocated), SPDIO_DMA_ALIGN_4);
 	}
 
+	spdio_dev.pSDIO = SDIO_WIFI;
 	spdio_dev.device_rx_done_cb = ex_spdio_rx_done_cb;
 	spdio_dev.device_tx_done_cb = ex_spdio_tx_done_cb;
 

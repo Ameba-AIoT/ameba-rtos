@@ -27,6 +27,7 @@ ameba_soc_project_check()
 #OPTIMIZE: Used in bin-merge process, remove theme if no need
 set(KM4TZ_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/project_km4tz)
 set(KM4NS_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/project_km4ns)
+set(boot_name amebagreen2_boot.bin)
 ###############################################################################
 
 ###############################################################################

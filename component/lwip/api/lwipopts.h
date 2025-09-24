@@ -61,7 +61,11 @@ extern unsigned int sys_now(void);
 #define TCP_SND_BUF                     (5 * TCP_MSS)
 #define TCP_SND_QUEUELEN                (4 * TCP_SND_BUF / TCP_MSS)
 /* Pbuf options */
+#if defined(CONFIG_PBUF_POOL_BUFSIZE)
+#define PBUF_POOL_BUFSIZE               CONFIG_PBUF_POOL_BUFSIZE
+#else
 #define PBUF_POOL_BUFSIZE               508
+#endif
 /* Network Interfaces options */
 #define LWIP_NETIF_API                  1
 #define LWIP_NUM_NETIF_CLIENT_DATA      1
@@ -125,6 +129,16 @@ extern unsigned int sys_now(void);
 #if defined(CONFIG_IP_NAT) && (CONFIG_IP_NAT == 1)
 #define IP_FORWARD                      1
 #define IP_NAT                          1
+#if defined(LWIP_IPV6) && (LWIP_IPV6 == 1)
+#define CONFIG_IP6_RLOCAL 1
+#endif
+#endif
+
+#if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
+#define LWIP_IPV6_FORWARD               1
+#define LWIP_HOOK_IP6_ROUTE nd6_find_nhb_netif
+#define is_sta_ap() (wifi_is_running(1)&&wifi_is_running(0))
+#define is_sta_only() (wifi_is_running(0)&&(!wifi_is_running(1)))
 #endif
 
 #if defined(CONFIG_HIGH_TP_TEST)

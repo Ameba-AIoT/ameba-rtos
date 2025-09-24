@@ -1,7 +1,7 @@
 ameba_global_include(
     include
-    include/cmsis
     ${c_COMPONENT_DIR}/soc/common/include
+    ${c_COMPONENT_DIR}/soc/common/include/cmsis
 )
 
 ameba_add_subdirectory(ram_common)

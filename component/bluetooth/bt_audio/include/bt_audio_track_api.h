@@ -100,7 +100,7 @@ uint16_t rtk_bt_audio_track_resume(void *track_hdl);
  * @param[in] size: size of audio data
  * @return successfully written bytes
  */
-int32_t rtk_bt_audio_track_play(void *track_hdl, void *buffer, uint16_t size);
+int32_t rtk_bt_audio_track_play(void *track_hdl, void *buffer, uint32_t size);
 
 /**
  * @brief     set hardware volume

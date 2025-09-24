@@ -6,44 +6,44 @@
 
 # HW Configuration
 
-- master's `MOSI` connect to slave1's `MOSI` & slave2's `MOSI`
-- master's `MISO` connect to slave1's `MISO `& slave2's `MISO`
-- master's `SCLK` connect to slave1's `SCLK` & slave2's `SCLK`
-- master's `SPI_GPIO_CS0` connect to slave1's `CS`
-- master's `SPI_GPIO_CS1` connect to slave2's `CS`
+- master's `MOSI` connect to slave1's `MOSI` & slave0's `MOSI`
+- master's `MISO` connect to slave1's `MISO `& slave0's `MISO`
+- master's `SCLK` connect to slave1's `SCLK` & slave0's `SCLK`
+- master's `SPI_GPIO_CS0` connect to slave0's `CS`
+- master's `SPI_GPIO_CS1` connect to slave1's `CS`
 
-In this way, slave2 will be selected first as software configuration.
+In this way, slave1 will be selected first as software configuration.
 
 For example:
 
 - On AmebaSmart, connect as below
 
-  - master's `MOSI (_PA_5)` connect to slave1's `MOSI (_PA_13)` & slave2's `MOSI (_PA_13)`
-  - master's `MISO (_PA_4)` connect to slave1's `MISO (_PA_14)`& slave2's `MISO (_PA_14)`
-  - master's `SCLK (_PA_3)` connect to slave1's `SCLK (_PA_15)` & slave2's `SCLK (_PA_15)`
-  - master's `SPI_GPIO_CS0 (PA_0)` connect to slave1's `CS (_PA_16)`
-  - master's `SPI_GPIO_CS1 (PA_1)` connect to slave2's `CS (_PA_16)`
+  - master's `MOSI (_PA_5)` connect to slave1's `MOSI (_PA_13)` & slave0's `MOSI (_PA_13)`
+  - master's `MISO (_PA_4)` connect to slave1's `MISO (_PA_14)`& slave0's `MISO (_PA_14)`
+  - master's `SCLK (_PA_3)` connect to slave1's `SCLK (_PA_15)` & slave0's `SCLK (_PA_15)`
+  - master's `SPI_GPIO_CS0 (PA_0)` connect to slave0's `CS (_PA_16)`
+  - master's `SPI_GPIO_CS1 (PA_1)` connect to slave1's `CS (_PA_16)`
 - On AmebaLite, connect as below
 
-  - master's `MOSI (_PB_3)` connect to slave1's `MOSI (_PA_29)` & slave2's `MOSI (_PA_29)`
-  - master's `MISO (_PB_4)` connect to slave1's `MISO (_PA_30)` & slave2's `MISO (_PA_30)`
-  - master's `SCLK (_PB_2)` connect to slave1's `SCLK (_PA_28)`& slave2's `SCLK (_PA_28)`
-  - master's `SPI_GPIO_CS0 (PA_0)` connect to slave1's `CS (_PA_31)`
-  - master's `SPI_GPIO_CS1 (PA_1)` connect to slave2's `CS (_PA_31)`
+  - master's `MOSI (_PB_3)` connect to slave1's `MOSI (_PA_29)` & slave0's `MOSI (_PA_29)`
+  - master's `MISO (_PB_4)` connect to slave1's `MISO (_PA_30)` & slave0's `MISO (_PA_30)`
+  - master's `SCLK (_PB_2)` connect to slave1's `SCLK (_PA_28)`& slave0's `SCLK (_PA_28)`
+  - master's `SPI_GPIO_CS0 (PA_0)` connect to slave0's `CS (_PA_31)`
+  - master's `SPI_GPIO_CS1 (PA_1)` connect to slave1's `CS (_PA_31)`
 - On AmebaDplus, connect as below
 
-  - master's `MOSI (_PB_19)` connect to slave1's `MOSI (_PB_24)`& slave2's `MOSI (_PB_24)`
-  - master's `MISO (_PB_20)` connect to slave1's `MISO (_PB_25)`& slave2's `MISO (_PB_25)`
-  - master's `SCLK (_PB_18)` connect to slave1's `SCLK (_PB_23)`& slave2's `SCLK (_PB_23)`
-  - master's `SPI_GPIO_CS0 (_PB_30)` connect to slave1's `CS (_PB_26)`
-  - master's `SPI_GPIO_CS1 (_PB_31)` connect to slave2's `CS (_PB_26)`
+  - master's `MOSI (_PB_19)` connect to slave1's `MOSI (_PB_24)`& slave0's `MOSI (_PB_24)`
+  - master's `MISO (_PB_20)` connect to slave1's `MISO (_PB_25)`& slave0's `MISO (_PB_25)`
+  - master's `SCLK (_PB_18)` connect to slave1's `SCLK (_PB_23)`& slave0's `SCLK (_PB_23)`
+  - master's `SPI_GPIO_CS0 (_PB_30)` connect to slave0's `CS (_PB_26)`
+  - master's `SPI_GPIO_CS1 (_PB_31)` connect to slave1's `CS (_PB_26)`
 - On AmebaGreen2, connect as below
 
-  - master's `MOSI (_PB_30)` connect to slave1's `MOSI (_PA_30)`& slave2's `MOSI (_PA_30)`
-  - master's `MISO (_PB_31)` connect to slave1's `MISO (_PA_31)`& slave2's `MISO (_PA_31)`
-  - master's `SCLK (_PB_29)` connect to slave1's `SCLK (_PA_29)`& slave2's `SCLK (_PA_29)`
-  - master's `SPI_GPIO_CS0 (_PB_26)` connect to slave1's `CS (_PB_0)`
-  - master's `SPI_GPIO_CS1 (_PB_27)` connect to slave2's `CS (_PB_0)`
+  - master's `MOSI (_PB_30)` connect to slave1's `MOSI (_PA_30)`& slave0's `MOSI (_PA_30)`
+  - master's `MISO (_PB_31)` connect to slave1's `MISO (_PA_31)`& slave0's `MISO (_PA_31)`
+  - master's `SCLK (_PB_29)` connect to slave1's `SCLK (_PA_29)`& slave0's `SCLK (_PA_29)`
+  - master's `SPI_GPIO_CS0 (_PB_26)` connect to slave0's `CS (_PB_0)`
+  - master's `SPI_GPIO_CS1 (_PB_27)` connect to slave1's `CS (_PB_0)`
 
 # SW configuration
 
@@ -60,15 +60,15 @@ For example:
 
 # Expect result
 
-1. At first, slave1 would receive data in decreasing order in a loop, while slave2 which is not selected by master receives nothing and generates rx timeout at the same time.
-2. In the next loop, slave2 selected by the master receives data in increasing order, while slave1 receives nothing and generates rx timeout.
+1. At first, slave1 would receive data in decreasing order in a loop, while slave0 which is not selected by master receives nothing and generates rx timeout at the same time.
+2. In the next loop, slave0 selected by the master receives data in increasing order, while slave1 receives nothing and generates rx timeout.
 3. For slave which is not selected in current loop, log like "SPI Slave Wait Timeout" will be shown, and dump data is 0x0 totally.
 
 # Note
 
 1. Para spi_idx should be assigned first in the initialization process.
 2. SPI1 is set as Master and SPI0 is set as Slave.
-3. Connect the master separately to slave1 and slave2 for the GND (ground) connection.
+3. Connect the master separately to slave1 and slave0 for the GND (ground) connection.
 
 # Supported IC
 

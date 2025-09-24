@@ -1,7 +1,7 @@
 #include "whc_dev.h"
 
 /**
- * @brief  to initialize the bridge device.
+ * @brief  to initialize the spi device.
  * @param  none.
  * @return none.
  */

@@ -31,12 +31,13 @@ def copy_or_append(src, dest_path):
         print(f"Copied {src} to {dest_path}")
 
 
-def copy_app_folder(app_name, source_base, target_dir):
+def copy_app_folder(app_name, target_dir, submodule_json_path):
     app_path = None
-    for root, dirs, _ in os.walk(source_base):
-        if app_name in dirs:
-            app_path = os.path.join(root, app_name)
-            break
+    if os.path.exists(submodule_json_path):
+        app_path = find_app_in_submodules(app_name, submodule_json_path)
+    if not app_path:
+        example_base = '../component/example'
+        app_path = find_app_folder(app_name, example_base)
 
     if app_path:
         s = app_path
@@ -47,10 +48,27 @@ def copy_app_folder(app_name, source_base, target_dir):
             shutil.move(conf_file_path, target_dir)
 
         create_cmake_file(target_dir, app_name)
-
-
     else:
-        print(f"Warning: No folder named '{app_name}' found under {source_base}")
+        print(f"Warning: No folder named '{app_name}' found under {example_base} or submodules")
+
+def find_app_folder(app_name, source_base):
+    for root, dirs, _ in os.walk(source_base):
+        if app_name in dirs:
+            return os.path.join(root, app_name)
+    return None
+
+def find_app_in_submodules(app_name, submodule_json_path):
+    with open(submodule_json_path, 'r') as f:
+        submodule_info = json.load(f)
+
+    for submodule in submodule_info:
+        for example in submodule.get("examples", []):
+            if example.get("name") == app_name:
+                app_path = example.get("path", "")
+                if app_path:
+                    return app_path
+
+    return None
 
 def create_json_file(target_dir, current_path):
     config = {
@@ -96,6 +114,23 @@ def creat_Kconfig_file(target_dir):
         with open(conf_name, 'w') as file:
             file.write("\r\n")
 
+def list_available_apps(submodule_info_path: str):
+    app_names = ["component/example/*/example_<app_name>.c"]
+
+    if os.path.exists(submodule_info_path):
+        with open(submodule_info_path, 'r') as f:
+            data = json.load(f)
+        for submodule in data:
+            for example in submodule.get("examples", []):
+                if "name" in example:
+                    app_names.append(example["name"])
+
+    if not app_names:
+        print("No available example app found")
+    else:
+        print("-- List available apps:")
+        for name in app_names:
+            print(f"     - {name}")
 
 def main():
     parser = argparse.ArgumentParser(description=None)
@@ -112,7 +147,13 @@ def main():
     current_path = os.getcwd()
     copy_files(FILES_TO_COPY, args.target)
     if args.app:
-        copy_app_folder(args.app, '../component/example', args.target)
+        submodule_info_path = os.path.join(current_path,'build/submodule_info.json')
+        if args.app == "list-apps":
+            list_available_apps(submodule_info_path)
+            shutil.rmtree(args.target)
+            return
+        else:
+            copy_app_folder(args.app, args.target, submodule_info_path)
     else:
         create_cmake_file(args.target)
     creat_Kconfig_file(args.target)

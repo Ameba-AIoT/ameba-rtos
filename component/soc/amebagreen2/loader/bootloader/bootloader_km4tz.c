@@ -12,6 +12,8 @@
 
 static const char *const TAG = "BOOT";
 extern void BOOT_ROM_Copy(void *__restrict dst0, const void *__restrict src0, size_t len0);
+MCM_MemTypeDef meminfo;
+extern PSRAMINFO_TypeDef PsramInfo;
 
 #define CHECK_AND_PRINT_FLAG(flagValue, bit, name)         \
 	do {                                                   \
@@ -75,7 +77,7 @@ int BOOT_Data_Flash_Init(void)
 {
 #if defined(CONFIG_SECOND_FLASH_NOR) || defined(CONFIG_SECOND_FLASH_NAND)
 
-	if (ChipInfo_MemoryType() == MEMORY_MCM_PSRAM) {
+	if (meminfo.mem_type == MCM_TYPE_PSRAM) {
 		RTK_LOGE(TAG, "Can't support second flash for chip with mem psram\r\n");
 		return RTK_FAIL;
 	}
@@ -94,10 +96,11 @@ int BOOT_PSRAM_Init(void)
 
 	/* return directly to save code size*/
 #if defined(CONFIG_DISABLE_PSRAM)
+	RTK_LOGI(TAG, "CONFIG_DISABLE_PSRAM\r\n");
 	return RTK_FAIL;
 #endif
 
-	if (ChipInfo_MemoryType() != MEMORY_MCM_PSRAM) {
+	if (meminfo.mem_type != MCM_TYPE_PSRAM) {
 		return RTK_FAIL;
 	}
 
@@ -114,7 +117,7 @@ int BOOT_PSRAM_Init(void)
 	PSRAM_PHY_StructInit(&PSPHY_InitStruct);
 	PSRAM_PHY_Init(&PSPHY_InitStruct);
 
-	if (PSRAM_VENDOR_GET((ChipInfo_MemoryInfo())) == MEM_PSRAM_APM) {
+	if (meminfo.dram_info.model == MCM_PSRAM_VENDOR_APM) {
 		RTK_LOGI(TAG, "Init APM PSRAM\r\n");
 
 		/* init psram controller */
@@ -317,6 +320,16 @@ void BOOT_Log_Init(void)
 	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_2, ENABLE);
 }
 
+/* To avoid RRAM holding incorrect data, incorporate a MAGIC_NUMBER for verification. */
+static bool BOOT_RRAM_InfoValid(void)
+{
+	if (RRAM_DEV->MAGIC_NUMBER != 0x6969A5A5) {
+		return FALSE;
+	} else {
+		return TRUE;
+	}
+}
+
 // 3 Image 1
 void BOOT_Image1(void)
 {
@@ -331,8 +344,9 @@ void BOOT_Image1(void)
 	/* BOOT Reason: POR or BOR. */
 	/* BOD is enabled by default. BOR may arise if voltage increases slowly during POR. */
 	/* To avoid Retention RAM cannot be initialized to 0 correctly. */
-	if ((BOOT_Reason() & ~AON_BIT_RSTF_BOR) == 0) {
+	if (((BOOT_Reason() & ~AON_BIT_RSTF_BOR) == 0) || (!BOOT_RRAM_InfoValid())) {
 		_memset(RRAM_DEV, 0, sizeof(RRAM_TypeDef));
+		RRAM_DEV->MAGIC_NUMBER = 0x6969A5A5;
 	}
 
 	BOOT_VerCheck();
@@ -355,6 +369,7 @@ void BOOT_Image1(void)
 		}
 	}
 
+	meminfo = ChipInfo_MCMInfo();
 	int ret = BOOT_PSRAM_Init();
 	if (ret == RTK_FAIL) {
 		LDO_MemSetInNormal(MLDO_OFF); /* psram initial fail or non-psram chip，close psram LDO(mem_ldo 1.8V)*/

@@ -41,8 +41,8 @@ extern void sys_reset(void);
 
 #define WTN_BUF_NUM 5
 #define WTN_BCMC_REPORT 3
-#define WTN_PC_IP_ENTRY 0x10
-#define WTN_PC_PORT_ENTRY 0x11
+#define WTN_PC_IP_ENTRY 2
+#define WTN_PC_PORT_ENTRY 3
 
 #define WTN_UDP_SOCKET
 //#define WTN_SINGLE_NODE_OTA
@@ -54,7 +54,7 @@ struct wtn_buf_node {
 };
 
 int wtn_client_fd = -1;
-u32 wtn_server_port = 0;
+u16 wtn_server_port = 0;
 u8 wtn_socket_need_close = 0;
 u8 wtn_tool_restart = 0;
 u8 wtn_tool_rand = 0;
@@ -100,11 +100,11 @@ int wtn_socket_send(u8 *buf, u32 len)
 	/*fill IP*/
 	buf_copy = (u8 *)rtos_mem_zmalloc(len);
 	memcpy(buf_copy, buf, len);
-	memcpy(buf_copy + 31, ip, 4);
+	memcpy(buf_copy + 42, ip, 4);
 	/*fill compile time*/
 	char *compiletime = NULL;
 	compiletime = RTL_FW_COMPILE_TIME;
-	memcpy(buf_copy + 48, compiletime,  strlen(compiletime));
+	memcpy(buf_copy + 60, compiletime,  strlen(compiletime));
 
 	rtos_critical_enter(RTOS_CRITICAL_WIFI);
 	for (i = 0; i < WTN_BUF_NUM; i++) {
@@ -340,22 +340,22 @@ void wtn_bcmc_socket_handler(void *param)
 			}
 		} else {
 			/*parsing content to get server ip and port*/
-			if (((u32)ret) >= 13) {
+			if (((u32)ret) >= 23) {
 				/*1 byte random, when tool restarted, random will change*/
 				if (wtn_tool_rand == 0) {
-					wtn_tool_rand = buf[3];
+					wtn_tool_rand = buf[12];
 				} else {
-					if (wtn_tool_rand != buf[3]) {
-						wtn_tool_rand = buf[3];
+					if (wtn_tool_rand != buf[12]) {
+						wtn_tool_rand = buf[12];
 						wtn_tool_restart = 1;
 					}
 				}
-				if (buf[4] == WTN_PC_IP_ENTRY) {
-					memcpy(wtn_server_ip, buf + 5, 4);
+				if (buf[13] == WTN_PC_IP_ENTRY) {
+					memcpy(wtn_server_ip, buf + 15, 4);
 				}
-				if (buf[9] == WTN_PC_PORT_ENTRY) {
-					memcpy(&wtn_server_port, buf + 10, 4);
-					wtn_server_port = htonl(wtn_server_port);
+				if (buf[19] == WTN_PC_PORT_ENTRY) {
+					memcpy(&wtn_server_port, buf + 21, 2);
+					wtn_server_port = ntohs(wtn_server_port);
 				}
 				if (wifi_user_config.wtn_rnat_en && wtn_rnat_ap_start) {
 					/*forward this packet by softap port*/

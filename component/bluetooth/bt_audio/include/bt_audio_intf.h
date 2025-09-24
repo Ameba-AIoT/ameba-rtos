@@ -11,6 +11,7 @@
 #include <basic_types.h>
 #include <bt_audio_track_api.h>
 #include <bt_audio_record_api.h>
+#include <bt_audio_ring_buffer.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -19,7 +20,6 @@ extern "C"
 
 #define RTK_BT_AUDIO_TRACK_PRES_MAX_COUNT 100 /* 10ms duration for 1s */
 #define RTK_BT_AUDIO_TRACK_PRES_DELTA_THRESHOLD_NS 1000000
-#define RTK_BT_AUDIO_DELAY_START_BUFFER_COUNT 4
 
 /**
  * @typedef   rtk_bt_audio_role_t
@@ -58,16 +58,6 @@ typedef struct {
 } rtk_bt_audio_codec_conf_t;
 
 /**
- * @typedef rtk_bt_audio_delay_start_t
- * @brief   structure of bt audio delay start
- */
-typedef struct {
-	uint8_t                 *buff;                                              /*!< delay start buffer */
-	uint32_t                size;                                               /*!< audio parameter */
-	uint32_t                used;                                               /*!< param length */
-} rtk_bt_audio_delay_start_t;
-
-/**
  * @typedef rtk_bt_audio_track_t
  * @brief   structure of audio track configuration
  */
@@ -85,16 +75,23 @@ typedef struct {
 	bool                       audio_sync_flag;                                                /*!< indicate whether audio sync is need */
 	uint8_t                    pres_comp_event;                                                /*!< indicate presentation delay compensation events */
 	uint32_t                   sdu_interval;                                                   /*!< record sdu interval(micro second) */
-	uint32_t                   pres_us;                                                        /*!< indicate presentation delay value */
+	bool
+	frc_cal_flag;                                                   /*!< indicate whether free run clock calculation is done previously */
+	int64_t                    expt_sdu_frc;                                                   /*!< calculate the expected sdu time stamp */
+	int64_t
+	frc_drift;                                                      /*!< save free run clock drift between app core and lower stack core */
+	uint32_t                   pres_delay_us;                                                  /*!< indicate presentation delay value */
 	uint32_t                   prev_ts_us;                                                     /*!< recording previous timestamp to check sdu loss */
-	int64_t                    trans_bytes;                                                    /*!< to record successfully transmitted audio bytes */
+	uint32_t
+	prev_sys_us;                                                    /*!< recording previous timestamp DTimestamp_Get() to check overflow */
+	uint64_t                   trans_bytes;                                                    /*!< to record successfully transmitted audio bytes */
 	uint32_t                   delta_index;                                                    /*!< to record delta number buffered in pres_delta_sum */
 	int64_t                    pres_delta_sum;                                                 /*!< record sum of render data time delta */
 	uint32_t                   pre_drop_cnt_left;                                              /*!< indicate left drop packets number */
 	uint8_t                    audio_hal_buff_count;                                           /*!< count audio hal buffer numbers */
 	void                       *audio_delay_start_timer;                                       /*!< delay start timer */
 	void                       *audio_sync_mutex;                                              /*!< audio sync mutex */
-	rtk_bt_audio_delay_start_t audio_delay_start_buff;                                         /*!< rtk_bt_audio_delay_start_t*/
+	bt_audio_ring_buffer_t     audio_delay_buff;                                               /*!< rtk_bt_audio_delay_start_t*/
 } rtk_bt_audio_track_t;
 
 /**
@@ -203,6 +200,16 @@ int rtk_bt_audio_record_data_get(uint32_t type, rtk_bt_audio_record_t *record, v
  */
 rtk_bt_audio_track_t *rtk_bt_audio_track_add(uint32_t type, float left_volume, float right_volume, uint32_t channels, uint32_t rate, uint32_t format,
 											 uint32_t duration, pcm_data_cb cb, bool play_flag);
+
+/**
+* @brief     enable audio play sync mode for specific track(This api should be invoked immediately after rtk_bt_audio_track_add, if used)
+* @param[in] ptrack: audio data codec type
+* @param[in] pd: left init volume
+* @return
+*            - NULL  : Fail
+*            - others: Track Handle
+*/
+uint16_t rtk_bt_audio_track_enable_sync_mode(rtk_bt_audio_track_t *ptrack, uint32_t pd);
 
 /**
  * @brief     config bt audio record parameter

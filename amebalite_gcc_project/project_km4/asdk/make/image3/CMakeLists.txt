@@ -8,6 +8,9 @@ ameba_add_subdirectory(${c_CMPT_IMG3_DIR})
 ameba_add_subdirectory(${c_CMPT_OS_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_SOC_DIR}/verification)
 ameba_add_subdirectory(${c_CMPT_SWLIB_DIR})
+ameba_add_subdirectory_if(CONFIG_MATTER_SECURE_EN
+    ${c_CMPT_MATTER_DIR}/project/cmake/component/mbedtls_secure lib_matter_secure
+)
 
 ###############################  GENERATE IMAGE  ###################################
 #---------------- PRE LINK -------------------#

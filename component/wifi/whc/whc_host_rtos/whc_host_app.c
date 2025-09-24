@@ -21,14 +21,16 @@ __weak void whc_host_pkt_rx_to_user(u8 *payload, u32 len)
 	u8 *ptr = payload;
 	u8 id;
 	u32 ipaddr, netmask, gw;
-
+	uint8_t idx = 0;
 	if (event == WHC_WIFI_TEST) {
 		ptr += 4;
 		id = *ptr;
 		ptr += 1;
 		switch (id) {
 		case WHC_WIFI_TEST_GET_MAC_ADDR:
-			LwIP_wlan_set_netif_info(STA_WLAN_INDEX, NULL, ptr);
+			idx = *ptr;
+			ptr += 1;
+			LwIP_wlan_set_netif_info(idx, NULL, ptr);
 			break;
 
 		case WHC_WIFI_TEST_GET_IP:

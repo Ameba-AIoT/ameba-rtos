@@ -97,7 +97,6 @@ static void inic_cb_resume(void);
 
 static usbd_config_t inic_cfg = {
 	.speed = USB_SPEED_FULL,
-	.dma_enable = 1U,
 	.isr_priority = INT_PRI_MIDDLE,
 };
 

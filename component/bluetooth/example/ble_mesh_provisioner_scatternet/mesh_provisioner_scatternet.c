@@ -2612,8 +2612,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_health_client_model_app_callback(uint8_t evt
 		health_status = (rtk_bt_mesh_health_client_status_t *)param;
 		BT_LOGA("[APP] Health client receive: src = %d, test id = %d, company id = 0x%04x, fault_array:\r\n",
 				health_status->src, health_status->test_id, health_status->company_id);
-		/*May not work, if not work, need memcpy pointer address*/
-		mesh_data_uart_dump(health_status->fault_array, health_status->fault_array_len);
+		uint8_t *fault_array = (uint8_t *)param + sizeof(rtk_bt_mesh_health_client_status_t);
+		mesh_data_uart_dump(fault_array, health_status->fault_array_len);
 	}
 	break;
 	case RTK_BT_MESH_HEALTH_CLIENT_MODEL_FAULT_STATUS: {
@@ -2621,8 +2621,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_health_client_model_app_callback(uint8_t evt
 		fault_status = (rtk_bt_mesh_health_client_status_t *)param;
 		BT_LOGA("[APP] Health client receive: src = %d, test id = %d, company id = 0x%04x, fault_array:\r\n",
 				fault_status->src, fault_status->test_id, fault_status->company_id);
-		/*May not work, if not work, need memcpy pointer address*/
-		mesh_data_uart_dump(fault_status->fault_array, fault_status->fault_array_len);
+		uint8_t *fault_array = (uint8_t *)param + sizeof(rtk_bt_mesh_health_client_status_t);
+		mesh_data_uart_dump(fault_array, fault_status->fault_array_len);
 		BT_AT_PRINT("+BLEMESHHEALTH:hf,%d,%d,%d,0x%04x,",
 					BT_AT_MESH_ROLE_CLIENT, fault_status->src, fault_status->test_id, fault_status->company_id);
 		BT_AT_DUMP_HEXN(fault_status->fault_array, fault_status->fault_array_len);

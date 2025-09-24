@@ -53,6 +53,7 @@ void mbedtls_sha512_clone(mbedtls_sha512_context *dst,
  */
 int mbedtls_sha512_starts(mbedtls_sha512_context *ctx, int is384)
 {
+    mbedtls_sha512_init(ctx);
     u8 SHA_MODE = 0;
     int ret;
 #if defined(MBEDTLS_SHA384_C) && defined(MBEDTLS_SHA512_C)
@@ -105,9 +106,17 @@ int mbedtls_sha512_update(mbedtls_sha512_context *ctx,
 int mbedtls_sha512_finish(mbedtls_sha512_context *ctx,
                           unsigned char *output)
 {
+    if(output == NULL || ctx == NULL) {
+        mbedtls_printf("output == NULL || ctx == NULL\n");
+        return MBEDTLS_ERR_SHA512_BAD_INPUT_DATA;
+    }
     int ret;
+    unsigned char output_buf[64] ALIGNMTO(CACHE_LINE_SIZE);
+
+    u32 output_len = ctx->sha2type==SHA2_384 ? 48 : 64;
     IPC_SEMTake(IPC_SEM_CRYPTO, 0xffffffff);
-    ret =  rtl_crypto_sha2_final(output,ctx);
+    ret =  rtl_crypto_sha2_final(output_buf,ctx);
+    _memcpy(output, output_buf, output_len);
     IPC_SEMFree(IPC_SEM_CRYPTO);
 
     return ret;

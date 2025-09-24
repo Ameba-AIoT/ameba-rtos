@@ -204,8 +204,11 @@ enum bt_rfk_type {
 	BT_RX_DCK       = 0,
 	BT_LOK          = 1,
 	BT_LOK_RES      = 2,
-	BT_DAC_DCK     = 3,
-	BT_ADC_DCK     = 4,
+	BT_DAC_DCK      = 3,
+	BT_ADC_DCK      = 4,
+	BT_DCK          = 5,
+	BT_IQK          = 6,
+	BT_FLATK        = 7,
 };
 /**
  * @struct   bt_rfk_param

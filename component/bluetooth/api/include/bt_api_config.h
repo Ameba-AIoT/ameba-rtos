@@ -168,6 +168,7 @@ extern "C"
 #define RTK_BLE_5_1_SUPPORT                 0
 #define RTK_BLE_5_2_SUPPORT                 0
 #define RTK_BLE_SMP_OOB_SUPPORT             1
+#define RTK_BLE_COC_SUPPORT                 0
 #endif /* RTK_BLE_SUPPORT */
 
 #if defined(RTK_BLE_4_2_SUPPORT) && RTK_BLE_4_2_SUPPORT
@@ -198,6 +199,7 @@ extern "C"
 #define RTK_BLE_5_1_SUPPORT                 0
 #define RTK_BLE_5_2_SUPPORT                 0
 #define RTK_BLE_SMP_OOB_SUPPORT             1
+#define RTK_BLE_COC_SUPPORT                 0
 #endif /* RTK_BLE_SUPPORT */
 
 #if defined(RTK_BLE_4_2_SUPPORT) && RTK_BLE_4_2_SUPPORT
@@ -407,6 +409,30 @@ extern "C"
 #if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) || (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
 #define RTK_BLE_5_0_USE_EXTENDED_ADV        1
 #endif
+
+#define RTK_BT_API_MEM_PRE_ALLOC            1
+
+#if defined(RTK_BT_API_MEM_PRE_ALLOC) && RTK_BT_API_MEM_PRE_ALLOC
+#define BT_API_SEM_POOL_SIZE                8
+#define BT_EVT_SMALL_POOL_SIZE              32
+
+#if (defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT) || \
+    (defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT)
+#define BT_EVT_MEDIUM_POOL_SIZE             8
+#else
+#define BT_EVT_MEDIUM_POOL_SIZE             4
+#endif
+
+#if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
+#define BT_EVT_LARGE_POOL_SIZE              4
+#else
+#define BT_EVT_LARGE_POOL_SIZE              1
+#endif
+
+#define BT_EVT_SMALL_BUF_SIZE               128
+#define BT_EVT_MEDIUM_BUF_SIZE              640
+#define BT_EVT_LARGE_BUF_SIZE               1280
+#endif  /* RTK_BT_API_MEM_PRE_ALLOC */
 
 #ifdef __cplusplus
 }

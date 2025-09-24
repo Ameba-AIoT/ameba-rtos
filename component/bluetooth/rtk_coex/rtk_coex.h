@@ -73,6 +73,173 @@
 #endif /* CONFIG_BT_COEX_DEBUG */
 
 
+#if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
+// defined by https://wiki.realtek.com/display/CN3SD9R/Ameba+Coex+MailBox
+// for mailbox_id = 0x27
+struct rtk_coex_b2w_sw_mailbox_bt_info_report_by_itself {
+	// lb0
+	uint8_t id;
+	// lb1
+	uint8_t len;
+	// lb2
+	uint8_t connect: 1;
+	uint8_t SCOeSCO: 1;
+	uint8_t inqpage: 1;
+	uint8_t aclbusy: 1;
+	uint8_t scobusy: 1;
+	uint8_t hid: 1;
+	uint8_t a2dp: 1;
+	uint8_t pan_opp_ftp: 1;
+	// lb3
+	uint8_t retry_cnt: 4;
+	uint8_t bt_fix_2M: 1;
+	uint8_t inquiry: 1;
+	uint8_t bt_mesh: 1;
+	uint8_t page: 1;
+	// hb0
+	uint8_t rssi;
+	// hb1
+	uint8_t le_link: 1;
+	uint8_t re_link: 1;
+	uint8_t setup_link: 1;
+	uint8_t ignore_wlan_act: 1;
+	uint8_t voice: 1;
+	uint8_t ble_scan_en: 1;
+	uint8_t role_switch: 1;
+	uint8_t multi_link: 1;
+	// hb2
+	uint8_t opp_exist: 1;
+	uint8_t afh_map_update: 1;
+	uint8_t a2dp_active: 1;
+	uint8_t legacy_slave: 1;
+	uint8_t hid_slot: 2;
+	uint8_t hid_pair_num: 2;
+	//hb3
+	uint8_t rsvd: 5;
+	uint8_t non_hid_sniff_link: 1;
+	uint8_t packet_3M: 1;
+	uint8_t a2dp_sink: 1;
+};
+// for mailbox_id = 0x30
+union rtk_coex_b2w_sw_mailbox_bt_mp_report {
+	// subid = 0x2D
+	struct {
+		// lb0
+		uint8_t id;
+		// lb1
+		uint8_t seq;
+		// lb2
+		uint8_t subid;
+		// lb3
+		uint8_t status: 4;
+		uint8_t len: 4;
+		// hb0
+		uint8_t le_bg_scan: 1;
+		uint8_t le_init_scan: 1;
+		uint8_t le_scan: 1;
+		uint8_t rsvd: 5;
+		// hb1-hb3
+		uint8_t rsvd_hb[3];
+	} rtk_coex_b2w_sw_mailbox_le_scan_type;
+	// subid = 0x2E
+	struct {
+		// lb0
+		uint8_t id;
+		// lb1
+		uint8_t seq;
+		// lb2
+		uint8_t subid;
+		// lb3
+		uint8_t status: 4;
+		uint8_t len: 4;
+		// hb0
+		uint8_t scan_window_low; // unit: 0.625ms
+		// hb1
+		uint8_t scan_window_high;
+		// hb2
+		uint8_t scan_intvl_low;
+		// hb3
+		uint8_t scan_intvl_high;
+	} rtk_coex_b2w_sw_mailbox_le_scan_para;
+};
+// for mailbox_id = 0x47
+struct rtk_coex_b2w_sw_mailbox_bt_extra_info_report_by_itself {
+	// lb0
+	uint8_t  id;
+	// lb1
+	uint8_t  len;
+	// lb2
+	u8 rsvd_lb2;
+	// lb3
+	uint8_t rssi;
+	// hb0
+	uint8_t rsvd_hb0;
+	// hb1
+	uint8_t rsvd_hb1_0: 2;
+	uint8_t le_setup_link: 1;
+	uint8_t rsvd_hb1_1: 1;
+	uint8_t seqnum: 4;
+	// hb2
+	uint8_t iso_intvl_low;//unit:1.25ms
+	// hb3
+	uint8_t iso_intvl_high;
+};
+// for mailbox_id = 0x49
+struct rtk_coex_b2w_sw_mailbox_bt_le_init_scan_start_end {
+	// lb0
+	uint8_t id;
+	// lb1
+	uint8_t len;
+	// lb2
+	uint8_t scan_window_low; // unit: 0.625ms
+	// lb3
+	uint8_t scan_window_high;
+	// hb0
+	uint8_t scan_intvl_low;
+	// hb1
+	uint8_t scan_intvl_high;
+	// hb2
+	uint8_t scan_start: 1;
+	uint8_t rsvd: 7;
+	// hb3
+	uint8_t rsvd_hb3;
+};
+enum LE_SCAN_TYPE_e {
+	LE_SCAN_NONE = 0,
+	LE_SCAN_INIT = 1,
+	LE_SCAN_NORMAL = 2,
+};
+enum LE_CONNECT_STATUS_e {
+	LE_CONNECT_NONE = 0,
+	LE_CONNECT_IDLE = 1,
+	LE_CONNECT_BUSY = 2,
+};
+struct rtk_coex_bt_info_t {
+	u16 le_scan_init_intvl;
+	u16 le_scan_init_window;
+	u16 le_scan_intvl;
+	u16 le_scan_window;
+	u8 le_scan_type: 3;
+	u8 le_connect: 3;
+	u8 le_setup_link: 1;
+	u8 rsvd: 1;
+	u8 le_link_cnt;
+};
+
+#ifndef BT_HCI_OP_LE_SET_SCAN_PARAM
+#define BT_HCI_OP_LE_SET_SCAN_PARAM     0x200b
+#endif
+#ifndef BT_HCI_OP_LE_SET_SCAN_ENABLE
+#define BT_HCI_OP_LE_SET_SCAN_ENABLE    0x200c
+#endif
+#ifndef BT_HCI_OP_LE_CREATE_CONN
+#define BT_HCI_OP_LE_CREATE_CONN    0x200d
+#endif
+#ifndef BT_HCI_OP_LE_CREATE_CONN_CANCEL
+#define BT_HCI_OP_LE_CREATE_CONN_CANCEL 0x200e
+#endif
+#endif
+
 enum __hci_conn_type {
 	HCI_CONN_TYPE_L2CAP = 0,
 	HCI_CONN_TYPE_SCO_ESCO  = 1,
@@ -125,9 +292,22 @@ enum rtk_coex_mailbox_cmd {
 	RTK_COEX_MAILBOX_WIFI_RPT_TDMA                      = 0x43,
 	RTK_COEX_MAILBOX_BT_LE_EXTRA_INFO_BY_ITSELF         = 0x46,
 	RTK_COEX_MAILBOX_BT_LE_EXTRA_INFO                   = 0x47,
-	RTK_COEX_MAILBOX_BT_SLOT_CTRL                       = 0x48
+	RTK_COEX_MAILBOX_BT_SLOT_CTRL                       = 0x48,
+	RTK_COEX_MAILBOX_BT_SCAN_START_END                  = 0x49,
 };
 
+/* for RTK_COEX_MAILBOX_BT_MP_REPORT 0x30*/
+enum rtk_coex_mailbox_mp_report_opcode {
+	RTK_COEX_MAILBOX_MP_REPORT_OPCODE_GET_BT_VERSION        = 0x0,
+	RTK_COEX_MAILBOX_MP_REPORT_OPCODE_WRITE_REG_ADDR        = 0xC,
+	RTK_COEX_MAILBOX_MP_REPORT_OPCODE_WRITE_REG_VALUE       = 0xD,
+	RTK_COEX_MAILBOX_MP_REPORT_OPCODE_READ_REG              = 0x11,
+	RTK_COEX_MAILBOX_MP_REPORT_OPCODE_IND_SPEC_ACL_PKT      = 0x21,
+	RTK_COEX_MAILBOX_MP_REPORT_OPCODE_COEX_SUPPORT_VERSION  = 0x2B,
+	RTK_COEX_MAILBOX_MP_REPORT_OPCODE_GET_BT_LE_SCAN_TYPE   = 0x2D,
+	RTK_COEX_MAILBOX_MP_REPORT_OPCODE_GET_BT_LE_SCAN_PARA   = 0x2E,
+	RTK_COEX_MAILBOX_MP_REPORT_OPCODE_SET_BT_LANCONS_LVL    = 0x32,
+};
 struct rtk_bt_coex_profile_info_t {
 	struct list_head list;
 	uint16_t psm;
@@ -141,6 +321,7 @@ struct rtk_bt_coex_conn_t {
 	struct list_head list;
 	uint16_t conn_handle;
 	uint8_t type;       /* __hci_conn_type：0:l2cap, 1:sco/esco, 2:le */
+	uint16_t connect_interval;
 	uint16_t profile_bitmap;
 	uint16_t profile_status_bitmap;
 	uint8_t  profile_refcount[PROFILE_MAX];
@@ -163,7 +344,15 @@ struct rtk_bt_coex_priv_t {
 	struct list_head monitor_list;
 	void *monitor_mutex;
 	void *monitor_timer;
+#if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
+	struct rtk_coex_bt_info_t bt_info_cur;
+	struct rtk_coex_bt_info_t bt_info_prev;
+	void *info_paras_mutex;
+	void *setup_link_timer;
+#endif
 };
+
+
 
 /* little endian */
 struct sbc_frame_hdr {

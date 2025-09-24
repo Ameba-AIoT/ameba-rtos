@@ -645,6 +645,16 @@ void Peripheral_Reset(void)
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_FEN_GRP1, APBPeriph_THM | APBPeriph_DTIM | APBPeriph_LOGUART);
 }
 
+/* To avoid RRAM holding incorrect data, incorporate a MAGIC_NUMBER for verification. */
+static bool BOOT_RRAM_InfoValid(void)
+{
+	if (RRAM_DEV->MAGIC_NUMBER != 0x6969A5A5) {
+		return FALSE;
+	} else {
+		return TRUE;
+	}
+}
+
 //3 Image 1
 void BOOT_Image1(void)
 {
@@ -660,8 +670,9 @@ void BOOT_Image1(void)
 
 	Peripheral_Reset();
 
-	if (BOOT_Reason() == 0) {
+	if ((BOOT_Reason() == 0) || (!BOOT_RRAM_InfoValid())) {
 		_memset(RRAM_DEV, 0, sizeof(RRAM_TypeDef));
+		RRAM_DEV->MAGIC_NUMBER = 0x6969A5A5;
 	}
 
 	/* enable IPC first for otp read */

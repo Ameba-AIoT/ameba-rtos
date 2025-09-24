@@ -14,9 +14,17 @@
 #include <whc_host_app_api.h>
 #include <whc_host_netlink.h>
 
+//#define WHC_AUTO_SETTING	1
+#define WHC_WIFI_SYSTEM_CMD_SIZE          200
+/* depends on real name, wlan0 for common, maybe wlan1 in some raspi*/
+/* enable auto setting after WHC_WIFI_NETDEV_NAME check */
+#define WHC_WIFI_NETDEV_NAME              "wlan0"
+
 #define MAX_ARG_COUNT 5
 #define MAX_ARG_LENGTH 128
 #define MAX_INPUT_SIZE 640
+
+struct whc_netlink whc_netlink_info;
 
 void whc_host_rx_buf_hdl(struct msgtemplate *msg);
 
@@ -136,37 +144,18 @@ int whc_host_set_tickps_cmd(char *subtype)
 /* below for kernel setting */
 int whc_host_set_netif_on(uint8_t idx)
 {
-	int nl_fd;
-	int nl_family_id = 0;
 	struct msgtemplate msg;
 	int ret = 0;
 	unsigned char *ptr = msg.buf;
 
-	/* initialize socket */
-	nl_fd = whc_host_api_create_nl_socket(NETLINK_GENERIC, getpid());
-	if (nl_fd < 0) {
-		fprintf(stderr, "failed to create netlink socket\n");
-		return 0;
-	}
-
-	/* get family id */
-	nl_family_id = whc_host_api_get_family_id(nl_fd, WHC_CMD_GENL_NAME);
-	if (!nl_family_id) {
-		fprintf(stderr, "Failed to get family id, errno %d\n", errno);
-		close(nl_fd);
-		return -1;
-	}
-
-	whc_host_fill_nlhdr(&msg, nl_family_id, 0, WHC_CMD_ECHO);
+	whc_host_fill_nlhdr(&msg, whc_netlink_info.family_id, 0, WHC_CMD_ECHO);
 	nla_put_u32(&ptr, WHC_ATTR_API_ID, CMD_WIFI_NETIF_ON);
 	nla_put_u8(&ptr, WHC_ATTR_WLAN_IDX, idx);
 	msg.n.nlmsg_len += ptr - msg.buf;
-	ret = whc_host_api_send_to_kernel(nl_fd, (char *)&msg, msg.n.nlmsg_len);
+	ret = whc_host_api_send_to_kernel(whc_netlink_info.sockfd, (char *)&msg, msg.n.nlmsg_len);
 	if (ret < 0) {
 		printf("msg send fail\n");
 	}
-
-	close(nl_fd);
 
 	return ret;
 }
@@ -174,39 +163,20 @@ int whc_host_set_netif_on(uint8_t idx)
 /* msg to kernel, set mac address */
 int whc_host_set_mac(uint8_t idx, char *mac)
 {
-	int nl_fd;
-	int nl_family_id = 0;
 	struct msgtemplate msg;
 	int ret = 0;
 	unsigned char *ptr = msg.buf;
 
-	/* initialize socket */
-	nl_fd = whc_host_api_create_nl_socket(NETLINK_GENERIC, getpid());
-	if (nl_fd < 0) {
-		fprintf(stderr, "failed to create netlink socket\n");
-		return 0;
-	}
-
-	/* get family id */
-	nl_family_id = whc_host_api_get_family_id(nl_fd, WHC_CMD_GENL_NAME);
-	if (!nl_family_id) {
-		fprintf(stderr, "Failed to get family id, errno %d\n", errno);
-		close(nl_fd);
-		return -1;
-	}
-
-	whc_host_fill_nlhdr(&msg, nl_family_id, 0, WHC_CMD_ECHO);
+	whc_host_fill_nlhdr(&msg, whc_netlink_info.family_id, 0, WHC_CMD_ECHO);
 	nla_put_u32(&ptr, WHC_ATTR_API_ID, CMD_WIFI_SET_MAC);
 	nla_put_u8(&ptr, WHC_ATTR_WLAN_IDX, idx);
 	nla_put_string(&ptr, WHC_ATTR_STRING, mac);
 	msg.n.nlmsg_len += ptr - msg.buf;
 
-	ret = whc_host_api_send_to_kernel(nl_fd, (char *)&msg, msg.n.nlmsg_len);
+	ret = whc_host_api_send_to_kernel(whc_netlink_info.sockfd, (char *)&msg, msg.n.nlmsg_len);
 	if (ret < 0) {
 		printf("msg send fail\n");
 	}
-
-	close(nl_fd);
 
 	return ret;
 }
@@ -224,35 +194,18 @@ int whc_host_wifi_mp(char *input)
 	unsigned char *ptr = msg.buf;
 	struct msgtemplate ans;
 
-	/* initialize socket */
-	nl_fd = whc_host_api_create_nl_socket(NETLINK_GENERIC, getpid());
-	if (nl_fd < 0) {
-		fprintf(stderr, "failed to create netlink socket\n");
-		return 0;
-	}
-
-	/* get family id */
-	nl_family_id = whc_host_api_get_family_id(nl_fd, WHC_CMD_GENL_NAME);
-	if (!nl_family_id) {
-		fprintf(stderr, "Failed to get family id, errno %d\n", errno);
-		close(nl_fd);
-		return -1;
-	}
-
-	whc_host_fill_nlhdr(&msg, nl_family_id, 0, WHC_CMD_ECHO);
+	whc_host_fill_nlhdr(&msg, whc_netlink_info.family_id, 0, WHC_CMD_ECHO);
 	nla_put_u32(&ptr, WHC_ATTR_API_ID, CMD_WIFI_MP);
 	nla_put_string(&ptr, WHC_ATTR_STRING, buf);
 	msg.n.nlmsg_len += ptr - msg.buf;
 
-	ret = whc_host_api_send_to_kernel(nl_fd, (char *)&msg, msg.n.nlmsg_len);
+	ret = whc_host_api_send_to_kernel(whc_netlink_info.sockfd, (char *)&msg, msg.n.nlmsg_len);
 	if (ret < 0) {
 		printf("msg send fail\n");
 	}
 
-	int rep_len = recv(nl_fd, &ans, sizeof(ans), 0);
+	int rep_len = recv(whc_netlink_info.sockfd, &ans, sizeof(ans), 0);
 	whc_host_rx_buf_hdl(&ans);
-
-	close(nl_fd);
 
 	return ret;
 }
@@ -269,32 +222,15 @@ int whc_host_wifi_dbg(char *input)
 	int ret = 0;
 	unsigned char *ptr = msg.buf;
 
-	/* initialize socket */
-	nl_fd = whc_host_api_create_nl_socket(NETLINK_GENERIC, getpid());
-	if (nl_fd < 0) {
-		fprintf(stderr, "failed to create netlink socket\n");
-		return 0;
-	}
-
-	/* get family id */
-	nl_family_id = whc_host_api_get_family_id(nl_fd, WHC_CMD_GENL_NAME);
-	if (!nl_family_id) {
-		fprintf(stderr, "Failed to get family id, errno %d\n", errno);
-		close(nl_fd);
-		return -1;
-	}
-
-	whc_host_fill_nlhdr(&msg, nl_family_id, 0, WHC_CMD_ECHO);
+	whc_host_fill_nlhdr(&msg, whc_netlink_info.family_id, 0, WHC_CMD_ECHO);
 	nla_put_u32(&ptr, WHC_ATTR_API_ID, CMD_WIFI_DBG);
 	nla_put_string(&ptr, WHC_ATTR_STRING, buf);
 	msg.n.nlmsg_len += ptr - msg.buf;
 
-	ret = whc_host_api_send_to_kernel(nl_fd, (char *)&msg, msg.n.nlmsg_len);
+	ret = whc_host_api_send_to_kernel(whc_netlink_info.sockfd, (char *)&msg, msg.n.nlmsg_len);
 	if (ret < 0) {
 		printf("msg send fail\n");
 	}
-
-	close(nl_fd);
 
 	return ret;
 }
@@ -427,31 +363,14 @@ int whc_host_nl_init(void)
 	int ret = 0;
 	unsigned char *ptr = msg.buf;
 
-	/* initialize socket */
-	nl_fd = whc_host_api_create_nl_socket(NETLINK_GENERIC, getpid());
-	if (nl_fd < 0) {
-		fprintf(stderr, "failed to create netlink socket\n");
-		return 0;
-	}
-
-	/* get family id */
-	nl_family_id = whc_host_api_get_family_id(nl_fd, WHC_CMD_GENL_NAME);
-	if (!nl_family_id) {
-		fprintf(stderr, "Failed to get family id, errno %d\n", errno);
-		close(nl_fd);
-		return -1;
-	}
-
-	whc_host_fill_nlhdr(&msg, nl_family_id, 0, WHC_CMD_ECHO);
+	whc_host_fill_nlhdr(&msg, whc_netlink_info.family_id, 0, WHC_CMD_ECHO);
 	nla_put_u32(&ptr, WHC_ATTR_API_ID, CMD_WIFI_INFO_INIT);
 	msg.n.nlmsg_len += ptr - msg.buf;
 
-	ret = whc_host_api_send_to_kernel(nl_fd, (char *)&msg, msg.n.nlmsg_len);
+	ret = whc_host_api_send_to_kernel(whc_netlink_info.sockfd, (char *)&msg, msg.n.nlmsg_len);
 	if (ret < 0) {
 		printf("msg send fail\n");
 	}
-
-	close(nl_fd);
 
 	return ret;
 }
@@ -566,14 +485,65 @@ void whc_host_scan_result(uint8_t *buf)
 	printf("%s", ap_info);
 }
 
+int whc_host_init_ip(uint8_t *buf)
+{
+	int ret = 0;
+	char cmd[WHC_WIFI_SYSTEM_CMD_SIZE] = {0};
+
+	if ((buf[0] == 0) && (buf[1] == 0) && (buf[2] == 0) && (buf[3] == 0)) {
+		return ret;
+	}
+
+	if (snprintf(cmd, WHC_WIFI_SYSTEM_CMD_SIZE - 1, "ifconfig %s down", WHC_WIFI_NETDEV_NAME) == -1) {
+		printf("whc_host_init_ip fail\n");
+		return 1;
+	}
+	ret = system(cmd);
+
+	if (ret == -1) {
+		printf("ifconfig %s down fail\n", WHC_WIFI_NETDEV_NAME);
+		return 1;
+	}
+
+	memset(cmd, 0, WHC_WIFI_SYSTEM_CMD_SIZE);
+
+	if (snprintf(cmd, WHC_WIFI_SYSTEM_CMD_SIZE - 1, "ifconfig %s %d.%d.%d.%d", WHC_WIFI_NETDEV_NAME,
+				 buf[0], buf[1], buf[2], buf[3]) == -1) {
+		printf("whc_host_init_ip fail\n");
+		return 1;
+	}
+
+	ret = system(cmd);
+
+	if (ret == -1) {
+		printf("ifconfig %s ip fail\n", WHC_WIFI_NETDEV_NAME);
+		return 1;
+	}
+
+	if (snprintf(cmd, WHC_WIFI_SYSTEM_CMD_SIZE - 1, "ifconfig %s up", WHC_WIFI_NETDEV_NAME) == -1) {
+		printf("whc_host_init_ip fail\n");
+		return 1;
+	}
+	ret = system(cmd);
+
+	if (ret == -1) {
+		printf("ifconfig %s down up\n", WHC_WIFI_NETDEV_NAME);
+		return 1;
+	}
+
+	return 0;
+}
+
 void whc_host_rx_buf_hdl(struct msgtemplate *msg)
 {
 	struct nlattr *na;
 	uint32_t event;
-	uint32_t bridge_event;
+	uint32_t whc_event;
 	size_t payload_len;
 	uint8_t *pos = NULL;
 	int real_len;
+	char mac[20] = {0};
+	uint8_t idx;
 
 	if (msg->n.nlmsg_type == NLMSG_ERROR) {
 		printf("Netlink message nlmsg_type: NLMSG_ERROR\n");
@@ -589,15 +559,21 @@ void whc_host_rx_buf_hdl(struct msgtemplate *msg)
 	/* msg->buf: NLA_HDRLEN for nla type and len, left for pkt payload*/
 	if (payload_len > 0) {
 		pos = &msg->buf[NLA_HDRLEN];
-		bridge_event = *(uint32_t *)pos;
-		if (bridge_event == WHC_WIFI_TEST) {
+		whc_event = *(uint32_t *)pos;
+		if (whc_event == WHC_WIFI_TEST) {
 			pos = pos + sizeof(uint32_t);
 			switch (*pos) {
 			case WHC_WIFI_TEST_GET_MAC_ADDR:
-				printf("MAC ADDR %02x:%02x:%02x:%02x:%02x:%02x\n", pos[1], pos[2], pos[3], pos[4], pos[5], pos[6]);
+				idx = pos[1];
+				printf("MAC ADDR %02x:%02x:%02x:%02x:%02x:%02x\n", pos[2], pos[3], pos[4], pos[5], pos[6], pos[7]);
+				snprintf(mac, sizeof(mac) - 1, "%02x:%02x:%02x:%02x:%02x:%02x", pos[2], pos[3], pos[4], pos[5], pos[6], pos[7]);
+				whc_host_set_mac(idx, mac);
 				break;
 			case WHC_WIFI_TEST_GET_IP:
-				printf("IP ADDR %d.%d.%d.%d\n", pos[1], pos[2], pos[3], pos[4]);
+				printf("IP ADDR %d.%d.%d.%d GW %d %d %d %d\n", pos[1], pos[2], pos[3], pos[4], pos[5], pos[6], pos[7], pos[8]);
+#ifdef WHC_AUTO_SETTING
+				whc_host_init_ip(&pos[1]);
+#endif
 				break;
 			case WHC_WIFI_TEST_SCAN_RESULT:
 				whc_host_scan_result(pos);
@@ -611,7 +587,6 @@ void whc_host_rx_buf_hdl(struct msgtemplate *msg)
 
 int main(void)
 {
-	int sock_fd;
 	int family_id;
 	char input_buf[MAX_INPUT_SIZE];
 	struct msgtemplate msg;
@@ -619,27 +594,28 @@ int main(void)
 	struct pollfd fds[2];
 	printf("Waiting for message from kernel or input command from user space\n");
 
+	memset(&whc_netlink_info, 0, sizeof(struct whc_netlink));
+
+	// Create and bind a socket
+	whc_netlink_info.sockfd = whc_host_api_create_nl_socket(NETLINK_GENERIC, getpid());
+	if (whc_netlink_info.sockfd < 0) {
+		printf("Failed to create netlink socket");
+		return -1;
+	}
+
+	// Retrieve the family id
+	whc_netlink_info.family_id = whc_host_api_get_family_id(whc_netlink_info.sockfd, WHC_CMD_GENL_NAME);
+	if (whc_netlink_info.family_id == 0) {
+		printf("Failed to retrieve family id\n");
+		close(whc_netlink_info.sockfd);
+		return -1;
+	}
+	//printf("Family ID for %s: %d\n", WHC_CMD_GENL_NAME, family_id);
+
 	while (1) {
 		memset(input_buf, 0, MAX_INPUT_SIZE);
 
-		// Create and bind a socket
-		sock_fd = whc_host_api_create_nl_socket(NETLINK_GENERIC, getpid());
-		if (sock_fd < 0) {
-			printf("Failed to create netlink socket");
-			return -1;
-		}
-
-		// Retrieve the family id
-		family_id = whc_host_api_get_family_id(sock_fd, WHC_CMD_GENL_NAME);
-		if (family_id == 0) {
-			printf("Failed to retrieve family id\n");
-			close(sock_fd);
-			return -1;
-		}
-
-		//printf("Family ID for %s: %d\n", WHC_CMD_GENL_NAME, family_id);
-
-		fds[0].fd = sock_fd;
+		fds[0].fd = whc_netlink_info.sockfd;
 		fds[0].events = POLLIN;  // Monitor for incoming Netlink messages
 		fds[1].fd = STDIN_FILENO;
 		fds[1].events = POLLIN;  // Monitor for standard input
@@ -647,9 +623,8 @@ int main(void)
 		int ret = poll(fds, 2, -1);  // Block until a file descriptor is ready
 		if (ret > 0) {
 			if (fds[0].revents & POLLIN) {
-				rx_len = recv(sock_fd, &msg, sizeof(msg), 0);
+				rx_len = recv(whc_netlink_info.sockfd, &msg, sizeof(msg), 0);
 				whc_host_rx_buf_hdl(&msg);
-				close(sock_fd);
 			}
 			if (fds[1].revents & POLLIN) {
 				if (fgets(input_buf, sizeof(input_buf), stdin) != NULL) {
@@ -658,7 +633,6 @@ int main(void)
 						break;
 					}
 					printf("Received cmd \n");
-					close(sock_fd);
 					whc_host_cmd_hdl(input_buf);
 				}
 			}
@@ -668,7 +642,7 @@ int main(void)
 		}
 	}
 
-	close(sock_fd);
+	close(whc_netlink_info.sockfd);
 	return 0;
 }
 

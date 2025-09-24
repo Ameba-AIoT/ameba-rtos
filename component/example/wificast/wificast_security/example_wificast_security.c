@@ -176,7 +176,7 @@ static void example_recv_cb_task(void *param)
 			RTK_LOGD(TAG, MAC_FMT", len: %d, type: %x\n", MAC_ARG(recv_data->mac), recv_data->data_len, hdr->type);
 			if (hdr->type & WIFI_CAST_UART_DATA) {
 				RTK_LOGI(TAG, MAC_FMT", recv count: %d, size: %d, data: %s\n",
-						MAC_ARG(recv_data->mac), ++count, hdr->len, recv_data->data + sizeof(struct example_frame_head));
+						 MAC_ARG(recv_data->mac), ++count, hdr->len, recv_data->data + sizeof(struct example_frame_head));
 			} else if (hdr->type & WIFI_CAST_SCAN_REQUEST) {
 				example_security_scan_request_cb(recv_data->mac);
 			} else if (hdr->type & WIFI_CAST_SCAN_RESPONSE) {
@@ -555,8 +555,8 @@ void WifiCastTestApp(u8  *argv[])
 
 u32
 CmdWifiCastTest(
-	IN u16 argc,
-	IN u8  *argv[]
+	u16 argc,
+	u8  *argv[]
 )
 {
 	if (argc > 0) {

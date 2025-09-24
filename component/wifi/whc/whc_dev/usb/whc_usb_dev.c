@@ -9,13 +9,10 @@ struct whc_usb_priv_t whc_usb_priv = {0};
 
 u8 wifi_whc_usb_status = WIFI_WHC_USB_STATUS_ACTIVE;
 
-#ifndef CONFIG_WHC_BRIDGE
 void rtw_pending_q_resume(void);
-#endif
 
 static usbd_config_t whc_usb_wifi_cfg = {
 	.speed = WIFI_WHC_USB_SPEED,
-	.dma_enable = 1U,
 	.isr_priority = 4,
 #if defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 292U,
@@ -99,10 +96,8 @@ static void whc_usb_dev_irq_task(void)
 				if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 2) ||
 					((new_skb = dev_alloc_skb(USB_BUFSZ, USB_SKB_RSVD_LEN)) == NULL)) {
 					whc_usb_priv.irq_info.wait_xmit_skb = 1;
-#ifndef CONFIG_WHC_BRIDGE
 					/* resume pending queue to release skb */
 					rtw_pending_q_resume();
-#endif
 					break;
 				}
 				msg_info = (struct whc_msg_info *)skb_rcv->data;
@@ -165,7 +160,7 @@ void whc_usb_dev_status_changed_cb(u8 old_status, u8 new_status)
 	if (new_status == USBD_ATTACH_STATUS_ATTACHED) {
 		wifi_whc_usb_status = WIFI_WHC_USB_STATUS_ACTIVE;
 	} else if (new_status == USBD_ATTACH_STATUS_DETACHED) {
-#if CONFIG_USBD_WHC_HOTPLUG
+#if defined(CONFIG_USBD_WHC_HOTPLUG)
 		wifi_whc_usb_status = WIFI_WHC_USB_STATUS_DISABLED;
 #else
 		wifi_whc_usb_status = WIFI_WHC_USB_STATUS_SUSPEND;
@@ -174,7 +169,7 @@ void whc_usb_dev_status_changed_cb(u8 old_status, u8 new_status)
 #if defined(CONFIG_BT) && defined(CONFIG_BT_INIC)
 	bt_inic_status_change_cb(new_status);
 #endif
-#if CONFIG_USBD_WHC_HOTPLUG
+#if defined(CONFIG_USBD_WHC_HOTPLUG)
 	rtos_sema_give(whc_usb_priv.usb_attach_status_sema);
 #endif
 }
@@ -237,6 +232,7 @@ static int whc_usb_dev_deinit_cb(void)
 
 		whc_usb_priv.tx_buf = NULL;
 		whc_usb_priv.irq_info.txdone = 0;
+		rtos_sema_give(whc_usb_priv.usb_tx_sema);
 	}
 
 	// free rx skb
@@ -296,32 +292,15 @@ static usbd_inic_cb_t whc_usb_dev_cb = {
 	.resume = whc_usb_dev_resume_cb,
 };
 
-#if CONFIG_USBD_WHC_HOTPLUG
+#if defined(CONFIG_USBD_WHC_HOTPLUG)
 static void whc_usb_hotplug_task(void)
 {
-	int ret = 0;
-
 	do {
 		rtos_sema_take(whc_usb_priv.usb_attach_status_sema, 0xFFFFFFFF);
 		if (wifi_whc_usb_status == WIFI_WHC_USB_STATUS_DISABLED) {
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "DETACHED\n");
-			/* Disconnect when detached, otherwise device and host will disagree on connection status after reattachment. */
-			wifi_disconnect();
-			usbd_inic_deinit();
-			ret = usbd_deinit();
-			if (ret != 0) {
-				break;
-			}
-
-			ret = usbd_init(&whc_usb_wifi_cfg);
-			if (ret != HAL_OK) {
-				RTK_LOGE(TAG_WLAN_INIC, "USBdevice init fail!\n");
-			}
-			ret = usbd_inic_init(&whc_usb_dev_cb);
-			if (ret != HAL_OK) {
-				RTK_LOGE(TAG_WLAN_INIC, "USB whc init fail!\n");
-			}
-
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "DETACHED, so reboot\n");
+			rtos_time_delay_ms(20);
+			System_Reset();
 		} else if (wifi_whc_usb_status == WIFI_WHC_USB_STATUS_ACTIVE) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "ATTACHED\n");
 		}
@@ -346,10 +325,10 @@ static void whc_usb_dev_device_init(void)
 	}
 
 	rtos_mutex_create_static(&whc_usb_priv.tx_lock);
-	rtos_sema_create_static(&whc_usb_priv.usb_tx_sema, 0, 0xFFFFFFFF);
+	rtos_sema_create_static(&whc_usb_priv.usb_tx_sema, 1, 0xFFFFFFFF);
 	rtos_sema_create_static(&whc_usb_priv.usb_irq_sema, 0, 0xFFFFFFFF);
 
-#if CONFIG_USBD_WHC_HOTPLUG
+#if defined(CONFIG_USBD_WHC_HOTPLUG)
 	rtos_sema_create_static(&whc_usb_priv.usb_attach_status_sema, 0, 1);
 	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"whc_usb_hotplug_task", (rtos_task_function_t)whc_usb_hotplug_task,
 										NULL, 1024, 8)) {
@@ -361,7 +340,6 @@ static void whc_usb_dev_device_init(void)
 										NULL, 512, 1)) {
 		RTK_LOGI(NOTAG, "Create whc_usb_dev_irq_task Err!!\n");
 	}
-	rtos_sema_give(whc_usb_priv.usb_tx_sema);
 
 	RTK_LOGI(TAG_WLAN_INIC, "USB device init done!\n");
 }

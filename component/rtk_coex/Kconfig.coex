@@ -22,7 +22,7 @@ if WLAN_MENU
         endif
 
         config COEXIST_EXT_MENU
-            depends on (COEX_MENU && (!MP_SHRINK))
+            depends on (COEX_MENU && (!MP_SHRINK) && (!AMEBAD))
             bool "Enable Ext Coex Support"
             default n
             select COEX_EXT_CHIP_SUPPORT
@@ -95,6 +95,7 @@ if WLAN_MENU
                 default "PA_15" if AMEBALITE
                 default "PB_0" if AMEBADPLUS
                 default "PA_21" if AMEBAGREEN2
+                default "PA_26" if AMEBAD
 
             config EXT_PTA_PIN_PRI
                 string "Pin PTA Priority"
@@ -102,6 +103,7 @@ if WLAN_MENU
                 default "PA_17" if AMEBALITE
                 default "PB_2" if AMEBADPLUS
                 default "PA_18" if AMEBAGREEN2
+                default "PB_1" if AMEBAD
 
             config EXT_PTA_PIN_GNT
                 string "Pin PTA Gnt"
@@ -109,6 +111,7 @@ if WLAN_MENU
                 default "PA_16" if AMEBALITE
                 default "PB_1" if AMEBADPLUS
                 default "PA_19" if AMEBAGREEN2
+                default "PA_27" if AMEBAD
 
             config COEX_EXT_CHIP_SUPPORT
                 bool

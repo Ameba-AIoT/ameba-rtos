@@ -117,8 +117,8 @@ void WifiCastTestApp(u8  *argv[])
 
 u32
 CmdWifiCastTest(
-	IN u16 argc,
-	IN u8  *argv[]
+	u16 argc,
+	u8  *argv[]
 )
 {
 	if (argc > 0) {

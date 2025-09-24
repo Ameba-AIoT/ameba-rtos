@@ -87,9 +87,6 @@
 /* Sense */
 #define USBD_MSC_SENSE_LIST_DEPTH                   4U
 
-/* SD access retry */
-#define USBD_MSC_SD_ACCESS_RETRY					3U
-
 typedef struct {
 	int(*disk_getcapacity)(u32 *sectors);
 	int(*disk_read)(u32 sector, u8 *buffer, u32 count);

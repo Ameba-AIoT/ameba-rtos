@@ -41,7 +41,7 @@ u32 SWR_MEM(u32 NewState)
 		/* 1.35v for DDR3L, 1.8v for psram and DDR2 */
 		swr->SWR_ON_CTRL2 &= (~SWR_MASK_REG_PWM_VREF_SEL);
 		swr->SWR_ON_CTRL0 &= (~SWR_MASK_VREFPFM_L);
-		if (ChipInfo_DDRType() == DDR_Type_DDR3L) {
+		if (ChipInfo_DDRType() == MCM_DDR3L) {
 			swr->SWR_ON_CTRL2 |= DDR3L_Vol;
 			swr->SWR_ON_CTRL0 |= SWR_VREFPFM_L(DDR3L_Vol_PFM);
 		} else {

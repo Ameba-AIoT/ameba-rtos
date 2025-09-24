@@ -1138,7 +1138,7 @@ static void wifi_scan_thread(void *pvParameters)
 }
 
 /*get ap security mode from scan list*/
-static int _get_ap_security_mode(IN char *ssid, OUT u32 *security_mode, OUT u8 *channel)
+static int _get_ap_security_mode(char *ssid, u32 *security_mode, u8 *channel)
 {
 	struct rtw_scan_param scan_param;
 	struct rtw_scan_result *scanned_ap_info;

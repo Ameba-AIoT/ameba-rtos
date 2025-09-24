@@ -12,7 +12,9 @@ This example describes how to use GPIO Port read/write by RAW GPIO API.
   When test GPIO port output:
 
   - GPIO ports as output pins connect to the LED long leg, and the LED short leg connect to GND
-  - Selected pins are decided by both `GPIO_TEST_PORT` and `pin_mask` defined in gpio_ext.h
+  - Selected pins are decided by both `GPIO_TEST_PORT` and `pin_mask` (as defined in the header file of the current example)
+     - The relevant header file can be found in the directory:
+      `component/example/peripheral/{mebd|raw}/{peripheral_name}/{example_folder_name}/`
 
     - About macro `GPIO_TEST_PORT`:
 

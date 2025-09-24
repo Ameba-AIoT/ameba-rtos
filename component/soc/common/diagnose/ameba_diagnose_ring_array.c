@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include "ameba_diagnose_ring_array.h"
 
 #include "os_wrapper.h"
