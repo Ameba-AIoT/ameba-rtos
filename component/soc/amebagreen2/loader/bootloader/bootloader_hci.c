@@ -163,7 +163,7 @@ void Boot_Fullmac_LoadIMGAll(void)
 		Boot_Fullmac_LoadImage();
 	} else {
 		switch (mem_type) {
-		case MEMORY_ONE_FLASH:
+		case MCM_TYPE_NOR_FLASH:
 			/* rom code init flash only when BOOT_FROM_FLASH */
 			void BOOT_ROM_InitFlash(void);
 			BOOT_ROM_InitFlash();
@@ -173,13 +173,13 @@ void Boot_Fullmac_LoadIMGAll(void)
 			Boot_Fullmac_XipEn();
 			Boot_Fullmac_Secure_Check(3, TRUE, FALSE);
 			break;
-		case MEMORY_MCM_PSRAM:
+		case MCM_TYPE_PSRAM:
 			/* Ensure BOOT_PSRAM_Init() in called in Bootloader */
 			Boot_Fullmac_ImgDownload();
 			Boot_Fullmac_Secure_Check(3, FALSE, TRUE);
 			break;
 		default:
-		case MEMORY_SINGLE_DIE:
+		case MCM_SINGLE_DIE:
 			Boot_Fullmac_Secure_Check(1, FALSE, FALSE);
 			break;
 		}

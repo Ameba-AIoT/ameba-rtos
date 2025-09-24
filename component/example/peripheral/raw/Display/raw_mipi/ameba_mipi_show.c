@@ -753,7 +753,8 @@ void LcdcRgbDisplayChk(void)
 
 void MIPIDemoShow_task(void)
 {
-	if (ChipInfo_MemoryType() == Memory_Type_PSRAM) {
+	MCM_MemTypeDef memInfo = ChipInfo_MCMInfo();
+	if (memInfo.mem_type & MCM_TYPE_PSRAM) {
 		RTK_LOGE(TAG, "Remember Modify LCDC_IMG_BUF_OFFSET in PSRAM(8MB)\n");
 		BackupLcdImgBuffer = (u8 *)(DDR_BASE + (5 << 20));	/*PSRAM use 5~8M*/
 		LcdImgBuffer1 = (u8 *)(BackupLcdImgBuffer + LCDC_IMG_BUF_SIZE);

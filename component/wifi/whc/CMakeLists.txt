@@ -148,20 +148,6 @@ if(CONFIG_WHC_DEV)
         )
         set(target_name wifi_whc_usb_dev)
     endif()
-elseif(CONFIG_WHC_BRIDGE)
-    if(CONFIG_WHC_INTF_SDIO)
-        ameba_list_append(private_sources
-            whc_dev/sdio/whc_sdio_drv.c
-            whc_dev/sdio/whc_sdio_dev.c
-        )
-        set(target_name wifi_fullmac_sdio_bridge_lite)
-    elseif(CONFIG_WHC_INTF_SPI)
-         ameba_list_append(private_sources
-            whc_dev/spi/whc_spi_drv.c
-            whc_dev/spi/whc_spi_dev.c
-        )
-        set(target_name wifi_fullmac_spi_bridge_lite)
-    endif()
 elseif(CONFIG_WHC_HOST)
     if(CONFIG_WHC_INTF_SPI)
         ameba_list_append(private_sources

@@ -37,6 +37,9 @@ config SUPPORT_USB_SHARED_DFIFO
 config SUPPORT_USBD_UAC
     def_bool y
 
+config SUPPORT_USBH_UAC
+    def_bool y
+
 # USB ECM host
 config SUPPORT_USBH_ECM
     def_bool y
@@ -49,6 +52,14 @@ config SUPPORT_SDIOH
     def_bool y
 
 config SUPPORT_SMP
+    def_bool y
+
+#
+# Audio features
+#
+
+# audio device function
+config SUPPORT_AUDIO_DEVICE
     def_bool y
 
 #---------- FEATURE LIST END-------------#
@@ -80,20 +91,6 @@ menu "CONFIG TrustZone"
         default y
 endmenu
 
-menu "CONFIG Mass Production"
-    config MP_INCLUDED
-        bool "Enable MP"
-    if MP_INCLUDED
-        choice
-            prompt "MP Mode"
-            default MP_SHRINK
-            config MP_EXPAND
-                bool "expand"
-            config MP_SHRINK
-                bool "shrink"
-        endchoice
-    endif
-endmenu
 
 menu "CONFIG Linux"
     config LINUX_FW_EN
@@ -120,9 +117,9 @@ rsource "../component/usb/Kconfig"
 
 menu "CONFIG APPLICATION"
 
-    rsource "../component/ui/Kconfig"
+    orsource "../component/ui/Kconfig"
 
-    rsource "../component/audio/Kconfig"
+    orsource "../component/audio/Kconfig"
 
     rsource "../component/utils/ipc/Kconfig"
 
@@ -130,10 +127,14 @@ menu "CONFIG APPLICATION"
 
     menu "AI Config"
         orsource "../component/tflite_micro/Kconfig"
-        rsource "../component/aivoice/Kconfig"
+        orsource "../component/aivoice/Kconfig"
     endmenu
 
     orsource "${APP_DIR}/Kconfig.prj"
+
+    orsource "../component/application/matter/project/cmake/Kconfig"
+
+    rsource "../component/soc/common/diagnose/Kconfig"
 
 endmenu
 

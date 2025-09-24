@@ -61,28 +61,35 @@ if(NOT TARGET diag_fmt)
   set_property(TARGET diag_fmt PROPERTY ADDITIONAL_CLEAN_FILES ${fmt_json} ${fmt_src})
 endif()
 
-if(CONFIG_WHC_DEV OR CONFIG_WHC_NONE)
-    #Core as NP(maybe also as AP: single core)
-    ameba_list_append(private_sources
-        ameba_diagnose_np.c
-        ameba_diagnose_transform.c
-        ${fmt_src}
+if (CONFIG_DIAGNOSE_EN)
+    if(CONFIG_WHC_DEV OR CONFIG_WHC_NONE)
+        #Core as NP(maybe also as AP: single core)
+        ameba_list_append(private_sources
+            ameba_diagnose_np.c
+            ameba_diagnose_transform.c
+            ${fmt_src}
 
-        # only for np
-        ameba_diagnose_protocol.c
-        ameba_diagnose_ring_array.c
-        ameba_diagnose_queue.c
-        ameba_diagnose_heap.c
-    )
-elseif(CONFIG_WHC_HOST)
-    #Core as AP
-    ameba_list_append(private_sources
-        ameba_diagnose_ap.c
-        ameba_diagnose_transform.c
-        ${fmt_src}
-    )
+            # only for np
+            ameba_diagnose_protocol.c
+            ameba_diagnose_ring_array.c
+            ameba_diagnose_queue.c
+            ameba_diagnose_heap.c
+        )
+    elseif(CONFIG_WHC_HOST)
+        #Core as AP
+        ameba_list_append(private_sources
+            ameba_diagnose_ap.c
+            ameba_diagnose_transform.c
+            ${fmt_src}
+        )
+    else()
+        #Core neither as AP nor as NP, add an empty function to uniform code in project
+        ameba_list_append(private_sources
+            ameba_diagnose_none.c
+        )
+    endif()
 else()
-    #Core neither as AP nor as NP, add an empty function to uniform code in project
+    # When Diagnose disable, keep some empty function.
     ameba_list_append(private_sources
         ameba_diagnose_none.c
     )

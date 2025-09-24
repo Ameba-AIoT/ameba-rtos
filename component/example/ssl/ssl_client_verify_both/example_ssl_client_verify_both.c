@@ -3,12 +3,59 @@
 
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/ssl.h"
+#include "mbedtls/debug.h"
 
-#define SERVER_HOST    "192.168.1.100"
+#define SERVER_HOST    "192.168.31.230"//230
 #define SERVER_PORT    "443"
 #define RESOURCE       "/"
 #define BUFFER_SIZE    2048
 
+#if 0
+/* ECDSA 客户端私钥 */
+static const char *test_client_key =
+	"-----BEGIN PRIVATE KEY-----\r\n" \
+	"MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg923508EHeC/AHyCT\r\n" \
+	"dcBgZ3x4WuncvHuZHsGchkmHTmmhRANCAASZf0ajeLs8GEiukr63MEAn/C2Iqwjk\r\n" \
+	"4M1h/x2cX9Yb+jacnUvtezdaziXuY9IyFPgk7HXvjT0yUl7TmNiwBdtn\r\n" \
+	"-----END PRIVATE KEY-----\r\n";
+
+static const char *test_client_crt =
+	"-----BEGIN CERTIFICATE-----\r\n" \
+	"MIICGzCCAcGgAwIBAgIUL9xjKj7a2qcnNl4VrMbwM8uN7xAwCgYIKoZIzj0EAwIw\r\n" \
+	"ZzELMAkGA1UEBhMCQ04xEDAOBgNVBAgMB0ppYW5nU3UxDzANBgNVBAcMBlN1Wmhv\r\n" \
+	"dTEQMA4GA1UECgwHUmVhbHNpbDELMAkGA1UECwwCQ0ExFjAUBgNVBAMMDUVDRFNB\r\n" \
+	"IFJvb3QgQ0EwHhcNMjUwODI1MTE0MzI5WhcNMjYwODI1MTE0MzI5WjBwMQswCQYD\r\n" \
+	"VQQGEwJDTjEQMA4GA1UECAwHSmlhbmdTdTEPMA0GA1UEBwwGU3VaaG91MRAwDgYD\r\n" \
+	"VQQKDAdSZWFsc2lsMQ8wDQYDVQQLDAZDbGllbnQxGzAZBgNVBAMMEmNsaWVudC5l\r\n" \
+	"eGFtcGxlLmNvbTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJl/RqN4uzwYSK6S\r\n" \
+	"vrcwQCf8LYirCOTgzWH/HZxf1hv6NpydS+17N1rOJe5j0jIU+CTsde+NPTJSXtOY\r\n" \
+	"2LAF22ejQjBAMB0GA1UdDgQWBBQSgT8zkj4LdYyWRgsPxNw5TlbzDzAfBgNVHSME\r\n" \
+	"GDAWgBTcO98m97FSwIoP1hbl3tLH8USy1TAKBggqhkjOPQQDAgNIADBFAiEAhDrN\r\n" \
+	"FlsRN7WsHDXNlggUBpLd+wqm9DpptE1aed326MwCIG/9QtJviAnoWJmif+9BMXjA\r\n" \
+	"hC/SNvTXv4X+ONhGlXMU\r\n" \
+	"-----END CERTIFICATE-----\r\n";
+
+/* ECDSA CA 根证书 (用于签发服务器和客户端证书) */
+static const char *test_ca_crt =
+	"-----BEGIN CERTIFICATE-----\r\n" \
+	"MIICIjCCAcmgAwIBAgIUFfmslKmN3x56RXrM5zx2mwWjgfQwCgYIKoZIzj0EAwIw\r\n" \
+	"ZzELMAkGA1UEBhMCQ04xEDAOBgNVBAgMB0ppYW5nU3UxDzANBgNVBAcMBlN1Wmhv\r\n" \
+	"dTEQMA4GA1UECgwHUmVhbHNpbDELMAkGA1UECwwCQ0ExFjAUBgNVBAMMDUVDRFNB\r\n" \
+	"IFJvb3QgQ0EwHhcNMjUwODI1MTE0MjIyWhcNMzUwODIzMTE0MjIyWjBnMQswCQYD\r\n" \
+	"VQQGEwJDTjEQMA4GA1UECAwHSmlhbmdTdTEPMA0GA1UEBwwGU3VaaG91MRAwDgYD\r\n" \
+	"VQQKDAdSZWFsc2lsMQswCQYDVQQLDAJDQTEWMBQGA1UEAwwNRUNEU0EgUm9vdCBD\r\n" \
+	"QTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABOA1AddpNZxLDgV5kDMgmxPYIuei\r\n" \
+	"VLg8Rhgn2t0yQDnjuU7+I2h7mnxJ8pseB8JufSQhtUwS2Ch1qYEfe7laHqGjUzBR\r\n" \
+	"MB0GA1UdDgQWBBTcO98m97FSwIoP1hbl3tLH8USy1TAfBgNVHSMEGDAWgBTcO98m\r\n" \
+	"97FSwIoP1hbl3tLH8USy1TAPBgNVHRMBAf8EBTADAQH/MAoGCCqGSM49BAMCA0cA\r\n" \
+	"MEQCIEZ3vcD71xknApHmmlbOowiGApoL5JhW+5DsBbbD6xIaAiBkq8mOoc7yk0Vd\r\n" \
+	"T/blFDUjW8GtBAQG/i0GY6Cohec2mg==\r\n" \
+	"-----END CERTIFICATE-----\r\n";
+#endif
+
+
+
+#if 1
 static const unsigned char *test_client_key = (unsigned char *) \
 		"-----BEGIN PRIVATE KEY-----\r\n" \
 		"MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCsTIOSoYt6mO+C\r\n" \
@@ -87,6 +134,7 @@ static const unsigned char *test_ca_crt = (unsigned char *) \
 		"lNdugeECgJtLVjRFOwryPz8Yzw1NrVc=\r\n" \
 		"-----END CERTIFICATE-----\r\n";
 
+#endif
 static int _verify_func(void *data, mbedtls_x509_crt *crt, int depth, uint32_t *flags)
 {
 	/* To avoid gcc warnings */
@@ -118,7 +166,6 @@ static void example_ssl_client_verify_both_thread(void *param)
 
 	// Delay to check successful WiFi connection and obtain of an IP address
 	LwIP_Check_Connectivity();
-
 	int ret;
 	mbedtls_net_context server_fd;
 	mbedtls_ssl_context ssl;
@@ -182,7 +229,7 @@ static void example_ssl_client_verify_both_thread(void *param)
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "ERROR: mbedtls_ssl_handshake ret(-0x%x)", -ret);
 		goto exit;
 	} else {
-		unsigned char buf[BUFFER_SIZE + 1];
+		unsigned char buf[BUFFER_SIZE + 64] ALIGNMTO(CACHE_LINE_SIZE);
 		int pos = 0, read_size = 0, resource_size = 0, content_len = 0, header_removed = 0;
 
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "SSL ciphersuite %s\n", mbedtls_ssl_get_ciphersuite(&ssl));
@@ -203,7 +250,7 @@ static void example_ssl_client_verify_both_thread(void *param)
 					body = header + strlen("\r\n\r\n");
 					*(body - 2) = 0;
 					header_removed = 1;
-					RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nHTTP Header: %s\n", buf);
+					// RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nHTTP Header: %s\n", buf);
 
 					// Remove header size to get first read size of data from body head
 					read_size = pos - ((unsigned char *) body - buf);
@@ -225,15 +272,19 @@ static void example_ssl_client_verify_both_thread(void *param)
 				}
 			}
 
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "read resource %d bytes\n", read_size);
+			// RTK_LOGS(NOTAG, RTK_LOG_INFO, "read resource %d bytes\n", read_size);
 			resource_size += read_size;
 		}
 
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "exit read. ret = %d\n", read_size);
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "http content-length = %d bytes, download resource size = %d bytes\n", content_len, resource_size);
 	}
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "SSL ciphersuite %s\n", mbedtls_ssl_get_ciphersuite(&ssl));
+
+
 
 exit:
+
 	mbedtls_net_free(&server_fd);
 	mbedtls_ssl_free(&ssl);
 	mbedtls_ssl_config_free(&conf);
@@ -247,7 +298,7 @@ void example_ssl_client_verify_both(void)
 {
 	rtos_task_t task;
 	if (rtos_task_create(&task, ((const char *)"example_ssl_client_verify_both_thread"), example_ssl_client_verify_both_thread,
-						 NULL, 2048 * 4, 1) != RTK_SUCCESS) {
+						 NULL, 2048 * 6, 1) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(example_ssl_client_verify_both_thread) failed", __FUNCTION__);
 	}
 }

@@ -1172,6 +1172,10 @@ static rtk_bt_le_audio_iso_channel_info_t *bt_stack_le_audio_big_setup_data_path
 			BT_LOGE("%s base_data_get_bis_codec_cfg fail\r\n", __func__);
 			return NULL;
 		}
+		if (sync_info.p_base_mapping) {
+			data.presentation_delay = sync_info.p_base_mapping->presentation_delay;
+			BT_LOGA("[LEA STACK] %s get base mapping presentation delay %d \r\n", __func__, data.presentation_delay);
+		}
 	}
 	p_iso_chann = bt_stack_le_audio_handle_data_path_setup(&data);
 	if (!p_iso_chann) {

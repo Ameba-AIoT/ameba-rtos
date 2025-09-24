@@ -28,8 +28,6 @@
 
 rtk_bt_le_iso_priv_t bt_le_iso_priv_data = {0};
 
-extern bool rtk_bt_check_evt_cb_direct_calling(uint8_t group, uint8_t evt_code);
-
 T_APP_RESULT g_cis_request_ind_ret = APP_RESULT_PENDING;
 
 void bt_stack_le_iso_data_direct_callback(uint8_t cb_type, void *p_cb_data)
@@ -50,7 +48,7 @@ void bt_stack_le_iso_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 		/* Send event */
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_ISO,
 									RTK_BT_LE_ISO_EVT_DATA_RECEIVE_IND,
-									sizeof(rtk_bt_le_iso_direct_iso_data_ind_t));
+									sizeof(rtk_bt_le_iso_direct_iso_data_ind_t) + p_data->p_bt_direct_iso->offset + p_data->p_bt_direct_iso->iso_sdu_len);
 		if (p_evt) {
 			rtk_bt_le_iso_direct_iso_data_ind_t *direct_iso_data_ind = (rtk_bt_le_iso_direct_iso_data_ind_t *)p_evt->data;
 			//the definition of rtk_bt_le_iso_direct_iso_data_ind_t and T_BT_DIRECT_ISO_DATA_IND are different,cannot use memcpy
@@ -63,13 +61,8 @@ void bt_stack_le_iso_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 			direct_iso_data_ind->ts_flag = p_data->p_bt_direct_iso->ts_flag;
 			direct_iso_data_ind->time_stamp = p_data->p_bt_direct_iso->time_stamp;
 			direct_iso_data_ind->buf_len = p_data->p_bt_direct_iso->offset + p_data->p_bt_direct_iso->iso_sdu_len;
-			/* 2nd level ptr in write event msg need deep copy */
-			direct_iso_data_ind->p_buf = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, direct_iso_data_ind->buf_len);
-			memset(direct_iso_data_ind->p_buf, 0, direct_iso_data_ind->buf_len);
+			direct_iso_data_ind->p_buf = BT_STRUCT_TAIL(direct_iso_data_ind, rtk_bt_le_iso_direct_iso_data_ind_t);
 			memcpy((void *)direct_iso_data_ind->p_buf, (void *)p_data->p_bt_direct_iso->p_buf, direct_iso_data_ind->buf_len);
-			/*  user_data point to the memory alloced for 2nd level ptr, so it's convenient
-			    to free it when free p_evt */
-			p_evt->user_data = direct_iso_data_ind->p_buf;
 			rtk_bt_evt_indicate(p_evt, NULL);
 		} else {
 			BT_LOGE("%s: evt_t allocate fail \r\n", __func__);

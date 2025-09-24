@@ -20,7 +20,7 @@
 /* for rtos host only */
 #define WHC_CMD_TEST_SET_HOST_RTOS  0xFF
 
-#define WHC_CMD_TEST_BUF_SIZE     16
+#define WHC_CMD_TEST_BUF_SIZE     32
 
 #define WHC_WHC_CMD_USER_TASK_STACK_SIZE		4096
 #define CONFIG_WHC_WHC_CMD_USER_TASK_PRIO 		3
@@ -34,6 +34,9 @@ u8 *whc_rx_msg_free_addr = NULL;
 u16 rx_msg_size;
 static struct rtw_network_info wifi = {0};
 
+/* update from host in mode s1d */
+struct whc_dev_network_info whc_network_info[2] = {0};
+
 #define at_printf(fmt, args...)    RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, fmt, ##args)
 
 __weak int whc_dev_ip_in_table_indicate(u8 gate, u8 ip)
@@ -44,6 +47,31 @@ __weak int whc_dev_ip_in_table_indicate(u8 gate, u8 ip)
 	//return 1 to forward all pkt now.
 	return 1;
 	//todo
+}
+
+__weak int whc_dev_get_lwip_info(u32 type, unsigned char *input, int index)
+{
+	int ret;
+	(void)input;
+
+	switch (type) {
+	case WHC_WLAN_GET_IP:
+		ret = (int)whc_network_info[index].ip;
+		break;
+
+	case WHC_WLAN_GET_GW:
+		ret = (int)whc_network_info[index].gw;
+		break;
+
+	case WHC_WLAN_GET_GWMSK:
+		ret = (int)whc_network_info[index].gw_mask;
+		break;
+	default:
+		RTK_LOGE(TAG_WLAN_INIC, "%s, ERROR: unknown network info type\n", __func__);
+		break;
+	}
+
+	return ret;
 }
 
 static void rtw_scan_result_to_string(struct rtw_scan_result *result, u8 *buffer, size_t buffer_size)
@@ -232,6 +260,8 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					ptr += 4;
 					*ptr = WHC_CMD_TEST_GET_MAC_ADDR;
 					ptr += 1;
+					*ptr = idx;
+					ptr += 1;
 					memcpy(ptr, dev_mac.octet, 6);
 					//6+4+1=11
 					whc_dev_api_send_to_host(buf, WHC_CMD_TEST_BUF_SIZE);
@@ -287,7 +317,10 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					*ptr = WHC_CMD_TEST_GET_IP;
 					ptr += 1;
 					memcpy(ptr, ip, 4);
-
+					ptr += 4;
+					ip = LwIP_GetGW(idx);
+					memcpy(ptr, ip, 4);
+					ptr += 4;
 					whc_dev_api_send_to_host(buf, WHC_CMD_TEST_BUF_SIZE);
 #endif
 #ifdef CONFIG_WHC_DUAL_TCPIP

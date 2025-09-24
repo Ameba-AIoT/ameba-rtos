@@ -98,6 +98,7 @@ add_custom_command(OUTPUT ${c_SDK_IMAGE_TARGET_DIR}/fullmac_ram_1_prepend.bin
         -Dc_MCU_PROJECT_NAME=${c_MCU_PROJECT_NAME} # name of current mcu project
         -Dc_MCU_KCONFIG_FILE=${c_MCU_KCONFIG_FILE} # file of current project's kconfig file
         -Dc_SDK_IMAGE_TARGET_DIR=${c_SDK_IMAGE_TARGET_DIR} # dir of image output
+        -Dc_BOOT_BINARY_NAME=${boot_name} # name of boot image
 
         # user's variables
         -DFINAL_IMAGE_DIR=${FINAL_IMAGE_DIR}
@@ -126,7 +127,7 @@ add_custom_target(
 
 set(clean_files
     ${c_SDK_IMAGE_TARGET_DIR}
-    ${FINAL_IMAGE_DIR}/amebagreen2_boot.bin
+    ${FINAL_IMAGE_DIR}/${boot_name}
 )
 
 set(link_deps

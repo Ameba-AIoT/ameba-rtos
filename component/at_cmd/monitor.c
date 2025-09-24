@@ -19,8 +19,8 @@ static const char *const TAG = "MONITOR";
 
 u32
 CmdRamHelp(
-	IN  u16 argc,
-	IN  u8  *argv[]
+	u16 argc,
+	u8  *argv[]
 )
 {
 	/* To avoid gcc warnings */
@@ -44,8 +44,8 @@ CmdRamHelp(
 
 u32
 cmd_reboot(
-	IN  u16 argc,
-	IN  u8  *argv[]
+	u16 argc,
+	u8  *argv[]
 )
 {
 	RTK_LOGS(TAG, RTK_LOG_ALWAYS, "Rebooting ...\n\r");
@@ -62,8 +62,8 @@ cmd_reboot(
 
 u32
 CmdTickPS(
-	IN  u16 argc,
-	IN  u8  *argv[]
+	u16 argc,
+	u8  *argv[]
 )
 {
 	/* To avoid gcc warnings */

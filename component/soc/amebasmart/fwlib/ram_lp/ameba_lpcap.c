@@ -267,7 +267,7 @@ int ap_suspend(SLEEP_ParamDef *psleep_param)
 	}
 
 	if (psleep_param != NULL) {
-		if (psleep_param->sleep_time) {
+		if (psleep_param->sleep_time != PMU_SLEEP_FOREVER) {
 			ap_wakeup_timer_init(psleep_param->sleep_time);
 		}
 		/* used for resume delay */

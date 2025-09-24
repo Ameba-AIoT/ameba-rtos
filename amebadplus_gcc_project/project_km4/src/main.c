@@ -53,6 +53,8 @@ void app_init_debug(void)
 #ifdef CONFIG_MBEDTLS_ENABLED
 void app_mbedtls_rom_init(void)
 {
+	CRYPTO_Init(NULL);
+	CRYPTO_SHA_Init(NULL);
 	ssl_function_map.ssl_calloc = (void *(*)(unsigned int, unsigned int))rtos_mem_calloc;
 	ssl_function_map.ssl_free = (void (*)(void *))rtos_mem_free;
 	ssl_function_map.ssl_printf = (long unsigned int (*)(const char *, ...))DiagPrintf;

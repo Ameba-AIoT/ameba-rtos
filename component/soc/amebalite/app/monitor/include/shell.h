@@ -23,7 +23,7 @@
 #define MAX_ARGV                16
 #endif
 
-typedef u32(*ECHOFUNC)(IN u8 *, ...);   //UART LOG echo-function type.
+typedef u32(*ECHOFUNC)(u8 *, ...);   //UART LOG echo-function type.
 typedef u32(*monitor_cmd_handler)(u16 argc, u8 *argv[]);
 
 typedef struct {
@@ -90,28 +90,28 @@ _LONG_CALL_ u32 shell_uart_irq_rom(void *Data);
 _LONG_CALL_
 extern void
 shell_cmd_history(
-	IN  u8  RevData,
-	IN  UART_LOG_CTL    *prvUartLogCtl,
-	IN  u8  EchoFlag
+	u8  RevData,
+	UART_LOG_CTL    *prvUartLogCtl,
+	u8  EchoFlag
 );
 _LONG_CALL_
 extern u8
 shell_cmd_chk(
-	IN  u8  RevData,
-	IN  UART_LOG_CTL    *prvUartLogCtl,
-	IN  u8  EchoFlag
+	u8  RevData,
+	UART_LOG_CTL    *prvUartLogCtl,
+	u8  EchoFlag
 );
 
 _LONG_CALL_
 extern void
 shell_array_init(
-	IN  u8  *pArrayToInit,
+	u8  *pArrayToInit,
 #ifdef CONFIG_LONGER_CMD
-	IN  u16  ArrayLen,
+	u16  ArrayLen,
 #else
-	IN  u8  ArrayLen,
+	u8  ArrayLen,
 #endif
-	IN  u8  InitValue
+	u8  InitValue
 );
 extern u8 **shell_get_argv(const   u8  *string);
 extern u8 shell_get_argc(const   u8  *string);

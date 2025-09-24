@@ -12,14 +12,12 @@
 #include "bt_debug.h"
 #include "dlist.h"
 
-#define H4_HDR_LEN          (1)
-
-#define SECURE_CONTEXT_SIZE (128)
+#define HCI_IF_HDR_LEN      (1)
 
 #define HCI_IF_TASK_SIZE    (2*1024)
 #define HCI_IF_TASK_PRIO    (5)
 
-#define HCI_IF_TX_QUEUE_NUM  (32)
+#define HCI_IF_TX_QUEUE_NUM (32)
 
 #define HCI_IF_TASK_CLOSED 0
 #define HCI_IF_TASK_RUNNING 1
@@ -41,7 +39,7 @@ static struct {
 
 static void rtk_stack_recv(struct hci_rx_packet_t *pkt)
 {
-	uint8_t offset = H4_HDR_LEN;
+	uint8_t offset = HCI_IF_HDR_LEN;
 
 	if (!pkt) {
 		return;
@@ -52,16 +50,16 @@ static void rtk_stack_recv(struct hci_rx_packet_t *pkt)
 	}
 
 	if (pkt->type == HCI_ACL || pkt->type == HCI_ISO) {
-		offset += HCI_H4_RX_ACL_PKT_BUF_OFFSET;
+		offset += HCI_IF_RX_ACL_PKT_BUF_OFFSET;
 	} else if (pkt->type == HCI_SCO) {
-		offset += HCI_H4_RX_SCO_PKT_BUF_OFFSET;
+		offset += HCI_IF_RX_SCO_PKT_BUF_OFFSET;
 	}
 
 	if (!IS_ALIGNED(pkt->buf, 4)) {
 		BT_LOGE("rx buf not aligned\r\n");
 		goto fail;
 	}
-	if (pkt->len + offset > hci_rx_buf_size(pkt->type)) {
+	if ((pkt->len + offset) > hci_rx_buf_size(pkt->type)) {
 		BT_LOGE("rx buf will overflow\r\n");
 		goto fail;
 	}
@@ -86,9 +84,9 @@ static struct hci_transport_cb rtk_stack_cb = {
 
 static void _hci_if_send(uint8_t *buf, uint32_t len)
 {
-	uint16_t offset = H4_HDR_LEN;
+	uint16_t offset = HCI_IF_HDR_LEN;
 	if (HCI_ACL == buf[0] || HCI_ISO == buf[0]) {
-		offset += HCI_H4_TX_ACL_PKT_BUF_OFFSET;
+		offset += HCI_IF_TX_ACL_PKT_BUF_OFFSET;
 	}
 
 	hci_transport_send(buf[0], buf + offset, len - offset, true);
@@ -140,12 +138,12 @@ static void hci_if_task(void *context)
 
 bool hci_if_open(HCI_IF_CALLBACK callback)
 {
-	if (hci_controller_is_enabled()) {
+	if (hci_controller_is_opened()) {
 		BT_LOGD("Hci Driver Already Open!\r\n");
 		goto end;
 	}
 
-	if (!hci_controller_enable()) {
+	if (!hci_controller_open()) {
 		return false;
 	}
 
@@ -156,10 +154,23 @@ bool hci_if_open(HCI_IF_CALLBACK callback)
 
 	memset(&hci_if_rtk, 0, sizeof(hci_if_rtk));
 	hci_if_rtk.cb = callback;
-	osif_msg_queue_create(&hci_if_rtk.tx_queue, HCI_IF_TX_QUEUE_NUM, sizeof(struct tx_packet_t));
-	osif_task_create(&hci_if_rtk.task_hdl, "hci_if_task", hci_if_task,
-					 0, HCI_IF_TASK_SIZE, HCI_IF_TASK_PRIO);
+
+	if (false == osif_msg_queue_create(&hci_if_rtk.tx_queue, HCI_IF_TX_QUEUE_NUM, sizeof(struct tx_packet_t))) {
+		goto failed;
+	}
+
+	if (false == osif_task_create(&hci_if_rtk.task_hdl, "hci_if_task", hci_if_task, 0, HCI_IF_TASK_SIZE, HCI_IF_TASK_PRIO)) {
+		osif_msg_queue_delete(hci_if_rtk.tx_queue);
+		goto failed;
+	}
+
 	hci_if_rtk.state = HCI_IF_TASK_RUNNING;
+	goto end;
+
+failed:
+	hci_controller_close();
+	hci_controller_free();
+	return false;
 
 end:
 	/* Upperstack will call hci_if_write immediately after this OPEN cb.
@@ -173,7 +184,7 @@ end:
 
 bool hci_if_close(void)
 {
-	if (!hci_controller_is_enabled()) {
+	if (!hci_controller_is_opened()) {
 		return true;
 	}
 
@@ -185,7 +196,7 @@ bool hci_if_close(void)
 		osif_delay(5);
 	}
 
-	hci_controller_disable();
+	hci_controller_close();
 
 	osif_msg_queue_delete(hci_if_rtk.tx_queue);
 

@@ -1,7 +1,11 @@
 set(DIR ${WIFIFWDIR}/amebadplus/ram)
 
 if(CONFIG_FW_DRIVER_COEXIST)
-    set(TARGET_LIB wifi_fw)
+    if(CONFIG_MP_INCLUDED AND CONFIG_MP_EXPAND)
+        set(TARGET_LIB wifi_fw_mp)
+    else()
+        set(TARGET_LIB wifi_fw)
+    endif()
 else()
     set(TARGET_LIB wifi_fw_singlecore)
 endif()

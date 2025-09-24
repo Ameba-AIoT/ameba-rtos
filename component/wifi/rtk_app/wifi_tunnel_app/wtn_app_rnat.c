@@ -103,7 +103,9 @@ static int rnat_wifi_restart_ap(struct rtw_softap_info *softAP_config, u32 softa
 	LwIP_SetIP(SOFTAP_WLAN_INDEX, addr, netmask, gw);
 	// start dhcp server
 	dhcps_init(&xnetif[SOFTAP_WLAN_INDEX]);
-
+#if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
+	LwIP_AUTOIP_IPv6(&xnetif[SOFTAP_WLAN_INDEX]);
+#endif
 	return 0;
 }
 
@@ -247,6 +249,10 @@ static void rnat_ap_start_thread(void *param)
 
 	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r[RMESH NAT] Start DHCP server\n");
 	dhcps_init(&xnetif[1]);
+
+#if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
+	LwIP_AUTOIP_IPv6(&xnetif[SOFTAP_WLAN_INDEX]);
+#endif
 	rtos_time_delay_ms(1000);
 
 	wifi_repeater_ap_config_complete = 1;

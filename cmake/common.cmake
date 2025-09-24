@@ -8,7 +8,6 @@ function(ameba_soc_name_to_camel_case input output)
     # Check if input starts with 'ameba'
     string(REGEX MATCH "^ameba" is_valid "${input}")
     if(NOT is_valid)
-        message(WARNING "Input does not start with 'ameba': ${input}")
         set(${output} "${input}" PARENT_SCOPE)
         return()
     endif()
@@ -104,10 +103,16 @@ macro(ameba_soc_project_create name)
             if (EXISTS ${OUTPUT_EXAMPLE})
                 set(EXAMPLEDIR ${OUTPUT_EXAMPLE})
             else()
-                file(GLOB_RECURSE EXAMPLEDIR
-                    ${c_CMPT_EXAMPLE_DIR}/example_${EXAMPLE}.c
-                    ${c_CMPT_EXAMPLE_DIR}/example_${EXAMPLE}.cc)
-                cmake_path(REMOVE_FILENAME EXAMPLEDIR)
+                if(EXISTS ${CMAKE_BINARY_DIR}/submodule_info.json)
+                    ameba_find_example_in_submodules(${EXAMPLE} EXAMPLEDIR)
+                endif()
+                if(NOT EXAMPLEDIR)
+                    file(GLOB_RECURSE EXAMPLEDIR
+                        ${c_CMPT_EXAMPLE_DIR}/example_${EXAMPLE}.c
+                        ${c_CMPT_EXAMPLE_DIR}/example_${EXAMPLE}.cc)
+                    cmake_path(REMOVE_FILENAME EXAMPLEDIR)
+                endif()
+
                 if(EXAMPLEDIR)
                     message("THE PATH of example_${EXAMPLE}.c is " "${EXAMPLEDIR}")
                 else()
@@ -153,6 +158,14 @@ endmacro()
 
 # Top soc project create and init, name value maybe amebaxxx
 macro(ameba_soc_project_exit)
+    add_custom_target(
+        gen_submodule_info
+        COMMENT "generate submodule_info.json"
+        COMMAND python ${c_BASEDIR}/tools/scripts/gen_submodule_info.py
+            ${CMAKE_BINARY_DIR}/submodule_info.json
+            "$<JOIN:$<TARGET_PROPERTY:g_PROJECT_CONFIG,submodule_info>, >"
+    )
+
     set(DAILY_BUILD 0 CACHE STRING "code analysis argument" FORCE)
     unset(EXAMPLE CACHE)
     unset(USER_SRC_DIR CACHE)
@@ -428,4 +441,34 @@ endfunction()
 function(ameba_mcu_project_check)
     ameba_info("mcu project: ${PROJECT_NAME}, mcu: ${c_MCU_TYPE}|${c_MCU_TYPE_UPPER}, isa: ${c_ISA_TYPE}, sdk: ${c_SDK_NAME}, dir: ${c_MCU_PROJECT_DIR}")
     ameba_info("freertos: ${c_FREERTOS_DIR}")
+endfunction()
+
+function(ameba_find_example_in_submodules EXAMPLE_NAME output)
+    set(JSON_FILE "${CMAKE_BINARY_DIR}/submodule_info.json")
+    if(NOT EXISTS "${JSON_FILE}")
+        message(FATAL_ERROR "JSON file not found: ${JSON_FILE}")
+        return()
+    endif()
+
+    set(FOUND_PATH "")
+    file(READ ${JSON_FILE} JSON_CONTENT)
+
+    string(JSON num_submodule LENGTH "${JSON_CONTENT}")
+    math(EXPR last_index_submodule "${num_submodule} - 1")
+    foreach(idx_submodule RANGE ${last_index_submodule})
+        string(JSON EXAMPLES_ARRAY GET "${JSON_CONTENT}" ${idx_submodule} "examples")
+        string(JSON num_example LENGTH ${EXAMPLES_ARRAY})
+        math(EXPR last_index_example "${num_example} - 1")
+
+        foreach(idx_example RANGE ${last_index_example})
+            string(JSON CURRENT_EXAMPLE_NAME GET "${EXAMPLES_ARRAY}" ${idx_example} "name")
+            if(${CURRENT_EXAMPLE_NAME} STREQUAL ${EXAMPLE_NAME})
+                string(JSON FOUND_PATH GET "${EXAMPLES_ARRAY}" ${idx_example} "path")
+                set(${output} ${FOUND_PATH} PARENT_SCOPE)
+                return()
+            endif()
+        endforeach()
+    endforeach()
+
+    set(${output} "" PARENT_SCOPE)
 endfunction()

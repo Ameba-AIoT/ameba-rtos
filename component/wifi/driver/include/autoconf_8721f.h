@@ -39,6 +39,7 @@
 /************************* Default Values of User Configure *****************************/
 #define MACID_HW_MAX_NUM		16
 /************************* Default Values of User Configure End***************************/
+//#define CONFIG_SUPPLICANT_SME
 
 /* Configure for bus */
 #define CONFIG_AXI_HCI
@@ -89,7 +90,7 @@
 
 #ifdef CONFIG_NAN
 #define CONFIG_NAN_PAIRING
-#define NAN_CUSTOMER_NANDOW
+// #define NAN_CUSTOMER_NANDOW
 #endif
 
 //#define CONFIG_SUPPORT_DYNAMIC_TXPWR
@@ -131,6 +132,7 @@
 #define CONFIG_P2P /*https://jira.realtek.com/browse/RSWLANDIOT-9254*/
 
 #define PHYSTS_WORK_AROUND
+#define RTL8721F_WORK_AROUND
 
 /*************************** Config for Gen TxPower Tool *******************************/
 /** VERSION 0: only support extending one EXT PWR_LIMIT table
@@ -149,7 +151,6 @@
 #define DRV_BB_CMN_RPT_DISABLE
 #define DRV_BB_STATISTICS_DISABLE
 #define DRV_BB_DGB_SUPPORT_DISABLE
-#define DRV_RF_DBG_TRACE_DISABLE
 #define DRV_BB_CH_INFO_DISABLE
 #define DRV_BB_CFO_TRK_DISABLE
 #define DRV_BB_ENV_MNTR_DISABLE

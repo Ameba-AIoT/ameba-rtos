@@ -141,28 +141,14 @@ typedef struct {
   * @}
   */
 
-/** @defgroup PSRAM_DQnum_define
- * @{
- */
-enum PSRAM_DQ_Type {
-	PSRAM_DEVICE_DQ8 = 0x1000,
-	PSRAM_DEVICE_DQ16 = 0x2000,
-};
-/**
-  * @}
-  */
-
 /** @defgroup PSRAM_Size_define
  * @{
  */
-enum PSRAM_Size_Info {
-	PSRAM_SIZE_32Mb = 0x100,
-	PSRAM_SIZE_64Mb = 0x200,
-	PSRAM_SIZE_128Mb = 0x300,
-	PSRAM_SIZE_256Mb = 0x400,
-	PSRAM_SIZE_512Mb = 0x500,
-
-};
+#define PSRAM_SIZE_32Mb			0x400000
+#define PSRAM_SIZE_64Mb			0x600000
+#define PSRAM_SIZE_128Mb		0x1000000
+#define PSRAM_SIZE_256Mb		0x2000000
+#define PSRAM_SIZE_512Mb		0x4000000
 /**
   * @}
   */
@@ -209,18 +195,18 @@ typedef struct {
   * @{
   */
 typedef struct {
-	u32 Psram_Vendor;
+	u8 Psram_Vendor;
 	u32 Psram_Clk_Limit;
 	u32 Psram_Size;
 	u32 Psram_Clk_Set;
-	u32 Psram_Page_size;
+	u8 Psram_Page_size;
 	u32 PSRAMC_Clk_Unit;
 	u32 Psram_Latency_Set;
 	u32 Psram_CSHI;			//cs high between cmd
 	u32 Psram_TRWR;			//cmd + tcss + cs high + addr
 	u32 Psram_Resume_Cnt;	//for autogating phy resume
-	u32 Psram_Type;
-	u32 Psram_DQ16;
+	u8 Psram_Type;
+	u8 Psram_DQ16;
 	u32 Psram_PDEX_CMD0;
 	u32 Psram_PDEX_CMD1;
 	u32 Psram_PDX_TIME;
@@ -322,6 +308,9 @@ typedef struct {
 #define	PSRAM_TYPE_WB955	0x0
 #define	PSRAM_TYPE_WB957	0x1
 #define	PSRAM_TYPE_WB958	0x2
+#define	PSRAM_TYPE_APM64	0x10
+#define	PSRAM_TYPE_APM128	0x11
+
 
 /**
   * @}
@@ -496,8 +485,8 @@ _LONG_CALL_	void PSRAM_CLK_Update(void);
 _LONG_CALL_ void PSRAM_PHY_StructInit(PSPHY_InitTypeDef *PSPHY_InitStruct);
 _LONG_CALL_ void PSRAM_PHY_Init(PSPHY_InitTypeDef *PSPHY_InitStruct);
 _LONG_CALL_ void PSRAM_CTRL_Init(void);
-_LONG_CALL_ void PSRAM_REG_Read(u32 type, u32 addr, u32 read_len, u8 *read_data, u32 CR, u32 DQ_16);
-_LONG_CALL_ void PSRAM_REG_Write(u32 type, u32 addr, u32 write_len, u8 *write_data, u32 DQ_16);
+_LONG_CALL_ void PSRAM_REG_Read(u32 type, u32 addr, u32 read_len, u8 *read_data, u32 CR, u8 DQ_16);
+_LONG_CALL_ void PSRAM_REG_Write(u32 type, u32 addr, u32 write_len, u8 *write_data, u8 DQ_16);
 _LONG_CALL_ u32 PSRAM_calibration(void);
 _LONG_CALL_ void PSRAM_APM_DEVIC_Init(void);
 _LONG_CALL_ void PSRAM_WB_DEVIC_Init(void);
@@ -517,13 +506,6 @@ _LONG_CALL_ void set_psram_wakeup_mode(void);
   */
 
 /* Other definitions --------------------------------------------------------*/
-
-#define PSRAM_VENDOR_GET(x)			(x & 0xF0000)
-#define PSRAM_DQNUM_GET(x)			(x & 0xF000)
-#define PSRAM_SIZE_GET(x)			  (x & 0xF00)
-#define PSRAM_CLK_LIMIT_GET(x)	(x & 0xF0)
-#define PSRAM_PAGE_SIZE_GET(x)	(x & 0xF)
-
 
 #define PSRAM_WB_IR0		0x0
 #define PSRAM_WB_IR1		0x1
@@ -585,9 +567,6 @@ _LONG_CALL_ void set_psram_wakeup_mode(void);
 #define PSRAM_DQ8_SL0			0x2
 
 
-#define PSRAM_TYPE_APM		0
-#define PSRAM_TYPE_WB		1
-
 #define PSRAM_MASK_CAL_ITT 		PSPHY_MASK_CFG_CAL_INTR_MASK|\
 								PSPHY_BIT_CFG_CAL_EN
 
@@ -628,14 +607,6 @@ _LONG_CALL_ void set_psram_wakeup_mode(void);
 } while (0)
 
 extern u8 APM_WR_INIT_LATENCY_SPEC[6];
-
-#define PSRAM_APM64_DQ8 	PSRAM_DEVICE_DQ8|PSRAM_DEVICE_CLK_200 | MEM_PSRAM_APM | PSRAM_SIZE_64Mb | PSRAM_PAGE1024
-#define PSRAM_APM128_DQ16 	PSRAM_DEVICE_DQ16|PSRAM_DEVICE_CLK_250 | MEM_PSRAM_APM | PSRAM_SIZE_128Mb | PSRAM_PAGE1024
-#define PSRAM_APM256_DQ16 	PSRAM_DEVICE_DQ16|PSRAM_DEVICE_CLK_250 | MEM_PSRAM_APM | PSRAM_SIZE_256Mb | PSRAM_PAGE2048
-
-#define PSRAM_WB955_DQ8  	PSRAM_DEVICE_DQ8|PSRAM_DEVICE_CLK_200 | MEM_PSRAM_WB | PSRAM_SIZE_32Mb | PSRAM_PAGE128
-#define PSRAM_WB957_DQ16 	PSRAM_DEVICE_DQ16|PSRAM_DEVICE_CLK_250 | MEM_PSRAM_WB | PSRAM_SIZE_128Mb | PSRAM_PAGE2048
-#define PSRAM_WB958_DQ16 	PSRAM_DEVICE_DQ16|PSRAM_DEVICE_CLK_250 | MEM_PSRAM_WB | PSRAM_SIZE_256Mb | PSRAM_PAGE1024
 
 #define ChipInfo_MemoryInfo() ChipInfo_MCM_Info()
 /* MANUAL_GEN_END */

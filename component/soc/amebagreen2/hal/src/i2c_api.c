@@ -288,6 +288,8 @@ int i2c_read(i2c_t *obj, int address, char *data, int length, int stop)
 {
 	/* To avoid gcc warnings */
 	(void) stop;
+	int rlen;
+	uint32_t retry_cnt = 0;
 
 	if (i2c_target_addr[obj->i2c_idx] != address) {
 		/* Deinit I2C first */
@@ -302,25 +304,26 @@ int i2c_read(i2c_t *obj, int address, char *data, int length, int stop)
 		I2C_Cmd(obj->I2Cx, ENABLE);
 	}
 
-	if (!master_addr_retry) {
-		I2C_MasterRead(obj->I2Cx, (unsigned char *)data, length);
-	} else {
-		while (length  != (int)I2C_MasterRead(obj->I2Cx, (unsigned char *)data, length)) {
+	rlen = I2C_MasterRead(obj->I2Cx, (unsigned char *)data, length);
 
-			/* Deinit I2C first */
-			i2c_reset(obj);
+	while ((rlen != length) && (retry_cnt < master_addr_retry)) {
+		/* Deinit I2C first */
+		i2c_reset(obj);
 
-			/* Load the user defined I2C target slave address */
-			i2c_target_addr[obj->i2c_idx] = address;
-			I2CInitDat[obj->i2c_idx].I2CAckAddr = address;
+		/* Load the user defined I2C target slave address */
+		i2c_target_addr[obj->i2c_idx] = address;
+		I2CInitDat[obj->i2c_idx].I2CAckAddr = address;
 
-			/* Init I2C now */
-			I2C_Init(obj->I2Cx, &I2CInitDat[obj->i2c_idx]);
-			I2C_Cmd(obj->I2Cx, ENABLE);
-		}
+		/* Init I2C now */
+		I2C_Init(obj->I2Cx, &I2CInitDat[obj->i2c_idx]);
+		I2C_Cmd(obj->I2Cx, ENABLE);
+
+		rlen = I2C_MasterRead(obj->I2Cx, (unsigned char *)data, length);
+		retry_cnt++;
 	}
 
-	return length;
+
+	return rlen;
 }
 
 /**
@@ -350,9 +353,9 @@ int i2c_write(i2c_t *obj, int address, const char *data, int length, int stop)
 	if ((!restart_enable) | (1 == stop)) {
 		return I2C_MasterWrite(obj->I2Cx, (unsigned char *)data, length);
 	} else {
-		i2c_send_restart(obj->I2Cx, (unsigned char *)data, length, 1);
+		return i2c_send_restart(obj->I2Cx, (unsigned char *)data, length, 1);
 	}
-	return length;
+
 }
 
 /**
@@ -387,7 +390,7 @@ int i2c_repeatread(i2c_t *obj, int address, uint8_t *pWriteBuf, int Writelen, ui
 		while ((I2C_CheckFlagState(obj->I2Cx, I2C_BIT_TFNF)) == 0);
 
 		if (cnt >= Writelen - 1) {
-			/*generate stop signal*/
+			/*generate restart signal*/
 			obj->I2Cx->IC_DATA_CMD = (*pWriteBuf++) | (1 << 10);
 		} else {
 			obj->I2Cx->IC_DATA_CMD = (*pWriteBuf++);
@@ -396,9 +399,7 @@ int i2c_repeatread(i2c_t *obj, int address, uint8_t *pWriteBuf, int Writelen, ui
 	/*Wait I2C TX FIFO not full*/
 	while ((I2C_CheckFlagState(obj->I2Cx, I2C_BIT_TFNF)) == 0);
 
-	I2C_MasterRead(obj->I2Cx, pReadBuf, Readlen);
-
-	return Readlen;
+	return I2C_MasterRead(obj->I2Cx, pReadBuf, Readlen);
 }
 
 /**
@@ -407,9 +408,9 @@ int i2c_repeatread(i2c_t *obj, int address, uint8_t *pWriteBuf, int Writelen, ui
   * @param  pBuf: Pointer to the data to be sent.
   * @param  len: Length of data that to be sent.
   * @param  restart: Specify whether a RESTART is issued after all the bytes are sent.
-  * @retval none
+  * @retval Length of sent data.
   */
-void i2c_send_restart(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u8 restart)
+int i2c_send_restart(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u8 restart)
 {
 	u8 cnt = 0;
 
@@ -423,9 +424,16 @@ void i2c_send_restart(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u8 restart)
 		} else {
 			I2Cx->IC_DATA_CMD = (*pBuf++);
 		}
+
+		while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFE)) == 0) {
+			if (I2C_GetRawINT(I2Cx) & I2C_BIT_TX_ABRT) {
+				I2C_ClearAllINT(I2Cx);
+				return cnt;
+			}
+		}
 	}
 
-	while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFE)) == 0);
+	return len;
 }
 
 /**

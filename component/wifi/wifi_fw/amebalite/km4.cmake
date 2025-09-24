@@ -2,6 +2,12 @@ set(DIR ${WIFIFWDIR}/amebalite/ram)
 set(DIR_COMMON ${WIFIFWDIR}/common)
 set(DIR_TEST ${WIFIFWDIR}/amebalite/test/src)
 
+if(CONFIG_MP_INCLUDED AND CONFIG_MP_EXPAND)
+    set(TARGET_LIB wifi_fw_mp)
+else()
+    set(TARGET_LIB wifi_fw)
+endif()
+
 set(
     MODULE_IFLAGS
     ${BASEDIR}/component/wifi/wifi_fw/amebalite/include
@@ -54,6 +60,7 @@ if(CONFIG_WHC_DEV)
         ${DIR_COMMON}/wififw_media_common.c
         ${DIR}/wififw_txrpt.c
         ${DIR_COMMON}/wififw_txrpt_common.c
+        ${DIR_COMMON}/wififw_mp.c
     )
 
     if(CONFIG_WIFI_FW_VERIFY)
@@ -76,7 +83,7 @@ if(CONFIG_WHC_DEV)
     endif()
 endif()
 if(NOT CMAKE_REFACTOR) # For temporary compatibility.
-ameba_app_library_with_gitver(wifi_fw)
+ameba_app_library_with_gitver(${TARGET_LIB})
 
 target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
 target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
@@ -95,7 +102,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # You may use if-else condition to set or update predefined variable above
 
 ameba_list_append(public_libraries
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_wifi_fw.a
+     ${c_SDK_LIB_APPLICATION_DIR}/lib_${TARGET_LIB}.a
 )
 
 # Component public part, user config end
@@ -133,7 +140,7 @@ ameba_list_append(private_includes ${MODULE_IFLAGS})
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
-ameba_add_external_app_library(wifi_fw
+ameba_add_external_app_library(${TARGET_LIB}
     p_SOURCES
         ${private_sources}
     p_INCLUDES

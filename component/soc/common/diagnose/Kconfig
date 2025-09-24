@@ -1,0 +1,6 @@
+config DIAGNOSE_EN_MENU
+    bool "Enable diagnose"
+    select DIAGNOSE_EN
+    default y
+config DIAGNOSE_EN
+    bool

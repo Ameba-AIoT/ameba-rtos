@@ -18,10 +18,6 @@ extern "C"
 {
 #endif
 
-#define RTK_EVT_POOL_SIZE 8
-
-#define BT_API_SYNC_TIMEOUT         3000
-
 #define RTK_BT_API_LE_BASE          0x0
 #define RTK_BT_API_BR_BASE          0x80
 #define RTK_BT_API_COMMON_BASE      0xE0
@@ -1193,26 +1189,9 @@ typedef struct {
 typedef struct {
 	uint8_t group;
 	uint8_t evt;
-	void *data;
 	uint32_t data_len;
-	uint8_t data_pool[RTK_EVT_POOL_SIZE];
-	void *user_data;
+	void *data;
 } rtk_bt_evt_t;
-
-struct act_mem_option {
-	uint8_t act;
-	uint32_t size;
-};
-
-struct evt_mem_option {
-	uint8_t evt;
-	uint32_t size;
-};
-
-struct evt_ret_mem_option {
-	uint8_t evt;
-	uint32_t size;
-};
 
 /********************************* Functions Declaration *******************************/
 /**
@@ -1282,7 +1261,19 @@ uint16_t rtk_bt_evt_unregister_callback(uint8_t group);
  */
 
 /*********************** Functions for API internal use **********************/
+#if defined(RTK_BT_API_MEM_PRE_ALLOC) && RTK_BT_API_MEM_PRE_ALLOC
+bool bt_api_sem_pool_init(void);
+
+void bt_api_sem_pool_deinit(void);
+
+bool bt_evt_mem_pool_init(void);
+
+void bt_evt_mem_pool_deinit(void);
+#endif
+
 uint16_t rtk_bt_send_cmd(uint8_t group, uint8_t act, void *param, uint32_t param_len);
+
+void bt_wait_cmd_send_complete(void);
 
 uint16_t rtk_bt_evt_init(void);
 
@@ -1293,6 +1284,8 @@ rtk_bt_evt_t *rtk_bt_event_create(uint8_t group, uint8_t evt, uint32_t param_len
 uint16_t rtk_bt_evt_indicate(void *evt, uint8_t *cb_ret);
 
 void rtk_bt_event_free(rtk_bt_evt_t *pevt);
+
+#define BT_STRUCT_TAIL(ptr, type)   ((void *)((uint8_t *)ptr + sizeof(type)))
 
 #define LE_TO_U32(_a)                                   \
         (((uint32_t)(*((uint8_t *)(_a) + 0)) << 0)  |   \

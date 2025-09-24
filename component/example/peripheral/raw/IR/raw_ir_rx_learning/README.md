@@ -4,7 +4,9 @@ This example describes how to use IR receive and learn the received waveform fre
 
 # HW Configuration
 
-Connect the rx pin to another board's tx pin defined in `example_ir_ext.h`.
+Connect the rx pin to another board's tx pin (as defined in the header file of the current example).
+- The relevant header file can be found in the directory:
+  `component/example/peripheral/{mebd|raw}/{peripheral_name}/{example_folder_name}/`
 
 # SW configuration
 

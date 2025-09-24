@@ -2,13 +2,13 @@ ameba_add_image(target_img2 p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_image2_all.bin)
 # variable c_CURRENT_IMAGE value is ${c_CURRENT_IMAGE}
 ###############################  ADD COMPONENT  ###################################
 
-ameba_add_subdirectory(${c_CMPT_AIVOICE_DIR})
+ameba_add_subdirectory_if_exist(${c_CMPT_AIVOICE_DIR})
 ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_APP_DIR}/benchmark)
-ameba_add_subdirectory(${c_CMPT_AUDIO_DIR})
+ameba_add_subdirectory_if_exist(${c_CMPT_AUDIO_DIR})
 ameba_add_subdirectory(${c_CMPT_BLUETOOTH_DIR})
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
-ameba_add_subdirectory(${c_CMPT_CMSIS_DSP_DIR})
+ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/cmsis-dsp)
 ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})
 ameba_add_subdirectory(${c_CMPT_EXAMPLE_DIR})
 ameba_add_subdirectory(${c_CMPT_FILE_SYSTEM_DIR})
@@ -26,7 +26,7 @@ ameba_add_subdirectory(${c_CMPT_SSL_DIR})
 ameba_add_subdirectory(${c_CMPT_SWLIB_DIR})
 ameba_add_subdirectory(${c_CMPT_SWLIB_DIR}/libnosys)
 ameba_add_subdirectory_if_exist(${c_CMPT_TFLITE_DIR}/cmake)
-ameba_add_subdirectory(${c_CMPT_UI_DIR})
+ameba_add_subdirectory_if_exist(${c_CMPT_UI_DIR})
 ameba_add_subdirectory(${c_CMPT_UTILS_DIR})
 ameba_add_subdirectory(${c_CMPT_USB_DIR})
 ameba_add_subdirectory(${c_CMPT_USRCFG_DIR})
@@ -36,6 +36,11 @@ ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_fw)
 ameba_add_subdirectory(${c_CMPT_DIAGNOSE_DIR})
 
 ameba_add_subdirectory(${c_MCU_PROJECT_DIR}/src)
+
+ameba_add_subdirectory_if(CONFIG_MATTER_EN
+    ${c_CMPT_MATTER_DIR}/project/cmake lib_matter
+)
+
 ###############################  GENERATE IMAGE  ###################################
 #---------------- PRE LINK -------------------#
 

@@ -121,6 +121,8 @@ int whc_wpa_ops_cli_cmd_parse(char *ptr, u8 *buf)
 		whc_wpa_ops_select_network(params, buf);
 	} else if (strcmp(cmd, "status") == 0) {
 		whc_wpa_ops_get_status(params, buf);
+	} else if (strcmp(cmd, "remove_network") == 0) {
+		whc_dev_rtw_cli_remove_network(params, buf);
 	} else if (strcmp(cmd, "wpas_cmd") == 0) {
 		whc_dev_rtw_cli_wpas_test(params, buf, msg_len - strlen("wpas_cmd") - 1);
 	} else {

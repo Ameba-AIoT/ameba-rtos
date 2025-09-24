@@ -156,7 +156,7 @@ int km4_suspend(SLEEP_ParamDef *psleep_param)
 	RRAM_TypeDef *rram = RRAM_DEV;
 
 	if (psleep_param != NULL) {
-		if (psleep_param->sleep_time) {
+		if (psleep_param->sleep_time != PMU_SLEEP_FOREVER) {
 			km4_wakeup_timer_init(psleep_param->sleep_time);
 		}
 		/*clean kr4 wake pending interrupt*/

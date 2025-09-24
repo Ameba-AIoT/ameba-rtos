@@ -21,7 +21,7 @@ void app_example(void)
 }
 #endif
 
-u32 CmdTfmTest(IN u16 argc, IN u8  *argv[])
+u32 CmdTfmTest(u16 argc, u8  *argv[])
 {
 	(void) argc;	/* To avoid gcc warnings */
 	(void) argv;	/* To avoid gcc warnings */

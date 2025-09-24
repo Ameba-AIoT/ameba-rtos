@@ -3,6 +3,11 @@
 
 #define WHC_CMD_GENL_NAME	"whc_ctrl_app"
 
+struct whc_netlink {
+	int sockfd;
+	int family_id;
+};
+
 enum whc_cmd_api_id {
 	CMD_GET_MAC_ADDR,
 	CMD_GET_IP,
@@ -65,6 +70,7 @@ enum whc_tickps_cmd_subtype {
 #define WHC_WIFI_TEST_DHCP           0x8
 #define WHC_WIFI_TEST_WIFION         0x9
 #define WHC_WIFI_TEST_SCAN_RESULT    0xA
+#define WHC_WIFI_TEST_SET_FILTER     0xB
 
 // todo: need sync, default 4k, however max buf in sdio & spi < 1.5k
 #define WHC_WIFI_MP_MSG_BUF_SIZE (4096)

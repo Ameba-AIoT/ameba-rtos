@@ -178,8 +178,7 @@ static void HCI_GetDeviceInfo(HCI_AdapterTypeDef *adapter)
 {
 	struct ameba_flash_info flashInfo;
 	HCI_DeviceInfoTypeDef *deviceInfo = &adapter->DeviceInfo;
-	u32 chipinfo;
-	u16 sizeInKB;
+	MCM_MemTypeDef memInfo;
 
 	deviceInfo->ChipId = HCI_CHIP_ID;
 	deviceInfo->CutVersion = EFUSE_GetChipVersion();
@@ -187,24 +186,10 @@ static void HCI_GetDeviceInfo(HCI_AdapterTypeDef *adapter)
 	deviceInfo->SramSizeInKB = HCI_SRAM_SIZE_IN_KB;
 	u32 MemType = ChipInfo_MemoryType();
 
-	if (MemType == MEMORY_MCM_PSRAM)  {
-		chipinfo = ChipInfo_MemoryInfo();
-		switch (PSRAM_SIZE_GET(chipinfo)) {
-		case PSRAM_SIZE_32Mb:
-			sizeInKB = 4 * 1024;
-			break;
-		case PSRAM_SIZE_64Mb:
-			sizeInKB = 8 * 1024;
-			break;
-		case PSRAM_SIZE_128Mb:
-			sizeInKB = 16 * 1024;
-			break;
-		default: // >= PSRAM_SIZE_256Mb
-			sizeInKB = 32 * 1024;
-			break;
-		}
-		deviceInfo->PramSizeInKB = sizeInKB;
-	} else if ((MemType == MEMORY_ONE_FLASH) || (MemType == MEMORY_TWO_FLASH)) {
+	if (MemType == MCM_TYPE_PSRAM) {
+		memInfo = ChipInfo_MCMInfo();
+		deviceInfo->PramSizeInKB = MCM_MEM_SIZE_IN_KBYTES(memInfo.dram_info.density);
+	} else if (MemType == MCM_TYPE_NOR_FLASH) {/* There exists one flash at most. */
 		nor_ftl_init(&flashInfo);
 		deviceInfo->FlashSizeInKB = flashInfo.capacity / 1024;
 	}

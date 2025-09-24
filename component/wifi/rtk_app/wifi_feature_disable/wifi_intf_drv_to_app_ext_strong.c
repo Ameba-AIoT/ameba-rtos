@@ -336,6 +336,11 @@ void wifi_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way)
 	call_noused = __LINE__;
 }
 
+void wifi_dhcp_success_indicate(void)
+{
+	call_noused = __LINE__;
+}
+
 int wifi_wpa_add_key(struct rtw_crypt_info *crypt)
 {
 	UNUSED(crypt);

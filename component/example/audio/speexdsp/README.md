@@ -1,6 +1,0 @@
-# CUSTOMER IMPLEMENTATION SPEEXDSP EXAMPLE
-# BUILD COMMAND
-./build.py -a speexdsp -p
-
-
-

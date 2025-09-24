@@ -107,4 +107,10 @@ menu "CONFIG LWIP"
         config DHCP6_DEBUG
             bool "Enable DHCP6 DEBUG"
     endif
+
+    config PBUF_POOL_BUFSIZE
+        int "Len of pbuf pool"
+        default 508
+        range 508 1500
+
 endmenu

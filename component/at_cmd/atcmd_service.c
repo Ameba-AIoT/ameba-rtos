@@ -137,11 +137,12 @@ char atcmd_usb_mode = 0;
 volatile char g_tt_mode_stop_flag = 0;
 volatile u8 g_tt_mode_stop_char_cnt = 0;
 rtos_timer_t xTimers_TT_Mode;
-char pin_name[5];
+char pin_name[5] = "NONE";
 char global_buf[SMALL_BUF];
 /* Out callback function */
 at_write out_buffer;
 rtos_sema_t atcmd_tt_mode_sema;
+char at_config_file_exist = 0;
 
 extern s32 wifi_set_countrycode(u8 *cntcode);
 
@@ -448,6 +449,11 @@ void atcmd_get_pin_from_json(const cJSON *const object, const char *const string
 		} else if (strstr(pin_ob->valuestring, "PB")) {
 			*value = _PB_0 + atoi(&(pin_ob->valuestring[2]));
 		}
+#ifdef _PC_0
+		else if (strstr(pin_ob->valuestring, "PC")) {
+			*value = _PC_0 + atoi(&(pin_ob->valuestring[2]));
+		}
+#endif
 	}
 }
 
@@ -516,6 +522,8 @@ int atcmd_host_control_config_setting(void)
 				}
 				atcmd_get_pin_from_json(uart_ob, "tx", &UART_TX);
 				atcmd_get_pin_from_json(uart_ob, "rx", &UART_RX);
+				atcmd_get_pin_from_json(uart_ob, "rts", (u8 *)&UART_RTS);
+				atcmd_get_pin_from_json(uart_ob, "cts", (u8 *)&UART_CTS);
 			}
 		} else if (g_host_control_mode == AT_HOST_CONTROL_SPI) {
 			cJSON *spi_ob, *spi_index_ob;
@@ -557,10 +565,22 @@ int atcmd_host_control_config_setting(void)
 		}
 	}
 
+	at_config_file_exist = 1;
+
 DEFAULT:
 	if (g_host_control_mode == AT_HOST_CONTROL_UART) {
-		RTK_LOGI(TAG, "ATCMD HOST Control Mode : UART, tx:%s, ", PIN_VAL_TO_NAME_STR(UART_TX));
+		RTK_LOGI(TAG, "ATCMD HOST Control Mode : UART, rts:%s, ", PIN_VAL_TO_NAME_STR(UART_RTS));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "cts:%s, ", PIN_VAL_TO_NAME_STR(UART_CTS));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "tx:%s, ", PIN_VAL_TO_NAME_STR(UART_TX));
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "rx:%s, ", PIN_VAL_TO_NAME_STR(UART_RX));
+		if (at_config_file_exist == 0) {
+			u32 atcmd_uart_baudrate = 0;
+			if (rt_kv_get("atcmd_uart_baudrate", (uint8_t *) &atcmd_uart_baudrate, 4) == 4) {
+				if (atcmd_uart_baudrate >= 4800 && atcmd_uart_baudrate <= 6000000) {
+					UART_BAUD = atcmd_uart_baudrate;
+				}
+			}
+		}
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "baudrate:%d\r\n", (int)UART_BAUD);
 		ret = atio_uart_init();
 	} else if (g_host_control_mode == AT_HOST_CONTROL_SPI) {
@@ -726,7 +746,6 @@ void atcmd_service_init(void)
 	//initialize tt mode ring sema
 	rtos_sema_create(&atcmd_tt_mode_sema, 0, 0xFFFF);
 
-#ifndef CONFIG_WHC_BRIDGE
 	int ret = atcmd_wifi_config_setting();
 	if (ret < 0) {
 		RTK_LOGE(TAG, "atcmd wifi config setting fail\n");
@@ -739,7 +758,6 @@ void atcmd_service_init(void)
 		RTK_LOGI(TAG, "atcmd host control config setting fail\n");
 		return;
 	}
-#endif
 
 	char *path = rtos_mem_zmalloc(MAX_KEY_LENGTH);
 	char *prefix = find_vfs_tag(VFS_REGION_1);

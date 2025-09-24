@@ -30,6 +30,10 @@ static const char *const TAG = "SPDIO";
 									SDIO_WIFI_BIT_RPWM2_INT | SDIO_WIFI_BIT_HOST_WAKE_CPU_INT | \
 									SDIO_WIFI_BIT_H2C_SUS_REQ)
 
+#define SDIO_NOTIFY_TYPE_INT_BT		(SDIO_BT_BIT_SDIO_CS_RDY | SDIO_BT_BIT_SDIO_CS_RST | \
+									SDIO_BT_BIT_HOST_WAKE_CPU_INT | SDIO_BT_BIT_H2C_SUS_REQ | \
+ 									SDIO_BT_BIT_CCCR_IOE2_SET | SDIO_BT_BIT_CCCR_IOE2_CLR)
+
 /** @}*/
 
 
@@ -37,12 +41,8 @@ static const char *const TAG = "SPDIO";
  * @{
  */
 
-struct spdio_t *g_spdio_priv = NULL;
-SPDIO_ADAPTER gSPDIODev;
-
-rtos_sema_t xSDIOIrqSema = NULL;;			/* Semaphore for SDIO RX, use to wakeup the SDIO RX task */
-rtos_task_t xSDIOIrqTaskHandle = NULL;	/* The handle of the SDIO Task special for RX, can be used to delete the task */
-
+SPDIO_ADAPTER gSPDIODevWifi;
+SPDIO_ADAPTER gSPDIODevBt;
 /**
  * @}
  */
@@ -79,7 +79,7 @@ static s8 spdio_rpwm_cb(PSPDIO_ADAPTER pSPDIODev)
 {
 	struct spdio_t *obj = (struct spdio_t *)pSPDIODev->spdio_priv;
 
-	u16 rpwm2 = SDIO_RPWM2_Get(SDIO_WIFI);
+	u16 rpwm2 = SDIO_RPWM2_Get(obj->pSDIO);
 
 	if (obj) {
 		return obj->rpwm_cb(obj, rpwm2);
@@ -95,10 +95,9 @@ static s8 spdio_rpwm_cb(PSPDIO_ADAPTER pSPDIODev)
  * @param pbuf Pointer to a spdio_buf_t structure which carries the payload.
  * @retval RTK_SUCCESS or RTK_FAIL.
  */
-s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
+u8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 {
-	PSPDIO_ADAPTER pgSDIODev = obj->priv;
-	return SPDIO_DeviceTx(pgSDIODev, pbuf);
+	return SPDIO_DeviceTx(obj->pSDIO, obj->priv, pbuf);
 }
 
 /**
@@ -122,9 +121,11 @@ void spdio_structinit(struct spdio_t *obj)
  */
 void spdio_trigger_rx_handle(void)
 {
-	PSPDIO_ADAPTER pSPDIODev = &gSPDIODev;
+	PSPDIO_ADAPTER pSPDIODev = &gSPDIODevWifi;
+	struct spdio_t *obj = (struct spdio_t *)pSPDIODev->spdio_priv;
+
 	if (pSPDIODev->WaitForDeviceRxbuf) {
-		rtos_sema_give(xSDIOIrqSema);
+		rtos_sema_give(obj->irq_sema);
 	}
 }
 
@@ -137,10 +138,18 @@ void spdio_trigger_rx_handle(void)
  */
 u32 SPDIO_IRQ_Handler(void *pData)
 {
-	UNUSED(pData);
-	// PSPDIO_ADAPTER pSPDIODev = pData;
-	InterruptDis(SDIO_WIFI_IRQ);
-	rtos_sema_give(xSDIOIrqSema);
+	PSPDIO_ADAPTER pSPDIODev = (PSPDIO_ADAPTER)pData;
+	struct spdio_t *obj = (struct spdio_t *)pSPDIODev->spdio_priv;
+	IRQn_Type irq_num;
+
+	if (SDIO_WIFI == obj->pSDIO) {
+		irq_num = SDIO_WIFI_IRQ;
+	} else {
+		irq_num = SDIO_BT_IRQ;
+	}
+
+	InterruptDis(irq_num);
+	rtos_sema_give(obj->irq_sema);
 
 	return 0;
 }
@@ -148,40 +157,51 @@ u32 SPDIO_IRQ_Handler(void *pData)
 static void SPDIO_IRQ_Handler_BH(void *pData)
 {
 	PSPDIO_ADAPTER pSPDIODev = pData;
+	struct spdio_t *obj = (struct spdio_t *)pSPDIODev->spdio_priv;
+	SDIO_TypeDef *SDIO = obj->pSDIO;
+	IRQn_Type irq_num;
 	u16 IntStatus;
+
+	if (SDIO_WIFI == SDIO) {
+		irq_num = SDIO_WIFI_IRQ;
+	} else {
+		irq_num = SDIO_BT_IRQ;
+	}
 
 	for (;;) {
 		/* Task blocked and wait the semaphore(events) here */
-		rtos_sema_take(xSDIOIrqSema, RTOS_MAX_TIMEOUT);
+		rtos_sema_take(obj->irq_sema, RTOS_MAX_TIMEOUT);
 
-		IntStatus = SDIO_INTStatus(SDIO_WIFI);
+		IntStatus = SDIO_INTStatus(SDIO);
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "%s:ISRStatus=0x%x\n", __FUNCTION__, IntStatus);
-		SDIO_INTClear(SDIO_WIFI, IntStatus); // clean the ISR
+		SDIO_INTClear(SDIO, IntStatus); // clean the ISR
 
-		if (IntStatus & SDIO_NOTIFY_TYPE_INT) {
-			SPDIO_Notify_INT(IntStatus);
+		if (((IntStatus & SDIO_NOTIFY_TYPE_INT) && (SDIO_WIFI == SDIO)) || \
+			((IntStatus & SDIO_NOTIFY_TYPE_INT_BT) && (SDIO_BT == SDIO))) {
+			SPDIO_Notify_INT(SDIO, IntStatus);
 		}
 
-		if (IntStatus & SDIO_WIFI_BIT_C2H_DMA_OK) {
-			SPDIO_Recycle_Rx_BD(pSPDIODev, spdio_device_tx_done_cb);
+		if (((IntStatus & SDIO_WIFI_BIT_C2H_DMA_OK) && (SDIO_WIFI == SDIO)) || \
+			((IntStatus & SDIO_BT_BIT_C2H_DMA_OK) && (SDIO_BT == SDIO))) {
+			SPDIO_Recycle_Rx_BD(SDIO, pSPDIODev, spdio_device_tx_done_cb);
 		}
 
-		if (IntStatus & SDIO_WIFI_BIT_H2C_MSG_INT) {
-			SDIO_H2C_MSG_Get(SDIO_WIFI);
-		}
-
-		if (IntStatus & SDIO_WIFI_BIT_H2C_DMA_OK || pSPDIODev->WaitForDeviceRxbuf) {
-			SPDIO_TxBd_DataReady_DeviceRx(pSPDIODev, spdio_device_rx_done_cb);
-		}
-		if (IntStatus & SDIO_WIFI_BIT_TXBD_H2C_OVF) {
+		if (((IntStatus & SDIO_WIFI_BIT_TXBD_H2C_OVF) && (SDIO_WIFI == SDIO)) || \
+			((IntStatus & SDIO_BT_BIT_TXBD_H2C_OVF) && (SDIO_BT == SDIO))) {
 			pSPDIODev->TxOverFlow = 1;
 		}
 
-		if (IntStatus & SDIO_WIFI_BIT_RPWM2_INT) {
+		if (((IntStatus & SDIO_WIFI_BIT_H2C_DMA_OK) && (SDIO_WIFI == SDIO)) || \
+			((IntStatus & SDIO_BT_BIT_H2C_DMA_OK) && (SDIO_BT == SDIO)) || \
+			pSPDIODev->WaitForDeviceRxbuf) {
+			SPDIO_TxBd_DataReady_DeviceRx(SDIO, pSPDIODev, spdio_device_rx_done_cb);
+		}
+
+		if ((IntStatus & SDIO_WIFI_BIT_RPWM2_INT) && (SDIO_WIFI == SDIO)) {
 			spdio_rpwm_cb(pSPDIODev);
 		}
-		InterruptEn(SDIO_WIFI_IRQ, SPDIO_IRQ_PRIORITY);
 
+		InterruptEn(irq_num, SPDIO_IRQ_PRIORITY);
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "%s @2 IntStatus=0x%x\n", __FUNCTION__, IntStatus);
 	}
 }
@@ -204,6 +224,8 @@ void SPDIO_Board_Init(void)
 
 void SPDIO_Buffer_free(PSPDIO_ADAPTER pSPDIODev)
 {
+	struct spdio_t *obj = (struct spdio_t *)pSPDIODev->spdio_priv;
+
 	if (pSPDIODev->pRXBDHdl) {
 		rtos_mem_free((u8 *)pSPDIODev->pRXBDHdl);
 		pSPDIODev->pRXBDHdl = NULL;
@@ -229,14 +251,14 @@ void SPDIO_Buffer_free(PSPDIO_ADAPTER pSPDIODev)
 		pSPDIODev->pRXDESCAddr = NULL;
 	}
 
-	if (xSDIOIrqSema) {
-		rtos_sema_delete(xSDIOIrqSema);
-		xSDIOIrqSema = NULL;
+	if (obj->irq_sema) {
+		rtos_sema_delete(obj->irq_sema);
+		obj->irq_sema = NULL;
 	}
 
-	if (xSDIOIrqTaskHandle) {
-		rtos_task_delete(xSDIOIrqTaskHandle);
-		xSDIOIrqTaskHandle = NULL;
+	if (obj->irq_task_hdl) {
+		rtos_task_delete(obj->irq_task_hdl);
+		obj->irq_task_hdl = NULL;
 	}
 }
 
@@ -252,7 +274,9 @@ void SPDIO_Buffer_free(PSPDIO_ADAPTER pSPDIODev)
  */
 void spdio_init(struct spdio_t *obj)
 {
-	PSPDIO_ADAPTER pSPDIODev = &gSPDIODev;
+	PSPDIO_ADAPTER pSPDIODev;
+	SDIO_TypeDef *SDIO;
+	IRQn_Type irq_num;
 	int ret;
 
 	if (obj == NULL) {
@@ -266,7 +290,16 @@ void spdio_init(struct spdio_t *obj)
 		return;
 	}
 
-	g_spdio_priv = obj;
+	SDIO = obj->pSDIO;
+	assert_param(IS_SDIO_DEVICE(SDIO));
+
+	if (SDIO_WIFI == SDIO) {
+		pSPDIODev = &gSPDIODevWifi;
+		irq_num = SDIO_WIFI_IRQ;
+	} else {
+		irq_num = SDIO_BT_IRQ;
+		pSPDIODev = &gSPDIODevBt;
+	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SDIO_Device_Init==>\n");
 
@@ -307,12 +340,13 @@ void spdio_init(struct spdio_t *obj)
 	}
 	SDIO_RxBdHdl_Init(pSPDIODev->pRXBDHdl, pSPDIODev->pRXBDAddr, pSPDIODev->pRXDESCAddr, obj->host_rx_bd_num);
 
-	rtos_sema_create(&(xSDIOIrqSema), 0, RTOS_SEMA_MAX_COUNT);
-	if (NULL == xSDIOIrqSema) {
+	rtos_sema_create(&(obj->irq_sema), 0, RTOS_SEMA_MAX_COUNT);
+	if (NULL == obj->irq_sema) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "SDIO_Device_Init Create IRQ Semaphore Err!!\n");
 		goto SDIO_INIT_ERR;
 	}
-	ret = rtos_task_create((rtos_task_t *)&xSDIOIrqTaskHandle, "SPDIO_IRQ_TASK", SPDIO_IRQ_Handler_BH, (void *)pSPDIODev, 1024 * 4, 1);
+
+	ret = rtos_task_create(&(obj->irq_task_hdl), "SPDIO_IRQ_TASK", SPDIO_IRQ_Handler_BH, (void *)pSPDIODev, 1024 * 4, 1);
 	if (RTK_SUCCESS != ret) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "SDIO_Device_Init: Create IRQ Task Err(%d)!!\n", ret);
 		goto SDIO_INIT_ERR;
@@ -323,14 +357,16 @@ void spdio_init(struct spdio_t *obj)
 	/* SDIO function enable and clock enable*/
 	RCC_PeriphClockCmd(APBPeriph_SDD, APBPeriph_SDD_CLOCK, ENABLE);
 
-	SPDIO_Device_Init(pSPDIODev);
+	SPDIO_Device_Init(SDIO, pSPDIODev);
 
-	// Update the power state indication
-	SDIO_CPWM2_Set(SDIO_WIFI, CPWM2_ACT_BIT, ENABLE);
+	if (SDIO_WIFI == SDIO) {
+		// Update the power state indication
+		SDIO_CPWM2_Set(SDIO, CPWM2_ACT_BIT, ENABLE);
+	}
 
 	/* enable the interrupt */
-	InterruptRegister((IRQ_FUN)SPDIO_IRQ_Handler, SDIO_WIFI_IRQ, (u32)pSPDIODev, SPDIO_IRQ_PRIORITY);
-	InterruptEn(SDIO_WIFI_IRQ, SPDIO_IRQ_PRIORITY);
+	InterruptRegister((IRQ_FUN)SPDIO_IRQ_Handler, irq_num, (u32)pSPDIODev, SPDIO_IRQ_PRIORITY);
+	InterruptEn(irq_num, SPDIO_IRQ_PRIORITY);
 
 	return;
 
@@ -345,22 +381,31 @@ SDIO_INIT_ERR:
  */
 void spdio_deinit(struct spdio_t *obj)
 {
+	SDIO_TypeDef *SDIO;
+	IRQn_Type irq_num;
+
 	if (obj == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "spdio obj is NULL, spdio deinit failed\n");
 		return;
 	}
 
-	// Indicate the Host that Ameba is inactive
-	SDIO_CPWM2_Set(SDIO_WIFI, CPWM2_ACT_BIT, DISABLE);
+	SDIO = obj->pSDIO;
+	assert_param(IS_SDIO_DEVICE(SDIO));
 
-	SPDIO_Device_DeInit();
+	if (SDIO_WIFI == SDIO) {
+		irq_num = SDIO_WIFI_IRQ;
+		// Indicate the Host that Ameba is inactive
+		SDIO_CPWM2_Set(SDIO, CPWM2_ACT_BIT, DISABLE);
+	} else {
+		irq_num = SDIO_BT_IRQ;
+	}
 
-	InterruptDis(SDIO_WIFI_IRQ);
-	InterruptUnRegister(SDIO_WIFI_IRQ);
+	SPDIO_Device_DeInit(SDIO);
+
+	InterruptDis(irq_num);
+	InterruptUnRegister(irq_num);
 
 	SPDIO_Buffer_free(obj->priv);
-
-	g_spdio_priv = NULL;
 }
 
 /**

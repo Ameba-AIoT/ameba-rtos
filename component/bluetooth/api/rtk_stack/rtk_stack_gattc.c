@@ -1329,7 +1329,6 @@ static void bt_stack_gattc_discover_state_cb(uint8_t conn_id,
 		p_disc_ind->status = status;
 		p_disc_ind->err_code = err_code;
 		rtk_bt_evt_indicate(p_evt, NULL);
-
 	} else {
 		/* if read_by_uuid(internal use discover and read_by_handle) failed or
 		    discover out nothing, indicate err here */
@@ -1403,7 +1402,6 @@ static void bt_stack_gattc_discover_result_cb(uint8_t conn_id, T_DISCOVERY_RESUL
 	p_disc_ind->profile_id = p_req->disc_param.profile_id;
 	p_disc_ind->type = p_req->disc_param.type;
 	p_disc_ind->status = RTK_BT_STATUS_CONTINUE;
-	// p_disc_ind->has_data = 1;
 
 	switch (res_type) {
 	case DISC_RESULT_ALL_SRV_UUID16:
@@ -1489,6 +1487,7 @@ static void bt_stack_gattc_read_result_cb(uint8_t conn_id, uint16_t cause,
 	rtk_bt_gatt_queue_t *p_queue = &gattc_priv->request_queue[conn_id];
 	rtk_bt_evt_t *p_evt = NULL;
 	rtk_bt_gattc_read_ind_t *p_read_ind = NULL;
+	uint32_t datalen = 0;
 	uint16_t conn_handle = le_get_conn_handle(conn_id);
 
 	p_req = remove_sent_req(p_queue);
@@ -1497,7 +1496,11 @@ static void bt_stack_gattc_read_result_cb(uint8_t conn_id, uint16_t cause,
 		goto end;
 	}
 
-	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_EVT_READ_RESULT_IND, sizeof(rtk_bt_gattc_read_ind_t));
+	/* before malloc memory according to value_size, need to check if cause has err,
+	    if cause has err, value_size may be invalid and very huge */
+	datalen = cause ? 0 : value_size;
+	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_EVT_READ_RESULT_IND,
+								sizeof(rtk_bt_gattc_read_ind_t) + datalen);
 	if (!p_evt) {
 		goto end;
 	}
@@ -1508,27 +1511,18 @@ static void bt_stack_gattc_read_result_cb(uint8_t conn_id, uint16_t cause,
 	p_read_ind->type = p_req->read_param.type;
 	p_read_ind->status = cause ? RTK_BT_STATUS_FAIL : RTK_BT_STATUS_CONTINUE;
 	p_read_ind->err_code = cause;
-	/* before malloc memory according to value_size, need to check if cause has err,
-	    if cause has err, value_size may be invalid and very huge */
 	if (0 == cause) {
-		p_evt->user_data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, value_size);
-		if (!p_evt->user_data) {
-			goto end;
-		}
-
 		switch (p_req->read_param.type) {
 		case RTK_BT_GATT_CHAR_READ_BY_HANDLE:
 			p_read_ind->by_handle.handle = handle;
 			p_read_ind->by_handle.len = value_size;
-			p_read_ind->by_handle.value = p_evt->user_data;
-			// p_read_ind->by_handle.value = p_value;
+			p_read_ind->by_handle.value = BT_STRUCT_TAIL(p_read_ind, rtk_bt_gattc_read_ind_t);
 			memcpy(p_read_ind->by_handle.value, p_value, value_size);
 			break;
 		case RTK_BT_GATT_CHAR_READ_BY_UUID:
 			p_read_ind->by_uuid_per.handle = handle;
 			p_read_ind->by_uuid_per.len = value_size;
-			p_read_ind->by_uuid_per.value = p_evt->user_data;
-			// p_read_ind->by_uuid_per.value = p_value;
+			p_read_ind->by_uuid_per.value = BT_STRUCT_TAIL(p_read_ind, rtk_bt_gattc_read_ind_t);
 			memcpy(p_read_ind->by_uuid_per.value, p_value, value_size);
 			break;
 		case RTK_BT_GATT_CHAR_READ_MULTIPLE:
@@ -1701,14 +1695,8 @@ static T_APP_RESULT bt_stack_gattc_cccd_notify_indicate_cb(uint8_t conn_id, bool
 
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GATTC,
 								notify ? RTK_BT_GATTC_EVT_NOTIFY_IND : RTK_BT_GATTC_EVT_INDICATE_IND,
-								sizeof(rtk_bt_gattc_cccd_value_ind_t));
-
+								sizeof(rtk_bt_gattc_cccd_value_ind_t) + value_size);
 	if (!p_evt) {
-		return APP_RESULT_REJECT;
-	}
-
-	p_evt->user_data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, value_size);
-	if (!p_evt->user_data) {
 		return APP_RESULT_REJECT;
 	}
 
@@ -1717,7 +1705,7 @@ static T_APP_RESULT bt_stack_gattc_cccd_notify_indicate_cb(uint8_t conn_id, bool
 	p_value_ind->profile_id = profile_id;
 	p_value_ind->value_handle = handle;
 	p_value_ind->len = value_size;
-	p_value_ind->value = p_evt->user_data;
+	p_value_ind->value = BT_STRUCT_TAIL(p_value_ind, rtk_bt_gattc_cccd_value_ind_t);
 	memcpy(p_value_ind->value, p_value, value_size);
 
 	rtk_bt_evt_indicate(p_evt, NULL);
@@ -1973,21 +1961,13 @@ T_APP_RESULT bt_stack_gattc_multiple_read_callback(T_CLIENT_ID client_id, uint8_
 		for (i = 0; i < res_num_handle; i++) {
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GATTC,
 										RTK_BT_GATTC_EVT_READ_RESULT_IND,
-										sizeof(rtk_bt_gattc_read_ind_t));
+										sizeof(rtk_bt_gattc_read_ind_t) + read_mul_data->p_read_tbl[i].read_len);
 			p_read_ind = (rtk_bt_gattc_read_ind_t *)p_evt->data;
 			memcpy(p_read_ind, &read_ind_temp, sizeof(rtk_bt_gattc_read_ind_t));
 			p_read_ind->multiple_variable_per.len = read_mul_data->p_read_tbl[i].read_len;
-			// p_read_ind->multiple_variable_per.value = read_mul_data->p_read_tbl[i].p_data;
-			p_read_ind->multiple_variable_per.value = (uint8_t *)osif_mem_alloc(
-														  RAM_TYPE_DATA_ON,
-														  p_read_ind->multiple_variable_per.len);
-			if (NULL == p_read_ind->multiple_variable_per.value) {
-				ret = APP_RESULT_REJECT;
-				goto end;
-			}
+			p_read_ind->multiple_variable_per.value = BT_STRUCT_TAIL(p_read_ind, rtk_bt_gattc_read_ind_t);
 			memcpy(p_read_ind->multiple_variable_per.value,
 				   read_mul_data->p_read_tbl[i].p_data, p_read_ind->multiple_variable_per.len);
-			p_evt->user_data = p_read_ind->multiple_variable_per.value;
 			rtk_bt_evt_indicate(p_evt, NULL);
 		}
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GATTC,

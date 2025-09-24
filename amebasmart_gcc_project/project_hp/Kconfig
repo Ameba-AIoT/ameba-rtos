@@ -1,5 +1,11 @@
 comment "--- --------------CPU config Start------------"
 
+config SUPPORT_CPU_MVE_FOR_KM4
+    def_bool y
+
+config SUPPORT_DSP_TABLE_ROM_FOR_KM4
+    def_bool y
+
 menu "CONFIG CHIP"
     config CPU_HAS_FPU_FOR_KM4
         bool

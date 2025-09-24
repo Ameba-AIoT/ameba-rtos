@@ -19,6 +19,170 @@ const I2C_DevTable I2C_DEV_TABLE[2] = {
 };
 
 u32 I2C_SLAVEWRITE_PATCH;
+// Backup buffer pointer array, one for each I2C controller
+static I2C_Backup *backup_buffers[I2C_MAX_NUM] = {NULL};
+
+
+/**
+ * @brief Configure backup buffer for specified I2C controller
+ * @param i2c_id I2C controller ID (I2C_ID_0 or I2C_ID_1)
+ * @param I2C_BackupStruct Pointer to the struct defined by user
+ * @return 1: success
+ */
+bool I2C_Config_BackupBuf(u32 i2c_id, I2C_Backup *I2C_BackupStruct)
+{
+	assert_param(IS_I2C_ID(i2c_id));
+	backup_buffers[i2c_id] = I2C_BackupStruct;
+	return TRUE;
+}
+
+/**
+ * @brief Save register state of specified I2C controller
+ * @param i2c_id I2C controller ID
+ * @return 0: fail; 1: success
+ */
+bool I2C_Suspend(u32 i2c_id)
+{
+	assert_param(IS_I2C_ID(i2c_id));
+	assert_param(backup_buffers[i2c_id] != NULL);
+
+	I2C_TypeDef *I2Cx = NULL;
+	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1);
+	switch (i2c_id) {
+	case I2C_ID_0:
+		if (!(Temp & APBPeriph_I2C0_CLOCK)) {
+			RTK_LOGI(TAG, "Suspend Fail: I2C_0 Disabled\n");
+			return FALSE;
+		}
+		I2Cx = (I2C_TypeDef *)I2C0_REG_BASE;
+		break;
+	case I2C_ID_1:
+		if (!(Temp & APBPeriph_I2C1_CLOCK)) {
+			RTK_LOGI(TAG, "Suspend Fail: I2C_1 Disabled\n");
+			return FALSE;
+		}
+		I2Cx = (I2C_TypeDef *)I2C1_REG_BASE;
+		break;
+	default:
+		break;
+	}
+
+	if (I2Cx == NULL) {
+		return FALSE;
+	}
+	I2C_Backup *buf = backup_buffers[i2c_id];
+
+	// Save critical registers (in sequence)
+	buf->IC_CON = I2Cx->IC_CON;
+	buf->IC_TAR = I2Cx->IC_TAR;
+	buf->IC_SAR = I2Cx->IC_SAR;
+	buf->IC_HS_MAR = I2Cx->IC_HS_MAR;
+	buf->IC_SS_SCL_HCNT = I2Cx->IC_SS_SCL_HCNT;
+	buf->IC_SS_SCL_LCNT = I2Cx->IC_SS_SCL_LCNT;
+	buf->IC_FS_SCL_HCNT = I2Cx->IC_FS_SCL_HCNT;
+	buf->IC_FS_SCL_LCNT = I2Cx->IC_FS_SCL_LCNT;
+	buf->IC_HS_SCL_HCNT = I2Cx->IC_HS_SCL_HCNT;
+	buf->IC_HS_SCL_LCNT = I2Cx->IC_HS_SCL_LCNT;
+	buf->IC_INTR_MASK = I2Cx->IC_INTR_MASK;
+	buf->IC_RX_TL = I2Cx->IC_RX_TL;
+	buf->IC_TX_TL = I2Cx->IC_TX_TL;
+	buf->IC_SDA_HOLD = I2Cx->IC_SDA_HOLD;
+	buf->IC_SLV_DATA_NACK_ONLY = I2Cx->IC_SLV_DATA_NACK_ONLY;
+	buf->IC_DMA_TDLR = I2Cx->IC_DMA_TDLR;
+	buf->IC_DMA_RDLR = I2Cx->IC_DMA_RDLR;
+	buf->IC_SDA_SETUP = I2Cx->IC_SDA_SETUP;
+	buf->IC_ACK_GENERAL_CALL = I2Cx->IC_ACK_GENERAL_CALL;
+	buf->IC_OUT_SMP_DLY = I2Cx->IC_OUT_SMP_DLY;
+	buf->IC_FILTER = I2Cx->IC_FILTER;
+	buf->IC_SAR2 = I2Cx->IC_SAR2;
+
+	I2Cx->IC_ENABLE &= ~I2C_BIT_ENABLE;
+
+	return TRUE;
+}
+
+/**
+ * @brief Restore register state for specified I2C controller
+ * @param i2c_id I2C controller ID
+ * @return 0: fail; 1: success
+ */
+bool I2C_Resume(u32 i2c_id)
+{
+	assert_param(IS_I2C_ID(i2c_id));
+	assert_param(backup_buffers[i2c_id] != NULL);
+
+	I2C_TypeDef *I2Cx = NULL;
+	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1);
+	switch (i2c_id) {
+	case I2C_ID_0:
+		if (!(Temp & APBPeriph_I2C0_CLOCK)) {
+			RTK_LOGI(TAG, "Resume Fail: I2C_0 Disabled\n");
+			return FALSE;
+		}
+		I2Cx = (I2C_TypeDef *)I2C0_REG_BASE;
+		break;
+	case I2C_ID_1:
+		if (!(Temp & APBPeriph_I2C1_CLOCK)) {
+			RTK_LOGI(TAG, "Resume Fail: I2C_1 Disabled\n");
+			return FALSE;
+		}
+		I2Cx = (I2C_TypeDef *)I2C1_REG_BASE;
+		break;
+	default:
+		break;
+	}
+
+	if (I2Cx == NULL) {
+		return FALSE;
+	}
+
+	I2C_Backup *buf = backup_buffers[i2c_id];
+
+	/* Disable the I2C first */
+	I2Cx->IC_ENABLE &= ~I2C_BIT_ENABLE;
+
+	I2Cx->IC_CON = buf->IC_CON;
+	I2Cx->IC_TAR = buf->IC_TAR;
+	I2Cx->IC_SAR = buf->IC_SAR;
+	I2Cx->IC_HS_MAR = buf->IC_HS_MAR;
+	I2Cx->IC_SS_SCL_HCNT = buf->IC_SS_SCL_HCNT;
+	I2Cx->IC_SS_SCL_LCNT = buf->IC_SS_SCL_LCNT;
+	I2Cx->IC_FS_SCL_HCNT = buf->IC_FS_SCL_HCNT;
+	I2Cx->IC_FS_SCL_LCNT = buf->IC_FS_SCL_LCNT;
+	I2Cx->IC_HS_SCL_HCNT = buf->IC_HS_SCL_HCNT;
+	I2Cx->IC_HS_SCL_LCNT = buf->IC_HS_SCL_LCNT;
+	I2Cx->IC_INTR_MASK = buf->IC_INTR_MASK;
+	I2Cx->IC_RX_TL = buf->IC_RX_TL;
+	I2Cx->IC_TX_TL = buf->IC_TX_TL;
+	I2Cx->IC_SDA_HOLD = buf->IC_SDA_HOLD;
+	I2Cx->IC_SLV_DATA_NACK_ONLY = buf->IC_SLV_DATA_NACK_ONLY;
+	I2Cx->IC_DMA_TDLR = buf->IC_DMA_TDLR;
+	I2Cx->IC_DMA_RDLR = buf->IC_DMA_RDLR;
+	I2Cx->IC_SDA_SETUP = buf->IC_SDA_SETUP;
+	I2Cx->IC_ACK_GENERAL_CALL = buf->IC_ACK_GENERAL_CALL;
+	I2Cx->IC_OUT_SMP_DLY = buf->IC_OUT_SMP_DLY;
+	I2Cx->IC_FILTER = buf->IC_FILTER;
+	I2Cx->IC_SAR2 = buf->IC_SAR2;
+
+	I2Cx->IC_ENABLE |= I2C_BIT_ENABLE;
+
+	return TRUE;
+}
+
+
+void I2C_SuspendAll(void)
+{
+	for (int i = 0; i < I2C_MAX_NUM; i++) {
+		I2C_Suspend(i);
+	}
+}
+
+void I2C_ResumeAll(void)
+{
+	for (int i = 0; i < I2C_MAX_NUM; i++) {
+		I2C_Resume(i);
+	}
+}
 
 /*below parameters are used for I2C speed fine-tune*/
 u32 IC_SS_SCL_HCNT_TRIM = 0;

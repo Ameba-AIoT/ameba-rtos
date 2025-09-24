@@ -46,6 +46,10 @@ void app_ftl_init(void)
 
 void app_mbedtls_rom_init(void)
 {
+	CRYPTO_Init(NULL);
+	CRYPTO_SHA_Init(NULL);
+	RCC_PeriphClockCmd(APBPeriph_RSA, APBPeriph_CLOCK_NULL, ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_ECDSA, APBPeriph_ECDSA_CLOCK, ENABLE);
 	ssl_function_map.ssl_calloc = (void *(*)(unsigned int, unsigned int))rtos_mem_calloc;
 	ssl_function_map.ssl_free = (void (*)(void *))rtos_mem_free;
 	ssl_function_map.ssl_printf = (long unsigned int (*)(const char *, ...))DiagPrintf;

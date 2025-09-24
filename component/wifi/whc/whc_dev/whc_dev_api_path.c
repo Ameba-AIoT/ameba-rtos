@@ -7,11 +7,12 @@
  *  possession or use of this module requires written permission of RealTek.
  */
 #include "whc_dev.h"
-#ifdef CONFIG_WHC_BRIDGE
-#include "lwip_netconf.h"
-#endif
 
 extern int wifi_set_chplan(u8 chplan);
+void rtw_sme_auth_event(struct rtw_sme_auth_info *auth_info);
+void rtw_sme_set_assocreq_ie(u8 *buf, u32 size, u8 wpa_rsn_exist);
+void rtw_sme_set_deauth_ie(u8 *ie, u32 ie_len, u16 reason_code);
+
 
 struct event_priv_t event_priv;
 
@@ -77,10 +78,14 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_SEND_EAPOL, whc_event_send_eapol},
 	{WHC_API_WIFI_AP_GET_CONNECTED_CLIENTS, whc_event_wifi_ap_get_connected_clients},
 	{WHC_API_WPA_4WAY_REPORT, whc_event_wpa_4way_rpt},
+	{WHC_API_WIFI_DHCP_SUCCESS_IND, whc_event_wifi_dhcp_success},
 	{WHC_API_WIFI_GET_TRAFFIC_STATS, whc_event_get_traffic_stats},
 	{WHC_API_WIFI_START_JOIN_CMD, whc_event_start_join_cmd},
 	{WHC_API_WIFI_GET_EAP_PHASE, whc_event_get_eap_phase},
-
+#ifdef CONFIG_SUPPLICANT_SME
+	{WHC_API_WIFI_SME_AUTH, whc_event_sme_auth},
+	{WHC_API_WIFI_SME_SET_ASSOCREQ_IE, whc_event_sme_set_assocreq_ie},
+#endif
 };
 
 void whc_send_api_ret_value(u32 api_id, u8 *pbuf, u32 len)
@@ -173,6 +178,27 @@ void whc_dev_api_task(void)
 		rtos_mem_free((u8 *)p_recv_msg);
 	} while (1);
 }
+
+#ifdef CONFIG_SUPPLICANT_SME
+void whc_event_sme_auth(u32 api_id, u32 *param_buf)
+{
+	int ret = 0;
+
+	rtw_sme_auth_event((struct rtw_sme_auth_info *)param_buf);
+	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
+}
+
+void whc_event_sme_set_assocreq_ie(u32 api_id, u32 *param_buf)
+{
+	int ret = 0;
+	u32 size = param_buf[0];
+	u8 wpa_rsn_exist = (u8) param_buf[1];
+
+	rtw_sme_set_assocreq_ie((u8 *)&param_buf[2], size, wpa_rsn_exist);
+
+	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
+}
+#endif
 
 void whc_event_get_eap_phase(u32 api_id, u32 *param_buf)
 {
@@ -299,6 +325,15 @@ void whc_event_wpa_4way_rpt(u32 api_id, u32 *param_buf)
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
+void whc_event_wifi_dhcp_success(u32 api_id, u32 *param_buf)
+{
+	UNUSED(param_buf);
+
+	int ret = 0;
+	wifi_dhcp_success_indicate();
+	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
+}
+
 void whc_event_get_traffic_stats(u32 api_id, u32 *param_buf)
 {
 	u8 wlan_idx = (u8)param_buf[0];
@@ -391,8 +426,17 @@ void whc_event_wifi_get_countrycode(u32 api_id, u32 *param_buf)
 
 void whc_event_wifi_disconnect(u32 api_id, u32 *param_buf)
 {
-	(void)param_buf;
 	int ret;
+
+#ifdef CONFIG_SUPPLICANT_SME
+	u32 ie_len = param_buf[0];
+	u16 reason_code = (u16)param_buf[1];
+
+	rtw_sme_set_deauth_ie((u8 *)&param_buf[2], ie_len, reason_code);
+#else
+	(void) param_buf;
+#endif
+	
 	ret = wifi_disconnect();
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
@@ -610,7 +654,7 @@ void whc_event_wifi_send_mgnt(u32 api_id, u32 *param_buf)
 void whc_event_wifi_set_EDCA_param(u32 api_id, u32 *param_buf)
 {
 	int ret;
-	struct rtw_edca_param *pedca_param = (struct rtw_edca_param *)param_buf[0];
+	struct rtw_edca_param *pedca_param = (struct rtw_edca_param *)param_buf;
 
 	ret = wifi_set_edca_param(pedca_param);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
@@ -629,11 +673,6 @@ void whc_event_wifi_iwpriv_info(u32 api_id, u32 *param_buf)
 
 void whc_event_wifi_ip_update(u32 api_id, u32 *param_buf)
 {
-#if defined(CONFIG_WHC_BRIDGE)
-	(void) api_id;
-	(void) param_buf;
-	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "API [%x] not supported!\n", api_id);
-#else
 	int ret = 0;
 	u8 *p_ip_addr = (u8 *)param_buf;
 
@@ -643,7 +682,6 @@ void whc_event_wifi_ip_update(u32 api_id, u32 *param_buf)
 	memcpy(IPv6Parm.IP, p_ip_addr + IPv4_ALEN, IPv6_ALEN);
 
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
-#endif
 }
 
 #ifdef CONFIG_NAN
@@ -1004,26 +1042,15 @@ void whc_event_wifi_get_ant_info(u32 api_id, u32 *param_buf)
 
 void whc_event_war_offload_ctrl(u32 api_id, u32 *param_buf)
 {
-#if defined(CONFIG_WHC_BRIDGE)
-	(void) api_id;
-	(void) param_buf;
-	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "API [%x] not supported!\n", api_id);
-
-#else
 	int ret = 0;
 
 	ret = rtw_war_offload_ctrl((u8 *)param_buf);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
-#endif
+
 }
 
 void whc_event_war_set_mdns_para(u32 api_id, u32 *param_buf)
 {
-#if defined(CONFIG_WHC_BRIDGE)
-	(void) api_id;
-	(void) param_buf;
-	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "API [%x] not supported!\n", api_id);
-#else
 	int ret = 0;
 	u32 mdns_param_sz;
 	u8 *ptr = (u8 *)param_buf;
@@ -1038,7 +1065,6 @@ void whc_event_war_set_mdns_para(u32 api_id, u32 *param_buf)
 	}
 
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
-#endif
 }
 
 void whc_event_wifi_driver_is_mp(u32 api_id, u32 *param_buf)
@@ -1062,15 +1088,7 @@ void whc_dev_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret
 	struct whc_api_info *info;
 	struct whc_api_info *ret_msg;
 	struct whc_txbuf_info_t *inic_tx;
-#if defined(CONFIG_WHC_INTF_USB) && defined(CONFIG_USBD_WHC_HOTPLUG)
-	/* Since device not attached to host, USB data transmission is unavailable.
-	   Calling whc_dev_send will cause to hang waiting for api_ret_sema. */
-	extern u8 wifi_whc_usb_status;
-	if (wifi_whc_usb_status == WIFI_WHC_USB_STATUS_DISABLED) {
-		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "Detached with host, not send api %d\n", id);
-		goto exit;
-	}
-#endif
+
 	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "Device Call API %ld\n", id);
 
 	rtos_mutex_take(event_priv.send_mutex, MUTEX_WAIT_TIMEOUT);
@@ -1206,7 +1224,7 @@ u8 whc_dev_promisc_callback_indicate(struct rtw_rx_pkt_info *pkt_info)
 int whc_dev_ip_in_table_indicate(u8 gate, u8 ip)
 {
 	u32 param_buf[2];
-	int ret;
+	int ret = 0;
 	param_buf[0] = gate;
 	param_buf[1] = ip;
 

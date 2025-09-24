@@ -48,6 +48,7 @@ ameba_list_append(private_sources
 	bt_audio_track_api.c
 	bt_audio_record_api.c
 	bt_audio_codec_wrapper.c
+	bt_audio_ring_buffer.c
 	bt_codec/sbc_codec_entity.c
 	bt_codec/lc3_codec_entity.c
 	bt_codec/cvsd_codec_entity.c

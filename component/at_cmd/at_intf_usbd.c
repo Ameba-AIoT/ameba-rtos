@@ -67,7 +67,6 @@ static u16 atcmd_usbd_ctrl_line_state;
 
 static usbd_config_t atcmd_usbd_cfg = {
 	.speed = CONFIG_USBD_CDC_ACM_SPEED,
-	.dma_enable   = 1U,
 	.isr_priority = INT_PRI_MIDDLE,
 	.intr_use_ptx_fifo  = 0U,
 #if defined(CONFIG_AMEBASMART)

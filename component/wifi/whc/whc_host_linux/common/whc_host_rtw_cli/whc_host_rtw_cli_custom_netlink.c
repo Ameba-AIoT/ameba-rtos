@@ -52,10 +52,12 @@ int whc_host_nl_custom_api(struct sk_buff *skb, struct genl_info *info)
 		whc_bridge_host_scan_result();
 	} else if (cmd == CMD_WIFI_GET_JOIN_EVENT) {
 		whc_host_get_join_status(skb, info);
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 	} else if (cmd == CMD_WIFI_DBG) {
 		whc_host_do_dbg_cmd(skb, info);
 	} else if (cmd == CMD_WIFI_MP) {
 		whc_host_do_mp_cmd(skb, info);
+#endif
 	}
 	return 0;
 }

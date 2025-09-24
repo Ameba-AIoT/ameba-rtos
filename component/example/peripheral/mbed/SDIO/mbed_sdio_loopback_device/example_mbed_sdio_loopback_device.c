@@ -15,7 +15,7 @@
 #define EX_SPDIO_RX_BD_NUM	20
 #define EX_SPDIO_RX_BUFSZ	(SPDIO_RX_BUFSZ_ALIGN(2048+24)) //n*64, must be rounded to 64, extra 24 bytes for spdio header info
 
-struct spdio_t spdio_dev;
+struct spdio_t spdio_dev = {0};
 
 char ex_spdio_tx(u8 *pdata, u16 size, u8 type)
 {
@@ -23,14 +23,18 @@ char ex_spdio_tx(u8 *pdata, u16 size, u8 type)
 	static int loop_cnt = 0;
 	int ret;
 	struct spdio_buf_t *tx_buf = (struct spdio_buf_t *)rtos_mem_malloc(sizeof(struct spdio_buf_t));
-	memset((u8 *)tx_buf, 0, sizeof(struct spdio_buf_t));
 
 	if (!tx_buf) {
+		RTK_LOGE(NOTAG, "malloc failed for spdio buffer structure!\n");
 		return RTK_FAIL;
 	}
+
+	memset((u8 *)tx_buf, 0, sizeof(struct spdio_buf_t));
+
 	tx_buf->buf_allocated = (u32)rtos_mem_malloc(size + SPDIO_DMA_ALIGN_4);
 	if (!tx_buf->buf_allocated) {
-		rtos_mem_free((u8 *)tx_buf);
+		RTK_LOGE(NOTAG, "malloc failed for spdio buffer!\n");
+		rtos_mem_free((void *)tx_buf);
 		return RTK_FAIL;
 	}
 	tx_buf->size_allocated = size + SPDIO_DMA_ALIGN_4;
@@ -46,8 +50,8 @@ char ex_spdio_tx(u8 *pdata, u16 size, u8 type)
 	// loopback
 	ret = spdio_tx(&spdio_dev, tx_buf);
 	if (ret == FALSE) {
-		rtos_mem_free((u8 *)tx_buf->buf_allocated);
-		rtos_mem_free((u8 *)tx_buf);
+		rtos_mem_free((void *)tx_buf->buf_allocated);
+		rtos_mem_free((void *)tx_buf);
 	}
 
 	return RTK_SUCCESS;
@@ -70,7 +74,7 @@ char ex_spdio_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size, u8 type)
 	ex_spdio_tx(pdata, size, type);
 
 	// manage rx_buf here
-	rtos_mem_free((char *)rx_buf->buf_allocated);
+	rtos_mem_free((void *)rx_buf->buf_allocated);
 
 	// assign new buffer for SPDIO RX
 	rx_buf->buf_allocated = (u32)rtos_mem_malloc(obj->device_rx_bufsz + SPDIO_DMA_ALIGN_4);
@@ -89,8 +93,8 @@ char ex_spdio_tx_done_cb(void *priv, void *pbuf)
 	UNUSED(priv);
 	struct spdio_buf_t *tx_buf = (struct spdio_buf_t *)pbuf;
 
-	rtos_mem_free((u8 *)tx_buf->buf_allocated);
-	rtos_mem_free((u8 *)tx_buf);
+	rtos_mem_free((void *)tx_buf->buf_allocated);
+	rtos_mem_free((void *)tx_buf);
 	return RTK_SUCCESS;
 }
 
@@ -113,14 +117,17 @@ void ex_spdio_thread(void *param)
 	for (i = 0; i < spdio_dev.host_tx_bd_num; i++) {
 		spdio_dev.rx_buf[i].buf_allocated = (u32)rtos_mem_malloc(spdio_dev.device_rx_bufsz + SPDIO_DMA_ALIGN_4);
 		if (!spdio_dev.rx_buf[i].buf_allocated) {
+			rtos_mem_free((void *)spdio_dev.rx_buf);
 			RTK_LOGE(NOTAG, "malloc failed for spdio buffer!\n");
 			return;
 		}
 		spdio_dev.rx_buf[i].size_allocated = spdio_dev.device_rx_bufsz + SPDIO_DMA_ALIGN_4;
 		// this buffer must be 4 byte alignment
 		spdio_dev.rx_buf[i].buf_addr = (u32)N_BYTE_ALIGMENT((u32)(spdio_dev.rx_buf[i].buf_allocated), SPDIO_DMA_ALIGN_4);
+		spdio_dev.rx_buf[i].buf_size = spdio_dev.device_rx_bufsz;
 	}
 
+	spdio_dev.pSDIO = SDIO_WIFI;
 	spdio_dev.device_rx_done_cb = ex_spdio_rx_done_cb;
 	spdio_dev.device_tx_done_cb = ex_spdio_tx_done_cb;
 

@@ -729,11 +729,11 @@ static void hfp_alert_timer_handle(void *arg)
 	while (pcm_offset < birds_sing_size / 2) {
 		if (pcm_offset + 512 < birds_sing_size / 2) {
 			if (alert_track_hdl) {
-				rtk_bt_audio_track_play(alert_track_hdl, (void *)(birds_sing + pcm_offset), (uint16_t)1024);
+				rtk_bt_audio_track_play(alert_track_hdl, (void *)(birds_sing + pcm_offset), (uint32_t)1024);
 			}
 		} else {
 			if (alert_track_hdl) {
-				rtk_bt_audio_track_play(alert_track_hdl, (void *)(birds_sing + pcm_offset), (uint16_t)(((birds_sing_size / 2) - pcm_offset) * 2));
+				rtk_bt_audio_track_play(alert_track_hdl, (void *)(birds_sing + pcm_offset), (uint32_t)(((birds_sing_size / 2) - pcm_offset) * 2));
 			}
 		}
 		pcm_offset += 512;
@@ -1208,7 +1208,6 @@ static rtk_bt_evt_cb_ret_t rtk_bt_pbap_app_callback(uint8_t evt_code, void *para
 		if (p_pbap_get_pb_cmpl->data_len) {
 			BT_LOGA(" phone book detail \r\n ");
 			BT_LOGA(" %s \r\n", p_pbap_get_pb_cmpl->p_data);
-			osif_mem_free(p_pbap_get_pb_cmpl->p_data);
 		}
 	}
 	break;
@@ -1220,7 +1219,6 @@ static rtk_bt_evt_cb_ret_t rtk_bt_pbap_app_callback(uint8_t evt_code, void *para
 					p_pbap_caller_id_name->bd_addr[5], p_pbap_caller_id_name->bd_addr[4], p_pbap_caller_id_name->bd_addr[3], p_pbap_caller_id_name->bd_addr[2],
 					p_pbap_caller_id_name->bd_addr[1], p_pbap_caller_id_name->bd_addr[0],
 					(char *)p_pbap_caller_id_name->name_ptr);
-			osif_mem_free(p_pbap_caller_id_name->name_ptr);
 		}
 	}
 	break;

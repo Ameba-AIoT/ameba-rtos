@@ -4,10 +4,10 @@
 ameba_global_include(
     include
     include/rom
-    include/cmsis
     ../rom/include
     ${c_CMPT_SWLIB_DIR}
     ${c_COMPONENT_DIR}/soc/common/include
+    ${c_COMPONENT_DIR}/soc/common/include/cmsis
 )
 
 ameba_add_subdirectory(ram_common)

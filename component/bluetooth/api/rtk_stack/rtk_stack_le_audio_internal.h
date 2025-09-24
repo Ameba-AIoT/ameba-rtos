@@ -164,6 +164,9 @@ typedef struct {
 	uint16_t iso_conn_handle;
 	uint16_t pkt_seq_num;
 	uint32_t presentation_delay;
+	uint32_t transport_latency_m_to_s;    /**< The actual transport latency, in microseconds, from Central to Peripheral. */
+	uint32_t transport_latency_s_to_m;    /**< The actual transport latency, in microseconds, from Peripheral to Central. */
+	uint32_t transport_latency_big;       /**< BIG transport latency, in microseconds */
 	rtk_bt_le_audio_cfg_codec_t codec_data;
 } rtk_bt_le_audio_iso_channel_info_t;
 

@@ -6,102 +6,7 @@
 
 #ifndef _AMEBA_CHIPINFO_H_
 #define _AMEBA_CHIPINFO_H_
-/*
- * Note: Some variables are planned to be deleted and replace with news, to unify MCM Memory information in all ICs.
-  * *************** delete start *******************************************
- */
-/** @defgroup Memory_Type_define
-  * @{
-  */
-enum Memory_Type {
-	Memory_Type_DDR = 0x01,
-	Memory_Type_PSRAM = 0x02,
-	Memory_Type_None = 0xFF,
-};
-/**
-  * @}
-  */
 
-/** @defgroup DDR_Type_define
-  * @{
-  */
-enum DDR_Type {
-	DDR_Type_DDR2 = 0x01,
-	DDR_Type_DDR3 = 0x02,
-	DDR_Type_DDR3L = 0x03,
-	DDR_Type_LPDDR1 = 0x04,
-	DDR_Type_None = 0xFF,
-};
-/**
-  * @}
-  */
-
-/** @defgroup PSRAM_Size_define
-  * @{
-  */
-enum PSRAM_Size {
-	PSRAM_Size_32M = 0x01,
-	PSRAM_Size_64M = 0x02,
-	PSRAM_Size_128M = 0x03,
-	PSRAM_Size_256M = 0x04,
-	PSRAM_Size_None = 0xFF,
-};
-/**
-  * @}
-  */
-
-/** @defgroup DDR_Size_define
-  * @{
-  */
-enum DDR_Size {
-	DDR_Size_256M = 0x01,
-	DDR_Size_512M = 0x02,
-	DDR_Size_1G = 0x03,
-	DDR_Size_2G = 0x04,
-	DDR_Size_None = 0xFF,
-};
-/**
-  * @}
-  */
-
-/** @defgroup Memory_vendor_define
-  * @{
-  */
-enum Memory_vendor {
-	Vendor_PSRAM_A = 0x01,
-	Vendor_PSRAM_B = 0x02,
-	Vendor_None = 0xFF,
-};
-/**
-  * @}
-  */
-
-/** @defgroup MemoryInfo_TypeDef
-  * @{
-  */
-typedef struct {
-	u8 sub_num;
-	u8 package_num;
-	u8 chip_info;
-	u8 memory_type;
-	u8 memory_size;
-	u8 memory_vendor;
-} MemoryInfo_TypeDef;
-/**
-  * @}
-  */
-
-/* *************** delete end *********************************/
-
-/** @defgroup Chip_Package_define
-  * @{
-  */
-enum Package_Type {
-	Package_Type_QFN228 = 0x0,
-	Package_Type_QFN144 = 0x1,
-	Package_Type_QFN100 = 0x2,
-	Package_Type_Unknown = 0xFF,
-};
 /** @defgroup CHIPINFO_MEMINFO_Structure_Type Structure Type
   * @{
   */
@@ -344,6 +249,17 @@ enum MCM_MemType {
 };
 /**  * @}  */
 
+/** @defgroup Chip_Package_define
+  * @{
+  */
+enum Package_Type {
+	Package_Type_QFN228 = 0x0,
+	Package_Type_QFN144 = 0x1,
+	Package_Type_QFN100 = 0x2,
+	Package_Type_Unknown = 0xFF,
+};
+/**  * @}  */
+
 #define	CHIPINFO_GET_SUBNUM(x)					((u8)(((x >> 5) & 0x00000007)))
 #define	CHIPINFO_GET_PKGNUM(x)					((u8)(((x >> 0) & 0x0000001F)))
 #define OTP_CHIPVER								0x7F0
@@ -392,12 +308,9 @@ _LONG_CALL_ void EFUSE_GetUUID(u32 *UUID);
 _LONG_CALL_ u8 ChipInfo_Get(void);
 _LONG_CALL_ u16 ChipInfo_BDNum(void);
 _LONG_CALL_ MCM_MemTypeDef ChipInfo_MCMInfo(void);
-_LONG_CALL_ u8 ChipInfo_MemoryType(void);
 _LONG_CALL_ bool ChipInfo_PsramExists(void);
 _LONG_CALL_ u32 ChipInfo_PsramBoundary(void);
 _LONG_CALL_ u8 ChipInfo_DDRType(void);
-_LONG_CALL_ u8 ChipInfo_MemorySize(void);
-_LONG_CALL_ u8 ChipInfo_MemoryVendor(void);
 _LONG_CALL_ u8 ChipInfo_ChipPackage(void);
 _LONG_CALL_ u8 EFUSE_Get_Info(u32 FuncID);
 _LONG_CALL_ void ChipInfo_GetSocName_ToBuf(char *buf, size_t buflen);

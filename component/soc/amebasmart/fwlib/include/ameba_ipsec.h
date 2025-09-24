@@ -591,7 +591,7 @@ typedef enum _SHA2_TYPE_ {
 #define AUTH_TYPE_SHA1					0x0
 #define AUTH_TYPE_SHA2					0x1
 
-#define AUTH_TYPE_MASK_HMAC 			0x4	// bit 2 
+#define AUTH_TYPE_MASK_HMAC 			0x4	// bit 2
 #define AUTH_TYPE_HMAC_MD5 				(AUTH_TYPE_MD5 | AUTH_TYPE_MASK_HMAC)
 #define AUTH_TYPE_HMAC_SHA1 			(AUTH_TYPE_SHA1 | AUTH_TYPE_MASK_HMAC)
 #define AUTH_TYPE_HMAC_SHA2 			(AUTH_TYPE_SHA2 | AUTH_TYPE_MASK_HMAC)
@@ -670,19 +670,19 @@ _LONG_CALL_ void CRYPTO_ClearAllINT(u32 engine_type);
 _LONG_CALL_ void CRYPTO_Reset(HAL_CRYPTO_ADAPTER *pIE);
 _LONG_CALL_ void CRYPTO_SHA_Reset(HAL_CRYPTO_ADAPTER *pIE);
 
-_LONG_CALL_ int CRYPTO_SetSecurityModeAD(HAL_CRYPTO_ADAPTER *pIE, IN const u32 cipher_type, IN const u32 auth_type, IN const void *pCipherKey,
-		IN const u32 lenCipherKey, IN const void *pAuthKey, IN const u32 lenAuthKey);
+_LONG_CALL_ int CRYPTO_SetSecurityModeAD(HAL_CRYPTO_ADAPTER *pIE, const u32 cipher_type, const u32 auth_type, const void *pCipherKey,
+		const u32 lenCipherKey, const void *pAuthKey, const u32 lenAuthKey);
 _LONG_CALL_ int CRYPTO_Init(HAL_CRYPTO_ADAPTER *pIE);
 _LONG_CALL_ int CRYPTO_SHA_Init(HAL_CRYPTO_ADAPTER *pIE);
 _LONG_CALL_ int CRYPTO_OTPKey_Init(u32 keynum, u32 status);
 _LONG_CALL_ int CRYPTO_OTPKey_SHA_Init(u32 keynum, u32 status);
-_LONG_CALL_ int CRYPTO_ProcessAD(HAL_CRYPTO_ADAPTER *pIE, IN const u8 *message, IN const u32 msglen, IN const u8 *pIv, IN const u32 ivlen, IN const u8 *paad,
-								 IN const u32 aadlen, OUT u8 *pResult, OUT u8 *pTag, hw_sha_context *ctx);
-_LONG_CALL_ int CRYPTO_CipherInit(HAL_CRYPTO_ADAPTER *pIE, IN const u32 cipher_type, IN const u8 *key, IN const u32 keylen);
-_LONG_CALL_ int CRYPTO_CipherEncryptAD(HAL_CRYPTO_ADAPTER *pIE, IN const u8 *message, IN const u32 msglen, IN const u8 *piv, IN const u32 ivlen,
-									   IN const u8 *paad, IN const u32 aadlen, OUT u8 *pResult, OUT u8 *pTag);
-_LONG_CALL_ int CRYPTO_CipherDecryptAD(HAL_CRYPTO_ADAPTER *pIE, IN const u8 *message, IN const u32 msglen, IN const u8 *piv, IN const u32 ivlen,
-									   IN const u8 *paad, IN const u32 aadlen, OUT u8 *pResult, OUT u8 *pTag);
+_LONG_CALL_ int CRYPTO_ProcessAD(HAL_CRYPTO_ADAPTER *pIE, const u8 *message, const u32 msglen, const u8 *pIv, const u32 ivlen, const u8 *paad,
+								 const u32 aadlen, u8 *pResult, u8 *pTag, hw_sha_context *ctx);
+_LONG_CALL_ int CRYPTO_CipherInit(HAL_CRYPTO_ADAPTER *pIE, const u32 cipher_type, const u8 *key, const u32 keylen);
+_LONG_CALL_ int CRYPTO_CipherEncryptAD(HAL_CRYPTO_ADAPTER *pIE, const u8 *message, const u32 msglen, const u8 *piv, const u32 ivlen,
+									   const u8 *paad, const u32 aadlen, u8 *pResult, u8 *pTag);
+_LONG_CALL_ int CRYPTO_CipherDecryptAD(HAL_CRYPTO_ADAPTER *pIE, const u8 *message, const u32 msglen, const u8 *piv, const u32 ivlen,
+									   const u8 *paad, const u32 aadlen, u8 *pResult, u8 *pTag);
 _LONG_CALL_ int CRYPTO_SendSeqBuf(u8 *pDigest, hw_sha_context *ctx);
 _LONG_CALL_ void hash_save(hw_sha_context *ctx);
 

@@ -276,7 +276,7 @@ void data_flash_highspeed_setup(void)
 	return;
 #endif
 
-	if (ChipInfo_MemoryType() == MEMORY_MCM_PSRAM) {
+	if (ChipInfo_MemoryType() == MCM_TYPE_PSRAM) {
 		RTK_LOGE(TAG, "Can't support second flash for chip with mem psram\r\n");
 		return;
 	}

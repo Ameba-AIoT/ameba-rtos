@@ -532,14 +532,14 @@ void at_tickps(void *arg)
 	if (_strcmp((const char *)argv[1], "DSLP") == 0) {
 		if (argc >= 3 && argc <= 4) {
 			/*unit: ms*/
-			u32 min_time = 0, max_time = 0;
+			u32 min_time = PMU_SLEEP_FOREVER, max_time = PMU_SLEEP_FOREVER;
+			/*unit: ms*/
 			if (argc >= 4) {
-				max_time =  _strtoul((const char *)(argv[3]), (char **)NULL, 10);
-			}
-			if (argc >= 3) {
 				min_time =  _strtoul((const char *)(argv[2]), (char **)NULL, 10);
+				max_time =  _strtoul((const char *)(argv[3]), (char **)NULL, 10);
+			} else {
+				max_time =  _strtoul((const char *)(argv[2]), (char **)NULL, 10);
 			}
-
 			pmu_set_sleep_time_range(min_time, max_time);
 		}
 
@@ -563,20 +563,18 @@ void at_tickps(void *arg)
 	}
 
 	if (_strcmp((char *)argv[1], "TIMER") == 0) {
-		u32 min_time = 0, max_time = 0;
-		if (argc < 3 || argc > 4) {
-			RTK_LOGW(NOTAG, "[TICKPS] Error parameters\r\n");
-			return;
+		if (argc >= 3 && argc <= 4) {
+			/*unit: ms*/
+			u32 min_time = PMU_SLEEP_FOREVER, max_time = PMU_SLEEP_FOREVER;
+			/*unit: ms*/
+			if (argc >= 4) {
+				min_time =  _strtoul((const char *)(argv[2]), (char **)NULL, 10);
+				max_time =  _strtoul((const char *)(argv[3]), (char **)NULL, 10);
+			} else {
+				max_time =  _strtoul((const char *)(argv[2]), (char **)NULL, 10);
+			}
+			pmu_set_sleep_time_range(min_time, max_time);
 		}
-		/*unit: ms*/
-		if (argc >= 4) {
-			max_time =  _strtoul((const char *)(argv[3]), (char **)NULL, 10);
-		}
-		if (argc >= 3) {
-			min_time =  _strtoul((const char *)(argv[2]), (char **)NULL, 10);
-		}
-
-		pmu_set_sleep_time_range(min_time, max_time);
 
 		pmu_release_wakelock(PMU_OS);
 	}

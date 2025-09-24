@@ -140,6 +140,7 @@ static void _handle_cmd_for_fpga(uint16_t opcode)
 static void bt_inic_recv(struct hci_rx_packet_t *pkt)
 {
 	bt_inic_send_to_host(pkt->type, pkt->buf, pkt->len);
+	hci_rx_pkt_free(pkt);
 }
 
 static struct hci_transport_cb bt_inic_cb = {
@@ -149,11 +150,11 @@ static struct hci_transport_cb bt_inic_cb = {
 
 bool bt_inic_open(void)
 {
-	if (hci_controller_is_enabled()) {
+	if (hci_controller_is_opened()) {
 		return true;
 	}
 
-	if (!hci_controller_enable()) {
+	if (!hci_controller_open()) {
 		return false;
 	}
 
@@ -165,7 +166,7 @@ bool bt_inic_open(void)
 
 void bt_inic_close(void)
 {
-	hci_controller_disable();
+	hci_controller_close();
 	hci_controller_free();
 }
 
@@ -194,11 +195,11 @@ static bool is_inic_vendor_cmd(uint16_t opcode, uint8_t *pdata)
 		param = pdata[3];
 		if (param == 0x01) {
 			hci_set_mp(true);
-			if (hci_controller_is_enabled()) {
-				hci_controller_disable();
+			if (hci_controller_is_opened()) {
+				hci_controller_close();
 				hci_controller_free();
 			}
-			if (!hci_controller_enable()) {
+			if (!hci_controller_open()) {
 				BT_LOGE("BT MP Patch download failed!\r\n");
 				status = 1; // download patch failed
 			} else {
@@ -207,11 +208,11 @@ static bool is_inic_vendor_cmd(uint16_t opcode, uint8_t *pdata)
 			hci_transport_register(&bt_inic_cb);
 		} else {
 			hci_set_mp(false);
-			if (hci_controller_is_enabled()) {
-				hci_controller_disable();
+			if (hci_controller_is_opened()) {
+				hci_controller_close();
 				hci_controller_free();
 			}
-			if (!hci_controller_enable()) {
+			if (!hci_controller_open()) {
 				BT_LOGE("BT Normal Patch download failed!\r\n");
 				status = 1; // download patch failed
 			} else {
@@ -255,7 +256,7 @@ void bt_inic_recv_from_host(uint8_t type, uint8_t *pdata, uint32_t len)
 		}
 	}
 
-	if (!hci_controller_is_enabled()) {
+	if (!hci_controller_is_opened()) {
 		BT_LOGA("Controller is off now, Power on.\r\n", type);
 		bt_inic_open(); // auto power on
 	}

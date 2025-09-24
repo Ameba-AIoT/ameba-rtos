@@ -944,6 +944,44 @@ int atcmd_bt_gmap(int argc, char *argv[])
 	return 0;
 }
 
+int le_audio_generic_demo_peripheral(uint8_t enable, uint32_t sound_channel);
+int atcmd_bt_le_audio_generic_demo_peripheral(int argc, char *argv[])
+{
+	(void)argc;
+	uint8_t op;
+	uint32_t channel = 0;
+	char *action[] = {"disable", "enable"};
+
+	if ((op = (uint8_t)str_to_int(argv[0])) > 2) {
+		BT_LOGE("Error: wrong value (%d) for gmap example!\r\n", op);
+		return -1;
+	}
+
+	if (strcmp(argv[1], "left") == 0) {
+		/* RTK_BT_LE_AUDIO_LOCATION_FL */
+		channel = 0x01;
+		BT_LOGA("Set channel left \r\n");
+	} else if (strcmp(argv[1], "right") == 0) {
+		/* RTK_BT_LE_AUDIO_LOCATION_FR */
+		channel = 0x02;
+		BT_LOGA("Set channel right \r\n");
+	} else if (strcmp(argv[1], "stereo") == 0) {
+		/* RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR */
+		channel = 0x03;
+		BT_LOGA("Set channel stereo \r\n");
+	} else {
+		BT_LOGE("Error: cap example only support left, right and stereo channel!\r\n");
+		return -1;
+	}
+	if (le_audio_generic_demo_peripheral(op, channel)) {
+		BT_LOGE("Error: le_audio_generic_demo_peripheral example %s failed!\r\n", action[op]);
+		return -1;
+	}
+
+	BT_LOGA("cap acceptor peripheral example %s OK!\r\n", action[op]);
+	return 0;
+}
+
 int atcmd_bt_pts_cmd(int argc, char *argv[]);
 int bt_pts_main(uint8_t enable);
 int atcmd_bt_pts(int argc, char *argv[])
@@ -1135,6 +1173,9 @@ static const cmd_table_t example_table[] = {
 #endif
 #if defined(CONFIG_BT_GMAP) && CONFIG_BT_GMAP
 	{"gmap",             atcmd_bt_gmap,             3, 4},
+#endif
+#if defined(CONFIG_BT_LE_AUDIO_GENERIC_DEMO_PERIPHERAL) && CONFIG_BT_LE_AUDIO_GENERIC_DEMO_PERIPHERAL
+	{"le_audio_generic_demo_peripheral",         atcmd_bt_le_audio_generic_demo_peripheral,   3, 3},
 #endif
 #if defined(CONFIG_BT_PTS) && CONFIG_BT_PTS
 	{"pts",              atcmd_bt_pts,              2, 4},

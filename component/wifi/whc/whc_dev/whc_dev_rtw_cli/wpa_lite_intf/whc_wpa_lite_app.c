@@ -100,6 +100,20 @@ end:
 
 }
 
+
+int whc_dev_rtw_cli_remove_network(char *ptr, u8 *buf)
+{
+	(void)ptr;
+	(void)buf;
+	struct wpa_ops_ssid *ssid = &ssid_a;
+
+	RTK_LOGI(TAG_WLAN_INIC, "%s\n", __func__);
+
+	wpa_config_free_ssid(ssid);
+
+	return 0;
+}
+
 int whc_wpa_ops_select_network(char *ptr, u8 *buf)
 {
 	(void)ptr;

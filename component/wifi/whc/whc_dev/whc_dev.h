@@ -51,9 +51,7 @@
 #include "whc_dev_struct.h"
 #endif
 
-#if !defined(CONFIG_FULLMAC) || (defined(CONFIG_FULLMAC) && !defined(CONFIG_WHC_BRIDGE))
 #include "whc_dev_protocal_offload.h"
-#endif
 
 #if !defined(CONFIG_FULLMAC) && defined(CONFIG_NAN)
 #include "rtw_nan_enum.h"

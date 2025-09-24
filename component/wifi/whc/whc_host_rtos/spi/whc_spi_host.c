@@ -310,6 +310,8 @@ retry:
 			GDMA_SetSrcAddr(spi_host_priv.SSITxGdmaInitStruct.GDMA_Index, spi_host_priv.SSITxGdmaInitStruct.GDMA_ChNum, (u32)spi_host_priv.dummy_tx_buf);
 			GDMA_Cmd(spi_host_priv.SSITxGdmaInitStruct.GDMA_Index, spi_host_priv.SSITxGdmaInitStruct.GDMA_ChNum, ENABLE);
 			SSI_SetDmaEnable(WHC_SPI_DEV, ENABLE, SPI_BIT_TDMAE);
+		} else {
+			rtos_sema_give(spi_host_priv.dev_rdy_sema);
 		}
 		rtos_mutex_give(spi_host_priv.dev_lock);
 

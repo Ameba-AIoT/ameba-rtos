@@ -26,6 +26,12 @@ include .config
 include $(BUILD_BASE)/project_ap/.config_ca32
 include Formosa.mk
 
+ifeq ($(CONFIG_MATTER_SECURE_EN),y)
+BASEDIR           = ../../../..
+MATTER_DIR        = $(BASEDIR)/component/application/matter
+MATTER_BUILDDIR   = $(MATTER_DIR)/project/cmake
+endif #CONFIG_MATTER_SECURE_EN
+
 # ifeq (${ASDK_VER},)
 # 	ASDK_VER = 10.3.1
 # 	TOOLCHAINVER = 4291
@@ -685,6 +691,14 @@ $(info Including ${AARCH32_SP_MAKE})
 include ${AARCH32_SP_MAKE}
 endif
 
+endif
+
+################################################################################
+# Include Matter Secure
+################################################################################
+
+ifeq ($(CONFIG_MATTER_SECURE_EN),y)
+include $(MATTER_BUILDDIR)/component/atf_mbedtls_secure/Makefile
 endif
 
 ################################################################################

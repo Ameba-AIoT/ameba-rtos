@@ -1744,12 +1744,16 @@ struct CLK_Info_Backup {
  *****************************************************************************/
 typedef struct {
 	u8 RRAM_SYS_RSVD[256];/* resvd for system */
+
+	u32 MAGIC_NUMBER;
 	__IO u32 MCM_INFO;
 	struct CLK_Info_Backup clk_info_bk;
 
 	u8 AP_WAKEUP_STATUS;
 	__IO u8 CHIP_INFO;
-	u8 RRAM_USER_RSVD[107];
+	__IO u8 PSRAM_TYPE;
+	__IO u8 PSRAM_DQ;
+	u8 RRAM_USER_RSVD[101];
 
 	u8 PCR_PROT_K3[32]; /* PCR_BASE */
 	u8 PCR_PROT_K2[32];

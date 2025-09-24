@@ -750,6 +750,21 @@ typedef struct {
   * @{
   */
 
+/** @defgroup I2C_Controller IDs
+  * @{
+  */
+
+enum {
+	I2C_ID_0,
+	I2C_ID_1,
+	I2C_MAX_NUM
+};
+#define IS_I2C_ID(ID) (((ID) == I2C_ID_0) || \
+									   ((ID) == I2C_ID_1))
+/**
+  * @}
+  */
+
 /** @defgroup I2C_Addr_Mode
   * @{
   */
@@ -864,6 +879,37 @@ _LONG_CALL_ void I2C_DmaMode2Config(I2C_TypeDef *I2Cx, u32 I2C_DmaCmd, u32 I2C_D
 _LONG_CALL_ bool I2C_TXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc, u8 *pTxBuf, int TxCount);
 _LONG_CALL_ bool I2C_RXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc, u8 *pRxBuf, int RxCount);
 
+/*I2C_Backup_Functions I2C Backup Functions*/
+typedef struct {
+	uint32_t IC_CON;
+	uint32_t IC_TAR;
+	uint32_t IC_SAR;
+	uint32_t IC_HS_MAR;
+	uint32_t IC_SS_SCL_HCNT;
+	uint32_t IC_SS_SCL_LCNT;
+	uint32_t IC_FS_SCL_HCNT;
+	uint32_t IC_FS_SCL_LCNT;
+	uint32_t IC_HS_SCL_HCNT;
+	uint32_t IC_HS_SCL_LCNT;
+	uint32_t IC_INTR_MASK;
+	uint32_t IC_RX_TL;
+	uint32_t IC_TX_TL;
+	uint32_t IC_SDA_HOLD;
+	uint32_t IC_SLV_DATA_NACK_ONLY;
+	uint32_t IC_DMA_TDLR;
+	uint32_t IC_DMA_RDLR;
+	uint32_t IC_SDA_SETUP;
+	uint32_t IC_ACK_GENERAL_CALL;
+	uint32_t IC_OUT_SMP_DLY;
+	uint32_t IC_FILTER;
+	uint32_t IC_SAR2;
+} I2C_Backup;
+
+_LONG_CALL_ bool I2C_Config_BackupBuf(u32 i2c_id, I2C_Backup *I2C_BackupStruct);
+_LONG_CALL_ bool I2C_Suspend(u32 i2c_id);
+_LONG_CALL_ bool I2C_Resume(u32 i2c_id);
+_LONG_CALL_ void I2C_SuspendAll(void);
+_LONG_CALL_ void I2C_ResumeAll(void);
 
 /* Other Definitions --------------------------------------------------------*/
 #if 1

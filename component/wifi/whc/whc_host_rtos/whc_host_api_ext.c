@@ -504,6 +504,11 @@ void wifi_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way)
 	}
 }
 
+void wifi_dhcp_success_indicate(void)
+{
+	whc_host_api_message_send(WHC_API_WIFI_DHCP_SUCCESS_IND, NULL, 0, NULL, 0);
+}
+
 //----------------------------------------------------------------------------//
 /*
  * Example for custom ie
@@ -851,7 +856,6 @@ s32 wifi_set_tx_advanced_config(struct rtw_tx_advanced_cfg *tx_setting)
 	param_buf[0] = (u32)tx_setting;
 	whc_host_api_message_send(WHC_API_WIFI_SET_TX_ADVANCED_CFG, (u8 *)param_buf, 4, (u8 *)&ret, sizeof(ret));
 
-	rtos_mem_free((u8 *)settings_temp);
 	return ret;
 }
 

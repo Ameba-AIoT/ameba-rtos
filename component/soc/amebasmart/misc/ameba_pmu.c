@@ -15,7 +15,6 @@ static uint32_t wakelock     = DEFAULT_WAKELOCK;
 static uint32_t sleepwakelock_timeout     = 0;
 uint32_t system_can_yield = 1; /* default is can */
 static uint32_t sleep_type = SLEEP_PG; /* 0 is power gate, 1 is clock gate */
-static uint32_t max_sleep_time = 0; /* if user want wakeup peridically, can set this timer*/
 SLEEP_ParamDef sleep_param ALIGNMTO(32); /* cacheline aligned for lp & np */
 
 static uint32_t deepwakelock     = DEFAULT_DEEP_WAKELOCK;
@@ -23,8 +22,8 @@ static uint32_t deepwakelock_timeout     = 0;
 static uint32_t sysactive_timeout_temp = 0;
 uint32_t sysactive_timeout_flag = 0;
 
-static uint32_t timer_min_sleep_time = 0;
-static uint32_t timer_max_sleep_time = 0;
+static uint32_t timer_min_sleep_time = PMU_SLEEP_FOREVER;
+static uint32_t timer_max_sleep_time = PMU_SLEEP_FOREVER;
 
 #ifdef CONFIG_ARM_CORE_CA32
 /* cpu hotplug flag for each core */
@@ -243,11 +242,10 @@ int pmu_ready_to_dsleep(void)
 void pmu_pre_sleep_processing(uint32_t *tick_before_sleep)
 {
 	if (pmu_ready_to_dsleep()) {
-		sleep_param.sleep_time = 0;// do not wake on system schedule tick
+		sleep_param.sleep_time = pmu_get_sleep_time();;// do not wake on system schedule tick
 		sleep_param.dlps_enable = ENABLE;
 	} else {
-		sleep_param.sleep_time = max_sleep_time;//*expected_idle_time;
-		max_sleep_time = 0;
+		sleep_param.sleep_time = pmu_get_sleep_time();;//*expected_idle_time;
 		sleep_param.dlps_enable = DISABLE;
 	}
 	sleep_param.sleep_type = sleep_type;
@@ -384,25 +382,38 @@ uint32_t pmu_get_sleep_type(void)
 {
 	return sleep_type;
 }
-
-void pmu_set_max_sleep_time(uint32_t timer_ms)
-{
-	max_sleep_time = timer_ms;
-}
-uint32_t pmu_get_sleep_time(void)
-{
-	u32 time = 0;
-	if (timer_max_sleep_time > timer_min_sleep_time) {
-		time = _rand() % (timer_max_sleep_time - timer_min_sleep_time + 1) + timer_min_sleep_time;
-	} else if (timer_min_sleep_time != 0) {
-		time = timer_min_sleep_time;
-	}
-	return time;
-}
 void pmu_set_sleep_time_range(uint32_t min_time, uint32_t max_time)
 {
 	timer_min_sleep_time = min_time;
 	timer_max_sleep_time = max_time;
+}
+void pmu_set_max_sleep_time(uint32_t timer_ms)
+{
+	timer_max_sleep_time = timer_ms;
+}
+
+uint32_t pmu_get_sleep_time(void)
+{
+	u32 time = 0;
+	/*case 1: max = 0, including [0, 0], [min, 0], invalid settings.
+	  case 2.1: min <= max, max != 0, wake up multiple times.
+	  case 2.2: min > max, inlcuding [PMU_SLEEP_FOREVER, max], and can only be woken up once.
+	*/
+	if (timer_max_sleep_time == 0) {
+		time = PMU_SLEEP_FOREVER;
+		pmu_set_sleep_time_range(PMU_SLEEP_FOREVER, PMU_SLEEP_FOREVER);
+	} else {
+		if (timer_max_sleep_time >= timer_min_sleep_time) {
+			/*min == max, periodic awakening, but [PMU_SLEEP_FOREVER, PMU_SLEEP_FOREVER] is invalid.
+			  min < max, randomly wakeup*/
+			time = _rand() % (timer_max_sleep_time - timer_min_sleep_time + 1) + timer_min_sleep_time;
+		} else {
+			time = timer_max_sleep_time;
+			pmu_set_sleep_time_range(PMU_SLEEP_FOREVER, PMU_SLEEP_FOREVER);
+		}
+	}
+
+	return time;
 }
 
 void pmu_set_dsleep_active_time(uint32_t TimeOutMs)

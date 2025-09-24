@@ -19,6 +19,9 @@
 #include <wifi_api.h>
 #include <lwip_netconf.h>
 #include <ameba_soc.h>
+#if defined(CONFIG_RMESH_EN)
+#include "wtn_app_zrpp.h"
+#endif
 
 #define BLE_WIFIMATE_DECODE_KEY_LEN                             (16)
 
@@ -461,7 +464,9 @@ static uint16_t ble_wifimate_server_write_wifi_scan_hdl(uint16_t conn_handle, ui
 	uint16_t ret = RTK_BT_OK;
 	uint8_t enable = 0;
 	struct rtw_scan_result *scanned_AP_list = NULL;
+#if !defined(CONFIG_RMESH_EN)
 	uint8_t join_status = RTW_JOINSTATUS_UNKNOWN;
+#endif
 	int scan_network = 0;
 	uint32_t scanned_AP_num = 0;
 	struct rtw_scan_param scan_param;
@@ -487,9 +492,13 @@ static uint16_t ble_wifimate_server_write_wifi_scan_hdl(uint16_t conn_handle, ui
 	memset(wifi_scan_result, 0, sizeof(struct ble_wifimate_wifi_scan_result_t));
 	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
 
+#if defined(CONFIG_RMESH_EN)
+	if (wtn_zrpp_sync_state_with_ble_config(ZRPP_CONTROL_PAUSE) == RTK_FAIL) {
+#else
 	wifi_get_join_status(&join_status);
 	BT_LOGD("%s join_status=%d\r\n", __func__, join_status);
 	if ((join_status > RTW_JOINSTATUS_UNKNOWN) && (join_status < RTW_JOINSTATUS_SUCCESS)) {
+#endif
 		BT_LOGE("[APP] WiFi Connecting now, forbid scanning, exit\r\n");
 		ret = RTK_BT_FAIL;
 		goto end;
@@ -666,6 +675,13 @@ static uint16_t ble_wifimate_wifi_connect(uint16_t conn_handle, struct wifi_conn
 	wifi_get_setting(STA_WLAN_INDEX, &setting);
 
 	ret = wifi_connect(&wifi, 1);
+#if defined(CONFIG_RMESH_EN)
+	if (ret == RTK_SUCCESS) {
+		wtn_zrpp_sync_state_with_ble_config(ZRPP_CONTROL_STOP);
+	} else {
+		wtn_zrpp_sync_state_with_ble_config(ZRPP_CONTROL_ALLOW);
+	}
+#endif
 	if (ret != RTK_SUCCESS) {
 		uint8_t err_code = ble_wifimate_wifi_conn_result_to_bwm_errcode(ret);
 		BT_LOGE("[APP] BLE WiFiMate server can't connect to AP, ret=%d err_code=%d\r\n", ret, err_code);

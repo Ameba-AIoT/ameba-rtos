@@ -55,7 +55,7 @@ static inline void transmit_chars(void)
 
 static inline void receive_chars(void)
 {
-	hci_uart_rx_irq_handler();
+	hci_uart_rx_irq_handler(true);
 }
 
 static uint32_t _uart_irq(void *data)
@@ -153,6 +153,7 @@ uint8_t hci_uart_open(void)
 
 	if (osif_sem_create(&g_uart->tx_done_sem, 0, 1) == false) {
 		BT_LOGE("g_uart->tx_done_sem create fail!\r\n");
+		osif_mem_free(g_uart);
 		return HCI_FAIL;
 	}
 

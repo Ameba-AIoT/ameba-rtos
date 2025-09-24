@@ -26,13 +26,14 @@ def main(argc, argv):
     parser.add_argument('-p', '--pristine', action='store_true', help='pristine build')
     parser.add_argument('-g', '--target',
                          help='custom target',
-                         choices=['rom', 'imgtool_flashloader', 'gen_imgtool_floader']
+                         choices=['rom', 'imgtool_flashloader', 'gen_imgtool_floader', 'gen_submodule_info']
                         )
     parser.add_argument('--daily-build', help='daily build flag')
     parser.add_argument('-gdb', '--gdb', action='store_true', help='gdb')
     parser.add_argument('-debug', '--debug', action='store_true', help='debug')
     parser.add_argument('-D', '--Defined', nargs='+', help='user defined variables')
-    parser.add_argument('--new',  nargs='+', help='build.py --new-prj <target_dir> [-a <APP>]')
+    parser.add_argument('--new',  nargs='+',
+                         help='build.py --new <target_dir> [-a <APP>] (use [-a list-apps] to check available apps)')
 
     args = parser.parse_args()
 
@@ -41,14 +42,6 @@ def main(argc, argv):
         print('Note: No application specified, choose default project')
     else:
         app = args.app
-
-    if args.new:
-        cmd = 'python ' + copy_script_dir + ' ' + ' '.join(args.new)
-        if app:
-            cmd += ' --app ' + app
-        print(cmd)
-        os.system(cmd)
-        return
 
     if args.build_dir == None:
         build_dir = DEFAULT_BUILD_DIR
@@ -84,11 +77,7 @@ def main(argc, argv):
         os.system(f'python {gdb_script_dir} debug')
         return
 
-    cmd = 'cd ' + build_dir + ' && '
-    if app != None:
-        cmd += 'cmake "' + project_dir + '" -DEXAMPLE=' + app
-    else:
-        cmd += 'cmake "' + project_dir + '"'
+    cmd = 'cd ' + build_dir + ' && ' + 'cmake "' + project_dir + '"'
 
     if args.daily_build != None:
         cmd += ' -DDAILY_BUILD=' + args.daily_build
@@ -105,6 +94,22 @@ def main(argc, argv):
         cmd += f' -D CMAKE_REFACTOR="TRUE"'
 
     cmd += ' -G Ninja'
+
+    if app != None:  # app maybe in submodule directory, get submodule info first
+        cmd_pre = cmd + ' && ninja gen_submodule_info'
+        print(cmd_pre)
+        os.system(cmd_pre)
+        if args.pristine:
+            shutil.rmtree(menuconfig_dir)
+        cmd += ' -DEXAMPLE=' + app
+
+    if args.new:
+        cmd_new = 'python ' + copy_script_dir + ' ' + ' '.join(args.new)
+        if app:
+            cmd_new += ' --app ' + app
+        print(cmd_new)
+        os.system(cmd_new)
+        return
 
     if args.pristine:
         cmd += ' && ninja clean && ninja'

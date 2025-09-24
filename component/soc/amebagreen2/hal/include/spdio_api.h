@@ -28,7 +28,7 @@
 #ifndef __SPDIO_API_H__
 #define __SPDIO_API_H__
 
-#include "basic_types.h"
+#include "ameba_soc.h"
 
 /** @addtogroup Ameba_Mbed_API
  * @{
@@ -59,11 +59,15 @@
  */
 
 struct spdio_t {
+	SDIO_TypeDef *pSDIO; // SDIO_WIFI or SDIO_BT
 	void *priv; //not used by user
 	u32 host_rx_bd_num; //for spdio send data to host, 2 bd for one packet, so this value must be rounded to 2
 	u32 host_tx_bd_num; //for spdio receive data from host
 	u32 device_rx_bufsz; //buffer size = desired packet length + 24(spdio header info), must be rounded to 64
 	struct spdio_buf_t *rx_buf; //buffer array for spdio receive assigned by user, device_rx_bufsz * host_tx_bd_num
+
+	rtos_sema_t irq_sema; /* SDIO irq task semaphore */
+	rtos_task_t irq_task_hdl; /* SDIO irq task handler */
 
 	/**
 	 * @brief Callback function defined by user, called by spdio when one packet is received.
@@ -101,14 +105,8 @@ struct spdio_t {
 void spdio_structinit(struct spdio_t *obj);
 void spdio_init(struct spdio_t *obj);
 void spdio_deinit(struct spdio_t *obj);
-s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf);
+u8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf);
 void spdio_trigger_rx_handle(void);
 void SPDIO_Board_Init(void);
-
-/**
- * @brief An obj which will be used to initialize SDIO interface,
- * 		so it must be initialized before by calling HalSdioInit();
- */
-extern struct spdio_t *g_spdio_priv;
 
 #endif // #ifndef __SPDIO_API_H__

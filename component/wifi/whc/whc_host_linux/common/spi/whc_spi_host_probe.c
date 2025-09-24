@@ -179,7 +179,7 @@ MODULE_DEVICE_TABLE(spi, whc_spi_ids);
 
 static struct spi_driver whc_spi_host_driver = {
 	.driver = {
-		.name = "inic",
+		.name = "whc",
 		.of_match_table = of_match_ptr(whc_of_ids),
 	},
 	.id_table = whc_spi_ids,

@@ -14,9 +14,8 @@ typedef enum {
 	PMU_AP_RUN	= 3,
 	PMU_BT_DEVICE	= 4,
 	PMU_VAD_DEVICE	= 5,
-#if defined(CONFIG_STANDARD_TICKLESS) && defined(CONFIG_LWIP_LAYER)
+	PMU_DHCP_PROCESS,
 	PMU_LWIP_STACK,
-#endif
 	PMU_DEV_USER_BASE, /* reserved for customer use */
 	PMU_MAX,
 } PMU_DEVICE;
@@ -31,7 +30,7 @@ enum CPU1_STATE {
 #define DEFAULT_WAKELOCK		(BIT(PMU_OS))
 
 #define DEFAULT_DEEP_WAKELOCK		(BIT(PMU_OS))
-#define SLEEP_MAX_DELAY		(uint32_t) 0xffffffffUL
+#define PMU_SLEEP_FOREVER		(uint32_t) 0xffffffffUL
 
 typedef uint32_t (*PSM_HOOK_FUN)(uint32_t, void *param_ptr);
 

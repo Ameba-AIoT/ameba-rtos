@@ -51,6 +51,10 @@ config HIGH_TP_TEST
     bool "Enable HIGH TP"
     default n
 
+config RMESH_EN
+    bool "Enable RMESH"
+    default n
+
 if LINUX_FW_EN
     config WIFI_P2P_ENABLE
         bool "Enable P2P"

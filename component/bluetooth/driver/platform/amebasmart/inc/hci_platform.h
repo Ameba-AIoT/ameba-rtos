@@ -43,8 +43,9 @@ uint8_t hci_platform_record_chipid(uint8_t chipid);
 
 bool rtk_bt_pre_enable(void);
 void rtk_bt_post_enable(void);
-uint8_t hci_platform_init(void);
-void hci_platform_deinit(void);
+uint8_t hci_platform_open(void);
+void hci_platform_close(void);
+void hci_platform_free(void);
 
 void hci_platform_debug_enable(void);
 

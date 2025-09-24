@@ -1,7 +1,32 @@
 #include <whc_host_linux.h>
 
+// for host change detect
+#include <linux/mmc/host.h>
+#include <linux/device.h>
+#include <linux/kallsyms.h>
+#include <linux/kprobes.h>
+
 struct whc_sdio whc_sdio_priv = {0};
 extern u32 rtw_sdio_enable_func(struct whc_sdio *priv);
+
+#if defined(CONFIG_WHC_ACTIVE_DETECT) && (KERNEL_VERSION(5, 15, 0) <= LINUX_VERSION_CODE)
+struct class *mmc_host_class = NULL;
+
+typedef unsigned long (*kallsyms_lookup_name_t)(const char *name);
+static kallsyms_lookup_name_t kallsyms_lookup_name_fn = NULL;
+
+struct mmc_host *whc_mmc_host = NULL;
+
+/*
+ * MMC host device name (defined in Device Tree).
+ * Example: "mmc0", "mmc1", etc. Must match DTS node label.
+ */
+static const char mmc_host_name[] = "mmc0";
+
+static struct kprobe kp = {
+	.symbol_name = "kallsyms_lookup_name"
+};
+#endif
 
 static int whc_sdio_host_probe(struct sdio_func *func, const struct sdio_device_id *id)
 {
@@ -138,7 +163,7 @@ exit:
 
 int whc_sdio_host_suspend_common(struct whc_sdio *priv)
 {
-#ifndef CONFIG_WHC_BRIDGE
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 	/* staion mode */
 	if (whc_fullmac_host_wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) {
 		/* update ip address success */
@@ -146,11 +171,11 @@ int whc_sdio_host_suspend_common(struct whc_sdio *priv)
 			return -EPERM;
 		}
 	}
+#endif
 
 	/* set wowlan_state, stop schedule rx/tx work */
 	global_idev.wowlan_state = 1;
 	netif_tx_stop_all_queues(global_idev.pndev[0]);
-#endif
 
 	/* suspend device */
 	if (!whc_sdio_host_rpwm_notify(priv, RPWM2_PWR_SUSPEND)) {
@@ -217,12 +242,10 @@ int whc_sdio_host_resume_common(struct whc_sdio *priv)
 		return -EPERM;
 	}
 
-#ifndef CONFIG_WHC_BRIDGE
 	netif_tx_start_all_queues(global_idev.pndev[0]);
 	netif_tx_wake_all_queues(global_idev.pndev[0]);
 
 	global_idev.wowlan_state = 0;
-#endif
 
 	return 0;
 }
@@ -232,8 +255,13 @@ int whc_sdio_host_resume(struct device *dev)
 	struct whc_sdio *priv = &whc_sdio_priv;
 	u32 himr;
 	u8 value;
-
+	struct mmc_host *host = container_of(dev, struct mmc_host, class_dev);
 	dev_dbg(dev, "%s", __func__);
+
+#if defined(CONFIG_WHC_ACTIVE_DETECT) && (KERNEL_VERSION(5, 15, 0) <= LINUX_VERSION_CODE)
+	mmc_detect_change(host, msecs_to_jiffies(5));
+#endif
+	(void) host;
 
 	/* some sdio local registers and CCCR would be reset after kernel resume from suspend */
 	/* enable func and set block size */
@@ -285,18 +313,77 @@ static const struct sdio_device_id whc_sdio_host_ids[] = {
 static struct sdio_driver whc_sdio_host_driver = {
 	.probe	= whc_sdio_host_probe,
 	.remove	= whc_sdio_host_remove,
-	.name	= "INIC_SDIO",
+	.name	= "WHC_SDIO",
 	.id_table	= whc_sdio_host_ids,
 	.drv = {
 		.pm = &whc_sdio_host_pm_ops,
 	},
 };
 
+#if defined(CONFIG_WHC_ACTIVE_DETECT) && (KERNEL_VERSION(5, 15, 0) <= LINUX_VERSION_CODE)
+int whc_sdio_host_find_class(void)
+{
+	register_kprobe(&kp);
+	kallsyms_lookup_name_fn = (kallsyms_lookup_name_t)kp.addr;
+	unregister_kprobe(&kp);
+
+	if (!kallsyms_lookup_name_fn) {
+		pr_err("Failed to get kallsyms_lookup_name\n");
+		return -EINVAL;
+	}
+
+	mmc_host_class = (struct class *)kallsyms_lookup_name_fn("mmc_host_class");
+	if (!mmc_host_class) {
+		pr_err("mmc_host_class not found\n");
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
+static int whc_sdio_host_find_mmc_callback(struct device *dev, void *data)
+{
+	(void) data;
+
+	if (!dev) {
+		pr_err("Invalid device or name\n");
+		return -EINVAL;
+	}
+
+	if (strcmp(dev_name(dev), mmc_host_name) == 0) {
+		whc_mmc_host = container_of(dev, struct mmc_host, class_dev);
+		return 1;
+	}
+	return 0;
+}
+
+int whc_sdio_host_find_mmc(void)
+{
+	whc_sdio_host_find_class();
+
+	if (!mmc_host_class) {
+		pr_err("mmc_host_class not available!\n");
+		return NULL;
+	}
+
+	class_for_each_device(mmc_host_class, NULL, NULL, whc_sdio_host_find_mmc_callback);
+
+	return 1;
+}
+#endif
+
 static int __init whc_sdio_host_init_module(void)
 {
 	int ret = 0;
 
 	printk("%s\n", __func__);
+
+#if defined(CONFIG_WHC_ACTIVE_DETECT) && (KERNEL_VERSION(5, 15, 0) <= LINUX_VERSION_CODE)
+	whc_sdio_host_find_mmc();
+	if (whc_mmc_host) {
+		mmc_detect_change(whc_mmc_host, msecs_to_jiffies(5));
+	}
+#endif
 
 	ret = sdio_register_driver(&whc_sdio_host_driver);
 	if (ret != 0) {

@@ -168,16 +168,12 @@ int rtw_sdio_alloc_irq(struct whc_sdio *priv);
 
 #endif
 
+int whc_fullmac_host_recv_process(struct sk_buff *pskb);
+
+#endif
 #if defined(CONFIG_WHC_CMD_PATH)
 void whc_host_register_genl_family(void);
 void whc_host_unregister_genl_family(void);
-int whc_bridge_host_recv_process(struct sk_buff *pskb);
 #endif
 
-#if !defined(CONFIG_WHC_BRIDGE)
-int whc_fullmac_host_recv_process(struct sk_buff *pskb);
-#endif
-
-
-#endif
 #endif // __RTW_FUNCTIONS_H__

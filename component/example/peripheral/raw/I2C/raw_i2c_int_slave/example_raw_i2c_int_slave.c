@@ -67,7 +67,7 @@ void i2c_rx_check(void)
 	RTK_LOGI(TAG, "SLAVE receive: Result is %s\r\n", (result) ? "success" : "fail");
 }
 
-static void I2CISRHandleTxEmpty(IN i2c_ts *obj)
+static void I2CISRHandleTxEmpty(i2c_ts *obj)
 {
 	u8 I2CStop = 0;
 
@@ -98,7 +98,7 @@ static void I2CISRHandleTxEmpty(IN i2c_ts *obj)
 	}
 }
 
-static void I2CISRHandleRdReq(IN i2c_ts *obj)
+static void I2CISRHandleRdReq(i2c_ts *obj)
 {
 	if (!obj->datalength) {
 		while (0 == I2C_CheckFlagState(obj->I2Cint.I2Cx, I2C_BIT_TFE));
@@ -118,7 +118,7 @@ static void I2CISRHandleRdReq(IN i2c_ts *obj)
 	}
 }
 
-static void I2CISRHandleRxFull(IN i2c_ts *obj)
+static void I2CISRHandleRxFull(i2c_ts *obj)
 {
 
 	/* To check I2C master RX data length. If all the data are received,
@@ -143,7 +143,7 @@ static void I2CISRHandleRxFull(IN i2c_ts *obj)
 }
 
 
-static u32 I2CISRHandle(IN void *Data)
+static u32 I2CISRHandle(void *Data)
 {
 	i2c_ts *obj = (i2c_ts *) Data;
 

@@ -466,7 +466,16 @@ s32 wifi_set_tx_rate_by_tos(u8 enable, u8 tos_precedence, u8 tx_rate);
 
 /**
  * @brief  Set EDCA parameters for STA/SOFTAP.
- * @param[in]  pedca_param: EDCA parameters (as per 802.11 spec):
+ * @param[in]  pedca_param: EDCA parameters {ACI, AIFSN, ECWMax, ECWMin, TXOP, SlotTime} (as per 802.11 spec):
+ * @code
+ * struct rtw_edca_param edca_param_0 = {0, 7, 0xa, 0x4, 0x0, 0}; // BE Queue
+ * struct rtw_edca_param edca_param_1 = {1, 3, 0xa, 0x4, 0x0, 0}; // BK Queue
+ * struct rtw_edca_param edca_param_2 = {2, 2, 0x4, 0x3, 0x5e, 0}; // VI Queue
+ * struct rtw_edca_param edca_param_3 = {3, 2, 0x3, 0x2, 0x2f, 0}; // VO Queue
+ * wifi_set_edca_param(&edca_param_0);
+ * wifi_set_edca_param(&edca_param_1);
+ * wifi_set_edca_param(&edca_param_2);
+ * wifi_set_edca_param(&edca_param_3);
  * @return
  *    - @ref RTK_SUCCESS : The API executed successfully.
  *    - -@ref RTK_ERR_WIFI_POWEROFF : Wi-Fi is powered off in IPS(Inactive Power Save) mode,

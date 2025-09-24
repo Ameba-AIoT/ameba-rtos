@@ -227,6 +227,7 @@ add_HookVersion(){
 		else
 			proj_name=${repo_url#*29418/}
 			cur_dir=`repo list | grep $proj_name | head -n 1 | cut -d':' -f 1`
+			cur_dir=$(echo "$cur_dir" | xargs)
 			raw_repo_root_dir=${cur_path%${cur_dir%% }}
 			repo_root_dir=${raw_repo_root_dir//\\/\/}
 		fi

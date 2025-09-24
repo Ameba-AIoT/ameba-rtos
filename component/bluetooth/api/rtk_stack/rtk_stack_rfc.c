@@ -203,7 +203,8 @@ static void app_rfc_cback(uint8_t *bd_addr, T_BT_RFC_MSG_TYPE msg_type, void *ms
 			}
 			bt_rfc_credits_give(bd_addr, p_ind->local_server_chann, 1);
 			{
-				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_RFC, RTK_BT_RFC_EVT_DATA_IND, sizeof(rtk_bt_rfc_data_ind_t));
+				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_RFC, RTK_BT_RFC_EVT_DATA_IND,
+											sizeof(rtk_bt_rfc_data_ind_t) + p_ind->length);
 				if (!p_evt) {
 					BT_LOGE("app_rfc_cback: evt_t allocate fail \r\n");
 					break;
@@ -213,12 +214,7 @@ static void app_rfc_cback(uint8_t *bd_addr, T_BT_RFC_MSG_TYPE msg_type, void *ms
 				p_rfc_data_ind->local_server_chann = p_ind->local_server_chann;
 				p_rfc_data_ind->remain_credits = p_ind->remain_credits;
 				p_rfc_data_ind->length = p_ind->length;
-				p_rfc_data_ind->buf = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, p_rfc_data_ind->length);
-				if (NULL == p_rfc_data_ind->buf) {
-					BT_LOGE("app_rfc_cback: data buf allocate fail \r\n");
-					rtk_bt_event_free(p_evt);
-					break;
-				}
+				p_rfc_data_ind->buf = BT_STRUCT_TAIL(p_rfc_data_ind, rtk_bt_rfc_data_ind_t);
 				memcpy((void *)p_rfc_data_ind->buf, (void *)p_ind->buf, p_rfc_data_ind->length);
 				/* Send event */
 				if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {

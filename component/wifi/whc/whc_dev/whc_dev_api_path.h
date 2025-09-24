@@ -107,9 +107,15 @@ void whc_event_wifi_get_setting(u32 api_id, u32 *param_buf);
 void whc_event_send_eapol(u32 api_id, u32 *param_buf);
 void whc_event_wifi_ap_get_connected_clients(u32 api_id, u32 *param_buf);
 void whc_event_wpa_4way_rpt(u32 api_id, u32 *param_buf);
+void whc_event_wifi_dhcp_success(u32 api_id, u32 *param_buf);
 void whc_event_get_traffic_stats(u32 api_id, u32 *param_buf);
 void whc_event_start_join_cmd(u32 api_id, u32 *param_buf);
 void whc_event_get_eap_phase(u32 api_id, u32 *param_buf);
+#endif
+
+#ifdef CONFIG_SUPPLICANT_SME
+void whc_event_sme_auth(u32 api_id, u32 *param_buf);
+void whc_event_sme_set_assocreq_ie(u32 api_id, u32 *param_buf);
 #endif
 
 /* ---------------------------- Public Functions ---------------------------- */

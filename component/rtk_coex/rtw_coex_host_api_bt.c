@@ -41,9 +41,9 @@ __weak void rtk_coex_btc_set_pta(u8 type, u8 role, u8 process)
 /////////////////////////////////////////////////////////////////////////////
 /////// API for c2h (app side)
 /////////////////////////////////////////////////////////////////////////////
-__weak void bt_coex_send_mailbox_cmd(uint8_t *user_data, uint16_t length)
+__weak void bt_coex_send_w2b_sw_mailbox(uint8_t *user_data, uint16_t length)
 {
-	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "weak bt_coex_send_mailbox_cmd, check!!!\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "weak bt_coex_send_w2b_sw_mailbox, check!!!\r\n");
 	(void) user_data;
 	(void) length;
 }
@@ -51,5 +51,5 @@ __weak void bt_coex_send_mailbox_cmd(uint8_t *user_data, uint16_t length)
 void rtk_coex_btc_wl_send_sw_mailbox(u8 type, u8 *data, u16 length)
 {
 	(void) type;
-	bt_coex_send_mailbox_cmd(data, length);
+	bt_coex_send_w2b_sw_mailbox(data, length);
 }

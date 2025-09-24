@@ -73,7 +73,7 @@
 #define SBC_NULL    0
 
 #ifndef SBC_MAX_NUM_FRAME
-#define SBC_MAX_NUM_FRAME 2
+#define SBC_MAX_NUM_FRAME 5
 #endif
 
 #ifndef SBC_DSP_OPT

@@ -28,7 +28,7 @@
 #ifndef __SPDIO_API_H__
 #define __SPDIO_API_H__
 
-#include "basic_types.h"
+#include "ameba_soc.h"
 
 /** @addtogroup Ameba_Mbed_API
  * @{
@@ -89,6 +89,7 @@ struct spdio_buf_t {
 };
 
 struct spdio_t {
+	SDIO_TypeDef *pSDIO; // SDIO_WIFI only
 	void *priv; //not used by user
 	u32 host_rx_bd_num; //for spdio send data to host, 2 bd for one packet, so this value must be rounded to 2
 	u32 host_tx_bd_num; //for spdio receive data from host

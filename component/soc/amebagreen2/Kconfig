@@ -24,6 +24,9 @@ menu "CONFIG FUNCTION TEST"
         if SYS_VERIFY
             choice
                 prompt "System Verify Type"
+                config EQC
+                    bool "EQC_Test"
+                    select USB_DEVICE_EN
                 config OLT
                     bool "OLT_Test"
                     select USB_DEVICE_EN

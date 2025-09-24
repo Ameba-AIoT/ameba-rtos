@@ -14,9 +14,8 @@ typedef enum {
 	PMU_WLAN_FW_DEVICE,
 	PMU_BT_DEVICE,
 	PMU_WHC_WIFI,
-#if defined(CONFIG_STANDARD_TICKLESS) && defined(CONFIG_LWIP_LAYER)
+	PMU_DHCP_PROCESS,
 	PMU_LWIP_STACK,
-#endif
 	PMU_DEV_USER_BASE,
 	PMU_MAX
 } PMU_DEVICE;
@@ -25,7 +24,7 @@ typedef enum {
 #define DEFAULT_WAKELOCK		(BIT(PMU_OS))
 
 #define DEFAULT_DEEP_WAKELOCK		(BIT(PMU_OS))
-#define SLEEP_MAX_DELAY		(uint32_t) 0xffffffffUL
+#define PMU_SLEEP_FOREVER		(uint32_t) 0xffffffffUL
 
 typedef uint32_t (*PSM_HOOK_FUN)(uint32_t, void *param_ptr);
 

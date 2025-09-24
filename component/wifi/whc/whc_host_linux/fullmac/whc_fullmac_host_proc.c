@@ -371,7 +371,7 @@ const struct rtw_proc_hdl ndev_sta_proc_hdls[] = {
 	RTW_PROC_HDL_SSEQ("current_ant", proc_read_curr_ant, NULL),
 	RTW_PROC_HDL_SSEQ("mp_fw", proc_read_mp_fw, NULL),
 
-#if !defined(CONFIG_WHC_BRIDGE)
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 #ifdef CONFIG_FULLMAC_HCI_SDIO
 	RTW_PROC_HDL_SSEQ("offload_enable", proc_get_offload_enable, proc_set_offload_enable),
 

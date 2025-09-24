@@ -19,6 +19,7 @@ int whc_wpa_ops_set_network(char *ptr, u8 *buf, int msg_len);
 int whc_wpa_ops_get_macaddr(u8 *ptr, u8 *buf);
 int whc_wpa_ops_do_scan(u8 *input, u8 *buf);
 int whc_wpa_ops_get_status(char *ptr, u8 *buf);
+int whc_dev_rtw_cli_remove_network(char *ptr, u8 *buf);
 int whc_dev_rtw_cli_wpas_test(char *ptr, u8 *buf, int msg_len);
 
 

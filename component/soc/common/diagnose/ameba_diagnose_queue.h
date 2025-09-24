@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #ifndef _AMEBA_DIAGNOSE_QUEUE_H_
 #define _AMEBA_DIAGNOSE_QUEUE_H_
 

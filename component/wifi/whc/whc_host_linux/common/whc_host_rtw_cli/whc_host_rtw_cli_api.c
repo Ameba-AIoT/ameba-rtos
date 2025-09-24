@@ -21,6 +21,7 @@ int whc_host_get_join_status(struct sk_buff *skb, struct genl_info *info)
 	return 0;
 }
 
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 int whc_host_do_mp_cmd(struct sk_buff *skb, struct genl_info *info)
 {
 	u8 *buf = NULL;
@@ -74,6 +75,7 @@ int whc_host_do_dbg_cmd(struct sk_buff *skb, struct genl_info *info)
 
 	return 0;
 }
+#endif
 
 int whc_bridge_host_do_scan(struct sk_buff *skb, struct genl_info *info)
 {

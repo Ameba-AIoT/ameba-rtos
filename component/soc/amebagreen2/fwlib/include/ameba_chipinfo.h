@@ -7,67 +7,6 @@
 #ifndef _AMEBA_CHIPINFO_H_
 #define _AMEBA_CHIPINFO_H_
 
-/*
- * Note: Some variables are planned to be deleted and replace with news, to unify MCM Memory information in all ICs.
-  * *************** delete start *******************************************
- */
-
-/*Green2: Memory define
-[31:28]: None
-[27:24]: None
-[23:20]: None
-[19:16]: PSRAM Type(APM OR WB); FLASH type;Single die
-[15:12]: DQ8 or DQ16
-[11:8]: PSRAM total size
-[7:4]: DEV CLK
-[3:0]: PSRAM page size
-*/
-
-/** @defgroup Memory_Type
-  * @{
-  */
-enum Mem_Type {
-	MEM_PSRAM_WB = 0x10000,
-	MEM_PSRAM_APM = 0x20000,
-	MEM_FLASH_3V3 = 0x40000,
-	MEM_SINGLE_DIE = 0x80000,
-	MEM_TYPE_UNKNOWN = 0xF0000,
-};
-/**
-  * @}
-  */
-#define Mem_Type_Get(x)	((x) & 0xF0000)
-
-/** @defgroup CHIP_MEMORY_Type_define
-  * @{
-  */
-enum CHIP_MEMORY_type {
-	MEMORY_MCM_PSRAM = 0,
-	MEMORY_ONE_FLASH,
-	MEMORY_TWO_FLASH,
-	MEMORY_SINGLE_DIE,
-	MEMORY_NOT_CLEAR,
-};
-/**
-  * @}
-  */
-
-
-/** @defgroup CHIPINFO_TypeDef
-  * @{
-  */
-typedef struct {
-	u8 sub_num;
-	u8 package_num;
-	u16 bd_num;
-	u32 memory_type;
-} CHIPINFO_TypeDef;
-/**
-  * @}
-  */
-
-/* *************** delete end *********************************/
-
 /** @defgroup CHIPINFO_MEMINFO_Structure_Type Structure Type
   * @{
   */
@@ -204,8 +143,8 @@ typedef struct {
 
 /* Flash Types */
 #define MCM_FLASH_TYPE_INVALID     0x0  /* Invalid or unspecified flash type */
-#define MCM_NAND_FLASH             0x1  /* NAND Flash */
-#define MCM_NOR_FLASH              0x2  /* NOR Flash */
+// #define MCM_NAND_FLASH             0x1  /* NAND Flash */
+// #define MCM_NOR_FLASH              0x2  /* NOR Flash */
 
 /******************* Flash Information End *******************/
 

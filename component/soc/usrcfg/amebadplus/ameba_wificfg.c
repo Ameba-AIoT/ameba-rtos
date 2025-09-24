@@ -27,7 +27,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.auto_reconnect_interval = 5;
 	wifi_user_config.no_beacon_disconnect_time = 9;  /* unit 2s, default 18s */
 
-#if (defined(CONFIG_WHC_INTF_SDIO) || defined(CONFIG_WHC_INTF_USB)) || (defined(CONFIG_WHC_BRIDGE))
+#if (defined(CONFIG_WHC_INTF_SDIO) || defined(CONFIG_WHC_INTF_USB))
 	skb_num_np_rsvd = 10; /*4 for rx_ring_buffer + 2 for mgnt trx + 4 for spido rx_ring_buffer */
 	wifi_user_config.skb_num_np = 20;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 	wifi_user_config.skb_num_ap = 0;
@@ -48,6 +48,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.skb_num_ap = 4;
 	wifi_user_config.rx_ampdu_num = 4;
 #endif
+	wifi_user_config.tx_ampdu_num = 0; /* 0: default 20, 1: equivalent to wifi_user_config.ampdu_tx_enable = 0, Otherwise: max aggregation number, up to 0x3F*/
 #if WIFI_LOGO_CERTIFICATION
 	wifi_user_config.skb_num_ap = 16;
 #endif
@@ -91,12 +92,14 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.ampdu_rx_enable = 1;
 	wifi_user_config.ampdu_tx_enable = 1;
 	wifi_user_config.check_dest_address_en = 1;
-	wifi_user_config.ap_compatibilty_enabled = 0x0B;
+	wifi_user_config.ap_compatibilty_enabled = 0x0F;
 	wifi_user_config.set_channel_api_do_rfk = 1;
 	wifi_user_config.rf_calibration_disable = 0;
 	wifi_user_config.tx_shortcut_enable = 1;
 	wifi_user_config.rx_shortcut_enable = 1;
 	wifi_user_config.keepalive_interval = 20;
+	wifi_user_config.rx_cca_thresh = 0;
+	wifi_user_config.rate_mask_cck = 0x0;
 
 	/* WPS */
 	wifi_user_config.wps_retry_count = 4;

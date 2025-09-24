@@ -215,70 +215,84 @@ uint16_t hci_get_body_len(const void *hdr, uint8_t type)
 	return len;
 }
 
-static bool _controller_is_enabled = false;
+static bool _controller_is_opened = false;
 uint8_t hci_process(void);
-bool hci_controller_enable(void)
+bool hci_controller_open(void)
 {
-	if (_controller_is_enabled) {
-		BT_LOGE("Controller Already enabled!\r\n");
+	if (_controller_is_opened) {
+		BT_LOGE("Controller Already Opened!\r\n");
 		return false;
 	}
 
 	/* Set WiFi leave powersave mode */
 	if (rtk_bt_pre_enable() == false) {
 		BT_LOGE("rtk_bt_pre_enable fail!\r\n");
-		return HCI_FAIL;
+		return false;
 	}
 
-	/* BT Board Init */
-	if (HCI_FAIL == hci_platform_init()) {
-		BT_LOGE("hci_platform_init fail!\r\n");
-		goto fail;
+	/* Platform Open */
+	if (HCI_FAIL == hci_platform_open()) {
+		BT_LOGE("hci_platform_open fail!\r\n");
+		return false;
 	}
 
-	/* HCI Transport */
+	/* HCI Transport Open */
 	if (HCI_FAIL == hci_transport_open()) {
 		BT_LOGE("hci_transport_open fail!\r\n");
-		goto fail;
+		goto transport_fail;
 	}
 
-	/* HCI StandAlone */
-	hci_standalone_open();
+	/* HCI StandAlone Open */
+	if (HCI_FAIL == hci_sa_open()) {
+		BT_LOGE("hci_sa_open fail!\r\n");
+		goto sa_fail;
+	}
 
 	/* HCI Transport Bridge to StandAlone */
 	hci_transport_register(&hci_sa_cb);
 
 	if (HCI_FAIL == hci_process()) {
 		BT_LOGE("hci_process fail!\r\n");
-		goto fail;
+		goto process_fail;
 	}
 
 	/* Recover WiFi powersave mode */
 	rtk_bt_post_enable();
-	_controller_is_enabled = true;
+
+	_controller_is_opened = true;
 	return true;
 
-fail:
-	hci_controller_disable();
+transport_fail:
+	hci_platform_close();
+	hci_platform_free();
+	return false;
+
+process_fail:
+	hci_sa_free();
+sa_fail:
+	hci_platform_close();
+	hci_transport_close();
+	hci_platform_free();
+	hci_transport_free();
 	return false;
 }
 
-void hci_controller_disable(void)
+void hci_controller_close(void)
 {
-	hci_platform_deinit();  /* Platform Deinit First */
-	hci_standalone_close(); /* HCI StandAlone Close */
+	hci_platform_close();   /* Platform Close First */
 	hci_transport_close();  /* HCI Transport Close */
 
-	_controller_is_enabled = false;
+	_controller_is_opened = false;
 }
 
 void hci_controller_free(void)
 {
-	hci_uart_free();        /* UART Free */
+	hci_platform_free();    /* Platform Free */
 	hci_transport_free();   /* HCI Transport Free */
+	hci_sa_free();          /* HCI StandAlone Free */
 }
 
-bool hci_controller_is_enabled(void)
+bool hci_controller_is_opened(void)
 {
-	return _controller_is_enabled;
+	return _controller_is_opened;
 }

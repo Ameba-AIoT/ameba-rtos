@@ -93,7 +93,7 @@ static inline void coex_ipc_entry(void)
 	rtk_coex_extc_set_enable(true);
 #endif
 #endif
-#else
+#else /*defined(CONFIG_ZEPHYR_SDK)*/
 // ipc case-zephyr sdk:
 #if defined(CONFIG_WHC_INTF_IPC)
 #if defined(CONFIG_COEXIST_HOST)
@@ -111,6 +111,7 @@ static inline void coex_ipc_entry(void)
 	extern void rtk_coex_extc_set_enable(bool enable);
 #if defined(CONFIG_WHC_NONE)
 	// #2. case singlecore: ext-paras init start from np
+	extern struct extchip_para_t g_extchip_para;
 #if defined(CONFIG_COEX_EXT_CHIP_SUPPORT)
 	coex_extc_paras_config(&g_extchip_para, true);
 #else
@@ -121,6 +122,6 @@ static inline void coex_ipc_entry(void)
 #endif
 #endif
 
-#endif
+#endif /*END OF !defined(CONFIG_ZEPHYR_SDK)*/
 }
 #endif /* __RTW_COEX_IPC_H__ */

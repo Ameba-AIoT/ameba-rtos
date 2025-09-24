@@ -81,11 +81,11 @@ u32 SPDIO_IRQ_Handler(void *pData)
 	SDIO_INTClear(SDIO_WIFI, IntStatus); // clean the ISR
 
 	if (IntStatus & SDIO_NOTIFY_TYPE_INT) {
-		SPDIO_Notify_INT(IntStatus);
+		SPDIO_Notify_INT(SDIO_WIFI, IntStatus);
 	}
 
 	if (IntStatus & SDIO_WIFI_BIT_C2H_DMA_OK) {
-		SPDIO_Recycle_Rx_BD(pSPDIODev, spdio_device_tx_done_cb);
+		SPDIO_Recycle_Rx_BD(SDIO_WIFI, pSPDIODev, spdio_device_tx_done_cb);
 	}
 
 	if (IntStatus & SDIO_WIFI_BIT_TXBD_H2C_OVF) {
@@ -93,7 +93,7 @@ u32 SPDIO_IRQ_Handler(void *pData)
 	}
 
 	if (IntStatus & SDIO_WIFI_BIT_H2C_DMA_OK || pSPDIODev->WaitForDeviceRxbuf) {
-		SPDIO_TxBd_DataReady_DeviceRx(pSPDIODev, spdio_device_rx_done_cb);
+		SPDIO_TxBd_DataReady_DeviceRx(SDIO_WIFI, pSPDIODev, spdio_device_rx_done_cb);
 	}
 
 	return 0;
@@ -126,7 +126,7 @@ void SPDIO_HAL_Init(void *adapter)
 	pSPDIODev->pRXDESCAddr = g_RXDESCAddr;
 	SDIO_RxBdHdl_Init(g_RXBDHdl, SPDIO_RXBDAddr, g_RXDESCAddr, pSPDIODev->host_rx_bd_num);
 
-	SPDIO_Device_Init(pSPDIODev);
+	SPDIO_Device_Init(SDIO_WIFI, pSPDIODev);
 
 	SDIO_CPWM2_Set(SDIO_WIFI, SPDIO_CCPWM2_SEND_CHECKSUM, DISABLE);
 	SDIO_CPWM2_Set(SDIO_WIFI, CPWM2_IMG1_BIT, ENABLE);
@@ -142,7 +142,7 @@ void SPDIO_HAL_DeInit(void)
 	pSPDIODev->spdio_priv = NULL;
 
 	SDIO_CPWM2_Set(SDIO_WIFI, CPWM2_IMG1_BIT, DISABLE);
-	SPDIO_Device_DeInit();
+	SPDIO_Device_DeInit(SDIO_WIFI);
 
 	InterruptDis(SDIO_WIFI_IRQ);
 	InterruptUnRegister(SDIO_WIFI_IRQ);
@@ -160,7 +160,7 @@ char SPDIO_HAL_Transmit(u8 *pdata, u16 size)
 	tx_buf->buf_size = size;
 	tx_buf->type = SPDIO_RX_DATA_USER; // you can define your own data type in spdio_rx_data_t and spdio_tx_data_t
 
-	ret = SPDIO_DeviceTx(pSPDIODev, tx_buf);
+	ret = SPDIO_DeviceTx(SDIO_WIFI, pSPDIODev, tx_buf);
 	if (ret == FALSE) {
 		/* free buffer, otherwise free in tx callback */
 	}

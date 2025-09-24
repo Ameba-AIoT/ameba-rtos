@@ -86,6 +86,46 @@ function(import_kconfig prefix kconfig_fragment)
   endif()
 endfunction()
 
+function(ameba_submodule_register name)
+    set(multiValueArgs
+        p_EXAMPLE_DIRS
+    )
+    cmake_parse_arguments(ARG "" "" "${multiValueArgs}" ${ARGN})
+
+    set(SUBMODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
+    set(INFO_STRING "submodule_name=${name} submodule_path=${SUBMODULE_PATH} ")
+    set_property(TARGET g_PROJECT_CONFIG APPEND PROPERTY submodule_info ${INFO_STRING})
+
+    if(NOT ARG_p_EXAMPLE_DIRS)
+        message(FATAL_ERROR "None p_EXAMPLE_DIRS. Submodule example directories must be given")
+    endif()
+
+    list(LENGTH ARG_p_EXAMPLE_DIRS example_num)
+    math(EXPR last_index "${example_num} - 1")
+    foreach(index RANGE ${last_index})
+        list(GET ARG_p_EXAMPLE_DIRS ${index} example_dir)
+        ameba_example_register(${example_dir})
+    endforeach()
+endfunction()
+
+function(ameba_example_register example_dir)
+    set(options p_NOT_SUBMODULE)
+    cmake_parse_arguments(ARG "${options}" "" "" ${ARGN})
+
+    if(NOT IS_ABSOLUTE "${example_dir}")
+        file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${example_dir}" example_dir)
+    endif()
+    get_filename_component(example_name "${example_dir}" NAME)
+
+    set(INFO_STRING "example_name=${example_name} example_path=${example_dir} ")
+
+    if(NOT ARG_p_NOT_SUBMODULE)
+        set_property(TARGET g_PROJECT_CONFIG APPEND PROPERTY submodule_info ${INFO_STRING})
+    # else() # TODO: using for non-submodule
+    endif()
+
+endfunction()
+
 function(ameba_add_empty_object)
     # Empty object is added to avoid cmake error: NO SOURCE given to target...
     # However, default empty file generates .data, .text, .rodata, .bss section, and debug related sections,

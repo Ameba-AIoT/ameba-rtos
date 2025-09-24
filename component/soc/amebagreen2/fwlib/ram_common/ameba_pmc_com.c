@@ -243,7 +243,6 @@ void SOCPS_ClockSourceConfig(u8 regu_state, u8 xtal_mode, u8 osc_option)
 
 void SOCPS_PowerManage(u8 regu_state)
 {
-	u8 chip_type = 0;
 	u32 reg_temp = 0;
 	SWR_TypeDef	*SWR = SWR_BASE;
 	LDO_TypeDef *LDO = LDO_BASE;
@@ -272,9 +271,9 @@ void SOCPS_PowerManage(u8 regu_state)
 	HAL_WRITE32(PMC_BASE, ARB_DBC0, reg_temp);
 
 	/*Set flash pad(g4) and psram pad(g5)*/
-	chip_type = ChipInfo_MemoryType();
+	MCM_MemTypeDef meminfo = ChipInfo_MCMInfo();
 
-	if (chip_type == MEMORY_SINGLE_DIE) {
+	if (meminfo.mem_type == MCM_SINGLE_DIE) {
 		/*case 1:chip of sing die, The G5 pad's io is not powered, so its IO core power (control reg) and IO pad(driver)
 		  needs to be turned off directly.*/
 		reg_temp = HAL_READ32(PMC_BASE, SYSPMC_OPT);
@@ -287,7 +286,7 @@ void SOCPS_PowerManage(u8 regu_state)
 		reg_temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_PWC);
 		reg_temp &= ~AON_BIT_G5_PAD_SHDN;
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_PWC, reg_temp);
-	} else if (chip_type == MEMORY_MCM_PSRAM) {
+	} else if (meminfo.mem_type == MCM_TYPE_PSRAM) {
 		/*case 2: chip with psram use G5 pad, and G5 pad use mldo 1.8V, and cannot be shutdown pad by sys_pmc*/
 		reg_temp = HAL_READ32(PMC_BASE, SYSPMC_OPT);
 		/*In all packages, the G4 pad uses an external power supply and cannot be shut down.*/

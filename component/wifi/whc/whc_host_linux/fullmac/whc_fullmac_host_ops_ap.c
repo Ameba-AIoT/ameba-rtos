@@ -187,7 +187,7 @@ static int whc_fullmac_host_set_txq_params(struct wiphy *wiphy, struct net_devic
 	aifsn = params->aifs;
 
 	edca_param.aci = aci;
-	edca_param.aci_aifsn = aifsn;
+	edca_param.aifsn = aifsn;
 	edca_param.cw_max = ECWMax;
 	edca_param.cw_min = ECWMin;
 	edca_param.txop_limit = TXOP;

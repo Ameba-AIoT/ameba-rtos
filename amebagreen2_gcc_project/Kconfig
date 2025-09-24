@@ -50,12 +50,14 @@ endmenu
 menu "CONFIG Memory Arch"
     config DISABLE_PSRAM
         bool "DISABLE PSRAM"
-    config SECOND_FLASH_NOR
-        bool "Second flash NOR"
-    if !SECOND_FLASH_NOR
-        config SECOND_FLASH_NAND
-            bool "Second flash NAND"
+    if DISABLE_PSRAM
+        config SECOND_FLASH_NOR
+            bool "Second flash NOR"
+        if !SECOND_FLASH_NOR
+            config SECOND_FLASH_NAND
+                bool "Second flash NAND"
         endif
+    endif
 endmenu
 
 menu "CONFIG Link Option"
@@ -109,7 +111,7 @@ menu "CONFIG Link Option"
 
     config PSRAM_ALL_FOR_AP_HEAP
         depends on !IMG2_PSRAM && !DATA_HEAP_PSRAM && !DISABLE_PSRAM
-        depends on !WIFI_HOST_CONTROL # FULLMAC_DEV or WHC_BRIDGE does not support PSRAM for now
+        depends on !WIFI_HOST_CONTROL # FULLMAC_DEV does not support PSRAM for now
         bool "ALL PSRAM USED FOR APPLICATION HEAP"
         default y
 
@@ -125,20 +127,6 @@ menu "CONFIG FULLMAC MODE"
 endmenu
 
 
-menu "CONFIG Mass Production"
-    config MP_INCLUDED
-        bool "Enable MP"
-    if MP_INCLUDED
-        choice
-            prompt "MP Mode"
-            default MP_SHRINK
-            config MP_EXPAND
-                bool "expand"
-            config MP_SHRINK
-                bool "shrink"
-        endchoice
-    endif
-endmenu
 
 rsource "../component/at_cmd/Kconfig"
 
@@ -160,11 +148,13 @@ rsource "../component/usb/Kconfig"
 
 menu "CONFIG APPLICATION"
 
-    rsource "../component/ui/Kconfig"
+    orsource "../component/ui/Kconfig"
 
-    rsource "../component/audio/Kconfig"
+    orsource "../component/audio/Kconfig"
 
     orsource "${RTK_APP_DIR}/Kconfig"
+
+    rsource "../component/soc/common/diagnose/Kconfig"
 
 endmenu
 
@@ -187,14 +177,7 @@ menu "CONFIG WHC INTF"
                 bool "FULLMAC_HOST"
                 select WHC_FULLMAC_HOST_IMPL
                 select WHC_HOST_FOR_KM4TZ
-            config WHC_BRIDGE
-                bool "BRIDGE_DEV"
-                select WIFI_HOST_CONTROL
-                select WHC_NONE_FOR_KM4TZ
-            config WHC_BRIDGE_HOST
-                bool "BRIDGE_HOST"
-                select WHC_FULLMAC_HOST_IMPL
-                select WHC_HOST_FOR_KM4TZ
+
     endchoice
 
     if !WHC_INTF_IPC_MENU && !WIFI_SINGLE_CORE_MENU
@@ -224,19 +207,16 @@ menu "CONFIG WHC INTF"
         endchoice
     endif
 
-    if FULLMAC_DEV || WHC_BRIDGE
+    if FULLMAC_DEV
         menu "FULLMAC config"
         config WHC_CMD_PATH
-            default y if WHC_BRIDGE
             bool "Support WHC CMD PATH"
         config WHC_WIFI_API_PATH
             default y if FULLMAC_DEV
             bool "Support WHC WIFI API PATH"
         config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4TZ
-            default y if WHC_BRIDGE
             bool "Support WHC SUPPLICANT OFFLOAD"
         config WHC_DUAL_TCPIP_FOR_KM4TZ
-            default y if WHC_BRIDGE
             bool "Support WHC DUAL TCPIP"
 
         endmenu
@@ -427,18 +407,6 @@ menu "CONFIG WIFI"
             select WIFI_FW_EN
             select LWIP_LAYER if WHC_DUAL_TCPIP_FOR_KM4TZ
 
-        config WHC_BRIDGE
-            bool
-            depends on WHC_NONE
-            select WLAN
-            select LWIP_LAYER
-            select FW_DRIVER_COEXIST
-            select WIFI_FW_EN
-            #todo remove at last
-            select WHC_CMD_PATH
-            select WHC_DUAL_TCPIP_FOR_KM4TZ
-            select WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4TZ
-
         config WHC_FULLMAC_HOST_IMPL
             bool
             depends on WHC_HOST
@@ -456,7 +424,7 @@ menu "CONFIG WIFI"
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
 
         config WIFI_FW_EN_FOR_KM4NS
-            depends on !FULLMAC_DEV && !WHC_BRIDGE
+            depends on !FULLMAC_DEV
             bool
             default !MP_SHRINK
     endif
@@ -482,8 +450,6 @@ menu "CONFIG WIFI"
     config ENABLE_WPS_DISCOVERY
         bool
     config FULLMAC_HOST
-        bool
-    config WHC_BRIDGE
         bool
     config WIFI_HOST_CONTROL
         bool

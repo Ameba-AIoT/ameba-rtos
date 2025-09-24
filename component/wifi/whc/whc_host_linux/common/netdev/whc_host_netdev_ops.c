@@ -29,7 +29,7 @@ struct rtw_priv_ioctl {
 int rtw_ndev_set_mac_address(struct net_device *pnetdev, void *p)
 {
 	int ret = 0;
-#ifndef CONFIG_WHC_BRIDGE
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 	struct sockaddr *addr = p;
 
 	if (rtw_netdev_idx(pnetdev) >= WHC_MAX_NET_PORT_NUM) {
@@ -191,7 +191,7 @@ int rtw_ndev_ioctl(struct net_device *ndev, struct ifreq *rq, void __user *data,
 	}
 
 	switch (cmd_id) {
-#ifndef CONFIG_WHC_BRIDGE
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 	case RTW_PRIV_DGB_CMD:
 		ret = whc_fullmac_host_iwpriv_cmd(cmd_buf_phy, cmd.len, cmd_buf, user_buf);
 		break;
@@ -262,14 +262,14 @@ int rtw_ndev_open(struct net_device *pnetdev)
 
 static int rtw_ndev_close(struct net_device *pnetdev)
 {
-#ifndef CONFIG_WHC_BRIDGE
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 	struct cfg80211_scan_info info;
 	int ret = 0;
 	u8 is_mp = 0;
 #endif
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
-#ifndef CONFIG_WHC_BRIDGE
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 	whc_fullmac_host_dev_driver_is_mp(&is_mp);
 	if (is_mp != 1) {
 		ret = whc_fullmac_host_scan_abort();
@@ -297,7 +297,7 @@ static int rtw_ndev_close(struct net_device *pnetdev)
 
 int rtw_ndev_open_ap(struct net_device *pnetdev)
 {
-#ifndef CONFIG_WHC_BRIDGE
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 	u8 is_mp = 0;
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
@@ -318,7 +318,7 @@ int rtw_ndev_open_ap(struct net_device *pnetdev)
 
 static int rtw_ndev_close_ap(struct net_device *pnetdev)
 {
-#ifndef CONFIG_WHC_BRIDGE
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 	struct cfg80211_scan_info info;
 	int ret = 0;
 	u8 is_mp = 0;
@@ -374,7 +374,7 @@ func_exit:
 
 static void rtw_set_rx_mode(struct net_device *dev)
 {
-#ifndef CONFIG_WHC_BRIDGE
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 	if ((rtw_netdev_flags(dev) ^ dev->flags) & IFF_PROMISC) {
 		if (dev->flags & IFF_PROMISC) {
 			dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s enable promisc mode!\n", __func__);
@@ -579,7 +579,7 @@ int rtw_ndev_alloc(void)
 {
 	int i, ret = false;
 	struct net_device *ndev = NULL;
-#if !defined(CONFIG_WHC_BRIDGE)
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 	struct wireless_dev *wdev;
 #endif
 
@@ -611,7 +611,7 @@ int rtw_ndev_alloc(void)
 #endif
 		SET_NETDEV_DEV(ndev, global_idev.fullmac_dev);
 
-#if !defined(CONFIG_WHC_BRIDGE)
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 		/* alloc and init wireless_dev */
 		wdev = (struct wireless_dev *)kzalloc(sizeof(struct wireless_dev), in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
 		if (!wdev) {
@@ -633,7 +633,7 @@ int rtw_ndev_alloc(void)
 
 fail:
 	for (i = 0; i < TOTAL_IFACE_NUM; i++) {
-#if !defined(CONFIG_WHC_BRIDGE)
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 		if (global_idev.pwdev_global[i]) { //wdev
 			kfree((u8 *)global_idev.pwdev_global[i]);
 			global_idev.pwdev_global[i] = NULL;

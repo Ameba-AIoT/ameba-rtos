@@ -8,11 +8,7 @@ void whc_host_recv_notify(void)
 int whc_host_recv_process(struct sk_buff *pskb)
 {
 	int ret = 0;
-#ifdef CONFIG_WHC_BRIDGE
-	ret = whc_bridge_host_recv_process(pskb);
-#else
 	ret = whc_fullmac_host_recv_process(pskb);
-#endif
 	return ret;
 }
 

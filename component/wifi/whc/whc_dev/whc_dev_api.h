@@ -26,6 +26,12 @@ enum whc_tickps_cmd_subtype {
 	WHC_CMD_TICKPS_TYPE_PG = 3,
 };
 
+struct whc_dev_network_info {
+	u8 ip[4];
+	u8 gw[4];
+	u8 gw_mask[4];
+};
+
 void whc_dev_init_cmd_path_task(void);
 
 #ifdef CONFIG_WHC_DUAL_TCPIP

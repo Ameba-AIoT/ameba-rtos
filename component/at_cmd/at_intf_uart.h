@@ -19,6 +19,8 @@
 extern u32 UART_BAUD;
 extern u8 UART_TX;
 extern u8 UART_RX;
+extern signed char UART_RTS;
+extern signed char UART_CTS;
 
 _LONG_CALL_ void atio_uart_output(char *buf, int len);
 _LONG_CALL_ int atio_uart_init(void);

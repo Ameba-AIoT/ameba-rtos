@@ -71,6 +71,20 @@ struct mlme_priv_t {
 	u8					b_in_disconnect: 1;
 };
 
+#ifdef CONFIG_SUPPLICANT_SME
+struct sme_priv_t {
+	enum nl80211_auth_type	auth_type;
+	u8						wep_key[13];
+	u8 						wep_key_len, wep_key_idx;
+
+	struct cfg80211_bss 	*cfg80211_assoc_bss;
+
+	u8						*deauth_ies;
+	u32						deauth_ie_len;
+	bool					deauth_from_wpas;
+};
+#endif
+
 #ifdef CONFIG_P2P
 struct p2p_priv_t {
 	struct wireless_dev 	*pd_pwdev; /*wdev of P2P Device intf*/
@@ -128,6 +142,10 @@ struct whc_device {
 
 #ifdef CONFIG_P2P
 	struct p2p_priv_t		p2p_global;
+#endif
+
+#ifdef CONFIG_SUPPLICANT_SME
+	struct sme_priv_t		sme_priv;
 #endif
 	u8 host_init_done: 1;
 };

@@ -17,7 +17,7 @@
 
 #include "wifi_api_types.h"
 
-#if !defined(CONFIG_WIFI_11K_ENABLE) && !defined(CONFIG_WIFI_11V_ENABLE) && !defined(CONFIG_WIFI_11R_ENABLE)
+#if !defined(CONFIG_WIFI_11K_ENABLE) && !defined(CONFIG_WIFI_11V_ENABLE) && !defined(CONFIG_WIFI_11R_ENABLE) && !defined(CONFIG_SUPPLICANT_SME)
 u8 rtw_check_peer_kvr_cap(void *a)
 {
 	UNUSED(a);
@@ -121,11 +121,13 @@ void rtw_set_to_roam(u8 roam_try_cnt)
 #endif
 
 #ifndef CONFIG_WIFI_11R_ENABLE
+#ifndef CONFIG_SUPPLICANT_SME
 u8 rtw_ft_check_en(void *a)
 {
 	UNUSED(a);
 	return 0;
 }
+#endif
 
 void rtw_ft_info_init(void)
 {

@@ -5,6 +5,76 @@
 
 struct genl_info wifi_event_user_genl_info;
 
+#ifdef CONFIG_FULLMAC_HCI_IPC
+static int _whc_host_ipc_cmd_work(u32 cmd, char *buf, u32 buf_len, struct genl_info *info)
+{
+	unsigned char *user_buf = NULL, *cmd_buf = NULL;
+	static dma_addr_t cmd_buf_phy = 0, user_buf_phy = 0;
+	int ret = 0;
+
+	cmd_buf = rtw_malloc(buf_len, &cmd_buf_phy);
+	if (!cmd_buf) {
+		dev_err(global_idev.fullmac_dev, "%s: mp allloc cmd buffer failed.\n", __func__);
+		ret = -ENOMEM;
+		goto func_exit;
+	}
+	memcpy(&wifi_event_user_genl_info, info, sizeof(struct genl_info));
+	memcpy(cmd_buf, buf, buf_len);
+
+	user_buf = rtw_malloc(WHC_WIFI_MP_MSG_BUF_SIZE, &user_buf_phy);
+	if (!user_buf) {
+		dev_err(global_idev.fullmac_dev, "%s: mp allloc user buffer failed.\n", __func__);
+		ret = -ENOMEM;
+		goto func_exit;
+	}
+
+	switch (cmd) {
+	case CMD_WIFI_DBG:
+		ret = whc_fullmac_host_iwpriv_cmd(cmd_buf_phy, buf_len, cmd_buf, user_buf);
+		break;
+	case CMD_WIFI_MP:
+		ret = whc_fullmac_host_mp_cmd(cmd_buf_phy, buf_len, user_buf_phy);
+		break;
+	default:
+		break;
+	}
+	buf_len = strlen(user_buf);
+	user_buf[buf_len] = '\0';
+	ret = whc_host_buf_rx_to_user(user_buf, buf_len + 1);
+
+func_exit:
+	if (user_buf) {
+		rtw_mfree(WHC_WIFI_MP_MSG_BUF_SIZE, user_buf, user_buf_phy);
+		cmd_buf = NULL;
+	}
+
+	if (cmd_buf) {
+		rtw_mfree(buf_len, cmd_buf, cmd_buf_phy);
+		cmd_buf = NULL;
+	}
+
+	return ret;
+}
+
+static int whc_host_ipc_nl_cmd_process(struct sk_buff *skb, struct genl_info *info)
+{
+	int ret = 0;
+	u32 cmd = nla_get_u32(info->attrs[WHC_ATTR_API_ID]);
+	u8 *buf = NULL;
+	u32 buf_len = SIZE_TX_DESC;
+
+	if ((cmd == CMD_WIFI_MP) || (cmd == CMD_WIFI_DBG)) {
+		buf = (char *)nla_data(info->attrs[WHC_ATTR_STRING]);
+		buf_len = strlen(buf) + 1;
+		ret = _whc_host_ipc_cmd_work(cmd, buf, buf_len, info);
+	} else if (cmd == CMD_WIFI_INFO_INIT) {
+		memcpy(&wifi_event_user_genl_info, info, sizeof(struct genl_info));
+	}
+
+	return ret;
+}
+#endif
+
 
 __attribute__((weak))  int whc_host_nl_custom_api(struct sk_buff *skb, struct genl_info *info)
 {
@@ -26,7 +96,7 @@ static int whc_host_nl_cmd_process(struct sk_buff *skb, struct genl_info *info)
 	u8 idx = 0;
 	u32 buf_len = SIZE_TX_DESC;
 	u32 payload_len;
-#ifndef CONFIG_WHC_BRIDGE
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 	char *user_buf;
 #endif
 
@@ -82,10 +152,12 @@ static int whc_host_nl_cmd_process(struct sk_buff *skb, struct genl_info *info)
 		} else {
 			idx = 0;
 		}
+		/* __LINK_STATE_DORMANT set for roaming issue, need clear, or DHCP fail in S1D */
+		netif_dormant_off(global_idev.pndev[idx]);
 		netif_carrier_on(global_idev.pndev[idx]);
 	} else if (cmd == CMD_WIFI_INFO_INIT) {
 		memcpy(&wifi_event_user_genl_info, info, sizeof(struct genl_info));
-#ifndef CONFIG_WHC_BRIDGE
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 	} else if (cmd == CMD_WIFI_MP) {
 		buf = (char *)nla_data(info->attrs[WHC_ATTR_STRING]);
 		buf_len = strlen(buf) + 1;
@@ -124,7 +196,11 @@ static const struct genl_multicast_group whc_mcgrps[] = {
 static struct genl_ops whc_nl_cmd_ops[] = {
 	{
 		.cmd = WHC_CMD_ECHO,
+#ifdef CONFIG_FULLMAC_HCI_IPC
+		.doit = whc_host_ipc_nl_cmd_process,
+#else
 		.doit = whc_host_nl_cmd_process,
+#endif
 	},
 	{
 		.cmd = WHC_CMD_CUSTOM_API,

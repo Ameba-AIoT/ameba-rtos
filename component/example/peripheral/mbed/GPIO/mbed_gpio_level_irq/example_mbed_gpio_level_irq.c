@@ -18,7 +18,7 @@
 gpio_irq_t gpio_level;
 int current_level = IRQ_LOW;
 
-void gpio_level_irq_handler(uint32_t id, gpio_irq_event event)
+void gpio_level_irq_handler(uint32_t id, uint32_t event)
 {
 	UNUSED(event);
 	uint32_t *level = (uint32_t *) id;

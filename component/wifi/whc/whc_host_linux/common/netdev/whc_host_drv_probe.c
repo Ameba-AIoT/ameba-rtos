@@ -69,7 +69,9 @@ static int rtw_inet6addr_notifier_call(struct notifier_block *nb, unsigned long 
 	switch (action) {
 	case NETDEV_UP:
 		memcpy(global_idev.ipv6_addr, &inet6_ifa->addr, RTW_IPv6_ADDR_LEN);
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 		whc_fullmac_host_update_ip_addr();
+#endif
 		dev_dbg(global_idev.fullmac_dev, "%s: up IP: [%pI6]\n", __func__, global_idev.ipv6_addr);
 		break;
 	case NETDEV_DOWN:
@@ -121,7 +123,7 @@ int rtw_netdev_probe(struct device *pdev)
 
 	dev_dbg(global_idev.fullmac_dev, "rtw_dev_probe start\n");
 
-#if !defined(CONFIG_WHC_BRIDGE)
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 	/*step1: alloc and init wiphy */
 	ret = rtw_wiphy_init();
 	if (ret == false) {
@@ -154,17 +156,18 @@ int rtw_netdev_probe(struct device *pdev)
 		goto os_ndevs_deinit;
 	}
 
-#if !defined(CONFIG_WHC_BRIDGE)
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 	rtw_regd_init();
 	rtw_drv_proc_init();
 #ifdef CONFIG_IEEE80211R
 	whc_fullmac_host_ft_init();
 #endif
-#endif
 
 #ifdef CONFIG_WAR_OFFLOAD
 	rtw_proxy_init();
 #endif
+#endif
+
 #if defined(CONFIG_WHC_CMD_PATH)
 	whc_host_register_genl_family();
 #endif
@@ -173,7 +176,7 @@ int rtw_netdev_probe(struct device *pdev)
 
 os_ndevs_deinit:
 	rtw_ndev_unregister();
-#if !defined(CONFIG_WHC_BRIDGE)
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 	rtw_wiphy_deinit();
 
 exit:
@@ -185,12 +188,12 @@ int rtw_netdev_remove(struct device *pdev)
 {
 	dev_dbg(global_idev.fullmac_dev, "%s start.", __func__);
 
-#if !defined(CONFIG_WHC_BRIDGE)
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 	rtw_drv_proc_deinit();
 #endif
 	rtw_ndev_unregister();
 	dev_dbg(global_idev.fullmac_dev, "unregister netdev done.");
-#if !defined(CONFIG_WHC_BRIDGE)
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 	wiphy_unregister(global_idev.pwiphy_global);
 
 	rtw_wiphy_deinit();

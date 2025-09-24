@@ -403,7 +403,7 @@ bool rtk_bt_pre_enable(void)
 			return false;
 		}
 
-		if (!hci_is_mp_mode()) {
+		if (hci_is_wifi_need_leave_ps()) {
 			wifi_set_lps_enable(FALSE);
 			wifi_set_ips_internal(FALSE);
 		}
@@ -417,7 +417,7 @@ void rtk_bt_post_enable(void)
 {
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
 	if (bt_ant_switch == ANT_S1) {
-		if (!hci_is_mp_mode()) {
+		if (hci_is_wifi_need_leave_ps()) {
 			wifi_set_lps_enable(wifi_user_config.lps_enable);
 			wifi_set_ips_internal(wifi_user_config.ips_enable);
 		}
@@ -431,7 +431,7 @@ void hci_platform_external_fw_log_pin(void)
 	PAD_PullCtrl(_PB_10, GPIO_PuPd_UP);
 }
 
-uint8_t hci_platform_init(void)
+uint8_t hci_platform_open(void)
 {
 	/* Read Efuse and Parse Configbuf */
 	if (HCI_FAIL == hci_platform_read_efuse()) {
@@ -453,7 +453,7 @@ uint8_t hci_platform_init(void)
 	/* BT Controller Reset */
 	hci_platform_controller_reset();
 
-	/* UART Init */
+	/* UART Open */
 	if (HCI_FAIL == hci_uart_open()) {
 		return HCI_FAIL;
 	}
@@ -461,17 +461,23 @@ uint8_t hci_platform_init(void)
 	return HCI_SUCCESS;
 }
 
-void hci_platform_deinit(void)
+void hci_platform_close(void)
 {
 	/* BT Controller Power Off */
 	bt_power_off();
 
-	/* UART Deinit */
+	/* UART Close */
 	hci_uart_close();
 
 	if (!CHECK_CFG_SW(CFG_SW_BT_FW_LOG)) {
 		rtk_bt_fw_log_close();
 	}
+}
+
+void hci_platform_free(void)
+{
+	/* UART Free */
+	hci_uart_free();
 }
 
 uint8_t hci_platform_record_chipid(uint8_t chipid)

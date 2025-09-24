@@ -19,8 +19,10 @@ void whc_host_send_data_to_dev(u8 *pbuf, u32 len, u32 with_txdesc);
 
 int whc_bridge_host_do_scan(struct sk_buff *skb, struct genl_info *info);
 int whc_bridge_host_scan_result(void);
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 int whc_host_do_dbg_cmd(struct sk_buff *skb, struct genl_info *info);
 int whc_host_do_mp_cmd(struct sk_buff *skb, struct genl_info *info);
+#endif
 int pre_process_buf_data(u8 *buf, u16 size);
 int whc_host_get_join_status(struct sk_buff *skb, struct genl_info *info);
 

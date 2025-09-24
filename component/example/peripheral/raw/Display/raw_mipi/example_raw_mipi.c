@@ -13,8 +13,9 @@ void mipi_demo(void)
 void example_raw_mipi(void)
 {
 	printf("MIPI demo main \n");
+	MCM_MemTypeDef memInfo = ChipInfo_MCMInfo();
 
-	if (DDR_AUTOGATING && (ChipInfo_MemoryType() == Memory_Type_DDR)) {
+	if (DDR_AUTOGATING && (memInfo.mem_type & MCM_TYPE_DDR)) {
 		printf("DDR_AUTOGATING shall be disabled to avoid dram in self-refresh.\n");
 	}
 

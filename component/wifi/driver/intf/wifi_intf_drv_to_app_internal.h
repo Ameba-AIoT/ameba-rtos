@@ -82,6 +82,7 @@ enum  {
 	RTW_EVENT_SME_RX_UNPROT_MLME_MGMT	= 123,
 
 	RTW_EVENT_WPA_P2P_CHANNEL_RDY		= 124, /**< STA mode: inform host channel switch ready */
+	RTW_EVENT_WTN_ZRPP_GET_AP_INFO		= 125,
 
 	RTW_EVENT_INTERNAL_MAX,
 };
@@ -357,6 +358,13 @@ int wifi_set_pmf_mode(u8 pmf_mode);
  * @return  null.
  */
 void wifi_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way);
+
+/**
+ * @brief  notify wifi driver the ip address is successfully obtained
+ * @param[in] None
+ * @return  null.
+ */
+void wifi_dhcp_success_indicate(void);
 
 /**
  * @brief  for wpa to set key to driver

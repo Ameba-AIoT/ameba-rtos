@@ -109,7 +109,6 @@ void pwmout_init(pwmout_t *obj, PinName pin)
 {
 	u32 pwm_chan;
 	u32 pwmtimer_idx;
-	TIM_CCInitTypeDef TIM_CCInitStruct;
 
 	assert_param(obj->pwm_idx < PWM_CHANNEL_MAX);
 
@@ -124,9 +123,6 @@ void pwmout_init(pwmout_t *obj, PinName pin)
 		pwmout_timer_init(obj);
 	}
 
-	RTIM_CCStructInit(&TIM_CCInitStruct);
-	TIM_CCInitStruct.TIM_OCPulse = (u32)(obj->pulse * 40 / (prescaler + 1)) & 0x0000ffff;
-	RTIM_CCxInit(TIMx[pwmtimer_idx], &TIM_CCInitStruct, pwm_chan);
 	RTIM_CCxCmd(TIMx[pwmtimer_idx], pwm_chan, TIM_CCx_Enable);
 
 	Pinmux_Config(pin, PinMap_PWM[pwmtimer_idx - 4][pwm_chan]);

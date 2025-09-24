@@ -38,11 +38,19 @@ static void whc_fullmac_host_event_set_acs_info(u32 *param_buf)
 
 static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *event_priv, u32 *param_buf)
 {
+	struct mlme_priv_t *mlme_priv = &global_idev.mlme_priv;
 	u32 event = (u32)param_buf[0];
 	char *evt_info = (char *) &param_buf[2];
 	u16 disassoc_reason;
 	int channel = 6;/*channel need get, force 6 seems ok temporary*/
 	struct wireless_dev *wdev = global_idev.pwdev_global[0];
+#ifdef CONFIG_SUPPLICANT_SME
+	struct sme_priv_t *sme_priv = &global_idev.sme_priv;
+	struct rtw_event_sme_auth_timeout *auth_timeout_info;
+	struct rtw_event_sme_rx_assoc_resp *rx_assoc_rsp_info;
+	struct net_device *pndev = global_idev.pndev[0];
+	struct rtw_event_report_frame *evt_rpt_frm;
+#endif
 	struct rtw_event_ap_sta_disassoc *sta_disassoc_info;
 	struct rtw_event_join_status_info *join_status_info;
 	struct rtw_event_disconnect *disconnect;
@@ -66,9 +74,9 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 			dev_dbg(global_idev.fullmac_dev, "%s: disassoc_reason=%d \n", __func__, disassoc_reason);
 			whc_fullmac_host_disconnect_indicate(disassoc_reason, 1, join_status_info->bssid);
 		}
-		if (global_idev.mlme_priv.b_in_disconnect) {
-			complete(&global_idev.mlme_priv.disconnect_done_sema);
-			global_idev.mlme_priv.b_in_disconnect = false;
+		if (mlme_priv->b_in_disconnect) {
+			complete(&mlme_priv->disconnect_done_sema);
+			mlme_priv->b_in_disconnect = false;
 		}
 	}
 
@@ -106,6 +114,14 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 				}
 			} else if (rtw_p2p_frame_is_registered(P2P_ROLE_CLIENT, IEEE80211_STYPE_ACTION)) { //GC intf has registered action report
 				wdev = global_idev.pwdev_global[1];
+			}
+		} else {
+			if (global_idev.p2p_global.pd_pwdev && memcmp((rx_mgnt_info->frame + 4), global_idev.p2p_global.pd_pwdev->address, 6) == 0) {
+				wdev =	global_idev.p2p_global.pd_pwdev;
+			} else if (global_idev.p2p_global.p2p_role == P2P_ROLE_CLIENT) { /* port0 is used by GC */
+				wdev = global_idev.pwdev_global[1];
+			} else {
+				wdev = global_idev.pwdev_global[0];							/* port0 is used by STA */
 			}
 		}
 #endif
@@ -149,6 +165,93 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 		dev_dbg(global_idev.fullmac_dev, "%s: owe update \n", __func__);
 		whc_fullmac_host_update_owe_info_event(evt_info);
 	}
+
+#ifdef CONFIG_SUPPLICANT_SME
+#ifdef CONFIG_P2P
+	if (global_idev.p2p_global.p2p_role == P2P_ROLE_CLIENT) {
+		pndev = global_idev.pndev[1];	/* GC connect using SME */
+	} else {
+		pndev = global_idev.pndev[0];	/* STA connect using SME */
+	}
+#endif
+	if (event == RTW_EVENT_SME_AUTH_TIMEOUT) {
+		dev_dbg(global_idev.fullmac_dev, "%s: RTW_EVENT_SME_AUTH_TIMEOUT \n", __func__);
+		auth_timeout_info = (struct rtw_event_sme_auth_timeout *)evt_info;
+		cfg80211_auth_timeout(pndev, auth_timeout_info->bssid);
+
+	} else if (event == RTW_EVENT_SME_ASSOC_TIMEOUT) {
+		dev_dbg(global_idev.fullmac_dev, "%s: RTW_EVENT_SME_ASSOC_TIMEOUT \n", __func__);
+
+		if (sme_priv->cfg80211_assoc_bss) {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+			struct cfg80211_assoc_failure *passocfail_data = (struct cfg80211_assoc_failure *)kzalloc(sizeof(struct cfg80211_assoc_failure), GFP_KERNEL);
+			passocfail_data->bss[0] = sme_priv->cfg80211_assoc_bss;
+			passocfail_data->timeout = 1;
+
+			cfg80211_assoc_failure(pndev, passocfail_data);
+			kfree(passocfail_data);
+#else
+			cfg80211_assoc_timeout(pndev, sme_priv->cfg80211_assoc_bss);
+#endif
+
+			sme_priv->cfg80211_assoc_bss = NULL;
+		} else {
+			dev_dbg(global_idev.fullmac_dev, "%s(): association timeout but no corresponding bss recorded\n", __FUNCTION__);
+		}
+
+	} else if (event == RTW_EVENT_SME_RX_MLME_MGNT) {
+		dev_dbg(global_idev.fullmac_dev, "%s: RTW_EVENT_SME_RX_MLME_MGNT\n", __func__);
+		evt_rpt_frm = (struct rtw_event_report_frame *)evt_info;
+		cfg80211_rx_mlme_mgmt(pndev, evt_rpt_frm->frame, evt_rpt_frm->frame_len);
+
+	} else if (event == RTW_EVENT_SME_TX_MLME_MGNT) {
+		dev_dbg(global_idev.fullmac_dev, "%s: RTW_EVENT_SME_TX_MLME_MGNT \n", __func__);
+		evt_rpt_frm = (struct rtw_event_report_frame *)evt_info;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0))
+		cfg80211_tx_mlme_mgmt(pndev, evt_rpt_frm->frame, evt_rpt_frm->frame_len, false);
+#else
+		cfg80211_tx_mlme_mgmt(pndev, evt_rpt_frm->frame, evt_rpt_frm->frame_len);
+#endif
+	} else if (event == RTW_EVENT_SME_RX_ASSOC_RESP) {
+		dev_dbg(global_idev.fullmac_dev, "%s: RTW_EVENT_SME_RX_ASSOC_RESP \n", __func__);
+
+		if (sme_priv->cfg80211_assoc_bss) {
+			rx_assoc_rsp_info = (struct rtw_event_sme_rx_assoc_resp *)evt_info;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+			struct cfg80211_rx_assoc_resp *passocrsp_data = (struct cfg80211_rx_assoc_resp *)kzalloc(sizeof(struct cfg80211_rx_assoc_resp), GFP_KERNEL);
+
+			passocrsp_data->buf = rx_assoc_rsp_info->frame;
+			passocrsp_data->len = rx_assoc_rsp_info->frame_len;
+			passocrsp_data->req_ies = mlme_priv->assoc_req_ie + WLAN_HDR_A3_LEN + 4 + (*(u8 *)mlme_priv->assoc_req_ie == 0 ? 0 : 6);/* re-assoc: current ap */
+			passocrsp_data->req_ies_len = mlme_priv->assoc_req_ie_len - WLAN_HDR_A3_LEN - 4 - (*(u8 *)mlme_priv->assoc_req_ie == 0 ? 0 : 6);
+			passocrsp_data->uapsd_queues = rx_assoc_rsp_info->uapsd_ac_enable;
+			passocrsp_data->links[0].bss = sme_priv->cfg80211_assoc_bss;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 2, 0))
+			passocrsp_data->links[0].status = *(u16 *)(passocrsp_data->buf + WLAN_HDR_A3_LEN + 2);
+#endif
+			passocrsp_data->links[0].addr = mlme_priv->assoc_req_ie + 4;
+
+			cfg80211_rx_assoc_resp(pndev, passocrsp_data);
+
+			kfree(passocrsp_data);
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0))
+			cfg80211_rx_assoc_resp(pndev, sme_priv->cfg80211_assoc_bss, rx_assoc_rsp_info->frame, rx_assoc_rsp_info->frame_len, rx_assoc_rsp_info->uapsd_ac_enable,
+								   mlme_priv->assoc_req_ie + WLAN_HDR_A3_LEN + 4 + (*(u8 *)mlme_priv->assoc_req_ie == 0 ? 0 : 6),
+								   mlme_priv->assoc_req_ie_len - WLAN_HDR_A3_LEN - 4 - (*(u8 *)mlme_priv->assoc_req_ie == 0 ? 0 : 6));
+#else
+			cfg80211_rx_assoc_resp(pndev, sme_priv->cfg80211_assoc_bss, rx_assoc_rsp_info->frame, rx_assoc_rsp_info->frame_len, rx_assoc_rsp_info->uapsd_ac_enable);
+#endif
+			sme_priv->cfg80211_assoc_bss = NULL;
+		} else {
+			dev_dbg(global_idev.fullmac_dev, "%s(): RX assocrsp but no corresponding bss recorded\n", __FUNCTION__);
+		}
+	} else if (event == RTW_EVENT_SME_RX_UNPROT_MLME_MGMT) {
+		rx_mgnt_info = (struct rtw_event_rx_mgnt *)evt_info;
+
+		dev_dbg(global_idev.fullmac_dev, "%s: rx unprot mlme mgnt \n", __func__);
+		cfg80211_rx_unprot_mlme_mgmt(pndev, rx_mgnt_info->frame, rx_mgnt_info->frame_len);
+	}
+#endif
 
 #ifdef CONFIG_P2P
 	if (event == RTW_EVENT_WPA_P2P_CHANNEL_RDY) {
@@ -347,6 +450,9 @@ void whc_fullmac_host_event_task(struct work_struct *data)
 #ifdef CONFIG_P2P
 	struct wireless_dev *wdev = NULL;
 #endif
+#ifdef CONFIG_NAN
+	u64 os_dep_data = 0;
+#endif
 
 	dev_dbg(global_idev.fullmac_dev, "-----DEVICE CALLING API %x START\n", p_recv_msg->api_id);
 
@@ -408,8 +514,8 @@ void whc_fullmac_host_event_task(struct work_struct *data)
 		whc_fullmac_host_event_nan_match_indicate(event_priv, param_buf);
 		break;
 	case WHC_API_CFG80211_NAN_DEL_FUNC:
-		u64 data = ((u64)param_buf[1] << 32) | param_buf[0];
-		whc_fullmac_host_nan_func_free(data);
+		os_dep_data = ((u64)param_buf[1] << 32) | param_buf[0];
+		whc_fullmac_host_nan_func_free(os_dep_data);
 		break;
 	case WHC_API_CFG80211_NAN_CFGVENDOR_EVENT:
 		whc_fullmac_host_event_nan_cfgvendor_event_indicate(event_priv, param_buf);

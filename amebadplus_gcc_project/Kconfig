@@ -62,6 +62,15 @@ menu "CONFIG TrustZone"
     rsource "project_km4/Kconfig.tz"
 endmenu
 
+menu "CONFIG Memory Arch"
+    config DISABLE_PSRAM
+        bool "DISABLE PSRAM"
+    if DISABLE_PSRAM
+        config SECOND_FLASH_NOR
+            bool "Second flash NOR"
+    endif
+endmenu
+
 menu "CONFIG Link Option"
     choice
         prompt "IMG1(Bootloader) running on FLASH or SRAM?"
@@ -114,20 +123,6 @@ menu "CONFIG Link Option"
 
 endmenu
 
-menu "CONFIG Mass Production"
-    config MP_INCLUDED
-        bool "Enable MP"
-    if MP_INCLUDED
-        choice
-            prompt "MP Mode"
-            default MP_SHRINK
-            config MP_EXPAND
-                bool "expand"
-            config MP_SHRINK
-                bool "shrink"
-        endchoice
-    endif
-endmenu
 
 rsource "../component/at_cmd/Kconfig"
 
@@ -148,16 +143,20 @@ rsource "../component/usb/Kconfig"
 
 menu "CONFIG APPLICATION"
 
-    rsource "../component/ui/Kconfig"
+    orsource "../component/ui/Kconfig"
 
-    rsource "../component/audio/Kconfig"
+    orsource "../component/audio/Kconfig"
 
     menu "AI Config"
         orsource "../component/tflite_micro/Kconfig"
-        rsource "../component/aivoice/Kconfig.dplus"
+        orsource "../component/aivoice/Kconfig.dplus"
     endmenu
 
     orsource "${RTK_APP_DIR}/Kconfig"
+
+    orsource "../component/application/matter/project/cmake/Kconfig"
+
+    rsource "../component/soc/common/diagnose/Kconfig"
 
 endmenu
 
@@ -177,13 +176,6 @@ menu "CONFIG WHC INTF"
                 select WHC_DEV_FOR_KM4
             config WHC_FULLMAC_HOST
                 bool "FULLMAC_HOST"
-                select WHC_FULLMAC_HOST_IMPL
-                select WHC_HOST_FOR_KM4
-            config WHC_BRIDGE
-                bool "BRIDGE_DEV"
-                select WHC_NONE_FOR_KM4
-            config WHC_BRIDGE_HOST
-                bool "BRIDGE_HOST"
                 select WHC_FULLMAC_HOST_IMPL
                 select WHC_HOST_FOR_KM4
             #config WIFI_SINGLE_CORE_MENU
@@ -243,19 +235,16 @@ menu "CONFIG WHC INTF"
         endmenu
     endif
 
-    if FULLMAC_DEV || WHC_BRIDGE
+    if FULLMAC_DEV
         menu "FULLMAC config"
         config WHC_CMD_PATH
-            default y if WHC_BRIDGE
             bool "Support WHC CMD PATH"
         config WHC_WIFI_API_PATH
             default y if FULLMAC_DEV
             bool "Support WHC WIFI API PATH"
         config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4
-            default y if WHC_BRIDGE
             bool "Support WHC SUPPLICANT OFFLOAD"
         config WHC_DUAL_TCPIP_FOR_KM4
-            default y if WHC_BRIDGE
             bool "Support WHC DUAL TCPIP"
         endmenu
     endif
@@ -327,16 +316,6 @@ menu "CONFIG WIFI"
             select WIFI_HOST_CONTROL
             select LWIP_LAYER if WHC_DUAL_TCPIP_FOR_KM4
 
-        config WHC_BRIDGE
-            bool
-            depends on WHC_NONE
-            select WLAN
-            select LWIP_LAYER
-            select WIFI_HOST_CONTROL
-            select WHC_CMD_PATH
-            select WHC_DUAL_TCPIP_FOR_KM4
-            select WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4
-
         config WHC_FULLMAC_HOST_IMPL
             bool
             depends on WHC_HOST
@@ -391,8 +370,6 @@ menu "CONFIG WIFI"
     config ENABLE_WPS_DISCOVERY
         bool
     config FULLMAC_HOST
-        bool
-    config WHC_BRIDGE
         bool
     config WIFI_HOST_CONTROL
         bool

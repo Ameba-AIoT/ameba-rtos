@@ -51,6 +51,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.skb_num_ap = 0;
 #endif
 #endif
+	wifi_user_config.tx_ampdu_num = 0; /* 0: default 20, 1: equivalent to wifi_user_config.ampdu_tx_enable = 0, Otherwise: max aggregation number, up to 0x3F*/
 	wifi_user_config.skb_buf_size = 0;
 	wifi_user_config.wifi_wpa_mode_force = RTW_WPA_AUTO_MODE;
 
@@ -86,13 +87,16 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.ampdu_rx_enable = (u8)TRUE;
 	wifi_user_config.ampdu_tx_enable = (u8)TRUE;
 	wifi_user_config.check_dest_address_en = (u8)TRUE;
-	wifi_user_config.ap_compatibilty_enabled = 0x0B;
+	wifi_user_config.ap_compatibilty_enabled = 0x0F;
 	wifi_user_config.set_channel_api_do_rfk = 1;
 	wifi_user_config.dpk_peak_limit = 0;
 	wifi_user_config.rf_calibration_disable = 0;
 	wifi_user_config.tx_shortcut_enable = 1;
 	wifi_user_config.rx_shortcut_enable = 1;
 	wifi_user_config.keepalive_interval = 20;
+	wifi_user_config.rx_cca_thresh = 0;
+	wifi_user_config.rate_mask_cck = 0x0;
+
 #if defined(CONFIG_FULLMAC_DEV) &&  !defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 	/* Linux wifi supports cfg80211 ops. */
 	wifi_user_config.cfg80211 = 1;

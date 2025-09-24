@@ -7,6 +7,7 @@
 
 
 /* SMC function IDs for Standard Service queries */
-#define RTK_SMC_TEST		0x82000001
+#define RTK_SMC_TEST			0x82000001
+#define RTK_SMC_MATTER_SECURE	0x82000002
 
 #endif /* BSEC_SVC_H */

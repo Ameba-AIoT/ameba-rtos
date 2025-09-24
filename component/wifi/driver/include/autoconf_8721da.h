@@ -46,6 +46,7 @@
 /************************* Default Values of User Configure *****************************/
 #define MACID_HW_MAX_NUM		16
 /************************* Default Values of User Configure End***************************/
+//#define CONFIG_SUPPLICANT_SME
 
 /* Configure for bus */
 #define CONFIG_AXI_HCI

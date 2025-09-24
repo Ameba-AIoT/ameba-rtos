@@ -773,7 +773,7 @@ void whc_spi_dev_send_cmd_data(u8 *buf, u32 len)
 	if (event != WHC_WIFI_EVT_RECV_PKTS) {
 		txbuf = rtos_mem_zmalloc(txsize);
 		if (!txbuf) {
-			RTK_LOGE(TAG_WLAN_INIC, "allocate buffer failed when to send in spi bridge\n");
+			RTK_LOGE(TAG_WLAN_INIC, "allocate buffer failed when to send in spi cmd data\n");
 			return;
 		}
 		hdr = (struct whc_cmd_path_hdr *)txbuf;

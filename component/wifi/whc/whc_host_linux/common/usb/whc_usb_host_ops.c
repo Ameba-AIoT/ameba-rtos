@@ -80,6 +80,7 @@ void whc_usb_host_send_data(u8 *buf, u32 len, struct sk_buff *pskb)
 		} else {
 			kfree(buf);
 		}
+		return;
 	}
 	mutex_lock(&priv->lock);
 

@@ -216,4 +216,6 @@ void SOCPS_MPUBackupEntry(struct CPU_BackUp_TypeDef *bk, MPU_Type *mpu);
 void SOCPS_MPUReFillEntry(struct CPU_BackUp_TypeDef *bk, MPU_Type *mpu);
 void SOCPS_PeriPermissionEntry(uint32_t ip_mask, u32 enable);
 void SOCPS_BitPermissionEntry(uint32_t ip_mask, u32 enable);
+
+extern SLEEP_ParamDef sleep_param;
 #endif //_AMEBA_PMC_H_

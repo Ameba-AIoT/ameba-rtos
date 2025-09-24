@@ -15,7 +15,7 @@
 static const char *const TAG = "COMP";
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
-#define CONFIG_USBD_COMPOSITE_HOTPLUG							0
+#define CONFIG_USBD_COMPOSITE_HOTPLUG							1
 
 #if COMP_MSC_RAM_DISK && (CONFIG_USBD_COMPOSITE_HOTPLUG == 1)
 #error "Hotplug is not supported when RAM is used for USB MSC media"
@@ -53,7 +53,6 @@ static void composite_cb_status_changed(u8 old_status, u8 status);
 
 static usbd_config_t composite_cfg = {
 	.speed = CONFIG_USBD_COMPOSITE_SPEED,
-	.dma_enable = 1U,
 	.isr_priority = CONFIG_USBD_COMPOSITE_ISR_THREAD_PRIORITY,
 	.intr_use_ptx_fifo = 0U,
 #if defined (CONFIG_AMEBASMART)
@@ -237,7 +236,9 @@ static void composite_hotplug_thread(void *param)
 				if (ret != 0) {
 					break;
 				}
+				usbd_composite_msc_disk_deinit();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
+				usbd_composite_msc_disk_init();
 				ret = usbd_init(&composite_cfg);
 				if (ret != 0) {
 					break;
@@ -274,6 +275,12 @@ static void example_usbd_composite_thread(void *param)
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
 	rtos_sema_create(&composite_attach_status_changed_sema, 0U, 1U);
 #endif
+
+	ret = usbd_composite_msc_disk_init();
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init disk fail\n");
+		goto exit_usbd_composite_msc_disc_init_fail;
+	}
 
 	ret = usbd_init(&composite_cfg);
 	if (ret != HAL_OK) {
@@ -313,6 +320,9 @@ exit_usbd_composite_init_fail:
 	usbd_deinit();
 
 exit_usbd_init_fail:
+	usbd_composite_msc_disk_deinit();
+
+exit_usbd_composite_msc_disc_init_fail:
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD COMP demo stop\n");
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
 	rtos_sema_delete(composite_attach_status_changed_sema);

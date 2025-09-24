@@ -146,7 +146,7 @@ uint16_t rtk_bt_audio_track_resume(void *track_hdl)
 	return 0;
 }
 
-int32_t rtk_bt_audio_track_play(void *track_hdl, void *buffer, uint16_t size)
+int32_t rtk_bt_audio_track_play(void *track_hdl, void *buffer, uint32_t size)
 {
 	struct RTAudioTrack *audio_track = NULL;
 

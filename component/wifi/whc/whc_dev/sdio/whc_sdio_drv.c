@@ -2,10 +2,8 @@
 
 struct whc_sdio_priv_t sdio_priv = {0};
 
-#ifndef CONFIG_WHC_BRIDGE
 void rtw_pending_q_resume(void);
 void (*bt_inic_sdio_recv_ptr)(uint8_t *buffer, uint16_t len);
-#endif
 
 static u32 whc_sdio_dev_suspend(u32 expected_idle_time, void *param)
 {
@@ -92,10 +90,8 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 
 		if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 5) ||
 			((new_skb = dev_alloc_skb(SPDIO_DEVICE_RX_BUFSZ, SPDIO_SKB_RSVD_LEN)) == NULL)) {
-#ifndef CONFIG_WHC_BRIDGE
 			/* resume pending queue to release skb */
 			rtw_pending_q_resume();
-#endif
 			return RTK_FAIL;
 		}
 
@@ -115,7 +111,6 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 
 		whc_sdio_dev_event_int_hdl(pdata, rx_skb, size);
 
-#ifndef  CONFIG_WHC_BRIDGE
 #ifdef CONFIG_WHC_WIFI_API_PATH
 	} else if (event == WHC_CUST_EVT) {
 		whc_dev_recv_cust_evt(pdata);
@@ -125,8 +120,6 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 		if (bt_inic_sdio_recv_ptr) {
 			bt_inic_sdio_recv_ptr(pdata, SPDIO_DEVICE_RX_BUFSZ);
 		}
-#endif
-
 	} else {
 		/* SPDIO receives EVENTS */
 		buf = rtos_mem_zmalloc(size);
@@ -178,6 +171,7 @@ void whc_sdio_dev_device_init(void)
 		}
 	}
 
+	dev->pSDIO = SDIO_WIFI;
 	dev->device_rx_done_cb = whc_sdio_dev_rx_done_cb;
 	dev->device_tx_done_cb = whc_sdio_dev_tx_done_cb;
 	dev->rpwm_cb = whc_sdio_dev_rpwm_cb;
@@ -187,10 +181,8 @@ void whc_sdio_dev_device_init(void)
 
 	spdio_init(dev);
 
-#ifndef CONFIG_WHC_BRIDGE
-	/* take lock after host ready in bridge mode */
+	/* take lock after host ready */
 	pmu_acquire_wakelock(PMU_WHC_WIFI);
-#endif
 
 	pmu_register_sleep_callback(PMU_WHC_WIFI, (PSM_HOOK_FUN)whc_sdio_dev_suspend, NULL, (PSM_HOOK_FUN)whc_sdio_dev_resume, NULL);
 

@@ -54,39 +54,44 @@ extern "C" {
 /**
   * @brief enum gpio_irq_event
   */
-
 typedef enum {
 	IRQ_NONE,
+	/* for edge trigger irq */
 	IRQ_RISE,
 	IRQ_FALL,
 
-	/* merge irq event from gpio_irq_event_ex */
-#if 1
+	/* for level trigger irq */
 	IRQ_LOW = 3,
 	IRQ_HIGH = 4,
-	IRQ_FALL_RISE = 5	// dual edge trigger, available for 8195B and 8710C
-#endif
+
+	/* for dual-edge trigger irq */
+	IRQ_FALL_RISE = 5
 
 } gpio_irq_event;
-/**
-  * @}
-  */
+/** @}*/
 
-/**
-  * @}
-  */
+/** @}*/
+/** @}*/
+/** @}*/
 
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
-
-
-typedef void (*gpio_irq_handler)(uint32_t id, gpio_irq_event event);
+/*
+ * Note:
+ *
+ * This 32-bit structure contains the following fields:
+ *
+ * uint32_t irq_event_type : 2;  // Bits [1:0] - Event type
+ *                                  1: Rising edge, high level
+ *                                  2: Falling edge, low level
+ *
+ * uint32_t reserved       : 14; // Bits [15:2] - Reserved
+ *
+ * uint32_t pin_num        : 5;  // Bits [20:16] - Pin number
+ *
+ * uint32_t port_num       : 2;  // Bits [22:21] - Port number
+ *
+ * uint32_t unused         : 9;  // Bits [31:23] - Unused
+ */
+typedef void (*gpio_irq_handler)(uint32_t id, uint32_t event);
 
 int gpio_irq_init(gpio_irq_t *obj, PinName pin, gpio_irq_handler handler, uint32_t id);
 void gpio_irq_free(gpio_irq_t *obj);

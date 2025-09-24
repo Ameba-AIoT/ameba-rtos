@@ -7,12 +7,12 @@ export CONFIG_FULLMAC_HCI_IPC = y
 export CONFIG_FULLMAC_HCI_SDIO = n
 export CONFIG_FULLMAC_HCI_SPI = n
 export CONFIG_FULLMAC_HCI_USB = n
-export CONFIG_WHC_BRIDGE = n
 export CONFIG_IEEE80211R = n
 export CONFIG_SUPPLICANT_SME = n
 export CONFIG_WHC_CMD_PATH = y
 export CONFIG_WHC_WIFI_API_PATH = y
 export CONFIG_WHC_HOST_RTW_CLI = n
+export CONFIG_WHC_ACTIVE_DETECT = n
 
 ifeq ($(CONFIG_FULLMAC_HCI_IPC),y)
 
@@ -27,10 +27,12 @@ ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/
 ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/whc
 ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/whc/whc_dev
 ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -I$(srctree)/$(src)/fullmac/ipc
+ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -I$(srctree)/$(src)/common
 ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -I$(srctree)/$(src)/common/netdev
 ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -I$(srctree)/$(src)/fullmac
 
 ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -DCONFIG_FULLMAC_HCI_IPC
+ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -DCONFIG_WHC_WIFI_API_PATH
 
 obj-$(CONFIG_WIFI_RTK_CFG80211_FULLMAC)	+= fullmac-ipc.o
 fullmac-ipc-objs			:= ./common/netdev/whc_host_drv_probe.o \
@@ -58,6 +60,10 @@ fullmac-ipc-objs			:= ./common/netdev/whc_host_drv_probe.o \
 					./fullmac/ipc/whc_fullmac_ipc_host_mem.o \
 					./fullmac/ipc/ameba_wificfg.o
 
+ifeq ($(CONFIG_WHC_CMD_PATH),y)
+ccflags-$(CONFIG_WHC_CMD_PATH) += -DCONFIG_WHC_CMD_PATH
+fullmac-ipc-objs += ./common/whc_host_netlink.o
+endif
 
 else
 
@@ -67,17 +73,6 @@ KDIR ?= /lib/modules/$(shell uname -r)/build
 M := $(CURDIR)
 B := $(abspath $O/$M)
 
-ifeq ($(CONFIG_WHC_BRIDGE),y)
-
-#fullmac bridge
-ifeq ($(CONFIG_FULLMAC_HCI_SDIO),y)
-SUB := bridge/sdio_bridge
-else ifeq ($(CONFIG_FULLMAC_HCI_SPI),y)
-SUB := bridge/spi_bridge
-endif
-
-else
-
 #fullmac
 ifeq ($(CONFIG_FULLMAC_HCI_SPI),y)
 SUB := fullmac/spi
@@ -85,8 +80,6 @@ else ifeq ($(CONFIG_FULLMAC_HCI_USB),y)
 SUB := fullmac/usb
 else ifeq ($(CONFIG_FULLMAC_HCI_SDIO),y)
 SUB := fullmac/sdio
-endif
-
 endif
 
 default:

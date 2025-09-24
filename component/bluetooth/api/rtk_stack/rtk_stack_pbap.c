@@ -148,7 +148,8 @@ static void app_pbap_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 			if (!param->pbap_get_phone_book_cmpl.data_end) {
 				bt_pbap_pull_continue(param->pbap_get_phone_book_cmpl.bd_addr);
 			}
-			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_PBAP, RTK_BT_PBAP_EVT_GET_PHONE_BOOK_CMPL, sizeof(rtk_bt_pbap_get_pb_cmpl_t));
+			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_PBAP, RTK_BT_PBAP_EVT_GET_PHONE_BOOK_CMPL,
+										sizeof(rtk_bt_pbap_get_pb_cmpl_t) + param->pbap_get_phone_book_cmpl.data_len);
 			if (!p_evt) {
 				BT_LOGE("app_pbap_bt_cback: evt_t allocate fail \r\n");
 				handle = false;
@@ -156,17 +157,10 @@ static void app_pbap_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 			}
 			p_pbap_get_pb_cmpl = (rtk_bt_pbap_get_pb_cmpl_t *)p_evt->data;
 			memcpy((void *)p_pbap_get_pb_cmpl->bd_addr, (void *)param->pbap_get_phone_book_cmpl.bd_addr, 6);
+			p_pbap_get_pb_cmpl->data_len = param->pbap_get_phone_book_cmpl.data_len;
 			if (param->pbap_get_phone_book_cmpl.data_len) {
-				p_pbap_get_pb_cmpl->p_data = osif_mem_alloc(RAM_TYPE_DATA_ON, param->pbap_get_phone_book_cmpl.data_len);
-				if (!p_pbap_get_pb_cmpl->p_data) {
-					BT_LOGE("app_pbap_bt_cback: p_data allocate fail \r\n");
-					handle = false;
-					break;
-				}
+				p_pbap_get_pb_cmpl->p_data = BT_STRUCT_TAIL(p_pbap_get_pb_cmpl, rtk_bt_pbap_get_pb_cmpl_t);
 				memcpy((void *)p_pbap_get_pb_cmpl->p_data, (void *)param->pbap_get_phone_book_cmpl.p_data, param->pbap_get_phone_book_cmpl.data_len);
-				p_pbap_get_pb_cmpl->data_len = param->pbap_get_phone_book_cmpl.data_len;
-			} else {
-				p_pbap_get_pb_cmpl->data_len = 0;
 			}
 			p_pbap_get_pb_cmpl->pb_size = param->pbap_get_phone_book_cmpl.pb_size;
 			p_pbap_get_pb_cmpl->new_missed_calls = param->pbap_get_phone_book_cmpl.new_missed_calls;
@@ -185,7 +179,8 @@ static void app_pbap_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 		BT_LOGA("app_pbap_bt_cback: Caller id name \r\n");
 		p_link = app_find_br_link(param->pbap_caller_id_name.bd_addr);
 		if (p_link != NULL) {
-			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_PBAP, RTK_BT_PBAP_EVT_CALLER_ID_NAME, sizeof(rtk_bt_pbap_caller_id_name_t));
+			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_PBAP, RTK_BT_PBAP_EVT_CALLER_ID_NAME,
+										sizeof(rtk_bt_pbap_caller_id_name_t) + param->pbap_caller_id_name.name_len);
 			if (!p_evt) {
 				BT_LOGE("app_pbap_bt_cback: evt_t allocate fail \r\n");
 				handle = false;
@@ -193,17 +188,10 @@ static void app_pbap_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 			}
 			p_pbap_caller_id_name = (rtk_bt_pbap_caller_id_name_t *)p_evt->data;
 			memcpy((void *)p_pbap_caller_id_name->bd_addr, (void *)param->pbap_caller_id_name.bd_addr, 6);
+			p_pbap_caller_id_name->name_len = param->pbap_caller_id_name.name_len;
 			if (param->pbap_caller_id_name.name_len > 0) {
-				p_pbap_caller_id_name->name_ptr = osif_mem_alloc(RAM_TYPE_DATA_ON, param->pbap_caller_id_name.name_len);
-				if (!p_pbap_caller_id_name->name_ptr) {
-					BT_LOGE("app_pbap_bt_cback: name_ptr allocate fail \r\n");
-					handle = false;
-					break;
-				}
+				p_pbap_caller_id_name->name_ptr = BT_STRUCT_TAIL(p_pbap_caller_id_name, rtk_bt_pbap_caller_id_name_t);
 				memcpy((void *)p_pbap_caller_id_name->name_ptr, (void *)param->pbap_caller_id_name.name_ptr, param->pbap_caller_id_name.name_len);
-				p_pbap_caller_id_name->name_len = param->pbap_caller_id_name.name_len;
-			} else {
-				p_pbap_caller_id_name->name_len = 0;
 			}
 			/* Send event */
 			if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {

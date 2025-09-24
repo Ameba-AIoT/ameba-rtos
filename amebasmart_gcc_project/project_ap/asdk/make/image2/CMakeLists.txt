@@ -4,7 +4,7 @@ ameba_add_image(target_img2 p_IMAGE_ALL ap_image_all.bin)
 
 ###############################  ADD COMPONENT  ###################################
 
-ameba_add_subdirectory(${c_CMPT_AIVOICE_DIR})
+ameba_add_subdirectory_if_exist(${c_CMPT_AIVOICE_DIR})
 ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
 ameba_add_subdirectory(${c_CMPT_MONITOR_DIR})
 ameba_add_subdirectory(${c_CMPT_SOC_DIR})
@@ -14,15 +14,16 @@ ameba_add_subdirectory(${c_CMPT_HAL_DIR})
 ameba_add_subdirectory(${c_CMPT_SWLIB_DIR})
 ameba_add_subdirectory(${c_CMPT_FILE_SYSTEM_DIR})
 ameba_add_subdirectory(${c_CMPT_EXAMPLE_DIR})
-ameba_add_subdirectory(${c_CMPT_AUDIO_DIR})
+ameba_add_subdirectory_if_exist(${c_CMPT_AUDIO_DIR})
 ameba_add_subdirectory(${c_CMPT_UTILS_DIR})
 ameba_add_subdirectory(${c_CMPT_USB_DIR})
+ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/cmsis-dsp)
 ameba_add_subdirectory_if_exist(${c_CMPT_WPAN_DIR})
 ameba_add_subdirectory(${c_CMPT_BLUETOOTH_DIR})
 ameba_add_subdirectory(${c_CMPT_NETWORK_DIR})
 ameba_add_subdirectory(${c_CMPT_LWIP_DIR})
 ameba_add_subdirectory(${c_CMPT_SSL_DIR})
-ameba_add_subdirectory(${c_CMPT_UI_DIR})
+ameba_add_subdirectory_if_exist(${c_CMPT_UI_DIR})
 ameba_add_subdirectory(${c_CMPT_DYN_APP_DIR})
 ameba_add_subdirectory(${c_CMPT_OS_DIR})
 ameba_add_subdirectory(${c_CMPT_DIAGNOSE_DIR})
@@ -39,6 +40,10 @@ ameba_add_subdirectory(${c_CMPT_PMC_DIR})
 
 ameba_add_subdirectory(${c_MCU_PROJECT_DIR}/src)
 
+ameba_add_subdirectory_if(CONFIG_MATTER_EN
+    ${c_CMPT_MATTER_DIR}/project/cmake lib_matter
+)
+
 # TODO: need to catch the error
 add_custom_target(atf ALL
     COMMAND ${CMAKE_COMMAND} -E echo "Building atf project"
@@ -51,6 +56,8 @@ set_target_properties(atf PROPERTIES
     ADDITIONAL_CLEAN_FILES
         ${CMAKE_BINARY_DIR}/project_ap/asdk/make/atf
 )
+
+ameba_target_depend_if(CONFIG_MATTER_SECURE_EN atf lib_atf_mbedtls_secure.a)
 
 ameba_target_depend(${c_CURRENT_IMAGE} atf)
 

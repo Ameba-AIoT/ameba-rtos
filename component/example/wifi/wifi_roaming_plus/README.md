@@ -14,20 +14,15 @@ None
 
 # SW configuration
 
-1. In `component/soc/usrcfg/amebaxxx/ameba_wificfg.c`.
-	```C
-	wifi_user_config.fast_reconnect_en = 0;
-	```
+1. If using fast DHCP, remember to enable it. Type command `./menuconfig.py` in auto_build and choose `CONFIG LWIP` -> `Enable Fast DHCP` save and exit.
 
-2. If using fast DHCP, remember to enable it. Type command `./menuconfig.py` in auto_build and choose `CONFIG LWIP` -> `Enable Fast DHCP` save and exit.
+2. Set the `RSSI_SCAN_THRESHOLD` and `RSSI_ROAMING_THRESHOLD` and `FIND_BETTER_RSSI_DELTA` according to the WLAN envrionment.
 
-3. Set the `RSSI_SCAN_THRESHOLD` and `RSSI_ROAMING_THRESHOLD` and `FIND_BETTER_RSSI_DELTA` according to the WLAN envrionment.
+3. Config `MAX_CH_NUM` and `MAX_AP_NUM` for your application usage. But with more scan `MAX_CH_NUM`, pre-scan time may takes longer.
 
-4. Config `MAX_CH_NUM` and `MAX_AP_NUM` for your application usage. But with more scan `MAX_CH_NUM`, pre-scan time may takes longer.
+4. IF support 5G channels. enable `SUPPORT_SCAN_5G_CHANNEL` and set the `roaming_channel_plan`.
 
-5. IF support 5G channels. enable `SUPPORT_SCAN_5G_CHANNEL` and set the `roaming_channel_plan`.
-
-6. Build and Download:
+5. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 

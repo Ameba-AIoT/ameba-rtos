@@ -1086,6 +1086,10 @@ void at_wlstate(void *arg)
 	rtos_mem_free((void *)p_wifi_setting);
 
 #if defined(CONFIG_IP_NAT) && (CONFIG_IP_NAT == 1)
+#if defined(LWIP_IPV6) && (LWIP_IPV6 == 1)
+	print_rlocal_ipv6_addresses();
+	print_rlocal_nhb();
+#endif
 	ipnat_dump();
 #endif
 
@@ -1175,6 +1179,27 @@ static void at_wlpromisc_help(void)
 	RTK_LOGI(NOTAG, "\t<all_apall>:\t\"all\" or \"apall\" only when enabled\r\n");
 }
 
+static u8 at_wlpromisc_cb(struct rtw_rx_pkt_info *pkt_info)
+{
+	UNUSED(pkt_info);
+	static u32 time = 0;
+	static u32 pkt_cnt = 0;
+	int time_diff;
+
+	if (0 == time) {
+		time = rtos_time_get_current_system_time_ms();
+	}
+	pkt_cnt++;
+	time_diff = rtos_time_get_current_system_time_ms() - time;
+	if (time_diff > 1000) {
+		RTK_LOGI(NOTAG, "recv %d pkts in %d ms\r\n", pkt_cnt, time_diff);
+		pkt_cnt = 0;
+		time = rtos_time_get_current_system_time_ms();
+	}
+
+	return RTW_PROMISC_NEED_DRV_HDL;
+}
+
 /****************************************************************
 AT command process:
 	AT+WLPROMISC
@@ -1227,6 +1252,7 @@ void at_wlpromisc(void *arg)
 			error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 			goto end;
 		}
+		promisc_para.callback = at_wlpromisc_cb;
 		wifi_promisc_enable(status, &promisc_para);
 	}
 
