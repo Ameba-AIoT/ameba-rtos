@@ -24,6 +24,9 @@ u8 UART_TX = _PA_4; // UART TX
 u8 UART_RX = _PA_5; // UART RX
 #endif
 
+signed char UART_RTS = -1;
+signed char UART_CTS = -1;
+
 u32 UART_BAUD = 38400;
 
 GDMA_InitTypeDef GDMA_InitStruct;
@@ -135,9 +138,14 @@ u32 atio_uart_handler(void *data)
 
 	uart_lsr = UART_LineStatusGet(UART_DEV);
 
+
 	if (uart_lsr & RUART_BIT_TIMEOUT_INT) {
-		UART_ClearRxFifo(UART_DEV);
-		return 0;
+		if (g_tt_mode) {
+			UART_INT_Clear(UART_DEV, RUART_BIT_TOICF);
+		} else {
+			UART_ClearRxFifo(UART_DEV);
+			return 0;
+		}
 	}
 
 	if (uart_lsr & UART_ALL_RX_ERR) {
@@ -299,6 +307,19 @@ int atio_uart_init(void)
 	UART_Init(UART_DEV, &UART_InitStruct);
 	UART_SetBaud(UART_DEV, UART_BAUD);
 	UART_RxCmd(UART_DEV, ENABLE);
+
+	if (UART_RTS > 0 && UART_CTS > 0) {
+		UART_SetRxLevel(UART_DEV_TABLE[uart_idx].UARTx, UART_RX_FIFOTRIG_LEVEL_1BYTES);
+#if defined (CONFIG_AMEBASMART)
+		Pinmux_Config(UART_RTS, PINMUX_FUNCTION_UART_RTSCTS);
+		Pinmux_Config(UART_CTS, PINMUX_FUNCTION_UART_RTSCTS);
+#else
+		Pinmux_Config(UART_RTS, PINMUX_FUNCTION_UART0_RTS);
+		Pinmux_Config(UART_CTS, PINMUX_FUNCTION_UART0_CTS);
+#endif
+		UART_DEV_TABLE[uart_idx].UARTx->MCR |= RUART_BIT_AFE;
+		UART_DEV_TABLE[uart_idx].UARTx->MCR |= RUART_BIT_RTS;
+	}
 
 	InterruptRegister((IRQ_FUN)atio_uart_handler, UART_DEV_TABLE[uart_idx].IrqNum, (u32)UART_DEV, INT_PRI_MIDDLE);
 	InterruptEn(UART_DEV_TABLE[uart_idx].IrqNum, INT_PRI_MIDDLE);

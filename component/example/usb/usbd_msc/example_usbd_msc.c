@@ -57,7 +57,6 @@ static void msc_cb_status_changed(u8 old_status, u8 status);
 
 static usbd_config_t msc_cfg = {
 	.speed = CONFIG_USBD_MSC_SPEED,
-	.dma_enable = 1U,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.ext_intr_enable = USBD_EPMIS_INTR,

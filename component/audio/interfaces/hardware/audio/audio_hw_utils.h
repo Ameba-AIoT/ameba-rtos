@@ -79,6 +79,7 @@ static inline bool AudioCheckValidFormat(enum AudioHwFormat format)
 		switch (format) {
 		case AUDIO_HW_FORMAT_PCM_8_BIT:
 		case AUDIO_HW_FORMAT_PCM_16_BIT:
+		case AUDIO_HW_FORMAT_PCM_24_BIT:
 		case AUDIO_HW_FORMAT_PCM_8_24_BIT:
 		case AUDIO_HW_FORMAT_PCM_32_BIT:
 			return true;

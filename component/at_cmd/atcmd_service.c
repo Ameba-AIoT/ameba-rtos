@@ -121,7 +121,7 @@ char g_host_control_mode = AT_HOST_CONTROL_UART;
 volatile char g_tt_mode_stop_flag = 0;
 volatile u8 g_tt_mode_stop_char_cnt = 0;
 rtos_timer_t xTimers_TT_Mode;
-char pin_name[5];
+char pin_name[5] = "NONE";
 char global_buf[SMALL_BUF];
 /* Out callback function */
 at_write out_buffer;
@@ -433,6 +433,11 @@ void atcmd_get_pin_from_json(const cJSON *const object, const char *const string
 		} else if (strstr(pin_ob->valuestring, "PB")) {
 			*value = _PB_0 + atoi(&(pin_ob->valuestring[2]));
 		}
+#ifdef _PC_0
+		else if (strstr(pin_ob->valuestring, "PC")) {
+			*value = _PC_0 + atoi(&(pin_ob->valuestring[2]));
+		}
+#endif
 	}
 }
 
@@ -499,6 +504,8 @@ int atcmd_host_control_config_setting(void)
 				}
 				atcmd_get_pin_from_json(uart_ob, "tx", &UART_TX);
 				atcmd_get_pin_from_json(uart_ob, "rx", &UART_RX);
+				atcmd_get_pin_from_json(uart_ob, "rts", (u8 *)&UART_RTS);
+				atcmd_get_pin_from_json(uart_ob, "cts", (u8 *)&UART_CTS);
 			}
 		} else if (g_host_control_mode == AT_HOST_CONTROL_SPI) {
 			cJSON *spi_ob, *spi_index_ob;
@@ -534,7 +541,9 @@ int atcmd_host_control_config_setting(void)
 
 DEFAULT:
 	if (g_host_control_mode == AT_HOST_CONTROL_UART) {
-		RTK_LOGI(TAG, "ATCMD HOST Control Mode : UART, tx:%s, ", PIN_VAL_TO_NAME_STR(UART_TX));
+		RTK_LOGI(TAG, "ATCMD HOST Control Mode : UART, rts:%s, ", PIN_VAL_TO_NAME_STR(UART_RTS));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "cts:%s, ", PIN_VAL_TO_NAME_STR(UART_CTS));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "tx:%s, ", PIN_VAL_TO_NAME_STR(UART_TX));
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "rx:%s, ", PIN_VAL_TO_NAME_STR(UART_RX));
 		if (at_config_file_exist == 0) {
 			u32 atcmd_uart_baudrate = 0;

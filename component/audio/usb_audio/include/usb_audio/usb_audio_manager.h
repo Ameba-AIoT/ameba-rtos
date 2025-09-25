@@ -34,10 +34,25 @@ typedef enum {
 
     /* Usb encounters an error. */
     USB_AUDIO_EVENT_ERROR,
+
+    /* Usb key event. */
+    USB_AUDIO_EVENT_KEY,
 } UsbAudioEventType;
 
+typedef enum {
+    USB_AUDIO_KEY_NONE,
+    USB_AUDIO_KEY_VOL_UP,
+    USB_AUDIO_KEY_VOL_DOWN,
+    USB_AUDIO_KEY_PLAY_PAUSE,
+} UsbAudioKeyType;
+
+typedef enum {
+    USB_AUDIO_KEY_UP,
+    USB_AUDIO_KEY_DOWN,
+} UsbAudioKeyState;
+
 typedef struct UsbAudioManager UsbAudioManager;
-typedef void (*UsbAudioEventCallback)(UsbAudioEventType event, void *user_data);
+typedef void (*UsbAudioEventCallback)(void *user_data, UsbAudioEventType event, int data1, int data2);
 
 /**
  * @brief Get the UsbAudioManager handler.

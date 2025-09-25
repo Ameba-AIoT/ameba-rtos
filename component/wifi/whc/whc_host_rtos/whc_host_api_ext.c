@@ -792,7 +792,6 @@ s32 wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc)
 
 void wifi_speaker_setting(u8 set_type, union rtw_speaker_set *settings)
 {
-#ifdef CONFIG_WIFI_SPEAKER_ENABLE
 	u32 param_buf[2] = {0};
 
 	param_buf[0] = (u32)set_type;
@@ -800,10 +799,6 @@ void wifi_speaker_setting(u8 set_type, union rtw_speaker_set *settings)
 	DCache_Clean((u32)settings, sizeof(union rtw_speaker_set));
 	param_buf[1] = (u32)settings;
 	whc_host_api_message_send(WHC_API_WIFI_SPEAKER, (u8 *)param_buf, 8, NULL, 0);
-#else
-	UNUSED(set_type);
-	UNUSED(settings);
-#endif
 }
 
 void wifi_set_owe_param(struct rtw_owe_param_t *owe_param)

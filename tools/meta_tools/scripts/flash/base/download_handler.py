@@ -196,7 +196,8 @@ class Ameba(object):
 
         start_time = datetime.now()
         while self.serial_port.inWaiting() < size:
-            time.sleep(0.001) # avoid waiting idly and improve efficiency.
+            if self.remote_server:
+                time.sleep(0.001) # avoid waiting idly and improve efficiency.
             if (datetime.now() - start_time).seconds >= timeout_seconds:
                 return ErrType.DEV_TIMEOUT, None
 

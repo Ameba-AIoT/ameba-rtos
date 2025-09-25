@@ -7,8 +7,14 @@ import os
 import subprocess
 import re
 import shutil
+import signal
 from typing import List, Dict
 from difflib import unified_diff
+
+IS_POSIX = (os.name == 'posix')
+if not IS_POSIX:
+    import win32api
+    import win32con
 
 BLACK = '\033[30m'
 RED = '\033[31m'
@@ -59,6 +65,7 @@ class Manager(object):
         self.prj_conf_external = os.path.join(out_dir, 'prj.conf') #for user external project
 
         self.general_configs = []
+        self.lock_file = os.path.join(self.config_root_dir, 'config_tmp')
 
     def run_command(self, script, *args):
         script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), script)
@@ -115,6 +122,30 @@ class Manager(object):
                 return 1
         return 0
 
+    def lock_acquire(self):
+        if os.path.exists(self.lock_file):
+            return False
+        else:
+            open(self.lock_file, "w")
+            return True
+
+    def lock_release(self):
+        if os.path.exists(self.lock_file):
+            os.remove(self.lock_file)
+
+    def lock_cleanup(self):
+        def cleanup_handler(signum, frame):
+            self.lock_release()
+        return cleanup_handler
+
+    def lock_cleanup_windows(self):
+        def cleanup_handler(ctrl_type):
+            if ctrl_type in (win32con.CTRL_CLOSE_EVENT, win32con.CTRL_LOGOFF_EVENT, win32con.CTRL_SHUTDOWN_EVENT):
+                self.lock_release()
+                return True
+            return False
+        return cleanup_handler
+
     def apply_manual_config(self) -> int:
         if not os.path.exists(self.config_in): #load default value to .config
             self.apply_default_config()
@@ -124,7 +155,24 @@ class Manager(object):
         if os.path.exists(self.config_default_old):
             os.remove(self.config_default_old)
 
-        return self.run_command('menuconfig.py', self.top_kconfig)
+        # cleanup the lock file when abnormal termination occurs
+        signal_handler = self.lock_cleanup()
+        signal.signal(signal.SIGINT, signal_handler) # ctrl+C
+        signal.signal(signal.SIGTERM, signal_handler)
+        if IS_POSIX: # for linux
+            signal.signal(signal.SIGHUP, signal_handler) # close the terminal or SSH disconnected
+        else: # for windows
+            signal.signal(signal.SIGBREAK, signal_handler) # ctrl+Break
+            windows_handler = self.lock_cleanup_windows()
+            win32api.SetConsoleCtrlHandler(windows_handler, True) # close/logoff/shutdown
+
+        if self.lock_acquire():
+            result = self.run_command('menuconfig.py', self.top_kconfig)
+            self.lock_release()
+            return result
+        else:
+            print("error: menuconfig is running in another terminal")
+            return None
 
     def apply_default_config(self) ->int:
         if os.path.exists(self.config_in):

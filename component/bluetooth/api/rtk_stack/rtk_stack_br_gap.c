@@ -382,6 +382,7 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 
 	case BT_EVENT_ACL_CONN_DISCONN: {
 		T_APP_BR_LINK *p_link = NULL;
+		BT_LOGA("BT_EVENT_ACL_CONN_DISCONN \r\n");
 		p_link = app_find_br_link(param->acl_conn_disconn.bd_addr);
 		if (!p_link) {
 			BT_LOGE("bt_stack_mgr_cback: no link found \r\n");

@@ -33,7 +33,6 @@ static usbd_config_t usbd_cfg = {
 #else
 	.speed = USB_SPEED_HIGH,
 #endif
-	.dma_enable = 1U,
 	.isr_priority = INT_PRI_MIDDLE,
 	.intr_use_ptx_fifo = 0U,
 	.nptx_max_epmis_cnt = 100U,

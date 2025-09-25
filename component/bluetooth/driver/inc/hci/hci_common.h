@@ -111,7 +111,7 @@ bool hci_controller_is_enabled(void);
 /**********************************************/
 
 /********** APIs called by hci uart ***********/
-void hci_uart_rx_irq_handler(void);
+void hci_uart_rx_irq_handler(bool from_irq);
 /**********************************************/
 
 #if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED

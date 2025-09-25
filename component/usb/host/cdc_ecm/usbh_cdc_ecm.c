@@ -480,12 +480,12 @@ static void usbh_cdc_ecm_process_bulk_out(usb_host_t *host)
 
 	switch (ep->xfer_state) {
 	case CDC_ECM_TRANSFER_STATE_XFER:
+		ep->xfer_state = CDC_ECM_TRANSFER_STATE_BUSY;
 		usbh_bulk_send_data(host,
 							ep->xfer_buf,
 							ep->xfer_len,
 							ep->pipe_id);
 
-		ep->xfer_state = CDC_ECM_TRANSFER_STATE_BUSY;
 		ep->idle_tick = usbh_get_tick(host);
 		ep->busy_tick = usbh_get_tick(host);
 		cdc->next_transfer = 1;
@@ -843,7 +843,7 @@ static int usbh_cdc_ecm_bulk_tx(void)
 	}
 
 	if (cdc->state == CDC_ECM_STATE_TRANSFER) {
-		if ((ep->xfer_state != CDC_ECM_TRANSFER_STATE_XFER) && (usbh_cdc_ecm_bulk_tx_time_check() == HAL_OK)) {
+		if ((ep->xfer_state == CDC_ECM_TRANSFER_STATE_IDLE) || (usbh_cdc_ecm_bulk_tx_time_check() == HAL_OK)) {
 			usbh_notify_class_state_change(host, ep->pipe_id);
 			ret = HAL_OK;
 		}

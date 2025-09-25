@@ -28,8 +28,6 @@
 
 rtk_bt_le_iso_priv_t bt_le_iso_priv_data = {0};
 
-extern bool rtk_bt_check_evt_cb_direct_calling(uint8_t group, uint8_t evt_code);
-
 T_APP_RESULT g_cis_request_ind_ret = APP_RESULT_PENDING;
 
 void bt_stack_le_iso_data_direct_callback(uint8_t cb_type, void *p_cb_data)

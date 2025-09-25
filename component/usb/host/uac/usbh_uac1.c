@@ -62,6 +62,9 @@ static int usbh_uac_count_list_blocks(struct list_head *head)
 	int cnt = 0;
 	struct list_head *pos;
 	list_for_each(pos, head) {
+		if (pos == NULL) {
+			break;
+		}
 		cnt++;
 	}
 	return cnt;

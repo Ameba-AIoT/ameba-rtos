@@ -104,6 +104,8 @@ typedef struct _wsclient_context {
 	char *client_cert;
 	char *client_key;
 	char *ca_cert;
+	int max_tx_len;
+	int max_rx_len;
 
 	//If max_data_len_rx is less than the length of payload(exclude header), the websocket message should be discarded because the buffer is insufficient to receive it
 	uint8_t enable_ws_msg_discarded;	//TRUE: Need to discard the websocket message

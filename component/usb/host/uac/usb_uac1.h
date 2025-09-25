@@ -7,7 +7,7 @@
 #ifndef USB_UAC1_H
 #define USB_UAC1_H
 
-#ifdef CONFIG_USBH_UAC
+#ifdef CONFIG_USB_UAC
 
 #define UAC_VERSION_1                   0x00
 #define UAC_VERSION_2                   0x20

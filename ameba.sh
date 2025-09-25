@@ -158,7 +158,52 @@ fi
 python $BASE_DIR/tools/scripts/check_requirements.py
 
 if [ "$(uname)" = "Linux" ]; then
-    chmod -R +x $PREBUILTS_DIR
+    echo "Process all .sh scripts only in specific directories..."
+
+    # Define the base directories to scan for script files.
+    SCAN_DIRS=()
+    # add ./*_gcc_project directories (current directory only)
+    for d in ./*_gcc_project; do
+        [ -d "$d" ] && SCAN_DIRS+=("$d")
+    done
+    # add ./tools directory
+    [ -d "./tools" ] && SCAN_DIRS+=("./tools")
+    # Example: To add a new directory in the future, add as follows:
+    # SCAN_DIRS+=("./new_directory")
+
+    # Define the file patterns to process (expandable), separated by spaces
+    FILE_PATTERNS=("*.sh")
+
+    # Search and set execute permission for script files in specified directories only
+    for base in "${SCAN_DIRS[@]}"; do
+        for pattern in "${FILE_PATTERNS[@]}"; do
+            find "$base" -type f -name "$pattern" -print0
+        done
+    done | while IFS= read -r -d '' file; do
+        if [ ! -x "$file" ]; then
+            chmod +x "$file" 2>/dev/null
+            if [ $? -ne 0 ]; then
+                echo "[WARNING] Failed to add execute permission: $file. Please check permissions or ownership." >&2
+            fi
+        fi
+    done
+
+    # Fix execute permissions for non-extension executables in PREBUILTS_DIR only
+    if [ -d "$PREBUILTS_DIR" ]; then
+        echo "Scanning for executable binary files with no extension in: $PREBUILTS_DIR ..."
+        find "$PREBUILTS_DIR" -type f ! -name "*.*" -print0 | while IFS= read -r -d '' file; do
+            if file "$file" | grep -q 'executable'; then
+                if [ ! -x "$file" ]; then
+                    chmod +x "$file" 2>/dev/null
+                    if [ $? -ne 0 ]; then
+                        echo "[WARNING] Failed to add execute permission to binary: $file. Please check permissions or ownership." >&2
+                    fi
+                fi
+            fi
+        done
+    else
+        echo "[WARNING] PREBUILTS_DIR not found: $PREBUILTS_DIR" >&2
+    fi
 fi
 
 info1="First choose IC platform : cd [IC]_gcc_project"

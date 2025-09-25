@@ -25,6 +25,27 @@ config USBH_CDC_ECM_MENU
         endchoice
     endif
 
+config USBH_COMPOSITE_MENU
+    bool "Composite"
+    select USBH_COMPOSITE if CORE_AS_AP
+    if USBH_COMPOSITE_MENU
+        choice
+            prompt "Select Composite Class"
+            config USBH_COMPOSITE_HID_UAC_MENU
+                bool "HID + UAC"
+                depends on SUPPORT_USBH_UAC
+                select USB_UAC if CORE_AS_AP
+                select USBH_COMPOSITE_HID_UAC if CORE_AS_AP
+                choice
+                    prompt "Select UAC Version"
+                    depends on USBH_COMPOSITE_HID_UAC_MENU
+                    config USBH_COMPOSITE_HID_UAC1_MENU
+                        bool "UAC 1.0"
+                        select USBH_COMPOSITE_HID_UAC1 if CORE_AS_AP
+                endchoice
+        endchoice
+    endif
+
 config USBH_MSC_MENU
     bool "MSC"
     select USBH_MSC if CORE_AS_AP
@@ -32,6 +53,7 @@ config USBH_MSC_MENU
 
 config USBH_UAC_MENU
     bool "UAC"
+    select USB_UAC  if CORE_AS_AP
     select USBH_UAC  if CORE_AS_AP
 
 config USBH_UVC_MENU

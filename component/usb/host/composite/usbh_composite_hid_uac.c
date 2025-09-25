@@ -1,0 +1,228 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Includes ------------------------------------------------------------------*/
+#include "usbh_composite_hid_uac.h"
+
+/* Private defines -----------------------------------------------------------*/
+
+/* Private types -------------------------------------------------------------*/
+
+/* Private macros ------------------------------------------------------------*/
+
+/* Private function prototypes -----------------------------------------------*/
+static int usbh_uac_cb_attach(usb_host_t *host);
+static int usbh_uac_cb_detach(usb_host_t *host);
+static int usbh_uac_cb_process(usb_host_t *host, u32 msg);
+static int usbh_uac_cb_setup(usb_host_t *host);
+static int usbh_uac_cb_sof(usb_host_t *host);
+
+/* Private variables ---------------------------------------------------------*/
+static const char *const TAG = "UAC";
+
+/* USB Standard Device Descriptor */
+static usbh_class_driver_t usbh_composite_driver = {
+	.class_code = USB_CLASS_AUDIO,
+	.attach = usbh_uac_cb_attach,
+	.detach = usbh_uac_cb_detach,
+	.setup = usbh_uac_cb_setup,
+	.process = usbh_uac_cb_process,
+	.sof = usbh_uac_cb_sof,
+};
+
+static usbh_composite_host_t usbh_composite_host;
+
+static int usbh_composite_deinit_class(usbh_class_driver_t **class)
+{
+	if (class) {
+		usbh_composite_uac_deinit();
+		*class = NULL;
+	}
+
+	return HAL_OK;
+}
+
+/**
+  * @brief  Attach callback.
+  * @param  host: Host handle
+  * @retval Status
+  */
+static int usbh_uac_cb_attach(usb_host_t *host)
+{
+	int ret;
+	usbh_composite_host_t *chost = &usbh_composite_host;
+
+	chost->host = host;
+
+	if ((chost->hid != NULL) && (chost->hid->attach != NULL)) {
+		ret = chost->hid->attach(host);
+		if (ret != HAL_OK) {
+			usbh_composite_deinit_class(&(chost->hid));
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Can not support hid\n");
+		}
+	}
+
+	if ((chost->uac != NULL) && (chost->uac->attach)) {
+		ret = chost->uac->attach(host);
+		if (ret != HAL_OK) {
+			usbh_composite_deinit_class(&(chost->uac));
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Can not support uac\n");
+		}
+	}
+
+	chost->state = USBH_COMPOSITE_ATTACH;
+
+	return HAL_OK;
+}
+
+/**
+  * @brief  Detach callback.
+  * @param  host: Host handle
+  * @retval Status
+  */
+static int usbh_uac_cb_detach(usb_host_t *host)
+{
+	usbh_composite_host_t *chost = &usbh_composite_host;
+	UNUSED(host);
+
+	chost->state = USBH_COMPOSITE_DETACHED;
+
+	if ((chost->hid != NULL) && (chost->hid->detach != NULL)) {
+		chost->hid->detach(host);
+	}
+
+	if ((chost->uac != NULL) && (chost->uac->detach)) {
+		chost->uac->detach(host);
+	}
+
+	return HAL_OK;
+}
+
+/**
+  * @brief  Standard control requests handling callback
+  * @param  host: Host handle
+  * @retval Status
+  */
+static int usbh_uac_cb_setup(usb_host_t *host)
+{
+	usbh_composite_host_t *chost = &usbh_composite_host;
+	int ret = HAL_OK;
+
+	if (chost->hid != NULL) { //maybe not support hid while do attch check
+		ret = usbh_composite_hid_handle_report_desc(host);
+		if (ret != HAL_OK) {
+			return ret;
+		}
+	}
+
+	if ((chost->hid != NULL) && (chost->hid->setup != NULL)) {
+		chost->hid->setup(host);
+	}
+
+	if ((chost->uac != NULL) && (chost->uac->setup)) {
+		chost->uac->setup(host);
+	}
+
+	chost->state = USBH_COMPOSITE_SETUP;
+
+	return HAL_OK;
+}
+
+/**
+  * @brief  Sof callback
+  * @param  host: Host handle
+  * @retval Status
+  */
+static int usbh_uac_cb_sof(usb_host_t *host)
+{
+	usbh_composite_host_t *chost = &usbh_composite_host;
+
+	if ((chost->hid != NULL) && (chost->hid->sof != NULL)) {
+		chost->hid->sof(host);
+	}
+
+	if ((chost->uac != NULL) && (chost->uac->sof)) {
+		chost->uac->sof(host);
+	}
+
+	return HAL_OK;
+}
+
+/**
+  * @brief  State machine handling callback
+  * @param  host: Host handle
+  * @retval Status
+  */
+static int usbh_uac_cb_process(usb_host_t *host, u32 msg)
+{
+	usbh_composite_host_t *chost = &usbh_composite_host;
+
+	if ((chost->hid != NULL) && (chost->hid->process != NULL)) {
+		chost->hid->process(host, msg);
+	}
+
+	if ((chost->uac != NULL) && (chost->uac->process != NULL)) {
+		chost->uac->process(host, msg);
+	}
+
+	return HAL_OK;
+}
+
+/* Exported functions --------------------------------------------------------*/
+
+/**
+  * @brief  Init uac class
+  * @param  cb: User callback
+  * @retval Status
+  */
+int usbh_composite_init(usbh_composite_hid_usr_cb_t *hid_cb, usbh_composite_uac_usr_cb_t *uac_cb, int frame_cnt)
+{
+	int ret;
+	usbh_composite_host_t *chost = &usbh_composite_host;
+
+	if ((hid_cb == NULL) || (uac_cb == NULL)) {
+		ret = HAL_ERR_PARA;
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+		return ret;
+	}
+
+	ret = usbh_composite_hid_init(chost, hid_cb);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init HID itf fail: %d\n", ret);
+		return ret;
+	}
+	chost->hid = (usbh_class_driver_t *)&usbh_composite_hid_driver;
+
+	ret = usbh_composite_uac_init(chost, uac_cb, frame_cnt);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init UAC itf fail: %d\n", ret);
+		usbh_composite_hid_deinit();
+		return ret;
+	}
+	chost->uac = (usbh_class_driver_t *)&usbh_composite_uac_driver;
+
+	usbh_register_class(&usbh_composite_driver);
+
+	return HAL_OK;
+}
+
+/**
+  * @brief  Deinit uac class
+  * @retval Status
+  */
+int usbh_composite_deinit(void)
+{
+	usbh_composite_host_t *chost = &usbh_composite_host;
+
+	usbh_unregister_class(&usbh_composite_driver);
+
+	usbh_composite_deinit_class(&(chost->uac));
+	usbh_composite_deinit_class(&(chost->hid));
+
+	chost->cb = NULL;
+
+	return HAL_OK;
+}

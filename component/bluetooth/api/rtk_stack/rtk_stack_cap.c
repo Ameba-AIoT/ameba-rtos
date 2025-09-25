@@ -63,8 +63,6 @@ static rtk_bt_le_audio_csis_sirk_type_t default_csis_sirk_type = RTK_BT_LE_CSIS_
 uint16_t default_csis_size = RTK_BT_LE_CSIS_SIRK_LEN;
 #endif
 
-extern bool rtk_bt_check_evt_cb_direct_calling(uint8_t group, uint8_t evt_code);
-
 #if defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT
 static uint16_t rtk_stack_mcp_client_read_result_handle(T_MCP_CLIENT_READ_RESULT *p_read_result)
 {
@@ -680,10 +678,6 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 			p_read_ind->char_uuid == MCS_UUID_CHAR_TRACK_DURATION || p_read_ind->char_uuid == MCS_UUID_CHAR_TRACK_POSITION ||
 			p_read_ind->char_uuid == MCS_UUID_CHAR_CONTENT_CONTROL_ID) {
 			rtk_bt_le_audio_mcp_server_read_ind_t *p_ind = NULL;
-			if (false == rtk_bt_check_evt_cb_direct_calling(RTK_BT_LE_GP_CAP, RTK_BT_LE_AUDIO_EVT_MCP_SERVER_READ_IND)) {
-				BT_LOGE("%s: RTK_BT_LE_AUDIO_EVT_MCP_SERVER_READ_IND is not direct calling!\r\n", __func__);
-				break;
-			}
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_CAP,
 										RTK_BT_LE_AUDIO_EVT_MCP_SERVER_READ_IND,
 										sizeof(rtk_bt_le_audio_mcp_server_read_ind_t));
