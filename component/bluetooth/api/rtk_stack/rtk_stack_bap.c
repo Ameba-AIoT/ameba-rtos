@@ -141,7 +141,6 @@ static rtk_bt_le_audio_unicast_ase_qos_t bt_le_audio_bap_ase_qos = {
 static uint8_t bt_le_audio_metadata[RTK_BT_LE_AUDIO_DEMO_CAP_METADATA_DATA_MAX_LEN];
 static uint8_t bt_le_audio_metadata_len = 0;
 
-extern bool rtk_bt_check_evt_cb_direct_calling(uint8_t group, uint8_t evt_code);
 static void bt_stack_le_audio_sync_cb(T_BLE_AUDIO_SYNC_HANDLE sync_handle, uint8_t cb_type, void *p_cb_data);
 
 void bt_stack_le_audio_group_cb(T_AUDIO_GROUP_MSG msg, T_BLE_AUDIO_GROUP_HANDLE handle, void *buf);
@@ -851,10 +850,6 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 			}
 		} else {
 			BT_LOGE("%s ascs_get_ase_prefer_qos fail, get it from app\r\n", __func__);
-			if (false == rtk_bt_check_evt_cb_direct_calling(RTK_BT_LE_GP_BAP, RTK_BT_LE_AUDIO_EVT_ASCS_GET_PREFER_QOS_IND)) {
-				BT_LOGE("%s: RTK_BT_LE_AUDIO_EVT_ASCS_GET_PREFER_QOS_IND is not direct calling!\r\n", __func__);
-				break;
-			}
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_BAP,
 										RTK_BT_LE_AUDIO_EVT_ASCS_GET_PREFER_QOS_IND,
 										sizeof(rtk_bt_le_audio_ascs_get_prefer_qos_ind_t));
@@ -1076,10 +1071,6 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 				p_data->handle, p_data->source_id, p_data->is_past, p_data->pa_interval);
 		rtk_bt_le_audio_bass_get_pa_sync_param_ind_t *p_ind = NULL;
 		rtk_bt_le_audio_bass_pa_sync_param_t pa_sync_param = {0};
-		if (false == rtk_bt_check_evt_cb_direct_calling(RTK_BT_LE_GP_BAP, RTK_BT_LE_AUDIO_EVT_BASS_GET_PA_SYNC_PARAM_IND)) {
-			BT_LOGE("%s: RTK_BT_LE_AUDIO_EVT_BASS_GET_PA_SYNC_PARAM_IND is not direct calling!\r\n", __func__);
-			break;
-		}
 		if (p_data->is_past) {
 			p_sync_dev_info = bt_stack_le_audio_sync_dev_add(p_data->handle);
 		} else {
@@ -1128,10 +1119,6 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 				p_data->handle, p_data->source_id);
 		rtk_bt_le_audio_bass_get_big_sync_param_ind_t *p_ind = NULL;
 		rtk_bt_le_audio_bass_big_sync_param_t big_sync_param = {0};
-		if (false == rtk_bt_check_evt_cb_direct_calling(RTK_BT_LE_GP_BAP, RTK_BT_LE_AUDIO_EVT_BASS_GET_BIG_SYNC_PARAM_IND)) {
-			BT_LOGE("%s: RTK_BT_LE_AUDIO_EVT_BASS_GET_BIG_SYNC_PARAM_IND is not direct calling!\r\n", __func__);
-			break;
-		}
 
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_BAP,
 									RTK_BT_LE_AUDIO_EVT_BASS_GET_BIG_SYNC_PARAM_IND,
@@ -3996,10 +3983,6 @@ void bt_stack_le_audio_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 			BT_LOGD("%s pkt_seq_num=%d\r\n", __func__, p_data->p_bt_direct_iso->pkt_seq_num);
 		}
 		/* Send event */
-		if (false == rtk_bt_check_evt_cb_direct_calling(RTK_BT_LE_GP_BAP, RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND)) {
-			BT_LOGE("%s: RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND is not direct calling!\r\n", __func__);
-			break;
-		}
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_BAP,
 									RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND,
 									sizeof(rtk_bt_le_audio_direct_iso_data_ind_t));

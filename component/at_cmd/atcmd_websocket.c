@@ -924,6 +924,7 @@ void at_wssendraw(void *arg)
 	char *send_buf = NULL;
 	int frag_len, res, tt_get_len;
 	uint8_t is_first_frag = 0;
+	int ret = 0;
 
 	UNUSED(argc);
 
@@ -1007,16 +1008,33 @@ void at_wssendraw(void *arg)
 					atcmd_tt_mode_end();
 					goto end;
 				}
+
 				if (length > ws_config[link_id].tx_buffer_size) {
 					if (is_first_frag == 0) {
 						is_first_frag = 1;
 						ws_send_with_opcode(send_buf, frag_len, use_mask, opcode, 0, ws_config[link_id].ws_client);
 					} else {
-						ws_send_with_opcode(send_buf, frag_len, use_mask, CONTINUATION, 0, ws_config[link_id].ws_client);
+						ret = ws_send_with_opcode(send_buf, frag_len, use_mask, CONTINUATION, 0, ws_config[link_id].ws_client);
+						while (ret < 0) {
+							if (ws_config[link_id].ws_client == NULL) {
+								error_no = 2;
+								break;
+							}
+							rtos_time_delay_ms(25);
+							ret = ws_send_with_opcode(send_buf, frag_len, use_mask, CONTINUATION, 0, ws_config[link_id].ws_client);
+						}
 					}
 
 				} else {
-					ws_send_with_opcode(send_buf, frag_len, use_mask, CONTINUATION, 1, ws_config[link_id].ws_client);
+					ret = ws_send_with_opcode(send_buf, frag_len, use_mask, CONTINUATION, 1, ws_config[link_id].ws_client);
+					while (ret < 0) {
+						if (ws_config[link_id].ws_client == NULL) {
+							error_no = 2;
+							break;
+						}
+						rtos_time_delay_ms(25);
+						ret = ws_send_with_opcode(send_buf, frag_len, use_mask, CONTINUATION, 1, ws_config[link_id].ws_client);
+					}
 				}
 
 				length -= frag_len;
@@ -1047,11 +1065,27 @@ void at_wssendraw(void *arg)
 						is_first_frag = 1;
 						ws_send_with_opcode(send_buf, frag_len, use_mask, opcode, 0, ws_config[link_id].ws_client);
 					} else {
-						ws_send_with_opcode(send_buf, frag_len, use_mask, CONTINUATION, 0, ws_config[link_id].ws_client);
+						ret = ws_send_with_opcode(send_buf, frag_len, use_mask, CONTINUATION, 0, ws_config[link_id].ws_client);
+						while (ret < 0) {
+							if (ws_config[link_id].ws_client == NULL) {
+								error_no = 2;
+								break;
+							}
+							rtos_time_delay_ms(25);
+							ret = ws_send_with_opcode(send_buf, frag_len, use_mask, CONTINUATION, 0, ws_config[link_id].ws_client);
+						}
 					}
 
 				} else {
-					ws_send_with_opcode(send_buf, frag_len, use_mask, CONTINUATION, 1, ws_config[link_id].ws_client);
+					ret = ws_send_with_opcode(send_buf, frag_len, use_mask, CONTINUATION, 1, ws_config[link_id].ws_client);
+					while (ret < 0) {
+						if (ws_config[link_id].ws_client == NULL) {
+							error_no = 2;
+							break;
+						}
+						rtos_time_delay_ms(25);
+						ret = ws_send_with_opcode(send_buf, frag_len, use_mask, CONTINUATION, 1, ws_config[link_id].ws_client);
+					}
 				}
 
 				length -= frag_len;

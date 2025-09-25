@@ -12,7 +12,6 @@ void rtw_pending_q_resume(void);
 
 static usbd_config_t whc_usb_wifi_cfg = {
 	.speed = WIFI_INIC_USB_SPEED,
-	.dma_enable = 1U,
 	.isr_priority = 4,
 #if defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 292U,

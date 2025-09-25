@@ -447,7 +447,7 @@ end:
 	return pevt;
 }
 
-bool rtk_bt_check_evt_cb_direct_calling(uint8_t group, uint8_t evt_code)
+static bool rtk_bt_check_evt_cb_direct_calling(uint8_t group, uint8_t evt_code)
 {
 	bool ret = false;
 

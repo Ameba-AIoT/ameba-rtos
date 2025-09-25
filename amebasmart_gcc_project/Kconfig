@@ -37,6 +37,9 @@ config SUPPORT_USB_SHARED_DFIFO
 config SUPPORT_USBD_UAC
     def_bool y
 
+config SUPPORT_USBH_UAC
+    def_bool y
+
 # USB ECM host
 config SUPPORT_USBH_ECM
     def_bool y

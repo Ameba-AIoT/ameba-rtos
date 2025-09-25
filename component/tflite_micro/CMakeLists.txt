@@ -200,9 +200,3 @@ else()
   target_compile_definitions(${MICROLITE_LIB_NAME} PRIVATE TF_LITE_USE_CTIME)
 endif()
 
-# build example test
-if (CMAKE_CHIP_TARGET MATCHES "linux$")
-  add_subdirectory("examples/hello_world")
-  add_subdirectory("examples/micro_speech")
-  add_subdirectory("examples/tflm_mnist")
-endif()

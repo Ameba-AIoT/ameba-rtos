@@ -20,6 +20,7 @@ def parse_requirement(requirement):
     parts = requirement.split('==')
     name = parts[0].strip()
     version = None if len(parts) < 2 else parts[1].strip()
+    version = version.split(';')[0].strip()
     return name, version
 
 def check_installed_packages(requirements):
@@ -28,8 +29,8 @@ def check_installed_packages(requirements):
 
     for requirement in requirements:
 
-        if platform.system != 'Windows':
-            if "windows-curses" in requirement:
+        if platform.system() != 'Windows':
+            if 'platform_system=="Windows"' in requirement.replace(' ', ''):
                 continue
 
         try:

@@ -31,7 +31,6 @@ static u32 usbd_msc_cmd_test(u16 argc, u8 *argv[]);
 /* Private variables ---------------------------------------------------------*/
 static usbd_config_t msc_cmd_cfg = {
 	.speed = CONFIG_USBD_MSC_SPEED,
-	.dma_enable = 1U,
 	.isr_priority = INT_PRI_MIDDLE,
 };
 

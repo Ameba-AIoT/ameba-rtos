@@ -90,7 +90,6 @@ typedef struct {
 							   	USB_SPEED_FULL: USB 1.1 transceiver, e.g. AmebaDPlus. */
 	u8 isr_priority;			/* USB ISR priority */
 	u8 isr_in_critical;			/* Process USB ISR in critical state. */
-	u8 dma_enable;				/* Enable USB internal DMA mode, 0-Disable, 1-Enable. */
 	u8 intr_use_ptx_fifo;		/* Use Periodic TX FIFO for INTR IN transfer, only for shared TxFIFO mode. */
 } usbd_config_t;
 

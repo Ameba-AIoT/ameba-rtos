@@ -88,7 +88,6 @@ static const usbd_verify_cb_t cmd_usbd_verify_cb = {
 
 static usbd_config_t cmd_usbd_verify_cfg = {
 	.speed = USB_SPEED_HIGH,
-	.dma_enable = 1U,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	/* EOPF for ISOC OUT */
@@ -716,21 +715,12 @@ int cmd_usbd_verify_test_entry(
 	sub_cmd = (const char *)argv[1];
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter subcmd=%s\n", sub_cmd);
 	if (_stricmp(sub_cmd, "dump") == 0) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "DMA: %d\n", cmd_usbd_verify_cfg.dma_enable);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Speed: %d\n", cmd_usbd_verify_cfg.speed);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "ExtIntr: %x\n", cmd_usbd_verify_cfg.ext_intr_enable);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "BulkInLen: %d(%d-%d)\n", usbd_bulk_in_len, usbd_bulk_in_only, usbd_bulk_out_only);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "IntrInLen: %d(%d-%d)\n", usbd_intr_in_len, usbd_intr_in_only, usbd_intr_out_only);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "IsocInLen: %d(%d-%d)\n", usbd_isoc_in_len, usbd_isoc_in_only, usbd_isoc_out_only);
 		cmd_usbd_verify_ep_debug_dump();
-	} else if (_stricmp(sub_cmd, "dma") == 0) {
-		u8 dma_en = 0;
-		if (argv[2] && (_stricmp((const char *)argv[2], (const char *)"en") == 0)) {
-			dma_en = 1;
-		} else if (argv[2] && (_stricmp((const char *)argv[2], (const char *)"dis") == 0)) {
-			dma_en = 0;
-		}
-		cmd_usbd_verify_cfg.dma_enable = dma_en;
 	} else if (_stricmp(sub_cmd, "speed") == 0) {
 		u8 speed = (u8)USB_SPEED_HIGH;
 		if (argv[2] && (_stricmp((const char *)argv[2], (const char *)"full") == 0)) {

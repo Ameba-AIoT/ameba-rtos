@@ -59,7 +59,7 @@ static inline void transmit_chars(void)
 
 static inline void receive_chars(void)
 {
-	hci_uart_rx_irq_handler();
+	hci_uart_rx_irq_handler(true);
 }
 
 static uint32_t _uart_irq(void *data)

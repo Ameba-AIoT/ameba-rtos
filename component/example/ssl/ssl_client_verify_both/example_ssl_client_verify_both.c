@@ -160,30 +160,18 @@ static int my_random(void *p_rng, unsigned char *output, size_t output_len)
 	return 0;
 }
 
-void my_debugs(void *ctx, int level, const char *file, int line, const char *str)
-{
-	if (level <= 4) {  // 只显示重要信息
-		printf("%s:%04d: %s", file, line, str);
-	}
-}
-
 static void example_ssl_client_verify_both_thread(void *param)
 {
 	UNUSED(param);
 
-	u32 t0, t1, t2, t3, t4;
-
 	// Delay to check successful WiFi connection and obtain of an IP address
 	LwIP_Check_Connectivity();
-	t0 = DTimestamp_Get();
 	int ret;
 	mbedtls_net_context server_fd;
 	mbedtls_ssl_context ssl;
 	mbedtls_ssl_config conf;
 	mbedtls_x509_crt client_x509;
 	mbedtls_pk_context client_pk;
-
-
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: SSL client (VERIFY_BOTH)\n");
 
@@ -193,9 +181,6 @@ static void example_ssl_client_verify_both_thread(void *param)
 	mbedtls_net_init(&server_fd);
 	mbedtls_ssl_init(&ssl);
 	mbedtls_ssl_config_init(&conf);
-
-	// mbedtls_ssl_conf_dbg(&conf, my_debugs, NULL);
-	// mbedtls_debug_set_threshold(4);
 
 	if ((ret = mbedtls_x509_crt_parse(&client_x509, (const unsigned char *) test_client_crt, strlen((char const *)test_client_crt) + 1)) != 0) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, " failed\n  ! mbedtls_x509_crt_parse returned %d\n\n", ret);
@@ -235,19 +220,15 @@ static void example_ssl_client_verify_both_thread(void *param)
 	mbedtls_ssl_conf_rng(&conf, my_random, NULL);
 	mbedtls_ssl_conf_own_cert(&conf, &client_x509, &client_pk);
 
-	t1 = DTimestamp_Get();
-
 	if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "ERRPR: mbedtls_ssl_setup ret(%d)\n", ret);
 		goto exit;
 	}
-	t2 = DTimestamp_Get();
 
 	if ((ret = mbedtls_ssl_handshake(&ssl)) != 0) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "ERROR: mbedtls_ssl_handshake ret(-0x%x)", -ret);
 		goto exit;
 	} else {
-		t3 = DTimestamp_Get();
 		unsigned char buf[BUFFER_SIZE + 64] ALIGNMTO(CACHE_LINE_SIZE);
 		int pos = 0, read_size = 0, resource_size = 0, content_len = 0, header_removed = 0;
 
@@ -255,9 +236,7 @@ static void example_ssl_client_verify_both_thread(void *param)
 		sprintf((char *) buf, "GET %s HTTP/1.1\r\nHost: %s\r\n\r\n", RESOURCE, SERVER_HOST);
 		mbedtls_ssl_write(&ssl, buf, strlen((char *) buf));
 
-
 		while ((read_size = mbedtls_ssl_read(&ssl, buf + pos, BUFFER_SIZE - pos)) > 0) {
-
 			if (header_removed == 0) {
 				char *header = NULL;
 
@@ -296,12 +275,10 @@ static void example_ssl_client_verify_both_thread(void *param)
 			// RTK_LOGS(NOTAG, RTK_LOG_INFO, "read resource %d bytes\n", read_size);
 			resource_size += read_size;
 		}
-		t4 = DTimestamp_Get();
 
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "exit read. ret = %d\n", read_size);
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "http content-length = %d bytes, download resource size = %d bytes\n", content_len, resource_size);
 	}
-	RTK_LOGI(NOTAG, "t0~t1:%dus\t t1~t2:%dus\t t2~t3:%dus\t t3~t4:%dus\t \n", t1 - t0, t2 - t1, t3 - t2, t4 - t3);
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "SSL ciphersuite %s\n", mbedtls_ssl_get_ciphersuite(&ssl));
 
 
@@ -319,9 +296,6 @@ exit:
 
 void example_ssl_client_verify_both(void)
 {
-	CRYPTO_SHA_Init(NULL);
-	CRYPTO_Init(NULL);
-	RCC_PeriphClockCmd(APBPeriph_ECDSA, APBPeriph_ECDSA_CLOCK, ENABLE);
 	rtos_task_t task;
 	if (rtos_task_create(&task, ((const char *)"example_ssl_client_verify_both_thread"), example_ssl_client_verify_both_thread,
 						 NULL, 2048 * 6, 1) != RTK_SUCCESS) {
