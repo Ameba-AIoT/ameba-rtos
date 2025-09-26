@@ -1,6 +1,8 @@
 import importlib.metadata
 import os
 import platform
+import subprocess
+import sys
 
 BLACK = '\033[30m'
 RED = '\033[31m'
@@ -26,6 +28,7 @@ def parse_requirement(requirement):
 def check_installed_packages(requirements):
     installed_packages = {dist.metadata['Name'].lower(): dist.version for dist in importlib.metadata.distributions()}
     missing_or_unsatisfied = []
+    uninstall_packages = []
 
     for requirement in requirements:
 
@@ -41,23 +44,43 @@ def check_installed_packages(requirements):
                     missing_or_unsatisfied.append(f"{YELLOW}{name} {installed_version} does not satisfy {requirement}{RESET}")
             else:
                 missing_or_unsatisfied.append(f"{RED}{name} is not installed{RESET}")
+                uninstall_packages.append((name, required_version))
         except Exception as e:
             print(f"Error parsing requirement '{requirement}': {e}")
 
-    return missing_or_unsatisfied
+    return missing_or_unsatisfied, uninstall_packages
+
+def install_missing_packages(missing_packages):
+    """
+    Install each missing or unsatisfied package one by one.
+    missing_packages: list of (name, version) tuples
+    """
+    for name, version in missing_packages:
+        if version:
+            package_spec = f"{name}=={version}"
+        else:
+            package_spec = name
+        print(f"Installing: {package_spec}")
+        try:
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', package_spec])
+            print(f"{GREEN} {name} installed successfully.{RESET}")
+        except subprocess.CalledProcessError as e:
+            print(f"{RED} Failed to install {package_spec}: {e}{RESET}")
 
 def main():
     script_path = os.path.abspath(__file__)
     script_dir = os.path.dirname(script_path)
     requirements_file = os.path.join(os.path.dirname(script_dir), 'requirements.txt')
     requirements = read_requirements(requirements_file)
-    issues = check_installed_packages(requirements)
+    issues, missing= check_installed_packages(requirements)
 
     if issues:
         print("PIP CHECK... The following packages are not satisfied or not installed:")
         for issue in issues:
             print(issue)
-        print(f'{YELLOW}Please check your Internet connection and run:\r\n{RESET}', f'pip install -r {requirements_file}')
+    if missing:
+        print("Installing missing/invalid packages...")
+        install_missing_packages(missing)
     else:
         print(f"{GREEN}PIP CHECK... All packages are installed correctly!{RESET}")
 
