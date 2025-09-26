@@ -1,0 +1,33 @@
+#
+# All submodules use GitHub absolute URLs.
+#
+
+[submodule "component/audio"]
+	path = component/audio
+	url = https://github.com/Ameba-AIoT/ameba-audio.git
+	branch = master
+
+[submodule "component/ui"]
+	path = component/ui
+	url = https://github.com/Ameba-AIoT/ameba-ui.git
+	branch = master
+
+[submodule "component/ui/LVGL/lvgl-8.3/lvgl"]
+	path = component/ui/LVGL/lvgl-8.3/lvgl
+	url = https://github.com/lvgl/lvgl.git
+	branch = release/v8.3
+
+[submodule "component/ui/LVGL/lvgl-9.3/lvgl"]
+	path = component/ui/LVGL/lvgl-9.3/lvgl
+	url = https://github.com/lvgl/lvgl.git
+	branch = release/v9.3
+
+[submodule "component/aivoice"]
+	path = component/aivoice
+	url = https://github.com/Ameba-AIoT/ameba-aivoice.git
+	branch = main
+
+[submodule "component/tflite_micro"]
+	path = component/tflite_micro
+	url = https://github.com/Ameba-AIoT/ameba-tflite-micro.git
+	branch = main

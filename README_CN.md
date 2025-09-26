@@ -29,6 +29,10 @@ ameba-rtos是瑞昱官方推出的物联网开发框架，同时支持Linux和Wi
 
 详细的配置步骤请参考上面链接中的应用指南的[GCC 编译环境](https://aiot.realmcu.com/docs/cn/latest/rst_rtos/0_gcc_build_environment/1_gcc_build_environment_toprst.html)章节，这里仅仅提供项目开发过程中部分通用命令和工程配置的参考：
 
+## 更新子模块
+
+ameba-rtos 中的子模块采用 GitHub 的路径（[详见 .gitmodules 文件](.gitmodules)）。通过 `git submodule update --init --recursive` 完成子模块的更新。
+
 ## 配置编译环境
 
 * 工具链默认安装在路径`/opt/rtk-toolchain`中，如果编译过程中出现"Error: No Toolchain in `/opt/rtk-toolchain/vsdk-10.3.1/linux/newlib`"的错误提示，请参考应用指南中的[安装工具链](https://aiot.realmcu.com/docs/cn/latest/rst_rtos/0_gcc_build_environment/1_gcc_build_environment_toprst.html#install-toolchain)章节，获取更多详细的信息。
