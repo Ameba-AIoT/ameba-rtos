@@ -29,6 +29,10 @@ For users who can access [Gitee](https://gitee.com), we recommend that download 
 
 See the ApplicationNote chapter [GCC Build Environment](https://aiot.realmcu.com/docs/en/latest/rst_rtos/0_gcc_build_environment/1_gcc_build_environment_toprst.html) from above links for a detailed setup guide. This is a quick reference for common commands working with ameba-rtos projects:
 
+## Update Submodules
+
+The submodules in ameba-rtos use GitHub URLs ([.gitmodules](.gitmodules)). Submodules are updated by running `git submodule update --init --recursive`.
+
 ## Setup Build Environment
 
 * The toolchain will be intalled in `/opt/rtk-toolchain` by default. If an error "Error: No Toolchain in `/opt/rtk-toolchain/vsdk-10.3.1/linux/newlib`" encounters when building the project, please refer to ApplicationNote section [Installing Toolchain](https://aiot.realmcu.com/docs/en/latest/rst_rtos/0_gcc_build_environment/1_gcc_build_environment_toprst.html#installing-toolchain) for more details.
