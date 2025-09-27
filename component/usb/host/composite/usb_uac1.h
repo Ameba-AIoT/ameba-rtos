@@ -15,6 +15,10 @@
 /* Audio Class Codes */
 #define USB_CLASS_AUDIO                 0x01U
 
+/* Audio Output Terminal Types */
+#define UAC_TERMINAL_TYPE_OUTPUT       0x0300
+#define UAC_TERMINAL_TYPE_SPEAKER      0x0301
+#define UAC_TERMINAL_TYPE_HEADPHONE    0x0302
 
 /* A.2 Audio Interface Subclass Codes */
 #define USB_SUBCLASS_AUDIOCONTROL       0x01
@@ -73,7 +77,6 @@
 #define UAC_GET_MEM                     (UAC_GET_ | UAC__MEM)
 
 #define UAC_GET_STAT                    0xff
-
 
 /* A.10 Control Selector Codes */
 
@@ -146,8 +149,14 @@
 #pragma pack(1)
 
 /* Terminal Control Selectors */
-/* 4.3.2  Class-Specific AC Interface Descriptor */
+/* Class-Specific AC Interface Descriptor header */
+typedef struct {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+} usb_ac_itf_desc_header_t;
 
+/* 4.3.2  Class-Specific AC Interface Descriptor */
 struct uac1_ac_header_descriptor {
 	uint8_t  bLength;                  /* 8 + n */
 	uint8_t  bDescriptorType;          /* USB_DT_CS_INTERFACE */

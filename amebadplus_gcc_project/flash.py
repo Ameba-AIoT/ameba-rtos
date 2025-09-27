@@ -42,7 +42,7 @@ def main():
     parser.add_argument('-o', '--log-file', type=str, help='output log file with path')
 
     parser.add_argument('--remote-server', type=str, help='remote serial server IP address')
-    parser.add_argument('--remote-port', type=int, help='remote serial server port (default: 58916)')
+    parser.add_argument('--remote-password', type=str, help='remote serial server validation password')
 
     parser.add_argument('--chip-erase', action='store_true', help='chip erase')
     parser.add_argument('--log-level', default='info', help='log level')
@@ -57,10 +57,6 @@ def main():
     log_level = args.log_level.upper()
 
     remote_server = args.remote_server
-    remote_port = args.remote_port
-
-    if (remote_server and not remote_port) or (not remote_server and remote_port):
-        raise ValueError("Both --remote-server and --remote-port must be provided together")
 
     cmds = ["--download", "--profile", PROFILE]
 
@@ -90,11 +86,12 @@ def main():
     cmds.append(f"--log-level")
     cmds.append(f"{log_level}")
 
-    if remote_server and remote_port:
+    if remote_server:
         cmds.append("--remote-server")
         cmds.append(remote_server)
-        cmds.append("--remote-port")
-        cmds.append(str(remote_port))
+    if args.remote_password:
+        cmds.append("--remote-password")
+        cmds.append(str(args.remote_password))
 
     if args.chip_erase:
         cmds.append("--chip-erase")

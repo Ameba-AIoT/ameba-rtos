@@ -159,16 +159,20 @@ static int usbh_uac_cb_sof(usb_host_t *host)
 static int usbh_uac_cb_process(usb_host_t *host, u32 msg)
 {
 	usbh_composite_host_t *chost = &usbh_composite_host;
+	int ret = HAL_BUSY;
 
+	/*
+		if the pocess has handle the msg, it return HAL_OK, else return HAL_BUSY
+	*/
 	if ((chost->hid != NULL) && (chost->hid->process != NULL)) {
-		chost->hid->process(host, msg);
+		ret = chost->hid->process(host, msg);
 	}
 
-	if ((chost->uac != NULL) && (chost->uac->process != NULL)) {
-		chost->uac->process(host, msg);
+	if ((ret != HAL_OK) && (chost->uac != NULL) && (chost->uac->process != NULL)) {
+		ret = chost->uac->process(host, msg);
 	}
 
-	return HAL_OK;
+	return ret;
 }
 
 /* Exported functions --------------------------------------------------------*/
