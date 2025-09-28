@@ -308,9 +308,9 @@ u8 usbh_get_toggle(usb_host_t *host, u8 pipe_num);
 usbh_urb_state_t usbh_get_urb_state(usb_host_t *host, u8 pipe_num);
 
 /* Notify host core that class state has been changed */
-void usbh_notify_class_state_change(usb_host_t *host, u32 param);
+int usbh_notify_class_state_change(usb_host_t *host, u32 param);
 /* Notify host core that URB state has been changed */
-void usbh_notify_urb_state_change(usb_host_t *host, u32 param);
+int usbh_notify_urb_state_change(usb_host_t *host, u32 param);
 
 /* Transfer operations */
 int usbh_ctrl_set_interface(usb_host_t *host, u8 if_num, u8 if_alt);

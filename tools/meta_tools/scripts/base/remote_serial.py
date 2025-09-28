@@ -62,7 +62,7 @@ class RemoteSerial:
         self.logger.debug(f"[RemoteSerial][{self.port}] Trying TCP connection: {self.remote_server}:{self.remote_port}")
         try:
             self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.tcp_socket.settimeout(10)  # TCP connect timeout 10s
+            # self.tcp_socket.settimeout(10)  # TCP connect timeout 10s
             self.tcp_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             self.logger.debug(f"[RemoteSerial][{self.port}] TCP_NODELAY set")
             self.tcp_socket.connect((self.remote_server, self.remote_port))
@@ -98,6 +98,9 @@ class RemoteSerial:
                     if not msg_str:
                         continue
                     self._parse_message(msg_str)
+            except ConnectionResetError as e:
+                self.logger.error(f"[RemoteSerial][{self.port}] Connection reset: {str(e)}")
+                break
             except ConnectionAbortedError as e:
                 self.logger.error(f"[RemoteSerial][{self.port}] Receive thread exception: {str(e)}")
                 break
@@ -108,7 +111,7 @@ class RemoteSerial:
         self.is_open = False
         if self.tcp_socket:
             self.tcp_socket.close()
-        self.logger.debug(f"[RemoteSerial][{self.port}] Receive thread exited")
+        self.logger.info(f"[RemoteSerial][{self.port}] Receive thread exited")
 
     def _parse_message(self, msg_str: str):
         """
@@ -176,6 +179,24 @@ class RemoteSerial:
                 )
         except Exception as e:
             raise SerialException(f"[RemoteSerial][{self.port}] Send command exception: {str(e)}")
+
+    def validate(self, password):
+        try:
+            validate_cmd = {
+                "type": "validate",
+                "password": password
+            }
+            self.is_open = True
+            resp = self._send_command(validate_cmd, timeout=10.0)
+
+            if not resp.get("success", False):
+                self.logger.debug(f"[RemoteSerial][{self.port}] Validate failed")
+                raise SerialException(f"[RemoteSerial][{self.port}] Remote serial validate failed: Wrong password")
+            self.is_open = False
+            self.logger.info(f"[RemoteSerial][{self.port}] Remote serial port validate successfully")
+        except Exception as e:
+            self.close()
+            raise SerialException(f"[RemoteSerial][{self.port}] Validate serial failed: {str(e)}")
 
     def open(self):
         if self.is_open:
@@ -291,6 +312,8 @@ class RemoteSerial:
         Return number of bytes waiting in receive buffer
         :return: buffer length
         """
+        if not self.is_open:
+            raise SerialException(f"[RemoteSerial][{self.port}] Read failed: serial not open")
         waiting = len(self.receive_buffer)
         return waiting
 

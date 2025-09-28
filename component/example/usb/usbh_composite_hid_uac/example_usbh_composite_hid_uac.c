@@ -407,4 +407,3 @@ void example_usbh_composite_hid_uac(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}
 }
-

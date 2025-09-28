@@ -22,19 +22,27 @@ from base import __version__
 from base.console_parser import ConsoleParser
 from base.console_reader import ConsoleReader
 from base.constants import CTRL_C, CTRL_H, EVENT_QUEUE_TIMEOUT, LAST_LINE_THREAD_INTERVAL, TAG_CMD, TAG_KEY, TAG_SERIAL, \
-    TAG_SERIAL_FLUSH
+    TAG_SERIAL_FLUSH, CMD_STOP
 from base.key_config import EXIT_KEY, EXIT_MENU_KEY, MENU_KEY
 from base.log_handler import LogHandler
 from base.color_output import print_normal, print_yellow, print_red
 from base.serial_handler import SerialHandler, SerialStopException
 from base.serial_reader import LinuxReader, SerialReader
+from typing import Optional, Dict, Any
+import os
+import logging
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../base'))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+from remote_serial import RemoteSerial
+import time
 
 key_description = miniterm.key_description
 
-TOOLCHAIN_DEFAULT_PATH_WINDOWS = r'C:\msys64\opt\rtk-toolchain'
+TOOLCHAIN_DEFAULT_PATH_WINDOWS = r'C:\rtk-toolchain'
 TOOLCHAIN_DEFAULT_PATH_LINUX = '/opt/rtk-toolchain'
 SDK_QUERY_CFG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'query.json')
-
+REMOTE_PORT = 58916
 
 class Monitor():
     """
@@ -48,8 +56,9 @@ class Monitor():
 
     def __init__(
             self,
-            serial_instance: serial.Serial,
-            elf_file: str,
+            port,
+            baudrate,
+            elf_file: str = '',
             toolchain_path: str = '',
             eol: str = 'CRLF',
             decode_coredumps: bool = False,
@@ -58,19 +67,21 @@ class Monitor():
             enable_address_decoding: bool = True,
             timestamps: bool = False,
             rom_file: Union[str, None] = None,
+            reset_mode: bool = False,
+            debug: bool = False,
+            remote_server: Optional[str] = None,
+            remote_port: Optional[int] = None,
+            remote_password: Optional[str] = None
     ):
         self.event_queue = queue.Queue()
         self.cmd_queue = queue.Queue()
-        self.console = miniterm.Console()
-        # wrap for windows support ANSI
-        self.console.output = wrap_stream(self.console.output, autoreset=True, convert=None, strip=None, wrap=True)
-
         self.target_os = target_os
         self.is_ca32 = is_ca32
         self.elf_file = elf_file or ""
         self.rom_file = rom_file or ""
         self.elf_exists = os.path.exists(self.elf_file)
-        self.log_handler = LogHandler(self.elf_file, self.console, timestamps, enable_address_decoding, toolchain_path,
+        self.debug = debug
+        self.log_handler = LogHandler(self.elf_file, timestamps, enable_address_decoding, toolchain_path,
                                       rom_elf_file=rom_file)
         if not self.elf_exists:
             print_yellow("Not set elf or elf not existed, will not handle core dump!")
@@ -95,26 +106,28 @@ class Monitor():
         self.timeout_cnt = 0
 
         if isinstance(self, SerialMonitor):
-            self.serial = serial_instance
-            self.serial_reader = SerialReader(self.serial, self.event_queue)
+            self.serial_reader = SerialReader(port, baudrate, self.event_queue,
+                                              reset_mode=reset_mode, debug=debug,
+                                              remote_server=remote_server, remote_port=remote_port, remote_password=remote_password)
 
         else:
             self.serial = subprocess.Popen([self.elf_file], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                            stderr=subprocess.STDOUT, bufsize=0)
             self.serial_reader = LinuxReader(self.serial, self.event_queue)
 
-        self.serial_handler = SerialHandler("", self.log_handler, target_os, self.serial, self.elf_file)
+        self.serial_handler = SerialHandler("", self.log_handler, target_os, self.elf_file)
 
         self.console_parser = ConsoleParser(eol)
-        self.console_reader = ConsoleReader(self.console, self.event_queue, self.cmd_queue, self.console_parser)
+        self.console_reader = ConsoleReader(self.event_queue, self.cmd_queue, self.console_parser)
 
         # internal state
         self._invoke_processing_last_line_timer = None
 
     def __enter__(self):
         """ Use "with self" to temporarily disable monitoring behaviour """
-        self.serial_reader.stop()
-        self.console_reader.stop()
+        # self.serial_reader.stop()
+        # self.console_reader.stop()
+        pass
 
     def __exit__(self, exc_type, exc_val, exc_tb):  # type: ignore
         raise NotImplementedError
@@ -127,31 +140,25 @@ class Monitor():
         self._pre_start()
         try:
             while self.console_reader.alive and self.serial_reader.alive:
-                try:
-                    self._main_loop()
-                except KeyboardInterrupt:
-                    print_yellow(
-                        f"To exit from monitor please use '{key_description(EXIT_KEY)}'. "
-                        f"Alternatively, you can use {key_description(MENU_KEY)} {key_description(EXIT_MENU_KEY)} to exit."
-                    )
-                    self.serial_write(codecs.encode(CTRL_C))
+                self._main_loop()
         except SerialStopException:
             print_normal("Stopping condition has been received\n")
         except KeyboardInterrupt:
-            pass
+            print("Received exit signal (Ctrl+C), shutting down program...")
         finally:
             try:
-                self.console_reader.stop()
-                self.serial_reader.stop()
+                self.console_reader._stop()
+                self.serial_reader._stop()
                 self.log_handler.stop_logging()
                 # Cancelling _invoke_processing_last_line_timer is not
                 # important here because receiving empty data doesn"t matter.
-                self._invoke_processing_last_line_timer = None
-            except Exception:  # noqa
-                pass
-            print_normal("\n")
+                if self._invoke_processing_last_line_timer:
+                    self._invoke_processing_last_line_timer.cancel()
+                    self._invoke_processing_last_line_timer = None
+            except Exception as e:  # noqa
+                print_red(f"{e}")
 
-    def serial_write(self, *args, **kwargs):
+    def serial_write(self, data):
         raise NotImplementedError
 
     def invoke_processing_last_line(self):
@@ -170,7 +177,7 @@ class Monitor():
         if event_tag == TAG_CMD:
             self.serial_handler.handle_commands(data, self.console_reader, self.serial_reader)
         elif event_tag == TAG_KEY:
-            self.serial_write(codecs.encode(data))
+            self.serial_write(data)
         elif event_tag == TAG_SERIAL:
             self.serial_handler.handle_serial_input(data, self.coredump)
             if self._invoke_processing_last_line_timer is not None:
@@ -195,19 +202,24 @@ class Monitor():
 class SerialMonitor(Monitor):
     def __exit__(self, exc_type, exc_val, exc_tb):  # type: ignore
         """ Use "with self" to temporarily disable monitoring behaviour """
-        self.console_reader.start()
-        if self.elf_exists:
-            self.serial_reader.gdb_exit = self.gdb_helper.gdb_exit  # type: ignore # write gdb_exit flag
-        self.serial_reader.start()
+        pass
+        # self.console_reader.start()
+        # if self.elf_exists:
+        #     self.serial_reader.gdb_exit = self.gdb_helper.gdb_exit  # type: ignore # write gdb_exit flag
+        # self.serial_reader.start()
 
     def _pre_start(self):
         super()._pre_start()
         self.serial_handler.start_cmd_sent = False
 
-    def serial_write(self, *args, **kwargs):
-        self.serial: serial.Serial
+    def serial_write(self, data):
         try:
-            self.serial.write(*args, **kwargs)
+            data_to_send = data.encode('utf-8')
+            # Display raw byte data in debug mode
+            if self.debug:
+                hex_str = ' '.join(f'{b:02X}' for b in data_to_send)
+                print(f"[Sent Data (Hex)]: {hex_str}")
+            self.serial_reader.serial.write(data_to_send)
             self.timeout_cnt = 0
         except serial.SerialTimeoutException:
             if not self.timeout_cnt:
@@ -237,24 +249,6 @@ class LinuxMonitor(Monitor):
     def check_gdb_stub_and_run(self, line):
         return  # fake function for linux target_os
 
-
-def detect_port():
-    """Detect connected ports and return the last one"""
-    try:
-        port_list = list_ports.comports()
-        port: str = port_list[-1].device
-        # keep the `/dev/ttyUSB0` default port on linux if connected
-        if sys.platform == "linux":
-            for p in port_list:
-                if p.device == "/dev/ttyUSB0":
-                    port = p.device
-                    break
-        print_yellow(f"--- Using autodetected port {port}")
-        return port
-    except IndexError:
-        sys.exit("No serial ports detected.")
-
-
 def main():
     colorama.init()
     parser = get_parser()
@@ -268,8 +262,7 @@ def main():
             print_red('Fail to load query configuration file "' + SDK_QUERY_CFG_FILE + '"')
             sys.exit(2)
     else:
-        print_red('Query configuration file "' + SDK_QUERY_CFG_FILE + '" does not exist')
-        sys.exit(1)
+        print_red('Note: Query configuration file "' + SDK_QUERY_CFG_FILE + '" does not exist')
 
     if args.device is None:
         print("Note: No device specified, monitor starts failed!")
@@ -277,55 +270,49 @@ def main():
     else:
         device = args.device.lower()
 
-    if args.toolchain_dir is None:
+    if args.decode_coredumps :
+        if not args.toolchain_dir:
+            print("Note: No toolchain_dir specified for decode-coredumps, monitor starts failed!")
+            sys.exit(1)
+        if not args.axf_file:
+            print("Note: No axf_file specified for decode-coredumps, monitor starts failed!")
+            sys.exit(1)
+        if not args.target_os:
+            print("Note: No target_os specified for decode-coredumps, monitor starts failed!")
+            sys.exit(1)
+
+    if args.enable_address_decoding:
+        if not args.toolchain_dir:
+            print("Note: No toolchain_dir specified for enable-address-decoding, monitor starts failed!")
+            sys.exit(1)
+        if not args.axf_file:
+            print("Note: No axf_file specified for enable-address-decoding, monitor starts failed!")
+            sys.exit(1)
+    toolchain_path = ''
+    if args.toolchain_dir:
         if os.name == "nt":
-            toolchain_dir = TOOLCHAIN_DEFAULT_PATH_WINDOWS
+            toolchain_path = os.path.join(args.toolchain_dir, "mingw32", "newlib")
         else:
-            toolchain_dir = TOOLCHAIN_DEFAULT_PATH_LINUX
-        print("No toolchain specified, use default toolchain: " + toolchain_dir)
-    else:
-        toolchain_dir = args.toolchain_dir
-
-    if not os.path.exists(toolchain_dir):
-        print("Error: Toolchain '" + toolchain_dir + "' does not exist")
-        sys.exit(1)
-
-    if device not in cfg["devices"].keys():
-        print('Error: Unsupported device "' + device + '", valid values: ')
-        [print(key) for key in cfg["devices"].keys()]
-        sys.exit(1)
-    else:
-        chip = cfg["devices"][device]["chip"]
-
-    toolchain = cfg["chips"][chip]["toolchain"]
-    if os.name == "nt":
-        toolchain_path = os.path.join(toolchain_dir, toolchain, "mingw32", "newlib")
-    else:
-        toolchain_path = os.path.join(toolchain_dir, toolchain, "linux", "newlib")
-    toolchain_path = str(toolchain_path)
-    if not os.path.exists(toolchain_path):
-        print(f"Error: Toolchain '{toolchain_path}' does not exist")
-        sys.exit(1)
+            toolchain_path = os.path.join(args.toolchain_dir, "linux", "newlib")
+        if not os.path.exists(args.toolchain_dir):
+            print(f"Error: Toolchain '{args.toolchain_dir}' does not exist")
 
     target_os = args.target_os or cfg["info"]["os"].lower()
 
     args.eol = args.eol or ("LF" if sys.platform == "linux" else "CRLF")
 
-    elf_file = args.elf_file
+    elf_file = args.axf_file
+    remote_server = args.remote_server
+    remote_port = REMOTE_PORT
 
     try:
         if target_os == "linux":
-            serial_instance = None
             cls = LinuxMonitor
             print_yellow(f"--- monitor {__version__} on linux ---")
         else:
             # The port name is changed in cases described in the following lines.
             # Use a local argument and avoid the modification of args.port.
             port = args.port
-
-            # if no port was set, detect connected ports and use one of them
-            if port is None:
-                port = detect_port()
             # GDB uses CreateFile to open COM port, which requires the COM name to be r"\\.\COMx" if the COM
             # number is larger than 10
             if os.name == "nt" and port.startswith("COM"):
@@ -337,17 +324,25 @@ def main():
                 print_yellow("--- WARNING: Serial ports accessed as /dev/tty.* will hang gdb if launched.")
                 print_yellow(f"--- Using {port} instead...")
 
-            serial_instance = serial.serial_for_url(port, int(args.baud), do_not_open=True, exclusive=True)
-            # setting write timeout is not supported for RFC2217 in pyserial
-            if not port.startswith("rfc2217://"):
-                serial_instance.write_timeout = 0.3
-
             cls = SerialMonitor
             print_yellow(
-                "--- monitor {v} on {p.name} {p.baudrate} ---".format(v=__version__, p=serial_instance))
+                "--- monitor {v} on {port} {baudrate} ---".format(v=__version__, port=port, baudrate=args.baud))
         rom_file = ""
-        monitor = cls(serial_instance, elf_file, toolchain_path, args.eol, args.decode_coredumps,
-                      target_os, args.ca32, args.enable_address_decoding, rom_file=rom_file)
+        monitor = cls(args.port, args.baud,
+                        timestamps=args.timestamps,
+                        elf_file=elf_file,
+                        toolchain_path=toolchain_path,
+                        eol=args.eol,
+                        decode_coredumps=args.decode_coredumps,
+                        target_os=target_os,
+                        is_ca32=args.ca32,
+                        enable_address_decoding=args.enable_address_decoding,
+                        rom_file=rom_file,
+                        reset_mode=args.reset,
+                        debug=args.debug,
+                        remote_server=remote_server,
+                        remote_port=remote_port,
+                        remote_password=args.remote_password)
 
         print_yellow("--- Quit: {q} | Menu: {m} | Help: {m} followed by {h} ---".format(
             q=key_description(EXIT_KEY),
@@ -362,23 +357,29 @@ def main():
 def get_parser():
     parser = argparse.ArgumentParser("monitor - a serial output monitor.")
 
+    parser.add_argument("-p", "--port", help="Serial port device, e.g., COM3 (Windows) or /dev/ttyUSB0 (Linux)")
     parser.add_argument("-b", "--baud", type=int, default=1500000, help="Serial port baud rate, default is 1500000")
-    parser.add_argument("--decode_coredumps", action="store_true",
+    parser.add_argument("--decode-coredumps", action="store_true",
                         help=f"If set will handle core dumps found in serial output. Default is False")
     parser.add_argument("--device", help="Set device name.")
-    parser.add_argument("--enable_address_decoding", action="store_true",
+    parser.add_argument("--enable-address-decoding", action="store_true",
                         help="Print lines about decoded addresses from the application ELF file, default is False")
-    parser.add_argument("--elf_file", nargs="?", help="ELF or AXF file of application")
-    parser.add_argument("--eol", choices=["CR", "LF", "CRLF"],
+    parser.add_argument("--axf-file", nargs="?", help="AXF file of application")
+    parser.add_argument("--eol", choices=["CR", "LF", "CRLF"], default="CRLF",
                         help="End of line to use when sending to the serial port. Defaults to LF for Linux targets and CR otherwise.")
-    parser.add_argument("-p", "--port", help="Serial port device. If not set, a connected port will be used."
-                                             "Default: `/dev/ttyUSB0` if connected." if sys.platform == "linux" else "")
-    parser.add_argument("--rom_file", nargs="?", help="Rom of application")
-    parser.add_argument("--target_os", help="Target os name (used when core dump decoding is enabled)")
+    parser.add_argument("--rom-file", nargs="?", help="Rom of application")
+    parser.add_argument("--target-os", help="Target os name (used when core dump decoding is enabled)")
     parser.add_argument("--ca32", action="store_true", help="If core is ca32, should set this.")
-    parser.add_argument("--timestamps", default=False, action="store_true",
+    parser.add_argument("--timestamps", action="store_true",
                         help="Add timestamp for each line. Default is False")
-    parser.add_argument("--toolchain_dir", help="Set toolchain dir. If not set, will get from config.")
+    parser.add_argument("--toolchain-dir", help="Set toolchain dir. If not set, will get from config.")
+
+    parser.add_argument('--reset', action='store_true', 
+                       help='Enable reset mode: Wait 100ms after connection to send "reboot" command, start output only after detecting "ROM:["')
+    parser.add_argument('--debug', action='store_true', 
+                       help='Enable debug mode: Display raw hexadecimal data of sent and received bytes')
+    parser.add_argument('--remote-server', type=str, help='remote serial server IP address')
+    parser.add_argument('--remote-password', type=str, help='remote serial server validation password')
 
     return parser
 
