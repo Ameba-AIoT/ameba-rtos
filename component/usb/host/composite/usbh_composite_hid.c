@@ -12,11 +12,12 @@
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
-#define UBSH_COMPOSITE_HID_BUF_FREQ_LEN        512U
+#define UBSH_COMPOSITE_HID_CTRL_BUF_LEN        512U
 #define UBSH_COMPOSITE_HID_IDLE_MAX_CNT        10U
+#define UBSH_COMPOSITE_HID_TRIGGER_MAX_CNT     50U
 
 #if USBH_COMPOSITE_HID_UAC_DEBUG
-#define USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG       1
+#define USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG       0
 #else
 #define USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG       0
 #endif
@@ -340,7 +341,7 @@ static void usbh_composite_hid_parse_hid_report_descriptor(const u8 *data, u8 le
 
 #if USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n=== Volume Control Capabilities Summary ===\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Total reports defined: %d\n", device_info->report_id_count);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Total reports defined:%d\n", device_info->report_id_count);
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n=== Device Capabilities ===\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Volume control supported: %s\n", device_info->volume.supported ? "Yes" : "No");
@@ -457,7 +458,7 @@ static int usbh_composite_hid_parse_hid_report_desc(u8 *pbuf, u32 buf_length)
 
 	usbh_composite_hid_parse_hid_report_descriptor(pbuf, buf_length, &(hid->vol_caps));
 
-	return 0;
+	return HAL_OK;
 }
 
 static void usbh_composite_hid_parse_hid_msg(const u8 *report, u8 len)
@@ -801,9 +802,11 @@ static int usbh_composite_hid_cb_process(usb_host_t *host, u32 msg)
 		if (hid->next_xfer) {
 			usbh_notify_class_state_change(host, ep->pipe);
 		}
+
+		return HAL_OK;
 	}
 
-	return HAL_OK;
+	return HAL_BUSY;
 }
 
 /**
@@ -816,7 +819,9 @@ static int usbh_composite_hid_cb_sof(usb_host_t *host)
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
 	usbh_hid_ep_cfg_t *ep = &(hid->ep_info);
 
-	usbh_notify_class_state_change(host, ep->pipe);
+	if ((host->tick - ep->tick) > UBSH_COMPOSITE_HID_TRIGGER_MAX_CNT) {
+		usbh_notify_class_state_change(host, ep->pipe);
+	}
 
 	return HAL_OK;
 }
@@ -837,9 +842,9 @@ int usbh_composite_hid_init(usbh_composite_host_t *driver, usbh_composite_hid_us
 	usb_os_memset(hid, 0x00, sizeof(usbh_composite_hid_t));
 	hid->driver = driver;
 
-	hid->hid_ctrl_buf = (u8 *)usb_os_malloc(UBSH_COMPOSITE_HID_BUF_FREQ_LEN);
+	hid->hid_ctrl_buf = (u8 *)usb_os_malloc(UBSH_COMPOSITE_HID_CTRL_BUF_LEN);
 	if (NULL == hid->hid_ctrl_buf) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc mem %d fail\n", UBSH_COMPOSITE_HID_BUF_FREQ_LEN);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc mem %d fail\n", UBSH_COMPOSITE_HID_CTRL_BUF_LEN);
 		return HAL_ERR_MEM;
 	}
 

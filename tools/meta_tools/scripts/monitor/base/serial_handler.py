@@ -18,12 +18,11 @@ class SerialHandler:
     The class is responsible for buffering serial input and performing corresponding commands.
     """
 
-    def __init__(self, last_line_part, logger, target_os, serial_instance, elf_file):
+    def __init__(self, last_line_part, logger, target_os, elf_file):
         # type: (str,  LogHandler, str,   serial.Serial, str) -> None
         self._last_line_part = last_line_part
         self.log_handler = logger
         self.target = target_os
-        self.serial_instance = serial_instance
         self.elf_file = elf_file
 
     def split_data(self, data: str) -> List[str]:
@@ -38,14 +37,15 @@ class SerialHandler:
             self._last_line_part = ""
         if not sp[-1].endswith("\n"):
             # last part is not a full line
-            self._last_line_part = sp.pop()
+            self._last_line_part = sp.pop(-1)
         return sp
 
     def handle_serial_input(self, data, coredump, finalize_line=False):
         sp = self.split_data(
             data)  # confirm that sp is a list of entire lines and the left part will be stored in _last_line_part
         for line in sp:
-            line_strip = line.strip()
+            # line_strip = line.strip()
+            line_strip = line
             if coredump:
                 with coredump.check(line_strip):
                     self.log_handler.print(line)
@@ -68,8 +68,7 @@ class SerialHandler:
 
     def handle_commands(self, cmd: int, console_reader: ConsoleReader, serial_reader: Union[SerialReader, LinuxReader]):
         if cmd == CMD_STOP:
-            console_reader.stop()
-            serial_reader.stop()
+            raise KeyboardInterrupt
         elif cmd == CMD_OUTPUT_TOGGLE:
             self.log_handler.output_toggle()
         elif cmd == CMD_TOGGLE_LOGGING:

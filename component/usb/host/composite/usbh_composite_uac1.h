@@ -16,6 +16,9 @@
 #include "os_wrapper.h"
 
 /* Exported defines ----------------------------------------------------------*/
+#define USBH_UAC_TERM_MAX_CNT         8
+#define USBH_UAC_FU_MAX_CNT           8
+#define USBH_UAC_MAX_CHANNEL          8
 
 #define USBH_UAC_ISOC_OUT_DIR          0
 #define USBH_UAC_ISOC_IN_DIR           1
@@ -35,7 +38,6 @@
 /* States for class */
 typedef enum {
 	UAC_STATE_IDLE = 0U,
-	UAC_STATE_CTRL_SETTING,
 	UAC_STATE_TRANSFER,
 	UAC_STATE_ERROR
 } usbh_uac_xfer_state_t;
@@ -49,16 +51,6 @@ typedef enum {
 	UAC_STATE_SET_IN_FREQ,
 	UAC_STATE_SET_VOLUME,
 	UAC_STATE_SET_MUTE,
-
-	UAC_STATE_SET_HID_ALT,
-	UAC_STATE_GET_HID_REPORT_DESC,
-
-	UAC_STATE_GET_OUT_ALT,
-	UAC_STATE_GET_OUT_FREQ,
-	UAC_STATE_GET_IN_ALT,
-	UAC_STATE_GET_IN_FREQ,
-	UAC_STATE_GET_VOLUME,
-	UAC_STATE_GET_MUTE
 } usbh_uac_ctrl_state_t;
 
 /* States for transfer */
@@ -67,6 +59,36 @@ typedef enum {
 	USBH_UAC_XFER,
 	USBH_UAC_XFER_BUSY,
 } usbh_uac_ep_trx_state_t;
+
+/* uac1.0 Audio Control   */
+typedef struct {
+	u16 terminal_type;
+	u8 terminal_id;
+	u8 source_id;
+	u8 is_input;
+} usbh_uac_term_info;
+
+typedef struct {
+	u8 channel_support[USBH_UAC_MAX_CHANNEL];
+	u16 sink_type;
+	u8 unit_id;
+	u8 source_id;
+	u8 sink_id;
+	u8 num_channels;
+	u8 master_support;
+	u8 control_size;
+} usbh_uac_vol_ctrl_info;
+
+typedef struct {
+	/* terminals array */
+	usbh_uac_term_info terminals[USBH_UAC_TERM_MAX_CNT];
+	usbh_uac_vol_ctrl_info controls[USBH_UAC_FU_MAX_CNT];
+
+	int terminal_count;
+	int volume_ctrl_count;
+	u8 best_match_idx;
+	u8 ac_itf_idx;
+} usbh_uac_ac_itf_info_t;
 
 typedef struct {
 	struct list_head list;
@@ -154,6 +176,7 @@ typedef struct {
 
 /* UAC host */
 typedef struct {
+	usbh_uac_ac_itf_info_t isoc_ac_info;
 	usbh_uac_as_itf_info_t *isoc_out_info;
 	usbh_uac_as_itf_info_t *isoc_in_info;
 
@@ -172,8 +195,11 @@ typedef struct {
 	__IO u8 dump_status_task_exit;
 #endif
 
-	__IO usbh_uac_xfer_state_t xfer_state;
-	usbh_uac_ctrl_state_t ctrl_state;
+	__IO usbh_uac_xfer_state_t xfer_state;   /* xfer status */
+	__IO usbh_uac_ctrl_state_t ctrl_state;   /* ctrl xfer status */
+	u16 volume_info;                         /* volume db */
+	u8 ch_idx;                               /* volume channale */
+	u8 mute;                                 /* 1 mute, 0 unmute */
 	u8 next_xfer;                            /*send next event flag*/
 } usbh_composite_uac_t;
 
@@ -190,6 +216,9 @@ int usbh_composite_uac_deinit(void);
 int usbh_composite_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_freq);
 const usbh_audio_fmt_t *usbh_composite_uac_get_alt_setting(u8 dir, u8 *fmt_cnt);
 u32 usbh_composite_uac_get_frame_size(u8 dir);
+
+int usbh_composite_uac_set_volume(u8 volume, u8 ch);
+int usbh_composite_uac_set_mute(u8 mute);
 
 u32 usbh_composite_uac_write(u8 *buffer, u32 size, u32 timeout_ms);
 void usbh_composite_uac_start_play(void);
