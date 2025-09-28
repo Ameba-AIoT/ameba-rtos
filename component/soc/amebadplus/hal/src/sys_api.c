@@ -138,7 +138,7 @@ void sys_recover_ota_signature(void)
 
 		/* write this sector with target data erased */
 		for (int idx = 0; idx < 0x1000; idx += 256) {
-			FLASH_WriteStream((Address[otaDstIdx] + idx), 256, (u8 *)backup);
+			FLASH_WriteStream((Address[otaDstIdx] + idx), 256, (u8 *)backup + idx);
 		}
 	}
 	free(backup);
