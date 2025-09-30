@@ -153,6 +153,11 @@ extern "C"
 #endif
 
 /*
+ * Ameba 8720F
+ */
+#elif defined(CONFIG_RTL8720F) && CONFIG_RTL8720F
+
+/*
  * Error Platform
  */
 #else

@@ -74,6 +74,7 @@ typedef struct {
 	int32_t                    track_num;                                                      /*!< indicate enqueued audio data numbers */
 	bool                       audio_sync_flag;                                                /*!< indicate whether audio sync is need */
 	uint8_t                    pres_comp_event;                                                /*!< indicate presentation delay compensation events */
+	uint32_t                   iso_interval;                                                   /*!< iso_interval */
 	uint32_t                   sdu_interval;                                                   /*!< record sdu interval(micro second) */
 	bool
 	frc_cal_flag;                                                   /*!< indicate whether free run clock calculation is done previously */
@@ -277,6 +278,16 @@ uint16_t rtk_bt_audio_record_del_all(void);
  *            - others: Codec entity
  */
 void *rtk_bt_audio_codec_add(rtk_bt_audio_codec_conf_t *paudio_codec_conf);
+
+/**
+ * @brief     update audio codec
+ * @param[in] paudio_codec_conf: audio codec configuration
+ * @param[in] pentity: audio codec entity
+ * @return
+ *            - NULL  : Fail
+ *            - others: Codec entity
+ */
+uint16_t rtk_bt_audio_codec_update(rtk_bt_audio_codec_conf_t *paudio_codec_conf, void *pentity);
 
 /**
  * @brief     remove one audio codec

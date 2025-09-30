@@ -6,9 +6,8 @@
 
 #include <stdbool.h>
 #include "hci_common.h"
-#include "hci_if_vhci.h"
+#include "hci_if_zephyr_sdn.h"
 #include "hci_transport.h"
-#include "hci_uart.h"
 #include "hci_platform.h"
 #include "bt_debug.h"
 #include <zephyr/drivers/bluetooth/hci_driver.h>

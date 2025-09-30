@@ -28,28 +28,59 @@ struct whc_netlink whc_netlink_info;
 
 void whc_host_rx_buf_hdl(struct msgtemplate *msg);
 
-void parse_arguments(char *input, char args[MAX_ARG_COUNT][MAX_ARG_LENGTH], int *arg_count)
-{
-	char *token;
-	*arg_count = 0;
+static char *whc_cmd_args[MAX_ARG_COUNT] = {0};
+char whc_cmd_backup[MAX_INPUT_SIZE] = {0};
+static uint32_t whc_cmd_argc;
 
-	token = strtok(input, " ");
-	while (token != NULL) {
-		if (*arg_count < MAX_ARG_COUNT) {
-			strncpy(args[*arg_count], token, MAX_ARG_LENGTH - 1);
-			args[*arg_count][MAX_ARG_LENGTH - 1] = '\0';
-			(*arg_count)++;
+static struct whc_host_command_entry cmd_table[] = {
+	{"getip", whc_host_get_ip},
+	{"getmac", whc_host_get_mac},
+	{"setrdy", whc_host_set_state},
+	{"tickps", whc_host_set_tickps_cmd},
+	{"setmac", whc_host_set_mac},
+	{"netifon", whc_host_set_netif_on},
+	{"init", whc_host_nl_init},
+	{"wifion", whc_host_wifi_on},
+	{"scan", whc_host_wifi_scan},
+	{"dhcp", whc_host_wifi_dhcp},
+	{"connect", whc_host_wifi_connect},
+	{"iwpriv", whc_host_wifi_mp},
+	{"dbg", whc_host_wifi_dbg},
+	{NULL, NULL}
+};
+
+void whc_host_execute_command(char *cmd)
+{
+	struct whc_host_command_entry *entry;
+
+	for (entry = cmd_table; entry->cmd_name != NULL; entry++) {
+		if (strcmp(cmd, entry->cmd_name) == 0) {
+			entry->handler();
+			return;
 		}
-		token = strtok(NULL, " ");
 	}
+	printf("Unknown command: %s\n", cmd);
 }
 
-int whc_host_get_mac_addr(uint8_t idx)
+int whc_host_get_mac(void)
 {
 	uint8_t buf[12] = {0};
 	uint8_t *ptr = buf;
 	uint32_t buf_len = 0;
 	int ret = 0;
+	uint8_t idx;
+
+	if (whc_cmd_argc < 2) {
+		printf("err: wlan index is needed !\n");
+		return -1;
+	} else {
+		idx = *whc_cmd_args[1] - '0';
+	}
+
+	if ((idx != 1) && (idx != 0)) {
+		printf("wrong wlan index %d, must be 0 or 1!\n", idx);
+		return -1;
+	}
 
 	*(uint32_t *)ptr = WHC_WIFI_TEST;
 	ptr += 4;
@@ -66,12 +97,25 @@ int whc_host_get_mac_addr(uint8_t idx)
 
 }
 
-int whc_host_get_ip(uint8_t idx)
+int whc_host_get_ip(void)
 {
 	uint8_t buf[12] = {0};
 	uint8_t *ptr = buf;
 	uint32_t buf_len = 0;
 	int ret = 0;
+	uint8_t idx;
+
+	if (whc_cmd_argc < 2) {
+		printf("err: wlan index is needed !\n");
+		return -1;
+	} else {
+		idx = *whc_cmd_args[1] - '0';
+	}
+
+	if ((idx != 1) && (idx != 0)) {
+		printf("wrong wlan index %d, must be 0 or 1!\n", idx);
+		return -1;
+	}
 
 	*(uint32_t *)ptr = WHC_WIFI_TEST;
 	ptr += 4;
@@ -89,31 +133,39 @@ int whc_host_get_ip(uint8_t idx)
 }
 
 
-int whc_host_set_state(uint8_t state)
+int whc_host_set_state(void)
 {
 	uint8_t buf[12] = {0};
 	uint8_t *ptr = buf;
 	uint32_t buf_len = 0;
 	int ret = 0;
+	uint8_t state;
+
+	if (whc_cmd_argc < 2) {
+		printf("err: host state need !\n");
+		return -1;
+	}
+
+	if (strcmp(whc_cmd_args[1], "ready") == 0) {
+		state = WHC_WIFI_TEST_SET_READY;
+	} else {
+		state = WHC_WIFI_TEST_SET_UNREADY;
+	}
 
 	*(uint32_t *)ptr = WHC_WIFI_TEST;
 	ptr += 4;
 	buf_len += 4;
-	if (state) {
-		*ptr = WHC_WIFI_TEST_SET_READY;
-	} else {
-		*ptr = WHC_WIFI_TEST_SET_UNREADY;
-	}
+
+	*ptr = state;
 	ptr += 1;
 	buf_len += 1;
 
 	ret = whc_host_api_send_nl_data(buf, buf_len);
 
 	return ret;
-
 }
 
-int whc_host_set_tickps_cmd(char *subtype)
+int whc_host_set_tickps_cmd(void)
 {
 	uint8_t buf[12] = {0};
 	uint8_t *ptr = buf;
@@ -123,15 +175,20 @@ int whc_host_set_tickps_cmd(char *subtype)
 	ptr += 4;
 	buf_len += 4;
 
+	if (whc_cmd_argc < 2) {
+		printf("err: tickps cmd needed to set subtype!\n");
+		return -1;
+	}
+
 	*ptr = WHC_WIFI_TEST_SET_TICKPS_CMD;
 	ptr += 1;
 	buf_len += 1;
 
-	if (strcmp(subtype, "r") == 0) {
+	if (strcmp(whc_cmd_args[1], "r") == 0) {
 		*ptr = WHC_CMD_TICKPS_R;
-	} else if (strcmp(subtype, "cg") == 0) {
+	} else if (strcmp(whc_cmd_args[1], "cg") == 0) {
 		*ptr = WHC_CMD_TICKPS_TYPE_CG;
-	} else if (strcmp(subtype, "pg") == 0) {
+	} else if (strcmp(whc_cmd_args[1], "pg") == 0) {
 		*ptr = WHC_CMD_TICKPS_TYPE_PG;
 	}
 	ptr += 1;
@@ -142,11 +199,24 @@ int whc_host_set_tickps_cmd(char *subtype)
 }
 
 /* below for kernel setting */
-int whc_host_set_netif_on(uint8_t idx)
+int whc_host_set_netif_on(void)
 {
 	struct msgtemplate msg;
 	int ret = 0;
 	unsigned char *ptr = msg.buf;
+	uint8_t idx;
+
+	if (whc_cmd_argc < 2) {
+		printf("err: wlan index is needed !\n");
+		return -1;
+	} else {
+		idx = *whc_cmd_args[1] - '0';
+	}
+
+	if ((idx != 1) && (idx != 0)) {
+		printf("wrong wlan index %d, must be 0 or 1!\n", idx);
+		return -1;
+	}
 
 	whc_host_fill_nlhdr(&msg, whc_netlink_info.family_id, 0, WHC_CMD_ECHO);
 	nla_put_u32(&ptr, WHC_ATTR_API_ID, CMD_WIFI_NETIF_ON);
@@ -161,16 +231,29 @@ int whc_host_set_netif_on(uint8_t idx)
 }
 
 /* msg to kernel, set mac address */
-int whc_host_set_mac(uint8_t idx, char *mac)
+int whc_host_set_mac(void)
 {
 	struct msgtemplate msg;
 	int ret = 0;
 	unsigned char *ptr = msg.buf;
+	uint8_t idx;
+
+	if (whc_cmd_argc < 3) {
+		printf("err: hw mac and wlan index are needed !\n");
+		return -1;
+	} else {
+		idx = *whc_cmd_args[1] - '0';
+	}
+
+	if ((idx != 1) && (idx != 0)) {
+		printf("wrong wlan index %d, must be 0 or 1!\n", idx);
+		return -1;
+	}
 
 	whc_host_fill_nlhdr(&msg, whc_netlink_info.family_id, 0, WHC_CMD_ECHO);
 	nla_put_u32(&ptr, WHC_ATTR_API_ID, CMD_WIFI_SET_MAC);
 	nla_put_u8(&ptr, WHC_ATTR_WLAN_IDX, idx);
-	nla_put_string(&ptr, WHC_ATTR_STRING, mac);
+	nla_put_string(&ptr, WHC_ATTR_STRING, whc_cmd_args[2]);
 	msg.n.nlmsg_len += ptr - msg.buf;
 
 	ret = whc_host_api_send_to_kernel(whc_netlink_info.sockfd, (char *)&msg, msg.n.nlmsg_len);
@@ -182,10 +265,10 @@ int whc_host_set_mac(uint8_t idx, char *mac)
 }
 
 /* msg to kernel, call api for dbg and mp */
-int whc_host_wifi_mp(char *input)
+int whc_host_wifi_mp(void)
 {
-	//rm header "mp"
-	char *buf = input + 3;
+	//rm header "iwpriv"
+	char *buf = whc_cmd_backup + strlen("iwpriv") + 1;
 
 	int nl_fd;
 	int nl_family_id = 0;
@@ -211,10 +294,10 @@ int whc_host_wifi_mp(char *input)
 }
 
 /* msg to kernel, call api for dbg and mp */
-int whc_host_wifi_dbg(char *input)
+int whc_host_wifi_dbg(void)
 {
 	//rm header "dbg"
-	char *buf = input + 4;
+	char *buf = whc_cmd_backup + 4;
 
 	int nl_fd;
 	int nl_family_id = 0;
@@ -235,52 +318,30 @@ int whc_host_wifi_dbg(char *input)
 	return ret;
 }
 
-int whc_host_send_atcmd(char *data)
-{
-	int buf_len = strlen(data);
-	uint8_t buf[256] = {0};
-	uint8_t *ptr = buf;
-	int ret = 0;
-
-	printf("send atcmd(%d) : %s \r\n", buf_len, data);
-
-	if (buf_len > 250) {
-		printf("cmd len is too long!\r\n");
-	} else {
-		*(uint32_t *)ptr = WHC_ATCMD_TEST;
-		ptr += 4;
-		buf_len += 4;
-		memcpy(ptr, data, strlen(data));
-		ptr += strlen(data);
-		*ptr = '\r';
-		ptr += 1;
-		*ptr = '\n';
-		ptr += 1;
-		buf_len += 2;
-		ret = whc_host_api_send_nl_data(buf, buf_len);
-	}
-
-	return ret;
-}
-
-void whc_host_wifi_connect(char *ssid, char *pwd)
+int whc_host_wifi_connect(void)
 {
 	uint8_t buf[128] = {0};
 	uint8_t *ptr = buf;
 	uint32_t buf_len = 0, len = 0;
+	char *pwd = NULL;
 
 	int ret = 0;
+
+	if (whc_cmd_argc > 2) {
+		pwd = whc_cmd_args[2];
+	}
+
 	*(uint32_t *)ptr = WHC_WIFI_TEST;
 	ptr += 4;
 
 	*ptr = WHC_WIFI_TEST_CONNECT;
 	ptr += 1;
 
-	len = strlen(ssid);
+	len = strlen(whc_cmd_args[1]);
 	*ptr = len;
 	ptr += 1;
 
-	memcpy(ptr, ssid, len);
+	memcpy(ptr, whc_cmd_args[1], len);
 	ptr += len;
 
 	if (pwd) {
@@ -299,6 +360,8 @@ void whc_host_wifi_connect(char *ssid, char *pwd)
 	buf_len = ptr - buf;
 
 	ret = whc_host_api_send_nl_data(buf, buf_len);
+
+	return ret;
 }
 
 int whc_host_wifi_scan(void)
@@ -377,99 +440,23 @@ int whc_host_nl_init(void)
 
 void whc_host_cmd_hdl(char *input)
 {
-	char *args[MAX_INPUT_SIZE / 2];
-	int arg_count = 0;
-	uint8_t idx = 0;
 	char *token;
-	char *pwd = NULL;
-	char backup[MAX_INPUT_SIZE] = {0};
+	char *cmd;
 
 	/* backup original string before strtok */
-	memcpy(backup, input, strlen(input));
+	memset(whc_cmd_backup, 0, MAX_INPUT_SIZE);
+	memcpy(whc_cmd_backup, input, strlen(input));
+	whc_cmd_argc = 0;
 
 	token = strtok(input, " ");
 	while (token != NULL) {
-		args[arg_count++] = token;
+		whc_cmd_args[whc_cmd_argc++] = token;
 		token = strtok(NULL, " ");
 	}
 
-	if (arg_count > 0) {
-		if (strcmp(args[0], "getip") == 0) {
-			if (arg_count < 2) {
-				printf("err: wlan index is needed !\n");
-			} else {
-				idx = *args[1] - '0';
-				if ((idx == 1) || (idx == 0)) {
-					whc_host_get_ip(idx);
-				} else {
-					printf("wrong wlan index %d, must be 0 or 1!\n", idx);
-				}
-			}
-		} else if (strcmp(args[0], "getmac") == 0) {
-			if (arg_count < 2) {
-				printf("err: wlan index is needed !\n");
-			} else {
-				idx = *args[1] - '0';
-				if ((idx == 1) || (idx == 0)) {
-					whc_host_get_mac_addr(idx);
-				} else {
-					printf("wrong wlan index %d, must be 0 or 1!\n", idx);
-				}
-			}
-		} else if (strcmp(args[0], "setrdy") == 0) {
-			whc_host_set_state(1);
-		} else if (strcmp(args[0], "unrdy") == 0) {
-			whc_host_set_state(0);
-		} else if (strcmp(args[0], "tickps") == 0) {
-			if (arg_count < 2) {
-				printf("err: tickps cmd needed to set subtype!\n");
-			} else {
-				whc_host_set_tickps_cmd(args[1]);
-			}
-		} else if (strcmp(args[0], "setmac") == 0) {
-			if (arg_count < 3) {
-				printf("err: hw mac and wlan index are needed !\n");
-			} else {
-				idx = *args[1] - '0';
-				if ((idx == 1) || (idx == 0)) {
-					whc_host_set_mac(idx, args[2]);
-				} else {
-					printf("wrong wlan index %d, must be 0 or 1!\n", idx);
-				}
-			}
-		} else if (strcmp(args[0], "netifon") == 0) {
-			if (arg_count < 2) {
-				printf("err: wlan index is needed !\n");
-			} else {
-				idx = *args[1] - '0';
-				if ((idx == 1) || (idx == 0)) {
-					whc_host_set_netif_on(idx);
-				} else {
-					printf("wrong wlan index %d, must be 0 or 1!\n", idx);
-				}
-			}
-		} else if (strcmp(args[0], "init") == 0) {
-			whc_host_nl_init();
-		} else if (strncmp(args[0], "AT", 2) == 0) {
-			whc_host_send_atcmd((char *)args[0]);
-		} else if (strcmp(args[0], "connect") == 0) {
-			if (arg_count > 2) {
-				pwd = args[2];
-			}
-			whc_host_wifi_connect(args[1], pwd);
-		} else if (strcmp(args[0], "scan") == 0) {
-			whc_host_wifi_scan();
-		} else if (strcmp(args[0], "dhcp") == 0) {
-			whc_host_wifi_dhcp();
-		} else if (strcmp(args[0], "mp") == 0) {
-			whc_host_wifi_mp(backup);
-		} else if (strcmp(args[0], "dbg") == 0) {
-			whc_host_wifi_dbg(backup);
-		} else if (strcmp(args[0], "wifion") == 0) {
-			whc_host_wifi_on();
-		} else {
-			printf("No command entered.\n");
-		}
+	if (whc_cmd_argc > 0) {
+		cmd = whc_cmd_args[0];
+		whc_host_execute_command(cmd);
 	}
 }
 
@@ -534,6 +521,39 @@ int whc_host_init_ip(uint8_t *buf)
 	return 0;
 }
 
+/* msg to kernel, set mac address */
+int whc_host_set_mac_internal(uint8_t idx, char *mac)
+{
+	struct msgtemplate msg;
+	int ret = 0;
+	unsigned char *ptr = msg.buf;
+
+	whc_host_fill_nlhdr(&msg, whc_netlink_info.family_id, 0, WHC_CMD_ECHO);
+	nla_put_u32(&ptr, WHC_ATTR_API_ID, CMD_WIFI_SET_MAC);
+	nla_put_u8(&ptr, WHC_ATTR_WLAN_IDX, idx);
+	nla_put_string(&ptr, WHC_ATTR_STRING, mac);
+	msg.n.nlmsg_len += ptr - msg.buf;
+
+	ret = whc_host_api_send_to_kernel(whc_netlink_info.sockfd, (char *)&msg, msg.n.nlmsg_len);
+	if (ret < 0) {
+		printf("msg send fail\n");
+	}
+
+	return ret;
+}
+
+void whc_host_mp_result(uint8_t *buf)
+{
+	uint8_t size = strlen(buf);
+	if (size > 1600) {
+		printf("mp result error \r\n");
+		return;
+	}
+
+	printf("%s \r\n", buf);
+	return;
+}
+
 void whc_host_rx_buf_hdl(struct msgtemplate *msg)
 {
 	struct nlattr *na;
@@ -567,7 +587,7 @@ void whc_host_rx_buf_hdl(struct msgtemplate *msg)
 				idx = pos[1];
 				printf("MAC ADDR %02x:%02x:%02x:%02x:%02x:%02x\n", pos[2], pos[3], pos[4], pos[5], pos[6], pos[7]);
 				snprintf(mac, sizeof(mac) - 1, "%02x:%02x:%02x:%02x:%02x:%02x", pos[2], pos[3], pos[4], pos[5], pos[6], pos[7]);
-				whc_host_set_mac(idx, mac);
+				whc_host_set_mac_internal(idx, mac);
 				break;
 			case WHC_WIFI_TEST_GET_IP:
 				printf("IP ADDR %d.%d.%d.%d GW %d %d %d %d\n", pos[1], pos[2], pos[3], pos[4], pos[5], pos[6], pos[7], pos[8]);
@@ -577,6 +597,9 @@ void whc_host_rx_buf_hdl(struct msgtemplate *msg)
 				break;
 			case WHC_WIFI_TEST_SCAN_RESULT:
 				whc_host_scan_result(pos);
+				break;
+			case WHC_WIFI_TEST_MP:
+				whc_host_mp_result(pos + sizeof(uint32_t));
 				break;
 			default:
 				break;

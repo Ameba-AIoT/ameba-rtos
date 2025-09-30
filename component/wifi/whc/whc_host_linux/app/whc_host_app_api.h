@@ -1,5 +1,5 @@
-#ifndef _RTW_SDIO_BRIDGE_API_H_
-#define _RTW_SDIO_BRIDGE_API_H_
+#ifndef _WHC_HOST_APP_API_H_
+#define _WHC_HOST_APP_API_H_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +7,13 @@
 #include <stdint.h>
 #include <string.h>
 #include <linux/genetlink.h>
+
+typedef int (*cmd_handler_t)(void);
+
+struct whc_host_command_entry {
+	char *cmd_name;
+	cmd_handler_t handler;
+};
 
 #define GENLMSG_DATA(glh)	((void *)((char*)NLMSG_DATA(glh) + GENL_HDRLEN))
 #define GENLMSG_PAYLOAD(glh)	(NLMSG_PAYLOAD(glh, 0) - GENL_HDRLEN)
@@ -114,9 +121,26 @@ static inline void nla_put_payload(unsigned char **pbuf, int attrtype, const cha
 /* buf in user space send to kernel, final kernel to device */
 int whc_host_api_send_nl_data(uint8_t *buf, uint32_t buf_len);
 
-int whc_host_set_mac(uint8_t idx, char *mac);
+int whc_host_set_mac_internal(uint8_t idx, char *mac);
 int whc_host_api_create_nl_socket(int protocol, int pid);
 int whc_host_api_send_to_kernel(int fd, char *buf, int buflen);
 int whc_host_api_get_family_id(int fd, char *family_name);
+
+
+int whc_host_get_mac(void);
+int whc_host_get_ip(void);
+int whc_host_set_state(void);
+int whc_host_set_tickps_cmd(void);
+int whc_host_set_netif_on(void);
+int whc_host_set_mac(void);
+int whc_host_wifi_mp(void);
+int whc_host_wifi_dbg(void);
+int whc_host_set_netif_on(void);
+int whc_host_wifi_connect(void);
+int whc_host_wifi_scan(void);
+int whc_host_wifi_on(void);
+int whc_host_wifi_dhcp(void);
+int whc_host_nl_init(void);
+
 
 #endif

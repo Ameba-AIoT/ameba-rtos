@@ -2,6 +2,20 @@ menu "CONFIG VFS"
     config VFS_LITTLEFS_INCLUDED
         bool "Enable VFS LITTLEFS"
         default n
+    if VFS_LITTLEFS_INCLUDED
+        choice
+            prompt "FLASH Type"
+            config LITTLEFS_FLASH_INTERNAL
+                bool "Internal FLASH"
+            config LITTLEFS_FLASH_EXTERNAL
+                bool "Exteranl FLASH"
+            if LITTLEFS_FLASH_EXTERNAL
+                config FLASH_EXTERNAL_SIZE
+                    int "External FLASH Size[KB]"
+                    default 4096
+            endif
+        endchoice
+    endif
     config VFS_FATFS_INCLUDED
         bool "Enable VFS FATFS"
     if VFS_FATFS_INCLUDED
@@ -10,13 +24,38 @@ menu "CONFIG VFS"
             config FATFS_DISK_FLASH_MENU
                 bool "FLASH"
                 select FATFS_DISK_FLASH
+            if FATFS_DISK_FLASH
+                choice
+                    prompt "FLASH Type"
+                    config FATFS_FLASH_INTERNAL
+                        bool "Internal FLASH"
+                    config FATFS_FLASH_EXTERNAL
+                        bool "Exteranl FLASH"
+                    if FATFS_FLASH_EXTERNAL
+                        config FLASH_EXTERNAL_SIZE
+                            int "External FLASH Size[KB]"
+                            default 4096
+                    endif
+                endchoice
+            endif
             config FATFS_DISK_SD_MENU   #amebasmart  green2 smartplus
                 bool "SD"
-                depends on SUPPORT_NAND_FLASH
                 select FATFS_DISK_SD
+            if FATFS_DISK_SD
+                choice
+                    prompt "SDIO MODE"
+                    config FATFS_SD_MODE
+                        bool "SD MODE"
+                        depends on SUPPORT_NAND_FLASH
+                    config FATFS_SD_SPI_MODE
+                        bool "SD SPI MODE"
+                   endchoice
+            endif
         endchoice
-        config FATFS_WITHIN_APP_IMG
-            bool "FATFS within APP Image"
+        if FATFS_FLASH_INTERNAL
+            config FATFS_WITHIN_APP_IMG
+                bool "FATFS within APP Image"
+        endif
         config FATFS_READ_ONLY
             bool "FATFS Read Only"
     endif

@@ -24,7 +24,6 @@
 	} while (0)
 
 struct whc_fullmac_host_ft_priv_t {
-	struct work_struct ft_work;
 	struct timer_list ft_auth_timer;
 	u8 reauth_count;
 	u8 ft_status;
@@ -62,7 +61,7 @@ static void _whc_fullmac_host_ft_auth_timer_hdl(struct timer_list *t)
 			cfg80211_disconnected(global_idev.pndev[WHC_STA_PORT], 0, NULL, 0, 1, GFP_ATOMIC);
 			whc_fullmac_host_ft_status_indicate(NULL, WLAN_STATUS_AUTH_TIMEOUT);
 		}
-		schedule_work(&(lacal_ft_priv.ft_work));
+		_whc_fullmac_host_ft_auth_tx();
 		mod_timer(&lacal_ft_priv.ft_auth_timer, jiffies + msecs_to_jiffies(REAUTH_TO));
 	}
 }
@@ -99,11 +98,6 @@ static int _whc_fullmac_host_ft_auth_tx(void)
 func_exit:
 	dev_dbg(global_idev.fullmac_dev, "%s exit %d\n", __func__, ret);
 	return ret;
-}
-
-static void _whc_fullmac_host_ft_auth_tx_task(struct work_struct *data)
-{
-	_whc_fullmac_host_ft_auth_tx();
 }
 
 static int _whc_fullmac_host_ft_auth_resp_process(u8 *pframe, u32 pkt_len)
@@ -161,7 +155,7 @@ static int _whc_fullmac_host_ft_auth_start(void)
 			__func__, ft_priv->target_roam_bssid[0], ft_priv->target_roam_bssid[1], ft_priv->target_roam_bssid[2], \
 			ft_priv->target_roam_bssid[3], ft_priv->target_roam_bssid[4], ft_priv->target_roam_bssid[5]);
 	_FT_SET_STATUS(_FT_AUTHENTICATING_STA);
-	schedule_work(&(lacal_ft_priv.ft_work));
+	_whc_fullmac_host_ft_auth_tx();
 
 	lacal_ft_priv.reauth_count = 0;
 	timer_setup(&lacal_ft_priv.ft_auth_timer, _whc_fullmac_host_ft_auth_timer_hdl, 0);
@@ -315,7 +309,6 @@ void whc_fullmac_host_ft_init(void)
 	dev_dbg(global_idev.fullmac_dev, "%s===>\n", __func__);
 	memset(ft_priv, 0, sizeof(struct whc_fullmac_host_ft_priv_t));
 	_FT_SET_STATUS(_FT_UNASSOCIATED_STA);
-	INIT_WORK(&(lacal_ft_priv.ft_work), _whc_fullmac_host_ft_auth_tx_task);
 }
 
 #endif /* CONFIG_IEEE80211R */

@@ -11,7 +11,7 @@
 #include "bt_debug.h"
 #include "hal_platform.h"
 #include "hci_platform.h"
-#include "hci/hci_common.h"
+#include "hci_controller.h"
 #include "platform_autoconf.h"
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
 #include "wifi_intf_drv_to_app_internal.h"

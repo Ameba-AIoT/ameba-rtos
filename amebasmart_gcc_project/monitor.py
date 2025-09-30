@@ -1,188 +1,43 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import serial
 import argparse
-import threading
 import sys
-import signal
 import time
 import os
+import subprocess
 
-# Import different terminal control modules for different operating systems
-try:
-    import tty
-    import termios
-    is_posix = True
-except ImportError:
-    import msvcrt
-    is_posix = False
+PROJECT_ROOT_DIR = os.path.realpath(os.path.dirname(os.path.abspath(__file__)))
+MONITOR_TOOL = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/meta_tools/scripts/monitor/monitor.py"))
 
-class SerialMonitor:
-    def __init__(self, port, baudrate, reset_mode=False, debug=False):
-        self.port = port
-        self.baudrate = baudrate
-        self.ser = None
-        self.running = False
-        self.receive_thread = None
-        self.reset_mode = reset_mode  # Whether to enable reset mode
-        self.start_output = not reset_mode  # Whether to start output (False initially in reset mode)
-        self.data_buffer = b''  # Buffer for received data in reset mode
-        self.target_keyword = b'ROM:['  # Target keyword set to ROM:[
-        self.debug = debug  # Debug mode switch
-        self.old_settings = None  # Save original terminal settings
-
-    def connect(self):
-        """Connect to the specified serial port"""
-        try:
-            self.ser = serial.Serial(
-                port=self.port,
-                baudrate=self.baudrate,
-                timeout=1,
-                parity=serial.PARITY_NONE,
-                stopbits=serial.STOPBITS_ONE,
-                bytesize=serial.EIGHTBITS
-            )
-            if self.ser.is_open:
-                print(f"Successfully connected to {self.port}, baud rate: {self.baudrate}")
-                if self.reset_mode:
-                    print("Reset mode enabled: Will send reboot command after 100ms")
-                else:
-                    print("Press Ctrl+C to exit, input characters will be sent in real-time")
-                if self.debug:
-                    print("Debug mode enabled: Raw byte data of sent and received data will be displayed")
-                return True
-            return False
-        except Exception as e:
-            print(f"Connection failed: {str(e)}")
-            return False
-
-    def _disable_echo(self):
-        """Disable terminal echo"""
-        if is_posix:
-            # Save current terminal settings
-            self.old_settings = termios.tcgetattr(sys.stdin)
-            # Set terminal to raw mode and disable echo
-            tty.setraw(sys.stdin.fileno())
-        # msvcrt.getch() in Windows doesn't echo by default, no extra settings needed
-
-    def _restore_terminal(self):
-        """Restore original terminal settings"""
-        if is_posix and self.old_settings:
-            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.old_settings)
-
-    def _process_and_print(self, data):
-        """Process and print received data"""
-        # Display raw byte data in debug mode
-        if self.debug:
-            hex_str = ' '.join(f'{b:02X}' for b in data)
-            print(f"[Received Data (Hex)]: {hex_str}")
-        
-        try:
-            text = data.decode('utf-8')
-            print(f"{text}", end='', flush=True)
-        except UnicodeDecodeError:
-            hex_str = ' '.join(f'{b:02X}' for b in data)
-            print(f"[Received (Hex)] {hex_str}")
-
-    def receive_data(self):
-        """Thread function for receiving serial data"""
-        while self.running and self.ser.is_open:
-            try:
-                if self.ser.in_waiting:
-                    data = self.ser.read(self.ser.in_waiting)
-                    
-                    # Handle output control in reset mode
-                    if self.reset_mode and not self.start_output:
-                        self.data_buffer += data  # Accumulate data into buffer
-                        
-                        # Check if target keyword ROM:[ is included
-                        if self.target_keyword in self.data_buffer:
-                            # Extract from the position of the keyword (including the keyword itself)
-                            index = self.data_buffer.find(self.target_keyword)
-                            data_to_output = self.data_buffer[index:]
-                            self.start_output = True  # Mark to start output
-                            self.data_buffer = b''  # Clear the buffer
-                            self._process_and_print(data_to_output)  # Print data containing the keyword
-                    else:
-                        # Directly process if not in reset mode or output has started
-                        self._process_and_print(data)
-            except Exception as e:
-                if self.running:
-                    print(f"Receiving error: {str(e)}")
+def run_monitor(argv):
+    cmds = [sys.executable, MONITOR_TOOL] + argv
+    print(cmds)
+    p = None
+    try:
+        p = subprocess.Popen(cmds)
+        while True:
+            # Poll the subprocess status in real time
+            ret = p.poll()
+            if ret is not None:
+                print(f"Subprocess has exited, exit code: {ret}")
                 break
-
-    def send_data(self, data):
-        """Send data to serial port without automatically adding terminator"""
-        if self.ser and self.ser.is_open:
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        print("Detected Ctrl+C, interrupting the main process!")
+        # Notify the subprocess to exit gracefully
+        if p is not None and p.poll() is None:
+            print("About to terminate the subprocess...")
+            # time.sleep(1)
+            p.terminate()  # Send SIGTERM
             try:
-                # Prepare data to send (no automatic terminator added)
-                data_to_send = data.encode('utf-8')
-                
-                # Display raw byte data in debug mode
-                if self.debug:
-                    hex_str = ' '.join(f'{b:02X}' for b in data_to_send)
-                    print(f"[Sent Data (Hex)]: {hex_str}")
-                
-                self.ser.write(data_to_send)
-            except Exception as e:
-                print(f"Sending error: {str(e)}")
-
-    def start(self):
-        """Start the serial monitor"""
-        if not self.connect():
-            return
-
-        # Disable terminal echo
-        self._disable_echo()
-
-        self.running = True
-        # Start receiving thread
-        self.receive_thread = threading.Thread(target=self.receive_data, daemon=True)
-        self.receive_thread.start()
-
-        # Execute special process if reset mode is enabled
-        if self.reset_mode:
-            try:
-                time.sleep(0.1)  # Wait for 100ms
-                self.send_data('reboot\r\n')  # Send reboot command (manually add \r\n)
-            except Exception as e:
-                print(f"Failed to send reboot command: {str(e)}")
-
-        # Handle user input (send in real-time)
-        try:
-            while self.running:
-                # Read a single character
-                if is_posix:
-                    # For POSIX systems (Linux/macOS)
-                    char = sys.stdin.read(1)
-                else:
-                    # For Windows systems
-                    char = msvcrt.getch().decode('utf-8')
-                
-                # Handle Ctrl+C (ASCII code 3 for Ctrl+C)
-                if char == '\x03':
-                    raise KeyboardInterrupt
-                
-                # Send the character in real-time
-                self.send_data(char)
-                
-        except KeyboardInterrupt:
-            self.stop()
-        finally:
-            # Ensure terminal settings are restored even if exception occurs
-            self._restore_terminal()
-
-    def stop(self):
-        """Stop the serial monitor and clean up resources"""
-        print("\nClosing connection...")
-        self.running = False
-        if self.receive_thread and self.receive_thread.is_alive():
-            self.receive_thread.join(timeout=1.0)
-        if self.ser and self.ser.is_open:
-            self.ser.close()
-        self._restore_terminal()  # Ensure terminal settings are restored
-        print("Exited successfully")
+                p.wait(timeout=0.02)
+                print("Subprocess exited gracefully.")
+            except subprocess.TimeoutExpired:
+                print("Subprocess did not respond in time, force killing...")
+                p.kill()
+                p.wait()
+        sys.exit(0)  # Finally, exit the main process
 
 def main():
     # Parse command line arguments
@@ -193,25 +48,65 @@ def main():
                        help='Enable reset mode: Wait 100ms after connection to send "reboot" command, start output only after detecting "ROM:["')
     parser.add_argument('-debug', action='store_true', 
                        help='Enable debug mode: Display raw hexadecimal data of sent and received bytes')
+    parser.add_argument('--remote-server', type=str, help='remote serial server IP address')
+    parser.add_argument('--remote-password', type=str, help='remote serial server validation password')
+
+    parser.add_argument("--decode-coredumps", action="store_true",
+                        help=f"If set will handle core dumps found in serial output. Default is False")
+    parser.add_argument("--enable-address-decoding", action="store_true",
+                        help="Print lines about decoded addresses from the application ELF file, default is False")
+    parser.add_argument("--axf-file", nargs="?", help="AXF file of application")
+    parser.add_argument("--toolchain-dir", help="Set toolchain dir. If not set, will get from config.")
+    parser.add_argument("--ca32", action="store_true", help="If core is ca32, should set this.")
     args = parser.parse_args()
 
-    # Validate required arguments
-    if not args.port or not args.baudrate:
-        print("Error: Both -p/--port and -b/--baudrate are required arguments")
-        sys.exit(1)
+    port = args.port
+    baudrate = args.baudrate
+    reset = args.reset
+    debug = args.debug
 
-    # Create SerialMonitor instance
-    monitor = SerialMonitor(args.port, args.baudrate, args.reset, args.debug)
-    
-    # Register signal handler for Ctrl+C
-    def signal_handler(signal, frame):
-        monitor.stop()
-        sys.exit(0)
-    
-    signal.signal(signal.SIGINT, signal_handler)
-    
-    # Start the monitor
-    monitor.start()
+    remote_server = args.remote_server
+    remote_password = args.remote_password
+
+    if not port:
+        raise ValueError("Serial port is invalid")
+
+    cmds = []
+    cmds.append("--device")
+    cmds.append("amebasmart")
+    cmds.append("--port")
+    cmds.append(f"{port}")
+    cmds.append("--baud")
+    cmds.append(f"{baudrate}")
+    cmds.append("--timestamps")
+    cmds.append("--target-os")
+    cmds.append("freertos")
+    if reset:
+        cmds.append("--reset")
+    if debug:
+        cmds.append("--debug")
+
+    if remote_server:
+        cmds.append("--remote-server")
+        cmds.append(remote_server)
+    if remote_password:
+        cmds.append("--remote-password")
+        cmds.append(remote_password)
+
+    if args.decode_coredumps:
+        cmds.append("--decode-coredumps")
+    if args.enable_address_decoding:
+        cmds.append("--enable-address-decoding")
+    if args.axf_file:
+        cmds.append("--axf-file")
+        cmds.append(f"{args.axf_file}")
+    if args.toolchain_dir:
+        cmds.append("--toolchain-dir")
+        cmds.append(f"{args.toolchain_dir}")
+    if args.ca32:
+        cmds.append("--ca32")
+
+    run_monitor(cmds)
 
 if __name__ == "__main__":
     main()

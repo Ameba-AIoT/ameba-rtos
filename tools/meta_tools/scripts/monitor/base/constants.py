@@ -38,7 +38,7 @@ ASYNC_CLOSING_WAIT_NONE = 0xFFFF  # don't wait at all
 RECONNECT_DELAY = 0.5  # timeout between reconnect tries
 CHECK_ALIVE_FLAG_TIMEOUT = 0.25  # timeout for checking alive flags (currently used by serial reader)
 
-TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+TIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
 GDB_PRINTF_REGISTER_INFO_START = "Register Infos Start"
 GDB_PRINTF_REGISTER_INFO_END = "Register Infos END"

@@ -158,49 +158,51 @@ fi
 python $BASE_DIR/tools/scripts/check_requirements.py
 
 if [ "$(uname)" = "Linux" ]; then
-    echo "Process all .sh scripts only in specific directories..."
-
-    # Define the base directories to scan for script files.
+    # 1. Build list of directories to scan
     SCAN_DIRS=()
-    # add ./*_gcc_project directories (current directory only)
+    # Add all *_gcc_project directories in current directory (one level)
     for d in ./*_gcc_project; do
         [ -d "$d" ] && SCAN_DIRS+=("$d")
     done
-    # add ./tools directory
+    # Add ./tools directory if it exists
     [ -d "./tools" ] && SCAN_DIRS+=("./tools")
-    # Example: To add a new directory in the future, add as follows:
+    # Example: Add a new directory if needed in future
     # SCAN_DIRS+=("./new_directory")
 
-    # Define the file patterns to process (expandable), separated by spaces
+    # 2. Define file patterns to process (can be expanded)
     FILE_PATTERNS=("*.sh")
 
-    # Search and set execute permission for script files in specified directories only
+    # 3. Find scripts and batch set execute permission (fast)
+    # Limit search to max 4 levels, process in parallel based on CPU cores
     for base in "${SCAN_DIRS[@]}"; do
         for pattern in "${FILE_PATTERNS[@]}"; do
-            find "$base" -type f -name "$pattern" -print0
+            find "$base" -maxdepth 5 -type f -name "$pattern" -print0
         done
-    done | while IFS= read -r -d '' file; do
+    done \
+    | xargs -0 -r -P "$(nproc)" -I{} bash -c '
+        file="$1"
         if [ ! -x "$file" ]; then
-            chmod +x "$file" 2>/dev/null
+            chmod +x "{}" 2>/dev/null
             if [ $? -ne 0 ]; then
-                echo "[WARNING] Failed to add execute permission: $file. Please check permissions or ownership." >&2
+                echo "[WARNING] Failed to add execute permission to binary: $file. Please check permissions or ownership." >&2
             fi
-        fi
-    done
+        fi '
 
-    # Fix execute permissions for non-extension executables in PREBUILTS_DIR only
+    # 4. Fix execute permission for binaries without extensions under PREBUILTS_DIR
     if [ -d "$PREBUILTS_DIR" ]; then
-        echo "Scanning for executable binary files with no extension in: $PREBUILTS_DIR ..."
-        find "$PREBUILTS_DIR" -type f ! -name "*.*" -print0 | while IFS= read -r -d '' file; do
+        find "$PREBUILTS_DIR" -type f ! -name "*.*" -print0 \
+        | xargs -0 -r -P "$(nproc)" bash -c '
+            file="$1"
             if file "$file" | grep -q 'executable'; then
                 if [ ! -x "$file" ]; then
-                    chmod +x "$file" 2>/dev/null
-                    if [ $? -ne 0 ]; then
-                        echo "[WARNING] Failed to add execute permission to binary: $file. Please check permissions or ownership." >&2
+                    if [ ! -x "$file" ]; then
+                        chmod +x "$file" 2>/dev/null
+                        if [ $? -ne 0 ]; then
+                            echo "[WARNING] Failed to add execute permission to binary: $file. Please check permissions or ownership." >&2
+                        fi
                     fi
                 fi
-            fi
-        done
+            fi '
     else
         echo "[WARNING] PREBUILTS_DIR not found: $PREBUILTS_DIR" >&2
     fi

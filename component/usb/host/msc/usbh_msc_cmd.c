@@ -40,11 +40,8 @@ static u32 filenum = 0;
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
-	.dma_enable = FALSE,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.main_task_priority = 3U,
-	.isr_task_priority  = 4U,
-
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,

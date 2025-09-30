@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include "hci_common.h"
+#include "hci_controller.h"
 
 typedef struct {
 	uint16_t len;

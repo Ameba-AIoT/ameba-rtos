@@ -325,9 +325,9 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 #endif
 #ifdef CONFIG_WHC_DUAL_TCPIP
 				} else if (*ptr == WHC_CMD_TEST_SET_READY) {
-					whc_dev_api_set_host_state(1);
+					whc_dev_api_set_host_state(WHC_HOST_READY);
 				} else if (*ptr == WHC_CMD_TEST_SET_UNREADY) {
-					whc_dev_api_set_host_state(0);
+					whc_dev_api_set_host_state(WHC_HOST_UNREADY);
 #endif
 				} else if (*ptr == WHC_CMD_TEST_SET_TICKPS_CMD) {
 					u8 subtype = *(ptr + 1);

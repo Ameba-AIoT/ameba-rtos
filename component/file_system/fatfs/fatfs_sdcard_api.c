@@ -32,7 +32,11 @@ int fatfs_sd_init(void)
 		FRESULT res;
 		// Register disk driver to Fatfs
 		VFS_DBG(VFS_INFO, "Register disk driver to Fatfs.");
+#if defined(CONFIG_FATFS_SD_SPI_MODE) && CONFIG_FATFS_SD_SPI_MODE
+		fatfs_sd_param.drv_num = FATFS_RegisterDiskDriver(&SD_disk_spi_Driver);
+#else
 		fatfs_sd_param.drv_num = FATFS_RegisterDiskDriver(&SD_disk_Driver);
+#endif
 
 		if (fatfs_sd_param.drv_num < 0) {
 			VFS_DBG(VFS_ERROR, "Rigester disk driver to FATFS fail.");

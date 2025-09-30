@@ -31,6 +31,15 @@ typedef enum {
 } bt_audio_pres_act_t;
 
 /**
+ * @brief     register track sync state in audio sync table
+ * @param[in] track: pointer of audio track struct
+ * @return
+ *            - 0  : sync state register success
+ *            - 1: sync state register failed
+ */
+uint16_t rtk_bt_audio_track_sync_state_register(rtk_bt_audio_track_t *track);
+
+/**
  * @brief     do audio xrun handle(when audio buffer is empty).
  * @param[in] track: pointer of audio track struct
  * @param[in] data: pointer of decoded data

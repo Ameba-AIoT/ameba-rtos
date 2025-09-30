@@ -56,6 +56,9 @@ config RMESH_EN
     default n
 
 if LINUX_FW_EN
+    config NAN
+        bool "Enable NAN"
+        default n
     config WIFI_P2P_ENABLE
         bool "Enable P2P"
         default n

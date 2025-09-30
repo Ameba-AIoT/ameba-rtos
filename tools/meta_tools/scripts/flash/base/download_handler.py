@@ -56,13 +56,15 @@ class Ameba(object):
                  memory_type=None,
                  erase_info=None,
                  remote_server: Optional[str] = None,
-                 remote_port: Optional[int] = None):
+                 remote_port: Optional[int] = None,
+                 remote_password: Optional[str] = None):
         self.logger = logger
         self.profile_info = profile
         self.serial_port = None
         self.serial_port_name = serial_port
         self.remote_server = remote_server
         self.remote_port = remote_port
+        self.remote_password = remote_password
         self.is_usb = self.is_realtek_usb() if not remote_server else False
         self.initial_serial_port()
         self.baudrate = baudrate
@@ -91,7 +93,7 @@ class Ameba(object):
         # initial serial port
         try:
             # determine whether to use a remote serial port
-            self.logger.debug(f"Remote server： self.logger type={type(self.logger)}，value={self.logger}")
+            self.logger.debug(f"Remote server: self.logger type={type(self.logger)}, value={self.logger}")
             if self.remote_server and self.remote_port:
                 self.logger.info(f"Connect to remote serial server: {self.remote_server}:{self.remote_port} (Serial port: {self.serial_port_name})")
                 # initialize remote serial port
@@ -102,6 +104,9 @@ class Ameba(object):
                     baudrate=self.profile_info.handshake_baudrate,
                     logger=self.logger
                 )
+                if self.remote_password:
+                    self.logger.info("Remote server: password set, will send validate command")
+                    self.serial_port.validate(self.remote_password)
                 self.serial_port.open()
             else:
                 # initialize local serial port

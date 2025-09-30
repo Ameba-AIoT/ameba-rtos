@@ -18,13 +18,12 @@ key_description = miniterm.key_description
 
 
 class LogHandler:
-    def __init__(self, elf_file: str, console: Console, timestamps: bool, enable_address_decoding: bool,
+    def __init__(self, elf_file: str, timestamps: bool, enable_address_decoding: bool,
                  toolchain_path: str, rom_elf_file: Union[str, None] = None):
         self.log_file = None
         self.output_enabled = True
         self._start_of_line = True
         self.elf_file = elf_file
-        self.console = console
         self.timestamps = timestamps
         self.timestamp_format = TIME_FORMAT
         if enable_address_decoding:
@@ -74,9 +73,8 @@ class LogHandler:
         new_line_char = "\n"
         text = text.replace("\r\n", "\n")
         text = text.replace("\r", "")
-
         if text and self.timestamps and (self.output_enabled or self.log_file):
-            t = datetime.datetime.now().strftime(self.timestamp_format)
+            t = datetime.datetime.now().strftime(self.timestamp_format)[:-3]
             # "text" is not guaranteed to be a full line. Timestamps should be only at the beginning of lines.
             line_prefix = t + " "
 
@@ -98,7 +96,7 @@ class LogHandler:
             self._start_of_line = text.endswith(new_line_char)
 
         if self.output_enabled:
-            print(text, end='')
+            print(text, end='', flush=True)
         if self.log_file:
             try:
                 self.log_file.write(text)

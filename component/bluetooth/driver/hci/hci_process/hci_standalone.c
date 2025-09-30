@@ -5,8 +5,8 @@
  */
 #include <osif.h>
 #include <string.h>
-#include "hci/hci_transport.h"
-#include "hci/hci_common.h"
+#include "hci_transport.h"
+#include "hci_common.h"
 
 static void *recv_sem = NULL;
 static uint8_t *hci_buf;

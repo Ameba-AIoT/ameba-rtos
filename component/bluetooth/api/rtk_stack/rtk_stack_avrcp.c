@@ -151,9 +151,10 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_PLAY_STATUS_CHANGED_REG_REQ \r\n");
 		p_link = app_find_br_link(param->avrcp_reg_play_status_changed.bd_addr);
 		if (p_link != NULL) {
-			BT_LOGA("app_avrcp_bt_cback: send reister rsp to %02x:%02x:%02x:%02x:%02x:%02x, status is 0x%02x \r\n",
+			BT_LOGA("app_avrcp_bt_cback: send register rsp to %02x:%02x:%02x:%02x:%02x:%02x, status is 0x%02x \r\n",
 					p_link->bd_addr[5], p_link->bd_addr[4], p_link->bd_addr[3], p_link->bd_addr[2], p_link->bd_addr[1], p_link->bd_addr[0],
 					p_link->avrcp_play_status);
+			p_link->reg_play_status_flag = true;
 			bt_avrcp_play_status_change_register_rsp(p_link->bd_addr, p_link->avrcp_play_status);
 		}
 	}
@@ -217,7 +218,7 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_PLAY");
 		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_PLAY \r\n");
-		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
+		p_link = app_find_br_link(param->avrcp_play.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_PLAY_REQ_EVENT, sizeof(rtk_bt_avrcp_digital_interface_command_t));
 			if (!p_evt) {
@@ -241,7 +242,7 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_PAUSE");
 		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_PAUSE \r\n");
-		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
+		p_link = app_find_br_link(param->avrcp_pause.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_PAUSE_REQ_EVENT, sizeof(rtk_bt_avrcp_digital_interface_command_t));
 			if (!p_evt) {
@@ -265,7 +266,7 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_STOP");
 		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_STOP \r\n");
-		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
+		p_link = app_find_br_link(param->avrcp_stop.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_STOP_REQ_EVENT, sizeof(rtk_bt_avrcp_digital_interface_command_t));
 			if (!p_evt) {
@@ -289,7 +290,7 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_FORWARD");
 		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_FORWARD \r\n");
-		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
+		p_link = app_find_br_link(param->avrcp_forward.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_FORWARD_REQ_EVENT, sizeof(rtk_bt_avrcp_digital_interface_command_t));
 			if (!p_evt) {
@@ -313,7 +314,7 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_BACKWARD");
 		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_BACKWARD \r\n");
-		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
+		p_link = app_find_br_link(param->avrcp_backward.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_BACKWARD_REQ_EVENT, sizeof(rtk_bt_avrcp_digital_interface_command_t));
 			if (!p_evt) {
@@ -337,7 +338,7 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_FAST_FORWARD_START");
 		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_FAST_FORWARD_START \r\n");
-		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
+		p_link = app_find_br_link(param->avrcp_fast_forward_start.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_FAST_FORWARD_START_REQ_EVENT, sizeof(rtk_bt_avrcp_digital_interface_command_t));
 			if (!p_evt) {
@@ -361,7 +362,7 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_FAST_FORWARD_STOP");
 		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_FAST_FORWARD_STOP \r\n");
-		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
+		p_link = app_find_br_link(param->avrcp_fast_forward_stop.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_FAST_FORWARD_STOP_REQ_EVENT, sizeof(rtk_bt_avrcp_digital_interface_command_t));
 			if (!p_evt) {
@@ -385,7 +386,7 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_REWIND_START");
 		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_REWIND_START \r\n");
-		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
+		p_link = app_find_br_link(param->avrcp_rewind_start.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_REWIND_START_REQ_EVENT, sizeof(rtk_bt_avrcp_digital_interface_command_t));
 			if (!p_evt) {
@@ -409,7 +410,7 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_REWIND_STOP");
 		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_REWIND_STOP \r\n");
-		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
+		p_link = app_find_br_link(param->avrcp_rewind_stop.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_REWIND_STOP_REQ_EVENT, sizeof(rtk_bt_avrcp_digital_interface_command_t));
 			if (!p_evt) {
@@ -433,7 +434,7 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_ABSOLUTE_VOLUME_SET");
 		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_ABSOLUTE_VOLUME_SET \r\n");
-		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
+		p_link = app_find_br_link(param->avrcp_absolute_volume_set.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_ABSOLUTE_VOLUME_SET, sizeof(rtk_bt_avrcp_absolute_volume_set_t));
 			if (!p_evt) {
@@ -780,9 +781,14 @@ static uint16_t bt_stack_avrcp_play_status_change_req(void *param)
 		BT_LOGE("%s: plink is NULL \r\n", __func__);
 		return RTK_BT_FAIL;
 	}
-	if (bt_avrcp_play_status_change_req(p_req_t->bd_addr, (T_BT_AVRCP_PLAY_STATUS)p_req_t->status)) {
-		p_link->avrcp_play_status = (T_BT_AVRCP_PLAY_STATUS)p_req_t->status;
-		return RTK_BT_OK;
+	if (p_link->reg_play_status_flag) {
+		if (bt_avrcp_play_status_change_req(p_req_t->bd_addr, (T_BT_AVRCP_PLAY_STATUS)p_req_t->status)) {
+			p_link->avrcp_play_status = (T_BT_AVRCP_PLAY_STATUS)p_req_t->status;
+			return RTK_BT_OK;
+		}
+	} else {
+		BT_LOGE("%s: the ct has not reg play status change req \r\n", __func__);
+		return RTK_BT_FAIL;
 	}
 
 	return RTK_BT_FAIL;

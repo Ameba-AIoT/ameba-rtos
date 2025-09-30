@@ -13,11 +13,11 @@ config BT_MESH_BASED_ON_CODED_PHY
     default n
 
 config BT_ZEPHYR
-    depends on BT_ADVANCED_FEATURE_MENU && !AMEBA_RLS    #internal
+    depends on BT_ADVANCED_FEATURE_MENU && !RTL8720F && !AMEBA_RLS    #internal
     bool "Use Zephyr BT Stack"
     default n
 
-config BT_SDN_VERIFY
+config BT_SDN_VERIFY       #remove after RTL8720F project ready
     depends on BT_ZEPHYR && AMEBAL2 && !AMEBA_RLS    #internal
     bool "SDN Verification"
     default n
@@ -63,12 +63,12 @@ if BT_EXAMPLE_DEMO_MENU
         default n
 
     config BT_OTA_CENTRAL
-        depends on AMEBADPLUS || AMEBALITE || AMEBASMART && !AMEBA_RLS    #internal amebadplus|amebalite|amebasmart
+        depends on (AMEBADPLUS || AMEBALITE || AMEBASMART) && !AMEBA_RLS    #internal amebadplus|amebalite|amebasmart
         bool "BLE OTA Central"
         default n
 
     config BT_OTA_PERIPHERAL
-        depends on AMEBADPLUS || AMEBALITE || AMEBASMART && !AMEBA_RLS    #internal amebadplus|amebalite|amebasmart
+        depends on (AMEBADPLUS || AMEBALITE || AMEBASMART) && !AMEBA_RLS    #internal amebadplus|amebalite|amebasmart
         bool "BLE OTA Peripheral"
         default n
 

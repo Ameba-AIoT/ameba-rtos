@@ -26,7 +26,7 @@ class StoppableThread(object):
 
     def start(self):
         if self._thread is None:
-            self._thread = threading.Thread(target=self._run_outer)
+            self._thread = threading.Thread(target=self._run_outer, daemon=True)
             self._thread.start()
 
     def _cancel(self):
@@ -45,5 +45,4 @@ class StoppableThread(object):
         if self._thread is not None:
             old_thread = self._thread
             self._thread = None
-            self._cancel()
-            old_thread.join()
+            old_thread.join(timeout=0.02)

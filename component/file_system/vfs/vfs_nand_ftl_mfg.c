@@ -16,7 +16,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include "lfs_nand_ftl.h"
+#include "vfs_nand_ftl.h"
 #include "littlefs_adapter.h"
 
 /* Private defines -----------------------------------------------------------*/

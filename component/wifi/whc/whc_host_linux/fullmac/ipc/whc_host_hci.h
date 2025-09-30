@@ -29,7 +29,8 @@
 
 /* Layer 1 structs. */
 struct event_priv_t {
-	struct tasklet_struct		api_tasklet; /* event_priv task to haddle event_priv msg */
+	struct work_struct		api_work; /* event_priv work to haddle event_priv msg */
+	struct workqueue_struct *api_workqueue; /* event_priv work queue to haddle event_priv msg */
 	ipc_msg_struct_t		api_ipc_msg; /* to store ipc msg for event_priv */
 	struct mutex			iiha_send_mutex; /* mutex to protect send host event_priv message */
 	struct whc_ipc_host_req_msg	*preq_msg;/* host event_priv message to send to device */

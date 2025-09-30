@@ -39,7 +39,7 @@ bool demo_usb_deinit(void);
 uint16_t demo_usb_read_buffer(uint8_t *buf, uint16_t len);
 #else
 bool demo_uart_init(void);
-uint16_t demo_uart_read(uint8_t *buf);
+uint16_t demo_uart_read(uint8_t *buf, uint16_t len);
 #endif
 #endif
 

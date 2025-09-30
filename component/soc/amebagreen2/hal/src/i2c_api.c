@@ -269,10 +269,10 @@ int i2c_write_timeout(i2c_t *obj, int address, char *data, int length, int stop,
 	}
 
 	if (!length) {
-		return (I2C_MasterSendNullData_TimeOut(obj->I2Cx, address, timeout_ms));
+		return I2C_MasterSendNullData_TimeOut(obj->I2Cx, address, timeout_ms);
 	}
 
-	return (I2C_MasterWrite_TimeOut(obj->I2Cx, (unsigned char *)data, length, timeout_ms));
+	return I2C_MasterWrite_TimeOut(obj->I2Cx, (unsigned char *)data, length, timeout_ms);
 }
 
 /**
@@ -370,7 +370,6 @@ int i2c_write(i2c_t *obj, int address, const char *data, int length, int stop)
   */
 int i2c_repeatread(i2c_t *obj, int address, uint8_t *pWriteBuf, int Writelen, uint8_t *pReadBuf, int Readlen)
 {
-	u8 cnt = 0;
 
 	if (i2c_target_addr[obj->i2c_idx] != address) {
 		/* Deinit I2C first */
@@ -385,21 +384,7 @@ int i2c_repeatread(i2c_t *obj, int address, uint8_t *pWriteBuf, int Writelen, ui
 		I2C_Cmd(obj->I2Cx, ENABLE);
 	}
 
-	/* write in the DR register the data to be sent */
-	for (cnt = 0; cnt < Writelen; cnt++) {
-		while ((I2C_CheckFlagState(obj->I2Cx, I2C_BIT_TFNF)) == 0);
-
-		if (cnt >= Writelen - 1) {
-			/*generate restart signal*/
-			obj->I2Cx->IC_DATA_CMD = (*pWriteBuf++) | (1 << 10);
-		} else {
-			obj->I2Cx->IC_DATA_CMD = (*pWriteBuf++);
-		}
-	}
-	/*Wait I2C TX FIFO not full*/
-	while ((I2C_CheckFlagState(obj->I2Cx, I2C_BIT_TFNF)) == 0);
-
-	return I2C_MasterRead(obj->I2Cx, pReadBuf, Readlen);
+	return I2C_MasterRepeatRead(obj->I2Cx, pWriteBuf, Writelen, pReadBuf, Readlen);
 }
 
 /**
@@ -416,7 +401,9 @@ int i2c_send_restart(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u8 restart)
 
 	/* Write in the DR register the data to be sent */
 	for (cnt = 0; cnt < len; cnt++) {
-		while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFNF)) == 0);
+		if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFNF, 0, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
+			return cnt;
+		}
 
 		if (cnt >= len - 1) {
 			/*generate restart signal*/
@@ -424,15 +411,9 @@ int i2c_send_restart(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u8 restart)
 		} else {
 			I2Cx->IC_DATA_CMD = (*pBuf++);
 		}
-
-		while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFE)) == 0) {
-			if (I2C_GetRawINT(I2Cx) & I2C_BIT_TX_ABRT) {
-				I2C_ClearAllINT(I2Cx);
-				return cnt;
-			}
-		}
 	}
 
+	I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFE, 0, I2C_POLL_TIMEOUT_MS);
 	return len;
 }
 
@@ -633,9 +614,7 @@ int i2c_slave_receive(i2c_t *obj)
   */
 int i2c_slave_read(i2c_t *obj, char *data, int length)
 {
-	I2C_SlaveRead(obj->I2Cx, (unsigned char *)data, length);
-
-	return length;
+	return I2C_SlaveRead(obj->I2Cx, (unsigned char *)data, length);
 }
 
 /**
@@ -644,13 +623,11 @@ int i2c_slave_read(i2c_t *obj, char *data, int length)
   * @param  data: Pointer to the data to be sent.
   * @param  length: Length of data that to be sent.
   * @return Write result.
-  * @retval 1: Success.
-  * @retval Others: Error.
+  * @retval Length of sent data.
   */
 int i2c_slave_write(i2c_t *obj, const char *data, int length)
 {
-	I2C_SlaveWrite(obj->I2Cx, (unsigned char *)data, length);
-	return 1;
+	return I2C_SlaveWrite(obj->I2Cx, (unsigned char *)data, length);
 }
 
 /**

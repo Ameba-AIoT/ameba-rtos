@@ -52,6 +52,7 @@ uint16_t bt_audio_ring_buffer_init(bt_audio_ring_buffer_t *ring_buffer, uint32_t
 			static_storage[i].size = storage_size;
 			ring_buffer->storage = static_storage[i].buffer;
 			find = true;
+			break;
 		}
 	}
 	if (!find) {

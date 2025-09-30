@@ -257,12 +257,19 @@ static void do_audio_sync_flow(rtk_bt_audio_track_t *track, uint8_t packet_index
 		cnt_drop = track->pre_drop_cnt_left;
 		if (cnt_drop > data_size) {
 			track->pre_drop_cnt_left = cnt_drop - data_size;
-			BT_LOGA("[BT AUDIO] drop %d data to speed up audio track rendering, left %d \r\n", (int)data_size, (int)track->pre_drop_cnt_left);
+			BT_LOGA("[BT AUDIO] pre drop %d data to speed up audio track rendering, left %d \r\n", (int)data_size, (int)track->pre_drop_cnt_left);
 		} else {
+#if defined(CONFIG_AUDIO_MIXER) && CONFIG_AUDIO_MIXER
+			/* drop entire packet data to avoid insert audio data causing stutter before all tracks sync ready */
+			memset((void *)pdata, 0, data_size);
+			track->pre_drop_cnt_left = 0;
+			BT_LOGA("[BT AUDIO] pre drop %d data to speed up audio track rendering \r\n", (int)data_size);
+#else
 			pdata += cnt_drop; // offset
 			data_size -= cnt_drop;
 			track->pre_drop_cnt_left = 0;
-			BT_LOGA("[BT AUDIO] drop %d data to speed up audio track rendering \r\n", (int)cnt_drop);
+			BT_LOGA("[BT AUDIO] pre drop %d data to speed up audio track rendering \r\n", (int)cnt_drop);
+#endif
 			do_audio_track_write(track, pdata, data_size);
 		}
 	} else {
@@ -956,6 +963,7 @@ rtk_bt_audio_track_t *rtk_bt_audio_track_add(uint32_t type, float left_volume, f
 		ptrack->audio_track_hdl = NULL;
 		BT_LOGE("[BT AUDIO] audio_track_hdl is NULL \r\n");
 	}
+	ptrack->iso_interval = duration;
 	ptrack->channels = channels;
 	ptrack->rate = rate;
 	ptrack->format = format;
@@ -1020,6 +1028,11 @@ uint16_t rtk_bt_audio_track_enable_sync_mode(rtk_bt_audio_track_t *ptrack, uint3
 	BT_LOGA("[BT_AUDIO] bt audio track sync mode is on, pd is %d \r\n", pd);
 	bt_audio_ring_buffer_init(&ptrack->audio_delay_buff,
 							  BT_AUDIO_RINGBUFFER_PRE_SIZE + (ptrack->rate * ptrack->channels * ptrack->bits * (pd / 1000) / (8 * 1000)));
+	/* register track sync state in table, used for audio sync between multiple tracks */
+	if (rtk_bt_audio_track_sync_state_register(ptrack)) {
+		BT_LOGE("[BT AUDIO] bt_audio_track_sync_state_register failed!\r\n");
+		return RTK_BT_AUDIO_FAIL;
+	}
 	ptrack->pres_delay_us = pd;
 	ptrack->audio_sync_flag = true;
 
@@ -1312,6 +1325,20 @@ void *rtk_bt_audio_codec_add(rtk_bt_audio_codec_conf_t *paudio_codec_conf)
 	osif_mutex_give(bt_audio_intf_priv_mutex);
 
 	return (void *)pentity;
+}
+
+uint16_t rtk_bt_audio_codec_update(rtk_bt_audio_codec_conf_t *paudio_codec_conf, void *pentity)
+{
+	if (!paudio_codec_conf && !pentity) {
+		BT_LOGE("[BT AUDIO] paudio_codec_conf or pentity is null \r\n");
+		return RTK_BT_AUDIO_FAIL;
+	}
+	/* judge whether already initialized */
+	if (!bt_audio_init_flag) {
+		BT_LOGE("[BT_AUDIO] BT audio has not be initialized \r\n");
+		return RTK_BT_AUDIO_FAIL;
+	}
+	return bt_audio_update_codec(paudio_codec_conf->codec_index, paudio_codec_conf->param, paudio_codec_conf->param_len, pentity);
 }
 
 uint16_t rtk_bt_audio_codec_remove(uint32_t type, void *pentity)

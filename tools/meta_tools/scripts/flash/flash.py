@@ -17,7 +17,7 @@ import version_info
 
 MinSupportedDeviceProfileMajorVersion = 1
 MinSupportedDeviceProfileMinorVersion = 1
-setting_file = "Setting.json"
+setting_file = "Settings.json"
 
 
 def convert_mingw_path_to_windows(mingw_path):
@@ -61,7 +61,7 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                         chip_erase,
                         memory_type, memory_info, download,
                         log_level, log_f,
-                        remote_server=None, remote_port=None):
+                        remote_server=None, remote_port=None, remote_password=None):
     logger = create_logger(serial_port, log_level=log_level, file=log_f)
 
     ameba = Ameba(profile_info, serial_port, serial_baudrate, image_dir, settings, logger,
@@ -70,7 +70,8 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                   memory_type=memory_type,
                   erase_info=memory_info,
                   remote_server=remote_server,
-                  remote_port=remote_port)
+                  remote_port=remote_port,
+                  remote_password=remote_password)
     if download:
         # download
         if not ameba.check_protocol_for_download():
@@ -91,7 +92,8 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                           memory_type=memory_type,
                           erase_info=memory_info,
                           remote_server=remote_server,
-                          remote_port=remote_port)
+                          remote_port=remote_port,
+                          remote_password=remote_password)
 
         logger.info(f"Image download start...")  # customized, do not modify
         ret = ameba.prepare()
@@ -197,7 +199,7 @@ def main(argc, argv):
     parser.add_argument('--partition-table', help="layout info, list")
 
     parser.add_argument('--remote-server', type=str, help='remote serial server IP address')
-    parser.add_argument('--remote-port', type=int, help='remote serial server port (default: 58916)')
+    parser.add_argument('--remote-password', type=str, help='remote serial server validation password')
 
     args = parser.parse_args()
     download = args.download
@@ -217,15 +219,8 @@ def main(argc, argv):
     partition_table = decoder_partition_string(args.partition_table)
 
     remote_server = args.remote_server
-    remote_port = args.remote_port
-
-    # --- check remote server params ---
-    if remote_server and not remote_port:
-        logger.error("Remote port is required when using remote server")
-        sys.exit(1)
-    if remote_port and not remote_server:
-        logger.error("Remote server IP is required when using remote port")
-        sys.exit(1)
+    remote_port = 58916
+    remote_password = args.remote_password
 
     if mem_t is not None:
         if mem_t == "nand":
@@ -432,13 +427,13 @@ def main(argc, argv):
 
     # load settings
     setting_path = os.path.realpath(os.path.join(RtkUtils.get_executable_root_path(), setting_file))
-    logger.info(f"Setting path: {setting_path}")
+    logger.info(f"Settings path: {setting_path}")
     try:
         if os.path.exists(setting_path):
             dt = JsonUtils.load_from_file(setting_path, need_decrypt=False)
             settings = RtSettings(** dt)
         else:
-            logger.debug(f"Setting.json not exists!")
+            logger.debug(f"{setting_file} not exists!")
             settings = RtSettings(**{})
     except Exception as err:
         logger.error(f"Load settings exception: {err}")
@@ -447,7 +442,7 @@ def main(argc, argv):
     try:
         JsonUtils.save_to_file(setting_path, settings.__repr__())
     except Exception as err:
-        logger.debug(f"save setting.json exception: {err}")
+        logger.debug(f"save {setting_file} exception: {err}")
 
     threads_list = []
 
@@ -455,7 +450,7 @@ def main(argc, argv):
         flash_thread = threading.Thread(target=flash_process_entry, args=(
         profile_info, sp, serial_baudrate, image_dir, settings, deepcopy(images_info), chip_erase,
         memory_type, memory_info, download, log_level, log_f,
-        remote_server, remote_port))
+        remote_server, remote_port, remote_password))
         threads_list.append(flash_thread)
         flash_thread.start()
 

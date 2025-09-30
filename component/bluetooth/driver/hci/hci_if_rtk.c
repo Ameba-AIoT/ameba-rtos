@@ -8,6 +8,7 @@
 #include "hci_if_rtk.h"
 #include "hci_transport.h"
 #include "hci_uart.h"
+#include "hci_controller.h"
 #include "hci_platform.h"
 #include "bt_debug.h"
 #include "dlist.h"

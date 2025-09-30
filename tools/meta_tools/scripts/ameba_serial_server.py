@@ -24,8 +24,10 @@ from PyQt5.QtCore import QObject, pyqtSignal
 import os
 
 APP_NAME = "AmebaSerialServer"
+APP_VERSION = "v1.0.0"
 PORT = 58916
-INSTALLER = 0
+MAX_CONNECTIONS = 10
+INSTALLER = 1
 
 @dataclass
 class SerialConfig:
@@ -34,18 +36,26 @@ class SerialConfig:
     stop_bits: int = 1
     parity: str = "none"
 
+@dataclass
+class ClientInfo:
+    serials: List[str]
+    thread: threading.Thread
+    validate: bool
+
 class AmebaSerialServer:
     def __init__(self):
         # Initialize logger
         self.logger = self._setup_logger()
         self.server_socket: Optional[socket.socket] = None
         self.running = False
-        self.connected_clients: Dict[socket.socket, threading.Thread] = {}
+        self.connected_clients: Dict[socket.socket, ClientInfo] = {}
         self.open_serials: Dict[str, serial.Serial] = {}
         self.serial_lock = threading.Lock()
+        self.tcp_lock = threading.Lock()
         self.start_time = time.time()
         self.cur_time = 0
         self.total_bytes = 0
+        self.password = ""
 
     def _setup_logger(self) -> logging.Logger:
         """Set up and return a Logger object"""
@@ -110,23 +120,31 @@ class AmebaSerialServer:
 
         try:
             self.server_socket.bind(('0.0.0.0', PORT))
-            self.server_socket.listen(5)
+            self.server_socket.listen(MAX_CONNECTIONS)
             self.logger.info(f"TCP Server started, listening on port {PORT}...")
 
             while self.running:
                 try:
                     client_socket, client_addr = self.server_socket.accept()
-                    self.logger.info(f"New connection: {client_addr[0]}:{client_addr[1]}")
-                    client_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                    self.logger.info(f"Set TCP_NODELAY for {client_addr}")
+                    with self.tcp_lock:
+                        if len(self.connected_clients) >= MAX_CONNECTIONS:
+                            self.logger.warning(f"Max connections reached, refusing: {client_addr[0]}:{client_addr[1]}")
+                            client_socket.close()
+                            continue
+                        self.logger.info(f"New connection: {client_addr[0]}:{client_addr[1]}")
+                        client_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                        self.logger.info(f"Set TCP_NODELAY for {client_addr}")                    
 
-                    client_thread = threading.Thread(
-                        target=self.handle_client,
-                        args=(client_socket, client_addr),
-                        daemon=True
-                    )
-                    self.connected_clients[client_socket] = client_thread
-                    client_thread.start()
+                        client_thread = threading.Thread(
+                            target=self.handle_client,
+                            args=(client_socket, client_addr),
+                            daemon=True
+                        )
+                        client_validate = True
+                        if self.password != "":
+                            client_validate = False
+                        self.connected_clients[client_socket] = ClientInfo(serials=[], thread=client_thread, validate=client_validate)
+                        client_thread.start()
                 except OSError:
                     if self.running:
                         self.logger.info("Server Socket closed, stopping accepting new connections.")
@@ -153,12 +171,13 @@ class AmebaSerialServer:
                 self.logger.error(f"Error occurred while closing server socket", exc_info=True)
 
         # Close all client connections
-        for client_socket in list(self.connected_clients.keys()):
-            try:
-                client_socket.close()
-            except Exception as e:
-                self.logger.error(f"Error occurred while closing client", exc_info=True)
-        self.connected_clients.clear()
+        with self.tcp_lock:
+            for client_socket in list(self.connected_clients.keys()):
+                try:
+                    client_socket.close()
+                except Exception as e:
+                    self.logger.error(f"Error occurred while closing client", exc_info=True)
+            self.connected_clients.clear()
 
         # Close all serial ports
         with self.serial_lock:
@@ -188,15 +207,21 @@ class AmebaSerialServer:
                     message_str, buffer = buffer.split('\n', 1)
                     message_str = message_str.strip()
                     if message_str:
-                        self.process_client_command(client_socket, message_str)
+                        result = self.process_client_command(client_socket, message_str)
+                        if not result:
+                            raise ConnectionAbortedError
         except (ConnectionResetError, ConnectionAbortedError):
             self.logger.info(f"Client connection interrupted: {addr_str}")
         except Exception as e:
             if self.running:
                 self.logger.error(f"Unknown error while handling client {addr_str}", exc_info=True)
         finally:
-            if client_socket in self.connected_clients:
-                del self.connected_clients[client_socket]
+            with self.tcp_lock:
+                client = self.connected_clients.pop(client_socket, None)
+                self.logger.info(f"Client disconnected pop: {addr_str}")
+            if client:
+                for port in client.serials:
+                    self.close_serial_port(port)
             try:
                 client_socket.close()
             except:
@@ -210,6 +235,32 @@ class AmebaSerialServer:
             cmd_type = command.get("type")
             self.logger.debug(f"Received command: {cmd_type}")
 
+            if cmd_type == "validate":
+                self.logger.info(f"Received command: {command_str}")
+                pw = command["password"]
+                success = True
+                msg = ""
+                if self.password != "":
+                    if pw != self.password:
+                        success = False
+                        msg = "Password is mis-matched"
+                response = {
+                    "type": "command_response",
+                    "success": success,
+                    "message": msg
+                }
+                self.connected_clients[client_socket].validate = success
+                self.send_to_client(client_socket, response)
+                return success
+            else:
+                if not self.connected_clients[client_socket].validate:
+                    response = {
+                        "type": "command_response",
+                        "success": False,
+                        "message": "Password should be validated first"
+                    }
+                    self.send_to_client(client_socket, response)
+                    return False
             if cmd_type == "list_com_ports":
                 self.logger.info(f"Received command: {command_str}")
                 current_ports = self.scan_com_ports()
@@ -231,6 +282,8 @@ class AmebaSerialServer:
                 )
                 response = {"type": "command_response", "port": port, "success": success, "message": msg}
                 self.total_bytes = 0
+                if success:
+                    self.connected_clients[client_socket].serials.append(port)
 
             elif cmd_type == "close_port":
                 self.logger.info(f"Received command: {command_str}")
@@ -238,6 +291,8 @@ class AmebaSerialServer:
                 success, msg = self.close_serial_port(port)
                 response = {"type": "command_response", "port": port, "success": success, "message": msg}
                 self.total_bytes = 0
+                if success:
+                    self.connected_clients[client_socket].serials.remove(port)
 
             elif cmd_type == "write_data":
                 port = command["port"]
@@ -264,10 +319,10 @@ class AmebaSerialServer:
                         self.start_time = self.cur_time
                         self.total_bytes = 0
                 except base64.binascii.Error as e:
-                    self.logger.error(f"Base64 解码失败: {e}")
+                    self.logger.error(f"Base64 decode failed: {e}")
                     response = {
                         "type": "command_response", "port": port,
-                        "success": False, "message": f"Base64 解码失败: {e}"
+                        "success": False, "message": f"Base64 decode failed: {e}"
                     }
             else:
                 raise ValueError(f"Unknown command type: {cmd_type}")
@@ -284,6 +339,7 @@ class AmebaSerialServer:
             port_in_cmd = command.get("port", "") if 'command' in locals() else ""
             error_response = {"type": "command_response", "success": False, "message": f"Command processing error: {e}", "port": port_in_cmd}
             self.send_to_client(client_socket, error_response)
+        return True
 
     # --- Serial port ---
     def scan_com_ports(self) -> List[str]:
@@ -375,9 +431,9 @@ class AmebaSerialServer:
                         "port": port,
                         "data": base64_data
                     }
-
-                    for client_socket in list(self.connected_clients.keys()):
-                        self.send_to_client(client_socket, message)
+                    with self.tcp_lock:
+                        for client_socket in list(self.connected_clients.keys()):
+                            self.send_to_client(client_socket, message)
 
                     self.logger.debug(f"[Serial Receive] tcp send complete")
             except Exception as e:
@@ -423,7 +479,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, tray_icon, logger):
         super().__init__()
         self.tray_icon = tray_icon
-        self.setWindowTitle("AmebaSerialServer Console")
+        self.setWindowTitle(f"{APP_NAME} {APP_VERSION}")
         self.resize(800, 500)
         self.log_edit = QtWidgets.QPlainTextEdit(self)
         self.log_edit.setReadOnly(True)
@@ -440,7 +496,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def closeEvent(self, event):
         event.ignore()
         self.hide()
-        self.tray_icon.showMessage("AmebaSerialServer", "程序已最小化到托盘", QtWidgets.QSystemTrayIcon.Information, 2000)
+        self.tray_icon.showMessage(f"{APP_NAME} {APP_VERSION}", "The program has been minimized to the system tray.", QtWidgets.QSystemTrayIcon.Information, 2000)
 
     def changeEvent(self, event):
         if event.type() == QtCore.QEvent.WindowStateChange:
@@ -454,20 +510,20 @@ class TrayApp(QtWidgets.QSystemTrayIcon):
         self.server = server
         menu = QtWidgets.QMenu()
 
-        set_password_action = menu.addAction("设置密码")
+        set_password_action = menu.addAction("Set Password")
         set_password_action.triggered.connect(self.set_password)
 
-        set_log_level_action = menu.addAction("设置日志等级")
+        set_log_level_action = menu.addAction("Set Log Level")
         set_log_level_action.triggered.connect(self.set_log_level)
 
-        show_action = menu.addAction("显示主界面")
+        show_action = menu.addAction("Show Main Window")
         show_action.triggered.connect(self.show_main_window)
         menu.addSeparator()
 
-        exit_action = menu.addAction("退出")
+        exit_action = menu.addAction("Exit")
         exit_action.triggered.connect(self.exit_all)
         self.setContextMenu(menu)
-        self.setToolTip("Ameba Serial Server 正在运行")
+        self.setToolTip(f"{APP_NAME} {APP_VERSION}")
         self.activated.connect(self.on_tray_activated)
 
     def show_main_window(self):
@@ -477,17 +533,23 @@ class TrayApp(QtWidgets.QSystemTrayIcon):
 
     def set_password(self):
         text, ok = QtWidgets.QInputDialog.getText(
-            self.main_window, "设置密码", "请输入新密码：", QtWidgets.QLineEdit.Normal)
+            self.main_window, "Set Password", "Please input new password", QtWidgets.QLineEdit.Normal)
         if ok and text:
-            QtWidgets.QMessageBox.information(self.main_window, "设置完成", "新密码已设置！")
-            self.server.password = text
+            QtWidgets.QMessageBox.information(self.main_window, "Set finished", "New password is set! Restart server after 100ms")
+            if self.server.password != text:
+                self.server.logger.info("Set new password, restart server...")
+                self.server.stop_server()
+                time.sleep(0.1)
+                server_thread = threading.Thread(target=self.server.start_server, daemon=True)
+                server_thread.start()
+                self.server.password = text
 
     def set_log_level(self):
         log_levels = {"Debug": logging.DEBUG, "Info": logging.INFO, "Warning": logging.WARN, "Error": logging.ERROR}
         level, ok = QtWidgets.QInputDialog.getItem(
-            self.main_window, "设置日志等级", "选择日志等级：", log_levels.keys(), 1, False)
+            self.main_window, "Set Log Level", "Log Level:", log_levels.keys(), 1, False)
         if ok and level:
-            QtWidgets.QMessageBox.information(self.main_window, "设置完成", f"日志等级已设置为：{level}")
+            QtWidgets.QMessageBox.information(self.main_window, "Set finished", f"Log level is set to: {level}")
             self.server.logger.setLevel(log_levels[level])
 
     def on_tray_activated(self, reason):
@@ -546,8 +608,8 @@ if __name__ == '__main__':
         tray_icon.show()
         main_win.show()
 
-        tray_icon.showMessage("AmebaSerialServer",
-                            "服务器已在后台运行，点击右键可退出。",
+        tray_icon.showMessage(f"{APP_NAME} {APP_VERSION}",
+                            "The server is already running in the background. Right-click to exit.",
                             QtWidgets.QSystemTrayIcon.Information,
                             3000)
 

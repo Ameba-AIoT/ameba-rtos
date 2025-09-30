@@ -122,7 +122,7 @@ int whc_fullmac_ipc_host_msg_enqueue(struct whc_ipc_ex_msg *p_ipc_msg);
 void whc_fullmac_ipc_host_msg_q_deinit(void);
 void whc_fullmac_ipc_host_send_packet(struct whc_ipc_ex_msg *p_ipc_msg);
 void whc_fullmac_ipc_host_recv_task_from_msg(u8 event_num, u32 msg_addr, u8 wlan_idx);
-void whc_fullmac_host_event_task(unsigned long data);
+void whc_fullmac_host_event_task(struct work_struct *data);
 int whc_host_xmit_init(void);
 void whc_host_xmit_deinit(void);
 void whc_fullmac_ipc_host_recv_task_from_msg_recv_pkts(int idx_wlan, struct dev_sk_buff *skb);
