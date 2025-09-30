@@ -51,8 +51,9 @@ extern "C"
 /* user le audio config */
 /* user codec config */
 /* user session qos config */
-#define RTK_BT_LE_MEDIA_AUDIO_CFG_SUPPORT (RTK_BT_LE_UNICAST_AUDIO_CFG_1_BIT | RTK_BT_LE_UNICAST_AUDIO_CFG_6_I_BIT | \
-                                           RTK_BT_LE_UNICAST_AUDIO_CFG_6_II_BIT | RTK_BT_LE_UNICAST_AUDIO_CFG_4_BIT)
+#define RTK_BT_LE_MEDIA_AUDIO_CFG_SUPPORT (RTK_BT_LE_UNICAST_AUDIO_CFG_1_BIT | RTK_BT_LE_UNICAST_AUDIO_CFG_3_BIT | \
+                                           RTK_BT_LE_UNICAST_AUDIO_CFG_4_BIT | RTK_BT_LE_UNICAST_AUDIO_CFG_6_I_BIT | \
+                                           RTK_BT_LE_UNICAST_AUDIO_CFG_6_II_BIT)
 /*  !!!RTK_BT_LE_MEDIA_AUDIO_CFG_PREFER should be associated with RTK_BT_LE_AUDIO_DEFAULT_UNICAST_AUDIO_CFG   */
 /*  !!!RTK_BT_LE_MEDIA_CODEC_CFG_PREFER should be associated with RTK_BT_LE_AUDIO_DEFAULT_CODEC_CFG_ITEM   */
 #if !defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) || !RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT

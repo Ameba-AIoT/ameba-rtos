@@ -5,7 +5,7 @@
 */
 
 #include "osif.h"
-#include "hci/hci_common.h"
+#include "hci_controller.h"
 #include "hci_uart.h"
 #include "hci_platform.h"
 #include "bt_debug.h"

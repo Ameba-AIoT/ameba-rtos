@@ -2205,7 +2205,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 	case RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND: {
 		rtk_bt_le_audio_direct_iso_data_ind_t *p_bt_direct_iso = (rtk_bt_le_audio_direct_iso_data_ind_t *)data;
 		if (p_bt_direct_iso->pkt_status_flag == RTK_BT_LE_ISO_ISOCH_DATA_PKT_STATUS_LOST_DATA) {
-			BT_LOGD("[APP] data loss: iso_conn_handle 0x%x pkt_seq_num:%d \r\n", p_bt_direct_iso->iso_conn_handle, p_bt_direct_iso->pkt_seq_num);
+			BT_LOGD("[APP] pkt status lost data: iso_conn_handle 0x%x pkt_seq_num:%d \r\n", p_bt_direct_iso->iso_conn_handle, p_bt_direct_iso->pkt_seq_num);
 			if (app_bt_le_audio_data_received(p_bt_direct_iso->iso_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_RX,
 											  NULL, max_sdu_len, p_bt_direct_iso->time_stamp)) {
 				BT_LOGE("[APP] %s app le audio data parsing fail \r\n", __func__);

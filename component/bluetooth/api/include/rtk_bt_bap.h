@@ -707,7 +707,7 @@ typedef struct {
 	uint16_t cis_conn_handle;                                 /**< connection handle of the CIS*/
 	rtk_bt_le_audio_cfg_codec_t codec_cfg;                    /**< @ref rtk_bt_le_audio_cfg_codec_t*/
 	rtk_bt_le_audio_iso_chann_t iso_chann_t;                  /**< iso channel struct */
-	uint8_t dev_num;                                          /**< for tx path waiting all devices ready */
+	uint16_t source_ase_num;                                   /**< for tx path waiting all devices ready */
 	uint32_t presentation_delay;                              /**< presentation delay */
 	uint32_t transport_latency_m_to_s;                        /**< The actual transport latency, in microseconds, from Central to Peripheral. */
 	uint32_t transport_latency_s_to_m;                        /**< The actual transport latency, in microseconds, from Peripheral to Central. */

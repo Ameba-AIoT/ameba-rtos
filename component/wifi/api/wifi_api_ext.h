@@ -465,13 +465,13 @@ s32 wifi_send_raw_frame(struct rtw_raw_frame_desc *raw_frame_desc);
 s32 wifi_set_tx_rate_by_tos(u8 enable, u8 tos_precedence, u8 tx_rate);
 
 /**
- * @brief  Set EDCA parameters for STA/SOFTAP.
- * @param[in]  pedca_param: EDCA parameters {ACI, AIFSN, ECWMax, ECWMin, TXOP, SlotTime} (as per 802.11 spec):
+ * @brief  Set EDCA parameters for STA/SOFTAP. Suggest to call API when wifi connected for STA mode, e,g., in RTW_EVENT_JOIN_STATUS event handler.
+ * @param[in]  pedca_param: EDCA parameters {ACI, AIFSN, CWmax, CWmin, TXOP, SlotTime} (as WMM_Specification_1.1 table 13):
  * @code
- * struct rtw_edca_param edca_param_0 = {0, 7, 0xa, 0x4, 0x0, 0}; // BE Queue
- * struct rtw_edca_param edca_param_1 = {1, 3, 0xa, 0x4, 0x0, 0}; // BK Queue
- * struct rtw_edca_param edca_param_2 = {2, 2, 0x4, 0x3, 0x5e, 0}; // VI Queue
- * struct rtw_edca_param edca_param_3 = {3, 2, 0x3, 0x2, 0x2f, 0}; // VO Queue
+ * struct rtw_edca_param edca_param_0 = {0, 7, 0xa, 0x4, 0x0, 0}; // BE Queue, AIFSN=7, CWmax=10, CWmin=4, TXOP=0, SlotTime default (short slot time 9us, long slot time 20us)
+ * struct rtw_edca_param edca_param_1 = {1, 3, 0xa, 0x4, 0x0, 0}; // BK Queue, AIFSN=3, CWmax=10, CWmin=4, TXOP=0, SlotTime default (short slot time 9us, long slot time 20us)
+ * struct rtw_edca_param edca_param_2 = {2, 2, 0x4, 0x3, 0x5e, 0}; // VI Queue, AIFSN=2, CWmax=4, CWmin=3, TXOP=3.008ms, SlotTime default (short slot time 9us, long slot time 20us)
+ * struct rtw_edca_param edca_param_3 = {3, 2, 0x3, 0x2, 0x2f, 0}; // VO Queue, AIFSN=2, CWmax=3, CWmin=2, TXOP=1.504ms, SlotTime default (short slot time 9us, long slot time 20us)
  * wifi_set_edca_param(&edca_param_0);
  * wifi_set_edca_param(&edca_param_1);
  * wifi_set_edca_param(&edca_param_2);

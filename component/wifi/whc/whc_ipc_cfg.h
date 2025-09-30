@@ -121,7 +121,7 @@
 #endif
 #endif
 
-#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAPRO3) || defined(CONFIG_AMEBAL2)
+#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAPRO3) || defined(CONFIG_AMEBAL2) || defined(CONFIG_RTL8720F)
 #if defined(CONFIG_ARM_CORE_CM4)
 #if defined(CONFIG_WHC_HOST)
 /* configuration for AP */

@@ -87,6 +87,7 @@ menu "CONFIG Link Option"
         config IMG2_FLASH
             bool "FLASH"
         config IMG2_PSRAM
+            depends on !DISABLE_PSRAM
             bool "PSRAM"
             select PSRAM_USED
     endchoice
@@ -97,6 +98,7 @@ menu "CONFIG Link Option"
         config DATA_HEAP_SRAM
             bool "SRAM"
         config DATA_HEAP_PSRAM
+            depends on !DISABLE_PSRAM
             bool "PSRAM"
             select PSRAM_USED
     endchoice
@@ -106,6 +108,7 @@ menu "CONFIG Link Option"
             prompt "IMG3(SecureImage) running on PSRAM or SRAM?"
             default IMG3_SRAM
             config IMG3_PSRAM
+                depends on !DISABLE_PSRAM
                 bool "PSRAM"
                 select PSRAM_USED
             config IMG3_SRAM
@@ -117,7 +120,7 @@ menu "CONFIG Link Option"
         bool
 
     config PSRAM_ALL_FOR_AP_HEAP
-        depends on !IMG2_PSRAM && !DATA_HEAP_PSRAM
+        depends on !IMG2_PSRAM && !DATA_HEAP_PSRAM && !DISABLE_PSRAM
         bool "ALL PSRAM USED FOR APPLICATION HEAP"
         default y
 
@@ -198,16 +201,32 @@ menu "CONFIG WHC INTF"
     endif
 
     if FULLMAC_DEV
+        menu "FULLMAC config"
+        config WHC_CMD_PATH
+            default y if FULLMAC_DEV && !WHC_INTF_USB
+            bool "Support WHC CMD PATH"
+        config WHC_WIFI_API_PATH
+            default y if FULLMAC_DEV
+            bool "Support WHC WIFI API PATH"
+        config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4
+            bool "Support WHC SUPPLICANT OFFLOAD"
+        config WHC_DUAL_TCPIP_FOR_KM4
+            bool "Support WHC DUAL TCPIP"
+        endmenu
+    endif
 
-        #WPA Lite in dev for FULLMAC host without std wpa_supplicant
-        choice
-            prompt "WPA Lite Location"
-            default WPA_LOCATION_HOST
-            config WPA_LOCATION_HOST
-                bool "HOST"
-            config WPA_LOCATION_DEV
-                bool "DEV"
-        endchoice
+    if WHC_FULLMAC_HOST && !WHC_INTF_IPC_MENU
+        menu "FULLMAC HOST config"
+        config WHC_CMD_PATH
+            default y
+            bool "Support WHC CMD PATH"
+        config WHC_WIFI_API_PATH
+            default y
+            bool "Support WHC WIFI API PATH"
+        endmenu
+    endif
+
+    if FULLMAC_DEV
 
         menu "Debug"
 
@@ -232,30 +251,6 @@ menu "CONFIG WHC INTF"
                 bool "STD"
         endchoice
 
-        endmenu
-    endif
-
-    if FULLMAC_DEV
-        menu "FULLMAC config"
-        config WHC_CMD_PATH
-            bool "Support WHC CMD PATH"
-        config WHC_WIFI_API_PATH
-            default y if FULLMAC_DEV
-            bool "Support WHC WIFI API PATH"
-        config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4
-            bool "Support WHC SUPPLICANT OFFLOAD"
-        config WHC_DUAL_TCPIP_FOR_KM4
-            bool "Support WHC DUAL TCPIP"
-        endmenu
-    endif
-
-    if WHC_FULLMAC_HOST && !WHC_INTF_IPC_MENU
-        menu "FULLMAC HOST config"
-        config WHC_CMD_PATH
-            default y
-            bool "Support WHC CMD PATH"
-        config WHC_WIFI_API_PATH
-            bool "Support WHC WIFI API PATH"
         endmenu
     endif
 
@@ -387,67 +382,22 @@ menu "CONFIG BT"
         config BT_HAS_MESH
             def_bool y
 
-        choice
-            depends on FULLMAC_DEV
-            prompt "HCI Mode"
-            default BT_INIC_SHARE
-            config BT_INIC_SHARE
-                bool "Share interface with WiFi"
-            config BT_INIC_H4
-                bool "UART H4"
-            config BT_INIC_H5
-                bool "UART H5"
-            config BT_INIC_NONE
-                bool "Internal"
-        endchoice
-
-        # set this to 'y' to debug BT inic without WiFi fullmac
-        config BT_INIC_DEBUG
-            bool
-            default n
-
-        choice
-            depends on BT_INIC_DEBUG && !FULLMAC_DEV
-            prompt "iNIC debug Interface"
-            default BT_INICD_H4
-            config BT_INICD_H4
-                bool "UART H4"
-            config BT_INICD_H5
-                bool "UART H5"
-            config BT_INICD_SPI
-                bool "SPI"
-            config BT_INICD_SDIO
-                bool "SDIO"
-        endchoice
-
-        config BT_INIC
-            depends on BT_INIC_SHARE || BT_INIC_H4 || BT_INIC_H5 || BT_INIC_DEBUG
-            bool
-            default y
-
-
-        # normal case: BT is always on AP CORE
-        # wifi fullmac, BT shares interface with WiFi: BT stays with WiFi on NP CORE
-        # wifi fullmac, BT uses UART alone: BT is on AP core, BUT WHC_HOST not defined.
-        # wifi fullmac, BT normal: BT application is on AP core, BUT WHC_HOST not defined.
-        config BT
-            bool
-            default y if WHC_HOST || WHC_NONE
-            default y if BT_INIC_SHARE && WHC_DEV
-            default y if FULLMAC_DEV && !BT_INIC_SHARE && !WHC_DEV
-            select FTL_ENABLED
-
-        config BT_ENABLE_FAST_MP
-            depends on !BT_INIC
-            bool
-            default MP_INCLUDED
-
-        config FTL_ENABLED
-            bool
+        rsource "../component/bluetooth/Kconfig.inic"
 
         if !BT_INIC
             rsource "../component/bluetooth/Kconfig"
         endif
+
+        config BT
+            def_bool WHC_HOST || WHC_NONE || (FULLMAC_DEV && WHC_DEV)
+            select FTL_ENABLED
+
+        config FTL_ENABLED
+            bool
+
+        config BT_ENABLE_FAST_MP
+            def_bool MP_INCLUDED && !BT_INIC
+
     endif
 endmenu
 

@@ -4,9 +4,12 @@
 //
 /////////////////////////////////////////////////
 
+#include "platform_autoconf.h"
 #include "kv.h"
 #include "vfs.h"
+#ifdef CONFIG_VFS_FATFS_INCLUDED
 #include "ff.h"
+#endif
 #include "diag.h"
 #include "littlefs_adapter.h"
 
@@ -15,6 +18,7 @@ extern int fclose(FILE *stream);
 extern size_t fwrite(const void *ptr, size_t size, size_t count, FILE *stream);
 extern size_t fread(void *ptr, size_t size, size_t count, FILE *stream);
 
+static int kv_init_done = 0;
 
 static char *prefix;
 int rt_kv_init(void)
@@ -39,12 +43,22 @@ int rt_kv_init(void)
 
 	DiagSnPrintf(path, MAX_KEY_LENGTH + 1, "%s:KV", prefix);
 	ret = mkdir(path, 0);
-	if (ret == LFS_ERR_EXIST || ret == -FR_EXIST) {
+	if (ret == LFS_ERR_EXIST
+#ifdef CONFIG_VFS_FATFS_INCLUDED
+		|| ret == -FR_EXIST
+#endif
+	   ) {
 		VFS_DBG(VFS_INFO, "KV dir already exist");
 		ret = 0;
 	}
 
 exit:
+	if (ret == 0) {
+		kv_init_done = 1;
+	} else {
+		kv_init_done = -1;
+	}
+
 	if (path) {
 		rtos_mem_free(path);
 	}
@@ -57,6 +71,10 @@ int32_t rt_kv_set(const char *key, const void *val, int32_t len)
 	int res = -1;
 	char *path = NULL;
 
+	while (kv_init_done == 0) {
+		rtos_time_delay_ms(10);
+	}
+
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
 		VFS_DBG(VFS_ERROR, "KV malloc fail");
 		goto exit;
@@ -67,7 +85,7 @@ int32_t rt_kv_set(const char *key, const void *val, int32_t len)
 		goto exit;
 	}
 
-	if (prefix == NULL) {
+	if (prefix == NULL || kv_init_done == -1) {
 		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
@@ -100,6 +118,10 @@ int32_t rt_kv_set_offset(const char *key, const void *val, int32_t len, int32_t 
 	int res = -1;
 	char *path = NULL;
 
+	while (kv_init_done == 0) {
+		rtos_time_delay_ms(10);
+	}
+
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
 		VFS_DBG(VFS_ERROR, "KV malloc fail");
 		goto exit;
@@ -110,7 +132,7 @@ int32_t rt_kv_set_offset(const char *key, const void *val, int32_t len, int32_t 
 		goto exit;
 	}
 
-	if (prefix == NULL) {
+	if (prefix == NULL || kv_init_done == -1) {
 		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
@@ -153,6 +175,10 @@ int32_t rt_kv_get(const char *key, void *buffer, int32_t len)
 	int res = -1;
 	char *path = NULL;
 
+	while (kv_init_done == 0) {
+		rtos_time_delay_ms(10);
+	}
+
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
 		VFS_DBG(VFS_ERROR, "KV malloc fail");
 		goto exit;
@@ -163,7 +189,7 @@ int32_t rt_kv_get(const char *key, void *buffer, int32_t len)
 		goto exit;
 	}
 
-	if (prefix == NULL) {
+	if (prefix == NULL || kv_init_done == -1) {
 		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
@@ -195,6 +221,10 @@ int32_t rt_kv_get_offset(const char *key, void *buffer, int32_t len, int32_t off
 	int res = -1;
 	char *path = NULL;
 
+	while (kv_init_done == 0) {
+		rtos_time_delay_ms(10);
+	}
+
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
 		VFS_DBG(VFS_ERROR, "KV malloc fail");
 		goto exit;
@@ -205,7 +235,7 @@ int32_t rt_kv_get_offset(const char *key, void *buffer, int32_t len, int32_t off
 		goto exit;
 	}
 
-	if (prefix == NULL) {
+	if (prefix == NULL || kv_init_done == -1) {
 		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
@@ -245,6 +275,10 @@ int32_t rt_kv_size(const char *key)
 	int res = -1;
 	char *path = NULL;
 
+	while (kv_init_done == 0) {
+		rtos_time_delay_ms(10);
+	}
+
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
 		VFS_DBG(VFS_ERROR, "KV malloc fail");
 		goto exit;
@@ -260,7 +294,7 @@ int32_t rt_kv_size(const char *key)
 		goto exit;
 	}
 
-	if (prefix == NULL) {
+	if (prefix == NULL || kv_init_done == -1) {
 		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
@@ -291,6 +325,10 @@ int32_t rt_kv_delete(const char *key)
 	int res = -1;
 	char *path = NULL;
 
+	while (kv_init_done == 0) {
+		rtos_time_delay_ms(10);
+	}
+
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
 		VFS_DBG(VFS_ERROR, "KV malloc fail");
 		goto exit;
@@ -301,7 +339,7 @@ int32_t rt_kv_delete(const char *key)
 		goto exit;
 	}
 
-	if (prefix == NULL) {
+	if (prefix == NULL || kv_init_done == -1) {
 		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
@@ -325,7 +363,11 @@ int rt_kv_list(char *buf, int32_t len)
 	char *name_str = NULL;
 	int ret = -1;
 
-	if (prefix == NULL) {
+	while (kv_init_done == 0) {
+		rtos_time_delay_ms(10);
+	}
+
+	if (prefix == NULL || kv_init_done == -1) {
 		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}

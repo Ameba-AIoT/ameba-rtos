@@ -2,6 +2,26 @@
 
 sed -i 's/CONFIG_FULLMAC_HCI_IPC = y/CONFIG_FULLMAC_HCI_IPC = n/g' Makefile
 
+#select fat or slim host
+echo "choose target host mode:"
+echo "1) Fat host with cfg80211"
+echo "2) Slim host without cfg80211"
+
+read -p "choose target host mode: " choice
+case $choice in
+	1)
+		echo "Fat host with cfg80211S select"
+		sed -i 's/CONFIG_WHC_WIFI_API_PATH = n/CONFIG_WHC_WIFI_API_PATH = y/g' Makefile
+		;;
+	2)
+		echo "Slim host without cfg80211 select"
+		sed -i 's/CONFIG_WHC_WIFI_API_PATH = y/CONFIG_WHC_WIFI_API_PATH = n/g' Makefile
+		;;
+	*)
+		echo "Invalid selection"
+		;;
+esac
+
 if [ "$1" == "spi" ]; then
 	sed -i 's/CONFIG_FULLMAC_HCI_SDIO = y/CONFIG_FULLMAC_HCI_SDIO = n/g' Makefile
 	sed -i 's/CONFIG_FULLMAC_HCI_USB = y/CONFIG_FULLMAC_HCI_USB = n/g' Makefile

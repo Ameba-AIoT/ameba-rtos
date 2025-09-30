@@ -126,6 +126,22 @@ rtk_bt_le_audio_ase_t *bt_stack_le_audio_find_ase(uint16_t conn_handle, uint8_t 
 	return NULL;
 }
 
+uint16_t bt_stack_le_audio_find_source_ase_num_by_conn_hdl(uint16_t conn_handle)
+{
+	uint16_t source_ase_num = 0;
+	rtk_bt_le_audio_link_t *p_link = bt_stack_le_audio_find_link_by_conn_handle(conn_handle);
+
+	if (p_link) {
+		for (uint8_t i = 0; i < RTK_BT_LE_AUDIO_DEMO_SOURCE_ASE_MAX_NUM; i++) {
+			if (p_link->lea_ase_tbl[i].used == true &&
+				p_link->lea_ase_tbl[i].direction == RTK_BLE_AUDIO_ISO_DATA_PATH_TX) {
+				source_ase_num++;
+			}
+		}
+	}
+	return source_ase_num;
+}
+
 static rtk_bt_le_audio_ase_t *bt_stack_le_audio_add_ase(uint16_t conn_handle, uint8_t ase_id)
 {
 	rtk_bt_le_audio_link_t *p_link = bt_stack_le_audio_find_link_by_conn_handle(conn_handle);

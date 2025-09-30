@@ -44,9 +44,7 @@ Taking RTL8730EA/QFN100 boards for example, the register R20 shall be parted on 
 	[MAIN-I] KM4 START SCHEDULER 
 	[USB-I] USB configurations:
 	[USB-I] * speed: 0
-	[USB-I] * dma_enable: 1
 	[USB-I] * main_task_priority: 3
-	[USB-I] * isr_task_priority: 4
 	[USB-I] * alt_max_cnt: 25
 	[USB-I] GSNPSID = 0x4F54310A
 	UVC init

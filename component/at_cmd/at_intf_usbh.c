@@ -86,10 +86,8 @@ extern UART_LOG_BUF shell_rxbuf;
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
-	.dma_enable = 1U,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
-	.isr_task_priority  = 5U,
 	.main_task_priority = 4U,
 	.sof_tick_enable = 1U,
 

@@ -539,12 +539,7 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 		p_ind->transport_latency_m_to_s = p_iso_chann->transport_latency_m_to_s;
 		p_ind->transport_latency_s_to_m = p_iso_chann->transport_latency_s_to_m;
 		if (p_data->path_direction == RTK_BLE_AUDIO_ISO_DATA_PATH_TX) {
-			rtk_bt_le_audio_group_info_t *p_group_info = bt_stack_le_audio_find_group_by_conn_handle(p_data->conn_handle);
-			if (p_group_info) {
-				p_ind->dev_num = p_group_info->lea_unicast.dev_num;
-			}
-		} else {
-			p_ind->dev_num = 0;
+			p_ind->source_ase_num = bt_stack_le_audio_find_source_ase_num_by_conn_hdl(p_data->conn_handle);
 		}
 		/* Send event */
 		rtk_bt_evt_indicate(p_evt, NULL);

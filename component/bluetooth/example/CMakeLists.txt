@@ -113,9 +113,8 @@ ameba_add_subdirectory_if(CONFIG_BT_HID
     bt_hid
 )
 
-ameba_add_subdirectory_if(CONFIG_WHC_FULLMAC_HOST
-    bt_host/rtos_driver
-)
+ameba_add_subdirectory_if(CONFIG_BT_INIC_HOST
+    bt_host/rtos_driver)
 
 ameba_add_subdirectory_if(CONFIG_BT_PTS
     bt_pts

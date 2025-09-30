@@ -13,6 +13,10 @@
 #include "usbh_composite_config.h"
 
 /* Exported defines ----------------------------------------------------------*/
+#define USBH_COMPOSITE_HID_THREAD_PRIORITY         3U
+#define USBH_COMPOSITE_HID_MST_COUNT               10U
+#define USBH_COMPOSITE_HID_MSG_LENGTH              16U
+
 /* Audio Class Codes */
 #define USBH_CLASS_HID               0x03U
 
@@ -48,6 +52,21 @@
 #define USBH_HID_CONSUMER_STOP                     0xB7
 
 /* Exported types ------------------------------------------------------------*/
+typedef struct {
+	u8 *buf;
+	__IO u16 buf_len;     /* buf valid len */
+} usb_ringbuf_t;
+
+typedef struct {
+	usb_ringbuf_t *list_node;
+	u8 *buf;
+
+	__IO u32 head;
+	__IO u32 tail;
+
+	u16 item_cnt;
+	u16 item_size;
+} usb_ringbuf_manager_t;
 
 /* USB HID descriptor */
 typedef struct {
@@ -160,6 +179,7 @@ typedef struct {
 
 typedef struct {
 	usbh_composite_hid_ctrl_caps_t vol_caps;
+	usb_ringbuf_manager_t report_msg;
 	usbh_dev_hid_desc_t hid_desc;
 	usbh_hid_ep_cfg_t ep_info;
 	usbh_composite_hid_event_t report_event;
@@ -172,6 +192,11 @@ typedef struct {
 	usbh_composite_hid_event_t last_event;
 	__IO u32 event_cnt;
 #endif
+
+	rtos_task_t msg_parse_task;
+
+	__IO u8 parse_task_alive;
+	__IO u8 parse_task_exit;
 
 	u8 report_desc_status;
 	u8 itf_idx;

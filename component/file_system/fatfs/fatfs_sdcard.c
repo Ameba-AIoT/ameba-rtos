@@ -10,7 +10,14 @@
 #include "vfs_fatfs.h"
 #include "os_wrapper.h"
 #include "ameba.h"
+#if defined(CONFIG_FATFS_DISK_SD) && CONFIG_FATFS_DISK_SD
+
+#if defined(CONFIG_FATFS_SD_MODE) && CONFIG_FATFS_SD_MODE
 #include "ameba_sd.h"
+#endif
+#if defined(CONFIG_FATFS_SD_SPI_MODE) && CONFIG_FATFS_SD_SPI_MODE
+#include "vfs_sd_spi.h"
+#endif
 
 #ifndef SD_BLOCK_SIZE
 #define SD_BLOCK_SIZE	512
@@ -18,30 +25,6 @@
 
 static rtos_mutex_t sd_mutex = NULL;
 static int init_status = 0;
-static rtos_sema_t vfs_sd_sema;
-
-static int sd_give_sema(u32 timeout)
-{
-	UNUSED(timeout);
-	return  rtos_sema_give(vfs_sd_sema);
-}
-
-static int sd_take_sema(u32 timeout)
-{
-	return rtos_sema_take(vfs_sd_sema, timeout);
-}
-
-static void sd_sema_init(void)
-{
-	rtos_sema_create(&vfs_sd_sema, 0, 1);
-	SD_SetSema(sd_take_sema, sd_give_sema);
-}
-
-static void sd_sema_deinit(void)
-{
-	rtos_sema_delete(vfs_sd_sema);
-	SD_SetSema(NULL, NULL);
-}
 
 static void sd_lock(void)
 {
@@ -60,6 +43,9 @@ static void sd_unlock(void)
 		rtos_mutex_give(sd_mutex);
 	}
 }
+
+#if defined(CONFIG_FATFS_SD_MODE) && CONFIG_FATFS_SD_MODE
+static rtos_sema_t vfs_sd_sema;
 
 DSTATUS interpret_sd_status(SD_RESULT result)
 {
@@ -90,6 +76,29 @@ DRESULT interpret_sd_result(SD_RESULT result)
 		ret = RES_ERROR;
 	}
 	return ret;
+}
+
+static int sd_give_sema(u32 timeout)
+{
+	UNUSED(timeout);
+	return  rtos_sema_give(vfs_sd_sema);
+}
+
+static int sd_take_sema(u32 timeout)
+{
+	return rtos_sema_take(vfs_sd_sema, timeout);
+}
+
+static void sd_sema_init(void)
+{
+	rtos_sema_create(&vfs_sd_sema, 0, 1);
+	SD_SetSema(sd_take_sema, sd_give_sema);
+}
+
+static void sd_sema_deinit(void)
+{
+	rtos_sema_delete(vfs_sd_sema);
+	SD_SetSema(NULL, NULL);
 }
 
 DSTATUS SD_disk_status(void)
@@ -239,3 +248,160 @@ ll_diskio_drv SD_disk_Driver = {
 #endif
 	.TAG	= (unsigned char *)"SD"
 };
+#endif
+
+#if defined(CONFIG_FATFS_SD_SPI_MODE) && CONFIG_FATFS_SD_SPI_MODE
+DSTATUS interpret_sd_status(SD_SPI_RESULT result)
+{
+	DSTATUS ret = 0;
+	if (result == SD_SPI_OK) {
+		ret = 0;
+	} else if (result == SD_SPI_NODISK) {
+		ret = STA_NODISK;
+	} else if (result == SD_SPI_INSERT) {
+		ret = STA_INSERT;
+	} else if (result == SD_SPI_INITERR) {
+		ret = STA_NOINIT;
+	} else if (result == SD_SPI_PROTECTED) {
+		ret = STA_PROTECT;
+	}
+
+	return ret;
+}
+
+DRESULT interpret_sd_result(SD_SPI_RESULT result)
+{
+	DRESULT ret = 0;
+	if (result == SD_SPI_OK) {
+		ret = RES_OK;
+	} else if (result == SD_SPI_PROTECTED) {
+		ret = RES_WRPRT;
+	} else if (result == SD_SPI_ERROR) {
+		ret = RES_ERROR;
+	}
+	return ret;
+}
+
+DSTATUS SD_disk_spi_status(void)
+{
+	SD_SPI_RESULT res;
+	res = sd_spi_get_status();
+	return interpret_sd_status(res);;
+}
+
+DSTATUS SD_disk_spi_initialize(void)
+{
+	SD_SPI_RESULT res;
+
+	sd_lock();
+	res = sd_spi_device_init();
+	init_status = 1;//The card is not init
+	sd_unlock();
+	return interpret_sd_status(res);
+}
+
+DSTATUS SD_disk_spi_deinitialize(void)
+{
+	SD_SPI_RESULT res;
+	sd_lock();
+	init_status = 0;//The card is not init
+	res = sd_spi_device_deinit();
+	sd_unlock();
+	return interpret_sd_status(res);
+}
+
+/* Read sector(s) --------------------------------------------*/
+DRESULT SD_disk_spi_read(BYTE *buff, DWORD sector, /*unsigned int*/UINT count)
+{
+	DRESULT res;
+	char retry_cnt = 0;
+	sd_lock();
+	do {
+		if (!init_status) {
+			res = STA_NODISK;
+			break;
+		}
+		res = interpret_sd_result(sd_spi_read_data(buff, sector, count));
+		if (++retry_cnt >= 3) {
+			break;
+		}
+	} while (res != RES_OK);
+	sd_unlock();
+
+	return res;
+}
+
+/* Write sector(s) --------------------------------------------*/
+#if _USE_WRITE == 1
+DRESULT SD_disk_spi_write(const BYTE *buff, DWORD sector, /*unsigned int*/UINT count)
+{
+	DRESULT res;
+	char retry_cnt = 0;
+	sd_lock();
+	do {
+		if (!init_status) {
+			res = STA_NODISK;
+		}
+		res = interpret_sd_result(sd_spi_write_data((uint8_t *)buff, sector, count));
+		if (++retry_cnt >= 3) {
+			break;
+		}
+	} while (res != RES_OK);
+	sd_unlock();
+
+	return res;
+}
+#endif
+
+/* Write sector(s) --------------------------------------------*/
+#if _USE_IOCTL == 1
+DRESULT SD_disk_spi_ioctl(BYTE cmd, void *buff)
+{
+	DRESULT res = RES_ERROR;
+	SD_SPI_RESULT result;
+
+	switch (cmd) {
+	/* Generic command (used by FatFs) */
+
+	/* Make sure that no pending write process in the physical drive */
+	case CTRL_SYNC:		/* Flush disk cache (for write functions) */
+		/* No write buffer for writing operation */
+		res = RES_OK;
+		break;
+	case GET_SECTOR_COUNT:	/* Get media size (for only f_mkfs()) */
+		result = sd_spi_get_sector_count((unsigned long *) buff);
+		res = interpret_sd_result(result);
+		break;
+	/* for case _MAX_SS != _MIN_SS */
+	case GET_SECTOR_SIZE:	/* Get sector size (for multiple sector size (_MAX_SS >= 1024)) */
+		*(WORD *)buff = 512; //2048;//4096;
+		res = RES_OK;
+		break;
+	case GET_BLOCK_SIZE:	/* Get erase block size (for only f_mkfs()) */
+		*(DWORD *)buff = SD_SPI_BLOCK_SIZE;
+		res = RES_OK;
+		break;
+
+	default:
+		res = RES_PARERR;
+		break;
+	}
+	return res;
+}
+#endif
+
+ll_diskio_drv SD_disk_spi_Driver = {
+	.disk_initialize = SD_disk_spi_initialize,
+	.disk_deinitialize = SD_disk_spi_deinitialize,
+	.disk_status = SD_disk_spi_status,
+	.disk_read = SD_disk_spi_read,
+#if _USE_WRITE == 1
+	.disk_write = SD_disk_spi_write,
+#endif
+#if _USE_IOCTL == 1
+	.disk_ioctl = SD_disk_spi_ioctl,
+#endif
+	.TAG	= (unsigned char *)"SD"
+};
+#endif
+#endif

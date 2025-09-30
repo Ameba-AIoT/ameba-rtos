@@ -5,9 +5,11 @@
  */
 
 #include "bt_debug.h"
-#include "hci_common.h"
+#include "hci_controller.h"
 #include "hci_transport.h"
+#if !defined(CONFIG_BT_SDN_VERIFY) || !CONFIG_BT_SDN_VERIFY
 #include "hci_uart.h"
+#endif
 
 /**
  * @brief     BT power on for MP test.
@@ -16,6 +18,7 @@
  */
 void rtk_bt_mp_power_on(void)
 {
+#if !defined(CONFIG_BT_SDN_VERIFY) || !CONFIG_BT_SDN_VERIFY
 	hci_set_mp(true);
 	if (hci_controller_open()) {
 		BT_LOGA("Patch download End!\r\n");
@@ -25,6 +28,7 @@ void rtk_bt_mp_power_on(void)
 		hci_transport_close();
 		hci_controller_free();
 	}
+#endif
 }
 
 /**
@@ -34,7 +38,9 @@ void rtk_bt_mp_power_on(void)
  */
 void rtk_bt_mp_power_off(void)
 {
+#if !defined(CONFIG_BT_SDN_VERIFY) || !CONFIG_BT_SDN_VERIFY
 	/* just power off controller, uart & transport are already closed & freed */
 	hci_controller_close();
 	hci_set_mp(false);
+#endif
 }

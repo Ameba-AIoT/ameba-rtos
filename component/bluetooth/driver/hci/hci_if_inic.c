@@ -10,7 +10,7 @@
 #include "hci_uart.h"
 #include "hci_platform.h"
 #include "bt_debug.h"
-#include "hci_common.h"
+#include "hci_controller.h"
 #include "bt_inic.h"
 
 uint8_t hci_process(void);

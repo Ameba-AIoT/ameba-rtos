@@ -157,19 +157,19 @@ image_total  xip_total  sram_total  xip_text  xip_rodata  sram_text  sram_rodata
 739          0          1499        0         0           672        67           0                760                lib_freertos_os_wrapper.a(os_wrapper_critical.o)
 108          0          108         0         0           108        0            0                0                  lib_freertos_os_wrapper.a(os_wrapper_memory.o)
 368          0          368         0         0           368        0            0                0                  lib_freertos_os_wrapper.a(os_wrapper_semaphore.o)
-120          0          120         0         0           120        0            0                0                  lib_freertos_os_wrapper.a(os_wrapper_task.o)
+136          0          136         0         0           136        0            0                0                  lib_freertos_os_wrapper.a(os_wrapper_task.o)
 140          0          140         0         0           140        0            0                0                  lib_freertos_os_wrapper.a(os_wrapper_time.o)
 1812         0          19416       0         0           1640       172          0                17604              lib_freertos_smp.a(port.o)
 636          0          636         0         0           636        0            0                0                  lib_freertos_smp.a(portASM.o)
 4213         0          4277        0         0           4096       117          0                64                 lib_freertos_smp.a(queue.o)
 82           0          82          0         0           60         22           0                0                  lib_rtk_assert.a(rtk_assert.o)
-9706         0          10138       0         0           9584       122          0                432                lib_freertos_smp.a(tasks.o)
+10146        0          10578       0         0           10024      122          0                432                lib_freertos_smp.a(tasks.o)
 1735         0          2119        0         0           1604       131          0                384                lib_freertos_smp.a(timers.o)
 ------------------------------------------------------------ os End -------------------------------------------------------------------------------------
 image_total  xip_total  sram_total  xip_text  xip_rodata  sram_text  sram_rodata  sram_data(load)  sram_data(noload)  module  
-22108        0          41437       0         0           21144      964          0                19329              (TOTALS)
+22564        0          41893       0         0           21600      964          0                19329              (TOTALS)
 Module os size:
-0x565c			22108
+0x5824			22564
 
 ============================================================ diagnose Start =============================================================================
 image_total  xip_total  sram_total  xip_text  xip_rodata  sram_text  sram_rodata  sram_data(load)  sram_data(noload)  module  
@@ -182,20 +182,20 @@ Module diagnose size:
 
 ============================================================ others Start ===============================================================================
 image_total  xip_total  sram_total  xip_text  xip_rodata  sram_text  sram_rodata  sram_data(load)  sram_data(noload)  module  
-1414         0          1414        0         0           708        706          0                0                  lib_project_src.a(main.o)
+1497         0          1497        0         0           776        721          0                0                  lib_project_src.a(main.o)
 224          0          252         0         0           220        4            0                28                 crtbegin.o
 ------------------------------------------------------------ others End ---------------------------------------------------------------------------------
 image_total  xip_total  sram_total  xip_text  xip_rodata  sram_text  sram_rodata  sram_data(load)  sram_data(noload)  module  
-1638         0          1666        0         0           928        710          0                28                 (TOTALS)
+1721         0          1749        0         0           996        725          0                28                 (TOTALS)
 Module others size:
-0x666			1638
+0x6b9			1721
 
 ======================================================================================================================================================
 image_total  xip_total  sram_total  xip_text  xip_rodata  sram_text  sram_rodata  sram_data(load)  sram_data(noload)  module  
-94176        0          177242      0         0           85596      7875         705              83066              (TOTALS)
+94715        0          177781      0         0           86120      7890         705              83066              (TOTALS)
 
 Image size:
-0x16fe0			94176
+0x171fb			94715
 
 ============================================================ RAM analysis Start =========================================================================
 ============================================================ libc Start =================================================================================

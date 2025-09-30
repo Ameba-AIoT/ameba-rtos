@@ -270,6 +270,37 @@ extern "C"
 #endif /* RTK_BLE_5_2_SUPPORT */
 
 /*
+ * Ameba 8720F
+ */
+#elif defined(CONFIG_RTL8720F) && CONFIG_RTL8720F
+#define RTK_BLE_GAP_MAX_LINKS               4
+#define RTK_BLE_SUPPORT                     1
+#define RTK_BT_POWER_CONTROL_SUPPORT        0
+
+#if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
+#define RTK_BLE_GATTS_SUPPORT               1
+#define RTK_BLE_GATTC_SUPPORT               1
+#define RTK_BLE_4_0_SUPPORT                 1
+#define RTK_BLE_4_2_SUPPORT                 1
+#define RTK_BLE_5_0_SUPPORT                 1
+#define RTK_BLE_5_1_SUPPORT                 0
+#define RTK_BLE_5_2_SUPPORT                 0
+#define RTK_BLE_SMP_OOB_SUPPORT             1
+#define RTK_BLE_COC_SUPPORT                 0
+#endif /* RTK_BLE_SUPPORT */
+
+#if defined(RTK_BLE_4_2_SUPPORT) && RTK_BLE_4_2_SUPPORT
+#define RTK_BLE_PRIVACY_SUPPORT             0
+#define RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT    1
+#endif /* RTK_BLE_4_2_SUPPORT */
+
+#if defined(RTK_BLE_5_0_SUPPORT) && RTK_BLE_5_0_SUPPORT
+#define RTK_BLE_5_0_SET_PHYS_SUPPORT        1
+#define RTK_BLE_5_0_AE_ADV_SUPPORT          0
+#define RTK_BLE_5_0_AE_SCAN_SUPPORT         0
+#endif /* RTK_BLE_5_0_SUPPORT */
+
+/*
  * Error Platform
  */
 #else

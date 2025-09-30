@@ -158,7 +158,7 @@ text  rodata  data  bss  module
 2124  253     0     0    lib_wifi_single_core_mp.a(rom_hal_recv.o)
 0     0       0     376  lib_wifi_com_sec.a(rom_hal_rom_to_flash.o)
 0     0       0     1616 lib_wifi_single_core_mp.a(rom_hal_structs.o)
-4084  206     0     0    lib_wifi_single_core_mp.a(rom_hal_xmit.o)
+4072  206     0     0    lib_wifi_single_core_mp.a(rom_hal_xmit.o)
 1148  32      0     0    lib_wifi_single_core_mp.a(rom_hal_xmit_g1.o)
 2440  64      0     0    lib_wifi_com_sec.a(rom_md5.o)
 1012  0       0     0    lib_wifi_com_sec.a(rom_rc4.o)
@@ -205,7 +205,7 @@ text  rodata  data  bss  module
 3604  110     0     0    lib_wifi_single_core_mp.a(rom_rtw_security_part2.o)
 864   90      0     0    lib_wifi_single_core_mp.a(rom_rtw_setkey.o)
 1596  257     0     0    lib_wifi_com_sec.a(rom_rtw_sha256.o)
-1764  13      0     0    lib_wifi_single_core_mp.a(rom_rtw_shortcut.o)
+1780  13      0     0    lib_wifi_single_core_mp.a(rom_rtw_shortcut.o)
 436   42      0     0    lib_wifi_single_core_mp.a(rom_rtw_sitesurvey.o)
 1460  0       0     0    lib_wifi_single_core_mp.a(rom_rtw_sitesurvey_report.o)
 368   68      0     40   lib_wifi_single_core_mp.a(rom_rtw_skbuff.o)
@@ -232,9 +232,9 @@ text  rodata  data  bss  module
 7916  781     0     4    lib_wpa_lite.a(rom_wpa_lite_sae_crypto.o)
 ------------------------- wifirom End ---------------------------------------------
 text  rodata  data  bss  module  
-14056436408   8     2075 (TOTALS)
+14056836408   8     2075 (TOTALS)
 Module wifirom size:
-0x2bb6f			179055
+0x2bb73			179059
 
 ========================= wificoex Start ==========================================
 text  rodata  data  bss  module  
@@ -243,20 +243,20 @@ text  rodata  data  bss  module
 116   0       0     0    lib_coex_mp.a(rtw_coex_action_single_ant.o)
 16    0       0     0    lib_coex_mp.a(rtw_coex_api_bt.o)
 376   109     11    1    lib_coex_mp.a(rtw_coex_api_ext.o)
-5348  113     20    4    lib_coex_mp.a(rtw_coex_api_wl.o)
+5416  113     20    4    lib_coex_mp.a(rtw_coex_api_wl.o)
 468   0       9     0    lib_coex_mp.a(rtw_coex_dbg.o)
 768   0       0     0    lib_coex_mp.a(rtw_coex_ext_chip.o)
 32    0       0     0    lib_coex_mp.a(rtw_coex_ext_chip_bt.o)
 912   0       28    0    lib_coex_mp.a(rtw_coex_ext_chip_rtl8730e.o)
 40    0       0     0    lib_coex_mp.a(rtw_coex_ext_chip_wpan.o)
 12    28      0     4    lib_coex_mp.a(rtw_coex_ipc_dev_api.o)
-8968  473     4     5    lib_coex_mp.a(rtw_coex_wl_chip.o)
-1480  74      116   0    lib_coex_mp.a(rtw_coex_wl_chip_rtl8730e.o)
+9072  473     4     5    lib_coex_mp.a(rtw_coex_wl_chip.o)
+1472  74      116   0    lib_coex_mp.a(rtw_coex_wl_chip_rtl8730e.o)
 ------------------------- wificoex End --------------------------------------------
 text  rodata  data  bss  module  
-19668 806     188   14   (TOTALS)
+19832 806     188   14   (TOTALS)
 Module wificoex size:
-0x50c4			20676
+0x5168			20840
 
 ========================= wifidrv Start ===========================================
 text  rodata  data  bss  module  
@@ -270,7 +270,7 @@ text  rodata  data  bss  module
 764   7       0     0    lib_wifi_single_core_mp.a(hal_h2c_g1.o)
 152   0       0     0    lib_wifi_single_core_mp.a(hal_interrupt.o)
 1196  9       0     1    lib_wifi_single_core_mp.a(hal_interrupt_g1.o)
-2888  345     0     0    lib_wifi_single_core_mp.a(hal_mp.o)
+2928  345     0     0    lib_wifi_single_core_mp.a(hal_mp.o)
 620   117     0     0    lib_wifi_single_core_mp.a(hal_phycfg.o)
 960   90      0     0    lib_wifi_single_core_mp.a(hal_ra.o)
 396   0       0     32   lib_wifi_single_core_mp.a(hal_recv.o)
@@ -285,8 +285,8 @@ text  rodata  data  bss  module
 584   87      0     4    lib_wifi_single_core_mp.a(rtw_action.o)
 220   0       0     0    lib_wifi_single_core_mp.a(rtw_adapter.o)
 36    18      0     0    lib_wifi_single_core_mp.a(rtw_addba.o)
-1700  171     0     0    lib_wifi_single_core_mp.a(rtw_ap.o)
-2672  65      0     0    lib_wifi_single_core_mp.a(rtw_assoc.o)
+1676  171     0     0    lib_wifi_single_core_mp.a(rtw_ap.o)
+2688  65      0     0    lib_wifi_single_core_mp.a(rtw_assoc.o)
 96    0       0     0    lib_wifi_com_sec.a(rtw_atomic.o)
 2208  67      0     0    lib_wifi_single_core_mp.a(rtw_auth.o)
 1336  38      0     1    lib_wifi_single_core_mp.a(rtw_beacon.o)
@@ -298,27 +298,27 @@ text  rodata  data  bss  module
 832   392     0     0    lib_rtw_event.a(rtw_event.o)
 1072  81      0     0    lib_wifi_single_core_mp.a(rtw_ips.o)
 1904  131     0     0    lib_wifi_single_core_mp.a(rtw_join.o)
-1392  61      0     0    lib_wifi_single_core_mp.a(rtw_join_result.o)
+1388  61      0     0    lib_wifi_single_core_mp.a(rtw_join_result.o)
 1032  18      0     4    lib_wifi_single_core_mp.a(rtw_lps.o)
 124   182     0     0    lib_wifi_single_core_mp.a(rtw_macid_mgt.o)
 1052  57      112   0    lib_wifi_single_core_mp.a(rtw_mgnt.o)
 1620  50      0     0    lib_wifi_single_core_mp.a(rtw_mp.o)
 200   0       0     0    lib_wifi_single_core_mp.a(rtw_network.o)
 1284  0       0     4    lib_wifi_single_core_mp.a(rtw_probe.o)
-2000  31      0     0    lib_wifi_single_core_mp.a(rtw_recv.o)
-792   35      0     0    lib_wifi_single_core_mp.a(rtw_recv_defrag.o)
+2004  31      0     0    lib_wifi_single_core_mp.a(rtw_recv.o)
+772   20      0     0    lib_wifi_single_core_mp.a(rtw_recv_defrag.o)
 1024  458     0     0    lib_wifi_single_core_mp.a(rtw_setkey.o)
 2284  103     0     2    lib_wifi_single_core_mp.a(rtw_sitesurvey.o)
 1260  30      0     0    lib_wifi_single_core_mp.a(rtw_sitesurvey_report.o)
 352   133     0     0    lib_wifi_single_core_mp.a(rtw_skbuff.o)
 188   0       0     0    lib_wifi_single_core_mp.a(rtw_state.o)
-2084  99      0     1244 lib_wifi_single_core_mp.a(rtw_sta_mgt.o)
+2080  99      0     1244 lib_wifi_single_core_mp.a(rtw_sta_mgt.o)
 144   0       0     0    lib_wifi_single_core_mp.a(rtw_task.o)
 716   163     0     16   lib_wifi_com_sec.a(rtw_timer.o)
 216   0       0     0    lib_wifi_single_core_mp.a(rtw_twt.o)
 112   26      0     0    lib_wifi_single_core_mp.a(rtw_vht.o)
 64    0       0     0    lib_wifi_com_sec.a(rtw_wakelock.o)
-1120  90      0     0    lib_wifi_single_core_mp.a(rtw_xmit.o)
+1172  90      0     0    lib_wifi_single_core_mp.a(rtw_xmit.o)
 416   170     0     10   lib_wifi_rtk_app.a(wifi_acs.o)
 952   266     0     224  lib_wifi_rtk_app_open.a(wifi_auto_reconnect.o)
 20    0       0     0    lib_wifi_rtk_app_open.a(wifi_fast_connect.o)
@@ -336,34 +336,34 @@ text  rodata  data  bss  module
 28    0       0     0    lib_wifi_single_core_mp.a(wifi_hal_hci_intfs.o)
 200   0       0     0    lib_wifi_single_core_mp.a(wifi_hal_interrupt.o)
 64    0       0     0    lib_wifi_single_core_mp.a(wifi_hal_io.o)
-1180  476     0     0    lib_wifi_single_core_mp.a(wifi_hal_mp.o)
+1196  476     0     0    lib_wifi_single_core_mp.a(wifi_hal_mp.o)
 316   0       0     0    lib_wifi_single_core_mp.a(wifi_hal_ops.o)
 1728  0       0     0    lib_wifi_single_core_mp.a(wifi_hal_phycfg.o)
 516   71      0     128  lib_wifi_single_core_mp.a(wifi_hal_recv.o)
 564   0       0     0    lib_wifi_single_core_mp.a(wifi_hal_rxdesc.o)
 76    0       0     0    lib_wifi_single_core_mp.a(wifi_hal_suspend.o)
-1720  0       0     0    lib_wifi_single_core_mp.a(wifi_hal_txdesc.o)
+1724  0       0     0    lib_wifi_single_core_mp.a(wifi_hal_txdesc.o)
 60    0       0     0    lib_wifi_single_core_mp.a(wifi_hal_txpower.o)
 72    0       0     0    lib_wifi_single_core_mp.a(wifi_hal_xmit.o)
 132   73      0     0    lib_wifi_rtk_app_open.a(wifi_init.o)
 1384  558     0     29   lib_wifi_single_core_mp.a(wifi_intf_drv_to_app_basic.o)
 3232  681     0     2    lib_wifi_single_core_mp.a(wifi_intf_drv_to_app_ext.o)
 396   82      0     0    lib_wifi_single_core_mp.a(wifi_intf_drv_to_lwip.o)
-11408 3867    0     2    lib_wifi_single_core_mp.a(wifi_intf_drv_to_mp.o)
+11448 3867    0     2    lib_wifi_single_core_mp.a(wifi_intf_drv_to_mp.o)
 2628  276     0     2196 lib_wifi_single_core_mp.a(wifi_intf_drv_to_upper.o)
 1296  32      0     8    lib_wifi_single_core_mp.a(wifi_intf_hal_to_g6_bb.o)
 676   147     0     0    lib_wifi_single_core_mp.a(wifi_intf_hal_to_g6_mac.o)
 652   0       0     0    lib_wifi_single_core_mp.a(wifi_intf_hal_to_g6_mac_common.o)
 812   0       0     0    lib_wifi_single_core_mp.a(wifi_intf_rom_to_flash.o)
 1212  430     0     332  lib_wpa_lite.a(wpa_lite_owe.o)
-7636  688     4     326  lib_wpa_lite.a(wpa_lite_psk.o)
+7660  688     4     326  lib_wpa_lite.a(wpa_lite_psk.o)
 3948  1415    3     0    lib_wpa_lite.a(wpa_lite_sae.o)
 0     0       0     68   lib_wpa_lite.a(wpa_lite_wnm.o)
 ------------------------- wifidrv End ---------------------------------------------
 text  rodata  data  bss  module  
-10027615393   129   7344 (TOTALS)
+10042015378   129   7344 (TOTALS)
 Module wifidrv size:
-0x1e106			123142
+0x1e187			123271
 
 ========================= wifibb Start ============================================
 text  rodata  data  bss  module  
@@ -493,13 +493,13 @@ text  rodata  data  bss  module
 16    0       0     0    libnosys.a(lseek.o)
 528   119     0     131  lib_monitor.a(shell_ram.o)
 1492  0       0     0    lib_swlib.a(sscanf_minimal.o)
-532   239     0     0    lib_hal.a(sys_api.o)
+548   239     0     0    lib_hal.a(sys_api.o)
 2     0       0     0    libnosys.a(_exit.o)
 ------------------------- fwlib End -----------------------------------------------
 text  rodata  data  bss  module  
-21026 7468    137   1939 (TOTALS)
+21042 7468    137   1939 (TOTALS)
 Module fwlib size:
-0x776a			30570
+0x777a			30586
 
 ========================= os Start ================================================
 text  rodata  data  bss  module  
@@ -606,20 +606,20 @@ Module network size:
 
 ========================= file_system Start =======================================
 text  rodata  data  bss  module  
-444   17      0     4    lib_kv.a(kv.o)
+560   17      0     8    lib_kv.a(kv.o)
 20256 2743    0     0    lib_littlefs.a(lfs.o)
-816   0       0     76   lib_littlefs.a(lfs_nand_ftl.o)
-940   0       72    0    lib_littlefs.a(lfs_nand_ftl_mfg.o)
 68    64      0     0    lib_littlefs.a(lfs_util.o)
 516   0       168   132  lib_littlefs.a(littlefs_adapter.o)
 712   0       0     100  lib_vfs.a(vfs.o)
 928   12      116   5    lib_vfs.a(vfs_littlefs.o)
+816   0       0     76   lib_vfs.a(vfs_nand_ftl.o)
+940   0       72    0    lib_vfs.a(vfs_nand_ftl_mfg.o)
 1680  5       0     0    lib_vfs.a(vfs_wrap.o)
 ------------------------- file_system End -----------------------------------------
 text  rodata  data  bss  module  
-26360 2841    356   317  (TOTALS)
+26476 2841    356   321  (TOTALS)
 Module file_system size:
-0x74b2			29874
+0x752a			29994
 
 ========================= diagnose Start ==========================================
 text  rodata  data  bss  module  
@@ -638,18 +638,18 @@ Module diagnose size:
 
 ========================= others Start ============================================
 text  rodata  data  bss  module  
-520   98      0     4    lib_project_src.a(main.o)
+572   113     0     4    lib_project_src.a(main.o)
 140   4       0     28   crtbegin.o
 ------------------------- others End ----------------------------------------------
 text  rodata  data  bss  module  
-660   102     0     32   (TOTALS)
+712   117     0     32   (TOTALS)
 Module others size:
-0x31a			794
+0x35d			861
 
 ================================================================================
 text  rodata  data  bss  module  
-593268134523  3040  31107(TOTALS)
+593764134523  3040  31111(TOTALS)
 
 Image size:
-0xba052			761938
+0xba246			762438
 

@@ -158,6 +158,10 @@ u8 whc_dev_rcvpkt_redirect(struct sk_buff *skb, struct whc_pkt_attrib *pattrib)
 		}
 	}
 
+	if (!(whc_dev_api_get_host_rdy())) {
+		return PORT_TO_UP;
+	}
+
 	if (pattrib->protocol == lwip_htons(ETHTYPE_ARP)) {
 		return PORT_TO_BOTH;
 	}

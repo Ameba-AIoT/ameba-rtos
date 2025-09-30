@@ -3,6 +3,14 @@
 
 #define WHC_CMD_GENL_NAME	"whc_ctrl_app"
 
+struct genl_info;
+typedef int (*netlink_cmd_handler_t)(struct genl_info *info);
+
+struct whc_host_netlink_command_entry {
+	char api_id;
+	netlink_cmd_handler_t handler;
+};
+
 struct whc_netlink {
 	int sockfd;
 	int family_id;
@@ -70,7 +78,8 @@ enum whc_tickps_cmd_subtype {
 #define WHC_WIFI_TEST_DHCP           0x8
 #define WHC_WIFI_TEST_WIFION         0x9
 #define WHC_WIFI_TEST_SCAN_RESULT    0xA
-#define WHC_WIFI_TEST_SET_FILTER     0xB
+#define WHC_WIFI_TEST_MP             0xB
+#define WHC_WIFI_TEST_DBG            0xC
 
 // todo: need sync, default 4k, however max buf in sdio & spi < 1.5k
 #define WHC_WIFI_MP_MSG_BUF_SIZE (4096)

@@ -11,7 +11,7 @@
 #include "hci_platform.h"
 #include "bt_debug.h"
 #include "dlist.h"
-#include "hci_common.h"
+#include "hci_controller.h"
 
 #define IS_ALIGNED(ptr, align) (((uintptr_t)(ptr)) % (align) == 0)
 

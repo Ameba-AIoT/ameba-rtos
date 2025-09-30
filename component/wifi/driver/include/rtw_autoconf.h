@@ -83,7 +83,7 @@
 #elif defined(CONFIG_AMEBAPRO3)
 /******************************* AmebaPro3 (8735c) ******************************/
 #include "autoconf_8721f.h"
-#elif defined(CONFIG_AMEBAL2)
+#elif defined(CONFIG_AMEBAL2) || defined(CONFIG_RTL8720F)
 /******************************* AmebaL2 (6955) ******************************/
 #include "autoconf_amebax.h"
 #endif
@@ -106,7 +106,7 @@
 
 #define CONFIG_ACM_METHOD 0	// 0:By SW 1:By HW.
 
-#ifndef CONFIG_AMEBAL2
+#if !defined(CONFIG_AMEBAL2) && !defined(CONFIG_RTL8720F)
 #define CONFIG_FRAME_DEFRAG // support frame defragmentaion
 #endif
 

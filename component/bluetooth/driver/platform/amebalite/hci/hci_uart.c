@@ -11,7 +11,7 @@
 #include "bt_debug.h"
 #include "hal_platform.h"
 #include "hci_platform.h"
-#include "hci/hci_common.h"
+#include "hci_controller.h"
 
 #define HCI_UART_IDX             (3)
 #define HCI_UART_DEV             (UART3_DEV)

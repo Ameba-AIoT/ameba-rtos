@@ -96,12 +96,12 @@ void app_pmu_init(void)
 
 extern int rt_kv_init(void);
 
-void app_filesystem_init(void)
+void fs_init_thread(void *param)
 {
+	(void)param;
 #if !(defined(CONFIG_MP_SHRINK)) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 	int ret = 0;
 	vfs_init();
-
 #ifdef CONFIG_FATFS_WITHIN_APP_IMG
 	ret = vfs_user_register("fat", VFS_FATFS, VFS_INF_FLASH, VFS_REGION_2, VFS_RO);
 	if (ret == 0) {
@@ -111,17 +111,23 @@ void app_filesystem_init(void)
 	}
 #endif
 
-	ret = vfs_user_register(VFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
+	vfs_user_register(VFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
+	ret = rt_kv_init();
 	if (ret == 0) {
-		ret = rt_kv_init();
-		if (ret == 0) {
-			RTK_LOGI(TAG, "File System Init Success\n");
-			return;
-		}
+		RTK_LOGI(TAG, "File System Init Success \n");
+		goto exit;
 	}
 
+
 	RTK_LOGE(TAG, "File System Init Fail \n");
+exit:
 #endif
+	rtos_task_delete(NULL);
+}
+
+void app_filesystem_init(void)
+{
+	rtos_task_create(NULL, ((const char *)"fs_init_thread"), fs_init_thread, NULL, 4096, 5);
 }
 
 /*

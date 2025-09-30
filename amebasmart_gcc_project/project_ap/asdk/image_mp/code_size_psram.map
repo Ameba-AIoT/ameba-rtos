@@ -150,19 +150,19 @@ text  rodata  data  bss  module
 672   67      0     760  lib_freertos_os_wrapper.a(os_wrapper_critical.o)
 108   0       0     0    lib_freertos_os_wrapper.a(os_wrapper_memory.o)
 368   0       0     0    lib_freertos_os_wrapper.a(os_wrapper_semaphore.o)
-120   0       0     0    lib_freertos_os_wrapper.a(os_wrapper_task.o)
+136   0       0     0    lib_freertos_os_wrapper.a(os_wrapper_task.o)
 140   0       0     0    lib_freertos_os_wrapper.a(os_wrapper_time.o)
 1640  172     0     17604lib_freertos_smp.a(port.o)
 636   0       0     0    lib_freertos_smp.a(portASM.o)
 4096  117     0     64   lib_freertos_smp.a(queue.o)
 60    22      0     0    lib_rtk_assert.a(rtk_assert.o)
-9584  122     0     432  lib_freertos_smp.a(tasks.o)
+10024 122     0     432  lib_freertos_smp.a(tasks.o)
 1604  131     0     384  lib_freertos_smp.a(timers.o)
 ------------------------- os End --------------------------------------------------
 text  rodata  data  bss  module  
-21144 964     0     19329(TOTALS)
+21600 964     0     19329(TOTALS)
 Module os size:
-0xa1dd			41437
+0xa3a5			41893
 
 ========================= diagnose Start ==========================================
 text  rodata  data  bss  module  
@@ -175,18 +175,18 @@ Module diagnose size:
 
 ========================= others Start ============================================
 text  rodata  data  bss  module  
-708   706     0     0    lib_project_src.a(main.o)
+776   721     0     0    lib_project_src.a(main.o)
 220   4       0     28   crtbegin.o
 ------------------------- others End ----------------------------------------------
 text  rodata  data  bss  module  
-928   710     0     28   (TOTALS)
+996   725     0     28   (TOTALS)
 Module others size:
-0x682			1666
+0x6d5			1749
 
 ================================================================================
 text  rodata  data  bss  module  
-85596 7875    705   83066(TOTALS)
+86120 7890    705   83066(TOTALS)
 
 Image size:
-0x2b45a			177242
+0x2b675			177781
 

@@ -1749,8 +1749,8 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 
 	case RTK_BT_LE_AUDIO_EVT_ASCS_SETUP_DATA_PATH_IND: {
 		rtk_bt_le_audio_ascs_setup_data_path_ind_t *param = (rtk_bt_le_audio_ascs_setup_data_path_ind_t *) data;
-		BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_ASCS_SETUP_DATA_PATH_IND(conn_handle %d, ase_id 0x%x, path_direction 0x%x, cis_conn_handle 0x%x, dev_num %d \r\n",
-				param->conn_handle, param->ase_id, param->path_direction, param->cis_conn_handle, (int)param->dev_num);
+		BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_ASCS_SETUP_DATA_PATH_IND(conn_handle %d, ase_id 0x%x, path_direction 0x%x, cis_conn_handle 0x%x\r\n",
+				param->conn_handle, param->ase_id, param->path_direction, param->cis_conn_handle);
 		BT_AT_PRINT("+BLEBAP:unicast,server,ascs,setup_data_path,%d,0x%x,0x%x,0x%x\r\n",
 					param->conn_handle, param->ase_id, param->path_direction, param->cis_conn_handle);
 		BT_LOGD("[APP] type_exist 0x%x, frame_duration 0x%x, sample_frequency 0x%x, codec_frame_blocks_per_sdu 0x%x, octets_per_codec_frame 0x%x, audio_channel_allocation 0x%x)\r\n",
@@ -1763,7 +1763,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 									  0,
 									  param->presentation_delay);
 		if (param->iso_chann_t.path_direction == RTK_BLE_AUDIO_ISO_DATA_PATH_TX) {
-			if (app_bt_le_audio_find_total_path_num(RTK_BLE_AUDIO_ISO_DATA_PATH_TX) == param->dev_num) {
+			if (app_bt_le_audio_find_total_path_num(RTK_BLE_AUDIO_ISO_DATA_PATH_TX) == param->source_ase_num) {
 				app_bt_le_audio_cap_encode_data_control(true);
 				app_bt_le_audio_send_timer_update((param->codec_cfg.frame_duration == RTK_BT_LE_FRAME_DURATION_CFG_10_MS) ? 10000 : 7500);
 			}
@@ -1899,7 +1899,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 	case RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND: {
 		rtk_bt_le_audio_direct_iso_data_ind_t *p_bt_direct_iso = (rtk_bt_le_audio_direct_iso_data_ind_t *)data;
 		if (p_bt_direct_iso->pkt_status_flag == RTK_BT_LE_ISO_ISOCH_DATA_PKT_STATUS_LOST_DATA) {
-			BT_LOGD("[APP] data loss: iso_conn_handle 0x%x, pkt_seq_num:%d \r\n", p_bt_direct_iso->iso_conn_handle, p_bt_direct_iso->pkt_seq_num);
+			BT_LOGD("[APP] pkt status lost data: iso_conn_handle 0x%x, pkt_seq_num:%d \r\n", p_bt_direct_iso->iso_conn_handle, p_bt_direct_iso->pkt_seq_num);
 			if (app_bt_le_audio_data_received(p_bt_direct_iso->iso_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_RX,
 											  NULL, max_sdu_len, p_bt_direct_iso->time_stamp)) {
 				BT_LOGE("[APP] %s app le audio data parsing fail \r\n", __func__);

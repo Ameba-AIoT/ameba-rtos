@@ -8,7 +8,12 @@
 #include <stdbool.h>
 #include "ameba_soc.h"
 #include "bt_debug.h"
+
+#ifdef CONFIG_BT_SDN_VERIFY
+#include "hci_if_inic_sdn.h"
+#else
 #include "hci_if_inic.h"
+#endif
 
 #define CONFIG_INIC_RX_PRIO        5
 #define CONFIG_INIC_RX_STACK_SIZE  (2048)
@@ -34,6 +39,18 @@
 #define UART_CTS    _PB_22
 #define UART_RTS    _PA_30
 #elif defined(CONFIG_AMEBAGREEN2)
+#define UART_INDEX  0
+#define UART_TX     _PA_4
+#define UART_RX     _PA_5
+#define UART_CTS    _PA_6
+#define UART_RTS    _PA_7
+#elif defined(CONFIG_AMEBAL2)
+#define UART_INDEX  0
+#define UART_TX     _PA_4
+#define UART_RX     _PA_5
+#define UART_CTS    _PA_6
+#define UART_RTS    _PA_7
+#elif defined(CONFIG_RTL8720F)
 #define UART_INDEX  0
 #define UART_TX     _PA_4
 #define UART_RX     _PA_5
@@ -260,6 +277,7 @@ void bt_inic_h4_init(void)
 	Pinmux_Config(UART_RX, UART_FUNCID(RXD, UART_INDEX));
 	Pinmux_Config(UART_CTS, UART_FUNCID(CTS, UART_INDEX));
 	Pinmux_Config(UART_RTS, UART_FUNCID(RTS, UART_INDEX));
+#elif defined(CONFIG_AMEBAL2)
 #endif
 
 	PAD_PullCtrl(UART_TX, GPIO_PuPd_UP); /* pull up Tx/Rx pin */

@@ -8,7 +8,7 @@
 #include <string.h>
 #include "bt_debug.h"
 #include "hci_transport.h"
-#include "hci_common.h"
+#include "hci_controller.h"
 #include "hci_if_dtm.h"
 
 static void *dtm_sem = NULL;

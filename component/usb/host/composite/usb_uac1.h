@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Realtek Semiconductor Corp.
+ * Copyright (c) 2025 Realtek Semiconductor Corp.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,14 +7,16 @@
 #ifndef USB_UAC1_H
 #define USB_UAC1_H
 
-#if CONFIG_USB_UAC
-
 #define UAC_VERSION_1                   0x00
 #define UAC_VERSION_2                   0x20
 
 /* Audio Class Codes */
 #define USB_CLASS_AUDIO                 0x01U
 
+/* Audio Output Terminal Types */
+#define UAC_TERMINAL_TYPE_OUTPUT       0x0300
+#define UAC_TERMINAL_TYPE_SPEAKER      0x0301
+#define UAC_TERMINAL_TYPE_HEADPHONE    0x0302
 
 /* A.2 Audio Interface Subclass Codes */
 #define USB_SUBCLASS_AUDIOCONTROL       0x01
@@ -73,7 +75,6 @@
 #define UAC_GET_MEM                     (UAC_GET_ | UAC__MEM)
 
 #define UAC_GET_STAT                    0xff
-
 
 /* A.10 Control Selector Codes */
 
@@ -146,8 +147,14 @@
 #pragma pack(1)
 
 /* Terminal Control Selectors */
-/* 4.3.2  Class-Specific AC Interface Descriptor */
+/* Class-Specific AC Interface Descriptor header */
+typedef struct {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+} usb_ac_itf_desc_header_t;
 
+/* 4.3.2  Class-Specific AC Interface Descriptor */
 struct uac1_ac_header_descriptor {
 	uint8_t  bLength;                  /* 8 + n */
 	uint8_t  bDescriptorType;          /* USB_DT_CS_INTERFACE */
@@ -185,7 +192,6 @@ struct uac_input_terminal_descriptor {
 #define UAC_INPUT_TERMINAL_PROC_MICROPHONE_ARRAY        0x206
 
 /* Terminals - control selectors */
-
 #define UAC_TERMINAL_CS_COPY_PROTECT_CONTROL            0x01
 
 /* 4.3.2.2 Output Terminal Descriptor */
@@ -369,7 +375,4 @@ struct uac1_status_word {
 } __attribute__((packed));
 #pragma pack(pop)
 
-#endif //CONFIG_USBH_UAC
-
 #endif // USB_UAC1_H
-

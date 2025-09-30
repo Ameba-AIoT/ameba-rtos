@@ -12,15 +12,6 @@ menu "CONFIG CHIP"
         bool
         default y
 
-    choice
-        prompt "Chip Version"
-        default AMEBAGREEN2_A_CUT_FOR_KM4NS
-        config AMEBAGREEN2_A_CUT_FOR_KM4NS
-            bool "AMEBAGREEN2_A_Cut"
-
-        config AMEBAGREEN2_B_CUT_FOR_KM4NS
-            bool "AMEBAGREEN2_B_Cut"
-    endchoice
 endmenu
 
 

@@ -6,7 +6,7 @@
 
 #ifndef _HCI_IF_INIC_H_
 #define _HCI_IF_INIC_H_
-#include "hci/hci_common.h"
+#include "hci_common.h"
 
 #define BT_INIC_FPGA_VERIFICATION               0
 

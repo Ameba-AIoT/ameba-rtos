@@ -641,7 +641,7 @@ int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u16 len, void *userdata)
 		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "EP%02x TX len=%d data=%d\n", num, len, buf[0]);
 		ep->xfer_state = USBD_INIC_EP_STATE_BUSY;
 		idev->in_ep[num].userdata = userdata;
-		usb_os_memcpy((void *)ep->xfer_buf, (void *)buf, len);
+		ep->xfer_buf = buf; /*Application should free this txbuf only afer TX DONE*/
 		ep->xfer_len = len;
 		usbd_ep_transmit(idev->dev, ep);
 	} else {

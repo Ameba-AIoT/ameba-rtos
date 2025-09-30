@@ -11,15 +11,5 @@ menu "CONFIG CHIP"
     config ARM_CORE_CM4_FOR_KM4TZ
         bool
         default y
-
-    choice
-        prompt "Chip Version"
-        default AMEBAGREEN2_A_CUT_FOR_KM4TZ
-        config AMEBAGREEN2_A_CUT_FOR_KM4TZ
-            bool "AMEBAGREEN2_A_Cut"
-
-        config AMEBAGREEN2_B_CUT_FOR_KM4TZ
-            bool "AMEBAGREEN2_B_Cut"
-    endchoice
 endmenu
 

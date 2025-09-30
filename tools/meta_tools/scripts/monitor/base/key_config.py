@@ -19,7 +19,7 @@ def key_to_hex(key: str) -> str:
 
 
 MENU_KEY = key_to_hex('T')
-EXIT_KEY = key_to_hex(']')
+EXIT_KEY = key_to_hex('C')
 TOGGLE_OUTPUT_KEY = key_to_hex('Y')
 TOGGLE_LOG_KEY = key_to_hex('L')
 TOGGLE_TIMESTAMPS_KEY = key_to_hex('I')
