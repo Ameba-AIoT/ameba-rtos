@@ -445,6 +445,271 @@ sys_timeouts_sleeptime(void)
   }
 }
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+/*
+mark timer has been removed
+*/
+static u8_t *lwip_removed_tmrs = NULL;
+
+/*
+Called in post sleep process to compenstate lwip internal counter, if lwip tmr has been removed, we need to update lwip internal counter.
+ */
+void lwip_update_internal_counter(u32_t ms)
+{
+  if (lwip_removed_tmrs == NULL) {
+    return;
+  }
+
+  u8_t i = 0;
+
+#if LWIP_TCP
+  if (lwip_removed_tmrs[i] == 1) {
+    comp_tcp_ticks(ms);
+  }
+  i++;
+#endif
+#if LWIP_IPV4
+#if IP_REASSEMBLY
+  if (lwip_removed_tmrs[i] == 1) {
+    comp_ip_reas_time(ms);
+  }
+  i++;
+#endif
+#if LWIP_ARP
+  if (lwip_removed_tmrs[i] == 1) {
+    comp_arp_ctime(ms);
+  }
+  i++;
+#endif
+#if LWIP_DHCP
+  i++;
+  i++;
+#endif
+#if LWIP_AUTOIP
+  if (lwip_removed_tmrs[i] == 1) {
+    comp_autoip_time(ms);
+  }
+  i++;
+#endif
+#if LWIP_IGMP
+  if (lwip_removed_tmrs[i] == 1) {
+    comp_igmp_time(ms);
+  }
+  i++;
+#endif
+#endif
+#if LWIP_DNS
+  if (lwip_removed_tmrs[i] == 1) {
+    comp_dns_ttl(ms);
+  }
+  i++;
+#endif
+#if LWIP_IPV6
+  if (lwip_removed_tmrs[i] == 1) {
+    comp_nd6_time(ms);
+  }
+  i++;
+#if LWIP_IPV6_REASS
+  if (lwip_removed_tmrs[i] == 1) {
+    comp_ip6_reas_time(ms);
+  }
+  i++;
+#endif
+#if LWIP_IPV6_MLD
+  if (lwip_removed_tmrs[i] == 1) {
+    comp_mld6_time(ms);
+  }
+  i++;
+#endif
+#if LWIP_IPV6_DHCP6
+  i++;
+#if LWIP_IPV6_DHCP6_STATEFUL
+  i++;
+#endif
+#endif
+#endif
+}
+
+/*
+Check whether tcpip_tcp_timer can be removed before enter sleep
+return 0: no, 1: yes, 2: not active
+ */
+u8_t check_tcpip_tcp_timer_removable(void)
+{
+  u8_t ret = 1;
+  
+  if (tcpip_tcp_timer_active == 0) {
+    ret = 2; // not active, no need to remove
+  } else if (tcpip_tcp_timer_active == 1 && check_tcp_tmr_removable() == 0) {
+    ret = 0;
+  }
+
+  return ret;
+}
+
+/*
+check and remove all unneeded lwip timers before enter tickless
+if not removable and tmr is already removed, use tcpip_timeout_noblock to inform tcpip_thread restore
+*/
+u32_t lwip_rm_unneeded_tmr(u32_t expected_idle_time, void *param)
+{
+	UNUSED(expected_idle_time);
+  UNUSED(param);
+  if (lwip_removed_tmrs == NULL) {
+		lwip_removed_tmrs = (u8_t *)rtos_mem_zmalloc(LWIP_ARRAYSIZE(lwip_cyclic_timers));
+    if (lwip_removed_tmrs == NULL) {
+      return FALSE;
+    }
+	}
+	
+	u8_t i = 0;
+  u32_t ret = TRUE;
+#if LWIP_TCP
+  if (check_tcpip_tcp_timer_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+    sys_untimeout(tcpip_tcp_timer, NULL);
+    lwip_removed_tmrs[i] = 1;
+  } else if (check_tcpip_tcp_timer_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+    if (tcpip_timeout_noblock(TCP_TMR_INTERVAL, tcpip_tcp_timer, NULL) == ERR_OK) {
+      lwip_removed_tmrs[i] = 0;
+    }
+    ret = FALSE;
+  }
+	i++;
+#endif
+#if LWIP_IPV4
+#if IP_REASSEMBLY
+  if (check_ip_reass_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+    sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
+    lwip_removed_tmrs[i] = 1;
+  } else if (check_ip_reass_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+    if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
+      lwip_removed_tmrs[i] = 0;
+    }
+    ret = FALSE;
+  }
+	i++;
+#endif
+#if LWIP_ARP
+  if (check_etharp_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+    sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
+    lwip_removed_tmrs[i] = 1;
+  } else if (check_etharp_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+    if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
+      lwip_removed_tmrs[i] = 0;
+    }
+    ret = FALSE;
+  }
+	i++;
+#endif
+#if LWIP_DHCP
+	/* dhcp_coarse_tmr interval is large enough, no need to remove it,  */
+	i++;
+  if (check_dhcp_fine_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+    sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
+    lwip_removed_tmrs[i] = 1;
+  } else if (check_dhcp_fine_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+    if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
+      lwip_removed_tmrs[i] = 0;
+    }
+    ret = FALSE;
+  }
+	i++;
+#endif
+#if LWIP_AUTOIP
+  if (check_autoip_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+    sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
+    lwip_removed_tmrs[i] = 1;
+  } else if (check_autoip_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+    if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
+      lwip_removed_tmrs[i] = 0;
+    }
+    ret = FALSE;
+  }
+	i++;
+#endif
+#if LWIP_IGMP
+  if (check_igmp_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+    sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
+    lwip_removed_tmrs[i] = 1;
+  } else if (check_igmp_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+    if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
+      lwip_removed_tmrs[i] = 0;
+    }
+    ret = FALSE;
+  }
+	i++;
+#endif
+#endif
+#if LWIP_DNS
+  if (check_dns_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+    sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
+    lwip_removed_tmrs[i] = 1;
+  } else if (check_dns_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+    if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
+      lwip_removed_tmrs[i] = 0;
+    }
+    ret = FALSE;
+  }
+	i++;
+#endif
+#if LWIP_IPV6
+  if (check_nd6_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+    sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
+    lwip_removed_tmrs[i] = 1;
+  } else if (check_nd6_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+    if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
+      lwip_removed_tmrs[i] = 0;
+    }
+    ret = FALSE;
+  }
+	i++;
+#if LWIP_IPV6_REASS
+  if (check_ip6_reass_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+    sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
+    lwip_removed_tmrs[i] = 1;
+  } else if (check_ip6_reass_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+    if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
+      lwip_removed_tmrs[i] = 0;
+    }
+    ret = FALSE;
+  }
+	i++;
+#endif
+#if LWIP_IPV6_MLD
+  if (check_mld6_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+    sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
+    lwip_removed_tmrs[i] = 1;
+  } else if (check_mld6_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+    if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
+      lwip_removed_tmrs[i] = 0;
+    }
+    ret = FALSE;
+  }
+	i++;
+#endif
+#if LWIP_IPV6_DHCP6
+  if (check_dhcp6_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+    sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
+    lwip_removed_tmrs[i] = 1;
+  } else if (check_dhcp6_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+    if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
+      lwip_removed_tmrs[i] = 0;
+    }
+    ret = FALSE;
+  }
+	i++;
+#if LWIP_IPV6_DHCP6_STATEFUL
+  /* dhcp6_lease_tmr interval is large enough, no need to remove it,  */
+  i++;
+#endif
+#endif
+#endif
+
+	return ret;
+}
+#endif
+
 #else /* LWIP_TIMERS && !LWIP_TIMERS_CUSTOM */
 /* Satisfy the TCP code which calls this function */
 void

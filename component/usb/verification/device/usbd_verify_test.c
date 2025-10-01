@@ -683,7 +683,6 @@ static void usbd_verify_xfer_dir(u8 *argv[])
 static void usbd_verify_usage(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Invalid arguments, usage:\n");
-	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify dma dis/en(default)\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify speed full/high_in_full/high(default)\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify ep_default <chiptype>\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd verify set_ep <addr_hex> <1:isoc/2:bulk/3:intr> <interval> <mps> <transsize>\n");
@@ -699,8 +698,8 @@ static void usbd_verify_usage(void)
 }
 
 int cmd_usbd_verify_test_entry(
-	IN  u16 argc,
-	IN  u8  *argv[])
+	u16 argc,
+	u8  *argv[])
 {
 	int status = HAL_OK;
 	const char *sub_cmd;

@@ -1,13 +1,11 @@
 /*
- * Copyright (c) 2024 Realtek Semiconductor Corp.
+ * Copyright (c) 2025 Realtek Semiconductor Corp.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef USB_UAC1_H
 #define USB_UAC1_H
-
-#if CONFIG_USB_UAC
 
 #define UAC_VERSION_1                   0x00
 #define UAC_VERSION_2                   0x20
@@ -194,7 +192,6 @@ struct uac_input_terminal_descriptor {
 #define UAC_INPUT_TERMINAL_PROC_MICROPHONE_ARRAY        0x206
 
 /* Terminals - control selectors */
-
 #define UAC_TERMINAL_CS_COPY_PROTECT_CONTROL            0x01
 
 /* 4.3.2.2 Output Terminal Descriptor */
@@ -378,7 +375,4 @@ struct uac1_status_word {
 } __attribute__((packed));
 #pragma pack(pop)
 
-#endif //CONFIG_USBH_UAC
-
 #endif // USB_UAC1_H
-

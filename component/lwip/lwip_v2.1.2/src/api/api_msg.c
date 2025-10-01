@@ -387,6 +387,22 @@ poll_tcp(void *arg, struct tcp_pcb *pcb)
   return ERR_OK;
 }
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+/*
+Check whether should poll tcp connection
+return 0: no, 1: yes
+ */
+u8_t check_tcp_conn_poll_needed(struct tcp_pcb *pcb)
+{
+  struct netconn *conn = (struct netconn *)pcb->callback_arg;
+  if (conn->state == NETCONN_WRITE || conn->state == NETCONN_CLOSE || conn->flags & NETCONN_FLAG_CHECK_WRITESPACE) {
+    return 1;
+  }
+  return 0;
+}
+#endif
+
 /**
  * Sent callback function for TCP netconns.
  * Signals the conn->sem and calls API_EVENT.

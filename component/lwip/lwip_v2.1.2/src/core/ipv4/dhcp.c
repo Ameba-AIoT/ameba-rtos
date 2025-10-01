@@ -2066,4 +2066,27 @@ dhcp_supplied_address(const struct netif *netif)
   return 0;
 }
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+/*
+Check whether dhcp_fine_tmr can be removed before enter sleep
+return 0: no, 1: yes
+ */
+u8_t check_dhcp_fine_tmr_removable(void)
+{
+  u8_t ret = 1;
+  struct netif *netif;
+  NETIF_FOREACH(netif) {
+    struct dhcp *dhcp = netif_dhcp_data(netif);
+    if (dhcp != NULL && dhcp->state != DHCP_STATE_OFF && dhcp->state != DHCP_STATE_BOUND) {
+      ret = 0;
+      goto exit;
+    }
+  }
+
+exit:
+  return ret;
+}
+#endif
+
 #endif /* LWIP_IPV4 && LWIP_DHCP */
