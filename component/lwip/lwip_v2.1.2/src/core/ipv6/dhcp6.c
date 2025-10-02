@@ -1975,4 +1975,36 @@ dhcp6_tmr(void)
     }
   }
 }
+
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+/*
+Check whether dhcp6_tmr can be removed before enter sleep
+return 0: no, 1: yes
+ */
+u8_t check_dhcp6_tmr_removable(void)
+{
+  u8_t ret = 1;
+  struct netif *netif;
+  NETIF_FOREACH(netif) {
+    struct dhcp6 *dhcp6 = netif_dhcp6_data(netif);
+    if (dhcp6 != NULL) {
+      if (dhcp->state != DHCP6_STATE_OFF && dhcp->state != DHCP6_STATE_HANDLING_CONFIG && dhcp->state != DHCP6_STATE_STATEFUL_BOUND) {
+        ret = 0;
+        goto exit;
+      }
+      for (int i = 1; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
+        if(ip6_addr_isduplicated(netif_ip6_addr_state(netif, i))) {
+          ret = 0;
+          goto exit;
+        }
+      }
+    }
+  }
+
+exit:
+  return ret;
+}
+#endif
+
 #endif /* LWIP_IPV6 && LWIP_IPV6_DHCP6 */
