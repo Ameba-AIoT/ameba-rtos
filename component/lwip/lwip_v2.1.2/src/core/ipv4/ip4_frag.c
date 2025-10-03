@@ -118,6 +118,12 @@ static u16_t ip_reass_pbufcount;
 static void ip_reass_dequeue_datagram(struct ip_reassdata *ipr, struct ip_reassdata *prev);
 static int ip_reass_free_complete_datagram(struct ip_reassdata *ipr, struct ip_reassdata *prev);
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+#include "ameba_soc.h"
+extern SLEEP_ParamDef sleep_param;
+#endif
+
 /**
  * Reassembly timer base function
  * for both NO_SYS == 0 and 1 (!).
@@ -690,6 +696,50 @@ nullreturn:
   pbuf_free(p);
   return NULL;
 }
+
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+/*
+Called in post sleep process to compenstate the ip reass time
+ */
+void comp_ip_reas_time(u32_t ms)
+{
+  struct ip_reassdata *r = reassdatagrams;
+  
+  while (r != NULL) {
+    r->timer = r->timer > ms / IP_TMR_INTERVAL ? r->timer - ms / IP_TMR_INTERVAL : 0;
+    r = r->next;
+  }
+}
+
+/*
+Check whether ip_reass_tmr can be removed before enter sleep
+return 0: no, 1: yes
+ */
+u8_t check_ip_reass_tmr_removable(void)
+{
+  u8_t ret = 1;
+  struct ip_reassdata *r = reassdatagrams;
+  u32_t max_sleep_time = 0;
+
+  while (r != NULL) {
+    if (r->timer > 0) {
+      max_sleep_time = r->timer * IP_TMR_INTERVAL;
+      if (sleep_param.sleep_time > max_sleep_time || sleep_param.sleep_time == 0) {
+        sleep_param.sleep_time = max_sleep_time;
+      }
+      r = r->next;
+    } else {
+      ret = 0;
+      goto exit;
+    }
+  }
+
+exit:
+  return ret;
+}
+#endif
+
 #endif /* IP_REASSEMBLY */
 
 #if IP_FRAG

@@ -21,7 +21,7 @@ static const char *const TAG = "USBH";
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
-
+#define USBH_MSC_TEST_BUF_SIZE      4096
 /* Private function prototypes -----------------------------------------------*/
 
 static int msc_cb_attach(void);
@@ -33,13 +33,21 @@ static int msc_cb_process(usb_host_t *host, u8 id);
 
 static usb_os_sema_t msc_attach_sema;
 static __IO int msc_is_ready = 0;
+static u8 *msc_wt_buf;
+static u8 *msc_rd_buf;
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
-	.dma_enable = FALSE,
+	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = 3U,
-	.isr_task_priority = 4U,
+	.sof_tick_enable = 1U,
+#if defined (CONFIG_AMEBAGREEN2)
+	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#endif
 };
 
 static usbh_msc_cb_t msc_usr_cb = {
@@ -51,9 +59,6 @@ static usbh_msc_cb_t msc_usr_cb = {
 static usbh_user_cb_t usbh_usr_cb = {
 	.process = msc_cb_process
 };
-
-static const u8 msc_wt_buf[] = "1234567890";
-static u8 msc_rd_buf[16];
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -104,23 +109,34 @@ static void usbh_emc_test(void *param)
 	int drv_num = 0;
 	FRESULT res;
 	char logical_drv[4];
-	char path[64];
+	char path[64] = {'0'};
 	int ret = 0;
+	u32 br;
 	u32 bw;
-	u32 round = 0;
-	u32 start;
-	u32 elapse;
+	u32 test_sizes[] = {512, 1024, 2048, 4096, 8192};
+	u32 test_size;
+	u8 data;
 	u32 i;
-	u32 len;
 
 	UNUSED(param);
 
 	usb_os_sema_create(&msc_attach_sema);
+	msc_wt_buf = (u8 *)rtos_mem_zmalloc(USBH_MSC_TEST_BUF_SIZE);
+	if (msc_wt_buf == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to alloc test buf\n");
+		goto exit;
+	}
+
+	msc_rd_buf = (u8 *)rtos_mem_zmalloc(USBH_MSC_TEST_BUF_SIZE);
+	if (msc_rd_buf == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to alloc test buf\n");
+		goto exit_free;
+	}
 
 	ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to init USB\n");
-		goto exit;
+		goto exit_free;
 	}
 
 	usbh_msc_init(&msc_usr_cb);
@@ -163,97 +179,79 @@ static void usbh_emc_test(void *param)
 				break;
 			}
 		}
-
+		RTK_LOGS(TAG, RTK_LOG_INFO, "FatFS USB W/R test start\n");
+next_file:
 		sprintf(&path[3], "TEST%ld.DAT", filenum);
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Open test file '%s'\n", path);
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Open test file '%s'\n", path);
 
-		// open test file
+		/* open test file */
 		res = f_open(&f, path, FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
 		if (res) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to open file: TEST%d.DAT\n", filenum);
 			goto exit_unmount;
 		}
 
-		start = SYSTIMER_TickGet();
-		len = strlen((const char *)msc_wt_buf);
-		while (msc_is_ready) {
-			++round;
+		/* change write data */
+		data = _rand() % 0xFF;
+		memset(msc_wt_buf, data, USBH_MSC_TEST_BUF_SIZE);
 
-			elapse = SYSTIMER_GetPassTime(start);
-			if (elapse >= 1000) {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Test round %lu#\n", round);
-				start = SYSTIMER_TickGet();
+		for (i = 0; i < sizeof(test_sizes) / sizeof(test_sizes[0]); ++i) {
+			test_size = test_sizes[i];
+			if (test_size > USBH_MSC_TEST_BUF_SIZE) {
+				break;
+			}
+			res = f_write(&f, (void *)msc_wt_buf, test_size, (UINT *)&bw);
+			if (res || (bw < test_size)) {
+				f_lseek(&f, 0);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "W err bw=%d, rc=%d\n", bw, res);
+				ret = HAL_ERR_HW;
+				break;
 			}
 
-			ret = HAL_OK;
+			/* move the file pointer to the file head*/
 			res = f_lseek(&f, 0);
 
-			do {
-				res = f_write(&f, msc_wt_buf, len, &bw);
-				if (res) {
-					f_lseek(&f, 0);
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "Write error bw=%d, rc=%d\n", bw, res);
-					ret = HAL_ERR_HW;
-					break;
-				}
-			} while (bw < len);
-
-			if (ret != HAL_OK) {
+			res = f_read(&f, (void *)msc_rd_buf, test_size, (UINT *)&br);
+			if (res || (br < test_size)) {
+				f_lseek(&f, 0);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "R err br=%d, rc=%d\n", br, res);
+				ret = HAL_ERR_HW;
 				break;
 			}
 
-			f_sync(&f);
-
+			/* move the file pointer to the file head*/
 			res = f_lseek(&f, 0);
 
-			do {
-				res = f_read(&f, msc_rd_buf, len, &bw);
-				if (res) {
-					f_lseek(&f, 0);
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "Read error bw=%d, rc=%d\n", bw, res);
-					ret = HAL_ERR_HW;
-					break;
-				}
-			} while (bw < len);
-
-			if (ret != HAL_OK) {
+			/* Check TRX data*/
+			if (!(memcmp(msc_wt_buf, msc_rd_buf, test_size) == 0)) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "W-R check err: %x-%x-%x-%x vs %x-%x-%x-%x\n",
+						 msc_wt_buf[0], msc_wt_buf[1], msc_wt_buf[test_size - 2], msc_wt_buf[test_size - 1],
+						 msc_rd_buf[0], msc_rd_buf[1], msc_rd_buf[test_size - 2], msc_rd_buf[test_size - 1]);
+				ret = HAL_ERR_HW;
 				break;
 			}
-
-			for (i = 0; i < len; i++) {
-				if (msc_wt_buf[i] != msc_rd_buf[i]) {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "Data check error\n");
-					ret = HAL_ERR_HW;
-					break;
-				}
-			}
-
-			if (ret != HAL_OK) {
-				break;
-			}
-
-			usb_os_memset(msc_rd_buf, 0, len);
-
-			usb_os_sleep_ms(1);
 		}
 
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Test aborted, round %d\n", round);
-
-		// close source file
+		/* close source file */
 		res = f_close(&f);
 		if (res) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to close file: %d\n", res);
 			ret = 1;
 		} else {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Test file closed\n");
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Test file closed\n");
 		}
 
 		if (!ret) {
-			filenum++;
+			if (filenum++ > 10) {
+				filenum = 0;
+			}
+			goto next_file;
+		} else {
+			break;
 		}
-		ret = 0;
 	}
 
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "Test abort: %d\n", ret);
 exit_unmount:
 	if (f_unmount(logical_drv) != FR_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to unmount logical drive\n");
@@ -265,6 +263,13 @@ exit_unregister:
 exit_deinit:
 	usbh_msc_deinit();
 	usbh_deinit();
+exit_free:
+	if (msc_wt_buf) {
+		rtos_mem_free(msc_wt_buf);
+	}
+	if (msc_rd_buf) {
+		rtos_mem_free(msc_rd_buf);
+	}
 exit:
 	usb_os_sema_delete(msc_attach_sema);
 	rtos_task_delete(NULL);

@@ -25,8 +25,7 @@
 
 #define USBH_UAC_ISOC_TEST_THREAD_PRIORITY    4
 #define USBH_UAC_MAIN_THREAD_PRIORITY         5
-#define USBH_UAC_ISR_THREAD_PRIORITY          6
-#define USBH_UAC_HOTPLUG_THREAD_PRIORITY      7
+#define USBH_UAC_HOTPLUG_THREAD_PRIORITY      6
 
 #define USBH_UAC_XFER_CHECK           0   /* used to check the trx data valid */
 
@@ -64,10 +63,8 @@ static int usbh_uac_err_count;
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_FULL,
-	.dma_enable = 1U,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
-	.isr_task_priority  = USBH_UAC_ISR_THREAD_PRIORITY,
 	.main_task_priority = USBH_UAC_MAIN_THREAD_PRIORITY,
 	.sof_tick_enable = 1U,
 	.alt_max_cnt = 10U,

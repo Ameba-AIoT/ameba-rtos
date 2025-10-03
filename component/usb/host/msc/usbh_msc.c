@@ -196,8 +196,7 @@ static int usbh_msc_setup(usb_host_t *host)
 		setup.b.wValue = 0U;
 		setup.b.wIndex = 0U;
 		setup.b.wLength = 1U;
-		status = usbh_ctrl_request(host, &setup, (u8 *)(void *)&msc->max_lun);
-
+		status = usbh_ctrl_request(host, &setup, (u8 *)(void *)msc->max_lun_buf);
 		/* When devices do not support the GetMaxLun request, this should
 		   be considred as only one logical unit is supported */
 		if (status == HAL_ERR_PARA) {
@@ -206,6 +205,7 @@ static int usbh_msc_setup(usb_host_t *host)
 		}
 
 		if (status == HAL_OK) {
+			msc->max_lun = *(msc->max_lun_buf);
 			msc->max_lun = (msc->max_lun > USBH_MSC_MAX_LUN) ? USBH_MSC_MAX_LUN : (msc->max_lun + 1U);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Max lun %d\n", msc->max_lun);
 
@@ -647,7 +647,7 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 
 	case BOT_DATA_IN:
 		/* Receive first packet */
-		usbh_bulk_receive_data(host, msc->hbot.pbuf, msc->bulk_in_packet_size, msc->bulk_in_pipe);
+		usbh_bulk_receive_data(host, msc->hbot.pbuf, cbw->field.DataTransferLength, msc->bulk_in_pipe);
 
 		msc->hbot.state = BOT_DATA_IN_WAIT;
 
@@ -658,24 +658,8 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 		urb_state = usbh_get_urb_state(host, msc->bulk_in_pipe);
 
 		if (urb_state == USBH_URB_DONE) {
-			/* Adjust Data pointer and data length */
-			if (cbw->field.DataTransferLength > msc->bulk_in_packet_size) {
-				msc->hbot.pbuf += msc->bulk_in_packet_size;
-				cbw->field.DataTransferLength -= msc->bulk_in_packet_size;
-			} else {
-				cbw->field.DataTransferLength = 0U;
-			}
-
-			/* More Data To be Received */
-			if (cbw->field.DataTransferLength > 0U) {
-				/* Send next packet */
-				usbh_bulk_receive_data(host, msc->hbot.pbuf, msc->bulk_in_packet_size, msc->bulk_in_pipe);
-			} else {
-				/* If value was 0, and successful transfer, then change the state */
-				msc->hbot.state  = BOT_RECEIVE_CSW;
-
-				usbh_notify_urb_state_change(host, 0);
-			}
+			msc->hbot.state  = BOT_RECEIVE_CSW;
+			usbh_notify_urb_state_change(host, 0);
 		} else if (urb_state == USBH_URB_STALL) {
 			/* This is Data IN Stage STALL Condition */
 			msc->hbot.state  = BOT_ERROR_IN;
@@ -694,7 +678,8 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 
 	case BOT_DATA_OUT:
 
-		usbh_bulk_send_data(host, msc->hbot.pbuf, msc->bulk_out_packet_size, msc->bulk_out_pipe);
+		msc->tick = usbh_get_tick(host);
+		usbh_bulk_send_data(host, msc->hbot.pbuf, cbw->field.DataTransferLength, msc->bulk_out_pipe);
 
 		msc->hbot.state  = BOT_DATA_OUT_WAIT;
 		break;
@@ -703,29 +688,15 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 		urb_state = usbh_get_urb_state(host, msc->bulk_out_pipe);
 
 		if (urb_state == USBH_URB_DONE) {
-			/* Adjust Data pointer and data length */
-			if (cbw->field.DataTransferLength > msc->bulk_out_packet_size) {
-				msc->hbot.pbuf += msc->bulk_out_packet_size;
-				cbw->field.DataTransferLength -= msc->bulk_out_packet_size;
-			} else {
-				cbw->field.DataTransferLength = 0U;
-			}
-
-			/* More Data To be Sent */
-			if (cbw->field.DataTransferLength > 0U) {
-				usbh_bulk_send_data(host, msc->hbot.pbuf, msc->bulk_out_packet_size, msc->bulk_out_pipe);
-			} else {
-				/* If value was 0, and successful transfer, then change the state */
-				msc->hbot.state  = BOT_RECEIVE_CSW;
-			}
-
+			msc->hbot.state = BOT_RECEIVE_CSW;
 			usbh_notify_urb_state_change(host, 0);
 		}
 
 		else if (urb_state == USBH_URB_BUSY) {
-			/* Resend same data */
-			msc->hbot.state  = BOT_DATA_OUT;
-
+			if (usbh_get_elapsed_ticks(host, msc->tick) >= 100) {
+				/* Resend same data */
+				msc->hbot.state  = BOT_DATA_OUT;
+			}
 			usbh_notify_urb_state_change(host, 0);
 		}
 
@@ -934,7 +905,6 @@ int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length)
 		}
 	}
 	msc->state = MSC_IDLE;
-
 	return HAL_OK;
 }
 
@@ -989,30 +959,55 @@ int usbh_msc_write(u8 lun, u32 address, u8 *pbuf, u32 length)
 int usbh_msc_init(usbh_msc_cb_t *cb)
 {
 	int ret = HAL_OK;
-	void *buf = NULL;
 	usbh_msc_host_t *msc = &usbh_msc_host;
 
 	if (cb != NULL) {
 		msc->cb = cb;
 	}
 
-	buf = usb_os_malloc(USBH_BOT_CSW_LENGTH);
-	if (buf != NULL) {
-		msc->hbot.csw = buf;
-	} else {
+	msc->hbot.cbw = usb_os_malloc(USBH_BOT_CSW_LENGTH);
+	if (msc->hbot.cbw == NULL) {
 		return HAL_ERR_MEM;
 	}
 
-	buf = usb_os_malloc(USBH_BOT_CBW_LENGTH);
-	if (buf != NULL) {
-		msc->hbot.cbw = buf;
-	} else {
-		usb_os_mfree(msc->hbot.csw);
-		return HAL_ERR_MEM;
+	msc->hbot.csw = usb_os_malloc(USBH_BOT_CBW_LENGTH);
+	if (msc->hbot.csw == NULL) {
+		ret = HAL_ERR_MEM;
+		goto exit_free;
+	}
+
+	msc->hbot.data = usb_os_malloc(USBH_BOT_DATA_LENGTH);
+	if (msc->hbot.data == NULL) {
+		ret = HAL_ERR_MEM;
+		goto exit_free;
+	}
+
+	msc->max_lun_buf = usb_os_malloc(1);
+	if (msc->max_lun_buf == NULL) {
+		ret = HAL_ERR_MEM;
+		goto exit_free;
 	}
 
 	ret = usbh_register_class(&usbh_msc_driver);
+	return ret;
 
+exit_free:
+	if (msc->max_lun_buf != NULL) {
+		usb_os_mfree(msc->max_lun_buf);
+		msc->max_lun_buf = NULL;
+	}
+	if (msc->hbot.data != NULL) {
+		usb_os_mfree(msc->hbot.data);
+		msc->hbot.data = NULL;
+	}
+	if (msc->hbot.csw != NULL) {
+		usb_os_mfree(msc->hbot.csw);
+		msc->hbot.csw = NULL;
+	}
+	if (msc->hbot.cbw != NULL) {
+		usb_os_mfree(msc->hbot.cbw);
+		msc->hbot.cbw = NULL;
+	}
 	return ret;
 }
 
@@ -1024,11 +1019,41 @@ int usbh_msc_deinit(void)
 {
 	int ret = HAL_OK;
 	usbh_msc_host_t *msc = &usbh_msc_host;
+	usb_host_t *host = msc->host;
+
+	if (msc->bulk_in_pipe) {
+		usbh_close_pipe(host, msc->bulk_in_pipe);
+		usbh_free_pipe(host, msc->bulk_in_pipe);
+		msc->bulk_in_pipe = 0U;
+	}
+
+	if (msc->bulk_out_pipe) {
+		usbh_close_pipe(host, msc->bulk_out_pipe);
+		usbh_free_pipe(host, msc->bulk_out_pipe);
+		msc->bulk_out_pipe = 0U;
+	}
+
+	if (msc->max_lun_buf != NULL) {
+		usb_os_mfree(msc->max_lun_buf);
+		msc->max_lun_buf = NULL;
+	}
+
+	if (msc->hbot.data != NULL) {
+		usb_os_mfree(msc->hbot.data);
+		msc->hbot.data = NULL;
+	}
+
+	if (msc->hbot.csw != NULL) {
+		usb_os_mfree(msc->hbot.csw);
+		msc->hbot.csw = NULL;
+	}
+
+	if (msc->hbot.cbw != NULL) {
+		usb_os_mfree(msc->hbot.cbw);
+		msc->hbot.cbw = NULL;
+	}
 
 	ret = usbh_unregister_class(&usbh_msc_driver);
-
-	usb_os_mfree(msc->hbot.csw);
-	usb_os_mfree(msc->hbot.cbw);
 
 	return ret;
 }
