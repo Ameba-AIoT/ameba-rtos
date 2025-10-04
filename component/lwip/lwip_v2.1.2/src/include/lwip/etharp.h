@@ -101,6 +101,12 @@ err_t etharp_raw(struct netif *netif, const struct eth_addr *ethsrc_addr,
            const struct eth_addr *hwdst_addr, const ip4_addr_t *ipdst_addr,
            const u16_t opcode);
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+void comp_arp_ctime(u32_t ms);
+u8_t check_etharp_tmr_removable(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

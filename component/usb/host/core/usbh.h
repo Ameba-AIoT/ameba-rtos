@@ -169,7 +169,7 @@ typedef struct {
 	u16 ptx_fifo_depth;                                 /* pTxFIFO depth in size of dword*/
 
 	u8 isr_priority;									/* USB ISR priority */
-	u8 isr_task_priority;								/* USB ISR thread priority */
+	u8 isr_in_critical;									/* Process USB ISR in critical state. */
 	u8 main_task_priority;								/* USB main thread priority */
 
 	u8 alt_max_cnt;										/* USB support max alt setting num */
@@ -177,7 +177,6 @@ typedef struct {
 	u8 transfer_retry_max_cnt;							/* USB transfer retry max count */
 
 	u8 speed;										/* USB speed, USB_SPEED_HIGH, USB_SPEED_HIGH_IN_FULL or USB_SPEED_LOW 0~3*/
-	u8 dma_enable;									/* Enable USB internal DMA mode, 0-Disable, 1-Enable */
 
 	/* 	used for get the usb host tick
 		if sof_tick_enable = 1, usbh_get_tick will return the tick which support by sof interrupt(should enable sof interrupt)
@@ -198,7 +197,6 @@ typedef struct {
 	int(*setup)(struct _usb_host_t *host);				/* Called after class attached to process class standard control requests */
 	int(*process)(struct _usb_host_t *host, u32 msg);		/* Called after class setup to process class specific transfers */
 	int(*sof)(struct _usb_host_t *host);					/* Called at SOF interrupt */
-	int(*nak)(struct _usb_host_t *host, u8 pipe_num);		/* Called at NAK interrupt of specific pipe */
 } usbh_class_driver_t;
 
 /* USB host user callback */
@@ -324,6 +322,7 @@ int usbh_intr_send_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
 int usbh_isoc_receive_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
 int usbh_isoc_send_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
 u32 usbh_get_last_transfer_size(usb_host_t *host, u8 pipe);
+u32 usbh_get_dev_address(void);
 
 int usbh_enable_nak_interrupt(usb_host_t *host, u8 pipe_num);
 int usbh_check_nak_timeout(usb_host_t *host, u8 pipe_num, u8 tick_cnt);

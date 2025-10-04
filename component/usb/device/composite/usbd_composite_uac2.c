@@ -990,7 +990,7 @@ const usbd_class_driver_t usbd_composite_uac_driver = {
 /* Private functions ---------------------------------------------------------*/
 
 #if USBD_UAC_ISOC_XFER_DEBUG
-u32 usbd_composite_uac_get_timetick(void) //ms
+u32 usbd_composite_uac_get_timetick(void) //us
 {
 #if defined(CONFIG_ARM_CORE_CA32) && CONFIG_ARM_CORE_CA32
 	return (u32)((arm_arch_timer_count() / 50) & (0xFFFFFFFF));

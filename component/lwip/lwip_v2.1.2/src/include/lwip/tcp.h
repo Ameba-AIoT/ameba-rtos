@@ -498,6 +498,12 @@ void tcp_ext_arg_set(struct tcp_pcb *pcb, uint8_t id, void *arg);
 void *tcp_ext_arg_get(const struct tcp_pcb *pcb, uint8_t id);
 #endif
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+void comp_tcp_ticks(u32_t ms);
+u8_t check_tcp_tmr_removable(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

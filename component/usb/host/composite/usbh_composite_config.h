@@ -49,7 +49,7 @@ typedef struct {
 
 	usbh_composite_cb_t *cb;
 	usb_host_t *host;
-	usbh_compsoite_state_t state;
+	__IO usbh_compsoite_state_t state;
 } usbh_composite_host_t;
 
 /* Exported macros -----------------------------------------------------------*/

@@ -16,22 +16,23 @@
 #include "os_wrapper.h"
 
 /* Exported defines ----------------------------------------------------------*/
-#define USBH_UAC_TERM_MAX_CNT         8
-#define USBH_UAC_FU_MAX_CNT           8
-#define USBH_UAC_MAX_CHANNEL          8
+#define USBH_UAC_TERM_MAX_CNT          8U
+#define USBH_UAC_FU_MAX_CNT            8U
+#define USBH_UAC_MAX_CHANNEL           8U
 
-#define USBH_UAC_ISOC_OUT_DIR          0
-#define USBH_UAC_ISOC_IN_DIR           1
+#define USBH_UAC_BIT_TO_BYTE           8U
+#define USBH_UAC_ONE_KHZ               1000U
 
-#define USBH_UAC_ALT_SETTING_MAX       10
-#define USBH_UAC_FREQ_FORMAT_MAX       6
+#define USBH_UAC_ISOC_OUT_DIR          0U
+#define USBH_UAC_ISOC_IN_DIR           1U
+
+#define USBH_UAC_ALT_SETTING_MAX       10U
+#define USBH_UAC_FREQ_FORMAT_MAX       6U
 
 #define USBH_UAC_SAMPLING_FREQ_CONTROL 0x100
 #define USBH_UAC_VERSION_01_10         0x110
 
-#define UBSH_UAC_AUDIO_FMT_FREQ_LEN    512
-#define UBSH_UAC_ALIGN4(x)             (((x) + 3) & ~3)
-#define UBSH_UAC_CAL_FRAME(n, d)       UBSH_UAC_ALIGN4((((n) + (d) - 1) / (d)))
+#define UBSH_UAC_AUDIO_FMT_FREQ_LEN    512U
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -81,11 +82,11 @@ typedef struct {
 
 typedef struct {
 	/* terminals array */
-	usbh_uac_term_info terminals[USBH_UAC_TERM_MAX_CNT];
 	usbh_uac_vol_ctrl_info controls[USBH_UAC_FU_MAX_CNT];
+	usbh_uac_term_info terminals[USBH_UAC_TERM_MAX_CNT];
 
-	int terminal_count;
-	int volume_ctrl_count;
+	u32 volume_ctrl_count;
+	u32 terminal_count;
 	u8 best_match_idx;
 	u8 ac_itf_idx;
 } usbh_uac_ac_itf_info_t;
@@ -108,10 +109,15 @@ typedef struct {
 	usbh_uac_buf_t *buf_list_node;
 	usbh_uac_buf_t *ring_buf;      /* write/read buf,maybe just read/write part of the packet */
 	usbh_uac_buf_t *xfer_buf;      /* buffer is xfer */
-	u32 free_buf_lock_valid;
-	u32 ready_buf_lock_valid;
-	u32 remain_size;
 	u8 *isoc_buf;
+	u32 remain_size;
+
+	u32 sample_freq;               /* choose frequency */
+	u32 sample_rem;                /* remainder from division sampling_freq/pkt_per_second */
+	u32 sample_accum;              /* sample accumulator */
+	u32 last_sample_accum;         /* sample accumulator */
+	u32 pkt_per_second;            /* packets per second */
+
 	u16 frame_cnt;
 	__IO u16 mps;
 	__IO u8 sema_valid;
@@ -136,7 +142,8 @@ typedef struct {
 	u32 isoc_len;
 	u32 isoc_interval;
 	__IO u32 isoc_tick;
-	u16 isoc_packet_size;
+	u16 isoc_packet_size_small;    /* small packet sizes in samples */
+	u16 isoc_packet_size;          /* large packet sizes in samples */
 	u8 isoc_pipe;
 	u8 isoc_ep_addr;
 	__IO usbh_uac_ep_trx_state_t isoc_state;

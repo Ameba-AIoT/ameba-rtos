@@ -122,6 +122,11 @@ extern void dhcp6_set_ntp_servers(u8_t num_ntp_servers, const ip_addr_t* ntp_ser
 
 #define netif_dhcp6_data(netif) ((struct dhcp6*)netif_get_client_data(netif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP6))
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+u8_t check_dhcp6_tmr_removable(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

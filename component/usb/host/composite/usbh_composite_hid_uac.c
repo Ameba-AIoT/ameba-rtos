@@ -14,11 +14,11 @@
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
-static int usbh_uac_cb_attach(usb_host_t *host);
-static int usbh_uac_cb_detach(usb_host_t *host);
-static int usbh_uac_cb_process(usb_host_t *host, u32 msg);
-static int usbh_uac_cb_setup(usb_host_t *host);
-static int usbh_uac_cb_sof(usb_host_t *host);
+static int usbh_composite_hid_uac_cb_attach(usb_host_t *host);
+static int usbh_composite_hid_uac_cb_detach(usb_host_t *host);
+static int usbh_composite_hid_uac_cb_process(usb_host_t *host, u32 msg);
+static int usbh_composite_hid_uac_cb_setup(usb_host_t *host);
+static int usbh_composite_hid_uac_cb_sof(usb_host_t *host);
 
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "UAC";
@@ -26,20 +26,34 @@ static const char *const TAG = "UAC";
 /* USB Standard Device Descriptor */
 static usbh_class_driver_t usbh_composite_driver = {
 	.class_code = USB_CLASS_AUDIO,
-	.attach = usbh_uac_cb_attach,
-	.detach = usbh_uac_cb_detach,
-	.setup = usbh_uac_cb_setup,
-	.process = usbh_uac_cb_process,
-	.sof = usbh_uac_cb_sof,
+	.attach = usbh_composite_hid_uac_cb_attach,
+	.detach = usbh_composite_hid_uac_cb_detach,
+	.setup = usbh_composite_hid_uac_cb_setup,
+	.process = usbh_composite_hid_uac_cb_process,
+	.sof = usbh_composite_hid_uac_cb_sof,
 };
 
 static usbh_composite_host_t usbh_composite_host;
 
-static int usbh_composite_deinit_class(usbh_class_driver_t **class)
+static int usbh_composite_deinit_uac_class(void)
 {
-	if (class) {
+	usbh_composite_host_t *chost = &usbh_composite_host;
+
+	if (chost->uac) {
 		usbh_composite_uac_deinit();
-		*class = NULL;
+		chost->uac = NULL;
+	}
+
+	return HAL_OK;
+}
+
+static int usbh_composite_deinit_hid_class(void)
+{
+	usbh_composite_host_t *chost = &usbh_composite_host;
+
+	if (chost->hid) {
+		usbh_composite_hid_deinit();
+		chost->hid = NULL;
 	}
 
 	return HAL_OK;
@@ -50,7 +64,7 @@ static int usbh_composite_deinit_class(usbh_class_driver_t **class)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_uac_cb_attach(usb_host_t *host)
+static int usbh_composite_hid_uac_cb_attach(usb_host_t *host)
 {
 	int ret;
 	usbh_composite_host_t *chost = &usbh_composite_host;
@@ -60,7 +74,7 @@ static int usbh_uac_cb_attach(usb_host_t *host)
 	if ((chost->hid != NULL) && (chost->hid->attach != NULL)) {
 		ret = chost->hid->attach(host);
 		if (ret != HAL_OK) {
-			usbh_composite_deinit_class(&(chost->hid));
+			usbh_composite_deinit_hid_class();
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Can not support hid\n");
 		}
 	}
@@ -68,7 +82,7 @@ static int usbh_uac_cb_attach(usb_host_t *host)
 	if ((chost->uac != NULL) && (chost->uac->attach)) {
 		ret = chost->uac->attach(host);
 		if (ret != HAL_OK) {
-			usbh_composite_deinit_class(&(chost->uac));
+			usbh_composite_deinit_uac_class();
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Can not support uac\n");
 		}
 	}
@@ -83,7 +97,7 @@ static int usbh_uac_cb_attach(usb_host_t *host)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_uac_cb_detach(usb_host_t *host)
+static int usbh_composite_hid_uac_cb_detach(usb_host_t *host)
 {
 	usbh_composite_host_t *chost = &usbh_composite_host;
 	UNUSED(host);
@@ -106,7 +120,7 @@ static int usbh_uac_cb_detach(usb_host_t *host)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_uac_cb_setup(usb_host_t *host)
+static int usbh_composite_hid_uac_cb_setup(usb_host_t *host)
 {
 	usbh_composite_host_t *chost = &usbh_composite_host;
 	int ret = HAL_OK;
@@ -136,7 +150,7 @@ static int usbh_uac_cb_setup(usb_host_t *host)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_uac_cb_sof(usb_host_t *host)
+static int usbh_composite_hid_uac_cb_sof(usb_host_t *host)
 {
 	usbh_composite_host_t *chost = &usbh_composite_host;
 
@@ -156,7 +170,7 @@ static int usbh_uac_cb_sof(usb_host_t *host)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_uac_cb_process(usb_host_t *host, u32 msg)
+static int usbh_composite_hid_uac_cb_process(usb_host_t *host, u32 msg)
 {
 	usbh_composite_host_t *chost = &usbh_composite_host;
 	int ret = HAL_BUSY;
@@ -222,9 +236,10 @@ int usbh_composite_deinit(void)
 	usbh_composite_host_t *chost = &usbh_composite_host;
 
 	usbh_unregister_class(&usbh_composite_driver);
+	chost->state = USBH_COMPOSITE_IDLE;
 
-	usbh_composite_deinit_class(&(chost->uac));
-	usbh_composite_deinit_class(&(chost->hid));
+	usbh_composite_deinit_uac_class();
+	usbh_composite_deinit_hid_class();
 
 	chost->cb = NULL;
 

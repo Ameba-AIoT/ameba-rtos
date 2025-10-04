@@ -31,10 +31,8 @@ static int usbh_usr_process(usb_host_t *host, u8 id);
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
-	.dma_enable = FALSE,
 	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = 3U,
-	.isr_task_priority = 4U,
 };
 
 static usbh_user_cb_t usbh_usr_cb = {

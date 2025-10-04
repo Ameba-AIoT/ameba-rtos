@@ -102,11 +102,29 @@ static int usbh_composite_uac_count_list_blocks(struct list_head *head)
   * @retval void
   */
 extern void usbh_composite_hid_status_dump_thread(void);
+static void usbh_composite_uac_status_dump(void)
+{
+	usbh_composite_uac_t *uac = &usbh_composite_uac;
+	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_out);
+	usbh_uac_ep_cfg_t *ep = &(uac->isoc_out_info->ep_info);
+
+	if (usbh_composite_uac_usb_status_check() == HAL_OK) {
+		int ready_cnt = usbh_composite_uac_count_list_blocks(&(buf_ctrl->ready_buf_lock_list.list));
+		int free_cnt = usbh_composite_uac_count_list_blocks(&(buf_ctrl->free_buf_lock_list.list));
+		int write_busy_cnt = (buf_ctrl->ring_buf != NULL) ? 1 : 0;
+		int xfer_busy_cnt = (buf_ctrl->xfer_buf != NULL) ? 1 : 0;
+
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "UAC:%d-%d-%d-%d xfer=%d %d-%d-%d\n", free_cnt, ready_cnt, write_busy_cnt, xfer_busy_cnt,
+				 buf_ctrl->transfer_continue, uac->ctrl_state, uac->xfer_state, ep->isoc_state);
+
+		// usbh_composite_hid_status_dump_thread();
+	}
+}
+
 static void usbh_composite_uac_status_dump_thread(void *param)
 {
 	UNUSED(param);
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_out);
 
 	uac->dump_status_task_alive = 1;
 	uac->dump_status_task_exit = 1;
@@ -114,19 +132,8 @@ static void usbh_composite_uac_status_dump_thread(void *param)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC dump thread\n");
 
 	while (uac->dump_status_task_exit) {
-		if (usbh_composite_uac_usb_status_check() == HAL_OK) {
-			int ready_cnt = usbh_composite_uac_count_list_blocks(&(buf_ctrl->ready_buf_lock_list.list));
-			int free_cnt = usbh_composite_uac_count_list_blocks(&(buf_ctrl->free_buf_lock_list.list));
-			int write_busy_cnt = (buf_ctrl->ring_buf != NULL) ? 1 : 0;
-			int xfer_busy_cnt = (buf_ctrl->xfer_buf != NULL) ? 1 : 0;
 
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "UAC DUMP:%d-%d-%d-%d xfer=%d %d\t", free_cnt, ready_cnt, write_busy_cnt, xfer_busy_cnt,
-					 buf_ctrl->transfer_continue, uac->ctrl_state);
-
-			usbh_composite_hid_status_dump_thread();
-
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
-		}
+		usbh_composite_uac_status_dump();
 
 		rtos_time_delay_ms(USBH_COMPOSITE_HID_UAC_DEBUG_LOOP_TIME);
 	}
@@ -397,7 +404,7 @@ static int usbh_composite_uac_find_best_ac(void)
 	usbh_uac_vol_ctrl_info *best = NULL;
 	usbh_uac_vol_ctrl_info *info;
 	int best_priority = -1;
-	int i;
+	u32 i;
 
 	for (i = 0; i < ac_info->volume_ctrl_count; i++) {
 		usbh_uac_vol_ctrl_info *current = &(ac_info->controls[i]);
@@ -475,6 +482,8 @@ static int usbh_composite_uac_parse_ac(u8 *pbuf, u32 *length, u32 buf_length)
 	usbh_uac_ac_itf_info_t *ac_info = &(uac->isoc_ac_info);
 	usb_ac_itf_desc_header_t *ac_header;
 	u8 *desc;
+	u32 t;
+	u8 ch;
 	u8 type;
 	u8 subtype;
 	u8 len;
@@ -571,13 +580,13 @@ static int usbh_composite_uac_parse_ac(u8 *pbuf, u32 *length, u32 buf_length)
 
 					vol_info.master_support = (desc[6] & UAC_FU_VOLUME) ? 1 : 0;
 
-					for (int ch = 0; ch < vol_info.num_channels; ch++) {
+					for (ch = 0; ch < vol_info.num_channels; ch++) {
 						if (7 + ch < len) {
 							vol_info.channel_support[ch] = (desc[7 + ch] & UAC_FU_VOLUME) ? 1 : 0;
 						}
 					}
 
-					for (int t = 0; t < ac_info->terminal_count; t++) {
+					for (t = 0; t < ac_info->terminal_count; t++) {
 						if (!ac_info->terminals[t].is_input &&
 							ac_info->terminals[t].source_id == vol_info.unit_id) {
 
@@ -1209,7 +1218,7 @@ static int usbh_composite_uac_ctrl_setting(usb_host_t *host, u32 msg)
 
 	switch (uac->ctrl_state) {
 	case UAC_STATE_CTRL_IDLE:
-		usb_os_sleep_ms(1000);
+		ret_status = HAL_OK;
 		break;
 
 	case UAC_STATE_SET_IN_ALT:
@@ -1309,8 +1318,7 @@ static int usbh_composite_uac_cb_process(usb_host_t *host, u32 msg)
 			}
 		} else if (msg == 0x00) { //ctrl msg
 			ret = usbh_composite_uac_ctrl_setting(host, 0);
-			if (ret == HAL_OK) {
-			} else {
+			if (ret != HAL_OK) {
 				ret = usbh_notify_class_state_change(host, 0);
 			}
 		}
@@ -1334,6 +1342,26 @@ static int usbh_composite_uac_cb_process(usb_host_t *host, u32 msg)
 	return ret;
 }
 
+static u32 usbh_composite_uac_next_packet_size(usbh_uac_buf_ctrl_t *pdata_ctrl)
+{
+	usbh_composite_uac_t *uac = &usbh_composite_uac;
+	usbh_uac_ep_cfg_t *ep = &(uac->isoc_out_info->ep_info);
+	u32 sample_accum = 0;
+	u32 ret;
+
+	sample_accum = pdata_ctrl->sample_accum + pdata_ctrl->sample_rem;
+	if (sample_accum >= pdata_ctrl->pkt_per_second) {
+		sample_accum -= pdata_ctrl->pkt_per_second;
+		ret = ep->isoc_packet_size;
+	} else {
+		ret = ep->isoc_packet_size_small;
+	}
+
+	pdata_ctrl->last_sample_accum = sample_accum;
+
+	return ret;
+}
+
 /**
   * @brief  Write data to a USB audio ring buffer
   * @param  pdata_ctrl: Pointer to the buffer control structure
@@ -1345,11 +1373,12 @@ static int usbh_composite_uac_cb_process(usb_host_t *host, u32 msg)
 static int usbh_composite_uac_write_ring_buf(usbh_uac_buf_ctrl_t *pdata_ctrl, u8 *buffer, u32 size, u32 *written_len)
 {
 	usbh_uac_buf_t *pbuf = NULL;
-	u32 mps = pdata_ctrl->mps;
+	u32 mps;
 	u32 offset = 0;
 	u32 remain_size = pdata_ctrl->remain_size;
 
 	if (pdata_ctrl->ring_buf) {
+		mps = usbh_composite_uac_next_packet_size(pdata_ctrl);
 		u32 can_copy = mps - remain_size;
 		u32 copy_len = size < can_copy ? size : can_copy;
 
@@ -1365,25 +1394,35 @@ static int usbh_composite_uac_write_ring_buf(usbh_uac_buf_ctrl_t *pdata_ctrl, u8
 			usbh_composite_uac_lock_list_add_tail(&pdata_ctrl->ring_buf->list, &pdata_ctrl->ready_buf_lock_list);
 			pdata_ctrl->ring_buf = NULL;
 			pdata_ctrl->remain_size = 0;
+
+			pdata_ctrl->sample_accum = pdata_ctrl->last_sample_accum;
 		} else {
 			return 0;
 		}
 	}
 
-	while (size >= mps) {
-		pbuf = usbh_composite_uac_lock_list_remove_head(&pdata_ctrl->free_buf_lock_list);
-		if (!pbuf || !pbuf->buf) {
-			return 1;
+	do {
+		mps = usbh_composite_uac_next_packet_size(pdata_ctrl);
+
+		if (size >= mps) {
+			pbuf = usbh_composite_uac_lock_list_remove_head(&pdata_ctrl->free_buf_lock_list);
+			if (!pbuf || !pbuf->buf) {
+				return 1;
+			}
+			usb_os_memcpy(pbuf->buf, buffer + offset, mps);
+
+			pbuf->buf_len = mps;
+			usbh_composite_uac_lock_list_add_tail(&pbuf->list, &pdata_ctrl->ready_buf_lock_list);
+
+			*written_len += mps;
+			size -= mps;
+			offset += mps;
+
+			pdata_ctrl->sample_accum = pdata_ctrl->last_sample_accum;
+		} else {
+			break;
 		}
-		usb_os_memcpy(pbuf->buf, buffer + offset, mps);
-
-		pbuf->buf_len = mps;
-		usbh_composite_uac_lock_list_add_tail(&pbuf->list, &pdata_ctrl->ready_buf_lock_list);
-
-		*written_len += mps;
-		size -= mps;
-		offset += mps;
-	}
+	} while (1);
 
 	if (size > 0) {
 		pbuf = usbh_composite_uac_lock_list_remove_head(&pdata_ctrl->free_buf_lock_list);
@@ -1639,13 +1678,13 @@ int usbh_composite_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sa
 {
 	usbh_uac_format_cfg_t *fmt;
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
+	usbh_uac_buf_ctrl_t *pdata_ctrl = &(uac->isoc_out);
 	usbh_uac_as_itf_info_t *as_itf = NULL;
 	usbh_uac_ep_cfg_t *ep = NULL;
 	usbh_ep_desc_t *ep_desc = NULL;
 	usb_host_t *host;
 	int ret = HAL_ERR_PARA;
 	int set_flag = 0;
-	int frame_ms;
 	int i, j;
 	u8 itf_num, alt_num;
 
@@ -1684,25 +1723,22 @@ int usbh_composite_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sa
 	if (set_flag) {
 		as_itf->choose_alt_idx = i;
 		as_itf->choose_freq_idx = j;
+		pdata_ctrl->sample_freq = sampling_freq;
 
 		//update ep_info
 		ep = &(as_itf->ep_info);
 		ep_desc = &(as_itf->alt_set_array[as_itf->choose_alt_idx].ep_desc);
 
 		ep->isoc_ep_addr = ep_desc->bEndpointAddress;
-		ep->isoc_packet_size = ep_desc->wMaxPacketSize;
 		ep->isoc_interval = ep_desc->bInterval;
 
-		//calculate accurate one frame size(byte)
-		frame_ms = UBSH_UAC_CAL_FRAME((channels * bit_width * sampling_freq * (ep->isoc_interval)), (8 * 1000));
+		/* full speed*/
+		pdata_ctrl->pkt_per_second = USBH_UAC_ONE_KHZ >> (ep->isoc_interval - 1);
 
-		if (frame_ms <= ep->isoc_packet_size) {
-			ep->isoc_packet_size = frame_ms;
-		} else {
-			// device ep des error, stop transfer
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "MPS error: %d < %d\n", ep->isoc_packet_size, frame_ms);
-			return ret;
-		}
+		pdata_ctrl->sample_rem = sampling_freq % pdata_ctrl->pkt_per_second;
+		//calculate accurate one frame size(byte)
+		ep->isoc_packet_size_small = channels * bit_width / USBH_UAC_BIT_TO_BYTE * (sampling_freq / pdata_ctrl->pkt_per_second);
+		ep->isoc_packet_size = channels * bit_width / USBH_UAC_BIT_TO_BYTE * ((sampling_freq + (pdata_ctrl->pkt_per_second - 1)) / pdata_ctrl->pkt_per_second);
 
 		usbh_composite_uac_stop_play();
 		host = uac->driver->host;
@@ -1732,7 +1768,6 @@ int usbh_composite_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sa
 		usbh_notify_class_state_change(host, 0);
 		ret = HAL_OK;
 	} else {
-
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alt not found %d %d %d\n", channels, bit_width, sampling_freq);
 		ret = HAL_ERR_PARA;
 	}
@@ -1862,12 +1897,12 @@ void usbh_composite_uac_start_play(void)
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_out);
 	usbh_uac_ep_cfg_t *ep = &(uac->isoc_out_info->ep_info);
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC START %d\n", uac->ctrl_state);
-
 	buf_ctrl->transfer_continue = 1;
 	uac->xfer_state = UAC_STATE_TRANSFER;
 	ep->isoc_state = USBH_UAC_XFER;
 	usbh_notify_class_state_change(uac->driver->host, ep->isoc_pipe);
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC START %d\n", uac->ctrl_state);
 }
 
 /**

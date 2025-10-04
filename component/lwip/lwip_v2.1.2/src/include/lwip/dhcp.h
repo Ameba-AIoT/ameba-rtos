@@ -139,6 +139,11 @@ extern void dhcp_set_ntp_servers(u8_t num_ntp_servers, const ip4_addr_t* ntp_ser
 
 #define netif_dhcp_data(netif) ((struct dhcp*)netif_get_client_data(netif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP))
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+u8_t check_dhcp_fine_tmr_removable(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

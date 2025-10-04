@@ -73,6 +73,12 @@
 #error LWIP_IPV6_DUP_DETECT_ATTEMPTS > IP6_ADDR_TENTATIVE_COUNT_MASK
 #endif
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+#include "ameba_soc.h"
+extern SLEEP_ParamDef sleep_param;
+#endif
+
 /* Router tables. */
 struct nd6_neighbor_cache_entry neighbor_cache[LWIP_ND6_NUM_NEIGHBORS];
 struct nd6_destination_cache_entry destination_cache[LWIP_ND6_NUM_DESTINATIONS];
@@ -2452,5 +2458,224 @@ nd6_restart_netif(struct netif *netif)
   netif->rs_timeout = 0;
 #endif /* LWIP_IPV6_SEND_ROUTER_SOLICIT */
 }
+
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+/*
+Called in post sleep process to compenstate the nd6 time
+ */
+void comp_nd6_time(u32_t ms)
+{
+  s8_t i;
+  struct netif *netif;
+
+  /* Process neighbor entries. */
+  for (i = 0; i < LWIP_ND6_NUM_NEIGHBORS; i++) {
+    switch (neighbor_cache[i].state) {
+    case ND6_REACHABLE:
+      neighbor_cache[i].counter.reachable_time = neighbor_cache[i].counter.reachable_time > ms ? neighbor_cache[i].counter.reachable_time - ms : 0;
+      break;
+    case ND6_STALE:
+      neighbor_cache[i].counter.stale_time += ms / ND6_TMR_INTERVAL;
+      break;
+    case ND6_DELAY:
+      neighbor_cache[i].counter.delay_time = neighbor_cache[i].counter.delay_time > ms / ND6_TMR_INTERVAL ? neighbor_cache[i].counter.delay_time - ms / ND6_TMR_INTERVAL : 0;
+      break;
+    case ND6_NO_ENTRY:
+    case ND6_INCOMPLETE:
+    case ND6_PROBE:
+    default:
+      break;
+    }
+  }
+
+  /* Process destination entries. */
+  for (i = 0; i < LWIP_ND6_NUM_DESTINATIONS; i++) {
+    destination_cache[i].age += ms / ND6_TMR_INTERVAL;
+  }
+
+  /* Process router entries. */
+  for (i = 0; i < LWIP_ND6_NUM_ROUTERS; i++) {
+    if (default_router_list[i].neighbor_entry != NULL) {
+      default_router_list[i].invalidation_timer = default_router_list[i].invalidation_timer > ms / 1000 ? default_router_list[i].invalidation_timer - ms / 1000 : 0;
+    }
+  }
+
+  /* Process prefix entries. */
+  for (i = 0; i < LWIP_ND6_NUM_PREFIXES; i++) {
+    if (prefix_list[i].netif != NULL) {
+      prefix_list[i].invalidation_timer = prefix_list[i].invalidation_timer > ms / 1000 ? prefix_list[i].invalidation_timer - ms / 1000 : 0;
+    }
+  }
+
+  /* Process our own addresses, updating address lifetimes and/or DAD state. */
+  NETIF_FOREACH(netif) {
+    for (i = 0; i < LWIP_IPV6_NUM_ADDRESSES; ++i) {
+      u8_t addr_state;
+#if LWIP_IPV6_ADDRESS_LIFETIMES
+      addr_state = netif_ip6_addr_state(netif, i);
+      if (!ip6_addr_isinvalid(addr_state) &&
+          !netif_ip6_addr_isstatic(netif, i)) {
+        u32_t life = netif_ip6_addr_valid_life(netif, i);
+        if (!ip6_addr_life_isinfinite(life)) {
+          life = life > ms / 1000 ? life - ms / 1000 : IP6_ADDR_LIFE_STATIC + 1; /* can not set to 0(IP6_ADDR_LIFE_STATIC) to affect judge in nd6_tmr */
+          netif_ip6_addr_set_valid_life(netif, i, life);
+        }
+        life = netif_ip6_addr_pref_life(netif, i);
+        if (!ip6_addr_life_isinfinite(life)) {
+          life = life > ms / 1000 ? life - ms / 1000 : 0;
+          netif_ip6_addr_set_pref_life(netif, i, life);
+        }
+      }
+#endif
+    }
+  }
+#if LWIP_IPV6_SEND_ROUTER_SOLICIT
+  nd6_tmr_rs_reduction = nd6_tmr_rs_reduction > ms / ND6_TMR_INTERVAL ? nd6_tmr_rs_reduction - ms / ND6_TMR_INTERVAL : 0;
+#endif
+}
+
+/*
+Check whether nd6_tmr can be removed before enter sleep
+return 0: no, 1: yes
+ */
+u8_t check_nd6_tmr_removable(void)
+{
+  s8_t i;
+  struct netif *netif;
+  u32_t max_sleep_time = 0;
+  u8_t ret = 1;
+
+  /* Process neighbor entries. */
+  for (i = 0; i < LWIP_ND6_NUM_NEIGHBORS; i++) {
+    switch (neighbor_cache[i].state) {
+    case ND6_INCOMPLETE:
+    case ND6_PROBE:
+      ret = 0;
+      goto exit;
+    case ND6_REACHABLE:
+      if (neighbor_cache[i].q != NULL) {
+        ret = 0;
+        goto exit;
+      }
+      if (neighbor_cache[i].counter.reachable_time <= ND6_TMR_INTERVAL) {
+        ret = 0;
+        goto exit;
+      } else {
+        max_sleep_time = neighbor_cache[i].counter.reachable_time - ND6_TMR_INTERVAL;
+        if (sleep_param.sleep_time > max_sleep_time || sleep_param.sleep_time == 0) {
+          sleep_param.sleep_time = max_sleep_time;
+        }
+      }
+      break;
+    case ND6_DELAY:
+      if (neighbor_cache[i].counter.delay_time <= 1) {
+        ret = 0;
+        goto exit;
+      } else {
+        max_sleep_time = (neighbor_cache[i].counter.delay_time - 1) * ND6_TMR_INTERVAL;
+        if (sleep_param.sleep_time > max_sleep_time || sleep_param.sleep_time == 0) {
+          sleep_param.sleep_time = max_sleep_time;
+        }
+      }
+      break;
+    case ND6_NO_ENTRY:
+    case ND6_STALE:
+    default:
+      break;
+    }
+  }
+
+  /* Process router entries. */
+  for (i = 0; i < LWIP_ND6_NUM_ROUTERS; i++) {
+    if (default_router_list[i].neighbor_entry != NULL) {
+      if (default_router_list[i].invalidation_timer <= ND6_TMR_INTERVAL / 1000) {
+        ret = 0;
+        goto exit;
+      } else {
+        max_sleep_time = (default_router_list[i].invalidation_timer - ND6_TMR_INTERVAL / 1000) * 1000;
+        if (sleep_param.sleep_time > max_sleep_time || sleep_param.sleep_time == 0) {
+          sleep_param.sleep_time = max_sleep_time;
+        }
+      }
+    }
+  }
+
+  /* Process prefix entries. */
+  for (i = 0; i < LWIP_ND6_NUM_PREFIXES; i++) {
+    if (prefix_list[i].netif != NULL) {
+      if (prefix_list[i].invalidation_timer <= ND6_TMR_INTERVAL / 1000) {
+        ret = 0;
+        goto exit;
+      } else {
+        max_sleep_time = (prefix_list[i].invalidation_timer - ND6_TMR_INTERVAL / 1000) * 1000;
+        if (sleep_param.sleep_time > max_sleep_time || sleep_param.sleep_time == 0) {
+          sleep_param.sleep_time = max_sleep_time;
+        }
+      }
+    }
+  }
+
+  /* Process our own addresses, updating address lifetimes and/or DAD state. */
+  NETIF_FOREACH(netif) {
+    for (i = 0; i < LWIP_IPV6_NUM_ADDRESSES; ++i) {
+      u8_t addr_state;
+#if LWIP_IPV6_ADDRESS_LIFETIMES
+      addr_state = netif_ip6_addr_state(netif, i);
+      if (!ip6_addr_isinvalid(addr_state) &&
+          !netif_ip6_addr_isstatic(netif, i)) {
+        u32_t life = netif_ip6_addr_valid_life(netif, i);
+        if (life <= ND6_TMR_INTERVAL / 1000) {
+          ret = 0;
+          goto exit;
+        } else {
+          if (!ip6_addr_life_isinfinite(life)) {
+            max_sleep_time = (life - ND6_TMR_INTERVAL / 1000) * 1000;
+            if (sleep_param.sleep_time > max_sleep_time || sleep_param.sleep_time == 0) {
+              sleep_param.sleep_time = max_sleep_time;
+            }
+          }
+          life = netif_ip6_addr_pref_life(netif, i);
+          if (life <= ND6_TMR_INTERVAL / 1000) {
+            ret = 0;
+            goto exit;
+          } else if (!ip6_addr_life_isinfinite(life)) {
+            max_sleep_time = (life - ND6_TMR_INTERVAL / 1000) * 1000;
+            if (sleep_param.sleep_time > max_sleep_time || sleep_param.sleep_time == 0) {
+              sleep_param.sleep_time = max_sleep_time;
+            }
+          }
+        }
+      }
+#endif
+      addr_state = netif_ip6_addr_state(netif, i);
+      if (ip6_addr_istentative(addr_state)) {
+        if ((addr_state & IP6_ADDR_TENTATIVE_COUNT_MASK) >= LWIP_IPV6_DUP_DETECT_ATTEMPTS) {
+          ret = 0;
+          goto exit;
+        } else if (netif_is_up(netif) && netif_is_link_up(netif)) {
+          ret = 0;
+          goto exit;
+        }
+      }
+    }
+  }
+
+#if LWIP_IPV6_SEND_ROUTER_SOLICIT
+  if (!nd6_tmr_rs_reduction) {
+    ret = 0;
+    goto exit;
+  } else {
+    max_sleep_time = nd6_tmr_rs_reduction * ND6_TMR_INTERVAL;
+    if (sleep_param.sleep_time > max_sleep_time || sleep_param.sleep_time == 0) {
+      sleep_param.sleep_time = max_sleep_time;
+    }
+  }
+#endif
+
+exit:
+  return ret;
+}
+#endif
 
 #endif /* LWIP_IPV6 */

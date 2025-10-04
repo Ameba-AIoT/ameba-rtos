@@ -98,6 +98,7 @@ struct audio_codec_entity_priv {
 		} vendor;
 	};
 	uint16_t (*init)(void *pentity, void *param);
+	uint16_t (*update)(void *pentity, void *param);
 	uint16_t (*deinit)(void *pentity);
 	uint16_t (*bt_audio_handle_media_data_packet)(void *pentity, uint8_t *packet, uint16_t size, uint32_t *pframe_size, uint8_t *pframe_num,
 												  uint8_t *pcodec_header_flag, struct audio_param *paudio_param);
@@ -303,6 +304,18 @@ int bt_codec_decoder_sample_rate(PAUDIO_CODEC_ENTITY pentity);
  *                              - others: Error code
  */
 uint16_t bt_audio_register_codec(uint32_t type, void *param, uint32_t param_len, PAUDIO_CODEC_ENTITY pentity);
+
+/**
+ * @brief     update codec if needed
+ * @param[in] type: indicate codec type
+ * @param[in] param: pointer of parameter
+ * @param[in] param_len: parameter length
+ * @param[in] pentity:codec entity
+ * @return
+ *                              - 0  : Succeed
+ *                              - others: Error code
+ */
+uint16_t bt_audio_update_codec(uint32_t type, void *param, uint32_t param_len, PAUDIO_CODEC_ENTITY pentity);
 
 /**
  * @brief     unregister codec

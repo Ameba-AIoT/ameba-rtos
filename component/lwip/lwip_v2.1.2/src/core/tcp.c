@@ -122,6 +122,11 @@
 #ifdef LWIP_HOOK_TCP_ISN
 #include <tcp_isn.h>
 #endif
+#ifdef CONFIG_STANDARD_TICKLESS
+#include "ameba_soc.h"
+extern SLEEP_ParamDef sleep_param;
+extern u8_t check_tcp_conn_poll_needed(struct tcp_pcb *pcb);
+#endif
 /* Added by Realtek end */
 
 #ifndef TCP_LOCAL_PORT_RANGE_START
@@ -2732,6 +2737,77 @@ void tcp_reg_active(struct tcp_pcb *pcb)
 {
   TCP_REG_ACTIVE(pcb);
 }
+
+#ifdef CONFIG_STANDARD_TICKLESS
+/*
+Called in post sleep process to compenstate the tcp_ticks
+ */
+void comp_tcp_ticks(u32_t ms)
+{
+  tcp_ticks += ms / TCP_SLOW_INTERVAL;
+}
+
+/*
+Check whether tcp_tmr can be removed before enter sleep
+return 0: no, 1: yes
+ */
+u8_t check_tcp_tmr_removable(void)
+{
+  u8_t ret = 1;
+  u32_t max_sleep_time = 0;
+
+  struct tcp_pcb *pcb;
+  pcb = tcp_active_pcbs;
+
+  while (pcb != NULL) {
+    /* copy from tcp_fasttmr check conditions */
+    if (pcb->flags & TF_ACK_DELAY || pcb->flags & TF_CLOSEPEND || pcb->refused_data != NULL) {
+      ret = 0;
+      goto exit;
+    }
+    /* copy from tcp_slowtmr check conditions */
+    if (pcb->state != ESTABLISHED) {
+      ret = 0;
+      goto exit;
+    } else if (pcb->unacked != NULL || pcb->unsent != NULL || pcb->ooseq != NULL) {
+      ret = 0;
+      goto exit;
+    } else if (ip_get_option(pcb, SOF_KEEPALIVE)) {
+      /* check if need to send keepalive or keepalive timeout */
+      if ((u32_t)(tcp_ticks - pcb->tmr) >= (pcb->keep_idle + TCP_KEEP_DUR(pcb)) / TCP_SLOW_INTERVAL ||
+          (u32_t)(tcp_ticks - pcb->tmr) >= (pcb->keep_idle + pcb->keep_cnt_sent * TCP_KEEP_INTVL(pcb)) / TCP_SLOW_INTERVAL) {
+        ret = 0;
+        goto exit;
+      } else if ((u32_t)(tcp_ticks - pcb->tmr) >= pcb->keep_idle / TCP_SLOW_INTERVAL && 
+                (u32_t)(tcp_ticks - pcb->tmr) < (pcb->keep_idle + pcb->keep_cnt_sent * TCP_KEEP_INTVL(pcb)) / TCP_SLOW_INTERVAL) {
+        /* keepalive has sent, not arrive next send time, max sleep time is keep_intvl */
+        max_sleep_time = (pcb->keep_idle + pcb->keep_cnt_sent * TCP_KEEP_INTVL(pcb)) / TCP_SLOW_INTERVAL - (u32_t)(tcp_ticks - pcb->tmr);
+        if (sleep_param.sleep_time > max_sleep_time * TCP_SLOW_INTERVAL || sleep_param.sleep_time == 0) {
+          sleep_param.sleep_time = max_sleep_time * TCP_SLOW_INTERVAL;
+        }
+      } else {
+        /* no need to send keepalive, max sleep time is keep_idle */
+        max_sleep_time = pcb->keep_idle / TCP_SLOW_INTERVAL - (u32_t)(tcp_ticks - pcb->tmr);
+        if (sleep_param.sleep_time > max_sleep_time * TCP_SLOW_INTERVAL || sleep_param.sleep_time == 0) {
+          sleep_param.sleep_time = max_sleep_time * TCP_SLOW_INTERVAL;
+        }
+      }
+    } else if (check_tcp_conn_poll_needed(pcb) == 1) {
+      ret = 0;
+      goto exit;
+    }
+    pcb = pcb->next;
+  }
+  pcb = tcp_tw_pcbs;
+  if (pcb != NULL) {
+    ret = 0;
+    goto exit;
+  }
+
+exit:
+  return ret;
+}
+#endif
 /* Added by Realtek end */
 
 #endif /* LWIP_TCP */

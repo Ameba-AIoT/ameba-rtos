@@ -26,8 +26,7 @@
 #define USBH_ECM_MONITOR_THREAD_PRIORITY      3
 #define USBH_ECM_RX_THREAD_PRIORITY           4
 #define USBH_ECM_MAIN_THREAD_PRIORITY         5
-#define USBH_ECM_ISR_THREAD_PRIORITY          6
-#define USBH_ECM_HOTPLUG_THREAD_PRIORITY      7
+#define USBH_ECM_HOTPLUG_THREAD_PRIORITY      6
 #define USBH_ECM_ISR_PRIORITY                 INT_PRI_MIDDLE
 
 /* Private types -------------------------------------------------------------*/
@@ -76,13 +75,10 @@ static usbh_cdc_ecm_time_t usbh_cdc_ecm_time_array[USBH_CDC_ECM_TYPE_MAX];
 
 static usbh_config_t usbh_ecm_cfg = {
 	.speed = USB_SPEED_HIGH,
-	.dma_enable = 1U,
 	.ext_intr_enable = 0, //USBH_SOF_INTR
 	.isr_priority = USBH_ECM_ISR_PRIORITY,
-	.isr_task_priority  = USBH_ECM_ISR_THREAD_PRIORITY,
 	.main_task_priority = USBH_ECM_MAIN_THREAD_PRIORITY,
 	.hub_enable = 1U,
-
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,

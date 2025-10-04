@@ -81,6 +81,12 @@ void nd6_adjust_mld_membership(struct netif *netif, s8_t addr_idx, u8_t new_stat
 #endif /* LWIP_IPV6_MLD */
 void nd6_restart_netif(struct netif *netif);
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+void comp_nd6_time(u32_t ms);
+u8_t check_nd6_tmr_removable(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

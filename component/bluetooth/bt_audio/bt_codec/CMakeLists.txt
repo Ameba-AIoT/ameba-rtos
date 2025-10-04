@@ -78,6 +78,7 @@ ameba_list_append(private_sources
 ameba_list_append(private_includes
 	${c_CMPT_AUDIO_DIR}/interfaces
 	${c_CMPT_AUDIO_DIR}/base/osal/osal_c/interfaces
+	sbc/common
 	sbc/decoder/include
 	sbc/encoder/include
 	lc3/include

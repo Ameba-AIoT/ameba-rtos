@@ -109,6 +109,12 @@ static void ip6_reass_free_complete_datagram(struct ip6_reassdata *ipr);
 static void ip6_reass_remove_oldest_datagram(struct ip6_reassdata *ipr, int pbufs_needed);
 #endif /* IP_REASS_FREE_OLDEST */
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+#include "ameba_soc.h"
+extern SLEEP_ParamDef sleep_param;
+#endif
+
 void
 ip6_reass_tmr(void)
 {
@@ -668,6 +674,49 @@ nullreturn:
   pbuf_free(p);
   return NULL;
 }
+
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+/*
+Called in post sleep process to compenstate the ip6 reass time
+ */
+void comp_ip6_reas_time(u32_t ms)
+{
+  struct ip6_reassdata *r = reassdatagrams;
+  
+  while (r != NULL) {
+    r->timer = r->timer > ms / IP6_REASS_TMR_INTERVAL ? r->timer - ms / IP6_REASS_TMR_INTERVAL : 0;
+    r = r->next;
+  }
+}
+
+/*
+Check whether ip6_reass_tmr can be removed before enter sleep
+return 0: no, 1: yes
+ */
+u8_t check_ip6_reass_tmr_removable(void)
+{
+  u8_t ret = 1;
+  struct ip6_reassdata *r = reassdatagrams;
+  u32_t max_sleep_time = 0;
+
+  while (r != NULL) {
+    if (r->timer > 0) {
+      max_sleep_time = r->timer * IP6_REASS_TMR_INTERVAL;
+      if (sleep_param.sleep_time > max_sleep_time || sleep_param.sleep_time == 0) {
+        sleep_param.sleep_time = max_sleep_time;
+      }
+      r = r->next;
+    } else {
+      ret = 0;
+      goto exit;
+    }
+  }
+
+exit:
+  return ret;
+}
+#endif
 
 #endif /* LWIP_IPV6 && LWIP_IPV6_REASS */
 

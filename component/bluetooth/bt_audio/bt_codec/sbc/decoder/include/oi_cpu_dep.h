@@ -43,8 +43,6 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
-
 /** \addtogroup Misc Miscellaneous APIs */
 /**@{*/
 
@@ -77,8 +75,14 @@ extern "C" {
 #define OI_CPU_M64111     19 /**< Renesas M64111 processor (M32R family) */
 #define OI_CPU_ARMV5_LEND 20 //*< ARM5, little-endian */
 
-/* BK4BTSTACK_CHANGE START */
-// #define OI_CPU_TYPE 12
+#define OI_CPU_TYPE 12
+
+#ifndef OI_CPU_TYPE
+#error "OI_CPU_TYPE type not defined"
+#endif
+
+/**@}*/
+
 
 /** @name Definitions indicating byte-wise endianness of target CPU
  *  @{
@@ -87,50 +91,8 @@ extern "C" {
 #define OI_BIG_ENDIAN_BYTE_ORDER    0  /**< Multiple-byte values are stored in memory beginning with the most significant byte at the lowest address.  */
 #define OI_LITTLE_ENDIAN_BYTE_ORDER 1  /**< Multiple-byte values are stored in memory beginning with the least significant byte at the lowest address. */
 
-#ifndef OI_CPU_TYPE
-
-// to avoid warnigns below
-#define OI_CPU_TYPE 0
-
-#if 0
-/ #error "OI_CPU_TYPE type not defined"
-#else
-
-// BK
-
-/** @name CPU/compiler-dependent primitive data type definitions
- *  @{
- */
-
-typedef int8_t     OI_INT8;
-typedef int16_t    OI_INT16;
-typedef int32_t    OI_INT32;
-typedef uint8_t    OI_UINT8;
-typedef uint16_t   OI_UINT16;
-typedef uint32_t   OI_UINT32;
-
-typedef OI_UINT32 OI_ELEMENT_UNION; /**< Type for first element of a union to support all data types up to pointer width. */
-
-
-#ifdef __LITTLE_ENDIAN__
-#define OI_CPU_BYTE_ORDER OI_LITTLE_ENDIAN_BYTE_ORDER
-#endif
-
-#ifdef __BIG_ENDIAN__
-#define OI_CPU_BYTE_ORDER OI_BIG_ENDIAN_BYTE_ORDER
-#endif
-
-// emergency fallback
-#ifndef OI_CPU_BYTE_ORDER
-#define OI_CPU_BYTE_ORDER OI_LITTLE_ENDIAN_BYTE_ORDER
-#endif
-
 /**@}*/
-#endif
 
-/**@}*/
-#endif
-/* BK4BTSTACK_CHANGE STOP */
 
 /** @name  CPU/compiler-independent primitive data type definitions
  *  @{
@@ -142,6 +104,7 @@ typedef unsigned int    OI_UINT;  /**< Unsigned integer values use native unsign
 typedef unsigned char   OI_BYTE;  /**< Raw bytes type uses native character data type for target CPU. */
 
 /**@}*/
+
 
 
 /*********************************************************************************/

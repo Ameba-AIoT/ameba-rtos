@@ -115,6 +115,11 @@ struct ip6_reassdata {
 void ip6_reass_tmr(void);
 struct pbuf *ip6_reass(struct pbuf *p);
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+void comp_ip6_reas_time(u32_t ms);
+u8_t check_ip6_reass_tmr_removable(void);
+#endif
 #endif /* LWIP_IPV6 && LWIP_IPV6_REASS */
 
 #if LWIP_IPV6 && LWIP_IPV6_FRAG  /* don't build if not configured for use in lwipopts.h */

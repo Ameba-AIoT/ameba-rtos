@@ -274,7 +274,11 @@ void pmu_pre_sleep_processing(uint32_t *tick_before_sleep)
 		sleep_param.sleep_time = pmu_get_sleep_time();// do not wake on system schedule tick
 		sleep_param.dlps_enable = ENABLE;
 	} else {
+#if defined(CONFIG_STANDARD_TICKLESS)
+		sleep_param.sleep_time = tick_before_sleep;
+#else
 		sleep_param.sleep_time = pmu_get_sleep_time();//*expected_idle_time;
+#endif
 		sleep_param.dlps_enable = DISABLE;
 	}
 

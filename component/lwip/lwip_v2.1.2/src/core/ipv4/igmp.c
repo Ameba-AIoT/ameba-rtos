@@ -96,6 +96,12 @@ Steve Reynolds
 
 #include <string.h>
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+#include "ameba_soc.h"
+extern SLEEP_ParamDef sleep_param;
+#endif
+
 static struct igmp_group *igmp_lookup_group(struct netif *ifp, const ip4_addr_t *addr);
 static err_t  igmp_remove_group(struct netif *netif, struct igmp_group *group);
 static void   igmp_timeout(struct netif *netif, struct igmp_group *group);
@@ -815,5 +821,58 @@ igmp_send(struct netif *netif, struct igmp_group *group, u8_t type)
     IGMP_STATS_INC(igmp.memerr);
   }
 }
+
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+/*
+Called in post sleep process to compenstate the igmp time
+ */
+void comp_igmp_time(u32_t ms)
+{
+  struct netif *netif;
+
+  NETIF_FOREACH(netif) {
+    struct igmp_group *group = netif_igmp_data(netif);
+    while (group != NULL) {
+      if (group->timer > 0) {
+        group->timer = group->timer > ms / IGMP_TMR_INTERVAL ? group->timer - ms / IGMP_TMR_INTERVAL : 1; /* can not set to 0 to affect judge in igmp_tmr */
+      }
+      group = group->next;
+    }
+  }
+}
+
+/*
+Check whether igmp_tmr can be removed before enter sleep
+return 0: no, 1: yes
+ */
+u8_t check_igmp_tmr_removable(void)
+{
+  u8_t ret = 1;
+  struct netif *netif;
+  u32_t max_sleep_time = 0;
+
+  NETIF_FOREACH(netif) {
+    struct igmp_group *group = netif_igmp_data(netif);
+    while (group != NULL) {
+      if (group->timer > 0) {
+        if (group->timer <= 1) {
+          ret = 0;
+          goto exit;
+        } else {
+          max_sleep_time = (group->timer - 1) * IGMP_TMR_INTERVAL;
+          if (sleep_param.sleep_time > max_sleep_time || sleep_param.sleep_time == 0) {
+            sleep_param.sleep_time = max_sleep_time;
+          }
+        }
+      }
+      group = group->next;
+    }
+  }
+
+exit:
+  return ret;
+}
+#endif
 
 #endif /* LWIP_IPV4 && LWIP_IGMP */

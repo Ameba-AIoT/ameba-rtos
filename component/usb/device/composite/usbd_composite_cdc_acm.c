@@ -46,11 +46,7 @@ static const u8 usbd_composite_cdc_acm_hs_itf_desc[] = {
 	USB_DESC_TYPE_INTERFACE,						/* bDescriptorType */
 	USBD_COMP_CDC_COM_ITF,							/* bInterfaceNumber */
 	0x00,											/* bAlternateSetting */
-#if CONFIG_COMP_CDC_ACM_NOTIFY
 	0x01,											/* bNumEndpoints */
-#else
-	0x00,											/* bNumEndpoints */
-#endif
 	0x02,											/* bInterfaceClass: CDC */
 	0x02,											/* bInterfaceSubClass: Abstract Control Model */
 	0x00,											/* bInterfaceProtocol: Common AT commands */
@@ -82,7 +78,6 @@ static const u8 usbd_composite_cdc_acm_hs_itf_desc[] = {
 	0x00,											/* bMasterInterface: Communication Class Interface */
 	USBD_COMP_CDC_DAT_ITF,							/* bSlaveInterface0: Data Class Interface */
 
-#if CONFIG_COMP_CDC_ACM_NOTIFY
 	/* INTR IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,								/* bLength */
 	USB_DESC_TYPE_ENDPOINT,							/* bDescriptorType */
@@ -90,7 +85,6 @@ static const u8 usbd_composite_cdc_acm_hs_itf_desc[] = {
 	USB_CH_EP_TYPE_INTR,							/* bmAttributes: INTR */
 	USB_LOW_BYTE(COMP_CDC_ACM_INTR_IN_PACKET_SIZE), USB_HIGH_BYTE(COMP_CDC_ACM_INTR_IN_PACKET_SIZE),	/* wMaxPacketSize */
 	COMP_CDC_ACM_HS_INTR_IN_INTERVAL,				/* bInterval */
-#endif
 
 	/* CDC Data Interface Descriptor */
 	USB_LEN_IF_DESC,								/* bLength */
@@ -137,11 +131,7 @@ static const u8 usbd_composite_cdc_acm_fs_itf_desc[] = {
 	USB_DESC_TYPE_INTERFACE,						/* bDescriptorType */
 	USBD_COMP_CDC_COM_ITF,							/* bInterfaceNumber */
 	0x00,											/* bAlternateSetting */
-#if CONFIG_COMP_CDC_ACM_NOTIFY
 	0x01,											/* bNumEndpoints */
-#else
-	0x00,											/* bNumEndpoints */
-#endif
 	0x02,											/* bInterfaceClass: CDC */
 	0x02,											/* bInterfaceSubClass: Abstract Control Model */
 	0x00,											/* bInterfaceProtocol: Common AT commands */
@@ -173,7 +163,6 @@ static const u8 usbd_composite_cdc_acm_fs_itf_desc[] = {
 	0x00,											/* bMasterInterface: Communication Class Interface */
 	USBD_COMP_CDC_DAT_ITF,							/* bSlaveInterface0: Data Class Interface */
 
-#if CONFIG_COMP_CDC_ACM_NOTIFY
 	/* INTR IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,								/* bLength */
 	USB_DESC_TYPE_ENDPOINT,							/* bDescriptorType */
@@ -181,7 +170,6 @@ static const u8 usbd_composite_cdc_acm_fs_itf_desc[] = {
 	USB_CH_EP_TYPE_INTR,							/* bmAttributes: INTR */
 	USB_LOW_BYTE(COMP_CDC_ACM_INTR_IN_PACKET_SIZE), USB_HIGH_BYTE(COMP_CDC_ACM_INTR_IN_PACKET_SIZE),	/* wMaxPacketSize */
 	COMP_CDC_ACM_FS_INTR_IN_INTERVAL,				/* bInterval: */
-#endif
 
 	/* CDC Data Interface Descriptor */
 	USB_LEN_IF_DESC,								/* bLength */
@@ -577,7 +565,7 @@ int usbd_composite_cdc_acm_init(usbd_composite_dev_t *cdev, u16 bulk_out_xfer_si
 #if CONFIG_COMP_CDC_ACM_NOTIFY
 	ep_intr_in->addr = USBD_COMP_CDC_INTR_IN_EP;
 	ep_intr_in->type = USB_CH_EP_TYPE_INTR;
-	ep_intr_in->xfer_buf = (usbd_composite_cdc_acm_ntf_t *)usb_os_malloc(sizeof(usbd_composite_cdc_acm_ntf_t));
+	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(sizeof(usbd_composite_cdc_acm_ntf_t));
 	if (ep_intr_in->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
 		goto usbd_composite_cdc_acm_init_clean_bulk_in_buf_exit;

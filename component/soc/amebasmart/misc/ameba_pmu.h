@@ -15,6 +15,7 @@ typedef enum {
 	PMU_BT_DEVICE	= 4,
 	PMU_VAD_DEVICE	= 5,
 	PMU_DHCP_PROCESS,
+	PMU_LWIP_STACK,
 	PMU_DEV_USER_BASE, /*reserved for customer use*/
 	PMU_MAX,
 } PMU_DEVICE;

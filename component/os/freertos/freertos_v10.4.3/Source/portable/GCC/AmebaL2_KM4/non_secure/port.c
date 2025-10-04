@@ -57,6 +57,10 @@
 #include "secure_init.h"
 #endif /* configENABLE_TRUSTZONE */
 
+#if defined(CONFIG_STANDARD_TICKLESS) && defined(CONFIG_LWIP_LAYER)
+extern void lwip_update_internal_counter(uint32_t ms);
+#endif
+
 #undef MPU_WRAPPERS_INCLUDED_FROM_API_FILE
 
 /**
@@ -1035,6 +1039,9 @@ void pmu_post_sleep_processing(uint32_t *tick_before_sleep)
 
 	/* update xTickCount and mark to trigger task list update in xTaskResumeAll */
 	vTaskCompTick(ms_passed);
+#if defined(CONFIG_STANDARD_TICKLESS) && defined(CONFIG_LWIP_LAYER)
+	lwip_update_internal_counter(ms_passed);
+#endif
 
 	RTK_LOGD(NOTAG, "%s sleeped:[%d] ms\n", (SYS_CPUID() == KM4NS_CPU_ID) ? "KM4NS" : "KM4TZ", ms_passed);
 }
@@ -1066,6 +1073,7 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 		its own wait for interrupt or wait for event instruction, and so wfi
 		should not be executed again.  However, the original expected idle
 		time variable must remain unmodified, so a copy is taken. */
+		tick_before_sleep = (uint32_t)xExpectedIdleTime;
 		configPRE_SLEEP_PROCESSING(tick_before_sleep);
 		configPOST_SLEEP_PROCESSING(tick_before_sleep);
 	} else {

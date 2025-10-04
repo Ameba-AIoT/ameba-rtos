@@ -63,9 +63,7 @@ static __IO int usbh_msc_is_ready = 0;
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_DRD_SPEED,
-	.dma_enable = FALSE,
 	.main_task_priority = 3U,
-	.isr_task_priority  = 4U,
 };
 
 static usbh_msc_cb_t usbh_msc_usr_cb = {

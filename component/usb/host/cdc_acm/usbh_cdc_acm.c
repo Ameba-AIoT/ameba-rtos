@@ -31,7 +31,6 @@ static int usbh_cdc_acm_process_set_control_line_state(usb_host_t *host);
 static void usbh_cdc_acm_process_tx(usb_host_t *host);
 static void usbh_cdc_acm_process_rx(usb_host_t *host);
 static void usbh_cdc_acm_process_intr_rx(usb_host_t *host);
-static int usbh_cdc_acm_nak(usb_host_t *host, u8 pipe_num);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -44,7 +43,6 @@ static usbh_class_driver_t usbh_cdc_acm_driver = {
 	.detach = usbh_cdc_acm_detach,
 	.setup = usbh_cdc_acm_setup,
 	.process = usbh_cdc_acm_process,
-	.nak = usbh_cdc_acm_nak,
 };
 
 static usbh_cdc_acm_host_t usbh_cdc_acm_host;
@@ -239,31 +237,6 @@ static int usbh_cdc_acm_setup(usb_host_t *host)
 		}
 	}
 	return status;
-}
-
-/**
-  * @brief  Usb nak callback function.
-  * @param  host: Host handle
-  * @param  pipe_num: Pipe number
-  * @retval return OK while success, else return HAL_ERR_UNKNOWN
-  */
-static int usbh_cdc_acm_nak(usb_host_t *host, u8 pipe_num)
-{
-	u8 ep_type;
-	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
-	if (pipe_num >= USB_MAX_PIPES) {
-		return HAL_ERR_PARA;
-	}
-
-	ep_type = usbh_get_ep_type(host, pipe_num);
-	if (ep_type == USB_CH_EP_TYPE_INTR) {
-		cdc->intr_in_busy_tick = usbh_get_tick(host);
-		cdc->intr_in_idle_tick = usbh_get_tick(host);
-		//INTR ,NAK did not retrigger the EP,wait for next binterval
-		return HAL_OK;
-	}
-
-	return HAL_ERR_UNKNOWN;
 }
 
 /**

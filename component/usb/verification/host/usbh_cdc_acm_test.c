@@ -67,10 +67,8 @@ static cdc_acm_usbh_t usbh_cdc = {
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
-	.dma_enable = 1U,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
-	.isr_task_priority  = 5U,
 	.main_task_priority = 4U,
 	.sof_tick_enable = 1U,
 #if defined (CONFIG_AMEBAGREEN2)
@@ -531,7 +529,6 @@ static void cdc_acm_verify_usage(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Invalid arguments, usage:\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh acm xlen <xfer length in byte>\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh acm speed <0: high, 1: full>\n");
-	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh acm dma <en/dis>\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh acm loop <test count>\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh acm init\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, " usbh acm deinit\n");
@@ -571,25 +568,6 @@ int cmd_usbh_cdc_acm_test(u16 argc, u8 *argv[])
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Speed %d\n", speed);
 			} else {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid speed\n");
-				ret = HAL_ERR_PARA;
-			}
-		}
-	} else if (_stricmp(cmd, "dma") == 0) {
-		if (argc < 3) {
-			cdc_acm_verify_usage();
-			return HAL_ERR_PARA;
-		}
-		if (usbh_cdc.is_init) {
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Already init, please deinit first\n");
-		} else {
-			if ((_stricmp((const char *)argv[2], (const char *)"en") == 0)) {
-				usbh_cfg.dma_enable = 1U;
-				RTK_LOGS(TAG, RTK_LOG_INFO, "DMA enabled\n");
-			} else if ((_stricmp((const char *)argv[2], (const char *)"dis") == 0)) {
-				usbh_cfg.dma_enable = 0U;
-				RTK_LOGS(TAG, RTK_LOG_INFO, "DMA disabled\n");
-			} else {
-				cdc_acm_verify_usage();
 				ret = HAL_ERR_PARA;
 			}
 		}
@@ -666,7 +644,6 @@ int cmd_usbh_cdc_acm_test(u16 argc, u8 *argv[])
 			}
 		}
 	} else if (_stricmp(cmd, "dump") == 0) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "DMA: %d\n", usbh_cfg.dma_enable);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Speed: %d\n", usbh_cfg.speed);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Size: %d\n", usbh_cdc.xfer_size);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Round: %d\n", usbh_cdc.test_round);

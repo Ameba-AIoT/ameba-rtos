@@ -114,7 +114,6 @@ static u8 uvc_buf_mjpeg[USBH_UVC_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZ
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
-	.dma_enable = 1,
 #if UVC_USE_SOF
 	.ext_intr_enable = USBH_SOF_INTR,
 	.sof_tick_enable = 1,
@@ -122,7 +121,6 @@ static usbh_config_t usbh_cfg = {
 	.alt_max_cnt = 25,
 	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = 3U,
-	.isr_task_priority  = 4U,
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,
@@ -1320,13 +1318,11 @@ u32 usbh_uvc_dec_test(u16 argc, u8 *argv[])
 	uvc_rgb_init();
 #endif
 #endif
+
 	if (argv[7]) {
-		usbh_cfg.dma_enable = _strtoul((const char *)(argv[7]), (char **)NULL, 10);
+		usbh_cfg.speed = _strtoul((const char *)(argv[7]), (char **)NULL, 10);
 	}
-	if (argv[8]) {
-		usbh_cfg.speed = _strtoul((const char *)(argv[8]), (char **)NULL, 10);
-	}
-	RTK_LOGS(TAG, RTK_LOG_INFO, "DMA %d, speed %d\n", usbh_cfg.dma_enable, usbh_cfg.speed);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Speed %d\n", usbh_cfg.speed);
 
 	if (instance == 0) {
 		uvc_if0 = _strtoul((const char *)(argv[1]), (char **)NULL, 10);

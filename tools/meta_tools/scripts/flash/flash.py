@@ -17,7 +17,7 @@ import version_info
 
 MinSupportedDeviceProfileMajorVersion = 1
 MinSupportedDeviceProfileMinorVersion = 1
-setting_file = "Setting.json"
+setting_file = "Settings.json"
 
 
 def convert_mingw_path_to_windows(mingw_path):
@@ -427,13 +427,13 @@ def main(argc, argv):
 
     # load settings
     setting_path = os.path.realpath(os.path.join(RtkUtils.get_executable_root_path(), setting_file))
-    logger.info(f"Setting path: {setting_path}")
+    logger.info(f"Settings path: {setting_path}")
     try:
         if os.path.exists(setting_path):
             dt = JsonUtils.load_from_file(setting_path, need_decrypt=False)
             settings = RtSettings(** dt)
         else:
-            logger.debug(f"Setting.json not exists!")
+            logger.debug(f"{setting_file} not exists!")
             settings = RtSettings(**{})
     except Exception as err:
         logger.error(f"Load settings exception: {err}")
@@ -442,7 +442,7 @@ def main(argc, argv):
     try:
         JsonUtils.save_to_file(setting_path, settings.__repr__())
     except Exception as err:
-        logger.debug(f"save setting.json exception: {err}")
+        logger.debug(f"save {setting_file} exception: {err}")
 
     threads_list = []
 

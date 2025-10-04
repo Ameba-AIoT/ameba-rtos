@@ -344,7 +344,6 @@ static void cdc_acm_verify_usage(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Invalid arguments, usage:\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd acm xlen <xfer length in byte>\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd acm speed <0:high, 1:high in full, 3:full>\n");
-	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd acm dma <en - enable, dis - disable>\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd acm init\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd acm rx\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, " usbd acm tx\n");

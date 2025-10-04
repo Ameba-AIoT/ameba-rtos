@@ -162,8 +162,29 @@ typedef struct {
  * @brief     Bluetooth A2DP stream start indication.
  */
 typedef struct {
-	uint8_t active_a2dp_link_index;                     /*!< stream index */
-	uint8_t stream_cfg;                                 /*!< stream cfg */
+	uint8_t bd_addr[6];                                 /*!< address */
+	uint8_t codec_type;                                 /*!< indicate codec */
+	union {
+		struct {
+			uint8_t     sampling_frequency;             /*!< indicate sample frequence */
+			uint8_t     channel_mode;                   /*!< indicate channel mode */
+			uint8_t     block_length;                   /*!< indicate block length */
+			uint8_t     subbands;                       /*!< indicate subbands */
+			uint8_t     allocation_method;              /*!< indicate allocation method */
+			uint8_t     min_bitpool;                    /*!< indicate min bitpool */
+			uint8_t     max_bitpool;                    /*!< indicate max bitpool */
+		} sbc;
+		struct {
+			uint8_t     object_type;                    /*!< indicate object type */
+			uint16_t    sampling_frequency;             /*!< indicate sample frequence */
+			uint8_t     channel_number;                 /*!< indicate channel number */
+			bool        vbr_supported;                  /*!< indicate vbr_supported */
+			uint32_t    bit_rate;                       /*!< indicate bit rate */
+		} aac;
+		struct {
+			uint8_t     info[12];                       /*!< vendor codec data */
+		} vendor;
+	} codec_info;
 } rtk_bt_a2dp_stream_start_t;
 
 /**
@@ -197,6 +218,23 @@ typedef struct {
 typedef struct {
 	uint8_t  bd_addr[6];                                /*!< address */
 } rtk_bt_a2dp_stream_data_rsp_t;
+
+/**
+ * @struct    rtk_bt_a2dp_stream_stop_t
+ * @brief     a2dp stream stop event.
+ */
+typedef struct {
+	uint8_t  bd_addr[6];                                /*!< address */
+} rtk_bt_a2dp_stream_stop_t;
+
+/**
+ * @struct    rtk_bt_a2dp_stream_close_t
+ * @brief     a2dp stream close event.
+ */
+typedef struct {
+	uint8_t  bd_addr[6];                                /*!< address */
+	uint16_t cause;                                     /*!< cause */
+} rtk_bt_a2dp_stream_close_t;
 
 /**
  * @struct    rtk_bt_a2dp_sdp_attr_info_t

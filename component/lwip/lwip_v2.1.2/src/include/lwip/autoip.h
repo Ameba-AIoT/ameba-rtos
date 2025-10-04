@@ -90,6 +90,12 @@ u8_t autoip_accept_packet(struct netif *netif, const ip4_addr_t *addr);
 
 #define netif_autoip_data(netif) ((struct autoip*)netif_get_client_data(netif, LWIP_NETIF_CLIENT_DATA_INDEX_AUTOIP))
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+void comp_autoip_time(u32_t ms);
+u8_t check_autoip_tmr_removable(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

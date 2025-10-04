@@ -31,6 +31,7 @@
 #define USBH_BOT_CSW_SIGNATURE            0x53425355U
 #define USBH_BOT_CBW_LENGTH               31U
 #define USBH_BOT_CSW_LENGTH               13U
+#define USBH_BOT_DATA_LENGTH              64U
 
 #define USBH_MSC_MAX_LUN       1U
 
@@ -113,12 +114,16 @@ typedef union {
 } usbh_bot_csw_t;
 
 typedef struct {
-	u8 data[64];
 	usbh_bot_state_t state;
 	usbh_bot_cmd_state_t cmd_state;
 	usbh_bot_cbw_t *cbw;
 	usbh_bot_csw_t *csw;
+	u32 origin_tx_pbuf_len;
+	u32 origin_rx_pbuf_len;
+	u8 *origin_tx_pbuf;
+	u8 *origin_rx_pbuf;
 	u8 *pbuf;
+	u8 *data;
 } usbh_bot_handle_t;
 
 /* Capacity data */
@@ -175,6 +180,7 @@ typedef struct {
 	usbh_bot_handle_t hbot;
 	usbh_msc_lun_t unit[USBH_MSC_MAX_LUN];
 	u16 current_lun;
+	u32 *max_lun_buf;
 	u32 max_lun;
 	usbh_msc_state_t state;
 	usbh_msc_cb_t *cb;

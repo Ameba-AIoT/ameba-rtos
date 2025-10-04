@@ -422,10 +422,8 @@ static int usbh_cts_xfer_test_receive(u8 *buf, u32 len)
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
-	.dma_enable = FALSE,
 	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = 8U,
-	.isr_task_priority = 9U,
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,

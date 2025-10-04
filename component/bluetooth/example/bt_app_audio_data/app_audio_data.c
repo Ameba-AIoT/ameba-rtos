@@ -309,20 +309,21 @@ bool demo_usb_deinit(void)
 #define DEMO_UART_IRQ_PRIO        (INT_PRI_LOWEST)
 #define DEMO_UART_TX_FIFO_SIZE    (32)
 #define DEMO_UART_RX_FIFO_SIZE    (32)
-#define DEMO_UART_RX_BUF_SIZE     (0x4000)   /* RX buffer size 8K */
+#define DEMO_UART_RX_BUF_SIZE     (0xC000)   /* RX buffer size 48K */
 #define DEMO_UART_RX_ENABLE_SIZE  (2048)      /* Only 512 left to read */
 #if defined(DEMO_UART_USING_DMA) && DEMO_UART_USING_DMA
 #define DEMO_UART_RX_DISABLE_SIZE (2048)      /* Only 2048 left to write */
 #else
-#define DEMO_UART_RX_DISABLE_SIZE (128)      /* Only 128 left to write */
+#define DEMO_UART_RX_DISABLE_SIZE (4096)      /* Only 128 left to write */
 #endif
-#define DEMO_UART_READ_THRESHOLD  (2560)
 #define DEMO_UART_DMA_TX_BURST_SIZE 8
 #define DEMO_UART_DMA_RX_BURST_SIZE 16 // RX_BURST_SIZE >= RX GDMA_SrcMsize
 #define DEMO_UART_RX_TO_BIT 10
 
 static uint8_t demo_uart_run = 1;
-
+#if !defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB) || (!RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB)
+static uint8_t uart_buff[DEMO_UART_RX_BUF_SIZE] __attribute__((aligned(4)));
+#endif
 static struct demo_uart_t {
 	/* UART */
 	UART_InitTypeDef UART_InitStruct;
@@ -549,24 +550,23 @@ static uint32_t demo_uart_irq(void *data)
 }
 #endif
 
-uint16_t demo_uart_read(uint8_t *buf)
+uint16_t demo_uart_read(uint8_t *buf, uint16_t len)
 {
 	uint16_t read_len = demo_uart_rx_to_read_space();
 	// uint8_t *temp = NULL
 
-	if (read_len > DEMO_UART_READ_THRESHOLD) {
-		read_len = DEMO_UART_READ_THRESHOLD;
-	} else {
+	if (read_len < len) {
+		// BT_LOGE("%s: no enough uart data to read! \r\n", __func__);
 		return 0;
 	}
 
-	if (read_len > demo_uart->ring_buffer_size - demo_uart->read_ptr) {
+	if (len > demo_uart->ring_buffer_size - demo_uart->read_ptr) {
 		memcpy(buf, &demo_uart->ring_buffer[demo_uart->read_ptr], demo_uart->ring_buffer_size - demo_uart->read_ptr);
-		memcpy(buf + (demo_uart->ring_buffer_size - demo_uart->read_ptr), &demo_uart->ring_buffer[0], read_len + demo_uart->read_ptr - demo_uart->ring_buffer_size);
+		memcpy(buf + (demo_uart->ring_buffer_size - demo_uart->read_ptr), &demo_uart->ring_buffer[0], len + demo_uart->read_ptr - demo_uart->ring_buffer_size);
 	} else {
-		memcpy(buf, &demo_uart->ring_buffer[demo_uart->read_ptr], read_len);
+		memcpy(buf, &demo_uart->ring_buffer[demo_uart->read_ptr], len);
 	}
-	demo_uart->read_ptr += read_len;
+	demo_uart->read_ptr += len;
 	demo_uart->read_ptr %= demo_uart->ring_buffer_size;
 
 	if (demo_uart->rx_disabled && demo_uart_rx_to_read_space() <= DEMO_UART_RX_ENABLE_SIZE) {
@@ -583,7 +583,7 @@ uint16_t demo_uart_read(uint8_t *buf)
 #endif
 	}
 
-	return read_len;
+	return len;
 }
 
 bool demo_uart_init(void)
@@ -597,12 +597,8 @@ bool demo_uart_init(void)
 		memset(demo_uart, 0, sizeof(struct demo_uart_t));
 	}
 	if (!demo_uart->ring_buffer) {
-		demo_uart->ring_buffer = (uint8_t *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, DEMO_UART_RX_BUF_SIZE, 4);
-		if (!demo_uart->ring_buffer) {
-			BT_LOGE("demo_uart->ring_buffer is NULL!");
-			return false;
-		}
-		memset(demo_uart->ring_buffer, 0, sizeof(DEMO_UART_RX_BUF_SIZE));
+		memset(uart_buff, 0, DEMO_UART_RX_BUF_SIZE);
+		demo_uart->ring_buffer = (uint8_t *)uart_buff;
 	}
 	demo_uart->ring_buffer_size = DEMO_UART_RX_BUF_SIZE;
 	demo_uart->read_ptr = 0;

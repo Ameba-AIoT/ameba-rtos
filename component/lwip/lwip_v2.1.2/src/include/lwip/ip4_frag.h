@@ -70,6 +70,13 @@ struct ip_reassdata {
 void ip_reass_init(void);
 void ip_reass_tmr(void);
 struct pbuf * ip4_reass(struct pbuf *p);
+
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+void comp_ip_reas_time(u32_t ms);
+u8_t check_ip_reass_tmr_removable(void);
+#endif
+
 #endif /* IP_REASSEMBLY */
 
 #if IP_FRAG
