@@ -19,7 +19,7 @@
 #define COMP_MSC_RX_THREAD_PRIORITY                 5U
 
 /* MSC Endpoint parameters */
-#define COMP_MSC_HS_MAX_PACKET_SIZE				256U   /* High speed BULK IN & OUT packet size */
+#define COMP_MSC_HS_MAX_PACKET_SIZE				512U   /* High speed BULK IN & OUT packet size */
 #define COMP_MSC_FS_MAX_PACKET_SIZE				64U    /* Full speed BULK IN & OUT packet size */
 
 /* MSC configurations */

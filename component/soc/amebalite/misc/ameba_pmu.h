@@ -16,6 +16,7 @@ enum PMU_DEVICE {
 	PMU_WLAN_FW_DEVICE,
 	PMU_BT_DEVICE,
 	PMU_DHCP_PROCESS,
+	PMU_LWIP_STACK,
 	PMU_DEV_USER_BASE, /*reserved for customer use*/
 	PMU_MAX			= 31,
 };

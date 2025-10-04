@@ -22,6 +22,8 @@
 #define USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG       0
 #endif
 
+#define mem_sync()    __sync_synchronize()
+
 /* Private function prototypes -----------------------------------------------*/
 #if USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG
 static const char *usbh_composite_hid_get_usage_page_name(u32 usage_page);
@@ -69,11 +71,25 @@ static usbh_composite_hid_t usbh_composite_hid;
 void usbh_composite_hid_status_dump_thread(void)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "HID cnt %d Type %d\t", hid->event_cnt, hid->last_event.type);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "HID %d-%d\n", hid->event_cnt, hid->last_event.type);
 }
 #endif
 
 #if USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG
+static void usb_list_dump_status(void)
+{
+	usbh_composite_hid_t *hid = &usbh_composite_hid;
+	usb_ringbuf_manager_t *handle = &(hid->report_msg);
+	usb_ringbuf_t *pbuf_data;
+	int idx;
+
+	for (idx = 0; idx < handle->item_cnt; idx++) {
+		pbuf_data = &(handle->list_node[idx]);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "HID rb init %d-0x%08x-%d-%d-%d\n", idx, pbuf_data->buf,
+				 pbuf_data->buf_len, handle->head, handle->tail);
+	}
+}
+
 // Usage Page
 static const char *usbh_composite_hid_get_usage_page_name(u32 usage_page)
 {
@@ -139,6 +155,136 @@ static void usbh_composite_hid_print_item(const usbh_composite_hid_item_t *item)
 }
 #endif
 
+/* can be common code */
+static int usb_ringbuf_is_empty(usb_ringbuf_manager_t *handle)
+{
+	return handle->head == handle->tail;
+}
+
+static int usb_ringbuf_is_full(usb_ringbuf_manager_t *handle)
+{
+	return ((handle->tail + 1) % (handle->item_cnt)) == handle->head;
+}
+
+static int usb_ringbuf_add_tail(usb_ringbuf_manager_t *handle, u8 *buf, u32 size)
+{
+	usb_ringbuf_t *target;
+	u32 cur_tail = handle->tail;
+	u32 next_tail = (cur_tail + 1) % (handle->item_cnt);
+
+	if (usb_ringbuf_is_full(handle)) {
+		return HAL_ERR_PARA;
+	}
+
+	target = &(handle->list_node[cur_tail]);
+	//check the size
+	if (size > handle->item_size) {
+		size = handle->item_size;
+	}
+	target->buf_len = size;
+	usb_os_memcpy((void *)(target->buf), (void *)buf, target->buf_len);
+
+	mem_sync();
+
+	handle->tail = next_tail;
+
+	return HAL_OK;
+}
+
+static u32 usb_ringbuf_remove_head(usb_ringbuf_manager_t *handle, u8 *buf, u32 size)
+{
+	usb_ringbuf_t *target;
+	u32 cur_head = handle->head;
+	u32 copy_len = size;
+
+	if (usb_ringbuf_is_empty(handle)) {
+		return 0;
+	}
+
+	if (buf == NULL || size == 0) {
+		return 0;
+	}
+
+	target = &(handle->list_node[cur_head]);
+
+#if USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG
+	if (target->buf < (handle->buf) || target->buf - (handle->buf) > (handle->item_cnt * handle->item_size)) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "addr 0x%08x-0x%08x\n", target->buf, handle->buf);
+		usb_list_dump_status();
+	}
+#endif
+
+	if (copy_len > target->buf_len) {
+		copy_len = target->buf_len;
+	}
+
+	usb_os_memcpy((void *)buf, (void *)(target->buf), copy_len);
+	target->buf_len = 0;
+
+	mem_sync();
+
+	handle->head = (cur_head + 1) % (handle->item_cnt);
+
+	return copy_len;
+}
+
+static int usb_list_manager_init(usb_ringbuf_manager_t *handle, u16 cnt, u16 size, u8 cache_align)
+{
+	usb_ringbuf_t *pbuf_data;
+	u16 item_length = size;
+	int idx;
+
+	if (cnt == 0 || size == 0) {
+		return HAL_ERR_PARA;
+	}
+
+	if (cache_align) {
+		item_length = CACHE_LINE_ALIGMENT(size);
+	}
+
+	handle->item_cnt = cnt;
+	handle->item_size = item_length;
+
+	handle->buf = (u8 *)usb_os_malloc(handle->item_cnt * handle->item_size);
+	if (handle->buf == NULL) {
+		return HAL_ERR_MEM;
+	}
+
+	handle->list_node = (usb_ringbuf_t *)usb_os_malloc(handle->item_cnt * sizeof(usb_ringbuf_t));
+	if (handle->list_node == NULL) {
+		usb_os_mfree(handle->buf);
+		handle->buf = NULL;
+		return HAL_ERR_MEM;
+	}
+
+	for (idx = 0; idx < handle->item_cnt; idx++) {
+		pbuf_data = &(handle->list_node[idx]);
+		pbuf_data->buf_len = 0;
+		pbuf_data->buf = handle->buf + handle->item_size * idx;
+	}
+
+	handle->head = 0;
+	handle->tail = 0;
+
+	return HAL_OK;
+}
+
+static int usb_list_manager_deinit(usb_ringbuf_manager_t *handle)
+{
+	if (handle->buf != NULL) {
+		usb_os_mfree(handle->buf);
+		handle->buf = NULL;
+	}
+
+	if (handle->list_node != NULL) {
+		usb_os_mfree(handle->list_node);
+		handle->list_node = NULL;
+	}
+
+	return HAL_OK;
+}
+
+/* hid report parse */
 static const u8 *usbh_composite_hid_fetch_item(const u8 *start, const u8 *end, usbh_composite_hid_item_t *item)
 {
 	if (start >= end) {
@@ -305,21 +451,20 @@ static void usbh_composite_hid_process_main_item(usbh_composite_hid_parse_state 
 
 static void usbh_composite_hid_parse_hid_report_descriptor(const u8 *data, u8 length, usbh_composite_hid_ctrl_caps_t *device_info)
 {
-	const u8 *end = data + length;
-	const u8 *ptr = data;
-
 	usbh_composite_hid_parse_state state = {0};
 	usbh_composite_hid_item_t item;
+	const u8 *end = data + length;
+	const u8 *ptr = data;
+#if USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG
+	int item_cnt = 0;
+#endif
 
 	state.device_info = device_info;
 	memset(device_info, 0, sizeof(usbh_composite_hid_ctrl_caps_t));
-#if USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG
-	int item_count = 0;
-#endif
 
 	while ((ptr = usbh_composite_hid_fetch_item(ptr, end, &item)) != NULL) {
 #if USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%03d] ", ++item_count);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%03d] ", ++item_cnt);
 		usbh_composite_hid_print_item(&item);
 #endif
 
@@ -366,18 +511,20 @@ static int usbh_composite_hid_parse_hid_report(const u8 *report_data, u8 report_
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
 	usbh_composite_hid_event_t *event = &(hid->report_event);
+	const u8 *data_start;
+	u32 data_len;
+	u8 report_id = 0;
+
 	event->type = VOLUME_EVENT_NONE;
 	event->is_press = 0;
 
-	// if (report_len == 0 || report_len > device_info->max_report_size)
 	if (report_len == 0) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Warning: Invalid report length: %d\n", report_len);
 		return HAL_ERR_PARA;
 	}
 
-	u8 report_id = 0;
-	const u8 *data_start = report_data;
-	size_t data_len = report_len;
+	data_start = report_data;
+	data_len = report_len;
 
 	/* check report id */
 	if (report_len > 1 &&
@@ -414,7 +561,6 @@ static int usbh_composite_hid_parse_hid_report(const u8 *report_data, u8 report_
 	}
 
 	if (device_info->media.supported && report_id == device_info->media.report_id) {
-
 		// pause play
 		u8 byte_idx = device_info->media.play_pause_bit / 8;
 		u8 bit_idx = device_info->media.play_pause_bit % 8;
@@ -441,7 +587,7 @@ static int usbh_composite_hid_parse_hid_report_desc(u8 *pbuf, u32 buf_length)
 
 #if USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG
 	u32 i = 0;
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Yiyuan 0x%08x data=%d\n", pbuf, buf_length);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Report info 0x%08x data=%d\n", pbuf, buf_length);
 	for (i = 0; i < buf_length;) {
 
 		if (i + 10 < buf_length) {
@@ -468,7 +614,8 @@ static void usbh_composite_hid_parse_hid_msg(const u8 *report, u8 len)
 	int ret;
 
 #if USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Received HID Report (length: %d): ", len);
+	usb_ringbuf_manager_t *handle = &(hid->report_msg);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "RX HID Report:(%d-%d-%d):", len, handle->head, handle->tail);
 	for (u8 i = 0; i < len; i++) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%02x ", report[i]);
 	}
@@ -675,7 +822,8 @@ static void usbh_composite_hid_in_process(usb_host_t *host)
 		urb_state = usbh_get_urb_state(host, ep->pipe);
 		if (urb_state == USBH_URB_DONE) {
 			len = usbh_get_last_transfer_size(host, ep->pipe);
-			usbh_composite_hid_parse_hid_msg(ep->buf, len);
+			/* save to list */
+			usb_ringbuf_add_tail(&(hid->report_msg), ep->buf, len);
 			ep->xfer_state = USBH_HID_XFER;  ///loop to next
 		} else if (urb_state == USBH_URB_BUSY) {
 			if ((host->tick - ep->tick) > ep->interval) {
@@ -826,6 +974,33 @@ static int usbh_composite_hid_cb_sof(usb_host_t *host)
 	return HAL_OK;
 }
 
+static void usbh_composite_hid_parse_thread(void *param)
+{
+	UNUSED(param);
+	usbh_composite_hid_t *hid = &usbh_composite_hid;
+	usb_ringbuf_manager_t *handle = &(hid->report_msg);
+	u8 report_msg[10];
+	u32 read_cnt;
+
+	hid->parse_task_alive = 1;
+	hid->parse_task_exit = 0;
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "HID parse thread\n");
+
+	while (hid->parse_task_exit == 0) {
+		read_cnt = usb_ringbuf_remove_head(handle, report_msg, 10);
+		// RTK_LOGS(TAG, RTK_LOG_INFO, "HID parse thread cnt %d\n", read_cnt);
+		if (read_cnt) {
+			usbh_composite_hid_parse_hid_msg(report_msg, read_cnt);
+			// RTK_LOGS(TAG, RTK_LOG_INFO, "HID parse thread done\n");
+		} else {
+			rtos_time_delay_ms(50);
+		}
+	}
+
+	hid->parse_task_alive = 0;
+	rtos_task_delete(NULL);
+}
 
 /* Exported functions --------------------------------------------------------*/
 
@@ -859,6 +1034,13 @@ int usbh_composite_hid_init(usbh_composite_host_t *driver, usbh_composite_hid_us
 		}
 	}
 
+	usb_list_manager_init(&(hid->report_msg), USBH_COMPOSITE_HID_MST_COUNT, USBH_COMPOSITE_HID_MSG_LENGTH, 0);
+
+	if (rtos_task_create(&(hid->msg_parse_task), ((const char *)"usbh_composite_hid_parse"), usbh_composite_hid_parse_thread,
+						 NULL, 4 * 1024U, USBH_COMPOSITE_HID_THREAD_PRIORITY) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hid parse task fail\n");
+	}
+
 	return HAL_OK;
 }
 
@@ -870,10 +1052,19 @@ int usbh_composite_hid_deinit(void)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
 
+	if (hid->parse_task_alive) {
+		hid->parse_task_exit = 1;
+		do {
+			rtos_time_delay_ms(1);
+		} while (hid->parse_task_alive);
+	}
+
 	if (hid->hid_ctrl_buf != NULL) {
 		usb_os_mfree(hid->hid_ctrl_buf);
 		hid->hid_ctrl_buf = NULL;
 	}
+
+	usb_list_manager_deinit(&(hid->report_msg));
 
 	return HAL_OK;
 }
