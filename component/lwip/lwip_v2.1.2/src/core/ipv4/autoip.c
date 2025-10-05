@@ -525,4 +525,42 @@ autoip_accept_packet(struct netif *netif, const ip4_addr_t *addr)
   return (autoip != NULL) && ip4_addr_cmp(addr, &(autoip->llipaddr));
 }
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+/*
+Called in post sleep process to compenstate the autoip time
+ */
+void comp_autoip_time(u32_t ms)
+{
+  struct netif *netif;
+  NETIF_FOREACH(netif) {
+    struct autoip *autoip = netif_autoip_data(netif);
+    if (autoip != NULL) {
+      autoip->lastconflict = autoip->lastconflict > ms / AUTOIP_TMR_INTERVAL ? autoip->lastconflict - ms / AUTOIP_TMR_INTERVAL : 0;
+      autoip->ttw = autoip->ttw > ms / AUTOIP_TMR_INTERVAL ? autoip->ttw - ms / AUTOIP_TMR_INTERVAL : 0;
+    }
+  }
+}
+
+/*
+Check whether autoip_tmr can be removed before enter sleep
+return 0: no, 1: yes
+ */
+u8_t check_autoip_tmr_removable(void)
+{
+  struct netif *netif;
+  u8_t ret = 1;
+  NETIF_FOREACH(netif) {
+    struct autoip *autoip = netif_autoip_data(netif);
+    if (autoip != NULL && autoip->state != AUTOIP_STATE_OFF && autoip->state != AUTOIP_STATE_BOUND) {
+      ret = 0;
+      goto exit;
+    }
+  }
+
+exit:
+  return ret;
+}
+#endif
+
 #endif /* LWIP_IPV4 && LWIP_AUTOIP */

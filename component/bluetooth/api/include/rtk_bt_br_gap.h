@@ -106,6 +106,7 @@ typedef struct {
 	void                *a2dp_track_handle;
 	void                *sco_track_handle;
 	bool                is_streaming;
+	bool                reg_play_status_flag;
 	uint8_t             avrcp_play_status;
 	uint16_t            handle;
 	uint16_t            sco_handle;
@@ -204,11 +205,20 @@ typedef struct {
 } rtk_bt_br_inquiry_start_t;
 
 /**
+ * @struct    rtk_bt_br_auto_sniff_mode_t
+ * @brief     BR/EDR auto sniff mode parameters.
+ */
+typedef struct {
+	uint8_t     bd_addr[6];                        /*!< address */
+	bool        enable;                            /*!< enable */
+} rtk_bt_br_auto_sniff_mode_t;
+
+/**
  * @struct    rtk_bt_br_sniff_mode_t
  * @brief     BR/EDR sniff mode parameters.
  */
 typedef struct {
-	uint8_t     enable;                            /*!< 0 for disable, 1 for enable */
+	uint8_t     enter;                             /*!< 0 for exit, 1 for enter */
 	uint8_t     bd_addr[6];                        /*!< address */
 	uint16_t    min_interval;                      /*!< Min sniff interval, only even values between 0x0002 and 0xFFFE are valid */
 	uint16_t
@@ -547,18 +557,28 @@ uint16_t rtk_bt_br_gap_set_pincode(uint8_t *pin_code, uint32_t length);
 uint16_t rtk_bt_br_gap_set_radio_mode(uint8_t radio_mode);
 
 /**
- * @brief     configure sniff mode.
- * @param[in] enable: 0 for disable, 1 for enable.
+ * @brief     configure auto entering sniff mode.
  * @param[in] bd_addr The Bluetooth device address
- * @param[in] min_interval: (0 for disable)Min sniff interval, only even values between 0x0002 and 0xFFFE are valid.
- * @param[in] max_interval: (0 for disable)Max sniff interval, only even values between 0x0002 and 0xFFFE are valid, should be larger than min_interval.
- * @param[in] sniff_attempt: (0 for disable)Number of baseband receive slots for sniff attempt.
- * @param[in] sniff_timeout: (0 for disable)Number of baseband receive slots for sniff timeout.
+ * @param[in] enable: false for disabling auto entering sniff mode and true for enabling.
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
  */
-uint16_t rtk_bt_br_gap_set_sniff_mode(uint8_t enable, uint8_t *bd_addr, uint16_t min_interval, uint16_t max_interval, uint16_t sniff_attempt,
+uint16_t rtk_bt_br_gap_set_auto_sniff_mode(uint8_t *bd_addr, bool enable);
+
+/**
+ * @brief     configure sniff mode.
+ * @param[in] enter: 0 for exit, 1 for enter.
+ * @param[in] bd_addr The Bluetooth device address
+ * @param[in] min_interval: (Only works for Enter Action)Min sniff interval, only even values between 0x0002 and 0xFFFE are valid.
+ * @param[in] max_interval: (Only works for Enter Action)Max sniff interval, only even values between 0x0002 and 0xFFFE are valid, should be larger than min_interval.
+ * @param[in] sniff_attempt: (Only works for Enter Action)Number of baseband receive slots for sniff attempt.
+ * @param[in] sniff_timeout: (Only works for Enter Action)Number of baseband receive slots for sniff timeout.
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_br_gap_set_sniff_mode(uint8_t enter, uint8_t *bd_addr, uint16_t min_interval, uint16_t max_interval, uint16_t sniff_attempt,
 									  uint16_t sniff_timeout);
 
 /**

@@ -1436,6 +1436,7 @@ int usbh_uac_wait_isoc_with_status_check(usbh_uac_buf_ctrl_t *pdata_ctrl, uint32
 
 		wait_time = (timeout_ms - elapsed > USBH_UAC_WAIT_SLICE_MS) ? USBH_UAC_WAIT_SLICE_MS : (timeout_ms - elapsed);
 
+		pdata_ctrl->write_wait_sema = 1;
 		if (rtos_sema_take(pdata_ctrl->isoc_sema, wait_time) == RTK_SUCCESS) {
 			pdata_ctrl->write_wait_sema = 0;
 			return HAL_OK;
