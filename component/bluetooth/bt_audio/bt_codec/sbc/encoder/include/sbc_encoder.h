@@ -40,11 +40,6 @@
 #define TRUE (!FALSE)
 #endif
 
-/* BK4BTSTACK_CHANGE START */
-#define SBC_NO_PCM_CPY_OPTION TRUE
-/* BK4BTSTACK_CHANGE END */
-
-
 #define SBC_MAX_NUM_OF_SUBBANDS 8
 #define SBC_MAX_NUM_OF_CHANNELS 2
 #define SBC_MAX_NUM_OF_BLOCKS   16
@@ -72,8 +67,14 @@
 
 #define SBC_NULL    0
 
+#define SBC_MODE_STD      0
+#define SBC_MODE_MSBC     1
+
+#define SBC_SYNC_WORD_STD        (0x9C)
+#define SBC_SYNC_WORD_MSBC       (0xAD)
+
 #ifndef SBC_MAX_NUM_FRAME
-#define SBC_MAX_NUM_FRAME 5
+#define SBC_MAX_NUM_FRAME 15
 #endif
 
 #ifndef SBC_DSP_OPT
@@ -161,13 +162,12 @@ typedef struct SBC_ENC_PARAMS_TAG {
 	SINT16 s16ChannelMode;                          /* mono, dual, streo or joint streo*/
 	SINT16 s16NumOfSubBands;                        /* 4 or 8 */
 	SINT16 s16NumOfChannels;
-	SINT16 s16NumOfBlocks;                          /* SBC: 4, 8, 12 or 16; mSBC: 15*/
+	SINT16 s16NumOfBlocks;                          /* 4, 8, 12 or 16*/
 	SINT16 s16AllocationMethod;                     /* loudness or SNR*/
 	SINT16 s16BitPool;                              /* 16*numOfSb for mono & dual;
                                                        32*numOfSb for stereo & joint stereo */
-	/* BK4BTSTACK_CHANGE START */
-	// UINT16 u16BitRate;
-	/* BK4BTSTACK_CHANGE END */
+	UINT16 u16BitRate;
+	UINT8  sbc_mode;                                /* SBC_MODE_STD or SBC_MODE_MSBC */
 	UINT8   u8NumPacketToEncode;                    /* number of sbc frame to encode. Default is 1 */
 #if (SBC_JOINT_STE_INCLUDED == TRUE)
 	SINT16 as16Join[SBC_MAX_NUM_OF_SUBBANDS];       /*1 if JS, 0 otherwise*/
@@ -193,17 +193,15 @@ typedef struct SBC_ENC_PARAMS_TAG {
 	UINT8  *pu8NextPacket;
 	UINT16 FrameHeader;
 	UINT16 u16PacketLength;
-	/* BK4BTSTACK_CHANGE START */
-	UINT8  mSBCEnabled;
-	/* BK4BTSTACK_CHANGE END */
+
 } SBC_ENC_PARAMS;
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-SBC_API extern void SBC_Encoder(SBC_ENC_PARAMS *strEncParams);
-SBC_API extern void SBC_Encoder_Init(SBC_ENC_PARAMS *strEncParams);
+extern void SBC_Encoder(SBC_ENC_PARAMS *strEncParams);
+extern void SBC_Encoder_Init(SBC_ENC_PARAMS *strEncParams);
 #ifdef __cplusplus
 }
 #endif

@@ -98,6 +98,10 @@ err_t  mem_free_callback(void *m);
 #if LWIP_TCPIP_TIMEOUT && LWIP_TIMERS
 err_t  tcpip_timeout(u32_t msecs, sys_timeout_handler h, void *arg);
 err_t  tcpip_untimeout(sys_timeout_handler h, void *arg);
+/* Realtek Add */
+#ifdef CONFIG_STANDARD_TICKLESS
+err_t  tcpip_timeout_noblock(u32_t msecs, sys_timeout_handler h, void *arg);
+#endif
 #endif /* LWIP_TCPIP_TIMEOUT && LWIP_TIMERS */
 
 #ifdef TCPIP_THREAD_TEST

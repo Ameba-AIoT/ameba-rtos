@@ -176,26 +176,48 @@ static int atcmd_br_gap_radio_mode(int argc, char **argv)
 	return 0;
 }
 
+static int atcmd_br_gap_auto_sniff_mode(int argc, char **argv)
+{
+	uint16_t ret = 1;
+	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
+	bool enable = false;
+
+	if (argc != 2) {
+		BT_LOGE("BR GAP auto sniff mode failed! wrong args num!\r\n");
+		return -1;
+	}
+	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
+	enable = (bool)str_to_int(argv[1]);
+	ret = rtk_bt_br_gap_set_auto_sniff_mode(bd_addr, enable);
+	if (ret) {
+		BT_LOGE("BR GAP auto sniff mode failed! err: 0x%x\r\n", ret);
+		return -1;
+	}
+
+	BT_LOGA("BR GAP %s auto sniff mode ...\r\n", (enable == false) ? "disable" : "enable");
+	return 0;
+}
+
 static int atcmd_br_gap_sniff_mode(int argc, char **argv)
 {
 	uint16_t ret = 1;
-	uint8_t enable = 0;
+	uint8_t enter = 0;
 	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
 
 	if (argc != 2 && argc != 6) {
 		BT_LOGE("BR GAP sniff mode failed! wrong args num!\r\n");
 		return -1;
 	}
-	enable = (uint8_t)str_to_int(argv[0]);
+	enter = (uint8_t)str_to_int(argv[0]);
 	hexdata_str_to_bd_addr(argv[1], bd_addr, RTK_BD_ADDR_LEN);
-	if (enable) {
+	if (enter) {
 		uint16_t min_interval = (uint16_t)str_to_int(argv[2]);
 		uint16_t max_interval = (uint16_t)str_to_int(argv[3]);
 		uint16_t sniff_attempt = (uint16_t)str_to_int(argv[4]);
 		uint16_t sniff_timeout = (uint16_t)str_to_int(argv[5]);
-		ret = rtk_bt_br_gap_set_sniff_mode(enable, bd_addr, min_interval, max_interval, sniff_attempt, sniff_timeout);
+		ret = rtk_bt_br_gap_set_sniff_mode(enter, bd_addr, min_interval, max_interval, sniff_attempt, sniff_timeout);
 	} else {
-		ret = rtk_bt_br_gap_set_sniff_mode(enable, bd_addr, 0, 0, 0, 0);
+		ret = rtk_bt_br_gap_set_sniff_mode(enter, bd_addr, 0, 0, 0, 0);
 	}
 	if (ret) {
 		BT_LOGE("BR GAP sniff mode failed! err: 0x%x\r\n", ret);
@@ -357,6 +379,7 @@ static const cmd_table_t br_gap_cmd_table[] = {
 	{"sec_param",          atcmd_br_gap_set_security_param,  1, 8},
 	{"bond_clear",         atcmd_br_gap_bond_clear,           1, 1},
 	{"radio_mode",         atcmd_br_gap_radio_mode,           2, 2},
+	{"auto_sniff_mode",    atcmd_br_gap_auto_sniff_mode,      3, 3},
 	{"sniff_mode",         atcmd_br_gap_sniff_mode,           3, 7},
 	{"bond_max_num",       atcmd_br_gap_bond_max_num,         1, 1},
 	{"bond_num",           atcmd_br_gap_bond_num,             1, 1},
