@@ -420,6 +420,35 @@ tcpip_untimeout(sys_timeout_handler h, void *arg)
   sys_mbox_post(&tcpip_mbox, msg);
   return ERR_OK;
 }
+
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+/*
+Called in sleep hook fun to inform tcpip_thread restore timer
+ */
+err_t
+tcpip_timeout_noblock(u32_t msecs, sys_timeout_handler h, void *arg)
+{
+  struct tcpip_msg *msg;
+
+  LWIP_ASSERT("Invalid mbox", sys_mbox_valid_val(tcpip_mbox));
+
+  msg = (struct tcpip_msg *)memp_malloc(MEMP_TCPIP_MSG_API);
+  if (msg == NULL) {
+    return ERR_MEM;
+  }
+
+  msg->type = TCPIP_MSG_TIMEOUT;
+  msg->msg.tmo.msecs = msecs;
+  msg->msg.tmo.h = h;
+  msg->msg.tmo.arg = arg;
+  if (sys_mbox_trypost(&tcpip_mbox, msg) != ERR_OK) {
+    return ERR_MEM;
+  }
+  return ERR_OK;
+}
+#endif
+
 #endif /* LWIP_TCPIP_TIMEOUT && LWIP_TIMERS */
 
 

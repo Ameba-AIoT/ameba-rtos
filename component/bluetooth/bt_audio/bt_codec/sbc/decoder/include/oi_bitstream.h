@@ -88,7 +88,7 @@ do { \
     \
     bitPtr += (bits); \
     while (bitPtr >= 16) { \
-        value = (((value) << 8) | *ptr++) & 0xffffffff; \
+        value = ((value) << 8) | *ptr++; \
         bitPtr -= 8; \
     } \
     OI_ASSERT((bits == 0) || (result < (1u << (bits)))); \
