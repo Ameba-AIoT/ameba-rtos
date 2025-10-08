@@ -127,6 +127,12 @@ struct sys_timeo** sys_timeouts_get_next_timeout(void);
 void lwip_cyclic_timer(void *arg);
 #endif
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+void lwip_update_internal_counter(u32_t ms);
+u32_t lwip_rm_unneeded_tmr(u32_t expected_idle_time, void *param);
+#endif
+
 #endif /* LWIP_TIMERS */
 
 #ifdef __cplusplus

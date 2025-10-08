@@ -801,20 +801,32 @@ static uint16_t bt_stack_br_gap_set_radio_mode(void *param)
 	}
 }
 
+extern void bt_timer_enter_sniff_enbale(uint8_t *bd_addr, bool enable);
+
+static uint16_t bt_stack_br_gap_set_auto_sniff_mode(void *param)
+{
+	rtk_bt_br_auto_sniff_mode_t *p_auto_sniff_mode_t = (rtk_bt_br_auto_sniff_mode_t *)param;
+
+	bt_timer_enter_sniff_enbale(p_auto_sniff_mode_t->bd_addr, p_auto_sniff_mode_t->enable);
+	BT_LOGA("bt_stack_br_gap_set_auto_sniff_mode  %s audio sniff mode \r\n", (p_auto_sniff_mode_t->enable == false) ? "disable" : "enable");
+
+	return 0;
+}
+
 static uint16_t bt_stack_br_gap_set_sniff_mode(void *param)
 {
 	T_GAP_CAUSE cause;
 	rtk_bt_br_sniff_mode_t *p_sniff_mode_t = (rtk_bt_br_sniff_mode_t *)param;
 
-	if (p_sniff_mode_t->enable) {
-		BT_LOGE("bt_stack_br_gap_set_sniff_mode: enable \r\n");
+	if (p_sniff_mode_t->enter) {
+		BT_LOGE("bt_stack_br_gap_set_sniff_mode: enter \r\n");
 		cause = gap_br_enter_sniff_mode(p_sniff_mode_t->bd_addr,
 										p_sniff_mode_t->min_interval,
 										p_sniff_mode_t->max_interval,
 										p_sniff_mode_t->sniff_attempt,
 										p_sniff_mode_t->sniff_timeout);
 	} else {
-		BT_LOGE("bt_stack_br_gap_set_sniff_mode: disable \r\n");
+		BT_LOGE("bt_stack_br_gap_set_sniff_mode: exit \r\n");
 		cause = gap_br_exit_sniff_mode(p_sniff_mode_t->bd_addr);
 	}
 
@@ -945,6 +957,11 @@ uint16_t bt_stack_br_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_BR_GAP_ACT_SET_RADIO_MODE:
 		BT_LOGD("RTK_BT_BR_GAP_ACT_SET_RADIO_MODE \r\n");
 		ret = bt_stack_br_gap_set_radio_mode(p_cmd->param);
+		break;
+
+	case RTK_BT_BR_GAP_ACT_SET_AUTO_SNIFF_MODE:
+		BT_LOGD("RTK_BT_BR_GAP_ACT_SET_AUTO_SNIFF_MODE \r\n");
+		ret = bt_stack_br_gap_set_auto_sniff_mode(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_SET_SNIFF_MODE:

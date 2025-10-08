@@ -39,7 +39,7 @@ class RtSettings():
         self.auto_program_spic_addr_mode_4byte = kwargs.get("AutoProgramSpicAddrMode4Byte", 0)
         self.auto_switch_to_download_mode_with_dtr_rts_file = kwargs.get("AutoSwitchToDownloadModeWithDtrRtsTimingFile", "Reburn.cfg")
         self.auto_reset_device_with_dtr_rts_file = kwargs.get("AutoResetDeviceWithDtrRtsTimingFile", "Reset.cfg")
-        self.post_process = kwargs.get("PostProcess", "NONE")
+        self.post_process = kwargs.get("PostProcess", "RESET")
 
     def __repr__(self):
         profile_dict = {
