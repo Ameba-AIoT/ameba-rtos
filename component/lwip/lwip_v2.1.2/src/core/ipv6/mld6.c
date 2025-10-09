@@ -69,6 +69,11 @@
 
 #include <string.h>
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+#include "ameba_soc.h"
+extern SLEEP_ParamDef sleep_param;
+#endif
 
 /*
  * MLD constants
@@ -622,5 +627,57 @@ mld6_send(struct netif *netif, struct mld_group *group, u8_t type)
       MLD6_HL, 0, IP6_NEXTH_HOPBYHOP, netif);
   pbuf_free(p);
 }
+
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+/*
+Called in post sleep process to compenstate the mld6 time
+ */
+void comp_mld6_time(u32_t ms)
+{
+  struct netif *netif;
+
+  NETIF_FOREACH(netif) {
+    struct mld_group *group = netif_mld6_data(netif);
+    while (group != NULL) {
+      if (group->timer > 0) {
+        group->timer = group->timer > ms / MLD6_TMR_INTERVAL ? group->timer - ms / MLD6_TMR_INTERVAL : 1; /* can not set to 0 to affect judge in mld6_tmr */
+      }
+      group = group->next;
+    }
+  }
+}
+
+/*
+Check whether mld6_tmr can be removed before enter sleep
+return 0: no, 1: yes
+ */
+u8_t check_mld6_tmr_removable(void)
+{
+  u8_t ret = 1;
+  struct netif *netif;
+  u32_t max_sleep_time = 0;
+  NETIF_FOREACH(netif) {
+    struct mld_group *group = netif_mld6_data(netif);
+    while (group != NULL) {
+      if (group->timer > 0) {
+        if (group->timer <= 1) {
+          ret = 0;
+          goto exit;
+        } else {
+          max_sleep_time = (group->timer - 1) * MLD6_TMR_INTERVAL;
+          if (sleep_param.sleep_time > max_sleep_time || sleep_param.sleep_time == 0) {
+            sleep_param.sleep_time = max_sleep_time;
+          }
+        }
+      }
+      group = group->next;
+    }
+  }
+
+exit:
+  return ret;
+}
+#endif
 
 #endif /* LWIP_IPV6 */

@@ -97,6 +97,12 @@
 
 #include <string.h>
 
+/* Realtek Add */
+#ifdef CONFIG_STANDARD_TICKLESS
+#include "ameba_soc.h"
+extern SLEEP_ParamDef sleep_param;
+#endif
+
 /** Random generator function to create random TXIDs and source ports for queries */
 #ifndef DNS_RAND_TXID
 #if ((LWIP_DNS_SECURE & LWIP_DNS_SECURE_RAND_XID) != 0)
@@ -1635,5 +1641,56 @@ dns_gethostbyname_addrtype(const char *hostname, ip_addr_t *addr, dns_found_call
   return dns_enqueue(hostname, hostnamelen, found, callback_arg LWIP_DNS_ADDRTYPE_ARG(dns_addrtype)
                      LWIP_DNS_ISMDNS_ARG(is_mdns));
 }
+
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+/*
+Called in post sleep process to compenstate the dns ttl
+ */
+void comp_dns_ttl(u32_t ms)
+{
+  u8_t i;
+  struct dns_table_entry *entry = NULL;
+  
+  for (i = 0; i < DNS_TABLE_SIZE; ++i) {
+    entry = &dns_table[i];
+    if (entry->state == DNS_STATE_DONE) {
+      entry->ttl = entry->ttl > ms / DNS_TMR_INTERVAL ? entry->ttl - ms / DNS_TMR_INTERVAL : 0;
+    }
+  }
+}
+
+/*
+Check whether dns_tmr can be removed before enter sleep
+return 0: no, 1: yes
+ */
+u8_t check_dns_tmr_removable(void)
+{
+  u8_t ret = 1;
+  u8_t i;
+  struct dns_table_entry *entry = NULL;
+  u32_t max_sleep_time = 0;
+
+  for (i = 0; i < DNS_TABLE_SIZE; ++i) {
+    entry = &dns_table[i];
+    if (entry->state != DNS_STATE_DONE && entry->state != DNS_STATE_UNUSED) {
+      ret = 0;
+      break;
+    } else if (entry->state == DNS_STATE_DONE) {
+      if (entry->ttl <= 1) {
+        ret = 0;
+        break;
+      } else {
+        max_sleep_time = (entry->ttl - 1) * DNS_TMR_INTERVAL;
+        if (sleep_param.sleep_time > max_sleep_time || sleep_param.sleep_time  == 0) {
+          sleep_param.sleep_time = max_sleep_time;
+        }
+      }
+    }
+  }
+
+  return ret;
+}
+#endif
 
 #endif /* LWIP_DNS */

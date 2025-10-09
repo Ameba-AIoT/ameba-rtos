@@ -135,6 +135,9 @@ void LwIP_Init(void)
 #endif
 
 	lwip_init_done = 1;
+#ifdef CONFIG_STANDARD_TICKLESS
+	pmu_register_sleep_callback(PMU_LWIP_STACK, (PSM_HOOK_FUN)lwip_rm_unneeded_tmr, NULL, NULL, NULL);
+#endif
 	RTK_LOGS(TAG_WLAN_DRV, RTK_LOG_INFO, "LWIP consume heap %d\n", heap - rtos_mem_get_free_heap_size() - 4 * TCPIP_THREAD_STACKSIZE);
 }
 
