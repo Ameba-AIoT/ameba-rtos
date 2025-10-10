@@ -186,6 +186,7 @@
   */
 _LONG_CALL_ void RCC_PeriphClockCmd(u32 APBPeriph, u32 APBPeriph_Clock, u8 NewState);
 _LONG_CALL_ u32 RCC_PeriphClockEnableChk(u32 APBPeriph_Clock_in);
+_LONG_CALL_ void RCC_PeriphClockSource_SPORT(AUDIO_SPORT_TypeDef *Sportx, u32 Source);
 /**
   * @}
   */

@@ -277,6 +277,8 @@ _LONG_CALL_ int XTAL_Check_READY(void);
   */
 _LONG_CALL_ void PLL_Enable(u8 pll_name);
 _LONG_CALL_ void PLL_Disable(u8 pll_name);
+_LONG_CALL_ void PLL_I2S0_CLK(u32 status, u32 clk);
+_LONG_CALL_ void PLL_I2S_CLK_DIV(u32 index, u32 status, u32 clk);
 _LONG_CALL_ void PLL_SetFreq(u8 pll_name, u32 pll_freq);
 _LONG_CALL_ float PLL_I2S_98P304M_ClkTune(u32 pll_sel, float ppm, u32 action);
 _LONG_CALL_ float PLL_I2S_45P158M_ClkTune(u32 pll_sel, float ppm, u32 action);

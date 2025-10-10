@@ -126,6 +126,8 @@ project_hp/asdk/make/image1/amebasmart/lib_usrcfg.a(ameba_pinmapcfg.o)
                               (--whole-archive)
 project_hp/asdk/make/image1/amebasmart/lib_usrcfg.a(ameba_intfcfg.o)
                               (--whole-archive)
+project_hp/asdk/make/image1/amebasmart/lib_usrcfg.a(ameba_audio_hw_usrcfg.o)
+                              (--whole-archive)
 /home/auto_jenkins_wlan5/workspace/sdk/auto-release-master/amebasmart_gcc_project/project_hp/asdk/lib/soc/lib_crashdump.a(ameba_freertos_backtrace.o)
                               (--whole-archive)
 /home/auto_jenkins_wlan5/workspace/sdk/auto-release-master/amebasmart_gcc_project/project_hp/asdk/lib/soc/lib_crashdump.a(ameba_v8m_backtrace.o)
@@ -606,6 +608,10 @@ Discarded input sections
                 0x0000000000000000        0x4 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .text.I2C_GetINT
                 0x0000000000000000        0x4 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+ .rodata.I2C_PollFlagRawINT.str1.4
+                0x0000000000000000       0x50 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+ .text.I2C_PollFlagRawINT
+                0x0000000000000000       0xac project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .text.I2C_MasterSendNullData
                 0x0000000000000000       0x1c project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .text.I2C_MasterSend
@@ -614,33 +620,25 @@ Discarded input sections
                 0x0000000000000000        0x4 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .text.I2C_ReceiveData
                 0x0000000000000000        0x8 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
- .rodata.I2C_MasterWrite.str1.4
-                0x0000000000000000       0x14 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .text.I2C_MasterWrite
-                0x0000000000000000       0x60 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+                0x0000000000000000       0xf4 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .text.I2C_MasterReadDW
-                0x0000000000000000       0x54 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
- .rodata.I2C_MasterRead.str1.4
-                0x0000000000000000       0x14 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+                0x0000000000000000      0x108 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .text.I2C_MasterRead
-                0x0000000000000000       0xc4 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+                0x0000000000000000       0xb8 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .rodata.I2C_SlaveWrite.str1.4
-                0x0000000000000000       0x37 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+                0x0000000000000000       0x13 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .text.I2C_SlaveWrite
-                0x0000000000000000       0xa4 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
- .rodata.I2C_SlaveRead.str1.4
-                0x0000000000000000       0x1d project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+                0x0000000000000000      0x15c project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .text.I2C_SlaveRead
-                0x0000000000000000       0x70 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+                0x0000000000000000       0x9c project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .text.I2C_MasterRepeatRead
-                0x0000000000000000       0x48 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+                0x0000000000000000      0x108 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .text.I2C_Cmd  0x0000000000000000       0x14 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .text.I2C_MasterRead_TimeOut
-                0x0000000000000000       0xa4 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
- .rodata.I2C_MasterWrite_TimeOut.str1.4
-                0x0000000000000000       0x15 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+                0x0000000000000000       0x5c project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .text.I2C_MasterWrite_TimeOut
-                0x0000000000000000       0xa4 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+                0x0000000000000000       0xb8 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .text.I2C_MasterSendNullData_TimeOut
                 0x0000000000000000       0x48 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .text.I2C_ISRHandle
@@ -665,16 +663,16 @@ Discarded input sections
                 0x0000000000000000        0x4 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .rodata.I2C_DEV_TABLE
                 0x0000000000000000       0x18 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
- .debug_info    0x0000000000000000     0x21ea project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
- .debug_abbrev  0x0000000000000000      0x3c7 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
- .debug_loc     0x0000000000000000     0x228c project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+ .debug_info    0x0000000000000000     0x26b0 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+ .debug_abbrev  0x0000000000000000      0x3dc project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+ .debug_loc     0x0000000000000000     0x2258 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .debug_aranges
-                0x0000000000000000       0xf8 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
- .debug_ranges  0x0000000000000000      0x368 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
- .debug_line    0x0000000000000000     0x1810 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
- .debug_str     0x0000000000000000      0xf72 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+                0x0000000000000000      0x100 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+ .debug_ranges  0x0000000000000000      0x3b0 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+ .debug_line    0x0000000000000000     0x196a project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+ .debug_str     0x0000000000000000     0x121d project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .comment       0x0000000000000000       0x37 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
- .debug_frame   0x0000000000000000      0x340 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+ .debug_frame   0x0000000000000000      0x3d4 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .ARM.attributes
                 0x0000000000000000       0x40 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
  .text          0x0000000000000000        0x0 project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_ledc.o)
@@ -2490,7 +2488,7 @@ Discarded input sections
                 0x0000000000000000       0x1c project_hp/asdk/make/image1/swlib/lib_swlib.a(sscanf_minimal.o)
  .debug_info    0x0000000000000000      0x746 project_hp/asdk/make/image1/swlib/lib_swlib.a(sscanf_minimal.o)
  .debug_abbrev  0x0000000000000000      0x328 project_hp/asdk/make/image1/swlib/lib_swlib.a(sscanf_minimal.o)
- .debug_loc     0x0000000000000000      0xc33 project_hp/asdk/make/image1/swlib/lib_swlib.a(sscanf_minimal.o)
+ .debug_loc     0x0000000000000000      0xc24 project_hp/asdk/make/image1/swlib/lib_swlib.a(sscanf_minimal.o)
  .debug_aranges
                 0x0000000000000000       0x30 project_hp/asdk/make/image1/swlib/lib_swlib.a(sscanf_minimal.o)
  .debug_ranges  0x0000000000000000       0x70 project_hp/asdk/make/image1/swlib/lib_swlib.a(sscanf_minimal.o)
@@ -2644,6 +2642,20 @@ Discarded input sections
  .comment       0x0000000000000000       0x37 project_hp/asdk/make/image1/amebasmart/lib_usrcfg.a(ameba_intfcfg.o)
  .ARM.attributes
                 0x0000000000000000       0x40 project_hp/asdk/make/image1/amebasmart/lib_usrcfg.a(ameba_intfcfg.o)
+ .text          0x0000000000000000        0x0 project_hp/asdk/make/image1/amebasmart/lib_usrcfg.a(ameba_audio_hw_usrcfg.o)
+ .data          0x0000000000000000        0x0 project_hp/asdk/make/image1/amebasmart/lib_usrcfg.a(ameba_audio_hw_usrcfg.o)
+ .bss           0x0000000000000000        0x0 project_hp/asdk/make/image1/amebasmart/lib_usrcfg.a(ameba_audio_hw_usrcfg.o)
+ .bss.audio_delay_start_sport_index
+                0x0000000000000000        0x4 project_hp/asdk/make/image1/amebasmart/lib_usrcfg.a(ameba_audio_hw_usrcfg.o)
+ .debug_info    0x0000000000000000       0x9f project_hp/asdk/make/image1/amebasmart/lib_usrcfg.a(ameba_audio_hw_usrcfg.o)
+ .debug_abbrev  0x0000000000000000       0x57 project_hp/asdk/make/image1/amebasmart/lib_usrcfg.a(ameba_audio_hw_usrcfg.o)
+ .debug_aranges
+                0x0000000000000000       0x18 project_hp/asdk/make/image1/amebasmart/lib_usrcfg.a(ameba_audio_hw_usrcfg.o)
+ .debug_line    0x0000000000000000      0x1cc project_hp/asdk/make/image1/amebasmart/lib_usrcfg.a(ameba_audio_hw_usrcfg.o)
+ .debug_str     0x0000000000000000      0x2d6 project_hp/asdk/make/image1/amebasmart/lib_usrcfg.a(ameba_audio_hw_usrcfg.o)
+ .comment       0x0000000000000000       0x37 project_hp/asdk/make/image1/amebasmart/lib_usrcfg.a(ameba_audio_hw_usrcfg.o)
+ .ARM.attributes
+                0x0000000000000000       0x40 project_hp/asdk/make/image1/amebasmart/lib_usrcfg.a(ameba_audio_hw_usrcfg.o)
  .text          0x0000000000000000        0x0 /home/auto_jenkins_wlan5/workspace/sdk/auto-release-master/amebasmart_gcc_project/project_hp/asdk/lib/soc/lib_crashdump.a(ameba_freertos_backtrace.o)
  .data          0x0000000000000000        0x0 /home/auto_jenkins_wlan5/workspace/sdk/auto-release-master/amebasmart_gcc_project/project_hp/asdk/lib/soc/lib_crashdump.a(ameba_freertos_backtrace.o)
  .bss           0x0000000000000000        0x0 /home/auto_jenkins_wlan5/workspace/sdk/auto-release-master/amebasmart_gcc_project/project_hp/asdk/lib/soc/lib_crashdump.a(ameba_freertos_backtrace.o)
@@ -5728,6 +5740,7 @@ I2C_MasterSendNullData_TimeOut                    project_hp/asdk/make/image1/fw
 I2C_MasterWrite                                   project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
 I2C_MasterWriteInt                                project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
 I2C_MasterWrite_TimeOut                           project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
+I2C_PollFlagRawINT                                project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
 I2C_ReceiveData                                   project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
 I2C_SLAVEWRITE_PATCH                              project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
 I2C_SetSlaveAddress                               project_hp/asdk/make/image1/fwlib/ram_common/lib_fwlib_common.a(ameba_i2c.o)
@@ -6660,6 +6673,7 @@ app_bod_init                                      project_hp/asdk/make/image1/fw
 app_mpu_nocache_check                             project_hp/asdk/make/image1/fwlib/ram_hp/lib_fwlib_hp.a(ameba_app_start.o)
 app_mpu_nocache_init                              project_hp/asdk/make/image1/fwlib/ram_hp/lib_fwlib_hp.a(ameba_app_start.o)
 app_start                                         project_hp/asdk/make/image1/fwlib/ram_hp/lib_fwlib_hp.a(ameba_app_start.o)
+audio_delay_start_sport_index                     project_hp/asdk/make/image1/amebasmart/lib_usrcfg.a(ameba_audio_hw_usrcfg.o)
 bootLzma_buffer_set                               project_hp/asdk/make/image1/bootloader/lib_bootloader_internal.a(boot_ota_hp.o)
 bootLzma_main_function                            project_hp/asdk/make/image1/bootloader/lib_bootloader_internal.a(boot_ota_hp.o)
 boot_export_symbol                                project_hp/asdk/make/image1/bootloader/lib_bootloader_internal.a(bootloader_hp.o)

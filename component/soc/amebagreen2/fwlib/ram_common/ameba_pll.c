@@ -8,6 +8,11 @@
 
 static const char *const TAG = "PLL";
 
+enum PLL_Clk {
+	CLK_98P304M = 0,
+	CLK_45P1584M
+};
+
 static u32 sys_pll_freq_input_get(void)
 {
 	u32 freq_xtal, prediv, freq_input;
@@ -101,7 +106,7 @@ static void sys_pll_set_freq(u32 freq_hz)
 	ncode = freq_hz / freq_input - 2;
 
 	fraction = freq_hz - (ncode + 2) * freq_input;
-	fcode = (u32)((float)fraction / ((float)freq_input) * (1 << 14) + 0.5);
+	fcode = (u32)((float)fraction / ((float)freq_input) * (1 << 14) + 0.5f);
 
 	sys_pll_set_div_reg(ncode, fcode);
 }
@@ -332,4 +337,61 @@ float PLL_I2S_45P158M_ClkTune(u32 pll_sel, float ppm, u32 action)
 
 	return real_ppm;
 }
+
+/**
+  * @brief  I2S0 CPU PLL CLOCK choose when system clock is an integer multiple of I2S PLL
+  * @param  status: ENABLE/DISABLE
+  * @param  clk: CLK_98P304M/CLK_45P1584M
+  */
+void PLL_I2S0_CLK(u32 status, u32 clk)
+{
+	UNUSED(status);
+	switch (clk) {
+	case CLK_45P1584M:
+		RCC_PeriphClockSourceSet(I2S, SYS_PLL);
+		RCC_PeriphClockDividerSet(SYS_PLL_I2S, 8);
+		RCC_PeriphClockDividerFENSet(SYS_PLL_I2S, ENABLE);
+		break;
+
+	case CLK_98P304M:
+		RCC_PeriphClockSourceSet(I2S, SYS_PLL);
+		RCC_PeriphClockDividerSet(SYS_PLL_I2S, 4);
+		RCC_PeriphClockDividerFENSet(SYS_PLL_I2S, ENABLE);
+		break;
+	}
+}
+
+/**
+  * @brief  I2S0 CPU PLL CLOCK choose when system clock is an integer multiple of I2S PLL
+  * 		For compatibility with zephyr.
+  * @param  index: 0
+  * @param  status: ENABLE/DISABLE
+  * @param  clk: CLK_98P304M/CLK_45P1584M
+  */
+void PLL_I2S_CLK_DIV(u32 index, u32 status, u32 clk)
+{
+	assert_param(index == 0);
+	PLL_I2S0_CLK(status, clk);
+}
+
+/**
+  * @brief    Configure sport Clock. Compatibility with Zephyr.
+  * @param  Source:  This parameter can be one of the following values:
+  *                            @arg CKSL_I2S_XTAL40M
+  *                            @arg CKSL_I2S_CPUPLL
+  * @retval   None
+  * @note    Used to switch SPORT clock
+  */
+void RCC_PeriphClockSource_SPORT(AUDIO_SPORT_TypeDef *Sportx, u32 Source)
+{
+	UNUSED(Sportx);
+	if (Source == CKSL_I2S_XTAL40M) {
+		RCC_PeriphClockSourceSet(I2S, XTAL);
+	} else if (Source == CKSL_I2S_CPUPLL) {
+		RCC_PeriphClockSourceSet(I2S, SYS_PLL);
+	} else {
+		RTK_LOGE(TAG, "invaild clk source!!!");
+	}
+}
+
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

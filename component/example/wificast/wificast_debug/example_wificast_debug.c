@@ -242,7 +242,8 @@ static void example_debug_initial_scan(struct example_scan_info **info_list, int
 {
 	struct example_scan_info info = {0};
 	int info_num = 0;
-
+	u32 start_tick = rtos_time_get_current_system_time_ms();
+	u32 cur_tick = cur_tick;
 	do {
 		example_send(WIFI_CAST_SCAN_REQUEST, WIFI_CAST_BROADCAST_MAC, NULL, 0);
 		if (RTK_SUCCESS == rtos_queue_receive(g_scan_report_q, &info, 50)) {
@@ -255,16 +256,15 @@ static void example_debug_initial_scan(struct example_scan_info **info_list, int
 					}
 				}
 			}
-			if (exist) {
-				continue;
+			if (!exist) {
+				RTK_LOGI(TAG, "%s, recv response from"MAC_FMT"\n", __func__, MAC_ARG(info.mac));
+				g_info_list = (struct example_scan_info *)rtos_mem_realloc(g_info_list, (info_num + 1) * sizeof(struct example_scan_info));
+				memcpy(g_info_list[info_num].mac, info.mac, 6);
+				info_num++;
 			}
-			RTK_LOGD(TAG, "%s, recv response from"MAC_FMT"\n", __func__, MAC_ARG(info.mac));
-			g_info_list = (struct example_scan_info *)rtos_mem_realloc(g_info_list, (info_num + 1) * sizeof(struct example_scan_info));
-			memcpy(g_info_list[info_num].mac, info.mac, 6);
-			info_num++;
 		}
-		wait_ms -= 50;
-	} while (wait_ms > 0);
+		cur_tick = rtos_time_get_current_system_time_ms();
+	} while ((cur_tick - start_tick) < wait_ms);
 
 	*info_list = g_info_list;
 	*num = info_num;

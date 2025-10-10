@@ -1296,7 +1296,7 @@ _LONG_CALL_ u32 AUDIO_SP_GetLRCLKStopThreshold(u32 index);
 _LONG_CALL_ void AUDIO_SP_Deinit(u32 index, u32 direction);
 _LONG_CALL_ void AUDIO_SP_SetTxDataFormat(u32 index, u32 format);
 _LONG_CALL_ void AUDIO_SP_SetRxDataFormat(u32 index, u32 format);
-
+_LONG_CALL_ void RCC_PeriphClockSource_SPORT(AUDIO_SPORT_TypeDef *Sportx, u32 Source);
 /**
   * @}
   */

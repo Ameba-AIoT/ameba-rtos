@@ -9,6 +9,8 @@ if(CMAKE_REFACTOR) # For temporary compatibility.
         ameba_add_subdirectory_if(CONFIG_WIFI_FW_EN amebagreen2)
     elseif(CONFIG_AMEBAL2)
         ameba_add_subdirectory_if(CONFIG_WIFI_FW_EN rle1331)
+    elseif(CONFIG_RTL8720F)
+        ameba_add_subdirectory_if(CONFIG_WIFI_FW_EN rle1331)	
     elseif(CONFIG_AMEBALITE)
         if(CONFIG_WLAN)
             if(CONFIG_WHC_DEV OR CONFIG_WHC_NONE)

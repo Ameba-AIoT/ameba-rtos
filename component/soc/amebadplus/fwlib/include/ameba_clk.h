@@ -219,6 +219,7 @@ _LONG_CALL_ void PLL_I2S0_CLK_Auto(u32 status, u32 clk);
 _LONG_CALL_ void PLL_I2S1_CLK_Auto(u32 status, u32 clk);
 _LONG_CALL_ void PLL_I2S0_CLK(u32 status, u32 clk);
 _LONG_CALL_ void PLL_I2S1_CLK(u32 status, u32 clk);
+_LONG_CALL_ void PLL_I2S_CLK_DIV(u32 index, u32 status, u32 clk);
 _LONG_CALL_ u32 PLL_I2S_CLKGet(void);
 _LONG_CALL_ float PLL_I2S_98P304M_ClkTune(u32 pll_sel, float ppm, u32 action);
 _LONG_CALL_ float PLL_I2S_45P158M_ClkTune(u32 pll_sel, float ppm, u32 action);

@@ -276,6 +276,15 @@ typedef struct {
 } rtk_bt_br_acl_disc_t;
 
 /**
+ * @struct    rtk_bt_br_link_key_req_t
+ * @brief     link key request.
+ */
+typedef struct {
+	uint8_t     found;                             /*!< indicate whether containing link key */
+	uint8_t     bd_addr[6];                        /*!< address */
+} rtk_bt_br_link_key_req_t;
+
+/**
  * @struct    rtk_bt_br_bond_key_t
  * @brief     bond key set.
  */
