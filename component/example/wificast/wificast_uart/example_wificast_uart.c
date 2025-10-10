@@ -65,6 +65,7 @@ static void example_uart_read_task(void *param)
 				RTK_LOGE(TAG, "%s, send fail\n", __func__);
 				continue;
 			}
+			rx_buf[sizeof(struct example_frame_head) + size] = '\0';
 			RTK_LOGI(TAG, "send count: %d, size: %d, data: %s\n", ++count, size, rx_buf + sizeof(struct example_frame_head));
 		}
 	}

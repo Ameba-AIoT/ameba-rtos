@@ -122,6 +122,12 @@ err_t          dns_local_addhost(const char *hostname, const ip_addr_t *addr);
 #endif /* DNS_LOCAL_HOSTLIST_IS_DYNAMIC */
 #endif /* DNS_LOCAL_HOSTLIST */
 
+/* Realtek add */
+#ifdef CONFIG_STANDARD_TICKLESS
+void comp_dns_ttl(u32_t ms);
+u8_t check_dns_tmr_removable(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

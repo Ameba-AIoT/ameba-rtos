@@ -108,10 +108,8 @@ u8 uvc_buf[USBH_UVC_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
-	.dma_enable = 1,
 	.alt_max_cnt = 25,
 	.isr_priority = INT_PRI_MIDDLE,
-	.isr_task_priority  = 4U,
 	.main_task_priority = 3U,
 	.sof_tick_enable = 1U,
 #if defined (CONFIG_AMEBAGREEN2)

@@ -407,7 +407,7 @@ func_exit:
 
 #endif
 
-void whc_fullmac_host_event_task(unsigned long data)
+void whc_fullmac_host_event_task(struct work_struct *data)
 {
 	struct event_priv_t *event_priv = &global_idev.event_priv;
 	struct device *pdev = NULL;
@@ -535,7 +535,7 @@ static u32 whc_fullmac_host_event_interrupt(aipc_ch_t *ch, ipc_msg_struct_t *pms
 
 	/* copy ipc_msg from temp memory in ipc interrupt. */
 	memcpy((u8 *) & (event_priv->recv_ipc_msg), (u8 *)pmsg, sizeof(ipc_msg_struct_t));
-	tasklet_schedule(&(event_priv->api_tasklet));
+	queue_work(event_priv->api_workqueue, &(event_priv->api_work));
 
 func_exit:
 	return ret;
@@ -559,11 +559,21 @@ int whc_fullmac_host_event_init(struct whc_device *idev)
 	event_priv->dev_req_network_info = dma_alloc_coherent(event_ch->pdev, DEV_REQ_NETWORK_INFO_MAX_LEN, &event_priv->dev_req_network_info_phy, GFP_KERNEL);
 	if (!event_priv->dev_req_network_info) {
 		dev_err(global_idev.fullmac_dev, "%s: allloc dev_req_network_info error.\n", "event");
+		dma_free_coherent(event_ch->pdev, sizeof(struct whc_ipc_host_req_msg), event_priv->preq_msg, event_priv->req_msg_phy_addr);
 		return -ENOMEM;
 	}
 
-	/* initialize event tasklet */
-	tasklet_init(&(event_priv->api_tasklet), whc_fullmac_host_event_task, (unsigned long)event_priv);
+	/* initialize event work */
+	event_priv->api_workqueue = alloc_ordered_workqueue("api_ordered_wq", 0);
+	if (!event_priv->api_workqueue) {
+		dev_err(global_idev.fullmac_dev, "%s: Failed to create workqueue\n", "event");
+		dma_free_coherent(event_ch->pdev, DEV_REQ_NETWORK_INFO_MAX_LEN,
+				event_priv->dev_req_network_info, event_priv->dev_req_network_info_phy);
+		dma_free_coherent(event_ch->pdev, sizeof(struct whc_ipc_host_req_msg), event_priv->preq_msg, event_priv->req_msg_phy_addr);
+		return -ENOMEM;
+	}
+
+	INIT_WORK(&(event_priv->api_work), whc_fullmac_host_event_task);
 
 	return 0;
 }
@@ -574,10 +584,11 @@ void whc_fullmac_host_event_deinit(void)
 	aipc_ch_t	*event_ch = global_idev.event_ch;
 
 	/* free sema to wakeup the message queue task */
-	tasklet_kill(&(event_priv->api_tasklet));
+	if (event_priv->api_workqueue)
+		destroy_workqueue(event_priv->api_workqueue);
 
 	dma_free_coherent(event_ch->pdev, DEV_REQ_NETWORK_INFO_MAX_LEN,
-					  event_priv->dev_req_network_info, event_priv->dev_req_network_info_phy);
+			  event_priv->dev_req_network_info, event_priv->dev_req_network_info_phy);
 	dma_free_coherent(event_ch->pdev, sizeof(struct whc_ipc_host_req_msg), event_priv->preq_msg, event_priv->req_msg_phy_addr);
 
 	/* deinitialize the mutex to send event_priv message. */

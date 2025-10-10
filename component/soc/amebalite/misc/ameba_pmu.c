@@ -225,7 +225,16 @@ void pmu_pre_sleep_processing(uint32_t *expected_idle_time)
 		sleep_param.sleep_time = pmu_get_sleep_time();// do not wake on system schedule tick
 		sleep_param.dlps_enable = ENABLE;
 	} else {
+#if defined(CONFIG_STANDARD_TICKLESS)
+#if (defined(CONFIG_AP_CORE_KM4) && defined(CONFIG_ARM_CORE_CM4)) \
+	|| (defined(CONFIG_AP_CORE_KR4) && defined(CONFIG_RSICV_CORE_KR4))
+		sleep_param.sleep_time = *expected_idle_time;
+#else
 		sleep_param.sleep_time = pmu_get_sleep_time();//*expected_idle_time;
+#endif
+#else
+		sleep_param.sleep_time = pmu_get_sleep_time();//*expected_idle_time;
+#endif
 		sleep_param.dlps_enable = DISABLE;
 	}
 	sleep_param.sleep_type = sleep_type;

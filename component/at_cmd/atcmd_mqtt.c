@@ -1321,13 +1321,13 @@ end:
 static void at_mqttcfg_help(void)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+MQTTCFG=<link_id>,<keepalive>,<cmd_timeout>,<disable_clean_session>[,<lwt_topic>,<lwt_msg>,<lwt_qos>,<lwt_retain>]\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+MQTTCFG=<link_id>[,<keepalive>][,<cmd_timeout>][,<clean_session>][,<lwt_topic>,<lwt_msg>][,<lwt_qos>][,<lwt_retain>]\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>:\t0~3. link ID.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<keepalive>:\ttimeout of MQTT ping. Unit: second.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<cmd_timeout>:\tmqtt connect and subcribe timeout. Unit: second.\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<disable_clean_session>:\tset MQTT clean session.\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t0:\tenable clean session.\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t1:\tdisable clean session.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<clean_session>:\tmqtt clean session option.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t0:\tdisable clean session.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t1:\tenable clean session.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<lwt_topic>:\tLWT (Last Will and Testament) message topic. Maximum length: 128 bytes.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<lwt_msg>:\tLWT message. Maximum length: 128 bytes.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<lwt_qos>:\tLWT QoS, which can be set to 0, 1, or 2. Default: 0.\r\n");
@@ -1339,7 +1339,7 @@ static void at_mqttcfg_help(void)
 /****************************************************************
 Function            at_mqttcfg
 Brief                   MQTT connection parameters configure. The command is used to configure mqtt connection parameters.
-AT+MQTTCFG=<link_id>,<keepalive>,<cmd_timeout>,<disable_clean_session>[,<lwt_topic>,<lwt_msg>,<lwt_qos>,<lwt_retain>]
+AT+MQTTCFG=<link_id>[,<keepalive>][,<cmd_timeout>][,<clean_session>][,<lwt_topic>,<lwt_msg>][,<lwt_qos>][,<lwt_retain>]
 ****************************************************************/
 void at_mqttcfg(void *arg)
 {
@@ -1348,7 +1348,7 @@ void at_mqttcfg(void *arg)
 	MQTT_RESULT_ENUM resultNo = MQTT_OK;
 	MQTT_CONTROL_BLOCK *mqttCb = NULL;
 	int link_id = MQTT_MAX_CLIENT_NUM;
-	int keepalive = 0, timeout = 0, qos = 0, retain = 0, disable_clean_session = 0;
+	int keepalive = 60, timeout = 60, qos = 0, retain = 0, clean_session = 1;
 
 	/* Get the parameters of AT command. */
 	if (!arg) {
@@ -1358,7 +1358,7 @@ void at_mqttcfg(void *arg)
 	}
 
 	argc = parse_param_advance(arg, argv);
-	if (argc < 5) {
+	if (argc < 2) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCFG] Input wrong parameter\r\n");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
@@ -1390,73 +1390,80 @@ void at_mqttcfg(void *arg)
 	}
 
 	/* keepalive. */
-	keepalive = atoi(argv[2]);
-	if (keepalive <= 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCFG] Invalid keepalive\r\n");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
+	if (argv[2] != NULL && (strlen(argv[2]) > 0)) {
+		keepalive = atoi(argv[2]);
+		if (keepalive <= 0) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCFG] Invalid keepalive\r\n");
+			resultNo = MQTT_ARGS_ERROR;
+			goto end;
+		}
 	}
 
 	/* timeout. */
-	timeout = atoi(argv[3]);
-	if (timeout < 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCFG] Invalid cmd_timeout\r\n");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
+	if (argv[3] != NULL && (strlen(argv[3]) > 0)) {
+		timeout = atoi(argv[3]);
+		if (timeout < 0) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCFG] Invalid cmd_timeout\r\n");
+			resultNo = MQTT_ARGS_ERROR;
+			goto end;
+		}
 	}
 
-	/* disable_clean_session. */
-	disable_clean_session = atoi(argv[4]);
-	if (disable_clean_session != 0 && disable_clean_session != 1) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCFG] Invalid disable_clean_session\r\n");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
+	/* clean_session. */
+	if (argv[4] != NULL && (strlen(argv[4]) > 0)) {
+		clean_session = atoi(argv[4]);
+		if (clean_session != 0 && clean_session != 1) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCFG] Invalid clean_session\r\n");
+			resultNo = MQTT_ARGS_ERROR;
+			goto end;
+		}
 	}
 
 	mqttCb->connectData.keepAliveInterval = (u16)keepalive;
 	mqttCb->client.command_timeout_ms = (u32)(timeout * 1000);
-	mqttCb->connectData.cleansession = (u8)disable_clean_session;
+	mqttCb->connectData.cleansession = (u8)clean_session;
+	mqttCb->connectData.willFlag = 0;
 
 	/* Last Will and Testament. (Optional) */
-	if (argc == 9) {
-		if (strlen(argv[5]) == 0) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCFG] Invalid lwt_topic\r\n");
-			resultNo = MQTT_ARGS_ERROR;
-			goto end;
-		}
+	if (argv[5] != NULL && (strlen(argv[5]) > 0)) {
 		resultNo = mqtt_string_copy(&mqttCb->connectData.will.topicName.cstring, argv[5], strlen(argv[5]));
 		if (MQTT_OK != resultNo) {
 			goto end;
 		}
-		if (strlen(argv[6]) == 0) {
+
+		if (argv[6] == NULL || strlen(argv[6]) == 0) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCFG] Invalid lwt_msg\r\n");
 			resultNo = MQTT_ARGS_ERROR;
 			goto end;
 		}
+
 		resultNo = mqtt_string_copy(&mqttCb->connectData.will.message.cstring, argv[6], strlen(argv[6]));
 		if (MQTT_OK != resultNo) {
 			goto end;
 		}
 
+		mqttCb->connectData.willFlag = 1;
+	}
+
+	if (argv[7] != NULL && (strlen(argv[7]) > 0)) {
 		qos = atoi(argv[7]);
 		if (qos < QOS0 || qos > QOS2) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCFG] Invalid lwt_qos\r\n");
 			resultNo = MQTT_ARGS_ERROR;
 			goto end;
 		}
+	}
 
+	if (argv[7] != NULL && (strlen(argv[7]) > 0)) {
 		retain = atoi(argv[8]);
 		if (retain != 0 && retain != 1) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCFG] Invalid lwt_retain\r\n");
 			resultNo = MQTT_ARGS_ERROR;
 			goto end;
 		}
-		mqttCb->connectData.willFlag = 1;
-		mqttCb->connectData.will.qos = (char)qos;
-		mqttCb->connectData.will.retained = (u8)retain;
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTCFG] No LWT value\r\n");
 	}
+	mqttCb->connectData.will.qos = (char)qos;
+	mqttCb->connectData.will.retained = (u8)retain;
 
 end:
 	if (MQTT_OK != resultNo) {
@@ -1562,7 +1569,7 @@ void at_mqttquery(void *arg)
 	at_printf("password: %s\r\n", mqttCb->password ? mqttCb->password : "NULL");
 	at_printf("cmd_timeout: %d\r\n", mqttCb->client.command_timeout_ms / 1000);
 	at_printf("keepalive: %d\r\n", mqttCb->connectData.keepAliveInterval);
-	at_printf("disable_clean_session: %d\r\n", mqttCb->connectData.cleansession);
+	at_printf("clean_session: %d\r\n", mqttCb->connectData.cleansession);
 	at_printf("LWT: %d\r\n", mqttCb->connectData.willFlag);
 	if (mqttCb->connectData.willFlag) {
 		MQTTPacket_willOptions *will = &mqttCb->connectData.will;

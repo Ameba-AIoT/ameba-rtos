@@ -83,7 +83,7 @@ int i2c_slave_write(i2c_t *obj, const char *data, int length);
 int i2c_slave_set_for_rd_req(i2c_t *obj, int set);
 int i2c_slave_set_for_data_nak(i2c_t *obj, int set_nak);
 int i2c_repeatread(i2c_t *obj, int address, u8 *pWriteBuf, int Writelen, u8 *pReadBuf, int Readlen) ;
-void i2c_send_restart(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u8 restart);
+int i2c_send_restart(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u8 restart);
 
 
 #ifdef __cplusplus

@@ -99,4 +99,9 @@ menu "CONFIG OS"
             endif
         endif
     endif
+    config STANDARD_TICKLESS
+        bool "Enable FreeRTOS Standard Tickless Flow"
+        default n
+        help
+            When enabled, AP core will only sleep xExpectedIdleTime after enter tickless.
 endmenu
