@@ -29,7 +29,7 @@ list(
 )
 
 #FIXME: These source are not add for amebaL2, add them will cause some compile error
-if(NOT CONFIG_AMEBAL2)
+if(CONFIG_AMEBADPLUS OR CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAPRO3 OR CONFIG_AMEBALITE OR CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS OR CONFIG_AMEBAD) 
     list(
         APPEND CSRC
         ${DIR_COMMON}/wififw_txpkt_common.c

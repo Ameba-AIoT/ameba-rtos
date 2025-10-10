@@ -484,19 +484,20 @@ int whc_fullmac_host_add_key(struct rtw_crypt_info *crypt)
 	int ret = 0;
 	u32 param_buf[1];
 	dma_addr_t dma_addr_crypt = 0;
+	struct rtw_crypt_info *crypt_temp = NULL;
 	struct device *pdev = global_idev.ipc_dev;
 
-	dma_addr_crypt = dma_map_single(pdev, crypt, sizeof(struct rtw_crypt_info), DMA_TO_DEVICE);
-	if (dma_mapping_error(pdev, dma_addr_crypt)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		return -1;
+	crypt_temp = rtw_malloc(sizeof(struct rtw_crypt_info), &dma_addr_crypt);
+	if (!crypt_temp) {
+		dev_err(global_idev.fullmac_dev, "%s: malloc failed!\n", __func__);
+		return -ENOMEM;
 	}
+	memcpy(crypt_temp, crypt, sizeof(struct rtw_crypt_info));
 
 	param_buf[0] = (u32)dma_addr_crypt;
-
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_ADD_KEY, param_buf, 1);
+	rtw_mfree(sizeof(struct rtw_crypt_info), crypt_temp, dma_addr_crypt);
 
-	dma_unmap_single(pdev, dma_addr_crypt, sizeof(struct rtw_crypt_info), DMA_TO_DEVICE);
 	return ret;
 }
 
@@ -640,21 +641,32 @@ int whc_fullmac_host_get_traffic_stats(u8 wlan_idx, dma_addr_t stats_traffic)
 	return ret;
 }
 
-int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, dma_addr_t stats_phy)
+int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, union rtw_phy_stats *stats)
 {
 	int ret = 0;
 	u32 param_buf[3];
 	dma_addr_t dma_addr_mac_addr = 0;
+	u8 *mac_addr_temp = NULL;
+	union rtw_phy_stats *stats_vir = NULL;
+	dma_addr_t stats_phy = 0;
 	struct device *pdev = global_idev.ipc_dev;
 
 	param_buf[0] = (u32)wlan_idx;
 
+	stats_vir = rtw_malloc(sizeof(union rtw_phy_stats), &stats_phy);
+	if (!stats_vir) {
+		dev_dbg(global_idev.fullmac_dev, "%s: malloc stats failed.", __func__);
+		return -ENOMEM;
+	}
+
 	if (mac_addr) {
-		dma_addr_mac_addr = dma_map_single(pdev, mac_addr, 6, DMA_TO_DEVICE);
-		if (dma_mapping_error(pdev, dma_addr_mac_addr)) {
-			dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-			return -1;
+		mac_addr_temp = rtw_malloc(6, &dma_addr_mac_addr);
+		if (!mac_addr_temp) {
+			rtw_mfree(sizeof(union rtw_phy_stats), stats_vir, stats_phy);
+			dev_err(global_idev.fullmac_dev, "%s: malloc dma_addr failed!\n", __func__);
+			return -ENOMEM;
 		}
+		memcpy(mac_addr_temp, mac_addr, 6);
 		param_buf[1] = (u32)dma_addr_mac_addr;
 	} else {
 		param_buf[1] = 0;
@@ -662,11 +674,12 @@ int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, dma_addr_t s
 
 	/* ptr of statistics to fullfill. */
 	param_buf[2] = (u32)stats_phy;
-
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_GET_PHY_STATS, param_buf, 3);
+	memcpy(stats, stats_vir, sizeof(union rtw_phy_stats));
 
+	rtw_mfree(sizeof(union rtw_phy_stats), stats_vir, stats_phy);
 	if (mac_addr) {
-		dma_unmap_single(pdev, dma_addr_mac_addr, 6, DMA_TO_DEVICE);
+		rtw_mfree(6, mac_addr_temp, dma_addr_mac_addr);
 	}
 
 	return ret;
@@ -922,7 +935,7 @@ int whc_fullmac_host_nan_cfgvendor_cmd(u16 vendor_cmd, const void *data, int len
 
 	data_vir = rtw_malloc(len, &dma_data);
 	if (data_vir == NULL) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc error!\n", __func__);
+		dev_err(global_idev.fullmac_dev, "%s: malloc failed!\n", __func__);
 		return -ENOMEM;
 	}
 	memcpy(data_vir, data, len);
@@ -1200,27 +1213,18 @@ int whc_fullmac_host_get_edcca_mode(u8 *edcca_mode)
 	dma_addr_t dma_addr = 0;
 	struct device *pdev = global_idev.ipc_dev;
 
-	virt_addr = kzalloc(sizeof(u8), GFP_KERNEL);
+	virt_addr = rtw_malloc(sizeof(u8), &dma_addr);
 	if (virt_addr == NULL) {
+		dev_err(global_idev.fullmac_dev, "%s: malloc failed!\n", __func__);
 		ret = -ENOMEM;
 		goto func_exit;
-	}
-
-	dma_addr = dma_map_single(pdev, virt_addr, sizeof(u8), DMA_FROM_DEVICE);
-	if (dma_mapping_error(pdev, dma_addr)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		ret = -EINVAL;
-		goto free_buf;
 	}
 	param_buf[0] = dma_addr;
 
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_GET_EDCCA_MODE, param_buf, 1);
 	/* need do cache invalidate before get value */
-	dma_unmap_single(pdev, dma_addr, sizeof(u8), DMA_FROM_DEVICE);
 	*edcca_mode = *virt_addr;
-
-free_buf:
-	kfree((u8 *)virt_addr);
+	rtw_mfree(sizeof(u8), virt_addr, dma_addr);
 
 func_exit:
 	return ret;
@@ -1234,29 +1238,19 @@ int whc_fullmac_host_get_ant_info(u8 *antdiv_mode, u8 *curr_ant)
 	dma_addr_t dma_addr = 0;
 	struct device *pdev = global_idev.ipc_dev;
 
-	virt_addr = kzalloc(2 * sizeof(u8), GFP_KERNEL);
+	virt_addr = rtw_malloc(2 * sizeof(u8), &dma_addr);
 	if (virt_addr == NULL) {
+		dev_err(global_idev.fullmac_dev, "%s: malloc failed!\n", __func__);
 		ret = -ENOMEM;
 		goto func_exit;
 	}
-
-	dma_addr = dma_map_single(pdev, virt_addr, 2 * sizeof(u8), DMA_FROM_DEVICE);
-	if (dma_mapping_error(pdev, dma_addr)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		ret = -EINVAL;
-		goto free_buf;
-	}
 	param_buf[0] = dma_addr;
 	param_buf[1] = dma_addr + 1;
-
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_GET_ANTENNA_INFO, param_buf, 2);
-	/* need do cache invalidate before get value */
-	dma_unmap_single(pdev, dma_addr, 2 * sizeof(u8), DMA_FROM_DEVICE);
 	*antdiv_mode = virt_addr[0];
 	*curr_ant = virt_addr[1];
 
-free_buf:
-	kfree((u8 *)virt_addr);
+	rtw_mfree(2 * sizeof(u8), virt_addr, dma_addr);
 
 func_exit:
 	return ret;
@@ -1267,6 +1261,7 @@ int whc_fullmac_host_set_country_code(char *cc)
 	int ret = 0;
 	u32 param_buf[1];
 	dma_addr_t phy_addr = 0;
+	char *country_code = NULL;
 	struct device *pdev = global_idev.ipc_dev;
 
 	if (strlen(cc) != 2) {
@@ -1274,15 +1269,16 @@ int whc_fullmac_host_set_country_code(char *cc)
 		return -EINVAL;
 	}
 
-	phy_addr = dma_map_single(pdev, cc, 2, DMA_TO_DEVICE);
-	if (dma_mapping_error(pdev, phy_addr)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		return -EPERM;
+	country_code = rtw_malloc(2, &phy_addr);
+	if (!country_code) {
+		dev_err(global_idev.fullmac_dev, "%s: maolloc failed\n", __func__);
+		return -ENOMEM;
 	}
+	memcpy(country_code, cc, 2);
 
 	param_buf[0] = (u32)phy_addr;
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SET_COUNTRY_CODE, param_buf, 1);
-	dma_unmap_single(pdev, phy_addr, 2, DMA_TO_DEVICE);
+	rtw_mfree(2, country_code, phy_addr);
 
 	return ret;
 }
@@ -1300,28 +1296,20 @@ int whc_fullmac_host_get_country_code(struct rtw_country_code_table *table)
 		return -EINVAL;
 	}
 
-	virt_addr = kzalloc(sizeof(struct rtw_country_code_table), GFP_KERNEL);
+	virt_addr = rtw_malloc(sizeof(struct rtw_country_code_table), &phy_addr);
 	if (virt_addr == NULL) {
 		dev_err(global_idev.fullmac_dev, "%s: allocate memory failed!\n", __func__);
-		return -EPERM;
-	}
-
-	phy_addr = dma_map_single(pdev, virt_addr, sizeof(struct rtw_country_code_table), DMA_FROM_DEVICE);
-	if (dma_mapping_error(pdev, phy_addr)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		kfree(virt_addr);
-		return -EPERM;
+		return -ENOMEM;
 	}
 
 	param_buf[0] = (u32)phy_addr;
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_GET_COUNTRY_CODE, param_buf, 1);
-	dma_unmap_single(pdev, phy_addr, sizeof(struct rtw_country_code_table), DMA_FROM_DEVICE);
 	memcpy(table, virt_addr, sizeof(struct rtw_country_code_table));
 	if ((virt_addr->char2[0] == 0xff) && (virt_addr->char2[1] == 0xff)) {
 		table->char2[0] = '0';
 		table->char2[1] = '0';
 	}
-	kfree(virt_addr);
+	rtw_mfree(sizeof(struct rtw_country_code_table), virt_addr, phy_addr);
 
 	return ret;
 }

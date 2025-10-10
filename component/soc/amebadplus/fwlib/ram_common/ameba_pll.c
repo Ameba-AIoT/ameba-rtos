@@ -228,6 +228,21 @@ void PLL_I2S1_CLK(u32 status, u32 clk)
 }
 
 /**
+  * @brief  I2S0/1 CPU PLL CLOCK choose when system clock is an integer multiple of I2S PLL
+  * @param  index: 0/1
+  * @param  status: ENABLE/DISABLE
+  * @param  clk: CLK_98P304M/CLK_45P1584M
+  */
+void PLL_I2S_CLK_DIV(u32 index, u32 status, u32 clk)
+{
+	if (index == 0) {
+		PLL_I2S0_CLK(status, clk);
+	} else {
+		PLL_I2S1_CLK(status, clk);
+	}
+}
+
+/**
   * @brief  Get I2S PLL clock.
   * @retval  can be one of the following values:
   *          98:98.304M

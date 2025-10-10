@@ -626,7 +626,7 @@ int whc_fullmac_host_get_traffic_stats(u8 wlan_idx, dma_addr_t traffic_stats_add
 	return ret;
 }
 
-int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, dma_addr_t phy_stats_addr)
+int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, union rtw_phy_stats *stats)
 {
 	int ret = 0;
 	u32 size, mac_len = 0;
@@ -647,7 +647,7 @@ int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, dma_addr_t p
 		memcpy((void *)(param + 2), mac_addr, ETH_ALEN);
 	}
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_GET_PHY_STATS, (u8 *)param, size, (u8 *)phy_stats_addr, sizeof(union rtw_phy_stats));
+	whc_fullmac_host_send_event(WHC_API_WIFI_GET_PHY_STATS, (u8 *)param, size, (u8 *)stats, sizeof(union rtw_phy_stats));
 
 	kfree((void *)param);
 

@@ -192,11 +192,12 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 	break;
 
 	case BT_EVENT_LINK_KEY_REQ: {
-		BT_LOGA("bt_stack_mgr_cback: BT_EVENT_LINK_KEY_REQ \r\n");
+		rtk_bt_br_link_key_req_t *p_link_key_req_t = NULL;
 		uint8_t found = 0;
 		uint8_t link_key[16];
 		T_BT_LINK_KEY_TYPE type;
 
+		BT_LOGA("bt_stack_mgr_cback: BT_EVENT_LINK_KEY_REQ \r\n");
 		if (bt_bond_key_get(param->link_key_req.bd_addr, link_key, (uint8_t *)&type)) {
 			bt_link_key_cfm(param->link_key_req.bd_addr, true, type, link_key);
 			found = 1;
@@ -205,13 +206,15 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 			found = 0;
 		}
 		{
-			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_LINK_KEY_REQ, sizeof(uint8_t));
+			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_LINK_KEY_REQ, sizeof(rtk_bt_br_link_key_req_t));
 			if (!p_evt) {
 				BT_LOGE("bt_stack_mgr_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
-			memcpy((void *)p_evt->data, (void *)&found, sizeof(uint8_t));
+			p_link_key_req_t = (rtk_bt_br_link_key_req_t *)p_evt->data;
+			memcpy((void *)p_link_key_req_t->bd_addr, (void *)param->link_key_req.bd_addr, 6);
+			p_link_key_req_t->found = found;
 			/* Send event */
 			if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
 				handle = false;

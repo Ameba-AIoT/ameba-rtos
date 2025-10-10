@@ -20,7 +20,7 @@ typedef struct i2c_m i2c_t;
 
 u32 restart_enable = 0;
 uint16_t i2c_target_addr[2];
-u32 master_addr_retry = 1;
+u32 master_addr_retry = 1; /* retry number */
 
 #define I2C_ID 0
 
@@ -155,15 +155,17 @@ void i2c_Restart_enable(i2c_t *obj)
   * @param  pBuf: point to the data to be sent.
   * @param  len: the length of data that to be sent.
   * @param  restart: specifies whether a RESTART is issued after all the bytes are sent.
-  * @retval none
+  * @retval Length of sent data.
   */
-void i2c_Send_restart(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u8 restart)
+int i2c_Send_restart(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u8 restart)
 {
 	u8 cnt = 0;
 
 	/* Write in the DR register the data to be sent */
 	for (cnt = 0; cnt < len; cnt++) {
-		while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFNF)) == 0);
+		if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFNF, 0, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
+			return cnt;
+		}
 
 		if (cnt >= len - 1) {
 			/*generate restart signal*/
@@ -173,7 +175,8 @@ void i2c_Send_restart(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u8 restart)
 		}
 	}
 
-	while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFE)) == 0);
+	I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFE, 0, I2C_POLL_TIMEOUT_MS);
+	return len;
 }
 
 /**
@@ -201,11 +204,10 @@ int i2c_Write(i2c_t *obj, int address, const char *data, int length, int stop)
 	}
 
 	if ((!restart_enable) || (1 == stop)) {
-		return (I2C_MasterWrite(obj->I2Cx, (unsigned char *)data, length));
+		return I2C_MasterWrite(obj->I2Cx, (unsigned char *)data, length);
 	} else {
-		i2c_Send_restart(obj->I2Cx, (unsigned char *)data, length, 1);
+		return i2c_Send_restart(obj->I2Cx, (unsigned char *)data, length, 1);
 	}
-	return length;
 }
 
 /**
@@ -221,6 +223,9 @@ int i2c_Read(i2c_t *obj, int address, char *data, int length, int stop)
 {
 	/* To avoid gcc warnings */
 	(void) stop;
+	int rlen;
+	uint32_t retry_cnt = 0;
+
 	if (i2c_target_addr[obj->i2c_idx] != address) {
 		/* Deinit I2C first */
 		I2C_Cmd(obj->I2Cx, DISABLE);
@@ -234,27 +239,28 @@ int i2c_Read(i2c_t *obj, int address, char *data, int length, int stop)
 		I2C_Cmd(obj->I2Cx, ENABLE);
 	}
 
-	if (!master_addr_retry) {
-		I2C_MasterRead(obj->I2Cx, (unsigned char *)data, length);
-	} else {
-		while (0 == I2C_MasterRead(obj->I2Cx, (unsigned char *)data, length)) {
-			/* Wait for i2c enter trap state from trap_stop state*/
-			DelayUs(100);
+	rlen = I2C_MasterRead(obj->I2Cx, (unsigned char *)data, length);
 
-			/* Deinit I2C first */
-			I2C_Cmd(obj->I2Cx, DISABLE);
+	while ((rlen != length) && (retry_cnt < master_addr_retry)) {
+		/* Wait for i2c enter trap state from trap_stop state*/
+		DelayUs(100);
 
-			/* Load the user defined I2C target slave address */
-			i2c_target_addr[obj->i2c_idx] = address;
-			I2CInitData[obj->i2c_idx].I2CAckAddr = address;
+		/* Deinit I2C first */
+		I2C_Cmd(obj->I2Cx, DISABLE);
 
-			/* Init I2C now */
-			I2C_Init(obj->I2Cx, &I2CInitData[obj->i2c_idx]);
-			I2C_Cmd(obj->I2Cx, ENABLE);
-		}
+		/* Load the user defined I2C target slave address */
+		i2c_target_addr[obj->i2c_idx] = address;
+		I2CInitData[obj->i2c_idx].I2CAckAddr = address;
+
+		/* Init I2C now */
+		I2C_Init(obj->I2Cx, &I2CInitData[obj->i2c_idx]);
+		I2C_Cmd(obj->I2Cx, ENABLE);
+
+		rlen = I2C_MasterRead(obj->I2Cx, (unsigned char *)data, length);
+		retry_cnt++;
 	}
 
-	return length;
+	return rlen;
 }
 void i2c_master_rx_check(void)
 {
@@ -328,9 +334,9 @@ void i2c_dual_master_task(void)
 	I2C_Cmd(i2cmaster.I2Cx, ENABLE);
 
 	// Master write - Slave read
-	RTK_LOGI(TAG, "\r\nMaster polling write1>>>\n");
+	RTK_LOGI(TAG, "Master polling write1>>>\n");
 #ifdef I2C_RESTART_DEMO
-	RTK_LOGI(TAG, "\r\nMaster polling write1.1>>>\n");
+	RTK_LOGI(TAG, "Master polling write1.1>>>\n");
 	i2c_Write(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], 1, 0);
 	i2c_Write(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[1], (I2C_DATA_LENGTH - 1), 1);
 #else
@@ -338,19 +344,18 @@ void i2c_dual_master_task(void)
 #endif
 	DelayMs(50);
 
-
-	// Master read - Slave write
-	RTK_LOGI(TAG, "Master polling read1>>>\n");
 #ifdef I2C_RESTART_DEMO
 	i2c_Write(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], 1, 0);
 #endif
+	// Master read - Slave write
+	RTK_LOGI(TAG, "Master polling read1>>>\n");
 	i2c_Read(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatarddst[0], I2C_DATA_LENGTH, 1);
 	DelayMs(50);
 	i2c_master_rx_check();
 
 #ifdef I2C_LOOP_TEST
 
-	RTK_LOGI(TAG, "\r\nMaster polling write2>>>\n");
+	RTK_LOGI(TAG, "Master polling write2>>>\n");
 	i2c_Write(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], I2C_DATA_LENGTH, 1);
 	DelayMs(50);
 	RTK_LOGI(TAG, "Master polling read2>>>\n");
@@ -358,7 +363,7 @@ void i2c_dual_master_task(void)
 	DelayMs(50);
 	i2c_master_rx_check();
 
-	RTK_LOGI(TAG, "\r\nMaster polling write3>>>\n");
+	RTK_LOGI(TAG, "Master polling write3>>>\n");
 	i2c_Write(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], I2C_DATA_LENGTH, 1);
 	DelayMs(50);
 	RTK_LOGI(TAG, "Master polling read3>>>\n");

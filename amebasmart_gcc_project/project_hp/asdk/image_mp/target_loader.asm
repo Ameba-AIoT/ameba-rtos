@@ -2216,7 +2216,7 @@ Disassembly of section .ram_image1.text:
 3000478e:	4628      	mov	r0, r5
 30004790:	f10d 021f 	add.w	r2, sp, #31
 30004794:	f10d 011e 	add.w	r1, sp, #30
-30004798:	f007 fffe 	bl	3000c798 <__SBOOT_GetMdType_veneer>
+30004798:	f007 fff6 	bl	3000c788 <__SBOOT_GetMdType_veneer>
 3000479c:	9001      	str	r0, [sp, #4]
 3000479e:	2800      	cmp	r0, #0
 300047a0:	d169      	bne.n	30004876 <_BOOT_Validate_ImgHash+0x106>
@@ -2459,7 +2459,7 @@ Disassembly of section .ram_image1.text:
 30004a00:	4620      	mov	r0, r4
 30004a02:	b005      	add	sp, #20
 30004a04:	e8bd 4030 	ldmia.w	sp!, {r4, r5, lr}
-30004a08:	f007 beba 	b.w	3000c780 <__SBOOT_Validate_ImgHash_veneer>
+30004a08:	f007 bece 	b.w	3000c7a8 <__SBOOT_Validate_ImgHash_veneer>
 30004a0c:	4620      	mov	r0, r4
 30004a0e:	b005      	add	sp, #20
 30004a10:	e8bd 4030 	ldmia.w	sp!, {r4, r5, lr}
@@ -2491,7 +2491,7 @@ Disassembly of section .ram_image1.text:
 30004a50:	7cba      	ldrb	r2, [r7, #18]
 30004a52:	f10d 010f 	add.w	r1, sp, #15
 30004a56:	f10d 000e 	add.w	r0, sp, #14
-30004a5a:	f007 fe95 	bl	3000c788 <__SBOOT_Validate_Algorithm_veneer>
+30004a5a:	f007 fea9 	bl	3000c7b0 <__SBOOT_Validate_Algorithm_veneer>
 30004a5e:	bb00      	cbnz	r0, 30004aa2 <BOOT_SignatureCheck+0x86>
 30004a60:	f8d8 101c 	ldr.w	r1, [r8, #28]
 30004a64:	2900      	cmp	r1, #0
@@ -2514,7 +2514,7 @@ Disassembly of section .ram_image1.text:
 30004a90:	f107 0870 	add.w	r8, r7, #112	; 0x70
 30004a94:	f89d 000e 	ldrb.w	r0, [sp, #14]
 30004a98:	4641      	mov	r1, r8
-30004a9a:	f007 fe85 	bl	3000c7a8 <__SBOOT_Validate_PubKey_veneer>
+30004a9a:	f007 fe81 	bl	3000c7a0 <__SBOOT_Validate_PubKey_veneer>
 30004a9e:	2800      	cmp	r0, #0
 30004aa0:	d075      	beq.n	30004b8e <BOOT_SignatureCheck+0x172>
 30004aa2:	7c7a      	ldrb	r2, [r7, #17]
@@ -2610,7 +2610,7 @@ Disassembly of section .ram_image1.text:
 30004b9e:	f89d 000e 	ldrb.w	r0, [sp, #14]
 30004ba2:	9300      	str	r3, [sp, #0]
 30004ba4:	463b      	mov	r3, r7
-30004ba6:	f007 fe03 	bl	3000c7b0 <__SBOOT_Validate_Signature_veneer>
+30004ba6:	f007 fdeb 	bl	3000c780 <__SBOOT_Validate_Signature_veneer>
 30004baa:	2800      	cmp	r0, #0
 30004bac:	f47f af79 	bne.w	30004aa2 <BOOT_SignatureCheck+0x86>
 30004bb0:	f107 0830 	add.w	r8, r7, #48	; 0x30
@@ -2622,7 +2622,7 @@ Disassembly of section .ram_image1.text:
 30004bc0:	4620      	mov	r0, r4
 30004bc2:	4633      	mov	r3, r6
 30004bc4:	462a      	mov	r2, r5
-30004bc6:	f007 fddb 	bl	3000c780 <__SBOOT_Validate_ImgHash_veneer>
+30004bc6:	f007 fdef 	bl	3000c7a8 <__SBOOT_Validate_ImgHash_veneer>
 30004bca:	2800      	cmp	r0, #0
 30004bcc:	f47f af69 	bne.w	30004aa2 <BOOT_SignatureCheck+0x86>
 30004bd0:	7c7c      	ldrb	r4, [r7, #17]
@@ -2673,14 +2673,14 @@ Disassembly of section .ram_image1.text:
 30004c42:	7ca2      	ldrb	r2, [r4, #18]
 30004c44:	f10d 010f 	add.w	r1, sp, #15
 30004c48:	f10d 000e 	add.w	r0, sp, #14
-30004c4c:	f007 fd9c 	bl	3000c788 <__SBOOT_Validate_Algorithm_veneer>
+30004c4c:	f007 fdb0 	bl	3000c7b0 <__SBOOT_Validate_Algorithm_veneer>
 30004c50:	4605      	mov	r5, r0
 30004c52:	b948      	cbnz	r0, 30004c68 <BOOT_CertificateCheck+0x44>
 30004c54:	f104 0720 	add.w	r7, r4, #32
 30004c58:	aa04      	add	r2, sp, #16
 30004c5a:	f89d 000e 	ldrb.w	r0, [sp, #14]
 30004c5e:	4639      	mov	r1, r7
-30004c60:	f007 fda2 	bl	3000c7a8 <__SBOOT_Validate_PubKey_veneer>
+30004c60:	f007 fd9e 	bl	3000c7a0 <__SBOOT_Validate_PubKey_veneer>
 30004c64:	4605      	mov	r5, r0
 30004c66:	b148      	cbz	r0, 30004c7c <BOOT_CertificateCheck+0x58>
 30004c68:	4b0f      	ldr	r3, [pc, #60]	; (30004ca8 <BOOT_CertificateCheck+0x84>)
@@ -2702,7 +2702,7 @@ Disassembly of section .ram_image1.text:
 30004c8e:	f89d 100f 	ldrb.w	r1, [sp, #15]
 30004c92:	f89d 000e 	ldrb.w	r0, [sp, #14]
 30004c96:	9601      	str	r6, [sp, #4]
-30004c98:	f007 fd8a 	bl	3000c7b0 <__SBOOT_Validate_Signature_veneer>
+30004c98:	f007 fd72 	bl	3000c780 <__SBOOT_Validate_Signature_veneer>
 30004c9c:	4605      	mov	r5, r0
 30004c9e:	2800      	cmp	r0, #0
 30004ca0:	d0c8      	beq.n	30004c34 <BOOT_CertificateCheck+0x10>
@@ -2731,14 +2731,14 @@ Disassembly of section .ram_image1.text:
 30004cd8:	7ca2      	ldrb	r2, [r4, #18]
 30004cda:	f10d 010f 	add.w	r1, sp, #15
 30004cde:	f10d 000e 	add.w	r0, sp, #14
-30004ce2:	f007 fd51 	bl	3000c788 <__SBOOT_Validate_Algorithm_veneer>
+30004ce2:	f007 fd65 	bl	3000c7b0 <__SBOOT_Validate_Algorithm_veneer>
 30004ce6:	4605      	mov	r5, r0
 30004ce8:	b948      	cbnz	r0, 30004cfe <BOOT_Extract_SignatureCheck+0x4a>
 30004cea:	f104 0870 	add.w	r8, r4, #112	; 0x70
 30004cee:	aa04      	add	r2, sp, #16
 30004cf0:	f89d 000e 	ldrb.w	r0, [sp, #14]
 30004cf4:	4641      	mov	r1, r8
-30004cf6:	f007 fd57 	bl	3000c7a8 <__SBOOT_Validate_PubKey_veneer>
+30004cf6:	f007 fd53 	bl	3000c7a0 <__SBOOT_Validate_PubKey_veneer>
 30004cfa:	4605      	mov	r5, r0
 30004cfc:	b150      	cbz	r0, 30004d14 <BOOT_Extract_SignatureCheck+0x60>
 30004cfe:	4b18      	ldr	r3, [pc, #96]	; (30004d60 <BOOT_Extract_SignatureCheck+0xac>)
@@ -2758,7 +2758,7 @@ Disassembly of section .ram_image1.text:
 30004d24:	f89d 000e 	ldrb.w	r0, [sp, #14]
 30004d28:	9300      	str	r3, [sp, #0]
 30004d2a:	4623      	mov	r3, r4
-30004d2c:	f007 fd40 	bl	3000c7b0 <__SBOOT_Validate_Signature_veneer>
+30004d2c:	f007 fd28 	bl	3000c780 <__SBOOT_Validate_Signature_veneer>
 30004d30:	4605      	mov	r5, r0
 30004d32:	2800      	cmp	r0, #0
 30004d34:	d1e3      	bne.n	30004cfe <BOOT_Extract_SignatureCheck+0x4a>
@@ -2766,7 +2766,7 @@ Disassembly of section .ram_image1.text:
 30004d38:	4632      	mov	r2, r6
 30004d3a:	f104 0130 	add.w	r1, r4, #48	; 0x30
 30004d3e:	f89d 000f 	ldrb.w	r0, [sp, #15]
-30004d42:	f007 fd1d 	bl	3000c780 <__SBOOT_Validate_ImgHash_veneer>
+30004d42:	f007 fd31 	bl	3000c7a8 <__SBOOT_Validate_ImgHash_veneer>
 30004d46:	4605      	mov	r5, r0
 30004d48:	2800      	cmp	r0, #0
 30004d4a:	d1d8      	bne.n	30004cfe <BOOT_Extract_SignatureCheck+0x4a>
@@ -9897,7 +9897,7 @@ Disassembly of section .ram_image1.text:
 30009852:	4622      	mov	r2, r4
 30009854:	4631      	mov	r1, r6
 30009856:	4628      	mov	r0, r5
-30009858:	f002 ffa2 	bl	3000c7a0 <__INT_HardFault_C_veneer>
+30009858:	f002 ff9e 	bl	3000c798 <__INT_HardFault_C_veneer>
 3000985c:	b015      	add	sp, #84	; 0x54
 3000985e:	e8bd 83f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, pc}
 30009862:	2b00      	cmp	r3, #0
@@ -14426,33 +14426,33 @@ Disassembly of section .ram_image1.text:
 3000c77c:	4770      	bx	lr
 3000c77e:	bf00      	nop
 
-3000c780 <__SBOOT_Validate_ImgHash_veneer>:
-3000c780:	f85f f000 	ldr.w	pc, [pc]	; 3000c784 <__SBOOT_Validate_ImgHash_veneer+0x4>
-3000c784:	00003541 	.word	0x00003541
+3000c780 <__SBOOT_Validate_Signature_veneer>:
+3000c780:	f85f f000 	ldr.w	pc, [pc]	; 3000c784 <__SBOOT_Validate_Signature_veneer+0x4>
+3000c784:	00003431 	.word	0x00003431
 
-3000c788 <__SBOOT_Validate_Algorithm_veneer>:
-3000c788:	f85f f000 	ldr.w	pc, [pc]	; 3000c78c <__SBOOT_Validate_Algorithm_veneer+0x4>
-3000c78c:	000033ed 	.word	0x000033ed
+3000c788 <__SBOOT_GetMdType_veneer>:
+3000c788:	f85f f000 	ldr.w	pc, [pc]	; 3000c78c <__SBOOT_GetMdType_veneer+0x4>
+3000c78c:	0000319d 	.word	0x0000319d
 
 3000c790 <____wrap_memset_veneer>:
 3000c790:	f85f f000 	ldr.w	pc, [pc]	; 3000c794 <____wrap_memset_veneer+0x4>
 3000c794:	00012efd 	.word	0x00012efd
 
-3000c798 <__SBOOT_GetMdType_veneer>:
-3000c798:	f85f f000 	ldr.w	pc, [pc]	; 3000c79c <__SBOOT_GetMdType_veneer+0x4>
-3000c79c:	0000319d 	.word	0x0000319d
+3000c798 <__INT_HardFault_C_veneer>:
+3000c798:	f85f f000 	ldr.w	pc, [pc]	; 3000c79c <__INT_HardFault_C_veneer+0x4>
+3000c79c:	0000d8ed 	.word	0x0000d8ed
 
-3000c7a0 <__INT_HardFault_C_veneer>:
-3000c7a0:	f85f f000 	ldr.w	pc, [pc]	; 3000c7a4 <__INT_HardFault_C_veneer+0x4>
-3000c7a4:	0000d8ed 	.word	0x0000d8ed
+3000c7a0 <__SBOOT_Validate_PubKey_veneer>:
+3000c7a0:	f85f f000 	ldr.w	pc, [pc]	; 3000c7a4 <__SBOOT_Validate_PubKey_veneer+0x4>
+3000c7a4:	00003495 	.word	0x00003495
 
-3000c7a8 <__SBOOT_Validate_PubKey_veneer>:
-3000c7a8:	f85f f000 	ldr.w	pc, [pc]	; 3000c7ac <__SBOOT_Validate_PubKey_veneer+0x4>
-3000c7ac:	00003495 	.word	0x00003495
+3000c7a8 <__SBOOT_Validate_ImgHash_veneer>:
+3000c7a8:	f85f f000 	ldr.w	pc, [pc]	; 3000c7ac <__SBOOT_Validate_ImgHash_veneer+0x4>
+3000c7ac:	00003541 	.word	0x00003541
 
-3000c7b0 <__SBOOT_Validate_Signature_veneer>:
-3000c7b0:	f85f f000 	ldr.w	pc, [pc]	; 3000c7b4 <__SBOOT_Validate_Signature_veneer+0x4>
-3000c7b4:	00003431 	.word	0x00003431
+3000c7b0 <__SBOOT_Validate_Algorithm_veneer>:
+3000c7b0:	f85f f000 	ldr.w	pc, [pc]	; 3000c7b4 <__SBOOT_Validate_Algorithm_veneer+0x4>
+3000c7b4:	000033ed 	.word	0x000033ed
 3000c7b8:	74696e49 	.word	0x74696e49
 3000c7bc:	0d425720 	.word	0x0d425720
 3000c7c0:	0000000a 	.word	0x0000000a
@@ -14608,11 +14608,11 @@ Disassembly of section .ram_image1.text:
 3000ca18:	203a656d 	.word	0x203a656d
 3000ca1c:	25207325 	.word	0x25207325
 3000ca20:	00000a73 	.word	0x00000a73
-3000ca24:	313a3631 	.word	0x313a3631
-3000ca28:	39333a31 	.word	0x39333a31
+3000ca24:	323a3131 	.word	0x323a3131
+3000ca28:	35313a30 	.word	0x35313a30
 3000ca2c:	00000000 	.word	0x00000000
-3000ca30:	20706553 	.word	0x20706553
-3000ca34:	32203033 	.word	0x32203033
+3000ca30:	2074634f 	.word	0x2074634f
+3000ca34:	32203031 	.word	0x32203031
 3000ca38:	00353230 	.word	0x00353230
 3000ca3c:	31474d49 	.word	0x31474d49
 3000ca40:	43455320 	.word	0x43455320

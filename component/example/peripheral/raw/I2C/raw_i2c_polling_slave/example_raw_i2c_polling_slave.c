@@ -212,12 +212,11 @@ void i2c_dual_slave_task(void)
 	I2C_SlaveRead(i2cslave.I2Cx, &i2cdatadst[0], I2C_DATA_LENGTH);
 	i2c_slave_rx_check();
 
-	// Master read - Slave write
 #ifdef I2C_RESTART_DEMO
 	RTK_LOGI(TAG, "Slave read 1.1>>>\n");
 	I2C_SlaveRead(i2cslave.I2Cx, &i2cdatadst[0], 1);
 #endif
-
+	// Master read - Slave write
 	RTK_LOGI(TAG, "Slave write 1>>>\n");
 	I2C_SlaveWrite(i2cslave.I2Cx, &i2cdatardsrc[0], I2C_DATA_LENGTH);
 	DelayMs(1);

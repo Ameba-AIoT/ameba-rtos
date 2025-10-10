@@ -162,7 +162,7 @@ image_total  xip_total  sram_total  xip_text  xip_rodata  sram_text  sram_rodata
 1798         0          1798        0         0           984        814          0                0                  lib_wifi_single_core_mp.a(rom_hal_debug.o)
 1680         0          1680        0         0           1672       0            8                0                  lib_wifi_single_core_mp.a(rom_hal_h2c.o)
 387          0          387         0         0           356        31           0                0                  lib_wifi_single_core_mp.a(rom_hal_h2c_g1.o)
-2377         0          2377        0         0           2124       253          0                0                  lib_wifi_single_core_mp.a(rom_hal_recv.o)
+2417         0          2417        0         0           2164       253          0                0                  lib_wifi_single_core_mp.a(rom_hal_recv.o)
 0            0          376         0         0           0          0            0                376                lib_wifi_com_sec.a(rom_hal_rom_to_flash.o)
 0            0          1616        0         0           0          0            0                1616               lib_wifi_single_core_mp.a(rom_hal_structs.o)
 4278         0          4278        0         0           4072       206          0                0                  lib_wifi_single_core_mp.a(rom_hal_xmit.o)
@@ -239,9 +239,9 @@ image_total  xip_total  sram_total  xip_text  xip_rodata  sram_text  sram_rodata
 8697         0          8701        0         0           7916       781          0                4                  lib_wpa_lite.a(rom_wpa_lite_sae_crypto.o)
 ------------------------------------------------------------ wifirom End --------------------------------------------------------------------------------
 image_total  xip_total  sram_total  xip_text  xip_rodata  sram_text  sram_rodata  sram_data(load)  sram_data(noload)  module  
-176984       0          179059      0         0           140568     36408        8                2075               (TOTALS)
+177024       0          179099      0         0           140608     36408        8                2075               (TOTALS)
 Module wifirom size:
-0x2b358			176984
+0x2b380			177024
 
 ============================================================ wificoex Start =============================================================================
 image_total  xip_total  sram_total  xip_text  xip_rodata  sram_text  sram_rodata  sram_data(load)  sram_data(noload)  module  
@@ -655,10 +655,10 @@ Module others size:
 
 ======================================================================================================================================================
 image_total  xip_total  sram_total  xip_text  xip_rodata  sram_text  sram_rodata  sram_data(load)  sram_data(noload)  module  
-731327       0          762438      0         0           593764     134523       3040             31111              (TOTALS)
+731367       0          762478      0         0           593804     134523       3040             31111              (TOTALS)
 
 Image size:
-0xb28bf			731327
+0xb28e7			731367
 
 ============================================================ RAM analysis Start =========================================================================
 ============================================================ libc Start =================================================================================

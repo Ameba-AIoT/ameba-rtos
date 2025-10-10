@@ -111,23 +111,13 @@ static int proc_read_beacon_rssi(struct seq_file *m, void *v)
 {
 	signed char	beacon_rssi;
 	int ret = 0;
-	union rtw_phy_stats *stats_vir = NULL;
-	dma_addr_t stats_phy;
+	union rtw_phy_stats stats = {0};
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
+	ret = whc_fullmac_host_get_phy_stats(STA_WLAN_INDEX, NULL, &stats);
 
-	stats_vir = rtw_malloc(sizeof(union rtw_phy_stats), &stats_phy);
-	if (!stats_vir) {
-		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
-		return -ENOMEM;
-	}
-
-	ret = whc_fullmac_host_get_phy_stats(STA_WLAN_INDEX, NULL, stats_phy);
-
-	beacon_rssi = stats_vir->sta.beacon_rssi;
+	beacon_rssi = stats.sta.beacon_rssi;
 	seq_printf(m, "%d\n", beacon_rssi);
-
-	rtw_mfree(sizeof(union rtw_phy_stats), stats_vir, stats_phy);
 
 	return ret;
 }
@@ -137,23 +127,15 @@ static int proc_read_data_rssi(struct seq_file *m, void *v)
 {
 	signed char	data_rssi;
 	int ret = 0;
-	union rtw_phy_stats *stats_vir = NULL;
-	dma_addr_t stats_phy;
+	union rtw_phy_stats stats = {0};
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
-	stats_vir = rtw_malloc(sizeof(union rtw_phy_stats), &stats_phy);
-	if (!stats_vir) {
-		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
-		return -ENOMEM;
-	}
 
-	ret = whc_fullmac_host_get_phy_stats(STA_WLAN_INDEX, NULL, stats_phy);
+	ret = whc_fullmac_host_get_phy_stats(STA_WLAN_INDEX, NULL, &stats);
 
-	data_rssi = stats_vir->sta.data_rssi;
+	data_rssi = stats.sta.data_rssi;
 	seq_printf(m, "%d\n", data_rssi);
-
-	rtw_mfree(sizeof(union rtw_phy_stats), stats_vir, stats_phy);
 
 	return ret;
 }

@@ -41,7 +41,7 @@ void i2c_master_rx_check(void)
 	int i2clocalcnt;
 	int result = 0;
 
-	RTK_LOGE(TAG, "check master received data>>>\n");
+	RTK_LOGI(TAG, "check master received data>>>\n");
 	for (i2clocalcnt = 0; i2clocalcnt < I2C_DATA_LENGTH; i2clocalcnt += 2) {
 //		RTK_LOGE(TAG,"i2c data: %02x \t %02x\n",i2cdatarddst[i2clocalcnt],i2cdatarddst[i2clocalcnt+1]);
 	}
@@ -54,7 +54,7 @@ void i2c_master_rx_check(void)
 			break;
 		}
 	}
-	RTK_LOGE(TAG, "\r\nMaster receive: Result is %s\r\n", (result) ? "success" : "fail");
+	RTK_LOGI(TAG, "\r\nMaster receive: Result is %s\r\n", (result) ? "success" : "fail");
 
 }
 
@@ -75,7 +75,7 @@ void i2c_dual_master_task(void)
 		i2cdatardsrc[i2clocalcnt] = i2clocalcnt + 1;
 	}
 
-	RTK_LOGE(TAG, "Slave addr=%x\n", MBED_I2C_SLAVE_ADDR0);
+	RTK_LOGI(TAG, "Slave addr=%x\n", MBED_I2C_SLAVE_ADDR0);
 	_memset(&i2cmaster, 0x00, sizeof(i2c_t));
 	i2cmaster.i2c_idx = I2C_0;
 	i2c_init(&i2cmaster, MBED_I2C_MTR_SDA, MBED_I2C_MTR_SCL);
@@ -85,7 +85,7 @@ void i2c_dual_master_task(void)
 #endif
 
 	// Master write - Slave read
-	RTK_LOGE(TAG, "\r\nMaster write>>>\n");
+	RTK_LOGI(TAG, "\r\nMaster write>>>\n");
 #ifdef I2C_RESTART_DEMO
 	i2c_write(&i2cmaster, MBED_I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], 1, 0);
 	i2c_write(&i2cmaster, MBED_I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[1], (I2C_DATA_LENGTH - 1), 1);
@@ -93,11 +93,11 @@ void i2c_dual_master_task(void)
 	i2c_write(&i2cmaster, MBED_I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], I2C_DATA_LENGTH, 1);
 #endif
 
-	// Master read - Slave write
-	RTK_LOGE(TAG, "Master read>>>\n");
 #ifdef I2C_RESTART_DEMO
 	i2c_write(&i2cmaster, MBED_I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], 1, 0);
 #endif
+	// Master read - Slave write
+	RTK_LOGI(TAG, "Master read>>>\n");
 	i2c_read(&i2cmaster, MBED_I2C_SLAVE_ADDR0, (char *)&i2cdatarddst[0], I2C_DATA_LENGTH, 1);
 
 	i2c_master_rx_check();
@@ -108,7 +108,7 @@ void i2c_dual_master_task(void)
 int example_mbed_i2c_polling_master(void)
 {
 	if (rtos_task_create(NULL, "I2C DULE MASTER DEMO", (rtos_task_t)i2c_dual_master_task, NULL, 3072, (1)) != RTK_SUCCESS) {
-		RTK_LOGE(TAG, "Cannot create i2c_dual_master_task demo task\n\r");
+		RTK_LOGI(TAG, "Cannot create i2c_dual_master_task demo task\n\r");
 	}
 
 	rtos_sched_start();
