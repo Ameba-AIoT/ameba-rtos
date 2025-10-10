@@ -474,6 +474,37 @@ u32 I2C_GetINT(I2C_TypeDef *I2Cx)
 }
 
 /**
+  * @brief  Poll the specified I2C flag and/or RawINT to be set.
+  * @param  I2Cx: where I2Cx can be I2C0_DEV, I2C1_DEV and I2C2_DEV.
+  * @param  I2C_FLAG: specifies the status flag to check.
+  * @param  I2C_RawINT: specifies the raw interrupt status to check.
+  * @param  timeout_ms: specifies timeout time, unit is ms.
+  *
+  * @retval RTK_SUCCESS: pass, RTK_ERR_TIMEOUT: timeout, RTK_FAIL: TX_ABRT
+  */
+s32 I2C_PollFlagRawINT(I2C_TypeDef *I2Cx, u32 I2C_FLAG, u32 I2C_RawINT, u32 timeout_ms)
+{
+	assert_param(I2C_FLAG | I2C_RawINT);
+
+	int TimeoutCnt = timeout_ms * 500;
+
+	while (((I2Cx->IC_STATUS & I2C_FLAG) == 0) & ((I2Cx->IC_RAW_INTR_STAT & I2C_RawINT) == 0)) {
+		if (I2Cx->IC_RAW_INTR_STAT & I2C_BIT_TX_ABRT) {
+			RTK_LOGI(TAG, "TX_ABRT: 0x%x\n", I2Cx->IC_TX_ABRT_SOURCE);
+			I2C_ClearAllINT(I2Cx);
+			return RTK_FAIL;
+		}
+		DelayUs(2);
+		if (TimeoutCnt == 0) {
+			RTK_LOGI(TAG, "Timeout when waiting IC_STATUS 0x%x, IC_RAW_INTR_STAT 0x%x\n", I2C_FLAG, I2C_RawINT);
+			return RTK_ERR_TIMEOUT;
+		}
+		TimeoutCnt--;
+	}
+	return RTK_SUCCESS;
+}
+
+/**
   * @brief  Master sends single byte through the I2Cx peripheral according to the set of the upper layer.
   * @param  I2Cx: where I2Cx can be I2C0_DEV, I2C1_DEV and I2C2_DEV.
   * @param  pBuf: point to the data that to be write.
@@ -544,7 +575,9 @@ u32 I2C_MasterWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 
 	/* Write in the DR register the data to be sent */
 	for (cnt = 0; cnt < len; cnt++) {
-		while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFNF)) == 0);
+		if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFNF, 0, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
+			return cnt;
+		}
 
 		if (cnt >= len - 1) {
 			/*generate stop signal*/
@@ -554,13 +587,8 @@ u32 I2C_MasterWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 		}
 	}
 
-	while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFE)) == 0) {
-		if (I2C_GetRawINT(I2Cx) & I2C_BIT_TX_ABRT) {
-			RTK_LOGI(TAG, "TX_ABRT: 0x%x\n", I2Cx->IC_TX_ABRT_SOURCE);
-			I2C_ClearAllINT(I2Cx);
-			return cnt;
-		}
-	}
+	/*Wait I2C TX FIFO empty*/
+	I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFE, 0, I2C_POLL_TIMEOUT_MS);
 	return cnt;
 }
 
@@ -578,9 +606,9 @@ u32 I2C_MasterWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
   * @param  I2Cx: where I2Cx can be I2C0_DEV, I2C1_DEV and I2C2_DEV.
   * @param  pBuf: point to the buffer to hold the received data.
   * @param  len: the length of data that to be received.
-  * @retval None
+  * @retval The length of data that have received from rx fifo.
   */
-void I2C_MasterReadDW(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
+u32 I2C_MasterReadDW(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 {
 	u32 cnt = 0;
 
@@ -596,14 +624,20 @@ void I2C_MasterReadDW(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 		/* read data */
 		if (cnt > 0) {
 			/* wait for I2C_FLAG_RFNE flag */
-			while ((I2C_CheckFlagState(I2Cx, I2C_BIT_RFNE)) == 0);
+			if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_RFNE, 0, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
+				return cnt - 1;
+			}
 			*pBuf++ = (u8)I2Cx->IC_DATA_CMD;
 		}
 	}
 
 	/* recv last data and NACK */
-	while ((I2C_CheckFlagState(I2Cx, I2C_BIT_RFNE)) == 0);
+	if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_RFNE, 0, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
+		return cnt - 1;
+	}
 	*pBuf++ = (u8)I2Cx->IC_DATA_CMD;
+
+	return len;
 }
 
 /**
@@ -616,14 +650,11 @@ void I2C_MasterReadDW(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 u32 I2C_MasterRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 {
 	u32 cnt = 0;
-	/*timout 5S*/
-	u32 timeout;
 	u32 skip_cnt = 0;
+	s32 poll_state;
 
 	/* read in the DR register the data to be received */
 	for (cnt = 0; cnt < len; cnt++) {
-
-		timeout = 2500000;
 
 		if (cnt >= len - 1) {
 			/* generate stop singal */
@@ -633,21 +664,12 @@ u32 I2C_MasterRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 		}
 
 		/* wait for I2C_FLAG_RFNE flag */
-		while ((I2C_CheckFlagState(I2Cx, I2C_BIT_RFNE)) == 0) {
-			if (I2C_GetRawINT(I2Cx) & I2C_BIT_TX_ABRT) {
-				RTK_LOGI(TAG, "TX_ABRT: 0x%x\n", I2Cx->IC_TX_ABRT_SOURCE);
-				I2C_ClearAllINT(I2Cx);
-				return cnt - skip_cnt;
-			}
-			DelayUs(2);
-			if (timeout == 0) {
-				skip_cnt++;
-				RTK_LOGI(TAG, "MasterRead_TimeOut\n");
-				break;
-			}
-			timeout--;
-		}
-		if (timeout > 0) {
+		poll_state = I2C_PollFlagRawINT(I2Cx, I2C_BIT_RFNE, 0, I2C_POLL_TIMEOUT_MS);
+		if (poll_state == RTK_ERR_TIMEOUT) {
+			skip_cnt++;
+		} else if (poll_state == RTK_FAIL) {
+			return cnt - skip_cnt;
+		} else {
 			*pBuf++ = (u8)I2Cx->IC_DATA_CMD;
 		}
 	}
@@ -664,31 +686,22 @@ u32 I2C_MasterRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 u32 I2C_SlaveWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 {
 	u32 cnt = 0;
-	/*timout 5S*/
-	u32 timeout ;
-	u32 int_status;
 
 	if ((I2Cx->IC_RAW_INTR_STAT & I2C_BIT_RX_DONE)) {
 		I2C_ClearINT(I2Cx, I2C_BIT_R_RX_DONE);
 	}
 
 	for (cnt = 0; cnt < len; cnt++) {
-		timeout = 2500000;
-		int_status = I2Cx->IC_RAW_INTR_STAT;
-		while (((int_status & I2C_BIT_RD_REQ) == 0) & ((int_status & I2C_BIT_RX_DONE) == 0)) {
-			DelayUs(2);
-			if (timeout == 0) {
-				RTK_LOGI(TAG, "Waiting for read request timeout\n");
-				return cnt;
-			}
-			timeout--;
-			int_status = I2Cx->IC_RAW_INTR_STAT;
+		if (I2C_PollFlagRawINT(I2Cx, 0, (I2C_BIT_RD_REQ | I2C_BIT_RX_DONE), I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
+			return cnt;
 		}
 
 		I2C_ClearINT(I2Cx, I2C_BIT_R_RD_REQ);
 
 		/* Check I2C TX FIFO status */
-		while (((I2C_CheckFlagState(I2Cx, I2C_BIT_TFNF))  == 0) & ((I2Cx->IC_RAW_INTR_STAT & I2C_BIT_RX_DONE) == 0));
+		if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFNF, I2C_BIT_RX_DONE, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
+			return cnt;
+		}
 		if (((I2Cx->IC_RAW_INTR_STAT & I2C_BIT_RX_DONE) != 0)) {
 			RTK_LOGI(TAG, "I2C EARLY RX DONE\n");
 			return cnt;
@@ -696,11 +709,10 @@ u32 I2C_SlaveWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 
 		I2Cx->IC_DATA_CMD = (*pBuf++);
 	}
-	while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFE)) == 0);
+	I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFE, 0, I2C_POLL_TIMEOUT_MS);
 	I2C_ClearAllINT(I2Cx);
 	return cnt;
 }
-
 
 /**
   * @brief  Read data with special length in slave mode through the I2Cx peripheral.
@@ -713,19 +725,10 @@ u32 I2C_SlaveRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 {
 	u32 cnt = 0;
 
-	/*timout 5S*/
-	u32 timeout;
-
 	for (cnt = 0; cnt < len; cnt++) {
-		timeout = 2500000;
 		/* Check I2C RX FIFO status */
-		while ((I2C_CheckFlagState(I2Cx, (I2C_BIT_RFNE | I2C_BIT_RFF))) == 0) {
-			DelayUs(2);
-			if (timeout == 0) {
-				RTK_LOGI(TAG, "SlaveRead_TimeOut: cnt = %d\n", cnt);
-				return cnt;
-			}
-			timeout--;
+		if (I2C_PollFlagRawINT(I2Cx, (I2C_BIT_RFNE | I2C_BIT_RFF), 0, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
+			return cnt;
 		}
 
 		*pBuf++ = (u8)I2Cx->IC_DATA_CMD;
@@ -740,16 +743,18 @@ u32 I2C_SlaveRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
   * @param  Writelen: Byte number to be transmitted.
   * @param  pReadBuf: Byte to be received.
   * @param  Readlen: Byte number to be received.
-  * @retval None
+  * @retval The length of data that have received from rx fifo.
   */
-void I2C_MasterRepeatRead(I2C_TypeDef *I2Cx, u8 *pWriteBuf, u32 Writelen, u8 *pReadBuf, u32 Readlen)
+u32 I2C_MasterRepeatRead(I2C_TypeDef *I2Cx, u8 *pWriteBuf, u32 Writelen, u8 *pReadBuf, u32 Readlen)
 {
 
 	u32 cnt = 0;
 
 	/* write in the DR register the data to be sent */
 	for (cnt = 0; cnt < Writelen; cnt++) {
-		while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFNF)) == 0);
+		if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFNF, 0, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
+			return 0;
+		}
 
 		if (cnt >= Writelen - 1) {
 			/*generate restart signal*/
@@ -759,10 +764,12 @@ void I2C_MasterRepeatRead(I2C_TypeDef *I2Cx, u8 *pWriteBuf, u32 Writelen, u8 *pR
 		}
 	}
 
-	/*Wait I2C TX FIFO not full*/
-	while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFNF)) == 0);
+	/*Wait I2C TX FIFO empty*/
+	if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFE, 0, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
+		return 0;
+	}
 
-	I2C_MasterRead(I2Cx, pReadBuf, Readlen);
+	return I2C_MasterRead(I2Cx, pReadBuf, Readlen);
 }
 
 /**
@@ -791,15 +798,12 @@ void I2C_Cmd(I2C_TypeDef *I2Cx, u8 NewState)
   * @param  timeout_ms: specifies timeout time, unit is ms.
   * @retval The length of data that have received from rx fifo.
   */
-u32 I2C_MasterRead_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 times)
+u32 I2C_MasterRead_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms)
 {
 	u32 cnt = 0;
-	u32 InTimeoutCount = 0;
 
 	/* read in the DR register the data to be received */
 	for (cnt = 0; cnt < len; cnt++) {
-		InTimeoutCount = times * 500;
-
 		if (cnt >= len - 1) {
 			/* generate stop singal */
 			I2Cx->IC_DATA_CMD = I2C_BIT_CMD_RW | I2C_BIT_CMD_STOP;
@@ -808,20 +812,8 @@ u32 I2C_MasterRead_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 times)
 		}
 
 		/* wait for I2C_FLAG_RFNE flag */
-		while ((I2C_CheckFlagState(I2Cx, I2C_BIT_RFNE)) == 0) {
-			if (I2C_GetRawINT(I2Cx) & I2C_BIT_TX_ABRT) {
-				RTK_LOGE(TAG, "TX_ABRT: 0x%x\n", I2Cx->IC_TX_ABRT_SOURCE);
-				I2C_ClearAllINT(I2Cx);
-				return cnt;
-			}
-
-			DelayUs(2);
-
-			if (InTimeoutCount == 0) {
-				RTK_LOGW(TAG, "MasterRead_TimeOut\n");
-				return cnt;
-			}
-			InTimeoutCount--;
+		if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_RFNE, 0, ms) != RTK_SUCCESS) {
+			return cnt;
 		}
 
 		*pBuf++ = (u8)I2Cx->IC_DATA_CMD;
@@ -838,16 +830,15 @@ u32 I2C_MasterRead_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 times)
   * @param  timeout_ms: specifies timeout time, unit is ms.
   * @retval The length of data that have sent to tx fifo.
   */
-u32 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 times)
+u32 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms)
 {
 	u32 cnt = 0;
-	u32 InTimeoutCount = 0;
 
 	/* Write in the DR register the data to be sent */
 	for (cnt = 0; cnt < len; cnt++) {
-		InTimeoutCount = times * 500;
-
-		while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFNF)) == 0);
+		if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFNF, 0, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
+			return cnt;
+		}
 
 		if (cnt >= len - 1) {
 			/*generate stop signal*/
@@ -855,24 +846,10 @@ u32 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 times)
 		} else {
 			I2Cx->IC_DATA_CMD = (*pBuf++);
 		}
-
-		while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFE)) == 0) {
-			if (I2C_GetRawINT(I2Cx) & I2C_BIT_TX_ABRT) {
-				RTK_LOGE(TAG, "TX_ABRT: 0x%x\n", I2Cx->IC_TX_ABRT_SOURCE);
-				I2C_ClearAllINT(I2Cx);
-				return cnt;
-			}
-
-			DelayUs(2);
-
-			if (InTimeoutCount == 0) {
-				RTK_LOGW(TAG, "MasterWrite_TimeOut\n");
-				return cnt;
-			}
-			InTimeoutCount--;
-		}
 	}
 
+	/*Wait I2C TX FIFO empty*/
+	I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFE, 0, ms);
 	return cnt;
 }
 
@@ -883,7 +860,7 @@ u32 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 times)
   * @param  timeout_ms: specifies timeout time, unit is ms.
   * @retval Slave ack condition:
   *          - 0: Slave available
-  *          - -1: Slave not available
+  *          - 1: Slave not available
   */
 s32 I2C_MasterSendNullData_TimeOut(I2C_TypeDef *I2Cx, int address, u32 timeout_ms)
 {

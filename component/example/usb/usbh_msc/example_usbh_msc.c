@@ -20,8 +20,7 @@ static const char *const TAG = "MSC";
 #define USBH_MSC_THREAD_STACK_SIZE  (1024*8)
 #define USBH_MSC_TEST_BUF_SIZE      4096
 #define USBH_MSC_TEST_ROUNDS        20
-#define USBH_MSC_TEST_SEED          0xA5
-
+#define USBH_MSC_CHECK_DATA          0
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
@@ -37,13 +36,13 @@ static int msc_cb_process(usb_host_t *host, u8 id);
 static rtos_sema_t msc_attach_sema;
 static __IO int msc_is_ready = 0;
 static u32 filenum = 0;
+static u8 *msc_wt_buf;
+static u8 *msc_rd_buf;
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
-	.dma_enable = FALSE,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
-	.isr_task_priority  = 4U,
 	.main_task_priority = 3U,
 	.sof_tick_enable = 1U,
 #if defined (CONFIG_AMEBAGREEN2)
@@ -124,16 +123,22 @@ void example_usbh_msc_thread(void *param)
 	u32 test_sizes[] = {512, 1024, 2048, 4096, 8192};
 	u32 test_size;
 	u32 i;
-	u8 *buf = NULL;
+	u8 data;
 
 	UNUSED(param);
 
 	rtos_sema_create(&msc_attach_sema, 0U, 1U);
 
-	buf = (u8 *)rtos_mem_zmalloc(USBH_MSC_TEST_BUF_SIZE);
-	if (buf == NULL) {
+	msc_wt_buf = (u8 *)rtos_mem_zmalloc(USBH_MSC_TEST_BUF_SIZE);
+	if (msc_wt_buf == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to alloc test buf\n");
 		goto exit;
+	}
+
+	msc_rd_buf = (u8 *)rtos_mem_zmalloc(USBH_MSC_TEST_BUF_SIZE);
+	if (msc_rd_buf == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to alloc test buf\n");
+		goto exit_free;
 	}
 
 	ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
@@ -186,16 +191,19 @@ void example_usbh_msc_thread(void *param)
 			}
 		}
 
+next_file:
 		sprintf(&path[3], "TEST%ld.DAT", filenum);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Open file: %s\n", path);
-		// open test file
+		/* open test file */
 		res = f_open(&f, path, FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
 		if (res) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to open file: TEST%d.DAT\n", filenum);
 			goto exit_unmount;
 		}
-		// clean write and read buffer
-		memset(buf, USBH_MSC_TEST_SEED, USBH_MSC_TEST_BUF_SIZE);
+
+		/* change write data */
+		data = _rand() % 0xFF;
+		memset(msc_wt_buf, data, USBH_MSC_TEST_BUF_SIZE);
 
 		for (i = 0; i < sizeof(test_sizes) / sizeof(test_sizes[0]); ++i) {
 			test_size = test_sizes[i];
@@ -207,7 +215,7 @@ void example_usbh_msc_thread(void *param)
 			start = SYSTIMER_TickGet();
 
 			for (round = 0; round < USBH_MSC_TEST_ROUNDS; ++round) {
-				res = f_write(&f, (void *)buf, test_size, (UINT *)&bw);
+				res = f_write(&f, (void *)msc_wt_buf, test_size, (UINT *)&bw);
 				if (res || (bw < test_size)) {
 					f_lseek(&f, 0);
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "W err bw=%d, rc=%d\n", bw, res);
@@ -227,7 +235,7 @@ void example_usbh_msc_thread(void *param)
 			start = SYSTIMER_TickGet();
 
 			for (round = 0; round < USBH_MSC_TEST_ROUNDS; ++round) {
-				res = f_read(&f, (void *)buf, test_size, (UINT *)&br);
+				res = f_read(&f, (void *)msc_rd_buf, test_size, (UINT *)&br);
 				if (res || (br < test_size)) {
 					f_lseek(&f, 0);
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "R err br=%d, rc=%d\n", br, res);
@@ -242,11 +250,22 @@ void example_usbh_msc_thread(void *param)
 
 			/* move the file pointer to the file head*/
 			res = f_lseek(&f, 0);
+
+#if USBH_MSC_CHECK_DATA
+			/* Check TRX data*/
+			if (!(memcmp(msc_wt_buf, msc_rd_buf, test_size) == 0)) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "WR%d check err: %x-%x-%x-%x vs %x-%x-%x-%x\n", test_size,
+						 msc_wt_buf[0], msc_wt_buf[1], msc_wt_buf[test_size - 2], msc_wt_buf[test_size - 1],
+						 msc_rd_buf[0], msc_rd_buf[1], msc_rd_buf[test_size - 2], msc_rd_buf[test_size - 1]);
+				ret = HAL_ERR_HW;
+				break;
+			}
+#endif
 		}
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "FatFS USB W/R performance test %s\n", (ret == 0) ? "done" : "abort");
 
-		// close source file
+		/* close source file */
 		res = f_close(&f);
 		if (res) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "File close fail\n");
@@ -255,14 +274,17 @@ void example_usbh_msc_thread(void *param)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "File close OK\n");
 		}
 
-		if (!ret) {
-			filenum++;
+		if ((!ret) && (++filenum < 10)) {
+			goto next_file;
+		} else {
+			break;
 		}
-		ret = 0;
 	}
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Test %d over: %d\n", filenum, ret);
 exit_unmount:
 	if (f_unmount(logical_drv) != FR_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to unmount logical drive\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to unmount logical drive: %d\n");
 	}
 exit_unregister:
 	if (FATFS_UnRegisterDiskDriver(drv_num)) {
@@ -272,8 +294,11 @@ exit_deinit:
 	usbh_msc_deinit();
 	usbh_deinit();
 exit_free:
-	if (buf) {
-		rtos_mem_free(buf);
+	if (msc_wt_buf) {
+		rtos_mem_free(msc_wt_buf);
+	}
+	if (msc_rd_buf) {
+		rtos_mem_free(msc_rd_buf);
 	}
 exit:
 	rtos_sema_delete(msc_attach_sema);

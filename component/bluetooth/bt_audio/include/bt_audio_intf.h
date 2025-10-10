@@ -272,6 +272,16 @@ uint16_t rtk_bt_audio_record_del_all(void);
 void *rtk_bt_audio_codec_add(rtk_bt_audio_codec_conf_t *paudio_codec_conf);
 
 /**
+ * @brief     update audio codec
+ * @param[in] paudio_codec_conf: audio codec configuration
+ * @param[in] pentity: audio codec entity
+ * @return
+ *            - NULL  : Fail
+ *            - others: Codec entity
+ */
+uint16_t rtk_bt_audio_codec_update(rtk_bt_audio_codec_conf_t *paudio_codec_conf, void *pentity);
+
+/**
  * @brief     remove one audio codec
  * @param[in] type: audio data codec type
  * @param[in] pentity: audio codec entity
