@@ -45,7 +45,7 @@
   sboot_algorithm: "ed25519",
   /* sboot_hash_alg valid option: "sha256"/"sha384"/"sha512"/"hmac256"/"hmac384"/"hmac512" */
   sboot_hash_alg: "sha256",
-  sboot_hmac_key: ["otp_key_0x220"],
+  sboot_hmac_key: "otp_key_0x220",
 
   /* ================================ RSIP global settings =============================== */
   rsip_enable: false,

@@ -2,9 +2,9 @@
 00000012 a IRQ_MODE
 00000013 a SVC_MODE
 0000001f a SYS_MODE
-00003fa0 A __stack
-00003fa0 B _end
-00003fa0 B __StackTop
+00003fd9 A __stack
+00003fd9 B __StackTop
+00003fe0 B _end
 00033000 T __rom_stdlib_text_start__
 003d1000 A __psram_heap_buffer_size__
 0a000020 T __km4_boot_text_start__

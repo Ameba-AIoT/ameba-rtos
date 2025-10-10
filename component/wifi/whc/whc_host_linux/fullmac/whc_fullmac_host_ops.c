@@ -16,9 +16,8 @@ static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_devi
 {
 	int ret = 0;
 	unsigned char tx_rate;
-	union rtw_phy_stats *phy_stats_vir = NULL;
+	union rtw_phy_stats phy_stats = {0};
 	union rtw_traffic_stats *traffic_stats_vir = NULL;
-	dma_addr_t stats_phy;
 	dma_addr_t stats_traffic;
 
 	if (!mac) {
@@ -29,19 +28,12 @@ static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_devi
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s,MAC => %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 			__func__, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-	phy_stats_vir = rtw_malloc(sizeof(union rtw_phy_stats), &stats_phy);
-	if (!phy_stats_vir) {
-		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
-		return -ENOMEM;
-	}
-
 	traffic_stats_vir = rtw_malloc(sizeof(union rtw_traffic_stats), &stats_traffic);
 	if (!traffic_stats_vir) {
-		rtw_mfree(sizeof(union rtw_phy_stats), phy_stats_vir, stats_phy);
 		return -ENOMEM;
 	}
 
-	ret = whc_fullmac_host_get_phy_stats(rtw_netdev_idx(ndev), mac, stats_phy);
+	ret = whc_fullmac_host_get_phy_stats(rtw_netdev_idx(ndev), mac, &phy_stats);
 	if (ret != 0) {
 		ret = -ENOENT;
 		goto exit;
@@ -49,12 +41,12 @@ static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_devi
 
 	if (rtw_netdev_idx(ndev) == WHC_AP_PORT) {
 		sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
-		sinfo->signal = phy_stats_vir->ap.data_rssi;
+		sinfo->signal = phy_stats.ap.data_rssi;
 		/*TODO: tx_rate need driver support*/
 
 	} else if (rtw_netdev_idx(ndev) == WHC_STA_PORT) {
 		sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
-		sinfo->signal = phy_stats_vir->sta.rssi;
+		sinfo->signal = phy_stats.sta.rssi;
 
 		ret = whc_fullmac_host_get_traffic_stats(STA_WLAN_INDEX, stats_traffic);
 		if (ret != 0) {
@@ -83,7 +75,6 @@ static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_devi
 	}
 
 exit:
-	rtw_mfree(sizeof(union rtw_phy_stats), phy_stats_vir, stats_phy);
 	rtw_mfree(sizeof(union rtw_traffic_stats), traffic_stats_vir, stats_traffic);
 
 	return ret;

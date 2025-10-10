@@ -142,15 +142,15 @@ ameba_list_append_if(CONFIG_AMEBAL2 public_includes
 )
 
 ameba_list_append_if(CONFIG_RTL8720F public_includes
-    ${c_CMPT_WIFI_DIR}/wifi_reg/rle1331
+    ${c_CMPT_WIFI_DIR}/wifi_reg/rl7098
     ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf
-    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf/rle1331
+    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf/rl7098
     ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb
     ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb/halbb_6955
     ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf
     ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf/halrf_6955
-    ${CMAKE_CURRENT_SOURCE_DIR}/rle1331
-    ${CMAKE_CURRENT_SOURCE_DIR}/rle1331_rom
+    ${CMAKE_CURRENT_SOURCE_DIR}/rl7098
+    ${CMAKE_CURRENT_SOURCE_DIR}/rl7098_rom
 )
 
 set(release_target_name wlan)
@@ -273,7 +273,7 @@ ameba_list_append_if(CONFIG_AMEBAL2 private_includes
 )
 
 ameba_list_append_if(CONFIG_RTL8720F private_includes
-    ${c_COMPONENT_DIR}/soc/amebaL2/rom/include
+    ${c_COMPONENT_DIR}/soc/RTL8720F/rom/include
     ${c_CMPT_WIFI_DIR}/wifi_fw/rle1331/include
 )
 

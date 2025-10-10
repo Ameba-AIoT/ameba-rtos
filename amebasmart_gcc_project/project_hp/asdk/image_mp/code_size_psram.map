@@ -155,7 +155,7 @@ text  rodata  data  bss  module
 984   814     0     0    lib_wifi_single_core_mp.a(rom_hal_debug.o)
 1672  0       8     0    lib_wifi_single_core_mp.a(rom_hal_h2c.o)
 356   31      0     0    lib_wifi_single_core_mp.a(rom_hal_h2c_g1.o)
-2124  253     0     0    lib_wifi_single_core_mp.a(rom_hal_recv.o)
+2164  253     0     0    lib_wifi_single_core_mp.a(rom_hal_recv.o)
 0     0       0     376  lib_wifi_com_sec.a(rom_hal_rom_to_flash.o)
 0     0       0     1616 lib_wifi_single_core_mp.a(rom_hal_structs.o)
 4072  206     0     0    lib_wifi_single_core_mp.a(rom_hal_xmit.o)
@@ -232,9 +232,9 @@ text  rodata  data  bss  module
 7916  781     0     4    lib_wpa_lite.a(rom_wpa_lite_sae_crypto.o)
 ------------------------- wifirom End ---------------------------------------------
 text  rodata  data  bss  module  
-14056836408   8     2075 (TOTALS)
+14060836408   8     2075 (TOTALS)
 Module wifirom size:
-0x2bb73			179059
+0x2bb9b			179099
 
 ========================= wificoex Start ==========================================
 text  rodata  data  bss  module  
@@ -648,8 +648,8 @@ Module others size:
 
 ================================================================================
 text  rodata  data  bss  module  
-593764134523  3040  31111(TOTALS)
+593804134523  3040  31111(TOTALS)
 
 Image size:
-0xba246			762438
+0xba26e			762478
 

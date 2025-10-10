@@ -38,7 +38,7 @@ int whc_fullmac_host_pmksa_ops(dma_addr_t pmksa_ops_addr);
 int whc_fullmac_host_channel_switch(dma_addr_t csa_param_addr);
 u32 whc_fullmac_host_update_ip_addr(void);
 int whc_fullmac_host_get_traffic_stats(u8 wlan_idx, dma_addr_t traffic_stats_addr);
-int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, dma_addr_t phy_stats_addr);
+int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, union rtw_phy_stats *stats);
 int whc_fullmac_host_get_setting(unsigned char wlan_idx, dma_addr_t setting_phy);
 int whc_fullmac_host_set_lps_enable(u8 enable);
 int whc_fullmac_host_mp_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_t user_addr);

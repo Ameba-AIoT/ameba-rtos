@@ -13,8 +13,8 @@ static rtos_sema_t xRxSemaphore = NULL;
 static rtos_mutex_t device_lock = NULL;
 static spi_t spi_master;
 
-volatile int MasterTxDone;
-volatile int MasterRxDone;
+static volatile int MasterTxDone;
+static volatile int MasterRxDone;
 
 void external_flash_tr_done_callback(u32 id, SpiIrq event)
 {

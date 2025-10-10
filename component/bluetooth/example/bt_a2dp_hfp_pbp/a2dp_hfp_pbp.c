@@ -114,7 +114,6 @@
 /* Max bond number is unchangable */
 #define A2DP_BT_MAX_BOND_NUM                                    8
 #define A2DP_BT_BOND_INFO_USED_VAL                              0x4E
-#define A2DP_BT_BOND_INFO_PRIORITY_UNASSIGNED                   0x4F
 #define A2DP_BT_BOND_INFO_FLUSH_EVENT                           0x01
 #define A2DP_BT_BOND_INFO_THREAD_EXIT                           0xFF
 /* ---------------------------- Struct definition --------------------------- */
@@ -142,6 +141,7 @@ struct app_demo_task_t {
 typedef struct {
 	uint16_t type;
 	uint16_t subtype;
+	uint8_t bd_addr[6];
 	union {
 		uint32_t  param;
 		void     *buf;
@@ -153,6 +153,7 @@ typedef struct {
 	uint8_t             name_contained;                     /* check whether this unit contains name */
 	uint8_t             priority;                           /* bond info priority, range from 1~8, 1 is the highest */
 	uint8_t             used_check;                         /* check whether this unit is configured */
+	uint8_t             save_flag;                          /* indicate whether flash save action is need */
 } a2dp_bond_info_t;
 typedef struct {
 	uint16_t count;
@@ -1523,16 +1524,43 @@ static a2dp_bond_info_t *get_free_bond_table_unit(void)
 }
 
 /* once application modify bond info, this api should bt invoke to sync bond info table */
-static uint16_t a2dp_flush_bond_info(uint8_t type)
+static uint16_t a2dp_flush_bond_info(uint8_t type, uint8_t *bd_addr)
 {
 	app_demo_msg_t io_msg;
-	io_msg.type = type;
 
+	io_msg.type = type;
+	if (bd_addr) {
+		memcpy(io_msg.bd_addr, bd_addr, 6);
+	}
 	if (false == osif_msg_send(a2dp_bond_info_flush_msg_q, &io_msg, 0)) {
 		return 1;
 	}
 
 	return 0;
+}
+
+static void a2dp_bond_info_dump(void)
+{
+	a2dp_bond_info_t *pbond_info = NULL;
+
+	BT_LOGA("[A2DP] Bond Info List\r\n");
+	for (uint8_t i = 0; i < a2dp_bond_num; i ++) {
+		pbond_info = a2dp_find_bond_info_by_priority(i + 1);
+		if (pbond_info && (pbond_info->used_check == A2DP_BT_BOND_INFO_USED_VAL)) {
+			BT_LOGA(">> %d. ", (int)(i + 1));
+			BT_LOGA(" mac addr %02x:%02x:%02x:%02x:%02x:%02x  ", pbond_info->bd_addr[5],
+					pbond_info->bd_addr[4],
+					pbond_info->bd_addr[3],
+					pbond_info->bd_addr[2],
+					pbond_info->bd_addr[1],
+					pbond_info->bd_addr[0]);
+			BT_LOGA(" name ");
+			if (pbond_info->name_contained) {
+				BT_LOGA(" %s", pbond_info->name);
+			}
+			BT_LOGA(" \r\n");
+		}
+	}
 }
 
 static void a2dp_bond_flush_thread(void *ctx)
@@ -1559,23 +1587,27 @@ static void a2dp_bond_flush_thread(void *ctx)
 				continue;
 			}
 			BT_LOGA("[A2DP] Get Bond Number %d \r\n", temp_bond_num);
+			if (temp_bond_num > A2DP_BT_MAX_BOND_NUM) {
+				temp_bond_num = A2DP_BT_MAX_BOND_NUM;
+			}
 			/* 2. get bond mac address accord to bond number */
 			for (uint8_t i = 0; i < temp_bond_num; i ++) {
-				/* gap bond priority start frmo 1, so i + 1 */
+				/* gap bond priority start from 1, so i + 1 */
 				ret = rtk_bt_br_gap_bond_addr_get(i + 1, bd_addr);
 				if (ret) {
 					BT_LOGE("[A2DP] Get bond addr failed! err: 0x%x", ret);
 					continue;
 				}
-				BT_LOGA("[A2DP] Get Bond addr %02x:%02x:%02x:%02x:%02x:%02x \r\n",
-						bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
-				/* 3. sync with a2dp_bond_table */
 				pbond_info = a2dp_find_bond_info_by_mac_addr(bd_addr);
-				if (!pbond_info) {
-					/* allocate new bond info unit */
+				if (pbond_info) {
+					if (pbond_info->priority != (i + 1)) {
+						pbond_info->priority = i + 1;
+						need_save_bond_info = 1;
+					}
+				} else {
 					pbond_info = get_free_bond_table_unit();
 					if (!pbond_info) {
-						BT_LOGE("[A2DP] Get free bond table unit fail \r\n");
+						BT_LOGE("[A2DP Demo] Get free bond table unit fail \r\n");
 						continue;
 					}
 					memcpy((void *)pbond_info->bd_addr, (void *)bd_addr, 6);
@@ -1583,52 +1615,21 @@ static void a2dp_bond_flush_thread(void *ctx)
 					pbond_info->priority = i + 1;
 					memset((void *)pbond_info->name, 0, RTK_BT_GAP_DEVICE_NAME_LEN);
 					need_save_bond_info = 1;
-					/* 4. try to fetch remote device name */
-					rtk_bt_br_gap_get_remote_name(bd_addr);
-				} else {
-					/* update bond info unit */
-					if (pbond_info->priority != (i + 1)) {
-						if (A2DP_BT_BOND_INFO_PRIORITY_UNASSIGNED != pbond_info->priority) {
-							a2dp_bond_info_t *ptemp_bond_info = NULL;
-							/* get previous priority bond info unit */
-							ptemp_bond_info = a2dp_find_bond_info_by_priority(i + 1);
-							if (ptemp_bond_info) {
-								/* this bond info should be mask for further configuration */
-								ptemp_bond_info->priority = A2DP_BT_BOND_INFO_PRIORITY_UNASSIGNED;
-							}
-						}
-						need_save_bond_info = 1;
-						pbond_info->priority = i + 1;
-					}
-					if (!pbond_info->name_contained) {
-						/* 4. try to fetch remote device name */
-						rtk_bt_br_gap_get_remote_name(bd_addr);
-					}
 				}
 			}
-			/* 5. Maybe the loweset priority bond unit is delete, which cannot be detected by step3 */
-			if (temp_bond_num < a2dp_bond_num) {
-				for (uint8_t i = 0; i < (a2dp_bond_num - temp_bond_num); i ++) {
-					pbond_info = a2dp_find_bond_info_by_priority(temp_bond_num + i + 1);
-					if (pbond_info) {
-						memset((void *)pbond_info, 0, sizeof(a2dp_bond_info_t));
-						need_save_bond_info = 1;
-					}
-				}
+			pbond_info = a2dp_find_bond_info_by_mac_addr(io_msg.bd_addr);
+			if (pbond_info && !pbond_info->name_contained) {
+				rtk_bt_br_gap_get_remote_name(io_msg.bd_addr);
+			} else if (pbond_info && pbond_info->save_flag) {
+				need_save_bond_info = 1;
+				pbond_info->save_flag = 0;
 			}
-			/* 6. check whether need save a2dp_bond_table */
 			if (need_save_bond_info) {
-				/* foreach table to check whether there is A2DP_BT_BOND_INFO_PRIORITY_UNASSIGNED bond unit(need to be deleted) */
-				for (uint8_t i = 0; i < A2DP_BT_MAX_BOND_NUM; i ++) {
-					if ((A2DP_BT_BOND_INFO_USED_VAL == a2dp_bond_table[i].used_check) &&
-						(A2DP_BT_BOND_INFO_PRIORITY_UNASSIGNED == a2dp_bond_table[i].priority)) {
-						memset((void *)&a2dp_bond_table[i], 0, sizeof(a2dp_bond_info_t));
-					}
-				}
 				if (rt_kv_set(a2dp_bond_info_key, (void *)a2dp_bond_table, sizeof(a2dp_bond_table)) == sizeof(a2dp_bond_table)) {
-					BT_LOGA("[A2DP] Save a2dp demo bond info table success \r\n");
+					BT_LOGA("[A2DP Demo] Save a2dp demo bond info table success \r\n");
+					a2dp_bond_info_dump();
 				} else {
-					BT_LOGE("[A2DP] Fail to save a2dp demo bond info table \r\n");
+					BT_LOGE("[A2DP Demo] Fail to save a2dp demo bond info table \r\n");
 				}
 			}
 			a2dp_bond_num = temp_bond_num;
@@ -1640,30 +1641,6 @@ static void a2dp_bond_flush_thread(void *ctx)
 
 	osif_sem_give(bond_info_flush_task.sem);
 	osif_task_delete(NULL);
-}
-
-static void a2dp_bond_info_dump(void)
-{
-	a2dp_bond_info_t *pbond_info = NULL;
-
-	BT_LOGA("[A2DP] Bond Info List\r\n");
-	for (uint8_t i = 0; i < a2dp_bond_num; i ++) {
-		pbond_info = a2dp_find_bond_info_by_priority(i + 1);
-		if (pbond_info) {
-			BT_LOGA(">> %d. ", (int)(i + 1));
-			BT_LOGA(" mac addr %02x:%02x:%02x:%02x:%02x:%02x  ", pbond_info->bd_addr[5],
-					pbond_info->bd_addr[4],
-					pbond_info->bd_addr[3],
-					pbond_info->bd_addr[2],
-					pbond_info->bd_addr[1],
-					pbond_info->bd_addr[0]);
-			BT_LOGA(" name ");
-			if (pbond_info->name_contained) {
-				BT_LOGA(" %s", pbond_info->name);
-			}
-			BT_LOGA(" \r\n");
-		}
-	}
 }
 
 static void a2dp_reconnect_timer_handle(void *arg)
@@ -1712,12 +1689,8 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 			if (pbond_info) {
 				memcpy((void *)pbond_info->name, (void *)p_name_rsp->name, RTK_BT_GAP_DEVICE_NAME_LEN);
 				pbond_info->name_contained = 1;
-				if (rt_kv_set(a2dp_bond_info_key, (void *)a2dp_bond_table, sizeof(a2dp_bond_table)) == sizeof(a2dp_bond_table)) {
-					BT_LOGA("[A2DP] Save a2dp demo bond info table success \r\n");
-					a2dp_bond_info_dump();
-				} else {
-					BT_LOGE("[A2DP] Fail to save a2dp demo bond info table \r\n");
-				}
+				pbond_info->save_flag = 1;
+				a2dp_flush_bond_info(A2DP_BT_BOND_INFO_FLUSH_EVENT, p_name_rsp->bd_addr);
 			}
 		}
 		break;
@@ -1773,11 +1746,11 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 	}
 
 	case RTK_BT_BR_GAP_LINK_KEY_REQ: {
-		uint8_t found = *(uint8_t *)param;
-		if (a2dp_bond_info_flush && found) {
-			a2dp_flush_bond_info(A2DP_BT_BOND_INFO_FLUSH_EVENT);
+		rtk_bt_br_link_key_req_t *p_link_key_req_t = (rtk_bt_br_link_key_req_t *)param;
+		if (a2dp_bond_info_flush && p_link_key_req_t->found) {
+			a2dp_flush_bond_info(A2DP_BT_BOND_INFO_FLUSH_EVENT, p_link_key_req_t->bd_addr);
 		}
-		BT_LOGA("[BR GAP] Link Key Request received and found is 0x%x \r\n", found);
+		BT_LOGA("[BR GAP] Link Key Request received and found is 0x%x \r\n", p_link_key_req_t->found);
 		break;
 	}
 
@@ -1785,7 +1758,7 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 		rtk_bt_br_bond_key_t *pbond_key_t = (rtk_bt_br_bond_key_t *)param;
 		uint8_t *bd_addr = pbond_key_t->bd_addr;
 		if (a2dp_bond_info_flush) {
-			a2dp_flush_bond_info(A2DP_BT_BOND_INFO_FLUSH_EVENT);
+			a2dp_flush_bond_info(A2DP_BT_BOND_INFO_FLUSH_EVENT, pbond_key_t->bd_addr);
 		}
 		BT_LOGA("[BR GAP] Set link key of %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
@@ -1820,9 +1793,6 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 				rtk_bt_br_gap_set_radio_mode(RTK_BT_BR_GAP_RADIO_MODE_CONNECTABLE);
 				osif_timer_start(&reconnect_timer);
 			}
-		}
-		if (a2dp_bond_info_flush) {
-			a2dp_flush_bond_info(A2DP_BT_BOND_INFO_FLUSH_EVENT);
 		}
 		break;
 	}
@@ -4388,7 +4358,7 @@ int bt_a2dp_hfp_pbp_main(uint8_t enable)
 		}
 		if (a2dp_bond_info_flush) {
 			/* indicate a2dp demo bond info flush thread to kill itself */
-			a2dp_flush_bond_info(A2DP_BT_BOND_INFO_THREAD_EXIT);
+			a2dp_flush_bond_info(A2DP_BT_BOND_INFO_THREAD_EXIT, NULL);
 			if (false == osif_sem_take(bond_info_flush_task.sem, 0xffffffff)) {
 				return -1;
 			}
