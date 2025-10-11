@@ -854,7 +854,7 @@ static void bt_coex_handle_handle_l2cap_dis_conn_req(struct rtk_bt_coex_conn_t *
 static void bt_coex_set_bitpool_to_fw(uint8_t *user_data, uint16_t length)
 {
 	struct sbc_frame_hdr *sbc_header = NULL;
-	struct rtp_header rtph ;
+	struct rtp_header rtph;
 	uint8_t hci_buf[1] = {0};
 
 	/* We assume it is SBC if the packet length
