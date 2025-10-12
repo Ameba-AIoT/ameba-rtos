@@ -26,21 +26,21 @@
 //to use pll for audio playback in ameba_audio_hw_usrcfg.h.
 #define TEST_TIMESTAMP         0
 
-#define EXAMPLE_AUDIO_DEBUG(fmt, args...)    printf("=> D/AudioTrackExample:[%s]: " fmt "\n", __func__, ## args)
-#define EXAMPLE_AUDIO_ERROR(fmt, args...)    printf("=> E/AudioTrackExample:[%s]: " fmt "\n", __func__, ## args)
+#define EXAMPLE_AUDIO_DEBUG(fmt, args...)    RTK_LOGA("TrackDemo", "[%s]: " fmt "\n", __func__, ## args)
+#define EXAMPLE_AUDIO_ERROR(fmt, args...)    RTK_LOGA("TrackDemo", "[%s]: " fmt "\n", __func__, ## args)
 
 #define  RTAUDIO_TRACK_DEBUG_HEAP_BEGIN() \
 	unsigned int heap_start;\
 	unsigned int heap_end;\
 	unsigned int heap_min_ever_free;\
-	printf("=> I/AudioTrackExample:[Mem] mem debug info init \n");\
+	RTK_LOGA("TrackDemo", "[Mem] mem debug info init \n");\
 	heap_start = rtos_mem_get_free_heap_size()
 
 #define  RTAUDIO_TRACK_DEBUG_HEAP_END() \
     heap_end = rtos_mem_get_free_heap_size();\
 	heap_min_ever_free = rtos_mem_get_minimum_ever_free_heap_size();\
-	printf("=> I/AudioTrackExample:[Mem] start (0x%x), end (0x%x), \n", heap_start, heap_end);\
-	printf("=> I/AudioTrackExample: diff (%d), peak (%d) \n", heap_start - heap_end, heap_start - heap_min_ever_free)
+	RTK_LOGA("TrackDemo", "[Mem] start (0x%x), end (0x%x), \n", heap_start, heap_end);\
+	RTK_LOGA("TrackDemo", "diff (%d), peak (%d) \n", heap_start - heap_end, heap_start - heap_min_ever_free)
 
 static uint32_t  g_track_rate = 16000;
 static uint32_t  g_track_channel = 2;
@@ -55,7 +55,7 @@ static uint32_t  g_mute = 0;
 
 static struct RTAudioTrack *g_audio_track = NULL;
 
-int32_t g_gain = 15;
+int32_t g_gain = -800;
 #if LITTLEFS_RAW
 #include <fcntl.h>
 static int s_lfs_fd = 0;
@@ -258,7 +258,7 @@ void play_sample(uint32_t channels, uint32_t rate, uint32_t bits, uint32_t perio
 		return;
 	}
 
-	track_buf_size = RTAudioTrack_GetMinBufferBytes(audio_track, RTAUDIO_CATEGORY_MEDIA, rate, format, channels) * 4;
+	track_buf_size = RTAudioTrack_GetMinBufferBytes(audio_track, RTAUDIO_CATEGORY_MEDIA, rate, format, channels) * 16;
 	RTAudioTrackConfig  track_config;
 	track_config.category_type = RTAUDIO_CATEGORY_MEDIA;
 	track_config.sample_rate = rate;
@@ -304,11 +304,6 @@ void play_sample(uint32_t channels, uint32_t rate, uint32_t bits, uint32_t perio
 
 #if SINE_GEN_EVERY_TIME
 		generate_sine(sine_buf, sine_frames_count, rate, channels, bits, &phase);
-		if (g_generate_cnt >= 1000 && g_generate_cnt % 1000 == 0) {
-			g_freq -= 1000;
-		} else if (g_generate_cnt >= 500 && g_generate_cnt % 500 == 0) {
-			g_freq += 1000;
-		}
 #else
 		if (g_generate_cnt < 1) {
 			generate_sine(sine_buf, sine_frames_count, rate, channels, bits, &phase);
@@ -415,9 +410,13 @@ void example_audio_track_thread(void *param)
 	rtos_time_delay_ms(5 * RTOS_TICK_RATE_HZ);
 #endif
 
-	play_sample(g_track_channel, g_track_rate, g_track_format, g_write_frames_one_time);
+	while (1) {
 
-	rtos_time_delay_ms(2 * RTOS_TICK_RATE_HZ);
+		play_sample(g_track_channel, g_track_rate, g_track_format, g_write_frames_one_time);
+
+		rtos_time_delay_ms(2000);
+
+	}
 
 #if LITTLEFS_RAW
 	if (s_lfs_fd > 0) {

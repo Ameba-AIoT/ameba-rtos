@@ -73,6 +73,9 @@ class LogHandler:
         new_line_char = "\n"
         text = text.replace("\r\n", "\n")
         text = text.replace("\r", "")
+        if text == "\n":
+            self._start_of_line = True
+            return
         if text and self.timestamps and (self.output_enabled or self.log_file):
             t = datetime.datetime.now().strftime(self.timestamp_format)[:-3]
             # "text" is not guaranteed to be a full line. Timestamps should be only at the beginning of lines.
@@ -96,7 +99,7 @@ class LogHandler:
             self._start_of_line = text.endswith(new_line_char)
 
         if self.output_enabled:
-            print(text, end='', flush=True)
+            print(text, end='')
         if self.log_file:
             try:
                 self.log_file.write(text)

@@ -47,9 +47,9 @@ ameba_list_append(private_sources
     ${c_SOC_TYPE}/primary_audio_hw_stream_out.c
     ${c_SOC_TYPE}/primary_audio_hw_card.c
     ${c_SOC_TYPE}/primary_audio_hw_stream_in.c
-    ${c_SOC_TYPE}/audio_hw_params_handle.c
     ${c_SOC_TYPE}/audio_hw_manager.c
     ${c_SOC_TYPE}/audio_hw_control.c
+    common/audio_hw_params_handle.c
 )
 
 ameba_list_append_if(CONFIG_AMEBADPLUS private_sources
@@ -76,9 +76,8 @@ ameba_list_append_if(CONFIG_AUDIO_DEVICE_USB private_sources
 
 ameba_list_append(private_includes
     ${c_CMPT_AUDIO_DIR}/interfaces
-    ${c_CMPT_AUDIO_DIR}/base/cutils/include
-    ${c_CMPT_AUDIO_DIR}/base/osal/osal_c/include
     ${c_CMPT_AUDIO_DIR}/audio_driver/include
+    ${c_CMPT_AUDIO_DIR}/audio_hal/common
     ${c_CMPT_BLUETOOTH_DIR}/api/include
     ${c_CMPT_BLUETOOTH_DIR}/osif
 )

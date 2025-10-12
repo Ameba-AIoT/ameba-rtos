@@ -24,7 +24,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 import os
 
 APP_NAME = "AmebaSerialServer"
-APP_VERSION = "v1.0.0"
+APP_VERSION = "v1.0.1"
 PORT = 58916
 MAX_CONNECTIONS = 10
 INSTALLER = 1
@@ -133,7 +133,7 @@ class AmebaSerialServer:
                             continue
                         self.logger.info(f"New connection: {client_addr[0]}:{client_addr[1]}")
                         client_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                        self.logger.info(f"Set TCP_NODELAY for {client_addr}")                    
+                        self.logger.info(f"Set TCP_NODELAY for {client_addr}")
 
                         client_thread = threading.Thread(
                             target=self.handle_client,
@@ -501,7 +501,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def changeEvent(self, event):
         if event.type() == QtCore.QEvent.WindowStateChange:
             if self.isMinimized():
-                self.hide()
+                self.showMinimized()
 
 class TrayApp(QtWidgets.QSystemTrayIcon):
     def __init__(self, icon, main_window=None, parent=None, server=None):
@@ -607,6 +607,9 @@ if __name__ == '__main__':
         main_win.setWindowIcon(icon)
         tray_icon.show()
         main_win.show()
+
+        QtWidgets.QApplication.processEvents()
+        main_win.showNormal()
 
         tray_icon.showMessage(f"{APP_NAME} {APP_VERSION}",
                             "The server is already running in the background. Right-click to exit.",
