@@ -40,6 +40,17 @@ extern PrimaryAudioConfig kPrimaryAudioConfig;
  */
 extern int64_t kStandbyDurationNs;
 
+/*
+ * If system has two devices output together, for example uac & a2dp.
+ * We need to alloc more buffer size for mixing, since uac sink and a2dp sink
+ * may hold a lot of buffers in them.
+ * The bigger kMultipleCopiedBuffer, the smoother.
+ * The bigger kMultipleCopiedBuffer, the more memory mixer will take.
+ * notice: if a2dp or uac device has very big latency, please make kMultipleCopiedBuffer bigger.
+ *         if a2dp or uac has distortion, please make kMultipleCopiedBuffer bigger.
+ */
+extern int32_t kMultipleCopiedBuffer;
+
 #ifdef __cplusplus
 }
 #endif

@@ -37,7 +37,10 @@ class SerialHandler:
             self._last_line_part = ""
         if not sp[-1].endswith("\n"):
             # last part is not a full line
-            self._last_line_part = sp.pop(-1)
+            if sp[-1].endswith("#"):
+                sp[-1] = sp[-1] + "\n"
+            else:
+                self._last_line_part = sp.pop(-1)
         return sp
 
     def handle_serial_input(self, data, coredump, finalize_line=False):

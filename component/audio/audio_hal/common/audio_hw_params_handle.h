@@ -12,17 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AMEBA_AUDIO_AUDIO_HAL_AMEBADPLUS_AUDIO_HW_PARAMS_HANDLE_H
-#define AMEBA_AUDIO_AUDIO_HAL_AMEBADPLUS_AUDIO_HW_PARAMS_HANDLE_H
+#ifndef AMEBA_AUDIO_AUDIO_HAL_COMMON_AUDIO_HW_PARAMS_HANDLE_H
+#define AMEBA_AUDIO_AUDIO_HAL_COMMON_AUDIO_HW_PARAMS_HANDLE_H
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdlib.h>
+#include "platform_stdlib.h"
+#include "basic_types.h"
 
 struct string_cell {
-    char *key;
-    char *value;
-    struct string_cell *next;
+	char *key;
+	char *value;
+	struct string_cell *next;
 };
 
 struct string_cell *string_cells_create_from_str(const char *_string);
