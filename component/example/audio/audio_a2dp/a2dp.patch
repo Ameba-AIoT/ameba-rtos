@@ -1,29 +1,22 @@
 diff --git a/component/bluetooth/example/bt_a2dp/CMakeLists.txt b/component/bluetooth/example/bt_a2dp/CMakeLists.txt
-index 4fe434d8ff..d0c6482a0c 100644
+index 4fe434d8ff..17e6f25e8c 100644
 --- a/component/bluetooth/example/bt_a2dp/CMakeLists.txt
 +++ b/component/bluetooth/example/bt_a2dp/CMakeLists.txt
 @@ -43,6 +43,7 @@ ameba_list_append(private_includes
  	../bt_app_audio_data
  	${c_CMPT_BLUETOOTH_DIR}/bt_audio/bt_codec/sbc/decoder/include
  	${c_CMPT_BLUETOOTH_DIR}/bt_audio/bt_codec/sbc/encoder/include
-+	${c_CMPT_AUDIO_DIR}/interfaces
++    ${c_CMPT_AUDIO_DIR}/interfaces
  )
  
  # Component private part, user config end
-@@ -61,4 +62,4 @@ ameba_add_internal_library(bt_a2dp
-     p_COMPILE_OPTIONS
-         ${private_compile_options}
- )
--##########################################################################################
-\ No newline at end of file
-+##########################################################################################
 diff --git a/component/bluetooth/example/bt_a2dp/a2dp.c b/component/bluetooth/example/bt_a2dp/a2dp.c
-index 3716a1b347..5afeaa344e 100644
+index a16673beb3..6971f2a7e8 100644
 --- a/component/bluetooth/example/bt_a2dp/a2dp.c
 +++ b/component/bluetooth/example/bt_a2dp/a2dp.c
-@@ -26,6 +26,11 @@
- #include <dlist.h>
+@@ -27,6 +27,11 @@
  #include <bt_utils.h>
+ #include <bt_audio_resample.h>
  
 +#include "audio/audio_service.h"
 +
@@ -33,26 +26,35 @@ index 3716a1b347..5afeaa344e 100644
  /* -------------------------------- Defines --------------------------------- */
  #define RTK_BT_DEV_NAME                      "RTK_BT_AUDIO_DEVICE"
  #define DEFAULT_PAGESCAN_WINDOW              0x48
-@@ -49,13 +54,13 @@ static uint8_t curr_volume = RTK_BT_DEFAULT_ABSOLUTE_VOLUME;
- 
+@@ -53,19 +58,22 @@ static uint8_t curr_volume = RTK_BT_DEFAULT_ABSOLUTE_VOLUME;
  /* ---------------------------- Static Variables ---------------------------- */
  static uint8_t a2dp_demo_init_flag = 0;
--static bool app_a2dp_src_send_flag = false;
-+bool app_a2dp_src_send_flag = false;
  static rtk_bt_audio_track_t *a2dp_demo_audio_track_hdl = NULL;
 -static void *a2dp_demo_codec_entity = NULL;
 -static uint8_t a2dp_demo_role;
 -static uint8_t src_a2dp_credits = RTK_BT_A2DP_SRC_STREAM_MAX_CREDITS;
+-static uint16_t src_a2dp_send_data_size = 0; // unit is sizeof(int16_t)
 +void *a2dp_demo_codec_entity = NULL;
 +uint8_t a2dp_demo_role;
 +uint8_t src_a2dp_credits = RTK_BT_A2DP_SRC_STREAM_MAX_CREDITS;
++uint16_t src_a2dp_send_data_size = 0; // unit is sizeof(int16_t)
++
  static rtk_bt_audio_codec_conf_t audio_codec_conf = {0};
+ static uint32_t demo_in_rate = 48000;
+ static uint8_t demo_in_channels = 2;
+ #if !defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) || !CONFIG_BT_AUDIO_SOURCE_OUTBAND
+ static rtk_bt_audio_biquad_t bq_t = {0};
+ static rtk_bt_audio_resample_t *g_audio_resample_t = NULL;
++
+ static uint32_t resample_out_frames, resample_in_frames;
+ #endif
 -static rtk_bt_sbc_codec_t sbc_codec_t = {
++
 +rtk_bt_sbc_codec_t sbc_codec_t = {
  	{
  		.sbc_enc_mode = (sbc_channel_mode_t)SBC_MODE_STANDARD,
- 		.blocks = 16,
-@@ -103,7 +108,7 @@ static struct a2dp_demo_task_t a2dp_task = {
+ 		.sbc_pkt_num = SBC_MAX_NUM_FRAME,
+@@ -119,7 +127,7 @@ static struct a2dp_demo_task_t a2dp_task = {
  	.run = 0,
  };
  
@@ -61,21 +63,24 @@ index 3716a1b347..5afeaa344e 100644
  /* ---------------------------- Auto reconnect config ---------------------------- */
  static void *reconnect_timer = NULL;
  static uint8_t a2dp_demo_auto_reconnect = 1;
-@@ -844,9 +849,13 @@ static void a2dp_task_entry(void *ctx)
+@@ -861,10 +869,16 @@ static void a2dp_task_entry(void *ctx)
  	osif_sem_give(a2dp_task.sem);
  
  	while (a2dp_task.run) {
 +#if 0
- 		if (app_a2dp_src_send_flag) {
- 			app_a2dp_src_send_data();
+ 		if (bt_a2dp_demo_src_send_sem) {
+ 			osif_sem_take(bt_a2dp_demo_src_send_sem, BT_TIMEOUT_FOREVER);
  		}
+ 		app_a2dp_src_send_data();
++
 +#else
 +       (void) app_a2dp_src_send_data;
++		osif_delay(a2dp_src_data_send_interval);
 +#endif
- 		osif_delay(3);
  	}
  
-@@ -1130,6 +1139,12 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
+ 	osif_sem_give(a2dp_task.sem);
+@@ -1158,6 +1172,12 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
  		BT_LOGA("[BR GAP] ACL connection fail with %02x:%02x:%02x:%02x:%02x:%02x, cause is 0x%x \r\n",
  				p_fail_rsp->bd_addr[5], p_fail_rsp->bd_addr[4], p_fail_rsp->bd_addr[3], p_fail_rsp->bd_addr[2], p_fail_rsp->bd_addr[1], p_fail_rsp->bd_addr[0],
  				p_fail_rsp->cause);
@@ -88,30 +93,28 @@ index 3716a1b347..5afeaa344e 100644
  		break;
  	}
  
-@@ -1202,6 +1217,12 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
+@@ -1230,6 +1250,10 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
  		if (a2dp_demo_bond_info_flush) {
  			a2dp_demo_flush_bond_info(A2DP_DEMO_BOND_INFO_FLUSH_EVENT);
  		}
-+
 +        if(a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
 +			RTAudioService_SetDeviceState(RTDEVICE_OUT_A2DP, RTAUDIO_DEVICE_STATE_UNAVAILABLE, "rtk_bt_a2dp", NULL);
 +			g_a2dp_connect = false;
 +		}
-+
  		break;
  	}
  
-@@ -1915,6 +1936,9 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
- 					p_stream_open_t->bd_addr[5], p_stream_open_t->bd_addr[4], p_stream_open_t->bd_addr[3],
- 					p_stream_open_t->bd_addr[2], p_stream_open_t->bd_addr[1], p_stream_open_t->bd_addr[0],
- 					(int)p_stream_open_t->max_pkt_len);
-+		if(a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
-+		    g_a2dp_connect = true;
-+		}
+@@ -2096,6 +2120,9 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
+ 												  ((sbc_codec_t.encoder_t.channel_mode != 0) ? 2 : 1));
+ #endif
+ 			BT_LOGA("[A2DP] sbc_pkt_num is update to %d, src_a2dp_send_data_size is %d \r\n", sbc_codec_t.encoder_t.sbc_pkt_num, src_a2dp_send_data_size);
++
++			g_a2dp_connect = true;
++
+ 		}
  	}
  	break;
- 
-@@ -2033,6 +2057,46 @@ static void a2dp_demo_reconnect_timer_handle(void *arg)
+@@ -2207,6 +2234,46 @@ static void a2dp_demo_reconnect_timer_handle(void *arg)
  	}
  }
  
@@ -158,7 +161,7 @@ index 3716a1b347..5afeaa344e 100644
  /**
   * @brief  process a2dp main init/ deinit.
   * @param  enable[in]: 1: init. 0 deinit
-@@ -2045,6 +2109,8 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
+@@ -2219,6 +2286,8 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
  	char addr_str[30] = {0};
  	char dev_name[30] = {0};
  
@@ -167,6 +170,19 @@ index 3716a1b347..5afeaa344e 100644
  	if (1 == enable) {
  		if (a2dp_demo_init_flag) {
  			BT_LOGE("%s Already init! \r\n", __func__);
+diff --git a/component/bluetooth/example/bt_app_audio_data/app_audio_data.h b/component/bluetooth/example/bt_app_audio_data/app_audio_data.h
+index 50e90c80ad..c0dfc5c5c2 100644
+--- a/component/bluetooth/example/bt_app_audio_data/app_audio_data.h
++++ b/component/bluetooth/example/bt_app_audio_data/app_audio_data.h
+@@ -16,7 +16,7 @@ extern "C"
+ 
+ extern const short birds_sing[];
+ extern uint32_t birds_sing_size;
+-#define CONFIG_BT_AUDIO_SOURCE_OUTBAND 0
++#define CONFIG_BT_AUDIO_SOURCE_OUTBAND 1
+ /* Before USB dongle--> LE Audio/A2DP source test:
+     Change the following Macros in app_audio_data.h
+             change         CONFIG_BT_AUDIO_SOURCE_OUTBAND              to     1
 diff --git a/component/bluetooth/example/bt_atcmd/CMakeLists.txt b/component/bluetooth/example/bt_atcmd/CMakeLists.txt
 index 817ab4c45d..08adac9f6e 100644
 --- a/component/bluetooth/example/bt_atcmd/CMakeLists.txt
@@ -180,10 +196,10 @@ index 817ab4c45d..08adac9f6e 100644
  
  # Component private part, user config end
 diff --git a/component/bluetooth/example/bt_atcmd/atcmd_bt_a2dp.c b/component/bluetooth/example/bt_atcmd/atcmd_bt_a2dp.c
-index 3f1f8dbc55..621dc48856 100644
+index 3f1f8dbc55..cfbd8c48fa 100644
 --- a/component/bluetooth/example/bt_atcmd/atcmd_bt_a2dp.c
 +++ b/component/bluetooth/example/bt_atcmd/atcmd_bt_a2dp.c
-@@ -17,6 +17,12 @@
+@@ -17,6 +17,11 @@
  #include <atcmd_bt_impl.h>
  #include <rtk_bt_br_gap.h>
  
@@ -192,11 +208,10 @@ index 3f1f8dbc55..621dc48856 100644
 +
 +extern bool g_a2dp_connect;
 +extern uint8_t a2dp_demo_role;
-+
  static int atcmd_bt_a2dp_connect(int argc, char **argv)
  {
  	(void)argc;
-@@ -51,6 +57,10 @@ static int atcmd_bt_a2dp_disconnect(int argc, char **argv)
+@@ -51,6 +56,10 @@ static int atcmd_bt_a2dp_disconnect(int argc, char **argv)
  	return 0;
  }
  
@@ -207,7 +222,7 @@ index 3f1f8dbc55..621dc48856 100644
  static int atcmd_bt_a2dp_start(int argc, char **argv)
  {
  	(void)argc;
-@@ -65,6 +75,15 @@ static int atcmd_bt_a2dp_start(int argc, char **argv)
+@@ -65,6 +74,16 @@ static int atcmd_bt_a2dp_start(int argc, char **argv)
  	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
  	BT_LOGA("A2DP starting to device %s ...\r\n", addr_str);
  
@@ -217,6 +232,7 @@ index 3f1f8dbc55..621dc48856 100644
 +	config.format = bt_a2dp_get_format();
 +
 +	if(a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
++		BT_LOGA("A2dp set device state avail");
 +	    RTAudioService_SetDeviceState(RTDEVICE_OUT_A2DP, RTAUDIO_DEVICE_STATE_AVAILABLE, "rtk_bt_a2dp", &config);
 +	}
 +

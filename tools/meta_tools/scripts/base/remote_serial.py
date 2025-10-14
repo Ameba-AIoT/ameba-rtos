@@ -193,7 +193,7 @@ class RemoteSerial:
                 self.logger.debug(f"[RemoteSerial][{self.port}] Validate failed")
                 raise SerialException(f"[RemoteSerial][{self.port}] Remote serial validate failed: Wrong password")
             self.is_open = False
-            self.logger.info(f"[RemoteSerial][{self.port}] Remote serial port validate successfully")
+            self.logger.debug(f"[RemoteSerial][{self.port}] Remote serial port validate successfully")
         except Exception as e:
             self.close()
             raise SerialException(f"[RemoteSerial][{self.port}] Validate serial failed: {str(e)}")
@@ -227,7 +227,7 @@ class RemoteSerial:
             # set is_open and start receive thread
             self.is_open = True
 
-            self.logger.info(f"[RemoteSerial][{self.port}] Remote serial port opened successfully (baudrate: {self.baudrate})")
+            self.logger.debug(f"[RemoteSerial][{self.port}] Remote serial port opened successfully (baudrate: {self.baudrate})")
         except Exception as e:
             self.close()
             raise SerialException(f"[RemoteSerial][{self.port}] Open serial failed: {str(e)}")

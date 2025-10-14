@@ -339,7 +339,7 @@ static int32_t StartAudioHwStreamOut(struct PrimaryAudioHwStreamOut *out)
 static ssize_t PrimaryStreamOutWrite(struct AudioHwStreamOut *stream, const void *buffer,
 									 size_t bytes, bool block)
 {
-	HAL_AUDIO_PVERBOSE("primaryStreamOutWrite: bytes: %u", bytes);
+	HAL_AUDIO_PVERBOSE("Write: bytes: %u", bytes);
 
 	int32_t ret = 0;
 	struct PrimaryAudioHwStreamOut *out = (struct PrimaryAudioHwStreamOut *)stream;

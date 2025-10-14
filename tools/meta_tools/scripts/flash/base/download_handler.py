@@ -105,7 +105,7 @@ class Ameba(object):
                     logger=self.logger
                 )
                 if self.remote_password:
-                    self.logger.info("Remote server: password set, will send validate command")
+                    self.logger.debug("Remote server: password set, will send validate command")
                     self.serial_port.validate(self.remote_password)
                 self.serial_port.open()
             else:
@@ -640,7 +640,7 @@ class Ameba(object):
                     self.logger.warning(f"Reset device with DTR/RTS fail: {ret}")
             else:
                 if next_op == NextOpType.RESET:
-                    self.logger.info(f"Reset device without DTR/RTS, may fail...")
+                    self.logger.info(f"Reset device without DTR/RTS")
 
                 ret = self.floader_handler.next_operation(next_op, 0)
                 if ret != ErrType.OK:
@@ -1046,7 +1046,7 @@ class Ameba(object):
                 progress = int((tx_sum / aligned_img_length) * 100)
                 if int((progress) / 10) != progress_int:
                     progress_int += 1
-                    self.logger.info(f"Programming progress: {progress}")  # customized, do not modified
+                    self.logger.info(f"Programming progress: {progress}%")  # customized, do not modified
 
                 if ret != ErrType.OK:
                     break
@@ -1151,7 +1151,7 @@ class Ameba(object):
                 progress = int((tx_sum / aligned_img_length) * 100)
                 if int((progress) / 10) != progress_int:
                     progress_int += 1
-                    self.logger.info(f"Programming progress: {progress}")  # customized, do not modified
+                    self.logger.info(f"Programming progress: {progress}%")  # customized, do not modified
 
             if image_info.full_erase and (next_erase_addr < image_info.end_address):
                 self.logger.debug(f"Erase extra address range: {hex(next_erase_addr)}-{hex(image_info.end_address)}")

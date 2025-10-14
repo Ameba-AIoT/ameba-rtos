@@ -63,12 +63,12 @@ if BT_EXAMPLE_DEMO_MENU
         default n
 
     config BT_OTA_CENTRAL
-        depends on AMEBADPLUS || AMEBALITE || AMEBASMART && !AMEBA_RLS    #internal amebadplus|amebalite|amebasmart
+        depends on (AMEBADPLUS || AMEBALITE || AMEBASMART) && !AMEBA_RLS    #internal amebadplus|amebalite|amebasmart
         bool "BLE OTA Central"
         default n
 
     config BT_OTA_PERIPHERAL
-        depends on AMEBADPLUS || AMEBALITE || AMEBASMART && !AMEBA_RLS    #internal amebadplus|amebalite|amebasmart
+        depends on (AMEBADPLUS || AMEBALITE || AMEBASMART) && !AMEBA_RLS    #internal amebadplus|amebalite|amebasmart
         bool "BLE OTA Peripheral"
         default n
 

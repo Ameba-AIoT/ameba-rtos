@@ -5,10 +5,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from colorama import Fore
+import sys
 
 
 def color_print(text, color: Fore, end="\n"):
-    print(f"{color}{text}{Fore.RESET}", end=end)
+    print(f"{color}{text}{Fore.RESET}", end=end, file=sys.__stdout__)
 
 
 def print_normal(text, end="\n"):
