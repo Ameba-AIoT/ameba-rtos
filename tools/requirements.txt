@@ -12,3 +12,4 @@ pyfatfs==1.1.0
 json5==0.12.0
 colorama==0.4.6
 pywin32==311 ; platform_system == "Windows"
+prompt_toolkit==3.0.52

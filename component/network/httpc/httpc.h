@@ -46,6 +46,10 @@ struct http_response {
 	char *content_type;           /*!< Pointer to Content-Type header field in the parsed HTTP header string */
 	size_t content_type_len;         /*!< Content-Type header field data length */
 	size_t content_len;              /*!< Value of Content-Length header field parsed in HTTP header string */
+	char *trans_enc;              /*!< Pointer to Transfer-Encoding header field in the parsed HTTP header string */
+	size_t trans_enc_len;            /*!< Transfer-Encoding header field data length */
+	size_t trans_chunk_len;         /*!< Chuncked current transfer length remain, default value: 0xFFFFFFFF*/
+
 };
 
 /**

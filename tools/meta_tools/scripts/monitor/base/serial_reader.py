@@ -22,6 +22,8 @@ if parent_dir not in sys.path:
 from remote_serial import RemoteSerial
 import logging
 from typing import Optional, Dict, Any
+from .console_reader import console_update_session
+import re
 
 class SerialReader(StoppableThread):
     """
@@ -55,35 +57,53 @@ class SerialReader(StoppableThread):
     def run(self):
         try:
             self.open_serial()
+            if not self.serial:
+                raise serial.SerialException
             if not self.serial.is_open:
-                return
-            print(f"Successfully connected to {self.serial.port}, baud rate: {self.baud}")
-            if self.reset_mode:
-                print("Reset mode enabled: Will send reboot command after 100ms")
-            else:
-                print("Press Ctrl+C to exit, input characters will be sent in real-time")
+                raise serial.SerialException
+            print_yellow(f"Successfully connected to {self.port}, baud rate: {self.baud}")
             if self.debug:
-                print("Debug mode enabled: Raw byte data of sent and received data will be displayed")
+                print_yellow("Debug mode enabled: Raw byte data of sent and received data will be displayed")
         except serial.SerialException as e:
-            print_yellow(str(e))
             port_list = "\n".join([p.device for p in list_ports.comports()])
-            print_yellow(f"Connection to {self.serial.port} failed. Available ports:\n{port_list}")
+            print_red(f"Connection to {self.port} failed: {str(e)}. Available ports:\n{port_list}")
             return
         self.gdb_exit = False
         self.running = True
         # Execute special process if reset mode is enabled
-        if self.reset_mode:
-            try:
-                time.sleep(0.1)  # Wait for 100ms
-                self.event_queue.put((TAG_KEY, 'reboot\r\n'), True) # Send reboot command (manually add \r\n)
-            except Exception as e:
-                print(f"Failed to send reboot command: {str(e)}")
+        time.sleep(0.1)  # Wait for 100ms
+        self.event_queue.put((TAG_KEY, 'AT+LIST\r\n'), True) # Send AT+LIST command (manually add \r\n)
         self.data_buffer = b''
         while self.running:
             try:
                 while self.serial.inWaiting() < 1:
                     if isinstance(self.serial, RemoteSerial):
-                        # print("RemoteSerial")
+                        time.sleep(0.01)
+                data = self.serial.read(self.serial.inWaiting())
+
+                # Display raw byte data in debug mode
+                if self.debug:
+                    hex_str = ' '.join(f'{b:02X}' for b in data)
+                    print(f"[Received Data (Hex)]: {hex_str}")
+
+                self.data_buffer += data
+                if b'AT+LIST' in self.data_buffer:
+                    if b'#' in self.data_buffer:
+                        self.parse_cmd_list(self.data_buffer)
+                        self.data_buffer = b''
+                        break
+            except Exception as e:
+                print_red(f"Failed to get cmd list: {str(e)}")
+        if self.reset_mode:
+            try:
+                self.event_queue.put((TAG_KEY, 'reboot\r\n'), True) # Send reboot command (manually add \r\n)
+            except Exception as e:
+                print_red(f"Failed to send reboot command: {str(e)}")
+        self.data_buffer = b''
+        while self.running:
+            try:
+                while self.serial.inWaiting() < 1:
+                    if isinstance(self.serial, RemoteSerial):
                         time.sleep(0.01)
                 data = self.serial.read(self.serial.inWaiting())
 
@@ -102,12 +122,11 @@ class SerialReader(StoppableThread):
                         data_to_output = self.data_buffer[index:]
                         self.start_output = True  # Mark to start output
                         self.data_buffer = b''  # Clear the buffer
-                        self.event_queue.put((TAG_SERIAL, data_to_output.decode('utf-8')), False)  # Print data containing the keyword
+                        self.event_queue.put((TAG_SERIAL, self.decode(data_to_output)), False)  # Print data containing the keyword
                 else:
                     # Directly process if not in reset mode or output has started
-                    self.event_queue.put((TAG_SERIAL, data.decode('utf-8')), False)
+                    self.event_queue.put((TAG_SERIAL, self.decode(data)), False)
             except Exception as e:
-                # print_red(e)
                 if not self.serial.is_open:
                     print("Serial port closed")
                 else:
@@ -122,6 +141,12 @@ class SerialReader(StoppableThread):
         if self.serial and self.serial.is_open:
             self.close_serial()
         print("Close serial port successfully")
+
+    def parse_cmd_list(self, data):
+        decode_data = self.decode(data)
+        commands = re.findall(r'\bAT\+\w+', decode_data)
+        commands_list = sorted(set(commands))
+        console_update_session(commands_list)
 
     def decode(self, data):
         try:
@@ -157,7 +182,7 @@ class SerialReader(StoppableThread):
     def open_serial(self, ):
         try:
             if self.remote_server and self.remote_port:
-                print(f"Connect to remote serial server: {self.remote_server}:{self.remote_port} (Serial port: {self.port})")
+                # print_yellow(f"Connect to remote serial server: {self.remote_server}:{self.remote_port} (Serial port: {self.port})")
                 self.serial = RemoteSerial(
                         remote_server=self.remote_server,
                         remote_port=self.remote_port,
@@ -166,7 +191,6 @@ class SerialReader(StoppableThread):
                         logger=self._setup_logger()
                 )
                 if self.remote_password:
-                    print("Remote server: password set, will send validate command")
                     self.serial.validate(self.remote_password)
                 self.serial.open()
             else:
@@ -179,7 +203,7 @@ class SerialReader(StoppableThread):
                         bytesize=serial.EIGHTBITS
                 )
             return True
-        except Exception as e:
+        except (Exception, serial.SerialException) as e:
             print(f"Connection failed: {str(e)}")
             return False
 

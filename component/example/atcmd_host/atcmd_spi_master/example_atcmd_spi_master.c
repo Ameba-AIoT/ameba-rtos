@@ -398,6 +398,6 @@ void example_atcmd_spi_master(void)
 	}
 
 	if (xTaskCreate((void *)uart_irq_handle_task, ((const char *)"uart_irq_handle_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 5, NULL) != pdPASS) {
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s rtos_task_create(atcmd_spi_host_task) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s rtos_task_create(uart_irq_handle_task) failed", __FUNCTION__);
 	}
 }
