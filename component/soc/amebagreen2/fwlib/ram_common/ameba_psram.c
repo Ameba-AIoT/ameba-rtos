@@ -437,6 +437,11 @@ void PSRAM_CTRL_Init(void)
 	psram_ctrl->TPR2 = (PDE_CS_H_CNT(CAL_PDEX_CS_H_CNT(40, PsramInfo.Psram_PDE_TIME)) | \
 						PDX_CS_H_CNT(CAL_PDEX_CS_H_CNT(40, PsramInfo.Psram_PDX_TIME)));
 
+	/*disable CGATE_EN_PDEX,  let pdex clk freerun.*/
+	if ((EFUSE_GetChipVersion()) == SYSCFG_CUT_VERSION_A) {
+		psram_ctrl->ICG_EN &= ~BIT_CGATE_EN_PDEX;
+	}
+
 	if (PsramInfo.Psram_Vendor == MCM_PSRAM_VENDOR_WB) {
 		if (PsramInfo.Psram_DQ16 == MCM_PSRAM_DQ16) {
 			/*0x134 set page size , channel number and cmd type*/
@@ -983,13 +988,7 @@ void PSRAM_HalfSleep_PDEX(u32 NewState)
 {
 	u32 psram_ctrl;
 	u32 psramtype = 0;
-	SPIC_TypeDef *psram_type = PSRAMC_DEV;
 	RRAM_TypeDef *rram = RRAM_DEV;
-
-	/*disable CGATE_EN_PDEX,  let pdex clk freerun*/
-	if ((SYSCFG_RLVersion()) == SYSCFG_CUT_VERSION_A) {
-		psram_type->ICG_EN &= ~BIT_CGATE_EN_PDEX;
-	}
 
 	/*polling pdex_ack, avoid pdex_cmd conflict*/
 	PSRAM_CHECK_WITH_TIMEOUT((LSYS_GET_PSRAM_PDEX_REQ(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_PSRAMC_FLASH_CTRL)) == 0x0), 0xFFFFFF);

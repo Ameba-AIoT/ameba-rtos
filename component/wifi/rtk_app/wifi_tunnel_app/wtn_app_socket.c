@@ -36,9 +36,6 @@
 
 extern void sys_reset(void);
 
-#define WTN_BROADCAST_PORT 12345
-#define WTN_OTA_REQUEST_PORT 54321
-
 #define WTN_BUF_NUM 5
 #define WTN_BCMC_REPORT 3
 #define WTN_PC_IP_ENTRY 2
@@ -63,7 +60,6 @@ u8 wtn_server_ip[4] = {0};
 rtos_sema_t  wtn_socket_send_sema = NULL;
 struct wtn_buf_node wtn_buf_pool[WTN_BUF_NUM] = {0};
 struct __queue wtn_buf_queue;
-struct wtn_http_ota_param ota_param;
 
 struct wtn_buf_node *dequeue_wtn_buf(struct __queue *p_queue)
 {
@@ -132,7 +128,7 @@ int wtn_socket_send(u8 *buf, u32 len)
 #ifdef WTN_SINGLE_NODE_OTA
 void wtn_http_ota_task(void *param)
 {
-	struct wtn_http_ota_param *ota_param = (struct wtn_http_ota_param *)param;
+	struct rmesh_http_ota_param *ota_param = (struct rmesh_http_ota_param *)param;
 	int ret = -1;
 	ota_context *ctx = NULL;
 
@@ -166,91 +162,53 @@ exit:
 	rtos_mem_free(ota_param->resource);
 	rtos_task_delete(NULL);
 }
-
-int wtn_ota_socket_process(int *ota_socket_fd, u8 *buf)
-{
-	struct sockaddr_in ota_server_addr;
-	struct sockaddr_in ota_client_addr;
-	u8 ota_packet_pattern[4] = {0xAC, 0xBD, 0xCE, 0xDF};
-	//u8 invalid_ip[4] = {0};
-	u8 ota_request_seq = 0;
-	int client_len;
-	int ret;
-	u8 httpiplen = 0;
-	u8 http_resourcelen = 0;
-	struct timeval timeout;
-
-	if ((*ota_socket_fd == -1)) {/*create socket first*/ //&& (memcmp(wtn_server_ip, invalid_ip, 4) != 0)
-		*ota_socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
-		if (*ota_socket_fd < 0) {
-			return RTK_FAIL;
-		}
-		memset(&ota_server_addr, 0, sizeof(ota_server_addr));
-		ota_server_addr.sin_family = AF_INET;
-		//ota_server_addr.sin_addr.s_addr = (u32)(wtn_server_ip[0] | wtn_server_ip[1] << 8 | wtn_server_ip[2] << 16 | wtn_server_ip[3] << 24);
-		ota_server_addr.sin_addr.s_addr = INADDR_ANY;
-		ota_server_addr.sin_port = htons(WTN_OTA_REQUEST_PORT);
-		if (bind(*ota_socket_fd, (struct sockaddr *)&ota_server_addr, sizeof(ota_server_addr)) < 0) {
-			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "wtn bind ota rx socket fail\n");
-			closesocket(*ota_socket_fd);
-			return RTK_FAIL;
-		}
-
-		timeout.tv_sec = 3;
-		timeout.tv_usec = 0;
-		lwip_setsockopt(*ota_socket_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-	}
-
-	if (*ota_socket_fd >= 0) {/*if socket created, try to receive ota request from server*/
-		memset(buf, 0, 200);
-		client_len = sizeof(ota_client_addr);
-		ret = lwip_recvfrom(*ota_socket_fd, buf, 50, 0, (struct sockaddr *)&ota_client_addr, (u32_t *)&client_len);
-		if (ret < 0) {
-			if (errno == EWOULDBLOCK || errno == EAGAIN) {
-				return RTK_FAIL;
-			}
-		} else if (((u32)ret) >= 5) {
-			if (memcmp(buf, ota_packet_pattern, 4) == 0) {
-				if (buf[4] != ota_request_seq) {
-					ota_request_seq = buf[4];
-					/*get host and resource*/
-					httpiplen = buf[5];
-					ota_param.host = (char *)rtos_mem_zmalloc(httpiplen + 1);
-					memcpy(ota_param.host, buf + 6, httpiplen);
-					http_resourcelen = buf[4 + 1 + 1 + httpiplen];
-					ota_param.resource = (char *)rtos_mem_zmalloc(http_resourcelen + 1);
-					memcpy(ota_param.resource, buf + 7 + buf[5], http_resourcelen);
-					memcpy(&ota_param.port, buf + 4 + 1 + 1 + httpiplen + 1 + http_resourcelen, 4);
-					ota_param.port = htonl(ota_param.port);
-					/*create task to do http ota*/
-					if (rtos_task_create(NULL, ((const char *)"update_ota_task"), wtn_http_ota_task, &ota_param, 8000, 1) != RTK_SUCCESS) {
-						RTK_LOGS(NOTAG, RTK_LOG_ERROR, "wtn ota task create fail\n");
-					}
-				}
-			}
-		}
-	}
-	return RTK_SUCCESS;
-}
 #endif
 
-void wtn_bcmc_socket_handler(void *param)
+static int wtn_create_socket(int *fd, u16 port)
+{
+	int opt = 1;
+	struct sockaddr_in addr;
+
+	*fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (*fd < 0) {
+		return RTK_FAIL;
+	}
+
+	setsockopt(*fd, SOL_SOCKET, SO_REUSEADDR, (const char *) &opt, sizeof(opt));
+
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = INADDR_ANY;
+	addr.sin_port = htons(port);
+
+	if (bind(*fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+		closesocket(*fd);
+		return RTK_FAIL;
+	}
+
+	return RTK_SUCCESS;
+}
+
+void wtn_rx_socket_handler(void *param)
 {
 	(void) param;
 	u8 *ip = 0;
 	u8 invalid_ip[4] = {0};
 	int bcmc_socket_fd = -1;
-	int softap_bcmc_socket_fd = -1;
-	int ota_socket_fd = -1;
+	int rnat_bcmc_forward_socket_fd = -1;
+	int uc_socket_fd = -1;
 	int broadcast_enable = 1;
-	int client_len;
-	struct sockaddr_in bcmc_server_addr;
-	struct sockaddr_in bcmc_client_addr;
 	struct sockaddr_in softap_bcmc_addr;
+
+	struct sockaddr_in from_addr;
+	socklen_t fromlen = sizeof(from_addr);
 	struct timeval timeout;
 	u8 *buf = NULL;
 	int opt = 1;
 	int ret;
+	int recv_len = 0;
+	fd_set rdset;
+	int maxfd;
 
 	/*check whether DHCP finished*/
 	ip = (u8 *)LwIP_GetIP(0);
@@ -270,15 +228,15 @@ void wtn_bcmc_socket_handler(void *param)
 			ip = (u8 *)LwIP_GetIP(1);
 		}
 		/*create the softap bcmc socket for forwarding bcmc socket pkt*/
-		softap_bcmc_socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
-		if (softap_bcmc_socket_fd < 0) {
+		rnat_bcmc_forward_socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
+		if (rnat_bcmc_forward_socket_fd < 0) {
 			goto exit;
 		}
 
-		setsockopt(softap_bcmc_socket_fd, SOL_SOCKET, SO_REUSEADDR, (const char *) &opt, sizeof(opt));
+		setsockopt(rnat_bcmc_forward_socket_fd, SOL_SOCKET, SO_REUSEADDR, (const char *) &opt, sizeof(opt));
 
-		if (setsockopt(softap_bcmc_socket_fd, SOL_SOCKET, SO_BROADCAST, &broadcast_enable, sizeof(broadcast_enable)) < 0) {
-			closesocket(softap_bcmc_socket_fd);
+		if (setsockopt(rnat_bcmc_forward_socket_fd, SOL_SOCKET, SO_BROADCAST, &broadcast_enable, sizeof(broadcast_enable)) < 0) {
+			closesocket(rnat_bcmc_forward_socket_fd);
 			goto exit;
 		}
 
@@ -289,31 +247,19 @@ void wtn_bcmc_socket_handler(void *param)
 	}
 
 	/*bind broadcast socket*/
-	bcmc_socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (bcmc_socket_fd < 0) {
+	if (wtn_create_socket(&bcmc_socket_fd, WTN_BROADCAST_PORT) == RTK_FAIL) {
 		goto exit;
 	}
+
 	if (setsockopt(bcmc_socket_fd, SOL_SOCKET, SO_BROADCAST, &broadcast_enable, sizeof(broadcast_enable)) < 0) {
 		closesocket(bcmc_socket_fd);
 		goto exit;
 	}
 
-	setsockopt(bcmc_socket_fd, SOL_SOCKET, SO_REUSEADDR, (const char *) &opt, sizeof(opt));
-
-	memset(&bcmc_server_addr, 0, sizeof(bcmc_server_addr));
-	bcmc_server_addr.sin_family = AF_INET;
-	bcmc_server_addr.sin_addr.s_addr = INADDR_ANY;
-	bcmc_server_addr.sin_port = htons(WTN_BROADCAST_PORT);
-
-	if (bind(bcmc_socket_fd, (struct sockaddr *)&bcmc_server_addr, sizeof(bcmc_server_addr)) < 0) {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "wtn bind rx socket fail\n");
-		closesocket(bcmc_socket_fd);
+	/*bind unicast socket*/
+	if (wtn_create_socket(&uc_socket_fd, WTN_UNICAST_PORT) == RTK_FAIL) {
 		goto exit;
 	}
-
-	timeout.tv_sec = 3;
-	timeout.tv_usec = 0;
-	lwip_setsockopt(bcmc_socket_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
 	buf = rtos_mem_zmalloc(200);
 	if (!buf) {
@@ -324,52 +270,66 @@ void wtn_bcmc_socket_handler(void *param)
 		if (wtn_socket_need_close) {
 			goto exit;
 		}
+
+		FD_ZERO(&rdset);
+		FD_SET(bcmc_socket_fd, &rdset);
+		FD_SET(uc_socket_fd, &rdset);
+		maxfd = (bcmc_socket_fd > uc_socket_fd) ? bcmc_socket_fd : uc_socket_fd;
+
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 500000;
+
 		memset(buf, 0, 200);
-		client_len = sizeof(bcmc_client_addr);
-		ret = lwip_recvfrom(bcmc_socket_fd, buf, 200, 0, (struct sockaddr *)&bcmc_client_addr, (u32_t *)&client_len);
+
+		ret = lwip_select(maxfd + 1, &rdset, NULL, NULL, &timeout);
 		if (ret < 0) {
-			if (errno == EWOULDBLOCK || errno == EAGAIN) {
-#ifdef WTN_SINGLE_NODE_OTA
-				goto ota_process;
-#else
-				continue;
-#endif
-			} else {
-				RTK_LOGS(NOTAG, RTK_LOG_ERROR, "wtn rx bcmc fail\n");
-				goto exit;
-			}
-		} else {
-			/*parsing content to get server ip and port*/
-			if (((u32)ret) >= 23) {
-				/*1 byte random, when tool restarted, random will change*/
-				if (wtn_tool_rand == 0) {
-					wtn_tool_rand = buf[12];
-				} else {
-					if (wtn_tool_rand != buf[12]) {
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "select error\n");
+			break;
+		} else if (ret == 0) {// timeout
+			continue;
+		}
+
+		if (FD_ISSET(bcmc_socket_fd, &rdset)) {
+			recv_len = lwip_recvfrom(bcmc_socket_fd, buf, 200, 0, (struct sockaddr *)&from_addr, &fromlen);
+			if (recv_len > 0) {
+				if (((u32)recv_len) >= 23) {
+					/*1 byte random, when tool restarted, random will change*/
+					if (wtn_tool_rand == 0) {
 						wtn_tool_rand = buf[12];
-						wtn_tool_restart = 1;
+					} else {
+						if (wtn_tool_rand != buf[12]) {
+							wtn_tool_rand = buf[12];
+							wtn_tool_restart = 1;
+						}
 					}
-				}
-				if (buf[13] == WTN_PC_IP_ENTRY) {
-					memcpy(wtn_server_ip, buf + 15, 4);
-				}
-				if (buf[19] == WTN_PC_PORT_ENTRY) {
-					memcpy(&wtn_server_port, buf + 21, 2);
-					wtn_server_port = ntohs(wtn_server_port);
-				}
-				if (wifi_user_config.wtn_rnat_en && wtn_rnat_ap_start) {
-					/*forward this packet by softap port*/
-					sendto(softap_bcmc_socket_fd, buf, ret, 0, (struct sockaddr *)&softap_bcmc_addr, sizeof(softap_bcmc_addr));
+					if (buf[13] == WTN_PC_IP_ENTRY) {
+						memcpy(wtn_server_ip, buf + 15, 4);
+					}
+					if (buf[19] == WTN_PC_PORT_ENTRY) {
+						memcpy(&wtn_server_port, buf + 21, 2);
+						wtn_server_port = ntohs(wtn_server_port);
+					}
+					if (wifi_user_config.wtn_rnat_en && wtn_rnat_ap_start) {
+						/*forward this packet by softap port*/
+						if (sendto(rnat_bcmc_forward_socket_fd, buf, recv_len, 0, (struct sockaddr *)&softap_bcmc_addr, sizeof(softap_bcmc_addr)) < 0) {
+							RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "rnat bcmc forward socket send fail\n");
+						}
+					}
 				}
 			}
 		}
-#ifdef WTN_SINGLE_NODE_OTA
-ota_process:
-		if (wtn_ota_socket_process(&ota_socket_fd, buf) == RTK_FAIL) {
-			continue;
+#ifdef CONFIG_RMESH_OTA_EN
+		if (FD_ISSET(uc_socket_fd, &rdset)) {
+			recv_len = lwip_recvfrom(uc_socket_fd, buf, 100, 0, (struct sockaddr *)&from_addr, &fromlen);
+			if (recv_len > 5) {
+				if (wtn_uc_socket_process(buf, recv_len) == RTK_FAIL) {
+					continue;
+				}
+			}
 		}
 #endif
 	}
+
 exit:
 	if (buf) {
 		rtos_mem_free(buf);
@@ -377,11 +337,11 @@ exit:
 	if (bcmc_socket_fd >= 0) {
 		closesocket(bcmc_socket_fd);
 	}
-	if (softap_bcmc_socket_fd >= 0) {
-		closesocket(softap_bcmc_socket_fd);
+	if (rnat_bcmc_forward_socket_fd >= 0) {
+		closesocket(rnat_bcmc_forward_socket_fd);
 	}
-	if (ota_socket_fd >= 0) {
-		closesocket(ota_socket_fd);
+	if (uc_socket_fd >= 0) {
+		closesocket(uc_socket_fd);
 	}
 	rtos_task_delete(NULL);
 }
@@ -497,7 +457,7 @@ int wtn_socket_init(u8 enable, u8 rnat_ap_start)
 		wtn_server_port = 0;
 		memset(wtn_server_ip, 0, 4);
 		memset(wtn_buf_pool, 0, WTN_BUF_NUM * sizeof(struct wtn_buf_node));
-		if (rtos_task_create(NULL, "wtn_bcmc_socket_handler", wtn_bcmc_socket_handler, NULL, 2048, 2) != RTK_SUCCESS) {
+		if (rtos_task_create(NULL, "wtn_rx_socket_handler", wtn_rx_socket_handler, NULL, 2048, 2) != RTK_SUCCESS) {
 			return RTK_FAIL;
 		}
 

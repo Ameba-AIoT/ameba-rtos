@@ -1,5 +1,7 @@
-/**
- * Copyright (c) 2015, Realsil Semiconductor Corporation. All rights reserved.
+/*
+ * Copyright (c) 2025 Realtek Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef _OSIF_H_

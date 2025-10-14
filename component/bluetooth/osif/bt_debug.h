@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2025 Realtek Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef _BT_DEBUG_H_
 #define _BT_DEBUG_H_
 

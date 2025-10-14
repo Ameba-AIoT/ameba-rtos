@@ -12,6 +12,8 @@
 #include "lwip_netconf.h"
 #include "atcmd_service.h"
 #include "atcmd_network.h"
+#include "lwip/apps/sntp.h"
+#include "sntp/sntp_api.h"
 
 void at_dns(void *arg)
 {
@@ -330,6 +332,267 @@ end:
 	}
 }
 
+static char *server_list[SNTP_MAX_SERVERS] = {NULL};
+static int server_count = 0;
+
+static int parse_timezone(const char *timezone_str, int *hours, int *minutes, int *is_positive)
+{
+	int h = 0;
+	int m = 0;
+	int positive = 1;
+	const char *num_str = timezone_str;
+
+	if (timezone_str[0] == '-') {
+		positive = 0;
+		num_str++;
+	} else if (timezone_str[0] == '+') {
+		return -1;
+	}
+
+	size_t len = strlen(num_str);
+	if (len == 1 || len == 2) {
+		h = atoi(num_str);
+		m = 0;
+	} else if (len == 3 || len == 4) {
+		char hour_str[3] = {num_str[0], (len == 3) ? '\0' : num_str[1], '\0'};
+		h = atoi(hour_str);
+		m = atoi(&num_str[(len == 3) ? 1 : 2]);
+	} else {
+		return -1;
+	}
+
+	if (h > 14 || (h == 14 && m > 0) || (!positive && (h > 12 || (h == 12 && m > 0)))) {
+		return -1;
+	}
+
+	*hours = h;
+	*minutes = m;
+	*is_positive = positive;
+	return 0;
+}
+
+void at_sntpcfg(void *arg)
+{
+	int argc = 0, error_no = 0;
+	char *argv[MAX_ARGC] = {0};
+	int enable = 0;
+	int hours = 8;
+	int minutes = 0;
+	int is_positive = 1;
+
+	if (arg == NULL) {
+		char *tz = getenv("TZ");
+		char tz_display[32] = "8";
+
+		if (tz && strlen(tz) > 3) {
+			char *sign_pos = strpbrk(tz + 3, "+-");
+
+			if (sign_pos) {
+				int hours = 0, minutes = 0;
+				char sign = *sign_pos;
+
+				if (sscanf(sign_pos + 1, "%d:%d", &hours, &minutes) >= 1) {
+					if (sign == '-') {
+						snprintf(tz_display, sizeof(tz_display), "%d%02d", hours, minutes);
+					} else {
+						snprintf(tz_display, sizeof(tz_display), "-%d%02d", hours, minutes);
+					}
+				} else if (sscanf(sign_pos + 1, "%d", &hours) == 1) {
+					if (sign == '-') {
+						snprintf(tz_display, sizeof(tz_display), "%d", hours);
+					} else {
+						snprintf(tz_display, sizeof(tz_display), "-%d", hours);
+					}
+				}
+			}
+		}
+
+		int is_sntp_enabled = sntp_enabled();
+		at_printf("\r\n+SNTPCFG:%d,%s", is_sntp_enabled, tz_display);
+
+		for (int i = 0; i < server_count; i++) {
+			if (server_list[i] != NULL) {
+				at_printf(",%s", server_list[i]);
+			}
+		}
+		at_printf("\r\n");
+
+		goto end;
+	}
+
+	argc = parse_param(arg, argv);
+
+	// Check if the number of server parameters exceeds SNTP_MAX_SERVERS
+	if (argc > 3 + SNTP_MAX_SERVERS) {
+		RTK_LOGE(NOTAG, "[+SNTPCFG] Too many SNTP servers (max %d)\r\n", SNTP_MAX_SERVERS);
+		error_no = 1;
+		goto end;
+	}
+
+	enable = atoi(argv[1]);
+	if (enable != 0 && enable != 1) {
+		RTK_LOGE(NOTAG, "[+SNTPCFG] Invalid enable\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	if (argc >= 3 && strlen(argv[2]) > 0) {
+		if (parse_timezone(argv[2], &hours, &minutes, &is_positive) != 0) {
+			RTK_LOGE(NOTAG, "[+SNTPCFG] Invalid timezone format. Use integer [-12,14] or [+|-][hh]mm format\r\n");
+			error_no = 2;
+			goto end;
+		}
+
+		char tz_str[32];
+
+		// The sign of offset is opposite to UTC offset
+		snprintf(tz_str, sizeof(tz_str), "XXX%c%d:%02d", is_positive ? '-' : '+', hours, minutes);
+
+		setenv("TZ", tz_str, 1);
+		tzset();
+
+		RTK_LOGI(NOTAG, "[+SNTPCFG] System timezone set to UTC%c%d:%02d (TZ=%s)\r\n",
+				 is_positive ? '+' : '-', hours, minutes, tz_str);
+	}
+
+	if (enable == 1) {
+		// Clear existing SNTP server configuration
+		sntp_stop();
+		for (int i = 0; i < server_count; i++) {
+			if (server_list[i] != NULL) {
+				free(server_list[i]);
+				server_list[i] = NULL;
+			}
+		}
+		server_count = 0;
+
+		// Process SNTP server parameters
+		if (argc >= 4) {
+			for (int i = 3; i < argc && server_count < SNTP_MAX_SERVERS; i++) {
+				if (strlen(argv[i]) > 0) {
+					RTK_LOGI(NOTAG, "[+SNTPCFG] Setting SNTP server %d: %s\r\n", server_count, argv[i]);
+					server_list[server_count] = strdup(argv[i]);
+					server_count++;
+				}
+			}
+		}
+
+		// If no server is configured, use the default server
+		if (server_count == 0) {
+			server_list[0] = strdup("pool.ntp.org");
+			sntp_setservername(0, server_list[0]);
+			server_count = 1;
+			RTK_LOGI(NOTAG, "[+SNTPCFG] Using default SNTP server: pool.ntp.org\r\n");
+		} else {
+			for (int i = 0; i < server_count; i++) {
+				if (strlen(server_list[i]) > 0) {
+					sntp_setservername(i, server_list[i]);
+				}
+			}
+		}
+
+		sntp_init();
+	} else if (enable == 0) {
+		sntp_stop();
+		for (int i = 0; i < server_count; i++) {
+			if (server_list[i] != NULL) {
+				free(server_list[i]);
+				server_list[i] = NULL;
+			}
+		}
+		server_count = 0;
+		RTK_LOGI(NOTAG, "[+SNTPCFG] SNTP stopped and server list cleared\r\n");
+	}
+
+end:
+	if (error_no == 0) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+
+void at_sntpintv(void *arg)
+{
+	int argc = 0, error_no = 0;
+	char *argv[MAX_ARGC] = {0};
+	int interval_sec = 0;
+	u32_t interval_ms = 0;
+
+	if (arg == NULL) {
+		interval_ms = sntp_get_update_interval();
+		interval_sec = interval_ms / 1000;
+		at_printf("\r\n+SNTPINTV:%d\r\n", interval_sec);
+		goto end;
+	}
+
+	argc = parse_param(arg, argv);
+	if (argc != 2) {
+		RTK_LOGE(NOTAG, "[+SNTPINTV] Invalid number of parameters\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	interval_sec = atoi(argv[1]);
+	if (interval_sec <= 15) {
+		RTK_LOGE(NOTAG, "[+SNTPINTV] Interval must be greater than 15 seconds\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	interval_ms = interval_sec * 1000;
+	sntp_set_update_interval(interval_ms);
+	RTK_LOGI(NOTAG, "[+SNTPINTV] SNTP update interval set to %d seconds (%u ms)\r\n", interval_sec, interval_ms);
+
+end:
+	if (error_no == 0) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+
+void at_sntptime(void *arg)
+{
+	(void)arg;
+	int error_no = 0;
+
+	time_t now;
+	struct tm timeinfo;
+	char tz_display[32] = "UTC+08:00";
+	char *tz_env = getenv("TZ");
+
+	time(&now);
+	timeinfo = *(localtime(&now));
+
+	// Get current timezone info and convert to display format
+	if (tz_env && strlen(tz_env) > 3) {
+		char *sign_pos = strpbrk(tz_env + 3, "+-");
+
+		if (sign_pos) {
+			int hours = 0, minutes = 0;
+			char sign = *sign_pos;
+
+			// The sign of offset is opposite to UTC offset
+			char utc_sign = (sign == '-') ? '+' : '-';
+
+			if (sscanf(sign_pos + 1, "%d:%d", &hours, &minutes) >= 1) {
+				snprintf(tz_display, sizeof(tz_display), "UTC%c%02d:%02d", utc_sign, hours, minutes);
+			}
+		}
+	}
+
+	at_printf("\r\n+SNTPTIME:%d-%02d-%02d %02d:%02d:%02d %s\r\n",
+			  timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday,
+			  timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, tz_display);
+
+	if (error_no == 0) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+
 log_item_t at_network_items[ ] = {
 	{"+DNS", at_dns, {NULL, NULL}},
 	{"+QUERYDNSSRV", at_querydnssrv, {NULL, NULL}},
@@ -337,6 +600,9 @@ log_item_t at_network_items[ ] = {
 	{"+PING", at_ping, {NULL, NULL}},
 	{"+IPERF", at_iperf, {NULL, NULL}},
 	{"+IPERF3", at_iperf3, {NULL, NULL}},
+	{"+SNTPCFG", at_sntpcfg, {NULL, NULL}},
+	{"+SNTPINTV", at_sntpintv, {NULL, NULL}},
+	{"+SNTPTIME", at_sntptime, {NULL, NULL}},
 };
 
 void print_network_at(void)

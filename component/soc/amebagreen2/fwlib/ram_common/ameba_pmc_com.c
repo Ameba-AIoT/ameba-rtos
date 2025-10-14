@@ -303,10 +303,12 @@ void SOCPS_PowerManage(u8 regu_state)
 	}
 
 	/*Set core ldo dummy load*/
-	reg_temp = HAL_READ32(PMC_BASE, DUMMY_LOAD_CTRL);
-	reg_temp &= ~ PMC_BIT_SYS_DMYL_SLP;
-	reg_temp |= PMC_BIT_SYS_DMYL_MNL;
-	HAL_WRITE32(PMC_BASE, DUMMY_LOAD_CTRL, reg_temp);
+	if (EFUSE_GetChipVersion() == SYSCFG_CUT_VERSION_A) {
+		reg_temp = HAL_READ32(PMC_BASE, DUMMY_LOAD_CTRL);
+		reg_temp &= ~ PMC_BIT_SYS_DMYL_SLP;
+		reg_temp |= PMC_BIT_SYS_DMYL_MNL;
+		HAL_WRITE32(PMC_BASE, DUMMY_LOAD_CTRL, reg_temp);
+	}
 
 	/*modify pfm parameters of SWR*/
 	reg_temp = SWR->SWR_PARAM_PFM;

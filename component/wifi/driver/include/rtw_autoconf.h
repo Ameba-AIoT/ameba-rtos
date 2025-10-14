@@ -83,9 +83,12 @@
 #elif defined(CONFIG_AMEBAPRO3)
 /******************************* AmebaPro3 (8735c) ******************************/
 #include "autoconf_8721f.h"
-#elif defined(CONFIG_AMEBAL2) || defined(CONFIG_RTL8720F)
+#elif defined(CONFIG_AMEBAL2)
 /******************************* AmebaL2 (6955) ******************************/
 #include "autoconf_amebax.h"
+#elif defined(CONFIG_RTL8720F)
+/******************************* Ameba (8720F) ******************************/
+#include "autoconf_8720f.h"
 #endif
 /****************** Configurations for each platform end **********************/
 

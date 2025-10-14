@@ -42,6 +42,8 @@ set(private_compile_options)         #private compile_options
 ameba_list_append(private_sources
     log.c
     sscanf_minimal.c
+
+    libnosys/gettod.c
 )
 
 ameba_list_append_ifnot(CONFIG_ARM_CORE_CA32 private_sources

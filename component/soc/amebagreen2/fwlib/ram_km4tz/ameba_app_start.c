@@ -159,7 +159,7 @@ void app_start(void)
 	os_init();
 	XTAL_INIT();
 
-	if ((SYSCFG_RLVersion()) >= SYSCFG_CUT_VERSION_B) {
+	if ((EFUSE_GetChipVersion()) >= SYSCFG_CUT_VERSION_B) {
 		if (SYSCFG_CHIPType_Get() == CHIP_TYPE_ASIC_POSTSIM) {//Only Asic need OSC Calibration
 			OSC4M_Init();
 			OSC4M_Calibration(30000);

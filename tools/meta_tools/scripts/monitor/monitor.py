@@ -83,8 +83,6 @@ class Monitor():
         self.debug = debug
         self.log_handler = LogHandler(self.elf_file, timestamps, enable_address_decoding, toolchain_path,
                                       rom_elf_file=rom_file)
-        if not self.elf_exists:
-            print_yellow("Not set elf or elf not existed, will not handle core dump!")
 
         if self.target_os == "freertos":
             from base.coredump_freertos import CoreDump
@@ -265,28 +263,28 @@ def main():
         print_red('Note: Query configuration file "' + SDK_QUERY_CFG_FILE + '" does not exist')
 
     if args.device is None:
-        print("Note: No device specified, monitor starts failed!")
+        print_red("Note: No device specified, monitor starts failed!")
         sys.exit(1)
     else:
         device = args.device.lower()
 
     if args.decode_coredumps :
         if not args.toolchain_dir:
-            print("Note: No toolchain_dir specified for decode-coredumps, monitor starts failed!")
+            print_red("Note: No toolchain_dir specified for decode-coredumps, monitor starts failed!")
             sys.exit(1)
         if not args.axf_file:
-            print("Note: No axf_file specified for decode-coredumps, monitor starts failed!")
+            print_red("Note: No axf_file specified for decode-coredumps, monitor starts failed!")
             sys.exit(1)
         if not args.target_os:
-            print("Note: No target_os specified for decode-coredumps, monitor starts failed!")
+            print_red("Note: No target_os specified for decode-coredumps, monitor starts failed!")
             sys.exit(1)
 
     if args.enable_address_decoding:
         if not args.toolchain_dir:
-            print("Note: No toolchain_dir specified for enable-address-decoding, monitor starts failed!")
+            print_red("Note: No toolchain_dir specified for enable-address-decoding, monitor starts failed!")
             sys.exit(1)
         if not args.axf_file:
-            print("Note: No axf_file specified for enable-address-decoding, monitor starts failed!")
+            print_red("Note: No axf_file specified for enable-address-decoding, monitor starts failed!")
             sys.exit(1)
     toolchain_path = ''
     if args.toolchain_dir:
@@ -295,7 +293,7 @@ def main():
         else:
             toolchain_path = os.path.join(args.toolchain_dir, "linux", "newlib")
         if not os.path.exists(args.toolchain_dir):
-            print(f"Error: Toolchain '{args.toolchain_dir}' does not exist")
+            print_red(f"Error: Toolchain '{args.toolchain_dir}' does not exist")
 
     target_os = args.target_os or cfg["info"]["os"].lower()
 
@@ -317,16 +315,10 @@ def main():
             # number is larger than 10
             if os.name == "nt" and port.startswith("COM"):
                 port = port.replace("COM", r"\\.\COM")
-                print_yellow("--- WARNING: GDB cannot open serial ports accessed as COMx")
-                print_yellow(f"--- Using {port} instead...")
             elif port.startswith("/dev/tty.") and sys.platform == "darwin":
                 port = port.replace("/dev/tty.", "/dev/cu.")
-                print_yellow("--- WARNING: Serial ports accessed as /dev/tty.* will hang gdb if launched.")
-                print_yellow(f"--- Using {port} instead...")
 
             cls = SerialMonitor
-            print_yellow(
-                "--- monitor {v} on {port} {baudrate} ---".format(v=__version__, port=port, baudrate=args.baud))
         rom_file = ""
         monitor = cls(args.port, args.baud,
                         timestamps=args.timestamps,
@@ -344,10 +336,7 @@ def main():
                         remote_port=remote_port,
                         remote_password=args.remote_password)
 
-        print_yellow("--- Quit: {q} | Menu: {m} | Help: {m} followed by {h} ---".format(
-            q=key_description(EXIT_KEY),
-            m=key_description(MENU_KEY),
-            h=key_description(CTRL_H)))
+        print_yellow("--- Exit monitor: Ctrl+C ---")
 
         monitor.main_loop()
     except KeyboardInterrupt:

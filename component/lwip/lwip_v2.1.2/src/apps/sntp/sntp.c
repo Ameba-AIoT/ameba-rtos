@@ -61,6 +61,7 @@
 
 #include <string.h>
 #include <time.h>
+#include "sntp/sntp_api.h"
 
 #if LWIP_UDP
 

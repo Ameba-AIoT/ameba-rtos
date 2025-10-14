@@ -102,6 +102,13 @@ extern unsigned int sys_now(void);
 #define LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS  1
 #define LWIP_ICMP_SUPPRESS                  0
 #define LWIP_ICMP_SUPPRESS_INTERVAL         900 //allow one icmp per second with tolerance of 100 ms
+/* SNTP options */
+#define SNTP_SERVER_DNS                   1
+#define SNTP_MAX_SERVERS                  3
+#define SNTP_SUPPRESS_DELAY_CHECK
+#define SNTP_UPDATE_DELAY                 sntp_get_update_interval()
+#define SNTP_SET_SYSTEM_TIME_US(sec, us)  sntp_set_system_time(sec, us)
+#define SNTP_GET_SYSTEM_TIME(sec, us)     sntp_get_system_time(&(sec), &(us))
 
 /* ------------------------------------ Options for different chips ------------------------------------ */
 

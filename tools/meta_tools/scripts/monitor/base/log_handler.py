@@ -96,7 +96,7 @@ class LogHandler:
             self._start_of_line = text.endswith(new_line_char)
 
         if self.output_enabled:
-            print(text, end='', flush=True)
+            print(text, end='')
         if self.log_file:
             try:
                 self.log_file.write(text)

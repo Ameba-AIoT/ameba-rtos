@@ -8,6 +8,6 @@ set(COMPRESSTOOL  python ${IMAGESCRIPTDIR}/axf2bin.py compress)
 set(BINARY_PADING python ${IMAGESCRIPTDIR}/axf2bin.py binary_pading)
 
 
-set(CODE_ANALYZE_PYTHON python ${IMAGESCRIPTDIR}/internal/code_analyze.py)
+set(CODE_ANALYZE_PYTHON python ${c_BASEDIR}/utils/code_analyze/code_analyze.py)
 set(STATIC_ANALYZE_PYTHON python ${IMAGESCRIPTDIR}/internal/static_code_analyze.py)
 set(EXTRACT_CODE_SIZE_PYTHON python ${IMAGESCRIPTDIR}/internal/extract_code_size.py)

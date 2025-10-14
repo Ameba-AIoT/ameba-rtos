@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2025 Realtek Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "osif.h"
 #include "hci_platform.h"
 #include "hci_controller.h"
