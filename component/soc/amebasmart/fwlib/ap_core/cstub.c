@@ -29,7 +29,7 @@
 #define CSTUB_FSTAT      _fstat
 #define CSTUB_GETPID     _getpid
 #define CSTUB_KILL       _kill
-#define CSTUB_GETTIMEOFDAY _gettimeofday
+// #define CSTUB_GETTIMEOFDAY _gettimeofday
 
 #elif defined(__mips__)
 #define CSTUB_READ       read

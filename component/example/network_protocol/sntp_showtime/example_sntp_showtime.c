@@ -1,68 +1,31 @@
 #include "lwip_netconf.h"
 #include "log.h"
-#include "sntp/sntp.h"
+#include "lwip/apps/sntp.h"
 
 #define TIME_MODE    1	//0: for UTC with microseconds, 1: for timezone with seconds
+#define SNTP_SERVER               "pool.ntp.org"
 
-#if (defined(CONFIG_SYSTEM_TIME64) && CONFIG_SYSTEM_TIME64)
 static void show_time(void)
 {
 #if (TIME_MODE == 0)
-	unsigned int update_tick = 0;
-	long long update_sec = 0, update_usec = 0;
-
-	sntp_get_lasttime(&update_sec, &update_usec, &update_tick);
-
-	if (update_tick) {
-		long long tick_diff_sec, tick_diff_ms, current_sec, current_usec;
-		unsigned int current_ms = rtos_time_get_current_system_time_ms();
-
-		tick_diff_sec = (current_ms - update_tick) / 1000;
-		tick_diff_ms = (current_ms - update_tick) % 1000;
-		update_sec += tick_diff_sec;
-		update_usec += (tick_diff_ms * 1000);
-		current_sec = update_sec + update_usec / 1000000;
-		current_usec = update_usec % 1000000;
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s + %d usec\n", ctime(&current_sec), current_usec);
-	}
+	uint32_t sec;
+	uint32_t us;
+	SNTP_GET_SYSTEM_TIME(sec, us);
+	time_t now = (time_t)sec;
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s + %d usec\n", ctime(&now), us);
 #elif (TIME_MODE == 1)
-	int timezone = 8;	// use UTC+8 timezone for example
-	struct tm tm_now = sntp_gen_system_time(timezone);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "%04d-%02d-%02d %02d:%02d:%02d UTC%s%d\n",
-			 tm_now.tm_year, tm_now.tm_mon, tm_now.tm_mday, tm_now.tm_hour, tm_now.tm_min, tm_now.tm_sec,
+	time_t now;
+	struct tm timeinfo;
+	int timezone = 8;	// use UTC+8(offset in hrs) timezone for example, 8 * 60 * 60(offset in seconds)
+	time(&now);
+	setenv("TZ", "CST-8", 1);
+	tzset();
+	timeinfo = *(localtime(&now));
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "%d-%d-%d %d:%d:%d UTC%s%d\n",
+			 timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec,
 			 (timezone > 0) ? "+" : "", timezone);
 #endif
 }
-#else
-static void show_time(void)
-{
-#if (TIME_MODE == 0)
-	unsigned int update_tick = 0;
-	time_t update_sec = 0, update_usec = 0;
-
-	sntp_get_lasttime(&update_sec, &update_usec, &update_tick);
-
-	if (update_tick) {
-		time_t tick_diff_sec, tick_diff_ms, current_sec, current_usec;
-		unsigned int current_ms = rtos_time_get_current_system_time_ms();
-
-		tick_diff_sec = (current_ms - update_tick) / 1000;
-		tick_diff_ms = (current_ms - update_tick) % 1000;
-		update_sec += tick_diff_sec;
-		update_usec += (tick_diff_ms * 1000);
-		current_sec = update_sec + update_usec / 1000000;
-		current_usec = update_usec % 1000000;
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s + %d usec\n", ctime(&current_sec), current_usec);
-	}
-#elif (TIME_MODE == 1)
-	int timezone = 8 * 3600;	// use UTC+8(offset in hrs) timezone for example, 8 * 60 * 60(offset in seconds)
-	struct tm tm_now = sntp_gen_system_time(timezone);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "%04d-%02d-%02d %02d:%02d:%02d UTC%s%d\n",
-			 tm_now.tm_year, tm_now.tm_mon, tm_now.tm_mday, tm_now.tm_hour, tm_now.tm_min, tm_now.tm_sec,
-			 (timezone / 3600 > 0) ? "+" : "", timezone / 3600);
-#endif
-}
-#endif
 
 static void example_sntp_showtime_thread(void *param)
 {
@@ -75,6 +38,8 @@ static void example_sntp_showtime_thread(void *param)
 	LwIP_Check_Connectivity();
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: SNTP show time====================\r\n");
+
+	sntp_setservername(0, SNTP_SERVER);
 
 	sntp_init();
 

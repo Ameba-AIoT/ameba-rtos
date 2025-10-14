@@ -941,10 +941,8 @@ void vApplicationIdleHook(void)
 
 #if defined(CONFIG_WIFI_FW_EN) && CONFIG_WIFI_FW_EN
 #if defined(CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
-#ifdef RTL8720F_TODO
 	extern void wififw_task_idle(void);
 	wififw_task_idle();
-#endif
 #endif
 #endif
 }

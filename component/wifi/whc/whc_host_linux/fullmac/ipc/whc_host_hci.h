@@ -145,6 +145,8 @@ struct whc_device {
 	u8				ip_addr[RTW_IP_ADDR_LEN];
 	u8				ipv6_addr[RTW_IPv6_ADDR_LEN];
 	u8				wowlan_state; /* 0: resume, 1: suspend */
+	u8				is_need_4way[WHC_MAX_NET_PORT_NUM]; /* 0: no need, 1: need */
+	u8				is_4way_ongoing[WHC_MAX_NET_PORT_NUM]; /* 0: 4-way is not ongoing, 1: 4-way is going */
 	bool b_in_roaming;
 
 	/* wifi user config */

@@ -501,6 +501,27 @@ int whc_fullmac_host_add_key(struct rtw_crypt_info *crypt)
 	return ret;
 }
 
+int whc_fullmac_host_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way)
+{
+	int ret = 0;
+	u32 param_buf[1];
+	dma_addr_t dma_addr_4way = 0;
+	struct rtw_wpa_4way_status *prpt_4way = NULL;
+
+	prpt_4way = rtw_malloc(sizeof(struct rtw_wpa_4way_status), &dma_addr_4way);
+	if (!prpt_4way) {
+		dev_err(global_idev.fullmac_dev, "%s: malloc failed!\n", __func__);
+		return -ENOMEM;
+	}
+	memcpy(prpt_4way, rpt_4way, sizeof(struct rtw_wpa_4way_status));
+
+	param_buf[0] = (u32)dma_addr_4way;
+	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WPA_4WAY_REPORT, param_buf, 1);
+
+	rtw_mfree(sizeof(struct rtw_wpa_4way_status), prpt_4way, dma_addr_4way);
+	return ret;
+}
+
 int whc_fullmac_host_tx_mgnt(u8 wlan_idx, const u8 *buf, size_t buf_len, u8 need_wait_ack)
 {
 	int ret = 0;

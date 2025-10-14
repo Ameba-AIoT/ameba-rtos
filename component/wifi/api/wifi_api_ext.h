@@ -79,6 +79,24 @@ s32 wifi_set_lps_listen_interval(u8 interval);
 
 
 /**
+ * @brief Set up custom TCP/UDP broadcast port filter white list for wifi wake application core under tickless state
+ * @warning There are up to 6 port numbers.
+ * @param[in] port_list: port list need to add in port filter white list
+ * @param[in] list_count: number of port list
+ * @code
+ * u16 port_list[] = {1234, 2234, 3234, 4234};
+ * wifi_set_broadcast_port_wakeup_white_list(port_list, 4);
+ * @endcode
+ * @return
+ *    - @ref RTK_SUCCESS : The API executed successfully.
+ *    - @ref RTK_FAIL: The API executed fail.
+ * @note
+ *    - If the port of TCP/UDP broadcast packet not match port_list, drop the packet and not wakeup host
+ *    - If this API is not set, all ports will not be filtered
+ */
+s32 wifi_set_broadcast_port_wakeup_white_list(u16 *port_list, u8 list_count);
+
+/**
  * @brief  Set the auto-reconnect mode for Wi-Fi connection.
  * This function allows temporarily enabling or disabling auto-reconnect mode,
  * overriding the default setting in ameba_wificfg.c.

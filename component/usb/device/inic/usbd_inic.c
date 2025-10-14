@@ -1044,7 +1044,7 @@ static int usbd_inic_handle_setup(usb_setup_req_t *req, u8 *buf)
 			pkt->data_offset = USBD_INIC_QUERY_PACKET_SIZE;
 			pkt->pkt_type = USBD_INIC_VENDOR_QUERY_ACK;
 			pkt->xfer_status = HAL_OK;
-			pkt->rl_version = (u8)(SYSCFG_RLVersion() & 0xFF);
+			pkt->rl_version = (u8)(EFUSE_GetChipVersion() & 0xFF);
 			pkt->dev_mode = USBD_INIC_FW_TYPE_APPLICATION;
 			ret = HAL_OK;
 		} else if (req->wIndex == USBD_INIC_VENDOR_RESET_CMD) {

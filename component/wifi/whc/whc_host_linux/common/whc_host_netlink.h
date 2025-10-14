@@ -1,7 +1,7 @@
 #ifndef __WHC_HOST_NETLINK_H__
 #define __WHC_HOST_NETLINK_H__
 
-#define WHC_CMD_GENL_NAME	"whc_ctrl_app"
+#define WHC_CMD_GENL_NAME	"whc_slim_host_demo"
 
 struct genl_info;
 typedef int (*netlink_cmd_handler_t)(struct genl_info *info);

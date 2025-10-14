@@ -91,7 +91,7 @@ void whc_host_get_ip(uint8_t idx)
 	whc_host_send_to_dev(buf, buf_len);
 }
 
-void whc_host_set_rdy(void)
+void whc_host_set_rdy(uint8_t state)
 {
 	uint8_t buf[12] = {0};
 	uint8_t *ptr = buf;
@@ -102,6 +102,8 @@ void whc_host_set_rdy(void)
 	buf_len += 4;
 	*ptr = WHC_WIFI_TEST_SET_READY;
 	ptr += 1;
+	buf_len += 1;
+	*ptr = state;
 	buf_len += 1;
 
 	whc_host_send_to_dev(buf, buf_len);
@@ -218,6 +220,7 @@ u32 cmd_whc_test(u16 argc, u8  *argv[])
 {
 	UNUSED(argc);
 	char *pwd = NULL;
+	u8 state = 1;
 
 	if (_strcmp((const char *)argv[0], "getmac") == 0) {
 		whc_host_get_mac_addr(0);
@@ -231,7 +234,13 @@ u32 cmd_whc_test(u16 argc, u8  *argv[])
 
 	if (_strcmp((const char *)argv[0], "setrdy") == 0) {
 		LwIP_netif_set_up(0);
-		whc_host_set_rdy();
+		if (argc > 1) {
+			if (_strcmp((const char *)argv[1], "unready") == 0) {
+				state = 0;
+			}
+		}
+
+		whc_host_set_rdy(state);
 		goto exit;
 	}
 

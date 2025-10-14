@@ -32,21 +32,24 @@
 #ifndef __CC_H__
 #define __CC_H__
 
+#include "platform_stdlib.h"
+
 /** LWIP_TIMEVAL_PRIVATE: if you want to use the struct timeval provided
  * by your system, set this to 0 and include <sys/time.h> in cc.h */
 #include <sys/time.h>
 
-#ifdef BYTE_ORDER
-#undef BYTE_ORDER
-#define BYTE_ORDER LITTLE_ENDIAN
-#endif
-
+#define LWIP_NO_STDINT_H 1
+#define LWIP_HAVE_INT64 1
 typedef unsigned   char    u8_t;
 typedef signed     char    s8_t;
 typedef unsigned   short   u16_t;
 typedef signed     short   s16_t;
 typedef unsigned   int    u32_t;
 typedef signed     long    s32_t;
+#if LWIP_HAVE_INT64
+typedef unsigned   long long   u64_t;
+typedef signed     long long   s64_t;
+#endif
 typedef u32_t mem_ptr_t;
 typedef int sys_prot_t;
 
@@ -64,8 +67,6 @@ typedef int sys_prot_t;
 #define PACK_STRUCT_FIELD(x) x
 
 #define LWIP_PLATFORM_ASSERT(x) //do { if(!(x)) while(1); } while(0)
-
-#define LWIP_NO_STDINT_H 1
 
 #ifdef LWIP_NO_CTYPE_H
 #undef LWIP_NO_CTYPE_H

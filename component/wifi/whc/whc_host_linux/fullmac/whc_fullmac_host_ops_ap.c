@@ -97,6 +97,7 @@ static int whc_fullmac_host_del_station(struct wiphy *wiphy, struct net_device *
 	u8 wlan_idx = rtw_netdev_idx(ndev);
 	u8 *mac_vir = NULL;
 	dma_addr_t mac_phy;
+	struct rtw_wpa_4way_status	rpt_4way = {0};
 
 	if (!params->mac) {
 		/*null means delete all sta, not implement right now*/
@@ -116,6 +117,21 @@ static int whc_fullmac_host_del_station(struct wiphy *wiphy, struct net_device *
 		return -ENOMEM;
 	}
 	memcpy(mac_vir, params->mac, 6);
+
+	dev_dbg(global_idev.fullmac_dev, "[fullmac]: wlan_idx = %d, is_need_4way= %d, is_4way_ongoing =%d", wlan_idx, global_idev.is_need_4way[wlan_idx],
+			global_idev.is_4way_ongoing[wlan_idx]);
+	//notify NP coex, 4-way handshake end
+	if (global_idev.is_need_4way[wlan_idx] && global_idev.is_4way_ongoing[wlan_idx] > 0) {
+		global_idev.is_4way_ongoing[wlan_idx] --;
+		if (0 == global_idev.is_4way_ongoing[wlan_idx]) {// no client ongoing 4-way process, then notify NP end. otherwise, not notify 4-way end.
+			rpt_4way.is_start = false;//
+			rpt_4way.is_success = true;//4-way process end
+			rpt_4way.wlan_idx = wlan_idx;
+			ret = whc_fullmac_host_wpa_4way_status_indicate(&rpt_4way);
+			dev_dbg(global_idev.fullmac_dev, "fullmac host indicate 4-way end\n");
+		}
+	}
+
 	ret = whc_fullmac_host_ap_del_client(wlan_idx, (u8 *) mac_phy);
 
 	if (mac_vir) {
@@ -272,6 +288,8 @@ void whc_fullmac_host_sta_assoc_indicate(char *buf, int buf_len)
 {
 	struct station_info sinfo;
 	u8 frame_styp, ie_offset = 0;
+	struct rtw_wpa_4way_status	rpt_4way = {0};
+	u8 wlan_idx = WHC_AP_PORT;
 
 	memset(&sinfo, 0, sizeof(sinfo));
 	frame_styp = le16_to_cpu(((struct rtw_ieee80211_hdr_3addr *)buf)->frame_ctl) & IEEE80211_FCTL_STYPE;
@@ -284,6 +302,18 @@ void whc_fullmac_host_sta_assoc_indicate(char *buf, int buf_len)
 	sinfo.assoc_req_ies = buf + WLAN_HDR_A3_LEN + 4;
 	sinfo.assoc_req_ies_len = buf_len - WLAN_HDR_A3_LEN - 4;
 	cfg80211_new_sta(global_idev.pndev[1], get_addr2_ptr(buf), &sinfo, GFP_ATOMIC);
+
+	dev_dbg(global_idev.fullmac_dev, "[fullmac]: wlan_idx = %d, is_need_4wway= %d, is_4way_ongoing =%d", wlan_idx, global_idev.is_need_4way[wlan_idx],
+			global_idev.is_4way_ongoing[wlan_idx]);
+	//send message notify NP coex, 4-way handshake start
+	if (global_idev.is_need_4way[wlan_idx]) {
+		rpt_4way.is_start = true;
+		rpt_4way.is_success = false;
+		rpt_4way.wlan_idx = wlan_idx;
+		whc_fullmac_host_wpa_4way_status_indicate(&rpt_4way);
+		global_idev.is_4way_ongoing[wlan_idx]++;
+		dev_dbg(global_idev.fullmac_dev, "fullmac host indicate 4-way start, ongoing 4way client cnt=%d \n", global_idev.is_4way_ongoing[wlan_idx]);
+	}
 }
 
 static int whc_fullmac_host_start_ap_ops(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_ap_settings *settings)
@@ -301,6 +331,7 @@ static int whc_fullmac_host_start_ap_ops(struct wiphy *wiphy, struct net_device 
 	u8 P2P_OUI[4] = {0x50, 0x6f, 0x9a, 0x09};
 	u8 WPS_OUI[4] = {0x00, 0x50, 0xf2, 0x04};
 #endif
+	u8 wlan_idx = rtw_netdev_idx(ndev);
 	dev_dbg(global_idev.fullmac_dev, "=>"FUNC_NDEV_FMT" - Start Softap\n", FUNC_NDEV_ARG(ndev));
 
 	whc_fullmac_host_dev_driver_is_mp(&is_mp);
@@ -308,7 +339,7 @@ static int whc_fullmac_host_start_ap_ops(struct wiphy *wiphy, struct net_device 
 		return -EPERM;
 	}
 
-	if (rtw_netdev_idx(ndev) == 0) {
+	if (wlan_idx == 0) {
 		return -EPERM;
 	}
 
@@ -339,6 +370,8 @@ static int whc_fullmac_host_start_ap_ops(struct wiphy *wiphy, struct net_device 
 #endif
 	dev_dbg(global_idev.fullmac_dev, "sae_pwd_len=%d\n", settings->crypto.sae_pwd_len);
 	dev_dbg(global_idev.fullmac_dev, "hidden_ssid=%d\n", settings->hidden_ssid);
+	global_idev.is_need_4way[wlan_idx] = 0;
+	global_idev.is_4way_ongoing[wlan_idx] = 0;
 
 	if (settings->privacy) {
 		if (settings->crypto.n_ciphers_pairwise > 1 || settings->crypto.n_akm_suites > 1) {
@@ -347,10 +380,13 @@ static int whc_fullmac_host_start_ap_ops(struct wiphy *wiphy, struct net_device 
 		}
 		if ((settings->crypto.wpa_versions == 2) && ((u8)settings->crypto.akm_suites[0] == 0x08)) {
 			softAP_config->security_type = RTW_SECURITY_WPA3_AES_PSK;
+			global_idev.is_need_4way[wlan_idx] = 1;
 		} else if ((settings->crypto.wpa_versions == 2) && ((u8)settings->crypto.ciphers_pairwise[0] == 0x04)) {
 			softAP_config->security_type = RTW_SECURITY_WPA2_AES_PSK;
+			global_idev.is_need_4way[wlan_idx] = 1;
 		} else if ((settings->crypto.wpa_versions == 2) && ((u8)settings->crypto.ciphers_pairwise[0] == 0x02)) {
 			softAP_config->security_type = RTW_SECURITY_WPA2_TKIP_PSK;
+			global_idev.is_need_4way[wlan_idx] = 1;
 		} else if (settings->crypto.wpa_versions == 1) {
 			dev_dbg(global_idev.fullmac_dev, "wpa_versions=1, not support right now!\n");
 			return -EPERM;
@@ -359,6 +395,8 @@ static int whc_fullmac_host_start_ap_ops(struct wiphy *wiphy, struct net_device 
 			dev_err(global_idev.fullmac_dev, "ERR: AP in WEP security mode is not supported!!");
 			return -EPERM;
 		}
+
+		dev_dbg(global_idev.fullmac_dev, "wlan_idx:%d, is_need_4way=%d, \n", wlan_idx, global_idev.is_need_4way[wlan_idx]);
 
 		/* If not fake, copy from upper layer, like WEP(unsupported). */
 		/* fix CWE-170, null terminated string, so to add 1. */

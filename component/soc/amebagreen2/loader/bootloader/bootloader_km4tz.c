@@ -362,13 +362,6 @@ void BOOT_Image1(void)
 	BOOT_Config_PMC_Role();
 	BOOT_ResetMask_Config();
 
-	if ((SYSCFG_RLVersion()) == SYSCFG_CUT_VERSION_A) {
-		if (SYSCFG_CHIPType_Get() == CHIP_TYPE_ASIC_POSTSIM) { // Only Asic need OSC Calibration
-			OSC4M_Init();
-			OSC4M_Calibration(30000);
-		}
-	}
-
 	meminfo = ChipInfo_MCMInfo();
 	int ret = BOOT_PSRAM_Init();
 	if (ret == RTK_FAIL) {

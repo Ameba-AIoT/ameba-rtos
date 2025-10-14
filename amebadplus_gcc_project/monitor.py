@@ -12,7 +12,6 @@ MONITOR_TOOL = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/meta_to
 
 def run_monitor(argv):
     cmds = [sys.executable, MONITOR_TOOL] + argv
-    print(cmds)
     p = None
     try:
         p = subprocess.Popen(cmds)

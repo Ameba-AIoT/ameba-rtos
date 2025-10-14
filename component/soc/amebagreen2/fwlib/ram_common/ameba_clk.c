@@ -207,13 +207,7 @@ void OSC4M_R_Set(u32 setbit, u32 clearbit)
 	if (clearbit) {
 		r_sel &= ~LDO_FREQ_R_SEL(clearbit);
 	}
-	/*	root cause: When the frequency is greater than 6M, The timeout mechanism can cause register write exceptions
-	 	solve problem:  the L/H/R value can be written normally
-		work around: Repeat writing to the register to make the previous write immediately effective
-	*/
-	if ((SYSCFG_RLVersion()) == SYSCFG_CUT_VERSION_A) {
-		ldo->LDO_4M_OSC_CTRL1 = r_sel;
-	}
+
 	ldo->LDO_4M_OSC_CTRL1 = r_sel;
 
 	/* It takes 2us to stable */
@@ -232,14 +226,6 @@ void OSC4M_VCM_Set(u32 value)
 	temp &= ~(LDO_MASK_VCM_SEL_L | LDO_MASK_VCM_SEL_H);
 	temp |= (LDO_VCM_SEL_L(value) | LDO_VCM_SEL_H(value));
 
-	/*	root cause: When the frequency is greater than 6M, The timeout mechanism can cause register write exceptions
-	 	solve problem:  the L/H/R value can be written normally
-		work around: Repeat writing to the register to make the previous write immediately effective
-	*/
-	if ((SYSCFG_RLVersion()) == SYSCFG_CUT_VERSION_A) {
-		ldo->LDO_4M_OSC_CTRL1 = temp;
-		DelayUs(20);
-	}
 	ldo->LDO_4M_OSC_CTRL1 = temp;
 	DelayUs(20);
 
@@ -270,10 +256,6 @@ u32 OSC4M_Calibration(u32 ppm_limit)
 	//RTK_LOGI(TAG, "regu->REGU_4MOSC0=0x%x\n",(regu->REGU_4MOSC0));
 
 	/* Step2: Clear 4m calibration parameter first */
-	if ((SYSCFG_RLVersion()) == SYSCFG_CUT_VERSION_A) {
-		ldo->LDO_4M_OSC_CTRL1 &= (u16)(~(LDO_MASK_VCM_SEL_L | LDO_MASK_VCM_SEL_H));
-		DelayUs(20);
-	}
 	ldo->LDO_4M_OSC_CTRL1 &= (u16)(~(LDO_MASK_VCM_SEL_L | LDO_MASK_VCM_SEL_H));
 	DelayUs(20);
 	//RTK_LOGI(TAG, "regu->REGU_4MOSC0=0x%x\n",(regu->REGU_4MOSC0));
@@ -322,10 +304,6 @@ u32 OSC4M_Calibration(u32 ppm_limit)
 		DelayUs(20);
 		temp &= ~(LDO_MASK_VCM_SEL_L | LDO_MASK_VCM_SEL_H);
 		temp |= min_delta_r;
-		if ((SYSCFG_RLVersion()) == SYSCFG_CUT_VERSION_A) {
-			ldo->LDO_4M_OSC_CTRL1 = temp;
-			DelayUs(20);
-		}
 		ldo->LDO_4M_OSC_CTRL1 = temp;
 		DelayUs(20);
 
@@ -344,10 +322,6 @@ u32 OSC4M_Calibration(u32 ppm_limit)
 	/* Else  */
 	/* 	REGU_FREQ_R_SEL[8-N] keep 1. */
 	clearbit = 0;
-	if ((SYSCFG_RLVersion()) == SYSCFG_CUT_VERSION_A) {
-		ldo->LDO_4M_OSC_CTRL1 &= (u16)(~LDO_MASK_FREQ_R_SEL);
-		DelayUs(20);
-	}
 	ldo->LDO_4M_OSC_CTRL1 &= (u16)(~LDO_MASK_FREQ_R_SEL);
 	DelayUs(20);
 	for (cal_n = 1; cal_n <= 8; cal_n++) {
@@ -384,10 +358,6 @@ u32 OSC4M_Calibration(u32 ppm_limit)
 		DelayUs(20);
 		temp &= ~LDO_MASK_FREQ_R_SEL;
 		temp |= min_delta_r;
-		if ((SYSCFG_RLVersion()) == SYSCFG_CUT_VERSION_A) {
-			ldo->LDO_4M_OSC_CTRL1 = temp;
-			DelayUs(20);
-		}
 		ldo->LDO_4M_OSC_CTRL1 = temp;
 
 		/* It takes 2us to stable */

@@ -97,6 +97,7 @@ ameba_list_append(private_sources
     lwip_${v_LWIP_VER}/src/api/api_lib.c
     lwip_${v_LWIP_VER}/src/api/netifapi.c
     lwip_${v_LWIP_VER}/src/apps/mdns/mdns.c
+    lwip_${v_LWIP_VER}/src/apps/sntp/sntp.c
 )
 
 #WARNING: For toolchain version 12.3.1, code like this will cause a warning:

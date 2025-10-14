@@ -8,7 +8,7 @@ SRC_FILES = whc_host_app_api.c whc_host_app.c
 
 OBJ_FILES = $(SRC_FILES:.c=.o)
 
-TARGET = whc_ctrl_app
+TARGET = whc_slim_host_demo
 
 all: $(TARGET)
 

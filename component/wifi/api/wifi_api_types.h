@@ -629,6 +629,15 @@ enum rtw_frame_type_subtype {
 	RTW_QOS_DATA_NULL	= (BIT(6) | RTW_QOS_DATA_TYPE),
 };
 
+/**
+ * @brief RMesh node types (size: u8).
+ */
+enum rtw_rmesh_node_type {
+	RMESH_SELF_NODE = 0,
+	RMESH_FATHER_NODE = 1,
+	RMESH_ROOT_NODE = 2,
+};
+
 /** @} End of WIFI_Exported_Enumeration_Types group*/
 
 /** @addtogroup WIFI_Exported_Structure_Types Structure Type
@@ -1113,6 +1122,15 @@ struct rtw_tx_power_ctl_info {
  */
 struct rtw_acs_config {
 	u8 band; /**< Frequency band: @ref RTW_SUPPORT_BAND_2_4G, etc. */
+};
+
+/**
+ * @brief Informations of RMesh node.
+ */
+struct rtw_rmesh_node_info {
+	u8 mac[6]; /**< MAC addressof node.*/
+	u8 layer; /**< layer of node.*/
+	u8 is_rnat; /**< 1 for node is rnat, 0 for node is not rnat.*/
 };
 
 /** @} End of WIFI_Exported_Structure_Types group*/

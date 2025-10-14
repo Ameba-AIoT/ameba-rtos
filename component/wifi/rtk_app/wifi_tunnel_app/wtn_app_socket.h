@@ -18,6 +18,9 @@
 #ifndef WTN_APP_SOCKET_H
 #define WTN_APP_SOCKET_H
 
+#define WTN_UNICAST_PORT 54321
+#define WTN_BROADCAST_PORT 12345
+
 struct wtn_http_ota_param {
 	char *host;
 	char *resource;
