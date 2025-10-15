@@ -35,4 +35,5 @@
 #define NAT_AP_GW_ADDR3 1
 
 void wtn_rnat_ap_init(u8 enable);
+u8 wtn_rnat_search_client_ip(u8 *src_mac);
 #endif
