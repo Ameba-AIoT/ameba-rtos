@@ -370,7 +370,7 @@ static void example_ota_initial_scan(struct example_scan_info **info_list, int *
 	struct example_scan_info info = {0};
 	int info_num = 0;
 	u32 start_tick = rtos_time_get_current_system_time_ms();
-	u32 cur_tick = cur_tick;
+	u32 cur_tick = start_tick;
 	do {
 		example_send(WIFI_CAST_SCAN_REQUEST, WIFI_CAST_BROADCAST_MAC, NULL, 0);
 		if (RTK_SUCCESS == rtos_queue_receive(g_scan_report_q, &info, 50)) {

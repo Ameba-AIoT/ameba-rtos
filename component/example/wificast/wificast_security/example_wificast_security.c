@@ -188,12 +188,7 @@ static void example_recv_cb_task(void *param)
 			struct example_frame_head *hdr = (struct example_frame_head *)recv_data->data;
 			RTK_LOGD(TAG, MAC_FMT", len: %d, type: %x\n", MAC_ARG(recv_data->mac), recv_data->data_len, hdr->type);
 			if (hdr->type & WIFI_CAST_UART_DATA) {
-<<<<<<< HEAD   (7fbb57 [amebasmart][bt][audio] fix a2dp related demo compile error )
-				RTK_LOGI(TAG, MAC_FMT", recv count: %d, size: %d, data: %s\n",
-						MAC_ARG(recv_data->mac), ++count, hdr->len, recv_data->data + sizeof(struct example_frame_head));
-=======
 				example_security_recv_uart_data_cb(recv_data->mac, recv_data->data + sizeof(struct example_frame_head), hdr->len);
->>>>>>> CHANGE (d31960 [common][wificast][example] fix uart data print format issue)
 			} else if (hdr->type & WIFI_CAST_SCAN_REQUEST) {
 				example_security_scan_request_cb(recv_data->mac);
 			} else if (hdr->type & WIFI_CAST_SCAN_RESPONSE) {
@@ -464,7 +459,7 @@ static void example_security_initial_scan(struct example_scan_info **info_list, 
 	struct example_scan_info info = {0};
 	int info_num = 0;
 	u32 start_tick = rtos_time_get_current_system_time_ms();
-	u32 cur_tick = cur_tick;
+	u32 cur_tick = start_tick;
 	do {
 		example_send(WIFI_CAST_SCAN_REQUEST, WIFI_CAST_BROADCAST_MAC, NULL, 0);
 		if (RTK_SUCCESS == rtos_queue_receive(g_scan_report_q, &info, 50)) {
