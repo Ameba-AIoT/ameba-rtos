@@ -109,6 +109,7 @@ int whc_host_init(void)
 {
 	int ret = 0;
 	struct whc_device *idev = &global_idev;
+	int i;
 
 	/* IPC channel of data and event init. */
 	global_idev.data_ch = whc_fullmac_host_ipc_data_ch_init(&whc_fullmac_ipc_host_recv_ops);
@@ -130,6 +131,11 @@ int whc_host_init(void)
 	if (ret < 0) {
 		dev_err(global_idev.fullmac_dev, "ipc host: init ipc host event_priv error(%d).\n", ret);
 		goto ipc_deinit;
+	}
+
+	for (i = 0; i < WHC_MAX_NET_PORT_NUM; i++) {
+		global_idev.is_need_4way[i] = 0;
+		global_idev.is_4way_ongoing[i] = 0;
 	}
 
 	wifi_set_user_config();

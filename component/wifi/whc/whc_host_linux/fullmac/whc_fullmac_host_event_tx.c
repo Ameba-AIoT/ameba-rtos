@@ -490,6 +490,16 @@ int whc_fullmac_host_add_key(struct rtw_crypt_info *crypt)
 	return ret;
 }
 
+int whc_fullmac_host_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way)
+{
+	int ret = 0;
+
+	whc_fullmac_host_send_event(WHC_API_WPA_4WAY_REPORT, (u8 *)rpt_4way, sizeof(struct rtw_wpa_4way_status), (u8 *)&ret, sizeof(int));
+
+	return ret;
+}
+
+
 int whc_fullmac_host_tx_mgnt(u8 wlan_idx, const u8 *buf, size_t buf_len, u8 need_wait_ack)
 {
 	int ret = 0;
