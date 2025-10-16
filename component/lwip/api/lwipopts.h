@@ -57,6 +57,8 @@ extern unsigned int sys_now(void);
 /* TCP options */
 #define LWIP_TCP                        1
 #define TCP_MSS                         (1500 - 40) //TCP_MSS = (Ethernet MTU - IP header size - TCP header size)
+/* TCP Minimum segment size. (Realtek add) */
+#define TCP_MSS_MIN 536
 #define TCP_WND                         (5 * TCP_MSS)
 #define TCP_SND_BUF                     (5 * TCP_MSS)
 #define TCP_SND_QUEUELEN                (4 * TCP_SND_BUF / TCP_MSS)

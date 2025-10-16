@@ -200,6 +200,7 @@ def main(argc, argv):
 
     parser.add_argument('--remote-server', type=str, help='remote serial server IP address')
     parser.add_argument('--remote-password', type=str, help='remote serial server validation password')
+    parser.add_argument('--no-reset', action='store_true', help='do not reset after flashing finished')
 
     args = parser.parse_args()
     download = args.download
@@ -221,6 +222,7 @@ def main(argc, argv):
     remote_server = args.remote_server
     remote_port = 58916
     remote_password = args.remote_password
+    no_reset = args.no_reset
 
     if mem_t is not None:
         if mem_t == "nand":
@@ -440,6 +442,10 @@ def main(argc, argv):
         settings = RtSettings(** {})
     # save Setting.json
     try:
+        if no_reset:
+            settings.post_process = "NONE"
+        else:
+            settings.post_process = "RESET"
         JsonUtils.save_to_file(setting_path, settings.__repr__())
     except Exception as err:
         logger.debug(f"save {setting_file} exception: {err}")
