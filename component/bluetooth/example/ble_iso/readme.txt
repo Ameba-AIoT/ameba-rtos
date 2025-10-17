@@ -4,7 +4,7 @@
 #                                                                                #
 ##################################################################################
 
-Date: 2025 - 03 - 20
+Date: 2025 - 10 - 16
 
 Setup Guide
 ~~~~~~~~~~~
@@ -26,8 +26,8 @@ ATCMD :
 	1.1.5 if want to create all cis included by the same cig
 			>> invoke 'AT+BLEISO=cis,initiator,create_cis_by_cig,<cis_id>,<cig_id>,<acl_conn_handle>' // acl_conn_handle will be printed when successfully invoking step 1.1.3
 				for example, if cig_id 1 contains two cis (cis_id 1 and cis_id 2), acl_conn_handle is 16, then need to do following
-				1. AT+BLEISO=cis,initiator,create_cis_by_cig,1,1,16  // create cis for cis id 1
-				2. AT+BLEISO=cis,initiator,create_cis_by_cig,2,1,16  // create cis for cis id 2
+				1. AT+BLEISO=cis,initiator,create_cis_by_cig,0,1,16  // create cis for cis id 1
+				2. AT+BLEISO=cis,initiator,create_cis_by_cig,1,1,16  // create cis for cis id 2
 		  if want to create a single cis included by one cig
 			>> invoke 'AT+BLEISO=cis,initiator,create_cis_by_hdl,<cis_id>,<cig_id>,<acl_conn_handle>,<cis_conn_handle>' // acl_conn_handle will be printed when successfully invoking step 1.1.3
 																												cis_conn_handle will be printed when successfully initializing step 1.1.1

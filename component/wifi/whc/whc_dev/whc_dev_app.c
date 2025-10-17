@@ -228,20 +228,19 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					idx = *(ptr + 1);
 					if (!wifi_is_running(idx)) {
 						RTK_LOGE(TAG_WLAN_INIC, "%s, port %d is not running!\n", __func__, idx);
-						rtos_mem_free(buf);
-						return;
+					} else {
+						wifi_get_mac_address(idx, &dev_mac, 0);
+						ptr = buf;
+						*(u32 *)ptr = WHC_WIFI_TEST;
+						ptr += 4;
+						*ptr = WHC_WIFI_TEST_GET_MAC_ADDR;
+						ptr += 1;
+						*ptr = idx;
+						ptr += 1;
+						memcpy(ptr, dev_mac.octet, 6);
+						//6+4+1=11
+						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE);
 					}
-					wifi_get_mac_address(idx, &dev_mac, 0);
-					ptr = buf;
-					*(u32 *)ptr = WHC_WIFI_TEST;
-					ptr += 4;
-					*ptr = WHC_WIFI_TEST_GET_MAC_ADDR;
-					ptr += 1;
-					*ptr = idx;
-					ptr += 1;
-					memcpy(ptr, dev_mac.octet, 6);
-					//6+4+1=11
-					whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE);
 				} else if (*ptr == WHC_WIFI_TEST_SCAN) {
 					whc_dev_cmd_scan();
 #ifdef CONFIG_LWIP_LAYER
@@ -284,21 +283,20 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					idx = *(ptr + 1);
 					if (!wifi_is_running(idx)) {
 						RTK_LOGE(TAG_WLAN_INIC, "%s, port %d is not running!\n", __func__, idx);
-						rtos_mem_free(buf);
-						return;
+					} else {
+						ip = LwIP_GetIP(idx);
+						ptr = buf;
+						*(u32 *)ptr = WHC_WIFI_TEST;
+						ptr += 4;
+						*ptr = WHC_WIFI_TEST_GET_IP;
+						ptr += 1;
+						memcpy(ptr, ip, 4);
+						ptr += 4;
+						ip = LwIP_GetGW(idx);
+						memcpy(ptr, ip, 4);
+						ptr += 4;
+						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE);
 					}
-					ip = LwIP_GetIP(idx);
-					ptr = buf;
-					*(u32 *)ptr = WHC_WIFI_TEST;
-					ptr += 4;
-					*ptr = WHC_WIFI_TEST_GET_IP;
-					ptr += 1;
-					memcpy(ptr, ip, 4);
-					ptr += 4;
-					ip = LwIP_GetGW(idx);
-					memcpy(ptr, ip, 4);
-					ptr += 4;
-					whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE);
 #endif
 #ifdef CONFIG_WHC_DUAL_TCPIP
 				} else if (*ptr == WHC_WIFI_TEST_SET_READY) {

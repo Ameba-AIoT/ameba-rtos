@@ -71,7 +71,9 @@ class Monitor():
             debug: bool = False,
             remote_server: Optional[str] = None,
             remote_port: Optional[int] = None,
-            remote_password: Optional[str] = None
+            remote_password: Optional[str] = None,
+            log_enabled: bool = False,
+            log_dir: Optional[str] = None
     ):
         self.event_queue = queue.Queue()
         self.cmd_queue = queue.Queue()
@@ -82,7 +84,7 @@ class Monitor():
         self.elf_exists = os.path.exists(self.elf_file)
         self.debug = debug
         self.log_handler = LogHandler(self.elf_file, timestamps, enable_address_decoding, toolchain_path,
-                                      rom_elf_file=rom_file)
+                                      log_enabled, log_dir, port, rom_elf_file=rom_file)
 
         if self.target_os == "freertos":
             from base.coredump_freertos import CoreDump
@@ -334,7 +336,9 @@ def main():
                         debug=args.debug,
                         remote_server=remote_server,
                         remote_port=remote_port,
-                        remote_password=args.remote_password)
+                        remote_password=args.remote_password,
+                        log_enabled = args.log,
+                        log_dir=args.log_dir)
 
         print_yellow("--- Exit monitor: Ctrl+C ---")
 
@@ -369,6 +373,10 @@ def get_parser():
                        help='Enable debug mode: Display raw hexadecimal data of sent and received bytes')
     parser.add_argument('--remote-server', type=str, help='remote serial server IP address')
     parser.add_argument('--remote-password', type=str, help='remote serial server validation password')
+    parser.add_argument('--log', action='store_true', 
+                       help='Enable logging mode: save logs to log file')
+    parser.add_argument('--log-dir', type=str, default="",
+                       help='Specify the target log file directory, if not, the logs will save to under xxxx_gcc_project when logging enabled')
 
     return parser
 

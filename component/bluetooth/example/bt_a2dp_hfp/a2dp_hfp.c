@@ -151,10 +151,12 @@ struct a2dp_demo_task_t {
 	uint8_t run;
 };
 
+#include "timer_api.h"
+#define A2DP_SEND_TIMER_ID TIMER13
+static gtimer_t bt_a2dp_demo_src_send_timer = {0};
 static bool bt_a2dp_demo_src_send_data_enable = false;
-static void *bt_a2dp_demo_src_send_timer = NULL;
 static void *bt_a2dp_demo_src_send_sem = NULL;
-static uint32_t a2dp_src_data_send_interval = 0;
+static uint32_t a2dp_src_data_send_interval_us = 0;
 static struct a2dp_demo_task_t a2dp_task = {
 	.hdl = NULL,
 	.sem = NULL,
@@ -1651,8 +1653,10 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 			BT_LOGA("[AVRCP]: Playing \r\n");
 			if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
 				if (bt_a2dp_demo_src_send_data_enable) {
-					if (false == osif_timer_restart(&bt_a2dp_demo_src_send_timer, a2dp_src_data_send_interval)) {
-						BT_LOGE("[APP] %s osif_timer_restart fail\r\n", __func__);
+					if (bt_a2dp_demo_src_send_timer.handler) {
+						gtimer_start_periodical(&bt_a2dp_demo_src_send_timer, a2dp_src_data_send_interval_us, (void *)bt_a2dp_demo_src_send_timer_handler, NULL);
+					} else {
+						BT_LOGE("[APP] %s: timer not init\r\n", __func__);
 					}
 				}
 			}
@@ -1663,8 +1667,10 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 			BT_LOGA("[AVRCP]: Paused \r\n");
 			if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
 				if (bt_a2dp_demo_src_send_data_enable) {
-					if (false == osif_timer_stop(&bt_a2dp_demo_src_send_timer)) {
-						BT_LOGE("[APP] %s osif_timer_stop fail\r\n", __func__);
+					if (bt_a2dp_demo_src_send_timer.handler) {
+						gtimer_stop(&bt_a2dp_demo_src_send_timer);
+					} else {
+						BT_LOGE("[APP] %s: timer not init\r\n", __func__);
 					}
 				}
 			} else {
@@ -1996,17 +2002,12 @@ static void rtk_bt_a2dp_demo_src_send_data_control(bool enable)
 			}
 			osif_sem_take(a2dp_task.sem, BT_TIMEOUT_FOREVER);
 		}
-		if (!bt_a2dp_demo_src_send_timer) {
-			a2dp_src_data_send_interval = ((resample_in_frames * demo_in_channels * 16 / 8) * 1000) / (demo_in_rate * demo_in_channels * (16 / 8));
-			BT_LOGA("[A2DP Demo] rtk_bt_a2dp_demo_src_send_data_control send interval is %d \r\n", a2dp_src_data_send_interval);
-			if (false == osif_timer_create(&bt_a2dp_demo_src_send_timer, "bt_a2dp_src_send_timer", 1, a2dp_src_data_send_interval, true,
-										   bt_a2dp_demo_src_send_timer_handler)) {
-				BT_LOGE("[APP] %s osif_timer_create fail\r\n", __func__);
-				goto fail;
-			}
-			if (false == osif_timer_start(&bt_a2dp_demo_src_send_timer)) {
-				BT_LOGE("[APP] %s osif_timer_start fail\r\n", __func__);
-				goto fail;
+		if (!bt_a2dp_demo_src_send_timer.handler) {
+			a2dp_src_data_send_interval_us = ((resample_in_frames * demo_in_channels * 16 / 8) * 1000) / (demo_in_rate * demo_in_channels * (16 / 8) / 1000) + 1;
+			BT_LOGA("[A2DP Demo] rtk_bt_a2dp_demo_src_send_data_control send interval(us) is %d \r\n", a2dp_src_data_send_interval_us);
+			if (bt_a2dp_demo_src_send_timer.handler == NULL) {
+				gtimer_init(&bt_a2dp_demo_src_send_timer, A2DP_SEND_TIMER_ID);
+				gtimer_start_periodical(&bt_a2dp_demo_src_send_timer, a2dp_src_data_send_interval_us, (void *)bt_a2dp_demo_src_send_timer_handler, NULL);
 			}
 		}
 	} else {
@@ -2015,14 +2016,10 @@ static void rtk_bt_a2dp_demo_src_send_data_control(bool enable)
 			return;
 		}
 		bt_a2dp_demo_src_send_data_enable = false;
-		if (bt_a2dp_demo_src_send_timer) {
-			if (false == osif_timer_stop(&bt_a2dp_demo_src_send_timer)) {
-				BT_LOGE("[APP] %s osif_timer_stop fail \r\n", __func__);
-			}
-			if (false == osif_timer_delete(&bt_a2dp_demo_src_send_timer)) {
-				BT_LOGE("[APP] %s osif_timer_delete fail \r\n", __func__);
-			}
-			bt_a2dp_demo_src_send_timer = NULL;
+		if (bt_a2dp_demo_src_send_timer.handler == NULL) {
+			gtimer_stop(&bt_a2dp_demo_src_send_timer);
+			gtimer_deinit(&bt_a2dp_demo_src_send_timer);
+			bt_a2dp_demo_src_send_timer.handler = NULL;
 		}
 		if (a2dp_task.hdl) {
 			a2dp_task.run = 0;
@@ -2039,10 +2036,10 @@ static void rtk_bt_a2dp_demo_src_send_data_control(bool enable)
 	return;
 
 fail:
-	if (bt_a2dp_demo_src_send_timer) {
-		osif_timer_stop(&bt_a2dp_demo_src_send_timer);
-		osif_timer_delete(&bt_a2dp_demo_src_send_timer);
-		bt_a2dp_demo_src_send_timer = NULL;
+	if (bt_a2dp_demo_src_send_timer.handler == NULL) {
+		gtimer_stop(&bt_a2dp_demo_src_send_timer);
+		gtimer_deinit(&bt_a2dp_demo_src_send_timer);
+		bt_a2dp_demo_src_send_timer.handler = NULL;
 	}
 	if (a2dp_task.hdl) {
 		a2dp_task.run = 0;
@@ -2212,8 +2209,10 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 			}
 		} else if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
 			if (bt_a2dp_demo_src_send_data_enable) {
-				if (false == osif_timer_restart(&bt_a2dp_demo_src_send_timer, a2dp_src_data_send_interval)) {
-					BT_LOGE("[APP] %s osif_timer_restart fail\r\n", __func__);
+				if (bt_a2dp_demo_src_send_timer.handler) {
+					gtimer_start_periodical(&bt_a2dp_demo_src_send_timer, a2dp_src_data_send_interval_us, (void *)bt_a2dp_demo_src_send_timer_handler, NULL);
+				} else {
+					BT_LOGE("[APP] %s: timer not init\r\n", __func__);
 				}
 			} else {
 				rtk_bt_a2dp_demo_src_send_data_control(true);
@@ -2229,8 +2228,10 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 		BT_LOGA("[A2DP] RTK_BT_A2DP_EVT_STREAM_START_RSP from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		if (bt_a2dp_demo_src_send_data_enable) {
-			if (false == osif_timer_restart(&bt_a2dp_demo_src_send_timer, a2dp_src_data_send_interval)) {
-				BT_LOGE("[APP] %s osif_timer_restart fail\r\n", __func__);
+			if (bt_a2dp_demo_src_send_timer.handler) {
+				gtimer_start_periodical(&bt_a2dp_demo_src_send_timer, a2dp_src_data_send_interval_us, (void *)bt_a2dp_demo_src_send_timer_handler, NULL);
+			} else {
+				BT_LOGE("[APP] %s: timer not init\r\n", __func__);
 			}
 		} else {
 			rtk_bt_a2dp_demo_src_send_data_control(true);
@@ -2249,10 +2250,10 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 					p_stream_stop_t->bd_addr[5], p_stream_stop_t->bd_addr[4], p_stream_stop_t->bd_addr[3],
 					p_stream_stop_t->bd_addr[2], p_stream_stop_t->bd_addr[1], p_stream_stop_t->bd_addr[0]);
 		if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
-			if (bt_a2dp_demo_src_send_data_enable) {
-				if (false == osif_timer_stop(&bt_a2dp_demo_src_send_timer)) {
-					BT_LOGE("[APP] %s osif_timer_stop fail\r\n", __func__);
-				}
+			if (bt_a2dp_demo_src_send_timer.handler) {
+				gtimer_stop(&bt_a2dp_demo_src_send_timer);
+			} else {
+				BT_LOGE("[APP] %s: timer not init\r\n", __func__);
 			}
 			rtk_bt_avrcp_play_status_change_req(p_stream_stop_t->bd_addr, RTK_BT_AVRCP_STATUS_PAUSED);
 		}
@@ -2837,12 +2838,16 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 		/* stop sending a2dp source audio stream */
 		if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
 			if (bt_a2dp_demo_src_send_data_enable && (p_hfp_call_status_ind->prev_status == 0) && (p_hfp_call_status_ind->curr_status == 1)) {
-				if (false == osif_timer_stop(&bt_a2dp_demo_src_send_timer)) {
-					BT_LOGE("[APP] %s osif_timer_stop fail\r\n", __func__);
+				if (bt_a2dp_demo_src_send_timer.handler) {
+					gtimer_stop(&bt_a2dp_demo_src_send_timer);
+				} else {
+					BT_LOGE("[APP] %s: timer not init\r\n", __func__);
 				}
 			} else if (bt_a2dp_demo_src_send_data_enable && (p_hfp_call_status_ind->prev_status != 0) && (p_hfp_call_status_ind->curr_status == 0)) {
-				if (false == osif_timer_restart(&bt_a2dp_demo_src_send_timer, a2dp_src_data_send_interval)) {
-					BT_LOGE("[APP] %s osif_timer_restart fail\r\n", __func__);
+				if (bt_a2dp_demo_src_send_timer.handler) {
+					gtimer_start_periodical(&bt_a2dp_demo_src_send_timer, a2dp_src_data_send_interval_us, (void *)bt_a2dp_demo_src_send_timer_handler, NULL);
+				} else {
+					BT_LOGE("[APP] %s: timer not init\r\n", __func__);
 				}
 			}
 		}

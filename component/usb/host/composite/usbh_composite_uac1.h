@@ -12,7 +12,6 @@
 #include "usb_ch9.h"
 #include "usb_uac1.h"
 #include "usbh_composite_config.h"
-#include <dlist.h>
 #include "os_wrapper.h"
 
 /* Exported defines ----------------------------------------------------------*/
@@ -92,30 +91,12 @@ typedef struct {
 } usbh_uac_ac_itf_info_t;
 
 typedef struct {
-	struct list_head list;
-	u8 *buf;
-	__IO u16 buf_len;     /* buf valid len */
-} usbh_uac_buf_t;
-
-typedef struct {
-	struct list_head list;
-	usb_os_lock_t lock;
-} usbh_uac_lock_list_head_t;
-
-typedef struct {
-	usbh_uac_lock_list_head_t free_buf_lock_list;
-	usbh_uac_lock_list_head_t ready_buf_lock_list;
+	usb_ringbuf_manager_t buf_list;
 	rtos_sema_t isoc_sema;
-	usbh_uac_buf_t *buf_list_node;
-	usbh_uac_buf_t *ring_buf;      /* write/read buf,maybe just read/write part of the packet */
-	usbh_uac_buf_t *xfer_buf;      /* buffer is xfer */
-	u8 *isoc_buf;
-	u32 remain_size;
-
 	u32 sample_freq;               /* choose frequency */
 	u32 sample_rem;                /* remainder from division sampling_freq/pkt_per_second */
 	u32 sample_accum;              /* sample accumulator */
-	u32 last_sample_accum;         /* sample accumulator */
+	u32 last_sample_accum;         /* last sample accumulator */
 	u32 pkt_per_second;            /* packets per second */
 
 	u16 frame_cnt;
@@ -198,6 +179,15 @@ typedef struct {
 
 #if USBH_COMPOSITE_HID_UAC_DEBUG
 	rtos_task_t dump_status_task;
+
+	__IO u32 sof_cnt;
+	__IO u32 isoc_tx_start_cnt;
+	__IO u32 isoc_tx_done_cnt;
+
+	__IO u32 isoc_xfer_buf_empty_cnt;
+	__IO u32 isoc_xfer_buf_err_cnt;
+	__IO u32 isoc_xfer_interval_cnt;
+
 	__IO u8 dump_status_task_alive;
 	__IO u8 dump_status_task_exit;
 #endif
