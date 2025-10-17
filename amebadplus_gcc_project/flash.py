@@ -46,6 +46,7 @@ def main():
 
     parser.add_argument('--chip-erase', action='store_true', help='chip erase')
     parser.add_argument('--log-level', default='info', help='log level')
+    parser.add_argument('--no-reset', action='store_true', help='do not reset after flashing finished')
 
     args = parser.parse_args()
     ports = args.port
@@ -95,6 +96,9 @@ def main():
 
     if args.chip_erase:
         cmds.append("--chip-erase")
+
+    if args.no_reset:
+        cmds.append("--no-reset")
 
     if not images:
         cmds.append(f"--image-dir")

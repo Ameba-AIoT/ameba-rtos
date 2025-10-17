@@ -16,7 +16,8 @@
 /* Private defines -----------------------------------------------------------*/
 #define USBH_UAC_HOT_PLUG_TEST        1     /* Hot plug / memory leak test */
 
-#define USBH_UAC_TEST_CNT             30
+#define USBH_UAC_TEST_CNT             3
+#define USBH_UAC_TEST_TIME            10
 #define USBH_UAC_FRAME_CNT            20
 
 #define USBH_UAC_CHANNELS             2
@@ -217,10 +218,11 @@ static void usbh_uac_isoc_test(void *param)
 	u8 *buffer = NULL;
 	u32 frame_size;
 	u32 total_len;
-	u32 send_len;
+	u32 send_len = 0;
 	u32 offset;
 	u32 ret;
 	u32 i;
+	u32 j;
 	u8 fmt_cnt;
 
 	UNUSED(param);
@@ -263,25 +265,30 @@ static void usbh_uac_isoc_test(void *param)
 			total_len = audio_total_data_len;
 			offset = 0;
 			usbh_composite_uac_start_play();
-			while (offset < total_len) {
-				TRNG_get_random_bytes(&send_len, 1);
-				// RTK_LOGS(TAG, RTK_LOG_INFO, "xfer len %d\n",send_len);
-				if (send_len == 0) {
-					continue;
-				}
+			j = 0;
+			for (j = 0; j < (u32)USBH_UAC_TEST_TIME; j++) {
+				offset = 0;
+				while (offset < total_len) {
+					TRNG_get_random_bytes(&send_len, 1);
+					send_len = send_len & 0xFFFF;
+					// RTK_LOGS(TAG, RTK_LOG_INFO, "xfer len %d\n",send_len);
+					if (send_len == 0) {
+						continue;
+					}
 
-				if (offset + send_len > total_len) {
-					send_len = total_len - offset;
-				}
+					if (offset + send_len > total_len) {
+						send_len = total_len - offset;
+					}
 
-				buffer = (u8 *)(usbh_uac_audio_data_handle + offset);
-				ret = usbh_composite_uac_write(buffer, send_len, 10);
-				if (ret != send_len) {
-					usbh_uac_err_count++;
-					continue;
-				}
+					buffer = (u8 *)(usbh_uac_audio_data_handle + offset);
+					ret = usbh_composite_uac_write(buffer, send_len, 10);
+					if (ret != send_len) {
+						usbh_uac_err_count++;
+						continue;
+					}
 
-				offset += ret;
+					offset += ret;
+				}
 			}
 
 			rtos_time_delay_ms(50);
