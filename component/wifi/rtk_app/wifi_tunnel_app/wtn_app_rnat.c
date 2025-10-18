@@ -30,6 +30,7 @@
 /*dnrd.c will use this*/
 extern char *rptssid;
 extern int wifi_repeater_ap_config_complete;
+extern struct table ip_table; /*for rnat search client ip*/
 rtos_task_t rnat_ap_start_task_hdl = NULL;
 rtos_task_t rnat_poll_ip_task_hdl = NULL;
 
@@ -282,5 +283,10 @@ void wtn_rnat_ap_init(u8 enable)
 		wifi_repeater_ap_config_complete = 0;
 		rnat_wifi_stop_ap();
 	}
+}
+
+u8 wtn_rnat_search_client_ip(u8 *src_mac)
+{
+	return dhcps_search_client_ip(src_mac);
 }
 #endif

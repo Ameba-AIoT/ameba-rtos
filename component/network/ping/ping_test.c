@@ -18,9 +18,9 @@ rtos_task_t g_ping_task = NULL;
 unsigned char *ping_buf = NULL;
 unsigned char  *reply_buf = NULL;
 int ping_socket;
+extern struct netif xnetif[];
 
-
-static void generate_ping_echo(unsigned char *buf, int size)
+static void generate_ping_echo(unsigned char *buf, int size, int domain)
 {
 	int i;
 	struct icmp_echo_hdr *pecho;
@@ -30,135 +30,151 @@ static void generate_ping_echo(unsigned char *buf, int size)
 	}
 
 	pecho = (struct icmp_echo_hdr *) buf;
-	ICMPH_TYPE_SET(pecho, ICMP_ECHO);
 	ICMPH_CODE_SET(pecho, 0);
 	pecho->chksum = 0;
 	pecho->id = PING_ID;
 	pecho->seqno = htons(++ ping_seq);
 
-	//Checksum includes icmp header and data. Need to calculate after fill up icmp header
-	pecho->chksum = inet_chksum(pecho, sizeof(struct icmp_echo_hdr) + size);
+	if (AF_INET == domain) {
+		ICMPH_TYPE_SET(pecho, ICMP_ECHO);
+		pecho->chksum = inet_chksum(pecho, sizeof(struct icmp_echo_hdr) + size);
+	}
+#if LWIP_IPV6
+	else if (AF_INET6 == domain) {
+		ICMPH_TYPE_SET(pecho, ICMP6_TYPE_EREQ);
+	}
+#endif
+}
+
+static void *get_addr_ptr(struct sockaddr *sa)
+{
+	void *ret = (void *) & ((struct sockaddr_in *)sa)->sin_addr;
+#if LWIP_IPV6
+	if (sa->sa_family == AF_INET6) {
+		ret = (void *) & ((struct sockaddr_in6 *)sa)->sin6_addr;
+	}
+#endif
+	return ret;
 }
 
 void ping_test(void *param)
 {
-	int i;
-	//int ping_socket;
-	int pint_timeout = PING_TO;
-	struct sockaddr_in to_addr, from_addr;
-	int from_addr_len = sizeof(struct sockaddr);
-	int ping_size, reply_size;
-	//unsigned char *ping_buf, *reply_buf;
-	unsigned int ping_time, reply_time;
-	struct ip_hdr *iphdr;
-	struct icmp_echo_hdr *pecho;
-	unsigned int min_time = 1000, max_time = 0;
-	struct hostent *server_host;
+	int i = 0;
+	int min_time = PING_TO, max_time = 0;
 	char *host = param;
 
 	rtos_time_delay_ms(100);//wait log service thread done
+
 	ping_total_time = 0;
 	ping_received_count = 0;
 
 	if (data_size < 0 || data_size > BUF_SIZE) {
 		printf("\n\r[ERROR] %s: data size error, effective range from 0 to %d\n", __func__, BUF_SIZE);
-		goto Exit;
+		goto cleanup_host;
 	}
 
-	//Ping size = icmp header(8 bytes) + data size
-	ping_size = sizeof(struct icmp_echo_hdr) + data_size;
+	struct addrinfo hints, *res;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_RAW;
 
-	ping_buf = rtos_mem_malloc(ping_size);
-	if (NULL == ping_buf) {
-		printf("\n\r[ERROR] %s: Allocate ping_buf failed\n", __func__);
-		return;
+	if (getaddrinfo(host, NULL, &hints, &res) != 0) {
+		printf("\n\r[%s] Failed to resolve: %s\n", __func__, host);
+		goto cleanup_host;
 	}
 
-	reply_size = ping_size + IP_HLEN;
-
-	reply_buf = rtos_mem_malloc(reply_size);
-	if (NULL == reply_buf) {
-		rtos_mem_free(ping_buf);
-		printf("\n\r[ERROR] %s: Allocate reply_buf failed\n", __func__);
-		goto Exit;
+	int family = res->ai_family;
+	int proto = IP_PROTO_ICMP;
+	int iphdr_len = IP_HLEN;
+#if LWIP_IPV6
+	if (family == AF_INET6) {
+		proto = IP6_NEXTH_ICMP6;
+		iphdr_len = IP6_HLEN;
+		if (255 == ping_interface) {
+			ping_interface = 0;
+		}
+	}
+#endif
+	ping_socket = socket(family, SOCK_RAW, proto);
+	if (ping_socket < 0) {
+		perror("Socket creation failed");
+		goto cleanup_addrinfo;
 	}
 
-	printf("\n\r[%s] PING %s %d(%d) bytes of data\n", __FUNCTION__, host, data_size, sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr) + data_size);
+	if ((ping_interface == 0) || (ping_interface == 1)) {
+		if (family == AF_INET) {
+			struct sockaddr_in bind_addr = {
+				.sin_family = AF_INET,
+				.sin_addr.s_addr = *(u32_t *)LwIP_GetIP(ping_interface)
+			};
+			bind(ping_socket, (struct sockaddr *)&bind_addr, sizeof(bind_addr));
+		}
+#if LWIP_IPV6
+		else {
+			struct sockaddr_in6 bind_addr = { .sin6_family = AF_INET6 };
+			memcpy(&bind_addr.sin6_addr, netif_ip6_addr(&xnetif[ping_interface], 0)->addr, 16);
+			bind(ping_socket, (struct sockaddr *)&bind_addr, sizeof(bind_addr));
+		}
+#endif
+	}
 
+	int icmp_hdr_len = sizeof(struct icmp_echo_hdr);
+	int ping_size = icmp_hdr_len + data_size;
+	int reply_size = ping_size + iphdr_len;
+	int header_size = icmp_hdr_len + iphdr_len;
+	unsigned char *ping_buf = rtos_mem_malloc(ping_size);
+	unsigned char *reply_buf = rtos_mem_malloc(reply_size);
+	if (!ping_buf || !reply_buf) {
+		printf("\n\r[%s] Buffer allocation failed\n", __func__);
+		goto cleanup_buffers;
+	}
+
+	printf("\n\r[%s] PING %s %d(%d) bytes of data\n", __FUNCTION__, host, data_size, header_size + data_size);
 	for (i = 0; ((i < ping_count) || (infinite_loop == 1)) && (!g_ping_terminate); i ++) {
-		ping_socket = socket(AF_INET, SOCK_RAW, IP_PROTO_ICMP);
-		if (ping_socket < 0) {
-			printf("create socket failed\r\n");
-		}
-		pint_timeout = PING_TO;
-
-		struct timeval timeout;
-		timeout.tv_sec = pint_timeout / 1000;
-		timeout.tv_usec = pint_timeout % 1000 * 1000;
+		int pint_timeout = PING_TO;
+		struct timeval timeout = {
+			.tv_sec = pint_timeout / 1000,
+			.tv_usec = (pint_timeout % 1000) * 1000
+		};
 		setsockopt(ping_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+		generate_ping_echo(ping_buf, data_size, family);
+		sendto(ping_socket, ping_buf, ping_size, 0, res->ai_addr, res->ai_addrlen);
 
-		to_addr.sin_len = sizeof(to_addr);
-		to_addr.sin_family = AF_INET;
-		if (inet_aton(host, &to_addr.sin_addr) == 0) {
-			server_host = gethostbyname(host);
-			if (server_host == NULL) {
-				printf("\n\r[%s] Get host name failed in the %d ping test\n", __FUNCTION__, (i + 1));
-				close(ping_socket);
-				rtos_time_delay_ms(ping_interval * 1000);
-				continue;
-			}
-			memcpy((void *) &to_addr.sin_addr, (void *) server_host->h_addr, 4);
-		} else {
-			to_addr.sin_addr.s_addr = inet_addr(host);
-		}
-
-		struct sockaddr_in s_serv_addr;
-		memset((char *)&s_serv_addr, 0, sizeof(s_serv_addr));
-		s_serv_addr.sin_family = AF_INET;
-
-
-		if (ping_interface == 0) {
-			s_serv_addr.sin_addr.s_addr = *(u32_t *)LwIP_GetIP(0);
-			if (bind(ping_socket, (struct sockaddr *)&s_serv_addr, sizeof(s_serv_addr)) < 0) {
-				printf("\r\nbind sock error!");
-			}
-		} else if (ping_interface == 1) {
-			s_serv_addr.sin_addr.s_addr = *(u32_t *)LwIP_GetIP(1);
-			if (bind(ping_socket, (struct sockaddr *)&s_serv_addr, sizeof(s_serv_addr)) < 0) {
-				printf("\r\nbind sock error!");
-			}
-		} else {
-			//do nothing
-		}
-
-		generate_ping_echo(ping_buf, data_size);
-		sendto(ping_socket, ping_buf, ping_size, 0, (struct sockaddr *) &to_addr, sizeof(to_addr));
-
-		ping_time = rtos_time_get_current_system_time_ms();
-		//ret_size = recvfrom(ping_socket, reply_buf, reply_size, 0, (struct sockaddr *) &from_addr, (socklen_t *) &from_addr_len);
+		unsigned int ping_time = rtos_time_get_current_system_time_ms();
 		while (1) {
-			if (recvfrom(ping_socket, reply_buf, reply_size, 0, (struct sockaddr *) &from_addr, (socklen_t *) &from_addr_len)
-				>= (int)(sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr))) {
-				reply_time = rtos_time_get_current_system_time_ms();
-				if (from_addr.sin_addr.s_addr == to_addr.sin_addr.s_addr) {
-					iphdr = (struct ip_hdr *)reply_buf;
-					pecho = (struct icmp_echo_hdr *)(reply_buf + (IPH_HL(iphdr) * 4));
+			struct sockaddr_storage from_addr;
+			socklen_t from_len = sizeof(from_addr);
+			int recv_size = recvfrom(ping_socket, reply_buf, reply_size, 0, (struct sockaddr *)&from_addr, &from_len);
+			if (recv_size >= header_size) {
+				unsigned int reply_time = rtos_time_get_current_system_time_ms();
+				int delta_time = reply_time - ping_time;
+				if (memcmp(get_addr_ptr(res->ai_addr), get_addr_ptr((struct sockaddr *)&from_addr), (family == AF_INET) ? 4 : 16) == 0) {
+					struct ip_hdr *iphdr = (struct ip_hdr *)reply_buf;
+					struct icmp_echo_hdr *pecho = (family == AF_INET) ?
+												  (struct icmp_echo_hdr *)(reply_buf + (IPH_HL(iphdr) * 4)) :
+												  (struct icmp_echo_hdr *)(reply_buf + iphdr_len);
 
 					if ((pecho->id == PING_ID) && (pecho->seqno == htons(ping_seq))) {
-						printf("\n\r[%s] %d bytes from %s: icmp_seq=%d time=%d ms", __FUNCTION__, data_size, inet_ntoa(from_addr.sin_addr),
-							   htons(pecho->seqno), (int)((reply_time - ping_time)));
-						ping_received_count++;
-						ping_total_time += (reply_time - ping_time);
-						if ((reply_time - ping_time) > max_time) {
-							max_time = (reply_time - ping_time);
+						char *ip_str = inet_ntoa(((struct sockaddr_in *)&from_addr)->sin_addr);
+#if LWIP_IPV6
+						if (family == AF_INET6) {
+							ip_str = inet6_ntoa(((struct sockaddr_in6 *)&from_addr)->sin6_addr);
 						}
-						if ((reply_time - ping_time) < min_time) {
-							min_time = (reply_time - ping_time);
+#endif
+						printf("\n\r[%s] %d bytes from %s: icmp_seq=%d time=%d ms\r\n", __FUNCTION__, data_size, ip_str,
+							   htons(pecho->seqno), delta_time);
+						ping_received_count++;
+						ping_total_time += delta_time;
+						if (delta_time > max_time) {
+							max_time = delta_time;
+						}
+						if (delta_time < min_time) {
+							min_time = delta_time;
 						}
 						break;
 					}
 				}
-				pint_timeout -= (int)((reply_time - ping_time));
+				pint_timeout -= delta_time;
 				if (pint_timeout > 0) {
 					struct timeval timeout;
 					timeout.tv_sec = pint_timeout / 1000;
@@ -171,7 +187,6 @@ void ping_test(void *param)
 			break;
 		}
 
-		close(ping_socket);
 		rtos_time_delay_ms(ping_interval * 1000);
 	}
 	if (g_ping_terminate) {
@@ -185,17 +200,20 @@ void ping_test(void *param)
 			   (ping_count - ping_received_count) * 100 / ping_count, ping_received_count ? ping_total_time / ping_received_count : 0);
 		printf("\n\r[%s] min: %u ms, max: %u ms\n\r", __FUNCTION__, min_time, max_time);
 	}
-Exit:
+
+cleanup_buffers:
 	if (ping_buf) {
 		rtos_mem_free(ping_buf);
-		ping_buf = NULL;
 	}
-
 	if (reply_buf) {
 		rtos_mem_free(reply_buf);
-		reply_buf = NULL;
 	}
+	close(ping_socket);
 
+cleanup_addrinfo:
+	freeaddrinfo(res);
+
+cleanup_host:
 	if (host) {
 		rtos_mem_free(host);
 	}
