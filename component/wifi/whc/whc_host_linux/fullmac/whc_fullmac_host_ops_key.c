@@ -43,6 +43,8 @@ static int whc_fullmac_host_add_key_ops(struct wiphy *wiphy, struct net_device *
 	struct rtw_crypt_info *crypt;
 	int ret = 0;
 	struct xmit_priv_t *xmit_priv = &global_idev.xmit_priv;
+	u8 wlan_idx;
+	struct rtw_wpa_4way_status	rpt_4way = {0};
 
 	dev_dbg(global_idev.fullmac_dev, "--- %s ---", __func__);
 	if (whc_fullmac_host_dev_driver_is_mp()) {
@@ -105,6 +107,25 @@ static int whc_fullmac_host_add_key_ops(struct wiphy *wiphy, struct net_device *
 
 	ret = whc_fullmac_host_add_key(crypt);
 exit:
+
+	wlan_idx = rtw_netdev_idx(ndev);
+	dev_dbg(global_idev.fullmac_dev, "[fullmac]: wlan_idx = %d, is_need_4wway= %d, is_4way_ongoing =%d", wlan_idx, global_idev.is_need_4way[wlan_idx],
+			global_idev.is_4way_ongoing[wlan_idx]);
+	//PTK is installed, notify NP coex, 4-way handshake end
+	if (pairwise && global_idev.is_need_4way[wlan_idx] && global_idev.is_4way_ongoing[wlan_idx]) {
+		if (1 == wlan_idx &&
+			(--global_idev.is_4way_ongoing[wlan_idx])) {//softap mode, if no client ongoing 4-way process, notify NP end. otherwise, not notify 4-way end.
+			kfree(crypt);
+			return ret;
+		}
+
+		rpt_4way.is_start = false;
+		rpt_4way.is_success = true;
+		rpt_4way.wlan_idx = wlan_idx;
+		ret = whc_fullmac_host_wpa_4way_status_indicate(&rpt_4way);
+		dev_dbg(global_idev.fullmac_dev, "[fullmac]: notify 4-way end");
+		global_idev.is_4way_ongoing[wlan_idx] = 0;
+	}
 
 	kfree(crypt);
 	return ret;

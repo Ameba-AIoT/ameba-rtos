@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import datetime
+import os
 from typing import Union
 from serial.tools.miniterm import Console
 
@@ -19,8 +20,12 @@ key_description = miniterm.key_description
 
 class LogHandler:
     def __init__(self, elf_file: str, timestamps: bool, enable_address_decoding: bool,
-                 toolchain_path: str, rom_elf_file: Union[str, None] = None):
+                 toolchain_path: str, log_enabled: bool, log_dir: str, port: str, rom_elf_file: Union[str, None] = None):
         self.log_file = None
+        self.log_dir = log_dir
+        self.log_enabled = log_enabled
+        self.log_date = None
+        self.port = port
         self.output_enabled = True
         self._start_of_line = True
         self.elf_file = elf_file
@@ -30,6 +35,8 @@ class LogHandler:
             self.address_decoder = AddressDecoder(toolchain_path, elf_file, rom_elf_file)
         else:
             self.address_decoder = None
+        if self.log_enabled:
+            self.start_logging()
 
     @property
     def address_buffer(self):
@@ -51,10 +58,13 @@ class LogHandler:
 
     def start_logging(self):
         if not self.log_file:
-            name = f"log.monitor.{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.txt"
+            name = os.path.join(self.log_dir, f"{self.port}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
+            if self.log_dir != "" and (not os.path.exists(self.log_dir)):
+                os.makedirs(self.log_dir, exist_ok=True)
             try:
                 self.log_file = open(name, "w")
-                print_yellow(f"\nLogging is enabled into file {name}")
+                self.log_date = datetime.datetime.now().date()
+                print_yellow(f"Logging is enabled into file {name}")
             except Exception as e:
                 print_red(f"\nLog file {name} cannot be created: {e}")
 
@@ -63,7 +73,7 @@ class LogHandler:
             try:
                 name = self.log_file.name
                 self.log_file.close()
-                print_yellow(f"\nLogging is disabled and file {name} has been closed")
+                print_yellow(f"Logging is disabled and file {name} has been closed")
             except Exception as e:  #
                 print_red(f"\nLog file cannot be closed: {e}")
             finally:
@@ -98,8 +108,12 @@ class LogHandler:
         if self.output_enabled:
             print(text, end='')
         if self.log_file:
+            if datetime.datetime.now().date() != self.log_date:
+                self.stop_logging()
+                self.start_logging()
             try:
                 self.log_file.write(text)
+                self.log_file.flush()
             except Exception as e:
                 print_red(f"\nCannot write to file: {e}")
                 self.stop_logging()

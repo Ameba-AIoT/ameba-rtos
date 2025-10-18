@@ -31,6 +31,7 @@ int whc_fullmac_host_deinit_ap(void);
 int whc_fullmac_host_start_ap(struct rtw_softap_info *softAP_config);
 int whc_fullmac_host_stop_ap(void);
 int whc_fullmac_host_add_key(struct rtw_crypt_info *crypt);
+int whc_fullmac_host_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way);
 int whc_fullmac_host_set_EDCA_params(struct rtw_edca_param *pedca_param);
 int whc_fullmac_host_tx_mgnt(u8 wlan_idx, const u8 *buf, size_t buf_len, u8 need_wait_ack);
 int whc_fullmac_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr);

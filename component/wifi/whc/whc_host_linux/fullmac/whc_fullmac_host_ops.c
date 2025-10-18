@@ -437,6 +437,7 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *user_data
 	unsigned int rtw_join_status_last = mlme_priv->rtw_join_status;
 
 	mlme_priv->rtw_join_status = join_status;
+	struct rtw_wpa_4way_status	rpt_4way = {0};
 
 	/* Merge from wifi_join_status_indicate. */
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
@@ -484,6 +485,18 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *user_data
 									mlme_priv->assoc_rsp_ie + WLAN_HDR_A3_LEN + 6, mlme_priv->assoc_rsp_ie_len -  WLAN_HDR_A3_LEN - 6,
 									WLAN_STATUS_SUCCESS, GFP_ATOMIC);
 			netif_carrier_on(global_idev.pndev[wlan_idx]);
+
+			dev_dbg(global_idev.fullmac_dev, "[fullmac]: wlan_idx = %d, is_need_4wway= %d, is_4way_ongoing =%d", wlan_idx, global_idev.is_need_4way[wlan_idx],
+					global_idev.is_4way_ongoing[wlan_idx]);
+			//send message notify NP coex, 4-way handshake start
+			if (global_idev.is_need_4way[wlan_idx]) {
+				rpt_4way.is_start = true;//4-way start
+				rpt_4way.is_success = false;
+				rpt_4way.wlan_idx = wlan_idx;
+				whc_fullmac_host_wpa_4way_status_indicate(&rpt_4way);
+				global_idev.is_4way_ongoing[wlan_idx] = 1;
+				dev_dbg(global_idev.fullmac_dev, "WHC fullmac host indicate 4-way start \n");
+			}
 		}
 		return;
 	}
@@ -501,6 +514,18 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *user_data
 		}
 		dev_dbg(global_idev.fullmac_dev, "[fullmac] --- %s --- join failed inform cfg80211.", __func__);
 
+		dev_dbg(global_idev.fullmac_dev, "[fullmac]: wlan_idx = %d, is_need_4wway= %d, is_4way_ongoing =%d", wlan_idx, global_idev.is_need_4way[wlan_idx],
+				global_idev.is_4way_ongoing[wlan_idx]);
+		//send message notify NP coex, 4-way handshake end
+		if (global_idev.is_need_4way[wlan_idx] && global_idev.is_4way_ongoing[wlan_idx]) {
+			rpt_4way.is_start = false;
+			rpt_4way.is_success = true;
+			rpt_4way.wlan_idx = wlan_idx;
+			whc_fullmac_host_wpa_4way_status_indicate(&rpt_4way);
+			global_idev.is_4way_ongoing[wlan_idx] = 0;
+			dev_dbg(global_idev.fullmac_dev, "WHC fullmac host indicate 4-way end \n");
+		}
+
 		if (rtw_join_status_last >= RTW_JOINSTATUS_ASSOCIATED) {
 			cfg80211_disconnected(global_idev.pndev[wlan_idx], 0, NULL, 0, 1, GFP_ATOMIC);
 		} else {
@@ -513,6 +538,7 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *user_data
 void whc_fullmac_host_disconnect_indicate(u16 reason, u8 locally_generated)
 {
 	u8 wlan_idx = 0;
+	struct rtw_wpa_4way_status	rpt_4way = {0};
 #ifdef CONFIG_P2P
 	if (global_idev.p2p_global.p2p_role == P2P_ROLE_CLIENT) {
 		wlan_idx = 1;// GC intf is up, then use GC's netdev
@@ -522,6 +548,19 @@ void whc_fullmac_host_disconnect_indicate(u16 reason, u8 locally_generated)
 	if (global_idev.pndev[wlan_idx] != NULL) {
 		/* Do it first for tx broadcast pkt after disconnection issue! */
 		netif_carrier_off(global_idev.pndev[wlan_idx]);
+
+		dev_dbg(global_idev.fullmac_dev, "[fullmac]: wlan_idx = %d, is_need_4wway= %d, is_4way_ongoing =%d", wlan_idx, global_idev.is_need_4way[wlan_idx],
+				global_idev.is_4way_ongoing[wlan_idx]);
+		//send message notify NP coex, 4-way handshake end
+		if (global_idev.is_need_4way[wlan_idx] && global_idev.is_4way_ongoing[wlan_idx]) {
+			rpt_4way.is_start = false;
+			rpt_4way.is_success = true;
+			rpt_4way.wlan_idx = wlan_idx;
+			whc_fullmac_host_wpa_4way_status_indicate(&rpt_4way);
+			global_idev.is_4way_ongoing[wlan_idx] = 0;
+			dev_dbg(global_idev.fullmac_dev, "WHC fullmac host indicate 4-way end \n");
+		}
+
 		dev_dbg(global_idev.fullmac_dev, "%s reason:%d\n", __func__, reason);
 		cfg80211_disconnected(global_idev.pndev[wlan_idx], reason, NULL, 0, locally_generated, GFP_ATOMIC);
 	}
@@ -615,6 +654,9 @@ static int whc_fullmac_host_connect_ops(struct wiphy *wiphy, struct net_device *
 
 	memset(connect_param, 0, sizeof(struct rtw_network_info));
 	connect_param->security_type = 0;
+	global_idev.is_need_4way[wlan_idx] = 0;
+	global_idev.is_4way_ongoing[wlan_idx] = 0;
+
 	if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_3) {
 		connect_param->security_type |= WPA3_SECURITY;
 	}
@@ -651,6 +693,7 @@ static int whc_fullmac_host_connect_ops(struct wiphy *wiphy, struct net_device *
 	if (connect_param->security_type && !(connect_param->security_type & WEP_ENABLED)) {
 		sme->key_len = 8;
 		sme->key = pwd;
+		global_idev.is_need_4way[wlan_idx] = 1;
 	}
 
 	memcpy(connect_param->ssid.val, (u8 *)sme->ssid, sme->ssid_len);
@@ -787,20 +830,33 @@ exit:
 static int whc_fullmac_host_disconnect_ops(struct wiphy *wiphy, struct net_device *ndev, u16 reason_code)
 {
 	int ret = 0;
-
+	u8 wlan_idx = rtw_netdev_idx(ndev);
+	struct rtw_wpa_4way_status	rpt_4way = {0};
 	dev_dbg(global_idev.fullmac_dev, "[fullmac] --- %s ---", __func__);
 
 	if (whc_fullmac_host_dev_driver_is_mp()) {
 		return -EPERM;
 	}
 
-	if (rtw_netdev_idx(ndev) == 1) {
+	if (wlan_idx == 1) {
 		return -EPERM;
 	}
 
 	if (wps_info.wps_phase) {
 		/* KM4 disable wps */
 		whc_fullmac_host_set_wps_phase(0);
+	}
+
+	dev_dbg(global_idev.fullmac_dev, "[fullmac]: wlan_idx = %d, is_need_4way= %d, is_4way_ongoing =%d", wlan_idx, global_idev.is_need_4way[wlan_idx],
+			global_idev.is_4way_ongoing[wlan_idx]);
+	//notify NP coex, 4-way handshake end
+	if (global_idev.is_need_4way[wlan_idx] && global_idev.is_4way_ongoing[wlan_idx]) {
+		rpt_4way.is_start = false;
+		rpt_4way.is_success = true;//4-way process end
+		rpt_4way.wlan_idx = wlan_idx;
+		ret = whc_fullmac_host_wpa_4way_status_indicate(&rpt_4way);
+		global_idev.is_4way_ongoing[wlan_idx] = 0;
+		dev_dbg(global_idev.fullmac_dev, "WHC fullmac host indicate 4-way end \n");
 	}
 
 	/* KM4 will report RTW_EVENT_DISCONNECT event to linux, after disconnect done, and b_in_disconnect can prevent a deadlock caused by an early event. */
@@ -885,6 +941,10 @@ static int whc_fullmac_host_get_channel_ops(struct wiphy *wiphy,
 	}
 
 	pnetdev = wdev_to_ndev(wdev);
+	if (!netif_running(pnetdev)) {
+		return -EPERM;
+	}
+
 #ifdef CONFIG_P2P
 	if (wdev == global_idev.p2p_global.pd_pwdev) {/*P2P Device intf not have ndev, wlanidx need fetch from other way*/
 		wlan_idx = global_idev.p2p_global.pd_wlan_idx;

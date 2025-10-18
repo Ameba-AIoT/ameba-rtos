@@ -1943,6 +1943,11 @@ tcp_parseopt(struct tcp_pcb *pcb)
           mss |= tcp_get_next_optbyte();
           /* Limit the mss to the configured TCP_MSS and prevent division by zero */
           pcb->mss = ((mss > TCP_MSS) || (mss == 0)) ? TCP_MSS : mss;
+
+          /* Realtek add */
+          if(pcb->mss < TCP_MSS_MIN)
+            pcb->mss = TCP_MSS_MIN;
+
           break;
 #if LWIP_WND_SCALE
         case LWIP_TCP_OPT_WS:
