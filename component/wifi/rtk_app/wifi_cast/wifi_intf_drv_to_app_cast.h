@@ -79,6 +79,7 @@ typedef struct wifi_cast_node {
  */
 typedef struct wifi_cast_frame_info {
 	unsigned int wait_ms;           /* set wait timeout when ack set to true */
+	unsigned short magic_num;       /* magic number */
 	unsigned char ack;              /* set enable or disable ACK, set to true if need rx node response with ack */
 	unsigned char retry_limit;      /* tx packet retry times (hardware retry limit times) */
 	unsigned char retransmit_count; /* tx packet restansmit count by software */
