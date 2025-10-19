@@ -148,6 +148,9 @@ a lot of data that needs to be copied, this should be set high. */
 /* TCP Maximum segment size. */
 #define TCP_MSS                 (1500 - 40)	  /* TCP_MSS = (Ethernet MTU - IP header size - TCP header size) */
 
+/* TCP Minimum segment size. (Realtek add) */
+#define TCP_MSS_MIN 536
+
 /* TCP sender buffer space (bytes). */
 #define TCP_SND_BUF             (5*TCP_MSS)
 /*  TCP_SND_QUEUELEN: TCP sender buffer space (pbufs). This must be at least
