@@ -965,6 +965,7 @@ end:
 
 /****************************************************************
 AT command process:
+
 	AT+WLSTOPAP
 	Wifi AT Command:
 	Set the wifi soft AP.
@@ -988,9 +989,6 @@ AT command process:
 void at_wlstate(void *arg)
 {
 	int i = 0;
-#ifdef CONFIG_DHCPS_KEPT_CLIENT_INFO
-	uint8_t *p = NULL;
-#endif
 #ifdef CONFIG_LWIP_LAYER
 	u8 *mac = LwIP_GetMAC(0);
 	u8 *ip = LwIP_GetIP(0);
@@ -1034,9 +1032,7 @@ void at_wlstate(void *arg)
 			if (p_wifi_setting->mode == RTW_MODE_AP || i == 1) {
 				unsigned int client_number;
 				struct rtw_client_list client_info = {0};
-#ifdef CONFIG_DHCPS_KEPT_CLIENT_INFO
 				union rtw_phy_stats phy_stats = {0};
-#endif
 				wifi_ap_get_connected_clients(&client_info);
 
 				at_printf("Associated Client List:\r\n");
@@ -1048,22 +1044,15 @@ void at_wlstate(void *arg)
 					at_printf("Client Num: %d\r\n", client_info.count);
 					for (client_number = 0; client_number < client_info.count; client_number++) {
 						at_printf("Client %d:\r\n", client_number + 1);
-#ifdef CONFIG_DHCPS_KEPT_CLIENT_INFO
-						for (int n = 0; n < wifi_user_config.ap_sta_num; n++) {
-							p = ip_table.client_mac[n];
-							if (memcmp(p, client_info.mac_list[client_number].octet, 6) == 0) {
-								at_printf("IPv4 address: %d.%d.%d.%d, ", gw[0], gw[1], gw[2], ip_table.ip_addr4[n]);
-								at_printf("MAC address: %02x:%02x:%02x:%02x:%02x:%02x, ", p[0], p[1], p[2], p[3], p[4], p[5]);
-								wifi_get_phy_stats(SOFTAP_WLAN_INDEX, p, &phy_stats);
-								at_printf("RSSI: %d", phy_stats.ap.data_rssi);
-								at_printf("\r\n");
-								break;
-							}
+						u8 *mac = client_info.mac_list[client_number].octet;
+						u8 ip_addr4 = dhcps_search_client_ip(mac);
+						if (ip_addr4) {
+							at_printf("IPv4 address: %d.%d.%d.%d, ", gw[0], gw[1], gw[2], ip_addr4);
+							at_printf("MAC address: %02x:%02x:%02x:%02x:%02x:%02x, ", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+							wifi_get_phy_stats(SOFTAP_WLAN_INDEX, mac, &phy_stats);
+							at_printf("RSSI: %d", phy_stats.ap.data_rssi);
+							at_printf("\r\n");
 						}
-#else
-						at_printf("MAC => "MAC_FMT"\r\n",
-								  MAC_ARG(client_info.mac_list[client_number].octet));
-#endif
 					}
 				}
 			}

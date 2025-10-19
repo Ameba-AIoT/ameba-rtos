@@ -19,6 +19,7 @@ static int usbh_composite_hid_uac_cb_detach(usb_host_t *host);
 static int usbh_composite_hid_uac_cb_process(usb_host_t *host, u32 msg);
 static int usbh_composite_hid_uac_cb_setup(usb_host_t *host);
 static int usbh_composite_hid_uac_cb_sof(usb_host_t *host);
+static int usbh_composite_hid_uac_cb_complete(usb_host_t *host, u8 pipe);
 
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "UAC";
@@ -31,6 +32,7 @@ static usbh_class_driver_t usbh_composite_driver = {
 	.setup = usbh_composite_hid_uac_cb_setup,
 	.process = usbh_composite_hid_uac_cb_process,
 	.sof = usbh_composite_hid_uac_cb_sof,
+	.complete = usbh_composite_hid_uac_cb_complete,
 };
 
 static usbh_composite_host_t usbh_composite_host;
@@ -87,6 +89,7 @@ static int usbh_composite_hid_uac_cb_attach(usb_host_t *host)
 		}
 	}
 
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Attach\n");
 	chost->state = USBH_COMPOSITE_ATTACH;
 
 	return HAL_OK;
@@ -103,6 +106,7 @@ static int usbh_composite_hid_uac_cb_detach(usb_host_t *host)
 	UNUSED(host);
 
 	chost->state = USBH_COMPOSITE_DETACHED;
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Detach\n");
 
 	if ((chost->hid != NULL) && (chost->hid->detach != NULL)) {
 		chost->hid->detach(host);
@@ -129,6 +133,8 @@ static int usbh_composite_hid_uac_cb_setup(usb_host_t *host)
 		ret = usbh_composite_hid_handle_report_desc(host);
 		if (ret != HAL_OK) {
 			return ret;
+		} else {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Get Hid msg OK\n");
 		}
 	}
 
@@ -140,6 +146,7 @@ static int usbh_composite_hid_uac_cb_setup(usb_host_t *host)
 		chost->uac->setup(host);
 	}
 
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Setup\n");
 	chost->state = USBH_COMPOSITE_SETUP;
 
 	return HAL_OK;
@@ -160,6 +167,27 @@ static int usbh_composite_hid_uac_cb_sof(usb_host_t *host)
 
 	if ((chost->uac != NULL) && (chost->uac->sof)) {
 		chost->uac->sof(host);
+	}
+
+	return HAL_OK;
+}
+
+/**
+  * @brief  Complete callback
+  * @param  host: Host handle
+  * @param  pipe: pipe index
+  * @retval Status
+  */
+static int usbh_composite_hid_uac_cb_complete(usb_host_t *host, u8 pipe)
+{
+	usbh_composite_host_t *chost = &usbh_composite_host;
+
+	if ((chost->hid != NULL) && (chost->hid->complete != NULL)) {
+		chost->hid->complete(host, pipe);
+	}
+
+	if ((chost->uac != NULL) && (chost->uac->complete)) {
+		chost->uac->complete(host, pipe);
 	}
 
 	return HAL_OK;
@@ -222,6 +250,7 @@ int usbh_composite_init(usbh_composite_hid_usr_cb_t *hid_cb, usbh_composite_uac_
 	}
 	chost->uac = (usbh_class_driver_t *)&usbh_composite_uac_driver;
 
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Init\n");
 	usbh_register_class(&usbh_composite_driver);
 
 	return HAL_OK;
@@ -234,6 +263,7 @@ int usbh_composite_init(usbh_composite_hid_usr_cb_t *hid_cb, usbh_composite_uac_
 int usbh_composite_deinit(void)
 {
 	usbh_composite_host_t *chost = &usbh_composite_host;
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit\n");
 
 	usbh_unregister_class(&usbh_composite_driver);
 	chost->state = USBH_COMPOSITE_IDLE;

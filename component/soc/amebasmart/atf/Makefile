@@ -3,6 +3,13 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
+ifeq ($(OS),Windows_NT)
+    SHELL := cmd.exe
+# windows use '\' to seperate path
+	fixpath = $(subst /,\,$1)
+else
+	fixpath = $1
+endif
 
 ifndef CROSS_COMPILE
 $(error error: CROSS_COMPILE is not defined. Please specify it by running 'make CROSS_COMPILE=<prefix>')
@@ -904,6 +911,7 @@ ENCTOOL			?=	${ENCTOOLPATH}/encrypt_fw${BIN_EXT}
 # Variables for use with Firmware Image Package
 FIPTOOLPATH		?=	tools/fiptool
 FIPTOOL			?=	${FIPTOOLPATH}/fiptool${BIN_EXT}
+FIPTOOL 		:= 	$(call fixpath, ${FIPTOOL})
 
 # Variables for use with sptool
 SPTOOLPATH		?=	tools/sptool

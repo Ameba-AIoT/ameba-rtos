@@ -44,6 +44,7 @@ set(private_compile_options)         #private compile_options
 ameba_list_append_if(CONFIG_WHC_HOST private_sources
     wtn_app_socket.c
     wtn_app_rnat.c
+    wtn_app_ota.c
     wtn_app_zrpp.c
 )
 

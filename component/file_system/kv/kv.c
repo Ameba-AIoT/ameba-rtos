@@ -18,7 +18,7 @@ extern int fclose(FILE *stream);
 extern size_t fwrite(const void *ptr, size_t size, size_t count, FILE *stream);
 extern size_t fread(void *ptr, size_t size, size_t count, FILE *stream);
 
-static int kv_init_done = 0;
+int kv_init_done = 0;
 
 static char *prefix;
 int rt_kv_init(void)
