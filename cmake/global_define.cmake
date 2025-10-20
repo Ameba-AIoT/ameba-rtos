@@ -62,6 +62,7 @@ ameba_set(c_CMPT_CRASHDUMP_DIR    ${c_COMPONENT_DIR}/soc/common/crashdump)
 ameba_set(c_CMPT_LZMA_DIR         ${c_COMPONENT_DIR}/soc/common/lzma)
 ameba_set(c_CMPT_ED25519_DIR      ${c_COMPONENT_DIR}/soc/common/rom_ed25519)
 ameba_set(c_CMPT_DIAGNOSE_DIR     ${c_COMPONENT_DIR}/soc/common/diagnose)
+ameba_set(c_CMPT_SOC_PQC_DIR      ${c_COMPONENT_DIR}/soc/common/pqc)
 #-------------------------#
 
 # Define dynamic dirs under component/

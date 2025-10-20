@@ -3,7 +3,6 @@
 #define __DHCPS_H__
 #include "lwip_netconf.h"
 
-#define CONFIG_DHCPS_KEPT_CLIENT_INFO
 
 #define DHCP_POOL_START			100
 #define DHCP_POOL_END			200
@@ -97,11 +96,10 @@ static const uint8_t dhcp_option_lease_time[] = {0x00, 0x00, 0x1c, 0x20}; //1 da
 static const uint8_t dhcp_option_interface_mtu[] = {0x05, 0xDC};
 
 struct table {
+	uint32_t ip_range_offer[8];
 	uint32_t ip_range[8];
-#ifdef CONFIG_DHCPS_KEPT_CLIENT_INFO
 	uint8_t (*client_mac)[6];
 	uint8_t *ip_addr4;
-#endif
 };
 
 PACK_STRUCT_BEGIN
@@ -139,6 +137,7 @@ void dhcps_set_addr_pool(int addr_pool_set, struct ip_addr *addr_pool_start, str
 void dhcps_init(struct netif *pnetif);
 void dhcps_deinit(void);
 int dhcps_ip_in_table_check(uint8_t gate, uint8_t d);
+uint8_t dhcps_search_client_ip(uint8_t *src_mac);
 
 extern struct netif *netif_default;
 

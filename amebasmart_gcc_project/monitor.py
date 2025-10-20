@@ -57,12 +57,18 @@ def main():
     parser.add_argument("--axf-file", nargs="?", help="AXF file of application")
     parser.add_argument("--toolchain-dir", help="Set toolchain dir. If not set, will get from config.")
     parser.add_argument("--ca32", action="store_true", help="If core is ca32, should set this.")
+    parser.add_argument('--log', action='store_true', 
+                       help='Enable logging mode: save logs to log file')
+    parser.add_argument('--log-dir', type=str, default="",
+                       help='Specify the target log file directory, if not, the logs will save to under xxxx_gcc_project when logging enabled')
     args = parser.parse_args()
 
     port = args.port
     baudrate = args.baudrate
     reset = args.reset
     debug = args.debug
+    log = args.log
+    log_dir = args.log_dir
 
     remote_server = args.remote_server
     remote_password = args.remote_password
@@ -84,6 +90,10 @@ def main():
         cmds.append("--reset")
     if debug:
         cmds.append("--debug")
+    if log:
+        cmds.append("--log")
+        cmds.append("--log-dir")
+        cmds.append(log_dir)
 
     if remote_server:
         cmds.append("--remote-server")

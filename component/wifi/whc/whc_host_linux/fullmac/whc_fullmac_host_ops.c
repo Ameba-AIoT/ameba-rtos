@@ -1021,6 +1021,10 @@ static int whc_fullmac_host_get_channel_ops(struct wiphy *wiphy,
 	}
 
 	pnetdev = wdev_to_ndev(wdev);
+	if (!netif_running(pnetdev)) {
+		return -EPERM;
+	}
+
 #ifdef CONFIG_P2P
 	if (wdev == global_idev.p2p_global.pd_pwdev) {/*P2P Device intf not have ndev, wlanidx need fetch from other way*/
 		wlan_idx = global_idev.p2p_global.pd_wlan_idx;

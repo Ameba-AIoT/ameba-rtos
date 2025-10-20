@@ -30,7 +30,7 @@ void app_init_debug(void)
 void pmc_patch(void)
 {
 
-	if (SYSCFG_RLVersion() == SYSCFG_CUT_VERSION_A) {
+	if (EFUSE_GetChipVersion() == SYSCFG_CUT_VERSION_A) {
 
 		/* PMC patch: gating KM0 CPU CLK */
 		u32 temp = HAL_READ32(OTP_REGPATCH_BASE, 0xB0);
@@ -48,7 +48,7 @@ void pmc_patch(void)
 		HAL_WRITE32(PMC_BASE, PMC_PATCH_GRP1_0, 0x02014163);
 		HAL_WRITE32(PMC_BASE, PMC_PATCH_GRP1_1, 0x100);
 
-	} else if (SYSCFG_RLVersion() >= SYSCFG_CUT_VERSION_B) {
+	} else {
 
 		/* PMC patch: set AON LDO into sleep mode and gating KM0 CPU CLK */
 		HAL_WRITE32(OTP_REGPATCH_BASE, 0xB0, 0x10d0221);

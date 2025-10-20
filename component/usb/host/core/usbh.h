@@ -14,6 +14,9 @@
 #include "usb_hal.h"
 
 /* Exported defines ----------------------------------------------------------*/
+/* This define used to debug the isr time issue */
+#define USBH_ISR_TASK_TIME_DEBUG            0U
+
 #define USBH_DEFAULT_MAX_ALT_NUM            3
 #define USBH_MAX_CLASS_NUM                  1
 #define USBH_DEFAULT_ERR_TRY_MAX_CNT        15
@@ -197,6 +200,7 @@ typedef struct {
 	int(*setup)(struct _usb_host_t *host);				/* Called after class attached to process class standard control requests */
 	int(*process)(struct _usb_host_t *host, u32 msg);		/* Called after class setup to process class specific transfers */
 	int(*sof)(struct _usb_host_t *host);					/* Called at SOF interrupt */
+	int(*complete)(struct _usb_host_t *host, u8 pipe);		/* Called at Complete interrupt of specific pipe */
 } usbh_class_driver_t;
 
 /* USB host user callback */
@@ -224,6 +228,14 @@ typedef struct _usb_host_t {
 	u32                   class_num;					/* Registered class number */
 	__IO u32              tick;							/* Host timer tick */
 	__IO usbh_state_t     state;						/* Host state */
+
+#if USBH_ISR_TASK_TIME_DEBUG
+	__IO u32 isr_func_time_cost_max;
+	__IO u32 isr_func_time_cost;
+	__IO u32 isr_trigger_time_diff_max;
+	__IO u32 isr_trigger_time_diff;
+	u32 isr_trigger_last_time;
+#endif
 } usb_host_t;
 
 /* Exported macros -----------------------------------------------------------*/
