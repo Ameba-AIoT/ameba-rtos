@@ -1165,7 +1165,7 @@ int bt_le_iso_main(uint8_t role, uint8_t enable)
 				set_cig_param.latency_m_s = RTK_BLE_ISO_DEFAULT_LATENCY_M_S;//10,
 				set_cig_param.latency_s_m = RTK_BLE_ISO_DEFAULT_LATENCY_S_M; //10
 				/* cis param */
-				set_cis_param.cis_id = 1;
+				set_cis_param.cis_id = 0;
 				set_cis_param.max_sdu_m_s = RTK_BLE_ISO_MAX_SDU_M_S;//128;
 				set_cis_param.max_sdu_s_m = RTK_BLE_ISO_MAX_SDU_S_M;//128;
 				set_cis_param.phy_m_s = RTK_BLE_ISO_DEFAULT_PHY_2M;
@@ -1178,7 +1178,7 @@ int bt_le_iso_main(uint8_t role, uint8_t enable)
 					set_cig_param.cig_id = i + 1;
 					memcpy((void *)&cig_start_setting.set_cig_param, (void *)&set_cig_param, sizeof(rtk_bt_le_iso_cig_initiator_set_cig_param_t));
 					for (uint8_t j = 0; j < cig_start_setting.cis_num; j ++) {
-						set_cis_param.cis_id = (j + 1) + (i * 2);
+						set_cis_param.cis_id = j + (i * 2);
 						memcpy((void *)&cig_start_setting.set_cis_param[j], (void *)&set_cis_param, sizeof(rtk_bt_le_iso_cig_initiator_set_cis_param_t));
 					}
 					BT_APP_PROCESS(rtk_bt_le_iso_cig_start_setting(&cig_start_setting));

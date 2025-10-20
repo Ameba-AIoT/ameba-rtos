@@ -16,10 +16,7 @@ from .constants import ASYNC_CLOSING_WAIT_NONE, CHECK_ALIVE_FLAG_TIMEOUT, RECONN
 from .color_output import print_red, print_yellow
 from .stoppable_thread import StoppableThread
 import os
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../base'))
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
-from remote_serial import RemoteSerial
+from .remote_serial import RemoteSerial
 import logging
 from typing import Optional, Dict, Any
 from .console_reader import console_update_session
@@ -54,6 +51,12 @@ class SerialReader(StoppableThread):
         # if not hasattr(self.serial, "cancel_read"):
         #     self.serial.timeout = CHECK_ALIVE_FLAG_TIMEOUT
 
+    def expired(self, start_time):
+        cur_time = time.time()
+        if cur_time - start_time > 2:
+            return True
+        return False
+
     def run(self):
         try:
             self.open_serial()
@@ -74,12 +77,24 @@ class SerialReader(StoppableThread):
         time.sleep(0.1)  # Wait for 100ms
         self.event_queue.put((TAG_KEY, 'AT+LIST\r\n'), True) # Send AT+LIST command (manually add \r\n)
         self.data_buffer = b''
+        start_time = time.time()
         while self.running:
             try:
-                while self.serial.inWaiting() < 1:
-                    if isinstance(self.serial, RemoteSerial):
+                if isinstance(self.serial, RemoteSerial):
+                    while self.serial.inWaiting() < 1:
                         time.sleep(0.01)
-                data = self.serial.read(self.serial.inWaiting())
+                        if self.expired(start_time):
+                            raise Exception("Get cmd list expired")
+                    if self.expired(start_time):
+                        raise Exception("Get cmd list expired")
+                    data = self.serial.read(self.serial.inWaiting())
+                else:
+                    if self.expired(start_time):
+                        raise Exception("Get cmd list expired")
+                    data = self.serial.read(1)
+                    if not data:
+                        continue
+                    data += self.serial.read(self.serial.in_waiting)
 
                 # Display raw byte data in debug mode
                 if self.debug:
@@ -94,6 +109,7 @@ class SerialReader(StoppableThread):
                         break
             except Exception as e:
                 print_red(f"Failed to get cmd list: {str(e)}")
+                break
         if self.reset_mode:
             try:
                 self.event_queue.put((TAG_KEY, 'reboot\r\n'), True) # Send reboot command (manually add \r\n)
@@ -102,10 +118,15 @@ class SerialReader(StoppableThread):
         self.data_buffer = b''
         while self.running:
             try:
-                while self.serial.inWaiting() < 1:
-                    if isinstance(self.serial, RemoteSerial):
+                if isinstance(self.serial, RemoteSerial):
+                    while self.serial.inWaiting() < 1:
                         time.sleep(0.01)
-                data = self.serial.read(self.serial.inWaiting())
+                    data = self.serial.read(self.serial.inWaiting())
+                else:
+                    data = self.serial.read(1)
+                    if not data:
+                        continue
+                    data += self.serial.read(self.serial.in_waiting)
 
                 # Display raw byte data in debug mode
                 if self.debug:

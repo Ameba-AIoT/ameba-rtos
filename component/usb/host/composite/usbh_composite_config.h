@@ -37,6 +37,24 @@ typedef enum {
 } usbh_compsoite_state_t;
 
 typedef struct {
+	u8 *buf;
+	__IO u16 buf_len;     /* buf valid len */
+} usb_ringbuf_t;
+
+typedef struct {
+	usb_ringbuf_t *list_node;
+	u8 *buf;
+
+	__IO u16 head;  //read idx
+	__IO u16 tail;  //write idx
+
+	__IO u16 written;  //part write data length
+
+	u16 item_cnt;
+	u16 item_size;
+} usb_ringbuf_manager_t;
+
+typedef struct {
 	void (*status_changed)(u8 old_status, u8 status);
 	int (* set_config)(void);
 } usbh_composite_cb_t;
@@ -57,6 +75,21 @@ typedef struct {
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
+u32 usb_ringbuf_get_count(usb_ringbuf_manager_t *handle);
+int usb_ringbuf_is_empty(usb_ringbuf_manager_t *handle);
+int usb_ringbuf_is_full(usb_ringbuf_manager_t *handle);
+
+int usb_ringbuf_add_tail(usb_ringbuf_manager_t *handle, u8 *buf, u32 size);
+u32 usb_ringbuf_remove_head(usb_ringbuf_manager_t *handle, u8 *buf, u32 size);
+
+usb_ringbuf_t *usb_ringbuf_get_head(usb_ringbuf_manager_t *handle);
+int usb_ringbuf_release_head(usb_ringbuf_manager_t *handle);
+
+int usb_ringbuf_write_partial(usb_ringbuf_manager_t *handle, u8 *data, u32 len);
+int usb_ringbuf_finish_write(usb_ringbuf_manager_t *handle);
+
+int usb_ringbuf_manager_init(usb_ringbuf_manager_t *handle, u16 cnt, u16 size, u8 cache_align);
+int usb_ringbuf_manager_deinit(usb_ringbuf_manager_t *handle);
 
 #endif // USBH_COMPOSITE_CONFIG_H
 

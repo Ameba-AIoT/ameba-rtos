@@ -38,7 +38,7 @@ static struct dhcp_msg *dhcp_message_repository;
 static int dhcp_message_total_options_lenth;
 
 /* allocated IP range */
-struct table  ip_table;
+static struct table ip_table;
 static struct ip_addr client_request_ip;
 static uint8_t client_addr[6];
 
@@ -68,6 +68,24 @@ int dhcps_ip_in_table_check(uint8_t gate, uint8_t d)
 	rtos_mutex_give(dhcps_ip_table_semaphore);
 
 	return ret;
+}
+
+uint8_t dhcps_search_client_ip(uint8_t *src_mac)
+{
+	uint8_t sta_num = wifi_user_config.ap_sta_num;
+
+	rtos_mutex_take(dhcps_ip_table_semaphore, RTOS_MAX_DELAY);
+	for (uint8_t j = 0; j < sta_num; j++) {
+		uint8_t ip = ip_table.ip_addr4[j];
+		uint8_t ip_index = ip - 1;
+		if ((memcmp(ip_table.client_mac[j], src_mac, 6) == 0) &&
+			(ip_table.ip_range[ip_index >> 5] & BIT(ip_index & 0x1F))) {
+			rtos_mutex_give(dhcps_ip_table_semaphore);
+			return ip;
+		}
+	}
+	rtos_mutex_give(dhcps_ip_table_semaphore);
+	return 0;
 }
 
 /**
@@ -128,91 +146,11 @@ static void mark_ip_in_table(uint8_t d)
 	rtos_mutex_give(dhcps_ip_table_semaphore);
 
 }
-#ifdef CONFIG_DHCPS_KEPT_CLIENT_INFO
-static void save_client_addr(struct ip_addr *client_ip, uint8_t *hwaddr)
-{
-	int i, j;
-	uint8_t invalid_ipaddr4;
-	unsigned int client_number;
-	struct rtw_client_list client_info;
-	memset(&client_info, 0, sizeof(struct rtw_client_list));
-
-	uint8_t d = (uint8_t)ip4_addr4(ip_2_ip4(client_ip));
-
-	rtos_mutex_take(dhcps_ip_table_semaphore, RTOS_MAX_DELAY);
-
-	for (i = 0; i < wifi_user_config.ap_sta_num; i++) {
-		if ((ip_table.ip_addr4[i] == 0 || ip_table.ip_addr4[i] == d)) {
-			ip_table.ip_addr4[i] = d;
-			memcpy(ip_table.client_mac[i], hwaddr, 6);
-			break;
-		}
-	}
-	/* cache of ip_table is full,write the new mac&ip instead of an invalid pairs */
-	if (i == wifi_user_config.ap_sta_num) {
-		wifi_ap_get_connected_clients(&client_info);
-		for (j = 0; j < wifi_user_config.ap_sta_num; j++) {
-			for (client_number = 0; client_number < client_info.count; client_number++) {
-				if (memcmp(ip_table.client_mac[j], client_info.mac_list[client_number].octet, 6) == 0) {
-					break;
-				}
-			}
-			/* find an invalid mac&ip,update it with a new record */
-			if (client_number == client_info.count) {
-				invalid_ipaddr4 = ip_table.ip_addr4[j];
-				ip_table.ip_range[invalid_ipaddr4 / 32] &= (~ BIT(invalid_ipaddr4 % 32 - 1)); //clear invalid ip_range
-				ip_table.ip_addr4[j] = d;
-				memcpy(ip_table.client_mac[j], hwaddr, 6);
-				break;
-			}
-		}
-	}
-
-#if (DEBUG_DHCPS)
-	printf("\r\n%s: ip %d.%d.%d.%d, hwaddr 0x%02x:0x%02x:0x%02x:0x%02x:0x%02x:0x%02x\n", __func__,
-		   ip4_addr1(ip_2_ip4(client_ip)), ip4_addr2(ip_2_ip4(client_ip)), ip4_addr3(ip_2_ip4(client_ip)), ip4_addr4(ip_2_ip4(client_ip)),
-		   hwaddr[0], hwaddr[1], hwaddr[2], hwaddr[3], hwaddr[4], hwaddr[5]);
-#endif
-	rtos_mutex_give(dhcps_ip_table_semaphore);
-}
-
-static uint8_t check_client_request_ip(struct ip_addr *client_req_ip, uint8_t *hwaddr)
-{
-	/* To avoid gcc warnings */
-	(void) client_req_ip;
-
-	int ip_addr4 = 0, i;
-
-#if (DEBUG_DHCPS)
-	printf("\r\n%s: ip %d.%d.%d.%d, hwaddr 0x%02x:0x%02x:0x%02x:0x%02x:0x%02x:0x%02x\n", __func__,
-		   ip4_addr1(ip_2_ip4(client_req_ip)), ip4_addr2(ip_2_ip4(client_req_ip)), ip4_addr3(ip_2_ip4(client_req_ip)), ip4_addr4(ip_2_ip4(client_req_ip)),
-		   hwaddr[0], hwaddr[1], hwaddr[2], hwaddr[3], hwaddr[4], hwaddr[5]);
-#endif
-
-	rtos_mutex_take(dhcps_ip_table_semaphore, RTOS_MAX_DELAY);
-
-	for (i = 0; i < wifi_user_config.ap_sta_num; i++) {
-		if (memcmp(ip_table.client_mac[i], hwaddr, 6) == 0) {
-			uint8_t temp = ip_table.ip_addr4[i];
-			if ((temp % 32 != 0) && ((ip_table.ip_range[temp / 32] >> (temp % 32 - 1)) & 1)) {
-				ip_addr4 = temp;
-				break;
-			}
-		}
-	}
-
-	rtos_mutex_give(dhcps_ip_table_semaphore);
-
-	if (i == wifi_user_config.ap_sta_num) {
-		ip_addr4 = 0;
-	}
-
-	return ip_addr4;
-}
 
 static uint8_t check_client_direct_request_ip(struct ip_addr *client_req_ip, uint8_t *hwaddr)
 {
-	int ip_addr4 = 0;
+	uint8_t ip_addr4 = 0;
+	uint8_t sta_num = wifi_user_config.ap_sta_num;
 
 #if (DEBUG_DHCPS)
 	printf("\r\n%s: ip %d.%d.%d.%d, hwaddr 0x%02x:0x%02x:0x%02x:0x%02x:0x%02x:0x%02x\n", __func__,
@@ -234,14 +172,12 @@ static uint8_t check_client_direct_request_ip(struct ip_addr *client_req_ip, uin
 	}
 	rtos_mutex_take(dhcps_ip_table_semaphore, RTOS_MAX_DELAY);
 
-	for (int i = 0; i < wifi_user_config.ap_sta_num; i++) {
-		if ((ip_table.ip_addr4[i] == ip_addr4 &&
-			 !(ip_table.client_mac[i][0] == hwaddr[0] &&
-			   ip_table.client_mac[i][1] == hwaddr[1] &&
-			   ip_table.client_mac[i][2] == hwaddr[2] &&
-			   ip_table.client_mac[i][3] == hwaddr[3] &&
-			   ip_table.client_mac[i][4] == hwaddr[4] &&
-			   ip_table.client_mac[i][5] == hwaddr[5]))) {
+	for (uint8_t i = 0; i < sta_num; i++) {
+		uint8_t ip = ip_table.ip_addr4[i];
+		uint8_t ip_index = ip - 1;
+		if ((ip == ip_addr4) &&
+			(!(memcmp(ip_table.client_mac[i], hwaddr, 6) == 0)) &&
+			(ip_table.ip_range[ip_index >> 5] & BIT(ip_index & 0x1F))) {
 			ip_addr4 = 0; // the ip is used
 			break;
 		}
@@ -270,7 +206,6 @@ void dump_client_table(void)
 	printf("\r\n");
 #endif
 }
-#endif //CONFIG_DHCPS_KEPT_CLIENT_INFO
 #endif
 
 /**
@@ -279,11 +214,14 @@ void dump_client_table(void)
   * @retval the usable index which represent the ip4_addr(ip) of allocated ip addr.
   */
 #if (!IS_USE_FIXED_IP)
-static uint8_t search_next_ip(void)
+static uint8_t search_next_ip(uint8_t *hwaddr)
 {
-	uint8_t range_count, offset_count;
+	struct rtw_client_list client_info = {0};
+	unsigned int k;
+	uint8_t i, j;
 	uint8_t start, end;
-	volatile uint8_t max_count;
+	uint8_t sta_num = wifi_user_config.ap_sta_num;
+
 	if (dhcps_addr_pool_set) {
 		start = (uint8_t)ip4_addr4(ip_2_ip4(&dhcps_addr_pool_start));
 		end = (uint8_t)ip4_addr4(ip_2_ip4(&dhcps_addr_pool_end));
@@ -292,13 +230,64 @@ static uint8_t search_next_ip(void)
 		end = 255;
 	}
 	rtos_mutex_take(dhcps_ip_table_semaphore, RTOS_MAX_DELAY);
-	for (range_count = 0; range_count < (max_count = 8); range_count++) {
-		for (offset_count = 0; offset_count < 32; offset_count++) {
-			if ((((ip_table.ip_range[range_count] >> offset_count) & 0x01) == 0)
-				&& (((range_count * 32) + (offset_count + 1)) >= start)
-				&& (((range_count * 32) + (offset_count + 1)) <= end)) {
+	/* If this MAC address has been allocated an address before, return the previously assigned address */
+	for (i = 0; i < sta_num; i++) {
+		if (memcmp(ip_table.client_mac[i], hwaddr, 6) == 0) {
+			uint8_t ip = ip_table.ip_addr4[i];
+			uint8_t ip_index = ip - 1;
+			if (ip_table.ip_range_offer[ip_index >> 5] & BIT(ip_index & 0x1F)) {
+#if (DEBUG_DHCPS)
+				printf("find allocated ip %d\r\n", ip);
+#endif
 				rtos_mutex_give(dhcps_ip_table_semaphore);
-				return ((range_count * 32) + (offset_count + 1));
+				return ip;
+			}
+		}
+	}
+
+	for (uint8_t range_count = 0; range_count < 8; range_count++) {
+		for (uint8_t offset_count = 0; offset_count < 32; offset_count++) {
+			uint8_t candidate_ip = range_count * 32 + offset_count + 1;
+			if ((((ip_table.ip_range_offer[range_count] >> offset_count) & 0x01) == 0)
+				&& (candidate_ip >= start)
+				&& (candidate_ip <= end)) {
+				ip_table.ip_range_offer[range_count] = ip_table.ip_range_offer[range_count] | BIT(offset_count);
+				for (i = 0; i < sta_num; i++) {
+					if ((ip_table.ip_addr4[i] == 0) || (ip_table.ip_addr4[i] == candidate_ip)) {
+						ip_table.ip_addr4[i] = candidate_ip;
+						memcpy(ip_table.client_mac[i], hwaddr, 6);
+#if (DEBUG_DHCPS)
+						printf("init ip %d\r\n", ((range_count * 32) + (offset_count + 1)));
+#endif
+						break;
+					}
+				}
+				if (i == sta_num) {
+					wifi_ap_get_connected_clients(&client_info);
+					unsigned int client_num = client_info.count;
+					for (j = 0; j < sta_num; j++) {
+						for (k = 0; k < client_num; k++) {
+							if (memcmp(ip_table.client_mac[j], client_info.mac_list[k].octet, 6) == 0) {
+								break;
+							}
+						}
+						/* find an invalid mac&ip,update it with a new record */
+						if (k == client_num) {
+							uint8_t invalid_ipaddr4 = ip_table.ip_addr4[j];
+							uint8_t invalid_index = invalid_ipaddr4 - 1;
+							ip_table.ip_range_offer[invalid_index >> 5] &= ~(1U << (invalid_index & 0x1F));
+							ip_table.ip_range[invalid_index >> 5] &= ~(1U << (invalid_index & 0x1F));
+							ip_table.ip_addr4[j] = candidate_ip;
+							memcpy(ip_table.client_mac[j], hwaddr, 6);
+#if (DEBUG_DHCPS)
+							printf("replace ip %d with %d\r\n", invalid_ipaddr4, ((range_count * 32) + (offset_count + 1)));
+#endif
+							break;
+						}
+					}
+				}
+				rtos_mutex_give(dhcps_ip_table_semaphore);
+				return candidate_ip;
 			}
 		}
 	}
@@ -519,14 +508,12 @@ static void dhcps_send_offer(struct pbuf *packet_buffer)
 	dhcp_message_total_options_lenth = DHCP_OPTION_TOTAL_LENGTH_MAX;
 	dhcp_message_repository = (struct dhcp_msg *)newly_malloc_packet_buffer->payload;
 #if (!IS_USE_FIXED_IP)
-#ifdef CONFIG_DHCPS_KEPT_CLIENT_INFO
-	temp_ip = check_client_request_ip(&client_request_ip, client_addr);
-#endif
+	temp_ip = dhcps_search_client_ip(client_addr);
 	if (temp_ip == 0) {
 		temp_ip = check_client_direct_request_ip(&client_request_ip, client_addr);
 		/* create new client ip */
 		if (temp_ip == 0) {
-			temp_ip = search_next_ip();
+			temp_ip = search_next_ip(client_addr);
 		}
 	}
 #if (DEBUG_DHCPS)
@@ -714,7 +701,6 @@ uint8_t dhcps_handle_state_machine_change(uint8_t option_message_type)
 			} else {
 				dhcp_server_state_machine = DHCP_SERVER_STATE_NAK;
 			}
-#ifdef CONFIG_DHCPS_KEPT_CLIENT_INFO
 		} else if (dhcp_server_state_machine == DHCP_SERVER_STATE_IDLE) {
 			uint8_t ip_addr4 = check_client_direct_request_ip(&client_request_ip, client_addr);
 
@@ -725,7 +711,6 @@ uint8_t dhcps_handle_state_machine_change(uint8_t option_message_type)
 			} else {
 				dhcp_server_state_machine = DHCP_SERVER_STATE_NAK;
 			}
-#endif
 		} else {
 			dhcp_server_state_machine = DHCP_SERVER_STATE_NAK;
 		}
@@ -869,14 +854,11 @@ static void dhcps_receive_udp_packet_handler(void *arg, struct udp_pcb *udp_pcb,
 			}
 #if (!IS_USE_FIXED_IP)
 			mark_ip_in_table((uint8_t)ip4_addr4(ip_2_ip4(&dhcps_allocated_client_address)));
-#ifdef CONFIG_DHCPS_KEPT_CLIENT_INFO
-			save_client_addr(&dhcps_allocated_client_address, client_addr);
 			memset(&client_request_ip, 0, sizeof(client_request_ip));
 			memset(&client_addr, 0, sizeof(client_addr));
 			memset(&dhcps_allocated_client_address, 0, sizeof(dhcps_allocated_client_address));
 #if (DEBUG_DHCPS)
 			dump_client_table();
-#endif
 #endif
 #endif
 			dhcp_server_state_machine = DHCP_SERVER_STATE_IDLE;
@@ -1072,18 +1054,14 @@ void dhcps_init(struct netif *pnetif)
 {
 	uint8_t *ip;
 //	printf("dhcps_init,wlan:%c\n\r",pnetif->name[1]);
-#ifdef CONFIG_DHCPS_KEPT_CLIENT_INFO
+	memset(&ip_table, 0, sizeof(struct table));
 	ip_table.client_mac = rtos_mem_zmalloc(wifi_user_config.ap_sta_num * 6 * sizeof(uint8_t));
 	ip_table.ip_addr4 = rtos_mem_zmalloc(wifi_user_config.ap_sta_num * sizeof(uint8_t));
 
-	memset(ip_table.client_mac, 0, wifi_user_config.ap_sta_num * 6 * sizeof(uint8_t));
-	memset(ip_table.ip_addr4, 0, wifi_user_config.ap_sta_num * sizeof(uint8_t));
-	memset(ip_table.ip_range, 0, sizeof(ip_table.ip_range));
 //	int i = 0;
 //	for(i=0; i< DHCPS_MAX_CLIENT_NUM+2; i++)
 //		memset(ip_table.client_mac[i], 0, 6);
 //	dump_client_table();
-#endif
 
 	dhcps_netif = pnetif;
 

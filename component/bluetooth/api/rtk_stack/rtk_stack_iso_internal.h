@@ -18,6 +18,8 @@ extern "C" {
 
 #if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
 
+#define INVALID_CIG_ID        0xFF
+#define INVALID_CIS_ID        0xFF
 typedef enum {
 	RTK_BLE_CIS_INITIATOR_DISABLE = 0,
 	RTK_BLE_CIS_INITIATOR_ENABLE,
@@ -66,6 +68,7 @@ typedef struct {
 
 typedef struct {
 	rtk_ble_cis_initiator_status_t status;
+	uint8_t cig_id;
 	uint8_t sdu_interval;
 	uint8_t cis_num;
 	uint16_t conn_handle;
@@ -80,6 +83,7 @@ typedef struct {
 
 typedef struct {
 	rtk_ble_cis_acceptor_status_t status;
+	uint8_t cig_id;
 	uint8_t sdu_interval;
 	uint8_t cis_num;
 	uint16_t conn_handle;

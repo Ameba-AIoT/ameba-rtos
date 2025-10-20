@@ -354,7 +354,8 @@ static COMMAND_TABLE   shell_cmd_table[] = {
 	(defined(CONFIG_AMEBALITE) && defined(CONFIG_ARM_CORE_CM4)) || \
 	(defined(CONFIG_AMEBADPLUS) && defined(CONFIG_ARM_CORE_CM4)) || \
 	(defined(CONFIG_AMEBAGREEN2) && defined(CONFIG_ARM_CORE_CM4_KM4TZ)) || \
-	(defined(CONFIG_AMEBAL2) && defined(CONFIG_ARM_CORE_CM4_KM4TZ))
+	(defined(CONFIG_AMEBAL2) && defined(CONFIG_ARM_CORE_CM4_KM4TZ)) || \
+	(defined(CONFIG_RTL8720F) && defined(CONFIG_ARM_CORE_CM4_KM4TZ))
 	{
 		(const u8 *)"EFUSE",	8, cmd_efuse_protect,	(const u8 *)"\tEFUSE \n"
 		"\t\t wmap addr(hex) len(hex) data(hex)\n"

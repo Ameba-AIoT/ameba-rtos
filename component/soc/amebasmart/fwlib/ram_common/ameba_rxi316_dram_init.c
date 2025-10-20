@@ -1031,7 +1031,7 @@ void rxi316_DynSre_init(u32 IdleCnt, u32 state)
 {
 	DDRC_TypeDef *ddrc = DDRC_DEV;
 
-	if (SYSCFG_RLVersion() < SYSCFG_CUT_VERSION_D) {
+	if (EFUSE_GetChipVersion() < SYSCFG_CUT_VERSION_D) {
 		IdleCnt = 0;	/* Keep Dram Active to fix srex issue */
 	} else {
 		/* CR_DPERF0[15:0].DIW < CR_DRR[23:8].tREF - 0x46 atfer D-Cut */
