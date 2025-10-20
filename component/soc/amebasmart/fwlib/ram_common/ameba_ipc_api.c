@@ -290,7 +290,7 @@ u32 IPC_SEMTake(u32 SEM_Idx, u32 timeout)
 				return TRUE;
 			} else {
 				if (timeout == 0) {
-					return FALSE;
+					goto fail;
 				}
 
 				/* yield os for high priority thread*/
@@ -310,7 +310,7 @@ u32 IPC_SEMTake(u32 SEM_Idx, u32 timeout)
 			Sema_Stat = HAL_READ16(IPC_IPC_SEMA_BASE, 0x0);
 			if (Sema_Stat & BIT(SEM_Idx)) {
 				if (timeout == 0) {
-					return FALSE;
+					goto fail;
 				}
 
 				/* yield os for high priority thread*/
@@ -328,6 +328,10 @@ u32 IPC_SEMTake(u32 SEM_Idx, u32 timeout)
 
 	}
 
+fail:
+	if (ipc_exit_func) {
+		ipc_exit_func(RTOS_CRITICAL_SEMA);
+	}
 	return FALSE;
 }
 

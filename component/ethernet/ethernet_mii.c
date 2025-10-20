@@ -59,7 +59,7 @@ typedef enum prehandler_ret(*prehandler_func_t)(struct pbuf **p, u8 *buf, u32 le
 
 prehandler_func_t rmii_rx_prehandler = NULL;
 
-void mii_patch_function(prehandler_func_t (*pfunc1))
+void mii_patch_function(prehandler_func_t pfunc1)
 {
 	rmii_rx_prehandler = pfunc1;
 }

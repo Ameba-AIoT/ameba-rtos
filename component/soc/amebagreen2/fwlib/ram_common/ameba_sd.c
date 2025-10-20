@@ -2432,16 +2432,6 @@ SD_RESULT SD_ConfigBusWidth(SD_HdlTypeDef *hsd, u8 WideMode)
 		return SD_ERROR;
 	}
 
-#ifdef AMEBAGREEN2_TODO
-	/* kw: need to set block size again after setting bus width? */
-	/* CMD16: Set Block Size for Card */
-	errorstate = SDMMC_CmdBlockLength(SDIOx, SD_BLOCK_SIZE);
-	if (errorstate != SD_ERROR_NONE) {
-		hsd->ErrorCode |= errorstate;
-		return SD_ERROR;
-	}
-#endif
-
 	return SD_OK;
 }
 
