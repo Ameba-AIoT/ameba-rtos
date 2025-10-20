@@ -213,7 +213,7 @@ u32 IPC_SEMTake(IPC_SEM_IDX SEM_Idx, u32 timeout)
 			break;
 		} else {
 			if (timeout == 0) {
-				return _FALSE;
+				goto fail;
 			}
 
 			if (ipc_delay) {
@@ -235,7 +235,7 @@ u32 IPC_SEMTake(IPC_SEM_IDX SEM_Idx, u32 timeout)
 		RTK_LOGS(TAG, "CPU %d take sema %d for pxid %d fail: cpuid %d pxid %d has taken the sema\n", CPUID, SEM_Idx, PXID_Idx[SEM_Idx], CPUID_idx - 1, PXID_idx);
 
 		irq_enable_restore(IrqStatus);
-		return FALSE;
+		goto fail;
 	}
 
 	if (PXID_Idx[SEM_Idx] == IPC_MAX_VALID_PXID) {
@@ -246,6 +246,12 @@ u32 IPC_SEMTake(IPC_SEM_IDX SEM_Idx, u32 timeout)
 
 	irq_enable_restore(IrqStatus);
 	return TRUE;
+
+fail:
+	if (ipc_exit) {
+		ipc_exit();
+	}
+	return FALSE;
 }
 
 /**
