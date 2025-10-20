@@ -213,7 +213,7 @@ u32 IPC_SEMTake(IPC_SEM_IDX SEM_Idx, u32 timeout)
 			break;
 		} else {
 			if (timeout == 0) {
-				return FALSE;
+				goto fail;
 			}
 
 			if (ipc_delay) {
@@ -236,7 +236,7 @@ u32 IPC_SEMTake(IPC_SEM_IDX SEM_Idx, u32 timeout)
 				 PXID_idx);
 
 		irq_enable_restore(IrqStatus);
-		return FALSE;
+		goto fail;
 	}
 
 	if (PXID_Idx[SEM_Idx] == IPC_MAX_VALID_PXID) {
@@ -247,6 +247,12 @@ u32 IPC_SEMTake(IPC_SEM_IDX SEM_Idx, u32 timeout)
 
 	irq_enable_restore(IrqStatus);
 	return TRUE;
+
+fail:
+	if (ipc_exit) {
+		ipc_exit(RTOS_CRITICAL_SEMA);
+	}
+	return FALSE;
 }
 
 /**

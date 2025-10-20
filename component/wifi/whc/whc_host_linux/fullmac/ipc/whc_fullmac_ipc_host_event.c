@@ -86,6 +86,8 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 #ifdef CONFIG_P2P
 	u16 frame_type;
 #endif
+	u8 wlan_idx;
+	struct rtw_wpa_4way_status	rpt_4way = {0};
 
 	if (!global_idev.event_ch) {
 		dev_err(global_idev.fullmac_dev, "%s,%s: event_priv_t is NULL in!\n", "event", __func__);
@@ -120,6 +122,22 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 
 	if (event == RTW_EVENT_STA_DISASSOC) {
 		dev_dbg(global_idev.fullmac_dev, "%s: sta disassoc \n", __func__);
+
+		wlan_idx = 1;
+		dev_dbg(global_idev.fullmac_dev, "[fullmac]: wlan_idx = %d, is_need_4way= %d, is_4way_ongoing =%d", wlan_idx, global_idev.is_need_4way[wlan_idx],
+				global_idev.is_4way_ongoing[wlan_idx]);
+		//notify NP coex, 4-way handshake end
+		if (global_idev.is_need_4way[wlan_idx] && global_idev.is_4way_ongoing[wlan_idx] > 0) {
+			global_idev.is_4way_ongoing[wlan_idx] --;
+			if (0 == global_idev.is_4way_ongoing[wlan_idx]) {// no client ongoing 4-way process, then notify NP end. otherwise, not notify 4-way end.
+				rpt_4way.is_start = false;//
+				rpt_4way.is_success = true;//4-way process end
+				rpt_4way.wlan_idx = wlan_idx;
+				whc_fullmac_host_wpa_4way_status_indicate(&rpt_4way);
+				dev_dbg(global_idev.fullmac_dev, "fullmac indicate 4-way end\n");
+			}
+		}
+
 		cfg80211_del_sta(global_idev.pndev[1], buf, GFP_ATOMIC);
 	}
 
@@ -568,7 +586,7 @@ int whc_fullmac_host_event_init(struct whc_device *idev)
 	if (!event_priv->api_workqueue) {
 		dev_err(global_idev.fullmac_dev, "%s: Failed to create workqueue\n", "event");
 		dma_free_coherent(event_ch->pdev, DEV_REQ_NETWORK_INFO_MAX_LEN,
-				event_priv->dev_req_network_info, event_priv->dev_req_network_info_phy);
+						  event_priv->dev_req_network_info, event_priv->dev_req_network_info_phy);
 		dma_free_coherent(event_ch->pdev, sizeof(struct whc_ipc_host_req_msg), event_priv->preq_msg, event_priv->req_msg_phy_addr);
 		return -ENOMEM;
 	}
@@ -584,11 +602,12 @@ void whc_fullmac_host_event_deinit(void)
 	aipc_ch_t	*event_ch = global_idev.event_ch;
 
 	/* free sema to wakeup the message queue task */
-	if (event_priv->api_workqueue)
+	if (event_priv->api_workqueue) {
 		destroy_workqueue(event_priv->api_workqueue);
+	}
 
 	dma_free_coherent(event_ch->pdev, DEV_REQ_NETWORK_INFO_MAX_LEN,
-			  event_priv->dev_req_network_info, event_priv->dev_req_network_info_phy);
+					  event_priv->dev_req_network_info, event_priv->dev_req_network_info_phy);
 	dma_free_coherent(event_ch->pdev, sizeof(struct whc_ipc_host_req_msg), event_priv->preq_msg, event_priv->req_msg_phy_addr);
 
 	/* deinitialize the mutex to send event_priv message. */
