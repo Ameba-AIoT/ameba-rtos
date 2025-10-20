@@ -52,21 +52,6 @@
 #define USBH_HID_CONSUMER_STOP                     0xB7
 
 /* Exported types ------------------------------------------------------------*/
-typedef struct {
-	u8 *buf;
-	__IO u16 buf_len;     /* buf valid len */
-} usb_ringbuf_t;
-
-typedef struct {
-	usb_ringbuf_t *list_node;
-	u8 *buf;
-
-	__IO u32 head;
-	__IO u32 tail;
-
-	u16 item_cnt;
-	u16 item_size;
-} usb_ringbuf_manager_t;
 
 /* USB HID descriptor */
 typedef struct {

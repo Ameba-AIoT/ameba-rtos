@@ -12,6 +12,7 @@ int whc_host_init(void)
 	int ret = 0;
 #endif
 	struct whc_device *idev = &global_idev;
+	int i;
 
 #if defined(CONFIG_FULLMAC_HCI_SDIO)
 	idev->intf_priv = &whc_sdio_priv;
@@ -35,6 +36,11 @@ int whc_host_init(void)
 		goto exit;
 	}
 #endif
+
+	for (i = 0; i < WHC_MAX_NET_PORT_NUM; i++) {
+		global_idev.is_need_4way[i] = 0;
+		global_idev.is_4way_ongoing[i] = 0;
+	}
 
 	memset(&global_idev.wifi_user_config, 0, sizeof(struct wifi_user_conf));
 #if !defined(CONFIG_WHC_BRIDGE)

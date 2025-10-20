@@ -24,7 +24,8 @@ from PyQt5.QtCore import QObject, pyqtSignal
 import os
 
 APP_NAME = "AmebaSerialServer"
-APP_VERSION = "v1.0.1"
+version = "1.0.3"
+APP_VERSION = f"v{version}"
 PORT = 58916
 MAX_CONNECTIONS = 10
 INSTALLER = 1
@@ -418,24 +419,23 @@ class AmebaSerialServer:
                 #rlist, _, _ = select.select([ser], [], [], 0.001)
                 #if rlist:
                 #    raw_data = ser.read(ser.in_waiting)
-                if ser.in_waiting > 0:
-                    raw_data = ser.read(ser.in_waiting)
-                    if not raw_data:
-                        continue
+                raw_data = ser.read(1)
+                if not raw_data:
+                    continue
+                raw_data += ser.read(ser.in_waiting)
+                base64_data = base64.b64encode(raw_data).decode('utf-8')
+                self.logger.debug(f"[Serial Receive] Port: {port} | Raw Length: {len(raw_data)} | Base64 Length: {len(base64_data)}")
 
-                    base64_data = base64.b64encode(raw_data).decode('utf-8')
-                    self.logger.debug(f"[Serial Receive] Port: {port} | Raw Length: {len(raw_data)} | Base64 Length: {len(base64_data)}")
+                message = {
+                    "type": "serial_data",
+                    "port": port,
+                    "data": base64_data
+                }
+                with self.tcp_lock:
+                    for client_socket in list(self.connected_clients.keys()):
+                        self.send_to_client(client_socket, message)
 
-                    message = {
-                        "type": "serial_data",
-                        "port": port,
-                        "data": base64_data
-                    }
-                    with self.tcp_lock:
-                        for client_socket in list(self.connected_clients.keys()):
-                            self.send_to_client(client_socket, message)
-
-                    self.logger.debug(f"[Serial Receive] tcp send complete")
+                self.logger.debug(f"[Serial Receive] tcp send complete")
             except Exception as e:
                 # If the serial port is pulled out, an exception will be thrown here
                 self.logger.error(f"Exception occurred while listening to serial port {port}, listening stopped.", exc_info=True)

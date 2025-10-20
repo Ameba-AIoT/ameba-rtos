@@ -76,20 +76,6 @@ void usbh_composite_hid_status_dump_thread(void)
 #endif
 
 #if USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG
-static void usb_list_dump_status(void)
-{
-	usbh_composite_hid_t *hid = &usbh_composite_hid;
-	usb_ringbuf_manager_t *handle = &(hid->report_msg);
-	usb_ringbuf_t *pbuf_data;
-	int idx;
-
-	for (idx = 0; idx < handle->item_cnt; idx++) {
-		pbuf_data = &(handle->list_node[idx]);
-		RTK_LOGS(TAG, RTK_LOG_INFO, "HID rb init %d-0x%08x-%d-%d-%d\n", idx, pbuf_data->buf,
-				 pbuf_data->buf_len, handle->head, handle->tail);
-	}
-}
-
 // Usage Page
 static const char *usbh_composite_hid_get_usage_page_name(u32 usage_page)
 {
@@ -156,17 +142,53 @@ static void usbh_composite_hid_print_item(const usbh_composite_hid_item_t *item)
 #endif
 
 /* can be common code */
-static int usb_ringbuf_is_empty(usb_ringbuf_manager_t *handle)
+/**
+  * @brief  Get the valid frame count
+  * @param  handle: Pointer to the ringbuf control structure
+  * @retval return frame count
+  */
+u32 usb_ringbuf_get_count(usb_ringbuf_manager_t *handle)
+{
+	u32 h, t;
+
+	h = handle->head;
+	t = handle->tail;
+
+	if (t >= h) {
+		return t - h;
+	} else {
+		return t + handle->item_cnt - h;
+	}
+}
+
+/**
+  * @brief  Check the ringbuf is empty
+  * @param  handle: Pointer to the ringbuf control structure
+  * @retval if empty return 1, else return 0
+  */
+int usb_ringbuf_is_empty(usb_ringbuf_manager_t *handle)
 {
 	return handle->head == handle->tail;
 }
 
-static int usb_ringbuf_is_full(usb_ringbuf_manager_t *handle)
+/**
+  * @brief  Check the ringbuf is full
+  * @param  handle: Pointer to the ringbuf control structure
+  * @retval if full return 1, else return 0
+  */
+int usb_ringbuf_is_full(usb_ringbuf_manager_t *handle)
 {
 	return ((handle->tail + 1) % (handle->item_cnt)) == handle->head;
 }
 
-static int usb_ringbuf_add_tail(usb_ringbuf_manager_t *handle, u8 *buf, u32 size)
+/**
+  * @brief  Add a new frame to the ringbuf tail
+  * @param  handle: Pointer to the ringbuf control structure
+  * @param  buf: write data handle
+  * @param  size: write data size
+  * @retval if success return HAL_ERR_PARA, else return HAL_OK
+  */
+int usb_ringbuf_add_tail(usb_ringbuf_manager_t *handle, u8 *buf, u32 size)
 {
 	usb_ringbuf_t *target;
 	u32 cur_tail = handle->tail;
@@ -191,7 +213,14 @@ static int usb_ringbuf_add_tail(usb_ringbuf_manager_t *handle, u8 *buf, u32 size
 	return HAL_OK;
 }
 
-static u32 usb_ringbuf_remove_head(usb_ringbuf_manager_t *handle, u8 *buf, u32 size)
+/**
+  * @brief  Read a frame from the ringbuf head
+  * @param  handle: Pointer to the ringbuf control structure
+  * @param  buf: read data handle
+  * @param  size: read max data size
+  * @retval return the copy data length
+  */
+u32 usb_ringbuf_remove_head(usb_ringbuf_manager_t *handle, u8 *buf, u32 size)
 {
 	usb_ringbuf_t *target;
 	u32 cur_head = handle->head;
@@ -207,13 +236,6 @@ static u32 usb_ringbuf_remove_head(usb_ringbuf_manager_t *handle, u8 *buf, u32 s
 
 	target = &(handle->list_node[cur_head]);
 
-#if USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG
-	if (target->buf < (handle->buf) || target->buf - (handle->buf) > (handle->item_cnt * handle->item_size)) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "addr 0x%08x-0x%08x\n", target->buf, handle->buf);
-		usb_list_dump_status();
-	}
-#endif
-
 	if (copy_len > target->buf_len) {
 		copy_len = target->buf_len;
 	}
@@ -228,7 +250,100 @@ static u32 usb_ringbuf_remove_head(usb_ringbuf_manager_t *handle, u8 *buf, u32 s
 	return copy_len;
 }
 
-static int usb_list_manager_init(usb_ringbuf_manager_t *handle, u16 cnt, u16 size, u8 cache_align)
+/*
+	The following APIs are used to write part of the data to ringbuf, take UAC as example:
+	audio writes data of various lengths to ringbuf, and USB sends them out with dma mode.
+	So there are two requirements: 1) the tx buf_addr should be cache aligned, 2) the length of the sent data is the length of one frame.
+
+	Therefore, usb needs to split the consecutive data transmitted from audio one by one and save them,
+	and ensure that the data at the end that does not meet the requirement of one frame is saved and can be combined with the data of the next time to form a complete data frame
+	USB achieves this specifically through ringbuf, where each item saves a frame of data
+
+	AudioData:     data1 data2 data3 data4 data4.......
+	USB Ringbuf:   frame1pad frame2pad frame3pad frame4pad ....
+
+	"Usb_ringbuf_write_partial" is used to write part of the data to ringbuf. The caller needs to control the amount of data written, which must not exceed the length of one frame
+	"Usb_ringbuf_finish_write" is used to indicate that this frame has been written, and the write idx switch to next position
+	"Usb_ringbuf_write_partial" combines "Usb_ringbuf_finish_write" to save the frame to the ringbuffer
+*/
+
+/**
+  * @brief  Write partial data to the tail
+  * @param  handle: Pointer to the ringbuf control structure
+  * @param  buf: write data handle
+  * @param  size: write data size
+  * @retval if full return 1, else return 0
+  */
+int usb_ringbuf_write_partial(usb_ringbuf_manager_t *handle, u8 *buf, u32 size)
+{
+	usb_ringbuf_t *target;
+	u32 cur_tail = handle->tail;
+	u32 remain = handle->item_size - handle->written;
+
+	if (size > remain) {
+		size = remain;
+	}
+
+	target = &(handle->list_node[cur_tail]);
+
+	usb_os_memcpy((void *)(target->buf + handle->written), (void *)buf, size);
+	handle->written += size;
+	target->buf_len = handle->written;
+
+	mem_sync();
+
+	return size;
+}
+
+/**
+  * @brief  finish write a frame
+  * @retval HAL_OK
+  */
+int usb_ringbuf_finish_write(usb_ringbuf_manager_t *handle)
+{
+	handle->tail = (handle->tail + 1) % (handle->item_cnt);
+	handle->written = 0;
+
+	return HAL_OK;
+}
+
+/*
+	UAC use ringbuf memory for transmission, so the mmeory can not be overwritten until get the complete interrupt
+	so call "usb_ringbuf_get_head" to get the buffer handle, and do the transmission
+	and call "usb_ringbuf_release_head" to release the buffer in the complete interrupt
+	just get the head, but not change the head idx
+*/
+usb_ringbuf_t *usb_ringbuf_get_head(usb_ringbuf_manager_t *handle)
+{
+	usb_ringbuf_t *target;
+	u32 cur_head = handle->head;
+
+	if (usb_ringbuf_is_empty(handle)) {
+		return NULL;
+	}
+
+	target = &(handle->list_node[cur_head]);
+
+	mem_sync();
+
+	return target;
+}
+
+/* release the head */
+int usb_ringbuf_release_head(usb_ringbuf_manager_t *handle)
+{
+	u32 cur_head = handle->head;
+
+	if (usb_ringbuf_is_empty(handle)) {
+		return 0;
+	}
+
+	handle->head = (cur_head + 1) % (handle->item_cnt);
+
+	return 0;
+}
+
+int usb_ringbuf_manager_init(usb_ringbuf_manager_t *handle, u16 cnt, u16 size, u8 cache_align)
 {
 	usb_ringbuf_t *pbuf_data;
 	u16 item_length = size;
@@ -242,6 +357,7 @@ static int usb_list_manager_init(usb_ringbuf_manager_t *handle, u16 cnt, u16 siz
 		item_length = CACHE_LINE_ALIGMENT(size);
 	}
 
+	handle->written = 0;
 	handle->item_cnt = cnt;
 	handle->item_size = item_length;
 
@@ -269,7 +385,7 @@ static int usb_list_manager_init(usb_ringbuf_manager_t *handle, u16 cnt, u16 siz
 	return HAL_OK;
 }
 
-static int usb_list_manager_deinit(usb_ringbuf_manager_t *handle)
+int usb_ringbuf_manager_deinit(usb_ringbuf_manager_t *handle)
 {
 	if (handle->buf != NULL) {
 		usb_os_mfree(handle->buf);
@@ -1034,7 +1150,7 @@ int usbh_composite_hid_init(usbh_composite_host_t *driver, usbh_composite_hid_us
 		}
 	}
 
-	usb_list_manager_init(&(hid->report_msg), USBH_COMPOSITE_HID_MST_COUNT, USBH_COMPOSITE_HID_MSG_LENGTH, 0);
+	usb_ringbuf_manager_init(&(hid->report_msg), USBH_COMPOSITE_HID_MST_COUNT, USBH_COMPOSITE_HID_MSG_LENGTH, 0);
 
 	if (rtos_task_create(&(hid->msg_parse_task), ((const char *)"usbh_composite_hid_parse"), usbh_composite_hid_parse_thread,
 						 NULL, 4 * 1024U, USBH_COMPOSITE_HID_THREAD_PRIORITY) != RTK_SUCCESS) {
@@ -1064,7 +1180,7 @@ int usbh_composite_hid_deinit(void)
 		hid->hid_ctrl_buf = NULL;
 	}
 
-	usb_list_manager_deinit(&(hid->report_msg));
+	usb_ringbuf_manager_deinit(&(hid->report_msg));
 
 	return HAL_OK;
 }
@@ -1089,7 +1205,7 @@ int usbh_composite_hid_handle_report_desc(usb_host_t *host)
 				hid->report_desc_status = USBH_HID_REPORT_GET_DESC;
 				ret = HAL_BUSY;
 			} else if (ret != HAL_BUSY) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "IN alt err\n");
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "IN set alt err\n");
 				usb_os_sleep_ms(100);
 			}
 		} else if (hid->report_desc_status == USBH_HID_REPORT_GET_DESC) {
@@ -1100,7 +1216,7 @@ int usbh_composite_hid_handle_report_desc(usb_host_t *host)
 				hid->report_desc = hid->hid_ctrl_buf;
 				usbh_composite_hid_parse_hid_report_desc(hid->report_desc, hid->hid_desc.wDescriptorLength);
 			} else if (ret != HAL_BUSY) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "IN alt err\n");
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "IN get report err\n");
 				usb_os_sleep_ms(100);
 			}
 		}
