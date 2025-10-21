@@ -51,7 +51,11 @@ jobs:
             git add cmake/toolchain/ameba-toolchain-asdk-12.3.1.cmake
             need_commit=1
           fi
-
+          if ! grep -q 'if(1)' cmake/toolchain/ameba-toolchain-vsdk-10.3.1.cmake; then
+            sed -i 's/if(USE_ALIYUN_URL)/if(1)/g' cmake/toolchain/ameba-toolchain-vsdk-10.3.1.cmake
+            git add cmake/toolchain/ameba-toolchain-vsdk-10.3.1.cmake
+            need_commit=1
+          fi
           if [ "$need_commit" -eq 1 ] ; then
             git commit -m "automated sync from github"
           fi
