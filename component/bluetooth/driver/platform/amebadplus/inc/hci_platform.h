@@ -26,7 +26,7 @@
 #define HCI_BT_COEX_ENABLE         1
 #define HCI_BT_COEX_SW_MAILBOX     0
 
-#define HCI_BT_KEEP_WAKE           0
+#define HCI_BT_KEEP_AWAKE          0
 
 typedef enum {
 	VOLTAGE_3V3 = 0,

@@ -645,11 +645,11 @@ static int usbd_composite_uac_ep_buf_ctrl_init(usbd_composite_uac_buf_ctrl_t *bu
 
 		buf_list_cnt = usbd_composite_uac_get_ring_buf_cnt(USB_SPEED_FULL);
 #if USBD_UAC_ISOC_XFER_DEBUG
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Buf mps len %d-%d(%d %d %d), cnt %d\n", buf_ctrl->isoc_mps, CACHE_LINE_ALIGMENT(buf_ctrl->isoc_mps), params->ch_cnt,
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Buf mps len %d-%d(%d %d %d), cnt %d\n", buf_ctrl->isoc_mps, CACHE_LINE_ALIGNMENT(buf_ctrl->isoc_mps), params->ch_cnt,
 				 params->byte_width, params->sampling_freq, buf_list_cnt);
 #endif
 
-		buf_ctrl->isoc_buf = (u8 *)usb_os_malloc(CACHE_LINE_ALIGMENT(buf_ctrl->isoc_mps) * buf_list_cnt);
+		buf_ctrl->isoc_buf = (u8 *)usb_os_malloc(CACHE_LINE_ALIGNMENT(buf_ctrl->isoc_mps) * buf_list_cnt);
 		if (buf_ctrl->isoc_buf == NULL) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Can not get isoc buf mem\n");
 			return HAL_ERR_MEM;
@@ -716,12 +716,12 @@ static int usbd_composite_uac_set_config(usb_dev_t *dev, u8 config)
 		pbuf_data = &(pbuf_ctrl->buf_list_node[idx]);
 		pbuf_data->buf_valid_len = 0;
 		pbuf_data->is_zero_pkt = 0;
-		pbuf_data->buf_raw = pbuf_ctrl->isoc_buf + CACHE_LINE_ALIGMENT(pbuf_ctrl->isoc_mps) * idx;
+		pbuf_data->buf_raw = pbuf_ctrl->isoc_buf + CACHE_LINE_ALIGNMENT(pbuf_ctrl->isoc_mps) * idx;
 		usbd_composite_uac_list_add_tail(&(pbuf_ctrl->empty_list), pbuf_data);
 	}
 
 	//usbd_audio_cfg_t *paudio_cfg = &(pbuf_ctrl->audio_config);
-	//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Fmt %d-%d-%d speed %d mps %d-%d cnt %d\n", paudio_cfg->ch_cnt , paudio_cfg->byte_width , paudio_cfg->sampling_freq, cdev->dev->dev_speed, pbuf_ctrl->isoc_mps, CACHE_LINE_ALIGMENT(pbuf_ctrl->isoc_mps), buf_list_cnt);
+	//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Fmt %d-%d-%d speed %d mps %d-%d cnt %d\n", paudio_cfg->ch_cnt , paudio_cfg->byte_width , paudio_cfg->sampling_freq, cdev->dev->dev_speed, pbuf_ctrl->isoc_mps, CACHE_LINE_ALIGNMENT(pbuf_ctrl->isoc_mps), buf_list_cnt);
 
 	pbuf_data = usbd_composite_uac_list_remove_head(&(pbuf_ctrl->empty_list));
 	if (NULL == pbuf_data) {

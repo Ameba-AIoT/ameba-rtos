@@ -340,7 +340,7 @@ static void bt_power_on(void)
 	set_reg_value((u32)(&(WLAFE_BASE->WLAFE_WLRFC_CTRL)), BIT3, 0);                 /* when WL RFAFE enter power off, keep WLRFC not power off */
 	set_reg_value(SYSTEM_CTRL_BASE + REG_LSYS_FEN_GRP1, BIT1, 1);                   /* release BTON reset */
 	osif_delay_us(100);
-	if (HCI_BT_KEEP_WAKE) {
+	if (HCI_BT_KEEP_AWAKE) {
 		set_reg_value(SYSTEM_CTRL_BASE + REG_LSYS_BT_CTRL0, BIT13, 1);              /* enable HOST_WAKE_BT */
 	}
 }

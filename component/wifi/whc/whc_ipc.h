@@ -29,6 +29,9 @@
 #include "os_wrapper.h"
 #include "wifi_api.h"
 #include "wifi_intf_drv_to_app_internal.h"
+#ifdef CONFIG_WIFI_TUNNEL
+#include "wifi_api_wtn.h"
+#endif
 #endif
 /* -------------------------------- Defines --------------------------------- */
 /*msg q task*/
@@ -74,6 +77,7 @@
 
 #ifdef CONFIG_WIFI_TUNNEL
 #define whc_dev_wtn_rnat_ap_init                         whc_ipc_dev_wtn_rnat_ap_init
+#define whc_dev_wtn_ota_callback_indicate                whc_ipc_dev_wtn_ota_callback_indicate
 #ifdef CONFIG_WTN_SOCKET_APP
 #define whc_dev_wtn_socket_send                          whc_ipc_dev_wtn_socket_send
 #define whc_dev_wtn_socket_init                          whc_ipc_dev_wtn_socket_init
@@ -195,6 +199,7 @@ int whc_ipc_dev_ip_in_table_indicate(u8 gate, u8 ip);
 #ifdef CONFIG_WIFI_TUNNEL
 int whc_ipc_host_api_wtn_identity_key_calc(u8 *password, u32 password_len);
 void whc_ipc_dev_wtn_rnat_ap_init(u8 enable);
+int whc_ipc_dev_wtn_ota_callback_indicate(u8 *buf, u16 len);
 #ifdef CONFIG_WTN_SOCKET_APP
 int whc_ipc_dev_wtn_socket_send(u8 *buf, u32 len);
 void whc_ipc_dev_wtn_socket_init(u8 enable, u8 rnat_ap_start);

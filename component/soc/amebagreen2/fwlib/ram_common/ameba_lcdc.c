@@ -12,7 +12,7 @@ u32 LCDC_SYS_CLK = 200000000;//200MHz
 u32 LCDC_RccEnable(void)
 {
 	u32 RegVal;
-	u32 LCDC_DMA_CLK;
+	u32 LCDC_DMA_CLK = 40000000;
 
 	if (SYSCFG_CHIPType_Get() == CHIP_TYPE_FPGA) {
 		/* System dummy reg: [7:5] = 111, voclk = 80MHz */
@@ -225,6 +225,26 @@ void LCDC_MCUInit(LCDC_TypeDef *LCDCx, LCDC_MCUInitTypeDef *LCDC_MCUInitStruct)
 }
 
 /**
+ * @brief  Configure the LCDC to work in MCU IO mode.
+ * @param  LCDCx: Where LCDCx can be LCDC.
+ * @retval None
+ */
+void LCDC_MCUIOMode(LCDC_TypeDef *LCDCx)
+{
+	LCDC_Cmd(LCDC, DISABLE);
+
+	/* configure mcu io/dma mode to io mode */
+	LCDCx->LCDC_MCU_CFG |= LCDC_BIT_MCU_IO_MODE_EN;
+	LCDCx->LCDC_DMA_MODE_CFG &= ~LCDC_BIT_DMA_TE_MODE;
+
+	/* configure mcu sync mode for io mode */
+	LCDCx->LCDC_MCU_CFG &= ~LCDC_MASK_MCU_SYNC_MODE;
+	LCDCx->LCDC_MCU_CFG |= LCDC_MCU_SYNC_MODE(LCDC_MCU_SYNC_WITH_INTERNAL_CLK);
+
+	LCDC_Cmd(LCDC, ENABLE);
+}
+
+/**
  * @brief  Configure the LCDC to work in MCU interface's DMA mode.
  * @param  LCDCx: Where LCDCx can be LCDC.
  * @param  DmaCfg: Pointer to a Lcdc_McuDmaCfgDef structure that contains
@@ -258,6 +278,7 @@ void LCDC_MCUDmaMode(LCDC_TypeDef *LCDCx, Lcdc_McuDmaCfgDef *DmaCfg)
 		McuCfgReg |= LCDC_TEDELAY(DmaCfg->TeDelay - 5);
 
 		/* enable DMA TE Mode mode */
+		DmaModeCfg &= ~LCDC_BIT_DMA_TRIGER_MODE;//aa add
 		DmaModeCfg |= LCDC_BIT_DMA_TE_MODE;
 
 	} else {
@@ -875,6 +896,20 @@ void LCDC_ShadowReloadConfig(LCDC_TypeDef *LCDCx)
 	LCDCx->LCDC_SHW_RLD_CFG |= LCDC_BIT_VBR;
 }
 
+/**
+ * @brief  Config Panel resolution for LCDC.
+ * @param  LCDCx: Where LCDCx can be LCDC.
+ * @param  Width: pixel number
+ * @param  height: line number
+ * @retval None
+ */
+void LCDC_PanelSizeConfig(LCDC_TypeDef *LCDCx, uint32_t width, uint32_t height)
+{
+	assert_param((width < 4095) && (height < 4095));
+
+	LCDCx->LCDC_PLANE_SIZE &= ~(LCDC_MASK_IMAGEHEIGHT | LCDC_MASK_IMAGEWIDTH);
+	LCDCx->LCDC_PLANE_SIZE |= (LCDC_IMAGEWIDTH(width) | LCDC_IMAGEHEIGHT(height));
+}
 
 /**
  * @brief  Config LCDC output color format.
@@ -1138,8 +1173,9 @@ void LCDC_MCUCtrlSwap(LCDC_TypeDef *LCDCx, u8 Status)
 	assert_param(IS_LCDC_ALL_PERIPH(LCDCx));
 
 	assert_param(LCDC_GET_IF_MODE(LCDCx->LCDC_CTRL) == LCDC_MCU_IF_8_BIT);
-	assert_param(LCDC_GET_COLOR_FORMAT(LCDCx->LCDC_COLOR_CFG) == LCDC_OUTPUT_FORMAT_RGB565);//rgb565
-	assert_param((LCDCx->LCDC_MCU_CFG & LCDC_BIT_MCU_IO_MODE_RUN) == LCDC_MCU_RUN_DMA_MODE);//dma mode
+	assert_param((LCDC_GET_COLOR_FORMAT(LCDCx->LCDC_COLOR_CFG) == LCDC_OUTPUT_FORMAT_RGB565) ||
+				 LCDC_GET_COLOR_FORMAT(LCDCx->LCDC_COLOR_CFG) == LCDC_OUTPUT_FORMAT_BGR565);
+	// assert_param((LCDCx->LCDC_MCU_CFG & LCDC_BIT_MCU_IO_MODE_RUN) == LCDC_MCU_RUN_DMA_MODE);//dma mode
 
 	regtmp = LCDCx->LCDC_MCU_CFG;
 

@@ -106,7 +106,7 @@ uint16_t hci_uart_send(uint8_t *buf, uint16_t len)
 	g_uart->tx_buf = buf;
 	g_uart->tx_len = len;
 
-	if (!HCI_BT_KEEP_WAKE) {
+	if (!HCI_BT_KEEP_AWAKE) {
 		if (!hci_is_mp_mode()) {
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
 			/* trigger wifi pll ready for bt action */
@@ -126,7 +126,7 @@ uint16_t hci_uart_send(uint8_t *buf, uint16_t len)
 		}
 	}
 
-	if (!HCI_BT_KEEP_WAKE) {
+	if (!HCI_BT_KEEP_AWAKE) {
 		/* release host wake bt */
 		set_reg_value(0x4080A2B8, BIT13, 0); /* disable HOST_WAKE_BT */
 		if (!hci_is_mp_mode()) {

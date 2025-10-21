@@ -337,7 +337,7 @@ static void bt_power_on(void)
 	set_reg_value(0x4100C208, BIT1, 1);             /* release BTON reset */
 	osif_delay_us(100);
 	set_reg_value(0x4100C214, BIT2, 0);             /* disable clk_osc4m_wlbt */
-	if (HCI_BT_KEEP_WAKE) {
+	if (HCI_BT_KEEP_AWAKE) {
 		set_reg_value(0x4100C280, BIT13, 1);        /* enable HOST_WAKE_BT */
 	}
 }

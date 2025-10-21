@@ -17,7 +17,7 @@ int BOOT_DecRDPImg(u32 SrcAddr, u8 *RdpIV, SubImgInfo_TypeDef *SubImgInfo, u8 *C
 {
 	IMAGE_HEADER *Hdr = NULL;
 	u8 InBuf[256];
-	ALIGNMTO(CACHE_LINE_SIZE) u8 Outbuf[CACHE_LINE_ALIGMENT(16)];
+	ALIGNMTO(CACHE_LINE_SIZE) u8 Outbuf[CACHE_LINE_ALIGNMENT(16)];
 	u8 Key[32], TmpIV[16];
 	u32 DestAddr, TotalLen;
 	u32 i = 0, sz;
