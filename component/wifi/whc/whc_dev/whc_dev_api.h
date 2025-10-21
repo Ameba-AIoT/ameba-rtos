@@ -130,6 +130,7 @@ void whc_dev_ap_ch_switch_callback_indicate(unsigned char channel, s8 ret);
 void whc_dev_set_netif_info(int idx_wlan, unsigned char *dev_addr);
 int whc_dev_get_lwip_info(u32 type, unsigned char *input, int index);
 void whc_dev_cfg80211_indicate_scan_report(u32 channel, u32 frame_is_bcn, s32 rssi, u8 *mac_addr, u8 *IEs, u32 ie_len);
+void whc_dev_update_regd_event_indicate(struct rtw_country_code_table *table);
 
 #ifdef CONFIG_NAN
 void whc_dev_cfg80211_indicate_nan_match(u8 type, u8 inst_id, u8 peer_inst_id, u8 *addr, u32 info_len, u8 *info, u64 cookie);

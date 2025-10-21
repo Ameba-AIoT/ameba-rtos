@@ -60,6 +60,7 @@ void whc_fullmac_host_update_owe_info_event(char *buf, int buf_len);
 void whc_fullmac_host_connect_indicate(unsigned int join_status, void *user_data, size_t user_data_len);
 int whc_fullmac_host_scan_done_indicate(unsigned int scanned_AP_num, void *user_data);
 u64 whc_fullmac_host_get_tsft(u8 iface_type);
+int rtw_regd_update(struct rtw_country_code_table *ptab);
 void rtw_reg_notifier(struct wiphy *wiphy, struct regulatory_request *request);
 int rtw_regd_init(void);
 void rtw_ethtool_ops_init(void);
