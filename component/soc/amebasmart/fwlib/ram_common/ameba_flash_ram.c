@@ -51,7 +51,7 @@ const IPC_INIT_TABLE ipc_flashpg_table[] = {
 };
 #endif
 
-ALIGNMTO(CACHE_LINE_SIZE) u8 Flash_Sync_Flag[CACHE_LINE_ALIGMENT(64)];
+ALIGNMTO(CACHE_LINE_SIZE) u8 Flash_Sync_Flag[CACHE_LINE_ALIGNMENT(64)];
 
 /**
   * @brief  This function is used to lock CPU when write or erase flash under XIP.

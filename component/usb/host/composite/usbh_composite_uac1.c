@@ -132,7 +132,7 @@ static void usbh_composite_uac_status_dump(void)
 				 (u32)(uac->sof_cnt), (u32)(uac->isoc_tx_start_cnt), (u32)(uac->isoc_tx_done_cnt),
 				 (u32)(uac->isoc_xfer_buf_empty_cnt), (u32)(uac->isoc_xfer_buf_err_cnt), (u32)(uac->isoc_xfer_interval_cnt));
 #endif
-		// usbh_composite_hid_status_dump_thread();
+		usbh_composite_hid_status_dump_thread();
 	}
 }
 
@@ -281,7 +281,7 @@ static void usbh_composite_uac_dump_cfgdesc(void)
 
 	if (uac->isoc_out_info) {
 		puacdesc = uac->isoc_out_info;
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\nUSB OUT at_cnt %d itf %d\n", puacdesc->alt_cnt, puacdesc->as_itf_num);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "USB OUT at_cnt %d itf %d\n", puacdesc->alt_cnt, puacdesc->as_itf_num);
 		//dump uac ac
 		//dump uac as
 		usbh_composite_uac_dump_as_desc(puacdesc);
@@ -289,7 +289,7 @@ static void usbh_composite_uac_dump_cfgdesc(void)
 
 	if (uac->isoc_in_info) {
 		puacdesc = uac->isoc_in_info;
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\nUSB IN at_cnt %d itf %d\n", puacdesc->alt_cnt, puacdesc->as_itf_num);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "USB IN at_cnt %d itf %d\n", puacdesc->alt_cnt, puacdesc->as_itf_num);
 		//dump uac ac
 		//dump uac as
 		usbh_composite_uac_dump_as_desc(puacdesc);
@@ -1278,7 +1278,7 @@ static int usbh_composite_uac_ctrl_setting(usb_host_t *host, u32 msg)
 			uac->ctrl_state = UAC_STATE_SET_IN_FREQ;
 		} else if (ret != HAL_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "IN alt err\n");
-			usb_os_sleep_ms(100);
+			uac->ctrl_state = UAC_STATE_SET_IN_FREQ;
 		}
 		break;
 	case UAC_STATE_SET_IN_FREQ:
@@ -1288,7 +1288,8 @@ static int usbh_composite_uac_ctrl_setting(usb_host_t *host, u32 msg)
 			ret_status = HAL_OK;
 		} else if (ret != HAL_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "IN freq err\n");
-			usb_os_sleep_ms(100);
+			uac->ctrl_state = UAC_STATE_CTRL_IDLE;
+			ret_status = HAL_OK;
 		}
 		break;
 
@@ -1298,7 +1299,7 @@ static int usbh_composite_uac_ctrl_setting(usb_host_t *host, u32 msg)
 			uac->ctrl_state = UAC_STATE_SET_OUT_FREQ;
 		} else if (ret != HAL_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "OUT alt err\n");
-			usb_os_sleep_ms(100);
+			uac->ctrl_state = UAC_STATE_SET_OUT_FREQ;
 		}
 		break;
 	case UAC_STATE_SET_OUT_FREQ:
@@ -1308,7 +1309,8 @@ static int usbh_composite_uac_ctrl_setting(usb_host_t *host, u32 msg)
 			ret_status = HAL_OK;
 		} else if (ret != HAL_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "OUT freq err\n");
-			usb_os_sleep_ms(100);
+			uac->ctrl_state = UAC_STATE_CTRL_IDLE;
+			ret_status = HAL_OK;
 		}
 		break;
 
@@ -1319,7 +1321,8 @@ static int usbh_composite_uac_ctrl_setting(usb_host_t *host, u32 msg)
 			ret_status = HAL_OK;
 		} else if (ret != HAL_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Set mute err\n");
-			usb_os_sleep_ms(100);
+			uac->ctrl_state = UAC_STATE_CTRL_IDLE;
+			ret_status = HAL_OK;
 		}
 		break;
 
@@ -1330,7 +1333,8 @@ static int usbh_composite_uac_ctrl_setting(usb_host_t *host, u32 msg)
 			ret_status = HAL_OK;
 		} else if (ret != HAL_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Set vol err\n");
-			usb_os_sleep_ms(100);
+			uac->ctrl_state = UAC_STATE_CTRL_IDLE;
+			ret_status = HAL_OK;
 		}
 		break;
 

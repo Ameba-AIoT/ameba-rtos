@@ -9,6 +9,7 @@ class ImageType(Enum):
     APP_ALL  = 5
     CERT     = 6
     DSP      = 7
+    VBMETA   = 8
 
     # IMAGE1_SUB    = 10 # like: fullmac_ram_1.bin, ram_1.bin
     # IMAGE2_SUB    = 11 # like: fullmac_sram_2.bin

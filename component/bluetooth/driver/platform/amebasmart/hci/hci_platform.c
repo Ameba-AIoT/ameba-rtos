@@ -357,7 +357,7 @@ static void bt_power_on(void)
 	}
 	set_reg_value(0x42008200, BIT25, 1);                /* Release BTON por, BT Memory */
 	set_reg_value(0x42008208, BIT13, 1);                /* Release BTON reset */
-	if (HCI_BT_KEEP_WAKE) {
+	if (HCI_BT_KEEP_AWAKE) {
 		set_reg_value(0x42008250, BIT13, 1);            /* enable HOST_WAKE_BT */
 	}
 }

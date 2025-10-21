@@ -78,7 +78,7 @@ void TM_Init(TM_InitTypeDef *TM_InitStruct)
 	if (SYSCFG_CUT_VERSION_A == EFUSE_GetChipVersion()) {
 		thermal->TM_GAIN = TM_CALIB_GAIN;
 		thermal->TM_OFFSET = TM_CALIB_OFFSET;
-        }
+	}
 
 	TM_HighPtConfig(TM_InitStruct->TM_HighProtectThreshold, ENABLE);
 	TM_HighWtConfig(TM_InitStruct->TM_HighWarnThreshold, ENABLE);
@@ -491,7 +491,7 @@ float TM_GetFdegree(u32 Data)
 {
 	float Fdegree = 0;
 
-	Fdegree = (TM_GetCdegree(Data) * 1.8) + 32;
+	Fdegree = (TM_GetCdegree(Data) * 1.8f) + 32;
 
 	return Fdegree;
 }

@@ -100,7 +100,5 @@ _LONG_CALL_ void UPS_TimOfInCmd(u32 NewState);
 _LONG_CALL_ void UPS_ReverseCmd(u32 NewState);
 _LONG_CALL_ void UPS_SetDbcCnt(u16 Dbc_Cnt);
 
-
-
 /* MANUAL_GEN_END */
 #endif

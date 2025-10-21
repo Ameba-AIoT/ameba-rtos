@@ -1216,8 +1216,8 @@ static int usbd_uac_ep_buf_ctrl_init(usbd_uac_buf_ctrl_t *buf_ctrl, usbd_audio_c
 		}
 		buf_ctrl->buf_array_cnt = usbd_uac_get_ring_buf_cnt(speed);
 
-		// RTK_LOGS(TAG, RTK_LOG_INFO, "Buf mps len %d-%d, cnt %d\n",buf_ctrl->isoc_mps,CACHE_LINE_ALIGMENT(buf_ctrl->isoc_mps),buf_ctrl->buf_array_cnt);
-		buf_ctrl->isoc_buf = (u8 *)usb_os_malloc(CACHE_LINE_ALIGMENT(buf_ctrl->isoc_mps) * buf_ctrl->buf_array_cnt);
+		// RTK_LOGS(TAG, RTK_LOG_INFO, "Buf mps len %d-%d, cnt %d\n",buf_ctrl->isoc_mps,CACHE_LINE_ALIGNMENT(buf_ctrl->isoc_mps),buf_ctrl->buf_array_cnt);
+		buf_ctrl->isoc_buf = (u8 *)usb_os_malloc(CACHE_LINE_ALIGNMENT(buf_ctrl->isoc_mps) * buf_ctrl->buf_array_cnt);
 		if (buf_ctrl->isoc_buf == NULL) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Can not get isoc buf mem\n");
 			return HAL_ERR_MEM;
@@ -1232,7 +1232,7 @@ static int usbd_uac_ep_buf_ctrl_init(usbd_uac_buf_ctrl_t *buf_ctrl, usbd_audio_c
 		for (idx = 0; idx < buf_ctrl->buf_array_cnt; idx ++) {
 			pdata = &(buf_ctrl->buf_array[idx]);
 			pdata->buf_valid_len = 0;
-			pdata->buf_raw = buf_ctrl->isoc_buf + CACHE_LINE_ALIGMENT(buf_ctrl->isoc_mps) * idx ;
+			pdata->buf_raw = buf_ctrl->isoc_buf + CACHE_LINE_ALIGNMENT(buf_ctrl->isoc_mps) * idx ;
 
 			// RTK_LOGS(TAG, RTK_LOG_INFO, "Buf %d-%d-%d-0x%08x\n",idx,buf_ctrl->isoc_mps,pdata->buf_valid_len,pdata->buf_raw);
 		}

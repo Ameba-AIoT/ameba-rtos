@@ -1095,7 +1095,7 @@ static int usbh_uac_ep_buf_ctrl_init(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_uac_ep_
 		return ret;
 	}
 
-	block_size = CACHE_LINE_ALIGMENT(buf_ctrl->mps);
+	block_size = CACHE_LINE_ALIGNMENT(buf_ctrl->mps);
 
 	buf_ctrl->remain_size = 0;
 
