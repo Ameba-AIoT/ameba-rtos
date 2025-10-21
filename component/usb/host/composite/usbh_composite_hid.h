@@ -182,6 +182,7 @@ typedef struct {
 
 	__IO u8 parse_task_alive;
 	__IO u8 parse_task_exit;
+	__IO u8 hid_ctrl;
 
 	u8 report_desc_status;
 	u8 itf_idx;

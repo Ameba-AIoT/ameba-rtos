@@ -88,6 +88,8 @@ T_APP_RESULT bt_stack_le_iso_cig_initiator_cb(uint8_t cig_id, uint8_t cb_type, v
 	T_CIG_MGR_CB_DATA *p_data = (T_CIG_MGR_CB_DATA *)p_cb_data;
 	rtk_bt_cmd_t *p_cmd = NULL;
 	rtk_bt_evt_t *p_evt = NULL;
+	uint8_t i, j = 0;
+	uint8_t cig_idx, cis_idx = 0;
 	UNUSED(cig_id);
 
 	BT_LOGD("%s: cig_id %d, cb_type 0x%x\r\n", __func__, cig_id, cb_type);
@@ -125,11 +127,6 @@ T_APP_RESULT bt_stack_le_iso_cig_initiator_cb(uint8_t cig_id, uint8_t cb_type, v
 			osif_sem_give(p_cmd->psem);
 		} else {
 			BT_LOGE("[%s] MSG_CIG_MGR_START_SETTING: find no pending command \r\n", __func__);
-		}
-		{
-			osif_mutex_take(bt_le_iso_priv_data.ini.mtx, BT_TIMEOUT_FOREVER);
-			bt_le_iso_priv_data.ini.initiator_info[p_data->p_cig_mgr_start_setting_rsp->cig_id - 1].status = RTK_BLE_CIS_INITIATOR_ENABLE;
-			osif_mutex_give(bt_le_iso_priv_data.ini.mtx);
 		}
 	}
 	break;
@@ -229,30 +226,77 @@ T_APP_RESULT bt_stack_le_iso_cig_initiator_cb(uint8_t cig_id, uint8_t cb_type, v
 						p_data->p_cig_mgr_cis_established_info->iso_interval);
 		/* parsing initiator status */
 		{
-			bool used_cig = false;
-			/* check whether this cig has been assigned */
-			if (bt_le_iso_priv_data.ini.initiator_info[p_data->p_cig_mgr_cis_established_info->cig_id - 1].status != RTK_BLE_CIS_INITIATOR_ENABLE) {
-				used_cig = true;
-				/* check whether this cis has already been assigned */
-				if (bt_le_iso_priv_data.ini.initiator_info[p_data->p_cig_mgr_cis_established_info->cig_id - 1].cis_info[p_data->p_cig_mgr_cis_established_info->cis_id -
-																														1].active) {
-					BT_LOGA("%s cis id is already exited \r\n", __func__);
+			bool is_cig_used = false, is_cis_used = false;
+			for (i = 0; i < bt_le_iso_priv_data.iso_app_conf.cig_num; i++) {
+				/* check whether this cig has been assigned */
+				if ((bt_le_iso_priv_data.ini.initiator_info[i].status != RTK_BLE_CIS_INITIATOR_ENABLE) &&
+					(bt_le_iso_priv_data.ini.initiator_info[i].cig_id == p_data->p_cig_mgr_cis_established_info->cig_id)) {
+					cig_idx = i;
+					is_cig_used = true;
+					BT_LOGD("%s: find existing CIG at index %d\r\n", __func__, i);
+					/* check whether this cis has already been assigned */
+					for (j = 0; j < bt_le_iso_priv_data.iso_app_conf.cis_num; j++) {
+						if ((bt_le_iso_priv_data.ini.initiator_info[i].cis_info[j].cis_id == p_data->p_cig_mgr_cis_established_info->cis_id) &&
+							(bt_le_iso_priv_data.ini.initiator_info[i].cis_info[j].active)) {
+							cis_idx = j;
+							is_cis_used = true;
+							BT_LOGD("%s: find existing CIS at index %d\r\n", __func__, j);
+							break;
+						}
+					}
+					break;
+				} else {
+					is_cig_used = false;
+				}
+			}
+			if (is_cis_used) {
+				BT_LOGE("%s: cig_id %d, cis id:%d is already exited \r\n", __func__,
+						bt_le_iso_priv_data.ini.initiator_info[cig_idx].cig_id,
+						bt_le_iso_priv_data.ini.initiator_info[cig_idx].cis_info[cis_idx].cis_id);
+				break;
+			}
+			/* assign CIG*/
+			bool cig_allocated = false;
+			if (!is_cig_used) {
+				for (i = 0; i < bt_le_iso_priv_data.iso_app_conf.cig_num; i++) {
+					if (bt_le_iso_priv_data.ini.initiator_info[i].cig_id == INVALID_CIG_ID) {
+						cig_idx = i;
+						cig_allocated = true;
+						BT_LOGD("%s: allocated new CIG at index %d\r\n", __func__, i);
+						break;
+					}
+				}
+				if (!cig_allocated) {
+					BT_LOGE("%s: no space to allocate CIG %d\r\n", __func__,
+							p_data->p_cig_mgr_cis_established_info->cig_id);
 					break;
 				}
 			}
+			/* assign CIS*/
+			bool cis_allocated = false;
+			for (j = 0; j < bt_le_iso_priv_data.iso_app_conf.cis_num; j++) {
+				if (bt_le_iso_priv_data.ini.initiator_info[cig_idx].cis_info[j].cis_id == INVALID_CIS_ID) {
+					cis_idx = j;
+					cis_allocated = true;
+					BT_LOGD("%s: allocated CIS at index %d\r\n", __func__, j);
+					break;
+				}
+			}
+			if (!cis_allocated) {
+				BT_LOGE("%s: no space to allocate CIS %d\r\n", __func__,
+						p_data->p_cig_mgr_cis_established_info->cis_id);
+				break;
+			}
 			osif_mutex_take(bt_le_iso_priv_data.ini.mtx, BT_TIMEOUT_FOREVER);
-			bt_le_iso_priv_data.ini.initiator_info[p_data->p_cig_mgr_cis_established_info->cig_id - 1].cis_info[p_data->p_cig_mgr_cis_established_info->cis_id - 1].active =
-				true;
-			bt_le_iso_priv_data.ini.initiator_info[p_data->p_cig_mgr_cis_established_info->cig_id - 1].cis_info[p_data->p_cig_mgr_cis_established_info->cis_id - 1].cis_id =
-				p_data->p_cig_mgr_cis_established_info->cis_id;
-			bt_le_iso_priv_data.ini.initiator_info[p_data->p_cig_mgr_cis_established_info->cig_id - 1].cis_info[p_data->p_cig_mgr_cis_established_info->cis_id -
-																												1].cis_conn_handle = p_data->p_cig_mgr_cis_established_info->cis_conn_handle;
-			bt_le_iso_priv_data.ini.initiator_info[p_data->p_cig_mgr_cis_established_info->cig_id - 1].cis_num ++;
-			if (!used_cig) {
-				bt_le_iso_priv_data.ini.initiator_info[p_data->p_cig_mgr_cis_established_info->cig_id - 1].status = RTK_BLE_CIS_INITIATOR_CIG_EST;
-				bt_le_iso_priv_data.ini.initiator_info[p_data->p_cig_mgr_cis_established_info->cig_id - 1].sdu_interval = RTK_BLE_ISO_DEFAULT_SDU_INTERVAL_M_S;
-				bt_le_iso_priv_data.ini.initiator_info[p_data->p_cig_mgr_cis_established_info->cig_id - 1].conn_handle = le_get_conn_handle(
-																															 p_data->p_cig_mgr_cis_established_info->conn_id);
+			bt_le_iso_priv_data.ini.initiator_info[cig_idx].cis_info[cis_idx].active = true;
+			bt_le_iso_priv_data.ini.initiator_info[cig_idx].cis_info[cis_idx].cis_id = p_data->p_cig_mgr_cis_established_info->cis_id;
+			bt_le_iso_priv_data.ini.initiator_info[cig_idx].cis_info[cis_idx].cis_conn_handle = p_data->p_cig_mgr_cis_established_info->cis_conn_handle;
+			bt_le_iso_priv_data.ini.initiator_info[cig_idx].cis_num ++;
+			if (!is_cig_used) {
+				bt_le_iso_priv_data.ini.initiator_info[cig_idx].cig_id = p_data->p_cig_mgr_cis_established_info->cig_id;
+				bt_le_iso_priv_data.ini.initiator_info[cig_idx].status = RTK_BLE_CIS_INITIATOR_CIG_EST;
+				bt_le_iso_priv_data.ini.initiator_info[cig_idx].sdu_interval = RTK_BLE_ISO_DEFAULT_SDU_INTERVAL_M_S;
+				bt_le_iso_priv_data.ini.initiator_info[cig_idx].conn_handle = le_get_conn_handle(p_data->p_cig_mgr_cis_established_info->conn_id);
 				bt_le_iso_priv_data.ini.cig_num ++;
 			}
 			osif_mutex_give(bt_le_iso_priv_data.ini.mtx);
@@ -311,8 +355,20 @@ T_APP_RESULT bt_stack_le_iso_cig_initiator_cb(uint8_t cig_id, uint8_t cb_type, v
 		}
 		/* update initiator status */
 		{
+			bool found = false;
+			for (i = 0; i < bt_le_iso_priv_data.iso_app_conf.cig_num; i++) {
+				if (bt_le_iso_priv_data.ini.initiator_info[i].cig_id == p_data->p_cig_mgr_setup_data_path_rsp->cig_id) {
+					cig_idx = i;
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				BT_LOGE("[%s] MSG_CIG_MGR_SETUP_DATA_PATH: cig_id:%d not find \r\n", __func__, p_data->p_cig_mgr_setup_data_path_rsp->cig_id);
+				break;
+			}
 			osif_mutex_take(bt_le_iso_priv_data.ini.mtx, BT_TIMEOUT_FOREVER);
-			bt_le_iso_priv_data.ini.initiator_info[p_data->p_cig_mgr_setup_data_path_rsp->cig_id - 1].status = RTK_BLE_CIS_INITIATOR_PATH_SETUP;
+			bt_le_iso_priv_data.ini.initiator_info[cig_idx].status = RTK_BLE_CIS_INITIATOR_PATH_SETUP;
 			osif_mutex_give(bt_le_iso_priv_data.ini.mtx);
 		}
 		{
@@ -497,29 +553,37 @@ T_APP_RESULT bt_stack_le_iso_cig_initiator_cb(uint8_t cig_id, uint8_t cb_type, v
 		}
 		{
 			bool found = false;
-			uint8_t cig_index = 0;
-			/* check whether this conn_handle is exited */
-			for (uint8_t i = 0; i < bt_le_iso_priv_data.iso_app_conf.cig_num; i ++) {
-				if ((bt_le_iso_priv_data.ini.initiator_info[i].conn_handle == conn_handle) && (p_data->p_cig_mgr_disconnect_info->cig_id == (i + 1))) {
-					cig_index = i;
-					found = true;
+			for (i = 0; i < bt_le_iso_priv_data.iso_app_conf.cig_num; i ++) {
+				/* check whether this cig_id and cis_id is exited */
+				if ((bt_le_iso_priv_data.ini.initiator_info[i].conn_handle == conn_handle) &&
+					(p_data->p_cig_mgr_disconnect_info->cig_id == bt_le_iso_priv_data.ini.initiator_info[i].cig_id)) {
+					for (j = 0; j < bt_le_iso_priv_data.iso_app_conf.cis_num; j ++) {
+						if (p_data->p_cig_mgr_disconnect_info->cis_id == bt_le_iso_priv_data.ini.initiator_info[i].cis_info[j].cis_id) {
+							cis_idx = j;
+							found = true;
+						}
+					}
+					cig_idx = i;
 				}
 			}
 			if (!found) {
 				BT_LOGE("%s This conn_handle 0x%x is not fill within CIG\r\n", __func__, conn_handle);
 				break;
 			}
-			if (RTK_BLE_CIS_INITIATOR_PATH_SETUP == bt_le_iso_priv_data.ini.initiator_info[cig_index].status) {
+			if (RTK_BLE_CIS_INITIATOR_PATH_SETUP == bt_le_iso_priv_data.ini.initiator_info[cig_idx].status) {
 				remove_input = 1;
 				remove_output = 1;
 			}
 			osif_mutex_take(bt_le_iso_priv_data.ini.mtx, BT_TIMEOUT_FOREVER);
-			bt_le_iso_priv_data.ini.initiator_info[cig_index].cis_info[p_data->p_cig_mgr_disconnect_info->cis_id - 1].active = false;
-			bt_le_iso_priv_data.ini.initiator_info[cig_index].cis_info[p_data->p_cig_mgr_disconnect_info->cis_id - 1].cis_id = 0;
-			bt_le_iso_priv_data.ini.initiator_info[cig_index].cis_info[p_data->p_cig_mgr_disconnect_info->cis_id - 1].cis_conn_handle = 0;
-			bt_le_iso_priv_data.ini.initiator_info[cig_index].cis_num --;
-			if (bt_le_iso_priv_data.ini.initiator_info[cig_index].cis_num == 0) {
-				bt_le_iso_priv_data.ini.initiator_info[cig_index].status = RTK_BLE_CIS_INITIATOR_CIG_DIS;
+			/* Remove CIS */
+			bt_le_iso_priv_data.ini.initiator_info[cig_idx].cis_info[cis_idx].active = false;
+			bt_le_iso_priv_data.ini.initiator_info[cig_idx].cis_info[cis_idx].cis_id = INVALID_CIS_ID;
+			bt_le_iso_priv_data.ini.initiator_info[cig_idx].cis_info[cis_idx].cis_conn_handle = 0;
+			bt_le_iso_priv_data.ini.initiator_info[cig_idx].cis_num --;
+			if (bt_le_iso_priv_data.ini.initiator_info[cig_idx].cis_num == 0) {
+				/* Remove CIG */
+				bt_le_iso_priv_data.ini.initiator_info[cig_idx].cig_id = INVALID_CIG_ID;
+				bt_le_iso_priv_data.ini.initiator_info[cig_idx].status = RTK_BLE_CIS_INITIATOR_CIG_DIS;
 			}
 			osif_mutex_give(bt_le_iso_priv_data.ini.mtx);
 		}
@@ -573,6 +637,8 @@ T_APP_RESULT bt_stack_le_iso_cig_acceptor_cb(uint8_t cb_type, void *p_cb_data)
 	T_CIG_MGR_CB_DATA *p_data = (T_CIG_MGR_CB_DATA *)p_cb_data;
 	rtk_bt_cmd_t *p_cmd = NULL;
 	rtk_bt_evt_t *p_evt = NULL;
+	uint8_t i, j = 0;
+	uint8_t cig_idx, cis_idx = 0;
 
 	BT_LOGD("app_isoc_cis_acceptor_cb: cb_type 0x%x\r\n", cb_type);
 
@@ -626,30 +692,79 @@ T_APP_RESULT bt_stack_le_iso_cig_acceptor_cb(uint8_t cb_type, void *p_cb_data)
 						p_data->p_cig_mgr_cis_established_info->iso_interval);
 		/* parsing acceptor status */
 		{
-			bool used_cig = false;
-			/* check whether this cig has been assigned */
-			if (bt_le_iso_priv_data.acp.acceptor_info[p_data->p_cig_mgr_cis_established_info->cig_id - 1].status != RTK_BLE_CIS_ACCEPTOR_ENABLE) {
-				used_cig = true;
-				/* check whether this cis has already been assigned */
-				if (bt_le_iso_priv_data.acp.acceptor_info[p_data->p_cig_mgr_cis_established_info->cig_id - 1].cis_info[p_data->p_cig_mgr_cis_established_info->cis_id -
-																													   1].active) {
-					BT_LOGA("%s cis id is already exited \r\n", __func__);
+			bool is_cig_used = false, is_cis_used = false;
+			for (i = 0; i < bt_le_iso_priv_data.iso_app_conf.cig_num; i++) {
+				/* check whether this cig has been assigned */
+				if ((bt_le_iso_priv_data.acp.acceptor_info[i].status != RTK_BLE_CIS_ACCEPTOR_ENABLE) &&
+					(bt_le_iso_priv_data.acp.acceptor_info[i].cig_id == p_data->p_cig_mgr_cis_established_info->cig_id)) {
+					cig_idx = i;
+					is_cig_used = true;
+					BT_LOGD("%s: Found existing CIG at index %d\r\n", __func__, i);
+					/* check whether this cis has already been assigned */
+					for (j = 0; j < bt_le_iso_priv_data.iso_app_conf.cis_num; j++) {
+						if ((bt_le_iso_priv_data.acp.acceptor_info[i].cis_info[j].cis_id ==
+							 p_data->p_cig_mgr_cis_established_info->cis_id) &&
+							(bt_le_iso_priv_data.acp.acceptor_info[i].cis_info[j].active)) {
+
+							cis_idx = j;
+							is_cis_used = true;
+							BT_LOGD("%s: Found existing CIS at index %d\r\n", __func__, j);
+							break;
+						}
+					}
+					break;
+				} else {
+					is_cig_used = false;
+				}
+			}
+			if (is_cis_used) {
+				BT_LOGE("%s: cig_id %d, cis id:%d is already exited \r\n", __func__,
+						bt_le_iso_priv_data.acp.acceptor_info[cig_idx].cig_id,
+						bt_le_iso_priv_data.acp.acceptor_info[cig_idx].cis_info[cis_idx].cis_id);
+				break;
+			}
+			/* assign CIG*/
+			bool cig_allocated = false;
+			if (!is_cig_used) {
+				for (i = 0; i < bt_le_iso_priv_data.iso_app_conf.cig_num; i++) {
+					if (bt_le_iso_priv_data.acp.acceptor_info[i].cig_id == INVALID_CIG_ID) {
+						cig_idx = i;
+						cig_allocated = true;
+						BT_LOGD("%s: allocated new CIG at index %d\r\n", __func__, i);
+						break;
+					}
+				}
+				if (!cig_allocated) {
+					BT_LOGE("%s: no space to allocate CIG %d\r\n", __func__,
+							p_data->p_cig_mgr_cis_established_info->cig_id);
 					break;
 				}
 			}
+			/* assign CIS*/
+			bool cis_allocated = false;
+			for (j = 0; j < bt_le_iso_priv_data.iso_app_conf.cis_num; j++) {
+				if (bt_le_iso_priv_data.acp.acceptor_info[cig_idx].cis_info[j].cis_id == INVALID_CIS_ID) {
+					cis_idx = j;
+					cis_allocated = true;
+					BT_LOGD("%s: allocated CIS at index %d\r\n", __func__, j);
+					break;
+				}
+			}
+			if (!cis_allocated) {
+				BT_LOGE("%s: no space to allocate CIS %d\r\n", __func__,
+						p_data->p_cig_mgr_cis_established_info->cis_id);
+				break;
+			}
 			osif_mutex_take(bt_le_iso_priv_data.acp.mtx, BT_TIMEOUT_FOREVER);
-			bt_le_iso_priv_data.acp.acceptor_info[p_data->p_cig_mgr_cis_established_info->cig_id - 1].cis_info[p_data->p_cig_mgr_cis_established_info->cis_id - 1].active =
-				true;
-			bt_le_iso_priv_data.acp.acceptor_info[p_data->p_cig_mgr_cis_established_info->cig_id - 1].cis_info[p_data->p_cig_mgr_cis_established_info->cis_id - 1].cis_id =
-				p_data->p_cig_mgr_cis_established_info->cis_id;
-			bt_le_iso_priv_data.acp.acceptor_info[p_data->p_cig_mgr_cis_established_info->cig_id - 1].cis_info[p_data->p_cig_mgr_cis_established_info->cis_id -
-																											   1].cis_conn_handle = p_data->p_cig_mgr_cis_established_info->cis_conn_handle;
-			bt_le_iso_priv_data.acp.acceptor_info[p_data->p_cig_mgr_cis_established_info->cig_id - 1].cis_num ++;
-			if (!used_cig) {
-				bt_le_iso_priv_data.acp.acceptor_info[p_data->p_cig_mgr_cis_established_info->cig_id - 1].status = RTK_BLE_CIS_ACCEPTOR_CIG_EST;
-				bt_le_iso_priv_data.acp.acceptor_info[p_data->p_cig_mgr_cis_established_info->cig_id - 1].sdu_interval = RTK_BLE_ISO_DEFAULT_SDU_INTERVAL_S_M;
-				bt_le_iso_priv_data.acp.acceptor_info[p_data->p_cig_mgr_cis_established_info->cig_id - 1].conn_handle = le_get_conn_handle(
-																															p_data->p_cig_mgr_cis_established_info->conn_id);
+			bt_le_iso_priv_data.acp.acceptor_info[cig_idx].cis_info[cis_idx].active = true;
+			bt_le_iso_priv_data.acp.acceptor_info[cig_idx].cis_info[cis_idx].cis_id = p_data->p_cig_mgr_cis_established_info->cis_id;
+			bt_le_iso_priv_data.acp.acceptor_info[cig_idx].cis_info[cis_idx].cis_conn_handle = p_data->p_cig_mgr_cis_established_info->cis_conn_handle;
+			bt_le_iso_priv_data.acp.acceptor_info[cig_idx].cis_num ++;
+			if (!is_cig_used) {
+				bt_le_iso_priv_data.acp.acceptor_info[cig_idx].cig_id = p_data->p_cig_mgr_cis_established_info->cig_id;
+				bt_le_iso_priv_data.acp.acceptor_info[cig_idx].status = RTK_BLE_CIS_ACCEPTOR_CIG_EST;
+				bt_le_iso_priv_data.acp.acceptor_info[cig_idx].sdu_interval = RTK_BLE_ISO_DEFAULT_SDU_INTERVAL_S_M;
+				bt_le_iso_priv_data.acp.acceptor_info[cig_idx].conn_handle = le_get_conn_handle(p_data->p_cig_mgr_cis_established_info->conn_id);
 				bt_le_iso_priv_data.acp.cig_num ++;
 			}
 			osif_mutex_give(bt_le_iso_priv_data.acp.mtx);
@@ -707,8 +822,20 @@ T_APP_RESULT bt_stack_le_iso_cig_acceptor_cb(uint8_t cb_type, void *p_cb_data)
 		}
 		/* update acceptor status */
 		{
+			bool found = false;
+			for (i = 0; i < bt_le_iso_priv_data.iso_app_conf.cig_num; i++) {
+				if (bt_le_iso_priv_data.acp.acceptor_info[i].cig_id == p_data->p_cig_mgr_setup_data_path_rsp->cig_id) {
+					cig_idx = i;
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				BT_LOGE("[%s] MSG_CIG_MGR_SETUP_DATA_PATH: cig_id:%d not find \r\n", __func__, p_data->p_cig_mgr_setup_data_path_rsp->cig_id);
+				break;
+			}
 			osif_mutex_take(bt_le_iso_priv_data.acp.mtx, BT_TIMEOUT_FOREVER);
-			bt_le_iso_priv_data.acp.acceptor_info[p_data->p_cig_mgr_setup_data_path_rsp->cig_id - 1].status = RTK_BLE_CIS_ACCEPTOR_PATH_SETUP;
+			bt_le_iso_priv_data.acp.acceptor_info[cig_idx].status = RTK_BLE_CIS_ACCEPTOR_PATH_SETUP;
 			osif_mutex_give(bt_le_iso_priv_data.acp.mtx);
 		}
 		{
@@ -897,12 +1024,17 @@ T_APP_RESULT bt_stack_le_iso_cig_acceptor_cb(uint8_t cb_type, void *p_cb_data)
 			//the handle and the associated data path of that CIS will be auto deleted,
 			//we don't need to repeat remove path by API rtk_bt_le_iso_cig_remove_path()
 			bool found = false;
-			uint8_t cig_index = 0;
-			/* check whether this conn_handle is exited */
-			for (uint8_t i = 0; i < bt_le_iso_priv_data.iso_app_conf.cig_num; i ++) {
-				if ((bt_le_iso_priv_data.acp.acceptor_info[i].conn_handle == conn_handle) && (p_data->p_cig_mgr_disconnect_info->cig_id == (i + 1))) {
-					cig_index = i;
-					found = true;
+			for (i = 0; i < bt_le_iso_priv_data.iso_app_conf.cig_num; i ++) {
+				/* check whether this cig_id and cis_id is exited */
+				if ((bt_le_iso_priv_data.acp.acceptor_info[i].conn_handle == conn_handle) &&
+					(p_data->p_cig_mgr_disconnect_info->cig_id == bt_le_iso_priv_data.acp.acceptor_info[i].cig_id)) {
+					for (j = 0; j < bt_le_iso_priv_data.iso_app_conf.cis_num; j ++) {
+						if (p_data->p_cig_mgr_disconnect_info->cis_id == bt_le_iso_priv_data.acp.acceptor_info[i].cis_info[j].cis_id) {
+							cis_idx = j;
+							found = true;
+						}
+					}
+					cig_idx = i;
 				}
 			}
 			if (!found) {
@@ -910,12 +1042,15 @@ T_APP_RESULT bt_stack_le_iso_cig_acceptor_cb(uint8_t cb_type, void *p_cb_data)
 				break;
 			}
 			osif_mutex_take(bt_le_iso_priv_data.acp.mtx, BT_TIMEOUT_FOREVER);
-			bt_le_iso_priv_data.acp.acceptor_info[cig_index].cis_info[p_data->p_cig_mgr_disconnect_info->cis_id - 1].active = false;
-			bt_le_iso_priv_data.acp.acceptor_info[cig_index].cis_info[p_data->p_cig_mgr_disconnect_info->cis_id - 1].cis_id = 0;
-			bt_le_iso_priv_data.acp.acceptor_info[cig_index].cis_info[p_data->p_cig_mgr_disconnect_info->cis_id - 1].cis_conn_handle = 0;
-			bt_le_iso_priv_data.acp.acceptor_info[cig_index].cis_num --;
-			if (bt_le_iso_priv_data.acp.acceptor_info[cig_index].cis_num == 0) {
-				bt_le_iso_priv_data.acp.acceptor_info[cig_index].status = RTK_BLE_CIS_ACCEPTOR_CIG_DIS;
+			/* Remove CIS */
+			bt_le_iso_priv_data.acp.acceptor_info[cig_idx].cis_info[cis_idx].active = false;
+			bt_le_iso_priv_data.acp.acceptor_info[cig_idx].cis_info[cis_idx].cis_id = INVALID_CIS_ID;
+			bt_le_iso_priv_data.acp.acceptor_info[cig_idx].cis_info[cis_idx].cis_conn_handle = 0;
+			bt_le_iso_priv_data.acp.acceptor_info[cig_idx].cis_num --;
+			if (bt_le_iso_priv_data.acp.acceptor_info[cig_idx].cis_num == 0) {
+				/* Remove CIG */
+				bt_le_iso_priv_data.acp.acceptor_info[cig_idx].cig_id = INVALID_CIG_ID;
+				bt_le_iso_priv_data.acp.acceptor_info[cig_idx].status = RTK_BLE_CIS_ACCEPTOR_CIG_DIS;
 			}
 			osif_mutex_give(bt_le_iso_priv_data.acp.mtx);
 		}
@@ -1523,9 +1658,12 @@ static uint16_t bt_stack_le_iso_cig_start_setting(void *data)
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 	/* foreach cig id is whether used */
-	if (bt_le_iso_priv_data.ini.initiator_info[param->set_cig_param.cig_id - 1].status != RTK_BLE_CIS_INITIATOR_DISABLE) {
-		BT_LOGE("%s fail: cig_id 0x%x is already started \r\n", __func__, param->set_cig_param.cig_id);
-		return RTK_BT_ERR_PARAM_INVALID;
+	for (uint8_t i = 0; i < bt_le_iso_priv_data.iso_app_conf.cig_num; i++) {
+		if ((bt_le_iso_priv_data.ini.initiator_info[i].status != RTK_BLE_CIS_INITIATOR_ENABLE) &&
+			(bt_le_iso_priv_data.ini.initiator_info[i].cig_id == param->set_cig_param.cig_id)) {
+			BT_LOGE("%s fail: cig_id 0x%x is already started \r\n", __func__, param->set_cig_param.cig_id);
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
 	}
 	p_cig_param = &param->set_cig_param;
 	/* register cig initiator callback for cig */
@@ -1572,7 +1710,6 @@ static uint16_t bt_stack_le_iso_cig_start_setting(void *data)
 		BT_LOGE("%s cig_mgr_start_setting fail(cause = 0x%x,cig_id = 0x%x)\r\n", __func__, cause, p_cig_param->cig_id);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
-	bt_le_iso_priv_data.ini.initiator_info[p_cig_param->cig_id - 1].sdu_interval = p_cig_param->sdu_interval_m_s;
 
 	return RTK_BT_OK;
 }
@@ -2146,11 +2283,6 @@ static uint16_t bt_stack_le_iso_cig_initiator_set_cis_acl_link(void *data)
 
 	cis_id = param->cis_id;
 
-	if (cis_id > bt_le_iso_priv_data.iso_app_conf.cis_num) {
-		BT_LOGE("%s fail: param error\r\n", __func__);
-		return RTK_BT_ERR_PARAM_INVALID;
-	}
-
 	if (false == le_get_conn_id_by_handle(param->conn_handle, &conn_id)) {
 		BT_LOGE("%s le_get_conn_id_by_handle fail(conn_handle = 0x%x)\r\n", __func__, param->conn_handle);
 		return RTK_BT_ERR_LOWER_STACK_API;
@@ -2285,8 +2417,11 @@ static uint16_t bt_stack_le_iso_sync_info(void *data)
 				break;
 			}
 			for (uint8_t i = 0; i < found_cig_num; i ++) {
-				memset((void *)&bt_le_iso_priv_data.ini.initiator_info[cig_index[i]], 0, sizeof(rtk_ble_cis_initiator_info_t));
 				bt_le_iso_priv_data.ini.initiator_info[cig_index[i]].status = RTK_BLE_CIS_INITIATOR_DISC;
+				bt_le_iso_priv_data.ini.initiator_info[cig_index[i]].cig_id = INVALID_CIG_ID;
+				bt_le_iso_priv_data.ini.initiator_info[cig_index[i]].sdu_interval = 0;
+				bt_le_iso_priv_data.ini.initiator_info[cig_index[i]].cis_num = 0;
+				bt_le_iso_priv_data.ini.initiator_info[cig_index[i]].conn_handle = 0;
 				bt_le_iso_priv_data.ini.cig_num --;
 			}
 			osif_mutex_give(bt_le_iso_priv_data.ini.mtx);
@@ -2311,8 +2446,11 @@ static uint16_t bt_stack_le_iso_sync_info(void *data)
 				break;
 			}
 			for (uint8_t i = 0; i < found_cig_num; i ++) {
-				memset((void *)&bt_le_iso_priv_data.acp.acceptor_info[cig_index[i]], 0, sizeof(rtk_ble_cis_acceptor_info_t));
 				bt_le_iso_priv_data.acp.acceptor_info[cig_index[i]].status = RTK_BLE_CIS_ACCEPTOR_DISC;
+				bt_le_iso_priv_data.acp.acceptor_info[cig_index[i]].cig_id = INVALID_CIG_ID;
+				bt_le_iso_priv_data.acp.acceptor_info[cig_index[i]].sdu_interval = 0;
+				bt_le_iso_priv_data.acp.acceptor_info[cig_index[i]].cis_num = 0;
+				bt_le_iso_priv_data.acp.acceptor_info[cig_index[i]].conn_handle = 0;
 				bt_le_iso_priv_data.acp.cig_num --;
 			}
 			osif_mutex_give(bt_le_iso_priv_data.acp.mtx);
@@ -2602,12 +2740,23 @@ uint16_t bt_stack_le_iso_init(void *p_conf)
 	if (RTK_BLE_ISO_ROLE_CIS_INITIATOR == p_le_iso_app_conf->iso_role) {
 		/* init mutex */
 		osif_mutex_create(&bt_le_iso_priv_data.ini.mtx);
+		for (uint8_t i = 0; i < p_le_iso_app_conf->cig_num; i ++) {
+			bt_le_iso_priv_data.ini.initiator_info[i].status = RTK_BLE_CIS_INITIATOR_ENABLE;
+			bt_le_iso_priv_data.ini.initiator_info[i].cig_id = INVALID_CIG_ID;
+			for (uint8_t j = 0; j < p_le_iso_app_conf->cis_num; j ++) {
+				bt_le_iso_priv_data.ini.initiator_info[i].cis_info[j].cis_id = INVALID_CIS_ID;
+			}
+		}
 	} else if (RTK_BLE_ISO_ROLE_CIS_ACCEPTOR == p_le_iso_app_conf->iso_role) {
 		cig_mgr_reg_acceptor_cb(bt_stack_le_iso_cig_acceptor_cb);
 		/* init mutex */
 		osif_mutex_create(&bt_le_iso_priv_data.acp.mtx);
 		for (uint8_t i = 0; i < p_le_iso_app_conf->cig_num; i ++) {
 			bt_le_iso_priv_data.acp.acceptor_info[i].status = RTK_BLE_CIS_ACCEPTOR_ENABLE;
+			bt_le_iso_priv_data.acp.acceptor_info[i].cig_id = INVALID_CIG_ID;
+			for (uint8_t j = 0; j < p_le_iso_app_conf->cis_num; j ++) {
+				bt_le_iso_priv_data.acp.acceptor_info[i].cis_info[j].cis_id = INVALID_CIS_ID;
+			}
 		}
 	} else if (RTK_BLE_ISO_ROLE_BIS_BROADCASTER == p_le_iso_app_conf->iso_role) {
 		cause = gap_big_mgr_isoc_broadcaster_init(p_le_iso_app_conf->big_num, p_le_iso_app_conf->bis_num, bt_stack_le_iso_big_broadcaster_cb);
