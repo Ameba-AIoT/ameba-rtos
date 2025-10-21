@@ -71,7 +71,7 @@ static usbh_composite_hid_t usbh_composite_hid;
 void usbh_composite_hid_status_dump_thread(void)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "HID %d-%d\n", hid->event_cnt, hid->last_event.type);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "HID %d-%d %d\n", hid->event_cnt, hid->last_event.type, hid->hid_ctrl);
 }
 #endif
 
@@ -354,7 +354,7 @@ int usb_ringbuf_manager_init(usb_ringbuf_manager_t *handle, u16 cnt, u16 size, u
 	}
 
 	if (cache_align) {
-		item_length = CACHE_LINE_ALIGMENT(size);
+		item_length = CACHE_LINE_ALIGNMENT(size);
 	}
 
 	handle->written = 0;
@@ -775,6 +775,8 @@ static int usbh_composite_hid_parse(u8 *pbuf, u32 *length, u32 buf_length)
 
 	hid->itf_idx = desc[2];
 	hid->alt_set_idx = desc[3];
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Itf %d-%d\n", hid->itf_idx, hid->alt_set_idx);
+
 	*length = ((usb_descriptor_header_t *) desc)->bLength;
 	desc = pbuf + *length;
 
@@ -1107,8 +1109,10 @@ static void usbh_composite_hid_parse_thread(void *param)
 		read_cnt = usb_ringbuf_remove_head(handle, report_msg, 10);
 		// RTK_LOGS(TAG, RTK_LOG_INFO, "HID parse thread cnt %d\n", read_cnt);
 		if (read_cnt) {
-			usbh_composite_hid_parse_hid_msg(report_msg, read_cnt);
-			// RTK_LOGS(TAG, RTK_LOG_INFO, "HID parse thread done\n");
+			if (hid->hid_ctrl) {
+				usbh_composite_hid_parse_hid_msg(report_msg, read_cnt);
+				// RTK_LOGS(TAG, RTK_LOG_INFO, "HID parse thread done\n");
+			}
 		} else {
 			rtos_time_delay_ms(50);
 		}
@@ -1205,8 +1209,9 @@ int usbh_composite_hid_handle_report_desc(usb_host_t *host)
 				hid->report_desc_status = USBH_HID_REPORT_GET_DESC;
 				ret = HAL_BUSY;
 			} else if (ret != HAL_BUSY) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "IN set alt err\n");
-				usb_os_sleep_ms(100);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "HID set alt err %d\n", ret);
+				usb_os_sleep_ms(5);
+				hid->report_desc_status = USBH_HID_REPORT_GET_DESC;
 			}
 		} else if (hid->report_desc_status == USBH_HID_REPORT_GET_DESC) {
 			ret = usbh_composite_hid_process_get_hid_report_desc(host);
@@ -1214,12 +1219,16 @@ int usbh_composite_hid_handle_report_desc(usb_host_t *host)
 				hid->report_desc_status = USBH_HID_REPORT_MAX;
 				//parse report desc
 				hid->report_desc = hid->hid_ctrl_buf;
+				hid->hid_ctrl = 1;
 				usbh_composite_hid_parse_hid_report_desc(hid->report_desc, hid->hid_desc.wDescriptorLength);
 			} else if (ret != HAL_BUSY) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "IN get report err\n");
-				usb_os_sleep_ms(100);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "HID get report err %d, no support\n", ret);
+				hid->hid_ctrl = 0;
+				ret = HAL_OK;
 			}
 		}
+	} else {
+		hid->hid_ctrl = 0;
 	}
 
 	return ret;

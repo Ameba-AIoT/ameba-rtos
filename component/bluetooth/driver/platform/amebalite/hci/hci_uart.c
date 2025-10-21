@@ -103,7 +103,7 @@ uint16_t hci_uart_send(uint8_t *buf, uint16_t len)
 	g_uart->tx_buf = buf;
 	g_uart->tx_len = len;
 
-	if (!HCI_BT_KEEP_WAKE) {
+	if (!HCI_BT_KEEP_AWAKE) {
 		/* acquire host wake bt */
 		set_reg_value(0x4100C280, BIT13, 1); /* enable HOST_WAKE_BT */
 	}
@@ -117,7 +117,7 @@ uint16_t hci_uart_send(uint8_t *buf, uint16_t len)
 		}
 	}
 
-	if (!HCI_BT_KEEP_WAKE) {
+	if (!HCI_BT_KEEP_AWAKE) {
 		/* release host wake bt */
 		set_reg_value(0x4100C280, BIT13, 0); /* disable HOST_WAKE_BT */
 	}

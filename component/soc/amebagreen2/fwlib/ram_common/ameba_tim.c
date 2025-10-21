@@ -818,3 +818,24 @@ u32 RTIM_GetChannelCountx(RTIM_TypeDef *TIMx, u16 TIM_Channel)
 
 	return TIMx->PHASECNTx[TIM_Channel];
 }
+
+/**
+  * @brief  Gets the TIMx Channel inputcapture mode enabled or not.
+  * @param  TIMx: where x can only be 4-7.
+  * @param  TIM_Channel: specifies the TIM Channel
+  *          This parameter can be one of the following values @ref TIM_Channel_definitions
+  * @retval RTK_SUCCESS/RTK_FAIL
+  */
+u32 RTIM_IsChannelCaptureEnabled(RTIM_TypeDef *TIMx, u16 TIM_Channel)
+{
+	/* Check the parameters */
+	assert_param(IS_TIM_PWM_TIM(TIMx));
+	assert_param(IS_TIM_CHANNEL(TIM_Channel));
+
+	if ((TIMx->CCRx[TIM_Channel] & (TIM_CCMode_Inputcapture | TIM_CCx_Enable)) == (TIM_CCMode_Inputcapture | TIM_CCx_Enable)) {
+		return RTK_SUCCESS;
+	} else {
+		return RTK_FAIL;
+	}
+
+}

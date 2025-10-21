@@ -214,9 +214,9 @@
                        mode == MBEDTLS_AES_DECRYPT );
  
  
-     unsigned char output_buf[CACHE_LINE_ALIGMENT(16) + CACHE_LINE_SIZE];
+     unsigned char output_buf[CACHE_LINE_ALIGNMENT(16) + CACHE_LINE_SIZE];
      unsigned char *output_buf_aligned;
-     output_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(output_buf));
+     output_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGNMENT(output_buf));
  
  
      IPC_SEMTake(IPC_SEM_CRYPTO, 0xffffffff);
@@ -269,8 +269,8 @@
  
      memcpy(iv_tmp, iv, 16);
      unsigned char *output_buf, *output_buf_aligned;
-     output_buf = (unsigned char *)mbedtls_calloc(1, (CACHE_LINE_ALIGMENT(length) + CACHE_LINE_SIZE));
-     output_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(output_buf));
+     output_buf = (unsigned char *)mbedtls_calloc(1, (CACHE_LINE_ALIGNMENT(length) + CACHE_LINE_SIZE));
+     output_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGNMENT(output_buf));
  
      IPC_SEMTake(IPC_SEM_CRYPTO, 0xffffffff);
      ret =rtl_crypto_aes_cbc_init(ctx->key_val, ctx->key_len_bits/8);

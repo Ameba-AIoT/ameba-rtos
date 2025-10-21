@@ -105,14 +105,11 @@ struct wifi_user_conf {
 	/*!	0: Disable ampdu tx, 1: Enable ampdu tx. */
 	u8 ampdu_tx_enable;
 
-	/*!	0: If the pkt's destination address doesn't match, it won't be dropped, 1: If the pkt's destination address doesn't match, it will be dropped. */
-	u8 check_dest_address_en;
-
 	/*!	The ap_compatibilty_enabled is used to configure the wlan settings, each bit controls one aspect.
 		- <b>bit 0:</b> 0: follow 802.11 spec, do not issue deauth, 1(default): issue deauth in 1st REAUTH_TO to be compatible with ap;
 		- <b>bit 1:</b> 0: do not check beacon info to connect with AP with multiple SSID, 1(default): check beacon info;
-		- <b>bit 2:</b> 0(default): do not issue deauth at start of auth, 1: issue deauth at start of auth;
-		- <b>bit 3:</b> 0: do not switch WEP auth algo unless WLAN_STATUS_NOT_SUPPORTED_AUTH_ALG, 1(default): switch WEP auth algo from shared key to open system in 1st REAUTH_TO;
+		- <b>bit 2:</b> 0: do not issue deauth at start of auth, 1(default): issue deauth at start of auth;
+		- <b>bit 4:</b> 1: addressing compatibility problems with the AP's BA mechanism, such as the timing of the ADDBA Resp and issues with the reordering buffer timer settings;
 		- <b>other bits:</b> reserved */
 	u8 ap_compatibilty_enabled;
 

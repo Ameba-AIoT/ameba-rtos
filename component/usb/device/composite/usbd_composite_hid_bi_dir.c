@@ -708,7 +708,7 @@ static int usbd_composite_hid_ring_buf_ctrl_init(void)
 	buf_ctrl->buf_array_cnt = COMP_HID_BUF_MAX_CNT;
 	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Buf mps len %d, cnt %d\n", buf_ctrl->hid_mps, buf_ctrl->buf_array_cnt);
 
-	buf_ctrl->hid_buf = (u8 *)usb_os_malloc(CACHE_LINE_ALIGMENT(buf_ctrl->hid_mps) * buf_ctrl->buf_array_cnt);
+	buf_ctrl->hid_buf = (u8 *)usb_os_malloc(CACHE_LINE_ALIGNMENT(buf_ctrl->hid_mps) * buf_ctrl->buf_array_cnt);
 	if (buf_ctrl->hid_buf == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Can not get hid buf mem\n");
 		return HAL_ERR_MEM;
@@ -722,7 +722,7 @@ static int usbd_composite_hid_ring_buf_ctrl_init(void)
 	for (idx = 0; idx < buf_ctrl->buf_array_cnt; idx ++) {
 		pdata = &(buf_ctrl->buf_array[idx]);
 		pdata->buf_valid_len = 0;
-		pdata->buf_raw = buf_ctrl->hid_buf + CACHE_LINE_ALIGMENT(buf_ctrl->hid_mps) * idx ;
+		pdata->buf_raw = buf_ctrl->hid_buf + CACHE_LINE_ALIGNMENT(buf_ctrl->hid_mps) * idx ;
 
 		// RTK_LOGS(TAG, RTK_LOG_DEBUG, "Buf %d-%d-%d-0x%08x\n",idx,buf_ctrl->hid_mps,pdata->buf_valid_len,pdata->buf_raw);
 	}
