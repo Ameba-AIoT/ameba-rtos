@@ -1332,6 +1332,22 @@ void whc_dev_cfg80211_indicate_scan_report(u32 channel, u32 frame_is_bcn, s32 rs
 	rtos_mem_free((u8 *)param);
 }
 
+void whc_dev_update_regd_event_indicate(struct rtw_country_code_table *table)
+{
+	u32 size = 0;
+	u8 *param = NULL;
+
+	size = sizeof(struct rtw_country_code_table);
+
+	param = (u8 *)rtos_mem_zmalloc(size);
+	memcpy(param, (u8 *)table, size);
+
+	whc_dev_api_message_send(WHC_API_UPDATE_REGD_EVENT, param, size, NULL, 0);
+
+	rtos_mem_free(param);
+}
+
+
 /**
  * @brief  to initialize the host for WIFI api.
  * @param  none.
