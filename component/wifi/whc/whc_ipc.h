@@ -57,6 +57,7 @@
 #define whc_dev_get_lwip_info                            whc_ipc_dev_get_lwip_info
 #define whc_dev_set_netif_info                           whc_ipc_dev_set_netif_info
 #define whc_dev_cfg80211_indicate_scan_report            whc_ipc_dev_cfg80211_indicate_scan_report
+#define whc_dev_update_regd_event_indicate               whc_ipc_dev_update_regd_event_indicate
 #define whc_dev_api_init                                 whc_ipc_dev_api_init
 
 #ifndef CONFIG_FULLMAC
@@ -179,6 +180,7 @@ void whc_ipc_dev_acs_info_indicate(struct rtw_acs_mntr_rpt *acs_mntr_rpt);
 void whc_ipc_dev_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data);
 u8 whc_ipc_dev_promisc_callback_indicate(struct rtw_rx_pkt_info *pkt_info);
 void whc_ipc_dev_ap_ch_switch_callback_indicate(unsigned char channel, s8 ret);
+void whc_ipc_dev_update_regd_event_indicate(struct rtw_country_code_table *table);
 int whc_ipc_dev_set_netif_info(int idx_wlan, unsigned char *dev_addr);
 int whc_dev_get_lwip_info(u32 type, unsigned char *input, int index);
 u64 whc_ipc_host_api_get_wifi_tsf(unsigned char port_id);

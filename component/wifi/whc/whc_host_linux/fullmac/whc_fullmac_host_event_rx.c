@@ -17,6 +17,15 @@ static void whc_fullmac_host_event_scan_report_indicate(struct event_priv_t *eve
 	return;
 }
 
+static void whc_fullmac_host_event_update_regd_indicate(struct event_priv_t *event_priv, u32 *param_buf)
+{
+	struct rtw_country_code_table *ptab = (struct rtw_country_code_table *)&param_buf[0];
+	(void)event_priv;
+
+	rtw_regd_update(ptab);
+	return;
+}
+
 static void whc_fullmac_host_event_set_acs_info(u32 *param_buf)
 {
 	u8 idx = 0;
@@ -400,6 +409,9 @@ void whc_fullmac_host_event_task(struct work_struct *data)
 								  global_idev.p2p_global.roch_duration, GFP_KERNEL);
 		break;
 #endif
+	case WHC_API_UPDATE_REGD_EVENT:
+		whc_fullmac_host_event_update_regd_indicate(event_priv, param_buf);
+		break;
 
 	default:
 		dev_err(global_idev.fullmac_dev, "%s: Unknown Device event(%x)!\n\r", "event", p_recv_msg->event);
