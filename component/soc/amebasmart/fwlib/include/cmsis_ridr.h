@@ -106,8 +106,11 @@ typedef struct {
 #define RIDR_CNTCTRL2_DUAL_MODE_CNT0_SET_Msk			(0x1UL /*<< RIDR_CNTCTRL2_DUAL_MODE_CNT0_SET_Pos*/)	/*!< RIDR CNTCTRL2: Dual-mode Counter0 Set Mask */
 
 /*@}*/ /* end of group CMSIS_RIDR */
-
+#ifdef TPIU_BASE
+#define RIDR_BASE           (TPIU_BASE +  0x2000UL)                    /*!< RTK Implementation Defined Registers Base Address*/
+#else
 #define RIDR_BASE           (TPI_BASE +  0x2000UL)                     /*!< RTK Implementation Defined Registers Base Address*/
+#endif
 #define RIDR                ((RIDR_Type      *)     RIDR_BASE        ) /*!< RTK Implementation Defined struct */
 
 /* Auxiliary Control Register Definitions */
@@ -144,11 +147,11 @@ void DCache_Way_Set(uint32_t Dcwrr_base, uint32_t Dcwrr_top, uint32_t way_restri
 {
 	uint32_t temp;
 
-	temp = SCnSCB->ACTLR;
+	temp = ICB->ACTLR;
 
 	temp &= (~(0x3 << 20));
 	temp |= (way_restrict << 20);
-	SCnSCB->ACTLR = temp;
+	ICB->ACTLR = temp;
 
 	RIDR->DCWRR_BASE = Dcwrr_base;
 	RIDR->DCWRR_TOP = Dcwrr_top;
@@ -172,11 +175,11 @@ void ICache_Way_Set(uint32_t Icwrr_base, uint32_t Icwrr_top, uint32_t way_restri
 {
 	uint32_t temp;
 
-	temp = SCnSCB->ACTLR;
+	temp = ICB->ACTLR;
 
 	temp &= (~(0x3 << 12));
 	temp |= (way_restrict << 12);
-	SCnSCB->ACTLR = temp;
+	ICB->ACTLR = temp;
 
 	RIDR->ICWRR_BASE = Icwrr_base;
 	RIDR->ICWRR_TOP = Icwrr_top;
