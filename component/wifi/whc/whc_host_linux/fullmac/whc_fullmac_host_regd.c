@@ -1392,6 +1392,29 @@ static void _rtl_reg_set_country_code(struct wiphy *wiphy, u8 *country)
 	}
 }
 
+int rtw_regd_update(struct rtw_country_code_table *ptab)
+{
+	int ret = 0;
+	struct ieee80211_regdomain *regd = NULL;
+	struct wiphy *wiphy = global_idev.pwiphy_global;
+
+	regd = _rtl_reg_get_regd(ptab->channel_plan);
+	memcpy((void *)&regd->alpha2[0], &ptab->char2[0], 2);
+
+	rtnl_lock();
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
+	ret = regulatory_set_wiphy_regd_sync(wiphy, regd);
+#else
+	ret = regulatory_set_wiphy_regd_sync_rtnl(wiphy, regd);
+#endif
+	rtnl_unlock();
+	if (ret != 0) {
+		dev_err(global_idev.fullmac_dev, "%s regulatory_set_wiphy_regd_sync_rtnl return %d\n", __func__, ret);
+	}
+
+	return ret;
+}
+
 void rtw_reg_notifier(struct wiphy *wiphy, struct regulatory_request *request)
 {
 	switch (request->initiator) {
