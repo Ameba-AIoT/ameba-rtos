@@ -8,16 +8,15 @@
 	- [Supported IC](#supported-ic)
 	- [Configurations](#configurations)
 		- [Hardware configurations](#hardware-configurations)
-	- [Software Patches](#software-patches)
-		- [A2dp Hal](#hal-patch)
-		- [A2dp Demo](#a2dp-patch)
 	- [How to run](#how-to-run)
 
 ## About
 
 Ameba audio project can achieve:
-1. if a2dp connected, using chip as a2dp source, and play audio through a2dp.
-2. if a2dp disconnected, play through speaker.
+1. if uac is playing, then a2dp connected, play with both uac and a2dp.
+2. if a2dp disconnected, play with uac.
+3. if only a2dp connected, play audio through a2dp.
+4. if no device connected, play through speaker.
 
 ## Supported IC
 1. AmebaSmart
@@ -39,15 +38,6 @@ Enter directory:amebasmart_gcc_project
 2. Define whether using pll clock or xtal clock for playback.
 3. Please refer to component/audio/audio_hal/xx/README.md.
 
-## Software Patches
-### A2dp Hal
-
-replace component/audio/audio_hal/a2dp/a2dp_audio_hw_stream_out.c with a2dp_audio_hw_stream_out.c in this directory.
-
-### A2dp Demo
-
-patch a2dp.patch to component/bluetooth directory.
-
 ## How to run
 
 Build and Download:
@@ -68,20 +58,20 @@ Build and Download:
 
 5. After above steps, we can get bluetooth mac address through logs.
 
-6. Source board connect to sink's bluetooth mac, suppose sink's mac is 00e04c800499
-   'AT+BTA2DP=conn,00e04c800499'
-   'AT+BTA2DP=start,00e04c800499'
+6. Source board connect to sink's bluetooth mac, suppose sink's mac is 00e04c800ea8
+   'AT+BTA2DP=conn,00e04c800ea8'
+   'AT+BTA2DP=start,00e04c800ea8'
 
 7. Source board run:
    'audio_track -r 16000 -c 2 -f 16'
 
-8. After all above steps, we will here sine wave through sink board.
+8. After all above steps, we will hear sine wave through sink board.
 
 9. If user wants to disconnect a2dp, use following cmd, and sine will output from other connected device(speaker or uac...).
-    AT+BRGAP=disc,00e04c800499
+    AT+BRGAP=disc,00e04c800ea8
 
 10. If user wants to test a2dp together with uac, user can run uac test together with this test.
-    Then user will here a2dp's sine wave and uac's music mixed together and playing with a2dp device and uac device.
+    Then user will hear sine wave and music mixed together and playing with both a2dp device and uac device.
 
 11. Notice: running uac and a2dp tests together takes 2.9M heap, please make sure memory is enough.
     adjust amebasmart_gcc_project/ameba_layout.ld if necessary.
