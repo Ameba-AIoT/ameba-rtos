@@ -8,9 +8,10 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
+    - name: Checkout code from GitHub
       uses: actions/checkout@v4
       with:
+        ref: release/v1.1
         fetch-depth: 0
     - name: Debug GITEE_TOKEN
       run: echo "TOKEN_LENGTH=${#GITEE_TOKEN}"
@@ -21,7 +22,7 @@ jobs:
         GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
       run: |
         git remote add gitee https://gloria-chen:${GITEE_TOKEN}@gitee.com/ameba-aiot/ameba-rtos.git
-        git push --mirror gitee
+        git push gitee HEAD:refs/heads/release/v1.1 --force
 
     - name: Push to Gitee only
       env:
