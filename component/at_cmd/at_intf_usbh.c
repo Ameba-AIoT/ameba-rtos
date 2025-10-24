@@ -442,7 +442,7 @@ void atcmd_usbh_input_handler_task(void)
 			continue;
 		}
 
-		actual_len = actual_len > UART_LOG_CMD_BUFLEN ? UART_LOG_CMD_BUFLEN : actual_len;
+		actual_len = actual_len > CMD_BUFLEN ? CMD_BUFLEN : actual_len;
 		rtos_mutex_take(usbh_rx_ringbuf_mutex, MUTEX_WAIT_TIMEOUT);
 		RingBuffer_Read(at_usbh_rx_ring_buf, pShellRxBuf->UARTLogBuf, actual_len);
 		rtos_mutex_give(usbh_rx_ringbuf_mutex);
@@ -464,7 +464,7 @@ recv_again:
 					continue;
 				}
 			} else {
-				shell_array_init((u8 *)shell_ctl.pTmpLogBuf->UARTLogBuf, UART_LOG_CMD_BUFLEN, '\0');
+				memset((u8 *)shell_ctl.pTmpLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
 			}
 		}
 
