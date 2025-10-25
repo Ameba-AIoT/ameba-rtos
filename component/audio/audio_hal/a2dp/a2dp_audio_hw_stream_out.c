@@ -1,19 +1,17 @@
 /*
- * Copyright (c) 2025 Realtek, LLC.
- * All rights reserved.
- *
- * Licensed under the Realtek License, Version 1.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License from Realtek
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-#include <inttypes.h>
+* Copyright (c) 2025 Realtek, LLC.
+* All rights reserved.
+*
+* Licensed under the Realtek License, Version 1.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License from Realtek
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 #include "os_wrapper.h"
 
@@ -21,10 +19,13 @@
 #include "audio_hw_osal_errnos.h"
 #include "audio_hw_debug.h"
 #include "audio_hw_params_handle.h"
+#include "ameba_audio_stream_buffer.h"
 
 #include "hardware/audio/audio_hw_types.h"
 #include "hardware/audio/audio_hw_utils.h"
 #include "hardware/audio/audio_hw_stream_out.h"
+
+#include "a2dp_audio_ring_buffer.h"
 
 #include "a2dp_audio_hw_card.h"
 
@@ -54,7 +55,14 @@ struct A2dpAudioHwStreamOut {
     uint16_t sequence;
     uint64_t written;
     bool delay_start;
+
+    AudioBuffer *rb;
+    int32_t rb_size;
+    void *rb_sem;
+    bool rb_sem_taken;
 };
+
+struct A2dpAudioHwStreamOut *k_out = NULL;
 
 static inline size_t A2dpAudioHwStreamOutFrameSize(const struct AudioHwStreamOut *s)
 {
@@ -126,6 +134,8 @@ static int32_t DoStandbyOutput(struct A2dpAudioHwStreamOut *out)
     if (!out->standby) {
         out->standby = 1;
     }
+
+    HAL_AUDIO_INFO("a2dp standby");
     return HAL_OSAL_OK;
 }
 
@@ -230,7 +240,7 @@ static int64_t A2dpGetTriggerTime(const struct AudioHwStreamOut *stream)
 }
 
 static int32_t A2dpSetStreamOutVolume(struct AudioHwStreamOut *stream, float left,
-                                     float right)
+                                    float right)
 {
     HAL_AUDIO_VERBOSE("A2dpSetStreamOutVolume enter, left: %f, right: %f", left, right);
     (void) stream;
@@ -240,96 +250,89 @@ static int32_t A2dpSetStreamOutVolume(struct AudioHwStreamOut *stream, float lef
     return HAL_OSAL_OK;
 }
 
+int32_t a2dp_hal_buffer_read(int8_t *buffer, int32_t bytes)
+{
+    uint32_t remain_size = 0;
+    int32_t size_read = 0;
+
+    if (!k_out) {
+        HAL_AUDIO_WARN("a2dp wait for init");
+        return HAL_OSAL_ERR_NO_INIT;
+    }
+    remain_size = ameba_audio_stream_buffer_get_remain_size(k_out->rb);
+
+    if ((uint32_t)bytes > remain_size) {
+        HAL_AUDIO_ERROR("byte bigger than remain size:%ld", remain_size);
+        return 0;
+    }
+    size_read = ameba_audio_stream_buffer_read(k_out->rb, buffer, bytes, 0);
+    if (k_out->rb_sem_taken) {
+        rtos_sema_give(k_out->rb_sem);
+    }
+    if (bytes != size_read) {
+        printf("prefer size %d, size read %d \r\n", (int)bytes, (int)size_read);
+    }
+
+    return size_read;
+}
+
 /* must be called with hw device and output stream mutexes locked */
 static int32_t StartAudioHwStreamOut(struct A2dpAudioHwStreamOut *out)
 {
     HAL_AUDIO_VERBOSE("start output stream enter");
+
     (void) out;
-    //todo set a2dp start.
     return HAL_OSAL_OK;
 }
 
-static ssize_t A2dpWrite(struct AudioHwStreamOut *stream, const void *buffer, size_t bytes, bool block)
-{
-
-    (void) stream;
-    (void) buffer;
-    (void) bytes;
-    (void) block;
-
-    HAL_AUDIO_INFO("a2dp write.");
-    rtos_time_delay_ms(10);
-
-    return 0;
-}
-
-static int8_t A2dpGetSrcA2dpCredits(void)
-{
-    return 1;
-}
-
-static void A2dpSrcA2dpCreditsDec(void)
-{
-}
-
 static ssize_t A2dpStreamOutWrite(struct AudioHwStreamOut *stream, const void *buffer,
-                                     size_t bytes, bool block)
+                                    size_t bytes, bool block)
 {
-    HAL_AUDIO_PVERBOSE("primaryStreamOutWrite: bytes: %u", bytes);
+    (void) block;
+    HAL_AUDIO_VERBOSE("write:%ld", bytes);
 
     int32_t ret = 0;
     struct A2dpAudioHwStreamOut *out = (struct A2dpAudioHwStreamOut *)stream;
-    //struct A2dpAudioHwCard *pri_card = out->pri_card;
 
     size_t frame_size = A2dpAudioHwStreamOutFrameSize((const struct AudioHwStreamOut *)stream);
+    int32_t max_wait_ms = 500;
 
-    //rtos_mutex_take(pri_card->lock, MUTEX_WAIT_TIMEOUT);
     rtos_mutex_take(out->lock, MUTEX_WAIT_TIMEOUT);
     if (out->standby) {
+        out->standby = 0;
         ret = StartAudioHwStreamOut(out);
         if (ret != 0) {
             HAL_AUDIO_ERROR("start stream_out fail");
-            //rtos_mutex_give(pri_card->lock);
             goto exit;
         }
-        out->standby = 0;
     }
 
-    size_t bytes_left = bytes;
-    int32_t max_write_cnt = 5;
-    while (bytes_left && max_write_cnt)
-    {
-        max_write_cnt--;
+    if (bytes > (size_t)out->rb_size) {
+        HAL_AUDIO_WARN("make sure write less than rb size once, please check A2dpGetStreamOutBufferSize's return value.");
+    }
 
-        int32_t max_credit_cnt = 20;
-        while(max_credit_cnt) {
-            if (!A2dpGetSrcA2dpCredits()) {
-                rtos_time_delay_ms(2);
-                max_credit_cnt--;
-            } else {
-                size_t send_size = bytes_left > 1024 ? 1024 : bytes_left;
-                ret = A2dpWrite(stream, (int8_t *)buffer + bytes - bytes_left, send_size, block);
-                if (ret == 0) {
-                    bytes_left -= send_size;
-                    A2dpSrcA2dpCreditsDec();
-                }
+    int32_t bytes_left = bytes;
+    while (bytes_left) {
+        if (ameba_audio_stream_buffer_get_available_size(out->rb) < (size_t)bytes_left) {
+            out->rb_sem_taken = true;
+            ret = rtos_sema_take(out->rb_sem, max_wait_ms);
+            out->rb_sem_taken = false;
+            if (ret < 0) {
+                //wait timeout
                 break;
             }
         }
 
-        if (ret < 0) {
-            break;
-        }
+        int32_t written = ameba_audio_stream_buffer_write(out->rb, (int8_t *)buffer + bytes - bytes_left, bytes_left);
+        bytes_left -= written;
     }
 
     //write successfully
-    if (ret >= 0) {
-        ret = bytes;
-        out->written += bytes / frame_size;
-        //sync with ameba audio driver's total_counter_boundary max value.
-        if (out->written > UINT64_MAX) {
-            out->written = 0;
-        }
+    ret = bytes - bytes_left;
+    out->written += bytes / frame_size;
+    //sync with ameba audio driver's total_counter_boundary max value.
+    if (out->written > UINT64_MAX) {
+        out->written = 0;
     }
 
 exit:
@@ -345,6 +348,9 @@ void DestroyA2dpAudioHwStreamOut(struct AudioHwStreamOut *stream_out)
     A2dpStandbyStreamOut(&stream_out->common);
 
     rtos_mutex_delete(out->lock);
+    ameba_audio_stream_buffer_release(out->rb);
+    rtos_sema_delete(out->rb_sem);
+
     rtos_mem_free(out);
 
     HAL_AUDIO_INFO("DestroyA2dpAudioHwStreamOut");
@@ -406,12 +412,25 @@ struct AudioHwStreamOut *CreateA2dpAudioHwStreamOut(struct AudioHwCard *card, co
         out->sample_rate = config->sample_rate;
     }
 
-    HAL_AUDIO_INFO("a2dp rate:%ld, channels:%ld, format:%d",
-                    out->sample_rate, out->channel_count, out->format);
-
     rtos_mutex_create(&out->lock);
 
+    out->rb_size = 1024 * 20;
+    out->rb = ameba_audio_stream_buffer_create();
+    if (!out->rb) {
+        HAL_AUDIO_ERROR("ring buffer create fail");
+        return NULL;
+    }
+    ameba_audio_stream_buffer_alloc(out->rb, out->rb_size);
+
+    rtos_sema_create(&out->rb_sem, 0, RTOS_SEMA_MAX_COUNT);
+    out->rb_sem_taken = false;
+
+    k_out = out;
+
     pri_card->output = out;
+
+    HAL_AUDIO_INFO("a2dp rate:%ld, channels:%ld, format:%d",
+                    out->sample_rate, out->channel_count, out->format);
 
     return &out->stream;
 }
