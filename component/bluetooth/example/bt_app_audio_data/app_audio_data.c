@@ -282,7 +282,7 @@ bool demo_usb_deinit(void)
 #error "Audio source outband from USB only support Amebasmart"
 #endif
 
-#else
+#elif defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_UART) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_UART
 #include <bt_debug.h>
 #include <osif.h>
 #include "ameba_soc.h"
@@ -321,9 +321,7 @@ bool demo_usb_deinit(void)
 #define DEMO_UART_RX_TO_BIT 10
 
 static uint8_t demo_uart_run = 1;
-#if !defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB) || (!RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_USB)
 static uint8_t uart_buff[DEMO_UART_RX_BUF_SIZE] __attribute__((aligned(4)));
-#endif
 static struct demo_uart_t {
 	/* UART */
 	UART_InitTypeDef UART_InitStruct;

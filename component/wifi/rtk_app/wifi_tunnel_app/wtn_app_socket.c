@@ -30,8 +30,11 @@
 #include <lwip/sockets.h>
 #include "log.h"
 #include "wifi_api.h"
+#include "wifi_api_wtn.h"
 #include "build_info.h"
 #include "wtn_app_socket.h"
+#include "wtn_app_ota.h"
+#include <dhcp/dhcps.h>
 
 
 extern void sys_reset(void);
@@ -164,6 +167,34 @@ exit:
 }
 #endif
 
+int wtn_uc_socket_process(u8 *buf, int *forward_sock_fd, int recv_len)
+{
+#ifndef CONFIG_RMESH_OTA_EN
+	UNUSED(forward_sock_fd);
+#endif
+	u8 ota_packet_pattern[6] = {0x52, 0x2d, 0x4D, 0x45, 0x53, 0x48};
+	u8 packet_type;
+	u8 ret = RTK_SUCCESS;
+
+	if (recv_len < 8) {
+		return RTK_FAIL;
+	}
+
+	if (memcmp(buf, ota_packet_pattern, 6) == 0) {
+		packet_type = buf[7];
+		switch (packet_type) {
+#ifdef CONFIG_RMESH_OTA_EN
+		case 3:
+			ret = wtn_on_ota_request(buf, recv_len, forward_sock_fd);
+			break;
+#endif
+		default:
+			break;
+		}
+	}
+	return ret;
+}
+
 static int wtn_create_socket(int *fd, u16 port)
 {
 	int opt = 1;
@@ -196,6 +227,7 @@ void wtn_rx_socket_handler(void *param)
 	u8 invalid_ip[4] = {0};
 	int bcmc_socket_fd = -1;
 	int rnat_bcmc_forward_socket_fd = -1;
+	int rnat_unicast_forward_socket_fd = -1;
 	int uc_socket_fd = -1;
 	int broadcast_enable = 1;
 	struct sockaddr_in softap_bcmc_addr;
@@ -219,6 +251,10 @@ void wtn_rx_socket_handler(void *param)
 		}
 		ip = (u8 *)LwIP_GetIP(0);
 	}
+
+#ifdef CONFIG_RMESH_OTA_EN
+	rmesh_ota_init();
+#endif
 
 	/*when rnat enabled, check whether softap ap has started*/
 	if (wifi_user_config.wtn_rnat_en && wtn_rnat_ap_start) {
@@ -256,7 +292,6 @@ void wtn_rx_socket_handler(void *param)
 		goto exit;
 	}
 
-	/*bind unicast socket*/
 	if (wtn_create_socket(&uc_socket_fd, WTN_UNICAST_PORT) == RTK_FAIL) {
 		goto exit;
 	}
@@ -322,7 +357,7 @@ void wtn_rx_socket_handler(void *param)
 		if (FD_ISSET(uc_socket_fd, &rdset)) {
 			recv_len = lwip_recvfrom(uc_socket_fd, buf, 100, 0, (struct sockaddr *)&from_addr, &fromlen);
 			if (recv_len > 5) {
-				if (wtn_uc_socket_process(buf, recv_len) == RTK_FAIL) {
+				if (wtn_uc_socket_process(buf, &rnat_unicast_forward_socket_fd, recv_len) == RTK_FAIL) {
 					continue;
 				}
 			}
@@ -339,6 +374,9 @@ exit:
 	}
 	if (rnat_bcmc_forward_socket_fd >= 0) {
 		closesocket(rnat_bcmc_forward_socket_fd);
+	}
+	if (rnat_unicast_forward_socket_fd >= 0) {
+		closesocket(rnat_unicast_forward_socket_fd);
 	}
 	if (uc_socket_fd >= 0) {
 		closesocket(uc_socket_fd);

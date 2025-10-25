@@ -35,17 +35,12 @@ static char whc_sdio_dev_rpwm_cb(void *priv, u16 value)
 
 	if (value & RPWM2_CG_BIT) {
 		SDIO_SetReady(SDIO_WIFI, DISABLE);
-		pmu_release_wakelock(PMU_WHC_WIFI);
+		whc_dev_ps_set_tickps_cmd(WHC_CMD_TICKPS_R);
 	}
 
 	if (value & RPWM2_ACT_BIT) {
-		pmu_acquire_wakelock(PMU_WHC_WIFI);
+		whc_dev_ps_resume_cb();
 		SDIO_SetReady(SDIO_WIFI, ENABLE);
-#if defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
-		extern void wifi_hal_system_resume_wlan(void);
-		/* normal wowlan resume by pkt rx. here by host tx */
-		wifi_hal_system_resume_wlan();
-#endif
 	}
 
 	return 0;

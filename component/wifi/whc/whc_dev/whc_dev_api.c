@@ -178,17 +178,6 @@ u8  whc_dev_api_get_default_direction(void)
 }
 #endif
 
-void whc_dev_api_set_tickps_cmd(u8 subtype)
-{
-	if (subtype == WHC_CMD_TICKPS_R) {
-		pmu_release_wakelock(PMU_OS);
-	} else if (subtype == WHC_CMD_TICKPS_TYPE_PG) {
-		pmu_set_sleep_type(SLEEP_PG);
-	} else if (subtype == WHC_CMD_TICKPS_TYPE_CG) {
-		pmu_set_sleep_type(SLEEP_CG);
-	}
-}
-
 #ifdef CONFIG_WHC_CMD_PATH
 /**
  * @brief  to send data to host

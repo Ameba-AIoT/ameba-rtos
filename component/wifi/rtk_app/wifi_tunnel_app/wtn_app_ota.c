@@ -134,7 +134,6 @@ struct rmesh_ota_priv *g_rmesh_ota_priv = NULL;
 const u8 RMESH_OTA_PATTERN[] = {0x52, 0x4D, 0x45, 0x53, 0x48, 0x4F, 0x54, 0x41};
 struct rmesh_http_ota_param ota_param;
 
-extern int rnat_unicast_forward_socket_fd;
 extern u8 wtn_rnat_ap_start;
 
 static void rmesh_ota_dump_buf(char *info, u8 *buf, int len)
@@ -1470,7 +1469,7 @@ void rmesh_ota_cmd_recv(struct rmesh_http_ota_param *ota_param)
 
 #if defined(WTN_SINGLE_NODE_OTA) || defined(WTN_MULTI_NODE_OTA)
 
-int wtn_on_ota_request(u8 *buf, int recv_len)
+int wtn_on_ota_request(u8 *buf, int recv_len, int *forward_sock_fd)
 {
 	u8 ota_request_seq = 0;
 	u8 httpiplen = 0;
@@ -1502,9 +1501,9 @@ int wtn_on_ota_request(u8 *buf, int recv_len)
 
 		if (wifi_user_config.wtn_rnat_en && wtn_rnat_ap_start) {
 			if (memcmp(target_mac, self_mac_p1, ETH_ALEN)) {
-				if (rnat_unicast_forward_socket_fd < 0) {
-					rnat_unicast_forward_socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
-					if (rnat_unicast_forward_socket_fd < 0) {
+				if (*forward_sock_fd < 0) {
+					*forward_sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
+					if (*forward_sock_fd < 0) {
 						RTK_LOGS(NOTAG, RTK_LOG_ERROR, "rnat unicast socket create fail\n");
 						return RTK_FAIL;
 					}
@@ -1518,7 +1517,7 @@ int wtn_on_ota_request(u8 *buf, int recv_len)
 					ota_forward_dest_addr.sin_port = htons(WTN_UNICAST_PORT);
 					ota_forward_dest_addr.sin_addr.s_addr = client_ip << 24 | gw[2] << 16 | gw[1] << 8 | gw[0];
 					while (try_cnt > 0) {
-						if (sendto(rnat_unicast_forward_socket_fd, buf, recv_len, 0, (struct sockaddr *)&ota_forward_dest_addr, sizeof(struct sockaddr_in)) > 0) {
+						if (sendto(*forward_sock_fd, buf, recv_len, 0, (struct sockaddr *)&ota_forward_dest_addr, sizeof(struct sockaddr_in)) > 0) {
 							break;
 						} else {
 							try_cnt--;

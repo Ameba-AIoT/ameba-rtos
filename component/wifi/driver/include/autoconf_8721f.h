@@ -60,6 +60,15 @@
 
 // #define SW_WEP_TKIP
 
+/* Mgnt Frame Encryption -> txdesc.sectype can distinguish between data frames and management frames separately.
+ * Mgnt Frame Decryption -> Unable to distinguish between data frames and management frames separately, both SW DEC or HW DEC.
+ * HW BUG: GCMP-256 mgnt frame dec/enc abnoraml[smart/lite/dp/g2], fix for AmebaGreen2_Bcut */
+#ifdef CONFIG_AMEBAGREEN2_A_CUT
+#undef CONFIG_PMF_USE_HW_CRYPTO
+#else
+#define CONFIG_PMF_USE_HW_CRYPTO
+#endif
+
 //#define CONFIG_BT_COEXIST
 
 #define RX_SHORTCUT /*there's no reoder in rx short right now, wifi logo need ping 10k which needs reorder, g2 has fixed*/

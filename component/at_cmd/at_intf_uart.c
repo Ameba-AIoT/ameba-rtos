@@ -12,14 +12,17 @@ u8 UART_TX = _PA_3; // UART0 TX
 u8 UART_RX = _PA_2; // UART0 RX
 #elif defined (CONFIG_AMEBALITE)
 /* fully programmable zone */
-u8 UART_TX = _PA_28; // UART TX
-u8 UART_RX = _PA_29; // UART RX
+u8 UART_TX = _PA_22; // UART TX
+u8 UART_RX = _PA_21; // UART RX
 #elif defined (CONFIG_AMEBADPLUS)
 /* fully programmable zone */
 u8 UART_TX = _PA_31; // UART TX
 u8 UART_RX = _PA_30; // UART RX
 #elif defined (CONFIG_AMEBAGREEN2)
 /* fully programmable zone */
+u8 UART_TX = _PA_26; // UART TX
+u8 UART_RX = _PA_25; // UART RX
+#else
 u8 UART_TX = _PA_4; // UART TX
 u8 UART_RX = _PA_5; // UART RX
 #endif
@@ -242,7 +245,7 @@ recv_again:
 
 	/* fetch all data in Uart rx fifo before processing each character */
 	while (UART_Readable(UART_DEV)) {
-		if (pShellRxBuf->BufCount >= UART_LOG_CMD_BUFLEN) {
+		if (pShellRxBuf->BufCount >= CMD_BUFLEN) {
 			break;
 		}
 		UART_CharGet(UART_DEV, &(pShellRxBuf->UARTLogBuf[pShellRxBuf->BufCount]));
@@ -263,7 +266,7 @@ recv_again:
 				shell_ctl.GiveSema();
 			}
 		} else {
-			shell_array_init((u8 *)shell_ctl.pTmpLogBuf->UARTLogBuf, UART_LOG_CMD_BUFLEN, '\0');
+			memset((u8 *)shell_ctl.pTmpLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
 		}
 	}
 
@@ -296,7 +299,7 @@ int atio_uart_init(void)
 	/* Configure UART TX and RX pin */
 	Pinmux_Config(UART_TX, PINMUX_FUNCTION_UART);
 	Pinmux_Config(UART_RX, PINMUX_FUNCTION_UART);
-#elif defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2)
+#else
 	/* Configure UART TX and RX pin */
 	Pinmux_Config(UART_TX, PINMUX_FUNCTION_UART0_TXD);
 	Pinmux_Config(UART_RX, PINMUX_FUNCTION_UART0_RXD);

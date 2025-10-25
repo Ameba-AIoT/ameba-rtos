@@ -10,13 +10,10 @@
 
 extern volatile UART_LOG_CTL		shell_ctl;
 #ifdef CONFIG_LONGER_CMD
-#define CMD_BUFLEN UART_LOG_CMD_BUFLEN_L
 extern UART_LOG_BUF shell_buf;
 extern UART_LOG_BUF shell_rxbuf;
 u8 shell_buf_array_l[CMD_BUFLEN];
 u8 shell_rxbuf_array_l[CMD_BUFLEN];
-#else
-#define CMD_BUFLEN UART_LOG_CMD_BUFLEN
 #endif
 
 rtos_sema_t	shell_sema = NULL;

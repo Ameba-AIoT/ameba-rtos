@@ -2199,8 +2199,8 @@ void at_sktsend(void *arg)
 	}
 
 	data_sz = atoi(argv[2]);
-	if ((data_sz <= 0) || (data_sz >= UART_LOG_CMD_BUFLEN)) {
-		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsend] The range of <data_size> is [1, UART_LOG_CMD_BUFLEN-1]\r\n");
+	if ((data_sz <= 0) || (data_sz >= CMD_BUFLEN)) {
+		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsend] The range of <data_size> is [1, CMD_BUFLEN-1]\r\n");
 		error_no = 1;
 		goto end;
 	}

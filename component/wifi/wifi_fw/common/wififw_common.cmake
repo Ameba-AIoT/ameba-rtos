@@ -26,6 +26,7 @@ list(
     ${DIR_COMMON}/wififw_bcnrxwindow_adjust_com.c
     ${DIR_COMMON}/wififw_wowlan_common.c
     ${DIR_COMMON}/wififw_mp.c
+    ${DIR_COMMON}/wififw_gtimer_common.c
 )
 
 #FIXME: These source are not add for amebaL2, add them will cause some compile error
@@ -33,7 +34,6 @@ if(CONFIG_AMEBADPLUS OR CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAPRO3 OR CONFIG_AMEBALI
     list(
         APPEND CSRC
         ${DIR_COMMON}/wififw_txpkt_common.c
-        ${DIR_COMMON}/wififw_gtimer_common.c
         ${DIR_COMMON}/wififw_btcoex_mailbox_common.c
         ${DIR_COMMON}/wififw_btcoex_tdma_common.c
         ${DIR_COMMON}/wififw_tunnel.c

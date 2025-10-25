@@ -32,7 +32,7 @@ ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -I$(srctree)/$(src)/common/netdev
 ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -I$(srctree)/$(src)/fullmac
 
 ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -DCONFIG_FULLMAC_HCI_IPC
-ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -DCONFIG_WHC_WIFI_API_PATH
+ccflags-$(CONFIG_WHC_WIFI_API_PATH) += -DCONFIG_WHC_WIFI_API_PATH
 
 obj-$(CONFIG_WIFI_RTK_CFG80211_FULLMAC)	+= fullmac-ipc.o
 fullmac-ipc-objs			:= ./common/netdev/whc_host_drv_probe.o \

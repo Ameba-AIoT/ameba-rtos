@@ -891,7 +891,7 @@ exit:
 int parse_param_advance(char *buf, char **argv)
 {
 	/* The last charactor should be '\0'. */
-	const int most_size = UART_LOG_CMD_BUFLEN - 1;
+	const int most_size = CMD_BUFLEN - 1;
 	int argc = 1, pos = 0, i = 0, j = 0, offset = 1;
 
 	if (buf == NULL) {

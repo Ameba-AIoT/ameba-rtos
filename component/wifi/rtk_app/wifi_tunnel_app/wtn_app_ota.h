@@ -102,5 +102,5 @@ struct rmesh_role_info_to_flash {
 void rmesh_ota_cmd_recv(struct rmesh_http_ota_param *ota_param);
 void rmesh_ota_init(void);
 void rmesh_ota_get_status(struct rmesh_ota_status *ota_sts);
-int wtn_on_ota_request(u8 *buf, int recv_len);
+int wtn_on_ota_request(u8 *buf, int recv_len, int *forward_sock_fd);
 #endif

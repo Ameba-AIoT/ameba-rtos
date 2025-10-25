@@ -199,9 +199,10 @@ void SOCPS_FixSpicRetFailPatch(void)
 
 void SOCPS_ClockSourceConfig(u8 regu_state, u8 xtal_mode, u8 osc_option)
 {
+	UNUSED(regu_state);
 	u32 reg_temp = 0;
 	LDO_TypeDef *LDO = LDO_BASE;
-	/* 2. OSC4M config */
+	/* 1. OSC4M config */
 	reg_temp = HAL_READ32(PMC_BASE, SYSPMC_OPT);
 	if (osc_option == TRUE) {
 		reg_temp |= PMC_BIT_PST_SLEP_ERCK;
@@ -211,12 +212,12 @@ void SOCPS_ClockSourceConfig(u8 regu_state, u8 xtal_mode, u8 osc_option)
 	HAL_WRITE32(PMC_BASE, SYSPMC_OPT, reg_temp);
 	RTK_LOGD(TAG, "SYSPMC_OPT %08x\n", HAL_READ32(PMC_BASE, SYSPMC_OPT));
 
-	/* 3.1 XTAL mode config */
+	/* 2.1 XTAL mode config */
 	reg_temp = HAL_READ32(PMC_BASE, AIP_TRIGGER);
 	reg_temp &= ~PMC_MASK_SYS_XTAL_SLP;
 	reg_temp |= PMC_SYS_XTAL_SLP(xtal_mode);
 
-	/* 3.2 for FPGA, XTAL need be on, remodify config if set to XTAL OFF*/
+	/* 2.2 for FPGA, XTAL need be on, remodify config if set to XTAL OFF*/
 	if ((SYSCFG_CHIPType_Get() == CHIP_TYPE_FPGA) && (xtal_mode == XTAL_OFF)) {
 		reg_temp &= ~PMC_MASK_SYS_XTAL_SLP;
 		reg_temp |= PMC_SYS_XTAL_SLP(XTAL_Normal); //keep normal in fpga
@@ -224,21 +225,24 @@ void SOCPS_ClockSourceConfig(u8 regu_state, u8 xtal_mode, u8 osc_option)
 	HAL_WRITE32(PMC_BASE, AIP_TRIGGER, reg_temp);
 	RTK_LOGI(TAG, "AIP_TRIGGER %08x\n", HAL_READ32(PMC_BASE, AIP_TRIGGER));
 
-	/* 5. XTAL sleep status config */
-	if (xtal_mode != XTAL_OFF) {
-		if (regu_state == STATE2_LDOPC_SWRPFM_08) {
-			reg_temp = HAL_READ32(PMC_BASE, SYSPMC_OPT);
-			reg_temp |= PMC_BIT_CKE_XTAL40M_SLEP;
-			HAL_WRITE32(PMC_BASE, SYSPMC_OPT, reg_temp);
-			/*Adjust voltage code of SWR to 0.9v*/
-			reg_temp = LDO->LDO_PFM_VOLT_CTRL;
-			reg_temp &= ~ LDO_MASK_VOLT_CODE1_PFM;
-			reg_temp |= LDO_VOLT_CODE1_PFM(0x6);
-			LDO->LDO_PFM_VOLT_CTRL = reg_temp;
-		} else {
-			RTK_LOGE(TAG, "xtal can only work in the state2 where the core voltage(LDO and SWR) is greater than 0.9v!\n");
-		}
+	/* 3. Config XTAL and its work voltage in sleep status:*/
+	if ((xtal_mode == XTAL_LPS_Without_40M) || (xtal_mode == XTAL_LPS_With_40M)) {
+		SOCPS_PowerStateSetInSleep(STATE2_LDOPC_SWRPFM_08);
+		RTK_LOGI(TAG, "The voltage of XTAL LPS/LPS with 40M mode in sleep state is 0.8V\n");
+	} else if ((xtal_mode == XTAL_Normal) || (xtal_mode == XTAL_HP)) {
+		SOCPS_PowerStateSetInSleep(STATE2_LDOPC_SWRPFM_08);
+		/*Adjust voltage code of SWR to 0.9v*/
+		reg_temp = LDO->LDO_PFM_VOLT_CTRL;
+		reg_temp &= ~ LDO_MASK_VOLT_CODE1_PFM;
+		reg_temp |= LDO_VOLT_CODE1_PFM(0x6);
+		LDO->LDO_PFM_VOLT_CTRL = reg_temp;
+		/* xtal clock gating can be set to 1 only when the sleep voltage is greater than or equal to 0.9V!*/
+		reg_temp = HAL_READ32(PMC_BASE, SYSPMC_OPT);
+		reg_temp |= PMC_BIT_CKE_XTAL40M_SLEP;
+		HAL_WRITE32(PMC_BASE, SYSPMC_OPT, reg_temp);
+		RTK_LOGI(TAG, "The voltage of XTAL Normal/HP mode in sleep state is 0.9V\n");
 	}
+
 }
 
 void SOCPS_PowerManage(u8 regu_state)
@@ -323,17 +327,17 @@ void SOCPS_PowerManage(u8 regu_state)
 	reg_temp |= SWR_BIT_SPS_DIG_ZCD_FEN;
 	SWR->SWR_DIG_ZCD = reg_temp;
 
-	/* Enable dummyload to accelerate voltage reduction and reduce power cut delay time.*/
+	/* Only after writing the following patch, the Acut setting regu delay parameter will take effect.*/
 	if (EFUSE_GetChipVersion() == SYSCFG_CUT_VERSION_A) {
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_PMC_PATCH_GRP0_1, 0xE107FCB5);
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_PMC_PATCH_GRP0_2, 0x1818460C);
-
-		/*enable swr dummy load to speed up when pfm voltage falling.*/
-		reg_temp = LDO->LDO_DUMMY;
-		reg_temp |= LDO_BIT_OPT_EN_SLP_DUMMY;
-		LDO->LDO_DUMMY = reg_temp;
-		SOCPS_ReguDelayAdjust(REGU_DELAY_1MS);
 	}
+	/*Enable swr dummy load to speed up when pfm voltage falling.*/
+	reg_temp = LDO->LDO_DUMMY;
+	reg_temp |= LDO_BIT_OPT_EN_SLP_DUMMY;
+	LDO->LDO_DUMMY = reg_temp;
+	SOCPS_ReguDelayAdjust(REGU_DELAY_1MS);
+
 	/*Modify the LDO dummy load to 2mA*/
 	reg_temp = LDO->LDO_RFAFE_1209;
 	reg_temp &= ~(LDO_BIT_REG_DMYLOAD_X3_L_1209 | LDO_BIT_REG_DMYLOAD_X2_L_1209);

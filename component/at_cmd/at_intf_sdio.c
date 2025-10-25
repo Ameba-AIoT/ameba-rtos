@@ -220,7 +220,7 @@ recv_again:
 					shell_ctl.GiveSema();
 				}
 			} else {
-				shell_array_init((u8 *)shell_ctl.pTmpLogBuf->UARTLogBuf, UART_LOG_CMD_BUFLEN, '\0');
+				memset((u8 *)shell_ctl.pTmpLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
 			}
 		}
 

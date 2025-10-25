@@ -52,8 +52,14 @@ config HIGH_TP_TEST
     default n
 
 config RMESH_EN
-    bool "Enable RMESH"
+    bool "Enable R-mesh"
     default n
+
+if RMESH_EN
+    config RMESH_OTA_EN
+        bool "Enable R-mesh OTA"
+        default n
+endif
 
 if LINUX_FW_EN
     config NAN

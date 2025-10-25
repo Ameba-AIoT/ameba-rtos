@@ -12,124 +12,10 @@
 #include "lwip_netconf.h"
 #include "atcmd_service.h"
 #include "atcmd_network.h"
+#if defined(CONFIG_ATCMD_SNTP) && (CONFIG_ATCMD_SNTP == 1)
 #include "lwip/apps/sntp.h"
 #include "sntp/sntp_api.h"
-
-void at_dns(void *arg)
-{
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
-	struct hostent *host_entry = NULL;
-	char **addr_list = NULL;
-
-	if (arg == NULL) {
-		RTK_LOGE(NOTAG, "[at_dns] Input parameter is NULL\r\n");
-		error_no = 1;
-		goto end;
-	}
-	argc = parse_param(arg, argv);
-	if (argc != 2) {
-		RTK_LOGE(NOTAG, "[at_dns] Invalid number of parameters\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	host_entry = gethostbyname(argv[1]);
-	if (host_entry != NULL) {
-		for (addr_list = host_entry->h_addr_list; *addr_list != NULL; addr_list++) {
-			at_printf("\r\n+DNS:%s\r\n", inet_ntoa(**addr_list));
-		}
-	} else {
-		RTK_LOGW(NOTAG, "[at_dns] Domain Name '%s' Not be resolved\r\n", argv[1]);
-		error_no = 2;
-		goto end;
-	}
-
-end:
-	if (error_no == 0) {
-		at_printf(ATCMD_OK_END_STR);
-	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
-	}
-}
-
-void at_querydnssrv(void *arg)
-{
-	int error_no = 0;
-	const ip_addr_t *dns_server = NULL;
-
-	if (arg != NULL) {
-		RTK_LOGE(NOTAG, "[at_querydnssrv] Input parameter SHOULD be NULL\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	at_printf("\r\n+QUERYDNSSRV:");
-
-	dns_server = dns_getserver(0);  // Primary DNS server
-	if (*(u32_t *)dns_server != IPADDR_ANY)   {
-		at_printf("%s", ipaddr_ntoa(dns_server));
-	}
-	dns_server = dns_getserver(1);  // Secondary DNS server
-	if (*(u32_t *)dns_server != IPADDR_ANY)   {
-		at_printf(", %s", ipaddr_ntoa(dns_server));
-	}
-	at_printf("\r\n");
-
-end:
-	if (error_no == 0) {
-		at_printf(ATCMD_OK_END_STR);
-	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
-	}
-}
-
-void at_setdnssrv(void *arg)
-{
-	int argc = 0, error_no = 0;
-	ip_addr_t dns_server1 = {0}, dns_server2 = {0};
-	char *argv[MAX_ARGC] = {0};
-
-	if (arg == NULL) {
-		RTK_LOGE(NOTAG, "[at_setdnssrv] Input parameter is NULL\r\n");
-		error_no = 1;
-		goto end;
-	}
-	argc = parse_param(arg, argv);
-	if ((argc < 2) || (argc > 3)) {
-		RTK_LOGE(NOTAG, "[at_setdnssrv] Invalid number of parameters\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	if (inet_pton(AF_INET, argv[1], &dns_server1) != 1)  {
-		RTK_LOGW(NOTAG, "[at_setdnssrv] Invalid DNS Server IP\r\n");
-		error_no = 2;
-		goto end;
-	}
-	if (argc == 3)   {
-		if (inet_pton(AF_INET, argv[2], &dns_server2) != 1)  {
-			RTK_LOGW(NOTAG, "[at_setdnssrv] Invalid DNS Server IP\r\n");
-			error_no = 2;
-			goto end;
-		}
-	}
-	RTK_LOGI(NOTAG, "[at_setdnssrv] DNS Server IP: 0x%08x,0x%08x\r\n", htonl(ip_2_ip4(&dns_server1)->addr), htonl(ip_2_ip4(&dns_server2)->addr));
-
-	if (argc == 2)   {
-		dns_setserver(0, &dns_server1);  // Primary DNS server
-	} else if (argc == 3)   {
-		dns_setserver(0, &dns_server1);  // Primary DNS server
-		dns_setserver(1, &dns_server2);  // Secondary DNS server
-	}
-
-end:
-	if (error_no == 0) {
-		at_printf(ATCMD_OK_END_STR);
-	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
-	}
-}
+#endif
 
 static void at_ping_help(void)
 {
@@ -332,6 +218,125 @@ end:
 	}
 }
 
+#if defined(CONFIG_ATCMD_DNS) && (CONFIG_ATCMD_DNS == 1)
+void at_dns(void *arg)
+{
+	int argc = 0, error_no = 0;
+	char *argv[MAX_ARGC] = {0};
+	struct hostent *host_entry = NULL;
+	char **addr_list = NULL;
+
+	if (arg == NULL) {
+		RTK_LOGE(NOTAG, "[at_dns] Input parameter is NULL\r\n");
+		error_no = 1;
+		goto end;
+	}
+	argc = parse_param(arg, argv);
+	if (argc != 2) {
+		RTK_LOGE(NOTAG, "[at_dns] Invalid number of parameters\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	host_entry = gethostbyname(argv[1]);
+	if (host_entry != NULL) {
+		for (addr_list = host_entry->h_addr_list; *addr_list != NULL; addr_list++) {
+			at_printf("\r\n+DNS:%s\r\n", inet_ntoa(**addr_list));
+		}
+	} else {
+		RTK_LOGW(NOTAG, "[at_dns] Domain Name '%s' Not be resolved\r\n", argv[1]);
+		error_no = 2;
+		goto end;
+	}
+
+end:
+	if (error_no == 0) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+
+void at_querydnssrv(void *arg)
+{
+	int error_no = 0;
+	const ip_addr_t *dns_server = NULL;
+
+	if (arg != NULL) {
+		RTK_LOGE(NOTAG, "[at_querydnssrv] Input parameter SHOULD be NULL\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	at_printf("\r\n+QUERYDNSSRV:");
+
+	dns_server = dns_getserver(0);  // Primary DNS server
+	if (*(u32_t *)dns_server != IPADDR_ANY)   {
+		at_printf("%s", ipaddr_ntoa(dns_server));
+	}
+	dns_server = dns_getserver(1);  // Secondary DNS server
+	if (*(u32_t *)dns_server != IPADDR_ANY)   {
+		at_printf(", %s", ipaddr_ntoa(dns_server));
+	}
+	at_printf("\r\n");
+
+end:
+	if (error_no == 0) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+
+void at_setdnssrv(void *arg)
+{
+	int argc = 0, error_no = 0;
+	ip_addr_t dns_server1 = {0}, dns_server2 = {0};
+	char *argv[MAX_ARGC] = {0};
+
+	if (arg == NULL) {
+		RTK_LOGE(NOTAG, "[at_setdnssrv] Input parameter is NULL\r\n");
+		error_no = 1;
+		goto end;
+	}
+	argc = parse_param(arg, argv);
+	if ((argc < 2) || (argc > 3)) {
+		RTK_LOGE(NOTAG, "[at_setdnssrv] Invalid number of parameters\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	if (inet_pton(AF_INET, argv[1], &dns_server1) != 1)  {
+		RTK_LOGW(NOTAG, "[at_setdnssrv] Invalid DNS Server IP\r\n");
+		error_no = 2;
+		goto end;
+	}
+	if (argc == 3)   {
+		if (inet_pton(AF_INET, argv[2], &dns_server2) != 1)  {
+			RTK_LOGW(NOTAG, "[at_setdnssrv] Invalid DNS Server IP\r\n");
+			error_no = 2;
+			goto end;
+		}
+	}
+	RTK_LOGI(NOTAG, "[at_setdnssrv] DNS Server IP: 0x%08x,0x%08x\r\n", htonl(ip_2_ip4(&dns_server1)->addr), htonl(ip_2_ip4(&dns_server2)->addr));
+
+	if (argc == 2)   {
+		dns_setserver(0, &dns_server1);  // Primary DNS server
+	} else if (argc == 3)   {
+		dns_setserver(0, &dns_server1);  // Primary DNS server
+		dns_setserver(1, &dns_server2);  // Secondary DNS server
+	}
+
+end:
+	if (error_no == 0) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+#endif /* CONFIG_ATCMD_DNS */
+
+#if defined(CONFIG_ATCMD_SNTP) && (CONFIG_ATCMD_SNTP == 1)
 static char *server_list[SNTP_MAX_SERVERS] = {NULL};
 static int server_count = 0;
 
@@ -379,51 +384,22 @@ void at_sntpcfg(void *arg)
 	int hours = 8;
 	int minutes = 0;
 	int is_positive = 1;
+	int interval_sec = 0;
 
 	if (arg == NULL) {
-		char *tz = getenv("TZ");
-		char tz_display[32] = "8";
-
-		if (tz && strlen(tz) > 3) {
-			char *sign_pos = strpbrk(tz + 3, "+-");
-
-			if (sign_pos) {
-				int hours = 0, minutes = 0;
-				char sign = *sign_pos;
-
-				if (sscanf(sign_pos + 1, "%d:%d", &hours, &minutes) >= 1) {
-					if (sign == '-') {
-						snprintf(tz_display, sizeof(tz_display), "%d%02d", hours, minutes);
-					} else {
-						snprintf(tz_display, sizeof(tz_display), "-%d%02d", hours, minutes);
-					}
-				} else if (sscanf(sign_pos + 1, "%d", &hours) == 1) {
-					if (sign == '-') {
-						snprintf(tz_display, sizeof(tz_display), "%d", hours);
-					} else {
-						snprintf(tz_display, sizeof(tz_display), "-%d", hours);
-					}
-				}
-			}
-		}
-
-		int is_sntp_enabled = sntp_enabled();
-		at_printf("\r\n+SNTPCFG:%d,%s", is_sntp_enabled, tz_display);
-
-		for (int i = 0; i < server_count; i++) {
-			if (server_list[i] != NULL) {
-				at_printf(",%s", server_list[i]);
-			}
-		}
-		at_printf("\r\n");
-
+		error_no = 1;
 		goto end;
 	}
 
 	argc = parse_param(arg, argv);
+	if (argc < 2) {
+		RTK_LOGE(NOTAG, "[+SNTPCFG] Invalid number of parameters\r\n");
+		error_no = 1;
+		goto end;
+	}
 
 	// Check if the number of server parameters exceeds SNTP_MAX_SERVERS
-	if (argc > 3 + SNTP_MAX_SERVERS) {
+	if (argc > 4 + SNTP_MAX_SERVERS) {
 		RTK_LOGE(NOTAG, "[+SNTPCFG] Too many SNTP servers (max %d)\r\n", SNTP_MAX_SERVERS);
 		error_no = 1;
 		goto end;
@@ -432,27 +408,40 @@ void at_sntpcfg(void *arg)
 	enable = atoi(argv[1]);
 	if (enable != 0 && enable != 1) {
 		RTK_LOGE(NOTAG, "[+SNTPCFG] Invalid enable\r\n");
-		error_no = 1;
+		error_no = 2;
 		goto end;
 	}
 
+	// timezone parameter
 	if (argc >= 3 && strlen(argv[2]) > 0) {
 		if (parse_timezone(argv[2], &hours, &minutes, &is_positive) != 0) {
 			RTK_LOGE(NOTAG, "[+SNTPCFG] Invalid timezone format. Use integer [-12,14] or [+|-][hh]mm format\r\n");
 			error_no = 2;
 			goto end;
 		}
+	}
 
-		char tz_str[32];
+	char tz_str[32];
+	// The sign of offset is opposite to UTC offset
+	snprintf(tz_str, sizeof(tz_str), "XXX%c%d:%02d", is_positive ? '-' : '+', hours, minutes);
 
-		// The sign of offset is opposite to UTC offset
-		snprintf(tz_str, sizeof(tz_str), "XXX%c%d:%02d", is_positive ? '-' : '+', hours, minutes);
+	setenv("TZ", tz_str, 1);
+	tzset();
 
-		setenv("TZ", tz_str, 1);
-		tzset();
+	RTK_LOGI(NOTAG, "[+SNTPCFG] System timezone set to UTC%c%02d:%02d (TZ=%s)\r\n",
+			 is_positive ? '+' : '-', hours, minutes, tz_str);
 
-		RTK_LOGI(NOTAG, "[+SNTPCFG] System timezone set to UTC%c%d:%02d (TZ=%s)\r\n",
-				 is_positive ? '+' : '-', hours, minutes, tz_str);
+	// interval parameter
+	if (argc >= 4 && strlen(argv[3]) > 0) {
+		interval_sec = atoi(argv[3]);
+		if (interval_sec <= 15) {
+			RTK_LOGE(NOTAG, "[+SNTPCFG] Interval must be greater than 15 seconds\r\n");
+			error_no = 2;
+			goto end;
+		}
+		u32_t interval_ms = interval_sec * 1000;
+		sntp_set_update_interval(interval_ms);
+		RTK_LOGI(NOTAG, "[+SNTPCFG] SNTP update interval set to %d seconds (%u ms)\r\n", interval_sec, interval_ms);
 	}
 
 	if (enable == 1) {
@@ -467,8 +456,8 @@ void at_sntpcfg(void *arg)
 		server_count = 0;
 
 		// Process SNTP server parameters
-		if (argc >= 4) {
-			for (int i = 3; i < argc && server_count < SNTP_MAX_SERVERS; i++) {
+		if (argc >= 5) {
+			for (int i = 4; i < argc && server_count < SNTP_MAX_SERVERS; i++) {
 				if (strlen(argv[i]) > 0) {
 					RTK_LOGI(NOTAG, "[+SNTPCFG] Setting SNTP server %d: %s\r\n", server_count, argv[i]);
 					server_list[server_count] = strdup(argv[i]);
@@ -512,37 +501,61 @@ end:
 	}
 }
 
-void at_sntpintv(void *arg)
+void at_sntpquery(void *arg)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
-	int interval_sec = 0;
-	u32_t interval_ms = 0;
+	int error_no = 0;
 
-	if (arg == NULL) {
-		interval_ms = sntp_get_update_interval();
-		interval_sec = interval_ms / 1000;
-		at_printf("\r\n+SNTPINTV:%d\r\n", interval_sec);
-		goto end;
-	}
-
-	argc = parse_param(arg, argv);
-	if (argc != 2) {
-		RTK_LOGE(NOTAG, "[+SNTPINTV] Invalid number of parameters\r\n");
+	if (arg != NULL) {
 		error_no = 1;
 		goto end;
 	}
 
-	interval_sec = atoi(argv[1]);
-	if (interval_sec <= 15) {
-		RTK_LOGE(NOTAG, "[+SNTPINTV] Interval must be greater than 15 seconds\r\n");
-		error_no = 1;
-		goto end;
-	}
+	at_printf("\r\n");
 
-	interval_ms = interval_sec * 1000;
-	sntp_set_update_interval(interval_ms);
-	RTK_LOGI(NOTAG, "[+SNTPINTV] SNTP update interval set to %d seconds (%u ms)\r\n", interval_sec, interval_ms);
+	// Query SNTP enable status
+	int is_sntp_enabled = sntp_enabled();
+	at_printf("enable: %d\r\n", is_sntp_enabled);
+
+	// Query timezone
+	char *tz = getenv("TZ");
+	char tz_display[32] = "800";
+
+	if (tz && strlen(tz) > 3) {
+		char *sign_pos = strpbrk(tz + 3, "+-");
+
+		if (sign_pos) {
+			int hours = 0, minutes = 0;
+			char sign = *sign_pos;
+
+			if (sscanf(sign_pos + 1, "%d:%d", &hours, &minutes) >= 1) {
+				if (sign == '-') {
+					snprintf(tz_display, sizeof(tz_display), "%d%02d", hours, minutes);
+				} else {
+					snprintf(tz_display, sizeof(tz_display), "-%d%02d", hours, minutes);
+				}
+			} else if (sscanf(sign_pos + 1, "%d", &hours) == 1) {
+				if (sign == '-') {
+					snprintf(tz_display, sizeof(tz_display), "%d", hours);
+				} else {
+					snprintf(tz_display, sizeof(tz_display), "-%d", hours);
+				}
+			}
+		}
+	}
+	at_printf("timezone: %s\r\n", tz_display);
+
+	// Query update interval
+	u32_t interval_ms = sntp_get_update_interval();
+	int interval_sec = interval_ms / 1000;
+	at_printf("interval: %d\r\n", interval_sec);
+
+	// Query SNTP servers
+	at_printf("server_count: %d\r\n", server_count);
+	for (int i = 0; i < server_count; i++) {
+		if (server_list[i] != NULL) {
+			at_printf("server%d: %s\r\n", i, server_list[i]);
+		}
+	}
 
 end:
 	if (error_no == 0) {
@@ -592,17 +605,22 @@ void at_sntptime(void *arg)
 		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
+#endif /* CONFIG_ATCMD_SNTP */
 
 log_item_t at_network_items[ ] = {
-	{"+DNS", at_dns, {NULL, NULL}},
-	{"+QUERYDNSSRV", at_querydnssrv, {NULL, NULL}},
-	{"+SETDNSSRV", at_setdnssrv, {NULL, NULL}},
 	{"+PING", at_ping, {NULL, NULL}},
 	{"+IPERF", at_iperf, {NULL, NULL}},
 	{"+IPERF3", at_iperf3, {NULL, NULL}},
+#if defined(CONFIG_ATCMD_DNS) && (CONFIG_ATCMD_DNS == 1)
+	{"+DNS", at_dns, {NULL, NULL}},
+	{"+QUERYDNSSRV", at_querydnssrv, {NULL, NULL}},
+	{"+SETDNSSRV", at_setdnssrv, {NULL, NULL}},
+#endif
+#if defined(CONFIG_ATCMD_SNTP) && (CONFIG_ATCMD_SNTP == 1)
 	{"+SNTPCFG", at_sntpcfg, {NULL, NULL}},
-	{"+SNTPINTV", at_sntpintv, {NULL, NULL}},
+	{"+SNTPQUERY", at_sntpquery, {NULL, NULL}},
 	{"+SNTPTIME", at_sntptime, {NULL, NULL}},
+#endif
 };
 
 void print_network_at(void)

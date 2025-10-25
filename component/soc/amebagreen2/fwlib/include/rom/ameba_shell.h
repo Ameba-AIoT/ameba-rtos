@@ -18,7 +18,11 @@
 //                                     cmd, the last byte is for string end ('\0').
 #define UART_LOG_CMD_BUFLEN     127
 #define UART_LOG_CMD_BUFLEN_L	4096
-
+#ifdef CONFIG_LONGER_CMD
+#define CMD_BUFLEN UART_LOG_CMD_BUFLEN_L
+#else
+#define CMD_BUFLEN UART_LOG_CMD_BUFLEN
+#endif
 #define MAX_ARGV                32
 
 typedef u32(*ECHOFUNC)(u8 *, ...);   //UART LOG echo-function type.

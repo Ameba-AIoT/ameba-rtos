@@ -23,16 +23,16 @@
  */
 
 #if   defined ( __ICCARM__ )
-#pragma system_include         /* treat file as system include file for MISRA check */
+  #pragma system_include         /* treat file as system include file for MISRA check */
 #elif defined (__clang__)
-#pragma clang system_header   /* treat file as system include file */
+  #pragma clang system_header   /* treat file as system include file */
 #endif
 
 #ifndef __CORE_CA_H_GENERIC
 #define __CORE_CA_H_GENERIC
 
 #ifdef __cplusplus
-extern "C" {
+ extern "C" {
 #endif
 
 /*******************************************************************************
@@ -46,76 +46,76 @@ extern "C" {
                                    __CA_CMSIS_VERSION_SUB          )       /*!< \brief CMSIS-Core(A) version number         */
 
 #if defined ( __CC_ARM )
-#if defined __TARGET_FPU_VFP
-#if defined(__FPU_PRESENT) && (__FPU_PRESENT == 1)
-#define __FPU_USED       1U
-#else
-#warning "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
-#define __FPU_USED       0U
-#endif
-#else
-#define __FPU_USED         0U
-#endif
+  #if defined __TARGET_FPU_VFP
+    #if defined(__FPU_PRESENT) && (__FPU_PRESENT == 1)
+      #define __FPU_USED       1U
+    #else
+      #warning "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+      #define __FPU_USED       0U
+    #endif
+  #else
+    #define __FPU_USED         0U
+  #endif
 
 #elif defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
-#if defined __ARM_FP
-#if defined (__FPU_PRESENT) && (__FPU_PRESENT == 1U)
-#define __FPU_USED       1U
-#else
-#warning "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
-#define __FPU_USED       0U
-#endif
-#else
-#define __FPU_USED         0U
-#endif
+  #if defined __ARM_FP
+    #if defined (__FPU_PRESENT) && (__FPU_PRESENT == 1U)
+      #define __FPU_USED       1U
+    #else
+      #warning "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+      #define __FPU_USED       0U
+    #endif
+  #else
+    #define __FPU_USED         0U
+  #endif
 
 #elif defined ( __ICCARM__ )
-#if defined __ARMVFP__
-#if defined(__FPU_PRESENT) && (__FPU_PRESENT == 1)
-#define __FPU_USED       1U
-#else
-#warning "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
-#define __FPU_USED       0U
-#endif
-#else
-#define __FPU_USED         0U
-#endif
+  #if defined __ARMVFP__
+    #if defined(__FPU_PRESENT) && (__FPU_PRESENT == 1)
+      #define __FPU_USED       1U
+    #else
+      #warning "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+      #define __FPU_USED       0U
+    #endif
+  #else
+    #define __FPU_USED         0U
+  #endif
 
 #elif defined ( __TMS470__ )
-#if defined __TI_VFP_SUPPORT__
-#if defined(__FPU_PRESENT) && (__FPU_PRESENT == 1)
-#define __FPU_USED       1U
-#else
-#warning "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
-#define __FPU_USED       0U
-#endif
-#else
-#define __FPU_USED         0U
-#endif
+  #if defined __TI_VFP_SUPPORT__
+    #if defined(__FPU_PRESENT) && (__FPU_PRESENT == 1)
+      #define __FPU_USED       1U
+    #else
+      #warning "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+      #define __FPU_USED       0U
+    #endif
+  #else
+    #define __FPU_USED         0U
+  #endif
 
 #elif defined ( __GNUC__ )
-#if defined (__VFP_FP__) && !defined(__SOFTFP__)
-#if defined(__FPU_PRESENT) && (__FPU_PRESENT == 1)
-#define __FPU_USED       1U
-#else
-#warning "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
-#define __FPU_USED       0U
-#endif
-#else
-#define __FPU_USED         0U
-#endif
+  #if defined (__VFP_FP__) && !defined(__SOFTFP__)
+    #if defined(__FPU_PRESENT) && (__FPU_PRESENT == 1)
+      #define __FPU_USED       1U
+    #else
+      #warning "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+      #define __FPU_USED       0U
+    #endif
+  #else
+    #define __FPU_USED         0U
+  #endif
 
 #elif defined ( __TASKING__ )
-#if defined __FPU_VFP__
-#if defined(__FPU_PRESENT) && (__FPU_PRESENT == 1)
-#define __FPU_USED       1U
-#else
-#error "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
-#define __FPU_USED       0U
-#endif
-#else
-#define __FPU_USED         0U
-#endif
+  #if defined __FPU_VFP__
+    #if defined(__FPU_PRESENT) && (__FPU_PRESENT == 1)
+      #define __FPU_USED       1U
+    #else
+      #error "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+      #define __FPU_USED       0U
+    #endif
+  #else
+    #define __FPU_USED         0U
+  #endif
 #endif
 
 #include "cmsis_compiler.h"               /* CMSIS compiler specific defines */
@@ -132,42 +132,42 @@ extern "C" {
 #define __CORE_CA_H_DEPENDANT
 
 #ifdef __cplusplus
-extern "C" {
+ extern "C" {
 #endif
 
-/* check device defines and use defaults */
+ /* check device defines and use defaults */
 #if defined __CHECK_DEVICE_DEFINES
-#ifndef __CA_REV
-#define __CA_REV              0x0000U
-#warning "__CA_REV not defined in device header file; using default!"
-#endif
+  #ifndef __CA_REV
+    #define __CA_REV              0x0000U
+    #warning "__CA_REV not defined in device header file; using default!"
+  #endif
 
-#ifndef __FPU_PRESENT
-#define __FPU_PRESENT             0U
-#warning "__FPU_PRESENT not defined in device header file; using default!"
-#endif
+  #ifndef __FPU_PRESENT
+    #define __FPU_PRESENT             0U
+    #warning "__FPU_PRESENT not defined in device header file; using default!"
+  #endif
 
-#ifndef __GIC_PRESENT
-#define __GIC_PRESENT             1U
-#warning "__GIC_PRESENT not defined in device header file; using default!"
-#endif
+  #ifndef __GIC_PRESENT
+    #define __GIC_PRESENT             1U
+    #warning "__GIC_PRESENT not defined in device header file; using default!"
+  #endif
 
-#ifndef __TIM_PRESENT
-#define __TIM_PRESENT             1U
-#warning "__TIM_PRESENT not defined in device header file; using default!"
-#endif
+  #ifndef __TIM_PRESENT
+    #define __TIM_PRESENT             1U
+    #warning "__TIM_PRESENT not defined in device header file; using default!"
+  #endif
 
-#ifndef __L2C_PRESENT
-#define __L2C_PRESENT             0U
-#warning "__L2C_PRESENT not defined in device header file; using default!"
-#endif
+  #ifndef __L2C_PRESENT
+    #define __L2C_PRESENT             0U
+    #warning "__L2C_PRESENT not defined in device header file; using default!"
+  #endif
 #endif
 
 /* IO definitions (access restrictions to peripheral registers) */
 #ifdef __cplusplus
-#define   __I     volatile             /*!< \brief Defines 'read only' permissions */
+  #define   __I     volatile             /*!< \brief Defines 'read only' permissions */
 #else
-#define   __I     volatile const       /*!< \brief Defines 'read only' permissions */
+  #define   __I     volatile const       /*!< \brief Defines 'read only' permissions */
 #endif
 #define     __O     volatile             /*!< \brief Defines 'write only' permissions */
 #define     __IO    volatile             /*!< \brief Defines 'read / write' permissions */
@@ -178,37 +178,39 @@ extern "C" {
 #define     __IOM    volatile            /*!< \brief Defines 'read / write' structure member permissions */
 #define RESERVED(N, T) T RESERVED##N;    // placeholder struct members used for "reserved" areas
 
-/*******************************************************************************
- *                 Register Abstraction
-  Core Register contain:
-  - CPSR
-  - CP15 Registers
-  - L2C-310 Cache Controller
-  - Generic Interrupt Controller Distributor
-  - Generic Interrupt Controller Interface
- ******************************************************************************/
+ /*******************************************************************************
+  *                 Register Abstraction
+   Core Register contain:
+   - CPSR
+   - CP15 Registers
+   - L2C-310 Cache Controller
+   - Generic Interrupt Controller Distributor
+   - Generic Interrupt Controller Interface
+  ******************************************************************************/
 
 /* Core Register CPSR */
-typedef union {
-	struct {
-		uint32_t M: 5;                       /*!< \brief bit:  0.. 4  Mode field */
-		uint32_t T: 1;                       /*!< \brief bit:      5  Thumb execution state bit */
-		uint32_t F: 1;                       /*!< \brief bit:      6  FIQ mask bit */
-		uint32_t I: 1;                       /*!< \brief bit:      7  IRQ mask bit */
-		uint32_t A: 1;                       /*!< \brief bit:      8  Asynchronous abort mask bit */
-		uint32_t E: 1;                       /*!< \brief bit:      9  Endianness execution state bit */
-		uint32_t IT1: 6;                     /*!< \brief bit: 10..15  If-Then execution state bits 2-7 */
-		uint32_t GE: 4;                      /*!< \brief bit: 16..19  Greater than or Equal flags */
-		RESERVED(0: 4, uint32_t)
-		uint32_t J: 1;                       /*!< \brief bit:     24  Jazelle bit */
-		uint32_t IT0: 2;                     /*!< \brief bit: 25..26  If-Then execution state bits 0-1 */
-		uint32_t Q: 1;                       /*!< \brief bit:     27  Saturation condition flag */
-		uint32_t V: 1;                       /*!< \brief bit:     28  Overflow condition code flag */
-		uint32_t C: 1;                       /*!< \brief bit:     29  Carry condition code flag */
-		uint32_t Z: 1;                       /*!< \brief bit:     30  Zero condition code flag */
-		uint32_t N: 1;                       /*!< \brief bit:     31  Negative condition code flag */
-	} b;                                   /*!< \brief Structure used for bit  access */
-	uint32_t w;                            /*!< \brief Type      used for word access */
+typedef union
+{
+  struct
+  {
+    uint32_t M:5;                        /*!< \brief bit:  0.. 4  Mode field */
+    uint32_t T:1;                        /*!< \brief bit:      5  Thumb execution state bit */
+    uint32_t F:1;                        /*!< \brief bit:      6  FIQ mask bit */
+    uint32_t I:1;                        /*!< \brief bit:      7  IRQ mask bit */
+    uint32_t A:1;                        /*!< \brief bit:      8  Asynchronous abort mask bit */
+    uint32_t E:1;                        /*!< \brief bit:      9  Endianness execution state bit */
+    uint32_t IT1:6;                      /*!< \brief bit: 10..15  If-Then execution state bits 2-7 */
+    uint32_t GE:4;                       /*!< \brief bit: 16..19  Greater than or Equal flags */
+    RESERVED(0:4, uint32_t)
+    uint32_t J:1;                        /*!< \brief bit:     24  Jazelle bit */
+    uint32_t IT0:2;                      /*!< \brief bit: 25..26  If-Then execution state bits 0-1 */
+    uint32_t Q:1;                        /*!< \brief bit:     27  Saturation condition flag */
+    uint32_t V:1;                        /*!< \brief bit:     28  Overflow condition code flag */
+    uint32_t C:1;                        /*!< \brief bit:     29  Carry condition code flag */
+    uint32_t Z:1;                        /*!< \brief bit:     30  Zero condition code flag */
+    uint32_t N:1;                        /*!< \brief bit:     31  Negative condition code flag */
+  } b;                                   /*!< \brief Structure used for bit  access */
+  uint32_t w;                            /*!< \brief Type      used for word access */
 } CPSR_Type;
 
 
@@ -270,39 +272,41 @@ typedef union {
 #define CPSR_M_SYS                       0x1FU                                  /*!< \brief CPSR: M System mode (PL1) */
 
 /* CP15 Register SCTLR */
-typedef union {
-	struct {
-		uint32_t M: 1;                       /*!< \brief bit:     0  MMU enable */
-		uint32_t A: 1;                       /*!< \brief bit:     1  Alignment check enable */
-		uint32_t C: 1;                       /*!< \brief bit:     2  Cache enable */
-		RESERVED(0: 2, uint32_t)
-		uint32_t CP15BEN: 1;                 /*!< \brief bit:     5  CP15 barrier enable */
-		RESERVED(1: 1, uint32_t)
-		uint32_t B: 1;                       /*!< \brief bit:     7  Endianness model */
-		RESERVED(2: 2, uint32_t)
-		uint32_t SW: 1;                      /*!< \brief bit:    10  SWP and SWPB enable */
-		uint32_t Z: 1;                       /*!< \brief bit:    11  Branch prediction enable */
-		uint32_t I: 1;                       /*!< \brief bit:    12  Instruction cache enable */
-		uint32_t V: 1;                       /*!< \brief bit:    13  Vectors bit */
-		uint32_t RR: 1;                      /*!< \brief bit:    14  Round Robin select */
-		RESERVED(3: 2, uint32_t)
-		uint32_t HA: 1;                      /*!< \brief bit:    17  Hardware Access flag enable */
-		RESERVED(4: 1, uint32_t)
-		uint32_t WXN: 1;                     /*!< \brief bit:    19  Write permission implies XN */
-		uint32_t UWXN: 1;                    /*!< \brief bit:    20  Unprivileged write permission implies PL1 XN */
-		uint32_t FI: 1;                      /*!< \brief bit:    21  Fast interrupts configuration enable */
-		uint32_t U: 1;                       /*!< \brief bit:    22  Alignment model */
-		RESERVED(5: 1, uint32_t)
-		uint32_t VE: 1;                      /*!< \brief bit:    24  Interrupt Vectors Enable */
-		uint32_t EE: 1;                      /*!< \brief bit:    25  Exception Endianness */
-		RESERVED(6: 1, uint32_t)
-		uint32_t NMFI: 1;                    /*!< \brief bit:    27  Non-maskable FIQ (NMFI) support */
-		uint32_t TRE: 1;                     /*!< \brief bit:    28  TEX remap enable. */
-		uint32_t AFE: 1;                     /*!< \brief bit:    29  Access flag enable */
-		uint32_t TE: 1;                      /*!< \brief bit:    30  Thumb Exception enable */
-		RESERVED(7: 1, uint32_t)
-	} b;                                   /*!< \brief Structure used for bit  access */
-	uint32_t w;                            /*!< \brief Type      used for word access */
+typedef union
+{
+  struct
+  {
+    uint32_t M:1;                        /*!< \brief bit:     0  MMU enable */
+    uint32_t A:1;                        /*!< \brief bit:     1  Alignment check enable */
+    uint32_t C:1;                        /*!< \brief bit:     2  Cache enable */
+    RESERVED(0:2, uint32_t)
+    uint32_t CP15BEN:1;                  /*!< \brief bit:     5  CP15 barrier enable */
+    RESERVED(1:1, uint32_t)
+    uint32_t B:1;                        /*!< \brief bit:     7  Endianness model */
+    RESERVED(2:2, uint32_t)
+    uint32_t SW:1;                       /*!< \brief bit:    10  SWP and SWPB enable */
+    uint32_t Z:1;                        /*!< \brief bit:    11  Branch prediction enable */
+    uint32_t I:1;                        /*!< \brief bit:    12  Instruction cache enable */
+    uint32_t V:1;                        /*!< \brief bit:    13  Vectors bit */
+    uint32_t RR:1;                       /*!< \brief bit:    14  Round Robin select */
+    RESERVED(3:2, uint32_t)
+    uint32_t HA:1;                       /*!< \brief bit:    17  Hardware Access flag enable */
+    RESERVED(4:1, uint32_t)
+    uint32_t WXN:1;                      /*!< \brief bit:    19  Write permission implies XN */
+    uint32_t UWXN:1;                     /*!< \brief bit:    20  Unprivileged write permission implies PL1 XN */
+    uint32_t FI:1;                       /*!< \brief bit:    21  Fast interrupts configuration enable */
+    uint32_t U:1;                        /*!< \brief bit:    22  Alignment model */
+    RESERVED(5:1, uint32_t)
+    uint32_t VE:1;                       /*!< \brief bit:    24  Interrupt Vectors Enable */
+    uint32_t EE:1;                       /*!< \brief bit:    25  Exception Endianness */
+    RESERVED(6:1, uint32_t)
+    uint32_t NMFI:1;                     /*!< \brief bit:    27  Non-maskable FIQ (NMFI) support */
+    uint32_t TRE:1;                      /*!< \brief bit:    28  TEX remap enable. */
+    uint32_t AFE:1;                      /*!< \brief bit:    29  Access flag enable */
+    uint32_t TE:1;                       /*!< \brief bit:    30  Thumb Exception enable */
+    RESERVED(7:1, uint32_t)
+  } b;                                   /*!< \brief Structure used for bit  access */
+  uint32_t w;                            /*!< \brief Type      used for word access */
 } SCTLR_Type;
 
 #define SCTLR_TE_Pos                     30U                                    /*!< \brief SCTLR: TE Position */
@@ -369,59 +373,63 @@ typedef union {
 #define SCTLR_M_Msk                      (1UL << SCTLR_M_Pos)                   /*!< \brief SCTLR: M Mask */
 
 /* CP15 Register ACTLR */
-typedef union {
+typedef union
+{
 #if (defined(__CORTEX_A) && __CORTEX_A == 5) || defined(DOXYGEN)
-	/** \brief Structure used for bit access on Cortex-A5 */
-	struct {
-		uint32_t FW: 1;                     /*!< \brief bit:      0  Cache and TLB maintenance broadcast */
-		RESERVED(0: 5, uint32_t)
-		uint32_t SMP: 1;                     /*!< \brief bit:     6  Enables coherent requests to the processor */
-		uint32_t EXCL: 1;                    /*!< \brief bit:     7  Exclusive L1/L2 cache control */
-		RESERVED(1: 2, uint32_t)
-		uint32_t DODMBS: 1;                  /*!< \brief bit:    10  Disable optimized data memory barrier behavior */
-		uint32_t DWBST: 1;                   /*!< \brief bit:    11  AXI data write bursts to Normal memory */
-		uint32_t RADIS: 1;                   /*!< \brief bit:    12  L1 Data Cache read-allocate mode disable */
-		uint32_t L1PCTL: 2;                  /*!< \brief bit:13..14  L1 Data prefetch control */
-		uint32_t BP: 2;                      /*!< \brief bit:16..15  Branch prediction policy */
-		uint32_t RSDIS: 1;                   /*!< \brief bit:    17  Disable return stack operation */
-		uint32_t BTDIS: 1;                   /*!< \brief bit:    18  Disable indirect Branch Target Address Cache (BTAC) */
-		RESERVED(3: 9, uint32_t)
-		uint32_t DBDI: 1;                    /*!< \brief bit:    28  Disable branch dual issue */
-		RESERVED(7: 3, uint32_t)
-	} b;
+  /** \brief Structure used for bit access on Cortex-A5 */
+  struct
+  {
+    uint32_t FW:1;                      /*!< \brief bit:      0  Cache and TLB maintenance broadcast */
+    RESERVED(0:5, uint32_t)
+    uint32_t SMP:1;                      /*!< \brief bit:     6  Enables coherent requests to the processor */
+    uint32_t EXCL:1;                     /*!< \brief bit:     7  Exclusive L1/L2 cache control */
+    RESERVED(1:2, uint32_t)
+    uint32_t DODMBS:1;                   /*!< \brief bit:    10  Disable optimized data memory barrier behavior */
+    uint32_t DWBST:1;                    /*!< \brief bit:    11  AXI data write bursts to Normal memory */
+    uint32_t RADIS:1;                    /*!< \brief bit:    12  L1 Data Cache read-allocate mode disable */
+    uint32_t L1PCTL:2;                   /*!< \brief bit:13..14  L1 Data prefetch control */
+    uint32_t BP:2;                       /*!< \brief bit:16..15  Branch prediction policy */
+    uint32_t RSDIS:1;                    /*!< \brief bit:    17  Disable return stack operation */
+    uint32_t BTDIS:1;                    /*!< \brief bit:    18  Disable indirect Branch Target Address Cache (BTAC) */
+    RESERVED(3:9, uint32_t)
+    uint32_t DBDI:1;                     /*!< \brief bit:    28  Disable branch dual issue */
+    RESERVED(7:3, uint32_t)
+ } b;
 #endif
 #if (defined(__CORTEX_A) && __CORTEX_A == 7) || defined(DOXYGEN)
-	/** \brief Structure used for bit access on Cortex-A7 */
-	struct {
-		RESERVED(0: 6, uint32_t)
-		uint32_t SMP: 1;                     /*!< \brief bit:     6  Enables coherent requests to the processor */
-		RESERVED(1: 3, uint32_t)
-		uint32_t DODMBS: 1;                  /*!< \brief bit:    10  Disable optimized data memory barrier behavior */
-		uint32_t L2RADIS: 1;                 /*!< \brief bit:    11  L2 Data Cache read-allocate mode disable */
-		uint32_t L1RADIS: 1;                 /*!< \brief bit:    12  L1 Data Cache read-allocate mode disable */
-		uint32_t L1PCTL: 2;                  /*!< \brief bit:13..14  L1 Data prefetch control */
-		uint32_t DDVM: 1;                    /*!< \brief bit:    15  Disable Distributed Virtual Memory (DVM) transactions */
-		RESERVED(3: 12, uint32_t)
-		uint32_t DDI: 1;                     /*!< \brief bit:    28  Disable dual issue */
-		RESERVED(7: 3, uint32_t)
-	} b;
+  /** \brief Structure used for bit access on Cortex-A7 */
+  struct
+  {
+    RESERVED(0:6, uint32_t)
+    uint32_t SMP:1;                      /*!< \brief bit:     6  Enables coherent requests to the processor */
+    RESERVED(1:3, uint32_t)
+    uint32_t DODMBS:1;                   /*!< \brief bit:    10  Disable optimized data memory barrier behavior */
+    uint32_t L2RADIS:1;                  /*!< \brief bit:    11  L2 Data Cache read-allocate mode disable */
+    uint32_t L1RADIS:1;                  /*!< \brief bit:    12  L1 Data Cache read-allocate mode disable */
+    uint32_t L1PCTL:2;                   /*!< \brief bit:13..14  L1 Data prefetch control */
+    uint32_t DDVM:1;                     /*!< \brief bit:    15  Disable Distributed Virtual Memory (DVM) transactions */
+    RESERVED(3:12, uint32_t)
+    uint32_t DDI:1;                      /*!< \brief bit:    28  Disable dual issue */
+    RESERVED(7:3, uint32_t)
+  } b;
 #endif
 #if (defined(__CORTEX_A) && __CORTEX_A == 9) || defined(DOXYGEN)
-	/** \brief Structure used for bit access on Cortex-A9 */
-	struct {
-		uint32_t FW: 1;                      /*!< \brief bit:     0  Cache and TLB maintenance broadcast */
-		RESERVED(0: 1, uint32_t)
-		uint32_t L1PE: 1;                    /*!< \brief bit:     2  Dside prefetch */
-		uint32_t WFLZM: 1;                   /*!< \brief bit:     3  Cache and TLB maintenance broadcast */
-		RESERVED(1: 2, uint32_t)
-		uint32_t SMP: 1;                     /*!< \brief bit:     6  Enables coherent requests to the processor */
-		uint32_t EXCL: 1;                    /*!< \brief bit:     7  Exclusive L1/L2 cache control */
-		uint32_t AOW: 1;                     /*!< \brief bit:     8  Enable allocation in one cache way only */
-		uint32_t PARITY: 1;                  /*!< \brief bit:     9  Support for parity checking, if implemented */
-		RESERVED(7: 22, uint32_t)
-	} b;
+  /** \brief Structure used for bit access on Cortex-A9 */
+  struct
+  {
+    uint32_t FW:1;                       /*!< \brief bit:     0  Cache and TLB maintenance broadcast */
+    RESERVED(0:1, uint32_t)
+    uint32_t L1PE:1;                     /*!< \brief bit:     2  Dside prefetch */
+    uint32_t WFLZM:1;                    /*!< \brief bit:     3  Cache and TLB maintenance broadcast */
+    RESERVED(1:2, uint32_t)
+    uint32_t SMP:1;                      /*!< \brief bit:     6  Enables coherent requests to the processor */
+    uint32_t EXCL:1;                     /*!< \brief bit:     7  Exclusive L1/L2 cache control */
+    uint32_t AOW:1;                      /*!< \brief bit:     8  Enable allocation in one cache way only */
+    uint32_t PARITY:1;                   /*!< \brief bit:     9  Support for parity checking, if implemented */
+    RESERVED(7:22, uint32_t)
+  } b;
 #endif
-	uint32_t w;                            /*!< \brief Type      used for word access */
+  uint32_t w;                            /*!< \brief Type      used for word access */
 } ACTLR_Type;
 
 #define ACTLR_DDI_Pos                    28U                                     /*!< \brief ACTLR: DDI Position */
@@ -482,28 +490,30 @@ typedef union {
 #define ACTLR_FW_Msk                     (1UL << ACTLR_FW_Pos)                   /*!< \brief ACTLR: FW Mask */
 
 /* CP15 Register CPACR */
-typedef union {
-	struct {
-		uint32_t CP0: 2;                     /*!< \brief bit:  0..1  Access rights for coprocessor 0 */
-		uint32_t CP1: 2;                     /*!< \brief bit:  2..3  Access rights for coprocessor 1 */
-		uint32_t CP2: 2;                     /*!< \brief bit:  4..5  Access rights for coprocessor 2 */
-		uint32_t CP3: 2;                     /*!< \brief bit:  6..7  Access rights for coprocessor 3 */
-		uint32_t CP4: 2;                     /*!< \brief bit:  8..9  Access rights for coprocessor 4 */
-		uint32_t CP5: 2;                     /*!< \brief bit:10..11  Access rights for coprocessor 5 */
-		uint32_t CP6: 2;                     /*!< \brief bit:12..13  Access rights for coprocessor 6 */
-		uint32_t CP7: 2;                     /*!< \brief bit:14..15  Access rights for coprocessor 7 */
-		uint32_t CP8: 2;                     /*!< \brief bit:16..17  Access rights for coprocessor 8 */
-		uint32_t CP9: 2;                     /*!< \brief bit:18..19  Access rights for coprocessor 9 */
-		uint32_t CP10: 2;                    /*!< \brief bit:20..21  Access rights for coprocessor 10 */
-		uint32_t CP11: 2;                    /*!< \brief bit:22..23  Access rights for coprocessor 11 */
-		uint32_t CP12: 2;                    /*!< \brief bit:24..25  Access rights for coprocessor 11 */
-		uint32_t CP13: 2;                    /*!< \brief bit:26..27  Access rights for coprocessor 11 */
-		uint32_t TRCDIS: 1;                  /*!< \brief bit:    28  Disable CP14 access to trace registers */
-		RESERVED(0: 1, uint32_t)
-		uint32_t D32DIS: 1;                  /*!< \brief bit:    30  Disable use of registers D16-D31 of the VFP register file */
-		uint32_t ASEDIS: 1;                  /*!< \brief bit:    31  Disable Advanced SIMD Functionality */
-	} b;                                   /*!< \brief Structure used for bit  access */
-	uint32_t w;                            /*!< \brief Type      used for word access */
+typedef union
+{
+  struct
+  {
+    uint32_t CP0:2;                      /*!< \brief bit:  0..1  Access rights for coprocessor 0 */
+    uint32_t CP1:2;                      /*!< \brief bit:  2..3  Access rights for coprocessor 1 */
+    uint32_t CP2:2;                      /*!< \brief bit:  4..5  Access rights for coprocessor 2 */
+    uint32_t CP3:2;                      /*!< \brief bit:  6..7  Access rights for coprocessor 3 */
+    uint32_t CP4:2;                      /*!< \brief bit:  8..9  Access rights for coprocessor 4 */
+    uint32_t CP5:2;                      /*!< \brief bit:10..11  Access rights for coprocessor 5 */
+    uint32_t CP6:2;                      /*!< \brief bit:12..13  Access rights for coprocessor 6 */
+    uint32_t CP7:2;                      /*!< \brief bit:14..15  Access rights for coprocessor 7 */
+    uint32_t CP8:2;                      /*!< \brief bit:16..17  Access rights for coprocessor 8 */
+    uint32_t CP9:2;                      /*!< \brief bit:18..19  Access rights for coprocessor 9 */
+    uint32_t CP10:2;                     /*!< \brief bit:20..21  Access rights for coprocessor 10 */
+    uint32_t CP11:2;                     /*!< \brief bit:22..23  Access rights for coprocessor 11 */
+    uint32_t CP12:2;                     /*!< \brief bit:24..25  Access rights for coprocessor 11 */
+    uint32_t CP13:2;                     /*!< \brief bit:26..27  Access rights for coprocessor 11 */
+    uint32_t TRCDIS:1;                   /*!< \brief bit:    28  Disable CP14 access to trace registers */
+    RESERVED(0:1, uint32_t)
+    uint32_t D32DIS:1;                   /*!< \brief bit:    30  Disable use of registers D16-D31 of the VFP register file */
+    uint32_t ASEDIS:1;                   /*!< \brief bit:    31  Disable Advanced SIMD Functionality */
+  } b;                                   /*!< \brief Structure used for bit  access */
+  uint32_t w;                            /*!< \brief Type      used for word access */
 } CPACR_Type;
 
 #define CPACR_ASEDIS_Pos                 31U                                    /*!< \brief CPACR: ASEDIS Position */
@@ -523,29 +533,32 @@ typedef union {
 #define CPACR_CP_FA                      3U                                     /*!< \brief CPACR CPn field: Full access. */
 
 /* CP15 Register DFSR */
-typedef union {
-	struct {
-		uint32_t FS0: 4;                     /*!< \brief bit: 0.. 3  Fault Status bits bit 0-3 */
-		uint32_t Domain: 4;                  /*!< \brief bit: 4.. 7  Fault on which domain */
-		RESERVED(0: 1, uint32_t)
-		uint32_t LPAE: 1;                    /*!< \brief bit:     9  Large Physical Address Extension */
-		uint32_t FS1: 1;                     /*!< \brief bit:    10  Fault Status bits bit 4 */
-		uint32_t WnR: 1;                     /*!< \brief bit:    11  Write not Read bit */
-		uint32_t ExT: 1;                     /*!< \brief bit:    12  External abort type */
-		uint32_t CM: 1;                      /*!< \brief bit:    13  Cache maintenance fault */
-		RESERVED(1: 18, uint32_t)
-	} s;                                   /*!< \brief Structure used for bit  access in short format */
-	struct {
-		uint32_t STATUS: 5;                  /*!< \brief bit: 0.. 5  Fault Status bits */
-		RESERVED(0: 3, uint32_t)
-		uint32_t LPAE: 1;                    /*!< \brief bit:     9  Large Physical Address Extension */
-		RESERVED(1: 1, uint32_t)
-		uint32_t WnR: 1;                     /*!< \brief bit:    11  Write not Read bit */
-		uint32_t ExT: 1;                     /*!< \brief bit:    12  External abort type */
-		uint32_t CM: 1;                      /*!< \brief bit:    13  Cache maintenance fault */
-		RESERVED(2: 18, uint32_t)
-	} l;                                   /*!< \brief Structure used for bit  access in long format */
-	uint32_t w;                            /*!< \brief Type      used for word access */
+typedef union
+{
+  struct
+  {
+    uint32_t FS0:4;                      /*!< \brief bit: 0.. 3  Fault Status bits bit 0-3 */
+    uint32_t Domain:4;                   /*!< \brief bit: 4.. 7  Fault on which domain */
+    RESERVED(0:1, uint32_t)
+    uint32_t LPAE:1;                     /*!< \brief bit:     9  Large Physical Address Extension */
+    uint32_t FS1:1;                      /*!< \brief bit:    10  Fault Status bits bit 4 */
+    uint32_t WnR:1;                      /*!< \brief bit:    11  Write not Read bit */
+    uint32_t ExT:1;                      /*!< \brief bit:    12  External abort type */
+    uint32_t CM:1;                       /*!< \brief bit:    13  Cache maintenance fault */
+    RESERVED(1:18, uint32_t)
+  } s;                                   /*!< \brief Structure used for bit  access in short format */
+  struct
+  {
+    uint32_t STATUS:5;                   /*!< \brief bit: 0.. 5  Fault Status bits */
+    RESERVED(0:3, uint32_t)
+    uint32_t LPAE:1;                     /*!< \brief bit:     9  Large Physical Address Extension */
+    RESERVED(1:1, uint32_t)
+    uint32_t WnR:1;                      /*!< \brief bit:    11  Write not Read bit */
+    uint32_t ExT:1;                      /*!< \brief bit:    12  External abort type */
+    uint32_t CM:1;                       /*!< \brief bit:    13  Cache maintenance fault */
+    RESERVED(2:18, uint32_t)
+  } l;                                   /*!< \brief Structure used for bit  access in long format */
+  uint32_t w;                            /*!< \brief Type      used for word access */
 } DFSR_Type;
 
 #define DFSR_CM_Pos                      13U                                    /*!< \brief DFSR: CM Position */
@@ -573,25 +586,28 @@ typedef union {
 #define DFSR_STATUS_Msk                  (0x3FUL << DFSR_STATUS_Pos)            /*!< \brief DFSR: STATUS Mask */
 
 /* CP15 Register IFSR */
-typedef union {
-	struct {
-		uint32_t FS0: 4;                     /*!< \brief bit: 0.. 3  Fault Status bits bit 0-3 */
-		RESERVED(0: 5, uint32_t)
-		uint32_t LPAE: 1;                    /*!< \brief bit:     9  Large Physical Address Extension */
-		uint32_t FS1: 1;                     /*!< \brief bit:    10  Fault Status bits bit 4 */
-		RESERVED(1: 1, uint32_t)
-		uint32_t ExT: 1;                     /*!< \brief bit:    12  External abort type */
-		RESERVED(2: 19, uint32_t)
-	} s;                                   /*!< \brief Structure used for bit access in short format */
-	struct {
-		uint32_t STATUS: 6;                  /*!< \brief bit: 0.. 5  Fault Status bits */
-		RESERVED(0: 3, uint32_t)
-		uint32_t LPAE: 1;                    /*!< \brief bit:     9  Large Physical Address Extension */
-		RESERVED(1: 2, uint32_t)
-		uint32_t ExT: 1;                     /*!< \brief bit:    12  External abort type */
-		RESERVED(2: 19, uint32_t)
-	} l;                                   /*!< \brief Structure used for bit access in long format */
-	uint32_t w;                            /*!< \brief Type      used for word access */
+typedef union
+{
+  struct
+  {
+    uint32_t FS0:4;                      /*!< \brief bit: 0.. 3  Fault Status bits bit 0-3 */
+    RESERVED(0:5, uint32_t)
+    uint32_t LPAE:1;                     /*!< \brief bit:     9  Large Physical Address Extension */
+    uint32_t FS1:1;                      /*!< \brief bit:    10  Fault Status bits bit 4 */
+    RESERVED(1:1, uint32_t)
+    uint32_t ExT:1;                      /*!< \brief bit:    12  External abort type */
+    RESERVED(2:19, uint32_t)
+  } s;                                   /*!< \brief Structure used for bit access in short format */
+  struct
+  {
+    uint32_t STATUS:6;                   /*!< \brief bit: 0.. 5  Fault Status bits */
+    RESERVED(0:3, uint32_t)
+    uint32_t LPAE:1;                     /*!< \brief bit:     9  Large Physical Address Extension */
+    RESERVED(1:2, uint32_t)
+    uint32_t ExT:1;                      /*!< \brief bit:    12  External abort type */
+    RESERVED(2:19, uint32_t)
+  } l;                                   /*!< \brief Structure used for bit access in long format */
+  uint32_t w;                            /*!< \brief Type      used for word access */
 } IFSR_Type;
 
 #define IFSR_ExT_Pos                     12U                                    /*!< \brief IFSR: ExT Position */
@@ -610,15 +626,17 @@ typedef union {
 #define IFSR_STATUS_Msk                  (0x3FUL << IFSR_STATUS_Pos)            /*!< \brief IFSR: STATUS Mask */
 
 /* CP15 Register ISR */
-typedef union {
-	struct {
-		RESERVED(0: 6, uint32_t)
-		uint32_t F: 1;                       /*!< \brief bit:     6  FIQ pending bit */
-		uint32_t I: 1;                       /*!< \brief bit:     7  IRQ pending bit */
-		uint32_t A: 1;                       /*!< \brief bit:     8  External abort pending bit */
-		RESERVED(1: 23, uint32_t)
-	} b;                                   /*!< \brief Structure used for bit  access */
-	uint32_t w;                            /*!< \brief Type      used for word access */
+typedef union
+{
+  struct
+  {
+    RESERVED(0:6, uint32_t)
+    uint32_t F:1;                        /*!< \brief bit:     6  FIQ pending bit */
+    uint32_t I:1;                        /*!< \brief bit:     7  IRQ pending bit */
+    uint32_t A:1;                        /*!< \brief bit:     8  External abort pending bit */
+    RESERVED(1:23, uint32_t)
+  } b;                                   /*!< \brief Structure used for bit  access */
+  uint32_t w;                            /*!< \brief Type      used for word access */
 } ISR_Type;
 
 #define ISR_A_Pos                        13U                                    /*!< \brief ISR: A Position */
@@ -658,62 +676,63 @@ typedef union {
  \brief  Union type to access the L2C_310 Cache Controller.
 */
 #if (defined (__L2C_PRESENT) && (__L2C_PRESENT == 1U)) || defined(DOXYGEN)
-typedef struct {
-	__IM  uint32_t CACHE_ID;                   /*!< \brief Offset: 0x0000 (R/ ) Cache ID Register               */
-	__IM  uint32_t CACHE_TYPE;                 /*!< \brief Offset: 0x0004 (R/ ) Cache Type Register             */
-	RESERVED(0[0x3e], uint32_t)
-	__IOM uint32_t CONTROL;                    /*!< \brief Offset: 0x0100 (R/W) Control Register                */
-	__IOM uint32_t AUX_CNT;                    /*!< \brief Offset: 0x0104 (R/W) Auxiliary Control               */
-	RESERVED(1[0x3e], uint32_t)
-	__IOM uint32_t EVENT_CONTROL;              /*!< \brief Offset: 0x0200 (R/W) Event Counter Control           */
-	__IOM uint32_t EVENT_COUNTER1_CONF;        /*!< \brief Offset: 0x0204 (R/W) Event Counter 1 Configuration   */
-	__IOM uint32_t EVENT_COUNTER0_CONF;        /*!< \brief Offset: 0x0208 (R/W) Event Counter 1 Configuration   */
-	RESERVED(2[0x2], uint32_t)
-	__IOM uint32_t INTERRUPT_MASK;             /*!< \brief Offset: 0x0214 (R/W) Interrupt Mask                  */
-	__IM  uint32_t MASKED_INT_STATUS;          /*!< \brief Offset: 0x0218 (R/ ) Masked Interrupt Status         */
-	__IM  uint32_t RAW_INT_STATUS;             /*!< \brief Offset: 0x021c (R/ ) Raw Interrupt Status            */
-	__OM  uint32_t INTERRUPT_CLEAR;            /*!< \brief Offset: 0x0220 ( /W) Interrupt Clear                 */
-	RESERVED(3[0x143], uint32_t)
-	__IOM uint32_t CACHE_SYNC;                 /*!< \brief Offset: 0x0730 (R/W) Cache Sync                      */
-	RESERVED(4[0xf], uint32_t)
-	__IOM uint32_t INV_LINE_PA;                /*!< \brief Offset: 0x0770 (R/W) Invalidate Line By PA           */
-	RESERVED(6[2], uint32_t)
-	__IOM uint32_t INV_WAY;                    /*!< \brief Offset: 0x077c (R/W) Invalidate by Way               */
-	RESERVED(5[0xc], uint32_t)
-	__IOM uint32_t CLEAN_LINE_PA;              /*!< \brief Offset: 0x07b0 (R/W) Clean Line by PA                */
-	RESERVED(7[1], uint32_t)
-	__IOM uint32_t CLEAN_LINE_INDEX_WAY;       /*!< \brief Offset: 0x07b8 (R/W) Clean Line by Index/Way         */
-	__IOM uint32_t CLEAN_WAY;                  /*!< \brief Offset: 0x07bc (R/W) Clean by Way                    */
-	RESERVED(8[0xc], uint32_t)
-	__IOM uint32_t CLEAN_INV_LINE_PA;          /*!< \brief Offset: 0x07f0 (R/W) Clean and Invalidate Line by PA  */
-	RESERVED(9[1], uint32_t)
-	__IOM uint32_t CLEAN_INV_LINE_INDEX_WAY;   /*!< \brief Offset: 0x07f8 (R/W) Clean and Invalidate Line by Index/Way  */
-	__IOM uint32_t CLEAN_INV_WAY;              /*!< \brief Offset: 0x07fc (R/W) Clean and Invalidate by Way     */
-	RESERVED(10[0x40], uint32_t)
-	__IOM uint32_t DATA_LOCK_0_WAY;            /*!< \brief Offset: 0x0900 (R/W) Data Lockdown 0 by Way          */
-	__IOM uint32_t INST_LOCK_0_WAY;            /*!< \brief Offset: 0x0904 (R/W) Instruction Lockdown 0 by Way   */
-	__IOM uint32_t DATA_LOCK_1_WAY;            /*!< \brief Offset: 0x0908 (R/W) Data Lockdown 1 by Way          */
-	__IOM uint32_t INST_LOCK_1_WAY;            /*!< \brief Offset: 0x090c (R/W) Instruction Lockdown 1 by Way   */
-	__IOM uint32_t DATA_LOCK_2_WAY;            /*!< \brief Offset: 0x0910 (R/W) Data Lockdown 2 by Way          */
-	__IOM uint32_t INST_LOCK_2_WAY;            /*!< \brief Offset: 0x0914 (R/W) Instruction Lockdown 2 by Way   */
-	__IOM uint32_t DATA_LOCK_3_WAY;            /*!< \brief Offset: 0x0918 (R/W) Data Lockdown 3 by Way          */
-	__IOM uint32_t INST_LOCK_3_WAY;            /*!< \brief Offset: 0x091c (R/W) Instruction Lockdown 3 by Way   */
-	__IOM uint32_t DATA_LOCK_4_WAY;            /*!< \brief Offset: 0x0920 (R/W) Data Lockdown 4 by Way          */
-	__IOM uint32_t INST_LOCK_4_WAY;            /*!< \brief Offset: 0x0924 (R/W) Instruction Lockdown 4 by Way   */
-	__IOM uint32_t DATA_LOCK_5_WAY;            /*!< \brief Offset: 0x0928 (R/W) Data Lockdown 5 by Way          */
-	__IOM uint32_t INST_LOCK_5_WAY;            /*!< \brief Offset: 0x092c (R/W) Instruction Lockdown 5 by Way   */
-	__IOM uint32_t DATA_LOCK_6_WAY;            /*!< \brief Offset: 0x0930 (R/W) Data Lockdown 5 by Way          */
-	__IOM uint32_t INST_LOCK_6_WAY;            /*!< \brief Offset: 0x0934 (R/W) Instruction Lockdown 5 by Way   */
-	__IOM uint32_t DATA_LOCK_7_WAY;            /*!< \brief Offset: 0x0938 (R/W) Data Lockdown 6 by Way          */
-	__IOM uint32_t INST_LOCK_7_WAY;            /*!< \brief Offset: 0x093c (R/W) Instruction Lockdown 6 by Way   */
-	RESERVED(11[0x4], uint32_t)
-	__IOM uint32_t LOCK_LINE_EN;               /*!< \brief Offset: 0x0950 (R/W) Lockdown by Line Enable         */
-	__IOM uint32_t UNLOCK_ALL_BY_WAY;          /*!< \brief Offset: 0x0954 (R/W) Unlock All Lines by Way         */
-	RESERVED(12[0xaa], uint32_t)
-	__IOM uint32_t ADDRESS_FILTER_START;       /*!< \brief Offset: 0x0c00 (R/W) Address Filtering Start         */
-	__IOM uint32_t ADDRESS_FILTER_END;         /*!< \brief Offset: 0x0c04 (R/W) Address Filtering End           */
-	RESERVED(13[0xce], uint32_t)
-	__IOM uint32_t DEBUG_CONTROL;              /*!< \brief Offset: 0x0f40 (R/W) Debug Control Register          */
+typedef struct
+{
+  __IM  uint32_t CACHE_ID;                   /*!< \brief Offset: 0x0000 (R/ ) Cache ID Register               */
+  __IM  uint32_t CACHE_TYPE;                 /*!< \brief Offset: 0x0004 (R/ ) Cache Type Register             */
+        RESERVED(0[0x3e], uint32_t)
+  __IOM uint32_t CONTROL;                    /*!< \brief Offset: 0x0100 (R/W) Control Register                */
+  __IOM uint32_t AUX_CNT;                    /*!< \brief Offset: 0x0104 (R/W) Auxiliary Control               */
+        RESERVED(1[0x3e], uint32_t)
+  __IOM uint32_t EVENT_CONTROL;              /*!< \brief Offset: 0x0200 (R/W) Event Counter Control           */
+  __IOM uint32_t EVENT_COUNTER1_CONF;        /*!< \brief Offset: 0x0204 (R/W) Event Counter 1 Configuration   */
+  __IOM uint32_t EVENT_COUNTER0_CONF;        /*!< \brief Offset: 0x0208 (R/W) Event Counter 1 Configuration   */
+        RESERVED(2[0x2], uint32_t)
+  __IOM uint32_t INTERRUPT_MASK;             /*!< \brief Offset: 0x0214 (R/W) Interrupt Mask                  */
+  __IM  uint32_t MASKED_INT_STATUS;          /*!< \brief Offset: 0x0218 (R/ ) Masked Interrupt Status         */
+  __IM  uint32_t RAW_INT_STATUS;             /*!< \brief Offset: 0x021c (R/ ) Raw Interrupt Status            */
+  __OM  uint32_t INTERRUPT_CLEAR;            /*!< \brief Offset: 0x0220 ( /W) Interrupt Clear                 */
+        RESERVED(3[0x143], uint32_t)
+  __IOM uint32_t CACHE_SYNC;                 /*!< \brief Offset: 0x0730 (R/W) Cache Sync                      */
+        RESERVED(4[0xf], uint32_t)
+  __IOM uint32_t INV_LINE_PA;                /*!< \brief Offset: 0x0770 (R/W) Invalidate Line By PA           */
+        RESERVED(6[2], uint32_t)
+  __IOM uint32_t INV_WAY;                    /*!< \brief Offset: 0x077c (R/W) Invalidate by Way               */
+        RESERVED(5[0xc], uint32_t)
+  __IOM uint32_t CLEAN_LINE_PA;              /*!< \brief Offset: 0x07b0 (R/W) Clean Line by PA                */
+        RESERVED(7[1], uint32_t)
+  __IOM uint32_t CLEAN_LINE_INDEX_WAY;       /*!< \brief Offset: 0x07b8 (R/W) Clean Line by Index/Way         */
+  __IOM uint32_t CLEAN_WAY;                  /*!< \brief Offset: 0x07bc (R/W) Clean by Way                    */
+        RESERVED(8[0xc], uint32_t)
+  __IOM uint32_t CLEAN_INV_LINE_PA;          /*!< \brief Offset: 0x07f0 (R/W) Clean and Invalidate Line by PA  */
+        RESERVED(9[1], uint32_t)
+  __IOM uint32_t CLEAN_INV_LINE_INDEX_WAY;   /*!< \brief Offset: 0x07f8 (R/W) Clean and Invalidate Line by Index/Way  */
+  __IOM uint32_t CLEAN_INV_WAY;              /*!< \brief Offset: 0x07fc (R/W) Clean and Invalidate by Way     */
+        RESERVED(10[0x40], uint32_t)
+  __IOM uint32_t DATA_LOCK_0_WAY;            /*!< \brief Offset: 0x0900 (R/W) Data Lockdown 0 by Way          */
+  __IOM uint32_t INST_LOCK_0_WAY;            /*!< \brief Offset: 0x0904 (R/W) Instruction Lockdown 0 by Way   */
+  __IOM uint32_t DATA_LOCK_1_WAY;            /*!< \brief Offset: 0x0908 (R/W) Data Lockdown 1 by Way          */
+  __IOM uint32_t INST_LOCK_1_WAY;            /*!< \brief Offset: 0x090c (R/W) Instruction Lockdown 1 by Way   */
+  __IOM uint32_t DATA_LOCK_2_WAY;            /*!< \brief Offset: 0x0910 (R/W) Data Lockdown 2 by Way          */
+  __IOM uint32_t INST_LOCK_2_WAY;            /*!< \brief Offset: 0x0914 (R/W) Instruction Lockdown 2 by Way   */
+  __IOM uint32_t DATA_LOCK_3_WAY;            /*!< \brief Offset: 0x0918 (R/W) Data Lockdown 3 by Way          */
+  __IOM uint32_t INST_LOCK_3_WAY;            /*!< \brief Offset: 0x091c (R/W) Instruction Lockdown 3 by Way   */
+  __IOM uint32_t DATA_LOCK_4_WAY;            /*!< \brief Offset: 0x0920 (R/W) Data Lockdown 4 by Way          */
+  __IOM uint32_t INST_LOCK_4_WAY;            /*!< \brief Offset: 0x0924 (R/W) Instruction Lockdown 4 by Way   */
+  __IOM uint32_t DATA_LOCK_5_WAY;            /*!< \brief Offset: 0x0928 (R/W) Data Lockdown 5 by Way          */
+  __IOM uint32_t INST_LOCK_5_WAY;            /*!< \brief Offset: 0x092c (R/W) Instruction Lockdown 5 by Way   */
+  __IOM uint32_t DATA_LOCK_6_WAY;            /*!< \brief Offset: 0x0930 (R/W) Data Lockdown 5 by Way          */
+  __IOM uint32_t INST_LOCK_6_WAY;            /*!< \brief Offset: 0x0934 (R/W) Instruction Lockdown 5 by Way   */
+  __IOM uint32_t DATA_LOCK_7_WAY;            /*!< \brief Offset: 0x0938 (R/W) Data Lockdown 6 by Way          */
+  __IOM uint32_t INST_LOCK_7_WAY;            /*!< \brief Offset: 0x093c (R/W) Instruction Lockdown 6 by Way   */
+        RESERVED(11[0x4], uint32_t)
+  __IOM uint32_t LOCK_LINE_EN;               /*!< \brief Offset: 0x0950 (R/W) Lockdown by Line Enable         */
+  __IOM uint32_t UNLOCK_ALL_BY_WAY;          /*!< \brief Offset: 0x0954 (R/W) Unlock All Lines by Way         */
+        RESERVED(12[0xaa], uint32_t)
+  __IOM uint32_t ADDRESS_FILTER_START;       /*!< \brief Offset: 0x0c00 (R/W) Address Filtering Start         */
+  __IOM uint32_t ADDRESS_FILTER_END;         /*!< \brief Offset: 0x0c04 (R/W) Address Filtering End           */
+        RESERVED(13[0xce], uint32_t)
+  __IOM uint32_t DEBUG_CONTROL;              /*!< \brief Offset: 0x0f40 (R/W) Debug Control Register          */
 } L2C_310_TypeDef;
 
 #define L2C_310           ((L2C_310_TypeDef *)L2C_310_BASE) /*!< \brief L2C_310 register set access pointer */
@@ -723,68 +742,70 @@ typedef struct {
 
 /** \brief  Structure type to access the Generic Interrupt Controller Distributor (GICD)
 */
-typedef struct {
-	__IOM uint32_t CTLR;                 /*!< \brief  Offset: 0x000 (R/W) Distributor Control Register */
-	__IM  uint32_t TYPER;                /*!< \brief  Offset: 0x004 (R/ ) Interrupt Controller Type Register */
-	__IM  uint32_t IIDR;                 /*!< \brief  Offset: 0x008 (R/ ) Distributor Implementer Identification Register */
-	RESERVED(0, uint32_t)
-	__IOM uint32_t STATUSR;              /*!< \brief  Offset: 0x010 (R/W) Error Reporting Status Register, optional */
-	RESERVED(1[11], uint32_t)
-	__OM  uint32_t SETSPI_NSR;           /*!< \brief  Offset: 0x040 ( /W) Set SPI Register */
-	RESERVED(2, uint32_t)
-	__OM  uint32_t CLRSPI_NSR;           /*!< \brief  Offset: 0x048 ( /W) Clear SPI Register */
-	RESERVED(3, uint32_t)
-	__OM  uint32_t SETSPI_SR;            /*!< \brief  Offset: 0x050 ( /W) Set SPI, Secure Register */
-	RESERVED(4, uint32_t)
-	__OM  uint32_t CLRSPI_SR;            /*!< \brief  Offset: 0x058 ( /W) Clear SPI, Secure Register */
-	RESERVED(5[9], uint32_t)
-	__IOM uint32_t IGROUPR[32];          /*!< \brief  Offset: 0x080 (R/W) Interrupt Group Registers */
-	__IOM uint32_t ISENABLER[32];        /*!< \brief  Offset: 0x100 (R/W) Interrupt Set-Enable Registers */
-	__IOM uint32_t ICENABLER[32];        /*!< \brief  Offset: 0x180 (R/W) Interrupt Clear-Enable Registers */
-	__IOM uint32_t ISPENDR[32];          /*!< \brief  Offset: 0x200 (R/W) Interrupt Set-Pending Registers */
-	__IOM uint32_t ICPENDR[32];          /*!< \brief  Offset: 0x280 (R/W) Interrupt Clear-Pending Registers */
-	__IOM uint32_t ISACTIVER[32];        /*!< \brief  Offset: 0x300 (R/W) Interrupt Set-Active Registers */
-	__IOM uint32_t ICACTIVER[32];        /*!< \brief  Offset: 0x380 (R/W) Interrupt Clear-Active Registers */
-	__IOM uint32_t IPRIORITYR[255];      /*!< \brief  Offset: 0x400 (R/W) Interrupt Priority Registers */
-	RESERVED(6, uint32_t)
-	__IOM uint32_t  ITARGETSR[255];      /*!< \brief  Offset: 0x800 (R/W) Interrupt Targets Registers */
-	RESERVED(7, uint32_t)
-	__IOM uint32_t ICFGR[64];            /*!< \brief  Offset: 0xC00 (R/W) Interrupt Configuration Registers */
-	__IOM uint32_t IGRPMODR[32];         /*!< \brief  Offset: 0xD00 (R/W) Interrupt Group Modifier Registers */
-	RESERVED(8[32], uint32_t)
-	__IOM uint32_t NSACR[64];            /*!< \brief  Offset: 0xE00 (R/W) Non-secure Access Control Registers */
-	__OM  uint32_t SGIR;                 /*!< \brief  Offset: 0xF00 ( /W) Software Generated Interrupt Register */
-	RESERVED(9[3], uint32_t)
-	__IOM uint32_t CPENDSGIR[4];         /*!< \brief  Offset: 0xF10 (R/W) SGI Clear-Pending Registers */
-	__IOM uint32_t SPENDSGIR[4];         /*!< \brief  Offset: 0xF20 (R/W) SGI Set-Pending Registers */
-	RESERVED(10[5236], uint32_t)
-	__IOM uint64_t IROUTER[988];         /*!< \brief  Offset: 0x6100(R/W) Interrupt Routing Registers */
+typedef struct
+{
+  __IOM uint32_t CTLR;                 /*!< \brief  Offset: 0x000 (R/W) Distributor Control Register */
+  __IM  uint32_t TYPER;                /*!< \brief  Offset: 0x004 (R/ ) Interrupt Controller Type Register */
+  __IM  uint32_t IIDR;                 /*!< \brief  Offset: 0x008 (R/ ) Distributor Implementer Identification Register */
+        RESERVED(0, uint32_t)
+  __IOM uint32_t STATUSR;              /*!< \brief  Offset: 0x010 (R/W) Error Reporting Status Register, optional */
+        RESERVED(1[11], uint32_t)
+  __OM  uint32_t SETSPI_NSR;           /*!< \brief  Offset: 0x040 ( /W) Set SPI Register */
+        RESERVED(2, uint32_t)
+  __OM  uint32_t CLRSPI_NSR;           /*!< \brief  Offset: 0x048 ( /W) Clear SPI Register */
+        RESERVED(3, uint32_t)
+  __OM  uint32_t SETSPI_SR;            /*!< \brief  Offset: 0x050 ( /W) Set SPI, Secure Register */
+        RESERVED(4, uint32_t)
+  __OM  uint32_t CLRSPI_SR;            /*!< \brief  Offset: 0x058 ( /W) Clear SPI, Secure Register */
+        RESERVED(5[9], uint32_t)
+  __IOM uint32_t IGROUPR[32];          /*!< \brief  Offset: 0x080 (R/W) Interrupt Group Registers */
+  __IOM uint32_t ISENABLER[32];        /*!< \brief  Offset: 0x100 (R/W) Interrupt Set-Enable Registers */
+  __IOM uint32_t ICENABLER[32];        /*!< \brief  Offset: 0x180 (R/W) Interrupt Clear-Enable Registers */
+  __IOM uint32_t ISPENDR[32];          /*!< \brief  Offset: 0x200 (R/W) Interrupt Set-Pending Registers */
+  __IOM uint32_t ICPENDR[32];          /*!< \brief  Offset: 0x280 (R/W) Interrupt Clear-Pending Registers */
+  __IOM uint32_t ISACTIVER[32];        /*!< \brief  Offset: 0x300 (R/W) Interrupt Set-Active Registers */
+  __IOM uint32_t ICACTIVER[32];        /*!< \brief  Offset: 0x380 (R/W) Interrupt Clear-Active Registers */
+  __IOM uint32_t IPRIORITYR[255];      /*!< \brief  Offset: 0x400 (R/W) Interrupt Priority Registers */
+        RESERVED(6, uint32_t)
+  __IOM uint32_t  ITARGETSR[255];      /*!< \brief  Offset: 0x800 (R/W) Interrupt Targets Registers */
+        RESERVED(7, uint32_t)
+  __IOM uint32_t ICFGR[64];            /*!< \brief  Offset: 0xC00 (R/W) Interrupt Configuration Registers */
+  __IOM uint32_t IGRPMODR[32];         /*!< \brief  Offset: 0xD00 (R/W) Interrupt Group Modifier Registers */
+        RESERVED(8[32], uint32_t)
+  __IOM uint32_t NSACR[64];            /*!< \brief  Offset: 0xE00 (R/W) Non-secure Access Control Registers */
+  __OM  uint32_t SGIR;                 /*!< \brief  Offset: 0xF00 ( /W) Software Generated Interrupt Register */
+        RESERVED(9[3], uint32_t)
+  __IOM uint32_t CPENDSGIR[4];         /*!< \brief  Offset: 0xF10 (R/W) SGI Clear-Pending Registers */
+  __IOM uint32_t SPENDSGIR[4];         /*!< \brief  Offset: 0xF20 (R/W) SGI Set-Pending Registers */
+        RESERVED(10[5236], uint32_t)
+  __IOM uint64_t IROUTER[988];         /*!< \brief  Offset: 0x6100(R/W) Interrupt Routing Registers */
 }  GICDistributor_Type;
 
 #define GICDistributor      ((GICDistributor_Type      *)     GIC_DISTRIBUTOR_BASE ) /*!< \brief GIC Distributor register set access pointer */
 
 /** \brief  Structure type to access the Generic Interrupt Controller Interface (GICC)
 */
-typedef struct {
-	__IOM uint32_t CTLR;                 /*!< \brief  Offset: 0x000 (R/W) CPU Interface Control Register */
-	__IOM uint32_t PMR;                  /*!< \brief  Offset: 0x004 (R/W) Interrupt Priority Mask Register */
-	__IOM uint32_t BPR;                  /*!< \brief  Offset: 0x008 (R/W) Binary Point Register */
-	__IM  uint32_t IAR;                  /*!< \brief  Offset: 0x00C (R/ ) Interrupt Acknowledge Register */
-	__OM  uint32_t EOIR;                 /*!< \brief  Offset: 0x010 ( /W) End Of Interrupt Register */
-	__IM  uint32_t RPR;                  /*!< \brief  Offset: 0x014 (R/ ) Running Priority Register */
-	__IM  uint32_t HPPIR;                /*!< \brief  Offset: 0x018 (R/ ) Highest Priority Pending Interrupt Register */
-	__IOM uint32_t ABPR;                 /*!< \brief  Offset: 0x01C (R/W) Aliased Binary Point Register */
-	__IM  uint32_t AIAR;                 /*!< \brief  Offset: 0x020 (R/ ) Aliased Interrupt Acknowledge Register */
-	__OM  uint32_t AEOIR;                /*!< \brief  Offset: 0x024 ( /W) Aliased End Of Interrupt Register */
-	__IM  uint32_t AHPPIR;               /*!< \brief  Offset: 0x028 (R/ ) Aliased Highest Priority Pending Interrupt Register */
-	__IOM uint32_t STATUSR;              /*!< \brief  Offset: 0x02C (R/W) Error Reporting Status Register, optional */
-	RESERVED(1[40], uint32_t)
-	__IOM uint32_t APR[4];               /*!< \brief  Offset: 0x0D0 (R/W) Active Priority Register */
-	__IOM uint32_t NSAPR[4];             /*!< \brief  Offset: 0x0E0 (R/W) Non-secure Active Priority Register */
-	RESERVED(2[3], uint32_t)
-	__IM  uint32_t IIDR;                 /*!< \brief  Offset: 0x0FC (R/ ) CPU Interface Identification Register */
-	RESERVED(3[960], uint32_t)
-	__OM  uint32_t DIR;                  /*!< \brief  Offset: 0x1000( /W) Deactivate Interrupt Register */
+typedef struct
+{
+  __IOM uint32_t CTLR;                 /*!< \brief  Offset: 0x000 (R/W) CPU Interface Control Register */
+  __IOM uint32_t PMR;                  /*!< \brief  Offset: 0x004 (R/W) Interrupt Priority Mask Register */
+  __IOM uint32_t BPR;                  /*!< \brief  Offset: 0x008 (R/W) Binary Point Register */
+  __IM  uint32_t IAR;                  /*!< \brief  Offset: 0x00C (R/ ) Interrupt Acknowledge Register */
+  __OM  uint32_t EOIR;                 /*!< \brief  Offset: 0x010 ( /W) End Of Interrupt Register */
+  __IM  uint32_t RPR;                  /*!< \brief  Offset: 0x014 (R/ ) Running Priority Register */
+  __IM  uint32_t HPPIR;                /*!< \brief  Offset: 0x018 (R/ ) Highest Priority Pending Interrupt Register */
+  __IOM uint32_t ABPR;                 /*!< \brief  Offset: 0x01C (R/W) Aliased Binary Point Register */
+  __IM  uint32_t AIAR;                 /*!< \brief  Offset: 0x020 (R/ ) Aliased Interrupt Acknowledge Register */
+  __OM  uint32_t AEOIR;                /*!< \brief  Offset: 0x024 ( /W) Aliased End Of Interrupt Register */
+  __IM  uint32_t AHPPIR;               /*!< \brief  Offset: 0x028 (R/ ) Aliased Highest Priority Pending Interrupt Register */
+  __IOM uint32_t STATUSR;              /*!< \brief  Offset: 0x02C (R/W) Error Reporting Status Register, optional */
+        RESERVED(1[40], uint32_t)
+  __IOM uint32_t APR[4];               /*!< \brief  Offset: 0x0D0 (R/W) Active Priority Register */
+  __IOM uint32_t NSAPR[4];             /*!< \brief  Offset: 0x0E0 (R/W) Non-secure Active Priority Register */
+        RESERVED(2[3], uint32_t)
+  __IM  uint32_t IIDR;                 /*!< \brief  Offset: 0x0FC (R/ ) CPU Interface Identification Register */
+        RESERVED(3[960], uint32_t)
+  __OM  uint32_t DIR;                  /*!< \brief  Offset: 0x1000( /W) Deactivate Interrupt Register */
 }  GICInterface_Type;
 
 #define GICInterface        ((GICInterface_Type        *)     GIC_INTERFACE_BASE )   /*!< \brief GIC Interface register set access pointer */
@@ -794,110 +815,102 @@ typedef struct {
 #if ((__CORTEX_A == 5U) || (__CORTEX_A == 9U)) || defined(DOXYGEN)
 /** \brief Structure type to access the Private Timer
 */
-typedef struct {
-	__IOM uint32_t LOAD;            //!< \brief  Offset: 0x000 (R/W) Private Timer Load Register
-	__IOM uint32_t COUNTER;         //!< \brief  Offset: 0x004 (R/W) Private Timer Counter Register
-	__IOM uint32_t CONTROL;         //!< \brief  Offset: 0x008 (R/W) Private Timer Control Register
-	__IOM uint32_t ISR;             //!< \brief  Offset: 0x00C (R/W) Private Timer Interrupt Status Register
-	RESERVED(0[4], uint32_t)
-	__IOM uint32_t WLOAD;           //!< \brief  Offset: 0x020 (R/W) Watchdog Load Register
-	__IOM uint32_t WCOUNTER;        //!< \brief  Offset: 0x024 (R/W) Watchdog Counter Register
-	__IOM uint32_t WCONTROL;        //!< \brief  Offset: 0x028 (R/W) Watchdog Control Register
-	__IOM uint32_t WISR;            //!< \brief  Offset: 0x02C (R/W) Watchdog Interrupt Status Register
-	__IOM uint32_t WRESET;          //!< \brief  Offset: 0x030 (R/W) Watchdog Reset Status Register
-	__OM  uint32_t WDISABLE;        //!< \brief  Offset: 0x034 ( /W) Watchdog Disable Register
+typedef struct
+{
+  __IOM uint32_t LOAD;            //!< \brief  Offset: 0x000 (R/W) Private Timer Load Register
+  __IOM uint32_t COUNTER;         //!< \brief  Offset: 0x004 (R/W) Private Timer Counter Register
+  __IOM uint32_t CONTROL;         //!< \brief  Offset: 0x008 (R/W) Private Timer Control Register
+  __IOM uint32_t ISR;             //!< \brief  Offset: 0x00C (R/W) Private Timer Interrupt Status Register
+        RESERVED(0[4], uint32_t)
+  __IOM uint32_t WLOAD;           //!< \brief  Offset: 0x020 (R/W) Watchdog Load Register
+  __IOM uint32_t WCOUNTER;        //!< \brief  Offset: 0x024 (R/W) Watchdog Counter Register
+  __IOM uint32_t WCONTROL;        //!< \brief  Offset: 0x028 (R/W) Watchdog Control Register
+  __IOM uint32_t WISR;            //!< \brief  Offset: 0x02C (R/W) Watchdog Interrupt Status Register
+  __IOM uint32_t WRESET;          //!< \brief  Offset: 0x030 (R/W) Watchdog Reset Status Register
+  __OM  uint32_t WDISABLE;        //!< \brief  Offset: 0x034 ( /W) Watchdog Disable Register
 } Timer_Type;
 #define PTIM ((Timer_Type *) TIMER_BASE )   /*!< \brief Timer register struct */
 #endif
 #endif
 
-/*******************************************************************************
- *                Hardware Abstraction Layer
-  Core Function Interface contains:
-  - L1 Cache Functions
-  - L2C-310 Cache Controller Functions
-  - PL1 Timer Functions
-  - GIC Functions
-  - MMU Functions
- ******************************************************************************/
+ /*******************************************************************************
+  *                Hardware Abstraction Layer
+   Core Function Interface contains:
+   - L1 Cache Functions
+   - L2C-310 Cache Controller Functions
+   - PL1 Timer Functions
+   - GIC Functions
+   - MMU Functions
+  ******************************************************************************/
 
 /* ##########################  L1 Cache functions  ################################# */
 
 /** \brief Enable Caches by setting I and C bits in SCTLR register.
 */
-__STATIC_FORCEINLINE void L1C_EnableCaches(void)
-{
-	__set_SCTLR(__get_SCTLR() | SCTLR_I_Msk | SCTLR_C_Msk);
-	__ISB();
+__STATIC_FORCEINLINE void L1C_EnableCaches(void) {
+  __set_SCTLR( __get_SCTLR() | SCTLR_I_Msk | SCTLR_C_Msk);
+  __ISB();
 }
 
 /** \brief Disable Caches by clearing I and C bits in SCTLR register.
 */
-__STATIC_FORCEINLINE void L1C_DisableCaches(void)
-{
-	__set_SCTLR(__get_SCTLR() & (~SCTLR_I_Msk) & (~SCTLR_C_Msk));
-	__ISB();
+__STATIC_FORCEINLINE void L1C_DisableCaches(void) {
+  __set_SCTLR( __get_SCTLR() & (~SCTLR_I_Msk) & (~SCTLR_C_Msk));
+  __ISB();
 }
 
 /** \brief  Enable Branch Prediction by setting Z bit in SCTLR register.
 */
-__STATIC_FORCEINLINE void L1C_EnableBTAC(void)
-{
-	__set_SCTLR(__get_SCTLR() | SCTLR_Z_Msk);
-	__ISB();
+__STATIC_FORCEINLINE void L1C_EnableBTAC(void) {
+  __set_SCTLR( __get_SCTLR() | SCTLR_Z_Msk);
+  __ISB();
 }
 
 /** \brief  Disable Branch Prediction by clearing Z bit in SCTLR register.
 */
-__STATIC_FORCEINLINE void L1C_DisableBTAC(void)
-{
-	__set_SCTLR(__get_SCTLR() & (~SCTLR_Z_Msk));
-	__ISB();
+__STATIC_FORCEINLINE void L1C_DisableBTAC(void) {
+  __set_SCTLR( __get_SCTLR() & (~SCTLR_Z_Msk));
+  __ISB();
 }
 
 /** \brief  Invalidate entire branch predictor array
 */
-__STATIC_FORCEINLINE void L1C_InvalidateBTAC(void)
-{
-	__set_BPIALL(0);
-	__DSB();     //ensure completion of the invalidation
-	__ISB();     //ensure instruction fetch path sees new state
+__STATIC_FORCEINLINE void L1C_InvalidateBTAC(void) {
+  __set_BPIALL(0);
+  __DSB();     //ensure completion of the invalidation
+  __ISB();     //ensure instruction fetch path sees new state
 }
 
 /** \brief  Invalidate the whole instruction cache
 */
-__STATIC_FORCEINLINE void L1C_InvalidateICacheAll(void)
-{
-	__set_ICIALLU(0);
-	__DSB();     //ensure completion of the invalidation
-	__ISB();     //ensure instruction fetch path sees new I cache state
+__STATIC_FORCEINLINE void L1C_InvalidateICacheAll(void) {
+  __set_ICIALLU(0);
+  __DSB();     //ensure completion of the invalidation
+  __ISB();     //ensure instruction fetch path sees new I cache state
 }
 
 /** \brief  Clean data cache line by address.
 * \param [in] va Pointer to data to clear the cache for.
 */
-__STATIC_FORCEINLINE void L1C_CleanDCacheMVA(void *va)
-{
-	__set_DCCMVAC((uint32_t)va);
-	__DMB();     //ensure the ordering of data cache maintenance operations and their effects
+__STATIC_FORCEINLINE void L1C_CleanDCacheMVA(void *va) {
+  __set_DCCMVAC((uint32_t)va);
+  __DMB();     //ensure the ordering of data cache maintenance operations and their effects
 }
 
 /** \brief  Invalidate data cache line by address.
 * \param [in] va Pointer to data to invalidate the cache for.
 */
-__STATIC_FORCEINLINE void L1C_InvalidateDCacheMVA(void *va)
-{
-	__set_DCIMVAC((uint32_t)va);
-	__DMB();     //ensure the ordering of data cache maintenance operations and their effects
+__STATIC_FORCEINLINE void L1C_InvalidateDCacheMVA(void *va) {
+  __set_DCIMVAC((uint32_t)va);
+  __DMB();     //ensure the ordering of data cache maintenance operations and their effects
 }
 
 /** \brief  Clean and Invalidate data cache by address.
 * \param [in] va Pointer to data to invalidate the cache for.
 */
-__STATIC_FORCEINLINE void L1C_CleanInvalidateDCacheMVA(void *va)
-{
-	__set_DCCIMVAC((uint32_t)va);
-	__DMB();     //ensure the ordering of data cache maintenance operations and their effects
+__STATIC_FORCEINLINE void L1C_CleanInvalidateDCacheMVA(void *va) {
+  __set_DCCIMVAC((uint32_t)va);
+  __DMB();     //ensure the ordering of data cache maintenance operations and their effects
 }
 
 /** \brief Calculate log2 rounded up
@@ -916,19 +929,18 @@ __STATIC_FORCEINLINE void L1C_CleanInvalidateDCacheMVA(void *va)
 */
 __STATIC_FORCEINLINE uint8_t __log2_up(uint32_t n)
 {
-	if (n < 2U) {
-		return 0U;
-	}
-	uint8_t log = 0U;
-	uint32_t t = n;
-	while (t > 1U) {
-		log++;
-		t >>= 1U;
-	}
-	if (n & 1U) {
-		log++;
-	}
-	return log;
+  if (n < 2U) {
+    return 0U;
+  }
+  uint8_t log = 0U;
+  uint32_t t = n;
+  while(t > 1U)
+  {
+    log++;
+    t >>= 1U;
+  }
+  if (n & 1U) { log++; }
+  return log;
 }
 
 /** \brief  Apply cache maintenance to given cache level.
@@ -937,61 +949,59 @@ __STATIC_FORCEINLINE uint8_t __log2_up(uint32_t n)
 */
 __STATIC_FORCEINLINE void __L1C_MaintainDCacheSetWay(uint32_t level, uint32_t maint)
 {
-	uint32_t Dummy;
-	uint32_t ccsidr;
-	uint32_t num_sets;
-	uint32_t num_ways;
-	uint32_t shift_way;
-	uint32_t log2_linesize;
-	int32_t log2_num_ways;
+  uint32_t Dummy;
+  uint32_t ccsidr;
+  uint32_t num_sets;
+  uint32_t num_ways;
+  uint32_t shift_way;
+  uint32_t log2_linesize;
+   int32_t log2_num_ways;
 
-	Dummy = level << 1U;
-	/* set csselr, select ccsidr register */
-	__set_CSSELR(Dummy);
-	/* get current ccsidr register */
-	ccsidr = __get_CCSIDR();
-	num_sets = ((ccsidr & 0x0FFFE000U) >> 13U) + 1U;
-	num_ways = ((ccsidr & 0x00001FF8U) >> 3U) + 1U;
-	log2_linesize = (ccsidr & 0x00000007U) + 2U + 2U;
-	log2_num_ways = __log2_up(num_ways);
-	if ((log2_num_ways < 0) || (log2_num_ways > 32)) {
-		return; // FATAL ERROR
-	}
-	shift_way = 32U - (uint32_t)log2_num_ways;
-	for (int32_t way = num_ways - 1; way >= 0; way--) {
-		for (int32_t set = num_sets - 1; set >= 0; set--) {
-			Dummy = (level << 1U) | (((uint32_t)set) << log2_linesize) | (((uint32_t)way) << shift_way);
-			switch (maint) {
-			case 0U:
-				__set_DCISW(Dummy);
-				break;
-			case 1U:
-				__set_DCCSW(Dummy);
-				break;
-			default:
-				__set_DCCISW(Dummy);
-				break;
-			}
-		}
-	}
-	__DMB();
+  Dummy = level << 1U;
+  /* set csselr, select ccsidr register */
+  __set_CSSELR(Dummy);
+  /* get current ccsidr register */
+  ccsidr = __get_CCSIDR();
+  num_sets = ((ccsidr & 0x0FFFE000U) >> 13U) + 1U;
+  num_ways = ((ccsidr & 0x00001FF8U) >> 3U) + 1U;
+  log2_linesize = (ccsidr & 0x00000007U) + 2U + 2U;
+  log2_num_ways = __log2_up(num_ways);
+  if ((log2_num_ways < 0) || (log2_num_ways > 32)) {
+    return; // FATAL ERROR
+  }
+  shift_way = 32U - (uint32_t)log2_num_ways;
+  for(int32_t way = num_ways-1; way >= 0; way--)
+  {
+    for(int32_t set = num_sets-1; set >= 0; set--)
+    {
+      Dummy = (level << 1U) | (((uint32_t)set) << log2_linesize) | (((uint32_t)way) << shift_way);
+      switch (maint)
+      {
+        case 0U: __set_DCISW(Dummy);  break;
+        case 1U: __set_DCCSW(Dummy);  break;
+        default: __set_DCCISW(Dummy); break;
+      }
+    }
+  }
+  __DMB();
 }
 
 /** \brief  Clean and Invalidate the entire data or unified cache
 * Generic mechanism for cleaning/invalidating the entire data or unified cache to the point of coherency
 * \param [in] op 0 - invalidate, 1 - clean, otherwise - invalidate and clean
 */
-__STATIC_FORCEINLINE void L1C_CleanInvalidateCache(uint32_t op)
-{
-	uint32_t clidr;
-	uint32_t cache_type;
-	clidr =  __get_CLIDR();
-	for (uint32_t i = 0U; i < 7U; i++) {
-		cache_type = (clidr >> i * 3U) & 0x7UL;
-		if ((cache_type >= 2U) && (cache_type <= 4U)) {
-			__L1C_MaintainDCacheSetWay(i, op);
-		}
-	}
+__STATIC_FORCEINLINE void L1C_CleanInvalidateCache(uint32_t op) {
+  uint32_t clidr;
+  uint32_t cache_type;
+  clidr =  __get_CLIDR();
+  for(uint32_t i = 0U; i<7U; i++)
+  {
+    cache_type = (clidr >> i*3U) & 0x7UL;
+    if ((cache_type >= 2U) && (cache_type <= 4U))
+    {
+      __L1C_MaintainDCacheSetWay(i, op);
+    }
+  }
 }
 
 /** \brief  Clean and Invalidate the entire data or unified cache
@@ -1000,30 +1010,26 @@ __STATIC_FORCEINLINE void L1C_CleanInvalidateCache(uint32_t op)
 * \deprecated Use generic L1C_CleanInvalidateCache instead.
 */
 CMSIS_DEPRECATED
-__STATIC_FORCEINLINE void __L1C_CleanInvalidateCache(uint32_t op)
-{
-	L1C_CleanInvalidateCache(op);
+__STATIC_FORCEINLINE void __L1C_CleanInvalidateCache(uint32_t op) {
+  L1C_CleanInvalidateCache(op);
 }
 
 /** \brief  Invalidate the whole data cache.
 */
-__STATIC_FORCEINLINE void L1C_InvalidateDCacheAll(void)
-{
-	L1C_CleanInvalidateCache(0);
+__STATIC_FORCEINLINE void L1C_InvalidateDCacheAll(void) {
+  L1C_CleanInvalidateCache(0);
 }
 
 /** \brief  Clean the whole data cache.
  */
-__STATIC_FORCEINLINE void L1C_CleanDCacheAll(void)
-{
-	L1C_CleanInvalidateCache(1);
+__STATIC_FORCEINLINE void L1C_CleanDCacheAll(void) {
+  L1C_CleanInvalidateCache(1);
 }
 
 /** \brief  Clean and invalidate the whole data cache.
  */
-__STATIC_FORCEINLINE void L1C_CleanInvalidateDCacheAll(void)
-{
-	L1C_CleanInvalidateCache(2);
+__STATIC_FORCEINLINE void L1C_CleanInvalidateDCacheAll(void) {
+  L1C_CleanInvalidateCache(2);
 }
 
 /* ##########################  L2 Cache functions  ################################# */
@@ -1032,107 +1038,107 @@ __STATIC_FORCEINLINE void L1C_CleanInvalidateDCacheAll(void)
 */
 __STATIC_INLINE void L2C_Sync(void)
 {
-	L2C_310->CACHE_SYNC = 0x0;
+  L2C_310->CACHE_SYNC = 0x0;
 }
 
 /** \brief Read cache controller cache ID from CACHE_ID register.
  * \return L2C_310_TypeDef::CACHE_ID
  */
-__STATIC_INLINE int L2C_GetID(void)
+__STATIC_INLINE int L2C_GetID (void)
 {
-	return L2C_310->CACHE_ID;
+  return L2C_310->CACHE_ID;
 }
 
 /** \brief Read cache controller cache type from CACHE_TYPE register.
 *  \return L2C_310_TypeDef::CACHE_TYPE
 */
-__STATIC_INLINE int L2C_GetType(void)
+__STATIC_INLINE int L2C_GetType (void)
 {
-	return L2C_310->CACHE_TYPE;
+  return L2C_310->CACHE_TYPE;
 }
 
 /** \brief Invalidate all cache by way
 */
-__STATIC_INLINE void L2C_InvAllByWay(void)
+__STATIC_INLINE void L2C_InvAllByWay (void)
 {
-	uint32_t assoc;
+  uint32_t assoc;
 
-	if (L2C_310->AUX_CNT & (1U << 16U)) {
-		assoc = 16U;
-	} else {
-		assoc =  8U;
-	}
+  if (L2C_310->AUX_CNT & (1U << 16U)) {
+    assoc = 16U;
+  } else {
+    assoc =  8U;
+  }
 
-	L2C_310->INV_WAY = (1U << assoc) - 1U;
-	while (L2C_310->INV_WAY & ((1U << assoc) - 1U)); //poll invalidate
+  L2C_310->INV_WAY = (1U << assoc) - 1U;
+  while(L2C_310->INV_WAY & ((1U << assoc) - 1U)); //poll invalidate
 
-	L2C_Sync();
+  L2C_Sync();
 }
 
 /** \brief Clean and Invalidate all cache by way
 */
-__STATIC_INLINE void L2C_CleanInvAllByWay(void)
+__STATIC_INLINE void L2C_CleanInvAllByWay (void)
 {
-	uint32_t assoc;
+  uint32_t assoc;
 
-	if (L2C_310->AUX_CNT & (1U << 16U)) {
-		assoc = 16U;
-	} else {
-		assoc =  8U;
-	}
+  if (L2C_310->AUX_CNT & (1U << 16U)) {
+    assoc = 16U;
+  } else {
+    assoc =  8U;
+  }
 
-	L2C_310->CLEAN_INV_WAY = (1U << assoc) - 1U;
-	while (L2C_310->CLEAN_INV_WAY & ((1U << assoc) - 1U)); //poll invalidate
+  L2C_310->CLEAN_INV_WAY = (1U << assoc) - 1U;
+  while(L2C_310->CLEAN_INV_WAY & ((1U << assoc) - 1U)); //poll invalidate
 
-	L2C_Sync();
+  L2C_Sync();
 }
 
 /** \brief Enable Level 2 Cache
 */
 __STATIC_INLINE void L2C_Enable(void)
 {
-	L2C_310->CONTROL = 0;
-	L2C_310->INTERRUPT_CLEAR = 0x000001FFuL;
-	L2C_310->DEBUG_CONTROL = 0;
-	L2C_310->DATA_LOCK_0_WAY = 0;
-	L2C_310->CACHE_SYNC = 0;
-	L2C_310->CONTROL = 0x01;
-	L2C_Sync();
+  L2C_310->CONTROL = 0;
+  L2C_310->INTERRUPT_CLEAR = 0x000001FFuL;
+  L2C_310->DEBUG_CONTROL = 0;
+  L2C_310->DATA_LOCK_0_WAY = 0;
+  L2C_310->CACHE_SYNC = 0;
+  L2C_310->CONTROL = 0x01;
+  L2C_Sync();
 }
 
 /** \brief Disable Level 2 Cache
 */
 __STATIC_INLINE void L2C_Disable(void)
 {
-	L2C_310->CONTROL = 0x00;
-	L2C_Sync();
+  L2C_310->CONTROL = 0x00;
+  L2C_Sync();
 }
 
 /** \brief Invalidate cache by physical address
 * \param [in] pa Pointer to data to invalidate cache for.
 */
-__STATIC_INLINE void L2C_InvPa(void *pa)
+__STATIC_INLINE void L2C_InvPa (void *pa)
 {
-	L2C_310->INV_LINE_PA = (uint32_t)pa;
-	L2C_Sync();
+  L2C_310->INV_LINE_PA = (uint32_t)pa;
+  L2C_Sync();
 }
 
 /** \brief Clean cache by physical address
 * \param [in] pa Pointer to data to invalidate cache for.
 */
-__STATIC_INLINE void L2C_CleanPa(void *pa)
+__STATIC_INLINE void L2C_CleanPa (void *pa)
 {
-	L2C_310->CLEAN_LINE_PA = (uint32_t)pa;
-	L2C_Sync();
+  L2C_310->CLEAN_LINE_PA = (uint32_t)pa;
+  L2C_Sync();
 }
 
 /** \brief Clean and invalidate cache by physical address
 * \param [in] pa Pointer to data to invalidate cache for.
 */
-__STATIC_INLINE void L2C_CleanInvPa(void *pa)
+__STATIC_INLINE void L2C_CleanInvPa (void *pa)
 {
-	L2C_310->CLEAN_INV_LINE_PA = (uint32_t)pa;
-	L2C_Sync();
+  L2C_310->CLEAN_INV_LINE_PA = (uint32_t)pa;
+  L2C_Sync();
 }
 #endif
 
@@ -1143,14 +1149,14 @@ __STATIC_INLINE void L2C_CleanInvPa(void *pa)
 */
 __STATIC_INLINE void GIC_EnableDistributor(void)
 {
-	GICDistributor->CTLR |= 1U;
+  GICDistributor->CTLR |= 1U;
 }
 
 /** \brief Disable the interrupt distributor using the GIC's CTLR register.
 */
 __STATIC_INLINE void GIC_DisableDistributor(void)
 {
-	GICDistributor->CTLR &= ~1U;
+  GICDistributor->CTLR &=~1U;
 }
 
 /** \brief Read the GIC's TYPER register.
@@ -1158,7 +1164,7 @@ __STATIC_INLINE void GIC_DisableDistributor(void)
 */
 __STATIC_INLINE uint32_t GIC_DistributorInfo(void)
 {
-	return (GICDistributor->TYPER);
+  return (GICDistributor->TYPER);
 }
 
 /** \brief Reads the GIC's IIDR register.
@@ -1166,7 +1172,7 @@ __STATIC_INLINE uint32_t GIC_DistributorInfo(void)
 */
 __STATIC_INLINE uint32_t GIC_DistributorImplementer(void)
 {
-	return (GICDistributor->IIDR);
+  return (GICDistributor->IIDR);
 }
 
 /** \brief Sets the GIC's ITARGETSR register for the given interrupt.
@@ -1175,8 +1181,8 @@ __STATIC_INLINE uint32_t GIC_DistributorImplementer(void)
 */
 __STATIC_INLINE void GIC_SetTarget(IRQn_Type IRQn, uint32_t cpu_target)
 {
-	uint32_t mask = GICDistributor->ITARGETSR[IRQn / 4U] & ~(0xFFUL << ((IRQn % 4U) * 8U));
-	GICDistributor->ITARGETSR[IRQn / 4U] = mask | ((cpu_target & 0xFFUL) << ((IRQn % 4U) * 8U));
+  uint32_t mask = GICDistributor->ITARGETSR[IRQn / 4U] & ~(0xFFUL << ((IRQn % 4U) * 8U));
+  GICDistributor->ITARGETSR[IRQn / 4U] = mask | ((cpu_target & 0xFFUL) << ((IRQn % 4U) * 8U));
 }
 
 /** \brief Read the GIC's ITARGETSR register.
@@ -1185,21 +1191,21 @@ __STATIC_INLINE void GIC_SetTarget(IRQn_Type IRQn, uint32_t cpu_target)
 */
 __STATIC_INLINE uint32_t GIC_GetTarget(IRQn_Type IRQn)
 {
-	return (GICDistributor->ITARGETSR[IRQn / 4U] >> ((IRQn % 4U) * 8U)) & 0xFFUL;
+  return (GICDistributor->ITARGETSR[IRQn / 4U] >> ((IRQn % 4U) * 8U)) & 0xFFUL;
 }
 
 /** \brief Enable the CPU's interrupt interface.
 */
 __STATIC_INLINE void GIC_EnableInterface(void)
 {
-	GICInterface->CTLR |= 1U; //enable interface
+  GICInterface->CTLR |= 1U; //enable interface
 }
 
 /** \brief Disable the CPU's interrupt interface.
 */
 __STATIC_INLINE void GIC_DisableInterface(void)
 {
-	GICInterface->CTLR &= ~1U; //disable distributor
+  GICInterface->CTLR &=~1U; //disable distributor
 }
 
 /** \brief Read the CPU's IAR register.
@@ -1207,7 +1213,7 @@ __STATIC_INLINE void GIC_DisableInterface(void)
 */
 __STATIC_INLINE IRQn_Type GIC_AcknowledgePending(void)
 {
-	return (IRQn_Type)(GICInterface->IAR);
+  return (IRQn_Type)(GICInterface->IAR);
 }
 
 /** \brief Writes the given interrupt number to the CPU's EOIR register.
@@ -1215,7 +1221,7 @@ __STATIC_INLINE IRQn_Type GIC_AcknowledgePending(void)
 */
 __STATIC_INLINE void GIC_EndInterrupt(IRQn_Type IRQn)
 {
-	GICInterface->EOIR = IRQn;
+  GICInterface->EOIR = IRQn;
 }
 
 /** \brief Enables the given interrupt using GIC's ISENABLER register.
@@ -1223,7 +1229,7 @@ __STATIC_INLINE void GIC_EndInterrupt(IRQn_Type IRQn)
 */
 __STATIC_INLINE void GIC_EnableIRQ(IRQn_Type IRQn)
 {
-	GICDistributor->ISENABLER[IRQn / 32U] = 1U << (IRQn % 32U);
+  GICDistributor->ISENABLER[IRQn / 32U] = 1U << (IRQn % 32U);
 }
 
 /** \brief Get interrupt enable status using GIC's ISENABLER register.
@@ -1232,7 +1238,7 @@ __STATIC_INLINE void GIC_EnableIRQ(IRQn_Type IRQn)
 */
 __STATIC_INLINE uint32_t GIC_GetEnableIRQ(IRQn_Type IRQn)
 {
-	return (GICDistributor->ISENABLER[IRQn / 32U] >> (IRQn % 32U)) & 1UL;
+  return (GICDistributor->ISENABLER[IRQn / 32U] >> (IRQn % 32U)) & 1UL;
 }
 
 /** \brief Disables the given interrupt using GIC's ICENABLER register.
@@ -1240,7 +1246,7 @@ __STATIC_INLINE uint32_t GIC_GetEnableIRQ(IRQn_Type IRQn)
 */
 __STATIC_INLINE void GIC_DisableIRQ(IRQn_Type IRQn)
 {
-	GICDistributor->ICENABLER[IRQn / 32U] = 1U << (IRQn % 32U);
+  GICDistributor->ICENABLER[IRQn / 32U] = 1U << (IRQn % 32U);
 }
 
 /** \brief Get interrupt pending status from GIC's ISPENDR register.
@@ -1249,22 +1255,22 @@ __STATIC_INLINE void GIC_DisableIRQ(IRQn_Type IRQn)
 */
 __STATIC_INLINE uint32_t GIC_GetPendingIRQ(IRQn_Type IRQn)
 {
-	uint32_t pend;
+  uint32_t pend;
 
-	if (IRQn >= 16U) {
-		pend = (GICDistributor->ISPENDR[IRQn / 32U] >> (IRQn % 32U)) & 1UL;
-	} else {
-		// INTID 0-15 Software Generated Interrupt
-		pend = (GICDistributor->SPENDSGIR[IRQn / 4U] >> ((IRQn % 4U) * 8U)) & 0xFFUL;
-		// No CPU identification offered
-		if (pend != 0U) {
-			pend = 1U;
-		} else {
-			pend = 0U;
-		}
-	}
+  if (IRQn >= 16U) {
+    pend = (GICDistributor->ISPENDR[IRQn / 32U] >> (IRQn % 32U)) & 1UL;
+  } else {
+    // INTID 0-15 Software Generated Interrupt
+    pend = (GICDistributor->SPENDSGIR[IRQn / 4U] >> ((IRQn % 4U) * 8U)) & 0xFFUL;
+    // No CPU identification offered
+    if (pend != 0U) {
+      pend = 1U;
+    } else {
+      pend = 0U;
+    }
+  }
 
-	return (pend);
+  return (pend);
 }
 
 /** \brief Sets the given interrupt as pending using GIC's ISPENDR register.
@@ -1272,13 +1278,13 @@ __STATIC_INLINE uint32_t GIC_GetPendingIRQ(IRQn_Type IRQn)
 */
 __STATIC_INLINE void GIC_SetPendingIRQ(IRQn_Type IRQn)
 {
-	if (IRQn >= 16U) {
-		GICDistributor->ISPENDR[IRQn / 32U] = 1U << (IRQn % 32U);
-	} else {
-		// INTID 0-15 Software Generated Interrupt
-		// Forward the interrupt to the CPU interface that requested it
-		GICDistributor->SGIR = (IRQn | 0x02000000U);
-	}
+  if (IRQn >= 16U) {
+    GICDistributor->ISPENDR[IRQn / 32U] = 1U << (IRQn % 32U);
+  } else {
+    // INTID 0-15 Software Generated Interrupt
+    // Forward the interrupt to the CPU interface that requested it
+    GICDistributor->SGIR = (IRQn | 0x02000000U);
+  }
 }
 
 /** \brief Clears the given interrupt from being pending using GIC's ICPENDR register.
@@ -1286,12 +1292,12 @@ __STATIC_INLINE void GIC_SetPendingIRQ(IRQn_Type IRQn)
 */
 __STATIC_INLINE void GIC_ClearPendingIRQ(IRQn_Type IRQn)
 {
-	if (IRQn >= 16U) {
-		GICDistributor->ICPENDR[IRQn / 32U] = 1U << (IRQn % 32U);
-	} else {
-		// INTID 0-15 Software Generated Interrupt
-		GICDistributor->CPENDSGIR[IRQn / 4U] = 1U << ((IRQn % 4U) * 8U);
-	}
+  if (IRQn >= 16U) {
+    GICDistributor->ICPENDR[IRQn / 32U] = 1U << (IRQn % 32U);
+  } else {
+    // INTID 0-15 Software Generated Interrupt
+    GICDistributor->CPENDSGIR[IRQn / 4U] = 1U << ((IRQn % 4U) * 8U);
+  }
 }
 
 /** \brief Sets the interrupt configuration using GIC's ICFGR register.
@@ -1301,13 +1307,13 @@ __STATIC_INLINE void GIC_ClearPendingIRQ(IRQn_Type IRQn)
 */
 __STATIC_INLINE void GIC_SetConfiguration(IRQn_Type IRQn, uint32_t int_config)
 {
-	uint32_t icfgr = GICDistributor->ICFGR[IRQn / 16U];
-	uint32_t shift = (IRQn % 16U) << 1U;
+  uint32_t icfgr = GICDistributor->ICFGR[IRQn / 16U];
+  uint32_t shift = (IRQn % 16U) << 1U;
 
-	icfgr &= (~(3U         << shift));
-	icfgr |= (int_config << shift);
+  icfgr &= (~(3U         << shift));
+  icfgr |= (  int_config << shift);
 
-	GICDistributor->ICFGR[IRQn / 16U] = icfgr;
+  GICDistributor->ICFGR[IRQn / 16U] = icfgr;
 }
 
 /** \brief Get the interrupt configuration from the GIC's ICFGR register.
@@ -1317,7 +1323,7 @@ __STATIC_INLINE void GIC_SetConfiguration(IRQn_Type IRQn, uint32_t int_config)
 */
 __STATIC_INLINE uint32_t GIC_GetConfiguration(IRQn_Type IRQn)
 {
-	return (GICDistributor->ICFGR[IRQn / 16U] >> ((IRQn % 16U) >> 1U));
+  return (GICDistributor->ICFGR[IRQn / 16U] >> ((IRQn % 16U) >> 1U));
 }
 
 /** \brief Set the priority for the given interrupt in the GIC's IPRIORITYR register.
@@ -1326,8 +1332,8 @@ __STATIC_INLINE uint32_t GIC_GetConfiguration(IRQn_Type IRQn)
 */
 __STATIC_INLINE void GIC_SetPriority(IRQn_Type IRQn, uint32_t priority)
 {
-	uint32_t mask = GICDistributor->IPRIORITYR[IRQn / 4U] & ~(0xFFUL << ((IRQn % 4U) * 8U));
-	GICDistributor->IPRIORITYR[IRQn / 4U] = mask | ((priority & 0xFFUL) << ((IRQn % 4U) * 8U));
+  uint32_t mask = GICDistributor->IPRIORITYR[IRQn / 4U] & ~(0xFFUL << ((IRQn % 4U) * 8U));
+  GICDistributor->IPRIORITYR[IRQn / 4U] = mask | ((priority & 0xFFUL) << ((IRQn % 4U) * 8U));
 }
 
 /** \brief Read the current interrupt priority from GIC's IPRIORITYR register.
@@ -1335,7 +1341,7 @@ __STATIC_INLINE void GIC_SetPriority(IRQn_Type IRQn, uint32_t priority)
 */
 __STATIC_INLINE uint32_t GIC_GetPriority(IRQn_Type IRQn)
 {
-	return (GICDistributor->IPRIORITYR[IRQn / 4U] >> ((IRQn % 4U) * 8U)) & 0xFFUL;
+  return (GICDistributor->IPRIORITYR[IRQn / 4U] >> ((IRQn % 4U) * 8U)) & 0xFFUL;
 }
 
 /** \brief Set the interrupt priority mask using CPU's PMR register.
@@ -1343,7 +1349,7 @@ __STATIC_INLINE uint32_t GIC_GetPriority(IRQn_Type IRQn)
 */
 __STATIC_INLINE void GIC_SetInterfacePriorityMask(uint32_t priority)
 {
-	GICInterface->PMR = priority & 0xFFUL; //set priority mask
+  GICInterface->PMR = priority & 0xFFUL; //set priority mask
 }
 
 /** \brief Read the current interrupt priority mask from CPU's PMR register.
@@ -1351,7 +1357,7 @@ __STATIC_INLINE void GIC_SetInterfacePriorityMask(uint32_t priority)
 */
 __STATIC_INLINE uint32_t GIC_GetInterfacePriorityMask(void)
 {
-	return GICInterface->PMR;
+  return GICInterface->PMR;
 }
 
 /** \brief Configures the group priority and subpriority split point using CPU's BPR register.
@@ -1359,7 +1365,7 @@ __STATIC_INLINE uint32_t GIC_GetInterfacePriorityMask(void)
 */
 __STATIC_INLINE void GIC_SetBinaryPoint(uint32_t binary_point)
 {
-	GICInterface->BPR = binary_point & 7U; //set binary point
+  GICInterface->BPR = binary_point & 7U; //set binary point
 }
 
 /** \brief Read the current group priority and subpriority split point from CPU's BPR register.
@@ -1367,7 +1373,7 @@ __STATIC_INLINE void GIC_SetBinaryPoint(uint32_t binary_point)
 */
 __STATIC_INLINE uint32_t GIC_GetBinaryPoint(void)
 {
-	return GICInterface->BPR;
+  return GICInterface->BPR;
 }
 
 /** \brief Get the status for a given interrupt.
@@ -1376,12 +1382,12 @@ __STATIC_INLINE uint32_t GIC_GetBinaryPoint(void)
 */
 __STATIC_INLINE uint32_t GIC_GetIRQStatus(IRQn_Type IRQn)
 {
-	uint32_t pending, active;
+  uint32_t pending, active;
 
-	active = ((GICDistributor->ISACTIVER[IRQn / 32U])  >> (IRQn % 32U)) & 1UL;
-	pending = ((GICDistributor->ISPENDR[IRQn / 32U]) >> (IRQn % 32U)) & 1UL;
+  active = ((GICDistributor->ISACTIVER[IRQn / 32U])  >> (IRQn % 32U)) & 1UL;
+  pending = ((GICDistributor->ISPENDR[IRQn / 32U]) >> (IRQn % 32U)) & 1UL;
 
-	return ((active << 1U) | pending);
+  return ((active<<1U) | pending);
 }
 
 /** \brief Generate a software interrupt using GIC's SGIR register.
@@ -1391,7 +1397,7 @@ __STATIC_INLINE uint32_t GIC_GetIRQStatus(IRQn_Type IRQn)
 */
 __STATIC_INLINE void GIC_SendSGI(IRQn_Type IRQn, uint32_t target_list, uint32_t filter_list)
 {
-	GICDistributor->SGIR = ((filter_list & 3U) << 24U) | ((target_list & 0xFFUL) << 16U) | (IRQn & 0x0FUL);
+  GICDistributor->SGIR = ((filter_list & 3U) << 24U) | ((target_list & 0xFFUL) << 16U) | (IRQn & 0x0FUL);
 }
 
 /** \brief Get the interrupt number of the highest interrupt pending from CPU's HPPIR register.
@@ -1399,7 +1405,7 @@ __STATIC_INLINE void GIC_SendSGI(IRQn_Type IRQn, uint32_t target_list, uint32_t 
 */
 __STATIC_INLINE uint32_t GIC_GetHighPendingIRQ(void)
 {
-	return GICInterface->HPPIR;
+  return GICInterface->HPPIR;
 }
 
 /** \brief Provides information about the implementer and revision of the CPU interface.
@@ -1407,7 +1413,7 @@ __STATIC_INLINE uint32_t GIC_GetHighPendingIRQ(void)
 */
 __STATIC_INLINE uint32_t GIC_GetInterfaceId(void)
 {
-	return GICInterface->IIDR;
+  return GICInterface->IIDR;
 }
 
 /** \brief Set the interrupt group from the GIC's IGROUPR register.
@@ -1416,13 +1422,13 @@ __STATIC_INLINE uint32_t GIC_GetInterfaceId(void)
 */
 __STATIC_INLINE void GIC_SetGroup(IRQn_Type IRQn, uint32_t group)
 {
-	uint32_t igroupr = GICDistributor->IGROUPR[IRQn / 32U];
-	uint32_t shift   = (IRQn % 32U);
+  uint32_t igroupr = GICDistributor->IGROUPR[IRQn / 32U];
+  uint32_t shift   = (IRQn % 32U);
 
-	igroupr &= (~(1U          << shift));
-	igroupr |= ((group & 1U) << shift);
+  igroupr &= (~(1U          << shift));
+  igroupr |= ( (group & 1U) << shift);
 
-	GICDistributor->IGROUPR[IRQn / 32U] = igroupr;
+  GICDistributor->IGROUPR[IRQn / 32U] = igroupr;
 }
 #define GIC_SetSecurity         GIC_SetGroup
 
@@ -1432,7 +1438,7 @@ __STATIC_INLINE void GIC_SetGroup(IRQn_Type IRQn, uint32_t group)
 */
 __STATIC_INLINE uint32_t GIC_GetGroup(IRQn_Type IRQn)
 {
-	return (GICDistributor->IGROUPR[IRQn / 32U] >> (IRQn % 32U)) & 1UL;
+  return (GICDistributor->IGROUPR[IRQn / 32U] >> (IRQn % 32U)) & 1UL;
 }
 #define GIC_GetSecurity         GIC_GetGroup
 
@@ -1440,82 +1446,84 @@ __STATIC_INLINE uint32_t GIC_GetGroup(IRQn_Type IRQn)
 */
 __STATIC_INLINE void GIC_DistInit(void)
 {
-	uint32_t i;
-	uint32_t num_irq = 0U;
-	uint32_t priority_field;
+  uint32_t i;
+  uint32_t num_irq = 0U;
+  uint32_t priority_field;
 
-	//A reset sets all bits in the IGROUPRs corresponding to the SPIs to 0,
-	//configuring all of the interrupts as Secure.
+  //A reset sets all bits in the IGROUPRs corresponding to the SPIs to 0,
+  //configuring all of the interrupts as Secure.
 
-	//Disable interrupt forwarding
-	GIC_DisableDistributor();
-	//Get the maximum number of interrupts that the GIC supports
-	num_irq = 32U * ((GIC_DistributorInfo() & 0x1FU) + 1U);
+  //Disable interrupt forwarding
+  GIC_DisableDistributor();
+  //Get the maximum number of interrupts that the GIC supports
+  num_irq = 32U * ((GIC_DistributorInfo() & 0x1FU) + 1U);
 
-	/* Priority level is implementation defined.
-	 To determine the number of priority bits implemented write 0xFF to an IPRIORITYR
-	 priority field and read back the value stored.*/
-	GIC_SetPriority((IRQn_Type)0U, 0xFFU);
-	priority_field = GIC_GetPriority((IRQn_Type)0U);
+  /* Priority level is implementation defined.
+   To determine the number of priority bits implemented write 0xFF to an IPRIORITYR
+   priority field and read back the value stored.*/
+  GIC_SetPriority((IRQn_Type)0U, 0xFFU);
+  priority_field = GIC_GetPriority((IRQn_Type)0U);
 
-	for (i = 32U; i < num_irq; i++) {
-		//Disable the SPI interrupt
-		GIC_DisableIRQ((IRQn_Type)i);
-		//Set level-sensitive (and N-N model)
-		GIC_SetConfiguration((IRQn_Type)i, 0U);
-		//Set priority
-		GIC_SetPriority((IRQn_Type)i, priority_field / 2U);
-		//Set target list to CPU0
-		GIC_SetTarget((IRQn_Type)i, 1U);
-	}
-	//Enable distributor
-	GIC_EnableDistributor();
+  for (i = 32U; i < num_irq; i++)
+  {
+      //Disable the SPI interrupt
+      GIC_DisableIRQ((IRQn_Type)i);
+      //Set level-sensitive (and N-N model)
+      GIC_SetConfiguration((IRQn_Type)i, 0U);
+      //Set priority
+      GIC_SetPriority((IRQn_Type)i, priority_field/2U);
+      //Set target list to CPU0
+      GIC_SetTarget((IRQn_Type)i, 1U);
+  }
+  //Enable distributor
+  GIC_EnableDistributor();
 }
 
 /** \brief Initialize the CPU's interrupt interface
 */
 __STATIC_INLINE void GIC_CPUInterfaceInit(void)
 {
-	uint32_t i;
-	uint32_t priority_field;
+  uint32_t i;
+  uint32_t priority_field;
 
-	//A reset sets all bits in the IGROUPRs corresponding to the SPIs to 0,
-	//configuring all of the interrupts as Secure.
+  //A reset sets all bits in the IGROUPRs corresponding to the SPIs to 0,
+  //configuring all of the interrupts as Secure.
 
-	//Disable interrupt forwarding
-	GIC_DisableInterface();
+  //Disable interrupt forwarding
+  GIC_DisableInterface();
 
-	/* Priority level is implementation defined.
-	 To determine the number of priority bits implemented write 0xFF to an IPRIORITYR
-	 priority field and read back the value stored.*/
-	GIC_SetPriority((IRQn_Type)0U, 0xFFU);
-	priority_field = GIC_GetPriority((IRQn_Type)0U);
+  /* Priority level is implementation defined.
+   To determine the number of priority bits implemented write 0xFF to an IPRIORITYR
+   priority field and read back the value stored.*/
+  GIC_SetPriority((IRQn_Type)0U, 0xFFU);
+  priority_field = GIC_GetPriority((IRQn_Type)0U);
 
-	//SGI and PPI
-	for (i = 0U; i < 32U; i++) {
-		if (i > 15U) {
-			//Set level-sensitive (and N-N model) for PPI
-			GIC_SetConfiguration((IRQn_Type)i, 0U);
-		}
-		//Disable SGI and PPI interrupts
-		GIC_DisableIRQ((IRQn_Type)i);
-		//Set priority
-		GIC_SetPriority((IRQn_Type)i, priority_field / 2U);
-	}
-	//Enable interface
-	GIC_EnableInterface();
-	//Set binary point to 0
-	GIC_SetBinaryPoint(0U);
-	//Set priority mask
-	GIC_SetInterfacePriorityMask(0xFFU);
+  //SGI and PPI
+  for (i = 0U; i < 32U; i++)
+  {
+    if(i > 15U) {
+      //Set level-sensitive (and N-N model) for PPI
+      GIC_SetConfiguration((IRQn_Type)i, 0U);
+    }
+    //Disable SGI and PPI interrupts
+    GIC_DisableIRQ((IRQn_Type)i);
+    //Set priority
+    GIC_SetPriority((IRQn_Type)i, priority_field/2U);
+  }
+  //Enable interface
+  GIC_EnableInterface();
+  //Set binary point to 0
+  GIC_SetBinaryPoint(0U);
+  //Set priority mask
+  GIC_SetInterfacePriorityMask(0xFFU);
 }
 
 /** \brief Initialize and enable the GIC
 */
 __STATIC_INLINE void GIC_Enable(void)
 {
-	GIC_DistInit();
-	GIC_CPUInterfaceInit(); //per CPU
+  GIC_DistInit();
+  GIC_CPUInterfaceInit(); //per CPU
 }
 #endif
 
@@ -1526,14 +1534,16 @@ __STATIC_INLINE void GIC_Enable(void)
 #if (__CORTEX_A == 7U) || defined(DOXYGEN)
 
 /** \brief Physical Timer Control register */
-typedef union {
-	struct {
-		uint32_t ENABLE: 1;     /*!< \brief bit: 0      Enables the timer. */
-		uint32_t IMASK: 1;      /*!< \brief bit: 1      Timer output signal mask bit. */
-		uint32_t ISTATUS: 1;    /*!< \brief bit: 2      The status of the timer. */
-		RESERVED(0: 29, uint32_t)
-	} b;                      /*!< \brief Structure used for bit  access */
-	uint32_t w;               /*!< \brief Type      used for word access */
+typedef union
+{
+  struct
+  {
+    uint32_t ENABLE:1;      /*!< \brief bit: 0      Enables the timer. */
+    uint32_t IMASK:1;       /*!< \brief bit: 1      Timer output signal mask bit. */
+    uint32_t ISTATUS:1;     /*!< \brief bit: 2      The status of the timer. */
+    RESERVED(0:29, uint32_t)
+  } b;                      /*!< \brief Structure used for bit  access */
+  uint32_t w;               /*!< \brief Type      used for word access */
 } CNTP_CTL_Type;
 
 /** \brief Configures the frequency the timer shall run at.
@@ -1541,8 +1551,8 @@ typedef union {
 */
 __STATIC_INLINE void PL1_SetCounterFrequency(uint32_t value)
 {
-	__set_CNTFRQ(value);
-	__ISB();
+  __set_CNTFRQ(value);
+  __ISB();
 }
 
 /** \brief Sets the reset value of the timer.
@@ -1550,8 +1560,8 @@ __STATIC_INLINE void PL1_SetCounterFrequency(uint32_t value)
 */
 __STATIC_INLINE void PL1_SetLoadValue(uint32_t value)
 {
-	__set_CNTP_TVAL(value);
-	__ISB();
+  __set_CNTP_TVAL(value);
+  __ISB();
 }
 
 /** \brief Get the current counter value.
@@ -1559,7 +1569,7 @@ __STATIC_INLINE void PL1_SetLoadValue(uint32_t value)
 */
 __STATIC_INLINE uint32_t PL1_GetCurrentValue(void)
 {
-	return (__get_CNTP_TVAL());
+  return(__get_CNTP_TVAL());
 }
 
 /** \brief Get the current physical counter value.
@@ -1567,7 +1577,7 @@ __STATIC_INLINE uint32_t PL1_GetCurrentValue(void)
 */
 __STATIC_INLINE uint64_t PL1_GetCurrentPhysicalValue(void)
 {
-	return (__get_CNTPCT());
+  return(__get_CNTPCT());
 }
 
 /** \brief Set the physical compare value.
@@ -1575,8 +1585,8 @@ __STATIC_INLINE uint64_t PL1_GetCurrentPhysicalValue(void)
 */
 __STATIC_INLINE void PL1_SetPhysicalCompareValue(uint64_t value)
 {
-	__set_CNTP_CVAL(value);
-	__ISB();
+  __set_CNTP_CVAL(value);
+  __ISB();
 }
 
 /** \brief Get the physical compare value.
@@ -1584,7 +1594,7 @@ __STATIC_INLINE void PL1_SetPhysicalCompareValue(uint64_t value)
 */
 __STATIC_INLINE uint64_t PL1_GetPhysicalCompareValue(void)
 {
-	return (__get_CNTP_CVAL());
+  return(__get_CNTP_CVAL());
 }
 
 /** \brief Configure the timer by setting the control value.
@@ -1592,8 +1602,8 @@ __STATIC_INLINE uint64_t PL1_GetPhysicalCompareValue(void)
 */
 __STATIC_INLINE void PL1_SetControl(uint32_t value)
 {
-	__set_CNTP_CTL(value);
-	__ISB();
+  __set_CNTP_CTL(value);
+  __ISB();
 }
 
 /** \brief Get the control value.
@@ -1601,7 +1611,7 @@ __STATIC_INLINE void PL1_SetControl(uint32_t value)
 */
 __STATIC_INLINE uint32_t PL1_GetControl(void)
 {
-	return (__get_CNTP_CTL());
+  return(__get_CNTP_CTL());
 }
 #endif
 
@@ -1612,7 +1622,7 @@ __STATIC_INLINE uint32_t PL1_GetControl(void)
 */
 __STATIC_INLINE void PTIM_SetLoadValue(uint32_t value)
 {
-	PTIM->LOAD = value;
+  PTIM->LOAD = value;
 }
 
 /** \brief Get the load value from timers LOAD register.
@@ -1620,14 +1630,14 @@ __STATIC_INLINE void PTIM_SetLoadValue(uint32_t value)
 */
 __STATIC_INLINE uint32_t PTIM_GetLoadValue(void)
 {
-	return (PTIM->LOAD);
+  return(PTIM->LOAD);
 }
 
 /** \brief Set current counter value from its COUNTER register.
 */
 __STATIC_INLINE void PTIM_SetCurrentValue(uint32_t value)
 {
-	PTIM->COUNTER = value;
+  PTIM->COUNTER = value;
 }
 
 /** \brief Get current counter value from timers COUNTER register.
@@ -1635,7 +1645,7 @@ __STATIC_INLINE void PTIM_SetCurrentValue(uint32_t value)
 */
 __STATIC_INLINE uint32_t PTIM_GetCurrentValue(void)
 {
-	return (PTIM->COUNTER);
+  return(PTIM->COUNTER);
 }
 
 /** \brief Configure the timer using its CONTROL register.
@@ -1643,7 +1653,7 @@ __STATIC_INLINE uint32_t PTIM_GetCurrentValue(void)
 */
 __STATIC_INLINE void PTIM_SetControl(uint32_t value)
 {
-	PTIM->CONTROL = value;
+  PTIM->CONTROL = value;
 }
 
 /** ref Timer_Type::CONTROL Get the current timer configuration from its CONTROL register.
@@ -1651,7 +1661,7 @@ __STATIC_INLINE void PTIM_SetControl(uint32_t value)
 */
 __STATIC_INLINE uint32_t PTIM_GetControl(void)
 {
-	return (PTIM->CONTROL);
+  return(PTIM->CONTROL);
 }
 
 /** ref Timer_Type::CONTROL Get the event flag in timers ISR register.
@@ -1659,14 +1669,14 @@ __STATIC_INLINE uint32_t PTIM_GetControl(void)
 */
 __STATIC_INLINE uint32_t PTIM_GetEventFlag(void)
 {
-	return (PTIM->ISR & 1UL);
+  return (PTIM->ISR & 1UL);
 }
 
 /** ref Timer_Type::CONTROL Clears the event flag in timers ISR register.
 */
 __STATIC_INLINE void PTIM_ClearEventFlag(void)
 {
-	PTIM->ISR = 1;
+  PTIM->ISR = 1;
 }
 #endif
 #endif
@@ -1766,80 +1776,89 @@ __STATIC_INLINE void PTIM_ClearEventFlag(void)
 /* Attributes enumerations */
 
 /* Region size attributes */
-typedef enum {
-	SECTION,
-	PAGE_4k,
-	PAGE_64k,
+typedef enum
+{
+   SECTION,
+   PAGE_4k,
+   PAGE_64k,
 } mmu_region_size_Type;
 
 /* Region type attributes */
-typedef enum {
-	NORMAL,
-	DEVICE,
-	SHARED_DEVICE,
-	NON_SHARED_DEVICE,
-	STRONGLY_ORDERED
+typedef enum
+{
+   NORMAL,
+   DEVICE,
+   SHARED_DEVICE,
+   NON_SHARED_DEVICE,
+   STRONGLY_ORDERED
 } mmu_memory_Type;
 
 /* Region cacheability attributes */
-typedef enum {
-	NON_CACHEABLE,
-	WB_WA,
-	WT,
-	WB_NO_WA,
+typedef enum
+{
+   NON_CACHEABLE,
+   WB_WA,
+   WT,
+   WB_NO_WA,
 } mmu_cacheability_Type;
 
 /* Region parity check attributes */
-typedef enum {
-	ECC_DISABLED,
-	ECC_ENABLED,
+typedef enum
+{
+   ECC_DISABLED,
+   ECC_ENABLED,
 } mmu_ecc_check_Type;
 
 /* Region execution attributes */
-typedef enum {
-	EXECUTE,
-	NON_EXECUTE,
+typedef enum
+{
+   EXECUTE,
+   NON_EXECUTE,
 } mmu_execute_Type;
 
 /* Region global attributes */
-typedef enum {
-	GLOBAL,
-	NON_GLOBAL,
+typedef enum
+{
+   GLOBAL,
+   NON_GLOBAL,
 } mmu_global_Type;
 
 /* Region shareability attributes */
-typedef enum {
-	NON_SHARED,
-	SHARED,
+typedef enum
+{
+   NON_SHARED,
+   SHARED,
 } mmu_shared_Type;
 
 /* Region security attributes */
-typedef enum {
-	SECURE,
-	NON_SECURE,
+typedef enum
+{
+   SECURE,
+   NON_SECURE,
 } mmu_secure_Type;
 
 /* Region access attributes */
-typedef enum {
-	NO_ACCESS,
-	RW,
-	READ,
+typedef enum
+{
+   NO_ACCESS,
+   RW,
+   READ,
 } mmu_access_Type;
 
 /* Memory Region definition */
 typedef struct RegionStruct {
-	mmu_region_size_Type rg_t;
-	mmu_memory_Type mem_t;
-	uint8_t domain;
-	mmu_cacheability_Type inner_norm_t;
-	mmu_cacheability_Type outer_norm_t;
-	mmu_ecc_check_Type e_t;
-	mmu_execute_Type xn_t;
-	mmu_global_Type g_t;
-	mmu_secure_Type sec_t;
-	mmu_access_Type priv_t;
-	mmu_access_Type user_t;
-	mmu_shared_Type sh_t;
+    mmu_region_size_Type rg_t;
+    mmu_memory_Type mem_t;
+    uint8_t domain;
+    mmu_cacheability_Type inner_norm_t;
+    mmu_cacheability_Type outer_norm_t;
+    mmu_ecc_check_Type e_t;
+    mmu_execute_Type xn_t;
+    mmu_global_Type g_t;
+    mmu_secure_Type sec_t;
+    mmu_access_Type priv_t;
+    mmu_access_Type user_t;
+    mmu_shared_Type sh_t;
 
 } mmu_region_attributes_Type;
 
@@ -2001,9 +2020,9 @@ typedef struct RegionStruct {
 */
 __STATIC_INLINE int MMU_XNSection(uint32_t *descriptor_l1, mmu_execute_Type xn)
 {
-	*descriptor_l1 &= SECTION_XN_MASK;
-	*descriptor_l1 |= ((xn & 0x1) << SECTION_XN_SHIFT);
-	return 0;
+  *descriptor_l1 &= SECTION_XN_MASK;
+  *descriptor_l1 |= ((xn & 0x1) << SECTION_XN_SHIFT);
+  return 0;
 }
 
 /** \brief  Set section domain
@@ -2015,9 +2034,9 @@ __STATIC_INLINE int MMU_XNSection(uint32_t *descriptor_l1, mmu_execute_Type xn)
 */
 __STATIC_INLINE int MMU_DomainSection(uint32_t *descriptor_l1, uint8_t domain)
 {
-	*descriptor_l1 &= SECTION_DOMAIN_MASK;
-	*descriptor_l1 |= ((domain & 0xF) << SECTION_DOMAIN_SHIFT);
-	return 0;
+  *descriptor_l1 &= SECTION_DOMAIN_MASK;
+  *descriptor_l1 |= ((domain & 0xF) << SECTION_DOMAIN_SHIFT);
+  return 0;
 }
 
 /** \brief  Set section parity check
@@ -2029,9 +2048,9 @@ __STATIC_INLINE int MMU_DomainSection(uint32_t *descriptor_l1, uint8_t domain)
 */
 __STATIC_INLINE int MMU_PSection(uint32_t *descriptor_l1, mmu_ecc_check_Type p_bit)
 {
-	*descriptor_l1 &= SECTION_P_MASK;
-	*descriptor_l1 |= ((p_bit & 0x1) << SECTION_P_SHIFT);
-	return 0;
+  *descriptor_l1 &= SECTION_P_MASK;
+  *descriptor_l1 |= ((p_bit & 0x1) << SECTION_P_SHIFT);
+  return 0;
 }
 
 /** \brief  Set section access privileges
@@ -2045,41 +2064,29 @@ __STATIC_INLINE int MMU_PSection(uint32_t *descriptor_l1, mmu_ecc_check_Type p_b
 */
 __STATIC_INLINE int MMU_APSection(uint32_t *descriptor_l1, mmu_access_Type user, mmu_access_Type priv, uint32_t afe)
 {
-	uint32_t ap = 0;
+  uint32_t ap = 0;
 
-	if (afe == 0) { //full access
-		if ((priv == NO_ACCESS) && (user == NO_ACCESS)) {
-			ap = 0x0;
-		} else if ((priv == RW) && (user == NO_ACCESS))   {
-			ap = 0x1;
-		} else if ((priv == RW) && (user == READ))        {
-			ap = 0x2;
-		} else if ((priv == RW) && (user == RW))          {
-			ap = 0x3;
-		} else if ((priv == READ) && (user == NO_ACCESS)) {
-			ap = 0x5;
-		} else if ((priv == READ) && (user == READ))      {
-			ap = 0x7;
-		}
-	}
+  if (afe == 0) { //full access
+    if ((priv == NO_ACCESS) && (user == NO_ACCESS)) { ap = 0x0; }
+    else if ((priv == RW) && (user == NO_ACCESS))   { ap = 0x1; }
+    else if ((priv == RW) && (user == READ))        { ap = 0x2; }
+    else if ((priv == RW) && (user == RW))          { ap = 0x3; }
+    else if ((priv == READ) && (user == NO_ACCESS)) { ap = 0x5; }
+    else if ((priv == READ) && (user == READ))      { ap = 0x7; }
+  }
 
-	else { //Simplified access
-		if ((priv == RW) && (user == NO_ACCESS))        {
-			ap = 0x1;
-		} else if ((priv == RW) && (user == RW))          {
-			ap = 0x3;
-		} else if ((priv == READ) && (user == NO_ACCESS)) {
-			ap = 0x5;
-		} else if ((priv == READ) && (user == READ))      {
-			ap = 0x7;
-		}
-	}
+  else { //Simplified access
+    if ((priv == RW) && (user == NO_ACCESS))        { ap = 0x1; }
+    else if ((priv == RW) && (user == RW))          { ap = 0x3; }
+    else if ((priv == READ) && (user == NO_ACCESS)) { ap = 0x5; }
+    else if ((priv == READ) && (user == READ))      { ap = 0x7; }
+  }
 
-	*descriptor_l1 &= SECTION_AP_MASK;
-	*descriptor_l1 |= (ap & 0x3) << SECTION_AP_SHIFT;
-	*descriptor_l1 |= ((ap & 0x4) >> 2) << SECTION_AP2_SHIFT;
+  *descriptor_l1 &= SECTION_AP_MASK;
+  *descriptor_l1 |= (ap & 0x3) << SECTION_AP_SHIFT;
+  *descriptor_l1 |= ((ap & 0x4)>>2) << SECTION_AP2_SHIFT;
 
-	return 0;
+  return 0;
 }
 
 /** \brief  Set section shareability
@@ -2091,9 +2098,9 @@ __STATIC_INLINE int MMU_APSection(uint32_t *descriptor_l1, mmu_access_Type user,
 */
 __STATIC_INLINE int MMU_SharedSection(uint32_t *descriptor_l1, mmu_shared_Type s_bit)
 {
-	*descriptor_l1 &= SECTION_S_MASK;
-	*descriptor_l1 |= ((s_bit & 0x1) << SECTION_S_SHIFT);
-	return 0;
+  *descriptor_l1 &= SECTION_S_MASK;
+  *descriptor_l1 |= ((s_bit & 0x1) << SECTION_S_SHIFT);
+  return 0;
 }
 
 /** \brief  Set section Global attribute
@@ -2105,9 +2112,9 @@ __STATIC_INLINE int MMU_SharedSection(uint32_t *descriptor_l1, mmu_shared_Type s
 */
 __STATIC_INLINE int MMU_GlobalSection(uint32_t *descriptor_l1, mmu_global_Type g_bit)
 {
-	*descriptor_l1 &= SECTION_NG_MASK;
-	*descriptor_l1 |= ((g_bit & 0x1) << SECTION_NG_SHIFT);
-	return 0;
+  *descriptor_l1 &= SECTION_NG_MASK;
+  *descriptor_l1 |= ((g_bit & 0x1) << SECTION_NG_SHIFT);
+  return 0;
 }
 
 /** \brief  Set section Security attribute
@@ -2119,9 +2126,9 @@ __STATIC_INLINE int MMU_GlobalSection(uint32_t *descriptor_l1, mmu_global_Type g
 */
 __STATIC_INLINE int MMU_SecureSection(uint32_t *descriptor_l1, mmu_secure_Type s_bit)
 {
-	*descriptor_l1 &= SECTION_NS_MASK;
-	*descriptor_l1 |= ((s_bit & 0x1) << SECTION_NS_SHIFT);
-	return 0;
+  *descriptor_l1 &= SECTION_NS_MASK;
+  *descriptor_l1 |= ((s_bit & 0x1) << SECTION_NS_SHIFT);
+  return 0;
 }
 
 /* Page 4k or 64k */
@@ -2135,14 +2142,17 @@ __STATIC_INLINE int MMU_SecureSection(uint32_t *descriptor_l1, mmu_secure_Type s
 */
 __STATIC_INLINE int MMU_XNPage(uint32_t *descriptor_l2, mmu_execute_Type xn, mmu_region_size_Type page)
 {
-	if (page == PAGE_4k) {
-		*descriptor_l2 &= PAGE_XN_4K_MASK;
-		*descriptor_l2 |= ((xn & 0x1) << PAGE_XN_4K_SHIFT);
-	} else {
-		*descriptor_l2 &= PAGE_XN_64K_MASK;
-		*descriptor_l2 |= ((xn & 0x1) << PAGE_XN_64K_SHIFT);
-	}
-	return 0;
+  if (page == PAGE_4k)
+  {
+      *descriptor_l2 &= PAGE_XN_4K_MASK;
+      *descriptor_l2 |= ((xn & 0x1) << PAGE_XN_4K_SHIFT);
+  }
+  else
+  {
+      *descriptor_l2 &= PAGE_XN_64K_MASK;
+      *descriptor_l2 |= ((xn & 0x1) << PAGE_XN_64K_SHIFT);
+  }
+  return 0;
 }
 
 /** \brief  Set 4k/64k page domain
@@ -2154,9 +2164,9 @@ __STATIC_INLINE int MMU_XNPage(uint32_t *descriptor_l2, mmu_execute_Type xn, mmu
 */
 __STATIC_INLINE int MMU_DomainPage(uint32_t *descriptor_l1, uint8_t domain)
 {
-	*descriptor_l1 &= PAGE_DOMAIN_MASK;
-	*descriptor_l1 |= ((domain & 0xf) << PAGE_DOMAIN_SHIFT);
-	return 0;
+  *descriptor_l1 &= PAGE_DOMAIN_MASK;
+  *descriptor_l1 |= ((domain & 0xf) << PAGE_DOMAIN_SHIFT);
+  return 0;
 }
 
 /** \brief  Set 4k/64k page parity check
@@ -2168,9 +2178,9 @@ __STATIC_INLINE int MMU_DomainPage(uint32_t *descriptor_l1, uint8_t domain)
 */
 __STATIC_INLINE int MMU_PPage(uint32_t *descriptor_l1, mmu_ecc_check_Type p_bit)
 {
-	*descriptor_l1 &= SECTION_P_MASK;
-	*descriptor_l1 |= ((p_bit & 0x1) << SECTION_P_SHIFT);
-	return 0;
+  *descriptor_l1 &= SECTION_P_MASK;
+  *descriptor_l1 |= ((p_bit & 0x1) << SECTION_P_SHIFT);
+  return 0;
 }
 
 /** \brief  Set 4k/64k page access privileges
@@ -2184,41 +2194,29 @@ __STATIC_INLINE int MMU_PPage(uint32_t *descriptor_l1, mmu_ecc_check_Type p_bit)
 */
 __STATIC_INLINE int MMU_APPage(uint32_t *descriptor_l2, mmu_access_Type user, mmu_access_Type priv, uint32_t afe)
 {
-	uint32_t ap = 0;
+  uint32_t ap = 0;
 
-	if (afe == 0) { //full access
-		if ((priv == NO_ACCESS) && (user == NO_ACCESS)) {
-			ap = 0x0;
-		} else if ((priv == RW) && (user == NO_ACCESS))   {
-			ap = 0x1;
-		} else if ((priv == RW) && (user == READ))        {
-			ap = 0x2;
-		} else if ((priv == RW) && (user == RW))          {
-			ap = 0x3;
-		} else if ((priv == READ) && (user == NO_ACCESS)) {
-			ap = 0x5;
-		} else if ((priv == READ) && (user == READ))      {
-			ap = 0x6;
-		}
-	}
+  if (afe == 0) { //full access
+    if ((priv == NO_ACCESS) && (user == NO_ACCESS)) { ap = 0x0; }
+    else if ((priv == RW) && (user == NO_ACCESS))   { ap = 0x1; }
+    else if ((priv == RW) && (user == READ))        { ap = 0x2; }
+    else if ((priv == RW) && (user == RW))          { ap = 0x3; }
+    else if ((priv == READ) && (user == NO_ACCESS)) { ap = 0x5; }
+    else if ((priv == READ) && (user == READ))      { ap = 0x6; }
+  }
 
-	else { //Simplified access
-		if ((priv == RW) && (user == NO_ACCESS))        {
-			ap = 0x1;
-		} else if ((priv == RW) && (user == RW))          {
-			ap = 0x3;
-		} else if ((priv == READ) && (user == NO_ACCESS)) {
-			ap = 0x5;
-		} else if ((priv == READ) && (user == READ))      {
-			ap = 0x7;
-		}
-	}
+  else { //Simplified access
+    if ((priv == RW) && (user == NO_ACCESS))        { ap = 0x1; }
+    else if ((priv == RW) && (user == RW))          { ap = 0x3; }
+    else if ((priv == READ) && (user == NO_ACCESS)) { ap = 0x5; }
+    else if ((priv == READ) && (user == READ))      { ap = 0x7; }
+  }
 
-	*descriptor_l2 &= PAGE_AP_MASK;
-	*descriptor_l2 |= (ap & 0x3) << PAGE_AP_SHIFT;
-	*descriptor_l2 |= ((ap & 0x4) >> 2) << PAGE_AP2_SHIFT;
+  *descriptor_l2 &= PAGE_AP_MASK;
+  *descriptor_l2 |= (ap & 0x3) << PAGE_AP_SHIFT;
+  *descriptor_l2 |= ((ap & 0x4)>>2) << PAGE_AP2_SHIFT;
 
-	return 0;
+  return 0;
 }
 
 /** \brief  Set 4k/64k page shareability
@@ -2230,9 +2228,9 @@ __STATIC_INLINE int MMU_APPage(uint32_t *descriptor_l2, mmu_access_Type user, mm
 */
 __STATIC_INLINE int MMU_SharedPage(uint32_t *descriptor_l2, mmu_shared_Type s_bit)
 {
-	*descriptor_l2 &= PAGE_S_MASK;
-	*descriptor_l2 |= ((s_bit & 0x1) << PAGE_S_SHIFT);
-	return 0;
+  *descriptor_l2 &= PAGE_S_MASK;
+  *descriptor_l2 |= ((s_bit & 0x1) << PAGE_S_SHIFT);
+  return 0;
 }
 
 /** \brief  Set 4k/64k page Global attribute
@@ -2244,9 +2242,9 @@ __STATIC_INLINE int MMU_SharedPage(uint32_t *descriptor_l2, mmu_shared_Type s_bi
 */
 __STATIC_INLINE int MMU_GlobalPage(uint32_t *descriptor_l2, mmu_global_Type g_bit)
 {
-	*descriptor_l2 &= PAGE_NG_MASK;
-	*descriptor_l2 |= ((g_bit & 0x1) << PAGE_NG_SHIFT);
-	return 0;
+  *descriptor_l2 &= PAGE_NG_MASK;
+  *descriptor_l2 |= ((g_bit & 0x1) << PAGE_NG_SHIFT);
+  return 0;
 }
 
 /** \brief  Set 4k/64k page Security attribute
@@ -2258,9 +2256,9 @@ __STATIC_INLINE int MMU_GlobalPage(uint32_t *descriptor_l2, mmu_global_Type g_bi
 */
 __STATIC_INLINE int MMU_SecurePage(uint32_t *descriptor_l1, mmu_secure_Type s_bit)
 {
-	*descriptor_l1 &= PAGE_NS_MASK;
-	*descriptor_l1 |= ((s_bit & 0x1) << PAGE_NS_SHIFT);
-	return 0;
+  *descriptor_l1 &= PAGE_NS_MASK;
+  *descriptor_l1 |= ((s_bit & 0x1) << PAGE_NS_SHIFT);
+  return 0;
 }
 
 /** \brief  Set Section memory attributes
@@ -2274,44 +2272,53 @@ __STATIC_INLINE int MMU_SecurePage(uint32_t *descriptor_l1, mmu_secure_Type s_bi
 */
 __STATIC_INLINE int MMU_MemorySection(uint32_t *descriptor_l1, mmu_memory_Type mem, mmu_cacheability_Type outer, mmu_cacheability_Type inner)
 {
-	*descriptor_l1 &= SECTION_TEXCB_MASK;
+  *descriptor_l1 &= SECTION_TEXCB_MASK;
 
-	if (STRONGLY_ORDERED == mem) {
-		return 0;
-	} else if (SHARED_DEVICE == mem) {
-		*descriptor_l1 |= (1 << SECTION_B_SHIFT);
-	} else if (NON_SHARED_DEVICE == mem) {
-		*descriptor_l1 |= (1 << SECTION_TEX1_SHIFT);
-	} else if (NORMAL == mem) {
-		*descriptor_l1 |= 1 << SECTION_TEX2_SHIFT;
-		switch (inner) {
-		case NON_CACHEABLE:
-			break;
-		case WB_WA:
-			*descriptor_l1 |= (1 << SECTION_B_SHIFT);
-			break;
-		case WT:
-			*descriptor_l1 |= 1 << SECTION_C_SHIFT;
-			break;
-		case WB_NO_WA:
-			*descriptor_l1 |= (1 << SECTION_B_SHIFT) | (1 << SECTION_C_SHIFT);
-			break;
-		}
-		switch (outer) {
-		case NON_CACHEABLE:
-			break;
-		case WB_WA:
-			*descriptor_l1 |= (1 << SECTION_TEX0_SHIFT);
-			break;
-		case WT:
-			*descriptor_l1 |= 1 << SECTION_TEX1_SHIFT;
-			break;
-		case WB_NO_WA:
-			*descriptor_l1 |= (1 << SECTION_TEX0_SHIFT) | (1 << SECTION_TEX0_SHIFT);
-			break;
-		}
-	}
-	return 0;
+  if (STRONGLY_ORDERED == mem)
+  {
+    return 0;
+  }
+  else if (SHARED_DEVICE == mem)
+  {
+    *descriptor_l1 |= (1 << SECTION_B_SHIFT);
+  }
+  else if (NON_SHARED_DEVICE == mem)
+  {
+    *descriptor_l1 |= (1 << SECTION_TEX1_SHIFT);
+  }
+  else if (NORMAL == mem)
+  {
+   *descriptor_l1 |= 1 << SECTION_TEX2_SHIFT;
+   switch(inner)
+   {
+      case NON_CACHEABLE:
+        break;
+      case WB_WA:
+        *descriptor_l1 |= (1 << SECTION_B_SHIFT);
+        break;
+      case WT:
+        *descriptor_l1 |= 1 << SECTION_C_SHIFT;
+        break;
+      case WB_NO_WA:
+        *descriptor_l1 |= (1 << SECTION_B_SHIFT) | (1 << SECTION_C_SHIFT);
+        break;
+    }
+    switch(outer)
+    {
+      case NON_CACHEABLE:
+        break;
+      case WB_WA:
+        *descriptor_l1 |= (1 << SECTION_TEX0_SHIFT);
+        break;
+      case WT:
+        *descriptor_l1 |= 1 << SECTION_TEX1_SHIFT;
+        break;
+      case WB_NO_WA:
+        *descriptor_l1 |= (1 << SECTION_TEX0_SHIFT) | (1 << SECTION_TEX0_SHIFT);
+        break;
+    }
+  }
+  return 0;
 }
 
 /** \brief  Set 4k/64k page memory attributes
@@ -2324,53 +2331,64 @@ __STATIC_INLINE int MMU_MemorySection(uint32_t *descriptor_l1, mmu_memory_Type m
 
   \return          0
 */
-__STATIC_INLINE int MMU_MemoryPage(uint32_t *descriptor_l2, mmu_memory_Type mem, mmu_cacheability_Type outer, mmu_cacheability_Type inner,
-								   mmu_region_size_Type page)
+__STATIC_INLINE int MMU_MemoryPage(uint32_t *descriptor_l2, mmu_memory_Type mem, mmu_cacheability_Type outer, mmu_cacheability_Type inner, mmu_region_size_Type page)
 {
-	*descriptor_l2 &= PAGE_4K_TEXCB_MASK;
+  *descriptor_l2 &= PAGE_4K_TEXCB_MASK;
 
-	if (page == PAGE_64k) {
-		//same as section
-		MMU_MemorySection(descriptor_l2, mem, outer, inner);
-	} else {
-		if (STRONGLY_ORDERED == mem) {
-			return 0;
-		} else if (SHARED_DEVICE == mem) {
-			*descriptor_l2 |= (1 << PAGE_4K_B_SHIFT);
-		} else if (NON_SHARED_DEVICE == mem) {
-			*descriptor_l2 |= (1 << PAGE_4K_TEX1_SHIFT);
-		} else if (NORMAL == mem) {
-			*descriptor_l2 |= 1 << PAGE_4K_TEX2_SHIFT;
-			switch (inner) {
-			case NON_CACHEABLE:
-				break;
-			case WB_WA:
-				*descriptor_l2 |= (1 << PAGE_4K_B_SHIFT);
-				break;
-			case WT:
-				*descriptor_l2 |= 1 << PAGE_4K_C_SHIFT;
-				break;
-			case WB_NO_WA:
-				*descriptor_l2 |= (1 << PAGE_4K_B_SHIFT) | (1 << PAGE_4K_C_SHIFT);
-				break;
-			}
-			switch (outer) {
-			case NON_CACHEABLE:
-				break;
-			case WB_WA:
-				*descriptor_l2 |= (1 << PAGE_4K_TEX0_SHIFT);
-				break;
-			case WT:
-				*descriptor_l2 |= 1 << PAGE_4K_TEX1_SHIFT;
-				break;
-			case WB_NO_WA:
-				*descriptor_l2 |= (1 << PAGE_4K_TEX0_SHIFT) | (1 << PAGE_4K_TEX0_SHIFT);
-				break;
-			}
-		}
-	}
+  if (page == PAGE_64k)
+  {
+    //same as section
+    MMU_MemorySection(descriptor_l2, mem, outer, inner);
+  }
+  else
+  {
+    if (STRONGLY_ORDERED == mem)
+    {
+      return 0;
+    }
+    else if (SHARED_DEVICE == mem)
+    {
+      *descriptor_l2 |= (1 << PAGE_4K_B_SHIFT);
+    }
+    else if (NON_SHARED_DEVICE == mem)
+    {
+      *descriptor_l2 |= (1 << PAGE_4K_TEX1_SHIFT);
+    }
+    else if (NORMAL == mem)
+    {
+      *descriptor_l2 |= 1 << PAGE_4K_TEX2_SHIFT;
+      switch(inner)
+      {
+        case NON_CACHEABLE:
+          break;
+        case WB_WA:
+          *descriptor_l2 |= (1 << PAGE_4K_B_SHIFT);
+          break;
+        case WT:
+          *descriptor_l2 |= 1 << PAGE_4K_C_SHIFT;
+          break;
+        case WB_NO_WA:
+          *descriptor_l2 |= (1 << PAGE_4K_B_SHIFT) | (1 << PAGE_4K_C_SHIFT);
+          break;
+      }
+      switch(outer)
+      {
+        case NON_CACHEABLE:
+          break;
+        case WB_WA:
+          *descriptor_l2 |= (1 << PAGE_4K_TEX0_SHIFT);
+          break;
+        case WT:
+          *descriptor_l2 |= 1 << PAGE_4K_TEX1_SHIFT;
+          break;
+        case WB_NO_WA:
+          *descriptor_l2 |= (1 << PAGE_4K_TEX0_SHIFT) | (1 << PAGE_4K_TEX0_SHIFT);
+          break;
+      }
+    }
+  }
 
-	return 0;
+  return 0;
 }
 
 /** \brief  Create a L1 section descriptor
@@ -2382,20 +2400,20 @@ __STATIC_INLINE int MMU_MemoryPage(uint32_t *descriptor_l2, mmu_memory_Type mem,
 */
 __STATIC_INLINE int MMU_GetSectionDescriptor(uint32_t *descriptor, mmu_region_attributes_Type reg)
 {
-	*descriptor  = 0;
+  *descriptor  = 0;
 
-	MMU_MemorySection(descriptor, reg.mem_t, reg.outer_norm_t, reg.inner_norm_t);
-	MMU_XNSection(descriptor, reg.xn_t);
-	MMU_DomainSection(descriptor, reg.domain);
-	MMU_PSection(descriptor, reg.e_t);
-	MMU_APSection(descriptor, reg.priv_t, reg.user_t, 1);
-	MMU_SharedSection(descriptor, reg.sh_t);
-	MMU_GlobalSection(descriptor, reg.g_t);
-	MMU_SecureSection(descriptor, reg.sec_t);
-	*descriptor &= SECTION_MASK;
-	*descriptor |= SECTION_DESCRIPTOR;
+  MMU_MemorySection(descriptor, reg.mem_t, reg.outer_norm_t, reg.inner_norm_t);
+  MMU_XNSection(descriptor,reg.xn_t);
+  MMU_DomainSection(descriptor, reg.domain);
+  MMU_PSection(descriptor, reg.e_t);
+  MMU_APSection(descriptor, reg.priv_t, reg.user_t, 1);
+  MMU_SharedSection(descriptor,reg.sh_t);
+  MMU_GlobalSection(descriptor,reg.g_t);
+  MMU_SecureSection(descriptor,reg.sec_t);
+  *descriptor &= SECTION_MASK;
+  *descriptor |= SECTION_DESCRIPTOR;
 
-	return 0;
+  return 0;
 }
 
 
@@ -2409,46 +2427,47 @@ __STATIC_INLINE int MMU_GetSectionDescriptor(uint32_t *descriptor, mmu_region_at
 */
 __STATIC_INLINE int MMU_GetPageDescriptor(uint32_t *descriptor, uint32_t *descriptor2, mmu_region_attributes_Type reg)
 {
-	*descriptor  = 0;
-	*descriptor2 = 0;
+  *descriptor  = 0;
+  *descriptor2 = 0;
 
-	switch (reg.rg_t) {
-	case PAGE_4k:
-		MMU_MemoryPage(descriptor2, reg.mem_t, reg.outer_norm_t, reg.inner_norm_t, PAGE_4k);
-		MMU_XNPage(descriptor2, reg.xn_t, PAGE_4k);
-		MMU_DomainPage(descriptor, reg.domain);
-		MMU_PPage(descriptor, reg.e_t);
-		MMU_APPage(descriptor2, reg.priv_t, reg.user_t, 1);
-		MMU_SharedPage(descriptor2, reg.sh_t);
-		MMU_GlobalPage(descriptor2, reg.g_t);
-		MMU_SecurePage(descriptor, reg.sec_t);
-		*descriptor &= PAGE_L1_MASK;
-		*descriptor |= PAGE_L1_DESCRIPTOR;
-		*descriptor2 &= PAGE_L2_4K_MASK;
-		*descriptor2 |= PAGE_L2_4K_DESC;
-		break;
+  switch (reg.rg_t)
+  {
+    case PAGE_4k:
+      MMU_MemoryPage(descriptor2, reg.mem_t, reg.outer_norm_t, reg.inner_norm_t, PAGE_4k);
+      MMU_XNPage(descriptor2, reg.xn_t, PAGE_4k);
+      MMU_DomainPage(descriptor, reg.domain);
+      MMU_PPage(descriptor, reg.e_t);
+      MMU_APPage(descriptor2, reg.priv_t, reg.user_t, 1);
+      MMU_SharedPage(descriptor2,reg.sh_t);
+      MMU_GlobalPage(descriptor2,reg.g_t);
+      MMU_SecurePage(descriptor,reg.sec_t);
+      *descriptor &= PAGE_L1_MASK;
+      *descriptor |= PAGE_L1_DESCRIPTOR;
+      *descriptor2 &= PAGE_L2_4K_MASK;
+      *descriptor2 |= PAGE_L2_4K_DESC;
+      break;
 
-	case PAGE_64k:
-		MMU_MemoryPage(descriptor2, reg.mem_t, reg.outer_norm_t, reg.inner_norm_t, PAGE_64k);
-		MMU_XNPage(descriptor2, reg.xn_t, PAGE_64k);
-		MMU_DomainPage(descriptor, reg.domain);
-		MMU_PPage(descriptor, reg.e_t);
-		MMU_APPage(descriptor2, reg.priv_t, reg.user_t, 1);
-		MMU_SharedPage(descriptor2, reg.sh_t);
-		MMU_GlobalPage(descriptor2, reg.g_t);
-		MMU_SecurePage(descriptor, reg.sec_t);
-		*descriptor &= PAGE_L1_MASK;
-		*descriptor |= PAGE_L1_DESCRIPTOR;
-		*descriptor2 &= PAGE_L2_64K_MASK;
-		*descriptor2 |= PAGE_L2_64K_DESC;
-		break;
+    case PAGE_64k:
+      MMU_MemoryPage(descriptor2, reg.mem_t, reg.outer_norm_t, reg.inner_norm_t, PAGE_64k);
+      MMU_XNPage(descriptor2, reg.xn_t, PAGE_64k);
+      MMU_DomainPage(descriptor, reg.domain);
+      MMU_PPage(descriptor, reg.e_t);
+      MMU_APPage(descriptor2, reg.priv_t, reg.user_t, 1);
+      MMU_SharedPage(descriptor2,reg.sh_t);
+      MMU_GlobalPage(descriptor2,reg.g_t);
+      MMU_SecurePage(descriptor,reg.sec_t);
+      *descriptor &= PAGE_L1_MASK;
+      *descriptor |= PAGE_L1_DESCRIPTOR;
+      *descriptor2 &= PAGE_L2_64K_MASK;
+      *descriptor2 |= PAGE_L2_64K_DESC;
+      break;
 
-	case SECTION:
-		//error
-		break;
-	}
+    case SECTION:
+      //error
+      break;
+  }
 
-	return 0;
+  return 0;
 }
 
 /** \brief  Create a 1MB Section
@@ -2461,21 +2480,22 @@ __STATIC_INLINE int MMU_GetPageDescriptor(uint32_t *descriptor, uint32_t *descri
 */
 __STATIC_INLINE void MMU_TTSection(uint32_t *ttb, uint32_t base_address, uint32_t count, uint32_t descriptor_l1)
 {
-	uint32_t offset;
-	uint32_t entry;
-	uint32_t i;
+  uint32_t offset;
+  uint32_t entry;
+  uint32_t i;
 
-	offset = base_address >> 20;
-	entry  = (base_address & 0xFFF00000) | descriptor_l1;
+  offset = base_address >> 20;
+  entry  = (base_address & 0xFFF00000) | descriptor_l1;
 
-	//4 bytes aligned
-	ttb = ttb + offset;
+  //4 bytes aligned
+  ttb = ttb + offset;
 
-	for (i = 0; i < count; i++) {
-		//4 bytes aligned
-		*ttb++ = entry;
-		entry += OFFSET_1M;
-	}
+  for (i = 0; i < count; i++ )
+  {
+    //4 bytes aligned
+    *ttb++ = entry;
+    entry += OFFSET_1M;
+  }
 }
 
 /** \brief  Create a 4k page entry
@@ -2488,29 +2508,30 @@ __STATIC_INLINE void MMU_TTSection(uint32_t *ttb, uint32_t base_address, uint32_
   \param [in]     descriptor_l2  L2 descriptor (region attributes)
 
 */
-__STATIC_INLINE void MMU_TTPage4k(uint32_t *ttb, uint32_t base_address, uint32_t count, uint32_t descriptor_l1, uint32_t *ttb_l2, uint32_t descriptor_l2)
+__STATIC_INLINE void MMU_TTPage4k(uint32_t *ttb, uint32_t base_address, uint32_t count, uint32_t descriptor_l1, uint32_t *ttb_l2, uint32_t descriptor_l2 )
 {
 
-	uint32_t offset, offset2;
-	uint32_t entry, entry2;
-	uint32_t i;
+  uint32_t offset, offset2;
+  uint32_t entry, entry2;
+  uint32_t i;
 
-	offset = base_address >> 20;
-	entry  = ((int)ttb_l2 & 0xFFFFFC00) | descriptor_l1;
+  offset = base_address >> 20;
+  entry  = ((int)ttb_l2 & 0xFFFFFC00) | descriptor_l1;
 
-	//4 bytes aligned
-	ttb += offset;
-	//create l1_entry
-	*ttb = entry;
+  //4 bytes aligned
+  ttb += offset;
+  //create l1_entry
+  *ttb = entry;
 
-	offset2 = (base_address & 0xff000) >> 12;
-	ttb_l2 += offset2;
-	entry2 = (base_address & 0xFFFFF000) | descriptor_l2;
-	for (i = 0; i < count; i++) {
-		//4 bytes aligned
-		*ttb_l2++ = entry2;
-		entry2 += OFFSET_4K;
-	}
+  offset2 = (base_address & 0xff000) >> 12;
+  ttb_l2 += offset2;
+  entry2 = (base_address & 0xFFFFF000) | descriptor_l2;
+  for (i = 0; i < count; i++ )
+  {
+    //4 bytes aligned
+    *ttb_l2++ = entry2;
+    entry2 += OFFSET_4K;
+  }
 }
 
 /** \brief  Create a 64k page entry
@@ -2523,52 +2544,54 @@ __STATIC_INLINE void MMU_TTPage4k(uint32_t *ttb, uint32_t base_address, uint32_t
   \param [in]     descriptor_l2  L2 descriptor (region attributes)
 
 */
-__STATIC_INLINE void MMU_TTPage64k(uint32_t *ttb, uint32_t base_address, uint32_t count, uint32_t descriptor_l1, uint32_t *ttb_l2, uint32_t descriptor_l2)
+__STATIC_INLINE void MMU_TTPage64k(uint32_t *ttb, uint32_t base_address, uint32_t count, uint32_t descriptor_l1, uint32_t *ttb_l2, uint32_t descriptor_l2 )
 {
-	uint32_t offset, offset2;
-	uint32_t entry, entry2;
-	uint32_t i, j;
+  uint32_t offset, offset2;
+  uint32_t entry, entry2;
+  uint32_t i,j;
 
 
-	offset = base_address >> 20;
-	entry  = ((int)ttb_l2 & 0xFFFFFC00) | descriptor_l1;
+  offset = base_address >> 20;
+  entry  = ((int)ttb_l2 & 0xFFFFFC00) | descriptor_l1;
 
-	//4 bytes aligned
-	ttb += offset;
-	//create l1_entry
-	*ttb = entry;
+  //4 bytes aligned
+  ttb += offset;
+  //create l1_entry
+  *ttb = entry;
 
-	offset2 = (base_address & 0xff000) >> 12;
-	ttb_l2 += offset2;
-	entry2 = (base_address & 0xFFFF0000) | descriptor_l2;
-	for (i = 0; i < count; i++) {
-		//create 16 entries
-		for (j = 0; j < 16; j++) {
-			//4 bytes aligned
-			*ttb_l2++ = entry2;
-		}
-		entry2 += OFFSET_64K;
-	}
+  offset2 = (base_address & 0xff000) >> 12;
+  ttb_l2 += offset2;
+  entry2 = (base_address & 0xFFFF0000) | descriptor_l2;
+  for (i = 0; i < count; i++ )
+  {
+    //create 16 entries
+    for (j = 0; j < 16; j++)
+    {
+      //4 bytes aligned
+      *ttb_l2++ = entry2;
+    }
+    entry2 += OFFSET_64K;
+  }
 }
 
 /** \brief  Enable MMU
 */
 __STATIC_INLINE void MMU_Enable(void)
 {
-	// Set M bit 0 to enable the MMU
-	// Set AFE bit to enable simplified access permissions model
-	// Clear TRE bit to disable TEX remap and A bit to disable strict alignment fault checking
-	__set_SCTLR((__get_SCTLR() & ~(1 << 28) & ~(1 << 1)) | 1 | (1 << 29));
-	__ISB();
+  // Set M bit 0 to enable the MMU
+  // Set AFE bit to enable simplified access permissions model
+  // Clear TRE bit to disable TEX remap and A bit to disable strict alignment fault checking
+  __set_SCTLR( (__get_SCTLR() & ~(1 << 28) & ~(1 << 1)) | 1 | (1 << 29));
+  __ISB();
 }
 
 /** \brief  Disable MMU
 */
 __STATIC_INLINE void MMU_Disable(void)
 {
-	// Clear M bit 0 to disable the MMU
-	__set_SCTLR(__get_SCTLR() & ~1);
-	__ISB();
+  // Clear M bit 0 to disable the MMU
+  __set_SCTLR( __get_SCTLR() & ~1);
+  __ISB();
 }
 
 /** \brief  Invalidate entire unified TLB
@@ -2576,9 +2599,9 @@ __STATIC_INLINE void MMU_Disable(void)
 
 __STATIC_INLINE void MMU_InvalidateTLB(void)
 {
-	__set_TLBIALL(0);
-	__DSB();     //ensure completion of the invalidation
-	__ISB();     //ensure instruction fetch path sees new state
+  __set_TLBIALL(0);
+  __DSB();     //ensure completion of the invalidation
+  __ISB();     //ensure instruction fetch path sees new state
 }
 
 

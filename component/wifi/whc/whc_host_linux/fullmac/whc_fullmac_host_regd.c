@@ -1346,7 +1346,7 @@ static struct chplan_regd chplan_regd_map[] = {
 	CHPLAN_REGD_ENT(0x7F, &rtl_regd_7F)     /* Word wide */
 };
 
-static struct ieee80211_regdomain *_rtl_reg_get_regd(u8 chplan)
+static struct ieee80211_regdomain *_whc_fullmac_host_regd_get(u8 chplan)
 {
 	struct chplan_regd *map = NULL;
 	u16 map_sz = 0;
@@ -1367,7 +1367,7 @@ static struct ieee80211_regdomain *_rtl_reg_get_regd(u8 chplan)
 	}
 }
 
-static void _rtl_reg_set_country_code(struct wiphy *wiphy, u8 *country)
+static void _whc_fullmac_host_regd_set_country_code(struct wiphy *wiphy, u8 *country)
 {
 	int ret = 0;
 	struct rtw_country_code_table table;
@@ -1376,7 +1376,7 @@ static void _rtl_reg_set_country_code(struct wiphy *wiphy, u8 *country)
 	ret = whc_fullmac_host_set_country_code(country);
 	if (ret == 0) {
 		whc_fullmac_host_get_country_code(&table);
-		regd = _rtl_reg_get_regd(table.channel_plan);
+		regd = _whc_fullmac_host_regd_get(table.channel_plan);
 		memcpy((void *)&regd->alpha2[0], &table.char2[0], 2);
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
@@ -1392,14 +1392,37 @@ static void _rtl_reg_set_country_code(struct wiphy *wiphy, u8 *country)
 	}
 }
 
-void rtw_reg_notifier(struct wiphy *wiphy, struct regulatory_request *request)
+int whc_fullmac_host_regd_update(struct rtw_country_code_table *ptab)
+{
+	int ret = 0;
+	struct ieee80211_regdomain *regd = NULL;
+	struct wiphy *wiphy = global_idev.pwiphy_global;
+
+	regd = _whc_fullmac_host_regd_get(ptab->channel_plan);
+	memcpy((void *)&regd->alpha2[0], &ptab->char2[0], 2);
+
+	rtnl_lock();
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
+	ret = regulatory_set_wiphy_regd_sync(wiphy, regd);
+#else
+	ret = regulatory_set_wiphy_regd_sync_rtnl(wiphy, regd);
+#endif
+	rtnl_unlock();
+	if (ret != 0) {
+		dev_err(global_idev.fullmac_dev, "%s regulatory_set_wiphy_regd_sync_rtnl return %d\n", __func__, ret);
+	}
+
+	return ret;
+}
+
+void whc_fullmac_host_regd_notifier(struct wiphy *wiphy, struct regulatory_request *request)
 {
 	switch (request->initiator) {
 	case NL80211_REGDOM_SET_BY_USER:
 	case NL80211_REGDOM_SET_BY_DRIVER:
 	case NL80211_REGDOM_SET_BY_CORE:
 	case NL80211_REGDOM_SET_BY_COUNTRY_IE:
-		_rtl_reg_set_country_code(wiphy, request->alpha2);
+		_whc_fullmac_host_regd_set_country_code(wiphy, request->alpha2);
 		break;
 	default:
 		/* do nothing */
@@ -1409,7 +1432,7 @@ void rtw_reg_notifier(struct wiphy *wiphy, struct regulatory_request *request)
 	return;
 }
 
-int rtw_regd_init(void)
+int whc_fullmac_host_regd_init(void)
 {
 	struct wiphy *wiphy = global_idev.pwiphy_global;
 	struct rtw_country_code_table table;
@@ -1423,7 +1446,7 @@ int rtw_regd_init(void)
 		return ret;
 	}
 
-	regd = _rtl_reg_get_regd(table.channel_plan);
+	regd = _whc_fullmac_host_regd_get(table.channel_plan);
 	if ((table.char2[0] == '0') && (table.char2[1] == '0')) {
 		memcpy((void *)&regd->alpha2[0], &ww_char2[0], 2);
 		dev_info(global_idev.fullmac_dev,
@@ -1455,8 +1478,8 @@ int rtw_regd_init(void)
 	}
 
 	/* add reg_notifier to set channel plan by user.
-	because _rtl_reg_set_country_code must be called after wifi on, rtw_regd_init assignement should be moved to rtw_regd_init */
-	wiphy->reg_notifier = rtw_reg_notifier;
+	because _whc_fullmac_host_regd_set_country_code must be called after wifi on, whc_fullmac_host_regd_init assignement should be moved to whc_fullmac_host_regd_init */
+	wiphy->reg_notifier = whc_fullmac_host_regd_notifier;
 
 	return 0;
 }
