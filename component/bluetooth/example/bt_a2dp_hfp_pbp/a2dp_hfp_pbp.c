@@ -2841,7 +2841,7 @@ static void app_bt_le_audio_pbp_bsrc_send_timer_deinit(void)
 
 static bool app_bt_le_audio_queue_water_level_is_enough(void)
 {
-	bool flag = true;
+	static bool flag = false;
 	if (app_pcm_data_mgr_queue.queue_size <= APP_BT_PCM_DATA_QUEUE_WATER_LEVEL / 10) {
 		flag = false;
 		BT_LOGA("[APP] %s: cur_water_level: %d \r\n", __func__, app_pcm_data_mgr_queue.queue_size / 192);

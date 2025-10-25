@@ -379,6 +379,7 @@ static u32 whc_spi_dev_resume(u32 expected_idle_time, void *param)
 		GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	}
 
+	whc_dev_ps_resume_cb();
 	return TRUE;
 }
 
