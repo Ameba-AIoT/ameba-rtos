@@ -206,8 +206,10 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 		netifapi_netif_set_up(pnetif);
 	}
 
+#ifndef CONFIG_STANDARD_TICKLESS
 	/*acqurie wakelock to guarantee dhcp*/
 	pmu_acquire_wakelock(PMU_DHCP_PROCESS);
+#endif
 	for (;;) {
 		//RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r ========DHCP_state:%d============\n\r",DHCP_state);
 		switch (DHCP_state) {
@@ -351,7 +353,9 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 	}
 
 exit:
+#ifndef CONFIG_STANDARD_TICKLESS
 	pmu_release_wakelock(PMU_DHCP_PROCESS);
+#endif
 	return ret;
 }
 

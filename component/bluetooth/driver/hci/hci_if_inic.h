@@ -18,6 +18,7 @@
 #define BT_HCI_CMD_VS_BT_OFF                    BT_OP(BT_OGF_VS, 0x0202)
 #define BT_HCI_CMD_VS_BT_HOST_SLEEP             BT_OP(BT_OGF_VS, 0x0203)
 #define BT_HCI_CMD_VS_BT_HOST_RESUME            BT_OP(BT_OGF_VS, 0x0204)
+#define BT_HCI_CMD_VS_BT_MP_DOWNLOAD            0xFD1C
 /**********************************************************/
 
 #if defined(BT_INIC_FPGA_VERIFICATION) && BT_INIC_FPGA_VERIFICATION
