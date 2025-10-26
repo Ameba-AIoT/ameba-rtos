@@ -12,19 +12,13 @@
 #define __WHC_DEV_API_H__
 
 #include "whc_dev.h"
+
 #ifdef CONFIG_WHC_DUAL_TCPIP
 #include "whc_dev_tcpip.h"
 #endif
 
 #define WHC_HOST_READY    1
 #define WHC_HOST_UNREADY  0
-
-enum whc_tickps_cmd_subtype {
-	WHC_CMD_TICKPS_R = 0,
-	WHC_CMD_TICKPS_A = 1,
-	WHC_CMD_TICKPS_TYPE_CG = 2,
-	WHC_CMD_TICKPS_TYPE_PG = 3,
-};
 
 struct whc_dev_network_info {
 	u8 ip[4];
@@ -48,7 +42,6 @@ void whc_dev_pktfilter_init(void);
 #endif
 
 void whc_dev_api_set_host_state(u8 state);
-void whc_dev_api_set_tickps_cmd(u8 subtype);
 
 /* pkt rx: pkt from host to device */
 /* weak func in rtk code, Reimplement the function if needed */

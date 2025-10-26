@@ -1,5 +1,4 @@
 if(NOT CONFIG_BT)
-    ameba_info("CONFIG_BT is off, bluetooth will not be built")
     return()
 endif()
 

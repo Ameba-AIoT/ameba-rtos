@@ -90,6 +90,8 @@ s32 wifi_set_lps_listen_interval(u8 interval);
  * @return
  *    - @ref RTK_SUCCESS : The API executed successfully.
  *    - @ref RTK_FAIL: The API executed fail.
+ *    - @ref RTK_ERR_WIFI_NOT_INIT: wifi not initial
+ *    - @ref RTK_ERR_WIFI_POWEROFF: Wi-Fi is powered off in IPS(Inactive Power Save) mode.
  * @note
  *    - If the port of TCP/UDP broadcast packet not match port_list, drop the packet and not wakeup host
  *    - If this API is not set, all ports will not be filtered

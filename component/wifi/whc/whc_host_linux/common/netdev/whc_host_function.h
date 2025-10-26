@@ -60,8 +60,9 @@ void whc_fullmac_host_update_owe_info_event(char *evt_info);
 void whc_fullmac_host_connect_indicate(unsigned int join_status, void *evt_info);
 int whc_fullmac_host_scan_done_indicate(unsigned int scanned_AP_num, void *user_data);
 u64 whc_fullmac_host_get_tsft(u8 iface_type);
-void rtw_reg_notifier(struct wiphy *wiphy, struct regulatory_request *request);
-int rtw_regd_init(void);
+int whc_fullmac_host_regd_update(struct rtw_country_code_table *ptab);
+void whc_fullmac_host_regd_notifier(struct wiphy *wiphy, struct regulatory_request *request);
+int whc_fullmac_host_regd_init(void);
 void rtw_ethtool_ops_init(void);
 
 #ifdef CONFIG_NAN
