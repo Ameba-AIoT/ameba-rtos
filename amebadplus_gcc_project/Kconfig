@@ -369,7 +369,7 @@ menu "CONFIG BT"
             def_bool y
 
         choice
-            depends on FULLMAC_DEV
+            depends on FULLMAC_DEV || WHC_BRIDGE
             prompt "HCI Mode"
             default BT_INIC_SHARE
             config BT_INIC_SHARE
