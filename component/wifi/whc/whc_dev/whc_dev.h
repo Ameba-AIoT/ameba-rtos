@@ -57,6 +57,7 @@
 #include "rtw_nan_enum.h"
 #endif
 
+#include "whc_dev_powersave.h"
 /* remove after rom freeze */
 #ifndef CONFIG_BUILD_ROM
 #include "bt_inic_defs.h"

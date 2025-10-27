@@ -19,6 +19,7 @@
 #include "task.h"
 #include "semphr.h"
 #include "queue.h"
+#include "ringbuffer.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -105,11 +106,14 @@ serial_t sobj;
 rtos_sema_t atcmd_usbd_tx_done_sema;
 rtos_sema_t tt_mode_tx_sema;
 void *uart_irq_handle_sema;
+void *uart_show_sema;
 char uart_format_buffer[FORMAT_LEN];
 u8 uart_irq_buffer[MAX_CMD_LEN] = {0};
 u32 uart_irq_count = 0;
 static u8 tt_mode_task_start = 0;
 volatile u8 high_water_mark = 0;
+RingBuffer *at_usbd_rx_ring_buf = NULL;
+u8 uart_show_buf[CONFIG_CDC_ACM_BULK_IN_XFER_SIZE] = {0};
 
 void uart_irq(uint32_t id, SerialIrq event)
 {
@@ -240,7 +244,8 @@ static int cdc_acm_cb_received(u8 *buf, u32 len)
 				ds_count += len;
 			}
 		} else {
-			uart_send_string(&sobj, (char *)buf, len);
+			RingBuffer_Write(at_usbd_rx_ring_buf, buf, len);
+			xSemaphoreGive(uart_show_sema);
 		}
 	}
 
@@ -505,6 +510,26 @@ void uart_irq_handle_task(void)
 	}
 }
 
+void uart_show_rx_data_task(void *param)
+{
+	u32 actual_len, show_len;
+	UNUSED(param);
+
+	while (1) {
+		xSemaphoreTake(uart_show_sema, 0xFFFFFFFF);
+
+		actual_len = RingBuffer_Available(at_usbd_rx_ring_buf);
+		while (actual_len > 0) {
+			show_len = actual_len > CONFIG_CDC_ACM_BULK_IN_XFER_SIZE ? CONFIG_CDC_ACM_BULK_IN_XFER_SIZE : actual_len;
+			RingBuffer_Read(at_usbd_rx_ring_buf, uart_show_buf, show_len);
+			uart_send_string(&sobj, (char *)uart_show_buf, show_len);
+			actual_len -= show_len;
+		}
+	}
+
+	vTaskDelete(NULL);
+}
+
 /* Exported functions --------------------------------------------------------*/
 
 /**
@@ -519,7 +544,10 @@ void example_atcmd_usbd_host(void)
 
 	uart_irq_handle_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
 	tt_mode_tx_sema = (void *)xSemaphoreCreateCounting(1, 0);
+	uart_show_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
 	rtos_sema_create(&atcmd_usbd_tx_done_sema, 0, 0xFFFF);
+
+	at_usbd_rx_ring_buf = RingBuffer_Create(NULL, 4 * 1024, LOCAL_RINGBUFF, 1);
 
 	ret = rtos_task_create(&task, "example_usbd_cdc_acm_thread", example_usbd_cdc_acm_thread, NULL, 1024U, CONFIG_CDC_ACM_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
@@ -531,5 +559,6 @@ void example_atcmd_usbd_host(void)
 	}
 
 	xTaskCreate((void *)tt_mode_test_task, ((const char *)"tt_mode_test_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 1, NULL);
+	xTaskCreate((void *)uart_show_rx_data_task, ((const char *)"uart_show_rx_data_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 1, NULL);
 }
 

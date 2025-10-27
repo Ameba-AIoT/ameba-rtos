@@ -100,7 +100,9 @@ void rtw_reconn_task_hdl(void *param)
 	(void) param;
 	int ret = RTK_FAIL;
 
+	rtw_reconn.b_ongoing = 1;
 	ret = wifi_connect(&rtw_reconn.conn_param, 1);
+	rtw_reconn.b_ongoing = 0;
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "reconn fail:-0x%x", -ret);
 		if ((ret == -RTK_ERR_WIFI_CONN_INVALID_KEY)) {
@@ -215,5 +217,14 @@ s32 wifi_get_autoreconnect(u8 *enable)
 #else
 	*enable = 0;
 	return RTK_FAIL;
+#endif
+}
+
+u8 wifi_is_autoreconnect_ongoing(void)
+{
+#if CONFIG_AUTO_RECONNECT
+	return rtw_reconn.b_ongoing;
+#else
+	return 0;
 #endif
 }
