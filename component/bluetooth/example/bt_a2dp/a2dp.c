@@ -26,6 +26,9 @@
 #include <dlist.h>
 #include <bt_utils.h>
 #include <bt_audio_resample.h>
+#if defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_AUDIO_HAL) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_AUDIO_HAL
+#include "audio/audio_service.h"
+#endif
 
 /* -------------------------------- Defines --------------------------------- */
 #define RTK_BT_DEV_NAME                      "RTK_BT_AUDIO_DEVICE"
@@ -759,7 +762,43 @@ static void app_a2dp_src_send_data(void)
 		// BT_LOGE("[A2DP] waiting src_a2dp_credits \r\n");
 	}
 }
-#else
+#elif defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_AUDIO_HAL) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_AUDIO_HAL
+extern int32_t a2dp_hal_buffer_read(int8_t *buffer, int32_t bytes);
+static void app_a2dp_src_send_data(void)
+{
+	static rtk_bt_a2dp_stream_data_send_t data_send_t = {0};
+	struct enc_codec_buffer *penc_codec_buffer_t = NULL;
+
+	if (src_a2dp_credits) {
+		if (a2dp_hal_buffer_read((int8_t *)pcm_buffer, (int32_t)(src_a2dp_send_data_size * 2))) {
+			// BT_LOGA("[A2DP SRC Demo]: uart buffer read success \r\n");
+			penc_codec_buffer_t = rtk_bt_audio_data_encode(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, (int16_t *)pcm_buffer,
+														   (uint32_t)(src_a2dp_send_data_size * 2));
+			if (penc_codec_buffer_t) {
+				memcpy((void *)data_send_t.bd_addr, (void *)remote_bd_addr, 6);
+				data_send_t.seq_num = a2dp_demo_send_data_seq++;
+				data_send_t.frame_buf = (uint8_t *)penc_codec_buffer_t->pbuffer;
+				data_send_t.frame_num = (uint8_t)penc_codec_buffer_t->frame_num;
+				data_send_t.time_stamp += data_send_t.frame_num * sbc_codec_t.encoder_t.subbands * sbc_codec_t.encoder_t.blocks;
+				data_send_t.len = (uint16_t)(penc_codec_buffer_t->frame_num * penc_codec_buffer_t->frame_size);
+				data_send_t.flush = false;
+				if (rtk_bt_a2dp_data_send(&data_send_t)) {
+					BT_LOGE("[A2DP] data send fail \r\n");
+				} else {
+					src_a2dp_credits --;
+				}
+				rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, penc_codec_buffer_t);
+			} else {
+				BT_LOGE("[A2DP SRC Demo]: Encode fail \r\n");
+			}
+		} else {
+			// BT_LOGE("[A2DP SRC Demo]: a2dp_hal_buffer_read fail \r\n");
+		}
+	} else {
+		// BT_LOGE("[A2DP] waiting src_a2dp_credits \r\n");
+	}
+}
+#elif defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_UART) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_UART
 static void app_a2dp_src_send_data(void)
 {
 	static rtk_bt_a2dp_stream_data_send_t data_send_t = {0};
@@ -1974,6 +2013,9 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 		if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
 			rtk_bt_a2dp_demo_src_send_data_control(false);
 			rtk_bt_avrcp_play_status_change_req(disconn_ind->bd_addr, RTK_BT_AVRCP_STATUS_STOPPED);
+#if defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_AUDIO_HAL) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_AUDIO_HAL
+			RTAudioService_SetDeviceState(RTDEVICE_OUT_A2DP, RTAUDIO_DEVICE_STATE_UNAVAILABLE, "rtk_bt_a2dp", NULL);
+#endif
 		}
 		rtk_bt_audio_codec_remove(audio_codec_conf.codec_index, a2dp_demo_codec_entity);
 		memset((void *)&audio_codec_conf, 0, sizeof(rtk_bt_audio_codec_conf_t));
@@ -2030,6 +2072,16 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 				audio_codec_conf.param = (void *)&sbc_codec_t;
 				audio_codec_conf.param_len = sizeof(sbc_codec_t);
 			}
+#if defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_AUDIO_HAL) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_AUDIO_HAL
+			{
+				RTAudioDeviceConfig config;
+				config.rate = sbc_codec_t.encoder_t.sample_rate;
+				config.channels = (sbc_codec_t.encoder_t.channel_mode == SBC_CHANNEL_MODE_MONO) ? 1 : 2;
+				config.format = RTAUDIO_FORMAT_PCM_16_BIT;
+				BT_LOGA("A2dp set device state avail");
+				RTAudioService_SetDeviceState(RTDEVICE_OUT_A2DP, RTAUDIO_DEVICE_STATE_AVAILABLE, "rtk_bt_a2dp", &config);
+			}
+#endif
 		}
 		a2dp_demo_codec_entity = rtk_bt_audio_codec_add(&audio_codec_conf);
 		// bt_a2dp_sink_event_handle(A2DP_SINK_STREAM_DATA_HANDLE_INIT, A2DP_SBC_CODEC, 0, NULL);
@@ -2269,7 +2321,9 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
 		if (!demo_usb_init()) {
 			BT_LOGE("demo_usb_init failed\r\n");
 		}
-#else
+#elif defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_AUDIO_HAL) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_AUDIO_HAL
+		RTAudioService_Init(); // no need deinit
+#elif defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_UART) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_UART
 		demo_uart_init();
 #endif
 #endif
