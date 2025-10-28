@@ -23,6 +23,7 @@
 #define MAX_ARGV                16
 #endif
 
+#define CMD_BUFLEN UART_LOG_CMD_BUFLEN
 typedef u32(*ECHOFUNC)(u8 *, ...);   //UART LOG echo-function type.
 typedef u32(*monitor_cmd_handler)(u16 argc, u8 *argv[]);
 

@@ -20,6 +20,14 @@ menu "CONFIG AT CMD"
         config ATCMD_NETWORK
             bool "Enable Network"
             default n
+        if ATCMD_NETWORK
+            config ATCMD_DNS
+                bool "Enable DNS"
+                default n
+            config ATCMD_SNTP
+                bool "Enable SNTP"
+                default n
+        endif
         config ATCMD_SOCKET
             bool "Enable Socket"
         config ATCMD_HTTP

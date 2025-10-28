@@ -1170,6 +1170,7 @@ uint16_t rtk_bt_audio_track_del(uint32_t type, rtk_bt_audio_track_t *ptrack)
 	priv->curr_track_num --;
 	if (ptrack->audio_sync_flag) {
 		bt_audio_ring_buffer_deinit(&ptrack->audio_delay_buff);
+		rtk_bt_audio_track_sync_state_unregister(ptrack);
 	}
 	if (ptrack->audio_delay_start_timer) {
 		osif_timer_delete(&ptrack->audio_delay_start_timer);

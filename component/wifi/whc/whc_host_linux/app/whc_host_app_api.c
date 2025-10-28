@@ -111,3 +111,17 @@ int whc_host_api_send_nl_data(uint8_t *buf, uint32_t buf_len)
 
 }
 
+void whc_host_set_ps_cmd(struct whc_dev_ps_cmd *pcmd, char *cmd_arg)
+{
+	if (strcmp(cmd_arg, "r") == 0) {
+		pcmd->type = WHC_CMD_TICKPS_R;
+	} else if (strcmp(cmd_arg, "a") == 0) {
+		pcmd->type = WHC_CMD_TICKPS_A;
+	} else if (strcmp(cmd_arg, "cg") == 0) {
+		pcmd->type = WHC_CMD_TICKPS_TYPE_CG;
+	} else if (strcmp(cmd_arg, "pg") == 0) {
+		pcmd->type = WHC_CMD_TICKPS_TYPE_PG;
+	}
+
+	return;
+}

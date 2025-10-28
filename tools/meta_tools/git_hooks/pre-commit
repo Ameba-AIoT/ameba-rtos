@@ -18,7 +18,7 @@
 # 	  Apply style to all 9.x branch
 
 ignore_repo_list="azure|benchmark|clintwood|demoui|wifi-audio|wigadget|wms|misc_tools|ameba_tools|image_scripts|meta_tools|flash|monitor|audio|lvgl|ui"
-ignore_component_list="RTX|SEGGER|efm32|emwin|LittlevGL|3rdparty|trusted-firmware-m|emWin|lvgl|third_party|wpa_supplicant_std"
+ignore_component_list="RTX|SEGGER|efm32|emwin|LittlevGL|3rdparty|trusted-firmware-m|emWin|lvgl|third_party|wpa_supplicant_std|gmssl"
 
 cur_path=$PWD
 # Expected URL format example: ssh://rswn.rtkbf.com:29418/iot/sw/sdk/loong

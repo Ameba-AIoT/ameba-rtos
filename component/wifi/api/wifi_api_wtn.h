@@ -87,6 +87,16 @@ int wifi_rmesh_update_node_ota_ver(u8 *ota_ver, u8 ota_ver_len, u8 ota_ongoing);
  */
 int wifi_rmesh_check_node_ota_ver(u8 *ota_ver, u8 ota_ver_len, enum rtw_rmesh_node_type node_type);
 
+/**
+ * @brief  Choose the specified node as father if it can be scanned.
+ * @param[in]  enable: whether to choose a fixed father.
+ * @param[in]  father_mac: The MAC address of the target father node.
+ * @return
+ *    - @ref RTK_SUCCESS : The API executed successfully.
+ *    - @ref RTK_FAIL : The API execution failed.
+ */
+int wifi_rmesh_fix_father(u8 enable, u8 *father_mac);
+
 /** @} End of Extended_Functions group */
 /** @} End of WIFI_Exported_Functions group*/
 /** @} End of WIFI_API group*/

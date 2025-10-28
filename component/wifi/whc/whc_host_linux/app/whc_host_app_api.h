@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <linux/genetlink.h>
+#include "whc_dev_powersave.h"
 
 typedef int (*cmd_handler_t)(void);
 
@@ -125,6 +126,7 @@ int whc_host_set_mac_internal(uint8_t idx, char *mac);
 int whc_host_api_create_nl_socket(int protocol, int pid);
 int whc_host_api_send_to_kernel(int fd, char *buf, int buflen);
 int whc_host_api_get_family_id(int fd, char *family_name);
+void whc_host_set_ps_cmd(struct whc_dev_ps_cmd *pcmd, char *cmd_arg);
 
 
 int whc_host_get_mac(void);

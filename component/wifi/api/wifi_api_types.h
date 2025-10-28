@@ -429,9 +429,6 @@ enum rtw_csi_role {
 enum rtw_trp_tis_mode {
 	RTW_TRP_TIS_DISABLE = 0,               /**< Disable TRP/TIS certification (default) */
 	RTW_TRP_TIS_NORMAL = 1,
-	RTW_TRP_TIS_DYNAMIC = 3,               /**< Enable dynamic mechanism */
-	RTW_TRP_TIS_FIX_ACK_RATE = 5,          /**<  Fix ACK rate to 6M */
-	RTW_TRP_TIS_FIX_PHY_ACK_HIGH_RATE = 9  /**<  Fix PHY ACK rate to RATE_54M | RATE_48M | RATE_36M | RATE_24M | RATE_18M | RATE_12M | RATE_9M | RATE_6M */
 };
 
 /**
@@ -636,6 +633,19 @@ enum rtw_rmesh_node_type {
 	RMESH_SELF_NODE = 0,
 	RMESH_FATHER_NODE = 1,
 	RMESH_ROOT_NODE = 2,
+};
+
+/**
+ * @brief bitmask for struct rtw_tx_advanced_cfg{} (size: u32).
+ */
+
+enum rtw_tx_advanced_cfg_bitmask {
+	RTW_TX_CFG_LIFE_TIME_BEBK_VALID         = BIT(0),
+	RTW_TX_CFG_LIFE_TIME_VIVO_VALID         = BIT(1),
+	RTW_TX_CFG_BCN_TX_PROTECT_TIME_VALID    = BIT(2),
+	RTW_TX_CFG_BCN_RX_PROTECT_TIME_VALID    = BIT(3),
+	RTW_TX_CFG_NAV_UPDATE_TH_VALID          = BIT(4),
+	RTW_TX_CFG_IGNORE_TX_NAV_VALID          = BIT(5),
 };
 
 /** @} End of WIFI_Exported_Enumeration_Types group*/
@@ -933,8 +943,8 @@ struct rtw_rx_pkt_info {
 */
 struct rtw_promisc_para {
 	/** @brief Specify which packets to receive by setting filtering conditions.
-		- @ref RTW_PROMISC_FILTER_ALL_PKT : Receive all packets in the air.
-		- @ref RTW_PROMISC_FILTER_AP_ALL : Receive all packtets sent by the connected AP.
+		- @ref RTW_PROMISC_FILTER_ALL_PKT : No address filtering.
+		- @ref RTW_PROMISC_FILTER_AP_ALL : Receive only packtets sent to or from the connected AP.
 		*/
 	u8 filter_mode;
 	/** @brief Callback function to handle received packets.
@@ -961,11 +971,15 @@ struct rtw_edca_param {
 /**
 *@brief Provide optional parameters for improving tx performance in special scenario
 */
+
 struct rtw_tx_advanced_cfg {
+	u16 valid_fields;             /**< Mask subfield. If a parameter is set, its corresponding bit in valid_fields must also be set. @ref RTW_TX_CFG_LIFE_TIME_BEBK_VALID... */
 	u16 pkt_lifetime_bebk;        /**< Packet lifetime in units of 256us for AC_BE/AC_BK. */
 	u16 pkt_lifetime_vivo;        /**< Packet lifetime in units of 256us for AC_VI/AC_VO. */
-	u8 nav_update_th;             /**< Rx NAV (Network Allocation Vector) update threshold in units of 128us[can not tx during Rx NAV]. */
-	u8 b_ignore_tx_nav_done : 1;  /**< Queue BKF not need to wait TX Nav finished. */
+	u16 tx_bcn_protect_time;      /**< A reserved period for Beacon TX, preventing other transmissions, unit:32us */
+	u8 rx_bcn_protect_time;       /**< A reserved period for Beacon RX, preventing other transmissions, unit:2.048ms; */
+	u8 rx_nav_update_th;          /**< Rx NAV (Network Allocation Vector) update threshold in units of 128us[can not tx during Rx NAV]. */
+	u8 b_ignore_tx_nav : 1;       /**< Queue BKF not need to wait TX Nav finished. */
 };
 
 /**********************************************************************************************

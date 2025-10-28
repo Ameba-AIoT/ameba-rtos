@@ -167,9 +167,18 @@ ameba_list_append(private_sources
 )
 
 if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2 OR CONFIG_RTL8720F)
+    if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2)
+        ameba_list_append (private_sources
+            hw_alt/aes_alt.c
+        )
+    else()
+        ameba_list_append (private_sources
+            hw_alt/aes_alt_rtl8720f.c
+        )
+    endif()
+
     ameba_list_append (private_sources
         hw_alt/rsa_alt.c
-        hw_alt/aes_alt.c
         hw_alt/sha256_alt.c
         hw_alt/sha512_alt.c
         hw_alt/ecc_alt.c
@@ -177,24 +186,24 @@ if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2 OR CONFIG_RTL8720F)
     )
 else()
 
-if(CONFIG_AMEBASMART OR CONFIG_AMEBALITE OR CONFIG_AMEBADPLUS)
-    ameba_list_append(private_sources
-		hw_alt_legacy/aes_alt.c
-        hw_alt_legacy/sha256_alt.c
-        hw_alt_legacy/sha512_alt.c
-        hw_alt_legacy/ssl_rom_to_ram_map.c
-    )
+    if(CONFIG_AMEBASMART OR CONFIG_AMEBALITE OR CONFIG_AMEBADPLUS)
+        ameba_list_append(private_sources
+            hw_alt_legacy/aes_alt.c
+            hw_alt_legacy/sha256_alt.c
+            hw_alt_legacy/sha512_alt.c
+            hw_alt_legacy/ssl_rom_to_ram_map.c
+        )
 
-else()
-    ameba_list_append(private_sources
-        library/aes.c
-        library/sha256.c
-        library/sha512.c
-        library/psa_crypto_driver_wrappers_no_static.c
-        library/psa_crypto_ffdh.c
-    )
+    else()
+        ameba_list_append(private_sources
+            library/aes.c
+            library/sha256.c
+            library/sha512.c
+            library/psa_crypto_driver_wrappers_no_static.c
+            library/psa_crypto_ffdh.c
+        )
 
-endif()
+    endif()
 endif()
 
 ameba_list_append_if(CONFIG_AMEBASMART private_sources hw_alt_legacy/ecc_alt.c)

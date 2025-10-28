@@ -174,6 +174,7 @@ int whc_host_set_tickps_cmd(void)
 	*(uint32_t *)ptr = WHC_WIFI_TEST;
 	ptr += 4;
 	buf_len += 4;
+	struct whc_dev_ps_cmd *pcmd;
 
 	if (whc_cmd_argc < 2) {
 		printf("err: tickps cmd needed to set subtype!\n");
@@ -184,15 +185,11 @@ int whc_host_set_tickps_cmd(void)
 	ptr += 1;
 	buf_len += 1;
 
-	if (strcmp(whc_cmd_args[1], "r") == 0) {
-		*ptr = WHC_CMD_TICKPS_R;
-	} else if (strcmp(whc_cmd_args[1], "cg") == 0) {
-		*ptr = WHC_CMD_TICKPS_TYPE_CG;
-	} else if (strcmp(whc_cmd_args[1], "pg") == 0) {
-		*ptr = WHC_CMD_TICKPS_TYPE_PG;
-	}
-	ptr += 1;
-	buf_len += 1;
+	pcmd = (struct whc_dev_ps_cmd *)ptr;
+	whc_host_set_ps_cmd(pcmd, whc_cmd_args[1]);
+
+	ptr += sizeof(struct whc_dev_ps_cmd);
+	buf_len += sizeof(struct whc_dev_ps_cmd);
 
 	ret = whc_host_api_send_nl_data(buf, buf_len);
 	return ret;
