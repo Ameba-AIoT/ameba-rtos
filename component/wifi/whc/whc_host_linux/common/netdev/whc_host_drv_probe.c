@@ -157,7 +157,7 @@ int rtw_netdev_probe(struct device *pdev)
 	}
 
 #if defined(CONFIG_WHC_WIFI_API_PATH)
-	rtw_regd_init();
+	whc_fullmac_host_regd_init();
 	rtw_drv_proc_init();
 #ifdef CONFIG_IEEE80211R
 	whc_fullmac_host_ft_init();

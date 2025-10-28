@@ -166,5 +166,6 @@ cp ../../../soc/usrcfg/common/ameba_wificfg_common.h ./common/include
 cp ../../../soc/amebadplus/fwlib/include/ameba_inic.h ./common/include
 cp ../../../bluetooth/driver/bt_inic/bt_inic_defs.h ./common/include
 cp ../whc_dev/whc_dev_tcpip.h ./common/include
+cp ../whc_dev/whc_dev_powersave.h ./common/include
 
 echo "Fullmac setup complete"

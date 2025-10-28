@@ -58,13 +58,6 @@ enum nl80211_multicast_groups {
 	WHC_MCGRP_EVENT,
 };
 
-enum whc_tickps_cmd_subtype {
-	WHC_CMD_TICKPS_R = 0,
-	WHC_CMD_TICKPS_A = 1,
-	WHC_CMD_TICKPS_TYPE_CG = 2,
-	WHC_CMD_TICKPS_TYPE_PG = 3,
-};
-
 /* for test demo */
 #define WHC_WIFI_TEST 0xffa5a5a5
 #define WHC_ATCMD_TEST 0xeea5a5a5

@@ -305,8 +305,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					whc_dev_api_set_host_state(WHC_HOST_UNREADY);
 #endif
 				} else if (*ptr == WHC_WIFI_TEST_SET_TICKPS_CMD) {
-					u8 subtype = *(ptr + 1);
-					whc_dev_api_set_tickps_cmd(subtype);
+					whc_dev_tickps_cmd((struct whc_dev_ps_cmd *)(ptr + 1));
 				} else if (*ptr == WHC_WIFI_TEST_WIFION) {
 #ifdef CONFIG_WHC_DUAL_TCPIP
 					whc_dev_api_set_host_state(WHC_HOST_READY);

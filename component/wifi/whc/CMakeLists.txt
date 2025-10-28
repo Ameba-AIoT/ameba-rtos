@@ -75,6 +75,7 @@ if(CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF_IPC)
         whc_dev/whc_dev_trx.c
         whc_dev/whc_dev_protocal_offload.c
         whc_dev/whc_dev_api.c
+        whc_dev/whc_dev_powersave.c
     )
 
     if(CONFIG_WHC_DUAL_TCPIP)

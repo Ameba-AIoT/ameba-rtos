@@ -52,9 +52,6 @@ static rtos_sema_t mii_rx_sema;
 rtos_sema_t ethernet_init_done;
 u8 mac_id[6] = {0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC};
 
-extern u8 ETHERNET_Pin_Grp;
-extern const u8 ETHERNET_PAD[4][11];
-
 typedef enum prehandler_ret(*prehandler_func_t)(struct pbuf **p, u8 *buf, u32 len);
 
 prehandler_func_t rmii_rx_prehandler = NULL;

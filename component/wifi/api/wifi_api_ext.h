@@ -90,6 +90,8 @@ s32 wifi_set_lps_listen_interval(u8 interval);
  * @return
  *    - @ref RTK_SUCCESS : The API executed successfully.
  *    - @ref RTK_FAIL: The API executed fail.
+ *    - @ref RTK_ERR_WIFI_NOT_INIT: wifi not initial
+ *    - @ref RTK_ERR_WIFI_POWEROFF: Wi-Fi is powered off in IPS(Inactive Power Save) mode.
  * @note
  *    - If the port of TCP/UDP broadcast packet not match port_list, drop the packet and not wakeup host
  *    - If this API is not set, all ports will not be filtered
@@ -291,6 +293,8 @@ s32 wifi_set_wireless_mode(u32 wmode);
  *        - Do not support calling APIs in callback.
  *        - Enabling promisc mode temporarily disables LPS(Legacy Power Save) and IPS(Inactive Power Save).
  *        - Original power save settings are restored when promisc mode is disabled.
+ *        - Promiscuous mode can coexist with STA mode and SoftAP mode. After packets are processed by the application layer, the Wi-Fi driver layer can proceed with further processing.
+ *        - Promiscuous mode can report Data Frames and Management Frames, but Control Frames are currently not reported.
  * @return  None.
  */
 void wifi_promisc_enable(u32 enable, struct rtw_promisc_para *para);

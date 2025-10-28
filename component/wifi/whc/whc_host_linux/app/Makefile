@@ -1,6 +1,9 @@
 CC=gcc
 
-CFLAGS = -I. -I.. -I../.. -I../common
+CFLAGS = -I. -I.. -I../.. -I../common -I../common/include
+
+ccflags-y += -DCONFIG_FULLMAC
+CFLAGS += $(ccflags-y)
 
 LDFLAGS = -lpthread
 

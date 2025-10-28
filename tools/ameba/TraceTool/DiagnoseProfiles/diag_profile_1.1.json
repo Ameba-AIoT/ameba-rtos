@@ -26,64 +26,74 @@
           "DIAG_EVT_WIFI_JOIN_FAIL": "RTK_EVENT_TYPE_WIFI_BASE + 0x04"
         },
         "RtkDiagDataFrame": {
-          "header": "u16",
-          "size": "u16",
-          "cmd": "u8",
-          "payload": "u8[0]"
+          "header": {"type": "u16"},
+          "size": {"type": "u16"},
+          "cmd": {"type": "u8"},
+          "payload": {"type": "u8[0]"}
         },
         "RtkDiagEvent": {
-          "evt_type": "u16",
-          "evt_len": "u16",
-          "evt_time": "u32",
-          "evt_level": "u8",
-          "rsvd": "u8[3]",
-          "evt_info": "u8[0]"
+          "evt_type": {"type": "u16"},
+          "evt_len": {"type": "u16"},
+          "evt_time": {"type": "u32"},
+          "evt_level": {"type": "u8"},
+          "rsvd": {"type": "u8[3]"},
+          "evt_info": {"type": "u8[0]"}
         },
         "diag_evt_demo_1": {
-          "u8_data": "u8",
-          "u16_data": "u16",
-          "f_data": "float",
-          "ch_data": "char",
-          "str_data": "char[32]"
+          "u8_data": {"type": "u8"},
+          "u16_data": {"type": "u16"},
+          "f_data": {"type": "float"},
+          "ch_data": {"type": "char"},
+          "str_data": {"type": "char[32]"}
         },
         "diag_evt_demo_2": {
-          "dm1_data": "struct diag_evt_demo_1",
-          "i_data": "int"
+          "dm1_data": {"type": "struct diag_evt_demo_1"},
+          "i_data": {"type": "int"}
         },
         "diag_evt_wifi_disconn": {
-          "reason": "u16"
+          "reason": {
+            "type": "u16",
+            "enum_ref": "rtw_disconn_reason",
+            "comment": "enum rtw_disconn_reason in wifi_api_types.h"
+           }
+        },
+        "rtw_disconn_reason": {
+           "no rx for a long time": 60001,
+           "AP change": 60002,
+           "by APP": 60101,
+           "before connect": 60102
         },
         "diag_evt_wifi_join_fail": {
-          "reason": "u16",
-          "reason_code": "u16"
+          "reason": {"type": "u16"},
+          "reason_code": {"type": "u16"}
         },
         "diag_evt_wifi_rxbd_t": {
-          "sw_index": "u8:4",
-          "hw_index": "u8:4"
+          "sw_index": {"type": "u8:4"},
+          "hw_index": {"type": "u8:4"}
         },
         "diag_evt_wifi_no_rx": {
-          "bb_cca_cck": "u8[5]",
-          "bb_cca_ofdm": "u8[5]",
-          "bb_rx_cck": "u8[5]",
-          "bb_rx_ofdm": "u8[5]",
-          "mac_rx_cck": "u8[5]",
-          "mac_rx_ofdm": "u8[5]",
-          "rxbd": "diag_evt_wifi_rxbd_t[5]",
-          "cca_th": "u8"
+          "bb_cca_cck": {"type": "u8[5]"},
+          "bb_cca_ofdm": {"type": "u8[5]"},
+          "bb_rx_cck": {"type": "u8[5]"},
+          "bb_rx_ofdm": {"type": "u8[5]"},
+          "mac_rx_cck": {"type": "u8[5]"},
+          "mac_rx_ofdm": {"type": "u8[5]"},
+          "rxbd": {"type": "diag_evt_wifi_rxbd_t[5]"},
+          "cca_th": {"type": "u8"}
         },
         "RtkDiagDataFrame_t": {
-          "header": "u16",
-          "size": "u16",
-          "cmd": "u8",
-          "payload": "u8[0]"
+          "header": {"type": "u16"},
+          "size": {"type": "u16"},
+          "cmd": {"type": "u8"},
+          "payload": {"type": "u8[0]"}
         },
         "RtkDiagEvent_t": {
-          "evt_type": "u16",
-          "evt_len": "u16",
-          "evt_time": "u32",
-          "evt_level": "u8",
-          "rsvd": "u8[3]",
-          "evt_info": "u8[0]"
+          "evt_type": {"type": "u16"},
+          "evt_len": {"type": "u16"},
+          "evt_time": {"type": "u32"},
+          "evt_level": {"type": "u8"},
+          "rsvd": {"type": "u8[3]"},
+          "evt_info": {"type": "u8[0]"}
         }
       }
     }
