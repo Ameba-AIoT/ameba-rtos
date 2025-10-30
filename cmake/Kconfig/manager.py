@@ -4,6 +4,7 @@
 # Copyright (c) 2024 Realtek Semiconductor Corp.
 # SPDX-License-Identifier: Apache-2.0
 import os
+import sys
 import subprocess
 import re
 import shutil
@@ -136,12 +137,14 @@ class Manager(object):
     def lock_cleanup(self):
         def cleanup_handler(signum, frame):
             self.lock_release()
+            sys.exit(0)
         return cleanup_handler
 
     def lock_cleanup_windows(self):
         def cleanup_handler(ctrl_type):
-            if ctrl_type in (win32con.CTRL_CLOSE_EVENT, win32con.CTRL_LOGOFF_EVENT, win32con.CTRL_SHUTDOWN_EVENT):
+            if ctrl_type in (win32con.CTRL_CLOSE_EVENT, win32con.CTRL_C_EVENT, win32con.CTRL_LOGOFF_EVENT, win32con.CTRL_SHUTDOWN_EVENT, win32con.CTRL_BREAK_EVENT):
                 self.lock_release()
+                os._exit(0)
                 return True
             return False
         return cleanup_handler
@@ -156,13 +159,12 @@ class Manager(object):
             os.remove(self.config_default_old)
 
         # cleanup the lock file when abnormal termination occurs
-        signal_handler = self.lock_cleanup()
-        signal.signal(signal.SIGINT, signal_handler) # ctrl+C
-        signal.signal(signal.SIGTERM, signal_handler)
         if IS_POSIX: # for linux
+            signal_handler = self.lock_cleanup()
+            signal.signal(signal.SIGTERM, signal_handler)
+            signal.signal(signal.SIGINT, signal_handler) # ctrl+C
             signal.signal(signal.SIGHUP, signal_handler) # close the terminal or SSH disconnected
         else: # for windows
-            signal.signal(signal.SIGBREAK, signal_handler) # ctrl+Break
             windows_handler = self.lock_cleanup_windows()
             win32api.SetConsoleCtrlHandler(windows_handler, True) # close/logoff/shutdown
 
