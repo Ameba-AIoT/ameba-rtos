@@ -51,6 +51,11 @@ typedef enum {
 	UAC_STATE_SET_IN_FREQ,
 	UAC_STATE_SET_VOLUME,
 	UAC_STATE_SET_MUTE,
+
+	UAC_STATE_GET_MUTE,
+	UAC_STATE_GET_CUR_VOLUME,
+	UAC_STATE_GET_VOLUME_MIN,
+	UAC_STATE_GET_VOLUME_MAX,
 } usbh_uac_ctrl_state_t;
 
 /* States for transfer */
@@ -69,13 +74,13 @@ typedef struct {
 } usbh_uac_term_info;
 
 typedef struct {
-	u8 channel_support[USBH_UAC_MAX_CHANNEL];
+	u16 channel_support[USBH_UAC_MAX_CHANNEL];
+	u16 master_support;
 	u16 sink_type;
 	u8 unit_id;
 	u8 source_id;
 	u8 sink_id;
 	u8 num_channels;
-	u8 master_support;
 	u8 control_size;
 } usbh_uac_vol_ctrl_info;
 
@@ -106,6 +111,13 @@ typedef struct {
 	__IO u8 transfer_continue;
 } usbh_uac_buf_ctrl_t;
 
+typedef struct {
+	s16 volume;
+	s16 vol_min;
+	s16 vol_max;
+	u8  mute;
+} usbh_uac_volume_info_t;
+
 /* Vendor user callback interface */
 typedef struct {
 	int(* init)(void);
@@ -123,6 +135,7 @@ typedef struct {
 	u32 isoc_len;
 	u32 isoc_interval;
 	__IO u32 isoc_tick;
+	__IO u32 xfer_frame;
 	u16 isoc_packet_size_small;    /* small packet sizes in samples */
 	u16 isoc_packet_size;          /* large packet sizes in samples */
 	u8 isoc_pipe;
@@ -164,18 +177,16 @@ typedef struct {
 
 /* UAC host */
 typedef struct {
+	usbh_uac_volume_info_t volume_info[1 + USBH_UAC_MAX_CHANNEL];
+	usbh_uac_buf_ctrl_t isoc_out;               /* isoc out */
 	usbh_uac_ac_itf_info_t isoc_ac_info;
 	usbh_uac_as_itf_info_t *isoc_out_info;
 	usbh_uac_as_itf_info_t *isoc_in_info;
 
-	usbh_uac_buf_ctrl_t isoc_out;            /* isoc out */
-
 	usbh_composite_uac_usr_cb_t *cb;
-
 	usbh_composite_host_t *driver;
 
 	u8 *audio_ctrl_buf;
-	__IO u32 cur_frame;
 
 #if USBH_COMPOSITE_HID_UAC_DEBUG
 	rtos_task_t dump_status_task;
@@ -194,10 +205,10 @@ typedef struct {
 
 	__IO usbh_uac_xfer_state_t xfer_state;   /* xfer status */
 	__IO usbh_uac_ctrl_state_t ctrl_state;   /* ctrl xfer status */
-	u16 volume_info;                         /* volume db */
+	u16 volume_value;                        /* volume db */
 	u8 ch_idx;                               /* volume channale */
-	u8 mute;                                 /* 1 mute, 0 unmute */
-	u8 next_xfer;                            /*send next event flag*/
+	u8 mute_value;                           /* 1 mute, 0 unmute */
+	u8 next_xfer;                            /* send next event flag*/
 } usbh_composite_uac_t;
 
 /* Exported macros -----------------------------------------------------------*/
@@ -209,12 +220,13 @@ extern const usbh_class_driver_t usbh_composite_uac_driver;
 
 int usbh_composite_uac_init(usbh_composite_host_t *chost, usbh_composite_uac_usr_cb_t *cb, int frame_cnt);
 int usbh_composite_uac_deinit(void);
+int usbh_composite_uac_get_volume_infor(usb_host_t *host);
 
 int usbh_composite_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_freq);
 const usbh_audio_fmt_t *usbh_composite_uac_get_alt_setting(u8 dir, u8 *fmt_cnt);
 u32 usbh_composite_uac_get_frame_size(u8 dir);
 
-int usbh_composite_uac_set_volume(u8 volume, u8 ch);
+int usbh_composite_uac_set_volume(u8 volume);
 int usbh_composite_uac_set_mute(u8 mute);
 
 u32 usbh_composite_uac_write(u8 *buffer, u32 size, u32 timeout_ms);

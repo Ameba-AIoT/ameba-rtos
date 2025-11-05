@@ -135,6 +135,8 @@ rsource "../component/file_system/Kconfig"
 
 rsource "../component/os/Kconfig"
 
+orsource "../component/utils/Kconfig"
+
 menu "CONFIG OTA OPTION"
     config UPGRADE_BOOTLOADER
         bool "Enable Bootloader OTA"

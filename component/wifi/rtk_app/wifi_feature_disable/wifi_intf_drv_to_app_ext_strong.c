@@ -393,3 +393,50 @@ s32 wifi_set_tx_advanced_config(struct rtw_tx_advanced_cfg *tx_setting)
 	call_noused = __LINE__;
 	return -1;
 }
+
+void wifi_rmesh_register_ota_callback(int (*ota_callback)(u8 *buf, u16 len))
+{
+	UNUSED(ota_callback);
+	call_noused = __LINE__;
+	return;
+}
+
+int wifi_rmesh_get_node_info(enum rtw_rmesh_node_type type, struct rtw_rmesh_node_info *node_info)
+{
+	UNUSED(type);
+	UNUSED(node_info);
+	call_noused = __LINE__;
+	return RTK_FAIL;
+}
+
+u8 wifi_rmesh_get_child_num(void)
+{
+	call_noused = __LINE__;
+	return 0;
+}
+
+int wifi_rmesh_get_child_info_list(u8 *child_num, struct rtw_rmesh_node_info *child_info_list)
+{
+	UNUSED(child_num);
+	UNUSED(child_info_list);
+	call_noused = __LINE__;
+	return RTK_FAIL;
+}
+
+int wifi_rmesh_update_node_ota_ver(u8 *ota_ver, u8 ota_ver_len, u8 ota_ongoing)
+{
+	UNUSED(ota_ver);
+	UNUSED(ota_ver_len);
+	UNUSED(ota_ongoing);
+	call_noused = __LINE__;
+	return RTK_FAIL;
+}
+
+int wifi_rmesh_check_node_ota_ver(u8 *ota_ver, u8 ota_ver_len, enum rtw_rmesh_node_type node_type)
+{
+	UNUSED(ota_ver);
+	UNUSED(ota_ver_len);
+	UNUSED(node_type);
+	call_noused = __LINE__;
+	return RTK_FAIL;
+}

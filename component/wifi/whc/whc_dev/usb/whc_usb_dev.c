@@ -140,20 +140,6 @@ static void whc_usb_dev_tx_done_cb(usbd_inic_ep_t *in_ep, u8 status)
 #endif
 }
 
-static void whc_usb_dev_suspend_cb(void)
-{
-#if defined(CONFIG_BT) && defined(CONFIG_BT_INIC)
-	bt_inic_usb_suspend_cb();
-#endif
-}
-
-static void whc_usb_dev_resume_cb(void)
-{
-#if defined(CONFIG_BT) && defined(CONFIG_BT_INIC)
-	bt_inic_usb_resume_cb();
-#endif
-}
-
 void whc_usb_dev_status_changed_cb(u8 old_status, u8 new_status)
 {
 	UNUSED(old_status);
@@ -167,7 +153,7 @@ void whc_usb_dev_status_changed_cb(u8 old_status, u8 new_status)
 #endif
 	}
 #if defined(CONFIG_BT) && defined(CONFIG_BT_INIC)
-	bt_inic_status_change_cb(new_status);
+	bt_inic_status_change_cb(old_status, new_status);
 #endif
 #if defined(CONFIG_USBD_WHC_HOTPLUG)
 	rtos_sema_give(whc_usb_priv.usb_attach_status_sema);
@@ -288,8 +274,6 @@ static usbd_inic_cb_t whc_usb_dev_cb = {
 	.received = whc_usb_dev_rx_done_cb,
 	.transmitted = whc_usb_dev_tx_done_cb,
 	.status_changed = whc_usb_dev_status_changed_cb,
-	.suspend = whc_usb_dev_suspend_cb,
-	.resume = whc_usb_dev_resume_cb,
 };
 
 #if defined(CONFIG_USBD_WHC_HOTPLUG)

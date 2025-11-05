@@ -401,37 +401,6 @@ int atcmd_bt_a2dp_scatternet(int argc, char *argv[])
 	return 0;
 }
 
-int bt_a2dp_provisioner_scatternet_main(uint8_t role, uint8_t enable);
-int atcmd_bt_a2dp_provisioner_scatternet(int argc, char *argv[])
-{
-	(void)argc;
-	uint8_t role;
-	uint8_t op;
-	char *action[] = {"disable", "enable"};
-
-	if (strcmp(argv[0], "snk") == 0) {
-		role = 1;
-		BT_LOGA("Set a2dp role (snk)\r\n");
-	} else if (strcmp(argv[0], "src") == 0) {
-		role = 0;
-		BT_LOGA("Set a2dp role (src)\r\n");
-	} else {
-		BT_LOGE("Invalid role set\r\n");
-		return -1;
-	}
-	if ((op = (uint8_t)str_to_int(argv[1])) > 2) {
-		BT_LOGE("Error: wrong value (%d) for a2dp provisioner scatternet example!\r\n", op);
-		return -1;
-	}
-	if (bt_a2dp_provisioner_scatternet_main(role, op)) {
-		BT_LOGE("Error: a2dp provisioner scatternet example %s failed!\r\n", action[op]);
-		return -1;
-	}
-
-	BT_LOGA("a2dp provisioner scatternet example %s OK!\r\n", action[op]);
-	return 0;
-}
-
 int bt_a2dp_sink_pbp_source_main(uint8_t enable);
 int atcmd_bt_a2dp_pbp(int argc, char *argv[])
 {
@@ -1134,9 +1103,6 @@ static const cmd_table_t example_table[] = {
 #endif
 #if defined(CONFIG_BT_A2DP_SCATTERNET) && CONFIG_BT_A2DP_SCATTERNET
 	{"a2dp_scatternet",  atcmd_bt_a2dp_scatternet,  3, 3},
-#endif
-#if defined(CONFIG_BT_A2DP_PROVISIONER_SCATTERNET) && CONFIG_BT_A2DP_PROVISIONER_SCATTERNET
-	{"a2dp_provisioner_scatternet",  atcmd_bt_a2dp_provisioner_scatternet,  3, 3},
 #endif
 #if defined(CONFIG_BT_A2DP_PBP) && CONFIG_BT_A2DP_PBP
 	{"a2dp_pbp",         atcmd_bt_a2dp_pbp,         2, 2},

@@ -5,13 +5,13 @@ menu "CONFIG VFS"
     if VFS_LITTLEFS_INCLUDED
         choice
             prompt "FLASH Type"
-            config LITTLEFS_FLASH_INTERNAL
-                bool "Internal FLASH"
-            config LITTLEFS_FLASH_EXTERNAL
-                bool "Exteranl FLASH"
-            if LITTLEFS_FLASH_EXTERNAL
-                config FLASH_EXTERNAL_SIZE
-                    int "External FLASH Size[KB]"
+            config LITTLEFS_FLASH
+                bool "FLASH"
+            config LITTLEFS_SECONDARY_FLASH
+                bool "Secondary FLASH"
+            if LITTLEFS_SECONDARY_FLASH
+                config SECONDARY_FLASH_SIZE
+                    int "Secondary FLASH Size[KB]"
                     default 4096
             endif
         endchoice
@@ -27,13 +27,13 @@ menu "CONFIG VFS"
             if FATFS_DISK_FLASH
                 choice
                     prompt "FLASH Type"
-                    config FATFS_FLASH_INTERNAL
-                        bool "Internal FLASH"
-                    config FATFS_FLASH_EXTERNAL
-                        bool "Exteranl FLASH"
-                    if FATFS_FLASH_EXTERNAL
-                        config FLASH_EXTERNAL_SIZE
-                            int "External FLASH Size[KB]"
+                    config FATFS_FLASH
+                        bool "FLASH"
+                    config FATFS_SECONDARY_FLASH
+                        bool "Secondary FLASH"
+                    if FATFS_SECONDARY_FLASH
+                        config SECONDARY_FLASH_SIZE
+                            int "Secondary FLASH Size[KB]"
                             default 4096
                     endif
                 endchoice

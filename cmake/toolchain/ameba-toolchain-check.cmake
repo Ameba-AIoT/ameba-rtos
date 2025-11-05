@@ -16,8 +16,30 @@ else()
 	endif()
 
 	if (EXISTS ${TOOLCHAINDIR}/${TOOLCHAINNAME})
-		message("${TOOLCHAINNAME} Had Existed")
-	else()
+		message("${TOOLCHAINNAME} Had Existed, Verifying integrity ......")
+
+		if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
+			execute_process(
+				COMMAND tar -jtf ${TOOLCHAINDIR}/${TOOLCHAINNAME} -C ${TOOLCHAINDIR} > /dev/null
+				RESULT_VARIABLE broken
+			)
+		else()
+			execute_process(
+				COMMAND 7z t ${TOOLCHAINDIR}/${TOOLCHAINNAME} -o${TOOLCHAINDIR}
+				RESULT_VARIABLE broken
+			)
+		endif()
+
+		if(broken)
+			execute_process(COMMAND ${CMAKE_COMMAND} -E remove -f ${TOOLCHAINDIR}/${TOOLCHAINNAME})
+			message("Integrity Verifying Failed. Delete and Redownload it...")
+		else()
+			message("Integrity Verifying success.")
+		endif()
+
+	endif()
+
+	if (NOT EXISTS ${TOOLCHAINDIR}/${TOOLCHAINNAME})
 		message("Download ${TOOLCHAINNAME} ...")
 		execute_process(
 			COMMAND wget --progress=bar:force -P ${TOOLCHAINDIR} ${TOOLCHAINURL}/${TOOLCHAINNAME}
@@ -31,7 +53,7 @@ else()
 		endif()
 	endif()
 
-	message("unzip ${TOOLCHAINNAME} ...")
+	message("Unzip ${TOOLCHAINNAME} ...")
 
 	if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
 		execute_process(
@@ -46,7 +68,8 @@ else()
 	endif()
 
 	if(ret)
-		message(FATAL_ERROR "Unzip Failed. Please unzip ${TOOLCHAINNAME} manually. If still failed, delete ${TOOLCHAINNAME} Manually and Try Again!")
+		execute_process(COMMAND ${CMAKE_COMMAND} -E remove_directory ${TOOLCHAINDIR}/${ToolChainVerMajor})
+		message(FATAL_ERROR "Unzip Failed. Please unzip ${TOOLCHAINNAME} manually.")
 	else()
 		message("Unzip ${TOOLCHAINNAME} Success")
 	endif()

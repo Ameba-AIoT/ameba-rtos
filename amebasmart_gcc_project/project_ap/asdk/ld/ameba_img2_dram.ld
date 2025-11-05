@@ -71,6 +71,10 @@ SECTIONS
 		__git_ver_table_start__ = .;
 		KEEP(*(.git.ver.data))
 		__git_ver_table_end__ = .;
+		. = ALIGN (4);
+		__unity_table_start__ = .;
+		KEEP(*(.unity.table.data*))
+		__unity_table_end__ = .;
 		. = ALIGN(4);
 		 __etext = .;
 	} > CA32_BL3_DRAM_NS

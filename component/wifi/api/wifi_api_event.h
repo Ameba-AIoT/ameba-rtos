@@ -71,7 +71,7 @@ enum rtw_event_id {
 	RTW_EVENT_WPA_WPS_FINISH,         /**< STA mode: WPS procedure completed */
 	RTW_EVENT_WPA_EAPOL_START,        /**< STA mode: WPA enterprise authentication started */
 	RTW_EVENT_WPA_EAPOL_RECVD,        /**< STA mode: EAPOL packet received during WPA enterprise authentication  */
-	RTW_EVENT_DHCP_STATUS,            /**< STA mode: DHCP status report (see rtw_event_dhcp_status)  */
+	RTW_EVENT_DHCP_STATUS,            /**< STA mode: DHCP status report (see @ref rtw_event_dhcp_status)  */
 
 	RTW_EVENT_MAX,
 };
@@ -81,11 +81,17 @@ enum rtw_event_id {
  * @{
  */
 
+/**
+ * @brief  Wi-Fi event handle struct.
+ */
 struct rtw_event_hdl_func_t {
-	u16 evt_id;  /* refer to @ref rtw_event_id */
+	u16 evt_id;  /**< refer to @ref rtw_event_id */
 	void (*handler)(u8 *evt_info);
 };
 
+/**
+  * @brief  Report info for event @ref RTW_EVENT_JOIN_STATUS
+  */
 struct rtw_event_join_status_info {
 	/* private paras */
 	union {
@@ -112,34 +118,50 @@ struct rtw_event_join_status_info {
 	} priv;
 
 	/* common paras */
-	u8 status;  /* refer to @ref rtw_join_status */
+	u8 status;  /**< refer to @ref rtw_join_status */
 	u8 channel;
 	u8 bssid[ETH_ALEN];
 	s8 rssi;
 	/* At the same time as reporting event info, frame content needs to be reported, which will be followed by event info. */
-	u32 frame_len;  /* 0: there is no frame followed; larger than 0: there is frame_len bytes of frame followed*/
-	u8 frame[];  /* if there is frame followed, point to head address */
+	u32 frame_len;  /**< 0: there is no frame followed; larger than 0: there is frame_len bytes of frame followed*/
+	u8 frame[];  /**< if there is frame followed, point to head address */
 };
 
+/**
+  * @brief  Report info for event @ref RTW_EVENT_AP_STA_ASSOC
+  */
 struct rtw_event_ap_sta_assoc {
 	u8 sta_mac[ETH_ALEN];
 	u32 frame_len;
 	u8 frame[];
 };
 
+/**
+  * @brief  Report info for event @ref RTW_EVENT_AP_STA_DISASSOC
+  */
 struct rtw_event_ap_sta_disassoc {
 	u8 sta_mac[ETH_ALEN];
 };
 
+/**
+  * @brief  Report info for event @ref RTW_EVENT_WPA_EAPOL_START
+  */
 struct rtw_event_wpa_eapol_start {
 	u8 dst_mac[ETH_ALEN];
 };
 
+/**
+  * @brief  Report info for event @ref RTW_EVENT_WPA_STA_WPS_START
+  */
 struct rtw_event_wpa_sta_wps_start {
 	u8 peer_mac[ETH_ALEN];
 };
+
+/**
+  * @brief  Report info for event @ref RTW_EVENT_DHCP_STATUS
+  */
 struct rtw_event_dhcp_status {
-	u8 dhcp_status;		/* only report DHCP_ADDRESS_ASSIGNED, DHCP_STOP, DHCP_TIMEOUT */
+	u8 dhcp_status;		/**< only report DHCP_ADDRESS_ASSIGNED, DHCP_STOP, DHCP_TIMEOUT */
 };
 
 #pragma pack(1) /* csi report info should be 1 byte alignment */
@@ -174,19 +196,6 @@ struct rtw_event_csi_report_info {
 
 /** @} End of WIFI_Exported_Structure_Types group*/
 /** @} End of WIFI_Exported_Types group*/
-
-/**********************************************************************************************
- *                                     Function Declarations
- *********************************************************************************************/
-/** @addtogroup WIFI_Exported_Functions Wi-Fi Exported Functions
- * @{
- */
-/** @addtogroup WIFI_Exported_Event_Functions Event Functions
-  * @{
-  */
-
-/** @} End of Event_Functions group*/
-/** @} End of WIFI_Exported_Functions group*/
 /** @} End of WIFI_API group*/
 #ifdef __cplusplus
 }

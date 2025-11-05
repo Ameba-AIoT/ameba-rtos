@@ -20,7 +20,6 @@
 
 /* -------------------------------- Includes -------------------------------- */
 #include "rtw_autoconf.h"
-#ifdef CONFIG_WTN_SOCKET_APP
 #include "os_wrapper.h"
 #include "lwip_netconf.h"
 #include "ameba_soc.h"
@@ -36,7 +35,7 @@
 #include "wtn_app_ota.h"
 #include <dhcp/dhcps.h>
 
-
+#ifdef CONFIG_RMESH_SOCKET_EN
 extern void sys_reset(void);
 
 #define WTN_BUF_NUM 5
@@ -80,52 +79,6 @@ struct wtn_buf_node *dequeue_wtn_buf(struct __queue *p_queue)
 	}
 	rtos_critical_exit(RTOS_CRITICAL_WIFI);
 	return p_node;
-}
-
-int wtn_socket_send(u8 *buf, u32 len)
-{
-	u8 *ip = 0;
-	u8 invalid_ip[4] = {0};
-	u8 *buf_copy = NULL;
-	struct wtn_buf_node *pnode = NULL;
-	int i;
-
-	/* check if DHCP finished */
-	ip = (u8 *)LwIP_GetIP(0);
-	if (memcmp(ip, invalid_ip, 4) == 0 || wtn_client_fd < 0) {
-		return RTK_FAIL;
-	}
-
-	/*fill IP*/
-	buf_copy = (u8 *)rtos_mem_zmalloc(len);
-	memcpy(buf_copy, buf, len);
-	memcpy(buf_copy + 42, ip, 4);
-	/*fill compile time*/
-	char *compiletime = NULL;
-	compiletime = RTL_FW_COMPILE_TIME;
-	memcpy(buf_copy + 60, compiletime,  strlen(compiletime));
-
-	rtos_critical_enter(RTOS_CRITICAL_WIFI);
-	for (i = 0; i < WTN_BUF_NUM; i++) {
-		if (wtn_buf_pool[i].is_used == 0) {
-			wtn_buf_pool[i].is_used = 1;
-			pnode = &wtn_buf_pool[i];
-			break;
-		}
-	}
-	rtos_critical_exit(RTOS_CRITICAL_WIFI);
-	if (pnode == NULL) {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "wtn not enough buf node\n");
-		return RTK_FAIL;
-	}
-
-	pnode->buf_addr = buf_copy;
-	pnode->buf_len = len;
-	rtos_critical_enter(RTOS_CRITICAL_WIFI);
-	rtw_list_insert_tail(&(pnode->list), get_list_head(&wtn_buf_queue));
-	rtos_critical_exit(RTOS_CRITICAL_WIFI);
-	rtos_sema_give(wtn_socket_send_sema);
-	return RTK_SUCCESS;
 }
 
 #ifdef WTN_SINGLE_NODE_OTA
@@ -481,9 +434,64 @@ exit:
 	rtos_sema_delete_static(wtn_socket_send_sema);
 	rtos_task_delete(NULL);
 }
+#endif
+
+int wtn_socket_send(u8 *buf, u32 len)
+{
+#ifdef CONFIG_RMESH_SOCKET_EN
+	u8 *ip = 0;
+	u8 invalid_ip[4] = {0};
+	u8 *buf_copy = NULL;
+	struct wtn_buf_node *pnode = NULL;
+	int i;
+
+	/* check if DHCP finished */
+	ip = (u8 *)LwIP_GetIP(0);
+	if (memcmp(ip, invalid_ip, 4) == 0 || wtn_client_fd < 0) {
+		return RTK_FAIL;
+	}
+
+	/*fill IP*/
+	buf_copy = (u8 *)rtos_mem_zmalloc(len);
+	memcpy(buf_copy, buf, len);
+	memcpy(buf_copy + 42, ip, 4);
+	/*fill compile time*/
+	char *compiletime = NULL;
+	compiletime = RTL_FW_COMPILE_TIME;
+	memcpy(buf_copy + 60, compiletime,  strlen(compiletime));
+
+	rtos_critical_enter(RTOS_CRITICAL_WIFI);
+	for (i = 0; i < WTN_BUF_NUM; i++) {
+		if (wtn_buf_pool[i].is_used == 0) {
+			wtn_buf_pool[i].is_used = 1;
+			pnode = &wtn_buf_pool[i];
+			break;
+		}
+	}
+	rtos_critical_exit(RTOS_CRITICAL_WIFI);
+	if (pnode == NULL) {
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "wtn not enough buf node\n");
+		return RTK_FAIL;
+	}
+
+	pnode->buf_addr = buf_copy;
+	pnode->buf_len = len;
+	rtos_critical_enter(RTOS_CRITICAL_WIFI);
+	rtw_list_insert_tail(&(pnode->list), get_list_head(&wtn_buf_queue));
+	rtos_critical_exit(RTOS_CRITICAL_WIFI);
+	rtos_sema_give(wtn_socket_send_sema);
+	return RTK_SUCCESS;
+#else
+	UNUSED(buf);
+	UNUSED(len);
+
+	return RTK_FAIL;
+#endif
+}
 
 int wtn_socket_init(u8 enable, u8 rnat_ap_start)
 {
+#ifdef CONFIG_RMESH_SOCKET_EN
 	wtn_rnat_ap_start = rnat_ap_start;
 	if (enable) {
 		rtos_sema_create_static(&wtn_socket_send_sema, 0, 0xFFFFFFFF);
@@ -510,5 +518,10 @@ int wtn_socket_init(u8 enable, u8 rnat_ap_start)
 	}
 
 	return RTK_SUCCESS;
-}
+#else
+	UNUSED(enable);
+	UNUSED(rnat_ap_start);
+
+	return RTK_FAIL;
 #endif
+}

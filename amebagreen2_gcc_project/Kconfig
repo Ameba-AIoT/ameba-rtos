@@ -33,6 +33,9 @@ config SUPPORT_USBD_INIC
 config SUPPORT_USBH_UVC_HW_DEC
     def_bool y
 
+config SUPPORT_USBH_ECM
+    def_bool y
+
 config SUPPORT_HEAP_TRACE
     def_bool y
 
@@ -135,6 +138,8 @@ rsource "../component/soc/common/rtk_assert/Kconfig"
 rsource "../component/file_system/Kconfig"
 
 rsource "../component/os/Kconfig"
+
+orsource "../component/utils/Kconfig"
 
 
 menu "CONFIG OTA OPTION"
@@ -517,7 +522,7 @@ config FPGA
 
 choice
     prompt "Chip Version"
-    default AMEBAGREEN2_A_CUT
+    default AMEBAGREEN2_B_CUT
     config AMEBAGREEN2_A_CUT
         bool "AMEBAGREEN2_A_Cut"
 

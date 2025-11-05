@@ -18,6 +18,10 @@ menu "CONFIG SSL"
         int "Maximum len of outgoing fragments."
         default 4096
 
+    config GMSSL_ENABLED
+        bool "Enable GmSSL"
+        default false
+
     if AMEBAGREEN2          # only for amebagreen2 km4tz
         config SSL_ROM_TEST_MENU
             bool "SSL ROM Test"

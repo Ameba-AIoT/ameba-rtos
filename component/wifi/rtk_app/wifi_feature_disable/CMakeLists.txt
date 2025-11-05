@@ -55,9 +55,6 @@ if(NOT CONFIG_WHC_HOST)
     ameba_list_append_ifnot(CONFIG_WIFI_P2P_ENABLE private_sources
         wifi_feature_dis_p2p.c)
 
-    ameba_list_append_ifnot(CONFIG_RMESH_OTA_EN private_sources
-        wifi_feature_dis_wtn_ota.c)
-
 endif()
 
 ameba_list_append_ifnot(CONFIG_WIFI_EAP_ENABLE private_sources
@@ -67,6 +64,11 @@ if(NOT (CONFIG_WIFI_11K_ENABLE AND CONFIG_WIFI_11V_ENABLE AND CONFIG_WIFI_11R_EN
     ameba_list_append(private_sources
         wifi_feature_dis_kvr.c
     )
+endif()
+
+if(NOT (CONFIG_RMESH_EN AND CONFIG_RMESH_SOCKET_EN AND CONFIG_RMESH_OTA_EN))
+    ameba_list_append(private_sources
+        wifi_feature_dis_wtn.c)
 endif()
 
 if(CONFIG_WHC_DEV AND CONFIG_WHC_INTF_IPC)

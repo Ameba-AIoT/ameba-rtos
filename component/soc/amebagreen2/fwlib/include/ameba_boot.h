@@ -75,6 +75,11 @@ extern u8 __tcm_heap_buffer_start__[];
 extern u8 __tcm_heap_buffer_size__[];
 #endif
 
+#if defined (CONFIG_UNITY_TEST) && CONFIG_UNITY_TEST
+extern u8 __unity_table_start__[];
+extern u8 __unity_table_end__[];
+#endif
+
 extern u8 __git_ver_table_start__[];
 extern u8 __git_ver_table_end__[];
 

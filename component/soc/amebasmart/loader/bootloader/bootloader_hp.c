@@ -291,7 +291,8 @@ void BOOT_PSRAM_Init(void)
 		}
 	}
 
-	PSRAM_AutoGating(ENABLE, Psram_IDLETIME, Psram_RESUME_TIME / PsramInfo.PSRAMC_Clk_Unit);
+	/* default disable autogating for psram */
+	PSRAM_AutoGating(DISABLE, Psram_IDLETIME, Psram_RESUME_TIME / PsramInfo.PSRAMC_Clk_Unit);
 }
 
 BOOT_RAM_TEXT_SECTION

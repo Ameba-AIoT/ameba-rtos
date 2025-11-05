@@ -49,8 +49,6 @@ typedef struct {
 	void(* transmitted)(usbd_inic_ep_t *in_ep, u8 status);
 	int(* received)(usbd_inic_ep_t *out_ep, u16 len);
 	void (*status_changed)(u8 old_status, u8 status);
-	void(*suspend)(void);
-	void(*resume)(void);
 } usbd_inic_cb_t;
 
 typedef struct {

@@ -67,6 +67,11 @@ extern u8 __psram_heap_buffer_size__[];
 extern u8 __psram_heap_extend_start__[];
 extern u8 __psram_heap_extend_size__[];
 
+#if defined (CONFIG_UNITY_TEST) && CONFIG_UNITY_TEST
+extern u8 __unity_table_start__[];
+extern u8 __unity_table_end__[];
+#endif
+
 #ifdef CONFIG_MP_SHRINK
 extern u8 __sram_floader_mp_start__[];
 extern u8 __sram_floader_mp_size__[];

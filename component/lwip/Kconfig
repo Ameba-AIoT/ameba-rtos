@@ -7,10 +7,6 @@ menu "CONFIG LWIP"
         bool "Enable NAT REPEATER"
         select IP_NAT if WHC_HOST || WHC_NONE
 
-    config LWIP_NETCONN_SEM_PER_THREAD_MENU
-        bool "Enable LWIP NETCONN SEM PER THREAD"
-        select LWIP_NETCONN_SEM_PER_THREAD if WHC_HOST || WHC_NONE
-
     config LWIP_IPV6_MENU
         bool "Enable LWIP IPV6"
         select LWIP_IPV6 if WHC_HOST || WHC_NONE
@@ -27,8 +23,6 @@ menu "CONFIG LWIP"
     config FAST_DHCP
         bool
     config IP_NAT
-        bool
-    config LWIP_NETCONN_SEM_PER_THREAD
         bool
     config LWIP_IPV6
         bool

@@ -4,7 +4,7 @@
 #include "time.h"
 #include "vfs.h"
 #include "ameba_ota.h"
-#include "vfs_external_nor_flash.h"
+#include "vfs_secondary_nor_flash.h"
 
 vfs_drv  vfs = {0};
 rtos_mutex_t vfs_mutex = NULL;
@@ -21,9 +21,9 @@ u32 VFS2_FLASH_SIZE = 0;
 
 void vfs_init()
 {
-#if (defined CONFIG_LITTLEFS_FLASH_EXTERNAL) || (defined CONFIG_FATFS_FLASH_EXTERNAL)
-	external_flash_spi_init(SCLK_FREQ);
-	external_flash_get_id();
+#if (defined CONFIG_LITTLEFS_SECONDARY_FLASH) || (defined CONFIG_FATFS_SECONDARY_FLASH)
+	secondary_flash_spi_init(SCLK_FREQ);
+	secondary_flash_get_id();
 #endif
 
 	if (vfs_mutex == NULL) {
@@ -138,10 +138,10 @@ void vfs_assign_region(int vfs_type, char region)
 	}
 
 	if (vfs_type == VFS_LITTLEFS) {
-#ifdef CONFIG_LITTLEFS_FLASH_EXTERNAL
+#ifdef CONFIG_LITTLEFS_SECONDARY_FLASH
 		(void) region;
 		LFS_FLASH_BASE_ADDR = 0x0;
-		LFS_FLASH_SIZE = CONFIG_FLASH_EXTERNAL_SIZE * 1024;
+		LFS_FLASH_SIZE = CONFIG_SECONDARY_FLASH_SIZE * 1024;
 #else
 		LFS_FLASH_BASE_ADDR = region == 1 ? VFS1_FLASH_BASE_ADDR : VFS2_FLASH_BASE_ADDR;
 		LFS_FLASH_SIZE = region == 1 ? VFS1_FLASH_SIZE : VFS2_FLASH_SIZE;
@@ -172,9 +172,9 @@ void vfs_assign_region(int vfs_type, char region)
 			FLASH_APP_BASE = (u32)img_hdr + 0x1000 - SPI_FLASH_BASE;
 			FLASH_SECTOR_COUNT = img_hdr->image_size / 512;
 		}
-#elif defined CONFIG_FATFS_FLASH_EXTERNAL
+#elif defined CONFIG_FATFS_SECONDARY_FLASH
 		FLASH_APP_BASE = 0x0;
-		FLASH_SECTOR_COUNT = CONFIG_FLASH_EXTERNAL_SIZE * 1024;
+		FLASH_SECTOR_COUNT = CONFIG_SECONDARY_FLASH_SIZE * 1024;
 #else
 		FLASH_APP_BASE = region == 1 ? VFS1_FLASH_BASE_ADDR : VFS2_FLASH_BASE_ADDR;
 		FLASH_SECTOR_COUNT = region == 1 ? (VFS1_FLASH_SIZE / 512) : (VFS2_FLASH_SIZE / 512);
@@ -271,9 +271,6 @@ int vfs_user_register(const char *prefix, int vfs_type, int interface, char regi
 			ret = vfs.drv[vfs_num]->mount(interface);
 			if (ret) {
 				VFS_DBG(VFS_ERROR, "vfs mount fail");
-				if (region == VFS_REGION_1) {
-					lfs_mount_fail = 1;
-				}
 			}
 			goto EXIT;
 		}

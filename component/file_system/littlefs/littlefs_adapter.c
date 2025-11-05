@@ -1,6 +1,6 @@
 #include "platform_autoconf.h"
 #include "littlefs_adapter.h"
-#include "vfs_external_nor_flash.h"
+#include "vfs_secondary_nor_flash.h"
 
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)
 #include "vfs_nand_ftl.h"
@@ -109,7 +109,7 @@ struct lfs_config g_nor_lfs_cfg = {
 	.prog_size = 1,
 	.block_size = 4096,
 	.lookahead_size = 8,
-#ifdef CONFIG_LITTLEFS_FLASH_EXTERNAL
+#ifdef CONFIG_LITTLEFS_SECONDARY_FLASH
 	.cache_size = 4096,
 #else
 	.cache_size = 256,
@@ -123,8 +123,8 @@ int lfs_nor_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, v
 		return LFS_ERR_OK;
 	}
 
-#ifdef CONFIG_LITTLEFS_FLASH_EXTERNAL
-	external_flash_read_stream(LFS_FLASH_BASE_ADDR + c->block_size * block + off, size, (char *)buffer);
+#ifdef CONFIG_LITTLEFS_SECONDARY_FLASH
+	secondary_flash_read_stream(LFS_FLASH_BASE_ADDR + c->block_size * block + off, size, (char *)buffer);
 #else
 	flash_t flash;
 
@@ -144,8 +144,8 @@ int lfs_nor_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, c
 		VFS_DBG(VFS_ERROR, "prog range exceed block size");
 		return LFS_ERR_IO;
 	}
-#ifdef CONFIG_LITTLEFS_FLASH_EXTERNAL
-	external_flash_write_stream(LFS_FLASH_BASE_ADDR + c->block_size * block + off, size, (char *)buffer);
+#ifdef CONFIG_LITTLEFS_SECONDARY_FLASH
+	secondary_flash_write_stream(LFS_FLASH_BASE_ADDR + c->block_size * block + off, size, (char *)buffer);
 #else
 	flash_t flash;
 
@@ -162,8 +162,8 @@ int lfs_nor_erase(const struct lfs_config *c, lfs_block_t block)
 		return LFS_ERR_IO;
 	}
 
-#ifdef CONFIG_LITTLEFS_FLASH_EXTERNAL
-	external_flash_erase_sector(LFS_FLASH_BASE_ADDR + c->block_size * block);
+#ifdef CONFIG_LITTLEFS_SECONDARY_FLASH
+	secondary_flash_erase_sector(LFS_FLASH_BASE_ADDR + c->block_size * block);
 #else
 	flash_t flash;
 
