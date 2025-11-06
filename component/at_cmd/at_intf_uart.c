@@ -12,16 +12,12 @@ u8 UART_TX = _PA_3; // UART0 TX
 u8 UART_RX = _PA_2; // UART0 RX
 #elif defined (CONFIG_AMEBALITE)
 /* fully programmable zone */
-u8 UART_TX = _PA_28; // UART TX
-u8 UART_RX = _PA_29; // UART RX
+u8 UART_TX = _PA_22; // UART TX
+u8 UART_RX = _PA_21; // UART RX
 #elif defined (CONFIG_AMEBADPLUS)
 /* fully programmable zone */
 u8 UART_TX = _PA_31; // UART TX
 u8 UART_RX = _PA_30; // UART RX
-#elif defined (CONFIG_AMEBAGREEN2)
-/* fully programmable zone */
-u8 UART_TX = _PA_4; // UART TX
-u8 UART_RX = _PA_5; // UART RX
 #endif
 
 signed char UART_RTS = -1;
@@ -34,7 +30,6 @@ rtos_sema_t uart_tx_sema;
 
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
-extern char lfs_mount_fail;
 
 #define UART_TT_BUF_LEN 1024
 u8 uart_tt_buf[UART_TT_BUF_LEN];

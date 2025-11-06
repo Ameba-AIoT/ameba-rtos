@@ -147,6 +147,8 @@ void hci_platform_bt_rf_calibration(void)
 
 		rtk_coex_btc_bt_rfk(&p_temp_pram, sizeof(struct bt_rfk_param));
 	}
+#else
+	BT_LOGE("BT_COEXIST disabled! ignore bt_rfk!");
 #endif
 }
 
@@ -158,6 +160,8 @@ void hci_platform_bt_rx_dck(void)
 	p_temp_pram.type = BT_RX_DCK;
 
 	rtk_coex_btc_bt_rfk(&p_temp_pram, sizeof(struct bt_rfk_param));
+#else
+	BT_LOGE("BT_COEXIST disabled! ignore bt_rx_dck!");
 #endif
 }
 

@@ -53,6 +53,7 @@ typedef struct {
 
 typedef struct {
 	bool used;
+	bool is_ready;
 	uint16_t iso_conn_handle;
 	void *p_iso_chann;
 	void *p_track_hdl;
@@ -1112,6 +1113,7 @@ static uint16_t app_bt_le_audio_add_data_path(uint16_t iso_conn_handle, void *p_
 				}
 #endif
 			}
+			app_le_audio_data_path[i].is_ready = true;
 			return 0;
 
 error:
@@ -1183,6 +1185,10 @@ static uint16_t app_bt_le_audio_data_received(uint16_t iso_handle, uint8_t path_
 	}
 	if (!p_app_bt_le_audio_data_path) {
 		BT_LOGE("[APP] %s cannot find matched p_app_bt_le_audio_data_path \r\n", __func__);
+		return 1;
+	}
+	if (!p_app_bt_le_audio_data_path->is_ready) {
+		BT_LOGE("[APP] %s: p_app_bt_le_audio_data_path not ready \r\n", __func__);
 		return 1;
 	}
 	/* do audio data received flow */
@@ -1890,7 +1896,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 			BT_LOGD("[APP] data loss: iso_conn_handle 0x%x, pkt_seq_num:%d \r\n", p_bt_direct_iso->iso_conn_handle, p_bt_direct_iso->pkt_seq_num);
 			if (app_bt_le_audio_data_received(p_bt_direct_iso->iso_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_RX,
 											  NULL, max_sdu_len)) {
-				BT_LOGE("[APP] %s app le audio data parsing fail \r\n", __func__);
+				BT_LOGD("[APP] %s app le audio data parsing fail \r\n", __func__);
 				break;
 			}
 		} else {
@@ -1934,7 +1940,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 				if (app_bt_le_audio_data_received(p_bt_direct_iso->iso_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_RX,
 												  p_bt_direct_iso->p_buf + p_bt_direct_iso->offset,
 												  p_bt_direct_iso->iso_sdu_len)) {
-					BT_LOGE("[APP] %s app le audio data parsing fail \r\n", __func__);
+					BT_LOGD("[APP] %s app le audio data parsing fail \r\n", __func__);
 					break;
 				}
 			}
