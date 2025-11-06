@@ -45,6 +45,10 @@ void setupMMUTable(int coreID)
 		/* NOTE: For RW Normal Memory, default XN. For RO Normal Memory, it can be EXC/XN */
 //		mmap_add_region(0x00000000, 0x00000000, 0x00100000, MT_CODE | MT_NS); // Non-Secure CPU do not need it
 		mmap_add_region(0x08000000, 0x08000000, 0x10000000 - 0x08000000, MT_CODE | MT_NS);
+
+		// RETENTION_RAM_BASE
+		mmap_add_region(0x23020000, 0x23020000, 0x23021000 - 0x23020000, MT_NON_CACHEABLE | MT_RW | MT_NS);
+
 		mmap_add_region(0x20000000, 0x20000000, 0x40000000 - 0x20000000, MT_MEMORY | MT_RW | MT_NS);
 		mmap_add_region(0x40000000, 0x40000000,	0x60000000 - 0x40000000, MT_DEVICE | MT_RW | MT_NS);
 

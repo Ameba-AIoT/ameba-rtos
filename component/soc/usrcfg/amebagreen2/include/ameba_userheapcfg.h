@@ -10,7 +10,7 @@
 #define configTOTAL_HEAP_SIZE					0 //Fixed to 0, delete later
 
 //HeapRegion Addresses need to be sorted from smallest to largest
-#if defined(CONFIG_WIFI_HOST_CONTROL)
+#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 #define SRAM_HEAP0_START					__bdram_heap_buffer_start__
 #define SRAM_HEAP0_SIZE						__bdram_heap_buffer_size__
 

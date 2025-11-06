@@ -20,7 +20,7 @@
 
 /* -------------------------------- Includes -------------------------------- */
 #include "rtw_autoconf.h"
-#ifdef CONFIG_WIFI_TUNNEL
+#ifdef CONFIG_RMESH_EN
 #include "wifi_api.h"
 #include "wifi_intf_drv_to_upper.h"
 #include "dhcp/dhcps.h"

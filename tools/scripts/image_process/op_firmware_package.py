@@ -526,7 +526,6 @@ class FirmwarePackage(OperationBase):
         if input_file_dir != self.output_image_dir:
             # copy input file to output_image_dir if not in
             shutil.copy(input_file, self.output_image_dir)
-            input_file = modify_file_path(input_file, new_directory=self.output_image_dir)
 
         manifest_config = self.manifest_manager.get_image_config(image_type)
         gcm_enable = manifest_config.rsip_enable and manifest_config.rsip_mode == 2

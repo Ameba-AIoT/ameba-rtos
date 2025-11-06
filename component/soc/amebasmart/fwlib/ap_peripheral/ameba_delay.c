@@ -30,6 +30,7 @@ void DelayUs(u32 us)
 	while (arm_arch_timer_count() < cntvct) {
 		DelayCheck();
 	}
+	__DSB();
 }
 
 /**

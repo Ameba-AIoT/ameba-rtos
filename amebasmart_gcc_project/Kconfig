@@ -105,6 +105,8 @@ rsource "../component/file_system/Kconfig"
 
 rsource "../component/os/Kconfig"
 
+orsource "../component/utils/Kconfig"
+
 menu "CONFIG OTA OPTION"
     config UPGRADE_BOOTLOADER
         bool "Enable Bootloader OTA"
@@ -146,6 +148,7 @@ menu "CONFIG WHC INTF"
         default WHC_INTF_IPC_MENU
         config WHC_INTF_IPC_MENU
             bool "WHC_IPC"
+            select WHC_INTF_IPC
             select WHC_DEV_FOR_KM4
             select WHC_HOST_FOR_CA32
         # config FULLMAC_DEV
@@ -194,14 +197,12 @@ menu "CONFIG WIFI"
 
         config WHC_INTF_IPC_MENU
             bool
-            select WHC_INTF_IPC
             select WHC_WIFI_API_PATH
             select WLAN if WHC_HOST||WHC_DEV
             select AS_INIC_AP if WHC_HOST
             select LWIP_LAYER if WHC_HOST && !MP_SHRINK
             select ENABLE_WPS if WHC_HOST && WIFI_WPS_ENABLE_MENU
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
-            select LWIP_NETCONN_SEM_PER_THREAD if WHC_HOST
 
         config FULLMAC_DEV
             bool
@@ -235,7 +236,6 @@ menu "CONFIG WIFI"
             select LWIP_LAYER if !MP_SHRINK
             select ENABLE_WPS if WIFI_WPS_ENABLE_MENU
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
-            select LWIP_NETCONN_SEM_PER_THREAD
 
     endif
 
@@ -268,8 +268,6 @@ menu "CONFIG WIFI"
     config ENABLE_WPS
         bool
     config ENABLE_WPS_DISCOVERY
-        bool
-    config LWIP_NETCONN_SEM_PER_THREAD
         bool
 
 endmenu

@@ -3,7 +3,8 @@ ENTRY(Reset_Handler)
 #include "../../../ameba_layout.ld"
 #include "project_km4tz/platform_autoconf.h"
 /* img1's layout of Floader or Fullmac is same */
-#if defined(GENERATE_FLOADER_LD) || defined(CONFIG_WIFI_HOST_CONTROL)
+#if defined(GENERATE_FLOADER_LD) || \
+	(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 	#define IMG1_LMA_REGION 		 KM4TZ_FLOADER_RAM_S
 #else
 	#define	IMG1_LMA_REGION			 KM4TZ_BOOTLOADER_RAM_S
@@ -11,7 +12,9 @@ ENTRY(Reset_Handler)
 
 #define IMG2_DATA_LMA_REGION	 KM4TZ_BD_RAM
 
-#if defined(GENERATE_FLOADER_LD) || defined(CONFIG_WIFI_HOST_CONTROL) || !defined(CONFIG_IMG1_FLASH)
+#if defined(GENERATE_FLOADER_LD) || \
+	(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV)) || \
+	!defined(CONFIG_IMG1_FLASH)
 	#define SRAM_INPUT_TEXT_SECTION 	*(.text*)
 	#define	SRAM_INPUT_NON_DRAM			*(.non.dram.text*)
 	#define SRAM_INPUT_BOOT_RODATA		*(.boot.rodata*)

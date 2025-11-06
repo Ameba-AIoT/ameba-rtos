@@ -40,7 +40,8 @@ __NO_RETURN void BOOT_NsStart(u32 Addr)
 __NO_RETURN void BOOT_ClearMSP_NsStart(u32 Addr)
 {
 	// do not use bss section after, because fullmac pg loader will overlay bss section
-#if defined(CONFIG_WIFI_HOST_CONTROL) && !defined(CONFIG_FULLMAC_PG_LOADER)
+#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV)) && \
+	!defined(CONFIG_FULLMAC_PG_LOADER)
 	_memcpy((void *)__km4tz_pg_loader_ram_start__, (void *)__embedded_bin_start, __embedded_bin_end - __embedded_bin_start);
 	DCache_CleanInvalidate((u32)__km4tz_pg_loader_ram_start__, __embedded_bin_end - __embedded_bin_start);
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_ADDR_TZ, __km4tz_pg_loader_ram_start__);
@@ -233,7 +234,7 @@ void BOOT_Share_Cache_To_TCM(void)
 	/* Set NP TCM share bit */
 	HAL_WRITE32(SYSTEM_CTRL_BASE_S, REG_LSYS_PLAT_STATUS, HAL_READ32(SYSTEM_CTRL_BASE_S, REG_LSYS_PLAT_STATUS) | LSYS_BIT_KM4NS_SHARE_CACHE_MEM);
 
-#ifndef CONFIG_FULLMAC_NEW_VERSION // When fullmac support XIP, need enable Cache and cannot share cache to TCM
+#ifdef CONFIG_FULLMAC_IN_SINGLE_DIE // When fullmac support XIP, need enable Cache and cannot share cache to TCM
 	/* Disable AP CPU cache */
 	Cache_Enable(DISABLE);
 
@@ -244,7 +245,7 @@ void BOOT_Share_Cache_To_TCM(void)
 
 void BOOT_Config_PMC_Role(void)
 {
-#if defined(CONFIG_WIFI_HOST_CONTROL)
+#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 	HAL_WRITE32(PMC_BASE, SYSPMC_CTRL, HAL_READ32(PMC_BASE, SYSPMC_CTRL) & (~PMC_BIT_NP_CPU_ID));
 	RTK_LOGI(TAG, "PMC_CORE_ROLE: KM4TZ\n");
 #else
@@ -374,12 +375,12 @@ void BOOT_Image1(void)
 		LDO_MemSetInSleep(MLDO_SLEEP);
 	}
 
-#ifndef CONFIG_WIFI_HOST_CONTROL
+#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 	BOOT_Data_Flash_Init();
 
 	flash_highspeed_setup();
 	BOOT_LoadImages();
-#endif /* CONFIG_WIFI_HOST_CONTROL */
+#endif
 
 	/* Config Non-Security World Registers
 	This function should be called before NP startup to avoid secure issue
@@ -390,13 +391,13 @@ void BOOT_Image1(void)
 		goto exit;
 	}
 
-#ifndef CONFIG_WIFI_HOST_CONTROL
+#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 	/*NP shall wait MPC setting for non-secure access*/
 	BOOT_Enable_NP();
 #else
 	BOOT_Share_Cache_To_TCM();
 	Boot_Fullmac_LoadIMGAll();
-#endif /* CONFIG_WIFI_HOST_CONTROL */
+#endif
 
 	/*switch shell control to NP, disable loguart interrupt to avoid loguart irq not assigned in non-secure world */
 	LOGUART_INTCoreConfig(LOGUART_DEV, LOGUART_BIT_INTR_MASK_AP, DISABLE);

@@ -61,7 +61,7 @@ static uint32_t master_addr_retry = 1;
   */
 static uint32_t i2c_index_get(PinName sda)
 {
-	if ((sda < PA_6) || (sda == PB_12)) {
+	if (sda >= _PC_8) {
 		assert_param(0);
 	}
 	return 0;

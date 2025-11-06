@@ -241,8 +241,9 @@ extern void ip_nat_initialize(void);
 #error "NETCONN_MORE != TCP_WRITE_FLAG_MORE"
 #endif
 #endif /* LWIP_NETCONN && LWIP_TCP */
-#if LWIP_SOCKET
-#endif /* LWIP_SOCKET */
+#if LWIP_NETCONN_FULLDUPLEX && !LWIP_NETCONN_SEM_PER_THREAD
+#error "For LWIP_NETCONN_FULLDUPLEX to work, LWIP_NETCONN_SEM_PER_THREAD is required"
+#endif
 
 
 /* Compile-time checks for deprecated options.

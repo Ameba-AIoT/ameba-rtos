@@ -80,6 +80,12 @@ extern u8 __sram_floader_mp_size__[];
 extern u8 __sram_bootloader_mp_start__[];
 extern u8 __sram_bootloader_mp_size__[];
 #endif
+
+#if defined (CONFIG_UNITY_TEST) && CONFIG_UNITY_TEST
+extern u8 __unity_table_start__[];
+extern u8 __unity_table_end__[];
+#endif
+
 /* sym for stdlib rom */
 extern u8 __rom_stdlib_bss_start__[];
 extern u8 __rom_stdlib_bss_end__[];

@@ -349,8 +349,8 @@ macro(ameba_mcu_project_create name mcu_type)
 endmacro()
 
 function(ameba_firmware_package output_app_name)
-    if (CONFIG_WIFI_HOST_CONTROL)
-        ameba_info("Skip firmware package when CONFIG_WIFI_HOST_CONTROL enabled")
+    if (CONFIG_FULLMAC_DEV)
+        ameba_info("Skip firmware package when CONFIG_FULLMAC_DEV enabled")
         return()
     endif()
     set(multiValueArgs

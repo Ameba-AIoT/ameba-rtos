@@ -6,16 +6,99 @@ import sys
 import os
 from collections import OrderedDict
 
+script_path = os.path.abspath(__file__)
+script_dir = os.path.dirname(script_path)
+component_path = os.path.join(os.path.dirname(os.path.dirname(script_dir)),'component')
 
-def parse_header_file(input_file):
-    with open(input_file, 'r') as f:
-        content = f.read()
+target_path = [
+   'wifi/api',
+   'soc/common/include',
+   ]
 
-    # Remove comments
+def _extract_enum_used_for_diag_from_file(enum_name, file_path):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except Exception:
+        return {}
+
+    # Remove line comments
+    content_no_line_comments = re.sub(r'//.*?\n', '\n', content)
+    enum_pattern = re.compile(r'enum\s+' + re.escape(enum_name) + r'\s*\{([^}]*)\}', re.DOTALL)
+    m = enum_pattern.search(content_no_line_comments)
+    if not m:
+        return {}
+
+    body = m.group(1)
+    enum_dict = OrderedDict()
+    variables = {}
+    current_value = None
+    is_first_item = True
+
+    for line in body.split('\n'):
+        raw = line.strip()
+        if not raw:
+            continue
+
+        # Extract block comment
+        block_comment_match = re.search(r'/\*(.*?)\*/', raw, flags=re.DOTALL)
+        comment = block_comment_match.group(1).strip() if block_comment_match else ''
+
+        # Remove block comments to parse name/value
+        line_nocom = re.sub(r'/\*.*?\*/', '', raw).strip()
+        item_match = re.match(r'(\w+)(?:\s*=\s*([^,]+))?,?', line_nocom)
+        if not item_match:
+            continue
+
+        name = item_match.group(1)
+        value_expr = item_match.group(2).strip() if item_match.group(2) else None
+
+        # Handle the first item
+        if is_first_item:
+            if value_expr is None:
+                current_value = 0
+            is_first_item = False
+
+        # Compute variable value
+        if value_expr:
+            try:
+                # Replace previously defined variables
+                for var_name, var_value in variables.items():
+                    value_expr = re.sub(rf'\b{re.escape(var_name)}\b', str(var_value), value_expr)
+
+                current_value = eval(value_expr)
+            except Exception:
+                try:
+                    current_value = int(value_expr, 0)
+                except Exception:
+                    current_value = value_expr
+        else:
+            if current_value is None:
+                current_value = 0
+            elif isinstance(current_value, int):
+                current_value += 1
+
+        variables[name] = current_value
+
+        # Check <!-- DIAG: --> in comment
+        diag_content = ""
+        if '<!-- DIAG: -->' in comment:
+            diag_content = comment.split('<!-- DIAG: -->', 1)[1].strip()
+
+        enum_dict[(name, current_value)] = diag_content
+
+    # Build map: key is non-empty DIAG content, value is corresponding enum value
+    diag_map = {}
+    for (name, value), diag_content in enum_dict.items():
+        if diag_content:
+            diag_map[diag_content] = value
+
+    return diag_map
+
+def _parse_enums(content):
+
     content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
-    content = re.sub(r'//.*?\n', '\n', content)
 
-    # Parse enums
     enums = {}
     enum_pattern = re.compile(r'enum\s+(\w+)\s*\{([^}]*)\}', re.DOTALL)
     for enum_match in enum_pattern.finditer(content):
@@ -26,7 +109,7 @@ def parse_header_file(input_file):
         current_value = 0
         for line in enum_body.split('\n'):
             line = line.strip()
-            if not line or line.startswith('//'):
+            if not line:
                 continue
 
             item_match = re.match(r'(\w+)(?:\s*=\s*([^,]+))?,?', line)
@@ -44,17 +127,29 @@ def parse_header_file(input_file):
 
         enums[enum_name] = dict(enum_values)
 
-    # Parse structs with improved array and nested struct handling
+    return enums
+
+def _parse_structs(content):
+
     structs = {}
+    enum_ref_types = {}
     struct_pattern = re.compile(r'struct\s+(?:tag)?(\w+)\s*\{([^}]*)\}\s*(?:__PACKED)?\s*;', re.DOTALL)
     for struct_match in struct_pattern.finditer(content):
         struct_name = struct_match.group(1)
         struct_body = struct_match.group(2)
 
         fields = OrderedDict()
-        for line in struct_body.split('\n'):
-            line = line.strip()
-            if not line or line.startswith('//'):
+
+        for raw_line in struct_body.split('\n'):
+            # Extract block comment (from raw line)
+            comment = None
+            comment_match = re.search(r'/\*(.*?)\*/', raw_line, flags=re.DOTALL)
+            line = re.sub(r'/\*.*?\*/', '', raw_line).strip()
+            if comment_match:
+                comment = comment_match.group(1).strip()
+
+            # Skip empty lines
+            if not line:
                 continue
 
             # Handle bit fields
@@ -63,25 +158,62 @@ def parse_header_file(input_file):
                 type_name = bit_field_match.group(1)
                 field_name = bit_field_match.group(2)
                 bits = bit_field_match.group(3)
-                fields[field_name] = f"{type_name}:{bits}"
+                fields[field_name] = {
+                    'type': f"{type_name}:{bits}",
+                    'comment': comment or ''
+                }
                 continue
 
             # Handle normal fields, arrays, and nested structs
             field_match = re.match(r'(struct\s+)?\s*(\w+)\s+(\w+)(?:\s*\[(\d+)\])?;', line)
+            """
+            r'(struct\s+)?'          # struct marker
+            r'\s*(\w+)\s+'           # type name
+            r'(\w+)'                 # field name
+            r'(?:\s*\[(\d+)\])?'     # array length
+            """
             if field_match:
                 is_struct = field_match.group(1) is not None
                 type_name = field_match.group(2)
                 field_name = field_match.group(3)
                 array_size = field_match.group(4)
 
-                if array_size:
-                    fields[field_name] = f"{type_name}[{array_size}]"
-                elif is_struct:
-                    fields[field_name] = f"struct {type_name}"
-                else:
-                    fields[field_name] = type_name
+                # Build field info (with comment handling)
+                field_info = {
+                    'type': f"{type_name}[{array_size}]" if array_size
+                            else (f"struct {type_name}" if is_struct else type_name),
+                    'comment': comment or ''
+                }
+
+                # Explicit comment declaration: "enum rtw_disconn_reason in wifi_api_types.h"
+                if comment:
+                    enum_ref_match = re.search(r'enum\s+(\w+)\s+in\s+([\w\.]+)', comment, re.IGNORECASE)
+                    if enum_ref_match:
+                        field_info['enum_ref'] = enum_ref_match.group(1)
+                        enum_file = enum_ref_match.group(2)
+                        if enum_file.endswith('.h'):
+                            for path_ in target_path:
+                                candidate = os.path.join(component_path, path_, enum_file)
+                                if os.path.exists(candidate):
+                                    diag_map = _extract_enum_used_for_diag_from_file(field_info['enum_ref'], candidate)
+                                    if diag_map:
+                                        enum_ref_types[field_info['enum_ref']] = diag_map
+                                    break
+
+                fields[field_name] = field_info
 
         structs[struct_name] = dict(fields)
+
+    return structs, enum_ref_types
+
+def parse_header_file(input_file):
+
+    with open(input_file, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    content = re.sub(r'//.*?\n', '\n', content)
+    enums = _parse_enums(content)
+    structs, enum_ref_types = _parse_structs(content)
 
     # Handle typedefs
     typedef_pattern = re.compile(r'typedef\s+struct\s+(?:tag)?(\w+)\s+(\w+)_t\s*;')
@@ -93,7 +225,8 @@ def parse_header_file(input_file):
 
     return {
         'enums': enums,
-        'structs': structs
+        'structs': structs,
+        'enum_ref_types': enum_ref_types
     }
 
 
@@ -106,7 +239,30 @@ def convert_to_output_format(parsed_data):
 
     # Add structs
     for struct_name, struct_fields in parsed_data['structs'].items():
-        output[struct_name] = struct_fields
+        converted_fields = OrderedDict()
+        for field_name, field_info in struct_fields.items():
+            # field_info is expected to be a dict with at least 'type'
+            if isinstance(field_info, dict):
+                entry = {'type': field_info.get('type')}
+                # include enum_ref if present
+                if 'enum_ref' in field_info:
+                    entry['enum_ref'] = field_info['enum_ref']
+                # only include comment if non-empty
+                comment = field_info.get('comment')
+                if comment:
+                    entry['comment'] = comment
+                converted_fields[field_name] = entry
+            else:
+                # legacy: if it's a simple type string, keep as type
+                converted_fields[field_name] = {'type': field_info}
+
+        output[struct_name] = converted_fields
+
+    # Add diag enums (extracted from referenced .h files)
+    if 'enum_ref_types' in parsed_data:
+        for enum_name, diag_map in parsed_data['enum_ref_types'].items():
+            # ensure keys are human-friendly (already normalized in extraction)
+            output[enum_name] = diag_map
 
     return output
 

@@ -137,8 +137,8 @@ void app_uart_rx_pin_wake_init(void)
 
 	GPIO_INTMode(GPIO_InitStruct.GPIO_Pin, ENABLE, GPIO_InitStruct.GPIO_ITTrigger,
 				 GPIO_InitStruct.GPIO_ITPolarity, GPIO_InitStruct.GPIO_ITDebounce);
-	InterruptRegister(GPIO_INTHandler, GPIOB_IRQ, (u32)GPIOB_BASE, 3);
-	InterruptEn(GPIOB_IRQ, 3);
+	InterruptRegister(GPIO_INTHandler, GPIOB_IRQ, (u32)GPIOB_BASE, INT_PRI_MIDDLE);
+	InterruptEn(GPIOB_IRQ, INT_PRI_MIDDLE);
 	GPIO_UserRegIrq(UART_LOG_RXD, app_uart_rx_pin_wake_int_handler, &GPIO_InitStruct);
 }
 

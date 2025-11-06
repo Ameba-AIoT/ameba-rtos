@@ -82,6 +82,8 @@ extern unsigned int sys_now(void);
 #define DEFAULT_UDP_RECVMBOX_SIZE       6
 #define DEFAULT_TCP_RECVMBOX_SIZE       6
 #define DEFAULT_ACCEPTMBOX_SIZE         6
+#define LWIP_NETCONN_SEM_PER_THREAD     1
+#define LWIP_NETCONN_FULLDUPLEX         1
 /* Sequential layer options */
 #define LWIP_NETCONN                    1
 #define LWIP_TCPIP_TIMEOUT              1
@@ -184,8 +186,7 @@ extern unsigned int sys_now(void);
 #define LWIP_HOOK_FILENAME              "rtk_otbr_lwip_hook.h"
 #endif
 
-#if defined(CONFIG_LWIP_NETCONN_SEM_PER_THREAD) && CONFIG_LWIP_NETCONN_SEM_PER_THREAD
-#define LWIP_NETCONN_SEM_PER_THREAD       1
+#if defined(LWIP_NETCONN_SEM_PER_THREAD) && LWIP_NETCONN_SEM_PER_THREAD
 #define LWIP_NETCONN_THREAD_SEM_GET()     sys_thread_sem_get()
 #define LWIP_NETCONN_THREAD_SEM_ALLOC()   sys_thread_sem_init()
 #define LWIP_NETCONN_THREAD_SEM_FREE()    sys_thread_sem_deinit()

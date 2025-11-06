@@ -32,7 +32,7 @@ endif()
 #NOTE: These compile options are not required for rom's component
 add_compile_options(-fdata-sections -ffunction-sections)
 
-if (NOT CONFIG_WIFI_HOST_CONTROL)
+if (NOT CONFIG_FULLMAC_DEV)
     ameba_add_subdirectory(make/image2)
     add_custom_target(
         ${c_MCU_PROJECT_NAME}

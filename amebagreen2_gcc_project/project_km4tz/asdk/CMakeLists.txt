@@ -47,7 +47,9 @@ add_compile_options(-fdata-sections -ffunction-sections)
 ameba_add_subdirectory_if(CONFIG_FPGA make/image_gdb_floader)
 ameba_add_subdirectory_ifnot(CONFIG_AMEBA_RLS make/image_imgtool_floader)
 
-ameba_add_subdirectory_if(CONFIG_WIFI_HOST_CONTROL make/image_pg_loader)
+if ((NOT CONFIG_WHC_INTF_IPC) AND CONFIG_WHC_DEV)
+ameba_add_subdirectory(make/image_pg_loader)
+endif()
 
 ameba_add_subdirectory(make/image1)
 ameba_add_subdirectory(make/image2)

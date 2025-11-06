@@ -14,7 +14,7 @@ ameba_add_subdirectory(${c_CMPT_LZMA_DIR})
 ameba_add_subdirectory(${c_CMPT_USRCFG_DIR} usrcfg)
 ameba_add_subdirectory(${c_CMPT_SOC_DIR}/lib/bootloader lib_bootloader)
 
-if(CONFIG_FULLMAC_DEV)
+if ((NOT CONFIG_WHC_INTF_IPC) AND CONFIG_WHC_DEV)
     ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_wrapper)
 endif()
 
@@ -41,7 +41,7 @@ add_custom_command(
     COMMENT "build bootloader linkerscript rlx8721d.ld"
 )
 
-if(CONFIG_WIFI_HOST_CONTROL)
+if ((NOT CONFIG_WHC_INTF_IPC) AND CONFIG_WHC_DEV)
     target_sources(${c_CURRENT_IMAGE} PRIVATE ${c_SDK_IMAGE_TARGET_DIR}/embedded_bin.o)
 
     if(TARGET target_pg_loader_${c_MCU_PROJECT_NAME})

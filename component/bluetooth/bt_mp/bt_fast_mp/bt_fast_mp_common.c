@@ -315,6 +315,8 @@ void bt_fast_mp_cmd_handle_api(void *arg)
 		rtk_bt_mp_dtm_power_on();
 #if defined(CONFIG_BT_COEXIST)
 		rtk_coex_btc_set_pta(PTA_BT, PTA_HOST_BT, COMMON_ACTION);
+#else
+		BT_LOGE("BT_COEXIST disabled! ignore set_pta!");
 #endif
 		BT_LOGA("Switch GNT_BT to BT.\n\r");
 		if (strcmp(argv[2], "DUT") == 0) {

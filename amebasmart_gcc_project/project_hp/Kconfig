@@ -18,10 +18,4 @@ menu "CONFIG CHIP"
             bool "ARM_CM4"
     endchoice
 
-    choice
-        prompt "Chip Version"
-        default AMEBASMART_B_CUT_FOR_KM4
-        config AMEBASMART_B_CUT_FOR_KM4
-            bool "AMEBASMART_B_Cut"
-    endchoice
 endmenu
