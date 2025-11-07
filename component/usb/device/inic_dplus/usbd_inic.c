@@ -29,8 +29,6 @@ static int usbd_inic_handle_ep0_data_out(usb_dev_t *dev);
 static int usbd_inic_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
 static void usbd_inic_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
-static int usbd_inic_suspend(usb_dev_t *dev);
-static int usbd_inic_resume(usb_dev_t *dev);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -130,8 +128,6 @@ static const usbd_class_driver_t usbd_inic_driver = {
 	.ep_data_in = usbd_inic_handle_ep_data_in,
 	.ep_data_out = usbd_inic_handle_ep_data_out,
 	.status_changed = usbd_inic_status_changed,
-	.suspend = usbd_inic_suspend,
-	.resume = usbd_inic_resume,
 };
 
 /* INIC Device */
@@ -517,32 +513,6 @@ static void usbd_inic_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 	if (idev->cb->status_changed) {
 		idev->cb->status_changed(old_status, status);
 	}
-}
-
-static int usbd_inic_suspend(usb_dev_t *dev)
-{
-	usbd_inic_dev_t *idev = &usbd_inic_dev;
-
-	UNUSED(dev);
-
-	if (idev->cb->suspend) {
-		idev->cb->suspend();
-	}
-
-	return HAL_OK;
-}
-
-static int usbd_inic_resume(usb_dev_t *dev)
-{
-	usbd_inic_dev_t *idev = &usbd_inic_dev;
-
-	UNUSED(dev);
-
-	if (idev->cb->resume) {
-		idev->cb->resume();
-	}
-
-	return HAL_OK;
 }
 
 /* Exported functions --------------------------------------------------------*/

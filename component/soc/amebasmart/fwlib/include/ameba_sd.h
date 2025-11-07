@@ -132,7 +132,7 @@ typedef struct {
 	u8 bus_spd;				/*!< Specify current bus speed, which would be a value of @ref SD_Access_Mode */
 	SD_RESULT sd_status;	/*!< Specify current sd status, which would be a value of @ref SD_Card_Status */
 
-	u8 dma_buf[SDIOH_C6R2_BUF_LEN] __attribute__((aligned(32)));	/*!< DMA buffer, 32 byte-alignment */
+	u8 dma_buf[SDIOH_C6R2_BUF_LEN] __attribute__((aligned(CACHE_LINE_SIZE)));	/*!< DMA buffer, 32 byte-alignment */
 } SD_CardInfo;
 
 /** @brief SDHOST CFG Structure Definition

@@ -7,6 +7,7 @@ extern "C" {
 #include "time.h"
 #include "log.h"
 #include "basic_types.h"
+#include "os_wrapper.h"
 #include <sys/unistd.h>
 #include <sys/stat.h>
 
@@ -163,7 +164,8 @@ typedef struct {
 extern vfs_drv  vfs;
 extern vfs_opt fatfs_drv;
 extern vfs_opt littlefs_drv;
-extern char lfs_mount_fail;
+extern int lfs_mount_flag;
+extern int fatfs_mount_flag;
 
 void vfs_init(void);
 void vfs_deinit(void);
@@ -185,6 +187,8 @@ int rmdir(const char *path);
 int mkdir(const char *pathname, mode_t mode);
 int access(const char *pathname, int mode);
 int alphasort(const struct dirent **a, const struct dirent **b);
+
+int check_mount_completion(int *mount_flag);
 
 enum {
 	VFS_ERROR = 0,

@@ -74,15 +74,17 @@ u32 OSC_CalResult_Get(u8 cal_clk)
 void OSC131_R_Set(u32 setbit, u32 clearbit)
 {
 	LDO_TypeDef *regu = LDO_BASE;
+	u32 reg_val = regu->LDO_32K_OSC_CTRL;
 
 	if (setbit) {
-		regu->LDO_32K_OSC_CTRL |= LDO_RCAL(setbit);
+		reg_val |= LDO_RCAL(setbit);
 	}
 
 	if (clearbit) {
-		regu->LDO_32K_OSC_CTRL &= ~LDO_RCAL(clearbit);
+		reg_val &= ~LDO_RCAL(clearbit);
 	}
 
+	regu->LDO_32K_OSC_CTRL = reg_val;
 	/* It takes 1ms to stable */
 	DelayMs(1);
 }
@@ -103,6 +105,7 @@ u32 OSC131K_Calibration(u32 ppm_limit)
 	u32 min_delta_r = 0;
 	u32 target_40m_counter = 2441; //cal_rpt=8*40Mhz/fclk_osc131k
 	u32 clearbit = 0;
+	u32 reg_val;
 	LDO_TypeDef *regu = LDO_BASE;
 	/*Ensure that 131k can output stably before calibration.*/
 	while (((LDO_BASE->LDO_DEBUG)&LDO_DBG_OSC_OK) == 0x0);
@@ -159,8 +162,10 @@ u32 OSC131K_Calibration(u32 ppm_limit)
 
 	/* the last one is not the best one */
 	if (delta > min_delta) {
-		regu->LDO_32K_OSC_CTRL &= ~LDO_MASK_RCAL;
-		regu->LDO_32K_OSC_CTRL |= min_delta_r;
+		reg_val = regu->LDO_32K_OSC_CTRL;
+		reg_val &= ~LDO_MASK_RCAL;
+		reg_val |= min_delta_r;
+		regu->LDO_32K_OSC_CTRL = reg_val;
 
 		/* It takes 1ms to stable */
 		DelayMs(1);

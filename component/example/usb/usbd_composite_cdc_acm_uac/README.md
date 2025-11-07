@@ -1,6 +1,6 @@
 # Example Description
 
-In this application, Ameba is designed as a USB CDC ACM and HID composite device, USB host can recognize Ameba as a CDC virtual serial port and a HID mouse.
+In this application, Ameba is designed as a USB CDC ACM and UAC composite device, USB host can recognize Ameba as a CDC virtual serial port and a audio speaker.
 
 # HW Configuration
 

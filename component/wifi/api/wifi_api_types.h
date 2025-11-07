@@ -628,6 +628,19 @@ enum rtw_frame_type_subtype {
 	RTW_QOS_DATA_NULL	= (BIT(6) | RTW_QOS_DATA_TYPE),
 };
 
+/**
+ * @brief bitmask for struct rtw_tx_advanced_cfg{} (size: u32).
+ */
+
+enum rtw_tx_advanced_cfg_bitmask {
+	RTW_TX_CFG_LIFE_TIME_BEBK_VALID         = BIT(0),
+	RTW_TX_CFG_LIFE_TIME_VIVO_VALID         = BIT(1),
+	RTW_TX_CFG_BCN_TX_PROTECT_TIME_VALID    = BIT(2),
+	RTW_TX_CFG_BCN_RX_PROTECT_TIME_VALID    = BIT(3),
+	RTW_TX_CFG_NAV_UPDATE_TH_VALID          = BIT(4),
+	RTW_TX_CFG_IGNORE_TX_NAV_VALID          = BIT(5),
+};
+
 /** @} End of WIFI_Exported_Enumeration_Types group*/
 
 /** @addtogroup WIFI_Exported_Structure_Types Structure Type
@@ -928,11 +941,15 @@ struct rtw_edca_param {
 /**
 *@brief Provide optional parameters for improving tx performance in special scenario
 */
+
 struct rtw_tx_advanced_cfg {
+	u16 valid_fields;             /**< Mask subfield. If a parameter is set, its corresponding bit in valid_fields must also be set. @ref RTW_TX_CFG_LIFE_TIME_BEBK_VALID... */
 	u16 pkt_lifetime_bebk;        /**< Packet lifetime in units of 256us for AC_BE/AC_BK. */
 	u16 pkt_lifetime_vivo;        /**< Packet lifetime in units of 256us for AC_VI/AC_VO. */
-	u8 nav_update_th;             /**< Rx NAV (Network Allocation Vector) update threshold in units of 128us[can not tx during Rx NAV]. */
-	u8 b_ignore_tx_nav_done : 1;  /**< Queue BKF not need to wait TX Nav finished. */
+	u16 tx_bcn_protect_time;      /**< A reserved period for Beacon TX, preventing other transmissions, unit:32us */
+	u8 rx_bcn_protect_time;       /**< A reserved period for Beacon RX, preventing other transmissions, unit:2.048ms; */
+	u8 rx_nav_update_th;          /**< Rx NAV (Network Allocation Vector) update threshold in units of 128us[can not tx during Rx NAV]. */
+	u8 b_ignore_tx_nav : 1;       /**< Queue BKF not need to wait TX Nav finished. */
 };
 
 /**********************************************************************************************

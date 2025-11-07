@@ -599,9 +599,9 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 /*File system interfaces for common APIs */
 
 /*API for fopen, fread, etc*/
-#define LV_USE_FS_STDIO 0
+#define LV_USE_FS_STDIO 1
 #if LV_USE_FS_STDIO
-#define LV_FS_STDIO_LETTER '\0'     /*Set an upper cased letter on which the drive will accessible (e.g. 'A')*/
+#define LV_FS_STDIO_LETTER 'A'     /*Set an upper cased letter on which the drive will accessible (e.g. 'A')*/
 #define LV_FS_STDIO_PATH ""         /*Set the working directory. File/directory paths will be appended to it.*/
 #define LV_FS_STDIO_CACHE_SIZE 0    /*>0 to cache this number of bytes in lv_fs_read()*/
 #endif
@@ -630,14 +630,14 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 #endif
 
 /*PNG decoder library*/
-#define LV_USE_PNG 0
+#define LV_USE_PNG 1
 
 /*BMP decoder library*/
-#define LV_USE_BMP 0
+#define LV_USE_BMP 1
 
 /* JPG + split JPG decoder library.
  * Split JPG is a custom format optimized for embedded systems. */
-#define LV_USE_SJPG 0
+#define LV_USE_SJPG 1
 
 /*GIF decoder library*/
 #define LV_USE_GIF 0
@@ -744,13 +744,13 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 #define LV_USE_DEMO_STRESS 1
 
 /*Music player demo*/
-#define LV_USE_DEMO_MUSIC 0
+#define LV_USE_DEMO_MUSIC 1
 #if LV_USE_DEMO_MUSIC
-#define LV_DEMO_MUSIC_SQUARE    0
+#define LV_DEMO_MUSIC_SQUARE    1
 #define LV_DEMO_MUSIC_LANDSCAPE 0
 #define LV_DEMO_MUSIC_ROUND     0
 #define LV_DEMO_MUSIC_LARGE     0
-#define LV_DEMO_MUSIC_AUTO_PLAY 0
+#define LV_DEMO_MUSIC_AUTO_PLAY 1
 #endif
 
 /*--END OF LV_CONF_H--*/

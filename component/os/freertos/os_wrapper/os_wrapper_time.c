@@ -38,7 +38,11 @@ TickType_t xTaskGetPendedTicksFromISR(void);
 
 void rtos_time_delay_ms(uint32_t ms)
 {
-	if (pmu_yield_os_check() && (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) && (!rtos_critical_is_in_interrupt())) {
+	if (pmu_yield_os_check() &&
+		(xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) &&
+		(!rtos_critical_is_in_interrupt()) &&
+		// if INT is disabled, vTaskDelay will not work, and ca32 will exec swi cause task switch
+		(rtos_get_critical_state() == 0)) {
 		vTaskDelay(RTOS_CONVERT_MS_TO_TICKS(ms));
 	} else {
 		DelayMs(ms);
