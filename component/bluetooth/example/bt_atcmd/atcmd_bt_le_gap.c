@@ -1777,7 +1777,7 @@ static int atcmd_ble_gap_set_pairing_mode(int argc, char **argv)
 static int atcmd_ble_gap_set_security_param(int argc, char **argv)
 {
 	uint16_t ret = 0;
-	if (argc != 0 && argc != 7 && argc != 9) {
+	if (argc != 0 && argc != 7 && argc != 10) {
 		BT_LOGE("GAP set security paramters failed! wrong args num!\r\n");
 		return BT_AT_ERR_PARAM_INVALID;
 	}
@@ -1793,6 +1793,7 @@ static int atcmd_ble_gap_set_security_param(int argc, char **argv)
 			.use_fixed_key = 0,
 			.fixed_key = 000000,
 			.auto_sec_req = 0,
+			.sign_key_flag = 0,
 		};
 		ret = rtk_bt_le_sm_set_security_param(&def_sec_param);
 		if (ret) {
@@ -1813,11 +1814,11 @@ static int atcmd_ble_gap_set_security_param(int argc, char **argv)
 		sec_param.use_fixed_key = (uint8_t)str_to_int(argv[5]);
 		sec_param.fixed_key = (uint32_t)str_to_int(argv[6]);
 	}
-	if (argc > 8) {
+	if (argc > 9) {
 		sec_param.sec_pair_only_flag = (uint8_t)str_to_int(argv[7]);
 		sec_param.auto_sec_req = (uint8_t)str_to_int(argv[8]);
+		sec_param.sign_key_flag = (uint8_t)str_to_int(argv[9]);
 	}
-
 
 	ret = rtk_bt_le_sm_set_security_param(&sec_param);
 	if (ret) {
@@ -2768,7 +2769,7 @@ static const cmd_table_t le_gap_cmd_table[] = {
 	{"wl_remove",    atcmd_ble_gap_remove_whitelist,   3, 3},
 	{"wl_clear",     atcmd_ble_gap_clear_whitelist,    1, 1},
 	{"pair_mode",    atcmd_ble_gap_set_pairing_mode,   2, 2},
-	{"sec_param",    atcmd_ble_gap_set_security_param, 1, 10},
+	{"sec_param",    atcmd_ble_gap_set_security_param, 1, 11},
 	{"get_sec_param",    atcmd_ble_gap_get_security_param, 1, 1},
 	{"sec",          atcmd_ble_gap_security,           2, 2},
 	{"pair_cfm",     atcmd_ble_gap_confirm_pair,       3, 3},

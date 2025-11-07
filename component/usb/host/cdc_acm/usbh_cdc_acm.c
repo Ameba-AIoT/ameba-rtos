@@ -415,10 +415,7 @@ static void usbh_cdc_acm_process_tx(usb_host_t *host)
 			cdc->data_tx_state = CDC_ACM_TRANSFER_STATE_TX;
 			usbh_notify_class_state_change(host, cdc->data_if.bulk_out_pipe);
 		} else if (urb_state == USBH_URB_ERROR) {
-			cdc->data_tx_state = CDC_ACM_TRANSFER_STATE_IDLE;
-			if ((cdc->cb != NULL) && (cdc->cb->transmit != NULL)) {
-				cdc->cb->transmit(urb_state);
-			}
+			cdc->data_tx_state = CDC_ACM_TRANSFER_STATE_TX;
 			usbh_notify_class_state_change(host, cdc->data_if.bulk_out_pipe);
 		} else if (urb_state == USBH_URB_IDLE) {
 			if (usbh_get_elapsed_ticks(host, cdc->tx_idle_tick) >= USB_BULK_OUT_IDLE_MAX_CNT) {
@@ -482,6 +479,9 @@ static void usbh_cdc_acm_process_rx(usb_host_t *host)
 			if (usbh_get_elapsed_ticks(host, cdc->rx_idle_tick) >= USB_BULK_IN_IDLE_MAX_CNT) {
 				cdc->data_rx_state = CDC_ACM_TRANSFER_STATE_RX;
 			}
+			usbh_notify_class_state_change(host, cdc->data_if.bulk_in_pipe);
+		} else if (urb_state == USBH_URB_ERROR) {
+			cdc->data_rx_state = CDC_ACM_TRANSFER_STATE_RX;
 			usbh_notify_class_state_change(host, cdc->data_if.bulk_in_pipe);
 		}
 		break;

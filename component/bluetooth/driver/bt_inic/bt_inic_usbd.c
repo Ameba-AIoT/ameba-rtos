@@ -26,8 +26,6 @@ static int inic_cb_clear_config(void);
 static int inic_cb_received(usbd_inic_ep_t *ep, u16 len);
 static void inic_cb_transmitted(usbd_inic_ep_t *ep, u8 status);
 static void inic_cb_status_changed(u8 old_status, u8 status);
-static void inic_cb_suspend(void);
-static void inic_cb_resume(void);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -49,8 +47,6 @@ static usbd_inic_cb_t inic_cb = {
 	.received = inic_cb_received,
 	.transmitted = inic_cb_transmitted,
 	.status_changed = inic_cb_status_changed,
-	.suspend = inic_cb_suspend,
-	.resume = inic_cb_resume,
 };
 
 #if CONFIG_USBD_INIC_HOTPLUG
@@ -174,19 +170,7 @@ static void inic_cb_status_changed(u8 old_status, u8 status)
 	inic_attach_status = status;
 	osif_sem_give(inic_attach_status_changed_sema);
 #endif
-	bt_inic_status_change_cb(status);
-}
-
-static void inic_cb_suspend(void)
-{
-	// TODO: Mark suspend status, stop USB transfer
-	bt_inic_usb_suspend_cb();
-}
-
-static void inic_cb_resume(void)
-{
-	// TODO: Unmark suspend status, re-start USB transfer
-	bt_inic_usb_resume_cb();
+	bt_inic_status_change_cb(old_status, status);
 }
 
 #if CONFIG_USBD_INIC_HOTPLUG

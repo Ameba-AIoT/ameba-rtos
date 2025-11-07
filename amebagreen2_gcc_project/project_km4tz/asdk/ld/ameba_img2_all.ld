@@ -107,11 +107,15 @@ SECTIONS
 		__git_ver_table_start__ = .;
 		KEEP(*(.git.ver.data))
 		__git_ver_table_end__ = .;
+		. = ALIGN (4);
+		__unity_table_start__ = .;
+		KEEP(*(.unity.table.data*))
+		__unity_table_end__ = .;
 
 		/* Add This for C++ support */
 		. = ALIGN(4);
 		__c_plus_plus_support_start__ = .;
-#if !defined(CONFIG_WIFI_HOST_CONTROL)
+#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 		__preinit_array_start = .;
 		KEEP(*(.preinit_array))
 		__preinit_array_end = .;
@@ -217,7 +221,7 @@ ASSERT(__psram_image2_start__ == ORIGIN(KM4TZ_BD_PSRAM), "__psram_image2_start__
 
 
 #if defined(CONFIG_DATA_HEAP_SRAM)
-	#if defined(CONFIG_WIFI_HOST_CONTROL)
+	#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 		//ASSERT(__ipc_table_start__ == __ipc_table_end__, "fullmac does not require ipc table!")
 		ASSERT(__c_plus_plus_support_start__ == __c_plus_plus_support_end__, "fullmac does not support C++!")
 

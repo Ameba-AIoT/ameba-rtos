@@ -79,6 +79,9 @@ static int whc_fullmac_host_add_key_ops(struct wiphy *wiphy, struct net_device *
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: key mode = %d", params->mode);
 
 	if (((params->cipher & 0xff) == 1) || ((params->cipher & 0xff) == 5)) {
+		if ((rtw_netdev_idx(ndev) == WHC_STA_PORT) && netif_dormant(ndev)) {
+			netif_dormant_off(ndev);
+		}
 		/* Set WEP key by rtos. */
 		dev_dbg(global_idev.fullmac_dev, "--- %s --- return: set key by rtos self. ", __func__);
 		kfree(crypt);

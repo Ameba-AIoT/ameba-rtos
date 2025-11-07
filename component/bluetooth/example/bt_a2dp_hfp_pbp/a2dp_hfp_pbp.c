@@ -119,6 +119,7 @@
 /* ---------------------------- Struct definition --------------------------- */
 typedef struct {
 	bool used;
+	bool is_ready;
 	uint16_t iso_conn_handle;
 	void *p_iso_chann;
 	void *p_track_hdl;
@@ -2672,6 +2673,7 @@ static uint16_t app_bt_le_audio_add_data_path(uint16_t iso_conn_handle, void *p_
 				((rtk_bt_audio_track_t *)app_le_audio_data_path[i].p_track_hdl)->sdu_interval = g_pbp_bsrc_send_timer_interval_us;
 #endif
 			}
+			app_le_audio_data_path[i].is_ready = true;
 			return 0;
 error:
 			memset((void *)&app_le_audio_data_path[i], 0, sizeof(app_bt_le_audio_data_path_t));
@@ -2742,6 +2744,10 @@ static uint16_t app_bt_le_audio_data_received(uint16_t iso_handle, uint8_t path_
 	}
 	if (!p_app_bt_le_audio_data_path) {
 		BT_LOGE("[APP] %s cannot find matched p_app_bt_le_audio_data_path \r\n", __func__);
+		return 1;
+	}
+	if (!p_app_bt_le_audio_data_path->is_ready) {
+		BT_LOGE("[APP] %s: p_app_bt_le_audio_data_path not ready \r\n", __func__);
 		return 1;
 	}
 	/* do audio data received flow */
@@ -3179,7 +3185,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 			if (!a2dp_play_flag) {
 				if (app_bt_le_audio_data_received(p_bt_direct_iso->iso_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_RX,
 												  NULL, max_sdu_len, p_bt_direct_iso->time_stamp)) {
-					BT_LOGE("[APP] %s app le audio data parsing fail \r\n", __func__);
+					BT_LOGD("[APP] %s app le audio data parsing fail \r\n", __func__);
 					break;
 				}
 			}
@@ -3227,7 +3233,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 													  p_bt_direct_iso->p_buf + p_bt_direct_iso->offset,
 													  p_bt_direct_iso->iso_sdu_len,
 													  p_bt_direct_iso->time_stamp)) {
-						BT_LOGE("[APP] %s app le audio data parsing fail \r\n", __func__);
+						BT_LOGD("[APP] %s app le audio data parsing fail \r\n", __func__);
 						break;
 					}
 				}

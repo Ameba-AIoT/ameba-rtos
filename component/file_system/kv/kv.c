@@ -31,7 +31,7 @@ int rt_kv_init(void)
 		goto exit;
 	}
 
-	if (lfs_mount_fail) {
+	if (lfs_mount_flag == -1) {
 		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}

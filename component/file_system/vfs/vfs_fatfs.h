@@ -33,7 +33,7 @@ extern ff_disk_drv  disk;
 extern ll_diskio_drv SD_disk_Driver;
 extern ll_diskio_drv SD_disk_spi_Driver;
 extern ll_diskio_drv FLASH_disk_Driver;
-extern ll_diskio_drv FLASH_disk_external_Driver;
+extern ll_diskio_drv FLASH_disk_secondary_Driver;
 
 typedef struct fatfs_flash_param_s {
 	int drv_num;

@@ -89,9 +89,9 @@ s32 wifi_set_lps_listen_interval(u8 interval);
  * @endcode
  * @return
  *    - @ref RTK_SUCCESS : The API executed successfully.
- *    - @ref RTK_FAIL: The API executed fail.
- *    - @ref RTK_ERR_WIFI_NOT_INIT: wifi not initial
- *    - @ref RTK_ERR_WIFI_POWEROFF: Wi-Fi is powered off in IPS(Inactive Power Save) mode.
+ *    - @ref RTK_FAIL : The API executed fail.
+ *    - @ref RTK_ERR_WIFI_NOT_INIT : wifi not initial
+ *    - @ref RTK_ERR_WIFI_POWEROFF : Wi-Fi is powered off in IPS(Inactive Power Save) mode.
  * @note
  *    - If the port of TCP/UDP broadcast packet not match port_list, drop the packet and not wakeup host
  *    - If this API is not set, all ports will not be filtered
@@ -378,7 +378,6 @@ s32 wifi_get_txbuf_pkt_num(s32 *pkt_num);
  */
 s32 wifi_get_antdiv_info(u8 *antdiv_mode, u8 *curr_ant);
 
-//-------------------------------------------------------------//
 /**
  * @brief Get the supported frequency band type.
  * @param[out]  band_type: Pointer to store the supported band type. Values:
@@ -419,7 +418,10 @@ s32 wifi_get_latched_tsf_i2s(struct rtw_speaker_read_latch_req *req, struct rtw_
  * @code
  *  u8 ie1[] = {221, 2, 2, 2};
  *  u8 ie2[] = {221, 2, 1, 1};
- *  struct rtw_custom_ie ie_list[2] = {{ie1, RTW_CUS_IE_BEACON|RTW_CUS_IE_PROBERSP}, {ie2, RTW_CUS_IE_PROBERSP}};
+ *  struct rtw_custom_ie ie_list[2] = {
+ *	  {ie1, RTW_CUS_IE_BEACON|RTW_CUS_IE_PROBERSP},
+ *    {ie2, RTW_CUS_IE_PROBERSP}
+ *  };
  *  wifi_add_custom_ie(ie_list, 2);
  * @endcode
  * @return
@@ -490,14 +492,23 @@ s32 wifi_set_tx_rate_by_tos(u8 enable, u8 tos_precedence, u8 tx_rate);
  * @brief  Set EDCA parameters for STA/SOFTAP. Suggest to call API when wifi connected for STA mode, e,g., in RTW_EVENT_JOIN_STATUS event handler.
  * @param[in]  pedca_param: EDCA parameters {ACI, AIFSN, CWmax, CWmin, TXOP, SlotTime} (as WMM_Specification_1.1 table 13):
  * @code
- * struct rtw_edca_param edca_param_0 = {0, 7, 0xa, 0x4, 0x0, 0}; // BE Queue, AIFSN=7, CWmax=10, CWmin=4, TXOP=0, SlotTime default (short slot time 9us, long slot time 20us)
- * struct rtw_edca_param edca_param_1 = {1, 3, 0xa, 0x4, 0x0, 0}; // BK Queue, AIFSN=3, CWmax=10, CWmin=4, TXOP=0, SlotTime default (short slot time 9us, long slot time 20us)
- * struct rtw_edca_param edca_param_2 = {2, 2, 0x4, 0x3, 0x5e, 0}; // VI Queue, AIFSN=2, CWmax=4, CWmin=3, TXOP=3.008ms, SlotTime default (short slot time 9us, long slot time 20us)
- * struct rtw_edca_param edca_param_3 = {3, 2, 0x3, 0x2, 0x2f, 0}; // VO Queue, AIFSN=2, CWmax=3, CWmin=2, TXOP=1.504ms, SlotTime default (short slot time 9us, long slot time 20us)
+ * struct rtw_edca_param edca_param_0 = {0, 7, 0xa, 0x4, 0x0, 0};
+ * // BE Queue, AIFSN=7, CWmax=10, CWmin=4, TXOP=0, SlotTime default
+ * (short slot time 9us, long slot time 20us)
+ * struct rtw_edca_param edca_param_1 = {1, 3, 0xa, 0x4, 0x0, 0};
+ * // BK Queue, AIFSN=3, CWmax=10, CWmin=4, TXOP=0, SlotTime default
+ * (short slot time 9us, long slot time 20us)
+ * struct rtw_edca_param edca_param_2 = {2, 2, 0x4, 0x3, 0x5e, 0};
+ * // VI Queue, AIFSN=2, CWmax=4, CWmin=3, TXOP=3.008ms, SlotTime default
+ * (short slot time 9us, long slot time 20us)
+ * struct rtw_edca_param edca_param_3 = {3, 2, 0x3, 0x2, 0x2f, 0};
+ * // VO Queue, AIFSN=2, CWmax=3, CWmin=2, TXOP=1.504ms, SlotTime default
+ * (short slot time 9us, long slot time 20us)
  * wifi_set_edca_param(&edca_param_0);
  * wifi_set_edca_param(&edca_param_1);
  * wifi_set_edca_param(&edca_param_2);
  * wifi_set_edca_param(&edca_param_3);
+ * @endcode
  * @return
  *    - @ref RTK_SUCCESS : The API executed successfully.
  *    - -@ref RTK_ERR_WIFI_POWEROFF : Wi-Fi is powered off in IPS(Inactive Power Save) mode,

@@ -567,6 +567,8 @@ bool bt_eqc_client_start_and_test(uint32_t bt_option)
 	}
 #if defined(CONFIG_BT_COEXIST)
 	rtk_coex_btc_set_pta(PTA_BT, PTA_HOST_BT, COMMON_ACTION);
+#else
+	BT_LOGE("BT_COEXIST disabled! ignore set_pta!");
 #endif
 
 	if (!eqc_le_client_test(eut_address)) {
@@ -589,6 +591,8 @@ bool bt_eqc_client_start_and_test(uint32_t bt_option)
 
 #if defined(CONFIG_BT_COEXIST)
 	rtk_coex_btc_set_pta(PTA_WIFI, PTA_HOST_BT, COMMON_ACTION);
+#else
+	BT_LOGE("BT_COEXIST disabled! ignore set_pta!");
 #endif
 	return true;
 }
@@ -615,6 +619,8 @@ bool bt_eqc_server_start(void)
 
 #if defined(CONFIG_BT_COEXIST)
 	rtk_coex_btc_set_pta(PTA_BT, PTA_HOST_BT, COMMON_ACTION);
+#else
+	BT_LOGE("BT_COEXIST disabled! ignore set_pta!");
 #endif
 
 	if (!eqc_le_start_advertising()) {
@@ -643,6 +649,8 @@ bool bt_eqc_server_stop(void)
 
 #if defined(CONFIG_BT_COEXIST)
 	rtk_coex_btc_set_pta(PTA_WIFI, PTA_HOST_BT, COMMON_ACTION);
+#else
+	BT_LOGE("BT_COEXIST disabled! ignore set_pta!");
 #endif
 
 	return true;

@@ -84,14 +84,11 @@ struct hci_evt_hdr {
 #if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
 #if defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK
 #define hci_is_mp_mode()            true
-#define hci_is_wifi_need_leave_ps() false    /* WiFi will not enter ps in MP shrink mode, no need to leave */
 #else /* CONFIG_MP_SHRINK */
 #define hci_is_mp_mode              hci_check_mp
-#define hci_is_wifi_need_leave_ps() true
 #endif /* CONFIG_MP_SHRINK */
 #else /* CONFIG_MP_INCLUDED */
 #define hci_is_mp_mode()            false
-#define hci_is_wifi_need_leave_ps() true
 #endif /* CONFIG_MP_INCLUDED */
 
 void hci_set_mp(bool is_mp);

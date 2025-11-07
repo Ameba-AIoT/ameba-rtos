@@ -46,7 +46,7 @@ ameba_list_append(private_sources
     vfs_littlefs.c
     vfs_wrap.c
     vfs.c
-    vfs_external_nor_flash.c
+    vfs_secondary_nor_flash.c
     vfs_sd_spi.c
 )
 

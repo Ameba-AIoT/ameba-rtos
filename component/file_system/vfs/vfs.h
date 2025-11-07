@@ -163,7 +163,8 @@ typedef struct {
 extern vfs_drv  vfs;
 extern vfs_opt fatfs_drv;
 extern vfs_opt littlefs_drv;
-extern char lfs_mount_fail;
+extern int lfs_mount_flag;
+extern int fatfs_mount_flag;
 
 void vfs_init(void);
 void vfs_deinit(void);

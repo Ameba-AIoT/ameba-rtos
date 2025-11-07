@@ -101,7 +101,7 @@ enum rtw_security_flag {
 };
 
 /**
-  * @brief  Enumerates the disconnect reasons used in @ref rtw_join_status_info
+  * @brief  Enumerates the disconnect reasons used in @ref rtw_event_join_status_info
   *         when a disconnect event (@ref RTW_JOINSTATUS_DISCONNECT) occurs (size: u16).
   *         The reasons include both standard 802.11 specification-based reasons and custom-defined
   *         reasons by the driver and application layers.
@@ -135,14 +135,14 @@ enum rtw_disconn_reason {
 #endif
 	/*RTK defined: Driver-detected issues causing disconnection. */
 	RTW_DISCONN_RSN_DRV_BASE                            = 60000,
-	RTW_DISCONN_RSN_DRV_AP_LOSS                         = 60001, /*~DIAG: no rx for a long time*/
-	RTW_DISCONN_RSN_DRV_AP_CHANGE                       = 60002, /*~DIAG: AP change*/
+	RTW_DISCONN_RSN_DRV_AP_LOSS                         = 60001, /**< <!-- DIAG: --> no rx for a long time*/
+	RTW_DISCONN_RSN_DRV_AP_CHANGE                       = 60002, /**< <!-- DIAG: --> AP change*/
 	RTW_DISCONN_RSN_DRV_BASE_END                        = 60099,
 
 	/*RTK defined: Application layer call some API to cause wifi disconnect.*/
 	RTW_DISCONN_RSN_APP_BASE                            = 60100,
-	RTW_DISCONN_RSN_APP_DISCONN                         = 60101, /*~DIAG: by APP*/
-	RTW_DISCONN_RSN_APP_CONN_WITHOUT_DISCONN            = 60102, /*~DIAG: disconnect before connecting*/
+	RTW_DISCONN_RSN_APP_DISCONN                         = 60101, /**< <!-- DIAG: --> by APP*/
+	RTW_DISCONN_RSN_APP_CONN_WITHOUT_DISCONN            = 60102, /**< <!-- DIAG: --> disconnect before connecting*/
 	RTW_DISCONN_RSN_APP_BASE_END                        = 60199,
 
 	RTW_DISCONN_RSN_MAX                                 = 65535,/*0xffff*/
@@ -733,7 +733,7 @@ struct rtw_scan_param {
 	 *  APs with the lowest RSSI are discarded if scanned APs exceed this number. */
 	u16                              max_ap_record_num;
 	void                            *scan_user_data;   /**< User-defined data passed to callback functions for handling scan results. */
-	u8                              rom_rsvd[8]; //resverd for next cut
+	u8                              rom_rsvd[8];       //resverd for next cut
 
 	/** @brief Callback for normal asynchronous mode.
 	  * @param[in] ap_num: Total number of scanned APs.

@@ -37,7 +37,7 @@ CmdRamHelp(
 			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%s\n", cmd_table[index].msg);
 		}
 	}
-	RTK_LOGS(TAG, RTK_LOG_ALWAYS, "----------------- TEST COMMAND MODE END  %x------------------\n", cmd_mum);
+	RTK_LOGS(TAG, RTK_LOG_ALWAYS, "----------------- TEST COMMAND MODE END  %x------------------\n", SYS_CPUID());
 
 	return TRUE ;
 }

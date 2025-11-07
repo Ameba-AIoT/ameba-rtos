@@ -20,13 +20,13 @@
 
 /* -------------------------------- Includes -------------------------------- */
 #include "rtw_autoconf.h"
-#ifdef CONFIG_WIFI_TUNNEL
 #include "wifi_api.h"
 #include "lwip_netconf.h"
 #include "wifi_api.h"
 #include "dhcp/dhcps.h"
 #include "wtn_app_rnat.h"
 
+#ifdef CONFIG_RMESH_EN
 /*dnrd.c will use this*/
 extern char *rptssid;
 extern int wifi_repeater_ap_config_complete;
@@ -262,8 +262,15 @@ exit:
 	rtos_task_delete(NULL);
 }
 
+u8 wtn_rnat_search_client_ip(u8 *src_mac)
+{
+	return dhcps_search_client_ip(src_mac);
+}
+#endif
+
 void wtn_rnat_ap_init(u8 enable)
 {
+#ifdef CONFIG_RMESH_EN
 	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "RNAT AP INIT=%d\n", enable);
 	if (enable) {
 		wifi_repeater_ap_config_complete = 0;
@@ -283,10 +290,7 @@ void wtn_rnat_ap_init(u8 enable)
 		wifi_repeater_ap_config_complete = 0;
 		rnat_wifi_stop_ap();
 	}
-}
-
-u8 wtn_rnat_search_client_ip(u8 *src_mac)
-{
-	return dhcps_search_client_ip(src_mac);
-}
+#else
+	UNUSED(enable);
 #endif
+}

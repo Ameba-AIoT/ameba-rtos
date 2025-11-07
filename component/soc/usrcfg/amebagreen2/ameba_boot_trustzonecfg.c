@@ -59,7 +59,7 @@ const TZ_CFG_TypeDef mpc2_config[MPC_ENTRYS_NUM] =						/* Security configuratio
 {
 //  Start					End						CTRL
 	{0x20001000,			0x20005000 - 1,			MPC_RW | MPC_NS},	/* entry0: Non-Secure MSP_NS, ROM_BSS_NS */
-#ifdef CONFIG_WIFI_HOST_CONTROL
+#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 	{0x20005000,			0x200A0000 - 1, 		MPC_RW | MPC_NS},	/* entry1: set sram all ns for fullmac mode */
 #else
 	{BD_RAM_START,			0x200A0000 - 1,			MPC_RW | MPC_NS},	/* entry1: BD_RAM*/

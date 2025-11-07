@@ -12,7 +12,7 @@
 
 extern lfs_t g_lfs;
 extern int rt_lfs_init(lfs_t *lfs);
-char lfs_mount_fail = 0;
+int lfs_mount_flag = 0;
 struct dirent *ent;
 
 int fmodeflags(const char *mode)
@@ -396,9 +396,11 @@ int littlefs_mount(int interface)
 	ret = rt_lfs_init(&g_lfs);
 	if (ret) {
 		VFS_DBG(VFS_ERROR, "Littlefs mount fail, ret is %d", ret);
+		lfs_mount_flag = -1;
 		return ret;
 	}
 	VFS_DBG(VFS_INFO, "Littlefs mount");
+	lfs_mount_flag = 1;
 	return ret;
 }
 

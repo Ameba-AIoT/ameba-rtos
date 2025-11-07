@@ -181,7 +181,7 @@ _LONG_CALL_ void SDIO_DMA_Reset(SDIO_TypeDef *SDIO);
 _LONG_CALL_ u32 SDIO_DMA_CTRL_Get(SDIO_TypeDef *SDIO);
 _LONG_CALL_ void SDIO_SetReady(SDIO_TypeDef *SDIO, int ready);
 _LONG_CALL_ void SDIO_RxReq(SDIO_TypeDef *SDIO);
-
+_LONG_CALL_ void SDIO_AbortRxReq(SDIO_TypeDef *SDIO);
 
 #define SDIO_CCCR_REG_BASE					(SDIO_REG_BASE + 0x1000)
 #define SDIO_LOCAL_REG_BASE					(SDIO_REG_BASE + 0x2000)

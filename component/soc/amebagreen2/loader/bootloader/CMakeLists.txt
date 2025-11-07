@@ -53,7 +53,7 @@ elseif("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz")
     )
 endif()
 
-if(CONFIG_FULLMAC_DEV OR (CONFIG_WHC_NONE AND (NOT CONFIG_WHC_INTF_IPC)))
+if ((NOT CONFIG_WHC_INTF_IPC) AND CONFIG_WHC_DEV)
   set(loader_condition TRUE)
 else()
   set(loader_condition FALSE)

@@ -8,6 +8,7 @@
 
 #include "ameba_soc.h"
 #include "usb_hal.h"
+#include "usb_regs.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -352,6 +353,9 @@ static u32 usb_chip_cg_suspend_cb(u32 expected_idle_time, void *param)
 	(void) expected_idle_time;
 	(void) param;
 	PLL_TypeDef *sys_pll = (PLL_TypeDef *)PLL_REG_BASE;
+
+	USB_PCGCCTL = USB_PCGCCTL | USB_OTG_PCGCCTL_STOPCLK;
+
 	sys_pll->PLL_UPLL_CTRL0 |= PLL_BIT_SUSPEND_WAK_MSK;
 	return TRUE;
 }
@@ -361,6 +365,8 @@ static u32 usb_chip_cg_resume_cb(u32 expected_idle_time, void *param)
 	(void) expected_idle_time;
 	(void) param;
 	u32 reg;
+
+	USB_PCGCCTL = USB_PCGCCTL & (~(USB_OTG_PCGCCTL_STOPCLK | USB_OTG_PCGCCTL_GATECLK));
 
 	reg = HAL_READ32(USB_ADDON_REG_CTRL, 0);
 	reg &= ~USB_ADDON_REG_CTRL_BIT_DIS_SUSPEND;
