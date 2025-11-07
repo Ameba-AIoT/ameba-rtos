@@ -221,6 +221,7 @@ static void do_audio_sync_flow(rtk_bt_audio_track_t *track, uint8_t packet_index
 {
 	uint16_t ret = 1;
 	uint32_t delta = 0;
+	rtk_bt_vendor_free_run_clock_t *p_clock = NULL;
 
 	/* first frame */
 	if (packet_index == 0) {
@@ -229,13 +230,32 @@ static void do_audio_sync_flow(rtk_bt_audio_track_t *track, uint8_t packet_index
 		if (delta > (track->sdu_interval * 10)) {
 			BT_LOGA("[BT AUDIO] %s: sdu is overflow ts_us %d \r\n", __func__, ts_us);
 			track->frc_cal_flag = false;
+			track->ts_oveflow_flag = true;
 		}
 		if (!track->frc_cal_flag) {
 			if (rtk_bt_get_hc_clock_offset(&track->frc_drift)) {
 				BT_LOGE("[BT AUDIO] %s: read track frc_drift fail \r\n", __func__);
 			}
-			track->expt_sdu_frc = (int64_t)track->frc_drift + (int64_t)ts_us;
-			track->frc_cal_flag = true;
+			p_clock = rtk_bt_get_hc_free_run_clock();
+			track->controller_free_run_clock = p_clock->controller_free_run_clock[0];
+			/* judge whether controller_free_run_clock is overflow */
+			if (track->ts_oveflow_flag) {
+				delta = (uint32_t)audio_delta((uint64_t)track->controller_free_run_clock, (uint64_t)0xFFFFFFFF);
+				if (delta < track->sdu_interval * 10) {
+					track->expt_sdu_frc += (int64_t)track->sdu_interval;
+					track->frc_cal_flag = false;
+					BT_LOGD("[BT AUDIO] %s: controller_free_run_clock not overflow \r\n", __func__);
+					//printf("[BT AUDIO] (track %p) expt_sdu_frc:%lld \r\n", track->audio_track_hdl, track->expt_sdu_frc);
+				} else {
+					track->expt_sdu_frc = (int64_t)track->frc_drift + (int64_t)ts_us;
+					track->frc_cal_flag = true;
+					track->ts_oveflow_flag = false;
+				}
+			} else {
+				track->expt_sdu_frc = (int64_t)track->frc_drift + (int64_t)ts_us;
+				track->frc_cal_flag = true;
+			}
+			//printf("[BT AUDIO] frc_drift: %lld, free_run_clock:%lld, ts_us:%lu \r\n", (int64_t)track->frc_drift,(int64_t)track->controller_free_run_clock, ts_us);
 		} else {
 			track->expt_sdu_frc += (int64_t)track->sdu_interval;
 			delta = (uint32_t)audio_delta(track->expt_sdu_frc, ((int64_t)track->frc_drift + (int64_t)ts_us));

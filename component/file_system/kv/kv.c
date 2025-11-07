@@ -31,7 +31,7 @@ int rt_kv_init(void)
 		goto exit;
 	}
 
-	if (lfs_mount_fail) {
+	if (lfs_mount_flag == -1) {
 		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
@@ -71,8 +71,9 @@ int32_t rt_kv_set(const char *key, const void *val, int32_t len)
 	int res = -1;
 	char *path = NULL;
 
-	while (kv_init_done == 0) {
-		rtos_time_delay_ms(10);
+	if (check_mount_completion(&kv_init_done) != 0) {
+		VFS_DBG(VFS_ERROR, "KV init fail");
+		goto exit;
 	}
 
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
@@ -85,7 +86,7 @@ int32_t rt_kv_set(const char *key, const void *val, int32_t len)
 		goto exit;
 	}
 
-	if (prefix == NULL || kv_init_done == -1) {
+	if (prefix == NULL) {
 		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
@@ -118,8 +119,9 @@ int32_t rt_kv_set_offset(const char *key, const void *val, int32_t len, int32_t 
 	int res = -1;
 	char *path = NULL;
 
-	while (kv_init_done == 0) {
-		rtos_time_delay_ms(10);
+	if (check_mount_completion(&kv_init_done) != 0) {
+		VFS_DBG(VFS_ERROR, "KV init fail");
+		goto exit;
 	}
 
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
@@ -132,7 +134,7 @@ int32_t rt_kv_set_offset(const char *key, const void *val, int32_t len, int32_t 
 		goto exit;
 	}
 
-	if (prefix == NULL || kv_init_done == -1) {
+	if (prefix == NULL) {
 		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
@@ -175,8 +177,9 @@ int32_t rt_kv_get(const char *key, void *buffer, int32_t len)
 	int res = -1;
 	char *path = NULL;
 
-	while (kv_init_done == 0) {
-		rtos_time_delay_ms(10);
+	if (check_mount_completion(&kv_init_done) != 0) {
+		VFS_DBG(VFS_ERROR, "KV init fail");
+		goto exit;
 	}
 
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
@@ -189,7 +192,7 @@ int32_t rt_kv_get(const char *key, void *buffer, int32_t len)
 		goto exit;
 	}
 
-	if (prefix == NULL || kv_init_done == -1) {
+	if (prefix == NULL) {
 		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
@@ -221,8 +224,9 @@ int32_t rt_kv_get_offset(const char *key, void *buffer, int32_t len, int32_t off
 	int res = -1;
 	char *path = NULL;
 
-	while (kv_init_done == 0) {
-		rtos_time_delay_ms(10);
+	if (check_mount_completion(&kv_init_done) != 0) {
+		VFS_DBG(VFS_ERROR, "KV init fail");
+		goto exit;
 	}
 
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
@@ -235,7 +239,7 @@ int32_t rt_kv_get_offset(const char *key, void *buffer, int32_t len, int32_t off
 		goto exit;
 	}
 
-	if (prefix == NULL || kv_init_done == -1) {
+	if (prefix == NULL) {
 		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
@@ -275,8 +279,9 @@ int32_t rt_kv_size(const char *key)
 	int res = -1;
 	char *path = NULL;
 
-	while (kv_init_done == 0) {
-		rtos_time_delay_ms(10);
+	if (check_mount_completion(&kv_init_done) != 0) {
+		VFS_DBG(VFS_ERROR, "KV init fail");
+		goto exit;
 	}
 
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
@@ -294,7 +299,7 @@ int32_t rt_kv_size(const char *key)
 		goto exit;
 	}
 
-	if (prefix == NULL || kv_init_done == -1) {
+	if (prefix == NULL) {
 		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
@@ -325,8 +330,9 @@ int32_t rt_kv_delete(const char *key)
 	int res = -1;
 	char *path = NULL;
 
-	while (kv_init_done == 0) {
-		rtos_time_delay_ms(10);
+	if (check_mount_completion(&kv_init_done) != 0) {
+		VFS_DBG(VFS_ERROR, "KV init fail");
+		goto exit;
 	}
 
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
@@ -339,7 +345,7 @@ int32_t rt_kv_delete(const char *key)
 		goto exit;
 	}
 
-	if (prefix == NULL || kv_init_done == -1) {
+	if (prefix == NULL) {
 		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
@@ -363,11 +369,12 @@ int rt_kv_list(char *buf, int32_t len)
 	char *name_str = NULL;
 	int ret = -1;
 
-	while (kv_init_done == 0) {
-		rtos_time_delay_ms(10);
+	if (check_mount_completion(&kv_init_done) != 0) {
+		VFS_DBG(VFS_ERROR, "KV init fail");
+		goto exit;
 	}
 
-	if (prefix == NULL || kv_init_done == -1) {
+	if (prefix == NULL) {
 		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}

@@ -12,9 +12,6 @@ static SD_CardInfo card_info;
 int (*sd_sema_take_fn)(u32);
 int (*sd_sema_give_isr_fn)(u32);
 static void (*cd_cb)(SD_RESULT);
-#if defined(SDIO) &&(SDIO == SD)
-extern u32 wait_for_sema;
-#endif
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -59,17 +56,6 @@ static void SDIOH_Pinmux(void)
 		Pinmux_Config((u8)sdioh_config.sdioh_wp_pin, PINMUX_FUNCTION_SDIOH);
 		PAD_PullCtrl((u8)sdioh_config.sdioh_wp_pin, GPIO_PuPd_UP);
 	}
-}
-
-static void SDIOH_PreDMATrans(void)
-{
-#if defined(SDIO) &&(SDIO == SD)
-	if ((CPU_InInterrupt() == 0) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (sd_sema_take_fn != NULL)) {
-
-		wait_for_sema = 1;
-		SDIOH_INTConfig(SDIOH_DMA_CTL_INT_EN, ENABLE);
-	}
-#endif
 }
 
 /**
@@ -494,7 +480,7 @@ static u32 SD_GetRCA(void)
 
 	// get RCA
 	card_info.rca = (SDIOH_GetResponse(SDIO_RESP1) << 8) | (SDIOH_GetResponse(SDIO_RESP2));
-	RTK_LOGS(TAG, RTK_LOG_INFO, "RCA = %04X\r\n", card_info.rca);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "RCA = %04x\r\n", card_info.rca);
 
 	return HAL_OK;
 }
@@ -556,7 +542,7 @@ static u32 SD_GetCSD(void)
 		card_info.capaticy = c_size << 9;  //KB
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "CSD Version:2.0\r\n");
-		RTK_LOGS(TAG, RTK_LOG_INFO, "User data area capacity: %lu GB\r\n", card_info.capaticy / 1024 / 1024);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "User data area capacity: %u GB\r\n", card_info.capaticy / 1024 / 1024);
 
 	} else {
 		c_size = (((card_info.csd[6] & 0x3) << 10) | (card_info.csd[7] << 2) | (card_info.csd[8] >> 6)) + 1;
@@ -565,15 +551,15 @@ static u32 SD_GetCSD(void)
 		card_info.capaticy = (u32)(c_size << (n - 10));  //KB
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "CSD Version:1.0\r\n");
-		RTK_LOGS(TAG, RTK_LOG_INFO, "User data area capacity: %lu MB\r\n", card_info.capaticy / 1024);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "User data area capacity: %u MB\r\n", card_info.capaticy / 1024);
 	}
 #endif
 
 	card_info.read_bl_len = 1 << (card_info.csd[5] & 0xF);
 	card_info.write_bl_len = 1 << (((card_info.csd[12] & 0x3) << 2) | (card_info.csd[13] >> 6));
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Max. read data block length: %lu Bytes\r\n", card_info.read_bl_len);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Max. write data block length: %lu Bytes\r\n", card_info.write_bl_len);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Max. read data block length: %u Bytes\r\n", card_info.read_bl_len);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Max. write data block length: %u Bytes\r\n", card_info.write_bl_len);
 
 	return HAL_OK;
 }
@@ -806,9 +792,7 @@ static u32 SD_SwitchFunction(u8 mode, u8 speed, u8 *buf_32align)
 	SDIOH_DmaCtl dma_cfg;
 	SDIOH_CmdTypeDef cmd_attr;
 
-	if ((buf_32align == NULL) || (((u32)buf_32align) & 0x1F)) {
-		return HAL_ERR_PARA;
-	}
+	assert_param((buf_32align != NULL) && IS_CACHE_LINE_ALIGNED_ADDR((u32)buf_32align));
 
 	/***** CMD6 *****/
 	_memset((void *)buf_32align, 0, SDIOH_C6R2_BUF_LEN);
@@ -862,27 +846,30 @@ static u32 SD_SwitchFunction(u8 mode, u8 speed, u8 *buf_32align)
 static u32 SD_IRQHandler(void *param)
 {
 	SDIOH_TypeDef *psdioh = SDIOH_BASE;
-	volatile u32 tmp1;
-	volatile u8 tmp2 = 0;
+	u32 tmp;
+	u8 give_sema = FALSE;
 	UNUSED(param);
 
-	tmp1 = SDIOH_GetISR();
+	__DSB();
 
-	if (tmp1 & SDIOH_DMA_CTL_INT_EN) {
-		if (sd_sema_give_isr_fn != NULL) {
-			sd_sema_give_isr_fn(SD_SEMA_MAX_DELAY);
+	tmp = SDIOH_GetISR();
+	if (tmp) {
+		SDIOH_INTClearPendingBit(tmp);
+		if (tmp & SDIOH_DMA_CTL_INT_EN) {
+			give_sema = TRUE;
 		}
 	}
 
-	if (tmp1) {
-		SDIOH_INTClearPendingBit(tmp1);
-	}
-
 	if (psdioh->CARD_INT_PEND & SDIOH_SDMMC_INT_PEND) {
-		tmp2 = psdioh->CARD_EXIST;
+		tmp = psdioh->CARD_EXIST;
+		psdioh->CARD_INT_PEND |= SDIOH_SDMMC_INT_PEND;
 
-		if (tmp2 & SDIOH_SD_EXIST) {
-			if (tmp2 & SDIOH_SD_WP) {
+		if (card_info.sd_status == SD_NODISK) {
+			give_sema = TRUE;
+		}
+
+		if (tmp & SDIOH_SD_EXIST) {
+			if (tmp & SDIOH_SD_WP) {
 				card_info.sd_status = SD_PROTECTED;
 			} else if ((cd_cb != NULL) && (card_info.sd_status != SD_INIT)) {
 				card_info.sd_status = SD_INIT;
@@ -899,11 +886,13 @@ static u32 SD_IRQHandler(void *param)
 			}
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Card Remove\n");
 		}
-
-		psdioh->CARD_INT_PEND |= SDIOH_SDMMC_INT_PEND;
 	}
 
-	__DSB();
+	if (TRUE == give_sema) {
+		if (sd_sema_give_isr_fn != NULL) {
+			sd_sema_give_isr_fn(SD_SEMA_MAX_DELAY);
+		}
+	}
 
 	return 0;
 }
@@ -913,6 +902,7 @@ SD_RESULT SD_GetEXTCSD(u8 *pbuf)
 	u32 ret;
 	SDIOH_DmaCtl dma_cfg;
 	SDIOH_CmdTypeDef cmd_attr;
+	assert_param((pbuf != NULL) && IS_CACHE_LINE_ALIGNED_ADDR((u32)pbuf));
 
 	/***** CMD8 *****/
 	DCache_CleanInvalidate((u32)pbuf, SD_BLOCK_SIZE);
@@ -968,7 +958,7 @@ u32 SD_ReadBlock(uint8_t *readbuff, uint32_t BlockIdx)
 	SDIOH_DmaCtl dma_cfg;
 	SDIOH_CmdTypeDef cmd_attr;
 
-	assert_param((readbuff != NULL) && ((((u32)readbuff) & 0x1F) == 0));
+	assert_param((readbuff != NULL) && IS_CACHE_LINE_ALIGNED_ADDR((u32)readbuff));
 
 	if (card_info.is_sdhc_sdxc) {
 		start = (u32)BlockIdx;
@@ -1032,7 +1022,7 @@ u32 SD_ReadMultiBlocks(uint8_t *readbuff, uint32_t BlockIdx, uint32_t NumberOfBl
 	SDIOH_CmdTypeDef cmd_attr;
 
 	assert_param(NumberOfBlocks > 1);
-	assert_param((readbuff != NULL) && ((((u32)readbuff) & 0x1F) == 0));
+	assert_param((readbuff != NULL) && IS_CACHE_LINE_ALIGNED_ADDR((u32)readbuff));
 
 	if (card_info.is_sdhc_sdxc) {
 		start = (u32)BlockIdx;
@@ -1087,7 +1077,7 @@ u32 SD_WriteBlock(uint8_t *writebuff, uint32_t BlockIdx)
 	u32 ret, start;
 	SDIOH_DmaCtl dma_cfg;
 	SDIOH_CmdTypeDef cmd_attr;
-	assert_param((writebuff != NULL) && ((((u32)writebuff) & 0x1F) == 0));
+	assert_param((writebuff != NULL) && IS_CACHE_LINE_ALIGNED_ADDR((u32)writebuff));
 
 	if (card_info.is_sdhc_sdxc) {
 		start = (u32)BlockIdx;
@@ -1149,7 +1139,7 @@ u32 SD_WriteMultiBlocks(uint8_t *writebuff, uint32_t BlockIdx, uint32_t NumberOf
 	SDIOH_CmdTypeDef cmd_attr;
 
 	assert_param(NumberOfBlocks > 1);
-	assert_param((writebuff != NULL) && ((((u32)writebuff) & 0x1F) == 0));
+	assert_param((writebuff != NULL) && IS_CACHE_LINE_ALIGNED_ADDR((u32)writebuff));
 
 	if (card_info.is_sdhc_sdxc) {
 		start = (u32)BlockIdx;
@@ -1349,7 +1339,7 @@ u32 SD_GetSDStatus(u8 *buf_32align)
 	SDIOH_DmaCtl dma_cfg;
 	SDIOH_CmdTypeDef cmd_attr;
 
-	assert_param((buf_32align != NULL) && ((((u32)buf_32align) & 0x1F) == 0));
+	assert_param((buf_32align != NULL) && IS_CACHE_LINE_ALIGNED_ADDR((u32)buf_32align));
 
 	/***** ACMD13 (CMD55) *****/
 	cmd_attr.arg = (card_info.rca) << 16;
@@ -1769,7 +1759,6 @@ void SD_CardInit(void)
 			if (ret != HAL_OK) {
 				break;
 			}
-
 		}
 	} while (0);
 
@@ -1790,8 +1779,6 @@ void SD_CardInit(void)
   */
 SD_RESULT SD_Init(void)
 {
-	u32 temp;
-
 	_memset(&card_info, 0, sizeof(SD_CardInfo));
 	card_info.sd_status = SD_NODISK;
 
@@ -1808,24 +1795,20 @@ SD_RESULT SD_Init(void)
 	SDIOH_DebounceSet(200);
 	SDIOH_DebounceCmd(ENABLE);
 
-	/* check if card exists or not */
-	temp = SDIOH_BASE->CARD_EXIST;
-	if (temp & SDIOH_SD_EXIST) {
-		if (!(temp & SDIOH_SD_WP)) {
-			card_info.sd_status = SD_INSERT;
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Card exists!\n");
-		} else {
-			card_info.sd_status = SD_PROTECTED;
+	InterruptRegister((IRQ_FUN)SD_IRQHandler, SDIO_HOST_IRQ, NULL, INT_PRI_HIGH);
+	InterruptEn(SDIO_HOST_IRQ, INT_PRI_HIGH);
+
+	if ((CPU_InInterrupt() == 0) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (sd_sema_take_fn != NULL)) {
+		if (sd_sema_take_fn(SD_SEMA_MAX_DELAY) != RTK_SUCCESS) {
+			card_info.sd_status = SD_INITERR;
 		}
 	} else {
-		card_info.sd_status = SD_NODISK;
+		/*
+		 * if No OS, wait ISR to change card_info.sd_status
+		 * if in interrupt context, Need to add check SDIOH_BASE->CARD_EXIST
+		 */
+		DelayMs(SD_SEMA_MAX_DELAY);
 	}
-
-	InterruptRegister((IRQ_FUN)SD_IRQHandler, SDIO_HOST_IRQ, NULL, 5);
-	InterruptEn(SDIO_HOST_IRQ, 5);
-
-	__DSB();
-	__ISB();
 #endif
 
 	/* Initialize SD card */

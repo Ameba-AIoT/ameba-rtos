@@ -39,10 +39,12 @@ static void FLASH_PLLInit_ClockDiv(void)
 	if (spic_ckd & IS_SYS_PLL) {
 		RCC_PeriphClockDividerSet(SYS_PLL_SPIC, GET_CLK_DIV(spic_ckd));
 		RCC_PeriphClockSourceSet(SPIC, SYS_PLL);
+		RCC_PeriphClockDividerFENSet(USB_PLL_SPIC, DISABLE);
 		RTK_LOGI(TAG, "SPIC CLK: %d Hz\n", sys_pll_clk / GET_CLK_DIV(spic_ckd));
 	} else {
 		RCC_PeriphClockDividerSet(USB_PLL_SPIC, GET_CLK_DIV(spic_ckd));
 		RCC_PeriphClockSourceSet(SPIC, USB_PLL);
+		RCC_PeriphClockDividerFENSet(SYS_PLL_SPIC, DISABLE);
 		RTK_LOGI(TAG, "SPIC CLK: %d Hz\n", usb_pll_clk / GET_CLK_DIV(spic_ckd));
 	}
 

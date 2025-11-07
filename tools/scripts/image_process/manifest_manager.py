@@ -226,13 +226,13 @@ class ManifestManager(ABC):
                     if value not in choices:
                         self.context.logger.error(f'{key} format error: should be one of {choices}')
                         return False
-                elif key in ["ctr_key", "rdp_key", "sboot_private_key", "sboot_public_key", "sboot_public_key_hash"]:
+                elif key in ["ctr_key", "rdp_key", "sboot_public_key_hash"]:
                     if isinstance(value, list):
                         if any(len(v) != 64 and len(v) != 32 for v in value):
                             self.context.logger.error(f'{key} format error: should be 32/64 bytes')
                             return False
                     elif len(value) != 64 and len(value) != 32 and value not in jdata:
-                        self.context.logger.error(f'{key} format error: should be 32/64 bytes: {value}')
+                        self.context.logger.error(f'{key} format error: should be 32/64 bytes: {value}, current len: {len(value)}')
                         return False
                 elif key.startswith("ecb_key"):
                     if isinstance(value, list):

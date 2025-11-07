@@ -7,11 +7,6 @@ menu "CONFIG CHIP" #DONE
             bool "ARM_KM0"
     endchoice
 
-    choice
-        prompt "Chip Version"
-        config AMEBASMART_A_CUT_FOR_KM0
-            bool "AMEBASMART_A_Cut"
-    endchoice
 endmenu
 
 

@@ -94,16 +94,6 @@ soc_configs:Dict[str, SocImageConfig] = {
         image3_section = None, #Not support rsip yet(maybe only support rdp)
         dsp_section = None
     ),
-    "amebasmartplus": SocImageConfig(
-        image1_section = "KM4_BOOT_XIP",
-        image2_section = {
-            "ap": "CA32_IMG2_XIP",
-            "hp": "KM4_IMG2_XIP",
-            "lp": "KM0_IMG2_XIP",
-        },
-        image3_section = None, #Not support rsip yet(maybe only support rdp)
-        dsp_section = None
-    ),
 }
 
 class FirmwarePackage(OperationBase):
@@ -526,7 +516,6 @@ class FirmwarePackage(OperationBase):
         if input_file_dir != self.output_image_dir:
             # copy input file to output_image_dir if not in
             shutil.copy(input_file, self.output_image_dir)
-            input_file = modify_file_path(input_file, new_directory=self.output_image_dir)
 
         manifest_config = self.manifest_manager.get_image_config(image_type)
         gcm_enable = manifest_config.rsip_enable and manifest_config.rsip_mode == 2

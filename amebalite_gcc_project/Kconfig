@@ -98,6 +98,8 @@ rsource "../component/file_system/Kconfig"
 
 rsource "../component/os/Kconfig"
 
+orsource "../component/utils/Kconfig"
+
 menu "CONFIG OTA OPTION"
     config UPGRADE_BOOTLOADER
         bool "Enable Bootloader OTA"
@@ -136,6 +138,7 @@ menu "CONFIG WHC INTF"
 		default WHC_INTF_IPC_MENU
 			config WHC_INTF_IPC_MENU
 				bool "WHC_IPC"
+                select WHC_INTF_IPC
 
             config WIFI_SINGLE_CORE_MENU
                 bool "SINGLE CORE"
@@ -207,7 +210,6 @@ menu "CONFIG WIFI"
 
         config WHC_INTF_IPC_MENU
             bool
-            select WHC_INTF_IPC
             select WHC_WIFI_API_PATH
             select WLAN
             select LWIP_LAYER if WHC_HOST && !MP_SHRINK

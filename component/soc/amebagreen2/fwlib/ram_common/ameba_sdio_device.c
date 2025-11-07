@@ -394,6 +394,10 @@ void SPDIO_Device_DeInit(SDIO_TypeDef *SDIO)
 	SDIO_INTConfig(SDIO, 0xffff, DISABLE);
 	SDIO_INTClearAll(SDIO);
 
-	// Reset SDIO DMA
+	/* step1: abort rx request */
+	SDIO_AbortRxReq(SDIO);
+	/* step2: reset SDIO DMA */
 	SDIO_DMA_Reset(SDIO);
+	/* step3: disable fen & cke */
+	RCC_PeriphClockCmd(APBPeriph_SDD, APBPeriph_SDD_CLOCK, DISABLE);
 }

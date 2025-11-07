@@ -19,7 +19,7 @@
 
 /* -------------------------------- Includes -------------------------------- */
 #include "rtw_autoconf.h"
-#ifdef CONFIG_WIFI_TUNNEL
+#ifdef CONFIG_RMESH_OTA_EN
 #include "os_wrapper.h"
 #include "lwip_netconf.h"
 #include "ameba_soc.h"

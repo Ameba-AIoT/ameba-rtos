@@ -10,6 +10,7 @@ else()
     set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all.ld)
 endif()
 
+# note!!! Keep the latest version at the top for release reason.
 set(c_ROM_LIB_DIR ${c_SDK_LIB_DIR}/amebalite_rom_acut)
 if(CONFIG_LINK_ROM_SYMB)
     set(c_LINK_ROM_LIB)

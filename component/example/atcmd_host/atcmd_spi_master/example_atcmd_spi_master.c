@@ -176,7 +176,7 @@ void Master_tr_done_callback(uint32_t pdata, SpiIrq event)
 	}
 }
 
-void gpio_edge_irq_handler(uint32_t id, gpio_irq_event event)
+void gpio_edge_irq_handler(uint32_t id, uint32_t event)
 {
 	(void)event;
 	(void)id;

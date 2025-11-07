@@ -78,9 +78,11 @@ typedef struct {
 	uint32_t                   sdu_interval;                                                   /*!< record sdu interval(micro second) */
 	bool
 	frc_cal_flag;                                                   /*!< indicate whether free run clock calculation is done previously */
+	bool                       ts_oveflow_flag;                                                /*!< indicate whether timestamp is overflow  */
 	int64_t                    expt_sdu_frc;                                                   /*!< calculate the expected sdu time stamp */
 	int64_t
 	frc_drift;                                                      /*!< save free run clock drift between app core and lower stack core */
+	uint64_t                   controller_free_run_clock;                                      /*!< save free controller_free_run_clock */
 	uint32_t                   pres_delay_us;                                                  /*!< indicate presentation delay value */
 	uint32_t                   prev_ts_us;                                                     /*!< recording previous timestamp to check sdu loss */
 	uint32_t

@@ -8,6 +8,7 @@ else()
     set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all.ld)
 endif()
 
+# note!!! Keep the latest version at the top for release reason.
 if(CONFIG_AMEBADPLUS_A_CUT)
     ameba_set(c_ROM_LIB_DIR ${c_SDK_LIB_DIR}/amebadplus_rom_acut)
 endif()

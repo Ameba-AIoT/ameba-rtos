@@ -19,12 +19,26 @@
 #define RTK_SUCCESS	0
 #define RTK_FAIL	(-1)
 
+/** @} End of WIFI_Exported_Constants group*/
+
+
+/** @addtogroup WIFI_Exported_Types Wi-Fi Exported Types
+* @{
+*/
+/** @addtogroup WIFI_Exported_Enumeration_Types Enumeration Type
+ * @{
+ */
+
+/**
+* @brief Error codes for RTK system (size: u32).
+*/
 enum rtk_error_code {
-	RTK_ERR_BADARG              = 2,    /*~DIAG: Bad Argument */
-	RTK_ERR_BUSY                = 3,    /*~DIAG: Busy*/
-	RTK_ERR_NOMEM               = 4,    /*~DIAG: No Memory*/
-	RTK_ERR_TIMEOUT             = 5,    /*~DIAG: Timeout */
-	RTK_ERR_BUFFER_OVERFLOW     = 6,    /*~DIAG: Data exceeds allocated buffer size.*/
+	//  content in <!-- --> can be ignored by Doxygen
+	RTK_ERR_BADARG              = 2,    /**< <!-- DIAG: --> Bad Argument */
+	RTK_ERR_BUSY                = 3,    /**< <!-- DIAG: --> Busy*/
+	RTK_ERR_NOMEM               = 4,    /**< <!-- DIAG: --> No Memory*/
+	RTK_ERR_TIMEOUT             = 5,    /**< <!-- DIAG: --> Timeout */
+	RTK_ERR_BUFFER_OVERFLOW     = 6,    /**< <!-- DIAG: --> Data exceeds allocated buffer size.*/
 
 	RTK_ERR_DIAG_BASE               = 0x60,
 	RTK_ERR_DIAG_UNINIT             = RTK_ERR_DIAG_BASE + 0x01,     // diag uninitialize
@@ -40,20 +54,22 @@ enum rtk_error_code {
 	RTK_ERR_DIAG_EVT_FIND_FAIL      = RTK_ERR_DIAG_BASE + 0x12,     // find event fail
 
 	RTK_ERR_WIFI_BASE                       = 0x1000,
-	RTK_ERR_WIFI_CONN_INVALID_KEY           = RTK_ERR_WIFI_BASE + 11,   /**< ~DIAG: Invalid key. */
-	RTK_ERR_WIFI_CONN_SCAN_FAIL             = RTK_ERR_WIFI_BASE + 12,   /*~DIAG: Can't find targrt AP*/
-	RTK_ERR_WIFI_CONN_AUTH_FAIL             = RTK_ERR_WIFI_BASE + 13,   /*~DIAG: Auth fail*/
-	RTK_ERR_WIFI_CONN_AUTH_PASSWORD_WRONG   = RTK_ERR_WIFI_BASE + 14,   /*~DIAG: Auth fail, password may wrong*/
-	RTK_ERR_WIFI_CONN_ASSOC_FAIL            = RTK_ERR_WIFI_BASE + 15,   /*~DIAG: Assoc fail*/
-	RTK_ERR_WIFI_CONN_4WAY_HANDSHAKE_FAIL   = RTK_ERR_WIFI_BASE + 16,   /*~DIAG: 4 way handshake fail*/
-	RTK_ERR_WIFI_CONN_4WAY_PASSWORD_WRONG   = RTK_ERR_WIFI_BASE + 17,   /*~DIAG: 4 way handshake fail, password may wrong*/
+	RTK_ERR_WIFI_CONN_INVALID_KEY           = RTK_ERR_WIFI_BASE + 11,   /**< <!-- DIAG: --> Invalid key */
+	RTK_ERR_WIFI_CONN_SCAN_FAIL             = RTK_ERR_WIFI_BASE + 12,   /**< <!-- DIAG: --> Can't find targrt AP*/
+	RTK_ERR_WIFI_CONN_AUTH_FAIL             = RTK_ERR_WIFI_BASE + 13,   /**< <!-- DIAG: --> Auth fail*/
+	RTK_ERR_WIFI_CONN_AUTH_PASSWORD_WRONG   = RTK_ERR_WIFI_BASE + 14,   /**< <!-- DIAG: --> Auth fail, password may wrong*/
+	RTK_ERR_WIFI_CONN_ASSOC_FAIL            = RTK_ERR_WIFI_BASE + 15,   /**< <!-- DIAG: --> Assoc fail*/
+	RTK_ERR_WIFI_CONN_4WAY_HANDSHAKE_FAIL   = RTK_ERR_WIFI_BASE + 16,   /**< <!-- DIAG: --> 4 way handshake fail*/
+	RTK_ERR_WIFI_CONN_4WAY_PASSWORD_WRONG   = RTK_ERR_WIFI_BASE + 17,   /**< <!-- DIAG: --> 4 way handshake fail, password may wrong*/
 
-	RTK_ERR_WIFI_POWEROFF       = RTK_ERR_WIFI_BASE + 32,   /*~DIAG: Wi-Fi is powered off in IPS(Inactive Power Save) mode, unable to access Wi-Fi registers.*/
-	RTK_ERR_WIFI_TX_BUF_FULL    = RTK_ERR_WIFI_BASE + 33,   /*~DIAG: tx buffer full(hw buffer & skb buffer) */
-	RTK_ERR_WIFI_NOT_INIT       = RTK_ERR_WIFI_BASE + 34,   /*~DIAG: wifi not initial*/
+	RTK_ERR_WIFI_POWEROFF       = RTK_ERR_WIFI_BASE + 32,   /**< <!-- DIAG: --> Wi-Fi is powered off in IPS(Inactive Power Save) mode, unable to access Wi-Fi registers.*/
+	RTK_ERR_WIFI_TX_BUF_FULL    = RTK_ERR_WIFI_BASE + 33,   /**< <!-- DIAG: --> tx buffer full(hw buffer & skb buffer) */
+	RTK_ERR_WIFI_NOT_INIT       = RTK_ERR_WIFI_BASE + 34,   /**< <!-- DIAG: --> wifi not initial*/
 };
 
-/** @}*/
-/** @}*/
+/** @} End of WIFI_Exported_Enumeration_Types group*/
+/** @} End of WIFI_Exported_Types group*/
+
+/** @} End of WIFI_API group */
 
 #endif

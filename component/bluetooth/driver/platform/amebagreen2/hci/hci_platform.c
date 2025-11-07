@@ -151,6 +151,8 @@ void hci_platform_bt_rf_calibration(void)
 
 		rtk_coex_btc_bt_rfk(&p_temp_pram, sizeof(struct bt_rfk_param));
 	}
+#else
+	BT_LOGE("BT_COEXIST disabled! ignore bt_rfk!");
 #endif
 }
 void hci_platform_bt_rx_dck(void)
@@ -161,6 +163,8 @@ void hci_platform_bt_rx_dck(void)
 	p_temp_pram.type = BT_RX_DCK;
 
 	rtk_coex_btc_bt_rfk(&p_temp_pram, sizeof(struct bt_rfk_param));
+#else
+	BT_LOGE("BT_COEXIST disabled! ignore bt_rx_dck!");
 #endif
 }
 int hci_platform_get_rx_adck_data(uint8_t *data, uint8_t len)
@@ -178,6 +182,8 @@ int hci_platform_get_rx_adck_data(uint8_t *data, uint8_t len)
 #else
 	(void) data;
 	(void) len;
+
+	BT_LOGE("BT_COEXIST disabled! ignore bt_rx_adck!");
 
 	return HCI_FAIL;
 #endif
@@ -401,10 +407,8 @@ bool rtk_bt_pre_enable(void)
 		return false;
 	}
 
-	if (hci_is_wifi_need_leave_ps()) {
-		wifi_set_lps_enable(FALSE);
-		wifi_set_ips_internal(FALSE);
-	}
+	wifi_set_lps_enable(FALSE);
+	wifi_set_ips_internal(FALSE);
 #endif
 
 	return true;
@@ -413,10 +417,8 @@ bool rtk_bt_pre_enable(void)
 void rtk_bt_post_enable(void)
 {
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
-	if (hci_is_wifi_need_leave_ps()) {
-		wifi_set_lps_enable(wifi_user_config.lps_enable);
-		wifi_set_ips_internal(wifi_user_config.ips_enable);
-	}
+	wifi_set_lps_enable(wifi_user_config.lps_enable);
+	wifi_set_ips_internal(wifi_user_config.ips_enable);
 #endif
 }
 

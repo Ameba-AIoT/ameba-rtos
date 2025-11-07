@@ -74,7 +74,7 @@ target_link_libraries(${c_CURRENT_IMAGE}
 )
 
 #--------------- POST BUILD ------------------#
-if(CONFIG_WIFI_HOST_CONTROL)
+if ((NOT CONFIG_WHC_INTF_IPC) AND CONFIG_WHC_DEV)
     ameba_layout_extract(FULLMAC_IMG2 ${c_LAYOUT_LD} FULLMAC_IMG2_ORIGIN FULLMAC_IMG2_END FULLMAC_IMG2_LENGTH)
 endif()
 

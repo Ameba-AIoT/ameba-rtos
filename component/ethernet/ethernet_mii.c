@@ -269,7 +269,7 @@ int ethernet_is_unplug(void)
 	}
 }
 
-void ethernet_pincig(void)
+void ethernet_pin_config(void)
 {
 #ifdef CONFIG_AMEBAGREEN2
 	/*disable phy reset pin*/
@@ -293,7 +293,7 @@ void ethernet_pincig(void)
 	u32 temp = HAL_READ32(PINMUX_REG_BASE, REG_PINMUX_SUB_CTRL);
 	temp |= PAD_BIT_DBG_CLK_FORCE;
 	temp &= ~PAD_MASK_DBG_CLK0_SEL;
-#ifdef CONFIG_MAC_EXT_50M
+#ifdef CONFIG_MAC_OUTPUT_50M
 	temp |= PAD_DBG_CLK0_SEL(EXT_CLK_50M);
 #else
 	temp |= PAD_DBG_CLK0_SEL(EXT_CLK_25M);
@@ -304,62 +304,36 @@ void ethernet_pincig(void)
 #endif
 }
 
-void ethernet_setclk_to_50m(void)
+void ethernet_clock_set(void)
 {
-#ifdef CONFIG_AMEBAGREEN2
-	uint32_t clk_source;
-	uint32_t pll_clk;
-	uint32_t div_value;
+	u8 gmac_ckd;
 
-	clk_source = RCC_PeriphClockSourceGet(GMAC);
+	const SocClk_Info_TypeDef *pSocClk_Info = &SocClk_Info[0];
+	const u32 usb_pll_clk = pSocClk_Info->USBPLL_CLK;
+	const u32 sys_pll_clk = pSocClk_Info->SYSPLL_CLK;
 
-	switch (clk_source) {
-	case CKSL_GMAC_EXT50M:
-		return;
-
-	case CKSL_GMAC_USB_PLL:
-		// enable GMAC FENCLK
-		RCC_PeriphClockDividerFENSet(USB_PLL_GMAC, ENABLE);
-		/*Brought about by SOC clock structure or other configurations, DD is known*/
+	/*Select a clock source that can be divided up to 50MHz.*/
+	gmac_ckd = PLL_ClkSrcGet(sys_pll_clk, usb_pll_clk, CLK_LIMIT_GMAC);
+	if (gmac_ckd & IS_SYS_PLL) {
+		RCC_PeriphClockSourceSet(GMAC, SYS_PLL);
 		RCC_PeriphClockDividerFENSet(SYS_PLL_GMAC, ENABLE);
-		pll_clk = USB_PLL_ClkGet();
-		break;
-
-	case CKSL_GMAC_SYS_PLL:
-		// enable GMAC FENCLK
-		RCC_PeriphClockDividerFENSet(SYS_PLL_GMAC, ENABLE);
-
+		RCC_PeriphClockDividerSet(SYS_PLL_GMAC, GET_CLK_DIV(gmac_ckd));
+	} else {
+		RCC_PeriphClockSourceSet(PSRAM, USB_PLL);
 		RCC_PeriphClockDividerFENSet(USB_PLL_GMAC, ENABLE);
-		pll_clk = SYS_PLL_ClkGet();
-		break;
-
-	default:
-		RTK_LOGI(TAG, "Error: Unknown GMAC CLK Source 0x%x\n", clk_source);
-		return;
+		RCC_PeriphClockDividerSet(USB_PLL_GMAC, GET_CLK_DIV(gmac_ckd));
 	}
-
-	if (pll_clk == 0) {
-		RTK_LOGI(TAG, "Error: PLL Clock is 0\n");
-		return;
-	}
-	div_value = pll_clk / 50000000;
-
-	if (clk_source == CKSL_GMAC_USB_PLL) {
-		RCC_PeriphClockDividerSet(USB_PLL_GMAC, div_value);
-	} else if (clk_source == CKSL_GMAC_SYS_PLL) {
-		RCC_PeriphClockDividerSet(SYS_PLL_GMAC, div_value);
-	}
-#endif
 }
 
 
 void ethernet_mii_init(void)
 {
 	/*only test ok for 7005*/
-	ethernet_pincig();
+	ethernet_pin_config();
+	/*Ennale GMAC Function and Clock */
 	RCC_PeriphClockCmd(APBPeriph_GMAC, APBPeriph_GMAC_CLOCK, ENABLE);
-	// RCC_PeriphClockSourceSet(GMAC, SYS_PLL);
-	ethernet_setclk_to_50m();
+
+	ethernet_clock_set();
 
 	// set the ethernet interface as default
 	ethernet_if_default = 1;

@@ -48,7 +48,7 @@ extern void wifi_cast_wifi_join_status_ev_hdl(u8 *evt_info);
 #endif
 extern struct rtw_event_hdl_func_t event_external_hdl[];
 extern u16 array_len_of_event_external_hdl;
-#ifdef CONFIG_WIFI_TUNNEL
+#if defined(CONFIG_WHC_HOST) && !defined(CONFIG_ZEPHYR_SDK) && !defined(CONFIG_MP_SHRINK) && defined(CONFIG_RMESH_EN)
 extern void wtn_zrpp_get_ap_info_evt_hdl(u8 *evt_info);
 #endif
 
@@ -287,7 +287,7 @@ const struct rtw_event_hdl_func_t event_internal_hdl[] = {
 	{RTW_EVENT_WPA_P2P_CHANNEL_RDY,	rtw_p2p_channel_switch_ready},
 #endif
 	{RTW_EVENT_DEAUTH_INFO_FLASH,	rtw_psk_deauth_info_flash_event_hdl},
-#ifdef CONFIG_WIFI_TUNNEL
+#if defined(CONFIG_WHC_HOST) && !defined(CONFIG_ZEPHYR_SDK) && !defined(CONFIG_MP_SHRINK) && defined(CONFIG_RMESH_EN)
 	{RTW_EVENT_WTN_ZRPP_GET_AP_INFO, wtn_zrpp_get_ap_info_evt_hdl},
 #endif
 };

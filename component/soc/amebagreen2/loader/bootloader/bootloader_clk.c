@@ -82,9 +82,13 @@ void BOOT_SOC_ClkSet(void)
 	if (pSocClk_Info->CPU_CKD & IS_SYS_PLL) {
 		RCC_PeriphClockDividerSet(SYS_PLL_HP, GET_CLK_DIV(pSocClk_Info->CPU_CKD));
 		RCC_PeriphClockSourceSet(HP, SYS_PLL);
+		/*Turn off the USB PLL divider switch.*/
+		RCC_PeriphClockDividerFENSet(USB_PLL_HP, DISABLE);
 	} else {
 		RCC_PeriphClockDividerSet(USB_PLL_HP, GET_CLK_DIV(pSocClk_Info->CPU_CKD));
 		RCC_PeriphClockSourceSet(HP, USB_PLL);
+		/*Turn off the USB PLL divider switch.*/
+		RCC_PeriphClockDividerFENSet(SYS_PLL_HP, DISABLE);
 	}
 	temp = CPU_ClkGet();
 	DelayClkUpdate(temp);
@@ -105,9 +109,11 @@ void BOOT_SOC_ClkSet(void)
 	if (shperi_ckd & IS_SYS_PLL) {
 		RCC_PeriphClockDividerSet(SYS_PLL_SHPERI, GET_CLK_DIV(shperi_ckd));
 		RCC_PeriphClockSourceSet(SHPERI, SYS_PLL);
+		RCC_PeriphClockDividerFENSet(USB_PLL_SHPERI, DISABLE);
 	} else {
 		RCC_PeriphClockDividerSet(USB_PLL_SHPERI, GET_CLK_DIV(shperi_ckd));
 		RCC_PeriphClockSourceSet(SHPERI, USB_PLL);
+		RCC_PeriphClockDividerFENSet(SYS_PLL_SHPERI, DISABLE);
 	}
 
 	/* hperi */
@@ -119,9 +125,11 @@ void BOOT_SOC_ClkSet(void)
 	if (hperi_ckd & IS_SYS_PLL) {
 		RCC_PeriphClockDividerSet(SYS_PLL_HPERI, GET_CLK_DIV(hperi_ckd));
 		RCC_PeriphClockSourceSet(HPERI, SYS_PLL);
+		RCC_PeriphClockDividerFENSet(USB_PLL_HPERI, DISABLE);
 	} else {
 		RCC_PeriphClockDividerSet(USB_PLL_HPERI, GET_CLK_DIV(hperi_ckd));
 		RCC_PeriphClockSourceSet(HPERI, USB_PLL);
+		RCC_PeriphClockDividerFENSet(SYS_PLL_HPERI, DISABLE);
 	}
 
 	/* psram */
@@ -129,9 +137,11 @@ void BOOT_SOC_ClkSet(void)
 	if (psramc_ckd & IS_SYS_PLL) {
 		RCC_PeriphClockDividerSet(SYS_PLL_PSRAM, GET_CLK_DIV(psramc_ckd));
 		RCC_PeriphClockSourceSet(PSRAM, SYS_PLL);
+		RCC_PeriphClockDividerFENSet(USB_PLL_PSRAM, DISABLE);
 	} else {
 		RCC_PeriphClockDividerSet(USB_PLL_PSRAM, GET_CLK_DIV(psramc_ckd));
 		RCC_PeriphClockSourceSet(PSRAM, USB_PLL);
+		RCC_PeriphClockDividerFENSet(SYS_PLL_PSRAM, DISABLE);
 	}
 
 	/* vo */

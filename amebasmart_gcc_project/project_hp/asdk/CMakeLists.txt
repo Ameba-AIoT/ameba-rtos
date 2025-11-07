@@ -2,6 +2,7 @@ set(CMAKE_EXECUTABLE_SUFFIX .axf)
 
 add_compile_options(-fdata-sections -ffunction-sections)
 
+# note!!! Keep the latest version at the top for release reason.
 if(CONFIG_AMEBASMART_B_CUT)
     ameba_set(c_ROM_LIB_DIR ${c_SDK_LIB_DIR}/amebasmart_rom_bcut)
     ameba_set(c_FLOADER_BIN_DIR ${c_SDK_GNU_UTILITY_DIR}/image_tool_flashloader/${c_SOC_TYPE}_acut)

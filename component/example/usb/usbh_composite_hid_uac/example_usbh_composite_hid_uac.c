@@ -74,11 +74,6 @@ static usbh_config_t usbh_cfg = {
 	.rx_fifo_depth = 500,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
-#elif defined (CONFIG_AMEBASMARTPLUS)
-	/*FIFO total depth is 1280 DWORD, reserve 14 DWORD for DMA addr*/
-	.rx_fifo_depth = 754,
-	.nptx_fifo_depth = 256,
-	.ptx_fifo_depth = 256,
 #elif defined (CONFIG_AMEBAL2)
 	/*FIFO total depth is 1024 DWORD, reserve 11 DWORD for DMA addr*/
 	.rx_fifo_depth = 501,

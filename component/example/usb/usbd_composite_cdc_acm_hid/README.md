@@ -72,4 +72,3 @@ Specially for Win7/XP host, please manually install the CDC ACM driver RtkUsbCdc
 - RTL8720F
 - RTL8721F
 - RTL8730E
-- RTL8730F

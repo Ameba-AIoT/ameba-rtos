@@ -1,6 +1,6 @@
 ameba_add_subdirectory(driver)
 
-# D/SMART/SMARTPLUS km0 Need driver to export global include path, but no CONFIG_WLAN
+# D/SMART km0 Need driver to export global include path, but no CONFIG_WLAN
 if(NOT CONFIG_WLAN)
     return()
 endif()

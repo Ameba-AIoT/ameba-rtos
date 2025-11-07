@@ -9,10 +9,4 @@ menu "CONFIG CHIP"
             bool "ARM_KM0"
     endchoice
 
-    choice
-        prompt "Chip Version"
-        default AMEBADPLUS_A_CUT_FOR_KM0
-        config AMEBADPLUS_A_CUT_FOR_KM0
-            bool "AMEBADPLUS_A_Cut"
-    endchoice
 endmenu

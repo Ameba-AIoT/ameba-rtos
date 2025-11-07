@@ -94,18 +94,6 @@ ameba_list_append_if(CONFIG_AMEBASMART public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6
 )
 
-ameba_list_append_if(CONFIG_AMEBASMARTPLUS public_includes
-    ${c_CMPT_WIFI_DIR}/wifi_reg/rtl8730f
-    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf
-    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf/rtl8730e
-    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8730e_rom
-    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb
-    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb/halbb_8730e
-    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf
-    ${CMAKE_CURRENT_SOURCE_DIR}/rtl8730e
-    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6
-)
-
 ameba_list_append_if(CONFIG_AMEBAGREEN2 public_includes
     ${c_CMPT_WIFI_DIR}/wifi_reg/rtl7005
     ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf
@@ -242,14 +230,6 @@ ameba_list_append_if(CONFIG_AMEBAD private_includes
 )
 
 ameba_list_append_if(CONFIG_AMEBASMART private_includes
-    ${c_CMPT_WIFI_DIR}/wifi_fw/amebasmart/include
-    ${c_FREERTOS_DIR}/include/
-    ${c_FREERTOS_DIR}/portable/GCC/AmebaSmart_HP/non_secure
-    ${c_FREERTOS_DIR}/portable/GCC/AmebaSmart_HP/secure
-    ${c_CMPT_FWLIB_DIR}/ap_core
-)
-
-ameba_list_append_if(CONFIG_AMEBASMARTPLUS private_includes
     ${c_CMPT_WIFI_DIR}/wifi_fw/amebasmart/include
     ${c_FREERTOS_DIR}/include/
     ${c_FREERTOS_DIR}/portable/GCC/AmebaSmart_HP/non_secure

@@ -1,8 +1,0 @@
-unknownMacro
-invalidPrintfArgType_s
-invalidPrintfArgType_n
-invalidPrintfArgType_p
-invalidPrintfArgType_uint
-invalidPrintfArgType_sint
-invalidPrintfArgType_float
-nullPointerRedundantCheck

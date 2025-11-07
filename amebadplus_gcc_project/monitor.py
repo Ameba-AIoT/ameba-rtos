@@ -8,7 +8,7 @@ import os
 import subprocess
 
 PROJECT_ROOT_DIR = os.path.realpath(os.path.dirname(os.path.abspath(__file__)))
-MONITOR_TOOL = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/meta_tools/scripts/monitor/monitor.py"))
+MONITOR_TOOL = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/ameba/Monitor/monitor.py"))
 
 def run_monitor(argv):
     cmds = [sys.executable, MONITOR_TOOL] + argv

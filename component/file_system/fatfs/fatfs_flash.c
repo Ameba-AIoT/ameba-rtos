@@ -10,10 +10,10 @@
 #include "vfs.h"
 #include "vfs_fatfs.h"
 #include "os_wrapper.h"
-#ifndef CONFIG_FATFS_FLASH_EXTERNAL
+#ifndef CONFIG_FATFS_SECONDARY_FLASH
 #include "flash_api.h"
 #else
-#include "vfs_external_nor_flash.h"
+#include "vfs_secondary_nor_flash.h"
 #endif
 
 #define FLASH_BLOCK_SIZE	512		// not passing any
@@ -57,7 +57,7 @@ DSTATUS FLASH_disk_deinitialize(void)
 	return res;
 }
 
-#ifndef CONFIG_FATFS_FLASH_EXTERNAL
+#ifndef CONFIG_FATFS_SECONDARY_FLASH
 
 flash_t		flash;
 
@@ -82,8 +82,6 @@ DRESULT FLASH_disk_write(const BYTE *buff, DWORD sector, UINT count)
 	DRESULT res = RES_OK;
 	u8 sector_index = sector % SECTOR_NUM;
 	u8 *flash_sector_buffer = (u8 *)rtos_mem_malloc(4096);
-
-	printf("internal flash , sector: %d, count : %d\r\n", (int)sector, (int)count);
 
 	//deal with fisrt flash sector
 	flash_stream_read(&flash, FLASH_APP_BASE + (sector / SECTOR_NUM) * 4096, 4096, flash_sector_buffer);
@@ -156,7 +154,7 @@ DRESULT FLASH_disk_read(BYTE *buff, DWORD sector, UINT count)
 	DRESULT res;
 	char retry_cnt = 0;
 	do {
-		res = interpret_flash_result(external_flash_read_stream(FLASH_APP_BASE + sector * SECTOR_SIZE_FLASH, count * SECTOR_SIZE_FLASH, (char *)buff));
+		res = interpret_flash_result(secondary_flash_read_stream(FLASH_APP_BASE + sector * SECTOR_SIZE_FLASH, count * SECTOR_SIZE_FLASH, (char *)buff));
 		if (++retry_cnt >= 3) {
 			break;
 		}
@@ -173,11 +171,11 @@ DRESULT FLASH_disk_write(const BYTE *buff, DWORD sector, UINT count)
 	char *flash_sector_buffer = rtos_mem_malloc(4096);
 
 	//deal with fisrt flash sector
-	external_flash_read_stream(FLASH_APP_BASE + (sector / SECTOR_NUM) * 4096, 4096, flash_sector_buffer);
+	secondary_flash_read_stream(FLASH_APP_BASE + (sector / SECTOR_NUM) * 4096, 4096, flash_sector_buffer);
 	memcpy(flash_sector_buffer + (sector_index * SECTOR_SIZE_FLASH), (BYTE *)buff,
 		   ((count + sector_index <= SECTOR_NUM) ? count : (u32)(SECTOR_NUM - sector_index))*SECTOR_SIZE_FLASH);
-	external_flash_erase_sector(FLASH_APP_BASE + (sector / SECTOR_NUM) * 4096);
-	external_flash_write_stream(FLASH_APP_BASE + (sector / SECTOR_NUM) * 4096, 4096, flash_sector_buffer);
+	secondary_flash_erase_sector(FLASH_APP_BASE + (sector / SECTOR_NUM) * 4096);
+	secondary_flash_write_stream(FLASH_APP_BASE + (sector / SECTOR_NUM) * 4096, 4096, flash_sector_buffer);
 	rtos_mem_free(flash_sector_buffer);
 	flash_sector_buffer = NULL;
 	return res;
@@ -222,7 +220,7 @@ DRESULT FLASH_disk_ioctl(BYTE cmd, void *buff)
 }
 #endif
 
-ll_diskio_drv FLASH_disk_external_Driver = {
+ll_diskio_drv FLASH_disk_secondary_Driver = {
 	.disk_initialize = FLASH_disk_initialize,
 	.disk_status = FLASH_disk_status,
 	.disk_read = FLASH_disk_read,

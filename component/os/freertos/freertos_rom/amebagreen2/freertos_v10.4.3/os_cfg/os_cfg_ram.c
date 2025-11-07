@@ -201,7 +201,7 @@ void os_rom_init(void)
 	msp_addr = MSP_RAM_HP_NS;
 #endif
 	/* all in km4tz when wifi host control */
-#ifdef CONFIG_WIFI_HOST_CONTROL
+#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 	os_cfg.patch_vApplicationIdleHook = vApplicationIdleHook_RAM;
 #endif
 

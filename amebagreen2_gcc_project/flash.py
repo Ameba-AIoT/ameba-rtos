@@ -13,7 +13,7 @@ import subprocess
 
 PROJECT_ROOT_DIR = os.path.realpath(os.path.dirname(os.path.abspath(__file__)))
 PROFILE = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/ameba/ImageTool/Devices/Profiles/AmebaGreen2_FreeRTOS_NOR.rdev"))
-FLASH_TOOL = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/meta_tools/scripts/flash/flash.py"))
+FLASH_TOOL = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/ameba/Flash/flash.py"))
 
 
 class MemoryInfo:
