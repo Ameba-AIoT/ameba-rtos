@@ -121,7 +121,7 @@
 /*************************** Config for Gen TxPower Tool End **************************/
 
 /*************************** Config for MP_MODE *******************************/
-#ifdef CONFIG_MP_INCLUDED
+#ifdef CONFIG_MP_SHRINK
 #undef RX_SHORTCUT
 #undef TX_SHORTCUT
 
@@ -134,9 +134,7 @@
 #define DRV_BB_ENV_MNTR_DISABLE
 #define DRV_BB_PHYSTS_PARSING_DISABLE
 #define DRV_BB_TIMER_SUPPORT_DISABLE
-#endif
 
-#ifdef CONFIG_MP_SHRINK
 #undef CONFIG_TWT
 #undef CONFIG_MCC_MODE
 #undef CONFIG_DFS

@@ -46,16 +46,18 @@ ameba_list_append(private_sources
     vfs_littlefs.c
     vfs_wrap.c
     vfs.c
+    vfs_secondary_nor_flash.c
+    vfs_sd_spi.c
 )
+
+ameba_list_append_if(CONFIG_SUPPORT_NAND_FLASH private_sources
+    vfs_nand_ftl.c
+    vfs_nand_ftl_mfg.c
+)
+
 if(CONFIG_VFS_FATFS_INCLUDED)
     ameba_list_append(private_sources
         vfs_fatfs.c
-        vfs_fatfs_flash.c
-        vfs_fatfs_flash_api.c
-    )
-    ameba_list_append_if(CONFIG_SUPPORT_SD_CARD private_sources
-        vfs_fatfs_sdcard_api.c
-        vfs_fatfs_sdcard.c
     )
 endif()
 

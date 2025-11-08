@@ -12,8 +12,12 @@
 
 #include <stdio.h>
 #ifndef WIN32
+#if !defined(__RTOS__)
 #include <dirent.h>
 #include <unistd.h>
+#else
+#include <vfs.h>
+#endif
 #else
 #include <windows.h>
 #endif

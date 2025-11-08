@@ -258,7 +258,7 @@ static log_item_t at_coex_items[] = {
 /* coex atcmd as a part of AT command "AT+LIST". */
 void print_coex_at(void)
 {
-#if ((defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED) && (defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK))
+#if (defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK)
 	//Print nothing
 #else
 
@@ -274,7 +274,7 @@ void print_coex_at(void)
 
 void at_coex_init(void)
 {
-#if ((defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED) && (defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK))
+#if (defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK)
 	(void)at_coex_items;
 #else
 	atcmd_service_add_table(at_coex_items, sizeof(at_coex_items) / sizeof(at_coex_items[0]));
