@@ -17,7 +17,7 @@ None
 	[*] Composite
 			Select Composite Class (HID + UAC)  --->
 	- Choose UAC Version 1.0 or 2.0 :
-	(X) CDC ACM + UAC
+	(X) HID + UAC
 			Select UAC Version (UAC 2.0)  --->
 	```
 	- Choose `CONFIG APPLICATION --->` -> `Audio Config --->`:
