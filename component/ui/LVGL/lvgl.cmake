@@ -117,6 +117,12 @@ ameba_list_append(private_sources
     lvgl/src/extra/widgets/span/lv_span.c
     lvgl/src/extra/widgets/spinner/lv_spinner.c
     lvgl/src/extra/widgets/tileview/lv_tileview.c
+    lvgl/src/extra/libs/fsdrv/lv_fs_stdio.c
+    lvgl/src/extra/libs/png/lv_png.c
+    lvgl/src/extra/libs/png/lodepng.c
+    lvgl/src/extra/libs/sjpg/lv_sjpg.c
+    lvgl/src/extra/libs/sjpg/tjpgd.c
+    lvgl/src/extra/libs/bmp/lv_bmp.c
 
     lvgl/src/font/lv_font.c
     lvgl/src/font/lv_font_dejavu_16_persian_hebrew.c
@@ -218,6 +224,7 @@ ameba_list_append(private_includes
 
 ameba_list_append(private_definitions
     LV_CONF_INCLUDE_SIMPLE
+    __RTOS__
 )
 
 ameba_list_append(private_compile_options

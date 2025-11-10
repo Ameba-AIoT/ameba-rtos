@@ -10,7 +10,7 @@ Required Components: speaker
 connect the speaker to board.
 
 # BUILD COMMAND
-./build.py -a mydata_source_player -p
+./build.py -a mydata_source_player
 
 ## Usage:
 CMD

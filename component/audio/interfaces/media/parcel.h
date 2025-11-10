@@ -17,15 +17,20 @@
 #define AMEBA_BASE_CUTILS_INTERFACES_CUTILS_PARCEL_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct Parcel Parcel;
+typedef void (*release_func)(Parcel* parcel, const uint8_t* data, size_t dataSize);
 
 Parcel *Parcel_Create(void);
-int32_t Parcel_Destroy(Parcel *parcel);
+void Parcel_IpcSetData(Parcel *parcel, uint8_t* data, size_t data_size, release_func rel_func);
+void Parcel_Destroy(Parcel *parcel);
+uint8_t* Parcel_IpcData(Parcel *parcel);
+size_t Parcel_IpcDataSize(Parcel *parcel);
 
 bool Parcel_WriteBool(Parcel *parcel, bool value);
 bool Parcel_ReadBool(Parcel *parcel);

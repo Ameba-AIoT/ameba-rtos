@@ -138,7 +138,7 @@ struct wpa_sta_info {
 	u8					b_clientHndshkDone : 1;
 	u8 					b_clientGkeyUpdate : 1;
 	u8					b_4way_triggered_by_join : 1;
-
+	u8 					b_pmk_ready : 1;
 };
 
 struct key_joininfo {

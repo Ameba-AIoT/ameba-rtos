@@ -13,6 +13,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/${v_FATFS_VER}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../vfs
 )
 
 # Component public part, user config end(DO NOT remove this line)
@@ -48,12 +49,18 @@ ameba_list_append_if(CONFIG_SUPPORT_FATFS_USB private_sources
     disk_if/src/usbdisk.c
 )
 
-
 ameba_list_append(private_sources
     ${v_FATFS_VER}/src/ff.c
     ${v_FATFS_VER}/src/diskio.c
     ${v_FATFS_VER}/src/ffsystem.c
     ${v_FATFS_VER}/src/ffunicode.c
+)
+
+ameba_list_append(private_sources
+    fatfs_flash.c
+    fatfs_flash_api.c
+    fatfs_sdcard.c
+    fatfs_sdcard_api.c
 )
 
 # Component private part, user config end(DO NOT remove this line)

@@ -168,8 +168,10 @@ void __rtos_critical_exit_os(void)
 
 uint32_t rtos_get_critical_state(void)
 {
-#ifndef CONFIG_ARM_CORE_CA32
+#ifdef CONFIG_ARM_CORE_CA32
+	uint32_t xCoreID = portGET_CORE_ID();
+	return GetComponentCriticalNesting(xCoreID) || GetOSCriticalNesting(xCoreID);
+#else
 	return xPortGetCriticalState();
 #endif
-	return 0;
 }

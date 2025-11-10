@@ -1,15 +1,18 @@
+importlib-metadata ; python_version < '3.8'
+packaging
 cryptography==3.4.8
 ecdsa==0.19.0
 pycryptodome==3.21.0
 pyDes==2.0.1
 pyelftools==0.31
 pyserial==3.5
-python-mbedtls==2.10.1
+python-mbedtls==2.7.0 ; python_version < '3.8'
+python-mbedtls==2.10.1 ; python_version >= '3.8'
 sslcrypto==5.3
 windows-curses==2.4.0 ; platform_system == "Windows"
 littlefs-python==0.13.3
-pyfatfs==1.1.0
-json5==0.12.0
+pyfatfs
+json5
 colorama==0.4.6
-pywin32==311 ; platform_system == "Windows"
-prompt_toolkit==3.0.52
+pywin32 ; platform_system == "Windows"
+prompt_toolkit
