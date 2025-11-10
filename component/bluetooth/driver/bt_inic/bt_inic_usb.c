@@ -148,22 +148,19 @@ u8 bt_inic_usb_hci_acl_hdl(u8 *buf, u16 len)
 	return 1;
 }
 
-void bt_inic_usb_suspend_cb(void)
-{
-	bt_inic_usb_status = BT_INIC_USB_STATUS_SUSPEND;
-}
 
-void bt_inic_usb_resume_cb(void)
-{
-	bt_inic_usb_status = BT_INIC_USB_STATUS_ACTIVE;
-}
 
-void bt_inic_status_change_cb(u8 status)
+void bt_inic_status_change_cb(u8 old_status, u8 status)
 {
+
 	if (status == USBD_ATTACH_STATUS_ATTACHED) {
 		bt_inic_usb_status = BT_INIC_USB_STATUS_ACTIVE;
 	} else if (status == USBD_ATTACH_STATUS_DETACHED) {
-		bt_inic_usb_status = BT_INIC_USB_STATUS_DISABLED;
+		if (old_status == USBD_ATTACH_STATUS_ATTACHED) {
+			bt_inic_usb_status = BT_INIC_USB_STATUS_SUSPEND;
+		} else {
+			bt_inic_usb_status = BT_INIC_USB_STATUS_DISABLED;
+		}
 	}
 }
 

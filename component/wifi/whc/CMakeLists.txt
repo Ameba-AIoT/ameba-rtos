@@ -220,16 +220,6 @@ elseif(CONFIG_AMEBASMART)
         ${c_CMPT_WIFI_DIR}/driver/rtl8730e_rom
         ${c_CMPT_WIFI_DIR}/wifi_fw/amebasmart/include
     )
-
-elseif(CONFIG_AMEBASMARTPLUS)
-    ameba_list_append(private_includes
-        ${c_CMPT_WIFI_DIR}/driver/phy_g6
-        ${c_CMPT_WIFI_DIR}/driver/phy_g6/bb
-        ${c_CMPT_WIFI_DIR}/driver/phy_g6/rf
-        ${c_CMPT_WIFI_DIR}/driver/rtl8730e
-        ${c_CMPT_WIFI_DIR}/driver/rtl8730e_rom
-        ${c_CMPT_WIFI_DIR}/wifi_fw/amebasmart/include
-    )
 endif()
 
 if(CONFIG_WHC_INTF_USB)

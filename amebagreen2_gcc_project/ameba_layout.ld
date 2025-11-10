@@ -152,7 +152,7 @@ MEMORY
 #endif
 
     /* IMG2 RAM */
-#if defined (CONFIG_WIFI_HOST_CONTROL)
+#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
     KM4TZ_BD_RAM (rwx) :                   ORIGIN = ORIGIN(FULLMAC_IMG2), LENGTH = LENGTH(FULLMAC_IMG2)
 #else
     KM4TZ_BD_RAM_TZ_NSC (rwx) :            ORIGIN = KM4TZ_RAM_TZ_NSC_START + IMAGE_HEADER_LEN,     LENGTH = RAM_TZ_NSC_SIZE - IMAGE_HEADER_LEN                                   /* KM4TZ BD RAM NSC: 4k */

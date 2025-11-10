@@ -134,8 +134,6 @@ typedef struct _usbd_class_driver_t {
 	int(*setup)(usb_dev_t *dev, usb_setup_req_t *req);
 
 	int(*sof)(usb_dev_t *dev);
-	int(*suspend)(usb_dev_t *dev);
-	int(*resume)(usb_dev_t *dev);
 
 	int(*ep0_data_in)(usb_dev_t *dev, u8 status);
 	int(*ep0_data_out)(usb_dev_t *dev);

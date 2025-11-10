@@ -8,13 +8,6 @@ menu "CONFIG CHIP" #DONE
             bool "ARM_CA32"
     endchoice
 
-    choice
-        prompt "Chip Version"
-        default AMEBASMART_A_CUT_FOR_CA32
-        config AMEBASMART_A_CUT_FOR_CA32
-            bool "AMEBASMART_A_Cut"
-    endchoice
-
     # Enable NEON (Advanced SIMD) support for ARM Cortex-A processors
     config NEON_FOR_CA32
         bool

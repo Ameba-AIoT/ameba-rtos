@@ -91,7 +91,7 @@ struct diag_evt_wifi_disconn { /*DIAG_EVT_WIFI_DISCONN*/
 } __PACKED;
 
 struct diag_evt_wifi_join_fail { /*DIAG_EVT_WIFI_JOIN_FAIL*/
-	u16 reason;/*in rtk_status.h*/
+	u16 reason;/*enum rtk_error_code in rtk_status.h*/
 	u16 reason_code;
 } __PACKED;
 

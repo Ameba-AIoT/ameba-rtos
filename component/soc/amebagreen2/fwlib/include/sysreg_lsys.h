@@ -232,8 +232,8 @@
 #define CKSL_I2S_USB_PLL 0x1
 #define CKSL_I2S_SYS_PLL 0x3
 #define CKSL_GMAC_EXT50M 0x0
-#define CKSL_GMAC_USB_PLL 0x1
-#define CKSL_GMAC_SYS_PLL 0x3
+#define CKSL_GMAC_SYS_PLL 0x1
+#define CKSL_GMAC_USB_PLL 0x3
 #define CKSL_VO_XTAL 0x0
 #define CKSL_VO_USB_PLL 0x1
 #define CKSL_VO_SYS_PLL 0x3
@@ -267,7 +267,7 @@
 #define LSYS_CKSL_I2S(x)        (((u32)((x) & 0x00000003) << 18))
 #define REG_LSYS_CKSL_I2S       REG_LSYS_CKSL_GRP0
 #define LSYS_GET_CKSL_I2S(x)    ((u32)(((x >> 18) & 0x00000003)))
-#define LSYS_MASK_CKSL_GMAC     ((u32)0x00000003 << 16)           /*!< R/W 0x1  gmac clock select ##x0: ext50m ##01: usb_pll ##11: sys_pll DD_SEC: bpc_gmac*/
+#define LSYS_MASK_CKSL_GMAC     ((u32)0x00000003 << 16)           /*!< R/W 0x1  gmac clock select ##x0: ext50m ##01: sys_pll ##11: usb_pll DD_SEC: bpc_gmac*/
 #define LSYS_CKSL_GMAC(x)       (((u32)((x) & 0x00000003) << 16))
 #define REG_LSYS_CKSL_GMAC      REG_LSYS_CKSL_GRP0
 #define LSYS_GET_CKSL_GMAC(x)   ((u32)(((x >> 16) & 0x00000003)))
@@ -1521,7 +1521,7 @@
 * ADC: BUS_CLK / IP_CLK
 * BT_32K: OSC131K / XTAL312P5K
 * DTIM: SDM32K / XTAL
-* GMAC: EXT50M / USB_PLL / SYS_PLL
+* GMAC: EXT50M / SYS_PLL / USB_PLL
 * GPIO4M: SDM32K / OSC4M
 * GPIO: BUS_CLK / IP_CLK
 * HP: XTAL / USB_PLL / SYS_PLL

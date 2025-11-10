@@ -20,7 +20,7 @@ ameba_list_append(public_includes
 )
 
 ## Differentiated configuration based on SoC types
-if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
+if(CONFIG_AMEBASMART)
      ameba_list_append_if(CONFIG_SPEEX_LIB public_libraries
          ${c_SDK_LIB_APPLICATION_DIR}/lib_speexdsp.a
      )

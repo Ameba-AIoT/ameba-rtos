@@ -249,7 +249,7 @@ void shell_init_ram(void)
 	//CONSOLE_AMEBA();
 }
 
-#ifndef CONFIG_WIFI_HOST_CONTROL
+#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 IPC_TABLE_DATA_SECTION
 const IPC_INIT_TABLE ipc_shell_table = {
 	.USER_MSG_TYPE = IPC_USER_DATA,

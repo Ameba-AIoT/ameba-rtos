@@ -9,7 +9,7 @@
 #include "ameba_dump_stack.h"
 #include "ameba_secure_boot.h"
 #include "boot_ota_km4tz.h"
-#ifdef CONFIG_FULLMAC_DEV
+#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 #include "hci_core.h"
 #endif
 
@@ -49,7 +49,7 @@ void Boot_SDIO_Pinmux_init(void)
 	}
 }
 
-#ifdef CONFIG_FULLMAC_DEV
+#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 void Boot_Fullmac_ImgInfo_Set(SubImgInfo_TypeDef *SubImgInfo, IMAGE_HEADER *ImgHdr)
 {
 	if (ImgHdr != &EmptyImgHdr) {
@@ -163,6 +163,7 @@ void Boot_Fullmac_LoadIMGAll(void)
 		Boot_Fullmac_LoadImage();
 	} else {
 		switch (mem_type) {
+#ifndef CONFIG_FULLMAC_IN_SINGLE_DIE
 		case MCM_TYPE_NOR_FLASH:
 			/* rom code init flash only when BOOT_FROM_FLASH */
 			void BOOT_ROM_InitFlash(void);
@@ -178,6 +179,7 @@ void Boot_Fullmac_LoadIMGAll(void)
 			Boot_Fullmac_ImgDownload();
 			Boot_Fullmac_Secure_Check(3, FALSE, TRUE);
 			break;
+#endif
 		default:
 		case MCM_SINGLE_DIE:
 			Boot_Fullmac_Secure_Check(1, FALSE, FALSE);

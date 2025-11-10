@@ -6,6 +6,8 @@
 #include "os_wrapper.h"
 #include "diag.h"
 
+int fatfs_mount_flag = 0;
+
 // return drv_num assigned
 int FATFS_RegisterDiskDriver(ll_diskio_drv *drv)
 {
@@ -473,8 +475,14 @@ int fatfs_mount(int interface)
 #endif
 	} else {
 		VFS_DBG(VFS_ERROR, "It don't support the interface %d", interface);
-		return -1;
 	}
+
+	if (ret) {
+		fatfs_mount_flag = -1;
+	} else {
+		fatfs_mount_flag = 1;
+	}
+
 	return ret;
 }
 

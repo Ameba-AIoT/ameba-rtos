@@ -18,6 +18,13 @@
 #define UAC_TERMINAL_TYPE_SPEAKER      0x0301
 #define UAC_TERMINAL_TYPE_HEADPHONE    0x0302
 
+/*  4.3.2.5 Feature Unit Descriptor  bmaControls */
+#define UAC_CONTROL_MUTE               BIT0
+#define UAC_CONTROL_VOLUME             BIT1
+#define UAC_CONTROL_BASS               BIT2
+#define UAC_CONTROL_MID                BIT3
+#define UAC_CONTROL_TREBLE             BIT4
+
 /* A.2 Audio Interface Subclass Codes */
 #define USB_SUBCLASS_AUDIOCONTROL       0x01
 #define USB_SUBCLASS_AUDIOSTREAMING     0x02
@@ -54,27 +61,17 @@
 #define UAC_EP_GENERAL                  0x01
 
 /* A.9 Audio Class-Specific Request Codes */
-#define UAC_SET_                        0x00
-#define UAC_GET_                        0x80
-
-#define UAC__CUR                        0x1
-#define UAC__MIN                        0x2
-#define UAC__MAX                        0x3
-#define UAC__RES                        0x4
-#define UAC__MEM                        0x5
-
-#define UAC_SET_CUR                     (UAC_SET_ | UAC__CUR)
-#define UAC_GET_CUR                     (UAC_GET_ | UAC__CUR)
-#define UAC_SET_MIN                     (UAC_SET_ | UAC__MIN)
-#define UAC_GET_MIN                     (UAC_GET_ | UAC__MIN)
-#define UAC_SET_MAX                     (UAC_SET_ | UAC__MAX)
-#define UAC_GET_MAX                     (UAC_GET_ | UAC__MAX)
-#define UAC_SET_RES                     (UAC_SET_ | UAC__RES)
-#define UAC_GET_RES                     (UAC_GET_ | UAC__RES)
-#define UAC_SET_MEM                     (UAC_SET_ | UAC__MEM)
-#define UAC_GET_MEM                     (UAC_GET_ | UAC__MEM)
-
-#define UAC_GET_STAT                    0xff
+#define UAC_SET_CUR                     0x01
+#define UAC_GET_CUR                     0x81
+#define UAC_SET_MIN                     0x02
+#define UAC_GET_MIN                     0x82
+#define UAC_SET_MAX                     0x03
+#define UAC_GET_MAX                     0x83
+#define UAC_SET_RES                     0x04
+#define UAC_GET_RES                     0x84
+#define UAC_SET_MEM                     0x05
+#define UAC_GET_MEM                     0x85
+#define UAC_GET_STAT                    0xFF
 
 /* A.10 Control Selector Codes */
 

@@ -25,7 +25,7 @@
 
 /* -------------------------------- Defines --------------------------------- */
 
-#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)
+#if defined(CONFIG_AMEBASMART)
 
 #if defined(CONFIG_ARM_CORE_CA32)
 #define COEX_IPC_DIR_MSG_RX IPC_NP_TO_AP

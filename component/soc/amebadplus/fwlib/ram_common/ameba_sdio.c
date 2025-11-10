@@ -361,6 +361,22 @@ void SDIO_RxReq(SDIO_TypeDef *SDIO)
 
 	HAL_WRITE8(SDIO_REG_BASE, REG_SPDIO_HCI_RX_REQ, BIT_HCI_RX_REQ);
 }
+
+/**
+ * @brief Abort SDIO Rx request.
+ * @param None
+ * @retval None
+ */
+void SDIO_AbortRxReq(SDIO_TypeDef *SDIO)
+{
+	UNUSED(SDIO);
+
+	u8 reg;
+
+	reg = HAL_READ8(SDIO_REG_BASE, REG_SPDIO_HCI_RX_REQ);
+	reg &= ~BIT_HCI_RX_REQ;
+	HAL_WRITE8(SDIO_REG_BASE, REG_SPDIO_HCI_RX_REQ, reg);
+}
 /**
   * @}
   */

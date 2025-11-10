@@ -11,11 +11,8 @@ endif()
 set(c_IMG1_LD ${c_SDK_LD_DIR}/ameba_img1_all.ld)
 set(c_IMG3_LD ${c_SDK_LD_DIR}/ameba_img3_all.ld)
 
-if(CONFIG_AMEBADPLUS_A_CUT)
-    set(c_ROM_LIB_DIR ${c_SDK_LIB_DIR}/amebadplus_rom_acut)
-elseif(CONFIG_AMEBADPLUS_B_CUT)
-    set(c_ROM_LIB_DIR ${c_SDK_LIB_DIR}/amebadplus_rom_bcut)
-endif()
+# note!!! Keep the latest version(KM0:A, KM4:B) at the top for release reason.
+set(c_ROM_LIB_DIR ${c_SDK_LIB_DIR}/amebadplus_rom_bcut)
 
 if(CONFIG_LINK_ROM_SYMB)
     set(c_LINK_ROM_LIB)

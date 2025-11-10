@@ -884,14 +884,6 @@ HAL_Status USB_PCD_Init(USB_PCD_HandleTypeDef *hpcd)
 	USB_PCD_SetTxFiFo(hpcd, 3, 16);
 	USB_PCD_SetTxFiFo(hpcd, 4, 32); // For INTR IN, unused
 	USB_PCD_SetTxFiFo(hpcd, 5, 16);
-#elif defined(CONFIG_AMEBASMARTPLUS)
-	USB_PCD_SetRxFiFo(hpcd, 898); // For CTRL OUT and BULK OUT
-	USB_PCD_SetTxFiFo(hpcd, 0, 32); // For CTRL IN
-	USB_PCD_SetTxFiFo(hpcd, 1, 256); // For BULK IN
-	USB_PCD_SetTxFiFo(hpcd, 2, 32); // For INTR IN, unused
-	USB_PCD_SetTxFiFo(hpcd, 3, 16);
-	USB_PCD_SetTxFiFo(hpcd, 4, 16);
-	USB_PCD_SetTxFiFo(hpcd, 5, 16);
 #elif defined(CONFIG_AMEBAL2)
 	USB_PCD_SetRxFiFo(hpcd, 660); // For CTRL OUT and BULK OUT
 	USB_PCD_SetTxFiFo(hpcd, 0, 32); // For CTRL IN

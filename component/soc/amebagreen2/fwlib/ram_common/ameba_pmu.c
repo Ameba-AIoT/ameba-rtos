@@ -224,7 +224,7 @@ void pmu_pre_sleep_processing(uint32_t *tick_before_sleep)
 	/*Disable systick interrupt to avoid interrupting sleep flow*/
 	Systick_Cmd(DISABLE);
 
-#if defined(CONFIG_WIFI_HOST_CONTROL)
+#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 	SOCPS_Sleep_FULLMAC(sleep_type);
 #else
 	if (sleep_type == SLEEP_PG) {

@@ -86,7 +86,7 @@ void app_pmu_init(void)
 	pmu_set_sleep_type(SLEEP_PG);
 
 	/* only one core in fullmac mode */
-#ifndef CONFIG_WIFI_HOST_CONTROL
+#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 	/* If the current cpu is np, need to hold the lock of another cpu */
 	if ((HAL_READ32(PMC_BASE, SYSPMC_CTRL) & PMC_BIT_CPU_IS_AP) == 0) {
 		pmu_acquire_wakelock(PMU_CPU1_RUN);
@@ -206,7 +206,7 @@ int main(void)
 	RTK_LOGI(TAG, "AP MAIN \n");
 	ameba_rtos_get_version();
 
-#ifdef CONFIG_WIFI_HOST_CONTROL
+#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 	app_fullmac_init();
 	app_IWDG_int();
 #else
@@ -255,7 +255,7 @@ int main(void)
 	shell_init_rom(0, NULL);
 	shell_init_ram();
 
-#ifdef CONFIG_WIFI_HOST_CONTROL
+#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 	/* Register Log Uart Callback function */
 	InterruptRegister((IRQ_FUN) shell_uart_irq_rom, UART_LOG_IRQ, (u32)NULL, INT_PRI_LOWEST);
 	InterruptEn(UART_LOG_IRQ, INT_PRI_LOWEST);

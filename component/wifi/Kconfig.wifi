@@ -56,9 +56,16 @@ config RMESH_EN
     default n
 
 if RMESH_EN
+    config RMESH_SOCKET_EN
+        bool "Enable R-mesh Socket"
+        default n
+
+if RMESH_SOCKET_EN
     config RMESH_OTA_EN
         bool "Enable R-mesh OTA"
         default n
+endif
+
 endif
 
 if LINUX_FW_EN

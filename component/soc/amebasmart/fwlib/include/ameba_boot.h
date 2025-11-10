@@ -69,6 +69,11 @@ extern u8 __psram_heap_extend_start__[];
 extern u8 __psram_heap_extend_size__[];
 extern u8 __non_secure_psram_end__[]; /* if psram is 8MB, than write 0x60800000 will write 0x60000000 */
 
+#if defined (CONFIG_UNITY_TEST) && CONFIG_UNITY_TEST
+extern u8 __unity_table_start__[];
+extern u8 __unity_table_end__[];
+#endif
+
 /* sym for stdlib rom */
 extern u8 __rom_stdlib_bss_start__[];
 extern u8 __rom_stdlib_bss_end__[];

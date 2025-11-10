@@ -108,7 +108,6 @@ typedef struct {
 
 extern void bt_stack_gatts_evt_indicate_mtu_exchange(uint8_t conn_id, uint16_t mtu);
 extern void bt_stack_gattc_evt_indicate_mtu_exchange(uint8_t conn_id, uint16_t mtu);
-extern rtk_bt_le_link_role_t convert_rtk_link_role(T_GAP_ROLE role);
 
 static T_GAP_DEV_STATE le_gap_dev_state = {0};
 static bt_stack_le_link_info_t bt_stack_le_link_tbl[RTK_BLE_GAP_MAX_LINKS] = {0};
@@ -157,7 +156,7 @@ static void privacy_handle_resolv_list(bool indicate);
 static void privacy_handle_bond_modify_msg(T_LE_BOND_MODIFY_TYPE type, T_LE_KEY_ENTRY *p_entry);
 #endif
 
-rtk_bt_le_link_role_t convert_rtk_link_role(T_GAP_ROLE role)
+static rtk_bt_le_link_role_t convert_rtk_link_role(T_GAP_ROLE role)
 {
 	switch (role) {
 	case GAP_LINK_ROLE_MASTER:
@@ -1361,6 +1360,12 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 	}
 #endif
 #endif /* F_BT_LE_4_0_DTM_SUPPORT */
+
+	case GAP_MSG_LE_GAP_STATE_MSG: {
+		T_IO_MSG *io_msg = (T_IO_MSG *)p_data->p_gap_state_msg;
+		bt_stack_le_gap_handle_io_msg(io_msg->subtype, &io_msg->u.param);
+		break;
+	}
 	default:
 		break;
 	}
@@ -2128,6 +2133,7 @@ uint16_t bt_stack_le_gap_init(void *gap_conf)
 		return RTK_BT_ERR_NO_RESOURCE;
 	}
 
+	le_gap_msg_info_way(false);
 	bt_stack_le_gap_ext_adv_init();
 
 	bt_stack_le_gap_set_config(gap_conf);
@@ -5212,6 +5218,12 @@ static uint16_t bt_stack_le_sm_set_security_param(void *param)
 	}
 
 	cause = gap_set_pairable_mode();
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	cause = le_bond_set_param(GAP_PARAM_BOND_SIGN_KEY_FLAG, sizeof(uint8_t),
+							  &p_sec_param->sign_key_flag);
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}

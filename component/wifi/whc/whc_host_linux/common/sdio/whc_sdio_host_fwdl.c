@@ -12,7 +12,7 @@
 u8 old_data_crc_err_cnt;
 u8 new_data_crc_err_cnt;
 
-char *rtw_fw1_path = "/etc/image/ap_fullmac.bin";
+char *rtw_fw1_path = "/etc/image/km4tz_fullmac.bin";
 
 u32	rtw_sdio_get_current_time(void)
 {

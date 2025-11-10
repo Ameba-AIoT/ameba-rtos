@@ -1154,6 +1154,7 @@ typedef struct {
 	uint8_t use_fixed_key;                  /*!< Pairing use fixed passkey */
 	uint32_t fixed_key;                     /*!< Fixed passkey value */
 	uint8_t auto_sec_req;                   /*!< Auto send security request when connected */
+	uint8_t sign_key_flag;                  /*!< Sign key flag, this field can't be get by @ref rtk_bt_le_sm_get_security_param */
 } rtk_bt_le_security_param_t;
 
 /**

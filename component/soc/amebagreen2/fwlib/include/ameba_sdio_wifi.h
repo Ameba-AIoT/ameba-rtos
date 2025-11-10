@@ -411,6 +411,7 @@ void SDIO_DMA_Reset(SDIO_TypeDef *SDIO);
 u32 SDIO_DMA_CTRL_Get(SDIO_TypeDef *SDIO);
 void SDIO_SetReady(SDIO_TypeDef *SDIO, int ready);
 void SDIO_RxReq(SDIO_TypeDef *SDIO);
+void SDIO_AbortRxReq(SDIO_TypeDef *SDIO);
 
 /* MANUAL_GEN_END */
 

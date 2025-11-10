@@ -181,7 +181,6 @@ int main(void)
 	//app_init_debug();
 
 	ipc_table_init(IPCNP_DEV);
-	IPC_SEMDelayStub((void *)rtos_time_delay_ms);
 
 	app_filesystem_init();
 
