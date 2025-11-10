@@ -129,12 +129,17 @@ static int usbh_composite_hid_uac_cb_setup(usb_host_t *host)
 	usbh_composite_host_t *chost = &usbh_composite_host;
 	int ret = HAL_OK;
 
+	if (chost->uac != NULL) {
+		ret = usbh_composite_uac_get_volume_infor(host);
+		if (ret != HAL_OK) {
+			return ret;
+		}
+	}
+
 	if (chost->hid != NULL) { //maybe not support hid while do attch check
 		ret = usbh_composite_hid_handle_report_desc(host);
 		if (ret != HAL_OK) {
 			return ret;
-		} else {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Get Hid msg OK\n");
 		}
 	}
 

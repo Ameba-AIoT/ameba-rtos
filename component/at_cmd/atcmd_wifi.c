@@ -262,7 +262,7 @@ void at_wlconn(void *arg)
 		goto end;
 	}
 
-#ifdef CONFIG_WIFI_TUNNEL
+#ifdef CONFIG_RMESH_EN
 	if (0 == strcmp("zrpp", argv[1])) {
 		extern void wtn_zrpp_start(void);
 		wtn_zrpp_start();

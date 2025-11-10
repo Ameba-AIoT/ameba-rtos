@@ -37,7 +37,7 @@ CmdRamHelp(
 			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%s\n", cmd_table[index].msg);
 		}
 	}
-	RTK_LOGS(TAG, RTK_LOG_ALWAYS, "----------------- TEST COMMAND MODE END  %x------------------\n", cmd_mum);
+	RTK_LOGS(TAG, RTK_LOG_ALWAYS, "----------------- TEST COMMAND MODE END  %x------------------\n", SYS_CPUID());
 
 	return TRUE ;
 }
@@ -349,7 +349,7 @@ static COMMAND_TABLE   shell_cmd_table[] = {
 		"\t\t \n"
 	},
 #ifndef CONFIG_MP_SHRINK
-#if ((defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)) && (defined(CONFIG_ARM_CORE_CA32) || defined(CONFIG_ARM_CORE_CM4))) || \
+#if (defined(CONFIG_AMEBASMART) && (defined(CONFIG_ARM_CORE_CA32) || defined(CONFIG_ARM_CORE_CM4))) || \
 	(defined(CONFIG_AMEBAD) && defined(CONFIG_ARM_CORE_CM4)) || \
 	(defined(CONFIG_AMEBALITE) && defined(CONFIG_ARM_CORE_CM4)) || \
 	(defined(CONFIG_AMEBADPLUS) && defined(CONFIG_ARM_CORE_CM4)) || \

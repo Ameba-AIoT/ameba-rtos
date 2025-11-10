@@ -107,32 +107,28 @@ static void usbh_uvc_set_alt(uvc_stream_t *stream)
 static void usbh_uvc_set_buf(uvc_stream_t *stream)
 {
 	int i, j;
-	u32 maxpktsize, npkt;
+	u32 max_pkt_size, pkt_cnt, pkt_stride;
 
-	maxpktsize = stream->cur_setting.ep_size;
-	if (maxpktsize & 0x3) {
-		maxpktsize &= ~0x3;   // for aligned
-		maxpktsize += 4;
-	}
+	max_pkt_size = stream->cur_setting.ep_size;
+	pkt_stride = CACHE_LINE_ALIGNMENT(max_pkt_size);
+	pkt_cnt = UVC_URB_SIZE / max_pkt_size;
 
-	npkt = UVC_URB_SIZE / maxpktsize;
-
-	//RTK_LOGS(TAG, RTK_LOG_DEBUG, "MPS:%d, npkt:%d\n", maxpktsize, npkt);
+	//RTK_LOGS(TAG, RTK_LOG_DEBUG, "MPS:%d, pkt_cnt:%d\n", max_pkt_size, pkt_cnt);
 
 	/*init urb*/
-	stream->urb_buffer_size = npkt * maxpktsize;
+	stream->urb_buffer_size = pkt_cnt * pkt_stride;
 	stream->uvc_buffer = (u8 *)usb_os_malloc(UVC_URB_NUMS * stream->urb_buffer_size);
 
 	for (i = 0; i < UVC_URB_NUMS; i ++) {
-		stream->urb[i] = (uvc_urb_t *) usb_os_malloc(sizeof(uvc_urb_t) + (npkt + 1) * sizeof(uvc_packet_desc_t));
+		stream->urb[i] = (uvc_urb_t *) usb_os_malloc(sizeof(uvc_urb_t) + (pkt_cnt + 1) * sizeof(uvc_packet_desc_t));
 		stream->urb[i]->addr = (u8 *)((u32)stream->uvc_buffer + i * stream->urb_buffer_size);
-		stream->urb[i]->packet_num = npkt;
+		stream->urb[i]->packet_num = pkt_cnt;
 		stream->urb[i]->index = i;
-		stream->urb[i]->packet_length = maxpktsize;
+		stream->urb[i]->packet_length = max_pkt_size;
 
-		for (j = 0; j < (int)npkt; j ++) {
-			stream->urb[i]->packet_info[j].length = maxpktsize;
-			stream->urb[i]->packet_info[j].offset = j * maxpktsize;
+		for (j = 0; j < (int)pkt_cnt; j ++) {
+			stream->urb[i]->packet_info[j].length = max_pkt_size;
+			stream->urb[i]->packet_info[j].offset = j * pkt_stride;
 		}
 	}
 
@@ -274,7 +270,7 @@ static uvc_frame_t *usbh_uvc_next_frame_buffer(uvc_stream_t *stream, uvc_frame_t
 		buf->err = 0;
 		buf->byteused = 0;
 		stream->err_frame_cnt ++;
-		RTK_LOGI(TAG, "Drop err frame\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Drop err frame\n");
 		return buf;
 	}
 
@@ -288,7 +284,7 @@ static uvc_frame_t *usbh_uvc_next_frame_buffer(uvc_stream_t *stream, uvc_frame_t
 	if (!list_empty(&stream->frame_empty)) {
 		frame_buffer = list_first_entry(&stream->frame_empty, uvc_frame_t, list);
 	} else {
-		RTK_LOGI(TAG, "No free uvc buffer 3\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "No free uvc buffer 3\n");
 		return NULL;
 	}
 
@@ -319,7 +315,7 @@ static void usbh_uvc_decode_urb(uvc_stream_t *stream, uvc_urb_t *urb)
 		frame_buffer = list_first_entry(&stream->frame_empty, uvc_frame_t, list);
 	} else {
 		usb_os_sema_give(stream->frame_sema);
-		RTK_LOGI(TAG, "No free uvc buffer\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "No free uvc buffer\n");
 		return;
 	}
 
@@ -332,13 +328,13 @@ static void usbh_uvc_decode_urb(uvc_stream_t *stream, uvc_urb_t *urb)
 		header = (uvc_vs_payload_header_t *)data;
 
 		if (length < header->bHeaderLength) {
-			RTK_LOGE(TAG, "Err: payload len(%dd) < header len(%d)\n", length, header->bHeaderLength);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Err: payload len(%dd) < header len(%d)\n", length, header->bHeaderLength);
 			return;
 		}
 
 		if (header->bmHeaderInfo.b.err == 1) {
 			/* Note: it need to send request if want to get error reason */
-			RTK_LOGI(TAG, "Drop pkt:bmHeaderInfo.b.err = 1\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Drop pkt:bmHeaderInfo.b.err = 1\n");
 			frame_buffer->err = 1;
 			continue;
 		}
@@ -349,7 +345,7 @@ static void usbh_uvc_decode_urb(uvc_stream_t *stream, uvc_urb_t *urb)
 			if (frame_buffer->byteused != 0) {
 				frame_buffer = usbh_uvc_next_frame_buffer(stream, frame_buffer);
 				if (!frame_buffer) {
-					RTK_LOGI(TAG, "No free uvc buffer 1\n");
+					RTK_LOGS(TAG, RTK_LOG_INFO, "No free uvc buffer 1\n");
 					return;
 				}
 			}

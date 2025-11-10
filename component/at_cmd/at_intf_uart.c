@@ -37,7 +37,6 @@ rtos_sema_t uart_tx_sema;
 
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
-extern char lfs_mount_fail;
 
 #define UART_TT_BUF_LEN 1024
 u8 uart_tt_buf[UART_TT_BUF_LEN];

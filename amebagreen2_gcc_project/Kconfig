@@ -33,6 +33,9 @@ config SUPPORT_USBD_INIC
 config SUPPORT_USBH_UVC_HW_DEC
     def_bool y
 
+config SUPPORT_USBH_ECM
+    def_bool y
+
 config SUPPORT_HEAP_TRACE
     def_bool y
 
@@ -119,14 +122,6 @@ menu "CONFIG Link Option"
         bool
 endmenu
 
-menu "CONFIG FULLMAC MODE"
-    config FULLMAC_NEW_VERSION
-        depends on WIFI_HOST_CONTROL
-        bool "Enable New FULLMAC"
-        default y
-endmenu
-
-
 
 rsource "../component/at_cmd/Kconfig"
 
@@ -135,6 +130,8 @@ rsource "../component/soc/common/rtk_assert/Kconfig"
 rsource "../component/file_system/Kconfig"
 
 rsource "../component/os/Kconfig"
+
+orsource "../component/utils/Kconfig"
 
 
 menu "CONFIG OTA OPTION"
@@ -167,6 +164,7 @@ menu "CONFIG WHC INTF"
         default WHC_INTF_IPC_MENU
             config WHC_INTF_IPC_MENU
                 bool "WHC_IPC"
+                select WHC_INTF_IPC
             config WIFI_SINGLE_CORE_MENU
                 bool "SINGLE CORE"
             config FULLMAC_DEV
@@ -206,7 +204,8 @@ menu "CONFIG WHC INTF"
             bool "Support WHC SUPPLICANT OFFLOAD"
         config WHC_DUAL_TCPIP_FOR_KM4TZ
             bool "Support WHC DUAL TCPIP"
-
+        config FULLMAC_IN_SINGLE_DIE
+            bool "Support Download to SRAM Only"
         endmenu
     endif
 
@@ -380,7 +379,6 @@ menu "CONFIG WIFI"
 
         config WHC_INTF_IPC_MENU
             bool
-            select WHC_INTF_IPC
             select WHC_WIFI_API_PATH
             select WLAN
             select LWIP_LAYER if WHC_HOST && !MP_SHRINK && !ZEPHYR_SDK
@@ -481,10 +479,10 @@ menu "CONFIG ETHERNET"
 	if ETHERNET
 		choice
 			prompt "PHY SOURCE CLK"
-			default MAC_EXT_50M
-			config MAC_EXT_50M
+			default MAC_OUTPUT_50M
+			config MAC_OUTPUT_50M
 				bool "external 50M"
-			config MAC_EXT_25M
+			config MAC_OUTPUT_25M
 				bool "external 25M"
 			config PHY_INT_XTAL
 				bool "internal xtal"
@@ -517,7 +515,7 @@ config FPGA
 
 choice
     prompt "Chip Version"
-    default AMEBAGREEN2_A_CUT
+    default AMEBAGREEN2_B_CUT
     config AMEBAGREEN2_A_CUT
         bool "AMEBAGREEN2_A_Cut"
 

@@ -33,8 +33,8 @@ int fatfs_flash_init(void)
 
 		// Register disk driver to Fatfs
 		VFS_DBG(VFS_INFO, "Register flash disk driver to Fatfs.");
-#if defined(CONFIG_FATFS_FLASH_EXTERNAL) && CONFIG_FATFS_FLASH_EXTERNAL
-		fatfs_flash_param.drv_num = FATFS_RegisterDiskDriver(&FLASH_disk_external_Driver);
+#if defined(CONFIG_FATFS_SECONDARY_FLASH) && CONFIG_FATFS_SECONDARY_FLASH
+		fatfs_flash_param.drv_num = FATFS_RegisterDiskDriver(&FLASH_disk_secondary_Driver);
 #else
 		fatfs_flash_param.drv_num = FATFS_RegisterDiskDriver(&FLASH_disk_Driver);
 #endif

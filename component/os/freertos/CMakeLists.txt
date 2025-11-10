@@ -10,7 +10,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # Component public part, user config begin(DO NOT remove this line)
 # You may use if-else condition to set or update predefined variable above
 
-if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
+if(CONFIG_AMEBASMART)
     if("${c_MCU_PROJECT_NAME}" STREQUAL "ap")
         set(portable_soc_mcu_dir ${c_FREERTOS_DIR}/portable/GCC/ARM_CA32)
         if(CONFIG_MP_SHRINK)
@@ -32,7 +32,7 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
         )
     else()
         #OPTIMIZE: Change the dir name from AmebaSmart_HP/AmebaSmart_LP to AmebaSmart_KM4/AmebaSmart_KM0 will be same as other soc.\
-        #OPTIMIZE: Amebasmart and amebasmartplus share same port dir
+        #OPTIMIZE: Amebasmart share same port dir
         set(portable_soc_mcu_dir ${c_FREERTOS_DIR}/portable/GCC/AmebaSmart_${c_MCU_PROJECT_NAME_UPPER})
         set(output_name freertos)
     endif()
@@ -114,7 +114,7 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
                 ${portable_soc_mcu_dir}/non_secure/portasm.c
             )
         endif()
-    elseif(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
+    elseif(CONFIG_AMEBASMART)
         if("${c_MCU_PROJECT_NAME}" STREQUAL "hp")
             ameba_list_append(private_sources
                 ${portable_soc_mcu_dir}/non_secure/port.c

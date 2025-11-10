@@ -12,14 +12,16 @@
  * @brief  Define memory alignment settings. This macro will be checked during compilation to ensure
  * that it is consistent with the configuration of the operating system.
  */
-#if (defined CONFIG_AMEBASMART) || (defined CONFIG_AMEBASMARTPLUS)
+#if (defined CONFIG_AMEBASMART)
 #if (defined CONFIG_ARM_CORE_CM4) || (defined CONFIG_ARM_CORE_CA32)
 #define RTOS_MEM_BYTE_ALIGNMENT 64
 #else
 #define RTOS_MEM_BYTE_ALIGNMENT 32
 #endif
 #else
+#ifndef RTOS_MEM_BYTE_ALIGNMENT
 #define RTOS_MEM_BYTE_ALIGNMENT 32
+#endif
 #endif
 
 /**

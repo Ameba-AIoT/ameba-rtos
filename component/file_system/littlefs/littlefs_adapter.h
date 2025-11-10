@@ -40,12 +40,18 @@ int lfs_nor_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, c
 int lfs_nor_erase(const struct lfs_config *c, lfs_block_t block);
 
 
-#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAGREEN2)
 extern struct lfs_config g_nand_lfs_cfg;
 
 int lfs_nand_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size);
 int lfs_nand_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size);
 int lfs_nand_erase(const struct lfs_config *c, lfs_block_t block);
+#endif
+
+#if defined(CONFIG_AMEBASMART)
+#define SHOULD_USE_NAND() (!SYSCFG_BootFromNor())
+#elif defined(CONFIG_AMEBAGREEN2)
+#define SHOULD_USE_NAND() (!SYSCFG_OTP_BootFromNor())
 #endif
 
 int lfs_diskio_sync(const struct lfs_config *c);

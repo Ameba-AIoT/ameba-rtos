@@ -71,9 +71,6 @@
 #elif defined(CONFIG_AMEBASMART)
 /******************************* AmebaD2 (8730E) ******************************/
 #include "autoconf_8730e.h"
-#elif defined(CONFIG_AMEBASMARTPLUS)
-/******************************* AmebaD2 (8730F) ******************************/
-#include "autoconf_8730e.h"
 #elif defined(CONFIG_AMEBALITE)
 /***************************** AmebaLite (8720E) *****************************/
 #include "autoconf_8720e.h"

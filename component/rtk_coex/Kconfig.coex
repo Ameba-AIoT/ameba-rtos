@@ -2,7 +2,7 @@ if WLAN_MENU
     menu "CONFIG COEX"
         config COEX_MENU
             bool "Enable Coex" if !AMEBA_RLS
-            default y if !AMEBAD && !AMEBAL2 && !AMEBASMARTPLUS
+            default y if !AMEBAD && !AMEBAL2
 
         if COEX_MENU
             config BT_COEXIST

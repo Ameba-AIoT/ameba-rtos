@@ -525,6 +525,7 @@ typedef struct {
 _LONG_CALL_ u32 SDIOH_Busy(void);
 _LONG_CALL_ u32 SDIOH_CheckTxError(u16 *status);
 _LONG_CALL_ u32 SDIOH_WaitTxDone(u32 timeout_us);
+_LONG_CALL_ void SDIOH_PreDMATrans(void);
 _LONG_CALL_ u32 SDIOH_WaitDMADone(u32 timeout_us);
 _LONG_CALL_ u32 SDIOH_GetISR(void);
 _LONG_CALL_ void SDIOH_INTConfig(u8 SDIO_IT, u32 newState);

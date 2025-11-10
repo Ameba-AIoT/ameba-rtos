@@ -32,7 +32,7 @@ struct whc_sdio;
 #define PWR_STATE_SLEEP		1
 
 //for CONFIG_FW_DOWNLOAD
-#define FW1_START_ADDR 0x20002400 // km4 bootloader
+#define FW1_START_ADDR 0x20003000 // km4 bootloader
 #define MAX_DLFW_PAGE_SIZE 4096 // firmware limit
 #define FW_RL005_SIZE (2 * 1024 * 1024) // 2M
 

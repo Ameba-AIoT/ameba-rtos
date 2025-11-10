@@ -4,10 +4,12 @@ set(c_LAYOUT_LD ${c_SOC_PROJECT_DIR}/ameba_layout.ld)
 set(c_IMG1_LD ${c_SDK_LD_DIR}/ameba_img1_all.ld)
 set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all.ld)
 set(c_IMG3_LD ${c_SDK_LD_DIR}/ameba_img3_all.ld)
-if(CONFIG_AMEBAGREEN2_A_CUT)
-    set(c_ROM_LIB_DIR  ${c_SDK_LIB_DIR}/amebagreen2_rom_acut)
-elseif(CONFIG_AMEBAGREEN2_B_CUT)
+
+# note!!! Keep the latest version at the top for release reason.
+if(CONFIG_AMEBAGREEN2_B_CUT)
     set(c_ROM_LIB_DIR  ${c_SDK_LIB_DIR}/amebagreen2_rom_bcut)
+elseif(CONFIG_AMEBAGREEN2_A_CUT)
+    set(c_ROM_LIB_DIR  ${c_SDK_LIB_DIR}/amebagreen2_rom_acut)
 endif()
 
 if(CONFIG_LINK_ROM_SYMB)
@@ -47,7 +49,9 @@ add_compile_options(-fdata-sections -ffunction-sections)
 ameba_add_subdirectory_if(CONFIG_FPGA make/image_gdb_floader)
 ameba_add_subdirectory_ifnot(CONFIG_AMEBA_RLS make/image_imgtool_floader)
 
-ameba_add_subdirectory_if(CONFIG_WIFI_HOST_CONTROL make/image_pg_loader)
+if ((NOT CONFIG_WHC_INTF_IPC) AND CONFIG_WHC_DEV)
+ameba_add_subdirectory(make/image_pg_loader)
+endif()
 
 ameba_add_subdirectory(make/image1)
 ameba_add_subdirectory(make/image2)

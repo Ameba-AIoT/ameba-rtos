@@ -59,4 +59,3 @@ Specially for Win7/XP host, please manually install the CDC ACM driver RtkUsbCdc
 
 # Supported IC
 
-- RTL8730F

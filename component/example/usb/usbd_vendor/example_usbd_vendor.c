@@ -69,11 +69,6 @@ static usbd_config_t vendor_cfg = {
 	.rx_fifo_depth = 292U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 256U, 128U, },
 	.ext_intr_enable = USBD_EOPF_INTR,//for ISOC OUT
-#elif defined (CONFIG_AMEBASMARTPLUS)
-	/*DFIFO total 1280 DWORD, resv 14 DWORD for DMA addr and EP0 fixed 32 DWORD*/
-	.rx_fifo_depth = 402U,
-	.ptx_fifo_depth = {256U, 256U, 32U, 256U, 32U},
-	//.ext_intr_enable =  USBD_EOPF_INTR,
 #elif defined (CONFIG_AMEBAL2)
 	/*DFIFO total 1024 DWORD, resv 11 DWORD for DMA addr and EP0 fixed 32 DWORD*/
 	.rx_fifo_depth = 405U,

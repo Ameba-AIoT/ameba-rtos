@@ -12,7 +12,7 @@ menu "IPC Message Queue Config"#DONE
 
         config IPC_MSG_MASTER_FOR_KM4
             def_bool y
-            depends on AMEBALITE||AMEBASMART||AMEBASMARTPLUS
+            depends on AMEBALITE||AMEBASMART
 
 
     endif

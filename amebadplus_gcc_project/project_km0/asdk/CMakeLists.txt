@@ -8,9 +8,8 @@ else()
     set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all.ld)
 endif()
 
-if(CONFIG_AMEBADPLUS_A_CUT)
-    ameba_set(c_ROM_LIB_DIR ${c_SDK_LIB_DIR}/amebadplus_rom_acut)
-endif()
+# note!!! Keep the latest version(KM0:A, KM4:B) at the top for release reason.
+ameba_set(c_ROM_LIB_DIR ${c_SDK_LIB_DIR}/amebadplus_rom_acut)
 
 if(CONFIG_LINK_ROM_SYMB)
     set(c_LINK_ROM_LIB)

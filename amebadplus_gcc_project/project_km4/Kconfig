@@ -11,13 +11,4 @@ menu "CONFIG CHIP"
         config ARM_CORE_CM4_FOR_KM4
             bool "ARM_CM4"
     endchoice
-
-    choice
-        prompt "Chip Version"
-        default AMEBADPLUS_B_CUT_FOR_KM4
-        config AMEBADPLUS_A_CUT_FOR_KM4
-            bool "AMEBADPLUS_A_Cut"
-        config AMEBADPLUS_B_CUT_FOR_KM4
-            bool "AMEBADPLUS_B_Cut"
-    endchoice
 endmenu

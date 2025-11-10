@@ -109,6 +109,17 @@
   * @}
   */
 
+/** @defgroup SDM_USER_DEFINED_param_definitions
+  * @{
+  */
+#define SDM_OBS_CYC_DEFAULT		1024
+#define SDM_OBS_REF_CYC_DEFAULT		312500
+#define SDM_OBS_REF_CYC_MODIFY		312503
+#define SDM_XTAL_PERIOD_DEFAULT   102400
+/**
+  * @}
+  */
+
 /** @defgroup XTAL_CLK_definitions
 * @{
 */
@@ -179,6 +190,7 @@
   */
 _LONG_CALL_ void SDM32K_Enable(void);
 _LONG_CALL_ void SDM32K_TimerCalEnable(u32 RTCCalibration);
+_LONG_CALL_ void SDM32K_CalFactorModify(u32 newstatus);
 /**
   * @}
   */

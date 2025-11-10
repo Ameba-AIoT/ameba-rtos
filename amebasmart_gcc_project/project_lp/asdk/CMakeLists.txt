@@ -2,12 +2,9 @@ set(CMAKE_EXECUTABLE_SUFFIX .axf)
 
 add_compile_options(-fdata-sections -ffunction-sections)
 
-if(CONFIG_AMEBASMART_A_CUT)
-    ameba_set(c_ROM_LIB_DIR ${c_SDK_LIB_DIR}/${c_SOC_TYPE}_rom_acut)
-    ameba_set(c_FLOADER_BIN_DIR ${c_SDK_GNU_UTILITY_DIR}/image_tool_flashloader/${c_SOC_TYPE}_acut)
-else()
-    ameba_fatal("CONFIG_AMEBASMART_A_CUT not defined as TRUE")
-endif()
+# note!!! Keep the latest version(lp:A) at the top for release reason.
+ameba_set(c_ROM_LIB_DIR ${c_SDK_LIB_DIR}/${c_SOC_TYPE}_rom_acut)
+ameba_set(c_FLOADER_BIN_DIR ${c_SDK_GNU_UTILITY_DIR}/image_tool_flashloader/${c_SOC_TYPE}_acut)
 
 if(CONFIG_LINK_ROM_SYMB)
     ameba_unset(c_LINK_ROM_LIB)

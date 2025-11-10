@@ -46,4 +46,3 @@ For other chips, refer to the AN for setup guide.
 - RTL8720F
 - RTL8721F
 - RTL8730E
-- RTL8730F

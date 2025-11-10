@@ -18,7 +18,7 @@ endif
 ifndef PROJECT_DIR
 $(error error: PROJECT_DIR is not defined. Please specify it by running 'make PROJECT_DIR=xxx')
 endif
-# PROJECT_DIR = ../../../../amebasmartplus_gcc_project/project_ap
+# PROJECT_DIR = ../../../../amebasmart_gcc_project/project_ap
 
 # specify the build base directory
 ifndef BUILD_BASE

@@ -41,7 +41,7 @@
 #define USBD_VENDOR_ISOC_OUT_EP                         0x02U  /* EP2 for ISOC OUT */
 #define USBD_VENDOR_INTR_IN_EP                          0x84U  /* EP4 for INTR IN */
 #define USBD_VENDOR_INTR_OUT_EP                         0x05U  /* EP5 for INTR OUT */
-#elif defined (CONFIG_AMEBASMARTPLUS) || defined (CONFIG_AMEBAL2)
+#elif defined (CONFIG_AMEBAL2)
 #define USBD_VENDOR_BULK_IN_EP                          0x84U  /* EP4 for BULK IN */
 #define USBD_VENDOR_BULK_OUT_EP                         0x04U  /* EP4 for BULK OUT */
 #define USBD_VENDOR_ISOC_IN_EP                          0x81U  /* EP1 for ISOC IN */
