@@ -28,7 +28,7 @@
 #include "atcmd_bt_mp.h"
 #endif
 #endif
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 #if defined(CONFIG_BT_COEXIST)
 #include "atcmd_coex.h"
 #endif
@@ -537,7 +537,7 @@ void at_list(void *arg)
 #endif
 #endif
 
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 #if defined(CONFIG_BT_COEXIST)
 	/* COEX commands. */
 	at_printf("COEX AT command:\r\n");

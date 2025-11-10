@@ -780,8 +780,12 @@ void SPDIO_Device_DeInit(void)
 		pgSPDIODev->IrqSema = NULL;
 	}
 
-	// Reset SDIO DMA
+	/* step1: abort rx request */
+	SDIO_AbortRxReq(SDIO_WIFI);
+	/* step2: reset SDIO DMA */
 	SDIO_DMA_Reset(SDIO_WIFI);
+	/* step3: disable fen & cke */
+	RCC_PeriphClockCmd(APBPeriph_SDIO, APBPeriph_SDIO_CLOCK, DISABLE);
 }
 
 /**

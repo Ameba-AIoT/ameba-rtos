@@ -1,12 +1,13 @@
 #include <stdio.h>
-#include "os_wrapper.h"
 #include "ameba.h"
 #include "time.h"
 #include "vfs.h"
 #include "ameba_ota.h"
+#include "vfs_secondary_nor_flash.h"
 
 vfs_drv  vfs = {0};
 rtos_mutex_t vfs_mutex = NULL;
+
 extern u32 FLASH_APP_BASE;
 extern u32 FLASH_SECTOR_COUNT;
 extern u32 LFS_FLASH_BASE_ADDR;
@@ -17,8 +18,24 @@ u32 VFS1_FLASH_SIZE = 0;
 u32 VFS2_FLASH_BASE_ADDR = 0;
 u32 VFS2_FLASH_SIZE = 0;
 
+int check_mount_completion(int *mount_flag)
+{
+	while (*mount_flag == 0) {
+		rtos_time_delay_ms(10);
+	}
+	if (*mount_flag == -1) {
+		return -1;
+	}
+	return 0;
+}
+
 void vfs_init()
 {
+#if (defined CONFIG_LITTLEFS_SECONDARY_FLASH) || (defined CONFIG_FATFS_SECONDARY_FLASH)
+	secondary_flash_spi_init(SCLK_FREQ);
+	secondary_flash_get_id();
+#endif
+
 	if (vfs_mutex == NULL) {
 		VFS_DBG(VFS_INFO, "vfs_mutex init\r\n");
 		memset(&vfs, 0, sizeof(vfs_drv));
@@ -131,8 +148,14 @@ void vfs_assign_region(int vfs_type, char region)
 	}
 
 	if (vfs_type == VFS_LITTLEFS) {
+#ifdef CONFIG_LITTLEFS_SECONDARY_FLASH
+		(void) region;
+		LFS_FLASH_BASE_ADDR = 0x0;
+		LFS_FLASH_SIZE = current_flash_model.flash_size == 0 ? CONFIG_SECONDARY_FLASH_SIZE * 1024 : current_flash_model.flash_size;
+#else
 		LFS_FLASH_BASE_ADDR = region == 1 ? VFS1_FLASH_BASE_ADDR : VFS2_FLASH_BASE_ADDR;
 		LFS_FLASH_SIZE = region == 1 ? VFS1_FLASH_SIZE : VFS2_FLASH_SIZE;
+#endif
 	}
 
 #ifdef CONFIG_VFS_FATFS_INCLUDED
@@ -159,6 +182,9 @@ void vfs_assign_region(int vfs_type, char region)
 			FLASH_APP_BASE = (u32)img_hdr + 0x1000 - SPI_FLASH_BASE;
 			FLASH_SECTOR_COUNT = img_hdr->image_size / 512;
 		}
+#elif defined CONFIG_FATFS_SECONDARY_FLASH
+		FLASH_APP_BASE = 0x0;
+		FLASH_SECTOR_COUNT = current_flash_model.flash_size == 0 ? CONFIG_SECONDARY_FLASH_SIZE * 1024 / 512 : current_flash_model.flash_size / 512;
 #else
 		FLASH_APP_BASE = region == 1 ? VFS1_FLASH_BASE_ADDR : VFS2_FLASH_BASE_ADDR;
 		FLASH_SECTOR_COUNT = region == 1 ? (VFS1_FLASH_SIZE / 512) : (VFS2_FLASH_SIZE / 512);
@@ -214,6 +240,18 @@ int vfs_user_register(const char *prefix, int vfs_type, int interface, char regi
 	int ret = -1;
 	rtos_mutex_take(vfs_mutex, MUTEX_WAIT_TIMEOUT);
 
+#if (defined CONFIG_LITTLEFS_SECONDARY_FLASH)
+	if (vfs_type == VFS_LITTLEFS && secondary_flash_init_flag != 1) {
+		VFS_DBG(VFS_ERROR, "Secondary flash failed to init\r\n");
+		goto EXIT;
+	}
+#elif (defined CONFIG_FATFS_SECONDARY_FLASH)
+	if (vfs_type == VFS_FATFS && secondary_flash_init_flag != 1) {
+		VFS_DBG(VFS_ERROR, "Secondary flash failed to init\r\n");
+		goto EXIT;
+	}
+#endif
+
 	if (vfs_type != VFS_FATFS && vfs_type != VFS_LITTLEFS) {
 		VFS_DBG(VFS_ERROR, "It don't support the file system");
 		goto EXIT;
@@ -255,9 +293,6 @@ int vfs_user_register(const char *prefix, int vfs_type, int interface, char regi
 			ret = vfs.drv[vfs_num]->mount(interface);
 			if (ret) {
 				VFS_DBG(VFS_ERROR, "vfs mount fail");
-				if (region == VFS_REGION_1) {
-					lfs_mount_fail = 1;
-				}
 			}
 			goto EXIT;
 		}

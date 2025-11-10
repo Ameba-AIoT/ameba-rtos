@@ -66,7 +66,7 @@ static u32 usb_cmd(u16 argc, u8 *argv[])
 		ret = usb_hal_driver.init(0);
 		if (ret == HAL_OK) {
 			usb_hal_disable_global_interrupt();
-			ret = usb_hal_core_init(0);
+			ret = usb_hal_core_init(1);
 			if (ret == HAL_OK) {
 				usb_hal_set_otg_mode((usb_otg_mode_t)0);
 				usb_hal_device_disconnect(0);

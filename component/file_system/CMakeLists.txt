@@ -1,7 +1,7 @@
 if(CONFIG_CORE_AS_AP)
-    ameba_add_subdirectory(fatfs)
     ameba_add_subdirectory(littlefs)
     ameba_add_subdirectory(kv)
     ameba_add_subdirectory(vfs)
     ameba_add_subdirectory_if(CONFIG_BT ftl)
 endif()
+ameba_add_subdirectory_if(CONFIG_VFS_FATFS_INCLUDED fatfs)

@@ -239,6 +239,7 @@ typedef unsigned int JDIMENSION;
  */
 
 #ifndef HAVE_BOOLEAN
+#undef boolean
 typedef int boolean;
 #endif
 #ifndef FALSE                   /* in case these macros already exist */

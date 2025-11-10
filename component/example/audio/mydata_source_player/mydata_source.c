@@ -33,7 +33,7 @@ int kMDSReadRetry = 0;
 #endif
 
 #ifdef MDS_UNKNOWN_LENGTH_TEST
-int kMDSLengthIncreaseTotalTimeMs = 10000;
+int kMDSLengthIncreaseTotalTimeMs = 100;
 volatile int g_source_total_length = 0;
 volatile bool g_length_increase_thread_alive = 0;
 void MyDataSource_UnknownLengthTestThread(void *Data);

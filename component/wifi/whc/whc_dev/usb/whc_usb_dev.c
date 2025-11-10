@@ -126,23 +126,13 @@ static void whc_usb_dev_tx_done_cb(usbd_inic_ep_t *in_ep, u8 status)
 	}
 }
 
-static void whc_usb_dev_suspend_cb(void)
-{
-	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "USB SUSPEND\n");
-	wifi_inic_usb_status = WIFI_INIC_USB_STATUS_SUSPEND;
-}
-
-static void whc_usb_dev_resume_cb(void)
-{
-	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "USB RESUME\n");
-	wifi_inic_usb_status = WIFI_INIC_USB_STATUS_ACTIVE;
-}
-
 void whc_usb_dev_status_changed_cb(u8 old_status, u8 new_status)
 {
 	UNUSED(old_status);
 	if (new_status == USBD_ATTACH_STATUS_ATTACHED) {
 		wifi_inic_usb_status = WIFI_INIC_USB_STATUS_ACTIVE;
+	} else if (new_status == USBD_ATTACH_STATUS_DETACHED) {
+		wifi_inic_usb_status = WIFI_INIC_USB_STATUS_SUSPEND;
 	}
 }
 
@@ -167,8 +157,6 @@ static usbd_inic_cb_t whc_usb_wifi_cb = {
 	.received = whc_usb_dev_rx_done_cb,
 	.transmitted = whc_usb_dev_tx_done_cb,
 	.status_changed = whc_usb_dev_status_changed_cb,
-	.suspend = whc_usb_dev_suspend_cb,
-	.resume = whc_usb_dev_resume_cb,
 };
 
 

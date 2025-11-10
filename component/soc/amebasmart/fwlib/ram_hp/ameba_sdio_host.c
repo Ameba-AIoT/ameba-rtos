@@ -94,6 +94,16 @@ u32 SDIOH_WaitTxDone(u32 timeout_us)
 	return HAL_TIMEOUT;
 }
 
+void SDIOH_PreDMATrans(void)
+{
+#if defined(SDIO) &&(SDIO == SD)
+	if ((CPU_InInterrupt() == 0) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (sd_sema_take_fn != NULL)) {
+		wait_for_sema = 1;
+		SDIOH_INTConfig(SDIOH_DMA_CTL_INT_EN, ENABLE);
+	}
+#endif
+}
+
 /**
   * @brief  Wait some time for SDIOH DMA done.
   * @param  timeout_us: timeout value in microseconds.
@@ -166,7 +176,7 @@ void SDIOH_INTConfig(u8 SDIO_IT, u32 newState)
 		psdioh->SD_ISREN |= (SDIO_IT | SDIOH_WRITE_DATA);
 	} else {
 		/*Bit0 reads as 0*/
-		psdioh->SD_ISREN |= SDIO_IT;
+		psdioh->SD_ISREN = SDIO_IT;
 	}
 }
 

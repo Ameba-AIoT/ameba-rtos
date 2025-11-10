@@ -1,8 +1,26 @@
-import importlib.metadata
 import os
 import platform
 import subprocess
 import sys
+try:
+    from packaging.requirements import Requirement
+    from packaging.version import parse as parse_version
+except ImportError:
+    print(" 'packaging' not found. Installing it now...")
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'packaging'])
+    from packaging.requirements import Requirement
+    from packaging.version import parse as parse_version
+
+try:
+    from importlib.metadata import distributions
+except ImportError:
+    # compatibility for python < 3.8
+    try:
+        from importlib_metadata import distributions
+    except ImportError:
+        print(" 'importlib-metadata' not found. Installing it now...")
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'importlib-metadata'])
+        from importlib_metadata import distributions
 
 BLACK = '\033[30m'
 RED = '\033[31m'
@@ -26,29 +44,28 @@ def parse_requirement(requirement):
     return name, version
 
 def check_installed_packages(requirements):
-    installed_packages = {dist.metadata['Name'].lower(): dist.version for dist in importlib.metadata.distributions()}
+    installed_packages = {dist.metadata['Name'].lower(): dist.version for dist in distributions()}
     missing_or_unsatisfied = []
-    uninstall_packages = []
+    packages_to_install = []
 
-    for requirement in requirements:
-
-        if platform.system() != 'Windows':
-            if 'platform_system=="Windows"' in requirement.replace(' ', ''):
-                continue
-
+    for requirement_str in requirements:
         try:
-            name, required_version = parse_requirement(requirement)
-            if name.lower() in installed_packages:
-                installed_version = installed_packages[name.lower()]
-                if required_version and installed_version != required_version:
-                    missing_or_unsatisfied.append(f"{YELLOW}{name} {installed_version} does not satisfy {requirement}{RESET}")
-            else:
-                missing_or_unsatisfied.append(f"{RED}{name} is not installed{RESET}")
-                uninstall_packages.append((name, required_version))
-        except Exception as e:
-            print(f"Error parsing requirement '{requirement}': {e}")
+            req = Requirement(requirement_str)
+            package_name = req.name.lower()
 
-    return missing_or_unsatisfied, uninstall_packages
+            if not req.marker or req.marker.evaluate():
+                if package_name in installed_packages:
+                    installed_version = parse_version(installed_packages[package_name])
+                    if req.specifier and not req.specifier.contains(installed_version):
+                        missing_or_unsatisfied.append(f"{YELLOW}{package_name} {installed_version} does not satisfy {requirement_str}{RESET}")
+                        packages_to_install.append((req.name, str(req.specifier)))
+                else:
+                    missing_or_unsatisfied.append(f"{RED}{package_name} is not installed{RESET}")
+                    packages_to_install.append((req.name, str(req.specifier)))
+        except Exception as e:
+            print(f"Error parsing requirement '{requirement_str}': {e}")
+
+    return missing_or_unsatisfied, packages_to_install
 
 def install_missing_packages(missing_packages):
     """
@@ -57,7 +74,7 @@ def install_missing_packages(missing_packages):
     """
     for name, version in missing_packages:
         if version:
-            package_spec = f"{name}=={version}"
+            package_spec = f"{name}{version}"
         else:
             package_spec = name
         print(f"Installing: {package_spec}")
@@ -78,9 +95,9 @@ def main():
         print("PIP CHECK... The following packages are not satisfied or not installed:")
         for issue in issues:
             print(issue)
-    if missing:
-        print("Installing missing/invalid packages...")
-        install_missing_packages(missing)
+        if missing:
+            print("Installing missing/invalid packages...")
+            install_missing_packages(missing)
     else:
         print(f"{GREEN}PIP CHECK... All packages are installed correctly!{RESET}")
 
