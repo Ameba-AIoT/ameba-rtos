@@ -63,6 +63,7 @@ In this demo, three frame buffers are used, indicated by `PIX_DATA0`, `PIX_DATA1
 
 #  Supported IC
 
-* AmebaGreen2
+- AmebaGreen2
+  * RTL8721F
 
 

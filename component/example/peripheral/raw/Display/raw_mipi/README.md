@@ -17,4 +17,5 @@ There are five pictures on the screen that keep switching.
 * `DDR_AUTOGATING` in `component\soc\amebasmart\fwlib\include\ameba_boot.h` shall be disabled to avoid dram in self-refresh.
 
 # Supported IC
-* AmebaSmart
+- AmebaSmart
+  * RTL8730E

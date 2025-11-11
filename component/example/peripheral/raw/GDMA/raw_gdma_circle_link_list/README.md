@@ -40,7 +40,14 @@ Because it is a circular linked list, the transmission will not stop.
 3. When the cache is enabled, if the user wants to stop transmission, first disable llp_src_en/llp_dst_en, and then refresh the cache immediately.
 # Supported IC
 
-- AmebaLite
 - AmebaSmart
+  * RTL8730E
+- AmebaLite
+  * RTL8726E
+  * RTL8720E
+  * RTL8713E
+  * RTL8710E
 - AmebaDplus
+  * RTL8721Dx
 - AmebaGreen2
+  * RTL8721F
