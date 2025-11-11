@@ -282,29 +282,16 @@ void np_set_psram_cmd(u8 cmd, u32 addr, u32 write_len, u8 *write_data)
 
 }
 
-u8 APM_WR_INIT_LATENCY_SPEC[6] = {
-	APM_WR_INIT_LATENCY_3CLK,
-	APM_WR_INIT_LATENCY_4CLK,
-	APM_WR_INIT_LATENCY_5CLK,
-	APM_WR_INIT_LATENCY_6CLK,
-	APM_WR_INIT_LATENCY_7CLK,
-	APM_WR_INIT_LATENCY_8CLK,
-};
-
 _OPTIMIZE_NONE_
 void np_set_psram_sleep_mode(u32 State)
 {
 	u32 Rtemp;
 	u8 mr4[2];
+	(void)Rtemp;
 
 	if (State) {
-		// close auto gating
-		Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E0);
-		Rtemp &= (~HSYS_BIT_PWDPAD_DQ_EN); //don't write 1 if user mode
-		HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E0, Rtemp);
 
-		// 50ns will be enough, check if need when without DBG
-		DelayUs(1);
+		PSRAM_AutoGating(DISABLE, Psram_IDLETIME, 0);
 		//RTK_LOGD(TAG, "psram enter half sleep mode\r\n");
 
 		mr4[0] = (APM_WR_INIT_LATENCY_SPEC[RRAM->PSRAM_LATENCY - 3]) << 5 | PSRAM_SLOW_REFRSH_ENABLE;
@@ -327,17 +314,7 @@ void np_set_psram_sleep_mode(u32 State)
 		mr4[1] = mr4[0];
 		np_set_psram_cmd(0xc0, 0x4, 2, mr4);
 
-		Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E4);
-		Rtemp &= ~(HSYS_MASK_PWDPAD_RESUME_VAL | HSYS_MASK_PWDPAD_IDLE_VAL);
-
-		Rtemp |= HSYS_PWDPAD_RESUME_VAL(0x10);
-		Rtemp |= HSYS_PWDPAD_IDLE_VAL(1);
-		HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E4, Rtemp);
-
-		Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E0);
-		Rtemp |= HSYS_BIT_PWDPAD_DQ_EN; //don't write 1 if user mode
-		HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E0, Rtemp);
-
+		PSRAM_AutoGating(ENABLE, Psram_IDLETIME, 0);
 	}
 }
 
