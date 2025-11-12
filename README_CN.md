@@ -6,12 +6,12 @@ ameba-rtos是瑞昱官方推出的物联网开发框架，同时支持Linux和Wi
 
 # 支持的芯片
 
-|芯片         |          master       |     release/v1.0       |     release/v1.1       |
-|:----------- |:---------------------:| :---------------------:| :---------------------:|
-|AmebaSmart   |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
-|AmebaLite    |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
-|AmebaDplus   |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
-|AmebaGreen2  |![alt text][supported] |                        |                        |
+|芯片系列        | 芯片                                |         master       |     release/v1.0       |     release/v1.1       |
+|:-------------- |:----------------------------------- |:---------------------:| :---------------------:| :---------------------:|
+|AmebaSmart系列   | RTL8730E                            |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+|AmebaLite系列    | RTL8726E/RTL8713E/RTL8720E/RTL8710E |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+|AmebaDplus系列   | RTL8721Dx                           |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+|AmebaGreen2系列  | RTL8721F                            |![alt text][supported] |                        |                        |
 
 [supported]: https://img.shields.io/badge/-%E6%94%AF%E6%8C%81-green "supported"
 
