@@ -32,7 +32,9 @@ ADC sample data and calculated voltage value in `mV` would be printed out `perio
 
 # Supported IC
 
-* AmebaSmart
-* AmebaDplus
+- AmebaSmart
+  * RTL8730E
+- AmebaDplus
+  * RTL8721Dx
 
 

@@ -48,7 +48,7 @@ void whc_dev_ps_resume_cb(void)
 {
 	/* acquire wakelock to prevent dev enter low power mode */
 	whc_dev_ps_set_tickps_cmd(WHC_CMD_TICKPS_A);
-#if defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
+#if defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST && !defined(CONFIG_MP_SHRINK)
 	extern void wifi_hal_system_resume_wlan(void);
 	/* normal wowlan resume by pkt rx. here by host tx */
 	wifi_hal_system_resume_wlan();

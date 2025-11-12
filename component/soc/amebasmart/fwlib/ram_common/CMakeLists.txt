@@ -55,6 +55,7 @@ ameba_list_append(private_sources
     ameba_rxi316_dram_init.c
     ameba_ddrphy.c
 
+    ameba_psram.c
     ameba_flash_ram.c
     ameba_captouch.c
     ameba_gdma_memcpy.c

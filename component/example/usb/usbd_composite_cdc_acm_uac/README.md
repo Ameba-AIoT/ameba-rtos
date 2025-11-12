@@ -80,5 +80,7 @@ Specially for Win7/XP host, please manually install the CDC ACM driver RtkUsbCdc
 
 # Supported IC
 
-- RTL8721Dx
-- RTL8730E
+- AmebaSmart
+  * RTL8730E
+- AmebaDplus
+  * RTL8721Dx

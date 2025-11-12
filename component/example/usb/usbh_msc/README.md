@@ -85,7 +85,7 @@ None
 
 # Supported IC
 
-- RTL872XD
-- RTL8720F
-- RTL8721F
-- RTL8730E
+- AmebaSmart
+  * RTL8730E
+- AmebaGreen2
+  * RTL8721F

@@ -26,3 +26,4 @@ GDMA will display "transfer over " in serial port tool,  and displays the result
 # Supported IC
 
 - AmebaGreen2
+  * RTL8721F
