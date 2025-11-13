@@ -80,6 +80,7 @@ typedef struct {
 	int(* deinit)(void);
 	int(* setup)(usb_setup_req_t *req, u8 *buf);
 	int(* received)(u8 *buf, u32 len);
+	void(* transmitted)(u8 status);
 } usbd_composite_cdc_acm_usr_cb_t;
 
 typedef struct {

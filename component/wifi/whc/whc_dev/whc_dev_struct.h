@@ -12,11 +12,10 @@
 
 #if defined(CONFIG_WHC_INTF_SDIO)
 #include "spdio_api.h"
-#endif
 #ifndef CONFIG_FULLMAC
 #include "ameba_inic.h"
 #endif
-
+#endif
 /* -------------------------------- Includes -------------------------------- */
 
 struct whc_api_info {

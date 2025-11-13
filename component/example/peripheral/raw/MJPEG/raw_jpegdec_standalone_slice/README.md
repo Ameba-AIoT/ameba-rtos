@@ -22,4 +22,5 @@ A board with PSRAM is required to meet the need for large memory usage.
 
 # Supported IC
 
-* AmebaGreen2
+- AmebaGreen2
+  * RTL8721F
