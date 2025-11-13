@@ -569,6 +569,11 @@ void BOOT_Image1(void)
 	/* set sw patch reg to 0 for security, this reg seure access only */
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_SW_PATCH, 0);
 
+	/* it will switch shell control to KM0, disable loguart interrupt to avoid loguart irq not assigned in non-secure world.
+	 it should switch before BOOT_RAM_TZCfg to avoid crash when loguart intr occur but it has been set to ns intr. */
+	LOGUART_INTCoreConfig(LOGUART_DEV, LOGUART_BIT_INTR_MASK_KM4, DISABLE);
+	InterruptDis(UART_LOG_IRQ);
+
 	/**
 	 * @brief If there are any functions placed on the flash (defined by BOOT_XIP_TEXT_SECTION) that need to be executed,
 	 * they must be run before BOOT_RAM_TZcfg().
@@ -578,9 +583,6 @@ void BOOT_Image1(void)
 
 	/*KM0 shall wait MPC setting for non-secure access*/
 	BOOT_Enable_KM0();
-	/*switch shell control to KM0, disable loguart interrupt to avoid loguart irq not assigned in non-secure world */
-	LOGUART_INTCoreConfig(LOGUART_DEV, LOGUART_BIT_INTR_MASK_KM4, DISABLE);
-	InterruptDis(UART_LOG_IRQ);
 
 	vector_table = (u32 *)Image2EntryFun->VectorNS;
 	vector_table[1] = (u32)Image2EntryFun->RamStartFun;
