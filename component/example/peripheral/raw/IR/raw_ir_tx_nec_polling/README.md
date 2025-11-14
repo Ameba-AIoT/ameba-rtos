@@ -73,7 +73,9 @@ Logic Analyzer or oscilloscope.
 # Supported IC
 
 - AmebaSmart
+  * RTL8730E
 - AmebaDplus
+  * RTL8721Dx
 - AmebaGreen2
-- AmebaD
+  * RTL8721F
 

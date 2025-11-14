@@ -382,6 +382,11 @@ void BOOT_Image1(void)
 	BOOT_LoadImages();
 #endif
 
+	/* it will switch shell control to NP, disable loguart interrupt to avoid loguart irq not assigned in non-secure world.
+	 it should switch before BOOT_RAM_TZCfg to avoid crash when loguart intr occur but it has been set to ns intr. */
+	LOGUART_INTCoreConfig(LOGUART_DEV, LOGUART_BIT_INTR_MASK_AP, DISABLE);
+	InterruptDis(UART_LOG_IRQ);
+
 	/* Config Non-Security World Registers
 	This function should be called before NP startup to avoid secure issue
 	Also should be called after psram init, to avoid secure function block psram init
@@ -398,10 +403,6 @@ void BOOT_Image1(void)
 	BOOT_Share_Cache_To_TCM();
 	Boot_Fullmac_LoadIMGAll();
 #endif
-
-	/*switch shell control to NP, disable loguart interrupt to avoid loguart irq not assigned in non-secure world */
-	LOGUART_INTCoreConfig(LOGUART_DEV, LOGUART_BIT_INTR_MASK_AP, DISABLE);
-	InterruptDis(UART_LOG_IRQ);
 
 	// vector_table = (u32 *)Image2EntryFun->VectorNS;
 	// vector_table[1] = (u32)Image2EntryFun->RamStartFun;

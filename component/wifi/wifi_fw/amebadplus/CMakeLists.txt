@@ -40,10 +40,6 @@ if(CONFIG_WIFI_FW_VERIFY)
 endif()
 
 
-if(NOT CMAKE_REFACTOR) # For temporary compatibility.
-ameba_app_library_with_gitver(${TARGET_LIB})
-target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
-else() # For temporary compatibility.NOTE:  script below is new
 ##########################################################################################
 ## * This part defines public part of the component
 ## * Public part will be used as global build configures for all component
@@ -108,4 +104,3 @@ ameba_add_external_app_library(${TARGET_LIB} #target name, will be part of outpu
         ${private_compile_options}
 )
 ##########################################################################################
-endif()# For temporary compatibility.

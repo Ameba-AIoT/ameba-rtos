@@ -39,5 +39,7 @@ none
 
 # Supported IC
 
-* AmebaDplus
-* AmebaGreen2
+- AmebaDplus
+  * RTL8721Dx
+- AmebaGreen2
+  * RTL8721F
