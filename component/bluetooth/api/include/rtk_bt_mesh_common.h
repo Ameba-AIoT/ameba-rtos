@@ -885,6 +885,20 @@ typedef enum {
 } rtk_bt_mesh_stack_act_set_tx_phy_t;  // gap_sched_ae_adv_type_t
 #endif
 
+/**
+ * @typedef   rtk_bt_mesh_bearer_field_t
+ * @brief     BLE MESH bearer field definition.
+ */
+enum {
+	RTK_BT_MESH_BEARER_FIELD_UNASSIGNED = 0,
+	RTK_BT_MESH_BEARER_FIELD_ADV = BIT0,
+	RTK_BT_MESH_BEARER_FIELD_GATT = BIT1,
+	RTK_BT_MESH_BEARER_FIELD_OTHER = BIT14,
+	RTK_BT_MESH_BEARER_FIELD_LOOPBACK = BIT15,
+	RTK_BT_MESH_BEARER_FIELD_ALL = 0xFFFF,
+} _SHORT_ENUM_;
+typedef uint16_t rtk_bt_mesh_bearer_field_t;
+
 /********************************* Functions Declaration *******************************/
 /**
  * @defgroup  ble_mesh_common BT LE Mesh Common APIs

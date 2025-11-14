@@ -399,7 +399,7 @@ int i2c_send_restart(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u8 restart)
 	/* Write in the DR register the data to be sent */
 	for (cnt = 0; cnt < len; cnt++) {
 		if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFNF, 0, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
-			return cnt;
+			return MAX(cnt - I2Cx->IC_TXFLR, 0);
 		}
 
 		if (cnt >= len - 1) {
@@ -410,7 +410,9 @@ int i2c_send_restart(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u8 restart)
 		}
 	}
 
-	I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFE, 0, I2C_POLL_TIMEOUT_MS);
+	if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFE, 0, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
+		return MAX(cnt - I2Cx->IC_TXFLR, 0);
+	}
 	return len;
 }
 
