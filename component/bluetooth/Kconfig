@@ -173,13 +173,6 @@ if BT_EXAMPLE_DEMO_MENU
             bool "BT A2DP and LE Audio TMAP"
             default n
     endif
-
-    if BT_HAS_MESH && BT_HAS_BREDR
-        config BT_A2DP_PROVISIONER_SCATTERNET_MENU
-            depends on !AMEBA_RLS    #internal
-            bool "BT A2DP and BLE Mesh Provisioner and BLE Scatternet"
-            default n
-    endif
 endif
 
 if BT
@@ -336,17 +329,6 @@ if BT
         select BT_PROFILE_A2DP_SUPPORT
         select BT_PROFILE_AVRCP_SUPPORT
         select BT_PROFILE_SDP_SUPPORT
-
-    config BT_A2DP_PROVISIONER_SCATTERNET_MENU
-        bool
-        select BT_A2DP_PROVISIONER_SCATTERNET
-        select BT_MESH_PROVISIONER_SUPPORT
-        select BT_APP_AUDIO_DATA
-        select BT_AUDIO_CODEC_SUPPORT
-        select BT_AUDIO_CODEC_SBC
-        select BT_PROFILE_A2DP_SUPPORT
-        select BT_PROFILE_AVRCP_SUPPORT
-        select BT_PROFILE_SDP_SUPPORT
 endif
 
 # Only select item needs following
@@ -387,8 +369,6 @@ config BT_A2DP_PBP
 config BT_A2DP_HFP_PBP
     bool
 config BT_A2DP_TMAP
-    bool
-config BT_A2DP_PROVISIONER_SCATTERNET
     bool
 config BT_MESH_PROVISIONER_SUPPORT
     bool

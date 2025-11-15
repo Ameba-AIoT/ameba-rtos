@@ -192,6 +192,26 @@ static int atcmd_ble_mesh_remote_prov_client_composition_refresh(int argc, char 
 #endif
 }
 
+static int atcmd_ble_mesh_remote_prov_server_set_prefer_bearer(int argc, char **argv)
+{
+	(void)argc;
+#if defined(BT_MESH_ENABLE_REMOTE_PROVISIONING_SERVER_MODEL) && BT_MESH_ENABLE_REMOTE_PROVISIONING_SERVER_MODEL
+	uint16_t ret;
+	rtk_bt_mesh_bearer_field_t bearer;
+	bearer = str_to_int(argv[0]);
+	ret = rtk_bt_mesh_remote_prov_set_prefer_bearer(&bearer);
+	if (RTK_BT_MESH_MSG_SEND_CAUSE_SUCCESS != ret) {
+		BT_LOGE("[%s] Remote prov set prefer bearer fail,reason:%d\r\n", __func__, ret);
+		return ret;
+	}
+	return 0;
+#else
+	(void)argv;
+	BT_LOGE("Platform not support remote provisioning server model.\r\n");
+	return -1;
+#endif
+}
+
 static const cmd_table_t mesh_remote_prov_client_model_cmd_table[] = {
 	{"scan_start",        atcmd_ble_mesh_remote_prov_client_scan_start,         5, 6},
 	{"scan_capa_get",     atcmd_ble_mesh_remote_prov_client_scan_capa_get,      3, 3},
@@ -200,6 +220,7 @@ static const cmd_table_t mesh_remote_prov_client_model_cmd_table[] = {
 	{"dev_key_refresh",   atcmd_ble_mesh_remote_prov_client_dev_key_refresh,    1, 2},
 	{"addr_refresh",      atcmd_ble_mesh_remote_prov_client_node_addr_refresh,  2, 3},
 	{"compo_refresh",     atcmd_ble_mesh_remote_prov_client_composition_refresh, 1, 2},
+	{"set_bearer",        atcmd_ble_mesh_remote_prov_server_set_prefer_bearer, 2, 2},
 	{NULL,},
 };
 
