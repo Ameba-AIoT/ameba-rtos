@@ -308,7 +308,7 @@ typedef struct {
 	uint16_t seq;                           /*!< Sequence number, for convinience, not mandatory */
 	uint16_t app_id;                        /*!< Every service has a app_id. */
 	uint16_t conn_handle;                   /*!< Connection handle for a client */
-	uint16_t cid;                           /*!< ID of L2CAP channel to send the response, MUST be same as cid in @ref rtk_bt_gatts_read_ind_t. Ignored when RTK_BT_5_2_EATT_SUPPORT is 0. */
+	uint16_t cid;                           /*!< ID of L2CAP channel to send the response, MUST be same as cid in @ref rtk_bt_gatts_read_ind_t. Ignored when RTK_BLE_MGR_LIB is 0. */
 	uint16_t index;                         /*!< Attribute index in service */
 	uint8_t err_code;                       /*!< Error code, @ref rtk_bt_err_att , if NOT ERR_RESP, equals 0 */
 	uint16_t len;                           /*!< Response Value length, when err_code == 0 */
@@ -323,7 +323,7 @@ typedef struct {
 	uint16_t seq;                           /*!< Sequence number, for convinience, not mandatory */
 	uint16_t app_id;                        /*!< Every service has a app_id. */
 	uint16_t conn_handle;                   /*!< Connection handle for a client */
-	uint16_t cid;                           /*!< ID of L2CAP channel to send the response, 0 indicates auto-select. Ignored when RTK_BT_5_2_EATT_SUPPORT is 0. */
+	uint16_t cid;                           /*!< ID of L2CAP channel to send the response, 0 indicates auto-select. Ignored when RTK_BLE_MGR_LIB is 0. */
 	uint16_t index;                         /*!< Attribute index in service */
 	uint8_t type;                           /*!< Write type */
 	uint8_t err_code;                       /*!< Error code, @ref rtk_bt_err_att , if NOT ERR_RESP, equals 0 */
@@ -337,7 +337,7 @@ typedef struct {
 	uint16_t seq;                           /*!< Sequence number, for convinience, not mandatory */
 	uint16_t app_id;                        /*!< Every service has a app_id. */
 	uint16_t conn_handle;                   /*!< Connection handle for a client */
-	uint16_t cid;                           /*!< ID of L2CAP channel to send the response, 0 indicates auto-select. Ignored when RTK_BT_5_2_EATT_SUPPORT is 0. */
+	uint16_t cid;                           /*!< ID of L2CAP channel to send the response, 0 indicates auto-select. Ignored when RTK_BLE_MGR_LIB is 0. */
 	uint16_t index;                         /*!< Attribute index in service */
 	uint16_t len;                           /*!< Indicate Value length */
 	const void *data;                       /*!< Indicate Value data */
@@ -349,7 +349,7 @@ typedef struct {
  */
 typedef struct {
 	uint16_t conn_handle;                   /*!< Connection handle for a client */
-	uint16_t cid;                           /*!< ID of L2CAP channel, 0 indicates auto-select. Ignored when RTK_BT_5_2_EATT_SUPPORT is 0. */
+	uint16_t cid;                           /*!< ID of L2CAP channel, 0 indicates auto-select. Ignored when RTK_BLE_MGR_LIB is 0. */
 	uint16_t start_handle;                  /*!< Start of affected attribute handle range */
 	uint16_t end_handle;                    /*!< End of affected attribute handle range */
 } rtk_bt_gatts_service_changed_indicate_param_t;
@@ -546,7 +546,7 @@ uint16_t rtk_bt_gatts_write_resp(rtk_bt_gatts_write_resp_param_t *param);
 /**
  * @brief     Server send service changed indication when builtin service is used.
  * @param[in] conn_handle: Connection handle for a client.
- * @param[in] cid: ID of L2CAP channel, 0 indicates auto-select. Ignored when RTK_BT_5_2_EATT_SUPPORT is 0.
+ * @param[in] cid: ID of L2CAP channel, 0 indicates auto-select. Ignored when RTK_BLE_MGR_LIB is 0.
  * @param[in] start_handle: Start of affected attribute handle range.
  * @param[in] end_handle: End of affected attribute handle range.
  * @return

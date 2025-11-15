@@ -58,6 +58,8 @@ Or it will echo:
 - SDIO host sends 2048 bytes, including 16-byte tx descriptor and 2032-byte payload.
 
 #  Supported IC
-* AmebaDplus
+
+- AmebaDplus
+  * RTL8721Dx
 
 

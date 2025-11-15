@@ -338,8 +338,7 @@ extern "C"
 #define RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT          0    //can set 1 when CAP Acceptor role
 #endif
 
-#if ((!defined(CONFIG_BT_ZEPHYR) || !CONFIG_BT_ZEPHYR) && \
-    ((defined(RTK_BT_5_2_EATT_SUPPORT) && RTK_BT_5_2_EATT_SUPPORT) || (defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT)))
+#if (!defined(CONFIG_BT_ZEPHYR) || !CONFIG_BT_ZEPHYR) && (defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT)
 #define RTK_BLE_MGR_LIB             1
 #define GATTC_TBL_STORAGE_SUPPORT   0
 #else

@@ -66,6 +66,11 @@ This example describes how to use GPIO Port read/write by MBED GPIO API.
 # Supported IC
 
 - AmebaSmart
+  * RTL8730E
 - AmebaLite
+  * RTL8726E
+  * RTL8720E
+  * RTL8713E
+  * RTL8710E
 - AmebaDplus
-- AmebaD
+  * RTL8721Dx
