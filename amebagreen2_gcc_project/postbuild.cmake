@@ -6,6 +6,11 @@ include(${c_CMAKE_FILES_DIR}/global_define.cmake)
 import_kconfig("CONFIG" ${c_MCU_KCONFIG_FILE})
 ameba_reset_global_define() #NOTE: Some variables like c_MP need to update after import kconfig
 
+if (CONFIG_FULLMAC_DEV)
+    file(REMOVE ${FINAL_IMAGE_DIR}/${c_APP_BINARY_NAME})
+    return()
+endif()
+
 message( "========== Image app generate start ==========")
 
 set(app_full_path ${c_IMAGE_OUTPUT_DIR}/${c_APP_BINARY_NAME})

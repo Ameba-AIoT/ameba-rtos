@@ -1036,7 +1036,7 @@
 #define LSYS_BIT_PX_SDIO_EXTRA         ((u32)0x00000001 << 2)            /*!< R/W 0x0  dcut ECO : sdio extra fid*/
 #define LSYS_PX_SDIO_EXTRA(x)          ((u32)(((x) & 0x00000001) << 2))
 #define LSYS_GET_PX_SDIO_EXTRA(x)      ((u32)(((x >> 2) & 0x00000001)))
-#define LSYS_BIT_PX_JTAG_EXTRA         ((u32)0x00000001 << 3)            /*!< R/W 0x0  dcut ECO : i2s3 extra fid*/
+#define LSYS_BIT_PX_JTAG_EXTRA         ((u32)0x00000001 << 3)            /*!< R/W 0x0  dcut ECO : jtag extra fid*/
 #define LSYS_PX_JTAG_EXTRA(x)          ((u32)(((x) & 0x00000001) << 3))
 #define LSYS_GET_PX_JTAG_EXTRA(x)      ((u32)(((x >> 3) & 0x00000001)))
 #define LSYS_BIT_PX_I2S2_EXTRA1        ((u32)0x00000001 << 4)            /*!< R/W 0x0  dcut ECO : i2s2 extra1 fid*/

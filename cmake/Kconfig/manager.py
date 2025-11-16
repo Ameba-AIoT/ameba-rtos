@@ -297,24 +297,35 @@ class Manager(object):
 
     def extract_lines(self, filename, sections:List[str]) -> List[str]:
         results = []
-        for section in sections:
-            begin_marker = f'{self.section_begin_marker_prefix}{section}{self.section_begin_marker_suffix}'
-            end_marker = f'{self.section_end_marker_prefix}{section}{self.section_end_marker_suffix}'
+        with open(filename, 'r') as file:
+            lines = file.readlines()
+            for section in sections:
+                begin_marker = f'{self.section_begin_marker_prefix}{section}{self.section_begin_marker_suffix}'
+                end_marker = f'{self.section_end_marker_prefix}{section}{self.section_end_marker_suffix}'
 
-            with open(filename, 'r') as file:
-                lines = file.readlines()
-            start_index = None
-            end_index = None
-            find_start = False
+                start_index = None
+                end_index = None
+                find_start = False
+                for i, line in enumerate(lines):
+                    if (not find_start) and (begin_marker in line):  #avoid start_marker is a substr of end_marker
+                        start_index = i
+                        find_start = True
+                    elif end_marker in line:
+                        end_index = i
+                        break
+                if start_index and end_index:
+                    results.extend(lines[start_index - 1:end_index + 2])
+
+            #NOTE: add the Private part to the result
+            end_markers = [f'{self.section_end_marker_prefix}{core}{self.section_end_marker_suffix}' for core in self.projects.values()]
+            no = 0
             for i, line in enumerate(lines):
-                if (not find_start) and (begin_marker in line):  #avoid start_marker is a substr of end_marker
-                    start_index = i
-                    find_start = True
-                elif end_marker in line:
-                    end_index = i
-                    break
-            if start_index and end_index:
-                results.extend(lines[start_index - 1:end_index + 2])
+                # Find the last end mark
+                if any(end_marker in line for end_marker in end_markers):
+                    no = max(no, i)
+            if no > 0:
+                results.extend(lines[no+1:])
+
         return results
 
     def parse_general_config(self) -> int:
@@ -338,6 +349,7 @@ class Manager(object):
         for proj, core in self.projects.items():
             role_config = self.extract_core_role(core)
             core_config_file = os.path.join(self.config_root_dir, f'.config_{core.lower()}')
+            core_config_file_tmp = os.path.join(self.config_root_dir, f'.config_{core.lower()}_tmp')
             core_config_file_old = os.path.join(self.config_root_dir, f'.config_{core.lower()}.old')
             core_hearder_dir = os.path.join(self.config_root_dir, f'project_{proj.lower()}')
             if not os.path.exists(core_hearder_dir):
@@ -349,11 +361,17 @@ class Manager(object):
                 config_out = core_config_file,
                 content = role_config
             )
+
+            core_config = self.extract_lines(core_config_file, [self.general_section_name, core.upper()])
+            with open(core_config_file_tmp, "w") as f:
+                f.writelines(core_config)
+            #NOTE: header MUST be generate use core_config_file_tmp but core_config_file
+            #      for core_config_file would include other core-kconfig-specifiled config unexpectly
             self.run_gen_config(
-                config_in=core_config_file,
+                config_in=core_config_file_tmp,
                 header_path=tmp_header_file
             )
-            core_config = self.extract_lines(core_config_file, [self.general_section_name, core.upper()])
+            os.remove(core_config_file_tmp)
 
             skip_pattern = [f"_FOR_{c}" for c in self.projects.values() if c != core]
             skip_pattern.append(r"_MENU(=|\s).*$")

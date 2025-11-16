@@ -22,4 +22,5 @@ None.
 
 # Supported IC
 
-* AmebaSmart
+- AmebaSmart
+  * RTL8730E

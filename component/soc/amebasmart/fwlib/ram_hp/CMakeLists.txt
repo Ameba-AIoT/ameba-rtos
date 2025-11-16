@@ -49,7 +49,6 @@ ameba_list_append(private_sources
     ameba_mipi.c
     ameba_sdio_host.c
     ameba_sd.c
-    ameba_psram.c
     ameba_audio_clock.c
     ameba_ipc_toap.c
     ameba_vad.c

@@ -499,6 +499,12 @@ int wifi_if_send_eapol(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags
 int wifi_wake_pll_rdy_in_ps_state(u8 need);
 
 /**
+  * @brief  for bt on to disable/enable ips/lps function
+  * @param[in] enable [DISABLE-disable and leave ips/lps; ENABLE-Release the control of BT ON over IPS/LPS]
+  */
+void wifi_ps_en_by_bt_on(u8 enable);
+
+/**
  * @brief  Enable Wi-Fi interface-2.
  * @return
  *    - @ref RTK_SUCCESS : Success, wifi open RTW_MODE_AP .

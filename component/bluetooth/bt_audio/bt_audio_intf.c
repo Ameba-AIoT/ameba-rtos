@@ -279,17 +279,10 @@ static void do_audio_sync_flow(rtk_bt_audio_track_t *track, uint8_t packet_index
 			track->pre_drop_cnt_left = cnt_drop - data_size;
 			BT_LOGA("[BT AUDIO] pre drop %d data to speed up audio track rendering, left %d \r\n", (int)data_size, (int)track->pre_drop_cnt_left);
 		} else {
-#if defined(CONFIG_AUDIO_MIXER) && CONFIG_AUDIO_MIXER
-			/* drop entire packet data to avoid insert audio data causing stutter before all tracks sync ready */
-			memset((void *)pdata, 0, data_size);
-			track->pre_drop_cnt_left = 0;
-			BT_LOGA("[BT AUDIO] pre drop %d data to speed up audio track rendering \r\n", (int)data_size);
-#else
 			pdata += cnt_drop; // offset
 			data_size -= cnt_drop;
 			track->pre_drop_cnt_left = 0;
 			BT_LOGA("[BT AUDIO] pre drop %d data to speed up audio track rendering \r\n", (int)cnt_drop);
-#endif
 			do_audio_track_write(track, pdata, data_size);
 		}
 	} else {

@@ -17,8 +17,8 @@ typedef struct {
 } usbh_uvc_dec_buf;
 
 typedef struct {
-	u32 ch;
 	usbh_uvc_dec_buf uvc_dec_buf[USBH_MAX_BUF_NUM];
+	u32 ch;
 	u32 frame_done_num;
 	u32 frame_done_size;
 	u32 free_buf_num;
@@ -29,7 +29,7 @@ typedef struct {
 	void *priv;
 
 	/* cmd reg related */
-	u32 ep_size;
+	u32 xfer_size;
 	u32 mps;
 	rtos_sema_t dec_sema;
 } usbh_uvc_dec;
