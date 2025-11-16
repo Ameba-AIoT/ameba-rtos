@@ -9,6 +9,7 @@
 #define __RTK_BT_MESH_REMOTE_PROVISIONING_H__
 
 #include <stdint.h>
+#include <rtk_bt_mesh_common.h>
 
 /* =============================================== Remote provisioning client model relate data struct definition ======================================= */
 
@@ -219,6 +220,16 @@ typedef struct {
 	uint16_t node_addr;
 	uint8_t attn_dur;
 } rtk_bt_mesh_remote_prov_client_node_addr_refresh_t;
+
+/* =============================================== Remote provisioning server model relate data struct definition ======================================= */
+/**
+ * @typedef   rtk_bt_mesh_remote_prov_server_act_t
+ * @brief     BLE MESH remote provisioning server model act definition.
+ */
+typedef enum {
+	RTK_BT_MESH_REMOTE_PROV_SERVER_ACT_SET_PREFER_BEARER = 1,
+	RTK_BT_MESH_REMOTE_PROV_SERVER_ACT_MAX,
+} rtk_bt_mesh_remote_prov_server_act_t;
 /* =============================================== Remote provisioning client model relate function definition ======================================= */
 /**
  * @defgroup  ble_mesh_remote_provisioning_client_model BT LE Mesh Rempte Provisioning Client Model APIs
@@ -290,6 +301,15 @@ uint16_t rtk_bt_mesh_remote_prov_node_addr_refresh(rtk_bt_mesh_remote_prov_clien
  */
 uint16_t rtk_bt_mesh_remote_prov_composition_refresh(uint8_t *attn_dur);
 
+/* =============================================== Remote provisioning server model relate function definition ======================================= */
+/**
+ * @brief     Set rpr server preferred bearer to provision, will cause event @ref RTK_BT_MESH_REMOTE_PROV_SERVER_ACT_SET_PREFER_BEARER
+ * @param[in] bearer: set prefer bearer param structure
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_mesh_remote_prov_set_prefer_bearer(rtk_bt_mesh_bearer_field_t *bearer);
 /**
  * @}
  */

@@ -214,4 +214,37 @@ bool remote_prov_client_init(void)
 }
 
 #endif // end of BT_MESH_ENABLE_REMOTE_PROVISIONING_CLIENT_MODEL
+
+#if defined(BT_MESH_ENABLE_REMOTE_PROVISIONING_SERVER_MODEL) && BT_MESH_ENABLE_REMOTE_PROVISIONING_SERVER_MODEL
+extern bool bt_stack_profile_check(rtk_bt_profile_t profile);
+uint16_t bt_mesh_remote_prov_server_model_act_handle(rtk_bt_cmd_t *p_cmd)
+{
+	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
+	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
+		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
+		ret = RTK_BT_ERR_UNSUPPORTED;
+		goto end;
+	}
+	if (!p_cmd) {
+		BT_LOGE("[%s] param is NULL!\r\n", __func__);
+		return RTK_BT_FAIL;
+	}
+	switch (p_cmd->act) {
+	case RTK_BT_MESH_REMOTE_PROV_SERVER_ACT_SET_PREFER_BEARER: {
+		rtk_bt_mesh_bearer_field_t *bearer;
+		bearer = (rtk_bt_mesh_bearer_field_t *)p_cmd->param;
+		rmt_prov_set_prefer_bearer(*bearer);
+		ret = RTK_BT_OK;
+		break;
+	}
+	default:
+		BT_LOGE("[%s] Unknown act:%d\r\n", __func__, p_cmd->act);
+		break;
+	}
+end:
+	p_cmd->ret = ret;
+	osif_sem_give(p_cmd->psem);
+	return ret;
+}
+#endif // end of BT_MESH_ENABLE_REMOTE_PROVISIONING_SERVER_MODEL
 #endif // end of RTK_BLE_MESH_SUPPORT
