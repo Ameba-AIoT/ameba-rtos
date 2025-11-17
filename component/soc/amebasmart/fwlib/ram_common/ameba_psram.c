@@ -762,13 +762,28 @@ bool PSRAM_calibration(void)
   */
 void PSRAM_AutoGating(u32 Enable, u32 IDleCnt, u32 ResumeCnt)
 {
+#if PSRAM_AUTOGATING
+
 	u32 Rtemp = 0;
 	if (Enable) {
-		Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E4);
-		Rtemp &= ~(HSYS_MASK_PWDPAD_RESUME_VAL | HSYS_MASK_PWDPAD_IDLE_VAL);
+		/* for adjust idlecnt safely */
+		Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E0);
+		Rtemp &= (~HSYS_BIT_PWDPAD_DQ_EN); //don't write 1 if user mode
+		HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E0, Rtemp);
 
-		Rtemp |= HSYS_PWDPAD_RESUME_VAL(ResumeCnt);
+		/* 50ns for pad resume */
+		DelayUs(1);
+
+		Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E4);
+		Rtemp &= ~HSYS_MASK_PWDPAD_IDLE_VAL;
 		Rtemp |= HSYS_PWDPAD_IDLE_VAL(IDleCnt);
+
+		/* psram info only in km4, always set idle cnt in KM4 */
+		if(ResumeCnt > 0) {
+			Rtemp &= ~HSYS_MASK_PWDPAD_RESUME_VAL;
+			Rtemp |= HSYS_PWDPAD_RESUME_VAL(ResumeCnt);
+		}
+
 		HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E4, Rtemp);
 
 		Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E0);
@@ -780,5 +795,13 @@ void PSRAM_AutoGating(u32 Enable, u32 IDleCnt, u32 ResumeCnt)
 		Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E0);
 		Rtemp &= (~HSYS_BIT_PWDPAD_DQ_EN); //don't write 1 if user mode
 		HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E0, Rtemp);
+
+		/* 50ns for pad resume */
+		DelayUs(1);
 	}
+#else
+	(void)Enable;
+	(void)IDleCnt;
+	(void)ResumeCnt;
+#endif
 }

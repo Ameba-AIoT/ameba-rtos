@@ -83,4 +83,16 @@ uint16_t rtk_bt_mesh_remote_prov_composition_refresh(uint8_t *attn_dur)
 }
 
 #endif // end of BT_MESH_ENABLE_REMOTE_PROVISIONING_CLIENT_MODEL
+
+#if defined(BT_MESH_ENABLE_REMOTE_PROVISIONING_SERVER_MODEL) && BT_MESH_ENABLE_REMOTE_PROVISIONING_SERVER_MODEL
+uint16_t rtk_bt_mesh_remote_prov_set_prefer_bearer(rtk_bt_mesh_bearer_field_t *bearer)
+{
+	uint16_t ret;
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_REMOTE_PROV_SERVER_MODEL, RTK_BT_MESH_REMOTE_PROV_SERVER_ACT_SET_PREFER_BEARER, bearer,
+						  sizeof(rtk_bt_mesh_bearer_field_t));
+
+	return ret;
+}
+#endif // end of BT_MESH_ENABLE_REMOTE_PROVISIONING_SERVER_MODEL
 #endif // end of RTK_BLE_MESH_SUPPORT
