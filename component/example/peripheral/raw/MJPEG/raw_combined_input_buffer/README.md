@@ -22,4 +22,5 @@ None
 
 # Supported IC
 
-* AmebaGreen2
+- AmebaGreen2
+  * RTL8721F

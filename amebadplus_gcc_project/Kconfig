@@ -309,7 +309,7 @@ menu "CONFIG WIFI"
             depends on WHC_DEV # only work in NP
             select WLAN
             select FW_DRIVER_COEXIST
-            select WIFI_FW_EN
+            select WIFI_FW_EN if !MP_SHRINK
             select WIFI_HOST_CONTROL
             select LWIP_LAYER if WHC_DUAL_TCPIP_FOR_KM4
 

@@ -12,6 +12,7 @@
 #include "platform_autoconf.h"
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
 #include "wifi_api.h"
+#include "wifi_intf_drv_to_app_internal.h"
 extern int wifi_set_ips_internal(u8 enable);
 #endif
 
@@ -403,8 +404,7 @@ bool rtk_bt_pre_enable(void)
 			return false;
 		}
 
-		wifi_set_lps_enable(FALSE);
-		wifi_set_ips_internal(FALSE);
+		wifi_ps_en_by_bt_on(DISABLE);
 	}
 #endif
 
@@ -415,8 +415,7 @@ void rtk_bt_post_enable(void)
 {
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
 	if (bt_ant_switch == ANT_S1) {
-		wifi_set_lps_enable(wifi_user_config.lps_enable);
-		wifi_set_ips_internal(wifi_user_config.ips_enable);
+		wifi_ps_en_by_bt_on(ENABLE);
 	}
 #endif
 }
