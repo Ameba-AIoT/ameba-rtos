@@ -195,7 +195,6 @@ menu "CONFIG WIFI"
             select LWIP_LAYER if CORE_AS_AP && !MP_SHRINK
             select ENABLE_WPS if CORE_AS_AP && WIFI_WPS_ENABLE_MENU
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
-            select LWIP_NETCONN_SEM_PER_THREAD if CORE_AS_AP
 
         config FULLMAC_DEV
             bool
@@ -231,7 +230,6 @@ menu "CONFIG WIFI"
             select LWIP_LAYER if !MP_SHRINK
             select ENABLE_WPS if WIFI_WPS_ENABLE_MENU
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
-            select LWIP_NETCONN_SEM_PER_THREAD
 
     endif
 
@@ -267,7 +265,6 @@ menu "CONFIG WIFI"
         bool
     config ENABLE_WPS_DISCOVERY
         bool
-    config LWIP_NETCONN_SEM_PER_THREAD
         bool
 
 endmenu

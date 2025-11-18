@@ -15,7 +15,7 @@ ameba_modify_file_path(${app_ns_full_path} app_ns_tmp_full_path p_SUFFIX _tmp)
 ameba_modify_file_path(${app_full_path} app_compress p_SUFFIX _compress)
 ameba_modify_file_path(${app_ns_full_path} app_compress_ns p_SUFFIX _compress)
 
-if(CONFIG_TRUSTZONE)
+if(CONFIG_TRUSTZONE OR CONFIG_TRUSTZONE_FOR_KM4)
     ameba_axf2bin_fw_pack(
         ${app_full_path}
         p_IMAGE2 ${c_IMAGE2_ALL_FILES}

@@ -160,6 +160,8 @@ bool rtk_stack_dfu_target_init(void);
 
 uint16_t bt_mesh_remote_prov_client_model_act_handle(rtk_bt_cmd_t *p_cmd);
 
+uint16_t bt_mesh_remote_prov_server_model_act_handle(rtk_bt_cmd_t *p_cmd);
+
 void remote_prov_client_init(void);
 
 void directed_forwarding_client_init(void);

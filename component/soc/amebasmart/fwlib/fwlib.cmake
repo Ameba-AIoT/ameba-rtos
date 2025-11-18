@@ -54,7 +54,7 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image1")
         ram_hp/ameba_nandflash.c
         ram_hp/ameba_ddrphy.c
         ram_hp/ameba_rxi316_dram_init.c
-        ram_hp/ameba_psram.c
+        ram_common/ameba_psram.c
         ram_common/ameba_clk.c
         ram_common/ameba_swr.c
         ram_common/ameba_otp.c
@@ -104,7 +104,7 @@ elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
                 ram_hp/ameba_mipi.c
                 ram_hp/ameba_sdio_host.c
                 ram_hp/ameba_sd.c
-                ram_hp/ameba_psram.c
+                ram_common/ameba_psram.c
                 ram_hp/ameba_ddrphy.c
                 ram_hp/ameba_rxi316_dram_init.c
                 ram_hp/ameba_codec.c
@@ -141,6 +141,7 @@ elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
                 ram_hp/ameba_rxi316_dram_init.c
                 # ram_hp/ameba_clk.c
 
+                ram_common/ameba_psram.c
                 ram_common/ameba_thermal.c
                 ram_common/ameba_mpu_ram.c
                 ram_common/ameba_swr.c
@@ -165,6 +166,7 @@ elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
                 ap_peripheral/ameba_delay.c
                 ap_core/ameba_pmc.c
 
+                ram_common/ameba_psram.c
                 ram_common/ameba_gdma_memcpy.c
                 ram_common/ameba_captouch.c
                 ram_common/ameba_thermal.c

@@ -11,23 +11,11 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 # You may use if-else condition to set or update predefined variable above
 ameba_list_append(public_includes
-    ${CMAKE_CURRENT_SOURCE_DIR}
+    interfaces/include
 )
 
-if(CONFIG_MP_INCLUDED)
-    if(CONFIG_MP_SHRINK)
-        set(target_name coex_mp_shrink)
-    else()
-        set(target_name coex_mp)
-    endif()
-else()
-    set(target_name coex)
-endif()
-
-## Differentiated configuration based on SoC types
-
 ameba_list_append(public_libraries
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_${target_name}.a
+    ${c_SDK_LIB_APPLICATION_DIR}/lib_jpeg.a
 )
 
 # Component public part, user config end
@@ -56,81 +44,74 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-if(CONFIG_MP_SHRINK)
-    ameba_list_append(private_sources
-        rtw_coex_mp_api.c
-        rtw_coex_ipc_dev.c
-        rtw_coex_ipc_dev_api.c
-    )
-    if(CONFIG_AMEBADPLUS)
-        ameba_list_append(private_sources
-            rtk_coex_wl_chip/rtw_coex_wl_chip_rtl8721da.c
-        )
-    elseif(CONFIG_AMEBASMART)
-        ameba_list_append(private_sources
-            rtk_coex_wl_chip/rtw_coex_wl_chip_rtl8730e.c
-        )
-    elseif(CONFIG_AMEBALITE)
-        ameba_list_append(private_sources
-            rtk_coex_wl_chip/rtw_coex_wl_chip_rtl8720e.c
-        )
-    elseif(AMEBAGREEN2)
-    else()
-
-    endif()
-else()
-    ameba_list_append(private_sources
-        rtk_coex_wl_chip/rtw_coex_wl_chip.c
-        rtk_coex_ext_chip/rtw_coex_ext_chip.c
-        rtw_coex_action.c
-        rtw_coex_action_single_ant.c
-        rtw_coex_action_dual_ant.c
-        rtw_coex_action_dual_chip.c
-        rtw_coex_api_wl.c
-        rtw_coex_api_bt.c
-        rtw_coex_api_ext.c
-        rtw_coex_api_wp.c
-        rtw_coex_dbg.c
-        rtk_coex_ext_chip/rtw_coex_ext_chip_bt.c
-        rtk_coex_ext_chip/rtw_coex_ext_chip_wpan.c
-        rtk_coex_ext_chip/rtw_coex_ext_chip_debug.c
-        rtk_coex_ext_chip/rtw_coex_ext_chip_btwpan.c
-        rtw_coex_ipc_dev.c
-        rtw_coex_ipc_dev_api.c
-    )
-    if(CONFIG_AMEBADPLUS)
-        ameba_list_append(private_sources
-            rtk_coex_wl_chip/rtw_coex_wl_chip_rtl8721da.c
-            rtk_coex_ext_chip/rtw_coex_ext_chip_rtl8721da.c
-        )
-    elseif(CONFIG_AMEBASMART)
-        ameba_list_append(private_sources
-            rtk_coex_wl_chip/rtw_coex_wl_chip_rtl8730e.c
-            rtk_coex_ext_chip/rtw_coex_ext_chip_rtl8730e.c
-        )
-    elseif(CONFIG_AMEBALITE)
-        ameba_list_append(private_sources
-            rtk_coex_wl_chip/rtw_coex_wl_chip_rtl8720e.c
-            rtk_coex_ext_chip/rtw_coex_ext_chip_rtl8720e.c
-        )
-    elseif(AMEBAGREEN2)
-    else()
-
-    endif()
-endif()
-
-
-ameba_list_append(private_includes
-    rtk_coex_wl_chip
-    rtk_coex_ext_chip
+ameba_list_append(private_sources
+    libjpeg-turbo/jcapimin.c
+    libjpeg-turbo/jcapistd.c
+    libjpeg-turbo/jaricom.c
+    libjpeg-turbo/jcarith.c
+    libjpeg-turbo/jccoefct.c
+    libjpeg-turbo/jccolor.c
+    libjpeg-turbo/jcdctmgr.c
+    libjpeg-turbo/jchuff.c
+    libjpeg-turbo/jcinit.c
+    libjpeg-turbo/jcmainct.c
+    libjpeg-turbo/jcmarker.c
+    libjpeg-turbo/jcmaster.c
+    libjpeg-turbo/jcomapi.c
+    libjpeg-turbo/jcparam.c
+    libjpeg-turbo/jcphuff.c
+    libjpeg-turbo/jcprepct.c
+    libjpeg-turbo/jcsample.c
+    libjpeg-turbo/jctrans.c
+    libjpeg-turbo/jdapimin.c
+    libjpeg-turbo/jdapistd.c
+    libjpeg-turbo/jdarith.c
+    libjpeg-turbo/jdatadst.c
+    libjpeg-turbo/jdatasrc.c
+    libjpeg-turbo/jdcoefct.c
+    libjpeg-turbo/jdcolor.c
+    libjpeg-turbo/jddctmgr.c
+    libjpeg-turbo/jdhuff.c
+    libjpeg-turbo/jdinput.c
+    libjpeg-turbo/jdmainct.c
+    libjpeg-turbo/jdmarker.c
+    libjpeg-turbo/jdmaster.c
+    libjpeg-turbo/jdmerge.c
+    libjpeg-turbo/jdphuff.c
+    libjpeg-turbo/jdpostct.c
+    libjpeg-turbo/jdsample.c
+    libjpeg-turbo/jdtrans.c
+    libjpeg-turbo/jerror.c
+    libjpeg-turbo/jfdctflt.c
+    libjpeg-turbo/jfdctfst.c
+    libjpeg-turbo/jfdctint.c
+    libjpeg-turbo/jidctflt.c
+    libjpeg-turbo/jidctfst.c
+    libjpeg-turbo/jidctint.c
+    libjpeg-turbo/jidctred.c
+    libjpeg-turbo/jmemmgr.c
+    libjpeg-turbo/jmemnobs.c
+    libjpeg-turbo/jquant1.c
+    libjpeg-turbo/jquant2.c
+    libjpeg-turbo/jutils.c
+    libjpeg-turbo/simd/jsimd_arm.c
+    libjpeg-turbo/simd/jsimd_arm_neon.S
 )
+ameba_list_append(private_compile_options
+    -O3
+    -fstrict-aliasing
+    -Wno-sign-compare
+    -Wno-unused-parameter
+    -Wno-error
+)
+
 # Component private part, user config end
 #------------------------------#
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
-ameba_add_external_app_library(${target_name}
+ameba_add_external_app_library(jpeg
     p_SOURCES
         ${private_sources}
     p_INCLUDES
