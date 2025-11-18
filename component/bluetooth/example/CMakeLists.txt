@@ -85,10 +85,6 @@ ameba_add_subdirectory_if(CONFIG_BT_A2DP_HFP
     bt_a2dp_hfp
 )
 
-ameba_add_subdirectory_if(CONFIG_BT_A2DP_PROVISIONER_SCATTERNET
-	bt_a2dp_provisioner_scatternet
-)
-
 ameba_add_subdirectory_if(CONFIG_BT_A2DP_SCATTERNET
     bt_a2dp_scatternet
 )

@@ -2905,6 +2905,7 @@ lwip_getsockopt_impl(int s, int level, int optname, void *optval, socklen_t *opt
 
 #ifdef LWIP_HOOK_SOCKETS_GETSOCKOPT
   if (LWIP_HOOK_SOCKETS_GETSOCKOPT(s, sock, level, optname, optval, optlen, &err)) {
+    done_socket(sock);
     return err;
   }
 #endif
@@ -3326,6 +3327,7 @@ lwip_setsockopt_impl(int s, int level, int optname, const void *optval, socklen_
 
 #ifdef LWIP_HOOK_SOCKETS_SETSOCKOPT
   if (LWIP_HOOK_SOCKETS_SETSOCKOPT(s, sock, level, optname, optval, optlen, &err)) {
+    done_socket(sock);
     return err;
   }
 #endif
