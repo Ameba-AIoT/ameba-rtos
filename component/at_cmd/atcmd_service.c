@@ -127,7 +127,7 @@ char global_buf[SMALL_BUF];
 at_write out_buffer;
 rtos_sema_t atcmd_tt_mode_sema;
 char at_config_file_exist = 0;
-
+extern int kv_init_done;
 extern s32 wifi_set_countrycode(u8 *cntcode);
 
 /**
@@ -610,6 +610,35 @@ void tt_mode_timeout_handler(void *arg)
 	rtos_sema_give(atcmd_tt_mode_sema);
 }
 
+void atcmd_host_control_mode_init_thread(void *param)
+{
+	(void) param;
+	rtos_timer_create(&xTimers_TT_Mode, "TT_Mode_Timer", NULL, 30, FALSE, tt_mode_timeout_handler);
+	//initialize tt mode ring sema
+	rtos_sema_create(&atcmd_tt_mode_sema, 0, 0xFFFF);
+	while (kv_init_done == 0) {
+		rtos_time_delay_ms(10);
+	}
+	int ret = atcmd_wifi_config_setting();
+	if (ret < 0) {
+		RTK_LOGE(TAG, "atcmd wifi config setting fail\n");
+		return;
+	}
+	ret = atcmd_host_control_config_setting();
+	if (ret < 0) {
+		RTK_LOGI(TAG, "atcmd host control config setting fail\n");
+		return;
+	}
+	char *path = rtos_mem_zmalloc(MAX_KEY_LENGTH);
+	char *prefix = find_vfs_tag(VFS_REGION_1);
+	DiagSnPrintf(path, MAX_KEY_LENGTH, "%s:AT", prefix);
+	mkdir(path, 0);
+	rtos_mem_free(path);
+	RTK_LOGI(TAG, ATCMD_HOST_CONTROL_INIT_STR);
+	at_printf(ATCMD_HOST_CONTROL_INIT_STR);
+	rtos_task_delete(NULL);
+}
+
 #else
 
 int at_printf_data(char *data, u32 len)
@@ -691,34 +720,7 @@ void atcmd_service_init(void)
 	rtos_mutex_recursive_create(&at_printf_mutex);
 
 #ifdef CONFIG_ATCMD_HOST_CONTROL
-	rtos_timer_create(&xTimers_TT_Mode, "TT_Mode_Timer", NULL, 30, FALSE, tt_mode_timeout_handler);
-
-	//initialize tt mode ring sema
-	rtos_sema_create(&atcmd_tt_mode_sema, 0, 0xFFFF);
-
-#ifndef CONFIG_WHC_BRIDGE
-	int ret = atcmd_wifi_config_setting();
-	if (ret < 0) {
-		RTK_LOGE(TAG, "atcmd wifi config setting fail\n");
-		return;
-	}
-
-	ret = atcmd_host_control_config_setting();
-
-	if (ret < 0) {
-		RTK_LOGI(TAG, "atcmd host control config setting fail\n");
-		return;
-	}
-#endif
-
-	char *path = rtos_mem_zmalloc(MAX_KEY_LENGTH);
-	char *prefix = find_vfs_tag(VFS_REGION_1);
-	DiagSnPrintf(path, MAX_KEY_LENGTH, "%s:AT", prefix);
-	mkdir(path, 0);
-	rtos_mem_free(path);
-
-	RTK_LOGI(TAG, ATCMD_HOST_CONTROL_INIT_STR);
-	at_printf(ATCMD_HOST_CONTROL_INIT_STR);
+	rtos_task_create(NULL, ((const char *)"atcmd_host_control_mode_init_thread"), atcmd_host_control_mode_init_thread, NULL, 4096, 5);
 #endif
 }
 

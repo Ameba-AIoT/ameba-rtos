@@ -11,7 +11,7 @@ message( "========== Image app generate start ==========")
 set(app_full_path ${c_IMAGE_OUTPUT_DIR}/${c_APP_BINARY_NAME})
 ameba_modify_file_path(${app_full_path} app_ns_full_path p_SUFFIX _ns)
 
-if (c_IMAGE3_ALL_FILES)
+if(CONFIG_TRUSTZONE OR CONFIG_TRUSTZONE_FOR_KM4)
     ameba_axf2bin_fw_pack(
         ${app_full_path}
         p_IMAGE2 ${c_IMAGE2_ALL_FILES}
