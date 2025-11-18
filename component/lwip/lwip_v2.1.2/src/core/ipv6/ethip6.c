@@ -55,9 +55,11 @@
 #include "netif/ethernet.h"
 
 #include <string.h>
+/* Added by Realtek start */
 #if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
 #include "lwip/lwip_ip6_rlocal.h"
 #endif
+/* Added by Realtek end */
 
 /**
  * Resolve and fill-in Ethernet address header for outgoing IPv6 packet.
@@ -99,7 +101,8 @@ ethip6_output(struct netif *netif, struct pbuf *q, const ip6_addr_t *ip6addr)
     dest.addr[3] = ((const u8_t *)(&(ip6addr->addr[3])))[1];
     dest.addr[4] = ((const u8_t *)(&(ip6addr->addr[3])))[2];
     dest.addr[5] = ((const u8_t *)(&(ip6addr->addr[3])))[3];
-    
+
+/* Added by Realtek start */
 #if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
     struct ip6_hdr *ip6hdr;
     ip_addr_t current_iphdr_src;
@@ -116,6 +119,8 @@ ethip6_output(struct netif *netif, struct pbuf *q, const ip6_addr_t *ip6addr)
       }
     }
 #endif
+/* Added by Realtek end */
+
     /* Send out. */
     return ethernet_output(netif, q, (const struct eth_addr*)(netif->hwaddr), &dest, ETHTYPE_IPV6);
   }

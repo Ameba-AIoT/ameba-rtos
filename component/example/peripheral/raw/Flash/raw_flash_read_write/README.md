@@ -27,6 +27,12 @@ User should set flash test start address (`FLASH_APP_BASE`) carefully to avoid c
 
 # Supported IC
 
-* AMEBASMART`(with Nor Flash)`
-* AMEBALITE
-* AMEBADPLUS
+- AmebaSmart`(with Nor Flash)`
+  * RTL8730E
+- AmebaLite
+  * RTL8726E
+  * RTL8720E
+  * RTL8713E
+  * RTL8710E
+- AmebaDplus
+  * RTL8721Dx

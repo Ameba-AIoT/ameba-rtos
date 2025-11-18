@@ -721,7 +721,7 @@ static void ecm_link_change_thread(void *param)
 				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 				netif_set_link_up(&eth_netif);
 
-				dhcp_status = LwIP_DHCP(2, DHCP_START);
+				dhcp_status = LwIP_IP_Address_Request(2);
 				if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
 					netifapi_netif_set_default(&eth_netif);	//Set default gw to ether netif
 					dhcp_done = 1;
@@ -745,7 +745,7 @@ static void ecm_link_change_thread(void *param)
 				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 				netif_set_link_up(&eth_netif);
 
-				dhcp_status = LwIP_DHCP(2, DHCP_START);
+				dhcp_status = LwIP_IP_Address_Request(2);
 				if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
 					netifapi_netif_set_default(&eth_netif);	//Set default gw to ether netif
 					dhcp_done = 1;

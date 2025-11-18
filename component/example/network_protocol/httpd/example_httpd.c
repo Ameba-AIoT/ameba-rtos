@@ -226,7 +226,9 @@ static void example_httpd_thread(void *param)
 	(void) param;
 
 	// Delay to check successful WiFi connection and obtain of an IP address
-	LwIP_Check_Connectivity();
+	while (LwIP_Check_Connectivity(0) != CONNECTION_VALID) {
+		rtos_time_delay_ms(2000);
+	}
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n====================Example: httpd====================\n");
 

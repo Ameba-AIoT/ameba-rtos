@@ -536,7 +536,7 @@ int wifi_restart_ap(struct rtw_softap_info *softAP_config)
 #if defined(CONFIG_DHCP_CLIENT) && CONFIG_DHCP_CLIENT
 		if (ret == RTK_SUCCESS) {
 			/* Start DHCPClient */
-			LwIP_DHCP(0, DHCP_START);
+			LwIP_IP_Address_Request(0);
 		}
 #endif
 	}
@@ -1226,7 +1226,7 @@ static void ConnectTargetAP(void)
 
 #ifdef CONFIG_LWIP_LAYER
 	/* Start DHCPClient */
-	LwIP_DHCP(0, DHCP_START);
+	LwIP_IP_Address_Request(0);
 #endif
 }
 

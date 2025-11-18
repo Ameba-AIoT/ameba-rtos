@@ -59,6 +59,7 @@ WAKEPIN_TypeDef sleep_wakepin_config[] = {
 PSCFG_TypeDef ps_config = {
 	.keep_OSC4M_on = FALSE,			/* keep OSC4M on or off for sleep */
 	.xtal_mode_in_sleep = XTAL_OFF,	/* set xtal mode during sleep mode, see enum xtal_mode_sleep for detail */
+	.swr_mode_in_sleep = SWR_PFM,	/* SWR work mode in sleep status.*/
 };
 
 UARTCFG_TypeDef uart_config[4] = {

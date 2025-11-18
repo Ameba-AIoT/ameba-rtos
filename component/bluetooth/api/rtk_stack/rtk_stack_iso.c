@@ -1111,6 +1111,14 @@ T_APP_RESULT bt_stack_le_iso_cig_acceptor_cb(uint8_t cb_type, void *p_cb_data)
 						p_data->p_cig_mgr_accept_cis_info->cis_conn_handle,
 						p_data->p_cig_mgr_accept_cis_info->cig_id,
 						p_data->p_cig_mgr_accept_cis_info->cis_id);
+		p_cmd = bt_stack_pending_cmd_search(cb_type);
+		if (p_cmd) {
+			bt_stack_pending_cmd_delete(p_cmd);
+			p_cmd->ret = p_data->p_cig_mgr_accept_cis_info->cause;
+			osif_sem_give(p_cmd->psem);
+		} else {
+			BT_LOGE("[%s] MSG_CIG_MGR_ACCEPT_CIS_INFO: find no pending command \r\n", __func__);
+		}
 	}
 	break;
 
@@ -1127,6 +1135,14 @@ T_APP_RESULT bt_stack_le_iso_cig_acceptor_cb(uint8_t cb_type, void *p_cb_data)
 						p_data->p_cig_mgr_reject_cis_info->cis_conn_handle,
 						p_data->p_cig_mgr_reject_cis_info->cig_id,
 						p_data->p_cig_mgr_reject_cis_info->cis_id);
+		p_cmd = bt_stack_pending_cmd_search(cb_type);
+		if (p_cmd) {
+			bt_stack_pending_cmd_delete(p_cmd);
+			p_cmd->ret = p_data->p_cig_mgr_reject_cis_info->cause;
+			osif_sem_give(p_cmd->psem);
+		} else {
+			BT_LOGE("[%s] MSG_CIG_MGR_REJECT_CIS_INFO: find no pending command \r\n", __func__);
+		}
 	}
 	break;
 

@@ -241,7 +241,6 @@ static int composite_cdc_acm_set_config(usb_dev_t *dev, u8 config)
 	usbd_ep_init(dev, ep_bulk_in);
 
 	/* Init BULK OUT EP */
-
 	ep_bulk_out->mps = (dev->dev_speed == USB_SPEED_HIGH) ? COMP_CDC_ACM_HS_BULK_OUT_PACKET_SIZE : COMP_CDC_ACM_FS_BULK_OUT_PACKET_SIZE;
 	usbd_ep_init(dev, ep_bulk_out);
 
@@ -354,6 +353,9 @@ static int composite_cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 st
 		/*TX done*/
 		if (ep_addr == USBD_COMP_CDC_BULK_IN_EP) {
 			ep_bulk_in->xfer_state = 0U;
+			if (cdc->cb->transmitted) {
+				cdc->cb->transmitted(status);
+			}
 		}
 #if CONFIG_COMP_CDC_ACM_NOTIFY
 		else if (ep_addr == USBD_COMP_CDC_INTR_IN_EP) {
@@ -364,6 +366,9 @@ static int composite_cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 st
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX fail: %d\n", ep_addr, status);
 		if (ep_addr == USBD_COMP_CDC_BULK_IN_EP) {
 			ep_bulk_in->xfer_state = 0U;
+			if (cdc->cb->transmitted) {
+				cdc->cb->transmitted(status);
+			}
 		}
 #if CONFIG_COMP_CDC_ACM_NOTIFY
 		else if (ep_addr == USBD_COMP_CDC_INTR_IN_EP) {

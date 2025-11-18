@@ -7,7 +7,7 @@ ameba_list_append(c_GLOBAL_MCU_LINK_OPTIONS
     -Wl,--no-enum-size-warning
 )
 
-if(CONFIG_AMEBAD)
+if(CONFIG_AMEBAD OR CONFIG_AMEBAPRO3)
     ameba_list_append(c_GLOBAL_MCU_LINK_OPTIONS -march=armv8-m.main+dsp)
 elseif(CONFIG_AMEBADPLUS OR CONFIG_AMEBALITE)
     ameba_list_append(c_GLOBAL_MCU_LINK_OPTIONS -march=armv8.1-m.main+dsp)

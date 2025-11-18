@@ -104,7 +104,9 @@ static void example_ssl_server_verify_required_thread(void *param)
 	const char *response = "<HTML><BODY>TLS OK</BODY></HTML>";
 
 	// Delay to check successful WiFi connection and obtain of an IP address
-	LwIP_Check_Connectivity();
+	while (LwIP_Check_Connectivity(0) != CONNECTION_VALID) {
+		rtos_time_delay_ms(2000);
+	}
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: SSL server (VERIFY_REQUIRED)\n");
 

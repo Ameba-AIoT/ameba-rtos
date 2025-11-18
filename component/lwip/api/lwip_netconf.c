@@ -607,15 +607,28 @@ void LwIP_AUTOIP_IPv6(struct netif *pnetif)
 #endif
 
 //To check successful WiFi connection and obtain of an IP address
-void LwIP_Check_Connectivity(void)
+int LwIP_Check_Connectivity(uint8_t idx)
 {
-	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
-	rtos_time_delay_ms(2000);
-	while (!((wifi_get_join_status(&join_status) == RTK_SUCCESS)
-			 && (join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Wait for WiFi and DHCP Connect Success...\n");
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Please use AT+WLCONN to connect AP first time\n");
-		rtos_time_delay_ms(2000);
+	if (idx == STA_WLAN_INDEX) {
+		u8 join_status = RTW_JOINSTATUS_UNKNOWN;
+		if (!((wifi_get_join_status(&join_status) == RTK_SUCCESS)
+			&& (join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(STA_WLAN_INDEX) != IP_ADDR_INVALID))) {
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "Wait for WiFi and DHCP Connect Success...\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "Please use AT+WLCONN to connect AP first time\n");
+			return CONNECTION_INVALID;
+		} else {
+			return CONNECTION_VALID;
+		}
+	} else if (idx == SOFTAP_WLAN_INDEX) {
+		if (wifi_is_running(SOFTAP_WLAN_INDEX) == FALSE) {
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "SoftAP is not running...\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "Please use AT+WLSTARTAP to start AP first time\n");
+			return CONNECTION_INVALID;
+		} else {
+			return CONNECTION_VALID;
+		}
+	} else {
+		return CONNECTION_INVALID;
 	}
 }
 
@@ -625,7 +638,7 @@ void LwIP_Check_Connectivity(void)
   * @retval -1 for failed
   */
 
-uint8_t LwIP_IP_Address_Request(void)
+uint8_t LwIP_IP_Address_Request(uint8_t idx)
 {
 	uint8_t ret = -1;
 #if LWIP_IPV6
@@ -633,7 +646,7 @@ uint8_t LwIP_IP_Address_Request(void)
 	LwIP_AUTOIP_IPv6(pnetif);
 #endif
 #if LWIP_IPV4
-	ret = LwIP_DHCP(STA_WLAN_INDEX, DHCP_START);
+	ret = LwIP_DHCP(idx, DHCP_START);
 #endif
 	return ret;
 }

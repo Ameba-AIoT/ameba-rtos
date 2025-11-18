@@ -243,7 +243,7 @@ ameba_list_append_if(CONFIG_AMEBAGREEN2 private_includes
 )
 
 ameba_list_append_if(CONFIG_AMEBAPRO3 private_includes
-    ${c_COMPONENT_DIR}/soc/amebagreen2/rom/include
+    ${c_COMPONENT_DIR}/soc/amebapro3/rom/include
     ${c_CMPT_WIFI_DIR}/wifi_fw/amebagreen2/include
 )
 

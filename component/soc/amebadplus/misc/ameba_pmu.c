@@ -75,7 +75,7 @@ uint32_t pmu_set_sysactive_time(uint32_t timeout)
 	u32 New_Cnt = 0;
 	PMCTIMER_TpyeDef *PMC_TIMER = PMC_TIMER_DEV;
 
-	New_Cnt = (u32)((((u64)timeout) << 15) / 1000); /*convert ms to cnt*/
+	New_Cnt = (u32)((((u64)timeout) << 5)); /*convert ms to cnt*/
 	PMCTimerCnt_Set(PMC_TIMER, PMC_SLEEP_TIMER, New_Cnt);
 
 	return 0;
@@ -328,7 +328,7 @@ void pmu_set_wakeup_timer(uint32_t timeout_ms)
 	u32 timeout_cnt = 0;
 	PMCTIMER_TpyeDef *PMC_TIMER = PMC_TIMER_DEV;
 
-	timeout_cnt = (timeout_ms << 15) / 1000;  /*convert ms to cnt*/
+	timeout_cnt = (timeout_ms << 5);  /*convert ms to cnt*/
 
 	PMCTimerCnt_Set(PMC_TIMER, PMC_WAKEUP_TIMER, timeout_cnt);
 }
@@ -345,7 +345,7 @@ void pmu_set_dsleep_active_time(uint32_t TimeOutMs)
 	u32 New_Cnt = 0;
 	PMCTIMER_TpyeDef *PMC_TIMER = PMC_TIMER_DEV;
 
-	New_Cnt = (TimeOutMs << 15) / 1000;  /*convert ms to cnt*/
+	New_Cnt = (TimeOutMs << 5);  /*convert ms to cnt*/
 	PMCTimerCnt_Set(PMC_TIMER, PMC_DSLP_TIMER, New_Cnt);
 }
 

@@ -76,6 +76,9 @@ extern unsigned char ap_ip[4], ap_netmask[4], ap_gw[4];
 #define AP_GW_ADDR2   ap_gw[2]
 #define AP_GW_ADDR3   ap_gw[3]
 
+#define CONNECTION_VALID 0
+#define CONNECTION_INVALID 1
+
 /* Private typedef -----------------------------------------------------------*/
 typedef enum {
 	DHCP_START = 0,
@@ -127,8 +130,8 @@ void LwIP_AUTOIP_STOP(uint8_t idx);
 void LwIP_AUTOIP_IPv6(struct netif *pnetif);
 #endif
 int netif_get_idx(struct netif *pnetif);
-void LwIP_Check_Connectivity(void);
-uint8_t LwIP_IP_Address_Request(void);
+int LwIP_Check_Connectivity(uint8_t idx);
+uint8_t LwIP_IP_Address_Request(uint8_t idx);
 
 #ifdef __cplusplus
 }

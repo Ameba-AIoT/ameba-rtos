@@ -693,7 +693,7 @@ static uint16_t ble_wifimate_wifi_connect(uint16_t conn_handle, struct wifi_conn
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 	uint8_t DCHP_state;
 	/* Start DHCPClient */
-	DCHP_state = LwIP_DHCP(0, DHCP_START);
+	DCHP_state = LwIP_IP_Address_Request(0);
 
 	if (DCHP_state != DHCP_ADDRESS_ASSIGNED) {
 		BT_LOGE("[APP] BLE WiFiMate server DHCP fail, DHCP_state=%d\r\n", DCHP_state);

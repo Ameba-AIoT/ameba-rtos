@@ -264,7 +264,7 @@ WIFI_RETRY_LOOP:
 		}
 #ifdef CONFIG_LWIP_LAYER
 		if (ret == RTK_SUCCESS) {
-			LwIP_IP_Address_Request();
+			LwIP_IP_Address_Request(0);
 		}
 #endif
 		free(data);

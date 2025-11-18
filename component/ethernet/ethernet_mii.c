@@ -126,7 +126,7 @@ void mii_intr_thread(void *param)
 		if (link_is_up) {
 			netif_set_link_up(&eth_netif);
 			if (dhcp_ethernet_mii == 1) {
-				dhcp_status = LwIP_DHCP(ETHERNET_IDX, DHCP_START);
+				dhcp_status = LwIP_IP_Address_Request(ETHERNET_IDX);
 			}
 
 			if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {

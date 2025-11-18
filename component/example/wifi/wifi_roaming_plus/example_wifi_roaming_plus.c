@@ -307,7 +307,7 @@ WIFI_RETRY_LOOP:
 				}
 			}
 #endif
-			LwIP_DHCP(0, DHCP_START);
+			LwIP_IP_Address_Request(0);
 			tick5 = rtos_time_get_current_system_time_ms();
 			ROAMING_DBG("dhcp time %d\n", (tick5 - tick4));
 			//clean arp? old arp table may not update.
@@ -689,8 +689,7 @@ void wifi_roaming_plus_thread(void *param)
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: wifi_roaming_plus \n");
 	while (1) { //wait wifi connect
-		if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
-			&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
+		if (LwIP_Check_Connectivity(0) == CONNECTION_VALID) {
 			break;
 		} else {
 			rtos_time_delay_ms(1000);
@@ -703,8 +702,7 @@ void wifi_roaming_plus_thread(void *param)
 	}
 
 	while (1) {
-		if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
-			&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
+		if (LwIP_Check_Connectivity(0) == CONNECTION_VALID) {
 			wifi_get_phy_stats(STA_WLAN_INDEX, NULL, &phy_stats);
 			ap_rssi = phy_stats.sta.rssi;
 			ROAMING_DBG("\r\n %s():Current rssi(%d),scan threshold rssi(%d)\n", __func__, ap_rssi, RSSI_SCAN_THRESHOLD);
@@ -722,8 +720,7 @@ void wifi_roaming_plus_thread(void *param)
 #if PRE_SCAN
 						ap_valid = AP_VALID_TIME;
 						while (ap_valid) {
-							if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
-								&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
+							if (LwIP_Check_Connectivity(0) == CONNECTION_VALID) {
 								wifi_get_phy_stats(STA_WLAN_INDEX, NULL, &phy_stats);
 								ap_rssi = phy_stats.sta.rssi;
 								ROAMING_DBG("\r\n %s():Current rssi(%d),roaming threshold rssi(%d)\n", __func__, ap_rssi, RSSI_ROAMING_THRESHOLD);
@@ -749,8 +746,7 @@ void wifi_roaming_plus_thread(void *param)
 							rtos_time_delay_ms(1000);
 						}
 #else//no pre scan
-						if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
-							&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
+						if (LwIP_Check_Connectivity(0) == CONNECTION_VALID) {
 							wifi_get_phy_stats(STA_WLAN_INDEX, NULL, &phy_stats);
 							ap_rssi = phy_stats.sta.rssi;
 							if (ap_rssi > RSSI_SCAN_THRESHOLD + 5) {

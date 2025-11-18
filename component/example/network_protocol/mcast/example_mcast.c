@@ -15,7 +15,9 @@ static void example_mcast_thread(void *param)
 	uint16_t port = 5353;
 
 	// Delay to check successful WiFi connection and obtain of an IP address
-	LwIP_Check_Connectivity();
+	while (LwIP_Check_Connectivity(0) != CONNECTION_VALID) {
+		rtos_time_delay_ms(2000);
+	}
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: mcast====================\r\n");
 
