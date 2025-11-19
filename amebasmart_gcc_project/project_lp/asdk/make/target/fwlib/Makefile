@@ -53,6 +53,7 @@ CSRC +=	$(DIR_COM)/ameba_ipc_ram.c \
 	$(DIR_COM)/ameba_wakepin.c \
 	$(DIR_COM)/ameba_arch.c \
 	$(DIR_COM)/ameba_fault_handle.c \
+	$(DIR_COM)/ameba_psram.c \
 
 CSRC += $(LOGDIR)/log.c
 CSRC += $(LOGDIR)/sscanf_minimal.c
