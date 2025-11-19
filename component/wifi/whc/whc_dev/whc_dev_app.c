@@ -11,8 +11,9 @@ u8 *whc_rx_msg = NULL;
 u8 *whc_rx_msg_free_addr = NULL;
 
 u16 rx_msg_size;
+#ifndef CONFIG_MP_SHRINK
 static struct rtw_network_info wifi = {0};
-
+#endif
 /* update from host in mode s1d */
 struct whc_dev_network_info whc_network_info[2] = {0};
 
@@ -207,6 +208,9 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 	(void)ip;
 	u8 len;
 	char *password = NULL;
+	(void)len;
+	(void)password;
+	(void)idx;
 	int ret;
 	(void)ret;
 
@@ -223,6 +227,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					RTK_LOGE(TAG_WLAN_INIC, "%s, can't alloc buffer!!\n", __func__);
 					return;
 				}
+#ifndef CONFIG_MP_SHRINK
 				if (*ptr == WHC_WIFI_TEST_GET_MAC_ADDR) {
 					struct rtw_mac dev_mac = {0};
 					idx = *(ptr + 1);
@@ -247,7 +252,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 				} else if (*ptr == WHC_WIFI_TEST_DHCP) {
 					LwIP_netif_set_link_up(STA_WLAN_INDEX);
 					/* Start DHCPClient */
-					LwIP_DHCP(STA_WLAN_INDEX, DHCP_START);
+					LwIP_IP_Address_Request(STA_WLAN_INDEX);
 #endif
 				} else if (*ptr == WHC_WIFI_TEST_CONNECT) {
 					memset(&wifi, 0, sizeof(struct rtw_network_info));
@@ -272,7 +277,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 #ifdef CONFIG_LWIP_LAYER
 					if (ret == RTK_SUCCESS) {
 						/* Start DHCPClient */
-						LwIP_DHCP(0, DHCP_START);
+						LwIP_IP_Address_Request(0);
 					} else {
 						RTK_LOGE(TAG_WLAN_INIC, "connect fail !\n");
 					}
@@ -314,7 +319,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 				} else if (*ptr == WHC_WIFI_TEST_SET_HOST_RTOS) {
 					wifi_user_config.cfg80211 = 0;
 				}
-
+#endif
 				rtos_mem_free(buf);
 			}
 			rtos_mem_free(whc_rx_msg_free_addr);

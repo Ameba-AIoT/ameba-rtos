@@ -589,7 +589,7 @@ static int usbh_vendor_sof(usb_host_t *host)
 			//isoc tx in 2^(ep_interval -1) sof
 			out_xfer->xfer_cnt++;
 			usbh_vendor_next_xfer(out_xfer);
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, out_xfer->pipe_num);
 			out_xfer->cur_frame = cur_frame;
 		}
 	}
@@ -659,7 +659,7 @@ static void usbh_vendor_bulk_process_rx(usb_host_t *host)
 				in_xfer->ep_state = USBH_VENDOR_IDLE;
 			}
 
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, in_xfer->pipe_num);
 		} else if ((urb_state == USBH_URB_BUSY) || (urb_state == USBH_URB_IDLE)) {
 			if (usbh_get_elapsed_ticks(host, in_xfer->tick) > 100) {
 				in_xfer->retry_time++;
@@ -672,11 +672,11 @@ static void usbh_vendor_bulk_process_rx(usb_host_t *host)
 				}
 			}
 
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, in_xfer->pipe_num);
 		} else if ((urb_state == USBH_URB_ERROR) || (urb_state == USBH_URB_STALL)) {
 			in_xfer->state = VENDOR_STATE_IDLE;
 			RTK_LOGS(TAG, RTK_LOG_INFO, "bulk rx err%d\n", in_xfer->xfer_cnt);
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify_class_state_change(host, in_xfer->pipe_num);
 		}
 		break;
 
@@ -699,7 +699,7 @@ static void usbh_vendor_bulk_process_tx(usb_host_t *host)
 	usbh_xfer_func xfer_func = usbh_get_xfer_func(out_xfer);
 
 	if ((out_xfer->test_mask & vendor->ep_mask) == 0) {
-		usbh_notify_class_state_change(host, out_xfer->pipe_num);
+		usbh_notify_class_state_change(host, 0);
 		return;
 	}
 
@@ -768,7 +768,7 @@ static void usbh_vendor_intr_process_rx(usb_host_t *host)
 	int status;
 
 	if ((in_xfer->test_mask & vendor->ep_mask) == 0) {
-		usbh_notify_class_state_change(host, in_xfer->pipe_num);
+		usbh_notify_class_state_change(host, 0);
 		return;
 	}
 
@@ -846,7 +846,7 @@ static void usbh_vendor_intr_process_tx(usb_host_t *host)
 	int status;
 
 	if ((out_xfer->test_mask & vendor->ep_mask) == 0) {
-		usbh_notify_class_state_change(host, out_xfer->pipe_num);
+		usbh_notify_class_state_change(host, 0);
 		return;
 	}
 
@@ -917,7 +917,7 @@ static void usbh_vendor_isoc_process_rx(usb_host_t *host)
 	int status;
 
 	if ((in_xfer->test_mask & vendor->ep_mask) == 0) {
-		usbh_notify_class_state_change(host, in_xfer->pipe_num);
+		usbh_notify_class_state_change(host, 0);
 		return;
 	}
 
@@ -986,7 +986,7 @@ static void usbh_vendor_isoc_process_tx(usb_host_t *host)
 	int status;
 
 	if ((out_xfer->test_mask & vendor->ep_mask) == 0) {
-		usbh_notify_class_state_change(host, out_xfer->pipe_num);
+		usbh_notify_class_state_change(host, 0);
 		return;
 	}
 

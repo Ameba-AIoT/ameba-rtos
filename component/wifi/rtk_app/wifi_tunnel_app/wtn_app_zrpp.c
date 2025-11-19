@@ -152,7 +152,7 @@ void wtn_zrpp_task(void *param)
 
 	/*step 3: get IP address using DHCP*/
 #ifdef CONFIG_LWIP_LAYER
-	if (DHCP_ADDRESS_ASSIGNED != LwIP_IP_Address_Request()) {
+	if (DHCP_ADDRESS_ASSIGNED != LwIP_IP_Address_Request(0)) {
 		RTK_LOGE(NOTAG, "ZRPP get IP failed\n");
 		goto exit;
 	}

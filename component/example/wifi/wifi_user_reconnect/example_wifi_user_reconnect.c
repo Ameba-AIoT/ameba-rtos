@@ -48,7 +48,7 @@ WIFI_CONNECT:
 	/*DHCP*/
 	if (ret == RTK_SUCCESS) {
 		RTK_LOGI(TAG, "Wifi connect success, Start DHCP\n");
-		ret = LwIP_DHCP(0, DHCP_START);
+		ret = LwIP_IP_Address_Request(0);
 		if (ret == DHCP_ADDRESS_ASSIGNED) {
 			RTK_LOGI(TAG, "DHCP Success\n");
 			reconnect_cnt = 0;

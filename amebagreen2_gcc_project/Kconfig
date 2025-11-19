@@ -30,6 +30,12 @@ config SUPPORT_USB
 config SUPPORT_USBD_INIC
     def_bool y
 
+config SUPPORT_USBD_UAC
+    def_bool y
+
+config SUPPORT_USBH_UAC
+    def_bool y
+
 config SUPPORT_USBH_UVC_HW_DEC
     def_bool y
 
@@ -189,6 +195,8 @@ menu "CONFIG WHC INTF"
                 select USBD_INIC
             config WHC_INTF_SPI
                 bool "WHC_INTF_SPI"
+            config WHC_INTF_UART
+                bool "WHC_INTF_UART"
         endchoice
     endif
 
@@ -391,7 +399,7 @@ menu "CONFIG WIFI"
             depends on WHC_DEV
             select WLAN
             select FW_DRIVER_COEXIST
-            select WIFI_FW_EN
+            select WIFI_FW_EN if !MP_SHRINK
             select LWIP_LAYER if WHC_DUAL_TCPIP_FOR_KM4TZ
 
         config WHC_FULLMAC_HOST_IMPL

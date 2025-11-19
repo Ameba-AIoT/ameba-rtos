@@ -189,7 +189,7 @@ s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 #if defined(TODO) && defined(CONFIG_LWIP_LAYER)
 	if (result == RTK_SUCCESS) {
 		/* Start DHCPClient */
-		LwIP_DHCP(0, DHCP_START);
+		LwIP_IP_Address_Request(0);
 	}
 #endif
 

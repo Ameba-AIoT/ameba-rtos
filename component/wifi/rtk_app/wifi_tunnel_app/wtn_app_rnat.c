@@ -192,13 +192,11 @@ static void rnat_ap_start_thread(void *param)
 	u32 gw;
 	struct rtw_wifi_setting wifi_setting = {0};
 	struct rtw_softap_info softap_config = {0};
-	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 	u8 timeout = 20;
 
 	/*step1: check if STA port connected to AP successfully*/
 	while (1) {
-		if (wifi_get_join_status(&join_status) == RTK_SUCCESS
-			&& (join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID)) {
+		if (LwIP_Check_Connectivity(0) == CONNECTION_VALID) {
 			break;
 		}
 		rtos_time_delay_ms(200);

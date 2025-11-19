@@ -300,7 +300,7 @@ static void ecm_example_bridge_thread(void *param)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Bridge example \n");
 
-	while (!(wifi_get_join_status(&join_status) == RTK_SUCCESS && join_status == RTW_JOINSTATUS_SUCCESS)) {
+	while (LwIP_Check_Connectivity(0) != CONNECTION_VALID) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for WIFI connection ...\n");
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Please use ATW0=ssid, ATW1=password, ATWC or AT+WLCONN to connect AP first time\n");
 		rtos_time_delay_ms(2000);

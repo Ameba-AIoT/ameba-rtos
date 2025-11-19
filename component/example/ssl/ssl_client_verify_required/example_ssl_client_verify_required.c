@@ -64,7 +64,9 @@ static void example_ssl_client_verify_required_thread(void *param)
 	UNUSED(param);
 
 	// Delay to check successful WiFi connection and obtain of an IP address
-	LwIP_Check_Connectivity();
+	while (LwIP_Check_Connectivity(0) != CONNECTION_VALID) {
+		rtos_time_delay_ms(2000);
+	}
 
 	int ret;
 	mbedtls_net_context server_fd;

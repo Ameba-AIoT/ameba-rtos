@@ -69,6 +69,7 @@ None
 
 # Supported IC
 
-- RTL8730E
-- RTL8721Dx
-- RTL8711Dx
+- AmebaSmart
+  * RTL8730E
+- AmebaDplus
+  * RTL8721Dx

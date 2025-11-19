@@ -59,6 +59,8 @@
 #include "whc_spi_host_trx.h"
 #elif defined(CONFIG_WHC_INTF_SDIO)
 #include "whc_sdio_host_trx.h"
+#elif defined(CONFIG_WHC_INTF_UART)
+#include "whc_uart_host_trx.h"
 #elif defined(CONFIG_WHC_INTF_IPC)
 #include "whc_ipc_host_trx.h"
 #endif

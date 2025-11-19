@@ -79,9 +79,11 @@ PACK_STRUCT_END
 
 #endif
 
+/* Added by Realtek start */
 #if defined(IP_NAT) && (IP_NAT == 1)
 extern void ip_nat_initialize(void);
 #endif
+/* Added by Realtek end */
 
 /* Compile-time sanity checks for configuration errors.
  * These can be done independently of LWIP_DEBUG, without penalty.
@@ -241,9 +243,11 @@ extern void ip_nat_initialize(void);
 #error "NETCONN_MORE != TCP_WRITE_FLAG_MORE"
 #endif
 #endif /* LWIP_NETCONN && LWIP_TCP */
+/* Added by Realtek start */
 #if LWIP_NETCONN_FULLDUPLEX && !LWIP_NETCONN_SEM_PER_THREAD
 #error "For LWIP_NETCONN_FULLDUPLEX to work, LWIP_NETCONN_SEM_PER_THREAD is required"
 #endif
+/* Added by Realtek end */
 
 
 /* Compile-time checks for deprecated options.
@@ -383,7 +387,9 @@ lwip_init(void)
   sys_timeouts_init();
 #endif /* LWIP_TIMERS */
 
+/* Added by Realtek start */
 #if defined(IP_NAT) && (IP_NAT == 1)
   ip_nat_initialize();
 #endif /* IP_NAT */
 }
+/* Added by Realtek end */

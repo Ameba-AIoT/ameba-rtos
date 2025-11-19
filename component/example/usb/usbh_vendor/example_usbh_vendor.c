@@ -390,7 +390,7 @@ void example_usbh_vendor_thread(void *param)
 	}
 
 #if CONFIG_USBH_VENDOR_HOT_PLUG_TEST
-	status = rtos_task_create(&task, "vendor_hotplug_thread", vendor_hotplug_thread, NULL, 1024U * 2, 3U);
+	status = rtos_task_create(&task, "vendor_hotplug_thread", vendor_hotplug_thread, NULL, 1024U * 2, 6U);
 	if (status != RTK_SUCCESS) {
 		usbh_vendor_deinit();
 		usbh_deinit();

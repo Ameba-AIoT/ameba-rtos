@@ -359,7 +359,7 @@ void at_wlconn(void *arg)
 	}
 
 #ifdef CONFIG_LWIP_LAYER
-	ret = LwIP_IP_Address_Request();
+	ret = LwIP_IP_Address_Request(0);
 	tick3 = rtos_time_get_current_system_time_ms();
 	if (DHCP_ADDRESS_ASSIGNED == ret) {
 		RTK_LOGI(NOTAG, "\r\n[+WLCONN] Got IP after %d ms.\r\n", (unsigned int)(tick3 - tick1));
@@ -1488,7 +1488,7 @@ void at_wlstaticip(void *arg)
 		goto end;
 	}
 
-	/* Static IP will be set in LwIP_DHCP(). */
+	/* Static IP will be set in LwIP_IP_Address_Request(). */
 	user_static_ip.use_static_ip = 1;
 	user_static_ip.addr = PP_HTONL(inet_addr(argv[1]));
 	if (argc == 4) {

@@ -58,3 +58,4 @@ Press and hold the key (8,6), then press any key (8,y), and there is no interrup
 # Supported IC
 
 - AmebaDplus
+  * RTL8721Dx

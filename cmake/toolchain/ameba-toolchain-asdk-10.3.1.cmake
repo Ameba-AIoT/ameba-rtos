@@ -3,7 +3,7 @@ set(CMAKE_SYSTEM_PROCESSOR arm)
 
 # set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
 set(ToolChainVerMajor asdk-${ASDK_VER})
-set(ToolChainVerMinor 4354)
+set(ToolChainVerMinor 4523)
 if(USE_ALIYUN_URL)
 set(TOOLCHAINURL https://rs-wn.oss-cn-shanghai.aliyuncs.com/)
 else()

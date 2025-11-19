@@ -18,10 +18,14 @@
 #ifdef CONFIG_WHC_INTF_SPI
 #include "whc_spi_host.h"
 #include "whc_spi_host_trx.h"
-#elif CONFIG_WHC_INTF_SDIO
+#elif defined(CONFIG_WHC_INTF_SDIO)
 #include "whc_sdio_host.h"
 #include "whc_sdio_host_trx.h"
 #include "rtw_sdio_drvio.h"
+#elif defined(CONFIG_WHC_INTF_UART)
+#include "whc_uart_host.h"
+#include "whc_uart_host_trx.h"
+#include "serial_api.h"
 #endif
 
 #ifdef CONFIG_LWIP_LAYER

@@ -148,6 +148,12 @@ if(CONFIG_WHC_DEV)
             whc_dev/usb/whc_usb_dev.c
         )
         set(target_name wifi_whc_usb_dev)
+    elseif(CONFIG_WHC_INTF_UART)
+        ameba_list_append(private_sources
+            whc_dev/uart/whc_uart_drv.c
+            whc_dev/uart/whc_uart_dev.c
+        )
+        set(target_name wifi_whc_sdio_dev)
     endif()
 elseif(CONFIG_WHC_HOST)
     if(CONFIG_WHC_INTF_SPI)
@@ -167,6 +173,14 @@ elseif(CONFIG_WHC_HOST)
             whc_host_rtos/sdio/whc_sdio_init.c
         )
         set(target_name wifi_whc_sdio_host)
+    elseif(CONFIG_WHC_INTF_UART)
+        ameba_list_append(private_sources
+            whc_host_rtos/whc_host_init.c
+            whc_host_rtos/uart/whc_uart_host.c
+            whc_host_rtos/uart/whc_uart_host_trx.c
+        )
+
+        set(target_name wifi_whc_spi_host)
     else()
         ameba_list_append(private_sources
             whc_host_rtos/ipc/whc_ipc_host.c

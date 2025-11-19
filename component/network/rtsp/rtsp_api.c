@@ -1315,7 +1315,6 @@ void rtsp_start_service(struct rtsp_context *rtsp_ctx)
 {
 	char *request, *request_concat_buf;
 	int mode = 0;
-	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 	struct rtw_wifi_setting setting = {0};
 	struct sockaddr_in server_addr, client_addr;
 	socklen_t client_addr_len = sizeof(struct sockaddr_in);
@@ -1345,9 +1344,8 @@ Redo:
 		if (rtsp_ctx->interface <= 1) {
 			if (wifi_is_running(0) == TRUE) {
 				wifi_get_setting(STA_WLAN_INDEX, &setting);
-				wifi_get_join_status(&join_status);
 				mode = setting.mode;
-				if (((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID)) && (mode == RTW_MODE_STA)) {
+				if ((LwIP_Check_Connectivity(0) == CONNECTION_VALID) && (mode == RTW_MODE_STA)) {
 					printf("connect successful sta mode\r\n");
 					break;
 				}
@@ -1749,8 +1747,7 @@ Redo:
 				}
 				if (rtsp_ctx->interface <= 1) {
 					if (mode == RTW_MODE_STA) {
-						wifi_get_join_status(&join_status);
-						if (!((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
+						if (LwIP_Check_Connectivity(0) != CONNECTION_VALID)) {
 							goto out;
 						}
 					} else if (mode == RTW_MODE_AP) {
@@ -1786,8 +1783,7 @@ out:
 
 		if (rtsp_ctx->interface <= 1) {
 			if (mode == RTW_MODE_STA) {
-				wifi_get_join_status(&join_status);
-				if (!((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
+				if (LwIP_Check_Connectivity(0) != CONNECTION_VALID) {
 					RTSP_DBG_ERROR("wifi Tx/Rx broke! rtsp service cannot stream");
 					close(rtsp_ctx->connect_ctx.socket_id);
 					RTSP_DBG_ERROR("RTSP Reconnect!");

@@ -140,7 +140,7 @@ static void nd6_free_q(struct nd6_q_entry *q);
 #define nd6_free_q(q) pbuf_free(q)
 #endif /* LWIP_ND6_QUEUEING */
 static void nd6_send_q(s8_t i);
-void nd6_restart_netif(struct netif *netif);
+void nd6_restart_netif(struct netif *netif); /* Added by Realtek */
 
 /**
  * A local address has been determined to be a duplicate. Take the appropriate
@@ -507,6 +507,7 @@ nd6_input(struct pbuf *p, struct netif *inp)
           }
         }
       }
+/* Added by Realtek start */
 #if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
       /* when recv dad delete the neighbor */
       i = nd6_find_neighbor_cache_entry(&target_address);
@@ -514,6 +515,7 @@ nd6_input(struct pbuf *p, struct netif *inp)
         nd6_free_neighbor_cache_entry(i);
       }
 #endif
+/* Added by Realtek end */
     } else {
       /* Sender is trying to resolve our address. */
       /* Verify that they included their own link-layer address. */
@@ -779,10 +781,12 @@ nd6_input(struct pbuf *p, struct netif *inp)
 
         rdnss_opt = (struct rdnss_option *)buffer;
         num = (rdnss_opt->length - 1) / 2;
+/* Added by Realtek start */
 #if LWIP_IPV4 && LWIP_IPV6
         rdnss_server_idx = DNS_MAX_SERVERS;
         for (n = 0; (rdnss_server_idx < DNS_IPV4_IPV6_MAX_SERVERS) && (n < num); n++) {
 #else
+/* Added by Realtek end */
         for (n = 0; (rdnss_server_idx < DNS_MAX_SERVERS) && (n < num); n++) {
 #endif
           ip_addr_t rdnss_address;
@@ -798,9 +802,11 @@ nd6_input(struct pbuf *p, struct netif *inp)
             } else {
               /* TODO implement DNS removal in dns.c */
               u8_t s;
+/* Added by Realtek start */
 #if LWIP_IPV4 && LWIP_IPV6
               for (s = DNS_MAX_SERVERS; s < DNS_IPV4_IPV6_MAX_SERVERS; s++) {
 #else
+/* Added by Realtek end */
               for (s = 0; s < DNS_MAX_SERVERS; s++) {
 #endif
                 const ip_addr_t *addr = dns_getserver(s);
@@ -1180,9 +1186,11 @@ nd6_tmr(void)
           !ip6_addr_isduplicated(netif_ip6_addr_state(netif, 0))) {
         if (nd6_send_rs(netif) == ERR_OK) {
           netif->rs_count--;
+/* Added by Realtek start */
           if (netif->rs_count == 0){
             netif->rs_timeout = 1;
           }
+/* Added by Realtek end */
         }
       }
     }
@@ -1576,6 +1584,7 @@ nd6_free_neighbor_cache_entry(s8_t i)
     neighbor_cache[i].q = NULL;
   }
 
+/* Added by Realtek start */
 #if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
   struct nd6_ipq_entry *r;
   while (neighbor_cache[i].ipq != NULL) {
@@ -1584,6 +1593,7 @@ nd6_free_neighbor_cache_entry(s8_t i)
     free(r);
   }
 #endif
+/* Added by Realtek end */
 
   neighbor_cache[i].state = ND6_NO_ENTRY;
   neighbor_cache[i].isrouter = 0;
