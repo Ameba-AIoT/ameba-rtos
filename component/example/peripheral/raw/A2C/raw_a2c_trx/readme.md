@@ -127,3 +127,4 @@ ErrStatus = 120, TEC = 128, REC = 0, ErrPassive = 1, ErrBusoff = 0, ErrWarning =
 # Supported IC
 
 - AmebaGreen2
+  * RTL8721F

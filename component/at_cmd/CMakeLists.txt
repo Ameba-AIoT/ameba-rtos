@@ -46,6 +46,10 @@ if(CONFIG_SUPPORT_ATCMD)
         atcmd_service.c
         atcmd_sys_common.c
     )
+    ameba_list_append(private_includes
+        ${c_CMPT_WIFI_DIR}/api
+        ${c_CMPT_WIFI_DIR}/common
+    )
 
 if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
 

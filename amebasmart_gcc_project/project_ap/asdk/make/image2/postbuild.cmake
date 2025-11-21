@@ -135,7 +135,7 @@ if(CONFIG_DYNAMIC_APP_LOAD_EN)
 
 endif()
 
-if(NOT CONFIG_AMEBA_RLS)
+if(NOT CONFIG_AMEBA_RLS AND NOT CONFIG_CP_TEST_CA32)
     message("========== Image analyze start ==========")
     ameba_execute_process(p_SHOW_OUTPUT
         COMMAND ${CODE_ANALYZE_PYTHON} ${ANALYZE_MP_IMG} ${DAILY_BUILD}

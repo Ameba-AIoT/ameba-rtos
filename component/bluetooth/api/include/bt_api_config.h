@@ -29,6 +29,7 @@ extern "C"
 #endif
 #define RTK_BT_POWER_CONTROL_SUPPORT        1
 #define RTK_BT_HC_CLOCK_OFFSET_SUPPORT      1
+#define RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT 0
 #define RTK_BLE_SET_TX_QUEUE_NUM            0
 
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
@@ -82,6 +83,7 @@ extern "C"
 #endif
 #define RTK_BT_POWER_CONTROL_SUPPORT        1
 #define RTK_BT_HC_CLOCK_OFFSET_SUPPORT      1
+#define RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT 0
 
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
 #define RTK_BLE_GATTS_SUPPORT               1
@@ -338,8 +340,7 @@ extern "C"
 #define RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT          0    //can set 1 when CAP Acceptor role
 #endif
 
-#if ((!defined(CONFIG_BT_ZEPHYR) || !CONFIG_BT_ZEPHYR) && \
-    ((defined(RTK_BT_5_2_EATT_SUPPORT) && RTK_BT_5_2_EATT_SUPPORT) || (defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT)))
+#if (!defined(CONFIG_BT_ZEPHYR) || !CONFIG_BT_ZEPHYR) && (defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT)
 #define RTK_BLE_MGR_LIB             1
 #define GATTC_TBL_STORAGE_SUPPORT   0
 #else

@@ -167,12 +167,12 @@ int main(void)
 	/* Create task here */
 	InterruptRegister(IPC_INTHandler, IPC_AP_IRQ, (u32)IPCAP_DEV, INT_PRI_MIDDLE);
 	InterruptEn(IPC_AP_IRQ, INT_PRI_MIDDLE);
+	ipc_table_init(IPCAP_DEV);
 
+#ifndef CONFIG_CP_TEST_CA32
 #ifdef CONFIG_MBEDTLS_ENABLED
 	app_mbedtls_rom_init();
 #endif
-
-	ipc_table_init(IPCAP_DEV);
 
 	app_pmu_init();
 
@@ -195,18 +195,18 @@ int main(void)
 	wifi_init();
 #endif
 
+	rtk_diag_init(RTK_DIAG_HEAP_SIZE, RTK_DIAG_SEND_BUFFER_SIZE);
+#endif /* CONFIG_CP_TEST_CA32 */
+
 	/* init console */
 	shell_init_rom(0, 0);
 	shell_init_ram();
-
-	rtk_diag_init(RTK_DIAG_HEAP_SIZE, RTK_DIAG_SEND_BUFFER_SIZE);
 
 	/* Execute application example */
 	app_example();
 
 	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
 	IPC_SEMDelayStub(&rtos_time_delay_ms);
-
 
 	/* Start the tasks and timer running. */
 	RTK_LOGI(TAG, "Cortex-A Start Scheduler\n");

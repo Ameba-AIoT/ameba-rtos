@@ -36,10 +36,6 @@ extern u8 rtw_join_status;
 
 struct internal_block_param *scan_abort_block_param = NULL;
 
-#ifdef CONFIG_LWIP_LAYER
-extern struct netif xnetif[NET_IF_NUM];
-#endif
-
 void (*p_ap_channel_switch_callback)(u8 channel, s8 ret) = NULL;
 
 

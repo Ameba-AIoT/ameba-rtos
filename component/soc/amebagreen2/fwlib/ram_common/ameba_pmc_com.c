@@ -250,6 +250,7 @@ void SOCPS_PowerManage(u8 regu_state)
 	u32 reg_temp = 0;
 	SWR_TypeDef	*SWR = SWR_BASE;
 	LDO_TypeDef *LDO = LDO_BASE;
+	PLL_TypeDef *PLL = (PLL_TypeDef *)PLL_REG_BASE;
 	/* 1. regu (SWR and core LDO)sleep status configuuration. */
 	if (regu_state) {
 		/* 4.1 Set REGU's state when sleep.*/
@@ -342,6 +343,9 @@ void SOCPS_PowerManage(u8 regu_state)
 	reg_temp = LDO->LDO_RFAFE_1209;
 	reg_temp &= ~(LDO_BIT_REG_DMYLOAD_X3_L_1209 | LDO_BIT_REG_DMYLOAD_X2_L_1209);
 	LDO->LDO_RFAFE_1209 = reg_temp;
+
+	/*close usb digital phy to save power(0.9v,900uA), and it will be enabled in usb_init*/
+	PLL->PLL_UPLL_CTRL0 &= ~PLL_BIT_USB_DPHY_EN;
 }
 
 u32 SOCPS_CPURoleGet(void)

@@ -1160,7 +1160,7 @@ void at_sktserver(void *arg)
 	node_pool[link_id].auto_rcv = auto_rcv;
 	node_pool[link_id].protocol = conn_type;
 	node_pool[link_id].src_port = src_port;
-	local_ip = LwIP_GetIP(0);
+	local_ip = LwIP_GetIP(NETIF_WLAN_STA_INDEX);
 	node_pool[link_id].src_ip = *((u32_t *)local_ip);
 
 	error_no = create_socket_server(&node_pool[link_id]);

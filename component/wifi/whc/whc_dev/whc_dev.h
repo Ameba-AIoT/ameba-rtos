@@ -43,6 +43,10 @@
 #include "whc_spi_drv.h"
 #elif defined (CONFIG_WHC_INTF_USB)
 #include "whc_usb_dev.h"
+#elif defined (CONFIG_WHC_INTF_UART)
+#include "serial_api.h"
+#include "whc_uart_drv.h"
+
 #endif
 
 #include "whc_dev_api.h"

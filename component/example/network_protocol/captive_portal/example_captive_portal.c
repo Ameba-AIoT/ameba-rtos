@@ -475,6 +475,7 @@ int wifi_restart_ap(struct rtw_softap_info *softAP_config)
 	u32 ip_addr;
 	u32 netmask;
 	u32 gw;
+	struct netif *pnetif;
 #endif
 
 #ifdef  CONFIG_CONCURRENT_MODE
@@ -505,7 +506,7 @@ int wifi_restart_ap(struct rtw_softap_info *softAP_config)
 		ip_addr = CONCAT_TO_UINT32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
 		netmask = CONCAT_TO_UINT32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
 		gw = CONCAT_TO_UINT32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
-		LwIP_SetIP(SOFTAP_WLAN_INDEX, ip_addr, netmask, gw);
+		LwIP_SetIP(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
 #endif
 		wifi_stop_ap();
 		rtos_time_delay_ms(20);
@@ -536,7 +537,7 @@ int wifi_restart_ap(struct rtw_softap_info *softAP_config)
 #if defined(CONFIG_DHCP_CLIENT) && CONFIG_DHCP_CLIENT
 		if (ret == RTK_SUCCESS) {
 			/* Start DHCPClient */
-			LwIP_DHCP(0, DHCP_START);
+			LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
 		}
 #endif
 	}
@@ -544,7 +545,8 @@ int wifi_restart_ap(struct rtw_softap_info *softAP_config)
 
 #ifdef CONFIG_LWIP_LAYER
 	// start dhcp server
-	dhcps_init(&xnetif[idx]);
+	pnetif = LwIP_idx_get_netif(idx);
+	dhcps_init(pnetif);
 #endif
 
 	return 0;
@@ -1226,7 +1228,7 @@ static void ConnectTargetAP(void)
 
 #ifdef CONFIG_LWIP_LAYER
 	/* Start DHCPClient */
-	LwIP_DHCP(0, DHCP_START);
+	LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
 #endif
 }
 
@@ -1598,7 +1600,6 @@ exit:
 #define STACKSIZE				512
 
 #ifdef CONFIG_LWIP_LAYER
-extern struct netif xnetif[NET_IF_NUM];
 #endif
 
 static void example_start_captive_portal(void *param)
@@ -1610,7 +1611,7 @@ static void example_start_captive_portal(void *param)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: captive_portal====================\r\n");
 
 #ifdef CONFIG_LWIP_LAYER
-	struct netif *pnetif = &xnetif[SOFTAP_WLAN_INDEX];
+	struct netif *pnetif = pnetif_ap;
 	u32 ip_addr;
 	u32 netmask;
 	u32 gw;
@@ -1623,7 +1624,7 @@ static void example_start_captive_portal(void *param)
 	ip_addr = CONCAT_TO_UINT32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
 	netmask = CONCAT_TO_UINT32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
 	gw = CONCAT_TO_UINT32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
-	LwIP_SetIP(SOFTAP_WLAN_INDEX, ip_addr, netmask, gw);
+	LwIP_SetIP(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
 #endif
 
 	RTK_LOGE(NOTAG, "Enable Wi-Fi with STA + AP mode\n");

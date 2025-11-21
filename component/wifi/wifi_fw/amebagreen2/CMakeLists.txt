@@ -35,10 +35,6 @@ if(CONFIG_WIFI_FW_VERIFY)
     include(${WIFIFWDIR}/amebagreen2/test/amebagreen2_test.cmake)
 endif()
 
-if(NOT CMAKE_REFACTOR) # For temporary compatibility.
-ameba_app_library_with_gitver(${TARGET_LIB})
-target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
-else() # For temporary compatibility.NOTE:  script below is new
 if(NOT CONFIG_FW_DRIVER_COEXIST)
     return()
 endif()
@@ -105,4 +101,3 @@ ameba_add_external_app_library(${TARGET_LIB}
     p_DROP_IF_NO_SOURCES
 )
 ##########################################################################################
-endif()# For temporary compatibility.

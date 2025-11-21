@@ -37,8 +37,7 @@ static const char *const TAG = "ECMB";
 /* Private variables ---------------------------------------------------------*/
 int dhcp_done = 0;
 
-extern struct netif xnetif[NET_IF_NUM];
-extern struct netif eth_netif;
+extern struct netif *pnetif_eth;
 
 void cdc_ecm_do_init(void)
 {
@@ -155,7 +154,7 @@ static u32_t send_to_wifi(pkt_attrib_t *pattrib, struct pbuf *p)
 		memcpy(&host_mac, (u8 *)p->payload + ETH_ALEN, ETH_ALEN);
 	}
 
-	memcpy((u8 *)p->payload + ETH_ALEN, xnetif[0].hwaddr, ETH_ALEN);
+	memcpy((u8 *)p->payload + ETH_ALEN, pnetif_sta->hwaddr, ETH_ALEN);
 #if ECMBDEBUG
 	RTK_LOGS(TAG, RTK_LOG_INFO, "%s(%d) src_port = %d\n", __func__, __LINE__, pattrib->src_port);
 
@@ -168,10 +167,10 @@ static u32_t send_to_wifi(pkt_attrib_t *pattrib, struct pbuf *p)
 	/* send to etharp_output */
 	if (pattrib->protocol == lwip_htons(ETHTYPE_IP)) {
 	} else if (pattrib->protocol == lwip_htons(ETHTYPE_ARP)) {
-		memcpy((u8 *)p->payload + ETH_ALEN + 16, xnetif[0].hwaddr, ETH_ALEN);
+		memcpy((u8 *)p->payload + ETH_ALEN + 16, pnetif_sta->hwaddr, ETH_ALEN);
 	}
 
-	xnetif[0].linkoutput(&xnetif[0], p);
+	pnetif_sta->linkoutput(pnetif_sta, p);
 
 	return 0;
 }
@@ -180,7 +179,7 @@ static u32_t send_to_usb(pkt_attrib_t *pattrib, struct pbuf *p)
 {
 	UNUSED(pattrib);
 
-	eth_netif.linkoutput(&eth_netif, p);
+	pnetif_eth->linkoutput(pnetif_eth, p);
 
 	return 0;
 }
@@ -281,11 +280,11 @@ static void ecm_example_monitor_link_change_thread(void *param)
 
 		if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {	// unlink -> link
 			ethernet_unplug = ETH_STATUS_INIT;
-			netif_set_link_up(&eth_netif);
+			netif_set_link_up(pnetif_eth);
 
 		} else if (0 == link_is_up && (ethernet_unplug >= ETH_STATUS_INIT)) {	// link -> unlink
 			ethernet_unplug = ETH_STATUS_DEINIT;
-			netif_set_default(&xnetif[0]);
+			netif_set_default(pnetif_sta);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Swicth to unlink !!\n");
 		} else {
 			rtos_time_delay_ms(1000);
@@ -300,14 +299,14 @@ static void ecm_example_bridge_thread(void *param)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Bridge example \n");
 
-	while (!(wifi_get_join_status(&join_status) == RTK_SUCCESS && join_status == RTW_JOINSTATUS_SUCCESS)) {
+	while (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for WIFI connection ...\n");
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Please use ATW0=ssid, ATW1=password, ATWC or AT+WLCONN to connect AP first time\n");
 		rtos_time_delay_ms(2000);
 	}
 
-	xnetif[0].input = wifi_in_usb_out;                    // station netif
-	eth_netif.input = usb_in_wifi_out;                    // ethernet netif
+	pnetif_sta->input = wifi_in_usb_out;                    // station netif
+	pnetif_eth->input = usb_in_wifi_out;                    // ethernet netif
 
 	rtos_task_delete(NULL);
 }

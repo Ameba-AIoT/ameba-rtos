@@ -122,6 +122,8 @@ menu "CONFIG APPLICATION"
         endif
     endmenu
 
+    orsource "../component/application/Kconfig"
+
     orsource "${RTK_APP_DIR}/Kconfig"
 
     orsource "../component/application/matter/project/cmake/Kconfig"
@@ -273,8 +275,8 @@ menu "CONFIG BT"
             def_bool y
         config BT_HAS_MESH
             def_bool y
-        config BT_HAS_LEAUDIO
-            def_bool y
+#       config BT_HAS_LEAUDIO
+#           def_bool y
 
         choice
             prompt "BT Mode Selection"

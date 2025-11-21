@@ -45,6 +45,10 @@ ameba_list_append(private_sources
     ameba_pmu.c
 )
 if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
+    ameba_list_append(private_includes
+        ${c_CMPT_WIFI_DIR}/api
+        ${c_CMPT_WIFI_DIR}/common
+    )
     ameba_list_append(private_sources ameba_ota.c)
 endif()
 

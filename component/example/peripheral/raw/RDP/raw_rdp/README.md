@@ -17,5 +17,11 @@ loguart output: `rdp call succeed!`
 If OTP is not programmed to enable RDP, Bootloader will not load RDP Image and can not run this example. The steps to configure RDP and download RDP image can be found in RDP chapter.
 
 # Supported IC
-* AmebaLite
-* AmebaDplus
+
+- AmebaLite
+  * RTL8726E
+  * RTL8720E
+  * RTL8713E
+  * RTL8710E
+- AmebaDplus
+  * RTL8721Dx

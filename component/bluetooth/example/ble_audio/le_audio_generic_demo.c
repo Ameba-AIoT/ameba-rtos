@@ -1097,7 +1097,9 @@ static uint16_t app_bt_le_audio_add_data_path(uint16_t iso_conn_handle, void *p_
 					app_bt_le_audio_lc3_codec_entity_remove(app_le_audio_data_path[i].p_codec_entity);
 					goto error;
 				} else {
-					// rtk_bt_audio_track_enable_sync_mode(app_le_audio_data_path[i].p_track_hdl, pd);
+#if defined(RTK_BT_LE_AUDIO_ISO_RX_SYNC_SUPPORT) && RTK_BT_LE_AUDIO_ISO_RX_SYNC_SUPPORT
+					rtk_bt_audio_track_enable_sync_mode(app_le_audio_data_path[i].p_track_hdl, pd);
+#endif
 				}
 				((rtk_bt_audio_track_t *)app_le_audio_data_path[i].p_track_hdl)->sdu_interval = bt_le_audio_demo_receiver_interval_us;
 			} else {
@@ -1108,7 +1110,9 @@ static uint16_t app_bt_le_audio_add_data_path(uint16_t iso_conn_handle, void *p_
 					app_bt_le_audio_lc3_codec_entity_remove(app_le_audio_data_path[i].p_codec_entity);
 					goto error;
 				} else {
-					// rtk_bt_audio_track_enable_sync_mode(app_le_audio_data_path[i].p_track_hdl, pd);
+#if defined(RTK_BT_LE_AUDIO_ISO_TX_SYNC_SUPPORT) && RTK_BT_LE_AUDIO_ISO_TX_SYNC_SUPPORT
+					rtk_bt_audio_track_enable_sync_mode(app_le_audio_data_path[i].p_track_hdl, pd);
+#endif
 				}
 				((rtk_bt_audio_track_t *)app_le_audio_data_path[i].p_track_hdl)->sdu_interval = bt_le_audio_demo_send_timer_interval_us;
 #endif
@@ -3049,6 +3053,18 @@ static rtk_bt_evt_cb_ret_t app_le_audio_common_gap_app_callback(uint8_t evt_code
 		BT_LOGA("[APP] proto_id(%d) conn_handle(%d) remote_mtu(%d) identity_id(%d)\r\n",
 				p_ind->proto_id, p_ind->conn_handle, p_ind->remote_mtu, p_ind->identity_id);
 		BT_DUMP16A("[APP] cid: ", p_ind->cid, p_ind->cid_num);
+		rtk_bt_gap_ecfc_conn_cfm_t cfm_param = {0};
+		uint16_t ret = 0;
+		cfm_param.conn_handle = p_ind->conn_handle;
+		cfm_param.identity_id = p_ind->identity_id;
+		cfm_param.cause = 0;
+		cfm_param.cid_num = p_ind->cid_num;
+		memcpy(cfm_param.p_cid, p_ind->cid, p_ind->cid_num * sizeof(uint16_t));
+		cfm_param.local_mtu = p_ind->remote_mtu;
+		ret = rtk_bt_gap_ecfc_send_conn_cfm(&cfm_param);
+		if (RTK_BT_OK == ret) {
+			BT_LOGA("[APP] ECFC auto conn confirm success\r\n");
+		}
 		break;
 	}
 	case RTK_BT_GAP_EVT_ECFC_DISCONN_IND: {

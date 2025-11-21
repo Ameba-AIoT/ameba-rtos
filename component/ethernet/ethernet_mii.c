@@ -32,8 +32,7 @@ u8 rmii_rx_desc[MII_RX_DESC_NO][ETH_RX_DESC_SIZE]__attribute__((aligned(32)));
 static rtos_mutex_t rmii_tx_mutex;
 volatile u32 ethernet_unplug = 0;
 
-extern struct netif  xnetif[NET_IF_NUM];
-extern struct netif  eth_netif;
+extern struct netif  *pnetif_eth;
 
 static u8 *pTmpTxPktBuf = NULL;
 static u8 *pTmpRxPktBuf = NULL;
@@ -124,25 +123,23 @@ void mii_intr_thread(void *param)
 		}
 
 		if (link_is_up) {
-			netif_set_link_up(&eth_netif);
+			netif_set_link_up(pnetif_eth);
 			if (dhcp_ethernet_mii == 1) {
-				dhcp_status = LwIP_DHCP(ETHERNET_IDX, DHCP_START);
+				dhcp_status = LwIP_IP_Address_Request(ETHERNET_IDX);
 			}
 
 			if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
 				if (1 == ethernet_if_default) {
-					netif_set_default(&eth_netif);    //Set default gw to ether netif
+					netif_set_default(pnetif_eth);    //Set default gw to ether netif
 				} else {
-					netif_set_default(&eth_netif);
+					netif_set_default(pnetif_eth);
 				}
 			}
 			break;
 		} else {
-			netif_set_link_down(&eth_netif);
-			netif_set_default(&eth_netif);
-#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
-			LwIP_ReleaseIP(ETHERNET_IDX);
-#endif
+			netif_set_link_down(pnetif_eth);
+			netif_set_default(pnetif_eth);
+			LwIP_ReleaseIP(NETIF_ETH_INDEX);
 		}
 
 		if (p_link_change_callback) {
@@ -242,13 +239,13 @@ void ethernet_demo(void *param)
 
 	Ethernet_init(&eth_initstruct);
 
-	memcpy((void *)eth_netif.hwaddr, (void *)mac_id, ETH_MAC_ADDR_LEN);
+	memcpy((void *)pnetif_eth->hwaddr, (void *)mac_id, ETH_MAC_ADDR_LEN);
 
 	rtos_sema_create_binary(&mii_rx_sema);
 	rtos_mutex_create(&rmii_tx_mutex);
 
 #ifndef CONFIG_RMII_VERIFY
-	netif_set_up(&eth_netif);
+	netif_set_up(pnetif_eth);
 #endif
 
 	rtos_sema_give(ethernet_init_done);

@@ -24,7 +24,6 @@
 #define SD_IO_TRY_CNT (8)
 #define TX_PACKET_802_3		(0x83)
 
-#define NET_IF_NUM 2
 #define DEV_REQ_NETWORK_INFO_MAX_LEN	6
 
 /* auth/assoc/key resnd limit can be configured, refer max >> RTW_JOIN_TIMEOUT

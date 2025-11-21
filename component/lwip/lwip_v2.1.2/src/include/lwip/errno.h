@@ -173,12 +173,14 @@ extern "C" {
 #define  ENOMEDIUM      123  /* No medium found */
 #define  EMEDIUMTYPE    124  /* Wrong medium type */
 
+/* Added by Realtek start */
 #define  ENOTSUP         134  /* Not supported */
 //#define  EILSEQ          138  /* Illegal byte sequence */
 //#define  EOVERFLOW       139  /* Value too large for defined data type */
 #define  ECANCELED       140  /* Operation canceled */
 #define  ENOTRECOVERABLE 141  /* State not recoverable */
 #define  EOWNERDEAD      142  /* Previous owner died */
+/* Added by Realtek end */
 
 #ifndef errno
 extern int errno;

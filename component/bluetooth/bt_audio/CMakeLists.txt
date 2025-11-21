@@ -14,6 +14,7 @@ ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/bt_codec
     ${CMAKE_CURRENT_SOURCE_DIR}/audio_noise_cancellation
+    ${CMAKE_CURRENT_SOURCE_DIR}/audio_sync
 )
 
 # Component public part, user config end
