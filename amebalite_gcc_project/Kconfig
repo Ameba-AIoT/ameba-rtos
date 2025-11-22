@@ -286,8 +286,8 @@ menu "CONFIG BT"
             def_bool y
         config BT_HAS_MESH
             def_bool y
-        config BT_HAS_LEAUDIO
-            def_bool y
+#       config BT_HAS_LEAUDIO
+#           def_bool y
 
         choice
             prompt "BT Mode Selection"

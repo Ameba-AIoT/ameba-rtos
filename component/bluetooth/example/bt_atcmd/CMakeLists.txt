@@ -60,6 +60,7 @@ if(CONFIG_BT_HAS_BREDR)
 		atcmd_bt_rfc.c
 		atcmd_bt_hid.c
 		atcmd_bt_hfp.c
+		atcmd_bt_pbap.c
 	)
 endif()
 
@@ -88,7 +89,6 @@ endif()
 if(CONFIG_BT_HAS_LEAUDIO)
 	ameba_list_append(private_sources
 		atcmd_bt_iso.c
-		atcmd_bt_pbap.c
 		atcmd_bt_bap.c
 		atcmd_bt_cap.c
 		atcmd_bt_tmap.c
