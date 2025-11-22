@@ -334,10 +334,10 @@ u32 BOOT_ChipInfo_PSRAMType(void)
 		ret = 0;/*0.9V, PSRAM-166M*/
 	} else if (Psram_clk_Max == PSRAM_DEVICE_CLK_166) {
 		assert_param(PsramSetClk <= 166 * MHZ_TICK_CNT);
-		ret = 1;/*1.0V, PSRAM-166M*/
+		ret = 0;/*0.9V, PSRAM-166M*/
 	} else if (Psram_clk_Max == PSRAM_DEVICE_CLK_200) {
 		assert_param(PsramSetClk <= 200 * MHZ_TICK_CNT);
-		ret = 2;/*1.0V, PSRAM-200M*/
+		ret = 0;/*0.9V, PSRAM-166M*/
 	} else if (Psram_clk_Max == PSRAM_DEVICE_CLK_250) {
 		assert_param(PsramSetClk <= 250 * MHZ_TICK_CNT);
 		ret = 3;/*1.0V, PSRAM-250M*/
