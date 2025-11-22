@@ -117,7 +117,7 @@ void rtw_reconn_task_hdl(void *param)
 
 #ifdef CONFIG_LWIP_LAYER
 	if (ret == RTK_SUCCESS) {
-		LwIP_IP_Address_Request();
+		LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
 	}
 #endif
 	rtos_task_delete(NULL);

@@ -17,14 +17,13 @@ void rtw_sme_set_deauth_ie(u8 *ie, u32 ie_len, u16 reason_code);
 struct event_priv_t event_priv;
 
 const struct event_func_t whc_dev_api_handlers[] = {
+#if !defined(CONFIG_MP_SHRINK)
 	{WHC_API_WIFI_CONNECT,	whc_event_wifi_connect},
 	{WHC_API_WIFI_ADD_KEY,	whc_event_wifi_add_key},
 	{WHC_API_WPA_PMKSA_OPS,	whc_event_wpa_pmksa_ops},
-	{WHC_API_WIFI_GET_COUNTRY_CODE,	whc_event_wifi_get_countrycode},
 	{WHC_API_WIFI_DISCONNECT,	whc_event_wifi_disconnect},
 	{WHC_API_WIFI_IS_RUNNING,	whc_event_wifi_is_running},
 	{WHC_API_WIFI_SET_CHANNEL,	whc_event_wifi_set_channel},
-	{WHC_API_WIFI_ON,	whc_event_wifi_on},
 	{WHC_API_WIFI_INIT_AP,	whc_event_wifi_init_ap},
 	{WHC_API_WIFI_DEINIT_AP,	whc_event_wifi_off_ap},
 	{WHC_API_WIFI_START_AP,	whc_event_wifi_start_ap},
@@ -48,7 +47,6 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_SET_GEN_IE,	whc_event_wifi_set_gen_ie},
 	{WHC_API_WIFI_SCAN_ABORT,	whc_event_wifi_scan_abort},
 	{WHC_API_WIFI_CUS_IE,	whc_event_wifi_custom_ie_ops},
-	{WHC_API_WIFI_SET_USR_CFG, whc_event_wifi_set_usr_config},
 	{WHC_API_WIFI_SET_HOST_RTOS, whc_event_wifi_set_host_rtos},
 	{WHC_API_WIFI_SET_EDCCA_MODE, whc_event_wifi_set_edcca_mode},
 	{WHC_API_WIFI_GET_EDCCA_MODE, whc_event_wifi_get_edcca_mode},
@@ -62,10 +60,6 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_NAN_DEL_FUNC,	whc_event_del_nan_func},
 	{WHC_API_NAN_CFGVENFOR,	whc_event_nan_cfgvenfor},
 #endif
-#ifdef CONFIG_MP_INCLUDED
-	{WHC_API_WIFI_MP_CMD,	whc_event_mp_cmd},
-#endif
-	{WHC_API_WIFI_DRIVE_IS_MP,	whc_event_wifi_driver_is_mp},
 #ifdef CONFIG_P2P
 	{WHC_API_P2P_ROLE,	whc_event_p2p_role},
 	{WHC_API_P2P_REMAIN_ON_CH,		whc_event_p2p_remain_on_ch},
@@ -74,7 +68,6 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WAR_SET_MDNS_PARA, whc_event_war_set_mdns_para},
 
 	{WHC_API_WIFI_GET_SCANNED_AP_INFO, whc_event_get_scan_res},
-	{WHC_API_WIFI_GET_SETTING, whc_event_wifi_get_setting},
 	{WHC_API_WIFI_SEND_EAPOL, whc_event_send_eapol},
 	{WHC_API_WIFI_AP_GET_CONNECTED_CLIENTS, whc_event_wifi_ap_get_connected_clients},
 	{WHC_API_WPA_4WAY_REPORT, whc_event_wpa_4way_rpt},
@@ -85,6 +78,16 @@ const struct event_func_t whc_dev_api_handlers[] = {
 #ifdef CONFIG_SUPPLICANT_SME
 	{WHC_API_WIFI_SME_AUTH, whc_event_sme_auth},
 	{WHC_API_WIFI_SME_SET_ASSOCREQ_IE, whc_event_sme_set_assocreq_ie},
+#endif
+#endif
+	{WHC_API_WIFI_ON,	whc_event_wifi_on},
+	{WHC_API_WIFI_DRIVE_IS_MP,	whc_event_wifi_driver_is_mp},
+	{WHC_API_WIFI_GET_SETTING, whc_event_wifi_get_setting},
+	{WHC_API_WIFI_GET_COUNTRY_CODE,	whc_event_wifi_get_countrycode},
+	{WHC_API_WIFI_SET_USR_CFG, whc_event_wifi_set_usr_config},
+
+#ifdef CONFIG_MP_INCLUDED
+	{WHC_API_WIFI_MP_CMD,	whc_event_mp_cmd},
 #endif
 };
 
@@ -436,7 +439,6 @@ void whc_event_wifi_disconnect(u32 api_id, u32 *param_buf)
 #else
 	(void) param_buf;
 #endif
-	
 	ret = wifi_disconnect();
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }

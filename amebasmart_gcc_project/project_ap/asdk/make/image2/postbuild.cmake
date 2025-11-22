@@ -100,8 +100,11 @@ if(CONFIG_DYNAMIC_APP_LOAD_EN)
     )
 
     if(EXISTS ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app.bin)
-        ameba_execute_process(
-            COMMAND ${PREPENDTOOL} ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app.bin  __dram_dynamic_app_text_start__  ${c_SDK_IMAGE_TARGET_DIR}/target_img2.map
+        ameba_axf2bin_prepend_head(
+            ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app_prepend.bin
+            ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app.bin
+            __dram_dynamic_app_text_start__
+            ${c_SDK_IMAGE_TARGET_DIR}/target_img2.map
         )
 
         ameba_execute_process(
@@ -135,7 +138,7 @@ if(CONFIG_DYNAMIC_APP_LOAD_EN)
 
 endif()
 
-if(NOT CONFIG_AMEBA_RLS)
+if(NOT CONFIG_AMEBA_RLS AND NOT CONFIG_CP_TEST_CA32)
     message("========== Image analyze start ==========")
     ameba_execute_process(p_SHOW_OUTPUT
         COMMAND ${CODE_ANALYZE_PYTHON} ${ANALYZE_MP_IMG} ${DAILY_BUILD}

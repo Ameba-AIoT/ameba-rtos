@@ -99,10 +99,10 @@ extern const ip_addr_t ip_addr_any_type;
 /** @ingroup ip4addr */
 #define IP_IS_V4(ipaddr)              (((ipaddr) == NULL) || IP_IS_V4_VAL(*(ipaddr)))
 /** @ingroup ip6addr */
-#define IP_IS_V6(ipaddr)              ((((uintptr_t)ipaddr) != (uintptr_t)NULL) && IP_IS_V6_VAL(*(ipaddr)))
+#define IP_IS_V6(ipaddr)              ((((uintptr_t)ipaddr) != (uintptr_t)NULL) && IP_IS_V6_VAL(*(ipaddr))) /* Modified by Realtek */
 
 #define IP_SET_TYPE_VAL(ipaddr, iptype) do { (ipaddr).type = (iptype); }while(0)
-#define IP_SET_TYPE(ipaddr, iptype)     do { if(((uintptr_t)ipaddr) != (uintptr_t)NULL) { IP_SET_TYPE_VAL(*(ipaddr), iptype); }}while(0)
+#define IP_SET_TYPE(ipaddr, iptype)     do { if(((uintptr_t)ipaddr) != (uintptr_t)NULL) { IP_SET_TYPE_VAL(*(ipaddr), iptype); }}while(0) /* Modified by Realtek */
 #define IP_GET_TYPE(ipaddr)           ((ipaddr)->type)
 
 #define IP_ADDR_RAW_SIZE(ipaddr)      (IP_GET_TYPE(&ipaddr) == IPADDR_TYPE_V4 ? sizeof(ip4_addr_t) : sizeof(ip6_addr_t))
@@ -147,6 +147,7 @@ extern const ip_addr_t ip_addr_any_type;
 #define ip_addr_copy_from_ip4(dest, src)      do{ \
   ip4_addr_copy(*ip_2_ip4(&(dest)), src); IP_SET_TYPE_VAL(dest, IPADDR_TYPE_V4); ip_clear_no4(&dest); }while(0)
 /** @ingroup ip4addr */
+/* Modified by Realtek */
 #define ip_addr_set_ip4_u32(ipaddr, val)  do{if((uintptr_t)ipaddr != (uintptr_t)NULL){ip4_addr_set_u32(ip_2_ip4(ipaddr), val); \
   IP_SET_TYPE(ipaddr, IPADDR_TYPE_V4); ip_clear_no4(ipaddr); }}while(0)
 /** @ingroup ip4addr */

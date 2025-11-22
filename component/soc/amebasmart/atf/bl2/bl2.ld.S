@@ -12,13 +12,25 @@ OUTPUT_ARCH(PLATFORM_LINKER_ARCH)
 ENTRY(bl2_entrypoint)
 
 MEMORY {
+#ifdef CONFIG_CP_TEST_CA32
+    ROM (rwx): ORIGIN = BL2_RO_BASE, LENGTH = BL2_RO_LIMIT - BL2_RO_BASE
+    RAM (rwx): ORIGIN = BL2_RW_BASE, LENGTH = BL2_RW_LIMIT - BL2_RW_BASE
+#else
     RAM (rwx): ORIGIN = BL2_BASE, LENGTH = BL2_LIMIT - BL2_BASE
+#endif
 }
 
+#ifdef CONFIG_CP_TEST_CA32
+#define BL2_ROM ROM
+#define BL2_RAM RAM
+#else
+#define BL2_ROM RAM
+#define BL2_RAM RAM
+#endif
 
 SECTIONS
 {
-    . = BL2_BASE;
+    . = ORIGIN(BL2_ROM);
     ASSERT(. == ALIGN(PAGE_SIZE),
            "BL2_BASE address is not aligned on a page boundary.")
 
@@ -30,16 +42,16 @@ SECTIONS
         *(.vectors)
         . = ALIGN(PAGE_SIZE);
         __TEXT_END__ = .;
-     } >RAM
+     } >BL2_ROM
 
      /* .ARM.extab and .ARM.exidx are only added because Clang need them */
      .ARM.extab . : {
         *(.ARM.extab* .gnu.linkonce.armextab.*)
-     } >RAM
+     } >BL2_ROM
 
      .ARM.exidx . : {
         *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-     } >RAM
+     } >BL2_ROM
 
     .rodata . : {
         __RODATA_START__ = .;
@@ -49,7 +61,7 @@ SECTIONS
 
         . = ALIGN(PAGE_SIZE);
         __RODATA_END__ = .;
-    } >RAM
+    } >BL2_ROM
 #else
     ro . : {
         __RO_START__ = .;
@@ -68,9 +80,14 @@ SECTIONS
          */
         . = ALIGN(PAGE_SIZE);
         __RO_END__ = .;
-    } >RAM
+    } >BL2_ROM
 #endif
 
+#ifdef CONFIG_CP_TEST_CA32
+    . = BL2_RW_BASE;
+    ASSERT(BL2_RW_BASE == ALIGN(PAGE_SIZE),
+           "BL2_RW_BASE address is not aligned on a page boundary.")
+#endif
     /*
      * Define a linker symbol to mark start of the RW memory area for this
      * image.
@@ -83,10 +100,24 @@ SECTIONS
      * section can be placed independently of the main .data section.
      */
     .data . : {
-        __DATA_START__ = .;
+        __DATA_RAM_START__ = .;
         *(SORT_BY_ALIGNMENT(.data*))
-        __DATA_END__ = .;
+        __DATA_RAM_END__ = .;
+#ifdef CONFIG_CP_TEST_CA32
+    } >RAM AT>ROM
+
+    __DATA_ROM_START__ = LOADADDR(.data);
+    __DATA_SIZE__ = SIZEOF(.data);
+    /*
+     * The .data section is the last PROGBITS section so its end marks the end
+     * of BL2's actual content in Trusted ROM.
+     */
+    __BL2_ROM_END__ =  __DATA_ROM_START__ + __DATA_SIZE__;
+    ASSERT(__BL2_ROM_END__ <= BL2_RO_LIMIT,
+           "BL2's ROM content has exceeded its limit.")
+#else
     } >RAM
+#endif /* CONFIG_CP_TEST_CA32 */
 
     stacks (NOLOAD) : {
         __STACKS_START__ = .;

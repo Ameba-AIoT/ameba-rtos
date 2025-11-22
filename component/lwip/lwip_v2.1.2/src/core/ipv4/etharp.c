@@ -411,9 +411,11 @@ etharp_find_entry(const ip4_addr_t *ipaddr, u8_t flags, struct netif *netif)
   return (s16_t)i;
 }
 
+/* Added by Realtek start */
 void etharp_arp_table_clear(void){
     memset(arp_table, 0, sizeof(arp_table));
 }
+/* Added by Realtek end */
 
 /**
  * Update (or insert) a IP/MAC address pair in the ARP cache.
@@ -815,7 +817,9 @@ etharp_output_to_arp_index(struct netif *netif, struct pbuf *q, netif_addr_idx_t
  * - ERR_RTE No route to destination (no gateway to external networks),
  * or the return type of either etharp_query() or ethernet_output().
  */
+/* Added by Realtek start */
 SRAM_WLAN_CRITICAL_CODE_SECTION
+/* Added by Realtek end */
 err_t
 etharp_output(struct netif *netif, struct pbuf *q, const ip4_addr_t *ipaddr)
 {

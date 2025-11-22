@@ -73,6 +73,13 @@ static void BOOT_SecureChip_MPCCfg(void)
 		MPC = MPCArray[mpcIdx];
 		Config = CfgArray[mpcIdx];
 
+#ifdef CONFIG_CP_TEST_CA32
+		UNUSED(Config);
+		MPC->MPC_Entry[idex].IDAU_BARx = MPC_IDAU_ADDR_MASK(0x00000000);
+		MPC->MPC_Entry[idex].IDAU_LARx = MPC_IDAU_ADDR_MASK(0xFFFFFFFF);
+		MPC->IDAU_CTRL |= BIT(idex);
+		MPC->IDAU_LOCK = 1;
+#else
 		for (idex = 0; idex < MPC_ENTRYS_NUM; idex++) {
 			/*  Check if search to end */
 			if (Config[idex].Start == 0xFFFFFFFF) {
@@ -108,6 +115,7 @@ static void BOOT_SecureChip_MPCCfg(void)
 		for (idex = 0; idex < MPC_ENTRYS_NUM; idex++) {
 			//DiagPrintf("IDAU_BAR%d:[%08x:%08x]\n", idex, MPC->ENTRY[idex].IDAU_BARx, MPC->ENTRY[idex].IDAU_LARx);
 		}
+#endif
 	}
 }
 

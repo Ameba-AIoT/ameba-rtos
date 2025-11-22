@@ -38,6 +38,18 @@
  */
 #define FIRMWARE_WELCOME_STR		"Booting Trusted Firmware\n"
 
+#ifdef CONFIG_CP_TEST_CA32
+#define BL2_IMAGE_DESC {				\
+	.image_id = BL2_IMAGE_ID,			\
+	SET_STATIC_PARAM_HEAD(image_info, PARAM_EP, \
+		VERSION_2, image_info_t, 0),		\
+	.image_info.image_base = BL2_RO_BASE,		\
+	.image_info.image_max_size = BL2_RO_LIMIT - BL2_RO_BASE,\
+	SET_STATIC_PARAM_HEAD(ep_info, PARAM_EP,	\
+		VERSION_2, entry_point_info_t, SECURE | EXECUTABLE),\
+	.ep_info.pc = BL2_RO_BASE,				\
+}
+#else
 #define BL2_IMAGE_DESC {				\
 	.image_id = BL2_IMAGE_ID,			\
 	SET_STATIC_PARAM_HEAD(image_info, PARAM_EP,	\
@@ -48,6 +60,7 @@
 		VERSION_2, entry_point_info_t, SECURE | EXECUTABLE),\
 	.ep_info.pc = BL2_BASE,				\
 }
+#endif
 
 /*
  * The following constants identify the extents of the code & read-only data

@@ -224,7 +224,7 @@ __weak int eap_start(char *method)
 #ifdef CONFIG_LWIP_LAYER
 	/* Start DHCPClient */
 	if (ret == 0) {
-		LwIP_DHCP(0, DHCP_START);
+		LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
 	}
 #endif
 

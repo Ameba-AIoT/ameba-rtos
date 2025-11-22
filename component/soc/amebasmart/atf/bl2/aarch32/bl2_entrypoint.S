@@ -89,6 +89,17 @@ func bl2_entrypoint
 	bl	zeromem
 #endif
 
+#ifdef CONFIG_CP_TEST_CA32
+	/* -----------------------------------------------------
+		* Copy data from ROM to RAM.
+		* -----------------------------------------------------
+		*/
+	ldr	r0, =__DATA_RAM_START__
+	ldr	r1, =__DATA_ROM_START__
+	ldr	r2, =__DATA_SIZE__
+	bl	memcpy4
+#endif
+
 	/* --------------------------------------------
 	 * Allocate a stack whose memory will be marked
 	 * as Normal-IS-WBWA when the MMU is enabled.

@@ -1,6 +1,5 @@
-if(CMAKE_REFACTOR)
-    set(BASEDIR ${c_BASEDIR})
-endif()
+set(BASEDIR ${c_BASEDIR})
+
 if (c_ENABLE_EXAMPLE)
     if (EXAMPLEDIR)
         message("EXAMPLEDIR = ${EXAMPLEDIR}")

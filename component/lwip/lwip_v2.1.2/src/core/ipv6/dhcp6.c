@@ -77,6 +77,7 @@
 #define LWIP_HOOK_DHCP6_PARSE_OPTION(netif, dhcp6, state, msg, msg_type, option, len, pbuf, offset) do { LWIP_UNUSED_ARG(msg); } while(0)
 #endif
 
+/* Added by Realtek start */
 #if LWIP_IPV4 && LWIP_IPV6
 #if LWIP_DNS && LWIP_DHCP6_MAX_DNS_SERVERS
 #if DNS_IPV4_IPV6_MAX_SERVERS > LWIP_DHCP6_MAX_DNS_SERVERS
@@ -88,6 +89,7 @@
 #define LWIP_DHCP6_PROVIDE_DNS_SERVERS 0
 #endif
 #else
+/* Added by Realtek end */
 #if LWIP_DNS && LWIP_DHCP6_MAX_DNS_SERVERS
 #if DNS_MAX_SERVERS > LWIP_DHCP6_MAX_DNS_SERVERS
 #define LWIP_DHCP6_PROVIDE_DNS_SERVERS LWIP_DHCP6_MAX_DNS_SERVERS
@@ -107,7 +109,7 @@
 enum dhcp6_option_idx {
   DHCP6_OPTION_IDX_CLI_ID = 0,
   DHCP6_OPTION_IDX_SERVER_ID,
-  DHCP6_OPTION_IDX_IA_NA,
+  DHCP6_OPTION_IDX_IA_NA, /* Added by Realtek */
 #if LWIP_DHCP6_PROVIDE_DNS_SERVERS
   DHCP6_OPTION_IDX_DNS_SERVER,
   DHCP6_OPTION_IDX_DOMAIN_LIST,
@@ -135,9 +137,11 @@ struct dhcp6_option_info dhcp6_rx_options[DHCP6_OPTION_IDX_MAX];
 #define dhcp6_get_option_length(dhcp6, idx)      (dhcp6_rx_options[idx].val_length)
 #define dhcp6_set_option(dhcp6, idx, start, len) do { dhcp6_rx_options[idx].val_start = (start); dhcp6_rx_options[idx].val_length = (len); }while(0)
 
+/* Added by Realtek start */
 extern int TRNG_get_random_bytes(void* dst, u32 size);
 extern void *rtos_mem_malloc( size_t xWantedSize );
 extern void nd6_restart_netif(struct netif *netif);
+/* Added by Realtek end */
 
 const ip_addr_t dhcp6_All_DHCP6_Relay_Agents_and_Servers = IPADDR6_INIT_HOST(0xFF020000, 0, 0, 0x00010002);
 const ip_addr_t dhcp6_All_DHCP6_Servers = IPADDR6_INIT_HOST(0xFF020000, 0, 0, 0x00010003);
@@ -149,6 +153,7 @@ static u8_t dhcp6_pcb_refcount;
 /* receive, unfold, parse and free incoming messages */
 static void dhcp6_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port);
 
+/* Added by Realtek start */
 #if LWIP_IPV6_DHCP6_STATEFUL
 static void dhcp6_stateful_solicit(struct netif *netif);
 static void dhcp6_stateful_request(struct netif *netif);
@@ -165,6 +170,7 @@ static err_t dhcp6_stateful_config(struct netif *netif, struct dhcp6 *dhcp6);
 static void dhcp6_stateful_abort_config(struct dhcp6 *dhcp6);
 u8_t dhcp6_supplied_address(const struct netif *netif);
 #endif /* LWIP_IPV6_DHCP6_STATEFUL */
+/* Added by Realtek end */
 
 /** Ensure DHCP PCB is allocated and bound */
 static err_t
@@ -368,6 +374,7 @@ dhcp6_stateful_enabled(struct dhcp6 *dhcp6)
 //  return ERR_OK;
 //}
 
+/* Added by Realtek start */
 static int
 dhcp6_enabled(struct dhcp6 *dhcp6)
 {
@@ -408,6 +415,7 @@ dhcp6_enable(struct netif *netif)
   LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp6_enable(): DHCPv6 enabled\n"));
   return ERR_OK;
 }
+/* Modified by Realtek end */
 
 /**
  * @ingroup dhcp6
@@ -425,7 +433,7 @@ dhcp6_disable(struct netif *netif)
   dhcp6 = netif_dhcp6_data(netif);
   if (dhcp6 != NULL) {
     if (dhcp6->state != DHCP6_STATE_OFF) {
-      LWIP_DEBUGF(DHCP6_DEBUG | LWIP_DBG_TRACE, ("dhcp6_disable(): DHCPv6 disabled\n"));
+      LWIP_DEBUGF(DHCP6_DEBUG | LWIP_DBG_TRACE, ("dhcp6_disable(): DHCPv6 disabled\n")); /* Modified by Realtek */
       dhcp6_set_state(dhcp6, DHCP6_STATE_OFF, "dhcp6_disable");
       if (dhcp6->pcb_allocated != 0) {
         dhcp6_dec_pcb_refcount(); /* free DHCPv6 PCB if not needed any more */
@@ -491,6 +499,7 @@ dhcp6_option_short(u16_t options_out_len, u8_t *options, u16_t value)
   return options_out_len;
 }
 
+/* Added by Realtek start */
 static u16_t
 dhcp6_option_long(u16_t options_out_len, u8_t *options, u32_t value)
 {
@@ -514,6 +523,7 @@ dhcp6_get_long(const struct pbuf *buf, u32_t dataptr, u16_t offset)
   pbuf_copy_partial(buf, &dataptr, 4, offset);
   return dataptr;
 }
+/* Added by Realtek end */
 
 static u16_t
 dhcp6_option_optionrequest(u16_t options_out_len, u8_t *options, const u16_t *req_options,
@@ -534,6 +544,7 @@ dhcp6_option_optionrequest(u16_t options_out_len, u8_t *options, const u16_t *re
   return ret;
 }
 
+/* Added by Realtek start */
 static u16_t
 dhcp6_option_clientid(u16_t options_out_len, u8_t *options, u16_t max_len, struct netif *netif, u16_t clientid_len)
 {
@@ -632,6 +643,7 @@ dhcp6_option_ia_na_iaaddr(u16_t options_out_len, u8_t *options, u16_t max_len, u
 
   return ret;
 }
+/* Added by Realtek end */
 
 /* All options are added, shrink the pbuf to the required size */
 static void
@@ -650,13 +662,15 @@ dhcp6_information_request(struct netif *netif, struct dhcp6 *dhcp6)
   u16_t msecs;
   struct pbuf *p_out;
   u16_t options_out_len;
+/* Added by Realtek start */
   u16_t optionrequest_len = sizeof(requested_options);
   u16_t elapsed_time_len = 2;
   u16_t opt_len_alloc = 4 + optionrequest_len + 4 + elapsed_time_len;
+/* Added by Realtek end */
 
   LWIP_DEBUGF(DHCP6_DEBUG | LWIP_DBG_TRACE, ("dhcp6_information_request()\n"));
   /* create and initialize the DHCP message header */
-  p_out = dhcp6_create_msg(netif, dhcp6, DHCP6_INFOREQUEST, opt_len_alloc, &options_out_len);
+  p_out = dhcp6_create_msg(netif, dhcp6, DHCP6_INFOREQUEST, opt_len_alloc, &options_out_len); /* Modified by Realtek */
   if (p_out != NULL) {
     err_t err;
     struct dhcp6_msg *msg_out = (struct dhcp6_msg *)p_out->payload;
@@ -665,7 +679,7 @@ dhcp6_information_request(struct netif *netif, struct dhcp6 *dhcp6)
 
     options_out_len = dhcp6_option_optionrequest(options_out_len, options, requested_options,
       LWIP_ARRAYSIZE(requested_options), p_out->len);
-    options_out_len = dhcp6_option_elapsed_time(options_out_len, options, p_out->len, elapsed_time_len);
+    options_out_len = dhcp6_option_elapsed_time(options_out_len, options, p_out->len, elapsed_time_len); /* Added by Realtek */
     LWIP_HOOK_DHCP6_APPEND_OPTIONS(netif, dhcp6, DHCP6_STATE_REQUESTING_CONFIG, msg_out,
       DHCP6_INFOREQUEST, options_out_len, p_out->len);
     dhcp6_msg_finalize(options_out_len, p_out);
@@ -690,7 +704,7 @@ static err_t
 dhcp6_request_config(struct netif *netif, struct dhcp6 *dhcp6)
 {
   /* stateless mode enabled and no request running? */
-  if (dhcp6->state == DHCP6_STATE_IDLE) {
+  if (dhcp6->state == DHCP6_STATE_IDLE) { /* Modified by Realtek */
     /* send Information-request and wait for answer; setup receive timeout */
     dhcp6_information_request(netif, dhcp6);
   }
@@ -703,7 +717,7 @@ dhcp6_abort_config_request(struct dhcp6 *dhcp6)
 {
   if (dhcp6->state == DHCP6_STATE_REQUESTING_CONFIG) {
     /* abort running request */
-    dhcp6_set_state(dhcp6, DHCP6_STATE_IDLE, "dhcp6_abort_config_request");
+    dhcp6_set_state(dhcp6, DHCP6_STATE_IDLE, "dhcp6_abort_config_request"); /* Modified by Realtek */
   }
 }
 
@@ -729,10 +743,12 @@ dhcp6_handle_config_reply(struct netif *netif, struct pbuf *p_msg_in)
 
     memset(&dns_addr, 0, sizeof(dns_addr));
     dns_addr6 = ip_2_ip6(&dns_addr);
+/* Added by Realtek start */
 #if LWIP_IPV4 && LWIP_IPV6
     for (n = DNS_MAX_SERVERS, idx = op_start; (idx < op_start + op_len) && (n < LWIP_DHCP6_PROVIDE_DNS_SERVERS);
          n++, idx += sizeof(struct ip6_addr_packed)) {
 #else
+/* Added by Realtek end */
     for (n = 0, idx = op_start; (idx < op_start + op_len) && (n < LWIP_DHCP6_PROVIDE_DNS_SERVERS);
          n++, idx += sizeof(struct ip6_addr_packed)) {
 #endif
@@ -775,6 +791,7 @@ dhcp6_handle_config_reply(struct netif *netif, struct pbuf *p_msg_in)
 }
 #endif /* LWIP_IPV6_DHCP6_STATELESS */
 
+/* Added by Realtek start */
 #if LWIP_IPV6_DHCP6_STATEFUL
 static void
 dhcp6_stateful_solicit(struct netif *netif)
@@ -1219,13 +1236,11 @@ dhcp6_stateful_release(struct netif *netif)
   }
 }
 
-
 /**
  * @ingroup dhcp6
  * This function calls dhcp6_stateful_release() internally.
  * @deprecated Use dhcp6_stateful_release() instead.
  */
-
 err_t
 dhcp6_release(struct netif *netif)
 {
@@ -1789,6 +1804,7 @@ dhcp6_parse_reply(struct pbuf *p, struct dhcp6 *dhcp6)
   }
   return ERR_OK;
 }
+/* Added by Realtek end */
 
 static void
 dhcp6_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
@@ -1848,10 +1864,11 @@ dhcp6_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr
     /* in info-requesting state? */
     if (dhcp6->state == DHCP6_STATE_REQUESTING_CONFIG) {
       dhcp6_handle_config_reply(netif, p);
-      dhcp6_set_state(dhcp6, DHCP6_STATE_HANDLING_CONFIG, "dhcp6_recv");
+      dhcp6_set_state(dhcp6, DHCP6_STATE_HANDLING_CONFIG, "dhcp6_recv"); /* Modified by Realtek */
     } else
 #endif /* LWIP_IPV6_DHCP6_STATELESS */
     {
+/* Added by Realtek start */
 #if LWIP_IPV6_DHCP6_STATEFUL
       /* in stateful state? */
       if ((dhcp6->state == DHCP6_STATE_STATEFUL_REQUESTING) || (dhcp6->state == DHCP6_STATE_STATEFUL_RENEWING) 
@@ -1871,6 +1888,7 @@ dhcp6_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr
 
 free_pbuf_and_return:
   pbuf_free(p);
+/* Added by Realtek end */
 }
 
 /**
@@ -1894,6 +1912,7 @@ dhcp6_timeout(struct netif *netif, struct dhcp6 *dhcp6)
     dhcp6_information_request(netif, dhcp6);
   }
 #endif /* LWIP_IPV6_DHCP6_STATELESS */
+/* Added by Realtek start */
 #if LWIP_IPV6_DHCP6_STATEFUL
   /* back-off period has passed, or server selection timed out */
   if (dhcp6->state == DHCP6_STATE_STATEFUL_SOLICITING){
@@ -1933,6 +1952,7 @@ dhcp6_timeout(struct netif *netif, struct dhcp6 *dhcp6)
     }
   }
 #endif /* LWIP_IPV6_DHCP6_STATEFUL */
+/* Added by Realtek end */
 
 }
 

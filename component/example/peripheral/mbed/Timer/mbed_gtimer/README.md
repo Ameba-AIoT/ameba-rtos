@@ -37,6 +37,13 @@ none
 
 # Supported IC
 - AmebaSmart
-- AebaLite
+  * RTL8730E
+- AmebaLite
+  * RTL8726E
+  * RTL8720E
+  * RTL8713E
+  * RTL8710E
 - AmebaDplus
+  * RTL8721Dx
 - AmebaGreen2
+  * RTL8721F

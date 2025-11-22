@@ -15,6 +15,13 @@ ameba_modify_file_path(${app_ns_full_path} app_ns_tmp_full_path p_SUFFIX _tmp)
 ameba_modify_file_path(${app_full_path} app_compress p_SUFFIX _compress)
 ameba_modify_file_path(${app_ns_full_path} app_compress_ns p_SUFFIX _compress)
 
+if (CONFIG_DSP_WITHIN_APP_IMG)
+    set(c_DSP_FILE ${c_SOC_PROJECT_DIR}/${CONFIG_DSP_IMAGE_TARGET_DIR}/dsp.bin)
+    if(NOT EXISTS ${c_DSP_FILE})
+        message(FATAL_ERROR "dsp file not exist: ${c_DSP_FILE}")
+    endif()
+endif()
+
 if(CONFIG_TRUSTZONE)
     if(CONFIG_DSP_WITHIN_APP_IMG)
         ameba_axf2bin_fw_pack(

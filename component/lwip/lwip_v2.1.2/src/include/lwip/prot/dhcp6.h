@@ -70,6 +70,7 @@ PACK_STRUCT_END
 /* DHCP6 client states */
 typedef enum {
   DHCP6_STATE_OFF                        = 0,
+/* Added by Realtek start */
   DHCP6_STATE_IDLE                       = 1,
   DHCP6_STATE_REQUESTING_CONFIG          = 2,
   DHCP6_STATE_HANDLING_CONFIG            = 3,
@@ -81,6 +82,7 @@ typedef enum {
   DHCP6_STATE_STATEFUL_CONFIRMING        = 9,
   DHCP6_STATE_STATEFUL_RELEASING         = 10,
   DHCP6_STATE_STATEFUL_DECLINING         = 11,
+/* Added by Realtek end */
 } dhcp6_state_enum_t;
 
 /* DHCPv6 message types */
@@ -115,7 +117,7 @@ typedef enum {
 #define DHCP6_DUID_UUID             4 /* UUID (RFC 6355) */
 
 /** DHCPv6 hardware types */
-#define DHCP6_HARDWARE_ETHERNET        1
+#define DHCP6_HARDWARE_ETHERNET        1 /* Added by Realtek */
 
 /* DHCPv6 options */
 #define DHCP6_OPTION_CLIENTID       1

@@ -463,7 +463,10 @@ ifeq ($(USE_ROMLIB),1)
 $(ELF): romlib.bin
 endif
 
-$(ELF): $(OBJS) $(LINKERFILE) | bl$(1)_dirs libraries $(BL_LIBS)
+# The '|' symbol denotes order-only prerequisites. These ensure targets are built before the main target,
+# but changes to order-only prerequisites DO NOT trigger rebuilding of the main target.
+# (Unlike normal dependencies which cause rebuilds when modified)
+$(ELF): $(OBJS) $(LINKERFILE) $(BL_LIBS) | bl$(1)_dirs libraries
 	$$(ECHO) "  LD      $$@"
 ifdef MAKE_BUILD_STRINGS
 	$(call MAKE_BUILD_STRINGS, $(BUILD_DIR)/build_message.o)

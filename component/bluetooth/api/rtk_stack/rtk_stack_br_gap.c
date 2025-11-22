@@ -342,6 +342,18 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 			break;
 		}
 		p_link->role = RTK_BT_BR_GAP_ROLE_MASTER;
+		{
+			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_LINK_ROLE_MASTER, 6);
+			if (!p_evt) {
+				BT_LOGE("bt_stack_mgr_cback: evt_t allocate fail \r\n");
+				break;
+			}
+			memcpy((void *)p_evt->data, (void *)param->acl_role_master.bd_addr, 6);
+			/* Send event */
+			if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
+				break;
+			}
+		}
 	}
 	break;
 
@@ -354,6 +366,18 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 			break;
 		}
 		p_link->role = RTK_BT_BR_GAP_ROLE_SLAVE;
+		{
+			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_LINK_ROLE_SLAVE, 6);
+			if (!p_evt) {
+				BT_LOGE("bt_stack_mgr_cback: evt_t allocate fail \r\n");
+				break;
+			}
+			memcpy((void *)p_evt->data, (void *)param->acl_role_slave.bd_addr, 6);
+			/* Send event */
+			if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
+				break;
+			}
+		}
 	}
 	break;
 

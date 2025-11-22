@@ -146,21 +146,25 @@ void vPortSecondaryStart(void)
 
 void smp_init(void)
 {
+#if ( configNUM_CORES == 1 )
+	/* power off core1 to avoid km4 has already open it */
+	rtk_core1_power_off();
+	return;
+#endif
+
 	BaseType_t xCoreID;
 	BaseType_t err;
 
-#if ( configNUM_CORES > 1 )
 	RTK_LOGS(TAG, RTK_LOG_INFO, "smp: Bringing up secondary CPUs ...\n");
 
 	if (SYSCFG_CHIPType_Get() != CHIP_TYPE_RTLSIM) {//RTL sim shall not use delayus before core1 ready
-		/* power on core1 to avoid km4 not open it */
 		rtk_core1_power_on();
-		DelayUs(50);
-	}
+#ifdef CONFIG_CP_TEST_CA32
+		DelayUs(120); // wait Core1 enter wfe in plat_secondary_cold_boot_setup, actually need 84us
 #else
-	/* power off core1 to avoid km4 has already open it */
-	rtk_core1_power_off();
+		DelayUs(40); // ddr need 7us, psram need 15us
 #endif
+	}
 
 	for (xCoreID = 0; xCoreID < configNUM_CORES; xCoreID++) {
 		if (xCoreID == portGET_CORE_ID()) {

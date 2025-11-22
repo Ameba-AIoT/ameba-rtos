@@ -63,7 +63,7 @@ void setupMMUTable(int coreID)
 		}
 		mmap_add_region(0x60000000, 0x60000000,	0x80000000 - 0x60000000, MT_MEMORY | MT_RW | MT_NS);
 
-		mmap_add_region(0x80000000, 0x80000000,	0x80000000, MT_DEVICE | MT_RW | MT_NS);
+		mmap_add_region(0x80000000, 0x80000000,	0xC0000000 - 0x80000000, MT_DEVICE | MT_RW | MT_NS);
 
 		init_xlat_tables();
 

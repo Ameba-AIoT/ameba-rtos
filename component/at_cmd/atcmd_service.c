@@ -41,6 +41,7 @@
 #endif
 #endif
 #include "atcmd_fs.h"
+#include "atcmd_ethernet.h"
 #endif
 
 #if defined(CONFIG_BT) && CONFIG_BT
@@ -100,6 +101,9 @@ log_init_t log_init_table[] = {
 #endif
 #endif  //CONFIG_LWIP_LAYER
 #endif  //CONFIG_WLAN
+#ifdef CONFIG_ETHERNET
+	at_ethernet_init,
+#endif
 	at_fs_init,
 #endif  //CONFIG_MP_SHRINK
 

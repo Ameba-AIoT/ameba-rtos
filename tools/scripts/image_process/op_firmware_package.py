@@ -94,6 +94,17 @@ soc_configs:Dict[str, SocImageConfig] = {
         image3_section = None, #Not support rsip yet(maybe only support rdp)
         dsp_section = None
     ),
+    "amebapro3": SocImageConfig(
+        image1_section = "KM4_BOOT",
+        image2_section = {
+            "ap": "CA32_IMG2",
+            "np": "KM4NP_IMG2",
+            "fp": "KM0_IMG2",
+            "mp": "KM4MP_IMG2",
+        },
+        image3_section = None, #Not support rsip yet(maybe only support rdp)
+        dsp_section = None
+    ),
 }
 
 class FirmwarePackage(OperationBase):

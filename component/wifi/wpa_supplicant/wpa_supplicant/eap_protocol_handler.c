@@ -97,7 +97,7 @@ int set_eap_ttls_method(void)
 
 void eap_send_eapol_start(u8 *dst_mac)
 {
-	u8 *dev_mac = LwIP_GetMAC(0);
+	u8 *dev_mac = LwIP_GetMAC(NETIF_WLAN_STA_INDEX);
 	struct wlan_ethhdr_t *eth_hdr;
 	struct lib1x_eapol *eapol;
 	u8 *buf = NULL;

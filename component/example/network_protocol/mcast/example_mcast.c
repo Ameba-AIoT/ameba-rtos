@@ -1,8 +1,6 @@
 #include "wifi_api.h"
 #include "lwip_netconf.h"
 
-extern struct netif xnetif[];
-
 static void example_mcast_thread(void *param)
 {
 	/* To avoid gcc warnings */
@@ -15,12 +13,14 @@ static void example_mcast_thread(void *param)
 	uint16_t port = 5353;
 
 	// Delay to check successful WiFi connection and obtain of an IP address
-	LwIP_Check_Connectivity();
+	while (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
+		rtos_time_delay_ms(2000);
+	}
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: mcast====================\r\n");
 
 	// Set NETIF_FLAG_IGMP flag for netif which should process IGMP messages
-	xnetif[0].flags |= NETIF_FLAG_IGMP;
+	pnetif_sta->flags |= NETIF_FLAG_IGMP;
 
 	if ((socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "ERROR: socket - AF_INET, SOCK_DGRAM\n");
