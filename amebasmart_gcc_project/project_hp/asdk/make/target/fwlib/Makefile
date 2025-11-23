@@ -36,7 +36,6 @@ CSRC +=	\
 	$(DIR)/ameba_mipi.c \
 	$(DIR)/ameba_sdio_host.c \
 	$(DIR)/ameba_sd.c	\
-	$(DIR)/ameba_psram.c \
 	$(DIR)/ameba_ddrphy.c \
 	$(DIR)/ameba_rxi316_dram_init.c \
 	$(DIR)/ameba_codec.c \
@@ -72,6 +71,8 @@ CSRC +=	$(DIR_COM)/ameba_i2c.c \
 	$(DIR_COM)/ameba_wakepin.c \
 	$(DIR_COM)/ameba_arch.c \
 	$(DIR_COM)/ameba_fault_handle.c \
+	$(DIR_COM)/ameba_psram.c \
+
 
 CSRC += $(LOGDIR)/log.c
 CSRC += $(LOGDIR)/sscanf_minimal.c
