@@ -50,10 +50,12 @@ if BT_EXAMPLE_DEMO_MENU
         default n
 
     config BT_WIFIMATE_DEVICE
+        depends on (AMEBADPLUS || AMEBALITE || AMEBASMART)    #amebadplus|amebalite|amebasmart
         bool "BLE WiFiMate Device"
         default n
 
     config BT_WIFIMATE_CONFIGURATOR
+        depends on (AMEBADPLUS || AMEBALITE || AMEBASMART)    #amebadplus|amebalite|amebasmart
         bool "BLE WiFiMate Configurator"
         default n
 

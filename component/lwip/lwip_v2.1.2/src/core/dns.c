@@ -304,8 +304,10 @@ static u8_t                   dns_last_pcb_idx;
 static u8_t                   dns_seqno;
 static struct dns_table_entry dns_table[DNS_TABLE_SIZE];
 static struct dns_req_entry   dns_requests[DNS_MAX_REQUESTS];
+/* Added by Realtek start */
 #if LWIP_IPV4 && LWIP_IPV6
 static ip_addr_t              dns_servers[DNS_IPV4_IPV6_MAX_SERVERS];
+/* Added by Realtek end */
 #else
 static ip_addr_t              dns_servers[DNS_MAX_SERVERS];
 #endif
@@ -370,8 +372,10 @@ dns_init(void)
 void
 dns_setserver(u8_t numdns, const ip_addr_t *dnsserver)
 {
+/* Added by Realtek start */
 #if LWIP_IPV4 && LWIP_IPV6
   if (numdns < DNS_IPV4_IPV6_MAX_SERVERS) {
+/* Added by Realtek end */
 #else
   if (numdns < DNS_MAX_SERVERS) {
 #endif

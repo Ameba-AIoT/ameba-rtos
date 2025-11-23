@@ -87,6 +87,7 @@ typedef struct {
 	uint32_t                   prev_ts_us;                                                     /*!< recording previous timestamp to check sdu loss */
 	uint32_t
 	prev_sys_us;                                                    /*!< recording previous timestamp DTimestamp_Get() to check overflow */
+	bool                       ref_ap_oveflow_flag;
 	uint64_t                   trans_bytes;                                                    /*!< to record successfully transmitted audio bytes */
 	uint32_t                   delta_index;                                                    /*!< to record delta number buffered in pres_delta_sum */
 	int64_t                    pres_delta_sum;                                                 /*!< record sum of render data time delta */

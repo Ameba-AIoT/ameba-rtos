@@ -12,7 +12,7 @@ import os
 from manifest_manager import ManifestImageConfig
 
 def check_python_lib(lib):
-    print('%s Python library is not installed.Please install by command: pip install -r {sdk}/tools/image_scripts/requirements.txt'%(lib))
+    print('%s Python library is not installed.'%(lib))
     sys.exit(-1)
 
 try:

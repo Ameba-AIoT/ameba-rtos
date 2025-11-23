@@ -13,6 +13,8 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${c_MBEDTLS_DIR}/include
+    ${c_MBEDTLS_DIR}/hw_alt_legacy
 )
 
 # Component public part, user config end

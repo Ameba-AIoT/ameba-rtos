@@ -36,6 +36,10 @@ PRAM_START_FUNCTION BOOT_SectionInit(void)
 BOOT_RAM_TEXT_SECTION
 __attribute__((noinline)) void BOOT_NsStart(u32 Addr)
 {
+#ifdef CONFIG_CP_TEST_CA32
+	while (1);
+#endif
+
 	/* clear stack */
 	u32 stack_top = MSPLIM_RAM_HP;
 	u32 stack_end = MSP_RAM_HP + 4;
@@ -70,6 +74,11 @@ void BOOT_RccConfig(void)
 	u32 CenReg[4] = {REG_LSYS_CKE_GRP0, REG_LSYS_CKE_GRP1, REG_LSYS_CKE_GRP2, REG_AON_CLK};
 	u32 CenSet[4] = {0};
 	u32 ClkRegIndx = 0;
+
+	TempVal = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_SW_RST_CTRL);
+	/* For debug reset: when debugger reset cpu, it's required to reset other cpus and some peripherals */
+	TempVal |= LSYS_OTHERCPU_RST_EN(1);
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_SW_RST_CTRL, TempVal);
 
 	for (idx = 0; ; idx++) {
 		/*  Check if search to end */
@@ -782,6 +791,28 @@ void BOOT_Log_Init(void)
 	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_2, ENABLE);
 }
 
+void Peripheral_Reset(void)
+{
+	//reason: The reason for maintaining these bits is for our debugging function.
+	//issue: LSYS_PERIALL_RST_EN will reset cpu, causing loss of debug information, which is unexpected.
+	//resolve: When initializing power, at bootloader, these bits are enabled.
+
+	/* The following IP cores are activated during power initialization, excluding those specified in the comments */
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FEN_GRP0,
+				APBPeriph_HPON | APBPeriph_LPLFM | APBPeriph_HPLFM | APBPeriph_LP | APBPeriph_NP |
+				APBPeriph_FLASH | APBPeriph_SCE | APBPeriph_DTIM | APBPeriph_AIP | APBPeriph_LOGUART |
+				APBPeriph_THM);
+
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FEN_GRP1,
+				APBPeriph_TRNG |
+				/* These IP cores are enabled depends on OTP programming */
+				APBPeriph_IPSEC | APBPeriph_LX1 | APBPeriph_ED25519 | APBPeriph_ECDSA);
+
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FEN_GRP2,
+				/* No IP cores are enabled when initializing power */
+				0UL);
+}
+
 /* To avoid RRAM holding incorrect data, incorporate a MAGIC_NUMBER for verification. */
 static bool BOOT_RRAM_InfoValid(void)
 {
@@ -806,11 +837,13 @@ void BOOT_Image1(void)
 
 	BOOT_ReasonSet();
 
+	/* For debug reset: when debugger reset cpu, it's required to reset other cpus and some peripherals */
+	Peripheral_Reset();
+
 	if ((BOOT_Reason() == 0) || (!BOOT_RRAM_InfoValid())) {
 		_memset(RRAM, 0, sizeof(RRAM_TypeDef));
 		RRAM->MAGIC_NUMBER = 0x6969A5A5;
 	}
-
 
 	BOOT_VerCheck();
 
@@ -914,7 +947,7 @@ void BOOT_Image1(void)
 		BOOT_DDR_LCDC_HPR();
 	}
 
-	/* Enable All Mask in SysReset Domain */
+	/* Reset SDM32K/OTP/RTC/PINMUX-PAD/SYSON/ATIM, and Syson domain can only be reset as a whole, not individually. */
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_SYSRST_MSK0, 0x0);
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_SYSRST_MSK1, 0x0);
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_SYSRST_MSK2, 0x0);
@@ -927,12 +960,14 @@ void BOOT_Image1(void)
 		goto INVALID_IMG2;
 	}
 
+	/* it will switch shell control to KM0, disable loguart interrupt to avoid loguart irq not assigned in non-secure world.
+	 it should switch before BOOT_RAM_TZCfg to avoid crash when loguart intr occur but it has been set to ns intr. */
+	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, DISABLE);
+	InterruptDis(UART_LOG_IRQ);
+
 	/* Config Non-Security World Registers and clean Dcache */
 	BOOT_RAM_TZCfg();
 
-	/*switch shell control to KM0, disable loguart interrupt to avoid loguart irq not assigned in non-secure world */
-	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, DISABLE);
-	InterruptDis(UART_LOG_IRQ);
 	BOOT_Enable_KM0();
 
 	/* AP Power-on, AP start run */

@@ -1678,20 +1678,26 @@ static int usbh_composite_uac_write_ring_buf(usbh_uac_buf_ctrl_t *pdata_ctrl, u8
 	u32 written_size = handle->written;
 	u32 offset = 0;
 	u32 mps;
+	u32 xfer_len;
+	u32 can_copy_len;
+	u32 copy_len;
 
 	if (written_size) {
-		mps = usbh_composite_uac_next_packet_size(pdata_ctrl);
-		u32 can_copy = mps - written_size;
-		u32 copy_len = size < can_copy ? size : can_copy;
+		xfer_len = usbh_composite_uac_next_packet_size(pdata_ctrl);
+		can_copy_len = xfer_len - written_size;
+		copy_len = size < can_copy_len ? size : can_copy_len;
 
 		usb_ringbuf_write_partial(handle, buffer, copy_len);
-
 		offset += copy_len;
-		size -= copy_len;
 		*written_len += copy_len;
 
-		usb_ringbuf_finish_write(handle);
-		pdata_ctrl->sample_accum = pdata_ctrl->last_sample_accum;
+		if (size >= can_copy_len) {
+			size -= copy_len;
+			usb_ringbuf_finish_write(handle);
+			pdata_ctrl->sample_accum = pdata_ctrl->last_sample_accum;
+		} else {
+			return 0;
+		}
 	}
 
 	do {

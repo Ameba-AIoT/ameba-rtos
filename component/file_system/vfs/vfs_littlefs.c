@@ -13,7 +13,7 @@
 extern lfs_t g_lfs;
 extern int rt_lfs_init(lfs_t *lfs);
 int lfs_mount_flag = 0;
-struct dirent *ent;
+static struct dirent *lfs_ent;
 
 int fmodeflags(const char *mode)
 {
@@ -283,13 +283,13 @@ struct dirent *littlefs_readdir(vfs_file *finfo)
 {
 	lfs_dir_t *dir = (lfs_dir_t *)finfo->file;
 	struct lfs_info info;
-	if (ent == NULL) {
-		ent = rtos_mem_malloc(sizeof(struct dirent));
-		if (ent == NULL) {
+	if (lfs_ent == NULL) {
+		lfs_ent = rtos_mem_malloc(sizeof(struct dirent));
+		if (lfs_ent == NULL) {
 			return NULL;
 		}
 	}
-	memset(ent, 0, sizeof(struct dirent));
+	memset(lfs_ent, 0, sizeof(struct dirent));
 	int err = lfs_dir_read(&g_lfs, dir, &info);
 	if (err <= 0) {
 		return NULL;
@@ -297,16 +297,16 @@ struct dirent *littlefs_readdir(vfs_file *finfo)
 	if (info.name[0] == 0) {
 		return NULL;
 	}
-	ent->d_ino = 0;
-	ent->d_off = 0;
-	ent->d_reclen = info.size;
+	lfs_ent->d_ino = 0;
+	lfs_ent->d_off = 0;
+	lfs_ent->d_reclen = info.size;
 	if (info.type == LFS_TYPE_DIR) {
-		ent->d_type = DT_DIR;
+		lfs_ent->d_type = DT_DIR;
 	} else {
-		ent->d_type = DT_REG;
+		lfs_ent->d_type = DT_REG;
 	}
-	sprintf(ent->d_name, "%s", info.name);
-	return ent;
+	sprintf(lfs_ent->d_name, "%s", info.name);
+	return lfs_ent;
 }
 
 int littlefs_closedir(vfs_file *finfo)
@@ -315,9 +315,9 @@ int littlefs_closedir(vfs_file *finfo)
 	lfs_dir_t *dir = (lfs_dir_t *)finfo->file;
 	ret = lfs_dir_close(&g_lfs, dir);
 	rtos_mem_free(dir);
-	if (ent != NULL) {
-		rtos_mem_free(ent);
-		ent = NULL;
+	if (lfs_ent != NULL) {
+		rtos_mem_free(lfs_ent);
+		lfs_ent = NULL;
 	}
 	if (ret < 0) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs Close directory fail: %d", ret);

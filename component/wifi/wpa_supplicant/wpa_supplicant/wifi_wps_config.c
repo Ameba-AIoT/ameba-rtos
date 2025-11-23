@@ -229,7 +229,7 @@ void wps_check_and_show_connection_info(void)
 	struct rtw_wifi_setting setting;
 #ifdef CONFIG_LWIP_LAYER
 	/* Start DHCP Client */
-	LwIP_DHCP(0, DHCP_START);
+	LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
 #endif
 	wifi_get_setting(STA_WLAN_INDEX, &setting);
 	/*show setting*/

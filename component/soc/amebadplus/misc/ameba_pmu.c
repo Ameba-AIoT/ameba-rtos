@@ -72,10 +72,16 @@ void pmu_exec_wakeup_hook_funs(uint32_t nDeviceIdMax)
 
 uint32_t pmu_set_sysactive_time(uint32_t timeout)
 {
-	u32 New_Cnt = 0;
+	uint32_t New_Cnt = 0;
 	PMCTIMER_TpyeDef *PMC_TIMER = PMC_TIMER_DEV;
 
-	New_Cnt = (u32)((((u64)timeout) << 15) / 1000); /*convert ms to cnt*/
+	/*convert ms to cnt:
+	  method: the ticks/ms equals 32 + 197/256 = 32.7695, and the deviation is 32.7695 - 32.768 = 0.0046%.
+	  The error is 46µs per second.The reason for using bit shift operations is to avoid division and
+	  improve the speed of operation.
+	*/
+	New_Cnt = (timeout << 5) + (((timeout << 7) + (timeout << 6) + (timeout << 2) + timeout) >> 8);
+
 	PMCTimerCnt_Set(PMC_TIMER, PMC_SLEEP_TIMER, New_Cnt);
 
 	return 0;
@@ -325,10 +331,14 @@ void pmu_init_wakeup_timer(void)
 
 void pmu_set_wakeup_timer(uint32_t timeout_ms)
 {
-	u32 timeout_cnt = 0;
+	uint32_t timeout_cnt = 0;
 	PMCTIMER_TpyeDef *PMC_TIMER = PMC_TIMER_DEV;
-
-	timeout_cnt = (timeout_ms << 15) / 1000;  /*convert ms to cnt*/
+	/*convert ms to cnt:
+	  method: the ticks/ms equals 32 + 197/256 = 32.7695, and the deviation is 32.7695 - 32.768 = 0.0046%.
+	  The error is 46µs per second.The reason for using bit shift operations is to avoid division and
+	  improve the speed of operation.
+	*/
+	timeout_cnt = (timeout_ms << 5) + (((timeout_ms << 7) + (timeout_ms << 6) + (timeout_ms << 2) + timeout_ms) >> 8);
 
 	PMCTimerCnt_Set(PMC_TIMER, PMC_WAKEUP_TIMER, timeout_cnt);
 }
@@ -342,10 +352,16 @@ void pmu_reset_wakeup_timer()
 
 void pmu_set_dsleep_active_time(uint32_t TimeOutMs)
 {
-	u32 New_Cnt = 0;
+	uint32_t New_Cnt = 0;
 	PMCTIMER_TpyeDef *PMC_TIMER = PMC_TIMER_DEV;
 
-	New_Cnt = (TimeOutMs << 15) / 1000;  /*convert ms to cnt*/
+	/*convert ms to cnt:
+	  method: the ticks/ms equals 32 + 197/256 = 32.7695, and the deviation is 32.7695 - 32.768 = 0.0046%.
+	  The error is 46µs per second.The reason for using bit shift operations is to avoid division and
+	  improve the speed of operation.
+	*/
+	New_Cnt = (TimeOutMs << 5) + (((TimeOutMs << 7) + (TimeOutMs << 6) + (TimeOutMs << 2) + TimeOutMs) >> 8);
+
 	PMCTimerCnt_Set(PMC_TIMER, PMC_DSLP_TIMER, New_Cnt);
 }
 

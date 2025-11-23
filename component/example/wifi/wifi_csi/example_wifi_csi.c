@@ -200,8 +200,7 @@ NEXT:
 			goto NEXT;
 
 		}
-		if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
-			&& (join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID)) {
+		if (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) == CONNECTION_VALID) {
 			rtos_time_delay_ms(2000);  /* 2s */
 			RTK_LOGA(NOTAG, "### STA Break ###\r\n");
 			break;

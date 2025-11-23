@@ -1163,56 +1163,14 @@ void vPortGetTaskHeapInfo(void)
 #endif
 #endif
 
-void* pvPortReAlloc( void *pv,  size_t xWantedSize )
-{
-	BlockLink_t *pxLink;
-	unsigned char *puc = ( unsigned char * ) pv;
-
-	if( pv )
-	{
-		if( !xWantedSize )
-		{
-			vPortFree( pv );
-			return NULL;
-		}
-
-		void *newArea = pvPortMalloc( xWantedSize );
-		if( newArea )
-		{
-			/* The memory being freed will have an xBlockLink structure immediately
-				before it. */
-			puc -= xHeapStructSize;
-
-			/* This casting is to keep the compiler from issuing warnings. */
-			pxLink = ( void * ) puc;
-
-			size_t oldSize =  (pxLink->xBlockSize & ~xBlockAllocatedBit) - xHeapStructSize;
-			size_t copySize = ( oldSize < xWantedSize ) ? oldSize : xWantedSize;
-			memcpy( newArea, pv, copySize );
-
-			vTaskSuspendAll();
-			{
-				/* Add this block to the list of free blocks. */
-				pxLink->xBlockSize &= ~xBlockAllocatedBit;
-				xFreeBytesRemaining += pxLink->xBlockSize;
-				prvInsertBlockIntoFreeList( ( ( BlockLink_t * ) pxLink ) );
-			}
-			xTaskResumeAll();
-			return newArea;
-		}
-	}
-	else if( xWantedSize )
-		return pvPortMalloc( xWantedSize );
-	else
-		return NULL;
-
-	return NULL;
-}
-
 void* pvPortReAllocBase( void *pv,  size_t xWantedSize, uint32_t startAddr)
 {
 	BlockLink_t *pxLink;
 	unsigned char *puc = ( unsigned char * ) pv;
+#if( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE )
+	uint8_t *pucBlockToFree = NULL;
+	size_t xBlockToFillSize = 0;
+#endif
 
 	if( pv )
 	{
@@ -1227,14 +1185,27 @@ void* pvPortReAllocBase( void *pv,  size_t xWantedSize, uint32_t startAddr)
 		{
 			/* The memory being freed will have an xBlockLink structure immediately
 				before it. */
+#if( defined CONFIG_HEAP_CORRUPTION_DETECT_LITE)
+			puc -= (xHeapStructSize + xHeadCanarySize);
+#else
 			puc -= xHeapStructSize;
+#endif
 
 			/* This casting is to keep the compiler from issuing warnings. */
 			pxLink = ( void * ) puc;
 
+#if( defined CONFIG_HEAP_CORRUPTION_DETECT_LITE)
+			size_t oldSize =  (pxLink->xBlockSize & ~xBlockAllocatedBit) - (xHeapStructSize + xHeadCanarySize + xTailCanarySize);
+#else
 			size_t oldSize =  (pxLink->xBlockSize & ~xBlockAllocatedBit) - xHeapStructSize;
+#endif
 			size_t copySize = ( oldSize < xWantedSize ) ? oldSize : xWantedSize;
 			memcpy( newArea, pv, copySize );
+#if ( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE)
+			pucBlockToFree = puc + xHeapStructSize;
+			xBlockToFillSize = (pxLink->xBlockSize & ~xBlockAllocatedBit) - xHeapStructSize;
+			_memset(pucBlockToFree, xFillFreed, xBlockToFillSize);
+#endif
 
 			vTaskSuspendAll();
 			{
@@ -1253,6 +1224,11 @@ void* pvPortReAllocBase( void *pv,  size_t xWantedSize, uint32_t startAddr)
 		return NULL;
 
 	return NULL;
+}
+
+void* pvPortReAlloc( void *pv,  size_t xWantedSize )
+{
+	return pvPortReAllocBase(pv, xWantedSize, 0);
 }
 
 void *pvPortCalloc(size_t xWantedCnt, size_t xWantedSize)

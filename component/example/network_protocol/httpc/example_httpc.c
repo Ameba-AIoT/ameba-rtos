@@ -23,7 +23,9 @@ static void example_httpc_thread(void *param)
 	struct httpc_conn *conn = NULL;
 
 	// Delay to check successful WiFi connection and obtain of an IP address
-	LwIP_Check_Connectivity();
+	while (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
+		rtos_time_delay_ms(2000);
+	}
 
 	printf("\n====================Example: httpc====================\n");
 

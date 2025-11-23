@@ -37,8 +37,8 @@ __weak void whc_host_pkt_rx_to_user(u8 *payload, u32 len)
 			ipaddr = CONCAT_TO_UINT32(ptr[0], ptr[1], ptr[2], ptr[3]);
 			netmask = CONCAT_TO_UINT32(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
 			gw = CONCAT_TO_UINT32(ptr[0], ptr[1], ptr[2], 1);
-			LwIP_SetIP(STA_WLAN_INDEX, ipaddr, netmask, gw);
-			LwIP_netif_set_link_up(0);
+			LwIP_SetIP(NETIF_WLAN_STA_INDEX, ipaddr, netmask, gw);
+			LwIP_netif_set_link_up(NETIF_WLAN_STA_INDEX);
 			break;
 
 		case WHC_WIFI_TEST_SCAN_RESULT:
@@ -233,7 +233,7 @@ u32 cmd_whc_test(u16 argc, u8  *argv[])
 	}
 
 	if (_strcmp((const char *)argv[0], "setrdy") == 0) {
-		LwIP_netif_set_up(0);
+		LwIP_netif_set_up(NETIF_WLAN_STA_INDEX);
 		if (argc > 1) {
 			if (_strcmp((const char *)argv[1], "unready") == 0) {
 				state = 0;

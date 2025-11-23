@@ -182,7 +182,7 @@ void wifi_tunnelapi_change_txbd_num(void)
 SRAM_NOCACHE_DATA_SECTION
 unsigned int tx_buf_vo_wtn[8 * 12];
 
-s32 wifi_hal_vo_tx_ring_init_wtn(u32 *p_txbd_addr, u8 *p_txbd_num, u8 txbd_size, u8 txbd_num)
+void wifi_hal_vo_tx_ring_init_wtn(u32 *p_txbd_addr, u8 *p_txbd_num, u8 txbd_size, u8 txbd_num)
 {
 #ifdef CONFIG_RSICV_CORE_KR4
 	u8	*pTxbd;
@@ -199,7 +199,7 @@ s32 wifi_hal_vo_tx_ring_init_wtn(u32 *p_txbd_addr, u8 *p_txbd_num, u8 txbd_size,
 	}
 #endif
 
-	*p_txbd_addr = tx_buf_vo_wtn;
+	*p_txbd_addr = (u32)tx_buf_vo_wtn;
 	*p_txbd_num = txbd_num;
 }
 #endif /* CONFIG_RMESH_EN */

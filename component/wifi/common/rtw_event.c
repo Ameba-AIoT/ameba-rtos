@@ -95,7 +95,7 @@ void wifi_event_join_status_internal_hdl(u8 *evt_info)
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
 		at_printf_indicate("wifi connected\r\n");
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
-		LwIP_netif_set_link_up(0);
+		LwIP_netif_set_link_up(NETIF_WLAN_STA_INDEX);
 #endif
 
 		/* if not use fast dhcp, store fast connect info to flash when connect successfully*/
@@ -138,8 +138,8 @@ void wifi_event_join_status_internal_hdl(u8 *evt_info)
 #endif
 		at_printf_indicate("wifi disconnected\r\n");
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
-		LwIP_DHCP_stop(0);
-		LwIP_netif_set_link_down(0);
+		LwIP_DHCP_stop(NETIF_WLAN_STA_INDEX);
+		LwIP_netif_set_link_down(NETIF_WLAN_STA_INDEX);
 #endif
 
 #if (!defined(CONFIG_WHC_DEV) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_WHC_HOST))) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)

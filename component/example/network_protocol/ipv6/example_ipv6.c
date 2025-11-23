@@ -23,7 +23,7 @@ static void ipv6_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_a
 		return;
 	}
 
-	netifp = &xnetif[0];
+	netifp = pnetif_sta;
 
 	if (netifp == NULL) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] No route, netif == NULL\n");
@@ -150,7 +150,7 @@ static void example_ipv6_udp_client(void)
 		memset(&src_addr6, 0, sizeof(src_addr6));
 		src_addr6.sin6_family = AF_INET6;
 		src_addr6.sin6_port = htons(UDP_SERVER_PORT);
-		inet6_addr_from_ip6addr(&src_addr6.sin6_addr, (ip6_addr_t *)&xnetif[0].ip6_addr[0]);
+		inet6_addr_from_ip6addr(&src_addr6.sin6_addr, (ip6_addr_t *)&pnetif_sta->ip6_addr[0]);
 
 		if (bind(client_fd, (struct sockaddr *)&src_addr6, sizeof(src_addr6)) != 0) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Bind socket failed\n");
@@ -285,7 +285,7 @@ static void example_ipv6_tcp_client(void)
 		memset(&src_addr6, 0, sizeof(src_addr6));
 		src_addr6.sin6_family = AF_INET6;
 		src_addr6.sin6_port = htons(TCP_SERVER_PORT);
-		inet6_addr_from_ip6addr(&src_addr6.sin6_addr, (ip6_addr_t *)&xnetif[0].ip6_addr[0]);
+		inet6_addr_from_ip6addr(&src_addr6.sin6_addr, (ip6_addr_t *)&pnetif_sta->ip6_addr[0]);
 
 		if (bind(client_fd, (struct sockaddr *)&src_addr6, sizeof(src_addr6)) != 0) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Bind socket failed\n");
@@ -365,7 +365,7 @@ static void example_ipv6_mcast_server(void)
 	//Register to multicast group membership
 	ip6_addr_t mcast_addr;
 	inet_pton(AF_INET6, MCAST_GROUP_IP, &(mcast_addr.addr));
-	ip6_addr_assign_zone(&mcast_addr, IP6_MULTICAST, &xnetif[0]);
+	ip6_addr_assign_zone(&mcast_addr, IP6_MULTICAST, pnetif_sta);
 
 	if (mld6_joingroup(IP6_ADDR_ANY6, &mcast_addr) != 0) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Register to ipv6 multicast group failed\n");
@@ -442,14 +442,14 @@ static void example_ipv6_mcast_client(void)
 	ser_addr.sin6_port = htons(MCAST_GROUP_PORT);
 	inet_pton(AF_INET6, MCAST_GROUP_IP, &(ser_addr.sin6_addr));
 	inet6_addr_to_ip6addr(&dest_addr6, &(ser_addr.sin6_addr));
-	ip6_addr_assign_zone(&dest_addr6, IP6_MULTICAST, &xnetif[0]);
+	ip6_addr_assign_zone(&dest_addr6, IP6_MULTICAST, pnetif_sta);
 
 	if (ip6_addr_ismulticast_linklocal(&dest_addr6) || ip6_addr_ismulticast_iflocal(&dest_addr6)
 		|| ip6_addr_islinklocal(&dest_addr6)) {
 		memset(&src_addr6, 0, sizeof(src_addr6));
 		src_addr6.sin6_family = AF_INET6;
 		src_addr6.sin6_port = htons(MCAST_GROUP_PORT);
-		inet6_addr_from_ip6addr(&src_addr6.sin6_addr, (ip6_addr_t *)&xnetif[0].ip6_addr[0]);
+		inet6_addr_from_ip6addr(&src_addr6.sin6_addr, (ip6_addr_t *)&pnetif_sta->ip6_addr[0]);
 
 		if (bind(client_fd, (struct sockaddr *)&src_addr6, sizeof(src_addr6)) != 0) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[ERROR] Bind socket failed\n");
@@ -561,13 +561,15 @@ static void example_ipv6_thread(void *param)
 	(void) param;
 
 	// Delay to check successful WiFi connection and obtain of an IP address
-	LwIP_Check_Connectivity();
+	while (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
+		rtos_time_delay_ms(2000);
+	}
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: ipv6====================\r\n");
 
-	LwIP_AUTOIP_IPv6(&xnetif[0]);
+	LwIP_AUTOIP_IPv6(NETIF_WLAN_STA_INDEX);
 	//Wait for ipv6 addr process conflict done
-	while (!ip6_addr_isvalid(netif_ip6_addr_state(&xnetif[0], 0))) {
+	while (!ip6_addr_isvalid(netif_ip6_addr_state(pnetif_sta, 0))) {
 		rtos_time_delay_ms(10);
 	}
 	/***---open a example service once!!---***/

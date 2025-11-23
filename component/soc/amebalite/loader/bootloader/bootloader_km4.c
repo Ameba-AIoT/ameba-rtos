@@ -640,9 +640,17 @@ void Peripheral_Reset(void)
 	//issue: LSYS_PERIALL_RST_EN will reset cpu, causing loss of debug information, which is unexpected.
 	//resolve: When initializing power, at bootloader, these bits are enabled.
 	// HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_FEN, APBPeriph_OTPC | APBPeriph_LPON);
+
+	/* The following IP cores are activated during power initialization, excluding those specified in the comments */
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_FEN_GRP0,
-				APBPeriph_TRNG | APBPeriph_AIP | APBPeriph_SCE | APBPeriph_FLASH | APBPeriph_KM4 | APBPeriph_PLFM | APBPeriph_HSOC);
-	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_FEN_GRP1, APBPeriph_THM | APBPeriph_DTIM | APBPeriph_LOGUART);
+				APBPeriph_TRNG | APBPeriph_AIP | APBPeriph_SCE | APBPeriph_FLASH | APBPeriph_KM4 | APBPeriph_PLFM | APBPeriph_HSOC |
+				/* These IP cores are enabled depends on OTP programming */
+				APBPeriph_SHA | APBPeriph_LX | APBPeriph_ECDSA);
+
+	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_FEN_GRP1,
+				APBPeriph_DTIM | APBPeriph_LOGUART |
+				/* This IP won't influence debug reset. */
+				APBPeriph_THM);
 }
 
 /* To avoid RRAM holding incorrect data, incorporate a MAGIC_NUMBER for verification. */

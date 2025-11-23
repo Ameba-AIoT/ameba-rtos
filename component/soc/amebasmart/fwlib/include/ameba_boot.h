@@ -54,13 +54,16 @@ extern u8  __rom_entry_ns_start__[];
 extern u8 __retention_entry_func__[];
 
 extern u8 __km0_flash_text_start__[];
+extern u8 __km0_flash_text_end__[];
 extern u8 __km0_ipc_memory_start__[];
 extern u8 __km4_flash_text_start__[];
+extern u8 __km4_flash_text_end__[];
 extern u8 __km0_image2_entry_func__[];
 extern u8 __km4_image2_entry_func__[];
 extern u8 __km4_audio_buf_start__[];
 extern u8 __ca32_fip_dram_start__[];
 extern u8 __ca32_flash_text_start__[];
+extern u8 __ca32_flash_text_end__[];
 extern u8 __ca32_bl1_dram_start__[];
 
 extern u8 __psram_heap_buffer_start__[];
@@ -263,6 +266,7 @@ extern u32 OTA_Region[3][2];
 extern u32 HUK_Derive_En;
 
 #define DDR_AUTOGATING		ENABLE
+#define PSRAM_AUTOGATING	DISABLE
 
 #define BOOT_FROM_OTA1		0
 #define BOOT_FROM_OTA2		1

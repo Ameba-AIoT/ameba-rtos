@@ -47,7 +47,7 @@ MEMORY
 	RETENTION_RAM (rwx) :                   ORIGIN = 0x23020000, LENGTH = 0x23020200 - 0x23020000	/* KM0 Retention SRAM: 512B */
 
 	/* Flash */
-	KM4_BOOT_XIP (rx) :                     ORIGIN = 0x0A000020, LENGTH = 0x0C000000 - 0x0A000020	/* KM4 Bootloader Virtual address: 32767k */
+	KM4_BOOT_XIP (rx) :                     ORIGIN = 0x0A000020, LENGTH = 0x0B000000 - 0x0A000020	/* KM4 Bootloader Virtual address: 32767k */
 	KM0_IMG2_XIP (rx) :                     ORIGIN = 0x0C000020, LENGTH = 0x0D000000 - 0x0C000020	/* KM0 IMG2 Virtual address: 32767k */
 	KM4_IMG2_XIP (rx) :                     ORIGIN = 0x0D000020, LENGTH = 0x0E000000 - 0x0D000020	/* KM4 IMG2 Virtual address: 32767k */
 	CA32_IMG2_XIP (rx) :                    ORIGIN = 0x0E000020, LENGTH = 0x10000000 - 0x0E000020	/* CA32 IMG2 Virtual address: 32767k */
@@ -56,12 +56,16 @@ MEMORY
 	CTRACE (rx) :                           ORIGIN = 0xCA000000, LENGTH = 0xCA7FFFFF - 0xCA000000	/* COEX LOG Virtual address: 8192k */
 
 	/* DRAM */
-#if CONFIG_IMG2_FLASH
+#ifdef CONFIG_IMG2_FLASH
 	KM4_BD_DRAM (rwx) :                     ORIGIN = 0x60000020, LENGTH = 0x60060000 - 0x60000020	/* KM4 MAIN DRAM: 384K */
-
-	CA32_BL1_DRAM_S (rwx) :                 ORIGIN = 0x70060020, LENGTH = 0x70070000 - 0x70060020	/* CA32 BL1 DRAM S: 64k */
-	CA32_BL3_DRAM_NS (rwx) :                ORIGIN = 0x60094000, LENGTH = PSRAM_END - 0x60094000	/* CA32 BL3 DRAM NS: 7600K */
 	KM4_DRAM_HEAP_EXT (rwx) :               ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* KM4 PSRAM HEAP EXT: 0 */
+#ifdef CONFIG_CP_TEST_CA32
+	CA32_BL1_DRAM_S (rwx) :                 ORIGIN = 0x0A000020, LENGTH = 0x0C000000 - 0x0A000020	/* CA32 BL1 DRAM S: 64k */
+	CA32_BL3_DRAM_NS (rwx) :                ORIGIN = 0x20000000, LENGTH = 0x20030000 - 0x20000000	/* CA32 BL3 DRAM NS: 128KB */
+#else
+	CA32_BL1_DRAM_S (rwx) :                 ORIGIN = 0x70060020, LENGTH = 0x70070000 - 0x70060020	/* CA32 BL1 DRAM S: 64k */
+	CA32_BL3_DRAM_NS (rwx) :                ORIGIN = 0x60088000, LENGTH = PSRAM_END - 0x60088000	/* CA32 BL3 DRAM NS: 7648K */
+#endif /* CONFIG_CP_TEST_CA32 */
 #else
 	KM4_BD_DRAM (rwx) :                     ORIGIN = 0x60000020, LENGTH = 0x6015B000 - 0x60000020	/* KM4 MAIN DRAM: 1387k */
 	KM4_BD_RAM_NSC (rwx) :                  ORIGIN = 0x6015B020, LENGTH = 0x6015C000 - 0x6015B020	/* KM4 BD RAM NSC: 3k */
@@ -71,7 +75,7 @@ MEMORY
 	CA32_BL1_DRAM_S (rwx) :                 ORIGIN = 0x70180020, LENGTH = 0x701A0000 - 0x70180020	/* CA32 BL1 DRAM S: 127k */
 	CA32_BL3_DRAM_NS (rwx) :                ORIGIN = 0x60300000, LENGTH = 0x60700000 - 0x60300000	/* CA32 BL3 DRAM NS: 4MB */
 	KM4_DRAM_HEAP_EXT (rwx) :               ORIGIN = 0x60700000, LENGTH = PSRAM_END - 0x60700000	/* KM4 PSRAM HEAP EXT: 1MB, (PSRAM Die is 8MB) */
-#endif
+#endif /* CONFIG_IMG2_FLASH */
 
 	CA32_DYNAMIC_APP_LOAD_DRAM (rwx) :      ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* CA32 CA32 DYNAMIC APP LOAD DRAM: 1MB */
 
@@ -82,14 +86,20 @@ __rom_stdlib_text_start__ = ORIGIN(KM4_IROM_STDLIB_NS);
 __km0_ipc_memory_start__ = ORIGIN(KM0_IPC_RAM);
 __km4_boot_text_start__ = ORIGIN(KM4_BOOT_XIP);
 __km0_flash_text_start__ = ORIGIN(KM0_IMG2_XIP);
+__km0_flash_text_end__ = ORIGIN(KM0_IMG2_XIP) + LENGTH(KM0_IMG2_XIP);
 __km4_flash_text_start__ = ORIGIN(KM4_IMG2_XIP);
+__km4_flash_text_end__ = ORIGIN(KM4_IMG2_XIP) + LENGTH(KM4_IMG2_XIP);
 __ca32_flash_text_start__ = ORIGIN(CA32_IMG2_XIP);
+__ca32_flash_text_end__ = ORIGIN(CA32_IMG2_XIP) + LENGTH(CA32_IMG2_XIP);
 
 __ca32_bl1_sram_start__ = ORIGIN(CA32_BL1_SRAM_S);
 __ca32_bl1_dram_start__ = ORIGIN(CA32_BL1_DRAM_S);
+#ifdef CONFIG_CP_TEST_CA32
+__ca32_fip_dram_start__ = ORIGIN(KM0_IMG2_XIP) - 0x20; // CA32 need page aligned address
+#else
 /* By Default, KM4 let KM4_BD_DRAM and [0x60600000, PSRAM_END) be non-secure, ATF Will Let [CA32_BL3_DRAM_NS, 0x60600000) Non-Secure after image load done */
 __ca32_fip_dram_start__ = ORIGIN(CA32_BL3_DRAM_NS) + SECURE_ADDR_OFFSET; /* CA32 FIP(BL2+BL32+BL33) IMG */
 /* CA32_FIP_MAX_SIZE is KBYTES((2048) */
 ASSERT(__ca32_fip_dram_start__ + KBYTES(2048) < PSRAM_END + SECURE_ADDR_OFFSET, "Error: reserved 2MB for FIP Img, please check psram size.")
-
+#endif
 __non_secure_psram_end__ = PSRAM_END;

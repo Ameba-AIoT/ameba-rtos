@@ -40,6 +40,11 @@ ameba_list_append_if(CONFIG_WHC_INTF_SDIO public_includes
     ${c_CMPT_WIFI_DIR}/whc/whc_host_rtos/sdio
 )
 
+ameba_list_append_if(CONFIG_WHC_INTF_UART public_includes
+    ${c_CMPT_WIFI_DIR}/whc/whc_dev/uart
+    ${c_CMPT_WIFI_DIR}/whc/whc_host_rtos/uart
+)
+
 ameba_list_append_if(CONFIG_WHC_INTF_SPI public_includes
     ${c_CMPT_WIFI_DIR}/whc/whc_dev/spi
     ${c_CMPT_WIFI_DIR}/whc/whc_host_rtos/spi
@@ -162,6 +167,8 @@ if(CONFIG_WHC_DEV)
         set(release_target_name wifi_whc_spi_np${LIB_NAME_WPA_OFFLOAD_SUFFIX}${LIB_NAME_MP_SUFFIX})
     elseif(CONFIG_WHC_INTF_USB)
         set(release_target_name wifi_whc_usb_np${LIB_NAME_WPA_OFFLOAD_SUFFIX}${LIB_NAME_MP_SUFFIX})
+    elseif(CONFIG_WHC_INTF_UART)
+        set(release_target_name wifi_whc_uart_np${LIB_NAME_WPA_OFFLOAD_SUFFIX}${LIB_NAME_MP_SUFFIX})
     else()
         set(release_target_name wifi_whc_np${LIB_NAME_WPA_OFFLOAD_SUFFIX}${LIB_NAME_MP_SUFFIX})
     endif()
@@ -243,7 +250,7 @@ ameba_list_append_if(CONFIG_AMEBAGREEN2 private_includes
 )
 
 ameba_list_append_if(CONFIG_AMEBAPRO3 private_includes
-    ${c_COMPONENT_DIR}/soc/amebagreen2/rom/include
+    ${c_COMPONENT_DIR}/soc/amebapro3/rom/include
     ${c_CMPT_WIFI_DIR}/wifi_fw/amebagreen2/include
 )
 

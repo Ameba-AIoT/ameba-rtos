@@ -958,7 +958,8 @@ static rtk_bt_evt_cb_ret_t app_bt_le_iso_cb(uint8_t evt_code, void *data, uint32
 				param->conn_handle, param->cis_conn_handle, param->cig_id, param->cis_id, param->cis_req_action);
 		if (param->cis_req_action == RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_PENDING) {
 			rtk_bt_le_iso_cig_acceptor_accept_cis(param->cis_conn_handle);//accept cis request
-			//rtk_bt_le_iso_cig_acceptor_reject_cis(param->cis_conn_handle,HCI_SUCCESS);//if you want to reject cis request
+			//if you want to reject cis request，reject reason @ref rtk_bt_err_hci
+			//rtk_bt_le_iso_cig_acceptor_reject_cis(param->cis_conn_handle, RTK_BT_HCI_ERR_UNKNOWN_CONN_ID);
 		}
 		break;
 	}

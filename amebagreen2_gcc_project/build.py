@@ -86,13 +86,6 @@ def main(argc, argv):
         for defs in args.Defined:
             cmd += ' -D' + defs
 
-    #TODO: For temporary compatibility, remove when wifi fully support new cmake
-    if args.Defined:
-        if not any(s.startswith("CMAKE_REFACTOR=") for s in args.Defined):
-            cmd += f' -D CMAKE_REFACTOR="TRUE"'
-    else:
-        cmd += f' -D CMAKE_REFACTOR="TRUE"'
-
     cmd += ' -G Ninja'
 
     if app != None:  # app maybe in submodule directory, get submodule info first

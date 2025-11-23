@@ -22,8 +22,6 @@
 #define NAT_AP_GW_ADDR2 43
 #define NAT_AP_GW_ADDR3 1
 
-extern struct netif xnetif[NET_IF_NUM];
-
 extern void dns_relay_service_init(void);
 extern void ip_nat_reinitialize(void);
 extern void ip_nat_sync_dns_serever_data(void);
@@ -43,6 +41,7 @@ static int ip_nat_wifi_restart_ap(struct rtw_softap_info *softAP_config)
 	u32 netmask;
 	u32 gw;
 	int timeout = 20;
+	struct netif *pnetif;
 
 	if (wifi_is_running(SOFTAP_WLAN_INDEX)) {
 		idx = 1;
@@ -53,7 +52,7 @@ static int ip_nat_wifi_restart_ap(struct rtw_softap_info *softAP_config)
 	addr = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 	netmask = CONCAT_TO_UINT32(NAT_AP_NETMASK_ADDR0, NAT_AP_NETMASK_ADDR1, NAT_AP_NETMASK_ADDR2, NAT_AP_NETMASK_ADDR3);
 	gw = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-	LwIP_SetIP(SOFTAP_WLAN_INDEX, addr, netmask, gw);
+	LwIP_SetIP(NETIF_WLAN_AP_INDEX, addr, netmask, gw);
 
 	wifi_stop_ap();
 
@@ -93,11 +92,12 @@ static int ip_nat_wifi_restart_ap(struct rtw_softap_info *softAP_config)
 	addr = CONCAT_TO_UINT32(NAT_AP_IP_ADDR0, NAT_AP_IP_ADDR1, NAT_AP_IP_ADDR2, NAT_AP_IP_ADDR3);
 	netmask = CONCAT_TO_UINT32(NAT_AP_NETMASK_ADDR0, NAT_AP_NETMASK_ADDR1, NAT_AP_NETMASK_ADDR2, NAT_AP_NETMASK_ADDR3);
 	gw = CONCAT_TO_UINT32(NAT_AP_GW_ADDR0, NAT_AP_GW_ADDR1, NAT_AP_GW_ADDR2, NAT_AP_GW_ADDR3);
-	LwIP_SetIP(SOFTAP_WLAN_INDEX, addr, netmask, gw);
+	LwIP_SetIP(NETIF_WLAN_AP_INDEX, addr, netmask, gw);
 
 	// start dhcp server
 	RTK_LOGI(TAG, "%s(%d)idx=%d\n", __FUNCTION__, __LINE__, idx);
-	dhcps_init(&xnetif[idx]);
+	pnetif = LwIP_idx_get_netif(idx);
+	dhcps_init(pnetif);
 
 	return 0;
 }
@@ -119,8 +119,8 @@ static int ip_nat_avoid_confliction_ip(void)
 	unsigned int inIpVal, inMaskVal, myIpVal, myMaskVal, maskVal;
 	char tmpBufIP[64] = {0}, tmpBufMask[64] = {0};
 
-	wanMask = LwIP_GetMASK(STA_WLAN_INDEX);
-	wanIp =  LwIP_GetIP(STA_WLAN_INDEX);
+	wanMask = LwIP_GetMASK(NETIF_WLAN_STA_INDEX);
+	wanIp =  LwIP_GetIP(NETIF_WLAN_STA_INDEX);
 
 	inIp.s_addr = *((unsigned int *) wanIp);
 	inMask.s_addr = *((unsigned int *) wanMask);
@@ -128,8 +128,8 @@ static int ip_nat_avoid_confliction_ip(void)
 	memcpy(&inIpVal, &inIp, 4);
 	memcpy(&inMaskVal, &inMask, 4);
 
-	myLocalMask = LwIP_GetMASK(SOFTAP_WLAN_INDEX);
-	myLocalIp =  LwIP_GetIP(SOFTAP_WLAN_INDEX);
+	myLocalMask = LwIP_GetMASK(NETIF_WLAN_AP_INDEX);
+	myLocalIp =  LwIP_GetIP(NETIF_WLAN_AP_INDEX);
 
 	myIp.s_addr = *((unsigned int *) myLocalIp);
 	myMask.s_addr = *((unsigned int *) myLocalMask);
@@ -189,7 +189,7 @@ static int ip_nat_avoid_confliction_ip(void)
 		iptab[2] = (uint8_t)(myIpVal >> 16);
 		iptab[3] = (uint8_t)(myIpVal >> 24);
 		IP4_ADDR(ip_2_ip4(&set_gw), iptab[0], iptab[1], iptab[2], iptab[3]);
-		netif_set_addr(&xnetif[1], ip_2_ip4(&set_ipaddr), ip_2_ip4(&set_netmask), ip_2_ip4(&set_gw));
+		netif_set_addr(pnetif_ap, ip_2_ip4(&set_ipaddr), ip_2_ip4(&set_netmask), ip_2_ip4(&set_gw));
 
 		struct rtw_wifi_setting setting;
 		wifi_get_setting(SOFTAP_WLAN_INDEX, &setting);
@@ -221,10 +221,10 @@ static void poll_ip_changed_thread(void *param)
 {
 	(void) param;
 	unsigned int oldip, newip;
-	memcpy(&oldip, LwIP_GetIP(STA_WLAN_INDEX), 4);
+	memcpy(&oldip, LwIP_GetIP(NETIF_WLAN_STA_INDEX), 4);
 
 	while (1) {
-		memcpy(&newip, LwIP_GetIP(STA_WLAN_INDEX), 4);
+		memcpy(&newip, LwIP_GetIP(NETIF_WLAN_STA_INDEX), 4);
 		if (0x0 == newip) {
 			goto nextcheck;
 		}
@@ -325,10 +325,10 @@ static void example_wlan_repeater_thread(void *param)
 	ip_addr = CONCAT_TO_UINT32(NAT_AP_IP_ADDR0, NAT_AP_IP_ADDR1, NAT_AP_IP_ADDR2, NAT_AP_IP_ADDR3);
 	netmask = CONCAT_TO_UINT32(NAT_AP_NETMASK_ADDR0, NAT_AP_NETMASK_ADDR1, NAT_AP_NETMASK_ADDR2, NAT_AP_NETMASK_ADDR3);
 	gw = CONCAT_TO_UINT32(NAT_AP_GW_ADDR0, NAT_AP_GW_ADDR1, NAT_AP_GW_ADDR2, NAT_AP_GW_ADDR3);
-	LwIP_SetIP(SOFTAP_WLAN_INDEX, ip_addr, netmask, gw);
+	LwIP_SetIP(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
 
 	RTK_LOGI(TAG, "\n\r[WLAN_REPEATER_EXAMPLE] Start DHCP server\n");
-	dhcps_init(&xnetif[1]);
+	dhcps_init(pnetif_ap);
 	rtos_time_delay_ms(1000);
 
 	wifi_repeater_ap_config_complete = 1;

@@ -20,6 +20,9 @@
 #define __WIFI_CONF_INTERNAL_H
 
 #include "wifi_api_types.h"
+#ifndef CONFIG_FULLMAC
+#include "lwip_netconf.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -141,7 +144,7 @@ struct rtw_crypt_info {
  * @brief  The structure is status of wpa_4way.
  */
 struct rtw_wpa_4way_status {
-	u8 *mac_addr;             /**< Mac addr of 4-way interactive peer device. */
+	u8 mac_addr[6];             /**< Mac addr of 4-way interactive peer device. */
 	u8 wlan_idx;              /**< Index of wlan interface. */
 	u8 is_start : 1;          /**< Start(1) or stop(0) of 4way/2way exchange. */
 	u8 is_grpkey_update : 1;  /**< Indicate first key change(0) or update grp_key change(1). */
@@ -497,6 +500,12 @@ int wifi_if_send_eapol(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags
   * @return  RTK_SUCCESS or RTK_FAIL.
   */
 int wifi_wake_pll_rdy_in_ps_state(u8 need);
+
+/**
+  * @brief  for bt on to disable/enable ips/lps function
+  * @param[in] enable [DISABLE-disable and leave ips/lps; ENABLE-Release the control of BT ON over IPS/LPS]
+  */
+void wifi_ps_en_by_bt_on(u8 enable);
 
 /**
  * @brief  Enable Wi-Fi interface-2.

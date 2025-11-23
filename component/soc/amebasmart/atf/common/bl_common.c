@@ -150,6 +150,13 @@ exit:
 static int load_image_flush(unsigned int image_id,
 			    image_info_t *image_data)
 {
+#ifdef CONFIG_CP_TEST_CA32
+	/* BL2 does not need load */
+	if (image_id == BL2_IMAGE_ID) {
+		return 0;
+	}
+#endif
+
 	int rc;
 
 	rc = load_image(image_id, image_data);

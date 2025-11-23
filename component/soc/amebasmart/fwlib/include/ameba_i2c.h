@@ -749,7 +749,7 @@ _LONG_CALL_ u32 I2C_ClearINT(I2C_TypeDef *I2Cx, u32 INTrAddr);
 _LONG_CALL_ void I2C_SetSpeed(I2C_TypeDef *I2Cx, u32 SpdMd, u32 I2Clk, u32 I2CIPClk);
 _LONG_CALL_ void I2C_StructInit(I2C_InitTypeDef *I2C_InitStruct);
 _LONG_CALL_ u8 I2C_ReceiveData(I2C_TypeDef *I2Cx);
-_LONG_CALL_ s32 I2C_PollFlagRawINT(I2C_TypeDef *I2Cx, u32 I2C_FLAG, u32 I2C_RawINT, u32 timeout_ms);
+_LONG_CALL_ s32 I2C_PollFlagRawINT(I2C_TypeDef *I2Cx, u32 I2C_FLAG, u32 I2C_RawINT, u32 timeout_ms, u32 *txflr_out);
 
 
 /*I2C_Exported_Master_Functions I2C Exported Master Functions*/
@@ -794,6 +794,7 @@ extern u32 IC_FS_SCL_HCNT_TRIM;
 extern u32 IC_FS_SCL_LCNT_TRIM;
 #define I2C_EARLY_RX_DONE 			-1
 #define I2C_POLL_TIMEOUT_MS  1000
+#define I2C_POLL_DELAY_US    2
 
 #endif
 

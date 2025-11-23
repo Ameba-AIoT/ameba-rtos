@@ -15,6 +15,33 @@
 #include "sysreg_lsys.h"
 #include "platform_autoconf.h"
 
+/*
+ * Due to the 256KB SRAM constraint, the FIP, BL2, and BL33 are no longer copied from Flash.​
+ * BL2 and BL33 will execute in place (XIP) from Flash, while BL32 will still be relocated to SRAM for execution.​
+ * The SRAM layout is partitioned based on the actual code size of each corresponding bootloader.​
+ *
+ * FIP Layout: 0x20100000 – 0x2014FFFF (320KB)
+ * FIP_ALIGN=64KB
+ *
+ * | Image              | Range                  | Actual Size  |
+ * |--------------------|------------------------|--------------|
+ * | TOC                | 0x20100000-0x201000FF  | 0x1A0        |
+ * | bl2.bin            | 0x20110000-0x2011A2A4  | 0xA2A5       |
+ * | bl32.bin (sp_min)  | 0x20120000-0x20124048  | 0x4049       |
+ * | bl33.bin (FreeRTOS)| 0x20130000-0x2014FFFF  | 0x145E0      |
+ *
+ *
+ * SRAM Layout: 0x40000000 – 0x40040000 (256KB)
+ *
+ * | Usage          | Size (KB) | Range                  |
+ * |----------------|-----------|------------------------|
+ * | SHARED_SRAM    | 4         | 0x40000000 - 0x40000FFF|
+ * | BL1 (data)     | 44        | 0x40001000 - 0x4000BFFF|
+ * | BL2 (data)     | 44        | 0x4000C000 - 0x40016FFF|
+ * | BL32 (text+data)| 72       | 0x40017000 - 0x40028FFF|
+ * | BL33 (data)    | 92        | 0x40029000 - 0x4003FFFF|
+ */
+
 /* Special value used to verify platform parameters from BL2 to BL3-1 */
 #define SHEIPA_BL31_PLAT_PARAM_VAL	0x0f1e2d3c4b5a6978ULL
 
@@ -66,38 +93,45 @@
 
 #define KM0_IPC_RAM				0x2301FD00
 
-#define DRAM_START_ADDR			0x60000000
-
 #define SEC_ROM_BASE			0x0
 #define SEC_ROM_SIZE			0x00000400
 
-#ifdef CONFIG_IMG2_FLASH
-#ifdef AARCH32_SP_OPTEE
-#error "not support optee when XIP"
-#endif
-/* Change to SRAM, cannot > 3.5KB */
-#define SEC_SRAM_BASE			0x3001F000
-#define SEC_SRAM_SIZE			0x00001000
-
-//ATF Actual Need 204KB
-#define SEC_DRAM_BASE			0x70060000
-#define SEC_DRAM_SIZE			0x00034000
+#ifdef CONFIG_CP_TEST_CA32
+#define DRAM_RANGE_BASE			UL(0x20000000)
+#define DRAM_RANGE_SIZE			UL(0x20000000)
 #else
-#define SEC_SRAM_BASE 			0x701B0000
-#define SEC_SRAM_SIZE 			0x00010000
-
-#define SEC_DRAM_BASE 			0x70180000
-#define SEC_DRAM_SIZE 			0x00180000
+#define DRAM_RANGE_BASE			UL(0x60000000)
+#define DRAM_RANGE_SIZE			UL(0x20000000)
 #endif
 
+#ifdef CONFIG_CP_TEST_CA32
+#define SEC_DRAM_BASE			UL(0x20020000)
+#define SEC_DRAM_SIZE			(0x20040000 - SEC_DRAM_BASE)
+#elif defined(CONFIG_IMG2_FLASH)
+#define SEC_DRAM_BASE			UL(0x70060000)
+#define SEC_DRAM_SIZE			UL(0x00028000)
+#else
+#define SEC_DRAM_BASE 			UL(0x70180000)
+#define SEC_DRAM_SIZE 			UL(0x00180000)
+#endif
+
+#ifdef CONFIG_CP_TEST_CA32
+#define NS_DRAM0_BASE			0x20000000
+#define NS_DRAM0_SIZE			(0x20020000 - NS_DRAM0_BASE)
+#else
 #define NS_DRAM0_BASE			((SEC_DRAM_BASE + SEC_DRAM_SIZE) & ~TZ_IDAU_SEC_OFFSET)
 #define NS_DRAM0_SIZE			(PSRAM_END - NS_DRAM0_BASE)
+#endif
 /*
  * ARM-TF lives in SRAM, partition it here
  */
-
-#define SHARED_RAM_BASE			SEC_SRAM_BASE
+#ifdef CONFIG_IMG2_FLASH
+#define SHARED_RAM_BASE			BL2_LIMIT
 #define SHARED_RAM_SIZE			0x00001000
+#else
+#define SHARED_RAM_BASE			BL2_LIMIT
+#define SHARED_RAM_SIZE			0x00010000
+#endif
 
 #define PLAT_SHEIPA_TRUSTED_MAILBOX_BASE	SHARED_RAM_BASE
 #define PLAT_SHEIPA_TRUSTED_MAILBOX_SIZE	(8 + PLAT_SHEIPA_HOLD_SIZE)
@@ -110,9 +144,6 @@
 
 #define PLAT_SHEIPA_WARM_BOOT_BASE	(PLAT_SHEIPA_TRUSTED_MAILBOX_BASE + 0x100)
 
-#define BL_RAM_BASE			(SHARED_RAM_BASE + SHARED_RAM_SIZE)
-#define BL_RAM_SIZE			(SEC_SRAM_SIZE - SHARED_RAM_SIZE)
-
 /*
  * BL1 specific defines.
  *
@@ -123,27 +154,42 @@
  */
 #ifdef CONFIG_IMG2_FLASH
 #define BL1_RO_SIZE			(0x4000)
-#define BL1_RW_SIZE			(0xC000)
+#define BL1_RW_SIZE			(0x8000)
 #else
 #define BL1_RO_SIZE			(0x20000)
 #define BL1_RW_SIZE			(0x10000)
 #endif
+
+#ifdef CONFIG_CP_TEST_CA32
+#define BL1_RO_BASE			0x0A000000
+#define BL1_RO_LIMIT		(BL1_RO_BASE + BL1_RO_SIZE)
+#define BL1_RW_BASE			(SEC_DRAM_BASE)
+#define BL1_RW_LIMIT		(BL1_RW_BASE + BL1_RW_SIZE)
+#else
 #define BL1_RO_BASE			SEC_DRAM_BASE
 #define BL1_RO_LIMIT		(BL1_RO_BASE + BL1_RO_SIZE)
 #define BL1_RW_BASE			(BL1_RO_LIMIT)
 #define BL1_RW_LIMIT		(BL1_RW_BASE + BL1_RW_SIZE)
-
+#endif
 /*
  * BL2 specific defines.
  *
  * Put BL2 just below BL3-1. BL2_BASE is calculated using the current BL2 debug
  * size plus a little space for growth.
  */
-#ifdef CONFIG_IMG2_FLASH
+
+#ifdef CONFIG_CP_TEST_CA32
+#define BL2_RO_BASE			(SHEIPA_FIP_BASE + 0x10000)
+#define BL2_RO_SIZE			(0x10000) //64KB
+#define BL2_RO_LIMIT		(BL2_RO_BASE + BL2_RO_SIZE)
+
 #define BL2_BASE			(BL1_RW_LIMIT)
-#define BL2_LIMIT			(BL2_BASE + 0x10000)
+#define BL2_LIMIT			(BL2_BASE + 0x8000)
+#elif defined(CONFIG_IMG2_FLASH)
+#define BL2_BASE			(BL1_RW_LIMIT)
+#define BL2_LIMIT			(BL2_BASE + 0xC000)
 #else
-#define BL2_BASE 			(BL1_RW_LIMIT + 0x10000) // skip SHARED_RAM
+#define BL2_BASE 			(BL1_RW_LIMIT)
 #define BL2_LIMIT			(BL2_BASE + 0x40000)
 #endif
 
@@ -165,7 +211,7 @@
  *
  * BL3-2 can execute from Secure SRAM, or Secure DRAM.
  */
-#define BL32_DRAM_BASE			BL2_LIMIT
+#define BL32_DRAM_BASE			(SHARED_RAM_BASE + SHARED_RAM_SIZE)
 #define BL32_DRAM_LIMIT			(SEC_DRAM_BASE + SEC_DRAM_SIZE)
 
 #define SEC_DRAM_ID				1
@@ -183,7 +229,7 @@
 #define PLAT_PHY_ADDR_SPACE_SIZE	(1ull << 32)
 #define PLAT_VIRT_ADDR_SPACE_SIZE	(1ull << 32)
 #define MAX_MMAP_REGIONS		16
-#define MAX_XLAT_TABLES			10
+#define MAX_XLAT_TABLES			6 /* align with 2M will save xlat table, actually used is 5 */
 #define MAX_IO_DEVICES			3
 #define MAX_IO_HANDLES			4
 
@@ -222,21 +268,18 @@
 #define SHEIPA_FLASH_BASE		SPI_FLASH_BASE
 #define SHEIPA_FLASH_SIZE		0x08000000
 
-/* Use for Sync KM4 flash_para */
-#define KM4_ROMBSS_RAM_COM_BASE		0x2001C000
-#define KM4_ROMBSS_RAM_COM_SIZE		0x1000
-
+#ifdef CONFIG_CP_TEST_CA32
+#define SHEIPA_FIP_BASE		(0x0C000000)
+#define SHEIPA_FIP_SIZE		(0x01000000)
+#else
 #define SHEIPA_FIP_BASE		(NS_DRAM0_BASE + TZ_IDAU_SEC_OFFSET)
 #define SHEIPA_FIP_SIZE		NS_DRAM0_SIZE
-
+#endif
 #define PLAT_SHEIPA_FIP_BASE		SHEIPA_FIP_BASE
 #define PLAT_SHEIPA_FIP_MAX_SIZE	SHEIPA_FIP_SIZE
 
 #define DEVICE0_BASE			0x40000000
 #define DEVICE0_SIZE			0x20000000
-
-#define KM0_RAM					0x23000000
-#define KM0_RAM_SIZE			0x20000
 
 /* TODO: Non-volatile counters for Trusted board boot,
  * Because fast model did't have hw non-volatile counters, so
@@ -255,7 +298,7 @@
 #endif
 
 #define DEVICE1_BASE			0x80000000
-#define DEVICE1_SIZE			0x80000000
+#define DEVICE1_SIZE			0x40000000 /* maximum address < 0xC0000000, save translation table size */
 
 /*
  * DT related constants

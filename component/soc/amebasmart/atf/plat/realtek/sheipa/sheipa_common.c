@@ -12,42 +12,29 @@
 
 #include "sheipa_private.h"
 
-#define MAP_DEVICE0	MAP_REGION_FLAT(DEVICE0_BASE,			\
-					DEVICE0_SIZE,			\
+#define MAP_DEVICE0	MAP_REGION_FLAT(DEVICE0_BASE, DEVICE0_SIZE, \
 					MT_DEVICE | MT_RW | MT_SECURE)
 
-#define MAP_DEVICE1	MAP_REGION_FLAT(DEVICE1_BASE,			\
-					DEVICE1_SIZE,			\
+#define MAP_DEVICE1	MAP_REGION_FLAT(DEVICE1_BASE, DEVICE1_SIZE, \
 					MT_DEVICE | MT_RW | MT_SECURE)
 
-#define MAP_SHARED_RAM	MAP_REGION_FLAT(SHARED_RAM_BASE,		\
-					SHARED_RAM_SIZE,		\
-					MT_DEVICE  | MT_RW | MT_SECURE)
+#define MAP_SHARED_RAM	MAP_REGION_FLAT(SHARED_RAM_BASE, SHARED_RAM_SIZE, \
+					MT_DEVICE | MT_RW | MT_SECURE)
 
-#define MAP_BL2_MEM	MAP_REGION_FLAT(BL2_BASE, BL2_LIMIT-BL2_BASE,	\
+#define MAP_S_DRAM0	MAP_REGION_FLAT(DRAM_RANGE_BASE, DRAM_RANGE_SIZE, \
 					MT_MEMORY | MT_RW | MT_SECURE)
 
-#define MAP_BL32_MEM	MAP_REGION_FLAT(BL32_MEM_BASE, BL32_MEM_SIZE,	\
+#define MAP_S_SRAM0	MAP_REGION_FLAT(0x20000000, 0x40000000 - 0x20000000, \
 					MT_MEMORY | MT_RW | MT_SECURE)
 
-#define MAP_S_DRAM0	MAP_REGION_FLAT(NS_DRAM0_BASE, NS_DRAM0_SIZE,	\
-					MT_MEMORY | MT_RW | MT_SECURE)
-
-#define MAP_NS_DRAM0	MAP_REGION_FLAT(NS_DRAM0_BASE, NS_DRAM0_SIZE,	\
-					MT_MEMORY | MT_RW | MT_NS)
-
-#define MAP_FIP	MAP_REGION_FLAT(SHEIPA_FIP_BASE, \
-					SHEIPA_FIP_SIZE, \
-					MT_MEMORY | MT_RW | MT_SECURE)
-
-#define MAP_KM0_RAM	MAP_REGION_FLAT(KM0_RAM, KM0_RAM_SIZE, \
+#define MAP_NS_DRAM0	MAP_REGION_FLAT(NS_DRAM0_BASE, NS_DRAM0_SIZE, \
 					MT_MEMORY | MT_RW | MT_NS)
 
 #define MAP_FLASH0	MAP_REGION_FLAT(SHEIPA_FLASH_BASE, SHEIPA_FLASH_SIZE, \
 					MT_MEMORY | MT_RW | MT_NS)
 
-#define MAP_KM4_ROMBSS_RAM_COM	MAP_REGION_FLAT(KM4_ROMBSS_RAM_COM_BASE, KM4_ROMBSS_RAM_COM_SIZE, \
-					MT_MEMORY | MT_RW | MT_NS)
+CASSERT(DRAM_RANGE_BASE <= BL1_RW_BASE, assert_bl1_base);
+CASSERT(DRAM_RANGE_BASE + DRAM_RANGE_SIZE > BL1_RW_LIMIT, assert_bl1_limit);
 
 /*
  * Table of regions for various BL stages to map using the MMU.
@@ -56,22 +43,21 @@
  */
 #if IMAGE_BL1
 static const mmap_region_t plat_sheipa_mmap[] = {
-	MAP_FIP,
+	MAP_FLASH0,
 	MAP_SHARED_RAM,
 	MAP_DEVICE0,
+	MAP_S_DRAM0,
 	MAP_DEVICE1,
-	MAP_BL2_MEM,
 	{0}
 };
 #endif
 #if IMAGE_BL2
 static const mmap_region_t plat_sheipa_mmap[] = {
-	MAP_FIP,
+	MAP_FLASH0,
 	MAP_SHARED_RAM,
 	MAP_DEVICE0,
 	MAP_S_DRAM0,
 	MAP_DEVICE1,
-	MAP_BL32_MEM,
 	{0}
 };
 #endif
@@ -79,8 +65,8 @@ static const mmap_region_t plat_sheipa_mmap[] = {
 static const mmap_region_t plat_sheipa_mmap[] = {
 	MAP_SHARED_RAM,
 	MAP_DEVICE0,
+	MAP_S_DRAM0,
 	MAP_DEVICE1,
-	MAP_BL32_MEM,
 	{0}
 };
 #endif
@@ -92,13 +78,12 @@ static const mmap_region_t plat_sheipa_mmap[] = {
  * configure_mmu_elx() will give the available subset of that,
  */
 const mmap_region_t plat_sheipa_mmap[] = {
+	MAP_FLASH0,
+	MAP_S_SRAM0,
 	MAP_SHARED_RAM,
 	MAP_DEVICE0,
 	MAP_NS_DRAM0,
 	MAP_DEVICE1,
-	MAP_KM0_RAM,
-	MAP_FLASH0,
-	MAP_KM4_ROMBSS_RAM_COM,
 	{0}
 };
 #endif

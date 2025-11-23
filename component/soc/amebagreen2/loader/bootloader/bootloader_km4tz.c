@@ -321,6 +321,21 @@ void BOOT_Log_Init(void)
 	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_2, ENABLE);
 }
 
+void Peripheral_Reset(void)
+{
+	//reason: The reason for maintaining these bits is for our debugging function.
+	//issue: LSYS_PERIALL_RST_EN will reset cpu, causing loss of debug information, which is unexpected.
+	//resolve: When initializing power, at bootloader, these bits are enabled.
+
+	/* The following IP cores are activated during power initialization, excluding those specified in the comments */
+	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_FEN_GRP0,
+				APBPeriph_SOC | APBPeriph_PLFM | APBPeriph_CPU1 | APBPeriph_CPU0 | APBPeriph_IPC |
+				APBPeriph_CRYPTO | APBPeriph_FLASH | APBPeriph_TRNG | APBPeriph_SDH | APBPeriph_SDD | APBPeriph_PKE);
+
+	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_FEN_GRP1,
+				APBPeriph_DTIM | APBPeriph_LOGUART | APBPeriph_THM | APBPeriph_USB);
+}
+
 /* To avoid RRAM holding incorrect data, incorporate a MAGIC_NUMBER for verification. */
 static bool BOOT_RRAM_InfoValid(void)
 {
@@ -342,6 +357,12 @@ void BOOT_Image1(void)
 
 	_memset((void *)__image1_bss_start__, 0, (__image1_bss_end__ - __image1_bss_start__));
 	BOOT_ReasonSet();
+
+	/* For debug reset: when debugger reset cpu, it's required to reset other cpus and some peripherals */
+	if (BOOT_Reason() & (AON_BIT_RSTF_WARM_KM4NS | AON_BIT_RSTF_WARM_KM4TZ)) {
+		Peripheral_Reset();
+	}
+
 	/* BOOT Reason: POR or BOR. */
 	/* BOD is enabled by default. BOR may arise if voltage increases slowly during POR. */
 	/* To avoid Retention RAM cannot be initialized to 0 correctly. */
@@ -382,6 +403,11 @@ void BOOT_Image1(void)
 	BOOT_LoadImages();
 #endif
 
+	/* it will switch shell control to NP, disable loguart interrupt to avoid loguart irq not assigned in non-secure world.
+	 it should switch before BOOT_RAM_TZCfg to avoid crash when loguart intr occur but it has been set to ns intr. */
+	LOGUART_INTCoreConfig(LOGUART_DEV, LOGUART_BIT_INTR_MASK_AP, DISABLE);
+	InterruptDis(UART_LOG_IRQ);
+
 	/* Config Non-Security World Registers
 	This function should be called before NP startup to avoid secure issue
 	Also should be called after psram init, to avoid secure function block psram init
@@ -398,10 +424,6 @@ void BOOT_Image1(void)
 	BOOT_Share_Cache_To_TCM();
 	Boot_Fullmac_LoadIMGAll();
 #endif
-
-	/*switch shell control to NP, disable loguart interrupt to avoid loguart irq not assigned in non-secure world */
-	LOGUART_INTCoreConfig(LOGUART_DEV, LOGUART_BIT_INTR_MASK_AP, DISABLE);
-	InterruptDis(UART_LOG_IRQ);
 
 	// vector_table = (u32 *)Image2EntryFun->VectorNS;
 	// vector_table[1] = (u32)Image2EntryFun->RamStartFun;
