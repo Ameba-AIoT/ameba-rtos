@@ -14,12 +14,12 @@
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
-#if (UVC_USE_HW == 0)
+#if (USBH_UVC_USE_HW == 0)
 static void usbh_uvc_decode_thread(void *param);
-static void usbh_uvc_decode_thread_deinit(uvc_stream_t *stream);
-static int usbh_uvc_decode_thread_init(uvc_stream_t *stream);
-static uvc_frame_t *usbh_uvc_next_frame_buffer(uvc_stream_t *stream, uvc_frame_t *buf);
-static void usbh_uvc_decode_urb(uvc_stream_t *stream, uvc_urb_t *urb);
+static void usbh_uvc_decode_thread_deinit(usbh_uvc_stream_t *stream);
+static int usbh_uvc_decode_thread_init(usbh_uvc_stream_t *stream);
+static usbh_uvc_frame_t *usbh_uvc_next_frame_buffer(usbh_uvc_stream_t *stream, usbh_uvc_frame_t *buf);
+static void usbh_uvc_decode_urb(usbh_uvc_stream_t *stream, usbh_uvc_urb_t *urb);
 #endif
 /* Private function prototypes -----------------------------------------------*/
 
@@ -28,7 +28,7 @@ static void usbh_uvc_decode_urb(uvc_stream_t *stream, uvc_urb_t *urb);
 static const char *const TAG = "UVC";
 
 extern usbh_uvc_host_t uvc_host;
-#if (UVC_USE_HW == 0)
+#if (USBH_UVC_USE_HW == 0)
 static u32 wait_recv_timeout = RTOS_MAX_DELAY;
 static u32 giveback_send_timeout = RTOS_MAX_DELAY;
 #endif
@@ -42,7 +42,7 @@ static u32 giveback_recv_timeout = RTOS_MAX_DELAY;
   *         frame2: frame number 2 to compare
   * @retval Compare result
   */
-#if ((UVC_USE_SOF == 1) && (UVC_USE_HW == 0))
+#if ((USBH_UVC_USE_SOF == 1) && (USBH_UVC_USE_HW == 0))
 static int uvc_frame_num_le(u32 frame1, u32 frame2)
 {
 	return ((frame2 - frame1) & HFNUM_MAX_FRNUM) <= (HFNUM_MAX_FRNUM >> 1);
@@ -54,48 +54,52 @@ static int uvc_frame_num_le(u32 frame1, u32 frame2)
   * @param	stream: uvc stream interface
   * @retval None
   */
-static void usbh_uvc_set_alt(uvc_stream_t *stream)
+static void usbh_uvc_find_alt(usbh_uvc_stream_t *stream)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usb_host_t *host = uvc->host;
+	usbh_uvc_setting_t *cur_setting = &stream->cur_setting;
+	usbh_ep_desc_t *ep = NULL;
 	int i;
-	u32 ep_size;
+	u32 xfer_size;
 	u32 XferSize = stream->stream_ctrl.dwMaxPayloadTransferSize;
 	u32 max_ep_size = UINT_MAX;
 
 	for (i = 0; i < stream->vs_intf->alt_num; i++) {
-		ep_size = stream->vs_intf->altsetting[i].endpoint->wMaxPacketSize;
+
+		xfer_size = stream->vs_intf->altsetting[i].endpoint->wMaxPacketSize;
 
 		if (host->config.speed == USB_SPEED_HIGH) {
-			ep_size = (ep_size & 0x07ff) * (1 + ((ep_size >> 11) & 3));
+			xfer_size = (xfer_size & 0x07ff) * (1 + ((xfer_size >> 11) & 3));
 		} else {
-			ep_size = ep_size & 0x07ff;
+			xfer_size = xfer_size & 0x07ff;
 		}
 
-		if ((ep_size >= XferSize) && (ep_size <= max_ep_size)) {
-			stream->cur_setting.altsetting = &stream->vs_intf->altsetting[i];
-			stream->cur_setting.bAlternateSetting = ((usbh_if_desc_t *)stream->cur_setting.altsetting->p)->bAlternateSetting;
-			stream->cur_setting.ep_addr = stream->cur_setting.altsetting->endpoint->bEndpointAddress;
-			stream->cur_setting.ep_size = ep_size;
-			stream->cur_setting.interval = stream->cur_setting.altsetting->endpoint->bInterval;
-			stream->cur_setting.ep_type = stream->cur_setting.altsetting->endpoint->bmAttributes & USB_EP_XFER_TYPE_MASK;
-			stream->cur_setting.bInterfaceNumber = stream->cur_setting.cur_vs_intf->bInterfaceNumber;
-			stream->cur_setting.mps = stream->cur_setting.altsetting->endpoint->wMaxPacketSize & 0x7ff;
-			stream->cur_setting.valid = 1;
-			max_ep_size = ep_size;
+		if ((xfer_size >= XferSize) && (xfer_size <= max_ep_size)) {
+			cur_setting->altsetting = &stream->vs_intf->altsetting[i];
+			cur_setting->bAlternateSetting = ((usbh_if_desc_t *)cur_setting->altsetting->p)->bAlternateSetting;
+			ep = cur_setting->altsetting->endpoint;
+			cur_setting->ep_addr = ep->bEndpointAddress;
+			cur_setting->xfer_size = xfer_size;
+			cur_setting->interval = ep->bInterval;
+			cur_setting->ep_type = ep->bmAttributes & USB_EP_XFER_TYPE_MASK;
+			cur_setting->bInterfaceNumber = cur_setting->cur_vs_intf->bInterfaceNumber;
+			cur_setting->mps = ep->wMaxPacketSize & 0x7ff;
+			cur_setting->valid = 1;
+			max_ep_size = xfer_size;
 		}
 	}
 
 #if USBH_UVC_DEBUG
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.altsetting:%x\n",  stream->cur_setting.altsetting);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.bAlternateSetting:%d\n", stream->cur_setting.bAlternateSetting);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.ep_addr:%d\n", stream->cur_setting.ep_addr);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.ep_size:%d\n", stream->cur_setting.ep_size);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.mps:%d\n", stream->cur_setting.mps);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.interval:%d\n", stream->cur_setting.interval);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.ep_type:%d\n", stream->cur_setting.ep_type);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.bInterfaceNumber:%d\n", stream->cur_setting.bInterfaceNumber);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.pipe:%d\n", stream->cur_setting.pipe);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.altsetting:%x\n",  cur_setting->altsetting);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.bAlternateSetting:%d\n", cur_setting->bAlternateSetting);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.ep_addr:%d\n", cur_setting->ep_addr);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.xfer_size:%d\n", cur_setting->xfer_size);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.mps:%d\n", cur_setting->mps);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.interval:%d\n", cur_setting->interval);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.ep_type:%d\n", cur_setting->ep_type);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.bInterfaceNumber:%d\n", cur_setting->bInterfaceNumber);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.pipe:%d\n", cur_setting->pipe);
 #endif
 }
 
@@ -104,35 +108,31 @@ static void usbh_uvc_set_alt(uvc_stream_t *stream)
   * @param	stream: uvc stream interface
   * @retval None
   */
-static void usbh_uvc_set_buf(uvc_stream_t *stream)
+static void usbh_uvc_set_buf(usbh_uvc_stream_t *stream)
 {
 	int i, j;
-	u32 maxpktsize, npkt;
+	u32 max_pkt_size, pkt_cnt, pkt_stride;
 
-	maxpktsize = stream->cur_setting.ep_size;
-	if (maxpktsize & 0x3) {
-		maxpktsize &= ~0x3;   // for aligned
-		maxpktsize += 4;
-	}
+	max_pkt_size = stream->cur_setting.xfer_size;
+	pkt_stride = CACHE_LINE_ALIGMENT(max_pkt_size);
+	pkt_cnt = USBH_UVC_URB_SIZE / max_pkt_size;
 
-	npkt = UVC_URB_SIZE / maxpktsize;
-
-	//RTK_LOGS(TAG, RTK_LOG_DEBUG, "MPS:%d, npkt:%d\n", maxpktsize, npkt);
+	//RTK_LOGS(TAG, RTK_LOG_DEBUG, "MPS:%d, pkt_cnt:%d\n", max_pkt_size, pkt_cnt);
 
 	/*init urb*/
-	stream->urb_buffer_size = npkt * maxpktsize;
-	stream->uvc_buffer = (u8 *)usb_os_malloc(UVC_URB_NUMS * stream->urb_buffer_size);
+	stream->urb_buffer_size = pkt_cnt * pkt_stride;
+	stream->uvc_buffer = (u8 *)usb_os_malloc(USBH_UVC_URB_NUMS * stream->urb_buffer_size);
 
-	for (i = 0; i < UVC_URB_NUMS; i ++) {
-		stream->urb[i] = (uvc_urb_t *) usb_os_malloc(sizeof(uvc_urb_t) + (npkt + 1) * sizeof(uvc_packet_desc_t));
+	for (i = 0; i < USBH_UVC_URB_NUMS; i ++) {
+		stream->urb[i] = (usbh_uvc_urb_t *)usb_os_malloc(sizeof(usbh_uvc_urb_t) + (pkt_cnt + 1) * sizeof(usbh_uvc_packet_desc_t));
 		stream->urb[i]->addr = (u8 *)((u32)stream->uvc_buffer + i * stream->urb_buffer_size);
-		stream->urb[i]->packet_num = npkt;
+		stream->urb[i]->packet_num = pkt_cnt;
 		stream->urb[i]->index = i;
-		stream->urb[i]->packet_length = maxpktsize;
+		stream->urb[i]->packet_length = max_pkt_size;
 
-		for (j = 0; j < (int)npkt; j ++) {
-			stream->urb[i]->packet_info[j].length = maxpktsize;
-			stream->urb[i]->packet_info[j].offset = j * maxpktsize;
+		for (j = 0; j < (int)pkt_cnt; j ++) {
+			stream->urb[i]->packet_info[j].length = max_pkt_size;
+			stream->urb[i]->packet_info[j].offset = j * pkt_stride;
 		}
 	}
 
@@ -140,8 +140,8 @@ static void usbh_uvc_set_buf(uvc_stream_t *stream)
 	stream->cur_packet = 0;
 	stream->cur_packet_state = 0;
 
-#if (UVC_USE_HW == 0)
-	for (i = 1; i < UVC_URB_NUMS; i ++) {
+#if (USBH_UVC_USE_HW == 0)
+	for (i = 1; i < USBH_UVC_URB_NUMS; i ++) {
 		if (usb_os_queue_send(stream->urb_giveback_queue, (void *)&stream->urb[i], RTOS_MAX_TIMEOUT) != HAL_OK) {
 			usb_os_queue_delete(stream->urb_wait_queue);
 			usb_os_queue_delete(stream->urb_giveback_queue);
@@ -157,11 +157,11 @@ static void usbh_uvc_set_buf(uvc_stream_t *stream)
   * @param	stream: uvc stream interface
   * @retval None
   */
-static void usbh_uvc_reset_buf(uvc_stream_t *stream)
+static void usbh_uvc_reset_buf(usbh_uvc_stream_t *stream)
 {
 	int i;
 
-	for (i = 0; i < UVC_URB_NUMS; i++) {
+	for (i = 0; i < USBH_UVC_URB_NUMS; i++) {
 		stream->urb[i]->addr = NULL;
 		stream->urb[i]->packet_num = 0;
 		stream->urb[i]->index = 0;
@@ -171,7 +171,7 @@ static void usbh_uvc_reset_buf(uvc_stream_t *stream)
 
 	usb_os_mfree(stream->uvc_buffer);
 }
-#if (UVC_USE_HW == 0)
+#if (USBH_UVC_USE_HW == 0)
 /**
   * @brief	UVC decode thread
   * @param	param: task parameter
@@ -179,8 +179,8 @@ static void usbh_uvc_reset_buf(uvc_stream_t *stream)
   */
 static void usbh_uvc_decode_thread(void *param)
 {
-	uvc_urb_t *urb_tmp;
-	uvc_stream_t *stream = (uvc_stream_t *) param;
+	usbh_uvc_urb_t *urb_tmp;
+	usbh_uvc_stream_t *stream = (usbh_uvc_stream_t *)param;
 
 	stream->complete_on = 1;
 	while (stream->complete_on) {
@@ -209,10 +209,10 @@ static void usbh_uvc_decode_thread(void *param)
   * @param	stream: uvc stream interface
   * @retval None
   */
-static void usbh_uvc_decode_thread_deinit(uvc_stream_t *stream)
+static void usbh_uvc_decode_thread_deinit(usbh_uvc_stream_t *stream)
 {
 	int i;
-	uvc_urb_t *urb_tmp;
+	usbh_uvc_urb_t *urb_tmp;
 
 	if (stream->decode_task != NULL) {
 		rtos_task_delete(stream->decode_task);
@@ -221,7 +221,7 @@ static void usbh_uvc_decode_thread_deinit(uvc_stream_t *stream)
 	stream->complete_flag = 0;
 	stream->complete_on = 0;
 
-	for (i = 0; i < UVC_URB_NUMS; i ++) {
+	for (i = 0; i < USBH_UVC_URB_NUMS; i ++) {
 		usb_os_queue_receive(stream->urb_wait_queue, (void *)&urb_tmp, 0);
 		usb_os_queue_receive(stream->urb_giveback_queue, (void *)&urb_tmp, 0);
 	}
@@ -236,21 +236,21 @@ static void usbh_uvc_decode_thread_deinit(uvc_stream_t *stream)
   * @param	stream: uvc stream interface
   * @retval Status
   */
-static int usbh_uvc_decode_thread_init(uvc_stream_t *stream)
+static int usbh_uvc_decode_thread_init(usbh_uvc_stream_t *stream)
 {
-	if (usb_os_queue_create(&stream->urb_wait_queue, sizeof(uvc_urb_t *), UVC_URB_NUMS) != HAL_OK) {
+	if (usb_os_queue_create(&stream->urb_wait_queue, sizeof(usbh_uvc_urb_t *), USBH_UVC_URB_NUMS) != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init wait Q fail\n");
 		return -1;
 	}
 
-	if (usb_os_queue_create(&stream->urb_giveback_queue, sizeof(uvc_urb_t *), UVC_URB_NUMS) != HAL_OK) {
+	if (usb_os_queue_create(&stream->urb_giveback_queue, sizeof(usbh_uvc_urb_t *), USBH_UVC_URB_NUMS) != HAL_OK) {
 		usb_os_queue_delete(stream->urb_wait_queue);
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init giveback Q fail\n");
 		return -1;
 	}
 
-	if (rtos_task_create(&stream->decode_task, "usbh_uvc_decode_thread", usbh_uvc_decode_thread, (void *)stream, UVC_DECODE_TASK_STACK,
-						 UVC_DECODE_TASK_PRIORITY) != RTK_SUCCESS) {
+	if (rtos_task_create(&stream->decode_task, "usbh_uvc_decode_thread", usbh_uvc_decode_thread, (void *)stream, USBH_UVC_DECODE_TASK_STACK,
+						 USBH_UVC_DECODE_TASK_PRIORITY) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create uvc decode thread\n");
 		return -1;
 	}
@@ -266,15 +266,15 @@ static int usbh_uvc_decode_thread_init(uvc_stream_t *stream)
   *         buf: the frame which has been filled
   * @retval Pointer of next frame buffer to be filled
   */
-static uvc_frame_t *usbh_uvc_next_frame_buffer(uvc_stream_t *stream, uvc_frame_t *buf)
+static usbh_uvc_frame_t *usbh_uvc_next_frame_buffer(usbh_uvc_stream_t *stream, usbh_uvc_frame_t *buf)
 {
-	uvc_frame_t *frame_buffer;
+	usbh_uvc_frame_t *frame_buffer;
 
 	if (buf->err == 1) {
 		buf->err = 0;
 		buf->byteused = 0;
 		stream->err_frame_cnt ++;
-		RTK_LOGI(TAG, "Drop err frame\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Drop err frame\n");
 		return buf;
 	}
 
@@ -286,9 +286,9 @@ static uvc_frame_t *usbh_uvc_next_frame_buffer(uvc_stream_t *stream, uvc_frame_t
 	usb_os_sleep_ms(1);
 
 	if (!list_empty(&stream->frame_empty)) {
-		frame_buffer = list_first_entry(&stream->frame_empty, uvc_frame_t, list);
+		frame_buffer = list_first_entry(&stream->frame_empty, usbh_uvc_frame_t, list);
 	} else {
-		RTK_LOGI(TAG, "No free uvc buffer 3\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "No free uvc buffer 3\n");
 		return NULL;
 	}
 
@@ -304,22 +304,22 @@ static uvc_frame_t *usbh_uvc_next_frame_buffer(uvc_stream_t *stream, uvc_frame_t
   *         urb: URB to decode
   * @retval None
   */
-static void usbh_uvc_decode_urb(uvc_stream_t *stream, uvc_urb_t *urb)
+static void usbh_uvc_decode_urb(usbh_uvc_stream_t *stream, usbh_uvc_urb_t *urb)
 {
 	int i;
 	u32 length;
-	uvc_vs_payload_header_t *header;
-	uvc_frame_t *frame_buffer;
+	usbh_uvc_vs_payload_header_t *header;
+	usbh_uvc_frame_t *frame_buffer;
 	u8 *data;
 	u8 *payload;
-	u8 fid;
 	u32 bytes, maxlen;
+	u8 fid;
 
 	if (!list_empty(&stream->frame_empty)) {
-		frame_buffer = list_first_entry(&stream->frame_empty, uvc_frame_t, list);
+		frame_buffer = list_first_entry(&stream->frame_empty, usbh_uvc_frame_t, list);
 	} else {
 		usb_os_sema_give(stream->frame_sema);
-		RTK_LOGI(TAG, "No free uvc buffer\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "No free uvc buffer\n");
 		return;
 	}
 
@@ -329,16 +329,16 @@ static void usbh_uvc_decode_urb(uvc_stream_t *stream, uvc_urb_t *urb)
 		length = urb->packet_info[i].length;
 		payload = data + data[0];
 
-		header = (uvc_vs_payload_header_t *)data;
+		header = (usbh_uvc_vs_payload_header_t *)data;
 
 		if (length < header->bHeaderLength) {
-			RTK_LOGE(TAG, "Err: payload len(%dd) < header len(%d)\n", length, header->bHeaderLength);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Err: payload len(%dd) < header len(%d)\n", length, header->bHeaderLength);
 			return;
 		}
 
 		if (header->bmHeaderInfo.b.err == 1) {
 			/* Note: it need to send request if want to get error reason */
-			RTK_LOGI(TAG, "Drop pkt:bmHeaderInfo.b.err = 1\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Drop pkt:bmHeaderInfo.b.err = 1\n");
 			frame_buffer->err = 1;
 			continue;
 		}
@@ -349,7 +349,7 @@ static void usbh_uvc_decode_urb(uvc_stream_t *stream, uvc_urb_t *urb)
 			if (frame_buffer->byteused != 0) {
 				frame_buffer = usbh_uvc_next_frame_buffer(stream, frame_buffer);
 				if (!frame_buffer) {
-					RTK_LOGI(TAG, "No free uvc buffer 1\n");
+					RTK_LOGS(TAG, RTK_LOG_INFO, "No free uvc buffer 1\n");
 					return;
 				}
 			}
@@ -364,7 +364,7 @@ static void usbh_uvc_decode_urb(uvc_stream_t *stream, uvc_urb_t *urb)
 			frame_buffer->byteused += bytes;
 		}
 
-#if UVC_DETECT_EOF
+#if USBH_UVC_DETECT_EOF
 		if (header->bmHeaderInfo.b.eof == 1) {
 			frame_buffer = usbh_uvc_next_frame_buffer(stream, frame_buffer);
 			if (!frame_buffer) {
@@ -386,20 +386,21 @@ static void usbh_uvc_decode_urb(uvc_stream_t *stream, uvc_urb_t *urb)
   * @param	stream: uvc stream interface
   * @retval Status
   */
-int usbh_uvc_process_rx(uvc_stream_t *stream)
+int usbh_uvc_process_rx(usbh_uvc_stream_t *stream)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
-	u8 urb_state;
 	u32 *urb_index;
 	u32 *packet_index;
 	u32 rx_len;
-	uvc_urb_t *urb;
+	usbh_uvc_urb_t *urb;
+	usbh_uvc_setting_t *cur_setting = &stream->cur_setting;
+	u8 urb_state;
 
-	urb_state = usbh_get_urb_state(uvc->host, stream->cur_setting.pipe);
+	urb_state = usbh_get_urb_state(uvc->host, cur_setting->pipe);
 
 	if (urb_state == USBH_URB_DONE) {
 
-		rx_len = usbh_get_last_transfer_size(uvc->host, stream->cur_setting.pipe);
+		rx_len = usbh_get_last_transfer_size(uvc->host, cur_setting->pipe);
 		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "rx%d:%d\n",stream->stream_num,  rx_len);
 
 		urb_index = &(stream->cur_urb);
@@ -408,7 +409,7 @@ int usbh_uvc_process_rx(uvc_stream_t *stream)
 		/* some camera may send zero length packet, just drop it */
 		if (rx_len == 0) {
 			stream->cur_packet_state = 0;
-#if (UVC_USE_SOF == 0)
+#if (USBH_UVC_USE_SOF == 0)
 			goto isoc_rev;
 #else
 			return HAL_OK;
@@ -431,12 +432,12 @@ int usbh_uvc_process_rx(uvc_stream_t *stream)
 		}
 
 		stream->cur_packet_state = 0;
-#if (UVC_USE_SOF == 0)
+#if (USBH_UVC_USE_SOF == 0)
 isoc_rev:
 		usbh_isoc_receive_data(uvc->host,
 							   stream->urb[*urb_index]->addr + stream->urb[*urb_index]->packet_info[*packet_index].offset,
-							   stream->cur_setting.ep_size,
-							   stream->cur_setting.pipe);
+							   cur_setting->xfer_size,
+							   cur_setting->pipe);
 		stream->cur_packet_state = 1;
 #endif
 	}
@@ -451,9 +452,10 @@ isoc_rev:
   */
 void usbh_uvc_process_sof(usb_host_t *host)
 {
-#if ((UVC_USE_SOF == 1) && (UVC_USE_HW == 0))
+#if ((USBH_UVC_USE_SOF == 1) && (USBH_UVC_USE_HW == 0))
 	usbh_uvc_host_t *uvc = &uvc_host;
-	uvc_stream_t *stream;
+	usbh_uvc_stream_t *stream;
+	usbh_uvc_setting_t *cur_setting = NULL;
 	int i;
 	u8 *addr;
 	u32 urb_index;
@@ -464,19 +466,20 @@ void usbh_uvc_process_sof(usb_host_t *host)
 
 	for (i = 0; i < uvc->uvc_desc.vs_num; i++) {
 		stream = &uvc->stream[i];
+		cur_setting = &stream->cur_setting;
 		if (stream->stream_data_state == STREAM_DATA_IN) {
 			rtos_critical_enter(RTOS_CRITICAL_USB);
-			if (uvc_frame_num_le(stream->cur_setting.last_frame + stream->cur_setting.interval, frame_num) && \
+			if (uvc_frame_num_le(cur_setting->last_frame + cur_setting->interval, frame_num) && \
 				(stream->cur_packet_state == 0)) {
 				stream->cur_packet_state = 1;
 				urb_index = stream->cur_urb;
 				packet_index = stream->cur_packet;
 				addr = stream->urb[urb_index]->addr + stream->urb[urb_index]->packet_info[packet_index].offset;
-				stream->cur_setting.last_frame = frame_num;
+				cur_setting->last_frame = frame_num;
 				usbh_isoc_receive_data(host,
 									   addr,
-									   stream->cur_setting.ep_size,
-									   stream->cur_setting.pipe);
+									   cur_setting->xfer_size,
+									   cur_setting->pipe);
 
 			}
 			rtos_critical_exit(RTOS_CRITICAL_USB);
@@ -493,9 +496,9 @@ void usbh_uvc_process_sof(usb_host_t *host)
   *         urb: the completed URB
   * @retval URB has been decoded and returned from decode thread
   */
-uvc_urb_t *usbh_uvc_urb_complete(uvc_stream_t *stream, uvc_urb_t *urb)
+usbh_uvc_urb_t *usbh_uvc_urb_complete(usbh_uvc_stream_t *stream, usbh_uvc_urb_t *urb)
 {
-	uvc_urb_t *urb_tmp = urb;
+	usbh_uvc_urb_t *urb_tmp = urb;
 
 	if (!usbh_get_status()) {
 		return NULL;
@@ -529,16 +532,16 @@ uvc_urb_t *usbh_uvc_urb_complete(uvc_stream_t *stream, uvc_urb_t *urb)
   			probe: indicate probe or commit
   * @retval Status
   */
-int usbh_uvc_set_video(uvc_stream_t *stream, int probe)
+int usbh_uvc_set_video(usbh_uvc_stream_t *stream, int probe)
 {
-	int ret;
-	u16 size;
-	u8 *data;
+	usbh_setup_req_t setup;
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usb_host_t *host = uvc->host;
+	usbh_uvc_stream_control_t *ctrl = &stream->stream_ctrl;
+	int ret, retry_cnt;
+	u8 *data;
 	u8 *ptr = (u8 *)uvc->uvc_desc.vc_intf.vcheader;
-	usbh_setup_req_t setup;
-	uvc_stream_control_t *ctrl = &stream->stream_ctrl;
+	u16 size;
 
 	/*note that for uvc1.5 wLength=48, not support now*/
 	size = ((ptr[3] | ptr[4] << 8) >= 0x0110) ? 34 : 26;
@@ -548,7 +551,7 @@ int usbh_uvc_set_video(uvc_stream_t *stream, int probe)
 
 	setup.b.bmRequestType = USB_H2D | USB_REQ_RECIPIENT_INTERFACE | \
 							USB_REQ_TYPE_CLASS;
-	setup.b.bRequest = UVC_SET_CUR;
+	setup.b.bRequest = USBH_UVC_SET_CUR;
 
 	if (probe) {
 		setup.b.wValue = VS_PROBE_CONTROL;
@@ -561,7 +564,18 @@ int usbh_uvc_set_video(uvc_stream_t *stream, int probe)
 
 	do {
 		ret = usbh_ctrl_request(host, &setup, data);
-	} while (ret == HAL_BUSY);
+		if (ret == HAL_OK) {
+			break;
+		} else {
+			retry_cnt++;
+			usb_os_sleep_ms(10);
+		}
+	} while (retry_cnt < 10);
+
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Set err\n");
+		return HAL_ERR_HW;
+	}
 
 	usb_os_mfree(data);
 
@@ -575,15 +589,15 @@ int usbh_uvc_set_video(uvc_stream_t *stream, int probe)
   			request: indicate which request
   * @retval Status
   */
-int usbh_uvc_get_video(uvc_stream_t *stream, int probe, u16 request)
+int usbh_uvc_get_video(usbh_uvc_stream_t *stream, int probe, u16 request)
 {
-	int ret;
-	u16 size;
-	u8 *data;
+	usbh_setup_req_t setup;
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usb_host_t *host = uvc->host;
-	usbh_setup_req_t setup;
-	uvc_stream_control_t *ctrl = &stream->stream_ctrl;
+	usbh_uvc_stream_control_t *ctrl = &stream->stream_ctrl;
+	int ret, retry_cnt;
+	u8 *data;
+	u16 size;
 
 	/*note that for uvc1.5 wLength=48, not support now*/
 	size = (uvc->uvc_desc.vc_intf.vcheader->bcdUVC >= 0x110) ? 34 : 26;
@@ -606,7 +620,18 @@ int usbh_uvc_get_video(uvc_stream_t *stream, int probe, u16 request)
 
 	do {
 		ret = usbh_ctrl_request(host, &setup, data);
-	} while (ret == HAL_BUSY);
+		if (ret == HAL_OK) {
+			break;
+		} else {
+			retry_cnt++;
+			usb_os_sleep_ms(10);
+		}
+	} while (retry_cnt < 10);
+
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "GET err\n");
+		return HAL_ERR_HW;
+	}
 
 	/* Note: Some broken devices may return wrong dwMaxVideoFrameSize and dwMaxPayloadTransferSize */
 
@@ -639,11 +664,11 @@ int usbh_uvc_get_video(uvc_stream_t *stream, int probe, u16 request)
   * @param	stream: uvc stream interface
   * @retval Status
   */
-int usbh_uvc_probe_video(uvc_stream_t *stream)
+int usbh_uvc_probe_video(usbh_uvc_stream_t *stream)
 {
 	/*probe video setting*/
 	usbh_uvc_set_video(stream, 1);
-	usbh_uvc_get_video(stream, 1, UVC_GET_CUR);
+	usbh_uvc_get_video(stream, 1, USBH_UVC_GET_CUR);
 	usbh_uvc_set_video(stream, 1);
 
 	return HAL_OK;
@@ -654,7 +679,7 @@ int usbh_uvc_probe_video(uvc_stream_t *stream)
   * @param	stream: uvc stream interface
   * @retval Status
   */
-int usbh_uvc_commit_video(uvc_stream_t *stream)
+int usbh_uvc_commit_video(usbh_uvc_stream_t *stream)
 {
 	/*commit video setting*/
 	usbh_uvc_set_video(stream, 0);
@@ -667,24 +692,25 @@ int usbh_uvc_commit_video(uvc_stream_t *stream)
   * @param	stream: uvc stream interface
   * @retval Status
   */
-int usbh_uvc_video_init(uvc_stream_t *stream)
+int usbh_uvc_video_init(usbh_uvc_stream_t *stream)
 {
 	int i;
-	uvc_stream_control_t *ctrl = &stream->stream_ctrl;
-	uvc_vs_t *vs = stream->vs_intf;
+	usbh_uvc_stream_control_t *ctrl = &stream->stream_ctrl;
+	usbh_uvc_vs_t *vs = stream->vs_intf;
 	u32 num_format = vs->nformat;
 	u32 num_frame;
-	uvc_vs_format_t *format = NULL;
-	uvc_vs_frame_t *frame = NULL;
+	usbh_uvc_vs_format_t *format = NULL;
+	usbh_uvc_vs_frame_t *frame = NULL;
 
+	/*probe flow*/
 	/*get default video setting*/
-	usbh_uvc_get_video(stream, 1, UVC_GET_DEF);
+	usbh_uvc_get_video(stream, 1, USBH_UVC_GET_DEF);
 
 	/*set defalt video setting*/
 	usbh_uvc_set_video(stream, 1);
 
 	/*get current video setting*/
-	usbh_uvc_get_video(stream, 1, UVC_GET_CUR);
+	usbh_uvc_get_video(stream, 1, USBH_UVC_GET_CUR);
 
 	/*select matched format */
 	for (i = 0; i < (int)num_format; i ++) {
@@ -722,28 +748,30 @@ int usbh_uvc_video_init(uvc_stream_t *stream)
   * @param	stream: uvc stream interface
   * @retval Status
   */
-int usbh_uvc_stream_init(uvc_stream_t *stream)
+int usbh_uvc_stream_init(usbh_uvc_stream_t *stream)
 {
+	usbh_uvc_host_t *uvc = &uvc_host;
+	usbh_uvc_setting_t *cur_setting = &stream->cur_setting;
 	int i;
 	int status;
-	usbh_uvc_host_t *uvc = &uvc_host;
+	int retry_cnt = 0;
 
 	usb_os_sema_create(&stream->frame_sema);
 
 	/*init frame buffer*/
 	INIT_LIST_HEAD(&stream->frame_chain);
 	INIT_LIST_HEAD(&stream->frame_empty);
-	stream->frame_buf = (u8 *)usb_os_malloc(UVC_VIDEO_MAX_FRAME * UVC_VIDEO_FRAME_SIZE);
-	stream->frame_buffer_size = UVC_VIDEO_FRAME_SIZE;
+	stream->frame_buf = (u8 *)usb_os_malloc(USBH_UVC_VIDEO_MAX_FRAME * USBH_UVC_VIDEO_FRAME_SIZE);
+	stream->frame_buffer_size = USBH_UVC_VIDEO_FRAME_SIZE;
 
-	for (i = 0; i < UVC_VIDEO_MAX_FRAME; i++) {
-		stream->frame_buffer[i].buf = stream->frame_buf + i * UVC_VIDEO_FRAME_SIZE;
+	for (i = 0; i < USBH_UVC_VIDEO_MAX_FRAME; i++) {
+		stream->frame_buffer[i].buf = stream->frame_buf + i * USBH_UVC_VIDEO_FRAME_SIZE;
 		stream->frame_buffer[i].byteused = 0;
 		INIT_LIST_HEAD(&stream->frame_buffer[i].list);
 		list_add(&stream->frame_buffer[i].list, &stream->frame_empty);
 	}
 
-#if (UVC_USE_HW == 0)
+#if (USBH_UVC_USE_HW == 0)
 	/* init decode thread */
 	usbh_uvc_decode_thread_init(stream);
 #endif
@@ -752,51 +780,62 @@ int usbh_uvc_stream_init(uvc_stream_t *stream)
 	usbh_uvc_commit_video(stream);
 
 	/* find current alt setting */
-	usbh_uvc_set_alt(stream);
+	usbh_uvc_find_alt(stream);
 
 	/* set urb buffer */
 	usbh_uvc_set_buf(stream);
 
 	/* open pipe for current setting */
 	usbh_open_pipe(uvc->host,
-				   stream->cur_setting.pipe,
-				   stream->cur_setting.ep_addr,
-				   stream->cur_setting.ep_type,
-				   stream->cur_setting.mps);
+				   cur_setting->pipe,
+				   cur_setting->ep_addr,
+				   cur_setting->ep_type,
+				   cur_setting->mps);
 
-	usbh_set_toggle(uvc->host, stream->cur_setting.pipe, 0);
+	usbh_set_toggle(uvc->host, cur_setting->pipe, 0);
 
 	do {
 		/* set alt setting for current interface */
-		status = usbh_ctrl_set_interface(uvc->host, stream->cur_setting.bInterfaceNumber, \
-										 stream->cur_setting.bAlternateSetting);
-	} while (status != HAL_OK);
+		status = usbh_ctrl_set_interface(uvc->host, cur_setting->bInterfaceNumber, \
+										 cur_setting->bAlternateSetting);
+		if (status == HAL_OK) {
+			break;
+		} else {
+			retry_cnt++;
+			usb_os_sleep_ms(10);
+		}
+	} while (retry_cnt < 10);
 
-#if (UVC_USE_HW == 1)
+	if (status != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Set alt err\n");
+		return HAL_ERR_HW;
+	}
+
+#if (USBH_UVC_USE_HW == 1)
 	stream->uvc_dec = usbh_uvc_dec_alloc_channel();
 	rtos_sema_create_binary(&stream->uvc_dec->dec_sema);
 
-	for (int i = 0; i < UVC_VIDEO_MAX_FRAME; i ++) {
+	for (int i = 0; i < USBH_UVC_VIDEO_MAX_FRAME; i ++) {
 		stream->uvc_dec->uvc_dec_buf[i].buf_start_addr = (u32)stream->frame_buffer[i].buf;
-		stream->uvc_dec->uvc_dec_buf[i].buf_size = UVC_VIDEO_FRAME_SIZE;
+		stream->uvc_dec->uvc_dec_buf[i].buf_size = USBH_UVC_VIDEO_FRAME_SIZE;
 	}
 
 	stream->uvc_dec->dev_addr = usbh_get_dev_address();
-	stream->uvc_dec->ep_num = stream->cur_setting.ep_addr;
-	stream->uvc_dec->binterval = stream->cur_setting.interval;
-	stream->uvc_dec->ep_size = stream->cur_setting.ep_size;
-	stream->uvc_dec->mps = stream->cur_setting.mps;
-	stream->uvc_dec->pipe_num = stream->cur_setting.pipe;
+	stream->uvc_dec->ep_num = cur_setting->ep_addr;
+	stream->uvc_dec->binterval = cur_setting->interval;
+	stream->uvc_dec->xfer_size = cur_setting->xfer_size;
+	stream->uvc_dec->mps = cur_setting->mps;
+	stream->uvc_dec->pipe_num = cur_setting->pipe;
 
 	usbh_uvc_dec_init(stream->uvc_dec);
 	usbh_uvc_dec_start(stream->uvc_dec);
 #endif
 
-#if ((UVC_USE_SOF == 0)&&(UVC_USE_HW == 0))
+#if ((USBH_UVC_USE_SOF == 0)&&(USBH_UVC_USE_HW == 0))
 	usbh_isoc_receive_data(uvc->host,
 						   stream->urb[stream->cur_urb]->addr + stream->urb[stream->cur_urb]->packet_info[stream->cur_packet].offset,
-						   stream->cur_setting.ep_size,
-						   stream->cur_setting.pipe);
+						   cur_setting->xfer_size,
+						   cur_setting->pipe);
 #endif
 	return HAL_OK;
 }
@@ -806,13 +845,15 @@ int usbh_uvc_stream_init(uvc_stream_t *stream)
   * @param	stream: uvc stream interface
   * @retval Status
   */
-void usbh_uvc_stream_deinit(uvc_stream_t *stream)
+void usbh_uvc_stream_deinit(usbh_uvc_stream_t *stream)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
+	usbh_uvc_setting_t *cur_setting = &stream->cur_setting;
 	int i;
 	int status;
+	int retry_cnt = 0;
 
-#if UVC_USE_HW
+#if USBH_UVC_USE_HW
 	usbh_uvc_dec_stop(stream->uvc_dec);
 	usbh_uvc_dec_deinit(stream->uvc_dec);
 	usbh_uvc_dec_free_channel(stream->uvc_dec);
@@ -822,24 +863,34 @@ void usbh_uvc_stream_deinit(uvc_stream_t *stream)
 
 	do {
 		/* reset interface */
-		status = usbh_ctrl_set_interface(uvc->host, stream->cur_setting.bInterfaceNumber, 0);
-	} while (status != HAL_OK);
+		status = usbh_ctrl_set_interface(uvc->host, cur_setting->bInterfaceNumber, 0);
+		if (status == HAL_OK) {
+			break;
+		} else {
+			retry_cnt++;
+			usb_os_sleep_ms(10);
+		}
+	} while (retry_cnt < 10);
+
+	if (status != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Reset intf err\n");
+	}
 
 	/* close pipe */
-	usbh_close_pipe(uvc->host, stream->cur_setting.pipe);
+	usbh_close_pipe(uvc->host, cur_setting->pipe);
 
 	/* reset urb buffer */
 	usbh_uvc_reset_buf(stream);
 
 	/* delete decode task */
-#if (UVC_USE_HW == 0)
+#if (USBH_UVC_USE_HW == 0)
 	usbh_uvc_decode_thread_deinit(stream);
 #endif
 
 	INIT_LIST_HEAD(&stream->frame_chain);
 	INIT_LIST_HEAD(&stream->frame_empty);
 
-	for (i = 0; i < UVC_VIDEO_MAX_FRAME; i++) {
+	for (i = 0; i < USBH_UVC_VIDEO_MAX_FRAME; i++) {
 		INIT_LIST_HEAD(&stream->frame_buffer[i].list);
 		stream->frame_buffer[i].byteused = 0;
 		stream->frame_buffer[i].buf = NULL;

@@ -476,24 +476,35 @@ u32 I2C_GetINT(I2C_TypeDef *I2Cx)
   * @param  I2C_FLAG: specifies the status flag to check.
   * @param  I2C_RawINT: specifies the raw interrupt status to check.
   * @param  timeout_ms: specifies timeout time, unit is ms.
+  * @param  txflr_out: points to a backup of IC_TXFLR in case TXFIFO flush.
   *
   * @retval RTK_SUCCESS: pass, RTK_ERR_TIMEOUT: timeout, RTK_FAIL: TX_ABRT
   */
-s32 I2C_PollFlagRawINT(I2C_TypeDef *I2Cx, u32 I2C_FLAG, u32 I2C_RawINT, u32 timeout_ms)
+s32 I2C_PollFlagRawINT(I2C_TypeDef *I2Cx, u32 I2C_FLAG, u32 I2C_RawINT, u32 timeout_ms, u32 *txflr_out)
 {
 	assert_param(I2C_FLAG | I2C_RawINT);
 
-	int TimeoutCnt = timeout_ms * 500;
+	int TimeoutCnt = timeout_ms * 1000 / I2C_POLL_DELAY_US;
+
+	if (txflr_out) {
+		*txflr_out = 0;
+	}
 
 	while (((I2Cx->IC_STATUS & I2C_FLAG) == 0) & ((I2Cx->IC_RAW_INTR_STAT & I2C_RawINT) == 0)) {
 		if (I2Cx->IC_RAW_INTR_STAT & I2C_BIT_TX_ABRT) {
 			RTK_LOGI(TAG, "TX_ABRT: 0x%x\n", I2Cx->IC_TX_ABRT_SOURCE);
+			if (txflr_out) {
+				*txflr_out = I2Cx->IC_TXFLR;
+			}
 			I2C_ClearAllINT(I2Cx);
 			return RTK_FAIL;
 		}
-		DelayUs(2);
+		DelayUs(I2C_POLL_DELAY_US);
 		if (TimeoutCnt == 0) {
 			RTK_LOGI(TAG, "Timeout when waiting IC_STATUS 0x%x, IC_RAW_INTR_STAT 0x%x\n", I2C_FLAG, I2C_RawINT);
+			if (txflr_out) {
+				*txflr_out = I2Cx->IC_TXFLR;
+			}
 			return RTK_ERR_TIMEOUT;
 		}
 		TimeoutCnt--;
@@ -564,16 +575,17 @@ u8 I2C_ReceiveData(I2C_TypeDef *I2Cx)
   * @param  I2Cx: where I2Cx can be I2C0_DEV, I2C1_DEV and I2C2_DEV.
   * @param  pBuf: point to the data to be transmitted.
   * @param  len: the length of data that to be transmitted.
-  * @retval The length of data that have sent to tx fifo.
+  * @retval The length of data that have sent to the bus.
   */
 u32 I2C_MasterWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 {
 	u32 cnt = 0;
+	u32 txflr = 0;
 
 	/* Write in the DR register the data to be sent */
 	for (cnt = 0; cnt < len; cnt++) {
-		if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFNF, 0, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
-			return cnt;
+		if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFNF, 0, I2C_POLL_TIMEOUT_MS, &txflr) != RTK_SUCCESS) {
+			return MAX(cnt - txflr, 0);
 		}
 
 		if (cnt >= len - 1) {
@@ -585,7 +597,9 @@ u32 I2C_MasterWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 	}
 
 	/*Wait I2C TX FIFO empty*/
-	I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFE, 0, I2C_POLL_TIMEOUT_MS);
+	if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFE, 0, I2C_POLL_TIMEOUT_MS, &txflr) != RTK_SUCCESS) {
+		return MAX(cnt - txflr, 0);
+	}
 	return cnt;
 }
 
@@ -621,7 +635,7 @@ u32 I2C_MasterReadDW(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 		/* read data */
 		if (cnt > 0) {
 			/* wait for I2C_FLAG_RFNE flag */
-			if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_RFNE, 0, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
+			if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_RFNE, 0, I2C_POLL_TIMEOUT_MS, NULL) != RTK_SUCCESS) {
 				return cnt - 1;
 			}
 			*pBuf++ = (u8)I2Cx->IC_DATA_CMD;
@@ -629,7 +643,7 @@ u32 I2C_MasterReadDW(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 	}
 
 	/* recv last data and NACK */
-	if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_RFNE, 0, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
+	if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_RFNE, 0, I2C_POLL_TIMEOUT_MS, NULL) != RTK_SUCCESS) {
 		return cnt - 1;
 	}
 	*pBuf++ = (u8)I2Cx->IC_DATA_CMD;
@@ -661,7 +675,7 @@ u32 I2C_MasterRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 		}
 
 		/* wait for I2C_FLAG_RFNE flag */
-		poll_state = I2C_PollFlagRawINT(I2Cx, I2C_BIT_RFNE, 0, I2C_POLL_TIMEOUT_MS);
+		poll_state = I2C_PollFlagRawINT(I2Cx, I2C_BIT_RFNE, 0, I2C_POLL_TIMEOUT_MS, NULL);
 		if (poll_state == RTK_ERR_TIMEOUT) {
 			skip_cnt++;
 		} else if (poll_state == RTK_FAIL) {
@@ -678,35 +692,38 @@ u32 I2C_MasterRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
   * @param  I2Cx: where I2Cx can be I2C0_DEV, I2C1_DEV and I2C2_DEV.
   * @param  pBuf: point to the data to be transmitted.
   * @param  len: the length of data that to be transmitted.
-  * @retval The length of data that have sent to tx fifo.
+  * @retval The length of data that have sent to the bus.
   */
 u32 I2C_SlaveWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 {
 	u32 cnt = 0;
+	u32 txflr = 0;
 
 	if ((I2Cx->IC_RAW_INTR_STAT & I2C_BIT_RX_DONE)) {
 		I2C_ClearINT(I2Cx, I2C_BIT_R_RX_DONE);
 	}
 
 	for (cnt = 0; cnt < len; cnt++) {
-		if (I2C_PollFlagRawINT(I2Cx, 0, (I2C_BIT_RD_REQ | I2C_BIT_RX_DONE), I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
-			return cnt;
+		if (I2C_PollFlagRawINT(I2Cx, 0, (I2C_BIT_RD_REQ | I2C_BIT_RX_DONE), I2C_POLL_TIMEOUT_MS, &txflr) != RTK_SUCCESS) {
+			return MAX(cnt - txflr, 0);
 		}
 
 		I2C_ClearINT(I2Cx, I2C_BIT_R_RD_REQ);
 
 		/* Check I2C TX FIFO status */
-		if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFNF, I2C_BIT_RX_DONE, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
-			return cnt;
+		if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFNF, I2C_BIT_RX_DONE, I2C_POLL_TIMEOUT_MS, &txflr) != RTK_SUCCESS) {
+			return MAX(cnt - txflr, 0);
 		}
 		if (((I2Cx->IC_RAW_INTR_STAT & I2C_BIT_RX_DONE) != 0)) {
 			RTK_LOGI(TAG, "I2C EARLY RX DONE\n");
-			return cnt;
+			return MAX(cnt - I2Cx->IC_TXFLR, 0);
 		};
 
 		I2Cx->IC_DATA_CMD = (*pBuf++);
 	}
-	I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFE, 0, I2C_POLL_TIMEOUT_MS);
+	if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFE, 0, I2C_POLL_TIMEOUT_MS, &txflr) != RTK_SUCCESS) {
+		return MAX(cnt - txflr, 0);
+	}
 	I2C_ClearAllINT(I2Cx);
 	return cnt;
 }
@@ -725,7 +742,7 @@ u32 I2C_SlaveRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 
 	for (cnt = 0; cnt < len; cnt++) {
 		/* Check I2C RX FIFO status */
-		if (I2C_PollFlagRawINT(I2Cx, (I2C_BIT_RFNE | I2C_BIT_RFF), 0, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
+		if (I2C_PollFlagRawINT(I2Cx, (I2C_BIT_RFNE | I2C_BIT_RFF), 0, I2C_POLL_TIMEOUT_MS, NULL) != RTK_SUCCESS) {
 			return cnt;
 		}
 
@@ -750,7 +767,7 @@ u32 I2C_MasterRepeatRead(I2C_TypeDef *I2Cx, u8 *pWriteBuf, u32 Writelen, u8 *pRe
 
 	/* write in the DR register the data to be sent */
 	for (cnt = 0; cnt < Writelen; cnt++) {
-		if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFNF, 0, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
+		if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFNF, 0, I2C_POLL_TIMEOUT_MS, NULL) != RTK_SUCCESS) {
 			return 0;
 		}
 
@@ -763,7 +780,7 @@ u32 I2C_MasterRepeatRead(I2C_TypeDef *I2Cx, u8 *pWriteBuf, u32 Writelen, u8 *pRe
 	}
 
 	/*Wait I2C TX FIFO empty*/
-	if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFE, 0, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
+	if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFE, 0, I2C_POLL_TIMEOUT_MS, NULL) != RTK_SUCCESS) {
 		return 0;
 	}
 
@@ -802,7 +819,7 @@ u32 I2C_SlaveReadTimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms)
 
 	for (cnt = 0; cnt < len; cnt++) {
 		/* Check I2C RX FIFO status */
-		if (I2C_PollFlagRawINT(I2Cx, (I2C_BIT_RFNE | I2C_BIT_RFF), 0, ms) != RTK_SUCCESS) {
+		if (I2C_PollFlagRawINT(I2Cx, (I2C_BIT_RFNE | I2C_BIT_RFF), 0, ms, NULL) != RTK_SUCCESS) {
 			return cnt;
 		}
 
@@ -835,7 +852,7 @@ u32 I2C_MasterRead_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms)
 		}
 
 		/* wait for I2C_FLAG_RFNE flag */
-		if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_RFNE, 0, ms) != RTK_SUCCESS) {
+		if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_RFNE, 0, ms, NULL) != RTK_SUCCESS) {
 			return cnt;
 		}
 
@@ -851,16 +868,17 @@ u32 I2C_MasterRead_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms)
   * @param  pBuf: point to the data to be transmitted.
   * @param  len: the length of data that to be received.
   * @param  timeout_ms: specifies timeout time, unit is ms.
-  * @retval The length of data that have sent to tx fifo.
+  * @retval The length of data that have sent to the bus.
   */
 u32 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms)
 {
 	u32 cnt = 0;
+	u32 txflr = 0;
 
 	/* Write in the DR register the data to be sent */
 	for (cnt = 0; cnt < len; cnt++) {
-		if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFNF, 0, I2C_POLL_TIMEOUT_MS) != RTK_SUCCESS) {
-			return cnt;
+		if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFNF, 0, I2C_POLL_TIMEOUT_MS, &txflr) != RTK_SUCCESS) {
+			return MAX(cnt - txflr, 0);
 		}
 
 		if (cnt >= len - 1) {
@@ -872,7 +890,9 @@ u32 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms)
 	}
 
 	/*Wait I2C TX FIFO empty*/
-	I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFE, 0, ms);
+	if (I2C_PollFlagRawINT(I2Cx, I2C_BIT_TFE, 0, ms, &txflr) != RTK_SUCCESS) {
+		return MAX(cnt - txflr, 0);
+	}
 	return cnt;
 }
 

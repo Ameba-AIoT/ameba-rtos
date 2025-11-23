@@ -51,7 +51,7 @@ static const char *const TAG = "USBH";
 
 /* Private macros ------------------------------------------------------------*/
 
-#define USBH_UVC_BUF_SIZE       UVC_VIDEO_FRAME_SIZE   // Frame buffer size, resident in PSRAM, depends on format type
+#define USBH_UVC_BUF_SIZE       USBH_UVC_VIDEO_FRAME_SIZE   // Frame buffer size, resident in PSRAM, depends on format type
 
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
@@ -114,7 +114,7 @@ static u8 uvc_buf_mjpeg[USBH_UVC_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZ
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
-#if UVC_USE_SOF
+#if USBH_UVC_USE_SOF
 	.ext_intr_enable = USBH_SOF_INTR,
 	.sof_tick_enable = 1,
 #endif
@@ -730,7 +730,7 @@ end:
 #endif
 #endif
 
-static void uvc_img_prepare_h264(uvc_frame_t *frame)
+static void uvc_img_prepare_h264(usbh_uvc_frame_t *frame)
 {
 	u32 len = 0;
 
@@ -775,7 +775,7 @@ static void uvc_img_prepare_h264(uvc_frame_t *frame)
 	}
 #endif
 }
-static void uvc_img_prepare_yuv(uvc_frame_t *frame)
+static void uvc_img_prepare_yuv(usbh_uvc_frame_t *frame)
 {
 	u32 len = 0;
 
@@ -799,7 +799,7 @@ static void uvc_img_prepare_yuv(uvc_frame_t *frame)
 #endif
 }
 
-static void uvc_img_prepare_mjpeg(uvc_frame_t *frame)
+static void uvc_img_prepare_mjpeg(usbh_uvc_frame_t *frame)
 {
 	u32 len = 0;
 
@@ -1028,17 +1028,17 @@ static int uvc_vfs_start_h264(void)
 static void usbh_uvc_instance1_test(void *param)
 {
 	int ret = 0;
-	uvc_frame_t *buf;
+	usbh_uvc_frame_t *buf;
 	u32 img_cnt = 0;
 	UNUSED(param);
 	uvc_config_t uvc_ctx;
 
 	if (uvc_formart1 == 0) {
-		uvc_ctx.fmt_type = UVC_FORMAT_MJPEG;
+		uvc_ctx.fmt_type = USBH_UVC_FORMAT_MJPEG;
 	} else if (uvc_formart1 == 1) {
-		uvc_ctx.fmt_type = UVC_FORMAT_H264;
+		uvc_ctx.fmt_type = USBH_UVC_FORMAT_H264;
 	} else {
-		uvc_ctx.fmt_type = UVC_FORMAT_YUV;
+		uvc_ctx.fmt_type = USBH_UVC_FORMAT_YUV;
 	}
 
 	uvc_ctx.width = uvc_width1;
@@ -1052,11 +1052,11 @@ static void usbh_uvc_instance1_test(void *param)
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "INS1: Para: %d*%d@%dfps\n", uvc_ctx.width, uvc_ctx.height, uvc_ctx.frame_rate);
 
-		if (uvc_ctx.fmt_type == UVC_FORMAT_MJPEG) {
+		if (uvc_ctx.fmt_type == USBH_UVC_FORMAT_MJPEG) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "INS1: MJPEG Stream\n");
-		} else if (uvc_ctx.fmt_type == UVC_FORMAT_H264) {
+		} else if (uvc_ctx.fmt_type == USBH_UVC_FORMAT_H264) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "INS1: H264 Stream\n");
-		} else if (uvc_ctx.fmt_type == UVC_FORMAT_YUV) {
+		} else if (uvc_ctx.fmt_type == USBH_UVC_FORMAT_YUV) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "INS1: YUV Stream\n");
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "INS1: Unsupport Stream\n");
@@ -1149,7 +1149,7 @@ exit1:
 static void usbh_uvc_instance0_test(void *param)
 {
 	int ret = 0;
-	uvc_frame_t *buf;
+	usbh_uvc_frame_t *buf;
 	u32 img_cnt = 0;
 	UNUSED(param);
 	uvc_config_t uvc_ctx;
@@ -1169,11 +1169,11 @@ static void usbh_uvc_instance0_test(void *param)
 	}
 
 	if (uvc_formart0 == 0) {
-		uvc_ctx.fmt_type = UVC_FORMAT_MJPEG;
+		uvc_ctx.fmt_type = USBH_UVC_FORMAT_MJPEG;
 	} else if (uvc_formart0 == 1) {
-		uvc_ctx.fmt_type = UVC_FORMAT_H264;
+		uvc_ctx.fmt_type = USBH_UVC_FORMAT_H264;
 	} else {
-		uvc_ctx.fmt_type = UVC_FORMAT_YUV;
+		uvc_ctx.fmt_type = USBH_UVC_FORMAT_YUV;
 	}
 
 	uvc_ctx.width = uvc_width0;
@@ -1188,11 +1188,11 @@ static void usbh_uvc_instance0_test(void *param)
 		goto exit1;
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "INS0: Para: %d*%d@%dfps\n", uvc_ctx.width, uvc_ctx.height, uvc_ctx.frame_rate);
-		if (uvc_ctx.fmt_type == UVC_FORMAT_MJPEG) {
+		if (uvc_ctx.fmt_type == USBH_UVC_FORMAT_MJPEG) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "INS0: MJPEG Stream\n");
-		} else if (uvc_ctx.fmt_type == UVC_FORMAT_H264) {
+		} else if (uvc_ctx.fmt_type == USBH_UVC_FORMAT_H264) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "INS0: H264 Stream\n");
-		} else if (uvc_ctx.fmt_type == UVC_FORMAT_YUV) {
+		} else if (uvc_ctx.fmt_type == USBH_UVC_FORMAT_YUV) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "INS0: YUV Stream\n");
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "INS0: Unsupport Stream\n");
@@ -1385,7 +1385,7 @@ u32 usbh_uvc_restart_test(u16 argc, u8 *argv[])
 	return 0;
 }
 
-#if UVC_USE_HW
+#if USBH_UVC_USE_HW
 u32 usbh_uvc_dec_dump(u16 argc, u8 *argv[])
 {
 	UNUSED(argc);
@@ -1539,7 +1539,7 @@ const COMMAND_TABLE usbh_uvc_test[] = {
 		(const u8 *)"uvc_stop", 10, usbh_uvc_stop_test, (const u8 *)"\tuvc test stop\n"
 		"\t\t cmd: uvc_stop \n"
 	},
-#if UVC_USE_HW
+#if USBH_UVC_USE_HW
 	{
 		(const u8 *)"uvc_dump", 3, usbh_uvc_dec_dump, (const u8 *)"\tuvc reg dump\n"
 		"\t\t cmd: uvc_dump \n"

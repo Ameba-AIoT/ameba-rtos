@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _USBH_UVC_INTF_H_
-#define _USBH_UVC_INTF_H_
+#ifndef USBH_UVC_INTF_H
+#define USBH_UVC_INTF_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -13,31 +13,31 @@
 
 /* Exported defines ----------------------------------------------------------*/
 #ifdef CONFIG_SUPPORT_USBH_UVC_HW_DEC
-#define UVC_USE_HW						1	/* use uvc hw decoder */
+#define USBH_UVC_USE_HW						1	/* use uvc hw decoder */
 #else
-#define UVC_USE_HW						0
+#define USBH_UVC_USE_HW						0
 #endif
-#define UVC_GET_FRAME_TIMEOUT			2000   /* unit:ms */
+#define USBH_UVC_GET_FRAME_TIMEOUT				2000   /* unit:ms */
 
 /*Supported type*/
-#define UVC_FORMAT_MJPEG				0x6
-#define UVC_FORMAT_YUV					0x4
-#define UVC_FORMAT_H264					0x10
+#define USBH_UVC_FORMAT_MJPEG				0x6
+#define USBH_UVC_FORMAT_YUV				0x4
+#define USBH_UVC_FORMAT_H264				0x10
 
-#define UVC_URB_NUMS					4
-#define UVC_URB_SIZE					(3072 + 32) * 2   /* bytes */
+#define USBH_UVC_URB_NUMS				4
+#define USBH_UVC_URB_SIZE				(3072 + 32) * 2   /* bytes */
 
-#define UVC_VIDEO_MAX_FRAME				3  /* if using UVC HW decoder, frame buffer number should fix to 3 */
-#define UVC_VIDEO_FRAME_SIZE			150*1024    /* bytes */
+#define USBH_UVC_VIDEO_MAX_FRAME			3  /* if using UVC HW decoder, frame buffer number should fix to 3 */
+#define USBH_UVC_VIDEO_FRAME_SIZE			150*1024    /* bytes */
 
-#define UVC_DECODE_TASK_STACK			512*4    /* bytes */
-#define UVC_DECODE_TASK_PRIORITY		5
+#define USBH_UVC_DECODE_TASK_STACK			512*4    /* bytes */
+#define USBH_UVC_DECODE_TASK_PRIORITY			5
 
-#define UVC_DETECT_EOF					0
+#define USBH_UVC_DETECT_EOF					0
 
-#define UVC_USE_SOF						0  /* if set to 0, sof interrupt can be disabled */
+#define USBH_UVC_USE_SOF					0  /* if set to 0, sof interrupt can be disabled */
 
-#define UVC_IRQ_PRIORITY				INT_PRI_LOWEST
+#define UVC_IRQ_PRIORITY					INT_PRI_LOWEST
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -65,7 +65,7 @@ typedef struct {
 	u8 *buf;
 	u32 byteused;
 	u32 err;
-} uvc_frame_t;
+} usbh_uvc_frame_t;
 
 /* Exported macros -----------------------------------------------------------*/
 
@@ -84,8 +84,8 @@ int usbh_uvc_stream_state(u32 if_num);
 
 int usbh_uvc_set_param(uvc_config_t *para, u32 if_num);
 
-uvc_frame_t *usbh_uvc_get_frame(u32 if_num);
+usbh_uvc_frame_t *usbh_uvc_get_frame(u32 if_num);
 
-void usbh_uvc_put_frame(uvc_frame_t *frame, u32 if_num);
+void usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u32 if_num);
 
 #endif

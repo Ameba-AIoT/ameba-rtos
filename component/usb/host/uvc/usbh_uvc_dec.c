@@ -9,7 +9,7 @@
 #include "usbh_uvc.h"
 #include "usbh_hal.h"
 
-#if (defined(UVC_USE_HW) && (UVC_USE_HW == 1))
+#if (defined(USBH_UVC_USE_HW) && (USBH_UVC_USE_HW == 1))
 
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "UVC";
@@ -216,7 +216,7 @@ void usbh_uvc_dec_init(usbh_uvc_dec *uvc_dec)
 	uvc_initstruct.hcdmai = uvc_initstruct.uvc_cmd[0].data;
 
 	/* uvc cmd 1 */
-	num_packets = uvc_dec->ep_size / uvc_dec->mps;
+	num_packets = uvc_dec->xfer_size / uvc_dec->mps;
 	if (num_packets == 1) {
 		data_pid = USBH_PID_DATA0;
 	} else if (num_packets == 2) {
@@ -224,7 +224,7 @@ void usbh_uvc_dec_init(usbh_uvc_dec *uvc_dec)
 	} else {
 		data_pid = USBH_PID_DATA2;
 	}
-	hcsize = (uvc_dec->ep_size & USB_OTG_HCTSIZ_XFRSIZ) |
+	hcsize = (uvc_dec->xfer_size & USB_OTG_HCTSIZ_XFRSIZ) |
 			 (((u32)num_packets << USB_OTG_HCTSIZ_PKTCNT_Pos) & USB_OTG_HCTSIZ_PKTCNT) |
 			 (((u32)data_pid << USB_OTG_HCTSIZ_DPID_Pos) & USB_OTG_HCTSIZ_DPID);
 	uvc_initstruct.uvc_cmd[1].cmd_reg0.enable = 1;
@@ -234,7 +234,7 @@ void usbh_uvc_dec_init(usbh_uvc_dec *uvc_dec)
 	uvc_initstruct.uvc_cmd[1].data = hcsize; 	/* HCSIZ value */
 
 	/* uvc cmd 2 */
-	mc = uvc_dec->ep_size / uvc_dec->mps;
+	mc = uvc_dec->xfer_size / uvc_dec->mps;
 	hcchar &= ~USB_OTG_HCCHAR_MC;
 	hcchar |= (u32)mc << USB_OTG_HCCHAR_MC_Pos;
 	hcchar &= ~USB_OTG_HCCHAR_CHDIS;
