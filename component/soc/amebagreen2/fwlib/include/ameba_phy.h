@@ -32,47 +32,118 @@ enum  phy_address {
 	PHYID_3,
 };
 
-#define RTK_EEEPC1R_DEVICE 0x3
-#define RTK_EEEPC1R_ADDRESS 0x0
+enum phy_mmd_access_mode {
+	PHY_MMD_ADDR,
+	PHY_MMD_DATA_NO_POST_INC,
+	PHY_MMD_DATA_RD_WR_POST_INC,
+	PHY_MMD_DATA_RD_POST_INC
+};
 
-#define RTK_EEEPS1R_DEVICE 0x3
-#define RTK_EEEPS1R_ADDRESS 0x1
+/* MMD register mapping table */
+enum rtl8201fr_mmd_device_t {
+	RTL8201FR_MMD_DEV_PCS = 3,      /* PCS (Physical Coding Sublayer) MMD device address */
+	RTL8201FR_MMD_DEV_EEE_ADV = 7   /* EEE advertisement/ability MMD device address */
+};
 
-#define RTK_EEECR_DEVICE 0x3
-#define RTK_EEECR_ADDRESS 0x14
+enum rtl8201fr_mmd_reg_t {
+	RTL8201FR_MMD_REG_EEEPC1R  = 0x0,   /* EEE PCS Control 1 Register Offset */
+	RTL8201FR_MMD_REG_EEEPS1R  = 0x01,  /* EEE PCS Status 1 Register Offset */
+	RTL8201FR_MMD_REG_EEECR    = 0x14,  /* EEE Capability Register Offset */
+	RTL8201FR_MMD_REG_EEEWER   = 0x16,  /* EEE Wake Error Register Offset */
+	RTL8201FR_MMD_REG_EEEAR    = 0x3c,  /* EEE Advertisement Register Offset */
+	RTL8201FR_MMD_REG_EEELPAR  = 0x3d   /* EEE Link Partner Ability Register Offset */
+};
 
-#define RTK_EEEWER_DEVICE 0x3
-#define RTK_EEEWER_ADDRESS 0x16
+/* RTL8201FR Page0 Register 13: MACR Register (0x0D) */
+#define RTL8201FR_MACR_FUNC_ADDR_MASK       (0x3 << 14)         	/*[15:14] Function selection for MMD access*/
+#define RTL8201FR_MACR_FUNC_ADDR(x)         (((x) & 0x3) << 14)
+#define RTL8201FR_MACR_FUNC_ADDR_GET(x)		(((x) & 0x3) >> 14)
+#define RTL8201FR_MACR_DEVAD_MASK      		(0x1F << 0)				/*[4:0] MMD device address*/
+#define RTL8201FR_MACR_DEVAD(x)        		(((x) & 0x1F) << 0)
+#define RTL8201FR_MACR_DEVAD_GET(x)    		(((x) & 0x1F) >> 0)
 
-#define RTK_EEEAR_DEVICE 0x7
-#define RTK_EEEAR_ADDRESS 0x3c
-#define RTK_EEEAR_ADVERTISE_EEE 0x2
-#define RTK_EEEAR_NOT_ADVERTISE_EEE 0x0
-
-#define RTK_EEELPAR_DEVICE 0x7
-#define RTK_EEELPAR_ADDRESS 0x3d
+/* RTL8201FR Page0 Register 14: MAADR (MMD Access Address/Data Register) */
+#define RTL8201FR_MAADR_DATA_MASK        (0xFFFF << 0)     			/* [15:0] Address/Data field, used for MMD management via MACR/MAADR pair */
+#define RTL8201FR_MAADR_DATA(x)          (((x) & 0xFFFF) << 0)
+#define RTL8201FR_MAADR_DATA_GET(x)      (((x) & 0xFFFF) >> 0)
 
 
-#define RTK8201F_EEE_CAPAB_PAGE 0x4
-#define RTK8201F_EEE_CAPAB_REG 0x10
-#define RTK8201F_EEE_CAPAB_EN 0x7377
+/* --- Page 4: Energy Efficient Ethernet (EEE) --- */
+#define	RTL8201FR_PAGE4_REG_EEE_CAP_EN          (0x10)   /*!< EEE Capability Register (Page 4, Reg 21) */
+#define RTL8201FR_PAGE4_REG_EEE_CAP             (0x15)   /*!< EEE Capability Register (Page 4, Reg 21) */
 
-#define RTK8201F_EEE_MODE_PAGE 0x7
-#define RTK8201F_EEE_MODE_REG 0x14
-#define RTK8201F_EEE_MAC_MODE_SET 0xD5
-#define RTK8201F_EEE_PHY_MODE_SET 0x10D5
+/* --- Page 7: Special/Custom registers --- */
+#define RTL8201FR_PAGE7_REG_RMII_MODE_SET		(0x10)   /*!< LED Mode Register (Page 7, Reg 11) */
+#define RTL8201FR_PAGE7_REG_CUSTOM_LED_SET      (0x11)   /*!< LED Mode Register (Page 7, Reg 11) */
 
-#define RTK8201F_RMSR_MODE_PAGE 0x7
-#define RTK8201F_RMSR_MODE_REG 0x10
-#define RTK8201F_RMSR_MAC_OUTPUT 0x1ffa
-#define RTK8201F_PMSR_MAC_INPUT 0xffa
+/*******************************************************************************
+ * RTL8201FR PAGE4 Registers
+ ******************************************************************************/
 
-#define RTK_MACR_DATA BIT(14)
+/* Page4 Register 16: EEE Capability Enable Register */
+#define RTL8201FR_P4_16_EEE_10_CAP           (1U << 13)   /* [13] Enable EEE 10M capability */
+#define RTL8201FR_P4_16_EEE_NWAY_EN          (1U << 12)   /* [12] Enable Next Page Exchange for EEE 100M */
+#define RTL8201FR_P4_16_TX_QUIET_EN          (1U << 9)    /* [9] Enable turning off 100TX when TX Quiet State (recommended for EEE) */
+#define RTL8201FR_P4_16_RX_QUIET_EN          (1U << 8)    /* [8] Enable turning off 100RX when RX Quiet State (recommended for EEE) */
 
-void PHY_SW_RESET(void);
-void PHY_RESTART_AN(void);
-void PHY_SET_MMD_REG(u32 type, u32 device, u32 addr, u32 data);
-u32 PHY_GET_MMD_REG(u32 type, u32 device, u32 addr);
-void PHY_ENABLE_EEE(u32 type, u32 STATUS);
-void PHY_SET_EEE_MODE(u32 type, u32 mode);
-void PHY_SET_REFCLK_DIR(u32 type, u32 MACDIR);
+/* Page4 Register 21: EEE Capability Register */
+#define RTL8201FR_P4_21_RG_DIS_LDVT          (1U << 12)   /* [12] Set 1: Disable line driver of the analog circuit */
+#define RTL8201FR_P4_21_EEE_100_CAP_GET(x)   (((x) >> 0) & 0x1) /* [0] Indicate link partner supports EEE 100M (NWay result, Read Only) */
+
+
+/*******************************************************************************
+ * RTL8201FR PAGE7 Registers
+ ******************************************************************************/
+
+/* Page7 Register 16: RMII Mode Setting Register (RMSR) */
+#define RTL8201FR_P7_16_RMII_CLK_DIR		 (1U << 12)			 /* [12] This bit sets type of TXC in RMII mode. */
+#define RTL8201FR_P7_16_RMII_TX_OFFSET(x)    (((x) & 0xF) << 8)  /* [11:8] Adjust RMII TX interface timing */
+#define RTL8201FR_P7_16_RMII_RX_OFFSET(x)    (((x) & 0xF) << 4)  /* [7:4]  Adjust RMII RX interface timing */
+#define RTL8201FR_P7_16_RMII_MODE            (1U << 3)           /* [3]    1: Set RMII mode (Must keep to 1) */
+#define RTL8201FR_P7_16_RMII_RXDV_SEL        (1U << 2)           /* [2]    1: CRS_DV pin is RXDV; 0: CRS_DV is CRS_DV signal */
+#define RTL8201FR_P7_16_RMII_RXDSEL          (1U << 1)           /* [1]    1: RMII data with SSD error; 0: RMII data only */
+
+/*******************************************************************************
+ * RTL8201FR MMD Register Mapping (accessed via MACR/MAADR)
+ ******************************************************************************/
+/* Device 3, Offset 0: EEEPCS Control 1 Register */
+#define RTL8201FR_EEEPC1R_CLK_STOP_EN      (0x1 << 10)   			/* [10] Enable RXC clock stop in LPI mode */
+
+/* Device 3, Offset 1: EEEPCS Status 1 Register (Read Only) */
+#define RTL8201FR_EEEPS1R_TX_LPI_RCVD_GET(x)    (((x) >> 11) & 0x1)	/* [11] TX PCS received LPI indication */
+#define RTL8201FR_EEEPS1R_RX_LPI_RCVD_GET(x)    (((x) >> 10) & 0x1)	/* [10] RX PCS received LPI indication */
+#define RTL8201FR_EEEPS1R_TX_LPI_IND_GET(x)     (((x) >> 9) & 0x1) 	/* [9] TX PCS LPI indication in progress */
+#define RTL8201FR_EEEPS1R_RX_LPI_IND_GET(x)     (((x) >> 8) & 0x1) 	/* [8] RX PCS LPI indication in progress */
+#define RTL8201FR_EEEPS1R_CLK_STOP_CAP_GET(x)   (((x) >> 6) & 0x1) 	/* [6] LPI TXC clock stop capability */
+
+/* Device 3, Offset 0x14: EEE Capability Register (Read Only) */
+#define RTL8201FR_EEECR_100BT_EEE_SUP_GET(x)    (((x) >> 1) & 0x1)  /* [1] 100Base-TX EEE support */
+
+/* Device 3, Offset 0x16: EEE Wake Error Register (Read Clear)*/
+#define RTL8201FR_EEEWER_WAKE_ERR_CNT_MASK      (0xFFFF)       		/* [15:0] EEE Wake error counter */
+#define RTL8201FR_EEEWER_WAKE_ERR_CNT(x)        ((x) & 0xFFFF)
+#define RTL8201FR_EEEWER_WAKE_ERR_CNT_GET(x)    ((x) & 0xFFFF)
+
+/* Device 7, Offset 0x3c: EEE Advertisement Register */
+#define RTL8201FR_EEEAR_100BT_EEE_ADV_MASK      (0x1 << 1)     		/* [1] Advertise 100Base-TX EEE capability */
+#define RTL8201FR_EEEAR_100BT_EEE_ADV(x)        (((x) & 0x1) << 1)
+#define RTL8201FR_EEEAR_100BT_EEE_ADV_GET(x)    (((x) >> 1) & 0x1)
+
+/* Device 7, Offset 0x3d: EEE Link Partner Ability Register */
+#define RTL8201FR_EEELPAR_LP_100BT_EEE_GET(x)   (((x) >> 1) & 0x1)  /* [1] Link partner advertises 100Base-TX EEE */
+
+
+/* RTL8211F Page 0xA43 Register 0x19: PHY Specific Control Register 2*/
+#define RTL8211F_PHY_MODE_PAGE					(0xA43)
+#define RTL8211F_PHYCR2_ADDR					(0x19)
+#define RTL8211F_PHCR2_PHY_MODE					(0x0863)
+#define RTL8211F_PHCR2_MAC_MODE					(0x0843)
+
+
+int PHY_SoftWareReset(uint8_t phy_id);
+int PHY_RestartAutoNego(uint8_t phy_id);
+int PHY_SetMmdReg(uint8_t phy_id, uint8_t mmd_dev, uint16_t mmd_addr, uint16_t data);
+int PHY_GetMmdReg(uint8_t phy_id, uint8_t mmd_dev, uint16_t mmd_addr, uint16_t *p_data);
+int PHY_EnableEEE(uint8_t phy_id, u32 status);
+int PHY_SetEEEMode(uint8_t phy_id, uint8_t eth_mode);
+int PHY_SetRefclkDir(uint8_t phy_id, u32 mac_dir);

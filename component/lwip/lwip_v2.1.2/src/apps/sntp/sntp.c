@@ -61,7 +61,7 @@
 
 #include <string.h>
 #include <time.h>
-#include "sntp/sntp_api.h"
+#include "sntp/sntp_api.h"                // Added by Realtek
 
 #if LWIP_UDP
 

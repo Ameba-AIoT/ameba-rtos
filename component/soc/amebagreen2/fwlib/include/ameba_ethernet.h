@@ -2423,6 +2423,10 @@ typedef struct {
   */
 
 /**
+  \brief  Defines MDIO Wait Time(us)
+*/
+#define MDIO_WAIT_TIME (64)
+/**
   \brief  Defines the FEPHY register address
 */
 enum fephy_reg_addr {
@@ -2747,8 +2751,8 @@ void Ethernet_SetDescAddr(ETH_InitTypeDef *ETH_InitStruct);
 void Ethernet_SetMacAddr(u8 *ETH_MacAddr);
 void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct);
 u32 Ethernet_init(ETH_InitTypeDef *ETH_InitStruct);
-u16 Ethernet_Read_PhyReg(u16 page, u16 reg_addr);
-u32 Ethernet_Write_PhyReg(u16 page, u16 reg_addr, u16 data);
+int Ethernet_ReadPhyReg(uint8_t phy_id, uint8_t reg_addr, uint16_t *data);
+int Ethernet_WritePhyReg(uint8_t phy_id, uint8_t reg_addr, uint16_t data);
 u32 Ethernet_GetLinkStatus(void);
 void Ethernet_SetRefclkDirec(u32 refclk_mode);
 void Ethernet_OutputClk2Phy(u32 pin);

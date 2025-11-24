@@ -238,11 +238,11 @@ u8 BOOT_OTA_LoadIMG2(u8 ImgIndex)
 	PhyAddr += MANIFEST_SIZE_4K_ALIGN;
 	LogAddr = (u32)__km0_flash_text_start__ - IMAGE_HEADER_LEN;
 
-	RSIP_MMU_Config(MMU_LP_IDX, LogAddr, LogAddr + 0x01000000 - 0x20, PhyAddr);
+	RSIP_MMU_Config(MMU_LP_IDX, LogAddr, (u32)__km0_flash_text_end__ - 0x20, PhyAddr);
 	RSIP_MMU_Cmd(MMU_LP_IDX, ENABLE);
 
 	/*KM0 IMG2 RSIP configurations*/
-	BOOT_OTFCheck(LogAddr, LogAddr + 0x01000000 - 0x20, OTF_IV_IMG2_IDX, OTF_LP_IDX);
+	BOOT_OTFCheck(LogAddr, (u32)__km0_flash_text_end__ - 0x20, OTF_IV_IMG2_IDX, OTF_LP_IDX);
 
 	/* KM0 XIP & SRAM, read with virtual addr in case of encryption */
 	Cnt = sizeof(Km0Label) / sizeof(char *);
@@ -268,10 +268,10 @@ u8 BOOT_OTA_LoadIMG2(u8 ImgIndex)
 	PhyAddr += TotalLen;
 	LogAddr = (u32)__km4_flash_text_start__ - IMAGE_HEADER_LEN;
 
-	RSIP_MMU_Config(MMU_HP_IDX, LogAddr, LogAddr + 0x01000000 - 0x20, PhyAddr);
+	RSIP_MMU_Config(MMU_HP_IDX, LogAddr, (u32)__km4_flash_text_end__ - 0x20, PhyAddr);
 	RSIP_MMU_Cmd(MMU_HP_IDX, ENABLE);
 
-	BOOT_OTFCheck(LogAddr, LogAddr + 0x01000000 - 0x20, OTF_IV_IMG2_IDX, OTF_HP_IDX);
+	BOOT_OTFCheck(LogAddr, (u32)__km4_flash_text_end__ - 0x20, OTF_IV_IMG2_IDX, OTF_HP_IDX);
 
 	/* KM4 XIP & SRAM, read with virtual addr in case of encryption */
 	Cnt = sizeof(Km4Label) / sizeof(char *);
@@ -565,16 +565,30 @@ u8 BOOT_OTA_AP(SubImgInfo_TypeDef *SubImgInfo, u8 Index, u8 ImgIndex)
 
 	/* remap AP image */
 	LogAddr = (u32)__ca32_flash_text_start__ - IMAGE_HEADER_LEN;
-
-	RSIP_MMU_Config(MMU_AP_IDX, LogAddr, LogAddr + 0x02000000 - 0x20, PhyAddr);
+	RSIP_MMU_Config(MMU_AP_IDX, LogAddr, (u32)__ca32_flash_text_end__ - 0x20, PhyAddr);
 	RSIP_MMU_Cmd(MMU_AP_IDX, ENABLE);
 
 	/*AP RSIP configurations*/
-	BOOT_OTFCheck(LogAddr, LogAddr + 0x02000000 - 0x20, OTF_IV_IMG2_IDX, OTF_AP_IDX);
+	BOOT_OTFCheck(LogAddr, (u32)__ca32_flash_text_end__ - 0x20, OTF_IV_IMG2_IDX, OTF_AP_IDX);
 
 	ImgAddr = SYSCFG_BootFromNor() ? LogAddr : PhyAddr;
 
 	ret = BOOT_LoadSubImage(&SubImgInfo[Index], ImgAddr, Cnt, APLabel, TRUE); // Check sub-image pattern and load AP sub-image
+
+#ifdef CONFIG_CP_TEST_CA32
+	LogAddr = (u32)__km4_boot_text_start__ - IMAGE_HEADER_LEN;
+	PhyAddr += SubImgInfo[Index].Len + SubImgInfo[Index + 1].Len; // Get AP BL1 DRAM physical address
+	assert_param(PhyAddr & ~0x1F); // Ensure address is 32-byte aligned
+	RSIP_MMU_Cmd(MMU_BOOTLOADER_IDX, DISABLE);
+	RSIP_MMU_Config(MMU_BOOTLOADER_IDX, LogAddr, LogAddr + 0x01000000 - 0x20, PhyAddr);
+	RSIP_MMU_Cmd(MMU_BOOTLOADER_IDX, ENABLE);
+
+	LogAddr = (u32)__ca32_fip_dram_start__ - IMAGE_HEADER_LEN;
+	PhyAddr += SubImgInfo[Index + 2].Len; // Get AP FIP physical address
+	RSIP_MMU_Cmd(MMU_LP_IDX, DISABLE);
+	RSIP_MMU_Config(MMU_LP_IDX, LogAddr, (u32)__km0_flash_text_end__ - 0x20, PhyAddr);
+	RSIP_MMU_Cmd(MMU_LP_IDX, ENABLE);
+#endif
 
 	if (ret != TRUE) {
 		goto Fail;

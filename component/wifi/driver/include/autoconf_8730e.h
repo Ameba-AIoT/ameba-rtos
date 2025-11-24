@@ -24,10 +24,8 @@
 #define CONFIG_MCC_MODE
 
 #ifdef CONFIG_NAN
-#define NET_IF_NUM	3
 #define SUPPORT_ADAPTER_NUM	3
 #else
-#define NET_IF_NUM 2
 #define SUPPORT_ADAPTER_NUM	2
 #endif
 /**************** configurations for concurrent mode end **********************/

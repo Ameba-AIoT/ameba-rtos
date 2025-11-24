@@ -84,6 +84,5 @@ u8 connect_target_ap = 0;
 u8 scan_ap = 0;
 
 extern u8 wifi_mode;
-extern struct netif xnetif[NET_IF_NUM]; /* network interface structure */
 
 #endif /* EXAMPLE_CAPTIVE_PORTAL_H */

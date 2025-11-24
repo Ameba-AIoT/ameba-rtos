@@ -179,7 +179,7 @@ will need to increase long long */
                            length)
 
 /* Set socket options argument */
-#undef IFNAMSIZ
+#undef IFNAMSIZ		/* Added by Realtek */
 #define IFNAMSIZ NETIF_NAMESIZE
 
 struct ifreq {
@@ -283,6 +283,7 @@ struct linger {
 #define TCP_KEEPIDLE   0x03    /* set pcb->keep_idle  - Same as TCP_KEEPALIVE, but use seconds for get/setsockopt */
 #define TCP_KEEPINTVL  0x04    /* set pcb->keep_intvl - Use seconds for get/setsockopt */
 #define TCP_KEEPCNT    0x05    /* set pcb->keep_cnt   - Use number of probes sent for get/setsockopt */
+/* Added by Realtek */
 #define TCP_MAXSEG     0x06    /* set pcb->mss - Limit MSS */
 #endif /* LWIP_TCP */
 

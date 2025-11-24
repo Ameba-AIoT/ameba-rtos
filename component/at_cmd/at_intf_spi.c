@@ -185,6 +185,21 @@ void atcmd_spi_task(void)
 				rtos_sema_take(slave_tx_sema, 0xFFFFFFFF);
 			}
 
+
+			if (rtos_queue_peek(g_spi_cmd_queue, (void *)&req, 0) == RTK_FAIL) {
+				remain_len = RingBuffer_Available(at_spi_tx_ring_buf);
+				if (remain_len >= (ATCMD_SPI_DMA_SIZE - 8)) {
+					if (rtos_timer_is_timer_active(xTimers_SPI_Output)) {
+						rtos_timer_stop(xTimers_SPI_Output, 0);
+					}
+					rtos_queue_send(g_spi_cmd_queue, (void *)&req, 0xFFFFFFFF);
+				} else if (remain_len > 0) {
+					if (rtos_timer_is_timer_active(xTimers_SPI_Output) == 0) {
+						rtos_timer_start(xTimers_SPI_Output, 0);
+					}
+				}
+			}
+
 			// check rx dataheader
 			if (SlaveRxBuf[0] != 0x41 || SlaveRxBuf[1] != 0x54) {
 				RTK_LOGI(TAG, "empty pkt, data may have been transmitted\n");

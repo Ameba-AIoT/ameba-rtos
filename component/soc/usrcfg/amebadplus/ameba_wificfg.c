@@ -32,7 +32,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.skb_num_np = 20;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 	wifi_user_config.skb_num_ap = 0;
 	wifi_user_config.rx_ampdu_num = 8;
-#elif defined(CONFIG_WHC_INTF_SPI)
+#elif defined(CONFIG_WHC_INTF_SPI) || defined(CONFIG_WHC_INTF_UART)
 	skb_num_np_rsvd = 7; /*4 for rx_ring_buffer + 2 for mgnt trx + 1 for spi rx_dma_buffer */
 	wifi_user_config.skb_num_np = 14;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 	wifi_user_config.skb_num_ap = 0;

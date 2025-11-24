@@ -392,6 +392,12 @@ if (ENABLE_SM4_XTS)
 	list(APPEND tests sm4_xts)
 endif()
 
+if (ENABLE_SM4_CBC_MAC)
+	message(STATUS "ENABLE_SM4_CBC_MAC is ON")
+	ameba_list_append(private_definitions -DENABLE_SM4_CBC_MAC)
+	list(APPEND src src/sm4_cbc_mac.c)
+endif()
+
 if (ENABLE_SHA1)
 	message(STATUS "ENABLE_SHA1 is ON")
 	ameba_list_append(private_definitions -DENABLE_SHA1)

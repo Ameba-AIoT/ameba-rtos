@@ -85,6 +85,15 @@ uint16_t rtk_bt_audio_track_stop(void *track_hdl);
 uint16_t rtk_bt_audio_track_pause(void *track_hdl);
 
 /**
+ * @brief     bt audio track pause without flush track
+ * @param[in] track_hdl: audio track handle
+ * @return
+ *                              - 0  : Succeed
+ *                              - 1: Fail
+ */
+uint16_t rtk_bt_audio_track_pause_without_flush(void *track_hdl);
+
+/**
  * @brief     bt audio track resume
  * @param[in] track_hdl: audio track handle
  * @return

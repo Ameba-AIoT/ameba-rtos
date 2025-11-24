@@ -39,8 +39,15 @@ void app_start(void)
 	/* Configure the hardware ready to run the demo. */
 	prvSetupHardware();
 
+#ifndef CONFIG_CP_TEST_CA32
 	/* Get flash_init_para info for AP */
 	_memcpy((void *)&flash_init_para, (const void *)HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FLASH_PARA_ADDR), sizeof(FLASH_InitTypeDef));
-
+#endif
 	main();
 }
+
+#ifdef CONFIG_CP_TEST_CA32
+#ifdef CONFIG_SUPPORT_ATCMD
+Compile_Assert(0, "CONFIG_SUPPORT_ATCMD shall be disabled for CP test CA32");
+#endif
+#endif

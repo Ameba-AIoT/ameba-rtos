@@ -46,6 +46,7 @@ static int composite_cdc_acm_cb_init(void);
 static int composite_cdc_acm_cb_deinit(void);
 static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf);
 static int composite_cdc_acm_cb_received(u8 *buf, u32 Len);
+static void composite_cdc_acm_cb_transmitted(u8 status);
 
 static void composite_cb_status_changed(u8 old_status, u8 status);
 
@@ -68,7 +69,8 @@ static usbd_composite_cdc_acm_usr_cb_t composite_cdc_acm_usr_cb = {
 	.init = composite_cdc_acm_cb_init,
 	.deinit = composite_cdc_acm_cb_deinit,
 	.setup = composite_cdc_acm_cb_setup,
-	.received = composite_cdc_acm_cb_received
+	.received = composite_cdc_acm_cb_received,
+	.transmitted = composite_cdc_acm_cb_transmitted
 };
 
 static usbd_composite_cdc_acm_line_coding_t composite_cdc_acm_line_coding;
@@ -121,7 +123,20 @@ static int composite_cdc_acm_cb_deinit(void)
   */
 static int composite_cdc_acm_cb_received(u8 *buf, u32 len)
 {
+	/* CDC ACM loopback test */
 	return usbd_composite_cdc_acm_transmit(buf, len);
+}
+
+/**
+  * @brief  Data transmit callback.
+  * @param  status: TX status
+  */
+static void composite_cdc_acm_cb_transmitted(u8 status)
+{
+	/* Complete one transfer, it's recommended to git semaphore
+	 *  to another thread to start next transfer
+	 */
+	UNUSED(status);
 }
 
 /**

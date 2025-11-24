@@ -57,12 +57,14 @@
 extern "C" {
 #endif
 
+/* Added by Realtek start */
 #if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
 struct nd6_ipq_entry {
   struct nd6_ipq_entry *next;
   ip6_addr_t ipq_address;
 };
 #endif
+/* Added by Realtek end */
 
 #if LWIP_ND6_QUEUEING
 /** struct for queueing outgoing packets for unknown address
@@ -95,9 +97,11 @@ struct nd6_neighbor_cache_entry {
     u32_t probes_sent;
     u32_t stale_time;     /* ticks (ND6_TMR_INTERVAL) */
   } counter;
+/* Added by Realtek start */
 #if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
   struct nd6_ipq_entry *ipq;
 #endif
+/* Added by Realtek end */
 };
 
 struct nd6_destination_cache_entry {

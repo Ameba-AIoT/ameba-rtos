@@ -69,10 +69,6 @@ ameba_execute_process(
     COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_DIR}/xip_image2_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/sram_2_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/psram_2_prepend.bin
     OUTPUT_FILE ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_image2_all.bin
 )
-ameba_execute_process(
-    COMMAND ${IMAGETOOL} ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_image2_all.bin ${BUILD_TYPE}
-    WORKING_DIRECTORY ${c_SOC_PROJECT_DIR}
-)
 
 if ((NOT CONFIG_WHC_INTF_IPC) AND CONFIG_WHC_DEV)
     message("========= linker fullmac image start =========")

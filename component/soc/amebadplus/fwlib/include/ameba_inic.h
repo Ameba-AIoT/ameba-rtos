@@ -124,15 +124,6 @@ typedef struct {
   * @}
   */
 
-/** @defgroup INIC_DESC_Size_definitions
-  * @{
-  */
-#define SIZE_RX_DESC	(sizeof(INIC_RX_DESC))
-#define SIZE_TX_DESC	(sizeof(INIC_TX_DESC))
-/**
-  * @}
-  */
-
 /**
  * @}
  */

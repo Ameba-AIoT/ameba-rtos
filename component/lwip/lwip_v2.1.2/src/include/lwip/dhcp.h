@@ -61,9 +61,11 @@ extern "C" {
 
 #define DHCP_BOOT_FILE_LEN      128U
 
+/* Added by Realtek start */
 #ifndef CONFIG_FAST_DHCP
 #define CONFIG_FAST_DHCP 0
 #endif
+/* Added by Realtek end */
 
 /* AutoIP cooperation flags (struct dhcp.autoip_coop_state) */
 typedef enum {

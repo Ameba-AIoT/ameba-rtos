@@ -106,10 +106,12 @@
 /** The IP header ID of the next outgoing IP packet */
 static u16_t ip_id;
 
+/* Added by Realtek start */
 #if defined(IP_NAT) && (IP_NAT == 1)
 extern err_t ip_nat_transfer(struct pbuf *p, struct netif *src, struct netif *target);
 extern err_t ip_nat_enqueue(struct pbuf *p, struct netif *inp);
 #endif
+/* Added by Realtek end */
 
 #if LWIP_MULTICAST_TX_OPTIONS
 /** The default netif used for multicast */
@@ -346,11 +348,13 @@ ip4_forward(struct pbuf *p, struct ip_hdr *iphdr, struct netif *inp)
     return;
   }
 
+/* Added by Realtek start */
 #if defined(IP_NAT) && (IP_NAT == 1)
   if(ip_nat_transfer(p, inp, netif) != ERR_OK) {
     return;
   }
 #endif
+/* Added by Realtek end */
 
   /* Incrementally update the IP checksum. */
   if (IPH_CHKSUM(iphdr) >= PP_HTONS(0xffffU - 0x100)) {
@@ -539,6 +543,7 @@ ip4_input(struct pbuf *p, struct netif *inp)
   }
 #endif
 
+/* Added by Realtek start */
 #if defined(IP_NAT) && (IP_NAT == 1)
   if(ip_nat_enqueue(p, inp) != ERR_OK) {
     pbuf_free(p);
@@ -548,6 +553,7 @@ ip4_input(struct pbuf *p, struct netif *inp)
     return ERR_OK;
   }
 #endif
+/* Added by Realtek end */
 
   /* copy IP addresses to aligned ip_addr_t */
   ip_addr_copy_from_ip4(ip_data.current_iphdr_dest, iphdr->dest);
