@@ -7,6 +7,7 @@
 #include "diag.h"
 
 int fatfs_mount_flag = 0;
+static struct dirent *fatfs_ent;
 
 // return drv_num assigned
 int FATFS_RegisterDiskDriver(ll_diskio_drv *drv)
@@ -300,37 +301,41 @@ struct dirent *fatfs_readdir(vfs_file *finfo)
 	if (pdir == NULL) {
 		return NULL;
 	}
-	struct dirent *ent = rtos_mem_malloc(sizeof(struct dirent));
-	if (ent == NULL) {
-		return NULL;
+	if (fatfs_ent == NULL) {
+		fatfs_ent = rtos_mem_malloc(sizeof(struct dirent));
+		if (fatfs_ent == NULL) {
+			return NULL;
+		}
 	}
 	FILINFO m_fileinfo;
 
 	res = f_readdir(pdir, &m_fileinfo);
 	if (res != FR_OK) {
-		rtos_mem_free(ent);
+		rtos_mem_free(fatfs_ent);
+		fatfs_ent = NULL;
 		VFS_DBG(VFS_ERROR, "vfs-fatfs readdir: error (%d)", res);
 		return NULL;
 	}
 
 	if (m_fileinfo.fname[0] == 0) {
-		rtos_mem_free(ent);
+		rtos_mem_free(fatfs_ent);
+		fatfs_ent = NULL;
 		return NULL;
 	}
 
 	fn = m_fileinfo.fname;
-	ent->d_ino = 0;
-	ent->d_off = 0;
-	ent->d_reclen = m_fileinfo.fsize;
+	fatfs_ent->d_ino = 0;
+	fatfs_ent->d_off = 0;
+	fatfs_ent->d_reclen = m_fileinfo.fsize;
 	if (m_fileinfo.fattrib & AM_DIR) {
-		ent->d_type = DT_DIR;    // directory
+		fatfs_ent->d_type = DT_DIR;    // directory
 	} else {
-		ent->d_type = DT_REG;    // regular file
+		fatfs_ent->d_type = DT_REG;    // regular file
 	}
 
 	fn = m_fileinfo.fname;
-	sprintf(ent->d_name, "%s", fn);
-	return ent;
+	sprintf(fatfs_ent->d_name, "%s", fn);
+	return fatfs_ent;
 }
 
 int fatfs_closedir(vfs_file *finfo)
@@ -338,6 +343,10 @@ int fatfs_closedir(vfs_file *finfo)
 	DIR *pdir = (DIR *)finfo->file;
 	FRESULT res = f_closedir(pdir);
 	rtos_mem_free(pdir);
+	if (fatfs_ent != NULL) {
+		rtos_mem_free(fatfs_ent);
+		fatfs_ent = NULL;
+	}
 	if (res > 0) {
 		VFS_DBG(VFS_ERROR, "vfs-fatfs closedir error %d \r\n", res);
 		return -1;
