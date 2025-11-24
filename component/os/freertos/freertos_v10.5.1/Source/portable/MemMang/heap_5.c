@@ -180,15 +180,16 @@ static void prvInsertBlockIntoFreeList(BlockLink_t *pxBlockToInsert);
  const size_t xHeapStructSize = (sizeof(BlockLink_t) + ((size_t)(portBYTE_ALIGNMENT - 1))) & ~((size_t) portBYTE_ALIGNMENT_MASK);
 
 #if ( (defined CONFIG_HEAP_PROTECTOR ) && ( defined CONFIG_HEAP_CORRUPTION_DETECT_LITE ) )
-#define xHeadCanaryValue 0xABBA1234
-#define xTailCanaryValue 0xBAAD5678
- const size_t xHeadCanarySize = portBYTE_ALIGNMENT;
- const size_t xTailCanarySize = portBYTE_ALIGNMENT;
- const size_t xNumPadding = portBYTE_ALIGNMENT / sizeof(uint32_t);
+#define xHeadCanaryValue 0xDEADBEEF
+#define xTailCanaryValue 0xCAFEBABE
+
+const size_t xHeadCanarySize = portBYTE_ALIGNMENT;
+const size_t xTailCanarySize = portBYTE_ALIGNMENT;
+const size_t xNumPadding = portBYTE_ALIGNMENT / sizeof(uint32_t);
 
 #if ( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE )
-#define xFillAlocated   0xCE
-#define xFillFreed      0xFE
+#define xFillAlocated   0xCC
+#define xFillFreed      0xDD
 #endif /* CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE */
 
 #endif /* CONFIG_HEAP_CORRUPTION_DETECT_LITE */
@@ -1149,6 +1150,10 @@ void* pvPortReAlloc( void *pv,  size_t xWantedSize )
 {
 	BlockLink_t *pxLink;
 	unsigned char *puc = ( unsigned char * ) pv;
+#if( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE )
+	uint8_t *pucBlockToFree = NULL;
+	size_t xBlockToFillSize = 0;
+#endif
 
 	if( pv )
 	{
@@ -1163,15 +1168,25 @@ void* pvPortReAlloc( void *pv,  size_t xWantedSize )
 		{
 			/* The memory being freed will have an xBlockLink structure immediately
 				before it. */
+#if( defined CONFIG_HEAP_CORRUPTION_DETECT_LITE)
+			puc -= (xHeapStructSize + xHeadCanarySize);
+#else
 			puc -= xHeapStructSize;
-
+#endif
 			/* This casting is to keep the compiler from issuing warnings. */
 			pxLink = ( void * ) puc;
-
+#if( defined CONFIG_HEAP_CORRUPTION_DETECT_LITE)
+			size_t oldSize =  (pxLink->xBlockSize & ~xBlockAllocatedBit) - (xHeapStructSize + xHeadCanarySize + xTailCanarySize);
+#else
 			size_t oldSize =  (pxLink->xBlockSize & ~xBlockAllocatedBit) - xHeapStructSize;
+#endif
 			size_t copySize = ( oldSize < xWantedSize ) ? oldSize : xWantedSize;
 			memcpy( newArea, pv, copySize );
-
+#if ( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE)
+			pucBlockToFree = puc + xHeapStructSize;
+			xBlockToFillSize = (pxLink->xBlockSize & ~xBlockAllocatedBit) - xHeapStructSize;
+			_memset(pucBlockToFree, xFillFreed, xBlockToFillSize);
+#endif
 			vTaskSuspendAll();
 			{
 				/* Add this block to the list of free blocks. */

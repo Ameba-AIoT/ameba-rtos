@@ -140,7 +140,7 @@ struct rtw_crypt_info {
  * @brief  The structure is status of wpa_4way.
  */
 struct rtw_wpa_4way_status {
-	u8 *mac_addr;             /**< Mac addr of 4-way interactive peer device. */
+	u8 mac_addr[6];             /**< Mac addr of 4-way interactive peer device. */
 	u8 wlan_idx;              /**< Index of wlan interface. */
 	u8 is_start : 1;          /**< Start(1) or stop(0) of 4way/2way exchange. */
 	u8 is_grpkey_update : 1;  /**< Indicate first key change(0) or update grp_key change(1). */
