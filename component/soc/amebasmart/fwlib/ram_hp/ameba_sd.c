@@ -1527,13 +1527,12 @@ SD_RESULT SD_WriteBlocks(u32 sector, const u8 *data, u32 count)
 		return card_info.sd_status;
 	}
 
-	if ((u32)data & 0x1F) { /* Not 32-byte aligned */
-		ptr = rtos_mem_malloc(SD_BLOCK_SIZE + 0x1F);
+	if ((u32)data % CACHE_LINE_SIZE) { /* Not CACHE_LINE_SIZE aligned */
+		ptr = rtos_mem_malloc(SD_BLOCK_SIZE);
 		if (ptr == NULL) {
 			RTK_LOGE(TAG, "Allocate buffer error !!\r\n");
 			return SD_ERROR;
 		}
-		ptr = (u8 *)(((((u32)ptr - 1) >> 5) + 1) << 5); /*next 32-byte aligned*/
 
 		do {
 			_memcpy(ptr, data + i * SD_BLOCK_SIZE, SD_BLOCK_SIZE);
@@ -1582,13 +1581,12 @@ SD_RESULT SD_ReadBlocks(u32 sector, u8 *data, u32 count)
 		return card_info.sd_status;
 	}
 
-	if ((u32)data & 0x1F) { /* Not 32-byte aligned */
-		ptr = rtos_mem_malloc(SD_BLOCK_SIZE + 0x1F);
+	if ((u32)data % CACHE_LINE_SIZE) { /* Not CACHE_LINE_SIZE aligned */
+		ptr = rtos_mem_malloc(SD_BLOCK_SIZE);
 		if (ptr == NULL) {
 			RTK_LOGE(TAG, "Allocate buffer error !!\r\n");
 			return SD_ERROR;
 		}
-		ptr = (u8 *)(((((u32)ptr - 1) >> 5) + 1) << 5); /*next 32-byte aligned*/
 
 		do {
 			if ((card_info.sd_status == SD_INITERR) || (card_info.sd_status == SD_ERROR) || (card_info.sd_status == SD_NODISK)) {
@@ -1639,9 +1637,8 @@ SD_RESULT SD_GetCapacity(u32 *sector_count)
 
 	if (card_info.capaticy == 0) {
 #if defined(SDIO) && (SDIO == EMMC)
-		u8 *EXT_CSD = rtos_mem_malloc(512 + 31);
-		EXT_CSD = (u8 *)(((((u32)EXT_CSD - 1) >> 5) + 1) << 5); /*next 32-byte aligned*/
-		SD_GetEXTCSD(EXT_CSD,);
+		u8 *EXT_CSD = rtos_mem_malloc(512);
+		SD_GetEXTCSD(EXT_CSD);
 		card_info.capaticy = (EXT_CSD[215] << 24 | EXT_CSD[214] << 16 | EXT_CSD[213] << 8 | EXT_CSD[212]) / 2;
 
 		rtos_mem_free(EXT_CSD);
