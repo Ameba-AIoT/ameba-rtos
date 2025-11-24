@@ -168,13 +168,6 @@ SECTIONS
 		__data_end__ = .;
 	} > CA32_BL3_DRAM_NS
 
-	.mmu_tbl (ALIGN(0x4000)) :
-	{
-		__mmu_tbl_start = .;
-		*(.mmu_tbl)
-		__mmu_tbl_end = .;
-	} > CA32_BL3_DRAM_NS
-
 	.bss (NOLOAD) :
 	{
 		__bss_start__ = .;
@@ -186,15 +179,15 @@ SECTIONS
 		__bss_end__ = .;
 	} > CA32_BL3_DRAM_NS
 
-	.xlat_table (NOLOAD) : { *(xlat_table) } > CA32_BL3_DRAM_NS
-
 	.heap (NOLOAD) :
 	{
+		__HeapBase = .;
+#ifndef CONFIG_CP_TEST_CA32
 		__end__ = .;
 		end = __end__;
-		__HeapBase = .;
-		KEEP(*(.heap))
+		*(.heap)
 		. = . + 8192;
+#endif
 		__HeapLimit = .;
 		__heap_limit = .;	/* Add for _sbrk */
 		__HeapSize = __HeapLimit - __HeapBase;
@@ -204,14 +197,16 @@ SECTIONS
 	{
 		. = ALIGN(16);
 		__StackLimit = .;
-		KEEP(*(.stack))
+		*(.stack)
 
 		. = ALIGN(4096);
 		__ram_nocache_start__ = .;
-		KEEP(*(.nocache.data))
+		*(.nocache.data)
 		. = ALIGN(4096);
 		__ram_nocache_end__ = .;
 	} > CA32_BL3_DRAM_NS
+
+	.xlat_table (NOLOAD) : { *(xlat_table) } > CA32_BL3_DRAM_NS
 
 	/* put in the end of psram part */
 	.psram_heap.start (NOLOAD):

@@ -22,9 +22,12 @@
 #include "flash_api.h"
 #ifdef CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
-extern struct netif xnetif[NET_IF_NUM];
 #endif
+#ifdef CONFIG_ZEPHYR_SDK
+#include"wifi_intf_drv_to_zephyr.h"
+#else
 #include "kv.h"
+#endif
 
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 uint32_t offer_ip = 0;
@@ -110,7 +113,9 @@ __weak int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int 
 
 	/* STEP2: get last time fast connect info from flash*/
 	memset(&read_data, 0xff, sizeof(struct wlan_fast_reconnect));
-#ifndef CONFIG_ZEPHYR_SDK
+#ifdef CONFIG_ZEPHYR_SDK
+	settings_load_one("wlan_data", (uint8_t *) &read_data, sizeof(struct wlan_fast_reconnect));
+#else
 	rt_kv_get("wlan_data", (uint8_t *) &read_data, sizeof(struct wlan_fast_reconnect));
 #endif
 
@@ -121,7 +126,9 @@ __weak int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int 
 #else
 		DiagPrintf("\r\n %s():not the same ssid/passphrase/channel, write new profile to flash \n", __func__);
 #endif
-#ifndef CONFIG_ZEPHYR_SDK
+#ifdef CONFIG_ZEPHYR_SDK
+		settings_save_one("wlan_data", (uint8_t *)&wifi_data_to_flash, sizeof(struct wlan_fast_reconnect));
+#else
 		rt_kv_set("wlan_data", (uint8_t *)&wifi_data_to_flash, sizeof(struct wlan_fast_reconnect));
 #endif
 	}
@@ -150,7 +157,7 @@ __weak int wifi_do_fast_connect(void)
 	struct psk_info PSK_INFO = {0};
 
 #ifdef CONFIG_LWIP_LAYER
-	netifapi_netif_set_up(&xnetif[0]);
+	netifapi_netif_set_up(pnetif_sta);
 #endif
 
 	data = (struct wlan_fast_reconnect *)malloc(sizeof(struct wlan_fast_reconnect));
@@ -158,6 +165,8 @@ __weak int wifi_do_fast_connect(void)
 		memset(data, 0xff, sizeof(struct wlan_fast_reconnect));
 #ifndef CONFIG_ZEPHYR_SDK
 		ret = rt_kv_get("wlan_data", (uint8_t *)data, sizeof(struct wlan_fast_reconnect));
+#else
+		ret = settings_load_one("wlan_data", (uint8_t *)data, sizeof(struct wlan_fast_reconnect));
 #endif
 		if (ret < 0) {
 			DiagPrintf("[FAST_CONNECT] Fast connect profile is not exist\n");
@@ -262,9 +271,15 @@ WIFI_RETRY_LOOP:
 				goto WIFI_RETRY_LOOP;
 			}
 		}
+#ifdef CONFIG_ZEPHYR_SDK
+		if (ret == RTK_SUCCESS) {
+			ameba_wifi_handle_connect_event();
+		}
+#endif
+
 #ifdef CONFIG_LWIP_LAYER
 		if (ret == RTK_SUCCESS) {
-			LwIP_IP_Address_Request();
+			LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
 		}
 #endif
 		free(data);

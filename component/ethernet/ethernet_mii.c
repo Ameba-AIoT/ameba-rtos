@@ -8,6 +8,8 @@
 #include "ethernet_mii.h"
 #include "ethernet_ex_api.h"
 #include "timer_api.h"
+#include "kv.h"
+#include "wifi_hal_eeprom.h"
 static const char *const TAG = "RMII";
 
 
@@ -32,8 +34,7 @@ u8 rmii_rx_desc[MII_RX_DESC_NO][ETH_RX_DESC_SIZE]__attribute__((aligned(32)));
 static rtos_mutex_t rmii_tx_mutex;
 volatile u32 ethernet_unplug = 0;
 
-extern struct netif  xnetif[NET_IF_NUM];
-extern struct netif  eth_netif;
+extern struct netif  *pnetif_eth;
 
 static u8 *pTmpTxPktBuf = NULL;
 static u8 *pTmpRxPktBuf = NULL;
@@ -50,7 +51,6 @@ extern int lwip_init_done;
 static rtos_sema_t mii_linkup_sema;
 static rtos_sema_t mii_rx_sema;
 rtos_sema_t ethernet_init_done;
-u8 mac_id[6] = {0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC};
 
 typedef enum prehandler_ret(*prehandler_func_t)(struct pbuf **p, u8 *buf, u32 len);
 
@@ -108,6 +108,7 @@ void mii_intr_thread(void *param)
 {
 	(void) param;
 	u32 dhcp_status = 0;
+	uint8_t eth_iptab[4];
 
 	while (1) {
 
@@ -124,25 +125,40 @@ void mii_intr_thread(void *param)
 		}
 
 		if (link_is_up) {
-			netif_set_link_up(&eth_netif);
-			if (dhcp_ethernet_mii == 1) {
-				dhcp_status = LwIP_DHCP(ETHERNET_IDX, DHCP_START);
-			}
+			netif_set_link_up(pnetif_eth);
+			if (rt_kv_size("eth_ip") > 0) {
+				u32_t ip, gw = 0, netmask = 0;
+				rt_kv_get("eth_ip", &ip, 4);
+				rt_kv_get("eth_gw", &gw, 4);
+				rt_kv_get("eth_netmask", &netmask, 4);
+				if (!netif_is_up(pnetif_eth)) {
+					netifapi_netif_set_up(pnetif_eth);
+				}
+				LwIP_SetIP(NETIF_ETH_INDEX, ip, netmask, gw);
+				netif_set_default(pnetif_eth);
+				eth_iptab[3] = (uint8_t)(ip >> 24);
+				eth_iptab[2] = (uint8_t)(ip >> 16);
+				eth_iptab[1] = (uint8_t)(ip >> 8);
+				eth_iptab[0] = (uint8_t)(ip);
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rSet Ethernet static IP : %d.%d.%d.%d\n", eth_iptab[3], eth_iptab[2], eth_iptab[1], eth_iptab[0]);
+			} else {
+				if (dhcp_ethernet_mii == 1) {
+					dhcp_status = LwIP_IP_Address_Request(NETIF_ETH_INDEX);
+				}
 
-			if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
-				if (1 == ethernet_if_default) {
-					netif_set_default(&eth_netif);    //Set default gw to ether netif
-				} else {
-					netif_set_default(&eth_netif);
+				if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
+					if (1 == ethernet_if_default) {
+						netif_set_default(pnetif_eth);    //Set default gw to ether netif
+					} else {
+						netif_set_default(pnetif_eth);
+					}
 				}
 			}
 			break;
 		} else {
-			netif_set_link_down(&eth_netif);
-			netif_set_default(&eth_netif);
-#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
-			LwIP_ReleaseIP(ETHERNET_IDX);
-#endif
+			netif_set_link_down(pnetif_eth);
+			netif_set_default(pnetif_eth);
+			LwIP_ReleaseIP(NETIF_ETH_INDEX);
 		}
 
 		if (p_link_change_callback) {
@@ -194,6 +210,10 @@ void ethernet_demo(void *param)
 {
 	(void) param;
 	ETH_InitTypeDef *peth_initstruct = &eth_initstruct;
+	u8 sMacAddr[6] = {0x00, 0xE0, 0x4C, 0xb7, 0x23, 0x00};
+	u8 eth_mac[6];
+	u8 random = 0;
+	u8 *hwinfo;
 
 	/* Initilaize the LwIP stack */
 	// can not init twice
@@ -235,20 +255,39 @@ void ethernet_demo(void *param)
 	peth_initstruct->ETH_TxPktBuf = (u8 *)pTmpTxPktBuf;
 	peth_initstruct->ETH_RxPktBuf = (u8 *)pTmpRxPktBuf;
 
-	memcpy((void *)(peth_initstruct->ETH_MacAddr), (void *)mac_id, ETH_MAC_ADDR_LEN);
+	hwinfo = (u8 *)rtos_mem_zmalloc(OTP_LMAP_LEN);
+	OTP_LogicalMap_Read(hwinfo, 0, OTP_LMAP_LEN);
+
+	memcpy(eth_mac, &hwinfo[EEPROM_MAC_ADDR], ETH_ALEN);
+
+	if (!memcmp(&hwinfo[EEPROM_MAC_ADDR], "\xff\xff\xff\xff\xff\xff", ETH_ALEN)) {
+		random = (u8)(_rand() % 1000) & 0xFE;
+		sMacAddr[5] = random;
+		for (int i = 0; i < 6; i++) {
+			eth_mac[i] = sMacAddr[i];
+		}
+	} else {
+		if (wifi_user_config.softap_addr_offset_idx == 0) {
+			eth_mac[wifi_user_config.softap_addr_offset_idx] += (3 << 1);
+		} else {
+			eth_mac[wifi_user_config.softap_addr_offset_idx] += 3;
+		}
+	}
+
+	memcpy((void *)(peth_initstruct->ETH_MacAddr), (void *)eth_mac, ETH_MAC_ADDR_LEN);
 
 	InterruptRegister((IRQ_FUN)RMII_IRQHandler, (IRQn_Type)RMII_IRQ, (u32)&eth_initstruct, 5);
 	InterruptEn(RMII_IRQ, 5);
 
 	Ethernet_init(&eth_initstruct);
 
-	memcpy((void *)eth_netif.hwaddr, (void *)mac_id, ETH_MAC_ADDR_LEN);
+	memcpy((void *)pnetif_eth->hwaddr, (void *)eth_mac, ETH_MAC_ADDR_LEN);
 
 	rtos_sema_create_binary(&mii_rx_sema);
 	rtos_mutex_create(&rmii_tx_mutex);
 
 #ifndef CONFIG_RMII_VERIFY
-	netif_set_up(&eth_netif);
+	netif_set_up(pnetif_eth);
 #endif
 
 	rtos_sema_give(ethernet_init_done);
@@ -256,6 +295,8 @@ void ethernet_demo(void *param)
 	if (RTK_SUCCESS != rtos_task_create(NULL, "mii_rx_thread", mii_rx_thread, NULL, 1024, 5)) {
 		RTK_LOGE(TAG, "\n\r%s xTaskCreate(mii_rx_thread) failed", __FUNCTION__);
 	}
+
+	rtos_mem_free(hwinfo);
 
 	rtos_task_delete(NULL);
 }

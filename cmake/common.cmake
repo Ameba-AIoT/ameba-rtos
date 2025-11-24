@@ -349,10 +349,6 @@ macro(ameba_mcu_project_create name mcu_type)
 endmacro()
 
 function(ameba_firmware_package output_app_name)
-    if (CONFIG_FULLMAC_DEV)
-        ameba_info("Skip firmware package when CONFIG_FULLMAC_DEV enabled")
-        return()
-    endif()
     set(multiValueArgs
         p_CUSTOM_VARIABLES #Variables to be transformed to postbuild.cmake directly
         p_MCU_PROJECTS
@@ -363,13 +359,6 @@ function(ameba_firmware_package output_app_name)
     foreach(var ${ARG_p_CUSTOM_VARIABLES})
         ameba_list_append(custom_variables -D${var}=${${var}})
     endforeach()
-
-    if (CONFIG_DSP_WITHIN_APP_IMG)
-        set(c_DSP_FILE ${c_SOC_PROJECT_DIR}/${DSP_IMAGE_TARGET_DIR}/dsp.bin)
-        if(NOT EXISTS ${c_DSP_FILE})
-            message(FATAL_ERROR "dsp file not exist: ${c_DSP_FILE}")
-        endif()
-    endif()
 
     # Merge image2/image3 to app.bin
     set(c_APP_BINARY_NAME ${output_app_name})
@@ -399,7 +388,7 @@ function(ameba_firmware_package output_app_name)
     string(REPLACE ";" "\\;" image1_all_files "${image1_all_files}")
     string(REPLACE ";" "\\;" image2_all_files "${image2_all_files}")
     string(REPLACE ";" "\\;" image3_all_files "${image3_all_files}")
-    ameba_info("image all list: image1: ${image1_all_files}, image2: ${image2_all_files}, image3: ${image3_all_files}, dsp: ${c_DSP_FILE}")
+    ameba_info("image all list: image1: ${image1_all_files}, image2: ${image2_all_files}, image3: ${image3_all_files}")
     add_custom_target(firmware_package ALL
         COMMAND ${CMAKE_COMMAND}
             # common variables
@@ -414,7 +403,6 @@ function(ameba_firmware_package output_app_name)
             -Dc_IMAGE1_ALL_FILES="${image1_all_files}" #NOTE: transfer as list
             -Dc_IMAGE2_ALL_FILES="${image2_all_files}" #NOTE: transfer as list
             -Dc_IMAGE3_ALL_FILES="${image3_all_files}" #NOTE: transfer as list
-            -Dc_DSP_FILE="${c_DSP_FILE}"
 
             # user's variables
             -DFINAL_IMAGE_DIR=${FINAL_IMAGE_DIR}

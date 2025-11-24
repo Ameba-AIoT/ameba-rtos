@@ -12,11 +12,10 @@
 
 #if defined(CONFIG_WHC_INTF_SDIO)
 #include "spdio_api.h"
-#endif
 #ifndef CONFIG_FULLMAC
 #include "ameba_inic.h"
 #endif
-
+#endif
 /* -------------------------------- Includes -------------------------------- */
 
 struct whc_api_info {
@@ -73,5 +72,9 @@ struct whc_msg_info {
 #define SPDIO_DEVICE_RX_BUFSZ	(SPDIO_RX_BUFSZ_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct whc_msg_info) + sizeof(INIC_TX_DESC))) //n*64, must be rounded to 64
 #define SPDIO_SKB_RSVD_LEN		N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct whc_msg_info) - sizeof(INIC_TX_DESC), SPDIO_DMA_ALIGN_4)
 
+#define UART_DMA_ALIGN(x)	((((x-1)>>5)+1)<<5) //alignement to 32 for cache line
+#define UART_BUFSZ		(UART_DMA_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct whc_msg_info)))
+/* uart as flow controller when rx */
+#define UART_SKB_RSVD_LEN	N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct whc_msg_info), WHC_UART_RX_BURST_SIZE)
 
 #endif /* __INIC_SDIO_H__ */

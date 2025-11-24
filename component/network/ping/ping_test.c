@@ -111,8 +111,9 @@ void ping_test(void *param)
 		}
 #if LWIP_IPV6
 		else {
+			struct netif * pnetif = LwIP_idx_get_netif(ping_interface);
 			struct sockaddr_in6 bind_addr = { .sin6_family = AF_INET6 };
-			memcpy(&bind_addr.sin6_addr, netif_ip6_addr(&xnetif[ping_interface], 0)->addr, 16);
+			memcpy(&bind_addr.sin6_addr, netif_ip6_addr(pnetif, 0)->addr, 16);
 			bind(ping_socket, (struct sockaddr *)&bind_addr, sizeof(bind_addr));
 		}
 #endif

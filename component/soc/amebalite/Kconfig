@@ -68,6 +68,8 @@ menu "CONFIG FUNCTION TEST"
         bool "LEDC_Verify_Mode"
         config I2C_VERIFY
         bool "I2C_Verify_Mode"
+        config RF_FLASH_VERIFY
+        bool "RF_FLASH_Verify_Mode"
         config PMC_VERIFY
         bool "PMC_Verify_Mode"
         config SGPIO_VERIFY

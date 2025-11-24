@@ -15,7 +15,7 @@ ameba_list_append(c_GLOBAL_MCU_COMPILE_ASM_OPTIONS
     -mthumb
 )
 
-if(CONFIG_AMEBAD)
+if(CONFIG_AMEBAD OR CONFIG_AMEBAPRO3)
     ameba_list_append(c_GLOBAL_MCU_COMPILE_ASM_OPTIONS -march=armv8-m.main+dsp)
 elseif(CONFIG_AMEBADPLUS OR CONFIG_AMEBALITE)
     ameba_list_append(c_GLOBAL_MCU_COMPILE_ASM_OPTIONS -march=armv8.1-m.main+dsp)

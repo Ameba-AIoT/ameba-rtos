@@ -26,13 +26,6 @@
 #include "lwip/lwip_ip6_rlocal.h"
 #endif
 
-#ifdef CONFIG_LWIP_LAYER
-struct static_ip_config user_static_ip;
-extern struct netif xnetif[NET_IF_NUM];
-
-unsigned char ap_ip[4] = {192, 168, 43, 1}, ap_netmask[4] = {255, 255, 255, 0}, ap_gw[4] = {192, 168, 43, 1};
-#endif
-
 #ifdef CONFIG_WLAN
 extern struct table  ip_table;
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
@@ -49,8 +42,8 @@ extern void ipnat_dump(void);
 
 extern int wifi_set_ips_internal(u8 enable);
 
-#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
-extern struct netif eth_netif;
+#if (defined(CONFIG_LWIP_USB_ETHERNET) || defined(CONFIG_ETHERNET))
+extern struct netif *pnetif_eth;
 #endif
 
 static void init_wifi_struct(void)
@@ -359,7 +352,7 @@ void at_wlconn(void *arg)
 	}
 
 #ifdef CONFIG_LWIP_LAYER
-	ret = LwIP_IP_Address_Request();
+	ret = LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
 	tick3 = rtos_time_get_current_system_time_ms();
 	if (DHCP_ADDRESS_ASSIGNED == ret) {
 		RTK_LOGI(NOTAG, "\r\n[+WLCONN] Got IP after %d ms.\r\n", (unsigned int)(tick3 - tick1));
@@ -442,7 +435,7 @@ void at_wldisconn(void *arg)
 end:
 #ifdef CONFIG_LWIP_LAYER
 	user_static_ip.use_static_ip = 0;
-	LwIP_ReleaseIP(STA_WLAN_INDEX);
+	LwIP_ReleaseIP(NETIF_WLAN_STA_INDEX);
 #endif
 	init_wifi_struct();
 	if (error_no == RTW_AT_OK) {
@@ -698,7 +691,6 @@ void at_wlstartap(void *arg)
 #ifdef CONFIG_LWIP_LAYER
 	u32 ip_addr, netmask, gw;
 	struct ip_addr start_ip, end_ip;
-	struct netif *pnetif = &xnetif[SOFTAP_WLAN_INDEX];
 #endif
 	int timeout = 20;
 	struct rtw_wifi_setting *setting = NULL;
@@ -896,7 +888,7 @@ void at_wlstartap(void *arg)
 	ip_addr = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 	netmask = CONCAT_TO_UINT32(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
 	gw = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-	LwIP_SetIP(SOFTAP_WLAN_INDEX, ip_addr, netmask, gw);
+	LwIP_SetIP(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
 #endif
 
 	if (ap.channel == 0) {
@@ -946,8 +938,8 @@ void at_wlstartap(void *arg)
 	ip_addr = CONCAT_TO_UINT32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
 	netmask = CONCAT_TO_UINT32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
 	gw = CONCAT_TO_UINT32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
-	LwIP_SetIP(SOFTAP_WLAN_INDEX, ip_addr, netmask, gw);
-	dhcps_init(pnetif);
+	LwIP_SetIP(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
+	dhcps_init(pnetif_ap);
 #endif
 
 end:
@@ -990,10 +982,10 @@ void at_wlstate(void *arg)
 {
 	int i = 0;
 #ifdef CONFIG_LWIP_LAYER
-	u8 *mac = LwIP_GetMAC(0);
-	u8 *ip = LwIP_GetIP(0);
-	u8 *gw = LwIP_GetGW(0);
-	u8 *msk = LwIP_GetMASK(0);
+	u8 *mac = LwIP_GetMAC(NETIF_WLAN_STA_INDEX);
+	u8 *ip = LwIP_GetIP(NETIF_WLAN_STA_INDEX);
+	u8 *gw = LwIP_GetGW(NETIF_WLAN_STA_INDEX);
+	u8 *msk = LwIP_GetMASK(NETIF_WLAN_STA_INDEX);
 #endif
 	struct rtw_wifi_setting *p_wifi_setting = NULL;
 
@@ -1060,16 +1052,18 @@ void at_wlstate(void *arg)
 	}
 
 	/* show the ethernet interface info */
-#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
+#if (defined(CONFIG_LWIP_USB_ETHERNET) || defined(CONFIG_ETHERNET))
 #ifdef CONFIG_LWIP_LAYER
-	mac = (uint8_t *)(eth_netif.hwaddr);
-	ip = (uint8_t *) & (eth_netif.ip_addr);
-	gw = (uint8_t *) & (eth_netif.gw);
+	mac = (uint8_t *)(pnetif_eth->hwaddr);
+	ip = (uint8_t *) & (pnetif_eth->ip_addr);
+	gw = (uint8_t *) & (pnetif_eth->gw);
+	msk = (uint8_t *) & (pnetif_eth->netmask);
 	at_printf("Interface ethernet\r\n");
 	at_printf("==============================\r\n");
 	at_printf("MAC => %02x:%02x:%02x:%02x:%02x:%02x\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) ;
 	at_printf("IP  => %d.%d.%d.%d\r\n", ip[0], ip[1], ip[2], ip[3]);
-	at_printf("GW  => %d.%d.%d.%d\r\n\r\n", gw[0], gw[1], gw[2], gw[3]);
+	at_printf("GW  => %d.%d.%d.%d\r\n", gw[0], gw[1], gw[2], gw[3]);
+	at_printf("MSK  => %d.%d.%d.%d\r\n\r\n", msk[0], msk[1], msk[2], msk[3]);
 #endif /* CONFIG_LWIP_LAYER */
 #endif /* CONFIG_LWIP_USB_ETHERNET || CONFIG_ETHERNET */
 	rtos_mem_free((void *)p_wifi_setting);
@@ -1488,7 +1482,7 @@ void at_wlstaticip(void *arg)
 		goto end;
 	}
 
-	/* Static IP will be set in LwIP_DHCP(). */
+	/* Static IP will be set in LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX). */
 	user_static_ip.use_static_ip = 1;
 	user_static_ip.addr = PP_HTONL(inet_addr(argv[1]));
 	if (argc == 4) {

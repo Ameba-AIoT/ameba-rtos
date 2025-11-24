@@ -59,9 +59,6 @@ static unsigned char dump_psRAMHeap[configTOTAL_PSRAM_HEAP_SIZE_TEST];
 #endif
 #endif  //ENABLE_REMOTE_FILE_DOWNLOAD
 
-extern struct netif xnetif[NET_IF_NUM];
-extern struct netif eth_netif;
-
 #if ENABLE_USER_SET_DONGLE_MAC
 static u16 led_color[1] = {0x1122};
 static u8 mac_valid[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
@@ -717,19 +714,19 @@ static void ecm_link_change_thread(void *param)
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Do DHCP\n");
 				ethernet_unplug = ETH_STATUS_INIT;
 				mac = (u8 *)usbh_cdc_ecm_process_mac_str();
-				memcpy(eth_netif.hwaddr, mac, 6);
+				memcpy(pnetif_eth->hwaddr, mac, 6);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-				netif_set_link_up(&eth_netif);
+				netif_set_link_up(pnetif_eth);
 
-				dhcp_status = LwIP_DHCP(2, DHCP_START);
+				dhcp_status = LwIP_IP_Address_Request(NETIF_ETH_INDEX);
 				if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
-					netifapi_netif_set_default(&eth_netif);	//Set default gw to ether netif
+					netifapi_netif_set_default(pnetif_eth);	//Set default gw to ether netif
 					dhcp_done = 1;
 				}
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
 			} else if (0 == link_is_up && (ethernet_unplug >= ETH_STATUS_INIT)) {	// link -> unlink
 				ethernet_unplug = ETH_STATUS_DEINIT;
-				netif_set_default(&xnetif[0]);
+				netif_set_default(pnetif_sta);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Swicth to unlink\n");
 			} else {
 				rtos_time_delay_ms(1000);
@@ -741,19 +738,19 @@ static void ecm_link_change_thread(void *param)
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Do DHCP\n");
 				ethernet_unplug = ETH_STATUS_INIT;
 				mac = dongle_mac;
-				memcpy(eth_netif.hwaddr, mac, 6);
+				memcpy(pnetif_eth->hwaddr, mac, 6);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-				netif_set_link_up(&eth_netif);
+				netif_set_link_up(pnetif_eth);
 
-				dhcp_status = LwIP_DHCP(2, DHCP_START);
+				dhcp_status = LwIP_IP_Address_Request(NETIF_ETH_INDEX);
 				if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
-					netifapi_netif_set_default(&eth_netif);	//Set default gw to ether netif
+					netifapi_netif_set_default(pnetif_eth);	//Set default gw to ether netif
 					dhcp_done = 1;
 				}
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
 			} else if (0 == link_is_up && (ethernet_unplug >= ETH_STATUS_INIT)) {	// link -> unlink
 				ethernet_unplug = ETH_STATUS_DEINIT;
-				netif_set_default(&xnetif[0]);
+				netif_set_default(pnetif_sta);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Swicth to unlink\n");
 			} else {
 				rtos_time_delay_ms(1000);
@@ -774,7 +771,7 @@ static void ecm_link_change_thread(void *param)
 				}
 			} else if (0 == link_is_up && (ethernet_unplug >= ETH_STATUS_INIT)) {
 				ethernet_unplug = ETH_STATUS_DEINIT;
-				netif_set_default(&xnetif[0]);
+				netif_set_default(pnetif_sta);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Swicth to unlink !!\n");
 			} else {
 				rtos_time_delay_ms(1000);

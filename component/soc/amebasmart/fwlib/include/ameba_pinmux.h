@@ -188,10 +188,18 @@
 #define PINMUX_FUNCTION_TIMINPUT_HS		(28)
 #define PINMUX_FUNCTION_DBGPORT			(29)
 #define PINMUX_FUNCTION_WAKEUP			(30)
+
+#define PINMUX_FUNCTION_SWD_EXTRA		(32)
+#define PINMUX_FUNCTION_SDIO_EXTRA		(33)
+
+#define PINMUX_FUNCTION_I2S2_EXTRA1		(34)
+#define PINMUX_FUNCTION_I2S2_EXTRA2		(35)
+#define PINMUX_FUNCTION_I2S2_DOUT_EXTRA	(36)
+
+#define PINMUX_FUNCTION_I2S3_EXTRA		(37)
+#define PINMUX_FUNCTION_I2S3_DOUT_EXTRA	(38)
+#define PINMUX_FUNCTION_I2S3_DIN_EXTRA	(39)
 /** @} */
-
-
-
 
 
 // Do NOT modify any AUTO_GEN code above
@@ -221,12 +229,23 @@
 #define PINMUX_S5		(5)
 /** @} */
 
+/** @defgroup PINMUX_EXTEND_FUNCTION_definitions
+ * @{
+ */
+typedef struct {
+	u16 func_id;
+	u16 bit_mask;
+} PINMUX_FUNCEXT_T;
+
+/** @} */
+
 /** @} */
 
 /** @defgroup PINMUX_Exported_Functions PINMUX Exported Functions
   * @{
   */
 _LONG_CALL_ void _Pinmux_Config(u8 PinName, u32 PinFunc);
+_LONG_CALL_ void Pinmux_ConfigEXT(u8 PinName, u32 PinFunc, u8 NewStatus);
 _LONG_CALL_ u32 Pinmux_ConfigGet(u8 PinName);
 _LONG_CALL_ void Pinmux_UartLogCtrl(u32  PinLocation, bool   Operation);
 _LONG_CALL_ void Pinmux_SpicCtrl(u32  PinLocation, bool Operation);

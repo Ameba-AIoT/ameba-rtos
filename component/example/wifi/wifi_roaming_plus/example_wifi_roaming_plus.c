@@ -83,9 +83,6 @@ enum {
 	FAST_CONNECT_ALL_CH  = 1
 };
 
-#ifdef CONFIG_LWIP_LAYER
-extern struct netif xnetif[NET_IF_NUM];
-#endif
 static wifi_roaming_ap_t *ap_list;
 static u8 pscan_channel_list[] = {1}; // set by customer
 static unsigned short ping_seq = 0;
@@ -222,7 +219,7 @@ static int wlan_fast_connect(struct wifi_roaming_data *data, u8 scan_type)
 	u8 autoreconn_en = 0;
 
 #ifdef CONFIG_LWIP_LAYER
-	netifapi_netif_set_up(&xnetif[0]);
+	netifapi_netif_set_up(pnetif_sta);
 #endif
 	//disable autoreconnect to manually reconnect the specific ap or channel.
 	if ((wifi_get_autoreconnect(&autoreconn_en) == RTK_SUCCESS) && autoreconn_en) {
@@ -292,7 +289,7 @@ WIFI_RETRY_LOOP:
 	// 2.dhcp
 	if (ret == RTK_SUCCESS) {
 		//Use ping test to check if need to do dhcp.
-		if (roaming_ping_test(*(u32 *)LwIP_GetGW(0))) {
+		if (roaming_ping_test(*(u32 *)LwIP_GetGW(NETIF_WLAN_STA_INDEX))) {
 			tick4 = rtos_time_get_current_system_time_ms();
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 			//get offer ip in flash
@@ -307,15 +304,15 @@ WIFI_RETRY_LOOP:
 				}
 			}
 #endif
-			LwIP_DHCP(0, DHCP_START);
+			LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
 			tick5 = rtos_time_get_current_system_time_ms();
 			ROAMING_DBG("dhcp time %d\n", (tick5 - tick4));
 			//clean arp? old arp table may not update.
-			etharp_cleanup_netif(&xnetif[0]);
+			etharp_cleanup_netif(pnetif_sta);
 
 			//store dhcp info for each ap.
 			memcpy(store_dhcp_info.ap_bssid, ap_info.bssid, 6);
-			store_dhcp_info.sta_ip = *(u32 *)LwIP_GetIP(0);
+			store_dhcp_info.sta_ip = *(u32 *)LwIP_GetIP(NETIF_WLAN_STA_INDEX);
 			wifi_write_ap_info_to_flash_ext((u8 *)&store_dhcp_info, sizeof(struct ap_additional_info));
 		}
 	} else {
@@ -689,8 +686,7 @@ void wifi_roaming_plus_thread(void *param)
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: wifi_roaming_plus \n");
 	while (1) { //wait wifi connect
-		if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
-			&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
+		if (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) == CONNECTION_VALID) {
 			break;
 		} else {
 			rtos_time_delay_ms(1000);
@@ -703,8 +699,7 @@ void wifi_roaming_plus_thread(void *param)
 	}
 
 	while (1) {
-		if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
-			&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
+		if (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) == CONNECTION_VALID) {
 			wifi_get_phy_stats(STA_WLAN_INDEX, NULL, &phy_stats);
 			ap_rssi = phy_stats.sta.rssi;
 			ROAMING_DBG("\r\n %s():Current rssi(%d),scan threshold rssi(%d)\n", __func__, ap_rssi, RSSI_SCAN_THRESHOLD);
@@ -722,8 +717,7 @@ void wifi_roaming_plus_thread(void *param)
 #if PRE_SCAN
 						ap_valid = AP_VALID_TIME;
 						while (ap_valid) {
-							if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
-								&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
+							if (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) == CONNECTION_VALID) {
 								wifi_get_phy_stats(STA_WLAN_INDEX, NULL, &phy_stats);
 								ap_rssi = phy_stats.sta.rssi;
 								ROAMING_DBG("\r\n %s():Current rssi(%d),roaming threshold rssi(%d)\n", __func__, ap_rssi, RSSI_ROAMING_THRESHOLD);
@@ -749,8 +743,7 @@ void wifi_roaming_plus_thread(void *param)
 							rtos_time_delay_ms(1000);
 						}
 #else//no pre scan
-						if (wifi_is_running(STA_WLAN_INDEX) && wifi_get_join_status(&join_status) == RTK_SUCCESS
-							&& ((join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
+						if (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) == CONNECTION_VALID) {
 							wifi_get_phy_stats(STA_WLAN_INDEX, NULL, &phy_stats);
 							ap_rssi = phy_stats.sta.rssi;
 							if (ap_rssi > RSSI_SCAN_THRESHOLD + 5) {

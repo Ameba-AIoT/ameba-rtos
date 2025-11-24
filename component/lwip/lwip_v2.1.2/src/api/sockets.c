@@ -1074,8 +1074,10 @@ lwip_recv_tcp_from(struct lwip_sock *sock, struct sockaddr *from, socklen_t *fro
 #endif /* !SOCKETS_DEBUG */
   {
     /* get remote addr/port from tcp_pcb */
+/* Modified by Realtek start */
     u16_t port = 0;
     ip_addr_t tmpaddr = {0};
+/* Modified by Realtek end */
     netconn_getaddr(sock->conn, &tmpaddr, &port, 0);
     LWIP_DEBUGF(SOCKETS_DEBUG, ("%s(%d):  addr=", dbg_fn, dbg_s));
     ip_addr_debug_print_val(SOCKETS_DEBUG, tmpaddr);
@@ -2893,7 +2895,7 @@ lwip_sockopt_to_ipopt(int optname)
 /** lwip_getsockopt_impl: the actual implementation of getsockopt:
  * same argument as lwip_getsockopt, either called directly or through callback
  */
-#include "ameba.h"
+#include "ameba.h"              // Added by Realtek
 static int
 lwip_getsockopt_impl(int s, int level, int optname, void *optval, socklen_t *optlen)
 {

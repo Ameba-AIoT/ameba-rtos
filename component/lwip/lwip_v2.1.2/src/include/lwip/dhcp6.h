@@ -50,6 +50,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+/* Added by Realtek start */
 #if LWIP_IPV6_DHCP6_STATEFUL
 /** period (in seconds) of the application calling dhcp6_lease_tmr() */
 #define DHCP6_LEASE_TIMER_SECS  60
@@ -57,6 +58,7 @@ extern "C" {
 /** period (in milliseconds) of the application calling dhcp6_lease_tmr() */
 #define DHCP6_LEASE_TIMER_MSECS (DHCP6_LEASE_TIMER_SECS * 1000UL)
 #endif
+/* Added by Realtek end */
 /** period (in milliseconds) of the application calling dhcp6_tmr() */
 #define DHCP6_TIMER_MSECS   500
 
@@ -76,6 +78,7 @@ struct dhcp6
   u16_t request_timeout;
 #if LWIP_IPV6_DHCP6_STATEFUL
   /* @todo: add more members here to keep track of stateful DHCPv6 data, like lease times */
+/* Added by Realtek start */
   u8_t server_id_buf[150];
   u16_t server_id_len;
   u8_t ia_na_buf[100];
@@ -93,6 +96,7 @@ struct dhcp6
   u32_t offered_t0_lease; /* lease period (in seconds) */
   u32_t offered_t1_renew; /* recommended renew time (usually 50% of lease period) */
   u32_t offered_t2_rebind; /* recommended rebind time (usually 87.5 of lease period)  */
+/* Added by Realtek end */
 
 #endif /* LWIP_IPV6_DHCP6_STATEFUL */
 };
@@ -104,13 +108,13 @@ void dhcp6_cleanup(struct netif *netif);
 
 //err_t dhcp6_enable_stateful(struct netif *netif);
 //err_t dhcp6_enable_stateless(struct netif *netif);
-err_t dhcp6_enable(struct netif *netif);
+err_t dhcp6_enable(struct netif *netif); /* Modified by Realtek */
 void dhcp6_disable(struct netif *netif);
-void dhcp6_stop(struct netif *netif);
+void dhcp6_stop(struct netif *netif); /* Added by Realtek */
 void dhcp6_tmr(void);
-void dhcp6_network_changed(struct netif *netif);
-void dhcp6_lease_tmr(void);
-err_t dhcp6_release(struct netif *netif);  
+void dhcp6_network_changed(struct netif *netif); /* Added by Realtek */
+void dhcp6_lease_tmr(void); /* Added by Realtek */
+err_t dhcp6_release(struct netif *netif); /* Added by Realtek */
 void dhcp6_nd6_ra_trigger(struct netif *netif, u8_t managed_addr_config, u8_t other_config);
 
 #if LWIP_DHCP6_GET_NTP_SRV

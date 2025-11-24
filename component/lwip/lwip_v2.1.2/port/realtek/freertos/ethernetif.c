@@ -59,13 +59,14 @@
 #include "whc_spi_host_trx.h"
 #elif defined(CONFIG_WHC_INTF_SDIO)
 #include "whc_sdio_host_trx.h"
+#elif defined(CONFIG_WHC_INTF_UART)
+#include "whc_uart_host_trx.h"
 #elif defined(CONFIG_WHC_INTF_IPC)
 #include "whc_ipc_host_trx.h"
 #endif
 #endif
 
-extern struct netif xnetif[NET_IF_NUM];
-extern struct netif eth_netif;
+extern struct netif *pnetif_eth;
 extern int rltk_mii_send(struct pbuf * p);
 
 #if defined(CONFIG_BRIDGE) && CONFIG_BRIDGE
@@ -78,7 +79,7 @@ static const char *const TAG = "ETHERNET";
         if ( ETHERNET_DEBUG ) DiagPrintf(format, ##__VA_ARGS__); \
     } while(0);
 
-#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
+#if (defined(CONFIG_LWIP_USB_ETHERNET) || defined(CONFIG_ETHERNET))
 #define MAX_BUFFER_SIZE		(1536)
 #define DST_MAC_LEN			(6)
 #define SRC_MAC_LEN			(6)
@@ -162,7 +163,7 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 
 #if CONFIG_WLAN
 #ifndef CONFIG_WHC_HOST
-	if (!wifi_is_running(netif_get_idx(netif))) {
+	if (!wifi_is_running(LwIP_netif_get_idx(netif))) {
 		return ERR_IF;
 	}
 #endif
@@ -188,13 +189,13 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 	if (sg_len) {
 #if CONFIG_WLAN
 #if defined(CONFIG_WHC_HOST)
-		ret = whc_host_send(netif_get_idx(netif), sg_list, sg_len, p->tot_len, NULL, is_special_pkt);
+		ret = whc_host_send(LwIP_netif_get_idx(netif), sg_list, sg_len, p->tot_len, NULL, is_special_pkt);
 		if (ret == ERR_IF) {
 			return ret;
 		}
 		if (ret == 0)
 #else
-		if (rltk_wlan_send(netif_get_idx(netif), sg_list, sg_len, p->tot_len, is_special_pkt) == 0)
+		if (rltk_wlan_send(LwIP_netif_get_idx(netif), sg_list, sg_len, p->tot_len, is_special_pkt) == 0)
 #endif
 #elif CONFIG_INIC_HOST
 		if (rltk_inic_send(sg_list, sg_len, p->tot_len) == 0)
@@ -221,7 +222,7 @@ static err_t low_level_output_mii(struct netif *netif, struct pbuf *p)
 	(void) p;
 	RTK_LOG_ETHERNET("%s %d \n", __func__, __LINE__);
 
-#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
+#if (defined(CONFIG_LWIP_USB_ETHERNET) || defined(CONFIG_ETHERNET))
 
 #if defined(CONFIG_ETHERNET_RMII) && CONFIG_ETHERNET_RMII
 	(void) TX_BUFFER;
@@ -258,7 +259,7 @@ static err_t low_level_output_mii(struct netif *netif, struct pbuf *p)
 
 void rltk_mii_init(void)
 {
-#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
+#if (defined(CONFIG_LWIP_USB_ETHERNET) || defined(CONFIG_ETHERNET))
 	if(mii_tx_mutex == NULL) {
 		rtos_mutex_create(&mii_tx_mutex);
 	}
@@ -267,7 +268,7 @@ void rltk_mii_init(void)
 
 void rltk_mii_deinit(void)
 {
-#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
+#if (defined(CONFIG_LWIP_USB_ETHERNET) || defined(CONFIG_ETHERNET))
 	if(mii_tx_mutex) {
 		rtos_mutex_delete(mii_tx_mutex);
 		mii_tx_mutex = NULL;
@@ -279,7 +280,7 @@ void rltk_mii_recv(struct eth_drv_sg *sg_list, int sg_len)
 {
 	UNUSED(sg_list);
 	UNUSED(sg_len);
-#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
+#if (defined(CONFIG_LWIP_USB_ETHERNET) || defined(CONFIG_ETHERNET))
 	struct eth_drv_sg *last_sg;
 	u8 *pbuf = RX_BUFFER;
 
@@ -296,7 +297,7 @@ u8 rltk_mii_recv_data_check(u8 *mac)
 {
 	UNUSED(mac);
 	u8 check_res = TRUE;
-#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
+#if (defined(CONFIG_LWIP_USB_ETHERNET) || defined(CONFIG_ETHERNET))
 #if defined(CONFIG_LWIP_USB_ETHERNET_BRIDGE) && CONFIG_LWIP_USB_ETHERNET_BRIDGE
 	return check_res;
 #else
@@ -349,7 +350,7 @@ struct pbuf * ethernetif_rmii_buf_copy(u32 frame_len, u8 *src_buf)
 void ethernetif_rmii_netif_recv(struct pbuf *p)
 {
 #if (defined(CONFIG_ETHERNET_RMII) && CONFIG_ETHERNET_RMII)
-	struct netif *netif = &eth_netif;
+	struct netif *netif = pnetif_eth;
 
 	if (p == NULL) {
 		return;
@@ -370,7 +371,7 @@ void ethernetif_recv(struct netif *netif, int total_len)
 	struct pbuf *p, *q;
 	int sg_len = 0;
 #if CONFIG_WLAN
-	if (!wifi_is_running(netif_get_idx(netif))) {
+	if (!wifi_is_running(LwIP_netif_get_idx(netif))) {
 		return;
 	}
 #endif
@@ -405,7 +406,7 @@ void ethernetif_recv(struct netif *netif, int total_len)
 	// Copy received packet to scatter list from wrapper rx skb
 	//RTK_LOGW(TAG, "\n\rwlan:%c: Recv sg_len: %d, tot_len:%d", netif->name[1],sg_len, total_len);
 #if CONFIG_WLAN
-	rltk_wlan_recv(netif_get_idx(netif), sg_list, sg_len);
+	rltk_wlan_recv(LwIP_netif_get_idx(netif), sg_list, sg_len);
 #elif CONFIG_INIC_HOST
 	rltk_inic_recv(sg_list, sg_len);
 #endif
@@ -420,13 +421,13 @@ void ethernetif_mii_recv(u8 *buf, u32 frame_len)
 {
 	(void) buf;
 	(void) frame_len;
-#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
+#if (defined(CONFIG_LWIP_USB_ETHERNET) || defined(CONFIG_ETHERNET))
 	struct eth_drv_sg sg_list[MAX_ETH_DRV_SG];
 	struct pbuf *p, *q;
 	int sg_len = 0;
 	u32 total_len = 0;
 
-	struct netif *netif = &eth_netif;
+	struct netif *netif = pnetif_eth;
 	u8 *macstr = (u8 *)(netif->hwaddr);
 
 	if (frame_len > MAX_BUFFER_SIZE) {

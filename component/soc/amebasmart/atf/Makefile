@@ -886,6 +886,12 @@ ifneq (${GENERATE_COT},0)
         endif
 endif
 
+ifeq ($(CONFIG_CP_TEST_CA32),y)
+#  64KB alignment for the FIP image.
+FIP_ALIGN:=65536
+$(eval $(call add_define_val,CONFIG_CP_TEST_CA32,1))
+endif
+
 ifneq (${FIP_ALIGN},0)
 FIP_ARGS += --align ${FIP_ALIGN}
 endif

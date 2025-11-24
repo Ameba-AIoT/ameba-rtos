@@ -1,0 +1,23 @@
+#ifndef __WHC_UART_HOST_TRX_H__
+#define __WHC_SPI_HOS__WHC_UART_HOST_TRX_H__T_TRX_H__
+/* -------------------------------- Includes -------------------------------- */
+/* external head files */
+#include "rtw_wifi_common.h"
+#include "rtw_skbuff.h"
+/* -------------------------------- Defines --------------------------------- */
+#define whc_host_send           whc_uart_host_send
+
+#define whc_host_send_to_dev           whc_uart_host_send_to_dev
+/* -------------------------------- Macros ---------------------------------- */
+/* ------------------------------- Data Types ------------------------------- */
+
+/* ---------------------------- Global Variables ---------------------------- */
+
+/* -------------------------- Function declaration -------------------------- */
+int whc_uart_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_len, struct skb_raw_para *raw_para, u8 is_special_pkt);
+void whc_uart_host_send_to_dev(u8 *buf, u32 len);
+
+
+#endif /* __WHC_UART_HOST_TRX_H__ */
+
+

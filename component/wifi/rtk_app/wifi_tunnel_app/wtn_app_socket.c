@@ -196,13 +196,13 @@ void wtn_rx_socket_handler(void *param)
 	int maxfd;
 
 	/*check whether DHCP finished*/
-	ip = (u8 *)LwIP_GetIP(0);
+	ip = (u8 *)LwIP_GetIP(NETIF_WLAN_STA_INDEX);
 	while (memcmp(ip, invalid_ip, 4) == 0) {
 		rtos_time_delay_ms(1000);
 		if (wtn_socket_need_close) {/*if connect fail after assoc success, since IP has not gotten, just exit*/
 			goto exit;
 		}
-		ip = (u8 *)LwIP_GetIP(0);
+		ip = (u8 *)LwIP_GetIP(NETIF_WLAN_STA_INDEX);
 	}
 
 #ifdef CONFIG_RMESH_OTA_EN
@@ -211,10 +211,10 @@ void wtn_rx_socket_handler(void *param)
 
 	/*when rnat enabled, check whether softap ap has started*/
 	if (wifi_user_config.wtn_rnat_en && wtn_rnat_ap_start) {
-		ip = (u8 *)LwIP_GetIP(1);
+		ip = (u8 *)LwIP_GetIP(NETIF_WLAN_AP_INDEX);
 		while (memcmp(ip, invalid_ip, 4) == 0) {
 			rtos_time_delay_ms(1000);
-			ip = (u8 *)LwIP_GetIP(1);
+			ip = (u8 *)LwIP_GetIP(NETIF_WLAN_AP_INDEX);
 		}
 		/*create the softap bcmc socket for forwarding bcmc socket pkt*/
 		rnat_bcmc_forward_socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -347,13 +347,13 @@ void wtn_tx_socket_handler(void *param)
 
 create_socket:
 	/*check whether DHCP finished and PC IP is obtained*/
-	ip = (u8 *)LwIP_GetIP(0);
+	ip = (u8 *)LwIP_GetIP(NETIF_WLAN_STA_INDEX);
 	while (memcmp(ip, invalid_ip, 4) == 0 || memcmp(wtn_server_ip, invalid_ip, 4) == 0) {
 		rtos_time_delay_ms(1000);
 		if (wtn_socket_need_close) {/*if connect fail after assoc success, since IP has not gotten, just exit*/
 			rtos_task_delete(NULL);
 		}
-		ip = (u8 *)LwIP_GetIP(0);
+		ip = (u8 *)LwIP_GetIP(NETIF_WLAN_STA_INDEX);
 	}
 
 #ifdef WTN_UDP_SOCKET
@@ -446,7 +446,7 @@ int wtn_socket_send(u8 *buf, u32 len)
 	int i;
 
 	/* check if DHCP finished */
-	ip = (u8 *)LwIP_GetIP(0);
+	ip = (u8 *)LwIP_GetIP(NETIF_WLAN_STA_INDEX);
 	if (memcmp(ip, invalid_ip, 4) == 0 || wtn_client_fd < 0) {
 		return RTK_FAIL;
 	}

@@ -8,7 +8,7 @@ import glob
 import subprocess
 
 # CMAKE_GDB IS AUTOSET BY CMAKE, DO NOT CHANGE IT MANUALLY.
-CMAKE_GDB = '/opt/rtk-toolchain/asdk-10.3.1-4354/linux/newlib/bin/arm-none-eabi-gdb'
+CMAKE_GDB = '/opt/rtk-toolchain/asdk-10.3.1-4523/linux/newlib/bin/arm-none-eabi-gdb'
 PROJECT_DIR = os.getcwd()
 ASDK = os.path.join(PROJECT_DIR, 'project_km4/asdk')
 GNU_SCRIPT =  os.path.join(ASDK, 'gnu_utility/gnu_script')

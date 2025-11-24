@@ -76,6 +76,7 @@ menu "CONFIG Link Option"
         prompt "IMG2(Application) running on PSRAM or FLASH?"
         default IMG2_PSRAM
         config IMG2_PSRAM
+            depends on !CP_TEST_CA32
             bool "PSRAM"
         config IMG2_FLASH
             bool "FLASH"
@@ -131,6 +132,8 @@ menu "CONFIG APPLICATION"
         orsource "../component/tflite_micro/Kconfig"
         orsource "../component/aivoice/Kconfig"
     endmenu
+
+    orsource "../component/application/Kconfig"
 
     orsource "${APP_DIR}/Kconfig.prj"
 
@@ -189,6 +192,7 @@ endmenu
 
 menu "CONFIG WIFI"
     config WLAN_MENU
+        depends on !CP_TEST_CA32
         bool "Enable Wifi"
         default y
     if WLAN_MENU
@@ -321,6 +325,14 @@ if !AMEBA_RLS
 comment "---------Test Config---------"
 
 menu "Verification and Test"
+    # shall all CPU see this option.
+    config CP_TEST_CA32
+        bool "CP Test CA32 without external memory"
+        help
+            Enable this option to let CA32 run code from SRAM in CP stage for test purpose.
+            This option is only for internal test, do not enable it in normal project.
+            It will reduce available memory size for CA32 application.
+
     rsource "../component/soc/amebasmart/Kconfig"
 endmenu
 endif

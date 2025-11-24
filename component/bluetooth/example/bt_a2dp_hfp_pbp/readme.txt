@@ -6,6 +6,7 @@
 
 Test Configuration
 ~~~~~~~~~~~
+LE Audio Config:
 1. BIS num 1 + Sample rate 16kHz + 2-channel + ISO interval 20 ms 
     1.1 Config the following Macros in rtk_bt_le_audio_def.h
             change   RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG               to         RTK_BT_ISO_INTERVAL_20_MS
@@ -37,8 +38,12 @@ GCC menuconfig
 
 Test ATCMD
 ~~~~~~~~~~~
-If user want to open audio local play fuction, must change the Maros in rtk_bt_le_audio_def.h before test:
-    change the RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT   to  1
+If user want to open audio local play fuction, must change the following Maros before test:
+    1.change the RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT   to  1   in rtk_bt_le_audio_def.h 
+    2.change the RTK_BT_LE_AUDIO_ISO_TX_SYNC_SUPPORT          to  1   in rtk_bt_le_audio_def.h 
+    3.change kPrimaryAudioConfig in ameba_audio_mixer_usrcfg.cpp:
+         change from   kPrimaryAudioConfig = {1024, 4, RTAUDIO_OUT_MIN_FRAMES_STAGE1};
+                to     kPrimaryAudioConfig = {256, 4, RTAUDIO_OUT_MIN_FRAMES_STAGE1};
 
 1. A2DP sink + AVRCP + HFP handfree + PBAP + Auracast demo 
     1.1 enable: AT+BTDEMO=a2dp_hfp_pbp,1

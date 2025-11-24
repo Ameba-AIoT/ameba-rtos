@@ -72,14 +72,14 @@
 #define LWIP_RAND() ((u32_t)rand())
 #endif
 
-#include "diag.h"
+#include "diag.h" /* Added by Realtek */
 /** Platform specific diagnostic output.\n
  * Note the default implementation pulls in printf, which may
  * in turn pull in a lot of standard libary code. In resource-constrained
  * systems, this should be defined to something less resource-consuming.
  */
 #ifndef LWIP_PLATFORM_DIAG
-#define LWIP_PLATFORM_DIAG(x) do {DiagPrintf x;} while(0)
+#define LWIP_PLATFORM_DIAG(x) do {DiagPrintf x;} while(0) /* Modified by Realtek */
 #include <stdio.h>
 #include <stdlib.h>
 #endif
@@ -90,7 +90,7 @@
  * systems, this should be defined to something less resource-consuming.
  */
 #ifndef LWIP_PLATFORM_ASSERT
-#define LWIP_PLATFORM_ASSERT(x) do {DiagPrintf("Assertion \"%s\" failed at line %d in %s\n", \
+#define LWIP_PLATFORM_ASSERT(x) do {DiagPrintf("Assertion \"%s\" failed at line %d in %s\n", \            /* Modified by Realtek */
                                      x, __LINE__, __FILE__); fflush(NULL); abort();} while(0)
 #include <stdio.h>
 #include <stdlib.h>
