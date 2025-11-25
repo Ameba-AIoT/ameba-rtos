@@ -1495,11 +1495,11 @@ static void hfp_alert_timer_handle(void *arg)
 	while (pcm_offset < birds_sing_size / 2) {
 		if (pcm_offset + 512 < birds_sing_size / 2) {
 			if (alert_track_hdl) {
-				rtk_bt_audio_track_play(alert_track_hdl, (void *)(birds_sing + pcm_offset), (uint16_t)1024);
+				rtk_bt_audio_track_play(alert_track_hdl, (void *)(birds_sing + pcm_offset), (uint32_t)1024);
 			}
 		} else {
 			if (alert_track_hdl) {
-				rtk_bt_audio_track_play(alert_track_hdl, (void *)(birds_sing + pcm_offset), (uint16_t)(((birds_sing_size / 2) - pcm_offset) * 2));
+				rtk_bt_audio_track_play(alert_track_hdl, (void *)(birds_sing + pcm_offset), (uint32_t)(((birds_sing_size / 2) - pcm_offset) * 2));
 			}
 		}
 		pcm_offset += 512;

@@ -18,6 +18,7 @@ extern "C"
 
 #define RTK_BT_AUDIO_SYNC_MAX_GAP_NS 2500000
 #define RTK_BT_AUDIO_SYNC_PPM_STEMP 1.03481
+#define audio_delta(a, b) ((a > b) ? (a - b) : (b - a))
 
 /**
  * @typedef   bt_audio_pres_act_t
@@ -29,6 +30,49 @@ typedef enum {
 	BT_AUDIO_PRES_ACT_HOLD = 2,
 } bt_audio_pres_act_t;
 
+#if defined(RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT) && RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT
+/**
+ * @brief     get ISO reference anchor point time
+ * @param[in] track: pointer of audio track struct
+ * @param[in] iso_conn_handle: ISO connect handle
+ * @param[in] dir: ISO path direction
+ * @param[in] iso_interval: ISO interval
+ * @param[in] sync_ref_ap: sync referance anchor point
+ * @return
+ *            - 0:  get success
+ *            - 1:  get failed
+ */
+uint16_t rtk_bt_audio_get_iso_ref_ap(rtk_bt_audio_track_t *track, uint16_t iso_conn_handle, uint8_t dir, uint16_t iso_interval,
+									 uint32_t *sync_ref_ap);
+#endif
+
+/**
+ * @brief     restart track sync
+ * @param[in] track: pointer of audio track struct
+ * @return
+ *            - 0  : sync restart success
+ *            - 1: sync restart failed
+ */
+uint16_t rtk_bt_audio_track_sync_restart(rtk_bt_audio_track_t *track);
+
+/**
+ * @brief     register track sync state in audio sync table
+ * @param[in] track: pointer of audio track struct
+ * @return
+ *            - 0  : sync state register success
+ *            - 1: sync state register failed
+ */
+uint16_t rtk_bt_audio_track_sync_state_register(rtk_bt_audio_track_t *track);
+
+/**
+ * @brief     unregister track sync state in audio sync table
+ * @param[in] track: pointer of audio track struct
+ * @return
+ *            - 0  : sync state unregister success
+ *            - 1: sync state unregister failed
+ */
+uint16_t rtk_bt_audio_track_sync_state_unregister(rtk_bt_audio_track_t *track);
+
 /**
  * @brief     do audio xrun handle(when audio buffer is empty).
  * @param[in] track: pointer of audio track struct
@@ -38,7 +82,7 @@ typedef enum {
  *            - 0  : do presentation
  *            - 1: no need to do presentation
  */
-uint16_t rtk_bt_audio_handle_xrun(rtk_bt_audio_track_t *track, uint8_t *data, uint16_t size);
+uint16_t rtk_bt_audio_handle_xrun(rtk_bt_audio_track_t *track, uint8_t *data, uint32_t size);
 
 /**
  * @brief     do audio presentation compenstaion check.
@@ -50,7 +94,7 @@ uint16_t rtk_bt_audio_handle_xrun(rtk_bt_audio_track_t *track, uint8_t *data, ui
  *            - 0  : do presentation
  *            - 1: no need to do presentation
  */
-uint16_t rtk_bt_audio_presentation_compensation(rtk_bt_audio_track_t *track, uint32_t ts_us, uint8_t **ppdata, uint32_t *pdata_size);
+uint16_t rtk_bt_audio_presentation_compensation(rtk_bt_audio_track_t *track, uint8_t packet_index, uint32_t ts_us, uint8_t **ppdata, uint32_t *pdata_size);
 
 /**
  * @}

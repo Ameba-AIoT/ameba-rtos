@@ -164,6 +164,9 @@ typedef struct {
 	uint16_t iso_conn_handle;
 	uint16_t pkt_seq_num;
 	uint32_t presentation_delay;
+	uint32_t transport_latency_m_to_s;    /**< The actual transport latency, in microseconds, from Central to Peripheral. */
+	uint32_t transport_latency_s_to_m;    /**< The actual transport latency, in microseconds, from Peripheral to Central. */
+	uint32_t transport_latency_big;       /**< BIG transport latency, in microseconds */
 	rtk_bt_le_audio_cfg_codec_t codec_data;
 } rtk_bt_le_audio_iso_channel_info_t;
 
@@ -253,6 +256,7 @@ rtk_bt_le_audio_link_t *bt_stack_le_audio_alloc_le_link(uint16_t conn_handle);
 rtk_bt_le_audio_link_t *bt_stack_le_audio_find_link_by_conn_handle(uint16_t conn_handle);
 bool bt_stack_le_audio_link_free(rtk_bt_le_audio_link_t *p_link);
 rtk_bt_le_audio_ase_t *bt_stack_le_audio_find_ase(uint16_t conn_handle, uint8_t ase_id);
+uint16_t bt_stack_le_audio_find_source_ase_num_by_conn_hdl(uint16_t conn_handle);
 void bt_stack_le_audio_demo_update_ase_state(T_ASCS_ASE_STATE *p_data);
 void bt_stack_le_audio_gen_metadata(uint8_t *p_data, uint8_t *p_data_len, uint16_t contexts_type, uint8_t ccid_num, uint8_t *p_ccid);
 uint16_t bt_stack_le_audio_check_sync(rtk_bt_le_audio_sync_dev_info_t *p_sync_dev_info);

@@ -7,6 +7,10 @@ ameba_add_subdirectory_if(CONFIG_BT_LE_AUDIO
     ble_audio
 )
 
+ameba_add_subdirectory_if(CONFIG_BT_LE_AUDIO_GENERIC_DEMO_PERIPHERAL
+    bt_le_audio_generic_demo_peripheral
+)
+
 ameba_add_subdirectory_if(CONFIG_BT_A2DP_PBP
     bt_a2dp_pbp
 )
