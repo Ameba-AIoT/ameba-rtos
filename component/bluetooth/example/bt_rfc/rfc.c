@@ -262,7 +262,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_rfc_app_callback(uint8_t evt_code, void *param
 				p_rfc_conn_ind->bd_addr[5], p_rfc_conn_ind->bd_addr[4],
 				p_rfc_conn_ind->bd_addr[3], p_rfc_conn_ind->bd_addr[2],
 				p_rfc_conn_ind->bd_addr[1], p_rfc_conn_ind->bd_addr[0]);
-		BT_LOGA("[RFC] Local server chann is 0x%02x, frame size is 0x%d \r\n", p_rfc_conn_ind->local_server_chann, p_rfc_conn_ind->frame_size);
+		BT_LOGA("[RFC] Local server chann is 0x%02x, frame size is %d \r\n", p_rfc_conn_ind->local_server_chann, p_rfc_conn_ind->frame_size);
 	}
 	break;
 

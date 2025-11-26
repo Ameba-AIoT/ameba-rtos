@@ -79,6 +79,12 @@ if(NOT CONFIG_AS_INIC_AP)
     ameba_list_append_if(CONFIG_AMEBAD private_sources
         ${c_CMPT_USRCFG_DIR}/ameba_wifi_power_table_usrcfg_1v8.c
     )
+    if(EXISTS ${c_BASEDIR}/tools/scripts/check_gen_txpower_tool_ver.py)
+        execute_process(COMMAND_ERROR_IS_FATAL ANY
+            COMMAND python ${c_BASEDIR}/tools/scripts/check_gen_txpower_tool_ver.py
+            ${c_SOC_TYPE} ${c_CMPT_WIFI_DIR}/driver/include ${c_CMPT_USRCFG_DIR} GEN_TXPWR_TOOL_VERSION TXPWR_TOOL_MAJOR_UPDATE
+        )
+    endif()
 endif()
 
 # Component private part, user config end

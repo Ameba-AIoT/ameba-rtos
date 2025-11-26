@@ -220,6 +220,27 @@ void bt_stack_vendor_callback(uint8_t cb_type, void *p_cb_data)
 		}
 		break;
 #endif
+#if defined(VENDOR_CMD_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT) && VENDOR_CMD_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT
+		case VENDOR_CMD_GET_LE_ISO_SYNC_REF_AP_INFO_OPCODE: {
+#if defined(RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT) && RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT
+			rtk_bt_vendor_sync_ref_ap_info_t *p_ap_info = rtk_bt_get_ref_ap_info();
+			BT_LOGD("Got AP Info Event \r\n");
+			if (p_ap_info && p_ap_info->enable && (cmd_rsp->param_len == sizeof(rtk_bt_le_iso_sync_ref_ap_info_t))) {
+				memcpy((void *)&p_ap_info->info, (void *)&cmd_rsp->param[0], sizeof(rtk_bt_le_iso_sync_ref_ap_info_t));
+				if (p_ap_info->info.Status) {
+					BT_LOGE("[%s] Get le iso sync ref ap info fail, cause:0x%x.\r\n", __func__, p_ap_info->info.Status);
+				} else {
+					BT_LOGD("[%s] Get le iso sync ref ap info \r\n", __func__);
+				}
+				osif_sem_give(p_ap_info->sem);
+			} else {
+				BT_LOGE("[%s] p_ap_info is Null of info enable is false or param len %d is not matched.\r\n", __func__, cmd_rsp->param_len);
+				osif_sem_give(p_ap_info->sem);
+			}
+#endif
+		}
+		break;
+#endif
 		default:
 			(void)cmd_rsp;
 			break;

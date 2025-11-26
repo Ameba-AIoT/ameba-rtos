@@ -707,7 +707,10 @@ typedef struct {
 	uint16_t cis_conn_handle;                                 /**< connection handle of the CIS*/
 	rtk_bt_le_audio_cfg_codec_t codec_cfg;                    /**< @ref rtk_bt_le_audio_cfg_codec_t*/
 	rtk_bt_le_audio_iso_chann_t iso_chann_t;                  /**< iso channel struct */
-	uint8_t dev_num;                                          /**< for tx path waiting all devices ready */
+	uint16_t source_ase_num;                                   /**< for tx path waiting all devices ready */
+	uint32_t presentation_delay;                              /**< presentation delay */
+	uint32_t transport_latency_m_to_s;                        /**< The actual transport latency, in microseconds, from Central to Peripheral. */
+	uint32_t transport_latency_s_to_m;                        /**< The actual transport latency, in microseconds, from Peripheral to Central. */
 } rtk_bt_le_audio_ascs_setup_data_path_ind_t;
 
 /**
@@ -880,6 +883,8 @@ typedef struct {
 	rtk_bt_le_audio_iso_chann_t iso_chann_t;                  /**< iso channel struct */
 	rtk_bt_le_audio_cfg_codec_t codec_t;                      /**< codec config */
 	rtk_bt_le_audio_sync_handle_t sync_handle;                /**< Synchronization handle*/
+	uint32_t presentation_delay;                              /**< presentation delay */
+	uint32_t transport_latency_big;                           /**< BIG transport latency, in microseconds */
 } rtk_bt_le_audio_big_setup_data_path_ind_t;
 
 /**
@@ -949,6 +954,8 @@ typedef struct {
 	uint16_t cause;
 	rtk_bt_le_audio_iso_chann_t iso_chann_t;                        /**< iso channel struct */
 	rtk_bt_le_audio_cfg_codec_t codec_t;                            /**< codec config */
+	uint32_t presentation_delay;                                    /**< presentation delay */
+	uint32_t transport_latency_big;                                 /**< BIG transport latency, in microseconds */
 } rtk_bt_le_audio_bap_big_setup_data_path_ind_t;
 
 /**
@@ -1004,6 +1011,9 @@ typedef struct {
 	rtk_bt_le_audio_cfg_codec_t codec_parsed_data;                   /**< @ref rtk_bt_le_audio_cfg_codec_t */
 	rtk_bt_le_audio_iso_chann_t iso_chann_t;                         /**< iso channel struct */
 	uint8_t dev_num;                                                 /**< for tx path waiting all devices */
+	uint32_t presentation_delay;                                     /**< presentation delay */
+	uint32_t transport_latency_m_to_s;                               /**< The actual transport latency, in microseconds, from Central to Peripheral. */
+	uint32_t transport_latency_s_to_m;                               /**< The actual transport latency, in microseconds, from Peripheral to Central. */
 } rtk_bt_le_audio_bap_setup_data_path_ind_t;
 
 /**

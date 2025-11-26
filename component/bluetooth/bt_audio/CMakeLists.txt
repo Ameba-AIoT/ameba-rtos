@@ -14,6 +14,7 @@ ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/bt_codec
     ${CMAKE_CURRENT_SOURCE_DIR}/audio_noise_cancellation
+    ${CMAKE_CURRENT_SOURCE_DIR}/audio_sync
 )
 
 # Component public part, user config end
@@ -48,6 +49,7 @@ ameba_list_append(private_sources
 	bt_audio_track_api.c
 	bt_audio_record_api.c
 	bt_audio_codec_wrapper.c
+	bt_audio_ring_buffer.c
 	bt_codec/sbc_codec_entity.c
 	bt_codec/lc3_codec_entity.c
 	bt_codec/cvsd_codec_entity.c

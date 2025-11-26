@@ -9,7 +9,7 @@
 
 #define AUDIO_STREAM_TASK_STACK_SIZE            1024 * 8
 #define AUDIO_STREAM_TASK_PRIORITY              4
-#define AUDIO_STREAM_MSG_QUEUE_SIZE             10
+#define AUDIO_STREAM_MSG_QUEUE_SIZE             50
 #define AUDIO_RENDER_BUFFER_FLAG                0
 #define AUDIO_RENDER_BUFFER_SIZE                5
 

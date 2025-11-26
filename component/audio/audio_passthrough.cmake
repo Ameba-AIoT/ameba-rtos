@@ -21,7 +21,7 @@ ameba_list_append_if(CONFIG_AUDIO_PASSTHROUGH public_libraries
 #WARNING: Fixed section, DO NOT change!
 ameba_global_include(${public_includes})
 ameba_global_define(${public_definitions})
-ameba_global_library(${public_libraries} p_NO_WHOLE_ARCHIVE)
+ameba_global_library(${public_libraries})
 
 ##########################################################################################
 ## * This part defines private part of the component

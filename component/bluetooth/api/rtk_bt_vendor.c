@@ -22,6 +22,10 @@
 static rtk_bt_vendor_free_run_clock_t hc_free_run_clock = {0};
 #endif
 
+#if defined(RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT) && RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT
+static rtk_bt_vendor_sync_ref_ap_info_t ref_ap_info = {0};
+#endif
+
 _WEAK void hci_platform_external_fw_log_pin(void)
 {
 	BT_LOGE("External fw log pin is not supported!\r\n");
@@ -277,6 +281,64 @@ out:
 #else
 	(void)p_offset;
 	BT_LOGE("Get host controller free run clock offset is not supported!\r\n");
+	return RTK_BT_FAIL;
+#endif
+}
+#endif
+
+#if defined(RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT) && RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT
+rtk_bt_vendor_sync_ref_ap_info_t *rtk_bt_get_ref_ap_info(void)
+{
+	return &ref_ap_info;
+}
+
+uint16_t rtk_bt_get_le_iso_sync_ref_ap_info(uint16_t conn_handle, uint8_t dir, rtk_bt_le_iso_sync_ref_ap_info_t *p_info)
+{
+#if defined(VENDOR_CMD_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT) && VENDOR_CMD_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT
+	uint8_t data[3] = {0};
+	rtk_bt_gap_vendor_cmd_param_t param;
+	uint16_t ret = 0;
+
+	if (!p_info) {
+		BT_LOGE("p_info is NULL!\r\n");
+		return RTK_BT_FAIL;
+	}
+	memcpy((void *)data, (void *)&conn_handle, sizeof(uint16_t));
+	data[2] = dir;
+	param.op = VENDOR_CMD_GET_LE_ISO_SYNC_REF_AP_INFO_OPCODE;
+	param.len = 3;
+	param.cmd_param = data;
+	/* init sync parameter */
+	memset(&ref_ap_info, 0, sizeof(rtk_bt_vendor_sync_ref_ap_info_t));
+	if (false == osif_sem_create(&ref_ap_info.sem, 0, 1)) {
+		BT_LOGE("ref_ap_info.sem create fail!\r\n");
+		return RTK_BT_FAIL;
+	}
+	ref_ap_info.enable = true;
+	BT_LOGD("Get le iso sync anchor point information \r\n");
+	ret = rtk_bt_gap_vendor_cmd_req(&param);
+	if (ret) {
+		BT_LOGE("rtk_bt_gap_vendor_cmd_req fail!\r\n");
+		ret = RTK_BT_FAIL;
+		goto out;
+	}
+	if (osif_sem_take(ref_ap_info.sem, 0xFFFFFFFF) == false) {
+		BT_LOGE("ref_ap_info.sem take fail!\r\n");
+		ret = RTK_BT_FAIL;
+		goto out;
+	}
+	memcpy((void *)p_info, (void *)&ref_ap_info.info, sizeof(rtk_bt_le_iso_sync_ref_ap_info_t));
+
+out:
+	ref_ap_info.enable = false;
+	osif_sem_delete(ref_ap_info.sem);
+
+	return ret;
+#else
+	(void)dir;
+	(void)conn_handle;
+	(void)p_info;
+	BT_LOGE("Get le iso ap info is not supported!\r\n");
 	return RTK_BT_FAIL;
 #endif
 }
