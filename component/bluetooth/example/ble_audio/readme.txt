@@ -21,9 +21,7 @@ GCC menuconfig
 1. BT Related:
     ./menuconfig.py --> CONFIG BT --> BT Example Demo --> BLE Audio --> BLE Audio Generic Demo
 2. Audio Related:
-    ./menuconfig.py --> MENUCONFIG FOR CA32 CONFIG --> Audio Config --> Select Audio Interfaces (Mixer)
-    or
-    ./menuconfig.py --> MENUCONFIG FOR KM4 CONFIG --> Audio Config --> Select Audio Interfaces (Mixer)
+    ./menuconfig.py --> CONFIG Application --> Audio Config --> Select Audio Interfaces (Mixer)
 3. GCC : use CMD "./build.py" to compile example
 4. To Config Media Source (component/bluetooth/api/include/rtk_bt_le_audio_def.h)
      4.1 Config RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT to 1 for enabling birds thing audio stream

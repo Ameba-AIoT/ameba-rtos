@@ -126,6 +126,22 @@ rtk_bt_le_audio_ase_t *bt_stack_le_audio_find_ase(uint16_t conn_handle, uint8_t 
 	return NULL;
 }
 
+uint16_t bt_stack_le_audio_find_source_ase_num_by_conn_hdl(uint16_t conn_handle)
+{
+	uint16_t source_ase_num = 0;
+	rtk_bt_le_audio_link_t *p_link = bt_stack_le_audio_find_link_by_conn_handle(conn_handle);
+
+	if (p_link) {
+		for (uint8_t i = 0; i < RTK_BT_LE_AUDIO_DEMO_SOURCE_ASE_MAX_NUM; i++) {
+			if (p_link->lea_ase_tbl[i].used == true &&
+				p_link->lea_ase_tbl[i].direction == RTK_BLE_AUDIO_ISO_DATA_PATH_TX) {
+				source_ase_num++;
+			}
+		}
+	}
+	return source_ase_num;
+}
+
 static rtk_bt_le_audio_ase_t *bt_stack_le_audio_add_ase(uint16_t conn_handle, uint8_t ase_id)
 {
 	rtk_bt_le_audio_link_t *p_link = bt_stack_le_audio_find_link_by_conn_handle(conn_handle);
@@ -1171,6 +1187,10 @@ static rtk_bt_le_audio_iso_channel_info_t *bt_stack_le_audio_big_setup_data_path
 		if (false == base_data_get_bis_codec_cfg(sync_info.p_base_mapping, p_data->bis_idx, (T_CODEC_CFG *)&data.codec_parsed_data)) {
 			BT_LOGE("%s base_data_get_bis_codec_cfg fail\r\n", __func__);
 			return NULL;
+		}
+		if (sync_info.p_base_mapping) {
+			data.presentation_delay = sync_info.p_base_mapping->presentation_delay;
+			BT_LOGA("[LEA STACK] %s get base mapping presentation delay %d \r\n", __func__, data.presentation_delay);
 		}
 	}
 	p_iso_chann = bt_stack_le_audio_handle_data_path_setup(&data);

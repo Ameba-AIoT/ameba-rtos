@@ -131,6 +131,20 @@ uint16_t rtk_bt_audio_track_pause(void *track_hdl)
 	return 0;
 }
 
+uint16_t rtk_bt_audio_track_pause_without_flush(void *track_hdl)
+{
+	struct RTAudioTrack *audio_track = NULL;
+
+	if (!track_hdl) {
+		BT_LOGE("%s: audio track is NULL", __func__);
+		return 1;
+	} else {
+		audio_track = (struct RTAudioTrack *)track_hdl;
+	}
+	RTAudioTrack_Pause(audio_track);
+
+	return 0;
+}
 uint16_t rtk_bt_audio_track_resume(void *track_hdl)
 {
 	struct RTAudioTrack *audio_track = NULL;
@@ -146,7 +160,7 @@ uint16_t rtk_bt_audio_track_resume(void *track_hdl)
 	return 0;
 }
 
-int32_t rtk_bt_audio_track_play(void *track_hdl, void *buffer, uint16_t size)
+int32_t rtk_bt_audio_track_play(void *track_hdl, void *buffer, uint32_t size)
 {
 	struct RTAudioTrack *audio_track = NULL;
 
