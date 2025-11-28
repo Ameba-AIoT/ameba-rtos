@@ -200,13 +200,15 @@ SECTIONS
     PROVIDE(IPC_SEMFree = 0x23b51);
     PROVIDE(hash_save = 0x23b79);
     PROVIDE(hash_restore = 0x23bf9);
-    PROVIDE(rtl_crypto_sha1_init = 0x23c89);
+    /* Renamed from rtl_crypto_sha1_init to fix the context-not-reset issue via a RAM patch. */
+    PROVIDE(_rtl_crypto_sha1_init = 0x23c89);
     PROVIDE(rtl_crypto_sha1_process = 0x23d11);
     PROVIDE(rtl_crypto_sha1_update_rom = 0x23d49);
     PROVIDE(rtl_crypto_sha1_update = 0x23dbd);
     PROVIDE(rtl_crypto_sha1_final = 0x23e21);
     PROVIDE(rtl_crypto_sha1 = 0x23e95);
-    PROVIDE(rtl_crypto_sha2_init = 0x23ebd);
+    /* Renamed from rtl_crypto_sha2_init to fix the context-not-reset issue via a RAM patch. */
+    PROVIDE(_rtl_crypto_sha2_init = 0x23ebd);
     PROVIDE(rtl_crypto_sha2_process = 0x240ed);
     PROVIDE(rtl_crypto_sha2_update_rom = 0x24129);
     PROVIDE(rtl_crypto_sha2_update = 0x241a1);
