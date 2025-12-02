@@ -227,7 +227,7 @@ void aivoice_algo_offline_example(void)
 	config.asr = &asr_param;    // can be NULL
 
 	struct aivoice_sdk_config aivoice_param = AIVOICE_SDK_CONFIG_DEFAULT();
-	aivoice_param.no_cmd_timeout = 10;
+	aivoice_param.timeout = 10;
 	config.common = &aivoice_param; // can be NULL
 #endif
 

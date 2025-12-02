@@ -129,17 +129,6 @@
   * @brief
   * @{
   */
-#define AON_BIT_RSTF_GDET_VD33_POS  ((u32)0x00000001 << 27) /*!< RW1CB 0h  This bit will be set to 1 when glitch detect vd33 pos happen.  Write 1 to clear.*/
-#define AON_BIT_RSTF_GDET_VD33_NEG  ((u32)0x00000001 << 26) /*!< RW1CB 0h  This bit will be set to 1 when glitch detect vd33 neg happen.  Write 1 to clear.*/
-#define AON_BIT_RSTF_GDET2_VD18_POS ((u32)0x00000001 << 25) /*!< RW1CB 0h  This bit will be set to 1 when glitch detect swr mem pos happen.  Write 1 to clear.*/
-#define AON_BIT_RSTF_GDET2_VD18_NEG ((u32)0x00000001 << 24) /*!< RW1CB 0h  This bit will be set to 1 when glitch detect swr mem neg happen.  Write 1 to clear.*/
-#define AON_BIT_RSTF_GDET1_VD18_POS ((u32)0x00000001 << 23) /*!< RW1CB 0h  This bit will be set to 1 when glitch detect swr psram pos happen.  Write 1 to clear.*/
-#define AON_BIT_RSTF_GDET1_VD18_NEG ((u32)0x00000001 << 22) /*!< RW1CB 0h  This bit will be set to 1 when glitch detect swr psram neg happen.  Write 1 to clear.*/
-#define AON_BIT_RSTF_GDET_VD09_POS  ((u32)0x00000001 << 21) /*!< RW1CB 0h  This bit will be set to 1 when glitch detect swr core pos happen.  Write 1 to clear.*/
-#define AON_BIT_RSTF_GDET_VD09_NEG  ((u32)0x00000001 << 20) /*!< RW1CB 0h  This bit will be set to 1 when glitch detect swr core neg happen.  Write 1 to clear.*/
-#define AON_BIT_RSTF_AP_WARM2PERI   ((u32)0x00000001 << 18) /*!< RW1CB 0h  This bit will be set to 1 when ap warm  resets the system. Write 1 to clear.*/
-#define AON_BIT_RSTF_KM4_WARM2PERI  ((u32)0x00000001 << 17) /*!< RW1CB 0h  This bit will be set to 1 when km4 warm  resets the system. Write 1 to clear.*/
-#define AON_BIT_RSTF_KM0_WARM2PERI  ((u32)0x00000001 << 16) /*!< RW1CB 0h  This bit will be set to 1 when km0 warm  resets the system. Write 1 to clear.*/
 #define AON_BIT_RSTF_WDG4           ((u32)0x00000001 << 15) /*!< RW1CB 0h  This bit will be set to 1 when WDG resets the system. Write 1 to clear.*/
 #define AON_BIT_RSTF_WDG3           ((u32)0x00000001 << 14) /*!< RW1CB 0h  This bit will be set to 1 when WDG resets the system. Write 1 to clear.*/
 #define AON_BIT_RSTF_WDG2           ((u32)0x00000001 << 13) /*!< RW1CB 0h  This bit will be set to 1 when WDG resets the system. Write 1 to clear.*/

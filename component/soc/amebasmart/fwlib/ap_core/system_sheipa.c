@@ -51,6 +51,8 @@ void prvSetupHardware(void)
 		smp_init();
 	}
 #endif
+	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW,
+			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) | LSYS_BIT_AP_RUNNING);
 }
 
 #if ( configNUM_CORES > 1 )

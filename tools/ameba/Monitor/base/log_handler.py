@@ -58,7 +58,8 @@ class LogHandler:
 
     def start_logging(self):
         if not self.log_file:
-            name = os.path.join(self.log_dir, f"{self.port}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
+            port_name = os.path.basename(self.port)
+            name = os.path.join(self.log_dir, f"{port_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
             if self.log_dir != "" and (not os.path.exists(self.log_dir)):
                 os.makedirs(self.log_dir, exist_ok=True)
             try:

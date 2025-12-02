@@ -101,7 +101,7 @@ typedef struct afe_config {
 	bool enable_adaptive_agc;               // adaptive AGC switch. Only supports voice communication mode.
 
 	// SSL module parameter
-	float ssl_resolution;                   // SSL solution(degree)
+	float ssl_resolution;                   // SSL solution(degree), the value should be in [7.5, 30].
 	int ssl_min_hz;                         // minimum frequency(Hz) of SSL module.
 	int ssl_max_hz;                         // maximum frequency(Hz) of SSL module.
 } afe_config_t;
@@ -125,7 +125,7 @@ typedef struct afe_config {
     .ns_mode = AFE_NS_SIGNAL_SET(), \
     .ns_cost_mode = AFE_NS_COST_HIGH, \
     .ns_aggressive_mode = AFE_NS_AGGR_LOW, \
-    .agc_fixed_gain = 15, \
+    .agc_fixed_gain = 10, \
     .enable_adaptive_agc = false, \
 }
 
@@ -147,7 +147,7 @@ typedef struct afe_config {
     .ns_mode = AFE_NS_SIGNAL_SET(), \
     .ns_cost_mode = AFE_NS_COST_HIGH, \
     .ns_aggressive_mode = AFE_NS_AGGR_LOW, \
-    .agc_fixed_gain = 15, \
+    .agc_fixed_gain = 10, \
     .enable_adaptive_agc = false, \
     .ssl_resolution = 10, \
     .ssl_min_hz = 500, \
@@ -172,7 +172,7 @@ typedef struct afe_config {
     .ns_mode = AFE_NS_SIGNAL_SET(), \
     .ns_cost_mode = AFE_NS_COST_HIGH, \
     .ns_aggressive_mode = AFE_NS_AGGR_LOW, \
-    .agc_fixed_gain = 15, \
+    .agc_fixed_gain = 10, \
     .enable_adaptive_agc = false, \
     .ssl_resolution = 10, \
     .ssl_min_hz = 300, \
@@ -197,7 +197,7 @@ typedef struct afe_config {
     .ns_mode = AFE_NS_SIGNAL_SET(), \
     .ns_cost_mode = AFE_NS_COST_HIGH, \
     .ns_aggressive_mode = AFE_NS_AGGR_LOW, \
-    .agc_fixed_gain = 15, \
+    .agc_fixed_gain = 10, \
     .enable_adaptive_agc = false, \
     .ssl_resolution = 10, \
     .ssl_min_hz = 300, \
@@ -222,7 +222,7 @@ typedef struct afe_config {
     .ns_mode = AFE_NS_SIGNAL_SET(), \
     .ns_cost_mode = AFE_NS_COST_HIGH, \
     .ns_aggressive_mode = AFE_NS_AGGR_LOW, \
-    .agc_fixed_gain = 15, \
+    .agc_fixed_gain = 10, \
     .enable_adaptive_agc = false, \
     .ssl_resolution = 10, \
     .ssl_min_hz = 300, \

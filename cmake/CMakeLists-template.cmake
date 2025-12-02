@@ -43,7 +43,7 @@ ameba_global_library(${public_libraries}) #default: whole-archived
 
 #NOTE: User defined section, add your private build configures here
 # You may use if-else condition to set these predefined variable
-# They are only for ameba_add_internal_library/ameba_add_external_app_library/ameba_add_external_soc_library
+# They are only for ameba_add_internal_library
 set(private_sources)                 #private source files, NOTE: relative path is OK
 set(private_includes)                #private include directories, NOTE: relative path is OK
 set(private_definitions)             #private definitions
@@ -61,9 +61,9 @@ ameba_list_append(private_includes
 # Component private part, user config end
 #------------------------------#
 
-#WARNING: Select right API based on your component's release/not-release/standalone
+#WARNING: Select right API based on your component's build system
 
-###NOTE: For open-source component, always build from source
+###NOTE: For open-source ameba component, always build from source
 ameba_add_internal_library(at_cmd
     p_SOURCES
         ${private_sources}
@@ -75,27 +75,8 @@ ameba_add_internal_library(at_cmd
         ${private_compile_options}
 )
 
-###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
-ameba_add_external_app_library(cmsis_dsp #target name, will be part of output library name: lib_cmsis_dsp.a
-    p_SOURCES
-        ${private_sources}
-    p_INCLUDES
-        ${private_includes}
-    p_DEFINITIONS
-        ${private_definitions}
-    p_COMPILE_OPTIONS
-        ${private_compile_options}
-)
+###NOTE: For a third-party component with a standalone CMakeLists.txt, link the target to current image
+ameba_add_subdirectory(path/to/your/cmakelists) # Add the real CMakeLists.txt dir of the wrapped component
+ameba_port_standalone_internal_library(foo)     # Add the real target of the wrapped component to link
 
-###NOTE: For closed-source component, only build before release and libs are packaged into lib/soc
-ameba_add_external_soc_library(chipinfo #target name, will be part of output library name: lib_chipinfo.a
-    p_SOURCES
-        ${private_sources}
-    p_INCLUDES
-        ${private_includes}
-    p_DEFINITIONS
-        ${private_definitions}
-    p_COMPILE_OPTIONS
-        ${private_compile_options}
-)
 ##########################################################################################

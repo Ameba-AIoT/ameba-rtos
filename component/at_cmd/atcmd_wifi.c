@@ -24,10 +24,7 @@
 #endif
 
 #ifdef CONFIG_LWIP_LAYER
-struct static_ip_config user_static_ip;
 extern struct netif xnetif[NET_IF_NUM];
-
-unsigned char ap_ip[4] = {192, 168, 43, 1}, ap_netmask[4] = {255, 255, 255, 0}, ap_gw[4] = {192, 168, 43, 1};
 #endif
 
 #ifdef CONFIG_WLAN

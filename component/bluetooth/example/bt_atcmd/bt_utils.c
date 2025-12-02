@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <atcmd_service.h>
 #include <rtk_bt_common.h>
 #include <bt_utils.h>
@@ -54,6 +55,7 @@ int str_to_int(char *str)
 {
 	bool is_hex = FALSE;
 	uint32_t str_len = strlen(str);
+	uint32_t i;
 
 	if ((str_len > 2) && ('0' == str[0]) && ('x' == str[1] || 'X' == str[1])) {
 		is_hex = TRUE;
@@ -61,6 +63,16 @@ int str_to_int(char *str)
 	if (is_hex) {
 		return hexnum_str_to_int(str);
 	} else {
+		if (!isdigit((int)str[0]) && str[0] != '-') {
+			BT_LOGE("[%s]Error: Invalid decimal char\r\n", __func__);
+			return -1;
+		}
+		for (i = 1; i < str_len; i++) {
+			if (!isdigit((int)str[i])) {
+				BT_LOGE("[%s]Error: Invalid decimal char\r\n", __func__);
+				return -1;
+			}
+		}
 		return atoi(str);
 	}
 }

@@ -74,6 +74,11 @@ void BOOT_RccConfig(void)
 	u32 CenSet[4] = {0};
 	u32 ClkRegIndx = 0;
 
+	TempVal = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_SW_RST_CTRL);
+	/* For debug reset: when debugger reset cpu, it's required to reset other cpus and some peripherals */
+	TempVal |= LSYS_OTHERCPU_RST_EN(1);
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_SW_RST_CTRL, TempVal);
+
 	for (idx = 0; ; idx++) {
 		/*  Check if search to end */
 		if (RCC_Config[idx].func == 0xFFFFFFFF) {
@@ -395,30 +400,20 @@ u32 BOOT_LoadImages(void)
 BOOT_RAM_TEXT_SECTION
 void BOOT_ReasonSet(void)
 {
-	u32 REG_AON_BOOT_REASON_HW_MASK = 0x00ffffff;
 	u32 temp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_AON_BOOT_REASON_HW);
-
-	/* keep lower 24bit, high 8 bit reserved for DMA */
-	temp &= REG_AON_BOOT_REASON_HW_MASK;
+	u32 ret = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_REASON_SW);
 
 	/*Clear the wake up reason*/
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_AON_BOOT_REASON_HW, temp);
+
+	/* keep lower 16bit, high 8 bit reserved for DMA, and bit16-18 is used by AP */
+	temp &= 0x0000FFFF;
+	temp |= (ret & 0x00FF0000);
 
 	/*Backup it to system register,So the software can read from the register*/
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_REASON_SW, temp);
 
 	RTK_LOGI(TAG, "KM4 BOOT REASON %x: ", temp);
-	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_GDET_VD33_POS, "GDET_VD33_POS");
-	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_GDET_VD33_NEG, "GDET_VD33_NEG");
-	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_GDET2_VD18_POS, "GDET2_VD18_POS");
-	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_GDET2_VD18_NEG, "GDET2_VD18_NEG");
-	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_GDET1_VD18_POS, "GDET1_VD18_POS");
-	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_GDET1_VD18_NEG, "GDET1_VD18_NEG");
-	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_GDET_VD09_POS, "GDET_VD09_POS");
-	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_GDET_VD09_NEG, "GDET_VD09_NEG");
-	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_AP_WARM2PERI, "AP_WARM2PERI");
-	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_KM4_WARM2PERI, "KM4_WARM2PERI");
-	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_KM0_WARM2PERI, "KM0_WARM2PERI");
 	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_WDG4, "WDG4");
 	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_WDG3, "WDG3");
 	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_WDG2, "WDG2");
@@ -789,6 +784,28 @@ void BOOT_Log_Init(void)
 	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_2, ENABLE);
 }
 
+void Peripheral_Reset(void)
+{
+	//reason: The reason for maintaining these bits is for our debugging function.
+	//issue: LSYS_PERIALL_RST_EN will reset cpu, causing loss of debug information, which is unexpected.
+	//resolve: When initializing power, at bootloader, these bits are enabled.
+
+	/* The following IP cores are activated during power initialization, excluding those specified in the comments */
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FEN_GRP0,
+				APBPeriph_HPON | APBPeriph_LPLFM | APBPeriph_HPLFM | APBPeriph_LP | APBPeriph_NP |
+				APBPeriph_FLASH | APBPeriph_SCE | APBPeriph_DTIM | APBPeriph_AIP | APBPeriph_LOGUART |
+				APBPeriph_THM);
+
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FEN_GRP1,
+				APBPeriph_TRNG |
+				/* These IP cores are enabled depends on OTP programming */
+				APBPeriph_IPSEC | APBPeriph_LX1 | APBPeriph_ED25519 | APBPeriph_ECDSA);
+
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FEN_GRP2,
+				/* No IP cores are enabled when initializing power */
+				0UL);
+}
+
 /* To avoid RRAM holding incorrect data, incorporate a MAGIC_NUMBER for verification. */
 static bool BOOT_RRAM_InfoValid(void)
 {
@@ -812,6 +829,9 @@ void BOOT_Image1(void)
 	_memset((void *) __image1_bss_start__, 0, (__image1_bss_end__ - __image1_bss_start__)); /*clear bss first*/
 
 	BOOT_ReasonSet();
+
+	/* For debug reset: when debugger reset cpu, it's required to reset other cpus and some peripherals */
+	Peripheral_Reset();
 
 	if ((BOOT_Reason() == 0) || (!BOOT_RRAM_InfoValid())) {
 		_memset(RRAM, 0, sizeof(RRAM_TypeDef));
@@ -943,10 +963,14 @@ void BOOT_Image1(void)
 
 	/* AP Power-on, AP start run */
 	if (Boot_AP_Enbale) {
-		BOOT_Enable_AP();
-		/* indicate AP is running */
-		HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW,
-				   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) | LSYS_BIT_AP_RUNNING | LSYS_BIT_AP_ENABLE);
+		ret = HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW);
+		if (0 == (ret & LSYS_BIT_AP_ENABLE)) {
+			BOOT_Enable_AP();
+		}
+
+		ret &= ~LSYS_BIT_AP_RUNNING; /* CA32 will set this Bit */
+		ret |= LSYS_BIT_AP_ENABLE;
+		HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW, ret);
 	} else {
 		BOOT_Disable_AP();
 	}

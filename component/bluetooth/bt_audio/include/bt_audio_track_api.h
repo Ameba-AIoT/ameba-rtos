@@ -85,6 +85,15 @@ uint16_t rtk_bt_audio_track_stop(void *track_hdl);
 uint16_t rtk_bt_audio_track_pause(void *track_hdl);
 
 /**
+ * @brief     bt audio track pause without flush track
+ * @param[in] track_hdl: audio track handle
+ * @return
+ *                              - 0  : Succeed
+ *                              - 1: Fail
+ */
+uint16_t rtk_bt_audio_track_pause_without_flush(void *track_hdl);
+
+/**
  * @brief     bt audio track resume
  * @param[in] track_hdl: audio track handle
  * @return
@@ -100,7 +109,7 @@ uint16_t rtk_bt_audio_track_resume(void *track_hdl);
  * @param[in] size: size of audio data
  * @return successfully written bytes
  */
-int32_t rtk_bt_audio_track_play(void *track_hdl, void *buffer, uint16_t size);
+int32_t rtk_bt_audio_track_play(void *track_hdl, void *buffer, uint32_t size);
 
 /**
  * @brief     set hardware volume
