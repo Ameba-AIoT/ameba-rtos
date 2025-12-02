@@ -30,6 +30,7 @@
 
 #define	RTK_ERR_WIFI_POWEROFF                   (RTK_ERR_WIFI_BASE + 32)	/**< Wi-Fi is powered off in IPS(Inactive Power Save) mode, unable to access Wi-Fi registers. */
 #define	RTK_ERR_WIFI_TX_BUF_FULL                (RTK_ERR_WIFI_BASE + 33)	/**< tx buffer full(hw buffer & skb buffer). */
+#define	RTK_ERR_WIFI_NOT_INIT                   (RTK_ERR_WIFI_BASE + 34)   /**< wifi not initial*/
 /** @}*/
 /** @}*/
 

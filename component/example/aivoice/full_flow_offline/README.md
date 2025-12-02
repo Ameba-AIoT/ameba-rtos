@@ -10,12 +10,22 @@ The pre-recorded audio used in this example is a 3 channel audio, channel 1 and 
 
 **Note: AFE res, kws lib, fst lib should match the content of audio, otherwise AIVoice can not detect.**
 
-# SW Configuration
-### AmebaSmart PSRAM
+## Supported IC
 
-#### 0. `cd amebasmart_gcc_project`
+1. AmebaSmart CA32 (SDK: ameba-rtos)
+2. AmebaLite KM4 (SDK: ameba-rtos)
+3. AmebaDplus KM4 (SDK: ameba-rtos)
+4. AmebaLite DSP (SDK: ameba-dsp)
+5. AmebaSmart Linux (SDK:ameba-linux)
 
-#### 1. Configure menuconfig
+## Build Example
+
+### Using SDK ameba-rtos
+
+#### AmebaSmart PSRAM
+
+1. **Configure menuconfig**:
+    `cd amebasmart_gcc_project`
     `./menuconfig.py`
     CONFIG Link Option  --->
         IMG2(Application) running on PSRAM or FLASH? (FLASH)  --->
@@ -24,14 +34,17 @@ The pre-recorded audio used in this example is a 3 channel audio, channel 1 and 
             [*] Enable TFLITE MICRO
             [*] Enable AIVoice
                 Select AFE Resource (afe_res_2mic50mm)  --->
-                Select KWS Resource (kws_res_xqxq)  --->
+                Select VAD Resource (vad_v7_200K)  --->
+                Select KWS Resource (kws_xiaoqiangxiaoqiang_nihaoxiaoqiang_v5_125K)  --->
+                Select ASR Resource (asr_cn_v10_1M)  --->
 
-#### 2. Build and Download:
+2. **Build and Download**:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-#### Expected Result
-* full_flow_offline result
+##### Expected Result (Amebasmart Psram)
+
+**full_flow_offline result**
 ```
 [AFE] multi-kws-beam = 0, 1, 2
 ---------------------SPEECH COMMANDS---------------------
@@ -77,39 +90,40 @@ Command ID39, 接听电话
 Command ID40, 挂断电话
 ---------------------------------------------------------
 
-[AIVOICE] rtk_aivoice version: v1.5.2#S6b1c736#N89da3ed#A6f74d23
-[AIVOICE] rtk_aivoice_model afe version: afe_2mic_asr_v1.4_AfePara_2mic50_v2.0_bf_v0.0_20250401
+[AIVOICE] rtk_aivoice version: v1.6.0#S87db3f2#N89da3ed#Ad90cdbe
+[AIVOICE] rtk_aivoice_model afe version: afe_2mic_asr_v1.5_AfePara_2mic50_v2.0_bf_v0.0_20250401
 [AIVOICE] rtk_aivoice_model vad version: vad_v7_opt
 [AIVOICE] rtk_aivoice_model kws version: kws_xqxq_v4.1_opt
 [AIVOICE] rtk_aivoice_model asr version: asr_cn_v8_opt
 [AIVOICE] rtk_aivoice_log_format version: v2
 [user] afe output 1 channels raw audio, others: {"abnormal_flag":0,"ssl_angle":-10}
-[AIVOICE] [KWS] result: {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.7746397852897644}
-[user] wakeup. {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.7746397852897644}
+[AIVOICE] [KWS] result: {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.766761064529419}
+[user] wakeup. {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.766761064529419}
 [user] voice angle 90.0
-[user] vad. status = 1, offset = 405
+[user] vad. status = 1, offset = 425
 [user] vad. status = 0, offset = 1865
 [AIVOICE] [ASR] result: {"type":0,"commands":[{"rec":"打开空调","id":1}]}
 [user] asr. {"type":0,"commands":[{"rec":"打开空调","id":1}]}
 [user] voice angle 90.0
 [user] vad. status = 1, offset = 525
-[AIVOICE] [KWS] result: {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.750707507133484}
-[user] wakeup. {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.750707507133484}
+[AIVOICE] [KWS] result: {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.81332826614379883}
+[user] wakeup. {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.81332826614379883}
 [user] voice angle 90.0
-[user] vad. status = 1, offset = 465
+[user] vad. status = 1, offset = 445
 [user] vad. status = 0, offset = 1765
 [AIVOICE] [ASR] result: {"type":0,"commands":[{"rec":"播放音乐","id":37}]}
 [user] asr. {"type":0,"commands":[{"rec":"播放音乐","id":37}]}
 [user] voice angle 90.0
 ```
 
-### AmebaDplus KM4
+#### AmebaDplus KM4
 
 > **Note: This chip only supports single microphone input and does not support ASR functionality.**
 
-#### 1. Replace Test Audio
-- Modify CMakeLists.txt to use `nhxq_dkkt_gbkt_noecho_1c.wav` as the test audio file
-- Place test audio file in the flash region using `__attribute__((section(".audio.data")))` and modify the linker script `amebadplus_gcc_project/project_km4/asdk/ld/ameba_img2_all.ld` by adding the following to `.xip_image2.text` section:
+1. **Replace Test Audio**:
+   * Modify CMakeLists.txt to use `platform/ameba_rtos/testwav_1c.wav` as the test audio file
+   * Modify the linker script `amebadplus_gcc_project/project_km4/asdk/ld/ameba_img2_all.ld` by adding the following to `.xip_image2.text` section:
+  
     ```ld
     .xip_image2.text :
     {
@@ -120,35 +134,37 @@ Command ID40, 挂断电话
     } > KM4_IMG2_XIP
     ```
 
-#### 2. Modify Code to Run afe_kws_vad Flow
-- Set the interface and parameters:
+2. **Modify Code to Run afe_kws_vad Flow**:
+   * Set the interface and parameters:
+  
     ```c
     #define AIVOICE_TARGET_AMEBADPLUS   (1)
     ```
 
-#### 3. Configure menuconfig
-- Enable the following options:
+3. **Configure menuconfig**:
+   * Enable the following options:
     ```< CONFIG APPLICATION  ---> AI Config  ---> [*] Enable TFLITE MICRO```
     ```< CONFIG APPLICATION  ---> AI Config  ---> [*] Enable AIVoice -> Select AFE Resource (afe_res_1mic)```
 
-#### 4. Build and Download
-* Refer to the SDK Examples section of the online documentation to generate images.
-* `Download` images to board by Ameba Image Tool.
+4. **Build and Download**:
+   * Refer to the SDK Examples section of the online documentation to generate images.
+   * `Download` images to board by Ameba Image Tool.
 
 
-#### Expected Result
-* full_flow_offline result
+##### Expected Result (Amebadplus KM4)
+
+**full_flow_offline result**
 ```
-[AIVOICE] rtk_aivoice version: v1.5.2#S6b1c736#N89da3ed#A6f74d23
+[AIVOICE] rtk_aivoice version: v1.6.0#S87db3f2#N89da3ed#Ad90cdbe
 [AIVOICE] rtk_aivoice_model afe version: afe_1mic_asr_v1.1_AfePara_1mic_ASR_v0.0_20240626_COM_v0.3_20250528
 [AIVOICE] rtk_aivoice_model vad version: vad_v8_opt
 [AIVOICE] rtk_aivoice_model kws version: kws_xqxq_v5_opt
 [AIVOICE] rtk_aivoice_log_format version: v2
 [user] afe output 1 channels raw audio, others: 
-[AIVOICE] [KWS] result: {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.63414132595062256}
-[user] wakeup. {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.63414132595062256}
+[AIVOICE] [KWS] result: {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.62849670648574829}
+[user] wakeup. {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.62849670648574829}
 [user] vad. status = 1, offset = 1185
-[user] vad. status = 0, offset = 2625
+[user] vad. status = 0, offset = 2605
 [user] vad. status = 1, offset = 3885
 [user] vad. status = 0, offset = 5325
 ```

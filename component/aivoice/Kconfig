@@ -23,20 +23,52 @@ if AIVOICE_EN_MENU
             bool "afe_res_2mic70mm"
             select AFE_RES_2MIC70MM if CORE_AS_AP
 
+        config AFE_RES_CIRCLE3MIC50MM_MENU
+            bool "afe_res_3mic50mm"
+            select AFE_RES_CIRCLE3MIC50MM if CORE_AS_AP
+    endchoice
+
+    choice
+        prompt "Select VAD Resource"
+        default VAD_V7_200K_MENU
+
+        config VAD_V7_200K_MENU
+            bool "vad_v7_200K"
+            select VAD_V7_200K if CORE_AS_AP
+
+        config VAD_V8_60K_MENU
+            bool "vad_v8_60K"
+            select VAD_V8_60K if CORE_AS_AP
     endchoice
 
     choice
         prompt "Select KWS Resource"
-        default KWS_RES_XQXQ_MENU
+        default KWS_XIAOQIANGXIAOQIANG_NIHAOXIAOQIANG_V4_300K_MENU
 
-        config KWS_RES_XQXQ_MENU
-            bool "kws_res_xqxq"
-            select KWS_RES_XQXQ if CORE_AS_AP
+        config KWS_XIAOQIANGXIAOQIANG_NIHAOXIAOQIANG_V4_300K_MENU
+            bool "kws_xiaoqiangxiaoqiang_nihaoxiaoqiang_v4_300K"
+            select KWS_XIAOQIANGXIAOQIANG_NIHAOXIAOQIANG_V4_300K if CORE_AS_AP
 
-        config KWS_RES_CUSTOM_MENU
-            bool "kws_res_custom"
-            select KWS_RES_CUSTOM if CORE_AS_AP
+        config KWS_XIAOQIANGXIAOQIANG_NIHAOXIAOQIANG_V5_125K_MENU
+            bool "kws_xiaoqiangxiaoqiang_nihaoxiaoqiang_v5_125K"
+            select KWS_XIAOQIANGXIAOQIANG_NIHAOXIAOQIANG_V5_125K if CORE_AS_AP
 
+        config KWS_CN_CUSTOMIZED_V3_750K_MENU
+            bool "kws_cn_customized_v3_750K"
+            select KWS_CN_CUSTOMIZED_V3_750K if CORE_AS_AP
+    endchoice
+
+    choice
+        prompt "Select ASR Resource"
+        default ASR_CN_V8_2M_MENU
+
+        config ASR_CN_V8_2M_MENU
+            bool "asr_cn_v8_2M"
+            select ASR_CN_V8_2M if CORE_AS_AP
+
+        config ASR_CN_V10_1M_MENU
+            bool "asr_cn_v10_1M"
+            select ASR_CN_V10_1M if CORE_AS_AP
     endchoice
 endif
 
@@ -55,8 +87,26 @@ config AFE_RES_2MIC50MM
 config AFE_RES_2MIC70MM
     bool
 
-config KWS_RES_XQXQ
+config AFE_RES_CIRCLE_3MIC50MM
     bool
 
-config KWS_RES_CUSTOM
+config VAD_V7_200K
+    bool
+
+config VAD_V8_60K
+    bool
+
+config KWS_XIAOQIANGXIAOQIANG_NIHAOXIAOQIANG_V4_300K
+    bool
+
+config KWS_XIAOQIANGXIAOQIANG_NIHAOXIAOQIANG_V5_125K
+    bool
+
+config KWS_CN_CUSTOMIZED_V3_750K
+    bool
+
+config ASR_CN_V8_2M
+    bool
+
+config ASR_CN_V10_1M
     bool

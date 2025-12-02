@@ -15,11 +15,11 @@ if AIVOICE_EN_MENU
 
     choice
         prompt "Select KWS Resource"
-        default KWS_RES_XQXQ_MENU
+        default KWS_XIAOQIANGXIAOQIANG_NIHAOXIAOQIANG_V5_125K_MENU
 
-        config KWS_RES_XQXQ_MENU
+        config KWS_XIAOQIANGXIAOQIANG_NIHAOXIAOQIANG_V5_125K_MENU
             bool "kws_res_xqxq"
-            select KWS_RES_XQXQ if CORE_AS_AP
+            select KWS_XIAOQIANGXIAOQIANG_NIHAOXIAOQIANG_V5_125K if CORE_AS_AP
 
     endchoice
 endif
@@ -30,6 +30,6 @@ config AIVOICE_EN
 config AFE_RES_1MIC
     bool
 
-config KWS_RES_XQXQ
+config KWS_XIAOQIANGXIAOQIANG_NIHAOXIAOQIANG_V5_125K
     bool
 

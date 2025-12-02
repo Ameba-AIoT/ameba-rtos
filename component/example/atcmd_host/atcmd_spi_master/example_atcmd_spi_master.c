@@ -7,11 +7,13 @@
 #include "example_atcmd_spi_master.h"
 #include "atcmd_service.h"
 #include "ringbuffer.h"
+#include "stdlib.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
 #include "queue.h"
+#include "timers.h"
 
 #define ATCMD_SPI_DMA_SIZE	2048 * 8
 #define SPI_SCLK_FREQ		20*1000*1000
@@ -32,7 +34,7 @@ void *uart_irq_handle_sema;
 void *tx_ringbuffer_mutex;
 
 RingBuffer *atcmd_host_tx_ring_buf = NULL;
-
+TimerHandle_t xTimers_UART_Output;
 gpio_t at_spi_master_to_slave_gpio;
 gpio_irq_t at_spi_slave_to_master_irq;
 
@@ -44,7 +46,9 @@ char uart_format_buffer[FORMAT_LEN];
 int current_edge = IRQ_FALL;
 char uart_irq_buffer[MAX_CMD_LEN] = {0};
 u32 uart_irq_count = 0;
+u32 last_uart_count = 0;
 volatile u8 tt_mode_task_start = 0;
+u32 tt_len = 2 * 1024 * 1024;;
 
 u8 MasterRxBuf[ATCMD_SPI_DMA_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 u8 MasterTxBuf[ATCMD_SPI_DMA_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
@@ -148,8 +152,12 @@ void uart_irq(uint32_t id, SerialIrq event)
 
 void uart_irq_handle_task(void)
 {
+	xTimerStart(xTimers_UART_Output, 0);
 	while (1) {
 		xSemaphoreTake(uart_irq_handle_sema, 0xFFFFFFFF);
+		if (strstr((char *)uart_irq_buffer, "\r\n") && strstr((char *)uart_irq_buffer, "AT+TEST=1,")) {
+			tt_len = atoi(&uart_irq_buffer[10]);
+		}
 		spi_master_send((u8 *)uart_irq_buffer, uart_irq_count);
 		memset(uart_irq_buffer, 0, MAX_CMD_LEN);
 		uart_irq_count = 0;
@@ -188,15 +196,14 @@ void gpio_edge_irq_handler(uint32_t id, gpio_irq_event event)
 
 void atcmd_tt_mode_task(void)
 {
-	// same size as atcmd config size , for example:"AT+HTTPPOST=server_url,/post,1,204800,,2,Connection: close,Transfer-Encoding: chunked" or "AT+TEST=1,2097152"
-	u32 tt_len = 2 * 1024 * 1024;
+	u32 tt_len_tmp = tt_len;
 	u32 send_len;
 	u8 *tt_tx_buf = pvPortMalloc(ATCMD_SPI_DMA_SIZE - 8);
 
-	while (tt_len > 0) {
-		send_len = tt_len > (ATCMD_SPI_DMA_SIZE - 8) ? (ATCMD_SPI_DMA_SIZE - 8) : tt_len;
+	while (tt_len_tmp > 0) {
+		send_len = tt_len_tmp > (ATCMD_SPI_DMA_SIZE - 8) ? (ATCMD_SPI_DMA_SIZE - 8) : tt_len_tmp;
 		spi_master_send((u8 *)tt_tx_buf, send_len);
-		tt_len -= send_len;
+		tt_len_tmp -= send_len;
 	}
 
 	vPortFree(tt_tx_buf);
@@ -380,8 +387,26 @@ NEXT:
 	}
 }
 
+void uart_output_timer_handle(void *arg)
+{
+	(void) arg;
+	if (uart_irq_count > 0) {
+		if (last_uart_count == 0) {
+			last_uart_count = uart_irq_count;
+		} else if (last_uart_count != uart_irq_count) {
+			last_uart_count = uart_irq_count;
+		} else {
+			xSemaphoreGive(uart_irq_handle_sema);
+		}
+	} else {
+		last_uart_count = 0;
+	}
+}
+
 void example_atcmd_spi_master(void)
 {
+	TickType_t timer_ticks;
+
 	master_tx_done_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
 	master_rx_done_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
 	master_trx_done_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
@@ -400,4 +425,8 @@ void example_atcmd_spi_master(void)
 	if (xTaskCreate((void *)uart_irq_handle_task, ((const char *)"uart_irq_handle_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 5, NULL) != pdPASS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s rtos_task_create(uart_irq_handle_task) failed", __FUNCTION__);
 	}
+
+
+	timer_ticks = (TickType_t)((100 + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS);
+	xTimers_UART_Output = xTimerCreate("uart_output_timer", timer_ticks, (BaseType_t)TRUE, (void *)NULL, (TimerCallbackFunction_t)uart_output_timer_handle);
 }

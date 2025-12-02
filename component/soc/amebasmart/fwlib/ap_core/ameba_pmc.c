@@ -37,6 +37,8 @@ void SOCPS_SleepPG(void)
 	smp_init();
 	pmu_set_secondary_cpu_state(1, CPU1_WAKE_FROM_PG);
 #endif
+	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW,
+			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) | LSYS_BIT_AP_RUNNING);
 	//pmu_acquire_wakelock(PMU_OS);
 }
 

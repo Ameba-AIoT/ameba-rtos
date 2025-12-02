@@ -165,4 +165,5 @@ SECTIONS
 #endif
 
     ASSERT(. <= BL1_RW_LIMIT, "BL1's RW section has exceeded its limit.")
+    ASSERT(bl1_boot_sram == ORIGIN(SRAM), "bl1_boot_sram is not at the start of SRAM.")
 }
