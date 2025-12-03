@@ -232,3 +232,38 @@ u32 SWR_PSRAM_Mode_Set(u32 SWR_Mode)
 		return 0;
 	}
 }
+
+/**
+  * @brief  Get core swr mode.
+  * @retval swr mode.
+  *   swr mode shows as follows:
+  *            - 1 : PWM mode
+  *            - 0 : PFM mode
+  */
+u32 SWR_Mode_Get(void)
+{
+	return REGU_BASE->REGU_POWER_CTRL & REGU_BIT_SYS_PWM_REQ;
+}
+/**
+  * @brief  set Core mode req from sys
+  * @param  req_mode: 0 - SWR_PFM, 1 - SWR_PWM
+  * @retval None.
+  */
+void SWR_PFM_MODE_Set(u32 req_mode)
+{
+	u32 temp;
+
+	REGU_TypeDef *regu = REGU_BASE;
+	temp = regu->REGU_POWER_CTRL;
+
+	if ((SWR_PFM == req_mode) && (SWR_PWM == SWR_Mode_Get())) {
+		SOCPS_SetReguOCP(ENABLE);
+		DelayUs(100);
+		temp &= ~REGU_BIT_SYS_PWM_REQ;
+		regu->REGU_POWER_CTRL = temp;
+	} else if ((SWR_PWM == req_mode) && (SWR_PFM == SWR_Mode_Get())) {
+		temp |= REGU_BIT_SYS_PWM_REQ;
+		regu->REGU_POWER_CTRL = temp;
+		SOCPS_SetReguOCP(DISABLE);
+	}
+}
