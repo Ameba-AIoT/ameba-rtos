@@ -353,7 +353,7 @@ function(ameba_firmware_package output_app_name)
     endforeach()
 
     if (CONFIG_DSP_WITHIN_APP_IMG)
-        set(c_DSP_FILE ${c_SOC_PROJECT_DIR}/${DSP_IMAGE_TARGET_DIR}/dsp.bin)
+        set(c_DSP_FILE ${c_SOC_PROJECT_DIR}/${CONFIG_DSP_IMAGE_TARGET_DIR}/dsp.bin)
         if(NOT EXISTS ${c_DSP_FILE})
             message(FATAL_ERROR "dsp file not exist: ${c_DSP_FILE}")
         endif()
