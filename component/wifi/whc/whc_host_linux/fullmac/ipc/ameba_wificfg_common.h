@@ -217,6 +217,9 @@ struct wifi_user_conf {
 		skb_num_np needs to be adjusted simultaneously.*/
 	u8 rx_ampdu_num;
 
+	/* set cck rate mask for tx data frame. Set bit to 1 to mask corresponding cck rate (bit 0 ~ 3: CCK 1M, 2M, 5.5M, 11M) */
+	u8 rate_mask_cck;
+
 	/*!	Linux Fullmac architecture, ignore in RTOS.*/
 	u8 cfg80211;
 

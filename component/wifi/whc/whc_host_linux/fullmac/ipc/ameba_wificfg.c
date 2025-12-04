@@ -91,6 +91,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.rx_shortcut_enable = 1;
 	wifi_user_config.keepalive_interval = 20;
 	wifi_user_config.rx_cca_thresh = 0;
+	wifi_user_config.rate_mask_cck = 0x0;
 
 #ifdef CONFIG_FULLMAC
 	/* Linux wifi supports cfg80211 ops. */

@@ -37,6 +37,10 @@ bool os_heap_add(u8 *start_addr, size_t heap_size)
 {
 	assert_param(heap_index < sizeof(xHeapRegions) / sizeof(xHeapRegions[0]));
 
+	if (heap_size == 0) {
+		return FALSE;
+	}
+
 	xHeapRegions[heap_index].pucStartAddress = start_addr;
 	xHeapRegions[heap_index].xSizeInBytes = (size_t)heap_size;
 	if (xHeapRegions[heap_index].xSizeInBytes != 0) {
