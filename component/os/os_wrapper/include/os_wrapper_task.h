@@ -114,6 +114,13 @@ int rtos_task_yield(void);
 rtos_task_t rtos_task_handle_get(void);
 
 /**
+ * @brief  Get task name by handle
+ * @param  p_handle: Task handle. If null is passed in here then the name of the calling task is being queried.
+ * @retval task name
+ */
+char *rtos_task_name_get(rtos_task_t p_handle);
+
+/**
  * @brief  Get os level task routine priority.
  * @param  p_handle: Task handle.
  * @retval Task priority value

@@ -13,7 +13,7 @@ set(v_ASDK_VER 12.3.1)
 set(v_FREERTOS_VER v10.4.3)
 set(v_LITTLEFS_VER r2.50)
 set(v_LWIP_VER v2.1.2)
-set(v_MBEDTLS_VER 3.6.2)
+set(v_MBEDTLS_VER 3.6.5)
 set(v_AMEBA_LOG_LEVEL ${c_AMEBA_LOG_LEVEL_INFO})
 set(c_VERBOSE_MAKEFILE FALSE)
 ###############################################################################

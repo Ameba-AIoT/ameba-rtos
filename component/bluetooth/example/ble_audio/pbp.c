@@ -20,7 +20,6 @@
 #include <rtk_bt_cap.h>
 #include <rtk_bt_vendor.h>
 #include <bt_audio_intf.h>
-#include <bt_audio_sync.h>
 #include <lc3_codec_entity.h>
 #include <bt_audio_track_api.h>
 #include <bt_audio_record_api.h>

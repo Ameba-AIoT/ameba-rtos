@@ -8,8 +8,10 @@ struct genl_info wifi_event_user_genl_info;
 static int whc_host_send_buf_to_dev(struct genl_info *info);
 static int whc_host_set_mac(struct genl_info *info);
 static int whc_host_set_netifon(struct genl_info *info);
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 static int whc_host_mp(struct genl_info *info);
 static int whc_host_dbg(struct genl_info *info);
+#endif
 static int whc_host_nl_init(struct genl_info *info);
 
 static struct whc_host_netlink_command_entry netlink_cmd_table[] = {
@@ -188,6 +190,7 @@ static int whc_host_nl_init(struct genl_info *info)
 	return 0;
 }
 
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 static int whc_host_mp(struct genl_info *info)
 {
 	u8 *buf;
@@ -223,6 +226,7 @@ static int whc_host_dbg(struct genl_info *info)
 	kfree(user_buf);
 	return 0;
 }
+#endif
 
 /* netlink cmd handler */
 static int whc_host_nl_cmd_process(struct sk_buff *skb, struct genl_info *info)

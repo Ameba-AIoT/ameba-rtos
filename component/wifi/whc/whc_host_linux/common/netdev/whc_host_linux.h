@@ -80,6 +80,7 @@
 #include <linux/of_gpio.h>
 
 /* fullmac headers. */
+#include "autoconf.h"
 #include "whc_host_wiphy.h"
 #include "wifi_api_types.h"
 #include "wifi_api_event.h"

@@ -1665,7 +1665,7 @@ end:
 #endif
 
 log_item_t at_wifi_items[ ] = {
-#if !(!defined(CONFIG_WHC_INTF_IPC) && !defined(CONFIG_WHC_WIFI_API_PATH))
+#if !(!defined(CONFIG_WHC_INTF_IPC) && !defined(CONFIG_WHC_WIFI_API_PATH) && !defined(CONFIG_WHC_NONE))
 #ifdef CONFIG_LWIP_LAYER
 	{"+WLSTATICIP", at_wlstaticip, {NULL, NULL}},
 #endif /* CONFIG_LWIP_LAYER */

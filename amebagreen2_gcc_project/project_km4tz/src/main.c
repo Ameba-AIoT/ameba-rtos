@@ -146,51 +146,6 @@ _WEAK void app_example(void)
 
 }
 
-void app_rtc_init(void)
-{
-	RTC_InitTypeDef RTC_InitStruct;
-	RTC_TimeTypeDef RTC_TimeStruct;
-
-	RTC_TimeStructInit(&RTC_TimeStruct);
-	RTC_TimeStruct.RTC_Year = 2021;
-	RTC_TimeStruct.RTC_Hours = 10;
-	RTC_TimeStruct.RTC_Minutes = 20;
-	RTC_TimeStruct.RTC_Seconds = 30;
-
-	RTC_StructInit(&RTC_InitStruct);
-	/*enable RTC*/
-	RTC_Enable(ENABLE);
-	RTC_Init(&RTC_InitStruct);
-	RTC_SetTime(RTC_Format_BIN, &RTC_TimeStruct);
-}
-
-u32 rtc_irq_init(void *Data)
-{
-	/* To avoid gcc warnings */
-	(void) Data;
-	u32 temp;
-
-	RTC_ClearDetINT();
-	SDM32K_Enable();
-	SYSTIMER_Init(); /* 0.2ms */
-	RCC_PeriphClockCmd(NULL, APBPeriph_RTC_CLOCK, ENABLE);
-	RTC_ClkSource_Select(SDM32K);
-
-	if ((Get_OSC131_STATE() & RTC_BIT_FIRST_PON) == 0) {
-		app_rtc_init();
-		/*set first_pon to 1, this indicate RTC first pon state*/
-		temp = Get_OSC131_STATE() | RTC_BIT_FIRST_PON;
-		Set_OSC131_STATE(temp);
-
-		/*before 131k calibratopn, cke_rtc should be enabled*/
-		if (SYSCFG_CHIPType_Get() == CHIP_TYPE_ASIC_POSTSIM) {//Only Asic need OSC Calibration
-			OSC131K_Calibration(30000); /* PPM=30000=3% *//* 7.5ms */
-		}
-	}
-
-	return 0;
-}
-
 void CPU1_WDG_RST_Handler(void)
 {
 	/* Let NP run */
@@ -263,16 +218,6 @@ int main(void)
 #endif
 
 	app_pmu_init();
-
-	/*this means osc131k is ready*/
-	if ((Get_OSC131_STATE() & RTC_BIT_FIRST_PON) == 1) {
-		SDM32K_Enable();
-		SYSTIMER_Init(); /* 0.2ms */
-	}
-
-	/*Register RTC_DET_IRQ callback function */
-	InterruptRegister((IRQ_FUN) rtc_irq_init, RTC_DET_IRQ, (u32)NULL, INT_PRI_LOWEST);
-	InterruptEn(RTC_DET_IRQ, INT_PRI_LOWEST);
 
 	/* Register CPU1_WDG_RST_IRQ Callback function */
 	InterruptRegister((IRQ_FUN) CPU1_WDG_RST_Handler, CPU1_WDG_RST_IRQ, (u32)NULL, INT_PRI_LOWEST);

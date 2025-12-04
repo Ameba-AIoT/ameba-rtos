@@ -27,7 +27,6 @@
 #include <bt_audio_track_api.h>
 #include <bt_audio_record_api.h>
 #include <bt_audio_intf.h>
-#include <bt_audio_sync.h>
 #include <bt_audio_noise_cancellation.h>
 #include <bt_audio_codec_wrapper.h>
 #include <lc3_codec_entity.h>
@@ -1771,6 +1770,20 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 		break;
 	}
 
+	case RTK_BT_BR_GAP_LINK_RSSI_INFO: {
+		rtk_bt_br_link_read_rssi_rsp *prssi_rsp_t = (rtk_bt_br_link_read_rssi_rsp *)param;
+		if (!prssi_rsp_t->cause) {
+			BT_LOGA("[BR GAP] Read rssi %d of %02x:%02x:%02x:%02x:%02x:%02x \r\n", prssi_rsp_t->rssi,
+					prssi_rsp_t->bd_addr[5], prssi_rsp_t->bd_addr[4], prssi_rsp_t->bd_addr[3],
+					prssi_rsp_t->bd_addr[2], prssi_rsp_t->bd_addr[1], prssi_rsp_t->bd_addr[0]);
+		} else {
+			BT_LOGA("[BR GAP] Read rssi fail, cause 0x%x, %02x:%02x:%02x:%02x:%02x:%02x \r\n", prssi_rsp_t->cause,
+					prssi_rsp_t->bd_addr[5], prssi_rsp_t->bd_addr[4], prssi_rsp_t->bd_addr[3],
+					prssi_rsp_t->bd_addr[2], prssi_rsp_t->bd_addr[1], prssi_rsp_t->bd_addr[0]);
+		}
+		break;
+	}
+
 	case RTK_BT_BR_GAP_ACL_DISCONN: {
 		rtk_bt_br_acl_disc_t *p_acl_disc_event = (rtk_bt_br_acl_disc_t *)param;
 		BT_LOGA("[BR GAP] ACL disconnection %02x:%02x:%02x:%02x:%02x:%02x \r\n",
@@ -2343,8 +2356,8 @@ static void app_bt_le_audio_iso_data_path_tx_track_pause(void)
 			}
 			p_track = (rtk_bt_audio_track_t *)app_le_audio_data_path[i].p_track_hdl;
 			if (p_track->audio_sync_flag) {
-				rtk_bt_audio_track_pause_without_flush(p_track->audio_track_hdl);
-				BT_LOGA("%s: rtk_bt_audio_track_pause_without_flush\r\n", __func__);
+				rtk_bt_audio_track_pause(p_track->audio_track_hdl);
+				BT_LOGA("%s: rtk_bt_audio_track_pause\r\n", __func__);
 			}
 		}
 	}
@@ -2479,7 +2492,9 @@ static rtk_bt_evt_cb_ret_t app_bt_a2dp_callback(uint8_t evt_code, void *param, u
 					pa2dp_stream->bd_addr[0]);
 		a2dp_play_flag = true;
 		if (a2dp_audio_track_hdl) {
-			rtk_bt_audio_track_resume(a2dp_audio_track_hdl->audio_track_hdl);
+			if (!lea_broadcast_start) {
+				rtk_bt_audio_track_resume(a2dp_audio_track_hdl->audio_track_hdl);
+			}
 		}
 	}
 	break;
@@ -2771,6 +2786,18 @@ static void app_bt_le_audio_remove_data_path_all(void)
 			memset((void *)&app_le_audio_data_path[i], 0, sizeof(app_bt_le_audio_data_path_t));
 		}
 	}
+}
+
+static uint16_t app_bt_le_audio_data_path_statistics(rtk_bt_le_audio_iso_data_path_direction_t path_direction)
+{
+	uint16_t path_num = 0;
+	for (uint16_t i = 0; i < APP_LE_AUDIO_DEMO_DATA_PATH_NUM; i ++) {
+		if (app_le_audio_data_path[i].used &&
+			(app_le_audio_data_path[i].path_direction == path_direction)) {
+			path_num++;
+		}
+	}
+	return path_num;
 }
 
 static uint16_t app_bt_le_audio_data_received(uint16_t iso_handle, uint8_t path_direction, uint8_t *data, uint16_t data_len, uint32_t ts_us)
@@ -3435,9 +3462,14 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 		BT_AT_PRINT("+BLEBAP:setup path bis_idx,bis_conn_handle,cause,0x%x,0x%x,0x%x\r\n",
 					param->bis_idx, param->bis_conn_handle, param->cause);
 		lea_codec_t = param->codec_t;
+		lea_broadcast_start = true;
+		/* a2dp local play suspend */
+		if (a2dp_audio_track_hdl) {
+			rtk_bt_audio_track_pause(a2dp_audio_track_hdl->audio_track_hdl);
+			BT_LOGA("[APP] %s: rtk_bt_audio_track_pause \r\n", __func__);
+		}
 		/* stop escan previously to avoid insufficent RF bandwidth */
 		rtk_bt_le_audio_ext_scan_act(false);
-		lea_broadcast_start = true;
 		g_pbp_bsrc_transport_latency_big = param->transport_latency_big;
 		g_pbp_iso_interval =  param->iso_chann_t.iso_interval * 1.25 * 1000;
 		BT_LOGA("[APP] g_pbp_bsrc_transport_latency_big: %d, g_pbp_iso_interval: %d \r\n",
@@ -3473,6 +3505,13 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 			app_queue_mgr_flush_queue(&app_pcm_data_mgr_queue);
 			pbp_broadcast_dequeue_flag = false;
 			osif_mutex_give(app_pcm_data_mgr_queue.mtx);
+		}
+		if (0 == app_bt_le_audio_data_path_statistics(RTK_BLE_AUDIO_ISO_DATA_PATH_TX)) {
+			/* wait for all BIS track release, a2dp local play resume*/
+			if (a2dp_audio_track_hdl) {
+				rtk_bt_audio_track_resume(a2dp_audio_track_hdl->audio_track_hdl);
+				BT_LOGA("[APP] %s: rtk_bt_audio_track_resume \r\n", __func__);
+			}
 		}
 		break;
 	}

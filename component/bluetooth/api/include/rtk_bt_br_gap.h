@@ -345,6 +345,16 @@ typedef struct {
 	uint16_t    cause;
 } rtk_bt_br_acl_conn_fail_t;
 
+/**
+ * @struct    rtk_bt_br_lin_read_rssi_rsp
+ * @brief     Bluetooth BR/EDR read rssi rsp
+ */
+typedef struct {
+	uint8_t     bd_addr[6];       /**< Bluetooth address of remote device. */
+	uint16_t    cause;            /**< Result of reading RSSI. */
+	int8_t      rssi;             /**< RSSI value read if success. */
+} rtk_bt_br_link_read_rssi_rsp;
+
 /* ------------------------------ Functions Declaration ------------------------------ */
 /**
  * @defgroup  bt_br_gap BT BR GAP APIs
@@ -619,6 +629,15 @@ uint16_t rtk_bt_br_gap_set_cod(uint32_t *bt_cod);
  *            - Others: Error code
  */
 uint16_t rtk_bt_br_gap_set_supvisiontimeout(uint16_t *supv_timeout);
+
+/**
+ * @brief     get rssi of current link.
+ * @param[in] bd_addr: The Bluetooth device address
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_br_gap_read_rssi(uint8_t *bd_addr);
 /**
  * @}
  */

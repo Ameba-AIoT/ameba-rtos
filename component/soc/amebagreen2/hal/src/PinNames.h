@@ -35,6 +35,7 @@ extern "C" {
 typedef enum {
 	PORT_A = 0,
 	PORT_B = 1,
+	PORT_C = 2,
 } GPIO_PORT;
 
 /**
@@ -116,6 +117,16 @@ typedef enum {
 	PB_29  = (PORT_B << 5 | 29),
 	PB_30  = (PORT_B << 5 | 30),
 	PB_31  = (PORT_B << 5 | 31),
+
+	PC_0  = (PORT_C << 5 | 0),
+	PC_1  = (PORT_C << 5 | 1),
+	PC_2  = (PORT_C << 5 | 2),
+	PC_3  = (PORT_C << 5 | 3),
+	PC_4  = (PORT_C << 5 | 4),
+	PC_5  = (PORT_C << 5 | 5),
+	PC_6  = (PORT_C << 5 | 6),
+	PC_7  = (PORT_C << 5 | 7),
+	PC_8  = (PORT_C << 5 | 8),
 
 	AD_0 = PA_20, //CH0
 	AD_1 = PA_19, //CH1

@@ -225,25 +225,14 @@ struct hci_ops_t whc_usb_host_intf_ops = {
 int whc_usb_host_send_event_check(u32 event_id)
 {
 	struct whc_usb *priv = &whc_usb_host_priv;
-	struct cfg80211_bss *bss = NULL;
 
 	/*when kernel's usb_disconnect triggered, endpoint will be disabled, thus cannot send event*/
 	/*but when driver->disconnect called by unregister_usb, since soft_unbind=1,
 	endpoint will not be disabled, event can still be send*/
 	if (priv->usb_disconnecting && (!priv->usb_deregistering)) {
 		if (event_id == WHC_API_WIFI_DISCONNECT) {
-			/* get bss according to channel, ssid, bss_type
-			   cfg80211_get_bss(wiphy, channel, bssid(NULL), ssid, ssid_len, bss_type, privacy) */
-			bss = cfg80211_get_bss(global_idev.pwiphy_global, global_idev.pwdev_global[0]->chandef.chan,
-								   NULL, global_idev.pwdev_global[0]->ssid, global_idev.pwdev_global[0]->ssid_len,
-								   global_idev.pwdev_global[0]->conn_bss_type, IEEE80211_PRIVACY_ANY);
-
-			if (bss) {
-				/*due to whc_fullmac_host_event_disconnect will wait for sema*/
-				whc_fullmac_host_disconnect_indicate(0, 1, bss->bssid);
-				complete(&global_idev.mlme_priv.disconnect_done_sema);
-				cfg80211_put_bss(global_idev.pwiphy_global, bss);
-			}
+			whc_fullmac_host_disconnect_indicate(0, 1, global_idev.bssid);
+			complete(&global_idev.mlme_priv.disconnect_done_sema);
 		}
 		return -1;
 	}

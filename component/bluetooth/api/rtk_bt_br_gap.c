@@ -406,3 +406,16 @@ uint16_t rtk_bt_br_gap_set_supvisiontimeout(uint16_t *supv_timeout)
 
 	return RTK_BT_OK;
 }
+
+uint16_t rtk_bt_br_gap_read_rssi(uint8_t *bd_addr)
+{
+	uint16_t ret = 0;
+
+	if (!bd_addr) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	ret = rtk_bt_send_cmd(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_ACT_READ_RSSI, (void *)bd_addr, 6);
+
+	return ret;
+}

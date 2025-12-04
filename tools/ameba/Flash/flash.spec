@@ -30,9 +30,9 @@ VSVersionInfo(
             [StringStruct(u'CompanyName', u'Realtek Semiconductor Corp.'),
             StringStruct(u'FileDescription', u'Flash Tool for Realtek Ameba SoCs'),
             StringStruct(u'FileVersion', u'{version}'),
-            StringStruct(u'InternalName', u'flash.exe'),
+            StringStruct(u'InternalName', u'AmebaFlash.exe'),
             StringStruct(u'LegalCopyright', u'Copyright (c) 2025 Realtek Semiconductor Corp.'),
-            StringStruct(u'OriginalFilename', u'flash.exe'),
+            StringStruct(u'OriginalFilename', u'AmebaFlash.exe'),
             StringStruct(u'ProductName', u'Ameba Flash Tool'),
             StringStruct(u'ProductVersion', u'{version}')])
         ]),
@@ -43,7 +43,7 @@ VSVersionInfo(
 
 
 a = Analysis(
-    ['flash.py'],
+    ['AmebaFlash.py'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -63,7 +63,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='flash',
+    name='AmebaFlash',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

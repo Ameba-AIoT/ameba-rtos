@@ -6,5 +6,5 @@ ECHO %JLinkGDBServer_Path% is NOT EXIST, Please Check your JlinkGDBServer_Path i
 ECHO Jlink version with v7.22 or later is recommanded
 PAUSE && EXIT 
 )
-
+TITLE=CORE0
 %JLinkGDBServer_Path% -device Cortex-A32 -if swd -jlinkscriptfile AP3_CA32_Core0.JLinkScript

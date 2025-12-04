@@ -80,4 +80,9 @@ enum WHC_WIFI_CTRL_TYPE {
 };
 #endif
 
+#if defined(CONFIG_WPA_STD)
+#include "wpas_std_wifi_intf.h"
+#endif //CONFIG_WPA_STD
+
+
 #endif /* __INIC_SDIO_H__ */

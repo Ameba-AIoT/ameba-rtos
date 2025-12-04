@@ -85,7 +85,7 @@ def create_json_file(target_dir, current_path):
 
 def create_cmake_file(target_dir, subdirectory_name=None):
     if subdirectory_name:
-        cmake_content = f"add_subdirectory({subdirectory_name})\r\n"
+        cmake_content = f"ameba_add_subdirectory({subdirectory_name})\r\n"
     else:
         cmake_content="\r\n"
     cmake_path = os.path.join(target_dir, 'CMakeLists.txt')

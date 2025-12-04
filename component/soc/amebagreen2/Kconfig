@@ -145,6 +145,8 @@ menu "CONFIG FUNCTION TEST"
         bool "chip_reset_verify"
         config DBG_TIMER_VERIFY
         bool "debugtimer_verify"
+        config PERFORMANCE_TEST
+        bool "performance_verify"
         config DHRYSTONE_TEST
         bool "Dhrystone Test"
         config RTLIB_VERIFY

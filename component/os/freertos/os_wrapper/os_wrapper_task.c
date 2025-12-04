@@ -99,6 +99,11 @@ rtos_task_t rtos_task_handle_get(void)
 	return (rtos_task_t)xTaskGetCurrentTaskHandle();
 }
 
+char *rtos_task_name_get(rtos_task_t p_handle)
+{
+	return pcTaskGetName((TaskHandle_t)p_handle);
+}
+
 uint32_t rtos_task_priority_get(rtos_task_t p_handle)
 {
 	return (uint32_t)uxTaskPriorityGet((TaskHandle_t)p_handle);

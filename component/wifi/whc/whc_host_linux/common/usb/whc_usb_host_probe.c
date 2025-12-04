@@ -57,10 +57,11 @@ int whc_usb_host_init(struct whc_usb *priv, struct usb_interface *intf)
 			priv->rx_pipe = usb_rcvbulkpipe(usb, endpoint_num);
 		} else if (usb_endpoint_dir_out(endpoint)) {
 #ifdef CONFIG_AMEBADPLUS
-			if (endpoint_num == RTW_WHC_WIFI_EP4_BULK_OUT || endpoint_num == RTW_WHC_WIFI_EP2_BULK_OUT) {
+			if (endpoint_num == RTW_WHC_WIFI_EP4_BULK_OUT || endpoint_num == RTW_WHC_WIFI_EP2_BULK_OUT)
 #else //GREEN2
-			if (endpoint_num == RTW_WHC_WIFI_EP5_BULK_OUT || endpoint_num == RTW_WHC_WIFI_EP6_BULK_OUT || endpoint_num == RTW_WHC_WIFI_EP7_BULK_OUT) {
+			if (endpoint_num == RTW_WHC_WIFI_EP5_BULK_OUT || endpoint_num == RTW_WHC_WIFI_EP6_BULK_OUT || endpoint_num == RTW_WHC_WIFI_EP7_BULK_OUT)
 #endif
+			{
 				priv->tx_pipe[cnt++] = usb_sndbulkpipe(usb, endpoint_num);
 				priv->tx_mps = usb_endpoint_maxp(endpoint);
 			}
@@ -86,7 +87,6 @@ static int whc_usb_host_trx_resource_init(struct list_head *q, int qsize, int pr
 	struct sk_buff	*skb;
 	struct whc_usb *priv = &whc_usb_host_priv;
 	int ret;
-	unsigned long addr;
 
 	reqs = kzalloc(qsize * sizeof(struct rtw_usbreq), GFP_ATOMIC);
 	if (reqs == NULL) {

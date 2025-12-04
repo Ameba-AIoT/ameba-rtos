@@ -1137,26 +1137,26 @@ enum CHIP_TYPE {
 	CHIP_TYPE_RTLSIM = 3
 };
 
-#define BIT_FORCE_USE_S0_ICFG			LSYS_PTRP_ICFG(0x0000000e)
-#define BIT_MCM_FLASH_PG1B_ICFG			LSYS_PTRP_ICFG(0x0000000d)
-#define BIT_MCM_FLASH_PG_ICFG			LSYS_PTRP_ICFG(0x0000000c)
+#define BIT_FORCE_USE_S0_ICFG     LSYS_PTRP_ICFG(0x0000000e)
+#define BIT_MCM_FLASH_PG1B_ICFG   LSYS_PTRP_ICFG(0x0000000d)
+#define BIT_MCM_FLASH_PG_ICFG     LSYS_PTRP_ICFG(0x0000000c)
 
 /*******************  Macro definition for Port M0 Master ID ********************/
-#define SYSM0_MASTER_SIC                                       0
-#define SYSM0_MASTER_OTPC                                    1
-#define SYSM0_MASTER_KM0                                      2
+#define SYSM0_MASTER_SIC          0
+#define SYSM0_MASTER_OTPC         1
+#define SYSM0_MASTER_KM0          2
 
 /******************Macro definition for REG_LSYS_BOOT_REASON_SW **************/
-#define REG_LSYS_AP_STATUS_SW			0x0266
+#define REG_LSYS_AP_STATUS_SW     0x0266
 //using Absolute Address plat_get_my_entrypoint in plat_helpers.S !! change carefully!!
-#define LSYS_BIT_AP_WAKE_FROM_PG		((u32)0x00000001 << 0)
-#define LSYS_BIT_AP_RUNNING				((u32)0x00000001 << 1)
-#define LSYS_BIT_AP_ENABLE				((u32)0x00000001 << 2)
+#define LSYS_BIT_AP_WAKE_FROM_PG  ((u32)0x00000001 << 0)
+#define LSYS_BIT_AP_RUNNING       ((u32)0x00000001 << 1)
+#define LSYS_BIT_AP_ENABLE        ((u32)0x00000001 << 2)
 
-#define REG_LSYS_NP_STATUS_SW			0x026A
-#define LSYS_BIT_NP_RUNNING                        ((u32)0x00000001 << 7)          /*!<R/W 0   */
-#define LSYS_NP_RUNNING(x)                         ((u32)(((x) & 0x00000001) << 7))
-#define LSYS_GET_NP_RUNNING(x)                     ((u32)(((x >> 7) & 0x00000001)))
+#define REG_LSYS_NP_STATUS_SW     0x026A
+#define LSYS_BIT_NP_RUNNING       ((u32)0x00000001 << 7)          /*!<R/W 0   */
+#define LSYS_NP_RUNNING(x)        ((u32)(((x) & 0x00000001) << 7))
+#define LSYS_GET_NP_RUNNING(x)    ((u32)(((x >> 7) & 0x00000001)))
 
 /* MANUAL_GEN_END */
 #endif

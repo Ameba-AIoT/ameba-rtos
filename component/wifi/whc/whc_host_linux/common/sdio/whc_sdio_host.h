@@ -16,6 +16,10 @@ struct whc_sdio;
 
 //#define CONFIG_POWER_SAVING
 //#define CONFIG_PS_DYNAMIC_CHK
+
+#define SIZE_RX_DESC	(sizeof(INIC_RX_DESC))
+#define SIZE_TX_DESC	(sizeof(INIC_TX_DESC))
+
 #define BUF_ALIGN_SZ	4
 
 #define SDIO_BLOCK_SIZE		256

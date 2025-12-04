@@ -300,11 +300,12 @@ int rtw_wiphy_init_params(struct wiphy *pwiphy)
 	if (ret == false) {
 		return ret;
 	}
+#ifndef CONFIG_AMEBALITE
 	ret = rtw_wiphy_band_init(pwiphy, NL80211_BAND_5GHZ);
 	if (ret == false) {
 		return ret;
 	}
-
+#endif
 	//HT cap-2.4G
 	pwiphy->bands[NL80211_BAND_2GHZ]->ht_cap.ht_supported = 1;
 	pwiphy->bands[NL80211_BAND_2GHZ]->ht_cap.cap = IEEE80211_HT_CAP_SUP_WIDTH_20_40 |
@@ -317,6 +318,7 @@ int rtw_wiphy_init_params(struct wiphy *pwiphy)
 	pwiphy->bands[NL80211_BAND_2GHZ]->ht_cap.mcs.rx_mask[0] = 0xFF;
 	pwiphy->bands[NL80211_BAND_2GHZ]->ht_cap.mcs.rx_highest = 72;
 
+#ifndef CONFIG_AMEBALITE
 	//HT cap-5G
 	pwiphy->bands[NL80211_BAND_5GHZ]->ht_cap.ht_supported = 1;
 	pwiphy->bands[NL80211_BAND_5GHZ]->ht_cap.cap = IEEE80211_HT_CAP_SUP_WIDTH_20_40 |
@@ -328,6 +330,7 @@ int rtw_wiphy_init_params(struct wiphy *pwiphy)
 	pwiphy->bands[NL80211_BAND_5GHZ]->ht_cap.mcs.tx_params = IEEE80211_HT_MCS_TX_DEFINED;
 	pwiphy->bands[NL80211_BAND_5GHZ]->ht_cap.mcs.rx_mask[0] = 0xFF;
 	pwiphy->bands[NL80211_BAND_5GHZ]->ht_cap.mcs.rx_highest = 72;
+#endif
 
 	return ret;
 }

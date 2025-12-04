@@ -1168,7 +1168,7 @@ int whc_fullmac_host_get_edcca_mode(u8 *edcca_mode)
 int whc_fullmac_host_get_ant_info(u8 *antdiv_mode, u8 *curr_ant)
 {
 	int ret = 0;
-	u8 value[2];
+	u8 value[2] = {0};
 
 	whc_fullmac_host_send_event(WHC_API_WIFI_GET_ANTENNA_INFO, NULL, 0, value, sizeof(value));
 	*antdiv_mode = value[0];

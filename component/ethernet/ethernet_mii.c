@@ -127,9 +127,12 @@ void mii_intr_thread(void *param)
 		if (link_is_up) {
 			netif_set_link_up(pnetif_eth);
 			if (rt_kv_size("eth_ip") > 0) {
-				u32_t ip, gw = 0, netmask = 0;
+				u32_t ip, gw = 0, netmask = 0xFFFFFF00;
 				rt_kv_get("eth_ip", &ip, 4);
 				rt_kv_get("eth_gw", &gw, 4);
+				if (gw == 0) {
+					gw = (ip & 0xFFFFFF00) | 0x01;
+				}
 				rt_kv_get("eth_netmask", &netmask, 4);
 				if (!netif_is_up(pnetif_eth)) {
 					netifapi_netif_set_up(pnetif_eth);

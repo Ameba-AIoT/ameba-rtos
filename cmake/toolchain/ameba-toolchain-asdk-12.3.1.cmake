@@ -3,11 +3,11 @@ set(CMAKE_SYSTEM_PROCESSOR arm)
 
 # set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
 set(ToolChainVerMajor asdk-${ASDK_VER})
-set(ToolChainVerMinor 4431)
+set(ToolChainVerMinor 4568)
 if(USE_ALIYUN_URL)
 set(TOOLCHAINURL https://aiot.realmcu.com/download/toolchain)
 else()
-set(TOOLCHAINURL https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/12.3.1_v2/)
+set(TOOLCHAINURL https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/12.3.1_v3/)
 endif()
 
 set(TOOLCHAINDIR)

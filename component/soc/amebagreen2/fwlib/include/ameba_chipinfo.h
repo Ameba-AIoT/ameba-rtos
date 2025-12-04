@@ -284,6 +284,10 @@ enum MCM_MemType {
 /** @defgroup HWINFO_Exported_Functions HWINFO Exported Functions
   * @{
   */
+_LONG_CALL_ u8 EFUSE_GetESFlag(void);
+_LONG_CALL_ void EFUSE_GetUUID(u32 *UUID);
+_LONG_CALL_ u8 EFUSE_Get_Info(u32 FuncID);
+_LONG_CALL_ u8 EFUSE_GetChipInfo(void);
 _LONG_CALL_ u8 EFUSE_GetChipVersion(void);
 _LONG_CALL_ u16 ChipInfo_BDNum(void);
 _LONG_CALL_ u8 ChipInfo_PSRAMType(void);

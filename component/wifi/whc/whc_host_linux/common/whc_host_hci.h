@@ -137,6 +137,7 @@ struct whc_device {
 	u8						wowlan_state; /* 0: resume, 1: suspend */
 	u8						is_need_4way[WHC_MAX_NET_PORT_NUM]; /* 0: no need, 1: need */
 	u8						is_4way_ongoing[WHC_MAX_NET_PORT_NUM]; /* 0: 4-way is not ongoing, 1: 4-way is going */
+	u8 						bssid[ETH_ALEN];
 	bool b_in_roaming;
 
 	/* wifi user config */

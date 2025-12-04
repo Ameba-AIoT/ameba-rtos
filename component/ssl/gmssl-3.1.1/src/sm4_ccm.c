@@ -109,7 +109,7 @@ int sm4_ccm_encrypt(const SM4_KEY *sm4_key, const uint8_t *iv, size_t ivlen,
 		}
 		sm4_cbc_mac_update(&mac_ctx, block, alen);
 		sm4_cbc_mac_update(&mac_ctx, aad, aadlen);
-		if (alen + aadlen % 16) {
+		if ((alen + aadlen) % 16) {
 			sm4_cbc_mac_update(&mac_ctx, zeros, 16 - (alen + aadlen)%16);
 		}
 	}
@@ -194,7 +194,7 @@ int sm4_ccm_decrypt(const SM4_KEY *sm4_key, const uint8_t *iv, size_t ivlen,
 		}
 		sm4_cbc_mac_update(&mac_ctx, block, alen);
 		sm4_cbc_mac_update(&mac_ctx, aad, aadlen);
-		if (alen + aadlen % 16) {
+		if ((alen + aadlen )% 16) {
 			sm4_cbc_mac_update(&mac_ctx, zeros, 16 - (alen + aadlen)%16);
 		}
 	}

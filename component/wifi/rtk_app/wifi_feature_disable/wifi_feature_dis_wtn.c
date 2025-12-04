@@ -241,14 +241,6 @@ int wifi_tunnel_rnat_rx_ota_process(u8 *pframe, u16 pkt_len)
 }
 #endif /* CONFIG_RMESH_OTA_EN */
 #else
-#ifndef CONFIG_RMESH_EN
-int whc_ipc_host_api_wtn_identity_key_calc(u8 *password, u32 password_len)
-{
-	UNUSED(password);
-	UNUSED(password_len);
 
-	return -1;
-}
-#endif /* CONFIG_RMESH_OTA_EN */
 #endif /* CONFIG_WHC_HOST */
 #endif /* CONFIG_WIFI_TUNNEL */

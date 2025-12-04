@@ -179,8 +179,8 @@ MEMORY
     /* Flash */
     KM4TZ_BOOT_XIP (rx) :                  ORIGIN = 0x10400020, LENGTH = 0x10C00000 - 0x10400020    /* KM4TZ IMG1 Virtual address: 8M */
     KM4TZ_IMG3_XIP (rx) :                  ORIGIN = 0x10C00020, LENGTH = 0x11000000 - 0x10C00020    /* KM4TZ IMG3 Virtual address: 4M */
-    KM4TZ_IMG2_XIP (rx) :                  ORIGIN = 0x02000020, LENGTH = 0x04000000 - 0x02000020    /* KM4TZ IMG2 Virtual address: 32M */
-    KM4NS_IMG2_XIP (rx) :                  ORIGIN = 0x04000020, LENGTH = 0x06000000 - 0x04000020    /* KM4NS IMG2 Virtual address: 32M */
+    KM4NS_IMG2_XIP (rx) :                  ORIGIN = 0x02000020, LENGTH = 0x04000000 - 0x02000020    /* KM4TZ IMG2 Virtual address: 32M */
+    KM4TZ_IMG2_XIP (rx) :                  ORIGIN = 0x04000020, LENGTH = 0x06000000 - 0x04000020    /* KM4NS IMG2 Virtual address: 32M */
     BTRACE (rx) :                          ORIGIN = 0xC8800000, LENGTH = 0xC9000000 - 0xC8800000    /* BT LOG Virtual address: 8192k */
     CTRACE (rx) :                          ORIGIN = 0xCA000000, LENGTH = 0xCA7FFFFF - 0xCA000000    /* COEX LOG Virtual address: 8192k */
 }
