@@ -60,8 +60,8 @@ void rtw_reconn_timer_start(void)
 		at_printf_indicate("wifi reconnect done\r\n");
 	} else {
 		rtw_reconn.b_waiting = 1;
-		rtw_wakelock_timeout(wifi_user_config.auto_reconnect_interval * 1000 + 10);
 		rtos_timer_start(rtw_reconn.timer, 1000);
+		rtw_wakelock_timeout(wifi_user_config.auto_reconnect_interval * 1000 + 10);
 	}
 }
 

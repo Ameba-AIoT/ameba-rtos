@@ -26,7 +26,7 @@
 #include "dhcp/dhcps.h"
 #include "wtn_app_rnat.h"
 
-#ifdef CONFIG_RMESH_EN
+#ifdef CONFIG_RNAT_EN
 /*dnrd.c will use this*/
 extern char *rptssid;
 extern int wifi_repeater_ap_config_complete;
@@ -267,7 +267,7 @@ u8 wtn_rnat_search_client_ip(u8 *src_mac)
 
 void wtn_rnat_ap_init(u8 enable)
 {
-#ifdef CONFIG_RMESH_EN
+#ifdef CONFIG_RNAT_EN
 	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "RNAT AP INIT=%d\n", enable);
 	if (enable) {
 		wifi_repeater_ap_config_complete = 0;

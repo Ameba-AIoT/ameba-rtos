@@ -127,6 +127,11 @@ void pmu_post_sleep_processing(TickType_t *tick_before_sleep)
 	lwip_update_internal_counter(ms_passed);
 #endif
 
+	/* exec sleep hook functions */
+	pmu_exec_wakeup_hook_funs(cur_device_id, ms_passed);
+
+	Systick_Cmd(ENABLE);
+
 	RTK_LOGD(NOTAG, "%s sleeped:[%d] ms\n", (SYS_CPUID() == 1) ? "NP" : "AP", ms_passed);
 }
 

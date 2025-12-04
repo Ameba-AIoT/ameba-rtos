@@ -12,8 +12,10 @@ import json
 import subprocess
 
 PROJECT_ROOT_DIR = os.path.realpath(os.path.dirname(os.path.abspath(__file__)))
-PROFILE = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/ameba/ImageTool/Devices/Profiles/AmebaSmart_FreeRTOS_NOR.rdev"))
-FLASH_TOOL = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/ameba/Flash/flash.py"))
+PROFILE_NOR = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/ameba/Flash/Devices/Profiles/AmebaSmart_FreeRTOS_NOR.rdev"))
+PROFILE_NAND = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/ameba/Flash/Devices/Profiles/AmebaSmart_FreeRTOS_NAND.rdev"))
+PROFILE = {'nor': PROFILE_NOR, 'nand': PROFILE_NAND}
+FLASH_TOOL = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/ameba/Flash/AmebaFlash.py"))
 
 
 class MemoryInfo:
@@ -59,7 +61,7 @@ def main():
 
     remote_server = args.remote_server
 
-    cmds = ["--download", "--profile", PROFILE]
+    cmds = ["--download", "--profile", PROFILE.get(mem_t, 'nor')]
 
     if log_file is not None:
         log_path = os.path.dirname(log_file)

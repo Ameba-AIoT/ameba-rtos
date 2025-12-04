@@ -1244,7 +1244,7 @@ void *pvPortCalloc(size_t xWantedCnt, size_t xWantedSize)
 	return p;
 }
 
-#if defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAD)
+#if defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAD) || defined (CONFIG_RTL8720F)
 void vApplicationMallocFailedHook(size_t xWantedSize)
 {
 	char *pcCurrentTask = "NoTsk";
@@ -1266,7 +1266,7 @@ void vApplicationMallocFailedHook(size_t xWantedSize)
 	taskENTER_CRITICAL();
 
 	/* 1. Basic info: Task name / Free Heap Size / WantedSize */
-	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d] [xWantedSize:%d]\r\n",
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d] [xWantedSize:%u]\r\n",
 			core_name, pcCurrentTask, xPortGetFreeHeapSize(), xWantedSize);
 
 #if defined (CONFIG_HEAP_PROTECTOR) && (CONFIG_HEAP_PROTECTOR== 1)

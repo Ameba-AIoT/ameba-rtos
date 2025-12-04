@@ -199,7 +199,6 @@ void whc_ipc_dev_cfg80211_indicate_channel_ready(void *scan_userdata);
 #endif
 int whc_ipc_dev_ip_in_table_indicate(u8 gate, u8 ip);
 #ifdef CONFIG_WIFI_TUNNEL
-int whc_ipc_host_api_wtn_identity_key_calc(u8 *password, u32 password_len);
 void whc_ipc_dev_wtn_rnat_ap_init(u8 enable);
 int whc_ipc_dev_wtn_ota_callback_indicate(u8 *buf, u16 len);
 #ifdef CONFIG_WTN_SOCKET_APP

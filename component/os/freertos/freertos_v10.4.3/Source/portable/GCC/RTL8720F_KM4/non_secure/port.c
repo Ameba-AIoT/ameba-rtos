@@ -282,6 +282,7 @@ static void prvSetupTimerInterrupt(void) PRIVILEGED_FUNCTION;
  * function.
  */
 static void prvTaskExitError(void);
+void TaskExitError(void);
 
 #if( configENABLE_MPU == 1 )
 /**
@@ -371,6 +372,13 @@ static void prvTaskExitError(void)
 		 * and therefore not output an 'unreachable code' warning for code that
 		 * appears after it. */
 	}
+}
+
+__attribute__((naked)) void TaskExitError(void)
+{
+    __asm volatile("nop");
+    __disable_irq();
+    while (1);
 }
 /*-----------------------------------------------------------*/
 
@@ -958,17 +966,6 @@ void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 	overflow.  When this is the case pxCurrentTCB can be inspected in the
 	debugger to find the offending task. */
 	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r[%s] STACK OVERFLOW - TaskName(%s)\n\r", __FUNCTION__, pcTaskName);
-	for (;;);
-}
-
-void vApplicationMallocFailedHook(void)
-{
-	char *pcCurrentTask = "NoTsk";
-	if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
-		pcCurrentTask = pcTaskGetName(NULL);
-	}
-	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d]\r\n", "KM4", pcCurrentTask, xPortGetFreeHeapSize());
-	taskDISABLE_INTERRUPTS();
 	for (;;);
 }
 /*-----------------------------------------------------------*/

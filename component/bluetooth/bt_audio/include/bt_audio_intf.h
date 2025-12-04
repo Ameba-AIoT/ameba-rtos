@@ -85,9 +85,11 @@ typedef struct {
 	uint64_t                   controller_free_run_clock;                                      /*!< save free controller_free_run_clock */
 	uint32_t                   pres_delay_us;                                                  /*!< indicate presentation delay value */
 	uint32_t                   prev_ts_us;                                                     /*!< recording previous timestamp to check sdu loss */
+	uint32_t                   mixer_start_threshold;                                          /*!< record Audio Mixer start threshhold */
 	uint32_t
 	prev_sys_us;                                                    /*!< recording previous timestamp DTimestamp_Get() to check overflow */
-	bool                       ref_ap_oveflow_flag;
+	bool                       ref_ap_oveflow_flag;                                            /*!< indicate CIG/BIG reference point occur overflow*/
+	bool                       audio_mixer_conf;                                                    /*!< indicate Audio Mixer or Passthrough*/
 	uint64_t                   trans_bytes;                                                    /*!< to record successfully transmitted audio bytes */
 	uint32_t                   delta_index;                                                    /*!< to record delta number buffered in pres_delta_sum */
 	int64_t                    pres_delta_sum;                                                 /*!< record sum of render data time delta */
@@ -214,6 +216,29 @@ rtk_bt_audio_track_t *rtk_bt_audio_track_add(uint32_t type, float left_volume, f
 *            - others: Track Handle
 */
 uint16_t rtk_bt_audio_track_enable_sync_mode(rtk_bt_audio_track_t *ptrack, uint32_t pd);
+
+/**
+ * @brief     restart track sync
+ * @param[in] track: pointer of audio track struct
+ * @return
+ *            - 0  : sync restart success
+ *            - 1: sync restart failed
+ */
+uint16_t rtk_bt_audio_track_sync_restart(rtk_bt_audio_track_t *track);
+
+/**
+ * @brief     get ISO reference anchor point time
+ * @param[in] track: pointer of audio track struct
+ * @param[in] iso_conn_handle: ISO connect handle
+ * @param[in] dir: ISO path direction
+ * @param[in] iso_interval: ISO interval
+ * @param[in] sync_ref_ap: BIG/CIG sync reference anchor point
+ * @return
+ *            - 0:  get success
+ *            - 1:  get failed
+ */
+uint16_t rtk_bt_audio_get_iso_ref_ap(rtk_bt_audio_track_t *track, uint16_t iso_conn_handle, uint8_t dir, uint16_t iso_interval,
+									 uint32_t *sync_ref_ap);
 
 /**
  * @brief     config bt audio record parameter

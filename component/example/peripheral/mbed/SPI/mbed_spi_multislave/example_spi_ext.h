@@ -90,15 +90,15 @@
 
 #elif defined (CONFIG_AMEBAGREEN2)
 /* using fully programmable range */
-#define SPI_GPIO_CS0 _PB_26
-#define SPI_GPIO_CS1 _PB_27
+#define SPI_GPIO_CS0 _PA_26
+#define SPI_GPIO_CS1 _PA_25
 
 #if SPI_IS_AS_MASTER
 // SPI1 //Master - Pinmux S0
-#define SPI1_MOSI  _PB_30
-#define SPI1_MISO  _PB_31
-#define SPI1_SCLK  _PB_29
-#define SPI1_CS    _PC_0
+#define SPI1_MOSI  _PB_8
+#define SPI1_MISO  _PB_9
+#define SPI1_SCLK  _PB_7
+#define SPI1_CS    _PB_10
 
 #else
 // SPI0 //Slave - Pinmux S0

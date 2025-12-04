@@ -12,7 +12,7 @@ extern "C"
 {
 #endif
 
-#define BT_AUDIO_RINGBUFFER_PRE_SIZE 1024 * 100
+#define BT_AUDIO_RINGBUFFER_PRE_SIZE 1920 * 15
 #define BT_AUDIO_RINGBUFFER_SIZE (BT_AUDIO_RINGBUFFER_PRE_SIZE + 9600) // 9600 is for 48k 2channels 16bits 50ms Presentation Delay
 #define BT_AUDIO_STATIC_RINGBUFFER_NUM 2
 

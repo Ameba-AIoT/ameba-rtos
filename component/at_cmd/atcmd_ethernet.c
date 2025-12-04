@@ -24,7 +24,7 @@ void at_ethip(void *arg)
 	int error_no = 0;
 	int store_flag = 0;
 	unsigned int ip = 0;
-	unsigned int netmask = 0;
+	unsigned int netmask = 0xFFFFFF00;
 	unsigned int gw = 0;
 
 	if (arg == NULL) {
@@ -58,6 +58,7 @@ void at_ethip(void *arg)
 	if (store_flag == 1) {
 		rt_kv_set("eth_ip", &ip, 4);
 	}
+	gw = (ip & 0xFFFFFF00) | 0x01;
 
 	if (argc >= 4) {
 		gw = PP_HTONL(inet_addr(argv[3]));

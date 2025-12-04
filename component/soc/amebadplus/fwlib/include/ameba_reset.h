@@ -83,6 +83,9 @@ enum CHIPEN_WORK_MODE {
 #define SYS_RESET_KEY 0x96969696
 #define SYS_RESET_TRIG 0x69696969
 
+#define IS_WDG_RESET(reason)	((reason) & (AON_BIT_RSTF_IWDG | AON_BIT_RSTF_WDG0 | \
+                                           AON_BIT_RSTF_WDG1 | AON_BIT_RSTF_WDG2))
+#define IS_SYS_RESET(reason)	((reason) & (AON_BIT_RSTF_KM0_SYS | AON_BIT_RSTF_KM4_SYS))
 
 extern void CHIPEN_WorkMode(enum CHIPEN_WORK_MODE mode);
 extern void CHIPEN_DebounceSet(u32 Debounce);

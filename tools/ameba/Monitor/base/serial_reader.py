@@ -143,10 +143,10 @@ class SerialReader(StoppableThread):
                         data_to_output = self.data_buffer[index:]
                         self.start_output = True  # Mark to start output
                         self.data_buffer = b''  # Clear the buffer
-                        self.event_queue.put((TAG_SERIAL, self.decode(data_to_output)), False)  # Print data containing the keyword
+                        self.event_queue.put((TAG_SERIAL, data_to_output), False)  # Print data containing the keyword
                 else:
                     # Directly process if not in reset mode or output has started
-                    self.event_queue.put((TAG_SERIAL, self.decode(data)), False)
+                    self.event_queue.put((TAG_SERIAL, data), False)
             except Exception as e:
                 if not self.serial.is_open:
                     print("Serial port closed")

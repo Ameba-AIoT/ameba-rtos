@@ -14,6 +14,8 @@
 /** Patch version number (x.x.X) */
 #define AMEBA_RTOS_VERSION_PATCH   0
 
+/* Doc Link: https://aiot.realmcu.com/en/latest/rtos/index.html */
+
 /**
  * Macro to convert version number into an integer
  */

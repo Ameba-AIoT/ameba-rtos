@@ -39,9 +39,11 @@ GCC menuconfig
 Test ATCMD
 ~~~~~~~~~~~
 If user want to open audio local play fuction, must change the following Maros before test:
-    1.change the RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT   to  1   in rtk_bt_le_audio_def.h 
-    2.change the RTK_BT_LE_AUDIO_ISO_TX_SYNC_SUPPORT          to  1   in rtk_bt_le_audio_def.h 
-    3.change kPrimaryAudioConfig in ameba_audio_mixer_usrcfg.cpp:
+    1.change the RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT          to     1   in rtk_bt_le_audio_def.h 
+    2.change the RTK_BT_LE_AUDIO_ISO_TX_SYNC_SUPPORT                 to     1   in rtk_bt_le_audio_def.h 
+    3.change the VENDOR_CMD_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT      to     1   in bt_vendor_config.h
+    4.change the RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT          to     1   in bt_api_config.h
+    5.change kPrimaryAudioConfig in ameba_audio_mixer_usrcfg.cpp:
          change from   kPrimaryAudioConfig = {1024, 4, RTAUDIO_OUT_MIN_FRAMES_STAGE1};
                 to     kPrimaryAudioConfig = {256, 4, RTAUDIO_OUT_MIN_FRAMES_STAGE1};
 

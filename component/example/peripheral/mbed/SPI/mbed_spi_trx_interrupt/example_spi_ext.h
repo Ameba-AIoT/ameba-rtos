@@ -72,10 +72,10 @@
 #define SPI0_CS    _PB_0
 
 // SPI1 //M - Pinmux S0
-#define SPI1_MOSI  _PB_30
-#define SPI1_MISO  _PB_31
-#define SPI1_SCLK  _PB_29
-#define SPI1_CS    _PC_0
+#define SPI1_MOSI  _PB_8
+#define SPI1_MISO  _PB_9
+#define SPI1_SCLK  _PB_7
+#define SPI1_CS    _PB_10
 #endif
 
 extern int example_mbed_spi_trx_interrupt(void);

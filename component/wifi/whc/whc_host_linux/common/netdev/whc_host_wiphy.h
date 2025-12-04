@@ -12,7 +12,11 @@
 #define __RTW_WIPHY_H__
 
 #define RTW_SSID_SCAN_AMOUNT		1 /* for WEXT_CSCAN_AMOUNT 9 */
+#ifdef CONFIG_AMEBALITE
+#define RTW_CHANNEL_SCAN_AMOUNT		14
+#else
 #define RTW_CHANNEL_SCAN_AMOUNT		(14+37)
+#endif
 #define RTW_SCAN_IE_LEN_MAX      	2304
 #define RTW_MAX_NUM_PMKIDS		4
 #define	MAX_CHANNEL_NUM_2G		14

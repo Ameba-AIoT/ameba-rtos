@@ -433,8 +433,9 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *evt_info)
 	struct cfg80211_roam_info roam_info = {0};
 #endif
 	struct ieee80211_mgmt *mgmt = NULL;
-	mlme_priv->rtw_join_status = join_status;
 	struct rtw_wpa_4way_status	rpt_4way = {0};
+
+	mlme_priv->rtw_join_status = join_status;
 
 	/* Merge from wifi_join_status_indicate. */
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
@@ -442,6 +443,7 @@ void whc_fullmac_host_connect_indicate(unsigned int join_status, void *evt_info)
 		if (mlme_priv->join_block_param) {
 			complete(&mlme_priv->join_block_param->sema);
 		}
+		memcpy(global_idev.bssid, join_status_info->bssid, ETH_ALEN);
 	}
 
 	/* step 1: internal process for different status*/
@@ -699,6 +701,9 @@ static int whc_fullmac_host_connect_ops(struct wiphy *wiphy, struct net_device *
 			sme->privacy, sme->key, sme->key_len, sme->key_idx, sme->auth_type);
 	dev_dbg(global_idev.fullmac_dev, "wpa_versions=0x%x, ciphers_pairwise=0x%x, cipher_group=0x%x, akm_suites=0x%x\n",
 			sme->crypto.wpa_versions, sme->crypto.ciphers_pairwise[0], sme->crypto.cipher_group, sme->crypto.akm_suites[0]);
+
+	/* clear bssid of last connection */
+	memset(global_idev.bssid, 0, ETH_ALEN);
 
 	size = sizeof(struct rtw_network_info) + (sme->key_len ? sme->key_len : sizeof(pwd));
 	ptr = buf = kmalloc(size, GFP_KERNEL);

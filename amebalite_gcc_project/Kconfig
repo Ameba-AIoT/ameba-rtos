@@ -144,28 +144,51 @@ menu "CONFIG WHC INTF"
 
             config WIFI_SINGLE_CORE_MENU
                 bool "SINGLE CORE"
-
+            config FULLMAC_DEV
+                bool "FULLMAC_DEV"
 	endchoice
-
-    if FULLMAC_DEV
+    if !WHC_INTF_IPC_MENU && !WIFI_SINGLE_CORE_MENU
         choice
-            prompt "FULLMAC INTERFACE"
-            config SPI_FULLMAC
-                bool "SPI_FULLMAC"
-            config USB_FULLMAC
-                bool "USB_FULLMAC"
-            config SDIO_FULLMAC
-                bool "SDIO_FULLMAC"
+            prompt "HW INTERFACE"
+            config WHC_INTF_SPI
+                bool "WHC_INTF_SPI"
         endchoice
         choice
             prompt "WIFI Driver Location"
             config KR4_AS_NP
                 bool "KR4"
                 select WHC_DEV_FOR_KR4
-            config KM4_AS_NP
-                bool "KM4"
-                select WHC_DEV_FOR_KM4
+
+            #config KM4_AS_NP
+            #    bool "KM4"
+            #    select WHC_DEV_FOR_KM4
         endchoice
+    endif
+
+    if FULLMAC_DEV
+        menu "FULLMAC config"
+        config WHC_CMD_PATH
+            default y if FULLMAC_DEV && !WHC_INTF_USB
+            bool "Support WHC CMD PATH"
+        config WHC_WIFI_API_PATH
+            default y if FULLMAC_DEV
+            bool "Support WHC WIFI API PATH"
+
+        config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KR4
+            depends on KR4_AS_NP
+            bool "Support WHC SUPPLICANT OFFLOAD"
+        #config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4
+        #    depends on KM4_AS_NP
+        #    bool "Support WHC SUPPLICANT OFFLOAD"
+
+        config WHC_DUAL_TCPIP_FOR_KR4
+            depends on KR4_AS_NP
+            bool "Support WHC DUAL TCPIP"
+        #config WHC_DUAL_TCPIP_FOR_KM4
+        #    depends on KM4_AS_NP
+        #    bool "Support WHC DUAL TCPIP"
+
+        endmenu
     endif
 
     if !FULLMAC_DEV
@@ -200,6 +223,16 @@ menu "CONFIG WHC INTF"
         bool
     config WHC_WIFI_API_PATH
         bool
+    config WHC_CMD_PATH
+        bool
+    #config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4
+    #    bool
+    #config WHC_DUAL_TCPIP_FOR_KM4
+    #    bool
+    config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KR4
+        bool
+    config WHC_DUAL_TCPIP_FOR_KR4
+        bool
 endmenu
 
 menu "CONFIG WIFI"
@@ -229,6 +262,14 @@ menu "CONFIG WIFI"
             select ENABLE_WPS if WIFI_WPS_ENABLE_MENU
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
 
+        config FULLMAC_DEV
+            bool
+            depends on WHC_DEV # only work in NP
+            select WLAN
+            select FW_DRIVER_COEXIST
+            select WIFI_FW_EN
+            select WIFI_HOST_CONTROL
+            select LWIP_LAYER if WHC_DUAL_TCPIP_FOR_KR4 || WHC_DUAL_TCPIP_FOR_KM4
     endif
 
     if !WLAN_MENU
@@ -262,6 +303,12 @@ menu "CONFIG WIFI"
     config ENABLE_WPS
         bool
     config ENABLE_WPS_DISCOVERY
+        bool
+    config FULLMAC_HOST
+        bool
+    config WIFI_HOST_CONTROL
+        bool
+    config WHC_FULLMAC_HOST_IMPL
         bool
 
 endmenu

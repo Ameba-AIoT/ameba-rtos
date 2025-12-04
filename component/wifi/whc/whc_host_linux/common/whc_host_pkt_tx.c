@@ -120,11 +120,7 @@ int whc_host_xmit_entry(int idx, struct sk_buff *pskb)
 	need_headroom = SIZE_TX_DESC + sizeof(struct whc_msg_info);
 
 	/* buf addr should be 4-byte aligned, because Laptop PCIE to SDIO converter driver don't support non 4byte-aligned transfer */
-	if (BUF_ALIGN_SZ != 0) {
-		pad_len = (uintptr_t)(pskb->data - need_headroom) % BUF_ALIGN_SZ;
-	} else {
-		pad_len = 0;
-	}
+	pad_len = BUF_ALIGN_SZ ? ((uintptr_t)(pskb->data - need_headroom) % BUF_ALIGN_SZ) : 0;
 	need_headroom += pad_len;
 
 	if (skb_headroom(pskb) >= need_headroom) {

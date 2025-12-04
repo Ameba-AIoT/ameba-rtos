@@ -184,7 +184,7 @@ return from its implementing function will end up in a "task exit error"
 function - which contains a call to configASSERT().  However this can give GCC
 some problems when it tries to unwind the stack, as the exit error function has
 nothing to return to.  To avoid this define configTASK_RETURN_ADDRESS to 0.  */
-#define configTASK_RETURN_ADDRESS	NULL
+#define configTASK_RETURN_ADDRESS ( (void *) ( (uintptr_t) TaskExitError + 2 ) )
 
 
 #define configMINIMAL_SECURE_STACK_SIZE					( 1024 )

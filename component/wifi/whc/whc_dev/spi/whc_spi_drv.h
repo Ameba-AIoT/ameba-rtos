@@ -29,6 +29,16 @@
 #define SPI0_SCLK	                _PB_23
 #define SPI0_CS		                _PB_26
 #define WHC_RECOVER_TIM_IDX			10
+
+#elif defined (CONFIG_AMEBALITE)
+#define PINMUX_FUNCTION_SPIS	    PINMUX_FUNCTION_SPI
+#define DEV_READY_PIN				_PB_3   // amebalite use different pin due to _PA_1(num 15, GPIO22 got by command "pinout") will be pull down by raspberry pi
+#define RX_REQ_PIN					_PA_11
+#define SPI0_MOSI	                _PA_29
+#define SPI0_MISO	                _PA_30
+#define SPI0_SCLK	                _PA_28
+#define SPI0_CS		                _PA_31
+#define WHC_RECOVER_TIM_IDX			10
 #endif
 
 #define DEV_READY					1

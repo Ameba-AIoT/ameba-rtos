@@ -591,7 +591,7 @@ void PSRAM_WB_DEVIC_Init(void)
 	} else {
 		data[0] = PSRAM_BIT8_WB_BURST_LENGTH(PSRAM_BURST_BIT8_SET) | \
 				  PSRAM_WB_RESERVER | \
-				  PSRAM_WB_DRIVE_STRENGTH(WB_Drive_Strength_000) | \
+				  PSRAM_WB_DRIVE_STRENGTH(WB_Drive_Strength_010) | \
 				  PSRAM_WB_DPD_EN(WB_NORMAL_OPE);	 // keep default driving stength
 
 		data[1] = PSRAM_WB_BURST_LENGTH(WB_BURST_LEN_128B) | \

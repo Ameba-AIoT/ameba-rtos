@@ -87,11 +87,12 @@ static int whc_spi_host_probe(struct spi_device *spi)
 {
 	struct whc_spi *priv = &whc_spi_priv;
 	int rc = 0;
+#if (KERNEL_VERSION(5, 5, 0) <= LINUX_VERSION_CODE)
 	struct spi_delay cs_setup_time = {
 		.unit = SPI_DELAY_UNIT_USECS,
 		.value = 7
 	};
-
+#endif
 	dev_info(&spi->dev, "%s\n", __func__);
 
 	priv->spi_dev = spi;
@@ -99,9 +100,13 @@ static int whc_spi_host_probe(struct spi_device *spi)
 
 	mutex_init(&(priv->lock));
 	sema_init(&priv->dev_rdy_sema, 0);
-
+#if (KERNEL_VERSION(5, 15, 0) <= LINUX_VERSION_CODE)
 	/* Setup SPI parameters */
 	spi->cs_setup = cs_setup_time;
+#elif (KERNEL_VERSION(5, 5, 0) <= LINUX_VERSION_CODE)
+	/* Setup SPI parameters */
+	spi->controller->cs_setup = cs_setup_time;
+#endif
 
 	dev_info(&spi->dev, "setup mode: %d, %u bits/w, %u Hz max\n",
 			 (int)(spi->mode & (SPI_CPOL | SPI_CPHA)), spi->bits_per_word,
@@ -139,8 +144,11 @@ static int whc_spi_host_probe(struct spi_device *spi)
 exit:
 	return rc;
 }
-
+#if (KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE)
 static void whc_spi_host_remove(struct spi_device *spi)
+#else
+static int whc_spi_host_remove(struct spi_device *spi)
+#endif
 {
 	struct whc_spi *priv = &whc_spi_priv;
 
@@ -162,7 +170,11 @@ static void whc_spi_host_remove(struct spi_device *spi)
 	gpio_free(DEBUG_PIN);
 #endif
 
+#if (KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE)
 	return;
+#else
+	return 0;
+#endif
 }
 
 static const struct of_device_id whc_of_ids[] = {

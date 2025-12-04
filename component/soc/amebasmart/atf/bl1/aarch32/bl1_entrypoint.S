@@ -37,32 +37,13 @@ vector_base bl1_vector_table
 	 */
 
 func bl1_entrypoint
-
-	mov sp, #0
-	mov lr, #0
-
-	cps #MODE32_sys
-	mov r0, #0
-	mov r1, #0
-	mov r2, #0
-	mov r3, #0
-	mov r4, #0
-	mov r5, #0
-	mov r6, #0
-	mov r7, #0
-	mov r8, #0
-	mov r9, #0
-	mov r10, #0
-	mov r11, #0
-	mov r12, #0
-	mov sp, #0
-	mov lr, #0
-
 	cps #MODE32_irq
+	isb
 	mov sp, #0
 	mov lr, #0
 
 	cps #MODE32_fiq
+	isb
 	mov r8, #0
 	mov r9, #0
 	mov r10, #0
@@ -72,32 +53,37 @@ func bl1_entrypoint
 	mov lr, #0
 
 	cps #MODE32_abt
+	isb
 	mov sp, #0
 	mov lr, #0
 
 	cps #MODE32_und
+	isb
 	mov sp, #0
 	mov lr, #0
 
 	cps #MODE32_mon
+	isb
 	mov sp, #0
 	mov lr, #0
 
 	cps #MODE32_svc
+	isb
 
-	mov r0, #(0xFF <<20)
-	mcr p15, 0, r0, c1, c0, 2
+	mrc p15, 0, r0, c1, c0, 2	@ read CPACR
+	orr r0, r0, #(0x3 << 20)	@ cp10 = 0b11 (full access for VFP)
+	orr r0, r0, #(0x3 << 22)	@ cp11 = 0b11 (full access for NEON)
+	mcr p15, 0, r0, c1, c0, 2	@ write CPACR
+	isb
+
 	mrc p15, 0, r0, c1, c0, 2
 	ubfx r0, r0, #20, #1
 	cmp r0, #1
-	bne ttb_setup
+	bne skip_vfp_init
 
-	mrc p15, 0, r1, c1, c0, 2
-	orr r1, r1, #(0xF <<20)
-	mcr p15, 0, r1, c1, c0, 2
 	mov r1, #(0x1<<30)
-	isb
 	vmsr fpexc, r1
+	isb
 
 	mov r1, #0
 	mov r2, #0
@@ -134,8 +120,7 @@ func bl1_entrypoint
 	vmov.f64	d30, d0
 	vmov.f64	d31, d0
 
-ttb_setup:
-
+skip_vfp_init:
 /* ---------------------------------------------------------------------
 * If the reset address is programmable then bl1_entrypoint() is
 * executed only on the cold boot path. Therefore, we can skip the warm

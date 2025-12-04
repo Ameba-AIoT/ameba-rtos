@@ -22,6 +22,13 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.auto_reconnect_count = 10;
 	wifi_user_config.auto_reconnect_interval = 5;
 	wifi_user_config.no_beacon_disconnect_time = 9; /* unit 2s, default 18s */
+
+#if defined(CONFIG_WHC_INTF_SPI)
+	skb_num_np_rsvd = 3; /* 2 for mgnt trx + 1 for spi rx_dma_buffer */
+	wifi_user_config.skb_num_np = 10;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
+	wifi_user_config.skb_num_ap = 0;
+	wifi_user_config.rx_ampdu_num = 4;
+#else
 #ifdef CONFIG_HIGH_TP_TEST /*enable high tp in make menuconfig*/
 	wifi_user_config.skb_num_np = 10; /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 	wifi_user_config.skb_num_ap = 8;
@@ -31,10 +38,11 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.skb_num_ap = 8; /*adjust to 8 for ping 10k*/
 	wifi_user_config.rx_ampdu_num = 4;
 #endif
-	wifi_user_config.tx_ampdu_num = 0; /* 0: default 20, 1: equivalent to wifi_user_config.ampdu_tx_enable = 0, Otherwise: max aggregation number, up to 0x3F*/
 #ifdef CONFIG_WHC_NONE
 	wifi_user_config.skb_num_ap = 0;
 #endif
+#endif
+	wifi_user_config.tx_ampdu_num = 0; /* 0: default 20, 1: equivalent to wifi_user_config.ampdu_tx_enable = 0, Otherwise: max aggregation number, up to 0x3F*/
 	wifi_user_config.skb_buf_size = 0;
 	wifi_user_config.wifi_wpa_mode_force = RTW_WPA_AUTO_MODE;
 
@@ -82,6 +90,13 @@ _WEAK void wifi_set_user_config(void)
 	/* WPS */
 	wifi_user_config.wps_retry_count = 4;
 	wifi_user_config.wps_retry_interval = 5000;
+
+#if defined(CONFIG_FULLMAC_DEV) &&  !defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
+	/* Linux wifi supports cfg80211 ops. */
+	wifi_user_config.cfg80211 = 1;
+#else
+	wifi_user_config.cfg80211 = 0;
+#endif
 
 	/* ensure skb_num_np >= rx_ampdu_num + skb_num_np_rsvd */
 	if (wifi_user_config.skb_num_np < wifi_user_config.rx_ampdu_num + skb_num_np_rsvd) {

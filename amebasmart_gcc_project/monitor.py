@@ -61,6 +61,8 @@ def main():
                        help='Enable logging mode: save logs to log file')
     parser.add_argument('--log-dir', type=str, default="",
                        help='Specify the target log file directory, if not, the logs will save to under xxxx_gcc_project when logging enabled')
+    parser.add_argument('--logAGG', nargs='+',  
+                        help='tthe logAGG enabled and source marked ')
     args = parser.parse_args()
 
     port = args.port
@@ -69,6 +71,7 @@ def main():
     debug = args.debug
     log = args.log
     log_dir = args.log_dir
+    logAGG = args.logAGG
 
     remote_server = args.remote_server
     remote_password = args.remote_password
@@ -94,6 +97,9 @@ def main():
         cmds.append("--log")
         cmds.append("--log-dir")
         cmds.append(log_dir)
+    if logAGG:
+        cmds.append("--logAGG")
+        cmds.extend(logAGG)
 
     if remote_server:
         cmds.append("--remote-server")

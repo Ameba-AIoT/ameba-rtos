@@ -983,6 +983,10 @@ rtk_bt_audio_track_t *rtk_bt_audio_track_add(uint32_t type, float left_volume, f
 	ptrack->channels = channels;
 	ptrack->rate = rate;
 	ptrack->format = format;
+#if defined(CONFIG_AUDIO_MIXER) && CONFIG_AUDIO_MIXER
+	ptrack->mixer_start_threshold = rtk_bt_audio_track_get_start_thresholdbytes(ptrack->audio_track_hdl);
+	BT_LOGA("%s: get start threshold: %d \r\n", __func__, (int)ptrack->mixer_start_threshold);
+#endif
 	switch (format) {
 	case BT_AUDIO_FORMAT_PCM_8_BIT:
 		ptrack->bits = 8;
@@ -1049,10 +1053,146 @@ uint16_t rtk_bt_audio_track_enable_sync_mode(rtk_bt_audio_track_t *ptrack, uint3
 		BT_LOGE("[BT AUDIO] bt_audio_track_sync_state_register failed!\r\n");
 		return RTK_BT_AUDIO_FAIL;
 	}
+#if defined(CONFIG_AUDIO_MIXER) && CONFIG_AUDIO_MIXER
+	ptrack->audio_mixer_conf = true;
+	BT_LOGA("[BT_AUDIO] bt audio track sync mode mixer is on\r\n");
+#else
+	ptrack->audio_mixer_conf = false;
+	BT_LOGA("[BT_AUDIO] bt audio track sync mode passthrough sync is on\r\n");
+#endif
 	ptrack->pres_delay_us = pd;
 	ptrack->audio_sync_flag = true;
 
 	return RTK_BT_AUDIO_OK;
+}
+
+uint16_t rtk_bt_audio_track_sync_restart(rtk_bt_audio_track_t *track)
+{
+	if (!track || !track->audio_track_hdl) {
+		BT_LOGE("[APP] %s failed, track is NULL\r\n", __func__);
+		return 1;
+	}
+	if (!track->audio_sync_flag) {
+		BT_LOGA("[APP] %s: do not support audio sync\r\n", __func__);
+		return 0;
+	}
+	if (track->audio_mixer_conf) {
+		osif_mutex_take(track->audio_sync_mutex, BT_TIMEOUT_FOREVER);
+		track->pres_comp_event = RTK_BT_AUDIO_TRACK_PRES_INIT;
+		track->audio_hal_buff_count = 0;
+		track->frc_cal_flag = false;
+		track->trans_bytes = 0;
+		osif_mutex_give(track->audio_sync_mutex);
+		rtk_bt_audio_track_resume(track->audio_track_hdl);
+		BT_LOGA("%s: rtk_bt_audio_track_resume \r\n", __func__);
+		BT_LOGA("%s: RTK_BT_AUDIO_TRACK_PRES_INIT \r\n", __func__);
+	}
+
+	return 0;
+}
+
+uint16_t rtk_bt_audio_get_iso_ref_ap(rtk_bt_audio_track_t *track, uint16_t iso_conn_handle, uint8_t dir,
+									 uint16_t iso_interval, uint32_t *sync_ref_ap)
+{
+	rtk_bt_le_iso_sync_ref_ap_info_t info = {0};
+	int64_t delt_time = 0;
+	uint32_t cur_host_time = 0;
+	int64_t ref_ap_host_time = 0;
+	uint16_t ret = 0;
+	uint32_t controller_anchor_point = 0;
+	static uint32_t prev_host_time = 0;
+	static uint32_t prev_group_ap = 0;
+#if defined(RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT) && RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT
+	ret = rtk_bt_get_le_iso_sync_ref_ap_info(iso_conn_handle, dir, &info);
+#else
+	(void)dir;
+	(void)iso_conn_handle;
+	ret = 1;
+#endif
+	if (ret) {
+		BT_LOGE("[BT AUDIO] %s: rtk_bt_get_le_iso_sync_ref_ap_info failed, ret: %d \r\n", __func__, ret);
+		return 1;
+	}
+	BT_LOGD("%s: Sdu_Seq_Num %d, Sdu_Interval %d, Cur_Sync_Ref_Point %d, Pre_Sync_Ref_Point %d, Group_Anchor_Point %d\r\n",
+			__func__,
+			info.Sdu_Seq_Num,
+			info.Sdu_Interval,
+			info.Cur_Sync_Ref_Point,
+			info.Pre_Sync_Ref_Point,
+			info.Group_Anchor_Point);
+	cur_host_time = DTimestamp_Get();
+	if (track->pres_comp_event == RTK_BT_AUDIO_TRACK_PRES_INIT) {
+		prev_host_time = cur_host_time;
+		prev_group_ap = info.Group_Anchor_Point;
+	} else {
+		uint32_t sys_time_delta = 0;
+		sys_time_delta = audio_delta(cur_host_time, prev_host_time);
+		prev_host_time = cur_host_time;
+		if (sys_time_delta > 0x7FFFFFFF) {
+			/* cur_host_time is overflow */
+			BT_LOGA("[BT AUDIO] %s: DTimestamp_Get is overflow %d \r\n", __func__, cur_host_time);
+			osif_mutex_take(track->audio_sync_mutex, BT_TIMEOUT_FOREVER);
+			track->frc_cal_flag = false;
+			osif_mutex_give(track->audio_sync_mutex);
+			*sync_ref_ap = info.Group_Anchor_Point;
+			return 0;
+		}
+		sys_time_delta = audio_delta(info.Group_Anchor_Point, prev_group_ap);
+		prev_group_ap = info.Group_Anchor_Point;
+		if (sys_time_delta >  0x7FFFFFFF) {
+			/* Group_Anchor_Point overflow*/
+			BT_LOGA("[BT AUDIO] %s: Group_Anchor_Point is overflow %d \r\n", __func__, info.Group_Anchor_Point);
+			osif_mutex_take(track->audio_sync_mutex, BT_TIMEOUT_FOREVER);
+			track->frc_cal_flag = false;
+			track->ref_ap_oveflow_flag = true;
+			osif_mutex_give(track->audio_sync_mutex);
+			*sync_ref_ap = info.Group_Anchor_Point;
+			return 0;
+		}
+	}
+	/* Group_Anchor_Point overflow but free run clock has not overflow  */
+	if (track->ref_ap_oveflow_flag) {
+		if ((uint32_t)audio_delta((uint64_t)track->frc_drift, (uint64_t)0xFFFFFFFF) < 0x1FFFFFFF) {
+			BT_LOGA("[BT AUDIO] %s: controller_free_run_clock not overflow \r\n", __func__);
+		} else {
+			track->ref_ap_oveflow_flag = false;
+			BT_LOGA("[BT AUDIO] %s: controller_free_run_clock is ready\r\n", __func__);
+		}
+		*sync_ref_ap = info.Group_Anchor_Point;
+		return 0;
+	}
+	ref_ap_host_time = (int64_t)info.Group_Anchor_Point + (int64_t)track->frc_drift;
+	delt_time = (int64_t)cur_host_time - ref_ap_host_time;
+	/* ref_ap_host_time overflow occur when free run clock drift has flush, and Group_Anchor_Point not overflow */
+	/* ts overflow before Group_Anchor_Point, and ts overflow trigger get new clock drift in do_audio_sync_flow() */
+	if (ref_ap_host_time > 0xFFFFFFFF) {
+		BT_LOGA("[BT AUDIO] %s: ref_ap_host_time overflow \r\n", __func__);
+		// printf("[BT AUDIO] delt_time:%lld, cur_host_time:%lu, ref_ap_host_time:%lld, Group_Anchor_Point: %lu, frc_drift:%lld \r\n",
+		//      delt_time, cur_host_time, ref_ap_host_time, info.Group_Anchor_Point, track->frc_drift);
+		*sync_ref_ap = info.Group_Anchor_Point;
+		return 0;
+	}
+	if (delt_time >= 0) {
+		if (delt_time > ((uint32_t)iso_interval / info.Sdu_Interval) * 6000) {
+			BT_LOGE("[BT AUDIO] %s: no enough time for BT controller \r\n", __func__);
+			// printf("[BT AUDIO] delt_time:%lld, cur_host_time:%lu, ref_ap_host_time:%lld, Group_Anchor_Point: %lu, frc_drift:%lld \r\n",
+			//      delt_time, cur_host_time, ref_ap_host_time, info.Group_Anchor_Point, track->frc_drift);
+			return 1;
+		}
+		controller_anchor_point = info.Group_Anchor_Point + iso_interval;
+	} else {
+		if (-delt_time > (int64_t)iso_interval) {
+			BT_LOGE("[BT AUDIO] %s: no enough time for BT controller \r\n", __func__);
+			// printf("[BT AUDIO] delt_time:%lld, cur_host_time:%lu, ref_ap_host_time:%lld, Group_Anchor_Point: %lu, frc_drift:%lld \r\n",
+			//      delt_time, cur_host_time, ref_ap_host_time, info.Group_Anchor_Point, track->frc_drift);
+			return 1;
+		}
+		controller_anchor_point = info.Group_Anchor_Point;
+	}
+
+	*sync_ref_ap = controller_anchor_point;
+
+	return 0;
 }
 
 uint16_t rtk_bt_audio_record_config(rtk_bt_audio_record_config_table_t *p_table)
@@ -1173,6 +1313,7 @@ uint16_t rtk_bt_audio_track_del(uint32_t type, rtk_bt_audio_track_t *ptrack)
 		return RTK_BT_AUDIO_FAIL;
 	}
 	if (ptrack->audio_track_hdl) {
+		rtk_bt_audio_track_pause(ptrack->audio_track_hdl);
 		rtk_bt_audio_track_stop(ptrack->audio_track_hdl);
 		rtk_bt_audio_track_deinit(ptrack->audio_track_hdl);
 	} else if (ptrack->pcm_data_cb) {

@@ -6,37 +6,75 @@
 
 import datetime
 import os
-from typing import Union
+import queue
+from typing import List, Optional, Union
 from serial.tools.miniterm import Console
 
 from .address_decoder import AddressDecoder
 from serial.tools import miniterm
 from .key_config import MENU_KEY, TOGGLE_OUTPUT_KEY
 from .color_output import print_red, print_yellow
-from .constants import TIME_FORMAT
+from .constants import TIME_FORMAT, EVENT_QUEUE_TIMEOUT
+from .stoppable_thread import StoppableThread
+from queue import Queue
 
 key_description = miniterm.key_description
 
 
-class LogHandler:
-    def __init__(self, elf_file: str, timestamps: bool, enable_address_decoding: bool,
-                 toolchain_path: str, log_enabled: bool, log_dir: str, port: str, rom_elf_file: Union[str, None] = None):
+
+class LogHandler(StoppableThread):
+    def __init__(self, elf_file: str, output_queue:Queue, timestamps: bool, enable_address_decoding: bool,
+                 toolchain_path: str, log_enabled: bool, log_dir: str,  port: str, logAGG: Optional[List[str]], rom_elf_file: Union[str, None] = None):
+        super(LogHandler, self).__init__()
         self.log_file = None
         self.log_dir = log_dir
         self.log_enabled = log_enabled
         self.log_date = None
         self.port = port
         self.output_enabled = True
+        self.output_queue = output_queue
         self._start_of_line = True
         self.elf_file = elf_file
         self.timestamps = timestamps
         self.timestamp_format = TIME_FORMAT
+        self._buf = bytearray()
+        self.running = False
+        self.logAGG_srcname = logAGG or []
+        self.logAGG_src = 2**len(self.logAGG_srcname) - 1
         if enable_address_decoding:
             self.address_decoder = AddressDecoder(toolchain_path, elf_file, rom_elf_file)
         else:
             self.address_decoder = None
         if self.log_enabled:
             self.start_logging()
+
+    def run(self):
+        self.running = True
+        while self.running:
+            try:
+                text = self.output_queue.get(timeout=EVENT_QUEUE_TIMEOUT)           
+            except queue.Empty:
+                continue
+
+            if self.output_enabled:
+                print(text, end='')
+            if self.log_file:
+                if datetime.datetime.now().date() != self.log_date:
+                    self.stop_logging()
+                    self.start_logging()
+                try:
+                    self.log_file.write(text)
+                    self.log_file.flush()
+                except Exception as e:
+                    print_red(f"\nCannot write to file: {e}")
+                    self.stop_logging()
+
+    def _stop(self):
+        """Stop the log output and clean up resources"""
+        print("Closing connection...")
+        self.stop_logging()
+        self.running = False
+        self.stop()
 
     @property
     def address_buffer(self):
@@ -58,7 +96,8 @@ class LogHandler:
 
     def start_logging(self):
         if not self.log_file:
-            name = os.path.join(self.log_dir, f"{self.port}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
+            port_name = os.path.basename(self.port)
+            name = os.path.join(self.log_dir, f"{port_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
             if self.log_dir != "" and (not os.path.exists(self.log_dir)):
                 os.makedirs(self.log_dir, exist_ok=True)
             try:
@@ -79,15 +118,23 @@ class LogHandler:
             finally:
                 self.log_file = None
 
-    def print(self, text):
+    def print(self, text, pathnum: int = 0):
         new_line_char = "\n"
         text = text.replace("\r\n", "\n")
         text = text.replace("\r", "")
         if text and self.timestamps and (self.output_enabled or self.log_file):
             t = datetime.datetime.now().strftime(self.timestamp_format)[:-3]
             # "text" is not guaranteed to be a full line. Timestamps should be only at the beginning of lines.
-            line_prefix = t + " "
 
+            if pathnum == 0:
+                line_prefix = t + " "
+            elif pathnum == 0x1:
+               line_prefix = t + f" [{self.logAGG_srcname[0]}]"
+            elif pathnum == 0x2:
+                line_prefix = t + f" [{self.logAGG_srcname[1]}]"
+            elif pathnum == 0x4:
+                line_prefix = t + f" [{self.logAGG_srcname[2]}]"                     
+            
             # If the output is at the start of a new line, prefix it with the timestamp text.
             if self._start_of_line:
                 text = line_prefix + text
@@ -105,18 +152,7 @@ class LogHandler:
         elif text:
             self._start_of_line = text.endswith(new_line_char)
 
-        if self.output_enabled:
-            print(text, end='')
-        if self.log_file:
-            if datetime.datetime.now().date() != self.log_date:
-                self.stop_logging()
-                self.start_logging()
-            try:
-                self.log_file.write(text)
-                self.log_file.flush()
-            except Exception as e:
-                print_red(f"\nCannot write to file: {e}")
-                self.stop_logging()
+        self.output_queue.put(text, False)   
 
     def output_toggle(self):  # type: () -> None
         self.output_enabled = not self.output_enabled
@@ -130,3 +166,62 @@ class LogHandler:
         translation = self.address_decoder.decode_address(line)
         if translation:
             print_yellow(translation)
+
+    def logAGG_parse(self, data: bytes):
+        """
+        put raw bytes into buffer，logAGG header parse and return events
+        Returns:
+          [ ("raw", b"..."), ("frame", src, b"..."), ... ]
+        """
+        events = []
+        self._buf.extend(data)
+
+        while self._buf:
+            "" " 1) find first 0xFF to sync " ""
+            try:
+                idx = self._buf.index(0xFF)
+            except ValueError:
+                "" "if 0xFF is not found，output as raw" ""
+                events.append(("raw", bytes(self._buf)))
+                self._buf.clear()
+                break
+            "" "if bytes before 0xFF，output as raw" ""
+            if idx > 0:
+                events.append(("raw", bytes(self._buf[:idx])))
+                del self._buf[:idx]
+
+            "" "make sure there are at lease header byte, otherwise wait for further input" ""
+            if len(self._buf) < 2:
+                break
+
+            "" " 2) parse header " ""
+            header = self._buf[1]
+            src    = (header >> 5) & 0x07
+            length = ((header >> 2) & 0x07) + 1
+            csum   = header & 0x03  # bit1~0
+
+            """ make sure the whole payload is here """
+            if len(self._buf) < 2 + length:
+                break
+
+            "" " cut the whole payload " ""
+            frame = bytes(self._buf[: 2 + length])
+            del self._buf[: 2 + length]
+
+            "" " 3) checksum compare：bit1 must be 0，bit0 == popcount(header>>2) % 2 " ""
+            "" " header bit7~2 """
+            high6 = header >> 2              
+            odd_parity = bin(high6).count("1") & 1 
+            bit1_ok = (csum & 0x2) == 0
+            bit0_ok = (csum & 0x1) == odd_parity
+            if not (bit1_ok and bit0_ok):
+                "" " checksum fail, output frame as raw " ""
+                events.append(("raw", frame))
+                continue
+            "" " 4) checksum pass and src matched, output frame as frame " ""
+            if src in (0x1, 0x2, 0x4) and (src & self.logAGG_src) != 0:
+                payload = frame[2:]
+                events.append(("frame", src, payload))
+
+        return events
+

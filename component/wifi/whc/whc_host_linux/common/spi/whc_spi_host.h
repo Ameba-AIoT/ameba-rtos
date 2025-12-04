@@ -2,7 +2,12 @@
 #define __WHC_SPI_HOST_H__
 
 #if (KERNEL_VERSION(6, 12, 0) <= LINUX_VERSION_CODE)
+#ifdef CONFIG_AMEBALITE
+// amebalite use different pin due to _PA_1(num 15, GPIO22 got by command "pinout") will be pull down by raspberry pi
+#define DEV_READY_PIN	        584
+#else
 #define DEV_READY_PIN			591
+#endif
 #define RX_REQ_PIN				592
 #define DEBUG_PIN				582
 
@@ -10,12 +15,19 @@
 
 /* For kernel version higher than 6.6, gpio pins of raspberry pi 5 are numbered differently.
 check the correct number of the required GPIO pin to use command " cat /sys/kernel/debug/gpio" */
-
+#ifdef CONFIG_AMEBALITE
+#define DEV_READY_PIN	        586
+#else
 #define DEV_READY_PIN			593
+#endif
 #define RX_REQ_PIN				594
 #define DEBUG_PIN				584
 #else
+#ifdef CONFIG_AMEBALITE
+#define DEV_READY_PIN			15
+#else
 #define DEV_READY_PIN			22
+#endif
 #define RX_REQ_PIN				23
 #define DEBUG_PIN				13
 #endif

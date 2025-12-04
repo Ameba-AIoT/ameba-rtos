@@ -140,7 +140,7 @@ MEMORY
 	KR4_IPC_RAM (rwx) :                     ORIGIN = 0x20004900, LENGTH = 0x20004C00 - 0x20004900	/* KR4 IPC RAM: 768B */
 	KR4_BOOT_RAM_BACKUP (rwx) :             ORIGIN = 0x20004C20, LENGTH = 0x20004C40 - 0x20004C20	/* KR4 BOOT RAM: 64B, Backup KR4 BootEntry.bin(32B Header+32B Entry)*/
 	KR4_RAM_ONLY (rwx) :                    ORIGIN = 0x20005520, LENGTH = 0x20005900 - 0x20005520	/* KR4 PMC RAM: 1K */
-	KM4_RAM_ONLY (rwx) :                    ORIGIN = 0x20005920, LENGTH = 0x20005D00 - 0x20005920	/* KM4 PMC RAM: 1K */
+	KM4_RAM_ONLY (rwx) :                    ORIGIN = 0x20005920, LENGTH = 0x20005D20 - 0x20005920	/* KM4 PMC RAM: 1K */
 	KR4_BOOT_RAM (rwx) :                    ORIGIN = 0x20040020, LENGTH = 0x20040040 - 0x20040020	/* KR4 BOOT RAM: 32B, Can be ignore When DSP use this addr */
 
 	/* IMG2 RAM */
