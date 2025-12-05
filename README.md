@@ -6,12 +6,15 @@ ameba-rtos is the development framework for Realtek SoCs supported on Linux and 
 
 # Supported SoCs
 
-| Chip Series       | Chip                                |          master       |     release/v1.0       |     release/v1.1       |
-|:----------------- |:----------------------------------- |:---------------------:| :---------------------:| :---------------------:|
-|AmebaSmart Series  | RTL8730E                            |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
-|AmebaLite Series   | RTL8726E/RTL8713E/RTL8720E/RTL8710E |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
-|AmebaDplus Series  | RTL8721Dx                           |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
-|AmebaGreen2 Series | RTL8721F                            |![alt text][supported] |                        |                        |
+| Chip      |          master       |     release/v1.0       |     release/v1.1       |
+|:--------- |:---------------------:| :---------------------:| :---------------------:|
+| RTL8730E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+| RTL8726E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+| RTL8721Dx |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+| RTL8710E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+| RTL8721F  |![alt text][supported] |                        |                        |
+| RTL8720E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+| RTL8713E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
 
 [supported]: https://img.shields.io/badge/-supported-green "supported"
 
