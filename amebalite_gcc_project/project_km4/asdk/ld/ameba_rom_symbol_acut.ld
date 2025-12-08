@@ -193,13 +193,15 @@ SECTIONS
     PROVIDE(RCC_PeriphClockSource_LOGUART = 0x24f55);
     PROVIDE(hash_save = 0x24f91);
     PROVIDE(hash_restore = 0x24ff9);
-    PROVIDE(rtl_crypto_sha1_init = 0x25069);
+    /* Renamed from rtl_crypto_sha1_init to fix the context-not-reset issue via a RAM patch. */
+    PROVIDE(_rtl_crypto_sha1_init = 0x25069);
     PROVIDE(rtl_crypto_sha1_process = 0x250ed);
     PROVIDE(rtl_crypto_sha1_update_rom = 0x25125);
     PROVIDE(rtl_crypto_sha1_update = 0x25195);
     PROVIDE(rtl_crypto_sha1_final = 0x251f9);
     PROVIDE(rtl_crypto_sha1 = 0x2526d);
-    PROVIDE(rtl_crypto_sha2_init = 0x25295);
+    /* Renamed from rtl_crypto_sha2_init to fix the context-not-reset issue via a RAM patch. */
+    PROVIDE(_rtl_crypto_sha2_init = 0x25295);
     PROVIDE(rtl_crypto_sha2_process = 0x254c1);
     PROVIDE(rtl_crypto_sha2_update_rom = 0x254fd);
     PROVIDE(rtl_crypto_sha2_update = 0x25571);

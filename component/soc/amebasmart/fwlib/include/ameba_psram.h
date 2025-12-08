@@ -235,8 +235,8 @@ extern u8 APM_WR_INIT_LATENCY_SPEC[6];
 
 #define 	PSRAM_PAGE1024		0xa
 
-#define Psram_RESUME_TIME		32		//unit ns, worst 50ns
-#define Psram_IDLETIME			1		//unit us
+#define Psram_RESUME_TIME		50		//unit ns, worst 50ns
+#define Psram_IDLETIME			16		//unit us
 
 #define Psram_WB_CSHI133		8
 #define Psram_WB_CSHI166		6

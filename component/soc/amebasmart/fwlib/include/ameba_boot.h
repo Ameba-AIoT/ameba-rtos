@@ -311,6 +311,7 @@ extern u32 OTA_Region[3][2];
 extern u32 HUK_Derive_En;
 
 #define DDR_AUTOGATING		ENABLE
+#define PSRAM_AUTOGATING	DISABLE
 
 #define BOOT_FROM_OTA1		0
 #define BOOT_FROM_OTA2		1

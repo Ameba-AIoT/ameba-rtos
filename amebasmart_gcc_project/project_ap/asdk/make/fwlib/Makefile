@@ -65,6 +65,7 @@ CSRC +=	$(DIR_COM)/ameba_ipc_api.c \
 	$(DIR_COM)/ameba_aontimer.c \
 	$(DIR_COM)/ameba_wakepin.c \
 	$(DIR_COM)/ameba_bor.c \
+	$(DIR_COM)/ameba_psram.c \
 
 
 CSRC +=	$(CFGDIR)/ameba_flashcfg.c \

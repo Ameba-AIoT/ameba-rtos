@@ -849,8 +849,16 @@ int ble_matter_adapter_peripheral_main(uint8_t enable)
         /* Enable BT */
         BT_APP_PROCESS(rtk_bt_enable(&bt_app_conf));
         BT_APP_PROCESS(rtk_bt_le_gap_get_bd_addr(&bd_addr));
-        rtk_bt_le_addr_to_str(&bd_addr, addr_str, sizeof(addr_str));
-        DiagPrintf("[APP] BD_ADDR: %s\r\n", addr_str);
+        /* Set random addr */
+        uint16_t ret = 0;
+        uint8_t random_addr[RTK_BD_ADDR_LEN] = {0};
+        ret = rtk_bt_le_gap_set_rand_addr(true, RTK_BT_LE_RAND_ADDR_STATIC, random_addr);
+        if (ret) {
+            printf("GAP set random address failed! err: 0x%x", ret);
+        }
+        printf("BLE Random Addr: %x:%x:%x:%x:%x:%x",
+                random_addr[0], random_addr[1], random_addr[2],
+                random_addr[3], random_addr[4], random_addr[5]);
 
         BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_COMMON_GP_GAP, peripheral_gap_app_callback));
         BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GAP, ble_peripheral_gap_app_callback));
@@ -907,14 +915,10 @@ int ble_matter_adapter_peripheral_main(uint8_t enable)
     return 0;
 }
 
-int ble_matter_adapter_config_adv(uint8_t *padv_data, uint8_t padv_data_length)
+int ble_matter_adapter_config_adv(uint16_t adv_int_min, uint16_t adv_int_max, uint8_t *padv_data, uint8_t padv_data_length)
 {
     //check adv is idle
     rtk_bt_le_gap_dev_state_t dev_state;
-    uint16_t ret = 0;
-    rtk_bt_le_rand_addr_type_t type = RTK_BT_LE_RAND_ADDR_STATIC;
-    uint8_t addr[RTK_BD_ADDR_LEN] = {0};
-    bool auto_generate = true;
 
     while (1) {
         if (rtk_bt_le_gap_get_dev_state(&dev_state) == RTK_BT_OK) {
@@ -932,13 +936,6 @@ int ble_matter_adapter_config_adv(uint8_t *padv_data, uint8_t padv_data_length)
         os_delay(100);
     }
 
-    //set random address
-    ret = rtk_bt_le_gap_set_rand_addr(auto_generate, type, addr);
-    if (ret) {
-        DiagPrintf("[MATTER] set random address failed! err: 0x%x", ret);
-        return -1;
-    }
-
     //sync adv_data
     memset(ble_matter_adv_data, 0, padv_data_length);
     memcpy(ble_matter_adv_data, padv_data, padv_data_length);
@@ -946,8 +943,8 @@ int ble_matter_adapter_config_adv(uint8_t *padv_data, uint8_t padv_data_length)
 
     BT_APP_PROCESS(rtk_bt_le_gap_set_adv_data(ble_matter_adv_data, ble_matter_adv_data_length));
 
-    adv_param.filter_policy = RTK_BT_LE_ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY;
-    adv_param.own_addr_type = RTK_BT_LE_ADDR_TYPE_RANDOM;
+    adv_param.interval_min = adv_int_min;
+    adv_param.interval_max = adv_int_max;
 
     return 0;
 }

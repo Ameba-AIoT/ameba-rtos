@@ -115,7 +115,6 @@ extern void bt_stack_le_iso_deinit(void);
 static T_GAP_DEV_STATE le_gap_dev_state = {0};
 static bt_stack_le_link_info_t bt_stack_le_link_tbl[RTK_BLE_GAP_MAX_LINKS] = {0};
 static uint16_t bt_stack_le_conn_handle[RTK_BLE_GAP_MAX_LINKS] = {0};
-static uint8_t bt_stack_le_link_num = 0;
 #if (defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV) && (defined(F_BT_LE_5_0_AE_ADV_SUPPORT) && F_BT_LE_5_0_AE_ADV_SUPPORT)
 static bt_stack_ext_adv_info_t bt_stack_ext_adv_tbl[GAP_MAX_EXT_ADV_SETS] = {0};
 static uint8_t bt_stack_le_legacy_adv_hdl = RTK_GAP_INVALID_ADV_HANDLE;
@@ -2197,7 +2196,6 @@ static void bt_stack_le_gap_handle_conn_state_evt(T_LE_GAP_MSG *p_gap_msg)
 			memcpy(p_disconn_ind->peer_addr.addr_val, &bt_stack_le_link_tbl[conn_id].peer_addr, RTK_BD_ADDR_LEN);
 
 			memset(&bt_stack_le_link_tbl[conn_id], 0, sizeof(bt_stack_le_link_info_t));
-			bt_stack_le_link_num--;
 			if (RTK_BT_LE_ROLE_SLAVE == p_disconn_ind->role && bt_stack_profile_check(RTK_BT_PROFILE_GATTS)) {
 				bt_stack_gatts_disconnect_queue_clear(conn_id);
 			}
@@ -2229,7 +2227,21 @@ static void bt_stack_le_gap_handle_conn_state_evt(T_LE_GAP_MSG *p_gap_msg)
 
 	case GAP_CONN_STATE_CONNECTED:
 		BT_LOGD("[conn_state_evt]: connected success, conn_id: %d\r\n", conn_id);
+		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_EVT_CONNECT_IND,
+									sizeof(rtk_bt_le_conn_ind_t));
+		if (!p_evt) {
+			return;
+		}
+		p_conn_ind = (rtk_bt_le_conn_ind_t *)p_evt->data;
+
 		conn_handle = le_get_conn_handle(conn_id);
+		if (0xFFFF == conn_handle) {
+			/* Here, conn_handle shall be recorded even if it's 0xFFFF, if not recorded,
+			bt_stack_le_conn_handle[conn_id] will be regarded as 0 in disconnected event */
+			bt_stack_le_conn_handle[conn_id] = conn_handle;
+			p_conn_ind->err = RTK_BT_ERR_PARAM_INVALID;
+			goto exit;
+		}
 		/* when conn_handle 16 first comes as conn_id 0, then disconnct; conn_handle 16 may
 		comes as conn_id 1 next time. So both bt_stack_le_conn_handle[] of 0 and 1 may record
 		the handle 16, cause the mismatch in bt_stack_le_gap_get_conn_id. Clear the old record here.*/
@@ -2240,14 +2252,15 @@ static void bt_stack_le_gap_handle_conn_state_evt(T_LE_GAP_MSG *p_gap_msg)
 		}
 		bt_stack_le_conn_handle[conn_id] = conn_handle;
 
+		if (!le_get_conn_info(conn_id, &conn_info)) {
+			p_conn_ind->err = RTK_BT_ERR_PARAM_INVALID;
+			goto exit;
+		}
 		bt_stack_le_link_tbl[conn_id].is_active = 1;
-		bt_stack_le_link_num++;
-
-		le_get_conn_info(conn_id, &conn_info);
 		bt_stack_le_link_tbl[conn_id].role = conn_info.role;
 		bt_stack_le_link_tbl[conn_id].is_pairing_initiator = 0;
-		le_get_conn_addr(conn_id, bt_stack_le_link_tbl[conn_id].peer_addr,
-						 (void *)&bt_stack_le_link_tbl[conn_id].bd_type);
+		bt_stack_le_link_tbl[conn_id].bd_type = (T_GAP_REMOTE_ADDR_TYPE)conn_info.remote_bd_type;
+		memcpy(bt_stack_le_link_tbl[conn_id].peer_addr, conn_info.remote_bd, GAP_BD_ADDR_LEN);
 
 		BT_LOGD("GAP_CONN_STATE_CONNECTED:remote_bd %02x:%02x:%02x:%02x:%02x:%02x, remote_addr_type %d\r\n",
 				bt_stack_le_link_tbl[conn_id].peer_addr[5],
@@ -2257,31 +2270,19 @@ static void bt_stack_le_gap_handle_conn_state_evt(T_LE_GAP_MSG *p_gap_msg)
 				bt_stack_le_link_tbl[conn_id].peer_addr[1],
 				bt_stack_le_link_tbl[conn_id].peer_addr[0],
 				bt_stack_le_link_tbl[conn_id].bd_type);
-		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_EVT_CONNECT_IND,
-									sizeof(rtk_bt_le_conn_ind_t));
-		if (!p_evt) {
-			return;
-		}
 
-		p_conn_ind = (rtk_bt_le_conn_ind_t *)p_evt->data;
-		p_conn_ind->conn_handle = le_get_conn_handle(conn_id);
+		p_conn_ind->conn_handle = conn_handle;
 		p_conn_ind->role = convert_rtk_link_role(conn_info.role);
 		p_conn_ind->peer_addr.type = (rtk_bt_le_addr_type_t)bt_stack_le_link_tbl[conn_id].bd_type;
 		memcpy(p_conn_ind->peer_addr.addr_val, bt_stack_le_link_tbl[conn_id].peer_addr, RTK_BD_ADDR_LEN);
-		le_get_conn_param(GAP_PARAM_CONN_INTERVAL, &p_conn_ind->conn_interval, conn_id);
-		le_get_conn_param(GAP_PARAM_CONN_LATENCY, &p_conn_ind->conn_latency, conn_id);
-		le_get_conn_param(GAP_PARAM_CONN_TIMEOUT, &p_conn_ind->supv_timeout, conn_id);
-
-#if defined(F_BT_LE_5_0_SET_PHYS_SUPPORT) && F_BT_LE_5_0_SET_PHYS_SUPPORT
-		{
-			uint8_t tx_phy;
-			uint8_t rx_phy;
-			le_get_conn_param(GAP_PARAM_CONN_RX_PHY_TYPE, &rx_phy, conn_id);
-			le_get_conn_param(GAP_PARAM_CONN_TX_PHY_TYPE, &tx_phy, conn_id);
-			BT_LOGD("[conn_state_evt]: tx_phy %d, rx_phy %d\r\n", tx_phy, rx_phy);
+		if (le_get_conn_param(GAP_PARAM_CONN_INTERVAL, &p_conn_ind->conn_interval, conn_id) ||
+			le_get_conn_param(GAP_PARAM_CONN_LATENCY, &p_conn_ind->conn_latency, conn_id) ||
+			le_get_conn_param(GAP_PARAM_CONN_TIMEOUT, &p_conn_ind->supv_timeout, conn_id)) {
+			p_conn_ind->err = RTK_BT_ERR_PARAM_INVALID;
+			goto exit;
 		}
-#endif
 
+exit:
 		rtk_bt_evt_indicate(p_evt, NULL);
 		break;
 
@@ -2611,8 +2612,6 @@ uint16_t bt_stack_le_gap_deinit(void)
 	memset((void *)&le_gap_dev_state, 0, sizeof(le_gap_dev_state));
 	memset((void *)bt_stack_le_link_tbl, 0, sizeof(bt_stack_le_link_info_t) * RTK_BLE_GAP_MAX_LINKS);
 	memset((void *)bt_stack_le_conn_handle, 0, sizeof(uint16_t)*RTK_BLE_GAP_MAX_LINKS);
-
-	bt_stack_le_link_num = 0;
 
 #if (defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV) && (defined(F_BT_LE_5_0_AE_ADV_SUPPORT) && F_BT_LE_5_0_AE_ADV_SUPPORT)
 	memset((void *)bt_stack_ext_adv_tbl, 0, sizeof(bt_stack_ext_adv_info_t) * GAP_MAX_EXT_ADV_SETS);

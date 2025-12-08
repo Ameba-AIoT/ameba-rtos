@@ -79,5 +79,5 @@ extern void SOCPS_SetDSPWakeEvent_MSK0(u32 Option, u32 NewStatus);
 extern void SOCPS_SetDSPWakeEvent_MSK1(u32 Option, u32 NewStatus);
 extern void SOCPS_SetDSPWakeEvent(u32 Option, u32 Group, u32 NewStatus);
 extern void SOCPS_DeepSleep_RAM(void);
-extern void SOCPS_SetReguOCP(u8 state);
+
 #endif  //_AMEBA_SOCPS_H_
