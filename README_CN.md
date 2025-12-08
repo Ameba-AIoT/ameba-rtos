@@ -6,18 +6,21 @@ ameba-rtos是瑞昱官方推出的物联网开发框架，同时支持Linux和Wi
 
 # 支持的芯片
 
-|芯片系列        | 芯片                                |         master       |     release/v1.0       |     release/v1.1       |
-|:-------------- |:----------------------------------- |:---------------------:| :---------------------:| :---------------------:|
-|AmebaSmart系列   | RTL8730E                            |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
-|AmebaLite系列    | RTL8726E/RTL8713E/RTL8720E/RTL8710E |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
-|AmebaDplus系列   | RTL8721Dx                           |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
-|AmebaGreen2系列  | RTL8721F                            |![alt text][supported] |                        |                        |
+| 芯片      |         master       |     release/v1.0       |     release/v1.1       |
+|:--------- |:---------------------:| :---------------------:| :---------------------:|
+| RTL8730E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+| RTL8726E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+| RTL8721Dx |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+| RTL8710E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+| RTL8721F  |![alt text][supported] |                        |                        |
+| RTL8720E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+| RTL8713E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
 
 [supported]: https://img.shields.io/badge/-%E6%94%AF%E6%8C%81-green "supported"
 
 # 相关文档
 
-最新版的文档: [RealMCU](https://aiot.realmcu.com/cn/latest/index.html) ，在菜单栏中选择产品来查看具体芯片的文档和手册。
+最新版的文档: [RealMCU](https://aiot.realmcu.com/cn/latest/rtos/index.html) ，在菜单栏中选择产品来查看具体芯片的文档和手册。
 
 **注意:** 不同系列的芯片都有其相对应的数据手册，请根据特定的芯片名称查找手册。
 
@@ -39,11 +42,11 @@ Ameba 扩展插件是在 Cline 基础上开发的 VS Code 扩展， 兼容原生
 * 固件烧录便捷工具
 * 串口监控集成支持
 
-参考[VS Code 使用指南](https://aiot.realmcu.com/cn/latest/rst_tools/vscode/index.html)进行插件安装。安装插件后，即可高效完成环境配置、项目编译、固件烧录及串口监控等开发任务。
+参考[VS Code 使用指南](https://aiot.realmcu.com/cn/latest/tools/vscode/index.html)进行插件安装。安装插件后，即可高效完成环境配置、项目编译、固件烧录及串口监控等开发任务。
 
 ## 手动配置编译环境
 
-如果您希望手动完成环境配置，请参考[FreeRTOS SDK 使用指南](https://aiot.realmcu.com/cn/latest/rst_rtos/rst_sdk/index.html)。根据指南内容，逐步进行以下操作：
+如果您希望手动完成环境配置，请参考[FreeRTOS SDK 使用指南](https://aiot.realmcu.com/cn/latest/rtos/sdk/index.html)。根据指南内容，逐步进行以下操作：
 
 * SDK 环境配置
 * 工程编译
