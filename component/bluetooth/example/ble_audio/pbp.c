@@ -1168,6 +1168,18 @@ static void app_bt_le_audio_remove_data_path_all(void)
 	}
 }
 
+static uint16_t app_bt_le_audio_data_path_statistics(rtk_bt_le_audio_iso_data_path_direction_t path_direction)
+{
+	uint16_t path_num = 0;
+	for (uint16_t i = 0; i < APP_LE_AUDIO_DEMO_DATA_PATH_NUM; i ++) {
+		if (app_le_audio_data_path[i].used &&
+			(app_le_audio_data_path[i].path_direction == path_direction)) {
+			path_num++;
+		}
+	}
+	return path_num;
+}
+
 static uint16_t app_bt_le_audio_data_received(uint16_t iso_handle, uint8_t path_direction, uint8_t *data, uint16_t data_len, uint32_t ts_us)
 {
 	app_bt_le_audio_data_path_t *p_app_bt_le_audio_data_path = NULL;
@@ -1518,6 +1530,10 @@ static void bt_le_audio_demo_encode_task_entry(void *ctx)
 						if (rtk_bt_audio_get_iso_ref_ap(p_track, app_le_audio_data_path[i].iso_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_TX,
 														g_pbp_iso_interval, &controller_anchor_point)) {
 							BT_LOGE("[APP] %s: rtk_bt_audio_get_iso_ref_ap failed %d\r\n", __func__);
+							if (app_le_audio_data_path[i].p_enc_codec_buffer_t) {
+								rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_LC3, app_le_audio_data_path[i].p_codec_entity, app_le_audio_data_path[i].p_enc_codec_buffer_t);
+							}
+							app_le_audio_data_path[i].p_enc_codec_buffer_t = NULL;
 							continue;
 						}
 #endif
@@ -1530,6 +1546,11 @@ static void bt_le_audio_demo_encode_task_entry(void *ctx)
 							/* ts not valid, re sync */
 							ts_us = controller_anchor_point + g_pbp_bsrc_transport_latency_big - ((uint32_t)g_pbp_iso_interval - bt_le_audio_demo_send_timer_interval_us);
 							pre_ts_us = ts_us;
+							BT_LOGE("[APP] %s: timestamp not valid %d\r\n", __func__);
+							if (app_le_audio_data_path[i].p_enc_codec_buffer_t) {
+								rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_LC3, app_le_audio_data_path[i].p_codec_entity, app_le_audio_data_path[i].p_enc_codec_buffer_t);
+							}
+							app_le_audio_data_path[i].p_enc_codec_buffer_t = NULL;
 							continue;
 						}
 						pre_ts_us = ts_us;
@@ -2480,8 +2501,11 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 									  param->iso_chann_t.iso_interval,
 									  param->presentation_delay);
 		if (param->iso_chann_t.path_direction == RTK_BLE_AUDIO_ISO_DATA_PATH_TX) {
-			app_bt_le_audio_pbp_encode_data_control(true);
-			app_bt_le_audio_send_timer_update((param->codec_t.frame_duration == RTK_BT_LE_FRAME_DURATION_CFG_10_MS) ? 10000 : 7500);
+			if (RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_NUM == app_bt_le_audio_data_path_statistics(RTK_BLE_AUDIO_ISO_DATA_PATH_TX)) {
+				/* wait for all BIS data path init, encode task start*/
+				app_bt_le_audio_pbp_encode_data_control(true);
+				app_bt_le_audio_send_timer_update((param->codec_t.frame_duration == RTK_BT_LE_FRAME_DURATION_CFG_10_MS) ? 10000 : 7500);
+			}
 		}
 		break;
 	}

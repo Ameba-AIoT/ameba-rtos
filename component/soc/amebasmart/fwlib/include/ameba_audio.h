@@ -2038,6 +2038,9 @@ _LONG_CALL_ void AUDIO_CODEC_EnableADCFifo(u32 ad_chn, u32 newstate);
 _LONG_CALL_ void AUDIO_CODEC_EnableADCFifoForMask(u32 ad_chn_mask);
 _LONG_CALL_ void AUDIO_CODEC_EnableDACFifo(u32 newstate);
 _LONG_CALL_ u32 AUDIO_CODEC_GetHPOMode(u32 channel);
+_LONG_CALL_ void AUDIO_CODEC_SetADCEQClk(u32 ad_chn, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetADCEQBand(u32 ad_chn, u32 band_sel, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetADCEQFilter(u32 ad_chn, u32 band_sel, CODEC_EQFilterCoef *EQFilterCoefPoint);
 
 /**
   * @}

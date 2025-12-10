@@ -51,6 +51,12 @@
 #include "atcmd_otp.h"
 #endif
 
+#if defined(CONFIG_ATCMD_HOST_CONTROL)
+#ifdef CONFIG_SUPPORT_SDIO_DEVICE
+#include "ameba_intfcfg.h"
+#endif
+#endif
+
 //======================================================
 struct list_head log_hash[ATC_INDEX_NUM];
 
@@ -108,10 +114,6 @@ log_init_t log_init_table[] = {
 
 //======================================================
 #if defined(CONFIG_ATCMD_HOST_CONTROL)
-#ifdef CONFIG_SUPPORT_SDIO_DEVICE
-extern u8 SDIO_Pin_Grp;
-extern const u8 SDIO_PAD[5][6];
-#endif
 RingBuffer *atcmd_tt_mode_rx_ring_buf = NULL;
 char g_tt_mode = 0;
 char g_tt_mode_check_watermark = 0;
@@ -569,10 +571,10 @@ DEFAULT:
 		RTK_LOGI(TAG, "ATCMD HOST Control Mode : SDIO, group:%d, ", SDIO_Pin_Grp);
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "clk:%s, ", PIN_VAL_TO_NAME_STR(SDIO_PAD[SDIO_Pin_Grp][0]));
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "cmd:%s, ", PIN_VAL_TO_NAME_STR(SDIO_PAD[SDIO_Pin_Grp][1]));
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "d3:%s, ", PIN_VAL_TO_NAME_STR(SDIO_PAD[SDIO_Pin_Grp][2]));
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "d2:%s, ", PIN_VAL_TO_NAME_STR(SDIO_PAD[SDIO_Pin_Grp][3]));
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "d1:%s, ", PIN_VAL_TO_NAME_STR(SDIO_PAD[SDIO_Pin_Grp][4]));
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "d0:%s\r\n", PIN_VAL_TO_NAME_STR(SDIO_PAD[SDIO_Pin_Grp][5]));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "d0:%s, ", PIN_VAL_TO_NAME_STR(SDIO_PAD[SDIO_Pin_Grp][2]));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "d1:%s, ", PIN_VAL_TO_NAME_STR(SDIO_PAD[SDIO_Pin_Grp][3]));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "d2:%s, ", PIN_VAL_TO_NAME_STR(SDIO_PAD[SDIO_Pin_Grp][4]));
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "d3:%s\r\n", PIN_VAL_TO_NAME_STR(SDIO_PAD[SDIO_Pin_Grp][5]));
 		ret = atio_sdio_init();
 #else
 		ret = -1;

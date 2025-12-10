@@ -1608,10 +1608,6 @@ function(ameba_target_add name)
     # Some validation check
     if (ARG_p_OUTPUT_PATH)
         if(${ARG_p_OUTPUT_PATH} STREQUAL ${c_SDK_LIB_APPLICATION_DIR} OR ${ARG_p_OUTPUT_PATH} STREQUAL ${c_SDK_LIB_SOC_DIR})
-            if(NOT ARG_p_STRIP_DEBUG OR NOT ARG_p_ENABLE_DETERMINISTIC_ARCHIVES)
-                ameba_warning("No set p_STRIP_DEBUG OR p_ENABLE_DETERMINISTIC_ARCHIVES for app/soc target: ${name}:${ARG_p_OUTPUT_PATH}")
-            endif()
-
             if(ARG_p_APPEND_TO_LIST)
                 ameba_warning("Set p_APPEND_TO_LIST for app/soc target: ${name}")
             endif()
@@ -1620,12 +1616,13 @@ function(ameba_target_add name)
                 ameba_warning("Not set p_OUTPUT_NAME for app/soc target: ${name}")
             endif()
         else()
-            if(ARG_p_STRIP_DEBUG OR ARG_p_ENABLE_DETERMINISTIC_ARCHIVES)
-                ameba_warning("Set p_STRIP_DEBUG OR p_ENABLE_DETERMINISTIC_ARCHIVES for non-app/soc target: ${name}:${ARG_p_OUTPUT_PATH}")
-            endif()
             if(NOT c_CURRENT_IMAGE)
                 ameba_warning("NO set c_CURRENT_IMAGE for non-app/soc target: ${name}:${ARG_p_OUTPUT_PATH}")
             endif()
+        endif()
+
+        if(BUILD_FOR_RLS AND (NOT ARG_p_STRIP_DEBUG OR NOT ARG_p_ENABLE_DETERMINISTIC_ARCHIVES))
+            ameba_warning("No set p_STRIP_DEBUG OR p_ENABLE_DETERMINISTIC_ARCHIVES for release lib: ${name}:${ARG_p_OUTPUT_PATH}")
         endif()
     else()
         if(NOT ${ARG_p_TYPE}_ STREQUAL "interface_")
@@ -1931,12 +1928,15 @@ endfunction()
 
 function(ameba_port_library_file file_path output_path output_name)
     set(full_output ${output_path}/lib_${output_name}.a)
+    set(_objcopy_flags)
+    ameba_list_append_if(BUILD_FOR_RLS _objcopy_flags -g -D)
     add_custom_command(
         OUTPUT ${full_output}
         COMMAND ${CMAKE_COMMAND} -E copy ${file_path} ${full_output}
-        COMMAND ${CMAKE_OBJCOPY} -g -D ${full_output}
+        COMMAND ${CMAKE_OBJCOPY} ${_objcopy_flags} ${full_output}
         DEPENDS ${file_path}
     )
+    unset(_objcopy_flags)
     ameba_gen_wrap_name(${output_name} c_CURRENT_TARGET_NAME)
     add_custom_target(
         ${c_CURRENT_TARGET_NAME}_trans ALL

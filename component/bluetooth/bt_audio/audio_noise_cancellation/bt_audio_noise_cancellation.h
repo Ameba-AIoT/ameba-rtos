@@ -22,12 +22,13 @@ extern "C"
 
 /**
  * @brief     create new audio noise cancellation interface.
+ * @param[in] codec_index: audio codec index
  * @param[in] channels: audio channel
  * @return
  *            - 0  : do presentation
  *            - 1: no need to do presentation
  */
-uint16_t rtk_bt_audio_noise_cancellation_new(uint32_t channels);
+uint16_t rtk_bt_audio_noise_cancellation_new(uint32_t codec_index, uint32_t channels);
 
 /**
  * @brief     feed voice data to ai voice noise cancellation interface.

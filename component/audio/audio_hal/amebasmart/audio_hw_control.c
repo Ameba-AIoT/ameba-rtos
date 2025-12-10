@@ -131,6 +131,42 @@ static int32_t AmebaSetMicUsage(struct AudioHwControl *control, uint32_t mic_usa
 	return ameba_audio_ctl_set_mic_usage(ameba_audio_get_ctl(), mic_usage);
 }
 
+static int32_t AmebaSetCaptureHpfFc(struct AudioHwControl *control, uint32_t channel_num, uint32_t fc)
+{
+	(void) control;
+	return ameba_audio_ctl_set_capture_hfp_fc(ameba_audio_get_ctl(), channel_num, fc);
+}
+
+static int32_t AmebaGetCaptureHpfFc(struct AudioHwControl *control, uint32_t channel_num)
+{
+	(void) control;
+	return ameba_audio_ctl_get_capture_hfp_fc(ameba_audio_get_ctl(), channel_num);
+}
+
+static int32_t AmebaSetCaptureEqEnable(struct AudioHwControl *control, uint32_t channel_num, bool state)
+{
+	(void) control;
+	return ameba_audio_ctl_set_adc_eq_clk(ameba_audio_get_ctl(), channel_num, state);
+}
+
+static int32_t AmebaSetCaptureEqFilter(struct AudioHwControl *control, uint32_t channel_num, uint32_t band_sel, struct AudioHwEqFilterCoef *eq_filter_coef)
+{
+	(void) control;
+	struct AmebaAudioEqFilterCoef ameba_coef;
+	ameba_coef.H0_Q = eq_filter_coef->H0_Q;
+	ameba_coef.B1_Q = eq_filter_coef->B1_Q;
+	ameba_coef.B2_Q = eq_filter_coef->B2_Q;
+	ameba_coef.A1_Q = eq_filter_coef->A1_Q;
+	ameba_coef.A2_Q = eq_filter_coef->A2_Q;
+	return ameba_audio_ctl_set_adc_eq_filter(ameba_audio_get_ctl(), channel_num, band_sel, &ameba_coef);
+}
+
+static int32_t AmebaSetCaptureEqBand(struct AudioHwControl *control, uint32_t channel_num, uint32_t band_sel, bool state)
+{
+	(void) control;
+	return ameba_audio_ctl_set_adc_eq_band(ameba_audio_get_ctl(), channel_num, band_sel, state);
+}
+
 static int32_t AmebaGetMicUsage(struct AudioHwControl *control)
 {
 	(void) control;
@@ -185,6 +221,11 @@ struct AudioHwControl *GetAudioHwControl(void)
 			s_hw_ctl_instance->SetCaptureVolume = AmebaSetCaptureVolume;
 			s_hw_ctl_instance->SetMicBstGain = AmebaSetMicBstGain;
 			s_hw_ctl_instance->GetMicBstGain = AmebaGetMicBstGain;
+			s_hw_ctl_instance->SetCaptureHpfFc = AmebaSetCaptureHpfFc;
+			s_hw_ctl_instance->GetCaptureHpfFc = AmebaGetCaptureHpfFc;
+			s_hw_ctl_instance->SetCaptureEqEnable = AmebaSetCaptureEqEnable;
+			s_hw_ctl_instance->SetCaptureEqFilter = AmebaSetCaptureEqFilter;
+			s_hw_ctl_instance->SetCaptureEqBand = AmebaSetCaptureEqBand;
 			s_hw_ctl_instance->SetMicUsage = AmebaSetMicUsage;
 			s_hw_ctl_instance->GetMicUsage = AmebaGetMicUsage;
 			s_hw_ctl_instance->AdjustPLLClock = AmebaAdjustPLLClock;

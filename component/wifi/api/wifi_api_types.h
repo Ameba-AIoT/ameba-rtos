@@ -629,16 +629,17 @@ enum rtw_frame_type_subtype {
 };
 
 /**
- * @brief bitmask for struct rtw_tx_advanced_cfg{} (size: u32).
+ * @brief update_masks fields definition for struct rtw_tx_advanced_cfg{} (size: u16).
  */
 
-enum rtw_tx_advanced_cfg_bitmask {
-	RTW_TX_CFG_LIFE_TIME_BEBK_VALID         = BIT(0),
-	RTW_TX_CFG_LIFE_TIME_VIVO_VALID         = BIT(1),
-	RTW_TX_CFG_BCN_TX_PROTECT_TIME_VALID    = BIT(2),
-	RTW_TX_CFG_BCN_RX_PROTECT_TIME_VALID    = BIT(3),
-	RTW_TX_CFG_NAV_UPDATE_TH_VALID          = BIT(4),
-	RTW_TX_CFG_IGNORE_TX_NAV_VALID          = BIT(5),
+enum rtw_tx_advanced_cfg_update_masks {
+	RTW_UPDATE_TXCFG_TX_LIFE_TIME_BEBK      = BIT(0),
+	RTW_UPDATE_TXCFG_TX_LIFE_TIME_VIVO      = BIT(1),
+	RTW_UPDATE_TXCFG_BCN_TX_PROTECT_TIME    = BIT(2),
+	RTW_UPDATE_TXCFG_BCN_RX_PROTECT_TIME    = BIT(3),
+	RTW_UPDATE_TXCFG_NAV_UPDATE_TH          = BIT(4),
+	RTW_UPDATE_TXCFG_IGNORE_TX_NAV          = BIT(5),
+	RTW_UPDATE_TXCFG_PARAM_ALL              = 0xFFFF,
 };
 
 /** @} End of WIFI_Exported_Enumeration_Types group*/
@@ -943,7 +944,7 @@ struct rtw_edca_param {
 */
 
 struct rtw_tx_advanced_cfg {
-	u16 valid_fields;             /**< Mask subfield. If a parameter is set, its corresponding bit in valid_fields must also be set. @ref RTW_TX_CFG_LIFE_TIME_BEBK_VALID... */
+	u16 update_masks;             /**< Mask subfield. If a parameter is set, its corresponding bit in update_masks must also be set. @ref RTW_UPDATE_TXCFG_TX_LIFE_TIME_BEBK... */
 	u16 pkt_lifetime_bebk;        /**< Packet lifetime in units of 256us for AC_BE/AC_BK. */
 	u16 pkt_lifetime_vivo;        /**< Packet lifetime in units of 256us for AC_VI/AC_VO. */
 	u16 tx_bcn_protect_time;      /**< A reserved period for Beacon TX, preventing other transmissions, unit:32us */
