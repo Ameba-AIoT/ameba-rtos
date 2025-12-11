@@ -225,6 +225,15 @@ uint16_t rtk_bt_audio_track_set_channel_count(void *track_hdl, uint32_t channel_
 uint32_t rtk_bt_audio_track_get_channel_count(void *track_hdl);
 
 /**
+ * @brief     audio track get mixer start thresholdbytes
+ * @param[in] track_hdl: audio track handle
+ * @return
+ *                              - 0  : Fail
+ *                              - Others: thresholdbytes
+ */
+int32_t rtk_bt_audio_track_get_start_thresholdbytes(void *track_hdl);
+
+/**
  * @brief     audio track get buffer size(Not ready)
  * @return    buffer size
  */

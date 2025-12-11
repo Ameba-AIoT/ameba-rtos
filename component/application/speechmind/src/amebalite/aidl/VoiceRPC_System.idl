@@ -1,0 +1,11 @@
+.insert <RPCBaseDS.h>
+.insert <VoiceRPCBaseDS.h>
+
+program VOICE_SYSTEM {
+    version VERSION {
+        HRESULT VOICE_RPC_ToAgent_Create(VOICE_RPC_INIT) = 1;
+        HRESULT VOICE_RPC_ToAgent_destroy(long) = 2;
+        HRESULT VOICE_RPC_ToAgent_Start(long) = 3;
+    } = 0;
+
+} = 3001;

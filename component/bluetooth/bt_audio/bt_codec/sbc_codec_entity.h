@@ -10,6 +10,7 @@
 #include <oi_status.h>
 #include <oi_codec_sbc.h>
 #include <sbc_encoder.h>
+#include <sbc_plc.h>
 #include <bt_audio_codec_wrapper.h>
 #include <bt_audio_config.h>
 
@@ -37,7 +38,7 @@ typedef enum {
  * @brief   structure of sbc encoder init
  */
 typedef struct {
-	sbc_channel_mode_t      sbc_enc_mode;           /*!< sbc encode mode */
+	sbc_mode_t              sbc_enc_mode;           /*!< sbc encode mode */
 	uint8_t                 sbc_pkt_num;            /*!< sbc encode packet number */
 	int                     blocks;                 /*!< sbc blocks */
 	int                     subbands;               /*!< sbc subbands */
@@ -53,7 +54,7 @@ typedef struct {
  * @brief   structure of sbc decoder init
  */
 typedef struct {
-	sbc_channel_mode_t      sbc_dec_mode;           /*!< sbc decode mode */
+	sbc_mode_t              sbc_dec_mode;           /*!< sbc decode mode */
 	uint32_t                sampling_frequency;     /*!< indicate sample frequence */
 	sbc_channel_mode_t      channel_mode;           /*!< indicate channel mode */
 	uint8_t                 block_length;           /*!< indicate block length */

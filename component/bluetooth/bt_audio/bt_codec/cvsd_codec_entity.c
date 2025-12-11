@@ -42,15 +42,15 @@ static uint16_t cvsd_encoder_process_data(void *p_entity, int16_t *data, uint32_
 {
 	(void)p_entity;
 
-	if (size > CVSD_FRAME_SIZE / 2) {
+	if (size > CVSD_FRAME_SIZE) {
 		BT_LOGE("%s : inpute size is large than 256 \r\n", __func__);
 		return 1;
 	}
 	pencoder_buffer->pbuffer = (uint8_t *)data;
 	pencoder_buffer->frame_num = 1;
-	pencoder_buffer->frame_size = size * 2;
+	pencoder_buffer->frame_size = size;
 	*p_frame_num = 1;
-	*p_actual_len = size * 2;
+	*p_actual_len = size;
 
 	return 0;
 }
