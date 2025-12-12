@@ -68,6 +68,7 @@ CSRC +=	$(DIR_COM)/ameba_i2c.c \
 	$(DIR_COM)/ameba_swr_calib.c \
 	$(DIR_COM)/ameba_psram.c \
 	$(DIR_COM)/ameba_fault_handle.c \
+	$(DIR_COM)/ameba_swr.c \
 #	$(DIR_COM)/ameba_pmc_com.c
 
 CSRC +=	$(LOGDIR)/log.c
