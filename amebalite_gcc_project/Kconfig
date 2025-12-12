@@ -111,6 +111,9 @@ menu "CONFIG APPLICATION"
         if DSP_EN
             orsource "../component/aivoice/Kconfig.dsp"
         endif
+        if AIVOICE_EN_MENU
+            orsource "../component/application/speechmind/Kconfig"
+        endif
     endmenu
 
     orsource "${RTK_APP_DIR}/Kconfig"

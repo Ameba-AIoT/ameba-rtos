@@ -41,6 +41,7 @@ ameba_list_append(private_sources
 
 ameba_list_append(private_includes
 	${c_CMPT_AIVOICE_DIR}/include
+	${c_CMPT_AUDIO_DIR}/third_party/speexdsp/include
 )
 
 # Component private part, user config end

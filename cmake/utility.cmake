@@ -174,9 +174,10 @@ function(ameba_add_external_library name output_path output_name)
         add_library(${flag_target} INTERFACE)
     endif()
 
+    if(BUILD_FOR_RLS)
+        list(APPEND ARGN p_STRIP_DEBUG p_ENABLE_DETERMINISTIC_ARCHIVES)
+    endif()
     ameba_add_library(${name}
-        p_STRIP_DEBUG
-        p_ENABLE_DETERMINISTIC_ARCHIVES
         p_OUTPUT_PATH ${output_path}
         p_OUTPUT_NAME ${output_name}
         ${ARGN}
@@ -350,6 +351,8 @@ function(ameba_add_merge_library output_name output_path)
    endif()
 
     set(full_output ${output_path}/lib_${output_name}.a)
+    set(_objcopy_flags)
+    ameba_list_append_if(BUILD_FOR_RLS _objcopy_flags -g -D)
     add_custom_command(
         OUTPUT ${full_output}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${temp_dir}
@@ -358,11 +361,12 @@ function(ameba_add_merge_library output_name output_path)
         ${list_cmd}
         COMMAND ${CMAKE_COMMAND} -E rm -f ${full_output}
         COMMAND ${CMAKE_COMMAND} -E chdir ${temp_dir} ${CMAKE_AR} crs ${full_output} "@o_files.list"
-        COMMAND ${CMAKE_OBJCOPY} -g -D ${full_output}
+        COMMAND ${CMAKE_OBJCOPY} ${_objcopy_flags} ${full_output}
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${temp_dir}
         DEPENDS ${libs}
         COMMENT "Merging libraries lib_${output_name}.a using ar"
     )
+    unset(_objcopy_flags)
 
     add_custom_target(
         ${c_CURRENT_TARGET_NAME}_merge ALL

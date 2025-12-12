@@ -125,7 +125,10 @@ menu "CONFIG APPLICATION"
 
     menu "AI Config"
         orsource "../component/tflite_micro/Kconfig"
-        rsource "../component/aivoice/Kconfig"
+        orsource "../component/aivoice/Kconfig"
+        if AIVOICE_EN_MENU
+            orsource "../component/application/speechmind/Kconfig"
+        endif
     endmenu
 
     orsource "${APP_DIR}/Kconfig.prj"

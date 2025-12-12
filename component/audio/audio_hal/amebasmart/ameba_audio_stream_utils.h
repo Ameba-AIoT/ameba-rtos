@@ -40,6 +40,7 @@ int32_t ameba_audio_get_fifo_num(uint32_t channel_count);
 int32_t ameba_audio_stream_get_mic_idx(uint32_t mic_category);
 int32_t ameba_audio_stream_get_adc_idx(uint32_t index);
 int32_t ameba_audio_stream_get_adc_chn_idx(uint32_t index);
+int32_t ameba_audio_stream_get_adc_eq_band_idx(uint32_t band_idx);
 int32_t ameba_audio_get_sp_format(enum AudioHwFormat format, uint32_t direction);
 int32_t ameba_audio_get_sp_rate(uint32_t rate);
 int32_t ameba_audio_get_codec_format(enum AudioHwFormat format, uint32_t direction);

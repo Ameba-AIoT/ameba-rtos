@@ -1,0 +1,25 @@
+.insert <RPCBaseDS.h>
+
+struct VOICE_RPC_INIT
+{
+    int32_t voice_iface_flag;
+    uint32_t mic_header_addr;
+    long mic_header_length;
+    uint32_t config_addr;
+    long config_length;
+    uint32_t usr_data;
+};
+
+struct VOICE_RPC_RESULT
+{
+    uint32_t usr_data;
+    int32_t type;
+    int32_t len;
+    uint32_t msg_addr;
+};
+
+struct VOICE_RPC_ERROR_STATE
+{
+    long type;
+    uint32_t data;
+};

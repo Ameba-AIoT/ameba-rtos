@@ -125,6 +125,47 @@ static int32_t AmebaGetMicBstGain(struct AudioHwControl *control, uint32_t mic_c
 	return ameba_audio_ctl_get_mic_bst_gain(ameba_audio_get_ctl(), mic_category);
 }
 
+static int32_t AmebaSetCaptureHpfFc(struct AudioHwControl *control, uint32_t channel_num, uint32_t fc)
+{
+	(void) control;
+	(void) channel_num;
+	(void) fc;
+	return HAL_OSAL_OK;
+}
+
+static int32_t AmebaGetCaptureHpfFc(struct AudioHwControl *control, uint32_t channel_num)
+{
+	(void) control;
+	(void) channel_num;
+	return HAL_OSAL_OK;
+}
+
+static int32_t AmebaSetCaptureEqEnable(struct AudioHwControl *control, uint32_t channel_num, bool state)
+{
+	(void) control;
+	(void) channel_num;
+	(void) state;
+	return HAL_OSAL_OK;
+}
+
+static int32_t AmebaSetCaptureEqFilter(struct AudioHwControl *control, uint32_t channel_num, uint32_t band_sel, struct AudioHwEqFilterCoef *eq_filter_coef)
+{
+	(void) control;
+	(void) channel_num;
+	(void) band_sel;
+	(void) eq_filter_coef;
+	return HAL_OSAL_OK;
+}
+
+static int32_t AmebaSetCaptureEqBand(struct AudioHwControl *control, uint32_t channel_num, uint32_t band_sel, bool state)
+{
+	(void) control;
+	(void) channel_num;
+	(void) band_sel;
+	(void) state;
+	return HAL_OSAL_OK;
+}
+
 static int32_t AmebaSetMicUsage(struct AudioHwControl *control, uint32_t mic_usage)
 {
 	(void) control;
@@ -194,6 +235,11 @@ struct AudioHwControl *GetAudioHwControl(void)
 		s_hw_ctl_instance->SetCaptureVolume = AmebaSetCaptureVolume;
 		s_hw_ctl_instance->SetMicBstGain = AmebaSetMicBstGain;
 		s_hw_ctl_instance->GetMicBstGain = AmebaGetMicBstGain;
+		s_hw_ctl_instance->SetCaptureHpfFc = AmebaSetCaptureHpfFc;
+		s_hw_ctl_instance->GetCaptureHpfFc = AmebaGetCaptureHpfFc;
+		s_hw_ctl_instance->SetCaptureEqEnable = AmebaSetCaptureEqEnable;
+		s_hw_ctl_instance->SetCaptureEqFilter = AmebaSetCaptureEqFilter;
+		s_hw_ctl_instance->SetCaptureEqBand = AmebaSetCaptureEqBand;
 		s_hw_ctl_instance->SetMicUsage = AmebaSetMicUsage;
 		s_hw_ctl_instance->GetMicUsage = AmebaGetMicUsage;
 		s_hw_ctl_instance->AdjustPLLClock = AmebaAdjustPLLClock;

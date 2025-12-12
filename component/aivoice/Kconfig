@@ -1,6 +1,7 @@
 config AIVOICE_EN_MENU
     bool "Enable AIVoice"
     select AIVOICE_EN if CORE_AS_AP
+    select TFLITE_MICRO_EN if CORE_AS_AP
 
 if AIVOICE_EN_MENU
     choice

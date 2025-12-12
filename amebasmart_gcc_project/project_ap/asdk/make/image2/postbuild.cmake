@@ -60,6 +60,9 @@ ameba_execute_process(
     COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl1/bl1.map ${c_SDK_IMAGE_TARGET_DIR}/bl1.map
     COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl2/bl2.map ${c_SDK_IMAGE_TARGET_DIR}/bl2.map
     COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl32/bl32.map ${c_SDK_IMAGE_TARGET_DIR}/bl32.map
+    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl1/bl1.elf ${c_SDK_IMAGE_TARGET_DIR}/bl1.elf
+    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl2/bl2.elf ${c_SDK_IMAGE_TARGET_DIR}/bl2.elf
+    COMMAND ${CMAKE_COMMAND} -E copy ${BUILD_BASE}/project_ap/asdk/make/atf/bl32/bl32.elf ${c_SDK_IMAGE_TARGET_DIR}/bl32.elf
 )
 
 ameba_axf2bin_pad(${c_SDK_IMAGE_TARGET_DIR}/bl1_sram.bin 32)

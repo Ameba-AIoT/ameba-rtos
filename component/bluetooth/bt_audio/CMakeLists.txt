@@ -63,6 +63,8 @@ ameba_list_append(private_includes
 	audio_noise_cancellation
 	bt_codec/sbc/decoder/include
 	bt_codec/sbc/encoder/include
+	bt_codec/sbc/common
+	bt_codec/sbc/plc
 	bt_codec/lc3/include
 	bt_codec/lc3/src
 )
