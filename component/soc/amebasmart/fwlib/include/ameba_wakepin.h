@@ -12,6 +12,8 @@
 #define	WAKEPIN_2							((u32)0x00000002)/*!< see aon_wakepin */
 #define	WAKEPIN_3							((u32)0x00000003)/*!< see aon_wakepin */
 
+#define WAKEPIN_EVENT	(AON_BIT_GPIO_PIN0_WAKDET_EVT | AON_BIT_GPIO_PIN1_WAKDET_EVT | AON_BIT_GPIO_PIN2_WAKDET_EVT | AON_BIT_GPIO_PIN3_WAKDET_EVT)
+
 enum wakepin_config {
 	LOW_LEVEL_WAKEUP	= 0, /* when GPIO level become high, will wakeup*/
 	HIGH_LEVEL_WAKEUP	= 1, /* when GPIO level become low, will wakeup*/

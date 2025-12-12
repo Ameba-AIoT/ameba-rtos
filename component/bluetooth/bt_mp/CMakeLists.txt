@@ -12,7 +12,6 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # You may use if-else condition to set or update predefined variable above
 ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ../driver/dtm
 )
 
 # Component public part, user config end

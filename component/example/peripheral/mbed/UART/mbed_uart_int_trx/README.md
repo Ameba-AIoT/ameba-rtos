@@ -52,14 +52,10 @@ End characters CRLF(CR: "0x0D" and LF: "0x0A") will be appended to input charact
 
 # Supported IC
 
-- AmebaSmart
-  * RTL8730E
-- AmebaLite
-  * RTL8726E
-  * RTL8720E
-  * RTL8713E
-  * RTL8710E
-- AmebaDplus
-  * RTL8721Dx
-- AmebaGreen2
-  * RTL8721F
+RTL8730E
+RTL8726E
+RTL8720E
+RTL8713E
+RTL8710E
+RTL8721Dx
+RTL8721F

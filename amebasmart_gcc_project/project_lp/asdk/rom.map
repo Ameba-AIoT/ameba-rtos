@@ -1,0 +1,1557 @@
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+KM4_IROM         0x0000000000000000 0x000000000001e000 xr
+KM4_IROM_NS      0x000000000001e000 0x0000000000015000 xr
+KM4_IROM_STDLIB_NS 0x0000000000033000 0x0000000000013000 xr
+KM4_DROM_NS      0x0000000000046000 0x000000000000e000 xr
+KM4_DROM         0x0000000000054000 0x0000000000004000 xr
+KM4_ROMBSS_RAM_S 0x0000000030000000 0x0000000000001000 rw
+KM4_MSP_RAM_S    0x0000000030001000 0x0000000000002000 rw
+KM4_BOOTLOADER_RAM_S 0x0000000030003020 0x0000000000005fe0 xrw
+KM4_FLOADER_RAM_S 0x0000000030003020 0x0000000000017fe0 xrw
+KM4_BD_RAM_NSC   0x000000006015b020 0x0000000000000fe0 xrw
+KM4_BD_RAM_ENTRY 0x000000006015c000 0x0000000000004000 xrw
+KM4_BD_RAM_S     0x0000000070160020 0x000000000001ffe0 xrw
+KM4_BD_RAM_NS_TZ 0x0000000060000020 0x000000000015afe0 xrw
+KM4_BD_RAM_NS_NTZ 0x0000000060000020 0x000000000017ffe0 xrw
+KM4_MSP_RAM_NS   0x000000002001b000 0x0000000000001000 rw
+KM4_ROMBSS_RAM_COM 0x000000002001c000 0x0000000000001000 rw
+KM4_ROMBSS_RAM_NS 0x000000002001d000 0x0000000000001000 rw
+KM4_STDLIB_HEAP_RAM_NS 0x000000002001e000 0x0000000000001000 rw
+KM4_AUDIO_BUFFER 0x0000000020020000 0x0000000000020000 rw
+KM4_BD_RAM_NS_NTZ_XIP 0x0000000020009020 0x0000000000011fe0 xrw
+EXTENTION_SRAM   0x0000000022000000 0x0000000001000000 xrw
+RETENTION_RAM    0x0000000023020000 0x0000000000000200 xrw
+KM0_IROM         0x0000000000000000 0x000000000000c000 xr
+KM0_DROM         0x000000000000c000 0x0000000000004000 xr
+KM0_ROMBSS_RAM   0x0000000023000000 0x0000000000002000 rw
+KM0_BD_RAM       0x0000000023002020 0x000000000001cce0 xrw
+KM0_IPC_RAM      0x000000002301ed00 0x0000000000000300 xrw
+KM0_MSP_RAM      0x000000002301f000 0x0000000000001000 rw
+PHY_IMG1         0x0000000008001020 0x0000000000004fe0 xr
+PHY_IMG2         0x0000000008020000 0x00000000001c0000 xr
+KM4_IMG3         0x00000000081e0000 0x0000000000020000 xr
+CA32_IMG         0x0000000008200000 0x0000000000100000 xr
+KM4_BOOT         0x000000000a000020 0x0000000001ffffe0 xr
+KM0_IMG2         0x000000000c000020 0x0000000001ffffe0 xr
+KM4_IMG2         0x000000000e000020 0x0000000001ffffe0 xr
+BTRACE           0x00000000c8800000 0x0000000000800000 xr
+CA32_IROM        0x0000000000000000 0x0000000000000400 xr
+CA32_BL1_SRAM_S  0x000000003001fe00 0x0000000000000200 xrw
+CA32_BL1_DRAM_S  0x0000000070180020 0x000000000001ffe0 xrw
+CA32_FIP_DRAM_NS 0x0000000060400000 0x0000000000c00000 xrw
+CA32_BL3_DRAM_NS 0x0000000060300000 0x0000000000d00000 xrw
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+                0x0000000000033000                __rom_stdlib_text_start__ = ORIGIN (KM4_IROM_STDLIB_NS)
+                0x0000000023002020                __km0_image2_entry_func__ = ORIGIN (KM0_BD_RAM)
+                0x000000002301ed00                __km0_ipc_memory_start__ = ORIGIN (KM0_IPC_RAM)
+                0x000000000a000020                __km4_boot_text_start__ = ORIGIN (KM4_BOOT)
+                0x000000000c000020                __km0_flash_text_start__ = ORIGIN (KM0_IMG2)
+                0x000000000e000020                __km4_flash_text_start__ = ORIGIN (KM4_IMG2)
+                0x00000000081e0000                __km4_image3_flash_start__ = ORIGIN (KM4_IMG3)
+                0x0000000008020000                __nspe_phy_addr__ = ORIGIN (PHY_IMG2)
+                0x000000003001fe00                __ca32_bl1_sram_start__ = ORIGIN (CA32_BL1_SRAM_S)
+                0x0000000070180020                __ca32_bl1_dram_start__ = ORIGIN (CA32_BL1_DRAM_S)
+                0x0000000008200000                __ca32_flash_start__ = ORIGIN (CA32_IMG)
+                0x0000000060400000                __ca32_fip_dram_start__ = ORIGIN (CA32_FIP_DRAM_NS)
+
+.rom.text       0x0000000000000000     0x79b4
+ *(.vectors_table)
+ .vectors_table
+                0x0000000000000000       0x18 ./build/rom/amebalp_vectors.o
+                0x0000000000000000                __vectors_table
+ *(.vectors_table_text)
+ *fill*         0x0000000000000018       0xe8 
+ .vectors_table_text
+                0x0000000000000100       0x14 ./build/rom/amebalp_vectors.o
+                0x0000000000000100                Reset_Handler
+                0x0000000000000104                NMI_Handler
+                0x0000000000000108                HardFault_Handler
+                0x000000000000010c                MemManage_Handler
+                0x0000000000000110                BusFault_Handler
+ *(.hal.rom.text*)
+ .hal.rom.text  0x0000000000000114       0x20 ./build/rom/ameba_assert_rom.o
+                0x0000000000000114                io_assert_failed
+ .hal.rom.text  0x0000000000000134       0x94 ./build/rom/ameba_backup_reg.o
+                0x0000000000000134                BKUP_Write
+                0x0000000000000158                BKUP_Read
+                0x0000000000000178                BKUP_Set
+                0x00000000000001a0                BKUP_Clear
+ .hal.rom.text  0x00000000000001c8      0x134 ./build/rom/ameba_clk_rom.o
+                0x00000000000001c8                XTAL_ClkGet
+                0x00000000000001e0                CPU_ClkSet
+                0x0000000000000248                CPU_ClkGet
+                0x00000000000002dc                HBUS_ClkSet
+ *fill*         0x00000000000002fc        0x4 
+ .hal.rom.text  0x0000000000000300       0x94 ./build/rom/ameba_delay_rom.o
+                0x0000000000000300                DelayNop
+                0x000000000000030a                DelayUs
+                0x0000000000000380                DelayMs
+ .hal.rom.text  0x0000000000000394      0x84c ./build/rom/ameba_flash_rom.o
+                0x0000000000000394                FLASH_SetSpiMode
+                0x0000000000000464                FLASH_RxCmd
+                0x00000000000004ec                FLASH_WaitBusy
+                0x000000000000057c                FLASH_RxData
+                0x000000000000064c                FLASH_TxCmd
+                0x00000000000006bc                FLASH_WriteEn
+                0x00000000000006e0                FLASH_TxData
+                0x00000000000007cc                FLASH_SetStatus
+                0x00000000000007ea                FLASH_Erase
+                0x0000000000000868                FLASH_DeepPowerDown
+                0x00000000000008b8                FLASH_SetStatusBits
+                0x0000000000000958                FLASH_StructInit_Micron
+                0x00000000000009d8                FLASH_StructInit_MXIC
+                0x0000000000000a50                FLASH_StructInit_GD
+                0x0000000000000ad0                FLASH_StructInit
+                0x0000000000000b4c                FLASH_Init
+ .hal.rom.text  0x0000000000000be0      0x418 ./build/rom/ameba_gpio_rom.o
+                0x0000000000000be0                GPIO_INTMode
+                0x0000000000000c44                GPIO_INTConfig
+                0x0000000000000c70                GPIO_INTHandler
+                0x0000000000000d60                GPIO_Direction
+                0x0000000000000d88                GPIO_Init
+                0x0000000000000e0c                GPIO_DeInit
+                0x0000000000000e80                GPIO_ReadDataBit
+                0x0000000000000ea4                GPIO_WriteBit
+                0x0000000000000ecc                GPIO_PortDirection
+                0x0000000000000f00                GPIO_PortRead
+                0x0000000000000f28                GPIO_PortWrite
+                0x0000000000000f58                GPIO_DebounceClock
+                0x0000000000000f84                GPIO_LevelSync
+                0x0000000000000fb4                GPIO_UserRegIrq
+ .hal.rom.text  0x0000000000000ff8      0x84c ./build/rom/ameba_loguart_rom.o
+                0x0000000000000ff8                LOGUART_StructInit
+                0x000000000000102a                LOGUART_SetBaud
+                0x00000000000010c8                LOGUART_RxCmd
+                0x00000000000010da                LOGUART_AGGCmd
+                0x00000000000010f4                LOGUART_AGGPathCmd
+                0x0000000000001188                LOGUART_AGGSetTimeOut
+                0x00000000000011a4                LOGUART_AGGSetThreshold
+                0x00000000000011d4                LOGUART_AGGSetSyncPattern
+                0x00000000000011e2                LOGUART_AGGPathAllCmd
+                0x0000000000001204                LOGUART_PutChar
+                0x000000000000125c                LOGUART_GetChar
+                0x0000000000001274                LOGUART_Readable
+                0x0000000000001284                LOGUART_GetRxCount
+                0x0000000000001290                LOGUART_GetIMR
+                0x000000000000129c                LOGUART_SetIMR
+                0x00000000000012a8                LOGUART_INTConfig
+                0x00000000000012ba                LOGUART_INTClear
+                0x00000000000012c2                LOGUART_GetStatus
+                0x00000000000012c6                LOGUART_ClearRxFifo
+                0x00000000000012e6                _LOGUART_Init
+                0x0000000000001464                LOGUART_Init
+                0x00000000000014c4                LOGUART_WaitBusy
+                0x00000000000014fc                LOGUART_WaitTxComplete
+                0x0000000000001530                LOGUART_BT_SendData
+                0x0000000000001560                LOGUART_Relay_StructInit
+                0x0000000000001572                LOGUART_Relay_SetFormat
+                0x00000000000015c0                LOGUART_Relay_SetBaud
+                0x0000000000001610                LOGUART_Relay_ClearRxFifo
+                0x000000000000163a                LOGUART_Relay_RxCmd
+                0x000000000000164c                LOGUART_MonitorParaConfig
+                0x000000000000169c                LOGUART_LPBaudSet
+                0x0000000000001740                LOGUART_Relay_LPSetBaud
+                0x00000000000017a0                LOGUART_RxMonitorCmd
+                0x00000000000017b2                LOGUART_RxMonBaudCtrlRegGet
+                0x00000000000017b6                LOGUART_RxMonitorSatusGet
+                0x00000000000017ba                LOGUART_DiagInit
+ .hal.rom.text  0x0000000000001844      0x244 ./build/rom/ameba_pinmux_rom.o
+                0x0000000000001844                PAD_DrvStrength
+                0x0000000000001868                PAD_PullCtrl
+                0x0000000000001894                PAD_SleepPullCtrl
+                0x00000000000018c0                PAD_ResistorCtrl
+                0x00000000000018e4                PAD_CMD
+                0x0000000000001908                Pinmux_Config
+                0x0000000000001920                Pinmux_ConfigGet
+                0x0000000000001930                Pinmux_UartLogCtrl
+                0x000000000000196c                PAD_SpicCtrl
+                0x00000000000019c0                Pinmux_SpicCtrl
+                0x0000000000001a78                Pinmux_Swdoff
+ .hal.rom.text  0x0000000000001a88      0x2ac ./build/rom/ameba_rcc_rom.o
+                0x0000000000001a88                RCC_PeriphClockCmd
+                0x0000000000001b00                RCC_PeriphClockSource_UART
+                0x0000000000001b88                RCC_PeriphClockSource_SPIC
+                0x0000000000001ba0                RCC_PeriphClockSource_PSRAM
+                0x0000000000001bb4                RCC_PeriphClockSource_SDM
+                0x0000000000001bd0                RCC_PeriphClockSource_VADMEM
+                0x0000000000001bf0                RCC_PeriphClockSource_AUDIOCODEC
+                0x0000000000001c10                RCC_PeriphClockSource_CTC
+                0x0000000000001c28                RCC_PeriphClockSource_ADC
+                0x0000000000001c40                RCC_PeriphClockSource_GPIO
+                0x0000000000001c58                RCC_PeriphClockSource_SPORT
+                0x0000000000001ccc                RCC_PeriphClockSource_32K
+                0x0000000000001ce4                RCC_PeriphClockSource_LOGUART
+ .hal.rom.text  0x0000000000001d34      0x31c ./build/rom/ameba_syscfg_rom.o
+                0x0000000000001d34                SYSCFG_GetChipInfo
+                0x0000000000001d40                SYSCFG_CUTVersion
+                0x0000000000001d50                SYSCFG_TRP_UARTImage
+                0x0000000000001d60                SYSCFG_TRP_ICFG
+                0x0000000000001d6c                SYSCFG_TRP_TestMode
+                0x0000000000001d7c                SYSCFG_TRP_OTPBYP
+                0x0000000000001d8c                SYSCFG_TRP_BootSel
+                0x0000000000001d9c                SYSCFG_ROMINFO_Get
+                0x0000000000001da8                SYSCFG_ROMINFO_Set
+                0x0000000000001dbc                SYSCFG_CHIPType_Get
+                0x0000000000001dcc                SYSCFG_OTP_RDPEn
+                0x0000000000001dec                SYSCFG_OTP_RSIPEn
+                0x0000000000001e0c                SYSCFG_OTP_SBootEn
+                0x0000000000001e2c                SYSCFG_OTP_LowBaudLog
+                0x0000000000001e3c                SYSCFG_OTP_DisBootLog
+                0x0000000000001e4c                SYSCFG_OTP_BigPageNand
+                0x0000000000001e5c                SYSCFG_OTP_USBLoadFullSpeed
+                0x0000000000001e6c                SYSCFG_OTP_BootSelect
+                0x0000000000001e7c                SYSCFG_OTP_BootFlashBaud
+                0x0000000000001e8c                SYSCFG_OTP_SPICBootSpeedUpDis
+                0x0000000000001e9c                SYSCFG_OTP_SPICAddr4ByteEn
+                0x0000000000001eac                SYSCFG_OTP_FlashDSleepEn
+                0x0000000000001ebc                SYSCFG_OTP_UartDownloadDis
+                0x0000000000001ecc                SYSCFG_OTP_SBoot_HW_DIS
+                0x0000000000001edc                SYSCFG_OTP_AntiRollback
+                0x0000000000001eec                SYSCFG_OTP_FaultLogDis
+                0x0000000000001efc                SYSCFG_OTP_RSIPMode
+                0x0000000000001f14                SYSCFG_OTP_HUKDerivEn
+                0x0000000000001f24                SYSCFG_OTP_RomPatchEn
+                0x0000000000001f40                SYSCFG_OTP_RandDelayEn
+                0x0000000000001f50                SYSCFG_OTP_RMAMode
+                0x0000000000001f78                SYSCFG_OTP_GetUsbPhyCalData
+                0x0000000000001f84                SYSCFG_OTP_GetUsbPhyCalData2
+                0x0000000000001f90                SYSCFG_OTP_UsbDownloadEnable
+                0x0000000000001f9c                SYSCFG_BootFromNor
+                0x0000000000001fc0                SYSCFG_HWTrigDownload
+                0x0000000000001fd2                SYS_M0CtrlSel
+                0x0000000000002028                SYSCFG_SWTrigDownload
+ .hal.rom.text  0x0000000000002050       0xb4 ./build/rom/ameba_systimer_rom.o
+                0x0000000000002050                SYSTIMER_Init
+                0x000000000000209c                SYSTIMER_TickGet
+                0x00000000000020b0                SYSTIMER_GetPassTick
+                0x00000000000020d0                SYSTIMER_GetPassTime
+ .hal.rom.text  0x0000000000002104      0xd24 ./build/rom/ameba_tim_rom.o
+                0x0000000000002104                RTIM_TimeBaseStructInit
+                0x000000000000211c                RTIM_Cmd
+                0x0000000000002270                RTIM_GetCount
+                0x00000000000023a4                RTIM_INTConfig
+                0x0000000000002504                RTIM_INTClear
+                0x0000000000002644                RTIM_TimeBaseInit
+                0x0000000000002854                RTIM_DeInit
+                0x0000000000002998                RTIM_INTClearPendingBit
+                0x0000000000002af4                RTIM_GetFlagStatus
+                0x0000000000002c88                RTIM_GetINTStatus
+ .hal.rom.text  0x0000000000002e28      0x3cc ./build/rom/ameba_uart_rom.o
+                0x0000000000002e28                UART_DeInit
+                0x0000000000002e2e                UART_StructInit
+                0x0000000000002e4a                UART_BaudParaGetFull
+                0x0000000000002e7e                UART_BaudParaGet
+                0x0000000000002ea0                UART_SetBaud
+                0x0000000000002f30                UART_SetBaudExt
+                0x0000000000002fa4                UART_SetRxLevel
+                0x0000000000002fcc                UART_RxCmd
+                0x0000000000002fde                UART_Writable
+                0x0000000000002fe6                UART_Readable
+                0x0000000000002fee                UART_CharPut
+                0x0000000000002ff2                UART_CharGet
+                0x0000000000002ff8                UART_ReceiveData
+                0x000000000000301c                UART_SendData
+                0x0000000000003040                UART_ReceiveDataTO
+                0x0000000000003078                UART_SendDataTO
+                0x00000000000030b0                UART_RxByteCntClear
+                0x00000000000030bc                UART_RxByteCntGet
+                0x00000000000030c2                UART_BreakCtl
+                0x00000000000030d6                UART_ClearRxFifo
+                0x00000000000030f6                UART_Init
+                0x00000000000031a0                UART_ClearTxFifo
+                0x00000000000031aa                UART_INTConfig
+                0x00000000000031bc                UART_INT_Clear
+                0x00000000000031c4                UART_IntStatus
+                0x00000000000031c8                UART_ModemStatusGet
+                0x00000000000031cc                UART_LineStatusGet
+                0x00000000000031d0                UART_WaitBusy
+ .hal.rom.text  0x00000000000031f4      0x2e4 ./build/rom/ameba_wdg.o
+                0x00000000000031f4                WDG_Wait_Busy
+                0x0000000000003214                WDG_StructInit
+                0x0000000000003224                WDG_Init
+                0x000000000000329c                WDG_Enable
+                0x00000000000032ec                WDG_Timeout
+                0x0000000000003350                WDG_Refresh
+                0x00000000000033a0                WDG_INTConfig
+                0x000000000000341c                WDG_ClearINT
+                0x000000000000348c                IWDG_LP_Enable
+ .hal.rom.text  0x00000000000034d8       0x9c ./build/rom/amebalp_boot_rom.o
+                0x00000000000034d8                BOOT_ROM_InitDebugFlg
+                0x00000000000034f4                BOOT_ROM_ResetVsr
+ .hal.rom.text  0x0000000000003574      0x6c8 ./build/rom/amebalp_vector_rom.o
+                0x0000000000003764                INT_HardFault_C
+                0x0000000000003828                INT_NMI
+                0x0000000000003844                INT_HardFault
+                0x000000000000385c                INT_MemManage
+                0x0000000000003878                INT_BusFault
+                0x0000000000003894                INT_UsageFault
+                0x00000000000038b0                irq_table_init
+                0x0000000000003a8c                irq_enable
+                0x0000000000003aa8                irq_disable
+                0x0000000000003acc                irq_set_priority
+                0x0000000000003b20                irq_get_priority
+                0x0000000000003b58                irq_set_pending
+                0x0000000000003b74                irq_get_pending
+                0x0000000000003b98                irq_clear_pending
+                0x0000000000003bb4                irq_register
+                0x0000000000003c20                irq_unregister
+ .hal.rom.text  0x0000000000003c3c      0x73c ./build/rom/diag.o
+                0x0000000000003c3c                DiagVSprintf
+                0x0000000000003f78                DiagPrintf
+                0x0000000000003fc8                DiagPrintfD
+                0x0000000000003ff4                DiagSPrintf
+                0x0000000000004020                DiagSnPrintf
+ .hal.rom.text  0x0000000000004378       0xd0 ./build/rom/monitor_rom.o
+                0x000000000000443c                cmd_rom_table
+ .hal.rom.text  0x0000000000004448      0x168 ./build/rom/rand.o
+                0x0000000000004448                _rand
+                0x0000000000004478                __wrap_rand
+                0x00000000000044a8                RandBytes_Get
+ .hal.rom.text  0x00000000000045b0      0x3e8 ./build/rom/shell_rom.o
+                0x00000000000045b0                shell_array_init
+                0x00000000000045be                shell_get_argc
+                0x00000000000045ea                shell_get_argv
+                0x00000000000046b4                shell_cmd_chk
+                0x0000000000004770                shell_uart_irq_rom
+                0x0000000000004888                shell_init_rom
+                0x0000000000004908                shell_task_rom
+                0x0000000000004930                shell_rom
+ *(.libc.rom.text*)
+ .libc.rom.text
+                0x0000000000004998      0x108 ./build/rom/char2num.o
+                0x0000000000004998                _char2num
+                0x00000000000049c4                _2char2dec
+                0x0000000000004a30                _2char2hex
+ .libc.rom.text
+                0x0000000000004aa0       0x78 ./build/rom/memchr.o
+                0x0000000000004aa0                _memchr
+ .libc.rom.text
+                0x0000000000004b18       0x44 ./build/rom/memcmp.o
+                0x0000000000004b18                _memcmp
+ .libc.rom.text
+                0x0000000000004b5c       0xa0 ./build/rom/memcpy.o
+                0x0000000000004b5c                _memcpy
+ .libc.rom.text
+                0x0000000000004bfc       0xac ./build/rom/memmove.o
+                0x0000000000004bfc                _memmove
+ .libc.rom.text
+                0x0000000000004ca8       0xa0 ./build/rom/memset.o
+                0x0000000000004ca8                _memset
+ .libc.rom.text
+                0x0000000000004d48       0x5c ./build/rom/strcmp.o
+                0x0000000000004d48                _strcmp
+ .libc.rom.text
+                0x0000000000004da4       0x34 ./build/rom/stricmp.o
+                0x0000000000004da4                _stricmp
+ .libc.rom.text
+                0x0000000000004dd8       0x58 ./build/rom/strlen.o
+                0x0000000000004dd8                _strlen
+ .libc.rom.text
+                0x0000000000004e30      0x148 ./build/rom/strtoul.o
+                0x0000000000004e30                _strtoul
+ .libc.rom.text
+                0x0000000000004f78       0x1c ./build/rom/strupr.o
+                0x0000000000004f78                _strupr
+ .libc.rom.text
+                0x0000000000004f94       0xa0 ./build/rom/strwrap.o
+                0x0000000000004f94                __wrap_memset
+                0x0000000000004fa4                __wrap_memcpy
+                0x0000000000004fb4                __wrap_memcmp
+                0x0000000000004fc4                __wrap_memchr
+                0x0000000000004fd4                __wrap_memmove
+                0x0000000000004fe4                __wrap_strlen
+                0x0000000000004ff4                __wrap_strcmp
+                0x0000000000005004                __wrap_stricmp
+                0x0000000000005014                __wrap_strupr
+                0x0000000000005024                __wrap_strtoul
+ *(.apple.rom.text*)
+ *(.ssl.rom.text*)
+ *(.FW.rom.text*)
+ .FW.rom.text   0x0000000000005034      0x338 ./build/rom/wififw_btconcurr_rom.o
+                0x0000000000005034                H2CHDL_BTInfo_8730A_ROM
+                0x0000000000005048                H2CHDL_ForceBTTxpwr_8730A_ROM
+                0x000000000000505c                H2CHDL_BTIgnoreWlanAct_8730A_ROM
+                0x0000000000005070                H2CHDL_AntSelReverse_8730A_ROM
+                0x0000000000005084                H2CHDL_WLOpmode_8730A_ROM
+                0x00000000000050ac                H2CHDL_BTMpH2C_8730A_ROM
+                0x00000000000050dc                H2CHDL_BTControl_8730A_ROM
+                0x00000000000050f0                H2CHDL_BT_Page_Scan_Interval_8730A_ROM
+                0x0000000000005114                H2CHDL_GNT_BT_Ctrl_8730A_ROM
+                0x0000000000005140                H2CHDL_BT_Only_Test_8730A_ROM
+                0x0000000000005170                H2CHDL_WL_Port_ID_8730A_ROM
+                0x000000000000518c                C2HBTLoopback_8730A_ROM
+                0x00000000000051d4                C2HBTMpRpt_8730A_ROM
+                0x0000000000005234                C2HBTMailBoxStatus_8730A_ROM
+                0x0000000000005268                InitBTCoexTimer_8730A_ROM
+                0x0000000000005284                Write778_8730A_ROM
+                0x00000000000052c4                TdmaChangeCoexTable_8730A_ROM
+                0x0000000000005304                BTNullSetting_8730A_ROM
+ .FW.rom.text   0x000000000000536c      0x3cc ./build/rom/wififw_cmd_rom.o
+                0x000000000000536c                H2CInQueue_8730A_ROM
+                0x000000000000544c                H2CDeQueue_8730A_ROM
+                0x00000000000054b4                InitC2H_8730A_ROM
+                0x00000000000054f0                WaitC2HOk_8730A_ROM
+                0x000000000000552c                C2HPKTRxDESC_8730A_ROM
+                0x0000000000005564                FillC2HContant_8730A_ROM
+                0x00000000000055a0                IssueC2HPKT_8730A_ROM
+                0x00000000000055f8                C2HDeQueue_8730A_ROM
+                0x0000000000005648                C2HInQueue_8730A_ROM
+                0x000000000000569c                CheckMaxMacidNum_8730A_ROM
+                0x00000000000056ec                SetMediaStatus_8730A_ROM
+                0x000000000000571c                GetMediaStatus_8730A_ROM
+ .FW.rom.text   0x0000000000005738       0xd8 ./build/rom/wififw_dma_rom.o
+                0x0000000000005738                InitDDMA_8730A_ROM
+                0x0000000000005790                WaitDDMARDY_8730A_ROM
+                0x00000000000057c0                ChkDDMAChksum_8730A_ROM
+                0x00000000000057dc                CheckDDMADone_8730A_ROM
+ .FW.rom.text   0x0000000000005810      0x450 ./build/rom/wififw_init_rom.o
+                0x0000000000005810                InitGTimer32us_8730A_ROM
+                0x0000000000005850                InitGTimer1ms_8730A_ROM
+                0x00000000000058a4                InitFuncPtrTable_8730A_ROM
+ .FW.rom.text   0x0000000000005c60      0x478 ./build/rom/wififw_interrupt_rom.o
+                0x0000000000005c60                ClrAllFWUsedIMR_8730A_ROM
+                0x0000000000005cbc                ClrAllFWUsedISR_8730A_ROM
+                0x0000000000005d1c                UpdateISRWlan_8730A_ROM
+                0x0000000000005dc4                UpdateISRFT_8730A_ROM
+                0x0000000000005e04                setwlanimr_8730A_ROM
+                0x0000000000005ecc                setfwimr_8730A_ROM
+                0x0000000000005f14                clrfwimr_8730A_ROM
+                0x0000000000005f58                clrwlanimr_8730A_ROM
+                0x0000000000006014                setftimr_8730A_ROM
+                0x0000000000006078                clrftimr_8730A_ROM
+ .FW.rom.text   0x00000000000060d8      0x478 ./build/rom/wififw_packet_rom.o
+                0x00000000000060d8                ChangeTransmiteRate_8730A_ROM
+                0x0000000000006130                PowerBitSetting_8730A_ROM
+                0x00000000000061a0                IssuePSPoll_8730A_ROM
+                0x00000000000061f8                ChkandChangePS_8730A_ROM
+                0x0000000000006290                IssueQNull_8730A_ROM
+                0x0000000000006324                CTS2SelfSetting_8730A_ROM
+                0x0000000000006340                IssueCTS2Self_8730A_ROM
+                0x00000000000063d8                IssueRsvdPagePacketSetting_8730A_ROM
+                0x00000000000064bc                ReadRxBuff_8730A_ROM
+                0x00000000000064e0                WaitCPUMGQEmpty_8730A_ROM
+                0x0000000000006510                PollingReg_8730A_ROM
+ .FW.rom.text   0x0000000000006550      0x4a4 ./build/rom/wififw_powersave_rom.o
+                0x0000000000006550                SetPwrStateReg_8730A_ROM
+                0x00000000000065c4                ResetPSParm_8730A_ROM
+                0x000000000000660c                ChkTxQueueIsEmpty_8730A_ROM
+                0x0000000000006630                Legacy_PS_Setting_8730A_ROM
+                0x00000000000066a4                PSModeSetting_8730A_ROM
+                0x000000000000675c                ConfigListenBeaconPeriod_8730A_ROM
+                0x000000000000679c                PSSetMode_8730A_ROM
+                0x00000000000067ec                PS_S2ToS0State_8730A_ROM
+                0x000000000000681c                PS_S3ToS2orS0State_8730A_ROM
+                0x0000000000006868                PS_S1ToS0orS2State_8730A_ROM
+                0x00000000000068c4                PS_S2ToS4State_8730A_ROM
+                0x0000000000006918                PS_S2ToS5State_8730A_ROM
+                0x000000000000693c                PS_S5ToS2State_8730A_ROM
+                0x0000000000006960                PS_S4ToS2State_8730A_ROM
+                0x000000000000699c                PS_S0ToS6State_8730A_ROM
+                0x00000000000069c8                PS_S6ToS0State_8730A_ROM
+ .FW.rom.text   0x00000000000069f4      0xfc0 ./build/rom/wififw_wowlan_rom.o
+                0x00000000000069f4                InitKeepAlive_8730A_ROM
+                0x0000000000006a10                H2CHDL_KeepAlive_8730A_ROM
+                0x0000000000006a4c                UpdateRxFFReadPtr_DropPkt_8730A_ROM
+                0x0000000000006a60                WaitRXDMAIdle_8730A_ROM
+                0x0000000000006aa0                PageOffsetAlignment_8730A_ROM
+                0x0000000000006ab0                DropCHK_8730A_ROM
+                0x0000000000006ad0                EnableWoWLAN_8730A_ROM
+                0x0000000000006b28                DisWoWLAN_8730A_ROM
+                0x0000000000006b64                H2CHDL_WoWLAN_8730A_ROM
+                0x0000000000006c68                DropDecision_8730A_ROM
+                0x0000000000006c80                FwDisConnectWakeUpHost_8730A_ROM
+                0x0000000000006ca4                DestinationMatch_8730A_ROM
+                0x0000000000006ce4                PassSecurityInfoToDriver_8730A_ROM
+                0x0000000000006d58                GetRemoteControlInfo_8730A_ROM
+                0x0000000000006e30                GetARPInfo_8730A_ROM
+                0x0000000000006ea8                OnARP_8730A_ROM
+                0x0000000000007058                GetNDPInfo_8730A_ROM
+                0x000000000000707c                IsIPV6_8730A_ROM
+                0x00000000000070b0                OnNS_8730A_ROM
+                0x000000000000728c                Ipv4Match_8730A_ROM
+                0x00000000000072fc                MatchUnicastFilter_8730A_ROM
+                0x00000000000073b4                WakeUpHostDecision_8730A_ROM
+                0x0000000000007414                CheckIV_8730A_ROM
+                0x000000000000753c                H2CHDL_AOACGlobalInfo_8730A_ROM
+                0x0000000000007550                H2CHDL_AOACRsvdpage1_8730A_ROM
+                0x000000000000758c                H2CHDL_AOACRsvdpage2_8730A_ROM
+                0x00000000000075c8                H2CHDL_AOACRsvdpage3_8730A_ROM
+                0x00000000000075e8                GetAddr_8730A_ROM
+                0x0000000000007614                ARP_hdl_8730A_ROM
+                0x0000000000007630                NDP_hdl_8730A_ROM
+                0x000000000000764c                InitDisconnectDecision_8730A_ROM
+                0x0000000000007670                H2CHDL_DisconnectDecision_8730A_ROM
+                0x00000000000076cc                AesTkipIvFun_8730A_ROM
+                0x0000000000007720                WepIvFun_8730A_ROM
+                0x0000000000007768                RTmemcmpBackward_8730A_ROM
+                0x0000000000007788                AssignIvToKeyRsc_8730A_ROM
+                0x00000000000077b6                AssignKeyRscToIV_8730A_ROM
+                0x00000000000077f6                AesTkipIvCheck_8730A_ROM
+                0x0000000000007868                WepIvCheck_8730A_ROM
+                0x00000000000078a4                GetIV_8730A_ROM
+                0x00000000000078d0                GetIVLenAndSecurityType_8730A_ROM
+                0x0000000000007914                GetMACHeaderLen_8730A_ROM
+                0x000000000000793c                UpdateIV_8730A_ROM
+
+.rom.rodata     0x000000000000c000      0x5a0
+                0x000000000000c000                . = ((. + 0x7) & 0xfffffff8)
+ *(.sim.rom.rodata*)
+ *(.hal.rom.rodata*)
+ .hal.rom.rodata
+                0x000000000000c000       0x60 ./build/rom/ameba_clk_rom.o
+ .hal.rom.rodata
+                0x000000000000c060        0x8 ./build/rom/ameba_flash_rom.o
+                0x000000000000c060                SPIC_CALIB_PATTERN
+ .hal.rom.rodata
+                0x000000000000c068        0xc ./build/rom/ameba_gpio_rom.o
+                0x000000000000c068                GPIO_PORTx
+ .hal.rom.rodata
+                0x000000000000c074       0x3c ./build/rom/ameba_loguart_rom.o
+ .hal.rom.rodata
+                0x000000000000c0b0       0x20 ./build/rom/monitor_rom.o
+ *(.libc.rom.rodata*)
+ *(.apple.rom.rodata*)
+ *(.ssl.rom.rodata*)
+ *(.FW.rom.rodata*)
+ *(.rom.rodata*)
+ .rom.rodata.str1.1
+                0x000000000000c0d0       0x35 ./build/rom/ameba_assert_rom.o
+ .rom.rodata.str1.1
+                0x000000000000c105      0x110 ./build/rom/amebalp_vector_rom.o
+ *fill*         0x000000000000c215        0x3 
+ .rom.rodata.str1.4
+                0x000000000000c218       0x11 ./build/rom/diag.o
+ .rom.rodata.str1.1
+                0x000000000000c229      0x108 ./build/rom/monitor_rom.o
+ .rom.rodata.str1.1
+                0x000000000000c331       0x2b ./build/rom/shell_rom.o
+ *(.rodata*)
+ .rodata.__FUNCTION__.0
+                0x000000000000c35c        0xb ./build/rom/ameba_backup_reg.o
+ .rodata.__FUNCTION__.1
+                0x000000000000c367        0x9 ./build/rom/ameba_backup_reg.o
+ .rodata.__FUNCTION__.2
+                0x000000000000c370        0xa ./build/rom/ameba_backup_reg.o
+ .rodata.__FUNCTION__.3
+                0x000000000000c37a        0xb ./build/rom/ameba_backup_reg.o
+ .rodata.__FUNCTION__.0
+                0x000000000000c385        0xc ./build/rom/ameba_flash_rom.o
+ .rodata.__FUNCTION__.1
+                0x000000000000c391        0xd ./build/rom/ameba_flash_rom.o
+ .rodata.__FUNCTION__.0
+                0x000000000000c39e        0xf ./build/rom/ameba_gpio_rom.o
+ .rodata.__FUNCTION__.1
+                0x000000000000c3ad       0x13 ./build/rom/ameba_gpio_rom.o
+ .rodata.__FUNCTION__.2
+                0x000000000000c3c0        0xf ./build/rom/ameba_gpio_rom.o
+ .rodata.__FUNCTION__.3
+                0x000000000000c3cf        0xe ./build/rom/ameba_gpio_rom.o
+ .rodata.__FUNCTION__.4
+                0x000000000000c3dd       0x13 ./build/rom/ameba_gpio_rom.o
+ .rodata.__FUNCTION__.5
+                0x000000000000c3f0        0xa ./build/rom/ameba_gpio_rom.o
+ .rodata.__FUNCTION__.0
+                0x000000000000c3fa       0x18 ./build/rom/ameba_loguart_rom.o
+ .rodata.__FUNCTION__.1
+                0x000000000000c412       0x12 ./build/rom/ameba_loguart_rom.o
+ .rodata.__FUNCTION__.2
+                0x000000000000c424       0x1a ./build/rom/ameba_loguart_rom.o
+ .rodata.__FUNCTION__.3
+                0x000000000000c43e       0x18 ./build/rom/ameba_loguart_rom.o
+ .rodata.__FUNCTION__.4
+                0x000000000000c456       0x13 ./build/rom/ameba_loguart_rom.o
+ .rodata.__FUNCTION__.5
+                0x000000000000c469        0xe ./build/rom/ameba_loguart_rom.o
+ .rodata.__FUNCTION__.0
+                0x000000000000c477       0x13 ./build/rom/ameba_pinmux_rom.o
+ .rodata.CSWTCH.1
+                0x000000000000c48a        0x6 ./build/rom/ameba_rcc_rom.o
+ .rodata.CSWTCH.2
+                0x000000000000c490        0x6 ./build/rom/ameba_rcc_rom.o
+ .rodata.__FUNCTION__.0
+                0x000000000000c496       0x12 ./build/rom/ameba_tim_rom.o
+ .rodata.__FUNCTION__.1
+                0x000000000000c4a8       0x13 ./build/rom/ameba_tim_rom.o
+ .rodata.__FUNCTION__.2
+                0x000000000000c4bb       0x18 ./build/rom/ameba_tim_rom.o
+ .rodata.__FUNCTION__.3
+                0x000000000000c4d3        0xe ./build/rom/ameba_tim_rom.o
+ .rodata.__FUNCTION__.4
+                0x000000000000c4e1        0xf ./build/rom/ameba_tim_rom.o
+ .rodata.__FUNCTION__.5
+                0x000000000000c4f0        0xe ./build/rom/ameba_tim_rom.o
+ .rodata.__FUNCTION__.6
+                0x000000000000c4fe        0xc ./build/rom/ameba_tim_rom.o
+ .rodata.__FUNCTION__.7
+                0x000000000000c50a        0x9 ./build/rom/ameba_tim_rom.o
+ .rodata.__FUNCTION__.8
+                0x000000000000c513       0x12 ./build/rom/ameba_tim_rom.o
+ .rodata.__FUNCTION__.0
+                0x000000000000c525       0x10 ./build/rom/ameba_uart_rom.o
+ .rodata.__FUNCTION__.1
+                0x000000000000c535        0xa ./build/rom/ameba_uart_rom.o
+ .rodata.__FUNCTION__.0
+                0x000000000000c53f        0xf ./build/rom/ameba_wdg.o
+ .rodata.__FUNCTION__.1
+                0x000000000000c54e        0xd ./build/rom/ameba_wdg.o
+ .rodata.__FUNCTION__.2
+                0x000000000000c55b        0xe ./build/rom/ameba_wdg.o
+ .rodata.__FUNCTION__.3
+                0x000000000000c569        0xc ./build/rom/ameba_wdg.o
+ .rodata.__FUNCTION__.4
+                0x000000000000c575        0xc ./build/rom/ameba_wdg.o
+ .rodata.__FUNCTION__.5
+                0x000000000000c581        0xb ./build/rom/ameba_wdg.o
+ .rodata.__FUNCTION__.6
+                0x000000000000c58c        0x9 ./build/rom/ameba_wdg.o
+ .rodata.CSWTCH.52
+                0x000000000000c595        0xb ./build/rom/wififw_btconcurr_rom.o
+
+.hal.rom.bss    0x0000000023000000      0xa44
+                0x0000000023000000                __rom_bss_start__ = .
+ *(.ram_vector_table1)
+ .ram_vector_table1
+                0x0000000023000000       0xf0 ./build/rom/amebalp_vector_rom.o
+                0x0000000023000000                NewVectorTable
+ *(.ram_vector_table2)
+ .ram_vector_table2
+                0x00000000230000f0       0xb0 ./build/rom/amebalp_vector_rom.o
+                0x00000000230000f0                UserIrqFunTable
+ *(.ram_vector_table3)
+ .ram_vector_table3
+                0x00000000230001a0       0xb0 ./build/rom/amebalp_vector_rom.o
+                0x00000000230001a0                UserIrqDataTable
+ *(.hal.rom.bss*)
+ .hal.rom.bss   0x0000000023000250        0x8 ./build/rom/ameba_delay_rom.o
+                0x0000000023000250                RBSS_UDELAY_FLAG
+                0x0000000023000254                RBSS_UDELAY_CLK
+ .hal.rom.bss   0x0000000023000258       0x74 ./build/rom/ameba_flash_rom.o
+                0x0000000023000258                flash_init_para
+ .hal.rom.bss   0x00000000230002cc      0x300 ./build/rom/ameba_gpio_rom.o
+                0x00000000230002cc                PortC_IrqData
+                0x000000002300034c                PortB_IrqData
+                0x00000000230003cc                PortA_IrqData
+                0x000000002300044c                PortC_IrqHandler
+                0x00000000230004cc                PortB_IrqHandler
+                0x000000002300054c                PortA_IrqHandler
+ .hal.rom.bss   0x00000000230005cc       0x1c ./build/rom/diag.o
+                0x00000000230005cc                ConfigDebugClose
+                0x00000000230005d0                ConfigDebugBuffer
+                0x00000000230005d4                ConfigDebugBufferGet
+                0x00000000230005d8                ConfigDebug
+ .hal.rom.bss   0x00000000230005e8      0x164 ./build/rom/shell_rom.o
+                0x00000000230005e8                shell_argv_array
+                0x0000000023000628                shell_ctl
+                0x000000002300064c                shell_rxbuf
+                0x00000000230006cc                shell_buf
+ *(.hal.rom.bank.bss*)
+ *(.libc.ram.bss*)
+ *(.ssl_ram_map*)
+ *(.FW.rom.bss*)
+ .FW.rom.bss    0x000000002300074c        0x1 ./build/rom/wififw_cmd_rom.o
+ *fill*         0x000000002300074d        0x3 
+ .FW.rom.bss    0x0000000023000750      0x2f4 ./build/rom/wififw_init_rom.o
+                0x0000000023000750                UpdateISRWlan_8730A_PTR
+                0x0000000023000754                UpdateISRFT_8730A_PTR
+                0x0000000023000758                ClrAllFWUsedIMR_8730A_PTR
+                0x000000002300075c                ClrAllFWUsedISR_8730A_PTR
+                0x0000000023000760                setfwimr_8730A_PTR
+                0x0000000023000764                clrfwimr_8730A_PTR
+                0x0000000023000768                setwlanimr_8730A_PTR
+                0x000000002300076c                clrwlanimr_8730A_PTR
+                0x0000000023000770                setftimr_8730A_PTR
+                0x0000000023000774                clrftimr_8730A_PTR
+                0x0000000023000778                InitDDMA_8730A_PTR
+                0x000000002300077c                WaitDDMARDY_8730A_PTR
+                0x0000000023000780                ChkDDMAChksum_8730A_PTR
+                0x0000000023000784                CheckDDMADone_8730A_PTR
+                0x0000000023000788                InitGTimer32us_8730A_PTR
+                0x000000002300078c                InitGTimer1ms_8730A_PTR
+                0x0000000023000790                H2CInQueue_8730A_PTR
+                0x0000000023000794                H2CDeQueue_8730A_PTR
+                0x0000000023000798                InitC2H_8730A_PTR
+                0x000000002300079c                WaitC2HOk_8730A_PTR
+                0x00000000230007a0                C2HPKTRxDESC_8730A_PTR
+                0x00000000230007a4                FillC2HContant_8730A_PTR
+                0x00000000230007a8                IssueC2HPKT_8730A_PTR
+                0x00000000230007ac                C2HDeQueue_8730A_PTR
+                0x00000000230007b0                C2HInQueue_8730A_PTR
+                0x00000000230007b4                CheckMaxMacidNum_8730A_PTR
+                0x00000000230007b8                SetMediaStatus_8730A_PTR
+                0x00000000230007bc                GetMediaStatus_8730A_PTR
+                0x00000000230007c0                ChangeTransmiteRate_8730A_PTR
+                0x00000000230007c4                PowerBitSetting_8730A_PTR
+                0x00000000230007c8                IssuePSPoll_8730A_PTR
+                0x00000000230007cc                ChkandChangePS_8730A_PTR
+                0x00000000230007d0                IssueQNull_8730A_PTR
+                0x00000000230007d4                CTS2SelfSetting_8730A_PTR
+                0x00000000230007d8                IssueCTS2Self_8730A_PTR
+                0x00000000230007dc                IssueRsvdPagePacketSetting_8730A_PTR
+                0x00000000230007e0                ReadRxBuff_8730A_PTR
+                0x00000000230007e4                WaitCPUMGQEmpty_8730A_PTR
+                0x00000000230007e8                PollingReg_8730A_PTR
+                0x00000000230007ec                SetPwrStateReg_8730A_PTR
+                0x00000000230007f0                ResetPSParm_8730A_PTR
+                0x00000000230007f4                ChkTxQueueIsEmpty_8730A_PTR
+                0x00000000230007f8                Legacy_PS_Setting_8730A_PTR
+                0x00000000230007fc                PSModeSetting_8730A_PTR
+                0x0000000023000800                ConfigListenBeaconPeriod_8730A_PTR
+                0x0000000023000804                PSSetMode_8730A_PTR
+                0x0000000023000808                PS_S2ToS0State_8730A_PTR
+                0x000000002300080c                PS_S3ToS2orS0State_8730A_PTR
+                0x0000000023000810                PS_S1ToS0orS2State_8730A_PTR
+                0x0000000023000814                PS_S2ToS4State_8730A_PTR
+                0x0000000023000818                PS_S2ToS5State_8730A_PTR
+                0x000000002300081c                PS_S5ToS2State_8730A_PTR
+                0x0000000023000820                PS_S4ToS2State_8730A_PTR
+                0x0000000023000824                PS_S0ToS6State_8730A_PTR
+                0x0000000023000828                PS_S6ToS0State_8730A_PTR
+                0x000000002300082c                InitKeepAlive_8730A_PTR
+                0x0000000023000830                H2CHDL_KeepAlive_8730A_PTR
+                0x0000000023000834                UpdateRxFFReadPtr_DropPkt_8730A_PTR
+                0x0000000023000838                WaitRXDMAIdle_8730A_PTR
+                0x000000002300083c                PageOffsetAlignment_8730A_PTR
+                0x0000000023000840                DropCHK_8730A_PTR
+                0x0000000023000844                EnableWoWLAN_8730A_PTR
+                0x0000000023000848                DisWoWLAN_8730A_PTR
+                0x000000002300084c                H2CHDL_WoWLAN_8730A_PTR
+                0x0000000023000850                DropDecision_8730A_PTR
+                0x0000000023000854                FwDisConnectWakeUpHost_8730A_PTR
+                0x0000000023000858                DestinationMatch_8730A_PTR
+                0x000000002300085c                PassSecurityInfoToDriver_8730A_PTR
+                0x0000000023000860                GetRemoteControlInfo_8730A_PTR
+                0x0000000023000864                GetARPInfo_8730A_PTR
+                0x0000000023000868                OnARP_8730A_PTR
+                0x000000002300086c                GetNDPInfo_8730A_PTR
+                0x0000000023000870                IsIPV6_8730A_PTR
+                0x0000000023000874                OnNS_8730A_PTR
+                0x0000000023000878                Ipv4Match_8730A_PTR
+                0x000000002300087c                MatchUnicastFilter_8730A_PTR
+                0x0000000023000880                WakeUpHostDecision_8730A_PTR
+                0x0000000023000884                CheckIV_8730A_PTR
+                0x0000000023000888                H2CHDL_AOACGlobalInfo_8730A_PTR
+                0x000000002300088c                H2CHDL_AOACRsvdpage1_8730A_PTR
+                0x0000000023000890                H2CHDL_AOACRsvdpage2_8730A_PTR
+                0x0000000023000894                H2CHDL_AOACRsvdpage3_8730A_PTR
+                0x0000000023000898                GetAddr_8730A_PTR
+                0x000000002300089c                ARP_hdl_8730A_PTR
+                0x00000000230008a0                NDP_hdl_8730A_PTR
+                0x00000000230008a4                InitDisconnectDecision_8730A_PTR
+                0x00000000230008a8                H2CHDL_DisconnectDecision_8730A_PTR
+                0x00000000230008ac                GetIV_8730A_PTR
+                0x00000000230008b0                GetIVLenAndSecurityType_8730A_PTR
+                0x00000000230008b4                GetMACHeaderLen_8730A_PTR
+                0x00000000230008b8                UpdateIV_8730A_PTR
+                0x00000000230008bc                AesTkipIvFun_8730A_PTR
+                0x00000000230008c0                WepIvFun_8730A_PTR
+                0x00000000230008c4                RTmemcmpBackward_8730A_PTR
+                0x00000000230008c8                AssignIvToKeyRsc_8730A_PTR
+                0x00000000230008cc                AssignKeyRscToIV_8730A_PTR
+                0x00000000230008d0                AesTkipIvCheck_8730A_PTR
+                0x00000000230008d4                WepIvCheck_8730A_PTR
+                0x00000000230008d8                H2CHDL_BTInfo_8730A_PTR
+                0x00000000230008dc                H2CHDL_ForceBTTxpwr_8730A_PTR
+                0x00000000230008e0                H2CHDL_BTIgnoreWlanAct_8730A_PTR
+                0x00000000230008e4                H2CHDL_AntSelReverse_8730A_PTR
+                0x00000000230008e8                H2CHDL_WLOpmode_8730A_PTR
+                0x00000000230008ec                H2CHDL_BTMpH2C_8730A_PTR
+                0x00000000230008f0                H2CHDL_BTControl_8730A_PTR
+                0x00000000230008f4                H2CHDL_BT_Page_Scan_Interval_8730A_PTR
+                0x00000000230008f8                H2CHDL_GNT_BT_Ctrl_8730A_PTR
+                0x00000000230008fc                H2CHDL_BT_Only_Test_8730A_PTR
+                0x0000000023000900                H2CHDL_WL_Port_ID_8730A_PTR
+                0x0000000023000904                C2HBTLoopback_8730A_PTR
+                0x0000000023000908                C2HBTMpRpt_8730A_PTR
+                0x000000002300090c                C2HBTMailBoxStatus_8730A_PTR
+                0x0000000023000910                InitBTCoexTimer_8730A_PTR
+                0x0000000023000914                Write778_8730A_PTR
+                0x0000000023000918                TdmaChangeCoexTable_8730A_PTR
+                0x000000002300091c                BTNullSetting_8730A_PTR
+                0x0000000023000920                WL2BTMailboxSend_8730A_PTR
+                0x0000000023000924                IssueNA_8730A_PTR
+                0x0000000023000928                issue_ARP_8730A_PTR
+                0x000000002300092c                WakeUpHost_8730A_PTR
+                0x0000000023000930                DisconnectTxNullChk_8730A_PTR
+                0x0000000023000934                DisconnectChk_8730A_PTR
+                0x0000000023000938                IssueNullData_8730A_PTR
+                0x000000002300093c                PsCloseRF_8730A_PTR
+                0x0000000023000940                PsOpenRF_8730A_PTR
+                0x0000000023000944                WriteTxPause_8730A_PTR
+                0x0000000023000948                WaitTxStateMachineOk_8730A_PTR
+                0x000000002300094c                WriteTxPauseWithMask_8730A_PTR
+                0x0000000023000950                PS_S4_Condition_Match_8730A_PTR
+                0x0000000023000954                PS_S2_Condition_Match_8730A_PTR
+                0x0000000023000958                Change_PS_State_8730A_PTR
+                0x000000002300095c                EnlargeBcnEarlyAndTimeout_8730A_PTR
+                0x0000000023000960                SetBcnEarlyAndTimeout_8730A_PTR
+                0x0000000023000964                SmartPS2InitTimerAndToGetRxPkt_8730A_PTR
+                0x0000000023000968                PS_S0ToS1State_8730A_PTR
+                0x000000002300096c                PS_S2ToS3State_8730A_PTR
+                0x0000000023000970                SetSmartPSTimer_8730A_PTR
+                0x0000000023000974                LPSOfld_Reload_PHYREG_8730A_PTR
+                0x0000000023000978                LPSOfld_HWCtrlTRXOnOff_8730A_PTR
+                0x000000002300097c                LPSOfld_RPWMExitPG_8730A_PTR
+                0x0000000023000980                LPSOfld_FuncInit_8730A_PTR
+                0x0000000023000984                LPSOfld_SetBcnErlyandTimeout_8730A_PTR
+                0x0000000023000988                LPSOfld_IMRSetting_8730A_PTR
+                0x000000002300098c                LPSOfld_SwtHIOECmdFile_8730A_PTR
+                0x0000000023000990                LPSOfld_ByPassLsysWakeInt_8730A_PTR
+                0x0000000023000994                LPSOfld_HIOECmdFilePGRSInit_8730A_PTR
+                0x0000000023000998                LPSOfld_HIOECmdFileInit_8730A_PTR
+                0x000000002300099c                LPSOfld_HIOECmdFileToTXFF_8730A_PTR
+                0x00000000230009a0                Media_Disconnection_8730A_PTR
+                0x00000000230009a4                H2CCmdFunc_8730A_PTR
+                0x00000000230009a8                UpdateISRSys_8730A_PTR
+                0x00000000230009ac                ISRSendSignalCommon_8730A_PTR
+                0x00000000230009b0                SendSignalCommon_8730A_PTR
+                0x00000000230009b4                OSSendSignalCommon_8730A_PTR
+                0x00000000230009b8                pDisconnectParm
+                0x00000000230009bc                pRemoteWakeupCtrl
+                0x00000000230009c0                pKeepAliveParm
+                0x00000000230009c4                pAOACPage3
+                0x00000000230009c8                pAOACPage2
+                0x00000000230009cc                pAOACPage1
+                0x00000000230009d0                pAOACGlobalInfo
+                0x00000000230009d4                pAOACReport
+                0x00000000230009d8                pSecurityInfo
+                0x00000000230009dc                pIpv6PseudoHeaderInfo
+                0x00000000230009e0                pNDPInfo
+                0x00000000230009e8                pARPInfo
+                0x00000000230009ec                pAOACInfo
+                0x00000000230009f0                pBtcScoreboard
+                0x00000000230009f4                pBtcMailbox
+                0x00000000230009f8                pH2cWlPortID
+                0x00000000230009fc                pH2cBtInit
+                0x0000000023000a00                pH2cBtOnlyTest
+                0x0000000023000a04                pH2cWlCalibration
+                0x0000000023000a08                pH2cBtPageScanInterval
+                0x0000000023000a0c                pH2cWlOpmode
+                0x0000000023000a10                pH2cAntSelReverse
+                0x0000000023000a14                pH2cBtTdma
+                0x0000000023000a18                pBtcPsTdma
+                0x0000000023000a1c                pMediaStatus
+                0x0000000023000a20                ScanEn
+                0x0000000023000a24                pPSTParm
+                0x0000000023000a28                pPSParm
+                0x0000000023000a2c                H2C_rptr
+                0x0000000023000a2e                RXFF0_BNDY
+                0x0000000023000a30                pC2HEvt
+                0x0000000023000a34                pH2CEvt
+                0x0000000023000a38                pRPL
+                0x0000000023000a3c                pIntHdl
+                0x0000000023000a40                TaskBitMap
+                0x0000000023000a44                __rom_bss_end__ = .
+
+.ram_image1.entry
+                0x0000000023002020        0x0
+                0x0000000023002020                __ram_image1_text_start__ = .
+                0x0000000023002020                __ram_start_table_start__ = .
+ *(SORT_BY_NAME(.image1.entry.data*))
+ *(.image1.validate.rodata*)
+ *(.image1.export.symb*)
+
+.ram_image1.text
+ *(.hal.ram.data*)
+
+.ram_retention.entry
+                0x0000000023020000        0x0
+                0x0000000023020000                __retention_entry_func__ = ABSOLUTE (.)
+
+.ram.data       0x0000000023002020        0x0
+ *(.data*)
+ .data          0x0000000023002020        0x0 ./build/rom/ameba_assert_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/ameba_backup_reg.o
+ .data          0x0000000023002020        0x0 ./build/rom/ameba_clk_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/ameba_delay_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/ameba_flash_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/ameba_gpio_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/ameba_loguart_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/ameba_pinmux_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/ameba_rcc_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/ameba_syscfg_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/ameba_systimer_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/ameba_tim_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/ameba_uart_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/ameba_wdg.o
+ .data          0x0000000023002020        0x0 ./build/rom/amebalp_boot_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/amebalp_vector_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/amebalp_vectors.o
+ .data          0x0000000023002020        0x0 ./build/rom/char2num.o
+ .data          0x0000000023002020        0x0 ./build/rom/diag.o
+ .data          0x0000000023002020        0x0 ./build/rom/memchr.o
+ .data          0x0000000023002020        0x0 ./build/rom/memcmp.o
+ .data          0x0000000023002020        0x0 ./build/rom/memcpy.o
+ .data          0x0000000023002020        0x0 ./build/rom/memmove.o
+ .data          0x0000000023002020        0x0 ./build/rom/memset.o
+ .data          0x0000000023002020        0x0 ./build/rom/monitor_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/rand.o
+ .data          0x0000000023002020        0x0 ./build/rom/shell_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/strcmp.o
+ .data          0x0000000023002020        0x0 ./build/rom/stricmp.o
+ .data          0x0000000023002020        0x0 ./build/rom/strlen.o
+ .data          0x0000000023002020        0x0 ./build/rom/strtoul.o
+ .data          0x0000000023002020        0x0 ./build/rom/strupr.o
+ .data          0x0000000023002020        0x0 ./build/rom/strwrap.o
+ .data          0x0000000023002020        0x0 ./build/rom/wififw_btconcurr_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/wififw_cmd_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/wififw_dma_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/wififw_init_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/wififw_interrupt_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/wififw_packet_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/wififw_powersave_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/wififw_txreport_rom.o
+ .data          0x0000000023002020        0x0 ./build/rom/wififw_wowlan_rom.o
+
+.ram.bss        0x0000000023002020        0x0
+ *(.bss*)
+ .bss           0x0000000023002020        0x0 ./build/rom/ameba_assert_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/ameba_backup_reg.o
+ .bss           0x0000000023002020        0x0 ./build/rom/ameba_clk_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/ameba_delay_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/ameba_flash_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/ameba_gpio_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/ameba_loguart_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/ameba_pinmux_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/ameba_rcc_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/ameba_syscfg_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/ameba_systimer_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/ameba_tim_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/ameba_uart_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/ameba_wdg.o
+ .bss           0x0000000023002020        0x0 ./build/rom/amebalp_boot_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/amebalp_vector_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/amebalp_vectors.o
+ .bss           0x0000000023002020        0x0 ./build/rom/char2num.o
+ .bss           0x0000000023002020        0x0 ./build/rom/diag.o
+ .bss           0x0000000023002020        0x0 ./build/rom/memchr.o
+ .bss           0x0000000023002020        0x0 ./build/rom/memcmp.o
+ .bss           0x0000000023002020        0x0 ./build/rom/memcpy.o
+ .bss           0x0000000023002020        0x0 ./build/rom/memmove.o
+ .bss           0x0000000023002020        0x0 ./build/rom/memset.o
+ .bss           0x0000000023002020        0x0 ./build/rom/monitor_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/rand.o
+ .bss           0x0000000023002020        0x0 ./build/rom/shell_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/strcmp.o
+ .bss           0x0000000023002020        0x0 ./build/rom/stricmp.o
+ .bss           0x0000000023002020        0x0 ./build/rom/strlen.o
+ .bss           0x0000000023002020        0x0 ./build/rom/strtoul.o
+ .bss           0x0000000023002020        0x0 ./build/rom/strupr.o
+ .bss           0x0000000023002020        0x0 ./build/rom/strwrap.o
+ .bss           0x0000000023002020        0x0 ./build/rom/wififw_btconcurr_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/wififw_cmd_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/wififw_dma_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/wififw_init_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/wififw_interrupt_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/wififw_packet_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/wififw_powersave_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/wififw_txreport_rom.o
+ .bss           0x0000000023002020        0x0 ./build/rom/wififw_wowlan_rom.o
+
+.rom.text.libgcc
+                0x00000000000079b4        0x0
+ *(.text*)
+ .text          0x00000000000079b4        0x0 ./build/rom/ameba_assert_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/ameba_backup_reg.o
+ .text          0x00000000000079b4        0x0 ./build/rom/ameba_clk_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/ameba_delay_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/ameba_flash_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/ameba_gpio_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/ameba_loguart_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/ameba_pinmux_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/ameba_rcc_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/ameba_syscfg_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/ameba_systimer_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/ameba_tim_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/ameba_uart_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/ameba_wdg.o
+ .text          0x00000000000079b4        0x0 ./build/rom/amebalp_boot_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/amebalp_vector_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/amebalp_vectors.o
+ .text          0x00000000000079b4        0x0 ./build/rom/char2num.o
+ .text          0x00000000000079b4        0x0 ./build/rom/diag.o
+ .text          0x00000000000079b4        0x0 ./build/rom/memchr.o
+ .text          0x00000000000079b4        0x0 ./build/rom/memcmp.o
+ .text          0x00000000000079b4        0x0 ./build/rom/memcpy.o
+ .text          0x00000000000079b4        0x0 ./build/rom/memmove.o
+ .text          0x00000000000079b4        0x0 ./build/rom/memset.o
+ .text          0x00000000000079b4        0x0 ./build/rom/monitor_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/rand.o
+ .text          0x00000000000079b4        0x0 ./build/rom/shell_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/strcmp.o
+ .text          0x00000000000079b4        0x0 ./build/rom/stricmp.o
+ .text          0x00000000000079b4        0x0 ./build/rom/strlen.o
+ .text          0x00000000000079b4        0x0 ./build/rom/strtoul.o
+ .text          0x00000000000079b4        0x0 ./build/rom/strupr.o
+ .text          0x00000000000079b4        0x0 ./build/rom/strwrap.o
+ .text          0x00000000000079b4        0x0 ./build/rom/wififw_btconcurr_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/wififw_cmd_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/wififw_dma_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/wififw_init_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/wififw_interrupt_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/wififw_packet_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/wififw_powersave_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/wififw_txreport_rom.o
+ .text          0x00000000000079b4        0x0 ./build/rom/wififw_wowlan_rom.o
+LOAD ./build/rom/ameba_assert_rom.o
+LOAD ./build/rom/ameba_backup_reg.o
+LOAD ./build/rom/ameba_clk_rom.o
+LOAD ./build/rom/ameba_delay_rom.o
+LOAD ./build/rom/ameba_flash_rom.o
+LOAD ./build/rom/ameba_gpio_rom.o
+LOAD ./build/rom/ameba_loguart_rom.o
+LOAD ./build/rom/ameba_pinmux_rom.o
+LOAD ./build/rom/ameba_rcc_rom.o
+LOAD ./build/rom/ameba_syscfg_rom.o
+LOAD ./build/rom/ameba_systimer_rom.o
+LOAD ./build/rom/ameba_tim_rom.o
+LOAD ./build/rom/ameba_uart_rom.o
+LOAD ./build/rom/ameba_wdg.o
+LOAD ./build/rom/amebalp_boot_rom.o
+LOAD ./build/rom/amebalp_vector_rom.o
+LOAD ./build/rom/amebalp_vectors.o
+LOAD ./build/rom/char2num.o
+LOAD ./build/rom/diag.o
+LOAD ./build/rom/memchr.o
+LOAD ./build/rom/memcmp.o
+LOAD ./build/rom/memcpy.o
+LOAD ./build/rom/memmove.o
+LOAD ./build/rom/memset.o
+LOAD ./build/rom/monitor_rom.o
+LOAD ./build/rom/rand.o
+LOAD ./build/rom/shell_rom.o
+LOAD ./build/rom/strcmp.o
+LOAD ./build/rom/stricmp.o
+LOAD ./build/rom/strlen.o
+LOAD ./build/rom/strtoul.o
+LOAD ./build/rom/strupr.o
+LOAD ./build/rom/strwrap.o
+LOAD ./build/rom/wififw_btconcurr_rom.o
+LOAD ./build/rom/wififw_cmd_rom.o
+LOAD ./build/rom/wififw_dma_rom.o
+LOAD ./build/rom/wififw_init_rom.o
+LOAD ./build/rom/wififw_interrupt_rom.o
+LOAD ./build/rom/wififw_packet_rom.o
+LOAD ./build/rom/wififw_powersave_rom.o
+LOAD ./build/rom/wififw_txreport_rom.o
+LOAD ./build/rom/wififw_wowlan_rom.o
+OUTPUT(rom.o elf32-littlearm)
+LOAD linker stubs
+
+.debug_info     0x0000000000000000    0x17a74
+ .debug_info    0x0000000000000000      0x228 ./build/rom/ameba_assert_rom.o
+ .debug_info    0x0000000000000228      0x2d8 ./build/rom/ameba_backup_reg.o
+ .debug_info    0x0000000000000500      0x317 ./build/rom/ameba_clk_rom.o
+ .debug_info    0x0000000000000817      0x284 ./build/rom/ameba_delay_rom.o
+ .debug_info    0x0000000000000a9b     0x1289 ./build/rom/ameba_flash_rom.o
+ .debug_info    0x0000000000001d24      0xcd3 ./build/rom/ameba_gpio_rom.o
+ .debug_info    0x00000000000029f7     0x1ac4 ./build/rom/ameba_loguart_rom.o
+ .debug_info    0x00000000000044bb      0x834 ./build/rom/ameba_pinmux_rom.o
+ .debug_info    0x0000000000004cef      0x6fd ./build/rom/ameba_rcc_rom.o
+ .debug_info    0x00000000000053ec      0x8f6 ./build/rom/ameba_syscfg_rom.o
+ .debug_info    0x0000000000005ce2      0x3ef ./build/rom/ameba_systimer_rom.o
+ .debug_info    0x00000000000060d1      0x974 ./build/rom/ameba_tim_rom.o
+ .debug_info    0x0000000000006a45      0xd3d ./build/rom/ameba_uart_rom.o
+ .debug_info    0x0000000000007782      0x64a ./build/rom/ameba_wdg.o
+ .debug_info    0x0000000000007dcc      0x35b ./build/rom/amebalp_boot_rom.o
+ .debug_info    0x0000000000008127     0x1680 ./build/rom/amebalp_vector_rom.o
+ .debug_info    0x00000000000097a7       0x26 ./build/rom/amebalp_vectors.o
+ .debug_info    0x00000000000097cd      0x1dc ./build/rom/char2num.o
+ .debug_info    0x00000000000099a9      0x827 ./build/rom/diag.o
+ .debug_info    0x000000000000a1d0      0x16d ./build/rom/memchr.o
+ .debug_info    0x000000000000a33d      0x13f ./build/rom/memcmp.o
+ .debug_info    0x000000000000a47c      0x163 ./build/rom/memcpy.o
+ .debug_info    0x000000000000a5df      0x159 ./build/rom/memmove.o
+ .debug_info    0x000000000000a738      0x15c ./build/rom/memset.o
+ .debug_info    0x000000000000a894      0x813 ./build/rom/monitor_rom.o
+ .debug_info    0x000000000000b0a7      0x4cf ./build/rom/rand.o
+ .debug_info    0x000000000000b576      0xd97 ./build/rom/shell_rom.o
+ .debug_info    0x000000000000c30d       0xf9 ./build/rom/strcmp.o
+ .debug_info    0x000000000000c406      0x12d ./build/rom/stricmp.o
+ .debug_info    0x000000000000c533       0xf5 ./build/rom/strlen.o
+ .debug_info    0x000000000000c628      0x231 ./build/rom/strtoul.o
+ .debug_info    0x000000000000c859       0xe3 ./build/rom/strupr.o
+ .debug_info    0x000000000000c93c      0x56e ./build/rom/strwrap.o
+ .debug_info    0x000000000000ceaa     0x11af ./build/rom/wififw_btconcurr_rom.o
+ .debug_info    0x000000000000e059      0x8f1 ./build/rom/wififw_cmd_rom.o
+ .debug_info    0x000000000000e94a      0x2ea ./build/rom/wififw_dma_rom.o
+ .debug_info    0x000000000000ec34     0x397d ./build/rom/wififw_init_rom.o
+ .debug_info    0x00000000000125b1      0x2e5 ./build/rom/wififw_interrupt_rom.o
+ .debug_info    0x0000000000012896     0x13e4 ./build/rom/wififw_packet_rom.o
+ .debug_info    0x0000000000013c7a     0x1133 ./build/rom/wififw_powersave_rom.o
+ .debug_info    0x0000000000014dad     0x2cc7 ./build/rom/wififw_wowlan_rom.o
+
+.debug_abbrev   0x0000000000000000     0x4197
+ .debug_abbrev  0x0000000000000000       0xdc ./build/rom/ameba_assert_rom.o
+ .debug_abbrev  0x00000000000000dc      0x101 ./build/rom/ameba_backup_reg.o
+ .debug_abbrev  0x00000000000001dd      0x17a ./build/rom/ameba_clk_rom.o
+ .debug_abbrev  0x0000000000000357      0x184 ./build/rom/ameba_delay_rom.o
+ .debug_abbrev  0x00000000000004db      0x314 ./build/rom/ameba_flash_rom.o
+ .debug_abbrev  0x00000000000007ef      0x23b ./build/rom/ameba_gpio_rom.o
+ .debug_abbrev  0x0000000000000a2a      0x325 ./build/rom/ameba_loguart_rom.o
+ .debug_abbrev  0x0000000000000d4f      0x191 ./build/rom/ameba_pinmux_rom.o
+ .debug_abbrev  0x0000000000000ee0      0x159 ./build/rom/ameba_rcc_rom.o
+ .debug_abbrev  0x0000000000001039      0x135 ./build/rom/ameba_syscfg_rom.o
+ .debug_abbrev  0x000000000000116e      0x159 ./build/rom/ameba_systimer_rom.o
+ .debug_abbrev  0x00000000000012c7      0x1eb ./build/rom/ameba_tim_rom.o
+ .debug_abbrev  0x00000000000014b2      0x213 ./build/rom/ameba_uart_rom.o
+ .debug_abbrev  0x00000000000016c5      0x132 ./build/rom/ameba_wdg.o
+ .debug_abbrev  0x00000000000017f7      0x1c3 ./build/rom/amebalp_boot_rom.o
+ .debug_abbrev  0x00000000000019ba      0x368 ./build/rom/amebalp_vector_rom.o
+ .debug_abbrev  0x0000000000001d22       0x14 ./build/rom/amebalp_vectors.o
+ .debug_abbrev  0x0000000000001d36       0xd9 ./build/rom/char2num.o
+ .debug_abbrev  0x0000000000001e0f      0x2a7 ./build/rom/diag.o
+ .debug_abbrev  0x00000000000020b6       0xd6 ./build/rom/memchr.o
+ .debug_abbrev  0x000000000000218c       0x8f ./build/rom/memcmp.o
+ .debug_abbrev  0x000000000000221b       0xc9 ./build/rom/memcpy.o
+ .debug_abbrev  0x00000000000022e4       0xc2 ./build/rom/memmove.o
+ .debug_abbrev  0x00000000000023a6       0xb6 ./build/rom/memset.o
+ .debug_abbrev  0x000000000000245c      0x22a ./build/rom/monitor_rom.o
+ .debug_abbrev  0x0000000000002686      0x1fa ./build/rom/rand.o
+ .debug_abbrev  0x0000000000002880      0x3d4 ./build/rom/shell_rom.o
+ .debug_abbrev  0x0000000000002c54       0x82 ./build/rom/strcmp.o
+ .debug_abbrev  0x0000000000002cd6       0xa6 ./build/rom/stricmp.o
+ .debug_abbrev  0x0000000000002d7c       0x91 ./build/rom/strlen.o
+ .debug_abbrev  0x0000000000002e0d      0x106 ./build/rom/strtoul.o
+ .debug_abbrev  0x0000000000002f13       0x9d ./build/rom/strupr.o
+ .debug_abbrev  0x0000000000002fb0       0xc8 ./build/rom/strwrap.o
+ .debug_abbrev  0x0000000000003078      0x1fc ./build/rom/wififw_btconcurr_rom.o
+ .debug_abbrev  0x0000000000003274      0x243 ./build/rom/wififw_cmd_rom.o
+ .debug_abbrev  0x00000000000034b7      0x14a ./build/rom/wififw_dma_rom.o
+ .debug_abbrev  0x0000000000003601      0x215 ./build/rom/wififw_init_rom.o
+ .debug_abbrev  0x0000000000003816      0x10e ./build/rom/wififw_interrupt_rom.o
+ .debug_abbrev  0x0000000000003924      0x23f ./build/rom/wififw_packet_rom.o
+ .debug_abbrev  0x0000000000003b63      0x221 ./build/rom/wififw_powersave_rom.o
+ .debug_abbrev  0x0000000000003d84      0x413 ./build/rom/wififw_wowlan_rom.o
+
+.debug_loc      0x0000000000000000     0xc33d
+ .debug_loc     0x0000000000000000       0x64 ./build/rom/ameba_assert_rom.o
+ .debug_loc     0x0000000000000064      0x162 ./build/rom/ameba_backup_reg.o
+ .debug_loc     0x00000000000001c6      0x311 ./build/rom/ameba_clk_rom.o
+ .debug_loc     0x00000000000004d7      0x14e ./build/rom/ameba_delay_rom.o
+ .debug_loc     0x0000000000000625      0xaf9 ./build/rom/ameba_flash_rom.o
+ .debug_loc     0x000000000000111e      0xbee ./build/rom/ameba_gpio_rom.o
+ .debug_loc     0x0000000000001d0c      0xe84 ./build/rom/ameba_loguart_rom.o
+ .debug_loc     0x0000000000002b90      0x411 ./build/rom/ameba_pinmux_rom.o
+ .debug_loc     0x0000000000002fa1      0xa2b ./build/rom/ameba_rcc_rom.o
+ .debug_loc     0x00000000000039cc      0x445 ./build/rom/ameba_syscfg_rom.o
+ .debug_loc     0x0000000000003e11      0x189 ./build/rom/ameba_systimer_rom.o
+ .debug_loc     0x0000000000003f9a      0x66e ./build/rom/ameba_tim_rom.o
+ .debug_loc     0x0000000000004608      0xc29 ./build/rom/ameba_uart_rom.o
+ .debug_loc     0x0000000000005231      0x392 ./build/rom/ameba_wdg.o
+ .debug_loc     0x00000000000055c3       0x23 ./build/rom/amebalp_boot_rom.o
+ .debug_loc     0x00000000000055e6      0x59c ./build/rom/amebalp_vector_rom.o
+ .debug_loc     0x0000000000005b82      0x2f4 ./build/rom/char2num.o
+ .debug_loc     0x0000000000005e76     0x16ae ./build/rom/diag.o
+ .debug_loc     0x0000000000007524      0x22c ./build/rom/memchr.o
+ .debug_loc     0x0000000000007750      0x1f1 ./build/rom/memcmp.o
+ .debug_loc     0x0000000000007941      0x414 ./build/rom/memcpy.o
+ .debug_loc     0x0000000000007d55      0x508 ./build/rom/memmove.o
+ .debug_loc     0x000000000000825d      0x2a3 ./build/rom/memset.o
+ .debug_loc     0x0000000000008500       0xe8 ./build/rom/monitor_rom.o
+ .debug_loc     0x00000000000085e8      0x64d ./build/rom/rand.o
+ .debug_loc     0x0000000000008c35      0x8b6 ./build/rom/shell_rom.o
+ .debug_loc     0x00000000000094eb       0xcf ./build/rom/strcmp.o
+ .debug_loc     0x00000000000095ba      0x187 ./build/rom/stricmp.o
+ .debug_loc     0x0000000000009741       0x90 ./build/rom/strlen.o
+ .debug_loc     0x00000000000097d1      0x5ac ./build/rom/strtoul.o
+ .debug_loc     0x0000000000009d7d       0x22 ./build/rom/strupr.o
+ .debug_loc     0x0000000000009d9f      0x378 ./build/rom/strwrap.o
+ .debug_loc     0x000000000000a117      0x468 ./build/rom/wififw_btconcurr_rom.o
+ .debug_loc     0x000000000000a57f      0x4c9 ./build/rom/wififw_cmd_rom.o
+ .debug_loc     0x000000000000aa48      0x287 ./build/rom/wififw_dma_rom.o
+ .debug_loc     0x000000000000accf      0x150 ./build/rom/wififw_init_rom.o
+ .debug_loc     0x000000000000ae1f      0x428 ./build/rom/wififw_packet_rom.o
+ .debug_loc     0x000000000000b247      0x12a ./build/rom/wififw_powersave_rom.o
+ .debug_loc     0x000000000000b371      0xfcc ./build/rom/wififw_wowlan_rom.o
+
+.debug_aranges  0x0000000000000000     0x10c8
+ .debug_aranges
+                0x0000000000000000       0x20 ./build/rom/ameba_assert_rom.o
+ .debug_aranges
+                0x0000000000000020       0x38 ./build/rom/ameba_backup_reg.o
+ .debug_aranges
+                0x0000000000000058       0x38 ./build/rom/ameba_clk_rom.o
+ .debug_aranges
+                0x0000000000000090       0x30 ./build/rom/ameba_delay_rom.o
+ .debug_aranges
+                0x00000000000000c0       0xa0 ./build/rom/ameba_flash_rom.o
+ .debug_aranges
+                0x0000000000000160       0x88 ./build/rom/ameba_gpio_rom.o
+ .debug_aranges
+                0x00000000000001e8      0x138 ./build/rom/ameba_loguart_rom.o
+ .debug_aranges
+                0x0000000000000320       0x70 ./build/rom/ameba_pinmux_rom.o
+ .debug_aranges
+                0x0000000000000390       0x80 ./build/rom/ameba_rcc_rom.o
+ .debug_aranges
+                0x0000000000000410      0x148 ./build/rom/ameba_syscfg_rom.o
+ .debug_aranges
+                0x0000000000000558       0x38 ./build/rom/ameba_systimer_rom.o
+ .debug_aranges
+                0x0000000000000590       0x68 ./build/rom/ameba_tim_rom.o
+ .debug_aranges
+                0x00000000000005f8       0xf8 ./build/rom/ameba_uart_rom.o
+ .debug_aranges
+                0x00000000000006f0       0x60 ./build/rom/ameba_wdg.o
+ .debug_aranges
+                0x0000000000000750       0x28 ./build/rom/amebalp_boot_rom.o
+ .debug_aranges
+                0x0000000000000778      0x1f0 ./build/rom/amebalp_vector_rom.o
+ .debug_aranges
+                0x0000000000000968       0x20 ./build/rom/amebalp_vectors.o
+ .debug_aranges
+                0x0000000000000988       0x30 ./build/rom/char2num.o
+ .debug_aranges
+                0x00000000000009b8       0x40 ./build/rom/diag.o
+ .debug_aranges
+                0x00000000000009f8       0x20 ./build/rom/memchr.o
+ .debug_aranges
+                0x0000000000000a18       0x20 ./build/rom/memcmp.o
+ .debug_aranges
+                0x0000000000000a38       0x20 ./build/rom/memcpy.o
+ .debug_aranges
+                0x0000000000000a58       0x20 ./build/rom/memmove.o
+ .debug_aranges
+                0x0000000000000a78       0x20 ./build/rom/memset.o
+ .debug_aranges
+                0x0000000000000a98       0x30 ./build/rom/monitor_rom.o
+ .debug_aranges
+                0x0000000000000ac8       0x30 ./build/rom/rand.o
+ .debug_aranges
+                0x0000000000000af8       0x60 ./build/rom/shell_rom.o
+ .debug_aranges
+                0x0000000000000b58       0x20 ./build/rom/strcmp.o
+ .debug_aranges
+                0x0000000000000b78       0x20 ./build/rom/stricmp.o
+ .debug_aranges
+                0x0000000000000b98       0x20 ./build/rom/strlen.o
+ .debug_aranges
+                0x0000000000000bb8       0x20 ./build/rom/strtoul.o
+ .debug_aranges
+                0x0000000000000bd8       0x20 ./build/rom/strupr.o
+ .debug_aranges
+                0x0000000000000bf8       0x68 ./build/rom/strwrap.o
+ .debug_aranges
+                0x0000000000000c60       0xa8 ./build/rom/wififw_btconcurr_rom.o
+ .debug_aranges
+                0x0000000000000d08       0x78 ./build/rom/wififw_cmd_rom.o
+ .debug_aranges
+                0x0000000000000d80       0x38 ./build/rom/wififw_dma_rom.o
+ .debug_aranges
+                0x0000000000000db8       0x30 ./build/rom/wififw_init_rom.o
+ .debug_aranges
+                0x0000000000000de8       0x68 ./build/rom/wififw_interrupt_rom.o
+ .debug_aranges
+                0x0000000000000e50       0x70 ./build/rom/wififw_packet_rom.o
+ .debug_aranges
+                0x0000000000000ec0       0x98 ./build/rom/wififw_powersave_rom.o
+ .debug_aranges
+                0x0000000000000f58      0x170 ./build/rom/wififw_wowlan_rom.o
+
+.debug_ranges   0x0000000000000000     0x1380
+ .debug_ranges  0x0000000000000000       0x10 ./build/rom/ameba_assert_rom.o
+ .debug_ranges  0x0000000000000010       0x28 ./build/rom/ameba_backup_reg.o
+ .debug_ranges  0x0000000000000038       0x58 ./build/rom/ameba_clk_rom.o
+ .debug_ranges  0x0000000000000090       0x40 ./build/rom/ameba_delay_rom.o
+ .debug_ranges  0x00000000000000d0       0xb8 ./build/rom/ameba_flash_rom.o
+ .debug_ranges  0x0000000000000188       0x78 ./build/rom/ameba_gpio_rom.o
+ .debug_ranges  0x0000000000000200      0x1c8 ./build/rom/ameba_loguart_rom.o
+ .debug_ranges  0x00000000000003c8       0x60 ./build/rom/ameba_pinmux_rom.o
+ .debug_ranges  0x0000000000000428       0x70 ./build/rom/ameba_rcc_rom.o
+ .debug_ranges  0x0000000000000498      0x138 ./build/rom/ameba_syscfg_rom.o
+ .debug_ranges  0x00000000000005d0       0x28 ./build/rom/ameba_systimer_rom.o
+ .debug_ranges  0x00000000000005f8       0x58 ./build/rom/ameba_tim_rom.o
+ .debug_ranges  0x0000000000000650       0xe8 ./build/rom/ameba_uart_rom.o
+ .debug_ranges  0x0000000000000738       0x50 ./build/rom/ameba_wdg.o
+ .debug_ranges  0x0000000000000788       0x40 ./build/rom/amebalp_boot_rom.o
+ .debug_ranges  0x00000000000007c8      0x260 ./build/rom/amebalp_vector_rom.o
+ .debug_ranges  0x0000000000000a28       0xb0 ./build/rom/char2num.o
+ .debug_ranges  0x0000000000000ad8      0x190 ./build/rom/diag.o
+ .debug_ranges  0x0000000000000c68       0x10 ./build/rom/memchr.o
+ .debug_ranges  0x0000000000000c78       0x10 ./build/rom/memcmp.o
+ .debug_ranges  0x0000000000000c88       0x10 ./build/rom/memcpy.o
+ .debug_ranges  0x0000000000000c98       0x10 ./build/rom/memmove.o
+ .debug_ranges  0x0000000000000ca8       0x10 ./build/rom/memset.o
+ .debug_ranges  0x0000000000000cb8       0x20 ./build/rom/monitor_rom.o
+ .debug_ranges  0x0000000000000cd8      0x150 ./build/rom/rand.o
+ .debug_ranges  0x0000000000000e28       0x90 ./build/rom/shell_rom.o
+ .debug_ranges  0x0000000000000eb8       0x10 ./build/rom/strcmp.o
+ .debug_ranges  0x0000000000000ec8       0x30 ./build/rom/stricmp.o
+ .debug_ranges  0x0000000000000ef8       0x10 ./build/rom/strlen.o
+ .debug_ranges  0x0000000000000f08       0x28 ./build/rom/strtoul.o
+ .debug_ranges  0x0000000000000f30       0x10 ./build/rom/strupr.o
+ .debug_ranges  0x0000000000000f40       0x58 ./build/rom/strwrap.o
+ .debug_ranges  0x0000000000000f98       0x98 ./build/rom/wififw_btconcurr_rom.o
+ .debug_ranges  0x0000000000001030       0x68 ./build/rom/wififw_cmd_rom.o
+ .debug_ranges  0x0000000000001098       0x28 ./build/rom/wififw_dma_rom.o
+ .debug_ranges  0x00000000000010c0       0x20 ./build/rom/wififw_init_rom.o
+ .debug_ranges  0x00000000000010e0       0x58 ./build/rom/wififw_interrupt_rom.o
+ .debug_ranges  0x0000000000001138       0x60 ./build/rom/wififw_packet_rom.o
+ .debug_ranges  0x0000000000001198       0x88 ./build/rom/wififw_powersave_rom.o
+ .debug_ranges  0x0000000000001220      0x160 ./build/rom/wififw_wowlan_rom.o
+
+.debug_line     0x0000000000000000    0x117c4
+ .debug_line    0x0000000000000000      0x2a8 ./build/rom/ameba_assert_rom.o
+ .debug_line    0x00000000000002a8      0x33b ./build/rom/ameba_backup_reg.o
+ .debug_line    0x00000000000005e3      0x4c2 ./build/rom/ameba_clk_rom.o
+ .debug_line    0x0000000000000aa5      0x376 ./build/rom/ameba_delay_rom.o
+ .debug_line    0x0000000000000e1b      0xfc0 ./build/rom/ameba_flash_rom.o
+ .debug_line    0x0000000000001ddb      0x910 ./build/rom/ameba_gpio_rom.o
+ .debug_line    0x00000000000026eb     0x1173 ./build/rom/ameba_loguart_rom.o
+ .debug_line    0x000000000000385e      0x50c ./build/rom/ameba_pinmux_rom.o
+ .debug_line    0x0000000000003d6a      0x76d ./build/rom/ameba_rcc_rom.o
+ .debug_line    0x00000000000044d7      0x7e8 ./build/rom/ameba_syscfg_rom.o
+ .debug_line    0x0000000000004cbf      0x387 ./build/rom/ameba_systimer_rom.o
+ .debug_line    0x0000000000005046      0xf38 ./build/rom/ameba_tim_rom.o
+ .debug_line    0x0000000000005f7e      0xa5b ./build/rom/ameba_uart_rom.o
+ .debug_line    0x00000000000069d9      0x614 ./build/rom/ameba_wdg.o
+ .debug_line    0x0000000000006fed      0x3bf ./build/rom/amebalp_boot_rom.o
+ .debug_line    0x00000000000073ac      0xeb7 ./build/rom/amebalp_vector_rom.o
+ .debug_line    0x0000000000008263       0xd0 ./build/rom/amebalp_vectors.o
+ .debug_line    0x0000000000008333      0x393 ./build/rom/char2num.o
+ .debug_line    0x00000000000086c6      0xf21 ./build/rom/diag.o
+ .debug_line    0x00000000000095e7      0x399 ./build/rom/memchr.o
+ .debug_line    0x0000000000009980      0x1f4 ./build/rom/memcmp.o
+ .debug_line    0x0000000000009b74      0x23c ./build/rom/memcpy.o
+ .debug_line    0x0000000000009db0      0x282 ./build/rom/memmove.o
+ .debug_line    0x000000000000a032      0x3b4 ./build/rom/memset.o
+ .debug_line    0x000000000000a3e6      0x4db ./build/rom/monitor_rom.o
+ .debug_line    0x000000000000a8c1      0x5e2 ./build/rom/rand.o
+ .debug_line    0x000000000000aea3      0xa39 ./build/rom/shell_rom.o
+ .debug_line    0x000000000000b8dc      0x14d ./build/rom/strcmp.o
+ .debug_line    0x000000000000ba29      0x116 ./build/rom/stricmp.o
+ .debug_line    0x000000000000bb3f      0x1e4 ./build/rom/strlen.o
+ .debug_line    0x000000000000bd23      0x3ad ./build/rom/strtoul.o
+ .debug_line    0x000000000000c0d0      0x245 ./build/rom/strupr.o
+ .debug_line    0x000000000000c315      0x409 ./build/rom/strwrap.o
+ .debug_line    0x000000000000c71e      0x77c ./build/rom/wififw_btconcurr_rom.o
+ .debug_line    0x000000000000ce9a      0x90d ./build/rom/wififw_cmd_rom.o
+ .debug_line    0x000000000000d7a7      0x417 ./build/rom/wififw_dma_rom.o
+ .debug_line    0x000000000000dbbe      0x844 ./build/rom/wififw_init_rom.o
+ .debug_line    0x000000000000e402      0x942 ./build/rom/wififw_interrupt_rom.o
+ .debug_line    0x000000000000ed44      0xacc ./build/rom/wififw_packet_rom.o
+ .debug_line    0x000000000000f810      0x765 ./build/rom/wififw_powersave_rom.o
+ .debug_line    0x000000000000ff75        0x0 ./build/rom/wififw_txreport_rom.o
+ .debug_line    0x000000000000ff75     0x184f ./build/rom/wififw_wowlan_rom.o
+
+.debug_str      0x0000000000000000    0x13efe
+ .debug_str     0x0000000000000000      0x3f8 ./build/rom/ameba_assert_rom.o
+ .debug_str     0x00000000000003f8      0x2a8 ./build/rom/ameba_backup_reg.o
+ .debug_str     0x00000000000006a0      0x336 ./build/rom/ameba_clk_rom.o
+ .debug_str     0x00000000000009d6      0x2b6 ./build/rom/ameba_delay_rom.o
+ .debug_str     0x0000000000000c8c      0xa63 ./build/rom/ameba_flash_rom.o
+ .debug_str     0x00000000000016ef      0x5ee ./build/rom/ameba_gpio_rom.o
+ .debug_str     0x0000000000001cdd     0x180c ./build/rom/ameba_loguart_rom.o
+ .debug_str     0x00000000000034e9      0x379 ./build/rom/ameba_pinmux_rom.o
+ .debug_str     0x0000000000003862      0x4d5 ./build/rom/ameba_rcc_rom.o
+ .debug_str     0x0000000000003d37      0x5ad ./build/rom/ameba_syscfg_rom.o
+ .debug_str     0x00000000000042e4      0x391 ./build/rom/ameba_systimer_rom.o
+ .debug_str     0x0000000000004675      0x47a ./build/rom/ameba_tim_rom.o
+ .debug_str     0x0000000000004aef      0x61e ./build/rom/ameba_uart_rom.o
+ .debug_str     0x000000000000510d      0x364 ./build/rom/ameba_wdg.o
+ .debug_str     0x0000000000005471      0x405 ./build/rom/amebalp_boot_rom.o
+ .debug_str     0x0000000000005876      0xd06 ./build/rom/amebalp_vector_rom.o
+ .debug_str     0x000000000000657c      0x10a ./build/rom/amebalp_vectors.o
+ .debug_str     0x0000000000006686      0x21f ./build/rom/char2num.o
+ .debug_str     0x00000000000068a5      0x382 ./build/rom/diag.o
+ .debug_str     0x0000000000006c27      0x22d ./build/rom/memchr.o
+ .debug_str     0x0000000000006e54      0x1ff ./build/rom/memcmp.o
+ .debug_str     0x0000000000007053      0x226 ./build/rom/memcpy.o
+ .debug_str     0x0000000000007279      0x232 ./build/rom/memmove.o
+ .debug_str     0x00000000000074ab      0x227 ./build/rom/memset.o
+ .debug_str     0x00000000000076d2      0x5eb ./build/rom/monitor_rom.o
+ .debug_str     0x0000000000007cbd      0x311 ./build/rom/rand.o
+ .debug_str     0x0000000000007fce      0x861 ./build/rom/shell_rom.o
+ .debug_str     0x000000000000882f      0x1f8 ./build/rom/strcmp.o
+ .debug_str     0x0000000000008a27      0x212 ./build/rom/stricmp.o
+ .debug_str     0x0000000000008c39      0x212 ./build/rom/strlen.o
+ .debug_str     0x0000000000008e4b      0x237 ./build/rom/strtoul.o
+ .debug_str     0x0000000000009082      0x216 ./build/rom/strupr.o
+ .debug_str     0x0000000000009298      0x328 ./build/rom/strwrap.o
+ .debug_str     0x00000000000095c0     0x11fc ./build/rom/wififw_btconcurr_rom.o
+ .debug_str     0x000000000000a7bc      0x811 ./build/rom/wififw_cmd_rom.o
+ .debug_str     0x000000000000afcd      0x3ae ./build/rom/wififw_dma_rom.o
+ .debug_str     0x000000000000b37b     0x3c1b ./build/rom/wififw_init_rom.o
+ .debug_str     0x000000000000ef96      0x354 ./build/rom/wififw_interrupt_rom.o
+ .debug_str     0x000000000000f2ea     0x16ea ./build/rom/wififw_packet_rom.o
+ .debug_str     0x00000000000109d4     0x1574 ./build/rom/wififw_powersave_rom.o
+ .debug_str     0x0000000000011f48      0x174 ./build/rom/wififw_txreport_rom.o
+ .debug_str     0x00000000000120bc     0x1e42 ./build/rom/wififw_wowlan_rom.o
+
+.comment        0x0000000000000000      0x75e
+ .comment       0x0000000000000000       0x2e ./build/rom/ameba_assert_rom.o
+ .comment       0x000000000000002e       0x2e ./build/rom/ameba_backup_reg.o
+ .comment       0x000000000000005c       0x2e ./build/rom/ameba_clk_rom.o
+ .comment       0x000000000000008a       0x2e ./build/rom/ameba_delay_rom.o
+ .comment       0x00000000000000b8       0x2e ./build/rom/ameba_flash_rom.o
+ .comment       0x00000000000000e6       0x2e ./build/rom/ameba_gpio_rom.o
+ .comment       0x0000000000000114       0x2e ./build/rom/ameba_loguart_rom.o
+ .comment       0x0000000000000142       0x2e ./build/rom/ameba_pinmux_rom.o
+ .comment       0x0000000000000170       0x2e ./build/rom/ameba_rcc_rom.o
+ .comment       0x000000000000019e       0x2e ./build/rom/ameba_syscfg_rom.o
+ .comment       0x00000000000001cc       0x2e ./build/rom/ameba_systimer_rom.o
+ .comment       0x00000000000001fa       0x2e ./build/rom/ameba_tim_rom.o
+ .comment       0x0000000000000228       0x2e ./build/rom/ameba_uart_rom.o
+ .comment       0x0000000000000256       0x2e ./build/rom/ameba_wdg.o
+ .comment       0x0000000000000284       0x2e ./build/rom/amebalp_boot_rom.o
+ .comment       0x00000000000002b2       0x2e ./build/rom/amebalp_vector_rom.o
+ .comment       0x00000000000002e0       0x2e ./build/rom/char2num.o
+ .comment       0x000000000000030e       0x2e ./build/rom/diag.o
+ .comment       0x000000000000033c       0x2e ./build/rom/memchr.o
+ .comment       0x000000000000036a       0x2e ./build/rom/memcmp.o
+ .comment       0x0000000000000398       0x2e ./build/rom/memcpy.o
+ .comment       0x00000000000003c6       0x2e ./build/rom/memmove.o
+ .comment       0x00000000000003f4       0x2e ./build/rom/memset.o
+ .comment       0x0000000000000422       0x2e ./build/rom/monitor_rom.o
+ .comment       0x0000000000000450       0x2e ./build/rom/rand.o
+ .comment       0x000000000000047e       0x2e ./build/rom/shell_rom.o
+ .comment       0x00000000000004ac       0x2e ./build/rom/strcmp.o
+ .comment       0x00000000000004da       0x2e ./build/rom/stricmp.o
+ .comment       0x0000000000000508       0x2e ./build/rom/strlen.o
+ .comment       0x0000000000000536       0x2e ./build/rom/strtoul.o
+ .comment       0x0000000000000564       0x2e ./build/rom/strupr.o
+ .comment       0x0000000000000592       0x2e ./build/rom/strwrap.o
+ .comment       0x00000000000005c0       0x2e ./build/rom/wififw_btconcurr_rom.o
+ .comment       0x00000000000005ee       0x2e ./build/rom/wififw_cmd_rom.o
+ .comment       0x000000000000061c       0x2e ./build/rom/wififw_dma_rom.o
+ .comment       0x000000000000064a       0x2e ./build/rom/wififw_init_rom.o
+ .comment       0x0000000000000678       0x2e ./build/rom/wififw_interrupt_rom.o
+ .comment       0x00000000000006a6       0x2e ./build/rom/wififw_packet_rom.o
+ .comment       0x00000000000006d4       0x2e ./build/rom/wififw_powersave_rom.o
+ .comment       0x0000000000000702       0x2e ./build/rom/wififw_txreport_rom.o
+ .comment       0x0000000000000730       0x2e ./build/rom/wififw_wowlan_rom.o
+
+.ARM.attributes
+                0x0000000000000000       0x2e
+ .ARM.attributes
+                0x0000000000000000       0x30 ./build/rom/ameba_assert_rom.o
+ .ARM.attributes
+                0x0000000000000030       0x30 ./build/rom/ameba_backup_reg.o
+ .ARM.attributes
+                0x0000000000000060       0x30 ./build/rom/ameba_clk_rom.o
+ .ARM.attributes
+                0x0000000000000090       0x30 ./build/rom/ameba_delay_rom.o
+ .ARM.attributes
+                0x00000000000000c0       0x30 ./build/rom/ameba_flash_rom.o
+ .ARM.attributes
+                0x00000000000000f0       0x30 ./build/rom/ameba_gpio_rom.o
+ .ARM.attributes
+                0x0000000000000120       0x30 ./build/rom/ameba_loguart_rom.o
+ .ARM.attributes
+                0x0000000000000150       0x30 ./build/rom/ameba_pinmux_rom.o
+ .ARM.attributes
+                0x0000000000000180       0x30 ./build/rom/ameba_rcc_rom.o
+ .ARM.attributes
+                0x00000000000001b0       0x30 ./build/rom/ameba_syscfg_rom.o
+ .ARM.attributes
+                0x00000000000001e0       0x30 ./build/rom/ameba_systimer_rom.o
+ .ARM.attributes
+                0x0000000000000210       0x30 ./build/rom/ameba_tim_rom.o
+ .ARM.attributes
+                0x0000000000000240       0x30 ./build/rom/ameba_uart_rom.o
+ .ARM.attributes
+                0x0000000000000270       0x30 ./build/rom/ameba_wdg.o
+ .ARM.attributes
+                0x00000000000002a0       0x30 ./build/rom/amebalp_boot_rom.o
+ .ARM.attributes
+                0x00000000000002d0       0x30 ./build/rom/amebalp_vector_rom.o
+ .ARM.attributes
+                0x0000000000000300       0x20 ./build/rom/amebalp_vectors.o
+ .ARM.attributes
+                0x0000000000000320       0x30 ./build/rom/char2num.o
+ .ARM.attributes
+                0x0000000000000350       0x30 ./build/rom/diag.o
+ .ARM.attributes
+                0x0000000000000380       0x30 ./build/rom/memchr.o
+ .ARM.attributes
+                0x00000000000003b0       0x30 ./build/rom/memcmp.o
+ .ARM.attributes
+                0x00000000000003e0       0x30 ./build/rom/memcpy.o
+ .ARM.attributes
+                0x0000000000000410       0x30 ./build/rom/memmove.o
+ .ARM.attributes
+                0x0000000000000440       0x30 ./build/rom/memset.o
+ .ARM.attributes
+                0x0000000000000470       0x30 ./build/rom/monitor_rom.o
+ .ARM.attributes
+                0x00000000000004a0       0x30 ./build/rom/rand.o
+ .ARM.attributes
+                0x00000000000004d0       0x30 ./build/rom/shell_rom.o
+ .ARM.attributes
+                0x0000000000000500       0x30 ./build/rom/strcmp.o
+ .ARM.attributes
+                0x0000000000000530       0x30 ./build/rom/stricmp.o
+ .ARM.attributes
+                0x0000000000000560       0x30 ./build/rom/strlen.o
+ .ARM.attributes
+                0x0000000000000590       0x30 ./build/rom/strtoul.o
+ .ARM.attributes
+                0x00000000000005c0       0x30 ./build/rom/strupr.o
+ .ARM.attributes
+                0x00000000000005f0       0x30 ./build/rom/strwrap.o
+ .ARM.attributes
+                0x0000000000000620       0x30 ./build/rom/wififw_btconcurr_rom.o
+ .ARM.attributes
+                0x0000000000000650       0x30 ./build/rom/wififw_cmd_rom.o
+ .ARM.attributes
+                0x0000000000000680       0x30 ./build/rom/wififw_dma_rom.o
+ .ARM.attributes
+                0x00000000000006b0       0x30 ./build/rom/wififw_init_rom.o
+ .ARM.attributes
+                0x00000000000006e0       0x30 ./build/rom/wififw_interrupt_rom.o
+ .ARM.attributes
+                0x0000000000000710       0x30 ./build/rom/wififw_packet_rom.o
+ .ARM.attributes
+                0x0000000000000740       0x30 ./build/rom/wififw_powersave_rom.o
+ .ARM.attributes
+                0x0000000000000770       0x30 ./build/rom/wififw_txreport_rom.o
+ .ARM.attributes
+                0x00000000000007a0       0x30 ./build/rom/wififw_wowlan_rom.o
+
+.debug_frame    0x0000000000000000     0x280c
+ .debug_frame   0x0000000000000000       0x28 ./build/rom/ameba_assert_rom.o
+ .debug_frame   0x0000000000000028       0x7c ./build/rom/ameba_backup_reg.o
+ .debug_frame   0x00000000000000a4       0x68 ./build/rom/ameba_clk_rom.o
+ .debug_frame   0x000000000000010c       0x58 ./build/rom/ameba_delay_rom.o
+ .debug_frame   0x0000000000000164      0x204 ./build/rom/ameba_flash_rom.o
+ .debug_frame   0x0000000000000368      0x184 ./build/rom/ameba_gpio_rom.o
+ .debug_frame   0x00000000000004ec      0x308 ./build/rom/ameba_loguart_rom.o
+ .debug_frame   0x00000000000007f4       0xe0 ./build/rom/ameba_pinmux_rom.o
+ .debug_frame   0x00000000000008d4      0x118 ./build/rom/ameba_rcc_rom.o
+ .debug_frame   0x00000000000009ec      0x2a4 ./build/rom/ameba_syscfg_rom.o
+ .debug_frame   0x0000000000000c90       0x78 ./build/rom/ameba_systimer_rom.o
+ .debug_frame   0x0000000000000d08      0x11c ./build/rom/ameba_tim_rom.o
+ .debug_frame   0x0000000000000e24      0x278 ./build/rom/ameba_uart_rom.o
+ .debug_frame   0x000000000000109c       0xf8 ./build/rom/ameba_wdg.o
+ .debug_frame   0x0000000000001194       0x38 ./build/rom/amebalp_boot_rom.o
+ .debug_frame   0x00000000000011cc      0x558 ./build/rom/amebalp_vector_rom.o
+ .debug_frame   0x0000000000001724       0x40 ./build/rom/char2num.o
+ .debug_frame   0x0000000000001764       0xc0 ./build/rom/diag.o
+ .debug_frame   0x0000000000001824       0x2c ./build/rom/memchr.o
+ .debug_frame   0x0000000000001850       0x2c ./build/rom/memcmp.o
+ .debug_frame   0x000000000000187c       0x34 ./build/rom/memcpy.o
+ .debug_frame   0x00000000000018b0       0x30 ./build/rom/memmove.o
+ .debug_frame   0x00000000000018e0       0x30 ./build/rom/memset.o
+ .debug_frame   0x0000000000001910       0x58 ./build/rom/monitor_rom.o
+ .debug_frame   0x0000000000001968       0x50 ./build/rom/rand.o
+ .debug_frame   0x00000000000019b8      0x108 ./build/rom/shell_rom.o
+ .debug_frame   0x0000000000001ac0       0x28 ./build/rom/strcmp.o
+ .debug_frame   0x0000000000001ae8       0x30 ./build/rom/stricmp.o
+ .debug_frame   0x0000000000001b18       0x28 ./build/rom/strlen.o
+ .debug_frame   0x0000000000001b40       0x38 ./build/rom/strtoul.o
+ .debug_frame   0x0000000000001b78       0x20 ./build/rom/strupr.o
+ .debug_frame   0x0000000000001b98      0x100 ./build/rom/strwrap.o
+ .debug_frame   0x0000000000001c98      0x1a8 ./build/rom/wififw_btconcurr_rom.o
+ .debug_frame   0x0000000000001e40      0x140 ./build/rom/wififw_cmd_rom.o
+ .debug_frame   0x0000000000001f80       0x6c ./build/rom/wififw_dma_rom.o
+ .debug_frame   0x0000000000001fec       0x58 ./build/rom/wififw_init_rom.o
+ .debug_frame   0x0000000000002044       0xd0 ./build/rom/wififw_interrupt_rom.o
+ .debug_frame   0x0000000000002114      0x130 ./build/rom/wififw_packet_rom.o
+ .debug_frame   0x0000000000002244      0x188 ./build/rom/wififw_powersave_rom.o
+ .debug_frame   0x00000000000023cc      0x440 ./build/rom/wififw_wowlan_rom.o

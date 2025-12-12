@@ -2172,8 +2172,9 @@ _LONG_CALL_ void AUDIO_CODEC_SetSideToneSrcForDAC(u32 channel, u32 src);
 _LONG_CALL_ void AUDIO_CODEC_SetSideToneZDETTimeOut(u32 channel, u32 time_out);
 _LONG_CALL_ void AUDIO_CODEC_SetSideToneZDET(u32 channel, u32 type);
 _LONG_CALL_ void AUDIO_CODEC_SetSideToneMute(u32 channel, u32 newstate);
-
-
+_LONG_CALL_ void AUDIO_CODEC_SetADCEQClk(u32 ad_chn, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetADCEQBand(u32 ad_chn, u32 band_sel, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetADCEQFilter(u32 ad_chn, u32 band_sel, CODEC_EQFilterCoef *EQFilterCoefPoint);
 
 
 /**

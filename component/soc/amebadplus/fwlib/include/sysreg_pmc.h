@@ -446,14 +446,6 @@
 #define LDO_MEM_MODE_NORM0	0x2
 #define LDO_MEM_MODE_NORM1	0x3
 
-/** @defgroup LDO_Exported_Functions LDO Exported Functions
-  * @{
-  */
-_LONG_CALL_	void CORE_LDO_Vol_Set(u8 vol_type);
-
-/**
-  * @}
-  */
 /* MANUAL_GEN_END */
 
 #endif

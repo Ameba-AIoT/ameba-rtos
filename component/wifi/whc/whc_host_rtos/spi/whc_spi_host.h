@@ -12,6 +12,7 @@
 #define SPI1_MISO                   _PA_31
 #define SPI1_SCLK                   _PA_29
 #define HOST_READY_PIN              _PB_0 //cs
+#define SPI_CLOCK_DIVIDER           4   // 100M clock source according to HPERI_ClkGet
 
 #elif defined (CONFIG_AMEBADPLUS)
 #define PINMUX_FUNCTION_SPIM	    PINMUX_FUNCTION_SPI
@@ -21,6 +22,17 @@
 #define SPI1_MISO	                _PB_25
 #define SPI1_SCLK	                _PB_23
 #define HOST_READY_PIN		        _PB_26  //cs
+#define SPI_CLOCK_DIVIDER           4   // 96M clock source according to spi_get_ipclk
+
+#elif defined (CONFIG_AMEBALITE)
+#define PINMUX_FUNCTION_SPIM	    PINMUX_FUNCTION_SPI
+#define DEV_READY_PIN				_PB_3   // amebalite use different pin due to _PA_1(num 15, GPIO22 got by command "pinout") will be pull down by raspberry pi
+#define RX_REQ_PIN					_PA_11
+#define SPI1_MOSI	                _PA_29
+#define SPI1_MISO	                _PA_30
+#define SPI1_SCLK	                _PA_28
+#define HOST_READY_PIN		        _PA_31
+#define SPI_CLOCK_DIVIDER           6   // 120M clock source according to spi_get_ipclk
 #endif
 
 

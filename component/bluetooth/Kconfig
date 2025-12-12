@@ -7,11 +7,6 @@ config BT_EXCLUDE_AT_COMMAND
     bool "Exclude BT AT Command"
     default n
 
-config BT_MESH_BASED_ON_CODED_PHY
-    depends on BT_ADVANCED_FEATURE_MENU && AMEBADPLUS    #amebadplus
-    bool "Enable BT Mesh Based on CODED PHY"
-    default n
-
 config BT_ZEPHYR
     depends on BT_ADVANCED_FEATURE_MENU && !RTL8720F && !AMEBA_RLS    #internal
     bool "Use Zephyr BT Stack"
@@ -45,17 +40,17 @@ if BT_EXAMPLE_DEMO_MENU
         default n
 
     config BT_TRANSFER_MODULE
-        depends on AMEBADPLUS    #amebadplus
+        depends on (AMEBADPLUS || AMEBAGREEN2)   #amebadplus|amebagreen2
         bool "BLE Transfer Module"
         default n
 
     config BT_WIFIMATE_DEVICE
-        depends on (AMEBADPLUS || AMEBALITE || AMEBASMART)    #amebadplus|amebalite|amebasmart
+        depends on (AMEBADPLUS || AMEBALITE || AMEBASMART || AMEBAGREEN2)    #amebadplus|amebalite|amebasmart|amebagreen2
         bool "BLE WiFiMate Device"
         default n
 
     config BT_WIFIMATE_CONFIGURATOR
-        depends on (AMEBADPLUS || AMEBALITE || AMEBASMART)    #amebadplus|amebalite|amebasmart
+        depends on (AMEBADPLUS || AMEBALITE || AMEBASMART || AMEBAGREEN2)    #amebadplus|amebalite|amebasmart|amebagreen2
         bool "BLE WiFiMate Configurator"
         default n
 
@@ -248,6 +243,7 @@ if BT
         select BT_HFP
         select BT_APP_AUDIO_DATA
         select BT_AUDIO_CODEC_SUPPORT
+        select BT_AUDIO_CODEC_SBC
         select BT_AUDIO_CODEC_CVSD
         select BT_PROFILE_HFP_SUPPORT
         select BT_PROFILE_PBAP_SUPPORT

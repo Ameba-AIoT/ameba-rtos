@@ -11,7 +11,8 @@ soc_to_drv_file = {
     'amebasmart':     'autoconf_8730e.h',
     'amebagreen2':    'autoconf_8721f.h',
     'amebaL2':        'autoconf_amebax.h',
-    'RTL8720F':       'autoconf_8720f.h'
+    'RTL8720F':       'autoconf_8720f.h',
+    'amebapro3':      'autoconf_8721f.h'
 }
 
 def extract_version_from_file(file_path: str, check_marco_name: str) -> Tuple[int, List[Dict[str, Any]]]:

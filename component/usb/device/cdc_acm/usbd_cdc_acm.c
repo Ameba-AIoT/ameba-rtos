@@ -315,6 +315,15 @@ static int cdc_acm_set_config(usb_dev_t *dev, u8 config)
 	usbd_ep_init(dev, ep_intr_in);
 #endif
 
+	if ((ep_bulk_out->skip_dcache_pre_clean) && (ep_bulk_out->xfer_buf != NULL) && (ep_bulk_out->xfer_len != 0)) {
+		if (USB_IS_MEM_DMA_ALIGNED(ep_bulk_out->xfer_buf)) {
+			DCache_Clean((u32)ep_bulk_out->xfer_buf, ep_bulk_out->xfer_len);
+		} else {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "RX buf align err\n");
+			return HAL_ERR_MEM;
+		}
+	}
+
 	/* Prepare to receive next BULK OUT packet */
 	usbd_ep_receive(dev, ep_bulk_out);
 
@@ -492,8 +501,21 @@ static int cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 
 	UNUSED(dev);
 
+	if ((ep_bulk_out->skip_dcache_post_invalidate) && (ep_bulk_out->xfer_buf != NULL) && (len != 0)) {
+		DCache_Invalidate((u32)ep_bulk_out->xfer_buf, len);
+	}
+
 	if ((ep_addr == CDC_ACM_BULK_OUT_EP) && (len > 0)) {
 		cdev->cb->received(ep_bulk_out->xfer_buf, len);
+	}
+
+	if ((ep_bulk_out->skip_dcache_pre_clean) && (ep_bulk_out->xfer_buf != NULL) && (ep_bulk_out->xfer_len != 0)) {
+		if (USB_IS_MEM_DMA_ALIGNED(ep_bulk_out->xfer_buf)) {
+			DCache_Clean((u32)ep_bulk_out->xfer_buf, ep_bulk_out->xfer_len);
+		} else {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "RX buf align err\n");
+			return HAL_ERR_MEM;
+		}
 	}
 
 	usbd_ep_receive(cdev->dev, ep_bulk_out);
@@ -714,7 +736,6 @@ int usbd_cdc_acm_init(u16 bulk_out_xfer_size, u16 bulk_in_xfer_size, usbd_cdc_ac
 
 	ep_bulk_out->addr = CDC_ACM_BULK_OUT_EP;
 	ep_bulk_out->type = USB_CH_EP_TYPE_BULK;
-
 	ep_bulk_out->xfer_buf_len = bulk_out_xfer_size;
 	ep_bulk_out->xfer_buf = (u8 *)usb_os_malloc(ep_bulk_out->xfer_buf_len);
 	ep_bulk_out->xfer_len = ep_bulk_out->xfer_buf_len;
@@ -854,8 +875,19 @@ int usbd_cdc_acm_transmit(u8 *buf, u16 len)
 		if (dev->is_ready) {
 			ep_bulk_in->is_busy = 1U;
 			ep_bulk_in->xfer_state = 1U;
-
+#if CONFIG_CDC_ACM_BULK_TX_SKIP_MEMCPY
+			ep_bulk_in->xfer_buf = buf;
+#else
 			usb_os_memcpy((void *)ep_bulk_in->xfer_buf, (void *)buf, len);
+#endif
+			if ((ep_bulk_in->skip_dcache_pre_clean) && (buf != NULL) && (len != 0)) {
+				if (USB_IS_MEM_DMA_ALIGNED(buf)) {
+					DCache_Clean((u32)buf, len);
+				} else {
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "EP TX buf align err\n");
+					return HAL_ERR_MEM;
+				}
+			}
 
 			if (dev->is_ready) {
 				ep_bulk_in->xfer_len = len;

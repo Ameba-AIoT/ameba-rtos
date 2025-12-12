@@ -49,7 +49,7 @@ ameba_list_append(c_GLOBAL_COMMON_LINK_OPTIONS
 )
 
 # wrap function are defined in vfs_wrap.c
-if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
+if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 ameba_list_append(c_GLOBAL_COMMON_LINK_OPTIONS
     "SHELL:-Wl,-wrap,fopen"
     "SHELL:-Wl,-wrap,fclose"

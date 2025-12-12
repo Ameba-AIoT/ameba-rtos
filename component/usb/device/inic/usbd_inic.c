@@ -1233,6 +1233,10 @@ static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 
 	UNUSED(dev);
 
+	if ((ep->skip_dcache_post_invalidate) && (ep->xfer_buf != NULL) && (len != 0)) {
+		DCache_Invalidate((u32)ep->xfer_buf, len);
+	}
+
 	if ((len > 0) && (cb->received != NULL)) {
 		cb->received(out_ep, len);
 	}
@@ -1410,21 +1414,29 @@ static int usbd_inic_wifi_init(void)
 	ep = &idev->in_ep[ep_num].ep;
 	ep->addr = USBD_WHC_WIFI_EP4_BULK_IN;
 	ep->type = USB_CH_EP_TYPE_BULK;
+	ep->skip_dcache_pre_clean = 0;
+	ep->skip_dcache_post_invalidate = 0;
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP5_BULK_OUT);
 	ep = &idev->out_ep[ep_num].ep;
 	ep->addr = USBD_WHC_WIFI_EP5_BULK_OUT;
 	ep->type = USB_CH_EP_TYPE_BULK;
+	ep->skip_dcache_pre_clean = 0;
+	ep->skip_dcache_post_invalidate = 0;
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP6_BULK_OUT);
 	ep = &idev->out_ep[ep_num].ep;
 	ep->addr = USBD_WHC_WIFI_EP6_BULK_OUT;
 	ep->type = USB_CH_EP_TYPE_BULK;
+	ep->skip_dcache_pre_clean = 0;
+	ep->skip_dcache_post_invalidate = 0;
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP7_BULK_OUT);
 	ep = &idev->out_ep[ep_num].ep;
 	ep->addr = USBD_WHC_WIFI_EP7_BULK_OUT;
 	ep->type = USB_CH_EP_TYPE_BULK;
+	ep->skip_dcache_pre_clean = 0;
+	ep->skip_dcache_post_invalidate = 0;
 
 	return HAL_OK;
 
@@ -1619,6 +1631,14 @@ int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u16 len, void *userdata)
 		idev->in_ep[num].userdata = userdata;
 		ep->xfer_buf = buf;/*Application should free this txbuf only afer TX DONE*/
 		ep->xfer_len = len;
+		if ((ep->skip_dcache_pre_clean) && (buf != NULL) && (len != 0)) {
+			if (USB_IS_MEM_DMA_ALIGNED(buf)) {
+				DCache_Clean((u32)buf, len);
+			} else {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "EP TX buf align err\n");
+				return HAL_ERR_MEM;
+			}
+		}
 		usbd_ep_transmit(idev->dev, ep);
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX len=%d data=%d: BUSY\n", num, len, buf[0]);
@@ -1650,6 +1670,15 @@ int usbd_inic_receive_data(u8 ep_addr, u8 *buf, u16 len, void *userdata)
 	ep->xfer_buf = buf;
 	ep->xfer_len = len;
 	idev->out_ep[num].userdata = userdata;
+
+	if ((ep->skip_dcache_pre_clean) && (buf != NULL) && (len != 0)) {
+		if (USB_IS_MEM_DMA_ALIGNED(buf)) {
+			DCache_Clean((u32)buf, len);
+		} else {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "EP RX buf align err\n");
+			return HAL_ERR_MEM;
+		}
+	}
 	usbd_ep_receive(idev->dev, ep);
 
 	return HAL_OK;

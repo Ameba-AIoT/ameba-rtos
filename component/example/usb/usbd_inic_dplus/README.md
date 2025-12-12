@@ -38,5 +38,4 @@ Specific USB INIC driver is required for USB host to recoganize this USB INIC de
 
 # Supported IC
 
-- AmebaDplus
-  * RTL8721Dx
+RTL8721Dx

@@ -106,7 +106,7 @@ struct _wifi_rom_to_flash_func_map {
 	int(*wifi_hal_mgnt_xmit)(u8 iface_type, struct xmit_frame *pmgntframe);
 	int(*wifi_hal_xmit)(u8 iface_type, struct xmit_frame *pxmitframe);
 	void(*wifi_hal_txdesc_fill)(struct xmit_frame *pxmitframe, u8 *pmem);
-	int(*rtw_mgmt_xmitframe_coalesce)(u8 iface_type, struct security_priv *psecuritypriv, struct xmit_frame *pxmitframe);
+	int(*rtw_mgmt_xmitframe_coalesce)(u8 iface_type, struct security_priv *psecuritypriv, struct xmit_frame *pxmitframe, u8 b_swenc);
 	void (*rtw_recv_validate_mgnt_frame)(u8 iface_type, union recv_frame **pprecv_frame);
 	int (*rtw_enqueue_cmd)(u8 iface_type, u8 *parmbuf, int(*cmd_hdl)(u8 iface_type, struct cmd_obj *pcmd), u32 parm_nobuf);
 	int(*wifi_hal_xmitframe_dump_sc)(u8 iface_type, struct sk_buff *pkt, struct sta_mlme_priv *psta_mlmepriv, int idx, u8 UserPriority);

@@ -50,5 +50,4 @@ None
 
 # Supported IC
 
-- AmebaSmart
-  * RTL8730E
+RTL8730E

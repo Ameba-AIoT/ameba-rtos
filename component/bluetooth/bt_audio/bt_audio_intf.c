@@ -67,7 +67,9 @@ static void                         *audio_stream_q = NULL;
 static uint8_t render_buffer_flag = 0;
 #endif
 #if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
-static uint16_t cvsd_one_to_two_channel_buff[120] = {0};
+/* pcm for cvsd is 60*2(16bits) bytes per channel */
+/* pcm for mSBC is 120*2(16bits) bytes per channel*/
+static uint16_t cvsd_one_to_two_channel_buff[240] = {0};
 #endif
 
 static rtk_bt_audio_record_config_table_t bt_audio_record_table = {
@@ -360,9 +362,10 @@ static void bt_audio_parsing_recv_stream(uint32_t type, rtk_bt_audio_track_t *tr
 				continue;
 			}
 #if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
-			if (RTK_BT_AUDIO_CODEC_CVSD == type) {
+			if (type & (RTK_BT_AUDIO_CODEC_CVSD | RTK_BT_AUDIO_CODEC_mSBC)) {
 				/* copy left channel to right channel
 				bt audio noise cancellation mic loop back need right channel */
+				param.channels = 2;
 				param.channel_allocation = 3;
 			}
 #endif
@@ -393,7 +396,7 @@ static void bt_audio_parsing_recv_stream(uint32_t type, rtk_bt_audio_track_t *tr
 					if (track->audio_track_hdl) {
 						if (!track->audio_sync_flag) {
 #if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
-							if (RTK_BT_AUDIO_CODEC_CVSD == type) {
+							if (type & (RTK_BT_AUDIO_CODEC_CVSD | RTK_BT_AUDIO_CODEC_mSBC)) {
 								for (uint16_t i = 0; i < pcm_data_size / 2; i ++) {
 									cvsd_one_to_two_channel_buff[i * 2] = pdecode_frame_buffer->pbuffer[i];
 									cvsd_one_to_two_channel_buff[i * 2 + 1] = pdecode_frame_buffer->pbuffer[i];
@@ -600,6 +603,11 @@ static uint16_t bt_audio_codec_init(rtk_bt_audio_codec_conf_t *paudio_codec_conf
 		BT_LOGE("[BT_AUDIO] sbc codec init  \r\n");
 		err = bt_audio_register_codec(RTK_BT_AUDIO_CODEC_SBC, paudio_codec_conf->param, paudio_codec_conf->param_len, pentity);
 	}
+	/* msbc codec */
+	if (RTK_BT_AUDIO_CODEC_mSBC == paudio_codec_conf->codec_index) {
+		BT_LOGE("[BT_AUDIO] mSBC codec init  \r\n");
+		err = bt_audio_register_codec(RTK_BT_AUDIO_CODEC_mSBC, paudio_codec_conf->param, paudio_codec_conf->param_len, pentity);
+	}
 #endif
 #if defined(CONFIG_BT_AUDIO_CODEC_AAC) && CONFIG_BT_AUDIO_CODEC_AAC
 	/* aac codec */
@@ -639,6 +647,11 @@ static uint16_t bt_audio_codec_deinit(uint32_t codec_index, PAUDIO_CODEC_ENTITY 
 	if (RTK_BT_AUDIO_CODEC_SBC == codec_index) {
 		BT_LOGE("[BT_AUDIO] sbc codec deinit  \r\n");
 		err = bt_audio_unregister_codec(RTK_BT_AUDIO_CODEC_SBC, pentity);
+	}
+	/* msbc codec */
+	if (RTK_BT_AUDIO_CODEC_mSBC == codec_index) {
+		BT_LOGE("[BT_AUDIO] msbc codec deinit  \r\n");
+		err = bt_audio_unregister_codec(RTK_BT_AUDIO_CODEC_mSBC, pentity);
 	}
 #endif
 #if defined(CONFIG_BT_AUDIO_CODEC_AAC) && CONFIG_BT_AUDIO_CODEC_AAC
@@ -1084,7 +1097,6 @@ uint16_t rtk_bt_audio_track_sync_restart(rtk_bt_audio_track_t *track)
 		track->trans_bytes = 0;
 		osif_mutex_give(track->audio_sync_mutex);
 		rtk_bt_audio_track_resume(track->audio_track_hdl);
-		BT_LOGA("%s: rtk_bt_audio_track_resume \r\n", __func__);
 		BT_LOGA("%s: RTK_BT_AUDIO_TRACK_PRES_INIT \r\n", __func__);
 	}
 

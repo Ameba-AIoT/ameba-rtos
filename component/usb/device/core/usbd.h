@@ -54,20 +54,22 @@ typedef enum {
 
 /* USB ep structure */
 typedef struct {
-	u8 *xfer_buf;               /* Pointer to transfer buffer */
-	u8 *rem_xfer_buf;           /* Pointer to remain transfer buffer */
-	u32 xfer_len;               /* transfer data length */
-	u32 rem_xfer_len;           /* remain transfer len, only for ep0 in driver */
-	u32 xfer_buf_len;           /* class transfer buffer len */
-	u16 mps;                    /* Endpoint Max packet size, 0~64KB */
-	u8 addr;                    /* Endpoint address */
-	u8 num;                     /* Endpoint number */
-	u8 type;                    /* Endpoint type, USB_EP_Type_XXX */
-	u8 binterval;               /* Endpoint binterval */
-	__IO u8 xfer_state;         /* class xfer state */
-	__IO u8 tx_zlp;             /* class tz ZLP packet or not */
-	__IO u8 dis_zlp;            /* class xfer ZLP enable or disable */
-	__IO u8 is_busy;            /* class is busy or not */
+	u8 *xfer_buf;                    /* Pointer to transfer buffer */
+	u8 *rem_xfer_buf;                /* Pointer to remain transfer buffer */
+	u32 xfer_len;                    /* transfer data length */
+	u32 rem_xfer_len;                /* remain transfer len, only for ep0 in driver */
+	u32 xfer_buf_len;                /* class transfer buffer len */
+	u16 mps;                         /* Endpoint Max packet size, 0~64KB */
+	u8 addr;                         /* Endpoint address */
+	u8 num;                          /* Endpoint number */
+	u8 type;                         /* Endpoint type, USB_EP_Type_XXX */
+	u8 binterval;                    /* Endpoint binterval */
+	u8 skip_dcache_pre_clean;        /* Skip DCache_Clean in TRX API and it will be called in class */
+	u8 skip_dcache_post_invalidate;  /* Skip DCache_Invalidate when RX complete and it will be called in class */
+	__IO u8 xfer_state;              /* class xfer state */
+	__IO u8 tx_zlp;                  /* class tz ZLP packet or not */
+	__IO u8 dis_zlp;                 /* class xfer ZLP enable or disable */
+	__IO u8 is_busy;                 /* class is busy or not */
 } usbd_ep_t;
 
 /* USB configuration structure */

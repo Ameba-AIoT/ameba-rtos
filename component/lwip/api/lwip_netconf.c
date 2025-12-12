@@ -150,7 +150,11 @@ void LwIP_Init(void)
 
 	lwip_init_done = 1;
 #ifdef CONFIG_STANDARD_TICKLESS
+#ifdef CONFIG_AMEBAGREEN2
+	pmu_register_sleep_callback(PMU_LWIP_STACK, (PSM_HOOK_FUN)lwip_rm_unneeded_tmr, NULL, (PSM_HOOK_FUN)lwip_update_internal_counter, NULL);
+#else
 	pmu_register_sleep_callback(PMU_LWIP_STACK, (PSM_HOOK_FUN)lwip_rm_unneeded_tmr, NULL, NULL, NULL);
+#endif
 #endif
 	RTK_LOGS(TAG_WLAN_DRV, RTK_LOG_INFO, "LWIP consume heap %d\n", heap - rtos_mem_get_free_heap_size() - 4 * TCPIP_THREAD_STACKSIZE);
 }
@@ -395,7 +399,7 @@ int LwIP_netif_get_idx(struct netif *pnetif)
 #endif
 }
 
-struct netif * LwIP_idx_get_netif(uint8_t idx)
+struct netif *LwIP_idx_get_netif(uint8_t idx)
 {
 #if defined(CONFIG_LWIP_LAYER) && (CONFIG_LWIP_LAYER == 1)
 	if (idx < NET_IF_NUM) {
@@ -672,7 +676,7 @@ int LwIP_Check_Connectivity(uint8_t idx)
 	if (idx == NETIF_WLAN_STA_INDEX) {
 		u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 		if (!((wifi_get_join_status(&join_status) == RTK_SUCCESS)
-			&& (join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(NETIF_WLAN_STA_INDEX) != IP_ADDR_INVALID))) {
+			  && (join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(NETIF_WLAN_STA_INDEX) != IP_ADDR_INVALID))) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "Wait for WiFi and DHCP Connect Success...\n");
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "Please use AT+WLCONN to connect AP first time\n");
 			return CONNECTION_INVALID;

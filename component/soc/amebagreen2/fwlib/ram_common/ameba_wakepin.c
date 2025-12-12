@@ -11,16 +11,15 @@
   * @brief  set REGU wakeup_pin (just on wakepin mux to 2 pads).
   * @param  PinMask: aon wakepin index
   *		This parameter can be one of the following values:
-  *		 @arg WAKUP_0 : PA3
-  *		 @arg WAKUP_1 : PA2
-  *		 @arg WAKUP_2 : PA1
-  *		 @arg WAKUP_3 : PA0
+  *		 @arg WAKEPIN_0 : PA3
+  *		 @arg WAKEPIN_1 : PA2
+  *		 @arg WAKEPIN_2 : PA1
+  *		 @arg WAKEPIN_3 : PA0
   * @param  level: aon wakepin level
   *		This parameter can be one of the following values:
   *		 @arg 1 : high wakeup
   *		 @arg 0 : low wakeup
-  * @note 1. wakeup state: sleep PG & CG & deep sleep
-  * 	  2. The PA0 and PA1 pins do exist in the QFN100 MCM FLASH/QFN100 Single Die/QFN68 MCM FLASH/QFN68 Single Die packet chip
+  * @note wakeup state: sleep PG & CG & deep sleep
   * @retval None
   */
 void Wakepin_Setting(u32 PinIdx, u32 level)

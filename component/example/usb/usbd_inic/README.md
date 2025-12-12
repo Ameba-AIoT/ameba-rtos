@@ -38,5 +38,4 @@ Specific USB INIC driver is required for USB host to recoganize this USB INIC de
 
 # Supported IC
 
-- AmebaGreen2
-  * RTL8721F
+RTL8721F

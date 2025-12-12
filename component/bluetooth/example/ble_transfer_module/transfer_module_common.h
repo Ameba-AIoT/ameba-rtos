@@ -41,14 +41,20 @@ extern "C" {
 #define TRANSFER_MODULE_INDICATE_CHRC_INDEX      8
 #define TRANSFER_MODULE_INDICATE_VAL_INDEX       9
 #define TRANSFER_MODULE_INDICATE_CCCD_INDEX      10
+#define TRANSFER_MODULE_INDEX_NUM                11
+
+#define TRANSFER_MODULE_UUID16_LEN              (2)
+#define TRANSFER_MODULE_UUID128_LEN             (16)
 
 struct transfer_module_char_t {
-	uint16_t char_uuid;
+	uint8_t uuid_type; // refers to rtk_bt_uuid_type_t
+	uint8_t char_uuid[TRANSFER_MODULE_UUID128_LEN]; // 16-bit UUID stores in first two elements of the array in little endian; 128-bit UUID occupies the entire array in little endian
 	uint16_t char_property;
 };
 
 struct transfer_module_srv_t {
-	uint16_t srv_uuid;
+	uint8_t uuid_type; // refers to rtk_bt_uuid_type_t
+	uint8_t srv_uuid[TRANSFER_MODULE_UUID128_LEN]; // 16-bit UUID stores in first two elements of the array in little endian; 128-bit UUID occupies the entire array in little endian
 	uint16_t char_num;
 	struct transfer_module_char_t chars[TRANSFER_MODULE_USER_DEFINED_CHAR_MAX_NUM];
 };
@@ -70,11 +76,11 @@ rtk_bt_evt_cb_ret_t ble_transfer_module_gatts_app_callback(uint8_t event, void *
 uint16_t ble_transfer_module_server_disconnect(uint16_t conn_handle);
 uint16_t ble_transfer_module_server_add(void);
 uint16_t ble_transfer_module_server_deinit(void);
-uint16_t ble_transfer_module_get_uuid(uint8_t attr, uint16_t *uuid);
-uint16_t ble_transfer_module_set_uuid(uint8_t attr, uint16_t uuid);
+uint16_t ble_transfer_module_get_uuid(uint8_t attr, uint8_t *uuid_type, uint8_t *uuid);
+uint16_t ble_transfer_module_set_uuid(uint8_t attr, uint8_t uuid_type, uint8_t *uuid);
 
 uint16_t ble_transfer_module_srv_add(struct transfer_module_srv_t *add_srv);
-uint16_t ble_transfer_module_srv_add_check(uint16_t uuid);
+uint16_t ble_transfer_module_srv_add_check(uint8_t uuid_type, uint8_t *uuid);
 void ble_transfer_module_srv_del(void);
 uint16_t ble_transfer_module_char_read_val_set(uint16_t app_id, uint16_t char_idx, uint8_t len, const void *data);
 

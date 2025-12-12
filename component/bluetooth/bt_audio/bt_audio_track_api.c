@@ -59,6 +59,7 @@ void *rtk_bt_audio_track_init(uint32_t channels,
 			track_buf_size = (duration * ((rate / 1000) * channels * (bits / 8)) / 1000) * 6;
 		} else {
 			track_buf_size = RTAudioTrack_GetMinBufferBytes(audio_track, RTAUDIO_CATEGORY_MEDIA, rate, format, channels) * 3;
+			//track_buf_size = 22608;
 		}
 		RTAudioTrackConfig  track_config;
 		track_config.category_type = RTAUDIO_CATEGORY_MEDIA;
@@ -71,7 +72,7 @@ void *rtk_bt_audio_track_init(uint32_t channels,
 #if defined(CONFIG_AUDIO_MIXER) && CONFIG_AUDIO_MIXER
 		/* set audio play start buffer size to match play latency and play fluency */
 		if (duration) {
-			int32_t thresholdBytes = (duration * ((rate / 1000) * channels * (bits / 8)) / 1000) * 5;
+			int32_t thresholdBytes = (duration * ((rate / 1000) * channels * (bits / 8)) / 1000) * 3;
 			RTAudioTrack_SetStartThresholdBytes(audio_track, thresholdBytes);
 		} else {
 			RTAudioTrack_SetStartThresholdBytes(audio_track, track_buf_size);

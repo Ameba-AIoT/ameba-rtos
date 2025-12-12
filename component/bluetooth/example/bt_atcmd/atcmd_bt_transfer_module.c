@@ -9,44 +9,136 @@
 #include <rtk_bt_device.h>
 #include <transfer_module_common.h>
 #include <rtk_service_config.h>
+#include <rtk_bt_att_defs.h>
+#include <ctype.h>
 
 static struct transfer_module_srv_t *s_add_srv = NULL;
 
 extern uint8_t transfer_module_is_enable(void);
 
+static int uuid_string_to_little_endian(const char *uuid_str, uint8_t *uuid_type, uint8_t uuid[16])
+{
+	char hex_str[33] = {0};
+	int hi, lo;
+	int j = 0;
+	int len = 0;
+	int i = 0;
+	int str_len = 0;
+
+	if (!uuid_str || !uuid_type || !uuid) {
+		BT_LOGE("[%s] invalid input param\r\n", __func__);
+		return BT_AT_ERR_PARAM_INVALID;
+	}
+	str_len = strlen(uuid_str);
+	// skip the leading '0x' or '0X' in uuid_str
+	if (!strncmp(uuid_str, "0x", 2) || !strncmp(uuid_str, "0X", 2)) {
+		i = 2;
+	}
+	// remove '-' in uuid_str
+	for (; i < str_len && uuid_str[i] && j < 32; i++) {
+		if (uuid_str[i] != '-') {
+			if (!isxdigit((unsigned char)uuid_str[i])) {
+				// not hex
+				BT_LOGE("[%s] uuid string not hex\r\n", __func__);
+				return BT_AT_ERR_PARAM_INVALID;
+			}
+			hex_str[j++] = uuid_str[i];
+		}
+	}
+
+	if (i < str_len) {
+		BT_LOGE("[%s] uuid string length wrong\r\n", __func__);
+		return BT_AT_ERR_PARAM_INVALID;
+	}
+
+	len = j / 2;
+	if (len == TRANSFER_MODULE_UUID16_LEN) {
+		*uuid_type = BT_UUID_TYPE_16;
+	} else if (len == TRANSFER_MODULE_UUID128_LEN) {
+		*uuid_type = BT_UUID_TYPE_128;
+	} else {
+		BT_LOGE("[%s] uuid string length wrong\r\n", __func__);
+		return BT_AT_ERR_PARAM_INVALID;
+	}
+
+	for (i = 0; i < len; i++) {
+		hi = hex_str[2 * (len - 1 - i)];
+		lo = hex_str[2 * (len - 1 - i) + 1];
+		if (isupper(hi)) {
+			hi = tolower(hi);
+		}
+		if (isupper(lo)) {
+			lo = tolower(lo);
+		}
+
+		uint8_t val = ((hi >= 'a') ? hi - 'a' + 10 : hi - '0') * 16
+					  + ((lo >= 'a') ? lo - 'a' + 10 : lo - '0');
+		uuid[i] = val;
+	}
+	return BT_AT_OK;
+}
+
 static int atcmd_bt_transfer_module_get_uuid(int argc, char **argv)
 {
 	(void)argc;
 	uint8_t attr = 0;
-	uint16_t uuid = 0;
+	uint8_t uuid_type = 0;
+	uint8_t uuid[TRANSFER_MODULE_UUID128_LEN] = {0};
 	uint16_t ret = 0;
 
 	attr = (uint8_t)str_to_int(argv[0]);
-	ret = ble_transfer_module_get_uuid(attr, &uuid);
+	ret = ble_transfer_module_get_uuid(attr, &uuid_type, uuid);
 	if (ret) {
 		BT_LOGE("[AT+BTDEMO] Transfer module get uuid failed, err: 0x%x\r\n", ret);
 		return bt_at_rtk_err_to_at_err(ret);
 	}
-	BT_LOGA("[AT+BTDEMO] Transfer module get uuid attr=%d uuid=0x%04x\r\n", attr, uuid);
-	BT_AT_PRINT("+BTDEMO:transfer_module,get_uuid,%d,0x%04x\r\n", attr, uuid);
-	return 0;
+
+	if (uuid_type == BT_UUID_TYPE_16) {
+		uint16_t uuid16 = uuid[0] | (uuid[1] << 8);
+		BT_LOGA("[AT+BTDEMO] Transfer module get uuid attr=%d uuid=0x%04x\r\n", attr, uuid16);
+		BT_AT_PRINT("+BTDEMO:transfer_module,get_uuid,%d,0x%04x\r\n", attr, uuid16);
+	} else if (uuid_type == BT_UUID_TYPE_128) {
+		// 128-bit UUID format: 8-4-4-4-12
+		BT_LOGA("[AT+BTDEMO] Transfer module get uuid attr=%d uuid=%02x%02x%02x%02x-",
+				attr, uuid[15], uuid[14], uuid[13], uuid[12]);
+		BT_LOGA("%02x%02x-", uuid[11], uuid[10]);
+		BT_LOGA("%02x%02x-", uuid[9], uuid[8]);
+		BT_LOGA("%02x%02x-", uuid[7], uuid[6]);
+		BT_LOGA("%02x%02x%02x%02x%02x%02x\n",
+				uuid[5], uuid[4], uuid[3], uuid[2], uuid[1], uuid[0]);
+
+		BT_AT_PRINT("+BTDEMO:transfer_module,get_uuid,%d,%02x%02x%02x%02x-",
+					attr, uuid[15], uuid[14], uuid[13], uuid[12]);
+		BT_AT_PRINT("%02x%02x-", uuid[11], uuid[10]);
+		BT_AT_PRINT("%02x%02x-", uuid[9], uuid[8]);
+		BT_AT_PRINT("%02x%02x-", uuid[7], uuid[6]);
+		BT_AT_PRINT("%02x%02x%02x%02x%02x%02x\n",
+					uuid[5], uuid[4], uuid[3], uuid[2], uuid[1], uuid[0]);
+	}
+	return BT_AT_OK;
 }
 
 static int atcmd_bt_transfer_module_set_uuid(int argc, char **argv)
 {
 	(void)argc;
 	uint8_t attr = 0;
-	uint16_t uuid = 0;
-	uint16_t ret = 0;
+	uint8_t uuid_type;
+	uint8_t uuid[TRANSFER_MODULE_UUID128_LEN] = {0};
+	int ret = 0;
 
 	attr = (uint8_t)str_to_int(argv[0]);
-	uuid = (uint16_t)str_to_int(argv[1]);
-	ret = ble_transfer_module_set_uuid(attr, uuid);
+
+	ret = uuid_string_to_little_endian(argv[1], &uuid_type, uuid);
+	if (ret != BT_AT_OK) {
+		return ret;
+	}
+
+	ret = ble_transfer_module_set_uuid(attr, uuid_type, uuid);
 	if (ret) {
 		BT_LOGE("[AT+BTDEMO] Transfer module set uuid failed, err: 0x%x\r\n", ret);
 		return bt_at_rtk_err_to_at_err(ret);
 	}
-	return 0;
+	return BT_AT_OK;
 }
 
 static int atcmd_bt_transfer_module_read_val(int argc, char **argv)
@@ -126,10 +218,17 @@ static int atcmd_bt_transfer_module_set_name(int argc, char **argv)
 
 static int atcmd_bt_transfer_module_srv_add(int argc, char **argv)
 {
-	uint16_t uuid;
+	uint8_t uuid_type;
+	uint8_t uuid[TRANSFER_MODULE_UUID128_LEN] = {0};
+	int ret;
 
 	if ((argc != 1) || (argv == NULL)) {
 		return BT_AT_ERR_PARAM_INVALID;
+	}
+
+	ret = uuid_string_to_little_endian(argv[0], &uuid_type, uuid);
+	if (ret != BT_AT_OK) {
+		return ret;
 	}
 
 	if (transfer_module_is_enable()) {
@@ -137,8 +236,7 @@ static int atcmd_bt_transfer_module_srv_add(int argc, char **argv)
 		return BT_AT_FAIL;
 	}
 
-	uuid = (uint16_t)str_to_int(argv[0]);
-	if (!ble_transfer_module_srv_add_check(uuid)) {
+	if (!ble_transfer_module_srv_add_check(uuid_type, uuid)) {
 		BT_LOGE("[AT+BTDEMO] Transfer module srv add check fail\r\n");
 		return BT_AT_FAIL;
 	}
@@ -152,16 +250,26 @@ static int atcmd_bt_transfer_module_srv_add(int argc, char **argv)
 		}
 	}
 
-	memset(s_add_srv, 0, sizeof(s_add_srv));
-	s_add_srv->srv_uuid = uuid;
+	memset(s_add_srv, 0, sizeof(struct transfer_module_srv_t));
+	s_add_srv->uuid_type = uuid_type;
+	memcpy(s_add_srv->srv_uuid, uuid, TRANSFER_MODULE_UUID128_LEN);
 
 	return BT_AT_OK;
 }
 
 static int atcmd_bt_transfer_module_char_add(int argc, char **argv)
 {
+	uint8_t uuid_type;
+	uint8_t uuid[TRANSFER_MODULE_UUID128_LEN] = {0};
+	int ret;
+
 	if (argc != 2 || !argv) {
 		return BT_AT_ERR_PARAM_INVALID;
+	}
+
+	ret = uuid_string_to_little_endian(argv[0], &uuid_type, uuid);
+	if (ret != BT_AT_OK) {
+		return ret;
 	}
 
 	if (transfer_module_is_enable()) {
@@ -179,7 +287,9 @@ static int atcmd_bt_transfer_module_char_add(int argc, char **argv)
 		return BT_AT_ERR_CHAR_ADD_EXCEED_MAX_NUM;
 	}
 
-	s_add_srv->chars[s_add_srv->char_num].char_uuid = (uint16_t)str_to_int(argv[0]);
+	memset(&s_add_srv->chars[s_add_srv->char_num], 0, sizeof(s_add_srv->chars[s_add_srv->char_num]));
+	s_add_srv->chars[s_add_srv->char_num].uuid_type = uuid_type;
+	memcpy(s_add_srv->chars[s_add_srv->char_num].char_uuid, uuid, TRANSFER_MODULE_UUID128_LEN);
 	s_add_srv->chars[s_add_srv->char_num].char_property = (uint16_t)str_to_int(argv[1]);
 	++s_add_srv->char_num;
 

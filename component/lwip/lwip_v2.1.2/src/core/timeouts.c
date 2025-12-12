@@ -457,10 +457,11 @@ static u8_t *lwip_removed_tmrs = NULL;
 /*
 Called in post sleep process to compenstate lwip internal counter, if lwip tmr has been removed, we need to update lwip internal counter.
  */
-void lwip_update_internal_counter(u32_t ms)
+uint32_t lwip_update_internal_counter(u32_t ms, void *param_ptr)
 {
+  (void)param_ptr;
   if (lwip_removed_tmrs == NULL) {
-    return;
+    return 0;
   }
 
   u8_t i = 0;
@@ -531,6 +532,7 @@ void lwip_update_internal_counter(u32_t ms)
 #endif
 #endif
 #endif
+  return 0;
 }
 
 /*
@@ -673,11 +675,13 @@ u32_t lwip_rm_unneeded_tmr(u32_t expected_idle_time, void *param)
 
   u8_t i = 0;
   u32_t ret = TRUE;
+  u8_t removable = 0;
 #if LWIP_TCP
-  if (check_tcpip_tcp_timer_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+  removable = check_tcpip_tcp_timer_removable();
+  if (removable == 1 && lwip_removed_tmrs[i] == 0) {
     sys_untimeout(tcpip_tcp_timer, NULL);
     lwip_removed_tmrs[i] = 1;
-  } else if (check_tcpip_tcp_timer_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+  } else if (removable == 0 && lwip_removed_tmrs[i] == 1) {
     if (tcpip_timeout_noblock(TCP_TMR_INTERVAL, tcpip_tcp_timer, NULL) == ERR_OK) {
       lwip_removed_tmrs[i] = 0;
     }
@@ -687,10 +691,11 @@ u32_t lwip_rm_unneeded_tmr(u32_t expected_idle_time, void *param)
 #endif
 #if LWIP_IPV4
 #if IP_REASSEMBLY
-  if (check_ip_reass_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+  removable = check_ip_reass_tmr_removable();
+  if (removable == 1 && lwip_removed_tmrs[i] == 0) {
     sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
     lwip_removed_tmrs[i] = 1;
-  } else if (check_ip_reass_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+  } else if (removable == 0 && lwip_removed_tmrs[i] == 1) {
     if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
       lwip_removed_tmrs[i] = 0;
     }
@@ -699,10 +704,11 @@ u32_t lwip_rm_unneeded_tmr(u32_t expected_idle_time, void *param)
   i++;
 #endif
 #if LWIP_ARP
-  if (check_etharp_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+  removable = check_etharp_tmr_removable();
+  if (removable == 1 && lwip_removed_tmrs[i] == 0) {
     sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
     lwip_removed_tmrs[i] = 1;
-  } else if (check_etharp_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+  } else if (removable == 0 && lwip_removed_tmrs[i] == 1) {
     if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
       lwip_removed_tmrs[i] = 0;
     }
@@ -713,10 +719,11 @@ u32_t lwip_rm_unneeded_tmr(u32_t expected_idle_time, void *param)
 #if LWIP_DHCP
   /* dhcp_coarse_tmr interval is large enough, no need to remove it,  */
   i++;
-  if (check_dhcp_fine_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+  removable = check_dhcp_fine_tmr_removable();
+  if (removable == 1 && lwip_removed_tmrs[i] == 0) {
     sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
     lwip_removed_tmrs[i] = 1;
-  } else if (check_dhcp_fine_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+  } else if (removable == 0 && lwip_removed_tmrs[i] == 1) {
     if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
       lwip_removed_tmrs[i] = 0;
     }
@@ -725,10 +732,11 @@ u32_t lwip_rm_unneeded_tmr(u32_t expected_idle_time, void *param)
   i++;
 #endif
 #if LWIP_AUTOIP
-  if (check_autoip_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+  removable = check_autoip_tmr_removable();
+  if (removable == 1 && lwip_removed_tmrs[i] == 0) {
     sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
     lwip_removed_tmrs[i] = 1;
-  } else if (check_autoip_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+  } else if (removable == 0 && lwip_removed_tmrs[i] == 1) {
     if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
       lwip_removed_tmrs[i] = 0;
     }
@@ -737,10 +745,11 @@ u32_t lwip_rm_unneeded_tmr(u32_t expected_idle_time, void *param)
   i++;
 #endif
 #if LWIP_IGMP
-  if (check_igmp_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+  removable = check_igmp_tmr_removable();
+  if (removable == 1 && lwip_removed_tmrs[i] == 0) {
     sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
     lwip_removed_tmrs[i] = 1;
-  } else if (check_igmp_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+  } else if (removable == 0 && lwip_removed_tmrs[i] == 1) {
     if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
       lwip_removed_tmrs[i] = 0;
     }
@@ -750,10 +759,11 @@ u32_t lwip_rm_unneeded_tmr(u32_t expected_idle_time, void *param)
 #endif
 #endif
 #if LWIP_DNS
-  if (check_dns_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+  removable = check_dns_tmr_removable();
+  if (removable == 1 && lwip_removed_tmrs[i] == 0) {
     sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
     lwip_removed_tmrs[i] = 1;
-  } else if (check_dns_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+  } else if (removable == 0 && lwip_removed_tmrs[i] == 1) {
     if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
       lwip_removed_tmrs[i] = 0;
     }
@@ -762,10 +772,11 @@ u32_t lwip_rm_unneeded_tmr(u32_t expected_idle_time, void *param)
   i++;
 #endif
 #if LWIP_IPV6
-  if (check_nd6_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+  removable = check_nd6_tmr_removable();
+  if (removable == 1 && lwip_removed_tmrs[i] == 0) {
     sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
     lwip_removed_tmrs[i] = 1;
-  } else if (check_nd6_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+  } else if (removable == 0 && lwip_removed_tmrs[i] == 1) {
     if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
       lwip_removed_tmrs[i] = 0;
     }
@@ -773,10 +784,11 @@ u32_t lwip_rm_unneeded_tmr(u32_t expected_idle_time, void *param)
   }
   i++;
 #if LWIP_IPV6_REASS
-  if (check_ip6_reass_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+  removable = check_ip6_reass_tmr_removable();
+  if (removable == 1 && lwip_removed_tmrs[i] == 0) {
     sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
     lwip_removed_tmrs[i] = 1;
-  } else if (check_ip6_reass_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+  } else if (removable == 0 && lwip_removed_tmrs[i] == 1) {
     if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
       lwip_removed_tmrs[i] = 0;
     }
@@ -785,10 +797,11 @@ u32_t lwip_rm_unneeded_tmr(u32_t expected_idle_time, void *param)
   i++;
 #endif
 #if LWIP_IPV6_MLD
-  if (check_mld6_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+  removable = check_mld6_tmr_removable();
+  if (removable == 1 && lwip_removed_tmrs[i] == 0) {
     sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
     lwip_removed_tmrs[i] = 1;
-  } else if (check_mld6_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+  } else if (removable == 0 && lwip_removed_tmrs[i] == 1) {
     if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
       lwip_removed_tmrs[i] = 0;
     }
@@ -797,10 +810,11 @@ u32_t lwip_rm_unneeded_tmr(u32_t expected_idle_time, void *param)
   i++;
 #endif
 #if LWIP_IPV6_DHCP6
-  if (check_dhcp6_tmr_removable() == 1 && lwip_removed_tmrs[i] == 0) {
+  removable = check_dhcp6_tmr_removable();
+  if (removable == 1 && lwip_removed_tmrs[i] == 0) {
     sys_untimeout(lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
     lwip_removed_tmrs[i] = 1;
-  } else if (check_dhcp6_tmr_removable() == 0 && lwip_removed_tmrs[i] == 1) {
+  } else if (removable == 0 && lwip_removed_tmrs[i] == 1) {
     if (tcpip_timeout_noblock(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i])) == ERR_OK) {
       lwip_removed_tmrs[i] = 0;
     }

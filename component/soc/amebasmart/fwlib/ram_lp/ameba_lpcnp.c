@@ -1073,7 +1073,7 @@ void np_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqStat
 	//set dlps
 	if (pmu_ready_to_dsleep()) {
 		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
-		if (psleep_param->sleep_time) {
+		if (psleep_param->sleep_time != PMU_SLEEP_FOREVER) {
 			AONTimer_ClearINT();
 			AONTimer_Setting(psleep_param->sleep_time);
 			AONTimer_INT(ENABLE);

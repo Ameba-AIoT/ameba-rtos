@@ -397,7 +397,8 @@ typedef struct {
 /** @defgroup LDO_Exported_Functions LDO Exported Functions
   * @{
   */
-_LONG_CALL_ void LDO_Mem_Dummy_Ctrl(u32 dummy_load);
+_LONG_CALL_	void LDO_CoreVolSet(u8 vol_type);
+_LONG_CALL_ void LDO_MemDummyCtrl(u32 dummy_load);
 
 /**
   * @}

@@ -31,7 +31,4 @@ Link list item structure should be built according the requirement.
 
 #  Supported IC
 
-- AmebaDplus
-  * RTL8721Dx
-
-
+RTL8721Dx

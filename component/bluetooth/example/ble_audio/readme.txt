@@ -4,7 +4,9 @@
 #                                                                                #
 ##################################################################################
 
-Configure the following Macros in bt_api_config.h
+Compile config 
+~~~~~~~~~~~
+1.Configure the following Macros in bt_api_config.h
     RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT         to                1
     RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT           to                1
     RTK_BLE_AUDIO_MICP_MIC_CONTROLLER_SUPPORT           to                1
@@ -15,6 +17,10 @@ Configure the following Macros in bt_api_config.h
     RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT      to                1
     RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT          to                1
     RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT               to                1
+
+2. change kPrimaryAudioConfig in ameba_audio_mixer_usrcfg.cpp:
+    change from   kPrimaryAudioConfig = {1024, 4, RTAUDIO_OUT_MIN_FRAMES_STAGE1};
+        to        kPrimaryAudioConfig = {240, 4, RTAUDIO_OUT_MIN_FRAMES_STAGE2};
 
 GCC menuconfig 
 ~~~~~~~~~~~

@@ -683,9 +683,13 @@ Called in post sleep process to compenstate the ip6 reass time
 void comp_ip6_reas_time(u32_t ms)
 {
   struct ip6_reassdata *r = reassdatagrams;
+  if (ms < IP6_REASS_TMR_INTERVAL / 2) {
+    return;
+  }
+  u32_t comp_ms = ms < IP6_REASS_TMR_INTERVAL ? IP6_REASS_TMR_INTERVAL : ms;
   
   while (r != NULL) {
-    r->timer = r->timer > ms / IP6_REASS_TMR_INTERVAL ? r->timer - ms / IP6_REASS_TMR_INTERVAL : 0;
+    r->timer = r->timer > comp_ms / IP6_REASS_TMR_INTERVAL ? r->timer - comp_ms / IP6_REASS_TMR_INTERVAL : 0;
     r = r->next;
   }
 }
@@ -703,7 +707,7 @@ u8_t check_ip6_reass_tmr_removable(void)
   while (r != NULL) {
     if (r->timer > 0) {
       max_sleep_time = r->timer * IP6_REASS_TMR_INTERVAL;
-      if (sleep_param.sleep_time > max_sleep_time || sleep_param.sleep_time == 0) {
+      if (sleep_param.sleep_time > max_sleep_time) {
         sleep_param.sleep_time = max_sleep_time;
       }
       r = r->next;

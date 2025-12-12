@@ -78,28 +78,39 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
             ret = ErrType.SYS_PROTO
             sys_exit(logger, False, ret)
 
-        ret, is_reburn = ameba.check_supported_flash_size(memory_type)
-        if ret != ErrType.OK:
-            logger.error(f"Check supported flash size fail")
-            sys_exit(logger, False, ret)
+        if memory_type == MemoryInfo.MEMORY_TYPE_NOR:
+            ret, is_reburn = ameba.check_supported_flash_size()
+            if ret != ErrType.OK:
+                logger.error(f"Check supported flash size fail")
+                sys_exit(logger, False, ret)
 
-        if is_reburn:
-            ameba.__del__()
-            # reset with remote params
-            ameba = Ameba(profile_info, serial_port, serial_baudrate, image_dir, settings, logger,
-                          download_img_info=images_info,
-                          chip_erase=chip_erase,
-                          memory_type=memory_type,
-                          erase_info=memory_info,
-                          remote_server=remote_server,
-                          remote_port=remote_port,
-                          remote_password=remote_password)
+            if is_reburn:
+                ameba.__del__()
+                # reset with remote params
+                ameba = Ameba(profile_info, serial_port, serial_baudrate, image_dir, settings, logger,
+                              download_img_info=images_info,
+                              chip_erase=chip_erase,
+                              memory_type=memory_type,
+                              erase_info=memory_info,
+                              remote_server=remote_server,
+                              remote_port=remote_port,
+                              remote_password=remote_password)
 
-        logger.info(f"Image download start...")  # customized, do not modify
-        ret = ameba.prepare()
-        if ret != ErrType.OK:
-            logger.error("Download prepare fail")
-            sys_exit(logger, False, ret)
+                logger.info(f"Re-prepare for reburn...")
+                ret = ameba.prepare()
+                if ret != ErrType.OK:
+                    logger.error("Download prepare fail")
+                    sys_exit(logger, False, ret)
+            else:
+                ret = ameba.show_device_info()
+                if ret != ErrType.OK:
+                    sys_exit(logger, False, ret)
+        else:
+            logger.info(f"Prepare for download...")
+            ret = ameba.prepare()
+            if ret != ErrType.OK:
+                logger.error("Download prepare fail")
+                sys_exit(logger, False, ret)
 
         ret = ameba.verify_images()
         if ret != ErrType.OK:
@@ -117,6 +128,7 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                 logger.error("Download image fail")
                 sys_exit(logger, False, ret)
 
+        logger.info(f"Image download start...")  # customized, do not modify
         ret = ameba.download_images()
         if ret != ErrType.OK:
             logger.error("Download image fail")

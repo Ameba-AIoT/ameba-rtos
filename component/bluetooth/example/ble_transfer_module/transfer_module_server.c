@@ -35,12 +35,21 @@
 
 #define TRANSFER_MODULE_READ_VAL_DEFAULT_LEN     10
 
+#define _U16_TO_LE(_a)                                  \
+        {(uint8_t)((_a) & 0xFF), (uint8_t)(((_a) >> 8) & 0xFF)}
+
+
 typedef struct {
-	uint16_t service_uuid;
-	uint16_t charac_read_uuid;
-	uint16_t charac_write_uuid;
-	uint16_t charac_notify_uuid;
-	uint16_t charac_indicate_uuid;
+	uint8_t service_uuid_type;
+	uint8_t service_uuid[TRANSFER_MODULE_UUID128_LEN]; // 16-bit UUID stores in first two elements of the array in little endian; 128-bit UUID occupies the entire array in little endian
+	uint8_t read_uuid_type;
+	uint8_t charac_read_uuid[TRANSFER_MODULE_UUID128_LEN]; // 16-bit UUID stores in first two elements of the array in little endian; 128-bit UUID occupies the entire array in little endian
+	uint8_t write_uuid_type;
+	uint8_t charac_write_uuid[TRANSFER_MODULE_UUID128_LEN]; // 16-bit UUID stores in first two elements of the array in little endian; 128-bit UUID occupies the entire array in little endian
+	uint8_t notify_uuid_type;
+	uint8_t charac_notify_uuid[TRANSFER_MODULE_UUID128_LEN]; // 16-bit UUID stores in first two elements of the array in little endian; 128-bit UUID occupies the entire array in little endian
+	uint8_t indicate_uuid_type;
+	uint8_t charac_indicate_uuid[TRANSFER_MODULE_UUID128_LEN]; // 16-bit UUID stores in first two elements of the array in little endian; 128-bit UUID occupies the entire array in little endian
 } transfer_module_uuid_t;
 
 typedef struct {
@@ -83,41 +92,19 @@ struct transfer_module_srv_info {
 };
 
 static transfer_module_uuid_t transfer_module_uuids = {
-	.service_uuid         =  TRANSFER_MODULE_UUID_SRV,
-	.charac_read_uuid     =  TRANSFER_MODULE_UUID_CHAR_VAL_READ,
-	.charac_write_uuid    =  TRANSFER_MODULE_UUID_CHAR_VAL_WRITE,
-	.charac_notify_uuid   =  TRANSFER_MODULE_UUID_CHAR_VAL_NOTIFY,
-	.charac_indicate_uuid =  TRANSFER_MODULE_UUID_CHAR_VAL_INDICATE,
+	.service_uuid_type    =  BT_UUID_TYPE_16,
+	.service_uuid         =  _U16_TO_LE(TRANSFER_MODULE_UUID_SRV),
+	.read_uuid_type       =  BT_UUID_TYPE_16,
+	.charac_read_uuid     =  _U16_TO_LE(TRANSFER_MODULE_UUID_CHAR_VAL_READ),
+	.write_uuid_type      =  BT_UUID_TYPE_16,
+	.charac_write_uuid    =  _U16_TO_LE(TRANSFER_MODULE_UUID_CHAR_VAL_WRITE),
+	.notify_uuid_type     =  BT_UUID_TYPE_16,
+	.charac_notify_uuid   =  _U16_TO_LE(TRANSFER_MODULE_UUID_CHAR_VAL_NOTIFY),
+	.indicate_uuid_type   =  BT_UUID_TYPE_16,
+	.charac_indicate_uuid =  _U16_TO_LE(TRANSFER_MODULE_UUID_CHAR_VAL_INDICATE),
 };
 
-static rtk_bt_gatt_attr_t transfer_module_attrs[] = {
-	/* Primary Service: simple BLE */
-	RTK_BT_GATT_PRIMARY_SERVICE(RTK_BT_UUID_TRANSFER_MODULE),
-
-	/* Read Characteristic */
-	RTK_BT_GATT_CHARACTERISTIC(RTK_BT_UUID_TRANSFER_MODULE_VAL_READ,
-							   RTK_BT_GATT_CHRC_READ,
-							   RTK_BT_GATT_PERM_READ),
-
-	/* Write Characteristic */
-	RTK_BT_GATT_CHARACTERISTIC(RTK_BT_UUID_TRANSFER_MODULE_VAL_WRITE,
-							   RTK_BT_GATT_CHRC_WRITE | RTK_BT_GATT_CHRC_WRITE_WITHOUT_RESP,
-							   RTK_BT_GATT_PERM_WRITE),
-
-	/* Notify Characteristic */
-	RTK_BT_GATT_CHARACTERISTIC(RTK_BT_UUID_TRANSFER_MODULE_VAL_NOTIFY,
-							   RTK_BT_GATT_CHRC_NOTIFY,
-							   RTK_BT_GATT_PERM_NONE),
-	RTK_BT_GATT_CCC(RTK_BT_GATT_PERM_READ | RTK_BT_GATT_PERM_WRITE),
-
-	/* Indicate Characteristic */
-	RTK_BT_GATT_CHARACTERISTIC(RTK_BT_UUID_TRANSFER_MODULE_VAL_INDICATE,
-							   RTK_BT_GATT_CHRC_INDICATE,
-							   RTK_BT_GATT_PERM_NONE),
-	RTK_BT_GATT_CCC(RTK_BT_GATT_PERM_READ | RTK_BT_GATT_PERM_WRITE),
-};
-
-static struct rtk_bt_gatt_service transfer_module_srv = RTK_BT_GATT_SERVICE(transfer_module_attrs, TRANSFER_MODULE_SRV_ID);
+static struct rtk_bt_gatt_service *default_srv = NULL;
 
 static transfer_module_read_val_t transfer_module_read_val = {
 	.len = TRANSFER_MODULE_READ_VAL_DEFAULT_LEN,
@@ -128,6 +115,11 @@ static uint8_t transfer_module_cccd_ntf_en_map[10] = {0};
 static uint8_t transfer_module_cccd_ind_en_map[10] = {0};
 
 static struct transfer_module_srv_info *user_defined_srvs[TRANSFER_MODULE_USER_DEFINED_SRV_MAX_NUM] = {0};
+
+static uint16_t transfer_module_primary_service_init(rtk_bt_gatt_attr_t *attr, uint8_t uuid_type, uint8_t *uuid);
+static uint16_t transfer_module_char_value_init(rtk_bt_gatt_attr_t *attr, uint8_t uuid_type, uint8_t *uuid, uint8_t perm);
+static uint16_t transfer_module_char_decl_init(rtk_bt_gatt_attr_t *attr, uint8_t uuid_type, uint8_t *uuid, uint16_t props);
+static uint16_t transfer_module_cccd_init(rtk_bt_gatt_attr_t *attr, uint8_t perm);
 
 static void transfer_module_server_mtu_exchange_hdl(void *data)
 {
@@ -543,39 +535,151 @@ uint16_t ble_transfer_module_server_disconnect(uint16_t conn_handle)
 	return RTK_BT_OK;
 }
 
+void ble_tranfer_module_default_srv_free(void)
+{
+	if (default_srv) {
+		if (default_srv->attrs) {
+			for (int attr_idx = 0; attr_idx < default_srv->attr_count; ++attr_idx) {
+				rtk_bt_gatt_attr_t *attr = &default_srv->attrs[attr_idx];
+				if (attr->user_data) {
+
+					if (BT_UUID_16(attr->uuid)->val == BT_UUID_GATT_CHRC_VAL) {
+						struct bt_uuid *uuid = (struct bt_uuid *)(((struct rtk_bt_gatt_chrc *)(attr->user_data))->uuid);
+						if (uuid) {
+							osif_mem_free(uuid);
+						}
+					}
+					osif_mem_free(attr->user_data);
+					attr->user_data = NULL;
+				}
+
+				if (attr->uuid) {
+					osif_mem_free((void *)(attr->uuid));
+					attr->uuid = NULL;
+				}
+
+			}
+			osif_mem_free(default_srv->attrs);
+			default_srv->attrs = NULL;
+		}
+
+		osif_mem_free(default_srv);
+		default_srv = NULL;
+	}
+}
+
+static uint16_t ble_transfer_module_default_srv_init(void)
+{
+	uint16_t ret = RTK_BT_OK;
+
+	default_srv = (struct rtk_bt_gatt_service *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct rtk_bt_gatt_service));
+	if (!default_srv) {
+		BT_LOGE("[APP] alloc user defined srv fail\r\n");
+		ret = RTK_BT_ERR_NO_MEMORY;
+		goto end;
+	}
+	memset(default_srv, 0, sizeof(struct rtk_bt_gatt_service));
+
+	default_srv->type = GATT_SERVICE_OVER_BLE;
+	default_srv->server_info = 0;
+	default_srv->user_data = NULL;
+	default_srv->register_status = 0;
+
+	default_srv->app_id = TRANSFER_MODULE_SRV_ID;
+	default_srv->attr_count = TRANSFER_MODULE_INDEX_NUM;
+	default_srv->attrs = (rtk_bt_gatt_attr_t *)osif_mem_alloc(
+							 RAM_TYPE_DATA_ON,
+							 default_srv->attr_count * sizeof(rtk_bt_gatt_attr_t));
+	if (!default_srv->attrs) {
+		BT_LOGE("[APP] alloc user defined srv attrs fail\r\n");
+		ret = RTK_BT_ERR_NO_MEMORY;
+		goto end;
+	}
+
+	ret = transfer_module_primary_service_init(&default_srv->attrs[TRANSFER_MODULE_SERVICE_INDEX],
+											   transfer_module_uuids.service_uuid_type, transfer_module_uuids.service_uuid);
+	if (ret != RTK_BT_OK) {
+		goto end;
+	}
+	/* Read Characteristic */
+	ret = transfer_module_char_decl_init(&default_srv->attrs[TRANSFER_MODULE_READ_CHRC_INDEX], transfer_module_uuids.read_uuid_type,
+										 transfer_module_uuids.charac_read_uuid, RTK_BT_GATT_CHRC_READ);
+	if (ret != RTK_BT_OK) {
+		goto end;
+	}
+
+	ret = transfer_module_char_value_init(&default_srv->attrs[TRANSFER_MODULE_READ_VAL_INDEX], transfer_module_uuids.read_uuid_type,
+										  transfer_module_uuids.charac_read_uuid, RTK_BT_GATT_PERM_READ);
+	if (ret != RTK_BT_OK) {
+		goto end;
+	}
+
+	/* Write Characteristic */
+	ret = transfer_module_char_decl_init(&default_srv->attrs[TRANSFER_MODULE_WRITE_CHRC_INDEX], transfer_module_uuids.write_uuid_type,
+										 transfer_module_uuids.charac_write_uuid, RTK_BT_GATT_CHRC_WRITE | RTK_BT_GATT_CHRC_WRITE_WITHOUT_RESP);
+	if (ret != RTK_BT_OK) {
+		goto end;
+	}
+
+	ret = transfer_module_char_value_init(&default_srv->attrs[TRANSFER_MODULE_WRITE_VAL_INDEX], transfer_module_uuids.write_uuid_type,
+										  transfer_module_uuids.charac_write_uuid, RTK_BT_GATT_PERM_WRITE);
+	if (ret != RTK_BT_OK) {
+		goto end;
+	}
+
+	/* Notify Characteristic */
+	ret = transfer_module_char_decl_init(&default_srv->attrs[TRANSFER_MODULE_NOTIFY_CHRC_INDEX], transfer_module_uuids.notify_uuid_type,
+										 transfer_module_uuids.charac_notify_uuid, RTK_BT_GATT_CHRC_NOTIFY);
+	if (ret != RTK_BT_OK) {
+		goto end;
+	}
+
+	ret = transfer_module_char_value_init(&default_srv->attrs[TRANSFER_MODULE_NOTIFY_VAL_INDEX], transfer_module_uuids.notify_uuid_type,
+										  transfer_module_uuids.charac_notify_uuid, RTK_BT_GATT_PERM_NONE);
+	if (ret != RTK_BT_OK) {
+		goto end;
+	}
+
+	ret = transfer_module_cccd_init(&default_srv->attrs[TRANSFER_MODULE_NOTIFY_CCCD_INDEX], RTK_BT_GATT_PERM_READ | RTK_BT_GATT_PERM_WRITE);
+	if (ret != RTK_BT_OK) {
+		goto end;
+	}
+
+	/* Indicate Characteristic */
+	ret = transfer_module_char_decl_init(&default_srv->attrs[TRANSFER_MODULE_INDICATE_CHRC_INDEX], transfer_module_uuids.indicate_uuid_type,
+										 transfer_module_uuids.charac_indicate_uuid, RTK_BT_GATT_CHRC_INDICATE);
+	if (ret != RTK_BT_OK) {
+		goto end;
+	}
+
+	ret = transfer_module_char_value_init(&default_srv->attrs[TRANSFER_MODULE_INDICATE_VAL_INDEX], transfer_module_uuids.indicate_uuid_type,
+										  transfer_module_uuids.charac_indicate_uuid, RTK_BT_GATT_PERM_NONE);
+	if (ret != RTK_BT_OK) {
+		goto end;
+	}
+
+	ret = transfer_module_cccd_init(&default_srv->attrs[TRANSFER_MODULE_INDICATE_CCCD_INDEX], RTK_BT_GATT_PERM_READ | RTK_BT_GATT_PERM_WRITE);
+	if (ret != RTK_BT_OK) {
+		goto end;
+	}
+
+end:
+	if (ret != RTK_BT_OK) {
+		ble_tranfer_module_default_srv_free();
+	}
+
+	return ret;
+}
+
 static uint16_t ble_transfer_module_register_default_srv(void)
 {
-	rtk_bt_gatt_attr_t *attrs = transfer_module_srv.attrs;
+	uint16_t ret = ble_transfer_module_default_srv_init();
+	if (ret != RTK_BT_OK) {
+		BT_LOGE("[%s] ble_transfer_module_default_srv_init fail\r\n", __func__);
+		return ret;
+	}
 
-	/* service uuid */
-	attrs[TRANSFER_MODULE_SERVICE_INDEX].user_data = BT_UUID_DECLARE_16(transfer_module_uuids.service_uuid);
-
-	/* charc read uuid */
-	((struct rtk_bt_gatt_chrc *)(attrs[TRANSFER_MODULE_READ_CHRC_INDEX].user_data))->uuid
-		= BT_UUID_DECLARE_16(transfer_module_uuids.charac_read_uuid);
-	attrs[TRANSFER_MODULE_READ_VAL_INDEX].uuid = BT_UUID_DECLARE_16(transfer_module_uuids.charac_read_uuid);
-
-	/* charc write uuid */
-	((struct rtk_bt_gatt_chrc *)(attrs[TRANSFER_MODULE_WRITE_CHRC_INDEX].user_data))->uuid
-		= BT_UUID_DECLARE_16(transfer_module_uuids.charac_write_uuid);
-	attrs[TRANSFER_MODULE_WRITE_VAL_INDEX].uuid = BT_UUID_DECLARE_16(transfer_module_uuids.charac_write_uuid);
-
-	/* charc notify uuid */
-	((struct rtk_bt_gatt_chrc *)(attrs[TRANSFER_MODULE_NOTIFY_CHRC_INDEX].user_data))->uuid
-		= BT_UUID_DECLARE_16(transfer_module_uuids.charac_notify_uuid);
-	attrs[TRANSFER_MODULE_NOTIFY_VAL_INDEX].uuid = BT_UUID_DECLARE_16(transfer_module_uuids.charac_notify_uuid);
-
-	/* charc indicate uuid */
-	((struct rtk_bt_gatt_chrc *)(attrs[TRANSFER_MODULE_INDICATE_CHRC_INDEX].user_data))->uuid
-		= BT_UUID_DECLARE_16(transfer_module_uuids.charac_indicate_uuid);
-	attrs[TRANSFER_MODULE_INDICATE_VAL_INDEX].uuid = BT_UUID_DECLARE_16(transfer_module_uuids.charac_indicate_uuid);
-
-	transfer_module_srv.type = GATT_SERVICE_OVER_BLE;
-	transfer_module_srv.server_info = 0;
-	transfer_module_srv.user_data = NULL;
-	transfer_module_srv.register_status = 0;
-
-	return rtk_bt_gatts_register_service(&transfer_module_srv);
+	return rtk_bt_gatts_register_service(default_srv);
 }
 
 static uint16_t ble_transfer_module_register_default_user_defined_srvs(void)
@@ -647,31 +751,40 @@ uint16_t ble_transfer_module_server_deinit(void)
 		}
 	}
 
+	// free default_srv
+	ble_tranfer_module_default_srv_free();
+
 	return RTK_BT_OK;
 }
 
-uint16_t ble_transfer_module_get_uuid(uint8_t attr, uint16_t *uuid)
+uint16_t ble_transfer_module_get_uuid(uint8_t attr, uint8_t *uuid_type, uint8_t *uuid)
 {
 	uint16_t ret = RTK_BT_OK;
-	if (!uuid) {
+	if (!uuid_type || !uuid) {
+		BT_LOGE("[%s] invalid input param\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
 	switch (attr) {
 	case TRANSFER_MODULE_ATTR_SERVICE:
-		*uuid = transfer_module_uuids.service_uuid;
+		*uuid_type = transfer_module_uuids.service_uuid_type;
+		memcpy(uuid, transfer_module_uuids.service_uuid, sizeof(transfer_module_uuids.service_uuid));
 		break;
 	case TRANSFER_MODULE_ATTR_READ:
-		*uuid = transfer_module_uuids.charac_read_uuid;
+		*uuid_type = transfer_module_uuids.read_uuid_type;
+		memcpy(uuid, transfer_module_uuids.charac_read_uuid, sizeof(transfer_module_uuids.charac_read_uuid));
 		break;
 	case TRANSFER_MODULE_ATTR_WRITE:
-		*uuid = transfer_module_uuids.charac_write_uuid;
+		*uuid_type = transfer_module_uuids.write_uuid_type;
+		memcpy(uuid, transfer_module_uuids.charac_write_uuid, sizeof(transfer_module_uuids.charac_write_uuid));
 		break;
 	case TRANSFER_MODULE_ATTR_NOTIFY:
-		*uuid = transfer_module_uuids.charac_notify_uuid;
+		*uuid_type = transfer_module_uuids.notify_uuid_type;
+		memcpy(uuid, transfer_module_uuids.charac_notify_uuid, sizeof(transfer_module_uuids.charac_notify_uuid));
 		break;
 	case TRANSFER_MODULE_ATTR_INDICATE:
-		*uuid = transfer_module_uuids.charac_indicate_uuid;
+		*uuid_type = transfer_module_uuids.indicate_uuid_type;
+		memcpy(uuid, transfer_module_uuids.charac_indicate_uuid, sizeof(transfer_module_uuids.charac_indicate_uuid));
 		break;
 	default:
 		BT_LOGE("[APP] Invalid transfer module attribute attr=%d\r\n", attr);
@@ -681,10 +794,14 @@ uint16_t ble_transfer_module_get_uuid(uint8_t attr, uint16_t *uuid)
 	return ret;
 }
 
-uint16_t ble_transfer_module_set_uuid(uint8_t attr, uint16_t uuid)
+uint16_t ble_transfer_module_set_uuid(uint8_t attr, uint8_t uuid_type, uint8_t *uuid)
 {
 	uint16_t ret = RTK_BT_OK;
 
+	if (!uuid) {
+		BT_LOGE("[%s] invalid input param\r\n", __func__);
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
 	if (rtk_bt_is_enable()) {
 		BT_LOGE("[APP] Transfer module set uuid fail, please set uuid before bt init\r\n");
 		return RTK_BT_FAIL;
@@ -692,19 +809,24 @@ uint16_t ble_transfer_module_set_uuid(uint8_t attr, uint16_t uuid)
 
 	switch (attr) {
 	case TRANSFER_MODULE_ATTR_SERVICE:
-		transfer_module_uuids.service_uuid = uuid;
+		transfer_module_uuids.service_uuid_type = uuid_type;
+		memcpy(transfer_module_uuids.service_uuid, uuid, sizeof(transfer_module_uuids.service_uuid));
 		break;
 	case TRANSFER_MODULE_ATTR_READ:
-		transfer_module_uuids.charac_read_uuid = uuid;
+		transfer_module_uuids.read_uuid_type = uuid_type;
+		memcpy(transfer_module_uuids.charac_read_uuid, uuid, sizeof(transfer_module_uuids.charac_read_uuid));
 		break;
 	case TRANSFER_MODULE_ATTR_WRITE:
-		transfer_module_uuids.charac_write_uuid = uuid;
+		transfer_module_uuids.write_uuid_type = uuid_type;
+		memcpy(transfer_module_uuids.charac_write_uuid, uuid, sizeof(transfer_module_uuids.charac_write_uuid));
 		break;
 	case TRANSFER_MODULE_ATTR_NOTIFY:
-		transfer_module_uuids.charac_notify_uuid = uuid;
+		transfer_module_uuids.notify_uuid_type = uuid_type;
+		memcpy(transfer_module_uuids.charac_notify_uuid, uuid, sizeof(transfer_module_uuids.charac_notify_uuid));
 		break;
 	case TRANSFER_MODULE_ATTR_INDICATE:
-		transfer_module_uuids.charac_indicate_uuid = uuid;
+		transfer_module_uuids.indicate_uuid_type = uuid_type;
+		memcpy(transfer_module_uuids.charac_indicate_uuid, uuid, sizeof(transfer_module_uuids.charac_indicate_uuid));
 		break;
 	default:
 		BT_LOGE("[APP] Invalid transfer module attribute attr=%d\r\n", attr);
@@ -798,9 +920,10 @@ void ble_transfer_module_srv_del(void)
 	}
 }
 
-static uint16_t transfer_module_primary_service_init(rtk_bt_gatt_attr_t *attr, uint16_t uuid)
+static uint16_t transfer_module_primary_service_init(rtk_bt_gatt_attr_t *attr, uint8_t uuid_type, uint8_t *uuid)
 {
-	if (!attr) {
+	if (!attr || !uuid || (uuid_type != BT_UUID_TYPE_16 && uuid_type != BT_UUID_TYPE_128)) {
+		BT_LOGE("[%s] invalid input param\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
@@ -809,8 +932,11 @@ static uint16_t transfer_module_primary_service_init(rtk_bt_gatt_attr_t *attr, u
 		BT_LOGE("[APP] alloc primary service attr uuid fail\r\n");
 		return RTK_BT_ERR_NO_MEMORY;
 	}
-
-	attr->user_data = (void *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct bt_uuid_16));
+	if (uuid_type == BT_UUID_TYPE_16) {
+		attr->user_data = (void *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct bt_uuid_16));
+	} else if (uuid_type == BT_UUID_TYPE_128) {
+		attr->user_data = (void *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct bt_uuid_128));
+	}
 	if (!attr->user_data) {
 		BT_LOGE("[APP] alloc primary service attr user_data fail\r\n");
 		return RTK_BT_ERR_NO_MEMORY;
@@ -818,17 +944,24 @@ static uint16_t transfer_module_primary_service_init(rtk_bt_gatt_attr_t *attr, u
 
 	memcpy((void *)attr->uuid, BT_UUID_GATT_PRIMARY, sizeof(struct bt_uuid_16));
 	attr->perm = RTK_BT_GATT_PERM_READ;
-	memcpy(attr->user_data, BT_UUID_DECLARE_16(uuid), sizeof(struct bt_uuid_16));
+	if (uuid_type == BT_UUID_TYPE_16) {
+		uint16_t uuid16 = LE_TO_U16(uuid);
+		memcpy(attr->user_data, BT_UUID_DECLARE_16(uuid16), sizeof(struct bt_uuid_16));
+	} else if (uuid_type == BT_UUID_TYPE_128) {
+		((struct bt_uuid_128 *)(attr->user_data))->uuid.type = BT_UUID_TYPE_128;
+		memcpy(((struct bt_uuid_128 *)(attr->user_data))->val, uuid, TRANSFER_MODULE_UUID128_LEN);
+	}
 	attr->len = 0;
 	attr->flag = RTK_BT_GATT_INTERNAL;
 
 	return RTK_BT_OK;
 }
 
-static uint16_t transfer_module_char_decl_init(rtk_bt_gatt_attr_t *attr, uint16_t uuid, uint16_t props)
+static uint16_t transfer_module_char_decl_init(rtk_bt_gatt_attr_t *attr, uint8_t uuid_type, uint8_t *uuid, uint16_t props)
 {
 	struct bt_uuid *char_uuid = NULL;
-	if (!attr) {
+	if (!attr || !uuid || (uuid_type != BT_UUID_TYPE_16 && uuid_type != BT_UUID_TYPE_128)) {
+		BT_LOGE("[%s] invalid input param\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
@@ -848,17 +981,29 @@ static uint16_t transfer_module_char_decl_init(rtk_bt_gatt_attr_t *attr, uint16_
 	attr->perm = RTK_BT_GATT_PERM_READ;
 	memcpy(attr->user_data,
 	(struct rtk_bt_gatt_chrc[]) {
-		RTK_BT_GATT_CHRC_INIT(BT_UUID_DECLARE_16(uuid), 0U, props)
+		RTK_BT_GATT_CHRC_INIT(NULL, 0U, props)
 	},
 	sizeof(struct rtk_bt_gatt_chrc));
 
-	((struct rtk_bt_gatt_chrc *)(attr->user_data))->uuid = (struct bt_uuid *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct bt_uuid_16));
-	char_uuid = (struct bt_uuid *)(((struct rtk_bt_gatt_chrc *)(attr->user_data))->uuid);
-	if (!char_uuid) {
-		BT_LOGE("[APP] alloc characteristic uuid fail\r\n");
-		return RTK_BT_ERR_NO_MEMORY;
+	if (uuid_type == BT_UUID_TYPE_16) {
+		uint16_t uuid16 = LE_TO_U16(uuid);
+		((struct rtk_bt_gatt_chrc *)(attr->user_data))->uuid = (struct bt_uuid *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct bt_uuid_16));
+		char_uuid = (struct bt_uuid *)(((struct rtk_bt_gatt_chrc *)(attr->user_data))->uuid);
+		if (!char_uuid) {
+			BT_LOGE("[APP] alloc characteristic uuid fail\r\n");
+			return RTK_BT_ERR_NO_MEMORY;
+		}
+		memcpy(char_uuid,  BT_UUID_DECLARE_16(uuid16), sizeof(struct bt_uuid_16));
+	} else if (uuid_type == BT_UUID_TYPE_128) {
+		((struct rtk_bt_gatt_chrc *)(attr->user_data))->uuid = (struct bt_uuid *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct bt_uuid_128));
+		char_uuid = (struct bt_uuid *)(((struct rtk_bt_gatt_chrc *)(attr->user_data))->uuid);
+		if (!char_uuid) {
+			BT_LOGE("[APP] alloc characteristic uuid fail\r\n");
+			return RTK_BT_ERR_NO_MEMORY;
+		}
+		((struct bt_uuid_128 *)char_uuid)->uuid.type = BT_UUID_TYPE_128;
+		memcpy(((struct bt_uuid_128 *)char_uuid)->val, uuid, TRANSFER_MODULE_UUID128_LEN);
 	}
-	memcpy(char_uuid,  BT_UUID_DECLARE_16(uuid), sizeof(struct bt_uuid_16));
 
 	attr->len = 0;
 	attr->flag = RTK_BT_GATT_INTERNAL;
@@ -866,19 +1011,30 @@ static uint16_t transfer_module_char_decl_init(rtk_bt_gatt_attr_t *attr, uint16_
 	return RTK_BT_OK;
 }
 
-static uint16_t transfer_module_char_value_init(rtk_bt_gatt_attr_t *attr, uint16_t uuid, uint8_t perm)
+static uint16_t transfer_module_char_value_init(rtk_bt_gatt_attr_t *attr, uint8_t uuid_type, uint8_t *uuid, uint8_t perm)
 {
-	if (!attr) {
+	if (!attr || !uuid || (uuid_type != BT_UUID_TYPE_16 && uuid_type != BT_UUID_TYPE_128)) {
+		BT_LOGE("[%s] invalid input param\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
-	attr->uuid = (struct bt_uuid *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct bt_uuid_16));
+	if (uuid_type == BT_UUID_TYPE_16) {
+		attr->uuid = (struct bt_uuid *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct bt_uuid_16));
+	} else if (uuid_type == BT_UUID_TYPE_128) {
+		attr->uuid = (struct bt_uuid *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct bt_uuid_128));
+	}
 	if (!attr->uuid) {
 		BT_LOGE("[APP] alloc characteristic value attr uuid fail\r\n");
 		return RTK_BT_ERR_NO_MEMORY;
 	}
 
-	memcpy((void *)attr->uuid, BT_UUID_DECLARE_16(uuid), sizeof(struct bt_uuid_16));
+	if (uuid_type == BT_UUID_TYPE_16) {
+		uint16_t uuid16 = LE_TO_U16(uuid);
+		memcpy((void *)attr->uuid, BT_UUID_DECLARE_16(uuid16), sizeof(struct bt_uuid_16));
+	} else if (uuid_type == BT_UUID_TYPE_128) {
+		((struct bt_uuid_128 *)(attr->uuid))->uuid.type = BT_UUID_TYPE_128;
+		memcpy(((struct bt_uuid_128 *)(attr->uuid))->val, uuid, TRANSFER_MODULE_UUID128_LEN);
+	}
 	attr->perm = perm;
 	attr->user_data = NULL;
 	attr->len = 0;
@@ -1008,18 +1164,20 @@ static uint16_t transfer_module_char_index_init(struct transfer_module_srv_info 
 }
 
 static uint16_t transfer_module_srv_attrs_init(struct rtk_bt_gatt_service *srv,
-											   uint16_t uuid,
+											   uint8_t uuid_type,
+											   uint8_t *uuid_val,
 											   int char_num,
 											   struct transfer_module_char_t *chars)
 {
 	int attr_idx = 0;
 	uint16_t ret = RTK_BT_OK;
 
-	if (!srv) {
+	if (!srv || (char_num != 0 && !chars) || !uuid_val) {
+		BT_LOGE("[%s] invalid input param\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
-	ret = transfer_module_primary_service_init(&srv->attrs[attr_idx++], uuid);
+	ret = transfer_module_primary_service_init(&srv->attrs[attr_idx++], uuid_type, uuid_val);
 	if (ret != RTK_BT_OK) {
 		return ret;
 	}
@@ -1028,9 +1186,10 @@ static uint16_t transfer_module_srv_attrs_init(struct rtk_bt_gatt_service *srv,
 	for (int char_idx = 0; char_idx < char_num; ++char_idx) {
 		uint8_t perm = 0;
 		uint16_t props = chars[char_idx].char_property;
-		uint16_t uuid = chars[char_idx].char_uuid;
+		uint8_t uuid_type = chars[char_idx].uuid_type;
+		uint8_t *uuid = chars[char_idx].char_uuid;
 
-		ret = transfer_module_char_decl_init(&srv->attrs[attr_idx++], uuid, props);
+		ret = transfer_module_char_decl_init(&srv->attrs[attr_idx++], uuid_type, uuid, props);
 		if (ret != RTK_BT_OK) {
 			break;
 		}
@@ -1042,7 +1201,7 @@ static uint16_t transfer_module_srv_attrs_init(struct rtk_bt_gatt_service *srv,
 			perm |= RTK_BT_GATT_PERM_WRITE;
 		}
 
-		ret = transfer_module_char_value_init(&srv->attrs[attr_idx++], uuid, perm);
+		ret = transfer_module_char_value_init(&srv->attrs[attr_idx++], uuid_type, uuid, perm);
 		if (ret != RTK_BT_OK) {
 			break;
 		}
@@ -1118,7 +1277,7 @@ uint16_t ble_transfer_module_srv_add(struct transfer_module_srv_t *add_srv)
 		goto end;
 	}
 
-	ret = transfer_module_srv_attrs_init(srv, add_srv->srv_uuid, add_srv->char_num, add_srv->chars);
+	ret = transfer_module_srv_attrs_init(srv, add_srv->uuid_type, add_srv->srv_uuid, add_srv->char_num, add_srv->chars);
 	if (ret != RTK_BT_OK) {
 		goto end;
 	}
@@ -1131,18 +1290,32 @@ end:
 	return ret;
 }
 
-uint16_t ble_transfer_module_srv_add_check(uint16_t uuid)
+uint16_t ble_transfer_module_srv_add_check(uint8_t uuid_type, uint8_t *uuid)
 {
 	int srv_idx = 0;
 	uint8_t unuse = 0;
 	uint8_t exist = 0;
 
+	if (!uuid || (uuid_type != BT_UUID_TYPE_16 && uuid_type != BT_UUID_TYPE_128)) {
+		BT_LOGE("[%s] invalid input param\r\n", __func__);
+		return FALSE;
+	}
+
 	for (srv_idx = 0; srv_idx < TRANSFER_MODULE_USER_DEFINED_SRV_MAX_NUM; ++srv_idx) {
 		if (!user_defined_srvs[srv_idx]) {
 			unuse = TRUE;
-		} else if (user_defined_srvs[srv_idx]->srv && user_defined_srvs[srv_idx]->srv->attrs) {
-			if (user_defined_srvs[srv_idx]->srv->attrs[0].user_data) {
-				if (((struct bt_uuid_16 *)(user_defined_srvs[srv_idx]->srv->attrs[0].user_data))->val == uuid) {
+		} else if (user_defined_srvs[srv_idx]->srv &&
+				   user_defined_srvs[srv_idx]->srv->attrs &&
+				   user_defined_srvs[srv_idx]->srv->attrs[0].user_data) {
+
+			if (uuid_type == BT_UUID_TYPE_16) {
+				struct bt_uuid_16 *uuid16 = (struct bt_uuid_16 *)(user_defined_srvs[srv_idx]->srv->attrs[0].user_data);
+				if (uuid16->uuid.type == BT_UUID_TYPE_16 && uuid16->val == LE_TO_U16(uuid)) {
+					exist = TRUE;
+				}
+			} else if (uuid_type == BT_UUID_TYPE_128) {
+				struct bt_uuid_128 *uuid128 = (struct bt_uuid_128 *)(user_defined_srvs[srv_idx]->srv->attrs[0].user_data);
+				if (uuid128->uuid.type == BT_UUID_TYPE_128 && !memcmp(uuid128->val, uuid, TRANSFER_MODULE_UUID128_LEN)) {
 					exist = TRUE;
 				}
 			}

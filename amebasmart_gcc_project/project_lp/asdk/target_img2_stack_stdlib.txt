@@ -1,0 +1,171 @@
+TASK FUNCTION                pvPortMalloc
+FuncName                     Size
+pvPortMalloc                 8
+pvPortMallocBase             32
+xTaskResumeAll               48
+xTaskIncrementTick.part.0    48
+vAssertCalled                24
+rtk_log_write_nano           32
+DiagPrintfNano               32
+DiagVprintfNano              80
+TotalSize                    304
+                             
+TASK FUNCTION                vPortFree
+FuncName                     Size
+vPortFree                    16
+xTaskResumeAll               48
+xTaskIncrementTick.part.0    48
+vAssertCalled                24
+rtk_log_write_nano           32
+DiagPrintfNano               32
+DiagVprintfNano              80
+TotalSize                    280
+                             
+TASK FUNCTION                DiagPrintf
+FuncName                     Size
+DiagPrintf                   32
+DiagVprintf                  80
+print_unsigned_num           64
+__aeabi_uldivmod             28
+__udivmoddi4                 40
+__clzsi2                     0
+TotalSize                    244
+                             
+TASK FUNCTION                DiagVprintf
+FuncName                     Size
+DiagVprintf                  80
+print_unsigned_num           64
+__aeabi_uldivmod             28
+__udivmoddi4                 40
+__clzsi2                     0
+TotalSize                    212
+                             
+TASK FUNCTION                xQueueSemaphoreTake
+FuncName                     Size
+xQueueSemaphoreTake          40
+xTaskResumeAll               48
+xTaskIncrementTick.part.0    48
+vAssertCalled                24
+rtk_log_write_nano           32
+DiagPrintfNano               32
+DiagVprintfNano              80
+TotalSize                    304
+                             
+TASK FUNCTION                xQueueGenericCreate
+FuncName                     Size
+xQueueGenericCreate          24
+pvPortMalloc                 8
+pvPortMallocBase             32
+xTaskResumeAll               48
+xTaskIncrementTick.part.0    48
+vAssertCalled                24
+rtk_log_write_nano           32
+DiagPrintfNano               32
+DiagVprintfNano              80
+TotalSize                    328
+                             
+TASK FUNCTION                xTimerGenericCommand
+FuncName                     Size
+xTimerGenericCommand         40
+xQueueGenericSend            48
+xTaskResumeAll               48
+xTaskIncrementTick.part.0    48
+vAssertCalled                24
+rtk_log_write_nano           32
+DiagPrintfNano               32
+DiagVprintfNano              80
+TotalSize                    352
+                             
+TASK FUNCTION                vTaskDelay
+FuncName                     Size
+vTaskDelay                   16
+xTaskResumeAll               48
+xTaskIncrementTick.part.0    48
+vAssertCalled                24
+rtk_log_write_nano           32
+DiagPrintfNano               32
+DiagVprintfNano              80
+TotalSize                    280
+                             
+TASK FUNCTION                DelayMs
+FuncName                     Size
+DelayMs                      8
+DelayUs                      24
+TotalSize                    32
+                             
+TASK FUNCTION                xQueueGenericSend
+FuncName                     Size
+xQueueGenericSend            48
+xTaskResumeAll               48
+xTaskIncrementTick.part.0    48
+vAssertCalled                24
+rtk_log_write_nano           32
+DiagPrintfNano               32
+DiagVprintfNano              80
+TotalSize                    312
+                             
+TASK FUNCTION                rtos_critical_enter
+FuncName                     Size
+rtos_critical_enter          8
+ulSetInterruptMaskFromISR    0
+TotalSize                    8
+                             
+TASK FUNCTION                rtos_critical_exit
+FuncName                     Size
+rtos_critical_exit           8
+vPortExitCritical            8
+vAssertCalled                24
+rtk_log_write_nano           32
+DiagPrintfNano               32
+DiagVprintfNano              80
+TotalSize                    184
+                             
+TASK FUNCTION                rtos_sema_take
+FuncName                     Size
+rtos_sema_take               24
+xQueueSemaphoreTake          40
+xTaskResumeAll               48
+xTaskIncrementTick.part.0    48
+vAssertCalled                24
+rtk_log_write_nano           32
+DiagPrintfNano               32
+DiagVprintfNano              80
+TotalSize                    328
+                             
+TASK FUNCTION                rtos_sema_give
+FuncName                     Size
+rtos_sema_give               16
+xQueueGenericSend            48
+xTaskResumeAll               48
+xTaskIncrementTick.part.0    48
+vAssertCalled                24
+rtk_log_write_nano           32
+DiagPrintfNano               32
+DiagVprintfNano              80
+TotalSize                    328
+                             
+TASK FUNCTION                rtos_time_delay_ms
+FuncName                     Size
+rtos_time_delay_ms           8
+vTaskDelay                   16
+xTaskResumeAll               48
+xTaskIncrementTick.part.0    48
+vAssertCalled                24
+rtk_log_write_nano           32
+DiagPrintfNano               32
+DiagVprintfNano              80
+TotalSize                    288
+                             
+TASK FUNCTION                rtos_timer_start
+FuncName                     Size
+rtos_timer_start             32
+xTimerGenericCommand         40
+xQueueGenericSend            48
+xTaskResumeAll               48
+xTaskIncrementTick.part.0    48
+vAssertCalled                24
+rtk_log_write_nano           32
+DiagPrintfNano               32
+DiagVprintfNano              80
+TotalSize                    384
+                             

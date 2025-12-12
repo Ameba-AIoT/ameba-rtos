@@ -16,14 +16,14 @@ static_assert(configNUM_CORES == RTOS_NUM_CORES, "Incorrect RTOS_NUM_CORES value
 static_assert(1 == RTOS_NUM_CORES, "Incorrect RTOS_NUM_CORES value config");
 #endif
 
-#if (RTOS_NUM_CORES == 1)
+#if (RTOS_NUM_CORES == 1) && !defined(portGET_CORE_ID)
 #define portGET_CORE_ID()		0
 #endif
 
 static uint32_t uxSavedInterruptStatus[RTOS_NUM_CORES] = {0};
 static uint16_t uxCriticalNestingCnt[RTOS_NUM_CORES] = {0};
 
-#ifndef CONFIG_ARM_CORE_CA32
+#if !defined(RTOS_NUM_CORES) || (RTOS_NUM_CORES == 1)
 uint32_t xPortGetCriticalState(void);
 #endif
 
@@ -168,7 +168,7 @@ void __rtos_critical_exit_os(void)
 
 uint32_t rtos_get_critical_state(void)
 {
-#ifdef CONFIG_ARM_CORE_CA32
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	uint32_t xCoreID = portGET_CORE_ID();
 	return GetComponentCriticalNesting(xCoreID) || GetOSCriticalNesting(xCoreID);
 #else

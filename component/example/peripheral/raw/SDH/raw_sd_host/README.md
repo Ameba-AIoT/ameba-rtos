@@ -48,5 +48,4 @@ User may select different configuration by modify sdioh_config. The HW configura
 
 # Supported IC
 
-- AmebaSmart
-  * RTL8730E
+RTL8730E

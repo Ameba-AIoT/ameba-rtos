@@ -280,6 +280,13 @@ s32 wifi_set_lps_listen_interval(u8 interval)
 	return -1;
 }
 
+s32 wifi_set_wowlan_rx_broadcast(u8 enable)
+{
+	UNUSED(enable);
+	call_noused = __LINE__;
+	return -1;
+}
+
 void wifi_wpa_pmksa_ops(struct rtw_pmksa_ops_t *pmksa_ops)
 {
 	UNUSED(pmksa_ops);

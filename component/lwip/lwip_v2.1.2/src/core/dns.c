@@ -1655,11 +1655,15 @@ void comp_dns_ttl(u32_t ms)
 {
   u8_t i;
   struct dns_table_entry *entry = NULL;
+  if (ms < DNS_TMR_INTERVAL / 2) {
+    return;
+  }
+  u32_t comp_ms = ms < DNS_TMR_INTERVAL ? DNS_TMR_INTERVAL : ms;
   
   for (i = 0; i < DNS_TABLE_SIZE; ++i) {
     entry = &dns_table[i];
     if (entry->state == DNS_STATE_DONE) {
-      entry->ttl = entry->ttl > ms / DNS_TMR_INTERVAL ? entry->ttl - ms / DNS_TMR_INTERVAL : 0;
+      entry->ttl = entry->ttl > comp_ms / DNS_TMR_INTERVAL ? entry->ttl - comp_ms / DNS_TMR_INTERVAL : 0;
     }
   }
 }
@@ -1686,7 +1690,7 @@ u8_t check_dns_tmr_removable(void)
         break;
       } else {
         max_sleep_time = (entry->ttl - 1) * DNS_TMR_INTERVAL;
-        if (sleep_param.sleep_time > max_sleep_time || sleep_param.sleep_time  == 0) {
+        if (sleep_param.sleep_time > max_sleep_time) {
           sleep_param.sleep_time = max_sleep_time;
         }
       }

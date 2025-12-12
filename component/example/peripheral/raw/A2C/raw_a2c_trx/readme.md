@@ -8,8 +8,8 @@ A2C0 and A2C1 use the following pins respectively:
 
 |    | A2C0  | A2C1  |
 |--- | ----- | ----- |
-| RX | PA 12 | PA 14 |
-| TX | PA 13 | PA 15 |
+| RX | PA 26 | PB 18 |
+| TX | PA 25 | PB 17 |
 
 These pins need to be connected to the CAN PHY device(chip). Then the CAN_H and CAN_L of the two CAN PHYs are connected via twisted pair wires without crossing.
 
@@ -124,7 +124,10 @@ tx error
 ErrStatus = 120, TEC = 128, REC = 0, ErrPassive = 1, ErrBusoff = 0, ErrWarning = 1
 
 ```
+# Note
+
+Users should refer to the datasheet of the selected CAN transceiver to determine whether the STB (Standby) pin is required for mode control (Standby/Normal). If the STB pin exists, ensure it is set to the correct logic level to enable normal CAN communication. For example, for the NXP TJA1042 transceiver, the STB pin must be explicitly pulled low to enter normal transmit/receive mode.
+
 # Supported IC
 
-- AmebaGreen2
-  * RTL8721F
+RTL8721F

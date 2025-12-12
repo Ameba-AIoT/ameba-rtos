@@ -1,0 +1,1363 @@
+
+Discarded input sections
+
+ .ram.data      0x0000000000000000        0x0 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ .ram.bss       0x0000000000000000        0x0 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ .rom.text.libgcc
+                0x0000000000000000        0x0 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+KM4_IROM         0x0000000000000000 0x000000000001e000 xr
+KM4_IROM_NS      0x000000000001e000 0x0000000000015000 xr
+KM4_IROM_STDLIB_NS 0x0000000000033000 0x0000000000013000 xr
+KM4_DROM_NS      0x0000000000046000 0x000000000000e000 xr
+KM4_DROM         0x0000000000054000 0x0000000000004000 xr
+KM4_ROMBSS_RAM_S 0x0000000030000000 0x0000000000001000 rw
+KM4_MSP_RAM_S    0x0000000030001000 0x0000000000002000 rw
+KM4_BOOTLOADER_RAM_S 0x0000000030003020 0x0000000000005fe0 xrw
+KM4_FLOADER_RAM_S 0x0000000030003020 0x0000000000017fe0 xrw
+KM4_BD_RAM_NSC   0x000000006015b020 0x0000000000000fe0 xrw
+KM4_BD_RAM_ENTRY 0x000000006015c000 0x0000000000004000 xrw
+KM4_BD_RAM_S     0x0000000070160020 0x000000000001ffe0 xrw
+KM4_BD_RAM_NS_TZ 0x0000000060000020 0x000000000015afe0 xrw
+KM4_BD_RAM_NS_NTZ 0x0000000060000020 0x000000000017ffe0 xrw
+KM4_MSP_RAM_NS   0x000000002001b000 0x0000000000001000 rw
+KM4_ROMBSS_RAM_COM 0x000000002001c000 0x0000000000001000 rw
+KM4_ROMBSS_RAM_NS 0x000000002001d000 0x0000000000001000 rw
+KM4_STDLIB_HEAP_RAM_NS 0x000000002001e000 0x0000000000001000 rw
+KM4_AUDIO_BUFFER 0x0000000020020000 0x0000000000020000 rw
+KM4_BD_RAM_NS_NTZ_XIP 0x0000000020009020 0x0000000000011fe0 xrw
+EXTENTION_SRAM   0x0000000022000000 0x0000000001000000 xrw
+RETENTION_RAM    0x0000000023020000 0x0000000000000200 xrw
+KM0_IROM         0x0000000000000000 0x000000000000c000 xr
+KM0_DROM         0x000000000000c000 0x0000000000004000 xr
+KM0_ROMBSS_RAM   0x0000000023000000 0x0000000000002000 rw
+KM0_BD_RAM       0x0000000023002020 0x000000000001cce0 xrw
+KM0_IPC_RAM      0x000000002301ed00 0x0000000000000300 xrw
+KM0_MSP_RAM      0x000000002301f000 0x0000000000001000 rw
+PHY_IMG1         0x0000000008001020 0x0000000000004fe0 xr
+PHY_IMG2         0x0000000008020000 0x00000000001c0000 xr
+KM4_IMG3         0x00000000081e0000 0x0000000000020000 xr
+CA32_IMG         0x0000000008200000 0x0000000000100000 xr
+KM4_BOOT         0x000000000a000020 0x0000000001ffffe0 xr
+KM0_IMG2         0x000000000c000020 0x0000000001ffffe0 xr
+KM4_IMG2         0x000000000e000020 0x0000000001ffffe0 xr
+BTRACE           0x00000000c8800000 0x0000000000800000 xr
+CA32_IROM        0x0000000000000000 0x0000000000000400 xr
+CA32_BL1_SRAM_S  0x000000003001fe00 0x0000000000000200 xrw
+CA32_BL1_DRAM_S  0x0000000070180020 0x000000000001ffe0 xrw
+CA32_FIP_DRAM_NS 0x0000000060400000 0x0000000000c00000 xrw
+CA32_BL3_DRAM_NS 0x0000000060300000 0x0000000000d00000 xrw
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+LOAD D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+START GROUP
+LOAD D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/../../project_hp/toolchain/mingw/asdk-10.2.0/mingw32/newlib/lib/gcc/arm-none-eabi/10.2.0/thumb/v8-m.base\libgcc.a
+LOAD D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/../../project_hp/toolchain/mingw/asdk-10.2.0/mingw32/newlib/arm-none-eabi/lib/thumb/v8-m.base\libc.a
+END GROUP
+START GROUP
+LOAD D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/../../project_hp/toolchain/mingw/asdk-10.2.0/mingw32/newlib/lib/gcc/arm-none-eabi/10.2.0/thumb/v8-m.base\libgcc.a
+LOAD D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/../../project_hp/toolchain/mingw/asdk-10.2.0/mingw32/newlib/arm-none-eabi/lib/thumb/v8-m.base\libc.a
+LOAD D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/../../project_hp/toolchain/mingw/asdk-10.2.0/mingw32/newlib/arm-none-eabi/lib/thumb/v8-m.base\libnosys.a
+END GROUP
+                0x0000000000033000                __rom_stdlib_text_start__ = ORIGIN (KM4_IROM_STDLIB_NS)
+                0x0000000023002020                __km0_image2_entry_func__ = ORIGIN (KM0_BD_RAM)
+                0x000000002301ed00                __km0_ipc_memory_start__ = ORIGIN (KM0_IPC_RAM)
+                0x000000000a000020                __km4_boot_text_start__ = ORIGIN (KM4_BOOT)
+                0x000000000c000020                __km0_flash_text_start__ = ORIGIN (KM0_IMG2)
+                0x000000000e000020                __km4_flash_text_start__ = ORIGIN (KM4_IMG2)
+                0x00000000081e0000                __km4_image3_flash_start__ = ORIGIN (KM4_IMG3)
+                0x0000000008020000                __nspe_phy_addr__ = ORIGIN (PHY_IMG2)
+                0x000000003001fe00                __ca32_bl1_sram_start__ = ORIGIN (CA32_BL1_SRAM_S)
+                0x0000000070180020                __ca32_bl1_dram_start__ = ORIGIN (CA32_BL1_DRAM_S)
+                0x0000000008200000                __ca32_flash_start__ = ORIGIN (CA32_IMG)
+                0x0000000060400000                __ca32_fip_dram_start__ = ORIGIN (CA32_FIP_DRAM_NS)
+
+.glue_7         0x0000000000000000        0x0
+ .glue_7        0x0000000000000000        0x0 linker stubs
+
+.glue_7t        0x0000000000000000        0x0
+ .glue_7t       0x0000000000000000        0x0 linker stubs
+
+.vfp11_veneer   0x0000000000000000        0x0
+ .vfp11_veneer  0x0000000000000000        0x0 linker stubs
+
+.v4_bx          0x0000000000000000        0x0
+ .v4_bx         0x0000000000000000        0x0 linker stubs
+
+.iplt           0x0000000000000000        0x0
+ .iplt          0x0000000000000000        0x0 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+
+.igot.plt       0x0000000030000000        0x0
+ .igot.plt      0x0000000030000000        0x0 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+
+.rom.text       0x0000000000000000     0x79b4
+ .rom.text      0x0000000000000000     0x79b4 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+                0x0000000000000000                __vectors_table
+                0x0000000000000100                Reset_Handler
+                0x0000000000000104                NMI_Handler
+                0x0000000000000108                HardFault_Handler
+                0x000000000000010c                MemManage_Handler
+                0x0000000000000110                BusFault_Handler
+                0x0000000000000114                io_assert_failed
+                0x0000000000000134                BKUP_Write
+                0x0000000000000158                BKUP_Read
+                0x0000000000000178                BKUP_Set
+                0x00000000000001a0                BKUP_Clear
+                0x00000000000001c8                XTAL_ClkGet
+                0x00000000000001e0                CPU_ClkSet
+                0x0000000000000248                CPU_ClkGet
+                0x00000000000002dc                HBUS_ClkSet
+                0x0000000000000300                DelayNop
+                0x000000000000030a                DelayUs
+                0x0000000000000380                DelayMs
+                0x0000000000000394                FLASH_SetSpiMode
+                0x0000000000000464                FLASH_RxCmd
+                0x00000000000004ec                FLASH_WaitBusy
+                0x000000000000057c                FLASH_RxData
+                0x000000000000064c                FLASH_TxCmd
+                0x00000000000006bc                FLASH_WriteEn
+                0x00000000000006e0                FLASH_TxData
+                0x00000000000007cc                FLASH_SetStatus
+                0x00000000000007ea                FLASH_Erase
+                0x0000000000000868                FLASH_DeepPowerDown
+                0x00000000000008b8                FLASH_SetStatusBits
+                0x0000000000000958                FLASH_StructInit_Micron
+                0x00000000000009d8                FLASH_StructInit_MXIC
+                0x0000000000000a50                FLASH_StructInit_GD
+                0x0000000000000ad0                FLASH_StructInit
+                0x0000000000000b4c                FLASH_Init
+                0x0000000000000be0                GPIO_INTMode
+                0x0000000000000c44                GPIO_INTConfig
+                0x0000000000000c70                GPIO_INTHandler
+                0x0000000000000d60                GPIO_Direction
+                0x0000000000000d88                GPIO_Init
+                0x0000000000000e0c                GPIO_DeInit
+                0x0000000000000e80                GPIO_ReadDataBit
+                0x0000000000000ea4                GPIO_WriteBit
+                0x0000000000000ecc                GPIO_PortDirection
+                0x0000000000000f00                GPIO_PortRead
+                0x0000000000000f28                GPIO_PortWrite
+                0x0000000000000f58                GPIO_DebounceClock
+                0x0000000000000f84                GPIO_LevelSync
+                0x0000000000000fb4                GPIO_UserRegIrq
+                0x0000000000000ff8                LOGUART_StructInit
+                0x000000000000102a                LOGUART_SetBaud
+                0x00000000000010c8                LOGUART_RxCmd
+                0x00000000000010da                LOGUART_AGGCmd
+                0x00000000000010f4                LOGUART_AGGPathCmd
+                0x0000000000001188                LOGUART_AGGSetTimeOut
+                0x00000000000011a4                LOGUART_AGGSetThreshold
+                0x00000000000011d4                LOGUART_AGGSetSyncPattern
+                0x00000000000011e2                LOGUART_AGGPathAllCmd
+                0x0000000000001204                LOGUART_PutChar
+                0x000000000000125c                LOGUART_GetChar
+                0x0000000000001274                LOGUART_Readable
+                0x0000000000001284                LOGUART_GetRxCount
+                0x0000000000001290                LOGUART_GetIMR
+                0x000000000000129c                LOGUART_SetIMR
+                0x00000000000012a8                LOGUART_INTConfig
+                0x00000000000012ba                LOGUART_INTClear
+                0x00000000000012c2                LOGUART_GetStatus
+                0x00000000000012c6                LOGUART_ClearRxFifo
+                0x00000000000012e6                _LOGUART_Init
+                0x0000000000001464                LOGUART_Init
+                0x00000000000014c4                LOGUART_WaitBusy
+                0x00000000000014fc                LOGUART_WaitTxComplete
+                0x0000000000001530                LOGUART_BT_SendData
+                0x0000000000001560                LOGUART_Relay_StructInit
+                0x0000000000001572                LOGUART_Relay_SetFormat
+                0x00000000000015c0                LOGUART_Relay_SetBaud
+                0x0000000000001610                LOGUART_Relay_ClearRxFifo
+                0x000000000000163a                LOGUART_Relay_RxCmd
+                0x000000000000164c                LOGUART_MonitorParaConfig
+                0x000000000000169c                LOGUART_LPBaudSet
+                0x0000000000001740                LOGUART_Relay_LPSetBaud
+                0x00000000000017a0                LOGUART_RxMonitorCmd
+                0x00000000000017b2                LOGUART_RxMonBaudCtrlRegGet
+                0x00000000000017b6                LOGUART_RxMonitorSatusGet
+                0x00000000000017ba                LOGUART_DiagInit
+                0x0000000000001844                PAD_DrvStrength
+                0x0000000000001868                PAD_PullCtrl
+                0x0000000000001894                PAD_SleepPullCtrl
+                0x00000000000018c0                PAD_ResistorCtrl
+                0x00000000000018e4                PAD_CMD
+                0x0000000000001908                Pinmux_Config
+                0x0000000000001920                Pinmux_ConfigGet
+                0x0000000000001930                Pinmux_UartLogCtrl
+                0x000000000000196c                PAD_SpicCtrl
+                0x00000000000019c0                Pinmux_SpicCtrl
+                0x0000000000001a78                Pinmux_Swdoff
+                0x0000000000001a88                RCC_PeriphClockCmd
+                0x0000000000001b00                RCC_PeriphClockSource_UART
+                0x0000000000001b88                RCC_PeriphClockSource_SPIC
+                0x0000000000001ba0                RCC_PeriphClockSource_PSRAM
+                0x0000000000001bb4                RCC_PeriphClockSource_SDM
+                0x0000000000001bd0                RCC_PeriphClockSource_VADMEM
+                0x0000000000001bf0                RCC_PeriphClockSource_AUDIOCODEC
+                0x0000000000001c10                RCC_PeriphClockSource_CTC
+                0x0000000000001c28                RCC_PeriphClockSource_ADC
+                0x0000000000001c40                RCC_PeriphClockSource_GPIO
+                0x0000000000001c58                RCC_PeriphClockSource_SPORT
+                0x0000000000001ccc                RCC_PeriphClockSource_32K
+                0x0000000000001ce4                RCC_PeriphClockSource_LOGUART
+                0x0000000000001d34                SYSCFG_GetChipInfo
+                0x0000000000001d40                SYSCFG_CUTVersion
+                0x0000000000001d50                SYSCFG_TRP_UARTImage
+                0x0000000000001d60                SYSCFG_TRP_ICFG
+                0x0000000000001d6c                SYSCFG_TRP_TestMode
+                0x0000000000001d7c                SYSCFG_TRP_OTPBYP
+                0x0000000000001d8c                SYSCFG_TRP_BootSel
+                0x0000000000001d9c                SYSCFG_ROMINFO_Get
+                0x0000000000001da8                SYSCFG_ROMINFO_Set
+                0x0000000000001dbc                SYSCFG_CHIPType_Get
+                0x0000000000001dcc                SYSCFG_OTP_RDPEn
+                0x0000000000001dec                SYSCFG_OTP_RSIPEn
+                0x0000000000001e0c                SYSCFG_OTP_SBootEn
+                0x0000000000001e2c                SYSCFG_OTP_LowBaudLog
+                0x0000000000001e3c                SYSCFG_OTP_DisBootLog
+                0x0000000000001e4c                SYSCFG_OTP_BigPageNand
+                0x0000000000001e5c                SYSCFG_OTP_USBLoadFullSpeed
+                0x0000000000001e6c                SYSCFG_OTP_BootSelect
+                0x0000000000001e7c                SYSCFG_OTP_BootFlashBaud
+                0x0000000000001e8c                SYSCFG_OTP_SPICBootSpeedUpDis
+                0x0000000000001e9c                SYSCFG_OTP_SPICAddr4ByteEn
+                0x0000000000001eac                SYSCFG_OTP_FlashDSleepEn
+                0x0000000000001ebc                SYSCFG_OTP_UartDownloadDis
+                0x0000000000001ecc                SYSCFG_OTP_SBoot_HW_DIS
+                0x0000000000001edc                SYSCFG_OTP_AntiRollback
+                0x0000000000001eec                SYSCFG_OTP_FaultLogDis
+                0x0000000000001efc                SYSCFG_OTP_RSIPMode
+                0x0000000000001f14                SYSCFG_OTP_HUKDerivEn
+                0x0000000000001f24                SYSCFG_OTP_RomPatchEn
+                0x0000000000001f40                SYSCFG_OTP_RandDelayEn
+                0x0000000000001f50                SYSCFG_OTP_RMAMode
+                0x0000000000001f78                SYSCFG_OTP_GetUsbPhyCalData
+                0x0000000000001f84                SYSCFG_OTP_GetUsbPhyCalData2
+                0x0000000000001f90                SYSCFG_OTP_UsbDownloadEnable
+                0x0000000000001f9c                SYSCFG_BootFromNor
+                0x0000000000001fc0                SYSCFG_HWTrigDownload
+                0x0000000000001fd2                SYS_M0CtrlSel
+                0x0000000000002028                SYSCFG_SWTrigDownload
+                0x0000000000002050                SYSTIMER_Init
+                0x000000000000209c                SYSTIMER_TickGet
+                0x00000000000020b0                SYSTIMER_GetPassTick
+                0x00000000000020d0                SYSTIMER_GetPassTime
+                0x0000000000002104                RTIM_TimeBaseStructInit
+                0x000000000000211c                RTIM_Cmd
+                0x0000000000002270                RTIM_GetCount
+                0x00000000000023a4                RTIM_INTConfig
+                0x0000000000002504                RTIM_INTClear
+                0x0000000000002644                RTIM_TimeBaseInit
+                0x0000000000002854                RTIM_DeInit
+                0x0000000000002998                RTIM_INTClearPendingBit
+                0x0000000000002af4                RTIM_GetFlagStatus
+                0x0000000000002c88                RTIM_GetINTStatus
+                0x0000000000002e28                UART_DeInit
+                0x0000000000002e2e                UART_StructInit
+                0x0000000000002e4a                UART_BaudParaGetFull
+                0x0000000000002e7e                UART_BaudParaGet
+                0x0000000000002ea0                UART_SetBaud
+                0x0000000000002f30                UART_SetBaudExt
+                0x0000000000002fa4                UART_SetRxLevel
+                0x0000000000002fcc                UART_RxCmd
+                0x0000000000002fde                UART_Writable
+                0x0000000000002fe6                UART_Readable
+                0x0000000000002fee                UART_CharPut
+                0x0000000000002ff2                UART_CharGet
+                0x0000000000002ff8                UART_ReceiveData
+                0x000000000000301c                UART_SendData
+                0x0000000000003040                UART_ReceiveDataTO
+                0x0000000000003078                UART_SendDataTO
+                0x00000000000030b0                UART_RxByteCntClear
+                0x00000000000030bc                UART_RxByteCntGet
+                0x00000000000030c2                UART_BreakCtl
+                0x00000000000030d6                UART_ClearRxFifo
+                0x00000000000030f6                UART_Init
+                0x00000000000031a0                UART_ClearTxFifo
+                0x00000000000031aa                UART_INTConfig
+                0x00000000000031bc                UART_INT_Clear
+                0x00000000000031c4                UART_IntStatus
+                0x00000000000031c8                UART_ModemStatusGet
+                0x00000000000031cc                UART_LineStatusGet
+                0x00000000000031d0                UART_WaitBusy
+                0x00000000000031f4                WDG_Wait_Busy
+                0x0000000000003214                WDG_StructInit
+                0x0000000000003224                WDG_Init
+                0x000000000000329c                WDG_Enable
+                0x00000000000032ec                WDG_Timeout
+                0x0000000000003350                WDG_Refresh
+                0x00000000000033a0                WDG_INTConfig
+                0x000000000000341c                WDG_ClearINT
+                0x000000000000348c                IWDG_LP_Enable
+                0x00000000000034d8                BOOT_ROM_InitDebugFlg
+                0x00000000000034f4                BOOT_ROM_ResetVsr
+                0x0000000000003764                INT_HardFault_C
+                0x0000000000003828                INT_NMI
+                0x0000000000003844                INT_HardFault
+                0x000000000000385c                INT_MemManage
+                0x0000000000003878                INT_BusFault
+                0x0000000000003894                INT_UsageFault
+                0x00000000000038b0                irq_table_init
+                0x0000000000003a8c                irq_enable
+                0x0000000000003aa8                irq_disable
+                0x0000000000003acc                irq_set_priority
+                0x0000000000003b20                irq_get_priority
+                0x0000000000003b58                irq_set_pending
+                0x0000000000003b74                irq_get_pending
+                0x0000000000003b98                irq_clear_pending
+                0x0000000000003bb4                irq_register
+                0x0000000000003c20                irq_unregister
+                0x0000000000003c3c                DiagVSprintf
+                0x0000000000003f78                DiagPrintf
+                0x0000000000003fc8                DiagPrintfD
+                0x0000000000003ff4                DiagSPrintf
+                0x0000000000004020                DiagSnPrintf
+                0x000000000000443c                cmd_rom_table
+                0x0000000000004448                _rand
+                0x0000000000004478                __wrap_rand
+                0x00000000000044a8                RandBytes_Get
+                0x00000000000045b0                shell_array_init
+                0x00000000000045be                shell_get_argc
+                0x00000000000045ea                shell_get_argv
+                0x00000000000046b4                shell_cmd_chk
+                0x0000000000004770                shell_uart_irq_rom
+                0x0000000000004888                shell_init_rom
+                0x0000000000004908                shell_task_rom
+                0x0000000000004930                shell_rom
+                0x0000000000004998                _char2num
+                0x00000000000049c4                _2char2dec
+                0x0000000000004a30                _2char2hex
+                0x0000000000004aa0                _memchr
+                0x0000000000004b18                _memcmp
+                0x0000000000004b5c                _memcpy
+                0x0000000000004bfc                _memmove
+                0x0000000000004ca8                _memset
+                0x0000000000004d48                _strcmp
+                0x0000000000004da4                _stricmp
+                0x0000000000004dd8                _strlen
+                0x0000000000004e30                _strtoul
+                0x0000000000004f78                _strupr
+                0x0000000000004f94                __wrap_memset
+                0x0000000000004fa4                __wrap_memcpy
+                0x0000000000004fb4                __wrap_memcmp
+                0x0000000000004fc4                __wrap_memchr
+                0x0000000000004fd4                __wrap_memmove
+                0x0000000000004fe4                __wrap_strlen
+                0x0000000000004ff4                __wrap_strcmp
+                0x0000000000005004                __wrap_stricmp
+                0x0000000000005014                __wrap_strupr
+                0x0000000000005024                __wrap_strtoul
+                0x0000000000005034                H2CHDL_BTInfo_8730A_ROM
+                0x0000000000005048                H2CHDL_ForceBTTxpwr_8730A_ROM
+                0x000000000000505c                H2CHDL_BTIgnoreWlanAct_8730A_ROM
+                0x0000000000005070                H2CHDL_AntSelReverse_8730A_ROM
+                0x0000000000005084                H2CHDL_WLOpmode_8730A_ROM
+                0x00000000000050ac                H2CHDL_BTMpH2C_8730A_ROM
+                0x00000000000050dc                H2CHDL_BTControl_8730A_ROM
+                0x00000000000050f0                H2CHDL_BT_Page_Scan_Interval_8730A_ROM
+                0x0000000000005114                H2CHDL_GNT_BT_Ctrl_8730A_ROM
+                0x0000000000005140                H2CHDL_BT_Only_Test_8730A_ROM
+                0x0000000000005170                H2CHDL_WL_Port_ID_8730A_ROM
+                0x000000000000518c                C2HBTLoopback_8730A_ROM
+                0x00000000000051d4                C2HBTMpRpt_8730A_ROM
+                0x0000000000005234                C2HBTMailBoxStatus_8730A_ROM
+                0x0000000000005268                InitBTCoexTimer_8730A_ROM
+                0x0000000000005284                Write778_8730A_ROM
+                0x00000000000052c4                TdmaChangeCoexTable_8730A_ROM
+                0x0000000000005304                BTNullSetting_8730A_ROM
+                0x000000000000536c                H2CInQueue_8730A_ROM
+                0x000000000000544c                H2CDeQueue_8730A_ROM
+                0x00000000000054b4                InitC2H_8730A_ROM
+                0x00000000000054f0                WaitC2HOk_8730A_ROM
+                0x000000000000552c                C2HPKTRxDESC_8730A_ROM
+                0x0000000000005564                FillC2HContant_8730A_ROM
+                0x00000000000055a0                IssueC2HPKT_8730A_ROM
+                0x00000000000055f8                C2HDeQueue_8730A_ROM
+                0x0000000000005648                C2HInQueue_8730A_ROM
+                0x000000000000569c                CheckMaxMacidNum_8730A_ROM
+                0x00000000000056ec                SetMediaStatus_8730A_ROM
+                0x000000000000571c                GetMediaStatus_8730A_ROM
+                0x0000000000005738                InitDDMA_8730A_ROM
+                0x0000000000005790                WaitDDMARDY_8730A_ROM
+                0x00000000000057c0                ChkDDMAChksum_8730A_ROM
+                0x00000000000057dc                CheckDDMADone_8730A_ROM
+                0x0000000000005810                InitGTimer32us_8730A_ROM
+                0x0000000000005850                InitGTimer1ms_8730A_ROM
+                0x00000000000058a4                InitFuncPtrTable_8730A_ROM
+                0x0000000000005c60                ClrAllFWUsedIMR_8730A_ROM
+                0x0000000000005cbc                ClrAllFWUsedISR_8730A_ROM
+                0x0000000000005d1c                UpdateISRWlan_8730A_ROM
+                0x0000000000005dc4                UpdateISRFT_8730A_ROM
+                0x0000000000005e04                setwlanimr_8730A_ROM
+                0x0000000000005ecc                setfwimr_8730A_ROM
+                0x0000000000005f14                clrfwimr_8730A_ROM
+                0x0000000000005f58                clrwlanimr_8730A_ROM
+                0x0000000000006014                setftimr_8730A_ROM
+                0x0000000000006078                clrftimr_8730A_ROM
+                0x00000000000060d8                ChangeTransmiteRate_8730A_ROM
+                0x0000000000006130                PowerBitSetting_8730A_ROM
+                0x00000000000061a0                IssuePSPoll_8730A_ROM
+                0x00000000000061f8                ChkandChangePS_8730A_ROM
+                0x0000000000006290                IssueQNull_8730A_ROM
+                0x0000000000006324                CTS2SelfSetting_8730A_ROM
+                0x0000000000006340                IssueCTS2Self_8730A_ROM
+                0x00000000000063d8                IssueRsvdPagePacketSetting_8730A_ROM
+                0x00000000000064bc                ReadRxBuff_8730A_ROM
+                0x00000000000064e0                WaitCPUMGQEmpty_8730A_ROM
+                0x0000000000006510                PollingReg_8730A_ROM
+                0x0000000000006550                SetPwrStateReg_8730A_ROM
+                0x00000000000065c4                ResetPSParm_8730A_ROM
+                0x000000000000660c                ChkTxQueueIsEmpty_8730A_ROM
+                0x0000000000006630                Legacy_PS_Setting_8730A_ROM
+                0x00000000000066a4                PSModeSetting_8730A_ROM
+                0x000000000000675c                ConfigListenBeaconPeriod_8730A_ROM
+                0x000000000000679c                PSSetMode_8730A_ROM
+                0x00000000000067ec                PS_S2ToS0State_8730A_ROM
+                0x000000000000681c                PS_S3ToS2orS0State_8730A_ROM
+                0x0000000000006868                PS_S1ToS0orS2State_8730A_ROM
+                0x00000000000068c4                PS_S2ToS4State_8730A_ROM
+                0x0000000000006918                PS_S2ToS5State_8730A_ROM
+                0x000000000000693c                PS_S5ToS2State_8730A_ROM
+                0x0000000000006960                PS_S4ToS2State_8730A_ROM
+                0x000000000000699c                PS_S0ToS6State_8730A_ROM
+                0x00000000000069c8                PS_S6ToS0State_8730A_ROM
+                0x00000000000069f4                InitKeepAlive_8730A_ROM
+                0x0000000000006a10                H2CHDL_KeepAlive_8730A_ROM
+                0x0000000000006a4c                UpdateRxFFReadPtr_DropPkt_8730A_ROM
+                0x0000000000006a60                WaitRXDMAIdle_8730A_ROM
+                0x0000000000006aa0                PageOffsetAlignment_8730A_ROM
+                0x0000000000006ab0                DropCHK_8730A_ROM
+                0x0000000000006ad0                EnableWoWLAN_8730A_ROM
+                0x0000000000006b28                DisWoWLAN_8730A_ROM
+                0x0000000000006b64                H2CHDL_WoWLAN_8730A_ROM
+                0x0000000000006c68                DropDecision_8730A_ROM
+                0x0000000000006c80                FwDisConnectWakeUpHost_8730A_ROM
+                0x0000000000006ca4                DestinationMatch_8730A_ROM
+                0x0000000000006ce4                PassSecurityInfoToDriver_8730A_ROM
+                0x0000000000006d58                GetRemoteControlInfo_8730A_ROM
+                0x0000000000006e30                GetARPInfo_8730A_ROM
+                0x0000000000006ea8                OnARP_8730A_ROM
+                0x0000000000007058                GetNDPInfo_8730A_ROM
+                0x000000000000707c                IsIPV6_8730A_ROM
+                0x00000000000070b0                OnNS_8730A_ROM
+                0x000000000000728c                Ipv4Match_8730A_ROM
+                0x00000000000072fc                MatchUnicastFilter_8730A_ROM
+                0x00000000000073b4                WakeUpHostDecision_8730A_ROM
+                0x0000000000007414                CheckIV_8730A_ROM
+                0x000000000000753c                H2CHDL_AOACGlobalInfo_8730A_ROM
+                0x0000000000007550                H2CHDL_AOACRsvdpage1_8730A_ROM
+                0x000000000000758c                H2CHDL_AOACRsvdpage2_8730A_ROM
+                0x00000000000075c8                H2CHDL_AOACRsvdpage3_8730A_ROM
+                0x00000000000075e8                GetAddr_8730A_ROM
+                0x0000000000007614                ARP_hdl_8730A_ROM
+                0x0000000000007630                NDP_hdl_8730A_ROM
+                0x000000000000764c                InitDisconnectDecision_8730A_ROM
+                0x0000000000007670                H2CHDL_DisconnectDecision_8730A_ROM
+                0x00000000000076cc                AesTkipIvFun_8730A_ROM
+                0x0000000000007720                WepIvFun_8730A_ROM
+                0x0000000000007768                RTmemcmpBackward_8730A_ROM
+                0x0000000000007788                AssignIvToKeyRsc_8730A_ROM
+                0x00000000000077b6                AssignKeyRscToIV_8730A_ROM
+                0x00000000000077f6                AesTkipIvCheck_8730A_ROM
+                0x0000000000007868                WepIvCheck_8730A_ROM
+                0x00000000000078a4                GetIV_8730A_ROM
+                0x00000000000078d0                GetIVLenAndSecurityType_8730A_ROM
+                0x0000000000007914                GetMACHeaderLen_8730A_ROM
+                0x000000000000793c                UpdateIV_8730A_ROM
+
+.rel.dyn        0x00000000000079b4        0x0
+ .rel.iplt      0x00000000000079b4        0x0 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+
+.rom.rodata     0x000000000000c000      0x5a0
+ .rom.rodata    0x000000000000c000      0x5a0 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+                0x000000000000c060                SPIC_CALIB_PATTERN
+                0x000000000000c068                GPIO_PORTx
+
+.hal.rom.bss    0x0000000023000000      0xa44
+ .hal.rom.bss   0x0000000023000000      0xa44 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+                0x0000000023000000                __rom_bss_start__
+                0x0000000023000000                NewVectorTable
+                0x00000000230000f0                UserIrqFunTable
+                0x00000000230001a0                UserIrqDataTable
+                0x0000000023000250                RBSS_UDELAY_FLAG
+                0x0000000023000254                RBSS_UDELAY_CLK
+                0x0000000023000258                flash_init_para
+                0x00000000230002cc                PortC_IrqData
+                0x000000002300034c                PortB_IrqData
+                0x00000000230003cc                PortA_IrqData
+                0x000000002300044c                PortC_IrqHandler
+                0x00000000230004cc                PortB_IrqHandler
+                0x000000002300054c                PortA_IrqHandler
+                0x00000000230005cc                ConfigDebugClose
+                0x00000000230005d0                ConfigDebugBuffer
+                0x00000000230005d4                ConfigDebugBufferGet
+                0x00000000230005d8                ConfigDebug
+                0x00000000230005e8                shell_argv_array
+                0x0000000023000628                shell_ctl
+                0x000000002300064c                shell_rxbuf
+                0x00000000230006cc                shell_buf
+                0x0000000023000750                UpdateISRWlan_8730A_PTR
+                0x0000000023000754                UpdateISRFT_8730A_PTR
+                0x0000000023000758                ClrAllFWUsedIMR_8730A_PTR
+                0x000000002300075c                ClrAllFWUsedISR_8730A_PTR
+                0x0000000023000760                setfwimr_8730A_PTR
+                0x0000000023000764                clrfwimr_8730A_PTR
+                0x0000000023000768                setwlanimr_8730A_PTR
+                0x000000002300076c                clrwlanimr_8730A_PTR
+                0x0000000023000770                setftimr_8730A_PTR
+                0x0000000023000774                clrftimr_8730A_PTR
+                0x0000000023000778                InitDDMA_8730A_PTR
+                0x000000002300077c                WaitDDMARDY_8730A_PTR
+                0x0000000023000780                ChkDDMAChksum_8730A_PTR
+                0x0000000023000784                CheckDDMADone_8730A_PTR
+                0x0000000023000788                InitGTimer32us_8730A_PTR
+                0x000000002300078c                InitGTimer1ms_8730A_PTR
+                0x0000000023000790                H2CInQueue_8730A_PTR
+                0x0000000023000794                H2CDeQueue_8730A_PTR
+                0x0000000023000798                InitC2H_8730A_PTR
+                0x000000002300079c                WaitC2HOk_8730A_PTR
+                0x00000000230007a0                C2HPKTRxDESC_8730A_PTR
+                0x00000000230007a4                FillC2HContant_8730A_PTR
+                0x00000000230007a8                IssueC2HPKT_8730A_PTR
+                0x00000000230007ac                C2HDeQueue_8730A_PTR
+                0x00000000230007b0                C2HInQueue_8730A_PTR
+                0x00000000230007b4                CheckMaxMacidNum_8730A_PTR
+                0x00000000230007b8                SetMediaStatus_8730A_PTR
+                0x00000000230007bc                GetMediaStatus_8730A_PTR
+                0x00000000230007c0                ChangeTransmiteRate_8730A_PTR
+                0x00000000230007c4                PowerBitSetting_8730A_PTR
+                0x00000000230007c8                IssuePSPoll_8730A_PTR
+                0x00000000230007cc                ChkandChangePS_8730A_PTR
+                0x00000000230007d0                IssueQNull_8730A_PTR
+                0x00000000230007d4                CTS2SelfSetting_8730A_PTR
+                0x00000000230007d8                IssueCTS2Self_8730A_PTR
+                0x00000000230007dc                IssueRsvdPagePacketSetting_8730A_PTR
+                0x00000000230007e0                ReadRxBuff_8730A_PTR
+                0x00000000230007e4                WaitCPUMGQEmpty_8730A_PTR
+                0x00000000230007e8                PollingReg_8730A_PTR
+                0x00000000230007ec                SetPwrStateReg_8730A_PTR
+                0x00000000230007f0                ResetPSParm_8730A_PTR
+                0x00000000230007f4                ChkTxQueueIsEmpty_8730A_PTR
+                0x00000000230007f8                Legacy_PS_Setting_8730A_PTR
+                0x00000000230007fc                PSModeSetting_8730A_PTR
+                0x0000000023000800                ConfigListenBeaconPeriod_8730A_PTR
+                0x0000000023000804                PSSetMode_8730A_PTR
+                0x0000000023000808                PS_S2ToS0State_8730A_PTR
+                0x000000002300080c                PS_S3ToS2orS0State_8730A_PTR
+                0x0000000023000810                PS_S1ToS0orS2State_8730A_PTR
+                0x0000000023000814                PS_S2ToS4State_8730A_PTR
+                0x0000000023000818                PS_S2ToS5State_8730A_PTR
+                0x000000002300081c                PS_S5ToS2State_8730A_PTR
+                0x0000000023000820                PS_S4ToS2State_8730A_PTR
+                0x0000000023000824                PS_S0ToS6State_8730A_PTR
+                0x0000000023000828                PS_S6ToS0State_8730A_PTR
+                0x000000002300082c                InitKeepAlive_8730A_PTR
+                0x0000000023000830                H2CHDL_KeepAlive_8730A_PTR
+                0x0000000023000834                UpdateRxFFReadPtr_DropPkt_8730A_PTR
+                0x0000000023000838                WaitRXDMAIdle_8730A_PTR
+                0x000000002300083c                PageOffsetAlignment_8730A_PTR
+                0x0000000023000840                DropCHK_8730A_PTR
+                0x0000000023000844                EnableWoWLAN_8730A_PTR
+                0x0000000023000848                DisWoWLAN_8730A_PTR
+                0x000000002300084c                H2CHDL_WoWLAN_8730A_PTR
+                0x0000000023000850                DropDecision_8730A_PTR
+                0x0000000023000854                FwDisConnectWakeUpHost_8730A_PTR
+                0x0000000023000858                DestinationMatch_8730A_PTR
+                0x000000002300085c                PassSecurityInfoToDriver_8730A_PTR
+                0x0000000023000860                GetRemoteControlInfo_8730A_PTR
+                0x0000000023000864                GetARPInfo_8730A_PTR
+                0x0000000023000868                OnARP_8730A_PTR
+                0x000000002300086c                GetNDPInfo_8730A_PTR
+                0x0000000023000870                IsIPV6_8730A_PTR
+                0x0000000023000874                OnNS_8730A_PTR
+                0x0000000023000878                Ipv4Match_8730A_PTR
+                0x000000002300087c                MatchUnicastFilter_8730A_PTR
+                0x0000000023000880                WakeUpHostDecision_8730A_PTR
+                0x0000000023000884                CheckIV_8730A_PTR
+                0x0000000023000888                H2CHDL_AOACGlobalInfo_8730A_PTR
+                0x000000002300088c                H2CHDL_AOACRsvdpage1_8730A_PTR
+                0x0000000023000890                H2CHDL_AOACRsvdpage2_8730A_PTR
+                0x0000000023000894                H2CHDL_AOACRsvdpage3_8730A_PTR
+                0x0000000023000898                GetAddr_8730A_PTR
+                0x000000002300089c                ARP_hdl_8730A_PTR
+                0x00000000230008a0                NDP_hdl_8730A_PTR
+                0x00000000230008a4                InitDisconnectDecision_8730A_PTR
+                0x00000000230008a8                H2CHDL_DisconnectDecision_8730A_PTR
+                0x00000000230008ac                GetIV_8730A_PTR
+                0x00000000230008b0                GetIVLenAndSecurityType_8730A_PTR
+                0x00000000230008b4                GetMACHeaderLen_8730A_PTR
+                0x00000000230008b8                UpdateIV_8730A_PTR
+                0x00000000230008bc                AesTkipIvFun_8730A_PTR
+                0x00000000230008c0                WepIvFun_8730A_PTR
+                0x00000000230008c4                RTmemcmpBackward_8730A_PTR
+                0x00000000230008c8                AssignIvToKeyRsc_8730A_PTR
+                0x00000000230008cc                AssignKeyRscToIV_8730A_PTR
+                0x00000000230008d0                AesTkipIvCheck_8730A_PTR
+                0x00000000230008d4                WepIvCheck_8730A_PTR
+                0x00000000230008d8                H2CHDL_BTInfo_8730A_PTR
+                0x00000000230008dc                H2CHDL_ForceBTTxpwr_8730A_PTR
+                0x00000000230008e0                H2CHDL_BTIgnoreWlanAct_8730A_PTR
+                0x00000000230008e4                H2CHDL_AntSelReverse_8730A_PTR
+                0x00000000230008e8                H2CHDL_WLOpmode_8730A_PTR
+                0x00000000230008ec                H2CHDL_BTMpH2C_8730A_PTR
+                0x00000000230008f0                H2CHDL_BTControl_8730A_PTR
+                0x00000000230008f4                H2CHDL_BT_Page_Scan_Interval_8730A_PTR
+                0x00000000230008f8                H2CHDL_GNT_BT_Ctrl_8730A_PTR
+                0x00000000230008fc                H2CHDL_BT_Only_Test_8730A_PTR
+                0x0000000023000900                H2CHDL_WL_Port_ID_8730A_PTR
+                0x0000000023000904                C2HBTLoopback_8730A_PTR
+                0x0000000023000908                C2HBTMpRpt_8730A_PTR
+                0x000000002300090c                C2HBTMailBoxStatus_8730A_PTR
+                0x0000000023000910                InitBTCoexTimer_8730A_PTR
+                0x0000000023000914                Write778_8730A_PTR
+                0x0000000023000918                TdmaChangeCoexTable_8730A_PTR
+                0x000000002300091c                BTNullSetting_8730A_PTR
+                0x0000000023000920                WL2BTMailboxSend_8730A_PTR
+                0x0000000023000924                IssueNA_8730A_PTR
+                0x0000000023000928                issue_ARP_8730A_PTR
+                0x000000002300092c                WakeUpHost_8730A_PTR
+                0x0000000023000930                DisconnectTxNullChk_8730A_PTR
+                0x0000000023000934                DisconnectChk_8730A_PTR
+                0x0000000023000938                IssueNullData_8730A_PTR
+                0x000000002300093c                PsCloseRF_8730A_PTR
+                0x0000000023000940                PsOpenRF_8730A_PTR
+                0x0000000023000944                WriteTxPause_8730A_PTR
+                0x0000000023000948                WaitTxStateMachineOk_8730A_PTR
+                0x000000002300094c                WriteTxPauseWithMask_8730A_PTR
+                0x0000000023000950                PS_S4_Condition_Match_8730A_PTR
+                0x0000000023000954                PS_S2_Condition_Match_8730A_PTR
+                0x0000000023000958                Change_PS_State_8730A_PTR
+                0x000000002300095c                EnlargeBcnEarlyAndTimeout_8730A_PTR
+                0x0000000023000960                SetBcnEarlyAndTimeout_8730A_PTR
+                0x0000000023000964                SmartPS2InitTimerAndToGetRxPkt_8730A_PTR
+                0x0000000023000968                PS_S0ToS1State_8730A_PTR
+                0x000000002300096c                PS_S2ToS3State_8730A_PTR
+                0x0000000023000970                SetSmartPSTimer_8730A_PTR
+                0x0000000023000974                LPSOfld_Reload_PHYREG_8730A_PTR
+                0x0000000023000978                LPSOfld_HWCtrlTRXOnOff_8730A_PTR
+                0x000000002300097c                LPSOfld_RPWMExitPG_8730A_PTR
+                0x0000000023000980                LPSOfld_FuncInit_8730A_PTR
+                0x0000000023000984                LPSOfld_SetBcnErlyandTimeout_8730A_PTR
+                0x0000000023000988                LPSOfld_IMRSetting_8730A_PTR
+                0x000000002300098c                LPSOfld_SwtHIOECmdFile_8730A_PTR
+                0x0000000023000990                LPSOfld_ByPassLsysWakeInt_8730A_PTR
+                0x0000000023000994                LPSOfld_HIOECmdFilePGRSInit_8730A_PTR
+                0x0000000023000998                LPSOfld_HIOECmdFileInit_8730A_PTR
+                0x000000002300099c                LPSOfld_HIOECmdFileToTXFF_8730A_PTR
+                0x00000000230009a0                Media_Disconnection_8730A_PTR
+                0x00000000230009a4                H2CCmdFunc_8730A_PTR
+                0x00000000230009a8                UpdateISRSys_8730A_PTR
+                0x00000000230009ac                ISRSendSignalCommon_8730A_PTR
+                0x00000000230009b0                SendSignalCommon_8730A_PTR
+                0x00000000230009b4                OSSendSignalCommon_8730A_PTR
+                0x00000000230009b8                pDisconnectParm
+                0x00000000230009bc                pRemoteWakeupCtrl
+                0x00000000230009c0                pKeepAliveParm
+                0x00000000230009c4                pAOACPage3
+                0x00000000230009c8                pAOACPage2
+                0x00000000230009cc                pAOACPage1
+                0x00000000230009d0                pAOACGlobalInfo
+                0x00000000230009d4                pAOACReport
+                0x00000000230009d8                pSecurityInfo
+                0x00000000230009dc                pIpv6PseudoHeaderInfo
+                0x00000000230009e0                pNDPInfo
+                0x00000000230009e8                pARPInfo
+                0x00000000230009ec                pAOACInfo
+                0x00000000230009f0                pBtcScoreboard
+                0x00000000230009f4                pBtcMailbox
+                0x00000000230009f8                pH2cWlPortID
+                0x00000000230009fc                pH2cBtInit
+                0x0000000023000a00                pH2cBtOnlyTest
+                0x0000000023000a04                pH2cWlCalibration
+                0x0000000023000a08                pH2cBtPageScanInterval
+                0x0000000023000a0c                pH2cWlOpmode
+                0x0000000023000a10                pH2cAntSelReverse
+                0x0000000023000a14                pH2cBtTdma
+                0x0000000023000a18                pBtcPsTdma
+                0x0000000023000a1c                pMediaStatus
+                0x0000000023000a20                ScanEn
+                0x0000000023000a24                pPSTParm
+                0x0000000023000a28                pPSParm
+                0x0000000023000a2c                H2C_rptr
+                0x0000000023000a2e                RXFF0_BNDY
+                0x0000000023000a30                pC2HEvt
+                0x0000000023000a34                pH2CEvt
+                0x0000000023000a38                pRPL
+                0x0000000023000a3c                pIntHdl
+                0x0000000023000a40                TaskBitMap
+                0x0000000023000a44                __rom_bss_end__
+
+.ram_image1.entry
+                0x0000000023002020        0x0
+                0x0000000023002020                __ram_image1_text_start__ = .
+                0x0000000023002020                __ram_start_table_start__ = .
+ *(SORT_BY_NAME(.image1.entry.data*))
+ *(.image1.validate.rodata*)
+ *(.image1.export.symb*)
+ .ram_image1.entry
+                0x0000000023002020        0x0 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+
+.ram_image1.text
+ *(.hal.ram.data*)
+
+.ram_retention.entry
+                0x0000000023020000        0x0
+                0x0000000023020000                __retention_entry_func__ = ABSOLUTE (.)
+ .ram_retention.entry
+                0x0000000023020000        0x0 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+
+.ram.data
+ *(.data*)
+
+.ram.bss
+ *(.bss*)
+
+.rom.text.libgcc
+ *(.text*)
+OUTPUT(target_rom.axf elf32-littlearm)
+LOAD linker stubs
+
+.debug_info     0x0000000000000000    0x17a74
+ .debug_info    0x0000000000000000    0x17a74 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+
+.debug_abbrev   0x0000000000000000     0x4197
+ .debug_abbrev  0x0000000000000000     0x4197 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+
+.debug_loc      0x0000000000000000     0xc33d
+ .debug_loc     0x0000000000000000     0xc33d D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+
+.debug_aranges  0x0000000000000000     0x10c8
+ .debug_aranges
+                0x0000000000000000     0x10c8 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+
+.debug_ranges   0x0000000000000000     0x1380
+ .debug_ranges  0x0000000000000000     0x1380 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+
+.debug_line     0x0000000000000000    0x117c4
+ .debug_line    0x0000000000000000    0x117c4 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+
+.debug_str      0x0000000000000000     0x9351
+ .debug_str     0x0000000000000000     0x9351 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+                                      0x13efe (size before relaxing)
+
+.comment        0x0000000000000000       0x2d
+ .comment       0x0000000000000000       0x2d D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+                                        0x75e (size before relaxing)
+
+.ARM.attributes
+                0x0000000000000000       0x2e
+ .ARM.attributes
+                0x0000000000000000       0x2e D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+
+.debug_frame    0x0000000000000000     0x280c
+ .debug_frame   0x0000000000000000     0x280c D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+
+Cross Reference Table
+
+Symbol                                            File
+ARP_hdl_8730A_PTR                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ARP_hdl_8730A_ROM                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+AesTkipIvCheck_8730A_PTR                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+AesTkipIvCheck_8730A_ROM                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+AesTkipIvFun_8730A_PTR                            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+AesTkipIvFun_8730A_ROM                            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+AssignIvToKeyRsc_8730A_PTR                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+AssignIvToKeyRsc_8730A_ROM                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+AssignKeyRscToIV_8730A_PTR                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+AssignKeyRscToIV_8730A_ROM                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+BKUP_Clear                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+BKUP_Read                                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+BKUP_Set                                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+BKUP_Write                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+BOOT_ROM_InitDebugFlg                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+BOOT_ROM_ResetVsr                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+BTNullSetting_8730A_PTR                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+BTNullSetting_8730A_ROM                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+BusFault_Handler                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+C2HBTLoopback_8730A_PTR                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+C2HBTLoopback_8730A_ROM                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+C2HBTMailBoxStatus_8730A_PTR                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+C2HBTMailBoxStatus_8730A_ROM                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+C2HBTMpRpt_8730A_PTR                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+C2HBTMpRpt_8730A_ROM                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+C2HDeQueue_8730A_PTR                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+C2HDeQueue_8730A_ROM                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+C2HInQueue_8730A_PTR                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+C2HInQueue_8730A_ROM                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+C2HPKTRxDESC_8730A_PTR                            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+C2HPKTRxDESC_8730A_ROM                            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+CPU_ClkGet                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+CPU_ClkSet                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+CTS2SelfSetting_8730A_PTR                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+CTS2SelfSetting_8730A_ROM                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ChangeTransmiteRate_8730A_PTR                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ChangeTransmiteRate_8730A_ROM                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+Change_PS_State_8730A_PTR                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+CheckDDMADone_8730A_PTR                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+CheckDDMADone_8730A_ROM                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+CheckIV_8730A_PTR                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+CheckIV_8730A_ROM                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+CheckMaxMacidNum_8730A_PTR                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+CheckMaxMacidNum_8730A_ROM                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ChkDDMAChksum_8730A_PTR                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ChkDDMAChksum_8730A_ROM                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ChkTxQueueIsEmpty_8730A_PTR                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ChkTxQueueIsEmpty_8730A_ROM                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ChkandChangePS_8730A_PTR                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ChkandChangePS_8730A_ROM                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ClrAllFWUsedIMR_8730A_PTR                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ClrAllFWUsedIMR_8730A_ROM                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ClrAllFWUsedISR_8730A_PTR                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ClrAllFWUsedISR_8730A_ROM                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ConfigDebug                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ConfigDebugBuffer                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ConfigDebugBufferGet                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ConfigDebugClose                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ConfigListenBeaconPeriod_8730A_PTR                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ConfigListenBeaconPeriod_8730A_ROM                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+DelayMs                                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+DelayNop                                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+DelayUs                                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+DestinationMatch_8730A_PTR                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+DestinationMatch_8730A_ROM                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+DiagPrintf                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+DiagPrintfD                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+DiagSPrintf                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+DiagSnPrintf                                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+DiagVSprintf                                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+DisWoWLAN_8730A_PTR                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+DisWoWLAN_8730A_ROM                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+DisconnectChk_8730A_PTR                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+DisconnectTxNullChk_8730A_PTR                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+DropCHK_8730A_PTR                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+DropCHK_8730A_ROM                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+DropDecision_8730A_PTR                            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+DropDecision_8730A_ROM                            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+EnableWoWLAN_8730A_PTR                            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+EnableWoWLAN_8730A_ROM                            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+EnlargeBcnEarlyAndTimeout_8730A_PTR               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FLASH_DeepPowerDown                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FLASH_Erase                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FLASH_Init                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FLASH_RxCmd                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FLASH_RxData                                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FLASH_SetSpiMode                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FLASH_SetStatus                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FLASH_SetStatusBits                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FLASH_StructInit                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FLASH_StructInit_GD                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FLASH_StructInit_MXIC                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FLASH_StructInit_Micron                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FLASH_TxCmd                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FLASH_TxData                                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FLASH_WaitBusy                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FLASH_WriteEn                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FillC2HContant_8730A_PTR                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FillC2HContant_8730A_ROM                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FwDisConnectWakeUpHost_8730A_PTR                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+FwDisConnectWakeUpHost_8730A_ROM                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GPIO_DeInit                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GPIO_DebounceClock                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GPIO_Direction                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GPIO_INTConfig                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GPIO_INTHandler                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GPIO_INTMode                                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GPIO_Init                                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GPIO_LevelSync                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GPIO_PORTx                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GPIO_PortDirection                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GPIO_PortRead                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GPIO_PortWrite                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GPIO_ReadDataBit                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GPIO_UserRegIrq                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GPIO_WriteBit                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GetARPInfo_8730A_PTR                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GetARPInfo_8730A_ROM                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GetAddr_8730A_PTR                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GetAddr_8730A_ROM                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GetIVLenAndSecurityType_8730A_PTR                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GetIVLenAndSecurityType_8730A_ROM                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GetIV_8730A_PTR                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GetIV_8730A_ROM                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GetMACHeaderLen_8730A_PTR                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GetMACHeaderLen_8730A_ROM                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GetMediaStatus_8730A_PTR                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GetMediaStatus_8730A_ROM                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GetNDPInfo_8730A_PTR                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GetNDPInfo_8730A_ROM                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GetRemoteControlInfo_8730A_PTR                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+GetRemoteControlInfo_8730A_ROM                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CCmdFunc_8730A_PTR                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CDeQueue_8730A_PTR                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CDeQueue_8730A_ROM                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_AOACGlobalInfo_8730A_PTR                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_AOACGlobalInfo_8730A_ROM                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_AOACRsvdpage1_8730A_PTR                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_AOACRsvdpage1_8730A_ROM                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_AOACRsvdpage2_8730A_PTR                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_AOACRsvdpage2_8730A_ROM                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_AOACRsvdpage3_8730A_PTR                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_AOACRsvdpage3_8730A_ROM                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_AntSelReverse_8730A_PTR                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_AntSelReverse_8730A_ROM                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_BTControl_8730A_PTR                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_BTControl_8730A_ROM                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_BTIgnoreWlanAct_8730A_PTR                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_BTIgnoreWlanAct_8730A_ROM                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_BTInfo_8730A_PTR                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_BTInfo_8730A_ROM                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_BTMpH2C_8730A_PTR                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_BTMpH2C_8730A_ROM                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_BT_Only_Test_8730A_PTR                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_BT_Only_Test_8730A_ROM                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_BT_Page_Scan_Interval_8730A_PTR            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_BT_Page_Scan_Interval_8730A_ROM            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_DisconnectDecision_8730A_PTR               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_DisconnectDecision_8730A_ROM               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_ForceBTTxpwr_8730A_PTR                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_ForceBTTxpwr_8730A_ROM                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_GNT_BT_Ctrl_8730A_PTR                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_GNT_BT_Ctrl_8730A_ROM                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_KeepAlive_8730A_PTR                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_KeepAlive_8730A_ROM                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_WLOpmode_8730A_PTR                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_WLOpmode_8730A_ROM                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_WL_Port_ID_8730A_PTR                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_WL_Port_ID_8730A_ROM                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_WoWLAN_8730A_PTR                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CHDL_WoWLAN_8730A_ROM                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CInQueue_8730A_PTR                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2CInQueue_8730A_ROM                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+H2C_rptr                                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+HBUS_ClkSet                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+HardFault_Handler                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+INT_BusFault                                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+INT_HardFault                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+INT_HardFault_C                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+INT_MemManage                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+INT_NMI                                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+INT_UsageFault                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ISRSendSignalCommon_8730A_PTR                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+IWDG_LP_Enable                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+InitBTCoexTimer_8730A_PTR                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+InitBTCoexTimer_8730A_ROM                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+InitC2H_8730A_PTR                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+InitC2H_8730A_ROM                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+InitDDMA_8730A_PTR                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+InitDDMA_8730A_ROM                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+InitDisconnectDecision_8730A_PTR                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+InitDisconnectDecision_8730A_ROM                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+InitFuncPtrTable_8730A_ROM                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+InitGTimer1ms_8730A_PTR                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+InitGTimer1ms_8730A_ROM                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+InitGTimer32us_8730A_PTR                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+InitGTimer32us_8730A_ROM                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+InitKeepAlive_8730A_PTR                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+InitKeepAlive_8730A_ROM                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+Ipv4Match_8730A_PTR                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+Ipv4Match_8730A_ROM                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+IsIPV6_8730A_PTR                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+IsIPV6_8730A_ROM                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+IssueC2HPKT_8730A_PTR                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+IssueC2HPKT_8730A_ROM                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+IssueCTS2Self_8730A_PTR                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+IssueCTS2Self_8730A_ROM                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+IssueNA_8730A_PTR                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+IssueNullData_8730A_PTR                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+IssuePSPoll_8730A_PTR                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+IssuePSPoll_8730A_ROM                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+IssueQNull_8730A_PTR                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+IssueQNull_8730A_ROM                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+IssueRsvdPagePacketSetting_8730A_PTR              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+IssueRsvdPagePacketSetting_8730A_ROM              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_AGGCmd                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_AGGPathAllCmd                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_AGGPathCmd                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_AGGSetSyncPattern                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_AGGSetThreshold                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_AGGSetTimeOut                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_BT_SendData                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_ClearRxFifo                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_DiagInit                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_GetChar                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_GetIMR                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_GetRxCount                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_GetStatus                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_INTClear                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_INTConfig                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_Init                                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_LPBaudSet                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_MonitorParaConfig                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_PutChar                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_Readable                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_Relay_ClearRxFifo                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_Relay_LPSetBaud                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_Relay_RxCmd                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_Relay_SetBaud                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_Relay_SetFormat                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_Relay_StructInit                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_RxCmd                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_RxMonBaudCtrlRegGet                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_RxMonitorCmd                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_RxMonitorSatusGet                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_SetBaud                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_SetIMR                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_StructInit                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_WaitBusy                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LOGUART_WaitTxComplete                            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LPSOfld_ByPassLsysWakeInt_8730A_PTR               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LPSOfld_FuncInit_8730A_PTR                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LPSOfld_HIOECmdFileInit_8730A_PTR                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LPSOfld_HIOECmdFilePGRSInit_8730A_PTR             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LPSOfld_HIOECmdFileToTXFF_8730A_PTR               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LPSOfld_HWCtrlTRXOnOff_8730A_PTR                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LPSOfld_IMRSetting_8730A_PTR                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LPSOfld_RPWMExitPG_8730A_PTR                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LPSOfld_Reload_PHYREG_8730A_PTR                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LPSOfld_SetBcnErlyandTimeout_8730A_PTR            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+LPSOfld_SwtHIOECmdFile_8730A_PTR                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+Legacy_PS_Setting_8730A_PTR                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+Legacy_PS_Setting_8730A_ROM                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+MatchUnicastFilter_8730A_PTR                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+MatchUnicastFilter_8730A_ROM                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+Media_Disconnection_8730A_PTR                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+MemManage_Handler                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+NDP_hdl_8730A_PTR                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+NDP_hdl_8730A_ROM                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+NMI_Handler                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+NewVectorTable                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+OSSendSignalCommon_8730A_PTR                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+OnARP_8730A_PTR                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+OnARP_8730A_ROM                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+OnNS_8730A_PTR                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+OnNS_8730A_ROM                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PAD_CMD                                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PAD_DrvStrength                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PAD_PullCtrl                                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PAD_ResistorCtrl                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PAD_SleepPullCtrl                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PAD_SpicCtrl                                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PSModeSetting_8730A_PTR                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PSModeSetting_8730A_ROM                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PSSetMode_8730A_PTR                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PSSetMode_8730A_ROM                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S0ToS1State_8730A_PTR                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S0ToS6State_8730A_PTR                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S0ToS6State_8730A_ROM                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S1ToS0orS2State_8730A_PTR                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S1ToS0orS2State_8730A_ROM                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S2ToS0State_8730A_PTR                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S2ToS0State_8730A_ROM                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S2ToS3State_8730A_PTR                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S2ToS4State_8730A_PTR                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S2ToS4State_8730A_ROM                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S2ToS5State_8730A_PTR                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S2ToS5State_8730A_ROM                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S2_Condition_Match_8730A_PTR                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S3ToS2orS0State_8730A_PTR                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S3ToS2orS0State_8730A_ROM                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S4ToS2State_8730A_PTR                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S4ToS2State_8730A_ROM                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S4_Condition_Match_8730A_PTR                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S5ToS2State_8730A_PTR                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S5ToS2State_8730A_ROM                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S6ToS0State_8730A_PTR                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PS_S6ToS0State_8730A_ROM                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PageOffsetAlignment_8730A_PTR                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PageOffsetAlignment_8730A_ROM                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PassSecurityInfoToDriver_8730A_PTR                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PassSecurityInfoToDriver_8730A_ROM                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+Pinmux_Config                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+Pinmux_ConfigGet                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+Pinmux_SpicCtrl                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+Pinmux_Swdoff                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+Pinmux_UartLogCtrl                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PollingReg_8730A_PTR                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PollingReg_8730A_ROM                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PortA_IrqData                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PortA_IrqHandler                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PortB_IrqData                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PortB_IrqHandler                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PortC_IrqData                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PortC_IrqHandler                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PowerBitSetting_8730A_PTR                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PowerBitSetting_8730A_ROM                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PsCloseRF_8730A_PTR                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+PsOpenRF_8730A_PTR                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RBSS_UDELAY_CLK                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RBSS_UDELAY_FLAG                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RCC_PeriphClockCmd                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RCC_PeriphClockSource_32K                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RCC_PeriphClockSource_ADC                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RCC_PeriphClockSource_AUDIOCODEC                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RCC_PeriphClockSource_CTC                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RCC_PeriphClockSource_GPIO                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RCC_PeriphClockSource_LOGUART                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RCC_PeriphClockSource_PSRAM                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RCC_PeriphClockSource_SDM                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RCC_PeriphClockSource_SPIC                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RCC_PeriphClockSource_SPORT                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RCC_PeriphClockSource_UART                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RCC_PeriphClockSource_VADMEM                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RTIM_Cmd                                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RTIM_DeInit                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RTIM_GetCount                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RTIM_GetFlagStatus                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RTIM_GetINTStatus                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RTIM_INTClear                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RTIM_INTClearPendingBit                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RTIM_INTConfig                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RTIM_TimeBaseInit                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RTIM_TimeBaseStructInit                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RTmemcmpBackward_8730A_PTR                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RTmemcmpBackward_8730A_ROM                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RXFF0_BNDY                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+RandBytes_Get                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ReadRxBuff_8730A_PTR                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ReadRxBuff_8730A_ROM                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ResetPSParm_8730A_PTR                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ResetPSParm_8730A_ROM                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+Reset_Handler                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SPIC_CALIB_PATTERN                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+STACK_TOP                                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_BootFromNor                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_CHIPType_Get                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_CUTVersion                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_GetChipInfo                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_HWTrigDownload                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_AntiRollback                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_BigPageNand                            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_BootFlashBaud                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_BootSelect                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_DisBootLog                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_FaultLogDis                            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_FlashDSleepEn                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_GetUsbPhyCalData                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_GetUsbPhyCalData2                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_HUKDerivEn                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_LowBaudLog                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_RDPEn                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_RMAMode                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_RSIPEn                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_RSIPMode                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_RandDelayEn                            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_RomPatchEn                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_SBootEn                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_SBoot_HW_DIS                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_SPICAddr4ByteEn                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_SPICBootSpeedUpDis                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_USBLoadFullSpeed                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_UartDownloadDis                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_OTP_UsbDownloadEnable                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_ROMINFO_Get                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_ROMINFO_Set                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_SWTrigDownload                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_TRP_BootSel                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_TRP_ICFG                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_TRP_OTPBYP                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_TRP_TestMode                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSCFG_TRP_UARTImage                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSTIMER_GetPassTick                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSTIMER_GetPassTime                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSTIMER_Init                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYSTIMER_TickGet                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SYS_M0CtrlSel                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+ScanEn                                            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SendSignalCommon_8730A_PTR                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SetBcnEarlyAndTimeout_8730A_PTR                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SetMediaStatus_8730A_PTR                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SetMediaStatus_8730A_ROM                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SetPwrStateReg_8730A_PTR                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SetPwrStateReg_8730A_ROM                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SetSmartPSTimer_8730A_PTR                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+SmartPS2InitTimerAndToGetRxPkt_8730A_PTR          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+TaskBitMap                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+TdmaChangeCoexTable_8730A_PTR                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+TdmaChangeCoexTable_8730A_ROM                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_BaudParaGet                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_BaudParaGetFull                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_BreakCtl                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_CharGet                                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_CharPut                                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_ClearRxFifo                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_ClearTxFifo                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_DeInit                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_INTConfig                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_INT_Clear                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_Init                                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_IntStatus                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_LineStatusGet                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_ModemStatusGet                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_Readable                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_ReceiveData                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_ReceiveDataTO                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_RxByteCntClear                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_RxByteCntGet                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_RxCmd                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_SendData                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_SendDataTO                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_SetBaud                                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_SetBaudExt                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_SetRxLevel                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_StructInit                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_WaitBusy                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UART_Writable                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UpdateISRFT_8730A_PTR                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UpdateISRFT_8730A_ROM                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UpdateISRSys_8730A_PTR                            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UpdateISRWlan_8730A_PTR                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UpdateISRWlan_8730A_ROM                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UpdateIV_8730A_PTR                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UpdateIV_8730A_ROM                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UpdateRxFFReadPtr_DropPkt_8730A_PTR               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UpdateRxFFReadPtr_DropPkt_8730A_ROM               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UserIrqDataTable                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+UserIrqFunTable                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WDG_ClearINT                                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WDG_Enable                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WDG_INTConfig                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WDG_Init                                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WDG_Refresh                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WDG_StructInit                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WDG_Timeout                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WDG_Wait_Busy                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WL2BTMailboxSend_8730A_PTR                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WaitC2HOk_8730A_PTR                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WaitC2HOk_8730A_ROM                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WaitCPUMGQEmpty_8730A_PTR                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WaitCPUMGQEmpty_8730A_ROM                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WaitDDMARDY_8730A_PTR                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WaitDDMARDY_8730A_ROM                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WaitRXDMAIdle_8730A_PTR                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WaitRXDMAIdle_8730A_ROM                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WaitTxStateMachineOk_8730A_PTR                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WakeUpHostDecision_8730A_PTR                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WakeUpHostDecision_8730A_ROM                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WakeUpHost_8730A_PTR                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WepIvCheck_8730A_PTR                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WepIvCheck_8730A_ROM                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WepIvFun_8730A_PTR                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WepIvFun_8730A_ROM                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+Write778_8730A_PTR                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+Write778_8730A_ROM                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WriteTxPauseWithMask_8730A_PTR                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+WriteTxPause_8730A_PTR                            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+XTAL_ClkGet                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+_2char2dec                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+_2char2hex                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+_LOGUART_Init                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__ca32_bl1_dram_start__                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__ca32_bl1_sram_start__                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__ca32_fip_dram_start__                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__ca32_flash_start__                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__km0_flash_text_start__                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__km0_image2_entry_func__                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__km0_ipc_memory_start__                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__km4_boot_text_start__                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__km4_flash_text_start__                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__km4_image3_flash_start__                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__nspe_phy_addr__                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__ram_image1_text_start__                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__ram_start_table_start__                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__retention_entry_func__                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__rom_bss_end__                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__rom_bss_start__                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__rom_stdlib_text_start__                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__vectors_table                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__wrap_memchr                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__wrap_memcmp                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__wrap_memcpy                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__wrap_memmove                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__wrap_memset                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__wrap_rand                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__wrap_strcmp                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__wrap_stricmp                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__wrap_strlen                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__wrap_strtoul                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+__wrap_strupr                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+_char2num                                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+_memchr                                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+_memcmp                                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+_memcpy                                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+_memmove                                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+_memset                                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+_rand                                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+_strcmp                                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+_stricmp                                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+_strlen                                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+_strtoul                                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+_strupr                                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+clrftimr_8730A_PTR                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+clrftimr_8730A_ROM                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+clrfwimr_8730A_PTR                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+clrfwimr_8730A_ROM                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+clrwlanimr_8730A_PTR                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+clrwlanimr_8730A_ROM                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+cmd_rom_table                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+flash_init_para                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+io_assert_failed                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+irq_clear_pending                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+irq_disable                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+irq_enable                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+irq_get_pending                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+irq_get_priority                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+irq_register                                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+irq_set_pending                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+irq_set_priority                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+irq_table_init                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+irq_unregister                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+issue_ARP_8730A_PTR                               D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pAOACGlobalInfo                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pAOACInfo                                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pAOACPage1                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pAOACPage2                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pAOACPage3                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pAOACReport                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pARPInfo                                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pBtcMailbox                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pBtcPsTdma                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pBtcScoreboard                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pC2HEvt                                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pDisconnectParm                                   D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pH2CEvt                                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pH2cAntSelReverse                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pH2cBtInit                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pH2cBtOnlyTest                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pH2cBtPageScanInterval                            D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pH2cBtTdma                                        D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pH2cWlCalibration                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pH2cWlOpmode                                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pH2cWlPortID                                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pIntHdl                                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pIpv6PseudoHeaderInfo                             D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pKeepAliveParm                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pMediaStatus                                      D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pNDPInfo                                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pPSParm                                           D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pPSTParm                                          D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pRPL                                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pRemoteWakeupCtrl                                 D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+pSecurityInfo                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+setftimr_8730A_PTR                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+setftimr_8730A_ROM                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+setfwimr_8730A_PTR                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+setfwimr_8730A_ROM                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+setwlanimr_8730A_PTR                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+setwlanimr_8730A_ROM                              D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+shell_argv_array                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+shell_array_init                                  D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+shell_buf                                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+shell_cmd_chk                                     D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+shell_ctl                                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+shell_get_argc                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+shell_get_argv                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+shell_init_rom                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+shell_rom                                         D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+shell_rxbuf                                       D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+shell_task_rom                                    D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o
+shell_uart_irq_rom                                D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/lib/rl6678_rom_acut/rom.o

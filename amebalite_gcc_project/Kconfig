@@ -120,6 +120,9 @@ menu "CONFIG APPLICATION"
         if DSP_EN
             orsource "../component/aivoice/Kconfig.dsp"
         endif
+        if AIVOICE_EN_MENU
+            orsource "../component/application/speechmind/Kconfig"
+        endif
     endmenu
 
     orsource "../component/application/Kconfig"
@@ -146,15 +149,24 @@ menu "CONFIG WHC INTF"
                 bool "SINGLE CORE"
             config FULLMAC_DEV
                 bool "FULLMAC_DEV"
+            config WHC_FULLMAC_HOST
+                bool "FULLMAC_HOST"
+                select WHC_FULLMAC_HOST_IMPL
+                select WHC_HOST_FOR_KM4
 	endchoice
+
     if !WHC_INTF_IPC_MENU && !WIFI_SINGLE_CORE_MENU
         choice
             prompt "HW INTERFACE"
             config WHC_INTF_SPI
                 bool "WHC_INTF_SPI"
         endchoice
+    endif
+
+    if FULLMAC_DEV
         choice
             prompt "WIFI Driver Location"
+            default KR4_AS_NP
             config KR4_AS_NP
                 bool "KR4"
                 select WHC_DEV_FOR_KR4
@@ -163,9 +175,6 @@ menu "CONFIG WHC INTF"
             #    bool "KM4"
             #    select WHC_DEV_FOR_KM4
         endchoice
-    endif
-
-    if FULLMAC_DEV
         menu "FULLMAC config"
         config WHC_CMD_PATH
             default y if FULLMAC_DEV && !WHC_INTF_USB
@@ -191,7 +200,18 @@ menu "CONFIG WHC INTF"
         endmenu
     endif
 
-    if !FULLMAC_DEV
+    if WHC_FULLMAC_HOST && !WHC_INTF_IPC_MENU
+        menu "FULLMAC HOST config"
+        config WHC_CMD_PATH
+            default y
+            bool "Support WHC CMD PATH"
+        config WHC_WIFI_API_PATH
+            default y
+            bool "Support WHC WIFI API PATH"
+        endmenu
+    endif
+
+    if WHC_INTF_IPC_MENU || WIFI_SINGLE_CORE_MENU
         choice
             prompt "Select AP Core"
             default AP_CORE_KM4
@@ -270,6 +290,12 @@ menu "CONFIG WIFI"
             select WIFI_FW_EN
             select WIFI_HOST_CONTROL
             select LWIP_LAYER if WHC_DUAL_TCPIP_FOR_KR4 || WHC_DUAL_TCPIP_FOR_KM4
+
+        config WHC_FULLMAC_HOST_IMPL
+            bool
+            depends on WHC_HOST
+            select WLAN
+            select LWIP_LAYER
     endif
 
     if !WLAN_MENU

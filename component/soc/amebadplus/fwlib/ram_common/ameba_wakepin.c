@@ -10,8 +10,8 @@
   * @brief  set REGU wakeup_pin (just on wakepin mux to 2 pads).
   * @param  PinMask: aon wakepin index
   *		This parameter can be one of the following values:
-  *		 @arg WAKUP_0 : _PB_30
-  *		 @arg WAKUP_1 : _PB_31
+  *		 @arg WAKEPIN_0 : _PB_30
+  *		 @arg WAKEPIN_1 : _PB_31
   * @param  level: aon wakepin level
   *		This parameter can be one of the following values:
   *		 @arg 1 : high wakeup

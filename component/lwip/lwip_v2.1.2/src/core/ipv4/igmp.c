@@ -830,12 +830,16 @@ Called in post sleep process to compenstate the igmp time
 void comp_igmp_time(u32_t ms)
 {
   struct netif *netif;
+  if (ms < IGMP_TMR_INTERVAL / 2) {
+    return;
+  }
+  u32_t comp_ms = ms < IGMP_TMR_INTERVAL ? IGMP_TMR_INTERVAL : ms;
 
   NETIF_FOREACH(netif) {
     struct igmp_group *group = netif_igmp_data(netif);
     while (group != NULL) {
       if (group->timer > 0) {
-        group->timer = group->timer > ms / IGMP_TMR_INTERVAL ? group->timer - ms / IGMP_TMR_INTERVAL : 1; /* can not set to 0 to affect judge in igmp_tmr */
+        group->timer = group->timer > comp_ms / IGMP_TMR_INTERVAL ? group->timer - comp_ms / IGMP_TMR_INTERVAL : 1; /* can not set to 0 to affect judge in igmp_tmr */
       }
       group = group->next;
     }
@@ -861,7 +865,7 @@ u8_t check_igmp_tmr_removable(void)
           goto exit;
         } else {
           max_sleep_time = (group->timer - 1) * IGMP_TMR_INTERVAL;
-          if (sleep_param.sleep_time > max_sleep_time || sleep_param.sleep_time == 0) {
+          if (sleep_param.sleep_time > max_sleep_time) {
             sleep_param.sleep_time = max_sleep_time;
           }
         }

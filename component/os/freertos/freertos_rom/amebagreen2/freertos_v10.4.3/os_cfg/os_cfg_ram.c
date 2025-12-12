@@ -3,10 +3,6 @@
 #ifdef CONFIG_PLATFORM_FREERTOS_ROM
 #include "os_cfg_ram.h"
 
-#if defined(CONFIG_STANDARD_TICKLESS) && defined(CONFIG_LWIP_LAYER)
-extern void lwip_update_internal_counter(uint32_t ms);
-#endif
-
 extern u32 xTickCount;
 extern u32 xPendedTicks;
 
@@ -123,9 +119,6 @@ void pmu_post_sleep_processing(TickType_t *tick_before_sleep)
 
 	/* update xTickCount and mark to trigger task list update in xTaskResumeAll */
 	vTaskCompTick(ms_passed);
-#if defined(CONFIG_STANDARD_TICKLESS) && defined(CONFIG_LWIP_LAYER)
-	lwip_update_internal_counter(ms_passed);
-#endif
 
 	/* exec sleep hook functions */
 	pmu_exec_wakeup_hook_funs(cur_device_id, ms_passed);

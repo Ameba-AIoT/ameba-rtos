@@ -91,7 +91,7 @@ static uint32_t resample_out_frames, resample_in_frames;
 #endif
 static rtk_bt_sbc_codec_t sbc_codec_t = {
 	{
-		.sbc_enc_mode = (sbc_channel_mode_t)SBC_MODE_STANDARD,
+		.sbc_enc_mode = (sbc_mode_t)SBC_MODE_STANDARD,
 		.sbc_pkt_num = SBC_MAX_NUM_FRAME,
 		.blocks = 16,
 		.subbands = 8,
@@ -2607,7 +2607,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 	}
 	psbc_decoder_t->min_bitpool = pa2dp_codec->sbc.min_bitpool;
 	psbc_decoder_t->max_bitpool = pa2dp_codec->sbc.max_bitpool;
-	psbc_decoder_t->sbc_dec_mode = (sbc_channel_mode_t)SBC_MODE_STANDARD;
+	psbc_decoder_t->sbc_dec_mode = (sbc_mode_t)SBC_MODE_STANDARD;
 	a2dp_demo_audio_track_hdl = rtk_bt_audio_track_add(RTK_BT_AUDIO_CODEC_SBC, (float)DEFAULT_AUDIO_LEFT_VOLUME, (float)DEFAULT_AUDIO_RIGHT_VOLUME, channels,
 													   psbc_decoder_t->sampling_frequency, BT_AUDIO_FORMAT_PCM_16_BIT, 0, NULL, true);
 	if (!a2dp_demo_audio_track_hdl) {
@@ -2682,7 +2682,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		return 1;
 	}
 	psbc_encoder_t->bitpool = pa2dp_codec->sbc.max_bitpool;
-	psbc_encoder_t->sbc_enc_mode = (sbc_channel_mode_t)SBC_MODE_STANDARD;
+	psbc_encoder_t->sbc_enc_mode = (sbc_mode_t)SBC_MODE_STANDARD;
 	BT_LOGA("[A2DP] Parsing encode struct:subbands is %d, blocks is %d, channel mode is %d \r\n", psbc_encoder_t->subbands, psbc_encoder_t->blocks,
 			psbc_encoder_t->channel_mode);
 
@@ -2824,7 +2824,7 @@ static void rtk_bt_a2dp_demo_src_send_data_control(bool enable)
 			return;
 		}
 		bt_a2dp_demo_src_send_data_enable = false;
-		if (bt_a2dp_demo_src_send_timer.handler == NULL) {
+		if (bt_a2dp_demo_src_send_timer.handler) {
 			gtimer_stop(&bt_a2dp_demo_src_send_timer);
 			gtimer_deinit(&bt_a2dp_demo_src_send_timer);
 			bt_a2dp_demo_src_send_timer.handler = NULL;
@@ -2844,7 +2844,7 @@ static void rtk_bt_a2dp_demo_src_send_data_control(bool enable)
 	return;
 
 fail:
-	if (bt_a2dp_demo_src_send_timer.handler == NULL) {
+	if (bt_a2dp_demo_src_send_timer.handler) {
 		gtimer_stop(&bt_a2dp_demo_src_send_timer);
 		gtimer_deinit(&bt_a2dp_demo_src_send_timer);
 		bt_a2dp_demo_src_send_timer.handler = NULL;

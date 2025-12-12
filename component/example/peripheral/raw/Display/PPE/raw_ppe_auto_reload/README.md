@@ -35,7 +35,6 @@ This example use polling PPE_GetValid() to check if layer registers for the prev
 
 #  Supported IC
 
-- AmebaDplus
-  * RTL8721Dx
+RTL8721Dx
 
 
