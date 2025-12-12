@@ -41,6 +41,10 @@ extern "C" {
 
 #define BLE_WIFIMATE_ENCRYPT_DECRYPT_KEY_LEN            (16)
 
+#define BLE_WIFIMATE_MBEDTLS_AES_KEY_BIT_128            (128)
+#define BLE_WIFIMATE_MBEDTLS_AES_KEY_BIT_192            (192)
+#define BLE_WIFIMATE_MBEDTLS_AES_KEY_BIT_256            (256)
+
 struct ble_wifimate_encrypt_decrypt_t {
 	uint8_t         algorithm_type;
 	uint8_t         key[BLE_WIFIMATE_ENCRYPT_DECRYPT_KEY_LEN];

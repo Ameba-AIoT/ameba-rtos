@@ -34,6 +34,5 @@ Since the PA 30 and PA 31 pins are used for SWD, they need to be turned off befo
 
 # Supported IC
 
-- AmebaDplus
-  * RTL8721Dx
+RTL8721Dx
 

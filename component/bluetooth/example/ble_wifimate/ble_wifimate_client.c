@@ -17,7 +17,7 @@
 #include <rtk_client_config.h>
 #include <ble_wifimate_service.h>
 #include <bt_utils.h>
-#include <ameba_soc.h>
+#include <mbedtls/aes.h>
 #if defined(BT_AT_SYNC) && BT_AT_SYNC
 #include <atcmd_bt_cmd_sync.h>
 #endif
@@ -64,48 +64,62 @@ static uint32_t ble_wifimate_client_checksum_cal(uint16_t len, uint8_t *data)
 
 static uint16_t ble_wifimate_aes_ecb_encrypt(uint8_t src_len, uint8_t *src, uint8_t key_len, uint8_t *key, uint8_t *result_len, uint8_t *result)
 {
-	/* If the length of the input plaintext data is not a multiple of the key length,
-	   it should be padded with zeros to make it a multiple of the key length. */
-	uint8_t align_len = (uint8_t)ceil(src_len / (double)key_len) * key_len;
-	uint8_t message[align_len];
-	uint32_t timeout = 0xFFFFFFFF;
-	uint8_t key_le[key_len] ALIGNMTO(0x4);
+	mbedtls_aes_context ctx;
+	uint32_t key_bit = BLE_WIFIMATE_MBEDTLS_AES_KEY_BIT_128;
+	uint8_t key_le[key_len];
+	int i = 0;
 
 	if (!src || !key || !result_len || !result) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
-	if (CRYPTO_Init(NULL) != 0) {
-		BT_LOGE("crypto engine init failed\r\n");
-	} else {
-		BT_LOGA("init success\n");
-	}
-
-	/*take sema to obtain the right to crypto engine*/
-	while (IPC_SEMTake(IPC_SEM_CRYPTO, timeout) != TRUE) {
-		BT_LOGE("ipsec get hw sema fail\n");
-	}
 	/* use a software key, it needs to be converted to little-endian format.
-	    For example, the key is 00112233445566778899aabbccddeeff, the key array should like:
-	    uint8_t key1[32] = {
-	        0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00 };.*/
+	   For example, the key is 00112233445566778899aabbccddeeff, the key array should like:
+	   uint8_t key1[32] = {0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00 };. */
 	memcpy(key_le, key, key_len);
 	array_to_little_endian(key_le, key_len);
-	rtl_crypto_aes_ecb_init(key_le, key_len);
 
-	memset(message, 0, align_len);
+	key_bit = ((key_len == 16) ? BLE_WIFIMATE_MBEDTLS_AES_KEY_BIT_128 :
+			   (key_len == 24) ? BLE_WIFIMATE_MBEDTLS_AES_KEY_BIT_192 : BLE_WIFIMATE_MBEDTLS_AES_KEY_BIT_256);
+
+	// initial AES
+	mbedtls_aes_init(&ctx);
+
+	// set AES encrypt key
+	if (mbedtls_aes_setkey_enc(&ctx, key_le, key_bit) != 0) {
+		BT_LOGE("%s: mbedtls AES key set fail\r\n", __func__);
+		return RTK_BT_FAIL;
+	}
+
+	uint8_t message_len = (uint8_t)ceil(src_len / 16.0) * 16;
+	uint8_t message[message_len];
+	uint8_t encrypted[message_len];
+
+	memset(message, 0, message_len);
+	memset(encrypted, 0, message_len);
+
 	memcpy(message, src, src_len);
-	rtl_crypto_aes_ecb_encrypt(message, align_len, NULL, 0, result);
-	*result_len = align_len;
 
+	// excute AES encrypt
+	for (i = 0; i < message_len; i += 16) {
+		if (mbedtls_aes_crypt_ecb(&ctx, MBEDTLS_AES_ENCRYPT, message + i, encrypted + i) != 0) {
+			BT_LOGE("%s: mbedtls AES encryption failed, i = %d\r\n", __func__, i);
+			break;
+		}
+	}
 
-	/*free sema to release the right to crypto engine*/
-	IPC_SEMFree(IPC_SEM_CRYPTO);
+	if (i < message_len) {
+		return RTK_BT_FAIL;
+	}
+
+	*result_len = message_len;
+	memcpy(result, encrypted, *result_len);
+
 	BT_DUMPD("====encrypt key=====\r\n", key, key_len);
-	BT_DUMPD("====encrypt message=====\r\n", message, align_len);
-	BT_DUMPD("====encrypt result=====\r\n", result, align_len);
+	BT_DUMPD("====encrypt message=====\r\n", message, message_len);
+	BT_DUMPD("====encrypt result=====\r\n", result, *result_len);
 
-	return 0;
+	return RTK_BT_OK;
 }
 
 static uint16_t ble_wifimate_client_encrypt(uint8_t src_len, uint8_t *src, uint8_t *des_len, uint8_t *des)

@@ -52,5 +52,4 @@ For other chips, refer to the AN for setup guide.
 
 # Supported IC
 
-- AmebaSmart
-  * RTL8730E
+RTL8730E

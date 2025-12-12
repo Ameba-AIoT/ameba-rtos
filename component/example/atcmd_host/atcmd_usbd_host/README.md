@@ -25,7 +25,5 @@ For more details, please refer to the atcmd USB section of the online document.
 
 # Supported IC
 
-- Amebadplus
-  * RTL8721Dx
-- Amebagreen2
-  * RTL8721F
+RTL8721Dx
+RTL8721F

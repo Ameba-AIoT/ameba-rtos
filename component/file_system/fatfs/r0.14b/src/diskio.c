@@ -78,7 +78,11 @@ DSTATUS disk_deinitialize(
 DRESULT disk_read(
 	BYTE pdrv,		/* Physical drive nmuber to identify the drive */
 	BYTE *buff,		/* Data buffer to store read data */
+#if FF_LBA64
+	QWORD sector,	/* Sector address in LBA */
+#else
 	DWORD sector,	/* Sector address in LBA */
+#endif
 	UINT count 	/* Number of sectors to read */
 )
 {
@@ -106,7 +110,11 @@ DRESULT disk_read(
 DRESULT disk_write(
 	BYTE pdrv,			/* Physical drive nmuber to identify the drive */
 	const BYTE *buff,	/* Data to be written */
-	DWORD sector,		/* Sector address in LBA */
+#if FF_LBA64
+	QWORD sector,	/* Sector address in LBA */
+#else
+	DWORD sector,	/* Sector address in LBA */
+#endif
 	UINT count			/* Number of sectors to write */
 )
 {

@@ -1,7 +1,7 @@
 
 #include "ameba_soc.h"
 #include "main.h"
-#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
+#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE || defined CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 #include "vfs.h"
 #endif
 #include "os_wrapper.h"
@@ -99,7 +99,7 @@ extern int rt_kv_init(void);
 void fs_init_thread(void *param)
 {
 	(void)param;
-#if !(defined(CONFIG_MP_SHRINK)) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
+#if !(defined(CONFIG_MP_SHRINK)) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE || defined CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 	int ret = 0;
 	vfs_init();
 #ifdef CONFIG_FATFS_WITHIN_APP_IMG

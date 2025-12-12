@@ -636,12 +636,16 @@ Called in post sleep process to compenstate the mld6 time
 void comp_mld6_time(u32_t ms)
 {
   struct netif *netif;
+  if (ms < MLD6_TMR_INTERVAL / 2) {
+    return;
+  }
+  u32_t comp_ms = ms < MLD6_TMR_INTERVAL ? MLD6_TMR_INTERVAL : ms;
 
   NETIF_FOREACH(netif) {
     struct mld_group *group = netif_mld6_data(netif);
     while (group != NULL) {
       if (group->timer > 0) {
-        group->timer = group->timer > ms / MLD6_TMR_INTERVAL ? group->timer - ms / MLD6_TMR_INTERVAL : 1; /* can not set to 0 to affect judge in mld6_tmr */
+        group->timer = group->timer > comp_ms / MLD6_TMR_INTERVAL ? group->timer - comp_ms / MLD6_TMR_INTERVAL : 1; /* can not set to 0 to affect judge in mld6_tmr */
       }
       group = group->next;
     }
@@ -666,7 +670,7 @@ u8_t check_mld6_tmr_removable(void)
           goto exit;
         } else {
           max_sleep_time = (group->timer - 1) * MLD6_TMR_INTERVAL;
-          if (sleep_param.sleep_time > max_sleep_time || sleep_param.sleep_time == 0) {
+          if (sleep_param.sleep_time > max_sleep_time) {
             sleep_param.sleep_time = max_sleep_time;
           }
         }

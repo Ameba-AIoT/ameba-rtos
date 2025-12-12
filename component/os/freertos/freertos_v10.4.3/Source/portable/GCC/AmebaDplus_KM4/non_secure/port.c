@@ -60,7 +60,7 @@
 #endif /* configENABLE_TRUSTZONE */
 
 #if defined(CONFIG_STANDARD_TICKLESS) && defined(CONFIG_LWIP_LAYER)
-extern void lwip_update_internal_counter(uint32_t ms);
+extern uint32_t lwip_update_internal_counter(u32_t ms, void *param_ptr);
 #endif
 
 #undef MPU_WRAPPERS_INCLUDED_FROM_API_FILE
@@ -1019,7 +1019,7 @@ void pmu_post_sleep_processing(uint32_t *tick_before_sleep)
 	/* update xTickCount and mark to trigger task list update in xTaskResumeAll */
 	vTaskCompTick(ms_passed);
 #if defined(CONFIG_STANDARD_TICKLESS) && defined(CONFIG_LWIP_LAYER)
-	lwip_update_internal_counter(ms_passed);
+	lwip_update_internal_counter(ms_passed, NULL);
 #endif
 
 	RTK_LOGD(NOTAG, "KM4 sleeped:[%lu] ms\n", ms_passed);

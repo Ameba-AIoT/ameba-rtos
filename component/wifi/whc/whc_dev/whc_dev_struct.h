@@ -29,7 +29,7 @@ struct whc_cust_hdr {
 	u32	len;
 };
 
-/* for spi only, due to full duplex communication in spi */
+/* for spi, due to full duplex communication in spi. Also for usb, due to the lack of length info. */
 struct whc_cmd_path_hdr {
 	u32	event;
 	u32	len;

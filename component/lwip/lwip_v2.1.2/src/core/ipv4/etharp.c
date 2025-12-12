@@ -1257,6 +1257,10 @@ Called in post sleep process to compenstate the arp ctime
 void comp_arp_ctime(u32_t ms)
 {
   int i;
+  if (ms < ARP_TMR_INTERVAL / 2) {
+    return;
+  }
+  u32_t comp_ms = ms < ARP_TMR_INTERVAL ? ARP_TMR_INTERVAL : ms;
 
   for (i = 0; i < ARP_TABLE_SIZE; ++i) {
     u8_t state = arp_table[i].state;
@@ -1265,7 +1269,7 @@ void comp_arp_ctime(u32_t ms)
         && (state != ETHARP_STATE_STATIC)
 #endif /* ETHARP_SUPPORT_STATIC_ENTRIES */
        ) {
-      arp_table[i].ctime += ms / ARP_TMR_INTERVAL;
+      arp_table[i].ctime += comp_ms / ARP_TMR_INTERVAL;
     }
   }
 }
@@ -1295,7 +1299,7 @@ u8_t check_etharp_tmr_removable(void)
         break;
       } else {
         max_sleep_time = (ARP_MAXAGE - (u32_t)arp_table[i].ctime) * ARP_TMR_INTERVAL;
-        if (sleep_param.sleep_time > max_sleep_time || sleep_param.sleep_time == 0) {
+        if (sleep_param.sleep_time > max_sleep_time) {
           sleep_param.sleep_time = max_sleep_time;
         }
       }

@@ -499,7 +499,7 @@ static void whc_spi_host_spi_init(void)
 	/* for stable now */
 #ifndef SPI_TOOD
 #endif
-	SSI_InitStructMaster.SPI_ClockDivider = 4;
+	SSI_InitStructMaster.SPI_ClockDivider = SPI_CLOCK_DIVIDER;
 	SSI_Init(WHC_SPI_DEV, &SSI_InitStructMaster);
 
 	spi_host_priv.rx_buf = rtos_mem_zmalloc(SPI_BUFSZ);

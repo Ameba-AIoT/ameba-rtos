@@ -129,7 +129,7 @@ void lwip_cyclic_timer(void *arg);
 
 /* Realtek add */
 #ifdef CONFIG_STANDARD_TICKLESS
-void lwip_update_internal_counter(u32_t ms);
+uint32_t lwip_update_internal_counter(u32_t ms, void *param_ptr);
 u32_t lwip_rm_unneeded_tmr(u32_t expected_idle_time, void *param);
 void lwip_restore_tmr(void);
 #endif

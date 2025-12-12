@@ -393,7 +393,7 @@ void BOOT_SOC_ClkSet(void)
 	QspiDiv = CLKDIV_ROUND_UP(PllClk, QSPI_CLK_LIMIT);/*target clk QSPI_CLK_LIMIT*/
 
 	/*0. configure core power according user setting */
-	CORE_LDO_Vol_Set(pSocClk_Info->Vol_Type);
+	LDO_CoreVolSet(pSocClk_Info->Vol_Type);
 
 	//1. switch clk to XTAL
 	Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0);
@@ -526,7 +526,7 @@ void BOOT_Image1(void)
 	BOOT_SOC_ClkSet();
 
 	/* Mem_LDO in normal0 mode by default, change dummy load from 500uA to 200uA */
-	LDO_Mem_Dummy_Ctrl(LDO_MEM_DUMMY_200UA);
+	LDO_MemDummyCtrl(LDO_MEM_DUMMY_200UA);
 
 	BOOT_TRNG_ParaSet();
 

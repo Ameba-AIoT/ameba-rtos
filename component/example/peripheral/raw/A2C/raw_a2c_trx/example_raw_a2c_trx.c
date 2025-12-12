@@ -1,5 +1,6 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
+#include "example_a2c_ext.h"
 #include <stdio.h>
 
 static u32 a2c_ram_buffer_map[] = {
@@ -344,10 +345,13 @@ static void EMC_A2CInit(void)
 	RCC_PeriphClockDividerFENSet(USB_PLL_A2C, DISABLE);
 	RCC_PeriphClockDividerFENSet(SYS_PLL_A2C, DISABLE);
 	RCC_PeriphClockSourceSet(A2C, XTAL);
-	Pinmux_Config(_PA_13, PINMUX_FUNCTION_A2C0_TX);
-	Pinmux_Config(_PA_12, PINMUX_FUNCTION_A2C0_RX);
-	Pinmux_Config(_PA_15, PINMUX_FUNCTION_A2C1_TX);
-	Pinmux_Config(_PA_14, PINMUX_FUNCTION_A2C1_RX);
+	Pinmux_Config(A2C0_TX, PINMUX_FUNCTION_A2C0_TX);
+	Pinmux_Config(A2C0_RX, PINMUX_FUNCTION_A2C0_RX);
+	Pinmux_Config(A2C1_TX, PINMUX_FUNCTION_A2C1_TX);
+	Pinmux_Config(A2C1_RX, PINMUX_FUNCTION_A2C1_RX);
+	/*Pull the STB pin low to put the CAN transceiver into normal mode.*/
+	PAD_PullCtrl(A2C0_STB, GPIO_PuPd_DOWN);
+	PAD_PullCtrl(A2C1_STB, GPIO_PuPd_DOWN);
 
 	A2Cx_0 = A2C_DEV_TABLE[0].A2Cx;
 	A2Cx_1 = A2C_DEV_TABLE[1].A2Cx;
@@ -433,6 +437,6 @@ int example_raw_a2c_trx(void)
 	if (rtos_task_create(NULL, "A2C1_TX_THREAD", a2c1_tx_thread, (void *)A2C1, 2048, 2) != RTK_SUCCESS) {
 		printf("\n%s: Create a2c1 tx thread Err!\n", __FUNCTION__);
 	}
-	rtos_sched_start();
+
 	return 0;
 }

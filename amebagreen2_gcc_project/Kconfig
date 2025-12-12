@@ -193,6 +193,7 @@ menu "CONFIG WHC INTF"
                 bool "WHC_INTF_SDIO"
             config WHC_INTF_USB
                 bool "WHC_INTF_USB"
+                select USB_HAL_LIB
                 select USB_DEVICE_EN
                 select USBD_INIC
             config WHC_INTF_SPI
@@ -205,7 +206,7 @@ menu "CONFIG WHC INTF"
     if FULLMAC_DEV
         menu "FULLMAC config"
         config WHC_CMD_PATH
-            default y if FULLMAC_DEV && !WHC_INTF_USB
+            default y if FULLMAC_DEV
             bool "Support WHC CMD PATH"
         config WHC_WIFI_API_PATH
             default y if FULLMAC_DEV

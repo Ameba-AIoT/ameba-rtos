@@ -18,10 +18,8 @@ If OTP is not programmed to enable RDP, Bootloader will not load RDP Image and c
 
 # Supported IC
 
-- AmebaLite
-  * RTL8726E
-  * RTL8720E
-  * RTL8713E
-  * RTL8710E
-- AmebaDplus
-  * RTL8721Dx
+RTL8726E
+RTL8720E
+RTL8713E
+RTL8710E
+RTL8721Dx

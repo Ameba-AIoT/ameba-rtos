@@ -47,9 +47,6 @@ This example will print out detect_time and frequency of received data.
 
 # Supported IC
 
-- AmebaSmart
-  * RTL8730E
-- AmebaDplus
-  * RTL8721Dx
-- AmebaGreen2
-  * RTL8721F
+RTL8730E
+RTL8721Dx
+RTL8721F

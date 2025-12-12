@@ -533,11 +533,15 @@ Called in post sleep process to compenstate the autoip time
 void comp_autoip_time(u32_t ms)
 {
   struct netif *netif;
+  if (ms < AUTOIP_TMR_INTERVAL / 2) {
+    return;
+  }
+  u32_t comp_ms = ms < AUTOIP_TMR_INTERVAL ? AUTOIP_TMR_INTERVAL : ms;
   NETIF_FOREACH(netif) {
     struct autoip *autoip = netif_autoip_data(netif);
     if (autoip != NULL) {
-      autoip->lastconflict = autoip->lastconflict > ms / AUTOIP_TMR_INTERVAL ? autoip->lastconflict - ms / AUTOIP_TMR_INTERVAL : 0;
-      autoip->ttw = autoip->ttw > ms / AUTOIP_TMR_INTERVAL ? autoip->ttw - ms / AUTOIP_TMR_INTERVAL : 0;
+      autoip->lastconflict = autoip->lastconflict > comp_ms / AUTOIP_TMR_INTERVAL ? autoip->lastconflict - comp_ms / AUTOIP_TMR_INTERVAL : 0;
+      autoip->ttw = autoip->ttw > comp_ms / AUTOIP_TMR_INTERVAL ? autoip->ttw - comp_ms / AUTOIP_TMR_INTERVAL : 0;
     }
   }
 }

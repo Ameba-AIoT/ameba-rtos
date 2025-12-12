@@ -58,7 +58,7 @@
 #endif /* configENABLE_TRUSTZONE */
 
 #if defined(CONFIG_STANDARD_TICKLESS) && defined(CONFIG_LWIP_LAYER)
-extern void lwip_update_internal_counter(uint32_t ms);
+extern uint32_t lwip_update_internal_counter(u32_t ms, void *param_ptr);
 #endif
 
 #undef MPU_WRAPPERS_INCLUDED_FROM_API_FILE
@@ -939,7 +939,7 @@ void vApplicationIdleHook(void)
 {
 	/* Use the idle task to place the CPU into a low power mode.  Greater power
 	saving could be achieved by not including any demo tasks that never block. */
-#if defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
+#if !defined(CONFIG_MP_SHRINK) && defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
 	extern int32_t driver_suspend_ret;
 #if defined (CONFIG_WLAN)
 	extern int32_t wlan_driver_check_and_suspend(void);
@@ -1048,7 +1048,7 @@ void pmu_post_sleep_processing(uint32_t *tick_before_sleep)
 	/* update xTickCount and mark to trigger task list update in xTaskResumeAll */
 	vTaskCompTick(ms_passed);
 #if defined(CONFIG_STANDARD_TICKLESS) && defined(CONFIG_LWIP_LAYER)
-	lwip_update_internal_counter(ms_passed);
+	lwip_update_internal_counter(ms_passed, NULL);
 #endif
 
 	RTK_LOGD(NOTAG, "%s sleeped:[%d] ms\n", (SYS_CPUID() == KM4NS_CPU_ID) ? "KM4NS" : "KM4TZ", ms_passed);

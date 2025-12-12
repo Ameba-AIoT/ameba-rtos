@@ -59,7 +59,6 @@ Or it will echo:
 
 #  Supported IC
 
-- AmebaDplus
-  * RTL8721Dx
+RTL8721Dx
 
 

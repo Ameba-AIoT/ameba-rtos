@@ -19,16 +19,7 @@ if ((NOT CONFIG_WHC_INTF_IPC) AND CONFIG_WHC_DEV)
 endif()
 
 if(CONFIG_WHC_INTF_USB)
-    target_sources(${c_CURRENT_IMAGE} PRIVATE
-        ${c_CMPT_FWLIB_DIR}/ram_common/ameba_usb.c
-
-        ${c_CMPT_USB_DIR}/common/usb_os.c
-        ${c_CMPT_USB_DIR}/common/usb_hal.c
-        ${c_CMPT_USB_DIR}/common/usb_phy.c
-    )
-    target_include_directories(${c_CURRENT_IMAGE} PRIVATE
-	${c_CMPT_USB_DIR}/common
-    )
+    ameba_add_subdirectory(${c_CMPT_USB_DIR}/common)
 endif()
 
 ###############################  GENERATE IMAGE  ###################################
@@ -118,7 +109,7 @@ add_custom_command(OUTPUT ${c_SDK_IMAGE_TARGET_DIR}/fullmac_ram_1_prepend.bin
 )
 
 add_custom_target(
-    ${c_CURRENT_IMAGE}_postbuild
+    ${c_MCU_PROJECT_NAME}_fullmac_img1_postbuild
     ALL
     DEPENDS ${c_SDK_IMAGE_TARGET_DIR}/fullmac_ram_1_prepend.bin
 )

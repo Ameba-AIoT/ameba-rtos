@@ -196,6 +196,7 @@ typedef enum {
 	IPC_SEM_OTP,
 	IPC_SEM_CRYPTO,
 	IPC_SEM_DIAGNOSE,
+	IPC_SEM_SYSON,
 	IPC_SEM_MAX = 16,			/* can't be this value, total 16 ipc semaphores*/
 } IPC_SEM_IDX;
 /** @} */

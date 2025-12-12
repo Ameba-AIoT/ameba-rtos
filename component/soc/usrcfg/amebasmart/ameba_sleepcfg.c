@@ -54,18 +54,6 @@ WakeEvent_TypeDef sleep_wevent_config[] = {
 	{0xFFFFFFFF,							WAKEUP_NULL},	/* Table end */
 };
 
-/* can be used by sleep mode & deep sleep mode */
-/* config can be set to DISABLE_WAKEPIN/HIGH_LEVEL_WAKEUP/LOW_LEVEL_WAKEUP */
-WAKEPIN_TypeDef sleep_wakepin_config[] = {
-//  wakepin			config
-	{WAKEPIN_0,		DISABLE_WAKEPIN},	/* WAKEPIN_0 corresponding to _PB_21 */
-	{WAKEPIN_1,		DISABLE_WAKEPIN},	/* WAKEPIN_1 corresponding to _PB_22  */
-	{WAKEPIN_2,		DISABLE_WAKEPIN},	/* WAKEPIN_2 corresponding to _PB_23  */
-	{WAKEPIN_3,		DISABLE_WAKEPIN},	/* WAKEPIN_3 corresponding to _PB_24  */
-
-	{0xFFFFFFFF,	DISABLE_WAKEPIN},	/* Table end */
-};
-
 PSCFG_TypeDef ps_config = {
 	.km0_pg_enable = FALSE,
 	.km0_pll_off = TRUE,

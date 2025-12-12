@@ -2744,7 +2744,11 @@ Called in post sleep process to compenstate the tcp_ticks
  */
 void comp_tcp_ticks(u32_t ms)
 {
-  tcp_ticks += ms / TCP_SLOW_INTERVAL;
+  if (ms < TCP_SLOW_INTERVAL / 2) {
+    return;
+  }
+  u32_t comp_ms = ms < TCP_SLOW_INTERVAL ? TCP_SLOW_INTERVAL : ms;
+  tcp_ticks += comp_ms / TCP_SLOW_INTERVAL;
 }
 
 /*
@@ -2782,13 +2786,13 @@ u8_t check_tcp_tmr_removable(void)
                 (u32_t)(tcp_ticks - pcb->tmr) < (pcb->keep_idle + pcb->keep_cnt_sent * TCP_KEEP_INTVL(pcb)) / TCP_SLOW_INTERVAL) {
         /* keepalive has sent, not arrive next send time, max sleep time is keep_intvl */
         max_sleep_time = (pcb->keep_idle + pcb->keep_cnt_sent * TCP_KEEP_INTVL(pcb)) / TCP_SLOW_INTERVAL - (u32_t)(tcp_ticks - pcb->tmr);
-        if (sleep_param.sleep_time > max_sleep_time * TCP_SLOW_INTERVAL || sleep_param.sleep_time == 0) {
+        if (sleep_param.sleep_time > max_sleep_time * TCP_SLOW_INTERVAL) {
           sleep_param.sleep_time = max_sleep_time * TCP_SLOW_INTERVAL;
         }
       } else {
         /* no need to send keepalive, max sleep time is keep_idle */
         max_sleep_time = pcb->keep_idle / TCP_SLOW_INTERVAL - (u32_t)(tcp_ticks - pcb->tmr);
-        if (sleep_param.sleep_time > max_sleep_time * TCP_SLOW_INTERVAL || sleep_param.sleep_time == 0) {
+        if (sleep_param.sleep_time > max_sleep_time * TCP_SLOW_INTERVAL) {
           sleep_param.sleep_time = max_sleep_time * TCP_SLOW_INTERVAL;
         }
       }

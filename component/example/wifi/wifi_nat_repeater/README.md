@@ -33,5 +33,4 @@ How to use atcmd to connect to public WiFi under sta mode:
 
 # Supported IC
 
-- AmebaDplus
-  * RTL8721Dx
+RTL8721Dx

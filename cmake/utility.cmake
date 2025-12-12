@@ -214,9 +214,10 @@ function(ameba_add_external_library name output_path output_name)
         add_library(${flag_target} INTERFACE)
     endif()
 
+    if(BUILD_FOR_RLS)
+        list(APPEND ARGN p_STRIP_DEBUG p_ENABLE_DETERMINISTIC_ARCHIVES)
+    endif()
     ameba_add_library(${name}
-        p_STRIP_DEBUG
-        p_ENABLE_DETERMINISTIC_ARCHIVES
         p_OUTPUT_PATH ${output_path}
         p_OUTPUT_NAME ${output_name}
         ${ARGN}
@@ -390,6 +391,8 @@ function(ameba_add_merge_library output_name output_path)
    endif()
 
     set(full_output ${output_path}/lib_${output_name}.a)
+    set(_objcopy_flags)
+    ameba_list_append_if(BUILD_FOR_RLS _objcopy_flags -g -D)
     add_custom_command(
         OUTPUT ${full_output}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${temp_dir}
@@ -398,11 +401,12 @@ function(ameba_add_merge_library output_name output_path)
         ${list_cmd}
         COMMAND ${CMAKE_COMMAND} -E rm -f ${full_output}
         COMMAND ${CMAKE_COMMAND} -E chdir ${temp_dir} ${CMAKE_AR} crs ${full_output} "@o_files.list"
-        COMMAND ${CMAKE_OBJCOPY} -g -D ${full_output}
+        COMMAND ${CMAKE_OBJCOPY} ${_objcopy_flags} ${full_output}
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${temp_dir}
         DEPENDS ${libs}
         COMMENT "Merging libraries lib_${output_name}.a using ar"
     )
+    unset(_objcopy_flags)
 
     add_custom_target(
         ${c_CURRENT_TARGET_NAME}_merge ALL
@@ -634,34 +638,31 @@ function(ameba_global_library)
     endif()
 endfunction()
 
+function(ameba_layout_extract name ldfile origin end length)
+    execute_process(
+        COMMAND ${Python3_EXECUTABLE} ${c_SDK_EXTRACT_LD_SCRIPT} ${ldfile} ${name} ORIGIN
+        RESULT_VARIABLE ret
+        OUTPUT_VARIABLE ${origin}
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    execute_process(
+        COMMAND ${Python3_EXECUTABLE} ${c_SDK_EXTRACT_LD_SCRIPT} ${ldfile} ${name} END
+        RESULT_VARIABLE ret
+        OUTPUT_VARIABLE ${end}
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    math(EXPR ${length} "${${end}} - ${${origin}}")
+    set(${origin} ${${origin}} PARENT_SCOPE)
+    set(${end} ${${end}} PARENT_SCOPE)
+    set(${length} ${${length}} PARENT_SCOPE)
+endfunction()
+
 ########################################################################################################
 #TODO: deprecated functions
 
-function(ameba_add_exist_library name)
-    ameba_warning("This function is deprecated and will be removed in future versions, use ameba_port_standalone_internal_library instead")
-    ameba_port_standalone_internal_library(${name})
-endfunction()
-
 #NOTE: For compatibility with version CMAKE_V0.1
-
 function(ameba_internal_library name)
     ameba_add_internal_library(${name})
-    set(CURRENT_LIB_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
-endfunction()
-
-#define soc library named lib_${name}_${PROJECT_NAME}.a, and it will be move to lib/soc
-function(ameba_soc_library name)
-    ameba_add_external_soc_library(${name})
-    set(CURRENT_LIB_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
-endfunction()
-
-#define application library named lib_${name}_${PROJECT_NAME}.a, and it will be move to lib/application
-function(ameba_app_library name)
-    ameba_add_external_app_library(${name})
-    set(CURRENT_LIB_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
-endfunction()
-
-function(ameba_app_library_with_gitver name)
-    ameba_add_external_app_library(${name})
     set(CURRENT_LIB_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
 endfunction()

@@ -30,12 +30,19 @@ list(
     ${DIR_COMMON}/wififw_btcoex_tdma_common.c
 )
 
-#FIXME: These source are not add for amebaL2, add them will cause some compile error
+#From L2 and 7098, mac uses tx architecture. FW cannot use the old ICs' wififw_txpkt_common.c.
 if(CONFIG_AMEBADPLUS OR CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAPRO3 OR CONFIG_AMEBALITE OR CONFIG_AMEBASMART OR CONFIG_AMEBAD)
     list(
         APPEND CSRC
         ${DIR_COMMON}/wififw_txpkt_common.c
-        ${DIR_COMMON}/wififw_btcoex_mailbox_common.c
         ${DIR_COMMON}/wififw_tunnel.c
+    )
+endif()
+
+#From 7098, BT use cpu SDN design, and deleted the old ICs' HW interface between WL and BT. wififw_btcoex_mailbox_common.c only for old ICs.
+if(CONFIG_AMEBADPLUS OR CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAPRO3 OR CONFIG_AMEBALITE OR CONFIG_AMEBASMART OR CONFIG_AMEBAD OR CONFIG_AMEBAL2)
+    list(
+        APPEND CSRC
+        ${DIR_COMMON}/wififw_btcoex_mailbox_common.c
     )
 endif()

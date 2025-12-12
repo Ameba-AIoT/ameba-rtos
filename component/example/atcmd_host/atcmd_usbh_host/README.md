@@ -25,5 +25,4 @@ For more details, please refer to the atcmd USB section of the online document.
 
 # Supported IC
 
-- AmebaSmart
-  * RTL8730E
+RTL8730E

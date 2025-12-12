@@ -115,10 +115,12 @@ u32 whc_spi_dev_rxdma_irq_handler(void *pData)
 
 	/* check and clear RX DMA ISR */
 	int_status = GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-	if ((int_status & (TransferType | BlockType)))  {
-		if (spi_priv.dev_status & DEV_STS_WAIT_RXDMA_DONE) {
-			rtos_sema_give(spi_priv.rxirq_sema);
-		}
+	if ((int_status & (TransferType)))  {
+		set_dev_rdy_pin(DEV_BUSY);
+		rtos_critical_enter(RTOS_CRITICAL_WIFI);
+		spi_priv.dev_status |= DEV_STS_WAIT_RXDMA_DONE;
+		rtos_critical_exit(RTOS_CRITICAL_WIFI);
+		rtos_sema_give(spi_priv.rxirq_sema);
 	}
 
 	if (int_status & ErrType) {
@@ -139,10 +141,12 @@ u32 whc_spi_dev_txdma_irq_handler(void *pData)
 
 	/* check and clear TX DMA ISR */
 	int_status = GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-	if (int_status & (TransferType | BlockType)) {
-		if (spi_priv.dev_status & DEV_STS_WAIT_TXDMA_DONE) {
-			rtos_sema_give(spi_priv.txirq_sema);
-		}
+	if (int_status & (TransferType)) {
+		set_dev_rxreq_pin(DEV_RX_IDLE);
+		rtos_critical_enter(RTOS_CRITICAL_WIFI);
+		spi_priv.dev_status |= DEV_STS_WAIT_TXDMA_DONE;
+		rtos_critical_exit(RTOS_CRITICAL_WIFI);
+		rtos_sema_give(spi_priv.txirq_sema);
 	}
 
 	if (int_status & ErrType) {
@@ -477,12 +481,12 @@ void whc_spi_dev_device_init(void)
 	pmu_register_sleep_callback(PMU_WHC_WIFI, (PSM_HOOK_FUN)whc_spi_dev_suspend, NULL, (PSM_HOOK_FUN)whc_spi_dev_resume, NULL);
 
 	/* Create irq task */
-	if (rtos_task_create(NULL, "SPI_RXDMA_IRQ_TASK", whc_spi_dev_rxdma_irq_task, (void *)whc_spi_priv, 1024 * 4, 7) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, "SPI_RXDMA_IRQ_TASK", whc_spi_dev_rxdma_irq_task, (void *)whc_spi_priv, 1024 * 4, 9) != RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, "Create SPI_RXDMA_IRQ_TASK Err!!\n");
 		return;
 	}
 
-	if (rtos_task_create(NULL, "SPI_TXDMA_IRQ_TASK", whc_spi_dev_txdma_irq_task, (void *)whc_spi_priv, 1024 * 4, 7) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, "SPI_TXDMA_IRQ_TASK", whc_spi_dev_txdma_irq_task, (void *)whc_spi_priv, 1024 * 4, 9) != RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, "Create SPI_TXDMA_IRQ_TASK Err!!\n");
 		return;
 	}
@@ -725,7 +729,7 @@ retry:
 
 	/* RXF interrupt would occur after whc_dev_spi_wait_dev_idle(). This case would increase time, during which Host would start SPI transfer.
 	 So double check SPI is not busy, then start TXDMA */
-	if (SSI_Busy(WHC_SPI_DEV)) {
+	if (SSI_Busy(WHC_SPI_DEV) || (spi_priv.dev_status != DEV_STS_IDLE)) {
 		rtos_critical_exit(RTOS_CRITICAL_WIFI);
 		goto retry;
 	}

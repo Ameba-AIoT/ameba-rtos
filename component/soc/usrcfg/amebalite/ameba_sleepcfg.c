@@ -45,17 +45,6 @@ WakeEvent_TypeDef sleep_wevent_config[] = {
 	{0xFFFFFFFF,							WAKEUP_NULL},	/* Table end */
 };
 
-
-/* can be used by sleep mode & deep sleep mode */
-/* config can be set to DISABLE_WAKEPIN/HIGH_LEVEL_WAKEUP/LOW_LEVEL_WAKEUP */
-WAKEPIN_TypeDef sleep_wakepin_config[] = {
-//  wakepin			config
-	{WAKEPIN_0,		DISABLE_WAKEPIN},	/* WAKEPIN_0 corresponding to _PA_0 */
-	{WAKEPIN_1,		DISABLE_WAKEPIN},	/* WAKEPIN_1 corresponding to _PA_1 */
-
-	{0xFFFFFFFF,	DISABLE_WAKEPIN},	/* Table end */
-};
-
 PSCFG_TypeDef ps_config = {
 	.keep_OSC4M_on = FALSE,			/* keep OSC4M on or off for sleep */
 	.xtal_mode_in_sleep = XTAL_OFF,	/* set xtal mode during sleep mode, see enum xtal_mode_sleep for detail */

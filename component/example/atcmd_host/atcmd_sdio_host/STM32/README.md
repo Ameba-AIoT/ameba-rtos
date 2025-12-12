@@ -28,5 +28,4 @@ For more details, please refer to the atcmd SDIO section of the online document.
 
 # Supported IC
 
-- AmebaDplus
-  * RTL8721Dx
+RTL8721Dx

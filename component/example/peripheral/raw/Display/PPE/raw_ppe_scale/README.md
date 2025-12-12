@@ -31,7 +31,6 @@ None
 
 #  Supported IC
 
-- AmebaDplus
-  * RTL8721Dx
+RTL8721Dx
 
 

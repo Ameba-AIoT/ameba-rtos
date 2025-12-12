@@ -2,25 +2,6 @@ if(CONFIG_AMEBA_RLS)
     message(FATAL_ERROR "This file MUST NOT be released")
 endif()
 
-function(ameba_layout_extract name ldfile origin end length)
-    execute_process(
-        COMMAND sh ${c_SDK_EXTRACT_LD_SCRIPT} ${ldfile} ${name} ORIGIN
-        RESULT_VARIABLE ret
-        OUTPUT_VARIABLE ${origin}
-    )
-
-    execute_process(
-        COMMAND sh ${c_SDK_EXTRACT_LD_SCRIPT} ${ldfile} ${name} END
-        RESULT_VARIABLE ret
-        OUTPUT_VARIABLE ${end}
-    )
-    math(EXPR ${length} "${${end}} - ${${origin}}")
-    set(${origin} ${${origin}} PARENT_SCOPE)
-    set(${end} ${${end}} PARENT_SCOPE)
-    set(${length} ${${length}} PARENT_SCOPE)
-endfunction()
-
-
 function(ameba_library_section_rename target)
     set(options
         p_TO_ROM

@@ -328,10 +328,27 @@ void SOCPS_PowerManage(u8 regu_state)
 	reg_temp |= SWR_BIT_SPS_DIG_ZCD_FEN;
 	SWR->SWR_DIG_ZCD = reg_temp;
 
-	/* Only after writing the following patch, the Acut setting regu delay parameter will take effect.*/
+	reg_temp = SWR->SWR_PARAM_PWML;
+	reg_temp &= ~ SWR_MASK_REG_SWR_ZCD_CTRL_PWML;
+	reg_temp |= SWR_REG_SWR_ZCD_CTRL_PWML(0x01);
+	SWR->SWR_PARAM_PWML = reg_temp;
+
+	reg_temp = SWR->SWR_PARAM_PWMH;
+	reg_temp &= ~ SWR_MASK_REG_SWR_ZCD_CTRL_PWMH;
+	reg_temp |= SWR_REG_SWR_ZCD_CTRL_PWMH(0x01);
+	SWR->SWR_PARAM_PWMH = reg_temp;
+
 	if (EFUSE_GetChipVersion() == SYSCFG_CUT_VERSION_A) {
+		/* Only after writing the following patch, the Acut setting regu delay parameter will take effect.*/
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_PMC_PATCH_GRP0_1, 0xE107FCB5);
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_PMC_PATCH_GRP0_2, 0x1818460C);
+	} else if (EFUSE_GetChipVersion() >= SYSCFG_CUT_VERSION_B) {
+		/*If an interruption occurs during the Wi-Fi sleep process, the voltage of core ldo will remain at 0.8V.
+		  At 0.8V, the RF cannot function properly, which will cause the Wi-Fi connection to drop.*/
+		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_PMC_PATCH_GRP0_1, 0xb0c964ab);
+		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_PMC_PATCH_GRP0_2, 0x0d89c341);
+		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_PMC_PATCH_GRP1_1, 0xe10190b7);
+		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_PMC_PATCH_GRP1_2, 0x1818460c);
 	}
 	/*Enable swr dummy load to speed up when pfm voltage falling.*/
 	reg_temp = LDO->LDO_DUMMY;

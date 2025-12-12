@@ -34,6 +34,8 @@ menu "CONFIG USB"
 
     config USB_OTG_EN
         bool
+    config USB_HAL_LIB
+        bool
     config USB_DEVICE_EN
         bool
     config USB_HOST_EN

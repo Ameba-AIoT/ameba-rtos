@@ -21,6 +21,9 @@
 
 #define CONFIG_CDC_ACM_NOTIFY_LOOP_TEST             0
 
+/* Skip memcpy BULK IN DATA from application in class */
+#define CONFIG_CDC_ACM_BULK_TX_SKIP_MEMCPY          1
+
 /*  CDC definitions */
 #define CDC_SEND_ENCAPSULATED_COMMAND               0x00U
 #define CDC_GET_ENCAPSULATED_RESPONSE               0x01U

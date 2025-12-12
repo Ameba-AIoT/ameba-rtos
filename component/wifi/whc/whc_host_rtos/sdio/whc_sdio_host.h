@@ -29,7 +29,7 @@
 /* auth/assoc/key resnd limit can be configured, refer max >> RTW_JOIN_TIMEOUT
  * including auth + assoc + 4way handshake, no dhcp
  */
-#define RTW_JOIN_TIMEOUT (3 * 12000 + 13100 + 20200 + 50) //(MAX_CNT_SCAN_TIMES * SCANNING_TIMEOUT + MAX_JOIN_TIMEOUT + KEY_EXCHANGE_TIMEOUT + 50)
+#define RTW_JOIN_TIMEOUT (10 * 12000 + 13100 + 20200 + 50) //(MAX_CNT_SCAN_TIMES * SCANNING_TIMEOUT + MAX_JOIN_TIMEOUT + KEY_EXCHANGE_TIMEOUT + 50)
 
 struct whc_sdio_host_priv_t {
 	rtos_sema_t host_send; /* sema to protect inic  host send */

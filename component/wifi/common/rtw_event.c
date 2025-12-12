@@ -349,6 +349,11 @@ void wifi_indication(u32 event, u8 *evt_info, s32 evt_len)
 	whc_dev_wifi_event_indicate(event, evt_info, evt_len);
 #endif
 
+#if defined(CONFIG_WPA_STD)
+	extern void whc_dev_wpas_wifi_event_indicate(u32 event_cmd, u8 * evt_info, s32 evt_len);
+	whc_dev_wpas_wifi_event_indicate(event, evt_info, evt_len);
+#endif
+
 #if !(defined CONFIG_WHC_DEV) || defined(CONFIG_WPA_LOCATION_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 	wifi_event_handle(event, evt_info);
 #endif

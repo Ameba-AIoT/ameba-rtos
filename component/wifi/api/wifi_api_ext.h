@@ -77,6 +77,13 @@ s32 wifi_set_lps_enable(u8 enable);
  */
 s32 wifi_set_lps_listen_interval(u8 interval);
 
+/**
+ * @brief   Enable or disable rx broadcast in tickless wowlan mode.
+ * @param[in]  enable: FALSE means disable rx broadcast in tickless wowlan mode, TRUE means enable(default) rx broadcast in tickless wowlan mode.
+ * @return
+ *    - @ref RTK_SUCCESS : The API executed successfully.
+ */
+s32 wifi_set_wowlan_rx_broadcast(u8 enable);
 
 /**
  * @brief Set up custom TCP/UDP broadcast port filter white list for wifi wake application core under tickless state

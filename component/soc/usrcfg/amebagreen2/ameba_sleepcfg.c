@@ -51,16 +51,6 @@ struct WakeEvent_TypeDef sleep_wevent_config[] = {
 	{0xFFFFFFFF,							WAKEUP_NULL},	/* Table end */
 };
 
-/* config attribute can be set to LOW_LEVEL_WAKEUP/HIGH_LEVEL_WAKEUP/DISABLE_WAKEPIN */
-struct WAKEPIN_TypeDef sleep_wakepin_config[] = {
-//  wakepin			config
-	{WAKEPIN_0,		DISABLE_WAKEPIN},	/* WAKEPIN_0(_PA_3) config */
-	{WAKEPIN_1,		DISABLE_WAKEPIN},	/* WAKEPIN_1(_PA_2) config */
-	{WAKEPIN_2,		DISABLE_WAKEPIN},	/* WAKEPIN_2(_PA_1) config */
-	{WAKEPIN_3,		DISABLE_WAKEPIN},	/* WAKEPIN_3(_PA_0) config */
-	{0xFFFFFFFF,	DISABLE_WAKEPIN},	/* Table end */
-};
-
 struct PSCFG_TypeDef ps_config = {
 	.keep_osc4m_on_in_sleep = FALSE,				/* keep OSC4M off or on during sleep */
 	.xtal_mode_in_sleep = XTAL_OFF,					/* set xtal mode during sleep mode, see enum xtal_mode_sleep for detail */

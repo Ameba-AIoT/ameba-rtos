@@ -1,0 +1,60 @@
+
+=============================================================
+      text       data        bss      total filename
+         0          0          0          0 amebalp_vectors.o
+         0          0          0          0 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+       156          0          0        156 amebalp_boot_rom.o
+      1736        864          0       2600 amebalp_vector_rom.o
+        32         53          0         85 ameba_assert_rom.o
+       148         41          0        189 ameba_backup_reg.o
+       308         96          0        404 ameba_clk_rom.o
+       148          8          0        156 ameba_delay_rom.o
+      2124        149          0       2273 ameba_flash_rom.o
+      1048        872          0       1920 ameba_gpio_rom.o
+      2124        185          0       2309 ameba_loguart_rom.o
+       580         19          0        599 ameba_pinmux_rom.o
+       684         12          0        696 ameba_rcc_rom.o
+       796          0          0        796 ameba_syscfg_rom.o
+       180          0          0        180 ameba_systimer_rom.o
+      3364        143          0       3507 ameba_tim_rom.o
+       972         26          0        998 ameba_uart_rom.o
+       740         86          0        826 ameba_wdg.o
+     15140       2554          0      17694 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+       208        296          0        504 monitor_rom.o
+      1000        399          0       1399 shell_rom.o
+      1208        695          0       1903 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+      1852         45          0       1897 diag.o
+       160          0          0        160 memset.o
+       360          0          0        360 rand.o
+       160          0          0        160 memcpy.o
+        68          0          0         68 memcmp.o
+       120          0          0        120 memchr.o
+       172          0          0        172 memmove.o
+        92          0          0         92 strcmp.o
+        88          0          0         88 strlen.o
+        52          0          0         52 stricmp.o
+        28          0          0         28 strupr.o
+       328          0          0        328 strtoul.o
+       264          0          0        264 char2num.o
+       160          0          0        160 strwrap.o
+      3904         45          0       3949 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+      1144          0          0       1144 wififw_packet_rom.o
+      1188          0          0       1188 wififw_powersave_rom.o
+      4032          0          0       4032 wififw_wowlan_rom.o
+       824         11          0        835 wififw_btconcurr_rom.o
+       972          1          0        973 wififw_cmd_rom.o
+      1144          0          0       1144 wififw_interrupt_rom.o
+         0          0          0          0 wififw_txreport_rom.o
+       216          0          0        216 wififw_dma_rom.o
+      1104        756          0       1860 wififw_init_rom.o
+     10624        768          0      11392 (TOTALS)
+=============================================================
+     30876       4062          0      34938 (AUTO_TOTALS)

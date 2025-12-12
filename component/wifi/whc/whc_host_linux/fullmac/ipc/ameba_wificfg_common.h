@@ -88,6 +88,9 @@ struct wifi_user_conf {
 		1 means disable rx broadcast in tickless wowlan mode, 0 means enable(default) rx broadcast in tickless wowlan mode.*/
 	u8 wowlan_rx_bcmc_dis;
 
+	/* set rx unicast packet timeout in LPS, unit:ms*/
+	u8 lps_rx_unicast_pkt_timeout;
+
 	/*!	U-APSD WMM power save mode. After connection, with low traffic, part of WIFI can be powered off and woken up upon packet interaction.\n
 		There are two power save modes: legacy power save and uapsd mode. Can only enable one of them.
 		0: Disable uapsd mode, 1: Enable. */

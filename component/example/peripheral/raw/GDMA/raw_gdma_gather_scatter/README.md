@@ -25,5 +25,4 @@ GDMA will display "transfer over " in serial port tool,  and displays the result
 6. When using the Destination Scatter function, users need to ensure that `dst data size` must be $((DSI + DSC)/DSI)$ of `src data size`, and `src data size` needs to be aligned with the transmission width of the destination. Otherwise, the destination has insufficient space to accommodate the scattered data.
 # Supported IC
 
-- AmebaGreen2
-  * RTL8721F
+RTL8721F

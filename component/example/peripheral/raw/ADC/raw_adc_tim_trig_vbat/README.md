@@ -36,5 +36,4 @@ For more info of `VBAT_MEAS`, refer to EVB schematic design file.
 
 # Supported IC
 
-- AmebaSmart
-  * RTL8730E
+RTL8730E

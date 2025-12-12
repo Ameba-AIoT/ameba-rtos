@@ -121,7 +121,7 @@ add_custom_command(
         -P ${CMAKE_CURRENT_SOURCE_DIR}/${c_POST_BUILD_SCRIPT}
 
     COMMENT "${c_CURRENT_IMAGE} post build"
-    DEPENDS ${c_CURRENT_IMAGE} ${c_SDK_IMAGE_TARGET_DIR}/fullmac_ram_1_prepend.bin
+    DEPENDS ${c_CURRENT_IMAGE} ${c_MCU_PROJECT_NAME}_fullmac_img1_postbuild
 )
 
 add_custom_target(

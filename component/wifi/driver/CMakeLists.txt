@@ -127,9 +127,9 @@ ameba_list_append_if(CONFIG_AMEBAL2 public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf
     ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf/rle1331
     ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb
-    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb/halbb_6955
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb/halbb_1331
     ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf
-    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf/halrf_6955
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf/halrf_1331
     ${CMAKE_CURRENT_SOURCE_DIR}/rle1331
     ${CMAKE_CURRENT_SOURCE_DIR}/rle1331_rom
 )
@@ -139,9 +139,9 @@ ameba_list_append_if(CONFIG_RTL8720F public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf
     ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf/rtl8720f
     ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb
-    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb/halbb_6955
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb/halbb_1331
     ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf
-    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf/halrf_6955
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf/halrf_1331
     ${CMAKE_CURRENT_SOURCE_DIR}/rtl8720f
     ${CMAKE_CURRENT_SOURCE_DIR}/rtl8720f_rom
 )
