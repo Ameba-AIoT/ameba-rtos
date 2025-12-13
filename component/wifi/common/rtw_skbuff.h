@@ -34,6 +34,7 @@
 
 #define SKB_DATA_ALIGN(X)	(((X) + (4 - 1)) & ~(4 - 1))
 
+#define TX_CACHE_CLEANED	BIT(7)
 struct  sk_buff_head {
 	struct list_head	*next, *prev;
 	unsigned int 		qlen;

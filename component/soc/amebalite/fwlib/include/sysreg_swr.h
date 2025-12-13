@@ -291,6 +291,8 @@ _LONG_CALL_ u32 SWR_MEM_Mode_Set(u32 SWR_Mode);
 _LONG_CALL_ u32 LDO_PSRAM(u32 NewState);
 _LONG_CALL_ u32 SWR_PSRAM_Mode_Get(void);
 _LONG_CALL_ u32 SWR_PSRAM_Mode_Set(u32 SWR_Mode);
+_LONG_CALL_ u32 SWR_Mode_Get(void);
+_LONG_CALL_ void SWR_PFM_MODE_Set(u32 req_mode);
 /**
   * @}
   */

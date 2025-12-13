@@ -213,12 +213,42 @@ void SOCPS_SleepPG(void)
 }
 
 /**
+ * @brief Set/Clear OCP Bit of REGU
+ *
+ * @param state ENABLE/DISABLE
+ *
+ * @note REGU patch: The power consumption of the RL6678 digital core
+ * may exceed the maximum load set by the SWR OCP at high
+ * temperatures, which could lead to abnormal output voltage.
+ */
+
+void SOCPS_SetReguOCP(u8 state)
+{
+	u32 Rtemp = 0;
+	REGU_TypeDef *REGU = REGU_BASE;
+
+	if (state == ENABLE) {
+		Rtemp = REGU->REGU_SWR_ON_CTRL0;
+		Rtemp |= REGU_BIT_POWOCP_L1;
+		REGU->REGU_SWR_ON_CTRL0 = Rtemp;
+	} else {
+		if (SWR_Mode_Get() != SWR_PWM) {
+			RTK_LOGS(NOTAG, "OCP cannot be disabled!");
+			return;
+		}
+		Rtemp = REGU->REGU_SWR_ON_CTRL0;
+		Rtemp &= ~ REGU_BIT_POWOCP_L1;
+		REGU->REGU_SWR_ON_CTRL0 = Rtemp;
+	}
+}
+/**
   *  @brief set work modules/wake up event after sleep.
   *  @retval None
   */
 void SOCPS_SleepInit(void)
 {
 	int i = 0;
+	u32 temp = 0;
 	static u32 km0cg_pwrmgt_config_val;
 
 	/*power management setting*/
@@ -256,6 +286,18 @@ void SOCPS_SleepInit(void)
 
 		i++;
 	}
+
+	/*Adjusting overpressure parameters*/
+	temp = REGU_BASE->REGU_SWR_ON_CTRL0;
+	temp &= ~ REGU_MASK_COT_I_L;
+	temp |= REGU_COT_I_L(0x3);
+	REGU_BASE->REGU_SWR_ON_CTRL0 = temp;
+
+	if (SWR_Mode_Get() == SWR_PWM) {
+		/*Disable OCP*/
+		SOCPS_SetReguOCP(DISABLE);
+	}
+
 }
 
 /**
