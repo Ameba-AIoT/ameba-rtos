@@ -1038,6 +1038,7 @@ static rtk_bt_audio_track_t *app_bt_le_audio_track_add(rtk_bt_le_audio_cfg_codec
 
 	if (iso_interval) {
 		duration = iso_interval * 1.25 * 1000; // iso interval in 1.25ms units
+		BT_LOGA("[APP] %s iso_interval: %d ms\r\n", __func__, duration);
 	} else {
 		if (p_codec->frame_duration == RTK_BT_LE_FRAME_DURATION_CFG_10_MS) {
 			duration = 10000;
@@ -1656,7 +1657,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 									  param->iso_chann_t.p_iso_chann,
 									  param->iso_chann_t.path_direction,
 									  param->codec_cfg,
-									  0,
+									  param->iso_chann_t.iso_interval,
 									  param->presentation_delay);
 		if (param->iso_chann_t.path_direction == RTK_BLE_AUDIO_ISO_DATA_PATH_TX) {
 			if (app_bt_le_audio_find_total_path_num(RTK_BLE_AUDIO_ISO_DATA_PATH_TX) == param->source_ase_num) {
@@ -1712,6 +1713,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 				param->framing, param->phy, param->retransmission_number, param->max_sdu,
 				param->max_transport_latency, (unsigned int)param->sdu_interval, (unsigned int)param->presentation_delay);
 		bt_le_audio_demo_receiver_interval_us = param->sdu_interval;
+		max_sdu_len = param->max_sdu;
 		break;
 	}
 
@@ -1799,6 +1801,10 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 			if (cnts_pkt_num >= APP_BT_LC3_PLC_MUSIC_COMPENSATION_BOUNDARY) {
 				BT_LOGA("[APP] Data loss: iso_conn_handle: 0x%x, cnts_pkt_num:%d, PLC cannot compensation, set mute \r\n", p_bt_direct_iso->iso_conn_handle, cnts_pkt_num);
 				/* PLC music compensation is not significant, set mute */
+				if (!max_sdu_len) {
+					BT_LOGE("[APP] RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND: max_sdu_len is 0 \r\n");
+					break;
+				}
 				uint8_t *p_iso_data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, max_sdu_len);
 				memset(p_iso_data, 0, max_sdu_len);
 				if (app_bt_le_audio_data_received(p_bt_direct_iso->iso_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_RX,
@@ -1910,7 +1916,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 									  param->iso_chann_t.p_iso_chann,
 									  param->iso_chann_t.path_direction,
 									  param->codec_parsed_data,
-									  0,
+									  param->iso_chann_t.iso_interval,
 									  param->presentation_delay);
 		if (param->iso_chann_t.path_direction == RTK_BLE_AUDIO_ISO_DATA_PATH_TX) {
 			if (app_bt_le_audio_find_total_path_num(RTK_BLE_AUDIO_ISO_DATA_PATH_TX) == param->dev_num) {
