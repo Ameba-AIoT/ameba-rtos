@@ -49,7 +49,7 @@ if(CONFIG_FATFS_WITHIN_APP_IMG)
     if(EXISTS ${c_SOC_PROJECT_DIR}/fatfs.bin)
         ameba_execute_process(
             COMMAND ${CMAKE_COMMAND} -E rename ${app_full_path} ${app_tmp_full_path}
-            COMMAND ${CMAKE_COMMAND} -E rename${app_ns_full_path} ${app_ns_tmp_full_path}
+            COMMAND ${CMAKE_COMMAND} -E rename ${app_ns_full_path} ${app_ns_tmp_full_path}
         )
         ameba_axf2bin_pad(${app_tmp_full_path} 4096)
         ameba_axf2bin_pad(${app_ns_tmp_full_path} 4096)

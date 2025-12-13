@@ -16,14 +16,10 @@ exit:
 
 static irqreturn_t whc_spi_host_dev_rdy_handler(int irq, void *context)
 {
-	if (gpio_get_value(DEV_READY_PIN)) {
-		whc_spi_priv.dev_state = DEV_READY;
+	atomic_set(&whc_spi_priv.dev_state, DEV_READY);
+	/* wakeup wait task */
+	up(&whc_spi_priv.dev_rdy_sema);
 
-		/* wakeup wait task */
-		up(&whc_spi_priv.dev_rdy_sema);
-	} else {
-		whc_spi_priv.dev_state = DEV_BUSY;
-	}
 	return IRQ_HANDLED;
 }
 
@@ -42,7 +38,7 @@ int whc_spi_host_setup_gpio(struct spi_device *spi)
 	}
 
 	status = request_irq(DEV_READY_IRQ, whc_spi_host_dev_rdy_handler,
-						 IRQF_SHARED | IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
+						 IRQF_SHARED | IRQF_TRIGGER_RISING,
 						 "SPI_DEV_READY", spi);
 	if (status) {
 		goto free_dev_rdy_pin;
@@ -124,10 +120,10 @@ static int whc_spi_host_probe(struct spi_device *spi)
 	}
 
 	if (gpio_get_value(DEV_READY_PIN)) {
-		whc_spi_priv.dev_state = DEV_READY;
+		atomic_set(&whc_spi_priv.dev_state, DEV_READY);
 		dev_info(&spi->dev, "dev ready\n");
 	} else {
-		whc_spi_priv.dev_state = DEV_BUSY;
+		atomic_set(&whc_spi_priv.dev_state, DEV_BUSY);
 		dev_info(&spi->dev, "dev busy\n");
 	}
 

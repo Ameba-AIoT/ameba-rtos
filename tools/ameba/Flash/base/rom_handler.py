@@ -218,6 +218,7 @@ class RomHandler(object):
         if ret == ErrType.OK:
             if ch[0] != NAK:
                 self.logger.debug(f"Check alive error,expect NAK, get 0x{ch.hex()}")
+                ret = ErrType.SYS_PROTO
         else:
             self.logger.debug(f"Check alive error: {ret}")
 
