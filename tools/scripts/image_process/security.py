@@ -211,6 +211,7 @@ def mbedtls_pk_binary_to_der(privkey, pubkey):
 @unique
 class Sec_AuthAlg(Enum):
     Sec_AuthID_ED25519 = 0
+    Sec_AuthID_MLDSA65 = 1
 
 @unique
 class mbedtls_ecp_group_id(Enum):
@@ -240,7 +241,7 @@ class HashID(Enum):
 
 class secure_boot():
     # valid input for gen_auth_id
-    valid_algorithm = [name.split('_')[-1].lower() for name in mbedtls_ecp_group_id.__members__] + ["ed25519"]
+    valid_algorithm = [name.split('_')[-1].lower() for name in mbedtls_ecp_group_id.__members__] + ["ed25519"] + ["ml_dsa_65"]
 
     def __init__(self):
         self.PrivKey = ''
@@ -268,6 +269,8 @@ class secure_boot():
     def gen_auth_id(self, strs:str):
         if strs == "ed25519":
             return Sec_AuthAlg.Sec_AuthID_ED25519.value
+        elif strs == "ml_dsa_65":
+            return Sec_AuthAlg.Sec_AuthID_MLDSA65.value
         else:
             name = f"MBEDTLS_ECP_DP_{strs.split('_')[-1].upper()}"
             if hasattr(mbedtls_ecp_group_id, name):
@@ -330,6 +333,77 @@ class secure_boot():
         keyinfo['public_key'] = pubkey_hex
         keyinfo['public_key_hash'] = pubkey_hash
         return
+
+    def ml_dsa_65_genkey(self, keyinfo):
+        try:
+            import pqcrypto.sign.ml_dsa_65 as ml_dsa_65
+        except ImportError:
+            print("ML-DSA-65 module not available. Please install pqcrypto.")
+            return -1
+
+        # Generate ML-DSA-65 keypair
+        public_key, secret_key = ml_dsa_65.generate_keypair()
+
+        # generate public key hash
+        hash = mbedtls.hashlib.sha256()
+        hash.update(public_key)
+        pubkey_hash = hash.hexdigest().upper()
+
+        # Convert to hex strings
+        privkey_hex = list_to_hex_str(secret_key)
+        pubkey_hex = list_to_hex_str(public_key)
+
+        keyinfo['sboot_pqc_private_key'] = privkey_hex
+        keyinfo['sboot_pqc_public_key'] = pubkey_hex
+        keyinfo['sboot_pqc_public_key_hash'] = pubkey_hash
+        return 0
+
+    def ml_dsa_65_sign(self, privkey_hex, msg, mlen, sig):
+        """Generate ML-DSA-65 signature
+        Args:
+            privkey_hex: Private key in hex string format
+            msg: Message bytes to sign
+            mlen: Message length
+            sig: Signature buffer to fill
+        Returns:
+            0 on success, -1 on failure
+        """
+        try:
+            import pqcrypto.sign.ml_dsa_65 as ml_dsa_65
+        except ImportError:
+            print("ML-DSA-65 module not available. Please install pqcrypto.")
+            return -1
+
+        try:
+            # Convert private key from hex to bytes
+            privkey_bytes = bytes.fromhex(privkey_hex)
+
+            # Convert message to bytes if it's not already
+            if hasattr(msg, 'cast'):  # ctypes array
+                # Convert ctypes array to bytes
+                msg_bytes = bytes(msg)
+            elif isinstance(msg, (list, tuple)):
+                msg_bytes = bytes(msg)
+            else:
+                msg_bytes = msg
+
+            # Ensure we only use the specified length
+            msg_bytes = msg_bytes[:mlen]
+
+            # Generate signature
+            signature = ml_dsa_65.sign(privkey_bytes, msg_bytes)
+
+            # Copy signature to output buffer
+            sig_len = min(len(signature), len(sig))
+            for i in range(sig_len):
+                sig[i] = signature[i]
+
+            print(f"ML-DSA-65 signature generated, length: {sig_len}")
+            return 0
+
+        except Exception as e:
+            print(f"Error generating ML-DSA-65 signature: {e}")
+            return -1
 
     def ed25519_sign(self, privkey, pubkey, msg, mlen, sig):
         privkey_bytes = bytes.fromhex(privkey)
