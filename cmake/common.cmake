@@ -158,6 +158,9 @@ macro(ameba_soc_project_exit)
     unset(USER_SRC_DIR CACHE)
     unset(TOOLCHAIN_DIR CACHE)
     unset(FINAL_IMAGE_DIR CACHE)
+    if(DEFINED BUILD_FOR_RLS)
+        unset(BUILD_FOR_RLS CACHE)
+    endif()
 endmacro()
 
 # must use macro to define, otherwise project() will not work if use function.
@@ -353,7 +356,7 @@ function(ameba_firmware_package output_app_name)
     endforeach()
 
     if (CONFIG_DSP_WITHIN_APP_IMG)
-        set(c_DSP_FILE ${c_SOC_PROJECT_DIR}/${DSP_IMAGE_TARGET_DIR}/dsp.bin)
+        set(c_DSP_FILE ${c_SOC_PROJECT_DIR}/${CONFIG_DSP_IMAGE_TARGET_DIR}/dsp.bin)
         if(NOT EXISTS ${c_DSP_FILE})
             message(FATAL_ERROR "dsp file not exist: ${c_DSP_FILE}")
         endif()

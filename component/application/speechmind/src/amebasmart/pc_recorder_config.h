@@ -1,0 +1,7 @@
+#ifndef _SPEECH_MIND_PC_RECORDER_CONFIG
+#define _SPEECH_MIND_PC_RECORDER_CONFIG
+
+#define PR_UART_TX          PA_14
+#define PR_UART_RX          PA_13
+
+#endif /* _SPEECH_MIND_PC_RECORDER_CONFIG */

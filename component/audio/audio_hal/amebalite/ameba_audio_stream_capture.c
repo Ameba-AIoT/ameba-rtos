@@ -121,12 +121,14 @@ static void ameba_audio_stream_rx_adc_mic_configure(StreamConfig config)
 			AUDIO_CODEC_SetADCMute(adc_idx, dc->mute_for_adc[j - 1] ? MUTE : UNMUTE);
 			AUDIO_CODEC_SetADCVolume(adc_idx, dc->volume_for_adc[j - 1]);
 		}
-		j = 1;
-		for (; j <= config.channels; j++) {
-			uint32_t adc_chn_idx = ameba_audio_stream_get_adc_chn_idx(j);
-			AUDIO_CODEC_EnableADC(adc_chn_idx, ENABLE);
-			AUDIO_CODEC_EnableADCFifo(adc_chn_idx, ENABLE);
+
+		uint32_t adc_mask = 0;
+		for (uint32_t i = 0; i < config.channels; i++) {
+			adc_mask |= ((uint32_t)0x00000001 << i);
 		}
+		AUDIO_CODEC_EnableADCForMask(adc_mask);
+		AUDIO_CODEC_EnableADCFifoForMask(adc_mask);
+
 	} else {  // use adcs according to user customize
 		uint32_t k = 1;
 		for (; k <= MAX_AD_NUM; k++) {
@@ -138,14 +140,10 @@ static void ameba_audio_stream_rx_adc_mic_configure(StreamConfig config)
 				AUDIO_CODEC_SetADCVolume(adc_idx, dc->volume_for_adc[k - 1]);
 			}
 		}
-		k = 1;
-		for (; k <= MAX_AD_NUM; k++) {
-			if ((dc->adc_use_status >> (k - 1)) & 1) {
-				uint32_t adc_chn_idx = ameba_audio_stream_get_adc_chn_idx(k);
-				AUDIO_CODEC_EnableADC(adc_chn_idx, ENABLE);
-				AUDIO_CODEC_EnableADCFifo(adc_chn_idx, ENABLE);
-			}
-		}
+
+		AUDIO_CODEC_EnableADCForMask(dc->adc_use_status);
+		AUDIO_CODEC_EnableADCFifoForMask(dc->adc_use_status);
+
 	}
 
 	//enable amic/dmic

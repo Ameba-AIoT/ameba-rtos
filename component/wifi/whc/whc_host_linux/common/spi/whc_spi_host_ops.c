@@ -15,10 +15,10 @@ void whc_spi_host_send_data(u8 *buf, u32 len, struct sk_buff *skb)
 
 	mutex_lock(&priv->lock);
 
-	while (priv->dev_state == DEV_BUSY) {
+	while (atomic_read(&priv->dev_state) == DEV_BUSY) {
 		/* wait for sema*/
 		if (down_timeout(&priv->dev_rdy_sema, msecs_to_jiffies(500))) {
-			dev_err(global_idev.fullmac_dev, "%s: wait dev busy timeout, can't send data\n\r", __func__);
+			dev_err(global_idev.fullmac_dev, "%s: wait dev busy(%d) timeout, can't send data\n\r", __func__, gpio_get_value(DEV_READY_PIN));
 			goto exit;
 		}
 	}
@@ -37,8 +37,12 @@ void whc_spi_host_send_data(u8 *buf, u32 len, struct sk_buff *skb)
 	/* initiate spi transaction */
 	spimsg = spi_message_alloc(1, GFP_KERNEL);
 	if (spimsg == NULL) {
+		kfree_skb(pskb);
 		goto exit;
 	}
+
+	/* set dev busy if to start to send data, for case device can't drive ready pin. */
+	atomic_set(&priv->dev_state, DEV_BUSY);
 
 	tr = list_first_entry(&spimsg->transfers, struct spi_transfer, transfer_list);
 	tr->len = SPI_BUFSZ;
@@ -79,10 +83,10 @@ void whc_spi_host_recv_data_process(void *intf_priv)
 
 	mutex_lock(&priv->lock);
 
-	while (priv->dev_state == DEV_BUSY) {
+	while (atomic_read(&priv->dev_state) == DEV_BUSY) {
 		/* wait for sema*/
 		if (down_timeout(&priv->dev_rdy_sema, msecs_to_jiffies(500))) {
-			dev_err(global_idev.fullmac_dev, "%s: wait dev busy timeout, can't send data\n\r", __func__);
+			dev_err(global_idev.fullmac_dev, "%s: wait dev busy(%d) timeout, can't send data\n\r", __func__, gpio_get_value(DEV_READY_PIN));
 			goto exit;
 		}
 	}
@@ -100,8 +104,12 @@ void whc_spi_host_recv_data_process(void *intf_priv)
 		/* initiate spi transaction */
 		spimsg = spi_message_alloc(1, GFP_KERNEL);
 		if (spimsg == NULL) {
+			kfree_skb(pskb);
 			goto exit;
 		}
+
+		/* set dev busy if to start to send data, for case device can't drive ready pin. */
+		atomic_set(&priv->dev_state, DEV_BUSY);
 
 		tr = list_first_entry(&spimsg->transfers, struct spi_transfer, transfer_list);
 		tr->rx_buf = pskb->data;

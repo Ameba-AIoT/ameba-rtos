@@ -38,6 +38,7 @@
 #define AMEBA_AUDIO_INTERFACES_AUDIO_AUDIO_CONTROL_H
 
 #include <stdint.h>
+#include "audio/audio_type.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -113,6 +114,14 @@ enum {
 	RTAUDIO_PLL_FASTER  = 1,
 	RTAUDIO_PLL_SLOWER  = 2,
 };
+
+typedef struct {
+	uint32_t H0_Q;
+	uint32_t B1_Q;
+	uint32_t B2_Q;
+	uint32_t A1_Q;
+	uint32_t A2_Q;
+} EqFilterCoef;
 
 /**
  * @brief Set Hardware Volume of audio dac.
@@ -350,6 +359,95 @@ int32_t RTAudioControl_SetMicBstGain(uint32_t mic_category, uint32_t gain);
  * @version 1.0
  */
 int32_t RTAudioControl_GetMicBstGain(uint32_t mic_category);
+
+/**
+ * @brief Set adc's hfp fc.
+ *
+ * @param channel_num the channel to adjust hfp's fc, ranges: 0~8.
+ * @param fc : select high pass filter fc
+ *	           This parameter can be one of the following values:
+ *	           @arg 0：5e10^-3 Fs
+ *	           @arg 1：2.5e10^-3 Fs
+ *	           @arg 2：1.125e10^-3 Fs
+ *	           @arg 3: 6.25e10^-4 Fs
+ *	           @arg 4: 3.125e10^-4 Fs
+ *	           @arg 5: 1.5625e10^-4 Fs
+ *	           @arg 6: 7.8125e10^-5 Fs
+ *	           @arg 7: 3.90625e10^-5 Fs
+ * @return Returns a value listed below: \n
+ * int32_t | Description
+ * ----------------------| -----------------------
+ * AUDIO_OK | the operation is successful.
+ * AUDIO_ERR_INVALID_OPERATION | param not supported.
+ * @since 1.0
+ * @version 1.0
+ */
+int32_t RTAudioControl_SetCaptureHpfFc(uint32_t channel_num, uint32_t fc);
+
+/**
+ * @brief Get adc's hfp fc.
+ *
+ * @param channel_num the channel to adjust hfp's fc, ranges 0 ~ (total_channel-1).
+ * @return Returns a value listed below: \n
+ * 0：5e10^-3 Fs
+ * 1：2.5e10^-3 Fs
+ * 2：1.125e10^-3 Fs
+ * 3: 6.25e10^-4 Fs
+ * 4: 3.125e10^-4 Fs
+ * 5: 1.5625e10^-4 Fs
+ * 6: 7.8125e10^-5 Fs
+ * 7: 3.90625e10^-5 Fs
+ * @since 1.0
+ * @version 1.0
+ */
+int32_t RTAudioControl_GetCaptureHpfFc(uint32_t channel_num);
+
+/**
+ * @brief Set capture eq enable.
+ *
+ * @param channel_num channel to enable eq, ranges 0 ~ (total_channel-1).
+ * @param state true means enable eq, false means disable eq for this channel.
+ * @return Returns a value listed below: \n
+ * int32_t | Description
+ * ----------------------| -----------------------
+ * AUDIO_OK | the operation is successful.
+ * AUDIO_ERR_INVALID_OPERATION | param not supported.
+ * @since 1.0
+ * @version 1.0
+ */
+int32_t RTAudioControl_SetCaptureEqEnable(uint32_t channel_num, bool state);
+
+/**
+ * @brief Set capture eq coef.
+ *
+ * @param channel_num channel to set eq filter, ranges 0 ~ (total_channel-1).
+ * @param band_sel band to set eq filter, ranges 0 ~ 4.
+ * @param eq_filter_coef eq filter coefficient.
+ * @return Returns a value listed below: \n
+ * int32_t | Description
+ * ----------------------| -----------------------
+ * AUDIO_OK | the operation is successful.
+ * AUDIO_ERR_INVALID_OPERATION | param not supported.
+ * @since 1.0
+ * @version 1.0
+ */
+int32_t RTAudioControl_SetCaptureEqFilter(uint32_t channel_num, uint32_t band_sel, EqFilterCoef *eq_filter_coef);
+
+/**
+ * @brief Set capture eq band state.
+ *
+ * @param channel_num channel to set eq filter, ranges 0 ~ (total_channel-1).
+ * @param band_sel band to set eq filter, ranges 0 ~ 4.
+ * @param state true to enable band, false to disable band.
+ * @return Returns a value listed below: \n
+ * int32_t | Description
+ * ----------------------| -----------------------
+ * AUDIO_OK | the operation is successful.
+ * AUDIO_ERR_INVALID_OPERATION | param not supported.
+ * @since 1.0
+ * @version 1.0
+ */
+int32_t RTAudioControl_SetCaptureEqBand(uint32_t channel_num, uint32_t band_sel, bool state);
 
 /**
  * @brief Set mic usage.

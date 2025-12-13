@@ -6,6 +6,7 @@
 
 from serial.tools.list_ports import comports
 import serial
+import struct
 import serial.tools.list_ports
 from datetime import datetime
 
@@ -56,6 +57,7 @@ class Ameba(object):
                  remote_port: Optional[int] = None,
                  remote_password: Optional[str] = None):
         self.logger = logger
+        self.setting = setting
         self.profile_info = profile
         self.serial_port = None
         self.serial_port_name = serial_port
@@ -69,7 +71,6 @@ class Ameba(object):
         self.download_img_info = download_img_info
         self.chip_erase = chip_erase
         self.memory_type = memory_type
-        self.setting = setting
         self.device_info = None
         self.erase_info = erase_info
         self.is_all_ram = True
@@ -112,6 +113,7 @@ class Ameba(object):
                                                      baudrate=self.profile_info.handshake_baudrate,
                                                      parity=serial.PARITY_NONE,
                                                      stopbits=serial.STOPBITS_ONE,
+                                                     timeout=self.setting.serial_initial_read_timeout_in_second,
                                                      bytesize=serial.EIGHTBITS)
                 else:
                     self.serial_port = serial.Serial()
@@ -120,6 +122,7 @@ class Ameba(object):
                     self.serial_port.parity = serial.PARITY_NONE
                     self.serial_port.stopbits = serial.STOPBITS_ONE
                     self.serial_port.bytesize = serial.EIGHTBITS
+                    self.serial_port.timeout = self.setting.serial_initial_read_timeout_in_second
                     self.serial_port.dtr = False
                     self.serial_port.rts = False
                     self.serial_port.open()
@@ -196,17 +199,26 @@ class Ameba(object):
         ret = ErrType.OK
         read_ch = None
 
-        start_time = datetime.now()
-        while self.serial_port.inWaiting() < size:
-            if self.remote_server:
-                time.sleep(0.001) # avoid waiting idly and improve efficiency.
-            if (datetime.now() - start_time).seconds >= timeout_seconds:
-                return ErrType.DEV_TIMEOUT, None
-
         try:
-            read_ch = self.serial_port.read(size=size)
+            start_time = time.monotonic()
+            data_buffer = bytearray()
+
+            while len(data_buffer) < size:
+                if (time.monotonic() - start_time) > timeout_seconds:
+                    return ErrType.DEV_TIMEOUT, bytes(data_buffer) if data_buffer else None
+
+                needed = size - len(data_buffer)
+                chunk = self.serial_port.read(needed)
+
+                if chunk:
+                    data_buffer.extend(chunk)
+
+                if self.remote_server:
+                    time.sleep(0.001)  # avoid waiting idly and improve efficiency.
+
+            ret, read_ch = ErrType.OK, bytes(data_buffer)
         except Exception as err:
-            self.logger.error(f"[{self.serial_port.port}] read bytes err: {err}")
+            self.logger.error(f"read bytes err: {err}")
             ret = ErrType.SYS_IO
 
         return ret, read_ch
@@ -357,48 +369,8 @@ class Ameba(object):
 
         return ret, is_floader
 
-    def prepare(self, show_device_info=True):
+    def show_device_info(self):
         ret = ErrType.OK
-        floader_init_baud = self.baudrate if self.is_usb else (self.profile_info.handshake_baudrate if
-                                                               (self.setting.switch_baudrate_at_floader == 1) else self.baudrate)
-        boot_delay = self.setting.usb_floader_boot_delay_in_second if self.profile_info.support_usb_download else self.setting.floader_boot_delay_in_second
-
-        if (not self.is_usb) and (self.setting.auto_switch_to_download_mode_with_dtr_rts != 0):
-            ret = self.auto_enter_download_mode()
-            if ret != ErrType.OK:
-                self.logger.error(f"Enter download mode by DTR/RTS fail: {ret}")
-                return ret
-
-        ret, is_floader = self.check_download_mode()
-        if ret != ErrType.OK:
-            self.logger.error(f"Enter download mode fail: {ret}")
-            return ret
-
-        if not is_floader:
-            # download flashloader to RAM
-            ret = self.rom_handler.download_floader()
-            if ret != ErrType.OK:
-                self.rom_handler.abort()
-                self.logger.error(f"Flashloader download fail: {ret}")
-                return ret
-
-            ret = self.switch_baudrate(floader_init_baud, boot_delay, True)
-            if ret != ErrType.OK:
-                self.logger.error(f"Flashloader boot fail: {ret}")
-                return ret
-
-            ret = self.floader_handler.handshake(self.baudrate)
-            if ret != ErrType.OK:
-                self.logger.error(f"Flashloader handshake fail: {ret}")
-                return ret
-
-        ret, self.device_info = self.floader_handler.query()
-        if ret != ErrType.OK:
-            self.logger.error(f"Query fail: {ret}")
-            return ret
-
-        if not show_device_info:
-            return ret
 
         self.logger.info("Device info:")
         self.logger.info(f'* DID: {hex(self.device_info.did)}')
@@ -462,6 +434,53 @@ class Ameba(object):
         ret = self.floader_handler.config(param)
         if ret != ErrType.OK:
             self.logger.error(f"Config device fail: {ret}")
+
+        return ret
+
+    def prepare(self, show_device_info=True):
+        ret = ErrType.OK
+        floader_init_baud = self.baudrate if self.is_usb else (self.profile_info.handshake_baudrate if
+                                                               (self.setting.switch_baudrate_at_floader == 1) else self.baudrate)
+        boot_delay = self.setting.usb_floader_boot_delay_in_second if self.profile_info.support_usb_download else self.setting.floader_boot_delay_in_second
+
+        if (not self.is_usb) and (self.setting.auto_switch_to_download_mode_with_dtr_rts != 0):
+            ret = self.auto_enter_download_mode()
+            if ret != ErrType.OK:
+                self.logger.error(f"Enter download mode by DTR/RTS fail: {ret}")
+                return ret
+
+        ret, is_floader = self.check_download_mode()
+        if ret != ErrType.OK:
+            self.logger.error(f"Enter download mode fail: {ret}")
+            return ret
+
+        if not is_floader:
+            # download flashloader to RAM
+            ret = self.rom_handler.download_floader()
+            if ret != ErrType.OK:
+                self.rom_handler.abort()
+                self.logger.error(f"Flashloader download fail: {ret}")
+                return ret
+
+            ret = self.switch_baudrate(floader_init_baud, boot_delay, True)
+            if ret != ErrType.OK:
+                self.logger.error(f"Flashloader boot fail: {ret}")
+                return ret
+
+            ret = self.floader_handler.handshake(self.baudrate)
+            if ret != ErrType.OK:
+                self.logger.error(f"Flashloader handshake fail: {ret}")
+                return ret
+
+        ret, self.device_info = self.floader_handler.query()
+        if ret != ErrType.OK:
+            self.logger.error(f"Query fail: {ret}")
+            return ret
+
+        if not show_device_info:
+            return ret
+
+        ret = self.show_device_info()
 
         return ret
 
@@ -971,109 +990,225 @@ class Ameba(object):
         checksum = 0
         write_timeout = 0
         is_ram = (image_info.memory_type == MemoryInfo.MEMORY_TYPE_RAM)
-        padding_data = self.setting.ram_download_padding_byte if is_ram else FlashUtils.FlashWritePaddingData.value
+        padding_byte_val = self.setting.ram_download_padding_byte if is_ram else FlashUtils.FlashWritePaddingData.value
+        padding_char = padding_byte_val.to_bytes(1, byteorder="little")
+
         start_time = datetime.now()
 
-        with open(image_path, 'rb') as stream:
-            img_content = stream.read()
+        try:
+            img_length = os.path.getsize(image_path)
+        except OSError as e:
+            self.logger.error(f"Failed to get file size: {e}")
+            return ErrType.SYS_PARAMETER
 
-        img_length = len(img_content)
         aligned_img_length = self.get_page_alligned_size(img_length, page_size)
+
         self.logger.debug(
             f"Image download size={aligned_img_length}({img_length}), start_addr={hex(image_info.start_address)}, "
             f"end_addr={hex(image_info.end_address)}")
 
         addr = image_info.start_address
         tx_sum = 0
-        if ((image_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND) or (
-                is_ram and (self.profile_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND))):
-            write_timeout = nand_program_timeout_in_second(block_size,
-                                                           page_size) + FlashUtils.NandBlockEraseTimeoutInSeconds.value
-            img = io.BytesIO(img_content)
-            img_bytes = img.read(img_length)
-            data_bytes = img_bytes.ljust(aligned_img_length, padding_data.to_bytes(1, byteorder="little"))
 
-            is_last_page = False
-            progress_int = 0
-            while not is_last_page:
-                if addr >= image_info.end_address:
-                    self.logger.debug(f"Overrange target={hex(addr)}, end={hex(image_info.end_address)}")
-                    ret = ErrType.SYS_OVERRANGE
-                    break
+        with open(image_path, 'rb') as file_stream:
+            if ((image_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND) or (
+                    is_ram and (self.profile_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND))):
 
-                ret = self.floader_handler.erase_flash(image_info.memory_type, addr, addr + block_size, block_size,
-                                                       nand_erase_timeout_in_second(block_size, block_size),
-                                                       sense=True)
-                if ret == ErrType.DEV_NAND_BAD_BLOCK.value or ret == ErrType.DEV_NAND_WORN_BLOCK.value:
-                    self.logger.info(
-                        f"{'Bad' if ret == ErrType.DEV_NAND_BAD_BLOCK else 'Worn'} block: 0x{format(addr, '08X')}")
-                    addr += self.device_info.flash_block_size()
-                    next_erase_addr = addr
-                    continue
-                elif ret != ErrType.OK:
-                    break
+                write_timeout = nand_program_timeout_in_second(block_size,
+                                                               page_size) + FlashUtils.NandBlockEraseTimeoutInSeconds.value
 
-                next_erase_addr = addr + self.device_info.flash_block_size()
+                is_last_page = False
+                progress_int = 0
 
-                i = 0
-                while i < pages_per_block:
-                    if tx_sum + page_size >= aligned_img_length:
-                        is_last_page = True
+                while not is_last_page:
+                    if addr >= image_info.end_address:
+                        self.logger.debug(f"Overrange target={hex(addr)}, end={hex(image_info.end_address)}")
+                        ret = ErrType.SYS_OVERRANGE
+                        break
 
-                    need_sense = (is_last_page or (i == pages_per_block - 1))
-                    ret = self.floader_handler.write(image_info.memory_type, data_bytes[tx_sum: tx_sum + page_size],
-                                                     page_size, addr, write_timeout, need_sense=need_sense)
-                    if ret == ErrType.OK:
-                        idx = 0
-                        while idx < page_size:
-                            checksum += (data_bytes[tx_sum + idx] + (data_bytes[tx_sum + idx + 1] << 8) + (
-                                    data_bytes[tx_sum + idx + 2] << 16) + (data_bytes[tx_sum + idx + 3] << 24))
-                            idx += 4
-                        checksum &= 0xFFFFFFFF
-                        addr += page_size
-                        tx_sum += page_size
+                    ret = self.floader_handler.erase_flash(image_info.memory_type, addr, addr + block_size, block_size,
+                                                           nand_erase_timeout_in_second(block_size, block_size),
+                                                           sense=True)
+                    if ret == ErrType.DEV_NAND_BAD_BLOCK.value or ret == ErrType.DEV_NAND_WORN_BLOCK.value:
+                        self.logger.info(
+                            f"{'Bad' if ret == ErrType.DEV_NAND_BAD_BLOCK else 'Worn'} block: 0x{format(addr, '08X')}")
+                        addr += self.device_info.flash_block_size()
+                        next_erase_addr = addr
+                        continue
+                    elif ret != ErrType.OK:
+                        break
+
+                    next_erase_addr = addr + self.device_info.flash_block_size()
+
+                    i = 0
+                    while i < pages_per_block:
+                        if tx_sum + page_size >= aligned_img_length:
+                            is_last_page = True
+
+                        chunk_data = file_stream.read(page_size)
+                        read_len = len(chunk_data)
+
+                        if read_len < page_size:
+                            chunk_data += padding_char * (page_size - read_len)
+
+                        need_sense = (is_last_page or (i == pages_per_block - 1))
+
+                        ret = self.floader_handler.write(image_info.memory_type, chunk_data,
+                                                         page_size, addr, write_timeout, need_sense=need_sense)
+                        if ret == ErrType.OK:
+                            # 新的极速计算方式 (利用 C 语言层加速)
+                            # '<' 代表小端模式，'I' 代表 unsigned int (4字节)
+                            # len(chunk_data)//4 计算出有多少个整数
+                            fmt = f'<{len(chunk_data) // 4}I'
+                            checksum = (checksum + sum(struct.unpack(fmt, chunk_data))) & 0xFFFFFFFF
+
+                            addr += page_size
+                            tx_sum += page_size
+                        else:
+                            self.logger.error(f"Write to addr={format(addr, '08x')}, size={page_size} fail: {ret}")
+                            break
+
+                        if is_last_page:
+                            break
+
+                        i += 1
+
+                    progress = int((tx_sum / aligned_img_length) * 100)
+                    if int((progress) / 10) != progress_int:
+                        progress_int += 1
+                        self.logger.info(f"Programming progress: {progress}%")
+
+                    if ret != ErrType.OK:
+                        break
+
+                if ret == ErrType.OK:
+                    if image_info.full_erase and (next_erase_addr < image_info.end_address):
+                        self.logger.debug(
+                            f"Erase extra address range: {hex(next_erase_addr)}-{hex(image_info.end_address)}")
+                        ret = self.floader_handler.erase_flash(image_info.memory_type, next_erase_addr,
+                                                               image_info.end_address,
+                                                               (image_info.end_address - next_erase_addr),
+                                                               nand_erase_timeout_in_second(
+                                                                   (image_info.end_address - next_erase_addr),
+                                                                   block_size),
+                                                               sense=True)
+                        if ret == ErrType.DEV_NAND_BAD_BLOCK.value or ret == ErrType.DEV_NAND_WORN_BLOCK.value:
+                            self.logger.debug(
+                                f"{'Bad' if ret == ErrType.DEV_NAND_BAD_BLOCK else 'Worn'} block: {hex(addr)}")
+                            ret = ErrType.OK
+                        elif ret != ErrType.OK:
+                            self.logger.error(f"Fail to erase block {hex(addr)}:{ret}")
+
+                    if tx_sum >= aligned_img_length:
+                        if aligned_img_length < 1024:
+                            self.logger.debug(f"Image download done: {aligned_img_length}bytes")
+                        elif aligned_img_length < 1024 * 1024:
+                            self.logger.debug(f"Image download done: {aligned_img_length // 1024}KB")
+                        else:
+                            self.logger.debug(
+                                f"Image download done: {round(aligned_img_length / 1024 / 1024, 2)}MB")
                     else:
-                        self.logger.error(f"Write to addr={format(addr, '08x')}, size={page_size} fail: {ret}")
+                        self.logger.warning(f"Image download uncompleted: {tx_sum}/{aligned_img_length}")
+
+                    elapse_ms = round((datetime.now() - start_time).total_seconds() * 1000, 0)
+                    kbps = aligned_img_length * 8 // elapse_ms
+                    size_kb = aligned_img_length // 1024
+
+                    if self.is_usb:
+                        self.logger.info(
+                            f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps / 1000}Mbps")
+                    else:
+                        self.logger.info(
+                            f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps}Kbps")
+            else:
+                write_pages = 0
+                progress_int = 0
+
+                while tx_sum < aligned_img_length:
+                    if write_pages == 0:
+                        if (addr % (64 * FlashUtils.NorDefaultPageSize.value)) == 0 and \
+                                ((aligned_img_length - tx_sum >= 64 * FlashUtils.NorDefaultPageSize.value)):
+                            block_size = 64 * FlashUtils.NorDefaultPageSize.value
+                        else:
+                            block_size = 4 * FlashUtils.NorDefaultPageSize.value
+
+                        pages_per_block = block_size // page_size
+                        erase_addr = addr
+                        write_timeout = FlashUtils.NorPageProgramTimeoutInSeconds.value * int(
+                            max(self.setting.sense_packet_count, pages_per_block)) + nor_erase_timeout_in_second(
+                            divide_then_round_up(block_size, 1024))
+
+                        if erase_addr != last_erase_addr:
+                            if (not is_ram) and (erase_addr % block_size) != 0:
+                                self.logger.error(
+                                    f"Flash erase address align error: addr {hex(erase_addr)} not aligned to block size {hex(block_size)}")
+                                ret = ErrType.SYS_PARAMETER
+                                break
+
+                            ret = self.floader_handler.erase_flash(image_info.memory_type, erase_addr,
+                                                                   erase_addr + block_size, block_size,
+                                                                   nor_erase_timeout_in_second(
+                                                                       divide_then_round_up(block_size, 1024)))
+                            if ret != ErrType.OK:
+                                break
+
+                            last_erase_addr = erase_addr
+                            next_erase_addr = erase_addr + block_size
+
+                    need_sense = ((((write_pages + 1) % self.setting.sense_packet_count) == 0) or
+                                  (write_pages + 1 >= pages_per_block) or
+                                  (tx_sum + page_size >= aligned_img_length))
+
+                    chunk_data = file_stream.read(page_size)
+                    read_len = len(chunk_data)
+
+                    if read_len < page_size:
+                        chunk_data += padding_char * (page_size - read_len)
+
+                    # 写入
+                    ret = self.floader_handler.write(image_info.memory_type, chunk_data,
+                                                     page_size, addr, write_timeout, need_sense=need_sense)
+                    if ret != ErrType.OK:
+                        self.logger.debug(f"Write to addr={hex(addr)} size={page_size} fail: {ret}")
                         break
 
-                    if is_last_page:
-                        break
+                    write_pages += 1
+                    if write_pages >= pages_per_block:
+                        write_pages = 0
 
-                    i += 1
-                progress = int((tx_sum / aligned_img_length) * 100)
-                if int((progress) / 10) != progress_int:
-                    progress_int += 1
-                    self.logger.info(f"Programming progress: {progress}%")  # customized, do not modified
+                    # 计算 Checksum
+                    # '<' 代表小端模式，'I' 代表 unsigned int (4字节)
+                    # len(chunk_data)//4 计算出有多少个整数
+                    fmt = f'<{len(chunk_data) // 4}I'
+                    checksum = (checksum + sum(struct.unpack(fmt, chunk_data))) & 0xFFFFFFFF
 
-                if ret != ErrType.OK:
-                    break
+                    addr += page_size
+                    tx_sum += page_size
 
-            if ret == ErrType.OK:
+                    progress = int((tx_sum / aligned_img_length) * 100)
+                    if int((progress) / 10) != progress_int:
+                        progress_int += 1
+                        self.logger.info(f"Programming progress: {progress}%")
+
                 if image_info.full_erase and (next_erase_addr < image_info.end_address):
                     self.logger.debug(
                         f"Erase extra address range: {hex(next_erase_addr)}-{hex(image_info.end_address)}")
                     ret = self.floader_handler.erase_flash(image_info.memory_type, next_erase_addr,
                                                            image_info.end_address,
                                                            (image_info.end_address - next_erase_addr),
-                                                           nand_erase_timeout_in_second(
-                                                               (image_info.end_address - next_erase_addr), block_size),
+                                                           nor_erase_timeout_in_second(divide_then_round_up(
+                                                               (image_info.end_address - next_erase_addr), 1024)),
                                                            sense=True)
-                    if ret == ErrType.DEV_NAND_BAD_BLOCK.value or ret == ErrType.DEV_NAND_WORN_BLOCK.value:
-                        self.logger.debug(
-                            f"{'Bad' if ret == ErrType.DEV_NAND_BAD_BLOCK else 'Worn'} block: {hex(addr)}")
-                        ret = ErrType.OK
-                    elif ret != ErrType.OK:
-                        self.logger.error(f"Fail to erase block {hex(addr)}:{ret}")
+                    if ret != ErrType.OK:
+                        self.logger.warning(
+                            f"Fail to extra address range {hex(next_erase_addr)}-{hex(image_info.end_address)}")
 
-                if tx_sum >= aligned_img_length:
-                    if aligned_img_length < 1024:
-                        self.logger.debug(f"Image download done: {aligned_img_length}bytes")
-                    elif aligned_img_length < 1024 * 1024:
-                        self.logger.debug(f"Image download done: {aligned_img_length // 1024}KB")
-                    else:
-                        self.logger.debug(f"Image download done: {round(aligned_img_length / 1024 / 1024, 2)}MB")
+                if aligned_img_length < 1024:
+                    self.logger.debug(f"Image download done: {aligned_img_length}bytes")
+                elif aligned_img_length < 1024 * 1024:
+                    self.logger.debug(f"Image download done: {aligned_img_length // 1024}KB")
                 else:
-                    self.logger.warning(f"Image download uncompleted: {tx_sum}/{aligned_img_length}")
+                    self.logger.debug(f"Image download done: {round(aligned_img_length / 1024 / 1024, 2)}MB")
 
                 elapse_ms = round((datetime.now() - start_time).total_seconds() * 1000, 0)
                 kbps = aligned_img_length * 8 // elapse_ms
@@ -1084,99 +1219,6 @@ class Ameba(object):
                         f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps / 1000}Mbps")
                 else:
                     self.logger.info(f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps}Kbps")
-        else:
-            write_pages = 0
-            img = io.BytesIO(img_content)
-            img_bytes = img.read(img_length)
-            data_bytes = img_bytes.ljust(aligned_img_length, padding_data.to_bytes(1, byteorder="little"))
-            progress_int = 0
-            while tx_sum < aligned_img_length:
-                if write_pages == 0:
-                    if (addr % (64 * FlashUtils.NorDefaultPageSize.value)) == 0 and \
-                            ((aligned_img_length - tx_sum >= 64 * FlashUtils.NorDefaultPageSize.value)):
-                        block_size = 64 * FlashUtils.NorDefaultPageSize.value
-                    else:
-                        block_size = 4 * FlashUtils.NorDefaultPageSize.value
-
-                    pages_per_block = block_size // page_size
-                    erase_addr = addr
-                    write_timeout = FlashUtils.NorPageProgramTimeoutInSeconds.value * int(
-                        max(self.setting.sense_packet_count, pages_per_block)) + nor_erase_timeout_in_second(
-                        divide_then_round_up(block_size, 1024))
-                    if erase_addr != last_erase_addr:
-                        if (not is_ram) and (erase_addr % block_size) != 0:
-                            # error: # customized, do not modify
-                            self.logger.error(
-                                f"Flash erase address align error: addr {hex(erase_addr)} not aligned to block size {hex(block_size)}")
-                            ret = ErrType.SYS_PARAMETER
-                            break
-
-                        ret = self.floader_handler.erase_flash(image_info.memory_type, erase_addr,
-                                                               erase_addr + block_size, block_size,
-                                                               nor_erase_timeout_in_second(
-                                                                   divide_then_round_up(block_size, 1024)))
-                        if ret != ErrType.OK:
-                            break
-
-                        last_erase_addr = erase_addr
-                        next_erase_addr = erase_addr + block_size
-
-                need_sense = ((((write_pages + 1) % self.setting.sense_packet_count) == 0) or
-                              (write_pages + 1 >= pages_per_block) or
-                              (tx_sum + page_size >= aligned_img_length))
-                ret = self.floader_handler.write(image_info.memory_type, data_bytes[tx_sum: tx_sum + page_size],
-                                                 page_size, addr, write_timeout, need_sense=need_sense)
-                if ret != ErrType.OK:
-                    self.logger.debug(f"Write to addr={hex(addr)} size={page_size} fail: {ret}")
-                    break
-
-                write_pages += 1
-                if write_pages >= pages_per_block:
-                    write_pages = 0
-
-                idx = 0
-                while idx < page_size:
-                    checksum += (data_bytes[tx_sum + idx] + (data_bytes[tx_sum + idx + 1] << 8) + (
-                            data_bytes[tx_sum + idx + 2] << 16) + (data_bytes[tx_sum + idx + 3] << 24))
-                    idx += 4
-
-                checksum &= 0xFFFFFFFF
-
-                addr += page_size
-                tx_sum += page_size
-
-                progress = int((tx_sum / aligned_img_length) * 100)
-                if int((progress) / 10) != progress_int:
-                    progress_int += 1
-                    self.logger.info(f"Programming progress: {progress}%")  # customized, do not modified
-
-            if image_info.full_erase and (next_erase_addr < image_info.end_address):
-                self.logger.debug(f"Erase extra address range: {hex(next_erase_addr)}-{hex(image_info.end_address)}")
-                ret = self.floader_handler.erase_flash(image_info.memory_type, next_erase_addr, image_info.end_address,
-                                                       (image_info.end_address - next_erase_addr),
-                                                       nor_erase_timeout_in_second(divide_then_round_up(
-                                                           (image_info.end_address - next_erase_addr), 1024)),
-                                                       sense=True)
-                if ret != ErrType.OK:
-                    self.logger.warning(
-                        f"Fail to extra address range {hex(next_erase_addr)}-{hex(image_info.end_address)}")
-
-            if aligned_img_length < 1024:
-                self.logger.debug(f"Image download done: {aligned_img_length}bytes")
-            elif aligned_img_length < 1024 * 1024:
-                self.logger.debug(f"Image download done: {aligned_img_length // 1024}KB")
-            else:
-                self.logger.debug(f"Image download done: {round(aligned_img_length / 1024 / 1024, 2)}MB")
-
-            elapse_ms = round((datetime.now() - start_time).total_seconds() * 1000, 0)
-            kbps = aligned_img_length * 8 // elapse_ms
-            size_kb = aligned_img_length // 1024
-
-            if self.is_usb:
-                self.logger.info(
-                    f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps / 1000}Mbps")
-            else:
-                self.logger.info(f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps}Kbps")
 
         if ret == ErrType.OK:
             cal_checksum = 0
@@ -1370,12 +1412,9 @@ class Ameba(object):
 
         return ret, mode
 
-    def check_supported_flash_size(self, memory_type):
+    def check_supported_flash_size(self):
         ret = ErrType.OK
         reset_system = False
-
-        if memory_type == MemoryInfo.MEMORY_TYPE_NAND:
-            return ret, reset_system
 
         self.logger.info(f"Check supported flash size...")
         ret = self.prepare(show_device_info=False)
@@ -1406,7 +1445,7 @@ class Ameba(object):
                 reset_system = True
 
             if reset_system:
-                boot_delay = self.setting.usb_rom_boot_delay_in_second if self.profile_info.support_usb_download else self.setting.floader_boot_delay_in_second
+                boot_delay = self.setting.usb_rom_boot_delay_in_second if self.profile_info.support_usb_download else self.setting.rom_boot_delay_in_second
                 # reset floader with next option
                 self.floader_handler.next_operation(NextOpType.REBURN, 0)
                 self.logger.info(f"Reburn delay {boot_delay}s")

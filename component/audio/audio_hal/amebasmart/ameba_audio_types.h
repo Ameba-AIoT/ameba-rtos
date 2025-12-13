@@ -131,6 +131,17 @@ struct AmebaAudioPatchConfig {
 	int32_t device;
 };
 
+/**
+ * @brief Defines the audio eq filter coef.
+ */
+struct AmebaAudioEqFilterCoef {
+	uint32_t H0_Q;
+	uint32_t B1_Q;
+	uint32_t B2_Q;
+	uint32_t A1_Q;
+	uint32_t A2_Q;
+};
+
 #ifdef __cplusplus
 }
 #endif

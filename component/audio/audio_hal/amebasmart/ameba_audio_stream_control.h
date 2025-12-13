@@ -16,12 +16,23 @@
 #define AMEBA_AUDIO_AUDIO_HAL_AMEBASMART_AMEBA_AUDIO_STREAM_CONTROL_H
 
 #include "ameba_audio_stream.h"
+#include "ameba_audio_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct AudioAmplifier AudioAmplifier;
+
+struct BandConfig {
+    bool state;
+	struct AmebaAudioEqFilterCoef coef;
+};
+
+struct AdcEqConfig {
+	bool state;
+	struct BandConfig bands_config[MAX_AD_BANS_NUM];
+};
 
 // only for ameba soc codec's control. I2S will not use this.
 typedef struct _StreamControl {
@@ -35,6 +46,8 @@ typedef struct _StreamControl {
 	uint32_t             volume_for_dacl;
 	uint32_t             volume_for_dacr;
 	uint32_t             volume_for_adc[MAX_AD_NUM];
+	uint32_t             hpf_fc_for_adc[MAX_AD_NUM];
+	struct AdcEqConfig   eq_config_for_adc[MAX_AD_EQ_NUM];
 	uint32_t             mic_category_for_adc[MAX_AD_NUM];
 	uint32_t             gain_for_micbst[MAX_AMIC_NUM];
 	bool                 mute_for_adc[MAX_AD_NUM];
@@ -63,6 +76,11 @@ bool ameba_audio_ctl_get_adc_mute(StreamControl *control, uint32_t channel);
 int32_t ameba_audio_ctl_set_tdm_adc_volume(StreamControl *control, uint32_t channels, uint32_t volume);
 int32_t ameba_audio_ctl_set_mic_bst_gain(StreamControl *control, uint32_t mic_category, uint32_t gain);
 int32_t ameba_audio_ctl_get_mic_bst_gain(StreamControl *control, uint32_t mic_category);
+int32_t ameba_audio_ctl_set_capture_hfp_fc(StreamControl *control, uint32_t channel, uint32_t fc);
+int32_t ameba_audio_ctl_get_capture_hfp_fc(StreamControl *control, uint32_t channel);
+int32_t ameba_audio_ctl_set_adc_eq_clk(StreamControl *control, uint32_t channel_num, bool state);
+int32_t ameba_audio_ctl_set_adc_eq_filter(StreamControl *control, uint32_t channel_num, uint32_t band_sel, struct AmebaAudioEqFilterCoef *eq_filter_coef);
+int32_t ameba_audio_ctl_set_adc_eq_band(StreamControl *control, uint32_t channel_num, uint32_t band_sel, bool state);
 int32_t ameba_audio_ctl_set_mic_usage(StreamControl *control, uint32_t mic_usage);
 int32_t ameba_audio_ctl_get_mic_usage(StreamControl *control);
 float ameba_audio_ctl_pll_clock_tune(StreamControl *control, uint32_t rate, float ppm, uint32_t action);

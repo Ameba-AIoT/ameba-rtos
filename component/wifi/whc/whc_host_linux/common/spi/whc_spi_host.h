@@ -44,7 +44,7 @@ struct whc_spi {
 
 	struct semaphore dev_rdy_sema;
 
-	u8 dev_state;
+	atomic_t dev_state;
 
 	int (*rx_process_func)(struct sk_buff *pskb);
 

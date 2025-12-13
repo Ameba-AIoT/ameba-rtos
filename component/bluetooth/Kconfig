@@ -253,6 +253,7 @@ if BT
         select BT_HFP
         select BT_APP_AUDIO_DATA
         select BT_AUDIO_CODEC_SUPPORT
+        select BT_AUDIO_CODEC_SBC
         select BT_AUDIO_CODEC_CVSD
         select BT_PROFILE_HFP_SUPPORT
         select BT_PROFILE_PBAP_SUPPORT

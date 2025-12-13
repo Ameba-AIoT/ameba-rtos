@@ -23,3 +23,9 @@ ChangeLog:
 					(3) Add no_reset param
 					(4) Change some log level 
 					(5) Rename flashloader folder with Devices
+20251208  v1.1.1.1  (1) Optimized read_bytes api
+                    (2) Optimized the issue where 1-N took longer than 1-1
+                    (3) Optimized the check flow before downloading start
+                    (4) Optimized memory usage by avoiding loading the entire image into memory
+                    (5) Rename Flash tool with AmebaFlash
+20251208  v1.1.1.2  Fix nand flash download fail issue

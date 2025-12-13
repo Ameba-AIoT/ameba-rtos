@@ -6,16 +6,16 @@ AIVoice is an offline AI solution developed by Realtek, including local algorith
 
 Note that this repository is not recommended for standalone use. Please use it with SDK ([ameba-rtos](https://github.com/Ameba-AIoT/ameba-rtos) or [ameba-dsp](https://github.com/Ameba-AIoT/ameba-dsp) or [ameba-linux](https://github.com/Ameba-AIoT/ameba-linux-manifest) ) based on the chosen SoC and OS.
 
-Documentation: [AIVoice Documentation](https://aiot.realmcu.com/en/latest/rst_rtos/rst_ai/aivoice/aivoice_overview/index.html)
+Documentation: [AIVoice Documentation](https://aiot.realmcu.com/en/latest/rtos/ai/aivoice/aivoice_overview/index.html)
 
 ### Supported SoCs
 
-| Chip       | OS    | Processor |         master         | SDK link                                                     |
-| :--------- | ----- | --------- | :--------------------: | ------------------------------------------------------------ |
-| AmebaSmart | Linux | CA32      | ![alt text][supported] | [ameba-linux](https://github.com/Ameba-AIoT/ameba-linux-manifest) |
-| AmebaSmart | RTOS  | CA32      | ![alt text][supported] | [ameba-rtos](https://github.com/Ameba-AIoT/ameba-rtos)       |
-| AmebaLite  | RTOS  | HiFi5 DSP | ![alt text][supported] | [ameba-dsp](https://github.com/Ameba-AIoT/ameba-dsp)         |
-| AmebaDplus | RTOS  | KM4       | ![alt text][supported] | [ameba-rtos](https://github.com/Ameba-AIoT/ameba-rtos)       |
+| Chip              | OS    | Processor |         master         | SDK link                                                     |
+| :---------------- | ----- | --------- | :--------------------: | ------------------------------------------------------------ |
+| RTL8730E          | Linux | CA32      | ![alt text][supported] | [ameba-linux](https://github.com/Ameba-AIoT/ameba-linux-manifest) |
+| RTL8730E          | RTOS  | CA32      | ![alt text][supported] | [ameba-rtos](https://github.com/Ameba-AIoT/ameba-rtos)       |
+| RTL8713E/RTL8726E | RTOS  | HiFi5 DSP | ![alt text][supported] | [ameba-dsp](https://github.com/Ameba-AIoT/ameba-dsp)         |
+| RTL8721Dx         | RTOS  | KM4       | ![alt text][supported] | [ameba-rtos](https://github.com/Ameba-AIoT/ameba-rtos)       |
 
 [supported]: https://img.shields.io/badge/-supported-green "supported"
 
@@ -89,6 +89,6 @@ Please refer to *examples/full_flow_offline/README.md* for details.
 
 [SpeechMind](https://github.com/Ameba-AIoT/speechmind) is an intelligent voice assistant framework that **integrates AIVoice with audio functions such as recording and playback**. Its demo implementation varies by chip:
 
-- AmebaLite (RTL8726E and RTL8713E): Refer to *examples/speechmind_demo/README.md* for DSP part, and refer to SpeechMind for MCU part.
-- AmebaSmart (RTL8730E): RTOS is supported. Refer to SpeechMind for details.
+- RTL8726E and RTL8713E: Refer to *examples/speechmind_demo/README.md* for DSP part, and refer to SpeechMind for MCU part.
+- RTL8730E: RTOS is supported. Refer to SpeechMind for details.
 - Other chip: Coming soon...

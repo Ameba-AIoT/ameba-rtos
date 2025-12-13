@@ -73,5 +73,5 @@ extern void SOCPS_LPWHP_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum);
 
 extern void SOCPS_WakeEvent_Init(void);
 extern void SOCPS_SetPowerCut_Time(u32 time);
-
+extern void SOCPS_SetReguOCP(u8 state);
 #endif  //_AMEBA_SOCPS_H_

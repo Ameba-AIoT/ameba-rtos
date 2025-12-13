@@ -386,6 +386,33 @@ int32_t ameba_audio_stream_get_adc_idx(uint32_t index)
 	return adc_num;
 }
 
+int32_t ameba_audio_stream_get_adc_eq_band_idx(uint32_t band_idx)
+{
+	int32_t band_sel = ADCEQBD0;
+	switch (band_idx) {
+	case 0:
+		band_sel = ADCEQBD0;
+		break;
+	case 1:
+		band_sel = ADCEQBD1;
+		break;
+	case 2:
+		band_sel = ADCEQBD2;
+		break;
+	case 3:
+		band_sel = ADCEQBD3;
+		break;
+	case 4:
+		band_sel = ADCEQBD4;
+		break;
+	default:
+		HAL_AUDIO_ERROR("[AmebaAudioUtils] band index: %ld not supported", band_idx);
+		break;
+	}
+
+	return band_sel;
+}
+
 void ameba_audio_dump_gdma_regs(u8 GDMA_ChNum)
 {
 	GDMA_TypeDef *GDMA = ((GDMA_TypeDef *)GDMA_BASE);

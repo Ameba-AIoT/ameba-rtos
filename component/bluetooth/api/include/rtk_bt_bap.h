@@ -873,6 +873,18 @@ typedef struct {
 } rtk_bt_le_audio_pa_sync_state_ind_t;
 
 /**
+ * @typedef    rtk_bt_le_audio_big_sync_state_ind_t
+ * @brief     Bluetooth LE audio big sync indication infomation.
+ */
+typedef struct {
+	uint8_t sync_state;                                             /**< BIG Synchronization state. @ref rtk_bt_le_audio_big_sync_state_t*/
+	uint8_t encryption;                                             /**< whether BIG data is in encryption or not */
+	uint8_t action;                                                 /**< BIG Synchronization action. */
+	uint8_t action_role;                                            /**< BIG Synchronization action role. */
+	uint8_t cause;
+} rtk_bt_le_audio_big_sync_state_ind_t;
+
+/**
  * @typedef    rtk_bt_le_audio_big_setup_data_path_ind_t
  * @brief     Bluetooth LE audio setup data path indication infomation.
  */

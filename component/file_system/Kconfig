@@ -58,6 +58,8 @@ menu "CONFIG VFS"
         endif
         config FATFS_READ_ONLY
             bool "FATFS Read Only"
+        config FATFS_SUPPORT_EXFAT
+            bool "FATFS Support EXFAT"
     endif
 endmenu
 

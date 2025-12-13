@@ -160,12 +160,13 @@ static void ameba_audio_stream_rx_codec_adc_reset(void)
 
 		AUDIO_CODEC_EnableADC(adc_chn_idx, DISABLE);
 		AUDIO_CODEC_EnableADCFifo(adc_chn_idx, DISABLE);
-		AUDIO_CODEC_SetADCHPF(idx, 3, DISABLE);
+		AUDIO_CODEC_SetADCHPF(idx, 0, DISABLE);
 		AUDIO_CODEC_SetADCMute(adc_idx, MUTE);
 		AUDIO_CODEC_SetADCMixMute(adc_idx, ANAAD, MUTE);
 		AUDIO_CODEC_SetADCANAFilter(adc_idx, DISABLE);
 		AUDIO_CODEC_SetADCMixMute(adc_idx, DMIC, MUTE);
 		AUDIO_CODEC_SetADCDmicFilter(adc_idx, DISABLE);
+		AUDIO_CODEC_SetADCEQClk(adc_chn_idx, DISABLE);
 	}
 }
 
@@ -197,6 +198,60 @@ static void ameba_audio_stream_rx_mic_bias_power_cut_configure(void)
 #endif
 }
 
+__attribute__((unused))
+static void ameba_audio_stream_rx_adc_eq_dump(void)
+{
+	StreamControl *dc = ameba_audio_get_ctl();
+	if (!dc) {
+		return;
+	}
+
+	for (int i = 0; i < MAX_AD_EQ_NUM; i++) {
+		HAL_AUDIO_INFO("adc:%ld state:%ld", i, dc->eq_config_for_adc[i].state);
+		for (int j = 0; j < MAX_AD_BANS_NUM; j++) {
+			HAL_AUDIO_INFO("adc:%ld band:%ld state:%ld, b0:%lx, b1:%lx, b2:%lx, a1:%lx, a2:%lx",
+							i, j,
+							dc->eq_config_for_adc[i].bands_config[j].state,
+							dc->eq_config_for_adc[i].bands_config[j].coef.H0_Q,
+							dc->eq_config_for_adc[i].bands_config[j].coef.B1_Q,
+							dc->eq_config_for_adc[i].bands_config[j].coef.B2_Q,
+							dc->eq_config_for_adc[i].bands_config[j].coef.A1_Q,
+							dc->eq_config_for_adc[i].bands_config[j].coef.A2_Q);
+		}
+	}
+}
+
+static void ameba_audio_stream_rx_adc_eq_configure(int32_t channel_idx, int32_t adc_ch_idx)
+{
+	StreamControl *dc = ameba_audio_get_ctl();
+	if (!dc) {
+		return;
+	}
+
+	if (channel_idx + 1 > MAX_AD_EQ_NUM) {
+		return;
+	}
+
+	if (!dc->eq_config_for_adc[channel_idx].state) {
+		return;
+	}
+
+	AUDIO_CODEC_SetADCEQClk(adc_ch_idx, ENABLE);
+
+	for (int32_t i = 0; i < MAX_AD_BANS_NUM; i++) {
+		if (dc->eq_config_for_adc[channel_idx].bands_config[i].state) {
+			AUDIO_CODEC_SetADCEQBand(adc_ch_idx, ameba_audio_stream_get_adc_eq_band_idx(i), ENABLE);
+			CODEC_EQFilterCoef codec_coef;
+			codec_coef.H0_Q = dc->eq_config_for_adc[channel_idx].bands_config[i].coef.H0_Q;
+			codec_coef.B1_Q = dc->eq_config_for_adc[channel_idx].bands_config[i].coef.B1_Q;
+			codec_coef.B2_Q = dc->eq_config_for_adc[channel_idx].bands_config[i].coef.B2_Q;
+			codec_coef.A1_Q = dc->eq_config_for_adc[channel_idx].bands_config[i].coef.A1_Q;
+			codec_coef.A2_Q = dc->eq_config_for_adc[channel_idx].bands_config[i].coef.A2_Q;
+			AUDIO_CODEC_SetADCEQFilter(adc_ch_idx, ameba_audio_stream_get_adc_eq_band_idx(i), &codec_coef);
+		}
+	}
+}
+
 static void ameba_audio_stream_rx_adc_mic_configure(StreamConfig config)
 {
 	StreamControl *dc = ameba_audio_get_ctl();
@@ -214,37 +269,45 @@ static void ameba_audio_stream_rx_adc_mic_configure(StreamConfig config)
 		HAL_AUDIO_VERBOSE("configure default adc");
 		uint32_t j = 1;
 		for (; j <= config.channels; j++) {
-			uint32_t adc_chn_idx = ameba_audio_stream_get_adc_chn_idx(j);
 			uint32_t adc_idx = ameba_audio_stream_get_adc_idx(j);
 
-			AUDIO_CODEC_EnableADC(adc_chn_idx, ENABLE);
-			AUDIO_CODEC_EnableADCFifo(adc_chn_idx, ENABLE);
-			AUDIO_CODEC_SetADCHPF(adc_idx, 3, ENABLE);
+			AUDIO_CODEC_SetADCHPF(adc_idx, dc->hpf_fc_for_adc[j - 1], ENABLE);
 			AUDIO_CODEC_SetADCMute(adc_idx, dc->mute_for_adc[j - 1] ? MUTE : UNMUTE);
 			AUDIO_CODEC_SetADCVolume(adc_idx, dc->volume_for_adc[j - 1]);
+			ameba_audio_stream_rx_adc_eq_configure(j - 1, ameba_audio_stream_get_adc_chn_idx(j));
 			//for I2S PLL case
 			if (AUDIO_HW_IN_SPORT_CLK_TYPE == 1) {
 				AUDIO_CODEC_SetADCASRC(I2S1, adc_idx, ameba_audio_get_codec_rate(config.rate), ENABLE);
 			}
 		}
+
+		uint32_t adc_mask = 0;
+		for (uint32_t i = 0; i < config.channels; i++) {
+			adc_mask |= ((uint32_t)0x00000001 << i);
+		}
+		AUDIO_CODEC_EnableADCForMask(adc_mask);
+		AUDIO_CODEC_EnableADCFifoForMask(adc_mask);
+
 	} else {  // use adcs according to user customize
 		uint32_t k = 1;
 		for (; k <= MAX_AD_NUM; k++) {
 			if ((dc->adc_use_status >> (k - 1)) & 1) {
-				uint32_t adc_chn_idx = ameba_audio_stream_get_adc_chn_idx(k);
 				uint32_t adc_idx = ameba_audio_stream_get_adc_idx(k);
 
-				AUDIO_CODEC_EnableADC(adc_chn_idx, ENABLE);
-				AUDIO_CODEC_EnableADCFifo(adc_chn_idx, ENABLE);
-				AUDIO_CODEC_SetADCHPF(adc_idx, 3, ENABLE);
+				AUDIO_CODEC_SetADCHPF(adc_idx, dc->hpf_fc_for_adc[k - 1], ENABLE);
 				AUDIO_CODEC_SetADCMute(adc_idx, dc->mute_for_adc[k - 1] ? MUTE : UNMUTE);
 				AUDIO_CODEC_SetADCVolume(adc_idx, dc->volume_for_adc[k - 1]);
+				ameba_audio_stream_rx_adc_eq_configure(k - 1, ameba_audio_stream_get_adc_chn_idx(k));
 				//for I2S PLL case
 				if (AUDIO_HW_IN_SPORT_CLK_TYPE == 1) {
 					AUDIO_CODEC_SetADCASRC(I2S1, adc_idx, ameba_audio_get_codec_rate(config.rate), ENABLE);
 				}
 			}
 		}
+
+		AUDIO_CODEC_EnableADCForMask(dc->adc_use_status);
+		AUDIO_CODEC_EnableADCFifoForMask(dc->adc_use_status);
+
 	}
 
 	//enable amic/dmic

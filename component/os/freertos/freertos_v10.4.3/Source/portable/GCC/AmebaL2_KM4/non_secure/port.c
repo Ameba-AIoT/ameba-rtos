@@ -282,6 +282,7 @@ static void prvSetupTimerInterrupt(void) PRIVILEGED_FUNCTION;
  * function.
  */
 static void prvTaskExitError(void);
+void TaskExitError(void);
 
 #if( configENABLE_MPU == 1 )
 /**
@@ -371,6 +372,13 @@ static void prvTaskExitError(void)
 		 * and therefore not output an 'unreachable code' warning for code that
 		 * appears after it. */
 	}
+}
+
+__attribute__((naked)) void TaskExitError(void)
+{
+    __asm volatile("nop");
+    __disable_irq();
+    while (1);
 }
 /*-----------------------------------------------------------*/
 

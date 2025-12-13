@@ -10,6 +10,7 @@
 #include <rtk_bt_common.h>
 #include <sbc_codec_entity.h>
 #include <bt_audio_debug.h>
+#include <bt_target.h>
 
 #define SBC_DEFAULT_DECODE_CHANNEL_NUM 2
 #define SBC_DEFAULT_DECODE_FAST_FILTER_BUFFERS 27
@@ -24,6 +25,14 @@ static uint32_t context_data[(((sizeof(OI_INT32) * SBC_MAX_BLOCKS * SBC_DEFAULT_
 												   + (sizeof(SBC_BUFFER_T) * SBC_MAX_CHANNELS * SBC_MAX_BANDS * SBC_DEFAULT_DECODE_FAST_FILTER_BUFFERS) \
 					+ (sizeof(OI_UINT32) - 1)) / sizeof(OI_UINT32))] = {0};
 static int16_t pcm_data[SBC_MAX_SAMPLES_PER_FRAME * SBC_MAX_CHANNELS] = {0}; // default is one frame each time, cause bt_audio_intf.c will parse the frame number firstly and process one by one
+#if defined(SBC_PLC_INCLUDED) && SBC_PLC_INCLUDED
+typedef struct {
+	bool first_good_frame_found;
+	sbc_plc_state_t plc_state;
+	int16_t sbc_plc_out[SBC_FS];
+} sbc_plc_t;
+static sbc_plc_t priv_sbc_plc = {0};
+#endif
 
 static uint16_t caculate_sbc_frame_size(uint16_t blocks, uint8_t channel_mode, uint16_t subbands, uint16_t bitpool)
 {
@@ -53,7 +62,7 @@ static uint16_t caculate_sbc_frame_size(uint16_t blocks, uint8_t channel_mode, u
 	return frame_size;
 }
 
-static bool bt_stack_sbc_decoder_init(sbc_mode_t mode, OI_CODEC_SBC_DECODER_CONTEXT *pcontext)
+static bool bt_stack_sbc_decoder_init(rtk_bt_sbc_decode_t *p_decode_t, OI_CODEC_SBC_DECODER_CONTEXT *pcontext)
 {
 	OI_STATUS status = OI_STATUS_SUCCESS;
 
@@ -61,9 +70,18 @@ static bool bt_stack_sbc_decoder_init(sbc_mode_t mode, OI_CODEC_SBC_DECODER_CONT
 		BT_LOGE("%s : input pcontext is NULL \r\n", __func__);
 		return false;
 	}
+#if defined(SBC_PLC_INCLUDED) && SBC_PLC_INCLUDED
+	if (p_decode_t->sbc_dec_mode == SBC_MODE_mSBC) {
+		// sbc plc init for mSBC
+		memset((void *)&priv_sbc_plc, 0, sizeof(sbc_plc_t));
+		sbc_plc_init(&priv_sbc_plc.plc_state);
+		BT_LOGA("%s : init plc for mSBC \r\n", __func__);
+	}
+#endif
 	// note: we always request stereo output, even for mono input
-	status = OI_CODEC_SBC_DecoderReset(pcontext, context_data, sizeof(context_data), SBC_DEFAULT_DECODE_CHANNEL_NUM, SBC_DEFAULT_DECODE_CHANNEL_NUM, FALSE,
-									   (bool)mode);
+	status = OI_CODEC_SBC_DecoderReset(pcontext, context_data, sizeof(context_data), p_decode_t->sbc_dec_mode == SBC_MODE_mSBC ? 1 : SBC_DEFAULT_DECODE_CHANNEL_NUM,
+									   p_decode_t->sbc_dec_mode == SBC_MODE_mSBC ? 1 : SBC_DEFAULT_DECODE_CHANNEL_NUM, false,
+									   (bool)(p_decode_t->sbc_dec_mode == SBC_MODE_mSBC ? true : false));
 	if (status != OI_STATUS_SUCCESS) {
 		BT_LOGE("%s : error during reset %d \r\n", __func__, status);
 		return false;
@@ -137,7 +155,7 @@ static uint16_t sbc_codec_init(void *pentity, void *param)
 	}
 	/* init decode component */
 	if (!priv_decode_flag) {
-		if (bt_stack_sbc_decoder_init((sbc_mode_t)psbc_codec_t->decoder_t.sbc_dec_mode, &priv_decode_context) == false) {
+		if (bt_stack_sbc_decoder_init(&psbc_codec_t->decoder_t, &priv_decode_context) == false) {
 			BT_LOGE("%s : bt_stack_sbc_decoder_init error \r\n", __func__);
 			return 1;
 		}
@@ -162,6 +180,9 @@ static uint16_t sbc_codec_update(void *pentity, void *param)
 	/* update encode component */
 	if (priv_encode_flag) {
 		SBC_Encoder_Update_Encode_Pktnum(psbc_codec_t->encoder_t.sbc_pkt_num);
+		BT_LOGA("%s: success update sbc pkt num to %d \r\n", __func__, psbc_codec_t->encoder_t.sbc_pkt_num);
+	} else {
+		BT_LOGE("%s: fail update sbc pkt num to %d \r\n", __func__, psbc_codec_t->encoder_t.sbc_pkt_num);
 	}
 	memcpy((void *)&sbc_codec_t, (void *)psbc_codec_t, sizeof(rtk_bt_sbc_codec_t));
 
@@ -172,6 +193,10 @@ static uint16_t sbc_codec_deinit(void *pentity)
 {
 	(void)pentity;
 
+#if defined(SBC_PLC_INCLUDED) && SBC_PLC_INCLUDED
+	sbc_plc_deinit(&priv_sbc_plc.plc_state);
+	priv_sbc_plc.first_good_frame_found = false;
+#endif
 	priv_encode_flag = false;
 	memset((void *)&priv_encode_params, 0, sizeof(SBC_ENC_PARAMS));
 	priv_decode_flag = false;
@@ -192,6 +217,10 @@ static uint16_t sbc_decoder_process_data(void *pentity, uint8_t *data, uint32_t 
 	int16_t *pcm_data_pointer = decode_buffer->pbuffer;
 	OI_UINT32 frame_data_len = size;
 	uint32_t pcmBytes, availPcmBytes;
+#if defined(SBC_PLC_INCLUDED) && SBC_PLC_INCLUDED
+	const OI_BYTE *zero_signal_frame_data;
+	OI_UINT32 zero_signal_frame_len = BTM_MSBC_FRAME_DATA_SIZE;
+#endif
 
 	availPcmBytes = sizeof(pcm_data);
 	// DBG_BAD("%s : Enter frame size %d \r\n", __func__, size);
@@ -203,10 +232,69 @@ static uint16_t sbc_decoder_process_data(void *pentity, uint8_t *data, uint32_t 
 										  pcm_data_pointer,
 										  &pcmBytes);
 		/* Handle decoding result. */
+#if defined(SBC_PLC_INCLUDED) && SBC_PLC_INCLUDED
+		if (priv_decode_context.sbc_mode == OI_SBC_MODE_MSBC) {
+			switch (status) {
+			case OI_OK: {
+				priv_sbc_plc.first_good_frame_found = true;
+				sbc_plc_good_frame(&(priv_sbc_plc.plc_state), (int16_t *)pcm_data_pointer, priv_sbc_plc.sbc_plc_out);
+			}
+
+			case OI_CODEC_SBC_NOT_ENOUGH_HEADER_DATA:
+			case OI_CODEC_SBC_NOT_ENOUGH_BODY_DATA:
+			case OI_CODEC_SBC_NOT_ENOUGH_AUDIO_DATA:
+				break;
+
+			case OI_CODEC_SBC_NO_SYNCWORD:
+			case OI_CODEC_SBC_CHECKSUM_MISMATCH: {
+				if (!priv_sbc_plc.first_good_frame_found) {
+					break;
+				}
+				zero_signal_frame_data = sbc_plc_zero_signal_frame();
+				zero_signal_frame_len = BTM_MSBC_FRAME_DATA_SIZE;
+				pcmBytes = HF_SBC_DEC_RAW_DATA_SIZE;
+				status = OI_CODEC_SBC_DecodeFrame(&priv_decode_context,
+												  &zero_signal_frame_data,
+												  &zero_signal_frame_len,
+												  pcm_data_pointer,
+												  &pcmBytes);
+				sbc_plc_bad_frame(&(priv_sbc_plc.plc_state), pcm_data_pointer, priv_sbc_plc.sbc_plc_out);
+				frame_data_len = 0;
+				BT_LOGE("%s: bad frame, using PLC to fix it, status is 0x%x, len is %d, pcmBytes is %d \r\n", __func__, status, zero_signal_frame_len, pcmBytes);
+				break;
+			}
+
+			case OI_STATUS_INVALID_PARAMETERS: {
+				// This caused by corrupt frames.
+				// The codec apparently does not recover from this.
+				// Re-initialize the codec.
+				BT_LOGE("%s: Frame decode error: OI_STATUS_INVALID_PARAMETERS", __func__);
+				if (OI_STATUS_SUCCESS != OI_CODEC_SBC_DecoderReset(&priv_decode_context, context_data, sizeof(context_data),
+																   priv_decode_context.sbc_mode == OI_SBC_MODE_MSBC ? 1 : SBC_DEFAULT_DECODE_CHANNEL_NUM,
+																   priv_decode_context.sbc_mode == OI_SBC_MODE_MSBC ? 1 : SBC_DEFAULT_DECODE_CHANNEL_NUM,
+																   false,
+																   (bool)(priv_decode_context.sbc_mode == OI_SBC_MODE_MSBC ? true : false))) {
+					BT_LOGE("%s: OI_CODEC_SBC_DecoderReset failed with error code %d \r\n", __func__, status);
+				}
+				break;
+			}
+
+			default:
+				BT_LOGE("%s: Frame decode error: %d \r\n", __func__, status);
+				break;
+			}
+		} else {
+			if (status != OI_STATUS_SUCCESS) {
+				BT_LOGE("%s: Decoding failure: %d \r\n", __func__, status);
+				break;
+			}
+		}
+#else
 		if (status != OI_STATUS_SUCCESS) {
 			BT_LOGE("%s: Decoding failure: %d \r\n", __func__, status);
 			break;
 		}
+#endif
 		availPcmBytes -= pcmBytes;
 		pcm_data_pointer += pcmBytes / 2;
 	}
@@ -315,12 +403,27 @@ static int read_frame_header(uint8_t *packet, int size, int *offset, sbc_frame_h
 static uint16_t sbc_audio_handle_media_data_packet(void *pentity, uint8_t *packet, uint16_t size, uint32_t *pframe_size, uint8_t *pframe_num,
 												   uint8_t *pcodec_header_flag, struct audio_param *paudio_param)
 {
-	(void)pentity;
 	avdtp_sbc_codec_header_t sbc_header = {0};
 	sbc_frame_header_t sbc_frame_header = {0};
 	uint32_t sbc_frame_size = 0;
 	int pos = 0;
+	PAUDIO_CODEC_ENTITY p_entity = (PAUDIO_CODEC_ENTITY)pentity;
 
+	if (!p_entity) {
+		BT_LOGE("%s: p_entity is NULL \r\n", __func__);
+		return 1;
+	}
+	/* mSBC parameter is default */
+	if (p_entity->type == RTK_BT_AUDIO_CODEC_mSBC) {
+		paudio_param->channels = 1;
+		paudio_param->channel_allocation = 1;
+		paudio_param->rate = 16000;
+		paudio_param->bits = 16;
+		*pcodec_header_flag = 0;
+		*pframe_num = 1;
+		*pframe_size = 57;
+		return 0;
+	}
 	/* decode sbc header */
 	*pcodec_header_flag = read_sbc_header(packet, size, &pos, &sbc_header);
 

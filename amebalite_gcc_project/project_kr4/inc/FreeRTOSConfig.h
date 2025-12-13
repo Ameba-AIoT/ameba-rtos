@@ -38,7 +38,7 @@
 
 /* Realtek back trace configuration. */
 #ifdef CONFIG_DEBUG_BACK_TRACE
-#define configTASK_RETURN_ADDRESS TaskExitError
+#define configTASK_RETURN_ADDRESS ( (void *) ( (uintptr_t) TaskExitError + 2 ) )
 #endif
 
 /* Realtek Heap Integrity Check configuration. */

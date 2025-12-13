@@ -85,6 +85,7 @@ typedef struct {
 	uint64_t                   controller_free_run_clock;                                      /*!< save free controller_free_run_clock */
 	uint32_t                   pres_delay_us;                                                  /*!< indicate presentation delay value */
 	uint32_t                   prev_ts_us;                                                     /*!< recording previous timestamp to check sdu loss */
+	uint32_t                   mixer_start_threshold;                                          /*!< record Audio Mixer start threshhold */
 	uint32_t
 	prev_sys_us;                                                    /*!< recording previous timestamp DTimestamp_Get() to check overflow */
 	bool                       ref_ap_oveflow_flag;                                            /*!< indicate CIG/BIG reference point occur overflow*/

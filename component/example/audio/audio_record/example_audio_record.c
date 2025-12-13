@@ -40,6 +40,16 @@
 //if running in passthrough architecture, please set 0 here.
 #define TEST_MIXER_ARCH       1
 
+enum {
+	EQLPF = 1,
+	EQHPF = 2,
+	EQBPF = 3,
+	EQLSF = 4,
+	EQHSF = 5,
+	EQNF = 6,
+	EQPF = 7,
+};
+
 #define EXAMPLE_AUDIO_DEBUG(fmt, args...)    printf("=> D/AudioRecordExample:[%s]: " fmt "\n", __func__, ## args)
 #define EXAMPLE_AUDIO_ERROR(fmt, args...)    printf("=> E/AudioRecordExample:[%s]: " fmt "\n", __func__, ## args)
 
@@ -68,6 +78,8 @@ static unsigned int  g_record_format = 16;
 static unsigned int  g_record_bytes_one_time = 8192;
 static unsigned int  g_record_mic_category = RTDEVICE_IN_MIC;
 static unsigned int  g_record_channel_src[MAX_CHANNEL_COUNT] = {RTAUDIO_AMIC1};
+static unsigned int  g_hpf_fc = 3;
+static unsigned int  g_eq_filter_type = 0;
 static unsigned int  Record_Sample(void);
 static          void Play_Sample(unsigned int channels, unsigned int rate);
 
@@ -101,6 +113,60 @@ static int GetFormatForBits(void)
 	}
 
 	return format;
+}
+
+static void FillEqFilterCoef(EqFilterCoef *coef)
+{
+	if (g_eq_filter_type == EQLPF) {
+		/* coefficient of low pass filter */
+		coef->H0_Q = 0x0070BD5C;
+		coef->B1_Q = 0x04000000;
+		coef->B2_Q = 0x02000000;
+		coef->A1_Q = 0x009D7957;
+		coef->A2_Q = 0x1F9F9139;
+	} else if (g_eq_filter_type == EQHPF) {
+		/* coefficient of high pass filter */
+		coef->H0_Q = 0x01FB4865;
+		coef->B1_Q = 0x1C000000;
+		coef->B2_Q = 0x02000000;
+		coef->A1_Q = 0x03F685A9;
+		coef->A2_Q = 0x1E096416;
+	} else if (g_eq_filter_type == EQBPF) {
+		/* coefficient of band pass filter */
+		coef->H0_Q = 0x0035FA76;
+		coef->B1_Q = 0x00000000;
+		coef->B2_Q = 0x1E000000;
+		coef->A1_Q = 0x0287BD8B;
+		coef->A2_Q = 0x1E6BF4ED;
+	} else if (g_eq_filter_type == EQLSF) {
+		/* coefficient of low shelving filter */
+		coef->H0_Q = 0x0218161A;
+		coef->B1_Q = 0x1C5E3906;
+		coef->B2_Q = 0x01A9BEB6;
+		coef->A1_Q = 0x03D0A40E;
+		coef->A2_Q = 0x1E2D437C;
+	} else if (g_eq_filter_type == EQHSF) {
+		/* coefficient of high shelving filter */
+		coef->H0_Q = 0x03C8147B;
+		coef->B1_Q = 0x1C85F1AF;
+		coef->B2_Q = 0x0189A7A4;
+		coef->A1_Q = 0x034417AE;
+		coef->A2_Q = 0x1E9E69D1;
+	} else if (g_eq_filter_type == EQNF) {
+		/* coefficient of notch filter */
+		coef->H0_Q = 0x01E0E26E;
+		coef->B1_Q = 0x1C5F00A5;
+		coef->B2_Q = 0x02000000;
+		coef->A1_Q = 0x03A0FF5B;
+		coef->A2_Q = 0x1E3E3B25;
+	} else if (g_eq_filter_type == EQPF) {
+		/* coefficient of peak filter */
+		coef->H0_Q = 0x01ED0FD0;
+		coef->B1_Q = 0x1C15D75D;
+		coef->B2_Q = 0x01F2CE6C;
+		coef->A1_Q = 0x03C51715;
+		coef->A2_Q = 0x1E329506;
+	}
 }
 
 static unsigned int Record_Sample()
@@ -185,6 +251,17 @@ static unsigned int Record_Sample()
 
 	RTAudioControl_SetCaptureVolume(4, 0x2f);
 	RTAudioControl_SetMicBstGain(RTAUDIO_AMIC2, MICBST_GAIN_30DB);
+	RTAudioControl_SetCaptureHpfFc(0, g_hpf_fc);
+	int32_t ch0_hpf_fc = RTAudioControl_GetCaptureHpfFc(0);
+	EXAMPLE_AUDIO_DEBUG("hpf fc for channel 0 is:%ld", ch0_hpf_fc);
+
+	if (g_eq_filter_type) {
+		RTAudioControl_SetCaptureEqEnable(0, true);
+		EqFilterCoef coef;
+		FillEqFilterCoef(&coef);
+		RTAudioControl_SetCaptureEqFilter(0, 0, &coef);
+		RTAudioControl_SetCaptureEqBand(0, 0, true);
+	}
 
 	switch (g_record_mode) {
 	case 0:
@@ -236,6 +313,7 @@ static unsigned int Record_Sample()
 			dumped_size += size;
 		}
 #endif
+
 		//drop first 100ms data of record, and instead send 0, because record need some time to be stable, it's normal.
 		if (!g_only_record && bytes_read >= 100 * g_record_rate * g_record_channel * g_record_format / 8 / 1000) {
 			RTAudioTrack_Write(audio_track, buffer, size, true);
@@ -491,6 +569,16 @@ void RTAudioRecordTestApp(char **argv)
 				} else {
 					g_record_mic_category = RTDEVICE_IN_MIC;
 				}
+			}
+		} else if (strcmp(*argv, "-hpf") == 0) {
+			argv++;
+			if (*argv) {
+				g_hpf_fc = atoi(*argv);
+			}
+		} else if (strcmp(*argv, "-filter") == 0) {
+			argv++;
+			if (*argv) {
+				g_eq_filter_type = atoi(*argv);
 			}
 		}
 		if (*argv) {

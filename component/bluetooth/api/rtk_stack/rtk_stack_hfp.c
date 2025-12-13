@@ -452,7 +452,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 				APP_PRINT_INFO0("HFP config: mSBC ");
 				BT_LOGA("app_hfp_bt_cback: HFP config: mSBC \r\n");
 				p_link->hfp_codec_type = RTK_BT_AUDIO_CODEC_mSBC;
-				p_link->hfp_sco_codec_info.msbc.channel_mode = 1;
+				p_link->hfp_sco_codec_info.msbc.channel_mode = 0; //SBC_CHANNEL_MODE_MONO
 				p_link->hfp_sco_codec_info.msbc.sample_rate = 16000;
 				p_link->hfp_sco_codec_info.msbc.bitpool = 26;
 				p_link->hfp_sco_codec_info.msbc.allocation_method = 0;
@@ -1233,7 +1233,7 @@ uint16_t bt_stack_hfp_init(uint8_t role)
 
 void bt_stack_hfp_deinit(void)
 {
-	BT_LOGA("[HFP]app_hfp_init\n");
+	BT_LOGA("[HFP]app_hfp_deinit\n");
 	if (hfp_role == RTK_BT_AUDIO_HFP_ROLE_AG) {
 		bt_hfp_ag_deinit();
 	} else {

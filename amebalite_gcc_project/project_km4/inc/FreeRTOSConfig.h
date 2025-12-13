@@ -258,5 +258,5 @@ extern int  pmu_ready_to_sleep(void);
 
 #endif /* __IASMARM__ */
 extern void TaskExitError(void);
-#define configTASK_RETURN_ADDRESS TaskExitError
+#define configTASK_RETURN_ADDRESS ( (void *) ( (uintptr_t) TaskExitError + 2 ) )
 #endif /* FREERTOS_CONFIG_H */

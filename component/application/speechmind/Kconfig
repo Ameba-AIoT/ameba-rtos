@@ -1,0 +1,16 @@
+config SPEECHMIND_EN_MENU
+    bool "Enable SpeechMind"
+    default n
+    select SPEECHMIND_EN if CORE_AS_AP
+    select AUDIO_FWK if CORE_AS_AP
+    select AUDIO_MIXER if CORE_AS_AP
+    select MEDIA_PLAYER if CORE_AS_AP
+    select MEDIA_DEMUX_WAV if CORE_AS_AP
+    select MEDIA_DEMUX_MP3 if CORE_AS_AP
+    select MEDIA_CODEC_PCM if CORE_AS_AP
+    select MEDIA_CODEC_MP3 if CORE_AS_AP
+    select IMQ_EN if AMEBALITE && CORE_AS_AP
+    select RPC_EN if AMEBALITE && CORE_AS_AP
+
+config SPEECHMIND_EN
+    bool

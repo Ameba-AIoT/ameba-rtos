@@ -39,6 +39,7 @@
 #define GDMA_SEM_IDX        3
 #define IPC_SEM_CRYPTO		4
 #define DIAGNOSE_SEM_IDX  5
+#define IPC_SEM_SYSON  6
 /**
   * @}
   */

@@ -1,0 +1,11 @@
+{
+    "sd_dump": 0,
+    "index": 0,
+    "save_times": 6,
+    "amplifier_volume": 0.9,
+    
+    "host": "ws://172.29.57.202",
+    "endpoint": "ws",
+    "port": 8443,
+	"session_timeout": 30
+}
