@@ -10,11 +10,13 @@
 extern "C" {
 #endif
 
-#define STREAM_OUT     0
-#define STREAM_IN      1
+#define STREAM_OUT      0
+#define STREAM_IN       1
 
-#define MAX_AD_NUM     8
-#define MAX_AMIC_NUM   5
+#define MAX_AD_NUM      8
+#define MAX_AMIC_NUM    5
+#define MAX_AD_EQ_NUM   6
+#define MAX_AD_BANS_NUM 5
 
 #define TX_SPORT0_IN_USE    ((uint32_t)0x00000001 << 0)
 #define TX_SPORT1_IN_USE    ((uint32_t)0x00000001 << 1)

@@ -28,6 +28,7 @@ ameba_add_subdirectory(${c_CMPT_OS_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_TFLITE_DIR}/cmake)
 ameba_add_subdirectory(${c_CMPT_WIFI_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_APP_DIR})
+ameba_add_subdirectory_if_exist(${c_CMPT_APP_DIR}/speechmind)
 ameba_add_subdirectory(${c_CMPT_RTK_COEX_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_SOC_DIR}/verification)
 
