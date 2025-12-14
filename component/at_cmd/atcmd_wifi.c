@@ -373,6 +373,62 @@ end:
 	}
 }
 
+static int wifi_disconnect_and_wait(int timeout_sec)
+{
+	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
+	int ret = 0;
+	int timeout = timeout_sec;
+	int error_no = RTW_AT_OK;
+	struct rtw_wifi_setting wifi_setting = {0};
+
+	if (wifi_get_setting(STA_WLAN_INDEX, &wifi_setting) >= 0) {
+		if (wifi_setting.mode == RTW_MODE_AP) {
+			RTK_LOGI(NOTAG, "No need do disconnect for softap mode\r\n");
+			/* RTW_AT_OK */
+			return error_no;
+		}
+	} else {
+		RTK_LOGI(NOTAG, "No need do disconnect when netif is down\r\n");
+		/* RTW_AT_OK */
+		return error_no;
+	}
+
+	if (wifi_get_join_status(&join_status) != RTK_SUCCESS) {
+		error_no = RTW_AT_ERR_UNKNOWN_ERR;
+		RTK_LOGW(NOTAG, "Wifi get join status ERROR\r\n");
+		return error_no;
+	}
+
+	if (join_status == RTW_JOINSTATUS_UNKNOWN) {
+		RTK_LOGI(NOTAG, "Not connected yet\r\n");
+		/* RTW_AT_OK */
+		return error_no;
+	}
+
+	/* Disconnecting ...... */
+	ret = wifi_disconnect();
+	if (ret < 0) {
+		RTK_LOGW(NOTAG, "Disconnect ERROR\r\n");
+		error_no = RTW_AT_ERR_UNKNOWN_ERR;
+		return error_no;
+	}
+
+	/* error_no == RTW_AT_ERR_STATUS_GET_FAILED means that the expected results have not been obtained within the specified time */
+	error_no = RTW_AT_ERR_RESULT_GET_FAILED;
+	while (timeout > 0) {
+		if ((wifi_get_join_status(&join_status) == RTK_SUCCESS) && join_status != RTW_JOINSTATUS_SUCCESS) {
+			RTK_LOGI(NOTAG, "disconnect done\r\n");
+			error_no = RTW_AT_OK;
+			break;
+		}
+
+		/* Delay 1s */
+		rtos_time_delay_ms(1000);
+		timeout--;
+	}
+	return error_no;
+}
+
 /****************************************************************
 AT command process:
 	AT+WLDISCONN
@@ -382,54 +438,61 @@ AT command process:
 ****************************************************************/
 void at_wldisconn(void *arg)
 {
-	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
-	int timeout = 20, ret = 0;
 	int error_no = RTW_AT_OK;
-	struct rtw_wifi_setting wifi_setting = {0};
 
 	UNUSED(arg);
 
-	if (wifi_get_setting(STA_WLAN_INDEX, &wifi_setting) >= 0) {
-		if (wifi_setting.mode == RTW_MODE_AP) {
-			RTK_LOGI(NOTAG, "[+WLDISCONN] No need do disconnect for softap mode\r\n");
-			goto end;
-		}
+	/* Disconnect and wait for completion */
+	error_no = wifi_disconnect_and_wait(20);
+
+#ifdef CONFIG_LWIP_LAYER
+	user_static_ip.use_static_ip = 0;
+	LwIP_ReleaseIP(STA_WLAN_INDEX);
+#endif
+	init_wifi_struct();
+	if (error_no == RTW_AT_OK) {
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		RTK_LOGI(NOTAG, "[+WLDISCONN] No need do disconnect when netif is down\r\n");
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+
+/****************************************************************
+AT command process:
+	AT+WLFORGET
+	Wifi AT Command:
+	Disconnect from a wifi network and delete the wlan_data in the flash.
+	[+WLFORGET]:OK
+****************************************************************/
+void at_wlforget(void* arg)
+{
+	int ret = 0;
+	int error_no = RTW_AT_OK;
+
+	UNUSED(arg);
+
+	/* Disconnect and wait for completion */
+	error_no = wifi_disconnect_and_wait(20);
+	if (error_no != RTW_AT_OK) {
 		goto end;
 	}
 
-	if (wifi_get_join_status(&join_status) != RTK_SUCCESS) {
-		error_no = RTW_AT_ERR_UNKNOWN_ERR;
-		RTK_LOGW(NOTAG, "[+WLDISCONN] Wifi get join status ERROR\r\n");
-		goto end;
-	}
-
-	if (join_status == RTW_JOINSTATUS_UNKNOWN) {
-		RTK_LOGI(NOTAG, "[+WLDISCONN] Not connected yet\r\n");
-		goto end;
-	}
-
-	/* Disconnecting ...... */
-	ret = wifi_disconnect();
+	/* stat the wlan_data */
+	extern int32_t rt_kv_size(const char *key);
+	ret = rt_kv_size("wlan_data");
 	if (ret < 0) {
-		RTK_LOGW(NOTAG, "[+WLDISCONN] Disconnect ERROR\r\n");
+		/* It is recommended to ensure that Wi-Fi is connected before calling AT+WLFORGET, as 'ret' is not clear. */
 		error_no = RTW_AT_ERR_UNKNOWN_ERR;
+		RTK_LOGE(NOTAG, "Unable to get wlan_data size, err=%d\r\n", ret);
 		goto end;
 	}
 
-	/* error_no == RTW_AT_ERR_STATUS_GET_FAILED means that the expected results have not been obtained within the specified time */
-	error_no = RTW_AT_ERR_RESULT_GET_FAILED;
-	while (timeout > 0) {
-		if ((wifi_get_join_status(&join_status) == RTK_SUCCESS) && join_status != RTW_JOINSTATUS_SUCCESS) {
-			RTK_LOGI(NOTAG, "[+WLDISCONN] disconnect done\r\n");
-			error_no = RTW_AT_OK;
-			break;
-		}
-
-		/* Delay 1s */
-		rtos_time_delay_ms(1000);
-		timeout--;
+	/* Delete wlan_data from flash */
+	extern int32_t rt_kv_delete(const char *key);
+	ret = rt_kv_delete("wlan_data");
+	if (ret != 0) {
+		error_no = RTW_AT_ERR_UNKNOWN_ERR;
+		RTK_LOGE(NOTAG, "Failed to delete wlan_data from flash, err=%d\r\n", ret);
 	}
 
 end:
@@ -1672,6 +1735,7 @@ log_item_t at_wifi_items[ ] = {
 #ifdef CONFIG_WLAN
 	{"+WLCONN", at_wlconn, {NULL, NULL}},
 	{"+WLDISCONN", at_wldisconn, {NULL, NULL}},
+	{"+WLFORGET", at_wlforget, {NULL, NULL}},
 	{"+WLSCAN", at_wlscan, {NULL, NULL}},
 	{"+WLRSSI", at_wlrssi, {NULL, NULL}},
 	{"+WLSTARTAP", at_wlstartap, {NULL, NULL}},
