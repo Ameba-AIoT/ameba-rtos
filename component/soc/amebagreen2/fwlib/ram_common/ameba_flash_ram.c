@@ -144,7 +144,7 @@ void FLASH_EraseXIP(u32 EraseType, u32 Address)
  *		- FLASH_EraseXIP is recommended if need
  * @retval None
  */
-void FLASH_EreaseDwordsXIP(u32 address, u32 dword_num)
+void FLASH_EraseDwordsXIP(u32 address, u32 dword_num)
 {
 	UNUSED(dword_num);
 	UNUSED(address);
