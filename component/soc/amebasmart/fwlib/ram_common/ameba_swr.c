@@ -329,11 +329,15 @@ void SWR_PFM_MODE_Set(u32 MODE)
 			RTK_LOGE(TAG, "In BST mode Now, goto Normal mode First !\n");
 			return;
 		}
+		SOCPS_SetReguOCP(ENABLE);
+		/*After enabling OCP, it takes 100us to take effect before switching to PFM mode.*/
+		DelayUs(100);
 		temp &= (~(REGU_BIT_SYS_PWM_REQ));
 		regu->REGU_POWER_CTRL = temp;
 	} else if ((!MODE) && (SWR_PFM == SWR_Mode_Get())) {
 		temp |= (REGU_BIT_SYS_PWM_REQ);
 		regu->REGU_POWER_CTRL = temp;
+		SOCPS_SetReguOCP(DISABLE);
 	}
 	return;
 }
