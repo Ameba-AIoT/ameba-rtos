@@ -43,6 +43,7 @@ ameba_list_append(private_includes
 	../bt_app_audio_data
 	${c_CMPT_BLUETOOTH_DIR}/bt_audio/bt_codec/sbc/decoder/include
 	${c_CMPT_BLUETOOTH_DIR}/bt_audio/bt_codec/sbc/encoder/include
+	${c_CMPT_BLUETOOTH_DIR}/bt_audio/bt_codec/sbc/plc
 	${c_CMPT_AUDIO_DIR}/interfaces
 )
 

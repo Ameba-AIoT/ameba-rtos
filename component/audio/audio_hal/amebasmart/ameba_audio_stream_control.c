@@ -106,6 +106,17 @@ StreamControl *ameba_audio_get_ctl(void)
 			g_control_instance->mute_for_mic_bst[3] = false;
 			g_control_instance->mute_for_mic_bst[4] = false;
 
+			for (int32_t i = 0; i < MAX_AD_NUM; i++) {
+				g_control_instance->hpf_fc_for_adc[i] = 3;
+			}
+
+			for (int i = 0; i < MAX_AD_EQ_NUM; i++) {
+				g_control_instance->eq_config_for_adc[i].state = false;
+				for (int j = 0; j < MAX_AD_BANS_NUM; j++) {
+					g_control_instance->eq_config_for_adc[i].bands_config[j].state = false;
+				}
+			}
+
 			AmpPinConfig amp_info;
 			amp_info.pinmux = AUDIO_HW_AMPLIFIER_PIN;
 			amp_info.enable_time = AUDIO_HW_AMPLIFIER_ENABLE_TIME;
@@ -520,6 +531,102 @@ int32_t ameba_audio_ctl_get_mic_bst_gain(StreamControl *control, uint32_t mic_ca
 	}
 
 	return control->gain_for_micbst[amic_num - 1];
+}
+
+int32_t ameba_audio_ctl_set_capture_hfp_fc(StreamControl *control, uint32_t channel, uint32_t fc)
+{
+	if (control == NULL) {
+		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
+		return HAL_OSAL_ERR_INVALID_OPERATION;
+	}
+
+	if (control->hpf_fc_for_adc[channel] != fc) {
+		if (ameba_audio_is_audio_ip_in_use(CODEC)) {
+			AUDIO_CODEC_SetADCHPF(ameba_audio_stream_get_adc_idx(channel + 1), fc, ENABLE);
+		}
+
+		control->hpf_fc_for_adc[channel] = fc;
+	}
+
+	return HAL_OSAL_OK;
+}
+
+int32_t ameba_audio_ctl_get_capture_hfp_fc(StreamControl *control, uint32_t channel)
+{
+	if (control == NULL) {
+		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
+		return HAL_OSAL_ERR_INVALID_OPERATION;
+	}
+
+	return control->hpf_fc_for_adc[channel];
+}
+
+int32_t ameba_audio_ctl_set_adc_eq_clk(StreamControl *control, uint32_t channel_num, bool state)
+{
+	if (control == NULL) {
+		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
+		return HAL_OSAL_ERR_INVALID_OPERATION;
+	}
+
+	if (channel_num > MAX_AD_EQ_NUM) {
+		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
+		return HAL_OSAL_ERR_INVALID_OPERATION;
+	}
+
+	if (g_control_instance->eq_config_for_adc[channel_num].state != state) {
+		if (ameba_audio_is_audio_ip_in_use(CODEC)) {
+			int32_t eq_state = state ? ENABLE : DISABLE;
+			AUDIO_CODEC_SetADCEQClk(ameba_audio_stream_get_adc_chn_idx(channel_num + 1), eq_state);
+		}
+		g_control_instance->eq_config_for_adc[channel_num].state = state;
+	}
+
+	return HAL_OSAL_OK;
+}
+
+int32_t ameba_audio_ctl_set_adc_eq_filter(StreamControl *control, uint32_t channel_num, uint32_t band_sel, struct AmebaAudioEqFilterCoef *eq_filter_coef)
+{
+	if (control == NULL) {
+		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
+		return HAL_OSAL_ERR_INVALID_OPERATION;
+	}
+
+	CODEC_EQFilterCoef codec_coef;
+	codec_coef.H0_Q = eq_filter_coef->H0_Q;
+	codec_coef.B1_Q = eq_filter_coef->B1_Q;
+	codec_coef.B2_Q = eq_filter_coef->B2_Q;
+	codec_coef.A1_Q = eq_filter_coef->A1_Q;
+	codec_coef.A2_Q = eq_filter_coef->A2_Q;
+
+	if (ameba_audio_is_audio_ip_in_use(CODEC)) {
+		AUDIO_CODEC_SetADCEQFilter(ameba_audio_stream_get_adc_chn_idx(channel_num + 1), band_sel, &codec_coef);
+	}
+
+	g_control_instance->eq_config_for_adc[channel_num].bands_config[band_sel].coef.H0_Q = eq_filter_coef->H0_Q;
+	g_control_instance->eq_config_for_adc[channel_num].bands_config[band_sel].coef.B1_Q = eq_filter_coef->B1_Q;
+	g_control_instance->eq_config_for_adc[channel_num].bands_config[band_sel].coef.B2_Q = eq_filter_coef->B2_Q;
+	g_control_instance->eq_config_for_adc[channel_num].bands_config[band_sel].coef.A1_Q = eq_filter_coef->A1_Q;
+	g_control_instance->eq_config_for_adc[channel_num].bands_config[band_sel].coef.A2_Q = eq_filter_coef->A2_Q;
+
+	return HAL_OSAL_OK;
+}
+
+int32_t ameba_audio_ctl_set_adc_eq_band(StreamControl *control, uint32_t channel_num, uint32_t band_sel, bool state)
+{
+	if (control == NULL) {
+		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
+		return HAL_OSAL_ERR_INVALID_OPERATION;
+	}
+
+	if (g_control_instance->eq_config_for_adc[channel_num].bands_config[band_sel].state != state) {
+		if (ameba_audio_is_audio_ip_in_use(CODEC)) {
+			int32_t band_state = state ? ENABLE : DISABLE;
+			AUDIO_CODEC_SetADCEQBand(ameba_audio_stream_get_adc_chn_idx(channel_num + 1), ameba_audio_stream_get_adc_eq_band_idx(band_sel), band_state);
+		}
+		g_control_instance->eq_config_for_adc[channel_num].bands_config[band_sel].state = state;
+	}
+
+	return HAL_OSAL_OK;
 }
 
 float ameba_audio_ctl_pll_clock_tune(StreamControl *control, uint32_t rate, float ppm, uint32_t action)
