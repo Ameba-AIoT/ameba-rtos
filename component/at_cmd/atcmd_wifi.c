@@ -477,9 +477,10 @@ void at_wlforget(void* arg)
 		goto end;
 	}
 
+	const char* key = "wlan_data";
 	/* stat the wlan_data */
 	extern int32_t rt_kv_size(const char *key);
-	ret = rt_kv_size("wlan_data");
+	ret = rt_kv_size(key);
 	if (ret < 0) {
 		/* It is recommended to ensure that Wi-Fi is connected before calling AT+WLFORGET, as 'ret' is not clear. */
 		error_no = RTW_AT_ERR_UNKNOWN_ERR;
@@ -489,7 +490,7 @@ void at_wlforget(void* arg)
 
 	/* Delete wlan_data from flash */
 	extern int32_t rt_kv_delete(const char *key);
-	ret = rt_kv_delete("wlan_data");
+	ret = rt_kv_delete(key);
 	if (ret != 0) {
 		error_no = RTW_AT_ERR_UNKNOWN_ERR;
 		RTK_LOGE(NOTAG, "Failed to delete wlan_data from flash, err=%d\r\n", ret);
