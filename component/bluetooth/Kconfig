@@ -30,7 +30,7 @@ if BT_EXAMPLE_DEMO_MENU
         default n
 
     config BT_HOGP
-        depends on AMEBASMART && !AMEBA_RLS    #internal amebasmart
+        depends on AMEBASMART && !AMEBA_RLS    #amebasmart internal
         bool "BLE HOGP"
         default n
 
@@ -45,22 +45,22 @@ if BT_EXAMPLE_DEMO_MENU
         default n
 
     config BT_WIFIMATE_DEVICE
-        depends on (AMEBADPLUS || AMEBALITE || AMEBASMART || AMEBAGREEN2)    #amebadplus|amebalite|amebasmart|amebagreen2
+        depends on (AMEBASMART || AMEBALITE || AMEBADPLUS || AMEBAGREEN2)    #amebasmart|amebalite|amebadplus|amebagreen2
         bool "BLE WiFiMate Device"
         default n
 
     config BT_WIFIMATE_CONFIGURATOR
-        depends on (AMEBADPLUS || AMEBALITE || AMEBASMART || AMEBAGREEN2)    #amebadplus|amebalite|amebasmart|amebagreen2
+        depends on (AMEBASMART || AMEBALITE || AMEBADPLUS || AMEBAGREEN2)    #amebasmart|amebalite|amebadplus|amebagreen2
         bool "BLE WiFiMate Configurator"
         default n
 
     config BT_OTA_CENTRAL
-        depends on (AMEBADPLUS || AMEBALITE || AMEBASMART) && !AMEBA_RLS    #internal amebadplus|amebalite|amebasmart
+        depends on (AMEBASMART || AMEBALITE || AMEBADPLUS) && !AMEBA_RLS    #amebasmart|amebalite|amebadplus internal
         bool "BLE OTA Central"
         default n
 
     config BT_OTA_PERIPHERAL
-        depends on (AMEBADPLUS || AMEBALITE || AMEBASMART) && !AMEBA_RLS    #internal amebadplus|amebalite|amebasmart
+        depends on (AMEBASMART || AMEBALITE || AMEBADPLUS) && !AMEBA_RLS    #amebasmart|amebalite|amebadplus internal
         bool "BLE OTA Peripheral"
         default n
 
@@ -93,7 +93,7 @@ if BT_EXAMPLE_DEMO_MENU
     endif
 
     if BT_HAS_LEAUDIO
-        config BT_ISO_TEST
+        config BT_ISO_TEST_MENU
             bool "BLE ISO Test"
             default n
 
@@ -102,11 +102,11 @@ if BT_EXAMPLE_DEMO_MENU
             default n
 
         if BT_LE_AUDIO_MENU
-            config BT_LE_AUDIO_GENERIC_DEMO
+            config BT_LE_AUDIO_GENERIC_DEMO_MENU
                 bool "BLE Audio Generic Demo"
                 default n
 
-            config BT_PBP
+            config BT_PBP_MENU
                 bool "BLE Audio Public Broadcast Profile"
                 default n
 
@@ -120,8 +120,8 @@ if BT_EXAMPLE_DEMO_MENU
         endif
 
         config BT_LE_AUDIO_GENERIC_DEMO_PERIPHERAL_MENU
-            depends on AMEBASMART && !AMEBA_RLS    #internal amebasmart
-            bool "BT LE Audio Generic Demo and BLE Peripheral"
+            depends on !AMEBA_RLS    #internal
+            bool "BLE Audio Generic Demo and BLE Peripheral"
             default n
     endif
 
@@ -203,37 +203,59 @@ if BT
         select BT_MESH_DEVICE_TEST
         select BT_MESH_DEVICE_SUPPORT
 
-    config BT_LE_AUDIO_MENU
+    config BT_ISO_TEST_MENU
         bool
-        select BT_LE_AUDIO
-        select BT_APP_AUDIO_DATA
+        select BT_ISO_TEST
+        select BT_ISO_SUPPORT
+
+    config BT_LE_AUDIO_GENERIC_DEMO_MENU
+        bool
+        select BT_LE_AUDIO_GENERIC_DEMO
+        select BT_LE_AUDIO_SUPPORT
+        select BT_APP_AUDIO_DATA_SUPPORT
         select BT_AUDIO_CODEC_SUPPORT
-        select BT_AUDIO_CODEC_LC3
+        select BT_AUDIO_CODEC_LC3_SUPPORT
+
+    config BT_PBP_MENU
+        bool
+        select BT_PBP
+        select BT_LE_AUDIO_SUPPORT
+        select BT_APP_AUDIO_DATA_SUPPORT
+        select BT_AUDIO_CODEC_SUPPORT
+        select BT_AUDIO_CODEC_LC3_SUPPORT
 
     config BT_TMAP_MENU
         bool
         select BT_TMAP
         select BT_TMAP_SUPPORT
+        select BT_LE_AUDIO_SUPPORT
+        select BT_APP_AUDIO_DATA_SUPPORT
+        select BT_AUDIO_CODEC_SUPPORT
+        select BT_AUDIO_CODEC_LC3_SUPPORT
 
     config BT_GMAP_MENU
         bool
         select BT_GMAP
         select BT_GMAP_SUPPORT
+        select BT_LE_AUDIO_SUPPORT
+        select BT_APP_AUDIO_DATA_SUPPORT
+        select BT_AUDIO_CODEC_SUPPORT
+        select BT_AUDIO_CODEC_LC3_SUPPORT
 
     config BT_LE_AUDIO_GENERIC_DEMO_PERIPHERAL_MENU
         bool
         select BT_LE_AUDIO_GENERIC_DEMO_PERIPHERAL
-        select BT_LE_AUDIO
-        select BT_APP_AUDIO_DATA
+        select BT_LE_AUDIO_SUPPORT
+        select BT_APP_AUDIO_DATA_SUPPORT
         select BT_AUDIO_CODEC_SUPPORT
-        select BT_AUDIO_CODEC_LC3
+        select BT_AUDIO_CODEC_LC3_SUPPORT
 
     config BT_A2DP_MENU
         bool
         select BT_A2DP
-        select BT_APP_AUDIO_DATA
+        select BT_APP_AUDIO_DATA_SUPPORT
         select BT_AUDIO_CODEC_SUPPORT
-        select BT_AUDIO_CODEC_SBC
+        select BT_AUDIO_CODEC_SBC_SUPPORT
         select BT_PROFILE_A2DP_SUPPORT
         select BT_PROFILE_AVRCP_SUPPORT
         select BT_PROFILE_SDP_SUPPORT
@@ -241,10 +263,10 @@ if BT
     config BT_HFP_MENU
         bool
         select BT_HFP
-        select BT_APP_AUDIO_DATA
+        select BT_APP_AUDIO_DATA_SUPPORT
         select BT_AUDIO_CODEC_SUPPORT
-        select BT_AUDIO_CODEC_SBC
-        select BT_AUDIO_CODEC_CVSD
+        select BT_AUDIO_CODEC_SBC_SUPPORT
+        select BT_AUDIO_CODEC_CVSD_SUPPORT
         select BT_PROFILE_HFP_SUPPORT
         select BT_PROFILE_PBAP_SUPPORT
         select BT_PROFILE_SDP_SUPPORT
@@ -252,10 +274,10 @@ if BT
     config BT_A2DP_HFP_MENU
         bool
         select BT_A2DP_HFP
-        select BT_APP_AUDIO_DATA
+        select BT_APP_AUDIO_DATA_SUPPORT
         select BT_AUDIO_CODEC_SUPPORT
-        select BT_AUDIO_CODEC_SBC
-        select BT_AUDIO_CODEC_CVSD
+        select BT_AUDIO_CODEC_SBC_SUPPORT
+        select BT_AUDIO_CODEC_CVSD_SUPPORT
         select BT_PROFILE_A2DP_SUPPORT
         select BT_PROFILE_AVRCP_SUPPORT
         select BT_PROFILE_HFP_SUPPORT
@@ -277,10 +299,10 @@ if BT
     config BT_AUDIO_MP_TEST_MENU
         bool
         select BT_AUDIO_MP_TEST
-        select BT_APP_AUDIO_DATA
+        select BT_APP_AUDIO_DATA_SUPPORT
         select BT_AUDIO_CODEC_SUPPORT
-        select BT_AUDIO_CODEC_SBC
-        select BT_AUDIO_CODEC_CVSD
+        select BT_AUDIO_CODEC_SBC_SUPPORT
+        select BT_AUDIO_CODEC_CVSD_SUPPORT
         select BT_PROFILE_A2DP_SUPPORT
         select BT_PROFILE_AVRCP_SUPPORT
         select BT_PROFILE_HFP_SUPPORT
@@ -291,9 +313,9 @@ if BT
     config BT_A2DP_SCATTERNET_MENU
         bool
         select BT_A2DP_SCATTERNET
-        select BT_APP_AUDIO_DATA
+        select BT_APP_AUDIO_DATA_SUPPORT
         select BT_AUDIO_CODEC_SUPPORT
-        select BT_AUDIO_CODEC_SBC
+        select BT_AUDIO_CODEC_SBC_SUPPORT
         select BT_PROFILE_A2DP_SUPPORT
         select BT_PROFILE_AVRCP_SUPPORT
         select BT_PROFILE_SDP_SUPPORT
@@ -301,10 +323,10 @@ if BT
     config BT_A2DP_PBP_MENU
         bool
         select BT_A2DP_PBP
-        select BT_LE_AUDIO
+        select BT_LE_AUDIO_SUPPORT
         select BT_AUDIO_CODEC_SUPPORT
-        select BT_AUDIO_CODEC_LC3
-        select BT_AUDIO_CODEC_SBC
+        select BT_AUDIO_CODEC_LC3_SUPPORT
+        select BT_AUDIO_CODEC_SBC_SUPPORT
         select BT_PROFILE_A2DP_SUPPORT
         select BT_PROFILE_AVRCP_SUPPORT
         select BT_PROFILE_SDP_SUPPORT
@@ -312,12 +334,12 @@ if BT
     config BT_A2DP_HFP_PBP_MENU
         bool
         select BT_A2DP_HFP_PBP
-        select BT_LE_AUDIO
-        select BT_APP_AUDIO_DATA
+        select BT_LE_AUDIO_SUPPORT
+        select BT_APP_AUDIO_DATA_SUPPORT
         select BT_AUDIO_CODEC_SUPPORT
-        select BT_AUDIO_CODEC_LC3
-        select BT_AUDIO_CODEC_SBC
-        select BT_AUDIO_CODEC_CVSD
+        select BT_AUDIO_CODEC_LC3_SUPPORT
+        select BT_AUDIO_CODEC_SBC_SUPPORT
+        select BT_AUDIO_CODEC_CVSD_SUPPORT
         select BT_PROFILE_A2DP_SUPPORT
         select BT_PROFILE_AVRCP_SUPPORT
         select BT_PROFILE_HFP_SUPPORT
@@ -328,10 +350,10 @@ if BT
         bool
         select BT_A2DP_TMAP
         select BT_TMAP_SUPPORT
-        select BT_LE_AUDIO
+        select BT_LE_AUDIO_SUPPORT
         select BT_AUDIO_CODEC_SUPPORT
-        select BT_AUDIO_CODEC_LC3
-        select BT_AUDIO_CODEC_SBC
+        select BT_AUDIO_CODEC_LC3_SUPPORT
+        select BT_AUDIO_CODEC_SBC_SUPPORT
         select BT_PROFILE_A2DP_SUPPORT
         select BT_PROFILE_AVRCP_SUPPORT
         select BT_PROFILE_SDP_SUPPORT
@@ -350,13 +372,17 @@ config BT_MESH_PROVISIONER_TEST
     bool
 config BT_MESH_DEVICE_TEST
     bool
-config BT_LE_AUDIO
+config BT_ISO_TEST
     bool
-config BT_LE_AUDIO_GENERIC_DEMO_PERIPHERAL
+config BT_LE_AUDIO_GENERIC_DEMO
+    bool
+config BT_PBP
     bool
 config BT_TMAP
     bool
 config BT_GMAP
+    bool
+config BT_LE_AUDIO_GENERIC_DEMO_PERIPHERAL
     bool
 config BT_A2DP
     bool
@@ -382,19 +408,23 @@ config BT_MESH_PROVISIONER_SUPPORT
     bool
 config BT_MESH_DEVICE_SUPPORT
     bool
+config BT_ISO_SUPPORT
+    bool
+config BT_LE_AUDIO_SUPPORT
+    bool
 config BT_TMAP_SUPPORT
     bool
 config BT_GMAP_SUPPORT
     bool
-config BT_APP_AUDIO_DATA
+config BT_APP_AUDIO_DATA_SUPPORT
     bool
 config BT_AUDIO_CODEC_SUPPORT
     bool
-config BT_AUDIO_CODEC_LC3
+config BT_AUDIO_CODEC_LC3_SUPPORT
     bool
-config BT_AUDIO_CODEC_SBC
+config BT_AUDIO_CODEC_SBC_SUPPORT
     bool
-config BT_AUDIO_CODEC_CVSD
+config BT_AUDIO_CODEC_CVSD_SUPPORT
     bool
 config BT_PROFILE_A2DP_SUPPORT
     bool

@@ -5,7 +5,7 @@
 
 #define WHC_UART_DEV	UART0_DEV
 #define UART_BAUD	4000000
-#define WHC_UART_RX_BURST_SIZE 1
+#define WHC_UART_RX_BURST_SIZE 16
 #define WHC_UART_TX_BURST_SIZE 8
 
 //depends on RxFifoTrigLevel
@@ -54,7 +54,9 @@ struct whc_uart_priv_t {
 	u8 uart_idx;
 	u8 wait_for_skb: 1;
 	u8 txdma_initialized: 1;
-
+	u8 rx_state;
+	u32 rx_size_done;
+	u32 rx_size_total;
 	rtos_mutex_t tx_lock;
 	rtos_mutex_t rx_lock;
 
@@ -71,7 +73,10 @@ struct whc_uart_priv_t {
 	struct whc_buf_info *txbuf_info;
 };
 
-
+#define WHC_UART_DEV_RX_DONE       0x0
+#define WHC_UART_DEV_RX_HEADER     0x1
+#define WHC_UART_DEV_RX_PAYLOAD    0x2
+#define WHC_UART_DEV_RX_END        0x3
 void whc_uart_dev_device_init(void);
 u8 whc_uart_dev_tx_path_avail(void);
 void whc_uart_dev_send(struct whc_buf_info *pbuf);

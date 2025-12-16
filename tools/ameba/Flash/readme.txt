@@ -66,6 +66,14 @@ command e.g.:
   --memory-type, nor, nand, ram
   ./AmebaFlash.py --erase --start-address 0x08000000 --memory-type nor --end-address 0x08001000 --size 1024
  
+> read wifi mac
+  --read-wifimac
+  --profile, device profile
+  --baudrate, read baudrate
+  --memory-type, memory type
+  --port, serial port
+  
+ 
 log demo:
 >>./AmebaFlash.py --download --port COM92 --start-address 0x08000000 --baudrate 1500000 --profile E:\git_repo\meta_tools\devices\Profiles\AmebaDplus_FreeRTOS_NOR.rdev --image Z:\workspace\debug\images\image_dp\image_all.bin --memory-type nor
 [2025-11-27 11:04:19.437][I] [main]Flash Version: 1.1.1.0
@@ -212,3 +220,16 @@ log demo:
 [2025-11-27 11:19:21.423][I] [COM92]Finished PASS
 [2025-11-27 11:19:21.426][I] [main]All flash threads have completed
 [2025-11-27 11:19:21.480][I] [COM92]COM92 closed.
+
+>>./AmebaFlash.py --read-wifimac --baudrate 1500000 --profile E:\git_repo\meta_tools\Profiles\AmebaDplus_FreeRTOS_NOR.rdev --memory-type nor --port COM7
+[2025-12-12 10:16:11.191][I] [main]AmebaFlash Version: 1.1.1.3
+[2025-12-12 10:16:11.191][I] [main]Device profile: Devices\Profiles\AmebaSmart_FreeRTOS_NOR.rdev
+[2025-12-12 10:16:11.191][I] [main]Serial port: ['COM7']
+[2025-12-12 10:16:11.191][I] [main]Baudrate: 1500000
+[2025-12-12 10:16:11.260][I] [main]Device profile Devices\Profiles\AmebaSmart_FreeRTOS_NOR.rdev loaded
+[2025-12-12 10:16:11.260][I] [main]Settings path: E:\git_repo\meta_tools\flash_v1.1.1.3_beta\Settings.json
+[2025-12-12 10:16:12.339][I] [COM7]WiFiMAC: 00:00:00:00:00:00
+[2025-12-12 10:16:12.341][I] [COM7]close COM7...
+[2025-12-12 10:16:12.341][I] [COM7]COM7 closed.
+[2025-12-12 10:16:12.343][I] [COM7]Finished PASS
+[2025-12-12 10:16:12.343][I] [main]All flash threads have completed

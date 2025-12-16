@@ -205,7 +205,7 @@ extern "C"
 #endif /* RTK_BLE_SUPPORT */
 
 #if defined(RTK_BLE_4_2_SUPPORT) && RTK_BLE_4_2_SUPPORT
-#if defined(CONFIG_BT_SDN_VERIFY) && CONFIG_BT_SDN_VERIFY
+#if defined(CONFIG_SDN) && CONFIG_SDN
 #define RTK_BLE_PRIVACY_SUPPORT             0
 #else
 #define RTK_BLE_PRIVACY_SUPPORT             1
@@ -285,10 +285,10 @@ extern "C"
 #endif
 
 #if defined(RTK_BLE_5_2_SUPPORT) && RTK_BLE_5_2_SUPPORT
-#if defined(CONFIG_BT_ISO_TEST) && CONFIG_BT_ISO_TEST
+#if defined(CONFIG_BT_ISO_SUPPORT) && CONFIG_BT_ISO_SUPPORT
 #define RTK_BLE_ISO_SUPPORT                 1
 #endif
-#if defined(CONFIG_BT_LE_AUDIO) && CONFIG_BT_LE_AUDIO
+#if defined(CONFIG_BT_LE_AUDIO_SUPPORT) && CONFIG_BT_LE_AUDIO_SUPPORT
 #define RTK_BLE_AUDIO_SUPPORT               1
 #if defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT
 #define RTK_BLE_AUDIO_TMAP_SUPPORT          1
@@ -347,13 +347,13 @@ extern "C"
 #define RTK_BLE_MGR_LIB             0
 #endif
 
-#if (defined(CONFIG_BT_ISO_TEST) && CONFIG_BT_ISO_TEST) && (defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT) && \
+#if (defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT) && \
     ((!defined(RTK_BLE_5_0_AE_ADV_SUPPORT) || !RTK_BLE_5_0_AE_ADV_SUPPORT) || (!defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) || !RTK_BLE_5_0_AE_SCAN_SUPPORT) || \
      (!defined(RTK_BLE_5_0_PA_ADV_SUPPORT) || !RTK_BLE_5_0_PA_ADV_SUPPORT) || (!defined(RTK_BLE_5_0_PA_SYNC_SUPPORT) || !RTK_BLE_5_0_PA_SYNC_SUPPORT))
 #error "Please enable AE, AE Scan, PA, PA Sync for correct platform when enable ISO DEMO"
 #endif
 
-#if (defined(CONFIG_BT_LE_AUDIO) && CONFIG_BT_LE_AUDIO) && (defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT) && \
+#if (defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT) && \
     ((!defined(RTK_BLE_5_0_AE_ADV_SUPPORT) || !RTK_BLE_5_0_AE_ADV_SUPPORT) || (!defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) || !RTK_BLE_5_0_AE_SCAN_SUPPORT))
 #error "Please enable AE, AE Scan for correct platform when enable LE AUDIO"
 #endif

@@ -16,6 +16,17 @@
 #define RTOS_TIME_SET_SYSTIME_TO_MS(tick)              (tick * RTOS_TICK_RATE_MS)
 
 /**
+ * @brief  Compares two timestamps to determine if time1 is chronologically after or equal to time2,
+ *         automatically handling 32-bit timer overflow/wrap-around conditions.
+ *         Equivalent to the Linux kernel's time_after_eq(time1, time2).
+ * @param  time1: The first timestamp to compare (e.g., current time)
+ * @param  time2: The second timestamp to compare (e.g., expiration time)
+ * @return TRUE if time1 is after or equal to time2; otherwise FALSE.
+ */
+#define rtos_time_after_eq(time1, time2) \
+    (((int32_t)((uint32_t)(time1) - (uint32_t)(time2)) >= 0) ? TRUE : FALSE)
+
+/**
  * @brief  If the current system is in a scheduling and non-interrupted state, it will switch to other tasks.
  *         Otherwise, the nop instruction will be executed.
  * @param  ms: Delay time in milliseconds

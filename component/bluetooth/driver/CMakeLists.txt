@@ -41,7 +41,7 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-if(NOT CONFIG_BT_SDN_VERIFY)
+if(NOT CONFIG_SDN)
 	ameba_list_append(private_sources
 		hci/hci_process/hci_process.c
 		hci/hci_process/hci_download_v1.c
@@ -65,7 +65,7 @@ ameba_list_append(private_sources
 )
 
 if(CONFIG_BT_INIC)
-	if(CONFIG_BT_SDN_VERIFY)
+	if(CONFIG_SDN)
 		ameba_list_append(private_sources vhci/hci_if_inic_sdn.c)
 	else()
 		ameba_list_append(private_sources hci/hci_if_inic.c)
@@ -91,7 +91,7 @@ if(CONFIG_BT_INIC)
 		ameba_list_append_if(CONFIG_RTL8720F private_sources bt_inic/bt_inic_sdio.c)
 	endif()
 elseif(CONFIG_BT_ZEPHYR)
-	if(CONFIG_BT_SDN_VERIFY)
+	if(CONFIG_SDN)
 		ameba_list_append(private_sources vhci/hci_if_zephyr_sdn.c)
 	else()
 		ameba_list_append(private_sources hci/hci_if_zephyr.c)
@@ -112,7 +112,7 @@ ameba_list_append(private_includes
 	${c_CMPT_BLUETOOTH_DIR}/rtk_coex
 )
 
-if(CONFIG_BT_SDN_VERIFY)
+if(CONFIG_SDN)
 	ameba_list_append(private_includes vhci)
 endif()
 

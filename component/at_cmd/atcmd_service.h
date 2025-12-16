@@ -131,5 +131,7 @@ extern int wext_private_command(char *cmd, int show_msg, char *user_buf);
 #if defined(CONFIG_BT) && CONFIG_BT
 extern void at_bt_init(void);
 #endif
-
+#if defined(CONFIG_SDN) && CONFIG_SDN
+extern void at_sdn_init(void);
+#endif
 #endif /* ATCMD_SERVICE_H */

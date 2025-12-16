@@ -2,11 +2,6 @@ if(NOT CONFIG_BT)
     return()
 endif()
 
-if(CONFIG_BT_SDN_VERIFY)
-    ameba_add_subdirectory(verification)
-    ameba_add_subdirectory(bt_controller)
-endif()
-
 ameba_add_subdirectory_ifnot(CONFIG_BT_INIC api)
 ameba_add_subdirectory_if(CONFIG_BT_AUDIO_CODEC_SUPPORT bt_audio)
 ameba_add_subdirectory(bt_mp)
