@@ -76,6 +76,7 @@ void __retarget_lock_init(_LOCK_T *lock_ptr)
 
 	if (*lock_ptr == NULL) {
 		RTK_LOGS(TAG, "%s, lock_ptr create failed!!!\n", __func__);
+		assert_param(*lock_ptr);
 	}
 }
 
@@ -91,6 +92,7 @@ void __retarget_lock_init_recursive(_LOCK_T *lock_ptr)
 
 	if (*lock_ptr == NULL) {
 		RTK_LOGS(TAG, "%s, lock_ptr create failed!!!\n", __func__);
+		assert_param(*lock_ptr);
 	}
 }
 
@@ -106,6 +108,9 @@ void __retarget_lock_close_recursive(_LOCK_T lock)
 	if (lock) {
 		if (xSemaphoreGetMutexHolder((QueueHandle_t)lock) == NULL) {
 			vSemaphoreDelete(lock);
+		} else {
+			RTK_LOGS(TAG, "%s, lock %p is still in use!!!\n", __func__, lock);
+			vSemaphoreDelete(lock);
 		}
 	}
 }
@@ -119,9 +124,7 @@ void __retarget_lock_acquire(_LOCK_T lock)
 		return;
 	}
 
-	if (!lock) {
-		__retarget_lock_init(&lock);
-	}
+	assert_param(lock);
 
 	if (rtos_critical_is_in_interrupt()) {
 		ret = xSemaphoreTakeFromISR(lock, &task_woken);
@@ -141,10 +144,12 @@ void __retarget_lock_acquire(_LOCK_T lock)
 void __retarget_lock_acquire_recursive(_LOCK_T lock)
 {
 	BaseType_t ret;
+
 	if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
-		// DiagPrintf("scheduler not start\n");
 		return;
 	}
+
+	assert_param(lock);
 
 	if (rtos_critical_is_in_interrupt()) {
 		return;
@@ -169,9 +174,7 @@ int __retarget_lock_try_acquire(_LOCK_T lock)
 		return 0;
 	}
 
-	if (!lock) {
-		__retarget_lock_init(&lock);
-	}
+	assert_param(lock);
 
 	if (rtos_critical_is_in_interrupt()) {
 		ret = xSemaphoreTakeFromISR(lock, &task_woken);
@@ -197,6 +200,8 @@ int __retarget_lock_try_acquire_recursive(_LOCK_T lock)
 	if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
 		return 0;
 	}
+
+	assert_param(lock);
 
 	if (rtos_critical_is_in_interrupt()) {
 		return 0;
