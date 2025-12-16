@@ -30,7 +30,7 @@ u8 used_buf_num = 0;
 extern struct event_priv_t event_priv;
 extern int whc_host_init_done;
 extern struct whc_uart_host_priv_t uart_host_priv;
-u8 tx_buf[fix_tx_buf_num][4 + UART_BUFSZ] = {0};
+u8 tx_buf[fix_tx_buf_num][32 + UART_BUFSZ] = {0};
 
 /**
  * @brief  to initialize the skb in host.
@@ -59,7 +59,6 @@ int whc_uart_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	(void)is_special_pkt;
 	struct eth_drv_sg *psg_list;
 	int ret = RTK_SUCCESS, i = 0;
-	int pad_len = 0;
 	struct whc_msg_info *msg;
 	struct whc_txbuf_info_t *whc_tx = rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
 
@@ -83,11 +82,11 @@ int whc_uart_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	}
 
 	ptr += 4;
-	pad_len = ((u32)ptr - sizeof(struct whc_msg_info)) % DEV_DMA_ALIGN;
+
 	msg = (struct whc_msg_info *)(ptr);
 	msg->event = WHC_WIFI_EVT_XIMT_PKTS;
 	msg->wlan_idx = idx;
-	msg->pad_len = pad_len;
+	msg->pad_len = 0;
 	msg->data_len = 0;
 	/* allocate the skb buffer */
 
@@ -109,9 +108,9 @@ int whc_uart_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	whc_uart_host_send_data(&whc_tx->txbuf_info);
 
 	used_buf_num = (used_buf_num + 1) % fix_tx_buf_num;
+
 	rtos_sema_give(uart_host_priv.host_send);
 
-	//rtos_mem_free(whc_tx);
 	return ret;
 }
 

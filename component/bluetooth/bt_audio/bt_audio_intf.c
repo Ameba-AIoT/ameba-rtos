@@ -597,7 +597,7 @@ static uint16_t bt_audio_codec_init(rtk_bt_audio_codec_conf_t *paudio_codec_conf
 		return err;
 	}
 
-#if defined(CONFIG_BT_AUDIO_CODEC_SBC) && CONFIG_BT_AUDIO_CODEC_SBC
+#if defined(CONFIG_BT_AUDIO_CODEC_SBC_SUPPORT) && CONFIG_BT_AUDIO_CODEC_SBC_SUPPORT
 	/* sbc codec */
 	if (RTK_BT_AUDIO_CODEC_SBC == paudio_codec_conf->codec_index) {
 		BT_LOGE("[BT_AUDIO] sbc codec init  \r\n");
@@ -609,21 +609,21 @@ static uint16_t bt_audio_codec_init(rtk_bt_audio_codec_conf_t *paudio_codec_conf
 		err = bt_audio_register_codec(RTK_BT_AUDIO_CODEC_mSBC, paudio_codec_conf->param, paudio_codec_conf->param_len, pentity);
 	}
 #endif
-#if defined(CONFIG_BT_AUDIO_CODEC_AAC) && CONFIG_BT_AUDIO_CODEC_AAC
+#if defined(CONFIG_BT_AUDIO_CODEC_AAC_SUPPORT) && CONFIG_BT_AUDIO_CODEC_AAC_SUPPORT
 	/* aac codec */
 	if (RTK_BT_AUDIO_CODEC_AAC == paudio_codec_conf->codec_index) {
 		BT_LOGE("[BT_AUDIO] aac codec init  \r\n");
 		err = bt_audio_register_codec(RTK_BT_AUDIO_CODEC_AAC, paudio_codec_conf->param, paudio_codec_conf->param_len, pentity);
 	}
 #endif
-#if defined(CONFIG_BT_AUDIO_CODEC_LC3) && CONFIG_BT_AUDIO_CODEC_LC3
+#if defined(CONFIG_BT_AUDIO_CODEC_LC3_SUPPORT) && CONFIG_BT_AUDIO_CODEC_LC3_SUPPORT
 	/* lc3 codec */
 	if (RTK_BT_AUDIO_CODEC_LC3 == paudio_codec_conf->codec_index) {
 		BT_LOGE("[BT_AUDIO] lc3 codec init  \r\n");
 		err = bt_audio_register_codec(RTK_BT_AUDIO_CODEC_LC3, paudio_codec_conf->param, paudio_codec_conf->param_len, pentity);
 	}
 #endif
-#if defined(CONFIG_BT_AUDIO_CODEC_CVSD) && CONFIG_BT_AUDIO_CODEC_CVSD
+#if defined(CONFIG_BT_AUDIO_CODEC_CVSD_SUPPORT) && CONFIG_BT_AUDIO_CODEC_CVSD_SUPPORT
 	/* cvsd codec */
 	if (RTK_BT_AUDIO_CODEC_CVSD == paudio_codec_conf->codec_index) {
 		BT_LOGE("[BT_AUDIO] cvsd codec init  \r\n");
@@ -642,7 +642,7 @@ static uint16_t bt_audio_codec_deinit(uint32_t codec_index, PAUDIO_CODEC_ENTITY 
 		BT_LOGE("[BT_AUDIO] Codec entity is empty \r\n");
 		return err;
 	}
-#if defined(CONFIG_BT_AUDIO_CODEC_SBC) && CONFIG_BT_AUDIO_CODEC_SBC
+#if defined(CONFIG_BT_AUDIO_CODEC_SBC_SUPPORT) && CONFIG_BT_AUDIO_CODEC_SBC_SUPPORT
 	/* sbc codec */
 	if (RTK_BT_AUDIO_CODEC_SBC == codec_index) {
 		BT_LOGE("[BT_AUDIO] sbc codec deinit  \r\n");
@@ -654,21 +654,21 @@ static uint16_t bt_audio_codec_deinit(uint32_t codec_index, PAUDIO_CODEC_ENTITY 
 		err = bt_audio_unregister_codec(RTK_BT_AUDIO_CODEC_mSBC, pentity);
 	}
 #endif
-#if defined(CONFIG_BT_AUDIO_CODEC_AAC) && CONFIG_BT_AUDIO_CODEC_AAC
+#if defined(CONFIG_BT_AUDIO_CODEC_AAC_SUPPORT) && CONFIG_BT_AUDIO_CODEC_AAC_SUPPORT
 	/* aac codec */
 	if (RTK_BT_AUDIO_CODEC_AAC == codec_index) {
 		BT_LOGE("[BT_AUDIO] aac codec deinit  \r\n");
 		err = bt_audio_unregister_codec(RTK_BT_AUDIO_CODEC_AAC, pentity);
 	}
 #endif
-#if defined(CONFIG_BT_AUDIO_CODEC_LC3) && CONFIG_BT_AUDIO_CODEC_LC3
+#if defined(CONFIG_BT_AUDIO_CODEC_LC3_SUPPORT) && CONFIG_BT_AUDIO_CODEC_LC3_SUPPORT
 	/* lc3 codec */
 	if (RTK_BT_AUDIO_CODEC_LC3 == codec_index) {
 		BT_LOGE("[BT_AUDIO] lc3 codec deinit  \r\n");
 		err = bt_audio_unregister_codec(RTK_BT_AUDIO_CODEC_LC3, pentity);
 	}
 #endif
-#if defined(CONFIG_BT_AUDIO_CODEC_CVSD) && CONFIG_BT_AUDIO_CODEC_CVSD
+#if defined(CONFIG_BT_AUDIO_CODEC_CVSD_SUPPORT) && CONFIG_BT_AUDIO_CODEC_CVSD_SUPPORT
 	/* cvsd codec */
 	if (RTK_BT_AUDIO_CODEC_CVSD == codec_index) {
 		BT_LOGE("[BT_AUDIO] cvsd codec deinit  \r\n");

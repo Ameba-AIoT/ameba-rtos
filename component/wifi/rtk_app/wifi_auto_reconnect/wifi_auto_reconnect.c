@@ -26,6 +26,9 @@
 #include "ethernetif.h"
 #endif
 #include "ameba_soc.h"
+#ifdef CONFIG_ZEPHYR_SDK
+#include"wifi_intf_drv_to_zephyr.h"
+#endif
 
 extern void eap_autoreconnect_hdl(u8 method_id);
 
@@ -58,6 +61,9 @@ void rtw_reconn_timer_start(void)
 	if (rtw_reconn.cnt > wifi_user_config.auto_reconnect_count) {
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "auto reconn max times\n");
 		at_printf_indicate("wifi reconnect done\r\n");
+#ifdef CONFIG_ZEPHYR_SDK
+		rtw_reconn.cnt = 0;
+#endif
 	} else {
 		rtw_reconn.b_waiting = 1;
 		rtos_timer_start(rtw_reconn.timer, 1000);
@@ -67,6 +73,8 @@ void rtw_reconn_timer_start(void)
 
 void rtw_reconn_dhcp_status_hdl(u8 *evt_info)
 {
+	(void)evt_info;
+#ifndef CONFIG_ZEPHYR_SDK
 	struct rtw_event_dhcp_status *dhcp_info = (struct rtw_event_dhcp_status *)evt_info;
 	u8 dhcp_state = dhcp_info->dhcp_status;
 
@@ -74,7 +82,7 @@ void rtw_reconn_dhcp_status_hdl(u8 *evt_info)
 		rtw_reconn.cnt = 0;
 		return;
 	}
-
+#endif
 	rtw_reconn_timer_start();
 }
 
@@ -120,6 +128,13 @@ void rtw_reconn_task_hdl(void *param)
 		LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
 	}
 #endif
+
+#ifdef CONFIG_ZEPHYR_SDK
+	if (ret == RTK_SUCCESS) {
+		ameba_wifi_handle_connect_event();
+	}
+#endif
+
 	rtos_task_delete(NULL);
 }
 

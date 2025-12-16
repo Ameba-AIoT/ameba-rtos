@@ -87,6 +87,8 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.keepalive_interval = 20;
 	wifi_user_config.rx_cca_thresh = 0;
 	wifi_user_config.rate_mask_cck = 0x0;
+	wifi_user_config.sgi = 1;
+	wifi_user_config.he_gi_ltf_cap = RTW_HE_GI_LTF_ALL;
 
 	/* WPS */
 	wifi_user_config.wps_retry_count = 4;

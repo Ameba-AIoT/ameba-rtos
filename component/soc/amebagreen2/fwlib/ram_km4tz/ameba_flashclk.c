@@ -58,8 +58,6 @@ int flash_handshake_highspeed(void)
 	u8 Dphy_Dly_Cnt = 3; /* DD recommend this value */
 	int Ret = RTK_FAIL;
 
-	FLASH_PLLInit_ClockDiv();
-
 	/* Note: some full voltage range Flash e.g.GD25WQ64E need 10ns
 	   HW recommend: at leaset 10ns */
 	SPIC->TPR1 = (SPIC->TPR1 & ~MASK_CS_ACTIVE_SETUP) | CS_ACTIVE_SETUP(2);
@@ -69,6 +67,9 @@ int flash_handshake_highspeed(void)
 
 	/* Open handshake function */
 	FLASH_Read_HandShake_Cmd(Dphy_Dly_Cnt, ENABLE);
+
+	/* If XiP, code may in flash. Handshake should be enabled before set to PLL clk */
+	FLASH_PLLInit_ClockDiv();
 
 	if (FLASH_Read_DataIsRight(valid_img1_addr)) {
 		Ret = RTK_SUCCESS;

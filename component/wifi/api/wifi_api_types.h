@@ -303,6 +303,16 @@ enum rtw_rate {
 	RTW_RATE_UNKNOWN = 0xff  /**< 0xff */
 };
 
+enum rtw_gi_ltf_cap {
+	RTW_HE_32_GI_4X_LTF	= BIT(0), /** HE 3.2us 4x LTF */
+	RTW_HE_08_GI_4X_LTF	= BIT(1), /** HE 0.8us 4x LTF */
+	RTW_HE_16_GI_2X_LTF	= BIT(2), /** HE 1.6us 2x LTF */
+	RTW_HE_08_GI_2X_LTF	= BIT(3), /** HE 0.8us 2x LTF */
+	RTW_HE_16_GI_1X_LTF	= BIT(4), /** HE 1.6us 1x LTF */
+	RTW_HE_08_GI_1X_LTF	= BIT(5), /** HE 0.8us 1x LTF */
+	RTW_HE_GI_LTF_ALL	= 0xFF /** support all GI-LTF modes */
+};
+
 /**
   * @brief CSI triggering management frame subtypes (size: u16).
   */

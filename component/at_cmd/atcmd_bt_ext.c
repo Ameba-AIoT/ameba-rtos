@@ -93,9 +93,6 @@ struct bt_at_cmd_table {
 #endif /* RTK_BLE_MESH_SUPPORT */
 #define CMD_NAME_GAP             "+BTGAP"
 #define CMD_NAME_BT_VENDOR       "+BTVENDOR"
-#if defined(CONFIG_BT_SDN_VERIFY) && CONFIG_BT_SDN_VERIFY
-#define CMD_NAME_BT_SDN_VERIFY   "+BTSDN"
-#endif /* CONFIG_BT_SDN_VERIFY */
 
 static void atcmd_bt_cmd(void *arg, char *cmd_name);
 static void fBTDEMO(void *arg)
@@ -362,13 +359,6 @@ static void fBTVENDOR(void *arg)
 	atcmd_bt_cmd(arg, CMD_NAME_BT_VENDOR);
 }
 
-#if defined(CONFIG_BT_SDN_VERIFY) && CONFIG_BT_SDN_VERIFY
-static inline void fBTSDNVERIFY(void *arg)
-{
-	atcmd_bt_cmd(arg, CMD_NAME_BT_SDN_VERIFY);
-}
-#endif /* CONFIG_BT_SDN_VERIFY */
-
 static struct bt_at_cmd_table at_bt_cmds[] = {
 	{{CMD_NAME_BT_DEMO,          fBTDEMO,              {NULL, NULL}},	atcmd_bt_example},
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
@@ -450,9 +440,6 @@ static struct bt_at_cmd_table at_bt_cmds[] = {
 #endif /* RTK_BLE_MESH_SUPPORT */
 	{{CMD_NAME_GAP,              fBTGAP,               {NULL, NULL}},	atcmd_bt_gap},
 	{{CMD_NAME_BT_VENDOR,        fBTVENDOR,            {NULL, NULL}},	atcmd_bt_vendor},
-#if defined(CONFIG_BT_SDN_VERIFY) && CONFIG_BT_SDN_VERIFY
-	{{CMD_NAME_BT_SDN_VERIFY,    fBTSDNVERIFY,         {NULL, NULL}},	atcmd_bt_sdn_verify_cmd},
-#endif /* CONFIG_BT_SDN_VERIFY */
 };
 
 /* BT atcmd as a part of AT command "AT+LIST". */

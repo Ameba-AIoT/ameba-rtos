@@ -226,6 +226,23 @@ struct wifi_user_conf {
 	/*! set cck rate mask for tx data frame. Set bit to 1 to mask corresponding cck rate (bit 0 ~ 3: CCK 1M, 2M, 5.5M, 11M) */
 	u8 rate_mask_cck;
 
+	/*!	set short GI capability for HT/VHT mode when tx data frame (not work for fix-rate mode).
+		0: disable short gi, always use long GI; 1: enable short GI, GI mode will be decided by driver & AP */
+	u8 sgi;
+
+	/*!	Set HE GI & LTF capability bitmap for AX mode (not work for fix-rate mode).
+		- e.g. set value RTW_HE_32_GI_4X_LTF to fix use 3.2us+2X-LTF.
+		- e.g. set value (RTW_HE_16_GI_2X_LTF | RTW_HE_08_GI_2X_LTF) to support 1.6us+2X-LTF and 0.8us+2X-LTF.
+		- @ref RTW_HE_32_GI_4X_LTF : support HE 3.2us GI + 4X-LTF
+		- @ref RTW_HE_08_GI_4X_LTF : support HE 0.8us GI + 4X-LTF
+		- @ref RTW_HE_16_GI_2X_LTF : support HE 1.6us GI + 2X-LTF
+		- @ref RTW_HE_08_GI_2X_LTF : support HE 0.8us GI + 2X-LTF
+		- @ref RTW_HE_16_GI_1X_LTF : support HE 1.6us GI + 1X-LTF
+		- @ref RTW_HE_08_GI_1X_LTF : support HE 0.8us GI + 1X-LTF
+		- @ref RTW_HE_GI_LTF_ALL : support all HE GI-LTF modes
+	*/
+	u8 he_gi_ltf_cap;
+
 	/*!	The maximum number of aggregated MPDU in an tx AMPDU. 0: default 20, 1: equivalent to wifi_user_config.ampdu_tx_enable = 0, Otherwise: max aggregation number, up to 0x3F.*/
 	u8 tx_ampdu_num;
 

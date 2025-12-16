@@ -51,6 +51,13 @@ if(CONFIG_SUPPORT_ATCMD)
         ${c_CMPT_WIFI_DIR}/common
     )
 
+    ameba_list_append_if(CONFIG_BT private_sources
+        atcmd_bt_ext.c
+    )
+    ameba_list_append_if(CONFIG_SDN private_sources
+        atcmd_sdn.c
+    )
+
 if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
 
     ameba_list_append(private_sources
@@ -69,9 +76,6 @@ if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
         atcmd_sockets.c
         atcmd_websocket.c
         atcmd_wifi.c
-    )
-    ameba_list_append_if(CONFIG_BT private_sources
-        atcmd_bt_ext.c
     )
     ameba_list_append_if(CONFIG_ETHERNET private_sources
         atcmd_ethernet.c

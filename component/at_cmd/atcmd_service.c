@@ -107,14 +107,6 @@ log_init_t log_init_table[] = {
 	at_fs_init,
 #endif  //CONFIG_MP_SHRINK
 
-#if defined(CONFIG_BT) && CONFIG_BT
-	at_bt_init,
-#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
-	at_mp_init,
-#endif
-#endif
-
-
 #ifndef CONFIG_MP_SHRINK
 #if defined(CONFIG_BT_COEXIST)
 	at_coex_init,
@@ -125,6 +117,17 @@ log_init_t log_init_table[] = {
 #ifndef CONFIG_AMEBAD
 	at_otp_init,
 #endif
+#endif
+
+#if defined(CONFIG_BT) && CONFIG_BT
+	at_bt_init,
+#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
+	at_mp_init,
+#endif
+#endif
+
+#if defined(CONFIG_SDN) && CONFIG_SDN
+	at_sdn_init,
 #endif
 };
 
