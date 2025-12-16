@@ -172,7 +172,7 @@ int main(void)
 	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
 	IPC_SEMDelayStub((void *)rtos_time_delay_ms);
 
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 	app_filesystem_init();
 #endif
 

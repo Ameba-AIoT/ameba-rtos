@@ -146,7 +146,7 @@ int main(void)
 
 	app_pmu_init();
 
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 	app_filesystem_init();
 #endif
 
