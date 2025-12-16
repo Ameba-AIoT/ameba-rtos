@@ -202,7 +202,7 @@ int main(void)
 	/*IPC table initialization*/
 	ipc_table_init(IPCKM4_DEV);
 
-#if !(defined(CONFIG_MP_INCLUDED) || defined (CONFIG_SDIO_FULLMAC) || defined (CONFIG_SPI_FULLMAC) || defined (CONFIG_USB_FULLMAC))
+#if !(defined(CONFIG_MP_SHRINK) || defined (CONFIG_SDIO_FULLMAC) || defined (CONFIG_SPI_FULLMAC) || defined (CONFIG_USB_FULLMAC))
 	app_filesystem_init();
 #endif
 

@@ -193,7 +193,7 @@ int main(void)
 	ipc_table_init(IPCNP_DEV);
 	IPC_SEMDelayStub((void *)rtos_time_delay_ms);
 
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 	app_filesystem_init();
 #endif
 

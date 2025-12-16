@@ -124,15 +124,10 @@
 
 //#define CONFIG_AUDIO_TSF
 /*************************** Config for MP_MODE *******************************/
-#ifdef CONFIG_MP_INCLUDED
+#ifdef CONFIG_MP_SHRINK
 #undef RX_SHORTCUT
 #undef TX_SHORTCUT
 
-#define CONFIG_PHYDM_CMD  /*disable it in normal driver,lite can save 172KB code size, smart need check*/
-//#define CONFIG_PHYDM_DEBUG_FUNCTION
-#endif
-
-#ifdef CONFIG_MP_SHRINK
 #undef CONFIG_TWT
 #undef CONFIG_MCC_MODE
 #undef CONFIG_DFS
