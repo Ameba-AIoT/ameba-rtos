@@ -12,11 +12,6 @@ config BT_EXCLUDE_AT_COMMAND
     bool "Exclude BT AT Command"
     default n
 
-config BT_MESH_BASED_ON_CODED_PHY
-    depends on BT_ADVANCED_FEATURE_MENU && AMEBADPLUS    #amebadplus
-    bool "Enable BT Mesh Based on CODED PHY"
-    default n
-
 config BT_ZEPHYR
     depends on BT_ADVANCED_FEATURE_MENU && !AMEBA_RLS    #internal
     bool "Use Zephyr BT Stack"
