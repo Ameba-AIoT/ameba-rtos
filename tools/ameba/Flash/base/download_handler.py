@@ -80,12 +80,28 @@ class Ameba(object):
 
     def __del__(self):
         if self.serial_port:
-            if self.serial_port.is_open:
-                self.logger.info(f"{self.serial_port.port} try to close.")
-                self.serial_port.close()
-            while self.serial_port.is_open:
-                pass
-            self.logger.info(f"{self.serial_port.port} closed.")
+            if self.is_open():
+                try:
+                    self.logger.info(f"close {self.serial_port.port}...")
+                    self.serial_port.close()
+                    self.logger.info(f"{self.serial_port.port} close done")
+                except Exception as e:
+                    self.logger.error(f"close error: {e}", exc_info=True)
+            self.serial_port = None
+
+    def clean_up(self):
+        if self.serial_port:
+            try:
+                if self.serial_port.is_open:
+                    self.logger.info(f"close {self.serial_port.port}...")
+                    self.serial_port.close()
+                while self.serial_port.is_open:
+                    pass
+                self.logger.info(f"{self.serial_port.port} closed.")
+            except Exception as err:
+                self.logger.error(f"close error: {err}", exc_info=True)
+
+            self.serial_port = None
 
     def initial_serial_port(self):
         # initial serial port
@@ -662,16 +678,6 @@ class Ameba(object):
                 if ret != ErrType.OK:
                     self.logger.warning(f"Next option {next_op} fail: {ret}")
 
-        # should close serial port
-        if self.serial_port and self.is_open():
-            try:
-                self.logger.info(f"close {self.serial_port.port}...")
-                self.serial_port.close()
-                self.logger.info(f"{self.serial_port.port} close done")
-            except Exception as e:
-                self.logger.error(f"close error: {e}", exc_info=True)
-        self.serial_port = None
-
         return ret
 
     def check_protocol(self):
@@ -1139,18 +1145,19 @@ class Ameba(object):
                             divide_then_round_up(block_size, 1024))
 
                         if erase_addr != last_erase_addr:
-                            if (not is_ram) and (erase_addr % block_size) != 0:
-                                self.logger.error(
-                                    f"Flash erase address align error: addr {hex(erase_addr)} not aligned to block size {hex(block_size)}")
-                                ret = ErrType.SYS_PARAMETER
-                                break
+                            if not self.chip_erase:
+                                if (not is_ram) and (erase_addr % block_size) != 0:
+                                    self.logger.error(
+                                        f"Flash erase address align error: addr {hex(erase_addr)} not aligned to block size {hex(block_size)}")
+                                    ret = ErrType.SYS_PARAMETER
+                                    break
 
-                            ret = self.floader_handler.erase_flash(image_info.memory_type, erase_addr,
-                                                                   erase_addr + block_size, block_size,
-                                                                   nor_erase_timeout_in_second(
-                                                                       divide_then_round_up(block_size, 1024)))
-                            if ret != ErrType.OK:
-                                break
+                                ret = self.floader_handler.erase_flash(image_info.memory_type, erase_addr,
+                                                                       erase_addr + block_size, block_size,
+                                                                       nor_erase_timeout_in_second(
+                                                                           divide_then_round_up(block_size, 1024)))
+                                if ret != ErrType.OK:
+                                    break
 
                             last_erase_addr = erase_addr
                             next_erase_addr = erase_addr + block_size
@@ -1190,7 +1197,7 @@ class Ameba(object):
                         progress_int += 1
                         self.logger.info(f"Programming progress: {progress}%")
 
-                if image_info.full_erase and (next_erase_addr < image_info.end_address):
+                if image_info.full_erase and (next_erase_addr < image_info.end_address) and not self.chip_erase:
                     self.logger.debug(
                         f"Erase extra address range: {hex(next_erase_addr)}-{hex(image_info.end_address)}")
                     ret = self.floader_handler.erase_flash(image_info.memory_type, next_erase_addr,
