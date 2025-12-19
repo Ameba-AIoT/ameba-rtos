@@ -279,6 +279,22 @@ s32 wifi_set_lps_listen_interval(u8 interval)
 	return -1;
 }
 
+s32 wifi_set_lps_bcn_window(u8 enable, u8 bcn_ely_time, u8 rx_bcn_timeout)
+{
+	UNUSED(enable);
+	UNUSED(bcn_ely_time);
+	UNUSED(rx_bcn_timeout);
+	call_noused = __LINE__;
+	return -1;
+}
+
+s32 wifi_set_wowlan_rx_broadcast(u8 enable)
+{
+	UNUSED(enable);
+	call_noused = __LINE__;
+	return -1;
+}
+
 void wifi_wpa_pmksa_ops(struct rtw_pmksa_ops_t *pmksa_ops)
 {
 	UNUSED(pmksa_ops);

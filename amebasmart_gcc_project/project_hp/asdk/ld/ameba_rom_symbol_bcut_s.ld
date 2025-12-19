@@ -92,13 +92,15 @@ SECTIONS
     PROVIDE(rtl_crypto_aes_gcm_decrypt = 0x4c05);
     PROVIDE(hash_save = 0x4c99);
     PROVIDE(hash_restore = 0x4d11);
-    PROVIDE(rtl_crypto_sha1_init = 0x4d99);
+    /* Renamed from rtl_crypto_sha1_init to fix the context-not-reset issue via a RAM patch. */
+    PROVIDE(_rtl_crypto_sha1_init = 0x4d99);
     PROVIDE(rtl_crypto_sha1_process = 0x4e2d);
     PROVIDE(rtl_crypto_sha1_update_rom = 0x4e6d);
     PROVIDE(rtl_crypto_sha1_update = 0x4ee9);
     PROVIDE(rtl_crypto_sha1_final = 0x4f55);
     PROVIDE(rtl_crypto_sha1 = 0x4fd1);
-    PROVIDE(rtl_crypto_sha2_init = 0x4ffd);
+    /* Renamed from rtl_crypto_sha2_init to fix the context-not-reset issue via a RAM patch. */
+    PROVIDE(_rtl_crypto_sha2_init = 0x4ffd);
     PROVIDE(rtl_crypto_sha2_process = 0x52c1);
     PROVIDE(rtl_crypto_sha2_update_rom = 0x5305);
     PROVIDE(rtl_crypto_sha2_update = 0x5385);

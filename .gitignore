@@ -23,6 +23,7 @@
 # !/**/gnu_utility/**/*.bin
 # !/**/gnu_utility/**/*.axf
 !/tools/**/*.bin
+!/component/aivoice/**/*.bin
 
 # project library files
 

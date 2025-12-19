@@ -48,6 +48,9 @@ ameba_list_append(private_sources
 	hci/hci_process/hci_common.c
 	hci/hci_process/hci_standalone.c
 	hci/hci_transport/hci_h4.c
+)
+
+ameba_list_append_if(CONFIG_AMEBADPLUS private_sources
 	dtm/hci_dtm.c
 )
 
