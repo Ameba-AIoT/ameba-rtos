@@ -77,6 +77,24 @@ s32 wifi_set_lps_enable(u8 enable);
  */
 s32 wifi_set_lps_listen_interval(u8 interval);
 
+/**
+ * @brief   Enable or disable manual configuration of rxbcn window under LPS.
+ * @param[in]  enable: It could be TRUE or FALSE.
+ * 	FALSE(default) means rxbcn window automatically decided by IC; TRUE means rxbcn window set by this api parameters.
+ * @param[in] bcn_ely_time(unit: 128us):set the rx bcn wakpup-ely-time before TBTT.
+ * @param[in] rx_bcn_timeout(unit: 1 ms): If no bcn is received within rx_bcn_timeout, RF will be turned off. Max to 31ms.
+ * @return  RTW_SUCCESS if setting successful.
+ * @return  RTW_ERROR otherwise.
+ */
+s32 wifi_set_lps_bcn_window(u8 enable, u8 bcn_ely_time, u8 rx_bcn_timeout);
+
+/**
+ * @brief   Enable or disable rx broadcast in tickless wowlan mode.
+ * @param[in]  enable: FALSE means disable rx broadcast in tickless wowlan mode, TRUE means enable(default) rx broadcast in tickless wowlan mode.
+ * @return
+ *    - @ref RTK_SUCCESS : The API executed successfully.
+ */
+s32 wifi_set_wowlan_rx_broadcast(u8 enable);
 
 /**
  * @brief Set up custom TCP/UDP broadcast port filter white list for wifi wake application core under tickless state

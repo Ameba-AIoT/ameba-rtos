@@ -122,12 +122,16 @@ class RomHandler(object):
                         ret = ErrType.SYS_CANCEL
                         self.logger.debug(f"Response CAN")
                         break
+                    elif ch[0] == ErrType.DEV_LENGTH.value:
+                        ret = ErrType.DEV_LENGTH
+                        self.logger.debug(f"Response ErrType.DEV_LENGTH")
+                        break
                     else:
                         ret = ErrType.SYS_PROTO
                         self.logger.debug(f"Unexpected reponse: 0x{ch.hex()}")
                         continue
 
-                if ret == ErrType.OK or ret == ErrType.SYS_CANCEL:
+                if ret == ErrType.OK or ret == ErrType.SYS_CANCEL or ret == ErrType.DEV_LENGTH:
                     break
                 else:
                     time.sleep(self.setting.request_retry_interval_second)
@@ -167,6 +171,9 @@ class RomHandler(object):
                 ret = self.send_request(cmd, 2, DEFAULT_TIMEOUT)
                 if ret == ErrType.OK:
                     self.logger.debug(f"BAUDSET ok")
+                elif ret == ErrType.DEV_LENGTH:
+                    self.logger.debug(f"Device not in rom download mode")
+                    break
                 else:
                     self.logger.debug(f"BAUDSET fail: {ret}")
                     continue
@@ -195,6 +202,9 @@ class RomHandler(object):
                     if ret == ErrType.OK:
                         self.logger.debug(f"Baudset ok")
                         break
+                    elif ret == ErrType.DEV_LENGTH:
+                        self.logger.debug(f"Device not in rom download mode")
+                        break
                     else:
                         self.logger.debug(f"Baudset fail: {ret}")
                 else:
@@ -206,7 +216,7 @@ class RomHandler(object):
                     else:
                         self.logger.debug(f"Baudchk fail: {ret}")
 
-        if ret == ErrType.OK:
+        if ret == ErrType.OK or ret == ErrType.DEV_LENGTH:
             self.logger.debug("Handshake done")
         else:
             self.logger.debug(f"Handshake fail: {ret}")

@@ -18,7 +18,7 @@ volatile u8 array_len_of_pwrlmt_regu_remapping = sizeof(pwrlmt_regu_remapping) /
  ******************************************************************************/
 
 // regu_en = {FCC, MKK, ETSI, IC, KCC, ACMA, CHILE, MEXICO, WW, GL, UKRAINE, CN, QATAR, UK, NCC,  EXT}
-const bool regu_en[16] = {1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0};
+const bool regu_en[16] = {1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0};
 u8 regu_en_array_len = sizeof(regu_en) / sizeof(bool);
 
 const s8 tx_pwr_limit_2g_fcc[3][14] = {
