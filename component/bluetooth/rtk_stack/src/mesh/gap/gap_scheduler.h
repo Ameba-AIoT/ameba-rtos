@@ -48,7 +48,9 @@ BEGIN_DECLS
 #define GAP_SCHED_SCAN_ALL_THE_TIME             1
 #define GAP_SCHED_ONE_SHOT_ADV                  1 //!< adv
 // RTK porting:only AmebaDplus support bt5 ae
-#if defined(CONFIG_AMEBADPLUS) && CONFIG_AMEBADPLUS
+// NOTICE!!!:mesh stack formal bt mesh normal lib and coded phy lib separately;
+// The difference is all in GAP_SCHED_BT5_AE, should take care of the corresponding part when update corrent mesh lib
+#if defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
 #define GAP_SCHED_BT5_AE                        1
 #else
 #define GAP_SCHED_BT5_AE                        0
