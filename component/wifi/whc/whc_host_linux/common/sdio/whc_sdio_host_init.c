@@ -43,28 +43,13 @@ u8 rtw_sdio_query_txbd_status(struct whc_sdio *priv)
 	return true;
 }
 
-static void rtw_sdio_interrupt_handler(struct sdio_func *func)
+static void rtw_sdio_check_and_process_interrupt(struct whc_sdio *priv)
 {
-	struct whc_sdio *priv;
 	u8 data[4];
 	u32 value, himr;
 #ifdef CALCULATE_FREE_TXBD
 	u32 freepage;
 #endif
-	priv = (struct whc_sdio *) sdio_get_drvdata(func);
-
-	//dev_dbg(&priv->func->dev, "%s: IRQ arrived!\n", __FUNCTION__);
-
-	if (func == NULL) {
-		dev_err(&priv->func->dev, "%s: func is NULL!\n", __FUNCTION__);
-		return;
-	}
-
-	if (priv->bSurpriseRemoved == true) {
-		return;
-	}
-
-	priv->sys_sdio_irq_thd = current;
 
 	//read HISR
 	sdio_local_read(priv, SDIO_REG_HISR, 4, data);
@@ -111,9 +96,51 @@ static void rtw_sdio_interrupt_handler(struct sdio_func *func)
 		//dev_err(&priv->func->dev, "%s: HISR(0x%08x) and HIMR(0x%08x) not match!\n",
 		//		__FUNCTION__, priv->sdio_hisr, priv->sdio_himr);
 	}
+}
+
+static void rtw_sdio_interrupt_handler(struct sdio_func *func)
+{
+	struct whc_sdio *priv;
+	priv = (struct whc_sdio *) sdio_get_drvdata(func);
+
+	dev_dbg(&priv->func->dev, "%s: IRQ arrived!\n", __FUNCTION__);
+	if (func == NULL) {
+		dev_err(&priv->func->dev, "%s: func is NULL!\n", __FUNCTION__);
+		return;
+	}
+
+	if (priv->bSurpriseRemoved == true) {
+		return;
+	}
+
+	priv->sys_sdio_irq_thd = current;
+
+	rtw_sdio_check_and_process_interrupt(priv);
 
 	priv->sys_sdio_irq_thd = NULL;
+
 }
+
+#ifdef SDIO_INT_MODE
+#else
+static struct task_struct *sdio_polling_task;
+atomic_t sdio_polling_run = ATOMIC_INIT(1);
+static int sdio_polling_thread(void *data)
+{
+	struct whc_sdio *priv = (struct whc_sdio *)data;
+	u32 interval = 10; // 10ms
+
+	dev_info(&priv->func->dev, "sdio polling every %dms\n", interval);
+
+	while (!kthread_should_stop() && atomic_read(&sdio_polling_run)) {
+		msleep(interval);
+		rtw_sdio_check_and_process_interrupt(priv);
+	}
+
+	return 0;
+}
+
+#endif
 
 int rtw_sdio_alloc_irq(struct whc_sdio *priv)
 {
@@ -217,8 +244,17 @@ static void rtw_sdio_init_interrupt(struct whc_sdio *priv)
 							SDIO_HIMR_CPWM1_MSK |
 							0);
 
+#ifdef SDIO_INT_MODE
 	// Register IRQ handler
 	rtw_sdio_alloc_irq(priv);
+#else
+	sdio_polling_task = kthread_run(sdio_polling_thread, priv, "sdio_poll");
+	if (IS_ERR(sdio_polling_task)) {
+		dev_err(&priv->func->dev, "Failed to create polling task\n");
+	} else {
+		dev_info(&priv->func->dev, "SDIO polling mode enabled\n");
+	}
+#endif
 
 	// Enable interrupt
 	himr = cpu_to_le32(priv->sdio_himr);
@@ -329,12 +365,21 @@ void rtw_sdio_deinit(struct whc_sdio *priv)
 			dev_err(&priv->func->dev, "%s: sdio_disable_func(%d)\n", __func__, err);
 		}
 
+#ifdef SDIO_INT_MODE
 		if (priv->irq_alloc) {
 			err = sdio_release_irq(func);
 			if (err) {
 				dev_err(&priv->func->dev, "%s: sdio_release_irq(%d)\n", __func__, err);
 			}
 		}
+#else
+		if (sdio_polling_task && !IS_ERR(sdio_polling_task)) {
+			atomic_set(&sdio_polling_run, 0);
+			kthread_stop(sdio_polling_task);
+			sdio_polling_task = NULL;
+			dev_info(&priv->func->dev, "SDIO polling task stopped\n");
+		}
+#endif
 
 		sdio_release_host(func);
 	}

@@ -61,6 +61,7 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                         chip_erase,
                         memory_type, memory_info, download,
                         log_level, log_f,
+                        read_wifimac=False,
                         remote_server=None, remote_port=None, remote_password=None):
     logger = create_logger(serial_port, log_level=log_level, file=log_f)
 
@@ -85,7 +86,7 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                 sys_exit(logger, False, ret)
 
             if is_reburn:
-                ameba.__del__()
+                ameba.clean_up()
                 # reset with remote params
                 ameba = Ameba(profile_info, serial_port, serial_baudrate, image_dir, settings, logger,
                               download_img_info=images_info,
@@ -145,6 +146,14 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
         if ret != ErrType.OK:
             logger.error("Post process fail")
             sys_exit(logger, False, ret)
+    elif read_wifimac:
+        # read wifi mac
+        ret = ameba.prepare(show_device_info=False)
+        if ret != ErrType.OK:
+            logger.error("Prepare for read wifi-mac fail")
+            sys_exit(logger, False, ret)
+
+        logger.info(f'WiFiMAC: {ameba.device_info.get_wifi_mac_text()}')
     else:
         # erase
         ret = ameba.prepare()
@@ -186,6 +195,8 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                 logger.error(f"Fail to restore the flash block protection")
                 sys_exit(logger, False, ret)
 
+    ameba.clean_up()
+
     sys_exit(logger, True, ret)
 
 
@@ -209,6 +220,7 @@ def main(argc, argv):
     parser.add_argument('--chip-erase', action='store_true', help='chip erase')
     parser.add_argument('--log-level', default='info', help='log level')
     parser.add_argument('--partition-table', help="layout info, list")
+    parser.add_argument('--read-wifimac', action='store_true', help="read wifi mac")
 
     parser.add_argument('--remote-server', type=str, help='remote serial server IP address')
     parser.add_argument('--remote-password', type=str, help='remote serial server validation password')
@@ -230,6 +242,7 @@ def main(argc, argv):
     size = args.size
     mem_t = args.memory_type
     partition_table = decoder_partition_string(args.partition_table)
+    read_wifimac = args.read_wifimac
 
     remote_server = args.remote_server
     remote_port = 58916
@@ -260,7 +273,7 @@ def main(argc, argv):
     if log_file is not None:
         logger.info(f"Log file: {log_file}")
 
-    logger.info(f"Flash Version: {version_info.version}")
+    logger.info(f"AmebaFlash Version: {version_info.version}")
 
     if remote_server:
         logger.info(f"Using remote serial server: {remote_server}:{remote_port}")
@@ -289,8 +302,8 @@ def main(argc, argv):
 
     if all([download, erase]):
         logger.warning("Download and erase are set true, only do image download ")
-    elif not (download or erase or chip_erase):
-        logger.error("Download or erase or chip-erase should be set")
+    elif not (download or erase or chip_erase or read_wifimac):
+        logger.error("Download or erase or chip-erase or read-wifimac should be set")
         sys.exit(1)
 
     memory_info = None
@@ -365,6 +378,9 @@ def main(argc, argv):
                     if key == "ImageName":
                         key = "Image"
                     logger.info(f'> {key}: {value}')
+    elif read_wifimac:
+        # profile, port, baudrate, memory-type
+        pass
     else:
         # erase
         if all([chip_erase, erase]):
@@ -412,15 +428,16 @@ def main(argc, argv):
                 end_address = start_address + size
             memory_info.end_address = end_address
 
-    if chip_erase:
-        logger.info(f"Chip erase: {chip_erase}")
-        if memory_type is None:
-            logger.warning("Memory type is required for chip erase")
-            sys.exit(1)
-        if memory_type != MemoryInfo.MEMORY_TYPE_NOR:
-            logger.warning("Memory type should be 'nor' for chip erase")
-    else:
-        logger.info(f"Chip erase: False")
+    if not read_wifimac:
+        if chip_erase:
+            logger.info(f"Chip erase: {chip_erase}")
+            if memory_type is None:
+                logger.warning("Memory type is required for chip erase")
+                sys.exit(1)
+            if memory_type != MemoryInfo.MEMORY_TYPE_NOR:
+                logger.warning("Memory type should be 'nor' for chip erase")
+        else:
+            logger.info(f"Chip erase: False")
 
     # check device profile
     try:
@@ -467,7 +484,7 @@ def main(argc, argv):
     for sp in serial_ports:
         flash_thread = threading.Thread(target=flash_process_entry, args=(
         profile_info, sp, serial_baudrate, image_dir, settings, deepcopy(images_info), chip_erase,
-        memory_type, memory_info, download, log_level, log_f,
+        memory_type, memory_info, download, log_level, log_f, read_wifimac:=read_wifimac,
         remote_server, remote_port, remote_password))
         threads_list.append(flash_thread)
         flash_thread.start()

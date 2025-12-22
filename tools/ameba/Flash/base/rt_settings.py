@@ -40,7 +40,7 @@ class RtSettings():
         self.auto_switch_to_download_mode_with_dtr_rts_file = kwargs.get("AutoSwitchToDownloadModeWithDtrRtsTimingFile", "Reburn.cfg")
         self.auto_reset_device_with_dtr_rts_file = kwargs.get("AutoResetDeviceWithDtrRtsTimingFile", "Reset.cfg")
         self.post_process = kwargs.get("PostProcess", "RESET")
-        self.serial_initial_read_timeout_in_second = round(kwargs.get("SerialInitialReadTimeoutInMillisecond", 3000) / 1000, 2)
+        self.serial_initial_read_timeout_in_second = round(kwargs.get("SerialInitialReadTimeoutInMillisecond", 20) / 1000, 2)
 
     def __repr__(self):
         profile_dict = {

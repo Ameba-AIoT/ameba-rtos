@@ -127,6 +127,12 @@ int rtw_promisc_rx(struct rtw_rx_pkt_info *ppktinfo)
 	int ret = 0;
 	struct net_device *ndev = global_idev.pndev[0];
 
+	if (ndev == NULL) {
+		dev_err(global_idev.fullmac_dev, "%s: ndev is NULL!\n\r",
+				__func__);
+		return -EINVAL;
+	}
+
 	if (ndev->type == ARPHRD_IEEE80211_RADIOTAP) {
 		ret = rtw_promisc_rx_80211_radiotap(ppktinfo);
 	} else {
