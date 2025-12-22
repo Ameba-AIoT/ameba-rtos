@@ -34,11 +34,7 @@ ifneq ($(CONFIG_BT_INIC), y)
 ifneq ($(CONFIG_BT_ZEPHYR), y)
 LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/platform/amebadplus/lib/btgap.a
 ifeq ($(findstring y, $(CONFIG_BT_MESH_PROVISIONER_SUPPORT) $(CONFIG_BT_MESH_DEVICE_SUPPORT)), y)
-ifeq ($(CONFIG_BT_MESH_BASED_ON_CODED_PHY), y)
-LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/src/mesh/lib/amebadplus/btmesh_coded_phy.a
-else
 LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/src/mesh/lib/amebadplus/btmesh.a
-endif
 endif
 endif
 endif
