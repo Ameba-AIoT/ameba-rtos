@@ -239,7 +239,6 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 		if [ "$CONFIG_BT_ADVANCED_FEATURE_MENU" = "y" ]; then
 			bool "  Exclude BT AT Command"						CONFIG_BT_EXCLUDE_AT_COMMAND
 #			bool "  Use Zephyr BT Stack"						CONFIG_BT_ZEPHYR
-			bool "  Enable BT Mesh Based on CODED PHY"			CONFIG_BT_MESH_BASED_ON_CODED_PHY
 		fi
 		bool "BT Example Demo"									CONFIG_BT_EXAMPLE_DEMO_MENU
 		if [ "$CONFIG_BT_EXAMPLE_DEMO_MENU" = "y" ]; then
