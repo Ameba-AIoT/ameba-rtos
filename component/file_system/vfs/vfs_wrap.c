@@ -101,7 +101,7 @@ FILE *__wrap_fopen(const char *filename, const char *mode)
 		DiagSnPrintf(finfo->name, sizeof(finfo->name), "%s", filename + prefix_len);
 	}
 
-	ret = vfs.drv[vfs_id]->open(finfo->name, mode, finfo);
+	ret = vfs.drv[vfs_id]->open(vfs.user[user_id].fs, finfo->name, mode, finfo);
 	if (ret < 0) {
 		free(finfo);
 		finfo = NULL;
@@ -118,7 +118,7 @@ int __wrap_fclose(FILE *stream)
 		return 0;
 	}
 
-	ret = vfs.drv[finfo->vfs_id]->close((vfs_file *)stream);
+	ret = vfs.drv[finfo->vfs_id]->close(vfs.user[finfo->user_id].fs, (vfs_file *)stream);
 	free(finfo);
 	return ret;
 }
@@ -144,12 +144,12 @@ size_t __wrap_fread(void *ptr, size_t size, size_t count, FILE *stream)
 		}
 
 		aesencsw = rtos_mem_calloc(msglen, sizeof(unsigned char));
-		ret = vfs.drv[finfo->vfs_id]->read(aesencsw, msglen, 1, (vfs_file *)stream);
+		ret = vfs.drv[finfo->vfs_id]->read(vfs.user[finfo->user_id].fs, aesencsw, msglen, 1, (vfs_file *)stream);
 		vfs.user[finfo->user_id].vfs_decrypt_callback(aesencsw, ptr, size * count);
 		rtos_mem_free(aesencsw);
 
 	} else {
-		ret = vfs.drv[finfo->vfs_id]->read(ptr, size, count, (vfs_file *)stream);
+		ret = vfs.drv[finfo->vfs_id]->read(vfs.user[finfo->user_id].fs, ptr, size, count, (vfs_file *)stream);
 	}
 
 	return ret;
@@ -185,11 +185,11 @@ size_t __wrap_fwrite(const void *ptr, size_t size, size_t count, FILE *stream)
 
 		aesencsw = rtos_mem_calloc(msglen, sizeof(unsigned char));
 		vfs.user[finfo->user_id].vfs_encrypt_callback((void *)ptr, aesencsw, size * count);
-		ret = vfs.drv[finfo->vfs_id]->write((void *)aesencsw, msglen, 1, (vfs_file *)stream);
+		ret = vfs.drv[finfo->vfs_id]->write(vfs.user[finfo->user_id].fs, (void *)aesencsw, msglen, 1, (vfs_file *)stream);
 		rtos_mem_free(aesencsw);
 
 	} else {
-		ret = vfs.drv[finfo->vfs_id]->write((void *)ptr, size, count, (vfs_file *)stream);
+		ret = vfs.drv[finfo->vfs_id]->write(vfs.user[finfo->user_id].fs, (void *)ptr, size, count, (vfs_file *)stream);
 	}
 
 	return ret;
@@ -203,7 +203,7 @@ int  __wrap_fseek(FILE *stream, long int offset, int origin)
 		return 0;
 	}
 
-	ret = vfs.drv[finfo->vfs_id]->seek(offset, origin, (vfs_file *)stream);
+	ret = vfs.drv[finfo->vfs_id]->seek(vfs.user[finfo->user_id].fs, offset, origin, (vfs_file *)stream);
 	return ret;
 }
 
@@ -213,7 +213,7 @@ void  __wrap_rewind(FILE *stream)
 	if (is_stdio(stream)) {
 		return;
 	}
-	vfs.drv[finfo->vfs_id]->rewind((vfs_file *)stream);
+	vfs.drv[finfo->vfs_id]->rewind(vfs.user[finfo->user_id].fs, (vfs_file *)stream);
 }
 
 int __wrap_fgetpos(FILE *stream, fpos_t   *p)
@@ -223,9 +223,9 @@ int __wrap_fgetpos(FILE *stream, fpos_t   *p)
 		return 0;
 	}
 #if defined(__ICCARM__)
-	p->_Off = vfs.drv[finfo->vfs_id]->fgetpos((vfs_file *)stream);
+	p->_Off = vfs.drv[finfo->vfs_id]->fgetpos(vfs.user[finfo->user_id].fs, (vfs_file *)stream);
 #elif defined(__GNUC__)
-	*p = vfs.drv[finfo->vfs_id]->fgetpos((vfs_file *)stream);
+	*p = vfs.drv[finfo->vfs_id]->fgetpos(vfs.user[finfo->user_id].fs, (vfs_file *)stream);
 #endif
 	return 0;
 }
@@ -238,9 +238,9 @@ int __wrap_fsetpos(FILE *stream, fpos_t   *p)
 		return 0;
 	}
 #if defined(__ICCARM__)
-	ret = vfs.drv[finfo->vfs_id]->fsetpos(p->_Off, (vfs_file *)stream);
+	ret = vfs.drv[finfo->vfs_id]->fsetpos(vfs.user[finfo->user_id].fs, p->_Off, (vfs_file *)stream);
 #elif defined(__GNUC__)
-	ret = vfs.drv[finfo->vfs_id]->fsetpos((unsigned int) * p, (vfs_file *)stream);
+	ret = vfs.drv[finfo->vfs_id]->fsetpos(vfs.user[finfo->user_id].fs, (unsigned int) * p, (vfs_file *)stream);
 #endif
 	return ret;
 }
@@ -256,7 +256,7 @@ int  __wrap_fflush(FILE *stream)
 		return 0;
 	}
 #endif
-	ret = vfs.drv[finfo->vfs_id]->fflush((vfs_file *)stream);
+	ret = vfs.drv[finfo->vfs_id]->fflush(vfs.user[finfo->user_id].fs, (vfs_file *)stream);
 	return ret;
 }
 
@@ -313,7 +313,7 @@ int __wrap_remove(const char *filename)
 		DiagSnPrintf(name, PATH_MAX, "%s", filename + prefix_len);
 	}
 
-	ret = vfs.drv[vfs_id]->remove(name);
+	ret = vfs.drv[vfs_id]->remove(vfs.user[user_id].fs, name);
 	rtos_mem_free(name);
 	return ret;
 }
@@ -381,7 +381,7 @@ int __wrap_rename(const char *oldname, const char *newname)
 		DiagSnPrintf(new_name, PATH_MAX, "%s", newname + prefix_len);
 	}
 
-	ret = vfs.drv[vfs_id]->rename(old_name, new_name);
+	ret = vfs.drv[vfs_id]->rename(vfs.user[user_id].fs, old_name, new_name);
 	rtos_mem_free(new_name);
 	rtos_mem_free(old_name);
 	return ret;
@@ -394,7 +394,7 @@ int __wrap_feof(FILE *stream)
 	if (is_stdio(stream)) {
 		return 0;
 	}
-	ret = vfs.drv[finfo->vfs_id]->eof((vfs_file *)stream);
+	ret = vfs.drv[finfo->vfs_id]->eof(vfs.user[finfo->user_id].fs, (vfs_file *)stream);
 	return ret;
 }
 
@@ -416,7 +416,7 @@ long int __wrap_ftell(FILE *stream)
 	if (is_stdio(stream)) {
 		return -1;
 	}
-	ret = vfs.drv[finfo->vfs_id]->tell((vfs_file *)stream);
+	ret = vfs.drv[finfo->vfs_id]->tell(vfs.user[finfo->user_id].fs, (vfs_file *)stream);
 	return ret;
 }
 
@@ -428,7 +428,7 @@ int __wrap_ftruncate(int stream, off_t length)
 		return -1;
 	}
 
-	ret = vfs.drv[finfo->vfs_id]->ftruncate((vfs_file *)stream, length);
+	ret = vfs.drv[finfo->vfs_id]->ftruncate(vfs.user[finfo->user_id].fs, (vfs_file *)stream, length);
 	return ret;
 }
 
@@ -495,6 +495,7 @@ DIR *__wrap_opendir(const char *name)
 	}
 	memset(finfo, 0x00, sizeof(vfs_file));
 	finfo->vfs_id = vfs_id;
+	finfo->user_id = user_id;
 	if (vfs.drv[vfs_id]->vfs_type == VFS_FATFS) {
 		int drv_id = 0;
 		drv_id = vfs.drv[vfs_id]->get_interface(vfs.user[user_id].vfs_interface_type);
@@ -507,7 +508,7 @@ DIR *__wrap_opendir(const char *name)
 		DiagSnPrintf(finfo->name, sizeof(finfo->name), "%s", name + prefix_len);
 	}
 
-	int ret = vfs.drv[vfs_id]->opendir(finfo->name, finfo);
+	int ret = vfs.drv[vfs_id]->opendir(vfs.user[user_id].fs, finfo->name, finfo);
 	if (ret != 0) {
 		free(finfo);
 		finfo = NULL;
@@ -519,7 +520,7 @@ struct dirent *__wrap_readdir(DIR *pdir)
 {
 	struct dirent *ent = NULL;
 	vfs_file *finfo = (vfs_file *)pdir;
-	ent = vfs.drv[finfo->vfs_id]->readdir(((vfs_file *)pdir));
+	ent = vfs.drv[finfo->vfs_id]->readdir(vfs.user[finfo->user_id].fs, ((vfs_file *)pdir));
 	return ent;
 }
 
@@ -527,7 +528,7 @@ int __wrap_closedir(DIR *dirp)
 {
 	int ret = 0;
 	vfs_file *finfo = (vfs_file *)dirp;
-	ret = vfs.drv[finfo->vfs_id]->closedir(((vfs_file *)dirp));
+	ret = vfs.drv[finfo->vfs_id]->closedir(vfs.user[finfo->user_id].fs, ((vfs_file *)dirp));
 	free(finfo);
 	return ret;
 }
@@ -596,7 +597,7 @@ int __wrap_rmdir(const char *path)
 		DiagSnPrintf(name, PATH_MAX, "%s", path + prefix_len);
 	}
 
-	ret = vfs.drv[vfs_id]->rmdir(name);
+	ret = vfs.drv[vfs_id]->rmdir(vfs.user[user_id].fs, name);
 	rtos_mem_free(name);
 	return ret;
 }
@@ -655,7 +656,7 @@ int __wrap_mkdir(const char *pathname, mode_t mode)
 		DiagSnPrintf(name, PATH_MAX, "%s", pathname + prefix_len);
 	}
 
-	ret = vfs.drv[vfs_id]->mkdir(name);
+	ret = vfs.drv[vfs_id]->mkdir(vfs.user[user_id].fs, name);
 	rtos_mem_free(name);
 	return ret;
 }
@@ -708,7 +709,7 @@ int __wrap_access(const char *pathname, int mode)
 		DiagSnPrintf(name, PATH_MAX, "%s", pathname + prefix_len);
 	}
 
-	ret = vfs.drv[vfs_id]->access(name, mode);
+	ret = vfs.drv[vfs_id]->access(vfs.user[user_id].fs, name, mode);
 	rtos_mem_free(name);
 	return ret;
 }
@@ -761,7 +762,7 @@ int __wrap_stat(const char *path, struct stat *buf)
 		DiagSnPrintf(name, PATH_MAX, "%s", path + prefix_len);
 	}
 
-	ret = vfs.drv[vfs_id]->stat(name, buf);
+	ret = vfs.drv[vfs_id]->stat(vfs.user[user_id].fs, name, buf);
 	rtos_mem_free(name);
 	return ret;
 }

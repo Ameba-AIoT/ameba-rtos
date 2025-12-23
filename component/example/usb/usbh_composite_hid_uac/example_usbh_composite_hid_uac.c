@@ -50,7 +50,7 @@ static int usbh_uac_cb_attach(void);
 static int usbh_uac_cb_detach(void);
 static int usbh_uac_cb_setup(void);
 static int usbh_uac_cb_isoc_transmitted(usbh_urb_state_t state);
-static int usbh_uac_cb_process(usb_host_t *host, u8 id);
+static int usbh_uac_cb_process(usb_host_t *host, u8 msg);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "UAC";
 
@@ -67,8 +67,7 @@ static usbh_config_t usbh_cfg = {
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = USBH_UAC_MAIN_THREAD_PRIORITY,
-	.sof_tick_enable = 1U,
-	.alt_max_cnt = 10U,
+	.tick_source = USBH_SOF_TICK,
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,
@@ -108,7 +107,7 @@ static int usbh_hid_cb_report(usbh_composite_hid_event_t *event)
 	}
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n=== Handling Event ===\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Press:%d\n", event->is_press);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Press:%d %d\n", event->is_press, event->type);
 
 	switch (event->type) {
 
@@ -185,11 +184,11 @@ static int usbh_uac_cb_isoc_transmitted(usbh_urb_state_t state)
 	return HAL_OK;
 }
 
-static int usbh_uac_cb_process(usb_host_t *host, u8 id)
+static int usbh_uac_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 
-	switch (id) {
+	switch (msg) {
 	case USBH_MSG_DISCONNECTED:
 		usbh_uac_is_ready = 0;
 		break;
@@ -288,7 +287,7 @@ static void usbh_uac_isoc_test(void *param)
 
 			rtos_time_delay_ms(50);
 			usbh_composite_uac_stop_play();
-			RTK_LOGS(TAG, RTK_LOG_INFO, "%d Send finished. Total bytes sent: %u, err count %d, busy count %d\n", i, offset, usbh_uac_err_count, usbh_uac_busy_count);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "%d Send finished. Total bytes sent: %d, err count %d, busy count %d\n", i, offset, usbh_uac_err_count, usbh_uac_busy_count);
 		}
 	}
 

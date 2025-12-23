@@ -29,8 +29,8 @@ typedef struct {
 	void *priv;
 
 	/* cmd reg related */
-	u32 xfer_size;
-	u32 mps;
+	u32 xfer_len;
+	u32 ep_mps;
 	rtos_sema_t dec_sema;
 } usbh_uvc_dec;
 

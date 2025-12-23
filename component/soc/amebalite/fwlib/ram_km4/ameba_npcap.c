@@ -144,7 +144,7 @@ u32 kr4_aontimer_wake_int_hdl(UNUSED_WARN_DIS void *Data)
 void kr4_wakeup_timer_init(uint32_t sleep_ms)
 {
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
-	SOCPS_SetAPWakeEvent_MSK1(WAKE_SRC_AON_TIM, ENABLE);
+	SOCPS_SetAPWakeEvent(WAKE_SRC_AON_TIM, ENABLE);
 	AONTimer_INT(ENABLE);
 	AONTimer_Setting(sleep_ms);
 	InterruptRegister(kr4_aontimer_wake_int_hdl, AON_TIM_IRQ, (u32)PMC_BASE, INT_PRI3);

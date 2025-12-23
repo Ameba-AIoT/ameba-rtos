@@ -31,9 +31,9 @@
 static int vendor_cb_attach(void);
 static int vendor_cb_detach(void);
 static int vendor_cb_setup(void);
-static int vendor_cb_process(usb_host_t *host, u8 id);
+static int vendor_cb_process(usb_host_t *host, u8 msg);
 static int vendor_cb_transmit(u8 ep_type);
-static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 Len);
+static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, u8 status);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "VND";
 
@@ -63,7 +63,7 @@ static usbh_config_t usbh_cfg = {
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = 3U,
-	.sof_tick_enable = 1U,
+	.tick_source = USBH_SOF_TICK,
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,
@@ -114,38 +114,49 @@ static int vendor_cb_setup(void)
 	return HAL_OK;
 }
 
-static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len)
+static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, u8 status)
 {
 	u16 vendor_bulk_in_mps = usbh_vendor_get_bulk_ep_mps();
 	u16 vendor_intr_in_mps = usbh_vendor_get_intr_ep_mps();
+
 	switch (ep_type) {
 	case USB_CH_EP_TYPE_BULK:
-		//limited the copy len
-		if ((len > 0) && ((vendor_bulk_total_rx_len + len) <= USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE)) {
-			memcpy(vendor_bulk_loopback_rx_buf + vendor_bulk_total_rx_len, buf, len);
+		if (status == HAL_OK) {
+			//limited the copy len
+			if ((len > 0) && ((vendor_bulk_total_rx_len + len) <= USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE)) {
+				memcpy(vendor_bulk_loopback_rx_buf + vendor_bulk_total_rx_len, buf, len);
+			}
+			vendor_bulk_total_rx_len += len;
+			//ZLP or short packet
+			if ((len == 0) || (len % vendor_bulk_in_mps)
+				|| ((len % vendor_bulk_in_mps == 0) && (len < USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE))
+				|| (vendor_bulk_total_rx_len > USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE)) {
+				vendor_bulk_total_rx_len = 0;
+				rtos_sema_give(vendor_bulk_receive_sema);
+			}
+		} else {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "%d RX fail: %d\n", ep_type, status);
 		}
-		vendor_bulk_total_rx_len += len;
-		//ZLP or short packet
-		if ((len == 0) || (len % vendor_bulk_in_mps)
-			|| ((len % vendor_bulk_in_mps == 0) && (len < USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE))
-			|| (vendor_bulk_total_rx_len > USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE)) {
-			vendor_bulk_total_rx_len = 0;
-			rtos_sema_give(vendor_bulk_receive_sema);
-		}
+
 		break;
 	case USB_CH_EP_TYPE_INTR:
-		//limited the copy len
-		if ((len > 0) && ((vendor_intr_total_rx_len + len) <= USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE)) {
-			memcpy(vendor_intr_loopback_rx_buf + vendor_intr_total_rx_len, buf, len);
-		}
-		vendor_intr_total_rx_len += len;
+		if (status == HAL_OK) {
+			//limited the copy len
+			if ((len > 0) && ((vendor_intr_total_rx_len + len) <= USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE)) {
+				memcpy(vendor_intr_loopback_rx_buf + vendor_intr_total_rx_len, buf, len);
+			}
+			vendor_intr_total_rx_len += len;
 
-		//transaction size > 0 and short packet
-		if ((len == 0) || ((len < vendor_intr_in_mps) && (vendor_intr_total_rx_len > 0))
-			|| (vendor_intr_total_rx_len > USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE)) { //
-			vendor_intr_total_rx_len = 0;
-			rtos_sema_give(vendor_intr_receive_sema);
+			//transaction size > 0 and short packet
+			if ((len == 0) || ((len < vendor_intr_in_mps) && (vendor_intr_total_rx_len > 0))
+				|| (vendor_intr_total_rx_len > USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE)) { //
+				vendor_intr_total_rx_len = 0;
+				rtos_sema_give(vendor_intr_receive_sema);
+			}
+		} else {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "%d RX fail: %d\n", ep_type, status);
 		}
+
 		break;
 	case USB_CH_EP_TYPE_ISOC:
 		rtos_sema_give(vendor_isoc_rxdone_sema);
@@ -290,11 +301,11 @@ static void vendor_isoc_test(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ISOC test PASS\n");
 }
 
-static int vendor_cb_process(usb_host_t *host, u8 id)
+static int vendor_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 
-	switch (id) {
+	switch (msg) {
 	case USBH_MSG_DISCONNECTED:
 		vendor_is_ready = 0;
 		break;
@@ -362,9 +373,7 @@ static void vendor_intr_test_task(void *param)
 void example_usbh_vendor_thread(void *param)
 {
 	int status;
-#if CONFIG_USBH_VENDOR_HOT_PLUG_TEST
 	rtos_task_t task;
-#endif
 
 	UNUSED(param);
 

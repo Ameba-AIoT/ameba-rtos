@@ -12,7 +12,7 @@
 
 /* Private defines -----------------------------------------------------------*/
 #define USBH_MSC_DEBUG 0
-
+#define MSC_XFER_MAX_TIMEOUT_TICK            100  //sof
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
@@ -28,9 +28,19 @@ static int usbh_msc_process_rw(usb_host_t *host, u8 lun);
 
 static const char *const TAG = "MSC";
 
-/* USB Standard Device Descriptor */
+/* USB MSC device identification */
+static const usbh_dev_id_t msc_devs[] = {
+	{
+		.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS,
+		.bInterfaceClass = MSC_CLASS_CODE,
+	},
+	{
+	},
+};
+
+/* USB Host MSC class driver */
 static usbh_class_driver_t usbh_msc_driver = {
-	.class_code = MSC_CLASS_CODE,
+	.id_table = msc_devs,
 	.attach = usbh_msc_attach,
 	.detach = usbh_msc_detach,
 	.setup = usbh_msc_setup,
@@ -49,99 +59,59 @@ static usbh_msc_host_t usbh_msc_host;
 static int usbh_msc_attach(usb_host_t *host)
 {
 	int status = HAL_ERR_UNKNOWN;
-	u8 pipe_num;
-	u8 interface;
-	usbh_if_desc_t *msc_if_desc;
+	usbh_itf_data_t *itf_data;
 	usbh_ep_desc_t *ep_desc;
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	usbh_bot_cbw_t *cbw = msc->hbot.cbw;
+	usbh_itf_desc_t *msc_itf_desc;
+	usbh_pipe_t *bulk_out = &msc->bulk_out;
+	usbh_pipe_t *bulk_in = &msc->bulk_in;
+	usbh_dev_id_t dev_id = {0,};
 
-	interface = usbh_get_interface(host, MSC_CLASS_CODE, USBH_MSC_TRANSPARENT, USBH_MSC_BOT);
-	if (interface == 0xFFU) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get itf fail\n");
-		return status;
-	}
+	dev_id.bInterfaceClass = MSC_CLASS_CODE;
+	dev_id.bInterfaceSubClass = USBH_MSC_TRANSPARENT;
+	dev_id.bInterfaceProtocol = USBH_MSC_BOT;
+	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
+	itf_data = usbh_get_interface_descriptor(host, &dev_id);
 
-	msc->host = host;
-	usbh_set_interface(host, interface);
-
-	msc_if_desc = usbh_get_interface_descriptor(host, interface, 0);
-	if (msc_if_desc == NULL) {
+	if (itf_data == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get itf desc fail\n");
-		return status;
-	}
-
-	/* Set data in/out endpoints */
-	ep_desc = &msc_if_desc->ep_desc_array[0];
-	if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
-		msc->bulk_in_ep = ep_desc->bEndpointAddress;
-		msc->bulk_in_packet_size  = ep_desc->wMaxPacketSize;
 	} else {
-		msc->bulk_out_ep = ep_desc->bEndpointAddress;
-		msc->bulk_out_packet_size  = ep_desc->wMaxPacketSize;
+		msc_itf_desc = itf_data->itf_desc_array;
+		msc->host = host;
+
+		/* Set data in/out endpoints */
+		for (int i = 0; i < 2; i++) {
+			ep_desc = &msc_itf_desc->ep_desc_array[i];
+			if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
+				usbh_open_pipe(host, bulk_in, ep_desc);
+				bulk_in->max_timeout_tick = MSC_XFER_MAX_TIMEOUT_TICK;
+			} else {
+				usbh_open_pipe(host, bulk_out, ep_desc);
+				bulk_out->max_timeout_tick = MSC_XFER_MAX_TIMEOUT_TICK;
+			}
+		}
+
+		msc->current_lun = 0U;
+		msc->state = MSC_INIT;
+		msc->error = MSC_OK;
+		msc->req_state = MSC_REQ_IDLE;
+
+		cbw->field.Signature = USBH_BOT_CBW_SIGNATURE;
+		cbw->field.Tag = USBH_BOT_CBW_TAG;
+		msc->hbot.state = BOT_SEND_CBW;
+		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
+		msc->hbot.cmd_state = BOT_CMD_SEND;
+
+		/* De-Initialize LUNs information */
+		usb_os_memset(msc->unit, 0, sizeof(msc->unit));
+
+		if ((msc->cb != NULL) && (msc->cb->attach != NULL)) {
+			msc->cb->attach();
+		}
+
+		status = HAL_OK;
 	}
-
-	ep_desc = &msc_if_desc->ep_desc_array[1];
-	if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
-		msc->bulk_in_ep = ep_desc->bEndpointAddress;
-		msc->bulk_in_packet_size  = ep_desc->wMaxPacketSize;
-	} else {
-		msc->bulk_out_ep = ep_desc->bEndpointAddress;
-		msc->bulk_out_packet_size  = ep_desc->wMaxPacketSize;
-	}
-
-	/*Allocate the length for host channel number out*/
-	pipe_num = usbh_alloc_pipe(host, msc->bulk_out_ep);
-	if (pipe_num != 0xFFU) {
-		msc->bulk_out_pipe = pipe_num;
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc BULK out pipe fail\n");
-		return HAL_ERR_MEM;
-	}
-
-	/*Allocate the length for host channel number in*/
-	pipe_num = usbh_alloc_pipe(host, msc->bulk_in_ep);
-	if (pipe_num != 0xFFU) {
-		msc->bulk_in_pipe = pipe_num;
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc BULK in pipe fail\n");
-		usbh_free_pipe(host, msc->bulk_out_pipe);
-		return HAL_ERR_MEM;
-	}
-
-	msc->current_lun = 0U;
-	msc->state = MSC_INIT;
-	msc->error = MSC_OK;
-	msc->req_state = MSC_REQ_IDLE;
-
-	cbw->field.Signature = USBH_BOT_CBW_SIGNATURE;
-	cbw->field.Tag = USBH_BOT_CBW_TAG;
-	msc->hbot.state = BOT_SEND_CBW;
-	msc->hbot.cmd_state = BOT_CMD_SEND;
-
-	/* De-Initialize LUNs information */
-	usb_os_memset(msc->unit, 0, sizeof(msc->unit));
-
-	/* Open channel for OUT endpoint */
-	usbh_open_pipe(host,
-				   msc->bulk_out_pipe,
-				   msc->bulk_out_ep,
-				   USB_CH_EP_TYPE_BULK,
-				   msc->bulk_out_packet_size);
-
-	/* Open channel for IN endpoint */
-	usbh_open_pipe(host,
-				   msc->bulk_in_pipe,
-				   msc->bulk_in_ep,
-				   USB_CH_EP_TYPE_BULK,
-				   msc->bulk_in_packet_size);
-
-	if ((msc->cb != NULL) && (msc->cb->attach != NULL)) {
-		msc->cb->attach();
-	}
-
-	status = HAL_OK;
-
 	return status;
 }
 
@@ -153,23 +123,20 @@ static int usbh_msc_attach(usb_host_t *host)
 static int usbh_msc_detach(usb_host_t *host)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
+	usbh_pipe_t *bulk_out = &msc->bulk_out;
+	usbh_pipe_t *bulk_in = &msc->bulk_in;
 
 	if ((msc->cb != NULL) && (msc->cb->detach != NULL)) {
 		msc->cb->detach();
 	}
 
-	if (msc->bulk_in_pipe) {
-		usbh_close_pipe(host, msc->bulk_in_pipe);
-		usbh_free_pipe(host, msc->bulk_in_pipe);
-		msc->bulk_in_pipe = 0U;
+	if (bulk_in->pipe_num) {
+		usbh_close_pipe(host, bulk_in);
 	}
 
-	if (msc->bulk_out_pipe) {
-		usbh_close_pipe(host, msc->bulk_out_pipe);
-		usbh_free_pipe(host, msc->bulk_out_pipe);
-		msc->bulk_out_pipe = 0U;
+	if (bulk_out->pipe_num) {
+		usbh_close_pipe(host, bulk_out);
 	}
-
 	return HAL_OK;
 }
 
@@ -190,12 +157,12 @@ static int usbh_msc_setup(usb_host_t *host)
 	case MSC_REQ_IDLE:
 	case MSC_REQ_GET_MAX_LUN:
 		/* Issue GetMaxLUN request */
-		setup.b.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS
-								| USB_REQ_RECIPIENT_INTERFACE;
-		setup.b.bRequest = USBH_MSC_GET_MAX_LUN;
-		setup.b.wValue = 0U;
-		setup.b.wIndex = 0U;
-		setup.b.wLength = 1U;
+		setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS
+								  | USB_REQ_RECIPIENT_INTERFACE;
+		setup.req.bRequest = USBH_MSC_GET_MAX_LUN;
+		setup.req.wValue = 0U;
+		setup.req.wIndex = 0U;
+		setup.req.wLength = 1U;
 		status = usbh_ctrl_request(host, &setup, (u8 *)(void *)msc->max_lun_buf);
 		/* When devices do not support the GetMaxLun request, this should
 		   be considred as only one logical unit is supported */
@@ -233,6 +200,7 @@ static int usbh_msc_setup(usb_host_t *host)
 /**
   * @brief  State machine handling callback
   * @param  host: Host handle
+  * @param  msg: Message data
   * @retval Status
   */
 static int usbh_msc_process(usb_host_t *host, u32 msg)
@@ -502,7 +470,7 @@ static usbh_bot_csw_state_t usbh_msc_decode_csw(usb_host_t *host)
 	usbh_bot_csw_state_t status = BOT_CSW_CMD_FAILED;
 
 	/*Checking if the transfer length is different than 13*/
-	if (usbh_get_last_transfer_size(host, msc->bulk_in_pipe) != USBH_BOT_CSW_LENGTH) {
+	if (usbh_get_last_transfer_size(host, &msc->bulk_in) != USBH_BOT_CSW_LENGTH) {
 		/*(4) Hi > Dn (Host expects to receive data from the device,
 		Device intends to transfer no data)
 		(5) Hi > Di (Host expects to receive data from the device,
@@ -596,161 +564,124 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 	int status = HAL_BUSY;
 	int error  = HAL_BUSY;
 	usbh_bot_csw_state_t CSW_Status = BOT_CSW_CMD_FAILED;
-	usbh_urb_state_t urb_state = USBH_URB_IDLE;
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	usbh_setup_req_t setup;
 	usbh_bot_csw_t *csw = msc->hbot.csw;
 	usbh_bot_cbw_t *cbw = msc->hbot.cbw;
-	u8 toggle = 0U;
+	usbh_pipe_t *bulk_out = &msc->bulk_out;
+	usbh_pipe_t *bulk_in = &msc->bulk_in;
+	int ret;
 
 	switch (msc->hbot.state) {
 	case BOT_SEND_CBW:
-		cbw->field.LUN = lun;
-		msc->hbot.state = BOT_SEND_CBW_WAIT;
-		usbh_bulk_send_data(host, cbw->data, USBH_BOT_CBW_LENGTH, msc->bulk_out_pipe);
 
-		break;
+		if (bulk_out->xfer_state == USBH_EP_XFER_START) {
+			cbw->field.LUN = lun;
+			bulk_out->xfer_buf = cbw->data;
+			bulk_out->xfer_len = USBH_BOT_CBW_LENGTH;
+			usbh_transfer_process(host, bulk_out);
+		} else {
+			ret = usbh_transfer_process(host, bulk_out);
 
-	case BOT_SEND_CBW_WAIT:
-
-		urb_state = usbh_get_urb_state(host, msc->bulk_out_pipe);
-
-		if (urb_state == USBH_URB_DONE) {
-			if (cbw->field.DataTransferLength != 0U) {
-				/* If there is Data Transfer Stage */
-				if (((cbw->field.Flags) & USB_REQ_DIR_MASK) == USB_D2H) {
-					/* Data Direction is IN */
-					msc->hbot.state = BOT_DATA_IN;
+			if ((ret == HAL_OK) && (bulk_out->xfer_state == USBH_EP_XFER_IDLE)) {
+				if (cbw->field.DataTransferLength != 0U) {
+					/* If there is Data Transfer Stage */
+					if (((cbw->field.Flags) & USB_REQ_DIR_MASK) == USB_D2H) {
+						/* Data Direction is IN */
+						msc->hbot.state = BOT_DATA_IN;
+						bulk_in->xfer_state = USBH_EP_XFER_START;
+					} else {
+						/* Data Direction is OUT */
+						msc->hbot.state = BOT_DATA_OUT;
+						bulk_out->xfer_state = USBH_EP_XFER_START;
+					}
 				} else {
-					/* Data Direction is OUT */
-					msc->hbot.state = BOT_DATA_OUT;
+					/* If there is NO Data Transfer Stage */
+					msc->hbot.state = BOT_RECEIVE_CSW;
+					bulk_in->xfer_state = USBH_EP_XFER_START;
 				}
-			} else {
-				/* If there is NO Data Transfer Stage */
-				msc->hbot.state = BOT_RECEIVE_CSW;
-			}
-
-			usbh_notify_urb_state_change(host, 0);
-		} else if (urb_state == USBH_URB_BUSY) {
-			/* Re-send CBW */
-			msc->hbot.state = BOT_SEND_CBW;
-
-			usbh_notify_urb_state_change(host, 0);
-		} else {
-			if (urb_state == USBH_URB_STALL) {
+				usbh_notify_class_state_change(host, 0);
+			} else if (bulk_out->xfer_state == USBH_EP_XFER_ERROR) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "TX CBW err: %d\n", usbh_get_urb_state(host, bulk_out));
 				msc->hbot.state  = BOT_ERROR_OUT;
-
-				usbh_notify_urb_state_change(host, 0);
+				usbh_notify_class_state_change(host, 0);
 			}
 		}
 		break;
-
 	case BOT_DATA_IN:
-		/* Receive first packet */
-		usbh_bulk_receive_data(host, msc->hbot.pbuf, cbw->field.DataTransferLength, msc->bulk_in_pipe);
 
-		msc->hbot.state = BOT_DATA_IN_WAIT;
-
-		break;
-
-	case BOT_DATA_IN_WAIT:
-
-		urb_state = usbh_get_urb_state(host, msc->bulk_in_pipe);
-
-		if (urb_state == USBH_URB_DONE) {
-			msc->hbot.state  = BOT_RECEIVE_CSW;
-			usbh_notify_urb_state_change(host, 0);
-		} else if (urb_state == USBH_URB_STALL) {
-			/* This is Data IN Stage STALL Condition */
-			msc->hbot.state  = BOT_ERROR_IN;
-
-			/* Refer to USB Mass-Storage Class : BOT (www.usb.org)
-			6.7.2 Host expects to receive data from the device
-			3. On a STALL condition receiving data, then:
-			The host shall accept the data received.
-			The host shall clear the Bulk-In pipe.
-			4. The host shall attempt to receive a CSW.*/
-
-			usbh_notify_urb_state_change(host, 0);
+		if (bulk_in->xfer_state == USBH_EP_XFER_START) {
+			bulk_in->xfer_buf = msc->hbot.pbuf;
+			bulk_in->xfer_len = cbw->field.DataTransferLength;
+			usbh_transfer_process(host, bulk_in);
 		} else {
+			ret = usbh_transfer_process(host, bulk_in);
+
+			if ((ret == HAL_OK) && (bulk_in->xfer_state == USBH_EP_XFER_IDLE)) {
+				msc->hbot.state  = BOT_RECEIVE_CSW;
+				bulk_in->xfer_state = USBH_EP_XFER_START;
+				usbh_notify_class_state_change(host, 0);
+			} else if (bulk_in->xfer_state == USBH_EP_XFER_ERROR) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "RX data err: %d\n", usbh_get_urb_state(host, bulk_in));
+				msc->hbot.state  = BOT_ERROR_IN;
+				usbh_notify_class_state_change(host, 0);
+			}
 		}
 		break;
-
 	case BOT_DATA_OUT:
 
-		msc->tick = usbh_get_tick(host);
-		usbh_bulk_send_data(host, msc->hbot.pbuf, cbw->field.DataTransferLength, msc->bulk_out_pipe);
-
-		msc->hbot.state  = BOT_DATA_OUT_WAIT;
-		break;
-
-	case BOT_DATA_OUT_WAIT:
-		urb_state = usbh_get_urb_state(host, msc->bulk_out_pipe);
-
-		if (urb_state == USBH_URB_DONE) {
-			msc->hbot.state = BOT_RECEIVE_CSW;
-			usbh_notify_urb_state_change(host, 0);
-		}
-
-		else if (urb_state == USBH_URB_BUSY) {
-			if (usbh_get_elapsed_ticks(host, msc->tick) >= 100) {
-				/* Resend same data */
-				msc->hbot.state  = BOT_DATA_OUT;
-			}
-			usbh_notify_urb_state_change(host, 0);
-		}
-
-		else if (urb_state == USBH_URB_STALL) {
-			msc->hbot.state  = BOT_ERROR_OUT;
-
-			/* Refer to USB Mass-Storage Class : BOT (www.usb.org)
-			6.7.3 Ho - Host expects to send data to the device
-			3. On a STALL condition sending data, then:
-			" The host shall clear the Bulk-Out pipe.
-			4. The host shall attempt to receive a CSW.
-			*/
-
-			usbh_notify_urb_state_change(host, 0);
+		if (bulk_out->xfer_state == USBH_EP_XFER_START) {
+			msc->tick = usbh_get_tick(host);
+			bulk_out->xfer_buf = msc->hbot.pbuf;
+			bulk_out->xfer_len = cbw->field.DataTransferLength;
+			usbh_transfer_process(host, bulk_out);
 		} else {
+			ret = usbh_transfer_process(host, bulk_out);
+
+			if ((ret == HAL_OK) && (bulk_out->xfer_state == USBH_EP_XFER_IDLE)) {
+				msc->hbot.state = BOT_RECEIVE_CSW;
+				bulk_in->xfer_state = USBH_EP_XFER_START;
+				usbh_notify_class_state_change(host, 0);
+			} else if (bulk_out->xfer_state == USBH_EP_XFER_ERROR) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "TX data err: %d\n", usbh_get_urb_state(host, bulk_out));
+				msc->hbot.state  = BOT_ERROR_OUT;
+				usbh_notify_class_state_change(host, 0);
+			}
 		}
 		break;
-
 	case BOT_RECEIVE_CSW:
 
-		usbh_bulk_receive_data(host, csw->data, USBH_BOT_CSW_LENGTH, msc->bulk_in_pipe);
-
-		msc->hbot.state  = BOT_RECEIVE_CSW_WAIT;
-		break;
-
-	case BOT_RECEIVE_CSW_WAIT:
-
-		urb_state = usbh_get_urb_state(host, msc->bulk_in_pipe);
-
-		/* Decode CSW */
-		if (urb_state == USBH_URB_DONE) {
-			msc->hbot.state = BOT_SEND_CBW;
-			msc->hbot.cmd_state = BOT_CMD_SEND;
-			CSW_Status = usbh_msc_decode_csw(host);
-
-			if (CSW_Status == BOT_CSW_CMD_PASSED) {
-				status = HAL_OK;
-			} else {
-				status = HAL_ERR_UNKNOWN;
-			}
-
-			usbh_notify_urb_state_change(host, 0);
-		} else if (urb_state == USBH_URB_STALL) {
-			msc->hbot.state  = BOT_ERROR_IN;
-
-			usbh_notify_urb_state_change(host, 0);
+		if (bulk_in->xfer_state == USBH_EP_XFER_START) {
+			bulk_in->xfer_buf = csw->data;
+			bulk_in->xfer_len = USBH_BOT_CSW_LENGTH;
+			ret = usbh_transfer_process(host, bulk_in);
 		} else {
+			/* Decode CSW */
+
+			if (usbh_get_urb_state(host, bulk_in) == USBH_URB_DONE) {
+				bulk_in->xfer_state = USBH_EP_XFER_IDLE;
+				msc->hbot.state = BOT_SEND_CBW;
+				msc->hbot.cmd_state = BOT_CMD_SEND;
+				bulk_out->xfer_state = USBH_EP_XFER_START;
+				CSW_Status = usbh_msc_decode_csw(host);
+
+				if (CSW_Status == BOT_CSW_CMD_PASSED) {
+					status = HAL_OK;
+				} else {
+					status = HAL_ERR_UNKNOWN;
+				}
+				usbh_notify_class_state_change(host, 0);
+			} else if (usbh_get_urb_state(host, bulk_in) == USBH_URB_STALL) {
+				msc->hbot.state  = BOT_ERROR_IN;
+				usbh_notify_class_state_change(host, 0);
+			}
 		}
 		break;
-
 	case BOT_ERROR_IN:
-		error = usbh_ctrl_clear_feature(host, msc->bulk_in_ep);
+		error = usbh_ctrl_clear_feature(host, bulk_in->ep_addr);
 		if (error == HAL_OK) {
 			msc->hbot.state = BOT_RECEIVE_CSW;
+			bulk_in->xfer_state = USBH_EP_XFER_START;
 		} else if (error == HAL_ERR_HW) {
 			/* This means that there is a STALL Error limit, Do Reset Recovery */
 			msc->hbot.state = BOT_UNRECOVERED_ERROR;
@@ -759,11 +690,8 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 		break;
 
 	case BOT_ERROR_OUT:
-		error = usbh_ctrl_clear_feature(host, msc->bulk_out_ep);
+		error = usbh_ctrl_clear_feature(host, bulk_out->ep_addr);
 		if (error == HAL_OK) {
-			toggle = usbh_get_toggle(host, msc->bulk_out_pipe);
-			usbh_set_toggle(host, msc->bulk_out_pipe, 1U - toggle);
-			usbh_set_toggle(host, msc->bulk_in_pipe, 0U);
 			msc->hbot.state = BOT_ERROR_IN;
 		} else {
 			if (error == HAL_ERR_HW) {
@@ -774,15 +702,16 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 
 
 	case BOT_UNRECOVERED_ERROR:
-		setup.b.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-		setup.b.bRequest = USBH_MSC_BOT_RESET;
-		setup.b.wValue = 0U;
-		setup.b.wIndex = 0U;
-		setup.b.wLength = 0U;
+		setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
+		setup.req.bRequest = USBH_MSC_BOT_RESET;
+		setup.req.wValue = 0U;
+		setup.req.wIndex = 0U;
+		setup.req.wLength = 0U;
 
 		status = usbh_ctrl_request(host, &setup, NULL);
 		if (status == HAL_OK) {
 			msc->hbot.state = BOT_SEND_CBW;
+			bulk_out->xfer_state = USBH_EP_XFER_START;
 		}
 		break;
 
@@ -795,7 +724,6 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 
 /**
   * @brief  Check if the MSC function is ready
-  * @param  None
   * @retval Status
   */
 int usbh_msc_is_rdy(void)
@@ -803,7 +731,7 @@ int usbh_msc_is_rdy(void)
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	int res;
 
-	if ((msc->host->state == USBH_CLASS_READY) && (msc->state == MSC_IDLE)) {
+	if ((msc->host->connect_state == USBH_STATE_SETUP) && (msc->state == MSC_IDLE)) {
 		res = 1;
 	} else {
 		res = 0;
@@ -814,14 +742,13 @@ int usbh_msc_is_rdy(void)
 
 /**
   * @brief  Get the Max LUN supported
-  * @param  None
   * @retval logical Unit Number supported
   */
 u32 usbh_msc_get_max_lun(void)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
 
-	if ((msc->host->state == USBH_CLASS_READY) && (msc->state == MSC_IDLE)) {
+	if ((msc->host->connect_state == USBH_STATE_SETUP) && (msc->state == MSC_IDLE)) {
 		return msc->max_lun;
 	}
 
@@ -838,7 +765,7 @@ int usbh_msc_unit_is_rdy(u8 lun)
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	int res;
 
-	if ((msc->host->state == USBH_CLASS_READY) && (msc->unit[lun].error == MSC_OK)) {
+	if ((msc->host->connect_state == USBH_STATE_SETUP) && (msc->unit[lun].error == MSC_OK)) {
 		res = 1;
 	} else {
 		res = 0;
@@ -857,7 +784,7 @@ int usbh_msc_get_lun_info(u8 lun, usbh_msc_lun_t *info)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
 
-	if ((msc->host->state == USBH_CLASS_READY) && (USBH_MSC_MAX_LUN > lun)) {
+	if ((msc->host->connect_state == USBH_STATE_SETUP) && (USBH_MSC_MAX_LUN > lun)) {
 		usb_os_memcpy(info, &msc->unit[lun], sizeof(usbh_msc_lun_t));
 		return HAL_OK;
 	} else {
@@ -876,13 +803,11 @@ int usbh_msc_get_lun_info(u8 lun, usbh_msc_lun_t *info)
 int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length)
 {
 	u32 timeout;
-	int is_device_connected;
 	usbh_msc_host_t *msc = &usbh_msc_host;
+	usb_host_t *host = msc->host;
 
-	is_device_connected = usbh_get_status();
-
-	if ((is_device_connected == 0U) ||
-		(msc->host->state != USBH_CLASS_READY) ||
+	if (((host->connect_state != USBH_STATE_ATTACH) &&
+		 (host->connect_state != USBH_STATE_SETUP)) ||
 		(msc->unit[lun].state != MSC_IDLE)) {
 		return  HAL_ERR_UNKNOWN;
 	}
@@ -899,7 +824,7 @@ int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length)
 		//FIXME, remove this in AP
 		usb_os_delay_us(200);
 #endif
-		if ((usbh_get_elapsed_ticks(msc->host, timeout) > (10000U * length)) || (is_device_connected == 0U)) {
+		if ((usbh_get_elapsed_ticks(msc->host, timeout) > (10000U * length)) || (host->connect_state < USBH_STATE_ATTACH)) {
 			msc->state = MSC_IDLE;
 			return HAL_ERR_UNKNOWN;
 		}
@@ -909,8 +834,7 @@ int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length)
 }
 
 /**
-  * @brief  USBH_MSC_Write
-  *         The function performs a Write operation
+  * @brief  Performs a Write operation.
   * @param  lun: logical Unit Number
   * @param  address: sector address
   * @param  pbuf: pointer to data
@@ -920,13 +844,11 @@ int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length)
 int usbh_msc_write(u8 lun, u32 address, u8 *pbuf, u32 length)
 {
 	u32 timeout;
-	int is_device_connected;
 	usbh_msc_host_t *msc = &usbh_msc_host;
+	usb_host_t *host = msc->host;
 
-	is_device_connected = usbh_get_status();
-
-	if ((is_device_connected == 0U) ||
-		(msc->host->state != USBH_CLASS_READY) ||
+	if (((host->connect_state != USBH_STATE_ATTACH) &&
+		 (host->connect_state != USBH_STATE_SETUP)) ||
 		(msc->unit[lun].state != MSC_IDLE)) {
 		return  HAL_ERR_UNKNOWN;
 	}
@@ -942,7 +864,7 @@ int usbh_msc_write(u8 lun, u32 address, u8 *pbuf, u32 length)
 		//FIXME, remove this in AP
 		usb_os_delay_us(200);
 #endif
-		if ((usbh_get_elapsed_ticks(msc->host, timeout) > (10000U * length)) || (is_device_connected == 0U)) {
+		if ((usbh_get_elapsed_ticks(msc->host, timeout) > (10000U * length)) || (host->connect_state < USBH_STATE_ATTACH)) {
 			msc->state = MSC_IDLE;
 			return HAL_ERR_UNKNOWN;
 		}
@@ -1020,17 +942,15 @@ int usbh_msc_deinit(void)
 	int ret = HAL_OK;
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	usb_host_t *host = msc->host;
+	usbh_pipe_t *bulk_out = &msc->bulk_out;
+	usbh_pipe_t *bulk_in = &msc->bulk_in;
 
-	if (msc->bulk_in_pipe) {
-		usbh_close_pipe(host, msc->bulk_in_pipe);
-		usbh_free_pipe(host, msc->bulk_in_pipe);
-		msc->bulk_in_pipe = 0U;
+	if (bulk_in->pipe_num) {
+		usbh_close_pipe(host, bulk_in);
 	}
 
-	if (msc->bulk_out_pipe) {
-		usbh_close_pipe(host, msc->bulk_out_pipe);
-		usbh_free_pipe(host, msc->bulk_out_pipe);
-		msc->bulk_out_pipe = 0U;
+	if (bulk_out->pipe_num) {
+		usbh_close_pipe(host, bulk_out);
 	}
 
 	if (msc->max_lun_buf != NULL) {

@@ -71,11 +71,11 @@ static const char *const TAG = "COMP";
 #define COMP_USBD_AUDIO_BUF_SIZE                  ((COMP_USBD_AUDIO_MS_BUF_SIZE) * 1)
 
 /* Private types -------------------------------------------------------------*/
-typedef struct __PACKED {
+typedef struct {
 	u8 func_cmd;      //left & right : alt win shift alt command
 	u8 padding;       //constant panding
 	u8 cmd[30];       //6 command key values
-} composite_usbd_hid_report_data_t;
+} __PACKED composite_usbd_hid_report_data_t;
 
 /* Private macros ------------------------------------------------------------*/
 

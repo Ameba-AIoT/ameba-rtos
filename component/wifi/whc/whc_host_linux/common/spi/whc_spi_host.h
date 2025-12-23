@@ -5,10 +5,12 @@
 #ifdef CONFIG_AMEBALITE
 // amebalite use different pin due to _PA_1(num 15, GPIO22 got by command "pinout") will be pull down by raspberry pi
 #define DEV_READY_PIN	        584
+#define RX_REQ_PIN				583
 #else
 #define DEV_READY_PIN			591
-#endif
 #define RX_REQ_PIN				592
+#endif
+
 #define DEBUG_PIN				582
 
 #elif (KERNEL_VERSION(6, 6, 0) <= LINUX_VERSION_CODE)
@@ -17,18 +19,23 @@
 check the correct number of the required GPIO pin to use command " cat /sys/kernel/debug/gpio" */
 #ifdef CONFIG_AMEBALITE
 #define DEV_READY_PIN	        586
+#define RX_REQ_PIN				585
 #else
 #define DEV_READY_PIN			593
-#endif
 #define RX_REQ_PIN				594
+#endif
+
 #define DEBUG_PIN				584
+
 #else
 #ifdef CONFIG_AMEBALITE
 #define DEV_READY_PIN			15
+#define RX_REQ_PIN				14
 #else
 #define DEV_READY_PIN			22
-#endif
 #define RX_REQ_PIN				23
+#endif
+
 #define DEBUG_PIN				13
 #endif
 

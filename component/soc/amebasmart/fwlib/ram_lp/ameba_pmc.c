@@ -483,8 +483,8 @@ void SOCPS_WakeEvent_Init(void)
 		i++;
 	}
 
-	SOCPS_SetNPWakeEvent_MSK0(sleep_wevent_config_val[1][0], ENABLE);
-	SOCPS_SetNPWakeEvent_MSK1(sleep_wevent_config_val[1][1], ENABLE);
+	SOCPS_SetNPWakeEvent(sleep_wevent_config_val[1][0], ENABLE);
+	SOCPS_SetNPWakeEvent(sleep_wevent_config_val[1][1], ENABLE);
 	RTK_LOGI(TAG, "NP wake event: %lx %lx\n", sleep_wevent_config_val[1][0], sleep_wevent_config_val[1][1]);
 
 	if ((sleep_wevent_config_val[1][0] | sleep_wevent_config_val[1][1])) {
@@ -496,8 +496,8 @@ void SOCPS_WakeEvent_Init(void)
 		sleep_wevent_config_val[0][0] |= WAKE_SRC_NP_WAKE;
 	}
 
-	SOCPS_SetAPWakeEvent_MSK0(sleep_wevent_config_val[2][0], ENABLE);
-	SOCPS_SetAPWakeEvent_MSK1(sleep_wevent_config_val[2][1], ENABLE);
+	SOCPS_SetAPWakeEvent(sleep_wevent_config_val[2][0], ENABLE);
+	SOCPS_SetAPWakeEvent(sleep_wevent_config_val[2][1], ENABLE);
 	RTK_LOGI(TAG, "AP wake event %lx %lx\n", sleep_wevent_config_val[2][0], sleep_wevent_config_val[2][1]);
 
 	if ((sleep_wevent_config_val[2][0] | sleep_wevent_config_val[2][1])) {
@@ -508,193 +508,114 @@ void SOCPS_WakeEvent_Init(void)
 		sleep_wevent_config_val[0][0] |= WAKE_SRC_AP_WAKE;
 	}
 
-	SOCPS_SetLPWakeEvent_MSK0(sleep_wevent_config_val[0][0], ENABLE);
-	SOCPS_SetLPWakeEvent_MSK1(sleep_wevent_config_val[0][1], ENABLE);
+	SOCPS_SetLPWakeEvent(sleep_wevent_config_val[0][0], ENABLE);
+	SOCPS_SetLPWakeEvent(sleep_wevent_config_val[0][1], ENABLE);
 	RTK_LOGI(TAG, "LP wake event %lx %lx\n", HAL_READ32(PMC_BASE, WAK_MASK0_LP), HAL_READ32(PMC_BASE, WAK_MASK1_LP));
 
 }
 
 /**
-  * @brief  set lp wake up event mask0.
+  * @brief  set LP wake up event mask.
   * @param  Option:
   *   This parameter can be any combination of the following values:
   *		 @arg WAKE_SRC_XXX
-  * @param  NewStatus: TRUE/FALSE.
+  * @param  NewStatus: ENABLE/DISABLE.
   * @retval None
   */
-void SOCPS_SetLPWakeEvent_MSK0(u32 Option, u32 NewStatus)
+void SOCPS_SetLPWakeEvent(u32 Option, u32 NewStatus)
 {
 	u32 WakeEvent = 0;
-
+	u32 RegIndex = (Option >> 30) & 0x3;
+	u32 Reg = 0;
+	switch (RegIndex) {
+	case 0x0:
+	case 0x1:
+	case 0x2:
+		Reg = WAK_MASK0_LP;
+		break;
+	case 0x3:
+		Reg = WAK_MASK1_LP;
+		break;
+	default:
+		return;
+	}
 	/* Set Event */
-	WakeEvent = HAL_READ32(PMC_BASE, WAK_MASK0_LP);
+	WakeEvent = HAL_READ32(PMC_BASE, Reg);
 	if (NewStatus == ENABLE) {
 		WakeEvent |= Option;
 	} else {
 		WakeEvent &= ~Option;
 	}
-	HAL_WRITE32(PMC_BASE, WAK_MASK0_LP, WakeEvent);
+	HAL_WRITE32(PMC_BASE, Reg, WakeEvent);
 }
 
 /**
-  * @brief  set lp wake up event mask1.
+  * @brief  set NP wake up event mask.
   * @param  Option:
   *   This parameter can be any combination of the following values:
   *		 @arg WAKE_SRC_XXX
-  * @param  NewStatus: TRUE/FALSE.
+  * @param  NewStatus: ENABLE/DISABLE.
   * @retval None
   */
-void SOCPS_SetLPWakeEvent_MSK1(u32 Option, u32 NewStatus)
+void SOCPS_SetNPWakeEvent(u32 Option, u32 NewStatus)
 {
 	u32 WakeEvent = 0;
-
+	u32 RegIndex = (Option >> 30) & 0x3;
+	u32 Reg = 0;
+	switch (RegIndex) {
+	case 0x0:
+	case 0x1:
+	case 0x2:
+		Reg = WAK_MASK0_NP;
+		break;
+	case 0x3:
+		Reg = WAK_MASK1_NP;
+		break;
+	default:
+		return;
+	}
 	/* Set Event */
-	WakeEvent = HAL_READ32(PMC_BASE, WAK_MASK1_LP);
+	WakeEvent = HAL_READ32(PMC_BASE, Reg);
 	if (NewStatus == ENABLE) {
 		WakeEvent |= Option;
 	} else {
 		WakeEvent &= ~Option;
 	}
-	HAL_WRITE32(PMC_BASE, WAK_MASK1_LP, WakeEvent);
+	HAL_WRITE32(PMC_BASE, Reg, WakeEvent);
 }
-
 /**
-  * @brief  set lp wake up event.
+  * @brief  set AP wake up event.
   * @param  Option:
   *   This parameter can be any combination of the following values:
   *		 @arg WAKE_SRC_XXX
-  * @param  NewStatus: TRUE/FALSE.
+  * @param  NewStatus: ENABLE/DISABLE.
   * @retval None
   */
-void SOCPS_SetLPWakeEvent(u32 Option, u32 Group, u32 NewStatus)
-{
-	if (Group) {
-		SOCPS_SetLPWakeEvent_MSK1(Option, NewStatus);
-	} else {
-		SOCPS_SetLPWakeEvent_MSK0(Option, NewStatus);
-	}
-}
-
-/**
-  * @brief  set np wake up event mask0.
-  * @param  Option:
-  *   This parameter can be any combination of the following values:
-  *		 @arg WAKE_SRC_XXX
-  * @param  NewStatus: TRUE/FALSE.
-  * @retval None
-  */
-void SOCPS_SetNPWakeEvent_MSK0(u32 Option, u32 NewStatus)
+void SOCPS_SetAPWakeEvent(u32 Option, u32 NewStatus)
 {
 	u32 WakeEvent = 0;
-
+	u32 RegIndex = (Option >> 30) & 0x3;
+	u32 Reg = 0;
+	switch (RegIndex) {
+	case 0x0:
+	case 0x1:
+	case 0x2:
+		Reg = WAK_MASK0_AP;
+		break;
+	case 0x3:
+		Reg = WAK_MASK1_AP;
+		break;
+	default:
+		return;
+	}
 	/* Set Event */
-	WakeEvent = HAL_READ32(PMC_BASE, WAK_MASK0_NP);
+	WakeEvent = HAL_READ32(PMC_BASE, Reg);
 	if (NewStatus == ENABLE) {
 		WakeEvent |= Option;
 	} else {
 		WakeEvent &= ~Option;
 	}
-	HAL_WRITE32(PMC_BASE, WAK_MASK0_NP, WakeEvent);
-}
-
-/**
-  * @brief  set np wake up event mask1.
-  * @param  Option:
-  *   This parameter can be any combination of the following values:
-  *		 @arg WAKE_SRC_XXX
-  * @param  NewStatus: TRUE/FALSE.
-  * @retval None
-  */
-void SOCPS_SetNPWakeEvent_MSK1(u32 Option, u32 NewStatus)
-{
-	u32 WakeEvent = 0;
-
-	/* Set Event */
-	WakeEvent = HAL_READ32(PMC_BASE, WAK_MASK1_NP);
-	if (NewStatus == ENABLE) {
-		WakeEvent |= Option;
-	} else {
-		WakeEvent &= ~Option;
-	}
-	HAL_WRITE32(PMC_BASE, WAK_MASK1_NP, WakeEvent);
-}
-
-/**
-  * @brief  set np wake up event.
-  * @param  Option:
-  *   This parameter can be any combination of the following values:
-  *		 @arg WAKE_SRC_XXX
-  * @param  NewStatus: TRUE/FALSE.
-  * @retval None
-  */
-void SOCPS_SetNPWakeEvent(u32 Option, u32 Group, u32 NewStatus)
-{
-	if (Group) {
-		SOCPS_SetNPWakeEvent_MSK1(Option, NewStatus);
-	} else {
-		SOCPS_SetNPWakeEvent_MSK0(Option, NewStatus);
-	}
-}
-
-/**
-  * @brief  set ap wake up event mask0.
-  * @param  Option:
-  *   This parameter can be any combination of the following values:
-  *		 @arg WAKE_SRC_XXX
-  * @param  NewStatus: TRUE/FALSE.
-  * @retval None
-  */
-void SOCPS_SetAPWakeEvent_MSK0(u32 Option, u32 NewStatus)
-{
-	u32 WakeEvent = 0;
-
-	/* Set Event */
-	WakeEvent = HAL_READ32(PMC_BASE, WAK_MASK0_AP);
-	if (NewStatus == ENABLE) {
-		WakeEvent |= Option;
-	} else {
-		WakeEvent &= ~Option;
-	}
-	HAL_WRITE32(PMC_BASE, WAK_MASK0_AP, WakeEvent);
-}
-
-/**
-  * @brief  set ap wake up event mask1.
-  * @param  Option:
-  *   This parameter can be any combination of the following values:
-  *		 @arg WAKE_SRC_XXX
-  * @param  NewStatus: TRUE/FALSE.
-  * @retval None
-  */
-void SOCPS_SetAPWakeEvent_MSK1(u32 Option, u32 NewStatus)
-{
-	u32 WakeEvent = 0;
-
-	/* Set Event */
-	WakeEvent = HAL_READ32(PMC_BASE, WAK_MASK1_AP);
-	if (NewStatus == ENABLE) {
-		WakeEvent |= Option;
-	} else {
-		WakeEvent &= ~Option;
-	}
-	HAL_WRITE32(PMC_BASE, WAK_MASK1_AP, WakeEvent);
-}
-
-/**
-  * @brief  set ap wake up event.
-  * @param  Option:
-  *   This parameter can be any combination of the following values:
-  *		 @arg WAKE_SRC_XXX
-  * @param  NewStatus: TRUE/FALSE.
-  * @retval None
-  */
-void SOCPS_SetAPWakeEvent(u32 Option, u32 Group, u32 NewStatus)
-{
-	if (Group) {
-		SOCPS_SetAPWakeEvent_MSK1(Option, NewStatus);
-	} else {
-		SOCPS_SetAPWakeEvent_MSK0(Option, NewStatus);
-	}
+	HAL_WRITE32(PMC_BASE, Reg, WakeEvent);
 }
 
 /**

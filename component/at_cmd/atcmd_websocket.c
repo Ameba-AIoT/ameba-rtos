@@ -451,7 +451,7 @@ void at_wsconn_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<cert_index>:\tspecify which set of certificate suite to use in the file system, must be bigger than 0\r\n");
 }
 
-static void at_ws_handler_data(wsclient_context **wsclient, int data_len)
+static void at_ws_handler_data(wsclient_context **wsclient, int data_len, enum opcode_type opcode)
 {
 	wsclient_context *wsc = *wsclient;
 	int link_id;
@@ -466,7 +466,7 @@ static void at_ws_handler_data(wsclient_context **wsclient, int data_len)
 
 	if (res > 0) {
 		at_printf_lock();
-		at_printf_indicate("[WS][DATA][%d][%d]:", link_id, data_len);
+		at_printf_indicate("[WS][DATA][%d][%d][%d]:", link_id, opcode, data_len);
 		at_printf_data((char *)wsc->receivedData, (u32)data_len);
 		at_printf("\r\n");
 		at_printf_unlock();

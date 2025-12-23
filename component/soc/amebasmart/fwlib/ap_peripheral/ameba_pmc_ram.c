@@ -10,47 +10,38 @@ static const char *const TAG = "PMC";
 extern SLEEP_ParamDef sleep_param;
 
 /**
-  * @brief  set ap wake up event mask0.
+  * @brief  set AP wake up event.
   * @param  Option:
   *   This parameter can be any combination of the following values:
   *		 @arg WAKE_SRC_XXX
-  * @param  NewStatus: TRUE/FALSE.
+  * @param  NewStatus: ENABLE/DISABLE.
   * @retval None
   */
-void SOCPS_SetAPWakeEvent_MSK0(u32 Option, u32 NewStatus)
+void SOCPS_SetAPWakeEvent(u32 Option, u32 NewStatus)
 {
 	u32 WakeEvent = 0;
-
+	u32 RegIndex = (Option >> 30) & 0x3;
+	u32 Reg = 0;
+	switch (RegIndex) {
+	case 0x0:
+	case 0x1:
+	case 0x2:
+		Reg = WAK_MASK0_AP;
+		break;
+	case 0x3:
+		Reg = WAK_MASK1_AP;
+		break;
+	default:
+		return;
+	}
 	/* Set Event */
-	WakeEvent = HAL_READ32(PMC_BASE, WAK_MASK0_AP);
+	WakeEvent = HAL_READ32(PMC_BASE, Reg);
 	if (NewStatus == ENABLE) {
 		WakeEvent |= Option;
 	} else {
 		WakeEvent &= ~Option;
 	}
-	HAL_WRITE32(PMC_BASE, WAK_MASK0_AP, WakeEvent);
-}
-
-/**
-  * @brief  set ap wake up event mask1.
-  * @param  Option:
-  *   This parameter can be any combination of the following values:
-  *		 @arg WAKE_SRC_XXX
-  * @param  NewStatus: TRUE/FALSE.
-  * @retval None
-  */
-void SOCPS_SetAPWakeEvent_MSK1(u32 Option, u32 NewStatus)
-{
-	u32 WakeEvent = 0;
-
-	/* Set Event */
-	WakeEvent = HAL_READ32(PMC_BASE, WAK_MASK1_AP);
-	if (NewStatus == ENABLE) {
-		WakeEvent |= Option;
-	} else {
-		WakeEvent &= ~Option;
-	}
-	HAL_WRITE32(PMC_BASE, WAK_MASK1_AP, WakeEvent);
+	HAL_WRITE32(PMC_BASE, Reg, WakeEvent);
 }
 
 /**

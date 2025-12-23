@@ -9,7 +9,6 @@
 #include <lwip/sockets.h>
 #include <lwip/netdb.h>
 #include "usbh_cdc_ecm.h"
-#include "usbh_cdc_ecm_appx.h"
 #include "usbh_cdc_ecm_hal.h"
 
 
@@ -55,7 +54,7 @@ static int cdc_ecm_cb_deinit(void);
 static int cdc_ecm_cb_attach(void);
 static int cdc_ecm_cb_detach(void);
 static int cdc_ecm_cb_setup(void);
-static int cdc_ecm_cb_process(usb_host_t *host, u8 id);
+static int cdc_ecm_cb_process(usb_host_t *host, u8 msg);
 static int cdc_ecm_cb_bulk_send(usbh_urb_state_t state);
 static int cdc_ecm_cb_bulk_receive(u8 *pbuf, u32 Len);
 static int cdc_ecm_cb_intr_receive(u8 *buf, u32 length);
@@ -78,7 +77,7 @@ static usbh_config_t usbh_ecm_cfg = {
 	.ext_intr_enable = 0, //USBH_SOF_INTR
 	.isr_priority = USBH_ECM_ISR_PRIORITY,
 	.main_task_priority = USBH_ECM_MAIN_THREAD_PRIORITY,
-	.hub_enable = 1U,
+	.hub_support = 1U,
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,
@@ -204,9 +203,9 @@ static int cdc_ecm_cb_bulk_receive(u8 *buf, u32 length)
 
 	usb_rx_total_len += length;
 	if (usb_rx_start_time == 0) {
-		usb_rx_start_time = usbh_get_timestamp(NULL);
+		usb_rx_start_time = usb_hal_get_timestamp_ms();
 	}
-	usb_rx_end_time = usbh_get_timestamp(NULL);
+	usb_rx_end_time = usb_hal_get_timestamp_ms();
 	usb_rx_interval_time = (usb_rx_end_time - usb_rx_start_time) * RTOS_TICK_RATE_MS;
 
 	if (usb_rx_interval_time >= 2000) {
@@ -246,7 +245,7 @@ static int cdc_ecm_cb_bulk_send(usbh_urb_state_t state)
 static int cdc_ecm_cb_intr_receive(u8 *buf, u32 length)
 {
 	if (buf && length >= 8) {
-		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Data(%02x %02x %02x %02x )\n",buf[0],buf[1],buf[2],buf[3]);
+		// RTK_LOGS(TAG, RTK_LOG_INFO, "Data(%02x %02x %02x %02x )\n",buf[0],buf[1],buf[2],buf[3]);
 		/*A1 00 00 00 01 00 00 00 */
 		if (length == 8 && buf[0] == 0xA1 && buf[1] == CDC_ECM_NOTIFY_NETWORK_CONNECTION) {
 			usbh_cdc_ecm_host_user.ecm_hw_connect = buf[2];
@@ -260,12 +259,12 @@ static int cdc_ecm_cb_intr_receive(u8 *buf, u32 length)
 	return HAL_OK;
 }
 
-static int cdc_ecm_cb_process(usb_host_t *host, u8 id)
+static int cdc_ecm_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
-	switch (id) {
+	switch (msg) {
 	case USBH_MSG_USER_SET_CONFIG:
-		usbh_cdc_ecm_choose_config(host);	//choose ecm config
+		usbh_cdc_ecm_choose_config(host);
 		break;
 	case USBH_MSG_DISCONNECTED:
 		usbh_cdc_ecm_host_user.cdc_ecm_is_ready = 0;
@@ -304,7 +303,7 @@ static void usbh_ecm_monitor_thread(void *param)
 			}
 
 			eth_state = usbh_cdc_ecm_get_connect_status();
-			u32 now = usbh_get_timestamp(NULL); //ms
+			u32 now = usb_hal_get_timestamp_ms(); //ms
 			next_sleep = -1;  //init
 
 			for (u8 i = 0; i < USBH_CDC_ECM_TYPE_MAX; i++) {
@@ -382,16 +381,13 @@ static int usbh_cdc_ecm_doinit(void)
 {
 	int status;
 
-	/* init appx */
-	usbh_cdc_ecm_appx_doinit(usbh_cdc_ecm_host_user.params);
-
 	status = usbh_init(&usbh_ecm_cfg, &usbh_ecm_usr_cb);
 	if (status != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Host init fail %d\n", status);
 		return USBH_CORE_INIT_FAIL;
 	}
 
-	status = usbh_cdc_ecm_init(&cdc_ecm_usb_cb);
+	status = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, usbh_cdc_ecm_host_user.params);
 	if (status != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init driver fail %d\n", status);
 		return USBH_CLASS_INIT_FAIL;
@@ -402,9 +398,11 @@ static int usbh_cdc_ecm_doinit(void)
 
 /* Exported functions  used in ECM class--------------------------------------------------------*/
 /**
-  * @brief  register EP info to the array for the monitor task
-  * @param  pipe: User Callback
-  * @param  priv: private params
+  * @brief  Register EP info to the array for the monitor task
+  * @param  pipe: pipe numeber
+  * @param  time_value: timer interval
+  * @param  fn: User Callback
+  * @param  type: EP type
   * @retval Status
   */
 int usbh_ecm_timer_register(u8 pipe, u32 time_value, usb_timer_func fn, u8 type)
@@ -463,7 +461,6 @@ int usbh_cdc_ecm_do_deinit(void)
 	usbh_ecm_timer_unregister();
 
 	//destory all task
-	RTK_LOGS(TAG, RTK_LOG_INFO, "[USBD]%s Line %d\n", __func__, __LINE__);
 	if (usbh_cdc_ecm_host_user.monitor_task != NULL) {
 		RTK_LOGI(TAG, "Del monitor_task task\n");
 		rtos_task_delete(usbh_cdc_ecm_host_user.monitor_task);
@@ -539,14 +536,20 @@ free_sema_exit:
 }
 
 /**
-  * @brief  usb enum success
-  * @retval status
+  * @brief  Check usb enum status
+  * @retval enum status
   */
 u8 usbh_cdc_ecm_usb_is_ready(void)
 {
 	return (usbh_cdc_ecm_check_enum_status() == HAL_OK);
 }
 
+/**
+  * @brief  Start to transmit data
+  * @param  buf: Data buffer
+  * @param  len: Data length
+  * @retval Status
+  */
 int usbh_cdc_ecm_send_data(u8 *buf, u32 len)
 {
 	int ret;
@@ -558,7 +561,7 @@ int usbh_cdc_ecm_send_data(u8 *buf, u32 len)
 
 	usb_tx_total_len += len;
 	if (usb_tx_start_time == 0) {
-		usb_tx_start_time = usbh_get_timestamp(NULL);
+		usb_tx_start_time = usb_hal_get_timestamp_ms();
 	}
 #endif
 
@@ -582,7 +585,7 @@ int usbh_cdc_ecm_send_data(u8 *buf, u32 len)
 		usbh_cdc_ecm_host_user.cdc_ecm_tx_block = 1;
 		usb_os_sema_take(usbh_cdc_ecm_host_user.cdc_ecm_tx_sema, USB_OS_SEMA_TIMEOUT);
 #if USBH_ECM_TX_SPEED_CHECK
-		usb_tx_end_time = usbh_get_timestamp(NULL);
+		usb_tx_end_time = usb_hal_get_timestamp_ms();
 		usb_tx_interval_time = (usb_tx_end_time - usb_tx_start_time) * RTOS_TICK_RATE_MS;
 
 		if (usb_tx_interval_time >= 3000) {
@@ -601,8 +604,8 @@ int usbh_cdc_ecm_send_data(u8 *buf, u32 len)
 }
 
 /**
-  * @brief  ecm device is ready
-  * @retval
+  * @brief  Get ecm device connect status
+  * @retval device connect status
   */
 int usbh_cdc_ecm_get_connect_status(void)//1 up
 {
@@ -612,26 +615,38 @@ int usbh_cdc_ecm_get_connect_status(void)//1 up
 	if (usbh_cdc_ecm_get_device_vid_info() == USB_DEFAULT_VID) {
 		return ret;
 	}
-	return usbh_cdc_ecm_host_user.cdc_ecm_is_ready ;
+	return usbh_cdc_ecm_host_user.cdc_ecm_is_ready;
 }
 
+/**
+  * @brief  Get the BULK IN max packet size
+  * @retval max packet size
+  */
 u16 usbh_cdc_ecm_get_receive_mps(void)
 {
 	return usbh_cdc_ecm_get_usbin_mps();
 }
 
+/**
+  * @brief  Get ecm device VID
+  * @retval device VID
+  */
 u16 usbh_cdc_ecm_get_device_vid(void)
 {
 	return usbh_cdc_ecm_get_device_vid_info();
 }
 
+/**
+  * @brief  Get ecm device PID
+  * @retval device PID
+  */
 u16 usbh_cdc_ecm_get_device_pid(void)
 {
 	return usbh_cdc_ecm_get_device_pid_info();
 }
 
 /**
-  * @brief  hex to char
+  * @brief Convert hex data to char format
   * @retval
   */
 u8 usbh_cdc_ecm_hex_to_char(u8 hex_num)
@@ -650,13 +665,6 @@ u8 usbh_cdc_ecm_hex_to_char(u8 hex_num)
 	}
 
 	return hex_num;
-}
-
-u8 usbh_cdc_ecm_prepare_done(void)
-{
-	usbh_cdc_ecm_trx_prepare_done();
-
-	return 0;
 }
 
 #if ECM_STATE_DEBUG_ENABLE

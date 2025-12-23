@@ -11,6 +11,7 @@
 #include "lfs.h"
 
 extern lfs_t g_lfs;
+extern lfs_t g_secondary_lfs;
 extern int rt_lfs_init(lfs_t *lfs);
 int lfs_mount_flag = 0;
 static struct dirent *lfs_ent;
@@ -43,7 +44,7 @@ int fmodeflags(const char *mode)
 	return flags;
 }
 
-int littlefs_open(const char *filename, const char *mode, vfs_file *finfo)
+int littlefs_open(void *fs, const char *filename, const char *mode, vfs_file *finfo)
 {
 	int ret = 0;
 	int flags = fmodeflags(mode);
@@ -75,7 +76,7 @@ int littlefs_open(const char *filename, const char *mode, vfs_file *finfo)
 		mode_flag |= LFS_O_APPEND;
 	}
 
-	ret = lfs_file_open(&g_lfs, file, filename, mode_flag);
+	ret = lfs_file_open(fs, file, filename, mode_flag);
 	if (ret < 0) {
 		if (ret == LFS_ERR_NOENT) {
 			VFS_DBG(VFS_WARNING, "file is not exist");
@@ -92,33 +93,33 @@ int littlefs_open(const char *filename, const char *mode, vfs_file *finfo)
 	return ret;
 }
 
-int littlefs_read(unsigned char *buf, unsigned int size, unsigned int count, vfs_file *finfo)
+int littlefs_read(void *fs, unsigned char *buf, unsigned int size, unsigned int count, vfs_file *finfo)
 {
 	int ret = 0;
 	lfs_file_t *file = (lfs_file_t *)finfo->file;
-	ret = lfs_file_read(&g_lfs, file, buf, size * count);
+	ret = lfs_file_read(fs, file, buf, size * count);
 	if (ret < 0) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs fread error %d \r\n", ret);
 	}
 	return ret;
 }
 
-int littlefs_write(unsigned char *buf, unsigned int size, unsigned int count, vfs_file *finfo)
+int littlefs_write(void *fs, unsigned char *buf, unsigned int size, unsigned int count, vfs_file *finfo)
 {
 	int ret = 0;
 	lfs_file_t *file = (lfs_file_t *)finfo->file;
-	ret = lfs_file_write(&g_lfs, file, buf, size * count);
+	ret = lfs_file_write(fs, file, buf, size * count);
 	if (ret < 0) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs fwrite error %d \r\n", ret);
 	}
 	return ret;
 }
 
-int littlefs_close(vfs_file *finfo)
+int littlefs_close(void *fs, vfs_file *finfo)
 {
 	int ret = 0;
 	lfs_file_t *file = (lfs_file_t *)finfo->file;
-	ret = lfs_file_close(&g_lfs, file);
+	ret = lfs_file_close(fs, file);
 	if (file) {
 		rtos_mem_free(file);
 	}
@@ -130,19 +131,19 @@ int littlefs_close(vfs_file *finfo)
 	return ret;
 }
 
-int littlefs_seek(long int offset, int origin, vfs_file *finfo)
+int littlefs_seek(void *fs, long int offset, int origin, vfs_file *finfo)
 {
 	int ret = 0;
 	lfs_file_t *file = (lfs_file_t *)finfo->file;
 	switch (origin) {
 	case SEEK_SET:
-		ret = lfs_file_seek(&g_lfs, file, offset, LFS_SEEK_SET);
+		ret = lfs_file_seek(fs, file, offset, LFS_SEEK_SET);
 		break;
 	case SEEK_CUR:
-		ret = lfs_file_seek(&g_lfs, file, offset, LFS_SEEK_CUR);
+		ret = lfs_file_seek(fs, file, offset, LFS_SEEK_CUR);
 		break;
 	case SEEK_END:
-		ret = lfs_file_seek(&g_lfs, file, offset, LFS_SEEK_END);
+		ret = lfs_file_seek(fs, file, offset, LFS_SEEK_END);
 		break;
 	}
 
@@ -153,25 +154,25 @@ int littlefs_seek(long int offset, int origin, vfs_file *finfo)
 	return ret;
 }
 
-void littlefs_rewind(vfs_file *finfo)
+void littlefs_rewind(void *fs, vfs_file *finfo)
 {
 	lfs_file_t *file = (lfs_file_t *)finfo->file;
-	lfs_file_rewind(&g_lfs, file);
+	lfs_file_rewind(fs, file);
 }
 
-int littlefs_fgetops(vfs_file *finfo)
+int littlefs_fgetops(void *fs, vfs_file *finfo)
 {
 	int location = 0;
 	lfs_file_t *file = (lfs_file_t *)finfo->file;
-	location = lfs_file_tell(&g_lfs, file);
+	location = lfs_file_tell(fs, file);
 	return location;
 }
 
-int littlefs_fsetops(unsigned int offset, vfs_file *finfo)
+int littlefs_fsetops(void *fs, unsigned int offset, vfs_file *finfo)
 {
 	int ret = 0;
 	lfs_file_t *file = (lfs_file_t *)finfo->file;
-	ret = lfs_file_seek(&g_lfs, file, offset, LFS_SEEK_SET);
+	ret = lfs_file_seek(fs, file, offset, LFS_SEEK_SET);
 
 	if (ret < 0) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs fsetops error %d \r\n", ret);
@@ -180,11 +181,11 @@ int littlefs_fsetops(unsigned int offset, vfs_file *finfo)
 	return ret;
 }
 
-int littlefs_fflush(vfs_file *finfo)
+int littlefs_fflush(void *fs, vfs_file *finfo)
 {
 	int ret = 0;
 	lfs_file_t *file = (lfs_file_t *)finfo->file;
-	ret = lfs_file_sync(&g_lfs, file);
+	ret = lfs_file_sync(fs, file);
 
 	if (ret < 0) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs fflush error %d \r\n", ret);
@@ -193,10 +194,10 @@ int littlefs_fflush(vfs_file *finfo)
 	return ret;
 }
 
-int littlefs_remove(const char *name)
+int littlefs_remove(void *fs, const char *name)
 {
 	int ret = 0;
-	ret = lfs_remove(&g_lfs, name);
+	ret = lfs_remove(fs, name);
 
 	if (ret == LFS_ERR_NOENT) {
 		VFS_DBG(VFS_INFO, "The file to be deleted does not exist.\r\n");
@@ -207,10 +208,10 @@ int littlefs_remove(const char *name)
 	return ret;
 }
 
-int littlefs_rename(const char *old_name, const char *new_name)
+int littlefs_rename(void *fs, const char *old_name, const char *new_name)
 {
 	int ret = 0;
-	ret = lfs_rename(&g_lfs, old_name, new_name);
+	ret = lfs_rename(fs, old_name, new_name);
 
 	if (ret < 0) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs remove error %d \r\n", ret);
@@ -219,13 +220,13 @@ int littlefs_rename(const char *old_name, const char *new_name)
 	return ret;
 }
 
-int littlefs_feof(vfs_file *finfo)
+int littlefs_feof(void *fs, vfs_file *finfo)
 {
 	int location = 0;//lfs_file_size
 	int size = 0;
 	lfs_file_t *file = (lfs_file_t *)finfo->file;
-	location = lfs_file_tell(&g_lfs, file);
-	size = lfs_file_size(&g_lfs, file);
+	location = lfs_file_tell(fs, file);
+	size = lfs_file_size(fs, file);
 	if ((size - location) <= 0) {
 		VFS_DBG(VFS_INFO, "End of file");
 		return 1;
@@ -241,19 +242,19 @@ int littlefs_ferror(vfs_file *finfo)
 	return 0;
 }
 
-int littlefs_ftell(vfs_file *finfo)
+int littlefs_ftell(void *fs, vfs_file *finfo)
 {
 	int location = 0;
 	lfs_file_t *file = (lfs_file_t *)finfo->file;
-	location = lfs_file_tell(&g_lfs, file);
+	location = lfs_file_tell(fs, file);
 	return location;
 }
 
-int littlefs_ftruncate(vfs_file *finfo, off_t length)
+int littlefs_ftruncate(void *fs, vfs_file *finfo, off_t length)
 {
 	int ret = 0;
 	lfs_file_t *file = (lfs_file_t *)finfo->file;
-	ret = lfs_file_truncate(&g_lfs, file, length);
+	ret = lfs_file_truncate(fs, file, length);
 	if (ret < 0) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs ftruncate error %d \r\n", ret);
 		return -1;
@@ -261,7 +262,7 @@ int littlefs_ftruncate(vfs_file *finfo, off_t length)
 	return 0;
 }
 
-int littlefs_opendir(const char *name, vfs_file *finfo)
+int littlefs_opendir(void *fs, const char *name, vfs_file *finfo)
 {
 	lfs_dir_t *dir = rtos_mem_malloc(sizeof(lfs_dir_t));
 	if (dir == NULL) {
@@ -269,7 +270,7 @@ int littlefs_opendir(const char *name, vfs_file *finfo)
 	}
 	memset(dir, 0, sizeof(lfs_dir_t));
 
-	int err = lfs_dir_open(&g_lfs, dir, name);
+	int err = lfs_dir_open(fs, dir, name);
 	if (err) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs opendir error %d \r\n", err);
 		rtos_mem_free(dir);
@@ -279,7 +280,7 @@ int littlefs_opendir(const char *name, vfs_file *finfo)
 	return err;
 }
 
-struct dirent *littlefs_readdir(vfs_file *finfo)
+struct dirent *littlefs_readdir(void *fs, vfs_file *finfo)
 {
 	lfs_dir_t *dir = (lfs_dir_t *)finfo->file;
 	struct lfs_info info;
@@ -290,7 +291,7 @@ struct dirent *littlefs_readdir(vfs_file *finfo)
 		}
 	}
 	memset(lfs_ent, 0, sizeof(struct dirent));
-	int err = lfs_dir_read(&g_lfs, dir, &info);
+	int err = lfs_dir_read(fs, dir, &info);
 	if (err <= 0) {
 		return NULL;
 	}
@@ -309,11 +310,11 @@ struct dirent *littlefs_readdir(vfs_file *finfo)
 	return lfs_ent;
 }
 
-int littlefs_closedir(vfs_file *finfo)
+int littlefs_closedir(void *fs, vfs_file *finfo)
 {
 	int ret = 0;
 	lfs_dir_t *dir = (lfs_dir_t *)finfo->file;
-	ret = lfs_dir_close(&g_lfs, dir);
+	ret = lfs_dir_close(fs, dir);
 	rtos_mem_free(dir);
 	if (lfs_ent != NULL) {
 		rtos_mem_free(lfs_ent);
@@ -325,32 +326,32 @@ int littlefs_closedir(vfs_file *finfo)
 	return ret;
 }
 
-int littlefs_mkdir(const char *pathname)
+int littlefs_mkdir(void *fs, const char *pathname)
 {
 	int ret = 0;
-	ret = lfs_mkdir(&g_lfs, pathname);
+	ret = lfs_mkdir(fs, pathname);
 	if (ret < 0 && ret != LFS_ERR_EXIST) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs mkdir fail: %d", ret);
 	}
 	return ret;
 }
 
-int littlefs_rmdir(const char *path)
+int littlefs_rmdir(void *fs, const char *path)
 {
 	int ret = 0;
-	ret = lfs_remove(&g_lfs, path);
+	ret = lfs_remove(fs, path);
 	if (ret < 0) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs rmdir fail: %d", ret);
 	}
 	return ret;
 }
 
-int littlefs_access(const char *pathname, int mode)
+int littlefs_access(void *fs, const char *pathname, int mode)
 {
 	(void) mode;
 	struct lfs_info info;
 	int ret = 0;
-	ret = lfs_stat(&g_lfs, pathname, &info);
+	ret = lfs_stat(fs, pathname, &info);
 	if (ret < 0) {
 		return -1;
 	} else {
@@ -358,11 +359,11 @@ int littlefs_access(const char *pathname, int mode)
 	}
 }
 
-int littlefs_stat(char *path, struct stat *buf)
+int littlefs_stat(void *fs, char *path, struct stat *buf)
 {
 	struct lfs_info info;
 	int ret = 0;
-	ret = lfs_stat(&g_lfs, path, &info);
+	ret = lfs_stat(fs, path, &info);
 	if (ret < 0) {
 		return -1;
 	}
@@ -393,7 +394,16 @@ int littlefs_mount(int interface)
 {
 	(void) interface;
 	int ret = 0;
-	ret = rt_lfs_init(&g_lfs);
+
+	if (interface == VFS_INF_FLASH) {
+		ret = rt_lfs_init(&g_lfs);
+	}
+#ifdef CONFIG_LITTLEFS_SECONDARY_FLASH
+	if (interface == VFS_INF_SECONDARY_FLASH) {
+		ret = rt_lfs_init(&g_secondary_lfs);
+	}
+#endif
+
 	if (ret) {
 		VFS_DBG(VFS_ERROR, "Littlefs mount fail, ret is %d", ret);
 		lfs_mount_flag = -1;
@@ -408,7 +418,16 @@ int littlefs_unmount(int interface)
 {
 	(void) interface;
 	int ret = 0;
-	ret = lfs_unmount(&g_lfs);
+
+	if (interface == VFS_INF_FLASH) {
+		ret = lfs_unmount(&g_lfs);
+	}
+#ifdef CONFIG_LITTLEFS_SECONDARY_FLASH
+	if (interface == VFS_INF_SECONDARY_FLASH) {
+		ret = lfs_unmount(&g_secondary_lfs);
+	}
+#endif
+
 	VFS_DBG(VFS_INFO, "Littlefs unmount");
 	return ret;
 }

@@ -65,13 +65,7 @@ void pmu_aontimer_wakeup_task(void)
 	InterruptRegister((IRQ_FUN)pmu_aontimer_int, AON_TIM_IRQ, NULL, 3);
 	InterruptEn(AON_TIM_IRQ, 3);
 	/*2. Call API or modify sleepcfg.c to set wakeup mask.*/
-#if defined(CONFIG_AMEBALITE)
-	SOCPS_SetAPWakeEvent_MSK1(WAKE_SRC_AON_TIM, ENABLE);
-#elif defined(CONFIG_AMEBASMART)
-	SOCPS_SetAPWakeEvent_MSK0(WAKE_SRC_AON_TIM, ENABLE);
-#elif defined(CONFIG_AMEBADPLUS) || defined(CONFIG_AMEBAGREEN2)
 	SOCPS_SetAPWakeEvent(WAKE_SRC_AON_TIM, ENABLE);
-#endif
 	/*3. (optional) Register sleep hook*/
 	pmu_register_sleep_callback(PMU_DEV_USER_BASE, (PSM_HOOK_FUN)app_peripheral_suspend, NULL, (PSM_HOOK_FUN)app_peripheral_resume, NULL);
 

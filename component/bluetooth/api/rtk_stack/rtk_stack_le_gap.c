@@ -719,8 +719,7 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 #endif
 
 	case GAP_MSG_LE_CONN_UPDATE_IND: {
-		/* Connection parameters update request by remote:
-		    LE Remote Connection Parameter Request Event */
+		/* Connection parameters update request by remote */
 		T_APP_RESULT app_res = (T_APP_RESULT)0;
 		uint8_t cb_ret = 0;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP,
@@ -3304,20 +3303,22 @@ static uint16_t bt_stack_le_gap_remove_ext_adv(void *param)
 
 static uint16_t bt_stack_le_gap_get_ext_adv_handle_by_conn_handle(void *param)
 {
-#if defined(RTK_BLE_MGR_LIB_EADV) && RTK_BLE_MGR_LIB_EADV
-	(void)param;
-	return RTK_BT_ERR_UNSUPPORTED;
-#else
 	rtk_bt_le_get_eadv_by_conn_handle_param_t *get_eadv_hdl = (rtk_bt_le_get_eadv_by_conn_handle_param_t *)param;
 	uint8_t conn_id = 0;
+	uint8_t adv_handle = 0;
 
 	if (!le_get_conn_id_by_handle(get_eadv_hdl->conn_handle, &conn_id)) {
 		return RTK_BT_ERR_NO_CONNECTION;
 	}
-	*(get_eadv_hdl->adv_handle) = le_ext_adv_get_adv_handle_by_conn_id(conn_id);
+
+	adv_handle = le_ext_adv_get_adv_handle_by_conn_id(conn_id);
+	if (0xFF == adv_handle) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	*(get_eadv_hdl->adv_handle) = adv_handle;
 
 	return 0;
-#endif
 }
 #endif /* RTK_BLE_5_0_USE_EXTENDED_ADV && F_BT_LE_5_0_AE_ADV_SUPPORT */
 

@@ -1,0 +1,33 @@
+{
+    "KM4": {
+        "preCommands": {
+            "set substitute-path": [
+                ["./component/soc/amebalite/app/monitor/rom/shell_rom.c", "component/soc/amebalite/rom/rom_common/ameba_shell_rom.c"],
+                ["./component/soc/amebalite/app/monitor/rom/monitor_rom.c", "component/soc/amebalite/rom/rom_common/ameba_monitor_rom.c"]
+            ],
+            "dir": [
+                "component/soc/amebalite/rom/download/xmodem",
+                "component/soc/amebalite/rom/rom_common",
+                "component/soc/amebalite/rom/rom_common_xo",
+                "component/soc/amebalite/rom/rom_km4",
+                "component/soc/amebalite/rom/stdlib",
+                "component/soc/amebalite/rom/string",
+                "component/soc/amebalite/rom/vector",
+                "component/soc/amebalite/fwlib/include",
+                "component/soc/common/include/cmsis",
+                "component/soc/common/trusted-firmware-m/platform/ext/target/realtek/amebadplus/cmsis_core"
+            ],
+            "add-symbol-file": [
+                "amebalite_gcc_project/project_km4/asdk/image/target_loader.axf",
+                "amebalite_gcc_project/project_km4/asdk/lib/amebalite_rom_acut/target_rom.axf",
+                "amebalite_gcc_project/project_km4/asdk/lib/amebalite_rom_acut/target_rom_ns.axf",
+                "amebalite_gcc_project/project_km4/asdk/lib/amebalite_rom_acut/target_stdlib.axf"
+            ]
+        },
+        "overrideCommands": [
+            "mem 0xa5a5a5a4 0xa5a5a5a6 none",
+            "mem 0xffffff00 0xffffffff none",
+            "set mem inaccessible-by-default off"
+        ]
+    }
+}

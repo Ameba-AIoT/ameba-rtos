@@ -111,6 +111,38 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_device_gap_app_callback(uint8_t evt_code
 		break;
 	}
 
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
+	case RTK_BT_LE_GAP_EVT_EXT_ADV_IND: {
+		rtk_bt_le_ext_adv_ind_t *ext_adv_ind = (rtk_bt_le_ext_adv_ind_t *)param;
+		if (!ext_adv_ind->err) {
+			if (ext_adv_ind->is_start) {
+				BT_LOGA("[APP] Ext ADV(%d) started\r\n", ext_adv_ind->adv_handle);
+
+				if (s_ble_wifimate_timer_hdl) {
+					BT_LOGA("[APP] ble wifimate timer start succeed!\r\n");
+					osif_timer_start(&s_ble_wifimate_timer_hdl);
+				}
+			} else {
+				BT_LOGA("[APP] Ext ADV(%d) stopped: reason 0x%x \r\n", ext_adv_ind->adv_handle, ext_adv_ind->stop_reason);
+			}
+		} else {
+			if (ext_adv_ind->is_start) {
+				BT_LOGE("[APP] Ext ADV(%d) started failed, err 0x%x\r\n", ext_adv_ind->adv_handle, ext_adv_ind->err);
+			} else {
+				BT_LOGE("[APP] Ext ADV(%d) stopped failed, err 0x%x\r\n", ext_adv_ind->adv_handle, ext_adv_ind->err);
+			}
+		}
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		if (bt_at_sync_event_match_check(RTK_BT_LE_GAP_EVT_ADV_START_IND) ||
+			bt_at_sync_event_match_check(RTK_BT_LE_GAP_EVT_ADV_STOP_IND)) {
+			bt_at_sync_set_result(ext_adv_ind->err);
+			bt_at_sync_sem_give();
+		}
+#endif
+		break;
+	}
+#endif
+
 	case RTK_BT_LE_GAP_EVT_SCAN_START_IND: {
 		rtk_bt_le_scan_start_ind_t *scan_start_ind = (rtk_bt_le_scan_start_ind_t *)param;
 		if (!scan_start_ind->err) {
@@ -331,11 +363,13 @@ int ble_wifimate_device_main(uint8_t enable, uint16_t timeout)
 		}
 		s_ble_wifmate_enable = true;
 
-		osif_timer_create(&s_ble_wifimate_timer_hdl, "ble_wifimate_start_timer", NULL, timeout * 1000, false,
-						  ble_wifimate_timeout_handler);
-		if (s_ble_wifimate_timer_hdl == NULL) {
-			BT_LOGE("[APP] ble wifimate create timer failed!\r\n");
-			return RTK_BT_ERR_OS_OPERATION;
+		if (timeout > 0) {
+			osif_timer_create(&s_ble_wifimate_timer_hdl, "ble_wifimate_start_timer", NULL, timeout * 1000, false,
+							  ble_wifimate_timeout_handler);
+			if (s_ble_wifimate_timer_hdl == NULL) {
+				BT_LOGE("[APP] ble wifimate create timer failed!\r\n");
+				return RTK_BT_ERR_OS_OPERATION;
+			}
 		}
 
 		//set GAP configuration

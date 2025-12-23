@@ -140,6 +140,8 @@ static void bt_uart_bridge_close(void)
 	/*Open log output*/
 	ConfigDebugClose = 0;
 
+#elif defined(CONFIG_AMEBAPRO3) && (CONFIG_AMEBAPRO3 == 1)
+	// todo
 #else /* not (CONFIG_AMEBALITE or CONFIG_AMEBASMART) */
 	u32 TempVal;
 
@@ -210,6 +212,12 @@ static u32 bt_uart_bridge_irq(void *data)
 	uint32_t reg_lsr = LOGUART_GetStatus(LOGUART_DEV);
 
 	/* when rx FIFO not empty */
+#if (defined(CONFIG_AMEBAPRO3) && (CONFIG_AMEBAPRO3 == 1))
+	// todo
+	(void)ret;
+	(void)reg_lsr;
+	bt_uart_bridge_close_pattern(rc);
+#else
 	if ((reg_lsr & RUART_BIT_RXFIFO_INT) || (reg_lsr & RUART_BIT_TIMEOUT_INT)) {
 		while (LOGUART_Readable()) {
 			rc = LOGUART_GetChar(FALSE);
@@ -235,7 +243,7 @@ static u32 bt_uart_bridge_irq(void *data)
 		LOGUART_INTConfig(LOGUART_DEV, RUART_BIT_ELSI, DISABLE);
 		LOGUART_INTClear(LOGUART_DEV, RUART_BIT_RLSICF);
 	}
-
+#endif
 	return 0;
 }
 
@@ -285,6 +293,9 @@ void bt_uart_bridge_open(void)
 	irq_register((IRQ_FUN)bt_uart_bridge_irq, UART_LOG_IRQ, (uint32_t)NULL, INT_PRI4);
 	irq_enable(UART_LOG_IRQ);
 
+#elif defined(CONFIG_AMEBAPRO3) && (CONFIG_AMEBAPRO3 == 1)
+	// todo
+	bt_uart_bridge_irq(NULL);
 #else /* not (CONFIG_AMEBALITE or CONFIG_AMEBASMART) */
 	u32 TempVal;
 
@@ -369,18 +380,22 @@ static int mp_ext2_gnt_bt(void **argv, int argc)
 	return 0;
 }
 
-#if defined(CONFIG_AMEBASMART)
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAPRO3)
 static int mp_ext2_ant(void **argv, int argc)
 {
 	(void)argc;
 
 	if (strcmp(argv[0], "s0") == 0) {
 		MP_EXT2_PRINTF("BT use dedicated RF s0.\n\r");
+#if defined(CONFIG_BT_COEXIST)
 		rtk_coex_btc_set_bt_ant(0);
+#endif
 		rtk_bt_set_bt_antenna(0);
 	} else if (strcmp(argv[0], "s1") == 0) {
 		MP_EXT2_PRINTF("BT use share RF s1.\n\r");
+#if defined(CONFIG_BT_COEXIST)
 		rtk_coex_btc_set_bt_ant(1);
+#endif
 		rtk_bt_set_bt_antenna(1);
 	}
 
@@ -392,7 +407,7 @@ at_mp_ext_item_t at_mp_ext2_items[] = {
 	{"bridge",      mp_ext2_uart_bridge,        UART_BRIDGE_USAGE},
 	{"bt_power",    mp_ext2_bt_power,           BT_POWER_USAGE},
 	{"gnt_bt",      mp_ext2_gnt_bt,             GNT_BT_USAGE},
-#if defined(CONFIG_AMEBASMART)
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAPRO3)
 	{"ant",         mp_ext2_ant,                SELECTION_BT_ANTENNA},
 #endif /* CONFIG_AMEBASMART */
 };

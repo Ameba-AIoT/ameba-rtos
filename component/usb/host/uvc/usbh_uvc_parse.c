@@ -50,28 +50,6 @@ static void usbh_uvc_entity_t_free(usbh_uvc_entity_t *entity)
 }
 
 /**
-  * @brief	Find next standard descriptor
-  * @param	pbuf: given buffer to find
-  			len: given buffer length
-  * @retval Pointer of next standard descriptor
-  */
-static u8 *usbh_uvc_find_next_stdesc(u8 *pbuf, u32 *len)
-{
-	u8 *desc = pbuf;
-
-	while (*len > 0) {
-		if (((usbh_uvc_desc_header_t *)desc)->bDescriptorType == USB_DESC_TYPE_INTERFACE) {
-			return (u8 *) desc;
-		} else {
-			*len -= ((usbh_uvc_desc_header_t *)desc)->bLength;
-			desc += ((usbh_uvc_desc_header_t *)desc)->bLength;
-		}
-	}
-
-	return NULL;
-}
-
-/**
   * @brief	Parse entity from given descriptor
   * @param	desc: given descriptor buffer
   * @retval Status
@@ -150,32 +128,41 @@ static u8 usbh_uvc_parse_entity(u8 *desc)
 		list_add_tail((struct list_head *)&entity->list, &uvc->entity_list);
 	}
 
-	return 0;
+	return HAL_OK;
 }
 
 /**
   * @brief	Parse video control interface
-  * @param	desc: given descriptor buffer
-  			length: lenghth of given buffer
+  * @param	itf_data: interface array buffer
   * @retval Status
   */
-static u8 usbh_uvc_parse_vc(u8 *pbuf, u32 *length)
+static u8 usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 {
-	u8 *desc = pbuf;
-	int ret;
 	usbh_uvc_host_t *uvc = &uvc_host;
+	u8 *desc;
+	u8 type;
+	u8 len;
+	int ret;
 	usbh_uvc_vc_t *vc_intf = &uvc->uvc_desc.vc_intf;
+	u16 itf_total_len = 0;
 
+	desc = itf_data->raw_data;
+	//save the first interface number
 	vc_intf->p = desc;
 	vc_intf->bInterfaceNumber = desc[2];
-	*length = 0;
 
 	while (1) {
-		/*find next descripter*/
-		*length += ((usbh_uvc_desc_header_t *) desc)->bLength;
-		desc = pbuf + *length;
+		if (desc == NULL || itf_total_len >= itf_data->raw_data_len) {
+			break;
+		}
 
-		switch (((usbh_uvc_desc_header_t *) desc)->bDescriptorType) {
+		/* Find next descripter */
+		len = ((usbh_desc_header_t *) desc)->bLength;
+		desc += len;
+		itf_total_len += len;
+
+		type = ((usbh_desc_header_t *) desc)->bDescriptorType;
+		switch (type) {
 		case USB_DESC_TYPE_CS_INTERFACE:
 			ret = usbh_uvc_parse_entity((u8 *)desc);
 			if (ret) {
@@ -202,33 +189,33 @@ static u8 usbh_uvc_parse_vc(u8 *pbuf, u32 *length)
 			break;
 
 		case USB_DESC_TYPE_INTERFACE:
-			return 0;
+			return HAL_OK;
 
 		default:
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Wrong desc type: %d\n", ((usbh_uvc_desc_header_t *) desc)->bDescriptorType);
-			return 0;
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Wrong desc type: %d\n", type);
+			return HAL_OK;
 		}
 	}
-
+	return HAL_OK;
 }
 
 /**
   * @brief	Parse video format
   * @param	vs_intf: pointer of video streaming interface
-  			desc: given descriptor buffer
-  			length: lenghth of given buffer
+  * @param  desc: given descriptor buffer
+  * @param  ength: lenghth of given buffer
   * @retval Status
   */
 static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 {
 	u8 *desc = pbuf;
-	u16 len = 0;
-	u16 totallen;
 	u32 nformat = 0;
 	u32 nframe_mjepg = 0, nframe_uncomp = 0, nframe_framebased = 0;
 	u32 index = -1;
 	u32 parsed_frame_num = 0;
-	u32 real_len;
+	u32 real_len = 0;
+	u16 len = 0;
+	u16 totallen;
 	usbh_uvc_vs_frame_t *frame;
 	usbh_uvc_vs_frame_t *tmp_frame;
 
@@ -302,9 +289,8 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 			break;
 		}
 		/*find next descripter*/
-		len += ((usbh_uvc_desc_header_t *) desc)->bLength;
-		real_len = len;
-		desc = pbuf + len;
+		real_len += ((usbh_desc_header_t *) desc)->bLength;
+		desc = pbuf + real_len;
 	}
 
 	desc = pbuf;
@@ -378,7 +364,7 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 		}
 
 		/*find next descripter*/
-		len += ((usbh_uvc_desc_header_t *) desc)->bLength;
+		len += ((usbh_desc_header_t *) desc)->bLength;
 		desc = pbuf + len;
 	}
 
@@ -394,67 +380,79 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 
 /**
   * @brief	Parse video streaming interface
-  * @param	pbuf: given descriptor buffer
-  			length: lenghth of given buffer
+  * @param	itf_data: interface array buffer
   * @retval Status
   */
-static u8 usbh_uvc_parse_vs(u8 *pbuf, u32 *length)
+static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 {
-	u8 *desc = pbuf;
-	u16 len = 0;
-	u8 bAlternateSetting;
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_vs_t *vs_intf = &uvc->uvc_desc.vs_intf[uvc->uvc_desc.vs_num];
 	uvc->stream[uvc->uvc_desc.vs_num].vs_intf = vs_intf;
 	uvc->uvc_desc.vs_num++;
+	u8 bAlternateSetting;
+	u8 *desc;
+	u8 type;
+	u16 len;
+	u16 itf_total_len = 0;
 
 	if (uvc->uvc_desc.vs_num > USBH_MAX_NUM_VS_DESC) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "too much VS itf %d-%d\n", uvc->uvc_desc.vs_num > USBH_MAX_NUM_VS_DESC);
 	}
 
+	desc = itf_data->raw_data;
+	//save the first interface number
 	vs_intf->p = desc;
 	vs_intf->bInterfaceNumber = desc[2];
-	*length = 0;
+
 	/*find next descripter*/
-	*length += ((usbh_uvc_desc_header_t *) desc)->bLength;
-	desc = pbuf + *length;
+	len = ((usbh_desc_header_t *) desc)->bLength;
+	desc += len;
+	itf_total_len += len;
 
 	while (1) {
-		switch (((usbh_uvc_desc_header_t *) desc)->bDescriptorType) {
+		if (desc == NULL || itf_total_len >= itf_data->raw_data_len) {
+			break;
+		}
+
+		type = ((usbh_desc_header_t *) desc)->bDescriptorType;
+		switch (type) {
 		case USB_DESC_TYPE_CS_INTERFACE:
 			usbh_uvc_parse_format(vs_intf, desc, &len);
-			desc = desc + len;
-			*length += len;
+			desc += len;
 			break;
 
 		case USB_DESC_TYPE_INTERFACE:
-			bAlternateSetting = ((usbh_if_desc_t *)desc)->bAlternateSetting;
+			if (((usbh_itf_desc_t *)desc)->bInterfaceNumber != vs_intf->bInterfaceNumber) { //find another itf, maybe it is the as itf, should return
+				RTK_LOGS(TAG, RTK_LOG_INFO, "VC intf new %d:old %d, return\n\n", ((usbh_itf_desc_t *)desc)->bInterfaceNumber, vs_intf->bInterfaceNumber);
+				return HAL_OK;
+			}
+			bAlternateSetting = ((usbh_itf_desc_t *)desc)->bAlternateSetting;
 			if (bAlternateSetting != 0) {
 				if (bAlternateSetting < USBH_MAX_NUM_VS_ALTS) {
 					vs_intf->altsetting[bAlternateSetting - 1].p = desc;
 					vs_intf->alt_num++;
 
-					len = ((usbh_uvc_desc_header_t *) desc)->bLength;
-					*length += len;
-					desc = desc + len;
+					len = ((usbh_desc_header_t *) desc)->bLength;
+					desc += len;
 					vs_intf->altsetting[bAlternateSetting - 1].endpoint = (usbh_ep_desc_t *)desc;
 				} else {
 					RTK_LOGS(TAG, RTK_LOG_WARN, "too much alt set %d-%d\n", bAlternateSetting, USBH_MAX_NUM_VS_ALTS);
 				}
-
-				len = ((usbh_uvc_desc_header_t *) desc)->bLength;
-				desc = desc + len;
-				*length += len;
 			} else {
-				return 0;
+				return HAL_OK;
 			}
+			len = ((usbh_desc_header_t *) desc)->bLength;
+			desc += len;
 			break;
 
 		default:
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "bDescriptorType: %d\n", ((usbh_uvc_desc_header_t *) desc)->bDescriptorType);
-			return 0;
+			len = ((usbh_desc_header_t *) desc)->bLength;
+			desc += len;
+			break;
 		}
+		itf_total_len += len;
 	}
+	return HAL_OK;
 }
 
 /**
@@ -464,58 +462,40 @@ static u8 usbh_uvc_parse_vs(u8 *pbuf, u32 *length)
   */
 int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 {
-	int ret = HAL_OK;
-	usbh_uvc_desc_header_t *desc = (usbh_uvc_desc_header_t *)usbh_get_active_raw_configuration_descriptor(host);
-	u32 cfglen = (u32)((usbh_cfg_desc_t *) desc)->wTotalLength;
-	usbh_if_desc_t *pbuf = (usbh_if_desc_t *) desc;
-	u32 len, desc_len;
+	usbh_itf_data_t *itf_data;
+	int ret = HAL_ERR_UNKNOWN;
+	usbh_dev_id_t dev_id = {0,};
 
-	while (1) {
-		pbuf = (usbh_if_desc_t *)usbh_uvc_find_next_stdesc((u8 *)pbuf, &cfglen);
-		if (pbuf == NULL) {
-			break;
-		}
-
-		if (pbuf->bInterfaceClass == USBH_UVC_CLASS_CODE) {
-			switch (pbuf->bInterfaceSubClass) {
-			case USB_SUBCLASS_VIDEOCONTROL:
-				ret = usbh_uvc_parse_vc((u8 *)pbuf, &len);
-				if (ret) {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "UVC parse video ctrl fail\n");
-					return ret;
-				}
-				pbuf = (usbh_if_desc_t *)((u8 *) pbuf + len);
-				cfglen -= len;
-				break;
-
-			case USB_SUBCLASS_VIDEOSTREAMING:
-				if (pbuf->bAlternateSetting == 0) {
-					ret = usbh_uvc_parse_vs((u8 *)pbuf, &len);
-					if (ret) {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "UVC parse video stream fail\n");
-						return ret;
-					}
-
-					pbuf = (usbh_if_desc_t *)((u8 *) pbuf + len);
-					cfglen -= len;
-				}
-				break;
-
-			default:
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Subclass(%d) is not VC or VS\n", pbuf->bInterfaceClass);
-				return HAL_ERR_PARA;
-
-			}
-		} else {
-			//skip non-uvc descriptor
-			desc_len = ((usbh_uvc_desc_header_t *)pbuf)->bLength;
-			cfglen -= desc_len;
-			pbuf = (usbh_if_desc_t *)((u8 *)pbuf + desc_len);
+	dev_id.bInterfaceClass = USBH_UVC_CLASS_CODE;
+	dev_id.bInterfaceSubClass = USB_SUBCLASS_VIDEOCONTROL;
+	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
+	itf_data = usbh_get_interface_descriptor(host, &dev_id);
+	if (itf_data == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get vc itf fail\n");
+		return ret;
+	} else 	{
+		ret = usbh_uvc_parse_vc(itf_data);
+		if (ret) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "UVC parse video ctrl fail\n");
+			return ret;
 		}
 	}
 
+	dev_id.bInterfaceClass = USBH_UVC_CLASS_CODE;
+	dev_id.bInterfaceSubClass = USB_SUBCLASS_VIDEOSTREAMING;
+	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
+	itf_data = usbh_get_interface_descriptor(host, &dev_id);
+	if (itf_data == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get vs itf fail\n");
+		return ret;
+	} else {
+		ret = usbh_uvc_parse_vs(itf_data);
+		if (ret) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "UVC parse video stream fail\n");
+			return ret;
+		}
+	}
 	return ret;
-
 }
 
 /**

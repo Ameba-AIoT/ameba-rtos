@@ -52,6 +52,13 @@ static struct ble_wifimate_char_recv_data_t s_multi_recv = {0};
 /* sp_encrypt point to s_encrypt, no need free in the client */
 static struct ble_wifimate_encrypt_decrypt_t *sp_encrypt = NULL;
 
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+static rtk_bt_gattc_uuid_t ble_wifimate_uuid = {
+	.is_uuid16 = true,
+	.p.uuid16 = BLE_WIFIMATE_UUID_SRV
+};
+#endif
+
 static uint32_t ble_wifimate_client_checksum_cal(uint16_t len, uint8_t *data)
 {
 	uint32_t checksum = 0;
@@ -446,6 +453,166 @@ uint16_t ble_wifimate_client_wifi_connect(uint16_t conn_handle, struct wifi_conn
 	return ble_wifimate_write_wlconn_enable_initial(conn_handle, conn_info);
 }
 
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+uint16_t ble_wifimate_client_srv_discover_all(uint16_t conn_handle)
+{
+	uint16_t ret = 0;
+
+	ret = rtk_bt_gattc_discover_all(conn_handle);
+	if (ret != RTK_BT_OK) {
+		BT_LOGE("[%s] Discover services failed! err: 0x%x\r\n", __func__, ret);
+	}
+
+	return ret;
+}
+
+static uint16_t ble_wifimate_client_char_find(uint16_t conn_handle)
+{
+	uint16_t ret = 0;
+	uint8_t conn_id = 0;
+	uint16_t char_handle = 0;
+	struct ble_wifimate_client_db_t *conn_db = NULL;
+	rtk_bt_gattc_find_param_t find_param = {0};
+	rtk_bt_gattc_uuid_t char_uuid = {
+		.is_uuid16 = true,
+	};
+
+	if (rtk_bt_le_gap_get_conn_id(conn_handle, &conn_id) != RTK_BT_OK) {
+		return RTK_BT_FAIL;
+	}
+
+	conn_db = ble_wifimate_database[conn_id];
+	if (!conn_db) {
+		return RTK_BT_FAIL;
+	}
+
+	find_param.conn_handle = conn_handle;
+	find_param.type = RTK_BT_GATT_FIND_CHARACTERISTIC_HANDLE;
+	find_param.find_char.srv_uuid = ble_wifimate_uuid;
+	find_param.find_char.p_handle = &char_handle;
+
+	char_uuid.p.uuid16 = BLE_WIFIMATE_UUID_CHAR_KEY_NEGOTIATE;
+	find_param.find_char.char_uuid = char_uuid;
+	ret = rtk_bt_gattc_find(&find_param);
+	if (ret == RTK_BT_OK) {
+		conn_db->char_db[BLE_WIFIMATE_CHAR_NEGOTIATE_KEY_IDX].char_val_handle = char_handle;
+		conn_db->char_db[BLE_WIFIMATE_CHAR_NEGOTIATE_KEY_IDX].uuid = char_uuid.p.uuid16;
+		BT_LOGA("[APP] Key Negotiate characteristic handle is 0x%04x, uuid=0x%04x\r\n",
+				char_handle, conn_db->char_db[BLE_WIFIMATE_CHAR_NEGOTIATE_KEY_IDX].uuid);
+	} else {
+		BT_LOGE("[APP] Find Key Negotiate characteristic fail.\r\n");
+		return ret;
+	}
+
+	char_uuid.p.uuid16 = BLE_WIFIMATE_UUID_CHAR_WIFI_SCAN_ENABLE;
+	find_param.find_char.char_uuid = char_uuid;
+	ret = rtk_bt_gattc_find(&find_param);
+	if (ret == RTK_BT_OK) {
+		conn_db->char_db[BLE_WIFIMATE_CHAR_WIFI_SCAN_ENABLE_IDX].char_val_handle = char_handle;
+		conn_db->char_db[BLE_WIFIMATE_CHAR_WIFI_SCAN_ENABLE_IDX].uuid = char_uuid.p.uuid16;
+		BT_LOGA("[APP] Wifi Scan Enable characteristic handle is 0x%04x, uuid=0x%04x\r\n",
+				char_handle, conn_db->char_db[BLE_WIFIMATE_CHAR_WIFI_SCAN_ENABLE_IDX].uuid);
+	} else {
+		BT_LOGE("[APP] Find Wifi Scan Enable characteristic fail.\r\n");
+		return ret;
+	}
+
+	char_uuid.p.uuid16 = BLE_WIFIMATE_UUID_CHAR_WIFI_SCAN_INFO;
+	find_param.find_char.char_uuid = char_uuid;
+	ret = rtk_bt_gattc_find(&find_param);
+	if (ret == RTK_BT_OK) {
+		conn_db->char_db[BLE_WIFIMATE_CHAR_WIFI_SCAN_INFO_IDX].char_val_handle = char_handle;
+		conn_db->char_db[BLE_WIFIMATE_CHAR_WIFI_SCAN_INFO_IDX].uuid = char_uuid.p.uuid16;
+		BT_LOGA("[APP] Wifi Scan Info characteristic handle is 0x%04x, uuid=0x%04x\r\n",
+				char_handle, conn_db->char_db[BLE_WIFIMATE_CHAR_WIFI_SCAN_INFO_IDX].uuid);
+	} else {
+		BT_LOGE("[APP] Find Wifi Scan Info characteristic fail.\r\n");
+		return ret;
+	}
+
+	char_uuid.p.uuid16 = BLE_WIFIMATE_UUID_CHAR_WIFI_CONNECT_ENABLE;
+	find_param.find_char.char_uuid = char_uuid;
+	ret = rtk_bt_gattc_find(&find_param);
+	if (ret == RTK_BT_OK) {
+		conn_db->char_db[BLE_WIFIMATE_CHAR_WIFI_CONNECT_ENABLE_IDX].char_val_handle = char_handle;
+		conn_db->char_db[BLE_WIFIMATE_CHAR_WIFI_CONNECT_ENABLE_IDX].uuid = char_uuid.p.uuid16;
+		BT_LOGA("[APP] Wifi Connect Enable characteristic handle is 0x%04x, uuid=0x%04x\r\n",
+				char_handle, conn_db->char_db[BLE_WIFIMATE_CHAR_WIFI_CONNECT_ENABLE_IDX].uuid);
+	} else {
+		BT_LOGE("[APP] Find Wifi Connect Enable characteristic fail.\r\n");
+		return ret;
+	}
+
+	char_uuid.p.uuid16 = BLE_WIFIMATE_UUID_CHAR_WIFI_CONNECT_STATE;
+	find_param.find_char.char_uuid = char_uuid;
+	ret = rtk_bt_gattc_find(&find_param);
+	if (ret == RTK_BT_OK) {
+		conn_db->char_db[BLE_WIFIMATE_CHAR_WIFI_CONNECT_STATE_IDX].char_val_handle = char_handle;
+		conn_db->char_db[BLE_WIFIMATE_CHAR_WIFI_CONNECT_STATE_IDX].uuid = char_uuid.p.uuid16;
+		BT_LOGA("[APP] Wifi Connect State characteristic handle is 0x%04x, uuid=0x%04x\r\n",
+				char_handle, conn_db->char_db[BLE_WIFIMATE_CHAR_WIFI_CONNECT_STATE_IDX].uuid);
+	} else {
+		BT_LOGE("[APP] Find Wifi Connect State characteristic fail.\r\n");
+		return ret;
+	}
+
+	return RTK_BT_OK;
+}
+
+static uint16_t ble_wifimate_client_cccd_find(uint16_t conn_handle)
+{
+	uint8_t conn_id = 0;
+	uint16_t cccd_handle = 0;
+	uint16_t ret = 0;
+	bool support_notify = false;
+	bool support_indicate = false;
+	rtk_bt_gattc_find_param_t find_param = {0};
+	rtk_bt_gattc_uuid_t char_uuid = {
+		.is_uuid16 = true,
+	};
+	struct ble_wifimate_client_db_t *conn_db = NULL;
+
+	if (rtk_bt_le_gap_get_conn_id(conn_handle, &conn_id) != RTK_BT_OK) {
+		return RTK_BT_FAIL;
+	}
+
+	conn_db = ble_wifimate_database[conn_id];
+	if (!conn_db || conn_db->disc_state != DISC_DONE) {
+		return RTK_BT_FAIL;
+	}
+
+	find_param.conn_handle = conn_handle;
+	find_param.type = RTK_BT_GATT_FIND_CHARACTERISTIC_CCCD_HANDLE;
+	find_param.find_char_cccd.srv_uuid = ble_wifimate_uuid;
+	find_param.find_char_cccd.p_handle = &cccd_handle;
+	find_param.find_char_cccd.p_notify = &support_notify;
+	find_param.find_char_cccd.p_indicate = &support_indicate;
+
+	char_uuid.p.uuid16 = BLE_WIFIMATE_UUID_CHAR_WIFI_SCAN_INFO;
+	find_param.find_char_cccd.char_uuid = char_uuid;
+	ret = rtk_bt_gattc_find(&find_param);
+	if (ret == RTK_BT_OK) {
+		conn_db->char_db[BLE_WIFIMATE_CHAR_WIFI_SCAN_INFO_IDX].cccd_handle = cccd_handle;
+		BT_LOGA("[APP] Wifi Scan Info cccd handle is 0x%04x.\r\n", cccd_handle);
+	} else {
+		BT_LOGE("[APP] Find Wifi Scan Info cccd fail.\r\n");
+		return ret;
+	}
+
+	char_uuid.p.uuid16 = BLE_WIFIMATE_UUID_CHAR_WIFI_CONNECT_STATE;
+	find_param.find_char_cccd.char_uuid = char_uuid;
+	ret = rtk_bt_gattc_find(&find_param);
+	if (ret == RTK_BT_OK) {
+		conn_db->char_db[BLE_WIFIMATE_CHAR_WIFI_CONNECT_STATE_IDX].cccd_handle = cccd_handle;
+		BT_LOGA("[APP] Wifi Connect State cccd handle is 0x%04x.\r\n", cccd_handle);
+	} else {
+		BT_LOGE("[APP] Find Wifi Connect State cccd fail.\r\n");
+		return ret;
+	}
+
+	return RTK_BT_OK;
+}
+#else /* #if RTK_BLE_MGR_LIB */
 static uint16_t ble_wifimate_client_srv_discover(uint16_t conn_handle)
 {
 	uint8_t conn_id;
@@ -541,6 +708,7 @@ static uint16_t ble_wifimate_client_charac_discover(uint16_t conn_handle)
 	conn_db->disc_state = DISC_START;
 	return RTK_BT_OK;
 }
+#endif /* #if RTK_BLE_MGR_LIB */
 
 static void ble_wifimate_client_mtu_exchange_hdl(void *data)
 {
@@ -555,7 +723,11 @@ static void ble_wifimate_client_mtu_exchange_hdl(void *data)
 				p_gatt_mtu_ind->mtu_size, p_gatt_mtu_ind->conn_handle);
 		s_mtu_size = p_gatt_mtu_ind->mtu_size;
 		BT_LOGD("%s s_mtu_size=%d\r\n", __func__, s_mtu_size);
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+		ble_wifimate_client_srv_discover_all(p_gatt_mtu_ind->conn_handle);
+#else
 		ble_wifimate_client_srv_discover(p_gatt_mtu_ind->conn_handle);
+#endif
 	} else {
 		BT_LOGE("[APP] GATTC mtu exchange fail \r\n");
 	}
@@ -589,6 +761,16 @@ static uint16_t ble_wifimate_client_set_cccd_indicate(uint16_t conn_handle, uint
 	cccd_param.profile_id = BLE_WIFIMATE_CLIENT_PROFILE_ID;
 	cccd_param.conn_handle = conn_handle;
 	cccd_param.bindicate = true;
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+	cccd_param.srv_cfg = false;
+	cccd_param.srv_uuid = ble_wifimate_uuid;
+	cccd_param.char_uuid.is_uuid16 = true;
+	if (index == BLE_WIFIMATE_CHAR_WIFI_SCAN_INFO_IDX) {
+		cccd_param.char_uuid.p.uuid16 = BLE_WIFIMATE_UUID_CHAR_WIFI_SCAN_INFO;
+	} else if (index == BLE_WIFIMATE_CHAR_WIFI_CONNECT_STATE_IDX) {
+		cccd_param.char_uuid.p.uuid16 = BLE_WIFIMATE_UUID_CHAR_WIFI_CONNECT_STATE;
+	}
+#else
 	cccd_param.char_val_handle =
 		conn_db->char_db[index].char_val_handle;
 	cccd_param.cccd_handle =
@@ -596,6 +778,7 @@ static uint16_t ble_wifimate_client_set_cccd_indicate(uint16_t conn_handle, uint
 
 	BT_LOGD("[APP] %s char_val_handle=0x%x cccd_handle=0x%x\r\n",
 			__func__, cccd_param.char_val_handle, cccd_param.cccd_handle);
+#endif
 
 	if (enable) {
 		ret = rtk_bt_gattc_enable_notify_or_indicate(&cccd_param);
@@ -789,6 +972,28 @@ static void ble_wifimate_client_indicate_hdl(void *data)
 	}
 }
 
+static uint16_t ble_wifimate_client_key_negotiate_config_set(struct key_negotiate_config_t *config)
+{
+	if (!config) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	if (!sp_encrypt) {
+		BT_LOGE("[APP] BLE WiFiMate client encrypt invalid\r\n");
+		return RTK_BT_FAIL;
+	}
+
+	config->algorithm = sp_encrypt->algorithm_type;
+	memcpy(config->key, sp_encrypt->key, sizeof(config->key));
+	BT_LOGA("[APP] BLE WiFiMate client negotiate key: algo_type(%d) \
+			key(%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x)...\r\n",
+			config->algorithm, config->key[0], config->key[1], config->key[2], config->key[3], config->key[4],
+			config->key[5], config->key[6], config->key[7], config->key[8], config->key[9],
+			config->key[10], config->key[11], config->key[12]);
+
+	return RTK_BT_OK;
+}
+
 static void ble_wifimate_client_cccd_enable_hdl(void *data)
 {
 	rtk_bt_gattc_cccd_update_ind_t *cccd_update =
@@ -807,6 +1012,18 @@ static void ble_wifimate_client_cccd_enable_hdl(void *data)
 		return;
 	}
 
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+	if (cccd_update->uuid.p.uuid16 == BLE_WIFIMATE_UUID_CHAR_WIFI_SCAN_INFO) {
+		BT_LOGD("[APP] BLE WiFiMate client enable wifi scan info char indicate succeed\r\n");
+		//enable wifi connect state char char cccd
+		ble_wifimate_client_set_cccd_indicate(conn_handle, BLE_WIFIMATE_CHAR_WIFI_CONNECT_STATE_IDX, true);
+	} else if (cccd_update->uuid.p.uuid16 == BLE_WIFIMATE_UUID_CHAR_WIFI_CONNECT_STATE) {
+		struct key_negotiate_config_t config = {0};
+
+		ble_wifimate_client_key_negotiate_config_set(&config);
+		ble_wifimate_client_negotiate_key(conn_handle, &config);
+	}
+#else
 	if (conn_db->char_db[BLE_WIFIMATE_CHAR_WIFI_SCAN_INFO_IDX].cccd_handle == cccd_update->cccd_handle) {
 		BT_LOGD("[APP] BLE WiFiMate client enable wifi scan info char indicate succeed\r\n");
 		//enable wifi connect state char char cccd
@@ -814,23 +1031,34 @@ static void ble_wifimate_client_cccd_enable_hdl(void *data)
 	} else if (conn_db->char_db[BLE_WIFIMATE_CHAR_WIFI_CONNECT_STATE_IDX].cccd_handle == cccd_update->cccd_handle) {
 		struct key_negotiate_config_t config = {0};
 
-		if (!sp_encrypt) {
-			BT_LOGE("[APP] BLE WiFiMate client encrypt invalid\r\n");
-			return;
-		}
-		config.algorithm = sp_encrypt->algorithm_type;
-		memcpy(config.key, sp_encrypt->key, sizeof(config.key));
-		BT_LOGA("[APP] BLE WiFiMate client negotiate key: algo_type(%d) \
-				key(%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x)...\r\n",
-				config.algorithm, config.key[0], config.key[1], config.key[2], config.key[3], config.key[4],
-				config.key[5], config.key[6], config.key[7], config.key[8], config.key[9],
-				config.key[10], config.key[11], config.key[12]);
+		ble_wifimate_client_key_negotiate_config_set(&config);
 		ble_wifimate_client_negotiate_key(conn_handle, &config);
 	}
+#endif /* #if RTK_BLE_MGR_LIB */
 }
 
 void ble_wifimate_client_discover_res_hdl(void *data)
 {
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+	rtk_bt_gattc_discover_ind_t *disc_res = (rtk_bt_gattc_discover_ind_t *)data;
+
+	if (disc_res->is_found) {
+		BT_LOGA("[APP] BLE wifimate client discover all success\r\n");
+		if (ble_wifimate_client_attach_conn(disc_res->conn_handle) != RTK_BT_OK) {
+			return;
+		}
+
+		if (ble_wifimate_client_char_find(disc_res->conn_handle) != RTK_BT_OK) {
+			return;
+		}
+
+		if (ble_wifimate_client_cccd_find(disc_res->conn_handle) != RTK_BT_OK) {
+			return;
+		}
+
+		ble_wifimate_client_set_cccd_indicate(disc_res->conn_handle, BLE_WIFIMATE_CHAR_WIFI_SCAN_INFO_IDX, true);
+	}
+#else
 	uint16_t uuid = 0;
 	rtk_bt_gattc_discover_ind_t *disc_res = (rtk_bt_gattc_discover_ind_t *)data;
 	rtk_bt_status_t disc_status = disc_res->status;
@@ -940,6 +1168,8 @@ void ble_wifimate_client_discover_res_hdl(void *data)
 #if !defined(BT_AT_SYNC) || !BT_AT_SYNC
 	general_client_discover_res_hdl(data);
 #endif
+
+#endif /* #if RTK_BLE_MGR_LIB */
 }
 
 static void ble_wifimate_client_write_res_hdl(void *data)
@@ -977,6 +1207,12 @@ static void ble_wifimate_client_write_res_hdl(void *data)
 	} else if (RTK_BT_STATUS_FAIL == write_status) {
 		BT_LOGE("[APP] BLE WiFiMate client write charac value_handle=0x%x fail, err_code %u\r\n",
 				att_handle, write_res->err_code);
+#if defined(BT_AT_SYNC) && BT_AT_SYNC
+		if (bt_at_sync_event_match_check(RTK_BT_GATTS_EVT_INDICATE_COMPLETE_IND)) {
+			bt_at_sync_set_result(write_res->err_code);
+			bt_at_sync_sem_give();
+		}
+#endif
 	}
 }
 
@@ -1069,6 +1305,10 @@ uint16_t ble_wifimate_client_attach_conn(uint16_t conn_handle)
 	}
 	memset(ble_wifimate_database[conn_id], 0, sizeof(struct ble_wifimate_client_db_t));
 
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+	ble_wifimate_database[conn_id]->disc_state = DISC_DONE;
+#endif
+
 	return RTK_BT_OK;
 }
 
@@ -1088,7 +1328,11 @@ uint16_t ble_wifimate_client_detach_conn(uint16_t conn_handle)
 
 uint16_t ble_wifimate_client_add(void)
 {
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+	return rtk_bt_gattc_register_profile(BLE_WIFIMATE_CLIENT_PROFILE_ID, ble_wifimate_uuid);
+#else
 	return rtk_bt_gattc_register_profile(BLE_WIFIMATE_CLIENT_PROFILE_ID);
+#endif
 }
 
 void ble_wifimate_client_deinit(void)

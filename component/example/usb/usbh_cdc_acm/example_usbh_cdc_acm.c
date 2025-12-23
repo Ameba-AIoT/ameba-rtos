@@ -36,11 +36,11 @@ static int cdc_acm_cb_deinit(void);
 static int cdc_acm_cb_attach(void);
 static int cdc_acm_cb_detach(void);
 static int cdc_acm_cb_setup(void);
-static int cdc_acm_cb_transmit(usbh_urb_state_t state);
-static int cdc_acm_cb_receive(u8 *pbuf, u32 Len);
-static int cdc_acm_cb_notify(u8 *pbuf, u32 Len);
+static int cdc_acm_cb_transmit(u8 status);
+static int cdc_acm_cb_receive(u8 *buf, u32 len, u8 status);
+static int cdc_acm_cb_notify(u8 *buf, u32 len, u8 status);
 static int cdc_acm_cb_line_coding_changed(usbh_cdc_acm_line_coding_t *line_coding);
-static int cdc_acm_cb_process(usb_host_t *host, u8 id);
+static int cdc_acm_cb_process(usb_host_t *host, u8 msg);
 static void cdc_acm_notify_test(void);
 static void cdc_acm_request_test(void);
 static void cdc_acm_notify_test_thread(void *param);
@@ -71,7 +71,7 @@ static usbh_config_t usbh_cfg = {
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = 4U,
-	.sof_tick_enable = 1U,
+	.tick_source = USBH_SOF_TICK,
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,
@@ -138,41 +138,52 @@ static int cdc_acm_cb_setup(void)
 	return HAL_OK;
 }
 
-static int cdc_acm_cb_notify(u8 *buf, u32 length)
+static int cdc_acm_cb_notify(u8 *buf, u32 len, u8 status)
 {
 	UNUSED(buf);
-	UNUSED(length);
-	rtos_sema_give(cdc_acm_notify_sema);
-	return HAL_OK;
-}
+	UNUSED(len);
 
-static int cdc_acm_cb_receive(u8 *buf, u32 length)
-{
-	u16 cdc_acm_bulk_in_mps = usbh_cdc_acm_get_bulk_ep_mps();
-
-	//limited the copy length
-	if ((length > 0) && ((cdc_acm_total_rx_len + length) <= USBH_CDC_ACM_LOOPBACK_BUF_SIZE)) {
-		memcpy(cdc_acm_loopback_rx_buf + cdc_acm_total_rx_len, buf, length);
-	}
-	cdc_acm_total_rx_len += length;
-	//ZLP or short packet
-	if ((length == 0) || (length % cdc_acm_bulk_in_mps)
-		|| ((length % cdc_acm_bulk_in_mps == 0) && (length < USBH_CDC_ACM_LOOPBACK_BUF_SIZE))
-		|| (cdc_acm_total_rx_len > USBH_CDC_ACM_LOOPBACK_BUF_SIZE)) {
-		cdc_acm_total_rx_len = 0;
-		rtos_sema_give(cdc_acm_receive_sema);
+	if (status == HAL_OK) {
+		rtos_sema_give(cdc_acm_notify_sema);
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "cdc_acm_cb_notify fail: %d\n", status);
 	}
 	return HAL_OK;
 }
 
-static int cdc_acm_cb_transmit(usbh_urb_state_t state)
+static int cdc_acm_cb_receive(u8 *buf, u32 len, u8 status)
 {
-	if (state == USBH_URB_DONE) {
+	UNUSED(buf);
+
+	if (status == HAL_OK) {
+		u16 cdc_acm_bulk_in_mps = usbh_cdc_acm_get_bulk_ep_mps();
+		//limited the copy len
+		if ((len > 0) && ((cdc_acm_total_rx_len + len) <= USBH_CDC_ACM_LOOPBACK_BUF_SIZE)) {
+			//memcpy(cdc_acm_loopback_rx_buf + cdc_acm_total_rx_len, buf, len);
+		}
+		cdc_acm_total_rx_len += len;
+		//ZLP or short packet
+		if ((len == 0) || (len % cdc_acm_bulk_in_mps)
+			|| ((len % cdc_acm_bulk_in_mps == 0) && (len < USBH_CDC_ACM_LOOPBACK_BUF_SIZE))
+			|| (cdc_acm_total_rx_len > USBH_CDC_ACM_LOOPBACK_BUF_SIZE)) {
+			cdc_acm_total_rx_len = 0;
+			rtos_sema_give(cdc_acm_receive_sema);
+		}
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "RX fail: %d\n", status);
+	}
+	return HAL_OK;
+}
+
+static int cdc_acm_cb_transmit(u8 status)
+{
+	if (status == HAL_OK) {
 		/*TX done*/
 		rtos_sema_give(cdc_acm_send_sema);
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX fail: %d\n", state);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX fail: %d\n", status);
 	}
+
 	return HAL_OK;
 }
 
@@ -182,11 +193,11 @@ static int cdc_acm_cb_line_coding_changed(usbh_cdc_acm_line_coding_t *line_codin
 	return HAL_OK;
 }
 
-static int cdc_acm_cb_process(usb_host_t *host, u8 id)
+static int cdc_acm_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 
-	switch (id) {
+	switch (msg) {
 	case USBH_MSG_DISCONNECTED:
 		cdc_acm_is_ready = 0;
 		break;

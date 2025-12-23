@@ -58,8 +58,6 @@
 #define USBH_UVC_GET_INFO                                    0x86
 #define USBH_UVC_GET_DEF                                     0x87
 
-
-
 #define VS_PROBE_CONTROL	(0x1<<8)
 #define VS_COMMIT_CONTROL	(0x2<<8)
 
@@ -90,8 +88,8 @@ typedef union {
 
 typedef  struct {
 	u16 bmHint;
-	u8  bFormatIndex;
-	u8  bFrameIndex;
+	u8 bFormatIndex;
+	u8 bFrameIndex;
 	u32 dwFrameInterval;
 	u16 wKeyFrameRate;
 	u16 wPFrameRate;
@@ -101,19 +99,17 @@ typedef  struct {
 	u32 dwMaxVideoFrameSize;
 	u32 dwMaxPayloadTransferSize;
 	u32 dwClockFrequency;
-	u8  bmFramingInfo;
-	u8  bPreferedVersion;
-	u8  bMinVersion;
-	u8  bMaxVersion;
-} _PACKED_ usbh_uvc_stream_control_t;
-
-
+	u8 bmFramingInfo;
+	u8 bPreferedVersion;
+	u8 bMinVersion;
+	u8 bMaxVersion;
+} __PACKED usbh_uvc_stream_control_t;
 
 typedef struct {
 	u8 bHeaderLength;
 	uvc_header_bitmap_t bmHeaderInfo;
 	u8 *ptr;
-} _PACKED_ usbh_uvc_vs_payload_header_t;
+} __PACKED usbh_uvc_vs_payload_header_t;
 
 
 typedef enum {
@@ -127,142 +123,131 @@ typedef struct {
 	u8 bDescriptorType;
 	u8 bDescriptorSubType;
 	u16 wMaxTransferSize;
-} _PACKED_ usbh_uvc_vc_intr_ep_desc_t;
-
+} __PACKED usbh_uvc_vc_intr_ep_desc_t;
 
 typedef struct {
-	u8  bLength;
-	u8  bDescriptorType;
-	u8  bDescriptorSubtype;
+	u8 bLength;
+	u8 bDescriptorType;
+	u8 bDescriptorSubtype;
 	u16 bcdUVC;
 	u16 wTotalLength;
 	u32 dwClockFrequency;
-	u8  bInCollection;
-	u8  baInterfaceNr[0];
-} _PACKED_ usbh_uvc_vc_header_desc_t;
-
-
-typedef struct {
-	u8  bLength;
-	u8  bDescriptorType;
-	u8  bDescriptorSubtype;
-	u8  bTerminalID;
-	u8  wTerminalType[2];
-	u8  bAssocTerminal;
-	u8  iTerminal;
-	u8  wObjectiveFocalLengthMin[2];
-	u8  wObjectiveFocalLengthMax[2];
-	u8  wOcularFocalLength[2];
-	u8  bControlSize;
-	u8  bmControls[3];
-} _PACKED_ usbh_uvc_vc_it_desc_t;
-
+	u8 bInCollection;
+	u8 baInterfaceNr[0];
+} __PACKED usbh_uvc_vc_header_desc_t;
 
 typedef struct {
-	u8  bLength;
-	u8  bDescriptorType;
-	u8  bDescriptorSubtype;
-	u8  bTerminalID;
-	u8  wTerminalType[2];
-	u8  bAssocTerminal;
-	u8  bSourceID;
-	u8  iTerminal;
-} _PACKED_ usbh_uvc_vc_ot_desc_t;
-
-
-typedef struct {
-	u8  bLength;
-	u8  bDescriptorType;
-	u8  bDescriptorSubtype;
-	u8  bTerminalID;
-	u8  wTerminalType[2];
-	u8  bAssocTerminal;
-	u8  iTerminal;
-	u8  wObjectiveFocalLengthMin[2];
-	u8  wObjectiveFocalLengthMax[2];
-	u8  wOcularFocalLength[2];
-	u8  bControlSize[1];
-	u8  bmControls[3];
-} _PACKED_ usbh_uvc_vc_ct_desc_t;
-
+	u8 bLength;
+	u8 bDescriptorType;
+	u8 bDescriptorSubtype;
+	u8 bTerminalID;
+	u8 wTerminalType[2];
+	u8 bAssocTerminal;
+	u8 iTerminal;
+	u8 wObjectiveFocalLengthMin[2];
+	u8 wObjectiveFocalLengthMax[2];
+	u8 wOcularFocalLength[2];
+	u8 bControlSize;
+	u8 bmControls[3];
+} __PACKED usbh_uvc_vc_it_desc_t;
 
 typedef struct {
-	u8  bLength;
-	u8  bDescriptorType;
-	u8  bDescriptorSubtype;
-	u8  bUnitID;
-	u8  bSourceID;
-	u8  wMaxMultiplier[2];
-	u8  bControlSize;
-	u8  bmControls[3];
-	u8  iProcessing;
-	u8  bmVideoStandards;
-} _PACKED_ usbh_uvc_vc_pu_desc_t;
-
+	u8 bLength;
+	u8 bDescriptorType;
+	u8 bDescriptorSubtype;
+	u8 bTerminalID;
+	u8 wTerminalType[2];
+	u8 bAssocTerminal;
+	u8 bSourceID;
+	u8 iTerminal;
+} __PACKED usbh_uvc_vc_ot_desc_t;
 
 typedef struct {
-	u8  bLength;
-	u8  bDescriptorType;
-	u8  bDescriptorSubtype;
-	u8  bUnitID;
-	u8  bNrInPins;
-	u8  bSourceID;
-	u8  iSelector;
-} _PACKED_ usbh_uvc_vc_su_desc_t;
-
-
-typedef struct {
-	u8  bLength;
-	u8  bDescriptorType;
-	u8  bDescriptorSubtype;
-	u8  bUnitID;
-	u8  guidExtensionCode[16];
-	u8  bNumControls;
-	u8  bNrInPins;
-	u8  *baSourceID;
-} _PACKED_ usbh_uvc_vc_xu_desc_t;
-
+	u8 bLength;
+	u8 bDescriptorType;
+	u8 bDescriptorSubtype;
+	u8 bTerminalID;
+	u8 wTerminalType[2];
+	u8 bAssocTerminal;
+	u8 iTerminal;
+	u8 wObjectiveFocalLengthMin[2];
+	u8 wObjectiveFocalLengthMax[2];
+	u8 wOcularFocalLength[2];
+	u8 bControlSize[1];
+	u8 bmControls[3];
+} __PACKED usbh_uvc_vc_ct_desc_t;
 
 typedef struct {
-	u8  bLength;
-	u8  bDescriptorType;
-	u8  bDescriptorSubtype;
-	u8  bUnitID;
-	u8  bNrInPins;
-	u8  bSourceID0;
-	u8  iSelector;
-} _PACKED_ usbh_uvc_vc_eu_desc_t;
-
-
-typedef struct {
-	u8  bLength;
-	u8  bDescriptorType;
-	u8  bDescriptorSubtype;
-	u8  bNumFormats;
-	u16  wTotalLength;
-	u8  bEndPointAddress;
-	u8  bmInfo;
-	u8  bTerminalLink;
-	u8  bStillCaptureMethod;
-	u8  bTriggerSupport;
-	u8  bTriggerUsage;
-	u8  bControlSize;
-	u8  bmaControls;
-} _PACKED_ usbh_uvc_vs_input_header_desc_t;
-
+	u8 bLength;
+	u8 bDescriptorType;
+	u8 bDescriptorSubtype;
+	u8 bUnitID;
+	u8 bSourceID;
+	u8 wMaxMultiplier[2];
+	u8 bControlSize;
+	u8 bmControls[3];
+	u8 iProcessing;
+	u8 bmVideoStandards;
+} __PACKED usbh_uvc_vc_pu_desc_t;
 
 typedef struct {
-	u8  bLength;
-	u8  bDescriptorType;
-	u8  bDescriptorSubtype;
-	u8  bNumFormats;
-	u8  wTotalLength[2];
-	u8  bEndPointAddress;
-	u8  bTerminalLink;
-	u8  bControlSize;
-	u8  bmaControls;
-} _PACKED_ usbh_uvc_vs_output_header_desc_t;
+	u8 bLength;
+	u8 bDescriptorType;
+	u8 bDescriptorSubtype;
+	u8 bUnitID;
+	u8 bNrInPins;
+	u8 bSourceID;
+	u8 iSelector;
+} __PACKED usbh_uvc_vc_su_desc_t;
 
+typedef struct {
+	u8 bLength;
+	u8 bDescriptorType;
+	u8 bDescriptorSubtype;
+	u8 bUnitID;
+	u8 guidExtensionCode[16];
+	u8 bNumControls;
+	u8 bNrInPins;
+	u8 *baSourceID;
+} __PACKED usbh_uvc_vc_xu_desc_t;
+
+typedef struct {
+	u8 bLength;
+	u8 bDescriptorType;
+	u8 bDescriptorSubtype;
+	u8 bUnitID;
+	u8 bNrInPins;
+	u8 bSourceID0;
+	u8 iSelector;
+} __PACKED usbh_uvc_vc_eu_desc_t;
+
+typedef struct {
+	u8 bLength;
+	u8 bDescriptorType;
+	u8 bDescriptorSubtype;
+	u8 bNumFormats;
+	u16 wTotalLength;
+	u8 bEndPointAddress;
+	u8 bmInfo;
+	u8 bTerminalLink;
+	u8 bStillCaptureMethod;
+	u8 bTriggerSupport;
+	u8 bTriggerUsage;
+	u8 bControlSize;
+	u8 bmaControls;
+} __PACKED usbh_uvc_vs_input_header_desc_t;
+
+typedef struct {
+	u8 bLength;
+	u8 bDescriptorType;
+	u8 bDescriptorSubtype;
+	u8 bNumFormats;
+	u8 wTotalLength[2];
+	u8 bEndPointAddress;
+	u8 bTerminalLink;
+	u8 bControlSize;
+	u8 bmaControls;
+} __PACKED usbh_uvc_vs_output_header_desc_t;
 
 typedef struct {
 	struct list_head list;
@@ -271,13 +256,6 @@ typedef struct {
 	u8 id;
 	u8 source[0];
 }  usbh_uvc_entity_t;
-
-
-typedef struct {
-	u8  bLength;
-	u8  bDescriptorType;
-}  usbh_uvc_desc_header_t;
-
 
 /* Exported variables --------------------------------------------------------*/
 

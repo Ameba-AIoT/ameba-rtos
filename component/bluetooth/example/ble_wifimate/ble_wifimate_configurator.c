@@ -54,20 +54,47 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_gap_app_callback(uint8_t evt_code, void 
 		const char target_name[13] = {'R', 'T', 'K', '_', 'W', 'i', 'F', 'i', 'M', 'a', 't', 'e', '\0'};
 		uint8_t *scan_name = NULL;
 		rtk_bt_le_scan_res_ind_t *scan_res_ind = (rtk_bt_le_scan_res_ind_t *)param;
-		rtk_bt_le_addr_to_str(&(scan_res_ind->adv_report.addr), le_addr, sizeof(le_addr));
-		/* local name end with 0 */
-		scan_res_ind->adv_report.data[9 + 19] = 0;
-		scan_name = &(scan_res_ind->adv_report.data[9]);
-		if (strstr((const char *)scan_name, target_name) != NULL) {
-			BT_LOGA("[APP] Scan info, [Device]: %s, AD evt type: %d, RSSI: %d, len: %d, adv_data: %s \r\n",
-					le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
-					scan_res_ind->adv_report.len, &(scan_res_ind->adv_report.data[9]));
-			BT_AT_PRINT("+BLEGAP:scan,info,%s,%d,%d,%d\r\n",
+		if (scan_res_ind->adv_report.len >= 28) {
+			/* local name end with 0 */
+			scan_res_ind->adv_report.data[9 + 19] = 0;
+			scan_name = &(scan_res_ind->adv_report.data[9]);
+			if (strstr((const char *)scan_name, target_name) != NULL) {
+				rtk_bt_le_addr_to_str(&(scan_res_ind->adv_report.addr), le_addr, sizeof(le_addr));
+				BT_LOGA("[APP] Scan info, [Device]: %s, AD evt type: %d, RSSI: %d, len: %d, adv_data: %s \r\n",
 						le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
-						scan_res_ind->adv_report.len);
+						scan_res_ind->adv_report.len, &(scan_res_ind->adv_report.data[9]));
+				BT_AT_PRINT("+BLEGAP:scan,info,%s,%d,%d,%d\r\n",
+							le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
+							scan_res_ind->adv_report.len);
+			}
 		}
 		break;
 	}
+
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
+	case RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND: {
+		const char target_name[13] = {'R', 'T', 'K', '_', 'W', 'i', 'F', 'i', 'M', 'a', 't', 'e', '\0'};
+		uint8_t *scan_name = NULL;
+		rtk_bt_le_ext_scan_res_ind_t *scan_res_ind = (rtk_bt_le_ext_scan_res_ind_t *)param;
+		if (scan_res_ind->len >= 28) {
+			/* local name end with 0 */
+			scan_res_ind->data[9 + 19] = 0;
+			scan_name = &(scan_res_ind->data[9]);
+			if (strstr((const char *)scan_name, target_name) != NULL) {
+				rtk_bt_le_addr_to_str(&(scan_res_ind->addr), le_addr, sizeof(le_addr));
+				BT_LOGA("[APP] Ext Scan info, [Device]: %s, AD evt type: 0x%x, RSSI: %d, PHY: 0x%x, TxPower: %d, Len: %d, adv_data: %s \r\n",
+						le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
+						(scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
+						scan_res_ind->tx_power, scan_res_ind->len, &(scan_res_ind->data[9]));
+				BT_AT_PRINT("+BLEGAP:escan,%s,0x%x,%d,0x%x,%d,%d\r\n",
+							le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
+							(scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
+							scan_res_ind->tx_power, scan_res_ind->len);
+			}
+		}
+		break;
+	}
+#endif
 
 	case RTK_BT_LE_GAP_EVT_SCAN_STOP_IND: {
 		rtk_bt_le_scan_stop_ind_t *scan_stop_ind = (rtk_bt_le_scan_stop_ind_t *)param;
@@ -112,8 +139,9 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_gap_app_callback(uint8_t evt_code, void 
 				BT_LOGA("[APP] BLE wifimate client attach connection success, conn_handle: %d\r\n",
 						conn_ind->conn_handle);
 			}
-			client_attach = true;
 #endif
+			client_attach = true;
+
 			if (rtk_bt_le_sm_is_device_bonded(&conn_ind->peer_addr)) {
 				BT_LOGA("[APP] Bonded device, start link encryption procedure\r\n");
 				rtk_bt_le_sm_start_security(conn_ind->conn_handle);

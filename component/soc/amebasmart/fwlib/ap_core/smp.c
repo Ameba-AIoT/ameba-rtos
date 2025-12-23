@@ -82,16 +82,26 @@ void vPortGateOtherCore(void)
 	arm_gic_raise_softirq(ulCoreID, IPI_FLASHPG_IRQ);
 
 	CA32_TypeDef *ca32 = CA32_BASE;
-	/* Ensure WFE is entered by IPI_FLASHPG_IRQ */
-	while ((ulFlashPG_Flag == 1) || (CA32_GET_STANDBYWFE(ca32->CA32_C0_CPU_STATUS) != BIT(ulCoreID)));
+	/* WFE wake-up events: A physical IRQ/FIQ interrupt, unless masked by the CPSR.I bit */
+	while (1) {
+		/* Ensure WFE is entered, maybe not by IPI_FLASHPG_IRQ */
+		if (CA32_GET_STANDBYWFE(ca32->CA32_C0_CPU_STATUS) == BIT(ulCoreID)) {
+			break;
+		}
+	}
 #endif
 }
 
 void vPortWakeOtherCore(void)
 {
-	ulFlashPG_Flag = 0;
-	__DSB();
-	__SEV();
+	if (ulFlashPG_Flag == 1) { // which means other core is already in WFE
+		ulFlashPG_Flag = 0;
+		return;
+	} else {
+		ulFlashPG_Flag = 0;
+		__DSB();
+		__SEV();
+	}
 }
 
 void vPortSecondaryOff(void)

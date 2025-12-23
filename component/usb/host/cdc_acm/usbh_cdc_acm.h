@@ -42,17 +42,6 @@
 
 /* Exported types ------------------------------------------------------------*/
 
-/* States for CDC State Machine */
-typedef enum {
-	CDC_ACM_TRANSFER_STATE_IDLE = 0U,
-	CDC_ACM_TRANSFER_STATE_TX,
-	CDC_ACM_TRANSFER_STATE_TX_BUSY,
-	CDC_ACM_TRANSFER_STATE_RX,
-	CDC_ACM_TRANSFER_STATE_RX_BUSY,
-	CDC_ACM_TRANSFER_STATE_NOTIFY_RX,
-	CDC_ACM_TRANSFER_STATE_NOTIFY_RX_BUSY,
-} usbh_cdc_acm_transfer_state_t;
-
 /* CDC ACM state */
 typedef enum {
 	CDC_ACM_STATE_IDLE = 0U,
@@ -68,9 +57,9 @@ typedef union {
 	u8 d8[CDC_LINE_CODING_DATA_LEN];
 	struct {
 		u32 dwDteRate;    /* Data terminal rate, in bits per second */
-		u8  bCharFormat;  /* Stop bits */
-		u8  bParityType;  /* Parity */
-		u8  bDataBits;    /* Data bits (5, 6, 7, 8 or 16) */
+		u8 bCharFormat;   /* Stop bits */
+		u8 bParityType;   /* Parity */
+		u8 bDataBits;     /* Data bits (5, 6, 7, 8 or 16) */
 	} b;
 } usbh_cdc_acm_line_coding_t;
 
@@ -90,24 +79,6 @@ typedef enum {
 	CDC_ACM_LINE_CODING_PARITY_SPACE
 } usbh_cdc_acm_line_coding_parity_t;
 
-/* CDC ACM communication interface */
-typedef struct {
-	u8  intr_in_pipe;
-	u8  intr_in_ep;
-	u16 intr_in_packet_size;
-	u32 intr_in_ep_interval;
-} usbh_cdc_acm_comm_if_t ;
-
-/* CDC ACM data interface */
-typedef struct {
-	u8  bulk_in_pipe;
-	u8  bulk_in_ep;
-	u16 bulk_in_packet_size;
-	u8  bulk_out_pipe;
-	u8  bulk_out_ep;
-	u16 bulk_out_packet_size;
-} usbh_cdc_acm_data_if_t ;
-
 /* CDC ACM user callback interface */
 typedef struct {
 	int(* init)(void);
@@ -115,41 +86,22 @@ typedef struct {
 	int(* attach)(void);
 	int(* detach)(void);
 	int(* setup)(void);
-	int(* notify)(u8 *buf, u32 len);
-	int(* receive)(u8 *buf, u32 len);
-	int(* transmit)(usbh_urb_state_t state);
+	int(* notify)(u8 *buf, u32 len, u8 status);
+	int(* receive)(u8 *buf, u32 len, u8 status);
+	int(* transmit)(u8 status);
 	int(* line_coding_changed)(usbh_cdc_acm_line_coding_t *line_coding);
 } usbh_cdc_acm_cb_t;
 
 /* CDC ACM host */
 typedef struct {
-	usbh_cdc_acm_comm_if_t        comm_if;
-	usbh_cdc_acm_data_if_t        data_if;
-
-	u32                           tx_len;
-	u8                            *tx_buf;
-	u8                            tx_zlp;
-	usbh_cdc_acm_transfer_state_t data_tx_state;
-	u32                           tx_idle_tick;
-
-	u32                           rx_len;
-	u8                            *rx_buf;
-	usbh_cdc_acm_transfer_state_t data_rx_state;
-	u32                           rx_idle_tick;
-
-	u32                           intr_in_idle_tick;
-	u32                           intr_in_busy_tick;
-	u32                           intr_rx_len;
-	u8                            *intr_rx_buf;
-	usbh_cdc_acm_transfer_state_t intr_data_rx_state;
-
-	usbh_cdc_acm_line_coding_t    *line_coding;
-	usbh_cdc_acm_line_coding_t    *user_line_coding;
-
-	usbh_cdc_acm_state_t          state;
-
-	usbh_cdc_acm_cb_t             *cb;
-	usb_host_t                    *host;
+	usbh_pipe_t bulk_in;
+	usbh_pipe_t bulk_out;
+	usbh_pipe_t intr_in;
+	usb_host_t *host;
+	usbh_cdc_acm_cb_t *cb;
+	usbh_cdc_acm_line_coding_t *line_coding;
+	usbh_cdc_acm_line_coding_t *user_line_coding;
+	usbh_cdc_acm_state_t state;
 } usbh_cdc_acm_host_t;
 
 /* Exported macros -----------------------------------------------------------*/

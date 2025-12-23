@@ -1281,7 +1281,7 @@ static uint16_t bt_stack_le_audio_pa_sync_state_change(T_BLE_AUDIO_SYNC_HANDLE s
 	return RTK_BT_OK;
 }
 
-static uint16_t bt_stack_le_audio_big_sync_state_indicate(T_BLE_AUDIO_BIG_SYNC_STATE *p_big_sync_state)
+static uint16_t bt_stack_le_audio_big_sync_state_indicate(T_BLE_AUDIO_BIG_SYNC_STATE *p_big_sync_state, T_BLE_AUDIO_SYNC_HANDLE sync_handle)
 {
 	bool indicate = false;
 	rtk_bt_evt_t *p_evt = NULL;
@@ -1314,6 +1314,20 @@ static uint16_t bt_stack_le_audio_big_sync_state_indicate(T_BLE_AUDIO_BIG_SYNC_S
 		break;
 	}
 	if (indicate) {
+		T_BLE_AUDIO_SYNC_INFO sync_info;
+		if (!ble_audio_sync_get_info(sync_handle, &sync_info)) {
+			BT_LOGE("[BAP] %s ble_audio_sync_get_info fail\r\n", __func__);
+			return 1;
+		}
+		BT_LOGD("[BT STACK] adv_type %d, advertiser_address = [%02x:%02x:%02x:%02x:%02x:%02x], adv_sid: 0x%x, broadcast_id [%02x:%02x:%02x]\r\n",
+				sync_info.advertiser_address_type,
+				sync_info.advertiser_address[5], sync_info.advertiser_address[4],
+				sync_info.advertiser_address[3], sync_info.advertiser_address[2],
+				sync_info.advertiser_address[1], sync_info.advertiser_address[0],
+				sync_info.adv_sid,
+				sync_info.broadcast_id[0],
+				sync_info.broadcast_id[1],
+				sync_info.broadcast_id[2]);
 		rtk_bt_le_audio_big_sync_state_ind_t *p_ind = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_BAP,
 									RTK_BT_LE_AUDIO_EVT_BIG_SYNC_STATE_IND,
@@ -1328,6 +1342,10 @@ static uint16_t bt_stack_le_audio_big_sync_state_indicate(T_BLE_AUDIO_BIG_SYNC_S
 		p_ind->action = p_big_sync_state->action;
 		p_ind->action_role = p_big_sync_state->action_role;
 		p_ind->cause = p_big_sync_state->cause;
+		p_ind->adv_type = sync_info.advertiser_address_type;
+		memcpy((void *)p_ind->adv_addr_val, (void *)sync_info.advertiser_address, RTK_BD_ADDR_LEN);
+		p_ind->adv_sid = sync_info.adv_sid;
+		memcpy((void *)p_ind->broadcast_id, (void *)sync_info.broadcast_id, 3);
 		/* Send event */
 		rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -1504,7 +1522,7 @@ static void bt_stack_le_audio_sync_cb(T_BLE_AUDIO_SYNC_HANDLE sync_handle, uint8
 					}
 				}
 			}
-			bt_stack_le_audio_big_sync_state_indicate(p_sync_cb->p_big_sync_state);
+			bt_stack_le_audio_big_sync_state_indicate(p_sync_cb->p_big_sync_state, sync_handle);
 		}
 	}
 	break;

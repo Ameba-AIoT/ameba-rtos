@@ -10,19 +10,13 @@
 #include "usbd_composite_uac2.h"
 #include "os_wrapper.h"
 
-#if USBD_UAC_ISOC_XFER_DEBUG
-#if defined(CONFIG_ARM_CORE_CA32) && CONFIG_ARM_CORE_CA32
-#include "arch_timer.h"
-#endif
-#endif
-
 /* Private defines -----------------------------------------------------------*/
 
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
 
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_COMPOSITE_UAC_DEBUG
 #define USBD_UAC_DEBUG_LOOP_TIME   1000
 #endif
 
@@ -38,7 +32,7 @@ static int usbd_composite_uac_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 s
 static int usbd_composite_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
 static int usbd_composite_uac_handle_ep0_data_out(usb_dev_t *dev);
 static void usbd_composite_uac_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_COMPOSITE_UAC_DEBUG
 static void usbd_composite_uac_status_dump_thread(void *param);
 static inline void usbd_composite_uac_get_audio_data_cnt(u32 audio_len);
 #endif
@@ -988,18 +982,6 @@ const usbd_class_driver_t usbd_composite_uac_driver = {
 };
 
 /* Private functions ---------------------------------------------------------*/
-
-#if USBD_UAC_ISOC_XFER_DEBUG
-u32 usbd_composite_uac_get_timetick(void) //us
-{
-#if defined(CONFIG_ARM_CORE_CA32) && CONFIG_ARM_CORE_CA32
-	return (u32)((arm_arch_timer_count() / 50) & (0xFFFFFFFF));
-#else
-	return DTimestamp_Get();
-#endif
-}
-#endif
-
 void usbd_composite_uac_list_init(usbd_composite_uac_buf_list_t *list)
 {
 	if (list) {
@@ -1063,7 +1045,7 @@ static void usbd_composite_uac_append_data(void)
 			usbd_composite_uac_list_add_tail(&(pdata_ctrl->empty_list), node);
 		}
 
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_COMPOSITE_UAC_DEBUG
 		uac->isoc_overwrite_cnt ++;
 #endif
 	}
@@ -1072,7 +1054,7 @@ static void usbd_composite_uac_append_data(void)
 	if (p_buf) {
 		p_buf->is_zero_pkt = 1;
 		p_buf->buf_valid_len = uac->isoc_rx_len;
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_COMPOSITE_UAC_DEBUG
 		uac->isoc_zlp_cnt ++;
 #endif
 		usbd_composite_uac_list_add_tail(&(pdata_ctrl->data_list), p_buf);
@@ -1163,7 +1145,7 @@ static u8 usbd_composite_uac_get_ch_config(u8 ch_cnt)
 static void usbd_composite_uac_ep_buf_ctrl_deinit(usbd_composite_uac_buf_ctrl_t *buf_ctrl)
 {
 	buf_ctrl->isoc_mps = 0;
-	buf_ctrl->transfer_continue = 0;
+	buf_ctrl->next_xfer = 0;
 	// RTK_LOGS(TAG, RTK_LOG_DEBUG, "Buf 0x%08x-0x%08x sema %d\n",buf_ctrl->isoc_buf,buf_ctrl->buf_list_node,buf_ctrl->uac_sema_valid);
 
 	if (buf_ctrl->isoc_buf != NULL) {
@@ -1234,7 +1216,7 @@ static int usbd_composite_uac_ep_buf_ctrl_init(usbd_composite_uac_buf_ctrl_t *bu
 		}
 
 		buf_list_cnt = usbd_composite_uac_get_ring_buf_cnt(USB_SPEED_HIGH);
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_COMPOSITE_UAC_DEBUG
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Buf mps len %d-%d(%d %d %d), cnt %d\n", buf_ctrl->isoc_mps, CACHE_LINE_ALIGNMENT(buf_ctrl->isoc_mps), params->ch_cnt,
 				 params->byte_width, params->sampling_freq, buf_list_cnt);
 #endif
@@ -1859,7 +1841,7 @@ static int usbd_composite_uac_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 s
 	usbd_composite_uac_device_t *cdev = &usbd_composite_uac_device;
 	usbd_composite_uac_buf_ctrl_t *pdata_ctrl = &(cdev->uac_isoc_in);
 
-	if (pdata_ctrl->transfer_continue) {
+	if (pdata_ctrl->next_xfer) {
 		if (ep_addr == USBD_COMP_UAC_ISOC_IN_EP) {
 			if (status != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "ISOC TX err: %d\n", status);
@@ -1954,7 +1936,7 @@ static int usbd_composite_uac_sof(usb_dev_t *dev)
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
 	usbd_composite_uac_buf_ctrl_t *pdata_ctrl = &(uac->uac_isoc_out);
 
-	if ((pdata_ctrl->transfer_continue) && (uac->isoc_rx_valid_cnt > 0)) {
+	if ((pdata_ctrl->next_xfer) && (uac->isoc_rx_valid_cnt > 0)) {
 		if (pdata_ctrl->sof_idx == 0) {
 			pdata_ctrl->sof_idx = 1 ;
 			pdata_ctrl->data_idx = 0 ;
@@ -1986,26 +1968,26 @@ static int usbd_composite_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16
 	usbd_ep_t *ep_isoc_out = &uac->ep_isoc_out;
 	UNUSED(dev);
 
-	// RTK_LOGS(TAG, RTK_LOG_DEBUG, "Read data out %d\n",pdata_ctrl->transfer_continue);
-#if USBD_UAC_ISOC_XFER_DEBUG
+	// RTK_LOGS(TAG, RTK_LOG_DEBUG, "Read data out %d\n",pdata_ctrl->next_xfer);
+#if USBD_COMPOSITE_UAC_DEBUG
 	uac->isoc_rx_cnt ++;
 #endif
 
 	p_buf = pdata_ctrl->p_cur_buf_node;
-	if (pdata_ctrl->transfer_continue) {
+	if (pdata_ctrl->next_xfer) {
 		if (ep_addr == USBD_COMP_UAC_ISOC_OUT_EP) {
 			if (len == 0) { //ZLP
 				ep_isoc_out->xfer_buf = p_buf->buf_raw;
 				ep_isoc_out->xfer_len = pdata_ctrl->isoc_mps;
 				usbd_ep_receive(cdev->dev, ep_isoc_out);
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_COMPOSITE_UAC_DEBUG
 				uac->isoc_rx_zlp_cnt ++;
 #endif
 			} else {
 				uac->isoc_rx_len = len;
 				uac->isoc_rx_valid_cnt ++;
-#if USBD_UAC_ISOC_XFER_DEBUG
-				u32 g_rx_new_tick = usbd_composite_uac_get_timetick(); //us
+#if USBD_COMPOSITE_UAC_DEBUG
+				u32 g_rx_new_tick = usb_hal_get_timestamp_us(); //us
 				if ((uac->isoc_rx_last_tick > 0) && (g_rx_new_tick - uac->isoc_rx_last_tick > uac->isoc_timeout_max_step)) {
 					uac->isoc_timeout_cnt ++;
 					uac->isoc_timeout_max_value = g_rx_new_tick - uac->isoc_rx_last_tick;
@@ -2025,7 +2007,7 @@ static int usbd_composite_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16
 					if (node) {
 						usbd_composite_uac_list_add_tail(&(pdata_ctrl->empty_list), node);
 					}
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_COMPOSITE_UAC_DEBUG
 					uac->isoc_overwrite_cnt ++;
 #endif
 				}
@@ -2069,7 +2051,7 @@ static u16 usbd_composite_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *re
 	u16 len = 0;
 	dev->self_powered = USBD_UAC_SELF_POWERED;
 
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_COMPOSITE_UAC_DEBUG
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
 	if (speed == USB_SPEED_HIGH) { //hs
 		uac->isoc_timeout_max_step = 175;
@@ -2126,7 +2108,7 @@ static void usbd_composite_uac_status_changed(usb_dev_t *dev, u8 old_status, u8 
 	}
 }
 
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_COMPOSITE_UAC_DEBUG
 
 /**
   * @brief  UAC status dump thread
@@ -2140,37 +2122,20 @@ static void usbd_composite_uac_status_dump_thread(void *param)
 
 	uac->uac_dump_task_alive = 1;
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC dump thread\n");
-
 	while (1) {
-
-#if USBD_ISR_TASK_TIME_DEBUG
 		if (uac && uac->cdev && uac->cdev->dev) {
 			usb_dev_t *dev = uac->cdev->dev;
-			RTK_LOGS(TAG, RTK_LOG_INFO, "USB RX %d-%d-%d/TO %d-%d/zp %d-%d-%d/OW %d/Pkt %d/len %d-%d/%d/IsrC %d-%d/isrT %d-%d\n",
+			RTK_LOGS(TAG, RTK_LOG_INFO, "USB RX %d-%d-%d/TO %d-%d/zp %d-%d-%d/OW %d/len %d-%d/%d/IsrC %d-%d/isrT %d-%d\n",
 					 uac->isoc_rx_valid_cnt, uac->isoc_rx_cnt, uac->isoc_rx_zlp_cnt,
 					 uac->isoc_timeout_cnt, uac->isoc_timeout_max_value,
 					 uac->isoc_zlp_cnt, (u32)(uac->uac_isoc_out.sof_idx), (u32)(uac->uac_isoc_out.data_idx),
 					 uac->isoc_overwrite_cnt,
-					 usbd_composite_uac_get_read_buf_cnt(),
 					 uac->copy_data_len, uac->isoc_rx_len,
-					 uac->uac_isoc_out.transfer_continue,
-					 dev->isr_func_time_cost_max, dev->isr_func_time_cost,
-					 dev->isr_trigger_time_diff_max, dev->isr_trigger_time_diff
+					 uac->uac_isoc_out.next_xfer,
+					 dev->isr_process_time_max, dev->isr_process_time,
+					 dev->isr_enter_period_max, dev->isr_enter_period
 					);
 		}
-#else
-		RTK_LOGS(TAG, RTK_LOG_INFO, "USB Dump RX %d-%d-%d/TO %d-%d/zp %d-%d-%d/OW %d/Pkt %d/len %d-%d/%d\n",
-				 uac->isoc_rx_valid_cnt, uac->isoc_rx_cnt, uac->isoc_rx_zlp_cnt,
-				 uac->isoc_timeout_cnt, uac->isoc_timeout_max_value,
-				 uac->isoc_zlp_cnt, (u32)(uac->uac_isoc_out.sof_idx), (u32)(uac->uac_isoc_out.data_idx),
-				 uac->isoc_overwrite_cnt,
-				 usbd_composite_uac_get_read_buf_cnt(),
-				 uac->copy_data_len, uac->isoc_rx_len,
-				 uac->uac_isoc_out.transfer_continue
-				);
-#endif
-
 		rtos_time_delay_ms(USBD_UAC_DEBUG_LOOP_TIME);
 	}
 
@@ -2179,7 +2144,6 @@ static void usbd_composite_uac_status_dump_thread(void *param)
 
 static void composite_usbd_comp_reset_isr_time(void)
 {
-#if USBD_ISR_TASK_TIME_DEBUG
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
 	usb_dev_t *dev;
 
@@ -2189,11 +2153,8 @@ static void composite_usbd_comp_reset_isr_time(void)
 
 	dev = uac->cdev->dev;
 
-	dev->isr_func_time_cost_max = 0;
-	dev->isr_trigger_time_diff_max = 0;
-#else
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid params\n");
-#endif
+	dev->isr_process_time_max = 0;
+	dev->isr_enter_period_max = 0;
 }
 
 static u32 composite_usbd_comp_hid_test(u16 argc, u8 *argv[])
@@ -2236,7 +2197,6 @@ static inline void usbd_composite_uac_get_audio_data_cnt(u32 audio_len)
 	uac->copy_data_len += audio_len;
 }
 #endif
-
 
 /**
   * @brief  Read data from a USB audio ring buffer
@@ -2306,7 +2266,7 @@ int usbd_composite_uac_init(usbd_composite_dev_t *cdev, usbd_composite_uac_usr_c
 	uac->cur_volume = 0x001F;
 	uac->cur_mute = 0;
 	uac->cur_clk_valid = 1;
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_COMPOSITE_UAC_DEBUG
 	uac->uac_dump_task_alive = 0;
 #endif
 	usbd_composite_uac_ep_buf_ctrl_deinit(&(uac->uac_isoc_in));
@@ -2354,7 +2314,7 @@ int usbd_composite_uac_init(usbd_composite_dev_t *cdev, usbd_composite_uac_usr_c
 
 	uac->cdev = cdev;
 
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_COMPOSITE_UAC_DEBUG
 	if (rtos_task_create(&(uac->uac_dump_task), ((const char *)"usbd_composite_uac_status_dump_thread"), usbd_composite_uac_status_dump_thread, NULL, 1024U,
 						 1) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create usb status dump task fail\n");
@@ -2373,7 +2333,7 @@ int usbd_composite_uac_deinit(void)
 {
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
 
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_COMPOSITE_UAC_DEBUG
 	if (uac->uac_dump_task_alive) {
 		rtos_task_delete(uac->uac_dump_task);
 		uac->uac_dump_task_alive = 0;
@@ -2445,12 +2405,12 @@ int usbd_composite_uac_receive_data(void)
 			}
 		}
 
-		pbuf_ctrl->transfer_continue = 1;
+		pbuf_ctrl->next_xfer = 1;
 		pbuf_ctrl->sof_idx = 0;
 		pbuf_ctrl->data_idx = 0;
 
-#if USBD_UAC_ISOC_XFER_DEBUG
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "First trigger sema %d cnt %d-%d \n", pbuf_ctrl->read_wait_sema, usbd_composite_uac_get_read_buf_cnt(), pbuf_ctrl->isoc_mps);
+#if USBD_COMPOSITE_UAC_DEBUG
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "First trigger sema %d-%d \n", pbuf_ctrl->read_wait_sema, pbuf_ctrl->isoc_mps);
 #endif
 	}
 
@@ -2481,7 +2441,7 @@ u8 usbd_composite_uac_config(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 
 			pbuf_ctrl = &(uac->uac_isoc_out);
 		}
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "UAC cfg\n");
-		pbuf_ctrl->transfer_continue = 0;
+		pbuf_ctrl->next_xfer = 0;
 
 		/* update the rx mps */
 		usbd_composite_uac_ep_update_mps(pbuf_ctrl, (usbd_audio_cfg_t *)uac_cfg, cdev->dev->dev_speed);
@@ -2500,7 +2460,7 @@ u32 usbd_composite_uac_start_play(void)
 	int ret = HAL_OK;
 	// RTK_LOGS(TAG, RTK_LOG_DEBUG, "UAC start\n");
 
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_COMPOSITE_UAC_DEBUG
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
 	uac->isoc_rx_last_tick = 0;
 #endif
@@ -2521,8 +2481,8 @@ void usbd_composite_uac_stop_play(void)
 
 	RTK_LOGS(TAG, RTK_LOG_DEBUG, "UAC stop\n");
 
-	uac->uac_isoc_out.transfer_continue = 0;
-	uac->uac_isoc_in.transfer_continue = 0;
+	uac->uac_isoc_out.next_xfer = 0;
+	uac->uac_isoc_in.next_xfer = 0;
 }
 
 /**
@@ -2540,7 +2500,7 @@ u32 usbd_composite_uac_read(u8 *buffer, u32 size, u32 time_out_ms, u32 *zero_pkt
 	u32 copy_len = 0;
 	u16 pkt_cnt = 0;
 
-	if (pdata_ctrl->transfer_continue == 0) {
+	if (pdata_ctrl->next_xfer == 0) {
 		return 0;
 	}
 
@@ -2552,7 +2512,6 @@ u32 usbd_composite_uac_read(u8 *buffer, u32 size, u32 time_out_ms, u32 *zero_pkt
 		usbd_composite_uac_read_ring_buf(pdata_ctrl, buffer, size, &copy_len, &pkt_cnt, zero_pkt_flag);
 	} else {
 		do {
-			// RTK_LOGS(TAG, RTK_LOG_DEBUG, "Ringtbuf cnt %d size=%d\n", usbd_composite_uac_get_read_buf_cnt(),size);
 			if (pdata_ctrl->data_list.count < USBD_UAC_HS_SOF_COUNT_PER_MS) {
 				//wait sema
 				pdata_ctrl->read_wait_sema = 1;
@@ -2568,10 +2527,10 @@ u32 usbd_composite_uac_read(u8 *buffer, u32 size, u32 time_out_ms, u32 *zero_pkt
 					break;
 				}
 			}
-		} while (pdata_ctrl->transfer_continue);
+		} while (pdata_ctrl->next_xfer);
 	}
 
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_COMPOSITE_UAC_DEBUG
 	usbd_composite_uac_get_audio_data_cnt(copy_len);
 #endif
 
