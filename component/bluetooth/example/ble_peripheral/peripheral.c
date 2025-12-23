@@ -344,41 +344,6 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 	}
 #endif
 
-#if 1 /* The role peripheral, no scan function, just for test here */
-	case RTK_BT_LE_GAP_EVT_SCAN_START_IND: {
-		rtk_bt_le_scan_start_ind_t *scan_start_ind = (rtk_bt_le_scan_start_ind_t *)param;
-		if (!scan_start_ind->err) {
-			BT_LOGA("[APP] Scan started, scan_type: %d\r\n", scan_start_ind->scan_type);
-		} else {
-			BT_LOGE("[APP] Scan start failed(err: 0x%x)\r\n", scan_start_ind->err);
-		}
-		BT_AT_PRINT("+BLEGAP:scan,start,%d,%d\r\n", (scan_start_ind->err == 0) ? 0 : -1, scan_start_ind->scan_type);
-		break;
-	}
-
-	case RTK_BT_LE_GAP_EVT_SCAN_RES_IND: {
-		rtk_bt_le_scan_res_ind_t *scan_res_ind = (rtk_bt_le_scan_res_ind_t *)param;
-		rtk_bt_le_addr_to_str(&(scan_res_ind->adv_report.addr), le_addr, sizeof(le_addr));
-		BT_LOGA("[APP] Scan info, [Device]: %s, AD evt type: %d, RSSI: %d\r\n",
-				le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi);
-		BT_AT_PRINT("+BLEGAP:scan,info,%s,%d,%d,%d\r\n",
-					le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
-					scan_res_ind->adv_report.len);
-		break;
-	}
-
-	case RTK_BT_LE_GAP_EVT_SCAN_STOP_IND: {
-		rtk_bt_le_scan_stop_ind_t *scan_stop_ind = (rtk_bt_le_scan_stop_ind_t *)param;
-		if (!scan_stop_ind->err) {
-			BT_LOGA("[APP] Scan stopped, reason: 0x%x\r\n", scan_stop_ind->stop_reason);
-		} else {
-			BT_LOGE("[APP] Scan stop failed(err: 0x%x)\r\n", scan_stop_ind->err);
-		}
-		BT_AT_PRINT("+BLEGAP:scan,stop,%d,0x%x\r\n", (scan_stop_ind->err == 0) ? 0 : -1, scan_stop_ind->stop_reason);
-		break;
-	}
-#endif
-
 	case RTK_BT_LE_GAP_EVT_CONNECT_IND: {
 		rtk_bt_le_conn_ind_t *conn_ind = (rtk_bt_le_conn_ind_t *)param;
 		rtk_bt_le_addr_to_str(&(conn_ind->peer_addr), le_addr, sizeof(le_addr));
@@ -735,7 +700,7 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 			BT_LOGA("[APP] LE COC connected, conn_handle: %d, cid: 0x%x\r\n",
 					coc_conn_ind->conn_handle, coc_conn_ind->cid);
 		} else {
-			BT_LOGE("[APP] LE COC connect failed, conn_hande: %d, cid: 0x%x, err: 0x%x\r\n",
+			BT_LOGE("[APP] LE COC connect failed, conn_handle: %d, cid: 0x%x, err: 0x%x\r\n",
 					coc_conn_ind->conn_handle, coc_conn_ind->cid, coc_conn_ind->err);
 		}
 		BT_AT_PRINT("+BLEGAP:coc_conn,%d,0x%x,%d\r\n", coc_conn_ind->conn_handle, coc_conn_ind->cid,
@@ -749,7 +714,7 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 			BT_LOGA("[APP] LE COC disconnected, conn_handle: %d, cid: 0x%x\r\n",
 					coc_disconn_ind->conn_handle, coc_disconn_ind->cid);
 		} else {
-			BT_LOGE("[APP] LE COC disconnect failed, conn_hande: %d, cid: 0x%x, err: 0x%x\r\n",
+			BT_LOGE("[APP] LE COC disconnect failed, conn_handle: %d, cid: 0x%x, err: 0x%x\r\n",
 					coc_disconn_ind->conn_handle, coc_disconn_ind->cid, coc_disconn_ind->err);
 		}
 		BT_AT_PRINT("+BLEGAP:coc_disconn,%d,0x%x,%d\r\n", coc_disconn_ind->conn_handle,

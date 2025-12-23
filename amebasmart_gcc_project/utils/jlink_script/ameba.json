@@ -1,0 +1,84 @@
+{
+    "CA32": {
+        "preCommands": {
+            "set substitute-path": [],
+            "dir": [],
+            "add-symbol-file": [
+                "amebasmart_gcc_project/project_ap/asdk/image/bl1.elf",
+                "amebasmart_gcc_project/project_ap/asdk/image/bl2.elf",
+                "amebasmart_gcc_project/project_ap/asdk/image/bl32.elf"
+            ]
+        },
+        "overrideCommands": [
+            "mem 0xa5a5a5a4 0xa5a5a5a6 none",
+            "mem 0xffffff00 0xffffffff none",
+            "set mem inaccessible-by-default off"
+        ]
+    },
+    "KM4": {
+        "preCommands": {
+            "set substitute-path": [
+                ["./component/soc/amebad2/fwlib/rom_hp/amebahp_boot_rom.c", "component/soc/amebasmart/rom/rom_hp/ameba_boot_rom.c"],
+                ["./component/soc/amebad2/fwlib/rom_hp/amebahp_vector_rom.c", "component/soc/amebasmart/rom/rom_hp/ameba_vector_rom.c"],
+                ["./component/soc/amebad2/app/monitor/rom/shell_rom.c", "component/soc/amebasmart/rom/rom_common/ameba_shell_rom.c"],
+                ["./component/soc/amebad2/app/monitor/rom/monitor_rom.c", "component/soc/amebasmart/rom/rom_common/ameba_monitor_rom.c"]
+            ],
+            "dir": [
+                "component/soc/amebasmart/rom/rom_common",
+                "component/soc/amebasmart/rom/rom_hp",
+                "component/soc/amebasmart/rom/string",
+                "component/soc/amebasmart/rom/stdlib",
+                "component/soc/amebasmart/rom/crashdump",
+                "component/soc/amebasmart/rom/mve_lib",
+                "component/soc/amebasmart/rom/vector",
+                "component/soc/amebasmart/fwlib/include",
+                "component/soc/common/include/cmsis",
+                "component/soc/common/trusted-firmware-m/platform/ext/target/realtek/amebadplus/cmsis_core"
+            ],
+            "add-symbol-file": [
+                "amebasmart_gcc_project/project_hp/asdk/image/target_loader.axf",
+                "amebasmart_gcc_project/project_hp/asdk/lib/amebasmart_rom_ccut/target_rom.axf",
+                "amebasmart_gcc_project/project_hp/asdk/lib/amebasmart_rom_ccut/target_rom_ns.axf",
+                "amebasmart_gcc_project/project_hp/asdk/lib/amebasmart_rom_ccut/target_stdlib.axf"
+            ]
+        },
+        "overrideCommands": [
+            "mem 0xa5a5a5a4 0xa5a5a5a6 none",
+            "mem 0xffffff00 0xffffffff none",
+            "set mem inaccessible-by-default off"
+        ]
+    },
+    "KM0": {
+        "preCommands": {
+            "set substitute-path": [
+                ["D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/../../../../../component/soc/amebad2/fwlib/rom_lp/amebalp_boot_rom.c",
+                "component/soc/amebasmart/rom/rom_lp/ameba_boot_rom.c"],
+                ["D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/../../../../../component/soc/amebad2/fwlib/rom_lp/amebalp_vector_rom.c",
+                "component/soc/amebasmart/rom/rom_lp/ameba_vector_rom.c"],
+                ["D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/../../../../../component/soc/amebad2/app/monitor/rom/monitor_rom.c",
+                "component/soc/amebasmart/rom/rom_common/ameba_monitor_rom.c"],
+                ["D:/0code/v03slave/1202/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_lp/asdk/../../../../../component/soc/amebad2/app/monitor/rom/shell_rom.c",
+                "component/soc/amebasmart/rom/rom_common/ameba_shell_rom.c"]
+            ],
+            "dir": [
+                "component/soc/amebasmart/rom/rom_common",
+                "component/soc/amebasmart/rom/rom_lp",
+                "component/soc/amebasmart/rom/string",
+                "component/soc/amebasmart/rom/stdlib",
+                "component/soc/amebasmart/rom/crashdump",
+                "component/soc/amebasmart/rom/vector",
+                "component/soc/amebasmart/fwlib/include",
+                "component/soc/common/include/cmsis",
+                "component/soc/common/trusted-firmware-m/platform/ext/target/realtek/amebadplus/cmsis_core"
+            ],
+            "add-symbol-file": [
+                "amebasmart_gcc_project/project_lp/asdk/lib/amebasmart_rom_acut/target_rom.axf"
+            ]
+        },
+        "overrideCommands": [
+            "mem 0xa5a5a5a4 0xa5a5a5a6 none",
+            "mem 0xffffff00 0xffffffff none",
+            "set mem inaccessible-by-default off"
+        ]
+    }
+}

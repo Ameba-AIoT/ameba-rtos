@@ -237,7 +237,7 @@ uint16_t bt_audio_register_codec(uint32_t type, void *param, uint32_t param_len,
 		return err;
 	}
 	switch (type) {
-#if defined(CONFIG_BT_AUDIO_CODEC_SBC) && CONFIG_BT_AUDIO_CODEC_SBC
+#if defined(CONFIG_BT_AUDIO_CODEC_SBC_SUPPORT) && CONFIG_BT_AUDIO_CODEC_SBC_SUPPORT
 	case RTK_BT_AUDIO_CODEC_SBC:
 		rtk_bt_audio_sbc_register(RTK_BT_AUDIO_CODEC_SBC, pentity);
 		if (pentity->init(pentity, param)) {
@@ -267,7 +267,7 @@ uint16_t bt_audio_register_codec(uint32_t type, void *param, uint32_t param_len,
 		}
 		break;
 #endif
-#if defined(CONFIG_BT_AUDIO_CODEC_AAC) && CONFIG_BT_AUDIO_CODEC_AAC
+#if defined(CONFIG_BT_AUDIO_CODEC_AAC_SUPPORT) && CONFIG_BT_AUDIO_CODEC_AAC_SUPPORT
 	case RTK_BT_AUDIO_CODEC_AAC:
 		// rtk_bt_audio_aac_register(RTK_BT_AUDIO_CODEC_AAC, pentity);
 		// if (pentity->init(pentity, param)) {
@@ -283,7 +283,7 @@ uint16_t bt_audio_register_codec(uint32_t type, void *param, uint32_t param_len,
 		// }
 		break;
 #endif
-#if defined(CONFIG_BT_AUDIO_CODEC_LC3) && CONFIG_BT_AUDIO_CODEC_LC3
+#if defined(CONFIG_BT_AUDIO_CODEC_LC3_SUPPORT) && CONFIG_BT_AUDIO_CODEC_LC3_SUPPORT
 	case RTK_BT_AUDIO_CODEC_LC3:
 		rtk_bt_audio_lc3_register(RTK_BT_AUDIO_CODEC_LC3, pentity);
 		if (pentity->init(pentity, param)) {
@@ -299,7 +299,7 @@ uint16_t bt_audio_register_codec(uint32_t type, void *param, uint32_t param_len,
 		}
 		break;
 #endif
-#if defined(CONFIG_BT_AUDIO_CODEC_CVSD) && CONFIG_BT_AUDIO_CODEC_CVSD
+#if defined(CONFIG_BT_AUDIO_CODEC_CVSD_SUPPORT) && CONFIG_BT_AUDIO_CODEC_CVSD_SUPPORT
 	case RTK_BT_AUDIO_CODEC_CVSD:
 		rtk_bt_audio_cvsd_register(RTK_BT_AUDIO_CODEC_CVSD, pentity);
 		if (pentity->init(pentity, param)) {
@@ -326,7 +326,7 @@ uint16_t bt_audio_register_codec(uint32_t type, void *param, uint32_t param_len,
 uint16_t bt_audio_update_codec(uint32_t type, void *param, uint32_t param_len, PAUDIO_CODEC_ENTITY pentity)
 {
 	(void)param_len;
-#if !defined(CONFIG_BT_AUDIO_CODEC_SBC) || !CONFIG_BT_AUDIO_CODEC_SBC
+#if !defined(CONFIG_BT_AUDIO_CODEC_SBC_SUPPORT) || !CONFIG_BT_AUDIO_CODEC_SBC_SUPPORT
 	(void)param;
 #endif
 	uint16_t err = RTK_BT_AUDIO_FAIL;
@@ -336,7 +336,7 @@ uint16_t bt_audio_update_codec(uint32_t type, void *param, uint32_t param_len, P
 		return err;
 	}
 	switch (type) {
-#if defined(CONFIG_BT_AUDIO_CODEC_SBC) && CONFIG_BT_AUDIO_CODEC_SBC
+#if defined(CONFIG_BT_AUDIO_CODEC_SBC_SUPPORT) && CONFIG_BT_AUDIO_CODEC_SBC_SUPPORT
 	case RTK_BT_AUDIO_CODEC_SBC:
 	case RTK_BT_AUDIO_CODEC_mSBC:
 		if (pentity->active_flag) {

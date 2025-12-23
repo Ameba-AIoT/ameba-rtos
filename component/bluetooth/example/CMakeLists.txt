@@ -3,7 +3,11 @@ ameba_add_subdirectory(bt_atcmd)
 ameba_add_subdirectory(gatt_service/client)
 ameba_add_subdirectory(gatt_service/server)
 
-ameba_add_subdirectory_if(CONFIG_BT_LE_AUDIO
+ameba_add_subdirectory_if(CONFIG_BT_APP_AUDIO_DATA_SUPPORT
+    bt_app_audio_data
+)
+
+ameba_add_subdirectory_if(CONFIG_BT_LE_AUDIO_SUPPORT
     ble_audio
 )
 
@@ -91,10 +95,6 @@ ameba_add_subdirectory_if(CONFIG_BT_A2DP_HFP
 
 ameba_add_subdirectory_if(CONFIG_BT_A2DP_SCATTERNET
     bt_a2dp_scatternet
-)
-
-ameba_add_subdirectory_if(CONFIG_BT_APP_AUDIO_DATA
-    bt_app_audio_data
 )
 
 ameba_add_subdirectory_if(CONFIG_BT_AUDIO_MP_TEST

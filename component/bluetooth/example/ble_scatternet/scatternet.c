@@ -871,7 +871,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 			BT_LOGA("[APP] LE COC connected, conn_handle: %d, cid: 0x%x\r\n",
 					coc_conn_ind->conn_handle, coc_conn_ind->cid);
 		} else {
-			BT_LOGE("[APP] LE COC connect failed, conn_hande: %d, cid: 0x%x, err: 0x%x\r\n",
+			BT_LOGE("[APP] LE COC connect failed, conn_handle: %d, cid: 0x%x, err: 0x%x\r\n",
 					coc_conn_ind->conn_handle, coc_conn_ind->cid, coc_conn_ind->err);
 		}
 		BT_AT_PRINT("+BLEGAP:coc_conn,%d,0x%x,%d\r\n", coc_conn_ind->conn_handle, coc_conn_ind->cid,
@@ -885,7 +885,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 			BT_LOGA("[APP] LE COC disconnected, conn_handle: %d, cid: 0x%x\r\n",
 					coc_disconn_ind->conn_handle, coc_disconn_ind->cid);
 		} else {
-			BT_LOGE("[APP] LE COC disconnect failed, conn_hande: %d, cid: 0x%x, err: 0x%x\r\n",
+			BT_LOGE("[APP] LE COC disconnect failed, conn_handle: %d, cid: 0x%x, err: 0x%x\r\n",
 					coc_disconn_ind->conn_handle, coc_disconn_ind->cid, coc_disconn_ind->err);
 		}
 		BT_AT_PRINT("+BLEGAP:coc_disconn,%d,0x%x,%d\r\n", coc_disconn_ind->conn_handle,
