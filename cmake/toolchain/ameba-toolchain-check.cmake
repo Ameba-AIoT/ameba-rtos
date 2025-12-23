@@ -17,15 +17,16 @@ else()
 
 	if (EXISTS ${TOOLCHAINDIR}/${TOOLCHAINNAME})
 		message("${TOOLCHAINNAME} Had Existed, Verifying integrity ......")
-
+		message("Please waiting...")
 		if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
 			execute_process(
-				COMMAND tar -jtf ${TOOLCHAINDIR}/${TOOLCHAINNAME} -C ${TOOLCHAINDIR} > /dev/null
+				COMMAND tar -jtf ${TOOLCHAINDIR}/${TOOLCHAINNAME}
+				OUTPUT_QUIET
 				RESULT_VARIABLE broken
 			)
 		else()
 			execute_process(
-				COMMAND 7z t ${TOOLCHAINDIR}/${TOOLCHAINNAME} -o${TOOLCHAINDIR}
+				COMMAND 7z t ${TOOLCHAINDIR}/${TOOLCHAINNAME}
 				RESULT_VARIABLE broken
 			)
 		endif()

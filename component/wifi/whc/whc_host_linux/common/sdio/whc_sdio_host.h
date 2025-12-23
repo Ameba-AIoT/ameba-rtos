@@ -9,6 +9,7 @@ struct whc_sdio;
 #include "whc_sdio_host_drvio.h"
 #include "whc_sdio_host_ops.h"
 
+// #define SDIO_INT_MODE 1
 #define CONFIG_SDIO_TX_ENABLE_AVAL_INT
 #define CONFIG_SDIO_TX_OVF_CTRL
 //#define CONFIG_SDIO_RX_AGGREGATION //for Rx Aggregation

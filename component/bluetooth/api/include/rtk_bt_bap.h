@@ -881,7 +881,11 @@ typedef struct {
 	uint8_t encryption;                                             /**< whether BIG data is in encryption or not */
 	uint8_t action;                                                 /**< BIG Synchronization action. */
 	uint8_t action_role;                                            /**< BIG Synchronization action role. */
-	uint8_t cause;
+	uint8_t cause;                                                   /**< cause. */
+	uint8_t adv_type;                                               /**< adv address type. */
+	uint8_t adv_addr_val[RTK_BD_ADDR_LEN];                          /**< adv address. */
+	uint8_t adv_sid;                                                /**< adv sid. */
+	uint8_t broadcast_id[RTK_BT_LE_AUDIO_BROADCAST_ID_LEN];         /**< broadcast id. */
 } rtk_bt_le_audio_big_sync_state_ind_t;
 
 /**
