@@ -35,6 +35,9 @@ typedef int(*qsort_compar)(const void *, const void *);
 #define VFS_INF_SD      0x00
 #define VFS_INF_RAM     0x01
 #define VFS_INF_FLASH   0x02
+#if (defined CONFIG_LITTLEFS_SECONDARY_FLASH) || (defined CONFIG_FATFS_SECONDARY_FLASH)
+#define VFS_INF_SECONDARY_FLASH   0x03
+#endif
 
 /*vfs read-write permission when initializing*/
 #define VFS_RW 0x00
@@ -108,28 +111,28 @@ typedef struct _vfs_file {
 } vfs_file;
 
 typedef struct {
-	int (*open)(const char *filename, const char *mode, vfs_file *finfo);
-	int (*read)(unsigned char *buf, unsigned int size, unsigned int count, vfs_file *file);
-	int (*write)(unsigned char *buf, unsigned int size, unsigned int count, vfs_file *file);
-	int (*close)(vfs_file *file);
-	int (*seek)(long int offset, int origin, vfs_file *file);
-	void (*rewind)(vfs_file *file);
-	int (*fgetpos)(vfs_file *file);
-	int (*fsetpos)(unsigned int offset, vfs_file *file);
-	int (*fflush)(vfs_file *file);
-	int (*remove)(const char *filename);
-	int (*rename)(const char *old_name, const char *new_name);
-	int (*eof)(vfs_file *file);
+	int (*open)(void *fs, const char *filename, const char *mode, vfs_file *finfo);
+	int (*read)(void *fs, unsigned char *buf, unsigned int size, unsigned int count, vfs_file *file);
+	int (*write)(void *fs, unsigned char *buf, unsigned int size, unsigned int count, vfs_file *file);
+	int (*close)(void *fs, vfs_file *file);
+	int (*seek)(void *fs, long int offset, int origin, vfs_file *file);
+	void (*rewind)(void *fs, vfs_file *file);
+	int (*fgetpos)(void *fs, vfs_file *file);
+	int (*fsetpos)(void *fs, unsigned int offset, vfs_file *file);
+	int (*fflush)(void *fs, vfs_file *file);
+	int (*remove)(void *fs, const char *filename);
+	int (*rename)(void *fs, const char *old_name, const char *new_name);
+	int (*eof)(void *fs, vfs_file *file);
 	int (*error)(vfs_file *file); //ferror
-	int (*tell)(vfs_file *file);
-	int (*ftruncate)(vfs_file *file, off_t length);
-	int (*opendir)(const char *name, vfs_file *file);
-	struct dirent   *(*readdir)(vfs_file *file);
-	int (*closedir)(vfs_file *file);
-	int (*rmdir)(const char *path);
-	int (*mkdir)(const char *pathname);
-	int (*access)(const char *pathname, int mode);
-	int (*stat)(char *path, struct stat *buf);
+	int (*tell)(void *fs, vfs_file *file);
+	int (*ftruncate)(void *fs, vfs_file *file, off_t length);
+	int (*opendir)(void *fs, const char *name, vfs_file *file);
+	struct dirent *(*readdir)(void *fs, vfs_file *file);
+	int (*closedir)(void *fs, vfs_file *file);
+	int (*rmdir)(void *fs, const char *path);
+	int (*mkdir)(void *fs, const char *pathname);
+	int (*access)(void *fs, const char *pathname, int mode);
+	int (*stat)(void *fs, char *path, struct stat *buf);
 	int (*mount)(int interface);
 	int (*unmount)(int interface);
 	int (*get_interface)(int interface);
@@ -152,6 +155,7 @@ typedef struct {
 	vfs_encrypt_callback_t vfs_encrypt_callback;
 	vfs_decrypt_callback_t vfs_decrypt_callback;
 	unsigned char encrypt_iv_len;
+	void *fs;
 } user_config;
 
 typedef struct {

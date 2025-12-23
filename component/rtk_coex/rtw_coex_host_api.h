@@ -157,6 +157,7 @@ enum rtk_coex_custom_product_id {
 	RTK_COEX_CUSTOM_PID_UNDEF = 0,
 	/* Add from here*/
 	RTK_COEX_CUSTOM_PID_GAMEPAD,			/* 1 */
+	RTK_COEX_CUSTOM_PID_GAMEPAD_5G_WL_PRI,	/* 2 */
 	RTK_COEX_CUSTOM_PID_MAX = 0xFF
 };
 

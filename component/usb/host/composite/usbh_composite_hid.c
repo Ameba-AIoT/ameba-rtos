@@ -40,10 +40,8 @@ static void usbh_composite_hid_parse_hid_report_descriptor(const u8 *data, u8 le
 static int usbh_composite_hid_parse_hid_report(const u8 *report_data, u8 report_len, const usbh_composite_hid_ctrl_caps_t *device_info);
 static int usbh_composite_hid_parse_hid_report_desc(u8 *pbuf, u32 buf_length);
 static void usbh_composite_hid_parse_hid_msg(const u8 *report, u8 len);
-static int usbh_composite_hid_parse(u8 *pbuf, u32 *length, u32 buf_length);
-static u8 *usbh_composite_hid_find_next_stdesc(u8 *pbuf, u32 *len);
-static int usbh_composite_hid_parse_cfgdesc(usb_host_t *host);
-static int usbh_composite_hid_process_set_hid_alt(usb_host_t *host);
+static int usbh_composite_hid_parse_details(usbh_itf_data_t *itf_data);
+static int usbh_composite_hid_parse_interface(usb_host_t *host);
 static int usbh_composite_hid_process_get_hid_report_desc(usb_host_t *host);
 static void usbh_composite_hid_in_process(usb_host_t *host);
 static int usbh_composite_hid_cb_attach(usb_host_t *host);
@@ -57,7 +55,6 @@ static const char *const TAG = "HID";
 
 /* USB Standard Device Descriptor */
 const usbh_class_driver_t usbh_composite_hid_driver = {
-	.class_code = USBH_CLASS_HID,
 	.attach = usbh_composite_hid_cb_attach,
 	.detach = usbh_composite_hid_cb_detach,
 	.setup = usbh_composite_hid_cb_setup,
@@ -68,7 +65,7 @@ const usbh_class_driver_t usbh_composite_hid_driver = {
 static usbh_composite_hid_t usbh_composite_hid;
 
 #if USBH_COMPOSITE_HID_UAC_DEBUG
-void usbh_composite_hid_status_dump_thread(void)
+void usbh_composite_hid_status_dump(void)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "HID %d-%d %d\n", hid->event_cnt, hid->last_event.type, hid->hid_ctrl);
@@ -607,17 +604,17 @@ static void usbh_composite_hid_parse_hid_report_descriptor(const u8 *data, u8 le
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n=== Device Capabilities ===\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Volume control supported: %s\n", device_info->volume.supported ? "Yes" : "No");
 	if (device_info->volume.supported) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "  Volume controls in Report ID: %d\n", device_info->volume.report_id);
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "  Volume Up: bit %d\n", device_info->volume.up_bit);
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "  Volume Down: bit %d\n", device_info->volume.down_bit);
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "  Mute: bit %d\n", device_info->volume.mute_bit);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tVolume controls in Report ID: %d\n", device_info->volume.report_id);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tVolume Up: bit %d\n", device_info->volume.up_bit);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tVolume Down: bit %d\n", device_info->volume.down_bit);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tMute: bit %d\n", device_info->volume.mute_bit);
 	}
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Media control supported: %s\n", device_info->media.supported ? "Yes" : "No");
 	if (device_info->media.supported) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "  Media controls in Report ID: %d\n", device_info->media.report_id);
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "  Play/Pause: bit %d\n", device_info->media.play_pause_bit);
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "  Stop: bit %d\n", device_info->media.stop_bit);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tMedia controls in Report ID: %d\n", device_info->media.report_id);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tPlay/Pause: bit %d\n", device_info->media.play_pause_bit);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tStop: bit %d\n", device_info->media.stop_bit);
 	}
 #endif
 }
@@ -759,87 +756,52 @@ static void usbh_composite_hid_parse_hid_msg(const u8 *report, u8 len)
 
 /**
   * @brief  Parse audio control interface
-  * @param  pbuf: given descriptor buffer
-  * @param  length: lenghth of parse
-  * @param  buf_length: lenghth of given buffer
+  * @param  itf_data: given interface struct handle
   * @retval Status
   */
-static int usbh_composite_hid_parse(u8 *pbuf, u32 *length, u32 buf_length)
+static int usbh_composite_hid_parse_details(usbh_itf_data_t *itf_data)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
 	usbh_dev_hid_desc_t *hid_desc = NULL;
-	usbh_hid_ep_cfg_t *ep_cfg = NULL;
-
-	u8 *desc = pbuf;
+	usbh_ep_desc_t *ep_desc = NULL;
+	u8 *desc = itf_data->raw_data;
 	u16 len = 0;
+	u16 itf_total_len = 0;
 
 	hid->itf_idx = desc[2];
-	hid->alt_set_idx = desc[3];
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Itf %d-%d\n", hid->itf_idx, hid->alt_set_idx);
-
-	*length = ((usb_descriptor_header_t *) desc)->bLength;
-	desc = pbuf + *length;
+	hid->itf_alt_idx = desc[3];
 
 	while (1) {
-		if (desc == NULL || *length >= buf_length) {
+		if (desc == NULL || itf_total_len >= itf_data->raw_data_len) {
 			break;
 		}
 
-		switch (((usb_descriptor_header_t *) desc)->bDescriptorType) {
+		len = ((usbh_desc_header_t *) desc)->bLength;
+		desc += len;
+		itf_total_len += len;
+
+		switch (((usbh_desc_header_t *) desc)->bDescriptorType) {
+		case USB_DESC_TYPE_INTERFACE:
+			if (((usbh_itf_desc_t *)desc)->bInterfaceNumber != hid->itf_idx) { //find another itf, should return
+				RTK_LOGS(TAG, RTK_LOG_DEBUG, "Hid intf new %d:old %d, return\n\n", ((usbh_itf_desc_t *)desc)->bInterfaceNumber, hid->itf_idx);
+				return HAL_OK;
+			}
+			break;
 		case USBH_HID_DESC:
 			hid_desc = (usbh_dev_hid_desc_t *)desc;
 			usb_os_memcpy(&(hid->hid_desc), hid_desc, sizeof(usbh_dev_hid_desc_t));
-
-			len = ((usb_descriptor_header_t *) desc)->bLength;
-			desc = desc + len;
-			*length += len;
 			break;
 
-		case USB_DESC_TYPE_ENDPOINT: {
-			usbh_ep_desc_t *ep_desc = (usbh_ep_desc_t *)desc;
-			ep_cfg = &(hid->ep_info);
+		case USB_DESC_TYPE_ENDPOINT:
+			ep_desc = (usbh_ep_desc_t *)desc;
+			usb_os_memcpy(&(hid->ep_desc), ep_desc, sizeof(usbh_ep_desc_t));
+			break;
 
-			ep_cfg->ep_addr = ep_desc->bEndpointAddress;
-			ep_cfg->packet_size = ep_desc->wMaxPacketSize;
-			ep_cfg->interval = ep_desc->bInterval;
-
-			len = ((usb_descriptor_header_t *) desc)->bLength;
-			desc = desc + len;
-			*length += len;
-		}
-		break;
-
-		default: {
-			len = ((usb_descriptor_header_t *) desc)->bLength;
-			desc = desc + len;
-			*length += len;
-		}
-		break;
+		default:
+			break;
 		}
 	}
 	return HAL_OK;
-}
-
-/**
-  * @brief  Find next standard descriptor
-  * @param  pbuf: given buffer to find
-  * @param  len: given buffer length
-  * @retval Pointer of next standard descriptor
-  */
-static u8 *usbh_composite_hid_find_next_stdesc(u8 *pbuf, u32 *len)
-{
-	u8 *desc = pbuf;
-
-	while (*len > 0) {
-		if (((usb_descriptor_header_t *)desc)->bDescriptorType == USB_DESC_TYPE_INTERFACE) {
-			return (u8 *) desc;
-		} else {
-			*len -= ((usb_descriptor_header_t *)desc)->bLength;
-			desc += ((usb_descriptor_header_t *)desc)->bLength;
-		}
-	}
-
-	return NULL;
 }
 
 /**
@@ -847,53 +809,23 @@ static u8 *usbh_composite_hid_find_next_stdesc(u8 *pbuf, u32 *len)
   * @param  host: usb host structure
   * @retval Status
   */
-static int usbh_composite_hid_parse_cfgdesc(usb_host_t *host)
+static int usbh_composite_hid_parse_interface(usb_host_t *host)
 {
+	usbh_dev_id_t dev_id = {0,};
+	dev_id.bInterfaceClass = USBH_CLASS_HID;
+	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS;
+	usbh_itf_data_t *itf_data = usbh_get_interface_descriptor(host, &dev_id);
 	int ret = HAL_OK;
-	usbh_cfg_desc_t *desc = (usbh_cfg_desc_t *)usbh_get_active_raw_configuration_descriptor(host);
-	usbh_if_desc_t *pbuf = (usbh_if_desc_t *) desc;
-	u32 cfglen = (u32)desc->wTotalLength;
-	u32 len = 0;
 
-	while (1) {
-		pbuf = (usbh_if_desc_t *)usbh_composite_hid_find_next_stdesc((u8 *)pbuf, &cfglen);
-		if (pbuf == NULL) {
-			break;
-		}
-
-		if (pbuf->bInterfaceClass == USBH_CLASS_HID) {
-			ret = usbh_composite_hid_parse((u8 *)pbuf, &len, cfglen);
-			if (ret) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "HID parse fail\n");
-				return ret;
-			}
-			pbuf = (usbh_if_desc_t *)((u8 *) pbuf + len);
-			cfglen -= len;
-			len = 0;
-		} else {
-			//skip no audio descriptor
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Skip desc 0x%x/%d\n", ((usb_descriptor_header_t *)desc)->bDescriptorType,
-					 ((usb_descriptor_header_t *)desc)->bLength);
-			cfglen -= ((usb_descriptor_header_t *)desc)->bLength;
-			pbuf = (usbh_if_desc_t *)((u8 *) pbuf + ((usb_descriptor_header_t *)desc)->bLength);
+	if (itf_data) {
+		ret = usbh_composite_hid_parse_details(itf_data);
+		if (ret) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "AC parse fail\n");
+			return ret;
 		}
 	}
 
 	return ret;
-}
-
-static int usbh_composite_hid_process_set_hid_alt(usb_host_t *host)
-{
-	usbh_setup_req_t setup;
-	usbh_composite_hid_t *hid = &usbh_composite_hid;
-
-	setup.b.bmRequestType = USB_H2D | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_INTERFACE;
-	setup.b.bRequest = USB_REQ_SET_INTERFACE;
-	setup.b.wValue = hid->alt_set_idx;
-	setup.b.wIndex = hid->itf_idx;
-	setup.b.wLength = 0U;
-
-	return usbh_ctrl_request(host, &setup, NULL);
 }
 
 static int usbh_composite_hid_process_get_hid_report_desc(usb_host_t *host)
@@ -901,11 +833,11 @@ static int usbh_composite_hid_process_get_hid_report_desc(usb_host_t *host)
 	usbh_setup_req_t setup;
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
 
-	setup.b.bmRequestType = USB_D2H | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_INTERFACE;
-	setup.b.bRequest = USB_REQ_GET_DESCRIPTOR;
-	setup.b.wValue = USBH_HID_REPORT_TYPE << 8;
-	setup.b.wIndex = hid->itf_idx;
-	setup.b.wLength = hid->hid_desc.wDescriptorLength;
+	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_INTERFACE;
+	setup.req.bRequest = USB_REQ_GET_DESCRIPTOR;
+	setup.req.wValue = USBH_HID_REPORT_TYPE << 8;
+	setup.req.wIndex = hid->itf_idx;
+	setup.req.wLength = hid->hid_desc.wDescriptorLength;
 
 	return usbh_ctrl_request(host, &setup, hid->hid_ctrl_buf);
 }
@@ -918,41 +850,38 @@ static int usbh_composite_hid_process_get_hid_report_desc(usb_host_t *host)
 static void usbh_composite_hid_in_process(usb_host_t *host)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
-	usbh_hid_ep_cfg_t *ep = &(hid->ep_info);
+	usbh_pipe_t *pipe = &(hid->pipe);
 	usbh_urb_state_t urb_state = USBH_URB_IDLE;
 	u32 len;
 
-	//rx to do
-	switch (ep->xfer_state) {
-	case USBH_HID_XFER:
-		if ((host->tick - ep->tick) > ep->interval) {
-			ep->tick = host->tick;
-			ep->xfer_state = USBH_HID_XFER_BUSY;
-			usbh_intr_receive_data(host,
-								   ep->buf,
-								   ep->packet_size,
-								   ep->pipe);
+	switch (pipe->xfer_state) {
+	case USBH_EP_XFER_START:
+		if (usbh_get_elapsed_ticks(host, pipe->tick) > pipe->ep_interval) {
+			pipe->tick = usbh_get_tick(host);
+			pipe->xfer_state = USBH_EP_XFER_BUSY;
+			pipe->xfer_len = pipe->ep_mps;
+			usbh_transfer_data(host, pipe);
 			hid->next_xfer = 1;
 		}
 		break;
 
-	case USBH_HID_XFER_BUSY:
-		urb_state = usbh_get_urb_state(host, ep->pipe);
+	case USBH_EP_XFER_BUSY:
+		urb_state = usbh_get_urb_state(host, pipe);
 		if (urb_state == USBH_URB_DONE) {
-			len = usbh_get_last_transfer_size(host, ep->pipe);
+			len = usbh_get_last_transfer_size(host, pipe);
 			/* save to list */
-			usb_ringbuf_add_tail(&(hid->report_msg), ep->buf, len);
-			ep->xfer_state = USBH_HID_XFER;  ///loop to next
+			usb_ringbuf_add_tail(&(hid->report_msg), pipe->xfer_buf, len);
+			pipe->xfer_state = USBH_EP_XFER_START;  ///loop to next
 		} else if (urb_state == USBH_URB_BUSY) {
-			if ((host->tick - ep->tick) > ep->interval) {
-				ep->xfer_state = USBH_HID_XFER;
+			if (usbh_get_elapsed_ticks(host, pipe->tick) > pipe->ep_interval) {
+				pipe->xfer_state = USBH_EP_XFER_START;
 				hid->next_xfer = 1;
 			}
 		} else if (urb_state == USBH_URB_ERROR) {
-			ep->xfer_state = USBH_HID_XFER;
+			pipe->xfer_state = USBH_EP_XFER_START;
 		} else if (urb_state == USBH_URB_IDLE) {
-			if ((host->tick - ep->tick) > (UBSH_COMPOSITE_HID_IDLE_MAX_CNT)*ep->interval) {
-				ep->xfer_state = USBH_HID_XFER;
+			if (usbh_get_elapsed_ticks(host, pipe->tick) > (UBSH_COMPOSITE_HID_IDLE_MAX_CNT)*pipe->ep_interval) {
+				pipe->xfer_state = USBH_EP_XFER_START;
 				hid->next_xfer = 1;
 			}
 		}
@@ -971,39 +900,21 @@ static void usbh_composite_hid_in_process(usb_host_t *host)
 static int usbh_composite_hid_cb_attach(usb_host_t *host)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
-	usbh_hid_ep_cfg_t *ep = NULL;
+	usbh_pipe_t *pipe = NULL;
 
 	int status = HAL_ERR_UNKNOWN;
-	u32 max_ep_size;
 
-	if (host->config.speed == USB_SPEED_HIGH) {
-		max_ep_size = 1024;
-	} else {
-		max_ep_size = 1023;
-	}
-
-	status = usbh_composite_hid_parse_cfgdesc(host);
+	status = usbh_composite_hid_parse_interface(host);
 	if (status) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Cfg parse fail\n");
 		return status;
 	}
 
-	if (hid->ep_info.ep_addr) {
-		ep = &(hid->ep_info);
-		ep->xfer_state = USBH_HID_XFER_IDLE;
+	if (hid->ep_desc.bEndpointAddress) {
+		pipe = &(hid->pipe);
 		hid->report_desc_status = USBH_HID_REPORT_SET_ALT;
 
-		if (ep->packet_size >= max_ep_size) {
-			ep->packet_size = max_ep_size;
-		}
-
-		ep->pipe = usbh_alloc_pipe(host, ep->ep_addr);
-
-		usbh_open_pipe(host,
-					   ep->pipe,
-					   ep->ep_addr,
-					   USB_CH_EP_TYPE_INTR,
-					   ep->packet_size);
+		usbh_open_pipe(host, pipe, &(hid->ep_desc));
 	}
 
 	if ((hid->cb != NULL) && (hid->cb->attach != NULL)) {
@@ -1038,15 +949,15 @@ static int usbh_composite_hid_cb_detach(usb_host_t *host)
 static int usbh_composite_hid_cb_setup(usb_host_t *host)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
-	usbh_hid_ep_cfg_t *ep = &(hid->ep_info);
+	usbh_pipe_t *pipe = &(hid->pipe);
 	UNUSED(host);
 
 	if ((hid->cb != NULL) && (hid->cb->setup != NULL)) {
 		hid->cb->setup();
 	}
 
-	ep->xfer_state = USBH_HID_XFER;
-	ep->buf = hid->hid_ctrl_buf;
+	pipe->xfer_state = USBH_EP_XFER_START;
+	pipe->xfer_buf = hid->hid_ctrl_buf;
 
 	return HAL_OK;
 }
@@ -1060,13 +971,15 @@ static int usbh_composite_hid_cb_setup(usb_host_t *host)
 static int usbh_composite_hid_cb_process(usb_host_t *host, u32 msg)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
-	usbh_hid_ep_cfg_t *ep = &(hid->ep_info);
+	usbh_pipe_t *pipe = &(hid->pipe);
+	usbh_event_t event;
+	event.d32 = msg;
 
-	if ((hid->hid_ctrl_buf) && (msg == ep->pipe)) {
+	if ((hid->hid_ctrl_buf) && (event.msg.pipe_num == pipe->pipe_num)) {
 		hid->next_xfer = 0;
 		usbh_composite_hid_in_process(host);
 		if (hid->next_xfer) {
-			usbh_notify_class_state_change(host, ep->pipe);
+			usbh_notify_composite_class_state_change(host, pipe->pipe_num, USBH_COMPOSITE_HID_EVENT);
 		}
 
 		return HAL_OK;
@@ -1083,16 +996,16 @@ static int usbh_composite_hid_cb_process(usb_host_t *host, u32 msg)
 static int usbh_composite_hid_cb_sof(usb_host_t *host)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
-	usbh_hid_ep_cfg_t *ep = &(hid->ep_info);
+	usbh_pipe_t *pipe = &(hid->pipe);
 
-	if ((host->tick - ep->tick) > UBSH_COMPOSITE_HID_TRIGGER_MAX_CNT) {
-		usbh_notify_class_state_change(host, ep->pipe);
+	if (usbh_get_elapsed_ticks(host, pipe->tick) > UBSH_COMPOSITE_HID_TRIGGER_MAX_CNT) {
+		usbh_notify_composite_class_state_change(host, pipe->pipe_num, USBH_COMPOSITE_HID_EVENT);
 	}
 
 	return HAL_OK;
 }
 
-static void usbh_composite_hid_parse_thread(void *param)
+static void usbh_composite_hid_msg_parse_thread(void *param)
 {
 	UNUSED(param);
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
@@ -1103,15 +1016,11 @@ static void usbh_composite_hid_parse_thread(void *param)
 	hid->parse_task_alive = 1;
 	hid->parse_task_exit = 0;
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "HID parse thread\n");
-
 	while (hid->parse_task_exit == 0) {
 		read_cnt = usb_ringbuf_remove_head(handle, report_msg, 10);
-		// RTK_LOGS(TAG, RTK_LOG_INFO, "HID parse thread cnt %d\n", read_cnt);
 		if (read_cnt) {
 			if (hid->hid_ctrl) {
 				usbh_composite_hid_parse_hid_msg(report_msg, read_cnt);
-				// RTK_LOGS(TAG, RTK_LOG_INFO, "HID parse thread done\n");
 			}
 		} else {
 			rtos_time_delay_ms(50);
@@ -1156,7 +1065,7 @@ int usbh_composite_hid_init(usbh_composite_host_t *driver, usbh_composite_hid_us
 
 	usb_ringbuf_manager_init(&(hid->report_msg), USBH_COMPOSITE_HID_MST_COUNT, USBH_COMPOSITE_HID_MSG_LENGTH, 0);
 
-	if (rtos_task_create(&(hid->msg_parse_task), ((const char *)"usbh_composite_hid_parse"), usbh_composite_hid_parse_thread,
+	if (rtos_task_create(&(hid->msg_parse_task), ((const char *)"usbh_composite_hid_msg_parse"), usbh_composite_hid_msg_parse_thread,
 						 NULL, 4 * 1024U, USBH_COMPOSITE_HID_THREAD_PRIORITY) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hid parse task fail\n");
 	}
@@ -1199,12 +1108,12 @@ int usbh_composite_hid_handle_report_desc(usb_host_t *host)
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
 	int ret = HAL_OK;
 
-	if (hid->ep_info.ep_addr && hid->report_desc == NULL) {
+	if (hid->pipe.ep_addr && hid->report_desc == NULL) {
 		//1. set itf
 		//2. set idle
 		//3. get report desc
 		if (hid->report_desc_status == USBH_HID_REPORT_SET_ALT) {
-			ret = usbh_composite_hid_process_set_hid_alt(host);
+			ret = usbh_ctrl_set_interface(host, hid->itf_idx, hid->itf_alt_idx);
 			if (ret == HAL_OK) {
 				hid->report_desc_status = USBH_HID_REPORT_GET_DESC;
 				ret = HAL_BUSY;

@@ -158,8 +158,8 @@ typedef enum {
   */
 #define SAU_INIT_CTRL_ALLNS  0
 
-#define SAU_ENTRYS_NUM			8
-#define MPC_ENTRYS_NUM			8
+#define SAU_ENTRY_NUM			8
+#define MPC_ENTRY_NUM			8
 
 void BOOT_RAM_TZCfg(void);
 void TZ_ConfigSlaveSecurity(PPC_PeripheralId Perip, u32 Status);

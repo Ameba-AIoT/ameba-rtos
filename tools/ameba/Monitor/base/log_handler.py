@@ -7,6 +7,7 @@
 import datetime
 import os
 import queue
+import re
 from typing import List, Optional, Union
 from serial.tools.miniterm import Console
 
@@ -20,6 +21,8 @@ from queue import Queue
 
 key_description = miniterm.key_description
 
+STACKTRACE_START = '.*?(========== Stack Trace ==========.*)'
+STACKTRACE_END = '========== End of Stack Trace =========='
 
 
 class LogHandler(StoppableThread):
@@ -41,6 +44,7 @@ class LogHandler(StoppableThread):
         self.running = False
         self.logAGG_srcname = logAGG or []
         self.logAGG_src = 2**len(self.logAGG_srcname) - 1
+        self._stacktrace = False
         if enable_address_decoding:
             self.address_decoder = AddressDecoder(toolchain_path, elf_file, rom_elf_file)
         else:
@@ -163,9 +167,21 @@ class LogHandler(StoppableThread):
     def handle_possible_address_in_line(self, line) -> None:
         if not self.address_decoder:
             return
-        translation = self.address_decoder.decode_address(line)
-        if translation:
-            print_yellow(translation)
+        stacktrace_start_mo = re.search(STACKTRACE_START, line.strip(), flags=re.I)
+        stcaktrace_end_mo = re.search(STACKTRACE_END, line.strip(), flags=re.I)
+        if stacktrace_start_mo:
+            self._stacktrace = True
+            return
+        if stcaktrace_end_mo:
+            self._stacktrace = False
+            return
+
+        if self._stacktrace:
+        #if True:
+            translation = self.address_decoder.decode_address(line)
+            if translation:
+                self.output_queue.put(translation, False)
+                #print_yellow(translation)
 
     def logAGG_parse(self, data: bytes):
         """

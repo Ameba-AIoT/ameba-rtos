@@ -61,6 +61,7 @@ if(CONFIG_WHC_DEV)
         ${DIR}/wififw_txrpt.c
         ${DIR_COMMON}/wififw_txrpt_common.c
         ${DIR_COMMON}/wififw_mp.c
+        ${DIR}/wififw_mp_debug.c
     )
 
     if(CONFIG_WIFI_FW_VERIFY)

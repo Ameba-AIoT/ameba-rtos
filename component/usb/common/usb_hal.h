@@ -14,44 +14,99 @@
 #include "basic_types.h"
 #include "ameba_soc.h"
 
-/* Exported defines ----------------------------------------------------------*/
+#define USB_IN_TOKEN_QUEUE_DEPTH         8U  /**< Depth of the IN token queue for periodic transfers (Shared FIFO mode only). */
 
-/* USB speed */
-#define USB_SPEED_HIGH                                 0
-#define USB_SPEED_HIGH_IN_FULL                         1
-#define USB_SPEED_LOW                                  2
-#define USB_SPEED_FULL                                 3
+/**
+ * @brief Defines the operational speeds for the USB controller.
+ */
+typedef enum {
+	USB_SPEED_HIGH = 0,                 /**< High Speed (480 Mbps). */
+	USB_SPEED_HIGH_IN_FULL,             /**< High Speed core running in Full Speed mode. */
+	USB_SPEED_LOW,                      /**< Low Speed (1.5 Mbps). */
+	USB_SPEED_FULL                      /**< Full Speed (12 Mbps). */
+} usb_speed_type_t;
 
-#define USB_IN_TOKEN_QUEUE_DEPTH                       8U
+/**
+ * @brief USB mode.
+ */
+typedef enum {
+	USB_OTG_MODE_DEVICE = 0,            /**< USB device mode */
+	USB_OTG_MODE_HOST                   /**< USB host mode */
+} usb_otg_mode_t;
 
-/* Exported macros -----------------------------------------------------------*/
+/**
+ * @brief Defines the status of the USB device bus lines (D+ and D-).
+ */
+typedef enum {
+	USB_DEV_BUS_STATUS_DN = BIT0,       /**< D- line status bit. */
+	USB_DEV_BUS_STATUS_DP = BIT1,       /**< D+ line status bit. */
+	USB_DEV_BUS_STATUS_SUSPEND = BIT2,  /**< Suspend indication bit. */
+} usb_dev_bus_state_t;
 
-
-/* Exported types ------------------------------------------------------------*/
-
+/**
+ * @brief Structure to hold USB calibration data for a PHY register.
+ */
 typedef struct {
-	u8 page; /*!< Page number */
-	u8 addr; /*!< Register address */
-	u8 val;  /*!< Register value */
+	u8 page;        /**< Page number for the PHY register. */
+	u8 addr;        /**< Register address. */
+	u8 val;         /**< Value to be written to the register. */
 } usb_cal_data_t;
 
+/**
+ * @brief Structure defining the platform-specific HAL driver interface.
+ * @details This structure holds pointers to functions that are implemented
+ *          at the platform level to control the USB hardware.
+ */
 typedef struct {
+	/**
+	 * @brief Initializes the underlying SoC-specific hardware for the USB controller.
+	 * @param[in] mode: The USB mode to initialize, see @ref usb_otg_mode_t.
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int(* init)(u8 mode);
+
+	/**
+	 * @brief De-initializes the underlying SoC-specific hardware.
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int(* deinit)(void);
+
+	/**
+	 * @brief Enables the USB interrupt with a specified priority.
+	 * @param[in] priority: The interrupt priority to set.
+	 */
 	void(* enable_interrupt)(u8 priority);
+
+	/**
+	 * @brief Disables the USB interrupt.
+	 */
 	void(* disable_interrupt)(void);
+
+	/**
+	 * @brief Registers the ISR handler for USB interrupts.
+	 * @param[in] handler: Pointer to the ISR function.
+	 * @param[in] priority: The interrupt handler priority to set.
+	 */
 	void(* register_irq_handler)(void *handler, u8 priority);
+
+	/**
+	 * @brief Unregisters the USB ISR handler.
+	 */
 	void(* unregister_irq_handler)(void);
+
+	/**
+	 * @brief Retrieves the SoC-specific USB PHY calibration data for a specific USB mode.
+	 * @param[in] mode: The USB mode for which to get calibration data, see ` USB_OTG_MODE_XX`
+	 * @return Pointer to an array of `usb_cal_data_t` structures.
+	 */
 	usb_cal_data_t *(* get_cal_data)(u8 mode);
+
+	/**
+	 * @brief Clock gating process for USB power management.
+	 * @param[in] ms: Time in milliseconds.
+	 */
 	void (*cg)(u32 ms);
 } usb_hal_driver_t;
-
-/* USB device bus state */
-typedef enum {
-	USB_DEV_BUS_STATUS_DN       = BIT0,  // D-
-	USB_DEV_BUS_STATUS_DP       = BIT1,  // D+
-	USB_DEV_BUS_STATUS_SUSPEND  = BIT2,  // suspend indication
-} usb_dev_bus_state_t;
 
 /* Exported variables --------------------------------------------------------*/
 
@@ -77,6 +132,7 @@ int usb_hal_get_device_bus_status(u32 *bus_status);
 void usb_hal_device_disconnect(u8 en);
 void usb_hal_dump_registers(void);
 
+u64 usb_hal_get_timestamp_us(void);
 u32 usb_hal_get_timestamp_ms(void);
 u32 usb_hal_get_time_tick(u8 speed);
 

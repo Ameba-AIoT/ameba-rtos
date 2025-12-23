@@ -54,7 +54,7 @@ static void dump_acm_cfgdesc(void)
 {
 #if ECM_ENABLE_DUMP_DESCRIPYOT_PARSE
 	usbh_cdc_ecm_appx_t      *atcmd = &appx_cmd;
-	usbh_cdc_ecm_ep_t        *pcomm_if = &(atcmd->report_ep);
+	usbh_cdc_ecm_ep_t        *pcomm_itf = &(atcmd->report_ep);
 	usbh_cdc_ecm_ep_t        *pdata_tx = &(atcmd->tx_ep);
 	usbh_cdc_ecm_ep_t        *pdata_rx = &(atcmd->rx_ep);
 
@@ -62,7 +62,7 @@ static void dump_acm_cfgdesc(void)
 
 	//dump atcmd control
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INTR epaddr(0x%x) MPS(%d) interval(%d)\n",
-			 pcomm_if->ep_addr, pcomm_if->ep_mps, pcomm_if->ep_interval);
+			 pcomm_itf->ep_addr, pcomm_itf->ep_mps, pcomm_itf->ep_interval);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "MAC(0x%x) \n", atcmd->iMACAddressStringId);
 
 	//dump atcmd data
@@ -92,11 +92,11 @@ static int usbh_cdc_acm_process_get_string(usb_host_t *host, u8 *pbuf, u16 bufle
 {
 	usbh_setup_req_t setup;
 
-	setup.b.bmRequestType = USB_D2H | USB_REQ_RECIPIENT_DEVICE | USB_REQ_TYPE_STANDARD;
-	setup.b.bRequest = USB_REQ_GET_DESCRIPTOR;
-	setup.b.wValue = USB_DESC_STRING | str_id;
-	setup.b.wIndex = 1U;
-	setup.b.wLength = buflen;
+	setup.req.bmRequestType = USB_D2H | USB_REQ_RECIPIENT_DEVICE | USB_REQ_TYPE_STANDARD;
+	setup.req.bRequest = USB_REQ_GET_DESCRIPTOR;
+	setup.req.wValue = USB_DESC_STRING | str_id;
+	setup.req.wIndex = 1U;
+	setup.req.wLength = buflen;
 
 	return usbh_ctrl_request(host, &setup, pbuf);
 }
@@ -159,11 +159,11 @@ static int usbh_cdc_ecm_process_set_alt(usb_host_t *host)
 {
 	usbh_setup_req_t setup;
 
-	setup.b.bmRequestType = USB_H2D | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_INTERFACE;
-	setup.b.bRequest = USB_REQ_SET_INTERFACE;
-	setup.b.wValue = usbh_cdc_ecm_get_ecm_itf_ifnum();
-	setup.b.wIndex = usbh_cdc_ecm_get_ecm_itf_alt();
-	setup.b.wLength = 0U;
+	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_INTERFACE;
+	setup.req.bRequest = USB_REQ_SET_INTERFACE;
+	setup.req.wValue = usbh_cdc_ecm_get_ecm_itf_ifnum();
+	setup.req.wIndex = usbh_cdc_ecm_get_ecm_itf_alt();
+	setup.req.wLength = 0U;
 
 	return usbh_ctrl_request(host, &setup, NULL);
 }
@@ -179,11 +179,11 @@ static int usbh_cdc_ecm_process_set_packet_filter(usb_host_t *host)
 	usbh_setup_req_t setup;
 	usbh_cdc_ecm_appx_t *atcmd = &appx_cmd;
 
-	setup.b.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.b.bRequest = CDC_ECM_SET_ETHERNET_PACKET_FILTER;
-	setup.b.wValue = atcmd->packet_filter;
-	setup.b.wIndex = 1U;
-	setup.b.wLength = 0;
+	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
+	setup.req.bRequest = CDC_ECM_SET_ETHERNET_PACKET_FILTER;
+	setup.req.wValue = atcmd->packet_filter;
+	setup.req.wIndex = 1U;
+	setup.req.wLength = 0;
 
 	return usbh_ctrl_request(host, &setup, NULL);
 }
@@ -198,11 +198,11 @@ static int usbh_cdc_ecm_process_set_muiticast_filter(usb_host_t *host)
 	usbh_setup_req_t setup;
 	usbh_cdc_ecm_appx_t *atcmd = &appx_cmd;
 
-	setup.b.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.b.bRequest = CDC_ECM_SET_ETHERNET_MULTICAST_FILTERS;
-	setup.b.wValue = 1;
-	setup.b.wIndex = 1U;
-	setup.b.wLength = atcmd->muticast_filter_len;
+	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
+	setup.req.bRequest = CDC_ECM_SET_ETHERNET_MULTICAST_FILTERS;
+	setup.req.wValue = 1;
+	setup.req.wIndex = 1U;
+	setup.req.wLength = atcmd->muticast_filter_len;
 
 	return usbh_ctrl_request(host, &setup, atcmd->dongle_ctrl_buf);
 }
@@ -217,11 +217,11 @@ static int usbh_cdc_ecm_process_get_statistic(usb_host_t *host)
 	usbh_setup_req_t setup;
 	usbh_cdc_ecm_appx_t *atcmd = &appx_cmd;
 
-	setup.b.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.b.bRequest = CDC_ECM_GET_ETHERNET_STATISTIC;
-	setup.b.wValue = atcmd->feature_selector;
-	setup.b.wIndex = 1U;
-	setup.b.wLength = 4;
+	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
+	setup.req.bRequest = CDC_ECM_GET_ETHERNET_STATISTIC;
+	setup.req.wValue = atcmd->feature_selector;
+	setup.req.wIndex = 1U;
+	setup.req.wLength = 4;
 
 	return usbh_ctrl_request(host, &setup, atcmd->dongle_ctrl_buf);
 }
@@ -238,11 +238,11 @@ static int usbh_cdc_ecm_process_get_rcr(usb_host_t *host)
 	usbh_setup_req_t setup;
 	usbh_cdc_ecm_appx_t *atcmd = &appx_cmd;
 
-	setup.b.bmRequestType = USB_D2H | USB_REQ_TYPE_VENDOR | USB_REQ_RECIPIENT_DEVICE;
-	setup.b.bRequest = 0x05;
-	setup.b.wValue = 0xc010;
-	setup.b.wIndex = 0x0100;
-	setup.b.wLength = 4;
+	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_VENDOR | USB_REQ_RECIPIENT_DEVICE;
+	setup.req.bRequest = 0x05;
+	setup.req.wValue = 0xc010;
+	setup.req.wIndex = 0x0100;
+	setup.req.wLength = 4;
 
 	return usbh_ctrl_request(host, &setup, atcmd->dongle_ctrl_buf);
 }
@@ -257,11 +257,11 @@ static int usbh_cdc_ecm_process_set_rcr(usb_host_t *host)
 	usbh_setup_req_t setup;
 	usbh_cdc_ecm_appx_t *atcmd = &appx_cmd;
 
-	setup.b.bmRequestType = USB_H2D | USB_REQ_TYPE_VENDOR | USB_REQ_RECIPIENT_DEVICE;
-	setup.b.bRequest = 0x05;
-	setup.b.wValue = 0xc010;
-	setup.b.wIndex = 0x010F;
-	setup.b.wLength = 4;
+	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_VENDOR | USB_REQ_RECIPIENT_DEVICE;
+	setup.req.bRequest = 0x05;
+	setup.req.wValue = 0xc010;
+	setup.req.wIndex = 0x010F;
+	setup.req.wLength = 4;
 
 	return usbh_ctrl_request(host, &setup, atcmd->dongle_ctrl_buf);
 }
@@ -277,11 +277,11 @@ static int usbh_cdc_ecm_process_set_flow_ctrl1(usb_host_t *host)
 	usbh_setup_req_t setup;
 	usbh_cdc_ecm_appx_t *atcmd = &appx_cmd;
 
-	setup.b.bmRequestType = 0x40;
-	setup.b.bRequest = 0x05;
-	setup.b.wValue = 0xC0A4;
-	setup.b.wIndex = 0x0103;
-	setup.b.wLength = 4;
+	setup.req.bmRequestType = 0x40;
+	setup.req.bRequest = 0x05;
+	setup.req.wValue = 0xC0A4;
+	setup.req.wIndex = 0x0103;
+	setup.req.wLength = 4;
 	return usbh_ctrl_request(host, &setup, (u8 *)atcmd->dongle_ctrl_buf);
 }
 /**
@@ -294,11 +294,11 @@ static int usbh_cdc_ecm_process_set_flow_ctrl2(usb_host_t *host)
 	usbh_setup_req_t setup;
 	usbh_cdc_ecm_appx_t *atcmd = &appx_cmd;
 
-	setup.b.bmRequestType = 0x40;
-	setup.b.bRequest = 0x05;
-	setup.b.wValue = 0xC0A8;
-	setup.b.wIndex = 0x0103;
-	setup.b.wLength = 4;
+	setup.req.bmRequestType = 0x40;
+	setup.req.bRequest = 0x05;
+	setup.req.wValue = 0xC0A8;
+	setup.req.wIndex = 0x0103;
+	setup.req.wLength = 4;
 	return usbh_ctrl_request(host, &setup, (u8 *)atcmd->dongle_ctrl_buf);
 }
 
@@ -313,11 +313,11 @@ static int usbh_cdc_ecm_process_mac_get_lock(usb_host_t *host)
 	usbh_setup_req_t setup;
 	usbh_cdc_ecm_appx_t *atcmd = &appx_cmd;
 
-	setup.b.bmRequestType = USB_D2H | USB_REQ_TYPE_VENDOR | USB_REQ_RECIPIENT_DEVICE;
-	setup.b.bRequest = 0x05;
-	setup.b.wValue = 0xE81C;
-	setup.b.wIndex = 0x010F;
-	setup.b.wLength = 4;
+	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_VENDOR | USB_REQ_RECIPIENT_DEVICE;
+	setup.req.bRequest = 0x05;
+	setup.req.wValue = 0xE81C;
+	setup.req.wIndex = 0x010F;
+	setup.req.wLength = 4;
 
 	return usbh_ctrl_request(host, &setup, atcmd->dongle_ctrl_buf);
 }
@@ -327,11 +327,11 @@ static int usbh_cdc_ecm_process_mac_set_dis_lock(usb_host_t *host)
 	usbh_setup_req_t setup;
 	usbh_cdc_ecm_appx_t *atcmd = &appx_cmd;
 
-	setup.b.bmRequestType = 0x40;
-	setup.b.bRequest = 0x05;
-	setup.b.wValue = 0xE81C;
-	setup.b.wIndex = 0x010F;
-	setup.b.wLength = 4;
+	setup.req.bmRequestType = 0x40;
+	setup.req.bRequest = 0x05;
+	setup.req.wValue = 0xE81C;
+	setup.req.wIndex = 0x010F;
+	setup.req.wLength = 4;
 	return usbh_ctrl_request(host, &setup, atcmd->dongle_ctrl_buf);
 }
 
@@ -340,11 +340,11 @@ static int usbh_cdc_ecm_process_mac_set_mac1(usb_host_t *host)
 	usbh_setup_req_t setup;
 	usbh_cdc_ecm_appx_t *atcmd = &appx_cmd;
 
-	setup.b.bmRequestType = 0x40;
-	setup.b.bRequest = 0x05;
-	setup.b.wValue = 0xC000;
-	setup.b.wIndex = 0x010F;
-	setup.b.wLength = 4;
+	setup.req.bmRequestType = 0x40;
+	setup.req.bRequest = 0x05;
+	setup.req.wValue = 0xC000;
+	setup.req.wIndex = 0x010F;
+	setup.req.wLength = 4;
 	return usbh_ctrl_request(host, &setup, atcmd->dongle_ctrl_buf);
 }
 
@@ -353,11 +353,11 @@ static int usbh_cdc_ecm_process_mac_set_mac2(usb_host_t *host)
 	usbh_setup_req_t setup;
 	usbh_cdc_ecm_appx_t *atcmd = &appx_cmd;
 
-	setup.b.bmRequestType = 0x40;
-	setup.b.bRequest = 0x05;
-	setup.b.wValue = 0xC004;
-	setup.b.wIndex = 0x0103;
-	setup.b.wLength = 4;
+	setup.req.bmRequestType = 0x40;
+	setup.req.bRequest = 0x05;
+	setup.req.wValue = 0xC004;
+	setup.req.wIndex = 0x0103;
+	setup.req.wLength = 4;
 	return usbh_ctrl_request(host, &setup, atcmd->dongle_ctrl_buf);
 }
 
@@ -366,11 +366,11 @@ static int usbh_cdc_ecm_process_mac_en_lock(usb_host_t *host)
 	usbh_setup_req_t setup;
 	usbh_cdc_ecm_appx_t *atcmd = &appx_cmd;
 
-	setup.b.bmRequestType = 0x40;
-	setup.b.bRequest = 0x05;
-	setup.b.wValue = 0xE81C;
-	setup.b.wIndex = 0x010F;
-	setup.b.wLength = 4;
+	setup.req.bmRequestType = 0x40;
+	setup.req.bRequest = 0x05;
+	setup.req.wValue = 0xE81C;
+	setup.req.wIndex = 0x010F;
+	setup.req.wLength = 4;
 	return usbh_ctrl_request(host, &setup, atcmd->dongle_ctrl_buf);
 }
 
@@ -384,11 +384,11 @@ static int usbh_cdc_ecm_process_led_set_ctrl(usb_host_t *host)
 	usbh_setup_req_t setup;
 	usbh_cdc_ecm_appx_t *atcmd = &appx_cmd;
 
-	setup.b.bmRequestType = 0x40;
-	setup.b.bRequest = 0x05;
-	setup.b.wValue = 0xDD90;
-	setup.b.wIndex = 0x0103;
-	setup.b.wLength = 4;
+	setup.req.bmRequestType = 0x40;
+	setup.req.bRequest = 0x05;
+	setup.req.wValue = 0xDD90;
+	setup.req.wIndex = 0x0103;
+	setup.req.wLength = 4;
 	return usbh_ctrl_request(host, &setup, atcmd->dongle_ctrl_buf);
 }
 
@@ -433,7 +433,6 @@ static void usbh_cdc_ecm_config_dongle_mac(usb_host_t *host, u16 vid, u16 pid)
 	case CDC_ECM_STATE_CTRL_MAC_GET_LOCK: //8152 mac
 		if ((pid != 0x8152) || (vid != 0x0BDA) || (atcmd->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY)) {
 			atcmd->sub_status++;
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "[USBD]%s Line %d\n", __func__, __LINE__);
 		} else {
 			usb_os_memset(atcmd->mac_ctrl_lock, 0, 4);
 			state = usbh_cdc_ecm_process_mac_get_lock(host);
@@ -450,7 +449,6 @@ static void usbh_cdc_ecm_config_dongle_mac(usb_host_t *host, u16 vid, u16 pid)
 	case CDC_ECM_STATE_CTRL_MAC_DISABLE_LOCK: //8152 mac
 		if ((pid != 0x8152) || (vid != 0x0BDA) || (atcmd->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY)) {
 			atcmd->sub_status++;
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "[USBD]%s Line %d\n", __func__, __LINE__);
 		} else {
 			atcmd->mac_ctrl_lock[0] = 0xD0;
 			usb_os_memcpy(atcmd->dongle_ctrl_buf, atcmd->mac_ctrl_lock, CDC_ECM_MAC_CTRL_REG_LEN);
@@ -467,7 +465,6 @@ static void usbh_cdc_ecm_config_dongle_mac(usb_host_t *host, u16 vid, u16 pid)
 	case CDC_ECM_STATE_CTRL_MAC_SET_MAC1: //8152 mac
 		if ((pid != 0x8152) || (vid != 0x0BDA) || (atcmd->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY)) {
 			atcmd->sub_status++;
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "[USBD]%s Line %d\n", __func__, __LINE__);
 		} else {
 			usb_os_memcpy(atcmd->dongle_ctrl_buf, &(atcmd->mac[0]), CDC_ECM_MAC_CTRL_REG_LEN);
 			state = usbh_cdc_ecm_process_mac_set_mac1(host);
@@ -483,7 +480,6 @@ static void usbh_cdc_ecm_config_dongle_mac(usb_host_t *host, u16 vid, u16 pid)
 	case CDC_ECM_STATE_CTRL_MAC_SET_MAC2: //8152 mac
 		if ((pid != 0x8152) || (vid != 0x0BDA) || (atcmd->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY)) {
 			atcmd->sub_status++;
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "[USBD]%s Line %d\n", __func__, __LINE__);
 		} else {
 			usb_os_memcpy(atcmd->dongle_ctrl_buf, &(atcmd->mac[4]), CDC_ECM_MAC_CTRL_REG_LEN);
 			atcmd->dongle_ctrl_buf[2] = atcmd->dongle_ctrl_buf[3] = 0xFF;
@@ -500,7 +496,6 @@ static void usbh_cdc_ecm_config_dongle_mac(usb_host_t *host, u16 vid, u16 pid)
 	case CDC_ECM_STATE_CTRL_MAC_ENABLE_LOCK: //8152 mac
 		if ((pid != 0x8152) || (vid != 0x0BDA) || (atcmd->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY)) {
 			atcmd->sub_status++;
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "[USBD]%s Line %d\n", __func__, __LINE__);
 		} else {
 			atcmd->mac_ctrl_lock[0] = 0x10;
 			usb_os_memcpy(atcmd->dongle_ctrl_buf, atcmd->mac_ctrl_lock, CDC_ECM_MAC_CTRL_REG_LEN);
@@ -708,11 +703,11 @@ static u8 usbh_cdc_ecm_at_set_line_coding(usb_host_t *host)
 	plinecoding->b.bParityType = CDC_ACM_LINE_CODING_PARITY_NO;
 	plinecoding->b.bDataBits = 8;
 
-	setup.b.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.b.bRequest = CDC_SET_LINE_CODING;
-	setup.b.wValue = 0U;
-	setup.b.wIndex = (u16)atcmd->param_item->at_line_idx;
-	setup.b.wLength = CDC_LINE_CODING_DATA_LEN;
+	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
+	setup.req.bRequest = CDC_SET_LINE_CODING;
+	setup.req.wValue = 0U;
+	setup.req.wIndex = (u16)atcmd->param_item->at_line_idx;
+	setup.req.wLength = CDC_LINE_CODING_DATA_LEN;
 
 	usb_os_memcpy(atcmd->dongle_ctrl_buf, plinecoding->d8, sizeof(usbh_cdc_ecm_line_coding_t));
 
@@ -976,7 +971,7 @@ static u8 usbh_cdc_ecm_parse_get_mac_id(usb_host_t *host)
 	u8 find_mac = 0 ;
 	u32 cfglen;
 	usbh_cfg_desc_t *desc;
-	usbh_if_desc_t *pbuf;
+	usbh_itf_desc_t *pbuf;
 	usbh_cdc_ecm_appx_t *atcmd = &appx_cmd;
 
 	/*
@@ -984,17 +979,17 @@ static u8 usbh_cdc_ecm_parse_get_mac_id(usb_host_t *host)
 	*/
 	desc = (usbh_cfg_desc_t *)usbh_get_active_raw_configuration_descriptor(host);
 	cfglen = (u32)desc->wTotalLength;
-	pbuf = (usbh_if_desc_t *) desc;
+	pbuf = (usbh_itf_desc_t *) desc;
 
 	while (!find_mac) {
-		pbuf = (usbh_if_desc_t *)usbh_cdc_ecm_find_next_ifdesc((u8 *)pbuf, &cfglen);
+		pbuf = (usbh_itf_desc_t *)usbh_cdc_ecm_find_next_ifdesc((u8 *)pbuf, &cfglen);
 		if (pbuf == NULL) {
 			break;
 		}
 		if ((pbuf->bInterfaceClass == CDC_IF_CDC_CTRL_CODE) //find the right interface
 			&& (pbuf->bInterfaceSubClass == CDC_IF_CDC_CTRL_SUB_CLASS_ECM_CODE)) {
 			cfglen -= pbuf->bLength;
-			pbuf = (usbh_if_desc_t *)((u8 *)pbuf + pbuf->bLength);
+			pbuf = (usbh_itf_desc_t *)((u8 *)pbuf + pbuf->bLength);
 			while (!find_mac) {
 				if (USB_DT_CS_INTERFACE == ((usbh_cdc_ecm_network_func_t *)pbuf)->bDescriptorType
 					&& CDC_ECM_NETWORK_FUNC_DESCRIPTOR == ((usbh_cdc_ecm_network_func_t *)pbuf)->bDescriptorSubtype) {
@@ -1004,12 +999,12 @@ static u8 usbh_cdc_ecm_parse_get_mac_id(usb_host_t *host)
 					break;
 				} else {
 					cfglen -= ((usb_ecm_descriptor_header *) pbuf)->bLength;
-					pbuf = (usbh_if_desc_t *)((u8 *)pbuf + ((usb_ecm_descriptor_header *) pbuf)->bLength);
+					pbuf = (usbh_itf_desc_t *)((u8 *)pbuf + ((usb_ecm_descriptor_header *) pbuf)->bLength);
 				}
 			}
 		} else {
 			cfglen -= pbuf->bLength;
-			pbuf = (usbh_if_desc_t *)((u8 *)pbuf + pbuf->bLength);
+			pbuf = (usbh_itf_desc_t *)((u8 *)pbuf + pbuf->bLength);
 		}
 	}
 
@@ -1117,7 +1112,7 @@ u8 usbh_cdc_ecm_parse_at_cfgdesc(usb_host_t *host, u16 vid, u16 pid)
 {
 	usbh_cdc_ecm_appx_t *pappx_cmd = &appx_cmd;
 	usbh_cdc_ecm_appx_param_t *data;
-	usbh_if_desc_t *comm_if_desc;
+	usbh_itf_desc_t *comm_itf_desc;
 	usbh_ep_desc_t *ep_desc;
 	u8 status = HAL_ERR_UNKNOWN;
 	u8 ret = HAL_OK;
@@ -1146,17 +1141,17 @@ u8 usbh_cdc_ecm_parse_at_cfgdesc(usb_host_t *host, u16 vid, u16 pid)
 				 pappx_cmd->param_item->at_line_idx);
 
 		/* Get Communication Interface */
-		comm_if_desc = usbh_get_interface_descriptor(host, pappx_cmd->param_item->at_line_idx, 0);///at port
-		if (comm_if_desc == NULL) {
+		comm_itf_desc = usbh_get_interface_descriptor(host, pappx_cmd->param_item->at_line_idx, 0);///at port
+		if (comm_itf_desc == NULL) {
 			RTK_LOGE(TAG, "Fail to get the %d common interface.\n", pappx_cmd->param_item->at_line_idx);
 			return status;
 		}
 
-		if (comm_if_desc->bNumEndpoints != 3) {
-			RTK_LOGS(TAG, RTK_LOG_INFO,  "Maybe Error Happen(id=%d)\n", comm_if_desc->bNumEndpoints);
+		if (comm_itf_desc->bNumEndpoints != 3) {
+			RTK_LOGS(TAG, RTK_LOG_INFO,  "Maybe Error Happen(id=%d)\n", comm_itf_desc->bNumEndpoints);
 		}
-		for (ep_id = 0 ; ep_id < comm_if_desc->bNumEndpoints ; ep_id++) {
-			ep_desc = &comm_if_desc->ep_desc_array[ep_id];
+		for (ep_id = 0 ; ep_id < comm_itf_desc->bNumEndpoints ; ep_id++) {
+			ep_desc = &comm_itf_desc->ep_desc_array[ep_id];
 
 			if (ep_desc->bmAttributes == USB_CH_EP_TYPE_BULK) {
 				if (USB_EP_IS_IN(ep_desc->bEndpointAddress)) {

@@ -46,7 +46,7 @@ typedef struct {
 	u8  bFrameIndex;
 	u8  bmCapabilities;
 	u8  bFrameIntervalType;
-} usbh_uvc_vs_frame_t;
+} __PACKED usbh_uvc_vs_frame_t;
 
 typedef struct {
 	char name[32];
@@ -101,17 +101,12 @@ typedef struct {
 } usbh_uvc_cfg_t;
 
 typedef struct {
+	usbh_pipe_t pipe;
 	usbh_uvc_alt_t *altsetting;
 	usbh_uvc_vs_t *cur_vs_intf;
 	u32 last_frame;
-	u16 xfer_size;
-	u16 mps;
 	u8 bAlternateSetting;
 	u8 bInterfaceNumber;
-	u8 pipe;
-	u8 ep_addr;
-	u8 interval;
-	u8 ep_type;
 	u8 valid;
 	u8 is_processing;
 } usbh_uvc_setting_t;
@@ -150,10 +145,12 @@ typedef struct {
 	u32 frame_buffer_size;
 	u32 frame_cnt;
 	u32 err_frame_cnt;
+	u32 drop_cnt;
 	u32 urb_buffer_size;
 	u32 cur_urb;
 	u32 cur_packet;
-	u8 *uvc_buffer;
+	usbh_uvc_frame_t *cur_frame_buf;
+	u8 *urb_buffer;
 	u8 *frame_buf;
 
 #if USBH_UVC_USE_HW
@@ -182,34 +179,24 @@ typedef struct {
 
 /*class module*/
 int usbh_uvc_class_init(void);
-
 void usbh_uvc_class_deinit(void);
 
 /*stream module*/
 int usbh_uvc_process_rx(usbh_uvc_stream_t *stream);
-
 usbh_uvc_urb_t *usbh_uvc_urb_complete(usbh_uvc_stream_t *stream, usbh_uvc_urb_t *urb);
 
 int usbh_uvc_set_video(usbh_uvc_stream_t *stream, int probe);
-
 int usbh_uvc_get_video(usbh_uvc_stream_t *stream, int probe, u16 request);
-
 int usbh_uvc_probe_video(usbh_uvc_stream_t *stream);
-
 int usbh_uvc_commit_video(usbh_uvc_stream_t *stream);
 
 int usbh_uvc_video_init(usbh_uvc_stream_t *stream);
-
 int usbh_uvc_stream_init(usbh_uvc_stream_t *stream);
-
 void usbh_uvc_stream_deinit(usbh_uvc_stream_t *stream);
-
 void usbh_uvc_process_sof(usb_host_t *host);
 
 int usbh_uvc_parse_cfgdesc(usb_host_t *host);
-
 void usbh_uvc_desc_init(void);
-
 void usbh_uvc_desc_deinit(void);
 
 #endif

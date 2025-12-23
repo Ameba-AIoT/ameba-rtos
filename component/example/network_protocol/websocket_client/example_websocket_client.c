@@ -1,10 +1,10 @@
 #include "lwip_netconf.h"
 #include "websocket/wsclient_api.h"
 
-void handle_message(wsclient_context **wsclient, int data_len)
+void handle_message(wsclient_context **wsclient, int data_len, enum opcode_type opcode)
 {
 	wsclient_context *wsc = *wsclient;
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n>>>>>> Receiving: %s with length: %d\n", wsc->receivedData, data_len);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n>>>>>> Receiving: %s with length: %d, opcode : %d\n", wsc->receivedData, data_len, opcode);
 
 	if (strcmp((char const *)wsc->receivedData, "hello") == 0) {
 		ws_send("world", strlen("world"), 1, wsc);

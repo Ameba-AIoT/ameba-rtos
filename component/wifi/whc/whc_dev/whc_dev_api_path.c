@@ -8,6 +8,10 @@
  */
 #include "whc_dev.h"
 
+#ifdef CONFIG_NAN
+extern u8 NAN_IPv6Parm[16];
+#endif
+
 extern int wifi_set_chplan(u8 chplan);
 void rtw_sme_auth_event(struct rtw_sme_auth_info *auth_info);
 void rtw_sme_set_assocreq_ie(u8 *buf, u32 size, u8 wpa_rsn_exist);
@@ -682,6 +686,9 @@ void whc_event_wifi_ip_update(u32 api_id, u32 *param_buf)
 
 	memcpy(IPv4Parm.IP, p_ip_addr, IPv4_ALEN);
 	memcpy(IPv6Parm.IP, p_ip_addr + IPv4_ALEN, IPv6_ALEN);
+#ifdef CONFIG_NAN
+	memcpy(NAN_IPv6Parm, p_ip_addr + IPv4_ALEN, IPv6_ALEN);
+#endif
 
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }

@@ -1,12 +1,5 @@
 ###############################################################################
 #NOTE: Configures, these parameter name is fixed and cannot be changed
-# set(v_ASDK_VER 10.3.1)
-# set(v_VSDK_VER 10.3.1)
-# set(v_FATFS_VER r0.14b)
-# set(v_FREERTOS_VER v10.2.1)
-# set(c_FREERTOS_DIR_SUFFIX _smp)
-# set(v_LITTLEFS_VER r2.50)
-# set(v_LWIP_VER v2.1.2)
 
 set(c_VERBOSE_MAKEFILE FALSE)
 ###############################################################################

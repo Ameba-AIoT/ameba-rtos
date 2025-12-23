@@ -89,6 +89,18 @@ menu "CONFIG Link Option"
         bool
 endmenu
 
+menu "CONFIG Mass Production"
+    config MP_INCLUDED
+        bool "Enable MP"
+    if MP_INCLUDED
+        choice
+            prompt "MP Mode"
+            default MP_EXPAND
+            config MP_EXPAND
+                bool "expand"
+        endchoice
+    endif
+endmenu
 
 rsource "../component/at_cmd/Kconfig"
 

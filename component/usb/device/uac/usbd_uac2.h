@@ -12,8 +12,11 @@
 #include "usbd.h"
 
 /* Exported defines ----------------------------------------------------------*/
+#define USBD_UAC_DEBUG      0
 
-#define USBD_UAC_ISOC_XFER_DEBUG                    0
+#if USBD_UAC_DEBUG && (USBD_TP_TRACE_DEBUG == 0)
+#error "Please set USBD_TP_TRACE_DEBUG in usbd.h"
+#endif
 
 #define USBD_UAC_RX_BUF_MAX_CNT                     10
 #define USBD_UAC_TX_BUF_MAX_CNT                     10
@@ -284,12 +287,12 @@
 
 /* Exported types ------------------------------------------------------------*/
 
-typedef struct __PACKED {
+typedef struct {
 	u16 wNumSubRanges;
 	u16 wMIN;
 	u16 wMAX;
 	u16 wRES;
-} usbd_uac_ctrl_range_layout2_struct;
+} __PACKED usbd_uac_ctrl_range_layout2_struct;
 
 typedef struct {
 	u32 dMIN;
@@ -297,16 +300,16 @@ typedef struct {
 	u32 dRES;
 } usbd_uac_sub_range_t;
 
-typedef struct __PACKED {
+typedef struct {
 	u16 wNumSubRanges;
 	usbd_uac_sub_range_t usbd_uac_sub_ranges[];
-} usbd_uac_sampling_freq_ctrl_range_t;
+} __PACKED usbd_uac_sampling_freq_ctrl_range_t;
 
-typedef struct __PACKED {
+typedef struct {
 	u8  bNrChannels;
 	u32 bmChannelConfig;
 	u8  iChannelNames;
-} usbd_uac_ac_connect_ctrl_t;
+} __PACKED usbd_uac_ac_connect_ctrl_t;
 
 typedef struct {
 	u32 sampling_freq;     // 384000
@@ -348,7 +351,7 @@ typedef struct {
 	__IO u8 read_wait_sema;
 	__IO u8 isoc_read_idx;  /*  */
 	__IO u8 isoc_write_idx; /* wr_idx means the next write pos, the wr_idx data is not valid */
-	__IO u8 transfer_continue;
+	__IO u8 next_xfer;
 } usbd_uac_buf_ctrl_t;
 
 typedef struct {
@@ -368,7 +371,7 @@ typedef struct {
 	u8 cur_ch_cnt;
 	u8 cur_mute;
 
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_UAC_DEBUG
 	u32 copy_data_len;
 	__IO u32 isoc_rx_cnt;
 	__IO u32 isoc_timeout_cnt;

@@ -45,18 +45,12 @@ extern void SOCPS_NP_resume(u32 type);
 extern void SOCPS_PSRAM_ClkSet(u8 Source);
 extern void SOCPS_Voltage_Switch(u8 sleep);
 
-
 extern int SOCPS_AONWakeReason(void);
 
-extern void SOCPS_SetNPWakeEvent_MSK0(u32 Option, u32 NewStatus);
-extern void SOCPS_SetNPWakeEvent_MSK1(u32 Option, u32 NewStatus);
-extern void SOCPS_SetNPWakeEvent(u32 Option, u32 Group, u32 NewStatus);
-extern void SOCPS_SetAPWakeEvent_MSK0(u32 Option, u32 NewStatus);
-extern void SOCPS_SetAPWakeEvent_MSK1(u32 Option, u32 NewStatus);
-extern void SOCPS_SetAPWakeEvent(u32 Option, u32 Group, u32 NewStatus);
-extern void SOCPS_SetDSPWakeEvent_MSK0(u32 Option, u32 NewStatus);
-extern void SOCPS_SetDSPWakeEvent_MSK1(u32 Option, u32 NewStatus);
-extern void SOCPS_SetDSPWakeEvent(u32 Option, u32 Group, u32 NewStatus);
+extern void SOCPS_SetNPWakeEvent(u32 Option, u32 NewStatus);
+extern void SOCPS_SetAPWakeEvent(u32 Option, u32 NewStatus);
+extern void SOCPS_SetDSPWakeEvent(u32 Option, u32 NewStatus);
+
 extern void SOCPS_DeepSleep_RAM(void);
 extern void SOCPS_Peripheral_Clk_Sleep(u8 state);
 extern void SOCPS_UartRxPinWakeSet(u32 status);

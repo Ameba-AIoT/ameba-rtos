@@ -28,7 +28,6 @@
 #define USBH_UAC_MAIN_THREAD_PRIORITY         5
 #define USBH_UAC_HOTPLUG_THREAD_PRIORITY      6
 
-
 #define USBH_UAC_XFER_CHECK           0   /* used to check the trx data valid */
 
 #if USBH_UAC_XFER_CHECK
@@ -51,15 +50,13 @@ static int usbh_uac_cb_attach(void);
 static int usbh_uac_cb_detach(void);
 static int usbh_uac_cb_setup(void);
 static int usbh_uac_cb_isoc_transmitted(usbh_urb_state_t state);
-static int usbh_uac_cb_process(usb_host_t *host, u8 id);
+static int usbh_uac_cb_process(usb_host_t *host, u8 msg);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "UAC";
 
 static rtos_sema_t usbh_uac_detach_sema;
 static rtos_sema_t usbh_uac_attach_sema;
 static rtos_sema_t usbh_uac_isoc_start_sema;
-
-static u8 usbh_uac_isoc_tx_buf[USBH_UAC_ISOC_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 
 static __IO int usbh_uac_is_ready = 0;
 static int usbh_uac_busy_count;
@@ -70,8 +67,7 @@ static usbh_config_t usbh_cfg = {
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = USBH_UAC_MAIN_THREAD_PRIORITY,
-	.sof_tick_enable = 1U,
-	.alt_max_cnt = 10U,
+	.tick_source = USBH_SOF_TICK,
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,
@@ -150,11 +146,11 @@ static int usbh_uac_cb_isoc_transmitted(usbh_urb_state_t state)
 	return HAL_OK;
 }
 
-static int usbh_uac_cb_process(usb_host_t *host, u8 id)
+static int usbh_uac_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 
-	switch (id) {
+	switch (msg) {
 	case USBH_MSG_DISCONNECTED:
 		usbh_uac_is_ready = 0;
 		break;
@@ -172,17 +168,32 @@ static int usbh_uac_cb_process(usb_host_t *host, u8 id)
 static void usbh_uac_isoc_test(void *param)
 {
 	const unsigned char *usbh_uac_audio_data_handle = usbh_uac_audio_data;
+	const usbh_audio_fmt_t *fmt_info = NULL;
 	u32 audio_total_data_len = usbh_uac_data_len;
-	u8 send_frame_cnt = 2;
+	const usbh_audio_fmt_t *audio_fmt = NULL;
+	u8 *buffer = NULL;
 	u32 frame_size;
 	u32 total_len;
 	u32 send_len;
 	u32 offset;
 	u32 ret;
 	u32 i;
+	u8 fmt_cnt;
 
 	UNUSED(param);
 	if (rtos_sema_take(usbh_uac_isoc_start_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+
+		fmt_info = usbh_uac_get_alt_setting(0, &fmt_cnt);
+
+		if ((fmt_info == NULL) || (fmt_cnt == 0)) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Get audio fmt fail\n");
+		} else {
+			for (i = 0; i < fmt_cnt; i++) {
+				audio_fmt = &(fmt_info[i]);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Audio fmt %d: %d %d %d\n", i, audio_fmt->ch_cnt, audio_fmt->bit_width, audio_fmt->sampling_freq);
+			}
+		}
+
 		// idx 0 means isoc out
 		if (usbh_uac_set_alt_setting(0, USBH_UAC_CHANNELS, USBH_UAC_BITWIDTH, USBH_UAC_SAMPLING_FREQ) != HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "No suitable interface/altsettinfg, return\n");
@@ -210,18 +221,14 @@ static void usbh_uac_isoc_test(void *param)
 			offset = 0;
 			usbh_uac_start_play();
 			while (offset < total_len) {
-
-				send_len = send_frame_cnt * frame_size;
+				TRNG_get_random_bytes(&send_len, 1);
+				// RTK_LOGS(TAG, RTK_LOG_INFO, "xfer len %d\n",send_len);
 				if (offset + send_len > total_len) {
 					send_len = total_len - offset;
 				}
-				memcpy(usbh_uac_isoc_tx_buf, usbh_uac_audio_data_handle + offset, send_len);
 
-				if (send_len < send_frame_cnt * frame_size) {
-					memset(usbh_uac_isoc_tx_buf + send_len, 0, send_frame_cnt * frame_size - send_len);
-				}
-
-				ret = usbh_uac_write(usbh_uac_isoc_tx_buf, send_len, 10);
+				buffer = (u8 *)(usbh_uac_audio_data_handle + offset);
+				ret = usbh_uac_write(buffer, send_len, 10);
 				if (ret != send_len) {
 					usbh_uac_err_count++;
 					continue;
@@ -230,8 +237,9 @@ static void usbh_uac_isoc_test(void *param)
 				offset += ret;
 			}
 
+			rtos_time_delay_ms(50);
 			usbh_uac_stop_play();
-			RTK_LOGS(TAG, RTK_LOG_INFO, "%d Send finished. Total bytes sent: %u, err count %d, busy count %d\n", i, offset, usbh_uac_err_count, usbh_uac_busy_count);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "%d Send finished. Total bytes sent: %d, err count %d, busy count %d\n", i, offset, usbh_uac_err_count, usbh_uac_busy_count);
 		}
 	}
 

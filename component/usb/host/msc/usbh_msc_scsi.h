@@ -24,9 +24,9 @@
 
 /* SCSI Command Data Length */
 #define USBH_MSC_TEST_UNIT_READY_LEN        0U
-#define USBH_MSC_READ_CAPACITY10_LEN             8U
-#define USBH_MSC_INQUIRY_LEN                    36U
-#define USBH_MSC_REQUEST_SENSE_LEN              14U
+#define USBH_MSC_READ_CAPACITY10_LEN        8U
+#define USBH_MSC_INQUIRY_LEN                36U
+#define USBH_MSC_REQUEST_SENSE_LEN          14U
 
 #define CBW_CB_LENGTH                       16U
 #define CBW_LENGTH                          10U

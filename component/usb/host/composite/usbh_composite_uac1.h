@@ -58,13 +58,6 @@ typedef enum {
 	UAC_STATE_GET_VOLUME_MAX,
 } usbh_uac_ctrl_state_t;
 
-/* States for transfer */
-typedef enum {
-	USBH_UAC_EP_IDLE = 0U,
-	USBH_UAC_XFER,
-	USBH_UAC_XFER_BUSY,
-} usbh_uac_ep_trx_state_t;
-
 /* uac1.0 Audio Control   */
 typedef struct {
 	u16 terminal_type;
@@ -108,7 +101,7 @@ typedef struct {
 	__IO u16 mps;
 	__IO u8 sema_valid;
 	__IO u8 write_wait_sema;
-	__IO u8 transfer_continue;
+	__IO u8 next_xfer;
 } usbh_uac_buf_ctrl_t;
 
 typedef struct {
@@ -128,20 +121,6 @@ typedef struct {
 	int(* isoc_transmitted)(usbh_urb_state_t state);
 	int(* isoc_received)(u8 *buf, u32 len);
 } usbh_composite_uac_usr_cb_t;
-
-/*uac descriptor struct*/
-typedef struct {
-	u8 *isoc_buf;
-	u32 isoc_len;
-	u32 isoc_interval;
-	__IO u32 isoc_tick;
-	__IO u32 xfer_frame;
-	u16 isoc_packet_size_small;    /* small packet sizes in samples */
-	u16 isoc_packet_size;          /* large packet sizes in samples */
-	u8 isoc_pipe;
-	u8 isoc_ep_addr;
-	__IO usbh_uac_ep_trx_state_t isoc_state;
-} usbh_uac_ep_cfg_t;
 
 typedef struct {
 	u8 freq[USBH_UAC_FREQ_FORMAT_MAX][3];
@@ -164,12 +143,15 @@ typedef struct {
 } usbh_audio_fmt_t;
 
 typedef struct {
-	usbh_uac_as_itf_alt_info_t alt_set_array[USBH_UAC_ALT_SETTING_MAX];
-	usbh_uac_ep_cfg_t ep_info;            /* ep cfg information */
+	/* save the alt_set, skip 0 idx */
+	usbh_uac_as_itf_alt_info_t itf_info_array[USBH_UAC_ALT_SETTING_MAX];
+	usbh_pipe_t pipe;                     /* pipe information */
 	usbh_audio_fmt_t *fmt_array;          /* saving all audio format */
+	u16 packet_size_small;                /* small packet sizes in samples */
+	u16 packet_size_large;                /* large packet sizes in samples */
 
-	u8 as_itf_num;                        /* as interface num */
-	u8 alt_cnt;                           /* as alt_setting count */
+	u8 as_itf_num;                        /* AS interface num */
+	u8 alt_cnt;                           /* AS alt_setting count */
 	u8 fmt_array_cnt;                     /* fmt_array item count */
 	u8 choose_alt_idx;                    /* choose alt setting index, not save the alt_set=0,so the real alt_idx=choose_alt_idx+1 */
 	u8 choose_freq_idx;                   /* choose freq index */
@@ -178,16 +160,13 @@ typedef struct {
 /* UAC host */
 typedef struct {
 	usbh_uac_volume_info_t volume_info[1 + USBH_UAC_MAX_CHANNEL];
-	usbh_uac_buf_ctrl_t isoc_out;               /* isoc out */
-	usbh_uac_ac_itf_info_t isoc_ac_info;
-	usbh_uac_as_itf_info_t *isoc_out_info;
-	usbh_uac_as_itf_info_t *isoc_in_info;
-
+	usbh_uac_buf_ctrl_t isoc_out;
+	usbh_uac_ac_itf_info_t ac_isoc_in;
+	usbh_uac_as_itf_info_t *as_isoc_out;
+	usbh_uac_as_itf_info_t *as_isoc_in;
 	usbh_composite_uac_usr_cb_t *cb;
 	usbh_composite_host_t *driver;
-
 	u8 *audio_ctrl_buf;
-
 #if USBH_COMPOSITE_HID_UAC_DEBUG
 	rtos_task_t dump_status_task;
 
@@ -202,7 +181,6 @@ typedef struct {
 	__IO u8 dump_status_task_alive;
 	__IO u8 dump_status_task_exit;
 #endif
-
 	__IO usbh_uac_xfer_state_t xfer_state;   /* xfer status */
 	__IO usbh_uac_ctrl_state_t ctrl_state;   /* ctrl xfer status */
 	u16 volume_value;                        /* volume db */

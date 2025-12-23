@@ -50,7 +50,7 @@ typedef struct fatfs_sd_param_s {
 int fatfs_sd_init(void);
 int fatfs_sd_close(void);
 
-int fatfs_flash_init(void);
+int fatfs_flash_init(int interface);
 int fatfs_flash_close(void);
 
 int FATFS_RegisterDiskDriver(ll_diskio_drv *disk_drv);

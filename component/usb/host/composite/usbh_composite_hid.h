@@ -62,7 +62,7 @@ typedef struct {
 	u8  bNumDescriptors;          /* sub descriptor count,usually is 1 */
 	u8  bReportDescriptorType;    /* report type, USBH_HID_REPORT_DESC */
 	u16 wDescriptorLength;        /* descriptor length */
-} __attribute__((packed)) usbh_dev_hid_desc_t ;
+} __PACKED usbh_dev_hid_desc_t ;
 
 typedef enum {
 	USBH_HID_REPORT_IDLE,
@@ -143,53 +143,29 @@ typedef struct {
 	int(* report)(usbh_composite_hid_event_t *event);
 } usbh_composite_hid_usr_cb_t;
 
-/* States for transfer */
-typedef enum {
-	USBH_HID_XFER_IDLE = 0U,
-	USBH_HID_XFER,
-	USBH_HID_XFER_BUSY,
-	USBH_HID_XFER_MAX,
-} usbh_hid_ep_xfer_state_t;
-
-typedef struct {
-	u8 *buf;
-	u32 len;
-	u32 interval;
-	__IO u32 tick;
-	u16 packet_size;
-	u8 pipe;
-	u8 ep_addr;
-	__IO usbh_hid_ep_xfer_state_t xfer_state;
-} usbh_hid_ep_cfg_t;
-
 typedef struct {
 	usbh_composite_hid_ctrl_caps_t vol_caps;
-	usb_ringbuf_manager_t report_msg;
-	usbh_dev_hid_desc_t hid_desc;
-	usbh_hid_ep_cfg_t ep_info;
 	usbh_composite_hid_event_t report_event;
-	u8 *report_desc;
-	u8 *hid_ctrl_buf;
-
-	usbh_composite_host_t *driver;
-
+	usb_ringbuf_manager_t report_msg;
+	rtos_task_t msg_parse_task;
+	usbh_dev_hid_desc_t hid_desc;
+	usbh_ep_desc_t ep_desc;
+	usbh_pipe_t pipe;
 #if USBH_COMPOSITE_HID_UAC_DEBUG
 	usbh_composite_hid_event_t last_event;
 	__IO u32 event_cnt;
 #endif
-
-	rtos_task_t msg_parse_task;
-
+	usbh_composite_host_t *driver;
+	usbh_composite_hid_usr_cb_t *cb;
+	u8 *report_desc;
+	u8 *hid_ctrl_buf;
+	u8 report_desc_status;
+	u8 itf_idx;
+	u8 itf_alt_idx;
+	u8 next_xfer;
 	__IO u8 parse_task_alive;
 	__IO u8 parse_task_exit;
 	__IO u8 hid_ctrl;
-
-	u8 report_desc_status;
-	u8 itf_idx;
-	u8 alt_set_idx;
-
-	u8 next_xfer;
-	usbh_composite_hid_usr_cb_t *cb;
 } usbh_composite_hid_t;
 
 /* Exported variables --------------------------------------------------------*/

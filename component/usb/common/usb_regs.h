@@ -22,11 +22,6 @@
 #define USB_OTG_CORE_ID_420A							0x4F54420AU
 #define USB_OTG_CORE_ID_430A							0x4F54430AU
 
-/* USB mode */
-#define USB_OTG_MODE_DEVICE								0
-#define USB_OTG_MODE_HOST								1
-#define USB_OTG_MODE_DRD								2
-
 /* USB OTG registers */
 #define USB_OTG_GLOBAL_BASE								0x000UL
 #define USB_OTG_HOST_BASE								0x400UL

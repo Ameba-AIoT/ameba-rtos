@@ -38,10 +38,10 @@ static const char *const TAG = "DRD";
 
 /* Private function prototypes -----------------------------------------------*/
 
-static void usbd_msc_cb_status_changed(u8 status);
+static void usbd_msc_cb_status_changed(u8 old_status, u8 status);
 static int usbh_msc_cb_attach(void);
 static int usbh_msc_cb_setup(void);
-static int usbh_msc_cb_process(usb_host_t *host, u8 id);
+static int usbh_msc_cb_process(usb_host_t *host, u8 msg);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -77,9 +77,9 @@ static usbh_user_cb_t usbh_usr_cb = {
 
 /* Private functions ---------------------------------------------------------*/
 
-static void usbd_msc_cb_status_changed(u8 status)
+static void usbd_msc_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Device status change: %d\n", status);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Device status change: %d->%d\n", old_status, status);
 }
 
 static int usbh_msc_cb_attach(void)
@@ -96,11 +96,11 @@ static int usbh_msc_cb_setup(void)
 	return HAL_OK;
 }
 
-static int usbh_msc_cb_process(usb_host_t *host, u8 id)
+static int usbh_msc_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 
-	switch (id) {
+	switch (msg) {
 	case USBH_MSG_DISCONNECTED:
 		usbh_msc_is_ready = 0;
 		break;

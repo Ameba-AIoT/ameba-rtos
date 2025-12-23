@@ -1420,7 +1420,7 @@ static int atcmd_ble_gap_get_conn_rssi(int argc, char **argv)
 		return -1;
 	}
 
-	BT_LOGA("GAP read rssi, conn_hanlde: %d, value: %d\r\n", conn_handle, rssi_val);
+	BT_LOGA("GAP read rssi, conn_handle: %d, value: %d\r\n", conn_handle, rssi_val);
 	BT_AT_PRINT("+BLEGAP:conn_rssi,%d,%d\r\n", conn_handle, rssi_val);
 	return 0;
 }

@@ -20,7 +20,10 @@
 
 #define STATIC_RXRING_POOL 1
 
-// #define CONFIG_WIFI_TUNNEL
+#define CONFIG_WIFI_TUNNEL
+#ifndef CONFIG_FULLMAC_DEV
+#define CONFIG_WTN_SOCKET_APP
+#endif
 
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
@@ -174,6 +177,8 @@
 #undef CONFIG_WIFI_TDMA_DIG /*for softap*/
 #undef CONFIG_WIFI_EDCCA
 #undef CONFIG_WIFI_ANTDIV
+#undef CONFIG_WIFI_TUNNEL
+#undef CONFIG_WTN_SOCKET_APP
 #define DISABLE_FW
 #endif
 

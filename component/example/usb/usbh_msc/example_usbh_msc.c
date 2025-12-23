@@ -29,7 +29,7 @@ static const char *const TAG = "MSC";
 
 static int msc_cb_attach(void);
 static int msc_cb_setup(void);
-static int msc_cb_process(usb_host_t *host, u8 id);
+static int msc_cb_process(usb_host_t *host, u8 msg);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -44,7 +44,7 @@ static usbh_config_t usbh_cfg = {
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = 3U,
-	.sof_tick_enable = 1U,
+	.tick_source = USBH_SOF_TICK,
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,
@@ -83,11 +83,11 @@ static int msc_cb_setup(void)
 	return HAL_OK;
 }
 
-static int msc_cb_process(usb_host_t *host, u8 id)
+static int msc_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 
-	switch (id) {
+	switch (msg) {
 	case USBH_MSG_DISCONNECTED:
 		msc_is_ready = 0;
 		break;

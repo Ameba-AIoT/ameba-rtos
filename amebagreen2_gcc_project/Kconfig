@@ -59,14 +59,12 @@ endmenu
 menu "CONFIG Memory Arch"
     config DISABLE_PSRAM
         bool "DISABLE PSRAM"
-    if DISABLE_PSRAM
-        config SECOND_FLASH_NOR
-            bool "Second flash NOR"
-        if !SECOND_FLASH_NOR
-            config SECOND_FLASH_NAND
-                bool "Second flash NAND"
+    config SECOND_FLASH_NOR
+        bool "Second flash NOR"
+    if !SECOND_FLASH_NOR
+        config SECOND_FLASH_NAND
+            bool "Second flash NAND"
         endif
-    endif
 endmenu
 
 menu "CONFIG Link Option"
@@ -128,6 +126,20 @@ menu "CONFIG Link Option"
         bool
 endmenu
 
+menu "CONFIG Mass Production"
+    config MP_INCLUDED
+        bool "Enable MP"
+    if MP_INCLUDED
+        choice
+            prompt "MP Mode"
+            default MP_SHRINK
+            config MP_EXPAND
+                bool "expand"
+            config MP_SHRINK
+                bool "shrink"
+        endchoice
+    endif
+endmenu
 
 rsource "../component/at_cmd/Kconfig"
 
@@ -245,89 +257,9 @@ menu "CONFIG WHC INTF"
         endchoice
 
         if WPA_STD
-            menu "wpa_supplicant config"
-            config DRIVER_WEXT
-                bool "Support DRIVER WEXT"
-            config DRIVER_NL80211
-                bool "Support DRIVER NL80211"
-            config DRIVER_NL80211_REALTEK
-                bool "Support DRIVER NL80211 REALTEK"
-            config STD_PASN_NAN
-                bool "Support PASN NAN"
-            config LIBNL32
-                bool "Support LIBNL32"
-            config DRIVER_WIRED
-                bool "Support driver wired"
-            config IEEE8021X_EAPOL
-                bool "Support IEEE8021X_EAPOL"
-            config EAP_MD5
-                bool "Support EAP_MD5"
-            config EAP_MSCHAPV2
-                bool "Support EAP_MSCHAPV2"
-            config EAP_TLS
-                bool "Support EAP_TLS"
-            config EAP_PEAP
-                bool "Support EAP_PEAP"
-            config EAP_TTLS
-                bool "Support EAP_TTLS"
-            config EAP_GTC
-                bool "Support EAP_GTC"
-            config EAP_OTP
-                bool "Support EAP_OTP"
-            config EAP_LEAP
-                bool "Support EAP_LEAP"
-            config WPS
-                bool "Support WPS"
-            config WPS2
-                bool "Support WPS2"
-            config PKCS12
-                bool "Support PKCS12"
-            config SMARTCARD
-                bool "Support SMARTCARD"
-            config CTRL_IFACE
-                bool "Support CTRL_IFACE"
-            config WPA_CLI_EDIT
-                bool "Support WPA_CLI_EDIT"
-            config SAE
-                bool "Support SAE"
-            config NEED_DH_GROUPS_ALL
-                bool "Support NEED_DH_GROUPS_ALL"
-            config SUITEB
-                bool "Support SUITEB"
-            config SUITEB192
-                bool "Support SUITEB192"
-            config IEEE80211W
-                bool "Support IEEE80211W"
-            config IEEE80211R
-                bool "Support IEEE80211R"
-            config IEEE80211N
-                bool "Support IEEE80211N"
-                default y
-            config IEEE80211AC
-                bool "Support IEEE80211AC"
-                default y
-            config WNM
-                bool "Support WNM"
-            config AP
-                bool "Support AP"
-            config P2P
-                bool "Support P2P"
-            config MBO
-                bool "Support MBO"
-            config DPP
-                bool "Support DPP"
-            config WEP
-                bool "Support WEP"
-            config PASN
-                bool "Support PASN"
-            config IEEE80211AX
-                bool "Support IEEE80211AX"
-                default y
-            config NO_RANDOM_POOL
-                bool "CONFIG NO RANDOM POOL"
-                default y
 
-            endmenu
+            orsource "../component/wifi/wpa_supplicant/wpa_supplicant_std/Kconfig"
+
         endif
 
         menu "RTW CLI"

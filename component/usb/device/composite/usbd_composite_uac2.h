@@ -14,8 +14,11 @@
 
 /* Exported defines ----------------------------------------------------------*/
 /* used for uac debug*/
-#define USBD_UAC_ISOC_XFER_DEBUG                    0
+#define USBD_COMPOSITE_UAC_DEBUG  0
 
+#if USBD_COMPOSITE_UAC_DEBUG && (USBD_TP_TRACE_DEBUG == 0)
+#error "Please set USBD_TP_TRACE_DEBUG in usbd.h"
+#endif
 /*
 * while the host does not send the audio data(for example: switch to next song), the usb should append zero packet to the buffer
 *
@@ -315,12 +318,12 @@
 
 /* Exported types ------------------------------------------------------------*/
 
-typedef struct __PACKED {
+typedef struct {
 	u16 wNumSubRanges;
 	u16 wMIN;
 	u16 wMAX;
 	u16 wRES;
-} usbd_composite_uac_ctrl_range_layout2_struct;
+} __PACKED usbd_composite_uac_ctrl_range_layout2_struct;
 
 typedef struct {
 	u32 dMIN;
@@ -328,16 +331,16 @@ typedef struct {
 	u32 dRES;
 } usbd_composite_uac_sub_range_t;
 
-typedef struct __PACKED {
+typedef struct {
 	u16 wNumSubRanges;
 	usbd_composite_uac_sub_range_t usbd_composite_uac_sub_ranges[];
-} usbd_composite_uac_sampling_freq_ctrl_range_t;
+} __PACKED usbd_composite_uac_sampling_freq_ctrl_range_t;
 
-typedef struct __PACKED {
+typedef struct {
 	u8  bNrChannels;
 	u32 bmChannelConfig;
 	u8  iChannelNames;
-} usbd_composite_uac_ac_connect_ctrl_t;
+} __PACKED usbd_composite_uac_ac_connect_ctrl_t;
 
 typedef struct {
 	u32 sampling_freq;     // 384000
@@ -391,7 +394,7 @@ typedef struct {
 	__IO u16 isoc_mps; //mps
 	__IO u8 uac_sema_valid : 1;
 	__IO u8 read_wait_sema : 1;
-	__IO u8 transfer_continue : 1;
+	__IO u8 next_xfer : 1;
 } usbd_composite_uac_buf_ctrl_t;
 
 typedef struct {
@@ -407,7 +410,7 @@ typedef struct {
 	__IO u32 isoc_rx_valid_cnt;
 	__IO u32 isoc_rx_len;
 
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_COMPOSITE_UAC_DEBUG
 	rtos_task_t uac_dump_task;
 	u32 isoc_rx_last_tick;
 	u32 isoc_timeout_max_step;

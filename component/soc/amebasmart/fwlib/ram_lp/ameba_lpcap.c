@@ -250,7 +250,7 @@ u32 ap_aontimer_wake_int_hdl(void *Data)
 void ap_wakeup_timer_init(uint32_t sleep_ms)
 {
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
-	SOCPS_SetAPWakeEvent_MSK0(WAKE_SRC_AON_TIM, ENABLE);
+	SOCPS_SetAPWakeEvent(WAKE_SRC_AON_TIM, ENABLE);
 	AONTimer_INT(ENABLE);
 	AONTimer_Setting(sleep_ms);
 	InterruptRegister(ap_aontimer_wake_int_hdl, AON_TIM_IRQ, (u32)PMC_BASE, INT_PRI3);

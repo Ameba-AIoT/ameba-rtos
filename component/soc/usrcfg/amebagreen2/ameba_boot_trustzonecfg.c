@@ -24,7 +24,7 @@
 #define BD_PSRAM_START 	(u32)__km4tz_bd_psram_start__
 #define BD_PSRAM_END	(u32)__non_secure_psram_end__
 
-const SAU_CFG_TypeDef sau_config[SAU_ENTRYS_NUM] = {
+const SAU_CFG_TypeDef sau_config[SAU_ENTRY_NUM] = {
 //  Start					End						NSC
 	{0x0001F000,			0x00200000 - 1,			0},	/* entry0: Share ROM NS */
 #if defined (CONFIG_TRUSTZONE_EN)
@@ -42,7 +42,7 @@ const SAU_CFG_TypeDef sau_config[SAU_ENTRYS_NUM] = {
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry7: TODO */
 };
 
-const TZ_CFG_TypeDef mpc3_config[MPC_ENTRYS_NUM] =						/* Security configuration for PSRAM */
+const TZ_CFG_TypeDef mpc3_config[MPC_ENTRY_NUM] =						/* Security configuration for PSRAM */
 {
 //  Start					End						CTRL
 	/* Note: __non_secure_psram_end__ maybe not real, update this info by the chipinfo value in bootloader. */
@@ -55,7 +55,7 @@ const TZ_CFG_TypeDef mpc3_config[MPC_ENTRYS_NUM] =						/* Security configuratio
 };
 
 //S2 0x2000_0000 ~ 0x2009_FFFF 640K sram0
-const TZ_CFG_TypeDef mpc2_config[MPC_ENTRYS_NUM] =						/* Security configuration for sram S2 */
+const TZ_CFG_TypeDef mpc2_config[MPC_ENTRY_NUM] =						/* Security configuration for sram S2 */
 {
 //  Start					End						CTRL
 	{0x20001000,			0x20005000 - 1,			MPC_RW | MPC_NS},	/* entry0: Non-Secure MSP_NS, ROM_BSS_NS */
@@ -70,7 +70,7 @@ const TZ_CFG_TypeDef mpc2_config[MPC_ENTRYS_NUM] =						/* Security configuratio
 	{0xFFFFFFFF,			0xFFFFFFFF,				MPC_RW | MPC_NS},	/* entry5: TODO */
 };
 
-const TZ_CFG_TypeDef mpc1_config[MPC_ENTRYS_NUM] =						/* Security configuration for Flash */
+const TZ_CFG_TypeDef mpc1_config[MPC_ENTRY_NUM] =						/* Security configuration for Flash */
 {
 //  Start					End						CTRL
 	{0x02000000,			0xFFFFFFFF, 			MPC_RO | MPC_NS},	/* entry0: Flash can be rw by ns word */

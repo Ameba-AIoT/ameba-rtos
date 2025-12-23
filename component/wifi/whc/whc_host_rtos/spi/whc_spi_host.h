@@ -27,7 +27,7 @@
 #elif defined (CONFIG_AMEBALITE)
 #define PINMUX_FUNCTION_SPIM	    PINMUX_FUNCTION_SPI
 #define DEV_READY_PIN				_PB_3   // amebalite use different pin due to _PA_1(num 15, GPIO22 got by command "pinout") will be pull down by raspberry pi
-#define RX_REQ_PIN					_PA_11
+#define RX_REQ_PIN					_PB_2
 #define SPI1_MOSI	                _PA_29
 #define SPI1_MISO	                _PA_30
 #define SPI1_SCLK	                _PA_28

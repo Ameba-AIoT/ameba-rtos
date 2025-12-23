@@ -59,7 +59,7 @@ else()
   set(loader_condition FALSE)
 endif()
 
-if("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz")
+if("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz" AND loader_condition)
     ameba_list_append_if(loader_condition private_includes
         hci/core
     )
