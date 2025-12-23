@@ -231,7 +231,7 @@ ll_diskio_drv FLASH_disk_secondary_Driver = {
 #if _USE_IOCTL == 1
 	.disk_ioctl = FLASH_disk_ioctl,
 #endif
-	.TAG	= (unsigned char *)"FLASH"
+	.TAG	= (unsigned char *)"SECONDARY_FLASH"
 };
 
 #endif

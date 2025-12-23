@@ -6,8 +6,17 @@
 #include "lfs.h"
 #include "vfs.h"
 
-extern struct lfs_config g_nor_lfs_cfg;
 extern lfs_t g_lfs;
+
+extern u32 LFS_FLASH_BASE_ADDR;
+extern u32 LFS_FLASH_SIZE;
+
+#ifdef CONFIG_LITTLEFS_SECONDARY_FLASH
+extern lfs_t g_secondary_lfs;
+
+extern u32 LFS_SECONDARY_FLASH_BASE_ADDR;
+extern u32 LFS_SECONDARY_FLASH_SIZE;
+#endif
 
 /**
  * lfs与底层flash读数据接口
@@ -40,17 +49,23 @@ int lfs_nor_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, c
 int lfs_nor_erase(const struct lfs_config *c, lfs_block_t block);
 
 
-#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAGREEN2)
+#ifdef CONFIG_SUPPORT_NAND_FLASH
 extern struct lfs_config g_nand_lfs_cfg;
-
 int lfs_nand_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size);
 int lfs_nand_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size);
 int lfs_nand_erase(const struct lfs_config *c, lfs_block_t block);
 #endif
 
+#ifdef CONFIG_LITTLEFS_SECONDARY_FLASH
+extern struct lfs_config g_secondary_nor_lfs_cfg;
+int lfs_secondary_nor_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size);
+int lfs_secondary_nor_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size);
+int lfs_secondary_nor_erase(const struct lfs_config *c, lfs_block_t block);
+#endif
+
 #if defined(CONFIG_AMEBASMART)
 #define SHOULD_USE_NAND() (!SYSCFG_BootFromNor())
-#elif defined(CONFIG_AMEBAGREEN2)
+#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAL2) || defined(CONFIG_AMEBAPRO3)
 #define SHOULD_USE_NAND() (!SYSCFG_OTP_BootFromNor())
 #endif
 

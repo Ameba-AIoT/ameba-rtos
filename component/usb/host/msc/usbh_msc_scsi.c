@@ -46,6 +46,7 @@ int usbh_scsi_test_unit_ready(usbh_msc_host_t *msc, u8 lun)
 		cbw->field.CB[0]  = USBH_MSC_TEST_UNIT_READY;
 
 		msc->hbot.state = BOT_SEND_CBW;
+		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_BUSY;
 		status = HAL_BUSY;
 		break;
@@ -85,7 +86,7 @@ int usbh_scsi_read_capacity(usbh_msc_host_t *msc, u8 lun, usbh_scsi_capacity_t *
 		cbw->field.CB[0]  = USBH_MSC_READ_CAPACITY10;
 
 		msc->hbot.state = BOT_SEND_CBW;
-
+		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_BUSY;
 		msc->hbot.pbuf = msc->hbot.data;
 		status = HAL_BUSY;
@@ -116,7 +117,7 @@ int usbh_scsi_read_capacity(usbh_msc_host_t *msc, u8 lun, usbh_scsi_capacity_t *
   * @brief  Issue Inquiry command.
   * @param  msc: Msc host handle
   * @param  lun: Logical Unit Number
-  * @param  capacity: pointer to the inquiry structure
+  * @param  inquiry: pointer to the inquiry structure
   * @retval Status
   */
 int usbh_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_scsi_inquiry_t *inquiry)
@@ -141,7 +142,7 @@ int usbh_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_scsi_inquiry_t *inquiry
 		cbw->field.CB[5]  = 0U;
 
 		msc->hbot.state = BOT_SEND_CBW;
-
+		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_BUSY;
 		msc->hbot.pbuf = msc->hbot.data;
 		status = HAL_BUSY;
@@ -180,7 +181,7 @@ int usbh_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_scsi_inquiry_t *inquiry
   * @brief  Issue RequestSense command.
   * @param  msc: Msc host handle
   * @param  lun: Logical Unit Number
-  * @param  capacity: pointer to the sense data structure
+  * @param  sense_data: pointer to the sense data structure
   * @retval Status
   */
 int usbh_scsi_request_sense(usbh_msc_host_t *msc, u8 lun, usbh_scsi_sense_t *sense_data)
@@ -205,6 +206,7 @@ int usbh_scsi_request_sense(usbh_msc_host_t *msc, u8 lun, usbh_scsi_sense_t *sen
 		cbw->field.CB[5]  = 0U;
 
 		msc->hbot.state = BOT_SEND_CBW;
+		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_BUSY;
 		msc->hbot.pbuf = msc->hbot.data;
 		status = HAL_BUSY;
@@ -264,6 +266,7 @@ int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 len
 		cbw->field.CB[8]  = (((u8 *)(void *)&length)[0]);
 
 		msc->hbot.state = BOT_SEND_CBW;
+		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_BUSY;
 		msc->hbot.origin_tx_pbuf = pbuf;
 		msc->hbot.origin_tx_pbuf_len = cbw->field.DataTransferLength;
@@ -328,6 +331,7 @@ int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 leng
 		cbw->field.CB[8]  = (((u8 *)(void *)&length)[0]);
 
 		msc->hbot.state = BOT_SEND_CBW;
+		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_BUSY;
 		msc->hbot.origin_rx_pbuf = pbuf;
 		msc->hbot.origin_rx_pbuf_len = cbw->field.DataTransferLength;

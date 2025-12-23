@@ -31,9 +31,10 @@ extern "C"
 #define EQC_INIT                        0x02
 #define EQC_INIT_FAIL                   0x04
 #define EQC_CLIEN_CONN                  0x08
-#define EQC_CLIEN_CHANMAP               0x10
-#define EQC_CLIEN_DISCONN_3E            0x20
-#define EQC_CLIEN_DISCONN_OT            0x40
+#define EQC_CLIEN_CONN_CANCEL           0x10
+#define EQC_CLIEN_CHANMAP               0x20
+#define EQC_CLIEN_DISCONN_3E            0x40
+#define EQC_CLIEN_DISCONN_OT            0x80
 
 void rtk_bt_eqc_power_on(void);
 void rtk_bt_eqc_power_off(void);

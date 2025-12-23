@@ -15,7 +15,7 @@
 #define USBH_DT_CS_INTERFACE                0x24
 #define USBH_DT_CS_ENDPOINT                 0x25
 #define USBH_UAC_WAIT_SLICE_MS              1
-#define USBH_UAC_HFNUM_MAX_FRNUM            0x3FFF
+#define USB_OTG_HFNUM_FRNUM_MAX             (0x3FFFUL)       /* Frame number max value */
 
 #define USBH_LE16(addr)                     (((u16)(addr)[0]) | ((u16)(((u32)(addr)[1]) << 8)))
 #define USBH_UAC_FREQ(freq)                 (((u32)freq[0]) | (((u32)freq[1]) << 8) | (((u32)freq[2]) << 16))
@@ -31,7 +31,7 @@ static int usbh_composite_uac_cb_process(usb_host_t *host, u32 msg);
 static int usbh_composite_uac_ctrl_setting(usb_host_t *host, u32 msg);
 static int usbh_composite_uac_cb_setup(usb_host_t *host);
 static int usbh_composite_uac_cb_sof(usb_host_t *host);
-static int usbh_composite_uac_cb_complete(usb_host_t *host, u8 pipe);
+static int usbh_composite_uac_cb_completed(usb_host_t *host, u8 pipe);
 static void usbh_composite_uac_isoc_in_process(usb_host_t *host);
 static void usbh_composite_uac_isoc_out_process_xfer(usb_host_t *host, u32 cur_frame);
 static void usbh_composite_uac_isoc_out_process_complete(usb_host_t *host);
@@ -39,9 +39,9 @@ static int usbh_composite_uac_process_set_out_alt(usb_host_t *host);
 static int usbh_composite_uac_process_set_out_freq(usb_host_t *host);
 static void usbh_composite_uac_deinit_pipe(u8 dir);
 static void usbh_composite_uac_deinit_all_pipe(void);
-static int usbh_composite_uac_parse_cfgdesc(usb_host_t *host);
-static int usbh_composite_uac_parse_ac(u8 *pbuf, u32 *length, u32 buf_length);
-static int usbh_composite_uac_parse_as(u8 *pbuf, u32 *length, u32 buf_length);
+static int usbh_composite_uac_parse_interface_desc(usb_host_t *host);
+static int usbh_composite_uac_parse_ac(usbh_itf_data_t *ac_itf);
+static int usbh_composite_uac_parse_as(usbh_itf_data_t *as_itf);
 static int usbh_composite_uac_usb_status_check(void);
 
 /* Private variables ---------------------------------------------------------*/
@@ -49,45 +49,32 @@ static const char *const TAG = "UAC";
 
 /* USB Standard Device Descriptor */
 const usbh_class_driver_t usbh_composite_uac_driver = {
-	.class_code = USB_CLASS_AUDIO,
 	.attach = usbh_composite_uac_cb_attach,
 	.detach = usbh_composite_uac_cb_detach,
 	.setup = usbh_composite_uac_cb_setup,
 	.process = usbh_composite_uac_cb_process,
 	.sof = usbh_composite_uac_cb_sof,
-	.complete = usbh_composite_uac_cb_complete,
+	.completed = usbh_composite_uac_cb_completed,
 };
 
 static usbh_composite_uac_t usbh_composite_uac;
 
 #if USBH_COMPOSITE_HID_UAC_DEBUG
-static void usbh_composite_uac_reset_test_cnt(void)
+static void usbh_composite_uac_dump_as_desc(usbh_uac_as_itf_info_t *as_info)
 {
-	usbh_composite_uac_t *uac = &usbh_composite_uac;
-
-	uac->sof_cnt = 0;
-	uac->isoc_tx_start_cnt = 0;
-	uac->isoc_tx_done_cnt = 0;
-	uac->isoc_xfer_buf_empty_cnt = 0;
-	uac->isoc_xfer_buf_err_cnt = 0;
-	uac->isoc_xfer_interval_cnt = 0;
-}
-
-static void usbh_composite_uac_dump_as_desc(usbh_uac_as_itf_info_t *puacdesc)
-{
-	usbh_uac_as_itf_alt_info_t *pasintf = NULL;
+	usbh_uac_as_itf_alt_info_t *as_alt_info = NULL;
 	usbh_uac_format_cfg_t *fmt = NULL;
 	usbh_ep_desc_t *audio_ep = NULL;
 	int i, k;
-	if (puacdesc == NULL) {
+	if (as_info == NULL) {
 		return;
 	}
 
-	for (i = 0; i < puacdesc->alt_cnt; i ++) {
-		pasintf = &(puacdesc->alt_set_array[i]);
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Intf=%d alts %d\n", puacdesc->as_itf_num, pasintf->alt_setting);
-		fmt = &(pasintf->format_info);
-		audio_ep = &(pasintf->ep_desc);
+	for (i = 0; i < as_info->alt_cnt; i ++) {
+		as_alt_info = &(as_info->itf_info_array[i]);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Intf=%d alts %d\n", as_info->as_itf_num, as_alt_info->alt_setting);
+		fmt = &(as_alt_info->format_info);
+		audio_ep = &(as_alt_info->ep_desc);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Ep%02x MPS %d %d\n", audio_ep->bEndpointAddress, audio_ep->wMaxPacketSize, audio_ep->bInterval);
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Ch %d byte %d freqcnt %d\n", fmt->channels, fmt->bit_width, fmt->freq_cnt);
@@ -102,35 +89,27 @@ static void usbh_composite_uac_dump_as_desc(usbh_uac_as_itf_info_t *puacdesc)
   * @param  param: Pointer to parameters
   * @retval void
   */
-extern void usbh_composite_hid_status_dump_thread(void);
+extern void usbh_composite_hid_status_dump(void);
 static void usbh_composite_uac_status_dump(void)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_out);
 	usb_ringbuf_manager_t *handle = &(buf_ctrl->buf_list);
-	usbh_uac_ep_cfg_t *ep = &(uac->isoc_out_info->ep_info);
+	usbh_pipe_t *pipe = &(uac->as_isoc_out->pipe);
 
 	if (usbh_composite_uac_usb_status_check() == HAL_OK) {
 		int ready_cnt = usb_ringbuf_get_count(handle);
-#if USBH_ISR_TASK_TIME_DEBUG
 		if (uac && uac->driver && uac->driver->host) {
 			usb_host_t *host = uac->driver->host;
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "UAC:%d-%d %d-%d/%d-%d-%d-%d/xfer=%d-%d-%d %d-%d-%d/%d-%d-%d-%d\n",
 					 ready_cnt, (handle->item_cnt - ready_cnt), handle->head, handle->tail,
-					 buf_ctrl->transfer_continue, uac->ctrl_state, uac->xfer_state, ep->isoc_state,
+					 buf_ctrl->next_xfer, uac->ctrl_state, uac->xfer_state, pipe->xfer_state,
 					 (u32)(uac->sof_cnt), (u32)(uac->isoc_tx_start_cnt), (u32)(uac->isoc_tx_done_cnt),
 					 (u32)(uac->isoc_xfer_buf_empty_cnt), (u32)(uac->isoc_xfer_buf_err_cnt), (u32)(uac->isoc_xfer_interval_cnt),
-					 host->isr_func_time_cost_max, host->isr_func_time_cost,
-					 host->isr_trigger_time_diff_max, host->isr_trigger_time_diff);
+					 host->isr_process_time_max, host->isr_process_time,
+					 host->isr_enter_period_max, host->isr_enter_period);
 		}
-#else
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "UAC:%d-%d %d-%d/%d-%d-%d-%d/xfer=%d-%d-%d %d-%d-%d\n",
-				 ready_cnt, (handle->item_cnt - ready_cnt), handle->head, handle->tail,
-				 buf_ctrl->transfer_continue, uac->ctrl_state, uac->xfer_state, ep->isoc_state,
-				 (u32)(uac->sof_cnt), (u32)(uac->isoc_tx_start_cnt), (u32)(uac->isoc_tx_done_cnt),
-				 (u32)(uac->isoc_xfer_buf_empty_cnt), (u32)(uac->isoc_xfer_buf_err_cnt), (u32)(uac->isoc_xfer_interval_cnt));
-#endif
-		usbh_composite_hid_status_dump_thread();
+		usbh_composite_hid_status_dump();
 	}
 }
 
@@ -142,8 +121,6 @@ static void usbh_composite_uac_status_dump_thread(void *param)
 	uac->dump_status_task_alive = 1;
 	uac->dump_status_task_exit = 1;
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC dump thread\n");
-
 	while (uac->dump_status_task_exit) {
 
 		usbh_composite_uac_status_dump();
@@ -154,24 +131,33 @@ static void usbh_composite_uac_status_dump_thread(void *param)
 	uac->dump_status_task_alive = 0;
 	rtos_task_delete(NULL);
 }
-#endif
 
 static void usbh_composite_uac_reset_isr_time(void)
 {
-#if USBH_ISR_TASK_TIME_DEBUG
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
 	usb_host_t *host;
 
 	if (uac && uac->driver && uac->driver->host) {
 		host = uac->driver->host;;
 
-		host->isr_func_time_cost_max = 0;
-		host->isr_trigger_time_diff_max = 0;
-
-		host->isr_trigger_last_time = 0;
+		host->isr_process_time_max = 0;
+		host->isr_enter_period_max = 0;
+		host->isr_enter_time = 0;
 	}
-#endif
 }
+
+static void usbh_composite_uac_reset_test_cnt(void)
+{
+	usbh_composite_uac_t *uac = &usbh_composite_uac;
+
+	uac->sof_cnt = 0;
+	uac->isoc_tx_start_cnt = 0;
+	uac->isoc_tx_done_cnt = 0;
+	uac->isoc_xfer_buf_empty_cnt = 0;
+	uac->isoc_xfer_buf_err_cnt = 0;
+	uac->isoc_xfer_interval_cnt = 0;
+}
+#endif
 
 static u32 usbh_composite_uac_test(u16 argc, u8 *argv[])
 {
@@ -213,10 +199,10 @@ static u32 usbh_composite_uac_test(u16 argc, u8 *argv[])
 			vol_bk -= 5;
 		}
 		usbh_composite_uac_set_volume(vol_bk);
+#if USBH_COMPOSITE_HID_UAC_DEBUG
 	} else if (_stricmp(cmd, "isr") == 0) {
 		usbh_composite_uac_reset_isr_time();
 	} else if (_stricmp(cmd, "reset") == 0) {
-#if USBH_COMPOSITE_HID_UAC_DEBUG
 		usbh_composite_uac_reset_test_cnt();
 #endif
 	} else {
@@ -239,19 +225,19 @@ static inline u32 usbh_composite_uac_frame_num_dec(u32 new, u32 start)
 	if (new >= start) {
 		return new - start;
 	} else {
-		return (USBH_UAC_HFNUM_MAX_FRNUM - start + 1 + new);
+		return (USB_OTG_HFNUM_FRNUM_MAX - start + 1 + new);
 	}
 }
 
 /*
  * Increments frame by the amount specified by inc. The addition is done
- * modulo USBH_UAC_HFNUM_MAX_FRNUM. Returns the incremented value.
+ * modulo USB_OTG_HFNUM_FRNUM_MAX. Returns the incremented value.
  *
  * send the token in next frame
  */
 static inline u32 usbh_composite_uac_frame_num_inc(u32 frame, u32 inc)
 {
-	return (frame + inc) & USBH_UAC_HFNUM_MAX_FRNUM;
+	return (frame + inc) & USB_OTG_HFNUM_FRNUM_MAX;
 }
 
 static u16 usbh_composite_uac_volume_to_db(usbh_uac_volume_info_t *uac_dev, u8 percent)
@@ -259,13 +245,13 @@ static u16 usbh_composite_uac_volume_to_db(usbh_uac_volume_info_t *uac_dev, u8 p
 	int range;
 	int raw;
 
-	if (uac_dev == NULL || percent > 100) {
+	if (uac_dev == NULL) {
 		return uac_dev->vol_min;
 	}
 
 	if (percent == 0) {
 		return uac_dev->vol_min;       // 0% min / mute
-	} else if (percent == 100) {
+	} else if (percent >= 100) {
 		return uac_dev->vol_max;       // 100% max
 	}
 
@@ -286,26 +272,22 @@ static void usbh_composite_uac_dump_cfgdesc(void)
 {
 #if USBH_COMPOSITE_HID_UAC_DEBUG
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_as_itf_info_t *puacdesc = NULL;
-	RTK_LOGS(TAG, RTK_LOG_INFO, "--------------------Dump Start------------------------------\n");
+	usbh_uac_as_itf_info_t *as_info = NULL;
+	RTK_LOGS(TAG, RTK_LOG_INFO, "--------------------AS Dump Start------------------------------\n");
 
-	if (uac->isoc_out_info) {
-		puacdesc = uac->isoc_out_info;
-		RTK_LOGS(TAG, RTK_LOG_INFO, "USB OUT at_cnt %d itf %d\n", puacdesc->alt_cnt, puacdesc->as_itf_num);
-		//dump uac ac
-		//dump uac as
-		usbh_composite_uac_dump_as_desc(puacdesc);
+	if (uac->as_isoc_out) {
+		as_info = uac->as_isoc_out;
+		RTK_LOGS(TAG, RTK_LOG_INFO, "USB OUT at_cnt %d itf %d\n", as_info->alt_cnt, as_info->as_itf_num);
+		usbh_composite_uac_dump_as_desc(as_info);
 	}
 
-	if (uac->isoc_in_info) {
-		puacdesc = uac->isoc_in_info;
-		RTK_LOGS(TAG, RTK_LOG_INFO, "USB IN at_cnt %d itf %d\n", puacdesc->alt_cnt, puacdesc->as_itf_num);
-		//dump uac ac
-		//dump uac as
-		usbh_composite_uac_dump_as_desc(puacdesc);
+	if (uac->as_isoc_in) {
+		as_info = uac->as_isoc_in;
+		RTK_LOGS(TAG, RTK_LOG_INFO, "USB IN at_cnt %d itf %d\n", as_info->alt_cnt, as_info->as_itf_num);
+		usbh_composite_uac_dump_as_desc(as_info);
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "---------------------Dump End-----------------------------\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "---------------------AS Dump End-----------------------------\n");
 #endif
 }
 
@@ -315,9 +297,9 @@ static usbh_uac_as_itf_info_t *usbh_composite_uac_get_as_itf_instance(u8 dir)
 	usbh_uac_as_itf_info_t *as_itf = NULL;
 
 	if (dir == USBH_UAC_ISOC_OUT_DIR) {
-		as_itf = uac->isoc_out_info;
+		as_itf = uac->as_isoc_out;
 	} else {
-		as_itf = uac->isoc_in_info;
+		as_itf = uac->as_isoc_in;
 	}
 
 	if (as_itf == NULL) {
@@ -328,7 +310,7 @@ static usbh_uac_as_itf_info_t *usbh_composite_uac_get_as_itf_instance(u8 dir)
 	return as_itf;
 }
 
-static void usbh_composite_uac_get_audio_format(usbh_uac_as_itf_info_t *puacdesc)
+static void usbh_composite_uac_get_audio_format(usbh_uac_as_itf_info_t *as_info)
 {
 	usbh_uac_as_itf_alt_info_t *pasintf = NULL;
 	usbh_uac_format_cfg_t *fmt = NULL;
@@ -337,27 +319,27 @@ static void usbh_composite_uac_get_audio_format(usbh_uac_as_itf_info_t *puacdesc
 	u8 fmt_idx = 0;
 	u8 i, k;
 
-	if (puacdesc == NULL) {
+	if (as_info == NULL) {
 		return;
 	}
 
-	for (i = 0; i < puacdesc->alt_cnt; i ++) {
-		pasintf = &(puacdesc->alt_set_array[i]);
+	for (i = 0; i < as_info->alt_cnt; i ++) {
+		pasintf = &(as_info->itf_info_array[i]);
 		fmt = &(pasintf->format_info);
 		fmt_cnt += fmt->freq_cnt;
 	}
 
-	puacdesc->fmt_array = (usbh_audio_fmt_t *)usb_os_malloc(sizeof(usbh_audio_fmt_t) * fmt_cnt);
-	if (puacdesc->fmt_array == NULL) {
+	as_info->fmt_array = (usbh_audio_fmt_t *)usb_os_malloc(sizeof(usbh_audio_fmt_t) * fmt_cnt);
+	if (as_info->fmt_array == NULL) {
 		return;
 	}
-	puacdesc->fmt_array_cnt = fmt_cnt;
+	as_info->fmt_array_cnt = fmt_cnt;
 
 	fmt_idx = 0;
-	for (i = 0; i < puacdesc->alt_cnt; i ++) {
-		fmt = &(puacdesc->alt_set_array[i].format_info);
+	for (i = 0; i < as_info->alt_cnt; i ++) {
+		fmt = &(as_info->itf_info_array[i].format_info);
 		for (k = 0; k < fmt->freq_cnt; k++) {
-			pfmt_info = &(puacdesc->fmt_array[fmt_idx++]);
+			pfmt_info = &(as_info->fmt_array[fmt_idx++]);
 
 			pfmt_info->sampling_freq = USBH_UAC_FREQ(fmt->freq[k]);
 			pfmt_info->bit_width = fmt->bit_width;
@@ -370,8 +352,8 @@ static u32 usbh_composite_uac_get_audio_format_info(void)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
 
-	usbh_composite_uac_get_audio_format(uac->isoc_out_info);
-	usbh_composite_uac_get_audio_format(uac->isoc_in_info);
+	usbh_composite_uac_get_audio_format(uac->as_isoc_out);
+	usbh_composite_uac_get_audio_format(uac->as_isoc_in);
 
 	return HAL_OK;
 }
@@ -381,18 +363,17 @@ static void usbh_composite_uac_deinit_pipe(u8 dir)
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
 	usb_host_t *host = uac->driver->host;
 	usbh_uac_as_itf_info_t *as_itf;
-	usbh_uac_ep_cfg_t *ep = NULL;
+	usbh_pipe_t *pipe = NULL;
 
 	as_itf = usbh_composite_uac_get_as_itf_instance(dir);
 	if (as_itf == NULL) {
 		return ;
 	}
 
-	ep = &(as_itf->ep_info);
-	if (ep->isoc_pipe) {
-		usbh_close_pipe(host, ep->isoc_pipe);
-		usbh_free_pipe(host, ep->isoc_pipe);
-		ep->isoc_pipe = 0U;
+	pipe = &(as_itf->pipe);
+	if (pipe->pipe_num) {
+		usbh_close_pipe(host, pipe);
+		pipe->pipe_num = 0U;
 	}
 }
 
@@ -406,34 +387,11 @@ static int usbh_composite_uac_usb_status_check(void)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
 
-	if (uac->driver->state < USBH_COMPOSITE_SETUP) {
-		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Device disconnected,wait\n");
-		return HAL_BUSY;
+	if ((uac->driver != NULL) && (uac->driver->host != NULL) && (uac->driver->host->connect_state >= USBH_STATE_SETUP)) {
+		return HAL_OK;
 	}
 
-	return HAL_OK;
-}
-
-/**
-  * @brief	Find next standard descriptor
-  * @param	pbuf: given buffer to find
-			len: given buffer length
-  * @retval Pointer of next standard descriptor
-  */
-static u8 *usbh_composite_uac_find_next_stdesc(u8 *pbuf, u32 *len)
-{
-	u8 *desc = pbuf;
-
-	while (*len > 0) {
-		if (((usb_descriptor_header_t *)desc)->bDescriptorType == USB_DESC_TYPE_INTERFACE) {
-			return (u8 *) desc;
-		} else {
-			*len -= ((usb_descriptor_header_t *)desc)->bLength;
-			desc += ((usb_descriptor_header_t *)desc)->bLength;
-		}
-	}
-
-	return NULL;
+	return HAL_BUSY;
 }
 
 static int usbh_composite_uac_is_output_terminal(u16 type)
@@ -464,7 +422,7 @@ static void usbh_composite_uac_add_volume(usbh_uac_ac_itf_info_t *list, const us
 static int usbh_composite_uac_find_best_ac(void)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_ac_itf_info_t *ac_info = &(uac->isoc_ac_info);
+	usbh_uac_ac_itf_info_t *ac_info = &(uac->ac_isoc_in);
 
 	usbh_uac_vol_ctrl_info *best = NULL;
 	usbh_uac_vol_ctrl_info *info;
@@ -505,46 +463,37 @@ static int usbh_composite_uac_find_best_ac(void)
 	info = &(ac_info->controls[ac_info->best_match_idx]);
 
 	if (!info) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "can not find\n");
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Can not find\n");
 		return HAL_OK;
 	}
 
 #if USBH_COMPOSITE_HID_UAC_DEBUG
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "UAC 1.0 :\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "  ID: 0x%02x\n", info->sink_id);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "  ID(unit_id): 0x%02x\n", info->unit_id);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "  ID(link): 0x%02x\n", info->source_id);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "  size: %dbyte\n", info->control_size);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "  mas: %02x\n", info->master_support);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "  ch: %d\n", info->num_channels);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tID: 0x%02x\n", info->sink_id);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tID(unit_id): 0x%02x\n", info->unit_id);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tID(link): 0x%02x\n", info->source_id);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tsize: %dbyte\n", info->control_size);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tmas: %02x\n", info->master_support);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tch: %d\n", info->num_channels);
 
 	for (int i = 0; i < info->num_channels; i++) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "  ch %d support: %02x\n",
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tch %d support: %02x\n",
 				 i + 1, info->channel_support[i]);
 	}
-
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nRequest:\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "  bmRequestType: 0x21\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "  bRequest:  0x01(SET_CUR)\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "  wValue:    0x%02x00 (funcID << 8 | main ch)\n", info->unit_id);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "  wIndex:    0x00%02x (itf << 8 | ctrl)\n", UAC_FU_VOLUME);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "  wLength:   %d (data length)\n", info->control_size);
 #endif
 
 	return HAL_OK;
 }
 
 /**
-  * @brief  Parse audio streaming interface
-  * @param  pbuf: given descriptor buffer
-  * @param  length: length of parse desc length
-  * @param  buf_length: length of given buffer
+  * @brief  Parse audio control interface
+  * @param  itf_data: interface descriptor buffer
   * @retval Status
   */
-static int usbh_composite_uac_parse_ac(u8 *pbuf, u32 *length, u32 buf_length)
+static int usbh_composite_uac_parse_ac(usbh_itf_data_t *itf_data)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_ac_itf_info_t *ac_info = &(uac->isoc_ac_info);
+	usbh_uac_ac_itf_info_t *ac_info = &(uac->ac_isoc_in);
 	usb_ac_itf_desc_header_t *ac_header;
 	u8 *desc;
 	u32 t;
@@ -552,30 +501,28 @@ static int usbh_composite_uac_parse_ac(u8 *pbuf, u32 *length, u32 buf_length)
 	u8 type;
 	u8 subtype;
 	u8 len;
+	u16 itf_total_len = 0;
 
-	desc = pbuf;
+	desc = itf_data->raw_data;
 	//save the first interface number as the ac itf_idx
 	ac_info->ac_itf_idx = desc[2];
 
-	//loop to get all input/out terminal
-
 	while (1) {
-		if (desc == NULL || *length >= buf_length) {
+		if (desc == NULL || itf_total_len >= itf_data->raw_data_len) {
 			break;
 		}
 
-		type = ((usb_descriptor_header_t *) desc)->bDescriptorType;
+		type = ((usbh_desc_header_t *) desc)->bDescriptorType;
 		if (type == USB_DESC_TYPE_INTERFACE) {
-			if (((usbh_if_desc_t *)desc)->bInterfaceNumber != ac_info->ac_itf_idx) { //find another itf, maybe it is the as itf, should return
-				RTK_LOGS(TAG, RTK_LOG_INFO, "AC intf new %d:old %d, return\n\n", ((usbh_if_desc_t *)desc)->bInterfaceNumber, ac_info->ac_itf_idx);
+			if (((usbh_itf_desc_t *)desc)->bInterfaceNumber != ac_info->ac_itf_idx) { //find another itf, maybe it is the as itf, should return
+				RTK_LOGS(TAG, RTK_LOG_DEBUG, "AC intf new %d:old %d, return\n\n", ((usbh_itf_desc_t *)desc)->bInterfaceNumber, ac_info->ac_itf_idx);
 				break;
 			}
 
-			len = ((usb_descriptor_header_t *) desc)->bLength;
-			desc = desc + len;
-			*length += len;
+			len = ((usbh_desc_header_t *) desc)->bLength;
+			desc += len;
 		} else if (type == USBH_DT_CS_INTERFACE) {
-			len = ((usb_descriptor_header_t *) desc)->bLength;
+			len = ((usbh_desc_header_t *) desc)->bLength;
 			ac_header = (usb_ac_itf_desc_header_t *)desc;
 			subtype = ac_header->bDescriptorSubtype;
 
@@ -602,32 +549,31 @@ static int usbh_composite_uac_parse_ac(u8 *pbuf, u32 *length, u32 buf_length)
 				}
 			}
 
-			desc = desc + len;
-			*length += len;
+			desc += len;
 		} else {
-			len = ((usb_descriptor_header_t *) desc)->bLength;
-			desc = desc + len;
-			*length += len;
+			len = ((usbh_desc_header_t *) desc)->bLength;
+			desc += len;
 		}
+		itf_total_len += len;
 	}
 
-	desc = pbuf;
+	desc = itf_data->raw_data;
 	while (1) {
 		if (desc == NULL) {
 			break;
 		}
 
-		type = ((usb_descriptor_header_t *) desc)->bDescriptorType;
+		type = ((usbh_desc_header_t *) desc)->bDescriptorType;
 		if (type == USB_DESC_TYPE_INTERFACE) {
-			if (((usbh_if_desc_t *)desc)->bInterfaceNumber != ac_info->ac_itf_idx) { //find another itf, maybe it is the as itf, should return
-				RTK_LOGS(TAG, RTK_LOG_INFO, "AC intf new %d:old %d, return\n\n", ((usbh_if_desc_t *)desc)->bInterfaceNumber, ac_info->ac_itf_idx);
+			if (((usbh_itf_desc_t *)desc)->bInterfaceNumber != ac_info->ac_itf_idx) { //find another itf, maybe it is the as itf, should return
+				RTK_LOGS(TAG, RTK_LOG_DEBUG, "AC intf new %d:old %d, return\n\n", ((usbh_itf_desc_t *)desc)->bInterfaceNumber, ac_info->ac_itf_idx);
 				break;
 			}
 
-			len = ((usb_descriptor_header_t *) desc)->bLength;
-			desc = desc + len;
+			len = ((usbh_desc_header_t *) desc)->bLength;
+			desc += len;
 		} else if (type == USBH_DT_CS_INTERFACE) {
-			len = ((usb_descriptor_header_t *) desc)->bLength;
+			len = ((usbh_desc_header_t *) desc)->bLength;
 			ac_header = (usb_ac_itf_desc_header_t *)desc;
 			subtype = ac_header->bDescriptorSubtype;
 
@@ -677,10 +623,10 @@ static int usbh_composite_uac_parse_ac(u8 *pbuf, u32 *length, u32 buf_length)
 				}
 			}
 
-			desc = desc + len;
+			desc += len;
 		} else {
-			len = ((usb_descriptor_header_t *) desc)->bLength;
-			desc = desc + len;
+			len = ((usbh_desc_header_t *) desc)->bLength;
+			desc += len;
 		}
 	}
 
@@ -689,23 +635,20 @@ static int usbh_composite_uac_parse_ac(u8 *pbuf, u32 *length, u32 buf_length)
 
 /**
   * @brief  Parse audio streaming interface
-  * @param  pbuf: given descriptor buffer
-  * @param  length: length of parse desc length
-  * @param  buf_length: length of given buffer
+  * @param  itf_data: interface descriptor buffer
   * @retval Status
   */
-static int usbh_composite_uac_parse_as(u8 *pbuf, u32 *length, u32 buf_length)
+static int usbh_composite_uac_parse_as(usbh_itf_data_t *itf_data)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_as_itf_info_t *as_itf = NULL;
 	usbh_uac_as_itf_alt_info_t *alt_setting = NULL;
 	usbh_uac_format_cfg_t *format_info = NULL;
+	usbh_uac_as_itf_info_t *as_itf = NULL;
 	usbh_ep_desc_t *ep_cfg = NULL;
-
-	u8 *desc = pbuf;
-	u16 len = 0;
+	u8 *desc = itf_data->raw_data;
+	u16 len;
+	u16 itf_total_len = 0;
 	u8 alt_set_idx;
-	// u8 is_audio_in;
 	u8 k;
 
 	as_itf = (usbh_uac_as_itf_info_t *)usb_os_malloc(sizeof(usbh_uac_as_itf_info_t));
@@ -713,31 +656,28 @@ static int usbh_composite_uac_parse_as(u8 *pbuf, u32 *length, u32 buf_length)
 		return HAL_ERR_MEM;
 	}
 
-	//uac alt setting 0, desc += length, jump the alt_setting=0 descriptor
 	as_itf->as_itf_num = desc[2];
-	*length = ((usb_descriptor_header_t *) desc)->bLength;
-	desc = pbuf + *length;
+	desc += ((usbh_desc_header_t *) desc)->bLength;
 
 	while (1) {
-		if (desc == NULL || *length >= buf_length) {
+		if (desc == NULL || itf_total_len >= itf_data->raw_data_len) {
 			break;
 		}
 
-		switch (((usb_descriptor_header_t *) desc)->bDescriptorType) {
+		switch (((usbh_desc_header_t *) desc)->bDescriptorType) {
 		case USB_DESC_TYPE_INTERFACE:
-			if (((usbh_if_desc_t *)desc)->bInterfaceNumber != as_itf->as_itf_num) {
-				RTK_LOGS(TAG, RTK_LOG_DEBUG, "AS intf new %d:old %d, return\n", ((usbh_if_desc_t *)desc)->bInterfaceNumber, as_itf->as_itf_num);
+			if (((usbh_itf_desc_t *)desc)->bInterfaceNumber != as_itf->as_itf_num) {
+				RTK_LOGS(TAG, RTK_LOG_DEBUG, "AS intf new %d:old %d, return\n", ((usbh_itf_desc_t *)desc)->bInterfaceNumber, as_itf->as_itf_num);
 				return HAL_OK;
 			}
 
-			alt_set_idx = ((usbh_if_desc_t *)desc)->bAlternateSetting;
+			alt_set_idx = ((usbh_itf_desc_t *)desc)->bAlternateSetting;
 			if ((alt_set_idx != 0) && (as_itf->alt_cnt < USBH_UAC_ALT_SETTING_MAX)) {
-				alt_setting = &(as_itf->alt_set_array[as_itf->alt_cnt]);
+				alt_setting = &(as_itf->itf_info_array[as_itf->alt_cnt]);
 				as_itf->alt_cnt ++;
 
-				len = ((usb_descriptor_header_t *) desc)->bLength;
-				desc = desc + len;
-				*length += len;
+				len = ((usbh_desc_header_t *) desc)->bLength;
+				desc += len;
 			} else {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "AS parse return %d %d\n", as_itf->alt_cnt, USBH_UAC_ALT_SETTING_MAX);
 				return HAL_OK;
@@ -762,9 +702,8 @@ static int usbh_composite_uac_parse_as(u8 *pbuf, u32 *length, u32 buf_length)
 				}
 			}
 
-			len = ((usb_descriptor_header_t *) desc)->bLength;
-			desc = desc + len;
-			*length += len;
+			len = ((usbh_desc_header_t *) desc)->bLength;
+			desc += len;
 		}
 		break;
 
@@ -776,31 +715,30 @@ static int usbh_composite_uac_parse_as(u8 *pbuf, u32 *length, u32 buf_length)
 
 				if (USB_EP_IS_IN(ep_desc->bEndpointAddress)) {
 					// is_audio_in = 1;
-					if (uac->isoc_in_info == NULL) {
-						uac->isoc_in_info = as_itf;
+					if (uac->as_isoc_in == NULL) {
+						uac->as_isoc_in = as_itf;
 					}
 				} else {
 					// is_audio_in = 0;
-					if (uac->isoc_out_info == NULL) {
-						uac->isoc_out_info = as_itf;
+					if (uac->as_isoc_out == NULL) {
+						uac->as_isoc_out = as_itf;
 					}
 				}
 			}
 
-			len = ((usb_descriptor_header_t *) desc)->bLength;
-			desc = desc + len;
-			*length += len;
+			len = ((usbh_desc_header_t *) desc)->bLength;
+			desc += len;
 		}
 		break;
 
 		case USBH_DT_CS_ENDPOINT:
 		default: {
-			len = ((usb_descriptor_header_t *) desc)->bLength;
-			desc = desc + len;
-			*length += len;
+			len = ((usbh_desc_header_t *) desc)->bLength;
+			desc += len;
 		}
 		break;
 		}
+		itf_total_len += len;
 	}
 
 	return HAL_OK;
@@ -811,68 +749,38 @@ static int usbh_composite_uac_parse_as(u8 *pbuf, u32 *length, u32 buf_length)
   * @param	host: usb host structure
   * @retval Status
   */
-static int usbh_composite_uac_parse_cfgdesc(usb_host_t *host)
+static int usbh_composite_uac_parse_interface_desc(usb_host_t *host)
 {
+	usbh_dev_id_t dev_id = {0,};
+	dev_id.bInterfaceClass = USB_CLASS_AUDIO;
+	dev_id.bInterfaceSubClass = USB_SUBCLASS_AUDIOCONTROL;
+	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS;
+	usbh_itf_data_t *itf_data = usbh_get_interface_descriptor(host, &dev_id);
 	int ret = HAL_OK;
-	usbh_cfg_desc_t *desc = (usbh_cfg_desc_t *)usbh_get_active_raw_configuration_descriptor(host);
-	usbh_if_desc_t *pbuf = (usbh_if_desc_t *) desc;
-	u32 cfglen = (u32)desc->wTotalLength;
-	u32 len = 0;
 
-	while (1) {
-		pbuf = (usbh_if_desc_t *)usbh_composite_uac_find_next_stdesc((u8 *)pbuf, &cfglen);
-		if (pbuf == NULL) {
-			break;
-		}
-
-		if (pbuf->bInterfaceClass == USB_CLASS_AUDIO) {
-			// only check audio interface
-			if (pbuf->bInterfaceProtocol != 0x00) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid device, only support UAC1.0\n");
-				ret = HAL_ERR_UNKNOWN;
-				break;
-			}
-
-			switch (pbuf->bInterfaceSubClass) {
-			case USB_SUBCLASS_AUDIOCONTROL: //audio control
-				ret = usbh_composite_uac_parse_ac((u8 *)pbuf, &len, cfglen);
-				if (ret) {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "AC parse fail\n");
-					return ret;
-				} else {
-					usbh_composite_uac_find_best_ac();
-				}
-
-				pbuf = (usbh_if_desc_t *)((u8 *) pbuf + len);
-				cfglen -= len;
-				len = 0;
-				break;
-
-			case USB_SUBCLASS_AUDIOSTREAMING: //audio streaming
-				if (pbuf->bAlternateSetting == 0) { //setting 0
-					ret = usbh_composite_uac_parse_as((u8 *)pbuf, &len, cfglen);
-					if (ret != HAL_OK) {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "AS parse fail\n");
-						return ret;
-					}
-
-					pbuf = (usbh_if_desc_t *)((u8 *) pbuf + len);
-					cfglen -= len;
-					len = 0;
-				}
-				break;
-
-			default:
-				return HAL_ERR_PARA;
-
-			}
+	if (itf_data) {
+		ret = usbh_composite_uac_parse_ac(itf_data);
+		if (ret != HAL_OK) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "AC parse fail\n");
+			return ret;
 		} else {
-			//skip no audio descriptor
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Skip desc 0x%x/%d\n", ((usb_descriptor_header_t *)desc)->bDescriptorType,
-					 ((usb_descriptor_header_t *)desc)->bLength);
-			cfglen -= ((usb_descriptor_header_t *)desc)->bLength;
-			pbuf = (usbh_if_desc_t *)((u8 *) pbuf + ((usb_descriptor_header_t *)desc)->bLength);
+			usbh_composite_uac_find_best_ac();
 		}
+	}
+
+	dev_id.bInterfaceClass = USB_CLASS_AUDIO;
+	dev_id.bInterfaceSubClass = USB_SUBCLASS_AUDIOSTREAMING;
+	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS;
+	itf_data = usbh_get_interface_descriptor(host, &dev_id);
+	while (itf_data) {
+		if (itf_data->itf_desc_array[0].bAlternateSetting == 0) {
+			ret = usbh_composite_uac_parse_as(itf_data);
+			if (ret != HAL_OK) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "AS parse fail\n");
+				return ret;
+			}
+		}
+		itf_data = itf_data->next;
 	}
 
 	return ret;
@@ -893,12 +801,12 @@ static int usbh_composite_uac_process_set_out_alt(usb_host_t *host)
 	usbh_setup_req_t setup;
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
 
-	setup.b.bmRequestType = USB_H2D | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_INTERFACE;
-	setup.b.bRequest = USB_REQ_SET_INTERFACE;
-	setup.b.wValue = uac->isoc_out_info->choose_alt_idx + 1;
-	setup.b.wIndex = uac->isoc_out_info->as_itf_num;
-	setup.b.wLength = 0U;
-	usbh_uac_dump_req_struct(&setup.b);
+	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_INTERFACE;
+	setup.req.bRequest = USB_REQ_SET_INTERFACE;
+	setup.req.wValue = uac->as_isoc_out->choose_alt_idx + 1;
+	setup.req.wIndex = uac->as_isoc_out->as_itf_num;
+	setup.req.wLength = 0U;
+	usbh_uac_dump_req_struct(&setup.req);
 
 	return usbh_ctrl_request(host, &setup, NULL);
 }
@@ -908,12 +816,12 @@ static int usbh_composite_uac_process_set_in_alt(usb_host_t *host)
 	usbh_setup_req_t setup;
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
 
-	setup.b.bmRequestType = USB_H2D | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_INTERFACE;
-	setup.b.bRequest = USB_REQ_SET_INTERFACE;
-	setup.b.wValue = uac->isoc_in_info->choose_alt_idx + 1;
-	setup.b.wIndex = uac->isoc_in_info->as_itf_num;
-	setup.b.wLength = 0U;
-	usbh_uac_dump_req_struct(&setup.b);
+	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_INTERFACE;
+	setup.req.bRequest = USB_REQ_SET_INTERFACE;
+	setup.req.wValue = uac->as_isoc_in->choose_alt_idx + 1;
+	setup.req.wIndex = uac->as_isoc_in->as_itf_num;
+	setup.req.wLength = 0U;
+	usbh_uac_dump_req_struct(&setup.req);
 
 	return usbh_ctrl_request(host, &setup, NULL);
 }
@@ -922,15 +830,15 @@ static int usbh_composite_uac_process_set_out_freq(usb_host_t *host)
 {
 	usbh_setup_req_t setup;
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_as_itf_info_t *as_itf = uac->isoc_out_info;
-	usbh_uac_format_cfg_t *fmt_info = &(as_itf->alt_set_array[as_itf->choose_alt_idx].format_info);
+	usbh_uac_as_itf_info_t *as_itf = uac->as_isoc_out;
+	usbh_uac_format_cfg_t *fmt_info = &(as_itf->itf_info_array[as_itf->choose_alt_idx].format_info);
 
-	setup.b.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_ENDPOINT;
-	setup.b.bRequest = UAC_SET_CUR;
-	setup.b.wValue = USBH_UAC_SAMPLING_FREQ_CONTROL;
-	setup.b.wIndex = as_itf->ep_info.isoc_ep_addr;
-	setup.b.wLength = 3U;
-	usbh_uac_dump_req_struct(&setup.b);
+	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_ENDPOINT;
+	setup.req.bRequest = UAC_SET_CUR;
+	setup.req.wValue = USBH_UAC_SAMPLING_FREQ_CONTROL;
+	setup.req.wIndex = as_itf->pipe.ep_addr;
+	setup.req.wLength = 3U;
+	usbh_uac_dump_req_struct(&setup.req);
 
 	usb_os_memcpy(uac->audio_ctrl_buf, fmt_info->freq[as_itf->choose_freq_idx], 3);
 
@@ -941,15 +849,15 @@ static int usbh_composite_uac_process_set_in_freq(usb_host_t *host)
 {
 	usbh_setup_req_t setup;
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_as_itf_info_t *as_itf = uac->isoc_in_info;
-	usbh_uac_format_cfg_t *fmt_info = &(as_itf->alt_set_array[as_itf->choose_alt_idx].format_info);
+	usbh_uac_as_itf_info_t *as_itf = uac->as_isoc_in;
+	usbh_uac_format_cfg_t *fmt_info = &(as_itf->itf_info_array[as_itf->choose_alt_idx].format_info);
 
-	setup.b.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_ENDPOINT;
-	setup.b.bRequest = UAC_SET_CUR;
-	setup.b.wValue = USBH_UAC_SAMPLING_FREQ_CONTROL;
-	setup.b.wIndex = as_itf->ep_info.isoc_ep_addr;
-	setup.b.wLength = 3U;
-	usbh_uac_dump_req_struct(&setup.b);
+	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_ENDPOINT;
+	setup.req.bRequest = UAC_SET_CUR;
+	setup.req.wValue = USBH_UAC_SAMPLING_FREQ_CONTROL;
+	setup.req.wIndex = as_itf->pipe.ep_addr;
+	setup.req.wLength = 3U;
+	usbh_uac_dump_req_struct(&setup.req);
 
 	usb_os_memcpy(uac->audio_ctrl_buf, fmt_info->freq[as_itf->choose_freq_idx], 3);
 
@@ -960,15 +868,15 @@ static int usbh_composite_uac_process_set_ch_volume(usb_host_t *host, u8 ch_idx)
 {
 	usbh_setup_req_t setup;
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_ac_itf_info_t *ac_info = &(uac->isoc_ac_info);
+	usbh_uac_ac_itf_info_t *ac_info = &(uac->ac_isoc_in);
 	usbh_uac_vol_ctrl_info *info = &(ac_info->controls[ac_info->best_match_idx]);
 
-	setup.b.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.b.bRequest = UAC_SET_CUR;
-	setup.b.wValue = (ch_idx) | (UAC_FU_VOLUME << 8);
-	setup.b.wIndex = (ac_info->ac_itf_idx) | (info->unit_id << 8);
-	setup.b.wLength = 2U;
-	usbh_uac_dump_req_struct(&setup.b);
+	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
+	setup.req.bRequest = UAC_SET_CUR;
+	setup.req.wValue = (ch_idx) | (UAC_FU_VOLUME << 8);
+	setup.req.wIndex = (ac_info->ac_itf_idx) | (info->unit_id << 8);
+	setup.req.wLength = 2U;
+	usbh_uac_dump_req_struct(&setup.req);
 
 	uac->audio_ctrl_buf[0] = (u8)(uac->volume_value);
 	uac->audio_ctrl_buf[1] = (u8)((uac->volume_value >> 8) & 0xFF);
@@ -979,7 +887,7 @@ static int usbh_composite_uac_process_set_ch_volume(usb_host_t *host, u8 ch_idx)
 static int usbh_composite_uac_process_set_volume(usb_host_t *host)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_ac_itf_info_t *ac_info = &(uac->isoc_ac_info);
+	usbh_uac_ac_itf_info_t *ac_info = &(uac->ac_isoc_in);
 	usbh_uac_vol_ctrl_info *info = &(ac_info->controls[ac_info->best_match_idx]);
 	int ret = HAL_BUSY;
 
@@ -1024,15 +932,15 @@ static int usbh_composite_uac_process_set_ch_mute(usb_host_t *host, u8 ch_idx)
 {
 	usbh_setup_req_t setup;
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_ac_itf_info_t *ac_info = &(uac->isoc_ac_info);
+	usbh_uac_ac_itf_info_t *ac_info = &(uac->ac_isoc_in);
 	usbh_uac_vol_ctrl_info *info = &(ac_info->controls[ac_info->best_match_idx]);
 
-	setup.b.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.b.bRequest = UAC_SET_CUR;
-	setup.b.wValue = (ch_idx) | (UAC_FU_MUTE << 8);
-	setup.b.wIndex = (ac_info->ac_itf_idx) | (info->unit_id << 8);
-	setup.b.wLength = 1U;
-	usbh_uac_dump_req_struct(&setup.b);
+	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
+	setup.req.bRequest = UAC_SET_CUR;
+	setup.req.wValue = (ch_idx) | (UAC_FU_MUTE << 8);
+	setup.req.wIndex = (ac_info->ac_itf_idx) | (info->unit_id << 8);
+	setup.req.wLength = 1U;
+	usbh_uac_dump_req_struct(&setup.req);
 
 	uac->audio_ctrl_buf[0] = uac->mute_value;
 
@@ -1042,7 +950,7 @@ static int usbh_composite_uac_process_set_ch_mute(usb_host_t *host, u8 ch_idx)
 static int usbh_composite_uac_process_set_mute(usb_host_t *host)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_ac_itf_info_t *ac_info = &(uac->isoc_ac_info);
+	usbh_uac_ac_itf_info_t *ac_info = &(uac->ac_isoc_in);
 	usbh_uac_vol_ctrl_info *info = &(ac_info->controls[ac_info->best_match_idx]);
 	int ret = HAL_BUSY;
 
@@ -1087,15 +995,15 @@ static int usbh_composite_uac_process_get_cur_mute(usb_host_t *host, u8 ch)
 {
 	usbh_setup_req_t setup;
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_ac_itf_info_t *ac_info = &(uac->isoc_ac_info);
+	usbh_uac_ac_itf_info_t *ac_info = &(uac->ac_isoc_in);
 	usbh_uac_vol_ctrl_info *info = &(ac_info->controls[ac_info->best_match_idx]);
 
-	setup.b.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.b.bRequest = UAC_GET_CUR;
-	setup.b.wValue = (ch) | (UAC_FU_MUTE << 8);
-	setup.b.wIndex = (ac_info->ac_itf_idx) | (info->unit_id << 8);
-	setup.b.wLength = 1U;
-	usbh_uac_dump_req_struct(&setup.b);
+	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
+	setup.req.bRequest = UAC_GET_CUR;
+	setup.req.wValue = (ch) | (UAC_FU_MUTE << 8);
+	setup.req.wIndex = (ac_info->ac_itf_idx) | (info->unit_id << 8);
+	setup.req.wLength = 1U;
+	usbh_uac_dump_req_struct(&setup.req);
 
 	return usbh_ctrl_request(host, &setup, uac->audio_ctrl_buf);
 }
@@ -1104,15 +1012,15 @@ static int usbh_composite_uac_process_get_cur_volume(usb_host_t *host, u8 ch)
 {
 	usbh_setup_req_t setup;
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_ac_itf_info_t *ac_info = &(uac->isoc_ac_info);
+	usbh_uac_ac_itf_info_t *ac_info = &(uac->ac_isoc_in);
 	usbh_uac_vol_ctrl_info *info = &(ac_info->controls[ac_info->best_match_idx]);
 
-	setup.b.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.b.bRequest = UAC_GET_CUR;
-	setup.b.wValue = (ch) | (UAC_FU_VOLUME << 8);
-	setup.b.wIndex = (ac_info->ac_itf_idx) | (info->unit_id << 8);
-	setup.b.wLength = 2U;
-	usbh_uac_dump_req_struct(&setup.b);
+	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
+	setup.req.bRequest = UAC_GET_CUR;
+	setup.req.wValue = (ch) | (UAC_FU_VOLUME << 8);
+	setup.req.wIndex = (ac_info->ac_itf_idx) | (info->unit_id << 8);
+	setup.req.wLength = 2U;
+	usbh_uac_dump_req_struct(&setup.req);
 
 	return usbh_ctrl_request(host, &setup, uac->audio_ctrl_buf);
 }
@@ -1121,15 +1029,15 @@ static int usbh_composite_uac_process_get_volume_range(usb_host_t *host, u8 min,
 {
 	usbh_setup_req_t setup;
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_ac_itf_info_t *ac_info = &(uac->isoc_ac_info);
+	usbh_uac_ac_itf_info_t *ac_info = &(uac->ac_isoc_in);
 	usbh_uac_vol_ctrl_info *info = &(ac_info->controls[ac_info->best_match_idx]);
 
-	setup.b.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.b.bRequest = (min) ? (UAC_GET_MIN) : (UAC_GET_MAX);
-	setup.b.wValue = (ch) | (UAC_FU_VOLUME << 8);
-	setup.b.wIndex = (ac_info->ac_itf_idx) | (info->unit_id << 8);
-	setup.b.wLength = 2U;
-	usbh_uac_dump_req_struct(&setup.b);
+	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
+	setup.req.bRequest = (min) ? (UAC_GET_MIN) : (UAC_GET_MAX);
+	setup.req.wValue = (ch) | (UAC_FU_VOLUME << 8);
+	setup.req.wIndex = (ac_info->ac_itf_idx) | (info->unit_id << 8);
+	setup.req.wLength = 2U;
+	usbh_uac_dump_req_struct(&setup.req);
 
 	return usbh_ctrl_request(host, &setup, uac->audio_ctrl_buf);
 }
@@ -1191,12 +1099,11 @@ static int usbh_composite_uac_get_unit_ctrl(usb_host_t *host, u16 bma_control, u
 			if (ret == HAL_OK) {
 				uac->ctrl_state = UAC_STATE_CTRL_IDLE;
 				volume_handle->vol_max = USBH_LE16(uac->audio_ctrl_buf);
-
 #if USBH_COMPOSITE_HID_UAC_DEBUG
 				RTK_LOGS(TAG, RTK_LOG_INFO, "mute %d\n", volume_handle->mute);
-				RTK_LOGS(TAG, RTK_LOG_INFO, "volume 0x%04x\n", volume_handle->volume);
-				RTK_LOGS(TAG, RTK_LOG_INFO, "volume min 0x%04x\n", volume_handle->vol_min);
-				RTK_LOGS(TAG, RTK_LOG_INFO, "volume max 0x%04x\n", volume_handle->vol_max);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "volume 0x%04x\n", (u16)volume_handle->volume);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "volume min 0x%04x\n", (u16)volume_handle->vol_min);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "volume max 0x%04x\n", (u16)volume_handle->vol_max);
 #endif
 			} else if (ret != HAL_BUSY) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "HID get report err %d, no support\n", ret);
@@ -1220,37 +1127,34 @@ static int usbh_composite_uac_get_unit_ctrl(usb_host_t *host, u16 bma_control, u
 static void usbh_composite_uac_isoc_in_process(usb_host_t *host)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_ep_cfg_t *ep = &(uac->isoc_in_info->ep_info);
+	usbh_pipe_t *pipe = &(uac->as_isoc_in->pipe);
 	usbh_urb_state_t urb_state = USBH_URB_IDLE;
 	u32 len;
 
 	//rx to do
-	switch (ep->isoc_state) {
-	case USBH_UAC_XFER:
-		if ((host->tick - ep->isoc_tick) >= ep->isoc_interval) {
-			ep->isoc_tick = host->tick;
-			usbh_isoc_receive_data(host,
-								   ep->isoc_buf,
-								   ep->isoc_packet_size,
-								   ep->isoc_pipe);
+	switch (pipe->xfer_state) {
+	case USBH_EP_XFER_START:
+		if (usbh_get_elapsed_frame_cnt(host, pipe->frame_num) >= pipe->ep_interval) {
+			pipe->frame_num = usbh_get_current_frame_number(host);
+			usbh_transfer_data(host, pipe);
 
-			ep->isoc_state = USBH_UAC_XFER_BUSY;
+			pipe->xfer_state = USBH_EP_XFER_BUSY;
 		}
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify_composite_class_state_change(host, 0, USBH_COMPOSITE_UAC_EVENT);
 		break;
 
-	case USBH_UAC_XFER_BUSY:
-		urb_state = usbh_get_urb_state(host, ep->isoc_pipe);
+	case USBH_EP_XFER_BUSY:
+		urb_state = usbh_get_urb_state(host, pipe);
 		if (urb_state == USBH_URB_DONE) {
-			len = usbh_get_last_transfer_size(host, ep->isoc_pipe);
+			len = usbh_get_last_transfer_size(host, pipe);
 			if ((uac->cb != NULL) && (uac->cb->isoc_received != NULL)) {
-				uac->cb->isoc_received(ep->isoc_buf, len);
+				uac->cb->isoc_received(pipe->xfer_buf, len);
 			}
-			ep->isoc_state = USBH_UAC_EP_IDLE;
+			pipe->xfer_state = USBH_EP_XFER_IDLE;
 		} else if (urb_state == USBH_URB_ERROR) {
-			ep->isoc_state = USBH_UAC_XFER;
+			pipe->xfer_state = USBH_EP_XFER_START;
 		}
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify_composite_class_state_change(host, 0, USBH_COMPOSITE_UAC_EVENT);
 		break;
 
 	default:
@@ -1266,7 +1170,7 @@ static void usbh_composite_uac_isoc_in_process(usb_host_t *host)
 static void usbh_composite_uac_isoc_out_process_xfer(usb_host_t *host, u32 cur_frame)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_ep_cfg_t *ep = &(uac->isoc_out_info->ep_info);
+	usbh_pipe_t *pipe = &(uac->as_isoc_out->pipe);
 	usbh_uac_buf_ctrl_t *pdata_ctrl = &(uac->isoc_out);
 	usb_ringbuf_t *pbuf = NULL;
 
@@ -1274,17 +1178,14 @@ static void usbh_composite_uac_isoc_out_process_xfer(usb_host_t *host, u32 cur_f
 		// check valid data
 		pbuf = usb_ringbuf_get_head(&(pdata_ctrl->buf_list));
 		if (pbuf && pbuf->buf_len > 0) {
-			ep->xfer_frame = usbh_composite_uac_frame_num_inc(cur_frame, 1);
+			pipe->frame_num = usbh_composite_uac_frame_num_inc(cur_frame, 1);
 #if USBH_COMPOSITE_HID_UAC_DEBUG
 			uac->isoc_tx_start_cnt ++;
 #endif
-			ep->isoc_buf = pbuf->buf;
-			ep->isoc_len = pbuf->buf_len;
-			usbh_isoc_send_data(host,
-								ep->isoc_buf,
-								(u16)ep->isoc_len,
-								ep->isoc_pipe);
-			ep->isoc_state = USBH_UAC_XFER_BUSY;
+			pipe->xfer_buf = pbuf->buf;
+			pipe->xfer_len = pbuf->buf_len;
+			usbh_transfer_data(host, pipe);
+			pipe->xfer_state = USBH_EP_XFER_BUSY;
 		} else { //data invalid
 #if USBH_COMPOSITE_HID_UAC_DEBUG
 			uac->isoc_xfer_buf_err_cnt ++;
@@ -1301,7 +1202,7 @@ static void usbh_composite_uac_isoc_out_process_complete(usb_host_t *host)
 {
 	UNUSED(host);
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_ep_cfg_t *ep = &(uac->isoc_out_info->ep_info);
+	usbh_pipe_t *pipe = &(uac->as_isoc_out->pipe);
 	usbh_uac_buf_ctrl_t *pdata_ctrl = &(uac->isoc_out);
 
 #if USBH_COMPOSITE_HID_UAC_DEBUG
@@ -1312,7 +1213,7 @@ static void usbh_composite_uac_isoc_out_process_complete(usb_host_t *host)
 
 	rtos_sema_give(pdata_ctrl->isoc_sema);
 
-	ep->isoc_state = USBH_UAC_EP_IDLE;
+	pipe->xfer_state = USBH_EP_XFER_IDLE;
 }
 
 /**
@@ -1325,18 +1226,11 @@ static int usbh_composite_uac_cb_attach(usb_host_t *host)
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
 	usbh_uac_as_itf_info_t *as_itf = NULL;
 	usbh_ep_desc_t *ep_desc = NULL;
-	usbh_uac_ep_cfg_t *ep = NULL;
+	usbh_pipe_t *pipe = NULL;
 
 	int status = HAL_ERR_UNKNOWN;
-	u32 max_ep_size;
 
-	if (host->config.speed == USB_SPEED_HIGH) {
-		max_ep_size = 1024;
-	} else {
-		max_ep_size = 1023;
-	}
-
-	status = usbh_composite_uac_parse_cfgdesc(host);
+	status = usbh_composite_uac_parse_interface_desc(host);
 	if (status) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Cfg parse fail\n");
 		return status;
@@ -1345,54 +1239,24 @@ static int usbh_composite_uac_cb_attach(usb_host_t *host)
 
 	usbh_composite_uac_get_audio_format_info();
 
-	if (uac->isoc_in_info) {
-		as_itf = uac->isoc_in_info;
+	if (uac->as_isoc_in) {
+		as_itf = uac->as_isoc_in;
 		as_itf->choose_alt_idx = 0;
 
-		ep = &(as_itf->ep_info);
-		ep_desc = &(as_itf->alt_set_array[as_itf->choose_alt_idx].ep_desc);
+		pipe = &(as_itf->pipe);
+		ep_desc = &(as_itf->itf_info_array[as_itf->choose_alt_idx].ep_desc);
 
-		ep->isoc_ep_addr = ep_desc->bEndpointAddress;
-		ep->isoc_packet_size = ep_desc->wMaxPacketSize;
-		ep->isoc_interval = usbh_get_interval(host, USB_CH_EP_TYPE_ISOC, ep_desc->bInterval);
-		ep->isoc_state = USBH_UAC_EP_IDLE;
-
-		if (ep->isoc_packet_size >= max_ep_size) {
-			ep->isoc_packet_size = max_ep_size;
-		}
-
-		ep->isoc_pipe = usbh_alloc_pipe(host, ep->isoc_ep_addr);
-
-		usbh_open_pipe(host,
-					   ep->isoc_pipe,
-					   ep->isoc_ep_addr,
-					   USB_CH_EP_TYPE_ISOC,
-					   ep->isoc_packet_size);
+		usbh_open_pipe(host, pipe, ep_desc);
 	}
 
-	if (uac->isoc_out_info) {
-		as_itf = uac->isoc_out_info;
+	if (uac->as_isoc_out) {
+		as_itf = uac->as_isoc_out;
 		as_itf->choose_alt_idx = 0;
 
-		ep = &(as_itf->ep_info);
-		ep_desc = &(as_itf->alt_set_array[as_itf->choose_alt_idx].ep_desc);
+		pipe = &(as_itf->pipe);
+		ep_desc = &(as_itf->itf_info_array[as_itf->choose_alt_idx].ep_desc);
 
-		ep->isoc_ep_addr = ep_desc->bEndpointAddress;
-		ep->isoc_packet_size = ep_desc->wMaxPacketSize;
-		ep->isoc_interval = usbh_get_interval(host, USB_CH_EP_TYPE_ISOC, ep_desc->bInterval);
-		ep->isoc_state = USBH_UAC_EP_IDLE;
-
-		if (ep->isoc_packet_size >= max_ep_size) {
-			ep->isoc_packet_size = max_ep_size;
-		}
-
-		ep->isoc_pipe = usbh_alloc_pipe(host, ep->isoc_ep_addr);
-
-		usbh_open_pipe(host,
-					   ep->isoc_pipe,
-					   ep->isoc_ep_addr,
-					   USB_CH_EP_TYPE_ISOC,
-					   ep->isoc_packet_size);
+		usbh_open_pipe(host, pipe, ep_desc);
 	}
 
 	if ((uac->cb != NULL) && (uac->cb->attach != NULL)) {
@@ -1448,26 +1312,26 @@ static int usbh_composite_uac_cb_setup(usb_host_t *host)
 static int usbh_composite_uac_cb_sof(usb_host_t *host)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_ep_cfg_t *ep = &(uac->isoc_out_info->ep_info);
+	usbh_pipe_t *pipe = &(uac->as_isoc_out->pipe);
 	usbh_uac_buf_ctrl_t *pdata_ctrl = &(uac->isoc_out);
-	u32 cur_frame = usbh_get_current_frame(host);
+	u32 cur_frame = usbh_get_current_frame_number(host);
 
 	/* this class right not just support isoc out */
-	if (pdata_ctrl->transfer_continue == 1) {
+	if (pdata_ctrl->next_xfer == 1) {
 #if USBH_COMPOSITE_HID_UAC_DEBUG
 		uac->sof_cnt ++;
 #endif
 		/*
-			if cur_frame - last xfer_frame  >= interval, means we should trigger a xfer asap
-			if isoc_state = idle, it means that last xfer has been done, so in sof intr, we should check whether the next frame will be the xfer frame
+			if cur_frame - last frame_num  >= interval, means we should trigger a xfer asap
+			if xfer_state = idle, it means that last xfer has been done, so in sof intr, we should check whether the next frame will be the xfer frame
 		*/
-		if ((usbh_composite_uac_frame_num_dec(cur_frame, ep->xfer_frame) >= ep->isoc_interval) ||
-			((ep->isoc_state == USBH_UAC_EP_IDLE) &&
-			 (usbh_composite_uac_frame_num_dec(usbh_composite_uac_frame_num_inc(cur_frame, 1), ep->xfer_frame) >= ep->isoc_interval))) {
+		if ((usbh_get_elapsed_frame_cnt(host, pipe->frame_num) >= pipe->ep_interval) ||
+			((pipe->xfer_state == USBH_EP_XFER_WAIT_SOF) &&
+			 (usbh_composite_uac_frame_num_dec(usbh_composite_uac_frame_num_inc(cur_frame, 1), pipe->frame_num) >= pipe->ep_interval))) {
 			usbh_composite_uac_isoc_out_process_xfer(host, cur_frame);
 		} else { // interval
 #if USBH_COMPOSITE_HID_UAC_DEBUG
-			if (ep->isoc_state == USBH_UAC_EP_IDLE) {
+			if (pipe->xfer_state == USBH_EP_XFER_IDLE) {
 				uac->isoc_xfer_interval_cnt ++;
 			}
 #endif
@@ -1475,7 +1339,7 @@ static int usbh_composite_uac_cb_sof(usb_host_t *host)
 	}
 
 	if (uac->ctrl_state != UAC_STATE_CTRL_IDLE) {
-		usbh_notify_class_state_change(host, 0x00);
+		usbh_notify_composite_class_state_change(host, 0x00, USBH_COMPOSITE_UAC_EVENT);
 	}
 
 	return HAL_OK;
@@ -1487,20 +1351,26 @@ static int usbh_composite_uac_cb_sof(usb_host_t *host)
   * @param  pipe: pipe index
   * @retval Status
   */
-static int usbh_composite_uac_cb_complete(usb_host_t *host, u8 pipe)
+static int usbh_composite_uac_cb_completed(usb_host_t *host, u8 pipe_num)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_ep_cfg_t *ep = &(uac->isoc_out_info->ep_info);
+	usbh_pipe_t *pipe = &(uac->as_isoc_out->pipe);
 	usbh_uac_buf_ctrl_t *pdata_ctrl = &(uac->isoc_out);
-	u32 cur_frame = usbh_get_current_frame(host);
+	u32 cur_frame = usbh_get_current_frame_number(host);
 
-	if (pdata_ctrl->transfer_continue == 1) {
-		if ((uac->isoc_out_info) && (pipe == uac->isoc_out_info->ep_info.isoc_pipe)) {
+	if (pdata_ctrl->next_xfer == 1) {
+		if ((uac->as_isoc_out) && (pipe_num == uac->as_isoc_out->pipe.pipe_num)) {
 			usbh_composite_uac_isoc_out_process_complete(host);
 
-			//trigger next xfer after isoc_interval
-			if (usbh_composite_uac_frame_num_dec(usbh_composite_uac_frame_num_inc(cur_frame, 1), ep->xfer_frame) >= ep->isoc_interval) {
-				usbh_composite_uac_isoc_out_process_xfer(host, cur_frame);
+			if (!usb_ringbuf_is_empty(&(pdata_ctrl->buf_list))) {
+				//trigger next xfer after binterval = 1
+				if (usbh_composite_uac_frame_num_dec(usbh_composite_uac_frame_num_inc(cur_frame, 1), pipe->frame_num) >= pipe->ep_interval) {
+					usbh_composite_uac_isoc_out_process_xfer(host, cur_frame);//USBH_EP_XFER_START
+				} else {
+					pipe->xfer_state = USBH_EP_XFER_WAIT_SOF;
+				}
+			} else {
+				pipe->xfer_state = USBH_EP_XFER_IDLE;
 			}
 		}
 	}
@@ -1608,20 +1478,19 @@ static int usbh_composite_uac_cb_process(usb_host_t *host, u32 msg)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_out);
+	usbh_event_t event;
 	int ret = HAL_OK;
+	event.d32 = msg;
 
 	switch (uac->xfer_state) {
 	case UAC_STATE_TRANSFER:
-		if ((buf_ctrl->transfer_continue) && (uac->isoc_in_info) && (msg == uac->isoc_in_info->ep_info.isoc_pipe)) {
+		if (event.msg.pipe_num == 0x00) { //ctrl msg
+			ret = usbh_composite_uac_ctrl_setting(host, 0);
+		} else if ((buf_ctrl->next_xfer) && (uac->as_isoc_in) && (event.msg.pipe_num == uac->as_isoc_in->pipe.pipe_num)) {
 			uac->next_xfer = 0;
 			usbh_composite_uac_isoc_in_process(host);
 			if (uac->next_xfer) {
-				usbh_notify_class_state_change(host, uac->isoc_in_info->ep_info.isoc_pipe);
-			}
-		} else if (msg == 0x00) { //ctrl msg
-			ret = usbh_composite_uac_ctrl_setting(host, 0);
-			if (ret != HAL_OK) {
-				ret = usbh_notify_class_state_change(host, 0);
+				usbh_notify_composite_class_state_change(host, uac->as_isoc_in->pipe.pipe_num, USBH_COMPOSITE_UAC_EVENT);
 			}
 		}
 		break;
@@ -1647,16 +1516,16 @@ static int usbh_composite_uac_cb_process(usb_host_t *host, u32 msg)
 static u32 usbh_composite_uac_next_packet_size(usbh_uac_buf_ctrl_t *pdata_ctrl)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_ep_cfg_t *ep = &(uac->isoc_out_info->ep_info);
+	usbh_uac_as_itf_info_t *as_itf = uac->as_isoc_out;
 	u32 sample_accum = 0;
 	u32 ret;
 
 	sample_accum = pdata_ctrl->sample_accum + pdata_ctrl->sample_rem;
 	if (sample_accum >= pdata_ctrl->pkt_per_second) {
 		sample_accum -= pdata_ctrl->pkt_per_second;
-		ret = ep->isoc_packet_size;
+		ret = as_itf->packet_size_large;
 	} else {
-		ret = ep->isoc_packet_size_small;
+		ret = as_itf->packet_size_small;
 	}
 
 	pdata_ctrl->last_sample_accum = sample_accum;
@@ -1677,7 +1546,6 @@ static int usbh_composite_uac_write_ring_buf(usbh_uac_buf_ctrl_t *pdata_ctrl, u8
 	usb_ringbuf_manager_t *handle = &(pdata_ctrl->buf_list);
 	u32 written_size = handle->written;
 	u32 offset = 0;
-	u32 mps;
 	u32 xfer_len;
 	u32 can_copy_len;
 	u32 copy_len;
@@ -1705,14 +1573,14 @@ static int usbh_composite_uac_write_ring_buf(usbh_uac_buf_ctrl_t *pdata_ctrl, u8
 			return 1;
 		}
 
-		mps = usbh_composite_uac_next_packet_size(pdata_ctrl);
+		xfer_len = usbh_composite_uac_next_packet_size(pdata_ctrl);
 
-		if (size >= mps) {
-			usb_ringbuf_add_tail(handle, buffer + offset, mps);
+		if (size >= xfer_len) {
+			usb_ringbuf_add_tail(handle, buffer + offset, xfer_len);
 
-			*written_len += mps;
-			size -= mps;
-			offset += mps;
+			*written_len += xfer_len;
+			size -= xfer_len;
+			offset += xfer_len;
 
 			pdata_ctrl->sample_accum = pdata_ctrl->last_sample_accum;
 		} else {
@@ -1738,12 +1606,12 @@ static int usbh_composite_uac_write_ring_buf(usbh_uac_buf_ctrl_t *pdata_ctrl, u8
   * @param  buf_ctrl: Pointer to the UAC buffer control structure
   * @retval void
   */
-static void usbh_composite_uac_ep_buf_ctrl_deinit(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_uac_ep_cfg_t *ep)
+static void usbh_composite_uac_ep_buf_ctrl_deinit(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_pipe_t *pipe)
 {
-	UNUSED(ep);
+	UNUSED(pipe);
 
 	buf_ctrl->mps = 0;
-	buf_ctrl->transfer_continue = 0;
+	buf_ctrl->next_xfer = 0;
 
 	if (buf_ctrl->sema_valid) {
 		buf_ctrl->sema_valid = 0;
@@ -1763,16 +1631,16 @@ static void usbh_composite_uac_ep_buf_ctrl_deinit(usbh_uac_buf_ctrl_t *buf_ctrl,
 /**
   * @brief  Initialize UAC endpoint buffer control structure
   * @param  buf_ctrl: Pointer to the UAC buffer control structure
-  * @param  ep: Pointer to ep parameters structure
+  * @param  pipe: Pointer to pipe parameters structure
   * @retval Status
   */
-static int usbh_composite_uac_ep_buf_ctrl_init(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_uac_ep_cfg_t *ep)
+static int usbh_composite_uac_ep_buf_ctrl_init(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_pipe_t *pipe)
 {
 	int ret = HAL_ERR_MEM;
 	u16 buf_list_cnt;
 
 	buf_list_cnt = buf_ctrl->frame_cnt;
-	buf_ctrl->mps = ep->isoc_packet_size;
+	buf_ctrl->mps = pipe->ep_mps;
 
 	if (buf_list_cnt == 0 || buf_ctrl->mps == 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Err param: cnt=%d, mps=%d\n", buf_list_cnt, buf_ctrl->mps);
@@ -1872,7 +1740,7 @@ int usbh_composite_uac_deinit(void)
 {
 	int ret = HAL_OK;
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_ep_cfg_t *ep = &(uac->isoc_out_info->ep_info);
+	usbh_pipe_t *pipe = &(uac->as_isoc_out->pipe);
 
 	usbh_composite_uac_stop_play();
 
@@ -1890,27 +1758,27 @@ int usbh_composite_uac_deinit(void)
 	}
 
 	usbh_composite_uac_deinit_all_pipe();
-	usbh_composite_uac_ep_buf_ctrl_deinit(&(uac->isoc_out), ep);
+	usbh_composite_uac_ep_buf_ctrl_deinit(&(uac->isoc_out), pipe);
 
 	if (uac->audio_ctrl_buf != NULL) {
 		usb_os_mfree(uac->audio_ctrl_buf);
 		uac->audio_ctrl_buf = NULL;
 	}
 
-	if (uac->isoc_out_info != NULL) {
-		if (uac->isoc_out_info->fmt_array) {
-			usb_os_mfree(uac->isoc_out_info->fmt_array);
+	if (uac->as_isoc_out != NULL) {
+		if (uac->as_isoc_out->fmt_array) {
+			usb_os_mfree(uac->as_isoc_out->fmt_array);
 		}
-		usb_os_mfree(uac->isoc_out_info);
-		uac->isoc_out_info = NULL;
+		usb_os_mfree(uac->as_isoc_out);
+		uac->as_isoc_out = NULL;
 	}
 
-	if (uac->isoc_in_info != NULL) {
-		if (uac->isoc_in_info->fmt_array) {
-			usb_os_mfree(uac->isoc_in_info->fmt_array);
+	if (uac->as_isoc_in != NULL) {
+		if (uac->as_isoc_in->fmt_array) {
+			usb_os_mfree(uac->as_isoc_in->fmt_array);
 		}
-		usb_os_mfree(uac->isoc_in_info);
-		uac->isoc_in_info = NULL;
+		usb_os_mfree(uac->as_isoc_in);
+		uac->as_isoc_in = NULL;
 	}
 
 	return ret;
@@ -1930,9 +1798,9 @@ int usbh_composite_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sa
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
 	usbh_uac_buf_ctrl_t *pdata_ctrl = &(uac->isoc_out);
 	usbh_uac_as_itf_info_t *as_itf = NULL;
-	usbh_uac_ep_cfg_t *ep = NULL;
+	usbh_pipe_t *pipe = NULL;
 	usbh_ep_desc_t *ep_desc = NULL;
-	usb_host_t *host;
+	usb_host_t *host = uac->driver->host;
 	int ret = HAL_ERR_PARA;
 	int set_flag = 0;
 	int i, j;
@@ -1949,7 +1817,7 @@ int usbh_composite_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sa
 
 	//actuaclly search from alt 1
 	for (i = 0; i < alt_num; i++) {
-		fmt = &(as_itf->alt_set_array[i].format_info);
+		fmt = &(as_itf->itf_info_array[i].format_info);
 
 		// Check format type, channels, and sample frequency
 		if (!fmt || fmt->bit_width != bit_width || fmt->channels != channels) {
@@ -1959,7 +1827,7 @@ int usbh_composite_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sa
 		// Check sample frequency
 		for (j = 0; j < fmt->freq_cnt; j++) {
 			if (USBH_UAC_FREQ(fmt->freq[j]) == sampling_freq) {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Found itf %d %d/%d %d %d\n", itf_num, i + 1, channels, bit_width, sampling_freq);
+				RTK_LOGS(TAG, RTK_LOG_DEBUG, "Found itf %d %d/%d %d %d\n", itf_num, i + 1, channels, bit_width, sampling_freq);
 				set_flag = 1;// Return as soon as we find a match
 				break;
 			}
@@ -1975,32 +1843,27 @@ int usbh_composite_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sa
 		as_itf->choose_freq_idx = j;
 		pdata_ctrl->sample_freq = sampling_freq;
 
-		//update ep_info
-		ep = &(as_itf->ep_info);
-		ep_desc = &(as_itf->alt_set_array[as_itf->choose_alt_idx].ep_desc);
-
-		ep->isoc_ep_addr = ep_desc->bEndpointAddress;
-		ep->isoc_interval = usbh_get_interval(host, USB_CH_EP_TYPE_ISOC, ep_desc->bInterval);
+		//update pipe
+		pipe = &(as_itf->pipe);
+		ep_desc = &(as_itf->itf_info_array[as_itf->choose_alt_idx].ep_desc);
 
 		/* full speed*/
 		pdata_ctrl->pkt_per_second = USBH_UAC_ONE_KHZ >> (ep_desc->bInterval - 1);
-
 		pdata_ctrl->sample_rem = sampling_freq % pdata_ctrl->pkt_per_second;
 		//calculate accurate one frame size(byte)
-		ep->isoc_packet_size_small = channels * bit_width / USBH_UAC_BIT_TO_BYTE * (sampling_freq / pdata_ctrl->pkt_per_second);
-		ep->isoc_packet_size = channels * bit_width / USBH_UAC_BIT_TO_BYTE * ((sampling_freq + (pdata_ctrl->pkt_per_second - 1)) / pdata_ctrl->pkt_per_second);
+		as_itf->packet_size_small = channels * bit_width / USBH_UAC_BIT_TO_BYTE * (sampling_freq / pdata_ctrl->pkt_per_second);
+		as_itf->packet_size_large = channels * bit_width / USBH_UAC_BIT_TO_BYTE * ((sampling_freq + (pdata_ctrl->pkt_per_second - 1)) / pdata_ctrl->pkt_per_second);
 
 		usbh_composite_uac_stop_play();
-		host = uac->driver->host;
+
 		//reinit pipe
 		usbh_composite_uac_deinit_pipe(dir);
-		ep->isoc_pipe = usbh_alloc_pipe(host, ep->isoc_ep_addr);
-		usbh_open_pipe(host, ep->isoc_pipe, ep->isoc_ep_addr, USB_CH_EP_TYPE_ISOC, ep->isoc_packet_size);
+		usbh_open_pipe(host, pipe, ep_desc);
 
 		// reinit ring buf
 		if (dir == USBH_UAC_ISOC_OUT_DIR) {
-			usbh_composite_uac_ep_buf_ctrl_deinit(&(uac->isoc_out), ep);
-			ret = usbh_composite_uac_ep_buf_ctrl_init(&(uac->isoc_out), ep);
+			usbh_composite_uac_ep_buf_ctrl_deinit(&(uac->isoc_out), pipe);
+			ret = usbh_composite_uac_ep_buf_ctrl_init(&(uac->isoc_out), pipe);
 		}
 
 		if (ret != HAL_OK) {
@@ -2015,7 +1878,7 @@ int usbh_composite_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sa
 			uac->ctrl_state = UAC_STATE_SET_IN_ALT;
 		}
 
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify_composite_class_state_change(host, 0, USBH_COMPOSITE_UAC_EVENT);
 		ret = HAL_OK;
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alt not found %d %d %d\n", channels, bit_width, sampling_freq);
@@ -2055,16 +1918,12 @@ const usbh_audio_fmt_t *usbh_composite_uac_get_alt_setting(u8 dir, u8 *fmt_cnt)
 u32 usbh_composite_uac_get_frame_size(u8 dir)
 {
 	usbh_uac_as_itf_info_t *as_itf = NULL;
-	usbh_uac_ep_cfg_t *ep = NULL;
-
 	as_itf = usbh_composite_uac_get_as_itf_instance(dir);
 	if (as_itf == NULL) {
 		return 0;
 	}
 
-	ep = &(as_itf->ep_info);
-
-	return ep->isoc_packet_size;
+	return as_itf->packet_size_large;
 }
 
 /**
@@ -2086,7 +1945,7 @@ u32 usbh_composite_uac_write(u8 *buffer, u32 size, u32 timeout_ms)
 		return 0;
 	}
 
-	if (pdata_ctrl->transfer_continue == 0) {
+	if (pdata_ctrl->next_xfer == 0) {
 		return 0;
 	}
 
@@ -2094,7 +1953,7 @@ u32 usbh_composite_uac_write(u8 *buffer, u32 size, u32 timeout_ms)
 		return 0;
 	}
 
-	while (written_len < size && pdata_ctrl->transfer_continue) {
+	while (written_len < size && pdata_ctrl->next_xfer) {
 		need_wait = 0;
 
 		if (timeout_ms) {
@@ -2118,7 +1977,7 @@ u32 usbh_composite_uac_write(u8 *buffer, u32 size, u32 timeout_ms)
 		just_written = 0;
 
 		usbh_composite_uac_write_ring_buf(pdata_ctrl, buffer + written_len, try_len, &just_written);
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Want %u, wrote %u\n", try_len, just_written);
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Want %msg, wrote %msg\n", try_len, just_written);
 
 		if (just_written > 0) {
 			written_len += just_written;
@@ -2145,19 +2004,19 @@ void usbh_composite_uac_start_play(void)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_out);
-	usbh_uac_ep_cfg_t *ep = &(uac->isoc_out_info->ep_info);
+	usbh_pipe_t *pipe = &(uac->as_isoc_out->pipe);
 
 #if USBH_COMPOSITE_HID_UAC_DEBUG
 	usbh_composite_uac_reset_test_cnt();
-#endif
 	usbh_composite_uac_reset_isr_time();
+#endif
 
-	buf_ctrl->transfer_continue = 1;
+	buf_ctrl->next_xfer = 1;
 	uac->xfer_state = UAC_STATE_TRANSFER;
-	ep->isoc_state = USBH_UAC_XFER;
-	usbh_notify_class_state_change(uac->driver->host, ep->isoc_pipe);
+	pipe->xfer_state = USBH_EP_XFER_START;
+	usbh_notify_composite_class_state_change(uac->driver->host, pipe->pipe_num, USBH_COMPOSITE_UAC_EVENT);
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC START %d\n", uac->ctrl_state);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC start %d\n", uac->ctrl_state);
 }
 
 /**
@@ -2170,7 +2029,7 @@ void usbh_composite_uac_stop_play(void)
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_out);
 
-	buf_ctrl->transfer_continue = 0;
+	buf_ctrl->next_xfer = 0;
 
 #if USBH_COMPOSITE_HID_UAC_DEBUG
 	usbh_composite_uac_reset_test_cnt();
@@ -2190,7 +2049,6 @@ int usbh_composite_uac_set_volume(u8 volume)
 	}
 
 	volume_db = (u16)usbh_composite_uac_volume_to_db(&(uac->volume_info[0]), volume);
-	// RTK_LOGS(TAG, RTK_LOG_INFO, "volume %d-%04x\n", volume, volume_db);
 
 	if ((uac->xfer_state == UAC_STATE_IDLE) || (uac->xfer_state == UAC_STATE_TRANSFER)) {
 		if (uac->ctrl_state == UAC_STATE_CTRL_IDLE) {
@@ -2198,7 +2056,7 @@ int usbh_composite_uac_set_volume(u8 volume)
 			uac->ch_idx = 0;
 			uac->ctrl_state = UAC_STATE_SET_VOLUME;
 			uac->xfer_state = UAC_STATE_TRANSFER;
-			usbh_notify_class_state_change(uac->driver->host, 0x00);
+			usbh_notify_composite_class_state_change(uac->driver->host, 0x00, USBH_COMPOSITE_UAC_EVENT);
 			ret = HAL_OK;
 		}
 	}
@@ -2220,8 +2078,7 @@ int usbh_composite_uac_set_mute(u8 mute)
 			uac->mute_value = mute;
 			uac->ctrl_state = UAC_STATE_SET_MUTE;
 			uac->xfer_state = UAC_STATE_TRANSFER;
-			usbh_notify_class_state_change(uac->driver->host, 0x00);
-
+			usbh_notify_composite_class_state_change(uac->driver->host, 0x00, USBH_COMPOSITE_UAC_EVENT);
 			ret = HAL_OK;
 		}
 	}
@@ -2237,7 +2094,7 @@ int usbh_composite_uac_set_mute(u8 mute)
 int usbh_composite_uac_get_volume_infor(usb_host_t *host)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usbh_uac_ac_itf_info_t *ac_info = &(uac->isoc_ac_info);
+	usbh_uac_ac_itf_info_t *ac_info = &(uac->ac_isoc_in);
 	usbh_uac_vol_ctrl_info *info = &(ac_info->controls[ac_info->best_match_idx]);
 	int ret = HAL_OK;
 

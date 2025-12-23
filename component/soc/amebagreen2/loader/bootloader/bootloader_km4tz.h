@@ -18,4 +18,5 @@ void BOOT_VerCheck(void);
 void Boot_SDIO_Pinmux_init(void);
 void Boot_Fullmac_LoadIMGAll(void);
 void BOOT_FullSpeedCheck(u32 cpu_clk);
+void BOOT_ReasonSet(void);
 #endif

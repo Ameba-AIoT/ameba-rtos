@@ -186,10 +186,10 @@ class Ameba(object):
                         time.sleep(0.1)
                     if ret != ErrType.OK:
                         self.logger.warning(f"Close serial port failed")
-                    time.sleep(delay_s)
 
                 if self.serial_port.baudrate != baud:
                     self.serial_port.baudrate = baud
+                    time.sleep(delay_s)
 
                 if self.is_usb:
                     for rty in range(10):
@@ -347,17 +347,19 @@ class Ameba(object):
                     self.serial_port.flushOutput()
 
                     self.write_bytes(CmdEsc)
-                    time.sleep(0.1)
+                    time.sleep(0.02)
 
                     if self.profile_info.is_amebad():
                         self.serial_port.flushOutput()
                         self.write_bytes(CmdSetBackupRegister)
-                        time.sleep(0.1)
+                        time.sleep(0.02)
 
                     self.serial_port.flushOutput()
                     self.write_bytes(CmdResetIntoDownloadMode)
 
                     self.switch_baudrate(self.profile_info.handshake_baudrate, boot_delay, True)
+                    self.serial_port.flushInput()
+                    time.sleep(0.05)
 
                     self.logger.debug(
                         f'Check whether reset in ROM download mode with baudrate {self.profile_info.handshake_baudrate}')
@@ -922,6 +924,7 @@ class Ameba(object):
                                                0, 0xFFFFFFFF,
                                                nor_erase_timeout_in_second(0xFFFFFFFF),
                                                sense=True, force=False)
+        self.logger.info(f"Chip erase end")
         return ret
 
     def download_images(self):
@@ -933,7 +936,6 @@ class Ameba(object):
             if ret != ErrType.OK:
                 self.logger.error(f"Chip erase fail")
                 return ret
-            self.logger.info(f"Chip erase end")
 
         if self.download_img_info:
             for image_info in self.download_img_info:
@@ -1034,7 +1036,7 @@ class Ameba(object):
 
                     ret = self.floader_handler.erase_flash(image_info.memory_type, addr, addr + block_size, block_size,
                                                            nand_erase_timeout_in_second(block_size, block_size),
-                                                           sense=True)
+                                                           sense=(not is_ram))
                     if ret == ErrType.DEV_NAND_BAD_BLOCK.value or ret == ErrType.DEV_NAND_WORN_BLOCK.value:
                         self.logger.info(
                             f"{'Bad' if ret == ErrType.DEV_NAND_BAD_BLOCK else 'Worn'} block: 0x{format(addr, '08X')}")
@@ -1048,31 +1050,35 @@ class Ameba(object):
 
                     i = 0
                     while i < pages_per_block:
-                        if tx_sum + page_size >= aligned_img_length:
-                            is_last_page = True
-
                         chunk_data = file_stream.read(page_size)
                         read_len = len(chunk_data)
 
-                        if read_len < page_size:
-                            chunk_data += padding_char * (page_size - read_len)
-
-                        need_sense = (is_last_page or (i == pages_per_block - 1))
-
-                        ret = self.floader_handler.write(image_info.memory_type, chunk_data,
-                                                         page_size, addr, write_timeout, need_sense=need_sense)
-                        if ret == ErrType.OK:
-                            # 新的极速计算方式 (利用 C 语言层加速)
-                            # '<' 代表小端模式，'I' 代表 unsigned int (4字节)
-                            # len(chunk_data)//4 计算出有多少个整数
-                            fmt = f'<{len(chunk_data) // 4}I'
-                            checksum = (checksum + sum(struct.unpack(fmt, chunk_data))) & 0xFFFFFFFF
-
-                            addr += page_size
-                            tx_sum += page_size
+                        if read_len <= 0:
+                            is_last_page = True
                         else:
-                            self.logger.error(f"Write to addr={format(addr, '08x')}, size={page_size} fail: {ret}")
-                            break
+                            if read_len < page_size:
+                                is_last_page = True
+                                chunk_data += padding_char * (page_size - read_len)
+
+                            if tx_sum + page_size >= aligned_img_length:
+                                is_last_page = True
+
+                            need_sense = (is_last_page or (i == pages_per_block - 1))
+
+                            ret = self.floader_handler.write(image_info.memory_type, chunk_data,
+                                                             page_size, addr, write_timeout, need_sense=need_sense)
+                            if ret == ErrType.OK:
+                                # 新的极速计算方式 (利用 C 语言层加速)
+                                # '<' 代表小端模式，'I' 代表 unsigned int (4字节)
+                                # len(chunk_data)//4 计算出有多少个整数
+                                fmt = f'<{len(chunk_data) // 4}I'
+                                checksum = (checksum + sum(struct.unpack(fmt, chunk_data))) & 0xFFFFFFFF
+
+                                addr += page_size
+                                tx_sum += page_size
+                            else:
+                                self.logger.error(f"Write to addr={format(addr, '08x')}, size={page_size} fail: {ret}")
+                                break
 
                         if is_last_page:
                             break
@@ -1130,11 +1136,20 @@ class Ameba(object):
                 write_pages = 0
                 progress_int = 0
 
-                while tx_sum < aligned_img_length:
+                chunk_data = file_stream.read(page_size)
+                read_len = len(chunk_data)
+
+                if read_len < page_size:
+                    chunk_data += padding_char * (page_size - read_len)
+
+                while read_len > 0:
                     if write_pages == 0:
                         if (addr % (64 * FlashUtils.NorDefaultPageSize.value)) == 0 and \
                                 ((aligned_img_length - tx_sum >= 64 * FlashUtils.NorDefaultPageSize.value)):
                             block_size = 64 * FlashUtils.NorDefaultPageSize.value
+                        elif (addr % (32 * FlashUtils.NorDefaultPageSize.value)) == 0 and \
+                                ((aligned_img_length - tx_sum >= 32 * FlashUtils.NorDefaultPageSize.value)):
+                            block_size = 32 * FlashUtils.NorDefaultPageSize.value
                         else:
                             block_size = 4 * FlashUtils.NorDefaultPageSize.value
 
@@ -1145,19 +1160,22 @@ class Ameba(object):
                             divide_then_round_up(block_size, 1024))
 
                         if erase_addr != last_erase_addr:
-                            if not self.chip_erase:
-                                if (not is_ram) and (erase_addr % block_size) != 0:
-                                    self.logger.error(
-                                        f"Flash erase address align error: addr {hex(erase_addr)} not aligned to block size {hex(block_size)}")
-                                    ret = ErrType.SYS_PARAMETER
-                                    break
+                            if self.chip_erase:
+                                erase_size = 0
+                            else:
+                                erase_size = block_size
+                            if (not is_ram) and (erase_addr % block_size) != 0:
+                                self.logger.error(
+                                    f"Flash erase address align error: addr {hex(erase_addr)} not aligned to block size {hex(block_size)}")
+                                ret = ErrType.SYS_PARAMETER
+                                break
 
-                                ret = self.floader_handler.erase_flash(image_info.memory_type, erase_addr,
-                                                                       erase_addr + block_size, block_size,
-                                                                       nor_erase_timeout_in_second(
-                                                                           divide_then_round_up(block_size, 1024)))
-                                if ret != ErrType.OK:
-                                    break
+                            ret = self.floader_handler.erase_flash(image_info.memory_type, erase_addr,
+                                                                   erase_addr + block_size, erase_size,
+                                                                   nor_erase_timeout_in_second(
+                                                                       divide_then_round_up(block_size, 1024)))
+                            if ret != ErrType.OK:
+                                break
 
                             last_erase_addr = erase_addr
                             next_erase_addr = erase_addr + block_size
@@ -1165,12 +1183,6 @@ class Ameba(object):
                     need_sense = ((((write_pages + 1) % self.setting.sense_packet_count) == 0) or
                                   (write_pages + 1 >= pages_per_block) or
                                   (tx_sum + page_size >= aligned_img_length))
-
-                    chunk_data = file_stream.read(page_size)
-                    read_len = len(chunk_data)
-
-                    if read_len < page_size:
-                        chunk_data += padding_char * (page_size - read_len)
 
                     # 写入
                     ret = self.floader_handler.write(image_info.memory_type, chunk_data,
@@ -1197,35 +1209,51 @@ class Ameba(object):
                         progress_int += 1
                         self.logger.info(f"Programming progress: {progress}%")
 
-                if image_info.full_erase and (next_erase_addr < image_info.end_address) and not self.chip_erase:
-                    self.logger.debug(
-                        f"Erase extra address range: {hex(next_erase_addr)}-{hex(image_info.end_address)}")
-                    ret = self.floader_handler.erase_flash(image_info.memory_type, next_erase_addr,
-                                                           image_info.end_address,
-                                                           (image_info.end_address - next_erase_addr),
-                                                           nor_erase_timeout_in_second(divide_then_round_up(
-                                                               (image_info.end_address - next_erase_addr), 1024)),
-                                                           sense=True)
-                    if ret != ErrType.OK:
-                        self.logger.warning(
-                            f"Fail to extra address range {hex(next_erase_addr)}-{hex(image_info.end_address)}")
+                    if tx_sum >= aligned_img_length:
+                        if self.chip_erase:
+                            erase_size = 0
+                        else:
+                            erase_size = image_info.end_address - next_erase_addr
 
-                if aligned_img_length < 1024:
-                    self.logger.debug(f"Image download done: {aligned_img_length}bytes")
-                elif aligned_img_length < 1024 * 1024:
-                    self.logger.debug(f"Image download done: {aligned_img_length // 1024}KB")
-                else:
-                    self.logger.debug(f"Image download done: {round(aligned_img_length / 1024 / 1024, 2)}MB")
+                        if image_info.full_erase and (next_erase_addr < image_info.end_address):
+                            self.logger.debug(
+                                f"Erase extra address range: {hex(next_erase_addr)}-{hex(image_info.end_address)}")
+                            ret = self.floader_handler.erase_flash(image_info.memory_type, next_erase_addr,
+                                                                   image_info.end_address,
+                                                                   erase_size,
+                                                                   nor_erase_timeout_in_second(divide_then_round_up(
+                                                                       (image_info.end_address - next_erase_addr), 1024)),
+                                                                   sense=True)
+                            if ret != ErrType.OK:
+                                self.logger.warning(
+                                    f"Fail to extra address range {hex(next_erase_addr)}-{hex(image_info.end_address)}")
 
-                elapse_ms = round((datetime.now() - start_time).total_seconds() * 1000, 0)
-                kbps = aligned_img_length * 8 // elapse_ms
-                size_kb = aligned_img_length // 1024
+                        if aligned_img_length < 1024:
+                            self.logger.debug(f"Image download done: {aligned_img_length}bytes")
+                        elif aligned_img_length < 1024 * 1024:
+                            self.logger.debug(f"Image download done: {aligned_img_length // 1024}KB")
+                        else:
+                            self.logger.debug(f"Image download done: {round(aligned_img_length / 1024 / 1024, 2)}MB")
 
-                if self.is_usb:
-                    self.logger.info(
-                        f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps / 1000}Mbps")
-                else:
-                    self.logger.info(f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps}Kbps")
+                        elapse_ms = round((datetime.now() - start_time).total_seconds() * 1000, 0)
+                        kbps = aligned_img_length * 8 // elapse_ms
+                        size_kb = aligned_img_length // 1024
+
+                        if self.is_usb:
+                            self.logger.info(
+                                f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps / 1000}Mbps")
+                        else:
+                            self.logger.info(f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps}Kbps")
+
+                        break
+
+                    chunk_data = file_stream.read(page_size)
+                    read_len = len(chunk_data)
+
+                    if read_len < page_size:
+                        chunk_data += padding_char * (page_size - read_len)
+
+            file_stream.close()
 
         if ret == ErrType.OK:
             cal_checksum = 0

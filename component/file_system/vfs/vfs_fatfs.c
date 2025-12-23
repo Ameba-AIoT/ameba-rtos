@@ -73,14 +73,21 @@ int fatfs_get_interface(int interface)
 		drv_id = FATFS_getDrivernum("RAM");
 	} else if (interface == VFS_INF_FLASH) {
 		drv_id = FATFS_getDrivernum("FLASH");
-	} else {
+	}
+#ifdef CONFIG_FATFS_SECONDARY_FLASH
+	else if (interface == VFS_INF_SECONDARY_FLASH) {
+		drv_id = FATFS_getDrivernum("SECONDARY_FLASH");
+	}
+#endif
+	else {
 		return -1;
 	}
 	return drv_id;
 }
 
-int fatfs_open(const char *filename, const char *mode, vfs_file *finfo)
+int fatfs_open(void *fs, const char *filename, const char *mode, vfs_file *finfo)
 {
+	(void) fs;
 	FIL *fil = rtos_mem_malloc(sizeof(FIL));
 	uint8_t mode_mapping = 0;
 	FRESULT res = FR_OK;
@@ -119,8 +126,9 @@ int fatfs_open(const char *filename, const char *mode, vfs_file *finfo)
 	return res;
 }
 
-int fatfs_read(unsigned char *buf, unsigned int size, unsigned int count, vfs_file *finfo)
+int fatfs_read(void *fs, unsigned char *buf, unsigned int size, unsigned int count, vfs_file *finfo)
 {
+	(void) fs;
 	FIL *fil = (FIL *)finfo->file;
 	size_t br;
 	FRESULT res = f_read(fil, buf, size * count, (UINT *)&br);
@@ -131,8 +139,9 @@ int fatfs_read(unsigned char *buf, unsigned int size, unsigned int count, vfs_fi
 	return br;
 }
 
-int fatfs_write(unsigned char *buf, unsigned int size, unsigned int count, vfs_file *finfo)
+int fatfs_write(void *fs, unsigned char *buf, unsigned int size, unsigned int count, vfs_file *finfo)
 {
+	(void) fs;
 	FIL *fil = (FIL *)finfo->file;
 	size_t bw;
 	FRESULT res = f_write(fil, buf, size * count, (UINT *)&bw);
@@ -143,8 +152,9 @@ int fatfs_write(unsigned char *buf, unsigned int size, unsigned int count, vfs_f
 	return bw;
 }
 
-int fatfs_close(vfs_file *finfo)
+int fatfs_close(void *fs, vfs_file *finfo)
 {
+	(void) fs;
 	FIL *fil = (FIL *)finfo->file;
 	FRESULT res = f_close(fil);
 	rtos_mem_free(fil);
@@ -155,8 +165,9 @@ int fatfs_close(vfs_file *finfo)
 	return 0;
 }
 
-int fatfs_seek(long int offset, int origin, vfs_file *finfo)
+int fatfs_seek(void *fs, long int offset, int origin, vfs_file *finfo)
 {
+	(void) fs;
 	FIL *fil = (FIL *)finfo->file;
 	int size = f_size(fil);
 	int curr = f_tell(fil);
@@ -183,22 +194,25 @@ int fatfs_seek(long int offset, int origin, vfs_file *finfo)
 	return pos;
 }
 
-void fatfs_rewind(vfs_file *finfo)
+void fatfs_rewind(void *fs, vfs_file *finfo)
 {
+	(void) fs;
 	FIL *fil = (FIL *)finfo->file;
 	f_lseek(fil, 0);
 }
 
-int fatfs_fgetops(vfs_file *finfo)
+int fatfs_fgetops(void *fs, vfs_file *finfo)
 {
+	(void) fs;
 	FIL *fil = (FIL *)finfo->file;
 	int value = 0;
 	value = f_tell(fil);
 	return value;
 }
 
-int fatfs_fsetops(unsigned int offset, vfs_file *finfo)
+int fatfs_fsetops(void *fs, unsigned int offset, vfs_file *finfo)
 {
+	(void) fs;
 	FIL *fil = (FIL *)finfo->file;
 	int value = 0;
 	value = f_lseek(fil, offset);
@@ -210,8 +224,9 @@ int fatfs_fsetops(unsigned int offset, vfs_file *finfo)
 	return value;
 }
 
-int fatfs_fflush(vfs_file *finfo)
+int fatfs_fflush(void *fs, vfs_file *finfo)
 {
+	(void) fs;
 	FIL *fil = (FIL *)finfo->file;
 	FRESULT res = f_sync(fil);
 
@@ -222,8 +237,9 @@ int fatfs_fflush(vfs_file *finfo)
 	return -res;
 }
 
-int fatfs_remove(const char *name)
+int fatfs_remove(void *fs, const char *name)
 {
+	(void) fs;
 	FRESULT res = f_unlink(name);
 
 	if (res > 0) {
@@ -233,8 +249,9 @@ int fatfs_remove(const char *name)
 	return -res;
 }
 
-int fatfs_rename(const char *old_name, const char *new_name)
+int fatfs_rename(void *fs, const char *old_name, const char *new_name)
 {
+	(void) fs;
 	FRESULT res = f_rename(old_name, new_name);
 
 	if (res > 0) {
@@ -244,8 +261,9 @@ int fatfs_rename(const char *old_name, const char *new_name)
 	return -res;
 }
 
-int fatfs_feof(vfs_file *finfo)
+int fatfs_feof(void *fs, vfs_file *finfo)
 {
+	(void) fs;
 	FIL *fil = (FIL *)finfo->file;
 	return f_eof(fil);
 }
@@ -256,14 +274,16 @@ int fatfs_ferror(vfs_file *finfo)
 	return f_error(fil);
 }
 
-int fatfs_ftell(vfs_file *finfo)
+int fatfs_ftell(void *fs, vfs_file *finfo)
 {
+	(void) fs;
 	FIL *fil = (FIL *)finfo->file;
 	return f_tell(fil);
 }
 
-int fatfs_ftruncate(vfs_file *finfo, off_t length)
+int fatfs_ftruncate(void *fs, vfs_file *finfo, off_t length)
 {
+	(void) fs;
 	FIL *fil = (FIL *)finfo->file;
 	FRESULT res = FR_INT_ERR;
 	res = f_lseek(fil, length);
@@ -278,8 +298,9 @@ int fatfs_ftruncate(vfs_file *finfo, off_t length)
 	return 0;
 }
 
-int fatfs_opendir(const char *name, vfs_file *finfo)
+int fatfs_opendir(void *fs, const char *name, vfs_file *finfo)
 {
+	(void) fs;
 	DIR *pdir = rtos_mem_malloc(sizeof(DIR));
 	FRESULT res = FR_OK;
 	if (pdir == NULL) {
@@ -293,8 +314,9 @@ int fatfs_opendir(const char *name, vfs_file *finfo)
 	return res;
 }
 
-struct dirent *fatfs_readdir(vfs_file *finfo)
+struct dirent *fatfs_readdir(void *fs, vfs_file *finfo)
 {
+	(void) fs;
 	DIR *pdir = (DIR *)finfo->file;
 	FRESULT res;
 	char *fn;
@@ -338,8 +360,9 @@ struct dirent *fatfs_readdir(vfs_file *finfo)
 	return fatfs_ent;
 }
 
-int fatfs_closedir(vfs_file *finfo)
+int fatfs_closedir(void *fs, vfs_file *finfo)
 {
+	(void) fs;
 	DIR *pdir = (DIR *)finfo->file;
 	FRESULT res = f_closedir(pdir);
 	rtos_mem_free(pdir);
@@ -355,8 +378,9 @@ int fatfs_closedir(vfs_file *finfo)
 	}
 }
 
-int fatfs_mkdir(const char *pathname)
+int fatfs_mkdir(void *fs, const char *pathname)
 {
+	(void) fs;
 	FRESULT res = f_mkdir(pathname);
 	if (res > 0 && res != FR_EXIST) {
 		VFS_DBG(VFS_ERROR, "vfs-fatfs mkdir error %d \r\n", res);
@@ -364,8 +388,9 @@ int fatfs_mkdir(const char *pathname)
 	return -res;
 }
 
-int fatfs_rmdir(const char *path)
+int fatfs_rmdir(void *fs, const char *path)
 {
+	(void) fs;
 	FRESULT res = f_unlink(path);
 	if (res > 0) {
 		VFS_DBG(VFS_ERROR, "vfs-fatfs rmdir error %d \r\n", res);
@@ -373,8 +398,9 @@ int fatfs_rmdir(const char *path)
 	return -res;
 }
 
-int fatfs_access(const char *pathname, int mode)
+int fatfs_access(void *fs, const char *pathname, int mode)
 {
+	(void) fs;
 	FRESULT res;
 	FILINFO finfo;
 
@@ -410,8 +436,9 @@ int fatfs_access(const char *pathname, int mode)
 	return 0;
 }
 
-int fatfs_stat(char *path, struct stat *buf)
+int fatfs_stat(void *fs, char *path, struct stat *buf)
 {
+	(void) fs;
 	FILINFO finfo;
 
 	FRESULT res = f_stat(path, &finfo);
@@ -474,13 +501,13 @@ int fatfs_mount(int interface)
 	int ret = -1;
 	if (interface == VFS_INF_SD) {
 		VFS_DBG(VFS_INFO, "sd mount");
-#if (defined(CONFIG_FATFS_DISK_SD) && CONFIG_FATFS_DISK_SD) || (defined(CONFIG_FATFS_SD_SPI_MODE) && CONFIG_FATFS_SD_SPI_MODE)
+#if defined(CONFIG_FATFS_DISK_SD) && CONFIG_FATFS_DISK_SD
 		ret = fatfs_sd_init();
 #endif
-	} else if (interface == VFS_INF_FLASH) {
+	} else if (interface != VFS_INF_RAM) {
 		VFS_DBG(VFS_INFO, "flash mount");
 #if defined(CONFIG_FATFS_DISK_FLASH) && CONFIG_FATFS_DISK_FLASH
-		ret = fatfs_flash_init();
+		ret = fatfs_flash_init(interface);
 #endif
 	} else {
 		VFS_DBG(VFS_ERROR, "It don't support the interface %d", interface);
@@ -500,10 +527,10 @@ int fatfs_ummount(int interface)
 	int ret = 0;
 	if (interface == VFS_INF_SD) {
 		VFS_DBG(VFS_INFO, "sd unmount");
-#if (defined(CONFIG_FATFS_DISK_SD) && CONFIG_FATFS_DISK_SD) || (defined(CONFIG_FATFS_SD_SPI_MODE) && CONFIG_FATFS_SD_SPI_MODE)
+#if defined(CONFIG_FATFS_DISK_SD) && CONFIG_FATFS_DISK_SD
 		ret = fatfs_sd_close();
 #endif
-	} else if (interface == VFS_INF_FLASH) {
+	} else if (interface != VFS_INF_RAM) {
 		VFS_DBG(VFS_INFO, "flash unmount");
 #if defined(CONFIG_FATFS_DISK_FLASH) && CONFIG_FATFS_DISK_FLASH
 		ret = fatfs_flash_close();

@@ -72,7 +72,7 @@ typedef struct {
 	u16 wIndex;
 	u16 wLength;
 	u8 buf[COMP_CDC_ACM_INTR_IN_DATA_SIZE];
-} __attribute__((packed)) usbd_composite_cdc_acm_ntf_t;
+} __PACKED usbd_composite_cdc_acm_ntf_t;
 #endif
 
 typedef struct {

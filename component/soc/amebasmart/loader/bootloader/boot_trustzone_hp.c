@@ -80,7 +80,7 @@ static void BOOT_SecureChip_MPCCfg(void)
 		MPC->IDAU_CTRL |= BIT(idex);
 		MPC->IDAU_LOCK = 1;
 #else
-		for (idex = 0; idex < MPC_ENTRYS_NUM; idex++) {
+		for (idex = 0; idex < MPC_ENTRY_NUM; idex++) {
 			/*  Check if search to end */
 			if (Config[idex].Start == 0xFFFFFFFF) {
 				break;
@@ -112,7 +112,7 @@ static void BOOT_SecureChip_MPCCfg(void)
 		}
 
 		//RTK_LOGD(TAG, "MPC: %08x, %08x\n", (u32)MPC, MPC->IDAU_CTRL);
-		for (idex = 0; idex < MPC_ENTRYS_NUM; idex++) {
+		for (idex = 0; idex < MPC_ENTRY_NUM; idex++) {
 			//DiagPrintf("IDAU_BAR%d:[%08x:%08x]\n", idex, MPC->ENTRY[idex].IDAU_BARx, MPC->ENTRY[idex].IDAU_LARx);
 		}
 #endif
@@ -137,7 +137,7 @@ static void BOOT_CPU_TZCfg(const TZ_CFG_TypeDef *sau_config)
 {
 	int idex = 0;
 	/* Configure SAU */
-	for (idex = 0; idex < SAU_ENTRYS_NUM; idex++) {
+	for (idex = 0; idex < SAU_ENTRY_NUM; idex++) {
 		/*  Check if search to end */
 		if (sau_config[idex].Start == 0xFFFFFFFF) {
 			break;
@@ -151,7 +151,7 @@ static void BOOT_CPU_TZCfg(const TZ_CFG_TypeDef *sau_config)
 					ENABLE << SAU_RLAR_ENABLE_Pos;
 	}
 
-	for (idex = 0; idex < SAU_ENTRYS_NUM; idex++) {
+	for (idex = 0; idex < SAU_ENTRY_NUM; idex++) {
 		//SAU->RNR = idex;
 		//DiagPrintf("SAU_BAR%d:[%08x:%08x]\n", idex, SAU->RBAR, SAU->RLAR);
 	}

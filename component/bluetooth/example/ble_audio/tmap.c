@@ -1038,7 +1038,7 @@ static rtk_bt_audio_track_t *app_bt_le_audio_track_add(rtk_bt_le_audio_cfg_codec
 
 	if (iso_interval) {
 		duration = iso_interval * 1.25 * 1000; // iso interval in 1.25ms units
-		BT_LOGA("[APP] %s iso_interval: %d ms\r\n", __func__, duration);
+		BT_LOGA("[APP] %s: iso_interval: %d ms\r\n", __func__, duration / 1000);
 	} else {
 		if (p_codec->frame_duration == RTK_BT_LE_FRAME_DURATION_CFG_10_MS) {
 			duration = 10000;
@@ -1593,6 +1593,59 @@ static void app_bt_le_audio_cap_encode_data_control(bool enable)
 static uint16_t last_pkt_num[APP_LE_AUDIO_DEMO_DATA_PATH_NUM] = {0};
 static uint16_t conn_hdl[APP_LE_AUDIO_DEMO_DATA_PATH_NUM] = {0};
 static uint16_t cnts_pkt_num[APP_LE_AUDIO_DEMO_DATA_PATH_NUM] = {0};
+static bool pkt_sync_start[APP_LE_AUDIO_DEMO_DATA_PATH_NUM] = {false};
+static uint16_t app_bt_iso_check_first_pkt_valid(rtk_bt_le_audio_direct_iso_data_ind_t *p_bt_direct_iso)
+{
+	uint16_t cur_idx = UINT16_MAX;
+	for (uint16_t i = 0; i < APP_LE_AUDIO_DEMO_DATA_PATH_NUM; i++) {
+		if (conn_hdl[i] == 0) {
+			conn_hdl[i] = p_bt_direct_iso->iso_conn_handle;
+			cur_idx = i;
+			break;
+		} else if (conn_hdl[i] == p_bt_direct_iso->iso_conn_handle) {
+			cur_idx = i;
+			break;
+		}
+	}
+	if (cur_idx >= APP_LE_AUDIO_DEMO_DATA_PATH_NUM) {
+		BT_LOGE("[APP] Error: No available space for conn_hdl: 0x%x\r\n",
+				p_bt_direct_iso->iso_conn_handle);
+		return 1;
+	}
+	if (!pkt_sync_start[cur_idx]) {
+		if (p_bt_direct_iso->pkt_status_flag == RTK_BT_LE_ISO_ISOCH_DATA_PKT_STATUS_VALID_DATA) {
+			pkt_sync_start[cur_idx] = true;
+		} else {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+static uint16_t app_bt_iso_first_pkt_check_deinit(uint16_t iso_conn_handle)
+{
+	uint16_t cur_idx = UINT16_MAX;
+	for (uint16_t i = 0; i < APP_LE_AUDIO_DEMO_DATA_PATH_NUM; i++) {
+		if (conn_hdl[i] == 0) {
+			conn_hdl[i] = iso_conn_handle;
+			cur_idx = i;
+			break;
+		} else if (conn_hdl[i] == iso_conn_handle) {
+			cur_idx = i;
+			break;
+		}
+	}
+	if (cur_idx >= APP_LE_AUDIO_DEMO_DATA_PATH_NUM) {
+		BT_LOGE("[APP] Error: No available space for conn_hdl: 0x%x\r\n",
+				iso_conn_handle);
+		return 1;
+	}
+	pkt_sync_start[cur_idx] = false;
+
+	return 0;
+}
+
 static uint16_t app_bt_iso_data_continous_empty_packet_number_statistic(rtk_bt_le_audio_direct_iso_data_ind_t *p_bt_direct_iso)
 {
 	uint16_t cur_idx = UINT16_MAX;
@@ -1678,6 +1731,8 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 			app_bt_le_audio_cap_encode_data_control(false);
 		}
 		app_bt_le_audio_remove_data_path(param->cis_conn_handle, param->path_direction);
+		/* Reset check first valid iso data mechanism */
+		app_bt_iso_first_pkt_check_deinit(param->cis_conn_handle);
 		break;
 	}
 
@@ -1796,6 +1851,11 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 
 	case RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND: {
 		rtk_bt_le_audio_direct_iso_data_ind_t *p_bt_direct_iso = (rtk_bt_le_audio_direct_iso_data_ind_t *)data;
+		/* Wait for the first valid iso data to do rx sync, make sure the timestamp valid */
+		if (app_bt_iso_check_first_pkt_valid(p_bt_direct_iso)) {
+			BT_LOGA("[APP] iso_conn_handle:0x%x wait for the first valid iso data \r\n", p_bt_direct_iso->iso_conn_handle);
+			break;
+		}
 		if (p_bt_direct_iso->pkt_status_flag == RTK_BT_LE_ISO_ISOCH_DATA_PKT_STATUS_LOST_DATA) {
 			uint16_t cnts_pkt_num = app_bt_iso_data_continous_empty_packet_number_statistic(p_bt_direct_iso);
 			if (cnts_pkt_num >= APP_BT_LC3_PLC_MUSIC_COMPENSATION_BOUNDARY) {
@@ -1880,6 +1940,18 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 		break;
 	}
 
+	case RTK_BT_LE_AUDIO_EVT_BIG_SYNC_STATE_IND: {
+		rtk_bt_le_audio_big_sync_state_ind_t *param = (rtk_bt_le_audio_big_sync_state_ind_t *)data;
+		BT_LOGD("[APP] broadcast %s big sync state change:sync_state 0x%x, action 0x%x, cause: 0x%x\r\n",
+				(bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK) ? "sink" : "assistant", param->sync_state, param->action, param->cause);
+		if (param->sync_state == RTK_BT_LE_AUDIO_BIG_SYNC_STATE_TERMINATED) {
+			BT_LOGA("[APP] broadcast %s big sync terminated \r\n", (bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK) ? "sink" : "assistant");
+		} else if (param->sync_state == RTK_BT_LE_AUDIO_BIG_SYNC_STATE_SYNCHRONIZED) {
+			BT_LOGA("[APP] broadcast %s big sync synchronized \r\n", (bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK) ? "sink" : "assistant");
+		}
+		break;
+	}
+
 	case RTK_BT_LE_AUDIO_EVT_BIG_SETUP_DATA_PATH: {
 		rtk_bt_le_audio_big_setup_data_path_ind_t *param = (rtk_bt_le_audio_big_setup_data_path_ind_t *)data;
 		BT_LOGD("[APP] broadcast sink big setup data path ind: bis_conn_handle: %08x, idx 0x%x, cause: 0x%x\r\n",
@@ -1898,6 +1970,8 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 		BT_LOGD("[APP] broadcast sink big remove data path ind: bis_conn_handle: %08x, idx 0x%x, cause: 0x%x\r\n",
 				param->bis_conn_handle, param->bis_idx, param->cause);
 		app_bt_le_audio_remove_data_path(param->bis_conn_handle, param->path_direction);
+		/* Reset check first valid iso data mechanism */
+		app_bt_iso_first_pkt_check_deinit(param->bis_conn_handle);
 		break;
 	}
 
@@ -3631,7 +3705,7 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 			}
 			if (rtk_bt_audio_init()) {
 				BT_LOGE("[APP] %s: rtk_bt_audio_init fail \r\n", __func__);
-				goto exit;
+				return 1;
 			}
 			bap_role = p_lea_app_conf->bap_role;
 			cap_role = p_lea_app_conf->cap_role;
@@ -3731,7 +3805,7 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 			}
 			if (rtk_bt_audio_init()) {
 				BT_LOGE("[APP] %s: rtk_bt_audio_init fail \r\n", __func__);
-				goto exit;
+				return 1;
 			}
 			bap_role = p_lea_app_conf->bap_role;
 			cap_role = p_lea_app_conf->cap_role;
@@ -3804,7 +3878,7 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 			}
 			if (rtk_bt_audio_init()) {
 				BT_LOGE("[APP] %s: rtk_bt_audio_init fail \r\n", __func__);
-				goto exit;
+				return 1;
 			}
 			bap_role = p_lea_app_conf->bap_role;
 			cap_role = p_lea_app_conf->cap_role;
@@ -3906,7 +3980,7 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 			}
 			if (rtk_bt_audio_init()) {
 				BT_LOGE("[APP] %s: rtk_bt_audio_init fail \r\n", __func__);
-				goto exit;
+				return 1;
 			}
 			bap_role = p_lea_app_conf->bap_role;
 			cap_role = p_lea_app_conf->cap_role;
@@ -3935,8 +4009,12 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 				bt_le_audio_demo_ext_scan_time_remaining = APP_LE_AUDIO_EXT_SCAN_TIMER_COUNT;
 			}
 #endif
+			app_bt_le_audio_cap_encode_data_control(false);
+			app_bt_le_audio_remove_data_path_all();
 			/* Disable BT */
 			BT_APP_PROCESS(rtk_bt_disable());
+			/* Disable Audio */
+			rtk_bt_audio_deinit();
 			{
 				app_bt_le_audio_scan_dev_list_remove_all();
 				scan_dev_queue.count = 0;
@@ -3946,8 +4024,6 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 				}
 				INIT_LIST_HEAD(&scan_dev_queue.head);
 			}
-			app_bt_le_audio_remove_data_path_all();
-			rtk_bt_audio_deinit();
 			bap_role = RTK_BT_LE_AUDIO_BAP_ROLE_UNKNOWN;
 			cap_role = RTK_BT_LE_AUDIO_CAP_ROLE_UNKNOWN;
 			tmap_role = RTK_BT_LE_AUDIO_TMAP_ROLE_UNKNOWN;
@@ -3957,8 +4033,11 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 		/* TMAP Broadcast Media Receiver deinit */
 		case RTK_BT_LE_AUDIO_TMAP_ROLE_BMR: {
 			app_bt_le_audio_ext_adv_deinit();
+			app_bt_le_audio_remove_data_path_all();
 			/* Disable BT */
 			BT_APP_PROCESS(rtk_bt_disable());
+			/* Disable Audio */
+			rtk_bt_audio_deinit();
 			{
 				app_bt_le_audio_scan_dev_list_remove_all();
 				scan_dev_queue.count = 0;
@@ -3968,8 +4047,6 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 				}
 				INIT_LIST_HEAD(&scan_dev_queue.head);
 			}
-			app_bt_le_audio_remove_data_path_all();
-			rtk_bt_audio_deinit();
 			bap_role = RTK_BT_LE_AUDIO_BAP_ROLE_UNKNOWN;
 			cap_role = RTK_BT_LE_AUDIO_CAP_ROLE_UNKNOWN;
 			tmap_role = RTK_BT_LE_AUDIO_TMAP_ROLE_UNKNOWN;
@@ -3986,8 +4063,12 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 				bt_le_audio_demo_ext_scan_time_remaining = APP_LE_AUDIO_EXT_SCAN_TIMER_COUNT;
 			}
 #endif
+			app_bt_le_audio_cap_encode_data_control(false);
+			app_bt_le_audio_remove_data_path_all();
 			/* Disable BT */
 			BT_APP_PROCESS(rtk_bt_disable());
+			/* Disable Audio */
+			rtk_bt_audio_deinit();
 			{
 				app_bt_le_audio_scan_dev_list_remove_all();
 				scan_dev_queue.count = 0;
@@ -3997,8 +4078,6 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 				}
 				INIT_LIST_HEAD(&scan_dev_queue.head);
 			}
-			app_bt_le_audio_remove_data_path_all();
-			rtk_bt_audio_deinit();
 			bap_role = RTK_BT_LE_AUDIO_BAP_ROLE_UNKNOWN;
 			cap_role = RTK_BT_LE_AUDIO_CAP_ROLE_UNKNOWN;
 			tmap_role = RTK_BT_LE_AUDIO_TMAP_ROLE_UNKNOWN;
@@ -4008,8 +4087,12 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 		/* TMAP Unicast Media Receiver deinit */
 		case RTK_BT_LE_AUDIO_TMAP_ROLE_UMR: {
 			app_bt_le_audio_ext_adv_deinit();
+			app_bt_le_audio_cap_encode_data_control(false);
+			app_bt_le_audio_remove_data_path_all();
 			/* Disable BT */
 			BT_APP_PROCESS(rtk_bt_disable());
+			/* Disable Audio */
+			rtk_bt_audio_deinit();
 			{
 				app_bt_le_audio_scan_dev_list_remove_all();
 				scan_dev_queue.count = 0;
@@ -4019,8 +4102,6 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 				}
 				INIT_LIST_HEAD(&scan_dev_queue.head);
 			}
-			app_bt_le_audio_remove_data_path_all();
-			rtk_bt_audio_deinit();
 			bap_role = RTK_BT_LE_AUDIO_BAP_ROLE_UNKNOWN;
 			cap_role = RTK_BT_LE_AUDIO_CAP_ROLE_UNKNOWN;
 			tmap_role = RTK_BT_LE_AUDIO_TMAP_ROLE_UNKNOWN;
@@ -4035,25 +4116,4 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 	}
 
 	return 0;
-
-exit:
-	/* Disable BT */
-	rtk_bt_disable();
-	{
-		app_bt_le_audio_scan_dev_list_remove_all();
-		scan_dev_queue.count = 0;
-		if (scan_dev_queue.mtx) {
-			osif_mutex_delete(scan_dev_queue.mtx);
-			scan_dev_queue.mtx = NULL;
-		}
-		INIT_LIST_HEAD(&scan_dev_queue.head);
-	}
-	app_bt_le_audio_remove_data_path_all();
-	rtk_bt_audio_deinit();
-	bap_role = RTK_BT_LE_AUDIO_BAP_ROLE_UNKNOWN;
-	cap_role = RTK_BT_LE_AUDIO_CAP_ROLE_UNKNOWN;
-	tmap_role = RTK_BT_LE_AUDIO_TMAP_ROLE_UNKNOWN;
-	demo_init_flag = false;
-	return 1;
-
 }

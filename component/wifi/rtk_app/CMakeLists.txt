@@ -18,6 +18,7 @@ ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/wifi_cast
     ${CMAKE_CURRENT_SOURCE_DIR}/wifi_fast_connect
     ${CMAKE_CURRENT_SOURCE_DIR}/wifi_auto_reconnect
+    ${CMAKE_CURRENT_SOURCE_DIR}/wifi_tunnel_app
 )
 
 set(need_external_lib OFF)

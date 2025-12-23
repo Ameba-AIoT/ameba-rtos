@@ -30,7 +30,7 @@ __NO_RETURN void BOOT_NsStart(u32 Addr)
 #endif
 
 	/* jump to ns world */
-	nsfunc *fp = cmse_nsfptr_create(Addr);
+	nsfunc *fp = (nsfunc *)cmse_nsfptr_create(Addr);
 	fp();
 
 	/* avoid compiler to pop stack when exit BOOT_NsStart */
@@ -351,11 +351,13 @@ void BOOT_Image1(void)
 {
 	PRAM_START_FUNCTION Image2EntryFun = (PRAM_START_FUNCTION)__image2_entry_func__;
 	FIH_DECLARE(fih_rc, FIH_FAILURE);
+
+	_memset((void *)__image1_bss_start__, 0, (__image1_bss_end__ - __image1_bss_start__));
+
 #ifdef CONFIG_WHC_INTF_SDIO
 	Boot_SDIO_Pinmux_init();
 #endif
 
-	_memset((void *)__image1_bss_start__, 0, (__image1_bss_end__ - __image1_bss_start__));
 	BOOT_ReasonSet();
 
 	/* For debug reset: when debugger reset cpu, it's required to reset other cpus and some peripherals */
@@ -460,15 +462,27 @@ BOOT_EXPORT_SYMB_TABLE boot_export_symbol = {
 
 };
 
+#ifdef __ZEPHYR__
+extern void z_arm_reset(void);
+#endif
+
 IMAGE1_ENTRY_SECTION
 RAM_FUNCTION_START_TABLE RamStartTable = {
 	.RamStartFun = NULL,
+#ifdef __ZEPHYR__
+	.RamWakeupFun = NULL,
+#else
 	.RamWakeupFun = BOOT_WakeFromPG,
+#endif
 	.RamPatchFun0 = NULL,
 	.RamPatchFun1 = NULL,
 	.RamPatchFun2 = NULL,
+#ifdef __ZEPHYR__
+	.FlashStartFun = z_arm_reset,
+#else
 #ifndef CONFIG_FULLMAC_PG_LOADER
 	.FlashStartFun = BOOT_Image1,
+#endif
 #endif
 	.ExportTable = &boot_export_symbol,
 };

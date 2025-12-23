@@ -57,9 +57,9 @@ typedef enum {
   */
 #define SAU_INIT_CTRL_ALLNS  0
 
-#define SAU_ENTRYS_NUM			8
+#define SAU_ENTRY_NUM			8
 
-#define MPC_ENTRYS_NUM			6
+#define MPC_ENTRY_NUM			6
 #define MPC_CNT					3
 
 /**

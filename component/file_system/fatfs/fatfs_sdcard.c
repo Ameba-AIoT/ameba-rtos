@@ -401,7 +401,7 @@ ll_diskio_drv SD_disk_spi_Driver = {
 #if _USE_IOCTL == 1
 	.disk_ioctl = SD_disk_spi_ioctl,
 #endif
-	.TAG	= (unsigned char *)"SD"
+	.TAG	= (unsigned char *)"SECONDARY_FLASH"
 };
 #endif
 #endif

@@ -52,13 +52,9 @@ typedef enum {
 
 typedef enum {
 	BOT_SEND_CBW  = 1,
-	BOT_SEND_CBW_WAIT,
 	BOT_DATA_IN,
-	BOT_DATA_IN_WAIT,
 	BOT_DATA_OUT,
-	BOT_DATA_OUT_WAIT,
 	BOT_RECEIVE_CSW,
-	BOT_RECEIVE_CSW_WAIT,
 	BOT_ERROR_IN,
 	BOT_ERROR_OUT,
 	BOT_UNRECOVERED_ERROR
@@ -151,12 +147,12 @@ typedef struct {
 
 /* Structure for LUN */
 typedef struct {
-	usbh_msc_state_t state;
-	usbh_msc_error_t error;
-	HAL_Status prev_ready_state;
 	usbh_scsi_capacity_t capacity;
 	usbh_scsi_sense_t sense;
 	usbh_scsi_inquiry_t inquiry;
+	usbh_msc_state_t state;
+	usbh_msc_error_t error;
+	HAL_Status prev_ready_state;
 	u8 state_changed;
 } usbh_msc_lun_t;
 
@@ -169,23 +165,19 @@ typedef struct {
 
 /* MSC host */
 typedef struct {
-	u8  bulk_in_pipe;
-	u8  bulk_out_pipe;
-	u8  bulk_out_ep;
-	u8  bulk_in_ep;
-	u16 bulk_out_packet_size;
-	u16 bulk_in_packet_size;
-	usbh_msc_error_t error;
-	usbh_msc_req_state_t req_state;
+	usbh_pipe_t bulk_in;
+	usbh_pipe_t bulk_out;
 	usbh_bot_handle_t hbot;
 	usbh_msc_lun_t unit[USBH_MSC_MAX_LUN];
-	u16 current_lun;
-	u32 *max_lun_buf;
-	u32 max_lun;
 	usbh_msc_state_t state;
+	usbh_msc_error_t error;
+	usbh_msc_req_state_t req_state;
 	usbh_msc_cb_t *cb;
 	usb_host_t *host;
+	u32 *max_lun_buf;
+	u32 max_lun;
 	u32 tick;
+	u16 current_lun;
 } usbh_msc_host_t;
 
 /* Exported macros -----------------------------------------------------------*/

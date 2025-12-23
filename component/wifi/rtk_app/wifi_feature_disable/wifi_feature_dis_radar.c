@@ -50,5 +50,39 @@ void wifi_hal_radar_rpt_hdl(u8 *buf, void *a)
 	UNUSED(a);
 }
 
+#ifdef CONFIG_MP_INCLUDED
+void wifi_hal_radar_start(void)
+{
+
+}
+
+void wifi_hal_radar_stop(void)
+{
+
+}
+
+void wifi_hal_radar_bw(u8 bw_idx)
+{
+	UNUSED(bw_idx);
+}
+
+void wifi_hal_radar_chrip(u8 chrip_width, u8 chirp_num)
+{
+	UNUSED(chrip_width);
+	UNUSED(chirp_num);
+}
+
+void wifi_hal_radar_frame(u16 frame_intev, u16 frame_num)
+{
+	UNUSED(frame_intev);
+	UNUSED(frame_num);
+}
+
+void wifi_hal_radar_trx(u8 start)
+{
+	UNUSED(start);
+}
+#endif
+
 #endif /* CONFIG_RADAR */
 

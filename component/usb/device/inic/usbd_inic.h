@@ -84,7 +84,7 @@ typedef struct {
 
 	// DWORD 5
 	u32	reserved;
-} usbd_inic_query_packet_t;
+} __PACKED usbd_inic_query_packet_t;
 
 typedef struct {
 	usbd_ep_t ep;

@@ -47,6 +47,9 @@ _LONG_CALL_ u32 DATA_FLASH_Read_DataIsRight(void);
 _LONG_CALL_ void DATA_FLASH_ClockSwitch(u32 Source, u32 Protection);
 _LONG_CALL_ int DATA_FLASH_WriteStream(u32 address, u32 len, u8 *data);
 _LONG_CALL_ void data_flash_highspeed_setup(void);
+_LONG_CALL_ void DATA_FLASH_UserMode_Enter(void);
+_LONG_CALL_ void DATA_FLASH_UserMode_Exit(void);
+
 /**
   * @}
   */

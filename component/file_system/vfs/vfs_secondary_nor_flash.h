@@ -20,6 +20,7 @@ typedef struct {
 /* support Flash model */
 static const flash_model_t flash_models[] = {
 	{0xC8, 0x40, 0x16, "GD25Q32E", 256, 4096, 4 * 1024 * 1024},  // GD25Q32E (4MB)
+	{0xC8, 0x40, 0x17, "GD25Q64E", 256, 4096, 8 * 1024 * 1024},  // GD25Q64E (8MB)
 	{0xC8, 0x40, 0x18, "GD25Q128E", 256, 4096, 16 * 1024 * 1024}, // GD25Q128E (16MB)
 	{0xEF, 0x40, 0x18, "W25Q128JV", 256, 4096, 16 * 1024 * 1024}, // W25Q128JV (16MB)
 };

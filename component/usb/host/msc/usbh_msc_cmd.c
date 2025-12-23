@@ -29,7 +29,7 @@ static const char *const TAG = "MSCH";
 /* Private function prototypes -----------------------------------------------*/
 static int msc_cb_attach(void);
 static int msc_cb_setup(void);
-static int msc_cb_process(usb_host_t *host, u8 id);
+static int msc_cb_process(usb_host_t *host, u8 msg);
 
 static u32 usbh_msc_cmd_test(u16 argc, u8 *argv[]);
 
@@ -90,11 +90,11 @@ static int msc_cb_setup(void)
 	return HAL_OK;
 }
 
-static int msc_cb_process(usb_host_t *host, u8 id)
+static int msc_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 
-	switch (id) {
+	switch (msg) {
 	case USBH_MSG_DISCONNECTED:
 		msc_is_ready = 0;
 		break;

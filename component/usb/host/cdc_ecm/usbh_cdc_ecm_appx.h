@@ -46,9 +46,9 @@ typedef union {
 	u8 d8[CDC_ECM_LINE_CODING_DATA_LEN];
 	struct {
 		u32 dwDteRate;    /* Data terminal rate, in bits per second */
-		u8  bCharFormat;  /* Stop bits */
-		u8  bParityType;  /* Parity */
-		u8  bDataBits;    /* Data bits (5, 6, 7, 8 or 16) */
+		u8 bCharFormat;   /* Stop bits */
+		u8 bParityType;   /* Parity */
+		u8 bDataBits;     /* Data bits (5, 6, 7, 8 or 16) */
 	} b;
 } usbh_cdc_ecm_line_coding_t;
 /* ---------------------------CDC ACM Config End -------------------------------*/
@@ -56,9 +56,7 @@ typedef union {
 /* Exported types ------------------------------------------------------------*/
 typedef enum {
 	CDC_ECM_STATE_AT_SETTING_IDLE      = 0U,
-
 	CDC_ECM_STATE_GET_MAC_STR,
-
 	CDC_ECM_STATE_CTRL_ALT_SETTING,
 
 #if ECM_ENABLE_PACKETFILTER
@@ -85,42 +83,40 @@ typedef enum {
 	CDC_ECM_STATE_AT_SETTING_MAX,
 } usbh_cdc_ecm_at_set_state_t;
 
-
 typedef struct {
-	u8                            muticast_filter[CDC_ECM_MUTICAST_FILTER_STR_LEN];
-	u8                            mac[CDC_ECM_MAC_STR_LEN];
-	u8                            mac_ctrl_lock[CDC_ECM_MAC_CTRL_REG_LEN];      /* for 8152 change mac */
-	u8                            flow_ctrl[CDC_ECM_MAC_CTRL_REG_LEN];          /* 8152 */
-	u8                            rcr[CDC_ECM_MAC_CTRL_REG_LEN];                /* 8156 */
+	u8 muticast_filter[CDC_ECM_MUTICAST_FILTER_STR_LEN];
+	u8 mac[CDC_ECM_MAC_STR_LEN];
+	u8 mac_ctrl_lock[CDC_ECM_MAC_CTRL_REG_LEN];      /* for 8152 change mac */
+	u8 flow_ctrl[CDC_ECM_MAC_CTRL_REG_LEN];          /* 8152 */
+	u8 rcr[CDC_ECM_MAC_CTRL_REG_LEN];                /* 8156 */
 
-	usbh_cdc_ecm_at_set_state_t   sub_status;
-	usbh_cdc_ecm_ep_t             report_ep;
-	usbh_cdc_ecm_ep_t             tx_ep;
-	usbh_cdc_ecm_ep_t             rx_ep;
+	usbh_cdc_ecm_at_set_state_t sub_status;
+	usbh_cdc_ecm_ep_t report_ep;
+	usbh_cdc_ecm_ep_t tx_ep;
+	usbh_cdc_ecm_ep_t rx_ep;
 
-	usb_appx_report               rx_report;
-	usbh_cdc_ecm_line_coding_t    line_coding;     //acm line setting
-	usb_os_sema_t                 acm_tx_sema;    //usb tx send sema
+	usb_appx_report rx_report;
+	usbh_cdc_ecm_line_coding_t line_coding;    /* acm line setting */
+	usb_os_sema_t acm_tx_sema;                 /* usb tx send sema */
 
-	usbh_cdc_ecm_appx_param_t     *param_item;
-	usbh_cdc_ecm_appx_param_t     *param_array;    //at port interface idx
+	usbh_cdc_ecm_appx_param_t *param_item;
+	usbh_cdc_ecm_appx_param_t *param_array;    /* at port interface idx */
 
-	u16                           *led_array;           /* led array */
-	u8                            *dongle_ctrl_buf;                    /* used for transfer,cache align*/
+	u16 *led_array;                            /* led array */
+	u8 *dongle_ctrl_buf;                       /* used for transfer,cache align */
 
-	u32                           eth_statistic_count;  /* feature select params */
+	u32 eth_statistic_count;                   /* feature select params */
+	u16 feature_selector;                      /* feature select params */
+	u16 packet_filter;                         /* packet filter params */
+	u16 muticast_filter_len;                   /* multicast filter params length */
 
-	u16                           feature_selector;    /* feature select params */
-	u16                           packet_filter;       /* packet filter params */
-	u16                           muticast_filter_len; /* multicast filter params length */
+	__IO u8 acm_tx_block;                      /* ecm attached status */
 
-	__IO u8                       acm_tx_block;   //ecm attached status
+	u8 mac_valid;
+	u8 iMACAddressStringId;                    /* get the mac address */
 
-	u8                            mac_valid;
-	u8                            iMACAddressStringId;                 /* get the mac address */
-
-	u8                            led_cnt;             /* led cnt */
-	u8                            mac_src_type;        /* ecm dongle mac source type : usbh_cdc_ecm_dongle_mac_type_t */
+	u8 led_cnt;                                /* led cnt */
+	u8 mac_src_type;                           /* ecm dongle mac source type，@ref usbh_cdc_ecm_dongle_mac_type_t */
 } usbh_cdc_ecm_appx_t;
 
 /* */

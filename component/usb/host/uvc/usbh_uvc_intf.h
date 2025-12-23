@@ -31,9 +31,7 @@
 #define USBH_UVC_VIDEO_FRAME_SIZE			150*1024    /* bytes */
 
 #define USBH_UVC_DECODE_TASK_STACK			512*4    /* bytes */
-#define USBH_UVC_DECODE_TASK_PRIORITY			5
-
-#define USBH_UVC_DETECT_EOF					0
+#define USBH_UVC_DECODE_TASK_PRIORITY		5
 
 #define USBH_UVC_USE_SOF					0  /* if set to 0, sof interrupt can be disabled */
 
@@ -46,11 +44,18 @@ enum streaming_state {
 	STREAMING_ON = 1,
 };
 
+typedef enum  {
+	UVC_FRAME_INIT = 0,
+	UVC_FRAME_FLYING,  // memcpying
+	UVC_FRAME_READY,   // ready to commit frame_chain
+	UVC_FRAME_INUSE    // in using
+} usbh_uvc_frame_state_t;
+
 typedef struct  {
-	int fmt_type;    		 //video format type
-	int width;               //video frame width
-	int height;              //video frame height
-	int frame_rate;          //video frame rate
+	int fmt_type;    //video format type
+	int width;       //video frame width
+	int height;      //video frame height
+	int frame_rate;  //video frame rate
 } uvc_config_t;
 
 typedef struct {
@@ -63,8 +68,11 @@ typedef struct {
 typedef struct {
 	struct list_head list;
 	u8 *buf;
+	u32 index;
 	u32 byteused;
 	u32 err;
+	u32 timestamp;
+	usbh_uvc_frame_state_t state;
 } usbh_uvc_frame_t;
 
 /* Exported macros -----------------------------------------------------------*/
@@ -73,19 +81,12 @@ typedef struct {
 
 /* Exported functions --------------------------------------------------------*/
 int usbh_uvc_init(usbh_uvc_cb_t *cb);
-
 void usbh_uvc_deinit(void);
-
-int usbh_uvc_stream_on(u32 if_num);
-
-int usbh_uvc_stream_off(u32 if_num);
-
-int usbh_uvc_stream_state(u32 if_num);
-
-int usbh_uvc_set_param(uvc_config_t *para, u32 if_num);
-
-usbh_uvc_frame_t *usbh_uvc_get_frame(u32 if_num);
-
-void usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u32 if_num);
+int usbh_uvc_stream_on(u32 itf_num);
+int usbh_uvc_stream_off(u32 itf_num);
+int usbh_uvc_stream_state(u32 itf_num);
+int usbh_uvc_set_param(uvc_config_t *para, u32 itf_num);
+usbh_uvc_frame_t *usbh_uvc_get_frame(u32 itf_num);
+void usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u32 itf_num);
 
 #endif

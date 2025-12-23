@@ -46,24 +46,13 @@ extern void SOCPS_SleepInit(void);
 extern void SOCPS_Hsram_Setting(void);
 
 extern u32 SOCPS_DsleepWakeStatusGet(void);
-
-extern void SOCPS_SetNPWakeEvent_MSK0_HP(u32 Option, u32 NewStatus);
-extern void SOCPS_SetNPWakeEvent_MSK1_HP(u32 Option, u32 NewStatus);
-
 extern int SOCPS_AONWakeReason(void);
-
 
 extern void SOCPS_MMUReFill(void);
 
-extern void SOCPS_SetLPWakeEvent_MSK0(u32 Option, u32 NewStatus);
-extern void SOCPS_SetLPWakeEvent_MSK1(u32 Option, u32 NewStatus);
-extern void SOCPS_SetLPWakeEvent(u32 Option, u32 Group, u32 NewStatus);
-extern void SOCPS_SetNPWakeEvent_MSK0(u32 Option, u32 NewStatus);
-extern void SOCPS_SetNPWakeEvent_MSK1(u32 Option, u32 NewStatus);
-extern void SOCPS_SetNPWakeEvent(u32 Option, u32 Group, u32 NewStatus);
-extern void SOCPS_SetAPWakeEvent_MSK0(u32 Option, u32 NewStatus);
-extern void SOCPS_SetAPWakeEvent_MSK1(u32 Option, u32 NewStatus);
-extern void SOCPS_SetAPWakeEvent(u32 Option, u32 Group, u32 NewStatus);
+extern void SOCPS_SetLPWakeEvent(u32 Option, u32 NewStatus);
+extern void SOCPS_SetNPWakeEvent(u32 Option, u32 NewStatus);
+extern void SOCPS_SetAPWakeEvent(u32 Option, u32 NewStatus);
 
 extern void SOCPS_SWRLDO_Suspend(u32 new_status);
 extern void SOCPS_SleepCG_RAM(void);

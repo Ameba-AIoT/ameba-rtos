@@ -8,8 +8,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/ameba.cmake)
 ###############################################################################
 #NOTE: Configures, these parameter name is fixed and cannot be changed
 set(v_ASDK_VER 12.3.1)
-# set(v_VSDK_VER 10.3.1)
-# set(v_FATFS_VER r0.14b)
+set(v_FATFS_VER r0.14b)
 set(v_FREERTOS_VER v10.4.3)
 set(v_LITTLEFS_VER r2.50)
 set(v_LWIP_VER v2.1.2)

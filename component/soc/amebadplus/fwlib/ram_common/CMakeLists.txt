@@ -54,6 +54,8 @@ ameba_list_append(private_sources
     ameba_fault_handle.c
     ameba_flash_ram.c
     ameba_gdma_ram.c
+    ameba_loguart.c
+    ameba_gpio.c
     ameba_i2c.c
     ameba_ipc_api.c
     ameba_ipc_ram.c

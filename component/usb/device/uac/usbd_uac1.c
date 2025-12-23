@@ -17,7 +17,7 @@
 /* Private macros ------------------------------------------------------------*/
 #define UABD_UAC_DESC_DUMP (0)
 
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_UAC_DEBUG
 #define USBD_UAC_DEBUG_LOOP_TIME   10*1000
 #define USBD_UAC_DEBUG_STEP_TIME   100
 #endif
@@ -38,7 +38,7 @@ static void usbd_uac_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 #if UABD_UAC_DESC_DUMP
 static int usbd_uac_desc_dump(u8 *pbuf, int len);
 #endif
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_UAC_DEBUG
 static void usbd_uac_status_dump_thread(void *param);
 #endif
 static inline void usbd_uac_get_audio_data_cnt(u32 audio_len);
@@ -562,7 +562,7 @@ static void usbd_uac_ep_buf_ctrl_deinit(usbd_uac_buf_ctrl_t *buf_ctrl)
 	buf_ctrl->isoc_write_idx = 0;
 	buf_ctrl->isoc_mps = 0;
 	buf_ctrl->buf_array_cnt = 0;
-	buf_ctrl->transfer_continue = 0;
+	buf_ctrl->next_xfer = 0;
 	// RTK_LOGS(TAG, RTK_LOG_INFO, "Buf 0x%08x-0x%08x sema %d\n",buf_ctrl->isoc_buf,buf_ctrl->buf_array,buf_ctrl->uac_sema_valid);
 
 	if (buf_ctrl->isoc_buf != NULL) {
@@ -1128,7 +1128,7 @@ static int usbd_uac_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usbd_uac_buf_ctrl_t *pdata_ctrl = &(cdev->uac_isoc_in);
 
-	if (pdata_ctrl->transfer_continue) {
+	if (pdata_ctrl->next_xfer) {
 		if (ep_addr == USBD_UAC_ISOC_IN_EP) {
 			if (status != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_WARN, "ISOC TX err: %d\n", status);
@@ -1155,9 +1155,9 @@ static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 	u8 wr_next;
 	UNUSED(dev);
 
-	//RTK_LOGS(TAG, RTK_LOG_WARN, "Read data out %d\n",pdata_ctrl->transfer_continue);
+	//RTK_LOGS(TAG, RTK_LOG_WARN, "Read data out %d\n",pdata_ctrl->next_xfer);
 
-	if (pdata_ctrl->transfer_continue) {
+	if (pdata_ctrl->next_xfer) {
 		if (ep_addr == USBD_UAC_ISOC_OUT_EP) {
 			if (len == 0) { //ZLP
 				//continue
@@ -1175,7 +1175,7 @@ static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 				if (pdata_ctrl->isoc_read_idx == wr_next) {
 					//RTK_LOGS(TAG, RTK_LOG_WARN, "Read too slow\n");
 					pdata_ctrl->isoc_read_idx = (pdata_ctrl->isoc_read_idx + 1) % (pdata_ctrl->buf_array_cnt);
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_UAC_DEBUG
 					cdev->isoc_overwrite_cnt++;
 #endif
 				}
@@ -1192,7 +1192,7 @@ static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 					rtos_sema_give(pdata_ctrl->uac_isoc_sema);
 				}
 
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_UAC_DEBUG
 				cdev->isoc_rx_cnt ++;
 				static u32 g_rx_last_tick = 0;
 				u32 g_rx_new_tick = DTimestamp_Get(); //us
@@ -1296,7 +1296,7 @@ static void usbd_uac_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 	}
 }
 
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_UAC_DEBUG
 /**
   * @brief  UAC status dump thread
   * @param  param: Pointer to parameters
@@ -1310,8 +1310,6 @@ static void usbd_uac_status_dump_thread(void *param)
 	u32 loop_idx = 0;
 	u32 max_loop = USBD_UAC_DEBUG_LOOP_TIME / USBD_UAC_DEBUG_STEP_TIME;
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC dump thread\n");
-
 	while (cdev->isoc_dump_thread) {
 		loop_idx = 0;
 		RTK_LOGS(TAG, RTK_LOG_INFO, "USB Dump RX %d/TO %d/OW %d/Pktcnt %d/copylen %d/%d\n",
@@ -1320,7 +1318,7 @@ static void usbd_uac_status_dump_thread(void *param)
 				 cdev->isoc_overwrite_cnt,
 				 usbd_uac_get_ring_buf_cnt(USB_SPEED_FULL),
 				 cdev->copy_data_len,
-				 cdev->uac_isoc_out.transfer_continue
+				 cdev->uac_isoc_out.next_xfer
 				);
 		do {
 			if (0 == cdev->isoc_dump_thread) {
@@ -1341,7 +1339,7 @@ static void usbd_uac_status_dump_thread(void *param)
   */
 static inline void usbd_uac_get_audio_data_cnt(u32 audio_len)
 {
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_UAC_DEBUG
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	cdev->copy_data_len += audio_len;
 #else
@@ -1433,7 +1431,7 @@ int usbd_uac_init(usbd_uac_cb_t *cb)
 
 	usbd_register_class(&usbd_uac_driver);
 
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_UAC_DEBUG
 	rtos_task_t task_dump;
 	if (rtos_task_create(&task_dump, ((const char *)"usbd_uac_status_dump_thread"), usbd_uac_status_dump_thread, NULL, 1024U, 1) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create usb status dump task fail\n");
@@ -1452,7 +1450,7 @@ int usbd_uac_deinit(void)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 
-#if USBD_UAC_ISOC_XFER_DEBUG
+#if USBD_UAC_DEBUG
 	cdev->isoc_dump_thread = 0;
 #endif
 
@@ -1517,7 +1515,7 @@ int usbd_uac_receive_data(void)
 	}
 
 	if (usbd_uac_ep_enable(&(cdev->cb->out))) {
-		pbuf_ctrl->transfer_continue = 1;
+		pbuf_ctrl->next_xfer = 1;
 		p_buf = &(pbuf_ctrl->buf_array[pbuf_ctrl->isoc_write_idx]);
 		// RTK_LOGS(TAG, RTK_LOG_ERROR, "First trigger sema %d cnt %d-%d \n", pdata_ctrl->read_wait_sema,usbd_uac_get_read_buf_cnt(),pbuf_ctrl->isoc_mps);
 		ep_isoc_out->xfer_buf = p_buf->buf_raw;
@@ -1551,7 +1549,7 @@ u8 usbd_uac_config(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 flag)
 			pbuf_ctrl = &(cdev->uac_isoc_out);
 		}
 
-		pbuf_ctrl->transfer_continue = 0;
+		pbuf_ctrl->next_xfer = 0;
 
 		usbd_uac_ep_buf_ctrl_deinit(pbuf_ctrl);
 		usbd_uac_ep_buf_ctrl_init(pbuf_ctrl, (usbd_audio_cfg_t *)uac_cfg, cdev->dev->dev_speed);
@@ -1591,8 +1589,8 @@ void usbd_uac_stop_play(void)
 
 	// RTK_LOGS(TAG, RTK_LOG_ERROR, "usbd uac stop\n");
 
-	cdev->uac_isoc_out.transfer_continue = 0;
-	cdev->uac_isoc_in.transfer_continue = 0;
+	cdev->uac_isoc_out.next_xfer = 0;
+	cdev->uac_isoc_in.next_xfer = 0;
 }
 
 /**
@@ -1608,7 +1606,7 @@ u32 usbd_uac_read(u8 *buffer, u32 size, u32 time_out_ms)
 	usbd_uac_buf_ctrl_t *pdata_ctrl = &(cdev->uac_isoc_out);
 	u32 copy_len = 0;
 
-	if (pdata_ctrl->transfer_continue == 0) {
+	if (pdata_ctrl->next_xfer == 0) {
 		return 0;
 	}
 
@@ -1636,7 +1634,7 @@ u32 usbd_uac_read(u8 *buffer, u32 size, u32 time_out_ms)
 					break;
 				}
 			}
-		} while (pdata_ctrl->transfer_continue);
+		} while (pdata_ctrl->next_xfer);
 	}
 
 	usbd_uac_get_audio_data_cnt(copy_len);

@@ -119,6 +119,7 @@ void eqc_le_check_connection_complete_event(uint8_t *buf, uint16_t buf_len)
 
 	if (status) {
 		BT_LOGE("link conn fail status 0x%x\n\r", status);
+		EQC_FLAG |= EQC_CLIEN_CONN_CANCEL;
 		return;
 	}
 
@@ -180,6 +181,7 @@ void eqc_le_check_enhance_connection_complete_event(uint8_t *buf, uint16_t buf_l
 
 	if (status) {
 		BT_LOGE("link conn fail status 0x%x\n\r", status);
+		EQC_FLAG |= EQC_CLIEN_CONN_CANCEL;
 		return;
 	}
 	//Check BD address is valid that not 0x000000000000
@@ -443,6 +445,41 @@ TEST_END:
 	return bMngrResult;
 }
 
+uint8_t eqc_le_client_connect_cancel(void)
+{
+	uint8_t bMngrResult = false;
+	uint32_t ulTime_Limit = 3;
+	uint32_t ulTime_Start = 0;
+	uint32_t ulTime_End = 0;
+	uint32_t ulTime_Dur = 0;
+
+	EQC_FLAG = EQC_INIT;
+	bMngrResult = rtk_bt_eqc_le_connect_cancel();
+
+	if (!bMngrResult) {
+		BT_LOGE("LE Cancel Connect Device fail...\n\r");
+		bMngrResult = EQC_API_FAIL;
+		return bMngrResult;
+	}
+
+	ulTime_Start = osif_sys_time_get();
+	do {
+		if (EQC_FLAG & EQC_CLIEN_CONN_CANCEL) {  // conn cancel success
+			bMngrResult = EQC_SUCCESS;
+			goto TEST_END;
+		}
+
+		osif_delay(100);
+		ulTime_End = osif_sys_time_get();
+		ulTime_Dur = (ulTime_End - ulTime_Start) / 1000;
+	} while (ulTime_Dur < ulTime_Limit);
+
+	bMngrResult = EQC_FAIL;
+
+TEST_END:
+	return bMngrResult;
+}
+
 bool eqc_le_client_test(uint8_t *btaddr)
 {
 	uint8_t bMngrResult = EQC_FAIL;
@@ -477,7 +514,7 @@ bool eqc_le_client_test(uint8_t *btaddr)
 		}
 		case EQC_WAIT_FAIL: {
 			BT_LOGA("Start to Cancel connect....\n\r");
-			if (!rtk_bt_eqc_le_connect_cancel()) {
+			if (EQC_SUCCESS != eqc_le_client_connect_cancel()) {
 				BT_LOGE("Cancel connect to LE device fail\n\r");
 				Func_Code = false;
 				goto TEST_END;
@@ -544,10 +581,34 @@ TEST_END:
 	return Func_Code;
 }
 
+bool bt_eqc_client_deinit(uint8_t deinit_flag)
+{
+	///deinit
+	E_EVENT_MSG deinit_event_msg = {0xFF, NULL};
+	eqc_le_send_msg(&deinit_event_msg);
+	eqc_le_wait_bt_status(deinit_flag);
+
+	memset(dut_address, 0, sizeof(dut_address));
+	memset(eut_address, 0, sizeof(dut_address));
+
+	if (EQC_DEINIT != EQC_FLAG) {
+		BT_LOGE("device deinit fail[%d]\n\r", EQC_FLAG);
+		return false;
+	}
+
+#if defined(CONFIG_BT_COEXIST)
+	rtk_coex_btc_set_pta(PTA_WIFI, PTA_HOST_BT, COMMON_ACTION);
+#else
+	BT_LOGE("BT_COEXIST disabled! ignore set_pta!");
+#endif
+	return true;
+}
+
 bool bt_eqc_client_start_and_test(uint32_t bt_option)
 {
 	uint8_t init_flag = EQC_INIT_FAIL | EQC_INIT;
 	uint8_t deinit_flag = EQC_DEINIT;
+	bool ret = true;
 	if (EQC_DEINIT != EQC_FLAG) {
 		BT_LOGE("device is not ready to init[%d]\n\r", EQC_FLAG);
 		return false;
@@ -573,28 +634,13 @@ bool bt_eqc_client_start_and_test(uint32_t bt_option)
 
 	if (!eqc_le_client_test(eut_address)) {
 		BT_LOGE("eqc_le_client_test fail\n\r");
+		bt_eqc_client_deinit(deinit_flag);
 		return false;
 	}
 
-	///deinit
-	E_EVENT_MSG deinit_event_msg = {0xFF, NULL};
-	eqc_le_send_msg(&deinit_event_msg);
-	eqc_le_wait_bt_status(deinit_flag);
+	ret = bt_eqc_client_deinit(deinit_flag);
 
-	memset(dut_address, 0, sizeof(dut_address));
-	memset(eut_address, 0, sizeof(dut_address));
-
-	if (EQC_DEINIT != EQC_FLAG) {
-		BT_LOGE("device deinit fail[%d]\n\r", EQC_FLAG);
-		return false;
-	}
-
-#if defined(CONFIG_BT_COEXIST)
-	rtk_coex_btc_set_pta(PTA_WIFI, PTA_HOST_BT, COMMON_ACTION);
-#else
-	BT_LOGE("BT_COEXIST disabled! ignore set_pta!");
-#endif
-	return true;
+	return ret;
 }
 
 bool bt_eqc_server_start(void)
