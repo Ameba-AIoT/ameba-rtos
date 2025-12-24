@@ -111,7 +111,6 @@ typedef enum {
 	SD_OK = 0,
 	SD_NODISK,
 	SD_INSERT,
-	SD_INIT, // about to initialize card
 	SD_INITERR,
 	SD_PROTECTED,
 	SD_ERROR,

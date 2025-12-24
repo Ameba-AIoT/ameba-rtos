@@ -1052,6 +1052,30 @@ int atcmd_bt_wifimate_configurator(int argc, char *argv[])
 	return ret;
 }
 
+#if defined(CONFIG_BT_FUZZ_TEST) && CONFIG_BT_FUZZ_TEST
+extern int bt_fuzz_test_main(uint8_t enable, uint8_t role);
+extern int atcmd_bt_fuzz_test_cmd(int argc, char *argv[]);
+int atcmd_bt_fuzz_test(int argc, char *argv[])
+{
+	int ret = 0;
+	if ((strcmp("0", argv[0]) == 0) || (strcmp("1", argv[0]) == 0)) {
+		uint8_t op = (uint8_t)str_to_int(argv[0]);
+		if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
+			BT_LOGE("Error: wrong parameter (%d) for bt fuzz test example!\r\n", op);
+			return BT_AT_ERR_PARAM_INVALID;
+		}
+		if (bt_fuzz_test_main(op, 1)) {
+			BT_LOGE("Error: bt fuzz test example %s failed!\r\n", (op == 1) ? "enable" : "disable");
+			return BT_AT_FAIL;
+		}
+
+		BT_LOGA("bt fuzz test example %s OK!\r\n", (op == 1) ? "enable" : "disable");
+	} else {
+		ret = atcmd_bt_fuzz_test_cmd(argc, argv);
+	}
+	return ret;
+}
+#endif
 static const cmd_table_t example_table[] = {
 #if defined(CONFIG_BT_AUDIO_MP_TEST) && CONFIG_BT_AUDIO_MP_TEST
 	{"bt_audio_mp_test", atcmd_bt_audio_mp_test,    2, 2},
@@ -1155,6 +1179,9 @@ static const cmd_table_t example_table[] = {
 #endif
 #if defined(CONFIG_BT_WIFIMATE_CONFIGURATOR) && CONFIG_BT_WIFIMATE_CONFIGURATOR
 	{"ble_wifimate_configurator", atcmd_bt_wifimate_configurator, 2, 6},
+#endif
+#if defined(CONFIG_BT_FUZZ_TEST) && CONFIG_BT_FUZZ_TEST
+	{"fuzz_test",        atcmd_bt_fuzz_test, 2, 6},
 #endif
 	{NULL,},
 };
