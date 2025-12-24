@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         ic: [amebalite, amebasmart, amebadplus, amebagreen2]
-        build_stage_suffix: [B0, B1, B2, B3]
+        build_stage_suffix: [B0, B1, B2, B3, B4, B5]
     with:
       ic_name: ${{ matrix.ic }}
       build_stage_name: ${{ matrix.build_stage_suffix }}
