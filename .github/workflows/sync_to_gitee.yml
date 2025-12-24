@@ -40,7 +40,9 @@ jobs:
               git checkout remotes/origin/master -b master
               echo "create master from origin/master"
           fi
-          need_commit=0
+          sed -i 's/github.com\/Ameba-AIoT/gitee.com\/ameba-aiot/g' .gitmodules
+          git add .gitmodules
+          need_commit=1
           if ! grep -q 'if(1)' cmake/toolchain/ameba-toolchain-asdk-10.3.1.cmake; then
             sed -i 's/if(USE_ALIYUN_URL)/if(1)/g' cmake/toolchain/ameba-toolchain-asdk-10.3.1.cmake
             git add cmake/toolchain/ameba-toolchain-asdk-10.3.1.cmake

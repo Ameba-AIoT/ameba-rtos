@@ -1,14 +1,22 @@
 {
           "amebalite": {"B1":"utils/confs_daily_build/bt_only.conf utils/confs_daily_build/ipc.conf utils/confs_daily_build/trustzone.conf utils/confs_daily_build/wifi_all.conf", 
                         "B2":"utils/confs_daily_build/lite_cross.conf utils/confs_daily_build/bt_only.conf utils/confs_daily_build/ipc.conf utils/confs_daily_build/trustzone.conf",
-                        "B3":"utils/confs_daily_build/atcmd.conf"},
+                        "B3":"utils/confs_daily_build/atcmd.conf",
+                        "B4":"utils/confs_daily_build/bt_only.conf utils/confs_daily_build/mp_expand.conf",
+                        "B5":"utils/confs_daily_build/bt_only.conf utils/confs_daily_build/mp_shrink.conf"},
           "amebasmart":{"B1":"utils/confs_daily_build/bt_en.conf utils/confs_daily_build/ipc.conf utils/confs_daily_build/trustzone.conf utils/confs_daily_build/vfs_fatfs.conf utils/confs_daily_build/usb_ap_host.conf utils/confs_daily_build/wifi_all.conf", 
                         "B2":"utils/confs_daily_build/bt3.conf utils/confs_daily_build/trustzone.conf utils/confs_daily_build/usb_hp_device.conf",
-                        "B3":"utils/confs_daily_build/atcmd.conf utils/confs_daily_build/usb_ap_device.conf"},
+                        "B3":"utils/confs_daily_build/atcmd.conf utils/confs_daily_build/usb_ap_device.conf",
+                        "B4":"utils/confs_daily_build/bt_en.conf utils/confs_daily_build/mp_expand.conf",
+                        "B5":"utils/confs_daily_build/bt_en.conf utils/confs_daily_build/mp_shrink.conf"},
           "amebadplus":{"B1":"utils/confs_daily_build/bt1.conf utils/confs_daily_build/wifi_all.conf",
                         "B2":"utils/confs_daily_build/bt2.conf utils/confs_daily_build/usb.conf",
-                        "B3":"utils/confs_daily_build/atcmd.conf"},
+                        "B3":"utils/confs_daily_build/atcmd.conf",
+                        "B4":"utils/confs_daily_build/bt_en.conf utils/confs_daily_build/mp_expand.conf",
+                        "B5":"utils/confs_daily_build/bt_en.conf utils/confs_daily_build/mp_shrink.conf"},
           "amebagreen2":{"B1":"utils/confs_daily_build/bt1.conf utils/confs_daily_build/wifi_all.conf",
                         "B2":"utils/confs_daily_build/usb.conf",
-                        "B3":"utils/confs_daily_build/atcmd.conf"}
+                        "B3":"utils/confs_daily_build/atcmd.conf",
+                        "B4":"utils/confs_daily_build/bt_en.conf utils/confs_daily_build/mp_expand.conf",
+                        "B5":"utils/confs_daily_build/bt_en.conf utils/confs_daily_build/mp_shrink.conf"}
 }
