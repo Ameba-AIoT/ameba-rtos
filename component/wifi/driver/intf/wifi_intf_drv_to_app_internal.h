@@ -234,6 +234,14 @@ struct _raw_data_desc_t {
 };
 
 /**
+  * @brief  the parameters for edcca test, only used for driver internal to set the edcca.
+  */
+struct rtw_edcca_param_t {
+	unsigned int edcca_mode; /**< 0: normal; 1: ETSI; 2 Janpan; 9: Disable */
+	int edcca_th; /**< EDCCA threshold, unit is dBm, the scope is [-128, 127], and the minimum step is 1.*/
+};
+
+/**
  * @brief  Set the current Media Access Control (MAC) address
  *	(or Ethernet hardware address) of the 802.11 device.
  * @param[in]  idx: Set STA or SoftAP mac address.
@@ -248,9 +256,11 @@ int wifi_set_mac_address(int idx, unsigned char *mac, u8 efuse);
 /**
  * @brief  for wifi certification of ETSI mode
  * @param[in]  edcca_mode: 0: normal; 1: ETSI; 2 Janpan; 9: Disable
+ * @param[in]  edcca_th: EDCCA threshold, unit is dBm, the scope is
+ *	[-60, -80], and the minimum step is 1.
  * @return  null.
  */
-void wifi_set_edcca_mode(u8 edcca_mode);
+void wifi_set_edcca_param(struct rtw_edcca_param_t *param);
 
 /**
  * @brief  Set global variable wifi_wpa_mode.
