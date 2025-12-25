@@ -510,6 +510,14 @@ typedef struct {
   * @}
   */
 
+/** @defgroup SDHOST_DMA_ALIGN_ADDR
+  * @{
+  */
+#define SDIOH_DMA_ALIGN_SZ      8 // hw: 8byte aligned
+/**
+  * @}
+  */
+
 /**
   * @}
   */
