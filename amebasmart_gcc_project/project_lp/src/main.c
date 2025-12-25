@@ -88,7 +88,7 @@ void app_IWDG_refresh(void *arg)
 
 }
 
-void app_IWDG_int(void)
+void app_IWDG_init(void)
 {
 	/*usually IWDG will enable by HW, and the bark interval is 4S
 	 * Due to inaccurate of Aon clk, IWDG should be refreshed
@@ -150,7 +150,7 @@ int main(void)
 
 	app_init_debug();
 
-	app_IWDG_int();
+	app_IWDG_init();
 
 	/* Execute application example */
 	app_example();

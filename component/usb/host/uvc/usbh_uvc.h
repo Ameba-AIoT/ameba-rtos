@@ -27,7 +27,7 @@
 #define USBH_MAX_NUM_MJPEG_FORMAT		30
 #define USBH_MAX_NUM_UNCOMP_FRAME		30
 
-#define USBH_MAX_NUM_VS_DESC			3
+#define USBH_MAX_NUM_VS_DESC			2
 #define USBH_MAX_NUM_VS_ALTS			30
 
 #define HFNUM_MAX_FRNUM					0x3fff

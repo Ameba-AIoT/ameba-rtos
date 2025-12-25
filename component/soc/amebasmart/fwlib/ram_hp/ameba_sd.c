@@ -26,9 +26,46 @@ static void (*cd_cb)(SD_RESULT);
 /** @defgroup SDHOST_Exported_Functions SDHOST Exported Functions
   * @{
   */
+static void SD_CardDetectHdl(u32 id, u32 event)
+{
+	(void)id;
+	u32 level = event & 0x3;
+
+	if (level == HAL_IRQ_FALL) { // high->low
+		RTK_LOGI(TAG, "Card Detected!\n");
+		if (card_info.sd_status == SD_NODISK) {
+			if (sd_sema_give_isr_fn != NULL) {
+				sd_sema_give_isr_fn(SD_SEMA_MAX_DELAY);
+			}
+		}
+		card_info.sd_status = SD_INSERT;
+	} else if (level == HAL_IRQ_RISE) { // low->high
+		RTK_LOGI(TAG, "Card Removed!\n");
+		card_info.sd_status = SD_NODISK;
+	}
+
+	if (cd_cb != NULL) {
+		cd_cb(card_info.sd_status);
+	}
+}
 
 static void SDIOH_Pinmux(void)
 {
+	GPIO_InitTypeDef GPIO_InitStruct_CD;
+	u8 port_num;
+
+	GPIO_TypeDef *GPIO_PORTx[3] = {
+		GPIOA_BASE,
+		GPIOB_BASE,
+		GPIOC_BASE
+	};
+
+	IRQn_Type GPIO_IRQ[3] = {
+		GPIOA_IRQ,
+		GPIOB_IRQ,
+		GPIOC_IRQ
+	};
+
 	Pinmux_Config(_PB_27, PINMUX_FUNCTION_SDIOH);	/* CMD */
 	Pinmux_Config(_PB_28, PINMUX_FUNCTION_SDIOH);	/* CLK */
 	Pinmux_Config(_PB_29, PINMUX_FUNCTION_SDIOH); 	/* D0 */
@@ -48,8 +85,22 @@ static void SDIOH_Pinmux(void)
 	}
 
 	if (sdioh_config.sdioh_cd_pin != _PNC) {			/* CD */
-		Pinmux_Config((u8)sdioh_config.sdioh_cd_pin, PINMUX_FUNCTION_SDIOH);
-		PAD_PullCtrl((u8)sdioh_config.sdioh_cd_pin, GPIO_PuPd_UP);
+		port_num = PORT_NUM(sdioh_config.sdioh_cd_pin);
+		GPIO_INTConfig(sdioh_config.sdioh_cd_pin, DISABLE);
+
+		GPIO_InitStruct_CD.GPIO_Pin =  sdioh_config.sdioh_cd_pin;
+		GPIO_InitStruct_CD.GPIO_Mode = GPIO_Mode_INT;
+		GPIO_InitStruct_CD.GPIO_PuPd = GPIO_PuPd_UP;
+		GPIO_InitStruct_CD.GPIO_ITTrigger = GPIO_INT_Trigger_BOTHEDGE;
+		GPIO_InitStruct_CD.GPIO_ITDebounce = GPIO_INT_DEBOUNCE_ENABLE;
+		GPIO_Init(&GPIO_InitStruct_CD);
+
+		InterruptRegister((IRQ_FUN)GPIO_INTHandler, GPIO_IRQ[port_num], (u32)GPIO_PORTx[port_num], INT_PRI_MIDDLE);
+		InterruptEn(GPIO_IRQ[port_num], INT_PRI_MIDDLE);
+
+		GPIO_UserRegIrq(sdioh_config.sdioh_cd_pin, (void *)SD_CardDetectHdl, (void *)NULL);
+		GPIO_INTConfig(sdioh_config.sdioh_cd_pin, ENABLE);
+		RTK_LOGI(TAG, "SDH_CD --> P%c%d\n", 'A' + port_num, PIN_NUM(sdioh_config.sdioh_cd_pin));
 	}
 
 	if (sdioh_config.sdioh_wp_pin != _PNC) {			/* WP */
@@ -162,6 +213,7 @@ static u32 SD_ResetCard(void)
 	return HAL_OK;
 }
 
+#if defined(SDIO) && (SDIO == SD)
 /**
   * @brief  Sends SD Memory Card interface condition, which includes host supply voltage information
   *  		and asks the card whether card supports voltage.
@@ -198,6 +250,7 @@ static u32 SD_VoltageCheck(u8 *voltage_mismatch)
 
 	return ret;
 }
+#endif
 
 /**
   * @brief  Forces the card to stop transmission.
@@ -343,8 +396,9 @@ static u32 SD_GetOCR(u8 voltage_mismatch)
 
 #else
 
-static SD_RESULT SD_GetOCR(u8 voltage_mismatch)
+static u32 SD_GetOCR(u8 voltage_mismatch)
 {
+	(void)voltage_mismatch;
 
 	u32 ret, cnt = 1000;
 	SDIOH_CmdTypeDef cmd_attr;
@@ -403,7 +457,7 @@ static u32 SD_GetCID(void)
 	DCache_CleanInvalidate((u32)pbuf, SDIOH_C6R2_BUF_LEN);
 
 	dma_cfg.op = SDIOH_DMA_READ;
-	dma_cfg.start_addr = ((u32)(pbuf)) / 8;
+	dma_cfg.start_addr = ((u32)(pbuf)) / SDIOH_DMA_ALIGN_SZ;
 	dma_cfg.blk_cnt = 1;
 	dma_cfg.type = SDIOH_DMA_R2;
 	SDIOH_DMAConfig(&dma_cfg);
@@ -497,14 +551,16 @@ static u32 SD_GetCSD(void)
 	SDIOH_DmaCtl dma_cfg;
 	SDIOH_CmdTypeDef cmd_attr;
 	u8 *pbuf = card_info.dma_buf;
+#if defined(SDIO) && (SDIO == SD)
 	u32 c_size, n;
+#endif
 
 	/***** CMD9 *****/
 	_memset((void *)(pbuf), 0, SDIOH_C6R2_BUF_LEN);
 	DCache_CleanInvalidate((u32)pbuf, SDIOH_C6R2_BUF_LEN);
 
 	dma_cfg.op = SDIOH_DMA_READ;
-	dma_cfg.start_addr = ((u32)(pbuf)) / 8;
+	dma_cfg.start_addr = ((u32)(pbuf)) / SDIOH_DMA_ALIGN_SZ;
 	dma_cfg.blk_cnt = 1;
 	dma_cfg.type = SDIOH_DMA_R2;
 	SDIOH_DMAConfig(&dma_cfg);
@@ -681,6 +737,7 @@ static u32 SD_SetBusWidth(u8 bus_width)
 	return HAL_OK;
 }
 
+#if defined(SDIO) && (SDIO == SD)
 /**
   * @brief  Get the SD Configuration Register (SCR).
   * @param  None
@@ -715,7 +772,7 @@ static u32 SD_GetSCR(void)
 	DCache_CleanInvalidate((u32)pbuf, SDIOH_C6R2_BUF_LEN);
 
 	dma_cfg.op = SDIOH_DMA_READ;
-	dma_cfg.start_addr = ((u32)(pbuf)) / 8;
+	dma_cfg.start_addr = ((u32)(pbuf)) / SDIOH_DMA_ALIGN_SZ;
 	dma_cfg.blk_cnt = 1;
 	dma_cfg.type = SDIOH_DMA_64B;
 	SDIOH_DMAConfig(&dma_cfg);
@@ -799,7 +856,7 @@ static u32 SD_SwitchFunction(u8 mode, u8 speed, u8 *buf_32align)
 	DCache_CleanInvalidate((u32)buf_32align, SDIOH_C6R2_BUF_LEN);
 
 	dma_cfg.op = SDIOH_DMA_READ;
-	dma_cfg.start_addr = ((u32)buf_32align) / 8;
+	dma_cfg.start_addr = ((u32)buf_32align) / SDIOH_DMA_ALIGN_SZ;
 	dma_cfg.blk_cnt = 1;
 	dma_cfg.type = SDIOH_DMA_64B;
 	SDIOH_DMAConfig(&dma_cfg);
@@ -837,6 +894,7 @@ static u32 SD_SwitchFunction(u8 mode, u8 speed, u8 *buf_32align)
 
 	return HAL_OK;
 }
+#endif
 
 /**
   * @brief  SD card interrupt handler.
@@ -845,7 +903,6 @@ static u32 SD_SwitchFunction(u8 mode, u8 speed, u8 *buf_32align)
   */
 static u32 SD_IRQHandler(void *param)
 {
-	SDIOH_TypeDef *psdioh = SDIOH_BASE;
 	u32 tmp;
 	u8 give_sema = FALSE;
 	UNUSED(param);
@@ -857,34 +914,6 @@ static u32 SD_IRQHandler(void *param)
 		SDIOH_INTClearPendingBit(tmp);
 		if (tmp & SDIOH_DMA_CTL_INT_EN) {
 			give_sema = TRUE;
-		}
-	}
-
-	if (psdioh->CARD_INT_PEND & SDIOH_SDMMC_INT_PEND) {
-		tmp = psdioh->CARD_EXIST;
-		psdioh->CARD_INT_PEND |= SDIOH_SDMMC_INT_PEND;
-
-		if (card_info.sd_status == SD_NODISK) {
-			give_sema = TRUE;
-		}
-
-		if (tmp & SDIOH_SD_EXIST) {
-			if (tmp & SDIOH_SD_WP) {
-				card_info.sd_status = SD_PROTECTED;
-			} else if ((cd_cb != NULL) && (card_info.sd_status != SD_INIT)) {
-				card_info.sd_status = SD_INIT;
-				cd_cb(card_info.sd_status);
-			} else if (card_info.sd_status == SD_NODISK) {
-				card_info.sd_status = SD_INSERT;
-			}
-
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Card Detect\n");
-		} else {
-			card_info.sd_status = SD_NODISK;
-			if (cd_cb != NULL) {
-				cd_cb(card_info.sd_status);
-			}
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Card Remove\n");
 		}
 	}
 
@@ -908,7 +937,7 @@ SD_RESULT SD_GetEXTCSD(u8 *pbuf)
 	DCache_CleanInvalidate((u32)pbuf, SD_BLOCK_SIZE);
 
 	dma_cfg.op = SDIOH_DMA_READ;
-	dma_cfg.start_addr = ((u32)(pbuf)) / 8;
+	dma_cfg.start_addr = ((u32)(pbuf)) / SDIOH_DMA_ALIGN_SZ;
 	dma_cfg.blk_cnt = 1;
 	dma_cfg.type = SDIOH_DMA_NORMAL;
 	SDIOH_DMAConfig(&dma_cfg);
@@ -970,7 +999,7 @@ u32 SD_ReadBlock(uint8_t *readbuff, uint32_t BlockIdx)
 	DCache_CleanInvalidate((u32)readbuff, SD_BLOCK_SIZE);
 
 	dma_cfg.op = SDIOH_DMA_READ;
-	dma_cfg.start_addr = ((u32)readbuff) / 8;
+	dma_cfg.start_addr = ((u32)readbuff) / SDIOH_DMA_ALIGN_SZ;
 	dma_cfg.blk_cnt = 1;
 	dma_cfg.type = SDIOH_DMA_NORMAL;
 	SDIOH_DMAConfig(&dma_cfg);
@@ -1034,7 +1063,7 @@ u32 SD_ReadMultiBlocks(uint8_t *readbuff, uint32_t BlockIdx, uint32_t NumberOfBl
 	DCache_CleanInvalidate((u32)readbuff, NumberOfBlocks * SD_BLOCK_SIZE);
 
 	dma_cfg.op = SDIOH_DMA_READ;
-	dma_cfg.start_addr = ((u32)readbuff) / 8;
+	dma_cfg.start_addr = ((u32)readbuff) / SDIOH_DMA_ALIGN_SZ;
 	dma_cfg.blk_cnt = NumberOfBlocks;
 	dma_cfg.type = SDIOH_DMA_NORMAL;
 	SDIOH_DMAConfig(&dma_cfg);
@@ -1077,7 +1106,7 @@ u32 SD_WriteBlock(uint8_t *writebuff, uint32_t BlockIdx)
 	u32 ret, start;
 	SDIOH_DmaCtl dma_cfg;
 	SDIOH_CmdTypeDef cmd_attr;
-	assert_param((writebuff != NULL) && IS_CACHE_LINE_ALIGNED_ADDR((u32)writebuff));
+	assert_param((writebuff != NULL) && ((u32)writebuff % SDIOH_DMA_ALIGN_SZ == 0));
 
 	if (card_info.is_sdhc_sdxc) {
 		start = (u32)BlockIdx;
@@ -1089,7 +1118,7 @@ u32 SD_WriteBlock(uint8_t *writebuff, uint32_t BlockIdx)
 	DCache_CleanInvalidate((u32)writebuff, SD_BLOCK_SIZE);
 
 	dma_cfg.op = SDIOH_DMA_WRITE;
-	dma_cfg.start_addr = ((u32)writebuff) / 8;
+	dma_cfg.start_addr = ((u32)writebuff) / SDIOH_DMA_ALIGN_SZ;
 	dma_cfg.blk_cnt = 1;
 	dma_cfg.type = SDIOH_DMA_NORMAL;
 	SDIOH_DMAConfig(&dma_cfg);
@@ -1139,7 +1168,7 @@ u32 SD_WriteMultiBlocks(uint8_t *writebuff, uint32_t BlockIdx, uint32_t NumberOf
 	SDIOH_CmdTypeDef cmd_attr;
 
 	assert_param(NumberOfBlocks > 1);
-	assert_param((writebuff != NULL) && IS_CACHE_LINE_ALIGNED_ADDR((u32)writebuff));
+	assert_param((writebuff != NULL) && ((u32)writebuff % SDIOH_DMA_ALIGN_SZ == 0));
 
 	if (card_info.is_sdhc_sdxc) {
 		start = (u32)BlockIdx;
@@ -1184,7 +1213,7 @@ u32 SD_WriteMultiBlocks(uint8_t *writebuff, uint32_t BlockIdx, uint32_t NumberOf
 
 	/***** CMD25 *****/
 	dma_cfg.op = SDIOH_DMA_WRITE;
-	dma_cfg.start_addr = ((u32)writebuff) / 8;
+	dma_cfg.start_addr = ((u32)writebuff) / SDIOH_DMA_ALIGN_SZ;
 	dma_cfg.blk_cnt = NumberOfBlocks;
 	dma_cfg.type = SDIOH_DMA_NORMAL;
 	SDIOH_DMAConfig(&dma_cfg);
@@ -1362,7 +1391,7 @@ u32 SD_GetSDStatus(u8 *buf_32align)
 	DCache_CleanInvalidate((u32)buf_32align, SDIOH_C6R2_BUF_LEN);
 
 	dma_cfg.op = SDIOH_DMA_READ;
-	dma_cfg.start_addr = ((u32)buf_32align) / 8;
+	dma_cfg.start_addr = ((u32)buf_32align) / SDIOH_DMA_ALIGN_SZ;
 	dma_cfg.blk_cnt = 1;
 	dma_cfg.type = SDIOH_DMA_64B;
 	SDIOH_DMAConfig(&dma_cfg);
@@ -1483,7 +1512,7 @@ u32 SD_SwitchBusSpeed(u8 speed)
 }
 
 #else
-SD_RESULT SD_SwitchBusSpeed(u8 speed)
+u32 SD_SwitchBusSpeed(u8 speed)
 {
 	u32 ret;
 	SDIOH_CmdTypeDef cmd_attr;
@@ -1561,26 +1590,33 @@ SD_RESULT SD_WriteBlocks(u32 sector, const u8 *data, u32 count)
 		return card_info.sd_status;
 	}
 
-	if ((u32)data % CACHE_LINE_SIZE) { /* Not CACHE_LINE_SIZE aligned */
-		ptr = rtos_mem_malloc(SD_BLOCK_SIZE);
+	if ((u32)data % SDIOH_DMA_ALIGN_SZ) { /* Not SDIOH_DMA_ALIGN_SZ aligned */
+		ptr = rtos_mem_malloc(SD_MALLOC_BLK_CNT * SD_BLOCK_SIZE); // 4KByte
 		if (ptr == NULL) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Allocate buffer error !!\r\n");
 			return SD_ERROR;
 		}
 
-		do {
-			_memcpy(ptr, data + i * SD_BLOCK_SIZE, SD_BLOCK_SIZE);
+		while (count > SD_MALLOC_BLK_CNT) {
+			_memcpy(ptr, data + i * SD_BLOCK_SIZE, SD_MALLOC_BLK_CNT * SD_BLOCK_SIZE);
 
-			res = SD_WriteBlock(ptr, sector + i);
+			res = SD_WriteMultiBlocks(ptr, sector + i, SD_MALLOC_BLK_CNT);
 			if (res != HAL_OK) {
 				break;
 			}
+			count -= SD_MALLOC_BLK_CNT;
+			i += SD_MALLOC_BLK_CNT;
+		};
 
-		} while (++i < count);
+		if (count > 1) {
+			res = SD_WriteMultiBlocks(ptr, sector + i, count);
+		} else if (count == 1) {
+			res = SD_WriteBlock(ptr, sector + i);
+		}
 
 		rtos_mem_free(ptr);
 
-	} else { /*32-byte aligned */
+	} else { /* SDIOH_DMA_ALIGN_SZ-byte aligned */
 
 		if (count == 1) {
 			res = SD_WriteBlock((uint8_t *)data, sector);
@@ -1776,6 +1812,8 @@ void SD_CardInit(void)
   */
 SD_RESULT SD_Init(void)
 {
+	SDIOH_TypeDef *psdioh = SDIOH_BASE;
+
 	_memset(&card_info, 0, sizeof(SD_CardInfo));
 	card_info.sd_status = SD_NODISK;
 
@@ -1784,40 +1822,43 @@ SD_RESULT SD_Init(void)
 
 	/* Initialize SDIOH */
 	SDIOH_Init(sdioh_config.sdioh_bus_width);
-#if defined(SDIO) &&(SDIO == EMMC)
-	card_info.sd_status = SD_INSERT;
-#else
-
-	/* Set insert debounce */
-	SDIOH_DebounceSet(200);
-	SDIOH_DebounceCmd(ENABLE);
 
 	InterruptRegister((IRQ_FUN)SD_IRQHandler, SDIO_HOST_IRQ, NULL, INT_PRI_HIGH);
 	InterruptEn(SDIO_HOST_IRQ, INT_PRI_HIGH);
 
-	if ((CPU_InInterrupt() == 0) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (sd_sema_take_fn != NULL)) {
-		if (sd_sema_take_fn(SD_SEMA_MAX_DELAY) != RTK_SUCCESS) {
-			card_info.sd_status = SD_INITERR;
-		}
+#if defined(SDIO) &&(SDIO == EMMC)
+	card_info.sd_status = SD_INSERT;
+#else
+	if (GPIO_ReadDataBit(sdioh_config.sdioh_cd_pin) == 0) {
+		/* cd signal is low: card is inserted */
+		card_info.sd_status = SD_INSERT;
 	} else {
-		/*
-		 * if No OS, wait ISR to change card_info.sd_status
-		 * if in interrupt context, Need to add check SDIOH_BASE->CARD_EXIST
-		 */
-		DelayMs(SD_SEMA_MAX_DELAY);
+		/* cd signal is low: card is inserted */
+		RTK_LOGS(TAG, RTK_LOG_INFO, "No card! Please insert the card into the slot...\n");
+		if ((CPU_InInterrupt() == 0) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (sd_sema_take_fn != NULL)) {
+			if (sd_sema_take_fn(SD_SEMA_MAX_DELAY) != RTK_SUCCESS) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "No card is inserted in %dms!\n", SD_SEMA_MAX_DELAY);
+			}
+		} else {
+			/*
+			* if No OS, wait ISR to change card_info.sd_status
+			* if in interrupt context, Need to add check SDIOH_BASE->CARD_EXIST
+			*/
+			DelayMs(SD_SEMA_MAX_DELAY);
+		}
 	}
 #endif
 
 	/* Initialize SD card */
 	if (card_info.sd_status == SD_INSERT) {
-		card_info.sd_status = SD_INIT;
 		SD_CardInit();
-	} else if (card_info.sd_status == SD_PROTECTED) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Card is write protected !!\r\n");
-
+		if (psdioh->CARD_EXIST & SDIOH_SD_WP) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Card is write protected!\r\n");
+			card_info.sd_status = SD_PROTECTED;
+		}
 	} else if (card_info.sd_status == SD_NODISK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Card is removed\r\n");
-		return SD_INITERR;
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Card is removed or not inserted!\r\n");
+		card_info.sd_status = SD_INITERR;
 	}
 
 	return card_info.sd_status;
