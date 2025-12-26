@@ -54,6 +54,7 @@ if("${c_MCU_PROJECT_NAME}" STREQUAL "ap")
         ${c_CMPT_FWLIB_DIR}/rom_common/ameba_pinmux_rom.c
         ${c_CMPT_FWLIB_DIR}/rom_common/ameba_rcc_rom.c
         ${c_CMPT_FWLIB_DIR}/rom_common/ameba_uart_rom.c
+        ${c_CMPT_FWLIB_DIR}/rom_common/ameba_loguart_rom.c
         ${c_CMPT_FWLIB_DIR}/rom_common/ameba_gpio_rom.c
         ${c_CMPT_FWLIB_DIR}/rom_common/ameba_flash_rom.c
         ${c_CMPT_FWLIB_DIR}/rom_common/ameba_wdg.c
@@ -64,7 +65,9 @@ if("${c_MCU_PROJECT_NAME}" STREQUAL "ap")
         ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_rsa.c
         ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_sha.c
         ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_spinand_rom.c
-		${c_CMPT_FWLIB_DIR}/rom_hp/ameba_ecdsa.c
+        ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_ecdsa.c
+        ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_otf_rom.c
+        ${c_CMPT_FWLIB_DIR}/rom_hp/ameba_trng.c
     )
 endif()
 
