@@ -97,6 +97,10 @@ ameba_add_subdirectory_if(CONFIG_BT_A2DP_SCATTERNET
     bt_a2dp_scatternet
 )
 
+ameba_add_subdirectory_if(CONFIG_BT_FUZZ_TEST
+    bt_fuzz_test
+)
+
 ameba_add_subdirectory_if(CONFIG_BT_AUDIO_MP_TEST
     bt_audio_mp_test
 )

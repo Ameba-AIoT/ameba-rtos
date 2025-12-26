@@ -15,6 +15,8 @@ static FlashInfo_TypeDef *current_IC;
 /* Flag to check configuration register or not. Necessary for wide-range VCC MXIC flash */
 static u8 check_config_reg = 0;
 
+static u32 SPIC_DATA_FLASH_CALIB_PATTERN[2] = {0};
+
 /**
   * @brief  Set New Calibration 600M PS Disable/Enable
   * @param  NewStatus: Disable/Enable
@@ -366,13 +368,19 @@ u32 DATA_FLASH_Read_DataIsRight(void)
 	pgolden_data[1] = HAL_READ32(LoaderLogAddr, 0x04);
 
 	if (FLASH_InitStruct->debug) {
-		RTK_LOGI(TAG,  "DATA FLASH_Read 0x%lx:0x%lx\n", pgolden_data[0], pgolden_data[1]);
+		RTK_LOGI(TAG, "read data from data flash address0 as SPIC_DATA_FLASH_CALIB_PATTERN when flash is in 1io 20M. \n"
+				 "DATA FLASH_Read Expected: 0x%08lx 0x%08lx, Got: 0x%08lx 0x%08lx\n",
+				 SPIC_DATA_FLASH_CALIB_PATTERN[0], SPIC_DATA_FLASH_CALIB_PATTERN[1], pgolden_data[0], pgolden_data[1]);
 	}
 
 	/* compare data */
-	if (_memcmp(pgolden_data, SPIC_CALIB_PATTERN, 8) == 0) {
+	if (_memcmp(pgolden_data, SPIC_DATA_FLASH_CALIB_PATTERN, 8) == 0) {
 		return TRUE;
 	} else {
+		RTK_LOGE(TAG, "Data flash calibration fail. \n"
+				 "DATA FLASH_Read Expected: 0x%08lx 0x%08lx, Got: 0x%08lx 0x%08lx\n"
+				 "If use nand flash, consider bad block\n",
+				 SPIC_DATA_FLASH_CALIB_PATTERN[0], SPIC_DATA_FLASH_CALIB_PATTERN[1], pgolden_data[0], pgolden_data[1]);
 		return FALSE;
 	}
 
@@ -664,6 +672,11 @@ void data_flash_highspeed_setup(void)
 
 	/* Set flash status register: set QE, clear protection bits */
 	data_flash_set_status_register();
+
+	/* read data from data flash address0 as calib data when flash is in 1io 20M*/
+	DCache_Invalidate(DATA_FLASH_BASE, 8);
+	SPIC_DATA_FLASH_CALIB_PATTERN[0] = HAL_READ32(DATA_FLASH_BASE, 0x00);
+	SPIC_DATA_FLASH_CALIB_PATTERN[1] = HAL_READ32(DATA_FLASH_BASE, 0x04);
 
 	/* Set flash I/O mode and high-speed calibration */
 	data_flash_rx_mode_switch(read_mode);

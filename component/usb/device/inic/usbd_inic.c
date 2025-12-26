@@ -8,7 +8,6 @@
 
 #include "usbd_inic.h"
 #include "usbd_inic_otp.h"
-#include "usbd.h"
 
 /* Private defines -----------------------------------------------------------*/
 

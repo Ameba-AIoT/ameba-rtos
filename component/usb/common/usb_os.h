@@ -17,9 +17,10 @@
 #include "os_wrapper.h"
 #endif
 
+/* Exported defines ----------------------------------------------------------*/
+
 /**
  * @brief Defines the maximum timeout value for semaphore operations.
- * @note This is only defined when an RTOS is used (`!CONFIG_NON_OS`).
  */
 #ifndef CONFIG_NON_OS
 #define USB_OS_SEMA_TIMEOUT		(RTOS_SEMA_MAX_COUNT)
@@ -34,9 +35,11 @@
 #define USB_DMA_ALIGNED		__attribute__((aligned(CACHE_LINE_SIZE)))
 #endif
 
+/* Exported macros -----------------------------------------------------------*/
+
 /**
  * @brief Checks if a memory address is aligned to the cache line size.
- * @param x The memory address to check.
+ * @param x: The memory address to check.
  * @return Non-zero if aligned, 0 otherwise.
  */
 #ifndef USB_IS_MEM_DMA_ALIGNED
@@ -45,7 +48,7 @@
 
 /**
  * @brief Extracts the low byte from a 16-bit value.
- * @param x The 16-bit value.
+ * @param x: The 16-bit value.
  * @return The low byte (u8).
  */
 #ifndef USB_LOW_BYTE
@@ -54,17 +57,16 @@
 
 /**
  * @brief Extracts the high byte from a 16-bit value.
- * @param x The 16-bit value.
+ * @param x: The 16-bit value.
  * @return The high byte (u8).
  */
 #ifndef USB_HIGH_BYTE
 #define USB_HIGH_BYTE(x)	((u8)(((x) >> 8) & 0x00FFU))
 #endif
 
+/* Exported types ------------------------------------------------------------*/
 /**
  * @brief Type definitions for abstracting OS objects.
- * @note These types are mapped to the underlying RTOS types when `CONFIG_NON_OS`
- *       is not defined. For a non-OS build, these are not used.
  * @{
  */
 #ifndef CONFIG_NON_OS
@@ -74,36 +76,54 @@ typedef rtos_queue_t usb_os_queue_t;  /**< Abstracted type for a message queue. 
 typedef rtos_task_t usb_os_task_t;    /**< Abstracted type for a task handle. */
 #endif
 /** @} */
+
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
 
 /**
- * @brief Puts the current task to sleep for a specified number of milliseconds.
- * @param[in] ms The duration to sleep in milliseconds.
+ * @brief Delays execution for a specified number of milliseconds.
+ * @param[in] ms: The duration to sleep in milliseconds.
  */
 void usb_os_sleep_ms(u32 ms);
 
 /**
  * @brief Delays execution for a specified number of microseconds.
- * @details This is typically a busy-wait loop.
- * @param[in] us The duration to delay in microseconds.
+ * @param[in] us: The duration to delay in microseconds.
  */
 void usb_os_delay_us(u32 us);
 
 /**
+ * @brief Gets the current time stamp in milliseconds.
+ * @return The current time stamp in milliseconds.
+ */
+u32 usb_os_get_timestamp_ms(void);
+
+/**
+ * @brief Gets the current time stamp in microseconds.
+ * @return The current time stamp in microseconds.
+ */
+u64 usb_os_get_timestamp_us(void);
+
+/**
+  * @brief  Gets the current time tick.
+  * @retval The current time tick.
+  */
+u32 usb_os_get_time_tick(u8 speed);
+
+/**
  * @brief Fills a block of memory with a specified value.
- * @param[out] buf Pointer to the memory block to fill.
- * @param[in] val The value to be set.
- * @param[in] size The number of bytes to be set to the value.
+ * @param[out] buf: Pointer to the memory block to fill.
+ * @param[in] val: The value to be set.
+ * @param[in] size: The number of bytes to be set to the value.
  */
 void usb_os_memset(void *buf, u8 val, u32 size);
 
 /**
  * @brief Copies a block of memory from a source to a destination.
- * @param[out] dst Pointer to the destination array where the content is to be copied.
- * @param[in] src Pointer to the source of data to be copied.
- * @param[in] size The number of bytes to copy.
+ * @param[out] dst: Pointer to the destination array where the content is to be copied.
+ * @param[in] src: Pointer to the source of data to be copied.
+ * @param[in] size: The number of bytes to copy.
  */
 void usb_os_memcpy(void *dst, const void *src, u32 size);
 

@@ -1134,25 +1134,30 @@ int whc_fullmac_host_update_custom_ie(u8 *ie, int ie_index, u8 type)
 	return ret;
 }
 
-int whc_fullmac_host_set_edcca_mode(u8 edcca_mode)
+int whc_fullmac_host_set_edcca_mode(struct rtw_edcca_param_t *p)
 {
 	int ret = 0;
-	u32 param_buf[1];
+	u8 *param_buf = NULL;
 
-	switch (edcca_mode) {
+	if (p == NULL) {
+		return -EINVAL;
+	}
+
+	switch (p->edcca_mode) {
 	case RTW_EDCCA_NORM:
 	case RTW_EDCCA_ADAPT:
 	case RTW_EDCCA_CS:
 	case RTW_EDCCA_DISABLE:
-		param_buf[0] = (u32)edcca_mode;
-		whc_fullmac_host_send_event(WHC_API_WIFI_SET_EDCCA_MODE, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
+		param_buf = (u8 *)p;
+		whc_fullmac_host_send_event(WHC_API_WIFI_SET_EDCCA_PARAM, param_buf, sizeof(struct rtw_edcca_param_t), (u8 *)&ret, sizeof(int));
 		break;
 	default:
-		dev_info(global_idev.fullmac_dev, "Wrong EDCCA mode %d!", edcca_mode);
+		dev_info(global_idev.fullmac_dev, "Wrong EDCCA mode %d!", p->edcca_mode);
 		dev_info(global_idev.fullmac_dev, "0: normal; 1: ETSI; 2: Japan; 9: Disable.");
 		ret = -EINVAL;
 		break;
 	}
+
 	return ret;
 }
 
