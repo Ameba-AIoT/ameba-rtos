@@ -482,13 +482,18 @@ static void whc_spi_host_spi_init(void)
 
 	u8 index = (WHC_SPI_DEV == SPI0_DEV) ? 0 : 1;
 
-	RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
-	Pinmux_Config(SPI1_MOSI, PINMUX_FUNCTION_SPIM);//MOSI
-	Pinmux_Config(SPI1_MISO, PINMUX_FUNCTION_SPIM);//MISO
-	Pinmux_Config(SPI1_SCLK, PINMUX_FUNCTION_SPIM);//CLK
-	//Pinmux_Config(SPI1_CS, PINMUX_FUNCTION_SPIM);//CS
-	//PAD_PullCtrl(SPI1_CS, GPIO_PuPd_UP);  // pull-up, default 1
-	PAD_PullCtrl(SPI1_SCLK, GPIO_PuPd_DOWN);
+	if (WHC_SPI_DEV == SPI0_DEV) {
+		RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
+	} else {
+		RCC_PeriphClockCmd(APBPeriph_SPI1, APBPeriph_SPI1_CLOCK, ENABLE);
+	}
+
+	Pinmux_Config(SPIM_MOSI, PINMUX_FUNCTION_SPIM);//MOSI
+	Pinmux_Config(SPIM_MISO, PINMUX_FUNCTION_SPIM);//MISO
+	Pinmux_Config(SPIM_SCLK, PINMUX_FUNCTION_SPIM);//CLK
+	//Pinmux_Config(SPIM_CS, PINMUX_FUNCTION_SPIM);//CS
+	//PAD_PullCtrl(SPIM_CS, GPIO_PuPd_UP);  // pull-up, default 1
+	PAD_PullCtrl(SPIM_SCLK, GPIO_PuPd_DOWN);
 
 	SSI_SetRole(WHC_SPI_DEV, SSI_MASTER);
 	SSI_StructInit(&SSI_InitStructMaster);

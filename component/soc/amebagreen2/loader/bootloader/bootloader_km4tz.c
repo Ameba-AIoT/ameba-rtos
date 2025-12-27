@@ -158,7 +158,13 @@ void BOOT_SCBConfig_HP(void)
 
 void BOOT_ImgCopy(void *__restrict dst0, const void *__restrict src0, size_t len0)
 {
-	BOOT_ROM_Copy(dst0, src0, len0);
+	if (SYSCFG_OTP_BootFromNor()) {
+		BOOT_ROM_Copy(dst0, src0, len0);
+	} else {
+		u32 NandAddr = Nand_L2P_Table((u32)src0) + SPI_FLASH_BASE;
+		BOOT_ROM_Copy(dst0, (void *)NandAddr, len0);
+	}
+
 }
 
 u32 BOOT_LoadImages(void)

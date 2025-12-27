@@ -396,7 +396,8 @@ static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 	u16 itf_total_len = 0;
 
 	if (uvc->uvc_desc.vs_num > USBH_MAX_NUM_VS_DESC) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "too much VS itf %d-%d\n", uvc->uvc_desc.vs_num > USBH_MAX_NUM_VS_DESC);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Too many VS itf %d-%d\n", uvc->uvc_desc.vs_num, USBH_MAX_NUM_VS_DESC);
+		return HAL_OK;
 	}
 
 	desc = itf_data->raw_data;
@@ -423,7 +424,7 @@ static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 
 		case USB_DESC_TYPE_INTERFACE:
 			if (((usbh_itf_desc_t *)desc)->bInterfaceNumber != vs_intf->bInterfaceNumber) { //find another itf, maybe it is the as itf, should return
-				RTK_LOGS(TAG, RTK_LOG_INFO, "VC intf new %d:old %d, return\n\n", ((usbh_itf_desc_t *)desc)->bInterfaceNumber, vs_intf->bInterfaceNumber);
+				RTK_LOGS(TAG, RTK_LOG_DEBUG, "VC intf new %d:old %d, return\n\n", ((usbh_itf_desc_t *)desc)->bInterfaceNumber, vs_intf->bInterfaceNumber);
 				return HAL_OK;
 			}
 			bAlternateSetting = ((usbh_itf_desc_t *)desc)->bAlternateSetting;
@@ -436,7 +437,7 @@ static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 					desc += len;
 					vs_intf->altsetting[bAlternateSetting - 1].endpoint = (usbh_ep_desc_t *)desc;
 				} else {
-					RTK_LOGS(TAG, RTK_LOG_WARN, "too much alt set %d-%d\n", bAlternateSetting, USBH_MAX_NUM_VS_ALTS);
+					RTK_LOGS(TAG, RTK_LOG_WARN, "Too many alt set %d-%d\n", bAlternateSetting, USBH_MAX_NUM_VS_ALTS);
 				}
 			} else {
 				return HAL_OK;
@@ -473,10 +474,10 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 	if (itf_data == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get vc itf fail\n");
 		return ret;
-	} else 	{
+	} else {
 		ret = usbh_uvc_parse_vc(itf_data);
 		if (ret) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "UVC parse video ctrl fail\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Parse vc fail\n");
 			return ret;
 		}
 	}
@@ -485,15 +486,14 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 	dev_id.bInterfaceSubClass = USB_SUBCLASS_VIDEOSTREAMING;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
-	if (itf_data == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get vs itf fail\n");
-		return ret;
-	} else {
+	while (itf_data) {
 		ret = usbh_uvc_parse_vs(itf_data);
-		if (ret) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "UVC parse video stream fail\n");
+		if (ret != HAL_OK) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Parse vs fail, itf=%d\n",
+					 itf_data->itf_desc_array[0].bInterfaceNumber);
 			return ret;
 		}
+		itf_data = itf_data->next;
 	}
 	return ret;
 }

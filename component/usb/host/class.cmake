@@ -57,11 +57,6 @@ if(CONFIG_USBH_UVC)
         ${USBH_CLASS_DIR}/uvc/usbh_uvc_parse.c
         ${USBH_CLASS_DIR}/uvc/usbh_uvc_stream.c
     )
-    if (CONFIG_SUPPORT_USBH_UVC_HW_DEC)
-        ameba_list_append(private_sources
-            ${USBH_CLASS_DIR}/uvc/usbh_uvc_dec.c
-        )
-    endif()
 endif()
 
 if(CONFIG_USBH_VENDOR)

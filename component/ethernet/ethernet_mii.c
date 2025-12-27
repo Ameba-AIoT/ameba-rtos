@@ -363,7 +363,7 @@ void ethernet_clock_set(void)
 		RCC_PeriphClockDividerFENSet(SYS_PLL_GMAC, ENABLE);
 		RCC_PeriphClockDividerSet(SYS_PLL_GMAC, GET_CLK_DIV(gmac_ckd));
 	} else {
-		RCC_PeriphClockSourceSet(PSRAM, USB_PLL);
+		RCC_PeriphClockSourceSet(GMAC, USB_PLL);
 		RCC_PeriphClockDividerFENSet(USB_PLL_GMAC, ENABLE);
 		RCC_PeriphClockDividerSet(USB_PLL_GMAC, GET_CLK_DIV(gmac_ckd));
 	}

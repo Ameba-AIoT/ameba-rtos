@@ -45,7 +45,7 @@ void app_IWDG_refresh(void *arg)
 	WDG_Refresh(IWDG_DEV);
 }
 
-void app_IWDG_int(void)
+void app_IWDG_init(void)
 {
 	/* usually IWDG will enable by HW, and the bark interval is 4095ms by default */
 	if (0 == (HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_FEN) & APBPeriph_IWDG)) {
@@ -163,7 +163,7 @@ int main(void)
 
 #if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 	app_fullmac_init();
-	app_IWDG_int();
+	app_IWDG_init();
 #else
 	/*IPC table initialization*/
 	ipc_table_init(IPCAP_DEV);

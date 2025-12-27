@@ -111,7 +111,6 @@ typedef enum {
 	SD_OK = 0,
 	SD_NODISK,
 	SD_INSERT,
-	SD_INIT, // about to initialize card
 	SD_INITERR,
 	SD_PROTECTED,
 	SD_ERROR,
@@ -211,6 +210,7 @@ typedef struct {
   * @{
   */
 #define SD_BLOCK_SIZE					512    //Bytes
+#define SD_MALLOC_BLK_CNT			8 // malloc size: 8 block
 /**
   * @}
   */
