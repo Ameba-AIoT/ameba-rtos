@@ -25,7 +25,7 @@ COREDUMP_END = '========== End of Crash Dump =========='
 STACK_DUMP_PATTERN = re.compile('==========\w+ Stack Dump ==========', flags=re.I)
 STACK_END_PATTERN = re.compile('StackEnd: (0x[\da-f]{8})', flags=re.I)
 STACK_DEPTH_PATTERN = re.compile(r'.*?dump\s+stack\s+depth\s+=\s*(\d+)$', flags=re.I)
-STACK_DATA_PATTERN = re.compile(r'\[([\da-f]+)]\s+((?:[\da-f]{8}\s*)+)', flags=re.I)
+STACK_DATA_PATTERN = re.compile(r'\[(?:0x)?([\da-f]+)]\s+((?:[\da-f]{8}\s*)+)', flags=re.I)
 
 # coredump states
 COREDUMP_IDLE = 0
@@ -67,7 +67,7 @@ class CoreDump:
 
         coredump_start_mo = re.search(COREDUMP_START, line.strip(), flags=re.I)
         coredump_end_mo = re.match(COREDUMP_END, line.strip(), flags=re.I)
-
+        
         if coredump_start_mo:
             print_yellow('core dump started (further output muted)')
             self.event_queue.put((TAG_KEY, '\n'))
