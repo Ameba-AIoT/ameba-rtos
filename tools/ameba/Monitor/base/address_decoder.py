@@ -48,7 +48,7 @@ class AddressDecoder:
                 bin_dir = os.path.join(self.toolchain_path, "bin")
                 if os.path.exists(bin_dir):
                     for file in os.listdir(bin_dir):
-                        if fnmatch.fnmatch(file, "*addr2line.exe"):
+                        if fnmatch.fnmatch(file, "*addr2line*"):
                             self.addr2line = os.path.join(bin_dir, file)
                             return
                 else:

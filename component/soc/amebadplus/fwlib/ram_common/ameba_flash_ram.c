@@ -6,6 +6,7 @@
 
 #include "ameba_soc.h"
 #include "os_wrapper.h"
+#include "os_wrapper_specific.h"
 
 static const char *const TAG = "FLASH";
 uint32_t PrevIrqStatus;
@@ -62,6 +63,7 @@ void FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum)
 		u32 time_pass_ms = SYSTIMER_GetPassTime(Start_Timer_Cnt);
 		u32 End_Systick_Cnt = xTaskGetTickCountFromISR();
 		u32 systick_pass_tick = 0;
+		u8 xSwitchRequired = FALSE;
 
 		if (End_Systick_Cnt >= Start_Systick_Cnt) {
 			systick_pass_tick = End_Systick_Cnt - Start_Systick_Cnt;
@@ -72,11 +74,16 @@ void FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum)
 		u32 step_tick = (time_pass_ms > (systick_pass_tick + 1)) ? (time_pass_ms - (systick_pass_tick + 1)) : 0;
 		/*  update kernel tick */
 		while (step_tick > 0) {
-			xTaskIncrementTick();
+			/* Increment the RTOS tick. */
+			if (xTaskIncrementTick() != FALSE) {
+				xSwitchRequired = TRUE;
+			}
 			step_tick --;
 		}
 
 		*pflag = WRITE_SYNC_CLEAR;
+		/* Pend a context switch. */
+		portEND_SWITCHING_ISR(xSwitchRequired);
 	}
 	DCache_Clean((u32)pflag, sizeof(pflag));
 

@@ -73,7 +73,7 @@ static int proc_get_dummy(struct seq_file *m, void *v)
 static ssize_t proc_write_edcca_mode(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
 {
 	char tmp[32];
-	u8 edcca_mode;
+	struct rtw_edcca_param_t param = {0};
 
 	if (count != 2) {
 		return -EFAULT;
@@ -84,8 +84,37 @@ static ssize_t proc_write_edcca_mode(struct file *file, const char __user *buffe
 	}
 
 	if (buffer && !copy_from_user(tmp, buffer, count)) {
-		sscanf(tmp, "%u", (unsigned int *)&edcca_mode);
-		if (whc_fullmac_host_set_edcca_mode(edcca_mode) < 0) {
+		sscanf(tmp, "%u", (unsigned int *)&param.edcca_mode);
+		/* MAX edcca_th is 127, to set the 128 for invalid edcca_th. */
+		param.edcca_th = 128;
+		if (whc_fullmac_host_set_edcca_mode(&param) < 0) {
+			return -EFAULT;
+		}
+	}
+
+	return count;
+}
+
+static ssize_t proc_write_edcca_th(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
+{
+	char tmp[32];
+	struct rtw_edcca_param_t param = {0};
+	u8 edcca_mode;
+
+	if (count > sizeof(tmp)) {
+		return -EFAULT;
+	}
+
+	if (buffer && !copy_from_user(tmp, buffer, count)) {
+		sscanf(tmp, "%d", (int *)&param.edcca_th);
+		if ((param.edcca_th > -60) || (param.edcca_th < -80)) {
+			dev_err(global_idev.fullmac_dev, "The range to fix EDCCA threshold is [-60 dbm, -80 dbm]. %d dbm is invalid!", param.edcca_th);
+			return -EINVAL;
+		}
+		whc_fullmac_host_get_edcca_mode(&edcca_mode);
+		param.edcca_mode = edcca_mode;
+
+		if (whc_fullmac_host_set_edcca_mode(&param) < 0) {
 			return -EFAULT;
 		}
 	}
@@ -359,6 +388,7 @@ static void rtw_ndev_ap_proc_deinit(const char *name)
 const struct rtw_proc_hdl ndev_sta_proc_hdls[] = {
 	RTW_PROC_HDL_SSEQ("bcn_time", proc_get_sta_tsf, NULL),
 	RTW_PROC_HDL_SSEQ("edcca_mode", proc_read_edcca_mode, proc_write_edcca_mode),
+	RTW_PROC_HDL_SSEQ("edcca_th", NULL, proc_write_edcca_th),
 	RTW_PROC_HDL_SSEQ("beacon_rssi", proc_read_beacon_rssi, NULL),
 	RTW_PROC_HDL_SSEQ("data_rssi", proc_read_data_rssi, NULL),
 	RTW_PROC_HDL_SSEQ("antdiv_mode", proc_read_antdiv_mode, NULL),

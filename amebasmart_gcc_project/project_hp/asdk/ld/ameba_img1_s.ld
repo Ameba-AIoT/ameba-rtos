@@ -21,6 +21,7 @@ SECTIONS
 	{
 		/* image1 text */
 		*(.boot.ram.text*)
+		*(.sramdram.only.text*)
 		*(.text*)
 		*(.boot.rodata*)
 		*(.rodata*)

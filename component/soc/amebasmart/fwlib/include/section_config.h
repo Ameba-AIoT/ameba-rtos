@@ -54,14 +54,14 @@
 #define WLAN_RAM_MAP_SECTION
 #define WLAN_ROM_BSS_SECTION
 
-#define	HAL_ROM_TEXT_SECTION
+#define	HAL_ROM_TEXT_SECTION				SECTION(".sramdram.only.text")
 #define	HAL_ROM_DATA_SECTION
 #define	HAL_ROM_BSS_SECTION
 
-#define LIBC_ROM_TEXT_SECTION
+#define LIBC_ROM_TEXT_SECTION				SECTION(".sramdram.only.text")
 #define	LIBC_ROM_DATA_SECTION
 
-#define SHELL_ROM_TEXT_SECTION
+#define SHELL_ROM_TEXT_SECTION				SECTION(".sramdram.only.text")
 #define SHELL_ROM_BSS_SECTION
 #define SHELL_ROM_DATA_SECTION
 

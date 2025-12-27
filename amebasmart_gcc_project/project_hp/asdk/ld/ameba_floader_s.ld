@@ -21,6 +21,7 @@ SECTIONS
 	{
 		/* image1 text */
 		*(.text*)
+		*(.sramdram.only.text*)
 		*(.rodata*)
 		. = ALIGN (4);
 	} > KM4_FLOADER_RAM_S

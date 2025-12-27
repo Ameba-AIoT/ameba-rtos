@@ -49,7 +49,7 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_CUS_IE,	whc_event_wifi_custom_ie_ops},
 	{WHC_API_WIFI_SET_USR_CFG, whc_event_wifi_set_usr_config},
 	{WHC_API_WIFI_SET_HOST_RTOS, whc_event_wifi_set_host_rtos},
-	{WHC_API_WIFI_SET_EDCCA_MODE, whc_event_wifi_set_edcca_mode},
+	{WHC_API_WIFI_SET_EDCCA_PARAM, whc_event_wifi_set_edcca_param},
 	{WHC_API_WIFI_GET_EDCCA_MODE, whc_event_wifi_get_edcca_mode},
 	{WHC_API_WIFI_GET_ANTENNA_INFO, whc_event_wifi_get_ant_info},
 #ifdef CONFIG_NAN
@@ -863,17 +863,17 @@ void whc_event_wifi_set_usr_config(u32 api_id, u32 *param_buf)
 	rtos_mem_free(pwifi_usrcfg);
 }
 
-void whc_event_wifi_set_edcca_mode(u32 api_id, u32 *param_buf)
+void whc_event_wifi_set_edcca_param(u32 api_id, u32 *param_buf)
 {
 	int ret;
-	u8 edcca_mode = (u8)param_buf[0];
+	struct rtw_edcca_param_t *param = (struct rtw_edcca_param_t *)param_buf[0];
 
-	switch (edcca_mode) {
+	switch (param->edcca_mode) {
 	case RTW_EDCCA_NORM:
 	case RTW_EDCCA_ADAPT:
 	case RTW_EDCCA_CS:
 	case RTW_EDCCA_DISABLE:
-		wifi_set_edcca_mode(edcca_mode);
+		wifi_set_edcca_param(param);
 		ret = 0;
 		break;
 	default:

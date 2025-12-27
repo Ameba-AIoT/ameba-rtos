@@ -1,10 +1,6 @@
 ###############################################################################
 #NOTE: Configures, these parameter name is fixed and cannot be changed
-# set(v_ASDK_VER 10.3.1)
-# set(v_VSDK_VER 10.3.1)
-# set(v_FATFS_VER r0.14b)
-# set(v_LITTLEFS_VER r2.50)
-# set(v_LWIP_VER v2.1.2)
+#ca32's v_FREERTOS_VER maybe changed in common.cmake by kconfig
 
 set(c_VERBOSE_MAKEFILE FALSE)
 ###############################################################################
