@@ -8,7 +8,6 @@
 
 #include "usbh_msc.h"
 #include "usbh_msc_scsi.h"
-#include "usbh.h"
 
 /* Private defines -----------------------------------------------------------*/
 #define USBH_MSC_DEBUG 0

@@ -336,8 +336,8 @@ static u32 whc_spi_dev_suspend(u32 expected_idle_time, void *param)
 	UNUSED(expected_idle_time);
 	UNUSED(param);
 	if (pmu_get_sleep_type() == SLEEP_PG) {
-		InterruptDis(SPI0_IRQ);
-		InterruptUnRegister(SPI0_IRQ);
+		InterruptDis(SPIS_IRQ);
+		InterruptUnRegister(SPIS_IRQ);
 	}
 	return TRUE;
 }
@@ -355,8 +355,8 @@ static u32 whc_spi_dev_resume(u32 expected_idle_time, void *param)
 		set_dev_rxreq_pin(DEV_RX_IDLE);
 
 		/* Initialize SPI */
-		PAD_PullCtrl(SPI0_CS, GPIO_PuPd_UP);  // pull-up, default 1
-		PAD_PullCtrl(SPI0_SCLK, GPIO_PuPd_DOWN);
+		PAD_PullCtrl(SPIS_CS, GPIO_PuPd_UP);  // pull-up, default 1
+		PAD_PullCtrl(SPIS_SCLK, GPIO_PuPd_DOWN);
 
 		SSI_SetRole(WHC_SPI_DEV, SSI_SLAVE);
 		SSI_StructInit(&SSI_InitStructSlave);
@@ -366,8 +366,8 @@ static u32 whc_spi_dev_resume(u32 expected_idle_time, void *param)
 		SSI_InitStructSlave.SPI_Role = SSI_SLAVE;
 		SSI_Init(WHC_SPI_DEV, &SSI_InitStructSlave);
 
-		InterruptRegister((IRQ_FUN)whc_spi_dev_interrupt_handler, SPI0_IRQ, (u32)(&spi_priv), INT_PRI_MIDDLE);
-		InterruptEn(SPI0_IRQ, INT_PRI_MIDDLE);
+		InterruptRegister((IRQ_FUN)whc_spi_dev_interrupt_handler, SPIS_IRQ, (u32)(&spi_priv), INT_PRI_MIDDLE);
+		InterruptEn(SPIS_IRQ, INT_PRI_MIDDLE);
 
 		/* Enable RX full interrupt */
 		SSI_INTConfig(WHC_SPI_DEV, SPI_BIT_RXFIM | SPI_BIT_SSRIM, ENABLE);
@@ -440,13 +440,18 @@ void whc_spi_dev_device_init(void)
 	RTIM_INTConfig(TIMx[WHC_RECOVER_TIM_IDX], TIM_IT_Update, ENABLE);
 
 	/* Initialize SPI */
-	RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
-	Pinmux_Config(SPI0_MOSI, PINMUX_FUNCTION_SPIS);//MOSI
-	Pinmux_Config(SPI0_MISO, PINMUX_FUNCTION_SPIS);//MISO
-	Pinmux_Config(SPI0_SCLK, PINMUX_FUNCTION_SPIS);//CLK
-	Pinmux_Config(SPI0_CS, PINMUX_FUNCTION_SPIS);//CS
-	PAD_PullCtrl(SPI0_CS, GPIO_PuPd_UP);  // pull-up, default 1
-	PAD_PullCtrl(SPI0_SCLK, GPIO_PuPd_DOWN);
+	if (WHC_SPI_DEV == SPI0_DEV) {
+		RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
+	} else {
+		RCC_PeriphClockCmd(APBPeriph_SPI1, APBPeriph_SPI1_CLOCK, ENABLE);
+	}
+
+	Pinmux_Config(SPIS_MOSI, PINMUX_FUNCTION_SPIS);//MOSI
+	Pinmux_Config(SPIS_MISO, PINMUX_FUNCTION_SPIS);//MISO
+	Pinmux_Config(SPIS_SCLK, PINMUX_FUNCTION_SPIS);//CLK
+	Pinmux_Config(SPIS_CS, PINMUX_FUNCTION_SPIS);//CS
+	PAD_PullCtrl(SPIS_CS, GPIO_PuPd_UP);  // pull-up, default 1
+	PAD_PullCtrl(SPIS_SCLK, GPIO_PuPd_DOWN);
 
 	SSI_SetRole(WHC_SPI_DEV, SSI_SLAVE);
 	SSI_StructInit(&SSI_InitStructSlave);
@@ -456,8 +461,8 @@ void whc_spi_dev_device_init(void)
 	SSI_InitStructSlave.SPI_Role = SSI_SLAVE;
 	SSI_Init(WHC_SPI_DEV, &SSI_InitStructSlave);
 
-	InterruptRegister((IRQ_FUN)whc_spi_dev_interrupt_handler, SPI0_IRQ, (u32)whc_spi_priv, INT_PRI_MIDDLE);
-	InterruptEn(SPI0_IRQ, INT_PRI_MIDDLE);
+	InterruptRegister((IRQ_FUN)whc_spi_dev_interrupt_handler, SPIS_IRQ, (u32)whc_spi_priv, INT_PRI_MIDDLE);
+	InterruptEn(SPIS_IRQ, INT_PRI_MIDDLE);
 
 	/* Enable RX full interrupt */
 	SSI_INTConfig(WHC_SPI_DEV, SPI_BIT_RXFIM | SPI_BIT_SSRIM, ENABLE);

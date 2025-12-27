@@ -11,6 +11,8 @@
 
 #include "basic_types.h"
 
+/* Exported defines ----------------------------------------------------------*/
+
 #define USB_VERSION_ID_0201                           0x0201 /**< USB Specification version 2.01. */
 
 /**
@@ -66,9 +68,9 @@
 #define USB_H2D                                        0x00U   /**< Host-to-Device direction. */
 #define USB_D2H                                        0x80U   /**< Device-to-Host direction. */
 
-#define USB_EP_IS_IN(ep_addr)	                       (((ep_addr) & USB_REQ_DIR_MASK) == USB_D2H)
-#define USB_EP_IS_OUT(ep_addr)	                       (((ep_addr) & USB_REQ_DIR_MASK) == USB_H2D)
-#define USB_EP_NUM(ep_addr)		                       ((ep_addr) & USB_REQ_NUM_MASK)
+#define USB_EP_IS_IN(ep_addr)	                       (((ep_addr) & USB_REQ_DIR_MASK) == USB_D2H)  /**< Check if the endpoint direction is IN. */
+#define USB_EP_IS_OUT(ep_addr)	                       (((ep_addr) & USB_REQ_DIR_MASK) == USB_H2D)  /**< Check if the endpoint direction is OUT. */
+#define USB_EP_NUM(ep_addr)		                       ((ep_addr) & USB_REQ_NUM_MASK)               /**< Get endpoint number from address. */
 
 /* D6..5 Type */
 #define USB_REQ_TYPE_STANDARD                          0x00U   /**< Standard request type. */
@@ -218,6 +220,10 @@
 /** @} */
 /** @} */ // End of Hub_Defs
 
+/* Exported macros -----------------------------------------------------------*/
+
+/* Exported types ------------------------------------------------------------*/
+
 /**
  * @brief Defines the transfer type of a USB endpoint.
  * @details Corresponds to the `bmAttributes` field in the endpoint descriptor.
@@ -228,6 +234,16 @@ typedef enum {
 	USB_CH_EP_TYPE_BULK,          /**< Bulk Endpoint/pipe. */
 	USB_CH_EP_TYPE_INTR           /**< Interrupt Endpoint/pipe. */
 } usb_ch_ep_type_t;
+
+/**
+ * @brief Defines the operational speeds for the USB controller.
+ */
+typedef enum {
+	USB_SPEED_HIGH = 0,                 /**< High Speed (480 Mbps). */
+	USB_SPEED_HIGH_IN_FULL,             /**< High Speed core running in Full Speed mode. */
+	USB_SPEED_LOW,                      /**< Low Speed (1.5 Mbps). */
+	USB_SPEED_FULL                      /**< Full Speed (12 Mbps). */
+} usb_speed_type_t;
 
 /**
  * @brief Standard USB setup request packet structure.
@@ -241,6 +257,10 @@ typedef struct {
 	u16 wIndex;                   /**< Request-specific index, often an interface or endpoint number. */
 	u16 wLength;                  /**< Number of bytes to transfer in the data phase. */
 } __PACKED usb_setup_req_t;
+
+/* Exported variables --------------------------------------------------------*/
+
+/* Exported functions --------------------------------------------------------*/
 
 #endif /* USB_CH9_H */
 

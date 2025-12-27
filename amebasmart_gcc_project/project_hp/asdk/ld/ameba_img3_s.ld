@@ -21,6 +21,7 @@ SECTIONS
 	{
 		__ram_image3_text_start__ = .;
 		*(.text*)
+		*(.sramdram.only.text*)
 		*(.rodata*)
 		. = ALIGN(32);
 	} > KM4_BD_RAM_S

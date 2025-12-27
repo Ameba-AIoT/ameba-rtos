@@ -6,7 +6,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include "usbd.h"
 #include "usbd_composite_cdc_acm_msc.h"
 #include "usbd_composite_cdc_acm.h"
 #include "usbd_composite_msc.h"

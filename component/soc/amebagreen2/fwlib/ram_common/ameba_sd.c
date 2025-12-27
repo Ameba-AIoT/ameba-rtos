@@ -17,9 +17,9 @@ static u8 scratch[SD_BLOCK_SIZE]__attribute__((aligned(32))) = {0};
 
 int (*sd_sema_take_fn)(u32);
 int (*sd_sema_give_isr_fn)(u32);
+static void (*cd_cb)(SD_RESULT);
 
 static SD_RESULT SD_PowerON(SD_HdlTypeDef *hsd);
-static SD_RESULT SD_InitCard(SD_HdlTypeDef *hsd);
 static SD_RESULT SD_SendSDStatus(SD_HdlTypeDef *hsd, u32 *pSDstatus);
 static u32 SD_SendCardStatus(SD_HdlTypeDef *hsd, u32 *pCardStatus);
 static u32 SD_WideBus_Enable(SD_HdlTypeDef *hsd);
@@ -65,11 +65,18 @@ static void SD_CardDetectHdl(u32 id, u32 event)
 {
 	(void)id;
 	u32 level = event & 0x3;
+	u32 sd_status;
 
 	if (level == HAL_IRQ_FALL) { // high->low
 		RTK_LOGI(TAG, "Card Detected!\n");
+		sd_status = SD_INSERT;
 	} else if (level == HAL_IRQ_RISE) { // low->high
 		RTK_LOGI(TAG, "Card Removed!\n");
+		sd_status = SD_NODISK;
+	}
+
+	if (cd_cb != NULL) {
+		cd_cb(sd_status);
 	}
 }
 
@@ -112,6 +119,7 @@ static void SDIOH_Pinmux(void)
 		GPIO_InitStruct_CD.GPIO_Mode = GPIO_Mode_INT;
 		GPIO_InitStruct_CD.GPIO_PuPd = GPIO_PuPd_UP;
 		GPIO_InitStruct_CD.GPIO_ITTrigger = GPIO_INT_Trigger_BOTHEDGE;
+		GPIO_InitStruct_CD.GPIO_ITDebounce = GPIO_INT_DEBOUNCE_ENABLE;
 		GPIO_Init(&GPIO_InitStruct_CD);
 
 		InterruptRegister((IRQ_FUN)GPIO_INTHandler, GPIO_IRQ[port_num], (u32)GPIO_PORTx[port_num], INT_PRI_MIDDLE);
@@ -145,10 +153,6 @@ SD_RESULT SD_Init(void)
 {
 	SD_RESULT ret;
 	u32 status;
-	u32 errorstate;
-	u8 val;
-	u32 cnt = 0;
-
 	SD_HdlTypeDef *hsd = &hsd0;
 
 	if (hsd == NULL) {
@@ -205,105 +209,11 @@ SD_RESULT SD_Init(void)
 	}
 
 	/* Card initialization */
-	ret = SD_InitCard(hsd); // (CMD2->)CMD3->(CMD9->)CMD7
+	ret = SD_CardInit(); // (CMD2->)CMD3->(CMD9->)CMD7(->CMD16)
 	if (ret != SD_OK) {
 		hsd->State = SD_STATE_READY;
 		return ret;
 	}
-
-	/*  Set block size */
-	if (hsd->Card.CardType != CARD_SDIO_ONLY) {
-		/* CMD16: Set Block Size for Card */
-		errorstate = SDMMC_CmdBlockLength(hsd->Instance, SD_BLOCK_SIZE); // CMD16
-		if (errorstate != SD_ERROR_NONE) {
-			/* Clear all the static flags */
-			SDIO_ClearErrSts(hsd->Instance, SDIO_ERR_FLAG);
-
-			hsd->ErrorCode |= errorstate;
-			hsd->State = SD_STATE_READY;
-			return SD_INITERR;
-		}
-	} else {
-		/* CMD52: set func0 blocksize */
-		ret = SD_IO_RW_Direct(hsd, BUS_WRITE, SDIO_FUNC0, SDIOD_CCCR_BLKSIZE_0, SD_BLOCK_SIZE & 0xFF, NULL);
-		if (ret != SD_OK) {
-			return ret;
-		}
-
-		/* CMD52: set func0 blocksize */
-		ret = SD_IO_RW_Direct(hsd, BUS_WRITE, SDIO_FUNC0, SDIOD_CCCR_BLKSIZE_1, (SD_BLOCK_SIZE >> 8) & 0xFF, NULL);
-		if (ret != SD_OK) {
-			return ret;
-		}
-
-		/* CMD52: set func1 blocksize */
-		ret = SD_IO_RW_Direct(hsd, BUS_WRITE, SDIO_FUNC0, SDIOD_CCCR_F1BLKSIZE_0, SD_BLOCK_SIZE & 0xFF, NULL);
-		if (ret != SD_OK) {
-			return ret;
-		}
-
-		/* CMD52: set func1 blocksize */
-		ret = SD_IO_RW_Direct(hsd, BUS_WRITE, SDIO_FUNC0, SDIOD_CCCR_F1BLKSIZE_1, (SD_BLOCK_SIZE >> 8) & 0xFF, NULL);
-		if (ret != SD_OK) {
-			return ret;
-		}
-	}
-
-	/* Set bus width */
-	ret = SD_ConfigBusWidth(hsd, sdioh_config.sdioh_bus_width);
-	if (ret != SD_OK) {
-		return ret;
-	}
-
-	/* Set bus speed */
-	ret = SD_ConfigBusSpeed(hsd, sdioh_config.sdioh_bus_speed);
-	if (ret != SD_OK) {
-		return ret;
-	}
-
-	if (hsd->Card.CardType != CARD_SDIO_ONLY) {
-		if (SD_GetCardState(hsd) != SD_CARD_TRANSFER) {
-			return SD_ERROR;
-		}
-	} else {
-		/* Enable func1 */
-		ret = SD_IO_RW_Direct(hsd, BUS_WRITE, SDIO_FUNC0, SDIOD_CCCR_IOEN, SDIO_FUNC_ENABLE_1, NULL);
-		if (ret != SD_OK) {
-			return SD_ERROR;
-		}
-
-		/* Wait until func1 is ready */
-		while (1) {
-			ret = SD_IO_RW_Direct(hsd, BUS_READ, SDIO_FUNC0, SDIOD_CCCR_IORDY, NULL, &val);
-			if (ret != SD_OK) {
-				return SD_ERROR;
-			}
-
-			if ((val & SDIO_FUNC_READY_1) != 0) {
-				break;
-			}
-			DelayMs(1);
-
-			if (cnt++ >= 500) {
-				return SD_ERROR;
-			}
-		}
-
-		/* Enable func1 interrupt */
-		ret = SD_IO_RW_Direct(hsd, BUS_WRITE, SDIO_FUNC0, SDIOD_CCCR_INTEN, INTR_CTL_MASTER_EN | INTR_CTL_FUNC1_EN, NULL);
-		if (ret != SD_OK) {
-			return SD_ERROR;
-		}
-	}
-
-	/* Initialize the error code */
-	hsd->ErrorCode = SD_ERROR_NONE;
-
-	/* Initialize the SD operation */
-	hsd->Context = SD_CONTEXT_NONE;
-
-	/* Initialize the SD state */
-	hsd->State = SD_STATE_READY;
 
 	return SD_OK;
 }
@@ -434,14 +344,17 @@ static SD_RESULT SD_PowerON(SD_HdlTypeDef *hsd)
  * @param  hsd: Pointer to SD handle
  * @retval SD Card error state
  */
-static SD_RESULT SD_InitCard(SD_HdlTypeDef *hsd)
+SD_RESULT SD_CardInit(void)
 {
+	SD_HdlTypeDef *hsd = &hsd0;
 	SDIOHOST_TypeDef *SDIOx = hsd->Instance;
 	SD_CardCIDTypeDef CID;
 	SD_CardCSDTypeDef CSD;
 	u32 errorstate;
 	SD_RESULT ret;
 	u16 sd_rca = 1U;
+	u8 val;
+	u32 cnt = 0;
 
 	/* Check the power State */
 	if (SDIO_GetPowerState(SDIOx) == 0U) {
@@ -512,6 +425,100 @@ static SD_RESULT SD_InitCard(SD_HdlTypeDef *hsd)
 		hsd->ErrorCode |= errorstate;
 		return SD_ERROR;
 	}
+
+	/*  Set block size */
+	if (hsd->Card.CardType != CARD_SDIO_ONLY) {
+		/* CMD16: Set Block Size for Card */
+		errorstate = SDMMC_CmdBlockLength(hsd->Instance, SD_BLOCK_SIZE); // CMD16
+		if (errorstate != SD_ERROR_NONE) {
+			/* Clear all the static flags */
+			SDIO_ClearErrSts(hsd->Instance, SDIO_ERR_FLAG);
+
+			hsd->ErrorCode |= errorstate;
+			hsd->State = SD_STATE_READY;
+			return SD_INITERR;
+		}
+	} else {
+		/* CMD52: set func0 blocksize */
+		ret = SD_IO_RW_Direct(hsd, BUS_WRITE, SDIO_FUNC0, SDIOD_CCCR_BLKSIZE_0, SD_BLOCK_SIZE & 0xFF, NULL);
+		if (ret != SD_OK) {
+			return ret;
+		}
+
+		/* CMD52: set func0 blocksize */
+		ret = SD_IO_RW_Direct(hsd, BUS_WRITE, SDIO_FUNC0, SDIOD_CCCR_BLKSIZE_1, (SD_BLOCK_SIZE >> 8) & 0xFF, NULL);
+		if (ret != SD_OK) {
+			return ret;
+		}
+
+		/* CMD52: set func1 blocksize */
+		ret = SD_IO_RW_Direct(hsd, BUS_WRITE, SDIO_FUNC0, SDIOD_CCCR_F1BLKSIZE_0, SD_BLOCK_SIZE & 0xFF, NULL);
+		if (ret != SD_OK) {
+			return ret;
+		}
+
+		/* CMD52: set func1 blocksize */
+		ret = SD_IO_RW_Direct(hsd, BUS_WRITE, SDIO_FUNC0, SDIOD_CCCR_F1BLKSIZE_1, (SD_BLOCK_SIZE >> 8) & 0xFF, NULL);
+		if (ret != SD_OK) {
+			return ret;
+		}
+	}
+
+	/* Set bus width */
+	ret = SD_ConfigBusWidth(hsd, sdioh_config.sdioh_bus_width);
+	if (ret != SD_OK) {
+		return ret;
+	}
+
+	/* Set bus speed */
+	ret = SD_ConfigBusSpeed(hsd, sdioh_config.sdioh_bus_speed);
+	if (ret != SD_OK) {
+		return ret;
+	}
+
+	if (hsd->Card.CardType != CARD_SDIO_ONLY) {
+		if (SD_GetCardState(hsd) != SD_CARD_TRANSFER) {
+			return SD_ERROR;
+		}
+	} else {
+		/* Enable func1 */
+		ret = SD_IO_RW_Direct(hsd, BUS_WRITE, SDIO_FUNC0, SDIOD_CCCR_IOEN, SDIO_FUNC_ENABLE_1, NULL);
+		if (ret != SD_OK) {
+			return SD_ERROR;
+		}
+
+		/* Wait until func1 is ready */
+		while (1) {
+			ret = SD_IO_RW_Direct(hsd, BUS_READ, SDIO_FUNC0, SDIOD_CCCR_IORDY, NULL, &val);
+			if (ret != SD_OK) {
+				return SD_ERROR;
+			}
+
+			if ((val & SDIO_FUNC_READY_1) != 0) {
+				break;
+			}
+			DelayMs(1);
+
+			if (cnt++ >= 500) {
+				return SD_ERROR;
+			}
+		}
+
+		/* Enable func1 interrupt */
+		ret = SD_IO_RW_Direct(hsd, BUS_WRITE, SDIO_FUNC0, SDIOD_CCCR_INTEN, INTR_CTL_MASTER_EN | INTR_CTL_FUNC1_EN, NULL);
+		if (ret != SD_OK) {
+			return SD_ERROR;
+		}
+	}
+
+	/* Initialize the error code */
+	hsd->ErrorCode = SD_ERROR_NONE;
+
+	/* Initialize the SD operation */
+	hsd->Context = SD_CONTEXT_NONE;
+
+	/* Initialize the SD state */
+	hsd->State = SD_STATE_READY;
 
 	/* All cards are initialized */
 	return SD_OK;
@@ -2693,6 +2700,16 @@ static void SD_Write_IT(SD_HdlTypeDef *hsd)
 	if (hsd->TxXferSize == 0) {
 		SDIO_ConfigNormIntSig(SDIOx, SDIOHOST_BIT_BUFF_WRITE_READY, DISABLE);
 	}
+}
+
+/**
+ *  @brief Set card detect irq callback for user.
+ *  @param cd_callback user callback function.
+ *  @retval None.
+ */
+void SD_SetCdCallback(void (*cd_callback)(SD_RESULT))
+{
+	cd_cb = cd_callback;
 }
 
 /**

@@ -6,7 +6,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include "usbd.h"
 #include "usbd_msc.h"
 #include "usbd_scsi.h"
 #include "os_wrapper.h"

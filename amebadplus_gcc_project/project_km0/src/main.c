@@ -42,7 +42,7 @@ void app_IWDG_refresh(void *arg)
 	WDG_Refresh(IWDG_DEV);
 }
 
-void app_IWDG_int(void)
+void app_IWDG_init(void)
 {
 	IWDG_LP_Enable(IWDG_DEV, DISABLE);
 	RTK_LOGI(TAG, "IWDG refresh on!\n");
@@ -104,7 +104,7 @@ int main(void)
 	InterruptEn(UART_LOG_IRQ, INT_PRI_LOWEST);
 	LOGUART_INTCoreConfig(LOGUART_DEV, LOGUART_BIT_INTR_MASK_KM0, ENABLE);
 
-	app_IWDG_int();
+	app_IWDG_init();
 
 	rtk_diag_init(RTK_DIAG_HEAP_SIZE, RTK_DIAG_SEND_BUFFER_SIZE);
 

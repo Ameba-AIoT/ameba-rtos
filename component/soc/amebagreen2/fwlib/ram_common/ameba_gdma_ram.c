@@ -600,8 +600,8 @@ u32 GDMA_GetBlkSize(u8 GDMA_Index, u8 GDMA_ChNum)
 	/* Check the parameters */
 	assert_param(IS_GDMA_Index(GDMA_Index));
 	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
-	/* block size = DSRx_H(high 5 bit) + SGRx_H(Low 16 bit)*/
-	BlkSize = (GDMA_GET_DSRx_H_BLOCK_TS_H(GDMA->CH[GDMA_ChNum].GDMA_DSRx_H) << 16) + GDMA_GET_SGRx_H_BLOCK_TS_L(GDMA->CH[GDMA_ChNum].GDMA_SGRx_H);
+
+	BlkSize = GDMA->CH[GDMA_ChNum].GDMA_CTLx_H;
 	return BlkSize;
 }
 

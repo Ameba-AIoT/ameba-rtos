@@ -6,7 +6,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usb_os.h"
-#include "usbh.h"
 #include "usbh_cdc_ecm.h"
 #include "usbh_cdc_ecm_hal.h"
 #if ECM_STATE_DEBUG_ENABLE

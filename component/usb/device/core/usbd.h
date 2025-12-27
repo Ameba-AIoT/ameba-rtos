@@ -11,26 +11,37 @@
 
 #include "usb_os.h"
 #include "usb_ch9.h"
-#include "usb_hal.h"
 
-/* This define is used to trace transfer performance */
-#define USBD_TP_TRACE_DEBUG             1U
+/* Exported defines ----------------------------------------------------------*/
+
+#define USBD_TP_TRACE_DEBUG             1U  /**<This define is used to trace transfer performance */
 
 /* USB descriptor configurations */
 #define USBD_MAX_NUM_INTERFACES			16U
 #define USBD_MAX_NUM_CONFIGURATION		16U
 
-/* USB device string descriptor index */
+/**
+ * @brief USB device string descriptor index.
+ * @{
+ */
 #define USBD_IDX_LANGID_STR				0x00U
 #define USBD_IDX_MFC_STR				0x01U
 #define USBD_IDX_PRODUCT_STR			0x02U
 #define USBD_IDX_SERIAL_STR				0x03U
 #define USBD_IDX_MS_OS_STR				0xEEU
+/** @} */
 
-/* USB device interrupt enable flag*/
+/**
+ * @brief USB device interrupt enable flag.
+ * @{
+ */
 #define USBD_SOF_INTR                   (BIT0) /**< Start of (micro)Frame Interrupt (GINTSTS.Sof). */
 #define USBD_EOPF_INTR                  (BIT1) /**< End of Periodic Frame Interrupt (GINTSTS.EOPF). */
 #define USBD_EPMIS_INTR                 (BIT2) /**< Endpoint Mismatch Interrupt (GINTSTS.EPMis). */
+/** @} */
+
+/* Exported macros -----------------------------------------------------------*/
+
 /* Exported types ------------------------------------------------------------*/
 
 /**
@@ -39,8 +50,8 @@
 typedef enum {
 	USBD_STATE_INIT       = 0U,                /**< Initial state, before enumeration. */
 	USBD_STATE_DEFAULT    = 1U,                /**< Default state, after reset. */
-	USBD_STATE_ADDRESSED  = 2U,                /**< Addressed state, after SET_ADDRESS. */
-	USBD_STATE_CONFIGURED = 3U,                /**< Configured state, after SET_CONFIGURATION. */
+	USBD_STATE_ADDRESSED  = 2U,                /**< Addressed state, after `SET_ADDRESS`. */
+	USBD_STATE_CONFIGURED = 3U,                /**< Configured state, after `SET_CONFIGURATION`. */
 	USBD_STATE_SUSPENDED  = 4U,                /**< Suspended state. */
 } usbd_state_t;
 
@@ -74,7 +85,7 @@ typedef struct {
 	u8 skip_dcache_post_invalidate;           /**< Skip `DCache_Invalidate` when RX complete and it will be called in class. */
 	__IO u8 xfer_state;                       /**< Current state of the class transfer. */
 	__IO u8 tx_zlp;                           /**< Flag to indicate if a Zero-Length Packet should be sent. */
-	__IO u8 dis_zlp;                          /**< Flag to disable ZLP for the current transfer. */
+	__IO u8 dis_zlp;                          /**< Flag to disable Zero-Length Packet for the current transfer. */
 	__IO u8 is_busy;                          /**< Flag indicating if the endpoint is currently busy. */
 } usbd_ep_t;
 
@@ -104,7 +115,7 @@ typedef struct {
 	/**
 	 * @brief Depth of TxFIFO n (for n=1 to USB_MAX_ENDPOINTS-1) in dwords which must not exceed hardware limits.
 	 * @details ptx_fifo_depth[i] corresponds to TxFIFO i+1 (Dedicated FIFO mode only).
-	 * @note::
+	 * @note
 	 *    - For SoCs with shared USB FIFO, no FIFO depth configuration is required.
 	 *    - For SoCs with dedicated USB FIFO, observe the following constraint:
 	 *      rx_fifo_depth + all ptx_fifo_depth[n] <= Hardware total FIFO depth
@@ -175,7 +186,7 @@ typedef struct _usbd_class_driver_t {
 	 *     - `USB_DESC_TYPE_DEVICE`: Device Descriptor, mandatory.
 	 *     - `USB_DESC_TYPE_CONFIGURATION`: Configuration Descriptor, mandatory.
 	 *     - `USB_DESC_TYPE_DEVICE_QUALIFIER`: Device Qualifier Descriptor, required for dual-speed (FS/HS) devices                                                                                                     |
-	 *     - `USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION`£ºOther Speed Configuration Descriptor, required for dual-speed (FS/HS) devices.
+	 *     - `USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION`ï¼šOther Speed Configuration Descriptor, required for dual-speed (FS/HS) devices.
 	 *     - `USB_DESC_TYPE_STRING`: String descriptors (language ID, manufacturer, product, serial), optional.
 	 * @param[in] dev: USB device.
 	 * @param[in] req: USB setup request.
@@ -284,8 +295,6 @@ typedef struct _usbd_class_driver_t {
 	void (*status_changed)(usb_dev_t *dev, u8 old_status, u8 status);
 } usbd_class_driver_t;
 
-/* Exported macros -----------------------------------------------------------*/
-
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
@@ -313,7 +322,10 @@ int usbd_get_status(void);
 /**
  * @brief Get USB device bus status.
  * @param[out] status: Return 0 on success, with the status parameter containing USB bus status
- *        represented as a bitwise combination of @ref usb_dev_bus_state_t
+ *        represented as a bitwise combination of enumeration values:
+ *          - `USB_DEV_BUS_STATUS_DN` = BIT0,       // D- line status bit.
+ *          - `USB_DEV_BUS_STATUS_DP` = BIT1,       // D+ line status bit.
+ *          - `USB_DEV_BUS_STATUS_SUSPEND` = BIT2,  //Suspend indication bit.
  * @return 0 on success, non-zero on failure.
  */
 int usbd_get_bus_status(u32 *status);
@@ -369,7 +381,7 @@ int usbd_ep_deinit(usb_dev_t *dev, usbd_ep_t *ep);
  * @note
  *     - The transfer executes asynchronously: function return doesn't indicate completion.
  *     - Check transfer status via ep_data_in/ep0_data_in callback of the @ref usbd_class_driver_t.
- *     - ZLP will be automatically transmitted as needed by device core driver.
+ *     - Zero-Length Packet will be automatically transmitted as needed by device core driver.
  * @param[in] dev: USB device.
  * @param[in] ep: USB endpoint.
  * @return 0 on success, non-zero on failure.

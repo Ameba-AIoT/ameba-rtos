@@ -239,10 +239,15 @@ void usbh_uvc_deinit(void)
   * @param	None
   * @retval Status
   */
-int usbh_uvc_stream_on(u32 itf_num)
+int usbh_uvc_stream_on(uvc_config_t *para, u32 itf_num)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_stream_t *stream = &uvc->stream[itf_num];
+#if USBH_UVC_USE_HW
+	stream->hw_uvc_isr_priorigy = para->hw_uvc_isr_priorigy;
+#else
+	UNUSED(para);
+#endif
 
 	if (stream->stream_state == STREAMING_ON) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Stream %d is already on\n", itf_num);
@@ -415,7 +420,7 @@ usbh_uvc_frame_t *usbh_uvc_get_frame(u32 itf_num)
 			list_del_init(&frame->list);
 			frame->state = UVC_FRAME_INUSE;
 #if USBH_UVC_DEBUG
-			RTK_LOGS(TAG, RTK_LOG_INFO, "get %d-%d\n", frame->timestamp, usb_hal_get_timestamp_ms());
+			RTK_LOGS(TAG, RTK_LOG_INFO, "get %d-%d\n", frame->timestamp, usb_os_get_timestamp_ms());
 #endif
 			return frame;
 		}

@@ -60,6 +60,10 @@ ameba_list_append_ifnot(CONFIG_SUPPORT_USB_NO_PHY private_sources
     ../common/usb_phy.c
 )
 
+ameba_list_append_if(CONFIG_SUPPORT_USBH_UVC_HW_DEC private_sources
+    core/usbh_hw_uvc.c
+)
+
 # Component private part, user config end
 #------------------------------#
 

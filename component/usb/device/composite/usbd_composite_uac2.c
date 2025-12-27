@@ -1987,7 +1987,7 @@ static int usbd_composite_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16
 				uac->isoc_rx_len = len;
 				uac->isoc_rx_valid_cnt ++;
 #if USBD_COMPOSITE_UAC_DEBUG
-				u32 g_rx_new_tick = usb_hal_get_timestamp_us(); //us
+				u32 g_rx_new_tick = usb_os_get_timestamp_us(); //us
 				if ((uac->isoc_rx_last_tick > 0) && (g_rx_new_tick - uac->isoc_rx_last_tick > uac->isoc_timeout_max_step)) {
 					uac->isoc_timeout_cnt ++;
 					uac->isoc_timeout_max_value = g_rx_new_tick - uac->isoc_rx_last_tick;

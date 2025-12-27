@@ -493,7 +493,7 @@ static void usbh_uvc_decode_urb(usbh_uvc_stream_t *stream, usbh_uvc_urb_t *urb)
 		/* For first payload of a frame arrival, record timestamp */
 		/* Note: host monotonic tick; consider replacing with device PTS/SCR if available and realiable */
 		if (frame_buffer->byteused == 0) {
-			frame_buffer->timestamp = usb_hal_get_timestamp_ms();
+			frame_buffer->timestamp = usb_os_get_timestamp_ms();
 		}
 
 		maxlen = stream->frame_buffer_size - frame_buffer->byteused;
@@ -898,23 +898,25 @@ int usbh_uvc_stream_init(usbh_uvc_stream_t *stream)
 	usbh_uvc_set_urb(stream);
 
 #if (USBH_UVC_USE_HW == 1)
-	stream->uvc_dec = usbh_uvc_dec_alloc_channel();
-	rtos_sema_create_binary(&stream->uvc_dec->dec_sema);
+
+	stream->uvc_dec = usbh_hw_uvc_dec_alloc_channel();
+	usbh_hw_uvc_dec *uvc_dec = stream->uvc_dec;
+	rtos_sema_create_binary(&uvc_dec->dec_sema);
 
 	for (int i = 0; i < USBH_UVC_VIDEO_MAX_FRAME; i ++) {
-		stream->uvc_dec->uvc_dec_buf[i].buf_start_addr = (u32)stream->frame_buffer[i].buf;
-		stream->uvc_dec->uvc_dec_buf[i].buf_size = USBH_UVC_VIDEO_FRAME_SIZE;
+		uvc_dec->uvc_dec_buf[i].buf_start_addr = (u32)stream->frame_buffer[i].buf;
+		uvc_dec->uvc_dec_buf[i].buf_size = USBH_UVC_VIDEO_FRAME_SIZE;
 	}
 
-	stream->uvc_dec->dev_addr = uvc->host->dev_addr;
-	stream->uvc_dec->xfer_len = pipe->xfer_len;
-	stream->uvc_dec->ep_num = pipe->ep_addr & 0x7FU;
-	stream->uvc_dec->binterval = pipe->ep_interval;
-	stream->uvc_dec->ep_mps = pipe->ep_mps;
-	stream->uvc_dec->pipe_num = pipe->pipe_num;
+	uvc_dec->dev_addr = uvc->host->dev_addr;
+	uvc_dec->xfer_len = pipe->xfer_len;
+	uvc_dec->ep_num = pipe->ep_addr & 0x7FU;
+	uvc_dec->binterval = pipe->ep_interval;
+	uvc_dec->ep_mps = pipe->ep_mps;
+	uvc_dec->pipe_num = pipe->pipe_num;
 
-	usbh_uvc_dec_init(stream->uvc_dec);
-	usbh_uvc_dec_start(stream->uvc_dec);
+	usbh_hw_uvc_dec_init(uvc_dec, stream->hw_uvc_isr_priorigy);
+	usbh_hw_uvc_dec_start(uvc_dec);
 #endif
 
 #if ((USBH_UVC_USE_SOF == 0)&&(USBH_UVC_USE_HW == 0))
@@ -938,9 +940,9 @@ void usbh_uvc_stream_deinit(usbh_uvc_stream_t *stream)
 	int status;
 
 #if USBH_UVC_USE_HW
-	usbh_uvc_dec_stop(stream->uvc_dec);
-	usbh_uvc_dec_deinit(stream->uvc_dec);
-	usbh_uvc_dec_free_channel(stream->uvc_dec);
+	usbh_hw_uvc_dec_stop(stream->uvc_dec);
+	usbh_hw_uvc_dec_deinit(stream->uvc_dec);
+	usbh_hw_uvc_dec_free_channel(stream->uvc_dec);
 	rtos_sema_delete(stream->uvc_dec->dec_sema);
 	stream->uvc_dec = NULL;
 #endif

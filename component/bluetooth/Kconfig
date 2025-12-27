@@ -55,12 +55,12 @@ if BT_EXAMPLE_DEMO_MENU
         default n
 
     config BT_OTA_CENTRAL
-        depends on (AMEBASMART || AMEBALITE || AMEBADPLUS) && !AMEBA_RLS    #amebasmart|amebalite|amebadplus internal
+        depends on (AMEBASMART || AMEBALITE || AMEBADPLUS || AMEBAGREEN2) && !AMEBA_RLS    #amebasmart|amebalite|amebadplus|amebagreen2 internal
         bool "BLE OTA Central"
         default n
 
     config BT_OTA_PERIPHERAL
-        depends on (AMEBASMART || AMEBALITE || AMEBADPLUS) && !AMEBA_RLS    #amebasmart|amebalite|amebadplus internal
+        depends on (AMEBASMART || AMEBALITE || AMEBADPLUS || AMEBAGREEN2) && !AMEBA_RLS    #amebasmart|amebalite|amebadplus|amebagreen2 internal
         bool "BLE OTA Peripheral"
         default n
 
@@ -168,6 +168,10 @@ if BT_EXAMPLE_DEMO_MENU
         config BT_A2DP_TMAP_MENU
             depends on !AMEBA_RLS    #internal
             bool "BT A2DP and LE Audio TMAP"
+            default n
+        config BT_FUZZ_TEST_MENU
+            depends on !AMEBA_RLS    #internal
+            bool "BT Fuzz Test"
             default n
     endif
 endif
@@ -320,6 +324,17 @@ if BT
         select BT_PROFILE_AVRCP_SUPPORT
         select BT_PROFILE_SDP_SUPPORT
 
+    config BT_FUZZ_TEST_MENU
+        bool
+        select BT_FUZZ_TEST
+        select BT_APP_AUDIO_DATA_SUPPORT
+        select BT_AUDIO_CODEC_SUPPORT
+        select BT_AUDIO_CODEC_SBC_SUPPORT
+        select BT_PROFILE_A2DP_SUPPORT
+        select BT_PROFILE_AVRCP_SUPPORT
+        select BT_PROFILE_SDP_SUPPORT
+        select BT_ISO_SUPPORT
+
     config BT_A2DP_PBP_MENU
         bool
         select BT_A2DP_PBP
@@ -397,6 +412,8 @@ config BT_RFC
 config BT_AUDIO_MP_TEST
     bool
 config BT_A2DP_SCATTERNET
+    bool
+config BT_FUZZ_TEST
     bool
 config BT_A2DP_PBP
     bool

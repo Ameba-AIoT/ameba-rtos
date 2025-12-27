@@ -17,6 +17,14 @@
 #else
 #define USBH_UVC_USE_HW						0
 #endif
+
+#if USBH_UVC_USE_HW
+#include "usbh_hw_uvc.h"
+
+#define USBH_HW_UVC_IRQ_PRIORITY					INT_PRI_LOWEST
+
+#endif
+
 #define USBH_UVC_GET_FRAME_TIMEOUT				2000   /* unit:ms */
 
 /*Supported type*/
@@ -34,8 +42,6 @@
 #define USBH_UVC_DECODE_TASK_PRIORITY		5
 
 #define USBH_UVC_USE_SOF					0  /* if set to 0, sof interrupt can be disabled */
-
-#define UVC_IRQ_PRIORITY					INT_PRI_LOWEST
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -56,6 +62,9 @@ typedef struct  {
 	int width;       //video frame width
 	int height;      //video frame height
 	int frame_rate;  //video frame rate
+#if USBH_UVC_USE_HW
+	u8 hw_uvc_isr_priorigy; //hw uvc isr priorigy
+#endif
 } uvc_config_t;
 
 typedef struct {
@@ -82,7 +91,7 @@ typedef struct {
 /* Exported functions --------------------------------------------------------*/
 int usbh_uvc_init(usbh_uvc_cb_t *cb);
 void usbh_uvc_deinit(void);
-int usbh_uvc_stream_on(u32 itf_num);
+int usbh_uvc_stream_on(uvc_config_t *para, u32 itf_num);
 int usbh_uvc_stream_off(u32 itf_num);
 int usbh_uvc_stream_state(u32 itf_num);
 int usbh_uvc_set_param(uvc_config_t *para, u32 itf_num);

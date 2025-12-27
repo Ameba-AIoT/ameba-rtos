@@ -183,7 +183,7 @@ static void gatts_loop_send_task_entry(void *ctx)
 	uint32_t cnt = 0;
 
 	while (true) {
-		simple_ble_srv_cccd_notify(param->conn_handle);
+		simple_ble_srv_cccd_indicate(param->conn_handle);
 		if (!gatts_loop_send_task_running) {
 			break;
 		}

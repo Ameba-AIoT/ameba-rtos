@@ -82,7 +82,7 @@ void app_IWDG_refresh(void *arg)
 	WDG_Refresh(IWDG_DEV);
 }
 
-void app_IWDG_int(void)
+void app_IWDG_init(void)
 {
 	/*usually IWDG will enable by HW, and the bark interval is 4S
 	 * Due to inaccurate of Aon clk, IWDG should be refreshed
@@ -207,7 +207,7 @@ int main(void)
 
 	app_pmu_init();
 
-	app_IWDG_int();
+	app_IWDG_init();
 
 	rtk_diag_init(RTK_DIAG_HEAP_SIZE, RTK_DIAG_SEND_BUFFER_SIZE);
 

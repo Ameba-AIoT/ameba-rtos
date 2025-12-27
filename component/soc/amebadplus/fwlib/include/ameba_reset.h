@@ -88,6 +88,7 @@ enum CHIPEN_WORK_MODE {
 #define IS_SYS_RESET(reason)	((reason) & (AON_BIT_RSTF_KM0_SYS | AON_BIT_RSTF_KM4_SYS))
 
 extern void CHIPEN_WorkMode(enum CHIPEN_WORK_MODE mode);
+extern u8 CHIPEN_WorkModeGet(void);
 extern void CHIPEN_DebounceSet(u32 Debounce);
 extern bool CHIPEN_IsPress(void);
 extern void CHIPEN_ThresHoldSet(u32 Thres_LP, u32 Thres_SP);

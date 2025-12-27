@@ -14,30 +14,30 @@
 #define PINMUX_FUNCTION_SPIS	    PINMUX_FUNCTION_SPI0
 #define DEV_READY_PIN				_PA_18
 #define RX_REQ_PIN					_PA_19
-#define SPI0_MOSI                   _PA_30
-#define SPI0_MISO                   _PA_31
-#define SPI0_SCLK                   _PA_29
-#define SPI0_CS                     _PB_0
+#define SPIS_MOSI                   _PA_30
+#define SPIS_MISO                   _PA_31
+#define SPIS_SCLK                   _PA_29
+#define SPIS_CS                     _PB_0
 #define WHC_RECOVER_TIM_IDX			0 //todo: need check
 
 #elif defined (CONFIG_AMEBADPLUS)
 #define PINMUX_FUNCTION_SPIS	    PINMUX_FUNCTION_SPI
 #define DEV_READY_PIN				_PB_9
 #define RX_REQ_PIN					_PB_8
-#define SPI0_MOSI	                _PB_24
-#define SPI0_MISO	                _PB_25
-#define SPI0_SCLK	                _PB_23
-#define SPI0_CS		                _PB_26
+#define SPIS_MOSI	                _PB_24
+#define SPIS_MISO	                _PB_25
+#define SPIS_SCLK	                _PB_23
+#define SPIS_CS		                _PB_26
 #define WHC_RECOVER_TIM_IDX			10
 
 #elif defined (CONFIG_AMEBALITE)
 #define PINMUX_FUNCTION_SPIS	    PINMUX_FUNCTION_SPI
 #define DEV_READY_PIN				_PB_3   // amebalite use different pin due to _PA_1(num 15, GPIO22 got by command "pinout") will be pull down by raspberry pi
 #define RX_REQ_PIN					_PB_2
-#define SPI0_MOSI	                _PA_29
-#define SPI0_MISO	                _PA_30
-#define SPI0_SCLK	                _PA_28
-#define SPI0_CS		                _PA_31
+#define SPIS_MOSI	                _PA_29
+#define SPIS_MISO	                _PA_30
+#define SPIS_SCLK	                _PA_28
+#define SPIS_CS		                _PA_31
 #define WHC_RECOVER_TIM_IDX			10
 #endif
 
@@ -48,6 +48,7 @@
 #define DEV_RX_IDLE					0
 
 #define WHC_SPI_DEV				    SPI0_DEV
+#define SPIS_IRQ                    SPI0_IRQ
 
 #define WHC_SPI_CLK_MHZ			    20
 #define WHC_RECOVER_TO_US			1000

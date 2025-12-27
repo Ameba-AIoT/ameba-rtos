@@ -450,6 +450,7 @@ typedef struct {
   */
 SD_RESULT SD_Init(void);
 SD_RESULT SD_DeInit(void);
+SD_RESULT SD_CardInit(void);
 /**
   * @}
   */
@@ -495,6 +496,7 @@ SD_RESULT SD_GetCardCSD(SD_HdlTypeDef *hsd, SD_CardCSDTypeDef *pCSD);
 SD_RESULT SD_GetSDStatus(SD_HdlTypeDef *hsd, SD_StatusTypeDef *pStatus);
 
 _LONG_CALL_ void SD_SetSema(int (*sema_take_fn)(u32), int (*sema_give_isr_fn)(u32));
+_LONG_CALL_ void SD_SetCdCallback(void (*cd_callback)(SD_RESULT));
 u32 SD_WaitTransDone(SD_HdlTypeDef *hsd, u32 timeout_us);
 _LONG_CALL_ SD_RESULT SD_Status(void);
 _LONG_CALL_ int SD_CheckStatusTO(SD_HdlTypeDef *hsd, u32 timeout_us);

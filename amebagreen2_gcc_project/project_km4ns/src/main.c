@@ -69,7 +69,7 @@ void app_IWDG_refresh(void *arg)
 	WDG_Refresh(IWDG_DEV);
 }
 
-void app_IWDG_int(void)
+void app_IWDG_init(void)
 {
 	/* usually IWDG will enable by HW, and the bark interval is 4095ms by default */
 	if (0 == (HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_FEN) & APBPeriph_IWDG)) {
@@ -192,7 +192,7 @@ int main(void)
 	InterruptEn(UART_LOG_IRQ, INT_PRI_LOWEST);
 	LOGUART_INTCoreConfig(LOGUART_DEV, LOGUART_BIT_INTR_MASK_NP, ENABLE);
 
-	app_IWDG_int();
+	app_IWDG_init();
 
 	rtk_diag_init(RTK_DIAG_HEAP_SIZE, RTK_DIAG_SEND_BUFFER_SIZE);
 

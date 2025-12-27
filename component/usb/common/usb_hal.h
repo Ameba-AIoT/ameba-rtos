@@ -14,17 +14,11 @@
 #include "basic_types.h"
 #include "ameba_soc.h"
 
+/* Exported defines ----------------------------------------------------------*/
+
 #define USB_IN_TOKEN_QUEUE_DEPTH         8U  /**< Depth of the IN token queue for periodic transfers (Shared FIFO mode only). */
 
-/**
- * @brief Defines the operational speeds for the USB controller.
- */
-typedef enum {
-	USB_SPEED_HIGH = 0,                 /**< High Speed (480 Mbps). */
-	USB_SPEED_HIGH_IN_FULL,             /**< High Speed core running in Full Speed mode. */
-	USB_SPEED_LOW,                      /**< Low Speed (1.5 Mbps). */
-	USB_SPEED_FULL                      /**< Full Speed (12 Mbps). */
-} usb_speed_type_t;
+/* Exported types ------------------------------------------------------------*/
 
 /**
  * @brief USB mode.
@@ -131,10 +125,6 @@ int usb_hal_read_packet(u8 *dest, u8 ep_ch_num, u16 len);
 int usb_hal_get_device_bus_status(u32 *bus_status);
 void usb_hal_device_disconnect(u8 en);
 void usb_hal_dump_registers(void);
-
-u64 usb_hal_get_timestamp_us(void);
-u32 usb_hal_get_timestamp_ms(void);
-u32 usb_hal_get_time_tick(u8 speed);
 
 #ifndef CONFIG_SUPPORT_USB_NO_PHY
 int usb_hal_read_phy_register(u8 addr, u8 *value);

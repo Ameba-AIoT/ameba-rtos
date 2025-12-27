@@ -115,7 +115,41 @@ class SerialReader(StoppableThread):
                 self.event_queue.put((TAG_KEY, 'reboot\r\n'), True) # Send reboot command (manually add \r\n)
             except Exception as e:
                 print_red(f"Failed to send reboot command: {str(e)}")
-        self.data_buffer = b''
+
+            self.data_buffer = b''
+            start_time = time.time()
+            while self.running:
+                try:
+                    if isinstance(self.serial, RemoteSerial):
+                        while self.serial.inWaiting() < 1:
+                            time.sleep(0.01)
+                            if self.expired(start_time):
+                                raise Exception("Reset expired")
+                        if self.expired(start_time):
+                            raise Exception("Reset expired")
+                        data = self.serial.read(self.serial.inWaiting())
+                    else:
+                        if self.expired(start_time):
+                            raise Exception("Reset expired")
+                        data = self.serial.read(1)
+                        if not data:
+                            continue
+                        data += self.serial.read(self.serial.in_waiting)
+
+                    # Display raw byte data in debug mode
+                    if self.debug:
+                        hex_str = ' '.join(f'{b:02X}' for b in data)
+                        print(f"[Received Data (Hex)]: {hex_str}")
+
+                    self.data_buffer += data
+                    if b'reboot' in self.data_buffer:
+                        if b'BOOT-I' in self.data_buffer:
+                            break
+                except Exception as e:
+                    print_red(f"Failed to reset, pelase reset manually: {str(e)}")
+                    self.data_buffer = b''
+                    break
+
         while self.running:
             try:
                 if isinstance(self.serial, RemoteSerial):
