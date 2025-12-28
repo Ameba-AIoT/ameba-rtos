@@ -444,6 +444,7 @@ int
 iperf_client_end(struct iperf_test *test)
 {
 	struct iperf_stream *sp;
+	int ret = 0;
 
 	/* Close all stream sockets */
 	SLIST_FOREACH(sp, &test->streams, streams) {
@@ -453,19 +454,20 @@ iperf_client_end(struct iperf_test *test)
 	/* show final summary */
 	test->reporter_callback(test);
 
+	if (g_client_terminate) {
+		i_errno = IESTOP;
+	} else {
+		if (iperf_set_send_state(test, IPERF_DONE) != 0) {
+			ret = -1;
+		}
+	}
+
 	/* Close control socket */
 	if (test->ctrl_sck >= 0) {
 		close(test->ctrl_sck);
 	}
 
-	if (g_client_terminate) {
-		i_errno = IESTOP;
-	} else {
-		if (iperf_set_send_state(test, IPERF_DONE) != 0) {
-			return -1;
-		}
-	}
-	return 0;
+	return ret;
 }
 
 
