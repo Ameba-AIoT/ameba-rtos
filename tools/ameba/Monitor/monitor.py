@@ -28,14 +28,13 @@ from base.log_handler import LogHandler
 from base.color_output import print_normal, print_yellow, print_red
 from base.serial_handler import SerialHandler, SerialStopException
 from base.serial_reader import LinuxReader, SerialReader
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import os
 
 key_description = miniterm.key_description
 
 TOOLCHAIN_DEFAULT_PATH_WINDOWS = r'C:\rtk-toolchain'
 TOOLCHAIN_DEFAULT_PATH_LINUX = '/opt/rtk-toolchain'
-SDK_QUERY_CFG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'query.json')
 REMOTE_PORT = 58916
 
 class Monitor():
@@ -67,19 +66,22 @@ class Monitor():
             remote_port: Optional[int] = None,
             remote_password: Optional[str] = None,
             log_enabled: bool = False,
-            log_dir: Optional[str] = None
+            log_dir: Optional[List[str]] = None,
+            logAGG: Optional[List[str]] = None
     ):
         self.event_queue = queue.Queue()
         self.cmd_queue = queue.Queue()
+        self.output_queue = queue.Queue()
         self.target_os = target_os
         self.is_ca32 = is_ca32
         self.elf_file = elf_file or ""
         self.rom_file = rom_file or ""
         self.elf_exists = os.path.exists(self.elf_file)
         self.debug = debug
-        self.log_handler = LogHandler(self.elf_file, timestamps, enable_address_decoding, toolchain_path,
-                                      log_enabled, log_dir, port, rom_elf_file=rom_file)
-
+        self.logAGG_enabled = True if logAGG else False
+        self.log_handler = LogHandler(self.elf_file, self.output_queue, timestamps, enable_address_decoding, toolchain_path,
+                                      log_enabled, log_dir, port, logAGG, rom_elf_file=rom_file)
+                                      
         if self.target_os == "freertos":
             from base.coredump_freertos import CoreDump
             self.coredump = CoreDump(decode_coredumps, self.event_queue, self.log_handler, self.elf_file, self.rom_file,
@@ -129,7 +131,7 @@ class Monitor():
     def _pre_start(self):
         self.console_reader.start()
         self.serial_reader.start()
-
+        self.log_handler.start()
     def main_loop(self):
         self._pre_start()
         try:
@@ -143,7 +145,7 @@ class Monitor():
             try:
                 self.console_reader._stop()
                 self.serial_reader._stop()
-                self.log_handler.stop_logging()
+                self.log_handler._stop()
                 # Cancelling _invoke_processing_last_line_timer is not
                 # important here because receiving empty data doesn"t matter.
                 if self._invoke_processing_last_line_timer:
@@ -173,7 +175,24 @@ class Monitor():
         elif event_tag == TAG_KEY:
             self.serial_write(data)
         elif event_tag == TAG_SERIAL:
-            self.serial_handler.handle_serial_input(data, self.coredump)
+            if self.logAGG_enabled:            
+                events = self.log_handler.logAGG_parse(data)           
+                for ev in events:
+                    src = 0
+                    payload = ''
+                    if ev[0] == "raw":
+                        _, payload = ev
+                    else: 
+                        _, src, payload = ev
+                    if not payload:
+                        payload_str = ''
+                    else:
+                        payload_str = payload.decode('utf-8')
+                    self.serial_handler.handle_serial_input(payload_str, self.coredump, src)
+            else:
+                payload_str = self.serial_reader.decode(data)              
+                self.serial_handler.handle_serial_input(payload_str, self.coredump)
+
             if self._invoke_processing_last_line_timer is not None:
                 self._invoke_processing_last_line_timer.cancel()
             self._invoke_processing_last_line_timer = threading.Timer(LAST_LINE_THREAD_INTERVAL,
@@ -247,17 +266,7 @@ def main():
     colorama.init()
     parser = get_parser()
     args = parser.parse_args()
-
-    if os.path.exists(SDK_QUERY_CFG_FILE):
-        try:
-            with open(SDK_QUERY_CFG_FILE, "r") as f:
-                cfg = json.load(f)
-        except:
-            print_red('Fail to load query configuration file "' + SDK_QUERY_CFG_FILE + '"')
-            sys.exit(2)
-    else:
-        print_red('Note: Query configuration file "' + SDK_QUERY_CFG_FILE + '" does not exist')
-
+    
     if args.device is None:
         print_red("Note: No device specified, monitor starts failed!")
         sys.exit(1)
@@ -291,8 +300,7 @@ def main():
         if not os.path.exists(args.toolchain_dir):
             print_red(f"Error: Toolchain '{args.toolchain_dir}' does not exist")
 
-    target_os = args.target_os or cfg["info"]["os"].lower()
-
+    target_os = args.target_os
     args.eol = args.eol or ("LF" if sys.platform == "linux" else "CRLF")
 
     elf_file = args.axf_file
@@ -332,7 +340,8 @@ def main():
                         remote_port=remote_port,
                         remote_password=args.remote_password,
                         log_enabled = args.log,
-                        log_dir=args.log_dir)
+                        log_dir=args.log_dir,
+                        logAGG = args.logAGG)
 
         print_yellow("--- Exit monitor: Ctrl+C ---")
 
@@ -371,6 +380,9 @@ def get_parser():
                        help='Enable logging mode: save logs to log file')
     parser.add_argument('--log-dir', type=str, default="",
                        help='Specify the target log file directory, if not, the logs will save to under xxxx_gcc_project when logging enabled')
+    parser.add_argument('--logAGG', nargs='+', 
+                         help='the logAGG enabled and source marked '
+                        )
 
     return parser
 
