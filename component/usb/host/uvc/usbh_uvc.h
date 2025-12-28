@@ -10,7 +10,6 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbh.h"
-#include "usbh_uvc_dec.h"
 #include "usbh_uvc_desc.h"
 #include "usbh_uvc_intf.h"
 
@@ -27,7 +26,7 @@
 #define USBH_MAX_NUM_MJPEG_FORMAT		30
 #define USBH_MAX_NUM_UNCOMP_FRAME		30
 
-#define USBH_MAX_NUM_VS_DESC			3
+#define USBH_MAX_NUM_VS_DESC			2
 #define USBH_MAX_NUM_VS_ALTS			30
 
 #define HFNUM_MAX_FRNUM					0x3fff
@@ -154,7 +153,8 @@ typedef struct {
 	u8 *frame_buf;
 
 #if USBH_UVC_USE_HW
-	usbh_uvc_dec *uvc_dec;
+	usbh_hw_uvc_dec *uvc_dec;
+	u8 hw_uvc_isr_priorigy;
 #endif
 
 	u8 stream_state;

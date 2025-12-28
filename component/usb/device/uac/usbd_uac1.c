@@ -8,7 +8,6 @@
 
 /* uac 1.0 */
 #include "usbd_uac1.h"
-#include "usbd.h"
 
 /* Private defines -----------------------------------------------------------*/
 

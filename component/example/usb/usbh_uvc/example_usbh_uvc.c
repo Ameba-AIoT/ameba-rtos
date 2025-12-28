@@ -31,6 +31,12 @@ static const char *const TAG = "UVC";
 #define CONFIG_USBH_UVC_CHECK_IMAGE_DATA  0
 
 #define CONFIG_USBH_UVC_LOOP  200
+
+#if USBH_UVC_USE_HW
+/* HW UVC IRQ PRIORITY*/
+#define USBH_HW_UVC_IRQ_PRIORITY					INT_PRI_LOWEST
+#endif
+
 /* Private includes -------------------------------------------------------------*/
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
@@ -610,6 +616,10 @@ static void example_usbh_uvc_task(void *param)
 	uvc_ctx.height = USBH_UVC_HEIGHT;
 	uvc_ctx.frame_rate = USBH_UVC_FRAME_RATE;
 
+#if USBH_UVC_USE_HW
+	uvc_ctx.hw_uvc_isr_priorigy = USBH_HW_UVC_IRQ_PRIORITY;
+#endif
+
 	rtos_sema_take(uvc_conn_sema, RTOS_SEMA_MAX_COUNT);
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Set parameters\n");
@@ -658,7 +668,7 @@ static void example_usbh_uvc_task(void *param)
 	img_cnt = 0;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Stream on\n");
-	ret = usbh_uvc_stream_on(USBH_UVC_IF_NUM_0);
+	ret = usbh_uvc_stream_on(&uvc_ctx, USBH_UVC_IF_NUM_0);
 	if (ret) {
 		goto exit2;
 	}

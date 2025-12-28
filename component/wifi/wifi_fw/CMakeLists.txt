@@ -8,7 +8,7 @@ if(CONFIG_AMEBAD)
     ameba_add_subdirectory_if(CONFIG_WIFI_FW_EN amebad)
 elseif(CONFIG_AMEBADPLUS)
     ameba_add_subdirectory_if(CONFIG_WIFI_FW_EN amebadplus)
-elseif(CONFIG_AMEBAGREEN2)
+elseif(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAPRO3)
     ameba_add_subdirectory_if(CONFIG_WIFI_FW_EN amebagreen2)
 elseif(CONFIG_AMEBAL2)
     ameba_add_subdirectory_if(CONFIG_WIFI_FW_EN rle1331)
@@ -30,7 +30,13 @@ ameba_global_include(
     common
 )
 
-ameba_global_include(
-    ${c_SOC_TYPE}/include
-)
+if(CONFIG_AMEBAPRO3)    #amebapro3 use amebagreen2 files
+    ameba_global_include(
+        amebagreen2/include
+    )
+else()
+    ameba_global_include(
+        ${c_SOC_TYPE}/include
+    )
+endif()
 

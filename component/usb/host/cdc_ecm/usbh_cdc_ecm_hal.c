@@ -203,9 +203,9 @@ static int cdc_ecm_cb_bulk_receive(u8 *buf, u32 length)
 
 	usb_rx_total_len += length;
 	if (usb_rx_start_time == 0) {
-		usb_rx_start_time = usb_hal_get_timestamp_ms();
+		usb_rx_start_time = usb_os_get_timestamp_ms();
 	}
-	usb_rx_end_time = usb_hal_get_timestamp_ms();
+	usb_rx_end_time = usb_os_get_timestamp_ms();
 	usb_rx_interval_time = (usb_rx_end_time - usb_rx_start_time) * RTOS_TICK_RATE_MS;
 
 	if (usb_rx_interval_time >= 2000) {
@@ -303,7 +303,7 @@ static void usbh_ecm_monitor_thread(void *param)
 			}
 
 			eth_state = usbh_cdc_ecm_get_connect_status();
-			u32 now = usb_hal_get_timestamp_ms(); //ms
+			u64 now = usb_os_get_timestamp_ms(); //ms
 			next_sleep = -1;  //init
 
 			for (u8 i = 0; i < USBH_CDC_ECM_TYPE_MAX; i++) {
@@ -561,7 +561,7 @@ int usbh_cdc_ecm_send_data(u8 *buf, u32 len)
 
 	usb_tx_total_len += len;
 	if (usb_tx_start_time == 0) {
-		usb_tx_start_time = usb_hal_get_timestamp_ms();
+		usb_tx_start_time = usb_os_get_timestamp_ms();
 	}
 #endif
 
@@ -585,7 +585,7 @@ int usbh_cdc_ecm_send_data(u8 *buf, u32 len)
 		usbh_cdc_ecm_host_user.cdc_ecm_tx_block = 1;
 		usb_os_sema_take(usbh_cdc_ecm_host_user.cdc_ecm_tx_sema, USB_OS_SEMA_TIMEOUT);
 #if USBH_ECM_TX_SPEED_CHECK
-		usb_tx_end_time = usb_hal_get_timestamp_ms();
+		usb_tx_end_time = usb_os_get_timestamp_ms();
 		usb_tx_interval_time = (usb_tx_end_time - usb_tx_start_time) * RTOS_TICK_RATE_MS;
 
 		if (usb_tx_interval_time >= 3000) {

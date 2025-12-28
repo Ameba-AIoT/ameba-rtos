@@ -35,7 +35,6 @@ key_description = miniterm.key_description
 
 TOOLCHAIN_DEFAULT_PATH_WINDOWS = r'C:\rtk-toolchain'
 TOOLCHAIN_DEFAULT_PATH_LINUX = '/opt/rtk-toolchain'
-SDK_QUERY_CFG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'query.json')
 REMOTE_PORT = 58916
 
 class Monitor():
@@ -82,7 +81,7 @@ class Monitor():
         self.logAGG_enabled = True if logAGG else False
         self.log_handler = LogHandler(self.elf_file, self.output_queue, timestamps, enable_address_decoding, toolchain_path,
                                       log_enabled, log_dir, port, logAGG, rom_elf_file=rom_file)
-
+                                      
         if self.target_os == "freertos":
             from base.coredump_freertos import CoreDump
             self.coredump = CoreDump(decode_coredumps, self.event_queue, self.log_handler, self.elf_file, self.rom_file,
@@ -267,17 +266,7 @@ def main():
     colorama.init()
     parser = get_parser()
     args = parser.parse_args()
-
-    if os.path.exists(SDK_QUERY_CFG_FILE):
-        try:
-            with open(SDK_QUERY_CFG_FILE, "r") as f:
-                cfg = json.load(f)
-        except:
-            print_red('Fail to load query configuration file "' + SDK_QUERY_CFG_FILE + '"')
-            sys.exit(2)
-    else:
-        print_red('Note: Query configuration file "' + SDK_QUERY_CFG_FILE + '" does not exist')
-
+    
     if args.device is None:
         print_red("Note: No device specified, monitor starts failed!")
         sys.exit(1)
@@ -311,8 +300,7 @@ def main():
         if not os.path.exists(args.toolchain_dir):
             print_red(f"Error: Toolchain '{args.toolchain_dir}' does not exist")
 
-    target_os = args.target_os or cfg["info"]["os"].lower()
-
+    target_os = args.target_os
     args.eol = args.eol or ("LF" if sys.platform == "linux" else "CRLF")
 
     elf_file = args.axf_file
