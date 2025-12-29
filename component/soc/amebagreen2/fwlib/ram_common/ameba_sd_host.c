@@ -476,7 +476,7 @@ u32 SDIO_CmdSendOpCond(SDIOHOST_TypeDef *SDIOx, u32 Ocr)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp4(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -494,7 +494,7 @@ u32 SDIO_CmdRWDirect(SDIOHOST_TypeDef *SDIOx, u32 Argument)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp5(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -512,7 +512,7 @@ u32 SDIO_CmdRWExtended(SDIOHOST_TypeDef *SDIOx, u32 Argument)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp5(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -665,7 +665,7 @@ u32 SDMMC_CmdBlockLength(SDIOHOST_TypeDef *SDIOx, u32 BlockSize)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -689,7 +689,7 @@ u32 SDMMC_CmdReadSingleBlock(SDIOHOST_TypeDef *SDIOx, u32 ReadAdd)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -713,7 +713,7 @@ u32 SDMMC_CmdReadMultiBlock(SDIOHOST_TypeDef *SDIOx, u32 ReadAdd)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -737,7 +737,7 @@ u32 SDMMC_CmdWriteSingleBlock(SDIOHOST_TypeDef *SDIOx, u32 WriteAdd)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -761,7 +761,7 @@ u32 SDMMC_CmdWriteMultiBlock(SDIOHOST_TypeDef *SDIOx, u32 WriteAdd)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -785,7 +785,7 @@ u32 SDMMC_CmdSDEraseStartAdd(SDIOHOST_TypeDef *SDIOx, u32 StartAdd)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -809,7 +809,7 @@ u32 SDMMC_CmdSDEraseEndAdd(SDIOHOST_TypeDef *SDIOx, u32 EndAdd)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -834,7 +834,7 @@ u32 SDMMC_CmdErase(SDIOHOST_TypeDef *SDIOx, u32 BlockCnt)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1B(SDIOx, SDMMC_ERASE_TIMEOUT * BlockCnt);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_ERASE_TIMEOUT * BlockCnt);
 
 	return errorstate;
 }
@@ -858,7 +858,7 @@ u32 SDMMC_CmdStopTransfer(SDIOHOST_TypeDef *SDIOx)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1B(SDIOx, SDMMC_STOP_TRANS_TIMEOUT);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_STOP_TRANS_TIMEOUT);
 
 	return errorstate;
 }
@@ -888,11 +888,7 @@ u32 SDMMC_CmdSelDesel(SDIOHOST_TypeDef *SDIOx, u32 Addr)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	if (Addr != 0x0) {
-		errorstate = SDMMC_GetCmdResp1B(SDIOx, SDMMC_DAT_TIMEOUT);
-	} else {
-		errorstate = SDMMC_GetCmdResp1(SDIOx);
-	}
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_DAT_TIMEOUT);
 
 	return errorstate;
 }
@@ -915,7 +911,7 @@ u32 SDMMC_CmdGoIdleState(SDIOHOST_TypeDef *SDIOx)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdError(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -943,7 +939,7 @@ u32 SDMMC_CmdOperCond(SDIOHOST_TypeDef *SDIOx)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp7(SDIOx); // R7
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -972,7 +968,7 @@ u32 SDMMC_CmdAppCommand(SDIOHOST_TypeDef *SDIOx, u32 Argument)
 	/* If there is a HAL_ERR_PARA, it is a MMC card, else
 	it is a SD card: SD card 2.0 (voltage range mismatch)
 	   or SD card 1.x */
-	errorstate = SDMMC_GetCmdResp1(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -989,7 +985,7 @@ u32 SDMMC_CmdAppOperCommand(SDIOHOST_TypeDef *SDIOx, u32 Argument)
 	SDIO_CmdInitTypeDef sdmmc_cmdinit;
 	u32 errorstate;
 
-	sdmmc_cmdinit.Argument = SDMMC_VOLTAGE_WINDOW_SD | Argument;
+	sdmmc_cmdinit.Argument = Argument;
 	sdmmc_cmdinit.CmdIndex = SDMMC_APP_OP_COND; // ACMD41(CMD55 + CMD41)
 	sdmmc_cmdinit.CmdType = SDMMC_CMD_NORMAL;
 	sdmmc_cmdinit.RespType = SDMMC_RSP_R3;
@@ -997,7 +993,7 @@ u32 SDMMC_CmdAppOperCommand(SDIOHOST_TypeDef *SDIOx, u32 Argument)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp3(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -1021,7 +1017,7 @@ u32 SDMMC_CmdBusWidth(SDIOHOST_TypeDef *SDIOx, u32 BusWidth)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -1045,7 +1041,7 @@ u32 SDMMC_CmdSetWrBlkEraseCnt(SDIOHOST_TypeDef *SDIOx, u32 BlockCnt)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -1069,7 +1065,7 @@ u32 SDMMC_CmdSendSCR(SDIOHOST_TypeDef *SDIOx)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -1093,7 +1089,7 @@ u32 SDMMC_CmdSendCID(SDIOHOST_TypeDef *SDIOx)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp2(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -1118,7 +1114,7 @@ u32 SDMMC_CmdSendCSD(SDIOHOST_TypeDef *SDIOx, u32 Argument)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp2(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -1129,7 +1125,7 @@ u32 SDMMC_CmdSendCSD(SDIOHOST_TypeDef *SDIOx, u32 Argument)
  * @param  pRCA: Card RCA
  * @retval HAL status
  */
-u32 SDMMC_CmdSetRelAdd(SDIOHOST_TypeDef *SDIOx, u16 *pRCA)
+u32 SDMMC_CmdSetRelAdd(SDIOHOST_TypeDef *SDIOx)
 {
 	SDIO_CmdInitTypeDef sdmmc_cmdinit;
 	u32 errorstate;
@@ -1143,7 +1139,7 @@ u32 SDMMC_CmdSetRelAdd(SDIOHOST_TypeDef *SDIOx, u16 *pRCA)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp6(SDIOx, pRCA);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -1167,7 +1163,7 @@ u32 SDMMC_CmdSendStatus(SDIOHOST_TypeDef *SDIOx, u32 Argument)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -1190,7 +1186,7 @@ u32 SDMMC_CmdStatusRegister(SDIOHOST_TypeDef *SDIOx)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
@@ -1217,116 +1213,194 @@ u32 SDMMC_CmdSwitch(SDIOHOST_TypeDef *SDIOx, u32 Argument)
 	SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
 
 	/* Check for error conditions */
-	errorstate = SDMMC_GetCmdResp1(SDIOx);
+	errorstate = SDIO_WaitResp(SDIOx, sdmmc_cmdinit.RespType, SDMMC_CMD_TIMEOUT);
 
 	return errorstate;
 }
 
 /**
- * @brief  Checks for error conditions for CMD0.
+ * @brief  Checks for error conditions after sending CMD.
  * @param  SDIOx Pointer to SDIO host
+ * @param  RespType Response type, which can be a value of @ref SDIO_LL_Response_Type.
+ * @param  TimeOutUs Timeout value in us.
  * @retval SD Card error state
  */
-u32 SDMMC_GetCmdError(SDIOHOST_TypeDef *SDIOx)
-{
-	u32 count = 0;
-
-	while (!(SDIO_GetNormSts(SDIOx) & SDIOHOST_BIT_CMD_COMPLETE)) {
-		if (count++ >= SDMMC_CMD_TIMEOUT) {
-			RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
-			return SD_ERROR_TIMEOUT;
-		}
-
-		/* exit while-loop ASAP */
-		DelayUs(1);
-	}
-
-	SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
-
-	return SD_ERROR_NONE;
-}
-
-/**
- * @brief  Checks for error conditions for R1 response.
- * @param  SDIOx Pointer to SDIO host
- * @retval SD Card error state
- */
-u32 SDMMC_GetCmdResp1(SDIOHOST_TypeDef *SDIOx)
+u32 SDIO_WaitResp(SDIOHOST_TypeDef *SDIOx, u8 RespType, u32 TimeOutUs)
 {
 	u32 response_r0;
 	u32 count = 0;
 	u32 norm_int, err_int;
 
-	while (1) {
-		norm_int = SDIO_GetNormSts(SDIOx);
-		err_int = SDIO_GetErrSts(SDIOx);
+	assert_param(IS_SD_RESP_TYPE(RespType));
 
-		if ((norm_int & SDIOHOST_BIT_CMD_COMPLETE) || (err_int & SDIO_CMD_ERR)) {
-			break;
+	switch (RespType) {
+	case SDMMC_RSP_R1:
+	case SDMMC_RSP_R2:
+	case SDMMC_RSP_R3:
+	case SDMMC_RSP_R4:
+	case SDMMC_RSP_R5:
+	case SDMMC_RSP_R6:
+	case SDMMC_RSP_R7:
+		while (1) {
+			norm_int = SDIO_GetNormSts(SDIOx);
+			err_int = SDIO_GetErrSts(SDIOx);
+
+			if ((norm_int & SDIOHOST_BIT_CMD_COMPLETE) || (err_int & SDIO_CMD_ERR)) {
+				break;
+			}
+
+			if (count++ >= TimeOutUs) {
+				RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
+				return SD_ERROR_TIMEOUT;
+			}
+
+			/* exit while-loop ASAP */
+			DelayUs(1);
 		}
 
-		if (count++ >= SDMMC_CMD_TIMEOUT) {
-			RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
-			return SD_ERROR_TIMEOUT;
+		if (norm_int & SDIOHOST_BIT_CMD_COMPLETE) {
+			SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
 		}
 
-		/* exit while-loop ASAP */
-		DelayUs(1);
-	}
+		if (err_int & SDIO_CMD_ERR) {
+			if (RespType == SDMMC_RSP_R7) {
+				DelayUs(10); // avoid cmd_err sts is set again after clear
+			}
+			SDIO_ClearErrSts(SDIOx, SDIO_CMD_ERR);
+			if (err_int & SDIOHOST_BIT_CMD_TIMEOUT_ERR) {
+				return SD_ERROR_CMD_RSP_TIMEOUT;
+			} else {
+				return SD_ERROR_GENERAL_UNKNOWN_ERR;
+			}
+		}
 
-	if (norm_int & SDIOHOST_BIT_CMD_COMPLETE) {
-		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
-	}
-
-	if (err_int & SDIO_CMD_ERR) {
-		SDIO_ClearErrSts(SDIOx, SDIO_CMD_ERR);
-		if (err_int & SDIOHOST_BIT_CMD_TIMEOUT_ERR) {
-			return SD_ERROR_CMD_RSP_TIMEOUT;
+		if (RespType == SDMMC_RSP_R2 || RespType == SDMMC_RSP_R3 || RespType == SDMMC_RSP_R4 || RespType == SDMMC_RSP_R7) {
+			return SD_ERROR_NONE;
 		} else {
-			return SD_ERROR_GENERAL_UNKNOWN_ERR;
+			response_r0 = SDIO_GetResponse(SDIOx, SDIO_RESP0);
+			if (RespType == SDMMC_RSP_R1) {
+				return SDMMC_CheckErrResp1(response_r0);
+			} else if (RespType == SDMMC_RSP_R5) {
+				return SDMMC_CheckErrResp5(response_r0);
+			} else if (RespType == SDMMC_RSP_R6) {
+				return SDMMC_CheckErrResp6(response_r0);
+			}
 		}
+		break;
+	case SDMMC_RSP_R1B:
+	case SDMMC_RSP_R5B:
+		while (1) {
+			norm_int = SDIO_GetNormSts(SDIOx);
+			err_int = SDIO_GetErrSts(SDIOx);
+
+			if ((norm_int & SDIOHOST_BIT_XFER_COMPLETE) || (err_int & (SDIO_CMD_ERR | SDIOHOST_BIT_DATA_TIMEOUT_ERR))) {
+				break;
+			}
+
+			if (count++ >= TimeOutUs) {
+				RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
+				return SD_ERROR_TIMEOUT;
+			}
+
+			/* exit while-loop ASAP */
+			DelayUs(1);
+		}
+
+		if (norm_int & SDIOHOST_BIT_CMD_COMPLETE) {
+			SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
+		}
+
+		if (norm_int & SDIOHOST_BIT_XFER_COMPLETE) {
+			SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_XFER_COMPLETE);
+		}
+
+		if (!(norm_int & SDIOHOST_BIT_XFER_COMPLETE) && (err_int & SDIOHOST_BIT_DATA_TIMEOUT_ERR)) {
+			RTK_LOGE(TAG, "%s busy\n", __FUNCTION__);
+			return SD_ERROR_BUSY;
+		}
+
+		if (err_int & SDIO_CMD_ERR) {
+			SDIO_ClearErrSts(SDIOx, SDIO_CMD_ERR);
+			if (err_int & SDIOHOST_BIT_CMD_TIMEOUT_ERR) {
+				return SD_ERROR_CMD_RSP_TIMEOUT;
+			} else {
+				return SD_ERROR_GENERAL_UNKNOWN_ERR;
+			}
+		}
+
+		response_r0 = SDIO_GetResponse(SDIOx, SDIO_RESP0);
+		if (RespType == SDMMC_RSP_R1B) {
+			return SDMMC_CheckErrResp1(response_r0);
+		} else if (RespType == SDMMC_RSP_R5B) {
+			return SDMMC_CheckErrResp5(response_r0);
+		}
+		break;
+	case SDMMC_RSP_NONE:
+		while (!(SDIO_GetNormSts(SDIOx) & SDIOHOST_BIT_CMD_COMPLETE)) {
+			if (count++ >= TimeOutUs) {
+				RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
+				return SD_ERROR_TIMEOUT;
+			}
+
+			/* exit while-loop ASAP */
+			DelayUs(1);
+		}
+
+		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
+
+		return SD_ERROR_NONE;
+		break;
+	default:
+		RTK_LOGE(TAG, "%s: Invalid response type!!!\n", __FUNCTION__);
 	}
 
-	/* We have received response, retrieve it for analysis  */
-	response_r0 = SDIO_GetResponse(SDIOx, SDIO_RESP0);
+	return SD_ERROR_GENERAL_UNKNOWN_ERR;
+}
 
-	if ((response_r0 & SDMMC_R1_ERRORBITS) == SDMMC_ALLZERO) {
+/**
+ * @brief  Checks for error conditions for R1 response.
+ * @param  resp R1 Response of CMD.
+ * @retval SD Card error state.
+ */
+u32 SDMMC_CheckErrResp1(u32 resp)
+{
+	if ((resp & SDMMC_R1_ERRORBITS) == SDMMC_ALLZERO) {
 		return SD_ERROR_NONE;
-	} else if ((response_r0 & SDMMC_R1_ADDR_OUT_OF_RANGE) == SDMMC_R1_ADDR_OUT_OF_RANGE) {
+	} else if ((resp & SDMMC_R1_ADDR_OUT_OF_RANGE) == SDMMC_R1_ADDR_OUT_OF_RANGE) {
 		return SD_ERROR_ADDR_OUT_OF_RANGE;
-	} else if ((response_r0 & SDMMC_R1_ADDR_MISALIGNED) == SDMMC_R1_ADDR_MISALIGNED) {
+	} else if ((resp & SDMMC_R1_ADDR_MISALIGNED) == SDMMC_R1_ADDR_MISALIGNED) {
 		return SD_ERROR_ADDR_MISALIGNED;
-	} else if ((response_r0 & SDMMC_R1_BLOCK_LEN_ERR) == SDMMC_R1_BLOCK_LEN_ERR) {
+	} else if ((resp & SDMMC_R1_BLOCK_LEN_ERR) == SDMMC_R1_BLOCK_LEN_ERR) {
 		return SD_ERROR_BLOCK_LEN_ERR;
-	} else if ((response_r0 & SDMMC_R1_ERASE_SEQ_ERR) == SDMMC_R1_ERASE_SEQ_ERR) {
+	} else if ((resp & SDMMC_R1_ERASE_SEQ_ERR) == SDMMC_R1_ERASE_SEQ_ERR) {
 		return SD_ERROR_ERASE_SEQ_ERR;
-	} else if ((response_r0 & SDMMC_R1_BAD_ERASE_PARAM) == SDMMC_R1_BAD_ERASE_PARAM) {
+	} else if ((resp & SDMMC_R1_BAD_ERASE_PARAM) == SDMMC_R1_BAD_ERASE_PARAM) {
 		return SD_ERROR_BAD_ERASE_PARAM;
-	} else if ((response_r0 & SDMMC_R1_WRITE_PROT_VIOLATION) == SDMMC_R1_WRITE_PROT_VIOLATION) {
+	} else if ((resp & SDMMC_R1_WRITE_PROT_VIOLATION) == SDMMC_R1_WRITE_PROT_VIOLATION) {
 		return SD_ERROR_WRITE_PROT_VIOLATION;
-	} else if ((response_r0 & SDMMC_R1_LOCK_UNLOCK_FAILED) == SDMMC_R1_LOCK_UNLOCK_FAILED) {
+	} else if ((resp & SDMMC_R1_LOCK_UNLOCK_FAILED) == SDMMC_R1_LOCK_UNLOCK_FAILED) {
 		return SD_ERROR_LOCK_UNLOCK_FAILED;
-	} else if ((response_r0 & SDMMC_R1_COM_CRC_FAILED) == SDMMC_R1_COM_CRC_FAILED) {
+	} else if ((resp & SDMMC_R1_COM_CRC_FAILED) == SDMMC_R1_COM_CRC_FAILED) {
 		return SD_ERROR_COM_CRC_FAILED;
-	} else if ((response_r0 & SDMMC_R1_ILLEGAL_CMD) == SDMMC_R1_ILLEGAL_CMD) {
+	} else if ((resp & SDMMC_R1_ILLEGAL_CMD) == SDMMC_R1_ILLEGAL_CMD) {
 		return SD_ERROR_ILLEGAL_CMD;
-	} else if ((response_r0 & SDMMC_R1_CARD_ECC_FAILED) == SDMMC_R1_CARD_ECC_FAILED) {
+	} else if ((resp & SDMMC_R1_CARD_ECC_FAILED) == SDMMC_R1_CARD_ECC_FAILED) {
 		return SD_ERROR_CARD_ECC_FAILED;
-	} else if ((response_r0 & SDMMC_R1_CC_ERROR) == SDMMC_R1_CC_ERROR) {
+	} else if ((resp & SDMMC_R1_CC_ERROR) == SDMMC_R1_CC_ERROR) {
 		return SD_ERROR_CC_ERR;
-	} else if ((response_r0 & SDMMC_R1_STREAM_READ_UNDERRUN) == SDMMC_R1_STREAM_READ_UNDERRUN) {
+	} else if ((resp & SDMMC_R1_STREAM_READ_UNDERRUN) == SDMMC_R1_STREAM_READ_UNDERRUN) {
 		return SD_ERROR_STREAM_READ_UNDERRUN;
-	} else if ((response_r0 & SDMMC_R1_STREAM_WRITE_OVERRUN) == SDMMC_R1_STREAM_WRITE_OVERRUN) {
+	} else if ((resp & SDMMC_R1_STREAM_WRITE_OVERRUN) == SDMMC_R1_STREAM_WRITE_OVERRUN) {
 		return SD_ERROR_STREAM_WRITE_OVERRUN;
-	} else if ((response_r0 & SDMMC_R1_CID_CSDMMC_OVERWRITE) == SDMMC_R1_CID_CSDMMC_OVERWRITE) {
+	} else if ((resp & SDMMC_R1_CID_CSDMMC_OVERWRITE) == SDMMC_R1_CID_CSDMMC_OVERWRITE) {
 		return SD_ERROR_CID_CSDMMC_OVERWRITE;
-	} else if ((response_r0 & SDMMC_R1_WP_ERASE_SKIP) == SDMMC_R1_WP_ERASE_SKIP) {
+	} else if ((resp & SDMMC_R1_WP_ERASE_SKIP) == SDMMC_R1_WP_ERASE_SKIP) {
 		return SD_ERROR_WP_ERASE_SKIP;
-	} else if ((response_r0 & SDMMC_R1_CARD_ECC_DISABLED) == SDMMC_R1_CARD_ECC_DISABLED) {
+	} else if ((resp & SDMMC_R1_CARD_ECC_DISABLED) == SDMMC_R1_CARD_ECC_DISABLED) {
 		return SD_ERROR_CARD_ECC_DISABLED;
-	} else if ((response_r0 & SDMMC_R1_ERASE_RESET) == SDMMC_R1_ERASE_RESET) {
+	} else if ((resp & SDMMC_R1_ERASE_RESET) == SDMMC_R1_ERASE_RESET) {
 		return SD_ERROR_ERASE_RESET;
-	} else if ((response_r0 & SDMMC_R1_AKE_SEQ_ERROR) == SDMMC_R1_AKE_SEQ_ERROR) {
+	} else if ((resp & SDMMC_R1_AKE_SEQ_ERROR) == SDMMC_R1_AKE_SEQ_ERROR) {
 		return SD_ERROR_AKE_SEQ_ERR;
 	} else {
 		return SD_ERROR_GENERAL_UNKNOWN_ERR;
@@ -1334,282 +1408,19 @@ u32 SDMMC_GetCmdResp1(SDIOHOST_TypeDef *SDIOx)
 }
 
 /**
- * @brief  Checks for error conditions for R1 response.
- * @param  SDIOx Pointer to SDIO host
- * @param  Timeout: Timeout value in us.
- * @retval SD Card error state
+ * @brief  Checks for error conditions for R5 response.
+ * @param  resp R5 Response of CMD.
+ * @retval SD Card error state.
  */
-u32 SDMMC_GetCmdResp1B(SDIOHOST_TypeDef *SDIOx, u32 Timeout)
+u32 SDMMC_CheckErrResp5(u32 resp)
 {
-	u32 response_r0;
-	u32 count = 0;
-	u32 norm_int, err_int;
-
-	while (1) {
-		norm_int = SDIO_GetNormSts(SDIOx);
-		err_int = SDIO_GetErrSts(SDIOx);
-
-		if ((norm_int & SDIOHOST_BIT_XFER_COMPLETE) || (err_int & (SDIO_CMD_ERR | SDIOHOST_BIT_DATA_TIMEOUT_ERR))) {
-			break;
-		}
-
-		if (count++ >= Timeout) {
-			RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
-			return SD_ERROR_TIMEOUT;
-		}
-
-		/* exit while-loop ASAP */
-		DelayUs(1);
-	}
-
-	if (norm_int & SDIOHOST_BIT_CMD_COMPLETE) {
-		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
-	}
-
-	if (norm_int & SDIOHOST_BIT_XFER_COMPLETE) {
-		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_XFER_COMPLETE);
-	}
-
-	if (!(norm_int & SDIOHOST_BIT_XFER_COMPLETE) && (err_int & SDIOHOST_BIT_DATA_TIMEOUT_ERR)) {
-		RTK_LOGE(TAG, "%s busy\n", __FUNCTION__);
-		return SD_ERROR_BUSY;
-	}
-
-	if (err_int & SDIO_CMD_ERR) {
-		SDIO_ClearErrSts(SDIOx, SDIO_CMD_ERR);
-		if (err_int & SDIOHOST_BIT_CMD_TIMEOUT_ERR) {
-			return SD_ERROR_CMD_RSP_TIMEOUT;
-		} else {
-			return SD_ERROR_GENERAL_UNKNOWN_ERR;
-		}
-	}
-
-	/* We have received response, retrieve it for analysis  */
-	response_r0 = SDIO_GetResponse(SDIOx, SDIO_RESP0);
-
-	if ((response_r0 & SDMMC_R1_ERRORBITS) == SDMMC_ALLZERO) {
+	if ((resp & SDMMC_R5_ERRORBITS) == SDMMC_ALLZERO) {
 		return SD_ERROR_NONE;
-	} else if ((response_r0 & SDMMC_R1_ADDR_OUT_OF_RANGE) == SDMMC_R1_ADDR_OUT_OF_RANGE) {
-		return SD_ERROR_ADDR_OUT_OF_RANGE;
-	} else if ((response_r0 & SDMMC_R1_ADDR_MISALIGNED) == SDMMC_R1_ADDR_MISALIGNED) {
-		return SD_ERROR_ADDR_MISALIGNED;
-	} else if ((response_r0 & SDMMC_R1_BLOCK_LEN_ERR) == SDMMC_R1_BLOCK_LEN_ERR) {
-		return SD_ERROR_BLOCK_LEN_ERR;
-	} else if ((response_r0 & SDMMC_R1_ERASE_SEQ_ERR) == SDMMC_R1_ERASE_SEQ_ERR) {
-		return SD_ERROR_ERASE_SEQ_ERR;
-	} else if ((response_r0 & SDMMC_R1_BAD_ERASE_PARAM) == SDMMC_R1_BAD_ERASE_PARAM) {
-		return SD_ERROR_BAD_ERASE_PARAM;
-	} else if ((response_r0 & SDMMC_R1_WRITE_PROT_VIOLATION) == SDMMC_R1_WRITE_PROT_VIOLATION) {
-		return SD_ERROR_WRITE_PROT_VIOLATION;
-	} else if ((response_r0 & SDMMC_R1_LOCK_UNLOCK_FAILED) == SDMMC_R1_LOCK_UNLOCK_FAILED) {
-		return SD_ERROR_LOCK_UNLOCK_FAILED;
-	} else if ((response_r0 & SDMMC_R1_COM_CRC_FAILED) == SDMMC_R1_COM_CRC_FAILED) {
-		return SD_ERROR_COM_CRC_FAILED;
-	} else if ((response_r0 & SDMMC_R1_ILLEGAL_CMD) == SDMMC_R1_ILLEGAL_CMD) {
-		return SD_ERROR_ILLEGAL_CMD;
-	} else if ((response_r0 & SDMMC_R1_CARD_ECC_FAILED) == SDMMC_R1_CARD_ECC_FAILED) {
-		return SD_ERROR_CARD_ECC_FAILED;
-	} else if ((response_r0 & SDMMC_R1_CC_ERROR) == SDMMC_R1_CC_ERROR) {
-		return SD_ERROR_CC_ERR;
-	} else if ((response_r0 & SDMMC_R1_STREAM_READ_UNDERRUN) == SDMMC_R1_STREAM_READ_UNDERRUN) {
-		return SD_ERROR_STREAM_READ_UNDERRUN;
-	} else if ((response_r0 & SDMMC_R1_STREAM_WRITE_OVERRUN) == SDMMC_R1_STREAM_WRITE_OVERRUN) {
-		return SD_ERROR_STREAM_WRITE_OVERRUN;
-	} else if ((response_r0 & SDMMC_R1_CID_CSDMMC_OVERWRITE) == SDMMC_R1_CID_CSDMMC_OVERWRITE) {
-		return SD_ERROR_CID_CSDMMC_OVERWRITE;
-	} else if ((response_r0 & SDMMC_R1_WP_ERASE_SKIP) == SDMMC_R1_WP_ERASE_SKIP) {
-		return SD_ERROR_WP_ERASE_SKIP;
-	} else if ((response_r0 & SDMMC_R1_CARD_ECC_DISABLED) == SDMMC_R1_CARD_ECC_DISABLED) {
-		return SD_ERROR_CARD_ECC_DISABLED;
-	} else if ((response_r0 & SDMMC_R1_ERASE_RESET) == SDMMC_R1_ERASE_RESET) {
-		return SD_ERROR_ERASE_RESET;
-	} else if ((response_r0 & SDMMC_R1_AKE_SEQ_ERROR) == SDMMC_R1_AKE_SEQ_ERROR) {
-		return SD_ERROR_AKE_SEQ_ERR;
-	} else {
-		return SD_ERROR_GENERAL_UNKNOWN_ERR;
-	}
-}
-
-/**
- * @brief  Checks for error conditions for R2 (CID or CSD) response.
- * @param  SDIOx Pointer to SDIO host
- * @retval SD Card error state
- */
-u32 SDMMC_GetCmdResp2(SDIOHOST_TypeDef *SDIOx)
-{
-	u32 count = 0;
-	u32 norm_int, err_int;
-
-	while (1) {
-		norm_int = SDIO_GetNormSts(SDIOx);
-		err_int = SDIO_GetErrSts(SDIOx);
-
-		if ((norm_int & SDIOHOST_BIT_CMD_COMPLETE) || (err_int & SDIO_CMD_ERR)) {
-			break;
-		}
-
-		if (count++ >= SDMMC_CMD_TIMEOUT) {
-			RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
-			return SD_ERROR_TIMEOUT;
-		}
-
-		/* exit while-loop ASAP */
-		DelayUs(1);
-	}
-
-	if (norm_int & SDIOHOST_BIT_CMD_COMPLETE) {
-		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
-	}
-
-	if (err_int & SDIO_CMD_ERR) {
-		SDIO_ClearErrSts(SDIOx, SDIO_CMD_ERR);
-		if (err_int & SDIOHOST_BIT_CMD_TIMEOUT_ERR) {
-			return SD_ERROR_CMD_RSP_TIMEOUT;
-		} else {
-			return SD_ERROR_GENERAL_UNKNOWN_ERR;
-		}
-	}
-
-	return SD_ERROR_NONE;
-}
-
-/**
- * @brief  Checks for error conditions for R3 (OCR) response.
- * @param  SDIOx Pointer to SDIO host
- * @retval SD Card error state
- */
-u32 SDMMC_GetCmdResp3(SDIOHOST_TypeDef *SDIOx)
-{
-	u32 count = 0;
-	u32 norm_int, err_int;
-
-	while (1) {
-		norm_int = SDIO_GetNormSts(SDIOx);
-		err_int = SDIO_GetErrSts(SDIOx);
-
-		if ((norm_int & SDIOHOST_BIT_CMD_COMPLETE) || (err_int & SDIO_CMD_ERR)) {
-			break;
-		}
-
-		if (count++ >= SDMMC_CMD_TIMEOUT) {
-			RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
-			return SD_ERROR_TIMEOUT;
-		}
-
-		/* exit while-loop ASAP */
-		DelayUs(1);
-	}
-
-	if (norm_int & SDIOHOST_BIT_CMD_COMPLETE) {
-		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
-	}
-
-	if (err_int & SDIO_CMD_ERR) {
-		SDIO_ClearErrSts(SDIOx, SDIO_CMD_ERR);
-		if (err_int & SDIOHOST_BIT_CMD_TIMEOUT_ERR) {
-			return SD_ERROR_CMD_RSP_TIMEOUT;
-		} else {
-			return SD_ERROR_GENERAL_UNKNOWN_ERR;
-		}
-	}
-
-	return SD_ERROR_NONE;
-}
-
-/**
- * @brief  Checks for error conditions for R3 (OCR) response.
- * @param  SDIOx Pointer to SDIO host
- * @retval SD Card error state
- */
-u32 SDMMC_GetCmdResp4(SDIOHOST_TypeDef *SDIOx)
-{
-	u32 count = 0;
-	u32 norm_int, err_int;
-
-	while (1) {
-		norm_int = SDIO_GetNormSts(SDIOx);
-		err_int = SDIO_GetErrSts(SDIOx);
-
-		if ((norm_int & SDIOHOST_BIT_CMD_COMPLETE) || (err_int & SDIO_CMD_ERR)) {
-			break;
-		}
-
-		if (count++ >= SDMMC_CMD_TIMEOUT) {
-			RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
-			return SD_ERROR_TIMEOUT;
-		}
-
-		/* exit while-loop ASAP */
-		DelayUs(1);
-	}
-
-	if (norm_int & SDIOHOST_BIT_CMD_COMPLETE) {
-		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
-	}
-
-	if (err_int & SDIO_CMD_ERR) {
-		SDIO_ClearErrSts(SDIOx, SDIO_CMD_ERR);
-		if (err_int & SDIOHOST_BIT_CMD_TIMEOUT_ERR) {
-			return SD_ERROR_CMD_RSP_TIMEOUT;
-		} else {
-			return SD_ERROR_GENERAL_UNKNOWN_ERR;
-		}
-	}
-
-	return SD_ERROR_NONE;
-}
-
-/**
- * @brief  Checks for error conditions for R1 response.
- * @param  SDIOx Pointer to SDIO host
- * @retval SD Card error state
- */
-u32 SDMMC_GetCmdResp5(SDIOHOST_TypeDef *SDIOx)
-{
-	u32 response_r0;
-	u32 count = 0;
-	u32 norm_int, err_int;
-
-	while (1) {
-		norm_int = SDIO_GetNormSts(SDIOx);
-		err_int = SDIO_GetErrSts(SDIOx);
-
-		if ((norm_int & SDIOHOST_BIT_CMD_COMPLETE) || (err_int & SDIO_CMD_ERR)) {
-			break;
-		}
-
-		if (count++ >= SDMMC_CMD_TIMEOUT) {
-			RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
-			return SD_ERROR_TIMEOUT;
-		}
-
-		/* exit while-loop ASAP */
-		DelayUs(1);
-	}
-
-	if (norm_int & SDIOHOST_BIT_CMD_COMPLETE) {
-		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
-	}
-
-	if (err_int & SDIO_CMD_ERR) {
-		SDIO_ClearErrSts(SDIOx, SDIO_CMD_ERR);
-		if (err_int & SDIOHOST_BIT_CMD_TIMEOUT_ERR) {
-			return SD_ERROR_CMD_RSP_TIMEOUT;
-		} else {
-			return SD_ERROR_GENERAL_UNKNOWN_ERR;
-		}
-	}
-
-	/* We have received response, retrieve it.  */
-	response_r0 = SDIO_GetResponse(SDIOx, SDIO_RESP0);
-
-	if ((response_r0 & SDMMC_R5_ERRORBITS) == SDMMC_ALLZERO) {
-		return SD_ERROR_NONE;
-	} else if ((response_r0 & SDMMC_R5_COM_CRC_ERROR) == SDMMC_R5_COM_CRC_ERROR) {
+	} else if ((resp & SDMMC_R5_COM_CRC_ERROR) == SDMMC_R5_COM_CRC_ERROR) {
 		return SD_ERROR_CMD_CRC_FAIL;
-	} else if ((response_r0 & SDMMC_R5_ILLEGAL_COMMAND) == SDMMC_R5_ILLEGAL_COMMAND) {
+	} else if ((resp & SDMMC_R5_ILLEGAL_COMMAND) == SDMMC_R5_ILLEGAL_COMMAND) {
 		return SD_ERROR_ILLEGAL_CMD;
-	} else if ((response_r0 & SDMMC_R5_OUT_OF_RANGE) == SDMMC_R5_OUT_OF_RANGE) {
+	} else if ((resp & SDMMC_R5_OUT_OF_RANGE) == SDMMC_R5_OUT_OF_RANGE) {
 		return SD_ERROR_ADDR_OUT_OF_RANGE;
 	} else {
 		return SD_ERROR_GENERAL_UNKNOWN_ERR;
@@ -1617,106 +1428,20 @@ u32 SDMMC_GetCmdResp5(SDIOHOST_TypeDef *SDIOx)
 }
 
 /**
- * @brief  Checks for error conditions for R6 (RCA) response.
- * @param  SDIOx Pointer to SDIO host
- * @param  SDMMC_CMD: The sent command index
- * @param  pRCA: Pointer to the variable that will contain the SD card relative
- *         address RCA
- * @retval SD Card error state
+ * @brief  Checks for error conditions for R6 response.
+ * @param  resp R6 Response of CMD.
+ * @retval SD Card error state.
  */
-u32 SDMMC_GetCmdResp6(SDIOHOST_TypeDef *SDIOx, u16 *pRCA)
+u32 SDMMC_CheckErrResp6(u32 resp)
 {
-	u32 response_r0;
-	u32 count = 0;
-	u32 norm_int, err_int;
-
-	while (1) {
-		norm_int = SDIO_GetNormSts(SDIOx);
-		err_int = SDIO_GetErrSts(SDIOx);
-
-		if ((norm_int & SDIOHOST_BIT_CMD_COMPLETE) || (err_int & SDIO_CMD_ERR)) {
-			break;
-		}
-
-		if (count++ >= SDMMC_CMD_TIMEOUT) {
-			RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
-			return SD_ERROR_TIMEOUT;
-		}
-
-		/* exit while-loop ASAP */
-		DelayUs(1);
-	}
-
-	if (norm_int & SDIOHOST_BIT_CMD_COMPLETE) {
-		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
-	}
-
-	if (err_int & SDIO_CMD_ERR) {
-		SDIO_ClearErrSts(SDIOx, SDIO_CMD_ERR);
-		if (err_int & SDIOHOST_BIT_CMD_TIMEOUT_ERR) {
-			return SD_ERROR_CMD_RSP_TIMEOUT;
-		} else {
-			return SD_ERROR_GENERAL_UNKNOWN_ERR;
-		}
-	}
-
-	/* We have received response, retrieve it.  */
-	response_r0 = SDIO_GetResponse(SDIOx, SDIO_RESP0);
-
-	if ((response_r0 & (SDMMC_R6_GENERAL_UNKNOWN_ERROR | SDMMC_R6_ILLEGAL_CMD |
-						SDMMC_R6_COM_CRC_FAILED)) == SDMMC_ALLZERO) {
-		*pRCA = (u16)(response_r0 >> 16);
-
+	if ((resp & (SDMMC_R6_GENERAL_UNKNOWN_ERROR | SDMMC_R6_ILLEGAL_CMD |
+				 SDMMC_R6_COM_CRC_FAILED)) == SDMMC_ALLZERO) {
 		return SD_ERROR_NONE;
-	} else if ((response_r0 & SDMMC_R6_ILLEGAL_CMD) == SDMMC_R6_ILLEGAL_CMD) {
+	} else if ((resp & SDMMC_R6_ILLEGAL_CMD) == SDMMC_R6_ILLEGAL_CMD) {
 		return SD_ERROR_ILLEGAL_CMD;
-	} else if ((response_r0 & SDMMC_R6_COM_CRC_FAILED) == SDMMC_R6_COM_CRC_FAILED) {
+	} else if ((resp & SDMMC_R6_COM_CRC_FAILED) == SDMMC_R6_COM_CRC_FAILED) {
 		return SD_ERROR_COM_CRC_FAILED;
 	} else {
 		return SD_ERROR_GENERAL_UNKNOWN_ERR;
 	}
-}
-
-/**
- * @brief  Checks for error conditions for R7 response.
- * @param  SDIOx Pointer to SDIO host
- * @retval SD Card error state
- */
-u32 SDMMC_GetCmdResp7(SDIOHOST_TypeDef *SDIOx)
-{
-	u32 count = 0;
-	u32 norm_int, err_int;
-
-	while (1) {
-		norm_int = SDIO_GetNormSts(SDIOx);
-		err_int = SDIO_GetErrSts(SDIOx);
-
-		if ((norm_int & SDIOHOST_BIT_CMD_COMPLETE) || (err_int & SDIO_CMD_ERR)) {
-			break;
-		}
-
-		if (count++ >= SDMMC_CMD_TIMEOUT) {
-			RTK_LOGE(TAG, "%s timeout\n", __FUNCTION__);
-			return SD_ERROR_TIMEOUT;
-		}
-
-		/* exit while-loop ASAP */
-		DelayUs(1);
-	}
-
-	if (norm_int & SDIOHOST_BIT_CMD_COMPLETE) {
-		SDIO_ClearNormSts(SDIOx, SDIOHOST_BIT_CMD_COMPLETE);
-	}
-
-	if (err_int & SDIO_CMD_ERR) {
-		DelayUs(10); // avoid cmd_err sts is set again after clear
-		SDIO_ClearErrSts(SDIOx, SDIO_CMD_ERR);
-		if (err_int & SDIOHOST_BIT_CMD_TIMEOUT_ERR) {
-			return SD_ERROR_CMD_RSP_TIMEOUT;
-		} else {
-			return SD_ERROR_GENERAL_UNKNOWN_ERR;
-		}
-	}
-
-	return SD_ERROR_NONE;
 }

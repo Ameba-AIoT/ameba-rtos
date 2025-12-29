@@ -11,7 +11,8 @@
 
 #include "usb_os.h"
 #include "usb_ch9.h"
-#include "usb_hal.h"
+
+/* Exported defines ----------------------------------------------------------*/
 
 /* This define is used to trace transfer performance */
 #define USBH_TP_TRACE_DEBUG                 1U
@@ -40,6 +41,8 @@
 #define USBH_DEV_ID_MATCH_ITF_INFO          (USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS | USBH_DEV_ID_MATCH_ITF_PROTOCOL)
 /** @} */
 
+/* Exported macros -----------------------------------------------------------*/
+
 /**
  * @brief Notifies the host core that the class state has changed.
  * @details This is a convenience macro for @ref usbh_notify_composite_class_state_change with owner set to `USBH_EVENT_OWNER`.
@@ -47,6 +50,8 @@
  * @param pipe_num The pipe number associated with the change.
  */
 #define usbh_notify_class_state_change(host, pipe_num) usbh_notify_composite_class_state_change(host, pipe_num, USBH_EVENT_OWNER)
+
+/* Exported types ------------------------------------------------------------*/
 
 /**
  * @brief Defines the transfer states for an endpoint's pipe.
@@ -444,8 +449,6 @@ typedef struct _usb_host_t {
 	u8 connect_state;                   /**< The current connection state. See @ref usbh_state_t. */
 } usb_host_t;
 
-/* Exported macros -----------------------------------------------------------*/
-
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
@@ -524,7 +527,7 @@ int usbh_set_configuration(usb_host_t *host, u8 cfg);
  * @param[in] host: Host Handle.
  * @param[in] id: Device id information.
  * @return interface descriptor handler.
- * @note : NULL means interface not found.
+ * @note NULL means interface not found.
  */
 usbh_itf_data_t *usbh_get_interface_descriptor(usb_host_t *host, usbh_dev_id_t *id);
 

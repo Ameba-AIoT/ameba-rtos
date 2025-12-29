@@ -29,6 +29,26 @@ void CHIPEN_WorkMode(enum CHIPEN_WORK_MODE mode)
 }
 
 /**
+ * @brief  Get CHIPEN work mode
+ * @param  None
+ * @retval mode: Work mode of CHIPEN. This value can be:
+ *    CHIPEN_HW_RESET_MODE ,
+ *    CHIPEN_INT_RESET_MODE,
+ *    CHIPEN_PULSE_RESET_MODE.
+ */
+u8 CHIPEN_WorkModeGet(void)
+{
+	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_CHIPEN_CTRL);
+	u8 Mode = AON_GET_CHIPEN_INTR_MODE(Temp);
+
+	if (Mode >= CHIPEN_PULSE_RESET_MODE) {
+		Mode = CHIPEN_PULSE_RESET_MODE;
+	}
+
+	return Mode;
+}
+
+/**
   * @brief  Set the CHIPEN Debounce Time.
   * Debounce timer works in all work mode
   * @param  Debounce: new debug counter.

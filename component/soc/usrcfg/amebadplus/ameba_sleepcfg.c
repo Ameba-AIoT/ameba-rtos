@@ -7,7 +7,7 @@
 #include "ameba_soc.h"
 
 /* Wakeup entry can be set to WAKEUP_NULL/WAKEUP_KM4/WAKEUP_KM0 */
-WakeEvent_TypeDef sleep_wevent_config[] = {
+struct WakeEvent_TypeDef sleep_wevent_config[] = {
 //  	Module								Wakeup
 #ifdef CONFIG_WHC_INTF_SDIO
 	{WAKE_SRC_SDIO,							WAKEUP_KM0},
@@ -47,8 +47,8 @@ WakeEvent_TypeDef sleep_wevent_config[] = {
 	{0xFFFFFFFF,							WAKEUP_NULL},	/* Table end */
 };
 
-PSCFG_TypeDef ps_config = {
-	.keep_OSC4M_on = FALSE,			/* keep OSC4M on or off for sleep */
+struct PSCFG_TypeDef ps_config = {
+	.keep_osc4m_on = FALSE,			/* keep OSC4M on or off for sleep */
 	.xtal_mode_in_sleep = XTAL_OFF,	/* set xtal mode during sleep mode, see enum xtal_mode_sleep for detail */
 	.sleep_to_08V = FALSE,			/* default sleep to 0.7V, set this option to TRUE will sleep to 0.8V */
 };

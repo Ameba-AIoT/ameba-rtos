@@ -1181,7 +1181,6 @@ int whc_fullmac_host_update_custom_ie(u8 *ie, int ie_index, u8 type)
 
 	size = sizeof(struct rtw_custom_ie) + ie[1] + 2;
 	buf_vir = rtw_malloc(size, &buf_phy);
-
 	if (!buf_vir) {
 		dev_err(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
@@ -1204,25 +1203,41 @@ int whc_fullmac_host_update_custom_ie(u8 *ie, int ie_index, u8 type)
 	return ret;
 }
 
-int whc_fullmac_host_set_edcca_mode(u8 edcca_mode)
+int whc_fullmac_host_set_edcca_mode(struct rtw_edcca_param_t *p)
 {
 	int ret = 0;
+	u8 *buf_vir = NULL;
+	dma_addr_t buf_phy = 0;
 	u32 param_buf[1];
 
-	switch (edcca_mode) {
+	if (p == NULL) {
+		return -EINVAL;
+	}
+
+	buf_vir = rtw_malloc(sizeof(struct rtw_edcca_param_t), &buf_phy);
+	if (!buf_vir) {
+		dev_err(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		return -ENOMEM;
+	}
+	memcpy(buf_vir, p, sizeof(struct rtw_edcca_param_t));
+
+	switch (p->edcca_mode) {
 	case RTW_EDCCA_NORM:
 	case RTW_EDCCA_ADAPT:
 	case RTW_EDCCA_CS:
 	case RTW_EDCCA_DISABLE:
-		param_buf[0] = (u32)edcca_mode;
-		ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SET_EDCCA_MODE, param_buf, 1);
+		param_buf[0] = buf_phy;
+		ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SET_EDCCA_PARAM, param_buf, 1);
 		break;
 	default:
-		dev_info(global_idev.fullmac_dev, "Wrong EDCCA mode %d!", edcca_mode);
+		dev_info(global_idev.fullmac_dev, "Wrong EDCCA mode %d!", p->edcca_mode);
 		dev_info(global_idev.fullmac_dev, "0: normal; 1: ETSI; 2: Japan; 9: Disable.");
 		ret = -EINVAL;
 		break;
 	}
+
+	rtw_mfree(sizeof(struct rtw_edcca_param_t), buf_vir, buf_phy);
+
 	return ret;
 }
 

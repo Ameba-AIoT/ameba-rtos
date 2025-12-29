@@ -329,16 +329,10 @@ void SOCPS_SleepInit(void)
 	/*power management setting*/
 	km0cg_pwrmgt_config_val = HAL_READ32(PMC_BASE, SYSPMC_OPT);
 
-	if (ps_config.keep_OSC4M_on) {
+	if (ps_config.keep_osc4m_on) {
 		km0cg_pwrmgt_config_val |= PMC_BIT_PST_SLEP_ERCK;
 	} else {
 		km0cg_pwrmgt_config_val &= ~PMC_BIT_PST_SLEP_ERCK;
-	}
-
-	if (ps_config.swr_mode_in_sleep == SWR_PWM) {
-		km0cg_pwrmgt_config_val |= PMC_BIT_PST_SLEP_EPWM;
-	} else {
-		km0cg_pwrmgt_config_val &= ~PMC_BIT_PST_SLEP_EPWM;
 	}
 
 	km0cg_pwrmgt_config_val &= (~PMC_MASK_PST_SLEP_XMD);

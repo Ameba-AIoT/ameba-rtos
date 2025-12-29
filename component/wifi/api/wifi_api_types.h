@@ -74,6 +74,8 @@ extern "C" {
 				((u8*)(x))[4],((u8*)(x))[5]      /**< Formats MAC address for printing. Usage Example: RTK_LOGS(NOTAG, RTK_LOG_INFO, "MAC addr="MAC_FMT"\n", MAC_ARG(mac_addr));*/
 #define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"  /**< Format string for printing MAC address.*/
 
+#define INVALID_RX_SNR			127
+
 /** @} End of WIFI_Exported_Constants group*/
 
 
@@ -958,6 +960,7 @@ struct rtw_csa_parm {
 */
 struct rtw_rx_pkt_info {
 	s8 recv_signal_power;  /**< Received signal strength indicator (RSSI) in dBm. */
+	s8 snr;                /**< Signal-to-noise ratio in dB. Unsupported ICs include Amebalite, Amebasmart, Amebagreen2 using INVALID_RX_SNR*/
 	u8 data_rate;          /**< Data rate of the received packet. Values: @ref RTW_RATE_1M, @ref RTW_RATE_2M, etc. */
 	u8 channel;            /**< Channel on which the packet was received. */
 	u8 *buf;               /**< Pointer to the buffer containing the received packet data. */

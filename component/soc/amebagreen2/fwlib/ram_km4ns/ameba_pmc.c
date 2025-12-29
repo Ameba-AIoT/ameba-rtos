@@ -15,10 +15,10 @@
 void SOCPS_SleepInitEntry(struct PSCFG_TypeDef *ps_config)
 {
 	/*2. Clock configuration*/
-	SOCPS_ClockSourceConfig(ps_config->regu_state_in_sleep, ps_config->xtal_mode_in_sleep, ps_config->keep_osc4m_on_in_sleep);
+	SOCPS_ClockSourceConfig(ps_config->sleep_to_08V, ps_config->xtal_mode_in_sleep, ps_config->keep_osc4m_on);
 
 	/*3. Power settings*/
-	SOCPS_PowerManage(ps_config->regu_state_in_sleep);
+	SOCPS_PowerManage(ps_config->sleep_to_08V);
 }
 
 void SOCPS_HWSleepFilter(u32 enable)

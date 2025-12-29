@@ -370,11 +370,6 @@ uint32_t pmu_get_wakelock_status(void)
 uint32_t pmu_set_sleep_type(uint32_t type)
 {
 	sleep_type = type;
-#if defined (CONFIG_ARM_CORE_CM0)
-	if (ps_config.km0_pg_enable) {
-		sleep_type = SLEEP_PG;
-	}
-#endif
 	return 0;
 }
 

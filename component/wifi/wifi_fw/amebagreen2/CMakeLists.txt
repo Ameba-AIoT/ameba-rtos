@@ -36,8 +36,10 @@ if(CONFIG_WIFI_FW_VERIFY)
     include(${WIFIFWDIR}/amebagreen2/test/amebagreen2_test.cmake)
 endif()
 
+if (CONFIG_AMEBAGREEN2)
 if(NOT CONFIG_FW_DRIVER_COEXIST)
     return()
+endif()
 endif()
 ##########################################################################################
 ## * This part defines public part of the component

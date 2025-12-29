@@ -190,11 +190,6 @@ enum PMC_AP_WAKE_STATUS {
   * @}
   */
 
-typedef struct {
-	u8 keep_OSC4M_on;
-	u8 xtal_mode_in_sleep;
-} PSCFG_TypeDef;
-
 extern u32 psp_temp;
 extern u32 psplim_temp;
 

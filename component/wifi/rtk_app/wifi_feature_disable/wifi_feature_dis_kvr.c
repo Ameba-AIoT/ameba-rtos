@@ -114,9 +114,9 @@ u16 rtw_roam_nb_ch_get(u8 ch)
 #endif
 
 #if !defined(CONFIG_WIFI_11V_ENABLE) && !defined(CONFIG_WIFI_11R_ENABLE)
-void rtw_set_to_roam(u8 roam_try_cnt)
+void rtw_set_to_roam(u8 trigger_roam)
 {
-	UNUSED(roam_try_cnt);
+	UNUSED(trigger_roam);
 }
 #endif
 

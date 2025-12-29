@@ -478,8 +478,10 @@ void pmu_post_sleep_processing(uint32_t *tick_before_sleep)
 	/* update xTickCount and mark to trigger task list update in xTaskResumeAll */
 	vTaskCompTick(ms_passed);
 
-	RTK_LOGD(NOTAG, "KM0 sleeped:[%lu] ms\n", ms_passed);
+	/* exec sleep hook functions */
+	pmu_exec_wakeup_hook_funs(cur_device_id, ms_passed);
 
+	RTK_LOGD(NOTAG, "KM0 sleeped:[%lu] ms\n", ms_passed);
 }
 
 /* NVIC will power off under sleep power gating mode, so we can */

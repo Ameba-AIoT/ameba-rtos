@@ -14,8 +14,8 @@
 #define FIND_BETTER_RSSI_DELTA 8	//target ap's rssi - current ap's rssi > FIND_BETTER_RSSI_DELTA
 #define PRE_SCAN	0
 #define SUPPORT_SCAN_5G_CHANNEL 0
-#define MAX_CH_NUM 13		// config the max channel number store in flash
-#define MAX_AP_NUM 16		// config the max ap number store in flash
+#define MAX_STORED_CH_NUM 13		// config the max channel number store in flash
+#define MAX_STORED_IP_NUM 16		// config the max ap number store in flash
 #define AP_VALID_TIME 60	//the valid time of target ap which found during pre scan
 #define ROAMING_PLUS_DBG 0		//for debug log
 #define SCAN_BUFLEN 500 	//each scan list length= 14 + ssid_length(32MAX). so SCAN_BUFLEN should be AP_NUM*(14+32) at least
@@ -74,8 +74,8 @@ struct wifi_roaming_data {
 	struct wlan_fast_reconnect ap_info;
 	u8 num;
 	u8 ap_n;
-	u32 channel[MAX_CH_NUM];
-	struct ap_additional_info add_ap_info[MAX_AP_NUM];
+	u32 channel[MAX_STORED_CH_NUM];
+	struct ap_additional_info add_ap_info[MAX_STORED_IP_NUM];
 } wifi_roaming_data_t;
 
 enum {
@@ -293,7 +293,7 @@ WIFI_RETRY_LOOP:
 			tick4 = rtos_time_get_current_system_time_ms();
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 			//get offer ip in flash
-			if ((data->ap_n < MAX_AP_NUM) && (scan_type == FAST_CONNECT_SPECIFIC_CH)) {
+			if ((data->ap_n < MAX_STORED_IP_NUM) && (scan_type == FAST_CONNECT_SPECIFIC_CH)) {
 				int i = 0;
 				for (i = 0; i < data->ap_n; i++) {
 					if (memcmp(ap_list->bssid, data->add_ap_info[i].ap_bssid, ETH_ALEN) == 0) {
@@ -358,13 +358,13 @@ static int  wifi_write_ap_info_to_flash_ext(u8 *data, u32 len)
 		}
 	}
 	if (n == 0) {
-		if (read_data.ap_n < MAX_AP_NUM) {
+		if (read_data.ap_n < MAX_STORED_IP_NUM) {
 			read_data.ap_n ++;
 			memcpy((u8 *)(read_data.add_ap_info[read_data.ap_n - 1].ap_bssid), ((struct ap_additional_info *)data)->ap_bssid, 6);
 			read_data.add_ap_info[read_data.ap_n - 1].sta_ip = ((struct ap_additional_info *)data)->sta_ip;
 			rt_kv_set("wlan_data", (uint8_t *)&read_data, sizeof(struct wifi_roaming_data));
 		} else {
-			ROAMING_DBG("%s(): For more AP infos, Please change MAX_AP_NUM first!\n", __func__);
+			ROAMING_DBG("%s(): For more AP infos, Please change MAX_STORED_IP_NUM first!\n", __func__);
 		}
 	}
 	u32 tick2 = rtos_time_get_current_system_time_ms();
@@ -487,7 +487,7 @@ int wifi_do_fast_connect(void)
 	rt_kv_get("wlan_data", (uint8_t *) &read_data, sizeof(struct wifi_roaming_data));
 
 	/* Check whether stored flash profile is empty */
-	if ((read_data.num == 0) || (read_data.num > MAX_CH_NUM)) {
+	if ((read_data.num == 0) || (read_data.num > MAX_STORED_CH_NUM)) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n[Wifi roaming plus]: Fast connect profile is empty, abort fast connection\n");
 	}
 	/* Find the best ap in flash profile */
@@ -612,7 +612,7 @@ int wifi_roaming_scan(struct wifi_roaming_data *read_data, u32 retry)
 #endif
 
 	/*scan specific channels*/
-	if (0 < read_data->num && read_data->num < MAX_CH_NUM) {
+	if (0 < read_data->num && read_data->num < MAX_STORED_CH_NUM) {
 		ROAMING_DBG("\r\n %s():try to find a better ap in flash\n", __func__);
 		while (read_data->num) {
 			if (read_data->channel[read_data->num - 1]) {

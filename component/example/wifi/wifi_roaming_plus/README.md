@@ -18,7 +18,7 @@ None
 
 2. Set the `RSSI_SCAN_THRESHOLD` and `RSSI_ROAMING_THRESHOLD` and `FIND_BETTER_RSSI_DELTA` according to the WLAN envrionment.
 
-3. Config `MAX_CH_NUM` and `MAX_AP_NUM` for your application usage. But with more scan `MAX_CH_NUM`, pre-scan time may takes longer.
+3. Config `MAX_STORED_CH_NUM` and `MAX_STORED_IP_NUM` for your application usage. But with more scan `MAX_STORED_CH_NUM`, pre-scan time may takes longer.
 
 4. IF support 5G channels. enable `SUPPORT_SCAN_5G_CHANNEL` and set the `roaming_channel_plan`.
 
@@ -43,3 +43,4 @@ RTL8720E
 RTL8713E
 RTL8710E
 RTL8721Dx
+RTL8721F

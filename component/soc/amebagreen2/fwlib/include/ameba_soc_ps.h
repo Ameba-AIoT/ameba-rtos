@@ -16,7 +16,13 @@ enum wakeup_mask {
 struct WakeEvent_TypeDef {
 	u32 Module;
 	enum wakeup_mask Wakeup;
-} ;
+};
+
+struct PSCFG_TypeDef {
+	u8 keep_osc4m_on;			/* keep OSC4M on or off for sleep and dslp*/
+	u8 xtal_mode_in_sleep;		/* set xtal mode during sleep mode*/
+	u8 sleep_to_08V;			/* default sleep to 0.7V, set this option to TRUE will sleep to 0.8V */
+};
 
 struct MPU_BackUp_TypeDef {
 	u32 CTRL;

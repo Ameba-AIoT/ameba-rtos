@@ -399,7 +399,17 @@ typedef struct {
 /* MANUAL_GEN_START */
 
 //Please add your defination here
-
+/** @defgroup XTAL_CLOCK_MODE_define
+  * @{
+  */
+enum xtal_mode_sleep {
+	XTAL_OFF = 0,
+	XTAL_LPS_Without_40M = 1,
+	XTAL_LPS_With_40M = 2,
+	XTAL_Normal = 3,
+	XTAL_HP = 4,
+};
+/** @} */
 /* MANUAL_GEN_END */
 
 #endif
