@@ -61,7 +61,7 @@ def main():
     parser.add_argument('--log-dir', type=str, default="",
                        help='Specify the target log file directory, if not, the logs will save to under xxxx_gcc_project when logging enabled')
     parser.add_argument('--logAGG', nargs='+',  
-                        help='tthe logAGG enabled and source marked ')
+                        help='the logAGG enabled and source marked ')
     args = parser.parse_args()
 
     port = args.port
