@@ -44,6 +44,7 @@ ameba_list_append(private_sources
     ameba_flashclk.c
     ameba_npcap.c
     ameba_phy.c
+    ameba_nandflash.c
 )
 
 ameba_list_append_ifnot(CONFIG_TRUSTZONE private_sources

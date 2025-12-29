@@ -81,7 +81,6 @@ _WEAK void wifi_set_user_config(void)
 	/* MISC */
 	wifi_user_config.en_mcc = 0;  /* must select ENABLE_MCC in menuconfig when wifi_user_config.en_mcc=1 */
 	wifi_user_config.mcc_force_p1_slot_ratio = 44;
-	wifi_user_config.max_roaming_times = 2;
 	wifi_user_config.ampdu_rx_enable = 1;
 	wifi_user_config.ampdu_tx_enable = 1;
 	wifi_user_config.ap_compatibilty_enabled = 0x07;

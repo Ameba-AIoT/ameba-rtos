@@ -52,9 +52,9 @@ struct WakeEvent_TypeDef sleep_wevent_config[] = {
 };
 
 struct PSCFG_TypeDef ps_config = {
-	.keep_osc4m_on_in_sleep = FALSE,				/* keep OSC4M off or on during sleep */
-	.xtal_mode_in_sleep = XTAL_OFF,					/* set xtal mode during sleep mode, see enum xtal_mode_sleep for detail */
-	.regu_state_in_sleep = STATE1_LDOPC_SWRPFM_07,
+	.keep_osc4m_on = FALSE,						/* keep OSC4M off or on during sleep */
+	.xtal_mode_in_sleep = XTAL_OFF,				/* set xtal mode during sleep mode*/
+	.sleep_to_08V = FALSE,						/* default sleep to 0.7V, set this option to TRUE will sleep to 0.8V */
 };
 
 UARTCFG_TypeDef uart_config[4] = {

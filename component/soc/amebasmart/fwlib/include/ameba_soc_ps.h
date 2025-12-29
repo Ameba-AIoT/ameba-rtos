@@ -32,10 +32,16 @@ typedef struct {
 	u32 Status;
 } PWRCFG_TypeDef;
 
-typedef struct {
+struct PSCFG_TypeDef {
+	u8 km0_audio_vad_on;
+	u8 keep_osc4m_on; 		/* keep OSC4M on or off for sleep and dslp*/
+	u8 xtal_mode_in_sleep;  /* set xtal mode during sleep mode*/
+};
+
+struct WakeEvent_TypeDef {
 	u32 Module;
 	enum wakeup_mask wakeup;
-} WakeEvent_TypeDef;
+};
 
 extern PWRCFG_TypeDef sleep_sram_config[];
 

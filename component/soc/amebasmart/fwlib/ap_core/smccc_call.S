@@ -3,33 +3,20 @@
  *
  * Author: PSP Software Group
  */
-
-#define __inst_arm(x) .long x
-#define __inst_arm_thumb32(arm_opcode, thumb_opcode) __inst_arm(arm_opcode)
-
-#define __SMC(imm4) __inst_arm_thumb32(				\
-	0xE1600070 | (((imm4) & 0xF) << 0),				\
-	0xF7F08000 | (((imm4) & 0xF) << 16)				\
-)
-
-	.macro __SMC imm4
-	.long
-	0xE1600070 | (((\imm4) & 0xF) << 0),
-	0xF7F08000 | (((\imm4) & 0xF) << 16)
-	.endm
+#include "asm_defs.h"
 
 	.macro SMCCC_SMC
-	__SMC(0)
+	smc #0
 	.endm
 
 	.macro SMCCC instr
-	mov	r12, sp
 	push	{r4-r7}
-	ldm	r12, {r4-r7}
+	add r4, sp, #(4 * 4)
+	ldm     r4, {r4-r7}
 	\instr
+	ldr     r4, [sp, #(8 * 4)]
+	stm     r4, {r0-r3}
 	pop	{r4-r7}
-	ldr	r12, [sp, #(4 * 4)]
-	stm	r12, {r0-r3}
 	bx	lr
 	.endm
 
@@ -39,6 +26,8 @@
  *		  unsigned long a6, unsigned long a7, struct arm_smccc_res *res,
  *		  struct arm_smccc_quirk *quirk)
  */
+	.__func_arm_thumb
 	.global __arm_smccc_smc
+	.type __arm_smccc_smc, %function
 __arm_smccc_smc:
 	SMCCC SMCCC_SMC

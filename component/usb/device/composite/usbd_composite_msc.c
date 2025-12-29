@@ -6,8 +6,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include "usbd.h"
-#include "usb_hal.h"
 #include "usbd_composite_config.h"
 #include "usbd_composite_msc.h"
 #include "usbd_composite_scsi.h"

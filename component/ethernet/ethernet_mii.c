@@ -239,8 +239,8 @@ void ethernet_demo(void *param)
 		pTmpRxPktBuf = NULL;
 	}
 
-	pTmpTxPktBuf = (u8 *)rtos_mem_zmalloc(/*MII_TX_DESC_CNT*/MII_TX_DESC_NO * ETH_PKT_BUFF_SZ);
-	pTmpRxPktBuf = (u8 *)rtos_mem_zmalloc(/*MII_RX_DESC_CNT*/MII_RX_DESC_NO * ETH_PKT_BUFF_SZ);
+	pTmpTxPktBuf = (u8 *)rtos_mem_zmalloc(/*MII_TX_DESC_CNT*/MII_TX_DESC_NO * ETH_PKT_MAX_SIZE);
+	pTmpRxPktBuf = (u8 *)rtos_mem_zmalloc(/*MII_RX_DESC_CNT*/MII_RX_DESC_NO * ETH_PKT_MAX_SIZE);
 
 
 	if (pTmpTxPktBuf == NULL || pTmpRxPktBuf == NULL) {
@@ -363,7 +363,7 @@ void ethernet_clock_set(void)
 		RCC_PeriphClockDividerFENSet(SYS_PLL_GMAC, ENABLE);
 		RCC_PeriphClockDividerSet(SYS_PLL_GMAC, GET_CLK_DIV(gmac_ckd));
 	} else {
-		RCC_PeriphClockSourceSet(PSRAM, USB_PLL);
+		RCC_PeriphClockSourceSet(GMAC, USB_PLL);
 		RCC_PeriphClockDividerFENSet(USB_PLL_GMAC, ENABLE);
 		RCC_PeriphClockDividerSet(USB_PLL_GMAC, GET_CLK_DIV(gmac_ckd));
 	}

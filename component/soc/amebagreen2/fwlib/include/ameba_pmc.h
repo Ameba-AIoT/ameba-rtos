@@ -191,12 +191,6 @@ enum PMC_AP_WAKE_STATUS {
   * @}
   */
 
-struct PSCFG_TypeDef {
-	u8 keep_osc4m_on_in_sleep;  /* keep OSC4M on or off for sleep*/
-	u8 xtal_mode_in_sleep;	    /* see enum xtal_mode_sleep for detail */
-	u8 regu_state_in_sleep;	    /* set work state of regu(SWR+LDO) in sleep, default sleep to 0.7V(SWR:PFM mode, LDO:power cut)*/
-};
-
 int ap_suspend(void);
 void ap_resume(void);
 u32 ap_status_on(void);

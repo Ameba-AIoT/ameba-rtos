@@ -130,9 +130,6 @@ struct wifi_user_conf {
 		- <b>Other bits:</b> reserved.*/
 	u16 rf_calibration_disable;
 
-	/*! The maximum number of roaming attempts triggered by BTM.*/
-	u8 max_roaming_times;
-
 	/*!	AP periodically sends null pkt to check whether the STA is offline, not support right now.*/
 	u8 ap_polling_sta;
 

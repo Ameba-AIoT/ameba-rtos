@@ -3,6 +3,7 @@
  *
  * Author: PSP Software Group
  */
+#include "asm_defs.h"
 
 #define UART_BASE_ADDRESS		0x4200C000
 
@@ -225,6 +226,7 @@ _boot:
 
 	/* should never get here */
 	.global exit
+	.type exit, %function
 exit:
 	b 	_exit
 
@@ -277,6 +279,7 @@ finished:
 	bx	lr
 
 
+	.__func_arm_thumb
 	.global	__PutCharacter
 	.type __PutCharacter, %function
 __PutCharacter:
@@ -289,13 +292,15 @@ __PutCharacter:
 	bne 2f
 1:
 	ldr r2, [r1, #0x14] /* LSR[23]: TP4F_NOT_FULL */
-	tst r2, #0x800000
+	mov r3, #0x800000
+	tst r2, r3
 	beq 1b
 	mov r2, #0xD
 	str r2, [r1, #0x68] /* UART transmitter holding register 4: FIFO entry for Cortex-A*/
 2:
 	ldr r2, [r1, #0x14]
-	tst r2, #0x800000
+	mov r3, #0x800000
+	tst r2, r3
 	beq 2b
 	str r0, [r1, #0x68]
 	bx	lr

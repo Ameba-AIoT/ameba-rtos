@@ -7,6 +7,8 @@
 #include "platform_autoconf.h"
 #include "ameba_soc.h"
 
+uint32_t cur_device_id = 0;
+
 static uint32_t wakelock     = DEFAULT_WAKELOCK;
 static uint32_t sleep_type = SLEEP_PG; /* 0 is power gate, 1 is clock gate */
 SLEEP_ParamDef sleep_param ALIGNMTO(32); /* cacheline aligned for lp & np */
@@ -55,7 +57,7 @@ uint32_t pmu_exec_sleep_hook_funs(void)
 	return nDeviceIdOffset;
 }
 
-void pmu_exec_wakeup_hook_funs(uint32_t nDeviceIdMax)
+void pmu_exec_wakeup_hook_funs(uint32_t nDeviceIdMax, uint32_t common_param)
 {
 	PSM_DD_HOOK_INFO *pPsmDdHookInfo = NULL;
 	uint32_t nDeviceIdOffset = 0;
@@ -65,7 +67,7 @@ void pmu_exec_wakeup_hook_funs(uint32_t nDeviceIdMax)
 
 		/*if this device register and sleep_hook_fun not NULL*/
 		if (pPsmDdHookInfo && pPsmDdHookInfo->wakeup_hook_fun) {
-			pPsmDdHookInfo->wakeup_hook_fun(0, pPsmDdHookInfo->wakeup_param_ptr);
+			pPsmDdHookInfo->wakeup_hook_fun(common_param, pPsmDdHookInfo->wakeup_param_ptr);
 		}
 	}
 }
@@ -233,6 +235,14 @@ void pmu_pre_sleep_processing(uint32_t *tick_before_sleep)
 
 	/*  Store gtimer timestamp before sleep */
 	*tick_before_sleep = SYSTIMER_TickGet();
+
+	/* exec sleep hook functions */
+	cur_device_id = pmu_exec_sleep_hook_funs();
+
+	if (cur_device_id != PMU_MAX) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "Sleep blocked because Dev %x  busy\n", cur_device_id);
+		return;
+	}
 
 	/* for test */
 #if 0

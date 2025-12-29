@@ -7,7 +7,7 @@
 #include "ameba_soc.h"
 
 /*wakeup attribute can be set to WAKEUP_NULL/WAKEUP_LP/WAKEUP_NP/WAKEUP_AP*/
-WakeEvent_TypeDef sleep_wevent_config[] = {
+struct WakeEvent_TypeDef sleep_wevent_config[] = {
 //  Module									wakeup
 	{WAKE_SRC_nFIQOUT1_OR_nIRQOUT1,			WAKEUP_NULL},
 	{WAKE_SRC_nFIQOUT0_OR_nIRQOUT0,			WAKEUP_NULL},
@@ -54,15 +54,10 @@ WakeEvent_TypeDef sleep_wevent_config[] = {
 	{0xFFFFFFFF,							WAKEUP_NULL},	/* Table end */
 };
 
-PSCFG_TypeDef ps_config = {
-	.km0_pg_enable = FALSE,
-	.km0_pll_off = TRUE,
+struct PSCFG_TypeDef ps_config = {
 	.km0_audio_vad_on = FALSE,
-	.km0_config_psram = TRUE, /* if device enter sleep mode or not, false for keep active */
-	.km0_sleep_withM4 = TRUE,
-	.keep_OSC4M_on = FALSE,
-	.xtal_mode_in_sleep = XTAL_OFF,
-	.swr_mode_in_sleep = SWR_PFM,
+	.keep_osc4m_on = FALSE,		   /* keep OSC4M off or on during sleep */
+	.xtal_mode_in_sleep = XTAL_OFF,/* set xtal mode during sleep mode */
 };
 
 UARTCFG_TypeDef uart_config[4] = {

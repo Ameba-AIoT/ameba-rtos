@@ -22,10 +22,15 @@ enum xtal_mode_sleep {
 };
 
 
-typedef struct {
+struct WakeEvent_TypeDef {
 	u32 Module;
 	enum wakeup_mask wakeup;
-} WakeEvent_TypeDef;
+};
+
+struct PSCFG_TypeDef {
+	u8 keep_osc4m_on;			/* keep OSC4M on or off for sleep and dslp*/
+	u8 xtal_mode_in_sleep;		/* set xtal mode during sleep mode*/
+};
 
 typedef struct {
 	u32 Module;

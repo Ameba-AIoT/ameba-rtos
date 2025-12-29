@@ -1022,6 +1022,9 @@ void pmu_post_sleep_processing(uint32_t *tick_before_sleep)
 	lwip_update_internal_counter(ms_passed, NULL);
 #endif
 
+	/* exec sleep hook functions */
+	pmu_exec_wakeup_hook_funs(cur_device_id, ms_passed);
+
 	RTK_LOGD(NOTAG, "KM4 sleeped:[%lu] ms\n", ms_passed);
 
 }
