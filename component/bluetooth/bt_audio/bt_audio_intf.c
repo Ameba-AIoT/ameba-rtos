@@ -338,10 +338,10 @@ static void bt_audio_parsing_recv_stream(uint32_t type, rtk_bt_audio_track_t *tr
 		BT_LOGE("[BT AUDIO] Codec entity not match \r\n");
 		goto exit;
 	}
-	while (size) {
+	do {
 		/* param frame number and frame size */
 		if (bt_audio_handle_media_data_packet(entity, data, size, &frame_size, &frame_num, &codec_header_flag, &param)) {
-			DBG_BAD("%s: media packet dismatch codec type %d ! \r\n", __func__, (int)type);
+			BT_LOGE("%s: media packet dismatch codec type %d ! \r\n", __func__, (int)type);
 			goto exit;
 		}
 		DBG_BAD("%s: frame_size %d, frame_num %d, %d ! \r\n", __func__, (int)frame_size, (int)frame_num, (int)type);
@@ -423,7 +423,7 @@ static void bt_audio_parsing_recv_stream(uint32_t type, rtk_bt_audio_track_t *tr
 		data += frame_size * frame_num;
 		size -= frame_size * frame_num;
 		handle_media_frame_num += frame_num;
-	}
+	} while (size);
 
 exit:
 	DBG_BAD("%s: Complete Frame num %d ! \r\n", __func__, handle_media_frame_num);

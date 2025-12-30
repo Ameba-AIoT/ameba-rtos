@@ -41,6 +41,7 @@
 
 /* .sramdram.only means cannot put in Flash, such as flash api */
 #define SRAMDRAM_ONLY_TEXT_SECTION			SECTION(".sramdram.only.text")
+#define SRAMDRAM_ONLY_DATA_SECTION			SECTION(".sramdram.only.data")  // Only used to replace HAL_ROM_DATA_SECTION in CA32
 
 /* sram only used in pmc flow, such as deepsleep entry when flash deep down or after psram disabled */
 #define SRAM_ONLY_TEXT_SECTION				SECTION(".sram.only.text")
@@ -55,15 +56,15 @@
 #define WLAN_ROM_BSS_SECTION
 
 #define	HAL_ROM_TEXT_SECTION				SECTION(".sramdram.only.text")
-#define	HAL_ROM_DATA_SECTION
+#define	HAL_ROM_DATA_SECTION				SRAMDRAM_ONLY_DATA_SECTION
 #define	HAL_ROM_BSS_SECTION
 
-#define LIBC_ROM_TEXT_SECTION				SECTION(".sramdram.only.text")
-#define	LIBC_ROM_DATA_SECTION
+#define	LIBC_ROM_TEXT_SECTION				SECTION(".sramdram.only.text")
+#define	LIBC_ROM_DATA_SECTION				SRAMDRAM_ONLY_DATA_SECTION
 
 #define SHELL_ROM_TEXT_SECTION				SECTION(".sramdram.only.text")
 #define SHELL_ROM_BSS_SECTION
-#define SHELL_ROM_DATA_SECTION
+#define SHELL_ROM_DATA_SECTION				SRAMDRAM_ONLY_DATA_SECTION
 
 #define BOOT_RAM_TEXT_SECTION				SECTION(".boot.ram.text")
 #define BOOT_RAM_RODATA_SECTION				SECTION(".boot.rodata")

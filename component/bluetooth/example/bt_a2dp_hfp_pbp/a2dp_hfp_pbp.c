@@ -113,6 +113,7 @@ static int record_frame_samples_per_channel = 0;
 #define APP_BT_RECONNECT_TIMER_INTERVAL                         5000
 #define APP_BT_RECONNECT_COUNT                                  3
 #define APP_BT_LC3_PLC_MUSIC_COMPENSATION_BOUNDARY              2
+#define APP_BT_AUDIO_RX_SYNC_VALID_DATA_SHRESHOLD               15
 /* Max bond number is unchangable */
 #define A2DP_BT_MAX_BOND_NUM                                    8
 #define A2DP_BT_BOND_INFO_USED_VAL                              0x4E
@@ -136,6 +137,7 @@ typedef struct {
 	struct enc_codec_buffer *p_enc_codec_buffer_t;
 	uint32_t encode_byte;
 	uint32_t sdu_tx_cnt;
+	uint32_t rx_valid_cnt;
 } app_bt_le_audio_data_path_t;
 struct app_demo_task_t {
 	void *hdl;
@@ -202,12 +204,36 @@ static struct app_demo_task_t nc_task = {
 	.sem = NULL,
 	.run  = 0,
 };
+#else
+#include "ringbuffer.h"
+/* record read task */
+struct record_task_t {
+	void *hdl;
+	void *sem;
+	uint8_t run;
+	RingBuffer *p_buffer;
+};
+
+static struct record_task_t record_task = {
+	.hdl = NULL,
+	.sem = NULL,
+	.run = 0,
+	.p_buffer = NULL,
+};
 #endif
+
+#include "timer_api.h"
+#define HFP_SCO_SEND_TIMER_ID TIMER12
+static gtimer_t bt_hfp_demo_sco_send_timer = {0};
+static bool bt_hfp_demo_sco_send_data_enable = false;
+static void *bt_hfp_demo_sco_send_sem = NULL;
+static uint32_t hfp_sco_data_send_interval_us = 0;
+
 /* HFP task*/
 static struct app_demo_task_t hfp_task = {
 	.hdl = NULL,
 	.sem = NULL,
-	.run  = 0,
+	.run = 0,
 };
 /* pbp broadcast source task*/
 static struct app_demo_task_t app_bt_pbp_bsrc_encode_task = {
@@ -1248,7 +1274,8 @@ static uint16_t app_bt_le_audio_bass_scan_report_handle(rtk_bt_le_ext_scan_res_i
 				memcpy(p_scan_dev_info->bass_scan_info_t.broadcast_id, scan_dev_info.bass_scan_info_t.broadcast_id, RTK_BT_LE_AUDIO_BROADCAST_ID_LEN);
 			}
 		}
-		BT_LOGA("[APP] %s broadcast scan add new device in list (addr: %s, adv_sid %x, broadcast_id: %02x %02x %02x, broadcast_name: %s) \r\n", __func__,
+		BT_LOGA("[APP] %s broadcast scan add new device in list (add_type:%d, addr: %s, adv_sid %x, broadcast_id: %02x %02x %02x, broadcast_name: %s) \r\n", __func__,
+				scan_res_ind->addr.type,
 				addr_str,
 				p_scan_dev_info->bass_scan_info_t.adv_sid,
 				scan_dev_info.bass_scan_info_t.broadcast_id[0],
@@ -2542,6 +2569,12 @@ static rtk_bt_evt_cb_ret_t app_bt_a2dp_callback(uint8_t evt_code, void *param, u
 		if (a2dp_audio_track_hdl) {
 			rtk_bt_audio_track_pause(a2dp_audio_track_hdl->audio_track_hdl);
 		}
+		// /* stop Auracast when HFP call incoming*/
+		// if (call_curr_status == RTK_BT_HFP_CALL_INCOMING) {
+		//  if (lea_broadcast_start) {
+		//      rtk_bt_le_audio_broadcast_source_stop();
+		//  }
+		// }
 	}
 	break;
 
@@ -2839,12 +2872,19 @@ static uint16_t app_bt_le_audio_data_received(uint16_t iso_handle, uint8_t path_
 		}
 	}
 	if (!p_app_bt_le_audio_data_path) {
-		BT_LOGE("[APP] %s cannot find matched p_app_bt_le_audio_data_path \r\n", __func__);
+		BT_LOGD("[APP] %s: iso_handle: 0x%x, find no matched\r\n", __func__, iso_handle);
 		return 1;
 	}
 	if (!p_app_bt_le_audio_data_path->is_ready) {
-		BT_LOGE("[APP] %s: p_app_bt_le_audio_data_path not ready \r\n", __func__);
+		BT_LOGD("[APP] %s: iso_handle: 0x%x, not ready \r\n", __func__, iso_handle);
 		return 1;
+	}
+	/* set mute in a few valid data of start to optimize rx sync music zz */
+	if ((p_app_bt_le_audio_data_path->rx_valid_cnt++) <= APP_BT_AUDIO_RX_SYNC_VALID_DATA_SHRESHOLD) {
+		if (data) {
+			memset((void *)data, 0, data_len);
+			BT_LOGA("[APP] %s: iso_handle: 0x%x, set mute \r\n", __func__, iso_handle);
+		}
 	}
 	/* do audio data received flow */
 	if (rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_LC3,
@@ -3442,6 +3482,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 {
 	(void)len;
 	static uint16_t max_sdu_len = 0;
+	uint8_t *p_iso_data = NULL;
 	switch (evt_code) {
 	case RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND: {
 		rtk_bt_le_audio_direct_iso_data_ind_t *p_bt_direct_iso = (rtk_bt_le_audio_direct_iso_data_ind_t *)data;
@@ -3461,7 +3502,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 						BT_LOGE("[APP] RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND: max_sdu_len is 0 \r\n");
 						break;
 					}
-					uint8_t *p_iso_data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, max_sdu_len);
+					p_iso_data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, max_sdu_len);
 					memset(p_iso_data, 0, max_sdu_len);
 					if (app_bt_le_audio_data_received(p_bt_direct_iso->iso_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_RX,
 													  p_iso_data, max_sdu_len, p_bt_direct_iso->time_stamp)) {
@@ -3496,6 +3537,21 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 						break;
 					}
 				}
+			} else {
+				/* iso data length is 0, set mute */
+				if (!max_sdu_len) {
+					BT_LOGE("[APP] RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND: max_sdu_len is 0 \r\n");
+					break;
+				}
+				p_iso_data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, max_sdu_len);
+				memset(p_iso_data, 0, max_sdu_len);
+				if (app_bt_le_audio_data_received(p_bt_direct_iso->iso_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_RX,
+												  p_iso_data, max_sdu_len, p_bt_direct_iso->time_stamp)) {
+					BT_LOGD("[APP] %s app le audio data parsing fail \r\n", __func__);
+					osif_mem_free(p_iso_data);
+					break;
+				}
+				osif_mem_free(p_iso_data);
 			}
 		}
 		break;
@@ -3960,9 +4016,11 @@ static uint16_t rtk_bt_hfp_cvsd_parse_decoder_struct(rtk_bt_hfp_codec_t *phfp_co
 		return 1;
 	}
 	/* AIVoice use 16k record */
-	hfp_audio_record_hdl = rtk_bt_audio_record_add(RTK_BT_AUDIO_CODEC_CVSD, AUDIO_RECORD_CHANNELS, 16000, 0, 0x7f);
+	hfp_audio_record_hdl = rtk_bt_audio_record_add(RTK_BT_AUDIO_CODEC_CVSD, AUDIO_RECORD_CHANNELS, 16000,
+												   record_frame_samples_per_channel * AUDIO_RECORD_CHANNELS * sizeof(int16_t), 0x7f);
 #else
-	hfp_audio_record_hdl = rtk_bt_audio_record_add(RTK_BT_AUDIO_CODEC_CVSD, AUDIO_RECORD_CHANNELS, pcvsd_decoder_t->sample_rate, 0, 0x7f);
+	hfp_audio_record_hdl = rtk_bt_audio_record_add(RTK_BT_AUDIO_CODEC_CVSD, AUDIO_RECORD_CHANNELS, pcvsd_decoder_t->sample_rate,
+												   record_frame_samples_per_channel * AUDIO_RECORD_CHANNELS * sizeof(int16_t), 0x7f);
 #endif
 	if (!hfp_audio_record_hdl) {
 		BT_LOGE("[HFP] bt audio record add fail \r\n");
@@ -4018,9 +4076,11 @@ static uint16_t rtk_bt_hfp_sbc_parse_decoder_struct(rtk_bt_hfp_codec_t *phfp_cod
 		return 1;
 	}
 	/* AIVoice use 16k record */
-	hfp_audio_record_hdl = rtk_bt_audio_record_add(RTK_BT_AUDIO_CODEC_mSBC, AUDIO_RECORD_CHANNELS, 16000, 0, 0x7f);
+	hfp_audio_record_hdl = rtk_bt_audio_record_add(RTK_BT_AUDIO_CODEC_mSBC, AUDIO_RECORD_CHANNELS, 16000,
+												   record_frame_samples_per_channel * AUDIO_RECORD_CHANNELS * sizeof(int16_t), 0x7f);
 #else
-	hfp_audio_record_hdl = rtk_bt_audio_record_add(RTK_BT_AUDIO_CODEC_mSBC, AUDIO_RECORD_CHANNELS, psbc_decoder_t->sampling_frequency, 0, 0x7f);
+	hfp_audio_record_hdl = rtk_bt_audio_record_add(RTK_BT_AUDIO_CODEC_mSBC, AUDIO_RECORD_CHANNELS, psbc_decoder_t->sampling_frequency,
+												   record_frame_samples_per_channel * AUDIO_RECORD_CHANNELS * sizeof(int16_t), 0x7f);
 #endif
 	if (!hfp_audio_record_hdl) {
 		BT_LOGE("[HFP] bt audio record add fail \r\n");
@@ -4041,13 +4101,13 @@ static void nc_task_entry(void *ctx)
 	(void)ctx;
 	static int read_size = 0;
 
+	nc_task.run = 1;
 	osif_sem_give(nc_task.sem);
 	while (nc_task.run) {
 		read_size = rtk_bt_audio_record_data_get(audio_hfp_codec_conf.codec_index, hfp_audio_record_hdl, hfp_codec_entity, (void *)record_buffer,
 												 record_frame_samples_per_channel * AUDIO_RECORD_CHANNELS * sizeof(int16_t),
 												 true);
 		rtk_bt_audio_noise_cancellation_feed(record_buffer, read_size);
-		osif_delay(10);
 	}
 	osif_sem_give(nc_task.sem);
 	osif_task_delete(NULL);
@@ -4059,9 +4119,13 @@ static void hfp_task_entry(void *ctx)
 	struct enc_codec_buffer *penc_codec_buffer_t = NULL;
 	rtk_bt_hfp_sco_data_send_t sco_data_t = {0};
 
+	hfp_task.run = 1;
 	osif_sem_give(hfp_task.sem);
 
 	while (hfp_task.run) {
+		if (bt_hfp_demo_sco_send_sem) {
+			osif_sem_take(bt_hfp_demo_sco_send_sem, BT_TIMEOUT_FOREVER);
+		}
 		if (rtk_bt_audio_noise_cancellation_data_get(nc_buffer,
 													 audio_hfp_codec_conf.codec_index == RTK_BT_AUDIO_CODEC_CVSD ? BT_ENCODE_FRAME_BYTES : (2 * BT_ENCODE_FRAME_BYTES))) {
 			penc_codec_buffer_t = rtk_bt_audio_data_encode(audio_hfp_codec_conf.codec_index, hfp_codec_entity,
@@ -4077,8 +4141,9 @@ static void hfp_task_entry(void *ctx)
 			rtk_bt_hfp_data_send(&sco_data_t);
 			sco_seq_num ++;
 			rtk_bt_audio_free_encode_buffer(audio_hfp_codec_conf.codec_index, hfp_codec_entity, penc_codec_buffer_t);
+		} else {
+			BT_LOGE("[HFP]noise cancellation data get fail \r\n");
 		}
-		osif_delay(1);
 	}
 	osif_sem_give(hfp_task.sem);
 	osif_task_delete(NULL);
@@ -4086,6 +4151,40 @@ static void hfp_task_entry(void *ctx)
 #else
 /* max record_frame_samples_per_channel for hfp without noise cancellation is 120(mSBC) */
 static int16_t voice_buffer[120 * AUDIO_RECORD_CHANNELS] = {0};
+static int16_t record_buffer[120 * AUDIO_RECORD_CHANNELS] = {0};
+static int16_t temp_buffer[120 * AUDIO_RECORD_CHANNELS] = {0};
+
+static void record_task_entry(void *ctx)
+{
+	(void)ctx;
+	static uint32_t read_size = 0;
+
+	record_task.p_buffer = RingBuffer_Create(NULL, record_frame_samples_per_channel * AUDIO_RECORD_CHANNELS * sizeof(int16_t) * 4, LOCAL_RINGBUFF, 1);
+	record_task.run = 1;
+	osif_sem_give(record_task.sem);
+
+	while (record_task.run) {
+		read_size = rtk_bt_audio_record_data_get(audio_hfp_codec_conf.codec_index, hfp_audio_record_hdl, hfp_codec_entity, (void *)voice_buffer,
+												 record_frame_samples_per_channel * AUDIO_RECORD_CHANNELS * sizeof(int16_t),
+												 true);
+		if (record_task.p_buffer) {
+			if (RingBuffer_Space(record_task.p_buffer) >= read_size) {
+				RingBuffer_Write(record_task.p_buffer, (uint8_t *)voice_buffer, read_size);
+			} else {
+				BT_LOGE("[HFP]record_task.p_buffer overlap occured \r\n");
+				RingBuffer_Read(record_task.p_buffer, (void *)temp_buffer, read_size);
+				RingBuffer_Write(record_task.p_buffer, (uint8_t *)voice_buffer, read_size);
+			}
+		} else {
+			BT_LOGE("[HFP]record_task.p_buffer create fail \r\n");
+			osif_delay(100);
+		}
+	}
+	RingBuffer_Destroy(record_task.p_buffer);
+	osif_sem_give(record_task.sem);
+	osif_task_delete(NULL);
+}
+
 static void hfp_task_entry(void *ctx)
 {
 	(void)ctx;
@@ -4093,17 +4192,24 @@ static void hfp_task_entry(void *ctx)
 	struct enc_codec_buffer *penc_codec_buffer_t = NULL;
 	rtk_bt_hfp_sco_data_send_t sco_data_t = {0};
 
+	hfp_task.run = 1;
 	osif_sem_give(hfp_task.sem);
 
 	while (hfp_task.run) {
-		read_size = rtk_bt_audio_record_data_get(audio_hfp_codec_conf.codec_index, hfp_audio_record_hdl, hfp_codec_entity, (void *)voice_buffer,
-												 record_frame_samples_per_channel * AUDIO_RECORD_CHANNELS * sizeof(int16_t),
-												 true);
-		osif_delay(1);
-		// BT_LOGA("get size %d \r\n", read_size);
+		if (bt_hfp_demo_sco_send_sem) {
+			osif_sem_take(bt_hfp_demo_sco_send_sem, BT_TIMEOUT_FOREVER);
+		}
+		if (record_task.p_buffer) {
+			if (RingBuffer_Available(record_task.p_buffer) >= record_frame_samples_per_channel * AUDIO_RECORD_CHANNELS * sizeof(int16_t)) {
+				RingBuffer_Read(record_task.p_buffer, (void *)record_buffer, record_frame_samples_per_channel * AUDIO_RECORD_CHANNELS * sizeof(int16_t));
+				read_size = record_frame_samples_per_channel * AUDIO_RECORD_CHANNELS * sizeof(int16_t);
+			} else {
+				read_size = 0;
+			}
+		}
 		if (read_size) {
 			penc_codec_buffer_t = rtk_bt_audio_data_encode(audio_hfp_codec_conf.codec_index, hfp_codec_entity,
-														   voice_buffer, record_frame_samples_per_channel * AUDIO_RECORD_CHANNELS * sizeof(int16_t));
+														   record_buffer, read_size);
 			if (!penc_codec_buffer_t) {
 				BT_LOGE("[HFP]get encode buffer fail \r\n");
 				continue;
@@ -4115,12 +4221,25 @@ static void hfp_task_entry(void *ctx)
 			rtk_bt_hfp_data_send(&sco_data_t);
 			sco_seq_num ++;
 			rtk_bt_audio_free_encode_buffer(audio_hfp_codec_conf.codec_index, hfp_codec_entity, penc_codec_buffer_t);
+		} else {
+			BT_LOGE("[HFP]record ringbuffer read fail \r\n");
 		}
 	}
 	osif_sem_give(hfp_task.sem);
 	osif_task_delete(NULL);
 }
 #endif
+
+static void bt_hfp_demo_sco_send_timer_handler(void *arg)
+{
+	(void)arg;
+
+	if (hfp_task.run) {
+		if (bt_hfp_demo_sco_send_sem) {
+			osif_sem_give(bt_hfp_demo_sco_send_sem);
+		}
+	}
+}
 
 static void hfp_alert_timer_handle(void *arg)
 {
@@ -4183,6 +4302,147 @@ static void app_hfp_ring_alert_stop(void)
 	}
 }
 
+static void rtk_bt_hfp_demo_sco_send_data_control(bool enable)
+{
+	BT_LOGA("[APP] %s %d\r\n", __func__, enable);
+	if (enable) {
+		if (bt_hfp_demo_sco_send_data_enable == true) {
+			BT_LOGE("[APP] %s: send data is alreay enabled\r\n", __func__);
+			return;
+		}
+		bt_hfp_demo_sco_send_data_enable = true;
+		if (bt_hfp_demo_sco_send_sem == NULL) {
+			osif_sem_create(&bt_hfp_demo_sco_send_sem, 0, BT_TIMEOUT_FOREVER);
+		}
+#if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
+		if (nc_task.hdl == NULL) {
+			rtk_bt_audio_noise_cancellation_new(audio_hfp_codec_conf.codec_index, AUDIO_RECORD_CHANNELS);
+			/* create noise cancellation thread */
+			if (false == osif_sem_create(&nc_task.sem, 0, 1)) {
+				BT_LOGE("[HFP Demo] Create nc_task sema Fail\r\n");
+				goto fail;
+			}
+			if (false == osif_task_create(&nc_task.hdl, "nc_task",
+										  nc_task_entry, NULL,
+										  6144, 4)) {
+				osif_sem_delete(nc_task.sem);
+				goto fail;
+			}
+			osif_sem_take(nc_task.sem, 0xffffffff);
+		}
+#else
+		if (record_task.hdl == NULL) {
+			if (false == osif_sem_create(&record_task.sem, 0, 1)) {
+				BT_LOGE("[HFP Demo] Create record_task.sem fail \r\n");
+				goto fail;
+			}
+			if (false == osif_task_create(&record_task.hdl, "record_task",
+										  record_task_entry, NULL,
+										  6144, 4)) {
+				BT_LOGE("[HFP Demo] Create record_task fail \r\n");
+				goto fail;
+			}
+			osif_sem_take(record_task.sem, BT_TIMEOUT_FOREVER);
+		}
+#endif
+		if (hfp_task.hdl == NULL) {
+			if (false == osif_sem_create(&hfp_task.sem, 0, 1)) {
+				BT_LOGE("[HFP Demo] Create hfp_task.sem fail \r\n");
+				goto fail;
+			}
+			if (false == osif_task_create(&hfp_task.hdl, "hfp_task",
+										  hfp_task_entry, NULL,
+										  6144, 4)) {
+				BT_LOGE("[HFP Demo] Create hfp_task fail \r\n");
+				goto fail;
+			}
+			osif_sem_take(hfp_task.sem, BT_TIMEOUT_FOREVER);
+		}
+		if (!bt_hfp_demo_sco_send_timer.handler) {
+			if (record_frame_samples_per_channel == 30) {
+				hfp_sco_data_send_interval_us = 3750; // 3.75 ms
+			} else {
+				hfp_sco_data_send_interval_us = 7500; // 7.5 ms
+			}
+			BT_LOGA("[HFP Demo] rtk_bt_hfp_demo_sco_send_data_control send interval(us) is %d \r\n", hfp_sco_data_send_interval_us);
+			if (bt_hfp_demo_sco_send_timer.handler == NULL) {
+				gtimer_init(&bt_hfp_demo_sco_send_timer, HFP_SCO_SEND_TIMER_ID);
+				gtimer_start_periodical(&bt_hfp_demo_sco_send_timer, hfp_sco_data_send_interval_us, (void *)bt_hfp_demo_sco_send_timer_handler, NULL);
+			}
+		}
+	} else {
+		if (bt_hfp_demo_sco_send_data_enable == false) {
+			BT_LOGE("[APP] %s: send data is alreay disabled\r\n", __func__);
+			return;
+		}
+		bt_hfp_demo_sco_send_data_enable = false;
+		if (bt_hfp_demo_sco_send_timer.handler) {
+			gtimer_stop(&bt_hfp_demo_sco_send_timer);
+			gtimer_deinit(&bt_hfp_demo_sco_send_timer);
+			bt_hfp_demo_sco_send_timer.handler = NULL;
+		}
+		if (hfp_task.hdl) {
+			hfp_task.run = 0;
+			osif_sem_give(bt_hfp_demo_sco_send_sem);
+			osif_sem_take(hfp_task.sem, BT_TIMEOUT_FOREVER);
+			osif_sem_delete(hfp_task.sem);
+			memset((void *)&hfp_task, 0, sizeof(struct app_demo_task_t));
+		}
+#if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
+		if (nc_task.hdl) {
+			nc_task.run = 0;
+			osif_sem_take(nc_task.sem, BT_TIMEOUT_FOREVER);
+			osif_sem_delete(nc_task.sem);
+			memset((void *)&nc_task, 0, sizeof(struct app_demo_task_t));
+			rtk_bt_audio_noise_cancellation_destroy();
+		}
+#else
+		if (record_task.hdl) {
+			record_task.run = 0;
+			osif_sem_give(bt_hfp_demo_sco_send_sem);
+			osif_sem_take(record_task.sem, BT_TIMEOUT_FOREVER);
+			osif_sem_delete(record_task.sem);
+			memset((void *)&record_task, 0, sizeof(struct record_task_t));
+		}
+#endif
+		if (bt_hfp_demo_sco_send_sem) {
+			osif_sem_delete(bt_hfp_demo_sco_send_sem);
+			bt_hfp_demo_sco_send_sem = NULL;
+		}
+	}
+	return;
+
+fail:
+	if (bt_hfp_demo_sco_send_timer.handler) {
+		gtimer_stop(&bt_hfp_demo_sco_send_timer);
+		gtimer_deinit(&bt_hfp_demo_sco_send_timer);
+		bt_hfp_demo_sco_send_timer.handler = NULL;
+	}
+#if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
+	if (nc_task.hdl) {
+		nc_task.run = 0;
+		osif_sem_take(nc_task.sem, BT_TIMEOUT_FOREVER);
+		osif_sem_delete(nc_task.sem);
+		memset((void *)&nc_task, 0, sizeof(struct app_demo_task_t));
+	}
+#endif
+	if (hfp_task.hdl) {
+		hfp_task.run = 0;
+		osif_sem_give(bt_hfp_demo_sco_send_sem);
+		osif_sem_take(hfp_task.sem, BT_TIMEOUT_FOREVER);
+		osif_sem_delete(hfp_task.sem);
+		memset((void *)&hfp_task, 0, sizeof(struct app_demo_task_t));
+	}
+	if (hfp_task.sem) {
+		osif_sem_delete(hfp_task.sem);
+		hfp_task.sem = NULL;
+	}
+	if (bt_hfp_demo_sco_send_sem) {
+		osif_sem_delete(bt_hfp_demo_sco_send_sem);
+		bt_hfp_demo_sco_send_sem = NULL;
+	}
+}
+
 static rtk_bt_evt_cb_ret_t app_bt_hfp_callback(uint8_t evt_code, void *param, uint32_t len)
 {
 	(void)len;
@@ -4239,10 +4499,19 @@ static rtk_bt_evt_cb_ret_t app_bt_hfp_callback(uint8_t evt_code, void *param, ui
 				BT_LOGA("[HFP] ring alert outband active \r\n");
 				app_hfp_ring_alert_start();
 			}
+			/* pause a2dp firstly */
+			if (a2dp_audio_track_hdl) {
+				rtk_bt_avrcp_pause(remote_bd_addr);
+			}
 		} else if ((RTK_BT_HFP_CALL_INCOMING == p_hfp_call_status_ind->prev_status) && (RTK_BT_HFP_CALL_INCOMING != p_hfp_call_status_ind->curr_status)) {
 			if (!ring_alert_inband) {
 				BT_LOGA("[HFP] ring alert outband inactive \r\n");
 				app_hfp_ring_alert_stop();
+			}
+		} else if ((RTK_BT_HFP_CALL_IDLE != p_hfp_call_status_ind->prev_status) && (RTK_BT_HFP_CALL_IDLE == p_hfp_call_status_ind->curr_status)) {
+			/* play a2dp */
+			if (a2dp_audio_track_hdl) {
+				rtk_bt_avrcp_play(remote_bd_addr);
 			}
 		}
 	}
@@ -4315,10 +4584,6 @@ static rtk_bt_evt_cb_ret_t app_bt_hfp_callback(uint8_t evt_code, void *param, ui
 					phfp_codec->bd_addr[2], phfp_codec->bd_addr[1], phfp_codec->bd_addr[0]);
 		/* stop escan previously to avoid insufficent RF bandwidth */
 		rtk_bt_le_audio_ext_scan_act(false);
-		/* pause a2dp firstly */
-		if (a2dp_audio_track_hdl) {
-			rtk_bt_avrcp_pause(remote_bd_addr);
-		}
 		/* if has sync to BIG, terminate it */
 		if (big_sync_handle) {
 			rtk_bt_le_audio_broadcast_big_sync_terminate_by_handle(big_sync_handle);
@@ -4360,45 +4625,31 @@ static rtk_bt_evt_cb_ret_t app_bt_hfp_callback(uint8_t evt_code, void *param, ui
 			rtk_bt_audio_codec_update(&audio_hfp_codec_conf, hfp_codec_entity);
 		}
 		/* config audio record thread */
-		{
-			BT_LOGA("[HFP] Create Record Demo \r\n");
-#if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
-			rtk_bt_audio_noise_cancellation_new(audio_hfp_codec_conf.codec_index, AUDIO_RECORD_CHANNELS);
-			/* create noise cancellation thread */
-			if (false == osif_sem_create(&nc_task.sem, 0, 1)) {
-				BT_LOGE("[HFP Demo] Create nc_task sema Fail\r\n");
-				return 1;
-			}
-			nc_task.run = 1;
-			if (false == osif_task_create(&nc_task.hdl, "nc_task",
-										  nc_task_entry, NULL,
-										  4096, 4)) {
-				osif_sem_delete(nc_task.sem);
-				return 1;
-			}
-			osif_sem_take(nc_task.sem, 0xffffffff);
-#endif
-			if (false == osif_sem_create(&hfp_task.sem, 0, 1)) {
-				BT_LOGE("[HFP] Create Record Demo Fail\r\n");
-				return 1;
-			}
-			hfp_task.run = 1;
-			if (false == osif_task_create(&hfp_task.hdl, "hfp_task",
-										  hfp_task_entry, NULL,
-										  6144, 4)) {
-				osif_sem_delete(hfp_task.sem);
-				return 1;
-			}
-			osif_sem_take(hfp_task.sem, 0xffffffff);
-		}
+		rtk_bt_hfp_demo_sco_send_data_control(true);
 	}
 	break;
 
 	case RTK_BT_HFP_EVT_SCO_DATA_IND: {
 		rtk_bt_hfp_sco_data_ind_t *pdata_in = (rtk_bt_hfp_sco_data_ind_t *)param;
 
-		if (rtk_bt_audio_recvd_data_in(audio_hfp_codec_conf.codec_index, hfp_audio_track_hdl, hfp_codec_entity, pdata_in->data, pdata_in->length, 0)) {
-			BT_LOGE("[HFP] SCO Data Receiving FAIL %d \r\n", audio_hfp_codec_conf.codec_index);
+		if (pdata_in->status == RTK_BT_SCO_PKT_STATUS_OK) {
+			if (rtk_bt_audio_recvd_data_in(audio_hfp_codec_conf.codec_index, hfp_audio_track_hdl, hfp_codec_entity, pdata_in->data, pdata_in->length, 0)) {
+				BT_LOGE("[HFP] SCO Data Receiving FAIL %d \r\n", audio_hfp_codec_conf.codec_index);
+			}
+		} else {
+			BT_LOGD("[HFP] received incorrect sco data, status is 0x%x, length is %d \r\n", pdata_in->status, pdata_in->length);
+			if (audio_hfp_codec_conf.codec_index == RTK_BT_AUDIO_CODEC_CVSD) {
+				/* CVSD has no plc, directly transmit pcm data */
+				memset(pdata_in->data, 0, pdata_in->length);
+				if (rtk_bt_audio_recvd_data_in(audio_hfp_codec_conf.codec_index, hfp_audio_track_hdl, hfp_codec_entity, pdata_in->data, pdata_in->length, 0)) {
+					BT_LOGE("[HFP] SCO Data Receiving FAIL %d \r\n", audio_hfp_codec_conf.codec_index);
+				}
+			} else {
+				/* do mSBC plc */
+				if (rtk_bt_audio_recvd_data_in(audio_hfp_codec_conf.codec_index, hfp_audio_track_hdl, hfp_codec_entity, NULL, 0, 0)) {
+					BT_LOGE("[HFP] SCO Data Receiving FAIL %d \r\n", audio_hfp_codec_conf.codec_index);
+				}
+			}
 		}
 	}
 	break;
@@ -4410,22 +4661,7 @@ static rtk_bt_evt_cb_ret_t app_bt_hfp_callback(uint8_t evt_code, void *param, ui
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		BT_AT_PRINT("+BTHFP:sco_disconn,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
 					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
-#if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
-		nc_task.run = 0;
-		if (false == osif_sem_take(nc_task.sem, 0xffffffffUL)) {
-			return 1;
-		}
-		osif_sem_delete(nc_task.sem);
-		nc_task.hdl = NULL;
-		nc_task.sem = NULL;
-#endif
-		hfp_task.run = 0;
-		if (false == osif_sem_take(hfp_task.sem, 0xffffffffUL)) {
-			return 1;
-		}
-		osif_sem_delete(hfp_task.sem);
-		hfp_task.hdl = NULL;
-		hfp_task.sem = NULL;
+		rtk_bt_hfp_demo_sco_send_data_control(false);
 		rtk_bt_audio_codec_remove(audio_hfp_codec_conf.codec_index, hfp_codec_entity);
 		if (audio_a2dp_codec_conf.codec_index == RTK_BT_AUDIO_CODEC_SBC) {
 			/* reinit sbc codec for a2dp */
@@ -4438,9 +4674,6 @@ static rtk_bt_evt_cb_ret_t app_bt_hfp_callback(uint8_t evt_code, void *param, ui
 		hfp_audio_record_hdl = NULL;
 		hfp_codec_entity = NULL;
 		call_curr_status = 0;
-#if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
-		rtk_bt_audio_noise_cancellation_destroy();
-#endif
 	}
 	break;
 
@@ -4797,28 +5030,8 @@ int bt_a2dp_hfp_pbp_main(uint8_t enable)
 		}
 		/* stop outband ring alert */
 		app_hfp_ring_alert_stop();
-#if defined(CONFIG_BT_AUDIO_NOISE_CANCELLATION) && CONFIG_BT_AUDIO_NOISE_CANCELLATION
-		if (nc_task.run) {
-			nc_task.run = 0;
-			if (false == osif_sem_take(nc_task.sem, 0xffffffffUL)) {
-				return -1;
-			}
-			osif_sem_delete(nc_task.sem);
-			nc_task.hdl = NULL;
-			nc_task.sem = NULL;
-		}
-		rtk_bt_audio_noise_cancellation_destroy();
-#endif
-		if (hfp_task.run) {
-			hfp_task.run = 0;
-			if (false == osif_sem_take(hfp_task.sem, 0xffffffffUL)) {
-				return -1;
-			}
-			osif_sem_delete(hfp_task.sem);
-			hfp_task.hdl = NULL;
-			hfp_task.sem = NULL;
-			rtk_bt_audio_codec_remove(audio_hfp_codec_conf.codec_index, hfp_codec_entity);
-		}
+		rtk_bt_hfp_demo_sco_send_data_control(false);
+		rtk_bt_audio_codec_remove(audio_hfp_codec_conf.codec_index, hfp_codec_entity);
 		/* LE Audio APP data path remove */
 		app_bt_le_audio_remove_data_path_all();
 		/* Disable BT */
