@@ -1,6 +1,6 @@
 #include "platform_autoconf.h"
 #include "littlefs_adapter.h"
-#include "vfs_secondary_nor_flash.h"
+#include "vfs_second_nor_flash.h"
 
 #ifdef CONFIG_SUPPORT_NAND_FLASH
 #include "vfs_nand_ftl.h"
@@ -95,16 +95,16 @@ int lfs_nand_erase(const struct lfs_config *c, lfs_block_t block)
 }
 #endif
 
-#ifdef CONFIG_LITTLEFS_SECONDARY_FLASH
-lfs_t g_secondary_lfs;
+#ifdef CONFIG_LITTLEFS_SECOND_FLASH
+lfs_t g_second_lfs;
 
-u32 LFS_SECONDARY_FLASH_BASE_ADDR;
-u32 LFS_SECONDARY_FLASH_SIZE;
+u32 LFS_SECOND_FLASH_BASE_ADDR;
+u32 LFS_SECOND_FLASH_SIZE;
 
-struct lfs_config g_secondary_nor_lfs_cfg = {
-	.read  = lfs_secondary_nor_read,
-	.prog  = lfs_secondary_nor_prog,
-	.erase = lfs_secondary_nor_erase,
+struct lfs_config g_second_nor_lfs_cfg = {
+	.read  = lfs_second_nor_read,
+	.prog  = lfs_second_nor_prog,
+	.erase = lfs_second_nor_erase,
 	.sync  = lfs_diskio_sync,
 
 #ifdef LFS_THREADSAFE
@@ -120,18 +120,18 @@ struct lfs_config g_secondary_nor_lfs_cfg = {
 	.block_cycles = 100,
 };
 
-int lfs_secondary_nor_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size)
+int lfs_second_nor_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size)
 {
 	if (size == 0) {
 		return LFS_ERR_OK;
 	}
 
-	secondary_flash_read_stream(LFS_SECONDARY_FLASH_BASE_ADDR + c->block_size * block + off, size, (char *)buffer);
+	second_flash_read_stream(LFS_SECOND_FLASH_BASE_ADDR + c->block_size * block + off, size, (char *)buffer);
 
 	return LFS_ERR_OK;
 }
 
-int lfs_secondary_nor_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size)
+int lfs_second_nor_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size)
 {
 	if (size == 0) {
 		return LFS_ERR_OK;
@@ -142,19 +142,19 @@ int lfs_secondary_nor_prog(const struct lfs_config *c, lfs_block_t block, lfs_of
 		return LFS_ERR_IO;
 	}
 
-	secondary_flash_write_stream(LFS_SECONDARY_FLASH_BASE_ADDR + c->block_size * block + off, size, (char *)buffer);
+	second_flash_write_stream(LFS_SECOND_FLASH_BASE_ADDR + c->block_size * block + off, size, (char *)buffer);
 
 	return LFS_ERR_OK;
 }
 
-int lfs_secondary_nor_erase(const struct lfs_config *c, lfs_block_t block)
+int lfs_second_nor_erase(const struct lfs_config *c, lfs_block_t block)
 {
 	if (c->block_size != 0x1000) {
 		VFS_DBG(VFS_ERROR, "block size config wrong");
 		return LFS_ERR_IO;
 	}
 
-	secondary_flash_erase_sector(LFS_SECONDARY_FLASH_BASE_ADDR + c->block_size * block);
+	second_flash_erase_sector(LFS_SECOND_FLASH_BASE_ADDR + c->block_size * block);
 
 	return LFS_ERR_OK;
 }
@@ -275,11 +275,11 @@ int rt_lfs_init(lfs_t *lfs)
 		}
 	}
 
-#ifdef CONFIG_LITTLEFS_SECONDARY_FLASH
-	if (lfs == &g_secondary_lfs) {
-		g_secondary_nor_lfs_cfg.block_count = LFS_SECONDARY_FLASH_SIZE / 4096;
-		VFS_DBG(VFS_INFO, "init secondary nor lfs cfg");
-		lfs_cfg = &g_secondary_nor_lfs_cfg;
+#ifdef CONFIG_LITTLEFS_SECOND_FLASH
+	if (lfs == &g_second_lfs) {
+		g_second_nor_lfs_cfg.block_count = LFS_SECOND_FLASH_SIZE / 4096;
+		VFS_DBG(VFS_INFO, "init second nor lfs cfg");
+		lfs_cfg = &g_second_nor_lfs_cfg;
 	}
 #endif
 

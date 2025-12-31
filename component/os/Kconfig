@@ -103,6 +103,7 @@ menu "CONFIG OS"
         endif
     endif
     config STANDARD_TICKLESS
+        depends on !AMEBASMART && !AMEBALITE && !AMEBAPRO3 && !AMEBAD
         bool "Enable FreeRTOS Standard Tickless Flow"
         default n
         help

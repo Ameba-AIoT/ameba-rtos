@@ -5,8 +5,110 @@
  */
 
 #include "ameba_soc.h"
+#include "os_wrapper.h"
+#include "os_wrapper_specific.h"
 
+static const char *const TAG = "FLASH";
 uint32_t PrevIrqStatus;
+
+#define WRITE_SYNC_CLEAR   0
+#define WRITE_SYNC_LOCK    1
+#define WRITE_SYNC_UNLOCK  2
+
+#ifdef CONFIG_ARM_CORE_CM4_KM4NS
+static u32 Start_Timer_Cnt = 0;
+static u32 Start_Systick_Cnt = 0;
+
+u32 xTaskIncrementTick(void);
+u32 xTaskGetTickCountFromISR(void);
+
+void FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum)
+{
+	/* To avoid gcc warnings */
+	(void) Data;
+	(void) IrqStatus;
+	(void) ChanNum;
+
+	__disable_irq();
+
+	PIPC_MSG_STRUCT ipc_msg = (PIPC_MSG_STRUCT)ipc_get_message(IPC_AP_TO_NP, IPC_A2N_FLASHPG_REQ);
+	u8 *pflag = (u8 *)ipc_msg->msg;
+	DCache_Invalidate((u32)pflag, sizeof(pflag));
+
+	if (*pflag == WRITE_SYNC_LOCK) {
+		/* Km4 in FLASH_Write_Lock, waiting for Km0 to record timer value */
+		Start_Timer_Cnt = SYSTIMER_TickGet();
+		Start_Systick_Cnt = xTaskGetTickCountFromISR();
+		*pflag = WRITE_SYNC_CLEAR;
+	} else if (*pflag == WRITE_SYNC_UNLOCK) {
+		/* Km4 in FLASH_Write_Unlock, waiting for Km0 to compensate systick value */
+		u32 time_pass_ms = SYSTIMER_GetPassTime(Start_Timer_Cnt);
+		u32 End_Systick_Cnt = xTaskGetTickCountFromISR();
+		u32 systick_pass_tick = 0;
+		u8 xSwitchRequired = FALSE;
+
+		if (End_Systick_Cnt >= Start_Systick_Cnt) {
+			systick_pass_tick = End_Systick_Cnt - Start_Systick_Cnt;
+		} else {
+			systick_pass_tick = 0xffffffff - (Start_Systick_Cnt - End_Systick_Cnt);
+		}
+
+		u32 step_tick = (time_pass_ms > (systick_pass_tick + 1)) ? (time_pass_ms - (systick_pass_tick + 1)) : 0;
+		/*  update kernel tick */
+		while (step_tick > 0) {
+			/* Increment the RTOS tick. */
+			if (xTaskIncrementTick() != FALSE) {
+				xSwitchRequired = TRUE;
+			}
+			step_tick --;
+		}
+
+		*pflag = WRITE_SYNC_CLEAR;
+		/* Pend a context switch. */
+		portEND_SWITCHING_ISR(xSwitchRequired);
+	}
+	DCache_Clean((u32)pflag, sizeof(pflag));
+
+	__enable_irq();
+}
+
+IPC_TABLE_DATA_SECTION
+const IPC_INIT_TABLE ipc_flashpg_table[] = {
+	{
+		.USER_MSG_TYPE = IPC_USER_DATA,
+		.Rxfunc = FLASH_Write_IPC_Int,
+		.RxIrqData = (void *) NULL,
+		.Txfunc = IPC_TXHandler,
+		.TxIrqData = (void *) NULL,
+		.IPC_Direction = IPC_AP_TO_NP,
+		.IPC_Channel = IPC_A2N_FLASHPG_REQ
+	}
+};
+#else
+/* CONFIG_ARM_CORE_CM4_KM4TZ */
+ALIGNMTO(CACHE_LINE_SIZE) static u8 Flash_Sync_Flag[CACHE_LINE_SIZE];
+
+static void Flash_Write_Lock_IPC(u8 sync_type)
+{
+	IPC_MSG_STRUCT ipc_msg_temp;
+	/* Set lock flag */
+	Flash_Sync_Flag[0] = sync_type;
+	DCache_Clean((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
+
+	ipc_msg_temp.msg_type = IPC_USER_POINT;
+	ipc_msg_temp.msg = (u32)Flash_Sync_Flag;
+	ipc_msg_temp.msg_len = 1;
+	ipc_msg_temp.rsvd = 0;
+	ipc_send_message(IPC_AP_TO_NP, IPC_A2N_FLASHPG_REQ, &ipc_msg_temp);
+
+	while (1) {
+		DCache_Invalidate((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
+		if (Flash_Sync_Flag[0] == WRITE_SYNC_CLEAR) {
+			break;
+		}
+	}
+}
+#endif
 
 /**
  * @brief  This function is used to lock CPU when write or erase flash under XIP.
@@ -15,11 +117,17 @@ uint32_t PrevIrqStatus;
  */
 void FLASH_Write_Lock(void)
 {
+	rtos_sched_suspend();
+	/* Get core-to-core hardware semphone */
+	while (IPC_SEMTake(IPC_SEM_FLASH, 1000) != TRUE) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "FLASH_Write_Lock get hw sema fail\n");
+	}
+#ifdef CONFIG_ARM_CORE_CM4_KM4TZ
+	/* Sent IPC to KM4NS */
+	Flash_Write_Lock_IPC(WRITE_SYNC_LOCK);
+#endif
 	/* disable irq */
 	PrevIrqStatus = irq_disable_save();
-
-	/* Get core-to-core hardware semphone */
-	IPC_SEMTake(IPC_SEM_FLASH, 0xffffffff);
 }
 
 /**
@@ -29,11 +137,16 @@ void FLASH_Write_Lock(void)
  */
 void FLASH_Write_Unlock(void)
 {
+#ifdef CONFIG_ARM_CORE_CM4_KM4TZ
+	/* Sent IPC to KM4NS */
+	Flash_Write_Lock_IPC(WRITE_SYNC_UNLOCK);
+#endif
+	/* restore irq */
+	irq_enable_restore(PrevIrqStatus);
 	/* Free core-to-core hardware semphone */
 	IPC_SEMFree(IPC_SEM_FLASH);
 
-	/* restore irq */
-	irq_enable_restore(PrevIrqStatus);
+	rtos_sched_resume();
 }
 
 /**

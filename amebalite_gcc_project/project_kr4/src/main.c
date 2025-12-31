@@ -110,14 +110,13 @@ void app_IWDG_init(void)
 
 extern int rt_kv_init(void);
 
-void fs_init_thread(void *param)
+void app_filesystem_init(void)
 {
-	(void)param;
 #if !(defined(CONFIG_MP_SHRINK)) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE || defined CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 	int ret = 0;
 	vfs_init();
 #ifdef CONFIG_FATFS_WITHIN_APP_IMG
-	ret = vfs_user_register("fat", VFS_FATFS, VFS_INF_FLASH, VFS_REGION_2, VFS_RO);
+	ret = vfs_user_register("fat", VFS_FATFS, VFS_INF_FLASH, VFS_REGION_3, VFS_RO);
 	if (ret == 0) {
 		RTK_LOGI(TAG, "VFS-FAT Init Success \n");
 	} else {
@@ -129,19 +128,12 @@ void fs_init_thread(void *param)
 	ret = rt_kv_init();
 	if (ret == 0) {
 		RTK_LOGI(TAG, "File System Init Success \n");
-		goto exit;
+		return;
 	}
 
 
 	RTK_LOGE(TAG, "File System Init Fail \n");
-exit:
 #endif
-	rtos_task_delete(NULL);
-}
-
-void app_filesystem_init(void)
-{
-	rtos_task_create(NULL, ((const char *)"fs_init_thread"), fs_init_thread, NULL, 4096, 5);
 }
 
 /*
