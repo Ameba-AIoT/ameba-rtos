@@ -78,6 +78,7 @@ SECTIONS
 		*(.sram.only.data*)
 
 		*(.data*)
+		*(.sramdram.only.data)
 		. = ALIGN (32);
 	} > KM0_BD_RAM
 
