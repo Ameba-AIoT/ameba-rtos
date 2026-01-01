@@ -666,6 +666,10 @@ void at_fs_region(void *arg)
 		g_cert_fs = VFS_REGION_1;
 	} else if (region == 2) {
 		g_cert_fs = VFS_REGION_2;
+	} else if (region == 3) {
+		g_cert_fs = VFS_REGION_3;
+	} else if (region == 4) {
+		g_cert_fs = VFS_REGION_4;
 	} else {
 		RTK_LOGW(TAG, "Parameter value is wrong\r\n");
 		error_no = 1;

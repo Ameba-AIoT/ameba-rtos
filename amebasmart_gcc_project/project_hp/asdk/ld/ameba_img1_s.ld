@@ -32,6 +32,7 @@ SECTIONS
 	{
 		__ram_image1_data_start__ = .;
 		*(.data*)
+		*(.sramdram.only.data)
 		. = ALIGN(16);
 		__ram_image1_data_end__ = .;
 

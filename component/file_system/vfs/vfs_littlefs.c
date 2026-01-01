@@ -11,9 +11,10 @@
 #include "lfs.h"
 
 extern lfs_t g_lfs;
-extern lfs_t g_secondary_lfs;
+extern lfs_t g_second_lfs;
 extern int rt_lfs_init(lfs_t *lfs);
 int lfs_mount_flag = 0;
+int lfs_second_flash_mount_flag = 0;
 static struct dirent *lfs_ent;
 
 int fmodeflags(const char *mode)
@@ -392,25 +393,33 @@ int littlefs_stat(void *fs, char *path, struct stat *buf)
 
 int littlefs_mount(int interface)
 {
-	(void) interface;
 	int ret = 0;
 
 	if (interface == VFS_INF_FLASH) {
 		ret = rt_lfs_init(&g_lfs);
 	}
-#ifdef CONFIG_LITTLEFS_SECONDARY_FLASH
-	if (interface == VFS_INF_SECONDARY_FLASH) {
-		ret = rt_lfs_init(&g_secondary_lfs);
+#ifdef CONFIG_LITTLEFS_SECOND_FLASH
+	if (interface == VFS_INF_SECOND_FLASH) {
+		ret = rt_lfs_init(&g_second_lfs);
 	}
 #endif
 
 	if (ret) {
 		VFS_DBG(VFS_ERROR, "Littlefs mount fail, ret is %d", ret);
-		lfs_mount_flag = -1;
+		if (interface == VFS_INF_SECOND_FLASH) {
+			lfs_second_flash_mount_flag = -1;
+		} else if (interface == VFS_INF_FLASH) {
+			lfs_mount_flag = -1;
+		}
 		return ret;
 	}
 	VFS_DBG(VFS_INFO, "Littlefs mount");
-	lfs_mount_flag = 1;
+	if (interface == VFS_INF_SECOND_FLASH) {
+		lfs_second_flash_mount_flag = 1;
+	} else if (interface == VFS_INF_FLASH) {
+		lfs_mount_flag = 1;
+	}
+
 	return ret;
 }
 
@@ -422,13 +431,19 @@ int littlefs_unmount(int interface)
 	if (interface == VFS_INF_FLASH) {
 		ret = lfs_unmount(&g_lfs);
 	}
-#ifdef CONFIG_LITTLEFS_SECONDARY_FLASH
-	if (interface == VFS_INF_SECONDARY_FLASH) {
-		ret = lfs_unmount(&g_secondary_lfs);
+#ifdef CONFIG_LITTLEFS_SECOND_FLASH
+	if (interface == VFS_INF_SECOND_FLASH) {
+		ret = lfs_unmount(&g_second_lfs);
 	}
 #endif
 
 	VFS_DBG(VFS_INFO, "Littlefs unmount");
+	if (interface == VFS_INF_SECOND_FLASH) {
+		lfs_second_flash_mount_flag = 0;
+	} else if (interface == VFS_INF_FLASH) {
+		lfs_mount_flag = 0;
+	}
+
 	return ret;
 }
 

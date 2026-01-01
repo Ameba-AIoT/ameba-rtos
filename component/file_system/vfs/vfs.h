@@ -13,7 +13,7 @@ extern "C" {
 
 #define PATH_MAX 256
 #define MAX_FS_SIZE 2		//number of supported file system types
-#define MAX_USER_SIZE 2		//number of supported file system regions
+#define MAX_USER_SIZE 4		//number of supported file system regions
 
 typedef int(*qsort_compar)(const void *, const void *);
 
@@ -33,18 +33,23 @@ typedef int(*qsort_compar)(const void *, const void *);
 
 /*vfs_interface_type*/
 #define VFS_INF_SD      0x00
-#define VFS_INF_RAM     0x01
-#define VFS_INF_FLASH   0x02
-#if (defined CONFIG_LITTLEFS_SECONDARY_FLASH) || (defined CONFIG_FATFS_SECONDARY_FLASH)
-#define VFS_INF_SECONDARY_FLASH   0x03
-#endif
+#define VFS_INF_SD_SPI	0x01
+#define VFS_INF_RAM     0x02
+#define VFS_INF_FLASH   0x03
+#define VFS_INF_SECOND_FLASH   0x04
 
 /*vfs read-write permission when initializing*/
 #define VFS_RW 0x00
 #define VFS_RO 0x01
 
-#define VFS_REGION_1	0x01
-#define VFS_REGION_2	0x02
+#define VFS_REGION_1	0x01	//flash layout vfs1 region
+#define VFS_REGION_2	0x02	//flash layout vfs2 region
+#define VFS_REGION_3	0x03	//fatfs with app image region
+#define VFS_REGION_4	0x04	//second flash , SD card or SPI-compatible SD NAND
+
+/* related to op_prepend_header.py */
+#define PATTERN_VFS_1 0x5f736676
+#define PATTERN_VFS_2 0x5f746166
 
 #define VFS_PREFIX "vfs"
 
@@ -169,7 +174,9 @@ extern vfs_drv  vfs;
 extern vfs_opt fatfs_drv;
 extern vfs_opt littlefs_drv;
 extern int lfs_mount_flag;
+extern int lfs_second_flash_mount_flag;
 extern int fatfs_mount_flag;
+extern int fatfs_second_flash_mount_flag;
 
 void vfs_init(void);
 void vfs_deinit(void);
@@ -192,7 +199,7 @@ int mkdir(const char *pathname, mode_t mode);
 int access(const char *pathname, int mode);
 int alphasort(const struct dirent **a, const struct dirent **b);
 
-int check_mount_completion(int *mount_flag);
+int vfs_check_mount_flag(int vfs_type, int vfs_interface_type, char *operation);
 
 enum {
 	VFS_ERROR = 0,
