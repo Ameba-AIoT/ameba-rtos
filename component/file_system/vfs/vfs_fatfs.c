@@ -7,18 +7,34 @@
 #include "diag.h"
 
 int fatfs_mount_flag = 0;
+int fatfs_second_flash_mount_flag = 0;
 static struct dirent *fatfs_ent;
+fatfs_params_t fatfs_flash_param;
+
+#if defined(CONFIG_FATFS_SECOND_FLASH) || defined(CONFIG_FATFS_SD_SPI_MODE) || defined(CONFIG_FATFS_SD_MODE)
+fatfs_params_t fatfs_second_flash_param;
+#endif
 
 // return drv_num assigned
 int FATFS_RegisterDiskDriver(ll_diskio_drv *drv)
 {
-	unsigned char drv_num = -1;
+	int drv_num = -1;
 
-	if (disk.nbr < _VOLUMES) {
-		drv->drv_num = disk.nbr;	// record driver number for a specific disk
-		disk.drv[disk.nbr] = drv;
+	//find an idle drv num
+	for (int i = 0; i < _VOLUMES; i++) {
+		if (!disk.drv[i]) {
+			drv_num = i;
+			break;
+		}
+	}
+
+	if (drv_num != -1) {
+		drv->drv_num = drv_num;
+		disk.drv[drv_num] = drv;
 		disk.nbr++;
-		drv_num = drv->drv_num;
+		while (disk.next_drv_num < _VOLUMES && disk.drv[disk.next_drv_num]) {
+			disk.next_drv_num++;
+		}
 	}
 	VFS_DBG(VFS_INFO, "FATFS Register: disk driver %d ", drv_num);
 	return drv_num;
@@ -26,21 +42,15 @@ int FATFS_RegisterDiskDriver(ll_diskio_drv *drv)
 
 int FATFS_UnRegisterDiskDriver(unsigned char drv_num)
 {
-	int index;
-
-	if (disk.nbr >= 1) {
-		for (index = 0; index < _VOLUMES; index++) {
-			if (disk.drv[index]) {
-				if (disk.drv[index]->drv_num == drv_num) {
-					disk.drv[index] = 0;
-					disk.nbr--;
-					return 0;
-				}
-			}
+	if (drv_num < _VOLUMES && disk.drv[drv_num]) {
+		disk.drv[drv_num] = NULL;
+		disk.nbr--;
+		if (drv_num < disk.next_drv_num) {
+			disk.next_drv_num = drv_num;
 		}
-		return -1; // fail
+		return 0;
 	}
-	return -1; // no disk driver registered
+	return -1;
 }
 
 
@@ -73,13 +83,11 @@ int fatfs_get_interface(int interface)
 		drv_id = FATFS_getDrivernum("RAM");
 	} else if (interface == VFS_INF_FLASH) {
 		drv_id = FATFS_getDrivernum("FLASH");
-	}
-#ifdef CONFIG_FATFS_SECONDARY_FLASH
-	else if (interface == VFS_INF_SECONDARY_FLASH) {
-		drv_id = FATFS_getDrivernum("SECONDARY_FLASH");
-	}
-#endif
-	else {
+	} else if (interface == VFS_INF_SECOND_FLASH) {
+		drv_id = FATFS_getDrivernum("SECOND_FLASH");
+	} else if (interface == VFS_INF_SD_SPI) {
+		drv_id = FATFS_getDrivernum("SD_SPI");
+	}	else {
 		return -1;
 	}
 	return drv_id;
@@ -499,24 +507,22 @@ int fatfs_stat(void *fs, char *path, struct stat *buf)
 int fatfs_mount(int interface)
 {
 	int ret = -1;
-	if (interface == VFS_INF_SD) {
+	if (interface == VFS_INF_SD || interface == VFS_INF_SD_SPI) {
 		VFS_DBG(VFS_INFO, "sd mount");
-#if defined(CONFIG_FATFS_DISK_SD) && CONFIG_FATFS_DISK_SD
-		ret = fatfs_sd_init();
+#if defined(CONFIG_FATFS_SD_MODE) || defined(CONFIG_FATFS_SD_SPI_MODE)
+		ret = fatfs_sd_init(interface);
 #endif
-	} else if (interface != VFS_INF_RAM) {
+	} else if (interface == VFS_INF_FLASH || interface == VFS_INF_SECOND_FLASH) {
 		VFS_DBG(VFS_INFO, "flash mount");
-#if defined(CONFIG_FATFS_DISK_FLASH) && CONFIG_FATFS_DISK_FLASH
 		ret = fatfs_flash_init(interface);
-#endif
 	} else {
 		VFS_DBG(VFS_ERROR, "It don't support the interface %d", interface);
 	}
 
-	if (ret) {
-		fatfs_mount_flag = -1;
-	} else {
-		fatfs_mount_flag = 1;
+	if (interface == VFS_INF_SD || interface == VFS_INF_SECOND_FLASH || interface == VFS_INF_SD_SPI) {
+		fatfs_second_flash_mount_flag = (ret == 0 ? 1 : -1);
+	} else if (interface == VFS_INF_FLASH) {
+		fatfs_mount_flag = (ret == 0 ? 1 : -1);
 	}
 
 	return ret;
@@ -527,18 +533,24 @@ int fatfs_ummount(int interface)
 	int ret = 0;
 	if (interface == VFS_INF_SD) {
 		VFS_DBG(VFS_INFO, "sd unmount");
-#if defined(CONFIG_FATFS_DISK_SD) && CONFIG_FATFS_DISK_SD
+#if defined(CONFIG_FATFS_SD_MODE) && CONFIG_FATFS_SD_MODE
 		ret = fatfs_sd_close();
 #endif
-	} else if (interface != VFS_INF_RAM) {
+	} else if (interface == VFS_INF_FLASH || interface == VFS_INF_SECOND_FLASH) {
 		VFS_DBG(VFS_INFO, "flash unmount");
-#if defined(CONFIG_FATFS_DISK_FLASH) && CONFIG_FATFS_DISK_FLASH
-		ret = fatfs_flash_close();
-#endif
+		ret = fatfs_flash_close(interface);
 	} else {
 		VFS_DBG(VFS_ERROR, "It don't support the interface %d", interface);
 		return -1;
 	}
+
+	if (interface == VFS_INF_SD || interface == VFS_INF_SECOND_FLASH) {
+		fatfs_second_flash_mount_flag = 0;
+	} else if (interface == VFS_INF_FLASH) {
+		fatfs_mount_flag = 0;
+	}
+
+
 	return ret;
 }
 

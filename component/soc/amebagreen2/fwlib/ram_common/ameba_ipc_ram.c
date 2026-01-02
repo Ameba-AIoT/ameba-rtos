@@ -108,14 +108,14 @@ void IPC_INTClear(IPC_TypeDef *IPCx, u8 IPC_Shiftbit)
 u32 IPC_INTHandler(void *Data)
 {
 	IPC_TypeDef *IPCx = (IPC_TypeDef *)Data;
-	u32 IrqStatus;
+	u32 IrqPending;
 	u32 i;
-	IrqStatus = IPCx->IPC_ISR;
+	IrqPending = IPCx->IPC_ISR & IPCx->IPC_IMR;
 
 	for (i = 0; i < 32; i++) {
-		if (IrqStatus & BIT(i)) {
+		if (IrqPending & BIT(i)) {
 			if (IPC_IrqHandler[i] != NULL) {
-				IPC_IrqHandler[i](IPC_IrqData[i], IrqStatus, i);
+				IPC_IrqHandler[i](IPC_IrqData[i], IrqPending, i);
 				IPCx->IPC_ISR = BIT(i);
 			} else {
 				IPCx->IPC_ISR = BIT(i);

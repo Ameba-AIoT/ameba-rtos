@@ -336,11 +336,25 @@ typedef struct {
 	};
 } rtk_bt_hfp_codec_t;
 
+
+/**
+ * @typedef   rtk_bt_sco_pkt_status
+ * @brief     indicate sco pkt status
+ */
+typedef enum rtk_bt_sco_pkt_status {
+	RTK_BT_SCO_PKT_STATUS_OK                  = 0x00,
+	RTK_BT_SCO_PKT_STATUS_INVALID             = 0x01,
+	RTK_BT_SCO_PKT_STATUS_NO_DATA             = 0x02,
+	RTK_BT_SCO_PKT_STATUS_PARTIAL_LOST        = 0x03,
+} rtk_bt_sco_pkt_status;
+
 /**
  * @struct    rtk_bt_hfp_sco_data_ind_t
  * @brief     Bluetooth hfp sco data receive indication.
  */
 typedef struct {
+	uint8_t bd_addr[6];
+	rtk_bt_sco_pkt_status status;
 	uint32_t length;                                    /*!< stream data length */
 	uint8_t  data[RTK_BT_HFP_MAX_SCO_DATA_LENGTH];      /*!< stream data */
 } rtk_bt_hfp_sco_data_ind_t;
