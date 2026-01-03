@@ -94,7 +94,7 @@ SECTIONS
 		*(.timesensitive.data*)
 
 		*(.data*)
-
+		*(.sramdram.only.data)
 		/*cache line size aligned in order to avoid MMU remap err*/
 		. = ALIGN(32);
 	} > KM4_BD_DRAM

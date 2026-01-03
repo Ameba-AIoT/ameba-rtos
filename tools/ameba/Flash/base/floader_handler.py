@@ -106,7 +106,7 @@ class FloaderHandler(object):
 
                 ret, ret_byte = self.ameba.read_bytes(timeout)
                 if ret != ErrType.OK:
-                    self.logger.error(f"Response error: {ret}, timeout:{timeout}")
+                    self.logger.debug(f"Response error: {ret}, timeout:{timeout}")
                     continue
                 if is_sync:
                     if ret_byte[0] == SOF:

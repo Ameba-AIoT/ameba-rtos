@@ -156,8 +156,8 @@ SECTIONS
 		. = ALIGN(4);
 		*(.timesensitive.data*)
 
-		*(.data)
 		*(.data*)
+		*(.sramdram.only.data)
 		. = ALIGN(4);
 
 		/* All data end */
