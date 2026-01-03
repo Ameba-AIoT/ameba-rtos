@@ -10,7 +10,7 @@
 #include "vfs_fatfs.h"
 #include "os_wrapper.h"
 #include "ameba.h"
-#if defined(CONFIG_FATFS_DISK_SD) && CONFIG_FATFS_DISK_SD
+#if defined(CONFIG_FATFS_SD_MODE) || defined(CONFIG_FATFS_SD_SPI_MODE)
 
 #if defined(CONFIG_FATFS_SD_MODE) && CONFIG_FATFS_SD_MODE
 #include "ameba_sd.h"
@@ -401,7 +401,7 @@ ll_diskio_drv SD_disk_spi_Driver = {
 #if _USE_IOCTL == 1
 	.disk_ioctl = SD_disk_spi_ioctl,
 #endif
-	.TAG	= (unsigned char *)"SECONDARY_FLASH"
+	.TAG	= (unsigned char *)"SD_SPI"
 };
 #endif
 #endif

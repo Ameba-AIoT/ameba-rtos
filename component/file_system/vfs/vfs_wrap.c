@@ -57,25 +57,10 @@ FILE *__wrap_fopen(const char *filename, const char *mode)
 		return NULL;
 	}
 
-	switch (vfs.drv[vfs_id]->vfs_type) {
-#ifdef CONFIG_VFS_FATFS_INCLUDED
-	case VFS_FATFS:
-		if (check_mount_completion(&fatfs_mount_flag) != 0) {
-			VFS_DBG(VFS_ERROR, "vfs init fail, fopen is not allowed");
-			return NULL;
-		}
-		break;
-#endif
-	case VFS_LITTLEFS:
-		if (check_mount_completion(&lfs_mount_flag) != 0) {
-			VFS_DBG(VFS_ERROR, "vfs init fail, fopen is not allowed");
-			return NULL;
-		}
-		break;
-	default:
-		break;
+	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, "fopen");
+	if (ret) {
+		return NULL;
 	}
-
 
 	if (vfs.user[user_id].vfs_ro_flag && (strchr(mode, 'w') || strchr(mode, '+') || strchr(mode, 'a'))) {
 		VFS_DBG(VFS_WARNING, "Vfs is read-only when initializing!");
@@ -271,23 +256,9 @@ int __wrap_remove(const char *filename)
 		return -1;
 	}
 
-	switch (vfs.drv[vfs_id]->vfs_type) {
-#ifdef CONFIG_VFS_FATFS_INCLUDED
-	case VFS_FATFS:
-		if (check_mount_completion(&fatfs_mount_flag) != 0) {
-			VFS_DBG(VFS_ERROR, "vfs init fail, remove is not allowed");
-			return -1;
-		}
-		break;
-#endif
-	case VFS_LITTLEFS:
-		if (check_mount_completion(&lfs_mount_flag) != 0) {
-			VFS_DBG(VFS_ERROR, "vfs init fail, remove is not allowed");
-			return -1;
-		}
-		break;
-	default:
-		break;
+	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, "remove");
+	if (ret) {
+		return -1;
 	}
 
 	if (vfs.user[user_id].vfs_ro_flag) {
@@ -329,23 +300,9 @@ int __wrap_rename(const char *oldname, const char *newname)
 		return -1;
 	}
 
-	switch (vfs.drv[vfs_id]->vfs_type) {
-#ifdef CONFIG_VFS_FATFS_INCLUDED
-	case VFS_FATFS:
-		if (check_mount_completion(&fatfs_mount_flag) != 0) {
-			VFS_DBG(VFS_ERROR, "vfs init fail, rename is not allowed");
-			return -1;
-		}
-		break;
-#endif
-	case VFS_LITTLEFS:
-		if (check_mount_completion(&lfs_mount_flag) != 0) {
-			VFS_DBG(VFS_ERROR, "vfs init fail, rename is not allowed");
-			return -1;
-		}
-		break;
-	default:
-		break;
+	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, "rename");
+	if (ret) {
+		return -1;
 	}
 
 	if (vfs.user[user_id].vfs_ro_flag) {
@@ -462,6 +419,7 @@ char *__wrap_fgets(char *str, int num, FILE *stream)
 
 DIR *__wrap_opendir(const char *name)
 {
+	int ret;
 	int prefix_len = 0;
 	int user_id = 0;
 	int vfs_id = find_vfs_number(name, &prefix_len, &user_id);
@@ -470,23 +428,9 @@ DIR *__wrap_opendir(const char *name)
 		return NULL;
 	}
 
-	switch (vfs.drv[vfs_id]->vfs_type) {
-#ifdef CONFIG_VFS_FATFS_INCLUDED
-	case VFS_FATFS:
-		if (check_mount_completion(&fatfs_mount_flag) != 0) {
-			VFS_DBG(VFS_ERROR, "vfs init fail, opendir is not allowed");
-			return NULL;
-		}
-		break;
-#endif
-	case VFS_LITTLEFS:
-		if (check_mount_completion(&lfs_mount_flag) != 0) {
-			VFS_DBG(VFS_ERROR, "vfs init fail, opendir is not allowed");
-			return NULL;
-		}
-		break;
-	default:
-		break;
+	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, "opendir");
+	if (ret) {
+		return NULL;
 	}
 
 	vfs_file *finfo = (vfs_file *)malloc(sizeof(vfs_file));
@@ -508,7 +452,7 @@ DIR *__wrap_opendir(const char *name)
 		DiagSnPrintf(finfo->name, sizeof(finfo->name), "%s", name + prefix_len);
 	}
 
-	int ret = vfs.drv[vfs_id]->opendir(vfs.user[user_id].fs, finfo->name, finfo);
+	ret = vfs.drv[vfs_id]->opendir(vfs.user[user_id].fs, finfo->name, finfo);
 	if (ret != 0) {
 		free(finfo);
 		finfo = NULL;
@@ -555,23 +499,9 @@ int __wrap_rmdir(const char *path)
 		return -1;
 	}
 
-	switch (vfs.drv[vfs_id]->vfs_type) {
-#ifdef CONFIG_VFS_FATFS_INCLUDED
-	case VFS_FATFS:
-		if (check_mount_completion(&fatfs_mount_flag) != 0) {
-			VFS_DBG(VFS_ERROR, "vfs init fail, rmdir is not allowed");
-			return -1;
-		}
-		break;
-#endif
-	case VFS_LITTLEFS:
-		if (check_mount_completion(&lfs_mount_flag) != 0) {
-			VFS_DBG(VFS_ERROR, "vfs init fail, rmdir is not allowed");
-			return -1;
-		}
-		break;
-	default:
-		break;
+	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, "rmdir");
+	if (ret) {
+		return -1;
 	}
 
 	if (vfs.user[user_id].vfs_ro_flag) {
@@ -614,23 +544,9 @@ int __wrap_mkdir(const char *pathname, mode_t mode)
 		return -1;
 	}
 
-	switch (vfs.drv[vfs_id]->vfs_type) {
-#ifdef CONFIG_VFS_FATFS_INCLUDED
-	case VFS_FATFS:
-		if (check_mount_completion(&fatfs_mount_flag) != 0) {
-			VFS_DBG(VFS_ERROR, "vfs init fail, mkdir is not allowed");
-			return -1;
-		}
-		break;
-#endif
-	case VFS_LITTLEFS:
-		if (check_mount_completion(&lfs_mount_flag) != 0) {
-			VFS_DBG(VFS_ERROR, "vfs init fail, mkdir is not allowed");
-			return -1;
-		}
-		break;
-	default:
-		break;
+	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, "mkdir");
+	if (ret) {
+		return -1;
 	}
 
 	if (vfs.user[user_id].vfs_ro_flag) {
@@ -672,23 +588,9 @@ int __wrap_access(const char *pathname, int mode)
 		return -1;
 	}
 
-	switch (vfs.drv[vfs_id]->vfs_type) {
-#ifdef CONFIG_VFS_FATFS_INCLUDED
-	case VFS_FATFS:
-		if (check_mount_completion(&fatfs_mount_flag) != 0) {
-			VFS_DBG(VFS_ERROR, "vfs init fail, access is not allowed");
-			return -1;
-		}
-		break;
-#endif
-	case VFS_LITTLEFS:
-		if (check_mount_completion(&lfs_mount_flag) != 0) {
-			VFS_DBG(VFS_ERROR, "vfs init fail, access is not allowed");
-			return -1;
-		}
-		break;
-	default:
-		break;
+	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, "access");
+	if (ret) {
+		return -1;
 	}
 
 	char *name = (char *)rtos_mem_zmalloc(PATH_MAX);
@@ -725,23 +627,9 @@ int __wrap_stat(const char *path, struct stat *buf)
 		return -1;
 	}
 
-	switch (vfs.drv[vfs_id]->vfs_type) {
-#ifdef CONFIG_VFS_FATFS_INCLUDED
-	case VFS_FATFS:
-		if (check_mount_completion(&fatfs_mount_flag) != 0) {
-			VFS_DBG(VFS_ERROR, "vfs init fail, stat is not allowed");
-			return -1;
-		}
-		break;
-#endif
-	case VFS_LITTLEFS:
-		if (check_mount_completion(&lfs_mount_flag) != 0) {
-			VFS_DBG(VFS_ERROR, "vfs init fail, stat is not allowed");
-			return -1;
-		}
-		break;
-	default:
-		break;
+	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, "stat");
+	if (ret) {
+		return -1;
 	}
 
 	char *name = (char *)rtos_mem_zmalloc(PATH_MAX);

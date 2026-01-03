@@ -383,7 +383,7 @@ int atcmd_wifi_config_setting(void)
 	struct stat *stat_buf = NULL;
 	char *wifi_config = NULL;
 
-	if (lfs_mount_flag == -1) {
+	if (lfs_mount_flag != 1) {
 		ret = -1;
 		goto EXIT;
 	}
@@ -472,7 +472,7 @@ int atcmd_host_control_config_setting(void)
 	char *atcmd_config = NULL;
 	cJSON *atcmd_ob = NULL, *interface_ob;
 
-	if (lfs_mount_flag == -1) {
+	if (lfs_mount_flag != 1) {
 		goto DEFAULT;
 	}
 

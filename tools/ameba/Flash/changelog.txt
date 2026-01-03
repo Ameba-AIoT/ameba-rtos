@@ -1,36 +1,37 @@
 ChangeLog:
-20250218  v1.0.0.1  (1) Support erase user area
-                    (2) Support chip erase before download
-                    (3) Add version info
-20250220  v1.0.0.2  Tune command args
-20250221  v1.0.0.3  (1) Fix log-file output bug
-                    (2) Tune log format
-                    (3) Add FileVersion in FileVersionInfo
-20250321  v1.0.1.0  (1) Support linux images download
-                    (2) Optimize request timeout
-                    (3) Support check flash block protection before process flash
-20250401  v1.0.1.1  (1) Check and program otp for flash size >=16MB
-                    (2) Fix dtr/rts level unexpectedly changed issue when open/close serial port
-20250408  v1.0.1.2  Fix nand flash download error with bad block
-20250423  v1.0.1.3  (1) Fix download fail in 4byte address mode
-                    (2) Supported otp about flash size >=16MB work for download
-20250605  v1.0.2.0  Seperate flashloaders from flash.exe
-20250701  v1.0.3.0  (1) Support compatibility with MinGW path format
-                    (2) Support customized DTR/RTS timing for reset/reburn
-20250703  v1.1.0.0  Support 1-N download/erase
-20251105  v1.1.1.0  (1) Support for remote server port download 
-                    (2) Set PostProcess as reset after flashing finished
-					(3) Add no_reset param
-					(4) Change some log level 
-					(5) Rename flashloader folder with Devices
-20251208  v1.1.1.1  (1) Optimized read_bytes api
-                    (2) Optimized the issue where 1-N took longer than 1-1
-                    (3) Optimized the check flow before downloading start
-                    (4) Optimized memory usage by avoiding loading the entire image into memory
-                    (5) Rename Flash tool with AmebaFlash
-20251208  v1.1.1.2  Fix nand flash download fail issue
-20251212  v1.1.1.3  (1) Support read wifi-mac
-                    (2) Optimized download flow when download with chip-erase
-                    (3) Optimized rom handshake flow
-20251218  v1.1.1.4  (1) Fix download multi-images fail issue
-                    (2) Fix probability of failure when enter to download mode
+20250218  v1.0.0  (1) Support erase user area
+                  (2) Support chip erase before download
+                  (3) Add version info
+                  (4)Tune command args
+                  (5) Fix log-file output bug
+                  (6) Tune log format
+                  (7) Add FileVersion in FileVersionInfo
+20250321  v1.0.1  (1) Support linux images download
+                  (2) Optimize request timeout
+                  (3) Support check flash block protection before process flash
+                  (4) Check and program otp for flash size >=16MB
+                  (5) Fix dtr/rts level unexpectedly changed issue when open/close serial port
+                  (6) Fix nand flash download error with bad block
+                  (7) Fix download fail in 4byte address mode
+                  (8) Supported otp about flash size >=16MB work for download
+20250605  v1.0.2  Seperate flashloaders from flash.exe
+20250701  v1.0.3  (1) Support compatibility with MinGW path format
+                  (2) Support customized DTR/RTS timing for reset/reburn
+20250703  v1.1.0  Support 1-N download/erase
+20251105  v1.1.1  (1) Support for remote server port download 
+                  (2) Set PostProcess as reset after flashing finished
+				  (3) Add no_reset param
+			      (4) Change some log level 
+				  (5) Rename flashloader folder with Devices
+20251208  v1.1.2  (1) Optimized read_bytes api
+                  (2) Optimized the issue where 1-N took longer than 1-1
+                  (3) Optimized the check flow before downloading start
+                  (4) Optimized memory usage by avoiding loading the entire image into memory
+                  (5) Rename Flash tool with AmebaFlash
+                  (6) Fix nand flash download fail issue
+20251212  v1.1.3  (1) Support read wifi-mac
+                  (2) Optimized download flow when download with chip-erase
+                  (3) Optimized rom handshake flow
+20251218  v1.1.4  (1) Fix download multi-images fail issue
+                  (2) Fix probability of failure when enter to download mode
+				  (3) Fix enter download mode fail issue when in lower download baudrate

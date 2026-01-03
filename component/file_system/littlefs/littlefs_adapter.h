@@ -11,11 +11,11 @@ extern lfs_t g_lfs;
 extern u32 LFS_FLASH_BASE_ADDR;
 extern u32 LFS_FLASH_SIZE;
 
-#ifdef CONFIG_LITTLEFS_SECONDARY_FLASH
-extern lfs_t g_secondary_lfs;
+#ifdef CONFIG_LITTLEFS_SECOND_FLASH
+extern lfs_t g_second_lfs;
 
-extern u32 LFS_SECONDARY_FLASH_BASE_ADDR;
-extern u32 LFS_SECONDARY_FLASH_SIZE;
+extern u32 LFS_SECOND_FLASH_BASE_ADDR;
+extern u32 LFS_SECOND_FLASH_SIZE;
 #endif
 
 /**
@@ -56,11 +56,11 @@ int lfs_nand_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, 
 int lfs_nand_erase(const struct lfs_config *c, lfs_block_t block);
 #endif
 
-#ifdef CONFIG_LITTLEFS_SECONDARY_FLASH
-extern struct lfs_config g_secondary_nor_lfs_cfg;
-int lfs_secondary_nor_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size);
-int lfs_secondary_nor_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size);
-int lfs_secondary_nor_erase(const struct lfs_config *c, lfs_block_t block);
+#ifdef CONFIG_LITTLEFS_SECOND_FLASH
+extern struct lfs_config g_second_nor_lfs_cfg;
+int lfs_second_nor_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size);
+int lfs_second_nor_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size);
+int lfs_second_nor_erase(const struct lfs_config *c, lfs_block_t block);
 #endif
 
 #if defined(CONFIG_AMEBASMART)
