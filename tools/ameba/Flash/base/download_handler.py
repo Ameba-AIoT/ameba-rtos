@@ -356,6 +356,7 @@ class Ameba(object):
 
                     self.serial_port.flushOutput()
                     self.write_bytes(CmdResetIntoDownloadMode)
+                    time.sleep(0.02)  # wait for cmd tx to device successfully when in lower baudrate
 
                     self.switch_baudrate(self.profile_info.handshake_baudrate, boot_delay, True)
                     self.serial_port.flushInput()

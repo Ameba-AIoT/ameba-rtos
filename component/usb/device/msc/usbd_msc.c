@@ -247,7 +247,7 @@ static int usbd_msc_sd_init(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SD init\n");
 
-#ifdef CONFIG_FATFS_SECONDARY_FLASH
+#ifdef CONFIG_FATFS_SECOND_FLASH
 	return FLASH_disk_secondary_Driver.disk_initialize();
 #else
 	return SD_disk_Driver.disk_initialize();
@@ -258,7 +258,7 @@ static int usbd_msc_sd_deinit(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SD deinit\n");
 
-#ifdef CONFIG_FATFS_SECONDARY_FLASH
+#ifdef CONFIG_FATFS_SECOND_FLASH
 	return FLASH_disk_secondary_Driver.disk_deinitialize();
 #else
 	return SD_disk_Driver.disk_deinitialize();
@@ -267,7 +267,7 @@ static int usbd_msc_sd_deinit(void)
 
 static int usbd_msc_sd_getcapacity(u32 *sector_count)
 {
-#ifdef CONFIG_FATFS_SECONDARY_FLASH
+#ifdef CONFIG_FATFS_SECOND_FLASH
 	return FLASH_disk_secondary_Driver.disk_ioctl(GET_SECTOR_COUNT, sector_count);
 #else
 	return SD_disk_Driver.disk_ioctl(GET_SECTOR_COUNT, sector_count);
@@ -276,7 +276,7 @@ static int usbd_msc_sd_getcapacity(u32 *sector_count)
 
 static int usbd_msc_sd_readblocks(u32 sector, u8 *data, u32 count)
 {
-#ifdef CONFIG_FATFS_SECONDARY_FLASH
+#ifdef CONFIG_FATFS_SECOND_FLASH
 	return FLASH_disk_secondary_Driver.disk_read(data, sector, count);
 #else
 	return SD_disk_Driver.disk_read(data, sector, count);
@@ -285,7 +285,7 @@ static int usbd_msc_sd_readblocks(u32 sector, u8 *data, u32 count)
 
 static int usbd_msc_sd_writeblocks(u32 sector, const u8 *data, u32 count)
 {
-#ifdef CONFIG_FATFS_SECONDARY_FLASH
+#ifdef CONFIG_FATFS_SECOND_FLASH
 	return FLASH_disk_secondary_Driver.disk_write(data, sector, count);
 #else
 	return SD_disk_Driver.disk_write(data, sector, count);

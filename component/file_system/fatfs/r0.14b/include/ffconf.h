@@ -119,7 +119,7 @@
 */
 
 
-#define FF_USE_LFN		2
+#define FF_USE_LFN		3
 #define FF_MAX_LFN		255
 /* The FF_USE_LFN switches the support for LFN (long file name).
 /
@@ -172,7 +172,7 @@
 / Drive/Volume Configurations
 /---------------------------------------------------------------------------*/
 
-#define FF_VOLUMES		1
+#define FF_VOLUMES		2
 /* Number of volumes (logical drives) to be used. (1-10) */
 
 
@@ -307,7 +307,5 @@
 /  The FF_SYNC_t defines O/S dependent sync object type. e.g. HANDLE, ID, OS_EVENT*,
 /  SemaphoreHandle_t and etc. A header file for O/S definitions needs to be
 /  included somewhere in the scope of ff.h. */
-
-#define DIR FDIR
 
 /*--- End of configuration options ---*/

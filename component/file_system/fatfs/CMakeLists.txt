@@ -48,10 +48,6 @@ ameba_list_append(private_compile_options
     -Wno-implicit-fallthrough
 )
 
-ameba_list_append_if(CONFIG_SUPPORT_FATFS_USB private_sources
-    disk_if/src/usbdisk.c
-)
-
 ameba_list_append(private_sources
     ${v_FATFS_VER}/src/ff.c
     ${v_FATFS_VER}/src/diskio.c
@@ -64,6 +60,7 @@ ameba_list_append(private_sources
     fatfs_flash_api.c
     fatfs_sdcard.c
     fatfs_sdcard_api.c
+    fatfs_usbh_api.c
 )
 
 # Component private part, user config end(DO NOT remove this line)

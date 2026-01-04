@@ -4,7 +4,7 @@
 #include "vfs.h"
 #include "example_vfs_encrypt.h"
 
-extern void vfs_set_user_encrypt_callback(char *prefix, vfs_encrypt_callback_t encrypt_func, vfs_decrypt_callback_t decrypt_func, unsigned char iv_len);
+extern void vfs_set_user_encrypt_callback(char *prefix, vfs_enc_callback_t encrypt_func, vfs_dec_callback_t decrypt_func, unsigned char iv_len);
 
 #define DUMP_BUFFER 0
 #define AES_KEY_LEN 16

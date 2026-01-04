@@ -50,6 +50,13 @@ _LONG_CALL_ void data_flash_highspeed_setup(void);
 _LONG_CALL_ void DATA_FLASH_UserMode_Enter(void);
 _LONG_CALL_ void DATA_FLASH_UserMode_Exit(void);
 
+_LONG_CALL_ void DATA_FLASH_RxCmdXIP(u8 cmd, u32 read_len, u8 *read_data);
+_LONG_CALL_ void DATA_FLASH_SetStatusXIP(u8 Cmd, u32 Len, u8 *Status);
+_LONG_CALL_ void DATA_FLASH_SetStatusBitsXIP(u32 SetBits, u32 NewState);
+_LONG_CALL_ void DATA_FLASH_TxDataXIP(u32 StartAddr, u32 DataPhaseLen, u8 *pData);
+_LONG_CALL_ void DATA_FLASH_EraseXIP(u32 EraseType, u32 Address);
+_LONG_CALL_ int DATA_FLASH_ReadStream(u32 address, u32 len, u8 *pbuf);
+_LONG_CALL_ int DATA_FLASH_WriteStream(u32 address, u32 len, u8 *pbuf);
 /**
   * @}
   */

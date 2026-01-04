@@ -516,10 +516,6 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_SCO_DATA_IND");
 			// BT_LOGA("app_hfp_bt_cback: BT_EVENT_SCO_DATA_IND \r\n");
-			if (param->sco_data_ind.status != BT_SCO_PKT_STATUS_OK) {
-				BT_LOGE("app_hfp_bt_cback: sco data ind status error %d \r\n", param->sco_data_ind.status);
-				break;
-			}
 			{
 				uint8_t cb_ret = 0;
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_SCO_DATA_IND, sizeof(rtk_bt_hfp_sco_data_ind_t));
@@ -529,6 +525,8 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 					break;
 				}
 				p_hfp_sc_data_ind = (rtk_bt_hfp_sco_data_ind_t *)p_evt->data;
+				memcpy((void *)p_hfp_sc_data_ind->bd_addr, (void *)param->sco_data_ind.bd_addr, 6);
+				p_hfp_sc_data_ind->status = (rtk_bt_sco_pkt_status)param->sco_data_ind.status;
 				memcpy((void *)p_hfp_sc_data_ind->data, (void *)param->sco_data_ind.p_data, param->sco_data_ind.length);
 				p_hfp_sc_data_ind->length = param->sco_data_ind.length;
 				/* Send event */
@@ -1070,6 +1068,8 @@ static uint16_t bt_stack_hfp_data_send(void *param)
 	do {
 		if (bt_sco_data_send(p_data_send_t->bd_addr, p_data_send_t->seq_num, p_data_send_t->buf, p_data_send_t->len)) {
 			return RTK_BT_OK;
+		} else {
+			BT_LOGA("One more sco data send try \r\n");
 		}
 		osif_delay(1);
 	} while (p_link->sco_handle);

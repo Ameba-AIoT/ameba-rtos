@@ -26,32 +26,32 @@ typedef struct {
 
 typedef struct {
 	ll_diskio_drv	*drv[_VOLUMES];
-	unsigned int            nbr;
+	unsigned int nbr;
 } ff_disk_drv;
 
 extern ff_disk_drv  disk;
 extern ll_diskio_drv SD_disk_Driver;
 extern ll_diskio_drv SD_disk_spi_Driver;
 extern ll_diskio_drv FLASH_disk_Driver;
-extern ll_diskio_drv FLASH_disk_secondary_Driver;
+extern ll_diskio_drv FLASH_second_disk_Driver;
 
 typedef struct fatfs_flash_param_s {
 	int drv_num;
 	char drv[4];
 	FATFS fs;
-} fatfs_flash_params_t;
+} fatfs_params_t;
 
-typedef struct fatfs_sd_param_s {
-	int drv_num;
-	char drv[4];
-	FATFS fs;
-} fatfs_sd_params_t;
+extern fatfs_params_t fatfs_flash_param;
+extern fatfs_params_t fatfs_second_flash_param;
 
-int fatfs_sd_init(void);
+int fatfs_sd_init(int interface);
 int fatfs_sd_close(void);
 
 int fatfs_flash_init(int interface);
-int fatfs_flash_close(void);
+int fatfs_flash_close(int interface);
+
+int fatfs_usbh_init(void);
+int fatfs_usbh_close(void);
 
 int FATFS_RegisterDiskDriver(ll_diskio_drv *disk_drv);
 int FATFS_UnRegisterDiskDriver(unsigned char drv_num);

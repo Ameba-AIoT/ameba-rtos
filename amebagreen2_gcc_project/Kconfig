@@ -15,6 +15,9 @@ config AMEBAGREEN2
 config SUPPORT_NAND_FLASH
     def_bool y
 
+config SUPPORT_FATFS_USB
+    def_bool y
+
 config SUPPORT_SDIO_DEVICE
     def_bool y
 
