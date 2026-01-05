@@ -1592,7 +1592,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		rtk_bt_avrcp_digital_interface_command_t *p_command_t = (rtk_bt_avrcp_digital_interface_command_t *)param;
 
 		BT_LOGA("[AVRCP]: Play req \r\n");
-		/* fro a2dp source */
+		/* for a2dp source */
 		rtk_bt_avrcp_play_status_change_req(p_command_t->bd_addr, RTK_BT_AVRCP_STATUS_PLAYING);
 		rtk_bt_a2dp_start(p_command_t->bd_addr);
 		break;
@@ -1602,7 +1602,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		rtk_bt_avrcp_digital_interface_command_t *p_command_t = (rtk_bt_avrcp_digital_interface_command_t *)param;
 
 		BT_LOGA("[AVRCP]: Pause req \r\n");
-		/* fro a2dp source */
+		/* for a2dp source */
 		rtk_bt_avrcp_play_status_change_req(p_command_t->bd_addr, RTK_BT_AVRCP_STATUS_PAUSED);
 		rtk_bt_a2dp_suspend(p_command_t->bd_addr);
 		break;
@@ -1612,7 +1612,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		rtk_bt_avrcp_digital_interface_command_t *p_command_t = (rtk_bt_avrcp_digital_interface_command_t *)param;
 
 		BT_LOGA("[AVRCP]: Stop req \r\n");
-		/* fro a2dp source */
+		/* for a2dp source */
 		rtk_bt_avrcp_play_status_change_req(p_command_t->bd_addr, RTK_BT_AVRCP_STATUS_STOPPED);
 		rtk_bt_a2dp_suspend(p_command_t->bd_addr);
 		break;

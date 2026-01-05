@@ -147,12 +147,17 @@ u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 			rtos_sema_create_binary(&ipc_Semaphore[IPC_ChNum]);
 		}
 
-		IPC_INTConfig(IPCx, IPC_ChNum, ENABLE);
+		/* clear pending interrupt status */
+		IPC_INTClear(IPCx, IPC_ChNum);
 
-		if (rtos_sema_take(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != RTK_SUCCESS) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, " IPC Get Semaphore Timeout\r\n");
-			IPC_INTConfig(IPCx, IPC_ChNum, DISABLE);
-			return IPC_SEMA_TIMEOUT;
+		/* if TX channel cleared during waiting then break waiting */
+		if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum))) {
+			IPC_INTConfig(IPCx, IPC_ChNum, ENABLE);
+			if (rtos_sema_take(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != RTK_SUCCESS) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, " IPC Get Semaphore Timeout\r\n");
+				IPC_INTConfig(IPCx, IPC_ChNum, DISABLE);
+				return IPC_SEMA_TIMEOUT;
+			}
 		}
 	}
 	return 0;
