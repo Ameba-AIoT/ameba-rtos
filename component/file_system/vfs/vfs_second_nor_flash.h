@@ -1,5 +1,5 @@
-#ifndef _SECONDARY_FLASH_H
-#define _SECONDARY_FLASH_H
+#ifndef _VFS_SECOND_NOR_FLASH_H
+#define _VFS_SECOND_NOR_FLASH_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -84,15 +84,15 @@ static const flash_model_t flash_models[] = {
 #define CACHE_LINE_SIZE CACHE_L1_DCACHE_LINE_SIZE
 #endif
 
-extern volatile int secondary_flash_init_flag;
+extern volatile int second_flash_init_flag;
 extern flash_model_t current_flash_model;
 
-void secondary_flash_spi_init(int hz);
-void secondary_flash_get_id(void);
-int32_t secondary_flash_erase_sector(uint32_t address);
-int32_t secondary_flash_write_stream(uint32_t address, uint32_t length, char *tx_buffer);
-int32_t secondary_flash_fast_read_stream(uint32_t address, uint32_t length, char *rx_buffer);
-int32_t secondary_flash_read_stream(uint32_t address, uint32_t length, char *rx_buffer);
+void second_flash_spi_init(void);
+void second_flash_get_id(void);
+int32_t second_flash_erase_sector(uint32_t address);
+int32_t second_flash_write_stream(uint32_t address, uint32_t length, char *tx_buffer);
+int32_t second_flash_fast_read_stream(uint32_t address, uint32_t length, char *rx_buffer);
+int32_t second_flash_read_stream(uint32_t address, uint32_t length, char *rx_buffer);
 #ifdef __cplusplus
 }
 #endif

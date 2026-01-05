@@ -186,7 +186,7 @@ typedef struct _usbd_class_driver_t {
 	 *     - `USB_DESC_TYPE_DEVICE`: Device Descriptor, mandatory.
 	 *     - `USB_DESC_TYPE_CONFIGURATION`: Configuration Descriptor, mandatory.
 	 *     - `USB_DESC_TYPE_DEVICE_QUALIFIER`: Device Qualifier Descriptor, required for dual-speed (FS/HS) devices                                                                                                     |
-	 *     - `USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION`：Other Speed Configuration Descriptor, required for dual-speed (FS/HS) devices.
+	 *     - `USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION`: Other Speed Configuration Descriptor, required for dual-speed (FS/HS) devices.
 	 *     - `USB_DESC_TYPE_STRING`: String descriptors (language ID, manufacturer, product, serial), optional.
 	 * @param[in] dev: USB device.
 	 * @param[in] req: USB setup request.

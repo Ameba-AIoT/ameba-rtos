@@ -14,6 +14,17 @@
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
+// HID request
+#define USBD_HID_GET_REPORT						0x01
+#define USBD_HID_GET_IDLE						0x02
+#define USBD_HID_GET_PROTOCOL					0x03
+#define USBD_HID_SET_REPORT						0x09
+#define USBD_HID_SET_IDLE						0x0a
+#define USBD_HID_SET_PROTOCOL					0x0b
+
+// wValue of HID report request
+#define USBD_HID_DESC							0x21
+#define USBD_HID_REPORT_DESC					0x22
 
 /* Private function prototypes -----------------------------------------------*/
 

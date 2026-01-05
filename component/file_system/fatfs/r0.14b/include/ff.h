@@ -240,7 +240,7 @@ typedef struct {
 #if FF_USE_FIND
 	const TCHAR *pat;		/* Pointer to the name matching pattern */
 #endif
-} FDIR;
+} DIR;
 
 
 

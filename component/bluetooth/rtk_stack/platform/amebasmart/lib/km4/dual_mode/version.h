@@ -1,11 +1,11 @@
 #define VERSION_MAJOR            0
 #define VERSION_MINOR            0
 #define VERSION_REVISION         0
-#define VERSION_BUILDNUM         985
-#define VERSION_GCID             0x5be58c9e
-#define VERSION_GCIDH            0xd629b0d9
-#define VERSION_PGCID            0x5bf4d77e
-#define VERSION_PGCIDH           0x6bbcabd3
+#define VERSION_BUILDNUM         988
+#define VERSION_GCID             0x5cf153c0
+#define VERSION_GCIDH            0xb46f75b8
+#define VERSION_PGCID            0xc4b1972e
+#define VERSION_PGCIDH           0x0b0ea334
 #define LIB_NAME                 "amebasmart"
 #define CUSTOMER_NAME            lib
 #define CN_1                     'l'
@@ -16,14 +16,14 @@
 #define CN_6                     '#'
 #define CN_7                     '#'
 #define CN_8                     '#'
-#define BUILDING_TIME            "Wed Dec 24 11:10:40 2025"
+#define BUILDING_TIME            "Tue Dec 30 11:09:07 2025"
 #define NAME2STR(a)              #a
 #define CUSTOMER_NAME_S          #NAME2STR(CUSTOMER_NAME)
 #define NUM4STR(a,b,c,d)         #a "." #b "." #c "." #d
 #define VERSIONBUILDSTR(a,b,c,d) NUM4STR(a,b,c,d)
 #define VERSION_BUILD_STR        VERSIONBUILDSTR(VERSION_MAJOR,VERSION_MINOR,VERSION_REVISION,VERSION_BUILD)
-#define COMMIT                   5be58c9ed629
-#define BUILDING_TIME_STR        Wed_2025_12_24_11_10_41
+#define COMMIT                   5cf153c0b46f
+#define BUILDING_TIME_STR        Tue_2025_12_30_11_09_10
 #define BUILDER                  server
 #define BUILDER_STR              server
 #define TO_STR(R) NAME2STR(R)

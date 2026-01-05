@@ -69,7 +69,7 @@ void DATA_FLASH_RxBasic_InUserMode(u8 cmd, u8 AddrValid, u32 StartAddr, u32 read
 	u32 read_word;
 	u16 read_half;
 	u8 read_byte;
-
+	u32 rx_ndf = read_len;
 
 	/* Set target slave */
 	spi_flash->SER = 1;
@@ -77,9 +77,18 @@ void DATA_FLASH_RxBasic_InUserMode(u8 cmd, u8 AddrValid, u32 StartAddr, u32 read
 	/* set CTRLR0: RX_mode */
 	spi_flash->CTRLR0 |= TMOD(3);
 
-	/* Set RX_NDF: frame number of receiving data. TX_NDF should be set in both transmit mode and receive mode.
-		TX_NDF should be set to zero in receive mode to skip the TX_DATA phase. */
-	spi_flash->RX_NDF = RX_NDF(read_len);
+	/* Hardware constraint: DR FIFO read must be at least 2 bytes at a time.
+	 * If read_len is odd, increase the read count by 1 (rx_ndf = read_len + 1).
+	 */
+	if (rx_ndf & 0x1) {
+		rx_ndf += 1;
+	}
+
+	/* Set RX_NDF / TX_NDF
+	 * RX_NDF: frame number to receive
+	 * TX_NDF: must be zero in RX mode to skip TX data phase
+	 */
+	spi_flash->RX_NDF = RX_NDF(rx_ndf);
 	spi_flash->TX_NDF = 0;
 
 	/* set flash_cmd: write cmd & address to fifo & addr is MSB */
@@ -127,7 +136,14 @@ void DATA_FLASH_RxBasic_InUserMode(u8 cmd, u8 AddrValid, u32 StartAddr, u32 read
 				__UNALIGNED_UINT16_WRITE((u32)read_data + offset, read_half);
 				offset += 2;
 			} else {
-				read_byte = spi_flash->DR[0].BYTE;
+				/* Due to hardware restrictions, single-byte reads from DR are not allowed.
+				* Read 2 bytes from DR and write only the last valid byte to the end of the user buffer.
+				*/
+				read_half = spi_flash->DR[0].HALF;
+				/* By default, use the low byte as the final 1 byte.
+				* If the hardware byte order is reversed, use the high byte instead.
+				*/
+				read_byte = (u8)(read_half & 0xFF);
 				HAL_WRITE8((u32)read_data, offset, read_byte);
 				offset += 1;
 			}

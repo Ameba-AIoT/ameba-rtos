@@ -21,7 +21,7 @@ void AONTimer_Setting(u32 SDuration)
 
 	SDuration = SDuration * 100;
 
-	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_TIM_SET, AON_TIM_CNT_CUR(SDuration));
+	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_TIM_SET, AON_TIM_CNT_SET(SDuration));
 }
 
 /**

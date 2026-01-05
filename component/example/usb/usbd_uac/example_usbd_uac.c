@@ -12,11 +12,8 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "usbd.h"
-#if defined(CONFIG_USBD_UAC1)
-#include "usbd_uac1.h"
-#else
-#include "usbd_uac2.h"
-#endif
+#include "usbd_uac.h"
+
 /* This used to check the USB issue */
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBADPLUS)
 #define CONFIG_USBD_AUDIO_EN                          1
