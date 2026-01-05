@@ -85,6 +85,8 @@ if exist "%BASE_DIR%\.venv\Scripts\activate.bat" (
 	pip list
 )
 
+set "AMEBA_SDK=%BASE_DIR%"
+
 :skip_venv_setup
 python "%BASE_DIR%\tools\scripts\check_requirements.py"
 
@@ -92,12 +94,14 @@ DOSKEY build.py=python build.py $*
 DOSKEY menuconfig.py=python menuconfig.py $*
 DOSKEY flash.py=python flash.py $*
 DOSKEY monitor.py=python monitor.py $*
+DOSKEY ameba.py=python %BASE_DIR%\ameba.py $*
 
-set "info1=First choose IC platform : cd [IC]_gcc_project"
-set "info2=Configure command:  menuconfig.py"
-set "info3=Build command:  build.py"
-set "info4=Flash command:  flash.py -p COMx"
-set "info5=Monitor command:  monitor.py -p COMx"
+set "info1=Setup complete. The Ameba SDK is now ready for use."
+set "info2=Go to the project root directory and run ameba.py"
+set "info3=Usage:      ameba.py [COMMAND] [ARGS]"
+set "info4=Build:      ameba.py build"
+set "info5=Select SoC: ameba.py soc"
+set "info6=Help:       ameba.py help"
 
 echo ================================================================================
 echo ^|  %info1%
@@ -105,6 +109,7 @@ echo ^|  %info2%
 echo ^|  %info3%
 echo ^|  %info4%
 echo ^|  %info5%
+echo ^|  %info6%
 echo ================================================================================
 
 :end

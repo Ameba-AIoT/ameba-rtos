@@ -4,7 +4,7 @@ This example demonstrates how to use the VFS module for data encryption. Unlike 
 
 Here is the prototype of the interface :
 ```C
-void vfs_set_user_encrypt_callback(char *prefix, vfs_encrypt_callback_t encrypt_func, vfs_decrypt_callback_t decrypt_func, unsigned char iv_len);
+void vfs_set_user_encrypt_callback(char *prefix, vfs_enc_callback_t encrypt_func, vfs_dec_callback_t decrypt_func, unsigned char iv_len);
 ```
 ```
 prefix : decided by user when registering the vfs (refer file system AN for more information)
@@ -31,11 +31,6 @@ Test Mode: (`VFS_LITTLEFS`/`VFS_FATFS`, `VFS_INF_FLASH`/`VFS_INF_SD`)
 		ret = vfs_user_register(VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
 		```
 
-   - For `VFS_FATFS` with `VFS_INF_SD`: (Only AmebaSmart support)
-		```C
-		ret = vfs_user_register(VFS_PREFIX, VFS_FATFS, VFS_INF_SD, VFS_REGION_1, VFS_RW);
-		```
-
 2. Type command `./menuconfig.py` and choose `CONFIG VFS`
    - For `VFS_LITTLEFS`:
 		```
@@ -48,13 +43,6 @@ Test Mode: (`VFS_LITTLEFS`/`VFS_FATFS`, `VFS_INF_FLASH`/`VFS_INF_SD`)
 		[ ] Enable VFS LITTLEFS
 		[*] Enable VFS FATFS
 		FATFS Memory Type (FlASH)
-		```
-
-   - For `VFS_FATFS` with `VFS_INF_SD`: (Only AmebaSmart support)
-		```
-		[ ] Enable VFS LITTLEFS
-		[*] Enable VFS FATFS
-		FATFS Memory Type (SD)
 		```
 
 3. Build and Download:

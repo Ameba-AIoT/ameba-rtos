@@ -4,6 +4,7 @@ import logging
 import json5
 import json
 from utility import *
+from ameba_soc_utils import SocManager
 
 class Context(ABC):
     manifest_file:str
@@ -20,15 +21,18 @@ class Context(ABC):
         self.image_folder_name = 'image_mp' if args.mp == 'y' else 'image'
         self.image_output_dir = ''
 
-        # get external project info from extern_dir/info.json
+        # get external project info from extern_dir/soc_info.json
         if args.extern_dir is not None:
-            info_json = os.path.join(args.extern_dir, 'info.json')
-            if(os.path.exists(info_json)):
-                with open(info_json, 'r') as jsonfile:
-                    config = json.load(jsonfile)
-                proj_dir = config.get('Paths', {}).get('gcc_project_dir')
-                proj_info = parse_project_info(os.path.abspath(os.path.join(args.extern_dir, proj_dir)))
-                self.external_soc_dir = args.extern_dir
+            manager = SocManager(args.extern_dir)
+            soc_info = manager.parse_soc_info()
+            if soc_info:
+                proj_info = parse_project_info(os.path.abspath(soc_info['dir']))
+                if os.path.exists(os.path.join(args.extern_dir, 'manifest.json5')):
+                    self.external_soc_dir = args.extern_dir # use manifest in user dir
+                else:
+                    self.external_soc_dir = proj_info['soc_dir']
+            else:
+                self.logger.fatal("Failed parse soc info for current project")
         else:
             proj_info = parse_project_info(args.post_build_dir if args.post_build_dir else os.getcwd())
             self.external_soc_dir = proj_info['soc_dir']

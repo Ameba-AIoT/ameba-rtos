@@ -487,7 +487,8 @@ class FirmwarePackage(OperationBase):
         if img3_manifest_config == None: #NOTE: manifest maybe not contain image3
             img3_gcm_enable = False
         else:
-            img3_gcm_enable = img3_manifest_config.rsip_enable and img3_manifest_config.rsip_mode == 2
+            # image3 may not have rsip_enable if only RDP is configured
+            img3_gcm_enable = getattr(img3_manifest_config, 'rsip_enable', False) and getattr(img3_manifest_config, 'rsip_mode', None) == 2
 
         tmp_ns_file_name = modify_file_path(self.output_file, suffix='_ns')# non-secure app file
         merge_files(tmp_ns_file_name, cert_file_name, manifest_file_name)  # merge_files api will overwrite output_file file
@@ -529,7 +530,8 @@ class FirmwarePackage(OperationBase):
             shutil.copy(input_file, self.output_image_dir)
 
         manifest_config = self.manifest_manager.get_image_config(image_type)
-        gcm_enable = manifest_config.rsip_enable and manifest_config.rsip_mode == 2
+        rsip_enable = getattr(manifest_config, 'rsip_enable', False)
+        gcm_enable = rsip_enable and manifest_config.rsip_mode == 2
 
         tmp_en_file_name = output_encrypt_file           #encrypted file
         tmp_gcm_file_name = modify_file_path(tmp_en_file_name, suffix='_tag')   #gcm tag file, file name role in security.py
@@ -545,7 +547,7 @@ class FirmwarePackage(OperationBase):
             tmp_en_src_file_name = tmp_sb_file_name # Use sboot file encrypt
 
         #Step1: create encrypt file and manifest file
-        if manifest_config.rsip_enable:
+        if getattr(manifest_config, 'rsip_enable', False):
             info = parse_project_info(input_file)
             section = self.config.section(image_type)
             if isinstance(section, dict):

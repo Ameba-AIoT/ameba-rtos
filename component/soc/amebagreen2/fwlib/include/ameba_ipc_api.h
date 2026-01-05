@@ -43,7 +43,7 @@ typedef struct ipc_msg_struct {
 #define IPC_REQ_TIMEOUT  2
 #define IPC_SEND_SUCCESS 0
 #define IPC_SEND_TIMEOUT 1
-#define IPC_SEMA_MAX_DELAY			0xFFFFFFFF
+#define IPC_SEMA_MAX_DELAY 0x10000 // 65536ms
 
 /**
   * @}

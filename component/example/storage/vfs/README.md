@@ -20,11 +20,6 @@ Test Mode: (`VFS_LITTLEFS`/`VFS_FATFS`, `VFS_INF_FLASH`/`VFS_INF_SD`)
 		ret = vfs_user_register(VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
 		```
 
-   - For `VFS_FATFS` with `VFS_INF_SD`: (Only AmebaSmart/AmebaGreen2 support)
-		```C
-		ret = vfs_user_register(VFS_PREFIX, VFS_FATFS, VFS_INF_SD, VFS_REGION_1, VFS_RW);
-		```
-
 2. Type command `./menuconfig.py` and choose `CONFIG VFS`
    - For `VFS_LITTLEFS`:
 		```
@@ -37,13 +32,6 @@ Test Mode: (`VFS_LITTLEFS`/`VFS_FATFS`, `VFS_INF_FLASH`/`VFS_INF_SD`)
 		[ ] Enable VFS LITTLEFS
 		[*] Enable VFS FATFS
 		FATFS Memory Type (FlASH)
-		```
-
-   - For `VFS_FATFS` with `VFS_INF_SD`: (Only AmebaSmart support)
-		```
-		[ ] Enable VFS LITTLEFS
-		[*] Enable VFS FATFS
-		FATFS Memory Type (SD)
 		```
 
 3. Build and Download:

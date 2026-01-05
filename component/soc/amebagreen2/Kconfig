@@ -129,6 +129,8 @@ menu "CONFIG FUNCTION TEST"
                 prompt "SPIC Verify Type"
                 config MCM_MEM_VERIFY
                     bool "MCM_MEMORY_VERIFY"
+                config DATA_NOR_FLASH_VERIFY
+                    bool "DATA_NOR_FLASH_VERIFY"
             endchoice
         endif
         config FTL_VERIFY

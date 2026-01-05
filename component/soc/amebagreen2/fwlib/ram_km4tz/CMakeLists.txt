@@ -38,6 +38,7 @@ set(private_compile_options)         #private compile_options
 ameba_list_append(private_sources
     ameba_app_start.c
     ameba_data_flash.c
+    ameba_data_flash_ram.c
     ameba_data_flashclk.c
     ameba_data_nand_flash.c
     ameba_ethernet.c

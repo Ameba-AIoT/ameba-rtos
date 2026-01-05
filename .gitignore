@@ -9,6 +9,8 @@
 /**/image/*
 /**/image_mp/*
 /**/build/*
+/**/menuconfig/*
+/**/soc_info.json
 # !/**/image/.gitignore
 # !/**/image_mp/.gitignore
 # !/**/build/.gitignore

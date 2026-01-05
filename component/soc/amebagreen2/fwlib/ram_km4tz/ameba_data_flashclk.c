@@ -16,6 +16,8 @@ static u8 check_config_reg = 0;
 
 static u32 SPIC_DATA_FLASH_CALIB_PATTERN[2] = {0};
 
+u32 DATA_FLASH_SIZE = 0;
+
 static void DATA_FLASH_PLLInit_ClockDiv(void)
 {
 	u8 psramc_ckd;
@@ -137,6 +139,8 @@ void data_flash_get_vendor(void)
 	/* Read flash ID */
 	DATA_FLASH_RxCmd(FLASH_InitStruct->FLASH_cmd_rd_id, 3, flash_ID);
 	RTK_LOGI(TAG, "Flash ID: %x-%x-%x\n", flash_ID[0], flash_ID[1], flash_ID[2]);
+
+	DATA_FLASH_SIZE = (1 << (flash_ID[2] - 0x11));
 
 	/* Get flash chip information */
 	current_IC = data_flash_get_chip_info((flash_ID[2] << 16) | (flash_ID[1] << 8) | flash_ID[0]);
@@ -274,14 +278,15 @@ void data_flash_highspeed_setup(void)
 {
 	FLASH_InitTypeDef *FLASH_InitStruct = &data_flash_init_para;
 	u32 read_mode = flash_get_readmode(Data_Flash_ReadMode);
+	u8 mem_type = ChipInfo_MemoryType();
 
 #if !defined(CONFIG_SECOND_FLASH_NOR) && !defined(CONFIG_SECOND_FLASH_NAND)
 	UNUSED(FLASH_InitStruct);
 	return;
 #endif
 
-	if (ChipInfo_MemoryType() == MCM_TYPE_PSRAM) {
-		RTK_LOGE(TAG, "Can't support second flash for chip with mem psram\r\n");
+	if ((mem_type == MCM_TYPE_PSRAM) || (mem_type == MCM_SINGLE_DIE)) {
+		RTK_LOGE(TAG, "Can't support second flash for chip with mem psram or single die\r\n");
 		return;
 	}
 

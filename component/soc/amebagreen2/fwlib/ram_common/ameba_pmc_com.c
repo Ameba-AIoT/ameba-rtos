@@ -252,13 +252,10 @@ void SOCPS_PowerManage(u8 regu_state)
 	LDO_TypeDef *LDO = LDO_BASE;
 	PLL_TypeDef *PLL = (PLL_TypeDef *)PLL_REG_BASE;
 	/* 1. regu (SWR and core LDO)sleep status configuuration. */
-	if (regu_state) {
-		/* 4.1 Set REGU's state when sleep.*/
-		SOCPS_PowerStateSetInSleep(regu_state);
-		/* 4.2 for simulation*/
-		SOCPS_ReguDelayAdjust(REGU_DELAY_500US);
+	if (regu_state == TRUE) {
+		SOCPS_PowerStateSetInSleep(STATE2_LDOPC_SWRPFM_08);
 	} else {
-		RTK_LOGE(TAG, "Invalid Regu state\n");
+		SOCPS_PowerStateSetInSleep(STATE1_LDOPC_SWRPFM_07);
 	}
 
 	/* 2. regu (SWR and core LDO) normal status configuration: default settings,state6: SWR-PFM, LDO-NORM.*/

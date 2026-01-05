@@ -17,6 +17,8 @@ static u8 check_config_reg = 0;
 
 static u32 SPIC_DATA_FLASH_CALIB_PATTERN[2] = {0};
 
+u32 DATA_FLASH_SIZE = 0;
+
 /**
   * @brief  Set New Calibration 600M PS Disable/Enable
   * @param  NewStatus: Disable/Enable
@@ -507,6 +509,8 @@ static void data_flash_get_vendor(void)
 	/* Read flash ID */
 	DATA_FLASH_RxCmd(FLASH_InitStruct->FLASH_cmd_rd_id, 3, flash_ID);
 	RTK_LOGI(TAG, "Flash ID: %x-%x-%x\n", flash_ID[0], flash_ID[1], flash_ID[2]);
+
+	DATA_FLASH_SIZE = (1 << (flash_ID[2] - 0x11));
 
 	/* Get flash chip information */
 	current_IC = flash_get_chip_info((flash_ID[2] << 16) | (flash_ID[1] << 8) | flash_ID[0]);

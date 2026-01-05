@@ -129,24 +129,25 @@ class ManifestImageConfig:
 
         if image_type != ImageType.CERT:
             #RSIP
-            self.rsip_enable:bool = config.get("rsip_enable", config.get("rsip_en", False))
-            if self.rsip_enable:
-                self.rsip_mode:int = config["rsip_mode"] #0 is CTR, 1 is XTS(CTR+ECB), 2 is GCM
-                self.rsip_gcm_tag_len:int = config.get("rsip_gcm_tag_len", 0xFF)
-                self.rsip_iv:str = config["rsip_iv"]
-                self.rsip_key:List[str] = []
-                if "rsip_key_group" in config:
-                    self.rsip_key = [config[v] for v in config[config["rsip_key_group"]]]
-                else:
-                    if self.rsip_mode == 0:
-                        self.rsip_key = [config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]]]
-                    elif self.rsip_mode == 1:
-                        self.rsip_key = [
-                            config["ecb_key"] if isinstance(config["ecb_key"], str) else config["ecb_key"][config["rsip_key_id"]],
-                            config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]],
-                        ]
-                    elif self.rsip_mode == 1:
-                        self.rsip_key = [config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]]]
+            if image_type == ImageType.IMAGE1 or image_type == ImageType.IMAGE2:
+                self.rsip_enable:bool = config.get("rsip_enable", config.get("rsip_en", False))
+                if self.rsip_enable:
+                    self.rsip_mode:int = config["rsip_mode"] #0 is CTR, 1 is XTS(CTR+ECB), 2 is GCM
+                    self.rsip_gcm_tag_len:int = config.get("rsip_gcm_tag_len", 0xFF)
+                    self.rsip_iv:str = config["rsip_iv"]
+                    self.rsip_key:List[str] = []
+                    if "rsip_key_group" in config:
+                        self.rsip_key = [config[v] for v in config[config["rsip_key_group"]]]
+                    else:
+                        if self.rsip_mode == 0:
+                            self.rsip_key = [config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]]]
+                        elif self.rsip_mode == 1:
+                            self.rsip_key = [
+                                config["ecb_key"] if isinstance(config["ecb_key"], str) else config["ecb_key"][config["rsip_key_id"]],
+                                config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]],
+                            ]
+                        elif self.rsip_mode == 1:
+                            self.rsip_key = [config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]]]
 
             #RDP
             self.rdp_enable:bool = config.get("rdp_enable", config.get("rdp_en", False))
@@ -644,8 +645,13 @@ class ManifestManager(ABC):
 
         if image_config.rsip_enable:
             for i, img in enumerate([self.image1, self.image2, self.image3], start=1):
-                if img == None: continue #NOTE: manifest maybe not contain image3
-                rsip_mode = 0xFF if img.rsip_mode == None else img.rsip_mode
+                if img is None: continue #NOTE: manifest maybe not contain image3
+                # Only process rsip_mode for images that have rsip_enable and rsip_mode attribute
+                if not hasattr(img, 'rsip_enable') or not img.rsip_enable:
+                    continue
+                rsip_mode = getattr(img, 'rsip_mode', None)
+                if rsip_mode is None:
+                    continue
                 basic_manifest_part.RsipCfg = basic_manifest_part.RsipCfg & (~(0x03 << (i * 2))|(rsip_mode << (i * 2)))
 
             memmove(addressof(basic_manifest_part.RsipIV), bytes.fromhex(image_config.rsip_iv), 8)

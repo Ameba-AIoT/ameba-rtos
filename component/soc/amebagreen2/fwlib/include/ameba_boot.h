@@ -179,6 +179,7 @@ extern void BOOT_RccConfig(void);
 #define NP_BOOT_INDEX				0x02020202
 
 #define IS_FLASH_ADDR(addr)			((addr >= 0x00200000) && (addr <= 0x1FFFFFFF))
+#define IS_DATA_FLASH_ADDR(addr)	((addr >= 0x60000000) && (addr <= 0x7FFFFFFF))
 #define RANGE_IS_BOOTRAM(src, len)	(((src) >= BOOT_LOADER_START) && ((len) < BOOT_LOADER_LIMIT - BOOT_LOADER_START) && ((src + len) < BOOT_LOADER_LIMIT))
 #define RANGE_IS_FULLMAC(src, len)	((((src) | TZ_IDAU_SEC_OFFSET) >= (FULLMAC_ADDR_START | TZ_IDAU_SEC_OFFSET)) && ((len) < FULLMAC_ADDR_END - FULLMAC_ADDR_START) && \
 									(((src + len) | TZ_IDAU_SEC_OFFSET) < (FULLMAC_ADDR_END | TZ_IDAU_SEC_OFFSET)))

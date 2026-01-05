@@ -3,7 +3,7 @@
 #include "time.h"
 #include "vfs.h"
 #include "ameba_ota.h"
-#include "vfs_secondary_nor_flash.h"
+#include "vfs_second_nor_flash.h"
 #include "littlefs_adapter.h"
 
 vfs_drv  vfs = {0};
@@ -11,30 +11,55 @@ rtos_mutex_t vfs_mutex = NULL;
 
 extern u32 FLASH_APP_BASE;
 extern u32 FLASH_SECTOR_COUNT;
+extern u32 SECOND_FLASH_SECTOR_COUNT;
+extern u32 DATA_FLASH_SIZE;
 
 u32 VFS1_FLASH_BASE_ADDR = 0;
 u32 VFS1_FLASH_SIZE = 0;
 u32 VFS2_FLASH_BASE_ADDR = 0;
 u32 VFS2_FLASH_SIZE = 0;
 
-int check_mount_completion(int *mount_flag)
+
+
+int vfs_check_mount_flag(int vfs_type, int vfs_interface_type, char *operation)
 {
-	while (*mount_flag == 0) {
-		rtos_time_delay_ms(10);
-	}
-	if (*mount_flag == -1) {
+	(void) operation;
+	int *check_flag = NULL;
+	switch (vfs_type) {
+#ifdef CONFIG_VFS_FATFS_INCLUDED
+	case VFS_FATFS:
+		if (vfs_interface_type == VFS_INF_SECOND_FLASH || vfs_interface_type == VFS_INF_SD
+			|| vfs_interface_type == VFS_INF_SD_SPI || vfs_interface_type == VFS_INF_USBH) {
+			check_flag = &fatfs2_mount_flag;
+		} else if (vfs_interface_type == VFS_INF_FLASH) {
+			check_flag = &fatfs_mount_flag;
+		}
+		if (check_flag != NULL && *check_flag != 1) {
+			VFS_DBG(VFS_ERROR, "vfs init fail, %s is not allowed", operation);
+			return -1;
+		}
+		break;
+#endif
+	case VFS_LITTLEFS:
+		if (vfs_interface_type == VFS_INF_SECOND_FLASH) {
+			check_flag = &lfs2_mount_flag;
+		} else if (vfs_interface_type == VFS_INF_FLASH) {
+			check_flag = &lfs_mount_flag;
+		}
+		if (check_flag != NULL && *check_flag != 1) {
+			VFS_DBG(VFS_ERROR, "vfs init fail, %s is not allowed", operation);
+			return -1;
+		}
+		break;
+	default:
 		return -1;
+		break;
 	}
 	return 0;
 }
 
 void vfs_init()
 {
-#if (defined CONFIG_LITTLEFS_SECONDARY_FLASH) || (defined CONFIG_FATFS_SECONDARY_FLASH)
-	secondary_flash_spi_init(SCLK_FREQ);
-	secondary_flash_get_id();
-#endif
-
 	if (vfs_mutex == NULL) {
 		VFS_DBG(VFS_INFO, "vfs_mutex init\r\n");
 		memset(&vfs, 0, sizeof(vfs_drv));
@@ -66,7 +91,7 @@ int find_vfs_number(const char *name, int *prefix_len, int *user_id)
 		return ret;
 	}
 
-	for (i = 0; i < MAX_FS_SIZE; i++) {
+	for (i = 0; i < VFS_FS_MAX; i++) {
 		if (vfs.user[i].tag == NULL) {
 			VFS_DBG(VFS_INFO, "VFS tag not match!");
 			break;
@@ -106,7 +131,7 @@ int find_inf_number(const char *name)
 		return -1;
 	}
 
-	for (i = 0; i < MAX_USER_SIZE; i++) {
+	for (i = 0; i < VFS_USER_REGION_MAX; i++) {
 		if (vfs.user[i].tag != NULL) {
 			ret =  strncmp(name, vfs.user[i].tag, strlen(vfs.user[i].tag));
 			if (ret == 0) {
@@ -122,7 +147,7 @@ int find_inf_number(const char *name)
 
 char *find_vfs_tag(char region)
 {
-	for (int i = 0; i < MAX_USER_SIZE; i++) {
+	for (int i = 0; i < VFS_USER_REGION_MAX; i++) {
 		if (vfs.user[i].vfs_region == region && vfs.user[i].tag != NULL) {
 			return (char *)vfs.user[i].tag;
 		}
@@ -147,54 +172,88 @@ void vfs_assign_region(int vfs_type, char region, int interface)
 	}
 
 	if (vfs_type == VFS_LITTLEFS) {
-#ifdef CONFIG_LITTLEFS_SECONDARY_FLASH
-		if (interface == VFS_INF_SECONDARY_FLASH) {
-			LFS_SECONDARY_FLASH_BASE_ADDR = 0x0;
-			LFS_SECONDARY_FLASH_SIZE = current_flash_model.flash_size;
+#ifdef CONFIG_LITTLEFS_SECOND_FLASH
+		if (interface == VFS_INF_SECOND_FLASH) {
+			if (region == VFS_REGION_4) {
+				LFS_SECOND_FLASH_BASE_ADDR = 0x0;
+#ifdef CONFIG_SECOND_FLASH_NOR
+				LFS_SECOND_FLASH_SIZE = DATA_FLASH_SIZE / 8 * 1024 * 1024;
+#else
+				LFS_SECOND_FLASH_SIZE = current_flash_model.flash_size;
+#endif
+			} else {
+				VFS_DBG(VFS_ERROR, "Interface(%d) with region(%d) is not supported by LITTLEFS\r\n", interface, region);
+			}
 		}
 #endif
 		if (interface == VFS_INF_FLASH) {
-			LFS_FLASH_BASE_ADDR = region == 1 ? VFS1_FLASH_BASE_ADDR : VFS2_FLASH_BASE_ADDR;
-			LFS_FLASH_SIZE = region == 1 ? VFS1_FLASH_SIZE : VFS2_FLASH_SIZE;
+			if (region == VFS_REGION_1) {
+				LFS_FLASH_BASE_ADDR = VFS1_FLASH_BASE_ADDR;
+				LFS_FLASH_SIZE = VFS1_FLASH_SIZE;
+			} else if (region == VFS_REGION_2) {
+				LFS_FLASH_BASE_ADDR = VFS2_FLASH_BASE_ADDR;
+				LFS_FLASH_SIZE = VFS2_FLASH_SIZE;
+			} else {
+				VFS_DBG(VFS_ERROR, "Interface(%d) with region(%d) is not supported by LITTLEFS\r\n", interface, region);
+			}
 		}
 	}
 
 #ifdef CONFIG_VFS_FATFS_INCLUDED
 	if (vfs_type == VFS_FATFS) {
+		if (region == VFS_REGION_4) {
+			if (interface == VFS_INF_SECOND_FLASH) {
+#ifdef CONFIG_FATFS_SECOND_FLASH
+#ifdef CONFIG_SECOND_FLASH_NOR
+				SECOND_FLASH_SECTOR_COUNT = DATA_FLASH_SIZE / 8 * 1024 * 1024 / 512;
+#else
+				SECOND_FLASH_SECTOR_COUNT = current_flash_model.flash_size / 512;
+#endif
+#endif
+			} else if (interface == VFS_INF_SD || interface == VFS_INF_SD_SPI || interface == VFS_INF_USBH) {
+				// nothing to do now
+			}	else {
+				VFS_DBG(VFS_ERROR, "Interface(%d) with region(%d) is not supported by FATFS\r\n", interface, region);
+			}
+		}
+
+		if (interface == VFS_INF_FLASH) {
+			if (region == VFS_REGION_1) {
+				FLASH_APP_BASE = VFS1_FLASH_BASE_ADDR;
+				FLASH_SECTOR_COUNT = VFS1_FLASH_SIZE / 512;
+			} else if (region == VFS_REGION_2) {
+				FLASH_APP_BASE = VFS2_FLASH_BASE_ADDR;
+				FLASH_SECTOR_COUNT = VFS2_FLASH_SIZE / 512;
+			} else if (region == VFS_REGION_3) {
 #ifdef CONFIG_FATFS_WITHIN_APP_IMG
 #ifndef OTA_IMGID_APP
-		u8 ota_index = ota_get_cur_index(OTA_IMGID_IMG2);
+				u8 ota_index = ota_get_cur_index(OTA_IMGID_IMG2);
 #else
-		u8 ota_index = ota_get_cur_index(OTA_IMGID_APP);
+				u8 ota_index = ota_get_cur_index(OTA_IMGID_APP);
 #endif
-		u32 img2_start_addr, img2_end_addr;
-		flash_get_layout_info(ota_index == OTA_INDEX_1 ? IMG_APP_OTA1 : IMG_APP_OTA2, &img2_start_addr, &img2_end_addr);
-		IMAGE_HEADER *img_hdr = (IMAGE_HEADER *)(img2_start_addr + 0x2000);  //add cert+manifest offset
-		while ((u32)img_hdr < img2_end_addr) {
-			if (img_hdr->signature[0] == 0x5f736676 && img_hdr->signature[1] == 0x5f746166 && img_hdr->image_addr == (u32)(&VFS1_FLASH_BASE_ADDR)) {
-				VFS_DBG(VFS_INFO, "find vfs region2 : 0x%x !!!\r\n", img_hdr);
-				break;
+				u32 img2_start_addr, img2_end_addr;
+				flash_get_layout_info(ota_index == OTA_INDEX_1 ? IMG_APP_OTA1 : IMG_APP_OTA2, &img2_start_addr, &img2_end_addr);
+				IMAGE_HEADER *img_hdr = (IMAGE_HEADER *)(img2_start_addr + 0x2000);  //add cert+manifest offset
+				while ((u32)img_hdr < img2_end_addr) {
+					if (img_hdr->signature[0] == PATTERN_VFS_1 && img_hdr->signature[1] == PATTERN_VFS_2 && img_hdr->image_addr == (u32)(&VFS1_FLASH_BASE_ADDR)) {
+						VFS_DBG(VFS_INFO, "find vfs region2 : 0x%x !!!\r\n", img_hdr);
+						break;
+					}
+					img_hdr = (IMAGE_HEADER *)((u32)img_hdr + 0x1000);
+				}
+				if ((u32)img_hdr >= img2_end_addr) {
+					VFS_DBG(VFS_INFO, "no fatfs binary \r\n");
+				} else {
+					FLASH_APP_BASE = (u32)img_hdr + 0x1000 - SPI_FLASH_BASE;
+					FLASH_SECTOR_COUNT = img_hdr->image_size / 512;
+				}
+#else
+				VFS_DBG(VFS_ERROR, "VFS_REGION_3 should used by CONFIG_FATFS_WITHIN_APP_IMG\r\n");
+#endif
+			} else {
+				VFS_DBG(VFS_ERROR, "Interface(%d) with region(%d) is not supported by FATFS\r\n", interface, region);
 			}
-			img_hdr = (IMAGE_HEADER *)((u32)img_hdr + 0x1000);
 		}
-		if ((u32)img_hdr >= img2_end_addr) {
-			VFS_DBG(VFS_INFO, "no fatfs binary \r\n");
-		} else {
-			FLASH_APP_BASE = (u32)img_hdr + 0x1000 - SPI_FLASH_BASE;
-			FLASH_SECTOR_COUNT = img_hdr->image_size / 512;
-		}
-#else
-#ifdef CONFIG_FATFS_SECONDARY_FLASH
-		if (interface == VFS_INF_SECONDARY_FLASH) {
-			FLASH_APP_BASE = 0x0;
-			FLASH_SECTOR_COUNT = current_flash_model.flash_size / 512;
-		}
-#endif
-		if (interface == VFS_INF_FLASH) {
-			FLASH_APP_BASE = region == 1 ? VFS1_FLASH_BASE_ADDR : VFS2_FLASH_BASE_ADDR;
-			FLASH_SECTOR_COUNT = region == 1 ? (VFS1_FLASH_SIZE / 512) : (VFS2_FLASH_SIZE / 512);
-		}
-#endif
 	}
 #endif
 	return;
@@ -203,11 +262,11 @@ void vfs_assign_region(int vfs_type, char region, int interface)
 int vfs_register(vfs_opt *drv, int vfs_type)
 {
 	unsigned char drv_num = -1;
-	if (vfs.nbr < MAX_FS_SIZE) {
-		drv->drv_num = vfs.nbr;	// record driver number for a specific disk
-		vfs.drv[vfs.nbr] = drv;
-		vfs.drv[vfs.nbr]->vfs_type = vfs_type;
-		vfs.nbr++;
+	if (vfs.drv_num < VFS_FS_MAX) {
+		drv->drv_num = vfs.drv_num;	// record driver number for a specific disk
+		vfs.drv[vfs.drv_num] = drv;
+		vfs.drv[vfs.drv_num]->vfs_type = vfs_type;
+		vfs.drv_num++;
 		drv_num = drv->drv_num;
 	}
 	return drv_num;
@@ -217,7 +276,7 @@ int vfs_scan_vfs(int vfs_type)
 {
 	int vfs_num = -1;
 	unsigned int i = 0;
-	for (i = 0; i < vfs.nbr; i++) {
+	for (i = 0; i < vfs.drv_num; i++) {
 		if (vfs.drv[i]->vfs_type == vfs_type) {
 			vfs_num = i;
 		}
@@ -225,43 +284,32 @@ int vfs_scan_vfs(int vfs_type)
 	return vfs_num;
 }
 
-void vfs_set_user_encrypt_callback(char *prefix, vfs_encrypt_callback_t encrypt_func, vfs_decrypt_callback_t decrypt_func, unsigned char iv_len)
+void vfs_set_user_encrypt_callback(char *prefix, vfs_enc_callback_t encrypt_func, vfs_dec_callback_t decrypt_func, unsigned char iv_len)
 {
 	int user_id;
 	find_vfs_number(prefix, NULL, &user_id);
-	if (vfs.user[user_id].vfs_encrypt_callback != NULL) {
+	if (vfs.user[user_id].vfs_enc_callback != NULL) {
 		VFS_DBG(VFS_WARNING, "User encrypt call back already exist !!!");
 		return;
 	}
 
-	vfs.user[user_id].vfs_encrypt_callback = encrypt_func;
-	vfs.user[user_id].vfs_decrypt_callback = decrypt_func;
-	vfs.user[user_id].encrypt_iv_len = iv_len;
+	vfs.user[user_id].vfs_enc_callback = encrypt_func;
+	vfs.user[user_id].vfs_dec_callback = decrypt_func;
+	vfs.user[user_id].enc_iv_len = iv_len;
 	return;
 }
 
 int vfs_user_register(const char *prefix, int vfs_type, int interface, char region, char flag)
 {
 	int vfs_num = 0;
+	int user_num = -1;
 	int ret = -1;
 	rtos_mutex_take(vfs_mutex, MUTEX_WAIT_TIMEOUT);
-
-#if (defined CONFIG_LITTLEFS_SECONDARY_FLASH)
-	if (vfs_type == VFS_LITTLEFS && secondary_flash_init_flag != 1) {
-		VFS_DBG(VFS_ERROR, "Secondary flash failed to init\r\n");
-		goto EXIT;
-	}
-#elif (defined CONFIG_FATFS_SECONDARY_FLASH)
-	if (vfs_type == VFS_FATFS && secondary_flash_init_flag != 1) {
-		VFS_DBG(VFS_ERROR, "Secondary flash failed to init\r\n");
-		goto EXIT;
-	}
-#endif
 
 	if (vfs_type != VFS_FATFS && vfs_type != VFS_LITTLEFS) {
 		VFS_DBG(VFS_ERROR, "It don't support the file system");
 		goto EXIT;
-	} else if (vfs_type == VFS_LITTLEFS && interface < VFS_INF_FLASH) {
+	} else if (vfs_type == VFS_LITTLEFS && interface > VFS_INF_SECOND_FLASH) {
 		VFS_DBG(VFS_ERROR, "interface type not supported by littlefs");
 		goto EXIT;
 	} else {
@@ -288,21 +336,33 @@ int vfs_user_register(const char *prefix, int vfs_type, int interface, char regi
 				goto EXIT;
 			}
 
-			vfs.user[vfs.ibr].tag = prefix;
-			vfs.user[vfs.ibr].vfs_type = vfs_type;
-			vfs.user[vfs.ibr].vfs_interface_type = interface;
-			vfs.user[vfs.ibr].vfs_type_id = vfs_num;
-			vfs.user[vfs.ibr].vfs_ro_flag = flag;
-			vfs.user[vfs.ibr].vfs_region = region;
-			if (interface == VFS_INF_FLASH) {
-				vfs.user[vfs.ibr].fs = &g_lfs;
+			//find an idle user num
+			for (int i = 0; i < VFS_USER_REGION_MAX; i++) {
+				if (!vfs.user[i].tag) {
+					user_num = i;
+					break;
+				}
 			}
-#ifdef CONFIG_LITTLEFS_SECONDARY_FLASH
-			if (interface == VFS_INF_SECONDARY_FLASH) {
-				vfs.user[vfs.ibr].fs = &g_secondary_lfs;
+
+			if (user_num == -1) {
+				VFS_DBG(VFS_INFO, "No more user region can be registered \r\n");
+				goto EXIT;
+			}
+
+			vfs.user[user_num].tag = prefix;
+			vfs.user[user_num].vfs_type = vfs_type;
+			vfs.user[user_num].vfs_interface_type = interface;
+			vfs.user[user_num].vfs_type_id = vfs_num;
+			vfs.user[user_num].vfs_ro_flag = flag;
+			vfs.user[user_num].vfs_region = region;
+			if (interface == VFS_INF_FLASH) {
+				vfs.user[user_num].fs = &g_lfs;
+			}
+#ifdef CONFIG_LITTLEFS_SECOND_FLASH
+			if (interface == VFS_INF_SECOND_FLASH) {
+				vfs.user[user_num].fs = &g_second_lfs;
 			}
 #endif
-			vfs.ibr++;
 			vfs_assign_region(vfs_type, region, interface);
 			ret = vfs.drv[vfs_num]->mount(interface);
 			if (ret) {
@@ -328,7 +388,6 @@ int vfs_user_unregister(const char *prefix, int vfs_type, int interface)
 		vfs_id = vfs.user[user_id].vfs_type_id;
 		memset(&vfs.user[user_id], 0x00, sizeof(user_config));
 		ret = vfs.drv[vfs_id]->unmount(interface);
-		vfs.ibr--;
 		goto EXIT;
 	} else {
 		ret = -1;

@@ -14,7 +14,10 @@ import subprocess
 PROJECT_ROOT_DIR = os.path.realpath(os.path.dirname(os.path.abspath(__file__)))
 PROFILE = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/ameba/Flash/Devices/Profiles/AmebaLite_FreeRTOS_NOR.rdev"))
 FLASH_TOOL = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/ameba/Flash/AmebaFlash.py"))
-
+if os.getcwd() != PROJECT_ROOT_DIR:
+    IMAGE_DIR = os.path.join(os.getcwd(), 'build')
+else:
+    IMAGE_DIR = PROJECT_ROOT_DIR
 
 class MemoryInfo:
     MEMORY_TYPE_RAM = 0
@@ -102,7 +105,7 @@ def main():
 
     if not images:
         cmds.append(f"--image-dir")
-        cmds.append(PROJECT_ROOT_DIR)
+        cmds.append(IMAGE_DIR)
     else:
         partition_table = []
 
@@ -115,7 +118,7 @@ def main():
 
         # 1. Argparse.images format [[image-name, start-address, end-address], ...]
         for group in images:
-            image_name_with_path = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, group[0]))
+            image_name_with_path = os.path.realpath(os.path.join(IMAGE_DIR, group[0]))
             image_name = os.path.basename(image_name_with_path)
             try:
                 start_addr = int(group[1], 16)
