@@ -138,6 +138,8 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
 	enum rtw_join_status_type join_status = (enum rtw_join_status_type)flags;
 	struct rtw_event_join_fail_info_t *fail_info = (struct rtw_event_join_fail_info_t *)buf;
 
+	rtw_join_status = join_status;
+
 	/* step 1: internal process for different status*/
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
@@ -194,8 +196,6 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
 		eap_disconnected_hdl();
 #endif
 	}
-
-	rtw_join_status = join_status;
 
 	if ((join_status == RTW_JOINSTATUS_DISCONNECT) || (join_status == RTW_JOINSTATUS_FAIL)) {
 		/*wpa lite disconnect hdl*/
