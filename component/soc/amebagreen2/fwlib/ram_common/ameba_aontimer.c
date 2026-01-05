@@ -71,13 +71,3 @@ void AONTimer_ClearINT(void)
 	temp |= AON_BIT_TIM_ISR;
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_TIM_ISR, temp);
 }
-
-
-void AONTimer_INT_WAKEUP(void)
-{
-	RTK_LOGI(NOTAG, "wake reason: 0x%x\n", SOCPS_AONWakeReason());
-	AONTimer_ClearINT();
-	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, DISABLE);
-	pmu_acquire_wakelock(PMU_OS);
-}
-

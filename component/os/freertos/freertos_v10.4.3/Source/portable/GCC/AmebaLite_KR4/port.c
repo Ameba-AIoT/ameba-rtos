@@ -46,10 +46,6 @@
 
 #include "platform_autoconf.h"
 
-#if defined(CONFIG_STANDARD_TICKLESS) && defined(CONFIG_LWIP_LAYER)
-extern uint32_t lwip_update_internal_counter(u32_t ms, void *param_ptr);
-#endif
-
 #ifdef configCLINT_BASE_ADDRESS
 #undef configCLINT_BASE_ADDRESS
 #endif
@@ -354,9 +350,6 @@ void pmu_post_sleep_processing(uint32_t *expected_idle_time)
 	/* update sleepwakelock_timeout if sysactive_timeout_temp not 0 */
 	sysactive_timeout_flag = 0;
 	pmu_set_sysactive_time(0);
-#if defined(CONFIG_STANDARD_TICKLESS) && defined(CONFIG_LWIP_LAYER)
-	lwip_update_internal_counter(ms_passed, NULL);
-#endif
 
 	RTK_LOGD(NOTAG, "%s sleeped:[%lu] ms\n", "KM4", ms_passed);	
 

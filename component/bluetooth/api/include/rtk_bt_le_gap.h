@@ -1721,6 +1721,17 @@ typedef struct {
 } rtk_bt_le_auth_oob_input_ind_t;
 
 /**
+ * @struct    rtk_bt_le_sec_level_t
+ * @brief     Bluetooth LE security level.
+ */
+typedef enum {
+	RTK_BT_LE_SEC_LEVEL_NONE          = 0x01,   /*!< No security (No authentication and no encryption). */
+	RTK_BT_LE_SEC_LEVEL_UNAUTHEN      = 0x02,   /*!< Unauthenticated pairing with encryption. */
+	RTK_BT_LE_SEC_LEVEL_AUTHEN        = 0x03,   /*!< Authenticated pairing with encryption. */
+	RTK_BT_LE_SEC_LEVEL_SC_AUTHEN_128 = 0x04,   /*!< Authenticated LE Secure Connections pairing with encryption using a 128-bit strength encryption key. */
+} rtk_bt_le_sec_level_t;
+
+/**
  * @struct    rtk_bt_le_auth_complete_ind_t
  * @brief     Bluetooth LE auth compeleted event msg.
  */
@@ -1729,6 +1740,7 @@ typedef struct {
 	uint16_t conn_handle;                   /*!< Connection handle */
 	uint8_t dev_ltk_length;                 /*!< Device long term key length*/
 	uint8_t dev_ltk[32];                    /*!< Device long term key */
+	rtk_bt_le_sec_level_t sec_level;        /*!< Security level */
 } rtk_bt_le_auth_complete_ind_t;
 
 /**

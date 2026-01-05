@@ -383,7 +383,7 @@ int atcmd_wifi_config_setting(void)
 	struct stat *stat_buf = NULL;
 	char *wifi_config = NULL;
 
-	if (lfs_mount_flag == -1) {
+	if (lfs_mount_flag != 1) {
 		ret = -1;
 		goto EXIT;
 	}
@@ -472,7 +472,7 @@ int atcmd_host_control_config_setting(void)
 	char *atcmd_config = NULL;
 	cJSON *atcmd_ob = NULL, *interface_ob;
 
-	if (lfs_mount_flag == -1) {
+	if (lfs_mount_flag != 1) {
 		goto DEFAULT;
 	}
 
@@ -675,21 +675,22 @@ void atcmd_host_control_mode_init_thread(void *param)
 	//initialize tt mode ring sema
 	rtos_sema_create(&atcmd_tt_mode_sema, 0, 0xFFFF);
 
-	while (kv_init_done == 0) {
-		rtos_time_delay_ms(10);
+	if (kv_init_done != 1) {
+		RTK_LOGE(TAG, "file system init fail\n");
+		goto exit;
 	}
 
 	int ret = atcmd_wifi_config_setting();
 	if (ret < 0) {
 		RTK_LOGE(TAG, "atcmd wifi config setting fail\n");
-		return;
+		goto exit;
 	}
 
 	ret = atcmd_host_control_config_setting();
 
 	if (ret < 0) {
 		RTK_LOGI(TAG, "atcmd host control config setting fail\n");
-		return;
+		goto exit;
 	}
 
 	char *path = rtos_mem_zmalloc(MAX_KEY_LENGTH);
@@ -701,6 +702,7 @@ void atcmd_host_control_mode_init_thread(void *param)
 	RTK_LOGI(TAG, ATCMD_HOST_CONTROL_INIT_STR);
 	at_printf(ATCMD_HOST_CONTROL_INIT_STR);
 
+exit:
 	rtos_task_delete(NULL);
 }
 

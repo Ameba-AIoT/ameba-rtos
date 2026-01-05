@@ -3,59 +3,37 @@ menu "CONFIG VFS"
         bool "Enable VFS LITTLEFS"
         default n
     if VFS_LITTLEFS_INCLUDED
-        choice
-            prompt "FLASH Type"
-            config LITTLEFS_FLASH
-                bool "FLASH"
-            config LITTLEFS_SECONDARY_FLASH
-                bool "Secondary FLASH"
-            if LITTLEFS_SECONDARY_FLASH
-                config SECONDARY_FLASH_SIZE
-                    int "Secondary FLASH Size[KB]"
-                    default 4096
-            endif
-        endchoice
+        config LITTLEFS_SECOND_FLASH_MENU
+            bool "Second FLASH"
+            select LITTLEFS_SECOND_FLASH
     endif
     config VFS_FATFS_INCLUDED
         bool "Enable VFS FATFS"
     if VFS_FATFS_INCLUDED
         choice
             prompt "FATFS Memory Type"
-            config FATFS_DISK_FLASH_MENU
+            config FATFS_FLASH
                 bool "FLASH"
-                select FATFS_DISK_FLASH
-            if FATFS_DISK_FLASH
-                choice
-                    prompt "FLASH Type"
-                    config FATFS_FLASH
-                        bool "FLASH"
-                    config FATFS_SECONDARY_FLASH
-                        bool "Secondary FLASH"
-                    if FATFS_SECONDARY_FLASH
-                        config SECONDARY_FLASH_SIZE
-                            int "Secondary FLASH Size[KB]"
-                            default 4096
-                    endif
-                endchoice
-            endif
+            config FATFS_SECOND_FLASH_MENU
+                bool "Second FLASH"
+                select FATFS_SECOND_FLASH
             config FATFS_DISK_SD_MENU   #amebasmart  green2
-                bool "SD"
-                select FATFS_DISK_SD
-            if FATFS_DISK_SD
-                choice
-                    prompt "SDIO MODE"
-                    config FATFS_SD_MODE
-                        bool "SD MODE"
-                        depends on SUPPORT_NAND_FLASH
-                    config FATFS_SD_SPI_MODE
-                        bool "SD SPI MODE"
-                   endchoice
-            endif
+                depends on SUPPORT_NAND_FLASH
+                bool "SD MODE"
+                select FATFS_SD_MODE
+            config FATFS_SD_SPI_MENU
+                bool "SD SPI MODE"
+                select FATFS_SD_SPI_MODE
+            config FATFS_USB_HOST_MENU
+                depends on SUPPORT_FATFS_USB
+                bool "USB Host MODE"
+                select FATFS_USB_HOST
+                select USB_OTG_EN if WHC_HOST || WHC_NONE
+                select USB_HOST_EN if WHC_HOST || WHC_NONE
+                select USBH_MSC if WHC_HOST || WHC_NONE
         endchoice
-        if FATFS_FLASH
-            config FATFS_WITHIN_APP_IMG
-                bool "FATFS within APP Image"
-        endif
+        config FATFS_WITHIN_APP_IMG
+            bool "FATFS within APP Image"
         config FATFS_READ_ONLY
             bool "FATFS Read Only"
         config FATFS_SUPPORT_EXFAT
@@ -63,8 +41,17 @@ menu "CONFIG VFS"
     endif
 endmenu
 
-config FATFS_DISK_FLASH
+config LITTLEFS_SECOND_FLASH
 bool
 
-config FATFS_DISK_SD
+config FATFS_SECOND_FLASH
+bool
+
+config FATFS_SD_MODE
+bool
+
+config FATFS_SD_SPI_MODE
+bool
+
+config FATFS_USB_HOST
 bool

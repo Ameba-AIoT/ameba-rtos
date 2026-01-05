@@ -7,7 +7,7 @@
 /* Includes ------------------------------------------------------------------ */
 
 /* uac 1.0 */
-#include "usbd_uac1.h"
+#include "usbd_uac.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -22,6 +22,201 @@
 #endif
 
 #define UABD_UAC_VOL_ERR_VAL       255
+
+#define USBD_UAC_FS_ISOC_MPS                        1023   /* Full speed ISOC IN & OUT max packet size */
+
+#define USBD_UAC_SELF_POWERED                       1U
+#define USBD_UAC_LANGID_STRING                      0x0409U
+#define USBD_UAC_MFG_STRING                         "Realtek"
+#define USBD_UAC_PROD_FS_STRING                     "Realtek UAC1.0 (FS)"
+#define USBD_UAC_SN_STRING                          "1234567890"
+
+/**
+ * Defines Audio trx buffer MAX count.
+ */
+#define USBD_UAC_RX_BUF_MAX_CNT                     10     /**< RX Ringbuf count */
+#define USBD_UAC_TX_BUF_MAX_CNT                     10     /**< TX Ringbuf count */
+
+#define USBD_UAC_CLASS_CODE                         0x01U
+#define USBD_UAC_SUBCLASS_AUDIOCONTROL              0x01U
+#define USBD_UAC_SUBCLASS_AUDIOSTREAMING            0x02U
+#define USBD_UAC_VERSION_01_10                      0x110U
+#define USBD_UAC_IF_CLASS_AUDIO                     0x01U
+
+#define USBD_UAC_ONE_KHZ                            1000U
+/**
+ * Defines UAC 2.0 device volume MAX & MIN.
+ */
+#define USBD_UAC_VOLUME_CTRL_MIN                    0xFF42  /**< UAC 2.0 device MAX volume db. */
+#define USBD_UAC_VOLUME_CTRL_MAX                    0x00BE  /**< UAC 2.0 device MIN volume db. */
+
+/* sample sampling freq max count */
+#define USBD_UAC_SAMPLING_FREQ_MAX_COUNT            2U
+
+/* bit_width */
+#define USBD_UAC_BIT_WIDTH(byte_width)              (8U * (byte_width))
+
+// Project-specific Interface Indices
+#define USBD_UAC_LEN_CLK_SRC_DESC                   0x08U
+#define USBD_UAC_LEN_AC_IN_TTY_DESC                 0x0CU
+#define USBD_UAC_LEN_AC_OUT_TTY_DESC                0x09U
+#define USBD_UAC_LEN_AS_IF_ALT_SET_DESC             0X07U
+#define USBD_UAC_LEN_AS_FRT_TYPE_ALT_SET_DESC       0x0EU
+#define USBD_UAC_LEN_EP_DESC                        0X09U
+#define USBD_UAC_LEN_DATA_EP_DESC                   0X07U
+#define USBD_UAC_LEN_CTRL_IF_HEADER                 0x09U
+#define USBD_UAC_LEN_FUNC_UNIT_DESC                 0x08U
+
+/* usbd uac */
+#define USBD_UAC_DESC_TYPE_AUDIO_CS_INTERFACE       0x24U
+#define USBD_UAC_CS_ENDPOINT_DESCRIPTOR             0x25U
+
+// Audio Class-Specific Audio Streaming Interface Descriptor Subtype Codes (UAC2.0 Spec Appendix A.10)
+#define USBD_UAC_AS_IF_DESC_SUBTYPE_UNDEFINED               0x00
+#define USBD_UAC_AS_IF_DESC_SUBTYPE_AS_GENERAL              0x01
+#define USBD_UAC_AS_IF_DESC_SUBTYPE_FORMAT_TYPE             0x02
+// Audio Class-Specific Audio Streaming Endpoint Descriptor Subtype Codes (UAC2.0 Spec Appendix A.13)
+#define USBD_UAC_AS_EP_DESC_SUBTYPE_EP_GENERAL              0x01
+//headset
+#define USBD_UAC_IF_IDX_AC_HEADSET                  0x00U
+#define USBD_UAC_IF_IDX_AS_HEADSET_HEADPHONES       0x01U
+#define USBD_UAC_IF_IDX_AS_HEADSET_MICROPHONE       0x02U
+
+// Audio Function Category Codes (UAC2.0 Spec Appendix A.7)
+#define USBD_UAC_FUNC_CATEGORY_CODE_DESKTOP_UNDEFINED              0x00U
+#define USBD_UAC_FUNC_CATEGORY_CODE_DESKTOP_SPEAKER                0x01U
+#define USBD_UAC_FUNC_CATEGORY_CODE_DESKTOP_HEADSET                0x04U
+
+// Audio Class-Specific Audio Control Interface Descriptor Subtype Codes (UAC2.0 Spec Appendix A.9)
+#define USBD_UAC_AC_IF_DESC_SUBTYPE_UNDEFINED                      0x00U
+#define USBD_UAC_AC_IF_DESC_SUBTYPE_HEADER                         0x01U
+#define USBD_UAC_AC_IF_DESC_SUBTYPE_INPUT_TERMINAL                 0x02U
+#define USBD_UAC_AC_IF_DESC_SUBTYPE_OUTPUT_TERMINAL                0x03U
+#define USBD_UAC_AC_IF_DESC_SUBTYPE_CLOCK_SELECTOR                 0X05U
+#define USBD_UAC_AC_IF_DESC_SUBTYPE_FEATURE_UNIT                   0x06U
+#define USBD_UAC_AC_IF_DESC_SUBTYPE_CLOCK_SOURCE                   0x0AU
+
+// USB Audio terminal
+// USB In
+#define USBD_UAC_CTRL_ENTITYID_CLOCK_HEADSET_MICROPHONE            0x12U
+#define USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_HEADSET_MICROPHONE    0x02U
+#define USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_FEATUREUNIT           0x08U
+#define USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_HEADSET_MICROPHONE   0x10U
+// USB Out
+#define USBD_UAC_CTRL_ENTITYID_CLOCK_HEADSET_HEADPHONES            0x15U
+#define USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_HEADSET_HEADPHONES    0x01U
+#define USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_FEATUREUNIT          0x05U
+#define USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_HEADSET_HEADPHONES   0x09U
+
+// uac1.0 spec
+#define USBD_UAC1_0_CLASS_SET_CUR                                  0x01U
+#define USBD_UAC1_0_CLASS_SET_MIN                                  0X02U
+#define USBD_UAC1_0_CLASS_SET_MAX                                  0X03U
+#define USBD_UAC1_0_CLASS_SET_RES                                  0x04U
+
+#define USBD_UAC1_0_CLASS_GET_CUR                                  0x81U
+#define USBD_UAC1_0_CLASS_GET_MIN                                  0X82U
+#define USBD_UAC1_0_CLASS_GET_MAX                                  0X83U
+#define USBD_UAC1_0_CLASS_GET_RES                                  0x84U
+
+// (UAC2.0 Spec Appendix A-17)
+#define USBD_UAC_CS_SAM_FREQ_CONTROL                               0x01U
+#define USBD_UAC_CS_CLK_VALID_CONTROL                              0x02U
+// (UAC2.0 Spec Appendix A-20)
+#define USBD_UAC_TE_CONNECTOR_CONTROL                              0x02U
+
+/*! @brief Commands for USB device AUDIO control feature unit control selector */
+#define USBD_UAC_CTRL_FU_MUTE_CONTROL_SELECTOR                     0x01U
+#define USBD_UAC_CTRL_FU_VOLUME_CONTROL_SELECTOR                   0x02U
+#define USBD_UAC_CTRL_FU_BASS_CONTROL_SELECTOR                     0x03U
+#define USBD_UAC_CTRL_FU_MID_CONTROL_SELECTOR                      0x04U
+#define USBD_UAC_CTRL_FU_TREBLE_CONTROL_SELECTOR                   0x05U
+#define USBD_UAC_CTRL_FU_GRAPHIC_EQUALIZER_CONTROL_SELECTOR        0x06U
+#define USBD_UAC_CTRL_FU_AUTOMATIC_GAIN_CONTROL_SELECTOR           0x07U
+#define USBD_UAC_CTRL_FU_DELAY_CONTROL_SELECTOR                    0x08U
+#define USBD_UAC_CTRL_FU_BASS_BOOST_CONTROL_SELECTOR               0x09U
+#define USBD_UAC_CTRL_FU_LOUDNESS_CONTROL_SELECTOR                 0x0AU
+#define USBD_UAC_CTRL_FU_INPUT_GAIN_CONTROL_SELECTOR               0x0BU
+#define USBD_UAC_CTRL_FU_INPUT_GAIN_PAD_CONTROL_SELECTOR           0x0CU
+#define USBD_UAC_CTRL_FU_PHASE_INVERTER_CONTROL_SELECTOR           0x0DU
+#define USBD_UAC_CTRL_FU_UNDERFLOW_CONTROL_SELECTOR                0x0EU
+#define USBD_UAC_CTRL_FU_OVERFLOW_CONTROL_SELECTOR                 0x0FU
+#define USBD_UAC_CTRL_FU_LATENCY_CONTROL_SELECTOR                  0x10U
+
+/* modify for constructor the description */
+/* config */
+#define USBD_UAC_CFG_LEN_OFFSET                     2U
+#define USBD_UAC_CFG_IF_CNT_OFFSET                  4U
+/* Audio Control */
+#define USBD_UAC_ASSOCIATION_IF_NUM_OFFSET          12U
+#define USBD_UAC_AC_IF_HEADER_LEN_OFFSET            32U
+#define USBD_UAC_IT_DESC_CH_CNT_OFFSET              8U
+#define USBD_UAC_IT_DESC_CH_CFG_OFFSET              9U
+#define USBD_UAC_OT_DESC_TYPE_OFFSET                4U
+/* Audio Streaming */
+#define USBD_UAC_AS_IF_DESC_NUM_OFFSET              2U
+#define USBD_UAC_AS_IF_DESC_ALT_OFFSET              3U
+#define USBD_UAC_AS_IF_DESC_EP_OFFSET               4U
+#define USBD_UAC_AS_IF_DESC_CH_CNT_OFFSET           10U
+#define USBD_UAC_AS_IF_DESC_CH_OFFSET               11U
+#define USBD_UAC_AS_FORMAT_DESC_SLOT_SIZE_OFFSET    4U
+#define USBD_UAC_AS_FORMAT_DESC_BIT_CNT_OFFSET      5U
+#define USBD_UAC_AS_EP_DESC_MPS_OFFSET              4U
+
+/* AC IF header interface num */
+#define USBD_UAC_AC_IF_NUM                          2U
+/* AC feature uint descriptor length */
+#define USBD_UAC_AC_FU_HEAD_DESC_LEN(ch_cnt)        (USBD_UAC_LEN_FUNC_UNIT_DESC +  (ch_cnt))
+/* AC IF header descriptor length */
+#define USBD_UAC_AC_IF_HEAD_DESC_LEN(ch_cnt) \
+    (USBD_UAC_LEN_CTRL_IF_HEADER  + USBD_UAC_LEN_AC_IN_TTY_DESC + \
+    USBD_UAC_AC_FU_HEAD_DESC_LEN(ch_cnt) + USBD_UAC_LEN_AC_OUT_TTY_DESC)
+/* len of total Audio control interface */
+#define USBD_UAC_AC_IF_LEN(ch_cnt)                 (USB_LEN_IF_DESC + USBD_UAC_AC_IF_HEAD_DESC_LEN(ch_cnt))
+/* len of each Audio stream interface/altsetting (one EP) */
+#define USBD_UAC_AS_EIF_LEN                        (USB_LEN_IF_DESC + USBD_UAC_LEN_AS_IF_ALT_SET_DESC + USBD_UAC_LEN_AS_FRT_TYPE_ALT_SET_DESC \
+                                                   + USBD_UAC_LEN_EP_DESC + USBD_UAC_LEN_DATA_EP_DESC)
+
+/* len of total Audio stream interface */
+#define USBD_UAC_AS_TIF_LEN(alt_num) \
+    (USBD_UAC_AS_EIF_LEN * (alt_num - 1) + USB_LEN_IF_DESC)
+/* full speed AS alt setting num */
+#define USBD_UAC_FS_AS_ALT_SETTING_NUM              5U
+
+/* get channel config */
+#define USBD_UAC_GET_CH_CONFIG(ch_cnt) \
+    ((ch_cnt) == 2 ? 0x03 : \
+     (ch_cnt) == 4 ? 0x0F : \
+     (ch_cnt) == 6 ? 0x3F : \
+     (ch_cnt) == 8 ? 0xFF : \
+     (ch_cnt) == 16 ? 0xFFFF : 0x03)
+/* get ot type */
+#define USBD_UAC_GET_OT_TYPE(ch_cnt) \
+    ((ch_cnt) == 2 ? 0x0301 : \
+     (ch_cnt) == 4 ? 0x0304 : \
+     (ch_cnt) == 6 ? 0x0304 : \
+     (ch_cnt) == 8 ? 0x0307 : \
+     (ch_cnt) == 16 ? 0x0307 : 0x0301)
+/* input terminal */
+#define USBD_UAC_CH_CONFIG_TYPE_LOW(ch_cnt)         (USB_LOW_BYTE(USBD_UAC_GET_CH_CONFIG(ch_cnt)))
+#define USBD_UAC_CH_CONFIG_TYPE_HIGH(ch_cnt)        (USB_HIGH_BYTE(USBD_UAC_GET_CH_CONFIG(ch_cnt)))
+/* output terminal */
+#define USBD_UAC_OT_DESC_TYPE_LOW(ch_cnt)           (USB_LOW_BYTE(USBD_UAC_GET_OT_TYPE(ch_cnt)))
+#define USBD_UAC_OT_DESC_TYPE_HIGH(ch_cnt)          (USB_HIGH_BYTE(USBD_UAC_GET_OT_TYPE(ch_cnt)))
+
+/* calculate full speed MPS */
+#define USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, sampling_freq_hz) \
+    ((ch_cnt) * (byte_width) * ((sampling_freq_hz) / USBD_UAC_ONE_KHZ + 1U))
+/* check MPS */
+#define USBD_UAC_IS_FS_MPS_VALID(ch_cnt, byte_width, sampling_freq_hz) \
+    ((USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, sampling_freq_hz)) <= USBD_UAC_FS_ISOC_MPS)
+/* get full speed MPS, if MPS > limit, choose next lower sampling freq to calculate */
+#define USBD_UAC_GET_FS_MPS(ch_cnt, byte_width)  USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_48K)
+
+/* len of full speed total configuration descriptor buf */
+#define USBD_UAC_FS_CFG_DESC_BUF_LEN(ch_cnt) \
+    (USB_LEN_CFG_DESC + USBD_UAC_AC_IF_LEN(ch_cnt) + USBD_UAC_AS_TIF_LEN(USBD_UAC_FS_AS_ALT_SETTING_NUM))
+
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -97,16 +292,6 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 #endif
 	0x32,                              /* bMaxPower */
 
-	/* 4.6 Interface Association Descriptor */
-	/* IAD Descriptor */
-	USB_LEN_IAD_DESC,                  /* Size of this descriptor (byte_width) */
-	USBD_UAC_IA_DESCRIPTOR,            /* Interface Association Descriptor type */
-	0x00,                              /* First Index: Audio Control Interface Index - Headset (0) */
-	USBD_UAC_AC_IF_NUM,                /* Audio Control Interface, Audio Streaming Interfaces () */
-	USBD_UAC_IF_CLASS_AUDIO,           /* Audio Device Class  */
-	0x00,                              /* No subclass */
-	0x00,                              /* Audio Protocol IP version 2.00 */
-	0x00,                              /* Function string descriptor index (0) */
 
 	/* 4.7.1 Standard AC Interface Descriptor */
 	/* Interface 0 Descriptor */
@@ -1554,7 +1739,7 @@ u8 usbd_uac_config(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 flag)
 		usbd_uac_ep_buf_ctrl_init(pbuf_ctrl, (usbd_audio_cfg_t *)uac_cfg, cdev->dev->dev_speed);
 	}
 
-	return 0;
+	return HAL_OK;
 }
 
 /**

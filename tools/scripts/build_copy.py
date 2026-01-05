@@ -5,18 +5,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+import sys
 import shutil
 import argparse
 import json
 
-FILES_TO_COPY = ['manifest.json5', '../tools/scripts/build.py', '../tools/scripts/menuconfig.py', '../tools/scripts/monitor.py', '../tools/scripts/flash.py']
-
-def copy_files(file_list, target_dir):
-    for file in file_list:
-        if os.path.exists(file):
-            shutil.copy2(file, target_dir)
-        else:
-            print(f"Warning: {file} does not exist and will not be copied.")
+sdk_root = os.environ.get('AMEBA_SDK')
 
 def copy_or_append(src, dest_path):
     # Check if the destination path already exists
@@ -36,20 +30,28 @@ def copy_app_folder(app_name, target_dir, submodule_json_path):
     if os.path.exists(submodule_json_path):
         app_path = find_app_in_submodules(app_name, submodule_json_path)
     if not app_path:
-        example_base = '../component/example'
+        example_base = os.path.join(sdk_root, 'component/example')
         app_path = find_app_folder(app_name, example_base)
 
     if app_path:
         s = app_path
         d = os.path.join(target_dir, app_name)
+        if os.path.exists(d): shutil.rmtree(d)
         shutil.copytree(s, d)
         conf_file_path = os.path.join(d, 'prj.conf')
         if os.path.exists(conf_file_path):
+            f = os.path.join(target_dir, 'prj.conf')
+            if os.path.exists(f): os.remove(f)
             shutil.move(conf_file_path, target_dir)
 
         create_cmake_file(target_dir, app_name)
     else:
-        print(f"Warning: No folder named '{app_name}' found under {example_base} or submodules")
+        if os.path.exists(submodule_json_path):
+            print(f"\nError: Failed to find '{app_name}' folder, or it is not enabled.")
+            print(f"       Use '-a list-apps' option to check available names.")
+        else:
+            print(f"'{app_name}' folder was not found in '{example_base}'. Try to search submodules...")
+        sys.exit(1)
 
 def find_app_folder(app_name, source_base):
     for root, dirs, _ in os.walk(source_base):
@@ -70,18 +72,33 @@ def find_app_in_submodules(app_name, submodule_json_path):
 
     return None
 
-def create_json_file(target_dir, current_path):
-    config = {
-        'Paths': {
-            'gcc_project_dir': current_path,
-        }
-    }
+def create_empty_app(target_dir):
+    app_name = 'app_example'
+    create_cmake_file(target_dir, app_name)
 
-    json_path = os.path.join(target_dir, 'info.json')
+    app_dir = os.path.join(target_dir, app_name)
+    os.makedirs(app_dir)
+    src_file = "app_main.c"
+    file_path = os.path.join(app_dir, src_file)
+    c_code_content = """void app_example(void)
+{
 
-    with open(json_path, 'w') as jsonfile:
-        json.dump(config, jsonfile, indent=4)
+}
+    """
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(c_code_content)
 
+    cmake_file = os.path.join(app_dir, 'CMakeLists.txt')
+    cmake_content = """# Please refer to path/to/your/ameba_sdk/cmake/CMakeLists-template.cmake
+set(private_sources)
+ameba_list_append(private_sources app_main.c)
+ameba_add_internal_library(app_example
+    p_SOURCES
+	    ${private_sources}
+)
+    """
+    with open(cmake_file, 'w', encoding='utf-8') as f:
+        f.writelines(cmake_content)
 
 def create_cmake_file(target_dir, subdirectory_name=None):
     if subdirectory_name:
@@ -93,21 +110,23 @@ def create_cmake_file(target_dir, subdirectory_name=None):
         cmake_file.write(cmake_content)
 
 def creat_ameba_script(target_dir, ameba_path):
-    ameba_sh = f"source {ameba_path}/ameba.sh \r\n"
+    env_sh = 'env.sh'
+    env_bat = 'env.bat'
+    ameba_sh = f"source {ameba_path}/{env_sh} \r\n"
     ameba_sh = ameba_sh.replace("\\", "/")
-    with open(os.path.join(target_dir, 'ameba.sh'), 'w') as file:
+    with open(os.path.join(target_dir, env_sh), 'w') as file:
         file.write(ameba_sh)
 
-    ameba_bat = f"call {ameba_path}\\ameba.bat \r\n"
+    ameba_bat = f"call {ameba_path}\\{env_bat} \r\n"
     ameba_bat = ameba_bat.replace("/", "\\")
-    with open(os.path.join(target_dir, 'ameba.bat'), 'w') as file:
+    with open(os.path.join(target_dir, env_bat), 'w') as file:
         file.write(ameba_bat)
 
 def creat_Kconfig_file(target_dir):
     Kconfig_name = os.path.join(target_dir, 'Kconfig')
 
     with open(Kconfig_name, 'w') as file:
-        file.write("\r\n")
+        file.write("# Please refer to https://aiot.realmcu.com/en/latest/rtos/sdk/sdk_config/index.html\r\n")
 
     conf_name = os.path.join(target_dir, 'prj.conf')
     if not os.path.exists(conf_name):
@@ -139,26 +158,34 @@ def main():
 
     args = parser.parse_args()
 
-    if os.path.exists(args.target):
-        shutil.rmtree(args.target)
-
-    os.makedirs(args.target)
-
     current_path = os.getcwd()
-    copy_files(FILES_TO_COPY, args.target)
     if args.app:
         submodule_info_path = os.path.join(current_path,'build/submodule_info.json')
         if args.app == "list-apps":
             list_available_apps(submodule_info_path)
-            shutil.rmtree(args.target)
             return
-        else:
-            copy_app_folder(args.app, args.target, submodule_info_path)
+
+    args.target = os.path.abspath(args.target)
+    if args.target != os.getcwd():
+        if os.path.exists(args.target):
+            shutil.rmtree(args.target)
+
+        os.makedirs(args.target)
     else:
-        create_cmake_file(args.target)
+        for filename in os.listdir(args.target):
+            file_path = os.path.join(args.target, filename)
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+
+    if args.app:
+        copy_app_folder(args.app, args.target, submodule_info_path)
+    else:
+        create_empty_app(args.target)
+
     creat_Kconfig_file(args.target)
-    create_json_file(args.target, current_path)
-    creat_ameba_script(args.target, os.path.dirname(current_path))
+    creat_ameba_script(args.target, sdk_root)
 
 if __name__ == '__main__':
     main()

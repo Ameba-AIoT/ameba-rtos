@@ -38,6 +38,8 @@ Linux)
         RTK_TOOLCHAIN_DIR=/opt/rtk-toolchain
     fi
 
+    export AMEBA_SDK="$BASE_DIR"
+
 	VENV_CMD="python -m venv $BASE_DIR/.venv"
     ACTIVE_CMD="source $BASE_DIR/.venv/bin/activate"
     PREBUILTS_DIR=$RTK_TOOLCHAIN_DIR/prebuilts-linux-$PREBUILTS_VERSION
@@ -48,6 +50,7 @@ Linux)
 	alias build.py='python build.py'
 	alias flash.py='python flash.py'
 	alias monitor.py='python monitor.py'
+    alias ameba.py='python $BASE_DIR/ameba.py'
     ;;
 *_NT*)
 
@@ -56,6 +59,9 @@ Linux)
     else
         RTK_TOOLCHAIN_DIR=/c/rtk-toolchain
     fi
+
+    WIN_SDK_PATH=$(cygpath -w "$BASE_DIR")
+    export AMEBA_SDK="$WIN_SDK_PATH"
 
 	VENV_CMD="python -m virtualenv $BASE_DIR/.venv"
     ACTIVE_CMD="source $BASE_DIR/.venv/Scripts/activate"
@@ -68,10 +74,26 @@ Linux)
 	alias build.py='winpty python build.py'
 	alias flash.py='winpty python flash.py'
 	alias monitor.py='winpty python monitor.py'
+    alias ameba.py='winpty python $BASE_DIR/ameba.py'
     ;;
 esac
 
+# support press tab to auto complete cmd
+_ameba_py_completion() {
+    local cur suggestions
+    cur="${COMP_WORDS[COMP_CWORD]}"
 
+    suggestions=$(env \
+        AMEBAPY_COMPLETE=1 \
+        COMP_WORDS="${COMP_WORDS[*]}" \
+        COMP_CWORD="$COMP_CWORD" \
+        python $BASE_DIR/ameba.py
+    )
+    COMPREPLY=($(compgen -W "${suggestions}" -- "${cur}"))
+    return 0
+}
+
+complete -F _ameba_py_completion ameba.py
 
 
 function update_prebuilts
@@ -208,11 +230,12 @@ if [ "$(uname)" = "Linux" ]; then
     fi
 fi
 
-info1="First choose IC platform : cd [IC]_gcc_project"
-info2="Configure command: menuconfig.py"
-info3="Build command: build.py"
-info4="Flash command:  flash.py -p COMx"
-info5="Monitor command:  monitor.py -p COMx"
+info1="Setup complete. The Ameba SDK is now ready for use."
+info2="Go to the project root directory and run ameba.py"
+info3="Usage:      ameba.py [COMMAND] [ARGS]"
+info4="Build:      ameba.py build"
+info5="Select SoC: ameba.py soc"
+info6="Help:       ameba.py help"
 
 echo "================================================================================"
 echo "|  $info1"
@@ -220,4 +243,5 @@ echo "|  $info2"
 echo "|  $info3"
 echo "|  $info4"
 echo "|  $info5"
+echo "|  $info6"
 echo "================================================================================"

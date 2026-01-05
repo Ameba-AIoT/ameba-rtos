@@ -11,7 +11,7 @@ SRC_FILES = whc_host_app_api.c whc_host_app.c
 
 OBJ_FILES = $(SRC_FILES:.c=.o)
 
-TARGET = whc_slim_host_demo
+TARGET = whc_cust_path_demo
 
 all: $(TARGET)
 

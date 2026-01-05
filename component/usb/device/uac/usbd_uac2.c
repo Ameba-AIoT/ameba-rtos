@@ -7,11 +7,49 @@
 /* Includes ------------------------------------------------------------------ */
 
 /* uac 2.0 */
-#include "usbd_uac2.h"
+#include "usbd_uac.h"
 
 /* Private defines -----------------------------------------------------------*/
 
 /* Private types -------------------------------------------------------------*/
+typedef struct {
+	u8  bNrChannels;
+	u32 bmChannelConfig;
+	u8  iChannelNames;
+} __PACKED usbd_uac_ac_connect_ctrl_t;
+
+/**
+ * @brief Structure to define the volume range attribute.
+ * @details This structure holds the volume range attribute,
+ *          such as max, min and res.
+ */
+typedef struct {
+	u16 wNumSubRanges;
+	u16 wMIN;
+	u16 wMAX;
+	u16 wRES;
+} __PACKED usbd_uac_ctrl_range_layout2_struct;
+
+/**
+ * @brief Structure to define the frequency.
+ * @details This is a packed structure used for sending notifications like SERIAL_STATE
+ *          over the INTERRUPT IN endpoint.
+ */
+typedef struct {
+	u32 dMIN;
+	u32 dMAX;
+	u32 dRES;
+} usbd_uac_sub_range_t;
+
+/**
+ * @brief Structure to define the frequency.
+ * @details This is a packed structure used for sending notifications like SERIAL_STATE
+ *          over the INTERRUPT IN endpoint.
+ */
+typedef struct {
+	u16 wNumSubRanges;
+	usbd_uac_sub_range_t usbd_uac_sub_ranges[];
+} __PACKED usbd_uac_sampling_freq_ctrl_range_t;
 
 /* Private macros ------------------------------------------------------------*/
 #define UABD_UAC_DESC_DUMP (0)
@@ -23,8 +61,246 @@
 
 #define UABD_UAC_VOL_ERR_VAL       255
 
-/* Private function prototypes -----------------------------------------------*/
+#define USBD_UAC_HS_ISOC_MPS                        1024   /**< High speed ISOC IN & OUT maximum packet size */
+#define USBD_UAC_FS_ISOC_MPS                        1023   /**< Full speed ISOC IN & OUT maximum packet size */
 
+#define USBD_UAC_SELF_POWERED                       1U                    /**< Device is self-powered. */
+#define USBD_UAC_LANGID_STRING                      0x0409U               /**< Language ID for string descriptors (0x0409 = English). */
+#define USBD_UAC_MFG_STRING                         "Realtek"             /**< Manufacturer string. */
+#define USBD_UAC_PROD_HS_STRING                     "Realtek UAC2.0 (HS)" /**< Product string for High-Speed mode. */
+#define USBD_UAC_PROD_FS_STRING                     "Realtek UAC2.0 (FS)" /**< Product string for Full-Speed mode. */
+#define USBD_UAC_SN_STRING                          "1234567890"          /**< Serial number string. */
+
+/**
+ * Defines Audio trx buffer MAX count.
+ */
+#define USBD_UAC_RX_BUF_MAX_CNT                     10     /**< RX Ringbuf count */
+#define USBD_UAC_TX_BUF_MAX_CNT                     10     /**< TX Ringbuf count */
+
+#define USBD_UAC_CLASS_CODE                         0x01U
+#define USBD_UAC_SUBCLASS_AUDIOCONTROL              0x01U
+#define USBD_UAC_SUBCLASS_AUDIOSTREAMING            0x02U
+#define USBD_UAC_VERSION_02_00                      0x20U
+#define USBD_UAC_IF_CLASS_AUDIO                     0x01U
+
+/* 1ms 8 frame in high speed */
+#define USBD_UAC_HS_SOF_COUNT_PER_MS                8U
+#define USBD_UAC_ONE_KHZ                            1000U
+
+/**
+ * Defines UAC 2.0 device volume MAX & MIN.
+ */
+#define USBD_UAC_VOLUME_CTRL_MIN                    0xFF42  /**< UAC 2.0 device MAX volume db. */
+#define USBD_UAC_VOLUME_CTRL_MAX                    0x00BE  /**< UAC 2.0 device MIN volume db. */
+
+/**
+ * Audio sample frequency
+ */
+#define USBD_UAC_SAMPLING_FREQ_MAX_COUNT             4U
+
+/* limit */
+#define USBD_UAC_HS_SAMPLING_FREQ_COUNT               USBD_UAC_SAMPLING_FREQ_MAX_COUNT
+
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
+#if USBD_UAC_DEFAULT_CH_CNT == USBD_UAC_CH_CNT_4
+#define USBD_UAC_FS_SAMPLING_FREQ_COUNT               3U
+#elif USBD_UAC_DEFAULT_CH_CNT == USBD_UAC_CH_CNT_6 || USBD_UAC_DEFAULT_CH_CNT == USBD_UAC_CH_CNT_8
+#define USBD_UAC_FS_SAMPLING_FREQ_COUNT               2U
+#endif
+#else
+#define USBD_UAC_FS_SAMPLING_FREQ_COUNT               USBD_UAC_SAMPLING_FREQ_MAX_COUNT
+#endif
+
+/* bit_width */
+#define USBD_UAC_BIT_WIDTH(byte_width)              (8U * (byte_width))
+
+/**
+ * Audio descriptor information
+ */
+
+/**
+ * Defines UAC 2.0 class-specific request codes.
+ */
+#define USBD_UAC_LEN_CLK_SRC_DESC                   0x08U  /**<UAC Clock Source Unit Descriptor length. */
+#define USBD_UAC_LEN_AC_IN_TTY_DESC                 0x11U  /**<UAC Audio Control Input Terminal Descriptor length. */
+#define USBD_UAC_LEN_AC_OUT_TTY_DESC                0x0CU  /**<UAC Audio Control Output Terminal Descriptor length. */
+#define USBD_UAC_LEN_AS_IF_ALT_SET_DESC             0x10U  /**<UAC Audio Streaming Interface Descriptor length. */
+#define USBD_UAC_LEN_AS_FRT_TYPE_ALT_SET_DESC       0x06U  /**<UAC Audio Streaming Format Type Descriptor length. */
+#define USBD_UAC_LEN_DATA_EP_DESC                   0x08U  /**<UAC Audio Data Endpoint Descriptor length. */
+#define USBD_UAC_LEN_CTRL_IF_HEADER                 0x09U  /**<UAC Audio Control Interface Header Descriptor length. */
+#define USBD_UAC_LEN_FUNC_UNIT_DESC                 0x09U  /**<UAC Audio Control Feature Unit Descriptor length. */
+
+#define USBD_UAC_DESC_TYPE_AUDIO_CS_INTERFACE       0x24U  /**<UAC Audio Interface Descriptor Type. */
+#define USBD_UAC_CS_ENDPOINT_DESCRIPTOR             0x25U  /**<UAC Audio Data Endpoint Descriptor Type. */
+#define USBD_UAC_IA_DESCRIPTOR                      0x0BU  /**<UAC IAD Descriptor type. */
+
+/**
+ * Audio Class-Specific Audio Streaming Interface Descriptor Subtype Codes (UAC2.0 Spec Appendix A.10)
+ */
+#define USBD_UAC_AS_IF_DESC_SUBTYPE_AS_GENERAL      0x01  /**<UAC Audio Streaming Interface Descriptor SubType. */
+#define USBD_UAC_AS_IF_DESC_SUBTYPE_FORMAT_TYPE     0x02  /**<UAC Audio Format Type Descriptor SubType. */
+/* Audio Class-Specific Audio Streaming Endpoint Descriptor Subtype Codes (UAC2.0 Spec Appendix A.13) */
+#define USBD_UAC_AS_EP_DESC_SUBTYPE_EP_GENERAL      0x01  /**<UAC Audio Data Endpoint Descriptor SubType. */
+
+#define USBD_UAC_IF_IDX_AC_HEADSET                  0x00U  /**<UAC Audio Control Interface Index. */
+#define USBD_UAC_IF_IDX_AS_HEADSET_HEADPHONES       0x01U  /**<UAC Audio Streaming Headphone Interface Index. */
+#define USBD_UAC_IF_IDX_AS_HEADSET_MICROPHONE       0x02U  /**<UAC Audio Streaming Microphone Interface Index. */
+
+// Audio Function Category Codes (UAC2.0 Spec Appendix A.7)
+#define USBD_UAC_FUNC_CATEGORY_CODE_DESKTOP_UNDEFINED              0x00U  /**<UAC Audio Function Undefined type. */
+#define USBD_UAC_FUNC_CATEGORY_CODE_DESKTOP_SPEAKER                0x01U  /**<UAC Audio Function Speaker. */
+#define USBD_UAC_FUNC_CATEGORY_CODE_DESKTOP_HEADSET                0x04U  /**<UAC Audio Function Headset. */
+
+// Audio Class-Specific Audio Control Interface Descriptor Subtype Codes (UAC2.0 Spec Appendix A.9)
+#define USBD_UAC_AC_IF_DESC_SUBTYPE_UNDEFINED                      0x00U  /**<UAC Audio Function Headset. */
+#define USBD_UAC_AC_IF_DESC_SUBTYPE_HEADER                         0x01U  /**<UAC Audio Function Headset. */
+#define USBD_UAC_AC_IF_DESC_SUBTYPE_INPUT_TERMINAL                 0x02U  /**<UAC Audio Function Headset. */
+#define USBD_UAC_AC_IF_DESC_SUBTYPE_OUTPUT_TERMINAL                0x03U  /**<UAC Audio Function Headset. */
+#define USBD_UAC_AC_IF_DESC_SUBTYPE_FEATURE_UNIT                   0x06U  /**<UAC Audio Function Headset. */
+#define USBD_UAC_AC_IF_DESC_SUBTYPE_CLOCK_SOURCE                   0x0AU  /**<UAC Audio Function Headset. */
+
+/**
+ * Defines USB Audio Microphone entity id.
+ */
+#define USBD_UAC_CTRL_ENTITYID_CLOCK_HEADSET_MICROPHONE            0x12U /**< Define microphone clock id. */
+#define USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_HEADSET_MICROPHONE    0x02U /**< Define microphone input terminal id. */
+#define USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_FEATUREUNIT           0x08U /**< Define microphone feature unit id. */
+#define USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_HEADSET_MICROPHONE   0x10U /**< Define microphone output terminal id. */
+
+/**
+ * Defines USB Audio Headphone entity id.
+ */
+#define USBD_UAC_CTRL_ENTITYID_CLOCK_HEADSET_HEADPHONES            0x15U /**< Define headphone clock id. */
+#define USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_HEADSET_HEADPHONES    0x01U /**< Define headphone input terminal id. */
+#define USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_FEATUREUNIT          0x05U /**< Define headphone feature unit id. */
+#define USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_HEADSET_HEADPHONES   0x09U /**< Define headphone output terminal id. */
+
+// (UAC2.0 Spec Appendix A-14)
+#define USBD_UAC_CLASS_REQ_CODE_CUR                                0x01U /**< UAC Audio Class-Specific Request CUR code. */
+#define USBD_UAC_CLASS_REQ_CODE_RANGE                              0x02U /**< UAC Audio Class-Specific Request RANGE code. */
+// (UAC2.0 Spec Appendix A-17)
+#define USBD_UAC_CS_SAM_FREQ_CONTROL                               0x01U /**< UAC Audio Clock Source Sample Frequency. */
+#define USBD_UAC_CS_CLK_VALID_CONTROL                              0x02U /**< UAC Audio Clock Source Clock Valid Control. */
+// (UAC2.0 Spec Appendix A-20)
+#define USBD_UAC_TE_CONNECTOR_CONTROL                              0x02U /**< UAC Audio Terminal Control Selectors CONNECTOR. */
+
+/*! @brief Commands for USB device AUDIO control feature unit control selector */
+#define USBD_UAC_CTRL_FU_MUTE_CONTROL_SELECTOR                     0x01U /**< UAC Feature Unit Mute Control */
+#define USBD_UAC_CTRL_FU_VOLUME_CONTROL_SELECTOR                   0x02U /**< UAC Feature Unit Volume Control */
+#define USBD_UAC_CTRL_FU_BASS_CONTROL_SELECTOR                     0x03U
+#define USBD_UAC_CTRL_FU_MID_CONTROL_SELECTOR                      0x04U
+#define USBD_UAC_CTRL_FU_TREBLE_CONTROL_SELECTOR                   0x05U
+#define USBD_UAC_CTRL_FU_GRAPHIC_EQUALIZER_CONTROL_SELECTOR        0x06U
+#define USBD_UAC_CTRL_FU_AUTOMATIC_GAIN_CONTROL_SELECTOR           0x07U
+#define USBD_UAC_CTRL_FU_DELAY_CONTROL_SELECTOR                    0x08U
+#define USBD_UAC_CTRL_FU_BASS_BOOST_CONTROL_SELECTOR               0x09U
+#define USBD_UAC_CTRL_FU_LOUDNESS_CONTROL_SELECTOR                 0x0AU
+#define USBD_UAC_CTRL_FU_INPUT_GAIN_CONTROL_SELECTOR               0x0BU
+#define USBD_UAC_CTRL_FU_INPUT_GAIN_PAD_CONTROL_SELECTOR           0x0CU
+#define USBD_UAC_CTRL_FU_PHASE_INVERTER_CONTROL_SELECTOR           0x0DU
+#define USBD_UAC_CTRL_FU_UNDERFLOW_CONTROL_SELECTOR                0x0EU
+#define USBD_UAC_CTRL_FU_OVERFLOW_CONTROL_SELECTOR                 0x0FU
+#define USBD_UAC_CTRL_FU_LATENCY_CONTROL_SELECTOR                  0x10U
+
+/* AC IF header interface num */
+#define USBD_UAC_AC_IF_NUM                          2U
+/* AC feature uint descriptor length */
+#define USBD_UAC_AC_FU_HEAD_DESC_LEN(ch_cnt)        (USBD_UAC_LEN_FUNC_UNIT_DESC + 1 + 4 * (ch_cnt))
+/* AC IF header descriptor length */
+#define USBD_UAC_AC_IF_HEAD_DESC_LEN(ch_cnt)         (USBD_UAC_LEN_CTRL_IF_HEADER + USBD_UAC_LEN_CLK_SRC_DESC + USBD_UAC_LEN_AC_IN_TTY_DESC + \
+										    			USBD_UAC_AC_FU_HEAD_DESC_LEN(ch_cnt) + USBD_UAC_LEN_AC_OUT_TTY_DESC)
+/* len of total Audio control interface */
+#define USBD_UAC_AC_IF_LEN(ch_cnt)                 (USB_LEN_IF_DESC + USBD_UAC_AC_IF_HEAD_DESC_LEN(ch_cnt))
+/* len of each Audio stream interface/altsetting (one EP) */
+#define USBD_UAC_AS_EIF_LEN                        (USB_LEN_IF_DESC + USBD_UAC_LEN_AS_IF_ALT_SET_DESC + USBD_UAC_LEN_AS_FRT_TYPE_ALT_SET_DESC \
+                                                   + USB_LEN_EP_DESC + USBD_UAC_LEN_DATA_EP_DESC)
+
+/* len of total Audio stream interface */
+#define USBD_UAC_AS_TIF_LEN(alt_num)               (USBD_UAC_AS_EIF_LEN * (alt_num - 1) + USB_LEN_IF_DESC)
+
+/* full speed AS alt setting num */
+#define USBD_UAC_FS_AS_ALT_SETTING_NUM              5U
+/* full speed AS alt setting num */
+#define USBD_UAC_HS_AS_ALT_SETTING_NUM              5U
+
+/**
+ * High Speed
+ */
+/* calculate high speed MPS */
+#define USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, sampling_freq_hz) \
+  ((ch_cnt) * (byte_width) * ((sampling_freq_hz) / USBD_UAC_ONE_KHZ / USBD_UAC_HS_SOF_COUNT_PER_MS + 1U))
+/* check MPS */
+#define USBD_UAC_IS_HS_MPS_VALID(ch_cnt, byte_width, sampling_freq_hz) \
+    ((USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, sampling_freq_hz)) <= USBD_UAC_HS_ISOC_MPS)
+/* get high speed MPS, if MPS > limit, choose next lower sampling_freq to calculate */
+#define USBD_UAC_GET_HS_MPS(ch_cnt, byte_width) \
+    (USBD_UAC_IS_HS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_192K) ? \
+    USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_192K) : \
+    (USBD_UAC_IS_HS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_96K) ? \
+    USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_96K) : \
+    (USBD_UAC_IS_HS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_48K) ? \
+    USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_48K) : \
+    (USBD_UAC_IS_HS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_44K) ? \
+    USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_44K) : 0))))
+
+/* len of high speed total configuration descriptor buf */
+#define USBD_UAC_HS_CFG_DESC_BUF_LEN(ch_cnt) \
+    (USB_LEN_CFG_DESC + USB_LEN_IAD_DESC  + USBD_UAC_AC_IF_LEN(ch_cnt) + USBD_UAC_AS_TIF_LEN(USBD_UAC_HS_AS_ALT_SETTING_NUM))
+
+/*
+*	Full Speed
+*/
+/* calculate full speed MPS */
+#define USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, sampling_freq_hz) \
+    ((ch_cnt) * (byte_width) * ((sampling_freq_hz) / USBD_UAC_ONE_KHZ + 1U))
+/* check MPS */
+#define USBD_UAC_IS_FS_MPS_VALID(ch_cnt, byte_width, sampling_freq_hz) \
+    ((USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, sampling_freq_hz)) <= USBD_UAC_FS_ISOC_MPS)
+/* get full speed MPS, if MPS > limit, choose next lower sampling freq to calculate */
+#define USBD_UAC_GET_FS_MPS(ch_cnt, byte_width) \
+    (USBD_UAC_IS_FS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_192K) ? \
+    USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_192K) : \
+    (USBD_UAC_IS_FS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_96K) ? \
+    USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_96K) : \
+    (USBD_UAC_IS_FS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_48K) ? \
+    USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_48K) : \
+    (USBD_UAC_IS_FS_MPS_VALID(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_44K) ? \
+    USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, USBD_UAC_SAMPLING_FREQ_44K) : 0))))
+
+/* len of full speed total configuration descriptor buf */
+#define USBD_UAC_FS_CFG_DESC_BUF_LEN(ch_cnt) \
+    (USB_LEN_CFG_DESC + USB_LEN_IAD_DESC  + USBD_UAC_AC_IF_LEN(ch_cnt) + USBD_UAC_AS_TIF_LEN(USBD_UAC_FS_AS_ALT_SETTING_NUM))
+
+/* UAC channel config */
+#define USBD_UAC_GET_CH_CONFIG(ch_cnt) \
+    ((ch_cnt) == 2 ? 0x03 : \
+     (ch_cnt) == 4 ? 0x0F : \
+     (ch_cnt) == 6 ? 0x3F : \
+     (ch_cnt) == 8 ? 0xFF : \
+     (ch_cnt) == 16 ? 0xFFFF : 0x03)
+
+/* UAC terminal type */
+#define USBD_UAC_GET_OT_TYPE(ch_cnt) \
+    ((ch_cnt) == 2 ? 0x0301 : \
+     (ch_cnt) == 4 ? 0x0304 : \
+     (ch_cnt) == 6 ? 0x0304 : \
+     (ch_cnt) == 8 ? 0x0307 : \
+     (ch_cnt) == 16 ? 0x0307 : 0x0301)
+/* input terminal */
+#define USBD_UAC_CH_CONFIG_TYPE_LOW(ch_cnt)         (USB_LOW_BYTE(USBD_UAC_GET_CH_CONFIG(ch_cnt)))
+#define USBD_UAC_CH_CONFIG_TYPE_HIGH(ch_cnt)        (USB_HIGH_BYTE(USBD_UAC_GET_CH_CONFIG(ch_cnt)))
+/* output terminal */
+#define USBD_UAC_OT_DESC_TYPE_LOW(ch_cnt)           (USB_LOW_BYTE(USBD_UAC_GET_OT_TYPE(ch_cnt)))
+#define USBD_UAC_OT_DESC_TYPE_HIGH(ch_cnt)          (USB_HIGH_BYTE(USBD_UAC_GET_OT_TYPE(ch_cnt)))
+
+#define USBD_UAC_INIT_SUB_RANGE(sub_range, min_sampling_freq, max_sampling_freq, res) \
+    do {                                               \
+        (sub_range).dMIN = (min_sampling_freq);        \
+        (sub_range).dMAX = (max_sampling_freq);        \
+        (sub_range).dRES = (res);                       \
+    } while(0)
+
+/* Private function prototypes -----------------------------------------------*/
 static int usbd_uac_set_config(usb_dev_t *dev, u8 config);
 static int usbd_uac_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req);
@@ -313,9 +589,9 @@ static const u8 usbd_uac_hs_config_desc[USBD_UAC_HS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	0x00,
 	0x00,
 	0x00,                                                    /* The Audio Data Format that can be Used to communicate with this interface, D0:PCM */
-	USBD_UAC_DEFAULT_CH_CNT,                                       /* Number of physical channels in the AS Interface audio channel cluster */
-	USBD_UAC_CH_CONFIG_TYPE_LOW(USBD_UAC_DEFAULT_CH_CNT),
-	USBD_UAC_CH_CONFIG_TYPE_HIGH(USBD_UAC_DEFAULT_CH_CNT),
+	USBD_UAC_CH_CNT_2,                                       /* Number of physical channels in the AS Interface audio channel cluster */
+	USBD_UAC_CH_CONFIG_TYPE_LOW(USBD_UAC_CH_CNT_2),
+	USBD_UAC_CH_CONFIG_TYPE_HIGH(USBD_UAC_CH_CNT_2),
 	0x00,
 	0x00,                                                    /* Describes the spatial location of the logical channels: */
 	0x00,                                                    /* Index of a string descriptor, describing the name of the first physical channel   */
@@ -338,8 +614,8 @@ static const u8 usbd_uac_hs_config_desc[USBD_UAC_HS_CFG_DESC_BUF_LEN(USBD_UAC_DE
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
                                                                 Usage: Data EP  */
-	USB_LOW_BYTE(USBD_UAC_GET_HS_MPS(USBD_UAC_DEFAULT_CH_CNT, USBD_UAC_BYTE_WIDTH_2)),   /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_UAC_GET_HS_MPS(USBD_UAC_DEFAULT_CH_CNT, USBD_UAC_BYTE_WIDTH_2)),
+	USB_LOW_BYTE(USBD_UAC_GET_HS_MPS(USBD_UAC_CH_CNT_2, USBD_UAC_DEFAULT_BYTE_WIDTH)),   /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_UAC_GET_HS_MPS(USBD_UAC_CH_CNT_2, USBD_UAC_DEFAULT_BYTE_WIDTH)),
 	0x01,                                                    /* bInterval */
 
 
@@ -395,8 +671,8 @@ static const u8 usbd_uac_hs_config_desc[USBD_UAC_HS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	USBD_UAC_DESC_TYPE_AUDIO_CS_INTERFACE,                   /* CS_INTERFACE Descriptor Type   */
 	USBD_UAC_AS_IF_DESC_SUBTYPE_FORMAT_TYPE,                 /* FORMAT_TYPE descriptor subtype   */
 	0x01,                                                    /* The format type AudioStreaming interfae using is FORMAT_TYPE_I (0x01)   */
-	USBD_UAC_BYTE_WIDTH_2,                                   /* The number of byte_width occupied by one audio subslot. Can be 1, 2, 3 or 4.   */
-	USBD_UAC_BIT_WIDTH(USBD_UAC_BYTE_WIDTH_2),               /* The number of effectively used bits from the available bits in an audio subslot   */
+	USBD_UAC_DEFAULT_BYTE_WIDTH,                             /* The number of byte_width occupied by one audio subslot. Can be 1, 2, 3 or 4.   */
+	USBD_UAC_BIT_WIDTH(USBD_UAC_DEFAULT_BYTE_WIDTH),         /* The number of effectively used bits from the available bits in an audio subslot   */
 
 
 	/* 4.10.1.1 Standard AS Isochronous Audio Data Endpoint Descriptor */
@@ -408,8 +684,8 @@ static const u8 usbd_uac_hs_config_desc[USBD_UAC_HS_CFG_DESC_BUF_LEN(USBD_UAC_DE
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
                                                                 Usage: Data EP  */
-	USB_LOW_BYTE(USBD_UAC_GET_HS_MPS(USBD_UAC_CH_CNT_4, USBD_UAC_BYTE_WIDTH_2)),    /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_UAC_GET_HS_MPS(USBD_UAC_CH_CNT_4, USBD_UAC_BYTE_WIDTH_2)),
+	USB_LOW_BYTE(USBD_UAC_GET_HS_MPS(USBD_UAC_CH_CNT_4, USBD_UAC_DEFAULT_BYTE_WIDTH)),    /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_UAC_GET_HS_MPS(USBD_UAC_CH_CNT_4, USBD_UAC_DEFAULT_BYTE_WIDTH)),
 	0x01,                                                    /* bInterval */
 
 
@@ -466,8 +742,8 @@ static const u8 usbd_uac_hs_config_desc[USBD_UAC_HS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	USBD_UAC_DESC_TYPE_AUDIO_CS_INTERFACE,                   /* CS_INTERFACE Descriptor Type   */
 	USBD_UAC_AS_IF_DESC_SUBTYPE_FORMAT_TYPE,                 /* FORMAT_TYPE descriptor subtype   */
 	0x01,                                                    /* The format type AudioStreaming interfae using is FORMAT_TYPE_I (0x01)   */
-	USBD_UAC_BYTE_WIDTH_2,                                   /* The number of byte_width occupied by one audio subslot. Can be 1, 2, 3 or 4.   */
-	USBD_UAC_BIT_WIDTH(USBD_UAC_BYTE_WIDTH_2),               /* The number of effectively used bits from the available bits in an audio subslot   */
+	USBD_UAC_DEFAULT_BYTE_WIDTH,                             /* The number of byte_width occupied by one audio subslot. Can be 1, 2, 3 or 4.   */
+	USBD_UAC_BIT_WIDTH(USBD_UAC_DEFAULT_BYTE_WIDTH),         /* The number of effectively used bits from the available bits in an audio subslot   */
 
 
 	/* 4.10.1.1 Standard AS Isochronous Audio Data Endpoint Descriptor */
@@ -479,8 +755,8 @@ static const u8 usbd_uac_hs_config_desc[USBD_UAC_HS_CFG_DESC_BUF_LEN(USBD_UAC_DE
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
                                                                 Usage: Data EP  */
-	USB_LOW_BYTE(USBD_UAC_GET_HS_MPS(USBD_UAC_CH_CNT_6, USBD_UAC_BYTE_WIDTH_2)),    /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_UAC_GET_HS_MPS(USBD_UAC_CH_CNT_6, USBD_UAC_BYTE_WIDTH_2)),
+	USB_LOW_BYTE(USBD_UAC_GET_HS_MPS(USBD_UAC_CH_CNT_6, USBD_UAC_DEFAULT_BYTE_WIDTH)),    /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_UAC_GET_HS_MPS(USBD_UAC_CH_CNT_6, USBD_UAC_DEFAULT_BYTE_WIDTH)),
 	0x01,                                                    /* bInterval */
 
 
@@ -537,8 +813,8 @@ static const u8 usbd_uac_hs_config_desc[USBD_UAC_HS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	USBD_UAC_DESC_TYPE_AUDIO_CS_INTERFACE,                   /* CS_INTERFACE Descriptor Type   */
 	USBD_UAC_AS_IF_DESC_SUBTYPE_FORMAT_TYPE,                 /* FORMAT_TYPE descriptor subtype   */
 	0x01,                                                    /* The format type AudioStreaming interfae using is FORMAT_TYPE_I (0x01)   */
-	USBD_UAC_BYTE_WIDTH_2,                                   /* The number of byte_width occupied by one audio subslot. Can be 1, 2, 3 or 4.   */
-	USBD_UAC_BIT_WIDTH(USBD_UAC_BYTE_WIDTH_2),               /* The number of effectively used bits from the available bits in an audio subslot   */
+	USBD_UAC_DEFAULT_BYTE_WIDTH,                             /* The number of byte_width occupied by one audio subslot. Can be 1, 2, 3 or 4.   */
+	USBD_UAC_BIT_WIDTH(USBD_UAC_DEFAULT_BYTE_WIDTH),         /* The number of effectively used bits from the available bits in an audio subslot   */
 
 
 	/* 4.10.1.1 Standard AS Isochronous Audio Data Endpoint Descriptor */
@@ -550,8 +826,8 @@ static const u8 usbd_uac_hs_config_desc[USBD_UAC_HS_CFG_DESC_BUF_LEN(USBD_UAC_DE
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
                                                                 Usage: Data EP  */
-	USB_LOW_BYTE(USBD_UAC_GET_HS_MPS(USBD_UAC_CH_CNT_8, USBD_UAC_BYTE_WIDTH_2)),    /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_UAC_GET_HS_MPS(USBD_UAC_CH_CNT_8, USBD_UAC_BYTE_WIDTH_2)),
+	USB_LOW_BYTE(USBD_UAC_GET_HS_MPS(USBD_UAC_CH_CNT_8, USBD_UAC_DEFAULT_BYTE_WIDTH)),    /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_UAC_GET_HS_MPS(USBD_UAC_CH_CNT_8, USBD_UAC_DEFAULT_BYTE_WIDTH)),
 	0x01,                                                    /* bInterval */
 
 
@@ -808,10 +1084,9 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
                                                                 Usage: Data EP  */
-	USB_LOW_BYTE(USBD_UAC_GET_FS_MPS(USBD_UAC_CH_CNT_2, USBD_UAC_BYTE_WIDTH_2)),   /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_UAC_GET_FS_MPS(USBD_UAC_CH_CNT_2, USBD_UAC_BYTE_WIDTH_2)),
+	USB_LOW_BYTE(USBD_UAC_GET_FS_MPS(USBD_UAC_CH_CNT_2, USBD_UAC_DEFAULT_BYTE_WIDTH)),   /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_UAC_GET_FS_MPS(USBD_UAC_CH_CNT_2, USBD_UAC_DEFAULT_BYTE_WIDTH)),
 	0x01,                                                    /* bInterval */
-
 
 	/* 4.10.1.2 Class-Specific AS Isochronous Audio Data Endpoint Descriptor */
 	/* Headphone Audio Data Endpoint Descriptor */
@@ -851,7 +1126,7 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	0x00,
 	0x00,
 	0x00,                                                    /* The Audio Data Format that can be Used to communicate with this interface, D0:PCM */
-	USBD_UAC_CH_CNT_4,                                 /* Number of physical channels in the AS Interface audio channel cluster */
+	USBD_UAC_CH_CNT_4,                                       /* Number of physical channels in the AS Interface audio channel cluster */
 	USBD_UAC_CH_CONFIG_TYPE_LOW(USBD_UAC_CH_CNT_4),
 	USBD_UAC_CH_CONFIG_TYPE_HIGH(USBD_UAC_CH_CNT_4),
 	0x00,
@@ -865,8 +1140,8 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	USBD_UAC_DESC_TYPE_AUDIO_CS_INTERFACE,                   /* CS_INTERFACE Descriptor Type   */
 	USBD_UAC_AS_IF_DESC_SUBTYPE_FORMAT_TYPE,                 /* FORMAT_TYPE descriptor subtype   */
 	0x01,                                                    /* The format type AudioStreaming interfae using is FORMAT_TYPE_I (0x01)   */
-	USBD_UAC_BYTE_WIDTH_2,                                   /* The number of byte_width occupied by one audio subslot. Can be 1, 2, 3 or 4.   */
-	USBD_UAC_BIT_WIDTH(USBD_UAC_BYTE_WIDTH_2),               /* The number of effectively used bits from the available bits in an audio subslot   */
+	USBD_UAC_DEFAULT_BYTE_WIDTH,                             /* The number of byte_width occupied by one audio subslot. Can be 1, 2, 3 or 4.   */
+	USBD_UAC_BIT_WIDTH(USBD_UAC_DEFAULT_BYTE_WIDTH),         /* The number of effectively used bits from the available bits in an audio subslot   */
 
 
 	/* 4.10.1.1 Standard AS Isochronous Audio Data Endpoint Descriptor */
@@ -878,8 +1153,8 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
                                                                 Usage: Data EP  */
-	USB_LOW_BYTE(USBD_UAC_GET_FS_MPS(USBD_UAC_CH_CNT_4, USBD_UAC_BYTE_WIDTH_2)),    /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_UAC_GET_FS_MPS(USBD_UAC_CH_CNT_4, USBD_UAC_BYTE_WIDTH_2)),
+	USB_LOW_BYTE(USBD_UAC_GET_FS_MPS(USBD_UAC_CH_CNT_4, USBD_UAC_DEFAULT_BYTE_WIDTH)),    /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_UAC_GET_FS_MPS(USBD_UAC_CH_CNT_4, USBD_UAC_DEFAULT_BYTE_WIDTH)),
 	0x01,                                                    /* bInterval */
 
 
@@ -913,16 +1188,16 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	USBD_UAC_LEN_AS_IF_ALT_SET_DESC,                         /* Size of the descriptor, in byte_width   */
 	USBD_UAC_DESC_TYPE_AUDIO_CS_INTERFACE,                   /* CS_INTERFACE Descriptor Type  */
 	USBD_UAC_AS_IF_DESC_SUBTYPE_AS_GENERAL,                  /* AS_GENERAL descriptor subtype   */
-	0x1, 													 /* The Terminal ID of the terminal to which this interface is connected */
-	0xF,                                                    /* bmControls : D1..0: Active Alternate Setting Control is not present
+	0x1,                                                     /* The Terminal ID of the terminal to which this interface is connected */
+	0xF,                                                     /* bmControls : D1..0: Active Alternate Setting Control is not present
                                                                 D3..2: Valid Alternate Settings Control is not present
                                                                 D7..4: Reserved, should set to 0   */
-	0x01,                                                    /* The format type AudioStreaming interfae using is FORMAT_TYPE_I (0x01)   */
+	0x01,                                                     /* The format type AudioStreaming interfae using is FORMAT_TYPE_I (0x01)   */
 	0x01,
 	0x00,
 	0x00,
 	0x00,                                                    /* The Audio Data Format that can be Used to communicate with this interface, D0:PCM */
-	USBD_UAC_CH_CNT_6,                                 /* Number of physical channels in the AS Interface audio channel cluster */
+	USBD_UAC_CH_CNT_6,                                       /* Number of physical channels in the AS Interface audio channel cluster */
 	USBD_UAC_CH_CONFIG_TYPE_LOW(USBD_UAC_CH_CNT_6),
 	USBD_UAC_CH_CONFIG_TYPE_HIGH(USBD_UAC_CH_CNT_6),
 	0x00,
@@ -993,7 +1268,7 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	0x00,
 	0x00,
 	0x00,                                                    /* The Audio Data Format that can be Used to communicate with this interface, D0:PCM */
-	USBD_UAC_CH_CNT_8,                                 /* Number of physical channels in the AS Interface audio channel cluster */
+	USBD_UAC_CH_CNT_8,                                       /* Number of physical channels in the AS Interface audio channel cluster */
 	USBD_UAC_CH_CONFIG_TYPE_LOW(USBD_UAC_CH_CNT_8),
 	USBD_UAC_CH_CONFIG_TYPE_HIGH(USBD_UAC_CH_CNT_8),
 	0x00,
@@ -1007,8 +1282,8 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	USBD_UAC_DESC_TYPE_AUDIO_CS_INTERFACE,                   /* CS_INTERFACE Descriptor Type   */
 	USBD_UAC_AS_IF_DESC_SUBTYPE_FORMAT_TYPE,                 /* FORMAT_TYPE descriptor subtype   */
 	0x01,                                                    /* The format type AudioStreaming interfae using is FORMAT_TYPE_I (0x01)   */
-	USBD_UAC_BYTE_WIDTH_2,                                   /* The number of byte_width occupied by one audio subslot. Can be 1, 2, 3 or 4.   */
-	USBD_UAC_BIT_WIDTH(USBD_UAC_BYTE_WIDTH_2),               /* The number of effectively used bits from the available bits in an audio subslot   */
+	USBD_UAC_DEFAULT_BYTE_WIDTH,                             /* The number of byte_width occupied by one audio subslot. Can be 1, 2, 3 or 4.   */
+	USBD_UAC_BIT_WIDTH(USBD_UAC_DEFAULT_BYTE_WIDTH),         /* The number of effectively used bits from the available bits in an audio subslot   */
 
 
 	/* 4.10.1.1 Standard AS Isochronous Audio Data Endpoint Descriptor */
@@ -1020,8 +1295,8 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
                                                                 Usage: Data EP  */
-	USB_LOW_BYTE(USBD_UAC_GET_FS_MPS(USBD_UAC_CH_CNT_8, USBD_UAC_BYTE_WIDTH_2)),    /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_UAC_GET_FS_MPS(USBD_UAC_CH_CNT_8, USBD_UAC_BYTE_WIDTH_2)),
+	USB_LOW_BYTE(USBD_UAC_GET_FS_MPS(USBD_UAC_CH_CNT_8, USBD_UAC_DEFAULT_BYTE_WIDTH)),    /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_UAC_GET_FS_MPS(USBD_UAC_CH_CNT_8, USBD_UAC_DEFAULT_BYTE_WIDTH)),
 	0x01,                                                    /* bInterval */
 
 
@@ -2119,7 +2394,7 @@ static void usbd_uac_status_dump_thread(void *param)
 				 cdev->isoc_rx_cnt,
 				 cdev->isoc_timeout_cnt,
 				 cdev->isoc_overwrite_cnt,
-				 usbd_uac_get_read_buf_cnt(),
+				 usbd_uac_get_read_frame_cnt(),
 				 cdev->copy_data_len,
 				 cdev->uac_isoc_out.next_xfer
 				);
@@ -2321,7 +2596,7 @@ int usbd_uac_receive_data(void)
 	if (usbd_uac_ep_enable(&(cdev->cb->out))) {
 		pbuf_ctrl->next_xfer = 1;
 		p_buf = &(pbuf_ctrl->buf_array[pbuf_ctrl->isoc_write_idx]);
-		// RTK_LOGS(TAG, RTK_LOG_ERROR, "First trigger sema %d cnt %d-%d \n", pdata_ctrl->read_wait_sema,usbd_uac_get_read_buf_cnt(),pbuf_ctrl->isoc_mps);
+		// RTK_LOGS(TAG, RTK_LOG_ERROR, "First trigger sema %d cnt %d-%d \n", pdata_ctrl->read_wait_sema,usbd_uac_get_read_frame_cnt(),pbuf_ctrl->isoc_mps);
 		ep_isoc_out->xfer_buf = p_buf->buf_raw;
 		ep_isoc_out->xfer_len = pbuf_ctrl->isoc_mps;
 		usbd_ep_receive(dev, ep_isoc_out);
@@ -2359,7 +2634,7 @@ u8 usbd_uac_config(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 flag)
 		usbd_uac_ep_buf_ctrl_init(pbuf_ctrl, (usbd_audio_cfg_t *)uac_cfg, cdev->dev->dev_speed);
 	}
 
-	return 0;
+	return HAL_OK;
 }
 
 /**

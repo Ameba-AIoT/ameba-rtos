@@ -4,9 +4,9 @@
 #include "gpio_api.h"
 #include "spi_api.h"
 #include "spi_ex_api.h"
-#include "vfs_secondary_nor_flash.h"
+#include "vfs_second_nor_flash.h"
 
-static const char *TAG = "SECONDARY-FLASH";
+static const char *TAG = "SECOND-FLASH";
 
 static rtos_sema_t xTxSemaphore = NULL;
 static rtos_sema_t xRxSemaphore = NULL;
@@ -16,10 +16,10 @@ static spi_t spi_master;
 static volatile int MasterTxDone;
 static volatile int MasterRxDone;
 
-volatile int secondary_flash_init_flag = 0;
+volatile int second_flash_init_flag = 0;
 flash_model_t current_flash_model = {0};
 
-void secondary_flash_tr_done_callback(u32 id, SpiIrq event)
+void second_flash_tr_done_callback(u32 id, SpiIrq event)
 {
 	(void) id;
 	switch (event) {
@@ -34,7 +34,7 @@ void secondary_flash_tr_done_callback(u32 id, SpiIrq event)
 	}
 }
 
-void secondary_flash_wait_idle(void)
+void second_flash_wait_idle(void)
 {
 	int count = 0;
 	while (spi_busy(&spi_master)) {
@@ -53,14 +53,14 @@ void secondary_flash_wait_idle(void)
 ** rx_buffer：buffer for reading data
 			  Notes: The first four bytes are the dummy bytes of the command, and the data starts from the fifth byte
 */
-int32_t secondary_flash_read_stream(uint32_t address, uint32_t length, char *rx_buffer)
+int32_t second_flash_read_stream(uint32_t address, uint32_t length, char *rx_buffer)
 {
-	int32_t ret = 1;
+	int32_t ret = 0;
 	char *cmd = NULL;
 	char *temp = NULL;
 	uint32_t total_len = length + CMD_LENGTH_FOUR;
 
-	secondary_flash_wait_idle();
+	second_flash_wait_idle();
 	rtos_mutex_take(device_lock, RTOS_SEMA_MAX_COUNT);
 
 	spi_flush_rx_fifo(&spi_master);
@@ -110,14 +110,14 @@ int32_t secondary_flash_read_stream(uint32_t address, uint32_t length, char *rx_
 ** rx_buffer：buffer for reading data
 			  Notes: The first five bytes are the dummy bytes of the command, and the data starts from the sixth byte
 */
-int32_t secondary_flash_fast_read_stream(uint32_t address, uint32_t length, char *rx_buffer)
+int32_t second_flash_fast_read_stream(uint32_t address, uint32_t length, char *rx_buffer)
 {
 	int32_t ret = 0;
 	char *cmd = NULL;
 	char *temp = NULL;
 	uint32_t total_len = length + CMD_LENGTH_FIVE;
 
-	secondary_flash_wait_idle();
+	second_flash_wait_idle();
 	rtos_mutex_take(device_lock, RTOS_SEMA_MAX_COUNT);
 
 	// CACHE_LINE_SIZE align
@@ -164,14 +164,14 @@ int32_t secondary_flash_fast_read_stream(uint32_t address, uint32_t length, char
 /* Master mode erase sector
 ** address: start address of erasing
 */
-int32_t secondary_flash_erase_sector(uint32_t address)
+int32_t second_flash_erase_sector(uint32_t address)
 {
 	int32_t ret = 0;
 	char *status = NULL;
 	char *cmd = NULL;
 	int count = 0;
 
-	secondary_flash_wait_idle();
+	second_flash_wait_idle();
 	rtos_mutex_take(device_lock, RTOS_SEMA_MAX_COUNT);
 
 	cmd = (char *)rtos_mem_zmalloc(CACHE_LINE_SIZE);
@@ -199,7 +199,7 @@ int32_t secondary_flash_erase_sector(uint32_t address)
 	cmd[0] = CMD_READ_STATUS;
 	do {
 		spi_flush_rx_fifo(&spi_master);
-		secondary_flash_wait_idle();
+		second_flash_wait_idle();
 		spi_master_write_read_stream_dma(&spi_master, cmd, status, CACHE_LINE_SIZE);
 
 		rtos_sema_take(xTxSemaphore, RTOS_SEMA_MAX_COUNT);
@@ -226,7 +226,7 @@ int32_t secondary_flash_erase_sector(uint32_t address)
 	count = 0;
 	do {
 		spi_flush_rx_fifo(&spi_master);
-		secondary_flash_wait_idle();
+		second_flash_wait_idle();
 		spi_master_write_read_stream_dma(&spi_master, cmd, status, CACHE_LINE_SIZE);
 
 		rtos_sema_take(xTxSemaphore, RTOS_SEMA_MAX_COUNT);
@@ -248,7 +248,7 @@ int32_t secondary_flash_erase_sector(uint32_t address)
 ** length：length of data
 ** tx_buffer：data to be written
 */
-int32_t secondary_flash_write_stream(uint32_t address, uint32_t length, char *tx_buffer)
+int32_t second_flash_write_stream(uint32_t address, uint32_t length, char *tx_buffer)
 {
 	int32_t ret = 0;
 	char *status = NULL;
@@ -257,7 +257,7 @@ int32_t secondary_flash_write_stream(uint32_t address, uint32_t length, char *tx
 	char *cmd = NULL;
 	int count = 0;
 
-	secondary_flash_wait_idle();
+	second_flash_wait_idle();
 	rtos_mutex_take(device_lock, RTOS_SEMA_MAX_COUNT);
 
 	cmd = (char *)rtos_mem_zmalloc(CMD_LENGTH_FOUR + FLASH_PAGE_SIZE);
@@ -289,7 +289,7 @@ int32_t secondary_flash_write_stream(uint32_t address, uint32_t length, char *tx
 		/* check WIP and WEL */
 		cmd[0] = CMD_READ_STATUS;
 		do {
-			secondary_flash_wait_idle();
+			second_flash_wait_idle();
 			spi_master_write_read_stream_dma(&spi_master, cmd, status, CACHE_LINE_SIZE);
 
 			rtos_sema_take(xTxSemaphore, RTOS_SEMA_MAX_COUNT);
@@ -328,7 +328,7 @@ int32_t secondary_flash_write_stream(uint32_t address, uint32_t length, char *tx
 		cmd[0] = CMD_READ_STATUS;
 		count = 0;
 		do {
-			secondary_flash_wait_idle();
+			second_flash_wait_idle();
 			ret = spi_master_write_read_stream_dma(&spi_master, cmd, status, CACHE_LINE_SIZE);
 
 			rtos_sema_take(xTxSemaphore, RTOS_SEMA_MAX_COUNT);
@@ -346,7 +346,7 @@ int32_t secondary_flash_write_stream(uint32_t address, uint32_t length, char *tx
 	return ret;
 }
 
-void secondary_flash_get_id(void)
+void second_flash_get_id(void)
 {
 	int32_t ret;
 	char device_id[CMD_LENGTH_FIVE] = {0};
@@ -412,28 +412,28 @@ void secondary_flash_get_id(void)
 		RTK_LOGI(TAG, "Memory Type ID : 0x%02X\r\n", device_id[2]);
 		RTK_LOGI(TAG, "Capacity ID    : 0x%02X\r\n", device_id[3]);
 		if (current_flash_model.manufacturer_id == 0) {
-			RTK_LOGI(TAG, "Secdonary Flash type is not in the flash list. Please add it in vfs_secondary_nor_flash.h.\r\n");
+			RTK_LOGI(TAG, "Secdonary Flash type is not in the flash list. Please add it in vfs_second_nor_flash.h.\r\n");
 		} else {
 			RTK_LOGI(TAG, "Detected Flash: %s\r\n", current_flash_model.model_name);
 		}
 		rtos_mutex_give(device_lock);
-		secondary_flash_init_flag = 1;
+		second_flash_init_flag = 1;
 		return;
 	}
 
 	/* Read Flash ID Fail */
 	RTK_LOGE(TAG, "%s: Failed to read Flash ID after %d retries!\r\n", __func__, retry_count);
-	secondary_flash_init_flag = -1;
+	second_flash_init_flag = -1;
 }
 
-void secondary_flash_spi_init(int hz)
+void second_flash_spi_init(void)
 {
 	spi_master.spi_idx = MBED_SPI0;
-	RTK_LOGI(TAG, "%s, spi idx: %X, freq: %d Hz\n", __func__, spi_master.spi_idx & 0x01, hz);
+	RTK_LOGI(TAG, "%s, spi idx: %X, freq: %d Hz\n", __func__, spi_master.spi_idx & 0x01, SCLK_FREQ);
 	spi_init(&spi_master, SPI0_MOSI, SPI0_MISO, SPI0_SCLK, SPI0_CS);
 	spi_format(&spi_master, 8, 0, 0);
-	spi_frequency(&spi_master, hz);
-	spi_irq_hook(&spi_master, (spi_irq_handler)secondary_flash_tr_done_callback, (uint32_t)&spi_master);
+	spi_frequency(&spi_master, SCLK_FREQ);
+	spi_irq_hook(&spi_master, (spi_irq_handler)second_flash_tr_done_callback, (uint32_t)&spi_master);
 
 	rtos_sema_create_binary(&xRxSemaphore);
 	rtos_sema_create_binary(&xTxSemaphore);
@@ -448,12 +448,12 @@ void secondary_flash_spi_init(int hz)
 	spi_flush_rx_fifo(&spi_master);
 }
 
-void secondary_flash_spi_free(void)
+void second_flash_spi_free(void)
 {
 	spi_free(&spi_master);
 }
 
-void secondary_flash_flush_rx_fifo(void)
+void second_flash_flush_rx_fifo(void)
 {
 	spi_flush_rx_fifo(&spi_master);
 }
