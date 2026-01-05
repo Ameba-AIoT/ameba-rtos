@@ -137,6 +137,7 @@ static void hci_if_task(void *context)
 			}
 
 			if (!pkt->buf) {
+				osif_mem_free(pkt);
 				goto out;
 			}
 
