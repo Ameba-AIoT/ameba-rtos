@@ -32,6 +32,11 @@ menu "CONFIG VFS"
                 select USB_HOST_EN if WHC_HOST || WHC_NONE
                 select USBH_MSC if WHC_HOST || WHC_NONE
         endchoice
+        if FATFS_SD_MODE
+            config FATFS_SD_HOTPLUG_MENU
+                bool "FATFS SDcard HOTPLUG"
+                select FATFS_SD_HOTPLUG
+        endif
         config FATFS_WITHIN_APP_IMG
             bool "FATFS within APP Image"
         config FATFS_READ_ONLY
@@ -54,4 +59,7 @@ config FATFS_SD_SPI_MODE
 bool
 
 config FATFS_USB_HOST
+bool
+
+config FATFS_SD_HOTPLUG
 bool

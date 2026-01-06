@@ -180,12 +180,6 @@ void BOOT_PSRAM_Init(void)
 	u8 pinname;
 	PSPHY_InitTypeDef PSPHY_InitStruct;
 
-	/* return directly to save code size*/
-#if defined(CONFIG_DISABLE_PSRAM)
-	RTK_LOGI(TAG, "CONFIG_DISABLE_PSRAM\r\n");
-	return;
-#endif
-
 	//reset psram device
 	RCC_PeriphClockCmd(APBPeriph_PSRAM, APBPeriph_PSRAM_CLOCK, DISABLE);
 	DelayUs(1);

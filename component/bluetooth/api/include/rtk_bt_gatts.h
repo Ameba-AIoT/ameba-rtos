@@ -18,11 +18,12 @@ extern "C"
 
 /**
  * @def       RTK_BT_GATT_INTERNAL
- * @brief     The attribute value is defined as a static(or global) variable in user APP,
- *            and the variable's pointer will be passed into lower stack. If this attribute is
- *            read by remote, lower stack will auto send this attribute value to response
- *            to read request, if this attribute is write by remote, lower stack will auto
- *            write the attribute value into this variable and response to write request.
+ * @brief     This attribute will be handled by stack internal. When the attribute is a
+ *            characteristic value, the value is defined as a static(or global) variable
+ *            in user APP, and the variable's pointer will be passed into lower stack.
+ *            If this attribute is read by remote, lower stack will auto send this attribute
+ *            value to response to read request, and if writed by remote, lower stack will
+ *            auto write the attribute value into this variable and response to write request.
  *            User APP layer need not to care it.
  */
 #define RTK_BT_GATT_INTERNAL                0

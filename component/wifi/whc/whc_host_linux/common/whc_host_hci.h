@@ -151,6 +151,7 @@ struct whc_device {
 	struct sme_priv_t		sme_priv;
 #endif
 	u8 host_init_done: 1;
+	u8 ipv6_addr_updated: 1;
 };
 
 extern struct whc_device global_idev;

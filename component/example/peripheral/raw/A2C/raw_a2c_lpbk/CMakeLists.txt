@@ -36,33 +36,17 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources
-    ameba_app_start.c
-    ameba_data_flash.c
-    ameba_data_flash_ram.c
-    ameba_data_flashclk.c
-    ameba_data_nand_flash.c
-    ameba_flashclk.c
-    ameba_npcap.c
-    ameba_nandflash.c
+    example_raw_a2c_lpbk.c
+    app_example.c
 )
-
-ameba_list_append_ifnot(CONFIG_TRUSTZONE private_sources
-    ameba_pmc.c
-)
-
-if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image3")
-    ameba_list_append(private_sources
-        ameba_pmc.c
-    )
-endif()
 
 # Component private part, user config end
 #------------------------------#
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 
-###NOTE: For closed-source component, only build before release and libs are packaged into lib/soc
-ameba_add_internal_library(fwlib_km4tz
+###NOTE: For open-source component, always build from source
+ameba_add_internal_library(example_raw_a2c_lpbk
     p_SOURCES
         ${private_sources}
     p_INCLUDES
@@ -72,4 +56,5 @@ ameba_add_internal_library(fwlib_km4tz
     p_COMPILE_OPTIONS
         ${private_compile_options}
 )
+
 ##########################################################################################

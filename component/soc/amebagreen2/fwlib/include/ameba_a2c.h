@@ -567,23 +567,12 @@ typedef struct {
 	u32 DLC;     /*!< Specifies the length of the frame that will be
                         transmitted. This parameter can be a value between
                         0 to 8 */
-
-	u32 ESI;     /*!< Specifies the FD frame esi bit, indicate error passive of message sending node,
-  		read bit, should always write 0, hardware automatic fill*/
-
-	u32 BRS;     /*!< Specifies the FD frame brs bit, indicate switch bit timing*/
-
-	u32 EDL;     /*!< Specifies the FD frame edl bit, indicate it's a FD frame*/
-
-	__attribute__((aligned(4)))
-	u8 Data[64]; /*!< Contains the data to be transmitted. It ranges from 0
-                        to 0xFF. */
-
-	u32 IDE_MASK;     /*!< Specifies the IDE MASK, ####*/
-
-	u32 ID_MASK;     /*!< Specifies the ID MASK, ####*/
-
-	u32 RTR_Mask;     /*!< Specifies the RTR MASK, ####*/
+	union {
+		/** Payload data accessed as unsigned 8 bit values. */
+		uint8_t Data[64];
+		/** Payload data accessed as unsigned 32 bit values. */
+		uint32_t Data_32[16];
+	};
 } A2C_TxMsgTypeDef;
 
 /**
@@ -618,16 +607,12 @@ typedef struct {
 	u32 DLC;     /*!< Specifies the length of the frame that will be
                         transmitted. This parameter can be a value between
                         0 to 8*/
-	u32 ESI;     /*!< Specifies the FD frame esi bit, indicate error passive of message sending node,
-  		read bit, should always write 0, hardware automatic fill*/
-
-	u32 BRS;     /*!< Specifies the FD frame brs bit, indicate switch bit timing*/
-
-	u32 EDL;     /*!< Specifies the FD frame edl bit, indicate it's a FD frame*/
-
-	__attribute__((aligned(4)))
-	u8 Data[64]; /*!< Contains the data to be transmitted. It ranges from 0
-                        to 0xFF. */
+	union {
+		/** Payload data accessed as unsigned 8 bit values. */
+		uint8_t Data[64];
+		/** Payload data accessed as unsigned 32 bit values. */
+		uint32_t Data_32[16];
+	};
 
 	u32 ID_MASK;     /*!< Specifies the ID MASK*/
 
@@ -652,10 +637,10 @@ typedef struct {
 /** @defgroup A2C_WORK_MODE_define
   * @{
   */
-#define A2C_NORMAL_MODE					        ((u32)0x00000000)
-#define A2C_SILENCE_MODE					        ((u32)0x00000001)
-#define A2C_EXT_LOOPBACK_MODE					  ((u32)0x00000002)
-#define A2C_INT_LOOPBACK_MODE            ((u32)0x00000003)
+#define A2C_NORMAL_MODE					          ((u32)0x00000000)
+#define A2C_SILENCE_MODE					        ((u32)0x00000000)
+#define A2C_EXT_LOOPBACK_MODE					    ((u32)0x00000001)
+#define A2C_INT_LOOPBACK_MODE             ((u32)0x00000002)
 #define IS_A2C_WORK_MODE(MODE) (((MODE) == A2C_NORMAL_MODE) || \
 									((MODE) == A2C_SILENCE_MODE) || \
 									((MODE) == A2C_EXT_LOOPBACK_MODE) || \

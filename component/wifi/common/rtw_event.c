@@ -21,9 +21,11 @@
 #if !defined(CONFIG_WHC_DEV)|| defined(CONFIG_WPA_LOCATION_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 #include "atcmd_service.h"
 #include "wpa_lite_intf.h"
+#ifndef CONFIG_WPA_STD
 #include <wifi_auto_reconnect.h>
 #include "../wpa_supplicant/wps_protocol_handler.h"
 #include "../wpa_supplicant/eap_protocol_handler.h"
+#endif
 #endif
 #if defined (CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
@@ -204,6 +206,7 @@ void rtw_join_status_hdl(u8 *evt_info)
 
 void rtw_eapol_start_hdl(u8 *evt_info)
 {
+	(void)evt_info;
 #ifdef CONFIG_ENABLE_EAP
 	if (get_eap_phase()) {
 		eap_eapol_start_hdl(evt_info);
@@ -214,6 +217,7 @@ void rtw_eapol_start_hdl(u8 *evt_info)
 void rtw_eapol_recvd_hdl(u8 *evt_info)
 {
 	struct rtw_event_report_frame *evt_rpt_frm = (struct rtw_event_report_frame *)evt_info;
+	(void)evt_rpt_frm;
 #ifdef CONFIG_ENABLE_EAP
 	if (get_eap_phase()) {
 		eap_eapol_recvd_hdl(evt_rpt_frm->frame, evt_rpt_frm->frame_len);
@@ -328,7 +332,9 @@ int wifi_event_handle(u32 event_cmd, u8 *evt_info)
 		return -RTK_ERR_BADARG;
 	}
 
+#ifndef CONFIG_WPA_STD
 	wifi_event_handle_internal(event_cmd, evt_info);
+#endif
 
 	wifi_event_handle_external(event_cmd, evt_info);
 

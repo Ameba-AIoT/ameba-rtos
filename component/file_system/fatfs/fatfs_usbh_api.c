@@ -12,11 +12,12 @@ int fatfs_usbh_close(void)
 		if (f_unmount(fatfs_second_flash_param.drv) != FR_OK) {
 			VFS_DBG(VFS_ERROR, "FATFS unmount logical drive fail.");
 		}
-
-		if (FATFS_UnRegisterDiskDriver(fatfs_second_flash_param.drv_num)) {
-			VFS_DBG(VFS_ERROR, "Unregister usbh driver from FATFS fail.");
-		}
 	}
+
+	if (FATFS_UnRegisterDiskDriver(fatfs_second_flash_param.drv_num)) {
+		VFS_DBG(VFS_ERROR, "Unregister usbh driver from FATFS fail.");
+	}
+
 	return 0;
 }
 

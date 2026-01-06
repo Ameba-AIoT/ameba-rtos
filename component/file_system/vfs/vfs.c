@@ -35,7 +35,7 @@ int vfs_check_mount_flag(int vfs_type, int vfs_interface_type, char *operation)
 			check_flag = &fatfs_mount_flag;
 		}
 		if (check_flag != NULL && *check_flag != 1) {
-			VFS_DBG(VFS_ERROR, "vfs init fail, %s is not allowed", operation);
+			VFS_DBG(VFS_ERROR, "vfs-fatfs mount fail, %s is not allowed", operation);
 			return -1;
 		}
 		break;
@@ -47,7 +47,7 @@ int vfs_check_mount_flag(int vfs_type, int vfs_interface_type, char *operation)
 			check_flag = &lfs_mount_flag;
 		}
 		if (check_flag != NULL && *check_flag != 1) {
-			VFS_DBG(VFS_ERROR, "vfs init fail, %s is not allowed", operation);
+			VFS_DBG(VFS_ERROR, "vfs-littlefs mount fail, %s is not allowed", operation);
 			return -1;
 		}
 		break;
