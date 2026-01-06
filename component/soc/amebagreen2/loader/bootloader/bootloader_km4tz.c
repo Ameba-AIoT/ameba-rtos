@@ -95,12 +95,6 @@ int BOOT_PSRAM_Init(void)
 	u8 pinname;
 	PSPHY_InitTypeDef PSPHY_InitStruct;
 
-	/* return directly to save code size*/
-#if defined(CONFIG_DISABLE_PSRAM)
-	RTK_LOGI(TAG, "CONFIG_DISABLE_PSRAM\r\n");
-	return RTK_FAIL;
-#endif
-
 	if (meminfo.mem_type != MCM_TYPE_PSRAM) {
 		return RTK_FAIL;
 	}

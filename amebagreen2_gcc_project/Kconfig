@@ -64,8 +64,6 @@ menu "CONFIG TrustZone"
 endmenu
 
 menu "CONFIG Memory Arch"
-    config DISABLE_PSRAM
-        bool "DISABLE PSRAM"
     config SECOND_FLASH_NOR
         bool "Second flash NOR"
     if !SECOND_FLASH_NOR
@@ -92,7 +90,6 @@ menu "CONFIG Link Option"
         config IMG2_SRAM
             bool "SRAM"
         config IMG2_PSRAM
-            depends on !DISABLE_PSRAM
             bool "PSRAM"
             select PSRAM_USED
     endchoice
@@ -103,7 +100,6 @@ menu "CONFIG Link Option"
         config DATA_HEAP_SRAM
             bool "SRAM"
         config DATA_HEAP_PSRAM
-            depends on !DISABLE_PSRAM
             bool "PSRAM"
             select PSRAM_USED
     endchoice
@@ -113,7 +109,6 @@ menu "CONFIG Link Option"
             prompt "IMG3(SecureImage) running on SRAM, PSRAM or FLASH?"
             default IMG3_SRAM
             config IMG3_PSRAM
-                depends on !DISABLE_PSRAM
                 bool "PSRAM"
                 select PSRAM_USED
             config IMG3_SRAM
@@ -124,7 +119,7 @@ menu "CONFIG Link Option"
     endif
 
     config PSRAM_ALL_FOR_AP_HEAP
-        depends on !IMG2_PSRAM && !DATA_HEAP_PSRAM && !DISABLE_PSRAM
+        depends on !IMG2_PSRAM && !DATA_HEAP_PSRAM
         depends on !WIFI_HOST_CONTROL # FULLMAC_DEV does not support PSRAM for now
         bool "ALL PSRAM USED FOR APPLICATION HEAP"
         default y

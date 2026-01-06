@@ -19,11 +19,12 @@ int fatfs_flash_close(int interface)
 		if (f_unmount(fatfs_param->drv) != FR_OK) {
 			VFS_DBG(VFS_ERROR, "FATFS unmount flash logical drive fail.");
 		}
-
-		if (FATFS_UnRegisterDiskDriver(fatfs_param->drv_num)) {
-			VFS_DBG(VFS_ERROR, "Unregister flash disk driver from FATFS fail.");
-		}
 	}
+
+	if (FATFS_UnRegisterDiskDriver(fatfs_param->drv_num)) {
+		VFS_DBG(VFS_ERROR, "Unregister flash disk driver from FATFS fail.");
+	}
+
 	return 0;
 }
 
@@ -88,7 +89,7 @@ int fatfs_flash_init(int interface)
 
 		if (res1 || res2) {
 #if FF_FS_READONLY
-			return -1;
+			goto fatfs_init_err;
 #else
 			VFS_DBG(VFS_INFO, "Mount existed FATFS failed, try to mkfs");
 

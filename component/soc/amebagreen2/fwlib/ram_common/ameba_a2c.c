@@ -333,7 +333,6 @@ void A2C_WriteMsg(A2C_TypeDef *A2Cx, A2C_TxMsgTypeDef *TxMsg)
 	u32 a2c_ram_arb = 0;
 	u32 a2c_ram_cmd = 0;
 	u32 a2c_ram_cs = 0;
-	u32 i;
 
 	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 	assert_param(IS_A2C_FRAME_TYPE(TxMsg->RTR));
@@ -341,7 +340,7 @@ void A2C_WriteMsg(A2C_TypeDef *A2Cx, A2C_TxMsgTypeDef *TxMsg)
 	assert_param(TxMsg->DLC <= 64);
 	assert_param(TxMsg->MsgBufferIdx <= 15);
 
-	/*configure cmd register, enable access*/
+	/* Enable Msg buf[x] access*/
 	a2c_ram_cmd |= (A2C_BIT_RAM_BUFFER_EN | A2C_BIT_RAM_ACC_ARB | A2C_BIT_RAM_ACC_CS | A2C_BIT_RAM_ACC_MASK | \
 					A2C_BIT_RAM_ACC_DATA_MASK | A2C_BIT_RAM_DIR);
 	a2c_ram_cmd |= TxMsg->MsgBufferIdx;
@@ -369,12 +368,12 @@ void A2C_WriteMsg(A2C_TypeDef *A2Cx, A2C_TxMsgTypeDef *TxMsg)
 
 	/*fill data, can2.0 8 bytes, can fd 64 bytes*/
 	if (TxMsg->RTR == A2C_DATA_FRAME) {
-		for (i = 0; i < 16; i++) {
-			HAL_WRITE32(&A2Cx->A2C_RAM_FDDATA_x[i], 0, *(u32 *)(&TxMsg->Data[(16 - i - 1) * 4]));
+		for (int i = 0; i < 16; i++) {
+			A2Cx->A2C_RAM_FDDATA_x[16 - i - 1] = TxMsg->Data_32[i];
 		}
 	}
 
-	/*finally, operate cmd register to write frame info in register into the ram message buffer*/
+	/* Write frame info in register into the ram message buffer */
 	a2c_ram_cmd |= A2C_BIT_RAM_START;
 	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
 	while (A2Cx->A2C_RAM_CMD & A2C_BIT_RAM_START);
@@ -415,12 +414,17 @@ void A2C_SetRxMsgBuf(A2C_TypeDef *A2Cx, A2C_RxMsgTypeDef *RxMsg)
 
 
 	/*configure MASK ID register*/
-	a2c_ram_mask |= A2C_RAM_ID_MASK(RxMsg->ID_MASK);
+	if (RxMsg->IDE == A2C_STANDARD_FRAME) {
+		A2Cx->A2C_RAM_MASK = A2C_RAM_ID_MASK(RxMsg->ID_MASK << 18);
+	} else {
+		A2Cx->A2C_RAM_MASK = A2C_RAM_ID_MASK(RxMsg->ID_MASK);
+	}
+
 	a2c_ram_mask |= RxMsg->IDE_Mask;
 	a2c_ram_mask |= RxMsg->RTR_Mask;
 	A2Cx->A2C_RAM_MASK = a2c_ram_mask;
 
-	/*finally, operate cmd register to write RX setting info in register into the ram message buffer*/
+	/* Write RX setting info in register into the ram message buffer */
 	a2c_ram_cmd |= A2C_BIT_RAM_START;
 	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
 	while (A2Cx->A2C_RAM_CMD & A2C_BIT_RAM_START);
@@ -443,11 +447,12 @@ void A2C_ReadMsg(A2C_TypeDef *A2Cx, A2C_RxMsgTypeDef *RxMsg)
 	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 	assert_param(RxMsg->MsgBufferIdx <= 15);
 
-	/*configure cmd register, enable access*/
+	/* Enable Msg buf[x] access */
 	a2c_ram_cmd |= (A2C_BIT_RAM_BUFFER_EN | A2C_BIT_RAM_ACC_ARB | A2C_BIT_RAM_ACC_CS | A2C_BIT_RAM_ACC_MASK | A2C_BIT_RAM_ACC_DATA_MASK);
 	a2c_ram_cmd |= RxMsg->MsgBufferIdx;
 	a2c_ram_cmd |= A2C_BIT_RAM_START;
-	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;/*firstly, operate cmd register to read frame into register from ram message buffer*/
+	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
+	/* Read frame into register from ram message buffer */
 	while (A2Cx->A2C_RAM_CMD & A2C_BIT_RAM_START);
 
 	/*read ARB register*/
@@ -488,7 +493,7 @@ void A2C_ReadMsg(A2C_TypeDef *A2Cx, A2C_RxMsgTypeDef *RxMsg)
 	/*configure DATA register: can2.0 8 bytes, can fd 64 bytes*/
 	if (RxMsg->RTR == A2C_DATA_FRAME) {
 		for (i = 0; i < 16; i++) {
-			*((u32 *)(&RxMsg->Data[(16 - i - 1) * 4])) = HAL_READ32(&A2Cx->A2C_RAM_FDDATA_x[i], 0);
+			RxMsg->Data_32[i] = A2Cx->A2C_RAM_FDDATA_x[16 - i - 1];
 		}
 	}
 }
@@ -512,7 +517,7 @@ void A2C_TxAutoReply(A2C_TypeDef *A2Cx, A2C_TxMsgTypeDef *TxMsg)
 	assert_param(TxMsg->DLC <= 64);
 	assert_param(TxMsg->MsgBufferIdx <= 15);
 
-	/*configure cmd register, enable access*/
+	/* Enable Msg buf[x] access */
 	a2c_ram_cmd |= (A2C_BIT_RAM_BUFFER_EN | A2C_BIT_RAM_ACC_ARB | A2C_BIT_RAM_ACC_CS | A2C_BIT_RAM_ACC_MASK | \
 					A2C_BIT_RAM_ACC_DATA_MASK | A2C_BIT_RAM_DIR);
 	a2c_ram_cmd |= TxMsg->MsgBufferIdx;
@@ -548,7 +553,7 @@ void A2C_TxAutoReply(A2C_TypeDef *A2Cx, A2C_TxMsgTypeDef *TxMsg)
 		}
 	}
 
-	/*finally, operate cmd register to write frame info in register into the ram message buffer*/
+	/* Write frame info in register into the ram message buffer*/
 	a2c_ram_cmd |= A2C_BIT_RAM_START;
 	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
 	while (A2Cx->A2C_RAM_CMD & A2C_BIT_RAM_START);
@@ -576,7 +581,6 @@ void A2C_RxAutoReply(A2C_TypeDef *A2Cx, A2C_RxMsgTypeDef *RxMsg)
 	a2c_ram_cmd |= (A2C_BIT_RAM_BUFFER_EN | A2C_BIT_RAM_ACC_ARB | A2C_BIT_RAM_ACC_CS | A2C_BIT_RAM_ACC_MASK | \
 					A2C_BIT_RAM_ACC_DATA_MASK | A2C_BIT_RAM_DIR);
 	a2c_ram_cmd |= RxMsg->MsgBufferIdx;
-	//A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
 
 	/*configure frame ARB register*/
 	a2c_ram_arb = A2Cx->A2C_RAM_ARB;
@@ -607,7 +611,7 @@ void A2C_RxAutoReply(A2C_TypeDef *A2Cx, A2C_RxMsgTypeDef *RxMsg)
 	a2c_ram_mask |= RxMsg->RTR_Mask;
 	A2Cx->A2C_RAM_MASK = a2c_ram_mask;
 
-	/*finally, operate cmd register to write RX setting info in register into the ram message buffer*/
+	/* Write RX setting into the ram message buffer*/
 	a2c_ram_cmd |= A2C_BIT_RAM_START;
 	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
 	while (A2Cx->A2C_RAM_CMD & A2C_BIT_RAM_START);
@@ -1150,7 +1154,7 @@ void A2C_FillTXDmaBuffer(A2C_TypeDef *A2Cx, A2C_TxMsgTypeDef *TxMsg)
 
 	/*configure cmd register, enable access*/
 	a2c_ram_cmd |= (A2C_BIT_RAM_BUFFER_EN | A2C_BIT_RAM_ACC_ARB | A2C_BIT_RAM_ACC_CS | A2C_BIT_RAM_ACC_MASK | \
-					/* A2C_RAM_ACC_DAT_MASK  | */ A2C_BIT_RAM_DIR);
+					A2C_BIT_RAM_ACC_DATA_MASK  |  A2C_BIT_RAM_DIR);
 	a2c_ram_cmd |= TxMsg->MsgBufferIdx;
 	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
 
@@ -1179,16 +1183,15 @@ void A2C_FillTXDmaBuffer(A2C_TypeDef *A2Cx, A2C_TxMsgTypeDef *TxMsg)
 
 	/*fill data, can2.0 8 bytes, can fd 64 bytes*/
 	if (TxMsg->RTR == A2C_DATA_FRAME) {
-		for (i = 0; i < 2; i++) {
-			// A2Cx->A2C_RAM_FDDATA_x[i] = TxMsg->Data[(16 - i - 1) * 4];
-			A2Cx->A2C_RAM_FDDATA_x[i] = TxMsg->Data[(2 - i - 1) * 4];
+		for (i = 0; i < 16; i++) {
+			A2Cx->A2C_RAM_FDDATA_x[16 - i - 1] = TxMsg->Data_32[i];
 		}
 	}
 
-	/*finally, operate cmd register to write frame info in register into the ram message buffer*/
+	/* Write frame info into the ram message buffer*/
 	a2c_ram_cmd |= A2C_BIT_RAM_START;
 	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
-	//while(A2CxBufer->A2C_RAM_CMD&A2C_BIT_RAM_START);
+	while (A2Cx->A2C_RAM_CMD & A2C_BIT_RAM_START);
 }
 
 

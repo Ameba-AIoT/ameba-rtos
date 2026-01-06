@@ -125,7 +125,10 @@ static int whc_fullmac_host_cfgvendor_nandow_entry(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int len)
 {
 	whc_fullmac_host_nan_cfgvendor_cmd(NAN_SUBCMD_CUSTOMER_NANDOW, data, len);
-
+	if (global_idev.ipv6_addr_updated) {
+		whc_fullmac_host_update_ip_addr();
+		global_idev.ipv6_addr_updated = 0;
+	}
 	return 0;
 }
 #endif

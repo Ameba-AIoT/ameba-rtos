@@ -85,7 +85,12 @@
 
 
 /************************ For EAP auth configurations *************************/
+/* wpa_supplicant_std handles EAP configuration in its own config.
+ * Do not include autoconf_eap.h to avoid configuration conflicts.
+ */
+#ifndef CONFIG_WPA_STD
 #include "autoconf_eap.h"
+#endif
 /************************ For EAP auth configurations *************************/
 /* KVR macro is default opened, but actually not working. To use it, need turn on the switch in menuconfig */
 #define CONFIG_IEEE80211V

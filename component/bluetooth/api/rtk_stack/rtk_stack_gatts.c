@@ -765,6 +765,27 @@ static uint32_t bt_stack_gatts_permission_trans(uint8_t perm)
 	return permission;
 }
 
+static uint16_t bt_stack_uuid16_common_attr_convert(rtk_bt_gatt_attr_t *app_attr, T_ATTRIB_APPL *stack_attr)
+{
+	uint16_t uuid16 = BT_UUID_16(app_attr->uuid)->val;
+
+	stack_attr->flags = (RTK_BT_GATT_APP == app_attr->flag) ? ATTRIB_FLAG_VALUE_APPL : ATTRIB_FLAG_VOID;
+	stack_attr->type_value[0] = LO_WORD(uuid16);
+	stack_attr->type_value[1] = HI_WORD(uuid16);
+	if (ATTRIB_FLAG_VALUE_APPL == stack_attr->flags) {
+		stack_attr->value_len = 0;
+		stack_attr->p_value_context = NULL;
+		if (GATT_UUID_CHAR_CLIENT_CONFIG == uuid16) {
+			stack_attr->flags |= ATTRIB_FLAG_CCCD_APPL;
+		}
+	} else {
+		stack_attr->value_len = app_attr->len;
+		stack_attr->p_value_context = app_attr->user_data;
+	}
+	stack_attr->permissions = bt_stack_gatts_permission_trans(app_attr->perm);
+
+	return RTK_BT_OK;
+}
 
 static uint16_t bt_stack_uuid16_attr_convert(uint16_t gatt_type, rtk_bt_gatt_attr_t *p_app_gatt_attr, T_ATTRIB_APPL *p_stack_gatt_attr)
 {
@@ -846,11 +867,13 @@ static uint16_t bt_stack_uuid16_attr_convert(uint16_t gatt_type, rtk_bt_gatt_att
 		p_stack_gatt_attr->value_len = 1;
 		p_stack_gatt_attr->p_value_context = NULL;
 		p_stack_gatt_attr->permissions = GATT_PERM_READ;
-
 		break;
 	}
 
 	case GATT_UUID_CHAR_EXTENDED_PROP: {
+		if (RTK_BT_GATT_APP == p_app_gatt_attr->flag) {
+			return bt_stack_uuid16_common_attr_convert(p_app_gatt_attr, p_stack_gatt_attr);
+		}
 		struct rtk_bt_gatt_cep *cep_attr_val = (struct rtk_bt_gatt_cep *)p_app_gatt_attr->user_data;
 		p_stack_gatt_attr->flags = ATTRIB_FLAG_VALUE_INCL;
 		p_stack_gatt_attr->type_value[0] = LO_WORD(uuid16);
@@ -864,6 +887,9 @@ static uint16_t bt_stack_uuid16_attr_convert(uint16_t gatt_type, rtk_bt_gatt_att
 	}
 
 	case GATT_UUID_CHAR_USER_DESCR: {
+		if (RTK_BT_GATT_APP == p_app_gatt_attr->flag) {
+			return bt_stack_uuid16_common_attr_convert(p_app_gatt_attr, p_stack_gatt_attr);
+		}
 		p_stack_gatt_attr->flags = ATTRIB_FLAG_VOID | ATTRIB_FLAG_ASCII_Z;
 		p_stack_gatt_attr->type_value[0] = LO_WORD(uuid16);
 		p_stack_gatt_attr->type_value[1] = HI_WORD(uuid16);
@@ -880,7 +906,11 @@ static uint16_t bt_stack_uuid16_attr_convert(uint16_t gatt_type, rtk_bt_gatt_att
 		p_stack_gatt_attr->permissions = bt_stack_gatts_permission_trans(p_app_gatt_attr->perm);
 		break;
 	}
+
 	case GATT_UUID_CHAR_CLIENT_CONFIG: {
+		if (RTK_BT_GATT_APP == p_app_gatt_attr->flag) {
+			return bt_stack_uuid16_common_attr_convert(p_app_gatt_attr, p_stack_gatt_attr);
+		}
 		p_stack_gatt_attr->flags = ATTRIB_FLAG_VALUE_INCL | ATTRIB_FLAG_CCCD_APPL;//ATTRIB_FLAG_CCCD_NO_FILTER
 		p_stack_gatt_attr->type_value[0] = LO_WORD(uuid16);
 		p_stack_gatt_attr->type_value[1] = HI_WORD(uuid16);
@@ -898,7 +928,11 @@ static uint16_t bt_stack_uuid16_attr_convert(uint16_t gatt_type, rtk_bt_gatt_att
 		}
 		break;
 	}
+
 	case GATT_UUID_CHAR_SERVER_CONFIG: {
+		if (RTK_BT_GATT_APP == p_app_gatt_attr->flag) {
+			return bt_stack_uuid16_common_attr_convert(p_app_gatt_attr, p_stack_gatt_attr);
+		}
 		struct rtk_bt_gatt_scc *scc_attr_val = (struct rtk_bt_gatt_scc *)p_app_gatt_attr->user_data;
 		p_stack_gatt_attr->flags = ATTRIB_FLAG_VALUE_INCL;
 		p_stack_gatt_attr->type_value[0] = LO_WORD(uuid16);
@@ -915,10 +949,13 @@ static uint16_t bt_stack_uuid16_attr_convert(uint16_t gatt_type, rtk_bt_gatt_att
 		if ((p_stack_gatt_attr->permissions & 0xf0) == 0) {
 			p_stack_gatt_attr->permissions |= GATT_PERM_WRITE;
 		}
-
 		break;
 	}
+
 	case GATT_UUID_CHAR_FORMAT: {
+		if (RTK_BT_GATT_APP == p_app_gatt_attr->flag) {
+			return bt_stack_uuid16_common_attr_convert(p_app_gatt_attr, p_stack_gatt_attr);
+		}
 		struct rtk_bt_gatt_cpf *format = (struct rtk_bt_gatt_cpf *)p_app_gatt_attr->user_data;
 		p_stack_gatt_attr->flags = ATTRIB_FLAG_VALUE_INCL;
 		p_stack_gatt_attr->type_value[0] = LO_WORD(uuid16);
@@ -935,7 +972,11 @@ static uint16_t bt_stack_uuid16_attr_convert(uint16_t gatt_type, rtk_bt_gatt_att
 		p_stack_gatt_attr->permissions = GATT_PERM_READ;
 		break;
 	}
+
 	case GATT_UUID_CHAR_AGGR_FORMAT: {
+		if (RTK_BT_GATT_APP == p_app_gatt_attr->flag) {
+			return bt_stack_uuid16_common_attr_convert(p_app_gatt_attr, p_stack_gatt_attr);
+		}
 		struct rtk_bt_gatt_caf *agg_format = (struct rtk_bt_gatt_caf *)p_app_gatt_attr->user_data;
 		p_stack_gatt_attr->flags = ATTRIB_FLAG_VOID;
 		p_stack_gatt_attr->type_value[0] = LO_WORD(uuid16);
@@ -953,26 +994,9 @@ static uint16_t bt_stack_uuid16_attr_convert(uint16_t gatt_type, rtk_bt_gatt_att
 		p_stack_gatt_attr->permissions = GATT_PERM_READ;
 		break;
 	}
-	default: {
-		p_stack_gatt_attr->flags = (RTK_BT_GATT_APP == p_app_gatt_attr->flag) ? ATTRIB_FLAG_VALUE_APPL : ATTRIB_FLAG_VOID;
-		p_stack_gatt_attr->type_value[0] = LO_WORD(uuid16);
-		p_stack_gatt_attr->type_value[1] = HI_WORD(uuid16);
-		p_stack_gatt_attr->value_len = p_app_gatt_attr->len;
-		if (ATTRIB_FLAG_VALUE_APPL == p_stack_gatt_attr->flags) {
-			p_stack_gatt_attr->value_len = 0;
-			p_stack_gatt_attr->p_value_context = NULL;
-		} else {
-			if (!p_stack_gatt_attr->value_len) {
-				return RTK_BT_ERR_PARAM_INVALID;
-			}
 
-			p_stack_gatt_attr->p_value_context = osif_mem_alloc(RAM_TYPE_DATA_ON, p_stack_gatt_attr->value_len);
-			if (!p_stack_gatt_attr->p_value_context) {
-				return RTK_BT_ERR_NO_MEMORY;
-			}
-			memcpy(p_stack_gatt_attr->p_value_context, p_app_gatt_attr->user_data, p_stack_gatt_attr->value_len);
-		}
-		p_stack_gatt_attr->permissions = bt_stack_gatts_permission_trans(p_app_gatt_attr->perm);
+	default: {
+		return bt_stack_uuid16_common_attr_convert(p_app_gatt_attr, p_stack_gatt_attr);
 		break;
 	}
 	}

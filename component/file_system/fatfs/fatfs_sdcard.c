@@ -24,7 +24,7 @@
 #endif
 
 static rtos_mutex_t sd_mutex = NULL;
-static int init_status = 0;
+int fatfs_init_status = 0;
 
 static void sd_lock(void)
 {
@@ -56,7 +56,7 @@ DSTATUS interpret_sd_status(SD_RESULT result)
 		ret = STA_NODISK;
 	} else if (result == SD_INSERT) {
 		ret = STA_INSERT;
-	} else if (result == SD_INITERR) {
+	} else if (result == SD_INITERR || result == SD_ERROR) {
 		ret = STA_NOINIT;
 	} else if (result == SD_PROTECTED) {
 		ret = STA_PROTECT;
@@ -115,7 +115,9 @@ DSTATUS SD_disk_initialize(void)
 	sd_sema_init();
 	sd_lock();
 	res = SD_Init();
-	init_status = 1;//The card is not init
+	if (res == SD_OK) {
+		fatfs_init_status = 1;//The card is initialized
+	}
 	sd_unlock();
 	return interpret_sd_status(res);
 }
@@ -124,7 +126,7 @@ DSTATUS SD_disk_deinitialize(void)
 {
 	SD_RESULT res;
 	sd_lock();
-	init_status = 0;//The card is not init
+	fatfs_init_status = 0;//The card is not initialized
 	res = SD_DeInit();
 	sd_unlock();
 	sd_sema_deinit();
@@ -138,7 +140,8 @@ DRESULT SD_disk_read(BYTE *buff, DWORD sector, /*unsigned int*/UINT count)
 	char retry_cnt = 0;
 	sd_lock();
 	do {
-		if (!init_status) {
+		if (!fatfs_init_status) {
+			VFS_DBG(VFS_ERROR, "sd card is not inserted");
 			res = STA_NODISK;
 			break;
 		}
@@ -160,7 +163,8 @@ DRESULT SD_disk_write(const BYTE *buff, DWORD sector, /*unsigned int*/UINT count
 	char retry_cnt = 0;
 	sd_lock();
 	do {
-		if (!init_status) {
+		if (!fatfs_init_status) {
+			VFS_DBG(VFS_ERROR, "sd card is not inserted");
 			res = STA_NODISK;
 		}
 		res = interpret_sd_result(SD_WriteBlocks(sector, (uint8_t *)buff, count));
@@ -295,7 +299,7 @@ DSTATUS SD_disk_spi_initialize(void)
 
 	sd_lock();
 	res = sd_spi_device_init();
-	init_status = 1;//The card is not init
+	fatfs_init_status = 1;//The card is initialized
 	sd_unlock();
 	return interpret_sd_status(res);
 }
@@ -304,7 +308,7 @@ DSTATUS SD_disk_spi_deinitialize(void)
 {
 	SD_SPI_RESULT res;
 	sd_lock();
-	init_status = 0;//The card is not init
+	fatfs_init_status = 0;//The card is not initialized
 	res = sd_spi_device_deinit();
 	sd_unlock();
 	return interpret_sd_status(res);
@@ -317,7 +321,7 @@ DRESULT SD_disk_spi_read(BYTE *buff, DWORD sector, /*unsigned int*/UINT count)
 	char retry_cnt = 0;
 	sd_lock();
 	do {
-		if (!init_status) {
+		if (!fatfs_init_status) {
 			res = STA_NODISK;
 			break;
 		}
@@ -339,7 +343,7 @@ DRESULT SD_disk_spi_write(const BYTE *buff, DWORD sector, /*unsigned int*/UINT c
 	char retry_cnt = 0;
 	sd_lock();
 	do {
-		if (!init_status) {
+		if (!fatfs_init_status) {
 			res = STA_NODISK;
 		}
 		res = interpret_sd_result(sd_spi_write_data((uint8_t *)buff, sector, count));

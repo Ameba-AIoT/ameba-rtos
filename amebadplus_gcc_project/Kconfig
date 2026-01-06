@@ -63,12 +63,8 @@ menu "CONFIG TrustZone"
 endmenu
 
 menu "CONFIG Memory Arch"
-    config DISABLE_PSRAM
-        bool "DISABLE PSRAM"
-    if DISABLE_PSRAM
-        config SECOND_FLASH_NOR
-            bool "Second flash NOR"
-    endif
+    config SECOND_FLASH_NOR
+        bool "Second flash NOR"
 endmenu
 
 menu "CONFIG Link Option"
@@ -87,7 +83,6 @@ menu "CONFIG Link Option"
         config IMG2_FLASH
             bool "FLASH"
         config IMG2_PSRAM
-            depends on !DISABLE_PSRAM
             bool "PSRAM"
             select PSRAM_USED
     endchoice
@@ -98,7 +93,6 @@ menu "CONFIG Link Option"
         config DATA_HEAP_SRAM
             bool "SRAM"
         config DATA_HEAP_PSRAM
-            depends on !DISABLE_PSRAM
             bool "PSRAM"
             select PSRAM_USED
     endchoice
@@ -108,7 +102,6 @@ menu "CONFIG Link Option"
             prompt "IMG3(SecureImage) running on PSRAM or SRAM?"
             default IMG3_SRAM
             config IMG3_PSRAM
-                depends on !DISABLE_PSRAM
                 bool "PSRAM"
                 select PSRAM_USED
             config IMG3_SRAM
@@ -120,7 +113,7 @@ menu "CONFIG Link Option"
         bool
 
     config PSRAM_ALL_FOR_AP_HEAP
-        depends on !IMG2_PSRAM && !DATA_HEAP_PSRAM && !DISABLE_PSRAM
+        depends on !IMG2_PSRAM && !DATA_HEAP_PSRAM
         bool "ALL PSRAM USED FOR APPLICATION HEAP"
         default y
 
