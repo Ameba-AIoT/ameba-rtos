@@ -483,8 +483,9 @@ void BOOT_SOC_ClkSet(void)
 	u32 APCLK = BOOT_AP_Clk_Get();
 	u32 NPCLK = SocClk_Info->NPPLL_CLK / SocClk_Info->KM4_CPU_CKD;
 	u32 LPCLK = 0;
-	/*PsramDiv should always 1,psram controller target clk 500M */
-	PsramDiv = SocClk_Info->NPPLL_CLK / 400 - 1;
+	/*Psramc max 460M*/
+	PsramDiv = DIV_ROUND_UP(SocClk_Info->NPPLL_CLK, CLK_LIMIT_PSRAM);
+	PsramDiv = (PsramDiv > 1) ? (PsramDiv - 1) : 1;
 	/*Hbus target clk 100M*/
 	HBusDiv =  SocClk_Info->NPPLL_CLK / 100 - 1;
 	/*HPeri target clk 200M*/
