@@ -900,6 +900,9 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 		SPORTx->SP_FORMAT |= ((SP_CH_LEN_SEL_RX(SP_InitStruct->SP_SelChLen)) | (SP_DATA_FORMAT_SEL_RX(SP_InitStruct->SP_SelDataFormat)) | (SP_DATA_LEN_SEL_RX_0(
 								  SP_InitStruct->SP_SelWordLen)));
 
+		SPORTx->SP_CTRL0 &= ~SP_MASK_DATA_FORMAT_SEL_TX;
+		SPORTx->SP_CTRL0 |= SP_DATA_FORMAT_SEL_TX(SP_InitStruct->SP_SelDataFormat);
+
 		/* Configure FIFO1 parameters*/
 		SPORTx->SP_DIRECT_CTRL1 &= ~(SP_MASK_DATA_LEN_SEL_RX_1);
 		SPORTx->SP_DIRECT_CTRL1 |= (SP_DATA_LEN_SEL_RX_1(SP_InitStruct->SP_SelWordLen));
@@ -1708,18 +1711,6 @@ u32 AUDIO_SP_GetTXCounterVal(u32 index)
  * @param  index: select SPORT.
  * @retval tx_phase:SPORT TX phase value.
  */
-/* u32 AUDIO_SP_GetTXPhaseVal(u32 index)
-{
- AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
- u32 tx_phase = (SPORTx->SP_DSP_COUNTER) & SP_MASK_TX_FS_PHASE_RPT;
- return tx_phase;
-} */
-
-/**
- * @brief  Get SPORT Tx phase value when channel length is 32bit, none of the other bits will do.
- * @param  index: select SPORT.
- * @retval tx_phase:SPORT TX phase value.
- */
 u32 AUDIO_SP_GetTXPhaseVal(u32 index)
 {
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
@@ -1793,18 +1784,6 @@ u32 AUDIO_SP_GetRXCounterVal(u32 index)
 	u32 rx_counter = ((SPORTx->SP_RX_COUNTER2) & SP_MASK_RX_SPORT_COUNTER) >> 5;
 	return rx_counter;
 }
-
-/**
- * @brief  Get SPORT Rx phase value when channel length is 32bit, none of the other bits will do.
- * @param  index: select SPORT.
- * @retval rx_phase:SPORT RX phase.
- */
-/* u32 AUDIO_SP_GetRXPhaseVal(u32 index)
-{
- AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
- u32 rx_phase = (SPORTx->SP_RX_COUNTER2) & SP_MASK_RX_FS_PHASE_RPT;
- return rx_phase;
-} */
 
 /**
  * @brief  Get SPORT Rx phase value when channel length is 32bit, none of the other bits will do.

@@ -69,9 +69,7 @@ static int rtw_inet6addr_notifier_call(struct notifier_block *nb, unsigned long 
 	switch (action) {
 	case NETDEV_UP:
 		memcpy(global_idev.ipv6_addr, &inet6_ifa->addr, RTW_IPv6_ADDR_LEN);
-#if defined(CONFIG_WHC_WIFI_API_PATH)
-		whc_fullmac_host_update_ip_addr();
-#endif
+		global_idev.ipv6_addr_updated = 1;
 		dev_dbg(global_idev.fullmac_dev, "%s: up IP: [%pI6]\n", __func__, global_idev.ipv6_addr);
 		break;
 	case NETDEV_DOWN:
