@@ -26,7 +26,9 @@
 #endif
 
 #include "atcmd_sys.h"
+#ifdef CONFIG_DIAGNOSE_EN
 #include "atcmd_diag.h"
+#endif
 
 #ifndef CONFIG_MP_SHRINK
 #ifdef CONFIG_WLAN
@@ -113,7 +115,9 @@ log_init_t log_init_table[] = {
 #endif
 #endif
 	at_sys_init,
+#ifdef CONFIG_DIAGNOSE_EN
 	at_diag_init,
+#endif
 #ifndef CONFIG_AMEBAD
 	at_otp_init,
 #endif

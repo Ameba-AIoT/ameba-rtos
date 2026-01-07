@@ -9,7 +9,6 @@
 
 #include "ameba_diagnose_protocol.h"
 
-int rtk_diag_uart_send(const RtkDiagDataFrame_t *frame);
-int rtk_diag_tcp_send(const RtkDiagDataFrame_t *frame);
+int rtk_diag_uart_send(const u8 *data, u16 len);
 
 #endif

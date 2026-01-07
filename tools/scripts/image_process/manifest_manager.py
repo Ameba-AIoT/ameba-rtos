@@ -129,25 +129,30 @@ class ManifestImageConfig:
 
         if image_type != ImageType.CERT:
             #RSIP
-            if image_type == ImageType.IMAGE1 or image_type == ImageType.IMAGE2:
+            # IMG3 enc: SoCs before amebagreen2 use RDP, not RSIP; new SoCs use RSIP, not RDP
+            # Therefore, the rdp_ string is used to determine whether image3's RSIP is enabled.
+            if image_type == ImageType.IMAGE3 and any(k.startswith("rdp_") for k in config):
+                self.rsip_enable:bool = False
+            else:
                 self.rsip_enable:bool = config.get("rsip_enable", config.get("rsip_en", False))
-                if self.rsip_enable:
-                    self.rsip_mode:int = config["rsip_mode"] #0 is CTR, 1 is XTS(CTR+ECB), 2 is GCM
-                    self.rsip_gcm_tag_len:int = config.get("rsip_gcm_tag_len", 0xFF)
-                    self.rsip_iv:str = config["rsip_iv"]
-                    self.rsip_key:List[str] = []
-                    if "rsip_key_group" in config:
-                        self.rsip_key = [config[v] for v in config[config["rsip_key_group"]]]
-                    else:
-                        if self.rsip_mode == 0:
-                            self.rsip_key = [config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]]]
-                        elif self.rsip_mode == 1:
-                            self.rsip_key = [
-                                config["ecb_key"] if isinstance(config["ecb_key"], str) else config["ecb_key"][config["rsip_key_id"]],
-                                config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]],
-                            ]
-                        elif self.rsip_mode == 1:
-                            self.rsip_key = [config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]]]
+
+            if self.rsip_enable:
+                self.rsip_mode:int = config["rsip_mode"] #0 is CTR, 1 is XTS(CTR+ECB), 2 is GCM
+                self.rsip_gcm_tag_len:int = config.get("rsip_gcm_tag_len", 0xFF)
+                self.rsip_iv:str = config["rsip_iv"]
+                self.rsip_key:List[str] = []
+                if "rsip_key_group" in config:
+                    self.rsip_key = [config[v] for v in config[config["rsip_key_group"]]]
+                else:
+                    if self.rsip_mode == 0:
+                        self.rsip_key = [config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]]]
+                    elif self.rsip_mode == 1:
+                        self.rsip_key = [
+                            config["ecb_key"] if isinstance(config["ecb_key"], str) else config["ecb_key"][config["rsip_key_id"]],
+                            config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]],
+                        ]
+                    elif self.rsip_mode == 1:
+                        self.rsip_key = [config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]]]
 
             #RDP
             self.rdp_enable:bool = config.get("rdp_enable", config.get("rdp_en", False))
