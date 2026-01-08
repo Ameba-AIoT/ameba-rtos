@@ -378,7 +378,7 @@
  *            digests and ciphers instead.
  *
  */
-#define MBEDTLS_AES_ALT
+//#define MBEDTLS_AES_ALT
 //#define MBEDTLS_ARIA_ALT
 //#define MBEDTLS_CAMELLIA_ALT
 //#define MBEDTLS_CCM_ALT
@@ -395,8 +395,8 @@
 //#define MBEDTLS_RIPEMD160_ALT
 //#define MBEDTLS_RSA_ALT
 //#define MBEDTLS_SHA1_ALT
-#define MBEDTLS_SHA256_ALT
-#define MBEDTLS_SHA512_ALT
+//#define MBEDTLS_SHA256_ALT
+//#define MBEDTLS_SHA512_ALT
 
 /*
  * When replacing the elliptic curve module, please consider, that it is
