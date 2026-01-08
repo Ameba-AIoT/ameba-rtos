@@ -31,7 +31,9 @@ int fatfs_flash_close(int interface)
 int fatfs_flash_init(int interface)
 {
 	int ret = 0;
+	FRESULT res1, res2;
 	fatfs_params_t *fatfs_param;
+
 	if (interface == VFS_INF_FLASH) {
 		fatfs_param = &fatfs_flash_param;
 	}
@@ -42,9 +44,6 @@ int fatfs_flash_init(int interface)
 #endif
 
 	if ((interface == VFS_INF_FLASH && fatfs_mount_flag != 1) || (interface == VFS_INF_SECOND_FLASH && fatfs2_mount_flag != 1)) {
-		int Fatfs_ok = 0;
-		FRESULT res1, res2;
-
 		// Register disk driver to Fatfs
 		VFS_DBG(VFS_INFO, "Register flash disk driver to Fatfs.");
 #if defined(CONFIG_FATFS_SECOND_FLASH) && CONFIG_FATFS_SECOND_FLASH
@@ -58,17 +57,14 @@ int fatfs_flash_init(int interface)
 
 		if (fatfs_param->drv_num < 0) {
 			VFS_DBG(VFS_ERROR, "Register flash disk driver to FATFS fail.");
+			ret = -1;
+			goto fatfs_init_err;
 		} else {
-			Fatfs_ok = 1;
 			fatfs_param->drv[0] = fatfs_param->drv_num + '0';
 			fatfs_param->drv[1] = ':';
 			fatfs_param->drv[2] = '/';
 			fatfs_param->drv[3] = 0;
 			VFS_DBG(VFS_INFO, "Flash drive path: %s ", fatfs_param->drv);
-		}
-		if (!Fatfs_ok) {
-			ret = -1;
-			goto fatfs_init_err;
 		}
 
 		res1 = f_mount(&fatfs_param->fs, fatfs_param->drv, 1);

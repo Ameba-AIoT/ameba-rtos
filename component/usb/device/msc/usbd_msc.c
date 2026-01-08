@@ -9,9 +9,11 @@
 #include "usbd_msc.h"
 #include "usbd_scsi.h"
 #include "os_wrapper.h"
-#include "ameba_sd.h"
-#if !USBD_MSC_RAM_DISK
+#if !defined(CONFIG_USBD_MSC_RAM_DISK)
 #include "vfs_fatfs.h"
+#endif
+#ifdef CONFIG_USBD_MSC_SD_MODE
+#include "ameba_sd.h"
 #endif
 /* Private defines -----------------------------------------------------------*/
 
@@ -189,7 +191,7 @@ static usbd_msc_dev_t usbd_msc_dev;
 static usb_os_lock_t usbd_msc_sd_lock = NULL;
 
 /* Private functions ---------------------------------------------------------*/
-#if USBD_MSC_RAM_DISK
+#ifdef CONFIG_USBD_MSC_RAM_DISK
 static u8 *usbd_msc_ram_disk_buf;
 
 static int RAM_init(void)
@@ -245,50 +247,58 @@ static int RAM_WriteBlocks(u32 sector, const u8 *data, u32 count)
 
 static int usbd_msc_sd_init(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "SD init\n");
 
-#ifdef CONFIG_FATFS_SECOND_FLASH
-	return FLASH_disk_secondary_Driver.disk_initialize();
-#else
+#ifdef CONFIG_USBD_MSC_EXTERNAL_FLASH
+	return FLASH_second_disk_Driver.disk_initialize();
+#elif defined CONFIG_USBD_MSC_SD_MODE
 	return SD_disk_Driver.disk_initialize();
+#else
+	return SD_disk_spi_Driver.disk_initialize();
 #endif
 }
 
 static int usbd_msc_sd_deinit(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "SD deinit\n");
 
-#ifdef CONFIG_FATFS_SECOND_FLASH
-	return FLASH_disk_secondary_Driver.disk_deinitialize();
-#else
+#ifdef CONFIG_USBD_MSC_EXTERNAL_FLASH
+	return FLASH_second_disk_Driver.disk_deinitialize();
+#elif defined CONFIG_USBD_MSC_SD_MODE
 	return SD_disk_Driver.disk_deinitialize();
+#else
+	return SD_disk_spi_Driver.disk_deinitialize();
 #endif
 }
 
 static int usbd_msc_sd_getcapacity(u32 *sector_count)
 {
-#ifdef CONFIG_FATFS_SECOND_FLASH
-	return FLASH_disk_secondary_Driver.disk_ioctl(GET_SECTOR_COUNT, sector_count);
-#else
+#ifdef CONFIG_USBD_MSC_EXTERNAL_FLASH
+	return FLASH_second_disk_Driver.disk_ioctl(GET_SECTOR_COUNT, sector_count);
+#elif defined CONFIG_USBD_MSC_SD_MODE
 	return SD_disk_Driver.disk_ioctl(GET_SECTOR_COUNT, sector_count);
+#else
+	return SD_disk_spi_Driver.disk_ioctl(GET_SECTOR_COUNT, sector_count);
 #endif
 }
 
 static int usbd_msc_sd_readblocks(u32 sector, u8 *data, u32 count)
 {
-#ifdef CONFIG_FATFS_SECOND_FLASH
-	return FLASH_disk_secondary_Driver.disk_read(data, sector, count);
-#else
+#ifdef CONFIG_USBD_MSC_EXTERNAL_FLASH
+	return FLASH_second_disk_Driver.disk_read(data, sector, count);
+#elif defined CONFIG_USBD_MSC_SD_MODE
 	return SD_disk_Driver.disk_read(data, sector, count);
+#else
+	return SD_disk_spi_Driver.disk_read(data, sector, count);
 #endif
 }
 
 static int usbd_msc_sd_writeblocks(u32 sector, const u8 *data, u32 count)
 {
-#ifdef CONFIG_FATFS_SECOND_FLASH
-	return FLASH_disk_secondary_Driver.disk_write(data, sector, count);
-#else
+#ifdef CONFIG_USBD_MSC_EXTERNAL_FLASH
+	return FLASH_second_disk_Driver.disk_write(data, sector, count);
+#elif defined CONFIG_USBD_MSC_SD_MODE
 	return SD_disk_Driver.disk_write(data, sector, count);
+#else
+	return SD_disk_spi_Driver.disk_write(data, sector, count);
 #endif
 }
 
@@ -790,7 +800,7 @@ int usbd_msc_disk_init(void)
 {
 	int ret;
 
-#if USBD_MSC_RAM_DISK
+#ifdef CONFIG_USBD_MSC_RAM_DISK
 	ret = RAM_init();
 #else
 	ret = usbd_msc_sd_init();
@@ -803,7 +813,7 @@ int usbd_msc_disk_deinit(void)
 {
 	int ret;
 
-#if USBD_MSC_RAM_DISK
+#ifdef CONFIG_USBD_MSC_RAM_DISK
 	ret = RAM_deinit();
 #else
 	ret = usbd_msc_sd_deinit();
@@ -831,7 +841,7 @@ int usbd_msc_init(usbd_msc_cb_t *cb)
 		cdev->cb = cb;
 	}
 
-#if USBD_MSC_RAM_DISK
+#ifdef CONFIG_USBD_MSC_RAM_DISK
 	ops->disk_getcapacity = RAM_GetCapacity;
 	ops->disk_read = RAM_ReadBlocks;
 	ops->disk_write = RAM_WriteBlocks;

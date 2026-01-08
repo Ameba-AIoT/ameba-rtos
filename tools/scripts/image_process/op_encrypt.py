@@ -40,6 +40,12 @@ class Encrypt(OperationBase):
         sub.add_argument('-a', '--algorithm', type=str, choices=ManifestManager.valid_algorithm, help='Algorithm to generate key pair', required=True)
         sub.add_argument('-o', '--output-file', help='Output key pair file', required=True)
 
+        #NOTE: args for topem
+        sub = subparsers.add_parser('topem', help='Transform to pem format')
+        sub.add_argument('-o', '--output-file', help='Output pem file', required=True)
+        sub.add_argument('-a', '--algorithm', type=str, choices=ManifestManager.valid_algorithm, help='Algorithm to generate key pair', required=True)
+        sub.add_argument('-m', '--image', choices=['image1', 'image2'], help='Output pem file', required=True)
+
     @staticmethod
     def require_manifest_file(context:Context) -> bool:
         return context.args.sub_operation != "keypair"
@@ -72,6 +78,12 @@ class Encrypt(OperationBase):
                 self.context.args.output_file,
                 self.context.args.algorithm
             )
+        elif self.context.args.sub_operation == "topem":
+            return self.transform_to_pem(
+                self.context.args.output_file,
+                self.context.args.algorithm,
+                self.context.args.image
+            )
         else:
             return Error(ErrorType.INVALID_INPUT)
 
@@ -97,3 +109,8 @@ class Encrypt(OperationBase):
     def create_keypair(self, output_file:str, algorithm:str) -> Error:
         self.logger.info(f"create keypair file for {algorithm}")
         return ManifestManager.create_keypair(self.context, output_file, algorithm)
+
+    @exit_on_failure(catch_exception=True)
+    def transform_to_pem(self, output_file:str, algorithm:str, image:str) -> Error:
+        self.logger.info(f"transform to pem {algorithm}")
+        return self.manifest_manager.transform_to_pem(output_file, algorithm, ImageType[image.upper()])

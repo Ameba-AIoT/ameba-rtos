@@ -34,8 +34,9 @@ int rtk_diag_req_version(void)
 {
 	return RTK_SUCCESS;
 }
-int rtk_diag_req_set_buf_com_capacity(u16 capacity)
+int rtk_diag_req_set_buf_com_capacity(u8 *sender_buffer, u16 capacity)
 {
+	UNUSED(sender_buffer);
 	UNUSED(capacity);
 	return RTK_SUCCESS;
 }

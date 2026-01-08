@@ -7,6 +7,9 @@ from ctypes import *
 from enum import Enum, unique
 from typing import Union, List
 import copy
+from cryptography.hazmat.primitives.asymmetric import ed25519
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives import serialization
 
 from ameba_enums import *
 from context import Context
@@ -129,25 +132,30 @@ class ManifestImageConfig:
 
         if image_type != ImageType.CERT:
             #RSIP
-            if image_type == ImageType.IMAGE1 or image_type == ImageType.IMAGE2:
+            # IMG3 enc: SoCs before amebagreen2 use RDP, not RSIP; new SoCs use RSIP, not RDP
+            # Therefore, the rdp_ string is used to determine whether image3's RSIP is enabled.
+            if image_type == ImageType.IMAGE3 and any(k.startswith("rdp_") for k in config):
+                self.rsip_enable:bool = False
+            else:
                 self.rsip_enable:bool = config.get("rsip_enable", config.get("rsip_en", False))
-                if self.rsip_enable:
-                    self.rsip_mode:int = config["rsip_mode"] #0 is CTR, 1 is XTS(CTR+ECB), 2 is GCM
-                    self.rsip_gcm_tag_len:int = config.get("rsip_gcm_tag_len", 0xFF)
-                    self.rsip_iv:str = config["rsip_iv"]
-                    self.rsip_key:List[str] = []
-                    if "rsip_key_group" in config:
-                        self.rsip_key = [config[v] for v in config[config["rsip_key_group"]]]
-                    else:
-                        if self.rsip_mode == 0:
-                            self.rsip_key = [config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]]]
-                        elif self.rsip_mode == 1:
-                            self.rsip_key = [
-                                config["ecb_key"] if isinstance(config["ecb_key"], str) else config["ecb_key"][config["rsip_key_id"]],
-                                config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]],
-                            ]
-                        elif self.rsip_mode == 1:
-                            self.rsip_key = [config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]]]
+
+            if self.rsip_enable:
+                self.rsip_mode:int = config["rsip_mode"] #0 is CTR, 1 is XTS(CTR+ECB), 2 is GCM
+                self.rsip_gcm_tag_len:int = config.get("rsip_gcm_tag_len", 0xFF)
+                self.rsip_iv:str = config["rsip_iv"]
+                self.rsip_key:List[str] = []
+                if "rsip_key_group" in config:
+                    self.rsip_key = [config[v] for v in config[config["rsip_key_group"]]]
+                else:
+                    if self.rsip_mode == 0:
+                        self.rsip_key = [config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]]]
+                    elif self.rsip_mode == 1:
+                        self.rsip_key = [
+                            config["ecb_key"] if isinstance(config["ecb_key"], str) else config["ecb_key"][config["rsip_key_id"]],
+                            config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]],
+                        ]
+                    elif self.rsip_mode == 1:
+                        self.rsip_key = [config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]]]
 
             #RDP
             self.rdp_enable:bool = config.get("rdp_enable", config.get("rdp_en", False))
@@ -163,16 +171,15 @@ class ManifestImageConfig:
         #SBOOT:
         if image_type in [ImageType.IMAGE1, ImageType.IMAGE2, ImageType.CERT, ImageType.VBMETA]:  #image3 is not required
             self.sboot_enable:bool = config.get("sboot_enable", config.get("secure_boot_en", False))
-            if self.sboot_enable:
-                self.sboot_algorithm:str = config["sboot_algorithm"] if "sboot_algorithm" in config else config["algorithm"]
-                self.sboot_hash_alg:str = config["sboot_hash_alg"] if "sboot_hash_alg" in config else config["hash_alg"]
-                if "sboot_hmac_key" in config:
-                    self.sboot_hmac_key:str = config[config["sboot_hmac_key"]] if config["sboot_hmac_key"] in config else config["sboot_hmac_key"]
-                else:
-                    self.sboot_hmac_key:str = config["hmac_key"]
-                self.sboot_private_key:str = config["sboot_private_key"] if "sboot_private_key" in config else config["private_key"]
-                self.sboot_public_key:str = config["sboot_public_key"] if "sboot_public_key" in config else config["public_key"]
-            self.sboot_public_key_hash:str = config["sboot_public_key_hash"] if "sboot_public_key_hash" in config else config["public_key_hash"]
+            self.sboot_algorithm:str = config["sboot_algorithm"] if "sboot_algorithm" in config else config.get("algorithm", "")
+            self.sboot_hash_alg:str = config["sboot_hash_alg"] if "sboot_hash_alg" in config else config.get("hash_alg", "")
+            if "sboot_hmac_key" in config:
+                self.sboot_hmac_key:str = config[config["sboot_hmac_key"]] if config["sboot_hmac_key"] in config else config["sboot_hmac_key"]
+            else:
+                self.sboot_hmac_key:str = config.get("hmac_key", "")
+            self.sboot_private_key:str = config["sboot_private_key"] if "sboot_private_key" in config else config.get("private_key", "")
+            self.sboot_public_key:str = config["sboot_public_key"] if "sboot_public_key" in config else config.get("public_key", "")
+            self.sboot_public_key_hash:str = config["sboot_public_key_hash"] if "sboot_public_key_hash" in config else config.get("public_key_hash", "")
 
         #PQC Support (for image2 when version >= 2)
         if "sboot_pqc_public_key_hash" in config:
@@ -829,4 +836,66 @@ class ManifestManager(ABC):
 
         with open(output_file, 'w') as f:
             json5.dump(key_info, f, indent=2)
+        return Error.success()
+
+    def transform_to_pem(self, output_file:str, algorithm:str, image_type) -> Error:
+        supportted_alg = ['ed25519', 'secp256r1']
+        if algorithm not in supportted_alg:
+            self.context.logger.error(f"not support algorithm: {algorithm}, support: {supportted_alg}")
+            return Error(ErrorType.INVALID_ARGS, "not support algorithm")
+        image_config = self.get_image_config(image_type)
+        private_key = bytes.fromhex(image_config.sboot_private_key)
+        public_key = bytes.fromhex(image_config.sboot_public_key)
+        public_key_hash_hex = image_config.sboot_public_key_hash
+        final_priv = None
+        if algorithm == 'ed25519':
+            seed = private_key[:32]
+            expected_pk = public_key
+            priv = ed25519.Ed25519PrivateKey.from_private_bytes(seed)
+            pub = priv.public_key()
+            pub_raw = pub.public_bytes(
+                encoding=serialization.Encoding.Raw,
+                format=serialization.PublicFormat.Raw
+            )
+            if pub_raw == expected_pk:
+                final_priv = priv
+            calc_hash = hashlib.sha256(pub_raw).hexdigest().upper()
+            json_hash_upper = public_key_hash_hex.upper()
+            if calc_hash != json_hash_upper:
+                self.context.logger.warning(f"hash not match: {json_hash_upper} vs {calc_hash}")
+        elif algorithm == 'secp256r1':
+            private_value = int.from_bytes(private_key, byteorder='big')
+            final_priv = ec.derive_private_key(private_value, ec.SECP256R1())
+            pub = final_priv.public_key()
+            pub_raw = pub.public_bytes(
+                encoding=serialization.Encoding.X962,
+                format=serialization.PublicFormat.UncompressedPoint
+            )
+            expected_pk = public_key
+            pub_to_compare = pub_raw
+            if len(expected_pk) == 64 and len(pub_raw) == 65:
+                pub_to_compare = pub_raw[1:]
+
+            if pub_to_compare != expected_pk:
+                self.context.logger.warning(
+                    f"Public key mismatch! Config: {expected_pk.hex()[:10]}... Derived: {pub_to_compare.hex()[:10]}..."
+                )
+            calc_hash = hashlib.sha256(pub_raw).hexdigest().upper()
+            json_hash_upper = public_key_hash_hex.upper()
+
+            if calc_hash != json_hash_upper:
+                calc_hash_no_header = hashlib.sha256(pub_raw[1:]).hexdigest().upper()
+                if calc_hash_no_header == json_hash_upper:
+                    pass
+                else:
+                    self.context.logger.warning(f"hash not match: {json_hash_upper} vs {calc_hash}")
+
+        enc = serialization.NoEncryption()
+        pem_pkcs8 = final_priv.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=enc
+        )
+        with open(output_file, "wb") as f:
+            f.write(pem_pkcs8)
         return Error.success()

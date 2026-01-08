@@ -13,13 +13,10 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
-#define USBD_MSC_TX_THREAD_PRIORITY                 5U  /**< TX thread priority */
-#define USBD_MSC_RX_THREAD_PRIORITY                 5U  /**< RX thread priority */
+#define USBD_MSC_TX_THREAD_PRIORITY                 5U                 /**< TX thread priority */
+#define USBD_MSC_RX_THREAD_PRIORITY                 5U                 /**< RX thread priority */
 
-/**
-* @brief Defines configuration constants like VID/PID, USB strings, and power settings.
- * @{
- */
+/* Defines configuration constants like VID/PID, USB strings, and power settings. */
 #define USBD_MSC_VID                                USB_VID            /**< Vendor ID. */
 #define USBD_MSC_PID                                USB_PID            /**< Product ID. */
 #define USBD_MSC_SELF_POWERED                       1U                 /**< Set to 1 if device is self-powered, 0 for bus-powered. */
@@ -29,78 +26,64 @@
 #define USBD_MSC_PROD_HS_STRING                     "Realtek MSC (HS)" /**< Product string for High-Speed. */
 #define USBD_MSC_PROD_FS_STRING                     "Realtek MSC (FS)" /**< Product string for Full-Speed. */
 #define USBD_MSC_SN_STRING                          "1234567890"       /**< Serial number string. */
-/** @} */
 
-/**
- * @brief Defines MSC-specific endpoint parameters.
- * @{
- */
+/* Defines MSC-specific endpoint parameters. */
 #if defined (CONFIG_AMEBAGREEN2)
-#define USBD_MSC_BULK_IN_EP                         0x82U
-#define USBD_MSC_BULK_OUT_EP                        0x02U
+#define USBD_MSC_BULK_IN_EP                         0x82U              /**< Endpoint for BULK IN. */
+#define USBD_MSC_BULK_OUT_EP                        0x02U              /**< Endpoint for BULK OUT. */
 #else
-#define USBD_MSC_BULK_IN_EP                         0x81U
-#define USBD_MSC_BULK_OUT_EP                        0x02U
+#define USBD_MSC_BULK_IN_EP                         0x81U              /**< Endpoint for BULK IN. */
+#define USBD_MSC_BULK_OUT_EP                        0x02U              /**< Endpoint for BULK OUT. */
 #endif
 
-#define USBD_MSC_HS_MAX_PACKET_SIZE                 512U    /**< High-Speed BULK IN & OUT max packet size. */
-#define USBD_MSC_FS_MAX_PACKET_SIZE                 64U     /**< Full-Speed BULK IN & OUT max packet size. */
+#define USBD_MSC_HS_MAX_PACKET_SIZE                 512U               /**< High-Speed BULK IN & OUT maximum packet size. */
+#define USBD_MSC_FS_MAX_PACKET_SIZE                 64U                /**< Full-Speed BULK IN & OUT maximum packet size. */
 
-#define USBD_MSC_CTRL_BUF_SIZE                      512U    /**< CTRL buffer size */
-/** @} */
+#define USBD_MSC_CTRL_BUF_SIZE                      512U               /**< Control transfer buffer size */
 
 /* MSC configurations */
-#define USBD_MSC_RAM_DISK							0      /* Use RAM as storage media, for test purpose only */
-#define USBD_MSC_FIX_CV_TEST_ISSUE					0      /* Enable for CV test */
+#define USBD_MSC_FIX_CV_TEST_ISSUE                  0                  /* Enable for CV test */
 
 /* RAM disk configurations */
-#if USBD_MSC_RAM_DISK
-#define USBD_MSC_RAM_DISK_SIZE                        (USBD_MSC_BUFLEN * 8) /**< Total size of the RAM disk. */
-#define USBD_MSC_RAM_DISK_SECTORS                     (USBD_MSC_RAM_DISK_SIZE >> USBD_MSC_BLK_BITS) /**< Total number of sectors in RAM disk. */
+#ifdef CONFIG_USBD_MSC_RAM_DISK
+#define USBD_MSC_RAM_DISK_SIZE                      (USBD_MSC_BUFLEN * 8) /**< Total size of the RAM disk. Should be > 64KB to support ATTO benchmark test. */
+#define USBD_MSC_RAM_DISK_SECTORS                   (USBD_MSC_RAM_DISK_SIZE >> USBD_MSC_BLK_BITS) /**< Total number of sectors in RAM disk. */
 #endif
 
-/**
- * @brief Defines storage-related parameters like block size and buffer length.
- * @{
- */
-#define USBD_MSC_BLK_BITS                             9              /**< Number of bits per block (log2(512)). */
-#define USBD_MSC_BLK_SIZE                             (1 << USBD_MSC_BLK_BITS) /**< Block size in bytes (512). */
-#define USBD_MSC_BUFLEN                               (16 * 1024)    /**< Default size of the internal data buffer. */
-/** @} */
+/* Defines storage-related parameters like block size and buffer length. */
+#define USBD_MSC_BLK_BITS                           9                        /**< Number of bits per block (log2(512)). */
+#define USBD_MSC_BLK_SIZE                           (1 << USBD_MSC_BLK_BITS) /**< Block size in bytes (512). */
+#define USBD_MSC_BUFLEN                             (16 * 1024)              /**< Default size of the internal data buffer. */
 
-/**
- * @brief Defines MSC class-specific request codes for the bRequest field.
- * @{
- */
-#define USBD_MSC_REQUEST_RESET                        0xFFU        /**< Bulk-Only Mass Storage Reset request. */
-#define USBD_MSC_REQUEST_GET_MAX_LUN                  0xFEU        /**< Get Max LUN request. */
-/** @} */
+/* Defines MSC class-specific request codes for the bRequest field. */
+#define USBD_MSC_REQUEST_RESET                      0xFFU        /**< Bulk-Only Mass Storage Reset request. */
+#define USBD_MSC_REQUEST_GET_MAX_LUN                0xFEU        /**< Get Max LUN request. */
 
 /* CBW/CSW configurations */
-#define USBD_MSC_CB_WRAP_LEN                          31U          /**< Standard CBW length */
-#define USBD_MSC_CB_SIGN                              0x43425355U  /**< Standard dCBWSignature, spells out USBC */
-#define USBD_MSC_CS_WRAP_LEN                          13U          /**< Standard CSW length */
-#define USBD_MSC_CS_SIGN                              0x53425355U  /**< Standard dCSWSignature, spells out 'USBS' */
+#define USBD_MSC_CB_WRAP_LEN                        31U          /**< Standard CBW length */
+#define USBD_MSC_CB_SIGN                            0x43425355U  /**< Standard dCBWSignature, spells out USBC */
+#define USBD_MSC_CS_WRAP_LEN                        13U          /**< Standard CSW length */
+#define USBD_MSC_CS_SIGN                            0x53425355U  /**< Standard dCSWSignature, spells out 'USBS' */
 
 /* CSW Status Definitions */
-#define USBD_MSC_CSW_CMD_PASSED                       0x00U
-#define USBD_MSC_CSW_CMD_FAILED                       0x01U
-#define USBD_MSC_CSW_PHASE_ERROR                      0x02U
+#define USBD_MSC_CSW_CMD_PASSED                     0x00U        /**< The `pass` status of the command execution */
+#define USBD_MSC_CSW_CMD_FAILED                     0x01U        /**< The `fail` status of the command execution */
+#define USBD_MSC_CSW_PHASE_ERROR                    0x02U        /**< The `phase error` status of the command execution */
 
 /* BOT state */
-#define USBD_MSC_IDLE                                  0U       /**< Idle state */
-#define USBD_MSC_DATA_OUT                              1U       /**< Data Out state */
-#define USBD_MSC_DATA_IN                               2U       /**< Data In state */
-#define USBD_MSC_LAST_DATA_IN                          3U       /**< Last Data In Last */
-#define USBD_MSC_SEND_DATA                             4U       /**< Send Immediate data */
-#define USBD_MSC_NO_DATA                               5U       /**< No data Stage */
+#define USBD_MSC_IDLE                               0U          /**< Idle state */
+#define USBD_MSC_DATA_OUT                           1U          /**< Data Out state */
+#define USBD_MSC_DATA_IN                            2U          /**< Data In state */
+#define USBD_MSC_LAST_DATA_IN                       3U          /**< Last Data In state */
+#define USBD_MSC_SEND_DATA                          4U          /**< Send Immediate data */
+#define USBD_MSC_NO_DATA                            5U          /**< No data Stage */
 
 /* BOT status */
-#define USBD_MSC_STATUS_NORMAL                         0U
-#define USBD_MSC_STATUS_RECOVERY                       1U
-#define USBD_MSC_STATUS_ERROR                          2U
+#define USBD_MSC_STATUS_NORMAL                      0U          /**< Normal working status */
+#define USBD_MSC_STATUS_RECOVERY                    1U          /**< Get MSC Reset request for recovery */
+#define USBD_MSC_STATUS_ERROR                       2U          /**< Error status */
 
-#define USBD_MSC_SENSE_LIST_DEPTH                      4U        /**< Depth of the SCSI sense data list. */
+#define USBD_MSC_SENSE_LIST_DEPTH                   4U          /**< Depth of the SCSI sense data list. */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -126,7 +109,7 @@ typedef struct {
 	u32 dCSWSignature;            /**< CSW Signature, must be 'USBS' (0x53425355). */
 	u32 dCSWTag;                  /**< The device shall set this to the value from the associated CBW's dCBWTag. */
 	u32 dCSWDataResidue;          /**< The difference between the amount of data expected and the actual data processed. */
-	u8 bCSWStatus;                /**< The status of the command execution (0=Pass, 1=Fail, 2=Phase Error). */
+	u8 bCSWStatus;                /**< The status of the command execution (0=Pass, 1=Fail, 2=Phase Error), see `USBD_MSC_CSW_XX`. */
 } usbd_msc_csw_t;
 
 /**
@@ -216,7 +199,6 @@ typedef struct {
 	u32 blkbits;                                    /**< Number of bits per block. */
 	u32 blksize;                                    /**< Block size in bytes. */
 	u32 blklen;                                     /**< The data length requested by the host. */
-
 	u16 rx_data_length;                             /**< BULK Received data length. */
 	u8 tx_status;                                   /**< BULK Transmitted status. */
 	u8 ro;                                          /**< Flag for media is write-protected. */

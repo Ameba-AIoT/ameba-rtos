@@ -47,3 +47,17 @@ class OperationBase(metaclass=BaseMeta):
     @staticmethod
     @abstractmethod
     def require_layout_file(context:Context) -> bool:...
+
+class OperationEmpty(OperationBase):
+    cmd_help_msg = 'Internal using for create Context'
+
+    def __init__(self, context:Context) -> None:
+        super().__init__(context)
+
+    @staticmethod
+    def require_manifest_file(context:Context) -> bool:
+        return True
+
+    @staticmethod
+    def require_layout_file(context:Context) -> bool:
+        return True

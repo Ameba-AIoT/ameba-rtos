@@ -10,11 +10,6 @@ static const char *const TAG = "APP";
 extern int main(void);
 extern void SOCPS_WakeFromPG_NP(void);
 
-#if defined (__GNUC__)
-/* Add This for C++ support to avoid compile error */
-void _init(void) {}
-#endif
-
 //set all KM0 rom & ram no-cachable, just flash cachable
 u32 app_mpu_nocache_init(void)
 {
@@ -79,12 +74,6 @@ void app_start(void)
 
 	/* low power pin dont need pinmap init again after wake from dslp */
 	pinmap_init(); /* 1.7ms */
-
-#if defined (__GNUC__)
-	extern void __libc_init_array(void);
-	/* Add This for C++ support */
-	__libc_init_array();
-#endif
 
 	/* 6. Configure MPU */
 	mpu_init();

@@ -8,6 +8,8 @@
 #define __O     volatile
 #define __IO    volatile
 
+#define HOTPULG_IN 0
+#define HOTPULG_OUT 1
 
 typedef struct {
 	DSTATUS(*disk_initialize)(void);                       /*!< Initialize Disk Drive                     */
@@ -35,6 +37,8 @@ extern ll_diskio_drv SD_disk_spi_Driver;
 extern ll_diskio_drv FLASH_disk_Driver;
 extern ll_diskio_drv FLASH_second_disk_Driver;
 
+extern void (*fatfs_hostplug_usr_cb)(int);
+
 typedef struct fatfs_flash_param_s {
 	int drv_num;
 	char drv[4];
@@ -53,8 +57,9 @@ int fatfs_flash_close(int interface);
 int fatfs_usbh_init(void);
 int fatfs_usbh_close(void);
 
+void fatfs_set_hotplug_usr_cb(void (*cd_callback)(int status));
+
 int FATFS_RegisterDiskDriver(ll_diskio_drv *disk_drv);
 int FATFS_UnRegisterDiskDriver(unsigned char drv_num);
 int FATFS_getDrivernum(const char *TAG);
-
 #endif

@@ -55,23 +55,27 @@ int rtk_diag_init(u16 heap_capacity, u16 sender_buffer_size);
 void rtk_diag_deinit(void);
 int rtk_diag_event_add(u8 evt_level, u16 evt_type, const u8 *evt_info, u16 evt_len);
 
+int rtk_diag_config_transform(rtk_diag_sender_t sender, u8 *sender_buffer, u16 sender_buffer_size);
+bool rtk_diag_transform_has_configed(void);
+
 //handle atcmd request and response
-int rtk_diag_req_timestamp(void); //获取当前系统时间戳
-int rtk_diag_req_version(void); //获取版本信息
-int rtk_diag_req_set_buf_com_capacity(u16 capacity); //设置通信缓冲容量
-int rtk_diag_req_set_buf_evt_capacity(u16 capacity); //设置事件总堆占用上限
-// int rtk_diag_req_set_buf_evt_pool_capacity(u16 capacity); //设置小事件内存池容量
-int rtk_diag_req_get_event(u32 timestamp, u16 offset); //获取event
-int rtk_diag_req_del_event_before(u32 timestamp); //删除指定时间(含)前事件
-int rtk_diag_req_del_event_after(u32 timestamp); //删除指定时间后事件
-int rtk_diag_req_get_del_events(void); //获取最近删除的事件
-int rtk_diag_req_clr_del_events(void); //清空最近删除的事件
-int rtk_diag_req_log_enable(u8 state); //设置开启或关闭log
+int rtk_diag_req_timestamp(void);
+int rtk_diag_req_version(void);
+int rtk_diag_req_set_buf_com_capacity(u8 *sender_buffer, u16 capacity); //set send buffer capacity
+int rtk_diag_req_set_buf_evt_capacity(u16 capacity); //set heap usage limit of event
+int rtk_diag_req_get_event(u32 timestamp, u16 offset);
+int rtk_diag_req_del_event_before(u32 timestamp);
+int rtk_diag_req_del_event_after(u32 timestamp); //This api will delete all events actually
+int rtk_diag_req_get_del_events(void); //get deleted events recently
+int rtk_diag_req_clr_del_events(void); //clear deleted events records
+int rtk_diag_req_log_enable(u8 state);
 
-
+void rtk_diag_proto_pack_crc(RtkDiagDataFrame_t *frame);
+int rtk_diag_req_low(u8 cmd, const u8 *payload, u16 payload_length, u8 error);
 //for debug
 #ifdef DIAG_DEBUG_TEST
 int rtk_diag_req_add_event_demo1(u8 evt_level, const char *data);
 int rtk_diag_req_dbg_log_enable(u8 state);
+int rtk_diag_dbg_send(const u8 *data, u16 len);
 #endif
 #endif //_AMEBA_DIAGNOSE_H_

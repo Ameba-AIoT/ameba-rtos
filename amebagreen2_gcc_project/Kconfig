@@ -39,13 +39,6 @@ config SUPPORT_USBD_UAC
 config SUPPORT_USBH_UAC
     def_bool y
 
-if TRUSTZONE_EN
-
-config SUPPORT_USBH_UVC_HW_DEC
-    def_bool y
-
-endif
-
 config SUPPORT_USBH_ECM
     def_bool y
 

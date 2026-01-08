@@ -9,6 +9,7 @@
 
 #include "ameba_soc.h"
 #include "ameba_diagnose_format.h"
+#include "ameba_diagnose_customer.h"
 
 /*****************************************************************************************************
  *                                   Internal
@@ -35,13 +36,18 @@ enum rtk_diag_cmd_type {
 	RTK_DIAG_CMD_TYPE_SET_LOG = 0x0A,
 
 	RTK_DIAG_CMD_TYPE_SET_DBG_LOG = 0x20,
+	RTK_DIAG_CMD_TYPE_NONE,
 };
 
 enum rtk_diag_ipc_msg_type {
-	RTK_DIAG_IPC_MSG_TYPE_ATCMD     = 0x00,
-	RTK_DIAG_IPC_MSG_TYPE_EVT_ADD   = 0x01
+	RTK_DIAG_IPC_MSG_TYPE_CONFIG    = 0x00,
+	RTK_DIAG_IPC_MSG_TYPE_ATCMD     = 0x01,
+	RTK_DIAG_IPC_MSG_TYPE_EVT_ADD   = 0x02,
 };
-#define RTK_DIAG_IPC_WAIT_RESPONSE (-255)
+
+#define RTK_DIAG_IPC_WAIT_RESPONSE  (-255)
+#define RTK_DIAG_IPC_DATA_READY     (-254)
+#define RTK_DIAG_IPC_FINISH         (-253)
 #define RTK_DIAG_IPC_WAIT_TIMEOUT (1000000)
 
 typedef struct {
@@ -72,5 +78,13 @@ typedef u32(*rtk_diag_heap_length_getter_t)(void *data);
 typedef void (*rtk_diag_heap_release_notice_t)(void *data);
 typedef const RtkDiagEvent_t *(*rtk_diag_queue_next_event_getter_t)(void);
 typedef void (*rtk_diag_ring_array_emplace_t)(void *address, const void *origin_data);
+typedef int (*rtk_diag_sender_t)(const u8 *data, u16 len);
+
+
+#ifdef DIAG_DEBUG_TEST
+#define DIAG_DBG_ASSERT(v) assert_param(v)
+#else
+#define DIAG_DBG_ASSERT(v)
+#endif
 
 #endif
