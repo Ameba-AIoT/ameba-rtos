@@ -49,6 +49,10 @@ if AIVOICE_EN_MENU
         config VAD_V8_60K_MENU
             bool "vad_v8_60K"
             select VAD_V8_60K if CORE_AS_AP
+
+        config VAD_V9_208K_MENU
+            bool "vad_v9_208K"
+            select VAD_V9_208K if CORE_AS_AP
     endchoice
 
     config SELECT_KWS_RESOURCE
@@ -142,6 +146,9 @@ config VAD_V7_200K
     bool
 
 config VAD_V8_60K
+    bool
+
+config VAD_V9_208K
     bool
 
 config KWS_XIAOQIANGXIAOQIANG_NIHAOXIAOQIANG_V4_300K
