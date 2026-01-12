@@ -1395,6 +1395,9 @@ void bt_stack_le_gap_set_config(void *app_conf)
 		le_bond_set_param(GAP_PARAM_BOND_SET_LOCAL_IRK, GAP_KEY_LEN, papp_conf->irk);
 	}
 #endif
+	if (papp_conf->min_enc_key_size) {
+		le_bond_set_param(GAP_PARAM_BOND_MIN_KEY_SIZE, sizeof(uint8_t), &papp_conf->min_enc_key_size);
+	}
 }
 
 void bt_stack_le_gap_ext_adv_init(void)
@@ -2520,9 +2523,28 @@ static bool bt_stack_le_sm_pairing_get_ltk(uint8_t conn_id, uint8_t *dev_ltk_len
 	return false;
 }
 
+static rtk_bt_le_sec_level_t convert_security_level(T_GAP_SEC_LEVEL sec_level)
+{
+	switch (sec_level) {
+	case GAP_SEC_LEVEL_UNAUTHEN:
+		__attribute__((fallthrough));
+	case GAP_SEC_LEVEL_SC_UNAUTHEN:
+		return RTK_BT_LE_SEC_LEVEL_UNAUTHEN;
+	case GAP_SEC_LEVEL_AUTHEN:
+		return RTK_BT_LE_SEC_LEVEL_AUTHEN;
+	case GAP_SEC_LEVEL_SC_AUTHEN:
+		return RTK_BT_LE_SEC_LEVEL_SC_AUTHEN_128;
+	case GAP_SEC_LEVEL_NO:
+		__attribute__((fallthrough));
+	default:
+		return RTK_BT_LE_SEC_LEVEL_NONE;
+	}
+}
+
 static void bt_stack_le_gap_handle_authen_state_evt(T_LE_GAP_MSG *p_gap_msg)
 {
 	T_GAP_AUTHEN_STATE *authen_state = &p_gap_msg->msg_data.gap_authen_state;
+	T_GAP_SEC_LEVEL sec_level;
 	uint8_t conn_id = authen_state->conn_id;
 	uint16_t status = authen_state->status;
 	uint8_t ltk_length = 0;
@@ -2545,6 +2567,9 @@ static void bt_stack_le_gap_handle_authen_state_evt(T_LE_GAP_MSG *p_gap_msg)
 		} else {
 			auth_ind->dev_ltk_length = ltk_length;
 			memcpy(auth_ind->dev_ltk, ltk, ltk_length);
+		}
+		if (GAP_CAUSE_SUCCESS == le_bond_get_sec_level(conn_id, &sec_level)) {
+			auth_ind->sec_level = convert_security_level(sec_level);
 		}
 	} else {
 		auth_ind->err = status;

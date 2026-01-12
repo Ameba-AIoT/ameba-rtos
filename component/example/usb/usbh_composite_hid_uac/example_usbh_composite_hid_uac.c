@@ -202,6 +202,10 @@ static int usbh_uac_cb_process(usb_host_t *host, u8 id)
 	case USBH_MSG_CONNECTED:
 		break;
 
+	case USBH_MSG_PROBE_FAIL:
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Probe Fail\n");
+		break;
+
 	default:
 		break;
 	}
