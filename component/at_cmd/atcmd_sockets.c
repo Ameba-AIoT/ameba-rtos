@@ -101,6 +101,35 @@ void hang_seednode(struct _node *main_node, struct _node *seed_node)
 	return;
 }
 
+void delete_seenode(struct _node *main_node, struct _node *seed_node)
+{
+	struct _node *n = main_node;
+	SYS_ARCH_DECL_PROTECT(lev);
+	SYS_ARCH_PROTECT(lev);
+
+	if (seed_node->ssl) {
+		mbedtls_ssl_free(seed_node->ssl);
+	}
+
+	close(seed_node->sockfd);
+
+	if (seed_node->ssl) {
+		rtos_mem_free(seed_node->ssl);
+	}
+
+	while (n->nextseed != seed_node) {
+		n = n->nextseed;
+	}
+	n->nextseed = seed_node->nextseed;
+
+	memset(seed_node, 0, sizeof(struct _node));
+	seed_node->sockfd = INVALID_SOCKET_ID;
+	seed_node->link_id = INVALID_LINK_ID;
+
+	SYS_ARCH_UNPROTECT(lev);
+	return;
+}
+
 
 //AT+SKTCFG=[<so_sndtimeo>],[<so_rcvtimeo>],[<tcp_nodelay>],[<so_keepalive>],[<tcp_keepidle>],[<tcp_keepintvl>],[<tcp_keepcnt>]
 void at_sktcfg(void *arg)
@@ -570,8 +599,9 @@ void socket_server_tcp_auto_rcv_client_and_data(void *param)
 							RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tcp_auto_rcv_client_and_data] Failed to read() = %d\r\n", actual_bytes_received);
 						}
 						FD_CLR(seednode->sockfd, &read_fds);
-						close(seednode->sockfd);
-						seednode->sockfd = INVALID_SOCKET_ID;
+						at_printf_indicate("[SKT][EVENT]: A client[link_id:%d,seed,tcp,dst_address:%s,dst_port:%d] disconnected from server[link_id:%d]\r\n",
+										   seednode->link_id, inet_ntoa(node_pool[seednode->link_id].dst_ip), seednode->dst_port, current_node->link_id);
+						delete_seenode(current_node, seednode);
 					}
 				}
 				seednode = seednode->nextseed;
@@ -809,11 +839,9 @@ void socket_server_tls_auto_rcv_client_and_data(void *param)
 							RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tls_auto_rcv_client_and_data] Failed to mbedtls_ssl_read() = -0x%04x\r\n", -actual_bytes_received);
 						}
 						FD_CLR(seednode->sockfd, &read_fds);
-						mbedtls_ssl_free(seednode->ssl);
-						close(seednode->sockfd);
-						seednode->sockfd = INVALID_SOCKET_ID;
-						rtos_mem_free(seednode->ssl);
-						seednode->ssl = NULL;
+						at_printf_indicate("[SKT][EVENT]: A client[link_id:%d,seed,tls,dst_address:%s,dst_port:%d] disconnected from server[link_id:%d]\r\n",
+										   seednode->link_id, inet_ntoa(node_pool[seednode->link_id].dst_ip), seednode->dst_port, current_node->link_id);
+						delete_seenode(current_node, seednode);
 					}
 				}
 				seednode = seednode->nextseed;

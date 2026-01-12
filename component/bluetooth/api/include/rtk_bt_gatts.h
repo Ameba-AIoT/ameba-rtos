@@ -18,24 +18,30 @@ extern "C"
 
 /**
  * @def       RTK_BT_GATT_INTERNAL
- * @brief     The attribute value is defined as a static(or global) variable in user APP,
- *            and the variable's pointer will be passed into lower stack. If this attribute is
- *            read by remote, lower stack will auto send this attribute value to response
- *            to read request, if this attribute is write by remote, lower stack will auto
- *            write the attribute value into this variable and response to write request.
- *            User APP layer need not to care it.
+ * @brief     This attribute will be handled by stack internal. When the attribute is a
+ *            characteristic value, this flag is equal to @ref RTK_BT_GATT_VOID.
  */
 #define RTK_BT_GATT_INTERNAL                0
 
 /**
  * @def       RTK_BT_GATT_APP
- * @brief     This attribute will be handled by User APP. ALL read/write to this attribute
- *            will be indicated to user app by a callback, and user App need to call
+ * @brief     This attribute will be handled by user APP. All read/write to this attribute
+ *            will be indicated to user APP by a callback, and user APP need to call
  *            @ref rtk_bt_gatts_read_resp or @ref rtk_bt_gatts_write_resp to response to
  *            read/write request from remote and modify the attribute value maintained
  *            in user APP when recevie write request.
  */
 #define RTK_BT_GATT_APP                     1
+
+/**
+ * @def       RTK_BT_GATT_VOID
+ * @brief     This attribute value will be passed into lower stack as a pointer. If this
+ *            attribute is read by remote, lower stack will auto send this attribute value
+ *            to response to read request. This flag is not suggested to be used when the
+ *            attribute is writable(including encrypted/authenticated write), because it
+ *            will not indicate APP the write events.
+ */
+#define RTK_BT_GATT_VOID                    2
 
 /**
  * @struct    rtk_bt_gatt_chrc

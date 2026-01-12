@@ -1181,12 +1181,12 @@ static app_bt_le_audio_scan_dev_info_t *app_bt_le_audio_scan_dev_list_add(app_bt
 	return p_scan_dev_info;
 }
 
-static bool app_bt_le_audio_adv_filter_service_data(uint8_t report_data_len, uint8_t *p_report_data,
+static bool app_bt_le_audio_adv_filter_service_data(uint16_t report_data_len, uint8_t *p_report_data,
 													uint16_t uuid, uint8_t **pp_service_data, uint16_t *p_data_len,
 													app_bt_le_audio_scan_dev_info_t *p_scan_dev_info)
 {
 	uint8_t *p_buffer = NULL;
-	uint8_t pos = 0;
+	uint16_t pos = 0;
 	uint16_t length = 0;
 	uint8_t type = 0;
 	bool is_found = false;

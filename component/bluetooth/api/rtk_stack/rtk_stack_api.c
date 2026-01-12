@@ -246,6 +246,7 @@ static uint16_t bt_stack_init(void *app_config)
 		default_conf.irk_auto_gen = papp_conf->irk_auto_gen;
 		memcpy(default_conf.irk, papp_conf->irk, RTK_BT_LE_GAP_IRK_LEN);
 #endif
+		default_conf.min_enc_key_size = papp_conf->min_enc_key_size;
 	} else {
 		default_conf.mtu_size = 180;
 		default_conf.master_init_mtu_req = true;
@@ -265,6 +266,7 @@ static uint16_t bt_stack_init(void *app_config)
 		default_conf.irk_auto_gen = true;
 		memset(default_conf.irk, 0, RTK_BT_LE_GAP_IRK_LEN);
 #endif
+		default_conf.min_enc_key_size = 0;
 	}
 
 	//Trace uart init

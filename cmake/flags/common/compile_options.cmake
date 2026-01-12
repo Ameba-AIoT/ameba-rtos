@@ -49,7 +49,7 @@ ameba_list_append(c_GLOBAL_COMMON_COMPILE_C_OPTIONS
 
     -save-temps=obj
     # -fno-short-enums
-    # -ffile-prefix-map=${c_BASEDIR}=.
+    -ffile-prefix-map=${c_BASEDIR}=.
 )
 
 if(CONFIG_AMEBALITE OR CONFIG_AMEBAD)

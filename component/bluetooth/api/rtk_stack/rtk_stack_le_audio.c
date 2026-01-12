@@ -528,7 +528,7 @@ uint16_t bt_stack_le_audio_sync_dev_remove(void *sync_handle)
 	p_list->count --;
 	osif_mutex_give(pmtx);
 	osif_mem_free(p_sync_dev_info);
-	BT_LOGD("[LEA STACK] %s remove sync_handle(%08x) from sync_handle list ok\r\n", __func__, sync_handle);
+	BT_LOGA("[LEA STACK] %s remove sync_handle(%08x) from sync_handle list ok\r\n", __func__, sync_handle);
 
 	return RTK_BT_OK;
 }

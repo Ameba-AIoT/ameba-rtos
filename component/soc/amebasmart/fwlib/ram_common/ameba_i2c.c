@@ -96,6 +96,13 @@ void I2C_Init(I2C_TypeDef *I2Cx, I2C_InitTypeDef *I2C_InitStruct)
 	/* Disable the IC first */
 	I2Cx->IC_ENABLE &= ~I2C_BIT_ENABLE;
 
+	/* To set IC_FILTER */
+	if (I2C_InitStruct->I2CFilter > (I2C_BIT_IC_DIG_FLTR_SEL | I2C_MASK_IC_DIG_FLTR_DEG)) {
+		I2C_InitStruct->I2CFilter |= I2C_MASK_IC_DIG_FLTR_DEG;
+		RTK_LOGD(TAG, "Filter value is out of range, clamped to max: 0x%x.\n", I2C_MASK_IC_DIG_FLTR_DEG);
+	}
+	I2Cx->IC_FILTER = I2C_InitStruct->I2CFilter;
+
 	/* Master case*/
 	if (I2C_InitStruct->I2CMaster) {
 		/*RESTART MUST be set in these condition in Master mode.
@@ -151,9 +158,6 @@ void I2C_Init(I2C_TypeDef *I2Cx, I2C_InitTypeDef *I2C_InitStruct)
 
 	/* To set RX_Full Level */
 	I2Cx->IC_RX_TL = I2C_InitStruct->I2CRXTL;
-
-	/* To set IC_FILTER */
-	I2Cx->IC_FILTER = I2C_InitStruct->I2CFilter;
 
 	/*I2C Clear all interrupts first*/
 	I2C_ClearAllINT(I2Cx);
@@ -262,6 +266,16 @@ void I2C_SetSpeed(I2C_TypeDef *I2Cx, u32 SpdMd, u32 I2Clk, u32 I2CIPClk)
 
 	default:
 		break;
+	}
+
+	/* check I2C filter */
+	u32 ICfilter = I2Cx->IC_FILTER;
+	u32 FilterLimit = ICHtime * IPClkM / 2000; /* filter_reg <= tHigh/4*2/clk_ns */
+	if (I2C_GET_IC_DIG_FLTR_DEG(ICfilter) > FilterLimit) {
+		RTK_LOGD(TAG, "Filter exceeds the limit: 0x%x.\n", FilterLimit);
+		ICfilter &= ~I2C_MASK_IC_DIG_FLTR_DEG;
+		ICfilter |= I2C_IC_DIG_FLTR_DEG(FilterLimit);
+		I2Cx->IC_FILTER = ICfilter;
 	}
 }
 
@@ -493,7 +507,7 @@ s32 I2C_PollFlagRawINT(I2C_TypeDef *I2Cx, u32 I2C_FLAG, u32 I2C_RawINT, u32 time
 		*txflr_out = 0;
 	}
 
-	while (((I2Cx->IC_STATUS & I2C_FLAG) == 0) & ((I2Cx->IC_RAW_INTR_STAT & I2C_RawINT) == 0)) {
+	while (((I2Cx->IC_STATUS & I2C_FLAG) == 0) && ((I2Cx->IC_RAW_INTR_STAT & I2C_RawINT) == 0)) {
 		if (I2Cx->IC_RAW_INTR_STAT & I2C_BIT_TX_ABRT) {
 			RTK_LOGI(TAG, "TX_ABRT: 0x%x\n", I2Cx->IC_TX_ABRT_SOURCE);
 			if (txflr_out) {

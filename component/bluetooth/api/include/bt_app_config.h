@@ -61,6 +61,7 @@ typedef struct {
                                                     will be indicated immediately.
                                                     By default, cccd will be saved. And this value will be ignored if @ref RTK_BLE_AUDIO_SUPPORT is enabled.*/
 	bool     key_convert_le_to_bredr;          /*!< Whether convert BLE LTK(only secure connections pairing) to BR/EDR link key (This configuration can only be used in BLE-BR/EDR Dual mode) */
+	uint8_t  min_enc_key_size;                 /*!< The minimum encryption key size that can be permitted when BLE pairing. */
 #if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
 	rtk_bt_le_iso_app_conf_t le_iso_app_conf; /*!< Default configuration for le iso */
 #endif

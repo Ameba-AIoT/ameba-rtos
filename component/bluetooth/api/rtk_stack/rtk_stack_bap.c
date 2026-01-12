@@ -1364,7 +1364,7 @@ static void bt_stack_le_audio_sync_cb(T_BLE_AUDIO_SYNC_HANDLE sync_handle, uint8
 	switch (cb_type) {
 	case MSG_BLE_AUDIO_SYNC_HANDLE_RELEASED: {
 		APP_PRINT_TRACE1("MSG_BLE_AUDIO_SYNC_HANDLE_RELEASED: action_role %d", p_sync_cb->p_sync_handle_released->action_role);
-		BT_LOGD("MSG_BLE_AUDIO_SYNC_HANDLE_RELEASED: action_role %d", p_sync_cb->p_sync_handle_released->action_role);
+		BT_LOGA("MSG_BLE_AUDIO_SYNC_HANDLE_RELEASED: action_role %d\r\n", p_sync_cb->p_sync_handle_released->action_role);
 		p_sync_dev_info = bt_stack_le_audio_sync_dev_find(sync_handle);
 		if (!p_sync_dev_info) {
 			BT_LOGE("[BAP] %s bt_stack_le_audio_sync_dev_find fail\r\n", __func__);
@@ -1398,6 +1398,16 @@ static void bt_stack_le_audio_sync_cb(T_BLE_AUDIO_SYNC_HANDLE sync_handle, uint8
 		bt_stack_le_audio_pa_sync_state_change(sync_handle, p_sync_cb->p_pa_sync_state, p_sync_dev_info);
 		if (p_sync_dev_info) {
 			bt_stack_le_audio_check_sync(p_sync_dev_info);
+		}
+		if (p_sync_cb->p_pa_sync_state->sync_state == GAP_PA_SYNC_STATE_TERMINATED) {
+			if (p_sync_cb->p_pa_sync_state->action == BLE_AUDIO_PA_TERMINATE ||
+				p_sync_cb->p_pa_sync_state->action == BLE_AUDIO_PA_LOST) {
+				if (!ble_audio_sync_release(&sync_handle)) {
+					BT_LOGD("[BAP] MSG_BLE_AUDIO_PA_SYNC_STATE: sync handle 0x%x release failed\r\n", __func__, sync_handle);
+				} else {
+					BT_LOGA("[BAP] MSG_BLE_AUDIO_PA_SYNC_STATE: sync handle 0x%x release success\r\n", __func__, sync_handle);
+				}
+			}
 		}
 	}
 	break;
@@ -1521,8 +1531,19 @@ static void bt_stack_le_audio_sync_cb(T_BLE_AUDIO_SYNC_HANDLE sync_handle, uint8
 						BT_LOGE("[BAP] %s bt_stack_le_audio_ext_scan_act fail \r\n", __func__);
 					}
 				}
+				bt_stack_le_audio_big_sync_state_indicate(p_sync_cb->p_big_sync_state, sync_handle);
+			} else if (p_sync_cb->p_big_sync_state->sync_state == BIG_SYNC_RECEIVER_SYNC_STATE_TERMINATED &&
+					   p_sync_cb->p_big_sync_state->action == BLE_AUDIO_BIG_TERMINATE &&
+					   (bt_le_audio_priv_data.bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK)) {
+				bt_stack_le_audio_big_sync_state_indicate(p_sync_cb->p_big_sync_state, sync_handle);
+				if (!ble_audio_sync_release(&sync_handle)) {
+					BT_LOGD("[BAP] MSG_BLE_AUDIO_BIG_SYNC_STATE: sync handle 0x%x release failed\r\n", __func__, sync_handle);
+				} else {
+					BT_LOGA("[BAP] MSG_BLE_AUDIO_BIG_SYNC_STATE: sync handle 0x%x release success\r\n", __func__, sync_handle);
+				}
+			} else {
+				bt_stack_le_audio_big_sync_state_indicate(p_sync_cb->p_big_sync_state, sync_handle);
 			}
-			bt_stack_le_audio_big_sync_state_indicate(p_sync_cb->p_big_sync_state, sync_handle);
 		}
 	}
 	break;
