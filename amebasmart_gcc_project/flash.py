@@ -15,7 +15,7 @@ PROJECT_ROOT_DIR = os.path.realpath(os.path.dirname(os.path.abspath(__file__)))
 PROFILE_NOR = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/ameba/Flash/Devices/Profiles/AmebaSmart_FreeRTOS_NOR.rdev"))
 PROFILE_NAND = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/ameba/Flash/Devices/Profiles/AmebaSmart_FreeRTOS_NAND.rdev"))
 PROFILE = {'nor': PROFILE_NOR, 'nand': PROFILE_NAND}
-FLASH_TOOL = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/ameba/Flash/flash.py"))
+FLASH_TOOL = os.path.realpath(os.path.join(PROJECT_ROOT_DIR, "../tools/ameba/Flash/AmebaFlash.py"))
 
 
 class MemoryInfo:
