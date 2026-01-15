@@ -149,36 +149,12 @@ char bt_inic_sdio_txfifo_data_ready(void *priv, void *pbuf, u8 *pdata, u16 size,
 	return RTK_SUCCESS;
 }
 
-static bool bt_inic_get_wakelock_status(void)
-{
-	uint32_t lock_status = pmu_get_wakelock_status();
-	BT_LOGD("[BT_PS] lock_status = 0x%x\r\n", lock_status);
-
-	if (lock_status & ((0x01) << PMU_BT_DEVICE)) {
-		return true;    //Already acquire bt wake lock
-	} else {
-		return false;   //Already release bt wake lock
-	}
-}
-
-static void bt_inic_acquire_wakelock(void)
-{
-	if (bt_inic_get_wakelock_status() == false) {
-		BT_LOGD("[BT_PS] pmu_acquire_wakelock PMU_BT_DEVICE\r\n");
-		pmu_acquire_wakelock(PMU_BT_DEVICE);
-	} else {
-		BT_LOGD("[BT_PS] already acquire PMU_BT_DEVICE\r\n");
-	}
-}
-
 static u32 bt_inic_sdio_dev_suspend(u32 expected_idle_time, void *param)
 {
 	UNUSED(expected_idle_time);
 	UNUSED(param);
 
-	BT_LOGD("[BT_PS] Enter %s \r\n", __func__);
-
-	hci_platform_force_uart_rts(true);
+	BT_LOGD("Enter %s \r\n", __func__);
 
 	SDIO_SetReady(SDIO_BT, DISABLE);
 
@@ -192,10 +168,7 @@ static u32 bt_inic_sdio_dev_resume(u32 expected_idle_time, void *param)
 
 	BT_LOGD("Enter %s \r\n", __func__);
 
-	bt_inic_acquire_wakelock();
 	SDIO_SetReady(SDIO_BT, ENABLE);
-
-	hci_platform_force_uart_rts(false);
 
 	return TRUE;
 }
@@ -239,7 +212,7 @@ void bt_inic_sdio_init(void)
 
 	osif_mutex_create(&rxbd_mutex);
 
-	pmu_register_sleep_callback(PMU_BT_DEVICE, (PSM_HOOK_FUN)bt_inic_sdio_dev_suspend, NULL, (PSM_HOOK_FUN)bt_inic_sdio_dev_resume, NULL);
+	pmu_register_sleep_callback(PMU_BT_HOST, (PSM_HOOK_FUN)bt_inic_sdio_dev_suspend, NULL, (PSM_HOOK_FUN)bt_inic_sdio_dev_resume, NULL);
 
 	BT_LOGA("BT SDIO device interface init OK !!\r\n");
 }

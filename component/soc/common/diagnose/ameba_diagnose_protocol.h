@@ -9,13 +9,13 @@
 
 #include "ameba_diagnose_types.h"
 
-int rtk_diag_proto_init(u16 payload_capacity, rtk_diag_queue_next_event_getter_t getter);
+int rtk_diag_proto_init(rtk_diag_queue_next_event_getter_t getter);
 void rtk_diag_proto_deinit(void);
 
-int rtk_diag_proto_set_capacity(u16 payload_capacity);
-u16 rtk_diag_proto_get_capacity(void);
+void rtk_diag_proto_set_buffer(RtkDiagDataFrame_t *sender_buffer, u16 sender_buffer_size);
+void rtk_diag_proto_pack_event(const RtkDiagEvent_t *event, u16 global_offset, u16 local_offset);
 
-const RtkDiagDataFrame_t *rtk_diag_proto_pack_error(u8 cmd_type, u8 error);
-const RtkDiagDataFrame_t *rtk_diag_proto_pack_data(const RtkDiagEvent_t *event, u16 global_offset, u16 local_offset);
+void rtk_diag_proto_pack_error(RtkDiagDataFrame_t *sender_buffer, u8 cmd_type, u8 error);
+void rtk_diag_proto_pack_custom(RtkDiagDataFrame_t *sender_buffer, u8 cmd_type, const u8 *payload, u16 payload_length);
 
 #endif

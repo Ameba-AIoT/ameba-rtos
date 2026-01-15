@@ -634,6 +634,38 @@ void UART_RTSForceCmd(UART_TypeDef *UARTx, u32 NewState)
 }
 
 /**
+ * @brief Configure UART rx timeout threshold.
+ * @param UARTx UART device, where x can be 0~3.
+ * @param RxTimeout Rx timeout value, unit is one bit time.
+ * @return None
+ */
+void UART_RxToThreConfig(UART_TypeDef *UARTx, u32 RxTimeout)
+{
+	assert_param(RxTimeout <= 0xFFFF);
+
+	u32 reg = UARTx->RX_PATH_CTRL;
+	reg &= ~RUART_MASK_R_RXTO_THRS;
+	reg |= RUART_R_RXTO_THRS(RxTimeout);
+	UARTx->RX_PATH_CTRL = reg;
+}
+
+/**
+ * @brief Configure UART rxfifo empty timeout threshold.
+ * @param UARTx UART device, where x can be 0~3.
+ * @param RxTimeout Rx timeout counter works in uart_rclk.
+ * @return None
+ */
+void UART_REToThreConfig(UART_TypeDef *UARTx, u32 RxTimeout)
+{
+	assert_param(RxTimeout <= 0xFFFFFFF);
+
+	u32 reg = UARTx->TH_RETI;
+	reg &= ~RUART_MASK_TH_RETI;
+	reg |= RUART_TH_RETI(RxTimeout);
+	UARTx->TH_RETI = reg;
+}
+
+/**
  * @}
  */
 

@@ -5,7 +5,7 @@
  ******************************************************************************/
 #include "whc_dev.h"
 
-#ifdef CONFIG_WHC_DUAL_TCPIP
+#ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
 #include "whc_dev_tcpip.h"
 
 #include "lwip/sys.h"

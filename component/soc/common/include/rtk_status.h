@@ -61,6 +61,7 @@ enum rtk_error_code {
 	RTK_ERR_WIFI_CONN_ASSOC_FAIL            = RTK_ERR_WIFI_BASE + 15,   /**< <!-- DIAG: --> Assoc fail*/
 	RTK_ERR_WIFI_CONN_4WAY_HANDSHAKE_FAIL   = RTK_ERR_WIFI_BASE + 16,   /**< <!-- DIAG: --> 4 way handshake fail*/
 	RTK_ERR_WIFI_CONN_4WAY_PASSWORD_WRONG   = RTK_ERR_WIFI_BASE + 17,   /**< <!-- DIAG: --> 4 way handshake fail, password may wrong*/
+	RTK_ERR_WIFI_CONN_APP_DISCONN           = RTK_ERR_WIFI_BASE + 18,   /**< <!-- DIAG: --> Connentting is aborted by application layer to disconnect*/
 
 	RTK_ERR_WIFI_POWEROFF       = RTK_ERR_WIFI_BASE + 32,   /**< <!-- DIAG: --> Wi-Fi is powered off in IPS(Inactive Power Save) mode, unable to access Wi-Fi registers.*/
 	RTK_ERR_WIFI_TX_BUF_FULL    = RTK_ERR_WIFI_BASE + 33,   /**< <!-- DIAG: --> tx buffer full(hw buffer & skb buffer) */

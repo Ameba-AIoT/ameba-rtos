@@ -13,7 +13,7 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
-#define USBH_UVC_CLASS_CODE  0xE
+#define USBH_UVC_CLASS_CODE                                  0xE
 
 /* A.5. Video Class-Specific VC Interface Descriptor Subtypes */
 #define USBH_UVC_VC_DESCRIPTOR_UNDEFINED                     0x00
@@ -23,7 +23,7 @@
 #define USBH_UVC_VC_SELECTOR_UNIT                            0x04
 #define USBH_UVC_VC_PROCESSING_UNIT                          0x05
 #define USBH_UVC_VC_EXTENSION_UNIT                           0x06
-#define USBH_UVC_VC_ENCODING_UNIT							0X07
+#define USBH_UVC_VC_ENCODING_UNIT                            0X07
 
 /* A.6. Video Class-Specific VS Interface Descriptor Subtypes */
 #define USBH_UVC_VS_UNDEFINED                                0x00
@@ -58,14 +58,14 @@
 #define USBH_UVC_GET_INFO                                    0x86
 #define USBH_UVC_GET_DEF                                     0x87
 
-#define VS_PROBE_CONTROL	(0x1<<8)
-#define VS_COMMIT_CONTROL	(0x2<<8)
+#define USBH_UVC_VS_PROBE_CONTROL                           (0x1<<8)
+#define USBH_UVC_VS_COMMIT_CONTROL                          (0x2<<8)
 
-#define USB_SUBCLASS_VIDEOCONTROL	0x01
-#define USB_SUBCLASS_VIDEOSTREAMING	0x02
+#define USBH_UVC_SUBCLASS_VIDEOCONTROL                       0x01
+#define USBH_UVC_SUBCLASS_VIDEOSTREAMING                     0x02
 
-#define USB_DESC_TYPE_CS_INTERFACE      0x24
-#define USB_DESC_TYPE_CS_ENDPOINT       0x25
+#define USBH_UVC_DESC_TYPE_CS_INTERFACE                      0x24
+#define USBH_UVC_DESC_TYPE_CS_ENDPOINT                       0x25
 
 
 /* Exported types ------------------------------------------------------------*/
@@ -83,7 +83,7 @@ typedef union {
 		u8 err: 1; //Error
 		u8 eoh: 1; //End of header
 	} b;
-} uvc_header_bitmap_t;
+} usbh_uvc_header_bitmap_t;
 
 
 typedef  struct {
@@ -107,7 +107,7 @@ typedef  struct {
 
 typedef struct {
 	u8 bHeaderLength;
-	uvc_header_bitmap_t bmHeaderInfo;
+	usbh_uvc_header_bitmap_t bmHeaderInfo;
 	u8 *ptr;
 } __PACKED usbh_uvc_vs_payload_header_t;
 

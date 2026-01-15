@@ -16,8 +16,16 @@ Attach SD card to the SDIOH slot on the board.
 	[*] Enable USB
 			USB Mode (Device)  --->
 	[*] 	MSC
+			Select storage media (RAM)  --->
 	```
 	Save and exit.
+
+	As a USB storage device, Ameba supports flexible access and management of various storage media, which can be configured as:
+
+	* RAM
+	* SD Card (SD Mode: using SDIO interface)
+	* SD Card (SPI Mode: using SPI interface)
+	* External Flash
 
 2. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.

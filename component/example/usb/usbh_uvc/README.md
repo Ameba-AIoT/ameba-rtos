@@ -1,6 +1,6 @@
 # Example Description
 
-In this application, Ameba is designed as an USB UVC host which can communicate with specific USB MJPEG camera.
+In this application, Ameba is designed as an USB UVC host which can communicate with specific USB camera.
 
 # HW Configuration
 
@@ -10,10 +10,15 @@ Taking RTL8730EA/QFN100 boards for example, the register R20 shall be parted on 
 # SW configuration
 
 1. Configure test scenarios
-	Configure `CONFIG_USBH_UVC_APP` in `example_usbh_uvc.c` for different test scenarios:
-	- `USBH_UVC_APP_SIMPLE`: Capture the frame and abandon it
-	- `USBH_UVC_APP_VFS`: Capture the frame and save it to filesystem. User need to configure VFS correctly refer to VFS example or document.
-	- `USBH_UVC_APP_HTTPC`: Capture the frame and save it to http server.
+	Configure `CONFIG_USBH_UVC` in `example_usbh_uvc.c` for different test scenarios:
+	- `USBH_UVC_SIMPLE`: Capture the frame and abandon it
+	- `USBH_UVC_VFS`: Capture the frame and save it to filesystem. User need to configure VFS correctly refer to VFS example or document.
+	- `USBH_UVC_HTTPC`: Capture the frame and save it to http server.
+
+	Configure CONFIG_USBH_UVC_FORMAT in example_usbh_uvc.c to test different video frame formats:
+	- `USBH_UVC_FORMAT_MJPEG`: Test capturing and processing MJPEG compressed frames.
+	- `USBH_UVC_FORMAT_YUV`: Test capturing and processing uncompressed YUV frames (Raw Data).
+	- `USBH_UVC_FORMAT_H264`: Test capturing and processing H.264 (AVC) encoded frames.
 
 2. Menuconfig
 	Type command `./menuconfig.py` under the project directory and choose `CONFIG USB`:
@@ -36,57 +41,34 @@ Taking RTL8730EA/QFN100 boards for example, the register R20 shall be parted on 
 	[UVC-I] USBH UVC demo start
 	```
 
-3. Ameba board will recoganize the USB camera and start to capture MJPEG frames at the rate of one frame per second.
+3. Ameba board will recoganize the USB camera and start to capture vedio frames at the rate of one frame per second.
 
 4. Once attach uvc camera to host, host will capture 200 images cyclically. Following log shall be printed on the LOGUART console:
 	```
-	[UVC] USB host uvc demo started...
-	[MAIN-I] KM4 START SCHEDULER 
-	[USB-I] USB configurations:
-	[USB-I] * speed: 0
-	[USB-I] * main_task_priority: 3
-	[USB-I] * alt_max_cnt: 25
-	[USB-I] GSNPSID = 0x4F54310A
-	UVC init
-	[USB-I] USB Device Attached
-	[USB-I] PID: 0x0530
-	[USB-I] VID: 0x27C2
-	[USB-I] Address (#1) assigned
-	[USB-I] Manufacturer: USB FHD Camera
-	[USB-I] Product: USB FHD Camera
-	[USB-I] Serial Number: 2399_2093_IQ306_v47_still
-	[USB-I] Enumeration done, total 1 configuration(s)
-	[USB-I] Default configuration set
-	[UVC-I] bDescriptorType: 11
-	[USB-I] 14 class started
-	UVC attach
-
-	Set UVC parameters
-
-	UVC para: 1280*720@30fps
-	MJPEG Stream
-
-	UVC stream on
-	Get frame 0
-
-	Capture uvc data, len=124008
-	Put frame
-	Get frame 1
-
-	Capture uvc data, len=43085
-	Put frame
-	Get frame 2
-
-	Capture uvc data, len=44906
-	Put frame
-	Get frame 3
-
-	Capture uvc data, len=44879
-	Put frame
-	Get frame 4
+	[UVC-I] USBH UVC demo start
+	[MAIN-I] KM4 START SCHEDULER
 	...
-	```
-
+	[UVC-I] INIT
+	[USBH-A] Device connect
+	[USBH-A] PID: 0x9230
+	[USBH-A] VID: 0x05a3
+	[USBH-A] Cfg 1
+	[USBH-A] Address 1 assigned
+	[USBH-A] MFG: HD Camera Manufacturer
+	[USBH-A] PROD: USB 2.0 Camera
+	[USBH-A] SN: N/A
+	[USBH-A] Enum done, total 1 cfg
+	[UVC-I] ATTACH
+	[UVC-I] Set paras: MJPEG 1280*720@60fps
+	[UVC-I] Stream on
+	[UVC-I] Captured frame 0, len=20832
+	[UVC-I] Captured frame 1, len=20912
+	...
+	[UVC-I] Captured frame 199, len=108264
+	[UVC-I] TP 4126 KB/s @ 4953 ms, fps 40/s
+	[UVC-I] TP 4.0 MB/s-40 (0_20930888/200)
+	[UVC-I] Stream off
+	[UVC-I] USBH UVC demo stop
 # Note
 
 None

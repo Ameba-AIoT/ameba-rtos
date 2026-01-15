@@ -124,49 +124,4 @@ int mbedtls_sha256_finish(mbedtls_sha256_context *ctx,
     return ret;
 }
 
-/*
- * output = SHA-256( input buffer )
- */
-int mbedtls_sha256(const unsigned char *input,
-                   size_t ilen,
-                   unsigned char *output,
-                   int is224)
-{
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    mbedtls_sha256_context ctx;
-
-#if defined(MBEDTLS_SHA224_C) && defined(MBEDTLS_SHA256_C)
-    if (is224 != 0 && is224 != 1) {
-        return MBEDTLS_ERR_SHA256_BAD_INPUT_DATA;
-    }
-#elif defined(MBEDTLS_SHA256_C)
-    if (is224 != 0) {
-        return MBEDTLS_ERR_SHA256_BAD_INPUT_DATA;
-    }
-#else /* defined MBEDTLS_SHA224_C only */
-    if (is224 == 0) {
-        return MBEDTLS_ERR_SHA256_BAD_INPUT_DATA;
-    }
-#endif
-
-    mbedtls_sha256_init(&ctx);
-
-    if ((ret = mbedtls_sha256_starts(&ctx, is224)) != 0) {
-        goto exit;
-    }
-
-    if ((ret = mbedtls_sha256_update(&ctx, input, ilen)) != 0) {
-        goto exit;
-    }
-
-    if ((ret = mbedtls_sha256_finish(&ctx, output)) != 0) {
-        goto exit;
-    }
-
-exit:
-    mbedtls_sha256_free(&ctx);
-
-    return ret;
-}
-
 #endif /* !MBEDTLS_SHA256_ALT */

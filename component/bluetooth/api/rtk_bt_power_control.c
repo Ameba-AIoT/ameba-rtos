@@ -28,7 +28,7 @@ static bool rtk_bt_get_wakelock_status(void)
 	uint32_t lock_status = pmu_get_wakelock_status();
 	BT_LOGD("[BT_PS] lock_status = 0x%x\r\n", lock_status);
 
-	if (lock_status & ((0x01) << PMU_BT_DEVICE)) {
+	if (lock_status & ((0x01) << PMU_BT_CONTROLLER)) {
 		return true;    //Already acquire bt wake lock
 	} else {
 		return false;   //Already release bt wake lock
@@ -38,20 +38,20 @@ static bool rtk_bt_get_wakelock_status(void)
 void rtk_bt_release_wakelock(void)
 {
 	if (rtk_bt_get_wakelock_status() == true) {
-		BT_LOGD("[BT_PS] pmu_release_wakelock PMU_BT_DEVICE\r\n");
-		pmu_release_wakelock(PMU_BT_DEVICE);
+		BT_LOGD("[BT_PS] pmu_release_wakelock PMU_BT_CONTROLLER\r\n");
+		pmu_release_wakelock(PMU_BT_CONTROLLER);
 	} else {
-		BT_LOGD("[BT_PS] already release PMU_BT_DEVICE\r\n");
+		BT_LOGD("[BT_PS] already release PMU_BT_CONTROLLER\r\n");
 	}
 }
 
 void rtk_bt_acquire_wakelock(void)
 {
 	if (rtk_bt_get_wakelock_status() == false) {
-		BT_LOGD("[BT_PS] pmu_acquire_wakelock PMU_BT_DEVICE\r\n");
-		pmu_acquire_wakelock(PMU_BT_DEVICE);
+		BT_LOGD("[BT_PS] pmu_acquire_wakelock PMU_BT_CONTROLLER\r\n");
+		pmu_acquire_wakelock(PMU_BT_CONTROLLER);
 	} else {
-		BT_LOGD("[BT_PS] already acquire PMU_BT_DEVICE\r\n");
+		BT_LOGD("[BT_PS] already acquire PMU_BT_CONTROLLER\r\n");
 	}
 }
 
@@ -126,7 +126,7 @@ void rtk_bt_power_save_init(rtk_bt_ps_callback p_suspend_callback, rtk_bt_ps_cal
 	rtk_bt_resume_callback = p_resume_callback;
 
 	/* register callback before entering ps mode and after exiting ps mode */
-	pmu_register_sleep_callback(PMU_BT_DEVICE, (PSM_HOOK_FUN)rtk_bt_suspend, NULL, (PSM_HOOK_FUN)rtk_bt_resume, NULL);
+	pmu_register_sleep_callback(PMU_BT_CONTROLLER, (PSM_HOOK_FUN)rtk_bt_suspend, NULL, (PSM_HOOK_FUN)rtk_bt_resume, NULL);
 
 	InterruptRegister((IRQ_FUN)rtk_bt_wake_host_irq_handler, BT_WAKE_HOST_IRQ, NULL, INT_PRI_LOWEST);
 }
@@ -136,7 +136,7 @@ void rtk_bt_power_save_deinit(void)
 	InterruptDis(BT_WAKE_HOST_IRQ);
 	InterruptUnRegister(BT_WAKE_HOST_IRQ);
 
-	pmu_unregister_sleep_callback(PMU_BT_DEVICE);
+	pmu_unregister_sleep_callback(PMU_BT_CONTROLLER);
 
 	rtk_bt_suspend_callback = NULL;
 	rtk_bt_resume_callback = NULL;

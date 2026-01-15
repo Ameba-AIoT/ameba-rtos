@@ -7,7 +7,7 @@
 #ifdef CONFIG_AMEBAGREEN2  // need use QFN100
 #define PINMUX_FUNCTION_SPIM	    PINMUX_FUNCTION_SPI0
 #define DEV_READY_PIN				_PA_18
-#define RX_REQ_PIN					_PA_19
+#define DEV_TX_REQ_PIN				_PA_19
 #define SPIM_MOSI                   _PA_30
 #define SPIM_MISO                   _PA_31
 #define SPIM_SCLK                   _PA_29
@@ -17,7 +17,7 @@
 #elif defined (CONFIG_AMEBADPLUS)
 #define PINMUX_FUNCTION_SPIM	    PINMUX_FUNCTION_SPI
 #define DEV_READY_PIN				_PB_9
-#define RX_REQ_PIN					_PB_8
+#define DEV_TX_REQ_PIN				_PB_8
 #define SPIM_MOSI	                _PB_24
 #define SPIM_MISO	                _PB_25
 #define SPIM_SCLK	                _PB_23
@@ -27,7 +27,7 @@
 #elif defined (CONFIG_AMEBALITE)
 #define PINMUX_FUNCTION_SPIM	    PINMUX_FUNCTION_SPI
 #define DEV_READY_PIN				_PB_3   // amebalite use different pin due to _PA_1(num 15, GPIO22 got by command "pinout") will be pull down by raspberry pi
-#define RX_REQ_PIN					_PB_2
+#define DEV_TX_REQ_PIN				_PB_2
 #define SPIM_MOSI	                _PA_29
 #define SPIM_MISO	                _PA_30
 #define SPIM_SCLK	                _PA_28
@@ -39,8 +39,8 @@
 #define DEV_READY					1
 #define DEV_BUSY					0
 
-#define DEV_RX_REQ					1
-#define DEV_RX_IDLE					0
+#define DEV_TX_REQ					1
+#define DEV_TX_IDLE					0
 
 #define HOST_READY					1
 #define HOST_BUSY					0

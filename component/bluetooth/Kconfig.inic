@@ -21,6 +21,8 @@ choice
         bool "UART H4"
     config BT_INIC_H5
         bool "UART H5"
+    config BT_INIC_NONE
+        bool "Internal"
     config BT_INIC_SPI_D
         depends on (BT_INIC_DEBUG || BT_INIC_HOST_DEBUG)
         bool "SPI"
@@ -42,7 +44,7 @@ config BT_INIC_USB
     def_bool (BT_INIC_SHARE && WHC_INTF_USB) || BT_INIC_USB_D
 
 config BT_INIC
-    def_bool FULLMAC_DEV || BT_INIC_DEBUG
+    def_bool (FULLMAC_DEV && !BT_INIC_NONE) || BT_INIC_DEBUG
 
 config BT_INIC_HOST
     def_bool WHC_FULLMAC_HOST || BT_INIC_HOST_DEBUG

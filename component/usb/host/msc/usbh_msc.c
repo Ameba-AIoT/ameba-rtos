@@ -725,7 +725,7 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
   * @brief  Check if the MSC function is ready
   * @retval Status
   */
-int usbh_msc_is_rdy(void)
+int usbh_msc_is_ready(void)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	int res;
@@ -759,7 +759,7 @@ u32 usbh_msc_get_max_lun(void)
   * @param  lun: logical Unit Number
   * @retval Lun status (0: not ready / 1: ready)
   */
-int usbh_msc_unit_is_rdy(u8 lun)
+int usbh_msc_unit_is_ready(u8 lun)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	int res;

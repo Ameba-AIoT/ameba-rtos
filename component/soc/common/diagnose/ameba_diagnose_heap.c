@@ -64,35 +64,42 @@ int rtk_diag_heap_destroy(RtkDiagHeapHandler_t *handler)
 	return RTK_SUCCESS;
 }
 
-//头部在前尾部在后(used_start < used_end), 或者初始没有数据的状态(used_start和used_end均为0)
+/**
+ * Head at front and tail at rear (used_start < used_end),
+ * or initial state with no data (both used_start and used_end are 0)
+ */
 static void *rtk_diag_heap_malloc_normal(RtkDiagHeapHandler_t *handler, u32 length)
 {
 	void *result = NULL;
-	assert_param(handler->head_end == handler->tail_end);
-	assert_param(handler->used_size == handler->head_end - handler->head_begin);
-	if (handler->capacity - handler->tail_end >= length) { //尾部有足够的空间
-		//Just allocate space from tail of space
+	DIAG_DBG_ASSERT(handler->head_end == handler->tail_end);
+	DIAG_DBG_ASSERT(handler->used_size == handler->head_end - handler->head_begin);
+	if (handler->capacity - handler->tail_end >= length) {
+		/* Sufficient space available at the tail */
 		result = handler->heap_pool + handler->tail_end;
 		handler->tail_end += length;
 		handler->used_size += length;
 		if (handler->head_begin == handler->tail_begin) {
 			handler->head_end = handler->tail_end;
 		}
-	} else { //从头部开始申请空间
-		u32 free_space = handler->head_begin; //head_begin可能不为0, 数据块可能被主动free过
+	} else { /** Allocate space starting from the head */
+		u32 free_space = handler->head_begin; /** head_begin may not be 0 (data blocks may have been actively freed) */
 		u32 current_head_data_length;
 		while (free_space < length) {
 			if (handler->head_begin < handler->head_end) {
-				//head_begin指向一个可以释放的数据块
-				handler->notice(handler->heap_pool + handler->head_begin); //通知用户要释放的数据块
-				current_head_data_length = handler->getter(handler->heap_pool + handler->head_begin); //获取待释放的数据块大小
-				handler->head_begin += current_head_data_length; //指向下一个数据块
-				//head_end不变
+				/** head_begin points to a freeable data block */
+
+				/** Notify the user of the data block to be freed */
+				handler->notice(handler->heap_pool + handler->head_begin);
+				/** Get the size of the data block to be freed */
+				current_head_data_length = handler->getter(handler->heap_pool + handler->head_begin);
+				/** Points to the next data block */
+				handler->head_begin += current_head_data_length;
+				/** head_end remains unchanged */
 				handler->used_size -= current_head_data_length;
 				free_space += current_head_data_length;
 			} else {
-				//head_begin进入了空洞块
-				assert_param(handler->used_size == 0);
+				/** head_begin enters the hole block */
+				DIAG_DBG_ASSERT(handler->used_size == 0);
 				handler->head_begin = 0;
 				handler->head_end = length;
 				break;
@@ -103,8 +110,10 @@ static void *rtk_diag_heap_malloc_normal(RtkDiagHeapHandler_t *handler, u32 leng
 		handler->used_size += length;
 		result = handler->heap_pool;
 		if (handler->head_begin >= handler->head_end) {
-			//上述while中可能在if中恰好申请足够的内存, 但此时head_begin可能进入空洞区了
-			assert_param(handler->head_begin == handler->head_end);
+			/** Sufficient memory may be allocated in the if clause of the above while loop,
+			 * but head_begin may enter the hole area at this time
+			 */
+			DIAG_DBG_ASSERT(handler->head_begin == handler->head_end);
 			handler->head_begin = 0;
 			handler->head_end = handler->tail_end;
 		}
@@ -160,36 +169,41 @@ void *rtk_diag_heap_malloc(RtkDiagHeapHandler_t *handler, u32 length)
 		 * tail_begin tail_end
 		 */
 		// RTK_LOGA("DIAG", "DBG: %u %u %u %u\n", handler->head_begin, handler->head_end, handler->tail_begin, handler->tail_end);
-		assert_param(handler->tail_begin == 0);
-		assert_param(handler->tail_end > handler->tail_begin);
-		assert_param(handler->head_begin >= handler->tail_end);
-		assert_param(handler->head_end > handler->head_begin);
-		assert_param(handler->capacity >= handler->head_end);
-		assert_param(handler->used_size == (handler->tail_end - handler->tail_begin) + (handler->head_end - handler->head_begin));
+		DIAG_DBG_ASSERT(handler->tail_begin == 0);
+		DIAG_DBG_ASSERT(handler->tail_end > handler->tail_begin);
+		DIAG_DBG_ASSERT(handler->head_begin >= handler->tail_end);
+		DIAG_DBG_ASSERT(handler->head_end > handler->head_begin);
+		DIAG_DBG_ASSERT(handler->capacity >= handler->head_end);
+		DIAG_DBG_ASSERT(handler->used_size == (handler->tail_end - handler->tail_begin) + (handler->head_end - handler->head_begin));
 
-		if (handler->head_begin - handler->tail_end >= length) { //tail到head之间的区域足够本次申请
+		if (handler->head_begin - handler->tail_end >= length) {
+			/** The area between tail and head is sufficient for this allocation */
 			result = handler->heap_pool + handler->tail_end;
 			handler->tail_end += length;
 			handler->used_size += length;
-			//tail_begin, head_begin, head_end保持变化
-		} else { //tail到head之间的区域不够本次申请, 需要从head_begin开始释放空间
+			//tail_begin, head_begin, head_end keep unchanged
+		} else {
+			/** The area between tail and head is insufficient for this allocation; need to free space starting from head_begin */
 			u32 free_space = handler->head_begin - handler->tail_end;
 			u32 current_head_data_length;
 			while (free_space < length) {
-				if (handler->head_begin < handler->head_end) { //head_begin指向数据块时则将其释放
-					handler->notice(handler->heap_pool + handler->head_begin); //通知用户要释放的数据块
-					current_head_data_length = handler->getter(handler->heap_pool + handler->head_begin); //获取待释放的数据块大小
-					handler->head_begin += current_head_data_length; //指向下一个数据块
+				if (handler->head_begin < handler->head_end) { /** Free the data block if head_begin points to it */
+					/** Notify the user of the data block to be freed */
+					handler->notice(handler->heap_pool + handler->head_begin);
+					/** Get the size of the data block to be freed */
+					current_head_data_length = handler->getter(handler->heap_pool + handler->head_begin);
+					/** Points to the next data block */
+					handler->head_begin += current_head_data_length;
 					handler->used_size -= current_head_data_length;
 					free_space += current_head_data_length;
 				} else {
-					//尝试剩余的空洞空间
+					/** Try using the remaining hole space */
 					free_space += handler->capacity - handler->head_end;
 					handler->head_begin = 0;
 					handler->head_end = handler->tail_end;
-					if (free_space >= length) { //足够则开始分配
+					if (free_space >= length) { /** Try the remaining hole space */
 						break;
-					} else { //仍然不够则进入第一种状态
+					} else {/** Enter the first state if still insufficient */
 						return rtk_diag_heap_malloc_normal(handler, length);
 					}
 				}
@@ -201,8 +215,10 @@ void *rtk_diag_heap_malloc(RtkDiagHeapHandler_t *handler, u32 length)
 			if (handler->head_begin == 0) {
 				handler->head_end = handler->tail_end;
 			} else if (handler->head_begin >= handler->head_end) {
-				//上述while中可能在if中恰好申请足够的内存, 但此时head_begin可能进入空洞区了
-				assert_param(handler->head_begin == handler->head_end);
+				/** Sufficient memory may be allocated in the if clause of the above while loop,
+				 * but head_begin may enter the hole area at this time
+				 */
+				DIAG_DBG_ASSERT(handler->head_begin == handler->head_end);
 				handler->head_begin = 0;
 				handler->head_end = handler->tail_end;
 			}
@@ -216,30 +232,26 @@ u32 rtk_diag_heap_free(RtkDiagHeapHandler_t *handler)
 	u32 current_head_data_length = 0;
 	if (handler->used_size > 0) {
 		u8 is_head_overlap_tail = handler->head_begin == handler->tail_begin;
-		// handler->notice(handler->heap_pool + handler->head_begin); //通知用户要释放的数据块
-		current_head_data_length = handler->getter(handler->heap_pool + handler->head_begin); //获取待释放的数据块大小
+		// handler->notice(handler->heap_pool + handler->head_begin);
+		current_head_data_length = handler->getter(handler->heap_pool + handler->head_begin);
 		handler->used_size -= current_head_data_length;
-		handler->head_begin += current_head_data_length; //指向下一个数据块
+		handler->head_begin += current_head_data_length;
 		if (handler->head_begin >= handler->head_end) {
-			//指向空洞数据块
-			assert_param(handler->head_begin == handler->head_end);
+			//when points to hole data block
+			DIAG_DBG_ASSERT(handler->head_begin == handler->head_end);
 			if (is_head_overlap_tail) {
-				handler->head_begin = 0;
-				handler->head_end = 0;
 				handler->tail_begin = 0;
 				handler->tail_end = 0;
-			} else {
-				handler->head_begin = handler->tail_begin;
-				handler->head_end = handler->tail_end;
 			}
-		} else if (is_head_overlap_tail) { //更新tail_begin
+			handler->head_begin = handler->tail_begin;
+			handler->head_end = handler->tail_end;
+		} else if (is_head_overlap_tail) { //update tail_begin
 			handler->tail_begin = handler->head_begin;
 		}
 
 	}
 	return current_head_data_length;
 }
-
 
 u32 rtk_diag_heap_get_capacity(const RtkDiagHeapHandler_t *handler)
 {

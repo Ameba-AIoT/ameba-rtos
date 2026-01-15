@@ -61,6 +61,7 @@ ameba_list_append(private_sources
     libnosys/times.c
     libnosys/unlink.c
     libnosys/wait.c
+    locks.c
 )
 ameba_list_append(private_compile_options
     -Wno-unused-parameter

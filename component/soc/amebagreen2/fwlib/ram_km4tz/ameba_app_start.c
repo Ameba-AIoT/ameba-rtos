@@ -10,6 +10,7 @@
 
 static const char *TAG = "APP";
 
+extern void newlib_locks_init(void);
 extern int main(void);
 extern void NS_ENTRY BOOT_IMG3(void);
 extern void SOCPS_WakeFromPG_AP(void);
@@ -219,6 +220,8 @@ void app_start(void)
 	__libc_init_array();
 #endif
 #endif
+
+	newlib_locks_init();
 
 	mpu_init();
 	app_mpu_nocache_init();

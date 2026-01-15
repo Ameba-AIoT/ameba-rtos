@@ -301,9 +301,13 @@ static const struct sdio_device_id sdio_ids[] = {
 	{ SDIO_DEVICE(0x024c, 0x8721)}, 							//amebad
 	{ SDIO_DEVICE(0x024c, 0x8722)}, 							//amebadplus
 #if defined(RTK_SDIO_WIFI) && (RTK_SDIO_WIFI == 1)
-	{ SDIO_DEVICE(0x024c, 0x8720), .class = SDIO_CLASS_WLAN}, 	//6973 or 7005 WIFI
+	{ SDIO_DEVICE(0x024c, 0x8006), .class = SDIO_CLASS_WLAN},   //RL7005 WIFI
+	{ SDIO_DEVICE(0x024c, 0x8720), .class = SDIO_CLASS_WLAN},   //RLE1331 WIFI
+	{ SDIO_DEVICE(0x024c, 0x8007), .class = SDIO_CLASS_WLAN},   //RL7098 WIFI
 #elif defined(RTK_SDIO_BT) && (RTK_SDIO_BT == 1)
-	{ SDIO_DEVICE(0x024c, 0x8720), .class = SDIO_CLASS_BT_A}, 	//6973 or 7005 BT
+	{ SDIO_DEVICE(0x024c, 0x8006), .class = SDIO_CLASS_BT_A},   //RL7005 BT
+	{ SDIO_DEVICE(0x024c, 0x8720), .class = SDIO_CLASS_BT_A},   //RLE1331 BT
+	{ SDIO_DEVICE(0x024c, 0x8007), .class = SDIO_CLASS_BT_A},   //RL7098 BT
 #endif
 };
 

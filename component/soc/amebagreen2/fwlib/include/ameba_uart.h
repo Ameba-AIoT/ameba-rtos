@@ -701,7 +701,8 @@ _LONG_CALL_ void UART_RxDebounceCmd(UART_TypeDef *UARTx, u32 NewState);
 _LONG_CALL_ void UART_RxDMADummyDataConfig(UART_TypeDef *UARTx, u8 Byte);
 _LONG_CALL_ u32 UART_GetRxDMADummyFlag(UART_TypeDef *UARTx);
 _LONG_CALL_ void UART_RxClearDMADummyFlag(UART_TypeDef *UARTx);
-
+_LONG_CALL_ void UART_RxToThreConfig(UART_TypeDef *UARTx, u32 RxTimeout);
+_LONG_CALL_ void UART_REToThreConfig(UART_TypeDef *UARTx, u32 RxTimeout);
 
 /* Other Definitions --------------------------------------------------------*/
 #define MAX_UART_INDEX			(4)

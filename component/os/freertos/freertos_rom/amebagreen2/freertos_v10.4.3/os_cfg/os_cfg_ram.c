@@ -136,6 +136,11 @@ void vPortCleanUpTCB(uint32_t *pulTCB)
 	extern void vPortFreeSecureContext(uint32_t *pulTCB);
 	vPortFreeSecureContext(pulTCB);
 #endif
+
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
+	extern void sys_thread_sem_deinit_tcb(uint32_t *pulTCB);
+	sys_thread_sem_deinit_tcb(pulTCB);
+#endif
 }
 
 void newlib_assign_1(uint32_t * pxNewLib_reent)

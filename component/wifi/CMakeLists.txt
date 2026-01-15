@@ -1,7 +1,3 @@
-if(CONFIG_RTL8720F)
-    add_compile_options(-O2)
-endif()
-
 ameba_add_subdirectory(driver)
 
 # D/SMART km0 Need driver to export global include path, but no CONFIG_WLAN

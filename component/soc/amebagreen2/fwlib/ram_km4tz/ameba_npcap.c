@@ -8,8 +8,6 @@
 
 static const char *const TAG = "NPCAP";
 
-u32 sleep_tick = 0;
-
 u32 ap_status_on(void)
 {
 	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP0);
@@ -151,8 +149,6 @@ void ap_tickless_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 	default:
 		RTK_LOGW(TAG, "unknow sleep type\n");
 	}
-	sleep_tick = SYSTIMER_TickGet();
-	RTK_LOGD(TAG, "T:%lu, tms:%lu\r\n", sleep_tick, (((sleep_tick & 0xFFFF8000) / 32768) * 1000 + ((sleep_tick & 0x7FFF) * 1000) / 32768));
 }
 
 

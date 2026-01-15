@@ -2,7 +2,7 @@
 
 struct whc_spi whc_spi_priv = {0};
 
-static irqreturn_t whc_spi_host_rx_req_handler(int irq, void *context)
+static irqreturn_t whc_spi_host_dev_txreq_handler(int irq, void *context)
 {
 	if (global_idev.recv_priv.initialized == false) {
 		goto exit;
@@ -44,17 +44,17 @@ int whc_spi_host_setup_gpio(struct spi_device *spi)
 		goto free_dev_rdy_pin;
 	}
 
-	status = gpio_request(RX_REQ_PIN, "RX_REQ_PIN");
+	status = gpio_request(DEV_TX_REQ_PIN, "DEV_TX_REQ_PIN");
 	if (status) {
 		goto free_dev_rdy_irq;
 	}
 
-	status = gpio_direction_input(RX_REQ_PIN);
+	status = gpio_direction_input(DEV_TX_REQ_PIN);
 	if (status) {
 		goto free_rx_req_pin;
 	}
 
-	status = request_irq(RX_REQ_IRQ, whc_spi_host_rx_req_handler,
+	status = request_irq(DEV_TX_REQ_IRQ, whc_spi_host_dev_txreq_handler,
 						 IRQF_SHARED | IRQF_TRIGGER_RISING,
 						 "SPI_RX_REQ", spi);
 	if (status) {
@@ -68,7 +68,7 @@ int whc_spi_host_setup_gpio(struct spi_device *spi)
 	return status;
 
 free_rx_req_pin:
-	gpio_free(RX_REQ_PIN);
+	gpio_free(DEV_TX_REQ_PIN);
 
 free_dev_rdy_irq:
 	free_irq(DEV_READY_IRQ, spi);
@@ -158,10 +158,10 @@ static int whc_spi_host_remove(struct spi_device *spi)
 	mutex_destroy(&(priv->lock));
 
 	free_irq(DEV_READY_IRQ, spi);
-	free_irq(RX_REQ_IRQ, spi);
+	free_irq(DEV_TX_REQ_IRQ, spi);
 
 	gpio_free(DEV_READY_PIN);
-	gpio_free(RX_REQ_PIN);
+	gpio_free(DEV_TX_REQ_PIN);
 #ifdef SPI_DEBUG
 	gpio_free(DEBUG_PIN);
 #endif

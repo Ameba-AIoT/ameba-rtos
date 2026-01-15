@@ -19,8 +19,6 @@
 #include "ringbuffer.h"
 #endif
 
-#define ATC_INDEX_NUM 32
-
 #ifndef MAX_ARGC
 #define MAX_ARGC 23
 #endif
@@ -30,7 +28,6 @@ typedef void (*log_act_t)(void *);
 typedef struct _at_command_item_ {
 	const char *log_cmd;
 	log_act_t at_act;
-	struct list_head node;
 } log_item_t;
 
 void atcmd_service_add_table(log_item_t *tbl, int len);

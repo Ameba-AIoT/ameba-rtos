@@ -38,6 +38,13 @@ SECTIONS
 		. = ALIGN(32);
 	} > KM0_IMG2_ENTRY
 
+	/* xip part */
+	.xip_image2.text :
+	{
+		__flash_text_start__ = .;
+		__flash_text_end__ = .;
+	} > KM0_IMG2_XIP
+
 	/* sram part */
 	.sram_image2.text.data ORIGIN(KM0_BD_RAM_MP):
 	{
@@ -47,9 +54,7 @@ SECTIONS
 		__sram_image2_end__ = .;
 		. = ALIGN(32);
 
-		__flash_text_start__ = .;
 		*(.non.dram.text*)
-		__flash_text_end__ = .;
 
 		*os_wrapper_static_functions.o(*.mutex_pool)
 		*os_wrapper_static_functions.o(*.sema_pool)
@@ -71,6 +76,9 @@ SECTIONS
 		__cmd_table_start__ = .;
 		KEEP(*(.cmd.table.data*))
 		__cmd_table_end__ = .;
+		__atcmd_table_start__ = .;
+		*(.atcmd.table.rodata*)
+		__atcmd_table_end__ = .;
 		. = ALIGN (4);
 		__ipc_table_start__ = .;
 		KEEP(*(*.ipc.table.data*))

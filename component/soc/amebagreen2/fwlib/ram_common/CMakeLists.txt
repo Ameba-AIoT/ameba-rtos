@@ -52,7 +52,7 @@ ameba_list_append(private_sources
     ameba_i2c.c
     ameba_uart.c
     ameba_spi.c
-    ameba_gpio_ram.c
+    ameba_gpio.c
     ameba_ir.c
     ameba_sport.c
     ameba_flash_ram.c
@@ -78,6 +78,8 @@ ameba_list_append(private_sources
     ameba_audio_clock.c
     ameba_pmc_com.c
     ameba_sdio_device.c
+    ameba_phy8201fr.c
+    ameba_ethernet.c
 )
 
 ameba_list_append(private_includes

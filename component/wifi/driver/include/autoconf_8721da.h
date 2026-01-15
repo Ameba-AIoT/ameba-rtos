@@ -22,13 +22,15 @@
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
 #define CONFIG_WIFI_TUNNEL
+#ifndef CONFIG_FULLMAC_DEV
 #define CONFIG_WTN_SOCKET_APP
+#endif
 //#define CONFIG_WTN_JUST_LINKAP
 #ifndef CONFIG_WIFI_TUNNEL
 //#define CONFIG_NAN
 #endif
 
-#if defined(CONFIG_WIFI_HOST_CONTROL) || defined(CONFIG_ZEPHYR_SDK)
+#if defined(CONFIG_ZEPHYR_SDK)
 #undef CONFIG_WIFI_TUNNEL
 #undef CONFIG_WTN_SOCKET_APP
 #endif
