@@ -48,6 +48,12 @@ ameba_list_append(private_compile_options
     -Wno-implicit-fallthrough
 )
 
+ameba_list_append(private_includes
+    ${c_CMPT_USB_DIR}/common
+    ${c_CMPT_USB_DIR}/host/core
+    ${c_CMPT_USB_DIR}/host/msc
+)
+
 ameba_list_append(private_sources
     ${v_FATFS_VER}/src/ff.c
     ${v_FATFS_VER}/src/diskio.c

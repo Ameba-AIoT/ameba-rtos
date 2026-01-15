@@ -619,7 +619,8 @@ void at_state(void *arg)
 	at_printf(ATCMD_OK_END_STR);
 }
 
-log_item_t at_sys_common_items[] = {
+ATCMD_TABLE_DATA_SECTION
+const log_item_t at_sys_common_items[] = {
 	{"+RREG", at_rreg, {NULL, NULL}},
 	{"+WREG", at_wreg, {NULL, NULL}},
 	{"+RST", at_rst, {NULL, NULL}},
@@ -647,5 +648,5 @@ void print_system_common_at(void)
 
 void at_sys_init_common(void)
 {
-	atcmd_service_add_table(at_sys_common_items, sizeof(at_sys_common_items) / sizeof(at_sys_common_items[0]));
+	atcmd_service_add_table((log_item_t *)at_sys_common_items, sizeof(at_sys_common_items) / sizeof(at_sys_common_items[0]));
 }

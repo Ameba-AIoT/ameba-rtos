@@ -19,6 +19,13 @@ SECTIONS
 		. = ALIGN(32);
 	} > KM4_IMG2_ENTRY
 
+	/* xip part */
+	.xip_image2.text :
+	{
+		__flash_text_start__ = .;
+		__flash_text_end__ = .;
+	} > KM4_IMG2_XIP
+
 	/* sram part */
 	.sram_image2.text.data ORIGIN(KM4_BD_RAM_MP):
 	{
@@ -31,9 +38,7 @@ SECTIONS
 		*port.o(*.uxIdleTaskStack*)
 		*port.o(*.uxTimerTaskStack*)
 
-		__flash_text_start__ = .;
 		*(.non.dram.text*)
-		__flash_text_end__ = .;
 
 		__psram_image2_start__ = .;
 		PSRAM_INPUT_TEXT_SECTION
@@ -50,6 +55,10 @@ SECTIONS
 		__cmd_table_start__ = .;
 		KEEP(*(.cmd.table.data*))
 		__cmd_table_end__ = .;
+		. = ALIGN (4);
+		__atcmd_table_start__ = .;
+		*(.atcmd.table.rodata*)
+		__atcmd_table_end__ = .;
 		. = ALIGN (4);
 		__ipc_table_start__ = .;
 		KEEP(*(*.ipc.table.data*))

@@ -202,12 +202,12 @@ menu "CONFIG WHC INTF"
         #    depends on KM4_AS_NP
         #    bool "Support WHC SUPPLICANT OFFLOAD"
 
-        config WHC_DUAL_TCPIP_FOR_KR4
+        config WHC_DEV_TCPIP_KEEPALIVE_FOR_KR4
             depends on KR4_AS_NP
-            bool "Support WHC DUAL TCPIP"
-        #config WHC_DUAL_TCPIP_FOR_KM4
+            bool "Support WHC DEV TCPIP KEEPALIVE"
+        #config WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4
         #    depends on KM4_AS_NP
-        #    bool "Support WHC DUAL TCPIP"
+        #    bool "Support WHC DEV TCPIP KEEPALIVE"
 
         endmenu
     endif
@@ -259,11 +259,11 @@ menu "CONFIG WHC INTF"
         bool
     #config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4
     #    bool
-    #config WHC_DUAL_TCPIP_FOR_KM4
+    #config WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4
     #    bool
     config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KR4
         bool
-    config WHC_DUAL_TCPIP_FOR_KR4
+    config WHC_DEV_TCPIP_KEEPALIVE_FOR_KR4
         bool
 endmenu
 
@@ -301,7 +301,7 @@ menu "CONFIG WIFI"
             select FW_DRIVER_COEXIST
             select WIFI_FW_EN
             select WIFI_HOST_CONTROL
-            select LWIP_LAYER if WHC_DUAL_TCPIP_FOR_KR4 || WHC_DUAL_TCPIP_FOR_KM4
+            select LWIP_LAYER if WHC_DEV_TCPIP_KEEPALIVE_FOR_KR4 || WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4
 
         config WHC_FULLMAC_HOST_IMPL
             bool

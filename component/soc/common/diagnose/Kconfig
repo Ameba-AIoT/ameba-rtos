@@ -1,7 +1,7 @@
 config DIAGNOSE_EN_MENU
     bool "Enable diagnose"
-    depends on SUPPORT_ATCMD || WLAN_MENU
+    depends on (SUPPORT_ATCMD || WLAN_MENU)
     select DIAGNOSE_EN
-    default y
+    default n
 config DIAGNOSE_EN
     bool

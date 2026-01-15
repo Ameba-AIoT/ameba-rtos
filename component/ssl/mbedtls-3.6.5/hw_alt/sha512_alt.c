@@ -99,49 +99,4 @@ int mbedtls_sha512_finish(mbedtls_sha512_context *ctx,
     return crypto_sha2_final(ctx, output);
 }
 
-/*
- * output = SHA-512( input buffer )
- */
-int mbedtls_sha512(const unsigned char *input,
-                   size_t ilen,
-                   unsigned char *output,
-                   int is384)
-{
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    mbedtls_sha512_context ctx;
-
-#if defined(MBEDTLS_SHA384_C) && defined(MBEDTLS_SHA512_C)
-    if (is384 != 0 && is384 != 1) {
-        return MBEDTLS_ERR_SHA512_BAD_INPUT_DATA;
-    }
-#elif defined(MBEDTLS_SHA512_C)
-    if (is384 != 0) {
-        return MBEDTLS_ERR_SHA512_BAD_INPUT_DATA;
-    }
-#else /* defined MBEDTLS_SHA384_C only */
-    if (is384 == 0) {
-        return MBEDTLS_ERR_SHA512_BAD_INPUT_DATA;
-    }
-#endif
-
-    mbedtls_sha512_init(&ctx);
-
-    if ((ret = mbedtls_sha512_starts(&ctx, is384)) != 0) {
-        goto exit;
-    }
-
-    if ((ret = mbedtls_sha512_update(&ctx, input, ilen)) != 0) {
-        goto exit;
-    }
-
-    if ((ret = mbedtls_sha512_finish(&ctx, output)) != 0) {
-        goto exit;
-    }
-
-exit:
-    mbedtls_sha512_free(&ctx);
-
-    return ret;
-}
-
 #endif /* !MBEDTLS_SHA512_ALT */

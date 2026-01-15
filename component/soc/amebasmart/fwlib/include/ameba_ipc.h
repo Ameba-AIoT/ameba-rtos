@@ -339,7 +339,7 @@ typedef enum {
 #define IPC_A2N_WIFI_API_TRAN					1	/*!<  AP -->  NP WIFI API Message Exchange */
 #define IPC_A2N_FLASHPG_REQ						2	/*!<  AP -->  NP Flash Program Request*/
 #define IPC_A2N_COEX_API_TRAN					3	/*!<  AP -->  NP COEX API Exchange */
-#define IPC_A2N_EVENT_REQ							4	/*!<  AP -->  NP Diagnose API Message Exchange */
+#define IPC_A2N_DIAGNOSE							4	/*!<  AP -->  NP Diagnose API Message Exchange */
 //#define IPC_A2N_Channel5						5
 // #define IPC_A2N_BT_DRC_TRAN						4	/*!<  Recycled: AP -->  NP BT DATA Message Exchange */
 // #define IPC_A2N_802154_TRAN						5 /*!<  Recycled */

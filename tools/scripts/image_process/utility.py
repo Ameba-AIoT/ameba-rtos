@@ -242,7 +242,7 @@ def parse_map_file(file_path:str, symbol:str) -> tuple:
         with open(file_path, 'r') as file:
             for line in file:
                 columns = line.strip().split()
-                if columns[2] == symbol:
+                if len(columns) >= 3 and columns[2] == symbol:
                     return tuple(columns)
     return ('0', '?', symbol)
 

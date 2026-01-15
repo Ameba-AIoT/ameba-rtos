@@ -43,8 +43,8 @@ static int cdc_acm_cb_attach(void);
 static int cdc_acm_cb_detach(void);
 static int cdc_acm_cb_setup(void);
 static int cdc_acm_cb_transmit(usbh_urb_state_t state);
-static int cdc_acm_cb_receive(u8 *pbuf, u32 Len);
-static int cdc_acm_cb_notify(u8 *pbuf, u32 Len);
+static int cdc_acm_cb_receive(u8 *pbuf, u32 Len, u8 status);
+static int cdc_acm_cb_notify(u8 *pbuf, u32 Len, u8 status);
 static int cdc_acm_cb_line_coding_changed(usbh_cdc_acm_line_coding_t *line_coding);
 static int cdc_acm_cb_process(usb_host_t *host, u8 id);
 
@@ -75,6 +75,7 @@ static void *usbh_rx_ringbuf_mutex = NULL;
 
 static __IO int atcmd_usbh_notify_len = 0;
 static __IO int atcmd_usbh_rx_len = 0;
+static __IO int atcmd_cdc_acm_total_rx_len = 0;
 RingBuffer *at_usbh_rx_ring_buf = NULL;
 static u8 tt_mode_task_start = 0;
 
@@ -90,7 +91,7 @@ static usbh_config_t usbh_cfg = {
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = 4U,
-	.sof_tick_enable = 1U,
+	.tick_source = USBH_SOF_TICK,
 
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
@@ -162,23 +163,35 @@ static int cdc_acm_cb_setup(void)
 	return HAL_OK;
 }
 
-static int cdc_acm_cb_receive(u8 *buf, u32 length)
+static int cdc_acm_cb_receive(u8 *buf, u32 len, u8 status)
 {
 	UNUSED(buf);
 	BaseType_t task_woken = pdFALSE;
 
-	atcmd_usbh_rx_len = length > USBH_CDC_ACM_LOOPBACK_BUF_SIZE ? USBH_CDC_ACM_LOOPBACK_BUF_SIZE : length;
-	xSemaphoreGiveFromISR(cdc_acm_receive_sema, &task_woken);
-	portEND_SWITCHING_ISR(task_woken);
+	if (status == HAL_OK) {
+		u16 cdc_acm_bulk_in_mps = usbh_cdc_acm_get_bulk_ep_mps();
+		atcmd_cdc_acm_total_rx_len += len;
+
+		if ((len == 0) || (len % cdc_acm_bulk_in_mps)
+			|| ((len % cdc_acm_bulk_in_mps == 0) && (len < USBH_CDC_ACM_LOOPBACK_BUF_SIZE))
+			|| (atcmd_cdc_acm_total_rx_len > USBH_CDC_ACM_LOOPBACK_BUF_SIZE)) {
+			atcmd_usbh_rx_len = atcmd_cdc_acm_total_rx_len;
+			atcmd_cdc_acm_total_rx_len = 0;
+			xSemaphoreGiveFromISR(cdc_acm_receive_sema, &task_woken);
+			portEND_SWITCHING_ISR(task_woken);
+		}
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "RX fail: %d\n", status);
+	}
 
 	return HAL_OK;
 }
 
-static int cdc_acm_cb_transmit(usbh_urb_state_t state)
+static int cdc_acm_cb_transmit(u8 state)
 {
 	BaseType_t task_woken = pdFALSE;
 
-	if (state == USBH_URB_DONE) {
+	if (state == HAL_OK) {
 		/*TX done*/
 		xSemaphoreGiveFromISR(cdc_acm_send_sema, &task_woken);
 		portEND_SWITCHING_ISR(task_woken);
@@ -188,14 +201,19 @@ static int cdc_acm_cb_transmit(usbh_urb_state_t state)
 	return HAL_OK;
 }
 
-static int cdc_acm_cb_notify(u8 *buf, u32 length)
+static int cdc_acm_cb_notify(u8 *buf, u32 length, u8 status)
 {
 	UNUSED(buf);
 	BaseType_t task_woken = pdFALSE;
 
-	atcmd_usbh_notify_len = length > USBH_CDC_ACM_NOTIFY_BUF_SIZE ? USBH_CDC_ACM_NOTIFY_BUF_SIZE : length;
-	xSemaphoreGiveFromISR(cdc_acm_notify_sema, &task_woken);
-	portEND_SWITCHING_ISR(task_woken);
+	if (status == HAL_OK) {
+		atcmd_usbh_notify_len = length > USBH_CDC_ACM_NOTIFY_BUF_SIZE ? USBH_CDC_ACM_NOTIFY_BUF_SIZE : length;
+		xSemaphoreGiveFromISR(cdc_acm_notify_sema, &task_woken);
+		portEND_SWITCHING_ISR(task_woken);
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "cdc_acm_cb_notify fail: %d\n", status);
+	}
+
 
 	return HAL_OK;
 }
@@ -352,6 +370,8 @@ WAIT_CONNECT:
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Device disconnect\n");
 			goto WAIT_CONNECT;
 		}
+
+		memset(cdc_acm_loopback_rx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 
 		ret = usbh_cdc_acm_receive(cdc_acm_loopback_rx_buf, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 		while (ret != HAL_OK) {
@@ -579,7 +599,7 @@ void example_atcmd_usbh_host(void)
 
 	/*init uart*/
 	sobj.uart_idx = 0;
-	serial_init(&sobj, PA_3, PA_2);
+	serial_init(&sobj, PA_25, PA_26);
 	serial_baud(&sobj, 115200);
 	serial_format(&sobj, 8, ParityNone, 1);
 

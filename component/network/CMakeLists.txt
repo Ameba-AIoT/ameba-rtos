@@ -2,7 +2,7 @@ if(CONFIG_ZEPHYR_SDK AND (CONFIG_WHC_HOST OR CONFIG_WHC_NONE))
     return()
 endif()
 
-if((CONFIG_WLAN AND (CONFIG_WHC_HOST OR CONFIG_WHC_NONE)) OR CONFIG_WHC_DUAL_TCPIP)
+if((CONFIG_WLAN AND (CONFIG_WHC_HOST OR CONFIG_WHC_NONE)) OR CONFIG_WHC_DEV_TCPIP_KEEPALIVE)
     ameba_add_subdirectory(mqtt)
     ameba_add_subdirectory(httpc)
     ameba_add_subdirectory(httpd)

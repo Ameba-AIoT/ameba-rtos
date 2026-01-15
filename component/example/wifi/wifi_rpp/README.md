@@ -20,7 +20,7 @@ None
    - Run `./build.py -a wifi_rpp` under project path, e.g. `amebadplus_gcc_project/`, to generate images.
    - `Download` images to 2 boards by Ameba Image Tool.
 
-4. Use the wifi provisioning mobile App to connect one of the boards to AP.
+4. Use the wifi provisioning mobile App (located at `{sdk}/tools/R-Mesh_Demo_Tool/MGravitation.apk`) to connect one of the boards to AP. See instructions on https://aiot.realmcu.com/en/latest/rtos/rmesh/zrpp/index.html#phase-i-assisted-provisioning.
 
 5. The other board will connect to AP automatically by Zero R-mesh Provisioning Protocol (ZRPP).
 

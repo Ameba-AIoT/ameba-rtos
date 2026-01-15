@@ -163,7 +163,7 @@ static u8 usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 
 		type = ((usbh_desc_header_t *) desc)->bDescriptorType;
 		switch (type) {
-		case USB_DESC_TYPE_CS_INTERFACE:
+		case USBH_UVC_DESC_TYPE_CS_INTERFACE:
 			ret = usbh_uvc_parse_entity((u8 *)desc);
 			if (ret) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to parse entity\n");
@@ -179,7 +179,8 @@ static u8 usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 			}
 			break;
 
-		case USB_DESC_TYPE_CS_ENDPOINT:		//class-specific VC interrupt endpoint descriptor
+		//class-specific VC interrupt endpoint descriptor
+		case USBH_UVC_DESC_TYPE_CS_ENDPOINT:
 			if (((usbh_uvc_vc_intr_ep_desc_t *)desc)->bDescriptorType == 0x25 && \
 				((usbh_uvc_vc_intr_ep_desc_t *)desc)->bDescriptorSubType == USB_CH_EP_TYPE_INTR) {
 				vc_intf->cs_intr_desc = desc;
@@ -229,7 +230,7 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 
 	/*first scan to get total number of format and frame*/
 	while (1) {
-		if (desc[1] != USB_DESC_TYPE_CS_INTERFACE) {
+		if (desc[1] != USBH_UVC_DESC_TYPE_CS_INTERFACE) {
 			break;
 		}
 		switch (desc[2]) {
@@ -395,8 +396,8 @@ static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 	u16 len;
 	u16 itf_total_len = 0;
 
-	if (uvc->uvc_desc.vs_num > USBH_MAX_NUM_VS_DESC) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Too many VS itf %d-%d\n", uvc->uvc_desc.vs_num, USBH_MAX_NUM_VS_DESC);
+	if (uvc->uvc_desc.vs_num > USBH_UVC_VS_DESC_MAX_NUM) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Too many VS itf %d-%d\n", uvc->uvc_desc.vs_num, USBH_UVC_VS_DESC_MAX_NUM);
 		return HAL_OK;
 	}
 
@@ -417,7 +418,7 @@ static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 
 		type = ((usbh_desc_header_t *) desc)->bDescriptorType;
 		switch (type) {
-		case USB_DESC_TYPE_CS_INTERFACE:
+		case USBH_UVC_DESC_TYPE_CS_INTERFACE:
 			usbh_uvc_parse_format(vs_intf, desc, &len);
 			desc += len;
 			break;
@@ -429,7 +430,7 @@ static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 			}
 			bAlternateSetting = ((usbh_itf_desc_t *)desc)->bAlternateSetting;
 			if (bAlternateSetting != 0) {
-				if (bAlternateSetting < USBH_MAX_NUM_VS_ALTS) {
+				if (bAlternateSetting < USBH_UVC_VS_ALTS_MAX_NUM) {
 					vs_intf->altsetting[bAlternateSetting - 1].p = desc;
 					vs_intf->alt_num++;
 
@@ -437,7 +438,7 @@ static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 					desc += len;
 					vs_intf->altsetting[bAlternateSetting - 1].endpoint = (usbh_ep_desc_t *)desc;
 				} else {
-					RTK_LOGS(TAG, RTK_LOG_WARN, "Too many alt set %d-%d\n", bAlternateSetting, USBH_MAX_NUM_VS_ALTS);
+					RTK_LOGS(TAG, RTK_LOG_WARN, "Too many alt set %d-%d\n", bAlternateSetting, USBH_UVC_VS_ALTS_MAX_NUM);
 				}
 			} else {
 				return HAL_OK;
@@ -468,7 +469,7 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 	usbh_dev_id_t dev_id = {0,};
 
 	dev_id.bInterfaceClass = USBH_UVC_CLASS_CODE;
-	dev_id.bInterfaceSubClass = USB_SUBCLASS_VIDEOCONTROL;
+	dev_id.bInterfaceSubClass = USBH_UVC_SUBCLASS_VIDEOCONTROL;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
 	if (itf_data == NULL) {
@@ -483,7 +484,7 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 	}
 
 	dev_id.bInterfaceClass = USBH_UVC_CLASS_CODE;
-	dev_id.bInterfaceSubClass = USB_SUBCLASS_VIDEOSTREAMING;
+	dev_id.bInterfaceSubClass = USBH_UVC_SUBCLASS_VIDEOSTREAMING;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
 	while (itf_data) {

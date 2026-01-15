@@ -438,7 +438,8 @@ void fATM2(void *arg)
 }
 
 //-------- AT MP commands ---------------------------------------------------------------
-log_item_t at_mp_items[] = {
+ATCMD_TABLE_DATA_SECTION
+const log_item_t at_mp_items[] = {
 	{"M2", fATM2, {NULL, NULL}},    // MP ext2 AT command
 };
 
@@ -449,7 +450,7 @@ void print_bt_mp_at(void)
 
 void at_mp_init(void)
 {
-	atcmd_service_add_table(at_mp_items, sizeof(at_mp_items) / sizeof(at_mp_items[0]));
+	atcmd_service_add_table((log_item_t *)at_mp_items, sizeof(at_mp_items) / sizeof(at_mp_items[0]));
 }
 
 #endif /* #if CONFIG_ATCMD_MP */

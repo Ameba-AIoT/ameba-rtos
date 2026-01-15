@@ -33,17 +33,16 @@ def is_pure_filename(path):
 
 class Manager(object):
     def __init__(self,
-                 projects:Dict[str, str],
-                 section_begin_marker_prefix='',
+                 section_begin_marker_prefix='MENUCONFIG FOR ', #full mark fmt: ${prefix}${core_name}${suffix},
                  section_begin_marker_suffix='',
-                 section_end_marker_prefix='',
+                 section_end_marker_prefix='end of MENUCONFIG FOR ',
                  section_end_marker_suffix='',
                  general_section_name = 'General',
                  private_section_name = 'Private',
                  out_dir = '.',
                  top_kconfig = 'Kconfig'
                  ) -> None:
-        self.projects = projects
+        self.projects = self.parse_project_core(top_kconfig)
         self.section_begin_marker_prefix = section_begin_marker_prefix
         self.section_begin_marker_suffix = section_begin_marker_suffix
         self.section_end_marker_prefix = section_end_marker_prefix
@@ -63,6 +62,8 @@ class Manager(object):
 
         self.default_conf = os.path.join(os.path.dirname(top_kconfig), 'default.conf')
         self.prj_conf = os.path.join(self.config_root_dir, 'prj.conf')
+        if out_dir != os.getcwd():
+            out_dir = os.path.dirname(out_dir)
         self.prj_conf_external = os.path.join(out_dir, 'prj.conf') #for user external project
 
         self.general_configs = []
@@ -148,6 +149,17 @@ class Manager(object):
             return False
         return cleanup_handler
 
+    def abort_handler_register(self):
+        # cleanup the lock file when menuconfig abort
+        if IS_POSIX: # for linux
+            signal_handler = self.lock_cleanup()
+            signal.signal(signal.SIGTERM, signal_handler)
+            signal.signal(signal.SIGINT, signal_handler) # ctrl+C
+            signal.signal(signal.SIGHUP, signal_handler) # close the terminal or SSH disconnected
+        else:       # for windows
+            windows_handler = self.lock_cleanup_windows()
+            win32api.SetConsoleCtrlHandler(windows_handler, True) # close/logoff/shutdown
+
     def apply_manual_config(self) -> int:
         if not os.path.exists(self.config_in): #load default value to .config
             self.apply_default_config()
@@ -157,15 +169,7 @@ class Manager(object):
         if os.path.exists(self.config_default_old):
             os.remove(self.config_default_old)
 
-        # cleanup the lock file when abnormal termination occurs
-        if IS_POSIX: # for linux
-            signal_handler = self.lock_cleanup()
-            signal.signal(signal.SIGTERM, signal_handler)
-            signal.signal(signal.SIGINT, signal_handler) # ctrl+C
-            signal.signal(signal.SIGHUP, signal_handler) # close the terminal or SSH disconnected
-        else: # for windows
-            windows_handler = self.lock_cleanup_windows()
-            win32api.SetConsoleCtrlHandler(windows_handler, True) # close/logoff/shutdown
+        self.abort_handler_register()
 
         if self.lock_acquire():
             result = self.run_command('menuconfig.py', self.top_kconfig)
@@ -251,7 +255,7 @@ class Manager(object):
 
         return self.run_set_config(config_in = config_in, config_out=config_out, content = confs)
 
-    def clean_all(self, script_dir:str):
+    def clean_all(self, script_dir:str, project_dir=None):
         if os.path.exists(self.config_root_dir):
             shutil.rmtree(self.config_root_dir)
 
@@ -260,7 +264,9 @@ class Manager(object):
 
         if os.path.exists(build_py):
             cmd = 'python ' + build_py + ' -d ' + build_dir + ' -c '
-            print(cmd)
+            if project_dir:
+                cmd += ' -proj ' + project_dir
+            # print(cmd)
             os.system(cmd)
 
         if os.path.exists(build_dir):
@@ -273,7 +279,7 @@ class Manager(object):
         if os.path.isabs(file):
             path = file
         else:
-            path = os.path.join(self.out_dir, file)
+            path = os.path.join(os.getcwd(), file)
 
         if os.path.realpath(path) == os.path.realpath(self.default_conf):
             print("WARNING: You are touching default.conf")
@@ -388,3 +394,20 @@ class Manager(object):
             self.process_section_suffix(tmp_header_file, core_header_file, skip_pattern, f"_FOR_{core}")
             os.remove(tmp_header_file)
         return 0
+
+    def parse_project_core(self, top_kconfig: str) -> dict:
+        result = None
+        if not os.path.exists(top_kconfig):
+            sys.exit(1)
+
+        with open(top_kconfig, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        pattern = re.compile(
+            r'menu\s+"MENUCONFIG FOR\s+(.+?)\s+CONFIG".*?rsource\s+"project_(.+?)/Kconfig"',
+            re.DOTALL
+        )
+        matches = pattern.findall(content)
+        result = {key: value for value, key in matches}
+
+        return result

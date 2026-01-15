@@ -15,21 +15,16 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
-#define USBH_UVC_MAX_NUM_IN_TERMINAL			5
-#define USBH_UVC_MAX_NUM_OUT_TERMINAL			2
-#define USBH_UVC_MAX_NUM_CAMERA_TERMINAL		2
-#define USBH_UVC_MAX_NUM_PROCESSING_UNIT		2
-#define USBH_UVC_MAX_NUM_EXTENSION_UNIT			2
-#define USBH_UVC_MAX_NUM_ENCODING_UNIT			2
-#define USBH_UVC_MAX_NUM_SELECTOR_UNIT			2
+#define USBH_UVC_IN_TERMINAL_MAX_NUM            5
+#define USBH_UVC_OUT_TERMINAL_MAX_NUM           2
+#define USBH_UVC_CAMERA_TERMINAL_MAX_NUM        2
+#define USBH_UVC_PROCESSING_UNIT_MAX_NUM        2
+#define USBH_UVC_EXTENSION_UNIT_MAX_NUM         2
+#define USBH_UVC_ENCODING_UNIT_MAX_NUM          2
+#define USBH_UVC_SELECTOR_UNIT_MAX_NUM          2
 
-#define USBH_MAX_NUM_MJPEG_FORMAT		30
-#define USBH_MAX_NUM_UNCOMP_FRAME		30
-
-#define USBH_MAX_NUM_VS_DESC			2
-#define USBH_MAX_NUM_VS_ALTS			30
-
-#define HFNUM_MAX_FRNUM					0x3fff
+#define USBH_UVC_VS_DESC_MAX_NUM                2
+#define USBH_UVC_VS_ALTS_MAX_NUM                30
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -83,7 +78,7 @@ typedef struct {
 } usbh_uvc_alt_t;
 
 typedef struct {
-	usbh_uvc_alt_t altsetting[USBH_MAX_NUM_VS_ALTS];
+	usbh_uvc_alt_t altsetting[USBH_UVC_VS_ALTS_MAX_NUM];
 	usbh_uvc_vs_input_header_desc_t *InputHeader;
 	usbh_uvc_vs_format_t *format;
 	u32 nformat;
@@ -94,7 +89,7 @@ typedef struct {
 } usbh_uvc_vs_t;
 
 typedef struct {
-	usbh_uvc_vs_t vs_intf[USBH_MAX_NUM_VS_DESC];
+	usbh_uvc_vs_t vs_intf[USBH_UVC_VS_DESC_MAX_NUM];
 	usbh_uvc_vc_t vc_intf;
 	u8 vs_num;
 } usbh_uvc_cfg_t;
@@ -125,7 +120,7 @@ typedef struct {
 
 typedef struct {
 	usbh_uvc_setting_t cur_setting;
-	usbh_uvc_frame_t frame_buffer[USBH_UVC_VIDEO_MAX_FRAME];
+	usbh_uvc_frame_t frame_buffer[USBH_UVC_VIDEO_FRAME_NUMS];
 	usbh_uvc_stream_control_t stream_ctrl;
 	struct list_head frame_empty;
 	struct list_head frame_chain;
@@ -154,7 +149,7 @@ typedef struct {
 
 #if USBH_UVC_USE_HW
 	usbh_hw_uvc_dec *uvc_dec;
-	u8 hw_uvc_isr_priorigy;
+	u8 isr_priority;
 #endif
 
 	u8 stream_state;
@@ -164,7 +159,7 @@ typedef struct {
 } usbh_uvc_stream_t;
 
 typedef struct {
-	usbh_uvc_stream_t stream[USBH_MAX_NUM_VS_DESC];
+	usbh_uvc_stream_t stream[USBH_UVC_VS_DESC_MAX_NUM];
 	usbh_uvc_cfg_t uvc_desc;
 	struct list_head entity_list;
 	struct list_head video_chain;

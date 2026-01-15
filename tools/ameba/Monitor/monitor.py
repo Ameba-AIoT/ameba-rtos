@@ -187,7 +187,7 @@ class Monitor():
                     if not payload:
                         payload_str = ''
                     else:
-                        payload_str = payload.decode('utf-8')
+                        payload_str = payload.decode('utf-8', errors='ignore')
                     self.serial_handler.handle_serial_input(payload_str, self.coredump, src)
             else:
                 payload_str = self.serial_reader.decode(data)              

@@ -92,7 +92,8 @@ end:
 	}
 }
 
-log_item_t at_ethernet_items[ ] = {
+ATCMD_TABLE_DATA_SECTION
+const log_item_t at_ethernet_items[ ] = {
 	{"+ETHIP", at_ethip, {NULL, NULL}},
 };
 
@@ -109,5 +110,5 @@ void print_ethernet_at(void)
 
 void at_ethernet_init(void)
 {
-	atcmd_service_add_table(at_ethernet_items, sizeof(at_ethernet_items) / sizeof(at_ethernet_items[0]));
+	atcmd_service_add_table((log_item_t *)at_ethernet_items, sizeof(at_ethernet_items) / sizeof(at_ethernet_items[0]));
 }

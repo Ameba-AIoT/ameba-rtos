@@ -26,7 +26,9 @@
 #endif
 
 #include "atcmd_sys.h"
+#ifdef CONFIG_DIAGNOSE_EN
 #include "atcmd_diag.h"
+#endif
 
 #ifndef CONFIG_MP_SHRINK
 #ifdef CONFIG_WLAN
@@ -113,7 +115,9 @@ log_init_t log_init_table[] = {
 #endif
 #endif
 	at_sys_init,
+#ifdef CONFIG_DIAGNOSE_EN
 	at_diag_init,
+#endif
 #ifndef CONFIG_AMEBAD
 	at_otp_init,
 #endif
@@ -790,30 +794,31 @@ void atcmd_service_init(void)
 	rtos_task_create(NULL, ((const char *)"atcmd_host_control_mode_init_thread"), atcmd_host_control_mode_init_thread, NULL, 4096, 5);
 #endif
 }
+extern u8 __atcmd_table_start__[];
+extern u8 __atcmd_table_end__[];
 
 //sizeof(log_items)/sizeof(log_items[0])
 void atcmd_service_add_table(log_item_t *tbl, int len)
 {
-	int i;
-	for (i = 0; i < len; i++) {
-		log_add_new_command(&tbl[i]);
-	}
+	(void)tbl;
+	(void)len;
+
+	return;
 }
 
 void *atcmd_action(char *cmd)
 {
-	int index = hash_index(cmd) % ATC_INDEX_NUM;
-	struct list_head *head = &log_hash[index];
-	struct list_head *iterator;
-	log_item_t *item;
+	log_item_t *item = (log_item_t *)__atcmd_table_start__;
+	u32 cmd_mum = ((__atcmd_table_end__ - __atcmd_table_start__) / sizeof(log_item_t));
+	u32	index ;
 	void *act = NULL;
 
-	list_for_each(iterator, head) {
-		item = list_entry(iterator, log_item_t, node);
+	for (index = 0; index < cmd_mum; index++) {
 		if (strcmp(item->log_cmd, cmd) == 0) {
 			act = (void *)item->at_act;
 			break;
 		}
+		item++;
 	}
 
 	return act;

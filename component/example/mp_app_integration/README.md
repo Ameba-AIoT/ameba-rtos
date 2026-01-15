@@ -10,7 +10,23 @@ None
 
 # SW configuration
 
-1. Modify the file `component/at_cmd/atcmd_service.c` by adding `#include "example_mp_app_integration.h"` and including `at_custom_init` in the `log_init_table`.
+1. Add AT command defined in the example into SDK as follows:
+   a. Add `{c_CMPT_EXAMPLE_DIR}/mp_app_integration` into private include path in `/component/at_cmd/CMakeLists.txt`.
+         ameba_list_append(private_includes
+               ${c_CMPT_WIFI_DIR}/api
+               ${c_CMPT_WIFI_DIR}/common
+      +        ${c_CMPT_EXAMPLE_DIR}/mp_app_integration
+         )
+   b. Modify the file `component/at_cmd/atcmd_service.c` by adding `#include "example_mp_app_integration.h"` and including `at_custom_init` in the `log_init_table`.
+      +#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
+      +#include "example_mp_app_integration.h"
+      +#endif
+
+      log_init_t log_init_table[] = {
+         at_sys_init_common,
+      +#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
+      +  at_custom_init,
+      +#endif
 2. Run `./menuconfig.py` in the project directory and select the following configuration:
    - Navigate to `CONFIG Mass Production` ---> Check `Enable MP` ---> Enter `MP Mode` ---> Select `expand`.
 3. Build and Download:

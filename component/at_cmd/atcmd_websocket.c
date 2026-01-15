@@ -2006,7 +2006,8 @@ end:
 	}
 }
 
-log_item_t at_websocket_items[ ] = {
+ATCMD_TABLE_DATA_SECTION
+const log_item_t at_websocket_items[ ] = {
 	{"+WSCFG", at_wscfg, {NULL, NULL}},
 	{"+WSGLCFG", at_wsglcfg, {NULL, NULL}},
 	{"+WSHEAD", at_wshead, {NULL, NULL}},
@@ -2064,7 +2065,7 @@ void init_websocket_struct(void)
 void at_websocket_init(void)
 {
 	init_websocket_struct();
-	atcmd_service_add_table(at_websocket_items, sizeof(at_websocket_items) / sizeof(at_websocket_items[0]));
+	atcmd_service_add_table((log_item_t *)at_websocket_items, sizeof(at_websocket_items) / sizeof(at_websocket_items[0]));
 }
 
 #endif /* CONFIG_ATCMD_WEBSOCKET */

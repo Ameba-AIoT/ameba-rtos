@@ -13,16 +13,6 @@
 #define error_printf(fmt, args...) bsp_string_output(fmt, ##args);
 #define trace_printf(fmt, args...) bsp_string_output(fmt, ##args);
 #define info_printf(fmt, args...) bsp_string_output(fmt, ##args);
-
-#ifndef CONFIG_BACK_TRACE_DEPTH_LIMIT
-#define CONFIG_BACK_TRACE_DEPTH_LIMIT 10
-#endif
-
-#ifdef BACKTRACE_DEBUG
-#define debug_printf(fmt, args...) bsp_string_output(fmt, ##args);
-#else
 #define debug_printf(fmt, args...)
-
-#endif
 
 #endif

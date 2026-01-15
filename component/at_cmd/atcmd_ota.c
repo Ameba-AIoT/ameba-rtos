@@ -386,8 +386,8 @@ end:
 	}
 }
 
-
-log_item_t at_ota_items[] = {
+ATCMD_TABLE_DATA_SECTION
+const log_item_t at_ota_items[] = {
 	{"+OTAHTTP", at_otahttp, {NULL, NULL}},
 	{"+OTAUSER", at_otauser, {NULL, NULL}},
 };
@@ -405,7 +405,7 @@ void print_ota_at(void)
 
 void at_ota_init(void)
 {
-	atcmd_service_add_table(at_ota_items, sizeof(at_ota_items) / sizeof(at_ota_items[0]));
+	atcmd_service_add_table((log_item_t *)at_ota_items, sizeof(at_ota_items) / sizeof(at_ota_items[0]));
 }
 
 #endif /* CONFIG_ATCMD_OTA */

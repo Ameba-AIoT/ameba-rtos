@@ -10,7 +10,9 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # Component public part, user config begin
 # You may use if-else condition to set or update predefined variable above
 
+set(DIAG_DEBUG_TEST FALSE)
 ameba_list_append(public_includes .)
+ameba_list_append_if(DIAG_DEBUG_TEST public_definitions DIAG_DEBUG_TEST)
 
 # Component public part, user config end
 #----------------------------------------#
@@ -38,7 +40,10 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-set(fmt_head ${CMAKE_CURRENT_SOURCE_DIR}/ameba_diagnose_format.h)
+set(fmt_head
+    ${CMAKE_CURRENT_SOURCE_DIR}/ameba_diagnose_format.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ameba_diagnose_customer.h
+)
 set(fmt_full ${CMAKE_CURRENT_SOURCE_DIR}/ameba_diagnose_format_full.json)
 set(fmt_json ${CMAKE_CURRENT_BINARY_DIR}/tmp_ameba_diagnose_format.json)
 set(fmt_src ${CMAKE_BINARY_DIR}/tmp_ameba_diagnose_hash.c)
@@ -49,7 +54,7 @@ if(NOT TARGET diag_fmt)
       COMMAND ${CMAKE_COMMAND}
         -Dc_DIAG_FMT_SCRIPT="${c_DIAG_FMT_SCRIPT}"
         -Dc_CMAKE_FILES_DIR=${c_CMAKE_FILES_DIR}
-        -Dfmt_head=${fmt_head}
+        -Dfmt_head="${fmt_head}"
         -Dfmt_json=${fmt_json}
         -Dfmt_src=${fmt_src}
         -Dfmt_full=${fmt_full}
@@ -67,6 +72,7 @@ if (CONFIG_DIAGNOSE_EN)
         ameba_list_append(private_sources
             ameba_diagnose_np.c
             ameba_diagnose_transform.c
+            ameba_diagnose_common.c
             ${fmt_src}
 
             # only for np
@@ -75,15 +81,19 @@ if (CONFIG_DIAGNOSE_EN)
             ameba_diagnose_queue.c
             ameba_diagnose_heap.c
         )
+        ameba_list_append_if(CONFIG_WHC_NONE private_definitions DIAG_CORE_AS_AP)
+        ameba_list_append_if(CONFIG_WHC_NONE private_definitions DIAG_SINGLE_CORE)
     elseif(CONFIG_WHC_HOST)
         #Core as AP
         ameba_list_append(private_sources
             ameba_diagnose_ap.c
             ameba_diagnose_transform.c
+            ameba_diagnose_common.c
             ${fmt_src}
         )
+        ameba_list_append(private_definitions DIAG_CORE_AS_AP)
     else()
-        #Core neither as AP nor as NP, add an empty function to uniform code in project
+        # When Diagnose disable, keep some empty function.
         ameba_list_append(private_sources
             ameba_diagnose_none.c
         )
@@ -95,10 +105,9 @@ else()
     )
 endif()
 
-set(DIAG_DEBUG_TEST 0)
 if(DIAG_DEBUG_TEST)
     ameba_list_append(private_sources ameba_diagnose_debug.c)
-    ameba_list_append(private_definitions DIAG_DEBUG_TEST)
+    # ameba_list_append(private_definitions DIAG_DEBUG_TASK)
 endif()
 
 

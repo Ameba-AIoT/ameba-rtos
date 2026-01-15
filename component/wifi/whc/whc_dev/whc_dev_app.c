@@ -303,7 +303,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE);
 					}
 #endif
-#ifdef CONFIG_WHC_DUAL_TCPIP
+#ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
 				} else if (*ptr == WHC_WIFI_TEST_SET_READY) {
 					whc_dev_api_set_host_state(WHC_HOST_READY);
 				} else if (*ptr == WHC_WIFI_TEST_SET_UNREADY) {
@@ -312,7 +312,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 				} else if (*ptr == WHC_WIFI_TEST_SET_TICKPS_CMD) {
 					whc_dev_tickps_cmd((struct whc_dev_ps_cmd *)(ptr + 1));
 				} else if (*ptr == WHC_WIFI_TEST_WIFION) {
-#ifdef CONFIG_WHC_DUAL_TCPIP
+#ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
 					whc_dev_api_set_host_state(WHC_HOST_READY);
 #endif
 					wifi_on(RTW_MODE_STA);

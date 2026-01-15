@@ -1647,7 +1647,8 @@ void mqtt_init_info(void)
 	}
 }
 
-log_item_t at_mqtt_items[ ] = {
+ATCMD_TABLE_DATA_SECTION
+const log_item_t at_mqtt_items[ ] = {
 	{"+MQTTCFG", at_mqttcfg, {NULL, NULL}},   /* MQTT connection configure. */
 	{"+MQTTCONN", at_mqttconn, {NULL, NULL}},  /* MQTT connect. */
 	{"+MQTTDISCONN", at_mqttdisconn, {NULL, NULL}},  /* MQTT disconnect. */
@@ -1674,7 +1675,7 @@ void at_mqtt_init(void)
 {
 	mqtt_init_info();
 
-	atcmd_service_add_table(at_mqtt_items, sizeof(at_mqtt_items) / sizeof(at_mqtt_items[0]));
+	atcmd_service_add_table((log_item_t *)at_mqtt_items, sizeof(at_mqtt_items) / sizeof(at_mqtt_items[0]));
 }
 
 #endif /* CONFIG_ATCMD_MQTT */

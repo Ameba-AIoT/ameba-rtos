@@ -47,7 +47,7 @@
 #include "whc_ipc.h"
 #endif
 
-#if (defined(CONFIG_WHC_DEV) && defined(CONFIG_WHC_DUAL_TCPIP)) || defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE
+#if (defined(CONFIG_WHC_DEV) && defined(CONFIG_WHC_DEV_TCPIP_KEEPALIVE)) || defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE
 struct static_ip_config user_static_ip;
 
 unsigned char ap_ip[4] = {192, 168, 43, 1}, ap_netmask[4] = {255, 255, 255, 0}, ap_gw[4] = {192, 168, 43, 1};

@@ -1664,7 +1664,8 @@ end:
 }
 #endif
 
-log_item_t at_wifi_items[ ] = {
+ATCMD_TABLE_DATA_SECTION
+const log_item_t at_wifi_items[ ] = {
 #if !(!defined(CONFIG_WHC_INTF_IPC) && !defined(CONFIG_WHC_WIFI_API_PATH) && !defined(CONFIG_WHC_NONE))
 #ifdef CONFIG_LWIP_LAYER
 	{"+WLSTATICIP", at_wlstaticip, {NULL, NULL}},
@@ -1708,7 +1709,7 @@ void at_wifi_init(void)
 	init_wifi_struct();
 #endif
 #ifndef CONFIG_MP_SHRINK
-	atcmd_service_add_table(at_wifi_items, sizeof(at_wifi_items) / sizeof(at_wifi_items[0]));
+	atcmd_service_add_table((log_item_t *)at_wifi_items, sizeof(at_wifi_items) / sizeof(at_wifi_items[0]));
 #endif
 }
 

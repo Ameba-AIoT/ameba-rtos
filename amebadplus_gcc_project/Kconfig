@@ -225,8 +225,8 @@ menu "CONFIG WHC INTF"
             bool "Support WHC WIFI API PATH"
         config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4
             bool "Support WHC SUPPLICANT OFFLOAD"
-        config WHC_DUAL_TCPIP_FOR_KM4
-            bool "Support WHC DUAL TCPIP"
+        config WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4
+            bool "Support WHC DEV TCPIP KEEPALIVE"
         endmenu
     endif
 
@@ -285,7 +285,7 @@ menu "CONFIG WHC INTF"
         bool
     config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4
         bool
-    config WHC_DUAL_TCPIP_FOR_KM4
+    config WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4
         bool
 endmenu
 
@@ -323,7 +323,7 @@ menu "CONFIG WIFI"
             select FW_DRIVER_COEXIST
             select WIFI_FW_EN if !MP_SHRINK
             select WIFI_HOST_CONTROL
-            select LWIP_LAYER if WHC_DUAL_TCPIP_FOR_KM4
+            select LWIP_LAYER if WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4
 
         config WHC_FULLMAC_HOST_IMPL
             bool

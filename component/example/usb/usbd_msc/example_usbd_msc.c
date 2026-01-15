@@ -13,6 +13,9 @@
 #if defined(CONFIG_AMEBASMART)
 #include "ameba_sd.h"
 #endif
+#ifdef CONFIG_USBD_MSC_EXTERNAL_FLASH
+#include "vfs_second_nor_flash.h"
+#endif
 
 /* Private defines -----------------------------------------------------------*/
 static const char *const TAG = "MSC";
@@ -21,8 +24,8 @@ static const char *const TAG = "MSC";
 #define CONFIG_USBD_MSC_USB_HOTPLUG					1
 #define CONFIG_USBD_MSC_SD_HOTPLUG					0
 
-#if USBD_MSC_RAM_DISK && (CONFIG_USBD_MSC_SD_HOTPLUG == 1)
-#error "Use RAM as storage media, no hotplug"
+#if !defined(CONFIG_USBD_MSC_SD_MODE) && (CONFIG_USBD_MSC_SD_HOTPLUG == 1)
+#error "Only SD card (SD mode) support SD hotplug"
 #endif
 
 #if !defined(CONFIG_AMEBASMART) && (CONFIG_USBD_MSC_SD_HOTPLUG == 1)
@@ -209,6 +212,11 @@ static void example_usbd_msc_thread(void *param)
 	rtos_sema_create(&msc_sd_status_changed_sema, 0U, 1U);
 #endif
 
+#ifdef CONFIG_USBD_MSC_EXTERNAL_FLASH
+	second_flash_spi_init();
+	second_flash_get_id();
+#endif
+
 	status = usbd_msc_disk_init();
 	if (status != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init disk fail\n");
@@ -257,7 +265,9 @@ exit_create_msc_sd_hotplug_fail:
 #endif
 #endif
 
+#if CONFIG_USBD_MSC_USB_HOTPLUG
 exit_create_hotplug_fail:
+#endif
 	usbd_msc_deinit();
 
 exit_usbd_msc_init_fail:

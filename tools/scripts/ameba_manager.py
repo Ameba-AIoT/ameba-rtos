@@ -17,7 +17,7 @@ class AmebaManager:
     def __init__(self):
         self.is_ready = False
         self.current_dir = os.getcwd()
-        self.build_dir = os.path.join(self.current_dir, "build")
+        self.script_dir = os.path.dirname(os.path.abspath(__file__))
         self.utils = SocManager()
         self.info_file = self.utils.info_file
         self.sdk_root = self.utils.sdk_root
@@ -52,7 +52,7 @@ class AmebaManager:
             },
             'soc': {
                 'action': lambda args: self.op_set_project(args[0]) if len(args) > 0 else self.op_select_interactive(),
-                'help': 'Select a SoC to build. If no SoC name given, enter the interactive selection.'
+                'help': 'Select an SoC to build. If no SoC name given, enter the interactive selection.'
             },
             'list': {
                 'action': lambda args: self.list_socs(),
@@ -63,18 +63,25 @@ class AmebaManager:
                 'help': 'Show the current selected SoC name.'
             },
             'clean': {
-                'action': lambda args: self.op_clean_build(),
-                'help': 'Clean build products of current project.'
+                'action': self.op_clean_build,
+                'help': 'Clean build products of the given or current SoC. e.g. ameba.py clean [soc_name]'
             },
-            'cleanall': {
-                'action': lambda args: self.op_clean_soc(),
-                'help': 'Clean the current SoC info and products.'
+            'cleansoc': {
+                'action': self.op_clean_soc,
+                'help': 'Clean all products of the given or current SoC. e.g. ameba.py cleansoc [soc_name]'
             },
             'help': {
                 'action': lambda args: self.show_help(),
                 'help': 'Display this help information.'
             }
         }
+
+        self.workdir_prefix = "build_"
+        self.current_soc_info = self.utils.parse_soc_info()
+        self.soc_workdir = None
+        if self.current_soc_info:
+            self.soc_workdir = os.path.join(self.current_dir, self.workdir_prefix + self.current_soc_info['name'])
+            os.environ['SOC_WORK_DIR'] = self.soc_workdir   # for other scripts use
 
         self.is_ready = True
 
@@ -114,7 +121,7 @@ class AmebaManager:
         if not self._check_ready(): return False
 
         if os.path.exists(self.info_file):
-            soc_info = self.utils.parse_soc_info()
+            soc_info = self.current_soc_info
             if soc_info and soc_info['dir']:
                 print(f"Current SoC: {GREEN}{soc_info['name']}{RESET}")
                 return True
@@ -150,7 +157,7 @@ class AmebaManager:
             print(f"{RED}ERROR: Creating new projects within the SDK or an existing project is not allowed.{RESET}")
             return False
 
-        op_type = 0
+        op_type = 0     # no app
         if len(args) > 1 and args[1] in ["app", "-a"]:
             if len(args) == 2:
                 print(f"{YELLOW}WARNING: Expect an app name, but not received.{RESET}")
@@ -158,16 +165,19 @@ class AmebaManager:
                 app_name = args[2]
                 copy_args = [proj_dir, "--app", app_name]
                 build_args = ["--new", proj_dir, "-a", app_name]
-                submodule_info = os.path.join(self.build_dir, 'submodule_info.json')
+                submodule_info = None
+                if self.soc_workdir:
+                    submodule_info = os.path.join(self.soc_workdir, 'build/submodule_info.json')
                 if app_name == "list-apps":
-                    op_type = 2
+                    op_type = 2     # list-apps
                 else:
-                    op_type = 1
+                    op_type = 1     # app
 
         script_dir = os.path.join(self.sdk_root, 'tools/scripts')
 
         if op_type == 2:
-            if os.path.exists(submodule_info):
+            if submodule_info and os.path.exists(submodule_info):
+                print(submodule_info)
                 run_script(script_dir, "build_copy.py", copy_args)
             else:
                 self.op_build(build_args)
@@ -196,7 +206,7 @@ class AmebaManager:
 
         if op_type == 1:
             if not run_script(script_dir, "build_copy.py", copy_args):
-                if not os.path.exists(submodule_info):
+                if not submodule_info or not os.path.exists(submodule_info):
                     self.op_build(build_args)
 
             if os.path.isdir(os.path.join(proj_dir, app_name)):
@@ -218,18 +228,23 @@ class AmebaManager:
 
         soc_name = self.utils.socs_lower.get(soc_name.lower())
 
-        previous_soc = self.utils.parse_soc_info()
+        previous_soc = self.current_soc_info
         if previous_soc and previous_soc['name'] == soc_name:
             print(f"Current SoC is: {GREEN}{soc_name}{RESET}")
             return True
-
-        self.op_clean_soc() # clean up first
 
         self.soc_info_set = {'name':soc_name}
         if not self.utils.save_soc_info(self.soc_info_set):
             return False
 
         print(f"Current SoC is set to: {GREEN}{soc_name}{RESET}. Saved as {self.info_file}")
+
+        self.current_soc_info = self.utils.parse_soc_info()
+        if not self.current_soc_info:
+            return False
+
+        self.soc_workdir = os.path.join(self.current_dir, self.workdir_prefix + soc_name)
+        os.environ['SOC_WORK_DIR'] = self.soc_workdir
 
         return True
 
@@ -247,7 +262,7 @@ class AmebaManager:
 
         while True:
             try:
-                choice = input(f"Enter a SoC number (1-{len(soc_names)}): ").strip()
+                choice = input(f"Enter an SoC number (1-{len(soc_names)}): ").strip()
                 if not choice: continue
                 idx = int(choice) - 1
                 if 0 <= idx < len(soc_names):
@@ -269,36 +284,47 @@ class AmebaManager:
         return False
 
     def _get_current_soc(self) -> Dict:
-        soc_info = self.utils.parse_soc_info()
+        soc_info = self.current_soc_info
         if soc_info:
             return soc_info
 
         print(f"{YELLOW}Current SoC is not set or invalid. Please select one first.{RESET}")
 
-        selected_soc = self._select_interactive_internal()
-        if selected_soc and self.op_set_project(selected_soc):
-             return self.utils.parse_soc_info()
+        if self.op_select_interactive():
+            return self.current_soc_info
 
         return None
 
     def op_build(self, args: List) -> bool:
         if not self._check_ready(): return False
         if self.env_type == 2:
-            return run_script(self.current_dir, "build.py", args)
+            return run_script(self.script_dir, "build.py", args + ['--project-dir', self.current_dir])
 
         if args and not args[0].startswith('-'):
-            if args[0].lower() in self.valid_socs_lower:
-                self.op_set_project(args[0])
-                args = args[1:]
+            if not self.op_set_project(args[0]):
+                return False
+            args = args[1:]
 
         soc_info = self._get_current_soc()
         if not soc_info: return False
 
-        build_args = args
-        defs = [f"EXTERN_DIR={self.current_dir}", f"FINAL_IMAGE_DIR={self.build_dir}"]
+        self.build_dir = os.path.join(self.soc_workdir, "build")
+
+        skip_flags = ['-proj', '--project-dir']    # skip '-proj'
+        for flag in skip_flags:
+            if flag in args:
+                print(f"{YELLOW}The param '{flag}' will be ignored.{RESET}")
+
+        build_args = args + ['--project-dir', soc_info['dir']]
+        defs = [f"EXTERN_DIR={self.current_dir}", f"FINAL_IMAGE_DIR={self.soc_workdir}"]
         other_args = ['-d', self.build_dir]
+        def_flag = None
         if '-D' in build_args:
-            idx = build_args.index('-D')
+            def_flag = '-D'
+        elif '--Defined' in build_args:
+            def_flag = '--Defined'
+        if def_flag:
+            idx = build_args.index(def_flag)
             build_args[idx + 1 : idx + 1] = defs
             build_args += other_args
         else:
@@ -306,76 +332,125 @@ class AmebaManager:
 
         is_external_app = (self.env_type > 2)
 
-        if is_external_app and '-a' not in args:
+        if is_external_app and '-a' not in args and '--app' not in args:
              build_args += ['-a', self.current_dir]
 
-        return run_script(soc_info['dir'], "build.py", build_args)
+        print(f"Start to build {GREEN}{soc_info['name']}{RESET} ...")
+        return run_script(self.script_dir, "build.py", build_args)
 
     def op_menuconfig(self, args: List) -> bool:
         if not self._check_ready(): return False
         if self.env_type == 2:
-            return run_script(self.current_dir, "menuconfig.py", args)
+            return run_script(self.script_dir, "menuconfig.py", args + ['--project-dir', self.current_dir])
 
         if args and not args[0].startswith('-'):
-            if args[0].lower() in self.valid_socs_lower:
-                self.op_set_project(args[0])
-                args = args[1:]
+            if not self.op_set_project(args[0]):
+                return False
+            args = args[1:]
 
         soc_info = self._get_current_soc()
         if not soc_info: return False
 
-        config_args = args
-        if self.current_dir != soc_info['dir']:
-            config_args += ['-d', self.current_dir, '-e', self.current_dir]
+        skip_flags = ['-proj', '--project-dir']    # skip '-proj'
+        for flag in skip_flags:
+            if flag in args:
+                print(f"{YELLOW}The param '{flag}' will be ignored.{RESET}")
 
-        return run_script(soc_info['dir'], "menuconfig.py", config_args)
+        config_args = args + ['--project-dir', soc_info['dir']]
+        if self.current_dir != soc_info['dir']:
+            config_args += ['-d', self.soc_workdir, '-e', self.current_dir]
+
+        print(f"Start to menuconfig {GREEN}{soc_info['name']}{RESET} ...")
+        return run_script(self.script_dir, "menuconfig.py", config_args)
 
     def op_monitor(self, args: List) -> bool:
         if not self._check_ready(): return False
-        if self.env_type == 2:
-            return run_script(self.current_dir, "monitor.py", args)
 
         soc_info = self._get_current_soc()
         if not soc_info: return False
 
         monitor_args = args
-        return run_script(soc_info['dir'], "monitor.py", monitor_args)
+        return run_script(self.script_dir, "monitor.py", monitor_args)
 
     def op_flash(self, args: List) -> bool:
         if not self._check_ready(): return False
-        if self.env_type == 2:
-            return run_script(self.current_dir, "flash.py", args)
+
+        if args and not args[0].startswith('-'):
+            if not self.op_set_project(args[0]):
+                return False
+            args = args[1:]
 
         soc_info = self._get_current_soc()
         if not soc_info: return False
 
-        flash_args = args
-        return run_script(soc_info['dir'], "flash.py", flash_args)
+        skip_flags = ['-dev', '--device']    # skip '-dev'
+        for flag in skip_flags:
+            if flag in args:
+                print(f"{YELLOW}The param '{flag}' will be ignored.{RESET}")
 
-    def op_clean_soc(self) -> bool:
-        if not self._check_ready(): return False
-        if os.path.exists(self.info_file):
-            print(f"{YELLOW}Cleanup previous selected SoC info and products...{RESET}")
-            self.op_menuconfig(["-c"])      # ninja clean, remove build and menuconfig
-            os.remove(self.info_file)       # remove soc_info
+        if self.env_type == 2:
+            img_dir = self.current_dir
         else:
-            for dir_name in ["build", "menuconfig"]:    # remove build and menuconfig
-                dir_path = os.path.join(self.current_dir, dir_name)
-                if os.path.exists(dir_path):
-                    print(f"Clean up the '{dir_name}' directory...")
-                    try:
-                        shutil.rmtree(dir_path)
-                    except OSError as e:
-                        print(f"{YELLOW}WARNING: Remove '{dir_path}' failed: {e}{RESET}", file=sys.stderr)
+            img_dir = self.soc_workdir
+        if not img_dir or not os.path.exists(img_dir):
+            print(f"{RED}ERROR: Please build before flash.{RESET}")
+            return False
+        flash_args = args + ['--image-dir', img_dir] + ['--device', soc_info['name']]
+
+        print(f"Start to flash {GREEN}{soc_info['name']}{RESET} ...")
+        return run_script(self.script_dir, "flash.py", flash_args)
+
+    def op_clean_soc(self, soc_name=None) -> bool:
+        if not self._check_ready(): return False
+        if self.env_type == 2:
+            self.op_menuconfig(["-c"])
+            return True
+
+        if soc_name:
+            if not self.op_set_project(soc_name[0]):
+                return False
+        elif not os.path.exists(self.info_file):
+            print(f"{YELLOW}WARNING: Please specify an SoC to cleanup: ameba.py cleansoc <soc_name>{RESET}")
+            return False
+
+        if not self.current_soc_info:
+            return False
+        if not os.path.exists(self.soc_workdir):
+            os.remove(self.info_file)
+            return True
+
+        soc = self.current_soc_info['name']
+        print(f"Cleanup all products of {soc}...")
+        self.op_menuconfig(["-c"])      # ninja clean, remove build and menuconfig
+        shutil.rmtree(self.soc_workdir)
+        os.remove(self.info_file)       # remove soc_info
 
         return True
 
-    def op_clean_build(self) -> bool:
+    def op_clean_build(self, soc_name=None) -> bool:
         if not self._check_ready(): return False
-        if os.path.exists(self.info_file):
-            self.op_build(["-c"])       # ninja clean
+        if self.env_type == 2:
+            self.op_build(["-c"])
+            shutil.rmtree(os.path.join(self.current_dir, "build"))
+            return True
 
-        dir_path = os.path.join(self.current_dir, "build")  # remove build
+        if soc_name:
+            if not self.op_set_project(soc_name[0]):
+                return False
+        elif not os.path.exists(self.info_file):
+            print(f"{YELLOW}WARNING: Please specify an SoC to clean: ameba.py clean <soc_name>.{RESET}")
+            return False
+
+        if not self.current_soc_info:
+            return False
+        if not os.path.exists(self.soc_workdir):
+            return False
+
+        soc = self.current_soc_info['name']
+        print(f"Cleanup build products of {soc}...")
+        self.op_build(["-c"])   # ninja clean
+
+        dir_path = os.path.join(self.soc_workdir, "build")  # remove build
         if os.path.exists(dir_path):
             print("Clean up the 'build' directory...")
             try:
@@ -398,7 +473,7 @@ class AmebaManager:
         suggestions = []
         if cword == 1:
             suggestions = [cmd for cmd in commands if cmd.startswith(current_word)]
-        elif cword == 2 and prev_word in ['soc']:
+        elif cword == 2 and prev_word in ['soc', 'clean', 'cleansoc']:
             suggestions = [soc for soc in self.valid_socs if soc.startswith(current_word)]
 
         print(' '.join(suggestions))

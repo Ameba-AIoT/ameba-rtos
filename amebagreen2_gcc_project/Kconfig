@@ -39,13 +39,6 @@ config SUPPORT_USBD_UAC
 config SUPPORT_USBH_UAC
     def_bool y
 
-if TRUSTZONE_EN
-
-config SUPPORT_USBH_UVC_HW_DEC
-    def_bool y
-
-endif
-
 config SUPPORT_USBH_ECM
     def_bool y
 
@@ -227,8 +220,8 @@ menu "CONFIG WHC INTF"
             bool "Support WHC WIFI API PATH"
         config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4TZ
             bool "Support WHC SUPPLICANT OFFLOAD"
-        config WHC_DUAL_TCPIP_FOR_KM4TZ
-            bool "Support WHC DUAL TCPIP"
+        config WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4TZ
+            bool "Support WHC DEV TCPIP KEEPALIVE"
         config FULLMAC_IN_SINGLE_DIE
             bool "Support Download to SRAM Only"
         endmenu
@@ -337,7 +330,7 @@ menu "CONFIG WIFI"
             select WLAN
             select FW_DRIVER_COEXIST
             select WIFI_FW_EN if !MP_SHRINK
-            select LWIP_LAYER if WHC_DUAL_TCPIP_FOR_KM4TZ
+            select LWIP_LAYER if WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4TZ
 
         config WHC_FULLMAC_HOST_IMPL
             bool

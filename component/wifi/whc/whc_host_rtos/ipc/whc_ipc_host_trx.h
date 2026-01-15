@@ -37,7 +37,6 @@
 /* 308 from DP asm 2024/4/11 */
 #define WIFI_STACK_SIZE_INIC_TRX_HST	(512 + CONTEXT_SAVE_SIZE)
 
-#define WHC_SKIP_RX_TASK
 /* -------------------------------- Macros ---------------------------------- */
 /* ------------------------------- Data Types ------------------------------- */
 /* recv buffer to store the data from IPC to queue. */

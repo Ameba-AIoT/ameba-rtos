@@ -14,7 +14,7 @@ void whc_uart_dev_init(void)
 
 	whc_uart_dev_device_init();
 
-#ifdef CONFIG_WHC_DUAL_TCPIP
+#ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
 	whc_dev_pktfilter_init();
 #endif
 

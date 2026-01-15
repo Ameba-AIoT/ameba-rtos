@@ -152,28 +152,6 @@ void ap_tickless_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 	RTK_LOGD(TAG, "T:%lu, tms:%lu\r\n", APSleepTick, (((APSleepTick & 0xFFFF8000) / 32768) * 1000 + ((APSleepTick & 0x7FFF) * 1000) / 32768));
 }
 
-/**
-  * @brief  Get ap sleep time.
-  * @param  null.
-  * @retval ap sleep time in ms.
-  */
-uint32_t pmu_get_apsleeptime(void)
-{
-	u32 current_tick = 0, apsleeptime = 0;
-
-	current_tick = SYSTIMER_TickGet();
-
-	if (current_tick >= APSleepTick) {
-		apsleeptime = current_tick - APSleepTick;
-	} else {
-		apsleeptime = (0xFFFFFFFF - APSleepTick) + current_tick;
-	}
-
-	apsleeptime = ((apsleeptime & 0xFFFF8000) / 32768) * 1000 + ((apsleeptime & 0x7FFF) * 1000) / 32768;
-
-	return apsleeptime;
-}
-
 IPC_TABLE_DATA_SECTION
 const IPC_INIT_TABLE ipc_tickless_table = {
 	.USER_MSG_TYPE = IPC_USER_DATA,

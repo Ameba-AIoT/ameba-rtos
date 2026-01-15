@@ -223,6 +223,8 @@ uint32_t pmu_get_kr4sleeptime(void);
 void SOCPS_ResMemMode(u32 module);
 void SOCPS_Kr4_StartTbl_Restore(void);
 void SOCPS_Kr4_StartTbl_Backup(void);
+void SOCPS_vPortBackupPmp(void);
+void SOCPS_vPortRestorePmp(void);
 
 #if defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
 extern void wifi_hal_system_resume_wlan(void);

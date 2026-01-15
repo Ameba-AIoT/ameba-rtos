@@ -15,6 +15,15 @@ fatfs_params_t fatfs_flash_param;
 fatfs_params_t fatfs_second_flash_param;
 #endif
 
+#if defined(CONFIG_FATFS_SD_HOTPLUG) || defined(CONFIG_FATFS_USB_HOST)
+void (*fatfs_hostplug_usr_cb)(int);
+
+void fatfs_set_hotplug_usr_cb(void (*cd_callback)(int status))
+{
+	fatfs_hostplug_usr_cb = cd_callback;
+}
+#endif
+
 // return drv_num assigned
 int FATFS_RegisterDiskDriver(ll_diskio_drv *drv)
 {

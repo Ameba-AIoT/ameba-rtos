@@ -2,7 +2,6 @@
 #include "main.h"
 #if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE || defined CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 #include "vfs.h"
-#include <mbedtls/platform.h>
 #endif
 #include "os_wrapper.h"
 
