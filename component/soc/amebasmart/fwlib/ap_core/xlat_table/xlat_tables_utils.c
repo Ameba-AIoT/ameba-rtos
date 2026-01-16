@@ -264,6 +264,7 @@ void xlat_tables_print(xlat_ctx_t *ctx)
  * virt_addr_space_size
  *   Size in bytes of the virtual address space.
  */
+SRAMDRAM_ONLY_TEXT_SECTION
 static uint64_t *find_xlat_table_entry(uintptr_t virtual_addr,
 				       void *xlat_table_base,
 				       unsigned int xlat_table_base_entries,
@@ -328,7 +329,7 @@ static uint64_t *find_xlat_table_entry(uintptr_t virtual_addr,
 	//return NULL;
 }
 
-
+SRAMDRAM_ONLY_TEXT_SECTION
 static int xlat_get_mem_attributes_internal(const xlat_ctx_t *ctx,
 		uintptr_t base_va, uint32_t *attributes, uint64_t **table_entry,
 		unsigned long long *addr_pa, unsigned int *table_level)
@@ -570,6 +571,134 @@ int xlat_change_mem_attributes_ctx(const xlat_ctx_t *ctx, uintptr_t base_va,
 		dccvac((uintptr_t)entry);
 #endif
 		base_va += PAGE_SIZE;
+	}
+
+	/* Ensure that the last descriptor writen is seen by the system. */
+	dsbish();
+
+	return 0;
+}
+
+SRAMDRAM_ONLY_TEXT_SECTION
+int xlat_update_mem_attributes_ctx(const xlat_ctx_t *ctx, uintptr_t base_va,
+				   size_t size, uint32_t attr)
+{
+	/* Note: This implementation isn't optimized. */
+	assert(ctx != NULL);
+	assert(ctx->initialized);
+
+	unsigned long long virt_addr_space_size = (unsigned long long)ctx->va_max_address + 1U;
+	assert(virt_addr_space_size > 0U);
+
+	if (!IS_PAGE_ALIGNED(base_va)) {
+		WARN("%s: Address 0x%lx is not aligned on a page boundary.\n", __func__, base_va);
+		return -EINVAL;
+	}
+
+	if ((size == 0U) || ((size % PAGE_SIZE) != 0U)) {
+		WARN("%s: Size 0x%x is not a multiple of a page size.\n", __func__, size);
+		return -EINVAL;
+	}
+
+	if (((attr & MT_EXECUTE_NEVER) == 0U) && ((attr & MT_RW) != 0U)) {
+		WARN("%s: Mapping memory as read-write and executable not allowed.\n", __func__);
+		return -EINVAL;
+	}
+
+	uintptr_t end_va = base_va + size;
+	uintptr_t base_va_original = base_va;
+	VERBOSE("Changing memory attributes from 0x%lx to 0x%lx...\n", base_va, end_va);
+
+	/*
+	 * Sanity checks.
+	 */
+	while (base_va < end_va) {
+		const uint64_t *entry;
+		uint64_t desc;
+		unsigned int level;
+		size_t block_size;
+
+		entry = find_xlat_table_entry(base_va,
+					      ctx->base_table,
+					      ctx->base_table_entries,
+					      virt_addr_space_size,
+					      &level);
+		if (entry == NULL) {
+			WARN("Address 0x%lx is not mapped.\n", base_va);
+			return -EINVAL;
+		}
+
+		desc = *entry;
+		block_size = XLAT_BLOCK_SIZE(level);
+
+		if (((desc & DESC_MASK) != BLOCK_DESC) && ((desc & DESC_MASK) != PAGE_DESC)) {
+			WARN("Unsupported descriptor type at 0x%lx\n", base_va);
+			return -EINVAL;
+		}
+
+		if (base_va + block_size > end_va) {
+			WARN("Region crosses granularity boundary at 0x%lx (block_size=0x%zx)\n",
+				base_va, block_size);
+			return -EINVAL;
+		}
+
+		base_va += block_size;
+	}
+
+	/* Restore original value. */
+	base_va = base_va_original;
+
+	while (base_va < end_va) {
+
+		uint32_t old_attr = 0U, new_attr;
+		uint64_t *entry = NULL;
+		unsigned int level = 0U;
+		unsigned long long addr_pa = 0ULL;
+		size_t block_size;
+
+		(void) xlat_get_mem_attributes_internal(ctx, base_va, &old_attr,
+					    &entry, &addr_pa, &level);
+
+		block_size = XLAT_BLOCK_SIZE(level);
+
+		/*
+		 * Allow changing:
+		 * - Memory type (Normal <-> Device)
+		 * - RW/RO
+		 * - Execute Never
+		 * - Secure/Non-secure
+		 */
+
+		/* Clean the old attributes so that they can be rebuilt. */
+		new_attr = old_attr & ~(MT_TYPE_MASK | MT_RW | MT_EXECUTE_NEVER | MT_USER);
+
+		/*
+		 * Update attributes, but filter out the ones this function
+		 * isn't allowed to change.
+		 */
+		new_attr |= attr & (MT_TYPE_MASK | MT_RW | MT_EXECUTE_NEVER | MT_USER);
+
+		/*
+		 * The break-before-make sequence requires writing an invalid
+		 * descriptor and making sure that the system sees the change
+		 * before writing the new descriptor.
+		 */
+		*entry = INVALID_DESC;
+#if !HW_ASSISTED_COHERENCY
+		dccvac((uintptr_t)entry);
+#endif
+		/* Invalidate any cached copy of this mapping in the TLBs. */
+		xlat_arch_tlbi_va(base_va, ctx->xlat_regime);
+
+		/* Ensure completion of the invalidation. */
+		xlat_arch_tlbi_va_sync();
+
+		/* Write new descriptor */
+		*entry = xlat_desc(ctx, new_attr, addr_pa, level);
+#if !HW_ASSISTED_COHERENCY
+		dccvac((uintptr_t)entry);
+#endif
+		base_va += block_size;
 	}
 
 	/* Ensure that the last descriptor writen is seen by the system. */

@@ -45,6 +45,8 @@ void smp_init(void);
 void vPortSecondaryOff(void);
 void vPortGateOtherCore(void);
 void vPortWakeOtherCore(void);
+void xlat_flash_region_device(void);
+void xlat_flash_region_xip(void);
 
 #endif /* !_ASMLANGUAGE */
 
