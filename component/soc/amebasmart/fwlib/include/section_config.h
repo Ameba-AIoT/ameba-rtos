@@ -7,7 +7,7 @@
 #ifndef _SECTION_CONFIG_H_
 #define _SECTION_CONFIG_H_
 
-#include "basic_types.h"
+#include "rtk_compiler.h"
 #include "platform_autoconf.h"
 
 #ifdef CONFIG_BUILD_ROM
