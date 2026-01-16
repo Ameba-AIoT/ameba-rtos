@@ -128,6 +128,29 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 	}
 	break;
 
+	case BT_EVENT_INQUIRY_CMPL: {
+		rtk_bt_br_inquiry_cmpl_t *p_cmpl = NULL;
+		{
+			APP_PRINT_INFO1("bt_stack_mgr_cback: inquiry completed, cause %x ", param->inquiry_cmpl.cause);
+			{
+				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_INQUIRY_CMPL, sizeof(rtk_bt_br_inquiry_cmpl_t));
+				if (!p_evt) {
+					BT_LOGE("bt_stack_mgr_cback: evt_t allocate fail \r\n");
+					handle = false;
+					break;
+				}
+				p_cmpl = (rtk_bt_br_inquiry_cmpl_t *)p_evt->data;
+				memcpy((void *)p_cmpl, (void *)&param->inquiry_cmpl, sizeof(rtk_bt_br_inquiry_cmpl_t));
+				/* Send event */
+				if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
+					handle = false;
+					break;
+				}
+			}
+		}
+	}
+	break;
+
 	case BT_EVENT_REMOTE_NAME_RSP: {
 		rtk_bt_br_remote_name_rsp_t *p_name_rsp = NULL;
 		T_APP_BR_LINK *p_link = NULL;

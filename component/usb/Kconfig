@@ -94,6 +94,8 @@ menu "CONFIG USB"
         bool
     config USBH_COMPOSITE_HID_UAC1
         bool
+    config USBH_COMPOSITE_ACM_ECM
+        bool
     config USBH_MSC
         bool
     config USBH_UAC

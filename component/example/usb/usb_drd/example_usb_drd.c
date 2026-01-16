@@ -59,7 +59,7 @@ static usbd_msc_cb_t usbd_msc_cb = {
 };
 
 static rtos_sema_t usbh_msc_attach_sema;
-static __IO int usbh_msc_is_ready = 0;
+static __IO int usbh_msc_is_rdy = 0;
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_DRD_SPEED,
@@ -92,7 +92,7 @@ static int usbh_msc_cb_attach(void)
 static int usbh_msc_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Host setup\n");
-	usbh_msc_is_ready = 1;
+	usbh_msc_is_rdy = 1;
 	return HAL_OK;
 }
 
@@ -102,7 +102,7 @@ static int usbh_msc_cb_process(usb_host_t *host, u8 msg)
 
 	switch (msg) {
 	case USBH_MSG_DISCONNECTED:
-		usbh_msc_is_ready = 0;
+		usbh_msc_is_rdy = 0;
 		break;
 	case USBH_MSG_CONNECTED:
 		break;
@@ -169,7 +169,7 @@ void example_usb_drd_thread(void *param)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Role switch\n");
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit MSC device class\n");
-	usbh_msc_deinit();
+	usbd_msc_deinit();
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit device driver\n");
 	usbd_deinit();
@@ -217,7 +217,7 @@ void example_usb_drd_thread(void *param)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "FatFS USB W/R performance test start...\n");
 
 	while (1) {
-		if (usbh_msc_is_ready) {
+		if (usbh_msc_is_rdy) {
 			rtos_time_delay_ms(10);
 			break;
 		}
@@ -237,7 +237,7 @@ void example_usb_drd_thread(void *param)
 		}
 
 		while (1) {
-			if (usbh_msc_is_ready) {
+			if (usbh_msc_is_rdy) {
 				rtos_time_delay_ms(10);
 				break;
 			}

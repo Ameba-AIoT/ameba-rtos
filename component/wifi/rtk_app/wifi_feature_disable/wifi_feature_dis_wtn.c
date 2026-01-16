@@ -210,6 +210,11 @@ void wifi_tunnel_socket_normal_rpt_send(void)
 
 }
 
+void wifi_tunnel_socket_enable(void)
+{
+
+}
+
 void whc_ipc_dev_wtn_socket_init(u8 enable, u8 rnat_ap_start)
 {
 	UNUSED(enable);

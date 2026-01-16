@@ -93,7 +93,7 @@ void whc_spi_host_recv_data_process(void *intf_priv)
 	}
 
 	/* check RX_REQ level */
-	if (gpio_get_value(RX_REQ_PIN)) {
+	if (gpio_get_value(DEV_TX_REQ_PIN)) {
 
 		/* allocate skb */
 		pskb = netdev_alloc_skb(NULL, SPI_BUFSZ);

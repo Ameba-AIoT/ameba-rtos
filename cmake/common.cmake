@@ -129,7 +129,7 @@ macro(ameba_soc_project_create name)
     endif()
 
     execute_process(
-        COMMAND python menuconfig.py --check -d ${c_WORKING_PROJECT_DIR}
+        COMMAND python ${c_BASEDIR}/tools/scripts/menuconfig.py -proj ${c_SOC_PROJECT_DIR} --check -d ${c_WORKING_PROJECT_DIR}
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMAND_ERROR_IS_FATAL ANY
     )

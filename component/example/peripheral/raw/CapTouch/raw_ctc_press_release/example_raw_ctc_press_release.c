@@ -182,7 +182,7 @@ void ctc_press_release_task(void) {
 #endif
 
 #if defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2)
-	/* AmebaDplus: Data will be sent to FIFO automatically even when debug mode is off since BCut */
+	/* RTL8721Dx: Data will be sent to FIFO automatically even when debug mode is off since BCut */
 	CapTouch_INTConfig(CAPTOUCH_DEV, CT_BIT_AFIFO_OVERLVL_INTR_EN, DISABLE);
 	CapTouch_INTConfig(CAPTOUCH_DEV, CT_BIT_AFIFO_OVERFLOW_INTR_EN, DISABLE);
 #endif

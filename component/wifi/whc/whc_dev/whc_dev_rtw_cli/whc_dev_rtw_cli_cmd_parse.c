@@ -79,7 +79,7 @@ __weak int whc_wpa_ops_wifi_on(u8 *ptr, u8 *buf)
 	(void)ptr;
 	(void)buf;
 
-#ifdef CONFIG_WHC_DUAL_TCPIP
+#ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
 	whc_dev_api_set_host_state(WHC_HOST_READY);
 #endif
 	wifi_on(RTW_MODE_STA);

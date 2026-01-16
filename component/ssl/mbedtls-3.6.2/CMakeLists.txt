@@ -62,10 +62,13 @@ ameba_list_append(private_definitions CONFIG_BUILD_NONSECURE=1)
 ameba_list_append_if(CONFIG_WLAN private_sources library/net_sockets.c)
 
 ameba_list_append(private_sources
+    library/aes.c
     library/aesce.c
     library/aesni.c
     library/aria.c
     library/base64.c
+    library/sha256.c
+    library/sha512.c
     library/bignum_mod.c
     library/bignum_mod_raw.c
     library/camellia.c
@@ -146,6 +149,8 @@ ameba_list_append(private_sources
     library/x509write_csr.c
     library/rsa.c
     hw_alt/entropy_hardware_alt.c
+    library/psa_crypto_driver_wrappers_no_static.c
+    library/psa_crypto_ffdh.c
 
     library/asn1parse.c
     library/asn1write.c
@@ -166,49 +171,41 @@ ameba_list_append(private_sources
     library/pk_ecc.c
 )
 
+# ========== Platforms with hardware acceleration (hw_alt) ==========
+# Both hw_alt and library sources are compiled. ALT macros in config headers control which implementation is used.
 if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2 OR CONFIG_RTL8720F)
     if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2)
-        ameba_list_append (private_sources
+        ameba_list_append(private_sources
             hw_alt/aes_alt.c
         )
     else()
-        ameba_list_append (private_sources
+        ameba_list_append(private_sources
             hw_alt/aes_alt_rtl8720f.c
         )
     endif()
 
-    ameba_list_append (private_sources
+    ameba_list_append(private_sources
         hw_alt/rsa_alt.c
         hw_alt/sha256_alt.c
         hw_alt/sha512_alt.c
         hw_alt/ecc_alt.c
         hw_alt/ssl_rom_to_ram_map.c
     )
-else()
 
-    if(CONFIG_AMEBASMART OR CONFIG_AMEBALITE OR CONFIG_AMEBADPLUS)
-        ameba_list_append(private_sources
-            hw_alt_legacy/aes_alt.c
-            hw_alt_legacy/sha256_alt.c
-            hw_alt_legacy/sha512_alt.c
-            hw_alt_legacy/ssl_rom_to_ram_map.c
-        )
+# ========== Legacy platforms with hardware acceleration (hw_alt_legacy) ==========
+elseif(CONFIG_AMEBASMART OR CONFIG_AMEBALITE OR CONFIG_AMEBADPLUS)
+    # Compile hw_alt_legacy sources
+    ameba_list_append(private_sources
+        hw_alt_legacy/aes_alt.c
+        hw_alt_legacy/sha256_alt.c
+        hw_alt_legacy/sha512_alt.c
+        hw_alt_legacy/ssl_rom_to_ram_map.c
+    )
 
-    else()
-        ameba_list_append(private_sources
-            library/aes.c
-            library/sha256.c
-            library/sha512.c
-            library/psa_crypto_driver_wrappers_no_static.c
-            library/psa_crypto_ffdh.c
-        )
-
-    endif()
+    ameba_list_append_if(CONFIG_AMEBASMART, private_sources, hw_alt_legacy/ecc_alt.c)
+    ameba_list_append_if(CONFIG_AMEBALITE, private_sources, hw_alt_legacy/ecc_alt.c)
+    ameba_list_append_if(CONFIG_AMEBASMART, private_sources, hw_alt_legacy/rsa_alt.c)
 endif()
-
-ameba_list_append_if(CONFIG_AMEBASMART private_sources hw_alt_legacy/ecc_alt.c)
-ameba_list_append_if(CONFIG_AMEBALITE private_sources hw_alt_legacy/ecc_alt.c)
-ameba_list_append_if(CONFIG_AMEBASMART private_sources hw_alt_legacy/rsa_alt.c)
 # Component private part, user config end
 #------------------------------#
 

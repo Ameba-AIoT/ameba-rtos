@@ -120,7 +120,6 @@ void i2c_dual_slave_task(void)
 
 
 	RTK_LOGI(TAG, "Slave write>>>\n");
-	i2c_slave_set_for_rd_req(&i2cslave, 1);
 	i2c_slave_write(&i2cslave, (char *)&i2cdatardsrc[0], I2C_DATA_LENGTH);
 
 	while (1);

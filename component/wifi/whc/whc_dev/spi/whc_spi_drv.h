@@ -13,7 +13,7 @@
 #ifdef CONFIG_AMEBAGREEN2  // need use QFN100
 #define PINMUX_FUNCTION_SPIS	    PINMUX_FUNCTION_SPI0
 #define DEV_READY_PIN				_PA_18
-#define RX_REQ_PIN					_PA_19
+#define DEV_TX_REQ_PIN				_PA_19
 #define SPIS_MOSI                   _PA_30
 #define SPIS_MISO                   _PA_31
 #define SPIS_SCLK                   _PA_29
@@ -23,7 +23,7 @@
 #elif defined (CONFIG_AMEBADPLUS)
 #define PINMUX_FUNCTION_SPIS	    PINMUX_FUNCTION_SPI
 #define DEV_READY_PIN				_PB_9
-#define RX_REQ_PIN					_PB_8
+#define DEV_TX_REQ_PIN				_PB_8
 #define SPIS_MOSI	                _PB_24
 #define SPIS_MISO	                _PB_25
 #define SPIS_SCLK	                _PB_23
@@ -33,7 +33,7 @@
 #elif defined (CONFIG_AMEBALITE)
 #define PINMUX_FUNCTION_SPIS	    PINMUX_FUNCTION_SPI
 #define DEV_READY_PIN				_PB_3   // amebalite use different pin due to _PA_1(num 15, GPIO22 got by command "pinout") will be pull down by raspberry pi
-#define RX_REQ_PIN					_PB_2
+#define DEV_TX_REQ_PIN				_PB_2
 #define SPIS_MOSI	                _PA_29
 #define SPIS_MISO	                _PA_30
 #define SPIS_SCLK	                _PA_28
@@ -44,8 +44,8 @@
 #define DEV_READY					1
 #define DEV_BUSY					0
 
-#define DEV_RX_REQ					1
-#define DEV_RX_IDLE					0
+#define DEV_TX_REQ					1 // dev request send data to host
+#define DEV_TX_IDLE					0
 
 #define WHC_SPI_DEV				    SPI0_DEV
 #define SPIS_IRQ                    SPI0_IRQ
@@ -81,7 +81,7 @@ struct whc_spi_priv_t {
 	struct sk_buff *rx_skb;
 	struct whc_buf_info *txbuf_info;
 
-	u8 rx_req;
+	u8 tx_req;
 	u8 wait_tx;
 	u8 wait_for_txbuf;
 
@@ -100,12 +100,12 @@ static inline void set_dev_rdy_pin(u8 status)
 #endif
 }
 
-static inline void set_dev_rxreq_pin(u8 status)
+static inline void set_dev_txreq_pin(u8 status)
 {
 #ifdef CONFIG_AMEBAGREEN2
-	GPIO_WriteBit(RX_REQ_PIN, status);
+	GPIO_WriteBit(DEV_TX_REQ_PIN, status);
 #else
-	GPIO_WriteBit_Critical(RX_REQ_PIN, status);
+	GPIO_WriteBit_Critical(DEV_TX_REQ_PIN, status);
 #endif
 }
 

@@ -11,15 +11,12 @@
 #include "os_wrapper.h"
 #include "log.h"
 
-StaticSemaphore_t __lock___sinit_recursive_mutex;
-StaticSemaphore_t __lock___sfp_recursive_mutex;
-StaticSemaphore_t __lock___atexit_recursive_mutex;
-StaticSemaphore_t __lock___at_quick_exit_mutex;
-StaticSemaphore_t __lock___malloc_recursive_mutex;
-StaticSemaphore_t __lock___env_recursive_mutex;
-StaticSemaphore_t __lock___tz_mutex;
-StaticSemaphore_t __lock___dd_hash_mutex;
-StaticSemaphore_t __lock___arc4random_mutex;
+/* Refer to stdlib.h, stdio.h, time.h */
+StaticSemaphore_t __lock___sinit_recursive_mutex; // newlib 4.1.0 still use
+StaticSemaphore_t __lock___sfp_recursive_mutex; // e.g. __sinit, called by vfprintf
+StaticSemaphore_t __lock___atexit_recursive_mutex; // e.g. called by atexit
+StaticSemaphore_t __lock___env_recursive_mutex; // e.g. called by getenv, setenv
+StaticSemaphore_t __lock___tz_mutex; // e.g. called by mktime, localtime
 
 static const char *const TAG = "LOCKS";
 
@@ -36,42 +33,22 @@ static void init_retarget_locks(void)
 	xSemaphoreCreateRecursiveMutexStatic(&__lock___sinit_recursive_mutex);
 	xSemaphoreCreateRecursiveMutexStatic(&__lock___sfp_recursive_mutex);
 	xSemaphoreCreateRecursiveMutexStatic(&__lock___atexit_recursive_mutex);
-	xSemaphoreCreateMutexStatic(&__lock___at_quick_exit_mutex);
-	//    xSemaphoreCreateRecursiveMutexStatic(&__lock___malloc_recursive_mutex);  // see below
 	xSemaphoreCreateRecursiveMutexStatic(&__lock___env_recursive_mutex);
 	xSemaphoreCreateMutexStatic(&__lock___tz_mutex);
-	xSemaphoreCreateMutexStatic(&__lock___dd_hash_mutex);
-	xSemaphoreCreateMutexStatic(&__lock___arc4random_mutex);
 #endif
 }
-
-// Special case for malloc/free. Without this, the full
-// malloc_recursive_mutex would be used, which is much slower.
-//
-// void __malloc_lock(struct _reent *r)
-// {
-// 	(void)r;
-// 	rtos_critical_enter(RTOS_CRITICAL_SOC);
-// }
-
-// void __malloc_unlock(struct _reent *r)
-// {
-// 	(void)r;
-// 	rtos_critical_exit(RTOS_CRITICAL_SOC);
-// }
 
 void __retarget_lock_init(_LOCK_T *lock_ptr)
 {
 	if (*lock_ptr) {
 		/* Lock already initialized */
-		RTK_LOGS(TAG, RTK_LOG_INFO, "%s, lock_ptr %p is already initialized!!!\n", __func__, *lock_ptr);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "%p inited\n", *lock_ptr);
 		return;
 	}
 
 	*lock_ptr = (_LOCK_T)xSemaphoreCreateMutex();
 
 	if (*lock_ptr == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s, lock_ptr create failed!!!\n", __func__);
 		rtk_assert(*lock_ptr);
 	}
 }
@@ -80,14 +57,13 @@ void __retarget_lock_init_recursive(_LOCK_T *lock_ptr)
 {
 	if (*lock_ptr) {
 		/* Lock already initialized */
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s, lock_ptr %p is already initialized!!!\n", __func__, *lock_ptr);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "%p inited\n", *lock_ptr);
 		return;
 	}
 
 	*lock_ptr = (_LOCK_T)xSemaphoreCreateRecursiveMutex();
 
 	if (*lock_ptr == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s, lock_ptr create failed!!!\n", __func__);
 		rtk_assert(*lock_ptr);
 	}
 }
@@ -102,12 +78,8 @@ void __retarget_lock_close(_LOCK_T lock)
 void __retarget_lock_close_recursive(_LOCK_T lock)
 {
 	if (lock) {
-		if (xSemaphoreGetMutexHolder((QueueHandle_t)lock) == NULL) {
-			vSemaphoreDelete(lock);
-		} else {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "%s, lock %p is still in use!!!\n", __func__, lock);
-			vSemaphoreDelete(lock);
-		}
+		rtk_assert(xSemaphoreGetMutexHolder((QueueHandle_t)lock) == NULL);
+		vSemaphoreDelete(lock);
 	}
 }
 
@@ -125,14 +97,13 @@ void __retarget_lock_acquire(_LOCK_T lock)
 	if (rtos_critical_is_in_interrupt()) {
 		ret = xSemaphoreTakeFromISR(lock, &task_woken);
 		if (ret != pdTRUE) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "%s, lock %p acquire from isr failed!!!\n", __func__, lock);
 			rtk_assert(0);
 		}
 		portEND_SWITCHING_ISR(task_woken);
 	} else {
 		ret = xSemaphoreTake((QueueHandle_t)lock, portMAX_DELAY);
 		if (ret != pdTRUE) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "%s, lock %p acquire failed!!!\n", __func__, lock);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "%p acq failed\n", lock);
 		}
 	}
 }
@@ -153,7 +124,7 @@ void __retarget_lock_acquire_recursive(_LOCK_T lock)
 
 	ret = xSemaphoreTakeRecursive((QueueHandle_t)lock, portMAX_DELAY);
 	if (ret != pdTRUE) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s, lock %p acquire failed!!!\n", __func__, lock);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%p acq recur failed\n", lock);
 	}
 }
 
@@ -176,7 +147,7 @@ int __retarget_lock_try_acquire(_LOCK_T lock)
 	} else {
 		ret = xSemaphoreTake((QueueHandle_t)lock, 0);
 		if (ret != pdTRUE) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "%s, lock %p acquire failed!!!\n", __func__, lock);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "%p try acq failed\n", lock);
 		}
 	}
 
@@ -199,7 +170,7 @@ int __retarget_lock_try_acquire_recursive(_LOCK_T lock)
 
 	ret = xSemaphoreTakeRecursive((QueueHandle_t)lock, 0);
 	if (ret != pdTRUE) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s, lock %p acquire failed!!!\n", __func__, lock);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%p try acq recur failed\n", lock);
 	}
 	return (ret == pdTRUE) ? 0 : -1;
 }
@@ -221,7 +192,7 @@ void __retarget_lock_release(_LOCK_T lock)
 	} else {
 		ret = xSemaphoreGive(lock);
 		if (ret != pdTRUE) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "%s, lock %p release failed!!!\n", __func__, lock);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "%p rls failed\n", lock);
 		}
 	}
 }
@@ -240,7 +211,7 @@ void __retarget_lock_release_recursive(_LOCK_T lock)
 
 	ret = xSemaphoreGiveRecursive((QueueHandle_t)lock);
 	if (ret != pdTRUE) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s, lock %p release failed!!!\n", __func__, lock);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%p rls recur failed\n", lock);
 	}
 }
 

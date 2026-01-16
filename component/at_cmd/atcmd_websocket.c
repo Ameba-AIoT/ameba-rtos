@@ -2006,26 +2006,27 @@ end:
 	}
 }
 
-log_item_t at_websocket_items[ ] = {
-	{"+WSCFG", at_wscfg, {NULL, NULL}},
-	{"+WSGLCFG", at_wsglcfg, {NULL, NULL}},
-	{"+WSHEAD", at_wshead, {NULL, NULL}},
-	{"+WSHEADRAW", at_wsheadraw, {NULL, NULL}},
-	{"+WSCONN", at_wsconn, {NULL, NULL}},
-	{"+WSSEND", at_wssend, {NULL, NULL}},
-	{"+WSSENDRAW", at_wssendraw, {NULL, NULL}},
-	{"+WSDISCONN", at_wsdisconn, {NULL, NULL}},
-	{"+WSQUERY", at_wsquery, {NULL, NULL}},
-	{"+WSTXQUEUECHECK", at_wsqueuecheck, {NULL, NULL}},
+ATCMD_TABLE_DATA_SECTION
+const log_item_t at_websocket_items[ ] = {
+	{"+WSCFG", at_wscfg},
+	{"+WSGLCFG", at_wsglcfg},
+	{"+WSHEAD", at_wshead},
+	{"+WSHEADRAW", at_wsheadraw},
+	{"+WSCONN", at_wsconn},
+	{"+WSSEND", at_wssend},
+	{"+WSSENDRAW", at_wssendraw},
+	{"+WSDISCONN", at_wsdisconn},
+	{"+WSQUERY", at_wsquery},
+	{"+WSTXQUEUECHECK", at_wsqueuecheck},
 
 	/* for websocket server */
-	{"+WSSRVCFG", at_wssrvcfg, {NULL, NULL}},
-	{"+WSSRVQUERY", at_wssrvquery, {NULL, NULL}},
-	{"+WSSRVSTART", at_wssrvstart, {NULL, NULL}},
-	{"+WSSRVDISCONN", at_wssrvdisconn, {NULL, NULL}},
-	{"+WSSRVSTOP", at_wssrvstop, {NULL, NULL}},
-	{"+WSSRVSEND", at_wssrvsend, {NULL, NULL}},
-	{"+WSSRVSENDRAW", at_wssrvsendraw, {NULL, NULL}},
+	{"+WSSRVCFG", at_wssrvcfg},
+	{"+WSSRVQUERY", at_wssrvquery},
+	{"+WSSRVSTART", at_wssrvstart},
+	{"+WSSRVDISCONN", at_wssrvdisconn},
+	{"+WSSRVSTOP", at_wssrvstop},
+	{"+WSSRVSEND", at_wssrvsend},
+	{"+WSSRVSENDRAW", at_wssrvsendraw},
 };
 
 void print_websocket_at(void)
@@ -2064,7 +2065,7 @@ void init_websocket_struct(void)
 void at_websocket_init(void)
 {
 	init_websocket_struct();
-	atcmd_service_add_table(at_websocket_items, sizeof(at_websocket_items) / sizeof(at_websocket_items[0]));
+	atcmd_service_add_table((log_item_t *)at_websocket_items, sizeof(at_websocket_items) / sizeof(at_websocket_items[0]));
 }
 
 #endif /* CONFIG_ATCMD_WEBSOCKET */

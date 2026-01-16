@@ -207,20 +207,6 @@ struct wps_str {
 #define WIFI_CIPHER_SUITE_BIP_GMAC_256	0x000FAC0C
 #define WIFI_CIPHER_SUITE_BIP_CMAC_256	0x000FAC0D
 
-/* SECCAM sec_type define */
-#define _NO_PRIVACY_	0x0
-#define _WEP40_		0x1
-#define _TKIP_		0x2
-#define _TKIP_WTMIC_	0x3
-#define _AES_		0x4	//_CCMP_128_
-#define _WEP104_	0x5
-#define _SMS4_		0x6	//_WAPI_
-#define _GCMP_		0x7
-#define _GCMP_256_	(_GCMP_ | BIT(3))
-#define _CCMP_256_	(_AES_ | BIT(3))
-#define _GCM_WAPI_	(_SMS4_ | BIT(3))		//_GCM_WAPI_
-#define _BIP_		0x8
-
 enum ENCRYP_PROTOCOL_E {
 	ENCRYP_PROTOCOL_OPENSYS,   //open system
 	ENCRYP_PROTOCOL_WEP,       //WEP

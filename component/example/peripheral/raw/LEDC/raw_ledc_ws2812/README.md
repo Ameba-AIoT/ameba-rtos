@@ -6,15 +6,15 @@ This example describes how to use LEDC to light WS2812 series LED in the state o
 
 Required Components: a WS2812 series LED and a 4.5V-5.5V power supply.
 
-* On AmebaSmart
+* On RTL8730E
 	- Connect `LEDC_PIN(_PA_9)` to `Data_In` of LED.
 	- Supply `5V` power for the LED
 	- Connect `GND` to `GND` of LED.
-* On AmebaLite
+* On RTL8726E/RTL8720E/RTL8713E/RTL8710E
 	- Connect `LEDC_PIN(_PA_21)` to `Data_In` of LED.
 	- Supply `5V` power for the LED.
 	- Connect `GND` to `GND` of LED.
-* On AmebaDplus
+* On RTL8721Dx
 	- Connect `LEDC_PIN(_PA_26)` to `Data_In` of LED.
 	- Supply `5V` power for the LED.
 	- Connect `GND` to `GND` of LED.

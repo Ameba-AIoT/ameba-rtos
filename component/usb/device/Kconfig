@@ -61,10 +61,27 @@ config USBD_INIC_MENU
 
 config USBD_MSC_MENU
     bool "MSC"
-    depends on SUPPORT_SDIOH
     select USBD_MSC if WHC_HOST || WHC_NONE
-    select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
-    select FATFS_DISK_SD if WHC_HOST || WHC_NONE
+    if USBD_MSC_MENU
+        choice
+            prompt "Select storage media"
+            config USBD_MSC_RAM_DISK
+                bool "RAM"
+            config USBD_MSC_SD_MODE
+                bool "SD Card (SD mode)"
+                depends on SUPPORT_SDIOH
+                select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
+                select FATFS_SD_MODE if WHC_HOST || WHC_NONE
+            config USBD_MSC_SD_SPI_MODE
+                bool "SD Card (SPI mode)"
+                select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
+                select FATFS_SD_SPI_MODE if WHC_HOST || WHC_NONE
+            config USBD_MSC_EXTERNAL_FLASH
+                bool "External FLASH"
+                select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
+                select FATFS_SECOND_FLASH if WHC_HOST || WHC_NONE
+        endchoice
+    endif
 
 config USBD_UAC_MENU
     bool "UAC"

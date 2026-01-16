@@ -23,8 +23,8 @@ ETH_InitTypeDef eth_initstruct;
 
 #define ETH_LINKCHANGE          8
 
-#define MII_TX_DESC_NO					4
-#define MII_RX_DESC_NO					4
+#define MII_TX_DESC_NO					8
+#define MII_RX_DESC_NO					16
 
 SRAM_NOCACHE_DATA_SECTION
 u8 rmii_tx_desc[MII_TX_DESC_NO][ETH_TX_DESC_SIZE]__attribute__((aligned(32)));
@@ -32,7 +32,6 @@ SRAM_NOCACHE_DATA_SECTION
 u8 rmii_rx_desc[MII_RX_DESC_NO][ETH_RX_DESC_SIZE]__attribute__((aligned(32)));
 
 static rtos_mutex_t rmii_tx_mutex;
-volatile u32 ethernet_unplug = 0;
 
 extern struct netif  *pnetif_eth;
 
@@ -217,7 +216,17 @@ void ethernet_demo(void *param)
 	u8 eth_mac[6];
 	u8 random = 0;
 	u8 *hwinfo;
-
+	/* The Bus Interface Instance */
+	const struct eth_mdio_ops eth_mdio_bus = {
+		.mdio_read  = Ethernet_ReadPhyReg,
+		.mdio_write = Ethernet_WritePhyReg,
+	};
+	struct eth_phy_dev eth_phy_dev_rtl8201fr = {
+		.priv = "RTL8201FR",
+		.bus = &eth_mdio_bus, /* To be assigned during initialization */
+		.addr = 0x01, 		  /* Default PHY address, can be changed */
+		.ops  = &phy_rtl8201fr_ops,
+	};
 	/* Initilaize the LwIP stack */
 	// can not init twice
 #ifndef CONFIG_RMII_VERIFY
@@ -225,7 +234,8 @@ void ethernet_demo(void *param)
 		LwIP_Init();
 	}
 #endif
-	Ethernet_StructInit(&eth_initstruct);
+
+	Ethernet_StructInit(&eth_initstruct, &eth_phy_dev_rtl8201fr);
 
 	/*ethernet_irq_hook*/
 	peth_initstruct->callback = (eth_callback_t)mii_intr_handler;
@@ -282,7 +292,7 @@ void ethernet_demo(void *param)
 	InterruptRegister((IRQ_FUN)RMII_IRQHandler, (IRQn_Type)RMII_IRQ, (u32)&eth_initstruct, 5);
 	InterruptEn(RMII_IRQ, 5);
 
-	Ethernet_init(&eth_initstruct);
+	Ethernet_Init(&eth_initstruct);
 
 	memcpy((void *)pnetif_eth->hwaddr, (void *)eth_mac, ETH_MAC_ADDR_LEN);
 
@@ -302,15 +312,6 @@ void ethernet_demo(void *param)
 	rtos_mem_free(hwinfo);
 
 	rtos_task_delete(NULL);
-}
-
-int ethernet_is_unplug(void)
-{
-	if (ethernet_unplug == 1) {
-		return TRUE;
-	} else {
-		return FALSE;
-	}
 }
 
 void ethernet_pin_config(void)

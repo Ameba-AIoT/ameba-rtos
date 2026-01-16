@@ -10,13 +10,13 @@ Connect wires:
 
 For example:
 
-- On AmebaSmart, then connect as below
+- On RTL8730E, then connect as below
   - Connect `GPIO_SIGNAL_SOURCE (_PB_10)` to `GPIO_IRQ_EDGE_PIN (_PA_10)`
-- On AmebaLite, then connect as below
+- On RTL8726E/RTL8720E/RTL8713E/RTL8710E, then connect as below
   - Connect `GPIO_SIGNAL_SOURCE (_PB_5)` to `GPIO_IRQ_EDGE_PIN (_PA_29)`
-- On AmebaDplus, then connect as below
+- On RTL8721Dx, then connect as below
   - Connect `GPIO_SIGNAL_SOURCE (_PB_10)` to `GPIO_IRQ_EDGE_PIN (_PA_12)`
-- On AmebaGreen2, then connect as below
+- On RTL8721F, then connect as below
   - Connect `GPIO_SIGNAL_SOURCE (_PA_25)` to `GPIO_IRQ_EDGE_PIN (_PA_26)`
 
 # SW configuration

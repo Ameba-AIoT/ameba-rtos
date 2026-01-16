@@ -682,7 +682,6 @@ void wifi_roaming_plus_thread(void *param)
 	u32 ap_valid = AP_VALID_TIME;
 #endif
 	struct wifi_roaming_data *read_data = NULL;
-	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: wifi_roaming_plus \n");
 	while (1) { //wait wifi connect

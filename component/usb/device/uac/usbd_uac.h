@@ -217,7 +217,6 @@ typedef struct {
  * @param[in] cb: Pointer to the user-defined callback structure.
  * @return 0 on success, non-zero on failure.
  */
-
 int usbd_uac_init(usbd_uac_cb_t *cb);
 
 /**

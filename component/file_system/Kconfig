@@ -18,7 +18,7 @@ menu "CONFIG VFS"
                 bool "Second FLASH"
                 select FATFS_SECOND_FLASH
             config FATFS_DISK_SD_MENU   #amebasmart  green2
-                depends on SUPPORT_NAND_FLASH
+                depends on SUPPORT_SDIOH
                 bool "SD MODE"
                 select FATFS_SD_MODE
             config FATFS_SD_SPI_MENU

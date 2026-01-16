@@ -9,7 +9,7 @@
 SDIOHCFG_TypeDef sdioh_config = {
 	.sdioh_bus_speed = SD_SPEED_HS, //SD_SPEED_DS or SD_SPEED_HS
 	.sdioh_bus_width = SDIOH_BUS_WIDTH_4BIT, //SDIOH_BUS_WIDTH_1BIT or SDIOH_BUS_WIDTH_4BIT
-	.sdioh_cd_pin = _PNC,		// _PNC or other gpio pin
+	.sdioh_cd_pin = _PB_19,		// _PNC or other gpio pins, e.g. _PB_19
 	.sdioh_wp_pin = _PNC,		// fixed
 };
 

@@ -329,9 +329,9 @@ class secure_boot():
         privkey_hex = list_to_hex_str(privkey_bytes)
         pubkey_hex = list_to_hex_str(pubkey_bytes)
 
-        keyinfo['private_key'] = privkey_hex
-        keyinfo['public_key'] = pubkey_hex
-        keyinfo['public_key_hash'] = pubkey_hash
+        keyinfo['sboot_private_key'] = privkey_hex
+        keyinfo['sboot_public_key'] = pubkey_hex
+        keyinfo['sboot_public_key_hash'] = pubkey_hash
         return
 
     def ml_dsa_65_genkey(self, keyinfo):
@@ -583,9 +583,9 @@ class secure_boot():
         # print(pubkey_hex)
         # print(privkey_hex)
 
-        keyinfo['private_key'] = privkey_hex
-        keyinfo['public_key'] = pubkey_hex
-        keyinfo['public_key_hash'] = pubkey_hash
+        keyinfo['sboot_private_key'] = privkey_hex
+        keyinfo['sboot_public_key'] = pubkey_hex
+        keyinfo['sboot_public_key_hash'] = pubkey_hash
         return keyinfo
 
     def gen_image_hash(self, filename, imghash):

@@ -197,8 +197,14 @@ SD_RESULT SD_Init(void)
 	/* Required power up waiting time before starting the SD initialization sequence */
 	DelayUs(2);
 
+	/* cd pin is configured and cd signal is high */
+	if ((sdioh_config.sdioh_cd_pin != _PNC) && (GPIO_ReadDataBit(sdioh_config.sdioh_cd_pin) == 1)) {
+		RTK_LOGE(TAG, "Card is removed or not inserted!\n");
+		return SD_NODISK;
+	}
+
 	/* Initialize the Card parameters */
-	/* CMD0->CMD8->CMD5->ACMD41)->(CMD2->)CMD3->(CMD9->)CMD7(->CMD16) */
+	/* CMD0->CMD8->CMD5(->ACMD41)->(CMD2->)CMD3->(CMD9->)CMD7(->CMD16) */
 
 	/* Identify card operating voltage */
 	ret = SD_PowerON(hsd); // CMD0->CMD8->CMD5(->ACMD41)
@@ -2821,14 +2827,23 @@ SD_RESULT SD_ReadBlocks(u32 sector, u8 *data, u32 count)
 SD_RESULT SD_WriteBlocks(u32 sector, const u8 *data, u32 count)
 {
 	SD_RESULT ret = SD_ERROR;
-	u32 i;
+	u8 *ptr;
+	u32 current_sector = sector;
+	const u8 *current_data = data;
+	u32 blk_remaining = count;
+	u32 blk_to_write;
+
+	if ((data == NULL) || (count == 0)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid data addr or block cnt!\n");
+		return SD_ERROR;
+	}
 
 	if (SD_CheckStatusTO(&hsd0, SD_FATFS_TIMEOUT) < 0) {
 		return ret; // SD card did not turn ready before timeout
 	}
 
-	if (!((u32)data & 0x1F) && !((count * SD_BLOCK_SIZE) & 0x1F)) { // 32Byte-aligned
-		/* the SCB_CleanDCache_by_Addr() requires a 32-Byte aligned address adjust the address and the D-Cache size to clean accordingly. */
+	if (((u32)data % SDIOH_DMA_ALIGN_SZ) == 0) {
+		/* SDIOH_DMA_ALIGN_SZ aligned */
 		DCache_CleanInvalidate((u32)data, count * SD_BLOCK_SIZE);
 
 		if (SD_WriteBlocks_DMA(&hsd0, (u8 *)data, (u32)sector, count) == SD_OK) {
@@ -2839,25 +2854,37 @@ SD_RESULT SD_WriteBlocks(u32 sector, const u8 *data, u32 count)
 			}
 		}
 	} else {
-		/* Slow path, fetch each sector a part and _memcpy to destination buffer */
-		for (i = 0; i < count; i++) {
-			_memcpy((void *)scratch, (void *)data, SD_BLOCK_SIZE);
-			data += SD_BLOCK_SIZE;
+		/* Not SDIOH_DMA_ALIGN_SZ aligned */
+		ptr = rtos_mem_malloc(SD_MALLOC_BLK_CNT * SD_BLOCK_SIZE); // 4KByte
+		if (ptr == NULL) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Allocate buffer error!\n");
+			return SD_ERROR;
+		}
 
-			DCache_CleanInvalidate((u32)scratch, SD_BLOCK_SIZE);
+		while (blk_remaining > 0) {
+			blk_to_write = blk_remaining > SD_MALLOC_BLK_CNT ? SD_MALLOC_BLK_CNT : blk_remaining;
 
-			if (SD_WriteBlocks_DMA(&hsd0, (u8 *)scratch, (u32)sector++, 1) == SD_OK) {
+			_memcpy(ptr, current_data, blk_to_write * SD_BLOCK_SIZE);
+
+			DCache_CleanInvalidate((u32)ptr, blk_to_write * SD_BLOCK_SIZE);
+
+			if (SD_WriteBlocks_DMA(&hsd0, (u8 *)ptr, current_sector, blk_to_write) == SD_OK) {
 				/* Wait that writing process is completed or a timeout occurs */
-
 				if (SD_CheckStatusTO(&hsd0, SD_FATFS_TIMEOUT) < 0) {
 					break;
 				}
 			} else {
 				break;
 			}
+
+			current_sector += blk_to_write;
+			current_data += blk_to_write * SD_BLOCK_SIZE;
+			blk_remaining -= blk_to_write;
 		}
 
-		if (i == count) {
+		rtos_mem_free(ptr);
+
+		if (blk_remaining == 0) {
 			ret = SD_OK;
 		}
 	}
@@ -2958,32 +2985,54 @@ SD_RESULT SD_IO_ReadBlocks(u8 FuncNum, u32 Addr, u8 *pData, u16 BlockCnt)
 
 SD_RESULT SD_IO_WriteBytes(u8 FuncNum, u32 Addr, u8 *pData, u16 ByteCnt)
 {
-	assert_param(ByteCnt <= SD_BLOCK_SIZE);
+	SD_RESULT ret = SD_ERROR;
+	u8 *ptr;
 
-	if (!((u32)pData & 0x1F) && !(ByteCnt & 0x1F)) { // 32Byte-aligned
-
-		DCache_CleanInvalidate((u32)pData, ByteCnt);
-
-		if (SD_IO_RW_Extended(&hsd0, BUS_WRITE, FuncNum, 0x1, Addr, pData, 0, ByteCnt) == SD_OK) {
-			return SD_OK;
-		}
-	} else {
-		_memcpy(scratch, pData, ByteCnt);
-		DCache_CleanInvalidate((u32)scratch, ByteCnt);
-
-		if (SD_IO_RW_Extended(&hsd0, BUS_WRITE, FuncNum, 0x1, Addr, scratch, 0, ByteCnt) == SD_OK) {
-			return SD_OK;
-		}
+	if ((pData == NULL) || (ByteCnt == 0) || (ByteCnt >= SD_BLOCK_SIZE)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid data addr or byte cnt!\n");
+		return SD_ERROR;
 	}
 
-	return SD_ERROR;
+	if (((u32)pData % SDIOH_DMA_ALIGN_SZ) == 0) {
+		/* SDIOH_DMA_ALIGN_SZ aligned */
+		DCache_CleanInvalidate((u32)pData, ByteCnt);
+
+		ret = SD_IO_RW_Extended(&hsd0, BUS_WRITE, FuncNum, 0x1, Addr, pData, 0, ByteCnt);
+
+	} else {
+		/* Not SDIOH_DMA_ALIGN_SZ aligned */
+		ptr = rtos_mem_malloc(SD_BLOCK_SIZE); // 512Byte
+		if (ptr == NULL) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Allocate buffer error!\n");
+			return SD_ERROR;
+		}
+
+		_memcpy(ptr, pData, ByteCnt);
+		DCache_CleanInvalidate((u32)ptr, ByteCnt);
+
+		ret = SD_IO_RW_Extended(&hsd0, BUS_WRITE, FuncNum, 0x1, Addr, ptr, 0, ByteCnt);
+
+		rtos_mem_free(ptr);
+	}
+
+	return ret;
 }
 
 SD_RESULT SD_IO_WriteBlocks(u8 FuncNum, u32 Addr, u8 *pData, u16 BlockCnt)
 {
-	u32 i;
+	u8 *ptr;
+	u32 current_addr = Addr;
+	const u8 *current_data = pData;
+	u32 blk_remaining = BlockCnt;
+	u32 blk_to_write;
 
-	if (!((u32)pData & 0x1F) && !((BlockCnt * SD_BLOCK_SIZE) & 0x1F)) { // 32Byte-aligned
+	if ((pData == NULL) || (BlockCnt == 0)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid data addr or block cnt!\n");
+		return SD_ERROR;
+	}
+
+	if (((u32)pData % SDIOH_DMA_ALIGN_SZ) == 0) {
+		/* SDIOH_DMA_ALIGN_SZ aligned */
 		DCache_CleanInvalidate((u32)pData, BlockCnt * SD_BLOCK_SIZE);
 
 		if (SD_IO_RW_Extended(&hsd0, BUS_WRITE, FuncNum, 0x1, Addr, pData, 1, BlockCnt) == SD_OK) {
@@ -2991,19 +3040,32 @@ SD_RESULT SD_IO_WriteBlocks(u8 FuncNum, u32 Addr, u8 *pData, u16 BlockCnt)
 			return SD_OK;
 		}
 	} else {
-		/* Slow path, fetch each sector a part and _memcpy to destination buffer */
-		for (i = 0; i < BlockCnt; i++) {
-			_memcpy(scratch, pData, SD_BLOCK_SIZE);
-			pData += SD_BLOCK_SIZE;
-
-			DCache_CleanInvalidate((u32)scratch, SD_BLOCK_SIZE);
-
-			if (SD_IO_RW_Extended(&hsd0, BUS_WRITE, FuncNum, 0x1, Addr, scratch, 1, 1) != SD_OK) {
-				break;
-			}
+		/* Not SDIOH_DMA_ALIGN_SZ aligned */
+		ptr = rtos_mem_malloc(SD_MALLOC_BLK_CNT * SD_BLOCK_SIZE); // 4KByte
+		if (ptr == NULL) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Allocate buffer error!\n");
+			return SD_ERROR;
 		}
 
-		if (i == BlockCnt) {
+		while (blk_remaining > 0) {
+			blk_to_write = blk_remaining > SD_MALLOC_BLK_CNT ? SD_MALLOC_BLK_CNT : blk_remaining;
+
+			_memcpy(ptr, current_data, blk_to_write * SD_BLOCK_SIZE);
+
+			DCache_CleanInvalidate((u32)ptr, blk_to_write * SD_BLOCK_SIZE);
+
+			if (SD_IO_RW_Extended(&hsd0, BUS_WRITE, FuncNum, 0x1, current_addr, ptr, 1, blk_to_write) != SD_OK) {
+				break;
+			}
+
+			current_addr += blk_to_write;
+			current_data += blk_to_write * SD_BLOCK_SIZE;
+			blk_remaining -= blk_to_write;
+		}
+
+		rtos_mem_free(ptr);
+
+		if (blk_remaining == 0) {
 			return SD_OK;
 		}
 	}
