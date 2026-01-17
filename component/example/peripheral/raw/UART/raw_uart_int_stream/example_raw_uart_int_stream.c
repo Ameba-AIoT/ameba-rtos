@@ -89,7 +89,7 @@ u32 uart_irq(void *data)
 			uart_obj->pTxBuf ++;
 		}
 
-		/* TX_EMPTY: unmask status before amebagreen2 */
+		/* TX_EMPTY: unmasked status before RTL8721F */
 		if (0 == uart_obj->TxCount && 1 == tx_busy) {
 			uart_send_string_done();
 		}

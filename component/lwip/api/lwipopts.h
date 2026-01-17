@@ -153,7 +153,6 @@ extern unsigned int sys_now(void);
 #endif
 
 #if defined(CONFIG_HIGH_TP_TEST)
-#if defined (CONFIG_WHC_HOST)
 #undef TCP_WND
 #define TCP_WND                         (16 * TCP_MSS)
 #undef TCP_SND_BUF
@@ -164,7 +163,6 @@ extern unsigned int sys_now(void);
 #define DEFAULT_UDP_RECVMBOX_SIZE       18
 #undef DEFAULT_TCP_RECVMBOX_SIZE
 #define DEFAULT_TCP_RECVMBOX_SIZE       18
-#endif
 #endif
 
 #if defined(CONFIG_WPAN_THREAD_BORDER_ROUTER_EN) && CONFIG_WPAN_THREAD_BORDER_ROUTER_EN
@@ -190,6 +188,13 @@ extern unsigned int sys_now(void);
 #define LWIP_NETCONN_THREAD_SEM_GET()     sys_thread_sem_get()
 #define LWIP_NETCONN_THREAD_SEM_ALLOC()   sys_thread_sem_init()
 #define LWIP_NETCONN_THREAD_SEM_FREE()    sys_thread_sem_deinit()
+#endif
+
+/*Can disable UDP checksum to achive higher throughput, when in reliable network environments or the application-layer protocol provides strong integrity protection*/
+#if defined (CONFIG_LWIP_SKIP_CHECK_UDP_CHECKSUM)
+#define CHECKSUM_CHECK_UDP              0
+#else
+#define CHECKSUM_CHECK_UDP              1
 #endif
 
 #endif /* LWIP_HDR_LWIPOPTS_H */

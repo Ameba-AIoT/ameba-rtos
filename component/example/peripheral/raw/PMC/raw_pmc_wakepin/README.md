@@ -4,17 +4,17 @@ This example demonstrates how to wake up via wakepin.
 
 # HW Configuration
 wakeup operation:
-* On AmebaSmart,
+* On RTL8730E,
 	- Connect PB_21/PB_22 to GND
 	- Or connect PB_21/PB_22 to V3.3
 	- PB_23 and PB_24 is for loguart now, contact RTK if need
-* On AmebaLite,
+* On RTL8726E/RTL8720E/RTL8713E/RTL8710E,
 	- Connect PA_0/PA_1 to to GND
 	- Or connect PA_0/PA_1 to V3.3
-* On AmebaDplus,
+* On RTL8721Dx,
 	- Connect PB_30/PB_31 to to GND
 	- Or connect PB_30/PB_31 to V3.3
-* On AmebaGreen2,
+* On RTL8721F,
 	- Connect PA_3/PA_2/PA_1/PA_0 to to GND
 	- Or connect PA_3/PA_2/PA_1/PA_0 to V3.3
 
@@ -24,10 +24,10 @@ wakeup operation:
 
 |    | WAKEPIN_0   | WAKEPIN_1   | WAKEPIN_2 | WAKEPIN_3|
 | ----- | ----- | ----- |----- | ----- |
-| AmebaSmart | PB 21 | PB 22 | | |
-| AmebaLite | PA 0 | PA 1 | | |
-| AmebaDplus| PB30 | PB 31 | | |
-| AmebaGreen2 | PA 3 | PA 2 | PA 1| PA 0 |
+| RTL8730E | PB 21 | PB 22 | | |
+| RTL8726E/RTL8720E/RTL8713E/RTL8710E | PA 0 | PA 1 | | |
+| RTL8721Dx| PB30 | PB 31 | | |
+| RTL8721F | PA 3 | PA 2 | PA 1| PA 0 |
 
 3. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.

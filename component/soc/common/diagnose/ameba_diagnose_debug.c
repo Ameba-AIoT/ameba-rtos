@@ -16,7 +16,6 @@ char *generate_random_string(int min_length, int max_length)
 	static const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 	int charset_length = sizeof(charset) - 1;
 
-	// 确保最小长度不小于0，最大长度不小于最小长度
 	if (min_length < 0) {
 		min_length = 0;
 	}
@@ -24,26 +23,39 @@ char *generate_random_string(int min_length, int max_length)
 		max_length = min_length;
 	}
 
-	// 生成随机长度
 	int length = min_length + _rand() % (max_length - min_length + 1);
 
-	// 分配内存
 	char *random_string = rtos_mem_malloc(length + 1); // +1 for null terminator
 	if (random_string == NULL) {
-		return NULL; // 内存分配失败
+		return NULL;
 	}
 
-	// 生成随机字符串
 	for (int i = 0; i < length; i++) {
 		random_string[i] = charset[_rand() % charset_length];
 	}
 
-	// 添加字符串结束符
 	random_string[length] = '\0';
 
 	return random_string;
 }
 
+int rtk_diag_dbg_send(const u8 *data, u16 len)
+{
+	for (u16 i = 0; i < len; i++) {
+		DiagPrintf("%02x", data[i]);
+		if (i == 4) {
+			DiagPrintf(" || ");
+		} else if (i >= 6 && (((i - 6) % 14) == 0)) {
+			DiagPrintf("\n  ");
+		} else {
+			LOGUART_PutChar(' ');
+		}
+	}
+	DiagPrintf("\n");
+	return RTK_SUCCESS;
+}
+
+#ifdef DIAG_DEBUG_TASK
 void test_rtk_diag_multi_task1(void *pv_parameters)
 {
 	(void)pv_parameters;
@@ -79,3 +91,4 @@ void rtk_diag_debug_create_task(void)
 		RTK_LOGA("DIAG", "Cannot create power_ppe demo task\n");
 	}
 }
+#endif

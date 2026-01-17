@@ -27,6 +27,9 @@ menu "CONFIG AT CMD"
             config ATCMD_SNTP
                 bool "Enable SNTP"
                 default n
+            config ATCMD_MDNS
+                bool "Enable MDNS"
+                default n
         endif
         config ATCMD_SOCKET
             bool "Enable Socket"

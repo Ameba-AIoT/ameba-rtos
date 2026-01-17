@@ -755,7 +755,7 @@ void flash_highspeed_setup(void)
 
 	spic_ckd = DIV_ROUND_UP(pll_clk, SPIC_CLK_LIMIT) - 1;
 	flash_speed = MAX(flash_speed, spic_ckd);
-	RTK_LOGI(TAG, "SPIC CLK: %d Hz\n", pll_clk / (flash_speed + 1));
+	RTK_LOGI(TAG, "FLASH CLK: %d Hz\n", pll_clk / (2 * (flash_speed + 1)));
 
 	__asm volatile("cpsid i");
 

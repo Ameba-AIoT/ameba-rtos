@@ -1099,5 +1099,10 @@ void vPortCleanUpTCB(uint32_t * pxTCB)
 #if( configENABLE_TRUSTZONE == 1 )
 	vPortFreeSecureContext( ( uint32_t * ) pxTCB );
 #endif
+
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
+	extern void sys_thread_sem_deinit_tcb(uint32_t *pxTCB);
+	sys_thread_sem_deinit_tcb(pxTCB);
+#endif
 }
 /*-----------------------------------------------------------*/

@@ -387,16 +387,17 @@ end:
 }
 #endif
 
-log_item_t at_sys_items[] = {
+ATCMD_TABLE_DATA_SECTION
+const log_item_t at_sys_items[] = {
 #ifndef CONFIG_INIC_NO_FLASH
-	{"+OTACLEAR", at_otaclear, {NULL, NULL}},
-	{"+OTARECOVER", at_otarecover, {NULL, NULL}},
+	{"+OTACLEAR", at_otaclear},
+	{"+OTARECOVER", at_otarecover},
 #endif
-	{"+TEST", at_test, {NULL, NULL}},
-	{"+LIST", at_list, {NULL, NULL}},
-	{"+GMR", at_gmr, {NULL, NULL}},
+	{"+TEST", at_test},
+	{"+LIST", at_list},
+	{"+GMR", at_gmr},
 #ifdef CONFIG_ATCMD_HOST_CONTROL
-	{"+UART", at_uart, {NULL, NULL}},
+	{"+UART", at_uart},
 #endif
 };
 
@@ -413,5 +414,5 @@ void print_system_at(void)
 
 void at_sys_init(void)
 {
-	atcmd_service_add_table(at_sys_items, sizeof(at_sys_items) / sizeof(at_sys_items[0]));
+	atcmd_service_add_table((log_item_t *)at_sys_items, sizeof(at_sys_items) / sizeof(at_sys_items[0]));
 }

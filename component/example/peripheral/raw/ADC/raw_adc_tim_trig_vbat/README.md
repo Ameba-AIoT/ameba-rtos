@@ -8,7 +8,7 @@ ADC could cooperate with `timer` modules which drive ADC module to do conversion
 
 In this example, ADC is configured to sample data in `vbat channel`.
 
-* On AmebaSmart
+* On RTL8730E
 	- Connect `VBAT_MEAS` to `to-be-measured signal`
 	- Connect `GND` to `GND` of to-be-measured device
 
@@ -32,7 +32,7 @@ For more info of `VBAT_MEAS`, refer to EVB schematic design file.
 1. Input voltage of vbat channel: `0 ~ 5V`.
 2. Conversion in normal channels can also be executed under timer-trigger mode
 3. Supported timer: `TIMER0 ~ TIMER7`.
-4. Vbat channel `is not supported` on `AmebaLite`.
+4. Vbat channel `is not supported` on `RTL8726E/RTL8720E/RTL8713E/RTL8710E`.
 
 # Supported IC
 

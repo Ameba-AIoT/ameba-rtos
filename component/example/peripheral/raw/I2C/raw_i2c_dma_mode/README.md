@@ -7,12 +7,12 @@
 
 This test needs two demo board, one as master and the other as slave.
 
-* On AMEBADPLUS
+* On RTL8721Dx
   - Master board I2C0 SDA (`PB_15`) to Slave board I2C0 SDA (`PB_15`) pin,
   - Master board I2C0 SCL (`PB_16`) to Slave board I2C0 SCL (`PB_16`) pin.
   - Master's `GND` connect to Slave's `GND`
 
-* On AMEBADGREEN2
+* On RTL8721F
   - Master board I2C0 SDA (`_PA_26`) to Slave board I2C0 SDA (`_PA_26`) pin,
   - Master board I2C0 SCL (`_PA_25`) to Slave board I2C0 SCL (`_PA_25`) pin.
   - Master's `GND` connect to Slave's `GND`
@@ -27,7 +27,7 @@ This test needs two demo board, one as master and the other as slave.
 4. How to modify gpio pin:
    you can also modify pinmux group settings according to correct pinmux table.
    for example: 
-   	If you want to modify pinmux group setting in AmebaSmart, then you should refer to UM0602_RTL8730E_pinmux.xls
+   	If you want to modify pinmux group setting in RTL8730E, then you should refer to UM0602_RTL8730E_pinmux.xls
 
 # Expected Result
 

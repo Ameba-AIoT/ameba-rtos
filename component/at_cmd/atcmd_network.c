@@ -16,6 +16,66 @@
 #include "lwip/apps/sntp.h"
 #include "sntp/sntp_api.h"
 #endif
+#if defined(CONFIG_ATCMD_MDNS) && (CONFIG_ATCMD_MDNS == 1)
+#include "mdns.h"
+
+typedef struct {
+	const char *key;
+	const char *value;
+} txt_item_t;
+
+typedef struct {
+	txt_item_t *items;
+	uint8_t     count;
+} txt_userdata_t;
+
+txt_userdata_t *mdns_txt_record = NULL;
+unsigned char mdns_enable_state = 0;
+
+enum mdns_state_enu {
+	MDNS_DEINIT = 0,
+	MDNS_DISABLE = 1,
+	MDNS_ENABLE = 2
+};
+
+static void free_txt_userdata(txt_userdata_t **psd)
+{
+	if (psd == NULL || *psd == NULL) {
+		return;
+	}
+
+	txt_userdata_t *ud = *psd;
+
+	for (uint8_t i = 0; i < ud->count; i++) {
+		free((char *)ud->items[i].key);
+		free((char *)ud->items[i].value);
+	}
+
+	free(ud->items);
+	free(ud);
+	*psd = NULL;
+}
+
+static void srv_txt(struct mdns_service *service, void *txt_userdata)
+{
+	char content[50] = {"Here is ameba lwip_mdns service!"};
+	mdns_resp_add_service_txtitem(service, content, strlen(content));
+
+	if (txt_userdata != NULL) {
+		txt_userdata_t *ud = (txt_userdata_t *)txt_userdata;
+		char buf[64];
+		for (uint8_t i = 0; i < ud->count; i++) {
+			memset(buf, 0, sizeof(buf));
+			int n = snprintf(buf, sizeof(buf), "%s=%s",
+							 ud->items[i].key,
+							 ud->items[i].value);
+			if (n > 0 && n < (int)sizeof(buf)) {
+				mdns_resp_add_service_txtitem(service, buf, (uint8_t)n);
+			}
+		}
+	}
+}
+#endif
 
 static void at_ping_help(void)
 {
@@ -334,7 +394,199 @@ end:
 		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
-#endif /* CONFIG_ATCMD_DNS */
+#endif
+
+#if defined(CONFIG_ATCMD_MDNS) && (CONFIG_ATCMD_MDNS == 1)
+void at_mdns(void *arg)
+{
+	int argc = 0, error_no = 0;
+	char *argv[MAX_ARGC] = {0};
+	int mode = 0, txt_record_cnt = 0, port = 0;
+	enum mdns_sd_proto protocol = 0;
+	char *hostname = NULL, *service_type = NULL, *service_name = NULL;
+
+	if (arg == NULL) {
+		RTK_LOGE(NOTAG, "[at_mdns] Input parameter is NULL\r\n");
+		error_no = 1;
+		goto end;
+	}
+	argc = parse_param_advance(arg, argv);
+	mode = atoi(argv[1]);
+	if (mode < 0 || mode > 1) {
+		RTK_LOGE(NOTAG, "[at_mdns] mode must be 0 or 1\r\n");
+	}
+
+	if (mode == 1) {
+		if (mdns_enable_state == MDNS_ENABLE) {
+			error_no = 3;
+			RTK_LOGE(NOTAG, "[at_mdns]mdns service has been enabled, please disable first \r\n");
+			goto end;
+		}
+
+		if (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
+			RTK_LOGE(NOTAG, "[at_mdns] Wifi connection is not ready\r\n");
+			error_no = 4;
+			goto end;
+		}
+
+		if (argc < 5) {
+			RTK_LOGE(NOTAG, "[at_mdns] Invalid number of parameters\r\n");
+			error_no = 1;
+			goto end;
+		}
+
+
+		if (strlen(argv[2]) == 0) {
+			RTK_LOGE(NOTAG, "[at_mdns] Missing hostname\r\n");
+			error_no = 1;
+			goto end;
+		}
+		hostname = (char *)argv[2];
+
+		if (strlen(argv[3]) == 0) {
+			RTK_LOGE(NOTAG, "[at_mdns] Missing service_type\r\n");
+			error_no = 1;
+			goto end;
+		}
+		service_type = (char *)argv[3];
+
+		port = atoi(argv[4]);
+		if (port <= 0 || port > 65535) {
+			RTK_LOGE(NOTAG, "[at_mdns] The range of <port> is [1, 65535]\r\n");
+			error_no = 1;
+			goto end;
+		}
+
+		if (argc >= 6) {
+			if (strlen(argv[5])) {
+				service_name = (char *)argv[5];
+			} else {
+				service_name = hostname;
+			}
+		} else {
+			service_name = hostname;
+		}
+
+		if (argc >= 7) {
+			if (strlen(argv[6])) {
+				if (atoi(argv[6]) == 1) {
+					protocol = DNSSD_PROTO_TCP;
+				} else if (atoi(argv[6]) == 2) {
+					protocol = DNSSD_PROTO_UDP;
+				} else {
+					RTK_LOGE(NOTAG, "[at_mdns] protocol number must be 1 or 2\r\n");
+					error_no = 1;
+					goto end;
+				}
+			} else {
+				protocol = DNSSD_PROTO_TCP;
+			}
+		} else {
+			protocol = DNSSD_PROTO_TCP;
+		}
+
+		if (argc > 8) {
+			if (strlen(argv[7])) {
+				if (atoi(argv[7]) > 6 || atoi(argv[7]) < 1) {
+					RTK_LOGE(NOTAG, "[at_mdns] txt_record_cnt must be 1~6\r\n");
+					error_no = 1;
+					goto end;
+				}
+				txt_record_cnt = atoi(argv[7]);
+			} else {
+				RTK_LOGE(NOTAG, "[at_mdns] txt_record_cnt must be clear if txt records are set \r\n");
+				error_no = 1;
+				goto end;
+			}
+
+			if (argc < 8 + 2 * txt_record_cnt) {
+				RTK_LOGE(NOTAG, "[at_mdns] key and value must be set if txt_record_cnt is clear \r\n");
+				error_no = 1;
+				goto end;
+			}
+
+			mdns_txt_record = (txt_userdata_t *)rtos_mem_zmalloc(sizeof(txt_userdata_t));
+			if (mdns_txt_record == NULL) {
+				RTK_LOGE(NOTAG, "[at_mdns] malloc failed \r\n");
+				error_no = 2;
+				goto end;
+			}
+
+			mdns_txt_record->count = txt_record_cnt;
+			mdns_txt_record->items = rtos_mem_zmalloc(sizeof(txt_item_t) * txt_record_cnt);
+			if (mdns_txt_record->items == NULL) {
+				RTK_LOGE(NOTAG, "[at_mdns] malloc failed \r\n");
+				error_no = 2;
+				goto end;
+			}
+
+			for (uint8_t i = 0; i < txt_record_cnt; i++) {
+
+				if (strlen(argv[8 + i * 2]) == 0 || strlen(argv[9 + i * 2]) == 0) {
+					RTK_LOGE(NOTAG, "[at_mdns] txt_record key or value must be set \r\n");
+					error_no = 1;
+					goto end;
+				}
+
+				mdns_txt_record->items[i].key   = strdup(argv[8 + i * 2]);
+				mdns_txt_record->items[i].value = strdup(argv[9 + i * 2]);
+
+				if (mdns_txt_record->items[i].key == NULL || mdns_txt_record->items[i].value == NULL) {
+					RTK_LOGE(NOTAG, "[at_mdns] malloc failed \r\n");
+					error_no = 2;
+					goto end;
+				}
+			}
+		}
+	}
+
+	if (mode == 0) {
+		mdns_resp_remove_netif(pnetif_sta);
+		if (mdns_txt_record != NULL) {
+			free_txt_userdata(&mdns_txt_record);
+		}
+		if (mdns_enable_state == MDNS_ENABLE) {
+			mdns_enable_state = MDNS_DISABLE;
+		}
+	} else if (mode == 1) {
+
+		if (mdns_enable_state == MDNS_DEINIT) {
+			mdns_resp_init();
+			mdns_enable_state = MDNS_DISABLE;
+		}
+
+		if (mdns_resp_add_netif(pnetif_sta, hostname, 30)) {
+			error_no = 5;
+			RTK_LOGE(NOTAG, "[at_mdns]mdns_resp_add_netif fail \r\n");
+			goto end;
+		}
+
+		if (mdns_resp_add_service(pnetif_sta, service_name, service_type, protocol, port, 30, srv_txt, mdns_txt_record)) {
+			error_no = 5;
+			RTK_LOGE(NOTAG, "[at_mdns]mdns_resp_add_service fail \r\n");
+			goto end;
+		}
+
+		mdns_enable_state = MDNS_ENABLE;
+
+	}
+
+end:
+	if (error_no == 0) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		if (error_no != 3) {
+			mdns_resp_remove_netif(pnetif_sta);
+			if (mdns_txt_record != NULL) {
+				free_txt_userdata(&mdns_txt_record);
+			}
+		}
+
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+
+#endif /* CONFIG_ATCMD_MDNS */
 
 #if defined(CONFIG_ATCMD_SNTP) && (CONFIG_ATCMD_SNTP == 1)
 static char *server_list[SNTP_MAX_SERVERS] = {NULL};
@@ -607,19 +859,23 @@ void at_sntptime(void *arg)
 }
 #endif /* CONFIG_ATCMD_SNTP */
 
-log_item_t at_network_items[ ] = {
-	{"+PING", at_ping, {NULL, NULL}},
-	{"+IPERF", at_iperf, {NULL, NULL}},
-	{"+IPERF3", at_iperf3, {NULL, NULL}},
+ATCMD_TABLE_DATA_SECTION
+const log_item_t at_network_items[ ] = {
+	{"+PING", at_ping},
+	{"+IPERF", at_iperf},
+	{"+IPERF3", at_iperf3},
 #if defined(CONFIG_ATCMD_DNS) && (CONFIG_ATCMD_DNS == 1)
-	{"+DNS", at_dns, {NULL, NULL}},
-	{"+QUERYDNSSRV", at_querydnssrv, {NULL, NULL}},
-	{"+SETDNSSRV", at_setdnssrv, {NULL, NULL}},
+	{"+DNS", at_dns},
+	{"+QUERYDNSSRV", at_querydnssrv},
+	{"+SETDNSSRV", at_setdnssrv},
+#endif
+#if defined(CONFIG_ATCMD_MDNS) && (CONFIG_ATCMD_MDNS == 1)
+	{"+MDNS", at_mdns},
 #endif
 #if defined(CONFIG_ATCMD_SNTP) && (CONFIG_ATCMD_SNTP == 1)
-	{"+SNTPCFG", at_sntpcfg, {NULL, NULL}},
-	{"+SNTPQUERY", at_sntpquery, {NULL, NULL}},
-	{"+SNTPTIME", at_sntptime, {NULL, NULL}},
+	{"+SNTPCFG", at_sntpcfg},
+	{"+SNTPQUERY", at_sntpquery},
+	{"+SNTPTIME", at_sntptime},
 #endif
 };
 
@@ -635,7 +891,7 @@ void print_network_at(void)
 
 void at_network_init(void)
 {
-	atcmd_service_add_table(at_network_items, sizeof(at_network_items) / sizeof(at_network_items[0]));
+	atcmd_service_add_table((log_item_t *)at_network_items, sizeof(at_network_items) / sizeof(at_network_items[0]));
 }
 
 #endif /* CONFIG_ATCMD_NETWORK */

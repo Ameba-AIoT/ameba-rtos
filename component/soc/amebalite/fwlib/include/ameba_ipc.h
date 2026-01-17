@@ -356,7 +356,7 @@ typedef enum {
 #define IPC_M2R_BT_DRC_TRAN						5	/*!<  Recycled: KM4 -->  KR4 BT DATA Exchange */
 #define IPC_M2R_WIFI_TRX_TRAN						6	/*!<  KM4 -->  KR4 WIFI Message Exchange */
 #define IPC_M2R_WIFI_API_TRAN						7	/*!<  KM4 -->  KR4 WIFI API Message Exchange */
-#define IPC_M2R_EVENT_REQ						5	/*!<  KM4 -->  KR4 Diagnose API Message Exchange */
+#define IPC_M2R_DIAGNOSE						5	/*!<  KM4 -->  KR4 Diagnose API Message Exchange */
 
 #define IPC_M2D_WAKE_DSP						0	/*!<  KM4 -->  DSP Wakeup */
 //#define IPC_M2D_Channel1							1

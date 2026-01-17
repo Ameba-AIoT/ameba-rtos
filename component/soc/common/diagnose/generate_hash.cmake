@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.20.0)
 include(${c_CMAKE_FILES_DIR}/utility.cmake)
 include(${c_CMAKE_FILES_DIR}/global_define.cmake)
 
+string(REPLACE " " ";" fmt_head "${fmt_head}")
 ameba_execute_process(
     COMMAND python ${c_DIAG_FMT_SCRIPT} h2j ${fmt_head} ${fmt_json}
 )

@@ -13,6 +13,7 @@ component_path = os.path.join(os.path.dirname(os.path.dirname(script_dir)),'comp
 target_path = [
    'wifi/api',
    'soc/common/include',
+   'soc/common/diagnose',
    ]
 
 def _extract_enum_used_for_diag_from_file(enum_name, file_path):
@@ -95,7 +96,7 @@ def _extract_enum_used_for_diag_from_file(enum_name, file_path):
 
     return diag_map
 
-def _parse_enums(content):
+def _parse_event_basic_enums(content):
 
     content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
 
@@ -104,6 +105,10 @@ def _parse_enums(content):
     for enum_match in enum_pattern.finditer(content):
         enum_name = enum_match.group(1)
         enum_body = enum_match.group(2)
+
+        # 仅处理以 rtk_event_ 或 diag_evt_ 开头的枚举
+        if not (enum_name.startswith('rtk_event_') or enum_name.startswith('diag_evt_')):
+            continue
 
         enum_values = OrderedDict()
         current_value = 0
@@ -158,9 +163,14 @@ def _parse_structs(content):
                 type_name = bit_field_match.group(1)
                 field_name = bit_field_match.group(2)
                 bits = bit_field_match.group(3)
+
+                diag_comment = ""
+                if comment and '<!-- DIAG: -->' in comment:
+                    diag_comment = comment.split('<!-- DIAG: -->', 1)[1].strip()
+
                 fields[field_name] = {
                     'type': f"{type_name}:{bits}",
-                    'comment': comment or ''
+                    'comment': diag_comment or ''
                 }
                 continue
 
@@ -178,11 +188,15 @@ def _parse_structs(content):
                 field_name = field_match.group(3)
                 array_size = field_match.group(4)
 
+                diag_comment = ""
+                if comment and '<!-- DIAG: -->' in comment:
+                    diag_comment = comment.split('<!-- DIAG: -->', 1)[1].strip()
+
                 # Build field info (with comment handling)
                 field_info = {
                     'type': f"{type_name}[{array_size}]" if array_size
                             else (f"struct {type_name}" if is_struct else type_name),
-                    'comment': comment or ''
+                    'comment': diag_comment or ''
                 }
 
                 # Explicit comment declaration: "enum rtw_disconn_reason in wifi_api_types.h"
@@ -206,27 +220,38 @@ def _parse_structs(content):
 
     return structs, enum_ref_types
 
-def parse_header_file(input_file):
 
-    with open(input_file, 'r', encoding='utf-8') as f:
-        content = f.read()
+def parse_header_files(header_files):
 
-    content = re.sub(r'//.*?\n', '\n', content)
-    enums = _parse_enums(content)
-    structs, enum_ref_types = _parse_structs(content)
+    all_enums = {}
+    all_structs = {}
+    all_enum_refs = {}
 
-    # Handle typedefs
-    typedef_pattern = re.compile(r'typedef\s+struct\s+(?:tag)?(\w+)\s+(\w+)_t\s*;')
-    for typedef_match in typedef_pattern.finditer(content):
-        original_name = typedef_match.group(1)
-        new_name = typedef_match.group(2) + "_t"
-        if original_name in structs:
-            structs[new_name] = structs[original_name]
+    for hdr in header_files:
+        with open(hdr, 'r', encoding='utf-8') as f:
+            content = f.read()
 
+        content = re.sub(r'//.*?\n', '\n', content)
+        enums = _parse_event_basic_enums(content)
+        structs, enum_ref_types = _parse_structs(content)
+
+        # Handle typedefs
+        typedef_pattern = re.compile(r'typedef\s+struct\s+(?:tag)?(\w+)\s+(\w+)_t\s*;')
+        for typedef_match in typedef_pattern.finditer(content):
+            original_name = typedef_match.group(1)
+            new_name = typedef_match.group(2) + "_t"
+            if original_name in structs:
+                structs[new_name] = structs[original_name]
+
+        all_enums.update(enums)
+        all_structs.update(structs)
+        all_enum_refs.update(enum_ref_types)
+
+    # 输出前将 set 转为列表，便于 JSON 序列化
     return {
-        'enums': enums,
-        'structs': structs,
-        'enum_ref_types': enum_ref_types
+        'enums': all_enums,
+        'structs': all_structs,
+        'enum_ref_types': all_enum_refs
     }
 
 
@@ -356,7 +381,7 @@ def main():
 
     # Parser for header to json conversion
     h2j_parser = subparsers.add_parser('h2j', help='Convert header file to JSON')
-    h2j_parser.add_argument('input_header', help='Input header file path')
+    h2j_parser.add_argument('input_headers', nargs='+', help='Realtek and Customer input header file paths')
     h2j_parser.add_argument('output_json', help='Output JSON file path')
 
     # Add the json file to the summary json file
@@ -372,7 +397,7 @@ def main():
 
     if args.command == 'h2j':
         # Convert header to JSON
-        parsed_data = parse_header_file(args.input_header)
+        parsed_data = parse_header_files(args.input_headers)
         output_data = convert_to_output_format(parsed_data)
 
         with open(args.output_json, 'w') as f:

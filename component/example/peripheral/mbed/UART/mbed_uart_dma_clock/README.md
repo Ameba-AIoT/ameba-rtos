@@ -6,16 +6,16 @@ This example describes how to use UART TX to simulate clock source by DMA.
 
 Required Components: Oscilloscope.
 
-* On AmebaSmart
+* On RTL8730E
   - Connect `UART_TX(_PA_3)` to oscilloscope
   - Connect `GND` to `GND` of oscilloscope
-* On AmebaLite
+* On RTL8726E/RTL8720E/RTL8713E/RTL8710E
   - Connect `UART_TX(_PA_28)` to oscilloscope
   - Connect `GND` to `GND` of oscilloscope
-* On AmebaDplus
+* On RTL8721Dx
   - Connect `UART_TX(_PA_26)` to oscilloscope
   - Connect `GND` to `GND` of oscilloscope
-* On AmebaGreen2
+* On RTL8721F
   - Connect `UART_TX(_PA_18)` to oscilloscope
   - Connect `GND` to `GND` of oscilloscope
 

@@ -187,7 +187,7 @@ class Monitor():
                     if not payload:
                         payload_str = ''
                     else:
-                        payload_str = payload.decode('utf-8')
+                        payload_str = payload.decode('utf-8', errors='ignore')
                     self.serial_handler.handle_serial_input(payload_str, self.coredump, src)
             else:
                 payload_str = self.serial_reader.decode(data)              
@@ -266,12 +266,6 @@ def main():
     colorama.init()
     parser = get_parser()
     args = parser.parse_args()
-    
-    if args.device is None:
-        print_red("Note: No device specified, monitor starts failed!")
-        sys.exit(1)
-    else:
-        device = args.device.lower()
 
     if args.decode_coredumps :
         if not args.toolchain_dir:
@@ -357,7 +351,6 @@ def get_parser():
     parser.add_argument("-b", "--baud", type=int, default=1500000, help="Serial port baud rate, default is 1500000")
     parser.add_argument("--decode-coredumps", action="store_true",
                         help=f"If set will handle core dumps found in serial output. Default is False")
-    parser.add_argument("--device", help="Set device name.")
     parser.add_argument("--enable-address-decoding", action="store_true",
                         help="Print lines about decoded addresses from the application ELF file, default is False")
     parser.add_argument("--axf-file", nargs="?", help="AXF file of application")

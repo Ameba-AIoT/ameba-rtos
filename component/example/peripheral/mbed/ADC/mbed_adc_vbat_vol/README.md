@@ -6,10 +6,10 @@ This example describes how to get ADC sample data in vbat channel by mbed API.
 
 In this example, ADC is configured to sample data in `vbat channel`.
 
-* On AmebaSmart
+* On RTL8730E
 	- Connect `VBAT_MEAS` to `to-be-measured signal`
 	- Connect `GND` to `GND` of to-be-measured device
-* On AmebaDplus
+* On RTL8721Dx
 	- Connect `VBAT_MEAS` to `to-be-measured signal`
 	- Connect `GND` to `GND` of to-be-measured device
 
@@ -28,7 +28,7 @@ ADC sample data and calculated voltage value in `mV` would be printed out `perio
 # Note
 
 1. Input voltage of vbat channel: `0 ~ 5V`.
-2. Vbat channel `is not supported` on `AmebaLite`.
+2. Vbat channel `is not supported` on `RTL8726E/RTL8720E/RTL8713E/RTL8710E`.
 
 # Supported IC
 

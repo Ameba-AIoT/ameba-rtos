@@ -5,17 +5,17 @@
 	#define IMG2_TEXT_LMA_REGION		 KM4TZ_IMG2_XIP
 	#define FLASH_INPUT_TEXT_SECTION		*(.non.dram.text*)
 	#ifdef CONFIG_DATA_HEAP_SRAM
-		#define SRAM_INPUT_TEXT_SECTION		*(.sramdram.only.text*)
+		#define SRAM_INPUT_TEXT_SECTION		*(.sramdram.only.text*) *(.lwip.cache.efficient.sramdram.only.text*)
 		#define PSRAM_INPUT_TEXT_SECTION
 	#else
 		#define SRAM_INPUT_TEXT_SECTION
-		#define PSRAM_INPUT_TEXT_SECTION	*(.sramdram.only.text*)
+		#define PSRAM_INPUT_TEXT_SECTION	*(.sramdram.only.text*) *(.lwip.cache.efficient.sramdram.only.text*)
 	#endif
 #elif defined(CONFIG_IMG2_SRAM)
 	#define OUT_TEXT_SECTION				.sram_image2.text.data
 	#define IMG2_TEXT_LMA_REGION		 KM4TZ_BD_RAM
 	#define FLASH_INPUT_TEXT_SECTION
-	#define SRAM_INPUT_TEXT_SECTION			*(.non.dram.text*) *(.sramdram.only.text*)
+	#define SRAM_INPUT_TEXT_SECTION			*(.non.dram.text*) *(.sramdram.only.text*) *(.lwip.cache.efficient.sramdram.only.text*)
 	#define PSRAM_INPUT_TEXT_SECTION
 	#ifndef CONFIG_DATA_HEAP_SRAM
 		#error "CONFIG_IMG2_SRAM requires CONFIG_DATA_HEAP_SRAM to be enabled"
@@ -25,7 +25,7 @@
 	#define IMG2_TEXT_LMA_REGION		 KM4TZ_BD_PSRAM
 	#define FLASH_INPUT_TEXT_SECTION		/* Nand do not support XIP */
 	#define SRAM_INPUT_TEXT_SECTION			*(.non.dram.text*)
-	#define PSRAM_INPUT_TEXT_SECTION		*(.sramdram.only.text*)
+	#define PSRAM_INPUT_TEXT_SECTION		*(.sramdram.only.text*) *(.lwip.cache.efficient.sramdram.only.text*)
 #endif
 
 #ifdef CONFIG_IMG2_PSRAM
@@ -92,6 +92,12 @@ SECTIONS
 		*(.image2.net.ram.text*)
 		*(.timesensitive.text*)
 
+		/* fix lwip text section to a high cache hit area, start at 0xXXXXX900, reduce cache conflicts between LwIP and ROM code*/
+		. = ALIGN (0x100) + 0x200;
+
+		*(.lwip.cache.efficient.text*)
+		*(.lwip.cache.efficient.rodata*)
+
 		*(.text*)
 		*(.rodata*)
 
@@ -99,6 +105,10 @@ SECTIONS
 		__cmd_table_start__ = .;
 		KEEP(*(.cmd.table.data*))
 		__cmd_table_end__ = .;
+		. = ALIGN (4);
+		__atcmd_table_start__ = .;
+		*(.atcmd.table.rodata*)
+		__atcmd_table_end__ = .;
 		. = ALIGN (4);
 		__ipc_table_start__ = .;
 		KEEP(*(*.ipc.table.data*))
@@ -154,6 +164,7 @@ SECTIONS
 	OUT_DATA_SECTION :
 	{
 		*(.timesensitive.data*)
+		*(.lwip.cache.efficient.data*)
 		*(.data*)
 
 		/*cache line size aligned in order to avoid MMU remap err*/
@@ -164,6 +175,7 @@ SECTIONS
 	.ram_image2.bss (NOLOAD):
 	{
 		__bss_start__ = .;
+		*(.lwip.cache.efficient.bss*)
 		*(.bss*)
 		*(COMMON)
 		__bss_end__ = .;

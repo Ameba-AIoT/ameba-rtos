@@ -11,5 +11,10 @@ menu "CONFIG CHIP"
     config ARM_CORE_CM4_FOR_KM4TZ
         bool
         default y
+
+    config SUPPORT_USBH_UVC_HW_DEC_FOR_KM4TZ
+        bool
+        default y
+
 endmenu
 

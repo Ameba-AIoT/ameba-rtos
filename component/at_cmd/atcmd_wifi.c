@@ -1664,29 +1664,30 @@ end:
 }
 #endif
 
-log_item_t at_wifi_items[ ] = {
+ATCMD_TABLE_DATA_SECTION
+const log_item_t at_wifi_items[ ] = {
 #if !(!defined(CONFIG_WHC_INTF_IPC) && !defined(CONFIG_WHC_WIFI_API_PATH) && !defined(CONFIG_WHC_NONE))
 #ifdef CONFIG_LWIP_LAYER
-	{"+WLSTATICIP", at_wlstaticip, {NULL, NULL}},
+	{"+WLSTATICIP", at_wlstaticip},
 #endif /* CONFIG_LWIP_LAYER */
 #ifdef CONFIG_WLAN
-	{"+WLCONN", at_wlconn, {NULL, NULL}},
-	{"+WLDISCONN", at_wldisconn, {NULL, NULL}},
-	{"+WLSCAN", at_wlscan, {NULL, NULL}},
-	{"+WLRSSI", at_wlrssi, {NULL, NULL}},
-	{"+WLSTARTAP", at_wlstartap, {NULL, NULL}},
-	{"+WLSTOPAP", at_wlstopap, {NULL, NULL}},
-	{"+WLSTATE", at_wlstate, {NULL, NULL}},
-	{"+WLRECONN", at_wlreconn, {NULL, NULL}},
-	{"+WLPROMISC", at_wlpromisc, {NULL, NULL}},
-	{"+WLDBG", at_wldbg, {NULL, NULL}},
+	{"+WLCONN", at_wlconn},
+	{"+WLDISCONN", at_wldisconn},
+	{"+WLSCAN", at_wlscan},
+	{"+WLRSSI", at_wlrssi},
+	{"+WLSTARTAP", at_wlstartap},
+	{"+WLSTOPAP", at_wlstopap},
+	{"+WLSTATE", at_wlstate},
+	{"+WLRECONN", at_wlreconn},
+	{"+WLPROMISC", at_wlpromisc},
+	{"+WLDBG", at_wldbg},
 #ifdef CONFIG_WPS
-	{"+WLWPS", at_wlwps, {NULL, NULL}},
+	{"+WLWPS", at_wlwps},
 #endif
 #ifdef CONFIG_CSI
-	{"+WLCSI", at_wlcsi, {NULL, NULL}},
+	{"+WLCSI", at_wlcsi},
 #endif
-	{"+WLPS", at_wlps, {NULL, NULL}},
+	{"+WLPS", at_wlps},
 #endif /* CONFIG_WLAN */
 #endif
 };
@@ -1708,7 +1709,7 @@ void at_wifi_init(void)
 	init_wifi_struct();
 #endif
 #ifndef CONFIG_MP_SHRINK
-	atcmd_service_add_table(at_wifi_items, sizeof(at_wifi_items) / sizeof(at_wifi_items[0]));
+	atcmd_service_add_table((log_item_t *)at_wifi_items, sizeof(at_wifi_items) / sizeof(at_wifi_items[0]));
 #endif
 }
 

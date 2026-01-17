@@ -60,8 +60,8 @@ This example describes how to use GPIO Port read/write by MBED GPIO API.
 
 # Note
 
-- On AmebaSmart, led_pattern is only supported in `PortA`
-- On AmebaLite, the pin of number for `PortB` is 20
+- On RTL8730E, led_pattern is only supported in `PortA`
+- On RTL8726E/RTL8720E/RTL8713E/RTL8710E, the pin of number for `PortB` is 20
 
 # Supported IC
 

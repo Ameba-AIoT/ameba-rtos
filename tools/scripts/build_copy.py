@@ -10,7 +10,8 @@ import shutil
 import argparse
 import json
 
-sdk_root = os.environ.get('AMEBA_SDK')
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sdk_root = os.path.abspath(os.path.join(SCRIPT_DIR, '../..'))
 
 def copy_or_append(src, dest_path):
     # Check if the destination path already exists
@@ -160,6 +161,9 @@ def main():
 
     current_path = os.getcwd()
     if args.app:
+        work_dir = os.environ.get('SOC_WORK_DIR')
+        if work_dir:
+            current_path = work_dir
         submodule_info_path = os.path.join(current_path,'build/submodule_info.json')
         if args.app == "list-apps":
             list_available_apps(submodule_info_path)

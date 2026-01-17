@@ -18,22 +18,22 @@
 
    For example:
 
-- On AmebaSmart, connect as below
+- On RTL8730E, connect as below
   - Connect `SPI0_MOSI (_PA_13)` to `SPI1_MOSI (_PA_5)`
   - Connect `SPI0_MISO (_PA_14)` to `SPI1_MISO (_PA_4)`
   - Connect `SPI0_SCLK (_PA_15)` to `SPI1_SCLK (_PA_3)`
   - Connect `SPI0_CS   (_PA_16)` to `SPI1_CS (_PA_2)`
-- On AmebaLite, connect as below
+- On RTL8726E/RTL8720E/RTL8713E/RTL8710E, connect as below
   - Connect `SPI0_MOSI (_PA_29)` to `SPI1_MOSI (_PB_3)`
   - Connect `SPI0_MISO (_PA_30)` to `SPI1_MISO (_PB_4)`
   - Connect `SPI0_SCLK (_PA_28)` to `SPI1_SCLK (_PB_2)`
   - Connect `SPI0_CS   (_PA_31)` to `SPI1_CS   (_PB_5)`
-- On AmebaDplus, connect as below
+- On RTL8721Dx, connect as below
   - Connect `SPI0_MOSI (_PB_24)` to `SPI1_MOSI (_PB_19)`
   - Connect `SPI0_MISO (_PB_25)` to `SPI1_MISO (_PB_20)`
   - Connect `SPI0_SCLK (_PB_23)` to `SPI1_SCLK (_PB_18)`
   - Connect `SPI0_CS (_PB_26)` to `SPI1_CS (_PB_21)`
-- On AmebaGreen2, connect as below
+- On RTL8721F, connect as below
   - Connect `SPI0_MOSI (_PA_30)` to `SPI1_MOSI (_PB_30)`
   - Connect `SPI0_MISO (_PA_31)` to `SPI1_MISO (_PB_31)`
   - Connect `SPI0_SCLK (_PA_29)` to `SPI1_SCLK (_PB_29)`
@@ -50,7 +50,7 @@ Refer the README of example `raw_spi_dma_mblk_rx_slv` to build slave image and d
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 - By default, this example select one pinmux group as MOSI/MISO/SCLK/CS, you can also modify pinmux group settings according to correct pinmux table.
-- For example, If you want to modify pinmux group setting in AmebaSmart, then you should refer to `UM0602_RTL8730E_pinmux.xls`.
+- For example, If you want to modify pinmux group setting in RTL8730E, then you should refer to `UM0602_RTL8730E_pinmux.xls`.
 
 # Expect result
 

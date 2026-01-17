@@ -8,11 +8,11 @@ To reduce ADC power consumption, an additional comparator could cooperate with A
 
 In this example, ADC is configured to sample data in `2 normal channels`.
 
-* On AmebaSmart
+* On RTL8730E
 	- Connect `ADC_CH2_PIN(_PA_2)` to `to-be-measured signal`
 	- Connect `ADC_CH3_PIN(_PA_3)` to `to-be-measured signal`
 	- Connect `GND` to `GND` of to-be-measured device
-* On AmebaLite
+* On RTL8726E/RTL8720E/RTL8713E/RTL8710E
 	- Connect `ADC_CH0_PIN(_PB_5)` to `to-be-measured signal`
 	- Connect `ADC_CH1_PIN(_PB_4)` to `to-be-measured signal`
 	- Connect `GND` to `GND` of to-be-measured device
@@ -24,7 +24,7 @@ In this example, ADC is configured to sample data in `2 normal channels`.
     * `CMP_Ref0`, `CMP_Ref1` and `CMP_WakeADCCtrl` can be modified to configure desired compare criterion.
 
 2. For more info of ADC channel pins, refer to pinmux spec.
-   For example, on AmebaSmart, refer to `UM0602_RTL8730E_pinmux.xls` for more info.
+   For example, on RTL8730E, refer to `UM0602_RTL8730E_pinmux.xls` for more info.
 
 3. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
@@ -42,9 +42,9 @@ For example, when `CH1` is fed with `1.8V` signal, the following log will be pri
 # Note
 
 1. Input voltage of single-ended normal channels:
-* On AmebaSmart
+* On RTL8730E
 	`0 ~ 1.8V`
-* On AmebaLite
+* On RTL8726E/RTL8720E/RTL8713E/RTL8710E
 	`0 ~ 3.3V`
 
 2. Each ADC channel has a unique corresponding pad. If `ADC_CHAN` is modified, `ADC_PAD` must be modified accordingly.

@@ -122,6 +122,9 @@ ameba_add_internal_library(lwip
     p_COMPILE_OPTIONS
         ${private_compile_options}
 )
+if (CONFIG_AMEBAGREEN2)
+ameba_library_section_prefix(${c_CURRENT_TARGET_NAME} .lwip.cache.efficient) #fix lwip section to cache efficient area
+endif()
 ##########################################################################################
 ameba_add_subdirectory(lwip_${v_LWIP_VER}/src/core/ipv4/ip_nat)
 ameba_add_subdirectory(lwip_${v_LWIP_VER}/src/core/ipv6/ip6_rlocal)

@@ -37,7 +37,9 @@
 /* 308 from DP asm 2024/4/11 */
 #define WIFI_STACK_SIZE_INIC_TRX_HST	(512 + CONTEXT_SAVE_SIZE)
 
-#define WHC_SKIP_RX_TASK
+#ifndef CONFIG_AMEBAL2
+#define WHC_RX_SKB_SHARE_TO_PBUF
+#endif
 /* -------------------------------- Macros ---------------------------------- */
 /* ------------------------------- Data Types ------------------------------- */
 /* recv buffer to store the data from IPC to queue. */
@@ -62,11 +64,18 @@ struct host_priv {
 	u8 host_init_done: 1;
 };
 
+struct rtw_pbuf {
+	struct pbuf_custom p;
+	struct sk_buff *skb;
+	u8 busy;
+};
+
 #define whc_host_send       whc_ipc_host_send
 /* ---------------------------- Global Variables ---------------------------- */
 
 /* -------------------------- Function declaration -------------------------- */
 void whc_ipc_host_init_skb(void);
+void whc_ipc_host_init_rtwpbuf_pool(void);
 void whc_ipc_host_init_priv(void);
 void whc_ipc_host_rx_handler(int idx_wlan, struct sk_buff *skb);
 int whc_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_len, struct skb_raw_para *raw_para, u8 is_special_pkt);

@@ -16,6 +16,9 @@ CYAN = '\033[36m'
 WHITE = '\033[37m'
 RESET = '\033[0m'
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+SDK_ROOT= os.path.abspath(os.path.join(SCRIPT_DIR, '../..'))
+
 def run_script(target_dir, script_name, args) -> bool:
     script_path = os.path.join(target_dir, script_name)
     if not os.path.exists(script_path):
@@ -28,7 +31,7 @@ def run_script(target_dir, script_name, args) -> bool:
 
 class SocManager:
     def __init__(self, cwd=os.getcwd()):
-        self.sdk_root = os.environ.get('AMEBA_SDK')
+        self.sdk_root = SDK_ROOT
         if not self.sdk_root or not os.path.isdir(self.sdk_root):
             raise ValueError(f"SDK root path does not exist or is not a directory: {self.sdk_root}")
 

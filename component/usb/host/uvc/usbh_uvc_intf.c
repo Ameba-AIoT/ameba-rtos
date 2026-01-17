@@ -165,14 +165,8 @@ static void usbh_uvc_find_frame_rate(usbh_uvc_stream_t *stream, uvc_config_t *co
   */
 int usbh_uvc_init(usbh_uvc_cb_t *cb)
 {
-	int ret;
+	int ret = HAL_OK;
 	usbh_uvc_host_t *uvc = &uvc_host;
-
-	usb_os_memset(uvc, 0, sizeof(usbh_uvc_host_t));
-	uvc->stream[0].stream_num = 0;
-	uvc->stream[1].stream_num = 1;
-
-	usbh_uvc_desc_init();
 
 	if (cb != NULL) {
 		uvc->cb = cb;
@@ -180,21 +174,18 @@ int usbh_uvc_init(usbh_uvc_cb_t *cb)
 			ret = cb->init();
 			if (ret != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "User cb init err: %d", ret);
-				goto init_fail;
+				return ret;
 			}
 		}
 	}
 
-	ret = usbh_uvc_class_init();
-	if (ret) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Class init err: %d", ret);
-		goto init_fail;
-	}
+	uvc->stream[0].stream_num = 0;
+	uvc->stream[1].stream_num = 1;
 
-	return HAL_OK;
+	usbh_uvc_desc_init();
 
-init_fail:
-	usbh_uvc_deinit();
+	usbh_uvc_class_init();
+
 	return ret;
 }
 
@@ -244,9 +235,7 @@ int usbh_uvc_stream_on(uvc_config_t *para, u32 itf_num)
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_stream_t *stream = &uvc->stream[itf_num];
 #if USBH_UVC_USE_HW
-	stream->hw_uvc_isr_priorigy = para->hw_uvc_isr_priorigy;
-#else
-	UNUSED(para);
+	stream->isr_priority = para->isr_priority;
 #endif
 
 	if (stream->stream_state == STREAMING_ON) {
@@ -254,6 +243,7 @@ int usbh_uvc_stream_on(uvc_config_t *para, u32 itf_num)
 		return HAL_OK;
 	}
 
+	stream->frame_buffer_size = CACHE_LINE_ALIGNMENT(para->frame_buf_size);
 	usbh_uvc_stream_init(stream);
 
 	stream->stream_state = STREAMING_ON;
@@ -368,7 +358,6 @@ int usbh_uvc_set_param(uvc_config_t *para, u32 itf_num)
 	/*Find format and closest resolution*/
 	ret = usbh_uvc_find_format_frame(stream, para, &format_index, &frame_index);
 	if (ret) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Find format or frame fail\n");
 		return HAL_ERR_PARA;
 	}
 
@@ -393,6 +382,8 @@ int usbh_uvc_set_param(uvc_config_t *para, u32 itf_num)
 		/* set alt setting for current interface */
 		ret = usbh_ctrl_set_interface(uvc->host, cur_setting->bInterfaceNumber, \
 									  cur_setting->bAlternateSetting);
+		rtos_time_delay_ms(1);
+
 	} while (ret == HAL_BUSY);
 
 	return HAL_OK;

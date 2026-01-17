@@ -2243,244 +2243,104 @@ typedef struct {
 /* MANUAL_GEN_START */
 
 // Please add your definitions here
-/* Define Ethernet Packet Field length */
-#define ETH_MAC_ADDR_LEN        (6)
-#define ETH_HEADER_LEN          (2 * ETH_MAC_ADDR_LEN + 2) /* Ethernet frame header size: Dest addr(6 Bytes) + Src addr(6 Bytes) + length/type(2 Bytes) */
-#define ETH_VLAN_TAG_LEN        (4)  /* Optional 802.1q VLAN Tag length */
-#define ETH_CRC_LEN             (4)  /* Ethernet frame CRC length */
+/* ========================================================================== */
+/*                           1. Forward Declarations                          */
+/* ========================================================================== */
+struct eth_phy_dev;
+struct eth_mdio_ops;
 
-#define ETH_PAYLOAD_MAX_LEN     (1500)     /*< Ethernet maximum payload size (bytes) */
-#define ETH_PAYLOAD_MIN_LEN     (46)       /* Minimum Ethernet payload size */
-#define ETH_JUMBO_FRAME_PAYLOAD_LEN (16*1024) /* Jumbo frame payload size */
+/* ========================================================================== */
+/*                       2. Packet & Frame Constants                          */
+/* ========================================================================== */
+#define ETH_MAC_ADDR_LEN            (6)
+#define ETH_HEADER_LEN              (14) /* Dest(6) + Src(6) + Type(2) */
+#define ETH_VLAN_TAG_LEN            (4)
+#define ETH_CRC_LEN                 (4)
 
-#define ETH_PKT_MAX_SIZE        (ETH_HEADER_LEN + ETH_VLAN_TAG_LEN + ETH_PAYLOAD_MAX_LEN + ETH_CRC_LEN) /* Maximum frame size (1522 Bytes) */
+/* Payload sizes */
+#define ETH_PAYLOAD_MIN_LEN         (46)
+#define ETH_PAYLOAD_MAX_LEN         (1500)
+#define ETH_JUMBO_FRAME_PAYLOAD_LEN (16 * 1024)
 
-/// Defines the delay period when checking the own bit of the Tx/Rx descriptors
-#define ETH_OWN_BIT_UPDATE_PERIOD       10
-/// Defines the max. timeout value when checking the flag of MDIO operations
-#define ETH_TIMEOUT_CNT_MAX             1000000
-/// Defines the header of vlantag (ctag)
-#define ETH_C_VLAN_HDR                  0x8100279F
-/// Defines the header of vlantag (stag)
-#define ETH_S_VLAN_HDR                  0x88A8279F
-/// Defines the size (unit: Bytes) of each Tx descriptor
-#define ETH_TX_DESC_SIZE	20  // 20 Bytes
-/// Defines the size (unit: Bytes) of each Rx descriptor
-#define ETH_RX_DESC_SIZE	16  // 16 Bytes
-/**
-  \brief  Defines PHY  register 0
-*/
+/* Total Frame sizes */
+#define ETH_PKT_MAX_SIZE            (ETH_HEADER_LEN + ETH_VLAN_TAG_LEN + ETH_PAYLOAD_MAX_LEN + ETH_CRC_LEN)
 
-#define PHY_RESET 			BIT(15)
-#define EN_LOOPBACK 		BIT(14)
-#define SPEED_SELECT 		BIT(13)
-#define EN_AUTO_GEN 		BIT(12)
-#define POWER_DOWN 			BIT(11)
-#define ISOLATION			BIT(10)
-#define RESTART_AUTO_GEN 	BIT(9)
-#define DUPLEX_ON 			BIT(8)
-#define COLLISION_TEST 		BIT(7)
+/* VLAN Headers */
+#define ETH_C_VLAN_HDR              0x8100279F
+#define ETH_S_VLAN_HDR              0x88A8279F
 
+/* ========================================================================== */
+/*                       3. DMA Descriptors (FEMAC)                           */
+/* ========================================================================== */
+/* Descriptor Sizes */
+#define ETH_TX_DESC_SIZE            20  // Bytes
+#define ETH_RX_DESC_SIZE            16  // Bytes
 
+/* --- Tx Descriptor Bit Definitions --- */
+#define FEMAC_TX_DSC_SHIFT_OWN      31
+#define FEMAC_TX_DSC_BIT_OWN        ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_OWN)
+#define FEMAC_TX_DSC_SHIFT_EOR      30
+#define FEMAC_TX_DSC_BIT_EOR        ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_EOR)
+#define FEMAC_TX_DSC_SHIFT_FS       29
+#define FEMAC_TX_DSC_BIT_FS         ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_FS)
+#define FEMAC_TX_DSC_SHIFT_LS       28
+#define FEMAC_TX_DSC_BIT_LS         ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_LS)
+#define FEMAC_TX_DSC_SHIFT_IPCS     27
+#define FEMAC_TX_DSC_BIT_IPCS       ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_IPCS)
+#define FEMAC_TX_DSC_SHIFT_L4CS     26
+#define FEMAC_TX_DSC_BIT_L4CS       ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_L4CS)
+#define FEMAC_TX_DSC_SHIFT_CRC      23
+#define FEMAC_TX_DSC_BIT_CRC        ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_CRC)
+#define FEMAC_TX_DSC_BIT_SIZE(dw1)  ((u32)((dw1) & 0x1FFFF))
 
-/**
-  \brief  Defines PHY  register (0x5C)
-*/
-#define FEMAC_MIIA_SHIFT_FLAG           31
-#define FEMAC_MIIA_BIT_FLAG             ((u32)0x00000001 << 31)
-#define FEMAC_MIIA_SHIFT_PHY_ADDR       26
-#define FEMAC_MIIA_MASK_PHY_ADDR        ((u32)0x0000001F << 26)
-#define FEMAC_MIIA_SHIFT_MDIO_BUSY      25
-#define FEMAC_MIIA_BIT_MDIO_BUSY        ((u32)0x00000001 << 25)
-#define FEMAC_MIIA_SHIFT_REG_ADDR       16
-#define FEMAC_MIIA_MASK_REG_ADDR        ((u32)0x0000001F << 16)
-#define FEMAC_MIIA_SHIFT_DATA           0
-#define FEMAC_MIIA_MASK_DATA            ((u32)0x0000FFFF << 0)
-
-/**
-  \brief  Defines FEMAC IDR0 register (0x0)
-*/
-#define FEMAC_IDR0_SHIFT_IDR0           24
-#define FEMAC_IDR0_BIT_IDR0             ((u32)0x000000FF << 24)
-#define FEMAC_IDR0_SHIFT_IDR1           16
-#define FEMAC_IDR0_BIT_IDR1             ((u32)0x000000FF << 16)
-#define FEMAC_IDR0_SHIFT_IDR2           8
-#define FEMAC_IDR0_BIT_IDR2             ((u32)0x000000FF << 8)
-#define FEMAC_IDR0_SHIFT_IDR3           0
-#define FEMAC_IDR0_BIT_IDR3             ((u32)0x000000FF << 0)
+/* --- Rx Descriptor Bit Definitions --- */
+#define FEMAC_RX_DSC_SHIFT_OWN      31
+#define FEMAC_RX_DSC_BIT_OWN        ((u32)0x00000001 << FEMAC_RX_DSC_SHIFT_OWN)
+#define FEMAC_RX_DSC_SHIFT_EOR      30
+#define FEMAC_RX_DSC_BIT_EOR        ((u32)0x00000001 << FEMAC_RX_DSC_SHIFT_EOR)
+#define FEMAC_RX_DSC_LEN(dw1)       ((u32)((dw1) & 0x0FFF))
 
 /**
-  \brief  Defines FEMAC IDR4 register (0x4)
-*/
-#define FEMAC_IDR4_SHIFT_IDR4           24
-#define FEMAC_IDR4_BIT_IDR4             ((u32)0x000000FF << 24)
-#define FEMAC_IDR4_SHIFT_IDR5           16
-#define FEMAC_IDR4_BIT_IDR5             ((u32)0x000000FF << 16)
+ * @brief Tx Descriptor Structure
+ */
+typedef struct {
+	uint32_t dw1;    /* Status & Command */
+	uint32_t addr;   /* Buffer Address */
+	uint32_t dw2;    /* VLAN / Timestamp (Optional) */
+	uint32_t dw3;    /* Reserved */
+	uint32_t dw4;    /* Reserved */
+} ETH_TxDescTypeDef;
 
 /**
-  \brief  Defines FEMAC Interrupt Status/Mask register (0x3C)
-*/
-#define FEMAC_IMR_SHIFT_LINKCHG         24
-#define FEMAC_IMR_BIT_LINKCHG           ((u32)0x00000001 << 24)
-#define FEMAC_IMR_SHIFT_TOK             22
-#define FEMAC_IMR_BIT_TOK               ((u32)0x00000001 << 22)
-#define FEMAC_IMR_SHIFT_RER_OVF         20
-#define FEMAC_IMR_BIT_RER_OVF           ((u32)0x00000001 << 20)
-#define FEMAC_IMR_SHIFT_ROK             16
-#define FEMAC_IMR_BIT_ROK               ((u32)0x00000001 << 16)
-#define FEMAC_ISR_SHIFT_RER_OVF         4
-#define FEMAC_ISR_BIT_RER_OVF           ((u32)0x00000001 << 4)
+ * @brief Rx Descriptor Structure
+ */
+typedef struct {
+	uint32_t dw1;    /* Status & Length */
+	uint32_t addr;   /* Buffer Address */
+	uint32_t dw2;    /* Extended Status */
+	uint32_t dw3;    /* Reserved */
+} ETH_RxDescTypeDef;
 
-/**
-  \brief  Defines FEMAC Receive Configuration register (0x44)
-*/
-#define FEMAC_RC_SHIFT_AER              5
-#define FEMAC_RC_MASK_AER               ((u32)0x00000001 << 5)
-#define FEMAC_RC_SHIFT_AR               4
-#define FEMAC_RC_MASK_AR                ((u32)0x00000001 << 4)
-#define FEMAC_RC_SHIFT_AB               3
-#define FEMAC_RC_MASK_AB                ((u32)0x00000001 << 3)
-#define FEMAC_RC_SHIFT_AM               2
-#define FEMAC_RC_MASK_AM                ((u32)0x00000001 << 2)
-#define FEMAC_RC_SHIFT_APM              1
-#define FEMAC_RC_MASK_APM               ((u32)0x00000001 << 1)
-#define FEMAC_RC_SHIFT_AAP              0
-#define FEMAC_RC_MASK_AAP               ((u32)0x00000001 << 0)
 
-/**
-  \brief  Defines FEMAC Media Status register (0x58)
-*/
-#define FEMAC_MS_SHIFT_SPEED            27
-#define FEMAC_MS_BIT_SPEED              ((u32)0x00000003 << 27)
-#define FEMAC_MS_SHIFT_LINKB            26
-#define FEMAC_MS_BIT_LINKB              ((u32)0x00000001 << 26)
-#define FEMAC_MS_SHIFT_FULLDUP          22
-#define FEMAC_MS_BIT_FULLDUP            ((u32)0x00000003 << 22)
-#define FEMAC_MS_SHIFT_NWCOMPLETE       21
-#define FEMAC_MS_BIT_NWCOMPLETE         ((u32)0x00000003 << 21)
+/* ========================================================================== */
+/*                       4. Hardware & Timing Constants                       */
+/* ========================================================================== */
+#define ETH_OWN_BIT_UPDATE_PERIOD   10        /* Delay when polling own bit */
+#define ETH_TIMEOUT_CNT_MAX         1000000   /* Max timeout loop count */
+#define MDIO_WAIT_TIME              64        /* MDIO Wait Time(us) */
 
-/**
-  \brief  Defines FEMAC MII access register (0x5C)
-*/
-#define FEMAC_MIIA_SHIFT_FLAG           31
-#define FEMAC_MIIA_BIT_FLAG             ((u32)0x00000001 << 31)
-#define FEMAC_MIIA_SHIFT_PHY_ADDR       26
-#define FEMAC_MIIA_MASK_PHY_ADDR        ((u32)0x0000001F << 26)
-#define FEMAC_MIIA_SHIFT_MDIO_BUSY      25
-#define FEMAC_MIIA_BIT_MDIO_BUSY        ((u32)0x00000001 << 25)
-#define FEMAC_MIIA_SHIFT_REG_ADDR       16
-#define FEMAC_MIIA_MASK_REG_ADDR        ((u32)0x0000001F << 16)
-#define FEMAC_MIIA_SHIFT_DATA           0
-#define FEMAC_MIIA_MASK_DATA            ((u32)0x0000FFFF << 0)
+/* Wait Types */
+#define WAIT_SMI_WRITE_DONE         0
+#define WAIT_SMI_READ_DONE          1
+#define WAIT_RMII_LINKUP            2
 
-/**
-  \brief  Defines FEMAC Tx command descriptor
-*/
-#define FEMAC_TX_DSC_SHIFT_OWN          31
-#define FEMAC_TX_DSC_BIT_OWN            ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_OWN)
-#define FEMAC_TX_DSC_SHIFT_EOR          30
-#define FEMAC_TX_DSC_BIT_EOR            ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_EOR)
-#define FEMAC_TX_DSC_SHIFT_FS           29
-#define FEMAC_TX_DSC_BIT_FS             ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_FS)
-#define FEMAC_TX_DSC_SHIFT_LS           28
-#define FEMAC_TX_DSC_BIT_LS             ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_LS)
-#define FEMAC_TX_DSC_SHIFT_IPCS         27
-#define FEMAC_TX_DSC_BIT_IPCS           ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_IPCS)
-#define FEMAC_TX_DSC_SHIFT_L4CS         26
-#define FEMAC_TX_DSC_BIT_L4CS           ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_L4CS)
-#define FEMAC_TX_DSC_SHIFT_CRC          23
-#define FEMAC_TX_DSC_BIT_CRC            ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_CRC)
-#define FEMAC_TX_DSC_BIT_SIZE(dw1)     ((u32)((dw1) & 0x1FFFF))
-/**
-  \brief  Defines FEMAC Rx command descriptor
-*/
-#define FEMAC_RX_DSC_SHIFT_OWN          31
-#define FEMAC_RX_DSC_BIT_OWN            ((u32)0x00000001 << FEMAC_RX_DSC_SHIFT_OWN)
-#define FEMAC_RX_DSC_SHIFT_EOR          30
-#define FEMAC_RX_DSC_BIT_EOR            ((u32)0x00000001 << FEMAC_RX_DSC_SHIFT_EOR)
-#define FEMAC_RX_DSC_LEN(dw1)           ((u32)((dw1) & 0x0FFF))
-/**
-  \brief  Defines FEPHY register page number
-*/
 
-#define FEPHY_REG_PAGE_0            0x0
-#define FEPHY_REG_PAGE_1            0x1
-#define FEPHY_REG_PAGE_2            0x2
-#define FEPHY_REG_PAGE_3            0x3
-#define FEPHY_REG_PAGE_4            0x4
-#define FEPHY_REG_PAGE_5            0x5
-#define FEPHY_REG_PAGE_6            0x6
-#define FEPHY_REG_PAGE_7            0x7
-#define FEPHY_REG_PAGE_8            0x8
-#define FEPHY_REG_PAGE_9            0x9
-#define FEPHY_REG_PAGE_A            0xA
-#define FEPHY_REG_PAGE_B            0xB
+/* ========================================================================== */
+/*                       5. Configuration Enums                               */
+/* ========================================================================== */
 
-/**
-  \brief  Defines FEPHY Page 0xA46 Reg 20
-*/
-#define FEPHY_REG_SHIFT_FUSE_RDY        0
-#define FEPHY_REG_MASK_FUSE_RDY         ((u32)0x00000001 << 0)
-
-#define FEPHY_IDAC_DEFAULT              0x6
-
-/** @defgroup Ethernet_Wait_Type
-  * @{
-  */
-#define WAIT_SMI_WRITE_DONE		0
-#define WAIT_SMI_READ_DONE		1
-#define WAIT_RMII_LINKUP		2
-/**
-  * @}
-  */
-
-/**
-  \brief  Defines MDIO Wait Time(us)
-*/
-#define MDIO_WAIT_TIME (64)
-
-/**
-  \brief  Defines the FEPHY register address
-*/
-enum fephy_reg_addr {
-	FEPHY_REG_ADDR_0        = 0,
-	FEPHY_REG_ADDR_1        = 1,
-	FEPHY_REG_ADDR_2        = 2,
-	FEPHY_REG_ADDR_3        = 3,
-	FEPHY_REG_ADDR_4        = 4,
-	FEPHY_REG_ADDR_5        = 5,
-	FEPHY_REG_ADDR_6        = 6,
-	FEPHY_REG_ADDR_7        = 7,
-	FEPHY_REG_ADDR_8        = 8,
-	FEPHY_REG_ADDR_9        = 9,
-	FEPHY_REG_ADDR_10       = 10,
-	FEPHY_REG_ADDR_11       = 11,
-	FEPHY_REG_ADDR_12       = 12,
-	FEPHY_REG_ADDR_13       = 13,
-	FEPHY_REG_ADDR_14       = 14,
-	FEPHY_REG_ADDR_15       = 15,
-	FEPHY_REG_ADDR_16       = 16,
-	FEPHY_REG_ADDR_17       = 17,
-	FEPHY_REG_ADDR_18       = 18,
-	FEPHY_REG_ADDR_19       = 19,
-	FEPHY_REG_ADDR_20       = 20,
-	FEPHY_REG_ADDR_21       = 21,
-	FEPHY_REG_ADDR_22       = 22,
-	FEPHY_REG_ADDR_23       = 23,
-	FEPHY_REG_ADDR_24       = 24,
-	FEPHY_REG_ADDR_25       = 25,
-	FEPHY_REG_ADDR_26       = 26,
-	FEPHY_REG_ADDR_27       = 27,
-	FEPHY_REG_ADDR_28       = 28,
-	FEPHY_REG_ADDR_29       = 29,
-	FEPHY_REG_ADDR_30       = 30,
-	FEPHY_REG_ADDR_31       = 31,
-};
-
-/**
-  \brief  Defines Ethernet interrupt event.
-*/
-enum  eth_int_event_e {
+/* --- Interrupt & Events --- */
+enum eth_int_event_e {
 	EthTxDone       = 0,
 	EthRxDone       = 1,
 	EthLinkUp       = 2,
@@ -2488,10 +2348,29 @@ enum  eth_int_event_e {
 	EthRx_RDU       = 4,
 };
 
-/**
-  \brief  Defines the InterFrameGap time.
-*/
-enum  eth_ifg_time_e {
+/* --- Link & Speed --- */
+enum eth_link_speed_e {
+	eth_speed_100       = 0,
+	eth_speed_10        = 1,
+};
+
+enum eth_duplex_mode_e {
+	eth_half_duplex     = 0,
+	eth_full_duplex     = 1,
+};
+
+enum eth_link_status_e {
+	eth_link_up         = 0,
+	eth_link_down       = 1,
+};
+
+enum eth_nway_status_e {
+	eth_nway_incompleted    = 0,
+	eth_nway_completed      = 1,
+};
+
+/* --- Hardware Tuning (Timing/Thresholds) --- */
+enum eth_ifg_time_e {
 	eth_ifg_time_0     = 0,
 	eth_ifg_time_1     = 1,
 	eth_ifg_time_2     = 2,
@@ -2502,59 +2381,88 @@ enum  eth_ifg_time_e {
 	eth_ifg_time_7     = 7,
 };
 
+/* Duplicate enum for compatibility (prefer merging if possible) */
+enum eth_ifg_time {
+	ETH_IFG_0 = 0,
+	ETH_IFG_1 = 1,
+	ETH_IFG_2 = 2,
+	ETH_IFG_3 = 3,// 9.6 us for 10 Mbps, 960 ns for 100 Mbps
+	ETH_IFG_4 = 4,
+	ETH_IFG_5 = 5,
+	ETH_IFG_6 = 6,
+	ETH_IFG_7 = 7,
+};
+
+enum eth_tx_threshold {
+	ETH_TX_THRESHOLD_128B = 0,
+	ETH_TX_THRESHOLD_256B = 1,
+	ETH_TX_THRESHOLD_512B = 2,
+	ETH_TX_THRESHOLD_1024B = 3,
+};
+
+enum eth_rx_threshold {
+	ETH_RX_THRESHOLD_1024B = 0,
+	ETH_RX_THRESHOLD_128B = 1,
+	ETH_RX_THRESHOLD_256B = 2,
+	ETH_RX_THRESHOLD_512B = 3,
+};
+
+
+enum eth_trigger_level {
+	ETH_TRIGGER_LEVEL_1_PKT = 0,
+	ETH_TRIGGER_LEVEL_4_PKTS = 1,
+	ETH_TRIGGER_LEVEL_8_PKTS = 2,
+	ETH_TRIGGER_LEVEL_12_PKTS = 3,
+	ETH_TRIGGER_LEVEL_16_PKTS = 4,
+	ETH_TRIGGER_LEVEL_20_PKTS = 5,
+	ETH_TRIGGER_LEVEL_24_PKTS = 6,
+	ETH_TRIGGER_LEVEL_28_PKTS = 7,
+};
+
+/* --- PHY Specific Setup --- */
+enum eth_phy_tx_setup {
+	ETH_PHY_TX_SETUP_TIME_6NS  = 0x6,
+	ETH_PHY_TX_SETUP_TIME_8NS  = 0x5,
+	ETH_PHY_TX_SETUP_TIME_10NS = 0x4, // Default
+	ETH_PHY_TX_SETUP_TIME_12NS = 0x3,
+	ETH_PHY_TX_SETUP_TIME_14NS = 0x2,
+	ETH_PHY_TX_SETUP_TIME_16NS = 0x1,
+	ETH_PHY_TX_SETUP_TIME_18NS = 0x0,
+};
+
+enum eth_phy_rx_setup {
+	ETH_PHY_RX_SETUP_TIME_8NS  = 0x8,
+	ETH_PHY_RX_SETUP_TIME_10NS = 0x9, // Default
+	ETH_PHY_RX_SETUP_TIME_12NS = 0x6,
+	ETH_PHY_RX_SETUP_TIME_14NS = 0x7,
+	ETH_PHY_RX_SETUP_TIME_16NS = 0x4,
+	ETH_PHY_RX_SETUP_TIME_18NS = 0x5,
+};
+
+/* --- Modes & Features --- */
 /**
   \brief  Defines the type of loopback function.
 */
-enum  eth_lbk_fun_e {
+enum eth_lbk_fun_e {
 	eth_normal_op       = 0,
 	eth_r2t_lbk         = 1,
 	eth_t2r_lbk         = 3,
 };
 
-/**
-  \brief  Defines the link speed.
-*/
-enum  eth_link_speed_e {
-	eth_speed_100       = 0,
-	eth_speed_10        = 1,
+enum eth_mac_lpb {
+	ETH_NORMAL_MODE       = 0,
+	ETH_LOOPBACK_R2T_MODE = 1,
+	ETH_LOOPBACK_T2R_MODE = 3,
 };
 
-/**
-  \brief  Defines the link status.
-*/
-enum  eth_link_status_e {
-	eth_link_up         = 0,
-	eth_link_down       = 1,
+enum eth_phy_lpb {
+	ETH_PHY_NORMAL_MODE   = 0x0,
+	ETH_PHY_LOOPBACK_MODE = 0x1,
 };
-
 /**
-  \brief  Defines the duplex mode.
+\brief  Defines Tx VLAN action.
 */
-enum  eth_duplex_mode_e {
-	eth_half_duplex     = 0,
-	eth_full_duplex     = 1,
-};
-
-/**
-  \brief  Defines the n-way status.
-*/
-enum  eth_nway_status_e {
-	eth_nway_incompleted    = 0,
-	eth_nway_completed      = 1,
-};
-
-/**
-  \brief  Defines the operation for PHY's register.
-*/
-enum  eth_phy_reg_op_e {
-	eth_phy_reg_read    = 0,
-	eth_phy_reg_write   = 1,
-};
-
-/**
-  \brief  Defines Tx VLAN action.
-*/
-enum  eth_vlan_action_e {
+enum eth_vlan_action_e {
 	eth_vlan_hdr_intact     = 0,
 	eth_vlan_hdr_insert     = 1,
 	eth_vlan_hdr_remove     = 2,
@@ -2578,7 +2486,7 @@ enum  eth_packet_type_e {
 	eth_pkt_ipv6_udp        = 10,
 };
 
-enum  eth_sys_hw_ctrl_e {
+enum eth_sys_hw_ctrl_e {
 	eth_sys_hw_fephy_ip,
 	eth_sys_hw_femac_ip,
 	eth_sys_hw_uabg_en,
@@ -2588,200 +2496,331 @@ enum  eth_sys_hw_ctrl_e {
 };
 
 
-/**
-  \brief  Ethernet callback function for interrupt event.
-*/
-typedef void (*eth_callback_t)(u32 event, u32 data);
-/**
-  \brief  Callback function to make OS do a context-switch while waiting.
-*/
-typedef void (*eth_task_yield)(void);
+enum eth_phy_type {
+	RTL_8721F,
+	RTL_8721G,
+};
 
-
-/**
-  \brief  The structure of Tx descriptor.
-*/
-typedef struct {
-	uint32_t dw1;    // offset 0
-	uint32_t addr;   // offset 4
-	uint32_t dw2;    // offset 8
-	uint32_t dw3;    // offset 12
-	uint32_t dw4;    // offset 16
-} ETH_TxDescTypeDef;
-
-/**
-  \brief  The structure of Rx descriptor.
-*/
-typedef struct {
-	uint32_t dw1;    // offset 0
-	uint32_t addr;   // offset 4
-	uint32_t dw2;    // offset 8
-	uint32_t dw3;   // offset 12
-} ETH_RxDescTypeDef;
-
+enum eth_mode {
+	ETH_MAC_MODE,
+	ETH_PHY_MODE,
+};
 
 enum eth_refclk_phase {
-	ETH_SAMPLED_ON_RISING_EDGE = 0x00,
-	ETH_SAMPLED_ON_FALLING_EDGE = 0x01,/*Falling edge is not a common usage*/
+	ETH_SAMPLED_ON_RISING_EDGE  = 0x00,
+	ETH_SAMPLED_ON_FALLING_EDGE = 0x01,
 };
 
 enum eth_refclk_on {
 	ETH_REFCLK_OFF = 0x00,
-	ETH_REFCLK_ON = 0x01,
-};
-
-enum eth_phy_lpb {
-	ETH_PHY_NORMAL_MODE = 0x0,
-	ETH_PHY_LOOPBACK_MODE = 0x1,
-};
-
-enum eth_mac_lpb {
-	ETH_NORMAL_MODE = 0,
-	ETH_LOOPBACK_R2T_MODE = 1,
-	ETH_LOOPBACK_T2R_MODE = 3,
-};
-
-
-enum eth_ifg_time {
-	ETH_IFG_0 = 0,
-	ETH_IFG_1 = 1,
-	ETH_IFG_2 = 2,
-	ETH_IFG_3 = 3,// 9.6 us for 10 Mbps, 960 ns for 100 Mbps
-	ETH_IFG_4 = 4,
-	ETH_IFG_5 = 5,
-	ETH_IFG_6 = 6,
-	ETH_IFG_7 = 7,
+	ETH_REFCLK_ON  = 0x01,
 };
 
 enum eth_rx_jumbo_cfg {
 	ETH_RX_JUMBO_DISABLE = 0x0,
-	ETH_RX_JUMBO_ENABLE = 0x1,
+	ETH_RX_JUMBO_ENABLE  = 0x1,
 };
-
-enum eth_tx_threshold {
-	ETH_TX_THRESHOLD_128B = 0,
-	ETH_TX_THRESHOLD_256B = 1,
-	ETH_TX_THRESHOLD_512B = 2,
-	ETH_TX_THRESHOLD_1024B = 3,
+/**
+\brief  Defines the operation for PHY's register.
+*/
+enum eth_phy_reg_op_e {
+	eth_phy_reg_read    = 0,
+	eth_phy_reg_write   = 1,
 };
-
-enum eth_rx_threshold {
-	ETH_RX_THRESHOLD_1024B = 0,
-	ETH_RX_THRESHOLD_128B = 1,
-	ETH_RX_THRESHOLD_256B = 2,
-	ETH_RX_THRESHOLD_512B = 3,
-};
-
-enum eth_trigger_level {
-	ETH_TRIGGER_LEVEL_1_PKT = 0,
-	ETH_TRIGGER_LEVEL_4_PKTS = 1,
-	ETH_TRIGGER_LEVEL_8_PKTS = 2,
-	ETH_TRIGGER_LEVEL_12_PKTS = 3,
-	ETH_TRIGGER_LEVEL_16_PKTS = 4,
-	ETH_TRIGGER_LEVEL_20_PKTS = 5,
-	ETH_TRIGGER_LEVEL_24_PKTS = 6,
-	ETH_TRIGGER_LEVEL_28_PKTS = 7,
-};
-
-//RTL8201FR TX Setup time
-enum eth_phy_tx_setup {
-	ETH_PHY_TX_SETUP_TIME_6NS = 0x6,
-	ETH_PHY_TX_SETUP_TIME_8NS = 0x5,
-	ETH_PHY_TX_SETUP_TIME_10NS = 0x4, //default 10ns_0x1111
-	ETH_PHY_TX_SETUP_TIME_12NS = 0x3,
-	ETH_PHY_TX_SETUP_TIME_14NS = 0x2,
-	ETH_PHY_TX_SETUP_TIME_16NS = 0x1,
-	ETH_PHY_TX_SETUP_TIME_18NS = 0x0,
-};
-
-//RTL8201FR RX Setup time
-enum eth_phy_rx_setup {
-	ETH_PHY_RX_SETUP_TIME_8NS = 0x8,
-	ETH_PHY_RX_SETUP_TIME_10NS = 0x9, //default 10ns_0x1111
-	ETH_PHY_RX_SETUP_TIME_12NS = 0x6,
-	ETH_PHY_RX_SETUP_TIME_14NS = 0x7,
-	ETH_PHY_RX_SETUP_TIME_16NS = 0x4,
-	ETH_PHY_RX_SETUP_TIME_18NS = 0x5,
-};
-
-
+/* ========================================================================== */
+/*                   6. Modern Driver Interface (MDIO)                        */
+/* ========================================================================== */
 
 /**
- * \brief       ETH init structure definition.
+ * @cond INTERNAL_HIDDEN
  *
- * \ingroup     ETH_Exported_Types
+ * These definitions are for internal driver implementation use only.
+ * Application code should use the inline helper functions defined below.
+ */
+struct eth_mdio_ops {
+	/**
+	 * @brief Read data from MDIO bus (Clause 22).
+	 *
+	 * @note Renamed from 'read' to 'mdio_read' to avoid conflicts with LwIP macros.
+	 *
+	 * @param bus       Pointer to the MDIO bus instance.
+	 * @param phy_addr  PHY address (0-31).
+	 * @param reg_addr  Register address (0-31).
+	 * @param data      Pointer to store the read value.
+	 *
+	 * @return RTK_SUCCESS on success, negative RTK error code on failure.
+	 */
+	int (*mdio_read)(uint8_t phy_addr, uint8_t reg_addr, uint16_t *data);
+
+	/**
+	 * @brief Write data to MDIO bus (Clause 22).
+	 *
+	 * @note Renamed from 'write' to 'mdio_write' to avoid conflicts with LwIP macros.
+	 *
+	 * @param bus       Pointer to the MDIO bus instance.
+	 * @param phy_addr  PHY address (0-31).
+	 * @param reg_addr  Register address (0-31).
+	 * @param data      Data to write.
+	 *
+	 * @return RTK_SUCCESS on success, negative RTK error code on failure.
+	 */
+	int (*mdio_write)(uint8_t phy_addr, uint8_t reg_addr, uint16_t data);
+
+	/**
+	 * @brief Read data from MDIO bus using Clause 45 access.
+	 *
+	 * @param bus       Pointer to the MDIO bus instance.
+	 * @param phy_addr  PHY address (0-31).
+	 * @param dev_addr  MMD (MDIO Manageable Device) address (0-31).
+	 * @param reg_addr  Register address (16-bit).
+	 * @param data      Pointer to store the read value.
+	 *
+	 * @return RTK_SUCCESS on success, negative RTK error code on failure.
+	 */
+	int (*mdio_read_c45)(uint8_t phy_addr, uint8_t dev_addr, uint16_t reg_addr, uint16_t *data);
+
+	/**
+	 * @brief Write data to MDIO bus using Clause 45 access.
+	 *
+	 * @param bus       Pointer to the MDIO bus instance.
+	 * @param phy_addr  PHY address (0-31).
+	 * @param dev_addr  MMD (MDIO Manageable Device) address (0-31).
+	 * @param reg_addr  Register address (16-bit).
+	 * @param data      Data to write.
+	 *
+	 * @return RTK_SUCCESS on success, negative RTK error code on failure.
+	 */
+	int (*mdio_write_c45)(uint8_t phy_addr, uint8_t dev_addr, uint16_t reg_addr, uint16_t data);
+
+};
+/* ========================================================================== */
+/*                            PHY Driver Operations                           */
+/* ========================================================================== */
+
+/**
+ * @brief PHY Link Speed
+ */
+typedef enum {
+	PHY_SPEED_10M   = 10,
+	PHY_SPEED_100M  = 100,
+	PHY_SPEED_1000M = 1000
+} phy_speed_t;
+
+/**
+ * @brief PHY Duplex Mode
+ */
+typedef enum {
+	PHY_DUPLEX_HALF = 0,
+	PHY_DUPLEX_FULL = 1
+} phy_duplex_t;
+
+/**
+ * @brief PHY Clock Source (Platform Specific)
+ */
+typedef enum {
+	PHY_CLK_XTAL = 0,       /**< Uses external crystal */
+	PHY_CLK_OSC_25M,        /**< Uses 25MHz Oscillator */
+	PHY_CLK_OSC_50M,        /**< Uses 50MHz Oscillator (RMII Ref Clk) */
+} phy_clock_source_t;
+
+/**
+ * @brief EEE (Energy Efficient Ethernet) Modes
+ */
+typedef enum {
+	PHY_EEE_DISABLE = 0,
+	PHY_EEE_ENABLE_AN,      /**< Enable EEE via Auto-Negotiation */
+	PHY_EEE_ENABLE_LPI,     /**< Enable LPI (Low Power Idle) only */
+} phy_eee_mode_t;
+
+/**
+ * @brief PHY Link Configuration (For forcing mode)
  */
 typedef struct {
-	enum eth_phy_type 		ETH_Phy_Type;
-	enum eth_mode 			ETH_Phy_mode;
-	enum eth_refclk_phase 	ETH_RefClkPhase;
-	enum eth_refclk_on 		ETH_RefClkDirec;
-	enum eth_mac_lpb 		ETH_Mac_LoopBackMode;
-	enum eth_phy_lpb 		ETH_Phy_LooPBackMode;
-	enum eth_ifg_time 		ETH_IFGTime;
-	enum eth_rx_jumbo_cfg 	ETH_RxJumbo;
-	enum eth_tx_threshold 	ETH_TxThreshold;
-	enum eth_rx_threshold 	ETH_RxThreshold;
-	enum eth_trigger_level 	ETH_TxTriggerLevel;
-	enum eth_trigger_level 	ETH_RxTriggerLevel;
-	enum eth_phy_tx_setup	ETH_PhyTxSetupTime;
-	enum eth_phy_rx_setup 	ETH_PhyRxSetupTime;
-	u8 		ETH_MacAddr[6];
-	u32 	ETH_RCR; //offset 0x44 RCR ReceiveConfigReg
-	u8 		ETH_TxDescNum;
-	u8 		ETH_RxDescNum;
-	u32 	ETH_IntMaskAndStatus;
-	ETH_TxDescTypeDef *ETH_TxDesc;
-	ETH_RxDescTypeDef *ETH_RxDesc;
-	u8 *ETH_TxPktBuf;
-	u8 *ETH_RxPktBuf;
-	u8 		ETH_TxDescCurrentNum;
-	u8 		ETH_RxDescCurrentNum;
-	u8 		ETH_RxFrameStartDescIdx;
-	u32 	ETH_RxFrameLen;
-	u32		ETH_TxFrameLen;
-	u32 	ETH_RxSegmentCount;
-	u16 	ETH_TxAllocBufSize;
-	u16 	ETH_RxAllocBufSize;
-	u16 	ETH_TxBufSize;
-	u16 	ETH_RxBufSize;
-	u32 	ETH_PHY_EEE_EN;
-	eth_callback_t callback;
-	eth_task_yield task_yield;
-} ETH_InitTypeDef, *PETH_InitTypeDef;
+	bool autoneg_en;        /**< true: Auto-Negotiation, false: Fixed Mode */
+	phy_speed_t speed;      /**< Speed (valid only if autoneg_en == false) */
+	phy_duplex_t duplex;    /**< Duplex (valid only if autoneg_en == false) */
+	bool advertise_100m;    /**< Advertise 100M ability */
+	bool advertise_10m;     /**< Advertise 10M ability */
+	bool advertise_pause;   /**< Advertise Pause frame capability */
+	bool advertise_asym_pause; /**< Advertise Asymmetric Pause capability */
+} phy_link_config_t;
 
 /**
- * @addtogroup hs_hal_ethernet_rom_func ETHERNET HAL ROM APIs.
- * @ingroup hs_hal_ethernet
- * @{
+ * @brief PHY Link Status
  */
-u32 Ethernet_GetINT(void);
-u32 Ethernet_ClearINT(u32 INTrBit);
-u32 RMII_IRQHandler(ETH_InitTypeDef *ETH_InitStruct);
-void Ethernet_AutoPolling(u32 opt);
-void Ethernet_ResetPHY(void);
-void Ethernet_SetDescAddr(ETH_InitTypeDef *ETH_InitStruct);
+typedef struct {
+	bool link_up;           /**< Link is Up */
+	phy_speed_t speed;      /**< Current Speed */
+	phy_duplex_t duplex;    /**< Current Duplex */
+	bool pause_tx;          /**< Flow Control: TX Pause enabled */
+	bool pause_rx;          /**< Flow Control: RX Pause enabled */
+} phy_link_state_t;
+
+/**
+ * @brief Link State Change Callback
+ * @param dev Pointer to the PHY device
+ * @param state Current link state
+ * @param user_data User provided data
+ */
+typedef void (*phy_link_cb_t)(struct eth_phy_dev *dev, phy_link_state_t state, void *user_data);
+
+/**
+ * @brief PHY Driver Operation Table (VTable)
+ */
+struct eth_phy_ops {
+	/**
+	 * @brief Initialize the PHY (Check ID, basic setup)
+	 */
+	int (*init)(struct eth_phy_dev *dev);
+
+	/**
+	 * @brief Perform Software Reset (Register reset)
+	 */
+	int (*reset)(struct eth_phy_dev *dev);
+
+	/**
+	 * @brief Configure Link Parameters (Speed, Duplex, Auto-Neg, Pause)
+	 */
+	int (*cfg_link)(struct eth_phy_dev *dev, const phy_link_config_t *cfg);
+
+	/**
+	 * @brief Get Current Link Status
+	 */
+	int (*get_link)(struct eth_phy_dev *dev, phy_link_state_t *state);
+
+	/**
+	 * @brief Restart Auto-Negotiation
+	 */
+	int (*autoneg_restart)(struct eth_phy_dev *dev);
+
+	/**
+	 * @brief Configure PHY Clock Source
+	 */
+	int (*cfg_clock)(struct eth_phy_dev *dev, phy_clock_source_t src);
+
+	/**
+	 * @brief Configure EEE (Energy Efficient Ethernet)
+	 */
+	int (*cfg_eee)(struct eth_phy_dev *dev, phy_eee_mode_t mode);
+
+	/**
+	 * @brief Enable/Disable Loopback Mode
+	 */
+	int (*set_loopback)(struct eth_phy_dev *dev, bool enable);
+
+	/**
+	 * @brief Register Link State Callback
+	 */
+	int (*set_link_callback)(struct eth_phy_dev *dev, phy_link_cb_t cb, void *user_data);
+};
+
+/**
+ * @brief PHY Device Instance
+ */
+struct eth_phy_dev {
+	const struct eth_mdio_ops *bus; /**< Associated MDIO Bus */
+	const struct eth_phy_ops *ops;  /**< Driver operations */
+	int32_t addr;                   /**< PHY Address (0-31) */
+	void *priv;                     /**< Private driver data */
+
+	/* Internal State for Callback management */
+	phy_link_cb_t link_cb;
+	void *cb_user_data;
+};
+
+/* ========================================================================== */
+/*                       7. Main Initialization Structures                    */
+/* ========================================================================== */
+
+/* Callback types */
+typedef void (*eth_callback_t)(u32 event, u32 data);
+typedef void (*eth_task_yield)(void);
+
+/**
+ * @brief  ETH Init Structure.
+ *         Contains configuration for both MAC and PHY, plus runtime buffers.
+ */
+typedef struct {
+	/* --- Configuration --- */
+	enum eth_phy_type       ETH_Phy_Type;
+	enum eth_mode           ETH_Phy_mode;
+	enum eth_refclk_phase   ETH_RefClkPhase;
+	enum eth_refclk_on      ETH_RefClkDirec;
+	enum eth_mac_lpb        ETH_Mac_LoopBackMode;
+	enum eth_phy_lpb        ETH_Phy_LooPBackMode;
+	enum eth_ifg_time       ETH_IFGTime;
+	enum eth_rx_jumbo_cfg   ETH_RxJumbo;
+	/* --- Thresholds & Timings --- */
+	enum eth_tx_threshold   ETH_TxThreshold;
+	enum eth_rx_threshold   ETH_RxThreshold;
+	enum eth_trigger_level  ETH_TxTriggerLevel;
+	enum eth_trigger_level  ETH_RxTriggerLevel;
+	enum eth_phy_tx_setup   ETH_PhyTxSetupTime;
+	enum eth_phy_rx_setup   ETH_PhyRxSetupTime;
+	/* --- Hardware Resources --- */
+	u8      ETH_MacAddr[6];
+	u32     ETH_RCR;            /* ReceiveConfigReg (Offset 0x44) */
+	u32     ETH_IntMaskAndStatus;
+	/* --- DMA Descriptors --- */
+	u8                  ETH_TxDescNum;
+	u8                  ETH_RxDescNum;
+	ETH_TxDescTypeDef   *ETH_TxDesc;
+	ETH_RxDescTypeDef   *ETH_RxDesc;
+	u8                  *ETH_TxPktBuf;
+	u8                  *ETH_RxPktBuf;
+	/* --- Runtime Status --- */
+	u8      ETH_TxDescCurrentNum;
+	u8      ETH_RxDescCurrentNum;
+	u8      ETH_RxFrameStartDescIdx;
+	u32     ETH_RxFrameLen;
+	u32     ETH_TxFrameLen;
+	u32     ETH_RxSegmentCount;
+	u16     ETH_TxAllocBufSize;
+	u16     ETH_RxAllocBufSize;
+	u16     ETH_TxBufSize;
+	u16     ETH_RxBufSize;
+	u32     ETH_PHY_EEE_EN;
+
+	/* --- Callbacks & Drivers --- */
+	eth_callback_t      callback;
+	eth_task_yield      task_yield;
+	struct eth_phy_dev  *phy_dev;  /* Now this works because eth_phy_dev is defined above */
+} ETH_InitTypeDef, *PETH_InitTypeDef;
+
+
+/* ========================================================================== */
+/*                       8. HAL Function Prototypes                           */
+/* ========================================================================== */
+
+/* Initialization & Control */
+void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct, struct eth_phy_dev *PHY_Dev);
+int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct);
 void Ethernet_SetMacAddr(u8 *ETH_MacAddr);
-void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct);
-u32 Ethernet_init(ETH_InitTypeDef *ETH_InitStruct);
-int Ethernet_ReadPhyReg(uint8_t phy_id, uint8_t reg_addr, uint16_t *data);
-int Ethernet_WritePhyReg(uint8_t phy_id, uint8_t reg_addr, uint16_t data);
-u32 Ethernet_GetLinkStatus(void);
 void Ethernet_SetRefclkDirec(u32 refclk_mode);
 void Ethernet_OutputClk2Phy(u32 pin);
 void Ethernet_UseExtClk(u32 pin);
-u8 *Ethernet_GetRXPktInfo(ETH_InitTypeDef *ETH_InitStruct, u32 *rx_len);
-void Ethernet_UpdateRXDESC(ETH_InitTypeDef *ETH_InitStruct);
+void Ethernet_AutoPolling(u32 opt);
+
+/* Interrupts */
+u32 Ethernet_GetINT(void);
+u32 Ethernet_ClearINT(u32 INTrBit);
+u32 RMII_IRQHandler(ETH_InitTypeDef *ETH_InitStruct);
+
+/* DMA & Packet Handling */
+void Ethernet_SetDescAddr(ETH_InitTypeDef *ETH_InitStruct);
 u8 *Ethernet_GetTXPktInfo(ETH_InitTypeDef *ETH_InitStruct);
 void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, u32 size);
+u8 *Ethernet_GetRXPktInfo(ETH_InitTypeDef *ETH_InitStruct, u32 *rx_len);
+void Ethernet_UpdateRXDESC(ETH_InitTypeDef *ETH_InitStruct);
 
+/* PHY / Link Helper */
+int Ethernet_ReadPhyReg(uint8_t phy_id, uint8_t reg_addr, uint16_t *data);
+int Ethernet_WritePhyReg(uint8_t phy_id, uint8_t reg_addr, uint16_t data);
+u32 Ethernet_GetLinkStatus(void);
+
+/* External references */
 extern void ethernet_mii_init(void);
 extern int link_is_up;
-
-//#define  ENABLE_EEE_FUNCTION
-
-#define  PHY_TYPE_SELECT RTL_8721F
-
 /* MANUAL_GEN_END */
 
 /** @} */

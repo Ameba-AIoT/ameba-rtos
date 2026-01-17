@@ -92,7 +92,7 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 
 		/* assign new buffer for SPDIO RX ring */
 		rx_buf->buf_allocated = rx_buf->buf_addr = (u32) new_skb->data;
-		rx_buf->size_allocated = sdio_priv.dev.device_rx_bufsz;
+		rx_buf->size_allocated = rx_buf->buf_size = sdio_priv.dev.device_rx_bufsz;
 		rx_buf->priv = new_skb;
 
 		/* handle buf data */
@@ -143,7 +143,7 @@ void whc_sdio_dev_device_init(void)
 	dev->priv = NULL;
 	dev->host_tx_bd_num = SPDIO_HOST_TX_BD_NUM;
 	dev->host_rx_bd_num = SPDIO_HOST_RX_BD_NUM;
-	dev->device_rx_bufsz = SPDIO_DEVICE_RX_BUFSZ;
+	dev->device_rx_bufsz = (((wifi_user_config.skb_buf_size ? wifi_user_config.skb_buf_size : MAX_SKB_BUF_SIZE) - SPDIO_SKB_RSVD_LEN) >> 6) << 6;
 
 	dev->rx_buf = (struct spdio_buf_t *)rtos_mem_zmalloc(dev->host_tx_bd_num * sizeof(struct spdio_buf_t));
 	if (!dev->rx_buf) {
@@ -156,7 +156,7 @@ void whc_sdio_dev_device_init(void)
 		skb = dev_alloc_skb(SPDIO_DEVICE_RX_BUFSZ, SPDIO_SKB_RSVD_LEN);
 
 		dev->rx_buf[i].buf_allocated = dev->rx_buf[i].buf_addr = (u32) skb->data;
-		dev->rx_buf[i].size_allocated = dev->device_rx_bufsz;
+		dev->rx_buf[i].size_allocated = dev->rx_buf[i].buf_size = dev->device_rx_bufsz;
 		dev->rx_buf[i].priv = skb;
 
 		// this buffer must be 4 byte alignment

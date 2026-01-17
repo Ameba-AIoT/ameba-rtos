@@ -43,6 +43,11 @@ config USBH_COMPOSITE_MENU
                         bool "UAC 1.0"
                         select USBH_COMPOSITE_HID_UAC1 if WHC_HOST || WHC_NONE
                 endchoice
+            config USBH_COMPOSITE_ACM_ECM_MENU
+                bool "ACM + ECM"
+                select USBH_COMPOSITE_ACM_ECM if WHC_HOST || WHC_NONE
+                select LWIP_USB_ETHERNET if WHC_HOST || WHC_NONE
+                select USBH_ECM_ETHERNET if WHC_HOST || WHC_NONE
         endchoice
     endif
 

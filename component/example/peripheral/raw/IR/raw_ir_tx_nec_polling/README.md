@@ -67,8 +67,8 @@ Logic Analyzer or oscilloscope.
   - rx stop threshold is controlled by received `IR_RxCntThrType`(default Low level) count > `IR_RxCntThr`(default 0xa1644, that is about 66ms)
   - decoding tolerance is 30% by default.
   - When using IR receiver module, set ir rx pin no-pull state.
-- On AmebaDplus: Pin in example is only supported as `IR_TX` or `IR_RX` function.
-- On AmebaSmart: Pin in example is supported as both `IR_TX ` and `IR_RX` function.
+- On RTL8721Dx: Pin in example is only supported as `IR_TX` or `IR_RX` function.
+- On RTL8730E: Pin in example is supported as both `IR_TX ` and `IR_RX` function.
 
 # Supported IC
 

@@ -12,7 +12,7 @@
 #include "os_wrapper.h"
 #include <stdio.h>
 
-/* compatible pinmux_funcid_name with AmebaD */
+/* compatible pinmux_funcid_name with RTL872xD */
 #ifndef CONFIG_AMEBAD
 #if defined(CONFIG_AMEBAGREEN2)
 //#define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI1

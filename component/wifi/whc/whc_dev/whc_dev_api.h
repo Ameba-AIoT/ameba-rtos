@@ -13,7 +13,7 @@
 
 #include "whc_dev.h"
 
-#ifdef CONFIG_WHC_DUAL_TCPIP
+#ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
 #include "whc_dev_tcpip.h"
 #endif
 
@@ -28,7 +28,7 @@ struct whc_dev_network_info {
 
 void whc_dev_init_cmd_path_task(void);
 
-#ifdef CONFIG_WHC_DUAL_TCPIP
+#ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
 u8 whc_dev_api_get_host_rdy(void);
 
 void whc_dev_api_set_default_direction(u8 dir);

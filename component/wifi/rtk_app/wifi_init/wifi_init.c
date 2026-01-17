@@ -85,7 +85,7 @@ void wifi_init_thread(void *param)
 {
 	UNUSED(param);
 
-#if defined(CONFIG_LWIP_LAYER) && defined(CONFIG_WHC_DUAL_TCPIP)
+#if defined(CONFIG_LWIP_LAYER) && defined(CONFIG_WHC_DEV_TCPIP_KEEPALIVE)
 	LwIP_Init();
 #endif
 

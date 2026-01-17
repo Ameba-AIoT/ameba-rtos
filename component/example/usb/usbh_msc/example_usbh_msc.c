@@ -272,7 +272,7 @@ next_file:
 		if ((!ret) && (++filenum < 10)) {
 			goto next_file;
 		} else {
-			break;
+			filenum = 0;
 		}
 	}
 

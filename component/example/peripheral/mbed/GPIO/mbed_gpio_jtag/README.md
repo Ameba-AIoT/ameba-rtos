@@ -17,16 +17,16 @@ This example describes how to use disable JTAG module and use GPIO pin to blink 
 
   For example:
 
-  - On AmebaSmart, connect as below
+  - On RTL8730E, connect as below
     - Connect a push button to `GPIO_JTAG_ENABLE_PIN _PA_5` and GND
     - Connect a LED to `GPIO_LED_PIN _PA_14` and GND
-  - On AmebaLite, connect as below
+  - On RTL8726E/RTL8720E/RTL8713E/RTL8710E, connect as below
     - Connect a push button to `GPIO_JTAG_ENABLE_PIN _PA_29` and GND
     - Connect a LED to `GPIO_LED_PIN _PB_1` and GND
-  - On AmebaDplus, connect as below
+  - On RTL8721Dx, connect as below
     - Connect a push button to `GPIO_JTAG_ENABLE_PIN _PA_12` and GND
     - Connect a LED to `GPIO_LED_PIN _PA_30` and GND
-  - On AmebaGreen2, connect as below
+  - On RTL8721F, connect as below
     - Connect a push button to `GPIO_JTAG_ENABLE_PIN _PA_26` and GND
     - Connect a LED to `GPIO_LED_PIN _PA_18` and GND
 

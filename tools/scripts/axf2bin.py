@@ -8,7 +8,7 @@ import sys
 import importlib.util
 
 missing_modules = []
-for module in ['json5']:
+for module in ['json5', 'click']:
     if importlib.util.find_spec(module) is None:
         missing_modules.append(module)
 if missing_modules:
