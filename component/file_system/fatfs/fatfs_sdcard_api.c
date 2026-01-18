@@ -17,10 +17,16 @@ u8 fatfs_sd_hotplug_flag = 0;
 
 static void fatfs_sd_intr_cb(SD_RESULT res)
 {
-	printf("FATFS SD callback status: %d\n", res);
+	int status;
+
 	if (fatfs_init_status != res - 1) {
 		fatfs_sd_change_status = res;
 		rtos_sema_give(fatfs_sd_hotplug_sema);
+	}
+
+	if (fatfs_hostplug_usr_cb) {
+		status = (res == SD_NODISK ? HOTPULG_OUT : HOTPULG_IN);
+		fatfs_hostplug_usr_cb(status);
 	}
 }
 
@@ -75,14 +81,13 @@ int fatfs_sd_close(void)
 int fatfs_sd_init(int interface)
 {
 	int ret = 0;
+	FRESULT res;
 
 #ifdef CONFIG_FATFS_SD_HOTPLUG
 	fatfs_sd_hotplug_enable(interface);
 #endif
 
 	if (fatfs2_mount_flag != 1) {
-		int Fatfs_ok = 0;
-		FRESULT res;
 		// Register disk driver to Fatfs
 		VFS_DBG(VFS_INFO, "Register sd driver to Fatfs.");
 
@@ -99,16 +104,13 @@ int fatfs_sd_init(int interface)
 
 		if (fatfs_second_flash_param.drv_num < 0) {
 			VFS_DBG(VFS_ERROR, "Rigester sd driver to FATFS fail.");
+			ret = -1;
+			goto fatfs_init_err;
 		} else {
-			Fatfs_ok = 1;
 			fatfs_second_flash_param.drv[0] = fatfs_second_flash_param.drv_num + '0';
 			fatfs_second_flash_param.drv[1] = ':';
 			fatfs_second_flash_param.drv[2] = '/';
 			fatfs_second_flash_param.drv[3] = 0;
-		}
-		if (!Fatfs_ok) {
-			ret = -1;
-			goto fatfs_init_err;
 		}
 
 		res = f_mount(&fatfs_second_flash_param.fs, fatfs_second_flash_param.drv, 1);

@@ -15,29 +15,58 @@
 #include "usbh.h"
 
 /* Private defines -----------------------------------------------------------*/
-static const char *const TAG = "UVC";
 /*Just capture and abandon frame*/
-#define USBH_UVC_APP_SIMPLE	1
+#define USBH_UVC_APP_SIMPLE                        1
 
 /*Capture frame and write it to SD card through vfs*/
-#define USBH_UVC_APP_VFS	2
+#define USBH_UVC_APP_VFS                           2
 
 /*Capture frame and write it to http server*/
-#define USBH_UVC_APP_HTTPC	3
+#define USBH_UVC_APP_HTTPC                         3
 
-/*Choose which application example*/
-#define CONFIG_USBH_UVC_APP  USBH_UVC_APP_SIMPLE
+/* User Configurations */
+/* Choose which application example */
+#define CONFIG_USBH_UVC_APP                        USBH_UVC_APP_SIMPLE
 
-#define CONFIG_USBH_UVC_CHECK_IMAGE_DATA  0
+/* Supported formats: USBH_UVC_FORMAT_MJPEG, USBH_UVC_FORMAT_YUV, USBH_UVC_FORMAT_H264
+ * Note: Users must verify which formats their specific camera supports and
+ * adjust the definition below accordingly. */
+#define CONFIG_USBH_UVC_FORMAT_TYPE                USBH_UVC_FORMAT_MJPEG
 
-#define CONFIG_USBH_UVC_LOOP  200
+/* Target resolution and compression ratio.
+ * If the specific camera device does not support
+ * these values, the host stack will automatically select the closest match.
+ * Always check the logs to confirm the actual parameters applied. */
+#define CONFIG_USBH_UVC_WIDTH                      1280
+#define CONFIG_USBH_UVC_HEIGHT                     720
+#define CONFIG_USBH_UVC_FRAME_RATE                 30
+
+/* Frame buffer size in bytes
+ * Size depends on format, resolution, and scene complexity.
+ * Please increase this value if an oversize error occurs. */
+#define CONFIG_USBH_UVC_FRAME_BUF_SIZE             (150 * 1024)
+
+/* Most cameras have a single video stream interface, so use default 0.
+ * If the camera supports dual streams, set this to 1.
+ * Note: Current protocol stack supports a maximum of 2 video stream interfaces. */
+#define CONFIG_USBH_UVC_IF_NUM_0                   0
 
 #if USBH_UVC_USE_HW
 /* HW UVC IRQ PRIORITY*/
-#define USBH_HW_UVC_IRQ_PRIORITY					INT_PRI_LOWEST
+#define CONFIG_USBH_UVC_HW_IRQ_PRIORITY            INT_PRI_LOWEST
 #endif
 
-/* Private includes -------------------------------------------------------------*/
+/* Hot plug / memory leak test */
+#define CONFIG_USBH_UVC_HOT_PLUG                   1
+
+/* Check image data validity (0: Disable, 1: Enable) */
+#define CONFIG_USBH_UVC_CHECK_MJEPG_DATA           0
+
+/* Number of frames to capture in the loop */
+#define CONFIG_USBH_UVC_LOOP                       200
+
+/* Maximum continuous error count before stopping */
+#define CONFIG_USBH_UVC_MAX_FAIL_COUNT             5
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
 #include "vfs.h"
@@ -51,30 +80,23 @@ static const char *const TAG = "UVC";
 #include "lwipconf.h"
 #endif
 
-/* Private macros ------------------------------------------------------------*/
-
-#define USBH_UVC_BUF_SIZE       USBH_UVC_VIDEO_FRAME_SIZE   // Frame buffer size, resident in PSRAM, depends on format type
-//resolution and compression ratio
-#define USBH_UVC_FORMAT_TYPE    USBH_UVC_FORMAT_MJPEG
-#define USBH_UVC_WIDTH          640
-#define USBH_UVC_HEIGHT         480
-#define USBH_UVC_FRAME_RATE     30
-
-#define USBH_UVC_IF_NUM_0                0     // most cameras have only one video stream interface
-
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
 #define USBH_UVC_VFS_WRITE_SIZE          (16 * 1024)
 #define USBH_UVC_VFS_VIDEO_SIZE          (2 * 1024 * 1024)
 #endif
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_HTTPC)
-#define USBH_UVC_HTTPC_WRITE_SIZE      (4 * 1024)
-#define USBH_UVC_HTTPC_VIDEO_SIZE      (2 * 1024 * 1024)
-#define USBH_UVC_HTTPC_SERVER          "192.168.1.102"
-#define USBH_UVC_HTTPC_SECURE           HTTPC_SECURE_NONE
-#define USBH_UVC_HTTPC_PORT             5090
-#define USBH_UVC_HTTP_TAG              "HTTP"
+#define USBH_UVC_HTTPC_WRITE_SIZE        (4 * 1024)
+#define USBH_UVC_HTTPC_VIDEO_SIZE        (2 * 1024 * 1024)
+#define USBH_UVC_HTTPC_SERVER            "192.168.1.102"
+#define USBH_UVC_HTTPC_SECURE            HTTPC_SECURE_NONE
+#define USBH_UVC_HTTPC_PORT              5090
+#define USBH_UVC_HTTP_TAG                "HTTP"
 #endif
+
+/* Private types -------------------------------------------------------------*/
+
+/* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -84,9 +106,10 @@ static int uvc_cb_attach(void);
 static int uvc_cb_detach(void);
 
 /* Private variables ---------------------------------------------------------*/
+static const char *const TAG = "UVC";
 
-static rtos_sema_t uvc_conn_sema;
-static rtos_sema_t uvc_disconn_sema;
+static rtos_sema_t uvc_attach_sema;
+static rtos_sema_t uvc_detach_sema;
 static rtos_mutex_t uvc_buf_mutex = NULL;
 static uvc_config_t uvc_ctx;
 
@@ -110,7 +133,7 @@ static u32 uvc_httpc_is_init = 0;
 static RingBuffer *uvc_rb;
 #endif
 
-u8 uvc_buf[USBH_UVC_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
+u8 uvc_buf[CONFIG_USBH_UVC_FRAME_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
@@ -154,14 +177,16 @@ static int uvc_cb_deinit(void)
 static int uvc_cb_attach(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
-	rtos_sema_give(uvc_conn_sema);
+	rtos_sema_give(uvc_attach_sema);
 	return HAL_OK;
 }
 
 static int uvc_cb_detach(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
-	rtos_sema_give(uvc_disconn_sema);
+#if CONFIG_USBH_UVC_HOT_PLUG
+	rtos_sema_give(uvc_detach_sema);
+#endif
 	return HAL_OK;
 }
 
@@ -189,19 +214,9 @@ static void uvc_calculate_tp(u32 loop)
 
 static void uvc_img_prepare(usbh_uvc_frame_t *frame)
 {
-	u32 len = 0;
+	u32 len = frame->byteused;
 
-	if (frame == NULL) {
-		return;
-	}
-
-	len = frame->byteused;
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Capture len=%d\n", len);
-	if (len > USBH_UVC_BUF_SIZE) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Image len overflow!\n");
-		return;
-	}
-#if CONFIG_USBH_UVC_CHECK_IMAGE_DATA
+#if CONFIG_USBH_UVC_CHECK_MJEPG_DATA
 	if (frame->buf[0] != 0xff || frame->buf[1] != 0xd8 || frame->buf[len - 2] != 0xff || frame->buf[len - 1] != 0xd9) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mjpeg] image error: %x %x %x %x\n", frame->buf[0], frame->buf[1], frame->buf[2], frame->buf[3]);
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mjpeg] image error: %x %x %x %x\n", frame->buf[len - 4], frame->buf[len - 3], frame->buf[len - 2], frame->buf[len - 1]);
@@ -243,7 +258,7 @@ static void uvc_img_prepare(usbh_uvc_frame_t *frame)
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
 
-#if (USBH_UVC_FORMAT_TYPE == USBH_UVC_FORMAT_MJPEG)
+#if (CONFIG_USBH_UVC_FORMAT_TYPE == USBH_UVC_FORMAT_MJPEG)
 static void uvc_vfs_thread(void *param)
 {
 	char path[128] = {0};
@@ -359,7 +374,7 @@ static int uvc_vfs_start(void)
 	int ret;
 	rtos_task_t task;
 
-	uvc_rb = RingBuffer_Create(uvc_buf, USBH_UVC_BUF_SIZE, LOCAL_RINGBUFF, 0);
+	uvc_rb = RingBuffer_Create(uvc_buf, CONFIG_USBH_UVC_FRAME_BUF_SIZE, LOCAL_RINGBUFF, 0);
 
 	ret = rtos_task_create(&task, "uvc_vfs_thread", uvc_vfs_thread, NULL, 1024U * 8, 1U);
 	if (ret != RTK_SUCCESS) {
@@ -384,7 +399,7 @@ char upload_request[] =
 char body_end[] =
 	"\r\n--%s--\r\n";
 
-#if (USBH_UVC_FORMAT_TYPE == USBH_UVC_FORMAT_MJPEG)
+#if (CONFIG_USBH_UVC_FORMAT_TYPE == USBH_UVC_FORMAT_MJPEG)
 
 /*
 	"POST /cgi-bin/submit.py HTTP/1.1\r\n"
@@ -575,7 +590,7 @@ static int uvc_httpc_start(void)
 		rtos_time_delay_ms(2000);
 	}
 
-	uvc_rb = RingBuffer_Create(uvc_buf, USBH_UVC_BUF_SIZE, LOCAL_RINGBUFF, 0);
+	uvc_rb = RingBuffer_Create(uvc_buf, CONFIG_USBH_UVC_FRAME_BUF_SIZE, LOCAL_RINGBUFF, 0);
 
 	rtos_sema_create(&uvc_httpc_save_img_sema, 0, 1);
 
@@ -590,129 +605,191 @@ static int uvc_httpc_start(void)
 
 #endif
 
-static void example_usbh_uvc_task(void *param)
+#if CONFIG_USBH_UVC_HOT_PLUG
+static void uvc_hotplug_thread(void *param)
 {
 	int ret = 0;
-	usbh_uvc_frame_t *buf;
-	int img_cnt = 0;
+
 	UNUSED(param);
+
+	for (;;) {
+		if (rtos_sema_take(uvc_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			rtos_time_delay_ms(100);
+			usbh_uvc_deinit();
+			usbh_deinit();
+			rtos_time_delay_ms(10);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
+
+			ret = usbh_init(&usbh_cfg, NULL);
+			if (ret != HAL_OK) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBH fail\n");
+				break;
+			}
+
+			ret = usbh_uvc_init(&uvc_cb);
+			if (ret < 0) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init UVC fail\n");
+				usbh_deinit();
+				break;
+			}
+		}
+	}
+
+	rtos_task_delete(NULL);
+}
+#endif
+
+static void example_usbh_uvc_task(void *param)
+{
+	usbh_uvc_frame_t *buf;
+	const char *fmt_name = NULL;
+#if CONFIG_USBH_UVC_HOT_PLUG
+	rtos_task_t task;
+#endif
+	int ret = 0;
+	int img_cnt = 0;
+	int fail_cnt = 0;
+	u32 len;
+
+	UNUSED(param);
+
+	rtos_sema_create(&uvc_attach_sema, 0U, 1U);
+	rtos_sema_create(&uvc_detach_sema, 0U, 1U);
+	rtos_mutex_create(&uvc_buf_mutex);
 
 	ret = usbh_init(&usbh_cfg, NULL);
 	if (ret != HAL_OK) {
-		goto exit;
+		goto exit1;
 	}
-
-	rtos_sema_create(&uvc_conn_sema, 0U, 1U);
-	rtos_sema_create(&uvc_disconn_sema, 0U, 1U);
-	rtos_mutex_create(&uvc_buf_mutex);
 
 	ret = usbh_uvc_init(&uvc_cb);
-	if (ret) {
+	if (ret != HAL_OK) {
+		usbh_deinit();
 		goto exit1;
 	}
 
-	uvc_ctx.fmt_type = USBH_UVC_FORMAT_TYPE;
-	uvc_ctx.width = USBH_UVC_WIDTH;
-	uvc_ctx.height = USBH_UVC_HEIGHT;
-	uvc_ctx.frame_rate = USBH_UVC_FRAME_RATE;
+#if CONFIG_USBH_UVC_HOT_PLUG
+	ret = rtos_task_create(&task, "uvc_hotplug_thread", uvc_hotplug_thread, NULL, 1024U, 6U);
+	if (ret != RTK_SUCCESS) {
+		usbh_uvc_deinit();
+		usbh_deinit();
+		goto exit1;
+	}
+#endif
+
+	uvc_ctx.fmt_type = CONFIG_USBH_UVC_FORMAT_TYPE;
+	uvc_ctx.width = CONFIG_USBH_UVC_WIDTH;
+	uvc_ctx.height = CONFIG_USBH_UVC_HEIGHT;
+	uvc_ctx.frame_rate = CONFIG_USBH_UVC_FRAME_RATE;
+	uvc_ctx.frame_buf_size = CONFIG_USBH_UVC_FRAME_BUF_SIZE;
 
 #if USBH_UVC_USE_HW
-	uvc_ctx.hw_uvc_isr_priorigy = USBH_HW_UVC_IRQ_PRIORITY;
+	uvc_ctx.isr_priority = CONFIG_USBH_UVC_HW_IRQ_PRIORITY;
 #endif
 
-	rtos_sema_take(uvc_conn_sema, RTOS_SEMA_MAX_COUNT);
+	if (rtos_sema_take(uvc_attach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Set parameters\n");
-	ret = usbh_uvc_set_param(&uvc_ctx, USBH_UVC_IF_NUM_0);
-	if (ret) {
-		goto exit1;
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Para: %d*%d@%dfps\n", uvc_ctx.width, uvc_ctx.height, uvc_ctx.frame_rate);
+		ret = usbh_uvc_set_param(&uvc_ctx, CONFIG_USBH_UVC_IF_NUM_0);
 
 		if (uvc_ctx.fmt_type == USBH_UVC_FORMAT_MJPEG) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "MJPEG Stream\n");
+			fmt_name = "MJPEG";
 		} else if (uvc_ctx.fmt_type == USBH_UVC_FORMAT_H264) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "H264 Stream\n");
+			fmt_name = "H264";
 		} else if (uvc_ctx.fmt_type == USBH_UVC_FORMAT_YUV) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "YUV Stream\n");
+			fmt_name = "YUV";
 		} else {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Unsupport Stream\n");
-			goto exit1;
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Unsupport type %d\n", uvc_ctx.fmt_type);
 		}
-	}
+
+		if (ret) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Set paras %s %d*%d@%dfps err, pls check\n", fmt_name, uvc_ctx.width, uvc_ctx.height, uvc_ctx.frame_rate);
+			goto exit1;
+		} else {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Set paras: %s %d*%d@%dfps\n", fmt_name, uvc_ctx.width, uvc_ctx.height, uvc_ctx.frame_rate);
+		}
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Start vfs service\n");
-	ret = uvc_vfs_start();
-	if (ret != 0) {
-		goto exit1;
-	}
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Start vfs service\n");
+		ret = uvc_vfs_start();
+		if (ret != 0) {
+			goto exit1;
+		}
 
-	while (uvc_vfs_is_init == 0) {
-		rtos_time_delay_ms(500);
-	}
+		while (uvc_vfs_is_init == 0) {
+			rtos_time_delay_ms(500);
+		}
 #endif
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_HTTPC)
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Start %s client\n", USBH_UVC_HTTP_TAG);
-	ret = uvc_httpc_start();
-	if (ret != 0) {
-		goto exit1;
-	}
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Start %s client\n", USBH_UVC_HTTP_TAG);
+		ret = uvc_httpc_start();
+		if (ret != 0) {
+			goto exit1;
+		}
 
-	while (uvc_httpc_is_init == 0) {
-		rtos_time_delay_ms(500);
-	}
+		while (uvc_httpc_is_init == 0) {
+			rtos_time_delay_ms(500);
+		}
 #endif
 
-	img_cnt = 0;
+		img_cnt = 0;
+		fail_cnt = 0;
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Stream on\n");
-	ret = usbh_uvc_stream_on(&uvc_ctx, USBH_UVC_IF_NUM_0);
-	if (ret) {
-		goto exit2;
-	}
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Stream on\n");
+		ret = usbh_uvc_stream_on(&uvc_ctx, CONFIG_USBH_UVC_IF_NUM_0);
+		if (ret) {
+			goto exit1;
+		}
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_HTTPC)
-	while (uvc_httpc_is_init) {
+		while (uvc_httpc_is_init) {
 #elif (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
-	while (uvc_vfs_is_init) {
+		while (uvc_vfs_is_init) {
 #else
-	rx_start = SYSTIMER_TickGet();
-	while (img_cnt < CONFIG_USBH_UVC_LOOP) {
+		rx_start = SYSTIMER_TickGet();
+		while (img_cnt < CONFIG_USBH_UVC_LOOP) {
 #endif
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Get frame %d\n", img_cnt);
-		buf = usbh_uvc_get_frame(USBH_UVC_IF_NUM_0);
-		if (buf == NULL) {
-			ret = 1;
-		} else {
-			ret = 0;
+
+			buf = usbh_uvc_get_frame(CONFIG_USBH_UVC_IF_NUM_0);
+			if (buf == NULL) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Capture frame %d fail\n", img_cnt);
+				fail_cnt++;
+				if (fail_cnt >= CONFIG_USBH_UVC_MAX_FAIL_COUNT) {
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Stop Capture (fail:%d)\n", fail_cnt);
+					break;
+				}
+
+				rtos_time_delay_ms(10);
+				break;
+			}
+
+			len = buf->byteused;
+			if (len > CONFIG_USBH_UVC_FRAME_BUF_SIZE) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Frame %d overflow %d > %d\n", img_cnt, len, CONFIG_USBH_UVC_FRAME_BUF_SIZE);
+				usbh_uvc_put_frame(buf, CONFIG_USBH_UVC_IF_NUM_0);
+				return;
+			}
+
+			if (len > 0) {
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Captured frame %d, len=%d\n", img_cnt, len);
+				uvc_img_prepare(buf);
+			}
+
+			usbh_uvc_put_frame(buf, CONFIG_USBH_UVC_IF_NUM_0);
+
+			img_cnt ++;
 		}
 
-		if (ret == 0) {
-			uvc_img_prepare(buf);
-		}
+		uvc_calculate_tp(img_cnt);
 
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Put frame\n");
-		usbh_uvc_put_frame(buf, USBH_UVC_IF_NUM_0);
-
-		img_cnt ++;
+		usbh_uvc_stream_off(CONFIG_USBH_UVC_IF_NUM_0);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Stream off\n");
 	}
-
-	uvc_calculate_tp(img_cnt);
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Stop capturing images\n");
-	usbh_uvc_stream_off(USBH_UVC_IF_NUM_0);
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap 0x%x bytes\n",  rtos_mem_get_free_heap_size());
-
-exit2:
-	usbh_uvc_deinit();
+	goto exit;
 exit1:
 	rtos_mutex_delete(uvc_buf_mutex);
-	rtos_sema_delete(uvc_conn_sema);
-	rtos_sema_delete(uvc_disconn_sema);
-	usbh_deinit();
+	rtos_sema_delete(uvc_attach_sema);
+	rtos_sema_delete(uvc_detach_sema);
 exit:
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH UVC demo stop\n");
 	rtos_task_delete(NULL);

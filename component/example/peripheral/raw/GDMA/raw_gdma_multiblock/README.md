@@ -27,9 +27,9 @@ GDMA will display "DMA data complete MaxMuliBlock = x " in serial port tool.
 
 2.  If the output character sequence of the serial port tool is disordered, please configure `Boot_Agg_En = TRUE` in ameba_bootcfg.c according to the chip ID.
 
-3. Since the lp core of AmebaSmart does not compile GDMA driver code, the compilation of this example will fail on this core. But the core supports GDMA function.
+3. Since the lp core of RTL8730E does not compile GDMA driver code, the compilation of this example will fail on this core. But the core supports GDMA function.
 
-4. If AmebaLite outputs `IO Driver Parameters error! file_name:BOOT_ChipInfo_PSRAMType`, which means that the board is not configured with PSRAM. There are two solutions:
+4. If RTL8726E/RTL8720E/RTL8713E/RTL8710E outputs `IO Driver Parameters error! file_name:BOOT_ChipInfo_PSRAMType`, which means that the board is not configured with PSRAM. There are two solutions:
    - Modify the menuconfig:
      - enter `./menuconfig.py` under the **{SDK}\amebaxxx_gcc_project** folder
      - set the `CONFIG LINK option` to `CodeInXip_DataHeapInSram[No_Psram]`

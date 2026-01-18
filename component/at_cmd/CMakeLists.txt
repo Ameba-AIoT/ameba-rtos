@@ -59,14 +59,12 @@ if(CONFIG_SUPPORT_ATCMD)
     )
 
 if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
-
     ameba_list_append(private_sources
         atcmd_sys.c
         atcmd_fs.c
         atcmd_bt_mp.c
         atcmd_coex.c
         atcmd_otp.c
-        atcmd_diag.c
     )
     ameba_list_append_if(CONFIG_WLAN private_sources
         atcmd_http.c
@@ -82,6 +80,9 @@ if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
     )
     ameba_list_append_if(CONFIG_ETHERNET private_includes
         ${c_CMPT_ETHERNET_DIR}/
+    )
+    ameba_list_append_if(CONFIG_DIAGNOSE_EN private_sources
+        atcmd_diag.c
     )
     if(CONFIG_ATCMD_HOST_CONTROL)
         ameba_list_append_if(CONFIG_SUPPORT_SDIO_DEVICE private_sources

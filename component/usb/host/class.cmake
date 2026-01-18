@@ -82,4 +82,10 @@ if(CONFIG_USBH_COMPOSITE)
         ${USBH_CLASS_DIR}/composite/usbh_composite_hid.c
         ${COMPOSITE_UAC_SOURCE}
     )
+
+    ameba_list_append_if(CONFIG_USBH_COMPOSITE_ACM_ECM private_sources
+        ${USBH_CLASS_DIR}/composite/usbh_composite_cdc_acm_ecm.c
+        ${USBH_CLASS_DIR}/composite/usbh_composite_cdc_acm.c
+        ${USBH_CLASS_DIR}/composite/usbh_composite_cdc_ecm.c
+    )
 endif()

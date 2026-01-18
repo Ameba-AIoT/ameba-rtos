@@ -26,11 +26,11 @@ Build and Download:
     - "#define IS_SNR_NOT_90DB(x)	((x) < 90)" 
     - "#define IS_SNR_NOT_70DB(x)	((x) < 70)"
 
-2. AmebaSmart only supports hp core and must enable Audio Framework.
+2. RTL8730E only supports hp core and must enable Audio Framework.
 
-3. Depending on the amplifier, AmebaDplus has different packages, and the DMIC's pins are different under different packages. AmebaDplus uses HT513 amplifier by default, if you want to use ALC1019, please change macro in main.c.
+3. Depending on the amplifier, RTL8721Dx has different packages, and the DMIC's pins are different under different packages. RTL8721Dx uses HT513 amplifier by default, if you want to use ALC1019, please change macro in main.c.
 
-4. If you want to play and record at the same time, you need to use it together with the speaker thread. Make sure that the speaker thread has a higher priority than the recording thread. If you use it on Amebalite, please enable fix_bclk in two threads.
+4. If you want to play and record at the same time, you need to use it together with the speaker thread. Make sure that the speaker thread has a higher priority than the recording thread. If you use it on RTL8726E/RTL8720E/RTL8713E/RTL8710E, please enable fix_bclk in two threads.
 
 # Supported IC
 

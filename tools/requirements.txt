@@ -16,3 +16,4 @@ json5
 colorama==0.4.6
 pywin32 ; platform_system == "Windows"
 prompt_toolkit
+click

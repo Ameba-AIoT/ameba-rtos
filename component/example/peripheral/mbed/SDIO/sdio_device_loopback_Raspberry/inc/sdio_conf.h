@@ -21,20 +21,19 @@
  *
  ******************************************************************************/
 
-#define AMEBADPLUS
-//#define RL7005
+#define CONFIG_SDIO_RTL8721Dx
+//#define CONFIG_SDIO_RTL8721F
 
-#ifdef AMEBADPLUS
+#ifdef CONFIG_SDIO_RTL8721Dx
 #define AUTOCONF_INCLUDED
-#define RTL871X_MODULE_NAME "AMEBADPLUS"
-#define DRV_NAME "amebadplus"
+#define RTL871X_MODULE_NAME "RTL8721Dx"
+#define DRV_NAME "rtl8721dx"
 #endif
 
-
-#ifdef RL7005
+#ifdef CONFIG_SDIO_RTL8721F
 #define AUTOCONF_INCLUDED
-#define RTL871X_MODULE_NAME "RL7005"
-#define DRV_NAME "rl7005"
+#define RTL871X_MODULE_NAME "RTL8721F"
+#define DRV_NAME "rtl8721f"
 #define FW_DOWNLOAD
 #define SDIO_WIFI
 #endif

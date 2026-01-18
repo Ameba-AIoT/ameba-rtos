@@ -56,7 +56,7 @@ DSTATUS USB_disk_status(void)
 {
 	DRESULT res = RES_ERROR;
 
-	if (usbh_msc_unit_is_rdy(0U)) {
+	if (usbh_msc_unit_is_ready(0U)) {
 		res = RES_OK;
 	} else {
 		res = RES_ERROR;
@@ -215,7 +215,7 @@ DRESULT USB_disk_ioctl(BYTE cmd, void *buff)
 		res = RES_OK;
 		break;
 
-	/* Get number of sectors on the disk (DWORD) */
+	/* Get total number of sectors on the disk (DWORD) */
 	case GET_SECTOR_COUNT :
 		if (usbh_msc_get_lun_info(0U, &info) == HAL_OK) {
 			*(DWORD *)buff = info.capacity.block_nbr;

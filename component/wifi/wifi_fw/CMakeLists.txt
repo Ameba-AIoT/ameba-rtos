@@ -1,7 +1,3 @@
-if(CONFIG_RTL8720F)
-    add_compile_options(-O2)
-endif()
-
 ameba_set(WIFIFWDIR ${c_COMPONENT_DIR}/wifi/wifi_fw) #Used in component/wifi/wifi_fw/amebasmart/CMakeLists.txt
 
 if(CONFIG_AMEBAD)

@@ -295,7 +295,6 @@ static void ecm_example_monitor_link_change_thread(void *param)
 static void ecm_example_bridge_thread(void *param)
 {
 	UNUSED(param);
-	u8 join_status;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Bridge example \n");
 

@@ -1,4 +1,4 @@
-mainmenu "AmebaSmart Configuration"
+mainmenu "${RTK_SOC_NAME} Configuration"
 
 comment "--------MENUCONFIG FOR General---------"
 

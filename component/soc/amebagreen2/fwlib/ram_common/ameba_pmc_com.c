@@ -30,9 +30,7 @@ void SOCPS_NVICBackup(struct CPU_BackUp_TypeDef *bk, SysTick_Type *systick, NVIC
 	bk->NVICbackup_HP[7] = nvic->ISPR[1];
 	bk->NVICbackup_HP[8] = nvic->ISPR[2];
 
-#if defined(__VTOR_PRESENT) && (__VTOR_PRESENT == 1)
 	bk->SCBbackup_HP[0] = scb->VTOR;
-#endif
 }
 
 void SOCPS_NVICReFill(struct CPU_BackUp_TypeDef *bk, SysTick_Type *systick, NVIC_Type *nvic, SCB_Type *scb)
@@ -60,9 +58,7 @@ void SOCPS_NVICReFill(struct CPU_BackUp_TypeDef *bk, SysTick_Type *systick, NVIC
 	nvic->ISER[1] = bk->NVICbackup_HP[1];
 	nvic->ISER[2] = bk->NVICbackup_HP[2];
 
-#if defined(__VTOR_PRESENT) && (__VTOR_PRESENT == 1)
 	scb->VTOR = bk->SCBbackup_HP[0];
-#endif
 }
 
 void SOCPS_MPUBackup(struct CPU_BackUp_TypeDef *bk, MPU_Type *mpu)

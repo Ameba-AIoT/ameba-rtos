@@ -636,7 +636,7 @@ uint16_t bt_stack_a2dp_init(uint8_t role)
 
 void bt_stack_a2dp_deinit(void)
 {
-	BT_LOGA("[A2DP]app_a2dp_init\n");
+	BT_LOGA("[A2DP]app_a2dp_deinit\n");
 	bt_a2dp_deinit();
 }
 

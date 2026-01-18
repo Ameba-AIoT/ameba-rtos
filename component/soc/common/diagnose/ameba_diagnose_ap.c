@@ -13,6 +13,9 @@ static u8 g_initialized = 0;
 static rtos_mutex_t g_ipc_mutex = NULL;
 static RtkDiagAtCmd_t g_at_cmd;
 u8 g_diag_debug_log_state;
+rtk_diag_sender_t g_diag_sender = NULL;
+RtkDiagDataFrame_t *g_using_frame_buffer = NULL;
+u16 g_using_frame_buffer_capacity = 0;
 
 SRAM_NOCACHE_DATA_SECTION
 static volatile RtkDiagIpcMsg_t g_diag_ipc_msg = {0};
@@ -22,13 +25,15 @@ int rtk_diag_init(u16 heap_capacity, u16 sender_buffer_size)
 	//NOTE: These two parameter work in NP side, here just for using uniform API
 	UNUSED(heap_capacity);
 	UNUSED(sender_buffer_size);
-#ifdef DIAG_DEBUG_TEST
-	void rtk_diag_debug_create_task(void);
-	rtk_diag_debug_create_task();
-#endif
 	if (g_initialized == 1) {
 		return RTK_SUCCESS;
 	}
+#ifdef DIAG_DEBUG_TASK
+	void rtk_diag_debug_create_task(void);
+	rtk_diag_debug_create_task();
+#endif
+
+	g_diag_sender = rtk_diag_uart_send;
 
 	if (rtos_mutex_create(&g_ipc_mutex) != RTK_SUCCESS) {
 		RTK_LOGA("DIAG", "Failed to create mutex in AP\n");
@@ -56,9 +61,29 @@ static int rtk_diag_ipc_status_get(void)
 
 static void rtk_diag_ipc_status_set(int flag)
 {
-	// __disable_irq();
 	g_diag_ipc_msg.flag = flag;
-	// __enable_irq();
+}
+
+static int rtk_diag_ipc_send_raw(u32 addr, u32 size, u8 type)
+{
+	IPC_MSG_STRUCT ipc_event_msg = {0};
+	u32 timeout = RTK_DIAG_IPC_WAIT_TIMEOUT;
+
+	DCache_Clean(addr, size);
+	g_diag_ipc_msg.addr = addr;
+	g_diag_ipc_msg.size = size;
+	g_diag_ipc_msg.type = type;
+	ipc_event_msg.msg = (u32)&g_diag_ipc_msg;
+	rtk_diag_ipc_status_set(RTK_DIAG_IPC_WAIT_RESPONSE);
+	DCache_Clean((u32)&g_diag_ipc_msg, sizeof(RtkDiagIpcMsg_t));
+	ipc_send_message(DIAG_IPC_DIR, DIAG_IPC_CHANNEL, &ipc_event_msg);
+	while (timeout--) {
+		DCache_Invalidate((u32)&g_diag_ipc_msg, sizeof(RtkDiagIpcMsg_t));
+		if (rtk_diag_ipc_status_get() != RTK_DIAG_IPC_WAIT_RESPONSE) {
+			return RTK_SUCCESS;
+		}
+	}
+	return RTK_ERR_TIMEOUT;
 }
 
 static int rtk_diag_ipc_send(u32 addr, u32 size, u8 type)
@@ -67,44 +92,49 @@ static int rtk_diag_ipc_send(u32 addr, u32 size, u8 type)
 		return RTK_ERR_BUSY;
 	}
 
-	DCache_Clean(addr, size);
-
-	g_diag_ipc_msg.addr = addr;
-	g_diag_ipc_msg.size = size;
-	g_diag_ipc_msg.type = type;
-
-	IPC_MSG_STRUCT ipc_event_msg = {0};
-	ipc_event_msg.msg = (u32)&g_diag_ipc_msg;
-
-	rtk_diag_ipc_status_set(RTK_DIAG_IPC_WAIT_RESPONSE);
-	DCache_Clean((u32)&g_diag_ipc_msg, sizeof(RtkDiagIpcMsg_t));
-	ipc_send_message(DIAG_IPC_DIR, DIAG_IPC_CHANNEL, &ipc_event_msg);
-	//timeout handle
-	u32 timeout = RTK_DIAG_IPC_WAIT_TIMEOUT;
-	int ret = RTK_ERR_TIMEOUT;
-	while (timeout--) {
-		DCache_Invalidate((u32)&g_diag_ipc_msg, sizeof(RtkDiagIpcMsg_t));
-		ret = rtk_diag_ipc_status_get();
-		if (ret != RTK_DIAG_IPC_WAIT_RESPONSE) {
-			break;
-		}
-	}
-	if (g_diag_debug_log_state) {
-		RTK_LOGA("DIAG", "ap ipc: addr = %x, size = %d, ret = %d, timeout = %u\n", g_diag_ipc_msg.addr, g_diag_ipc_msg.size, ret, timeout);
+	int ret = rtk_diag_ipc_send_raw(addr, size, type);
+	if (ret == RTK_SUCCESS && type == RTK_DIAG_IPC_MSG_TYPE_ATCMD) {
+		/* Only atcmd msg need to response with protocal */
+		DCache_Invalidate((u32)g_using_frame_buffer, g_using_frame_buffer_capacity);
+		ret = g_diag_sender((const u8 *)g_using_frame_buffer, RTK_DIAG_FRAME_STRUCTURE_REAL_SIZE(g_using_frame_buffer));
 	}
 	rtos_mutex_give(g_ipc_mutex);
 	return ret;
 }
 
+int rtk_diag_config_transform(rtk_diag_sender_t sender, u8 *sender_buffer, u16 sender_buffer_size)
+{
+	int ret = RTK_SUCCESS;
+	if (rtos_mutex_take(g_ipc_mutex, MUTEX_WAIT_TIMEOUT) != RTK_SUCCESS) {
+		return RTK_ERR_BUSY;
+	}
+	g_diag_sender = sender == NULL ? rtk_diag_uart_send : sender;
+	if (sender_buffer) {
+		if (sender_buffer_size < RTK_DIAG_SEND_BUFFER_SIZE_MIN) {
+			RTK_LOGA("DIAG", "buf cap(%u) must > %u\n", sender_buffer_size, RTK_DIAG_SEND_BUFFER_SIZE_MIN);
+			ret = RTK_ERR_DIAG_TOO_SMALL_BUFF;
+			goto end;
+		}
+		if ((RtkDiagDataFrame_t *)sender_buffer == g_using_frame_buffer && g_using_frame_buffer_capacity == sender_buffer_size) {
+			ret =  RTK_SUCCESS;
+			goto end;
+		}
+		g_using_frame_buffer = (RtkDiagDataFrame_t *)sender_buffer;
+		g_using_frame_buffer_capacity = sender_buffer_size;
+	}
+	ret = rtk_diag_ipc_send_raw((u32)g_using_frame_buffer, g_using_frame_buffer_capacity, RTK_DIAG_IPC_MSG_TYPE_CONFIG);
+end:
+	rtos_mutex_give(g_ipc_mutex);
+	return ret;
+}
+
+bool rtk_diag_transform_has_configed(void)
+{
+	return g_diag_sender && g_using_frame_buffer;
+}
+
 int rtk_diag_event_add(u8 evt_level, u16 evt_type, const u8 *evt_info, u16 evt_len)
 {
-#ifdef CONFIG_AMEBAD
-	UNUSED(evt_level);
-	UNUSED(evt_type);
-	UNUSED(evt_info);
-	UNUSED(evt_len);
-	return RTK_SUCCESS;
-#else
 	u32 ts = rtos_time_get_current_system_time_ms();//get ts as quick as possible
 
 	RtkDiagEvent_t *event = (RtkDiagEvent_t *)rtos_mem_malloc(sizeof(RtkDiagEvent_t) + evt_len);
@@ -120,46 +150,35 @@ int rtk_diag_event_add(u8 evt_level, u16 evt_type, const u8 *evt_info, u16 evt_l
 	int ret = rtk_diag_ipc_send((u32)event, sizeof(RtkDiagEvent_t) + evt_len, RTK_DIAG_IPC_MSG_TYPE_EVT_ADD);
 	rtos_mem_free(event);
 	return ret;
-#endif
-}
-
-static int rtk_diag_req_low(u8 cmd, const u8 *payload, u16 payload_length)
-{
-	RtkDiagDataFrame_t *frame = (RtkDiagDataFrame_t *)rtos_mem_malloc(sizeof(RtkDiagDataFrame_t) + payload_length + 1);
-	if (NULL == frame) {
-		return RTK_ERR_DIAG_MALLOC;
-	}
-	frame->header = RTK_DIAG_FRAME_HEADER;
-	frame->size = payload_length + 1;
-	frame->cmd = cmd;
-	_memcpy(frame->payload, payload, payload_length);
-	u8 check_sum = frame->cmd;
-	for (int i = 0; i < frame->size - 1; i++) {
-		check_sum ^= frame->payload[i];
-	}
-	frame->payload[frame->size - 1] = check_sum;
-	int res = rtk_diag_uart_send(frame);
-	rtos_mem_free(frame);
-	return res;
 }
 
 int rtk_diag_req_timestamp(void)
 {
 	u32 tm = rtos_time_get_current_system_time_ms();
-	return rtk_diag_req_low(RTK_DIAG_CMD_TYPE_OSTIME, (u8 *)&tm, sizeof(tm));
+	return rtk_diag_req_low(RTK_DIAG_CMD_TYPE_OSTIME, (u8 *)&tm, sizeof(tm), 0);
 }
 
 int rtk_diag_req_version(void)
 {
 	extern const char *g_rtk_diag_format_hash;
-	return rtk_diag_req_low(RTK_DIAG_CMD_TYPE_VER, (u8 *)g_rtk_diag_format_hash, strlen(g_rtk_diag_format_hash));
+	return rtk_diag_req_low(RTK_DIAG_CMD_TYPE_VER, (u8 *)g_rtk_diag_format_hash, strlen(g_rtk_diag_format_hash), 0);
 }
 
-int rtk_diag_req_set_buf_com_capacity(u16 capacity)
+int rtk_diag_req_set_buf_com_capacity(u8 *sender_buffer, u16 capacity)
 {
-	g_at_cmd.type = RTK_DIAG_CMD_TYPE_BUFFER;
-	g_at_cmd.capacity = capacity;
-	return rtk_diag_ipc_send((u32)&g_at_cmd, sizeof(RtkDiagAtCmd_t), RTK_DIAG_IPC_MSG_TYPE_ATCMD);
+	int ret = RTK_SUCCESS;
+	if (sender_buffer) {
+		if (g_using_frame_buffer != (RtkDiagDataFrame_t *)sender_buffer || g_using_frame_buffer_capacity != capacity) {
+			g_using_frame_buffer = (RtkDiagDataFrame_t *)sender_buffer;
+			g_using_frame_buffer_capacity = capacity;
+			rtk_diag_ipc_send((u32)g_using_frame_buffer, g_using_frame_buffer_capacity, RTK_DIAG_IPC_MSG_TYPE_CONFIG);
+		}
+		rtk_diag_req_low(RTK_DIAG_CMD_TYPE_BUFFER, (u8 *)&capacity, sizeof(capacity), 0);
+	} else {
+		ret = capacity < RTK_DIAG_SEND_BUFFER_SIZE_MIN ? RTK_ERR_DIAG_TOO_SMALL_BUFF : RTK_ERR_DIAG_MALLOC;
+		rtk_diag_req_low(RTK_DIAG_CMD_TYPE_BUFFER, NULL, 0, ret);
+	}
+	return ret;
 }
 
 int rtk_diag_req_set_buf_evt_capacity(u16 capacity)
@@ -168,13 +187,6 @@ int rtk_diag_req_set_buf_evt_capacity(u16 capacity)
 	g_at_cmd.capacity = capacity;
 	return rtk_diag_ipc_send((u32)&g_at_cmd, sizeof(RtkDiagAtCmd_t), RTK_DIAG_IPC_MSG_TYPE_ATCMD);
 }
-
-// int rtk_diag_req_set_buf_evt_pool_capacity(u16 capacity)
-// {
-//   g_at_cmd.type = RTK_DIAG_CMD_TYPE_HEAP;
-//   g_at_cmd.capacity = capacity;
-//   return rtk_diag_ipc_send((u32)&g_at_cmd, sizeof(RtkDiagAtCmd_t), RTK_DIAG_IPC_MSG_TYPE_ATCMD);
-// }
 
 int rtk_diag_req_get_event(u32 timestamp, u16 offset)
 {

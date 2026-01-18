@@ -168,11 +168,12 @@ exit:
 	rtos_mem_free(EfuseBuf);
 }
 
-log_item_t at_otp_items[] = {
-	{"+OTP", at_otp, {NULL, NULL}},
+ATCMD_TABLE_DATA_SECTION
+const log_item_t at_otp_items[] = {
+	{"+OTP", at_otp},
 };
 
 void at_otp_init(void)
 {
-	atcmd_service_add_table(at_otp_items, sizeof(at_otp_items) / sizeof(at_otp_items[0]));
+	atcmd_service_add_table((log_item_t *)at_otp_items, sizeof(at_otp_items) / sizeof(at_otp_items[0]));
 }

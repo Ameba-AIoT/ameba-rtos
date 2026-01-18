@@ -296,7 +296,7 @@ retry:
 		}
 
 		/* check RX_REQ level */
-		if (GPIO_ReadDataBit(RX_REQ_PIN)) {
+		if (GPIO_ReadDataBit(DEV_TX_REQ_PIN)) {
 			rtos_sema_take(spi_host_priv.host_recv_done, MUTEX_WAIT_TIMEOUT);
 			spi_host_priv.host_dma_waiting_status = HOST_RX_DMA_CB_DONE | HOST_TX_DMA_CB_DONE;
 
@@ -335,7 +335,7 @@ static int whc_spi_host_devrdy_handler(int irq, void *context)
 	return 1; //IRQ_HANDLED;
 }
 
-static int whc_spi_host_rx_req_handler(int irq, void *context)
+static int whc_spi_host_dev_txreq_handler(int irq, void *context)
 {
 	(void)irq;
 	(void)context;
@@ -352,14 +352,14 @@ static void whc_spi_host_setup_gpio(void)
 	InterruptEn(GPIOB_IRQ, 6);
 
 	/* Initialize GPIO */
-	/* rx req only need rising */
-	GPIO_InitStruct.GPIO_Pin = RX_REQ_PIN;
+	/* tx req only need rising */
+	GPIO_InitStruct.GPIO_Pin = DEV_TX_REQ_PIN;
 	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
 	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_INT;
 	GPIO_InitStruct.GPIO_ITTrigger = GPIO_INT_Trigger_EDGE;
 	GPIO_InitStruct.GPIO_ITPolarity = GPIO_INT_POLARITY_ACTIVE_HIGH;
 	GPIO_Init(&GPIO_InitStruct);
-	GPIO_UserRegIrq(GPIO_InitStruct.GPIO_Pin, whc_spi_host_rx_req_handler, &GPIO_InitStruct);
+	GPIO_UserRegIrq(GPIO_InitStruct.GPIO_Pin, whc_spi_host_dev_txreq_handler, &GPIO_InitStruct);
 	GPIO_INTConfig(GPIO_InitStruct.GPIO_Pin, ENABLE);
 
 	/* dev ready need both edge */

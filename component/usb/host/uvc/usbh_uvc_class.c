@@ -157,22 +157,17 @@ static int usbh_uvc_detach(usb_host_t *host)
 static int usbh_uvc_setup(usb_host_t *host)
 {
 	int status = HAL_BUSY;
-	int i, retry_cnt;
+	int i;
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_stream_t *stream;
 
 	for (i = 0; i < uvc->uvc_desc.vs_num; i ++) {
-		retry_cnt = 0;
 		stream = &uvc->stream[i];
+
 		do {
 			status = usbh_ctrl_set_interface(host, stream->cur_setting.bInterfaceNumber, 0);
-			if (status == HAL_OK) {
-				break;
-			} else {
-				retry_cnt++;
-				usb_os_sleep_ms(10);
-			}
-		} while (retry_cnt < 10);
+			rtos_time_delay_ms(1);
+		} while (status == HAL_BUSY);
 
 		if (status != HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Setup err\n");

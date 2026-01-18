@@ -92,6 +92,7 @@ if [[ "$1" == "sdio" ]]; then
         4)
             echo "AMEBAX select"
             sed -i 's/#undef CONFIG_AMEBAGREEN2/#define CONFIG_AMEBAGREEN2 1/g' ./common/autoconf.h
+			sed -i 's/#undef GREEN2_WA/#define GREEN2_WA 1/g' ./common/autoconf.h
             ;;
 
         *)

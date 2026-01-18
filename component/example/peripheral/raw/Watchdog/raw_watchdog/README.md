@@ -41,7 +41,7 @@ Build and Download:
 # Note
 
 * WDG support window protection, refresh between [window - reload] will reset the system.
-* IWDG can only trigger global reset which reset whole chip, other watchdogs can trigger global reset or cpu reset in AmebaLite.
+* IWDG can only trigger global reset which reset whole chip, other watchdogs can trigger global reset or cpu reset in RTL8726E/RTL8720E/RTL8713E/RTL8710E.
 * IWDG may be enabled by HW, so window protection cannot be enabled again for IWDG already enabled.
 
 # Supported IC

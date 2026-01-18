@@ -35,15 +35,22 @@ static void FLASH_PLLInit_ClockDiv(void)
 	u32 sys_pll_clk = RRAM_DEV->clk_info_bk.SYSPLL_CLK;
 
 	/* set spic clock src and div */
-	spic_ckd = PLL_ClkSrcGet(sys_pll_clk, usb_pll_clk, CLK_LIMIT_SPIC);
+
+	/* SPIC work in this clock will effect RF performance*/
+	if (sys_pll_clk == PLL_393P216M) {
+		spic_ckd = PLL_ClkSrcGet(PLL_NONE, usb_pll_clk, CLK_LIMIT_SPIC);
+	} else {
+		spic_ckd = PLL_ClkSrcGet(sys_pll_clk, usb_pll_clk, CLK_LIMIT_SPIC);
+	}
+
 	if (spic_ckd & IS_SYS_PLL) {
 		RCC_PeriphClockDividerSet(SYS_PLL_SPIC, GET_CLK_DIV(spic_ckd));
 		RCC_PeriphClockSourceSet(SPIC, SYS_PLL);
-		RTK_LOGI(TAG, "SPIC CLK: %d Hz\n", sys_pll_clk / GET_CLK_DIV(spic_ckd));
+		RTK_LOGI(TAG, "FLASH CLK: %d Hz\n", sys_pll_clk / (2 * GET_CLK_DIV(spic_ckd)));
 	} else {
 		RCC_PeriphClockDividerSet(USB_PLL_SPIC, GET_CLK_DIV(spic_ckd));
 		RCC_PeriphClockSourceSet(SPIC, USB_PLL);
-		RTK_LOGI(TAG, "SPIC CLK: %d Hz\n", usb_pll_clk / GET_CLK_DIV(spic_ckd));
+		RTK_LOGI(TAG, "FLASH CLK: %d Hz\n", usb_pll_clk / (2 * GET_CLK_DIV(spic_ckd)));
 	}
 
 	/* save spic clock para into retention memory */

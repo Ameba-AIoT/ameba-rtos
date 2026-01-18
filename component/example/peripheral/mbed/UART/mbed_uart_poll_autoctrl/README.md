@@ -6,25 +6,25 @@ This example describes how to UART auto-flow-control function.
 
 Required Components: another peer device.
 
-* On AmebaSmart
+* On RTL8730E
 	- Connect `UART_TX(_PA_3)` to `UART_RX(_PA_2)` of peer device
 	- Connect `UART_RX(_PA_2)` to `UART_TX(_PA_3)` of peer device
 	- Connect `UART_RTS(_PA_5)` to `UART_CTS(_PA_4)` of peer device
 	- Connect `UART_CTS(_PA_4)` to `UART_RTS(_PA_5)` of peer device
 	- Connect `GND` to `GND` of peer device
-* On AmebaLite
+* On RTL8726E/RTL8720E/RTL8713E/RTL8710E
 	- Connect `UART_TX(_PA_28)` to `UART_RX(_PA_29)` of peer device
 	- Connect `UART_RX(_PA_29)` to `UART_TX(_PA_28)` of peer device
 	- Connect `UART_RTS(_PA_30)` to `UART_CTS(_PA_31)` of peer device
 	- Connect `UART_CTS(_PA_31)` to `UART_RTS(_PA_30)` of peer device
 	- Connect `GND` to `GND` of peer device
-* On AmebaDplus
+* On RTL8721Dx
 	- Connect `UART_TX(_PB_17)` to `UART_RX(_PB_18)` of peer device
 	- Connect `UART_RX(_PB_18)` to `UART_TX(_PB_17)` of peer device
 	- Connect `UART_RTS(_PB_19)` to `UART_CTS(_PB_20)` of peer device
 	- Connect `UART_CTS(_PB_20)` to `UART_RTS(_PB_19)` of peer device
 	- Connect `GND` to `GND` of peer device
-* On AmebaGreen2
+* On RTL8721F
 	- Connect `UART_TX(_PA_18)` to `UART_RX(_PA_19)` of peer device
 	- Connect `UART_RX(_PA_19)` to `UART_TX(_PA_18)` of peer device
 	- Connect `UART_RTS(_PA_25)` to `UART_CTS(_PA_26)` of peer device
@@ -52,13 +52,13 @@ By default, `UART0` is used to transmit or receive `1000` data to or from anothe
 
 # Note
 
-* On AmebaSmart
+* On RTL8730E
 	- Only `UART0/1/2` are designed with RTS/CTS pins.
-* On AmebaLite
+* On RTL8726E/RTL8720E/RTL8713E/RTL8710E
 	- Only `UART0/3` are designed with RTS/CTS pins.
-* On AmebaDplus
+* On RTL8721Dx
 	- Only `UART0/2` are designed with RTS/CTS pins.
-* On AmebaGreen2
+* On RTL8721F
 	- Only `UART0/3` are designed with RTS/CTS pins.
 
 # Supported IC

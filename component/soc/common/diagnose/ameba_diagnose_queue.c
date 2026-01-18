@@ -34,10 +34,12 @@ u32 rtk_diag_element_length_callback(void *data)
 static void rtk_diag_heap_element_remove_callback(void *data)
 {
 	RtkDiagEvent_t *event = (RtkDiagEvent_t *)data;
-	//NOTE: 两种情况会触发该回调:
-	//  1. rtk_diag_heap_malloc触发: 小事件的heap满了, 要overwrite event了, 此时需要从queue中将其及其之前的event都删掉, 此时其前面的event理论上应该都是big event
-	//  2. rtk_diag_heap_free触发: enqueue时总内存使用达到了total_capacity, 需要持续释放空间直到足够添加新event, 此时是由rtk_diag_heap_free
-	//  正常情况下队列中一定有该event, 且该event前面的节点存储的一定是big event
+	/* NOTE: This callback will be involked in two cases:
+	 *  1. by rtk_diag_heap_malloc: when little event will be overwrite because heap is full,
+	 *      so all events(including this one, they should be big event) will be deleted
+	 *  2. by rtk_diag_heap_free: when total mem usage meet total_capacity,
+	 *      so space need to be freed until enough to store new event
+	 */
 	RtkDiagEvent_t *tmp_evt;
 	while (1) {
 		tmp_evt = rtk_diag_ring_array_pop(g_handler->evt_node_arr);
@@ -63,6 +65,7 @@ void rtk_diag_deleted_event_emplace_callback(void *address, const void *data)
 
 int rtk_diag_queue_init(u16 heap_capacity, u16 total_capacity)
 {
+	int ret = RTK_SUCCESS;
 	//init queue handler
 	g_handler = (RtkDiagQueueHandler_t *)rtos_mem_malloc(sizeof(RtkDiagQueueHandler_t));
 	if (NULL == g_handler) {
@@ -75,9 +78,8 @@ int rtk_diag_queue_init(u16 heap_capacity, u16 total_capacity)
 							  rtk_diag_element_length_callback,
 							  rtk_diag_heap_element_remove_callback);
 	if (NULL == g_handler->heap_handler) {
-		rtos_mem_free(g_handler);
-		g_handler = NULL;
-		return RTK_ERR_DIAG_UNINIT;
+		ret = RTK_ERR_DIAG_UNINIT;
+		goto end3;
 	}
 
 	//init deleted_evt_arr
@@ -85,32 +87,33 @@ int rtk_diag_queue_init(u16 heap_capacity, u16 total_capacity)
 								 sizeof(RtkDiagDeletedEvent_t),
 								 rtk_diag_deleted_event_emplace_callback);
 	if (NULL == g_handler->deleted_evt_arr) {
-		rtk_diag_heap_destroy(g_handler->heap_handler);
-		rtos_mem_free(g_handler);
-		g_handler = NULL;
-		return RTK_ERR_DIAG_UNINIT;
+		ret = RTK_ERR_DIAG_UNINIT;
+		goto end2;
 	}
 	//init evt_node_arr
 	g_handler->evt_node_arr = rtk_diag_ring_array_create(total_capacity / sizeof(RtkDiagEvent_t),
 							  sizeof(RtkDiagEvent_t *), NULL);
 	if (NULL == g_handler->evt_node_arr) {
-		rtk_diag_ring_array_destroy(g_handler->deleted_evt_arr);
-		rtk_diag_heap_destroy(g_handler->heap_handler);
-		rtos_mem_free(g_handler);
-		g_handler = NULL;
-		return RTK_ERR_DIAG_UNINIT;
+		ret = RTK_ERR_DIAG_UNINIT;
+		goto end1;
 	}
 
-	g_handler->total_size = heap_capacity; //小事件的固定heap整个大小计入统计
-	g_handler->total_capacity = total_capacity; //事件总内存使用上限
+	g_handler->total_size = heap_capacity; 			//add fixed heap size of little event
+	g_handler->total_capacity = total_capacity; //total memory limit of event
 	return RTK_SUCCESS;
+
+end1:
+	rtk_diag_ring_array_destroy(g_handler->deleted_evt_arr);
+end2:
+	rtk_diag_heap_destroy(g_handler->heap_handler);
+end3:
+	rtos_mem_free(g_handler);
+	g_handler = NULL;
+	return ret;
 }
 
 void rtk_diag_queue_deinit(void)
 {
-	if (NULL == g_handler) {
-		return;
-	}
 	//destroy g_handler
 	rtk_diag_queue_clear();
 	rtk_diag_ring_array_destroy(g_handler->deleted_evt_arr);
@@ -124,7 +127,7 @@ int rtk_diag_queue_set_total_capacity(u16 total_capacity)
 {
 	if (total_capacity > rtk_diag_heap_get_capacity(g_handler->heap_handler) + RTK_DIAG_LITTLE_EVENT_THRESHOLD + sizeof(RtkDiagEvent_t)) {
 		//WARNING: MUST larger than fix-sized heap capacity + one big event(smallest)
-		RTK_LOGA("DIAG", "Change total capacity from %u to %u\n", g_handler->total_capacity, total_capacity);
+		RTK_LOGA("DIAG", "Change total cap from %u to %u\n", g_handler->total_capacity, total_capacity);
 		g_handler->total_capacity = total_capacity;
 		return RTK_SUCCESS;
 	}
@@ -141,7 +144,7 @@ u16 rtk_diag_queue_get_total_capacity(void)
 int rtk_diag_queue_enqueue(u32 timestamp, u8 evt_level, u16 evt_type, const u8 *evt_info, u16 evt_len)
 {
 	if (g_diag_debug_log_state) {
-		RTK_LOGA("DIAG", "Diag event add: %u, %u, %u\n", timestamp, evt_level, evt_type);
+		RTK_LOGA("DIAG", "evt add: %u, %u, %u\n", timestamp, evt_level, evt_type);
 	}
 
 	if (evt_len > RTK_DIAG_BIT_EVENT_THRESHOLD) {
@@ -150,7 +153,7 @@ int rtk_diag_queue_enqueue(u32 timestamp, u8 evt_level, u16 evt_type, const u8 *
 
 	u32 event_len = sizeof(RtkDiagEvent_t) + evt_len;
 	if (evt_len > RTK_DIAG_LITTLE_EVENT_THRESHOLD) {
-		//大事件需要检查是否超过允许的最大内存使用空间, 小事件不用检查, 因为其整个heap已经被计算在内了
+		//Check whether the comming big event meet the total limit(little event is uncessary because its fixed heap is already added)
 		RtkDiagEvent_t *tmp_evt = NULL;
 		while (rtk_diag_ring_array_size(g_handler->evt_node_arr) > 0 && g_handler->total_size + event_len > g_handler->total_capacity) {
 			tmp_evt = (RtkDiagEvent_t *)rtk_diag_ring_array_pop(g_handler->evt_node_arr);
@@ -162,7 +165,7 @@ int rtk_diag_queue_enqueue(u32 timestamp, u8 evt_level, u16 evt_type, const u8 *
 				rtos_mem_free(tmp_evt);
 			} else {
 				//WARNING: should not come here!!!
-				assert_param(1);
+				assert_param(0);
 			}
 		}
 	}
@@ -211,11 +214,12 @@ RtkDiagEvent_t *rtk_diag_queue_dequeue(void)
 		event = (RtkDiagEvent_t *)rtos_mem_malloc(sizeof(RtkDiagEvent_t) + tmp_event->evt_len);
 		_memcpy(event, tmp_event, sizeof(RtkDiagEvent_t) + tmp_event->evt_len);
 		rtk_diag_heap_free(g_handler->heap_handler); //release memory in static heap
-	} else if (event->evt_len <= RTK_DIAG_BIT_EVENT_THRESHOLD) {
+	} else if (tmp_event->evt_len <= RTK_DIAG_BIT_EVENT_THRESHOLD) {
 		//NOTE: shallow copy when use system heap
+		event = tmp_event;
 	} else {
 		//WARNING: should not come here!!!
-		assert_param(1);
+		assert_param(0);
 	}
 	return event;
 }
@@ -231,7 +235,7 @@ int rtk_diag_queue_clear(void)
 			rtos_mem_free(event);
 		} else {
 			//WARNING: should not come here!!!
-			assert_param(1);
+			assert_param(0);
 		}
 	}
 	return RTK_SUCCESS;
@@ -253,7 +257,7 @@ int rtk_diag_queue_del_before(u32 timestamp, u16 *count)
 			rtos_mem_free(tmp_event);
 		} else {
 			//WARNING: should not come here!!!
-			assert_param(1);
+			assert_param(0);
 		}
 		(void)rtk_diag_ring_array_pop(g_handler->evt_node_arr);
 		(*count)++;
@@ -274,7 +278,7 @@ int rtk_diag_queue_del_after(u32 timestamp, u16 *count)
 			rtos_mem_free(tmp_event);
 		} else {
 			//WARNING: should not come here!!!
-			assert_param(1);
+			assert_param(0);
 		}
 		(void)rtk_diag_ring_array_pop(g_handler->evt_node_arr);
 		(*count)++;
@@ -292,8 +296,8 @@ int rtk_diag_queue_clr_del_list(void)
 	return rtk_diag_ring_array_clear(g_handler->deleted_evt_arr);
 }
 
-//入参*offset是timestamp下所有数据拼接起来的offset, 也是数据传输协议中的offset
-//函数执行完毕后修改*offset为全局offset下对应到返回event中的offset(局部)
+// Input: *offset is the concatenated offset of all data with the timestamp (also the offset in the data transfer protocol)
+// After execution: modify *offset to the local offset corresponding to the returned event under the global offset
 const RtkDiagEvent_t *rtk_diag_queue_find(u32 timestamp, u16 *global_offset, u16 *local_offset, int *result)
 {
 	*result = RTK_SUCCESS;
@@ -308,7 +312,7 @@ const RtkDiagEvent_t *rtk_diag_queue_find(u32 timestamp, u16 *global_offset, u16
 	g_handler->prev_find_node = index;
 	/*--------------------------------------------------*/
 	//>>> When: tmp_node->event->evt_time < timestamp
-	//请求的timestamp太新(Spec3.3.1, 所有event都已经发送完毕), 没有event满足(或者queue本就是空的)
+	// Requested timestamp is too new (Spec3.3.1: all events have been sent), no matching events (or the queue is empty)
 	if (index == rtk_diag_ring_array_size(g_handler->evt_node_arr)) {
 		//timestamp is newer than any event in nodes
 		*result = RTK_ERR_DIAG_EVT_NO_MORE;
@@ -319,7 +323,7 @@ const RtkDiagEvent_t *rtk_diag_queue_find(u32 timestamp, u16 *global_offset, u16
 
 	/*--------------------------------------------------*/
 	//>>> When: tmp_node->event->evt_time > timestamp
-	//请求的timestamp下所有event都已经被删除或timestamp为0
+	// All events with the requested timestamp have been deleted, or the timestamp is 0
 	if (tmp_event->evt_time > timestamp) {
 		//Spec 3.4.4, 3.4.7, Spec 3.4.6 case 2
 		*global_offset = 0;
@@ -330,37 +334,41 @@ const RtkDiagEvent_t *rtk_diag_queue_find(u32 timestamp, u16 *global_offset, u16
 
 	/*--------------------------------------------------*/
 	//--- When: tmp_node->event->evt_time == timestamp
-	//tmp_node此时是队列中timestamp下的第一个event(最早的一个)
+	// tmp_node is the first (earliest) event with the timestamp in the queue now
 	u16 total_offset = 0;
-	//计算目标时间戳(timestamp)下被删除的event的offset总和
+	// Calculate the total offset of deleted events with the target timestamp
 	for (u32 i = 0; i < rtk_diag_ring_array_size(g_handler->deleted_evt_arr); ++i) {
 		const RtkDiagDeletedEvent_t *del_event = rtk_diag_ring_array_view(g_handler->deleted_evt_arr, i);
 		if (del_event->evt_time == timestamp) {
 			total_offset += RTK_DIAG_EVENT_STRUCTURE_REAL_SIZE(del_event);
 		} else if (del_event->evt_time > timestamp) {
 			//Should not go here
-			assert_param(1);
+			assert_param(0);
 		}
 	}
 
 	if (*global_offset < total_offset) {
 		//Spec 3.4.6 case 1, spec 3.4.8
-		//请求的event已经被删除, 直接上报timestamp下最头部(最早)的event
+		// The requested event has been deleted; directly report the top (earliest) event with the timestamp
 		*global_offset = total_offset;
 		*local_offset = 0;
 		return tmp_event;
 	} else if (*global_offset == total_offset) {
-		//请求的event刚好是timestamp下最头部(最早)的event
+		// The requested event is exactly the top (earliest) event with the timestamp
 		*global_offset = total_offset;
 		*local_offset = 0;
 		return tmp_event;
 	} else {
-		//请求的event还在, 根据offset将其找到, 注意global_offset不一定正好卡在event边界上, 因为大event分片传输, 此时global_offset可能在event内部
+		/* The requested event still exists; locate it by offset. Note: global_offset may not align
+		 * exactly with event boundaries (large events are transmitted in fragments,
+		 * so global_offset could be inside an event)
+		 */
 		u32 tmp_total_offset = total_offset;
 		while (index < rtk_diag_ring_array_size(g_handler->evt_node_arr) && tmp_event->evt_time == timestamp) {
 			tmp_total_offset = total_offset + RTK_DIAG_EVENT_STRUCTURE_REAL_SIZE(tmp_event);
 			if (tmp_total_offset > *global_offset) {
-				*local_offset = *global_offset - total_offset; //更新请求的offset在目标event中的分片偏移量
+				/** Update the fragment offset of the requested offset in the target event */
+				*local_offset = *global_offset - total_offset;
 				break;
 			}
 			total_offset = tmp_total_offset;
@@ -371,20 +379,34 @@ const RtkDiagEvent_t *rtk_diag_queue_find(u32 timestamp, u16 *global_offset, u16
 
 		if (index == rtk_diag_ring_array_size(g_handler->evt_node_arr)) {
 			assert_param(*global_offset == total_offset);
-			//队列中最尾部(最新)的event正是timestamp, 说明所有event已经发送完毕
+			/**
+			 * The last (newest) event in the queue is exactly the timestamp,
+			 * indicating all events have been sent completely
+			 */
 			*result = RTK_ERR_DIAG_EVT_NO_MORE;
 			g_handler->prev_find_node = INVALID_EVENT_NODE;
 			return NULL;
 		} else {
 			if (tmp_event->evt_time != timestamp) {
-				//遍历完timestamp下所有的event还是找不到对应的offset, 此时选择发送下一个timestamp的event
-				*global_offset = 0;  //下一个timestamp的中的event肯定还未被删除过, 因为timestamp的event还有在队列中, 肯定是更早的先被删除
+				/**
+				 * After iterating all events with the timestamp, the corresponding offset
+				 * is still not found; send the event of the next timestamp in this case
+				 */
+
+				/**
+				 * Events with the next timestamp must not have been deleted yet,
+				 * because events with the current timestamp still exist in the queue
+				 * (earlier events are always deleted first)
+				 */
+				*global_offset = 0;
 				*local_offset = 0;
 				return tmp_event;
 			} else {
-				//找到了真正请求的event:
-				// *global_offset 保持原来的值
-				// 这里 *local_offset 是在上面的while循环中更新好的
+				/**
+				 * Found the actual requested event:
+				 *   - *global_offset remains its original value
+				 *   - *local_offset has been updated in the while loop above
+				 */
 				return tmp_event;
 			}
 		}

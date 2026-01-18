@@ -28,3 +28,11 @@ void TZ_ConfigSlaveSecurity(PPC_PeripheralId Perip, u32 Status)
 		PPC_REG[Perip / U32_BITS] |= BIT(Perip % U32_BITS);
 	}
 }
+
+void TZ_tfm_platform_pmc_bkup(void)
+{
+#ifdef CONFIG_RDP_TFM
+	int32_t tfm_platform_pmc_bkup(void);
+	tfm_platform_pmc_bkup();
+#endif
+}

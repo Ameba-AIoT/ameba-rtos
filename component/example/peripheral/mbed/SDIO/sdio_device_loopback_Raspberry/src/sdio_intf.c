@@ -230,7 +230,7 @@ static int rtk_sdio_probe(struct sdio_func *func, const struct sdio_device_id *i
 	//rtw_write8(padapter, SDIO_REG_HRPWM, BIT1|BIT0);
 
 #ifdef FW_DOWNLOAD
-	/* image download, amebadplus not support yet */
+	/* image download, RTL8721Dx not support yet */
 	//RL7005_FirmwareDownload(padapter);
 #endif
 
@@ -298,12 +298,16 @@ static void rtk_sdio_remove(struct sdio_func *func)
 }
 
 static const struct sdio_device_id sdio_ids[] = {
-	{ SDIO_DEVICE(0x024c, 0x8721)}, 							//amebad
-	{ SDIO_DEVICE(0x024c, 0x8722)}, 							//amebadplus
+	{ SDIO_DEVICE(0x024c, 0x8721)}, 							// RTL872xD
+	{ SDIO_DEVICE(0x024c, 0x8722)}, 							// RTL8721Dx
 #if defined(RTK_SDIO_WIFI) && (RTK_SDIO_WIFI == 1)
-	{ SDIO_DEVICE(0x024c, 0x8720), .class = SDIO_CLASS_WLAN}, 	//6973 or 7005 WIFI
+	{ SDIO_DEVICE(0x024c, 0x8006), .class = SDIO_CLASS_WLAN},   // RTL8721F WIFI
+	{ SDIO_DEVICE(0x024c, 0x8720), .class = SDIO_CLASS_WLAN},   // RLE1331 WIFI
+	{ SDIO_DEVICE(0x024c, 0x8007), .class = SDIO_CLASS_WLAN},   // RL7098 WIFI
 #elif defined(RTK_SDIO_BT) && (RTK_SDIO_BT == 1)
-	{ SDIO_DEVICE(0x024c, 0x8720), .class = SDIO_CLASS_BT_A}, 	//6973 or 7005 BT
+	{ SDIO_DEVICE(0x024c, 0x8006), .class = SDIO_CLASS_BT_A},   // RTL8721F BT
+	{ SDIO_DEVICE(0x024c, 0x8720), .class = SDIO_CLASS_BT_A},   // RLE1331 BT
+	{ SDIO_DEVICE(0x024c, 0x8007), .class = SDIO_CLASS_BT_A},   // RL7098 BT
 #endif
 };
 
