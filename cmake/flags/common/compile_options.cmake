@@ -46,13 +46,12 @@ ameba_list_append(c_GLOBAL_COMMON_COMPILE_C_OPTIONS
 
     -save-temps=obj
     # -fno-short-enums
-    # -ffile-prefix-map=${c_BASEDIR}=.
+    -ffile-prefix-map=${c_BASEDIR}=.
 )
-
-if(CONFIG_AMEBALITE OR CONFIG_AMEBAD OR CONFIG_RTL8720F OR CONFIG_AMEBAGREEN2)
-    ameba_list_append(c_GLOBAL_COMMON_COMPILE_C_OPTIONS -Os)
-else()
+if(CONFIG_AMEBASMART OR CONFIG_AMEBADPLUS OR CONFIG_AMEBAL2 OR CONFIG_AMEBAPRO3)
     ameba_list_append(c_GLOBAL_COMMON_COMPILE_C_OPTIONS -O2)
+else()
+    ameba_list_append(c_GLOBAL_COMMON_COMPILE_C_OPTIONS -Os)
 endif()
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 

@@ -19,6 +19,7 @@
 #define GIT_VER_TABLE_SECTION				SECTION(".git.ver.data")
 #define IPC_TABLE_DATA_SECTION				SECTION(".ipc.table.data")
 #define UNITY_TABLE_DATA_SECTION				SECTION(".unity.table.data")
+#define ATCMD_TABLE_DATA_SECTION				SECTION(".atcmd.table.rodata")
 
 // Image 1 Entry Data
 #define IMAGE1_ENTRY_SECTION				SECTION(".image1.entry.data")

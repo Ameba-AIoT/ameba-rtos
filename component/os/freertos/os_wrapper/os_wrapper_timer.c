@@ -9,12 +9,15 @@
 #include "timers.h"
 #include "os_wrapper.h"
 #include "os_wrapper_specific.h"
+#include "log.h"
 
 /* FreeRTOS Static Implementation */
 #if( configSUPPORT_STATIC_ALLOCATION == 1 )
 extern StaticTimer_t *__reserved_get_timer_from_poll(void);
 extern void __reserved_release_timer_to_poll(void *buf);
 #endif
+
+static const char *TAG = "TIMER";
 
 int rtos_timer_create_static(rtos_timer_t *pp_handle, const char *p_timer_name, uint32_t timer_id,
 							 uint32_t interval_ms, uint8_t reload, void (*p_timer_callback)(void *))
@@ -34,6 +37,7 @@ int rtos_timer_create_static(rtos_timer_t *pp_handle, const char *p_timer_name, 
 										(void *)timer_id, (TimerCallbackFunction_t)p_timer_callback, timer);
 
 		if (*pp_handle == NULL) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "create_s [%s]", p_timer_name);
 			return RTK_FAIL;
 		}
 	}
@@ -71,6 +75,7 @@ int rtos_timer_create(rtos_timer_t *pp_handle, const char *p_timer_name, uint32_
 	*pp_handle = xTimerCreate(p_timer_name, timer_ticks, (BaseType_t)reload,
 							  (void *)timer_id, (TimerCallbackFunction_t)p_timer_callback);
 	if (*pp_handle == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "create [%s]", p_timer_name);
 		return RTK_FAIL;
 	}
 
@@ -90,6 +95,7 @@ int rtos_timer_delete(rtos_timer_t p_handle, uint32_t wait_ms)
 	if (ret == pdTRUE) {
 		return RTK_SUCCESS;
 	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "del [%s]", pcTimerGetName((TimerHandle_t) p_handle));
 		return RTK_FAIL;
 	}
 }
@@ -106,16 +112,18 @@ int rtos_timer_start(rtos_timer_t p_handle, uint32_t wait_ms)
 		task_woken = pdFALSE;
 		ret = xTimerStartFromISR((TimerHandle_t) p_handle, &task_woken);
 		if (ret != pdTRUE) {
-			return RTK_FAIL;
+			goto exit;
 		}
 		portEND_SWITCHING_ISR(task_woken);
 	} else {
 		ret = xTimerStart((TimerHandle_t) p_handle, RTOS_CONVERT_MS_TO_TICKS(wait_ms));
 	}
 
+exit:
 	if (ret == pdTRUE) {
 		return RTK_SUCCESS;
 	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "start [%s]", pcTimerGetName((TimerHandle_t) p_handle));
 		return RTK_FAIL;
 	}
 }
@@ -132,16 +140,18 @@ int rtos_timer_stop(rtos_timer_t p_handle, uint32_t wait_ms)
 		task_woken = pdFALSE;
 		ret = xTimerStopFromISR((TimerHandle_t) p_handle, &task_woken);
 		if (ret != pdTRUE) {
-			return RTK_FAIL;
+			goto exit;
 		}
 		portEND_SWITCHING_ISR(task_woken);
 	} else {
 		ret = xTimerStop((TimerHandle_t) p_handle, RTOS_CONVERT_MS_TO_TICKS(wait_ms));
 	}
 
+exit:
 	if (ret == pdTRUE) {
 		return RTK_SUCCESS;
 	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "stop [%s]", pcTimerGetName((TimerHandle_t) p_handle));
 		return RTK_FAIL;
 	}
 }
@@ -161,16 +171,18 @@ int rtos_timer_change_period(rtos_timer_t p_handle, uint32_t interval_ms, uint32
 		task_woken = pdFALSE;
 		ret = xTimerChangePeriodFromISR((TimerHandle_t) p_handle, timer_ticks, &task_woken);
 		if (ret != pdTRUE) {
-			return RTK_FAIL;
+			goto exit;
 		}
 		portEND_SWITCHING_ISR(task_woken);
 	} else {
 		ret = xTimerChangePeriod((TimerHandle_t) p_handle, timer_ticks, RTOS_CONVERT_MS_TO_TICKS(wait_ms));
 	}
 
+exit:
 	if (ret == pdTRUE) {
 		return RTK_SUCCESS;
 	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "chg [%s]", pcTimerGetName((TimerHandle_t) p_handle));
 		return RTK_FAIL;
 	}
 }
@@ -185,3 +197,37 @@ uint32_t rtos_timer_get_id(rtos_timer_t p_handle)
 	return (uint32_t) pvTimerGetTimerID((TimerHandle_t) p_handle);
 }
 
+int rtos_timer_pend_function_call(void (*p_func)(void *, uint32_t),
+								  void *pv_parameter1,
+								  uint32_t ul_parameter2,
+								  uint32_t wait_ms)
+{
+	BaseType_t ret, task_woken;
+
+	if (p_func == NULL) {
+		return RTK_FAIL;
+	}
+
+	if (rtos_critical_is_in_interrupt()) {
+		task_woken = pdFALSE;
+		ret = xTimerPendFunctionCallFromISR((PendedFunction_t)p_func,
+											pv_parameter1,
+											ul_parameter2,
+											&task_woken);
+		if (ret != pdTRUE) {
+			return RTK_FAIL;
+		}
+		portEND_SWITCHING_ISR(task_woken);
+	} else {
+		ret = xTimerPendFunctionCall((PendedFunction_t)p_func,
+									 pv_parameter1,
+									 ul_parameter2,
+									 RTOS_CONVERT_MS_TO_TICKS(wait_ms));
+	}
+
+	if (ret == pdTRUE) {
+		return RTK_SUCCESS;
+	} else {
+		return RTK_FAIL;
+	}
+}

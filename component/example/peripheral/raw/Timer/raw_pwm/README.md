@@ -5,7 +5,7 @@ This example describes how to use pwm.
 Connect LED to below PWM pins and ground
 
 For example:
-1. If you run this example in AmebaSmart, then connect as below
+1. If you run this example in RTL8730E, then connect as below
 
 	GND <--> LED0 <---> PA_14 //pwm0
 	GND <--> LED1 <---> PA_9  //pwm1
@@ -13,7 +13,7 @@ For example:
 	GND <--> LED3 <---> PA_4  //pwm3
 	GND <--> LED4 <---> PA_5  //pwm4
 	GND <--> LED5 <---> PA_13 //pwm5
-2. If you run this example in AmebaLite, then connect as below
+2. If you run this example in RTL8726E/RTL8720E/RTL8713E/RTL8710E, then connect as below
 
 	GND <--> LED0 <---> PA_28
 	GND <--> LED1 <---> PA_29
@@ -23,7 +23,7 @@ For example:
 	GND <--> LED5 <---> PA_27
 	GND <--> LED6 <---> PA_21
 	GND <--> LED7 <---> PA_22
-3. If you run this example in AmebaDplus, then connect as below
+3. If you run this example in RTL8721Dx, then connect as below
 
 	GND <--> LED0 <---> PA_12
 	GND <--> LED1 <---> PA_26
@@ -34,7 +34,7 @@ For example:
 	GND <--> LED6 <---> PB_18
 	GND <--> LED7 <---> PB_19
 
-4. If you run this example in AmebaGreen2, then connect as below
+4. If you run this example in RTL8721F, then connect as below
 
 	GND <--> LED0 <---> PA_6
 	GND <--> LED1 <---> PA_7
@@ -47,7 +47,7 @@ For example:
 
 2. How to modify gpio pin:
    - you can also modify pinmux group settings according to correct pinmux table. For example:
-    If you want to modify pinmux group setting in AmebaSmart, then you should refer to UM0602_RTL8730E_pinmux.xls
+    If you want to modify pinmux group setting in RTL8730E, then you should refer to UM0602_RTL8730E_pinmux.xls
 
 # Expect result
 
@@ -55,13 +55,13 @@ For example:
   - Connect the logic analyzer, and PWM waveforms on all six/eight channels can be displayed. The Waveform duty cycle gradually increases and then decreases.
 
 # Note
-1. The initial brightness setting of the AmebaSmart is different from that of other chips, so the output of the LED is also different from other chips.
+1. The initial brightness setting of the RTL8730E is different from that of other chips, so the output of the LED is also different from other chips.
 
-2. Only a few pins of AmebaSmart can output PWM waveforms, and only specific pins can output specific PWM channels. For details, please refer to its pinmux table.
+2. Only a few pins of RTL8730E can output PWM waveforms, and only specific pins can output specific PWM channels. For details, please refer to its pinmux table.
 
-3. Only certain pins of AmebaLite can output PWM waveforms. For example, the PB0, PB1, PB2, PB3 (or PA28, PA29, PA30, PA31) pins can only output PWM0~PWM3. For details, refer to the corresponding pinmux table.
+3. Only certain pins of RTL8726E/RTL8720E/RTL8713E/RTL8710E can output PWM waveforms. For example, the PB0, PB1, PB2, PB3 (or PA28, PA29, PA30, PA31) pins can only output PWM0~PWM3. For details, refer to the corresponding pinmux table.
 
-4. If the AmebaLite board is 8720E, you need to replace the pins.
+4. If the RTL8726E/RTL8720E/RTL8713E/RTL8710E board is 8720E, you need to replace the pins.
 
    ```shell
     //8726E, _PA_26;  8720E, _PA_15

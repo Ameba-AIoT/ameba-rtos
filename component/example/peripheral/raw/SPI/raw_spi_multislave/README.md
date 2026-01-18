@@ -18,28 +18,28 @@ In this way, slave1 will be selected first as software configuration.
 
 For example:
 
-- On AmebaSmart, connect as below
+- On RTL8730E, connect as below
 
   - master's `MOSI (_PA_5)` connect to slave1's `MOSI (_PA_13)` & slave0's `MOSI (_PA_13)`
   - master's `MISO (_PA_4)` connect to slave1's `MISO (_PA_14)`& slave0's `MISO (_PA_14)`
   - master's `SCLK (_PA_3)` connect to slave1's `SCLK (_PA_15)` & slave0's `SCLK (_PA_15)`
   - master's `SPI_GPIO_CS0 (PA_0)` connect to slave0's `CS (_PA_16)`
   - master's `SPI_GPIO_CS1 (PA_1)` connect to slave1's `CS (_PA_16)`
-- On AmebaLite, connect as below
+- On RTL8726E/RTL8720E/RTL8713E/RTL8710E, connect as below
 
   - master's `MOSI (_PB_3)` connect to slave1's `MOSI (_PA_29)` & slave0's `MOSI (_PA_29)`
   - master's `MISO (_PB_4)` connect to slave1's `MISO (_PA_30)` & slave0's `MISO (_PA_30)`
   - master's `SCLK (_PB_2)` connect to slave1's `SCLK (_PA_28)`& slave0's `SCLK (_PA_28)`
   - master's `SPI_GPIO_CS0 (PA_0)` connect to slave0's `CS (_PA_31)`
   - master's `SPI_GPIO_CS1 (PA_1)` connect to slave1's `CS (_PA_31)`
-- On AmebaDplus, connect as below
+- On RTL8721Dx, connect as below
 
   - master's `MOSI (_PB_19)` connect to slave1's `MOSI (_PB_24)`& slave0's `MOSI (_PB_24)`
   - master's `MISO (_PB_20)` connect to slave1's `MISO (_PB_25)`& slave0's `MISO (_PB_25)`
   - master's `SCLK (_PB_18)` connect to slave1's `SCLK (_PB_23)`& slave0's `SCLK (_PB_23)`
   - master's `SPI_GPIO_CS0 (_PB_30)` connect to slave0's `CS (_PB_26)`
   - master's `SPI_GPIO_CS1 (_PB_31)` connect to slave1's `CS (_PB_26)`
-- On AmebaGreen2, connect as below
+- On RTL8721F, connect as below
 
   - master's `MOSI (_PB_30)` connect to slave1's `MOSI (_PA_30)`& slave0's `MOSI (_PA_30)`
   - master's `MISO (_PB_31)` connect to slave1's `MISO (_PA_31)`& slave0's `MISO (_PA_31)`

@@ -14,16 +14,16 @@ This example describes how to use GPIO read/write by MBED GPIO API.
   - Connect a LED to `GPIO_LED_PIN` (as defined in the header file of the current example)
   
   For example:
-  - On AmebaSmart, connect as below
+  - On RTL8730E, connect as below
     - Connect a push button to `GPIO_PUSHBT_PIN _PA_10` and GND
     - Connect a LED to `GPIO_LED_PIN _PB_10` and GND
-  - On AmebaLite, connect as below
+  - On RTL8726E/RTL8720E/RTL8713E/RTL8710E, connect as below
     - Connect a push button to `GPIO_PUSHBT_PIN _PA_29` and GND
     - Connect a LED to `GPIO_LED_PIN _PB_5` and GND
-  - On AmebaDplus, connect as below
+  - On RTL8721Dx, connect as below
     - Connect a push button to `GPIO_PUSHBT_PIN _PA_12` and GND
     - Connect a LED to `GPIO_LED_PIN _PB_10` and GND
-  - On AmebaGreen2, connect as below
+  - On RTL8721F, connect as below
     - Connect a push button to `GPIO_PUSHBT_PIN _PA_26` and GND
     - Connect a LED to `GPIO_LED_PIN _PA_25` and GND
 

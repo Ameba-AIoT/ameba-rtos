@@ -6,19 +6,19 @@ This example describes how to use CapTouch to detect key press and release.
 
 Required Components: capacitive circuit.
 
-* On AmebaSmart
+* On RTL8730E
 	- CapTouch provides up to `9 channels` for capacitive sensing.
 	- Connect `CTC_CHx_PIN` to `to-be-detected signal`, where x can be `0-8` and `CTC_CHx_PIN` is defined under `CapTouch_Chn_Pad_Selection` in ameba_captouch.h.
 	- Connect `GND` to `GND` of capacitive circuit.
-* On AmebaLite
+* On RTL8726E/RTL8720E/RTL8713E/RTL8710E
 	- CapTouch provides up to `9 channels` for capacitive sensing.
 	- Connect `CTC_CHx_PIN` to `to-be-detected signal`, where x can be `0-8` and `CTC_CHx_PIN` is defined under `CapTouch_Chn_Pad_Selection` in ameba_captouch.h.
 	- Connect `GND` to `GND` of capacitive circuit.
-* On AmebaDplus
+* On RTL8721Dx
 	- CapTouch provides up to `4 channels` for capacitive sensing.
 	- Connect `CTC_CHx_PIN` to `to-be-detected signal`, where x can be `0-3` and `CTC_CHx_PIN` is defined under `CapTouch_Chn_Pad_Selection` in ameba_captouch.h.
 	- Connect `GND` to `GND` of capacitive circuit.
-* On AmebaGreen2
+* On RTL8721F
 	- CapTouch provides up to `9 channels` for capacitive sensing.
 	- Connect `CTC_CHx_PIN` to `to-be-detected signal`, where x can be `0-8` and `CTC_CHx_PIN` is defined under `CapTouch_Chn_Pad_Selection` in ameba_captouch.h.
 	- Connect `GND` to `GND` of capacitive circuit.

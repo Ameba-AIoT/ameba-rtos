@@ -12,13 +12,13 @@ This example describes how to use GPIO read/write to generate a pulse and to mea
   - Connect `GPIO_IRQ_PIN` to `GPIO_OUT_PIN`
 
   For example:
-  - On AmebaSmart, connect as below
+  - On RTL8730E, connect as below
     - Connect `GPIO_IRQ_PIN (_PA_10)` to `GPIO_OUT_PIN (_PB_10)`
-  - On AmebaLite, connect as below
+  - On RTL8726E/RTL8720E/RTL8713E/RTL8710E, connect as below
     - Connect `GPIO_IRQ_PIN (_PA_29)` to `GPIO_OUT_PIN (_PB_5)`
-  - On AmebaDplus, connect as below
+  - On RTL8721Dx, connect as below
     - Connect `GPIO_IRQ_PIN (_PA_12)` to `GPIO_OUT_PIN (_PB_10)`
-  - On AmebaGreen2, connect as below
+  - On RTL8721F, connect as below
     - Connect `GPIO_IRQ_PIN (_PA_26)` to `GPIO_OUT_PIN (_PA_25)`
 
 # SW configuration

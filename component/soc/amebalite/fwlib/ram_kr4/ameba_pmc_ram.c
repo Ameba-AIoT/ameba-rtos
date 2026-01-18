@@ -5,8 +5,35 @@
  */
 
 #include "ameba_soc.h"
+#include "FreeRTOS.h"
+#include "ameba_plic.h"
 
 //static const char *const TAG = "PMC";
+extern void vPortBackupPmp(BaseType_t *pxPmpBaseAddr);
+extern void vPortRestorePmp(BaseType_t *pxPmpBaseAddr);
+
+#if (portUSING_MPU_WRAPPERS == 1)
+struct ctxPMPBackup {
+	BaseType_t xPmpAddrs[ configMAX_PMPADDR_NUMBER ];
+	BaseType_t xPmpCfgs[ configMAX_PMPCFG_NUMBER ];
+};
+
+struct ctxPMPBackup ctxPMP;
+#endif
+
+void SOCPS_vPortBackupPmp(void)
+{
+#if (portUSING_MPU_WRAPPERS == 1)
+	vPortBackupPmp((BaseType_t *) &ctxPMP);
+#endif
+}
+
+void SOCPS_vPortRestorePmp(void)
+{
+#if (portUSING_MPU_WRAPPERS == 1)
+	vPortRestorePmp((BaseType_t *) &ctxPMP);
+#endif
+}
 
 /**
   * @brief  KM4 wake KR4 by IPC

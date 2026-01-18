@@ -18,83 +18,41 @@
 #define DUMP_STACK_MIN_DEPTH(depth)  ((depth >= MIN_DUMP_DEPTH) && (depth <= MAX_DUMP_DEPTH) ? depth:MIN_DUMP_DEPTH)
 /* The number displayed per row*/
 #define CONFIG_DISPLAY_NUMBER		 4
-/* display details, including file names and line numbers, default: On*/
-#define CONFIG_DEBUG_TINY_CRASH_DUMP
 
-/* define platform type */
-#define CMB_CPU_ARM_CORTEX_M0          0
-#define CMB_CPU_ARM_CORTEX_M3          1
-#define CMB_CPU_ARM_CORTEX_M4          2
-#define CMB_CPU_ARM_CORTEX_M7          3
-#define CMB_CPU_REALTEK_KM0            4
-#define CMB_CPU_REALTEK_KM4            5
-#define CMB_CPU_REALTEK_TM9            6
-
-#define CMB_CPU_ARM_CORTEX_M33  CMB_CPU_REALTEK_KM4
-#define CMB_CPU_PLATFORM_TYPE CMB_CPU_ARM_CORTEX_M33
-
-/* define language type */
-#define CMB_PRINT_LANGUAGE_ENGLISH     0
-
-#ifndef CMB_PRINT_LANGUAGE
-#define CMB_PRINT_LANGUAGE             CMB_PRINT_LANGUAGE_ENGLISH
-#endif
 /* ============= Configure end ============*/
 
 /* system handler control and state register */
-#ifndef CMB_SYSHND_CTRL
 #define CMB_SYSHND_CTRL                (*(volatile unsigned int*)  (0xE000ED24u))
-#endif
 
 /* memory management fault status register */
-#ifndef CMB_NVIC_MFSR
 #define CMB_NVIC_MFSR                  (*(volatile unsigned char*) (0xE000ED28u))
-#endif
 
 /* bus fault status register */
-#ifndef CMB_NVIC_BFSR
 #define CMB_NVIC_BFSR                  (*(volatile unsigned char*) (0xE000ED29u))
-#endif
 
 /* usage fault status register */
-#ifndef CMB_NVIC_UFSR
 #define CMB_NVIC_UFSR                  (*(volatile unsigned short*)(0xE000ED2Au))
-#endif
 
 /* hard fault status register */
-#ifndef CMB_NVIC_HFSR
 #define CMB_NVIC_HFSR                  (*(volatile unsigned int*)  (0xE000ED2Cu))
-#endif
 
 /* debug fault status register */
-#ifndef CMB_NVIC_DFSR
 #define CMB_NVIC_DFSR                  (*(volatile unsigned short*)(0xE000ED30u))
-#endif
 
 /* memory management fault address register */
-#ifndef CMB_NVIC_MMAR
 #define CMB_NVIC_MMAR                  (*(volatile unsigned int*)  (0xE000ED34u))
-#endif
 
 /* bus fault manage address register */
-#ifndef CMB_NVIC_BFAR
 #define CMB_NVIC_BFAR                  (*(volatile unsigned int*)  (0xE000ED38u))
-#endif
 
 /* auxiliary fault status register */
-#ifndef CMB_NVIC_AFSR
 #define CMB_NVIC_AFSR                  (*(volatile unsigned short*)(0xE000ED3Cu))
-#endif
 
 /* secure fault status register */
-#ifndef CMB_NVIC_SFSR
 #define CMB_NVIC_SFSR                  (*(volatile unsigned int*)  (0xE000EDE4u))
-#endif
 
 /* secure fault address register */
-#ifndef CMB_NVIC_SFAR
 #define CMB_NVIC_SFAR                  (*(volatile unsigned int*)  (0xE000EDE8u))
-#endif
 
 /**
  * Cortex-M fault registers
@@ -132,13 +90,13 @@ struct cmb_hard_fault_regs {
 		struct {
 			unsigned int MEMFAULTACT    : 1;   // Read as 1 if memory management fault is active
 			unsigned int BUSFAULTACT    : 1;   // Read as 1 if bus fault exception is active
-#if (CMB_CPU_PLATFORM_TYPE == CMB_CPU_ARM_CORTEX_M33)
+#ifdef CONFIG_ARM_CORE_CM4
 			unsigned int HARDFAULTACT   : 1;   // Read as 1 if hardfault is active
 #else
 			unsigned int UnusedBits1    : 1;
 #endif
 			unsigned int USGFAULTACT    : 1;   // Read as 1 if usage fault exception is active
-#if (CMB_CPU_PLATFORM_TYPE == CMB_CPU_ARM_CORTEX_M33)
+#ifdef CONFIG_ARM_CORE_CM4
 			unsigned int SECUREFAULTACT : 1;   // Read as 1 if secure fault exception is active
 			unsigned int NMIACT         : 1;   // Read as 1 if NMI exception is active
 			unsigned int UnusedBits2    : 1;
@@ -157,7 +115,7 @@ struct cmb_hard_fault_regs {
 			unsigned int MEMFAULTENA    : 1;   // Memory management fault handler enable
 			unsigned int BUSFAULTENA    : 1;   // Bus fault handler enable
 			unsigned int USGFAULTENA    : 1;   // Usage fault handler enable
-#if (CMB_CPU_PLATFORM_TYPE == CMB_CPU_ARM_CORTEX_M33)
+#ifdef CONFIG_ARM_CORE_CM4
 			unsigned int SECUREFAULTENA : 1;   // Secure fault handler enable
 			unsigned int SECUREFAULTPENDED : 1;   // Secure fault pended; Secure fault handler was started but was replaced by a higher-priority exception
 			unsigned int HARDFAULTPENDED   : 1;   // Hard fault pended; Hard fault handler was started but was replaced by a higher-priority exception
@@ -204,7 +162,7 @@ struct cmb_hard_fault_regs {
 			unsigned short INVSTATE   : 1;     // Attempts to switch to an invalid state (e.g., ARM)
 			unsigned short INVPC      : 1;     // Attempts to do an exception with a bad value in the EXC_RETURN number
 			unsigned short NOCP       : 1;     // Attempts to execute a coprocessor instruction
-#if (CMB_CPU_PLATFORM_TYPE == CMB_CPU_ARM_CORTEX_M33)
+#ifdef CONFIG_ARM_CORE_CM4
 			unsigned short STKOF      : 1;     // Indicates a stack overflow error has occured
 			unsigned short UnusedBits : 3;
 #else

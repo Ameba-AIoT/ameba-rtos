@@ -102,9 +102,10 @@ class SerialReader(StoppableThread):
                     print(f"[Received Data (Hex)]: {hex_str}")
 
                 self.data_buffer += data
-                if b'AT+LIST' in self.data_buffer:
-                    if b'#' in self.data_buffer:
-                        self.parse_cmd_list(self.data_buffer)
+                filtered = re.sub(rb'\xff.', b'', self.data_buffer)
+                if b'AT+LIST' in filtered:
+                    if b'#' in filtered:
+                        self.parse_cmd_list(filtered)
                         self.data_buffer = b''
                         break
             except Exception as e:
@@ -142,8 +143,9 @@ class SerialReader(StoppableThread):
                         print(f"[Received Data (Hex)]: {hex_str}")
 
                     self.data_buffer += data
-                    if b'reboot' in self.data_buffer:
-                        if b'BOOT-I' in self.data_buffer:
+                    filtered = re.sub(rb'\xff.', b'', self.data_buffer)
+                    if b'reboot' in filtered:
+                        if b'BOOT-I' in filtered:
                             break
                 except Exception as e:
                     print_red(f"Failed to reset, pelase reset manually: {str(e)}")

@@ -415,14 +415,8 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	usbd_ep_t *ep0_out = &dev->ep0_out;
 	int ret = HAL_OK;
 	u16 len = 0;
-	u16 report_len;
+	u16 report_len = 0;
 	u8 *buf = NULL;
-
-#if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
-	report_len = sizeof(hid_mouse_report_desc);
-#else
-	report_len = sizeof(hid_keyboard_report_desc);
-#endif
 
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
 	case USB_REQ_TYPE_STANDARD:
@@ -452,6 +446,11 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			}
 			break;
 		case USB_REQ_GET_DESCRIPTOR:
+#if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
+			report_len = sizeof(hid_mouse_report_desc);
+#else
+			report_len = sizeof(hid_keyboard_report_desc);
+#endif
 			if (USB_HIGH_BYTE(req->wValue) == USBD_HID_REPORT_DESC) {
 				/* HID Report Descriptor */
 #if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
@@ -495,6 +494,13 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			ep0_in->xfer_len = 1U;
 			usbd_ep_transmit(dev, ep0_in);
 			break;
+
+		case USBD_HID_GET_REPORT:
+			/* send an empty report */
+			memset(ep0_in->xfer_buf, 0x0, req->wLength);
+			ep0_in->xfer_len = req->wLength;
+			usbd_ep_transmit(dev, ep0_in);
+			break;
 		case USBD_HID_SET_REPORT:
 			if ((req->wLength) && (!(req->bmRequestType & 0x80U))) {
 				usb_os_memcpy((void *)&hid->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
@@ -503,6 +509,7 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			}
 			ret = HAL_OK;
 			break;
+
 		case USBD_HID_SET_IDLE:
 			hid->idle_rate = USB_HIGH_BYTE(req->wValue);
 			break;

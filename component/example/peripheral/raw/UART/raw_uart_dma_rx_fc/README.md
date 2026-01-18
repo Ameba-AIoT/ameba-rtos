@@ -6,19 +6,19 @@ This example describes how to use UART to communicate with PC by DMA, where URAT
 
 Required Components: USBtoTTL adapter.
 
-* On AmebaSmart
+* On RTL8730E
 	- Connect `UART_TX(_PA_3)` to `RXD` of adapter
 	- Connect `UART_RX(_PA_2)` to `TXD` of adapter
 	- Connect `GND` to `GND` of adapter
-* On AmebaLite
+* On RTL8726E/RTL8720E/RTL8713E/RTL8710E
 	- Connect `UART_TX(_PA_28)` to `RXD` of adapter
 	- Connect `UART_RX(_PA_29)` to `TXD` of adapter
 	- Connect `GND` to `GND` of adapter
-* On AmebaDplus
+* On RTL8721Dx
 	- Connect `UART_TX(_PA_26)` to `RXD` of adapter
 	- Connect `UART_RX(_PA_27)` to `TXD` of adapter
 	- Connect `GND` to `GND` of adapter
-* On AmebaGreen2
+* On RTL8721F
 	- Connect `UART_TX(_PA_18)` to `RXD` of adapter
 	- Connect `UART_RX(_PA_19)` to `TXD` of adapter
 	- Connect `GND` to `GND` of adapter

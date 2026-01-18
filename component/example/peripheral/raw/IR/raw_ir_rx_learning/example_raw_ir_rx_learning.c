@@ -330,7 +330,7 @@ void IR_learning_wave_capture(uint32_t *rev_buf)
 	}
 
 	/* | -keyIndex- | -Frequency- | -DectTimeNum- | --wave data-- | */
-#ifdef AMEBASMART_TODO
+#ifdef RTL8730E_TODO
 	//storage related data to flash
 
 #endif

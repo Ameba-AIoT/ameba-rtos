@@ -302,7 +302,7 @@ void flash_highspeed_setup(void)
 	spic_ckd = CLKDIV_ROUND_UP(pllm_clk, SPIC_CLK_LIMIT) - 1;
 	flash_speed = MAX(flash_speed, spic_ckd);
 
-	RTK_LOGI(TAG, "SPIC CLK: %d Hz\n", pllm_clk / (flash_speed + 1));
+	RTK_LOGI(TAG, "FLASH CLK: %d Hz\n", pllm_clk / (2 * (flash_speed + 1)));
 
 
 	__disable_irq();

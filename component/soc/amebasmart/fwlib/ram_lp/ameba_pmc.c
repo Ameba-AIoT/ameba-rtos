@@ -444,8 +444,6 @@ void SOCPS_WakeEvent_Init(void)
 {
 	u32 i;
 	u32 sleep_wevent_config_val[3][2] = {0};
-	u32 group = 0;
-	u32 wakebit = 0;
 
 	/*wake event setting*/
 	for (i = 0;;) {
@@ -454,25 +452,28 @@ void SOCPS_WakeEvent_Init(void)
 			break;
 		}
 
-		/* decide group */
-		if ((sleep_wevent_config[i].Module & WAKE_MASK1_CHECK) == WAKE_MASK1_CHECK) {
-			group = 1;
-			wakebit = sleep_wevent_config[i].Module & (~WAKE_MASK1_CHECK);
-		} else {
-			group = 0;
-			wakebit = sleep_wevent_config[i].Module;
-		}
-
 		if (sleep_wevent_config[i].wakeup == WAKEUP_LP) {
-			sleep_wevent_config_val[0][group] |= wakebit;
+			if (sleep_wevent_config[i].Module >> 30) {
+				sleep_wevent_config_val[0][1] |= sleep_wevent_config[i].Module;//for WAK_MASK1_LP
+			} else {
+				sleep_wevent_config_val[0][0] |= sleep_wevent_config[i].Module;//for WAK_MASK0_LP
+			}
 		}
 
 		if (sleep_wevent_config[i].wakeup == WAKEUP_NP) {
-			sleep_wevent_config_val[1][group] |= wakebit;
+			if (sleep_wevent_config[i].Module >> 30) {
+				sleep_wevent_config_val[1][1] |= sleep_wevent_config[i].Module;//for WAK_MASK1_NP
+			} else {
+				sleep_wevent_config_val[1][0] |= sleep_wevent_config[i].Module;//for WAK_MASK0_NP
+			}
 		}
 
 		if (sleep_wevent_config[i].wakeup == WAKEUP_AP) {
-			sleep_wevent_config_val[2][group] |= wakebit;
+			if (sleep_wevent_config[i].Module >> 30) {
+				sleep_wevent_config_val[2][1] |= sleep_wevent_config[i].Module;//for WAK_MASK1_AP
+			} else {
+				sleep_wevent_config_val[2][0] |= sleep_wevent_config[i].Module;//for WAK_MASK1_AP
+			}
 		}
 		i++;
 	}

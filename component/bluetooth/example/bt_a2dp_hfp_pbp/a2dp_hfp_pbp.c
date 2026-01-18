@@ -1181,12 +1181,12 @@ static app_bt_le_audio_scan_dev_info_t *app_bt_le_audio_scan_dev_list_add(app_bt
 	return p_scan_dev_info;
 }
 
-static bool app_bt_le_audio_adv_filter_service_data(uint8_t report_data_len, uint8_t *p_report_data,
+static bool app_bt_le_audio_adv_filter_service_data(uint16_t report_data_len, uint8_t *p_report_data,
 													uint16_t uuid, uint8_t **pp_service_data, uint16_t *p_data_len,
 													app_bt_le_audio_scan_dev_info_t *p_scan_dev_info)
 {
 	uint8_t *p_buffer = NULL;
-	uint8_t pos = 0;
+	uint16_t pos = 0;
 	uint16_t length = 0;
 	uint8_t type = 0;
 	bool is_found = false;
@@ -1727,6 +1727,12 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 		BT_AT_PRINT("+BRGAP:inquiry_result,%02x:%02x:%02x:%02x:%02x:%02x,%s\r\n",
 					p_result->bd_addr[5], p_result->bd_addr[4], p_result->bd_addr[3], p_result->bd_addr[2], p_result->bd_addr[1], p_result->bd_addr[0],
 					p_result->name);
+		break;
+	}
+
+	case RTK_BT_BR_GAP_INQUIRY_CMPL: {
+		rtk_bt_br_inquiry_cmpl_t *p_cmpl = (rtk_bt_br_inquiry_cmpl_t *)param;
+		BT_LOGA("[BR GAP] Inquiry completed, cause is 0x%x \r\n", p_cmpl->cause);
 		break;
 	}
 

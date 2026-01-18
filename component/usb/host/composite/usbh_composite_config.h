@@ -22,6 +22,15 @@
 #define USBH_COMPOSITE_HID_UAC_EVENT              BIT0
 #define USBH_COMPOSITE_HID_EVENT                  BIT1
 #define USBH_COMPOSITE_UAC_EVENT                  BIT2
+#elif defined(CONFIG_USBH_COMPOSITE_ACM_ECM)
+
+#define USB_4G_DONGLE_SUPPORT                     1
+
+#define USB_EF_DONGLE_VID        0x2C7C
+#define EF_DONGLE_PID_EG915      0x0901
+#define EF_DONGLE_PID_EG91       0x0191
+#define USB_DEFAULT_VID          USB_VID
+
 #else
 #error "No composite class configured"
 #endif
@@ -54,6 +63,9 @@ typedef struct {
 #if defined(CONFIG_USBH_COMPOSITE_HID_UAC)
 	usbh_class_driver_t *hid;
 	usbh_class_driver_t *uac;
+#elif defined(CONFIG_USBH_COMPOSITE_ACM_ECM)
+	usbh_class_driver_t *acm;
+	usbh_class_driver_t *ecm;
 #endif
 	usbh_composite_cb_t *cb;
 	usb_host_t *host;

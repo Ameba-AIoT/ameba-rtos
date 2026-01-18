@@ -225,6 +225,7 @@ typedef struct {
   */
 
 #define SD_BLOCK_SIZE 512U // Block size is 512 bytes by default
+#define SD_MALLOC_BLK_CNT (8) // malloc size: 8 block
 #define SD_FATFS_TIMEOUT (30 * 1000 * 1000) // 30s: 30 * 1000 * 1000us
 #define SD_SEMA_MAX_DELAY  10
 

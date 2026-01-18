@@ -155,5 +155,6 @@ __STATIC_INLINE u32 TrustZone_IsSecure(void)
 #endif
 }
 
+void TZ_tfm_platform_pmc_bkup(void);
 
 #endif

@@ -179,7 +179,6 @@ void example_wifi_csi_report_cb(u8 *evt_info)
 static void wifi_csi_thread(void *param)
 {
 	(void)param;
-	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 	struct rtw_csi_action_parm act_param = {0};
 	struct csi_report_data	*csi_rpt_pkt = NULL;
 	unsigned char assoc_ap_mac[6] = {0xa4, 0x39, 0xb3, 0xa4, 0xbe, 0x2d};  /* need modify to mac address of associated AP when sta mode */

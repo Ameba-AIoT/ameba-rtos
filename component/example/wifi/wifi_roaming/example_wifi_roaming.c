@@ -113,7 +113,6 @@ void wifi_roaming_thread(void *param)
 	memset(&roaming_ap, 0, sizeof(wifi_roaming_ap_t));
 	roaming_ap.rssi = -100;
 	u8 autoreconn_en = 0;
-	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 #ifdef CONFIG_LWIP_LAYER
 	uint8_t *IP = LwIP_GetIP(NETIF_WLAN_STA_INDEX);
 #endif

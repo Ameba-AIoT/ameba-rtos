@@ -9,7 +9,7 @@ import subprocess
 
 # CMAKE_GDB IS AUTOSET BY CMAKE, DO NOT CHANGE IT MANUALLY.
 CMAKE_GDB = '/opt/rtk-toolchain/asdk-12.3.1-4568/linux/newlib/bin/arm-none-eabi-gdb'
-PROJECT_DIR = os.getcwd()
+PROJECT_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '../../..'))
 ASDK = os.path.join(PROJECT_DIR, 'project_km4tz/asdk')
 GNU_SCRIPT =  os.path.join(ASDK, 'gnu_utility/gnu_script')
 FLASH_SCRIPT = os.path.join(GNU_SCRIPT, 'rtl_gdb_flash_write.txt')
@@ -32,8 +32,12 @@ def check_config(file_path, config):
                 return True
     return False
 
-BUILD_TYPE = check_config(os.path.join(PROJECT_DIR, CONFIG_FILE), 'CONFIG_MP_INCLUDED=y')
-FPGA = check_config(os.path.join(PROJECT_DIR, CONFIG_FILE), 'CONFIG_FPGA=y')
+if os.getcwd() == PROJECT_DIR:
+    CONFIG_FILE_PATH = os.path.join(PROJECT_DIR, CONFIG_FILE)
+else:
+    CONFIG_FILE_PATH = os.path.join(os.environ.get('SOC_WORK_DIR'), CONFIG_FILE)
+BUILD_TYPE = check_config(CONFIG_FILE_PATH, 'CONFIG_MP_INCLUDED=y')
+FPGA = check_config(CONFIG_FILE_PATH, 'CONFIG_FPGA=y')
 
 def replace_in_file(file_path, pattern, replacement):
     with open(file_path, 'r', encoding='utf-8') as file:

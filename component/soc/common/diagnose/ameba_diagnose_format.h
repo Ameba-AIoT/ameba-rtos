@@ -50,13 +50,13 @@ enum rtk_event_type {
 	RTK_EVENT_TYPE_DBG_DEMO_1,
 	RTK_EVENT_TYPE_DBG_DEMO_2,
 
-	RTK_EVENT_TYPE_WIFI_BASE = 50000, // wifi event in [50000, 60000-1]
+	RTK_EVENT_TYPE_WIFI_BASE = 40000, // wifi event in [40000, 50000-1]
 	//wifi module continue add
 
-	RTK_EVENT_TYPE_CUSTOMER = 60000,
+	RTK_EVENT_TYPE_CUSTOMER = 50000,
 	//customer add
 
-	RTK_EVENT_TYPE_MAX,
+	RTK_EVENT_TYPE_MAX  = 60000,
 };
 
 /*****************************************************************************************************
@@ -87,11 +87,11 @@ enum diag_evt_wifi {
 };
 
 struct diag_evt_wifi_disconn { /*DIAG_EVT_WIFI_DISCONN*/
-	u16 reason;/*enum rtw_disconn_reason in wifi_api_types.h*/
+	u16 reason;  /* <!-- DIAG: --> enum rtw_disconn_reason in wifi_api_types.h*/
 } __PACKED;
 
 struct diag_evt_wifi_join_fail { /*DIAG_EVT_WIFI_JOIN_FAIL*/
-	u16 reason;/*enum rtk_error_code in rtk_status.h*/
+	u16 reason;  /* <!-- DIAG: --> enum rtk_error_code in rtk_status.h*/
 	u16 reason_code;
 } __PACKED;
 

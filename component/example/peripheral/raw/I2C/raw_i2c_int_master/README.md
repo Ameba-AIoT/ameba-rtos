@@ -12,22 +12,22 @@ master's SCL connect to slave's SCL
 
 master's GND connect to slave's GND 
 
-* On AMEBASMART
+* On RTL8730E
   - master's `SDA (_PA_9)` connect to slave's `SDA`
   - master's  `SCL (_PA_10)` connect to slave's `SCL` 
   - master's  `GND` connect to slave's `GND` 
 
-* On AMEBALITE
+* On RTL8726E/RTL8720E/RTL8713E/RTL8710E
   - master's `SDA (_PA_29)` connect to slave's `SDA`
   - master's `SCL (_PA_30)` connect to slave's `SCL` 
   - master's `GND` connect to slave's `GND` 
 
-* On AMEBADPLUS
+* On RTL8721Dx
   - master's`SDA (_PB_15)` connect to slave's `SDA`
   - master's `SCL (_PB_16)` connect to slave's `SCL` 
   - master's `GND` connect to slave's `GND` 
 
-* On AMEBADGREEN2
+* On RTL8721F
   - master's`SDA (_PA_26)` connect to slave's `SDA`
   - master's `SCL (_PA_25)` connect to slave's `SCL`
   - master's `GND` connect to slave's `GND`
@@ -41,7 +41,7 @@ master's GND connect to slave's GND
 2. How to modify gpio pin:
    you can also modify pinmux group settings according to correct pinmux table.
    for example: 
-   	If you want to modify pinmux group setting in AmebaSmart, then you should refer to UM0602_RTL8730E_pinmux.xls
+   	If you want to modify pinmux group setting in RTL8730E, then you should refer to UM0602_RTL8730E_pinmux.xls
 
 # Expected Result
 

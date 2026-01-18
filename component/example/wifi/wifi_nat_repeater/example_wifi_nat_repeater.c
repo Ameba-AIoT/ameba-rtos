@@ -336,8 +336,10 @@ static void example_wlan_repeater_thread(void *param)
 	rtos_task_delete(NULL);
 }
 
-void example_nat_repeater(void)
+void wifi_nat_repeater_init_thread(void *param)
 {
+	UNUSED(param);
+
 	while (wifi_is_running(STA_WLAN_INDEX) == FALSE) {
 		rtos_time_delay_ms(1000);
 	}
@@ -346,10 +348,22 @@ void example_nat_repeater(void)
 
 	if (rtos_task_create(NULL, ((const char *)"example_wlan_repeater_thread"), example_wlan_repeater_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGI(TAG, "\n\r%s rtos_task_create failed\n", __FUNCTION__);
+		goto exit;
 	}
 	if (rtos_task_create(NULL, ((const char *)"poll_ip_changed_thread"), poll_ip_changed_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGI(TAG, "\n\r%s rtos_task_create failed\n", __FUNCTION__);
+		goto exit;
 	}
 
 	dns_relay_service_init();
+
+exit:
+	rtos_task_delete(NULL);
+}
+
+void example_nat_repeater(void)
+{
+	if (rtos_task_create(NULL, ((const char *)"wifi_nat_repeater_init_"), wifi_nat_repeater_init_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
+		RTK_LOGI(TAG, "\n\r%s Create wifi nat repeater task failed\n", __FUNCTION__);
+	}
 }

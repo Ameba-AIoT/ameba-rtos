@@ -78,7 +78,7 @@ if(CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF_IPC)
         whc_dev/whc_dev_powersave.c
     )
 
-    if(CONFIG_WHC_DUAL_TCPIP)
+    if(CONFIG_WHC_DEV_TCPIP_KEEPALIVE)
         ameba_list_append(private_sources
             whc_dev/whc_dev_tcpip.c
         )

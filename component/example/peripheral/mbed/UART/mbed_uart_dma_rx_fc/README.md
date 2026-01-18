@@ -6,19 +6,19 @@ This example describes how to use UART to communicate with PC by DMA before time
 
 Required Components: USBtoTTL adapter.
 
-* On AmebaSmart
+* On RTL8730E
 	- Connect `UART_TX(_PA_3)` to `RXD` of adapter
 	- Connect `UART_RX(_PA_2)` to `TXD` of adapter
 	- Connect `GND` to `GND` of adapter
-* On AmebaLite
+* On RTL8726E/RTL8720E/RTL8713E/RTL8710E
 	- Connect `UART_TX(_PA_28)` to `RXD` of adapter
 	- Connect `UART_RX(_PA_29)` to `TXD` of adapter
 	- Connect `GND` to `GND` of adapter
-* On AmebaDplus
+* On RTL8721Dx
 	- Connect `UART_TX(_PA_26)` to `RXD` of adapter
 	- Connect `UART_RX(_PA_27)` to `TXD` of adapter
 	- Connect `GND` to `GND` of adapter
-* On AmebaGreen2
+* On RTL8721F
 	- Connect `UART_TX(_PA_18)` to `RXD` of adapter
 	- Connect `UART_RX(_PA_19)` to `TXD` of adapter
 	- Connect `GND` to `GND` of adapter
@@ -30,7 +30,7 @@ By default, `UART0` is used to communicate with PC under `38400bps` by DMA befor
 1. `UART_IDX` and `UART_BAUD` can be modified to configure desired UART device and baudrate.
 2. Accordingly, `UART_TX` and `UART_RX` in example_uart_ext.h should be updated if `UART_IDX` is modified.
    For more info of UART pins, refer to pinmux spec.
-3. `RX_TO_MS` can be modified to configure UART RX timeout limit in ms. Maximum value of RX_TO_MS is `65535/UART_BAUD`(s) for AmebaSmart/AmebaLite/AmebaDplus and `6710ms` for AmebaGreen2.
+3. `RX_TO_MS` can be modified to configure UART RX timeout limit in ms. Maximum value of RX_TO_MS is `65535/UART_BAUD`(s) for RTL8730E/RTL8726E/RTL8720E/RTL8713E/RTL8710E/RTL8721Dx and `6710ms` for RTL8721F.
 4. `SRX_BUF_SZ` can be modified to set DMA buffer size.
 5. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
@@ -39,7 +39,7 @@ By default, `UART0` is used to communicate with PC under `38400bps` by DMA befor
 # Expected Result
 
 1. Open super terminal or Ameba trace tool and set baudrate to `38400bps`, `1 stopbit`, `no parity`, `no flow control`.
-2. Characters from terminal input will be received and transferred to predefined buffer by DMA before timeout. Received characters will be transmitted to PC by DMA subsequently. On AmebaGreen2, `'Timeout! Got NByte(s)'` will be displayed if time expires since last data sent to UART, without filling given buffer.
+2. Characters from terminal input will be received and transferred to predefined buffer by DMA before timeout. Received characters will be transmitted to PC by DMA subsequently. On RTL8721F, `'Timeout! Got NByte(s)'` will be displayed if time expires since last data sent to UART, without filling given buffer.
 3. Characters sent from PC will be displayed on the terminal.
 
 # Note

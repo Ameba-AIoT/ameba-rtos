@@ -12,8 +12,9 @@ typedef enum {
 	PMU_WLAN_DEVICE		= 1,
 	PMU_KM4_RUN			= 2,
 	PMU_AP_RUN	= 3,
-	PMU_BT_DEVICE	= 4,
-	PMU_VAD_DEVICE	= 5,
+	PMU_BT_CONTROLLER	= 4,
+	PMU_BT_HOST	= 5,
+	PMU_VAD_DEVICE	= 6,
 	PMU_DHCP_PROCESS,
 	PMU_LWIP_STACK,
 	PMU_DEV_USER_BASE, /* reserved for customer use */

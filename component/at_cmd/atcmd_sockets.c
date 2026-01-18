@@ -2679,17 +2679,17 @@ end:
 }
 
 
-
-log_item_t at_socket_items[ ] = {
-	{"+SKTCFG", at_sktcfg, {NULL, NULL}},
-	{"+SKTQUERY", at_sktquery, {NULL, NULL}},
-	{"+SKTSERVER", at_sktserver, {NULL, NULL}},
-	{"+SKTCLIENT", at_sktclient, {NULL, NULL}},
-	{"+SKTSENDRAW", at_sktsendraw, {NULL, NULL}},
-	{"+SKTSEND", at_sktsend, {NULL, NULL}},
-	{"+SKTREAD", at_sktread, {NULL, NULL}},
-	{"+SKTSTATE", at_sktstate, {NULL, NULL}},
-	{"+SKTDEL", at_sktdel, {NULL, NULL}},
+ATCMD_TABLE_DATA_SECTION
+const log_item_t at_socket_items[ ] = {
+	{"+SKTCFG", at_sktcfg},
+	{"+SKTQUERY", at_sktquery},
+	{"+SKTSERVER", at_sktserver},
+	{"+SKTCLIENT", at_sktclient},
+	{"+SKTSENDRAW", at_sktsendraw},
+	{"+SKTSEND", at_sktsend},
+	{"+SKTREAD", at_sktread},
+	{"+SKTSTATE", at_sktstate},
+	{"+SKTDEL", at_sktdel},
 };
 
 void print_socket_at(void)
@@ -2706,7 +2706,7 @@ void at_socket_init(void)
 {
 	init_node_pool();
 
-	atcmd_service_add_table(at_socket_items, sizeof(at_socket_items) / sizeof(at_socket_items[0]));
+	atcmd_service_add_table((log_item_t *)at_socket_items, sizeof(at_socket_items) / sizeof(at_socket_items[0]));
 }
 
 #endif /* CONFIG_ATCMD_SOCKET */
