@@ -121,6 +121,7 @@ static uint64_t *xlat_table_get_empty(xlat_ctx_t *ctx)
 /*
  * Returns a block/page table descriptor for the given level and attributes.
  */
+SRAMDRAM_ONLY_TEXT_SECTION
 uint64_t xlat_desc(const xlat_ctx_t *ctx, uint32_t attr,
 				   unsigned long long addr_pa, unsigned int level)
 {
