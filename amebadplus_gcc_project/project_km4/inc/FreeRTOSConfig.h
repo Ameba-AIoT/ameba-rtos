@@ -256,7 +256,7 @@ extern int  pmu_ready_to_sleep(void);
 /* system assert level controlled by rtk_assert.h header file. */
 #ifndef __ASSEMBLER__
 #include "rtk_assert.h"
-//#define configASSERT(x)    rtk_assert(x)
+#define configASSERT(x)    rtk_assert(x)
 #endif
 
 #endif /* __IASMARM__ */

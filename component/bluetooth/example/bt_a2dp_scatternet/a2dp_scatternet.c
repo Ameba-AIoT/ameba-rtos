@@ -2913,7 +2913,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 			rtk_bt_a2dp_demo_src_send_data_control(false);
 			rtk_bt_avrcp_play_status_change_req(disconn_ind->bd_addr, RTK_BT_AVRCP_STATUS_STOPPED);
 #if defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_AUDIO_HAL) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_AUDIO_HAL
-			RTAudioService_SetDeviceState(RTDEVICE_OUT_A2DP, RTAUDIO_DEVICE_STATE_UNAVAILABLE, "rtk_bt_a2dp", NULL);
+			AudioService_SetDeviceState(DEVICE_OUT_A2DP, AUDIO_DEVICE_STATE_UNAVAILABLE, "rtk_bt_a2dp", NULL);
 #endif
 		}
 		rtk_bt_audio_codec_remove(audio_codec_conf.codec_index, a2dp_demo_codec_entity);
@@ -2973,12 +2973,12 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 			}
 #if defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_AUDIO_HAL) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_AUDIO_HAL
 			{
-				RTAudioDeviceConfig config;
+				AudioDeviceConfig config;
 				config.rate = sbc_codec_t.encoder_t.sample_rate;
 				config.channels = (sbc_codec_t.encoder_t.channel_mode == SBC_CHANNEL_MODE_MONO) ? 1 : 2;
-				config.format = RTAUDIO_FORMAT_PCM_16_BIT;
+				config.format = AUDIO_FORMAT_PCM_16_BIT;
 				BT_LOGA("A2dp set device state avail");
-				RTAudioService_SetDeviceState(RTDEVICE_OUT_A2DP, RTAUDIO_DEVICE_STATE_AVAILABLE, "rtk_bt_a2dp", &config);
+				AudioService_SetDeviceState(DEVICE_OUT_A2DP, AUDIO_DEVICE_STATE_AVAILABLE, "rtk_bt_a2dp", &config);
 			}
 #endif
 		}
@@ -3321,7 +3321,7 @@ int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable)
 				BT_LOGE("demo_usb_init failed\r\n");
 			}
 #elif defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_AUDIO_HAL) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_AUDIO_HAL
-			RTAudioService_Init(); // no need deinit
+			AudioService_Init(); // no need deinit
 #elif defined(RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_UART) && RTK_BT_AUDIO_SOURCE_OUTBAND_FROM_UART
 			demo_uart_init();
 #endif

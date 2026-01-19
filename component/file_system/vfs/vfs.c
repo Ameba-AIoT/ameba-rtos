@@ -6,11 +6,20 @@
 #include "vfs_second_nor_flash.h"
 #include "littlefs_adapter.h"
 
+#ifdef CONFIG_SUPPORT_NAND_FLASH
+#include "vfs_nand_ftl.h"
+#endif
+
 vfs_drv  vfs = {0};
 rtos_mutex_t vfs_mutex = NULL;
 
+extern u8 fatfs_flash_is_nand;
 extern u32 FLASH_APP_BASE;
+extern u8 SECTOR_NUM;
 extern u32 FLASH_SECTOR_COUNT;
+extern u32 SECTOR_SIZE_FLASH;;
+extern u32 FLASH_BLOCK_SIZE;
+
 extern u32 SECOND_FLASH_SECTOR_COUNT;
 extern u32 DATA_FLASH_SIZE;
 
@@ -18,8 +27,6 @@ u32 VFS1_FLASH_BASE_ADDR = 0;
 u32 VFS1_FLASH_SIZE = 0;
 u32 VFS2_FLASH_BASE_ADDR = 0;
 u32 VFS2_FLASH_SIZE = 0;
-
-
 
 int vfs_check_mount_flag(int vfs_type, int vfs_interface_type, char *operation)
 {
@@ -67,6 +74,26 @@ void vfs_init()
 	} else {
 		VFS_DBG(VFS_INFO, "vfs_mutex is already init");
 	}
+
+#ifdef CONFIG_SUPPORT_NAND_FLASH
+	if (SHOULD_USE_NAND()) {
+		if (NAND_FTL_Init() == HAL_OK) {
+#ifdef CONFIG_VFS_FATFS_INCLUDED
+			//fatfs config
+			SECTOR_SIZE_FLASH = vfs_nand_flash_pagesize;
+			SECTOR_NUM = vfs_nand_flash_pagenum;
+			FLASH_BLOCK_SIZE = SECTOR_SIZE_FLASH * SECTOR_NUM;
+			fatfs_flash_is_nand = 1;
+#endif
+			//littlefs config
+			g_nand_lfs_cfg.read_size = vfs_nand_flash_pagesize;
+			g_nand_lfs_cfg.prog_size = vfs_nand_flash_pagesize;
+			g_nand_lfs_cfg.cache_size = vfs_nand_flash_pagesize;
+		} else {
+			VFS_DBG(VFS_ERROR, "nand ftl init fail");
+		}
+	}
+#endif
 }
 
 void vfs_deinit()
@@ -220,10 +247,10 @@ void vfs_assign_region(int vfs_type, char region, int interface)
 		if (interface == VFS_INF_FLASH) {
 			if (region == VFS_REGION_1) {
 				FLASH_APP_BASE = VFS1_FLASH_BASE_ADDR;
-				FLASH_SECTOR_COUNT = VFS1_FLASH_SIZE / 512;
+				FLASH_SECTOR_COUNT = VFS1_FLASH_SIZE / SECTOR_SIZE_FLASH;
 			} else if (region == VFS_REGION_2) {
 				FLASH_APP_BASE = VFS2_FLASH_BASE_ADDR;
-				FLASH_SECTOR_COUNT = VFS2_FLASH_SIZE / 512;
+				FLASH_SECTOR_COUNT = VFS2_FLASH_SIZE / SECTOR_SIZE_FLASH;
 			} else if (region == VFS_REGION_3) {
 #ifdef CONFIG_FATFS_WITHIN_APP_IMG
 #ifndef OTA_IMGID_APP
@@ -245,7 +272,7 @@ void vfs_assign_region(int vfs_type, char region, int interface)
 					VFS_DBG(VFS_INFO, "no fatfs binary \r\n");
 				} else {
 					FLASH_APP_BASE = (u32)img_hdr + 0x1000 - SPI_FLASH_BASE;
-					FLASH_SECTOR_COUNT = img_hdr->image_size / 512;
+					FLASH_SECTOR_COUNT = img_hdr->image_size / SECTOR_SIZE_FLASH;
 				}
 #else
 				VFS_DBG(VFS_ERROR, "VFS_REGION_3 should used by CONFIG_FATFS_WITHIN_APP_IMG\r\n");

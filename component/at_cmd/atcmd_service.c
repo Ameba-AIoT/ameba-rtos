@@ -20,7 +20,7 @@
 #if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 #include "vfs.h"
 #include "kv.h"
-#ifndef CONFIG_ZEPHYR_SDK
+#ifndef CONFIG_PLATFORM_ZEPHYR
 #include "cJSON.h"
 #endif
 #endif
