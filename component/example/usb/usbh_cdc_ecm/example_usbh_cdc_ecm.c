@@ -13,13 +13,19 @@
 #include "usbh.h"
 #include "mbedtls/md5.h"
 #include "lwip_netconf.h"
-#include "usbh_cdc_ecm_hal.h"
+#include "usbh_cdc_ecm.h"
 
 /* Private defines -----------------------------------------------------------*/
 static const char *const TAG = "ECM";
 
 extern void rltk_mii_init(void);
 extern void rltk_mii_deinit(void);
+
+#define ENABLE_USBH_CDC_ECM_HOT_PLUG            1     /* Hot plug */
+
+#define USBH_ECM_MAIN_THREAD_PRIORITY           5
+#define USBH_ECM_HOTPLUG_THREAD_PRIORITY        6
+#define USBH_ECM_ISR_PRIORITY                   INT_PRI_MIDDLE
 
 /*enable this used to check ecm init/deinit memory leakage*/
 #define ENABLE_ECM_MEM_CHECK                    0
@@ -39,13 +45,6 @@ extern void rltk_mii_deinit(void);
 #define RECV_TO                                 60*1000   // ms
 #endif
 
-/* Ethernet State */
-typedef enum {
-	ETH_STATUS_IDLE = 0U,
-	ETH_STATUS_DEINIT,
-	ETH_STATUS_INIT,
-	ETH_STATUS_MAX,
-} eth_state_t;
 
 /* Private variables ---------------------------------------------------------*/
 #if ENABLE_REMOTE_FILE_DOWNLOAD
@@ -64,7 +63,62 @@ static u8 mac_valid[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 
 static u8 dhcp_done = 0;
 
+static usb_os_sema_t cdc_ecm_detach_sema;
+#if ENABLE_USBH_CDC_ECM_HOT_PLUG
+rtos_task_t 	            hotplug_task;
+#endif
+
 /* Private types -------------------------------------------------------------*/
+/* Ethernet State */
+typedef enum {
+	ETH_STATUS_IDLE = 0U,
+	ETH_STATUS_DEINIT,
+	ETH_STATUS_INIT,
+	ETH_STATUS_MAX,
+} eth_state_t;
+
+/* Private function prototypes -----------------------------------------------*/
+static int cdc_ecm_cb_init(void);
+static int cdc_ecm_cb_deinit(void);
+static int cdc_ecm_cb_attach(void);
+static int cdc_ecm_cb_detach(void);
+static int cdc_ecm_cb_setup(void);
+static int cdc_ecm_cb_process(usb_host_t *host, u8 msg);
+static int cdc_ecm_cb_bulk_receive(u8 *pbuf, u32 Len);
+static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max);
+
+static usbh_config_t usbh_ecm_cfg = {
+	.speed = USB_SPEED_HIGH,
+	.ext_intr_enable = 0, //USBH_SOF_INTR
+	.isr_priority = USBH_ECM_ISR_PRIORITY,
+	.main_task_priority = USBH_ECM_MAIN_THREAD_PRIORITY,
+	.hub_support = 1U,
+#if defined (CONFIG_AMEBAGREEN2)
+	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined (CONFIG_AMEBAL2)
+	/*FIFO total depth is 1024 DWORD, reserve 11 DWORD for DMA addr*/
+	.rx_fifo_depth = 501,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#endif
+};
+
+static usbh_cdc_ecm_state_cb_t cdc_ecm_usb_cb = {
+	.init   = cdc_ecm_cb_init,
+	.deinit = cdc_ecm_cb_deinit,
+	.attach = cdc_ecm_cb_attach,
+	.detach = cdc_ecm_cb_detach,
+	.setup  = cdc_ecm_cb_setup,
+	.bulk_received = cdc_ecm_cb_bulk_receive,
+};
+
+static usbh_user_cb_t usbh_ecm_usr_cb = {
+	.process = cdc_ecm_cb_process,
+	.validate = cdc_ecm_cb_device_check,
+};
 
 static usbh_cdc_ecm_priv_data_t ecm_priv = {
 #if ENABLE_USER_SET_DONGLE_MAC
@@ -78,9 +132,91 @@ static usbh_cdc_ecm_priv_data_t ecm_priv = {
 #endif
 };
 
-static void cdc_ecm_do_init(void)
+static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max)
 {
-	usbh_cdc_ecm_do_init(ethernetif_mii_recv, &ecm_priv);
+	UNUSED(cfg_max);
+	return usbh_cdc_ecm_check_config_desc(host);
+}
+
+static int cdc_ecm_cb_init(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
+	return HAL_OK;
+}
+
+static int cdc_ecm_cb_deinit(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "DEINIT\n");
+	return HAL_OK;
+}
+
+static int cdc_ecm_cb_attach(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
+	return HAL_OK;
+}
+
+static int cdc_ecm_cb_detach(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
+#if ENABLE_USBH_CDC_ECM_HOT_PLUG
+	usb_os_sema_give(cdc_ecm_detach_sema);
+#endif
+	return HAL_OK;
+}
+
+static int cdc_ecm_cb_setup(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
+	return HAL_OK;
+}
+
+static int cdc_ecm_cb_bulk_receive(u8 *buf, u32 length)
+{
+	if (length > 0) {
+		ethernetif_mii_recv(buf, length);
+	}
+
+	return HAL_OK;
+}
+
+static int cdc_ecm_cb_process(usb_host_t *host, u8 msg)
+{
+	UNUSED(host);
+	switch (msg) {
+	case USBH_MSG_USER_SET_CONFIG:
+		usbh_cdc_ecm_choose_config(host);
+		break;
+	case USBH_MSG_DISCONNECTED:
+		// usbh_cdc_ecm_host_user.cdc_ecm_is_ready = 0;
+		break;
+
+	case USBH_MSG_CONNECTED:
+		break;
+
+	default:
+		break;
+	}
+
+	return HAL_OK;
+}
+
+static int cdc_ecm_do_init(void)
+{
+	int ret = 0;
+
+	ret = usbh_init(&usbh_ecm_cfg, &usbh_ecm_usr_cb);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBH fail\n");
+		return 0;
+	}
+
+	ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, &ecm_priv);
+	if (ret < 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ECM fail\n");
+		usbh_deinit();
+		return 0;
+	}
 
 	do {
 		if (usbh_cdc_ecm_usb_is_ready()) {
@@ -89,9 +225,8 @@ static void cdc_ecm_do_init(void)
 		rtos_time_delay_ms(1000);
 	} while (1); //wait usb init success
 
-	printf("Example Pid 0x%x/Vid 0x%x\n", usbh_cdc_ecm_get_device_vid(), usbh_cdc_ecm_get_device_pid());
+	return 1;
 }
-
 
 static void ecm_link_change_thread(void *param)
 {
@@ -103,26 +238,34 @@ static void ecm_link_change_thread(void *param)
 	UNUSED(param);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter link status task!\n");
 
-	cdc_ecm_do_init();
+	if (cdc_ecm_do_init() == 0) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "USB init fail\n");
+
+		rtos_task_delete(NULL);
+	}
 
 	while (1) {
 		link_is_up = usbh_cdc_ecm_get_connect_status();
 
 		if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {	// unlink -> link
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Do DHCP\n");
-			ethernet_unplug = ETH_STATUS_INIT;
 			mac = (u8 *)usbh_cdc_ecm_process_mac_str();
-			memcpy(pnetif_eth->hwaddr, mac, 6);
-			RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-			netif_set_link_up(pnetif_eth);
-
-			dhcp_status = LwIP_IP_Address_Request(NETIF_ETH_INDEX);
-			if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
-				netifapi_netif_set_default(pnetif_eth);	//Set default gw to ether netif
-				dhcp_done = 1;
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
+			if (mac == NULL) {
+				rtos_time_delay_ms(1000);
 			} else {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Fail\n");
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Do DHCP\n");
+				ethernet_unplug = ETH_STATUS_INIT;
+				memcpy(pnetif_eth->hwaddr, mac, 6);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+				netif_set_link_up(pnetif_eth);
+
+				dhcp_status = LwIP_IP_Address_Request(NETIF_ETH_INDEX);
+				if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
+					netifapi_netif_set_default(pnetif_eth);	//Set default gw to ether netif
+					dhcp_done = 1;
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
+				} else {
+					RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Fail\n");
+				}
 			}
 		} else if (0 == link_is_up && (ethernet_unplug >= ETH_STATUS_INIT)) {	// link -> unlink
 			ethernet_unplug = ETH_STATUS_DEINIT;
@@ -341,10 +484,43 @@ static void usbh_ecm_mem_check_thread(void *param)
 			rtos_task_delete(monitor_task);
 
 			usbh_cdc_ecm_do_deinit();
-			// rltk_mii_deinit();
+
 			rtos_time_delay_ms(3000);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Loop delete %d: all_free:0x%08x\r\n", loop, usb_os_get_free_heap_size());
 			loop++;
+		}
+	}
+}
+#endif
+
+#if ENABLE_USBH_CDC_ECM_HOT_PLUG
+static void ecm_hotplug_thread(void *param)
+{
+	int ret = 0;
+
+	UNUSED(param);
+
+	for (;;) {
+		usb_os_sema_take(cdc_ecm_detach_sema, USB_OS_SEMA_TIMEOUT);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Hot plug\n");
+		//stop isr
+		usbh_cdc_ecm_deinit();
+		usbh_deinit();
+
+		rtos_time_delay_ms(10);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap size: 0x%08x\n", usb_os_get_free_heap_size());
+
+		ret = usbh_init(&usbh_ecm_cfg, &usbh_ecm_usr_cb);
+		if (ret != HAL_OK) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBH fail\n");
+			break;
+		}
+
+		ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, &ecm_priv);
+		if (ret < 0) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ECM fail\n");
+			usbh_deinit();
+			break;
 		}
 	}
 }
@@ -356,12 +532,18 @@ void example_usbh_cdc_ecm(void)
 {
 	int status;
 	rtos_task_t monitor_task;
-#if ENABLE_REMOTE_FILE_DOWNLOAD
-	rtos_task_t download_task;
-#endif
+
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH ECM demo start\n");
 
+	usb_os_sema_create(&cdc_ecm_detach_sema);
 	rltk_mii_init();
+
+#if ENABLE_USBH_CDC_ECM_HOT_PLUG
+	status = rtos_task_create(&hotplug_task, "usbh_ecm_hotplug_thread", ecm_hotplug_thread, NULL, 1024U, USBH_ECM_HOTPLUG_THREAD_PRIORITY);
+	if (status != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug check task fail\n");
+	}
+#endif
 
 #if ENABLE_ECM_MEM_CHECK
 	status = rtos_task_create(&monitor_task, "usbh_ecm_mem_check_thread", usbh_ecm_mem_check_thread, NULL, 1024U * 2, 3U);
@@ -375,6 +557,7 @@ void example_usbh_cdc_ecm(void)
 	}
 
 #if ENABLE_REMOTE_FILE_DOWNLOAD
+	rtos_task_t download_task;
 	status = rtos_task_create(&download_task, "usbh_ecm_download_thread", ecm_download_thread, NULL, 10 * 512U, 2U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create download thread fail\n");

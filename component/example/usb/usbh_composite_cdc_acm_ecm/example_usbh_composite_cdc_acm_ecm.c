@@ -309,7 +309,6 @@ static int composite_acm_cb_rxdata(u8 *pbuf, u32 len) //type is usb transfer typ
 static u32 composite_acm_cmd_test(u16 argc, u8 *argv[])
 {
 	u8 *cmd;
-	u8 pbuf[PBUF_MAX_LEN];
 
 	if (argc == 0) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Invalid argument\n");
@@ -319,12 +318,18 @@ static u32 composite_acm_cmd_test(u16 argc, u8 *argv[])
 	cmd = (u8 *)argv[0];
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "At cmd(%s)\n", cmd);
-	if (USB_EF_DONGLE_VID == usbh_composite_acm_ecm_get_device_pid()) {
-		memset(pbuf, 0x00, PBUF_MAX_LEN);
-		memcpy(pbuf, cmd, composite_dev_strlen(cmd));
-		pbuf[composite_dev_strlen(cmd) + 0] = 0x0D;
-		pbuf[composite_dev_strlen(cmd) + 1] = 0x0A;
-		usbh_composite_cdc_acm_transmit(pbuf, composite_dev_strlen(pbuf));
+	if (USB_EF_DONGLE_VID == usbh_composite_acm_ecm_get_device_vid()) {
+		memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
+		memcpy(acm_ctrl_buf, cmd, composite_dev_strlen(cmd));
+		acm_ctrl_buf[composite_dev_strlen(cmd) + 0] = 0x0D;
+		acm_ctrl_buf[composite_dev_strlen(cmd) + 1] = 0x0A;
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Pre AtCmd\n");
+		while (1) {
+			if (HAL_OK != usbh_composite_cdc_acm_transmit(acm_ctrl_buf, composite_dev_strlen(acm_ctrl_buf))) {
+				break;
+			}
+			rtos_time_delay_ms(1000);
+		}
 	} else {
 	}
 	RTK_LOGS(TAG, RTK_LOG_INFO, "At cmd(%s) finish!\n", cmd);

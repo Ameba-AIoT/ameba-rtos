@@ -83,7 +83,6 @@ extern "C"
 #endif
 #define RTK_BT_POWER_CONTROL_SUPPORT        1
 #define RTK_BT_HC_CLOCK_OFFSET_SUPPORT      1
-#define RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT 0
 
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
 #define RTK_BLE_GATTS_SUPPORT               1

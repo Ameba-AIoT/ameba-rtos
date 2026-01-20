@@ -99,18 +99,18 @@ static rtos_sema_t cdc_acm_attach_status_changed_sema;
 
 #define MAX_CMD_LEN 2000
 #define FORMAT_LEN 128
-serial_t sobj;
-rtos_sema_t atcmd_usbd_tx_done_sema;
-rtos_sema_t tt_mode_tx_sema;
-void *uart_irq_handle_sema;
-void *uart_show_sema;
-char uart_format_buffer[FORMAT_LEN];
-u8 uart_irq_buffer[MAX_CMD_LEN] = {0};
-u32 uart_irq_count = 0;
+static serial_t sobj;
+static rtos_sema_t atcmd_usbd_tx_done_sema;
+static rtos_sema_t tt_mode_tx_sema;
+static void *uart_irq_handle_sema;
+static void *uart_show_sema;
+static char uart_format_buffer[FORMAT_LEN];
+static u8 uart_irq_buffer[MAX_CMD_LEN] = {0};
+static u32 uart_irq_count = 0;
 static u8 tt_mode_task_start = 0;
-volatile u8 high_water_mark = 0;
-RingBuffer *at_usbd_rx_ring_buf = NULL;
-u8 uart_show_buf[CONFIG_CDC_ACM_BULK_IN_XFER_SIZE] = {0};
+static volatile u8 high_water_mark = 0;
+static RingBuffer *at_usbd_rx_ring_buf = NULL;
+static u8 uart_show_buf[CONFIG_CDC_ACM_BULK_IN_XFER_SIZE] = {0};
 
 void uart_irq(uint32_t id, SerialIrq event)
 {

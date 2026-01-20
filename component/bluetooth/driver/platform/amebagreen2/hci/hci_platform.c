@@ -338,6 +338,7 @@ static uint8_t hci_platform_parse_config(void)
 
 static void bt_power_on(void)
 {
+	set_reg_value(SYSTEM_MEM_CTRL_BASE + REG_CTRL_GRP_BT_E0_CTRL, BIT3 | BIT4 | BIT5, 0); /* set BT BMEM high 32K power mode in sys LPS mode */
 	set_reg_value(SYSTEM_CTRL_BASE + REG_LSYS_PWC, BIT1 | BIT2, 3);                 /* enable BT Power Cut */
 	osif_delay_us(40);
 	set_reg_value(SYSTEM_CTRL_BASE + REG_LSYS_PWC, BIT17 | BIT18, 0);               /* disable ISO of BT */
@@ -381,6 +382,7 @@ void bt_power_off(void)
 	}
 	set_reg_value(SYSTEM_CTRL_BASE + REG_LSYS_PWC, BIT17 | BIT18, 3);                /* enable ISO of BT and PD_SHRM */
 	set_reg_value(SYSTEM_CTRL_BASE + REG_LSYS_PWC, BIT1 | BIT2, 0);                  /* disable BT Power Cut & PD_SHRM Power Cut */
+	set_reg_value(SYSTEM_MEM_CTRL_BASE + REG_CTRL_GRP_BT_E0_CTRL, BIT3 | BIT4 | BIT5, 2); /* set BT BMEM high 32K power mode in sys LPS mode */
 	set_reg_value(SYSTEM_CTRL_BASE + REG_LSYS_BT_CTRL0, BIT13, 0);                   /* disable HOST_WAKE_BT */
 }
 

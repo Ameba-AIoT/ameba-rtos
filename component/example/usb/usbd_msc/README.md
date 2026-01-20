@@ -49,4 +49,5 @@ None
 # Supported IC
 
 RTL8730E
+RTL8721Dx
 RTL8721F

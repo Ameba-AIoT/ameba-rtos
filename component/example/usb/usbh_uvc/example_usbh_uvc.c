@@ -73,11 +73,14 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include "ringbuffer.h"
 #endif
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_HTTPC)
 #include "httpc/httpc.h"
 #include "lwipconf.h"
+#include "lwip_netconf.h"
+#include "ringbuffer.h"
 #endif
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
@@ -88,7 +91,7 @@
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_HTTPC)
 #define USBH_UVC_HTTPC_WRITE_SIZE        (4 * 1024)
 #define USBH_UVC_HTTPC_VIDEO_SIZE        (2 * 1024 * 1024)
-#define USBH_UVC_HTTPC_SERVER            "192.168.1.102"
+#define USBH_UVC_HTTPC_SERVER            "192.168.1.100"
 #define USBH_UVC_HTTPC_SECURE            HTTPC_SECURE_NONE
 #define USBH_UVC_HTTPC_PORT              5090
 #define USBH_UVC_HTTP_TAG                "HTTP"
@@ -127,7 +130,9 @@ static RingBuffer *uvc_rb;
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_HTTPC)
 static rtos_sema_t uvc_httpc_save_img_sema = NULL;
+#if (CONFIG_USBH_UVC_FORMAT_TYPE == USBH_UVC_FORMAT_MJPEG)
 static int uvc_httpc_img_file_no = 0;
+#endif
 static int uvc_buf_size = 0;
 static u32 uvc_httpc_is_init = 0;
 static RingBuffer *uvc_rb;
@@ -217,10 +222,22 @@ static void uvc_img_prepare(usbh_uvc_frame_t *frame)
 	u32 len = frame->byteused;
 
 #if CONFIG_USBH_UVC_CHECK_MJEPG_DATA
+	//some camera may pad 0 to the end of image
+	while (1) {
+		if (frame->buf[len - 1] == 0) {
+			len--;
+		} else {
+			break;
+		}
+	}
+
+	/* UVC Host only passes data through. */
+	/* Invalid data from camera should be handled by application and must not stopping fetching the next frame. */
 	if (frame->buf[0] != 0xff || frame->buf[1] != 0xd8 || frame->buf[len - 2] != 0xff || frame->buf[len - 1] != 0xd9) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mjpeg] image error: %x %x %x %x\n", frame->buf[0], frame->buf[1], frame->buf[2], frame->buf[3]);
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mjpeg] image error: %x %x %x %x\n", frame->buf[len - 4], frame->buf[len - 3], frame->buf[len - 2], frame->buf[len - 1]);
-		return;
+		/* should not return */
+		/* The application can adopt a drop mechanism here, discarding frames that do not comply with the specification without storing them */
 	}
 #endif
 
@@ -236,7 +253,7 @@ static void uvc_img_prepare(usbh_uvc_frame_t *frame)
 #if ((CONFIG_USBH_UVC_APP == USBH_UVC_APP_HTTPC) || (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS))
 	if (rtos_mutex_take(uvc_buf_mutex, 1000 / uvc_ctx.frame_rate / 2) == RTK_SUCCESS) {
 		if (uvc_ctx.fmt_type == USBH_UVC_FORMAT_H264) {
-			if (RingBuffer_Space(uvc_rb) > frame->byteused) {
+			if ((u32)RingBuffer_Space(uvc_rb) > frame->byteused) {
 				RingBuffer_Write(uvc_rb, frame->buf, frame->byteused);
 			}
 			rtos_mutex_give(uvc_buf_mutex);
@@ -270,9 +287,18 @@ static void uvc_vfs_thread(void *param)
 	UNUSED(param);
 
 	rtos_sema_create(&uvc_vfs_save_img_sema, 0U, 1U);
+
+	res = vfs_user_register("sdcard", VFS_FATFS, VFS_INF_SD, VFS_REGION_4, VFS_RW);
+	if (res == 0) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "VFS-SDcard Init Success \n");
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "VFS-SDcard Init Fail \n");
+		goto exit;
+	}
+
 	uvc_vfs_is_init = 1;
 
-	prefix = find_vfs_tag(VFS_REGION_1);
+	prefix = find_vfs_tag(VFS_REGION_4);
 
 	while (uvc_vfs_is_init) {
 		if (rtos_sema_take(uvc_vfs_save_img_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
@@ -287,7 +313,7 @@ static void uvc_vfs_thread(void *param)
 		snprintf(path, sizeof(path), "%s:%s", prefix, filename);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Create image file: %s\n", path);
 
-		finfo = fopen(path, "w");
+		finfo = fopen(path, "wb+");
 		if (finfo == NULL) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "fopen image fail\n");
 			goto exit;
@@ -296,9 +322,9 @@ static void uvc_vfs_thread(void *param)
 		if (rtos_mutex_take(uvc_buf_mutex, RTOS_MAX_TIMEOUT) == RTK_SUCCESS) {
 			res = fwrite(uvc_buf, uvc_buf_size, 1, finfo);
 			if (res != uvc_buf_size) {
-				RTK_LOGS(NOTAG, RTK_LOG_ERROR, "fwrite() failed, err: %d\n", res);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "fwrite() failed, err: %d\n", res);
 			} else {
-				RTK_LOGS(NOTAG, RTK_LOG_INFO, "fwrite() ok, w %d\n", uvc_buf_size);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "fwrite() ok, w %d\n", uvc_buf_size);
 			}
 
 			rtos_mutex_give(uvc_buf_mutex);
@@ -328,7 +354,15 @@ static void uvc_vfs_thread(void *param)
 	rtos_sema_create(&uvc_vfs_save_img_sema, 0U, 1U);
 	uvc_vfs_is_init = 1;
 
-	prefix = find_vfs_tag(VFS_REGION_1);
+	res = vfs_user_register("sdcard", VFS_FATFS, VFS_INF_SD, VFS_REGION_4, VFS_RW);
+	if (res == 0) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "VFS-SDcard Init Success \n");
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "VFS-SDcard Init Fail \n");
+		goto exit;
+	}
+
+	prefix = find_vfs_tag(VFS_REGION_4);
 
 	memset(filename, 0, 64);
 	sprintf(filename, "stream");
@@ -470,6 +504,11 @@ static void uvc_httpc_thread(void *param)
 		ret = httpc_request_write_data(conn, uvc_buf, uvc_buf_size);
 		if (ret < 0) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Send %s request fail: %d\n", USBH_UVC_HTTP_TAG, ret);
+			httpc_conn_close(conn);
+			rtos_time_delay_ms(2);
+			httpc_conn_connect(conn, USBH_UVC_HTTPC_SERVER, USBH_UVC_HTTPC_PORT, 0);
+		} else {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Send image%d request ok\n", uvc_httpc_img_file_no);
 		}
 
 		rtos_mutex_give(uvc_buf_mutex);

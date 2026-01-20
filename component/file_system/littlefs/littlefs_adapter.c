@@ -7,7 +7,6 @@
 #endif
 
 lfs_t g_lfs;
-
 u32 LFS_FLASH_BASE_ADDR;
 u32 LFS_FLASH_SIZE;
 
@@ -37,14 +36,17 @@ int lfs_nand_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, 
 		return LFS_ERR_OK;
 	}
 
-	u32 NandAddr, PageAddr;
+	u32 NandAddr, PageAddr, read_len = 0;
 
-	NandAddr = LFS_FLASH_BASE_ADDR + c->block_size * block + off;
-	PageAddr = NAND_ADDR_TO_PAGE_ADDR(NandAddr);
-	if (NAND_FTL_ReadPage(PageAddr, (uint8_t *)buffer)) {
-		return LFS_ERR_CORRUPT;
+	while (read_len < size) {
+		NandAddr = LFS_FLASH_BASE_ADDR + c->block_size * block + off + read_len;
+		PageAddr = NAND_ADDR_TO_PAGE_ADDR(NandAddr);
+
+		if (NAND_FTL_ReadPage(PageAddr, (uint8_t *)buffer + read_len)) {
+			return LFS_ERR_CORRUPT;
+		}
+		read_len += c->prog_size;
 	}
-
 
 	return LFS_ERR_OK;
 }
@@ -61,7 +63,6 @@ int lfs_nand_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, 
 	}
 
 	u32 NandAddr, PageAddr;
-
 
 	NandAddr = LFS_FLASH_BASE_ADDR + c->block_size * block + off;
 	PageAddr = NAND_ADDR_TO_PAGE_ADDR(NandAddr);
@@ -274,16 +275,15 @@ int rt_lfs_init(lfs_t *lfs)
 	if (lfs == &g_lfs) {
 #ifdef CONFIG_SUPPORT_NAND_FLASH
 		if (SHOULD_USE_NAND()) {
-			VFS_DBG(VFS_INFO, "init nand lfs cfg");
-			NAND_FTL_Init();
-			g_nand_lfs_cfg.block_count = LFS_FLASH_SIZE / 128 / 1024;
+			g_nand_lfs_cfg.block_count = LFS_FLASH_SIZE / vfs_nand_flash_pagesize / vfs_nand_flash_pagenum;
 			lfs_cfg = &g_nand_lfs_cfg;
+			VFS_DBG(VFS_INFO, "init nand lfs cfg");
 		} else
 #endif
 		{
 			g_nor_lfs_cfg.block_count = LFS_FLASH_SIZE / 4096;
-			VFS_DBG(VFS_INFO, "init nor lfs cfg");
 			lfs_cfg = &g_nor_lfs_cfg;
+			VFS_DBG(VFS_INFO, "init nor lfs cfg");
 		}
 	}
 
