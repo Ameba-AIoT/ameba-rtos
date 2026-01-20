@@ -52,10 +52,14 @@ After installing the plugin, you can efficiently complete environment setup, pro
 If you prefer to configure the build environment manually, please refer to the [FreeRTOS SDK User Guide](https://aiot.realmcu.com/en/latest/rtos/sdk/index.html).
 Follow the steps described in the guide to:
 
-* Set up the SDK environment
-* Compile your project
-* Flash the images
-* Monitor the serial port
+* Set up the SDK environment: Run `source env.sh` on Linux or `env.bat` on Windows.
+* Configure your project:
+  `ameba.py soc <soc_name>` sets the target chip to `<soc_name>`.
+  `ameba.py menuconfig` configures the project.
+
+* Compile your project: `ameba.py build`
+* Flash the images: `ameba.py flash -p <PORT> -b <BAUDRATE> -i <BIN_FILE> <START_ADDR> <END_ADDR>`
+* Monitor the serial port: `ameba.py monitor -p <PORT> -b 1500000`
 
 # Feedback
 
