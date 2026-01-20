@@ -6,17 +6,18 @@ ameba-rtos是瑞昱官方推出的物联网开发框架，同时支持Linux和Wi
 
 # 支持的芯片
 
-| 芯片      |         master       |     release/v1.0       |     release/v1.1       |
-|:--------- |:---------------------:| :---------------------:| :---------------------:|
-| RTL8730E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
-| RTL8726E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
-| RTL8721Dx |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
-| RTL8710E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
-| RTL8721F  |![alt text][supported] |                        |                        |
-| RTL8720E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
-| RTL8713E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+| 芯片      |         master       |     release/v1.0          |     release/v1.1         |
+|:--------- |:---------------------:| :-----------------------:| :-----------------------:|
+| RTL8730E  |![alt text][supported] | ![alt text][supported]   | ![alt text][supported]   |
+| RTL8726E  |![alt text][supported] | ![alt text][supported]   | ![alt text][supported]   |
+| RTL8721Dx |![alt text][supported] | ![alt text][supported]   | ![alt text][supported]   |
+| RTL8710E  |![alt text][supported] | ![alt text][supported]   | ![alt text][supported]   |
+| RTL8721F  |![alt text][supported] | ![alt text][not-support] | ![alt text][not-support] |
+| RTL8720E  |![alt text][supported] | ![alt text][supported]   | ![alt text][supported]   |
+| RTL8713E  |![alt text][supported] | ![alt text][supported]   | ![alt text][supported]   |
 
 [supported]: https://img.shields.io/badge/-%E6%94%AF%E6%8C%81-green "supported"
+[not-support]: https://img.shields.io/badge/-%E4%B8%8D%E6%94%AF%E6%8C%81-red "not support"
 
 # 相关文档
 
@@ -48,10 +49,13 @@ Ameba 扩展插件是在 Cline 基础上开发的 VS Code 扩展， 兼容原生
 
 如果您希望手动完成环境配置，请参考[FreeRTOS SDK 使用指南](https://aiot.realmcu.com/cn/latest/rtos/sdk/index.html)。根据指南内容，逐步进行以下操作：
 
-* SDK 环境配置
-* 工程编译
-* 固件烧录
-* 串口监控
+* SDK 环境配置: Linux 平台执行 `source env.sh`，Windows 平台执行 `env.bat`。
+* 工程配置：
+  `ameba.py soc <soc_name>` 选择目标芯片 `<soc_name>`。
+  `ameba.py menuconfig` 配置工程。
+* 工程编译： `ameba.py build`
+* 固件烧录： `ameba.py flash -p <PORT> -b <BAUDRATE> -i <BIN_FILE> <START_ADDR> <END_ADDR>`
+* 串口监控： `ameba.py monitor -p <PORT> -b 1500000`
 
 # 反馈
 
