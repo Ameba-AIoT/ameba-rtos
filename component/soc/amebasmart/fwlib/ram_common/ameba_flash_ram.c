@@ -74,7 +74,7 @@ void FLASH_Write_Lock(void)
 #ifdef CONFIG_ARM_CORE_CA32
 	/*1. Close Core1 to avoid Core1 Access Flash */
 	vPortGateOtherCore();
-#ifdef CONFIG_XIP_FLASH
+
 	/*2. Sent IPC to KM4 */
 	IPC_MSG_STRUCT ipc_msg_temp;
 	_memset(Flash_Sync_Flag, 0, sizeof(Flash_Sync_Flag));
@@ -84,7 +84,8 @@ void FLASH_Write_Lock(void)
 	ipc_msg_temp.msg = (u32)Flash_Sync_Flag;
 	ipc_msg_temp.msg_len = 1;
 	ipc_msg_temp.rsvd = 0; /* for coverity init issue */
-	ipc_send_message(IPC_AP_TO_NP, IPC_A2N_FLASHPG_REQ, &ipc_msg_temp);
+	while (ipc_send_message(IPC_AP_TO_NP, IPC_A2N_FLASHPG_REQ, &ipc_msg_temp)) {
+	};
 
 	while (1) {
 		DCache_Invalidate((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
@@ -92,7 +93,9 @@ void FLASH_Write_Lock(void)
 			break;
 		}
 	}
-#endif
+
+	/*3. Change MMU Table of flash region */
+	xlat_flash_region_device();
 #endif
 }
 
@@ -106,12 +109,14 @@ SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_Write_Unlock(void)
 {
 #ifdef CONFIG_ARM_CORE_CA32
-#ifdef CONFIG_XIP_FLASH
 	/*1. Let KM4 Go */
 	Flash_Sync_Flag[0] = 0;
 	DCache_Clean((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
-#endif
-	/*2. Wakeup Core1 */
+
+	/*2. restore MMU */
+	xlat_flash_region_xip();
+
+	/*3. Wakeup Core1 */
 	vPortWakeOtherCore();
 #endif
 
@@ -387,7 +392,7 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 #endif
 }
 
-SRAMDRAM_ONLY_TEXT_SECTION
+SRAMDRAM_ONLY_TEXT_SECTION __NO_INLINE
 void FLASH_UserMode_Enter(void)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
@@ -395,19 +400,28 @@ void FLASH_UserMode_Enter(void)
 	/* CA32 may access flash by prefetch in background */
 	__DSB();
 	__ISB();
-	FLASH_WaitBusy_InUserMode(WAIT_SPIC_BUSY);
 
+	FLASH_WaitBusy_InUserMode(WAIT_SPIC_BUSY);
+	__DSB();
 	spi_flash->CTRLR0 |= BIT_USER_MODE;
+	__DSB();
+
 	/* user mode is entered after auto cmd is done, which means if SPIC BUSY=1, HW will not write Ctrl0 */
 	while (!(spi_flash->CTRLR0 & BIT_USER_MODE));
+	__DSB();
 }
 
-SRAMDRAM_ONLY_TEXT_SECTION
+SRAMDRAM_ONLY_TEXT_SECTION __NO_INLINE
 void FLASH_UserMode_Exit(void)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
+
+	__DSB();
 	spi_flash->CTRLR0 &= ~BIT_USER_MODE;
+	__DSB();
+
 	while (spi_flash->CTRLR0 & BIT_USER_MODE);
+	__DSB();
 	__ISB();
 }
 
@@ -428,6 +442,7 @@ void FLASH_RxCmd_InUserMode(u8 cmd, u32 read_len, u8 *read_data)
 	u32 value;
 
 	/* Caller should Enter user mode first */
+	__DSB();
 
 	/* Set OneBit Mode */
 	FLASH_SetSpiMode(&flash_init_para, SpicOneBitMode);
@@ -448,7 +463,9 @@ void FLASH_RxCmd_InUserMode(u8 cmd, u32 read_len, u8 *read_data)
 	spi_flash->DR[0].BYTE = cmd;
 
 	/* Enable SSIENR to start the transfer */
+	__DSB();
 	spi_flash->SSIENR = BIT_SPIC_EN;
+	__DSB();
 
 	/* read data */
 	rx_num = 0;
@@ -464,7 +481,7 @@ void FLASH_RxCmd_InUserMode(u8 cmd, u32 read_len, u8 *read_data)
 
 	/* Recover */
 	FLASH_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
-
+	__DSB();
 	/* Caller decide to Exit user mode */
 }
 
@@ -495,6 +512,8 @@ void FLASH_WaitBusy_InUserMode(u32 WaitType)
 	SPIC_TypeDef *spi_flash = SPIC;
 	u32 BusyCheck = 0;
 	u8 status = 0;
+
+	__DSB();
 
 	do {
 		if (WaitType == WAIT_SPIC_BUSY) {
@@ -562,10 +581,12 @@ void FLASH_TxCmd_InUserMode(u8 cmd, u8 DataPhaseLen, u8 *pData)
 	u32 value;
 
 	/* Caller should Enter user mode first */
+	__DSB();
 
 	/* backup bitmode & addr_len */
 	addr_length = spi_flash->USER_LENGTH;
 	ctrl0 = spi_flash->CTRLR0;
+	__DSB();
 
 	/* set CTRLR0: TX mode and one bit mode */
 	spi_flash->CTRLR0 &= ~(TMOD(3) | CMD_CH(3) | ADDR_CH(3) | DATA_CH(3));
@@ -587,7 +608,9 @@ void FLASH_TxCmd_InUserMode(u8 cmd, u8 DataPhaseLen, u8 *pData)
 	}
 
 	/* Enable SSIENR to start the transfer */
+	__DSB();
 	spi_flash->SSIENR = BIT_SPIC_EN;
+	__DSB();
 
 	/* Wait transfer complete. When complete, SSIENR.SPIC_EN are cleared by HW automatically. */
 	FLASH_WaitBusy_InUserMode(WAIT_TRANS_COMPLETE);
@@ -595,7 +618,7 @@ void FLASH_TxCmd_InUserMode(u8 cmd, u8 DataPhaseLen, u8 *pData)
 	/* Restore bitmode & addr_len */
 	spi_flash->USER_LENGTH = addr_length;
 	spi_flash->CTRLR0 = ctrl0;
-
+	__DSB();
 	/* Call FLASH_WaitBusy(WAIT_FLASH_BUSY) after this function:
 		1) wait flash busy done (wip=0)
 		2) restore SPIC to auto mode */
@@ -631,6 +654,7 @@ void FLASH_TxData(u32 StartAddr, u32 DataPhaseLen, u8 *pData)
 
 	/* set CTRLR0: TX mode and one bit mode */
 	ctrl0 = spi_flash->CTRLR0;
+	__DSB();
 	spi_flash->CTRLR0 &= ~(TMOD(3) | CMD_CH(3) | ADDR_CH(3) | DATA_CH(3));
 
 	/* Set ADDR length */
@@ -663,7 +687,9 @@ void FLASH_TxData(u32 StartAddr, u32 DataPhaseLen, u8 *pData)
 	}
 
 	/* Enable SSIENR to start the transfer */
+	__DSB();
 	spi_flash->SSIENR = BIT_SPIC_EN;
+	__DSB();
 
 	/* write the remaining data into fifo */
 	while (tx_num < DataPhaseLen) {

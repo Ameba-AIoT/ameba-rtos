@@ -10,6 +10,7 @@
 #include "main.h"
 
 /* Scheduler includes. */
+#include "sheipa.h"
 
 #include "ameba_soc.h"
 #ifdef CONFIG_CORE_AS_AP
@@ -203,6 +204,9 @@ int main(void)
 
 	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
 	IPC_SEMDelayStub(&rtos_time_delay_ms);
+
+	/* Configure the hardware ready to run the demo. */
+	prvSetupHardware();
 
 	/* Start the tasks and timer running. */
 	RTK_LOGI(TAG, "Cortex-A Start Scheduler\n");
