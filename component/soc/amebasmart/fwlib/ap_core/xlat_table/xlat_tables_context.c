@@ -119,6 +119,12 @@ int xlat_change_mem_attributes(uintptr_t base_va, size_t size, uint32_t attr)
 	return xlat_change_mem_attributes_ctx(&tf_xlat_ctx, base_va, size, attr);
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
+int xlat_update_mem_attributes(uintptr_t base_va, size_t size, uint32_t attr)
+{
+	return xlat_update_mem_attributes_ctx(&tf_xlat_ctx, base_va, size, attr);
+}
+
 #if PLAT_RO_XLAT_TABLES
 /* Change the memory attributes of the descriptors which resolve the address
  * range that belongs to the translation tables themselves, which are by default
