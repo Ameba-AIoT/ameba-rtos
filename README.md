@@ -12,11 +12,12 @@ ameba-rtos is the development framework for Realtek SoCs supported on Linux and 
 | RTL8726E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
 | RTL8721Dx |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
 | RTL8710E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
-| RTL8721F  |![alt text][supported] |                        |                        |
+| RTL8721F  |![alt text][supported] | ![alt text][not-support] |![alt text][not-support] |
 | RTL8720E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
 | RTL8713E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
 
 [supported]: https://img.shields.io/badge/-supported-green "supported"
+[not-support]: https://img.shields.io/badge/-not%20support-red "not support"
 
 # Documentation
 
