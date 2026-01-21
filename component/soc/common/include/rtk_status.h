@@ -27,6 +27,7 @@
 #define	RTK_ERR_WIFI_CONN_ASSOC_FAIL            (RTK_ERR_WIFI_BASE + 15)
 #define	RTK_ERR_WIFI_CONN_4WAY_HANDSHAKE_FAIL   (RTK_ERR_WIFI_BASE + 16)
 #define	RTK_ERR_WIFI_CONN_4WAY_PASSWORD_WRONG   (RTK_ERR_WIFI_BASE + 17)
+#define	RTK_ERR_WIFI_CONN_APP_DISCONN           (RTK_ERR_WIFI_BASE + 18)
 
 #define	RTK_ERR_WIFI_POWEROFF                   (RTK_ERR_WIFI_BASE + 32)	/**< Wi-Fi is powered off in IPS(Inactive Power Save) mode, unable to access Wi-Fi registers. */
 #define	RTK_ERR_WIFI_TX_BUF_FULL                (RTK_ERR_WIFI_BASE + 33)	/**< tx buffer full(hw buffer & skb buffer). */
