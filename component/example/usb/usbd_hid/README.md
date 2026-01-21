@@ -15,7 +15,7 @@ None
 	#define USBD_HID_DEVICE_TYPE		USBD_HID_KEYBOARD_DEVICE
 
 2. Menuconfig
-	Type command `./menuconfig.py` under the project directory and choose `CONFIG USB`:
+	Use menuconfig and choose `CONFIG USB`:
 	```
 	[*] Enable USB
 			USB Mode (Device)  --->

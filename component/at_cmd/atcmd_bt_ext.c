@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "platform_autoconf.h"
+#if defined(CONFIG_BT) && CONFIG_BT
+
 #include "atcmd_service.h"
 #include "atcmd_bt_impl.h"
 #include "bt_utils.h"
@@ -520,7 +523,7 @@ static void fBTVENDOR(void *arg)
 	}
 }
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_bt_cmds[] = {
 	{"+BTDEMO",              fBTDEMO},
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
@@ -631,18 +634,4 @@ void print_bt_ext_at(void)
 #endif
 }
 
-void at_bt_init(void)
-{
-#if (defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK) || \
-    (defined(CONFIG_BT_EXCLUDE_AT_COMMAND) && CONFIG_BT_EXCLUDE_AT_COMMAND) || \
-    (defined(CONFIG_BT_INIC) && CONFIG_BT_INIC)
-	(void)at_bt_cmds;
-#else
-	// int i = 0, size = sizeof(at_bt_cmds) / sizeof(at_bt_cmds[0]);
-
-	// while (i < size) {
-	// 	atcmd_service_add_table(&(at_bt_cmds[i].item), 1);
-	// 	i++;
-	// }
-#endif
-}
+#endif /* CONFIG_BT */

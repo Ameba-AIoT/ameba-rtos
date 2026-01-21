@@ -70,7 +70,7 @@ ameba_list_append(private_sources wifi_feature_dis_wtn.c)
 
 if(CONFIG_WHC_DEV AND CONFIG_WHC_INTF_IPC)
     if(NOT CONFIG_AMEBALITE)
-        if(NOT CONFIG_ZEPHYR_SDK)
+        if(NOT CONFIG_PLATFORM_ZEPHYR)
             if(TARGET target_wifi_nouse)
                 add_custom_command(
                     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/wifi_intf_drv_to_app_ext_noused.c

@@ -1,4 +1,6 @@
 #include "platform_autoconf.h"
+#ifdef CONFIG_ETHERNET
+
 #include "kv.h"
 #include "atcmd_service.h"
 #include "wifi_api_types.h"
@@ -92,7 +94,7 @@ end:
 	}
 }
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_ethernet_items[ ] = {
 	{"+ETHIP", at_ethip},
 };
@@ -108,7 +110,4 @@ void print_ethernet_at(void)
 	}
 }
 
-void at_ethernet_init(void)
-{
-	atcmd_service_add_table((log_item_t *)at_ethernet_items, sizeof(at_ethernet_items) / sizeof(at_ethernet_items[0]));
-}
+#endif /* CONFIG_ETHERNET */

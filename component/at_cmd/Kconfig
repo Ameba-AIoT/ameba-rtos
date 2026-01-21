@@ -1,5 +1,6 @@
 menu "CONFIG AT CMD"
     config SUPPORT_ATCMD
+        depends on !PLATFORM_ZEPHYR
         bool "Enable ATCMD"
         default n
     if SUPPORT_ATCMD

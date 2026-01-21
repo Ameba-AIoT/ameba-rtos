@@ -12,11 +12,7 @@
 #include "usbd.h"
 #include "usbd_composite_config.h"
 #include "usbd_composite_hid_bi_dir.h"
-#if defined(CONFIG_USBD_COMPOSITE_HID_UAC1)
-#include "usbd_composite_uac1.h"
-#else
-#include "usbd_composite_uac2.h"
-#endif
+#include "usbd_composite_uac.h"
 
 /* Exported defines ----------------------------------------------------------*/
 

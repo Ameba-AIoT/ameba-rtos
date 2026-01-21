@@ -27,7 +27,7 @@ None
       +#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
       +  at_custom_init,
       +#endif
-2. Run `./menuconfig.py` in the project directory and select the following configuration:
+2. Use menuconfig and select the following configuration:
    - Navigate to `CONFIG Mass Production` ---> Check `Enable MP` ---> Enter `MP Mode` ---> Select `expand`.
 3. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.

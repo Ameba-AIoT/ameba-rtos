@@ -10,9 +10,6 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # Component public part, user config begin
 
 # You may use if-else condition to set or update predefined variable above
-ameba_list_append(public_libraries
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_httpd.a
-)
 
 # Component public part, user config end
 #----------------------------------------#
@@ -37,12 +34,13 @@ set(private_includes)                #private include directories, NOTE: relativ
 set(private_definitions)             #private definitions
 set(private_compile_options)         #private compile_options
 
-
-if(CONFIG_AMEBA_RLS)
 #------------------------------#
 # Component private part, user config begin
 
 ameba_list_append(private_sources
+    httpd_core.c
+    httpd_msg.c
+    httpd_util.c
     httpd_tls.c
 )
 
@@ -62,38 +60,3 @@ ameba_add_internal_library(httpd
     p_COMPILE_OPTIONS
         ${private_compile_options}
 )
-
-else()
-#------------------------------#
-# Component private part, user config begin
-if(BUILD_FOR_RLS)
-ameba_list_append(private_sources
-    httpd_core.c
-    httpd_msg.c
-    httpd_util.c
-)
-else()
-ameba_list_append(private_sources
-    httpd_core.c
-    httpd_msg.c
-    httpd_util.c
-    httpd_tls.c
-)
-endif()
-# Component private part, user config end
-#------------------------------#
-
-#WARNING: Select right API based on your component's release/not-release/standalone
-
-###NOTE: For open-source component, always build from source
-ameba_add_external_app_library(httpd
-    p_SOURCES
-        ${private_sources}
-    p_INCLUDES
-        ${private_includes}
-    p_DEFINITIONS
-        ${private_definitions}
-    p_COMPILE_OPTIONS
-        ${private_compile_options}
-)
-endif()

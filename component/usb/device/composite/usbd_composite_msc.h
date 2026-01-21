@@ -14,62 +14,87 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
-/* TX/RX thread priority */
-#define COMP_MSC_TX_THREAD_PRIORITY                 5U
-#define COMP_MSC_RX_THREAD_PRIORITY                 5U
+#define COMP_MSC_TX_THREAD_PRIORITY             5U     /**< TX thread priority */
+#define COMP_MSC_RX_THREAD_PRIORITY             5U     /**< RX thread priority */
 
 /* MSC Endpoint parameters */
-#define COMP_MSC_HS_MAX_PACKET_SIZE				512U   /* High speed BULK IN & OUT packet size */
-#define COMP_MSC_FS_MAX_PACKET_SIZE				64U    /* Full speed BULK IN & OUT packet size */
+#define COMP_MSC_HS_MAX_PACKET_SIZE				512U   /**< High speed BULK IN & OUT packet size */
+#define COMP_MSC_FS_MAX_PACKET_SIZE				64U    /**< Full speed BULK IN & OUT packet size */
 
 /* MSC configurations */
-#define COMP_MSC_RAM_DISK						0      /* Use RAM as storage media, for test purpose only */
-#define COMP_MSC_FIX_CV_TEST_ISSUE				0      /* Enable for CV test */
+#define COMP_MSC_FIX_CV_TEST_ISSUE				0      /**< Enable for CV test */
 
-#define COMP_MSC_BLK_BITS						9
-#define COMP_MSC_BLK_SIZE						(1 << COMP_MSC_BLK_BITS)
-#define COMP_MSC_BUFLEN							(16*1024) /* Default size of buffer length */
+#define COMP_MSC_BLK_BITS						9      /**< Number of bits per block (log2(512)). */
+#define COMP_MSC_BLK_SIZE						(1 << COMP_MSC_BLK_BITS)/**< Block size in bytes (512). */
+#define COMP_MSC_BUFLEN							(16*1024)/**< Default size of the internal data buffer. */
+
 /* RAM disk configurations */
-#if COMP_MSC_RAM_DISK
-#define COMP_MSC_RAM_DISK_SIZE					(COMP_MSC_BUFLEN * 8) // Should be > 64KB to support ATTO benchmark test
-#define COMP_MSC_RAM_DISK_SECTORS				(COMP_MSC_RAM_DISK_SIZE >> COMP_MSC_BLK_BITS)
+#ifdef CONFIG_USBD_COMPOSITE_MSC_RAM_DISK
+#define COMP_MSC_RAM_DISK_SIZE					(COMP_MSC_BUFLEN * 8) /**< Total size of the RAM disk. Should be > 64KB to support ATTO benchmark test. */
+#define COMP_MSC_RAM_DISK_SECTORS				(COMP_MSC_RAM_DISK_SIZE >> COMP_MSC_BLK_BITS) /**< Total size of the RAM disk. Should be > 64KB to support ATTO benchmark test. */
 #endif
 
 /* MSC Request Codes */
-#define COMP_MSC_REQUEST_RESET					0xFF
-#define COMP_MSC_REQUEST_GET_MAX_LUN			0xFE
+#define COMP_MSC_REQUEST_RESET					0xFF            /**< Bulk-Only Mass Storage Reset request. */
+#define COMP_MSC_REQUEST_GET_MAX_LUN			0xFE            /**< Get Max LUN request. */
 
 /* CBW/CSW configurations */
-#define COMP_MSC_CB_WRAP_LEN					31U
-#define COMP_MSC_CB_SIGN						0x43425355U    /*spells out USBC */
+#define COMP_MSC_CB_WRAP_LEN					31U            /**< Standard CBW length */
+#define COMP_MSC_CB_SIGN						0x43425355U    /**< Standard dCBWSignature, spells out USBC */
 #define COMP_MSC_MAX_DATA						256U
-#define COMP_MSC_CS_WRAP_LEN					13U
-#define COMP_MSC_CS_SIGN						0x53425355U      /* spells out 'USBS' */
+#define COMP_MSC_CS_WRAP_LEN					13U            /**< Standard CSW length */
+#define COMP_MSC_CS_SIGN						0x53425355U    /**< Standard dCSWSignature, spells out 'USBS' */
 
 /* CSW Status Definitions */
-#define COMP_MSC_CSW_CMD_PASSED					0x00U
-#define COMP_MSC_CSW_CMD_FAILED					0x01U
-#define COMP_MSC_CSW_PHASE_ERROR				0x02U
+#define COMP_MSC_CSW_CMD_PASSED					0x00U          /**< The `pass` status of the command execution */
+#define COMP_MSC_CSW_CMD_FAILED					0x01U          /**< The `fail` status of the command execution */
+#define COMP_MSC_CSW_PHASE_ERROR				0x02U          /**< The `phase error` status of the command execution */
 
 /* BOT State */
-#define COMP_MSC_IDLE							0U       /* Idle state */
-#define COMP_MSC_DATA_OUT						1U       /* Data Out state */
-#define COMP_MSC_DATA_IN						2U       /* Data In state */
-#define COMP_MSC_LAST_DATA_IN					3U       /* Last Data In Last */
-#define COMP_MSC_SEND_DATA						4U       /* Send Immediate data */
-#define COMP_MSC_NO_DATA						5U       /* No data Stage */
+#define COMP_MSC_IDLE							0U             /* Idle state */
+#define COMP_MSC_DATA_OUT						1U             /* Data Out state */
+#define COMP_MSC_DATA_IN						2U             /* Data In state */
+#define COMP_MSC_LAST_DATA_IN					3U             /* Last Data In Last */
+#define COMP_MSC_SEND_DATA						4U             /* Send Immediate data */
+#define COMP_MSC_NO_DATA						5U             /* No data Stage */
 
 /* BOT Status */
-#define COMP_MSC_STATUS_NORMAL					0U
-#define COMP_MSC_STATUS_RECOVERY				1U
-#define COMP_MSC_STATUS_ERROR					2U
+#define COMP_MSC_STATUS_NORMAL					0U             /**< Normal working status */
+#define COMP_MSC_STATUS_RECOVERY				1U             /**< Get MSC Reset request for recovery */
+#define COMP_MSC_STATUS_ERROR					2U             /**< Error status */
 
 /* Sense */
-#define COMP_MSC_SENSE_LIST_DEPTH               4U
+#define COMP_MSC_SENSE_LIST_DEPTH               4U             /**< Depth of the SCSI sense data list. */
 
+/* Exported types ------------------------------------------------------------*/
+
+/**
+ * @brief Disk operation functions structure.
+ * @details This structure holds pointers to the low-level disk I/O functions,
+ *          abstracting the physical storage medium.
+ */
 typedef struct {
+	/**
+	 * @brief Gets the capacity of the disk.
+	 * @param[out] sectors: Pointer to a variable to store the total number of sectors.
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int(*disk_getcapacity)(u32 *sectors);
+	/**
+	 * @brief Reads one or more sectors from the disk.
+	 * @param[in] sector: The starting sector number to read from.
+	 * @param[out] buffer: Pointer to the buffer to store the read data.
+	 * @param[in] count: The number of sectors to read.
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int(*disk_read)(u32 sector, u8 *buffer, u32 count);
+	/**
+	 * @brief Writes one or more sectors to the disk.
+	 * @param[in] sector: The starting sector number to write to.
+	 * @param[in] buffer: Pointer to the buffer containing the data to write.
+	 * @param[in] count: The number of sectors to write.
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int(*disk_write)(u32 sector, const u8 *buffer, u32 count);
 } usbd_composite_msc_disk_ops_t;
 
@@ -137,9 +162,30 @@ typedef struct {
 
 extern const usbd_class_driver_t usbd_composite_msc_driver;
 
+/* Exported functions --------------------------------------------------------*/
+
+/**
+ * @brief Initializes the MSC device class driver.
+ * @param[in] cb: Pointer to the composite device structure.
+ * @return 0 on success, non-zero on failure.
+ */
 int usbd_composite_msc_init(usbd_composite_dev_t *cdev);
+
+/**
+ * @brief De-initializes the MSC device class driver.
+ */
 void usbd_composite_msc_deinit(void);
 
+/**
+ * @brief Initializes the underlying storage disk.
+ * @return 0 on success, non-zero on failure.
+ */
 int usbd_composite_msc_disk_init(void);
+
+/**
+ * @brief De-initializes the underlying storage disk.
+ * @return 0 on success, non-zero on failure.
+ */
 int usbd_composite_msc_disk_deinit(void);
+
 #endif // USBD_COMPOSITE_MSC_H

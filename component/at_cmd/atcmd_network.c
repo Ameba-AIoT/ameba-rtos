@@ -859,7 +859,7 @@ void at_sntptime(void *arg)
 }
 #endif /* CONFIG_ATCMD_SNTP */
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_network_items[ ] = {
 	{"+PING", at_ping},
 	{"+IPERF", at_iperf},
@@ -887,11 +887,6 @@ void print_network_at(void)
 	for (i = 0; cmdSize > i; i++) {
 		at_printf("AT%s\r\n", at_network_items[i].log_cmd);
 	}
-}
-
-void at_network_init(void)
-{
-	atcmd_service_add_table((log_item_t *)at_network_items, sizeof(at_network_items) / sizeof(at_network_items[0]));
 }
 
 #endif /* CONFIG_ATCMD_NETWORK */

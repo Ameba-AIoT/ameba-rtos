@@ -7,6 +7,7 @@
 #include "platform_autoconf.h"
 
 #ifndef CONFIG_MP_SHRINK
+#ifdef CONFIG_WLAN
 #include "atcmd_service.h"
 #include "atcmd_wifi.h"
 #ifdef CONFIG_LWIP_LAYER
@@ -1664,7 +1665,7 @@ end:
 }
 #endif
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_wifi_items[ ] = {
 #if !(!defined(CONFIG_WHC_INTF_IPC) && !defined(CONFIG_WHC_WIFI_API_PATH) && !defined(CONFIG_WHC_NONE))
 #ifdef CONFIG_LWIP_LAYER
@@ -1705,12 +1706,7 @@ void print_wifi_at(void)
 
 void at_wifi_init(void)
 {
-#ifdef CONFIG_WLAN
 	init_wifi_struct();
-#endif
-#ifndef CONFIG_MP_SHRINK
-	atcmd_service_add_table((log_item_t *)at_wifi_items, sizeof(at_wifi_items) / sizeof(at_wifi_items[0]));
-#endif
 }
-
+#endif /* CONFIG_WLAN */
 #endif /* CONFIG_MP_SHRINK */

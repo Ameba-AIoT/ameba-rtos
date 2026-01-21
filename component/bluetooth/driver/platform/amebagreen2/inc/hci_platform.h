@@ -12,8 +12,8 @@
 #include "platform_stdlib.h"
 
 #define hci_platform_START_RF_CALIBRATION 1
-#define hci_platform_DOWNLOAD_PATCH 1
-#define hci_platform_MP_RESET_BAUDRATE 1
+#define hci_platform_DOWNLOAD_PATCH       1
+#define hci_platform_MP_RESET_BAUDRATE    1
 #define hci_platform_START_RX_DCK         1
 #define hci_platform_WRITE_RX_ADCK        1
 #define hci_platform_WRITE_PHY_EFUSE      1

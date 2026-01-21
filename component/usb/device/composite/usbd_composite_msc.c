@@ -10,8 +10,10 @@
 #include "usbd_composite_msc.h"
 #include "usbd_composite_scsi.h"
 #include "os_wrapper.h"
+#ifdef CONFIG_USBD_COMPOSITE_MSC_SD_MODE
 #include "ameba_sd.h"
-#if !COMP_MSC_RAM_DISK
+#endif
+#if !defined(CONFIG_USBD_COMPOSITE_MSC_RAM_DISK)
 #include "vfs_fatfs.h"
 #endif
 /* Private defines -----------------------------------------------------------*/
@@ -116,7 +118,7 @@ const usbd_class_driver_t usbd_composite_msc_driver = {
 };
 
 /* Private functions ---------------------------------------------------------*/
-#if COMP_MSC_RAM_DISK
+#ifdef CONFIG_USBD_COMPOSITE_MSC_RAM_DISK
 static u8 *usbd_composite_msc_ram_disk_buf;
 
 static int RAM_init(void)
@@ -175,35 +177,65 @@ static int RAM_WriteBlocks(u32 sector, const u8 *data, u32 count)
 static int usbd_composite_msc_sd_init(void)
 {
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "SD init\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Disk init\n");
 
+#ifdef CONFIG_USBD_COMPOSITE_MSC_EXTERNAL_FLASH
+	return FLASH_second_disk_Driver.disk_initialize();
+#elif defined CONFIG_USBD_COMPOSITE_MSC_SD_MODE
 	return SD_disk_Driver.disk_initialize();
+#else
+	return SD_disk_spi_Driver.disk_initialize();
+#endif
 }
 
 static int usbd_composite_msc_sd_deinit(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "SD deinit\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Disk deinit\n");
 
+#ifdef CONFIG_USBD_COMPOSITE_MSC_EXTERNAL_FLASH
+	return FLASH_second_disk_Driver.disk_deinitialize();
+#elif defined CONFIG_USBD_COMPOSITE_MSC_SD_MODE
 	return SD_disk_Driver.disk_deinitialize();
+#else
+	return SD_disk_spi_Driver.disk_deinitialize();
+#endif
 }
 
 static int usbd_composite_msc_sd_getcapacity(u32 *sector_count)
 {
+#ifdef CONFIG_USBD_COMPOSITE_MSC_EXTERNAL_FLASH
+	return FLASH_second_disk_Driver.disk_ioctl(GET_SECTOR_COUNT, sector_count);
+#elif defined CONFIG_USBD_COMPOSITE_MSC_SD_MODE
 	return SD_disk_Driver.disk_ioctl(GET_SECTOR_COUNT, sector_count);
+#else
+	return SD_disk_spi_Driver.disk_ioctl(GET_SECTOR_COUNT, sector_count);
+#endif
 }
 
 static int usbd_composite_msc_sd_readblocks(u32 sector, u8 *data, u32 count)
 {
+#ifdef CONFIG_USBD_COMPOSITE_MSC_EXTERNAL_FLASH
+	return FLASH_second_disk_Driver.disk_read(data, sector, count);
+#elif defined CONFIG_USBD_COMPOSITE_MSC_SD_MODE
 	return SD_disk_Driver.disk_read(data, sector, count);
+#else
+	return SD_disk_spi_Driver.disk_read(data, sector, count);
+#endif
 }
 
 static int usbd_composite_msc_sd_writeblocks(u32 sector, const u8 *data, u32 count)
 {
+#ifdef CONFIG_USBD_COMPOSITE_MSC_EXTERNAL_FLASH
+	return FLASH_second_disk_Driver.disk_write(data, sector, count);
+#elif defined CONFIG_USBD_COMPOSITE_MSC_SD_MODE
 	return SD_disk_Driver.disk_write(data, sector, count);
+#else
+	return SD_disk_spi_Driver.disk_write(data, sector, count);
+#endif
 }
 
 #endif // CONFIG_AMEBASMART
-#endif // COMP_MSC_RAM_DISK
+#endif // USBD_COMPOSITE_MSC_RAM_DISK
 
 /**
 * @brief  Abort the current transfer
@@ -605,7 +637,7 @@ int usbd_composite_msc_disk_init(void)
 {
 	SD_RESULT ret;
 
-#if COMP_MSC_RAM_DISK
+#ifdef CONFIG_USBD_COMPOSITE_MSC_RAM_DISK
 	ret = RAM_init();
 #else
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAGREEN2)
@@ -622,7 +654,7 @@ int usbd_composite_msc_disk_deinit(void)
 {
 	SD_RESULT ret;
 
-#if COMP_MSC_RAM_DISK
+#ifdef CONFIG_USBD_COMPOSITE_MSC_RAM_DISK
 	ret = RAM_deinit();
 #else
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAGREEN2)
@@ -653,7 +685,7 @@ int usbd_composite_msc_init(usbd_composite_dev_t *cdev)
 
 	mdev->cdev = cdev;
 
-#if COMP_MSC_RAM_DISK
+#ifdef CONFIG_USBD_COMPOSITE_MSC_RAM_DISK
 	ops->disk_getcapacity = RAM_GetCapacity;
 	ops->disk_read = RAM_ReadBlocks;
 	ops->disk_write = RAM_WriteBlocks;

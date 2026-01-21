@@ -25,8 +25,6 @@ None
 
 2. Make sure `SERVER_PORT` has been set.
 
-3. For more details, please refer to UM0150 Realtek Ameba CoAP User Guide.pdf
-
 # Supported IC
 
 RTL8730E
