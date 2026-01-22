@@ -36,9 +36,6 @@ void app_start(void)
 	__libc_init_array();
 #endif
 
-	/* Configure the hardware ready to run the demo. */
-	prvSetupHardware();
-
 	/* Get flash_init_para info for AP */
 	_memcpy((void *)&flash_init_para, (const void *)HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FLASH_PARA_ADDR), sizeof(FLASH_InitTypeDef));
 
