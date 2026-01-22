@@ -61,9 +61,11 @@ struct netif *pnetif_ap = &xnetif[NETIF_WLAN_AP_INDEX];
 #if defined(CONFIG_NAN)
 struct netif *pnetif_nan = &xnetif[NETIF_WLAN_NAN_INDEX];
 #endif
-#if (defined(CONFIG_LWIP_USB_ETHERNET) || defined(CONFIG_ETHERNET))
+#if defined(CONFIG_LWIP_ETHERNET)
 struct netif *pnetif_eth = &xnetif[NETIF_ETH_INDEX];
-extern err_t ethernetif_mii_init(struct netif *netif);
+#endif
+#if defined(CONFIG_LWIP_USB_ETHERNET)
+struct netif *pnetif_usb_eth = &xnetif[NETIF_USB_ETH_INDEX];
 #endif
 /* Private functions ---------------------------------------------------------*/
 /**
@@ -108,7 +110,14 @@ void LwIP_Init(void)
 			IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
 			IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 		}
-#if (defined(CONFIG_LWIP_USB_ETHERNET) || defined(CONFIG_ETHERNET))
+#if defined(CONFIG_LWIP_USB_ETHERNET)
+		else if (idx == NETIF_USB_ETH_INDEX) {
+			IP4_ADDR(ip_2_ip4(&ipaddr), ETH_IP_ADDR0, ETH_IP_ADDR1, ETH_IP_ADDR2, ETH_IP_ADDR3);
+			IP4_ADDR(ip_2_ip4(&netmask), ETH_NETMASK_ADDR0, ETH_NETMASK_ADDR1, ETH_NETMASK_ADDR2, ETH_NETMASK_ADDR3);
+			IP4_ADDR(ip_2_ip4(&gw), ETH_GW_ADDR0, ETH_GW_ADDR1, ETH_GW_ADDR2, ETH_GW_ADDR3);
+		}
+#endif
+#if defined(CONFIG_LWIP_ETHERNET)
 		else if (idx == NETIF_ETH_INDEX) {
 			IP4_ADDR(ip_2_ip4(&ipaddr), ETH_IP_ADDR0, ETH_IP_ADDR1, ETH_IP_ADDR2, ETH_IP_ADDR3);
 			IP4_ADDR(ip_2_ip4(&netmask), ETH_NETMASK_ADDR0, ETH_NETMASK_ADDR1, ETH_NETMASK_ADDR2, ETH_NETMASK_ADDR3);
@@ -124,14 +133,7 @@ void LwIP_Init(void)
 		xnetif[idx].name[0] = 'r';
 		xnetif[idx].name[1] = '0' + idx;
 
-#if (defined(CONFIG_LWIP_USB_ETHERNET) || defined(CONFIG_ETHERNET))
-		if (idx == NETIF_ETH_INDEX) {
-			netifapi_netif_add(pnetif_eth, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &ethernetif_mii_init, &tcpip_input);
-		} else
-#endif
-		{
-			netifapi_netif_add(&xnetif[idx], ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &ethernetif_init, &tcpip_input);
-		}
+		netifapi_netif_add(&xnetif[idx], ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &ethernetif_init, &tcpip_input);
 
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "interface %d is initialized\n", idx);
 
@@ -591,7 +593,7 @@ void LwIP_SetIP(uint8_t idx, u32_t addr, u32_t netmask_addr, u32_t gw_addr)
 		return;
 	}
 
-#if CONFIG_WLAN || (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
+#if CONFIG_WLAN || (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_LWIP_ETHERNET) && CONFIG_LWIP_ETHERNET)
 	ip_2_ip4(&ipaddr)->addr = PP_HTONL(addr);
 	ip_2_ip4(&netmask)->addr = PP_HTONL(netmask_addr);
 	ip_2_ip4(&gw)->addr = PP_HTONL(gw_addr);
@@ -672,8 +674,14 @@ int LwIP_Check_Connectivity(uint8_t idx)
 	if (idx == NETIF_WLAN_STA_INDEX) {
 		u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 		if (!((wifi_get_join_status(&join_status) == RTK_SUCCESS)
-			  && (join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(NETIF_WLAN_STA_INDEX) != IP_ADDR_INVALID))) {
+			  && (join_status == RTW_JOINSTATUS_SUCCESS)
+#if defined(CONFIG_LWIP_USB_ETHERNET_BRIDGE) && CONFIG_LWIP_USB_ETHERNET_BRIDGE
+			 )) {
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "Wait for WiFi Connect Success...\n");
+#else
+			  &&(*(u32 *)LwIP_GetIP(NETIF_WLAN_STA_INDEX) != IP_ADDR_INVALID))) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "Wait for WiFi and DHCP Connect Success...\n");
+#endif
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "Please use AT+WLCONN to connect AP first time\n");
 			return CONNECTION_INVALID;
 		} else {

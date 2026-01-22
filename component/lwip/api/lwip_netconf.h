@@ -25,8 +25,11 @@ extern "C" {
 extern struct netif xnetif[];
 extern struct netif *pnetif_sta;
 extern struct netif *pnetif_ap;
-#if (defined(CONFIG_LWIP_USB_ETHERNET) || defined(CONFIG_ETHERNET))
+#if defined(CONFIG_LWIP_ETHERNET)
 extern struct netif *pnetif_eth;
+#endif
+#if defined(CONFIG_LWIP_USB_ETHERNET)
+extern struct netif *pnetif_usb_eth;
 #endif
 #if LWIP_IPV6
 #define LwIP_DUMP_IPV6_ADDRESS(addr) do { \
@@ -97,7 +100,10 @@ enum {
 #if defined(CONFIG_NAN)
 	NETIF_WLAN_NAN_INDEX,
 #endif
-#if (defined(CONFIG_LWIP_USB_ETHERNET) || defined(CONFIG_ETHERNET))
+#if defined(CONFIG_LWIP_USB_ETHERNET)
+	NETIF_USB_ETH_INDEX,
+#endif
+#if defined(CONFIG_LWIP_ETHERNET)
 	NETIF_ETH_INDEX,
 #endif
 	NET_IF_NUM

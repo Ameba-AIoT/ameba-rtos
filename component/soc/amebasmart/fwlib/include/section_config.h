@@ -19,7 +19,20 @@
 #define GIT_VER_TABLE_SECTION				SECTION(".git.ver.data")
 #define IPC_TABLE_DATA_SECTION				SECTION(".ipc.table.data")
 #define UNITY_TABLE_DATA_SECTION			SECTION(".unity.table.data")
-#define ATCMD_TABLE_DATA_SECTION				SECTION(".atcmd.table.rodata")
+
+/* ATCMD section type 1: used by all cores */
+#if defined(CONFIG_SUPPORT_ATCMD) && !(defined CONFIG_ARM_CORE_CM0)
+#define ATCMD_TABLE_DATA_SECTION			SECTION(".atcmd.table.rodata")
+#else
+#define ATCMD_TABLE_DATA_SECTION
+#endif
+
+/* ATCMD section type 2: Used in AP && !MP_SHRINK mode */
+#if (defined(CONFIG_SUPPORT_ATCMD) && (defined(CONFIG_WHC_HOST) || defined(CONFIG_WHC_NONE))) && !defined(CONFIG_MP_SHRINK)
+#define ATCMD_APONLY_TABLE_DATA_SECTION		SECTION(".atcmd.table.rodata")
+#else
+#define ATCMD_APONLY_TABLE_DATA_SECTION
+#endif
 
 // Image 1 Entry Data
 #define IMAGE1_ENTRY_SECTION				SECTION(".image1.entry.data")
@@ -65,8 +78,8 @@
 #define	LIBC_ROM_DATA_SECTION				SRAMDRAM_ONLY_TEXT_SECTION
 
 #define SHELL_ROM_TEXT_SECTION				SRAMDRAM_ONLY_TEXT_SECTION
+#define SHELL_ROM_DATA_SECTION				SRAMDRAM_ONLY_DATA_SECTION
 #define SHELL_ROM_BSS_SECTION
-#define SHELL_ROM_DATA_SECTION				SRAMDRAM_ONLY_TEXT_SECTION
 
 #define BOOT_RAM_TEXT_SECTION				SECTION(".boot.ram.text")
 #endif //_SECTION_CONFIG_H_

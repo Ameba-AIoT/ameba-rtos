@@ -13,17 +13,17 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
-#define USBD_COMP_VID                     USB_VID
-#define USBD_COMP_PID                     USB_PID
+/* Defines configuration constants like VID/PID, USB strings, and power settings. */
+#define USBD_COMP_VID                     USB_VID      /**< Vendor ID. */
+#define USBD_COMP_PID                     USB_PID      /**< Product ID. */
 
-#define USBD_COMP_LANGID                  0x0409U
-#define USBD_COMP_SELF_POWERED            1U
-#define USBD_COMP_REMOTE_WAKEUP_EN        1U
+#define USBD_COMP_LANGID                  0x0409U      /**< Language ID string (0x0409 for U.S. English). */
+#define USBD_COMP_SELF_POWERED            1U           /**< Set to 1 if device is self-powered, 0 for bus-powered. */
+#define USBD_COMP_REMOTE_WAKEUP_EN        1U           /**< Set to 1 if remote wakeup is enabled,  0 for disable. */
 
-#define USBD_COMP_MFG_STRING              "Realtek"
-#define USBD_COMP_PROD_STRING             "Realtek Composite Device"
-#define USBD_COMP_SN_STRING               "1234567890"
-
+#define USBD_COMP_MFG_STRING              "Realtek"    /**< Manufacturer string. */
+#define USBD_COMP_PROD_STRING             "Realtek Composite Device"/**< Product string. */
+#define USBD_COMP_SN_STRING               "1234567890" /**< Serial number string. */
 
 #if defined(CONFIG_USBD_COMPOSITE_CDC_ACM_HID)
 /* Interfaces */
@@ -70,8 +70,8 @@
 #define USBD_COMP_CDC_BULK_IN_EP               0x82U
 #define USBD_COMP_CDC_BULK_OUT_EP              0x02U
 #define USBD_COMP_CDC_INTR_IN_EP               0x83U
-#define USBD_COMP_HID_INTR_OUT_EP              0x05U
-#define USBD_COMP_HID_INTR_IN_EP               0x84U
+#define USBD_COMP_UAC_ISOC_OUT_EP              0x05U
+#define USBD_COMP_UAC_ISOC_IN_EP               0x84U
 #else
 #define USBD_COMP_CDC_BULK_IN_EP               0x81U
 #define USBD_COMP_CDC_BULK_OUT_EP              0x02U
@@ -161,30 +161,47 @@
 
 /* Exported types ------------------------------------------------------------*/
 
+/**
+ * @brief Composite user callback structure.
+ */
 typedef struct {
-	void (*status_changed)(u8 old_status, u8 status);
+	/**
+	 * @brief Callback invoked when USB status change. See @ref usbd_attach_status_t.
+	 * @details Called upon connection state changed for hot-plug support (e.g. do reinitialization on host disconnection)
+	 * @param[in] old_status: Previous status of USB device.
+	 * @param[in] status: Current status of USB device.
+	 * @return None
+	 */
+	void (*status_changed)(u8 old_status, u8 status);    /**< Called upon USB attach status changes for application to support hot-plug events. */
+	/**
+	 * @brief Called in the `set_config` callback of @ref usbd_class_driver_t to notifies application layer that the class driver becomes operational.
+	 * @return None
+	 */
 	int (* set_config)(void);
 } usbd_composite_cb_t;
 
+/**
+ * @brief Composite device structure.
+ */
 typedef struct {
-	usb_setup_req_t ctrl_req;
+	usb_setup_req_t ctrl_req;     /**< Control setup request. */
 
 #if defined(CONFIG_USBD_COMPOSITE_CDC_ACM_HID)
-	usbd_class_driver_t *cdc;
-	usbd_class_driver_t *hid;
+	usbd_class_driver_t *cdc;     /**< CDC ACM class. */
+	usbd_class_driver_t *hid;     /**< HID class. */
 #elif defined(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC)
-	usbd_class_driver_t *cdc;
-	usbd_class_driver_t *uac;
+	usbd_class_driver_t *cdc;     /**< CDC ACM class. */
+	usbd_class_driver_t *uac;     /**< UAC class. */
 #elif defined(CONFIG_USBD_COMPOSITE_CDC_ACM_MSC)
-	usbd_class_driver_t *cdc;
-	usbd_class_driver_t *msc;
+	usbd_class_driver_t *cdc;     /**< CDC ACM class. */
+	usbd_class_driver_t *msc;     /**< MSC class. */
 #elif defined(CONFIG_USBD_COMPOSITE_HID_UAC)
-	usbd_class_driver_t *hid;  /* used for hid private command */
-	usbd_class_driver_t *uac;
+	usbd_class_driver_t *hid;     /**< HID class. */
+	usbd_class_driver_t *uac;     /**< UAC class. */
 #endif
 
-	usbd_composite_cb_t *cb;
-	usb_dev_t *dev;
+	usbd_composite_cb_t *cb;      /**< Composite user callback */
+	usb_dev_t *dev;               /**< USB device instance */
 } usbd_composite_dev_t;
 
 /* Exported macros -----------------------------------------------------------*/

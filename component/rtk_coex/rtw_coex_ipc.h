@@ -79,7 +79,7 @@ static inline void coex_ipc_entry(void)
 #endif
 #endif
 
-#if !defined(CONFIG_ZEPHYR_SDK)
+#if !defined(CONFIG_PLATFORM_ZEPHYR)
 // #1.ipc case-linux:(ipc@coex not support, temporarily solution for smart linux)
 // #2.ipc case-rtos(ap-np):
 // #3.no-ipc case-fullmac/bridge/singlecore:
@@ -93,7 +93,7 @@ static inline void coex_ipc_entry(void)
 	rtk_coex_extc_set_enable(true);
 #endif
 #endif
-#else /*defined(CONFIG_ZEPHYR_SDK)*/
+#else /*defined(CONFIG_PLATFORM_ZEPHYR)*/
 // ipc case-zephyr sdk:
 #if defined(CONFIG_WHC_INTF_IPC)
 #if defined(CONFIG_COEXIST_HOST)
@@ -122,6 +122,6 @@ static inline void coex_ipc_entry(void)
 #endif
 #endif
 
-#endif /*END OF !defined(CONFIG_ZEPHYR_SDK)*/
+#endif /*END OF !defined(CONFIG_PLATFORM_ZEPHYR)*/
 }
 #endif /* __RTW_COEX_IPC_H__ */

@@ -14,7 +14,7 @@ Taking RTL8730EA/QFN100 boards for example, the register R20 shall be parted on 
 # SW configuration
 
 1. Menuconfig
-	Type command `./menuconfig.py` under the project directory and :
+	Use menuconfig and :
 	- Choose `CONFIG USB --->`:
 	```
 	[*] Enable USB

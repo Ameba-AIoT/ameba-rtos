@@ -39,11 +39,11 @@ For example:
   - master's `SPI_GPIO_CS1 (_PB_31)` connect to slave1's `CS (_PB_26)`
 - On RTL8721F, connect as below
 
-  - master's `MOSI (_PB_30)` connect to slave1's `MOSI (_PA_30)`& slave0's `MOSI (_PA_30)`
-  - master's `MISO (_PB_31)` connect to slave1's `MISO (_PA_31)`& slave0's `MISO (_PA_31)`
-  - master's `SCLK (_PB_29)` connect to slave1's `SCLK (_PA_29)`& slave0's `SCLK (_PA_29)`
-  - master's `SPI_GPIO_CS0 (_PB_26)` connect to slave0's `CS (_PB_0)`
-  - master's `SPI_GPIO_CS1 (_PB_27)` connect to slave1's `CS (_PB_0)`
+  - master's `MOSI (_PB_8)` connect to slave1's `MOSI (_PA_30)`& slave0's `MOSI (_PA_30)`
+  - master's `MISO (_PB_9)` connect to slave1's `MISO (_PA_31)`& slave0's `MISO (_PA_31)`
+  - master's `SCLK (_PB_7)` connect to slave1's `SCLK (_PA_29)`& slave0's `SCLK (_PA_29)`
+  - master's `SPI_GPIO_CS0 (_PA_26)` connect to slave0's `CS (_PB_0)`
+  - master's `SPI_GPIO_CS1 (_PA_25)` connect to slave1's `CS (_PB_0)`
 
 # SW configuration
 

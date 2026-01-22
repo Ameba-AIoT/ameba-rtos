@@ -23,7 +23,7 @@
 #ifdef CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
 #endif
-#ifdef CONFIG_ZEPHYR_SDK
+#ifdef CONFIG_PLATFORM_ZEPHYR
 #include"wifi_intf_drv_to_zephyr.h"
 #else
 #include "kv.h"
@@ -113,7 +113,7 @@ __weak int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int 
 
 	/* STEP2: get last time fast connect info from flash*/
 	memset(&read_data, 0xff, sizeof(struct wlan_fast_reconnect));
-#ifdef CONFIG_ZEPHYR_SDK
+#ifdef CONFIG_PLATFORM_ZEPHYR
 	settings_load_one("wlan_data", (uint8_t *) &read_data, sizeof(struct wlan_fast_reconnect));
 #else
 	rt_kv_get("wlan_data", (uint8_t *) &read_data, sizeof(struct wlan_fast_reconnect));
@@ -126,7 +126,7 @@ __weak int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int 
 #else
 		DiagPrintf("\r\n %s():not the same ssid/passphrase/channel, write new profile to flash \n", __func__);
 #endif
-#ifdef CONFIG_ZEPHYR_SDK
+#ifdef CONFIG_PLATFORM_ZEPHYR
 		settings_save_one("wlan_data", (uint8_t *)&wifi_data_to_flash, sizeof(struct wlan_fast_reconnect));
 #else
 		rt_kv_set("wlan_data", (uint8_t *)&wifi_data_to_flash, sizeof(struct wlan_fast_reconnect));
@@ -163,7 +163,7 @@ __weak int wifi_do_fast_connect(void)
 	data = (struct wlan_fast_reconnect *)malloc(sizeof(struct wlan_fast_reconnect));
 	if (data) {
 		memset(data, 0xff, sizeof(struct wlan_fast_reconnect));
-#ifndef CONFIG_ZEPHYR_SDK
+#ifndef CONFIG_PLATFORM_ZEPHYR
 		ret = rt_kv_get("wlan_data", (uint8_t *)data, sizeof(struct wlan_fast_reconnect));
 #else
 		ret = settings_load_one("wlan_data", (uint8_t *)data, sizeof(struct wlan_fast_reconnect));
@@ -271,7 +271,7 @@ WIFI_RETRY_LOOP:
 				goto WIFI_RETRY_LOOP;
 			}
 		}
-#ifdef CONFIG_ZEPHYR_SDK
+#ifdef CONFIG_PLATFORM_ZEPHYR
 		if (ret == RTK_SUCCESS) {
 			ameba_wifi_handle_connect_event();
 		}

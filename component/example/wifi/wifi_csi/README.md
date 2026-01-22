@@ -8,7 +8,7 @@ None
 
 # SW configuration
 
-1. Use cmd `./menuconfig.py` and select `CONFIG WIFI`->`Enable WIFI CSI`.
+1. Use menuconfig and select `CONFIG WIFI`->`Enable WIFI CSI`.
 
 2. If sta mode, please modify assoc_ap_mac of wifi_csi_thread() in `example_wifi_csi.c`:
 	```
