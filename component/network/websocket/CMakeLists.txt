@@ -15,10 +15,6 @@ ameba_list_append(public_includes
     .
 )
 
-ameba_list_append(public_libraries
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_websocket.a
-)
-
 # Component public part, user config end
 #----------------------------------------#
 
@@ -42,11 +38,14 @@ set(private_includes)                #private include directories, NOTE: relativ
 set(private_definitions)             #private definitions
 set(private_compile_options)         #private compile_options
 
-if(CONFIG_AMEBA_RLS)
 #------------------------------#
 # Component private part, user config begin
 
 ameba_list_append(private_sources
+    libwsclient.c
+    ws_server_msg.c
+    wsclient_api.c
+    wsserver_api.c
     wsserver_tls.c
     wsclient_tls.c
 )
@@ -67,40 +66,3 @@ ameba_add_internal_library(websocket
     p_COMPILE_OPTIONS
         ${private_compile_options}
 )
-else()
-#------------------------------#
-# Component private part, user config begin
-if(BUILD_FOR_RLS)
-ameba_list_append(private_sources
-    libwsclient.c
-    ws_server_msg.c
-    wsclient_api.c
-    wsserver_api.c
-)
-else()
-ameba_list_append(private_sources
-    libwsclient.c
-    ws_server_msg.c
-    wsclient_api.c
-    wsserver_api.c
-    wsserver_tls.c
-    wsclient_tls.c
-)
-endif()
-# Component private part, user config end
-#------------------------------#
-
-#WARNING: Select right API based on your component's release/not-release/standalone
-
-###NOTE: For open-source component, always build from source
-ameba_add_external_app_library(websocket
-    p_SOURCES
-        ${private_sources}
-    p_INCLUDES
-        ${private_includes}
-    p_DEFINITIONS
-        ${private_definitions}
-    p_COMPILE_OPTIONS
-        ${private_compile_options}
-)
-endif()

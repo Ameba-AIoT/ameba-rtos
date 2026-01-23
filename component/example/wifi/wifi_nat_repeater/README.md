@@ -9,7 +9,7 @@ None
 # SW configuration
 
 1. Define `CONFIG_IP_NAT` by selecting configuration in menuconfig:
-	1. use CMD `./menuconfig.py` to show configurations;
+	1. use menuconfig to show configurations;
 	2. choose `CONFIG LWIP`;
 	3. choose `NAT REPEATER Enable`.
 

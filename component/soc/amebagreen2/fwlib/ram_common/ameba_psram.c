@@ -134,7 +134,7 @@ void ChipInfo_InitPsramInfoFromMemInfo(const MCM_MemTypeDef *meminfo, PSRAMINFO_
 	}
 	rram->PSRAM_TYPE = info->Psram_Vendor;
 	rram->PSRAM_DQ = info->Psram_DQ16;
-	RTK_LOGI(TAG, "rram->PSRAM_TYPE  = 0x%x\n", rram->PSRAM_TYPE);
+	RTK_LOGD(TAG, "rram->PSRAM_TYPE  = 0x%x\n", rram->PSRAM_TYPE);
 }
 
 /**
@@ -238,10 +238,10 @@ void PSRAM_CLK_Update(void)
 		}
 	}
 
-	RTK_LOGI(TAG, "PSRAM Control: CLK=%-8lu Hz | DQ Width=%-2d bits | Density=0x%08X Bytes \n", \
-			 PsramClk, \
+	RTK_LOGI(TAG, "PSRAM CLK: %ldMHz, DQ%ld, Size: %ldMB\n", \
+			 PsramClk / 1000000, \
 			 PsramInfo.Psram_DQ16 == MCM_PSRAM_DQ16 ? 16 : 8, \
-			 PsramInfo.Psram_Size);
+			 PsramInfo.Psram_Size / 1024 / 1024);
 }
 
 
@@ -855,7 +855,7 @@ u32 PSRAM_SW_Calibration(u32 DQnum)
 		}
 	}
 
-	RTK_LOGI(TAG, "CalNmin = %x CalNmax = %x WindowSize = %x phase: %x \n", window_start, window_end, window_size, phase_cnt);
+	RTK_LOGI(TAG, "Cal win size %ld\n", window_size);
 
 	if ((window_size) < 9) {
 		return FALSE;

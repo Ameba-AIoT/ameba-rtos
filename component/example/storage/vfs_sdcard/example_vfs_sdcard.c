@@ -7,6 +7,16 @@
 void fatfs_usr_cb(int status)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Fatfs hotplug user callback works, status : %d\n", status);
+
+	if (status == HOTPULG_IN) {
+		if (fatfs2_mount_flag != 1) {
+			vfs_user_register("sdcard", VFS_FATFS, VFS_INF_SD, VFS_REGION_4, VFS_RW);
+		}
+	} else {
+		if (fatfs2_mount_flag == 1) {
+			vfs_user_unregister("sdcard", VFS_FATFS, VFS_INF_SD);
+		}
+	}
 }
 
 void example_vfs_sdcard_thread(void *param)

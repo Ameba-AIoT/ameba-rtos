@@ -31,7 +31,7 @@ Test Mode: (`VFS_LITTLEFS`/`VFS_FATFS`, `VFS_INF_FLASH`/`VFS_INF_SD`)
 		ret = vfs_user_register(VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
 		```
 
-2. Type command `./menuconfig.py` and choose `CONFIG VFS`
+2. Use menuconfig and choose `CONFIG VFS`
    - For `VFS_LITTLEFS`:
 		```
 		[*] Enable VFS LITTLEFS

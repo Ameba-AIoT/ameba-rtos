@@ -8,14 +8,9 @@ None
 
 # SW configuration
 
-1. `lwipopts.h`
-	```C
-	#define LWIP_SOCKET_SET_ERRNO 1
-	```
+1. Modify `SERVER_IP` and `SERVER_PORT` in `example_nonblock_connect.c` for server connection
 
-2. Modify `SERVER_IP` and `SERVER_PORT` in `example_nonblock_connect.c` for server connection
-
-3. Build and Download:
+2. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 

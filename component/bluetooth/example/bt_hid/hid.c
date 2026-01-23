@@ -284,6 +284,16 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 		break;
 	}
 
+	case RTK_BT_BR_GAP_LINK_ROLE_MASTER: {
+		BT_LOGA("[BR GAP] RTK_BT_BR_GAP_LINK_ROLE_MASTER \r\n");
+		break;
+	}
+
+	case RTK_BT_BR_GAP_LINK_ROLE_SLAVE: {
+		BT_LOGA("[BR GAP] RTK_BT_BR_GAP_LINK_ROLE_SLAVE \r\n");
+		break;
+	}
+
 	default:
 		BT_LOGE("%s, Unknown GAP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
 		break;

@@ -177,12 +177,14 @@ int main(void)
 	wifi_init();
 #endif
 
+#ifdef CONFIG_SHELL
 	/* init console */
 	shell_init_rom(0, 0);
 	shell_init_ram();
 	InterruptRegister((IRQ_FUN) shell_uart_irq_rom, UART_LOG_IRQ, (u32)NULL, INT_PRI4);
 	InterruptEn(UART_LOG_IRQ, INT_PRI4);
 	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, ENABLE);
+#endif
 
 	app_init_debug();
 

@@ -189,9 +189,11 @@ int main(void)
 	rtk_diag_init(RTK_DIAG_HEAP_SIZE, RTK_DIAG_SEND_BUFFER_SIZE);
 #endif /* CONFIG_CP_TEST_CA32 */
 
+#ifdef CONFIG_SHELL
 	/* init console */
 	shell_init_rom(0, 0);
 	shell_init_ram();
+#endif
 
 	/* Execute application example */
 	app_example();

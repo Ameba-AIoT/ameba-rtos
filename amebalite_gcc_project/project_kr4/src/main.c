@@ -190,9 +190,11 @@ int main(void)
 	wifi_init();
 #endif
 
+#ifdef CONFIG_SHELL
 	/* init console */
 	shell_init_rom(0, 0);
 	shell_init_ram();
+#endif
 
 	app_init_debug();
 

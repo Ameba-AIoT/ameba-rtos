@@ -12,12 +12,13 @@
 #include "os_wrapper.h"
 #include "os_wrapper_time.h"
 #include "usbh.h"
-#include "usbh_cdc_ecm_hal.h"
+#include "usbh_cdc_ecm.h"
 #include "wifi_api.h"
 
 /* Private defines -----------------------------------------------------------*/
-extern void rltk_mii_init(void);
+extern void rltk_usb_eth_init(void);
 
+#define ENABLE_USBH_CDC_ECM_HOT_PLUG            1     /* Hot plug */
 
 #define ECMBDEBUG  0
 
@@ -29,6 +30,9 @@ struct eth_addr host_mac = {{0x00}}; // mac of device connected to usb
 static const char *const TAG = "ECMB";
 
 /* Private types -------------------------------------------------------------*/
+#define USBH_ECM_MAIN_THREAD_PRIORITY           5
+#define USBH_ECM_HOTPLUG_THREAD_PRIORITY        6
+#define USBH_ECM_ISR_PRIORITY                   INT_PRI_MIDDLE
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -37,11 +41,141 @@ static const char *const TAG = "ECMB";
 /* Private variables ---------------------------------------------------------*/
 int dhcp_done = 0;
 
-extern struct netif *pnetif_eth;
+extern struct netif *pnetif_usb_eth;
 
-void cdc_ecm_do_init(void)
+static usb_os_sema_t cdc_ecm_detach_sema;
+#if ENABLE_USBH_CDC_ECM_HOT_PLUG
+rtos_task_t 	            hotplug_task;
+#endif
+
+/* Private function prototypes -----------------------------------------------*/
+static int cdc_ecm_cb_init(void);
+static int cdc_ecm_cb_deinit(void);
+static int cdc_ecm_cb_attach(void);
+static int cdc_ecm_cb_detach(void);
+static int cdc_ecm_cb_setup(void);
+static int cdc_ecm_cb_process(usb_host_t *host, u8 msg);
+static int cdc_ecm_cb_bulk_receive(u8 *pbuf, u32 Len);
+static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max);
+
+static usbh_config_t usbh_ecm_cfg = {
+	.speed = USB_SPEED_HIGH,
+	.ext_intr_enable = 0, //USBH_SOF_INTR
+	.isr_priority = USBH_ECM_ISR_PRIORITY,
+	.main_task_priority = USBH_ECM_MAIN_THREAD_PRIORITY,
+	.hub_support = 1U,
+#if defined (CONFIG_AMEBAGREEN2)
+	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined (CONFIG_AMEBAL2)
+	/*FIFO total depth is 1024 DWORD, reserve 11 DWORD for DMA addr*/
+	.rx_fifo_depth = 501,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#endif
+};
+
+static usbh_cdc_ecm_state_cb_t cdc_ecm_usb_cb = {
+	.init   = cdc_ecm_cb_init,
+	.deinit = cdc_ecm_cb_deinit,
+	.attach = cdc_ecm_cb_attach,
+	.detach = cdc_ecm_cb_detach,
+	.setup  = cdc_ecm_cb_setup,
+	.bulk_received = cdc_ecm_cb_bulk_receive,
+};
+
+static usbh_user_cb_t usbh_ecm_usr_cb = {
+	.process = cdc_ecm_cb_process,
+	.validate = cdc_ecm_cb_device_check,
+};
+
+static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max)
 {
-	usbh_cdc_ecm_do_init(ethernetif_mii_recv, NULL);
+	UNUSED(cfg_max);
+	return usbh_cdc_ecm_check_config_desc(host);
+}
+
+static int cdc_ecm_cb_init(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
+	return HAL_OK;
+}
+
+static int cdc_ecm_cb_deinit(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "DEINIT\n");
+	return HAL_OK;
+}
+
+static int cdc_ecm_cb_attach(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
+	return HAL_OK;
+}
+
+static int cdc_ecm_cb_detach(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
+#if ENABLE_USBH_CDC_ECM_HOT_PLUG
+	usb_os_sema_give(cdc_ecm_detach_sema);
+#endif
+	return HAL_OK;
+}
+
+static int cdc_ecm_cb_setup(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
+	return HAL_OK;
+}
+
+static int cdc_ecm_cb_bulk_receive(u8 *buf, u32 length)
+{
+	if (length > 0) {
+		ethernetif_usb_eth_recv(buf, length);
+	}
+
+	return HAL_OK;
+}
+
+static int cdc_ecm_cb_process(usb_host_t *host, u8 msg)
+{
+	UNUSED(host);
+	switch (msg) {
+	case USBH_MSG_USER_SET_CONFIG:
+		usbh_cdc_ecm_choose_config(host);
+		break;
+	case USBH_MSG_DISCONNECTED:
+		// usbh_cdc_ecm_host_user.cdc_ecm_is_ready = 0;
+		break;
+
+	case USBH_MSG_CONNECTED:
+		break;
+
+	default:
+		break;
+	}
+
+	return HAL_OK;
+}
+
+static int cdc_ecm_do_init(void)
+{
+	int ret = 0;
+
+	ret = usbh_init(&usbh_ecm_cfg, &usbh_ecm_usr_cb);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBH fail\n");
+		return 0;
+	}
+
+	ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, NULL);
+	if (ret < 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ECM fail\n");
+		usbh_deinit();
+		return 0;
+	}
 
 	do {
 		if (usbh_cdc_ecm_usb_is_ready()) {
@@ -50,11 +184,8 @@ void cdc_ecm_do_init(void)
 		rtos_time_delay_ms(1000);
 	} while (1); //wait usb init success
 
-	usbh_cdc_ecm_prepare_done();
-
-	printf("Example Pid 0x%x/Vid 0x%x\n", usbh_cdc_ecm_get_device_vid(), usbh_cdc_ecm_get_device_pid());
+	return 1;
 }
-
 
 /* Ethernet State */
 typedef enum {
@@ -179,7 +310,7 @@ static u32_t send_to_usb(pkt_attrib_t *pattrib, struct pbuf *p)
 {
 	UNUSED(pattrib);
 
-	pnetif_eth->linkoutput(pnetif_eth, p);
+	pnetif_usb_eth->linkoutput(pnetif_usb_eth, p);
 
 	return 0;
 }
@@ -271,17 +402,19 @@ static void ecm_example_monitor_link_change_thread(void *param)
 	eth_state_t ethernet_unplug = ETH_STATUS_IDLE;
 
 	//todo: The usb will not be initialized at the beginning(need the cooperation of hw design)
-	cdc_ecm_do_init();
+	if (cdc_ecm_do_init() == 0) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "USB init fail\n");
 
-	rltk_mii_init();
+		rtos_task_delete(NULL);
+	}
+
 
 	while (1) {
 		link_is_up = usbh_cdc_ecm_get_connect_status();
 
 		if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {	// unlink -> link
 			ethernet_unplug = ETH_STATUS_INIT;
-			netif_set_link_up(pnetif_eth);
-
+			netif_set_link_up(pnetif_usb_eth);
 		} else if (0 == link_is_up && (ethernet_unplug >= ETH_STATUS_INIT)) {	// link -> unlink
 			ethernet_unplug = ETH_STATUS_DEINIT;
 			netif_set_default(pnetif_sta);
@@ -305,7 +438,7 @@ static void ecm_example_bridge_thread(void *param)
 	}
 
 	pnetif_sta->input = wifi_in_usb_out;                    // station netif
-	pnetif_eth->input = usb_in_wifi_out;                    // ethernet netif
+	pnetif_usb_eth->input = usb_in_wifi_out;                    // ethernet netif
 
 	rtos_task_delete(NULL);
 }
@@ -316,6 +449,8 @@ void example_usbh_wifi_bridge(void)
 	int status;
 	rtos_task_t monitor_task;
 	rtos_task_t bridge_task;
+
+	rltk_usb_eth_init();
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USB host usbh_wifi_bridge demo started\n");
 

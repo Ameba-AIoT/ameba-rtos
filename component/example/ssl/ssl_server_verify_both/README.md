@@ -11,7 +11,7 @@ None
 1. Modify `SERVER_PORT` and response content in `example_ssl_server_verify_both.c` based on your SSL server.
 
 2. (Optional) Test for TLS1.3.
-   - Type command `./menuconfig.py` and choose `CONFIG SSL`-> `Enable TLS 1.3`
+   - Use menuconfig and choose `CONFIG SSL`-> `Enable TLS 1.3`
 
 3. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.

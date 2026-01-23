@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Realtek Semiconductor Corp.
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -289,8 +289,7 @@ static int phy_rtl8201_init(struct eth_phy_dev *phy)
 		return RTK_FAIL;
 	}
 
-	/* 3. Perform Software Reset */
-	return phy->ops->reset(phy);
+	return err;
 }
 
 /**
@@ -325,13 +324,16 @@ static int phy_rtl8201_reset(struct eth_phy_dev *phy)
 }
 
 /**
- * @brief      Configure Link Parameters
+ * @brief      Configure Link Parameters (Speed, Duplex, Auto-neg, Flow Control)
  *
- * Sets up Auto-Negotiation advertisement or forces speed/duplex.
+ * Sets up Auto-Negotiation advertisement or forces speed/duplex based on the
+ * input configuration structure.
  *
- * Logic:
- * - If autoneg_en is true: Configure ADVERTISE register and restart AN.
- * - If autoneg_en is false: Force SPEED/DUPLEX bits in BMCR.
+ * Supported features based on phy_link_config_t:
+ * - Auto-Negotiation vs Forced Mode
+ * - 10M / 100M Speed selection
+ * - Half / Full Duplex selection
+ * - Flow Control (Symmetric & Asymmetric Pause) advertisement
  *
  * @param[in]  phy       Pointer to the Ethernet PHY device structure.
  * @param[in]  cfg       Pointer to link configuration structure.
@@ -341,16 +343,25 @@ static int phy_rtl8201_reset(struct eth_phy_dev *phy)
 static int phy_rtl8201_cfg_link(struct eth_phy_dev *phy, const phy_link_config_t *cfg)
 {
 	int err = RTK_SUCCESS;
-	uint16_t bmcr = 0;
-	uint16_t advertise = 0;
+	uint16_t bmcr, advertise;
+	uint16_t bmcr_mask;
 
-	/* Select Page 0 */
+	if (!phy || !cfg) {
+		return RTK_FAIL;
+	}
+
+	/* 1. Select Page 0 to access standard registers */
 	phy_rtl8201fr_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, &err);
 
 	if (cfg->autoneg_en) {
-		/* --- Auto-Negotiation Mode --- */
-		advertise = ADVERTISE_CSMA; /* IEEE 802.3 Selector */
+		/* ============================================= */
+		/*            Auto-Negotiation Mode              */
+		/* ============================================= */
 
+		/* Initialize Advertisement with CSMA/CD Selector (00001b) */
+		advertise = ADVERTISE_CSMA;
+
+		/* A. Configure Speed/Duplex Advertisement */
 		if (cfg->advertise_100m) {
 			advertise |= (ADVERTISE_100FULL | ADVERTISE_100HALF);
 		}
@@ -358,24 +369,55 @@ static int phy_rtl8201_cfg_link(struct eth_phy_dev *phy, const phy_link_config_t
 			advertise |= (ADVERTISE_10FULL | ADVERTISE_10HALF);
 		}
 
-		/* Update Advertisement Register */
+		/* B. Configure Flow Control (Pause) Advertisement */
+		/* Bit 10: Symmetric Pause */
+		if (cfg->advertise_pause) {
+			advertise |= ADVERTISE_PAUSE_CAP;
+		}
+		/* Bit 11: Asymmetric Pause */
+		if (cfg->advertise_asym_pause) {
+			advertise |= ADVERTISE_PAUSE_ASYM;
+		}
+
+		/* Write Advertisement Register (Reg 4) */
 		phy_rtl8201fr_write_safe(phy, MII_ADVERTISE, advertise, &err);
 
-		/* Configure BMCR to Enable and Restart AN */
-		bmcr = BMCR_ANENABLE | BMCR_ANRESTART;
+		/* Read current BMCR */
+		bmcr = phy_rtl8201fr_read_safe(phy, MII_BMCR, &err);
+
+		/* Enable AN and Restart AN */
+		bmcr |= (BMCR_ANENABLE | BMCR_ANRESTART);
+
+		/* Write back BMCR */
+		phy_rtl8201fr_write_safe(phy, MII_BMCR, bmcr, &err);
+
 	} else {
-		/* --- Forced Mode --- */
+		/* ============================================= */
+		/*                Forced Mode                    */
+		/* ============================================= */
+
+		/* Read current BMCR to preserve Loopback/PowerDown bits */
+		bmcr = phy_rtl8201fr_read_safe(phy, MII_BMCR, &err);
+
+		/* Mask out Speed, Duplex, and AN Enable bits */
+		bmcr_mask = BMCR_SPEED100 | BMCR_FULLDPLX | BMCR_ANENABLE;
+		bmcr &= ~bmcr_mask;
+
+		/* Set Speed */
 		if (cfg->speed == PHY_SPEED_100M) {
 			bmcr |= BMCR_SPEED100;
 		}
+		/* Note: PHY_SPEED_10M corresponds to bit 13 being 0, which is handled by the mask */
+
+		/* Set Duplex */
 		if (cfg->duplex == PHY_DUPLEX_FULL) {
 			bmcr |= BMCR_FULLDPLX;
 		}
-		/* Note: BMCR_ANENABLE is 0 here */
-	}
+		/* Note: PHY_DUPLEX_HALF corresponds to bit 8 being 0, handled by mask */
 
-	/* Write to BMCR */
-	phy_rtl8201fr_write_safe(phy, MII_BMCR, bmcr, &err);
+		/* Write back BMCR (Reg 0) */
+		phy_rtl8201fr_write_safe(phy, MII_BMCR, bmcr, &err);
+	}
 
 	return err;
 }
@@ -451,7 +493,7 @@ static int phy_rtl8201_autoneg_restart(struct eth_phy_dev *phy)
 }
 
 /**
- * @brief      Configure PHY Clock Source (RMII Mode)
+ * @brief      Configure PHY Reference Clock Direction
  *
  * Maps abstract Clock Source to RTL8201 Page 7 RMII settings.
  *
@@ -465,11 +507,11 @@ static int phy_rtl8201_autoneg_restart(struct eth_phy_dev *phy)
  * 3. Restore Page 0.
  *
  * @param[in]  phy       Pointer to the Ethernet PHY device structure.
- * @param[in]  src       Clock source configuration.
+ * @param[in]  dir       Clock source configuration.
  *
  * @return     RTK_SUCCESS on success, error code otherwise.
  */
-static int phy_rtl8201_cfg_clock(struct eth_phy_dev *phy, phy_clock_source_t src)
+static int phy_rtl8201_cfg_refclock(struct eth_phy_dev *phy, enum eth_refclk_dir dir)
 {
 	int err = RTK_SUCCESS;
 	uint16_t val;
@@ -481,7 +523,7 @@ static int phy_rtl8201_cfg_clock(struct eth_phy_dev *phy, phy_clock_source_t src
 	val = phy_rtl8201fr_read_safe(phy, RTL8201_P7_RMII_MODE, &err);
 
 	if (err == RTK_SUCCESS) {
-		if (src != PHY_CLK_XTAL) {
+		if (dir == ETH_REFCLK_MAC2PHY) {
 			val |= RTL8201_P7_RMII_CLK_DIR;  /* Set bit: Input Mode */
 		} else {
 			val &= ~RTL8201_P7_RMII_CLK_DIR; /* Clear bit: Output Mode */
@@ -594,7 +636,7 @@ const struct eth_phy_ops phy_rtl8201fr_ops = {
 	.cfg_link           = phy_rtl8201_cfg_link,
 	.get_link           = phy_rtl8201_get_link,
 	.autoneg_restart    = phy_rtl8201_autoneg_restart,
-	.cfg_clock          = phy_rtl8201_cfg_clock,
+	.cfg_refclock       = phy_rtl8201_cfg_refclock,
 	.cfg_eee            = phy_rtl8201_cfg_eee,
 	.set_loopback       = phy_rtl8201_set_loopback,
 	.set_link_callback  = phy_rtl8201_set_link_callback,

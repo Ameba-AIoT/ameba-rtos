@@ -39,9 +39,12 @@ typedef enum {
 
 /* Private variables ---------------------------------------------------------*/
 
-
-
 static NAND_FTL_DeviceTypeDef NF_Device;
+
+/* Public variables ---------------------------------------------------------*/
+
+u32 vfs_nand_flash_pagesize = 0;
+u32 vfs_nand_flash_pagenum = 0;
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -235,6 +238,11 @@ u8 NAND_FTL_Init(void)
 	NAND_FTL_DeviceTypeDef *nand = &NF_Device;
 	Flash_InfoTypeDef *info = &nand->MemInfo;
 
+	if (nand->Initialized) {
+		VFS_DBG(VFS_INFO, "NAND already initilized");
+		return HAL_OK;
+	}
+
 	VFS_DBG(VFS_INFO, "NAND init started");
 
 	nand->LastErasedBlockAddr = 0xFFFFFFFF;
@@ -278,6 +286,8 @@ u8 NAND_FTL_Init(void)
 	ret = NAND_FTL_MfgInit(nand);
 	if (ret == HAL_OK) {
 		nand->Initialized = 1;
+		vfs_nand_flash_pagesize = info->PageSize;
+		vfs_nand_flash_pagenum = info->PagesPerBlock;
 		VFS_DBG(VFS_INFO, "NAND init done");
 	}
 

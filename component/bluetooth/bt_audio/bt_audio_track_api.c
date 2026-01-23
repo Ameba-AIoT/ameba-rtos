@@ -23,16 +23,16 @@ void *rtk_bt_audio_track_init(uint32_t channels,
 {
 	(void)period_size;
 	(void)period_count;
-	struct RTAudioTrack *audio_track = NULL;
+	struct AudioTrack *audio_track = NULL;
 	int track_buf_size = 4096;
 #if defined(CONFIG_AUDIO_MIXER) && CONFIG_AUDIO_MIXER
 	uint32_t track_start_threshold = 0;
 #endif
-	uint32_t flags = RTAUDIO_OUTPUT_FLAG_NONE;
+	uint32_t flags = AUDIO_OUTPUT_FLAG_NONE;
 	uint32_t bits = 16;
 
-	RTAudioService_Init();
-	audio_track = RTAudioTrack_Create();
+	AudioService_Init();
+	audio_track = AudioTrack_Create();
 	if (!audio_track) {
 		BT_LOGE("%s :new AudioTrack failed", __func__);
 		return NULL;
@@ -58,26 +58,26 @@ void *rtk_bt_audio_track_init(uint32_t channels,
 		if (duration) {
 			track_buf_size = (duration * ((rate / 1000) * channels * (bits / 8)) / 1000) * 6;
 		} else {
-			track_buf_size = RTAudioTrack_GetMinBufferBytes(audio_track, RTAUDIO_CATEGORY_MEDIA, rate, format, channels) * 3;
+			track_buf_size = AudioTrack_GetMinBufferBytes(audio_track, AUDIO_CATEGORY_MEDIA, rate, format, channels) * 3;
 			//track_buf_size = 22608;
 		}
-		RTAudioTrackConfig  track_config;
-		track_config.category_type = RTAUDIO_CATEGORY_MEDIA;
+		AudioTrackConfig  track_config;
+		track_config.category_type = AUDIO_CATEGORY_MEDIA;
 		track_config.sample_rate = rate;
 		track_config.format = format;
 		track_config.channel_count = channels;
 		track_config.buffer_bytes = track_buf_size;
-		RTAudioTrack_Init(audio_track, &track_config, flags);
+		AudioTrack_Init(audio_track, &track_config, flags);
 
 #if defined(CONFIG_AUDIO_MIXER) && CONFIG_AUDIO_MIXER
 		/* set audio play start buffer size to match play latency and play fluency */
 		if (duration) {
 			int32_t thresholdBytes = (duration * ((rate / 1000) * channels * (bits / 8)) / 1000) * 3;
-			RTAudioTrack_SetStartThresholdBytes(audio_track, thresholdBytes);
+			AudioTrack_SetStartThresholdBytes(audio_track, thresholdBytes);
 		} else {
-			RTAudioTrack_SetStartThresholdBytes(audio_track, track_buf_size);
+			AudioTrack_SetStartThresholdBytes(audio_track, track_buf_size);
 		}
-		track_start_threshold = RTAudioTrack_GetStartThresholdBytes(audio_track);
+		track_start_threshold = AudioTrack_GetStartThresholdBytes(audio_track);
 		BT_LOGA("%s: get start threshold:%d\r\n", __func__, (int)track_start_threshold);
 #endif
 		BT_LOGE("%s sample_rate %d, channel_count %d, track_buf_size %d \r\n", __func__,
@@ -91,97 +91,97 @@ void *rtk_bt_audio_track_init(uint32_t channels,
 
 uint16_t rtk_bt_audio_track_deinit(void *track_hdl)
 {
-	struct RTAudioTrack *audio_track = NULL;
+	struct AudioTrack *audio_track = NULL;
 
 	if (!track_hdl) {
 		BT_LOGE("%s: audio track is NULL", __func__);
 		return 1;
 	} else {
-		audio_track = (struct RTAudioTrack *)track_hdl;
+		audio_track = (struct AudioTrack *)track_hdl;
 	}
-	RTAudioTrack_Pause(audio_track);
-	RTAudioTrack_Stop(audio_track);
-	RTAudioTrack_Destroy(audio_track);
+	AudioTrack_Pause(audio_track);
+	AudioTrack_Stop(audio_track);
+	AudioTrack_Destroy(audio_track);
 
 	return 0;
 }
 
 uint16_t rtk_bt_audio_track_stop(void *track_hdl)
 {
-	struct RTAudioTrack *audio_track = NULL;
+	struct AudioTrack *audio_track = NULL;
 
 	if (!track_hdl) {
 		BT_LOGE("%s: audio track is NULL", __func__);
 		return 1;
 	} else {
-		audio_track = (struct RTAudioTrack *)track_hdl;
+		audio_track = (struct AudioTrack *)track_hdl;
 	}
-	RTAudioTrack_Stop(audio_track);
+	AudioTrack_Stop(audio_track);
 
 	return 0;
 }
 
 uint16_t rtk_bt_audio_track_pause(void *track_hdl)
 {
-	struct RTAudioTrack *audio_track = NULL;
+	struct AudioTrack *audio_track = NULL;
 
 	if (!track_hdl) {
 		BT_LOGE("%s: audio track is NULL", __func__);
 		return 1;
 	} else {
-		audio_track = (struct RTAudioTrack *)track_hdl;
+		audio_track = (struct AudioTrack *)track_hdl;
 	}
-	RTAudioTrack_Pause(audio_track);
-	RTAudioTrack_Flush(audio_track);
+	AudioTrack_Pause(audio_track);
+	AudioTrack_Flush(audio_track);
 
 	return 0;
 }
 
 uint16_t rtk_bt_audio_track_pause_without_flush(void *track_hdl)
 {
-	struct RTAudioTrack *audio_track = NULL;
+	struct AudioTrack *audio_track = NULL;
 
 	if (!track_hdl) {
 		BT_LOGE("%s: audio track is NULL", __func__);
 		return 1;
 	} else {
-		audio_track = (struct RTAudioTrack *)track_hdl;
+		audio_track = (struct AudioTrack *)track_hdl;
 	}
-	RTAudioTrack_Pause(audio_track);
+	AudioTrack_Pause(audio_track);
 
 	return 0;
 }
 uint16_t rtk_bt_audio_track_resume(void *track_hdl)
 {
-	struct RTAudioTrack *audio_track = NULL;
+	struct AudioTrack *audio_track = NULL;
 
 	if (!track_hdl) {
 		BT_LOGE("%s: audio track is NULL", __func__);
 		return 1;
 	} else {
-		audio_track = (struct RTAudioTrack *)track_hdl;
+		audio_track = (struct AudioTrack *)track_hdl;
 	}
-	RTAudioTrack_Start(audio_track);
+	AudioTrack_Start(audio_track);
 
 	return 0;
 }
 
 int32_t rtk_bt_audio_track_play(void *track_hdl, void *buffer, uint32_t size)
 {
-	struct RTAudioTrack *audio_track = NULL;
+	struct AudioTrack *audio_track = NULL;
 
 	if (!track_hdl) {
 		BT_LOGE("%s: audio track is NULL", __func__);
 		return 1;
 	} else {
-		audio_track = (struct RTAudioTrack *)track_hdl;
+		audio_track = (struct AudioTrack *)track_hdl;
 	}
-	return RTAudioTrack_Write(audio_track, buffer, size, true);
+	return AudioTrack_Write(audio_track, buffer, size, true);
 }
 
 uint16_t rtk_bt_audio_track_set_hardware_volume(float left_volume, float right_volume)
 {
-	return RTAudioControl_SetHardwareVolume(left_volume, right_volume);
+	return AudioControl_SetHardwareVolume(left_volume, right_volume);
 }
 
 uint16_t rtk_bt_audio_track_get_volume(float *left_volume, float *right_volume)
@@ -190,33 +190,33 @@ uint16_t rtk_bt_audio_track_get_volume(float *left_volume, float *right_volume)
 		BT_LOGE("%s: left_volume or right_volume is NULL pointer", __func__);
 		return 1;
 	}
-	return RTAudioControl_GetHardwareVolume(left_volume, right_volume);
+	return AudioControl_GetHardwareVolume(left_volume, right_volume);
 }
 
 uint16_t rtk_bt_audio_track_set_software_volume(void *track_hdl, float left_volume, float right_volume)
 {
-	struct RTAudioTrack *audio_track = NULL;
+	struct AudioTrack *audio_track = NULL;
 	if (!track_hdl) {
 		BT_LOGE("%s: audio track is NULL", __func__);
 		return 1;
 	} else {
-		audio_track = (struct RTAudioTrack *)track_hdl;
+		audio_track = (struct AudioTrack *)track_hdl;
 	}
 
-	return RTAudioTrack_SetVolume(audio_track, left_volume, right_volume);
+	return AudioTrack_SetVolume(audio_track, left_volume, right_volume);
 }
 
 uint16_t rtk_bt_audio_track_start(void *track_hdl, float left_volume, float right_volume)
 {
-	struct RTAudioTrack *audio_track = NULL;
+	struct AudioTrack *audio_track = NULL;
 
 	if (!track_hdl) {
 		BT_LOGE("%s: audio track is NULL", __func__);
 		return 1;
 	} else {
-		audio_track = (struct RTAudioTrack *)track_hdl;
+		audio_track = (struct AudioTrack *)track_hdl;
 	}
-	if (RTAudioTrack_Start(audio_track)) {
+	if (AudioTrack_Start(audio_track)) {
 		BT_LOGE("audio track start fail!! ");
 		return 1;
 	}
@@ -231,10 +231,10 @@ uint16_t rtk_bt_audio_track_start(void *track_hdl, float left_volume, float righ
 	{
 		char string_value[20];
 		sprintf(string_value, "%s%d", "amp_pin=", (int)_PA_12);
-		RTAudioTrack_SetParameters(audio_track, string_value);
+		AudioTrack_SetParameters(audio_track, string_value);
 	}
 #elif defined(CONFIG_AUDIO_MIXER) && CONFIG_AUDIO_MIXER
-	RTAudioControl_SetAmplifierEnPin(_PA_12);
+	AudioControl_SetAmplifierEnPin(_PA_12);
 #endif
 #endif
 	return 0;
@@ -242,15 +242,15 @@ uint16_t rtk_bt_audio_track_start(void *track_hdl, float left_volume, float righ
 
 uint16_t rtk_bt_audio_track_delay_start(void *track_hdl, bool ctrl)
 {
-	struct RTAudioTrack *audio_track = NULL;
+	struct AudioTrack *audio_track = NULL;
 
 	if (!track_hdl) {
 		BT_LOGE("%s: audio track is NULL", __func__);
 		return 1;
 	} else {
-		audio_track = (struct RTAudioTrack *)track_hdl;
+		audio_track = (struct AudioTrack *)track_hdl;
 	}
-	RTAudioTrack_SetParameters(audio_track, ctrl == true ? "delay_start=1" : "delay_start=0");
+	AudioTrack_SetParameters(audio_track, ctrl == true ? "delay_start=1" : "delay_start=0");
 
 	return 0;
 }
@@ -267,83 +267,83 @@ uint16_t rtk_bt_audio_track_hw_start(void)
 void rtk_bt_audio_track_set_mute(bool muted)
 {
 	//true means mute dac, false means unmute dac.
-	if (0 != RTAudioControl_SetPlaybackMute(muted)) {
+	if (0 != AudioControl_SetPlaybackMute(muted)) {
 		BT_LOGE("audio track mute fail!! ");
 	}
 }
 
 bool rtk_bt_audio_track_get_muted(void)
 {
-	return RTAudioControl_GetPlaybackMute();
+	return AudioControl_GetPlaybackMute();
 }
 
 uint16_t rtk_bt_audio_track_set_sample_rate(void *track_hdl, uint32_t sample_rate)
 {
-	struct RTAudioTrack *audio_track = NULL;
+	struct AudioTrack *audio_track = NULL;
 
 	if (!track_hdl) {
 		BT_LOGE("%s: audio track is NULL", __func__);
 		return 1;
 	} else {
-		audio_track = (struct RTAudioTrack *)track_hdl;
+		audio_track = (struct AudioTrack *)track_hdl;
 	}
-	RTAudioTrack_SetSampleRate(audio_track, sample_rate);
+	AudioTrack_SetSampleRate(audio_track, sample_rate);
 
 	return 0;
 }
 
 uint32_t rtk_bt_audio_track_get_sample_rate(void *track_hdl)
 {
-	struct RTAudioTrack *audio_track = NULL;
+	struct AudioTrack *audio_track = NULL;
 
 	if (!track_hdl) {
 		BT_LOGE("%s: audio track is NULL", __func__);
 		return 0;
 	} else {
-		audio_track = (struct RTAudioTrack *)track_hdl;
+		audio_track = (struct AudioTrack *)track_hdl;
 	}
-	return RTAudioTrack_GetSampleRate(audio_track);
+	return AudioTrack_GetSampleRate(audio_track);
 }
 
 uint16_t rtk_bt_audio_track_set_channel_count(void *track_hdl, uint32_t channel_count)
 {
-	struct RTAudioTrack *audio_track = NULL;
+	struct AudioTrack *audio_track = NULL;
 
 	if (!track_hdl) {
 		BT_LOGE("%s: audio track is NULL", __func__);
 		return 1;
 	} else {
-		audio_track = (struct RTAudioTrack *)track_hdl;
+		audio_track = (struct AudioTrack *)track_hdl;
 	}
-	RTAudioTrack_SetChannelCount(audio_track, channel_count);
+	AudioTrack_SetChannelCount(audio_track, channel_count);
 
 	return 0;
 }
 
 uint32_t rtk_bt_audio_track_get_channel_count(void *track_hdl)
 {
-	struct RTAudioTrack *audio_track = NULL;
+	struct AudioTrack *audio_track = NULL;
 
 	if (!track_hdl) {
 		BT_LOGE("%s: audio track is NULL", __func__);
 		return 0;
 	} else {
-		audio_track = (struct RTAudioTrack *)track_hdl;
+		audio_track = (struct AudioTrack *)track_hdl;
 	}
-	return RTAudioTrack_GetChannelCount(audio_track);
+	return AudioTrack_GetChannelCount(audio_track);
 }
 
 int32_t rtk_bt_audio_track_get_start_thresholdbytes(void *track_hdl)
 {
-	struct RTAudioTrack *audio_track = NULL;
+	struct AudioTrack *audio_track = NULL;
 
 	if (!track_hdl) {
 		BT_LOGE("%s: audio track is NULL", __func__);
 		return 0;
 	} else {
-		audio_track = (struct RTAudioTrack *)track_hdl;
+		audio_track = (struct AudioTrack *)track_hdl;
 	}
-	return RTAudioTrack_GetStartThresholdBytes(audio_track);
+	return AudioTrack_GetStartThresholdBytes(audio_track);
 }
 
 long rtk_bt_audio_track_get_buffer_size(void)
