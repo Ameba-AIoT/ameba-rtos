@@ -31,9 +31,7 @@
 #define USBH_UVC_VIDEO_FRAME_SIZE			150*1024    /* bytes */
 
 #define USBH_UVC_DECODE_TASK_STACK			512*4    /* bytes */
-#define USBH_UVC_DECODE_TASK_PRIORITY			5
-
-#define USBH_UVC_DETECT_EOF					0
+#define USBH_UVC_DECODE_TASK_PRIORITY		5
 
 #define USBH_UVC_USE_SOF					0  /* if set to 0, sof interrupt can be disabled */
 
@@ -45,6 +43,13 @@ enum streaming_state {
 	STREAMING_OFF = 0,
 	STREAMING_ON = 1,
 };
+
+typedef enum  {
+	UVC_FRAME_INIT = 0,
+	UVC_FRAME_FLYING,  // memcpying
+	UVC_FRAME_READY,   // ready to commit frame_chain
+	UVC_FRAME_INUSE    // in using
+} usbh_uvc_frame_state_t;
 
 typedef struct  {
 	int fmt_type;    		 //video format type
@@ -63,8 +68,11 @@ typedef struct {
 typedef struct {
 	struct list_head list;
 	u8 *buf;
+	u32 index;
 	u32 byteused;
 	u32 err;
+	u32 timestamp;
+	usbh_uvc_frame_state_t state;
 } usbh_uvc_frame_t;
 
 /* Exported macros -----------------------------------------------------------*/

@@ -11,7 +11,7 @@
 #include "log.h"
 
 
-int printf(const char *fmt, ...);
+int DiagPrintf(const char *fmt, ...);
 
 /*
  * The log output macros print output to the console. These macros produce
@@ -19,7 +19,7 @@ int printf(const char *fmt, ...);
  * make command line) is greater or equal than the level required for that
  * type of log output.
  *
- * The format expected is the same as for printf(). For example:
+ * The format expected is the same as for DiagPrintf(). For example:
  * INFO("Info %s.\n", "message")    -> INFO:    Info message.
  * WARN("Warning %s.\n", "message") -> WARNING: Warning message.
  */
@@ -59,36 +59,36 @@ int printf(const char *fmt, ...);
 #define no_tf_log(fmt, ...)				\
 	do {						\
 		if (false) {				\
-			printf(fmt, ##__VA_ARGS__);	\
+			DiagPrintf(fmt, ##__VA_ARGS__);	\
 		}					\
 	} while (false)
 
 #if LOG_LEVEL >= LOG_LEVEL_ERROR
-# define ERROR(...)	printf(LOG_MARKER_ERROR __VA_ARGS__)
+# define ERROR(...)	DiagPrintf(LOG_MARKER_ERROR __VA_ARGS__)
 #else
 # define ERROR(...)	no_tf_log(LOG_MARKER_ERROR __VA_ARGS__)
 #endif
 
 #if LOG_LEVEL >= LOG_LEVEL_NOTICE
-# define NOTICE(...)	printf(LOG_MARKER_NOTICE __VA_ARGS__)
+# define NOTICE(...)	DiagPrintf(LOG_MARKER_NOTICE __VA_ARGS__)
 #else
 # define NOTICE(...)	no_tf_log(LOG_MARKER_NOTICE __VA_ARGS__)
 #endif
 
 #if LOG_LEVEL >= LOG_LEVEL_WARNING
-# define WARN(...)	printf(LOG_MARKER_WARNING __VA_ARGS__)
+# define WARN(...)	DiagPrintf(LOG_MARKER_WARNING __VA_ARGS__)
 #else
 # define WARN(...)	no_tf_log(LOG_MARKER_WARNING __VA_ARGS__)
 #endif
 
 #if LOG_LEVEL >= LOG_LEVEL_INFO
-# define INFO(...)	printf(LOG_MARKER_INFO __VA_ARGS__)
+# define INFO(...)	DiagPrintf(LOG_MARKER_INFO __VA_ARGS__)
 #else
 # define INFO(...)	no_tf_log(LOG_MARKER_INFO __VA_ARGS__)
 #endif
 
 #if LOG_LEVEL >= LOG_LEVEL_VERBOSE
-# define VERBOSE(...)	printf(LOG_MARKER_VERBOSE __VA_ARGS__)
+# define VERBOSE(...)	DiagPrintf(LOG_MARKER_VERBOSE __VA_ARGS__)
 #else
 # define VERBOSE(...)	no_tf_log(LOG_MARKER_VERBOSE __VA_ARGS__)
 #endif
@@ -108,7 +108,7 @@ int printf(const char *fmt, ...);
 /* Function called when stack protection check code detects a corrupted stack */
 //void __attribute__((__noreturn__)) __stack_chk_fail(void);
 
-//void tf_log(const char *fmt, ...) __printflike(1, 2);
+//void tf_log(const char *fmt, ...) __DiagPrintflike(1, 2);
 //void tf_log_set_max_level(unsigned int log_level);
 
 #endif /* __ASSEMBLER__ */
