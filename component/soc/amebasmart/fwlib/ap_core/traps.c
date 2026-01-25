@@ -135,19 +135,25 @@ _WEAK void Crash_DumpReg(uint32_t cstack[], uint32_t spsr)
 	DCache_Clean((uint32_t)sp, depth);
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 _WEAK void UndefinedExceptionHandler(uint32_t cstack[], uint32_t spsr)
 {
+	xlat_flash_region_xip();
+
 	printf("Address of the undefined instruction 0x%08x\n", (unsigned int)UndefinedExceptionAddr);
 
 	Crash_DumpReg(cstack, spsr);
 	for (;;);
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 _WEAK void DataAbortHandler(uint32_t cstack[], uint32_t spsr)
 {
 	uint32_t FaultStatus;
 
 	asm volatile("mrc	p15, 0, %0, c5, c0, 0" : "=r"(FaultStatus));
+
+	xlat_flash_region_xip();
 
 	printf("Data abort with Data Fault Status Register  0x%08x\n", (unsigned int)FaultStatus);
 	printf("Address of Instruction causing Data abort 0x%08x\n", (unsigned int)DataAbortAddr);
@@ -156,11 +162,14 @@ _WEAK void DataAbortHandler(uint32_t cstack[], uint32_t spsr)
 	for (;;);
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 _WEAK void PrefetchAbortHandler(uint32_t cstack[], uint32_t spsr)
 {
 	uint32_t FaultStatus;
 
 	asm volatile("mrc	p15, 0, %0, c5, c0, 1" : "=r"(FaultStatus));
+
+	xlat_flash_region_xip();
 
 	printf("Prefetch abort with Instruction Fault Status Register 0x%08x\n", (unsigned int)FaultStatus);
 	printf("Address of Instruction causing Data abort 0x%08x\n", (unsigned int)PrefetchAbortAddr);
@@ -168,4 +177,3 @@ _WEAK void PrefetchAbortHandler(uint32_t cstack[], uint32_t spsr)
 	Crash_DumpReg(cstack, spsr);
 	for (;;);
 }
-

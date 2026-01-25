@@ -15,10 +15,6 @@ ameba_list_append(public_includes
     .
 )
 
-ameba_list_append(public_libraries
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_websocket.a
-)
-
 # Component public part, user config end
 #----------------------------------------#
 
@@ -60,7 +56,7 @@ ameba_list_append(private_sources
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For open-source component, always build from source
-ameba_add_external_app_library(websocket
+ameba_add_internal_library(websocket
     p_SOURCES
         ${private_sources}
     p_INCLUDES

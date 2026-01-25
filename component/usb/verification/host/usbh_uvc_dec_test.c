@@ -739,7 +739,6 @@ static void uvc_img_prepare_h264(usbh_uvc_frame_t *frame)
 	}
 
 	len = frame->byteused;
-	DCache_Invalidate((u32)frame->buf, len);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "[h264] addr %x len=%d\n", frame->buf, len);
 	if (len > USBH_UVC_BUF_SIZE) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[h264] Image len overflow!\n");
@@ -784,7 +783,6 @@ static void uvc_img_prepare_yuv(usbh_uvc_frame_t *frame)
 	}
 
 	len = frame->byteused;
-	DCache_Invalidate((u32)frame->buf, len);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "[yuv] addr=%x len=%d\n", frame->buf, len);
 	if (len > USBH_UVC_BUF_SIZE) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[yuv] Image len overflow!\n");
@@ -808,7 +806,6 @@ static void uvc_img_prepare_mjpeg(usbh_uvc_frame_t *frame)
 	}
 
 	len = frame->byteused;
-	DCache_Invalidate((u32)frame->buf, len);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "[mjpeg] addr=%x len=%d\n", frame->buf, len);
 
 	if (len > USBH_UVC_BUF_SIZE) {
