@@ -8,7 +8,6 @@ include $(MAKE_INCLUDE_GEN)
 #*****************************************************************************#
 DIR = $(BASEDIR)/component/network/websocket
 MODULE_IFLAGS += -I$(BASEDIR)/component/network/websocket
-TARGET_LIB = lib_websocket
 vpath %.c $(DIR) $(shell find $(DIR) -type d)
 
 #*****************************************************************************#
@@ -20,7 +19,8 @@ CSRC +=	$(DIR)/libwsclient.c \
 		$(DIR)/ws_server_msg.c \
 		$(DIR)/wsclient_api.c \
 		$(DIR)/wsserver_api.c \
-
+		$(DIR)/websocket/wsserver_tls.c \
+		$(DIR)/websocket/wsclient_tls.c \
 #*****************************************************************************#
 #                               Object FILE LIST                              #
 #*****************************************************************************#
@@ -37,7 +37,7 @@ OBJS = $(notdir $(CSRC:.c=.o))
 #*****************************************************************************#
 COPY_RAM_OBJS: CORE_TARGETS
 all: COPY_RAM_OBJS
-	$(call GEN_AND_MOVE_TO_LIB_FOLDER, $(TARGET_LIB), $(TARGET_LIBAPP_FOLDER))
+
 #*****************************************************************************#
 #              GENERATE OBJECT FILE                                           #
 #*****************************************************************************#
