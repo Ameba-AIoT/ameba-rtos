@@ -8,7 +8,6 @@ include $(MAKE_INCLUDE_GEN)
 #*****************************************************************************#
 DIR = $(BASEDIR)/component/network/httpd
 MODULE_IFLAGS += -I$(BASEDIR)/component/network/httpd
-TARGET_LIB = lib_httpd
 vpath %.c $(DIR) $(shell find $(DIR) -type d)
 
 #*****************************************************************************#
@@ -19,6 +18,7 @@ vpath %.c $(DIR) $(shell find $(DIR) -type d)
 CSRC +=	$(DIR)/httpd_core.c \
 		$(DIR)/httpd_msg.c \
 		$(DIR)/httpd_util.c \
+		$(DIR)/httpd/httpd_tls.c \
 
 #*****************************************************************************#
 #                               Object FILE LIST                              #
@@ -36,7 +36,6 @@ OBJS = $(notdir $(CSRC:.c=.o))
 #*****************************************************************************#
 COPY_RAM_OBJS: CORE_TARGETS
 all: COPY_RAM_OBJS
-	$(call GEN_AND_MOVE_TO_LIB_FOLDER, $(TARGET_LIB), $(TARGET_LIBAPP_FOLDER))
 #*****************************************************************************#
 #              GENERATE OBJECT FILE                                           #
 #*****************************************************************************#
