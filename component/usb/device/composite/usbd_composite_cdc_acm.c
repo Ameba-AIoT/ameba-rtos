@@ -22,7 +22,7 @@ static int composite_cdc_acm_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static u16 composite_cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
 static int composite_cdc_acm_handle_ep0_data_out(usb_dev_t *dev);
 static int composite_cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
-static int composite_cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
+static int composite_cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -385,7 +385,7 @@ static int composite_cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 st
   * @param  ep_addr: endpoint address
   * @retval Status
   */
-static int composite_cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
+static int composite_cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
 	usbd_composite_cdc_acm_dev_t *cdc = &composite_cdc_acm_dev;
 	usbd_ep_t *ep_bulk_out = &cdc->ep_bulk_out;
@@ -664,7 +664,7 @@ int usbd_composite_cdc_acm_deinit(void)
   * @param  len: data length
   * @retval Status
   */
-int usbd_composite_cdc_acm_transmit(u8 *buf, u16 len)
+int usbd_composite_cdc_acm_transmit(u8 *buf, u32 len)
 {
 	int ret = HAL_ERR_HW;
 	usbd_composite_cdc_acm_dev_t *cdc = &composite_cdc_acm_dev;

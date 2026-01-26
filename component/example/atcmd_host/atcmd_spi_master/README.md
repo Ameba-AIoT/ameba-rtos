@@ -9,12 +9,15 @@
 None
 
 # SW configuration
+1. For atcmd device:
+   a. Modify the SPI and UART configurations in atcmd_config.json as needed. (like pins, spi clock frequence, uart baudrate).
 
-1. Modify the SPI and UART configurations in atcmd_config.json as needed. (like pins, spi clock frequence, uart baudrate).
+   b. Build and Download:
+      * Refer to the SDK Examples section of the online documentation to generate images.
+      * `Download` images to board by Ameba Image Tool.
 
-2. Build and Download:
-   * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool.
+2. For atcmd host:
+   a. ATCMD Mode of menuconfig should be configured as `Manual Test Mode`.
 
 # Expect result
 
@@ -26,4 +29,10 @@ For more details, please refer to the atcmd SPI section of the online document.
 
 # Supported IC
 
+RTL8730E
+RTL8726E
+RTL8720E
+RTL8713E
+RTL8710E
 RTL8721Dx
+RTL8721F

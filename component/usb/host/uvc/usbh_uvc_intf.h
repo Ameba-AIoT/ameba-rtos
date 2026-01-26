@@ -39,6 +39,8 @@
 
 #define USBH_UVC_USE_SOF                              0  /* if set to 0, sof interrupt can be disabled */
 
+#define UBSH_UVC_REQUEST_BUF_LEN                      64
+
 /* Exported types ------------------------------------------------------------*/
 
 enum streaming_state {
@@ -62,13 +64,15 @@ typedef struct  {
 #if USBH_UVC_USE_HW
 	u8 isr_priority; //hw uvc isr priorigy
 #endif
-} uvc_config_t;
+} usbh_uvc_config_t;
 
 typedef struct {
 	int(* init)(void);
 	int(* deinit)(void);
 	int(* attach)(void);
 	int(* detach)(void);
+	int(* setup)(void);
+	int(* setparam)(void);
 } usbh_uvc_cb_t;
 
 typedef struct {
@@ -88,10 +92,10 @@ typedef struct {
 /* Exported functions --------------------------------------------------------*/
 int usbh_uvc_init(usbh_uvc_cb_t *cb);
 void usbh_uvc_deinit(void);
-int usbh_uvc_stream_on(uvc_config_t *para, u32 itf_num);
+int usbh_uvc_stream_on(usbh_uvc_config_t *para, u32 itf_num);
 int usbh_uvc_stream_off(u32 itf_num);
 int usbh_uvc_stream_state(u32 itf_num);
-int usbh_uvc_set_param(uvc_config_t *para, u32 itf_num);
+int usbh_uvc_set_param(usbh_uvc_config_t *para, u32 itf_num);
 usbh_uvc_frame_t *usbh_uvc_get_frame(u32 itf_num);
 void usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u32 itf_num);
 

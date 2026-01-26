@@ -15,6 +15,6 @@ extern u8 chanel_idx_max;
 extern u8 rtw_chnl_tbl[MAX_CHANNEL_NUM];
 extern struct rtw_acs_mntr_rpt acs_mntr_rpt_tbl[MAX_CHANNEL_NUM];
 
-int whc_fullmac_host_dump_survey_params(struct wiphy *wiphy, struct net_device *netdev, int idx, struct survey_info *info);
+int whc_host_dump_survey_params(struct wiphy *wiphy, struct net_device *netdev, int idx, struct survey_info *info);
 
 #endif

@@ -1373,9 +1373,9 @@ static void _whc_fullmac_host_regd_set_country_code(struct wiphy *wiphy, u8 *cou
 	struct rtw_country_code_table table;
 	struct ieee80211_regdomain *regd = NULL;
 
-	ret = whc_fullmac_host_set_country_code(country);
+	ret = whc_host_set_country_code(country);
 	if (ret == 0) {
-		whc_fullmac_host_get_country_code(&table);
+		whc_host_get_country_code(&table);
 		regd = _whc_fullmac_host_regd_get(table.channel_plan);
 		memcpy((void *)&regd->alpha2[0], &table.char2[0], 2);
 
@@ -1385,10 +1385,10 @@ static void _whc_fullmac_host_regd_set_country_code(struct wiphy *wiphy, u8 *cou
 		ret = regulatory_set_wiphy_regd_sync_rtnl(wiphy, regd);
 #endif
 		if (ret != 0) {
-			dev_err(global_idev.fullmac_dev, "%s regulatory_set_wiphy_regd_sync_rtnl return %d\n", __func__, ret);
+			dev_err(global_idev.pwhc_dev, "%s regulatory_set_wiphy_regd_sync_rtnl return %d\n", __func__, ret);
 		}
 	} else {
-		dev_err(global_idev.fullmac_dev, "%s set country %s failed\n", __func__, country);
+		dev_err(global_idev.pwhc_dev, "%s set country %s failed\n", __func__, country);
 	}
 }
 
@@ -1409,7 +1409,7 @@ int whc_fullmac_host_regd_update(struct rtw_country_code_table *ptab)
 #endif
 	rtnl_unlock();
 	if (ret != 0) {
-		dev_err(global_idev.fullmac_dev, "%s regulatory_set_wiphy_regd_sync_rtnl return %d\n", __func__, ret);
+		dev_err(global_idev.pwhc_dev, "%s regulatory_set_wiphy_regd_sync_rtnl return %d\n", __func__, ret);
 	}
 
 	return ret;
@@ -1440,21 +1440,21 @@ int whc_fullmac_host_regd_init(void)
 	struct ieee80211_regdomain *regd = NULL;
 	int ret = 0;
 
-	ret = whc_fullmac_host_get_country_code(&table);
+	ret = whc_host_get_country_code(&table);
 	if (ret < 0) {
-		dev_err(global_idev.fullmac_dev, "%s get country code from firmware failed (%d)\n", __func__, ret);
+		dev_err(global_idev.pwhc_dev, "%s get country code from firmware failed (%d)\n", __func__, ret);
 		return ret;
 	}
 
 	regd = _whc_fullmac_host_regd_get(table.channel_plan);
 	if ((table.char2[0] == '0') && (table.char2[1] == '0')) {
 		memcpy((void *)&regd->alpha2[0], &ww_char2[0], 2);
-		dev_info(global_idev.fullmac_dev,
+		dev_info(global_idev.pwhc_dev,
 				 "Willis-Efuse_Channel_Plan Version: %s, world wide.\n",
 				 CH_PLAN_VERSION);
 	} else {
 		memcpy((void *)&regd->alpha2[0], &table.char2[0], 2);
-		dev_info(global_idev.fullmac_dev,
+		dev_info(global_idev.pwhc_dev,
 				 "Willis-Efuse_Channel_Plan Version: %s, country: %c%c.\n",
 				 CH_PLAN_VERSION, table.char2[0], table.char2[1]);
 	}
@@ -1474,7 +1474,7 @@ int whc_fullmac_host_regd_init(void)
 	rtnl_unlock();
 
 	if (ret != 0) {
-		dev_err(global_idev.fullmac_dev, "%s regulatory_set_wiphy_regd_sync_rtnl return %d\n", __func__, ret);
+		dev_err(global_idev.pwhc_dev, "%s regulatory_set_wiphy_regd_sync_rtnl return %d\n", __func__, ret);
 	}
 
 	/* add reg_notifier to set channel plan by user.

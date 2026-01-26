@@ -23,7 +23,7 @@ static aipc_ch_t *whc_fullmac_host_ipc_data_ch_init(struct aipc_ch_ops *ops)
 	/* allocate the ipc channel */
 	data_ch = ameba_ipc_alloc_ch(sizeof(struct whc_device *));
 	if (!data_ch) {
-		dev_err(global_idev.fullmac_dev, "alloc ch 0 failed!!!");
+		dev_err(global_idev.pwhc_dev, "alloc ch 0 failed!!!");
 		return NULL;
 	}
 	/* initialize the ipc channel */
@@ -35,7 +35,7 @@ static aipc_ch_t *whc_fullmac_host_ipc_data_ch_init(struct aipc_ch_ops *ops)
 
 	/* regist the ipc channel */
 	if (ameba_ipc_channel_register(data_ch) < 0) {
-		dev_err(global_idev.fullmac_dev, "register ipc data channel failed!!!");
+		dev_err(global_idev.pwhc_dev, "register ipc data channel failed!!!");
 		goto free_ipc_ch;
 	}
 
@@ -49,7 +49,7 @@ free_ipc_ch:
 void whc_fullmac_host_ipc_data_ch_deinit(void)
 {
 	if (!global_idev.data_ch) {
-		dev_err(global_idev.fullmac_dev, "ERROR: event ch has been deinit.");
+		dev_err(global_idev.pwhc_dev, "ERROR: event ch has been deinit.");
 		return;
 	}
 
@@ -67,7 +67,7 @@ static aipc_ch_t *whc_fullmac_host_ipc_event_ch_init(struct aipc_ch_ops *ops)
 	/* allocate the ipc channel */
 	event_ch = ameba_ipc_alloc_ch(sizeof(struct event_priv_t *));
 	if (!event_ch) {
-		dev_err(global_idev.fullmac_dev, "%s: no memory for ipc channel 1.\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: no memory for ipc channel 1.\n", __func__);
 		return NULL;
 	}
 
@@ -80,7 +80,7 @@ static aipc_ch_t *whc_fullmac_host_ipc_event_ch_init(struct aipc_ch_ops *ops)
 
 	/* regist the event_priv ipc channel */
 	if (ameba_ipc_channel_register(event_ch) < 0) {
-		dev_err(global_idev.fullmac_dev, "%s: regist event_priv channel error.\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: regist event_priv channel error.\n", __func__);
 		goto free_ipc_ch;
 	}
 
@@ -94,7 +94,7 @@ free_ipc_ch:
 void whc_fullmac_host_ipc_event_ch_deinit(void)
 {
 	if (!global_idev.event_ch) {
-		dev_err(global_idev.fullmac_dev, "ERROR: event ch has been deinit.");
+		dev_err(global_idev.pwhc_dev, "ERROR: event ch has been deinit.");
 		return;
 	}
 
@@ -115,7 +115,7 @@ int whc_host_init(void)
 	global_idev.data_ch = whc_fullmac_host_ipc_data_ch_init(&whc_fullmac_ipc_host_recv_ops);
 	global_idev.event_ch = whc_fullmac_host_ipc_event_ch_init(&whc_fullmac_ipc_host_event_ops);
 	if (global_idev.data_ch == NULL || global_idev.event_ch == NULL) {
-		dev_err(global_idev.fullmac_dev, "IPC Allocate channel failed.");
+		dev_err(global_idev.pwhc_dev, "IPC Allocate channel failed.");
 		return -ENOMEM;
 	}
 	global_idev.ipc_dev = global_idev.data_ch->pdev;
@@ -123,13 +123,13 @@ int whc_host_init(void)
 	/* initialize the message queue, and assign the task haddle function */
 	ret = whc_fullmac_ipc_host_msg_q_init(global_idev.ipc_dev, whc_fullmac_ipc_host_recv_task_from_msg);
 	if (ret < 0) {
-		dev_err(global_idev.fullmac_dev, "msg queue init fail.");
+		dev_err(global_idev.pwhc_dev, "msg queue init fail.");
 		goto ipc_deinit;
 	}
 
-	ret = whc_fullmac_host_event_init(idev);
+	ret = whc_host_event_init(idev);
 	if (ret < 0) {
-		dev_err(global_idev.fullmac_dev, "ipc host: init ipc host event_priv error(%d).\n", ret);
+		dev_err(global_idev.pwhc_dev, "ipc host: init ipc host event_priv error(%d).\n", ret);
 		goto ipc_deinit;
 	}
 
@@ -143,20 +143,20 @@ int whc_host_init(void)
 
 	ret = whc_host_xmit_init();
 	if (ret < 0) {
-		dev_err(global_idev.fullmac_dev, "malloc ipc xmit memory failed.(%d).\n", ret);
+		dev_err(global_idev.pwhc_dev, "malloc ipc xmit memory failed.(%d).\n", ret);
 		goto ipc_deinit;
 	}
 
 	global_idev.host_init_done = 1;
 
-	ret = whc_fullmac_host_set_user_config(&global_idev.wifi_user_config);
+	ret = whc_host_set_user_config(&global_idev.wifi_user_config);
 	if (ret < 0) {
-		dev_err(global_idev.fullmac_dev, "set wifi user config failed.(%d).\n", ret);
+		dev_err(global_idev.pwhc_dev, "set wifi user config failed.(%d).\n", ret);
 		goto ipc_deinit;
 	}
 
 	/* tell KM4 to open wifi */
-	whc_fullmac_host_wifi_on();
+	whc_host_wifi_on();
 
 	return 0;
 
@@ -169,7 +169,7 @@ ipc_deinit:
 void whc_host_deinit(void)
 {
 	whc_host_xmit_deinit();
-	whc_fullmac_host_event_deinit();
+	whc_host_event_deinit();
 
 	whc_fullmac_ipc_host_msg_q_deinit();
 

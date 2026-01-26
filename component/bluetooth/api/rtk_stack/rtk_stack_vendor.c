@@ -135,7 +135,9 @@ void bt_stack_vendor_callback(uint8_t cb_type, void *p_cb_data)
 		}
 		break;
 #endif
-#if (defined(VENDOR_CMD_SET_TX_POWER_SUPPORT) && VENDOR_CMD_SET_TX_POWER_SUPPORT) || (defined(VENDOR_CMD_LE_EXTENSION_FEATURE_SUPPORT) && VENDOR_CMD_LE_EXTENSION_FEATURE_SUPPORT)
+#if (defined(VENDOR_CMD_SET_TX_POWER_SUPPORT) && VENDOR_CMD_SET_TX_POWER_SUPPORT) || \
+(defined(VENDOR_CMD_LE_EXTENSION_FEATURE_SUPPORT) && VENDOR_CMD_LE_EXTENSION_FEATURE_SUPPORT) || \
+(defined(VENDOR_CMD_READ_ACC_HIT_COUNTER_SUPPORT) && VENDOR_CMD_READ_ACC_HIT_COUNTER_SUPPORT)
 		case VENDOR_CMD_LE_EXTENSION_FEATURE_OPCODE: {
 #if defined(VENDOR_CMD_SET_TX_POWER_SUPPORT) && VENDOR_CMD_SET_TX_POWER_SUPPORT
 			if (cmd_rsp->param_len >= 1 && (SUB_CMD_SET_ADV_TX_POWER == cmd_rsp->param[0] || SUB_CMD_SET_CONN_TX_POWER == cmd_rsp->param[0])) {
@@ -155,6 +157,42 @@ void bt_stack_vendor_callback(uint8_t cb_type, void *p_cb_data)
 								cmd_rsp->param[0], cmd_rsp->cause);
 					} else {
 						gap_sched_handle_ae_coding_scheme_set_done();
+					}
+				}
+			}
+#endif
+#endif
+#if defined(VENDOR_CMD_READ_ACC_HIT_COUNTER_SUPPORT) && VENDOR_CMD_READ_ACC_HIT_COUNTER_SUPPORT
+#if defined(RTK_BLE_GET_SLAVE_CONN_CLOCK_SUPPORT) && RTK_BLE_GET_SLAVE_CONN_CLOCK_SUPPORT
+			if (cmd_rsp->param_len >= 1 && SUB_CMD_READ_ACC_HIT_COUNTER == cmd_rsp->param[0]) {
+				rtk_bt_vendor_conn_clock_info_t *p_slave_clock_info = rtk_bt_get_slave_clock_info();
+				if (p_slave_clock_info) {
+					memset(&(p_slave_clock_info->info), 0, sizeof(p_slave_clock_info->info));
+					if (cmd_rsp->cause) {
+						BT_LOGE("[%s] read acc hit counter fail, cause:0x%x.\r\n", __func__, cmd_rsp->cause);
+						p_slave_clock_info->info.status = RTK_BT_LE_CLOCK_STATUS_CONN_HANDLE_ERROR;
+					} else if (cmd_rsp->param_len >= 4) {
+						uint8_t acc_hit = cmd_rsp->param[3];
+						p_slave_clock_info->info.conn_handle = LE_TO_U16(&(cmd_rsp->param[1]));
+
+						if (acc_hit) {
+							BT_LOGA("[%s] read acc hit counter success.\r\n", __func__);
+							p_slave_clock_info->info.status = RTK_BT_LE_CLOCK_STATUS_SUCCESS;
+							p_slave_clock_info->info.clock_counter =
+								((uint64_t)cmd_rsp->param[4])        |
+								((uint64_t)cmd_rsp->param[5] << 8)   |
+								((uint64_t)cmd_rsp->param[6] << 16)  |
+								((uint64_t)cmd_rsp->param[7] << 24)  |
+								((uint64_t)cmd_rsp->param[8] << 32);
+							p_slave_clock_info->info.event_counter = LE_TO_U16(&(cmd_rsp->param[9]));
+							p_slave_clock_info->info.ce_interval   = LE_TO_U16(&(cmd_rsp->param[11]));
+						} else {
+							BT_LOGA("[%s] read acc hit counter acc_hit=%d.\r\n", __func__, acc_hit);
+							p_slave_clock_info->info.status = RTK_BT_LE_CLOCK_STATUS_GET_FAIL;
+						}
+					}
+					if (p_slave_clock_info->sem) {
+						osif_sem_give(p_slave_clock_info->sem);
 					}
 				}
 			}

@@ -112,6 +112,10 @@ DSTATUS SD_disk_initialize(void)
 {
 	SD_RESULT res;
 
+	if (fatfs_init_status == 1) {
+		return 0;
+	}
+
 	sd_sema_init();
 	sd_lock();
 	res = SD_Init();
@@ -125,6 +129,11 @@ DSTATUS SD_disk_initialize(void)
 DSTATUS SD_disk_deinitialize(void)
 {
 	SD_RESULT res;
+
+	if (fatfs_init_status == 0) {
+		return 0;
+	}
+
 	sd_lock();
 	fatfs_init_status = 0;//The card is not initialized
 	res = SD_DeInit();

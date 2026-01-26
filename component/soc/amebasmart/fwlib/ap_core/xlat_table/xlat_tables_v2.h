@@ -365,6 +365,10 @@ int xlat_change_mem_attributes_ctx(const xlat_ctx_t *ctx, uintptr_t base_va,
 				   size_t size, uint32_t attr);
 int xlat_change_mem_attributes(uintptr_t base_va, size_t size, uint32_t attr);
 
+int xlat_update_mem_attributes_ctx(const xlat_ctx_t *ctx, uintptr_t base_va,
+				   size_t size, uint32_t attr);
+int xlat_update_mem_attributes(uintptr_t base_va, size_t size, uint32_t attr);
+
 #if PLAT_RO_XLAT_TABLES
 /*
  * Change the memory attributes of the memory region encompassing the higher

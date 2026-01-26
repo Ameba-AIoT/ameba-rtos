@@ -34,7 +34,7 @@ static int hid_clear_config(usb_dev_t *dev, u8 config);
 static int hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
-static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
+static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static int hid_handle_ep0_data_out(usb_dev_t *dev);
 #endif
 static void hid_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
@@ -389,7 +389,7 @@ static int hid_handle_ep0_data_out(usb_dev_t *dev)
 	return ret;
 }
 
-static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
+static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
 	usbd_hid_t *hid = &hid_device;
 	usbd_ep_t *ep_intr_out = &hid->ep_intr_out;
@@ -721,7 +721,7 @@ static void hid_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 
 /* Exported functions --------------------------------------------------------*/
 
-int usbd_hid_init(u16 tx_buf_len, usbd_hid_usr_cb_t *cb)
+int usbd_hid_init(u32 tx_buf_len, usbd_hid_usr_cb_t *cb)
 {
 	int ret = HAL_OK;
 	usbd_hid_t *hid = &hid_device;
@@ -808,7 +808,7 @@ int usbd_hid_deinit(void)
 	return HAL_OK;
 }
 
-int usbd_hid_send_data(u8 *data, u16 len)
+int usbd_hid_send_data(u8 *data, u32 len)
 {
 	int ret = HAL_ERR_HW;
 	usbd_hid_t *hid = &hid_device;

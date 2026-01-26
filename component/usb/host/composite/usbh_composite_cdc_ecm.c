@@ -39,11 +39,6 @@
 #define USB_INTR_IN_IDLE_MAX_CNT         80U
 #define USB_INTR_IN_BUSY_MAX_CNT         10U
 
-/* monitor task */
-#define USB_INTR_IN_CHECK_TIME_CNT       20U
-#define USB_BULK_IN_CHECK_TIME_CNT       10U
-#define USB_BULK_OUT_CHECK_TIME_CNT      10U
-
 /* ecm ethernet connect status check */
 #define USBH_ECM_ETH_STATUS_CHECK                               500U  //ms
 

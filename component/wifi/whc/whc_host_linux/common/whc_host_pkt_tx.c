@@ -104,14 +104,14 @@ int whc_host_xmit_entry(int idx, struct sk_buff *pskb)
 	u32 need_headroom, pad_len;
 
 	if (!global_idev.host_init_done) {
-		dev_err(global_idev.fullmac_dev, "Host xmit err: wifi not init\n");
+		dev_err(global_idev.pwhc_dev, "Host xmit err: wifi not init\n");
 		return -1;
 	}
 
 	if (whc_host_xmit_pending_q_num() >= QUEUE_STOP_THRES) {
 		netif_tx_stop_all_queues(pndev);
 		if (whc_host_xmit_pending_q_num() >= PKT_DROP_THRES) {
-			dev_warn(global_idev.fullmac_dev, "buffered too much pkts, drop!\n");
+			dev_warn(global_idev.pwhc_dev, "buffered too much pkts, drop!\n");
 			b_dropped = true;
 			goto exit;
 		}
@@ -127,7 +127,7 @@ int whc_host_xmit_entry(int idx, struct sk_buff *pskb)
 		skb_push(pskb, need_headroom);
 	} else {
 		if (pskb_expand_head(pskb, need_headroom, 0, GFP_ATOMIC)) {
-			dev_warn(global_idev.fullmac_dev, "expand headroom FAIL!\n");
+			dev_warn(global_idev.pwhc_dev, "expand headroom FAIL!\n");
 			b_dropped = true;
 			goto exit;
 		}
@@ -175,7 +175,7 @@ int whc_host_xmit_init(void)
 
 	xmit_priv->tx_thread = kthread_run(whc_host_xmit_thread, xmit_priv, "RTW_TX_THREAD");
 	if (IS_ERR(xmit_priv->tx_thread)) {
-		dev_err(global_idev.fullmac_dev, "FAIL to create sdio_tx_thread!\n");
+		dev_err(global_idev.pwhc_dev, "FAIL to create sdio_tx_thread!\n");
 		xmit_priv->tx_thread = NULL;
 		return -EINVAL;
 	}

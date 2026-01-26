@@ -15,13 +15,13 @@ static int whc_fullmac_host_p2p_ndev_open(struct net_device *pnetdev)
 {
 	struct wireless_dev *wdev;
 
-	dev_info(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
+	dev_info(global_idev.pwhc_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 
 	wdev = ndev_to_wdev(pnetdev);
 	rtw_netdev_priv_is_on(pnetdev) = true;
 
 	if (wdev->iftype == NL80211_IFTYPE_P2P_GO) {
-		whc_fullmac_host_init_ap();
+		whc_host_init_ap();
 	}
 
 	netif_tx_start_all_queues(pnetdev);
@@ -36,11 +36,11 @@ static int whc_fullmac_host_p2p_ndev_close(struct net_device *pnetdev)
 	struct cfg80211_scan_info info;
 	int ret = 0;
 
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
+	dev_dbg(global_idev.pwhc_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 
-	ret = whc_fullmac_host_scan_abort();
+	ret = whc_host_scan_abort();
 	if (ret) {
-		dev_err(global_idev.fullmac_dev, "[fullmac]: %s abort wifi scan failed!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "[fullmac]: %s abort wifi scan failed!\n", __func__);
 		return -EPERM;
 	}
 	if (global_idev.mlme_priv.pscan_req_global) {
@@ -61,11 +61,11 @@ static int whc_fullmac_host_p2p_ndev_close(struct net_device *pnetdev)
 		}
 	} else if (wdev->iftype == NL80211_IFTYPE_P2P_GO) {
 		/* if2 deinit (SW) */
-		whc_fullmac_host_deinit_ap();
+		whc_host_deinit_ap();
 	}
 	rtw_netdev_priv_is_on(pnetdev) = false;
 
-	whc_fullmac_host_set_p2p_role(P2P_ROLE_DISABLE);
+	whc_host_set_p2p_role(P2P_ROLE_DISABLE);
 	global_idev.p2p_global.p2p_role = P2P_ROLE_DISABLE;
 
 	return 0;
@@ -105,7 +105,7 @@ int whc_fullmac_host_ndev_p2p_register(enum nl80211_iftype type, const char *nam
 #ifndef CONFIG_FULLMAC_HCI_IPC
 	ndev->needed_headroom = max(SIZE_RX_DESC, SIZE_TX_DESC) + sizeof(struct whc_msg_info) + 4;
 #endif
-	SET_NETDEV_DEV(ndev, global_idev.fullmac_dev);
+	SET_NETDEV_DEV(ndev, global_idev.pwhc_dev);
 	global_idev.pndev[wlan_idx] = ndev;
 
 	/* step2: alloc wireless_dev */
@@ -130,7 +130,7 @@ int whc_fullmac_host_ndev_p2p_register(enum nl80211_iftype type, const char *nam
 		eth_hw_addr_set(global_idev.pndev[wlan_idx], dev_addr);
 #endif
 	} else if (type == NL80211_IFTYPE_P2P_CLIENT) {
-		whc_fullmac_host_init_ap();
+		whc_host_init_ap();
 		global_idev.p2p_global.pd_wlan_idx = 1;
 		whc_fullmac_host_p2p_driver_macaddr_switch();//switch port0 and port1 MAC
 	}
@@ -139,7 +139,7 @@ int whc_fullmac_host_ndev_p2p_register(enum nl80211_iftype type, const char *nam
 	rtw_ethtool_ops_init();
 	netdev_set_default_ethtool_ops(global_idev.pndev[wlan_idx], &global_idev.rtw_ethtool_ops);
 	if (dev_alloc_name(global_idev.pndev[wlan_idx], name) < 0) {
-		dev_err(global_idev.fullmac_dev, "dev_alloc_name, fail!\n");
+		dev_err(global_idev.pwhc_dev, "dev_alloc_name, fail!\n");
 	}
 	netif_carrier_off(global_idev.pndev[wlan_idx]);
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
@@ -148,15 +148,15 @@ int whc_fullmac_host_ndev_p2p_register(enum nl80211_iftype type, const char *nam
 	ret = (register_netdevice(global_idev.pndev[wlan_idx]) == 0) ? true : false;
 #endif
 	if (ret != true) {
-		dev_err(global_idev.fullmac_dev, "netdevice register fail!\n");
+		dev_err(global_idev.pwhc_dev, "netdevice register fail!\n");
 		goto dev_fail;
 	}
 
 	if (type == NL80211_IFTYPE_P2P_GO) {
-		whc_fullmac_host_set_p2p_role(P2P_ROLE_GO);
+		whc_host_set_p2p_role(P2P_ROLE_GO);
 		global_idev.p2p_global.p2p_role = P2P_ROLE_GO;
 	} else if (type == NL80211_IFTYPE_P2P_CLIENT) {
-		whc_fullmac_host_set_p2p_role(P2P_ROLE_CLIENT);
+		whc_host_set_p2p_role(P2P_ROLE_CLIENT);
 		global_idev.p2p_global.p2p_role = P2P_ROLE_CLIENT;
 	}
 	return true;
@@ -209,7 +209,7 @@ int whc_fullmac_host_p2p_iface_alloc(struct wiphy *wiphy, const char *name,
 	}
 
 	if (old_wdev) {/*step1: check whether old wdev exits(normally already freed in del intf)*/
-		dev_info(global_idev.fullmac_dev, "%s: wdev already exists", __func__);
+		dev_info(global_idev.pwhc_dev, "%s: wdev already exists", __func__);
 		ret = -EBUSY;
 		return ret;
 	}
@@ -263,7 +263,7 @@ void whc_fullmac_host_p2p_iface_free(struct wiphy *wiphy, struct wireless_dev *w
 		}
 	}
 
-	whc_fullmac_host_set_p2p_role(P2P_ROLE_DISABLE);
+	whc_host_set_p2p_role(P2P_ROLE_DISABLE);
 	global_idev.p2p_global.p2p_role = P2P_ROLE_DISABLE;
 
 	return;
@@ -273,8 +273,8 @@ void whc_fullmac_host_p2p_iface_free(struct wiphy *wiphy, struct wireless_dev *w
   netdev1: driver_wlanidx_0, port0_MAC=efuse_mac+1 */
 void whc_fullmac_host_p2p_driver_macaddr_switch(void)
 {
-	whc_fullmac_host_set_mac_addr(1, global_idev.pndev[0]->dev_addr);
-	whc_fullmac_host_set_mac_addr(0, global_idev.pndev[1]->dev_addr);
+	whc_host_set_mac_addr(1, global_idev.pndev[0]->dev_addr);
+	whc_host_set_mac_addr(0, global_idev.pndev[1]->dev_addr);
 	rtw_netdev_idx(global_idev.pndev[0]) = 1;
 	rtw_netdev_idx(global_idev.pndev[1]) = 0;
 }
@@ -297,14 +297,14 @@ void whc_fullmac_host_p2p_gc_intf_revert(u8 need_if2_deinit)
 		}
 
 		memcpy((void *)&port0_macaddr[softap_addr_offset_idx], &last, 1);
-		whc_fullmac_host_set_mac_addr(0, port0_macaddr);
-		whc_fullmac_host_set_mac_addr(1, global_idev.pndev[1]->dev_addr);
+		whc_host_set_mac_addr(0, port0_macaddr);
+		whc_host_set_mac_addr(1, global_idev.pndev[1]->dev_addr);
 		if (global_idev.pndev[0]) {
 			rtw_netdev_idx(global_idev.pndev[0]) = 0;
 		}
 		rtw_netdev_idx(global_idev.pndev[1]) = 1;
 		if (need_if2_deinit) {
-			whc_fullmac_host_deinit_ap();
+			whc_host_deinit_ap();
 		}
 	}
 }

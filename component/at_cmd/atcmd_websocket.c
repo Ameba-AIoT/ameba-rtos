@@ -2006,7 +2006,7 @@ end:
 	}
 }
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_websocket_items[ ] = {
 	{"+WSCFG", at_wscfg},
 	{"+WSGLCFG", at_wsglcfg},
@@ -2065,7 +2065,6 @@ void init_websocket_struct(void)
 void at_websocket_init(void)
 {
 	init_websocket_struct();
-	atcmd_service_add_table((log_item_t *)at_websocket_items, sizeof(at_websocket_items) / sizeof(at_websocket_items[0]));
 }
 
 #endif /* CONFIG_ATCMD_WEBSOCKET */

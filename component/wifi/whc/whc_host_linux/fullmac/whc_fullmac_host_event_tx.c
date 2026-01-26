@@ -1,7 +1,7 @@
 
 #include <whc_host_linux.h>
 
-void whc_fullmac_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
+void whc_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 {
 #ifdef CONFIG_WHC_WIFI_API_PATH
 	struct event_priv_t *event_priv = &global_idev.event_priv;
@@ -13,11 +13,11 @@ void whc_fullmac_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 
 	u32 timeout;
 
 	if (!global_idev.host_init_done) {
-		dev_err(global_idev.fullmac_dev, "Host api err: wifi not init\n");
+		dev_err(global_idev.pwhc_dev, "Host api err: wifi not init\n");
 		return;
 	}
 
-	dev_dbg(global_idev.fullmac_dev, "-----HOST CALLING API %x START\n", id);
+	dev_dbg(global_idev.pwhc_dev, "-----HOST CALLING API %x START\n", id);
 
 #ifdef CONFIG_FULLMAC_HCI_USB
 	if (whc_usb_host_send_event_check(id) < 0) {
@@ -46,7 +46,7 @@ void whc_fullmac_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 
 		kfree(buf);
 #endif
 	} else {
-		dev_err(global_idev.fullmac_dev, "%s can't alloc buffer!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s can't alloc buffer!\n", __func__);
 		goto exit;
 	}
 
@@ -58,7 +58,7 @@ void whc_fullmac_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 
 	event_priv->b_waiting_for_ret = 0;
 
 	if (wait_ret == 0) {
-		dev_err(global_idev.fullmac_dev, "wait ret value timeout!!\n");
+		dev_err(global_idev.pwhc_dev, "wait ret value timeout!!\n");
 		goto exit;
 	}
 
@@ -66,7 +66,7 @@ void whc_fullmac_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 
 	if (ret_msg != NULL) {
 		/* check api_id of return msg */
 		if (ret_msg->api_id != id) {
-			dev_err(global_idev.fullmac_dev, "Host API return value id not match!\n");
+			dev_err(global_idev.pwhc_dev, "Host API return value id not match!\n");
 		}
 
 		/* copy return value*/
@@ -78,13 +78,13 @@ void whc_fullmac_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 
 		kfree_skb(event_priv->rx_api_ret_msg);
 		event_priv->rx_api_ret_msg = NULL;
 	} else {
-		dev_err(global_idev.fullmac_dev, "Host API return value is NULL!\n");
+		dev_err(global_idev.pwhc_dev, "Host API return value is NULL!\n");
 	}
 
 exit:
 	mutex_unlock(&(event_priv->send_mutex));
 
-	dev_dbg(global_idev.fullmac_dev, "-----HOST API %x CALLING DONE\n", id);
+	dev_dbg(global_idev.pwhc_dev, "-----HOST API %x CALLING DONE\n", id);
 #else
 	(void)id;
 	(void)param;
@@ -94,7 +94,7 @@ exit:
 #endif
 }
 
-int whc_fullmac_host_set_user_config(struct wifi_user_conf *pwifi_usrcfg)
+int whc_host_set_user_config(struct wifi_user_conf *pwifi_usrcfg)
 {
 	u32 size;
 	u32 param_buf[1];
@@ -102,21 +102,21 @@ int whc_fullmac_host_set_user_config(struct wifi_user_conf *pwifi_usrcfg)
 	size = sizeof(struct wifi_user_conf);
 	param_buf[0] = 0;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_SET_USR_CFG, (u8 *)param_buf, sizeof(param_buf), (u8 *)pwifi_usrcfg, size);
+	whc_host_send_event(WHC_API_WIFI_SET_USR_CFG, (u8 *)param_buf, sizeof(param_buf), (u8 *)pwifi_usrcfg, size);
 
 	return 0;
 }
 
-void whc_fullmac_host_wifi_on(void)
+void whc_host_wifi_on(void)
 {
 	u32 param_buf[1];
 
 	param_buf[0] = 0;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_ON, (u8 *)param_buf, sizeof(param_buf), NULL, 0);
+	whc_host_send_event(WHC_API_WIFI_ON, (u8 *)param_buf, sizeof(param_buf), NULL, 0);
 }
 
-int whc_fullmac_host_set_mac_addr(u32 wlan_idx, u8 *addr)
+int whc_host_set_mac_addr(u32 wlan_idx, u8 *addr)
 {
 	int ret = 0;
 	u32 size;
@@ -129,14 +129,14 @@ int whc_fullmac_host_set_mac_addr(u32 wlan_idx, u8 *addr)
 	param[1] = 0;
 	memcpy((void *)(param + 2), addr, ETH_ALEN);
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_SET_MAC_ADDR, (u8 *)param, size, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_SET_MAC_ADDR, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
 
 	return ret;
 }
 
-int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8 block)
+int whc_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8 block)
 {
 	int ret = 0;
 	struct internal_block_param *block_param = NULL;
@@ -192,7 +192,7 @@ int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8
 	memcpy(ptr, &scan_param->scan_user_data, sizeof(u32)); /* for P2P roch related indicate */
 	ptr += sizeof(u32);
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_SCAN_NETWROKS, (u8 *)param, size, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_SCAN_NETWROKS, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
 
@@ -204,7 +204,7 @@ int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8
 		global_idev.mlme_priv.scan_block_param = block_param;
 
 		if (wait_for_completion_interruptible_timeout(&block_param->sema, RTW_SCAN_TIMEOUT) == 0) {
-			dev_err(global_idev.fullmac_dev, "%s: Scan timeout!\n", __func__);
+			dev_err(global_idev.pwhc_dev, "%s: Scan timeout!\n", __func__);
 			ret = -EINVAL;
 		}
 		global_idev.mlme_priv.scan_block_param = NULL;
@@ -219,7 +219,7 @@ error:
 	return ret;
 }
 
-int whc_fullmac_host_scan_abort(void)
+int whc_host_scan_abort(void)
 {
 	int ret = 0;
 	struct internal_block_param *block_param = NULL;
@@ -232,7 +232,7 @@ int whc_fullmac_host_scan_abort(void)
 	/* initialize scan_abort_sema. */
 	init_completion(&block_param->sema);
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_SCAN_ABORT, NULL, 0, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_SCAN_ABORT, NULL, 0, (u8 *)&ret, sizeof(int));
 
 	if (ret < 0) {
 		ret = 0;
@@ -242,7 +242,7 @@ int whc_fullmac_host_scan_abort(void)
 	global_idev.mlme_priv.scan_abort_block_param = block_param;
 
 	if (wait_for_completion_interruptible_timeout(&block_param->sema, RTW_SCAN_ABORT_TIMEOUT) == 0) {
-		dev_err(global_idev.fullmac_dev, "%s: Scan abort wait timeout!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: Scan abort wait timeout!\n", __func__);
 		ret = -EINVAL;
 	}
 	global_idev.mlme_priv.scan_abort_block_param = NULL;
@@ -256,7 +256,7 @@ exit:
 	return ret;
 }
 
-int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsigned char block)
+int whc_host_event_connect(struct rtw_network_info *connect_param, unsigned char block)
 {
 	int ret = 0;
 	struct internal_block_param *block_param = NULL;
@@ -268,14 +268,14 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 	if ((global_idev.mlme_priv.rtw_join_status > RTW_JOINSTATUS_UNKNOWN)
 		&& (global_idev.mlme_priv.rtw_join_status < RTW_JOINSTATUS_SUCCESS)
 		&& (global_idev.mlme_priv.rtw_join_status != RTW_JOINSTATUS_AUTHENTICATED)) {
-		dev_err(global_idev.fullmac_dev, "[fullmac]: auth is not finished! rtw_join_status=%d\n", global_idev.mlme_priv.rtw_join_status);
+		dev_err(global_idev.pwhc_dev, "[fullmac]: auth is not finished! rtw_join_status=%d\n", global_idev.mlme_priv.rtw_join_status);
 		return -EBUSY;
 	}
 #else
 	/* step1: check if there's ongoing connect*/
 	if ((global_idev.mlme_priv.rtw_join_status > RTW_JOINSTATUS_UNKNOWN)
 		&& (global_idev.mlme_priv.rtw_join_status < RTW_JOINSTATUS_SUCCESS)) {
-		dev_err(global_idev.fullmac_dev, "[fullmac]: there is ongoing wifi connect!rtw_join_status=%d\n", global_idev.mlme_priv.rtw_join_status);
+		dev_err(global_idev.pwhc_dev, "[fullmac]: there is ongoing wifi connect!rtw_join_status=%d\n", global_idev.mlme_priv.rtw_join_status);
 		return -EBUSY;
 	}
 #endif
@@ -346,7 +346,7 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 
 	//print_hex_dump_bytes("connect_param: ", DUMP_PREFIX_NONE, param, size);
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_CONNECT, (u8 *)param, size, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_CONNECT, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
 
@@ -361,12 +361,12 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 		global_idev.mlme_priv.join_block_param = block_param;
 
 		if (wait_for_completion_interruptible_timeout(&block_param->sema, RTW_JOIN_TIMEOUT) == 0) {
-			dev_err(global_idev.fullmac_dev, "%s: Join bss timeout!\n", __func__);
+			dev_err(global_idev.pwhc_dev, "%s: Join bss timeout!\n", __func__);
 			global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
 			ret = -EINVAL;
 			goto error;
 		} else {
-			if (whc_fullmac_host_wifi_get_join_status() != RTW_JOINSTATUS_SUCCESS) {
+			if (whc_host_wifi_get_join_status() != RTW_JOINSTATUS_SUCCESS) {
 				ret = -EINVAL;
 				global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
 				goto error;
@@ -388,7 +388,7 @@ error:
 	return ret;
 }
 
-int whc_fullmac_host_event_disconnect(u16 reason_code)
+int whc_host_event_disconnect(u16 reason_code)
 {
 	u32 ie_len = 0, size;
 	u32 *param;
@@ -412,49 +412,49 @@ int whc_fullmac_host_event_disconnect(u16 reason_code)
 		memcpy((void *)(param + 2), (void *)ie, ie_len);
 	}
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_DISCONNECT, (u8 *)param, size, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_DISCONNECT, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
 
 	return ret;
 }
 
-int whc_fullmac_host_wifi_get_join_status(void)
+int whc_host_wifi_get_join_status(void)
 {
 	return global_idev.mlme_priv.rtw_join_status;
 }
 
-int whc_fullmac_host_set_channel(u32 wlan_idx, u8 ch)
+int whc_host_set_channel(u32 wlan_idx, u8 ch)
 {
 	int ret = 0;
 	u32 param_buf[2];
 
 	param_buf[0] = wlan_idx;
 	param_buf[1] = (u32)ch;
-	whc_fullmac_host_send_event(WHC_API_WIFI_SET_CHANNEL, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_SET_CHANNEL, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
 
-int whc_fullmac_host_init_ap(void)
+int whc_host_init_ap(void)
 {
 	int ret = 0;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_INIT_AP, NULL, 0, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_INIT_AP, NULL, 0, (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
 
-int whc_fullmac_host_deinit_ap(void)
+int whc_host_deinit_ap(void)
 {
 	int ret = 0;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_DEINIT_AP, NULL, 0, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_DEINIT_AP, NULL, 0, (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
 
-int whc_fullmac_host_ap_del_client(u8 wlan_idx, u8 *mac)
+int whc_host_ap_del_client(u8 wlan_idx, u8 *mac)
 {
 	int ret = 0;
 	u32 size;
@@ -466,14 +466,14 @@ int whc_fullmac_host_ap_del_client(u8 wlan_idx, u8 *mac)
 	param[0] = wlan_idx;
 	memcpy((void *)(param + 1), mac, ETH_ALEN);
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_AP_DEL_CLIENT, (u8 *)param, size, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_AP_DEL_CLIENT, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
 
 	return ret;
 }
 
-int whc_fullmac_host_start_ap(struct rtw_softap_info *softAP_config)
+int whc_host_start_ap(struct rtw_softap_info *softAP_config)
 {
 	int ret = 0;
 	u32 size;
@@ -506,51 +506,51 @@ int whc_fullmac_host_start_ap(struct rtw_softap_info *softAP_config)
 	memcpy(ptr, softAP_config->password, softAP_config->password_len);
 	ptr += softAP_config->password_len;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_START_AP, (u8 *)param, size, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_START_AP, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
 
 	return ret;
 }
 
-int whc_fullmac_host_stop_ap(void)
+int whc_host_stop_ap(void)
 {
 	int ret = 0;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_STOP_AP, NULL, 0, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_STOP_AP, NULL, 0, (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
 
-int whc_fullmac_host_set_EDCA_params(struct rtw_edca_param *pedca_param)
+int whc_host_set_EDCA_params(struct rtw_edca_param *pedca_param)
 {
 	int ret = 0;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_SET_EDCA_PARAM, (u8 *)pedca_param, sizeof(struct rtw_edca_param), (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_SET_EDCA_PARAM, (u8 *)pedca_param, sizeof(struct rtw_edca_param), (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
 
-int whc_fullmac_host_add_key(struct rtw_crypt_info *crypt)
+int whc_host_add_key(struct rtw_crypt_info *crypt)
 {
 	int ret = 0;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_ADD_KEY, (u8 *)crypt, sizeof(struct rtw_crypt_info), (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_ADD_KEY, (u8 *)crypt, sizeof(struct rtw_crypt_info), (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
 
-int whc_fullmac_host_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way)
+int whc_host_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way)
 {
 	int ret = 0;
 
-	whc_fullmac_host_send_event(WHC_API_WPA_4WAY_REPORT, (u8 *)rpt_4way, sizeof(struct rtw_wpa_4way_status), (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WPA_4WAY_REPORT, (u8 *)rpt_4way, sizeof(struct rtw_wpa_4way_status), (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
 
 
-int whc_fullmac_host_tx_mgnt(u8 wlan_idx, const u8 *buf, size_t buf_len, u8 need_wait_ack)
+int whc_host_tx_mgnt(u8 wlan_idx, const u8 *buf, size_t buf_len, u8 need_wait_ack)
 {
 	int ret = 0;
 	u32 size;
@@ -568,14 +568,14 @@ int whc_fullmac_host_tx_mgnt(u8 wlan_idx, const u8 *buf, size_t buf_len, u8 need
 	}
 	memcpy((void *)(param + 3), buf, buf_len);
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_SEND_MGNT, (u8 *)param, size, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_SEND_MGNT, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
 
 	return ret;
 }
 
-int whc_fullmac_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
+int whc_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 {
 	int ret = 0;
 	u32 size, mac_len = 0;
@@ -597,14 +597,14 @@ int whc_fullmac_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 		memcpy((void *)(param + 3), mac_addr, ETH_ALEN);
 	}
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_SAE_STATUS, (u8 *)param, size, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_SAE_STATUS, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
 
 	return ret;
 }
 
-u32 whc_fullmac_host_update_ip_addr(void)
+u32 whc_host_update_ip_addr(void)
 {
 	u32 ret = 0;
 	u8 param[RTW_IP_ADDR_LEN + RTW_IPv6_ADDR_LEN];
@@ -612,12 +612,12 @@ u32 whc_fullmac_host_update_ip_addr(void)
 	memcpy(param, global_idev.ip_addr, RTW_IP_ADDR_LEN);
 	memcpy(param + RTW_IP_ADDR_LEN, global_idev.ipv6_addr, RTW_IPv6_ADDR_LEN);
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_IP_UPDATE, param, sizeof(param), (u8 *)&ret, sizeof(u32));
+	whc_host_send_event(WHC_API_WIFI_IP_UPDATE, param, sizeof(param), (u8 *)&ret, sizeof(u32));
 
 	return ret;
 }
 
-int whc_fullmac_host_get_traffic_stats(u8 wlan_idx, dma_addr_t traffic_stats_addr)
+int whc_host_get_traffic_stats(u8 wlan_idx, dma_addr_t traffic_stats_addr)
 {
 	int ret = 0;
 	u32 size;
@@ -629,14 +629,14 @@ int whc_fullmac_host_get_traffic_stats(u8 wlan_idx, dma_addr_t traffic_stats_add
 
 	param[0] = (u32)wlan_idx;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_GET_TRAFFIC_STATS, (u8 *)param, size, (u8 *)traffic_stats_addr, sizeof(union rtw_traffic_stats));
+	whc_host_send_event(WHC_API_WIFI_GET_TRAFFIC_STATS, (u8 *)param, size, (u8 *)traffic_stats_addr, sizeof(union rtw_traffic_stats));
 
 	kfree((void *)param);
 
 	return ret;
 }
 
-int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, union rtw_phy_stats *stats)
+int whc_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, union rtw_phy_stats *stats)
 {
 	int ret = 0;
 	u32 size, mac_len = 0;
@@ -657,56 +657,56 @@ int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, union rtw_ph
 		memcpy((void *)(param + 2), mac_addr, ETH_ALEN);
 	}
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_GET_PHY_STATS, (u8 *)param, size, (u8 *)stats, sizeof(union rtw_phy_stats));
+	whc_host_send_event(WHC_API_WIFI_GET_PHY_STATS, (u8 *)param, size, (u8 *)stats, sizeof(union rtw_phy_stats));
 
 	kfree((void *)param);
 
 	return ret;
 }
 
-int whc_fullmac_host_get_setting(unsigned char wlan_idx, dma_addr_t setting_addr)
+int whc_host_get_setting(unsigned char wlan_idx, dma_addr_t setting_addr)
 {
 	int ret = 0;
 	u32 param_buf[1];
 
 	param_buf[0] = wlan_idx;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_GET_SETTING, (u8 *)param_buf, sizeof(param_buf), (u8 *)setting_addr, sizeof(struct rtw_wifi_setting));
+	whc_host_send_event(WHC_API_WIFI_GET_SETTING, (u8 *)param_buf, sizeof(param_buf), (u8 *)setting_addr, sizeof(struct rtw_wifi_setting));
 
 	return ret;
 }
 
-int whc_fullmac_host_channel_switch(dma_addr_t csa_param_addr)
+int whc_host_channel_switch(dma_addr_t csa_param_addr)
 {
 	int ret = 0;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_AP_CH_SWITCH, (u8 *)csa_param_addr, sizeof(struct rtw_csa_parm), (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_AP_CH_SWITCH, (u8 *)csa_param_addr, sizeof(struct rtw_csa_parm), (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
 
-int whc_fullmac_host_pmksa_ops(dma_addr_t pmksa_ops_addr)
+int whc_host_pmksa_ops(dma_addr_t pmksa_ops_addr)
 {
 	int ret = 0;
 
-	whc_fullmac_host_send_event(WHC_API_WPA_PMKSA_OPS, (u8 *)pmksa_ops_addr, sizeof(struct rtw_pmksa_ops_t), (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WPA_PMKSA_OPS, (u8 *)pmksa_ops_addr, sizeof(struct rtw_pmksa_ops_t), (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
 
-int whc_fullmac_host_set_lps_enable(u8 enable)
+int whc_host_set_lps_enable(u8 enable)
 {
 	int ret = 0;
 	u32 param_buf[1];
 
 	param_buf[0] = (u32)enable;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_SET_LPS_EN, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_SET_LPS_EN, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
 
-int whc_fullmac_host_mp_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_t user_addr)
+int whc_host_mp_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_t user_addr)
 {
 	int ret = 0;
 	u32 size;
@@ -719,7 +719,7 @@ int whc_fullmac_host_mp_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_
 	param[1] = cmd_len;
 	memcpy((void *)(param + 2), (void *)cmd_addr, cmd_len);
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_MP_CMD, (u8 *)param, size, (u8 *)user_addr, WIFI_MP_MSG_BUF_SIZE);
+	whc_host_send_event(WHC_API_WIFI_MP_CMD, (u8 *)param, size, (u8 *)user_addr, WIFI_MP_MSG_BUF_SIZE);
 
 	/* free buffer */
 	kfree((void *)param);
@@ -727,7 +727,7 @@ int whc_fullmac_host_mp_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_
 	return ret;
 }
 
-int whc_fullmac_host_iwpriv_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, unsigned char *cmd, unsigned char *user_buf)
+int whc_host_iwpriv_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, unsigned char *cmd, unsigned char *user_buf)
 {
 	int ret = 0;
 	u32 size;
@@ -741,7 +741,7 @@ int whc_fullmac_host_iwpriv_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, unsig
 	param[1] = cmd_len;
 	memcpy((void *)(param + 2), (void *)cmd_addr, cmd_len);
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_IWPRIV_INFO, (u8 *)param, size, (u8 *)param, size);
+	whc_host_send_event(WHC_API_WIFI_IWPRIV_INFO, (u8 *)param, size, (u8 *)param, size);
 	memcpy((u8 *)&ret, (u8 *)param, sizeof(int));
 	if (ret == 0) {
 		output = (u8 *)param + sizeof(int);
@@ -753,30 +753,30 @@ int whc_fullmac_host_iwpriv_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, unsig
 	return ret;
 }
 
-u64 whc_fullmac_host_get_tsft(u8 iface_type)
+u64 whc_host_get_tsft(u8 iface_type)
 {
-	dev_err(global_idev.fullmac_dev, "%s sdio cannot access wifi reg directly!\n", __func__);
+	dev_err(global_idev.pwhc_dev, "%s sdio cannot access wifi reg directly!\n", __func__);
 	return 0;
 }
 
 #ifdef CONFIG_NAN
-int whc_fullmac_host_init_nan(void)
+int whc_host_init_nan(void)
 {
 	int ret = 0;
 
-	whc_fullmac_host_send_event(WHC_API_NAN_INIT, NULL, 0, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_NAN_INIT, NULL, 0, (u8 *)&ret, sizeof(int));
 	return ret;
 }
 
-int whc_fullmac_host_deinit_nan(void)
+int whc_host_deinit_nan(void)
 {
 	int ret = 0;
 
-	whc_fullmac_host_send_event(WHC_API_NAN_DEINIT, NULL, 0, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_NAN_DEINIT, NULL, 0, (u8 *)&ret, sizeof(int));
 	return ret;
 }
 
-int whc_fullmac_host_start_nan(u8 master_pref, u8 band_support)
+int whc_host_start_nan(u8 master_pref, u8 band_support)
 {
 	int ret = 0;
 	u32 param_buf[2];
@@ -784,21 +784,21 @@ int whc_fullmac_host_start_nan(u8 master_pref, u8 band_support)
 	param_buf[0] = (u32)master_pref;
 	param_buf[1] = (u32)band_support;
 
-	whc_fullmac_host_send_event(WHC_API_NAN_START, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_NAN_START, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
 
-int whc_fullmac_host_stop_nan(void)
+int whc_host_stop_nan(void)
 {
 	int ret = 0;
 
-	whc_fullmac_host_send_event(WHC_API_NAN_STOP, NULL, 0, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_NAN_STOP, NULL, 0, (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
 
-int whc_fullmac_host_add_nan_func(struct rtw_nan_func_t *func, void *nan_func_pointer)
+int whc_host_add_nan_func(struct rtw_nan_func_t *func, void *nan_func_pointer)
 {
 	int ret = 0;
 	u32 size;
@@ -917,14 +917,14 @@ int whc_fullmac_host_add_nan_func(struct rtw_nan_func_t *func, void *nan_func_po
 	func_pointer_addr = (u64)(uintptr_t)nan_func_pointer;
 	memcpy(ptr, &func_pointer_addr, sizeof(u64));
 
-	whc_fullmac_host_send_event(WHC_API_NAN_ADD_FUNC, (u8 *)param, size, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_NAN_ADD_FUNC, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
 
 	return ret;
 }
 
-int whc_fullmac_host_del_nan_func(u64 cookie)
+int whc_host_del_nan_func(u64 cookie)
 {
 	int ret = 0;
 	u32 param_buf[2];
@@ -932,12 +932,12 @@ int whc_fullmac_host_del_nan_func(u64 cookie)
 	param_buf[0] = (u32)(cookie & 0xFFFFFFFF);
 	param_buf[1] = (u32)((cookie >> 32) & 0xFFFFFFFF);
 
-	whc_fullmac_host_send_event(WHC_API_NAN_DEL_FUNC, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_NAN_DEL_FUNC, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
 
-int whc_fullmac_host_nan_cfgvendor_cmd(u16 vendor_cmd, const void *data, int len)
+int whc_host_nan_cfgvendor_cmd(u16 vendor_cmd, const void *data, int len)
 {
 	int ret = 0;
 	u32 size;
@@ -950,7 +950,7 @@ int whc_fullmac_host_nan_cfgvendor_cmd(u16 vendor_cmd, const void *data, int len
 	param[1] = (u32)len;
 	memcpy((void *)(param + 2), data, len);
 
-	whc_fullmac_host_send_event(WHC_API_NAN_CFGVENFOR, (u8 *)param, size, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_NAN_CFGVENFOR, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
 
@@ -959,14 +959,14 @@ int whc_fullmac_host_nan_cfgvendor_cmd(u16 vendor_cmd, const void *data, int len
 #endif
 
 #ifdef CONFIG_SUPPLICANT_SME
-void whc_fullmac_host_sme_auth(dma_addr_t auth_data_phy)
+void whc_host_sme_auth(dma_addr_t auth_data_phy)
 {
 	struct rtw_sme_auth_info *auth_info = (struct rtw_sme_auth_info *)auth_data_phy;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_SME_AUTH, (u8 *)auth_data_phy, sizeof(struct rtw_sme_auth_info) + auth_info->data_len, NULL, 0);
+	whc_host_send_event(WHC_API_WIFI_SME_AUTH, (u8 *)auth_data_phy, sizeof(struct rtw_sme_auth_info) + auth_info->data_len, NULL, 0);
 }
 
-int whc_fullmac_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len, u8 wpa_rsn_exist)
+int whc_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len, u8 wpa_rsn_exist)
 {
 	int ret = 0;
 	u32 size;
@@ -979,7 +979,7 @@ int whc_fullmac_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len, u8 wpa_rsn_exist
 	param[1] = (u32)wpa_rsn_exist;
 	memcpy((void *)(param + 2), (void *)ie, ie_len);
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_SME_SET_ASSOCREQ_IE, (u8 *)param, size, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_SME_SET_ASSOCREQ_IE, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
 
@@ -987,50 +987,50 @@ int whc_fullmac_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len, u8 wpa_rsn_exist
 }
 #endif
 
-int whc_fullmac_host_set_pmf_mode(u8 pmf_mode)
+int whc_host_set_pmf_mode(u8 pmf_mode)
 {
 	int ret = 0;
 	u32 param_buf[1];
 
 	param_buf[0] = (u32)pmf_mode;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_SET_PMF_MODE, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_SET_PMF_MODE, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
 
-int whc_fullmac_host_set_ch_plan(u8 ch_plan)
+int whc_host_set_ch_plan(u8 ch_plan)
 {
 	int ret = 0;
 	u32 param_buf[1];
 
 	param_buf[0] = (u32)ch_plan;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_SET_CHPLAN, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_SET_CHPLAN, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
 	return ret;
 }
 
-int whc_fullmac_host_set_wps_phase(u8 enable)
+int whc_host_set_wps_phase(u8 enable)
 {
 	int ret = 0;
 	u32 param_buf[1];
 	param_buf[0] = (u32)enable;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_SET_WPS_PHASE, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_SET_WPS_PHASE, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
 	return ret;
 }
 
-int whc_fullmac_host_set_wpa_mode(u8 wpa_mode)
+int whc_host_set_wpa_mode(u8 wpa_mode)
 {
 	int ret = 0;
 	u32 param_buf[1];
 	param_buf[0] = (u32)wpa_mode;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_SET_WPA_MODE, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_SET_WPA_MODE, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
 	return ret;
 }
 
-int whc_fullmac_host_set_owe_param(struct rtw_owe_param_t *owe_param)
+int whc_host_set_owe_param(struct rtw_owe_param_t *owe_param)
 {
 	int ret = 0;
 	u32 size;
@@ -1039,12 +1039,12 @@ int whc_fullmac_host_set_owe_param(struct rtw_owe_param_t *owe_param)
 	size = sizeof(struct rtw_owe_param_t);
 	param = (u32 *)kzalloc(size, GFP_KERNEL);
 	memcpy((void *)param, (void *)owe_param, size);
-	whc_fullmac_host_send_event(WHC_API_WIFI_SET_OWE_PARAM, (u8 *)param, size, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_SET_OWE_PARAM, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 	kfree((void *)param);
 	return ret;
 }
 
-int whc_fullmac_host_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags)
+int whc_host_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags)
 {
 	int ret = 0;
 	u32 size;
@@ -1058,14 +1058,14 @@ int whc_fullmac_host_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, 
 	param[2] = (u32)flags;
 	memcpy((void *)(param + 3), (void *)buf, buf_len);
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_SET_GEN_IE, (u8 *)param, size, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_SET_GEN_IE, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
 
 	return ret;
 }
 
-int whc_fullmac_host_add_custom_ie(const struct element **elem, u8 num, u16 type)
+int whc_host_add_custom_ie(const struct element **elem, u8 num, u16 type)
 {
 	int ret = 0;
 	u32 size = 0;
@@ -1092,26 +1092,26 @@ int whc_fullmac_host_add_custom_ie(const struct element **elem, u8 num, u16 type
 		ptr += 3 + elem[i]->datalen;
 	}
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_CUS_IE, param, size, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_CUS_IE, param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
 
 	return ret;
 }
 
-int whc_fullmac_host_del_custom_ie(unsigned char wlan_idx)
+int whc_host_del_custom_ie(unsigned char wlan_idx)
 {
 	int ret = 0;
 	u8 param[2];
 
 	param[0] = 2;
 	param[1] = wlan_idx;
-	whc_fullmac_host_send_event(WHC_API_WIFI_CUS_IE, param, 2, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_CUS_IE, param, 2, (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
 
-int whc_fullmac_host_update_custom_ie(u8 *ie, int ie_index, u8 type)
+int whc_host_update_custom_ie(u8 *ie, int ie_index, u8 type)
 {
 	int ret = 0;
 	u32 size = 0;
@@ -1127,14 +1127,14 @@ int whc_fullmac_host_update_custom_ie(u8 *ie, int ie_index, u8 type)
 
 	memcpy(ptr, ie, 2 + ie[1]);
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_CUS_IE, param, size, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_CUS_IE, param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
 
 	return ret;
 }
 
-int whc_fullmac_host_set_edcca_mode(struct rtw_edcca_param_t *p)
+int whc_host_set_edcca_mode(struct rtw_edcca_param_t *p)
 {
 	int ret = 0;
 	u8 *param_buf = NULL;
@@ -1149,11 +1149,11 @@ int whc_fullmac_host_set_edcca_mode(struct rtw_edcca_param_t *p)
 	case RTW_EDCCA_CS:
 	case RTW_EDCCA_DISABLE:
 		param_buf = (u8 *)p;
-		whc_fullmac_host_send_event(WHC_API_WIFI_SET_EDCCA_PARAM, param_buf, sizeof(struct rtw_edcca_param_t), (u8 *)&ret, sizeof(int));
+		whc_host_send_event(WHC_API_WIFI_SET_EDCCA_PARAM, param_buf, sizeof(struct rtw_edcca_param_t), (u8 *)&ret, sizeof(int));
 		break;
 	default:
-		dev_info(global_idev.fullmac_dev, "Wrong EDCCA mode %d!", p->edcca_mode);
-		dev_info(global_idev.fullmac_dev, "0: normal; 1: ETSI; 2: Japan; 9: Disable.");
+		dev_info(global_idev.pwhc_dev, "Wrong EDCCA mode %d!", p->edcca_mode);
+		dev_info(global_idev.pwhc_dev, "0: normal; 1: ETSI; 2: Japan; 9: Disable.");
 		ret = -EINVAL;
 		break;
 	}
@@ -1161,34 +1161,34 @@ int whc_fullmac_host_set_edcca_mode(struct rtw_edcca_param_t *p)
 	return ret;
 }
 
-int whc_fullmac_host_get_edcca_mode(u8 *edcca_mode)
+int whc_host_get_edcca_mode(u8 *edcca_mode)
 {
 	int ret = 0;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_GET_EDCCA_MODE, NULL, 0, edcca_mode, sizeof(u8));
+	whc_host_send_event(WHC_API_WIFI_GET_EDCCA_MODE, NULL, 0, edcca_mode, sizeof(u8));
 
 	return ret;
 }
 
-int whc_fullmac_host_get_ant_info(u8 *antdiv_mode, u8 *curr_ant)
+int whc_host_get_ant_info(u8 *antdiv_mode, u8 *curr_ant)
 {
 	int ret = 0;
 	u8 value[2] = {0};
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_GET_ANTENNA_INFO, NULL, 0, value, sizeof(value));
+	whc_host_send_event(WHC_API_WIFI_GET_ANTENNA_INFO, NULL, 0, value, sizeof(value));
 	*antdiv_mode = value[0];
 	*curr_ant = value[1];
 
 	return ret;
 }
 
-int whc_fullmac_host_set_country_code(char *cc)
+int whc_host_set_country_code(char *cc)
 {
 	int ret = 0;
 	u8 param[2];
 
 	if (strlen(cc) != 2) {
-		dev_err(global_idev.fullmac_dev, "%s: the length of country is not 2.\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: the length of country is not 2.\n", __func__);
 		return -EINVAL;
 	}
 
@@ -1199,21 +1199,21 @@ int whc_fullmac_host_set_country_code(char *cc)
 		memcpy(param, cc, 2);
 	}
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_SET_COUNTRY_CODE, param, sizeof(param), (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_SET_COUNTRY_CODE, param, sizeof(param), (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
 
-int whc_fullmac_host_get_country_code(struct rtw_country_code_table *table)
+int whc_host_get_country_code(struct rtw_country_code_table *table)
 {
 	int ret = 0;
 
 	if (table == NULL) {
-		dev_err(global_idev.fullmac_dev, "%s: input is NULL.\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: input is NULL.\n", __func__);
 		return -EINVAL;
 	}
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_GET_COUNTRY_CODE, NULL, 0, (u8 *)table, sizeof(struct rtw_country_code_table));
+	whc_host_send_event(WHC_API_WIFI_GET_COUNTRY_CODE, NULL, 0, (u8 *)table, sizeof(struct rtw_country_code_table));
 
 	if ((table->char2[0] == 0xff) && (table->char2[1] == 0xff)) {
 		table->char2[0] = '0';
@@ -1225,16 +1225,16 @@ int whc_fullmac_host_get_country_code(struct rtw_country_code_table *table)
 
 
 #ifdef CONFIG_P2P
-void whc_fullmac_host_set_p2p_role(enum rtw_p2p_role role)
+void whc_host_set_p2p_role(enum rtw_p2p_role role)
 {
 	u32 param_buf[1];
 
 	param_buf[0] = (u32)role;
 
-	whc_fullmac_host_send_event(WHC_API_P2P_ROLE, (u8 *)param_buf, sizeof(param_buf), NULL, 0);
+	whc_host_send_event(WHC_API_P2P_ROLE, (u8 *)param_buf, sizeof(param_buf), NULL, 0);
 }
 
-int whc_fullmac_host_set_p2p_remain_on_ch(unsigned char wlan_idx, u8 enable)
+int whc_host_set_p2p_remain_on_ch(unsigned char wlan_idx, u8 enable)
 {
 	int ret = 0;
 	u32 param_buf[2];
@@ -1242,12 +1242,12 @@ int whc_fullmac_host_set_p2p_remain_on_ch(unsigned char wlan_idx, u8 enable)
 	param_buf[0] = (u32)wlan_idx;
 	param_buf[1] = (u32)enable;
 
-	whc_fullmac_host_send_event(WHC_API_P2P_REMAIN_ON_CH, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_P2P_REMAIN_ON_CH, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
 	return ret;
 }
 #endif
 
-int whc_fullmac_host_war_offload_ctrl(u8 offload_en, u32 offload_ctrl)
+int whc_host_war_offload_ctrl(u8 offload_en, u32 offload_ctrl)
 {
 	int ret = 0;
 	struct H2C_WAROFFLOAD_PARM param;
@@ -1255,12 +1255,12 @@ int whc_fullmac_host_war_offload_ctrl(u8 offload_en, u32 offload_ctrl)
 	param.offload_en = offload_en;
 	param.offload_ctrl = offload_ctrl;
 
-	whc_fullmac_host_send_event(WHC_API_WAR_OFFLOAD_CTRL, (u8 *)&param, sizeof(struct H2C_WAROFFLOAD_PARM), (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WAR_OFFLOAD_CTRL, (u8 *)&param, sizeof(struct H2C_WAROFFLOAD_PARM), (u8 *)&ret, sizeof(int));
 
 	return ret;
 }
 
-int whc_fullmac_host_set_mdns_param(u8 *pframe, u32 len)
+int whc_host_set_mdns_param(u8 *pframe, u32 len)
 {
 	int ret = 0;
 	u32 size = 0;
@@ -1272,18 +1272,18 @@ int whc_fullmac_host_set_mdns_param(u8 *pframe, u32 len)
 	memcpy(param, &len, sizeof(len));
 	memcpy(param + 4, pframe, len);
 
-	whc_fullmac_host_send_event(WHC_API_WAR_SET_MDNS_PARA, param, size, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WAR_SET_MDNS_PARA, param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
 
 	return ret;
 }
 
-int whc_fullmac_host_dev_driver_is_mp(u8 *is_mp)
+int whc_host_dev_driver_is_mp(u8 *is_mp)
 {
 	int ret = 0;
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_DRIVE_IS_MP, NULL, 0, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_DRIVE_IS_MP, NULL, 0, (u8 *)&ret, sizeof(int));
 	if (ret < 0) {
 		*is_mp = 0;
 	} else {
@@ -1293,7 +1293,7 @@ int whc_fullmac_host_dev_driver_is_mp(u8 *is_mp)
 	return ret;
 }
 
-int whc_fullmac_host_set_promisc_enable(u32 enable, u8 mode)
+int whc_host_set_promisc_enable(u32 enable, u8 mode)
 {
 	(void) enable;
 	(void) mode;
@@ -1303,7 +1303,7 @@ int whc_fullmac_host_set_promisc_enable(u32 enable, u8 mode)
 	return 0;
 }
 
-int whc_fullmac_host_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 status)
+int whc_host_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 status)
 {
 	u8 *param = NULL;
 	u32 size = 0;
@@ -1313,7 +1313,7 @@ int whc_fullmac_host_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 s
 		size = sizeof(struct rtw_kvr_param_t) + sizeof(u16);
 		param = (u8 *)kzalloc(size, GFP_KERNEL);
 		if (param == NULL) {
-			dev_err(global_idev.fullmac_dev, "%s: malloc error!\n", __func__);
+			dev_err(global_idev.pwhc_dev, "%s: malloc error!\n", __func__);
 			return -ENOMEM;
 		}
 		memcpy(param, kvr_param, sizeof(struct rtw_kvr_param_t));
@@ -1322,12 +1322,12 @@ int whc_fullmac_host_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 s
 		size = sizeof(u16);
 		param = (u8 *)kzalloc(size, GFP_KERNEL);
 		if (param == NULL) {
-			dev_err(global_idev.fullmac_dev, "%s: malloc error!\n", __func__);
+			dev_err(global_idev.pwhc_dev, "%s: malloc error!\n", __func__);
 			return -ENOMEM;
 		}
 		memcpy(param, &status, sizeof(u16));
 	}
-	whc_fullmac_host_send_event(WHC_API_WIFI_FT_STATUS, param, size, (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WIFI_FT_STATUS, param, size, (u8 *)&ret, sizeof(int));
 
 	if (param) {
 		kfree((void *)param);

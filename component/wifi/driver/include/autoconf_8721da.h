@@ -30,7 +30,7 @@
 //#define CONFIG_NAN
 #endif
 
-#if defined(CONFIG_ZEPHYR_SDK)
+#if defined(CONFIG_PLATFORM_ZEPHYR)
 #undef CONFIG_WIFI_TUNNEL
 #undef CONFIG_WTN_SOCKET_APP
 #endif

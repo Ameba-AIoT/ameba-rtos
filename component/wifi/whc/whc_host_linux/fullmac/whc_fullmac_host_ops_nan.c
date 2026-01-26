@@ -99,7 +99,7 @@ static int whc_fullmac_host_start_nan_ops(struct wiphy *wiphy,
 	band_support = ((conf->bands & BIT(NL80211_BAND_2GHZ)) ? RTW_SUPPORT_BAND_2_4G : 0)
 				   | ((conf->bands & BIT(NL80211_BAND_5GHZ)) ? RTW_SUPPORT_BAND_5G : 0);
 
-	if (whc_fullmac_host_start_nan(conf->master_pref, band_support) == -1) {
+	if (whc_host_start_nan(conf->master_pref, band_support) == -1) {
 		ret = -ENOTCONN;
 	}
 
@@ -110,7 +110,7 @@ void whc_fullmac_host_stop_nan_ops(struct wiphy *wiphy, struct wireless_dev *wde
 {
 	printk(" => %s\n", __func__);
 
-	whc_fullmac_host_stop_nan();
+	whc_host_stop_nan();
 }
 
 static int whc_fullmac_host_add_nan_func_ops(struct wiphy *wiphy,
@@ -134,7 +134,7 @@ static int whc_fullmac_host_add_nan_func_ops(struct wiphy *wiphy,
 
 	ptr = buf = kmalloc(size, GFP_KERNEL);
 	if (!buf) {
-		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
 	}
 	memset(buf, 0, size);
@@ -203,7 +203,7 @@ static int whc_fullmac_host_add_nan_func_ops(struct wiphy *wiphy,
 
 	nan_param->instance_id = func->instance_id;
 	nan_param->cookie = func->cookie;
-	func->instance_id = whc_fullmac_host_add_nan_func(nan_param, func);
+	func->instance_id = whc_host_add_nan_func(nan_param, func);
 
 	whc_fullmac_host_dump_nan_func(func);
 
@@ -219,7 +219,7 @@ void whc_fullmac_host_del_nan_func_ops(struct wiphy *wiphy,
 {
 	printk("%s =>\n", __func__);
 
-	whc_fullmac_host_del_nan_func(cookie);
+	whc_host_del_nan_func(cookie);
 }
 
 static int whc_fullmac_host_nan_change_conf_ops(struct wiphy *wiphy,

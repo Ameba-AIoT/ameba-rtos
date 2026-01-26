@@ -83,7 +83,7 @@ int whc_fullmac_ipc_host_msg_q_init(struct device *pdev, void (*task_hdl)(u8 eve
 
 	msg_priv->p_inic_ipc_msg = dma_alloc_coherent(pdev, sizeof(struct whc_ipc_ex_msg), &msg_priv->ipc_msg_phy_addr, GFP_KERNEL);
 	if (!msg_priv->p_inic_ipc_msg) {
-		dev_dbg(global_idev.fullmac_dev, "%s: allloc p_inic_ipc_msg error.\n", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: allloc p_inic_ipc_msg error.\n", __func__);
 		return -ENOMEM;
 	}
 
@@ -126,7 +126,7 @@ int whc_fullmac_ipc_host_msg_enqueue(struct whc_ipc_ex_msg *p_ipc_msg)
 
 	if (p_node == NULL) {
 		ret = -ENOMEM;
-		dev_err(global_idev.fullmac_dev, "[AP] NO buffer for new nodes, waiting!\n\r");
+		dev_err(global_idev.pwhc_dev, "[AP] NO buffer for new nodes, waiting!\n\r");
 		goto func_out;
 	}
 

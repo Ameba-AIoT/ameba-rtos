@@ -14,7 +14,7 @@
 /* Private macros ------------------------------------------------------------*/
 #define USBH_DT_CS_INTERFACE                0x24
 #define USBH_DT_CS_ENDPOINT                 0x25
-#define USBH_UAC_WAIT_SLICE_MS              1
+#define USBH_UAC_WAIT_SLICE_MS              5
 #define USB_OTG_HFNUM_FRNUM_MAX             (0x3FFFUL)       /* Frame number max value */
 
 #define USBH_LE16(addr)                     (((u16)(addr)[0]) | ((u16)(((u32)(addr)[1]) << 8)))

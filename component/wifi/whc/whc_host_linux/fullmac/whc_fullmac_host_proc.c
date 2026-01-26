@@ -51,7 +51,7 @@ inline struct proc_dir_entry *rtw_proc_create_entry(const char *name, struct pro
 
 static int proc_get_sta_tsf(struct seq_file *m, void *v)
 {
-	u64 tsf_value = whc_fullmac_host_get_tsft(0);
+	u64 tsf_value = whc_host_get_tsft(0);
 
 	seq_printf(m, "%llu\n", tsf_value);
 
@@ -60,7 +60,7 @@ static int proc_get_sta_tsf(struct seq_file *m, void *v)
 
 static int proc_get_ap_tsf(struct seq_file *m, void *v)
 {
-	u64 tsf_value = whc_fullmac_host_get_tsft(1);
+	u64 tsf_value = whc_host_get_tsft(1);
 
 	seq_printf(m, "%llu\n", tsf_value);
 
@@ -89,7 +89,7 @@ static ssize_t proc_write_edcca_mode(struct file *file, const char __user *buffe
 		sscanf(tmp, "%u", (unsigned int *)&param.edcca_mode);
 		/* MAX edcca_th is 127, to set the 128 for invalid edcca_th. */
 		param.edcca_th = 128;
-		if (whc_fullmac_host_set_edcca_mode(&param) < 0) {
+		if (whc_host_set_edcca_mode(&param) < 0) {
 			return -EFAULT;
 		}
 	}
@@ -110,13 +110,13 @@ static ssize_t proc_write_edcca_th(struct file *file, const char __user *buffer,
 	if (buffer && !copy_from_user(tmp, buffer, count)) {
 		sscanf(tmp, "%d", (int *)&param.edcca_th);
 		if ((param.edcca_th > -60) || (param.edcca_th < -80)) {
-			dev_err(global_idev.fullmac_dev, "The range to fix EDCCA threshold is [-60 dbm, -80 dbm]. %d dbm is invalid!", param.edcca_th);
+			dev_err(global_idev.pwhc_dev, "The range to fix EDCCA threshold is [-60 dbm, -80 dbm]. %d dbm is invalid!", param.edcca_th);
 			return -EINVAL;
 		}
-		whc_fullmac_host_get_edcca_mode(&edcca_mode);
+		whc_host_get_edcca_mode(&edcca_mode);
 		param.edcca_mode = edcca_mode;
 
-		if (whc_fullmac_host_set_edcca_mode(&param) < 0) {
+		if (whc_host_set_edcca_mode(&param) < 0) {
 			return -EFAULT;
 		}
 	}
@@ -124,13 +124,13 @@ static ssize_t proc_write_edcca_th(struct file *file, const char __user *buffer,
 	return count;
 }
 
-int whc_fullmac_host_get_ant_info(u8 *antdiv_mode, u8 *curr_ant);
+int whc_host_get_ant_info(u8 *antdiv_mode, u8 *curr_ant);
 static int proc_read_edcca_mode(struct seq_file *m, void *v)
 {
 	u8 edcca_mode = 0;
 	int ret = 0;
 
-	ret = whc_fullmac_host_get_edcca_mode(&edcca_mode);
+	ret = whc_host_get_edcca_mode(&edcca_mode);
 	seq_printf(m, "%d\n", edcca_mode);
 
 	return ret;
@@ -142,8 +142,8 @@ static int proc_read_beacon_rssi(struct seq_file *m, void *v)
 	int ret = 0;
 	union rtw_phy_stats stats = {0};
 
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
-	ret = whc_fullmac_host_get_phy_stats(STA_WLAN_INDEX, NULL, &stats);
+	dev_dbg(global_idev.pwhc_dev, "[fullmac]: %s", __func__);
+	ret = whc_host_get_phy_stats(STA_WLAN_INDEX, NULL, &stats);
 
 	beacon_rssi = stats.sta.beacon_rssi;
 	seq_printf(m, "%d\n", beacon_rssi);
@@ -158,10 +158,10 @@ static int proc_read_data_rssi(struct seq_file *m, void *v)
 	int ret = 0;
 	union rtw_phy_stats stats = {0};
 
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
+	dev_dbg(global_idev.pwhc_dev, "[fullmac]: %s", __func__);
 
 
-	ret = whc_fullmac_host_get_phy_stats(STA_WLAN_INDEX, NULL, &stats);
+	ret = whc_host_get_phy_stats(STA_WLAN_INDEX, NULL, &stats);
 
 	data_rssi = stats.sta.data_rssi;
 	seq_printf(m, "%d\n", data_rssi);
@@ -176,7 +176,7 @@ static int proc_read_antdiv_mode(struct seq_file *m, void *v)
 	u8 curr_ant = 0;
 	int ret = 0;
 
-	ret = whc_fullmac_host_get_ant_info(&antdiv_mode, &curr_ant);
+	ret = whc_host_get_ant_info(&antdiv_mode, &curr_ant);
 	seq_printf(m, "%d\n", antdiv_mode);
 
 	return ret;
@@ -188,7 +188,7 @@ static int proc_read_curr_ant(struct seq_file *m, void *v)
 	u8 curr_ant = 0;
 	int ret = 0;
 
-	ret = whc_fullmac_host_get_ant_info(&antdiv_mode, &curr_ant);
+	ret = whc_host_get_ant_info(&antdiv_mode, &curr_ant);
 	seq_printf(m, "%d\n", curr_ant);
 
 	return ret;
@@ -200,7 +200,7 @@ static int proc_read_mp_fw(struct seq_file *m, void *v)
 	u8 is_mp = 0;
 	int ret = 0;
 
-	ret = whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	ret = whc_host_dev_driver_is_mp(&is_mp);
 	seq_printf(m, "%d\n", is_mp);
 
 	return ret;
@@ -308,23 +308,23 @@ static struct proc_dir_entry *rtw_ndev_ap_proc_init(const char *name)
 	ssize_t i;
 
 	if (name == NULL) {
-		dev_err(global_idev.fullmac_dev, "rtw driver netdevice name not existed");
+		dev_err(global_idev.pwhc_dev, "rtw driver netdevice name not existed");
 		goto exit;
 	}
 
 	if (rtw_proc == NULL) {
-		dev_err(global_idev.fullmac_dev, "rtw driver proc dir not existed");
+		dev_err(global_idev.pwhc_dev, "rtw driver proc dir not existed");
 		goto exit;
 	}
 
 	if (rtw_ap_proc) {
-		dev_info(global_idev.fullmac_dev, "rtw driver ap proc dir existed");
+		dev_info(global_idev.pwhc_dev, "rtw driver ap proc dir existed");
 		goto exit;
 	}
 
 	rtw_ap_proc = rtw_proc_create_dir(name, rtw_proc, NULL);
 	if (rtw_ap_proc == NULL) {
-		dev_err(global_idev.fullmac_dev, "rtw driver created ap proc failed");
+		dev_err(global_idev.pwhc_dev, "rtw driver created ap proc failed");
 		goto exit;
 	}
 
@@ -339,7 +339,7 @@ static struct proc_dir_entry *rtw_ndev_ap_proc_init(const char *name)
 		}
 
 		if (!entry) {
-			dev_err(global_idev.fullmac_dev, "rtw driver created ap entry failed");
+			dev_err(global_idev.pwhc_dev, "rtw driver created ap entry failed");
 			goto exit;
 		}
 	}
@@ -353,12 +353,12 @@ static void rtw_ndev_ap_proc_deinit(const char *name)
 	int i;
 
 	if (name == NULL) {
-		dev_err(global_idev.fullmac_dev, "rtw driver netdevice name not existed");
+		dev_err(global_idev.pwhc_dev, "rtw driver netdevice name not existed");
 		return;
 	}
 
 	if (rtw_ap_proc == NULL) {
-		dev_info(global_idev.fullmac_dev, "rtw driver ap entry not existed");
+		dev_info(global_idev.pwhc_dev, "rtw driver ap entry not existed");
 		return;
 	}
 
@@ -489,23 +489,23 @@ static struct proc_dir_entry *rtw_ndev_sta_proc_init(const char *name)
 	ssize_t i;
 
 	if (name == NULL) {
-		dev_err(global_idev.fullmac_dev, "rtw driver netdevice name not existed");
+		dev_err(global_idev.pwhc_dev, "rtw driver netdevice name not existed");
 		goto exit;
 	}
 
 	if (rtw_proc == NULL) {
-		dev_err(global_idev.fullmac_dev, "rtw driver proc dir not existed");
+		dev_err(global_idev.pwhc_dev, "rtw driver proc dir not existed");
 		goto exit;
 	}
 
 	if (rtw_sta_proc) {
-		dev_info(global_idev.fullmac_dev, "rtw driver sta proc dir existed");
+		dev_info(global_idev.pwhc_dev, "rtw driver sta proc dir existed");
 		goto exit;
 	}
 
 	rtw_sta_proc = rtw_proc_create_dir(name, rtw_proc, NULL);
 	if (rtw_sta_proc == NULL) {
-		dev_err(global_idev.fullmac_dev, "rtw driver created sta proc failed");
+		dev_err(global_idev.pwhc_dev, "rtw driver created sta proc failed");
 		goto exit;
 	}
 
@@ -520,7 +520,7 @@ static struct proc_dir_entry *rtw_ndev_sta_proc_init(const char *name)
 		}
 
 		if (!entry) {
-			dev_err(global_idev.fullmac_dev, "rtw driver created sta entry failed");
+			dev_err(global_idev.pwhc_dev, "rtw driver created sta entry failed");
 			goto exit;
 		}
 	}
@@ -534,12 +534,12 @@ static void rtw_ndev_sta_proc_deinit(const char *name)
 	int i;
 
 	if (name == NULL) {
-		dev_err(global_idev.fullmac_dev, "rtw driver netdevice name not existed");
+		dev_err(global_idev.pwhc_dev, "rtw driver netdevice name not existed");
 		return;
 	}
 
 	if (rtw_sta_proc == NULL) {
-		dev_info(global_idev.fullmac_dev, "rtw driver sta entry not existed");
+		dev_info(global_idev.pwhc_dev, "rtw driver sta entry not existed");
 		return;
 	}
 
@@ -653,13 +653,13 @@ int rtw_drv_proc_init(void)
 	struct proc_dir_entry *entry = NULL;
 
 	if (rtw_proc != NULL) {
-		dev_info(global_idev.fullmac_dev, "rtw driver proc existed");
+		dev_info(global_idev.pwhc_dev, "rtw driver proc existed");
 		goto exit;
 	}
 
 	rtw_proc = rtw_proc_create_dir(WHC_HOST_NAME, get_proc_net, NULL);
 	if (rtw_proc == NULL) {
-		dev_err(global_idev.fullmac_dev, "rtw driver proc create dir failed");
+		dev_err(global_idev.pwhc_dev, "rtw driver proc create dir failed");
 		goto exit;
 	}
 
@@ -675,7 +675,7 @@ int rtw_drv_proc_init(void)
 			}
 
 			if (!entry) {
-				dev_err(global_idev.fullmac_dev, "rtw driver proc create entry failed");
+				dev_err(global_idev.pwhc_dev, "rtw driver proc create entry failed");
 				goto exit;
 			}
 		}

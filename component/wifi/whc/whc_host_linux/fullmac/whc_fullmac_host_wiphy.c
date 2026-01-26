@@ -193,7 +193,7 @@ int rtw_wiphy_band_init(struct wiphy *pwiphy, u32 band_type)
 		   );
 
 	if (!band) {
-		dev_err(global_idev.fullmac_dev, "init wiphy band failed\n");
+		dev_err(global_idev.pwhc_dev, "init wiphy band failed\n");
 		return false;
 	}
 
@@ -272,7 +272,7 @@ int rtw_wiphy_init_params(struct wiphy *pwiphy)
 
 	/* Support for AP mode. */
 #ifdef CONFIG_SUPPLICANT_SME
-	dev_info(global_idev.fullmac_dev, "Set offload AP mode SME\n");
+	dev_info(global_idev.pwhc_dev, "Set offload AP mode SME\n");
 
 	/*
 	 * This is required by AP SAE, otherwise wpa_driver_nl80211_capa() would
@@ -340,7 +340,7 @@ int rtw_wiphy_init(void)
 	int ret = false;
 	struct wiphy *pwiphy = NULL;
 
-	dev_dbg(global_idev.fullmac_dev, "--- %s ---", __func__);
+	dev_dbg(global_idev.pwhc_dev, "--- %s ---", __func__);
 
 	whc_fullmac_host_ops_sta_init();
 	whc_fullmac_host_ops_ap_init();
@@ -356,9 +356,9 @@ int rtw_wiphy_init(void)
 		return ret;
 	}
 	global_idev.pwiphy_global = pwiphy;
-	set_wiphy_dev(pwiphy, global_idev.fullmac_dev);
+	set_wiphy_dev(pwiphy, global_idev.pwhc_dev);
 #ifdef CONFIG_NAN
-	whc_fullmac_host_cfgvendor_attach(global_idev.pwiphy_global);
+	whc_host_cfgvendor_attach(global_idev.pwiphy_global);
 #endif
 
 	ret = rtw_wiphy_init_params(pwiphy);
@@ -386,7 +386,7 @@ wiphy_fail:
 void rtw_wiphy_deinit(void)
 {
 #ifdef CONFIG_NAN
-	whc_fullmac_host_cfgvendor_detach(global_idev.pwiphy_global);
+	whc_host_cfgvendor_detach(global_idev.pwiphy_global);
 #endif
 
 	if (global_idev.pwiphy_global->bands[NL80211_BAND_2GHZ]) {
@@ -400,7 +400,7 @@ void rtw_wiphy_deinit(void)
 
 	if (global_idev.pwiphy_global) {
 		wiphy_free(global_idev.pwiphy_global);
-		dev_dbg(global_idev.fullmac_dev, "free wiphy done.");
+		dev_dbg(global_idev.pwhc_dev, "free wiphy done.");
 		global_idev.pwiphy_global = NULL;
 	}
 }

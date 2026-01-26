@@ -38,7 +38,7 @@ void whc_host_recv_init(void)
 
 	recv_priv->rx_thread = kthread_run(whc_host_recv_thread, recv_priv, "RTW_RX_THREAD");
 	if (IS_ERR(recv_priv->rx_thread)) {
-		dev_err(global_idev.fullmac_dev, "FAIL to create llhw_recv_thread!\n");
+		dev_err(global_idev.pwhc_dev, "FAIL to create llhw_recv_thread!\n");
 		recv_priv->rx_thread = NULL;
 	}
 

@@ -157,12 +157,12 @@ typedef struct {
  */
 
 /**
-* @brief Initializes class driver with application callback handler.
-* @param[in] tx_buf_len: transfer buffer length
-* @param[in] cb: Pointer to the user-defined callback structure.
-* @return 0 on success, non-zero on failure.
-*/
-int usbd_hid_init(u16 tx_buf_len, usbd_hid_usr_cb_t *cb);
+ * @brief Initializes class driver with application callback handler.
+ * @param[in] tx_buf_len: transfer buffer length
+ * @param[in] cb: Pointer to the user-defined callback structure.
+ * @return 0 on success, non-zero on failure.
+ */
+int usbd_hid_init(u32 tx_buf_len, usbd_hid_usr_cb_t *cb);
 
 /**
   * @brief  DeInitialize HID device
@@ -176,7 +176,7 @@ int usbd_hid_deinit(void);
  * @param[in] len: Length of the data in bytes.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_hid_send_data(u8 *buf, u16 len);
+int usbd_hid_send_data(u8 *buf, u32 len);
 
 /* Exported functions --------------------------------------------------------*/
 

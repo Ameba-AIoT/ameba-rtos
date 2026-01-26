@@ -7,6 +7,7 @@
 #include "platform_autoconf.h"
 
 #if defined(CONFIG_BT_COEXIST)
+#ifndef CONFIG_MP_SHRINK
 #include "rtw_coex_host_api.h"
 #include "platform_stdlib.h"
 #include "atcmd_service.h"
@@ -248,7 +249,7 @@ static void fWPCOEX(void *arg)
 
 }
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 static const log_item_t at_coex_items[] = {
 	{CMD_NAME_COEX,          fCOMMONCOEX},
 	{CMD_NAME_BTC,          fBTCOEX},
@@ -272,14 +273,5 @@ void print_coex_at(void)
 	}
 #endif
 }
-
-void at_coex_init(void)
-{
-#if (defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK)
-	(void)at_coex_items;
-#else
-	atcmd_service_add_table((log_item_t *)at_coex_items, sizeof(at_coex_items) / sizeof(at_coex_items[0]));
-#endif
-}
-
-#endif
+#endif /* CONFIG_MP_SHRINK */
+#endif /* CONFIG_BT_COEXIST */

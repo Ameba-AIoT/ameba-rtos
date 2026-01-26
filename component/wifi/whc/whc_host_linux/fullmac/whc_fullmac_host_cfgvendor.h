@@ -54,10 +54,10 @@ enum rtw_vendor_event {
 #define GET_OVERALL_EVENT_ID(nandow_id) (nandow_id+NANDOW_EVENTID_OFFSET)
 #endif
 
-void whc_fullmac_host_cfgvendor_attach(struct wiphy *wiphy);
-void whc_fullmac_host_cfgvendor_detach(struct wiphy *wiphy);
+void whc_host_cfgvendor_attach(struct wiphy *wiphy);
+void whc_host_cfgvendor_detach(struct wiphy *wiphy);
 
-void whc_fullmac_host_cfgvendor_nan_event_indication(u8 event_id, void *event, int size);
-void whc_fullmac_host_cfgvendor_send_cmd_reply(void  *data, int len);
+void whc_host_cfgvendor_nan_event_indication(u8 event_id, void *event, int size);
+void whc_host_cfgvendor_send_cmd_reply(void  *data, int len);
 #endif
 

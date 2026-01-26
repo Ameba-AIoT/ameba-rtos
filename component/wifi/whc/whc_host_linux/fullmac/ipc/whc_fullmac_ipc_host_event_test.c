@@ -16,7 +16,7 @@ void whc_fullmac_host_event_auth_req(u8 *evt_info)
 	struct rtw_event_join_status_info *join_status_info = (struct rtw_event_join_status_info *)evt_info;
 
 	if (join_status_info != NULL) {
-		dev_dbg(global_idev.fullmac_dev, "Auth req: ch %d, bssid %02x:%02x:%02x:%02x:%02x:%02x, rssi %d\n", join_status_info->channel, join_status_info->bssid[0],
+		dev_dbg(global_idev.pwhc_dev, "Auth req: ch %d, bssid %02x:%02x:%02x:%02x:%02x:%02x, rssi %d\n", join_status_info->channel, join_status_info->bssid[0],
 				join_status_info->bssid[1],
 				join_status_info->bssid[2], join_status_info->bssid[3], join_status_info->bssid[4], join_status_info->bssid[5], join_status_info->rssi);
 	}
@@ -27,7 +27,7 @@ void whc_fullmac_host_event_auth_resp(u8 *evt_info)
 	struct rtw_event_join_status_info *join_status_info = (struct rtw_event_join_status_info *)evt_info;
 
 	if (join_status_info != NULL) {
-		dev_dbg(global_idev.fullmac_dev, "Auth resp: bssid %02x:%02x:%02x:%02x:%02x:%02x, status %d\n", join_status_info->bssid[0], join_status_info->bssid[1],
+		dev_dbg(global_idev.pwhc_dev, "Auth resp: bssid %02x:%02x:%02x:%02x:%02x:%02x, status %d\n", join_status_info->bssid[0], join_status_info->bssid[1],
 				join_status_info->bssid[2],
 				join_status_info->bssid[3], join_status_info->bssid[4], join_status_info->bssid[5], join_status_info->priv.authenticated.reason_or_status_code);
 	}
@@ -38,7 +38,7 @@ void whc_fullmac_host_event_assoc_req(u8 *evt_info)
 	struct rtw_event_join_status_info *join_status_info = (struct rtw_event_join_status_info *)evt_info;
 
 	if (join_status_info != NULL) {
-		dev_dbg(global_idev.fullmac_dev, "Assoc req: is_reassoc %d, ch %d, bssid %02x:%02x:%02x:%02x:%02x:%02x, rssi %d\n",
+		dev_dbg(global_idev.pwhc_dev, "Assoc req: is_reassoc %d, ch %d, bssid %02x:%02x:%02x:%02x:%02x:%02x, rssi %d\n",
 				join_status_info->priv.associating.is_reassoc,
 				join_status_info->channel, join_status_info->bssid[0], join_status_info->bssid[1], join_status_info->bssid[2], join_status_info->bssid[3],
 				join_status_info->bssid[4], join_status_info->bssid[5], join_status_info->rssi);
@@ -50,7 +50,7 @@ void whc_fullmac_host_event_assoc_resp(u8 *evt_info)
 	struct rtw_event_join_status_info *join_status_info = (struct rtw_event_join_status_info *)evt_info;
 
 	if (join_status_info != NULL) {
-		dev_dbg(global_idev.fullmac_dev, "Assoc resp: is_reassoc %d, bssid %02x:%02x:%02x:%02x:%02x:%02x, status %d\n", join_status_info->priv.associated.is_reassoc,
+		dev_dbg(global_idev.pwhc_dev, "Assoc resp: is_reassoc %d, bssid %02x:%02x:%02x:%02x:%02x:%02x, status %d\n", join_status_info->priv.associated.is_reassoc,
 				join_status_info->bssid[0], join_status_info->bssid[1], join_status_info->bssid[2], join_status_info->bssid[3], join_status_info->bssid[4],
 				join_status_info->bssid[5],
 				join_status_info->priv.associated.reason_or_status_code);
@@ -62,7 +62,7 @@ void whc_fullmac_host_event_join_fail(u8 *evt_info)
 	struct rtw_event_join_status_info *join_status_info = (struct rtw_event_join_status_info *)evt_info;
 
 	if (join_status_info != NULL) {
-		dev_dbg(global_idev.fullmac_dev, "Join fail: ch %d, bssid %02x:%02x:%02x:%02x:%02x:%02x, rssi %d, reason %d, status %d\n", join_status_info->channel,
+		dev_dbg(global_idev.pwhc_dev, "Join fail: ch %d, bssid %02x:%02x:%02x:%02x:%02x:%02x, rssi %d, reason %d, status %d\n", join_status_info->channel,
 				join_status_info->bssid[0], join_status_info->bssid[1], join_status_info->bssid[2], join_status_info->bssid[3], join_status_info->bssid[4],
 				join_status_info->bssid[5], join_status_info->rssi,
 				join_status_info->priv.fail.fail_reason, join_status_info->priv.fail.reason_or_status_code);
@@ -74,7 +74,7 @@ void whc_fullmac_host_event_disconnect_hdl(u8 *evt_info)
 	struct rtw_event_join_status_info *join_status_info = (struct rtw_event_join_status_info *)evt_info;
 
 	if (join_status_info != NULL) {
-		dev_dbg(global_idev.fullmac_dev, "Disconnect: ch %d, bssid %02x:%02x:%02x:%02x:%02x:%02x, rssi %d, reason %d\n", join_status_info->channel,
+		dev_dbg(global_idev.pwhc_dev, "Disconnect: ch %d, bssid %02x:%02x:%02x:%02x:%02x:%02x, rssi %d, reason %d\n", join_status_info->channel,
 				join_status_info->bssid[0],
 				join_status_info->bssid[1], join_status_info->bssid[2], join_status_info->bssid[3], join_status_info->bssid[4], join_status_info->bssid[5],
 				join_status_info->rssi,
@@ -88,7 +88,7 @@ void whc_fullmac_host_join_status_hdl(u8 *evt_info)
 	struct rtw_event_join_status_info *join_status_info = (struct rtw_event_join_status_info *)evt_info;
 
 	if (join_status_info == NULL) {
-		dev_err(global_idev.fullmac_dev, "Event join status err!\n");
+		dev_err(global_idev.pwhc_dev, "Event join status err!\n");
 		return;
 	}
 

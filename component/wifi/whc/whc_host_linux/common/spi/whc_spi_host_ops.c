@@ -19,19 +19,19 @@ void whc_spi_host_send_data(u8 *buf, u32 len, struct sk_buff *skb)
 	while (atomic_read(&priv->dev_state) == DEV_BUSY) {
 		/* wait for sema*/
 		if (down_timeout(&priv->dev_rdy_sema, msecs_to_jiffies(500))) {
-			dev_err(global_idev.fullmac_dev, "%s: wait dev busy(%d) timeout, can't send data\n\r", __func__, gpio_get_value(DEV_READY_PIN));
+			dev_err(global_idev.pwhc_dev, "%s: wait dev busy(%d) timeout, can't send data\n\r", __func__, gpio_get_value(DEV_READY_PIN));
 			goto exit;
 		}
 	}
 
 	if (len > SPI_BUFSZ) {
-		dev_err(global_idev.fullmac_dev, "%s: len(%d) > SPI_BUFSZ\n\r", __func__, len);
+		dev_err(global_idev.pwhc_dev, "%s: len(%d) > SPI_BUFSZ\n\r", __func__, len);
 	}
 
 	/* allocate rx skb */
 	pskb = netdev_alloc_skb(NULL, SPI_BUFSZ);
 	if (pskb == NULL) {
-		dev_err(global_idev.fullmac_dev, "%s: Alloc skb rx buf Err!!\n\r", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: Alloc skb rx buf Err!!\n\r", __func__);
 		goto exit;
 	}
 
@@ -87,7 +87,7 @@ void whc_spi_host_recv_data_process(void *intf_priv)
 	while (atomic_read(&priv->dev_state) == DEV_BUSY) {
 		/* wait for sema*/
 		if (down_timeout(&priv->dev_rdy_sema, msecs_to_jiffies(500))) {
-			dev_err(global_idev.fullmac_dev, "%s: wait dev busy(%d) timeout, can't send data\n\r", __func__, gpio_get_value(DEV_READY_PIN));
+			dev_err(global_idev.pwhc_dev, "%s: wait dev busy(%d) timeout, can't send data\n\r", __func__, gpio_get_value(DEV_READY_PIN));
 			goto exit;
 		}
 	}
@@ -98,7 +98,7 @@ void whc_spi_host_recv_data_process(void *intf_priv)
 		/* allocate skb */
 		pskb = netdev_alloc_skb(NULL, SPI_BUFSZ);
 		if (pskb == NULL) {
-			dev_err(global_idev.fullmac_dev, "%s: Alloc skb rx buf Err!!\n\r", __func__);
+			dev_err(global_idev.pwhc_dev, "%s: Alloc skb rx buf Err!!\n\r", __func__);
 			goto exit;
 		}
 
@@ -177,7 +177,7 @@ void whc_host_send_cmd_data(u8 *buf, u32 len)
 			whc_spi_host_send_data(txbuf, txsize, NULL);
 			kfree(txbuf);
 		} else {
-			dev_err(global_idev.fullmac_dev, "%s can't alloc spi buffer!\n", __func__);
+			dev_err(global_idev.pwhc_dev, "%s can't alloc spi buffer!\n", __func__);
 		}
 	} else {
 		whc_spi_host_send_data(buf, len, NULL);

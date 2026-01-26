@@ -8,6 +8,8 @@
 
 #if defined(CONFIG_BT) && CONFIG_BT
 #if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
+/* Ensure fATM2 is linked only in ap core */
+#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 #include "atcmd_service.h"
 #include "atcmd_bt_mp.h"
 
@@ -447,12 +449,6 @@ const log_item_t at_mp_items[] = {
 void print_bt_mp_at(void)
 {
 }
-
-void at_mp_init(void)
-{
-	atcmd_service_add_table((log_item_t *)at_mp_items, sizeof(at_mp_items) / sizeof(at_mp_items[0]));
-}
-
+#endif /* CONFIG_WHC_HOST || CONFIG_WHC_NONE */
 #endif /* #if CONFIG_ATCMD_MP */
 #endif /* #if CONFIG_BT */
-

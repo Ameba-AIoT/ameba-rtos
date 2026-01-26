@@ -1112,30 +1112,7 @@ void bt_stack_gatts_evt_indicate_mtu_exchange(uint16_t conn_handle, uint16_t mtu
 /* convert ATT error to T_APP_RESULT which is used in rtk ble stack */
 static T_APP_RESULT att_err_to_app_result(uint8_t att_err)
 {
-	T_APP_RESULT app_res = APP_RESULT_SUCCESS;
-
-	switch (att_err) {
-	case 0:
-		break;
-	case RTK_BT_ATT_ERR_PREP_QUEUE_FULL:
-	case RTK_BT_ATT_ERR_INVALID_OFFSET:
-	case RTK_BT_ATT_ERR_INVALID_VALUE_SIZE:
-	case RTK_BT_ATT_ERR_INVALID_PDU:
-	case RTK_BT_ATT_ERR_ATTR_NOT_FOUND:
-	case RTK_BT_ATT_ERR_ATTR_NOT_LONG:
-	case RTK_BT_ATT_ERR_INSUFFICIENT_RESOURCES:
-	case RTK_BT_ATT_ERR_VALUE_NOT_ALLOWED:
-	case RTK_BT_ATT_ERR_MIN_APPLIC_CODE:
-	case RTK_BT_ATT_ERR_CCCD_IMPROPERLY_CONFIGURED:
-	case RTK_BT_ATT_ERR_PROC_ALREADY_IN_PROGRESS:
-		app_res = (T_APP_RESULT)(ATT_ERR | att_err);
-		break;
-	default:
-		app_res = APP_RESULT_REJECT;
-		break;
-	}
-
-	return app_res;
+	return att_err ? (ATT_ERR | att_err) : APP_RESULT_SUCCESS;
 }
 
 static uint16_t bt_stack_gatts_read_rsp(void *param)
