@@ -7,11 +7,15 @@
 #include "sheipa.h"
 #include "ameba_soc.h"
 #include "FreeRTOS.h"
+#include <spinlock.h>
 
 static const char *const TAG = "#";
 extern void _boot(void);
 extern void vPortRestoreTaskContext(void);
 
+#if ( configNUM_CORES > 1 )
+extern spinlock_t flash_lock;
+#endif
 /*-----------------------------------------------------------*/
 
 void rtk_core1_power_on(void)
@@ -74,6 +78,11 @@ void vPortGateOtherCore(void)
 		return;
 	}
 
+	/* The completion of a DSB that completes a TLB maintenance operation ensures that all accesses that used the old mapping have completed. */
+	MMU_InvalidateTLB();
+	L1C_InvalidateBTAC();
+	spin_lock(&flash_lock);
+
 	ulFlashPG_Flag = 1;
 	__DSB();
 
@@ -82,16 +91,24 @@ void vPortGateOtherCore(void)
 	arm_gic_raise_softirq(ulCoreID, IPI_FLASHPG_IRQ);
 
 	CA32_TypeDef *ca32 = CA32_BASE;
-	/* Ensure WFE is entered by IPI_FLASHPG_IRQ */
-	while ((ulFlashPG_Flag == 1) || (CA32_GET_STANDBYWFE(ca32->CA32_C0_CPU_STATUS) != BIT(ulCoreID)));
+	/* WFE wake-up events: A physical IRQ/FIQ interrupt, unless masked by the CPSR.I bit */
+	while (1) {
+		/* Ensure WFE is entered, maybe not by IPI_FLASHPG_IRQ */
+		if (CA32_GET_STANDBYWFE(ca32->CA32_C0_CPU_STATUS) == BIT(ulCoreID)) {
+			break;
+		}
+	}
 #endif
 }
 
 void vPortWakeOtherCore(void)
 {
+#if ( configNUM_CORES > 1 )
 	ulFlashPG_Flag = 0;
 	__DSB();
 	__SEV();
+	spin_unlock(&flash_lock);
+#endif
 }
 
 void vPortSecondaryOff(void)

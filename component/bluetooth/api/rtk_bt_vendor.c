@@ -16,6 +16,7 @@
 #include "rtk_bt_vendor.h"
 #include "rtk_bt_le_gap.h"
 #include "bt_debug.h"
+#include "rtk_bt_common.h"
 
 #if defined(RTK_BT_HC_CLOCK_OFFSET_SUPPORT) && RTK_BT_HC_CLOCK_OFFSET_SUPPORT
 #include "ameba_soc.h"
@@ -24,6 +25,10 @@ static rtk_bt_vendor_free_run_clock_t hc_free_run_clock = {0};
 
 #if defined(RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT) && RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT
 static rtk_bt_vendor_sync_ref_ap_info_t ref_ap_info = {0};
+#endif
+
+#if defined(RTK_BLE_GET_SLAVE_CONN_CLOCK_SUPPORT) && RTK_BLE_GET_SLAVE_CONN_CLOCK_SUPPORT
+static rtk_bt_vendor_conn_clock_info_t slave_clock_info = {0};
 #endif
 
 _WEAK void hci_platform_external_fw_log_pin(void)
@@ -343,3 +348,63 @@ out:
 #endif
 }
 #endif
+
+#if defined(RTK_BLE_GET_SLAVE_CONN_CLOCK_SUPPORT) && RTK_BLE_GET_SLAVE_CONN_CLOCK_SUPPORT
+rtk_bt_vendor_conn_clock_info_t *rtk_bt_get_slave_clock_info(void)
+{
+	return &slave_clock_info;
+}
+
+uint16_t rtk_bt_le_get_slave_conn_clock(uint16_t conn_handle, rtk_bt_le_conn_clock_info_t *clock_info)
+{
+#if defined(VENDOR_CMD_READ_ACC_HIT_COUNTER_SUPPORT) && VENDOR_CMD_READ_ACC_HIT_COUNTER_SUPPORT
+	uint8_t data[3] = {0};
+	uint16_t ret = RTK_BT_OK;
+	rtk_bt_gap_vendor_cmd_param_t param = {0};
+
+	if (!clock_info) {
+		BT_LOGE("clock_info is NULL!\r\n");
+		return RTK_BT_FAIL;
+	}
+	memset(clock_info, 0, sizeof(clock_info));
+
+	data[0] = SUB_CMD_READ_ACC_HIT_COUNTER;
+	U16_TO_LE(&(data[1]), conn_handle);
+	param.op = VENDOR_CMD_LE_EXTENSION_FEATURE_OPCODE;
+	param.len = 3;
+	param.cmd_param = data;
+
+	memset(&slave_clock_info, 0, sizeof(rtk_bt_vendor_conn_clock_info_t));
+	if (false == osif_sem_create(&slave_clock_info.sem, 0, 1)) {
+		BT_LOGE("slave_clock_info.sem create fail!\r\n");
+		return RTK_BT_FAIL;
+	}
+
+	ret = rtk_bt_gap_vendor_cmd_req(&param);
+	if (ret) {
+		BT_LOGE("rtk_bt_gap_vendor_cmd_req fail!\r\n");
+		ret = RTK_BT_FAIL;
+		goto out;
+	}
+
+	if (osif_sem_take(slave_clock_info.sem, 0xFFFFFFFF) == false) {
+		BT_LOGE("slave_clock_info.sem take fail!\r\n");
+		ret = RTK_BT_FAIL;
+		goto out;
+	}
+
+	memcpy((void *)clock_info, (void *)&slave_clock_info.info, sizeof(rtk_bt_le_conn_clock_info_t));
+
+out:
+	osif_sem_delete(slave_clock_info.sem);
+	slave_clock_info.sem = NULL;
+
+	return ret;
+#else
+	(void)conn_handle;
+	(void)clock_info;
+	BT_LOGE("Get slave connection link clock is not supported!\r\n");
+	return RTK_BT_FAIL;
+#endif
+}
+#endif /* RTK_BLE_GET_SLAVE_CONN_CLOCK_SUPPORT */
