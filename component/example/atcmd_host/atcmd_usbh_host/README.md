@@ -8,12 +8,15 @@ In this example, the control of the AT command module via USB is simply demonstr
 None
 
 # SW configuration
+1. For atcmd device:
+   a. Modify the USB configurations in atcmd_config.json.
 
-1. Modify the USB configurations in atcmd_config.json.
+   b. Build and Download:
+      * Refer to the SDK Examples section of the online documentation to generate images.
+      * `Download` images to board by Ameba Image Tool.
 
-2. Build and Download:
-   * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool.
+2. For atcmd host:
+   a. ATCMD Mode of menuconfig should be configured as `Manual Test Mode`.
 
 # Expect result
 
@@ -26,3 +29,4 @@ For more details, please refer to the atcmd USB section of the online document.
 # Supported IC
 
 RTL8730E
+RTL8721F

@@ -7,6 +7,7 @@
 #include "platform_autoconf.h"
 
 #ifndef CONFIG_MP_SHRINK
+#ifdef CONFIG_WLAN
 #include "atcmd_service.h"
 #include "atcmd_wifi.h"
 #ifdef CONFIG_LWIP_LAYER
@@ -42,8 +43,11 @@ extern void ipnat_dump(void);
 
 extern int wifi_set_ips_internal(u8 enable);
 
-#if (defined(CONFIG_LWIP_USB_ETHERNET) || defined(CONFIG_ETHERNET))
+#if defined(CONFIG_LWIP_ETHERNET)
 extern struct netif *pnetif_eth;
+#endif
+#if defined(CONFIG_LWIP_USB_ETHERNET)
+extern struct netif *pnetif_usb_eth;
 #endif
 
 static void init_wifi_struct(void)
@@ -1052,8 +1056,8 @@ void at_wlstate(void *arg)
 	}
 
 	/* show the ethernet interface info */
-#if (defined(CONFIG_LWIP_USB_ETHERNET) || defined(CONFIG_ETHERNET))
 #ifdef CONFIG_LWIP_LAYER
+#if defined(CONFIG_LWIP_ETHERNET)
 	mac = (uint8_t *)(pnetif_eth->hwaddr);
 	ip = (uint8_t *) & (pnetif_eth->ip_addr);
 	gw = (uint8_t *) & (pnetif_eth->gw);
@@ -1064,8 +1068,22 @@ void at_wlstate(void *arg)
 	at_printf("IP  => %d.%d.%d.%d\r\n", ip[0], ip[1], ip[2], ip[3]);
 	at_printf("GW  => %d.%d.%d.%d\r\n", gw[0], gw[1], gw[2], gw[3]);
 	at_printf("MSK  => %d.%d.%d.%d\r\n\r\n", msk[0], msk[1], msk[2], msk[3]);
+#endif /* CONFIG_LWIP_ETHERNET */
+
+#if defined(CONFIG_LWIP_USB_ETHERNET)
+	mac = (uint8_t *)(pnetif_usb_eth->hwaddr);
+	ip = (uint8_t *) & (pnetif_usb_eth->ip_addr);
+	gw = (uint8_t *) & (pnetif_usb_eth->gw);
+	msk = (uint8_t *) & (pnetif_usb_eth->netmask);
+	at_printf("Interface usb ethernet\r\n");
+	at_printf("==============================\r\n");
+	at_printf("MAC => %02x:%02x:%02x:%02x:%02x:%02x\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) ;
+	at_printf("IP  => %d.%d.%d.%d\r\n", ip[0], ip[1], ip[2], ip[3]);
+	at_printf("GW  => %d.%d.%d.%d\r\n", gw[0], gw[1], gw[2], gw[3]);
+	at_printf("MSK  => %d.%d.%d.%d\r\n\r\n", msk[0], msk[1], msk[2], msk[3]);
+#endif /* CONFIG_LWIP_USB_ETHERNET */
 #endif /* CONFIG_LWIP_LAYER */
-#endif /* CONFIG_LWIP_USB_ETHERNET || CONFIG_ETHERNET */
+
 	rtos_mem_free((void *)p_wifi_setting);
 
 #if defined(CONFIG_IP_NAT) && (CONFIG_IP_NAT == 1)
@@ -1627,6 +1645,48 @@ void at_wlcsi(void *arg)
 				csi_param.multi_type = (unsigned char)atoi(argv[j]);
 			}
 		}
+		/* trig_frame_data */
+		else if (0 == strcmp("trig_frame_data", argv[i])) {
+			if ((argc > j) && (strlen(argv[j]) != 0)) {
+				csi_param.trig_frame_data = (u16)atoi(argv[j]);
+			}
+		}
+		/* csi_role */
+		else if (0 == strcmp("csi_role", argv[i])) {
+			if ((argc > j) && (strlen(argv[j]) != 0)) {
+				csi_param.csi_role = (unsigned char)atoi(argv[j]);
+			}
+		}
+		/* alg_opt */
+		else if (0 == strcmp("alg_opt", argv[i])) {
+			if ((argc > j) && (strlen(argv[j]) != 0)) {
+				csi_param.alg_opt = (unsigned char)atoi(argv[j]);
+			}
+		}
+		/* ch_opt */
+		else if (0 == strcmp("ch_opt", argv[i])) {
+			if ((argc > j) && (strlen(argv[j]) != 0)) {
+				csi_param.ch_opt = (unsigned char)atoi(argv[j]);
+			}
+		}
+		/* trig_frame_mgnt */
+		else if (0 == strcmp("trig_frame_mgnt", argv[i])) {
+			if ((argc > j) && (strlen(argv[j]) != 0)) {
+				csi_param.trig_frame_mgnt = (u16)atoi(argv[j]);
+			}
+		}
+		/* trig_frame_ctrl */
+		else if (0 == strcmp("trig_frame_ctrl", argv[i])) {
+			if ((argc > j) && (strlen(argv[j]) != 0)) {
+				csi_param.trig_frame_ctrl = (u16)atoi(argv[j]);
+			}
+		}
+		/* data_bw */
+		else if (0 == strcmp("data_bw", argv[i])) {
+			if ((argc > j) && (strlen(argv[j]) != 0)) {
+				csi_param.data_bw = (unsigned char)atoi(argv[j]);
+			}
+		}
 		/* Invalid input. */
 		else {
 			RTK_LOGW(NOTAG, "[+WLCSI] Invalid parameter type\r\n");
@@ -1664,7 +1724,7 @@ end:
 }
 #endif
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_wifi_items[ ] = {
 #if !(!defined(CONFIG_WHC_INTF_IPC) && !defined(CONFIG_WHC_WIFI_API_PATH) && !defined(CONFIG_WHC_NONE))
 #ifdef CONFIG_LWIP_LAYER
@@ -1705,12 +1765,7 @@ void print_wifi_at(void)
 
 void at_wifi_init(void)
 {
-#ifdef CONFIG_WLAN
 	init_wifi_struct();
-#endif
-#ifndef CONFIG_MP_SHRINK
-	atcmd_service_add_table((log_item_t *)at_wifi_items, sizeof(at_wifi_items) / sizeof(at_wifi_items[0]));
-#endif
 }
-
+#endif /* CONFIG_WLAN */
 #endif /* CONFIG_MP_SHRINK */

@@ -44,8 +44,8 @@ If user want to open audio local play fuction, must change the following Maros b
     3.change the VENDOR_CMD_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT      to     1   in bt_vendor_config.h
     4.change the RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT          to     1   in bt_api_config.h
     5.change kPrimaryAudioConfig in ameba_audio_mixer_usrcfg.cpp:
-         change from   kPrimaryAudioConfig = {1024, 4, RTAUDIO_OUT_MIN_FRAMES_STAGE1};
-                to     kPrimaryAudioConfig = {240, 4, RTAUDIO_OUT_MIN_FRAMES_STAGE2};
+         change from   kPrimaryAudioConfig = {1024, 4, AUDIO_OUT_MIN_FRAMES_STAGE1};
+                to     kPrimaryAudioConfig = {240, 4, AUDIO_OUT_MIN_FRAMES_STAGE2};
     6.  unmask the following code in bt_audio_track_api.c
        from  //track_buf_size = 22608;
         to    track_buf_size = 22608;

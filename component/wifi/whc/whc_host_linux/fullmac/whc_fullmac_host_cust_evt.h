@@ -13,7 +13,7 @@
 
 #include <whc_host_linux.h>
 
-void whc_fullmac_host_recv_cust_evt(u8 *buf);
-void whc_fullmac_host_send_cust_evt(u8 *buf, u32 len);
+void whc_host_recv_cust_evt(u8 *buf);
+void whc_host_send_cust_evt(u8 *buf, u32 len);
 
 #endif //__RTW_LLHW_CUST_EVT_H__

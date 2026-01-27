@@ -35,13 +35,11 @@ int whc_dev_rtw_cli_remove_network(char *ptr, u8 *buf)
 
 int whc_dev_rtw_cli_wpas_test(char *ptr, u8 *buf, int msg_len)
 {
-	int value = 0;
 	(void)buf;
 
 	RTK_LOGE(TAG_WLAN_INIC, "%s,  value: %s\n", __func__, ptr);
 
-	wpas_std_test_cmd(ptr, msg_len);
-
+	whc_dev_wpas_wpa_cli_cmd(ptr, msg_len);
 
 	return 0;
 }

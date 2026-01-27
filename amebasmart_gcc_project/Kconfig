@@ -62,6 +62,19 @@ config SUPPORT_SMP
 config SUPPORT_AUDIO_DEVICE
     def_bool y
 
+# audio cmds
+config SUPPORT_AUDIO_CMD_ARECORD
+    def_bool y
+
+config SUPPORT_AUDIO_CMD_APLAY
+    def_bool y
+
+config SUPPORT_AUDIO_CMD_PLAYER
+    def_bool y
+
+config SUPPORT_AUDIO_CMD_PCRECORD
+    def_bool y
+
 #---------- FEATURE LIST END-------------#
 
 menu "CONFIG Link Option"

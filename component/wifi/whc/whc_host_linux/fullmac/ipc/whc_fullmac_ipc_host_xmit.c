@@ -14,7 +14,7 @@ void whc_fullmac_ipc_host_xmit_done(int idx_wlan)
 {
 	atomic_inc(&global_idev.xmit_priv.skb_free_num);
 	if (atomic_read(&global_idev.xmit_priv.skb_free_num) >= QUEUE_WAKE_THRES) {
-		//dev_dbg(global_idev.fullmac_dev, "wq %d\n", free_num);
+		//dev_dbg(global_idev.pwhc_dev, "wq %d\n", free_num);
 		netif_tx_wake_all_queues(global_idev.pndev[0]);
 		netif_tx_wake_all_queues(global_idev.pndev[1]);
 	}
@@ -35,7 +35,7 @@ static struct dev_sk_buff *whc_fullmac_ipc_host_find_one_free_skb(u32 *skb_index
 	} while (*skb_index != start_idx);
 
 	*b_dropped = true;
-	dev_warn(global_idev.fullmac_dev, "[ERROR] not found free skb. free_skb_num=%d\n", atomic_read(&global_idev.xmit_priv.skb_free_num));
+	dev_warn(global_idev.pwhc_dev, "[ERROR] not found free skb. free_skb_num=%d\n", atomic_read(&global_idev.xmit_priv.skb_free_num));
 	return NULL;
 }
 
@@ -53,7 +53,7 @@ int whc_host_xmit_entry(int idx, struct sk_buff *pskb)
 	int skb_num_ap = global_idev.wifi_user_config.skb_num_ap;
 
 	if (!global_idev.host_init_done) {
-		dev_err(global_idev.fullmac_dev, "Host xmit err: wifi not init\n");
+		dev_err(global_idev.pwhc_dev, "Host xmit err: wifi not init\n");
 		return -1;
 	}
 
@@ -61,7 +61,7 @@ int whc_host_xmit_entry(int idx, struct sk_buff *pskb)
 	if (atomic_read(&global_idev.xmit_priv.skb_free_num) < QUEUE_STOP_THRES) {
 		netif_tx_stop_all_queues(pndev);//, skb_get_queue_mapping(pskb));
 		if (atomic_read(&global_idev.xmit_priv.skb_free_num) == 0) {
-			dev_warn(global_idev.fullmac_dev, "[DEBUG] free_num is zero\n");
+			dev_warn(global_idev.pwhc_dev, "[DEBUG] free_num is zero\n");
 			b_dropped = true;
 			goto func_exit;
 		}
@@ -125,7 +125,7 @@ int whc_host_xmit_init(void)
 	int i;
 
 	if (xmit_priv->host_skb_buff) {
-		dev_err(global_idev.fullmac_dev, "host_skb_buff not mfree|\n");
+		dev_err(global_idev.pwhc_dev, "host_skb_buff not mfree|\n");
 		return -ENOMEM;
 	}
 
@@ -133,11 +133,11 @@ int whc_host_xmit_init(void)
 	xmit_priv->host_skb_buff = (struct dev_sk_buff *)dma_alloc_coherent(pdev, sizeof(struct dev_sk_buff) * skb_num_ap, &xmit_priv->host_skb_buff_phy, GFP_KERNEL);
 	skb_data_buf = dma_alloc_coherent(pdev, xmit_priv->skb_buf_max_size * skb_num_ap, &xmit_priv->host_skb_data_phy, GFP_KERNEL);
 	if (!xmit_priv->host_skb_buff || !skb_data_buf) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
 	}
 	if ((u32)xmit_priv->host_skb_buff_phy & (SKB_CACHE_SZ - 1)) {
-		dev_err(global_idev.fullmac_dev, "%s: skb not align.", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: skb not align.", __func__);
 	}
 
 	memset(xmit_priv->host_skb_buff, 0, sizeof(struct dev_sk_buff) * skb_num_ap);

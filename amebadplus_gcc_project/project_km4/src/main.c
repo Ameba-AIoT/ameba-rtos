@@ -220,9 +220,11 @@ int main(void)
 	bt_inic_init();
 #endif
 
+#ifdef CONFIG_SHELL
 	/* init console */
 	shell_init_rom(0, 0);
 	shell_init_ram();
+#endif
 
 	app_pmu_init();
 #if defined(CONFIG_RTCIO_ENABLED) && CONFIG_RTCIO_ENABLED

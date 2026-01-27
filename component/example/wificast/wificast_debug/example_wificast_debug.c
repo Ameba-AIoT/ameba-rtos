@@ -341,14 +341,14 @@ void command_handle(u16 argc, u8 *argv[])
 
 	if (is_shell) {
 		for (int i = 2; i < argc; i++) {
-			DiagSnPrintf((char *)(cmdbuf + cmdsize), strlen((const char *)argv[i]), "%s ", argv[i]);
-			cmdsize += strlen((const char *)argv[i]) + 1;
+			int written = DiagSnPrintf((char *)(cmdbuf + cmdsize), UART_LOG_CMD_BUFLEN - cmdsize, "%s%c", argv[i], (i == argc - 1) ? '\0' : ' ');
+			cmdsize += written;
 		}
 	} else {
 		memcpy(cmdbuf, argv[2], strlen((const char *)argv[2]) + 1);
 		cmdsize = strlen((const char *)argv[2]) + 1;
 	}
-
+	RTK_LOGI(TAG, "send command %s to "MAC_FMT"\n", cmdbuf, MAC_ARG(mac));
 	if (WIFI_CAST_OK != example_send(WIFI_CAST_DEBUG_COMMAND, mac, cmdbuf, cmdsize)) {
 		RTK_LOGE(TAG, "%s, send fail\n", __func__);
 	}

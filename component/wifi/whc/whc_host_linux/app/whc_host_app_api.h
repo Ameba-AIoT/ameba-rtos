@@ -140,7 +140,7 @@ int whc_host_wifi_dbg(void);
 int whc_host_set_netif_on(void);
 int whc_host_wifi_connect(void);
 int whc_host_wifi_scan(void);
-int whc_host_wifi_on(void);
+int whc_host_set_wifi_on(void);
 int whc_host_wifi_dhcp(void);
 int whc_host_nl_init(void);
 

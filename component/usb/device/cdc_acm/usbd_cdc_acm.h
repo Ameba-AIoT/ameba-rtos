@@ -209,7 +209,7 @@ typedef struct {
  * @param[in] cb: Pointer to the user-defined callback structure.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_cdc_acm_init(u16 bulk_out_xfer_size, u16 bulk_in_xfer_size, usbd_cdc_acm_cb_t *cb);
+int usbd_cdc_acm_init(u32 bulk_out_xfer_size, u32 bulk_in_xfer_size, usbd_cdc_acm_cb_t *cb);
 
 /**
  * @brief De-initializes the CDC ACM class driver.
@@ -223,7 +223,7 @@ int usbd_cdc_acm_deinit(void);
  * @param[in] len: Length of the data in bytes.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_cdc_acm_transmit(u8 *buf, u16 len);
+int usbd_cdc_acm_transmit(u8 *buf, u32 len);
 
 #if CONFIG_CDC_ACM_NOTIFY
 /**

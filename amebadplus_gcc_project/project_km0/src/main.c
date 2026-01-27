@@ -97,12 +97,14 @@ int main(void)
 	bt_inic_init();
 #endif
 
+#ifdef CONFIG_SHELL
 	shell_init_rom(0, NULL);
 	shell_init_ram();
 	/* Register Log Uart Callback function */
 	InterruptRegister((IRQ_FUN) shell_uart_irq_rom, UART_LOG_IRQ, (u32)NULL, INT_PRI_LOWEST);
 	InterruptEn(UART_LOG_IRQ, INT_PRI_LOWEST);
 	LOGUART_INTCoreConfig(LOGUART_DEV, LOGUART_BIT_INTR_MASK_KM0, ENABLE);
+#endif
 
 	app_IWDG_init();
 

@@ -19,7 +19,7 @@ static int rtw_promisc_rx_80211_radiotap(struct rtw_rx_pkt_info *ppktinfo)
 	uint32_t present = 0 ;
 	int freq = 0;
 
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s enter\n", __func__);
+	dev_dbg(global_idev.pwhc_dev, "[fullmac]: %s enter\n", __func__);
 	freq = rtw_ch2freq(ppktinfo->channel);
 	present_len = sizeof(uint8_t); /* Data rate */
 	present |= (1 << IEEE80211_RADIOTAP_RATE);
@@ -36,7 +36,7 @@ static int rtw_promisc_rx_80211_radiotap(struct rtw_rx_pkt_info *ppktinfo)
 	/* allocate skb to store ethernet data from IPC. */
 	pskb = netdev_alloc_skb(global_idev.pndev[0], ppktinfo->len + rtap_len);
 	if (pskb == NULL) {
-		dev_err(global_idev.fullmac_dev, "%s: Alloc skb rx buf Err, alloc_sz %d!!\n\r",
+		dev_err(global_idev.pwhc_dev, "%s: Alloc skb rx buf Err, alloc_sz %d!!\n\r",
 				__func__, ppktinfo->len);
 		return -ENOMEM;
 	}
@@ -100,11 +100,11 @@ static int rtw_promisc_rx_ether(struct rtw_rx_pkt_info *ppktinfo)
 {
 	struct sk_buff *pskb = NULL;
 
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s enter\n", __func__);
+	dev_dbg(global_idev.pwhc_dev, "[fullmac]: %s enter\n", __func__);
 	/* allocate skb to store ethernet data from IPC. */
 	pskb = netdev_alloc_skb(global_idev.pndev[0], ppktinfo->len);
 	if (pskb == NULL) {
-		dev_err(global_idev.fullmac_dev, "%s: Alloc skb rx buf Err, alloc_sz %d!!\n\r",
+		dev_err(global_idev.pwhc_dev, "%s: Alloc skb rx buf Err, alloc_sz %d!!\n\r",
 				__func__, ppktinfo->len);
 		return -ENOMEM;
 	}
@@ -128,7 +128,7 @@ int rtw_promisc_rx(struct rtw_rx_pkt_info *ppktinfo)
 	struct net_device *ndev = global_idev.pndev[0];
 
 	if (ndev == NULL) {
-		dev_err(global_idev.fullmac_dev, "%s: ndev is NULL!\n\r",
+		dev_err(global_idev.pwhc_dev, "%s: ndev is NULL!\n\r",
 				__func__);
 		return -EINVAL;
 	}

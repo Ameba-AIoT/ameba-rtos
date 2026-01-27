@@ -1111,8 +1111,7 @@ end:
 	return;
 }
 
-
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_http_items[] = {
 	{"+HTTPHEADER", at_httpheader},
 	{"+HTTPCONF", at_httpconf},
@@ -1131,11 +1130,6 @@ void print_http_at(void)
 	for (i = 0; i < itemNum; i++)  {
 		at_printf("AT%s\r\n", at_http_items[i].log_cmd);
 	}
-}
-
-void at_http_init(void)
-{
-	atcmd_service_add_table((log_item_t *)at_http_items, sizeof(at_http_items) / sizeof(at_http_items[0]));
 }
 
 #endif /* CONFIG_ATCMD_FTTP */

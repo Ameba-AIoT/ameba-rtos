@@ -56,6 +56,20 @@ config WIFI_POWER_TABLE_USRCFG_1v8
 config WIFI_POWER_TABLE_USRCFG_3v3_1v25
     def_bool y
 
+#
+# Audio features
+#
+
+# audio cmds
+config SUPPORT_AUDIO_CMD_ARECORD
+    def_bool y
+
+config SUPPORT_AUDIO_CMD_APLAY
+    def_bool y
+
+config SUPPORT_AUDIO_CMD_PLAYER
+    def_bool y
+
 #---------- FEATURE LIST END-------------#
 
 menu "CONFIG TrustZone"
@@ -202,8 +216,10 @@ menu "CONFIG WHC INTF"
         choice
            prompt "HW INTERFACE"
            config WHC_INTF_SDIO
+                depends on !WHC_FULLMAC_HOST
                 bool "WHC_INTF_SDIO"
             config WHC_INTF_USB
+                depends on !WHC_FULLMAC_HOST
                 bool "WHC_INTF_USB"
                 select USB_HAL_LIB
                 select USB_DEVICE_EN
@@ -295,23 +311,13 @@ menu "CONFIG WIFI"
         default y
 
     if WLAN_MENU
-
-        choice
-            depends on !AMEBA_RLS
-            prompt "SDK MODE"
-            default NORMAL_SDK
-            config NORMAL_SDK
-                bool "NORMAL_INIC"
-            config ZEPHYR_SDK
-                bool "ZEPHYR_INIC"
-        endchoice
         orsource "../component/wifi/Kconfig.wifi"
 
         config WHC_INTF_IPC_MENU
             bool
             select WHC_WIFI_API_PATH
             select WLAN
-            select LWIP_LAYER if WHC_HOST && !MP_SHRINK && !ZEPHYR_SDK
+            select LWIP_LAYER if WHC_HOST && !MP_SHRINK && !PLATFORM_ZEPHYR
             select FW_DRIVER_COEXIST if WHC_DEV
             select ENABLE_WPS if WHC_HOST && WIFI_WPS_ENABLE_MENU
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS

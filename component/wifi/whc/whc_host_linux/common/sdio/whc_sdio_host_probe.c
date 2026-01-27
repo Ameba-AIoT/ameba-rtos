@@ -165,9 +165,9 @@ int whc_sdio_host_suspend_common(struct whc_sdio *priv)
 {
 #if defined(CONFIG_WHC_WIFI_API_PATH)
 	/* staion mode */
-	if (whc_fullmac_host_wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) {
+	if (whc_host_wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) {
 		/* update ip address success */
-		if (whc_fullmac_host_update_ip_addr()) {
+		if (whc_host_update_ip_addr()) {
 			return -EPERM;
 		}
 	}

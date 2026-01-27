@@ -15,6 +15,22 @@ config SUPPORT_HEAP_TRACE
 #---------- FEATURE LIST START-----------#
 #All features are invisible in menuconfig
 
+#
+# Audio features
+#
+
+# audio cmds
+config SUPPORT_AUDIO_CMD_ARECORD
+    def_bool y
+
+config SUPPORT_AUDIO_CMD_APLAY
+    def_bool y
+
+config SUPPORT_AUDIO_CMD_PLAYER
+    def_bool y
+
+config SUPPORT_AUDIO_CMD_PCRECORD
+    def_bool y
 
 #---------- FEATURE LIST END-------------#
 

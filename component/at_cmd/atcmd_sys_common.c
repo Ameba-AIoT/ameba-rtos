@@ -644,9 +644,3 @@ void print_system_common_at(void)
 		at_printf("AT%s\r\n", at_sys_common_items[index].log_cmd);
 	}
 }
-
-
-void at_sys_init_common(void)
-{
-	atcmd_service_add_table((log_item_t *)at_sys_common_items, sizeof(at_sys_common_items) / sizeof(at_sys_common_items[0]));
-}

@@ -47,15 +47,15 @@ static int whc_fullmac_host_add_key_ops(struct wiphy *wiphy, struct net_device *
 	u8 wlan_idx;
 	struct rtw_wpa_4way_status	rpt_4way = {0};
 
-	dev_dbg(global_idev.fullmac_dev, "--- %s ---", __func__);
-	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	dev_dbg(global_idev.pwhc_dev, "--- %s ---", __func__);
+	whc_host_dev_driver_is_mp(&is_mp);
 	if (is_mp == 1) {
 		return -EPERM;
 	}
 
 	crypt = kmalloc(sizeof(struct rtw_crypt_info), GFP_KERNEL);
 	if (!crypt) {
-		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
 	}
 
@@ -67,23 +67,23 @@ static int whc_fullmac_host_add_key_ops(struct wiphy *wiphy, struct net_device *
 		goto exit;
 	}
 
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: netdev = %d", crypt->wlan_idx);
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: key_index = %d", key_index);
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: pairwise= %d", pairwise);
+	dev_dbg(global_idev.pwhc_dev, "[fullmac]: netdev = %d", crypt->wlan_idx);
+	dev_dbg(global_idev.pwhc_dev, "[fullmac]: key_index = %d", key_index);
+	dev_dbg(global_idev.pwhc_dev, "[fullmac]: pairwise= %d", pairwise);
 	if (pairwise) {
-		dev_dbg(global_idev.fullmac_dev, "[fullmac]: mac addr = %x %x %x %x %x %x", *mac_addr, *(mac_addr + 1), *(mac_addr + 2), *(mac_addr + 3), *(mac_addr + 4),
+		dev_dbg(global_idev.pwhc_dev, "[fullmac]: mac addr = %x %x %x %x %x %x", *mac_addr, *(mac_addr + 1), *(mac_addr + 2), *(mac_addr + 3), *(mac_addr + 4),
 				*(mac_addr + 5));
 	}
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: key material. key len = %d.\n", params->key_len);
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: cipher suite = %08x", params->cipher);
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: key mode = %d", params->mode);
+	dev_dbg(global_idev.pwhc_dev, "[fullmac]: key material. key len = %d.\n", params->key_len);
+	dev_dbg(global_idev.pwhc_dev, "[fullmac]: cipher suite = %08x", params->cipher);
+	dev_dbg(global_idev.pwhc_dev, "[fullmac]: key mode = %d", params->mode);
 
 	if (((params->cipher & 0xff) == 1) || ((params->cipher & 0xff) == 5)) {
 		if ((rtw_netdev_idx(ndev) == WHC_STA_PORT) && netif_dormant(ndev)) {
 			netif_dormant_off(ndev);
 		}
 		/* Set WEP key by rtos. */
-		dev_dbg(global_idev.fullmac_dev, "--- %s --- return: set key by rtos self. ", __func__);
+		dev_dbg(global_idev.pwhc_dev, "--- %s --- return: set key by rtos self. ", __func__);
 		kfree(crypt);
 		return 0;
 	}
@@ -110,14 +110,14 @@ static int whc_fullmac_host_add_key_ops(struct wiphy *wiphy, struct net_device *
 	}
 #endif
 
-	ret = whc_fullmac_host_add_key(crypt);
+	ret = whc_host_add_key(crypt);
 	if ((rtw_netdev_idx(ndev) == WHC_STA_PORT) && (ret == 0) && netif_dormant(ndev)) {
 		netif_dormant_off(ndev);
 	}
 exit:
 
 	wlan_idx = rtw_netdev_idx(ndev);
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: wlan_idx = %d, is_need_4wway= %d, is_4way_ongoing =%d", wlan_idx, global_idev.is_need_4way[wlan_idx],
+	dev_dbg(global_idev.pwhc_dev, "[fullmac]: wlan_idx = %d, is_need_4wway= %d, is_4way_ongoing =%d", wlan_idx, global_idev.is_need_4way[wlan_idx],
 			global_idev.is_4way_ongoing[wlan_idx]);
 	//PTK is installed, notify NP coex, 4-way handshake end
 	if (pairwise && global_idev.is_need_4way[wlan_idx] && global_idev.is_4way_ongoing[wlan_idx]) {
@@ -130,8 +130,8 @@ exit:
 		rpt_4way.is_start = false;
 		rpt_4way.is_success = true;
 		rpt_4way.wlan_idx = wlan_idx;
-		ret = whc_fullmac_host_wpa_4way_status_indicate(&rpt_4way);
-		dev_dbg(global_idev.fullmac_dev, "[fullmac]: notify 4-way end");
+		ret = whc_host_wpa_4way_status_indicate(&rpt_4way);
+		dev_dbg(global_idev.pwhc_dev, "[fullmac]: notify 4-way end");
 		global_idev.is_4way_ongoing[wlan_idx] = 0;
 	}
 
@@ -148,7 +148,7 @@ static int whc_fullmac_host_get_key(struct wiphy *wiphy, struct net_device *ndev
 									, const u8 *mac_addr, void *cookie
 									, void (*callback)(void *cookie, struct key_params *))
 {
-	dev_dbg(global_idev.fullmac_dev, "--- %s --- !!!!!!!!!!", __func__);
+	dev_dbg(global_idev.pwhc_dev, "--- %s --- !!!!!!!!!!", __func__);
 	return 0;
 }
 
@@ -159,7 +159,7 @@ static int whc_fullmac_host_del_key(struct wiphy *wiphy, struct net_device *ndev
 									, u8 key_index, bool pairwise, const u8 *mac_addr)
 
 {
-	dev_dbg(global_idev.fullmac_dev, "--- %s --- !!!!!!!!!!!!", __func__);
+	dev_dbg(global_idev.pwhc_dev, "--- %s --- !!!!!!!!!!!!", __func__);
 	if ((rtw_netdev_idx(ndev) == WHC_STA_PORT) && !netif_dormant(ndev)) {
 		netif_dormant_on(ndev);
 	}
@@ -172,7 +172,7 @@ static int whc_fullmac_host_set_default_key(struct wiphy *wiphy, struct net_devi
 #endif
 		, u8 key_index, bool unicast, bool multicast)
 {
-	dev_dbg(global_idev.fullmac_dev, "--- %s ---", __func__);
+	dev_dbg(global_idev.pwhc_dev, "--- %s ---", __func__);
 	return 0;
 }
 
@@ -182,14 +182,14 @@ static int whc_fullmac_host_set_default_mgmt_key(struct wiphy *wiphy, struct net
 #endif
 		, u8 key_index)
 {
-	dev_dbg(global_idev.fullmac_dev, "--- %s ---", __func__);
+	dev_dbg(global_idev.pwhc_dev, "--- %s ---", __func__);
 	return 0;
 }
 
 #if defined(CONFIG_GTK_OL)
 static int whc_fullmac_host_set_rekey_data(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_gtk_rekey_data *data)
 {
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
+	dev_dbg(global_idev.pwhc_dev, "[fullmac]: %s", __func__);
 	return 0;
 }
 #endif /*CONFIG_GTK_OL*/
@@ -200,16 +200,16 @@ static int whc_fullmac_host_set_pmksa(struct wiphy *wiphy, struct net_device *nd
 	dma_addr_t		pmksa_ops_phy;
 	u8 is_mp = 0;
 
-	dev_dbg(global_idev.fullmac_dev, "--- %s ---", __func__);
+	dev_dbg(global_idev.pwhc_dev, "--- %s ---", __func__);
 
-	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	whc_host_dev_driver_is_mp(&is_mp);
 	if (is_mp == 1) {
 		return -EPERM;
 	}
 
 	pmksa_ops_vir = rtw_malloc(sizeof(struct rtw_pmksa_ops_t), &pmksa_ops_phy);
 	if (!pmksa_ops_vir) {
-		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
 	}
 
@@ -218,14 +218,14 @@ static int whc_fullmac_host_set_pmksa(struct wiphy *wiphy, struct net_device *nd
 		memcpy(pmksa_ops_vir->pmk, pmksa->pmk, 32);
 	}
 	if (pmksa->bssid) {
-		dev_dbg(global_idev.fullmac_dev, "set [%02x:%02x:%02x:%02x:%02x:%02x] pmksa",
+		dev_dbg(global_idev.pwhc_dev, "set [%02x:%02x:%02x:%02x:%02x:%02x] pmksa",
 				*pmksa->bssid, *(pmksa->bssid + 1), *(pmksa->bssid + 2), *(pmksa->bssid + 3), *(pmksa->bssid + 4), *(pmksa->bssid + 5));
 		memcpy(pmksa_ops_vir->mac_addr, pmksa->bssid, 6);
 	}
 
 	pmksa_ops_vir->wlan_idx = rtw_netdev_idx(ndev);
 	pmksa_ops_vir->ops_id = PMKSA_SET;
-	whc_fullmac_host_pmksa_ops(pmksa_ops_phy);
+	whc_host_pmksa_ops(pmksa_ops_phy);
 
 	if (pmksa_ops_vir) {
 		rtw_mfree(sizeof(struct rtw_pmksa_ops_t), pmksa_ops_vir, pmksa_ops_phy);
@@ -240,16 +240,16 @@ static int whc_fullmac_host_del_pmksa(struct wiphy *wiphy, struct net_device *nd
 	dma_addr_t		pmksa_ops_phy;
 	u8 is_mp = 0;
 
-	dev_dbg(global_idev.fullmac_dev, "--- %s ---", __func__);
+	dev_dbg(global_idev.pwhc_dev, "--- %s ---", __func__);
 
-	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	whc_host_dev_driver_is_mp(&is_mp);
 	if (is_mp == 1) {
 		return -EPERM;
 	}
 
 	pmksa_ops_vir = rtw_malloc(sizeof(struct rtw_pmksa_ops_t), &pmksa_ops_phy);
 	if (!pmksa_ops_vir) {
-		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
 	}
 
@@ -257,14 +257,14 @@ static int whc_fullmac_host_del_pmksa(struct wiphy *wiphy, struct net_device *nd
 		memcpy(pmksa_ops_vir->pmkid, pmksa->pmkid, 16);
 	}
 	if (pmksa->bssid) {
-		dev_dbg(global_idev.fullmac_dev, "delete [%02x:%02x:%02x:%02x:%02x:%02x] pmksa",
+		dev_dbg(global_idev.pwhc_dev, "delete [%02x:%02x:%02x:%02x:%02x:%02x] pmksa",
 				*pmksa->bssid, *(pmksa->bssid + 1), *(pmksa->bssid + 2), *(pmksa->bssid + 3), *(pmksa->bssid + 4), *(pmksa->bssid + 5));
 		memcpy(pmksa_ops_vir->mac_addr, pmksa->bssid, 6);
 	}
 
 	pmksa_ops_vir->wlan_idx = rtw_netdev_idx(ndev);
 	pmksa_ops_vir->ops_id = PMKSA_DEL;
-	whc_fullmac_host_pmksa_ops(pmksa_ops_phy);
+	whc_host_pmksa_ops(pmksa_ops_phy);
 
 	if (pmksa_ops_vir) {
 		rtw_mfree(sizeof(struct rtw_pmksa_ops_t), pmksa_ops_vir, pmksa_ops_phy);
@@ -279,22 +279,22 @@ static int whc_fullmac_host_flush_pmksa(struct wiphy *wiphy, struct net_device *
 	dma_addr_t		pmksa_ops_phy;
 	u8 is_mp = 0;
 
-	dev_dbg(global_idev.fullmac_dev, "--- %s --- ", __func__);
+	dev_dbg(global_idev.pwhc_dev, "--- %s --- ", __func__);
 
-	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	whc_host_dev_driver_is_mp(&is_mp);
 	if (is_mp == 1) {
 		return -EPERM;
 	}
 
 	pmksa_ops_vir = rtw_malloc(sizeof(struct rtw_pmksa_ops_t), &pmksa_ops_phy);
 	if (!pmksa_ops_vir) {
-		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
 	}
 
 	pmksa_ops_vir->wlan_idx = rtw_netdev_idx(ndev);
 	pmksa_ops_vir->ops_id = PMKSA_FLUSH;
-	whc_fullmac_host_pmksa_ops(pmksa_ops_phy);
+	whc_host_pmksa_ops(pmksa_ops_phy);
 
 	if (pmksa_ops_vir) {
 		rtw_mfree(sizeof(struct rtw_pmksa_ops_t), pmksa_ops_vir, pmksa_ops_phy);

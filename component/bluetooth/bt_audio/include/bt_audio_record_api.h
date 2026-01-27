@@ -152,14 +152,14 @@ uint32_t rtk_bt_audio_record_get_channel_count(void *record_hdl);
  * The meaning of the string is to choose "no_afe_pure_data" mode for audio capture.
  * [amebalite] & [amebaSmart]: There are 4 modes, all take the default above amic setting for example,
  *              the data stucture is as follows:
- *              mode(no_afe_pure_data): take RTAudioRecordConfig's channel_count 3 for example:mic1+mic2+mic3;
+ *              mode(no_afe_pure_data): take AudioRecordConfig's channel_count 3 for example:mic1+mic2+mic3;
  *                                     for lite demo borad, mic3 is ref data as the hardware design.
- *              mode(do_afe_only_out): take RTAudioRecordConfig's channel_count 1 for example:out;
+ *              mode(do_afe_only_out): take AudioRecordConfig's channel_count 1 for example:out;
  *                                     out means the mic data after denoise.
- *              mode(no_afe_all_data): take RTAudioRecordConfig's channel_count 4 for example:mic1+mic2+mic3+out;
+ *              mode(no_afe_all_data): take AudioRecordConfig's channel_count 4 for example:mic1+mic2+mic3+out;
  *                                     for lite demo borad, mic3 is ref data as the hardware design.
  *                                     out is NULL, and for the app to set.
- *              mode(do_afe_all_data): take RTAudioRecordConfig's channel_count 4 for example:mic1+mic2+mic3+out;
+ *              mode(do_afe_all_data): take AudioRecordConfig's channel_count 4 for example:mic1+mic2+mic3+out;
  *                                     for lite demo borad, mic3 is ref data as the hardware design.
  *                                     out means the mic data after denoise.
  * If default setting meets your requirements, no need to set again.
@@ -184,7 +184,7 @@ uint16_t rtk_bt_audio_record_set_capture_volume(uint32_t channels, uint32_t volu
 /**
  * @brief     Set Capture Mic type for channel.this function should be called after rtk_bt_audio_record_init
  * @param[in] channel_num: the channel number to set mic type.
- * @param[in] mic_category: the mic type, can be RTAUDIO_AMIC1...RTAUDIO_DMIC8.
+ * @param[in] mic_category: the mic type, can be AUDIO_AMIC1...AUDIO_DMIC8.
  *           [amebalite] support AMIC1-AMIC3, DMIC1-DMIC4
  *           [amebasmart] support AMIC1-AMIC5, DMIC1-DMIC8
  * @return
@@ -195,10 +195,10 @@ uint16_t rtk_bt_audio_record_set_channel_mic_category(uint32_t channel_num, uint
 
 /**
  * @brief     Set Micbst Gain.this function should be called after rtk_bt_audio_record_init
- * @param[in] mic_category: the mic type, can be RTAUDIO_AMIC1...RTAUDIO_DMIC8.
+ * @param[in] mic_category: the mic type, can be AUDIO_AMIC1...AUDIO_DMIC8.
  *           [amebalite] support AMIC1-AMIC3, DMIC1-DMIC4
  *           [amebasmart] support AMIC1-AMIC5, DMIC1-DMIC8
- * @param[in] gain.can be RTAUDIO_MICBST_GAIN_0DB-RTAUDIO_MICBST_GAIN_40DB
+ * @param[in] gain.can be AUDIO_MICBST_GAIN_0DB-AUDIO_MICBST_GAIN_40DB
  * @return
  *                              - 0  : Succeed
  *                              - others: Error code
@@ -207,10 +207,10 @@ uint16_t rtk_bt_audio_record_set_mic_bst_gain(uint32_t mic_category, uint32_t ga
 
 /**
  * @brief     Get Micbst Gain.this function should be called after rtk_bt_audio_record_init
- * @param[in] mic_category: the mic type, can be RTAUDIO_AMIC1...RTAUDIO_DMIC8.
+ * @param[in] mic_category: the mic type, can be AUDIO_AMIC1...AUDIO_DMIC8.
  *           [amebalite] support AMIC1-AMIC3, DMIC1-DMIC4
  *           [amebasmart] support AMIC1-AMIC5, DMIC1-DMIC8
- * @return gain of mic_category, can be RTAUDIO_MICBST_GAIN_0DB-RTAUDIO_MICBST_GAIN_40DB
+ * @return gain of mic_category, can be AUDIO_MICBST_GAIN_0DB-AUDIO_MICBST_GAIN_40DB
  */
 int32_t rtk_bt_audio_record_get_mic_bst_gain(uint32_t mic_category);
 

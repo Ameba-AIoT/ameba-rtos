@@ -11,7 +11,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 if(CONFIG_AMEBASMART OR CONFIG_AMEBALITE)
 	ameba_list_append(public_libraries ${CMAKE_CURRENT_SOURCE_DIR}/lib/${c_SOC_TYPE}/${c_MCU_TYPE}/btmesh.a)
-elseif(CONFIG_AMEBADPLUS)
+elseif(CONFIG_AMEBADPLUS OR CONFIG_AMEBAGREEN2)
 	ameba_list_append(public_libraries ${CMAKE_CURRENT_SOURCE_DIR}/lib/${c_SOC_TYPE}/btmesh.a)
 endif()
 

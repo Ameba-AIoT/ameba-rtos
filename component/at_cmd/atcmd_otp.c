@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "platform_autoconf.h"
+#ifndef CONFIG_AMEBAD
+
 #include "atcmd_service.h"
 
 static const char *TAG = "ATCMD_OTP";
@@ -168,12 +171,8 @@ exit:
 	rtos_mem_free(EfuseBuf);
 }
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_otp_items[] = {
 	{"+OTP", at_otp},
 };
-
-void at_otp_init(void)
-{
-	atcmd_service_add_table((log_item_t *)at_otp_items, sizeof(at_otp_items) / sizeof(at_otp_items[0]));
-}
+#endif // CONFIG_AMEBAD

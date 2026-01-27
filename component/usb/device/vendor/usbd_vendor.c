@@ -21,7 +21,7 @@ static int usbd_vendor_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
 static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
-static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
+static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_vendor_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
@@ -494,7 +494,7 @@ static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
   * @param  ep_addr: endpoint address
   * @retval Status
   */
-static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
+static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 	usbd_ep_t *ep_isoc_out = &cdev->ep_isoc_out;
@@ -811,7 +811,7 @@ int usbd_vendor_deinit(void)
 	return HAL_OK;
 }
 
-int usbd_vendor_transmit_bulk_data(u8 *buf, u16 len)
+int usbd_vendor_transmit_bulk_data(u8 *buf, u32 len)
 {
 	int ret = HAL_OK;
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
@@ -839,7 +839,7 @@ int usbd_vendor_transmit_bulk_data(u8 *buf, u16 len)
 	return ret;
 }
 
-int usbd_vendor_transmit_intr_data(u8 *buf, u16 len)
+int usbd_vendor_transmit_intr_data(u8 *buf, u32 len)
 {
 	int ret = HAL_OK;
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
@@ -867,7 +867,7 @@ int usbd_vendor_transmit_intr_data(u8 *buf, u16 len)
 	return ret;
 }
 
-int usbd_vendor_transmit_isoc_data(u8 *buf, u16 len)
+int usbd_vendor_transmit_isoc_data(u8 *buf, u32 len)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 	usb_dev_t *dev = cdev->dev;

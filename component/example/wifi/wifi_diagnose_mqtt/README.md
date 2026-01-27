@@ -8,7 +8,7 @@ None
 
 # SW configuration
 
-1. Use cmd `./menuconfig.py` and select `CONFIG APPLICATION`->`Enable diagnose`.
+1. Use menuconfig and select `CONFIG APPLICATION`->`Enable diagnose`.
 
 2. Update MQTT Broker address in `example_wifi_diagnose_mqtt.c`
    ```C

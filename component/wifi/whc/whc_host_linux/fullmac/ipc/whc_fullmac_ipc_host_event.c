@@ -50,13 +50,13 @@ static void whc_fullmac_host_scan_report_indicate(struct event_priv_t *event_pri
 	u32 ie_len = p_ipc_msg->param_buf[5];
 
 	if (!global_idev.event_ch) {
-		dev_err(global_idev.fullmac_dev, "%s,%s: event_priv_t is NULL in!\n", "event", __func__);
+		dev_err(global_idev.pwhc_dev, "%s,%s: event_priv_t is NULL in!\n", "event", __func__);
 		goto func_exit;
 	}
 
 	pdev = global_idev.ipc_dev;
 	if (!pdev) {
-		dev_err(global_idev.fullmac_dev, "%s,%s: device is NULL in scan!\n", "event", __func__);
+		dev_err(global_idev.pwhc_dev, "%s,%s: device is NULL in scan!\n", "event", __func__);
 		goto func_exit;
 	}
 
@@ -66,7 +66,7 @@ func_exit:
 	return;
 }
 
-static void whc_fullmac_host_event_update_regd_indicate(struct event_priv_t *event_priv, struct whc_ipc_dev_req_msg *p_ipc_msg)
+static void whc_host_event_update_regd_indicate(struct event_priv_t *event_priv, struct whc_ipc_dev_req_msg *p_ipc_msg)
 {
 	struct rtw_country_code_table *ptab = (struct rtw_country_code_table *)llhw_ipc_fw_phy_to_virt(p_ipc_msg->param_buf[0]);
 	(void)event_priv;
@@ -76,20 +76,20 @@ static void whc_fullmac_host_event_update_regd_indicate(struct event_priv_t *eve
 	return;
 }
 
-static void whc_fullmac_host_event_set_acs_info(struct whc_ipc_dev_req_msg *p_ipc_msg)
+static void whc_host_event_set_acs_info(struct whc_ipc_dev_req_msg *p_ipc_msg)
 {
 	u8 idx = 0;
 	struct device *pdev = NULL;
 	struct rtw_acs_mntr_rpt *acs_rpt = llhw_ipc_fw_phy_to_virt(p_ipc_msg->param_buf[0]);
 
 	if (!global_idev.event_ch) {
-		dev_err(global_idev.fullmac_dev, "%s,%s: event_priv_t is NULL in!\n", "event", __func__);
+		dev_err(global_idev.pwhc_dev, "%s,%s: event_priv_t is NULL in!\n", "event", __func__);
 		goto func_exit;
 	}
 
 	pdev = global_idev.ipc_dev;
 	if (!pdev) {
-		dev_err(global_idev.fullmac_dev, "%s,%s: device is NULL in scan!\n", "event", __func__);
+		dev_err(global_idev.pwhc_dev, "%s,%s: device is NULL in scan!\n", "event", __func__);
 		goto func_exit;
 	}
 
@@ -109,7 +109,7 @@ func_exit:
 	return;
 }
 
-static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *event_priv, struct whc_ipc_dev_req_msg *p_ipc_msg)
+static void whc_host_event_join_status_indicate(struct event_priv_t *event_priv, struct whc_ipc_dev_req_msg *p_ipc_msg)
 {
 	struct mlme_priv_t *mlme_priv = &global_idev.mlme_priv;
 	u32 event = (u32)p_ipc_msg->param_buf[0];
@@ -138,13 +138,13 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 	struct rtw_wpa_4way_status	rpt_4way = {0};
 
 	if (!global_idev.event_ch) {
-		dev_err(global_idev.fullmac_dev, "%s,%s: event_priv_t is NULL in!\n", "event", __func__);
+		dev_err(global_idev.pwhc_dev, "%s,%s: event_priv_t is NULL in!\n", "event", __func__);
 		goto func_exit;
 	}
 
 	pdev = global_idev.ipc_dev;
 	if (!pdev) {
-		dev_err(global_idev.fullmac_dev, "%s,%s: device is NULL in scan!\n", "event", __func__);
+		dev_err(global_idev.pwhc_dev, "%s,%s: device is NULL in scan!\n", "event", __func__);
 		goto func_exit;
 	}
 
@@ -158,7 +158,7 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 		if (join_status == RTW_JOINSTATUS_DISCONNECT) {
 			disconnect = &join_status_info->priv.disconnect;
 			disassoc_reason = (u16)(disconnect->disconn_reason && 0xffff);
-			dev_dbg(global_idev.fullmac_dev, "%s: disassoc_reason=%d \n", __func__, disassoc_reason);
+			dev_dbg(global_idev.pwhc_dev, "%s: disassoc_reason=%d \n", __func__, disassoc_reason);
 			whc_fullmac_host_disconnect_indicate(disassoc_reason, 1, join_status_info->bssid);
 		}
 		if (global_idev.mlme_priv.b_in_disconnect) {
@@ -167,16 +167,16 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 		}
 	}
 	if (event == RTW_EVENT_AP_STA_ASSOC) {
-		dev_dbg(global_idev.fullmac_dev, "%s: sta assoc \n", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: sta assoc \n", __func__);
 		sta_assoc_info = (struct rtw_event_ap_sta_assoc *)evt_info;
 		whc_fullmac_host_sta_assoc_indicate(sta_assoc_info->frame, sta_assoc_info->frame_len);
 	}
 
 	if (event == RTW_EVENT_AP_STA_DISASSOC) {
-		dev_dbg(global_idev.fullmac_dev, "%s: sta disassoc \n", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: sta disassoc \n", __func__);
 
 		wlan_idx = 1;
-		dev_dbg(global_idev.fullmac_dev, "[fullmac]: wlan_idx = %d, is_need_4way= %d, is_4way_ongoing =%d", wlan_idx, global_idev.is_need_4way[wlan_idx],
+		dev_dbg(global_idev.pwhc_dev, "[fullmac]: wlan_idx = %d, is_need_4way= %d, is_4way_ongoing =%d", wlan_idx, global_idev.is_need_4way[wlan_idx],
 				global_idev.is_4way_ongoing[wlan_idx]);
 		//notify NP coex, 4-way handshake end
 		if (global_idev.is_need_4way[wlan_idx] && global_idev.is_4way_ongoing[wlan_idx] > 0) {
@@ -185,8 +185,8 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 				rpt_4way.is_start = false;//
 				rpt_4way.is_success = true;//4-way process end
 				rpt_4way.wlan_idx = wlan_idx;
-				whc_fullmac_host_wpa_4way_status_indicate(&rpt_4way);
-				dev_dbg(global_idev.fullmac_dev, "llhw indicate 4-way end\n");
+				whc_host_wpa_4way_status_indicate(&rpt_4way);
+				dev_dbg(global_idev.pwhc_dev, "llhw indicate 4-way end\n");
 			}
 		}
 
@@ -195,7 +195,7 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 	}
 
 	if (event == RTW_EVENT_EXTERNAL_AUTH_REQ) {
-		dev_dbg(global_idev.fullmac_dev, "%s: auth req \n", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: auth req \n", __func__);
 		whc_fullmac_host_external_auth_request(evt_info);
 	}
 
@@ -227,7 +227,7 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 			}
 		}
 #endif
-		dev_dbg(global_idev.fullmac_dev, "%s: rx mgnt \n", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: rx mgnt \n", __func__);
 		/*channel need get, force 6 seems ok temporary*/
 		cfg80211_rx_mgmt(wdev, rtw_ch2freq(channel), 0, rx_mgnt_info->frame, rx_mgnt_info->frame_len, 0);
 	}
@@ -258,12 +258,12 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 			}
 		}
 #endif
-		dev_dbg(global_idev.fullmac_dev, "%s: rx mgnt \n", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: rx mgnt \n", __func__);
 		cfg80211_rx_mgmt(wdev, rtw_ch2freq(channel), 0, rx_mgnt_info->frame, rx_mgnt_info->frame_len, 0);
 	}
 
 	if (event == RTW_EVENT_OWE_PEER_KEY_RECV) {
-		dev_dbg(global_idev.fullmac_dev, "%s: owe update \n", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: owe update \n", __func__);
 		whc_fullmac_host_update_owe_info_event(evt_info);
 	}
 
@@ -276,12 +276,12 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 	}
 #endif
 	if (event == RTW_EVENT_SME_AUTH_TIMEOUT) {
-		dev_dbg(global_idev.fullmac_dev, "%s: RTW_EVENT_SME_AUTH_TIMEOUT \n", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: RTW_EVENT_SME_AUTH_TIMEOUT \n", __func__);
 		auth_timeout_info = (struct rtw_event_sme_auth_timeout *)evt_info;
 		cfg80211_auth_timeout(pndev, auth_timeout_info->bssid);
 
 	} else if (event == RTW_EVENT_SME_ASSOC_TIMEOUT) {
-		dev_dbg(global_idev.fullmac_dev, "%s: RTW_EVENT_SME_ASSOC_TIMEOUT \n", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: RTW_EVENT_SME_ASSOC_TIMEOUT \n", __func__);
 
 		if (sme_priv->cfg80211_assoc_bss) {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
@@ -296,16 +296,16 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 #endif
 			sme_priv->cfg80211_assoc_bss = NULL;
 		} else {
-			dev_dbg(global_idev.fullmac_dev, "%s(): association timeout but no corresponding bss recorded\n", __FUNCTION__);
+			dev_dbg(global_idev.pwhc_dev, "%s(): association timeout but no corresponding bss recorded\n", __FUNCTION__);
 		}
 
 	} else if (event == RTW_EVENT_SME_RX_MLME_MGNT) {
-		dev_dbg(global_idev.fullmac_dev, "%s: RTW_EVENT_SME_RX_MLME_MGNT\n", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: RTW_EVENT_SME_RX_MLME_MGNT\n", __func__);
 		evt_rpt_frm = (struct rtw_event_report_frame *)evt_info;
 		cfg80211_rx_mlme_mgmt(pndev, evt_rpt_frm->frame, evt_rpt_frm->frame_len);
 
 	} else if (event == RTW_EVENT_SME_TX_MLME_MGNT) {
-		dev_dbg(global_idev.fullmac_dev, "%s: RTW_EVENT_SME_TX_MLME_MGNT \n", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: RTW_EVENT_SME_TX_MLME_MGNT \n", __func__);
 		evt_rpt_frm = (struct rtw_event_report_frame *)evt_info;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0))
 		cfg80211_tx_mlme_mgmt(pndev, evt_rpt_frm->frame, evt_rpt_frm->frame_len, false);
@@ -313,7 +313,7 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 		cfg80211_tx_mlme_mgmt(pndev, evt_rpt_frm->frame, evt_rpt_frm->frame_len);
 #endif
 	} else if (event == RTW_EVENT_SME_RX_ASSOC_RESP) {
-		dev_dbg(global_idev.fullmac_dev, "%s: RTW_EVENT_SME_RX_ASSOC_RESP \n", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: RTW_EVENT_SME_RX_ASSOC_RESP \n", __func__);
 
 		if (sme_priv->cfg80211_assoc_bss) {
 			rx_assoc_rsp_info = (struct rtw_event_sme_rx_assoc_resp *)evt_info;
@@ -343,12 +343,12 @@ static void whc_fullmac_host_event_join_status_indicate(struct event_priv_t *eve
 #endif
 			sme_priv->cfg80211_assoc_bss = NULL;
 		} else {
-			dev_dbg(global_idev.fullmac_dev, "%s(): RX assocrsp but no corresponding bss recorded\n", __FUNCTION__);
+			dev_dbg(global_idev.pwhc_dev, "%s(): RX assocrsp but no corresponding bss recorded\n", __FUNCTION__);
 		}
 	} else if (event == RTW_EVENT_SME_RX_UNPROT_MLME_MGMT) {
 		rx_mgnt_info = (struct rtw_event_rx_mgnt *)evt_info;
 
-		dev_dbg(global_idev.fullmac_dev, "%s: rx unprot mlme mgnt \n", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: rx unprot mlme mgnt \n", __func__);
 		cfg80211_rx_unprot_mlme_mgmt(pndev, rx_mgnt_info->frame, rx_mgnt_info->frame_len);
 	}
 #endif
@@ -370,7 +370,7 @@ func_exit:
 	return;
 }
 
-static void whc_fullmac_host_event_set_netif_info(struct event_priv_t *event_priv, struct whc_ipc_dev_req_msg *p_ipc_msg)
+static void whc_host_event_set_netif_info(struct event_priv_t *event_priv, struct whc_ipc_dev_req_msg *p_ipc_msg)
 {
 	struct device *pdev = NULL;
 	int idx = (u32)p_ipc_msg->param_buf[0];
@@ -378,26 +378,26 @@ static void whc_fullmac_host_event_set_netif_info(struct event_priv_t *event_pri
 	int softap_addr_offset_idx = global_idev.wifi_user_config.softap_addr_offset_idx;
 	u8 mac_addr[ETH_ALEN] = {0};
 
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: set netif info.");
+	dev_dbg(global_idev.pwhc_dev, "[fullmac]: set netif info.");
 
 	if (!global_idev.event_ch) {
-		dev_err(global_idev.fullmac_dev, "%s,%s: event_priv_t is NULL in!\n", "event", __func__);
+		dev_err(global_idev.pwhc_dev, "%s,%s: event_priv_t is NULL in!\n", "event", __func__);
 		goto func_exit;
 	}
 
 	pdev = global_idev.ipc_dev;
 	if (!pdev) {
-		dev_err(global_idev.fullmac_dev, "%s,%s: device is NULL in scan!\n", "event", __func__);
+		dev_err(global_idev.pwhc_dev, "%s,%s: device is NULL in scan!\n", "event", __func__);
 		goto func_exit;
 	}
 
 	if (idx >= WHC_MAX_NET_PORT_NUM) {
-		dev_dbg(global_idev.fullmac_dev, "%s: interface %d not exist!\n", __func__, idx);
+		dev_dbg(global_idev.pwhc_dev, "%s: interface %d not exist!\n", __func__, idx);
 		goto func_exit;
 	}
 
 	if (!dev_addr) {
-		dev_dbg(global_idev.fullmac_dev, "%s: mac address is NULL!\n", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: mac address is NULL!\n", __func__);
 		goto func_exit;
 	}
 
@@ -417,7 +417,7 @@ static void whc_fullmac_host_event_set_netif_info(struct event_priv_t *event_pri
 	eth_hw_addr_set(global_idev.pndev[idx], dev_addr);
 #endif
 
-	dev_dbg(global_idev.fullmac_dev, "MAC ADDR [%02x:%02x:%02x:%02x:%02x:%02x]", *global_idev.pndev[idx]->dev_addr,
+	dev_dbg(global_idev.pwhc_dev, "MAC ADDR [%02x:%02x:%02x:%02x:%02x:%02x]", *global_idev.pndev[idx]->dev_addr,
 			*(global_idev.pndev[idx]->dev_addr + 1), *(global_idev.pndev[idx]->dev_addr + 2),
 			*(global_idev.pndev[idx]->dev_addr + 3), *(global_idev.pndev[idx]->dev_addr + 4),
 			*(global_idev.pndev[idx]->dev_addr + 5));
@@ -443,7 +443,7 @@ func_exit:
 	return;
 }
 
-static void whc_fullmac_host_event_get_network_info(struct event_priv_t *event_priv, struct whc_ipc_dev_req_msg *p_ipc_msg)
+static void whc_host_event_get_network_info(struct event_priv_t *event_priv, struct whc_ipc_dev_req_msg *p_ipc_msg)
 {
 	struct device *pdev = NULL;
 	uint32_t type = (uint32_t)p_ipc_msg->param_buf[0];
@@ -457,13 +457,13 @@ static void whc_fullmac_host_event_get_network_info(struct event_priv_t *event_p
 	uint32_t inic_ip_mask[WHC_MAX_NET_PORT_NUM] = {0};
 
 	if (!global_idev.event_ch) {
-		dev_err(global_idev.fullmac_dev, "%s: event_priv_t is NULL!\n", "event");
+		dev_err(global_idev.pwhc_dev, "%s: event_priv_t is NULL!\n", "event");
 		goto func_exit;
 	}
 
 	pdev = global_idev.ipc_dev;
 	if (!pdev) {
-		dev_err(global_idev.fullmac_dev, "%s: device is NULL!\n", "event");
+		dev_err(global_idev.pwhc_dev, "%s: device is NULL!\n", "event");
 		goto func_exit;
 	}
 
@@ -483,7 +483,7 @@ static void whc_fullmac_host_event_get_network_info(struct event_priv_t *event_p
 		rsp_len = 4;
 		break;
 	case WHC_WLAN_GET_GW:
-		dev_warn(global_idev.fullmac_dev, "WHC_WLAN_GET_GW is not supported. Add into global_idev if needed.");
+		dev_warn(global_idev.pwhc_dev, "WHC_WLAN_GET_GW is not supported. Add into global_idev if needed.");
 		break;
 	case WHC_WLAN_GET_GWMSK:
 		rcu_read_lock();
@@ -517,7 +517,7 @@ static void whc_fullmac_host_event_promisc_pkt_hdl(struct event_priv_t *event_pr
 
 	pdev = global_idev.ipc_dev;
 	if (!pdev) {
-		dev_err(global_idev.fullmac_dev, "%s,%s: device is NULL!\n", "event", __func__);
+		dev_err(global_idev.pwhc_dev, "%s,%s: device is NULL!\n", "event", __func__);
 		goto func_exit;
 	}
 
@@ -531,7 +531,7 @@ func_exit:
 }
 
 #ifdef CONFIG_NAN
-static void whc_fullmac_host_event_nan_match_indicate(struct event_priv_t *event_priv, struct whc_ipc_dev_req_msg *p_ipc_msg)
+static void whc_host_event_nan_match_indicate(struct event_priv_t *event_priv, struct whc_ipc_dev_req_msg *p_ipc_msg)
 {
 	struct device *pdev = NULL;
 	u8 type = p_ipc_msg->param_buf[0];
@@ -544,7 +544,7 @@ static void whc_fullmac_host_event_nan_match_indicate(struct event_priv_t *event
 
 	pdev = global_idev.ipc_dev;
 	if (!pdev) {
-		dev_err(global_idev.fullmac_dev, "%s,%s: device is NULL in scan!\n", "event", __func__);
+		dev_err(global_idev.pwhc_dev, "%s,%s: device is NULL in scan!\n", "event", __func__);
 		goto func_exit;
 	}
 
@@ -554,7 +554,7 @@ func_exit:
 	return;
 }
 
-static void whc_fullmac_host_event_nan_cfgvendor_event_indicate(struct event_priv_t *event_priv, struct whc_ipc_dev_req_msg *p_ipc_msg)
+static void whc_host_event_nan_cfgvendor_event_indicate(struct event_priv_t *event_priv, struct whc_ipc_dev_req_msg *p_ipc_msg)
 {
 	struct device *pdev = NULL;
 	u8 event_id = p_ipc_msg->param_buf[0];
@@ -563,17 +563,17 @@ static void whc_fullmac_host_event_nan_cfgvendor_event_indicate(struct event_pri
 
 	pdev = global_idev.ipc_dev;
 	if (!pdev) {
-		dev_err(global_idev.fullmac_dev, "%s,%s: device is NULL in scan!\n", "event", __func__);
+		dev_err(global_idev.pwhc_dev, "%s,%s: device is NULL in scan!\n", "event", __func__);
 		goto func_exit;
 	}
 
-	whc_fullmac_host_cfgvendor_nan_event_indication(event_id, event_addr, size);
+	whc_host_cfgvendor_nan_event_indication(event_id, event_addr, size);
 
 func_exit:
 	return;
 }
 
-static void whc_fullmac_host_event_nan_cfgvendor_cmd_reply(struct event_priv_t *event_priv, struct whc_ipc_dev_req_msg *p_ipc_msg)
+static void whc_host_event_nan_cfgvendor_cmd_reply(struct event_priv_t *event_priv, struct whc_ipc_dev_req_msg *p_ipc_msg)
 {
 	struct device *pdev = NULL;
 	unsigned char *data_addr = llhw_ipc_fw_phy_to_virt(p_ipc_msg->param_buf[0]);
@@ -581,11 +581,11 @@ static void whc_fullmac_host_event_nan_cfgvendor_cmd_reply(struct event_priv_t *
 
 	pdev = global_idev.ipc_dev;
 	if (!pdev) {
-		dev_err(global_idev.fullmac_dev, "%s,%s: device is NULL in scan!\n", "event", __func__);
+		dev_err(global_idev.pwhc_dev, "%s,%s: device is NULL in scan!\n", "event", __func__);
 		goto func_exit;
 	}
 
-	whc_fullmac_host_cfgvendor_send_cmd_reply(data_addr, size);
+	whc_host_cfgvendor_send_cmd_reply(data_addr, size);
 
 func_exit:
 	return;
@@ -593,7 +593,7 @@ func_exit:
 
 #endif
 
-void whc_fullmac_host_event_task(struct work_struct *data)
+void whc_host_event_task(struct work_struct *data)
 {
 	struct event_priv_t *event_priv = &global_idev.event_priv;
 	struct device *pdev = NULL;
@@ -607,19 +607,19 @@ void whc_fullmac_host_event_task(struct work_struct *data)
 #endif
 
 	if (!global_idev.event_ch) {
-		dev_err(global_idev.fullmac_dev, "%s: event_priv_t is NULL!\n", "event");
+		dev_err(global_idev.pwhc_dev, "%s: event_priv_t is NULL!\n", "event");
 		goto func_exit;
 	}
 
 	pdev = global_idev.ipc_dev;
 	if (!pdev) {
-		dev_err(global_idev.fullmac_dev, "%s: device is NULL!\n", "event");
+		dev_err(global_idev.pwhc_dev, "%s: device is NULL!\n", "event");
 		goto func_exit;
 	}
 
 	msg_len = event_priv->recv_ipc_msg.msg_len;
 	if (!event_priv->recv_ipc_msg.msg || !msg_len) {
-		dev_err(global_idev.fullmac_dev, "%s: Invalid device message!\n", "event");
+		dev_err(global_idev.pwhc_dev, "%s: Invalid device message!\n", "event");
 		goto func_exit;
 	}
 	p_recv_msg = llhw_ipc_fw_phy_to_virt(event_priv->recv_ipc_msg.msg);
@@ -655,7 +655,7 @@ void whc_fullmac_host_event_task(struct work_struct *data)
 		}
 		break;
 	case WHC_API_IP_ACS:
-		whc_fullmac_host_event_set_acs_info(p_recv_msg);
+		whc_host_event_set_acs_info(p_recv_msg);
 		break;
 	case WHC_API_SCAN_EACH_REPORT_USER_CALLBACK:
 		//iiha_scan_each_report_cb_hdl(event_priv, p_recv_msg);
@@ -664,41 +664,41 @@ void whc_fullmac_host_event_task(struct work_struct *data)
 		//iiha_ap_ch_switch_hdl(event_priv, p_recv_msg);
 		break;
 	case WHC_API_WIFI_EVENT:
-		whc_fullmac_host_event_join_status_indicate(event_priv, p_recv_msg);
+		whc_host_event_join_status_indicate(event_priv, p_recv_msg);
 		break;
 	case WHC_API_PROMISC_CALLBACK:
 		whc_fullmac_host_event_promisc_pkt_hdl(event_priv, p_recv_msg);
 		break;
 	case WHC_API_GET_LWIP_INFO:
-		whc_fullmac_host_event_get_network_info(event_priv, p_recv_msg);
+		whc_host_event_get_network_info(event_priv, p_recv_msg);
 		break;
 	case WHC_API_SET_NETIF_INFO:
-		whc_fullmac_host_event_set_netif_info(event_priv, p_recv_msg);
+		whc_host_event_set_netif_info(event_priv, p_recv_msg);
 		break;
 	case WHC_API_CFG80211_SCAN_REPORT:
 		whc_fullmac_host_scan_report_indicate(event_priv, p_recv_msg);
 		break;
 #ifdef CONFIG_NAN
 	case WHC_API_CFG80211_NAN_REPORT_MATCH_EVENT:
-		whc_fullmac_host_event_nan_match_indicate(event_priv, p_recv_msg);
+		whc_host_event_nan_match_indicate(event_priv, p_recv_msg);
 		break;
 	case WHC_API_CFG80211_NAN_DEL_FUNC:
 		os_dep_data = ((u64)p_recv_msg->param_buf[1] << 32) | p_recv_msg->param_buf[0];
 		whc_fullmac_host_nan_func_free(os_dep_data);
 		break;
 	case WHC_API_CFG80211_NAN_CFGVENDOR_EVENT:
-		whc_fullmac_host_event_nan_cfgvendor_event_indicate(event_priv, p_recv_msg);
+		whc_host_event_nan_cfgvendor_event_indicate(event_priv, p_recv_msg);
 		break;
 	case WHC_API_CFG80211_NAN_CFGVENDOR_CMD_REPLY:
-		whc_fullmac_host_event_nan_cfgvendor_event_indicate(event_priv, p_recv_msg);
+		whc_host_event_nan_cfgvendor_event_indicate(event_priv, p_recv_msg);
 		break;
 #endif
 	case WHC_API_UPDATE_REGD_EVENT:
-		whc_fullmac_host_event_update_regd_indicate(event_priv, p_recv_msg);
+		whc_host_event_update_regd_indicate(event_priv, p_recv_msg);
 		break;
 
 	default:
-		dev_err(global_idev.fullmac_dev, "%s: Unknown Device event(%d)!\n\r", "event", p_recv_msg->enevt_id);
+		dev_err(global_idev.pwhc_dev, "%s: Unknown Device event(%d)!\n\r", "event", p_recv_msg->enevt_id);
 		break;
 	}
 
@@ -715,7 +715,7 @@ static u32 whc_fullmac_host_event_interrupt(aipc_ch_t *ch, ipc_msg_struct_t *pms
 	u32 ret = 0;
 
 	if (!event_priv) {
-		dev_err(global_idev.fullmac_dev, "%s: event_priv_t is NULL in interrupt!\n", "event");
+		dev_err(global_idev.pwhc_dev, "%s: event_priv_t is NULL in interrupt!\n", "event");
 		goto func_exit;
 	}
 
@@ -727,7 +727,7 @@ func_exit:
 	return ret;
 }
 
-int whc_fullmac_host_event_init(struct whc_device *idev)
+int whc_host_event_init(struct whc_device *idev)
 {
 	struct event_priv_t	*event_priv = &global_idev.event_priv;
 	aipc_ch_t	*event_ch = global_idev.event_ch;
@@ -737,14 +737,14 @@ int whc_fullmac_host_event_init(struct whc_device *idev)
 
 	event_priv->preq_msg = dma_alloc_coherent(event_ch->pdev, sizeof(struct whc_ipc_host_req_msg), &event_priv->req_msg_phy_addr, GFP_KERNEL);
 	if (!event_priv->preq_msg) {
-		dev_err(global_idev.fullmac_dev, "%s: allloc req_msg error.\n", "event");
+		dev_err(global_idev.pwhc_dev, "%s: allloc req_msg error.\n", "event");
 		return -ENOMEM;
 	}
 
 	/* coherent alloc some non-cache memory for transmit network_info to NP */
 	event_priv->dev_req_network_info = dma_alloc_coherent(event_ch->pdev, DEV_REQ_NETWORK_INFO_MAX_LEN, &event_priv->dev_req_network_info_phy, GFP_KERNEL);
 	if (!event_priv->dev_req_network_info) {
-		dev_err(global_idev.fullmac_dev, "%s: allloc dev_req_network_info error.\n", "event");
+		dev_err(global_idev.pwhc_dev, "%s: allloc dev_req_network_info error.\n", "event");
 		dma_free_coherent(event_ch->pdev, sizeof(struct whc_ipc_host_req_msg), event_priv->preq_msg, event_priv->req_msg_phy_addr);
 		return -ENOMEM;
 	}
@@ -752,19 +752,19 @@ int whc_fullmac_host_event_init(struct whc_device *idev)
 	/* initialize event work */
 	event_priv->api_workqueue = alloc_ordered_workqueue("api_ordered_wq", 0);
 	if (!event_priv->api_workqueue) {
-		dev_err(global_idev.fullmac_dev, "%s: Failed to create workqueue\n", "event");
+		dev_err(global_idev.pwhc_dev, "%s: Failed to create workqueue\n", "event");
 		dma_free_coherent(event_ch->pdev, DEV_REQ_NETWORK_INFO_MAX_LEN,
 						  event_priv->dev_req_network_info, event_priv->dev_req_network_info_phy);
 		dma_free_coherent(event_ch->pdev, sizeof(struct whc_ipc_host_req_msg), event_priv->preq_msg, event_priv->req_msg_phy_addr);
 		return -ENOMEM;
 	}
 
-	INIT_WORK(&(event_priv->api_work), whc_fullmac_host_event_task);
+	INIT_WORK(&(event_priv->api_work), whc_host_event_task);
 
 	return 0;
 }
 
-void whc_fullmac_host_event_deinit(void)
+void whc_host_event_deinit(void)
 {
 	struct event_priv_t *event_priv = &global_idev.event_priv;
 	aipc_ch_t	*event_ch = global_idev.event_ch;

@@ -1,0 +1,12 @@
+# Generic GDB script for loading ROM process
+# By gdb -ex set: rom.bin path and address
+
+source ../../../tools/scripts/gnu_script/rtl_gdb_jtag_boot_com.txt
+
+# Folloing cmds will be set via -ex parameter before sourcing this script
+# restore $ROM_BIN binary $ADDR
+
+#Only for kr4: workaround for KR4 default cache policies
+#dump binary memory ram_2_dump.bin 0x20022000 0x20030000
+
+# quit

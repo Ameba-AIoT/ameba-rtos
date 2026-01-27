@@ -43,10 +43,6 @@ Some strategies are used to manage connection exception
 
 2. `SO_KEEPALIVE` and `TCP_KEEPIDLE` are set to clear TCP buffer when network is bad. For if TCP buffer is full and can't allocate more memory, the situation will last for about 20 minutes until MAX data retries reached, and then MQTT will not restart successfully during this time for allocating memory failed.
 
-# Note
-
-For more details, please refer to `UM0060 Realtek Ameba-all MQTT User Guide.pdf`.
-
 # Supported IC
 
 RTL8730E

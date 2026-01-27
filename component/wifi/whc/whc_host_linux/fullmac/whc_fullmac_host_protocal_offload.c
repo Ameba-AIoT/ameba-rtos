@@ -104,10 +104,10 @@ void rtw_proxy_mdns_parms_init(u8 is_set_default)
 			pwrpriv->wowlan_war_offload_mdns_txt_rsp[0].txt[offset++] = strlen(default_txt_rsp_0[i]);
 			memcpy(pwrpriv->wowlan_war_offload_mdns_txt_rsp[0].txt + offset, default_txt_rsp_0[i], strlen(default_txt_rsp_0[i]));
 			offset += strlen(default_txt_rsp_0[i]);
-			dev_info(global_idev.fullmac_dev, "==> default_txt_rsp_0[%d]: [%s](%zu), offset(%d)\n", i, default_txt_rsp_0[i], strlen(default_txt_rsp_0[i]), offset);
+			dev_info(global_idev.pwhc_dev, "==> default_txt_rsp_0[%d]: [%s](%zu), offset(%d)\n", i, default_txt_rsp_0[i], strlen(default_txt_rsp_0[i]), offset);
 		}
 		pwrpriv->wowlan_war_offload_mdns_txt_rsp[0].txt_len = offset;
-		dev_info(global_idev.fullmac_dev, "==> offset = %d\n\n", offset);
+		dev_info(global_idev.pwhc_dev, "==> offset = %d\n\n", offset);
 #endif
 		// 1
 		for (offset = 0, i = 0; i < 13; i++) {
@@ -116,7 +116,7 @@ void rtw_proxy_mdns_parms_init(u8 is_set_default)
 			offset += strlen(default_txt_rsp_1[i]);
 		}
 		pwrpriv->wowlan_war_offload_mdns_txt_rsp[1].txt_len = offset;
-		dev_info(global_idev.fullmac_dev, "==> offset = %d\n\n", offset);
+		dev_info(global_idev.pwhc_dev, "==> offset = %d\n\n", offset);
 
 		// 2
 		for (offset = 0, i = 0; i < 1; i++) {
@@ -125,7 +125,7 @@ void rtw_proxy_mdns_parms_init(u8 is_set_default)
 			offset += strlen(default_txt_rsp_2[i]);
 		}
 		pwrpriv->wowlan_war_offload_mdns_txt_rsp[2].txt_len = offset;
-		dev_info(global_idev.fullmac_dev, "==> offset = %d\n\n", offset);
+		dev_info(global_idev.pwhc_dev, "==> offset = %d\n\n", offset);
 
 		// 3
 		for (offset = 0, i = 0; i < 5; i++) {
@@ -134,7 +134,7 @@ void rtw_proxy_mdns_parms_init(u8 is_set_default)
 			offset += strlen(default_txt_rsp_3[i]);
 		}
 		pwrpriv->wowlan_war_offload_mdns_txt_rsp[3].txt_len = offset;
-		dev_info(global_idev.fullmac_dev, "==> offset = %d\n\n", offset);
+		dev_info(global_idev.pwhc_dev, "==> offset = %d\n\n", offset);
 
 		// 4
 		for (offset = 0, i = 0; i < 11; i++) {
@@ -143,7 +143,7 @@ void rtw_proxy_mdns_parms_init(u8 is_set_default)
 			offset += strlen(default_txt_rsp_4[i]);
 		}
 		pwrpriv->wowlan_war_offload_mdns_txt_rsp[4].txt_len = offset;
-		dev_info(global_idev.fullmac_dev, "==> offset = %d\n\n", offset);
+		dev_info(global_idev.pwhc_dev, "==> offset = %d\n\n", offset);
 
 		/* txt_rsp_num is always as MAX_MDNS_TXT_NUM because the input mechanism(new/append) makes the entities are not in order */
 		pwrpriv->wowlan_war_offload_mdns_txt_rsp_num = MAX_MDNS_TXT_NUM;
@@ -160,10 +160,10 @@ void rtw_set_offload_ctrl(u32 value)
 	pwrctl->wowlan_war_offload_mode = value ? true : false;
 
 	/* send offload control bits to device, enable/disable offload */
-	whc_fullmac_host_war_offload_ctrl(pwrctl->wowlan_war_offload_mode, pwrctl->wowlan_war_offload_ctrl);
+	whc_host_war_offload_ctrl(pwrctl->wowlan_war_offload_mode, pwrctl->wowlan_war_offload_ctrl);
 
 	/* update ip address */
-	whc_fullmac_host_update_ip_addr();
+	whc_host_update_ip_addr();
 
 	if (pwrctl->wowlan_war_offload_mode) {
 		/* for mdns, update mdns parameters to device */
@@ -174,7 +174,7 @@ void rtw_set_offload_ctrl(u32 value)
 			rtw_wow_prepare_mdns_para(mdns_para, &mdns_para_len);
 
 			/* send mdns para to device*/
-			whc_fullmac_host_set_mdns_param(mdns_para, mdns_para_len);
+			whc_host_set_mdns_param(mdns_para, mdns_para_len);
 
 			kfree((void *)mdns_para);
 		}
@@ -422,7 +422,7 @@ bool rtw_wow_war_mdns_parser_pattern(u8 *input, char *target,
 				mask_pos = (pos_in_unit_as_4bit / 8);
 
 				if (!IsHexDigit(member[idx])) {
-					dev_err(global_idev.fullmac_dev, "%s:[ERROR] pattern is invalid!!(%c)\n", __func__, member[idx]);
+					dev_err(global_idev.pwhc_dev, "%s:[ERROR] pattern is invalid!!(%c)\n", __func__, member[idx]);
 					goto error;
 				}
 
@@ -578,12 +578,12 @@ ssize_t proc_set_offload_enable(struct file *file, const char __user *buffer, si
 	u32 offload_cfg = 0;
 
 	if (NULL == buffer) {
-		dev_err(global_idev.fullmac_dev, "input buffer is NULL");
+		dev_err(global_idev.pwhc_dev, "input buffer is NULL");
 		return -EFAULT;
 	}
 
 	if (count < 1) {
-		dev_err(global_idev.fullmac_dev, "input length is 0!\n");
+		dev_err(global_idev.pwhc_dev, "input length is 0!\n");
 		return -EFAULT;
 	}
 
@@ -624,17 +624,17 @@ ssize_t proc_set_offload_mdns_domain_name(struct file *file, const char __user *
 	char domain_name[MAX_MDNS_DOMAIN_NAME_LEN + 1];
 
 	if (NULL == buffer) {
-		dev_err(global_idev.fullmac_dev, "input buffer is NULL");
+		dev_err(global_idev.pwhc_dev, "input buffer is NULL");
 		return -EFAULT;
 	}
 
 	if (count < 1) {
-		dev_err(global_idev.fullmac_dev, "input length is 0!\n");
+		dev_err(global_idev.pwhc_dev, "input length is 0!\n");
 		return -EFAULT;
 	}
 
 	if (count > sizeof(tmp)) {
-		dev_err(global_idev.fullmac_dev, "input length is large than MAX_MDNS_DOMAIN_NAME_LEN(%d)\n", MAX_MDNS_DOMAIN_NAME_LEN);
+		dev_err(global_idev.pwhc_dev, "input length is large than MAX_MDNS_DOMAIN_NAME_LEN(%d)\n", MAX_MDNS_DOMAIN_NAME_LEN);
 		return -EFAULT;
 	}
 
@@ -684,17 +684,17 @@ ssize_t proc_set_offload_mdns_machine_name(struct file *file, const char __user 
 	char tmp[MAX_MDNS_MACHINE_NAME_LEN * 3 - 1 + 1];
 
 	if (NULL == buffer) {
-		dev_err(global_idev.fullmac_dev, "input buffer is NULL!\n");
+		dev_err(global_idev.pwhc_dev, "input buffer is NULL!\n");
 		return -EFAULT;
 	}
 
 	if (count < 1) {
-		dev_err(global_idev.fullmac_dev, "input length is 0!\n");
+		dev_err(global_idev.pwhc_dev, "input length is 0!\n");
 		return -EFAULT;
 	}
 
 	if (count > sizeof(tmp)) {
-		dev_err(global_idev.fullmac_dev, "input length, %lu, is large than MAX_MDNS_MACHINE_NAME_LEN(%d)\n", (count + 1) / 3,
+		dev_err(global_idev.pwhc_dev, "input length, %lu, is large than MAX_MDNS_MACHINE_NAME_LEN(%d)\n", (count + 1) / 3,
 				MAX_MDNS_MACHINE_NAME_LEN);
 		return -EFAULT;
 	}
@@ -707,7 +707,7 @@ ssize_t proc_set_offload_mdns_machine_name(struct file *file, const char __user 
 		} else {
 			int idx = pwrpriv->wowlan_war_offload_mdns_mnane_num;
 			if (idx == MAX_MDNS_MACHINE_NAME_NUM) {
-				dev_err(global_idev.fullmac_dev, "the num of machine name is already %d(MAX_MDNS_MACHINE_NAME_NUM)!\n", MAX_MDNS_MACHINE_NAME_NUM);
+				dev_err(global_idev.pwhc_dev, "the num of machine name is already %d(MAX_MDNS_MACHINE_NAME_NUM)!\n", MAX_MDNS_MACHINE_NAME_NUM);
 				return -EFAULT;
 			}
 			if (rtw_wow_war_mdns_parser_pattern(tmp, pwrpriv->wowlan_war_offload_mdns_mnane[idx].name,
@@ -770,23 +770,23 @@ ssize_t proc_set_offload_mdns_service_info(struct file *file, const char __user 
 	int txt_idx;
 
 	if (NULL == buffer) {
-		dev_err(global_idev.fullmac_dev, "input buffer is NULL!\n");
+		dev_err(global_idev.pwhc_dev, "input buffer is NULL!\n");
 		return -EFAULT;
 	}
 
 	if (count < 1) {
-		dev_err(global_idev.fullmac_dev, "input length is 0!\n");
+		dev_err(global_idev.pwhc_dev, "input length is 0!\n");
 		return -EFAULT;
 	}
 
 	if (count > (sizeof(char) * (max_input_size))) {
-		dev_err(global_idev.fullmac_dev, "input length is too large\n");
+		dev_err(global_idev.pwhc_dev, "input length is too large\n");
 		return -EFAULT;
 	}
 
 	tmp = rtw_malloc(sizeof(char) * (max_input_size), NULL);
 	if (NULL == tmp) {
-		dev_err(global_idev.fullmac_dev, "tmp buffer allocate fail!!\n");
+		dev_err(global_idev.pwhc_dev, "tmp buffer allocate fail!!\n");
 		count = -EFAULT;
 		goto exit;
 	}
@@ -801,16 +801,16 @@ ssize_t proc_set_offload_mdns_service_info(struct file *file, const char __user 
 			memset(pwrpriv->wowlan_war_offload_mdns_service, 0, sizeof(pwrpriv->wowlan_war_offload_mdns_service));
 			pwrpriv->wowlan_war_offload_mdns_service_info_num = 0;
 		} else if (count != sscanf_parameter_length) {
-			dev_err(global_idev.fullmac_dev, "Length of total parameters does not match the input buffer. (%d != %lu)\n",
+			dev_err(global_idev.pwhc_dev, "Length of total parameters does not match the input buffer. (%d != %lu)\n",
 					sscanf_parameter_length, count);
-			dev_err(global_idev.fullmac_dev, "Please check the content and length of each parameter.\n");
-			dev_err(global_idev.fullmac_dev, "input buffer = (%s)(%lu)!\n\n", tmp, count);
-			dev_err(global_idev.fullmac_dev, "srv = %s (%lu)!\n", srv, strlen(srv));
-			dev_err(global_idev.fullmac_dev, "trans = %s (%lu)!\n", trans, strlen(trans));
-			dev_err(global_idev.fullmac_dev, "domain = %s (%lu)!\n", domain, strlen(domain));
-			dev_err(global_idev.fullmac_dev, "target = %s (%lu)!\n", target, strlen(target));
-			dev_err(global_idev.fullmac_dev, "port = %x-%x, ttl = %d!\n", port0, port1, ttl);
-			dev_err(global_idev.fullmac_dev, "txt idx = %d!\n", txt_idx);
+			dev_err(global_idev.pwhc_dev, "Please check the content and length of each parameter.\n");
+			dev_err(global_idev.pwhc_dev, "input buffer = (%s)(%lu)!\n\n", tmp, count);
+			dev_err(global_idev.pwhc_dev, "srv = %s (%lu)!\n", srv, strlen(srv));
+			dev_err(global_idev.pwhc_dev, "trans = %s (%lu)!\n", trans, strlen(trans));
+			dev_err(global_idev.pwhc_dev, "domain = %s (%lu)!\n", domain, strlen(domain));
+			dev_err(global_idev.pwhc_dev, "target = %s (%lu)!\n", target, strlen(target));
+			dev_err(global_idev.pwhc_dev, "port = %x-%x, ttl = %d!\n", port0, port1, ttl);
+			dev_err(global_idev.pwhc_dev, "txt idx = %d!\n", txt_idx);
 			count = -EFAULT;
 			goto exit;
 		} else {
@@ -818,13 +818,13 @@ ssize_t proc_set_offload_mdns_service_info(struct file *file, const char __user 
 			port[1] = (u8)port1;
 
 			if (txt_idx >= MAX_MDNS_TXT_NUM) {
-				dev_err(global_idev.fullmac_dev, "input txt idx, %d, is out of range (0~%d)!\n", txt_idx, MAX_MDNS_TXT_NUM - 1);
+				dev_err(global_idev.pwhc_dev, "input txt idx, %d, is out of range (0~%d)!\n", txt_idx, MAX_MDNS_TXT_NUM - 1);
 				count = -EFAULT;
 				goto exit;
 			}
 
 			if (pwrpriv->wowlan_war_offload_mdns_txt_rsp[txt_idx].txt_len == 0) {
-				dev_err(global_idev.fullmac_dev, "wowlan_war_offload_mdns_txt_rsp[%d] is null! Please initiate it first.\n", txt_idx);
+				dev_err(global_idev.pwhc_dev, "wowlan_war_offload_mdns_txt_rsp[%d] is null! Please initiate it first.\n", txt_idx);
 				count = -EFAULT;
 				goto exit;
 			}
@@ -894,18 +894,18 @@ ssize_t proc_set_offload_mdns_txt_rsp(struct file *file, const char __user *buff
 	int idx;
 
 	if (NULL == buffer) {
-		dev_err(global_idev.fullmac_dev, "input buffer is NULL!\n");
+		dev_err(global_idev.pwhc_dev, "input buffer is NULL!\n");
 		return -EFAULT;
 	}
 
 	if (count < 1) {
-		dev_err(global_idev.fullmac_dev, "input length is 0!\n");
+		dev_err(global_idev.pwhc_dev, "input length is 0!\n");
 		return -EFAULT;
 	}
 
 	tmp = rtw_malloc(sizeof(char) * (max_input_size), NULL);
 	if (NULL == tmp) {
-		dev_err(global_idev.fullmac_dev, "tmp buffer allocate fail!!\n");
+		dev_err(global_idev.pwhc_dev, "tmp buffer allocate fail!!\n");
 		count = -EFAULT;
 		goto exit;
 	}
@@ -917,7 +917,7 @@ ssize_t proc_set_offload_mdns_txt_rsp(struct file *file, const char __user *buff
 			if (pwrpriv->wowlan_war_offload_mdns_service_info_num == 0) {
 				memset(pwrpriv->wowlan_war_offload_mdns_txt_rsp, 0, sizeof(pwrpriv->wowlan_war_offload_mdns_txt_rsp));
 			} else {
-				dev_err(global_idev.fullmac_dev, "Txt rsp are refered! (Current service_info_num = %d)\n", pwrpriv->wowlan_war_offload_mdns_service_info_num);
+				dev_err(global_idev.pwhc_dev, "Txt rsp are refered! (Current service_info_num = %d)\n", pwrpriv->wowlan_war_offload_mdns_service_info_num);
 				count = -EFAULT;
 				goto exit;
 			}
@@ -932,12 +932,12 @@ ssize_t proc_set_offload_mdns_txt_rsp(struct file *file, const char __user *buff
 			sscanf_parameter_length = 1 + strlen(op) + txt_len + num;
 
 			if (count != sscanf_parameter_length) {
-				dev_err(global_idev.fullmac_dev, "Length of total parameters does not match the input buffer. (%d != %lu)(num=%d)\n",
+				dev_err(global_idev.pwhc_dev, "Length of total parameters does not match the input buffer. (%d != %lu)(num=%d)\n",
 						sscanf_parameter_length, count, num);
-				dev_err(global_idev.fullmac_dev, "Please check the content and length of each parameter.\n");
-				dev_err(global_idev.fullmac_dev, "input buffer = (%s)(%lu)!\n\n", tmp, count);
-				dev_err(global_idev.fullmac_dev, "op. = %s (%lu)!\n", op, strlen(op));
-				dev_err(global_idev.fullmac_dev, "txt = %s (%lu)!\n", txt_str, strlen(txt_str));
+				dev_err(global_idev.pwhc_dev, "Please check the content and length of each parameter.\n");
+				dev_err(global_idev.pwhc_dev, "input buffer = (%s)(%lu)!\n\n", tmp, count);
+				dev_err(global_idev.pwhc_dev, "op. = %s (%lu)!\n", op, strlen(op));
+				dev_err(global_idev.pwhc_dev, "txt = %s (%lu)!\n", txt_str, strlen(txt_str));
 				count = -EFAULT;
 				goto exit;
 			} else {
@@ -945,7 +945,7 @@ ssize_t proc_set_offload_mdns_txt_rsp(struct file *file, const char __user *buff
 				u16 offset;
 
 				if (idx >= MAX_MDNS_TXT_NUM) {
-					dev_err(global_idev.fullmac_dev, "the index, %d, is over the range of txt rsp(0~%d)!\n", idx, MAX_MDNS_TXT_NUM - 1);
+					dev_err(global_idev.pwhc_dev, "the index, %d, is over the range of txt rsp(0~%d)!\n", idx, MAX_MDNS_TXT_NUM - 1);
 					count = -EFAULT;
 					goto exit;
 				}
@@ -955,14 +955,14 @@ ssize_t proc_set_offload_mdns_txt_rsp(struct file *file, const char __user *buff
 					pwrpriv->wowlan_war_offload_mdns_txt_rsp[idx].txt_len = 0;
 				} else if (strncmp(op, "append", 6) == 0) {
 					if ((pwrpriv->wowlan_war_offload_mdns_txt_rsp[idx].txt_len + strlen(txt_str) + 1) > MAX_MDNS_TXT_LEN) {
-						dev_err(global_idev.fullmac_dev, "the txt rsp(%d) will be over the limitation(%d) if append input string(%lu)!\n",
+						dev_err(global_idev.pwhc_dev, "the txt rsp(%d) will be over the limitation(%d) if append input string(%lu)!\n",
 								pwrpriv->wowlan_war_offload_mdns_txt_rsp[idx].txt_len,
 								MAX_MDNS_TXT_LEN, strlen(txt_str) + 1);
 						count = -EFAULT;
 						goto exit;
 					}
 				} else {
-					dev_err(global_idev.fullmac_dev, "Invaild op str %s (new/append only)!\n", op);
+					dev_err(global_idev.pwhc_dev, "Invaild op str %s (new/append only)!\n", op);
 					count = -EFAULT;
 					goto exit;
 				}

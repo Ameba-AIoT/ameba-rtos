@@ -25,34 +25,38 @@ typedef struct {
 } usbh_hw_uvc_dec_buf;
 
 typedef struct {
-	usbh_hw_uvc_dec_buf uvc_dec_buf[USBH_HW_UAC_MAX_BUF_NUM];
+	usbh_hw_uvc_dec_buf buf[USBH_HW_UAC_MAX_BUF_NUM];
+	void *priv;
 	u32 ch;
 	u32 frame_done_num;
 	u32 frame_done_size;
-	u32 free_buf_num;
-	u32 ep_num;
-	u32 pipe_num;
-	u32 binterval;
-	u32 dev_addr;
-	void *priv;
+	u32 free_buf_cnt;
 
 	/* cmd reg related */
 	u32 xfer_len;
 	u32 ep_mps;
 	rtos_sema_t dec_sema;
+
+	u8 ep_num;
+	u8 pipe_num;
+	u8 interval;
+	u8 dev_addr;
 } usbh_hw_uvc_dec;
+
+typedef struct {
+	usbh_pipe_t *pipe;
+	u8 dev_addr;
+	u8 isr_priority;
+} usbh_hw_uvc_dec_ctx;
 
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
 
-usbh_hw_uvc_dec *usbh_hw_uvc_dec_alloc_channel(void);
-void usbh_hw_uvc_dec_free_channel(usbh_hw_uvc_dec *uvc_dec);
-void usbh_hw_uvc_dec_init(usbh_hw_uvc_dec *uvc_dec, u8 irq_pri);
-void usbh_hw_uvc_dec_deinit(usbh_hw_uvc_dec *uvc_dec);
-void usbh_hw_uvc_dec_start(usbh_hw_uvc_dec *uvc_dec);
-void usbh_hw_uvc_dec_stop(usbh_hw_uvc_dec *uvc_dec);
-void usbh_hw_uvc_dec_dump_reg(void);
-#endif
-#endif
+void usbh_hw_uvc_init(usbh_hw_uvc_dec *uvc_dec, const usbh_hw_uvc_dec_ctx *ctx);
+void usbh_hw_uvc_deinit(usbh_hw_uvc_dec *uvc_dec);
+usbh_hw_uvc_dec *usbh_hw_uvc_alloc_channel(void);
+void usbh_hw_uvc_free_channel(usbh_hw_uvc_dec *uvc_dec);
 
+#endif
+#endif

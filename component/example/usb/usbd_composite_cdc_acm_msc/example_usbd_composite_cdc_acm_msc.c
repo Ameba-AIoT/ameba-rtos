@@ -10,14 +10,16 @@
 #include "usbd.h"
 #include "usbd_composite_cdc_acm_msc.h"
 #include "os_wrapper.h"
-
+#ifdef CONFIG_USBD_COMPOSITE_MSC_EXTERNAL_FLASH
+#include "vfs_second_nor_flash.h"
+#endif
 /* Private defines -----------------------------------------------------------*/
 static const char *const TAG = "COMP";
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 #define CONFIG_USBD_COMPOSITE_HOTPLUG							1
 
-#if COMP_MSC_RAM_DISK && (CONFIG_USBD_COMPOSITE_HOTPLUG == 1)
+#if defined(CONFIG_USBD_COMPOSITE_MSC_RAM_DISK) && (CONFIG_USBD_COMPOSITE_HOTPLUG == 1)
 #error "Hotplug is not supported when RAM is used for USB MSC media"
 #endif
 
@@ -289,6 +291,11 @@ static void example_usbd_composite_thread(void *param)
 
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
 	rtos_sema_create(&composite_attach_status_changed_sema, 0U, 1U);
+#endif
+
+#ifdef CONFIG_USBD_COMPOSITE_MSC_EXTERNAL_FLASH
+	second_flash_spi_init();
+	second_flash_get_id();
 #endif
 
 	ret = usbd_composite_msc_disk_init();

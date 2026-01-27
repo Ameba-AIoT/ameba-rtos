@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "platform_autoconf.h"
+#ifdef CONFIG_DIAGNOSE_EN
+
 #include "atcmd_service.h"
 #include "ameba_diagnose.h"
 
@@ -159,12 +162,9 @@ end:
 	}
 }
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_diag_items[] = {
 	{"+DIAG", at_diag},
 };
 
-void at_diag_init(void)
-{
-	atcmd_service_add_table((log_item_t *)at_diag_items, sizeof(at_diag_items) / sizeof(at_diag_items[0]));
-}
+#endif /* CONFIG_DIAGNOSE_EN */

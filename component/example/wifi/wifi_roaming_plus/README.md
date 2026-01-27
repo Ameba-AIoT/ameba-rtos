@@ -14,7 +14,7 @@ None
 
 # SW configuration
 
-1. If using fast DHCP, remember to enable it. Type command `./menuconfig.py` in auto_build and choose `CONFIG LWIP` -> `Enable Fast DHCP` save and exit.
+1. If using fast DHCP, remember to enable it. Use menuconfig and choose `CONFIG LWIP` -> `Enable Fast DHCP` save and exit.
 
 2. Set the `RSSI_SCAN_THRESHOLD` and `RSSI_ROAMING_THRESHOLD` and `FIND_BETTER_RSSI_DELTA` according to the WLAN envrionment.
 

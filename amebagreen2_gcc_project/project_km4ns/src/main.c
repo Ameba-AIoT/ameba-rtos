@@ -176,6 +176,7 @@ int main(void)
 	wifi_init();
 #endif
 
+#ifdef CONFIG_SHELL
 	/* init console */
 	shell_init_rom(0, NULL);
 	shell_init_ram();
@@ -183,6 +184,7 @@ int main(void)
 	InterruptRegister((IRQ_FUN) shell_uart_irq_rom, UART_LOG_IRQ, (u32)NULL, INT_PRI_LOWEST);
 	InterruptEn(UART_LOG_IRQ, INT_PRI_LOWEST);
 	LOGUART_INTCoreConfig(LOGUART_DEV, LOGUART_BIT_INTR_MASK_NP, ENABLE);
+#endif
 
 	app_IWDG_init();
 

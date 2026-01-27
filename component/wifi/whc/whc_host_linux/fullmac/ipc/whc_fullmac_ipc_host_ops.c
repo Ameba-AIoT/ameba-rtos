@@ -17,13 +17,13 @@ int whc_fullmac_ipc_host_send_msg(u32 id, u32 *param_buf, u32 buf_len)
 	int cnt = 120000;
 
 	if (!global_idev.host_init_done) {
-		dev_err(global_idev.fullmac_dev, "Host api err: wifi not init\n");
+		dev_err(global_idev.pwhc_dev, "Host api err: wifi not init\n");
 		ret = -1;
 		goto func_exit;
 	}
 
 	if (!global_idev.event_ch) {
-		dev_err(global_idev.fullmac_dev, "%s: event ch is NULL when to send msg!\n",  "event");
+		dev_err(global_idev.pwhc_dev, "%s: event ch is NULL when to send msg!\n",  "event");
 		ret = -1;
 		goto func_exit;
 	}
@@ -41,17 +41,17 @@ int whc_fullmac_ipc_host_send_msg(u32 id, u32 *param_buf, u32 buf_len)
 	event_priv->api_ipc_msg.msg_type = IPC_USER_POINT;
 	event_priv->api_ipc_msg.msg_len = sizeof(struct whc_ipc_host_req_msg);
 
-	dev_dbg(global_idev.fullmac_dev, "-----LINUX SEND IPC\n");
+	dev_dbg(global_idev.pwhc_dev, "-----LINUX SEND IPC\n");
 
 	ret = ameba_ipc_channel_send(global_idev.event_ch, &(event_priv->api_ipc_msg));
 	if (ret < 0) {
-		dev_err(global_idev.fullmac_dev, "LINUX IPC SEND FAIL!!!! ret = %d", ret);
+		dev_err(global_idev.pwhc_dev, "LINUX IPC SEND FAIL!!!! ret = %d", ret);
 	}
 
 	while (event_priv->preq_msg->api_id != WHC_API_PROCESS_DONE) {
 		cnt --;
 		if (cnt == 0) {
-			dev_warn(global_idev.fullmac_dev, "wait remsg has been 1.2s,id:%x\n", event_priv->preq_msg->api_id);
+			dev_warn(global_idev.pwhc_dev, "wait remsg has been 1.2s,id:%x\n", event_priv->preq_msg->api_id);
 		}
 		udelay(10);
 	}
@@ -64,7 +64,7 @@ func_exit:
 	return ret;
 }
 
-int whc_fullmac_host_set_user_config(struct wifi_user_conf *pwifi_usrcfg)
+int whc_host_set_user_config(struct wifi_user_conf *pwifi_usrcfg)
 {
 	u32 param_buf[1];
 	dma_addr_t phy_addr;
@@ -74,7 +74,7 @@ int whc_fullmac_host_set_user_config(struct wifi_user_conf *pwifi_usrcfg)
 
 	pusrcfg = rtw_malloc(sizeof(struct wifi_user_conf), &phy_addr);
 	if (!pusrcfg) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc failed!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: malloc failed!\n", __func__);
 		return -1;
 	}
 	memcpy(pusrcfg, pwifi_usrcfg, sizeof(struct wifi_user_conf));
@@ -86,7 +86,7 @@ int whc_fullmac_host_set_user_config(struct wifi_user_conf *pwifi_usrcfg)
 	return ret;
 }
 
-void whc_fullmac_host_wifi_on(void)
+void whc_host_wifi_on(void)
 {
 	u32 param_buf[1];
 
@@ -95,7 +95,7 @@ void whc_fullmac_host_wifi_on(void)
 	whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_ON, param_buf, 1);
 }
 
-int whc_fullmac_host_set_mac_addr(u32 wlan_idx, u8 *addr)
+int whc_host_set_mac_addr(u32 wlan_idx, u8 *addr)
 {
 	dma_addr_t phy_addr;
 	u8 *mac_addr = NULL;
@@ -105,7 +105,7 @@ int whc_fullmac_host_set_mac_addr(u32 wlan_idx, u8 *addr)
 
 	mac_addr = rtw_malloc(ETH_ALEN, &phy_addr);
 	if (mac_addr == NULL) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc error!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: malloc error!\n", __func__);
 		return -ENOMEM;
 	}
 	memcpy(mac_addr, addr, ETH_ALEN);
@@ -121,7 +121,7 @@ int whc_fullmac_host_set_mac_addr(u32 wlan_idx, u8 *addr)
 	return ret;
 }
 
-int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8 block)
+int whc_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8 block)
 {
 	int ret = 0;
 	struct internal_block_param *block_param = NULL;
@@ -145,7 +145,7 @@ int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8
 	buf_vir = rtw_malloc(size, &buf_phy);
 	size += (ssid_length + scan_param->channel_list_num);
 	if (!buf_vir) {
-		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: malloc failed.", __func__);
 		ret = -ENOMEM;
 		goto error;
 	}
@@ -174,7 +174,7 @@ int whc_fullmac_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8
 		global_idev.mlme_priv.scan_block_param = block_param;
 
 		if (wait_for_completion_interruptible_timeout(&block_param->sema, RTW_SCAN_TIMEOUT) == 0) {
-			dev_err(global_idev.fullmac_dev, "%s: Scan timeout!\n", __func__);
+			dev_err(global_idev.pwhc_dev, "%s: Scan timeout!\n", __func__);
 			ret = -EINVAL;
 		}
 		global_idev.mlme_priv.scan_block_param = NULL;
@@ -192,7 +192,7 @@ error:
 	return ret;
 }
 
-int whc_fullmac_host_scan_abort(void)
+int whc_host_scan_abort(void)
 {
 	int ret = 0;
 	struct internal_block_param *block_param = NULL;
@@ -215,7 +215,7 @@ int whc_fullmac_host_scan_abort(void)
 	global_idev.mlme_priv.scan_abort_block_param = block_param;
 
 	if (wait_for_completion_interruptible_timeout(&block_param->sema, RTW_SCAN_ABORT_TIMEOUT) == 0) {
-		dev_err(global_idev.fullmac_dev, "%s: Scan abort wait timeout!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: Scan abort wait timeout!\n", __func__);
 		ret = -EINVAL;
 	}
 	global_idev.mlme_priv.scan_abort_block_param = NULL;
@@ -229,7 +229,7 @@ exit:
 	return ret;
 }
 
-int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsigned char block)
+int whc_host_event_connect(struct rtw_network_info *connect_param, unsigned char block)
 {
 	int ret = 0;
 	struct internal_block_param *block_param = NULL;
@@ -245,14 +245,14 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 	if ((global_idev.mlme_priv.rtw_join_status > RTW_JOINSTATUS_UNKNOWN)
 		&& (global_idev.mlme_priv.rtw_join_status < RTW_JOINSTATUS_SUCCESS)
 		&& (global_idev.mlme_priv.rtw_join_status != RTW_JOINSTATUS_AUTHENTICATED)) {
-		dev_err(global_idev.fullmac_dev, "[fullmac]: auth is not finished! rtw_join_status=%d\n", global_idev.mlme_priv.rtw_join_status);
+		dev_err(global_idev.pwhc_dev, "[fullmac]: auth is not finished! rtw_join_status=%d\n", global_idev.mlme_priv.rtw_join_status);
 		return -EBUSY;
 	}
 #else
 	/* step1: check if there's ongoing connect*/
 	if ((global_idev.mlme_priv.rtw_join_status > RTW_JOINSTATUS_UNKNOWN)
 		&& (global_idev.mlme_priv.rtw_join_status < RTW_JOINSTATUS_SUCCESS)) {
-		dev_err(global_idev.fullmac_dev, "[fullmac]: there is ongoing wifi connect!rtw_join_status=%d\n", global_idev.mlme_priv.rtw_join_status);
+		dev_err(global_idev.pwhc_dev, "[fullmac]: there is ongoing wifi connect!rtw_join_status=%d\n", global_idev.mlme_priv.rtw_join_status);
 		return -EBUSY;
 	}
 #endif
@@ -277,7 +277,7 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 	size = sizeof(struct rtw_network_info) + connect_param->password_len;
 	buf_vir = rtw_malloc(size, &buf_phy);
 	if (!buf_vir) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: mapping dma error!\n", __func__);
 		global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
 		ret = -ENOMEM;
 		goto error;
@@ -305,12 +305,12 @@ int whc_fullmac_host_event_connect(struct rtw_network_info *connect_param, unsig
 		global_idev.mlme_priv.join_block_param = block_param;
 
 		if (wait_for_completion_interruptible_timeout(&block_param->sema, RTW_JOIN_TIMEOUT) == 0) {
-			dev_err(global_idev.fullmac_dev, "%s: Join bss timeout!\n", __func__);
+			dev_err(global_idev.pwhc_dev, "%s: Join bss timeout!\n", __func__);
 			global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
 			ret = -EINVAL;
 			goto error;
 		} else {
-			if (whc_fullmac_host_wifi_get_join_status() != RTW_JOINSTATUS_SUCCESS) {
+			if (whc_host_wifi_get_join_status() != RTW_JOINSTATUS_SUCCESS) {
 				ret = -EINVAL;
 				global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
 				goto error;
@@ -334,7 +334,7 @@ error:
 	return ret;
 }
 
-int whc_fullmac_host_event_disconnect(u16 reason_code)
+int whc_host_event_disconnect(u16 reason_code)
 {
 	u8 *buf_vir = NULL;
 	dma_addr_t buf_phy = 0;
@@ -348,7 +348,7 @@ int whc_fullmac_host_event_disconnect(u16 reason_code)
 		if (ie_len != 0) {
 			buf_vir = rtw_malloc(ie_len, &buf_phy);
 			if (!buf_vir) {
-				dev_err(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+				dev_err(global_idev.pwhc_dev, "%s: malloc failed.", __func__);
 				return -ENOMEM;
 			}
 
@@ -370,12 +370,12 @@ int whc_fullmac_host_event_disconnect(u16 reason_code)
 	return ret;
 }
 
-int whc_fullmac_host_wifi_get_join_status(void)
+int whc_host_wifi_get_join_status(void)
 {
 	return global_idev.mlme_priv.rtw_join_status;
 }
 
-int whc_fullmac_host_set_channel(u32 wlan_idx, u8 ch)
+int whc_host_set_channel(u32 wlan_idx, u8 ch)
 {
 	int ret = -1;
 	u32 param_buf[2];
@@ -387,7 +387,7 @@ int whc_fullmac_host_set_channel(u32 wlan_idx, u8 ch)
 	return ret;
 }
 
-int whc_fullmac_host_init_ap(void)
+int whc_host_init_ap(void)
 {
 	int ret = 0;
 
@@ -395,7 +395,7 @@ int whc_fullmac_host_init_ap(void)
 	return ret;
 }
 
-int whc_fullmac_host_deinit_ap(void)
+int whc_host_deinit_ap(void)
 {
 	int ret = 0;
 
@@ -403,7 +403,7 @@ int whc_fullmac_host_deinit_ap(void)
 	return ret;
 }
 
-int whc_fullmac_host_ap_del_client(u8 wlan_idx, u8 *mac)
+int whc_host_ap_del_client(u8 wlan_idx, u8 *mac)
 {
 	int ret = 0;
 	u32 param_buf[2];
@@ -415,7 +415,7 @@ int whc_fullmac_host_ap_del_client(u8 wlan_idx, u8 *mac)
 	return ret;
 }
 
-int whc_fullmac_host_start_ap(struct rtw_softap_info *softAP_config)
+int whc_host_start_ap(struct rtw_softap_info *softAP_config)
 {
 	int ret = 0;
 	u32 param_buf[2];
@@ -428,7 +428,7 @@ int whc_fullmac_host_start_ap(struct rtw_softap_info *softAP_config)
 	size = sizeof(struct rtw_softap_info) + softAP_config->password_len;
 	buf_vir = rtw_malloc(size, &buf_phy);
 	if (!buf_vir) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: mapping dma error!\n", __func__);
 		return -1;
 	}
 	memcpy(buf_vir, softAP_config, size);
@@ -448,7 +448,7 @@ int whc_fullmac_host_start_ap(struct rtw_softap_info *softAP_config)
 	return ret;
 }
 
-int whc_fullmac_host_stop_ap(void)
+int whc_host_stop_ap(void)
 {
 	int ret = 0;
 
@@ -457,7 +457,7 @@ int whc_fullmac_host_stop_ap(void)
 	return ret;
 }
 
-int whc_fullmac_host_set_EDCA_params(struct rtw_edca_param *pedca_param)
+int whc_host_set_EDCA_params(struct rtw_edca_param *pedca_param)
 {
 	u32 param_buf[1];
 	dma_addr_t phy_addr;
@@ -467,7 +467,7 @@ int whc_fullmac_host_set_EDCA_params(struct rtw_edca_param *pedca_param)
 
 	pedca_param_temp = rtw_malloc(sizeof(struct rtw_edca_param), &phy_addr);
 	if (!pedca_param_temp) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc failed!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: malloc failed!\n", __func__);
 		return -1;
 	}
 	memcpy(pedca_param_temp, pedca_param, sizeof(struct rtw_edca_param));
@@ -479,7 +479,7 @@ int whc_fullmac_host_set_EDCA_params(struct rtw_edca_param *pedca_param)
 	return ret;
 }
 
-int whc_fullmac_host_add_key(struct rtw_crypt_info *crypt)
+int whc_host_add_key(struct rtw_crypt_info *crypt)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -489,7 +489,7 @@ int whc_fullmac_host_add_key(struct rtw_crypt_info *crypt)
 
 	crypt_temp = rtw_malloc(sizeof(struct rtw_crypt_info), &dma_addr_crypt);
 	if (!crypt_temp) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc failed!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: malloc failed!\n", __func__);
 		return -ENOMEM;
 	}
 	memcpy(crypt_temp, crypt, sizeof(struct rtw_crypt_info));
@@ -501,7 +501,7 @@ int whc_fullmac_host_add_key(struct rtw_crypt_info *crypt)
 	return ret;
 }
 
-int whc_fullmac_host_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way)
+int whc_host_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -510,7 +510,7 @@ int whc_fullmac_host_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4w
 
 	prpt_4way = rtw_malloc(sizeof(struct rtw_wpa_4way_status), &dma_addr_4way);
 	if (!prpt_4way) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc failed!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: malloc failed!\n", __func__);
 		return -ENOMEM;
 	}
 	memcpy(prpt_4way, rpt_4way, sizeof(struct rtw_wpa_4way_status));
@@ -522,7 +522,7 @@ int whc_fullmac_host_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4w
 	return ret;
 }
 
-int whc_fullmac_host_tx_mgnt(u8 wlan_idx, const u8 *buf, size_t buf_len, u8 need_wait_ack)
+int whc_host_tx_mgnt(u8 wlan_idx, const u8 *buf, size_t buf_len, u8 need_wait_ack)
 {
 	int ret = 0;
 	u32 param_buf[2];
@@ -536,7 +536,7 @@ int whc_fullmac_host_tx_mgnt(u8 wlan_idx, const u8 *buf, size_t buf_len, u8 need
 	buf_vir = rtw_malloc(size, &buf_phy);
 
 	if (!buf_vir) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: malloc failed.", __func__);
 		return -1;
 	}
 
@@ -558,7 +558,7 @@ int whc_fullmac_host_tx_mgnt(u8 wlan_idx, const u8 *buf, size_t buf_len, u8 need
 	return ret;
 }
 
-int whc_fullmac_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
+int whc_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 {
 	int ret = 0;
 	u32 param_buf[3];
@@ -572,7 +572,7 @@ int whc_fullmac_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 	if (mac_addr) {
 		mac_addr_tmp = rtw_malloc(ETH_ALEN, &dma_addr_mac_addr);
 		if (!mac_addr_tmp) {
-			dev_err(global_idev.fullmac_dev, "%s: malloc mac_addr failed!\n", __func__);
+			dev_err(global_idev.pwhc_dev, "%s: malloc mac_addr failed!\n", __func__);
 			return -ENOMEM;
 		}
 		memcpy(mac_addr_tmp, mac_addr, ETH_ALEN);
@@ -590,7 +590,7 @@ int whc_fullmac_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 	return ret;
 }
 
-u32 whc_fullmac_host_update_ip_addr(void)
+u32 whc_host_update_ip_addr(void)
 {
 	int ret = 0;
 	struct event_priv_t *event_priv = &global_idev.event_priv;
@@ -599,14 +599,14 @@ u32 whc_fullmac_host_update_ip_addr(void)
 	u8 *ip_addr = NULL;
 	dma_addr_t ip_addr_phy = 0;
 
-	ip_addr = dma_alloc_coherent(global_idev.fullmac_dev, sizeof(u32), &ip_addr_phy, GFP_KERNEL);
+	ip_addr = dma_alloc_coherent(global_idev.pwhc_dev, sizeof(u32), &ip_addr_phy, GFP_KERNEL);
 	if (!ip_addr) {
-		dev_err(global_idev.fullmac_dev, "%s: allloc ip_addr error.\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: allloc ip_addr error.\n", __func__);
 		return -ENOMEM;
 	}
 	memcpy(ip_addr, global_idev.ip_addr, 4);
 
-	dev_dbg(global_idev.fullmac_dev, "%s ip=[%d.%d.%d.%d]\n", __func__, ip_addr[0], ip_addr[1], ip_addr[2], ip_addr[3]);
+	dev_dbg(global_idev.pwhc_dev, "%s ip=[%d.%d.%d.%d]\n", __func__, ip_addr[0], ip_addr[1], ip_addr[2], ip_addr[3]);
 
 	param_buf[0] = (u32)ip_addr_phy;
 
@@ -634,20 +634,20 @@ u32 whc_fullmac_host_update_ip_addr(void)
 	}
 
 	if (try_cnt == 0) {
-		dev_err(global_idev.fullmac_dev, "wowlan update ip address fail");
+		dev_err(global_idev.pwhc_dev, "wowlan update ip address fail");
 	}
 
 	mutex_unlock(&(event_priv->iiha_send_mutex));
 	ret = event_priv->preq_msg->ret;
 
 	if (ip_addr) {
-		dma_free_coherent(global_idev.fullmac_dev, sizeof(u32), ip_addr, ip_addr_phy);
+		dma_free_coherent(global_idev.pwhc_dev, sizeof(u32), ip_addr, ip_addr_phy);
 		ip_addr = NULL;
 	}
 	return ret;
 }
 
-int whc_fullmac_host_get_traffic_stats(u8 wlan_idx, dma_addr_t stats_traffic)
+int whc_host_get_traffic_stats(u8 wlan_idx, dma_addr_t stats_traffic)
 {
 	int ret = 0;
 	u32 param_buf[2];
@@ -662,7 +662,7 @@ int whc_fullmac_host_get_traffic_stats(u8 wlan_idx, dma_addr_t stats_traffic)
 	return ret;
 }
 
-int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, union rtw_phy_stats *stats)
+int whc_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, union rtw_phy_stats *stats)
 {
 	int ret = 0;
 	u32 param_buf[3];
@@ -676,7 +676,7 @@ int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, union rtw_ph
 
 	stats_vir = rtw_malloc(sizeof(union rtw_phy_stats), &stats_phy);
 	if (!stats_vir) {
-		dev_dbg(global_idev.fullmac_dev, "%s: malloc stats failed.", __func__);
+		dev_dbg(global_idev.pwhc_dev, "%s: malloc stats failed.", __func__);
 		return -ENOMEM;
 	}
 
@@ -684,7 +684,7 @@ int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, union rtw_ph
 		mac_addr_temp = rtw_malloc(6, &dma_addr_mac_addr);
 		if (!mac_addr_temp) {
 			rtw_mfree(sizeof(union rtw_phy_stats), stats_vir, stats_phy);
-			dev_err(global_idev.fullmac_dev, "%s: malloc dma_addr failed!\n", __func__);
+			dev_err(global_idev.pwhc_dev, "%s: malloc dma_addr failed!\n", __func__);
 			return -ENOMEM;
 		}
 		memcpy(mac_addr_temp, mac_addr, 6);
@@ -706,7 +706,7 @@ int whc_fullmac_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, union rtw_ph
 	return ret;
 }
 
-int whc_fullmac_host_get_setting(unsigned char wlan_idx, dma_addr_t setting_phy)
+int whc_host_get_setting(unsigned char wlan_idx, dma_addr_t setting_phy)
 {
 	int ret = 0;
 	u32 param_buf[2];
@@ -720,7 +720,7 @@ int whc_fullmac_host_get_setting(unsigned char wlan_idx, dma_addr_t setting_phy)
 	return ret;
 }
 
-int whc_fullmac_host_channel_switch(dma_addr_t csa_param_phy)
+int whc_host_channel_switch(dma_addr_t csa_param_phy)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -731,7 +731,7 @@ int whc_fullmac_host_channel_switch(dma_addr_t csa_param_phy)
 	return ret;
 }
 
-int whc_fullmac_host_pmksa_ops(dma_addr_t pmksa_ops_phy)
+int whc_host_pmksa_ops(dma_addr_t pmksa_ops_phy)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -743,7 +743,7 @@ int whc_fullmac_host_pmksa_ops(dma_addr_t pmksa_ops_phy)
 	return ret;
 }
 
-int whc_fullmac_host_set_lps_enable(u8 enable)
+int whc_host_set_lps_enable(u8 enable)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -754,7 +754,7 @@ int whc_fullmac_host_set_lps_enable(u8 enable)
 	return ret;
 }
 
-int whc_fullmac_host_mp_cmd(dma_addr_t cmd_phy, unsigned int cmd_len, dma_addr_t user_phy)
+int whc_host_mp_cmd(dma_addr_t cmd_phy, unsigned int cmd_len, dma_addr_t user_phy)
 {
 	u32 param_buf[4];
 
@@ -766,7 +766,7 @@ int whc_fullmac_host_mp_cmd(dma_addr_t cmd_phy, unsigned int cmd_len, dma_addr_t
 	return whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_MP_CMD, param_buf, 4);
 }
 
-int whc_fullmac_host_iwpriv_cmd(dma_addr_t cmd_phy, unsigned int cmd_len, unsigned char *cmd, unsigned char *user_buf)
+int whc_host_iwpriv_cmd(dma_addr_t cmd_phy, unsigned int cmd_len, unsigned char *cmd, unsigned char *user_buf)
 {
 	u32 param_buf[3];
 	int ret = 0;
@@ -791,7 +791,7 @@ void whc_fullmac_ipc_host_send_packet(struct whc_ipc_ex_msg *p_ipc_msg)
 	 * the next message.
 	 */
 	if (p_ipc_msg->msg_queue_status == IPC_WIFI_MSG_MEMORY_NOT_ENOUGH) {
-		dev_err(global_idev.fullmac_dev, "[AP]%s: p_ipc_msg->msg_queue_status not enough. Do not msleep here.\n", __func__);
+		dev_err(global_idev.pwhc_dev, "[AP]%s: p_ipc_msg->msg_queue_status not enough. Do not msleep here.\n", __func__);
 		/* TX SKBBUF 10 + RX DONE 10 = MSG POOL 20. If msg memory is still not enough, need debug.  */
 	}
 
@@ -802,7 +802,7 @@ void whc_fullmac_ipc_host_send_packet(struct whc_ipc_ex_msg *p_ipc_msg)
 		udelay(2);
 		try_cnt--;
 		if (try_cnt == 0) {
-			dev_warn(global_idev.fullmac_dev, "[AP] inic ipc wait timeout %d\n", pmsg->event_num);
+			dev_warn(global_idev.pwhc_dev, "[AP] inic ipc wait timeout %d\n", pmsg->event_num);
 			break;
 		}
 	}
@@ -821,7 +821,7 @@ void whc_fullmac_ipc_host_send_packet(struct whc_ipc_ex_msg *p_ipc_msg)
 	spin_unlock_bh(&msg_priv->ipc_send_msg_lock);
 }
 
-u64 whc_fullmac_host_get_tsft(u8 iface_type)
+u64 whc_host_get_tsft(u8 iface_type)
 {
 	u32 reg_tsf_low = 0, reg_tsf_high = 0;
 	u64 tsft_val = 0;
@@ -833,7 +833,7 @@ u64 whc_fullmac_host_get_tsft(u8 iface_type)
 		reg_tsf_low = llhw_ipc_wifi_reg_read32(0x568);
 		reg_tsf_high = llhw_ipc_wifi_reg_read32(0x56C);
 	} else {
-		dev_warn(global_idev.fullmac_dev, "[AP] unknown port(%d)!\n", iface_type);
+		dev_warn(global_idev.pwhc_dev, "[AP] unknown port(%d)!\n", iface_type);
 	}
 
 	tsft_val = ((u64)reg_tsf_high << 32) | reg_tsf_low;
@@ -841,7 +841,7 @@ u64 whc_fullmac_host_get_tsft(u8 iface_type)
 }
 
 #ifdef CONFIG_NAN
-int whc_fullmac_host_init_nan(void)
+int whc_host_init_nan(void)
 {
 	int ret = 0;
 
@@ -849,7 +849,7 @@ int whc_fullmac_host_init_nan(void)
 	return ret;
 }
 
-int whc_fullmac_host_deinit_nan(void)
+int whc_host_deinit_nan(void)
 {
 	int ret = 0;
 
@@ -857,7 +857,7 @@ int whc_fullmac_host_deinit_nan(void)
 	return ret;
 }
 
-int whc_fullmac_host_start_nan(u8 master_pref, u8 band_support)
+int whc_host_start_nan(u8 master_pref, u8 band_support)
 {
 	int ret = 0;
 	u32 param_buf[2];
@@ -869,7 +869,7 @@ int whc_fullmac_host_start_nan(u8 master_pref, u8 band_support)
 	return ret;
 }
 
-int whc_fullmac_host_stop_nan(void)
+int whc_host_stop_nan(void)
 {
 	int ret = 0;
 
@@ -877,7 +877,7 @@ int whc_fullmac_host_stop_nan(void)
 	return ret;
 }
 
-int whc_fullmac_host_add_nan_func(struct rtw_nan_func_t *func, void *nan_func_pointer)
+int whc_host_add_nan_func(struct rtw_nan_func_t *func, void *nan_func_pointer)
 {
 	int ret = 0;
 	size_t size = 0;
@@ -895,7 +895,7 @@ int whc_fullmac_host_add_nan_func(struct rtw_nan_func_t *func, void *nan_func_po
 
 	buf_vir = rtw_malloc(size, &buf_phy);
 	if (!buf_vir) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: mapping dma error!\n", __func__);
 		return -1;
 	}
 	memcpy(buf_vir, func, size);
@@ -934,7 +934,7 @@ int whc_fullmac_host_add_nan_func(struct rtw_nan_func_t *func, void *nan_func_po
 	return ret;
 }
 
-int whc_fullmac_host_del_nan_func(u64 cookie)
+int whc_host_del_nan_func(u64 cookie)
 {
 	int ret = 0;
 	u32 param_buf[2];
@@ -946,7 +946,7 @@ int whc_fullmac_host_del_nan_func(u64 cookie)
 	return ret;
 }
 
-int whc_fullmac_host_nan_cfgvendor_cmd(u16 vendor_cmd, const void *data, int len)
+int whc_host_nan_cfgvendor_cmd(u16 vendor_cmd, const void *data, int len)
 {
 	int ret = 0;
 	u32 param_buf[3];
@@ -956,7 +956,7 @@ int whc_fullmac_host_nan_cfgvendor_cmd(u16 vendor_cmd, const void *data, int len
 
 	data_vir = rtw_malloc(len, &dma_data);
 	if (data_vir == NULL) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc failed!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: malloc failed!\n", __func__);
 		return -ENOMEM;
 	}
 	memcpy(data_vir, data, len);
@@ -972,7 +972,7 @@ int whc_fullmac_host_nan_cfgvendor_cmd(u16 vendor_cmd, const void *data, int len
 #endif
 
 #ifdef CONFIG_P2P
-void whc_fullmac_host_set_p2p_role(enum rtw_p2p_role role)
+void whc_host_set_p2p_role(enum rtw_p2p_role role)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -982,7 +982,7 @@ void whc_fullmac_host_set_p2p_role(enum rtw_p2p_role role)
 	whc_fullmac_ipc_host_send_msg(WHC_API_P2P_ROLE, param_buf, 1);
 }
 
-int whc_fullmac_host_set_p2p_remain_on_ch(unsigned char wlan_idx, u8 enable)
+int whc_host_set_p2p_remain_on_ch(unsigned char wlan_idx, u8 enable)
 {
 	int ret = 0;
 	u32 param_buf[2];
@@ -996,7 +996,7 @@ int whc_fullmac_host_set_p2p_remain_on_ch(unsigned char wlan_idx, u8 enable)
 #endif
 
 #ifdef CONFIG_SUPPLICANT_SME
-void whc_fullmac_host_sme_auth(dma_addr_t auth_data_phy)
+void whc_host_sme_auth(dma_addr_t auth_data_phy)
 {
 	u32 param_buf[1];
 
@@ -1004,7 +1004,7 @@ void whc_fullmac_host_sme_auth(dma_addr_t auth_data_phy)
 	whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SME_AUTH, param_buf, 1);
 }
 
-int whc_fullmac_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len, u8 wpa_rsn_exist)
+int whc_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len, u8 wpa_rsn_exist)
 {
 	u8 *buf_vir = NULL;
 	dma_addr_t buf_phy = 0;
@@ -1013,7 +1013,7 @@ int whc_fullmac_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len, u8 wpa_rsn_exist
 
 	buf_vir = rtw_malloc(ie_len, &buf_phy);
 	if (!buf_vir) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
 	}
 
@@ -1032,7 +1032,7 @@ int whc_fullmac_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len, u8 wpa_rsn_exist
 
 #endif
 
-int whc_fullmac_host_set_pmf_mode(u8 pmf_mode)
+int whc_host_set_pmf_mode(u8 pmf_mode)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -1043,7 +1043,7 @@ int whc_fullmac_host_set_pmf_mode(u8 pmf_mode)
 	return ret;
 }
 
-int whc_fullmac_host_set_wps_phase(u8 enable)
+int whc_host_set_wps_phase(u8 enable)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -1053,7 +1053,7 @@ int whc_fullmac_host_set_wps_phase(u8 enable)
 	return ret;
 }
 
-int whc_fullmac_host_set_wpa_mode(u8 wpa_mode)
+int whc_host_set_wpa_mode(u8 wpa_mode)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -1063,7 +1063,7 @@ int whc_fullmac_host_set_wpa_mode(u8 wpa_mode)
 	return ret;
 }
 
-int whc_fullmac_host_set_owe_param(struct rtw_owe_param_t *owe_param)
+int whc_host_set_owe_param(struct rtw_owe_param_t *owe_param)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -1073,7 +1073,7 @@ int whc_fullmac_host_set_owe_param(struct rtw_owe_param_t *owe_param)
 
 	powe = rtw_malloc(sizeof(struct rtw_owe_param_t), &dma_data);
 	if (powe == NULL) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc error!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: malloc error!\n", __func__);
 		return -ENOMEM;
 	}
 	memcpy(powe, owe_param, sizeof(struct rtw_owe_param_t));
@@ -1084,7 +1084,7 @@ int whc_fullmac_host_set_owe_param(struct rtw_owe_param_t *owe_param)
 	return ret;
 }
 
-int whc_fullmac_host_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags)
+int whc_host_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags)
 {
 	int ret = 0;
 	u32 param_buf[4];
@@ -1094,7 +1094,7 @@ int whc_fullmac_host_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, 
 
 	data = rtw_malloc(buf_len, &dma_data);
 	if (data == NULL) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc error!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: malloc error!\n", __func__);
 		return -ENOMEM;
 	}
 	memcpy(data, buf, buf_len);
@@ -1109,7 +1109,7 @@ int whc_fullmac_host_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, 
 	return ret;
 }
 
-int whc_fullmac_host_add_custom_ie(const struct element **elem, u8 num, u16 type)
+int whc_host_add_custom_ie(const struct element **elem, u8 num, u16 type)
 {
 	int ret = 0;
 	u32 param_buf[4];
@@ -1129,7 +1129,7 @@ int whc_fullmac_host_add_custom_ie(const struct element **elem, u8 num, u16 type
 	buf_vir = rtw_malloc(size, &buf_phy);
 
 	if (!buf_vir) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
 	}
 
@@ -1157,7 +1157,7 @@ int whc_fullmac_host_add_custom_ie(const struct element **elem, u8 num, u16 type
 	return ret;
 }
 
-int whc_fullmac_host_del_custom_ie(unsigned char wlan_idx)
+int whc_host_del_custom_ie(unsigned char wlan_idx)
 {
 	int ret = 0;
 	u32 param_buf[2];
@@ -1169,7 +1169,7 @@ int whc_fullmac_host_del_custom_ie(unsigned char wlan_idx)
 	return ret;
 }
 
-int whc_fullmac_host_update_custom_ie(u8 *ie, int ie_index, u8 type)
+int whc_host_update_custom_ie(u8 *ie, int ie_index, u8 type)
 {
 	int ret = 0;
 	u32 param_buf[4];
@@ -1182,7 +1182,7 @@ int whc_fullmac_host_update_custom_ie(u8 *ie, int ie_index, u8 type)
 	size = sizeof(struct rtw_custom_ie) + ie[1] + 2;
 	buf_vir = rtw_malloc(size, &buf_phy);
 	if (!buf_vir) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
 	}
 	cus_ie_array = (struct rtw_custom_ie *)buf_vir;
@@ -1203,7 +1203,7 @@ int whc_fullmac_host_update_custom_ie(u8 *ie, int ie_index, u8 type)
 	return ret;
 }
 
-int whc_fullmac_host_set_edcca_mode(struct rtw_edcca_param_t *p)
+int whc_host_set_edcca_mode(struct rtw_edcca_param_t *p)
 {
 	int ret = 0;
 	u8 *buf_vir = NULL;
@@ -1216,7 +1216,7 @@ int whc_fullmac_host_set_edcca_mode(struct rtw_edcca_param_t *p)
 
 	buf_vir = rtw_malloc(sizeof(struct rtw_edcca_param_t), &buf_phy);
 	if (!buf_vir) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
 	}
 	memcpy(buf_vir, p, sizeof(struct rtw_edcca_param_t));
@@ -1230,8 +1230,8 @@ int whc_fullmac_host_set_edcca_mode(struct rtw_edcca_param_t *p)
 		ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_SET_EDCCA_PARAM, param_buf, 1);
 		break;
 	default:
-		dev_info(global_idev.fullmac_dev, "Wrong EDCCA mode %d!", p->edcca_mode);
-		dev_info(global_idev.fullmac_dev, "0: normal; 1: ETSI; 2: Japan; 9: Disable.");
+		dev_info(global_idev.pwhc_dev, "Wrong EDCCA mode %d!", p->edcca_mode);
+		dev_info(global_idev.pwhc_dev, "0: normal; 1: ETSI; 2: Japan; 9: Disable.");
 		ret = -EINVAL;
 		break;
 	}
@@ -1241,7 +1241,7 @@ int whc_fullmac_host_set_edcca_mode(struct rtw_edcca_param_t *p)
 	return ret;
 }
 
-int whc_fullmac_host_get_edcca_mode(u8 *edcca_mode)
+int whc_host_get_edcca_mode(u8 *edcca_mode)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -1251,7 +1251,7 @@ int whc_fullmac_host_get_edcca_mode(u8 *edcca_mode)
 
 	virt_addr = rtw_malloc(sizeof(u8), &dma_addr);
 	if (virt_addr == NULL) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc failed!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: malloc failed!\n", __func__);
 		ret = -ENOMEM;
 		goto func_exit;
 	}
@@ -1266,7 +1266,7 @@ func_exit:
 	return ret;
 }
 
-int whc_fullmac_host_get_ant_info(u8 *antdiv_mode, u8 *curr_ant)
+int whc_host_get_ant_info(u8 *antdiv_mode, u8 *curr_ant)
 {
 	int ret = 0;
 	u32 param_buf[2];
@@ -1276,7 +1276,7 @@ int whc_fullmac_host_get_ant_info(u8 *antdiv_mode, u8 *curr_ant)
 
 	virt_addr = rtw_malloc(2 * sizeof(u8), &dma_addr);
 	if (virt_addr == NULL) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc failed!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: malloc failed!\n", __func__);
 		ret = -ENOMEM;
 		goto func_exit;
 	}
@@ -1292,7 +1292,7 @@ func_exit:
 	return ret;
 }
 
-int whc_fullmac_host_set_country_code(char *cc)
+int whc_host_set_country_code(char *cc)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -1301,13 +1301,13 @@ int whc_fullmac_host_set_country_code(char *cc)
 	struct device *pdev = global_idev.ipc_dev;
 
 	if (strlen(cc) != 2) {
-		dev_err(global_idev.fullmac_dev, "%s: the length of country is not 2.\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: the length of country is not 2.\n", __func__);
 		return -EINVAL;
 	}
 
 	country_code = rtw_malloc(2, &phy_addr);
 	if (!country_code) {
-		dev_err(global_idev.fullmac_dev, "%s: maolloc failed\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: maolloc failed\n", __func__);
 		return -ENOMEM;
 	}
 	memcpy(country_code, cc, 2);
@@ -1319,7 +1319,7 @@ int whc_fullmac_host_set_country_code(char *cc)
 	return ret;
 }
 
-int whc_fullmac_host_get_country_code(struct rtw_country_code_table *table)
+int whc_host_get_country_code(struct rtw_country_code_table *table)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -1328,13 +1328,13 @@ int whc_fullmac_host_get_country_code(struct rtw_country_code_table *table)
 	struct device *pdev = global_idev.ipc_dev;
 
 	if (table == NULL) {
-		dev_err(global_idev.fullmac_dev, "%s: input is NULL.\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: input is NULL.\n", __func__);
 		return -EINVAL;
 	}
 
 	virt_addr = rtw_malloc(sizeof(struct rtw_country_code_table), &phy_addr);
 	if (virt_addr == NULL) {
-		dev_err(global_idev.fullmac_dev, "%s: allocate memory failed!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: allocate memory failed!\n", __func__);
 		return -ENOMEM;
 	}
 
@@ -1350,7 +1350,7 @@ int whc_fullmac_host_get_country_code(struct rtw_country_code_table *table)
 	return ret;
 }
 
-int whc_fullmac_host_dev_driver_is_mp(u8 *is_mp)
+int whc_host_dev_driver_is_mp(u8 *is_mp)
 {
 	int ret = 0;
 
@@ -1364,7 +1364,7 @@ int whc_fullmac_host_dev_driver_is_mp(u8 *is_mp)
 	return ret;
 }
 
-int whc_fullmac_host_set_promisc_enable(u32 enable, u8 mode)
+int whc_host_set_promisc_enable(u32 enable, u8 mode)
 {
 	int ret = 0;
 	u32 param_buf[3];
@@ -1377,7 +1377,7 @@ int whc_fullmac_host_set_promisc_enable(u32 enable, u8 mode)
 	return ret;
 }
 
-int whc_fullmac_host_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 status)
+int whc_host_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 status)
 {
 	dma_addr_t phy_addr = 0;
 	u8 *param = NULL;
@@ -1388,7 +1388,7 @@ int whc_fullmac_host_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 s
 	if (kvr_param) {
 		param = rtw_malloc(sizeof(struct rtw_kvr_param_t), &phy_addr);
 		if (param == NULL) {
-			dev_err(global_idev.fullmac_dev, "%s: malloc error!\n", __func__);
+			dev_err(global_idev.pwhc_dev, "%s: malloc error!\n", __func__);
 			return -ENOMEM;
 		}
 		memcpy(param, kvr_param, sizeof(struct rtw_kvr_param_t));

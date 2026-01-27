@@ -12,7 +12,7 @@
 #ifdef CONFIG_NAN
 
 /*---------------------------events--------------------------*/
-void whc_fullmac_host_cfgvendor_nan_event_indication(u8 event_id, void *event, int size)
+void whc_host_cfgvendor_nan_event_indication(u8 event_id, void *event, int size)
 {
 	struct wiphy *wiphy = global_idev.pwiphy_global;
 	struct wireless_dev *wdev = global_idev.pwdev_global[2];
@@ -35,7 +35,7 @@ exit:
 	return;
 }
 
-void whc_fullmac_host_cfgvendor_send_cmd_reply(void  *data, int len)
+void whc_host_cfgvendor_send_cmd_reply(void  *data, int len)
 {
 	struct wiphy *wiphy = global_idev.pwiphy_global;
 	struct sk_buff *skb;
@@ -55,85 +55,85 @@ exit:
 }
 
 /*---------------------------cmds--------------------------*/
-static int whc_fullmac_host_cfgvendor_set_nan_srvc_extinfo(struct wiphy *wiphy,
+static int whc_host_cfgvendor_set_nan_srvc_extinfo(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int len)
 {
-	whc_fullmac_host_nan_cfgvendor_cmd(NAN_SUBCMD_SRVC_EXT_INFO, data, len);
+	whc_host_nan_cfgvendor_cmd(NAN_SUBCMD_SRVC_EXT_INFO, data, len);
 	return 0;
 }
 
-static int whc_fullmac_host_cfgvendor_set_nan_data_request(struct wiphy *wiphy,
+static int whc_host_cfgvendor_set_nan_data_request(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int len)
 {
-	whc_fullmac_host_nan_cfgvendor_cmd(NAN_SUBCMD_DATA_REQ, data, len);
-
-	return 0;
-}
-
-static int whc_fullmac_host_cfgvendor_set_nan_data_response(struct wiphy *wiphy,
-		struct wireless_dev *wdev, const void *data, int len)
-{
-	whc_fullmac_host_nan_cfgvendor_cmd(NAN_SUBCMD_DATA_RSP, data, len);
+	whc_host_nan_cfgvendor_cmd(NAN_SUBCMD_DATA_REQ, data, len);
 
 	return 0;
 }
 
-static int whc_fullmac_host_cfgvendor_set_nan_data_end(struct wiphy *wiphy,
+static int whc_host_cfgvendor_set_nan_data_response(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int len)
 {
-	whc_fullmac_host_nan_cfgvendor_cmd(NAN_SUBCMD_DATA_END, data, len);
+	whc_host_nan_cfgvendor_cmd(NAN_SUBCMD_DATA_RSP, data, len);
+
+	return 0;
+}
+
+static int whc_host_cfgvendor_set_nan_data_end(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int len)
+{
+	whc_host_nan_cfgvendor_cmd(NAN_SUBCMD_DATA_END, data, len);
 
 	return 0;
 }
 
 #ifdef CONFIG_NAN_PAIRING
-static int whc_fullmac_host_cfgvendor_set_nan_follow_up(struct wiphy *wiphy,
+static int whc_host_cfgvendor_set_nan_follow_up(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int len)
 {
-	whc_fullmac_host_nan_cfgvendor_cmd(NAN_SUBCMD_FOLLOWUP, data, len);
+	whc_host_nan_cfgvendor_cmd(NAN_SUBCMD_FOLLOWUP, data, len);
 
 	return 0;
 }
 
-static int whc_fullmac_host_cfgvendor_nan_pairing_set_pw(struct wiphy *wiphy,
+static int whc_host_cfgvendor_nan_pairing_set_pw(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int len)
 {
-	whc_fullmac_host_nan_cfgvendor_cmd(NAN_SUBCMD_PAIRING_SET_PW, data, len);
+	whc_host_nan_cfgvendor_cmd(NAN_SUBCMD_PAIRING_SET_PW, data, len);
 
 	return 0;
 }
 
-static int whc_fullmac_host_cfgvendor_nan_pasn_start(struct wiphy *wiphy,
+static int whc_host_cfgvendor_nan_pasn_start(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int len)
 {
-	whc_fullmac_host_nan_cfgvendor_cmd(NAN_SUBCMD_PASN_START, data, len);
+	whc_host_nan_cfgvendor_cmd(NAN_SUBCMD_PASN_START, data, len);
 
 	return 0;
 }
 
-static int whc_fullmac_host_cfgvendor_nan_pasn_setkeys(struct wiphy *wiphy,
+static int whc_host_cfgvendor_nan_pasn_setkeys(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int len)
 {
-	whc_fullmac_host_nan_cfgvendor_cmd(NAN_SUBCMD_PASN_SET_KEY, data, len);
+	whc_host_nan_cfgvendor_cmd(NAN_SUBCMD_PASN_SET_KEY, data, len);
 
 	return 0;
 }
 #endif /* CONFIG_NAN_PAIRING */
 
 #ifdef NAN_CUSTOMER_NANDOW
-static int whc_fullmac_host_cfgvendor_nandow_entry(struct wiphy *wiphy,
+static int whc_host_cfgvendor_nandow_entry(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int len)
 {
-	whc_fullmac_host_nan_cfgvendor_cmd(NAN_SUBCMD_CUSTOMER_NANDOW, data, len);
+	whc_host_nan_cfgvendor_cmd(NAN_SUBCMD_CUSTOMER_NANDOW, data, len);
 	if (global_idev.ipv6_addr_updated) {
-		whc_fullmac_host_update_ip_addr();
+		whc_host_update_ip_addr();
 		global_idev.ipv6_addr_updated = 0;
 	}
 	return 0;
 }
 #endif
 
-static const struct  nl80211_vendor_cmd_info whc_fullmac_host_vendor_events[] = {
+static const struct  nl80211_vendor_cmd_info whc_host_vendor_events[] = {
 	{ OUI_REALTEK, NAN_EVENT_DATA_COMFIRM},
 #ifdef NAN_CUSTOMER_NANDOW
 	{ OUI_REALTEK, GET_OVERALL_EVENT_ID(WFPAL_M_NAN_CLUSTER_CHANGED)},
@@ -171,7 +171,7 @@ static const struct  nl80211_vendor_cmd_info whc_fullmac_host_vendor_events[] = 
 };
 
 
-static const struct wiphy_vendor_command whc_fullmac_host_vendor_cmds[] = {
+static const struct wiphy_vendor_command whc_host_vendor_cmds[] = {
 	{
 		{
 			.vendor_id = OUI_REALTEK,
@@ -179,7 +179,7 @@ static const struct wiphy_vendor_command whc_fullmac_host_vendor_cmds[] = {
 		},
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.policy = VENDOR_CMD_RAW_DATA,
-		.doit = whc_fullmac_host_cfgvendor_set_nan_srvc_extinfo
+		.doit = whc_host_cfgvendor_set_nan_srvc_extinfo
 	},
 	{
 		{
@@ -188,7 +188,7 @@ static const struct wiphy_vendor_command whc_fullmac_host_vendor_cmds[] = {
 		},
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.policy = VENDOR_CMD_RAW_DATA,
-		.doit = whc_fullmac_host_cfgvendor_set_nan_data_request
+		.doit = whc_host_cfgvendor_set_nan_data_request
 	},
 	{
 		{
@@ -197,7 +197,7 @@ static const struct wiphy_vendor_command whc_fullmac_host_vendor_cmds[] = {
 		},
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.policy = VENDOR_CMD_RAW_DATA,
-		.doit = whc_fullmac_host_cfgvendor_set_nan_data_response
+		.doit = whc_host_cfgvendor_set_nan_data_response
 	},
 	{
 		{
@@ -206,7 +206,7 @@ static const struct wiphy_vendor_command whc_fullmac_host_vendor_cmds[] = {
 		},
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.policy = VENDOR_CMD_RAW_DATA,
-		.doit = whc_fullmac_host_cfgvendor_set_nan_data_end
+		.doit = whc_host_cfgvendor_set_nan_data_end
 	},
 #ifdef CONFIG_NAN_PAIRING
 	{
@@ -216,7 +216,7 @@ static const struct wiphy_vendor_command whc_fullmac_host_vendor_cmds[] = {
 		},
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.policy = VENDOR_CMD_RAW_DATA,
-		.doit = whc_fullmac_host_cfgvendor_set_nan_follow_up
+		.doit = whc_host_cfgvendor_set_nan_follow_up
 	},
 #endif
 #ifdef NAN_CUSTOMER_NANDOW
@@ -227,7 +227,7 @@ static const struct wiphy_vendor_command whc_fullmac_host_vendor_cmds[] = {
 		},
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.policy = VENDOR_CMD_RAW_DATA,
-		.doit = whc_fullmac_host_cfgvendor_nandow_entry
+		.doit = whc_host_cfgvendor_nandow_entry
 	},
 #endif /* NAN_CUSTOMER_NANDOW */
 #ifdef CONFIG_NAN_PAIRING
@@ -238,7 +238,7 @@ static const struct wiphy_vendor_command whc_fullmac_host_vendor_cmds[] = {
 		},
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.policy = VENDOR_CMD_RAW_DATA,
-		.doit = whc_fullmac_host_cfgvendor_nan_pairing_set_pw
+		.doit = whc_host_cfgvendor_nan_pairing_set_pw
 	},
 	{
 		{
@@ -247,7 +247,7 @@ static const struct wiphy_vendor_command whc_fullmac_host_vendor_cmds[] = {
 		},
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.policy = VENDOR_CMD_RAW_DATA,
-		.doit = whc_fullmac_host_cfgvendor_nan_pasn_start
+		.doit = whc_host_cfgvendor_nan_pasn_start
 	},
 	{
 		{
@@ -256,20 +256,20 @@ static const struct wiphy_vendor_command whc_fullmac_host_vendor_cmds[] = {
 		},
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.policy = VENDOR_CMD_RAW_DATA,
-		.doit = whc_fullmac_host_cfgvendor_nan_pasn_setkeys
+		.doit = whc_host_cfgvendor_nan_pasn_setkeys
 	}
 #endif /* CONFIG_NAN_PAIRING */
 };
 
-void whc_fullmac_host_cfgvendor_attach(struct wiphy *wiphy)
+void whc_host_cfgvendor_attach(struct wiphy *wiphy)
 {
-	wiphy->vendor_commands	= whc_fullmac_host_vendor_cmds;
-	wiphy->n_vendor_commands = ARRAY_SIZE(whc_fullmac_host_vendor_cmds);
-	wiphy->vendor_events	= whc_fullmac_host_vendor_events;
-	wiphy->n_vendor_events	= ARRAY_SIZE(whc_fullmac_host_vendor_events);
+	wiphy->vendor_commands	= whc_host_vendor_cmds;
+	wiphy->n_vendor_commands = ARRAY_SIZE(whc_host_vendor_cmds);
+	wiphy->vendor_events	= whc_host_vendor_events;
+	wiphy->n_vendor_events	= ARRAY_SIZE(whc_host_vendor_events);
 }
 
-void whc_fullmac_host_cfgvendor_detach(struct wiphy *wiphy)
+void whc_host_cfgvendor_detach(struct wiphy *wiphy)
 {
 	wiphy->vendor_commands  = NULL;
 	wiphy->vendor_events    = NULL;

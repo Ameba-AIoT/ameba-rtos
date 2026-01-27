@@ -9,7 +9,7 @@ None
 # SW configuration
 
 1. Menuconfig
-	Type command `./menuconfig.py` under the project directory and :
+	Use menuconfig and :
 	- Choose `CONFIG USB --->`:
 	```
 	[*] Enable USB
@@ -26,6 +26,14 @@ None
 			Select Audio Interfaces (PassThrough)  --->
 
 	Note: If the audio speaker is not very smooth, choose `Select Audio Interfaces (Mixer)`, check the audio composite note to get more details.
+	```
+
+	If the development board model is RTL8721F, please follow the steps below to select FREERTOS via menuconfig.
+	Use menuconfig and :
+	- Choose `CONFIG OS --->`:
+	```
+	[*] Enable Kernel
+			Kernel Selecte (FREERTOS)--->
 	```
 	Save and exit.
 
@@ -82,3 +90,4 @@ Specially for Win7/XP host, please manually install the CDC ACM driver RtkUsbCdc
 
 RTL8730E
 RTL8721Dx
+RTL8721F

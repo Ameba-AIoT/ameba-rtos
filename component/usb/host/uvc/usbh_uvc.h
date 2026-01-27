@@ -27,6 +27,25 @@
 #define USBH_UVC_VS_ALTS_MAX_NUM                30
 
 /* Exported types ------------------------------------------------------------*/
+typedef enum {
+	UVC_STATE_IDLE = 0,
+	UVC_STATE_CTRL,
+	UVC_STATE_TRANSFER,
+	UVC_STATE_ERROR
+} usbh_uvc_state_t;
+
+typedef enum {
+	STREAM_STATE_CTRL_IDLE = 0,
+	STREAM_STATE_SET_PARA,        // Set Param: Probe - Commit - Set alt
+	STREAM_STATE_PROBE_NEGOTIATE, // Set Video (Probe1)
+	STREAM_STATE_PROBE_UPDATE,    // Get Video (Probe2)
+	STREAM_STATE_PROBE_FINAL,     // Set Video (Probe3)
+	STREAM_STATE_COMMIT,          // Set Video (Commit)
+	STREAM_STATE_FIND_ALT,        // Find Interface/Altsetting for transfer
+	STREAM_STATE_SET_ALT,         // Set Interface/Altsetting for transfer
+	STREAM_STATE_SET_CTRL,        // Set Interface/0 for ctrl
+	STREAM_STATE_ERROR
+} usbh_stream_state_t;
 
 typedef struct {
 	u32 dwMinBitRate;
@@ -133,6 +152,7 @@ typedef struct {
 	usb_os_queue_t urb_wait_queue;
 	usb_os_queue_t urb_giveback_queue;
 	usb_os_task_t decode_task;
+	volatile usbh_stream_state_t state;
 	volatile u32 cur_packet_state;
 	volatile u32 complete_flag;
 	volatile u32 complete_on;
@@ -146,15 +166,17 @@ typedef struct {
 	usbh_uvc_frame_t *cur_frame_buf;
 	u8 *urb_buffer;
 	u8 *frame_buf;
+	u8 *request_buf;
 
 #if USBH_UVC_USE_HW
 	usbh_hw_uvc_dec *uvc_dec;
 	u8 isr_priority;
 #endif
 
+	volatile u8 set_alt;
 	u8 stream_state;
 	u8 stream_data_state;
-	u8 stream_num;
+	u8 stream_idx;
 	u8 last_fid;
 } usbh_uvc_stream_t;
 
@@ -163,9 +185,12 @@ typedef struct {
 	usbh_uvc_cfg_t uvc_desc;
 	struct list_head entity_list;
 	struct list_head video_chain;
+	usbh_setup_req_t setup_req;
 	usb_host_t *host;
 	usbh_uvc_cb_t *cb;
+	volatile usbh_uvc_state_t state;
 	u32 sof_cnt;
+	volatile u8 stream_in_ctrl;// record stream idx for ctrl process
 } usbh_uvc_host_t;
 
 /* Exported variables --------------------------------------------------------*/
@@ -182,8 +207,6 @@ usbh_uvc_urb_t *usbh_uvc_urb_complete(usbh_uvc_stream_t *stream, usbh_uvc_urb_t 
 
 int usbh_uvc_set_video(usbh_uvc_stream_t *stream, int probe);
 int usbh_uvc_get_video(usbh_uvc_stream_t *stream, int probe, u16 request);
-int usbh_uvc_probe_video(usbh_uvc_stream_t *stream);
-int usbh_uvc_commit_video(usbh_uvc_stream_t *stream);
 
 int usbh_uvc_video_init(usbh_uvc_stream_t *stream);
 int usbh_uvc_stream_init(usbh_uvc_stream_t *stream);

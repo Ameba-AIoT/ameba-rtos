@@ -30,9 +30,9 @@ int whc_host_init(void)
 	whc_host_recv_init();
 
 #if defined(CONFIG_WHC_WIFI_API_PATH)
-	ret = whc_fullmac_host_event_init(idev);
+	ret = whc_host_event_init(idev);
 	if (ret < 0) {
-		dev_err(idev->fullmac_dev, "whc_fullmac_host_event_init error(%d).\n", ret);
+		dev_err(idev->pwhc_dev, "whc_host_event_init error(%d).\n", ret);
 		goto exit;
 	}
 #endif
@@ -48,12 +48,12 @@ int whc_host_init(void)
 
 	memset(&global_idev.wifi_user_config, 0, sizeof(struct wifi_user_conf));
 #if defined(CONFIG_WHC_WIFI_API_PATH)
-	whc_fullmac_host_set_user_config(&global_idev.wifi_user_config);
+	whc_host_set_user_config(&global_idev.wifi_user_config);
 #endif
 
 #if defined(CONFIG_WHC_WIFI_API_PATH)
 	/* tell KM4 to open wifi */
-	whc_fullmac_host_wifi_on();
+	whc_host_wifi_on();
 #endif
 	return 0;
 
@@ -68,7 +68,7 @@ void whc_host_deinit(void)
 	whc_host_xmit_deinit();
 
 #if defined(CONFIG_WHC_WIFI_API_PATH)
-	whc_fullmac_host_event_deinit();
+	whc_host_event_deinit();
 #endif
 
 	whc_host_recv_deinit();

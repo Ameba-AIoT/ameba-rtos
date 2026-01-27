@@ -25,10 +25,10 @@
 #define USBD_INIC_ITF_BT_SCO							1U
 #define USBD_INIC_ITF_WIFI								2U
 
-#define USBD_INIC_HS_BULK_MPS							512U   /* High speed BULK IN & OUT max packet size */
-#define USBD_INIC_FS_BULK_MPS							64U   /* Full speed BULK IN & OUT max packet size */
-#define USBD_INIC_HS_INTR_MPS							16U   /* High speed INTR IN & OUT max packet size */
-#define USBD_INIC_FS_INTR_MPS							16U   /* Full speed INTR IN & OUT max packet size */
+#define USBD_INIC_HS_BULK_MPS							512U  /* High speed BULK IN & OUT maximum packet size */
+#define USBD_INIC_FS_BULK_MPS							64U   /* Full speed BULK IN & OUT maximum packet size */
+#define USBD_INIC_HS_INTR_MPS							16U   /* High speed INTR IN & OUT maximum packet size */
+#define USBD_INIC_FS_INTR_MPS							16U   /* Full speed INTR IN & OUT maximum packet size */
 
 #define USBD_INIT_BT_EP1_INTR_IN						0x81U
 #define USBD_INIC_BT_EP2_BULK_IN						0x82U
@@ -38,7 +38,7 @@
 #define USBD_WHC_WIFI_EP6_BULK_OUT						0x06U
 #define USBD_WHC_WIFI_EP7_BULK_OUT						0x07U
 
-#define USBD_INIC_CTRL_BUF_SIZE							512U  /* CTRL buffer size */
+#define USBD_INIC_CTRL_BUF_SIZE							512U  /* Control buffer size */
 
 #define USBD_INIC_EP_STATE_IDLE							0U
 #define USBD_INIC_EP_STATE_BUSY							1U
@@ -91,15 +91,64 @@ typedef struct {
 	void *userdata; // userdata for each ep
 } usbd_inic_ep_t;
 
+/**
+ * @brief INIC user callback structure.
+ * @details This structure holds pointers to user-defined callback functions
+ *          that are invoked on various INIC events.
+ */
 typedef struct {
-	// Common callbacks
+	/**
+	 * @brief Called during class driver initialization for application resource setup.
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int(* init)(void);
+
+	/**
+	 * @brief Called during class driver deinitialization for resource cleanup.
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int(* deinit)(void);
+
+	/**
+	 * @brief Called during control transfer SETUP/DATA phases to handle application-specific control requests.
+	 * @param[in] req: Pointer to the setup request packet.
+	 * @param[out] buf: Pointer to a buffer for data stage of control transfers.
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int(* setup)(usb_setup_req_t *req, u8 *buf);
+
+	/**
+	 * @brief Notifies application layer when INIC driver becomes operational.
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int(* set_config)(void);
+
+	/**
+	 * @brief Notifies application layer when INIC driver becomes non-operational.
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int(* clear_config)(void);
+
+	/**
+	 * @brief Called when non-control IN transfer done, for asynchronous non-control IN transfer status notification.
+	 * @param[in] in_ep: Pointer to the INIC IN endpoint.
+	 * @param[in] status: The status of the transmission.
+	 */
 	void(* transmitted)(usbd_inic_ep_t *in_ep, u8 status);
-	int(* received)(usbd_inic_ep_t *out_ep, u16 len);
+
+	/**
+	 * @brief Called when non-control OUT transfer done, for application to handle the received host command/data.
+	 * @param[in] out_ep: Pointer to the INIC OUT endpoint.
+	 * @param[in] len: Length of the received data in bytes.
+	 * @return 0 on success, non-zero on failure.
+	 */
+	int(* received)(usbd_inic_ep_t *out_ep, u32 len);
+
+	/**
+	 * @brief Called when the USB device status changes for application to support USB hot-plug events.
+	 * @param[in] old_status: The previous USB device status.
+	 * @param[in] status: The new USB device status.
+	 */
 	void (*status_changed)(u8 old_status, u8 status);
 } usbd_inic_cb_t;
 
@@ -125,11 +174,53 @@ typedef struct {
 
 /* Exported functions --------------------------------------------------------*/
 
+/**
+* @brief Initializes class driver with application callback handler.
+* @param[in] cb: Pointer to the user-defined callback structure.
+* @return 0 on success, non-zero on failure.
+*/
 int usbd_inic_init(usbd_inic_cb_t *cb);
+
+/**
+ * @brief DeInitialize HID device
+ * @return 0 on success, non-zero on failure.
+ */
 int usbd_inic_deinit(void);
+
+/**
+ * @brief Transmits control IN data
+ * @param[in] buf: Pointer to the data buffer to be transmitted.
+ * @param[in] len: Length of the data in bytes.
+ * @return 0 on success, non-zero on failure.
+ */
 int usbd_inic_transmit_ctrl_data(u8 *buf, u16 len);
-int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u16 len, void *userdata);
-int usbd_inic_receive_data(u8 ep_addr, u8 *buf, u16 len, void *userdata);
+
+/**
+ * @brief Transmits data to the host.
+ * @param[in] ep_addr: Endpoint address.
+ * @param[in] buf: Pointer to the data buffer to be transmitted.
+ * @param[in] len: Length of the data in bytes.
+ * @param[in] userdata: userdata from application for each endpoint.
+ * @return 0 on success, non-zero on failure.
+ */
+int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata);
+
+/**
+ * @brief Prepares to receive non-control OUT data.
+ * @param[in] ep_addr: Endpoint address.
+ * @param[in] buf: Pointer to the data buffer.
+ * @param[in] len: Length of the data in bytes.
+ * @param[in] userdata: userdata from application for each endpoint.
+ * @return 0 on success, non-zero on failure.
+ */
+int usbd_inic_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata);
+
+/**
+ * @brief Checks whether the BT is enbaled.
+ * @return
+ *        - 1: BT is enbaled.
+ *        - 0: BT is disabled.
+ */
 u8 usbd_inic_is_bt_en(void);
 #endif  /* USBD_INIC_H */
 

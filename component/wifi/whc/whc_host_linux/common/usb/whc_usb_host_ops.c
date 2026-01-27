@@ -253,7 +253,7 @@ void whc_host_send_cmd_data(u8 *buf, u32 len)
 	}
 	txbuf = kzalloc(txsize, GFP_KERNEL);
 	if (!txbuf) {
-		dev_err(global_idev.fullmac_dev, "%s can't alloc usb buffer!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s can't alloc usb buffer!\n", __func__);
 		return;
 	}
 	if (event != WHC_WIFI_EVT_XIMT_PKTS) {

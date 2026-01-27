@@ -17,7 +17,7 @@
 * @param  len: length of the transmitted data.
 * @return none.
 */
-static inline void whc_fullmac_host_recv_cust_evt_hd(u8 *buf, u32 len)
+static inline void whc_host_recv_cust_evt_hdl(u8 *buf, u32 len)
 {
 	(void) buf;
 	(void) len;
@@ -27,12 +27,12 @@ static inline void whc_fullmac_host_recv_cust_evt_hd(u8 *buf, u32 len)
 	return;
 }
 
-void whc_fullmac_host_recv_cust_evt(u8 *rx_buf)
+void whc_host_recv_cust_evt(u8 *rx_buf)
 {
 	struct whc_cust_hdr *head = (struct whc_cust_hdr *)rx_buf;
 	u8 *buf = rx_buf + sizeof(struct whc_cust_hdr);
 
-	whc_fullmac_host_recv_cust_evt_hd(buf, head->len);
+	whc_host_recv_cust_evt_hdl(buf, head->len);
 
 	return;
 }
@@ -43,7 +43,7 @@ void whc_fullmac_host_recv_cust_evt(u8 *rx_buf)
 * @param  len: length of the transmitted data.
 * @return none.
 */
-void whc_fullmac_host_send_cust_evt(u8 *buf, u32 len)
+void whc_host_send_cust_evt(u8 *buf, u32 len)
 {
 	struct whc_cust_hdr *head = NULL;
 	u8 *buf_send = NULL;
@@ -69,6 +69,6 @@ void whc_fullmac_host_send_cust_evt(u8 *buf, u32 len)
 		kfree(buf_send);
 #endif
 	} else {
-		dev_err(global_idev.fullmac_dev, "%s can't alloc buffer!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s can't alloc buffer!\n", __func__);
 	}
 }

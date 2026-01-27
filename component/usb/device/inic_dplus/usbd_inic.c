@@ -26,7 +26,7 @@ static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
 static int usbd_inic_handle_ep0_data_out(usb_dev_t *dev);
 static int usbd_inic_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
-static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
+static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_inic_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
@@ -388,7 +388,7 @@ static int usbd_inic_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
   * @param  ep_addr: endpoint number
   * @retval Status
   */
-static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
+static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_inic_cb_t *cb = idev->cb;
@@ -596,7 +596,7 @@ int usbd_inic_transmit_ctrl_data(u8 *buf, u16 len)
 	return HAL_OK;
 }
 
-int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u16 len, void *userdata)
+int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 {
 	int ret = HAL_OK;
 	u8 num = USB_EP_NUM(ep_addr);
@@ -638,7 +638,7 @@ int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u16 len, void *userdata)
 	return ret;
 }
 
-int usbd_inic_receive_data(u8 ep_addr, u8 *buf, u16 len, void *userdata)
+int usbd_inic_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 {
 	u8 num = USB_EP_NUM(ep_addr);
 	usbd_inic_dev_t *idev = &usbd_inic_dev;

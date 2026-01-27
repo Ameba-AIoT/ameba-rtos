@@ -2678,8 +2678,7 @@ end:
 	}
 }
 
-
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_socket_items[ ] = {
 	{"+SKTCFG", at_sktcfg},
 	{"+SKTQUERY", at_sktquery},
@@ -2705,8 +2704,6 @@ void print_socket_at(void)
 void at_socket_init(void)
 {
 	init_node_pool();
-
-	atcmd_service_add_table((log_item_t *)at_socket_items, sizeof(at_socket_items) / sizeof(at_socket_items[0]));
 }
 
 #endif /* CONFIG_ATCMD_SOCKET */

@@ -77,7 +77,7 @@ SECTIONS
 		KEEP(*(.cmd.table.data*))
 		__cmd_table_end__ = .;
 		__atcmd_table_start__ = .;
-		*(.atcmd.table.rodata*)
+		KEEP(*(.atcmd.table.rodata*))
 		__atcmd_table_end__ = .;
 		. = ALIGN (4);
 		__ipc_table_start__ = .;

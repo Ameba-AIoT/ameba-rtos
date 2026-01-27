@@ -142,7 +142,7 @@ static int usbh_composite_cdc_acm_receive(u8 *buf, u32 len)
 	usbh_pipe_t *pipe = &cdc->bulk_in;
 
 	if ((cdc->state == CDC_ACM_STATE_IDLE) || (cdc->state == CDC_ACM_STATE_TRANSFER)) {
-		if (pipe->xfer_state == USBH_EP_XFER_IDLE) {
+		if (pipe->xfer_state == USBH_EP_XFER_IDLE || pipe->xfer_state == USBH_EP_XFER_ERROR) {
 			pipe->xfer_buf = buf;
 			pipe->xfer_len = len;
 

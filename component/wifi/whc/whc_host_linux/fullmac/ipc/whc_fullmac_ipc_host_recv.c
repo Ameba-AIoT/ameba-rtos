@@ -29,12 +29,12 @@ void whc_fullmac_ipc_host_recv_task_from_msg_recv_pkts(int idx_wlan, struct dev_
 
 	/* get the rx queue. */
 	if (!pdev) {
-		dev_err(global_idev.fullmac_dev, "%s: device or inic device is NULL!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: device or inic device is NULL!\n", __func__);
 		goto func_exit;
 	}
 
 	if (!skb_phy) {
-		dev_err(global_idev.fullmac_dev, "%s: skb_phy is NULL", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: skb_phy is NULL", __func__);
 		goto func_exit;
 	}
 
@@ -43,7 +43,7 @@ void whc_fullmac_ipc_host_recv_task_from_msg_recv_pkts(int idx_wlan, struct dev_
 	/* allocate pbuf to store ethernet data from IPC. */
 	pskb = netdev_alloc_skb(idev->pndev[idx_wlan], skb->len);
 	if (pskb == NULL) {
-		dev_err(global_idev.fullmac_dev, "%s: Alloc skb rx buf Err, alloc_sz %d!!\n\r",
+		dev_err(global_idev.pwhc_dev, "%s: Alloc skb rx buf Err, alloc_sz %d!!\n\r",
 				__func__, skb->len);
 		goto recv_done;
 	}
@@ -78,7 +78,7 @@ void whc_fullmac_ipc_host_recv_task_from_msg(u8 event_num, u32 msg_addr, u8 wlan
 		whc_fullmac_ipc_host_recv_task_from_msg_recv_pkts(wlan_idx, (struct dev_sk_buff *)(msg_addr));
 		break;
 	default:
-		dev_err(global_idev.fullmac_dev, "Host Unknown event(%d)!\n\r", event_num);
+		dev_err(global_idev.pwhc_dev, "Host Unknown event(%d)!\n\r", event_num);
 		break;
 	}
 }
@@ -92,7 +92,7 @@ static unsigned int whc_fullmac_ipc_host_recv_interrupt(aipc_ch_t *ch, ipc_msg_s
 	pdev = global_idev.ipc_dev;
 	if (!pdev) {
 		ret = -ENODEV;
-		dev_err(global_idev.fullmac_dev, "%s:%s ipc device is null (%d).\n", "ipc recv", __func__, ret);
+		dev_err(global_idev.pwhc_dev, "%s:%s ipc device is null (%d).\n", "ipc recv", __func__, ret);
 		goto func_exit;
 	}
 

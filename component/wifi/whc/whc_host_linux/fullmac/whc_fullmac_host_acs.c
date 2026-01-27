@@ -23,11 +23,11 @@ u8 rtw_chnl_tbl[MAX_CHANNEL_NUM] = {
 
 struct rtw_acs_mntr_rpt acs_mntr_rpt_tbl[MAX_CHANNEL_NUM] = {0};
 
-int whc_fullmac_host_dump_survey_params(struct wiphy *wiphy, struct net_device *netdev, int idx, struct survey_info *info)
+int whc_host_dump_survey_params(struct wiphy *wiphy, struct net_device *netdev, int idx, struct survey_info *info)
 {
 	u8 is_mp = 0;
 
-	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	whc_host_dev_driver_is_mp(&is_mp);
 	if (is_mp == 1) {
 		return -ENOENT;
 	}
@@ -37,7 +37,7 @@ int whc_fullmac_host_dump_survey_params(struct wiphy *wiphy, struct net_device *
 	}
 
 	if (!info) {
-		dev_err(global_idev.fullmac_dev, "%s: invial parameters!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: invial parameters!\n", __func__);
 		return -ENOENT;
 	}
 
@@ -63,7 +63,7 @@ int whc_fullmac_host_dump_survey_params(struct wiphy *wiphy, struct net_device *
 		info->filled = SURVEY_INFO_TIME | SURVEY_INFO_TIME_BUSY | SURVEY_INFO_TIME_TX | SURVEY_INFO_NOISE_DBM;
 	} else {
 		info->channel = NULL;
-		dev_dbg(global_idev.fullmac_dev, "%s: idx: %d, acs_info == NULL\n", __func__, idx);
+		dev_dbg(global_idev.pwhc_dev, "%s: idx: %d, acs_info == NULL\n", __func__, idx);
 	}
 
 	return 0;

@@ -686,14 +686,9 @@ end:
 
 }
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_fs_items[] = {
 	{"+FS", at_fs},
 	{"+CERT", at_cert},
 	{"+FSRGN", at_fs_region},
 };
-
-void at_fs_init(void)
-{
-	atcmd_service_add_table((log_item_t *)at_fs_items, sizeof(at_fs_items) / sizeof(at_fs_items[0]));
-}

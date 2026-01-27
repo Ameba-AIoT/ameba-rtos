@@ -10,7 +10,7 @@
 #include "main.h"
 
 /* Scheduler includes. */
-
+#include "sheipa.h"
 #include "ameba_soc.h"
 #if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 #include "vfs.h"
@@ -189,15 +189,20 @@ int main(void)
 	rtk_diag_init(RTK_DIAG_HEAP_SIZE, RTK_DIAG_SEND_BUFFER_SIZE);
 #endif /* CONFIG_CP_TEST_CA32 */
 
+#ifdef CONFIG_SHELL
 	/* init console */
 	shell_init_rom(0, 0);
 	shell_init_ram();
+#endif
 
 	/* Execute application example */
 	app_example();
 
 	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
 	IPC_SEMDelayStub(&rtos_time_delay_ms);
+
+	/* Configure the hardware ready to run the demo. */
+	prvSetupHardware();
 
 	/* Start the tasks and timer running. */
 	RTK_LOGI(TAG, "Cortex-A Start Scheduler\n");

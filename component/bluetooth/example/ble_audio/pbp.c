@@ -77,6 +77,7 @@ typedef struct {
 	uint32_t encode_byte;
 	uint32_t sdu_tx_cnt;
 	uint32_t rx_valid_cnt;
+	bool sdu_sync_flag;
 } app_bt_le_audio_data_path_t;
 
 typedef struct {
@@ -1532,22 +1533,25 @@ static void bt_le_audio_demo_encode_task_entry(void *ctx)
 				p_track = (rtk_bt_audio_track_t *)app_le_audio_data_path[i].p_track_hdl;
 				if (p_track && p_track->audio_sync_flag) {
 					if (i == 0) {
-						if (app_le_audio_data_path[i].sdu_tx_cnt == 0) {
+						if (!app_le_audio_data_path[i].sdu_sync_flag) {
 							if (rtk_bt_get_hc_clock_offset(&p_track->frc_drift)) {
 								BT_LOGE("[BT AUDIO] %s: read track frc_drift fail \r\n", __func__);
 							}
 						}
 #if defined(RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT) && RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT
-						if (app_le_audio_data_path[i].sdu_tx_cnt == 0) {
+						if (!app_le_audio_data_path[i].sdu_sync_flag) {
 							if (rtk_bt_audio_get_iso_ref_ap(p_track, app_le_audio_data_path[i].iso_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_TX,
 															g_pbp_iso_interval, &controller_anchor_point)) {
-								BT_LOGE("[APP] %s: rtk_bt_audio_get_iso_ref_ap failed %d\r\n", __func__);
+								BT_LOGE("[APP] %s: rtk_bt_audio_get_iso_ref_ap failed \r\n", __func__);
 								if (app_le_audio_data_path[i].p_enc_codec_buffer_t) {
 									rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_LC3, app_le_audio_data_path[i].p_codec_entity, app_le_audio_data_path[i].p_enc_codec_buffer_t);
 								}
 								app_le_audio_data_path[i].p_enc_codec_buffer_t = NULL;
 								continue;
 							}
+							app_le_audio_data_path[i].sdu_sync_flag = true;
+							app_le_audio_data_path[i].sdu_tx_cnt = 0;
+							BT_LOGA("[APP] %s: tx sync calibrate successfully \r\n", __func__);
 						}
 #endif
 						if (app_le_audio_data_path[i].sdu_tx_cnt == 0) {
@@ -1593,6 +1597,7 @@ static void bt_le_audio_demo_encode_task_entry(void *ctx)
 								app_le_audio_data_path[i].pkt_seq_num, ret);
 						BT_DUMPD("", app_le_audio_data_path[i].p_enc_codec_buffer_t->pbuffer, app_le_audio_data_path[i].p_enc_codec_buffer_t->frame_size);
 					}
+					app_le_audio_data_path[i].sdu_tx_cnt++;
 #if defined(RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT
 					if (rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_LC3,
 												   app_le_audio_data_path[i].p_track_hdl,

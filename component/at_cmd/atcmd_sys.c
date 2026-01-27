@@ -387,7 +387,7 @@ end:
 }
 #endif
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_sys_items[] = {
 #ifndef CONFIG_INIC_NO_FLASH
 	{"+OTACLEAR", at_otaclear},
@@ -410,9 +410,4 @@ void print_system_at(void)
 	for (index = 0; index < cmd_len; index++) {
 		at_printf("AT%s\r\n", at_sys_items[index].log_cmd);
 	}
-}
-
-void at_sys_init(void)
-{
-	atcmd_service_add_table((log_item_t *)at_sys_items, sizeof(at_sys_items) / sizeof(at_sys_items[0]));
 }
