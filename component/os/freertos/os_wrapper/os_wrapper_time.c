@@ -140,7 +140,7 @@ uint64_t rtos_time_get_current_system_time_ns(void)
 	}
 
 	/* arm_arch_timer_count's clock source refers to GenericTimerFreq */
-	time_ns = time_ms * 1000000ULL + (pass_value * 1000) / (GenericTimerFreq / 1000000ULL);
+	time_ns = time_ms * 1000000ULL + (pass_value * 1000000000 / GenericTimerFreq) ;
 #else
 #error "Undefined core"
 #endif

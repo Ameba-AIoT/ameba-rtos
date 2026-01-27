@@ -1199,7 +1199,20 @@ uint16_t rtk_bt_audio_get_iso_ref_ap(rtk_bt_audio_track_t *track, uint16_t iso_c
 			//      delt_time, cur_host_time, ref_ap_host_time, info.Group_Anchor_Point, track->frc_drift);
 			return 1;
 		}
-		controller_anchor_point = info.Group_Anchor_Point;
+		/* This time zone is ambiguous, BT Host cannot guarantee that the SDU will be sent out on time*/
+		if (-delt_time >= 4000 && -delt_time <= 6000) {
+			BT_LOGE("[BT AUDIO] %s: anchor point not valid, do re sync! \r\n", __func__);
+			return 1;
+		}
+		if ((uint32_t)iso_interval > info.Sdu_Interval) {
+			if (-delt_time > 5000) {
+				controller_anchor_point = info.Group_Anchor_Point;
+			} else {
+				controller_anchor_point = info.Group_Anchor_Point + iso_interval;
+			}
+		} else {
+			controller_anchor_point = info.Group_Anchor_Point;
+		}
 	}
 
 	*sync_ref_ap = controller_anchor_point;
