@@ -7,7 +7,7 @@ set(MICROLITE_LIB_NAME "tensorflow-microlite")
 
 set(tflite_dir "${CMAKE_CURRENT_SOURCE_DIR}/tensorflow/lite")
 set(signal_dir "${CMAKE_CURRENT_SOURCE_DIR}/signal")
-set(download_dir "${CMAKE_CURRENT_LIST_DIR}/downloads")
+set(download_dir "${CMAKE_CURRENT_LIST_DIR}/downloads_${CMAKE_CHIP_TARGET}")
 set(compiler_mlir_dir "${CMAKE_CURRENT_SOURCE_DIR}/tensorflow/compiler/mlir/")
 set(tflite_micro_dir "${tflite_dir}/micro")
 set(tflite_micro_frontend_dir "${tflite_dir}/experimental/microfrontend/lib")

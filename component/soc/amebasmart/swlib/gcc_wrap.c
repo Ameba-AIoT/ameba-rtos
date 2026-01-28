@@ -9,15 +9,6 @@
 #include "diag.h"
 #include "os_wrapper.h"
 
-#ifdef CONFIG_ARM_CORE_CA32
-/* include apcore/spinlock.h for padding a cache line fully*/
-#include "spinlock.h"
-/**
- * @brief The CA32 has two cores that need to be locked
- * when printing to avoid interrupting each other
- */
-static spinlock_t print_lock;
-#endif
 
 void *__wrap_malloc(size_t size)
 {
@@ -73,7 +64,8 @@ int __wrap_printf(const char *__restrict fmt, ...)
 	va_list ap;
 
 #ifdef CONFIG_ARM_CORE_CA32
-	u32 isr_status = spin_lock_irqsave(&print_lock);
+	/* The CA32 has two cores that need to be locked when printing to avoid interrupting each other */
+	rtos_critical_enter(RTOS_CRITICAL_LOG);
 #endif
 
 	va_start(ap, fmt);
@@ -93,7 +85,7 @@ int __wrap_printf(const char *__restrict fmt, ...)
 	va_end(ap);
 
 #ifdef CONFIG_ARM_CORE_CA32
-	spin_unlock_irqrestore(&print_lock, isr_status);
+	rtos_critical_exit(RTOS_CRITICAL_LOG);
 #endif
 
 	return ret;

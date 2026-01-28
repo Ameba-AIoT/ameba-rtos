@@ -99,6 +99,29 @@ typedef struct {
 	bool enable;
 } rtk_bt_vendor_sync_ref_ap_info_t;
 
+typedef enum {
+	RTK_BT_LE_CLOCK_STATUS_SUCCESS = 0,       /* get successs */
+	RTK_BT_LE_CLOCK_STATUS_CONN_HANDLE_ERROR, /* input parameter conn_handle error */
+	RTK_BT_LE_CLOCK_STATUS_GET_FAIL,          /* get fail reason: the slave did not receive the connection packet */
+} rtk_bt_le_clock_status_t;
+
+typedef struct {
+	uint64_t clock_counter; /* clock_counter wrap around from 83886079999 to 0 */
+	uint16_t conn_handle;
+	uint16_t event_counter; /* event_counter wrap around from 65535 to 0 */
+	uint16_t ce_interval;   /* the value of the connection interval: connection_interval = ce_interval * 1.25 ms */
+	uint8_t  status;        /* refers to rtk_bt_le_clock_status_t */
+} rtk_bt_le_conn_clock_info_t;
+
+typedef struct {
+	rtk_bt_le_conn_clock_info_t info;
+	void *sem;
+} rtk_bt_vendor_conn_clock_info_t;
+
+typedef enum {
+	SUB_CMD_READ_ACC_HIT_COUNTER    = 0x14,
+} rtk_bt_vendor_get_slave_conn_clock_subcmd_type_t;
+
 /**
  * @typedef   rtk_bt_vendor_free_run_clock_latch_subcmd_type_t
  * @brief     Free run clock latch subcmd type.
@@ -219,6 +242,22 @@ rtk_bt_vendor_sync_ref_ap_info_t *rtk_bt_get_ref_ap_info(void);
  *            - Others: Error code
  */
 uint16_t rtk_bt_get_le_iso_sync_ref_ap_info(uint16_t conn_handle, uint8_t dir, rtk_bt_le_iso_sync_ref_ap_info_t *p_info);
+#endif
+
+#if defined(RTK_BLE_GET_SLAVE_CONN_CLOCK_SUPPORT) && RTK_BLE_GET_SLAVE_CONN_CLOCK_SUPPORT
+
+rtk_bt_vendor_conn_clock_info_t *rtk_bt_get_slave_clock_info(void);
+
+/**
+ * @brief      Get the clock information  of slave connection link.
+ * @param[in] conn_handle: connection handle
+ * @param[out] p_info: The clock information
+ * @note       This API shall NOT be called in bt_api_task.
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_get_slave_conn_clock(uint16_t conn_handle, rtk_bt_le_conn_clock_info_t *clock_info);
 #endif
 /**
  * @}

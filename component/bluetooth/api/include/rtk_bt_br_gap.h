@@ -327,6 +327,14 @@ typedef struct {
 } rtk_bt_br_inquiry_result_t;
 
 /**
+ * @struct    rtk_bt_br_inquiry_cmpl_t
+ * @brief     Bluetooth BR/EDR Inquiry Completed.(Copy of T_BT_EVENT_PARAM_INQUIRY_CMPL)
+ */
+typedef struct {
+	uint16_t cause;
+} rtk_bt_br_inquiry_cmpl_t;
+
+/**
  * @struct    rtk_bt_br_inquiry_result_t
  * @brief     Bluetooth BR/EDR Inquiry Result.(Copy of T_BT_EVENT_PARAM_INQUIRY_RESULT)
  */

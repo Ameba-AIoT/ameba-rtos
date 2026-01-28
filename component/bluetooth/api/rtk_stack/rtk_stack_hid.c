@@ -41,16 +41,6 @@ static void app_hid_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 
 	switch (event_type) {
 
-	case BT_EVENT_SDP_ATTR_INFO: {
-		T_BT_SDP_ATTR_INFO *sdp_info = &param->sdp_attr_info.info;
-		if (sdp_info->srv_class_uuid_type == BT_SDP_UUID16 && sdp_info->srv_class_uuid_data.uuid_16 == UUID_HUMAN_INTERFACE_DEVICE_SERVICE) {
-			if (!bt_hid_connect_req(param->sdp_attr_info.bd_addr)) {
-				BT_LOGE("bt_stack_rfc_evt_ind_cback: bt_hid_connect_req send failed\r\n");
-			}
-		}
-	}
-	break;
-
 	case BT_EVENT_HID_CONN_IND: {
 		rtk_bt_hid_conn_ind_t *p_hid_conn_ind = NULL;
 
@@ -195,11 +185,9 @@ static void app_hid_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 static uint16_t bt_stack_hid_connect(void *param)
 {
 	uint8_t *bd_addr = (uint8_t *)param;
-	T_BT_SDP_UUID_DATA uuid;
 
-	uuid.uuid_16 = UUID_HUMAN_INTERFACE_DEVICE_SERVICE;
-
-	if (bt_sdp_discov_start(bd_addr, BT_SDP_UUID16, uuid)) {
+	if (bt_hid_connect_req(bd_addr)) {
+		BT_LOGA("HID Connect Successfully \r\n");
 		return RTK_BT_OK;
 	}
 

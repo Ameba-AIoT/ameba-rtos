@@ -23,6 +23,10 @@ ameba_add_subdirectory_if(CONFIG_BT_A2DP_HFP_PBP
     bt_a2dp_hfp_pbp
 )
 
+ameba_add_subdirectory_if(CONFIG_BT_A2DP_HFP_PBP_PERIPHERAL
+    bt_a2dp_hfp_pbp_peripheral
+)
+
 ameba_add_subdirectory_if(CONFIG_BT_A2DP_TMAP
     bt_a2dp_tmap
 )

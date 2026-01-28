@@ -23,24 +23,19 @@
 #include "ameba_soc.h"
 #include "ringbuffer.h"
 
-#define RB_LOGV(x, ...) printf("[%s][%s] " x, LOG_TAG, __func__, ##__VA_ARGS__)
-#define RB_LOGD(x, ...) printf("[%s][%s] " x, LOG_TAG, __func__, ##__VA_ARGS__)
-#define RB_LOGI(x, ...) printf("[%s][%s] " x, LOG_TAG, __func__, ##__VA_ARGS__)
-#define RB_LOGW(x, ...) printf("[%s][%s] warn: " x, LOG_TAG, __func__, ##__VA_ARGS__)
-#define RB_LOGE(x, ...) printf("[%s][%s] error: " x, LOG_TAG, __func__, ##__VA_ARGS__)
 #define RB_BYTE_ALIGNMENT 128
 
 RingBuffer *RingBuffer_Create(void *data, uint32_t size, int32_t type, int32_t owns)
 {
 	RingBuffer *rb = (RingBuffer *)rtos_mem_malloc(sizeof(RingBuffer));
 	if (!rb) {
-		RB_LOGE("alloc struct fail.\n");
+		RTK_LOGE(LOG_TAG, "alloc struct fail.\n");
 		return NULL;
 	}
 	if (owns) {
 		rb->start = rtos_mem_malloc(size);
 		if (!rb->start) {
-			RB_LOGE("alloc data fail.\n");
+			RTK_LOGE(LOG_TAG, "alloc data fail.\n");
 			rtos_mem_free(rb);
 			return NULL;
 		}
@@ -95,7 +90,7 @@ uint32_t RingBuffer_Available(RingBuffer *rb)
 int32_t RingBuffer_Write(RingBuffer *rb, uint8_t *buffer, uint32_t count)
 {
 	if (!count || !buffer) {
-		RB_LOGW("try to write from empty buffer.\n");
+		RTK_LOGW(LOG_TAG, "try to write from empty buffer.\n");
 		return -1;
 	}
 	if (rb->type == SHARED_RINGBUFF) {
@@ -144,7 +139,7 @@ int32_t RingBuffer_Write(RingBuffer *rb, uint8_t *buffer, uint32_t count)
 int32_t RingBuffer_Read(RingBuffer *rb, uint8_t *buffer, uint32_t count)
 {
 	if (!count || !buffer) {
-		RB_LOGW("try to read to empty buffer.\n");
+		RTK_LOGW(LOG_TAG, "try to read to empty buffer.\n");
 		return -1;
 	}
 	if (rb->type == SHARED_RINGBUFF) {

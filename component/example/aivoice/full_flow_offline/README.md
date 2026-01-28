@@ -13,10 +13,9 @@ The pre-recorded audio used in this example is a 3 channel audio, channel 1 and 
 ## Supported IC
 
 1. AmebaSmart CA32 (SDK: ameba-rtos)
-2. AmebaLite KM4 (SDK: ameba-rtos)
-3. AmebaDplus KM4 (SDK: ameba-rtos)
-4. AmebaLite DSP (SDK: ameba-dsp)
-5. AmebaSmart Linux (SDK:ameba-linux)
+2. AmebaDplus KM4 (SDK: ameba-rtos)
+3. AmebaLite DSP (SDK: ameba-dsp)
+4. AmebaSmart Linux (SDK:ameba-linux)
 
 ## Build Example
 
@@ -120,33 +119,17 @@ Command ID40, 挂断电话
 
 > **Note: This chip only supports single microphone input and does not support ASR functionality.**
 
-1. **Replace Test Audio**:
-   * Modify CMakeLists.txt to use `platform/ameba_rtos/testwav_1c.wav` as the test audio file
-   * Modify the linker script `amebadplus_gcc_project/project_km4/asdk/ld/ameba_img2_all.ld` by adding the following to `.xip_image2.text` section:
-  
-    ```ld
-    .xip_image2.text :
-    {
-        __flash_text_start__ = .;
-        *(.audio.data*)
-        *(.non.dram.text*)
-        __flash_text_end__ = .;
-    } > KM4_IMG2_XIP
-    ```
-
-2. **Modify Code to Run afe_kws_vad Flow**:
-   * Set the interface and parameters:
-  
-    ```c
-    #define AIVOICE_TARGET_AMEBADPLUS   (1)
-    ```
-
-3. **Configure menuconfig**:
+1. **Configure menuconfig**:
    * Enable the following options:
-    ```< CONFIG APPLICATION  ---> AI Config  ---> [*] Enable TFLITE MICRO```
-    ```< CONFIG APPLICATION  ---> AI Config  ---> [*] Enable AIVoice -> Select AFE Resource (afe_res_1mic)```
+    ```text
+    < CONFIG APPLICATION  ---> AI Config  ---> [*] Enable TFLITE MICRO
+    ```
 
-4. **Build and Download**:
+    ```text
+    < CONFIG APPLICATION  ---> AI Config  ---> [*] Enable AIVoice -> Select AFE Resource (afe_res_1mic)
+    ```
+
+2. **Build and Download**:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
@@ -160,7 +143,7 @@ Command ID40, 挂断电话
 [AIVOICE] rtk_aivoice_model vad version: vad_v8_opt
 [AIVOICE] rtk_aivoice_model kws version: kws_xqxq_v5_opt
 [AIVOICE] rtk_aivoice_log_format version: v2
-[user] afe output 1 channels raw audio, others: 
+[user] afe output 1 channels raw audio, others:
 [AIVOICE] [KWS] result: {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.62849670648574829}
 [user] wakeup. {"id":2,"keyword":"ni-hao-xiao-qiang","score":0.62849670648574829}
 [user] vad. status = 1, offset = 1185

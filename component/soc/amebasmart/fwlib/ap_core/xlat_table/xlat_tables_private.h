@@ -12,6 +12,7 @@
 #include "platform_def.h"
 
 #include "xlat_tables_defs.h"
+#include "section_config.h"
 
 #if PLAT_XLAT_TABLES_DYNAMIC
 /*

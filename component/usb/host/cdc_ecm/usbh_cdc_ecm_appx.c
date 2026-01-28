@@ -485,7 +485,8 @@ static void usbh_cdc_ecm_config_dongle_mac(usb_host_t *host, u16 vid, u16 pid)
 			atcmd->sub_status++;
 			RTK_LOGS(TAG, RTK_LOG_DEBUG, "[USBD]%s Line %d\n", __func__, __LINE__);
 		} else {
-			usb_os_memcpy(atcmd->dongle_ctrl_buf, &(atcmd->mac[4]), CDC_ECM_MAC_CTRL_REG_LEN);
+			atcmd->dongle_ctrl_buf[0] = atcmd->mac[4];
+			atcmd->dongle_ctrl_buf[1] = atcmd->mac[5];
 			atcmd->dongle_ctrl_buf[2] = atcmd->dongle_ctrl_buf[3] = 0xFF;
 			state = usbh_cdc_ecm_process_mac_set_mac2(host);
 			if (state == HAL_OK) {

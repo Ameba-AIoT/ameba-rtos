@@ -11,6 +11,7 @@
 
 /* Private defines -----------------------------------------------------------*/
 
+#define USBH_UVC_DEBUG 0
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
@@ -282,9 +283,60 @@ int usbh_uvc_stream_off(u32 if_num)
 }
 
 /**
+  * @brief	Find out best alt setting
+  * @param	stream: uvc stream interface
+  * @retval None
+  */
+static void usbh_uvc_find_alt(usbh_uvc_stream_t *stream)
+{
+	usbh_uvc_host_t *uvc = &uvc_host;
+	usb_host_t *host = uvc->host;
+	usbh_uvc_setting_t *cur_setting = &stream->cur_setting;
+	usbh_ep_desc_t *ep = NULL;
+	int i;
+	u32 xfer_size;
+	u32 XferSize = stream->stream_ctrl.dwMaxPayloadTransferSize;
+	u32 max_ep_size = UINT_MAX;
+	for (i = 0; i < stream->vs_intf->alt_num; i++) {
+		xfer_size = stream->vs_intf->altsetting[i].endpoint->wMaxPacketSize;
+		if (host->config.speed == USB_SPEED_HIGH) {
+			xfer_size = (xfer_size & 0x07ff) * (1 + ((xfer_size >> 11) & 3));
+		} else {
+			xfer_size = xfer_size & 0x07ff;
+		}
+		if ((xfer_size >= XferSize) && (xfer_size <= max_ep_size)) {
+			cur_setting->altsetting = &stream->vs_intf->altsetting[i];
+			cur_setting->bAlternateSetting = ((usbh_if_desc_t *)cur_setting->altsetting->p)->bAlternateSetting;
+			ep = cur_setting->altsetting->endpoint;
+			cur_setting->ep_addr = ep->bEndpointAddress;
+			cur_setting->xfer_size = xfer_size;
+			cur_setting->interval = ep->bInterval;
+			cur_setting->ep_type = ep->bmAttributes & USB_EP_XFER_TYPE_MASK;
+			cur_setting->bInterfaceNumber = cur_setting->cur_vs_intf->bInterfaceNumber;
+			cur_setting->mps = ep->wMaxPacketSize & 0x7ff;
+			cur_setting->valid = 1;
+			max_ep_size = xfer_size;
+		}
+	}
+#if USBH_UVC_DEBUG
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.altsetting:%x\n",  cur_setting->altsetting);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.bAlternateSetting:%d\n", cur_setting->bAlternateSetting);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.ep_addr:%d\n", cur_setting->ep_addr);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.xfer_size:%d\n", cur_setting->xfer_size);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.mps:%d\n", cur_setting->mps);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.interval:%d\n", cur_setting->interval);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.ep_type:%d\n", cur_setting->ep_type);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.bInterfaceNumber:%d\n", cur_setting->bInterfaceNumber);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.pipe:%d\n", cur_setting->pipe);
+#endif
+}
+
+/**
   * @brief	Set video parameter
   * @param	para: user parameter, such as FPS, resolution
   * @retval Status
+  * The CFG may have been rewritten to the closest configuration supported by the device.
+  * Consumers, such as RTSP, need to proceed with subsequent operations based on the updated CFG
   */
 int usbh_uvc_set_param(uvc_config_t *para, u32 if_num)
 {
@@ -292,20 +344,21 @@ int usbh_uvc_set_param(uvc_config_t *para, u32 if_num)
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_stream_t *stream = &uvc->stream[if_num];
 	usbh_uvc_stream_control_t *ctrl = &stream->stream_ctrl;
+	usbh_uvc_setting_t *cur_setting = &stream->cur_setting;
 	u32 format_index, frame_index;
 	u32 frame_intv = 0;
 
 	if ((para->fmt_type != USBH_UVC_FORMAT_MJPEG) && (para->fmt_type != USBH_UVC_FORMAT_YUV) \
 		&& (para->fmt_type != USBH_UVC_FORMAT_H264)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Format not support, only support MJEPG, UNCOMPRESSED and H264\n");
-		return -HAL_ERR_PARA;
+		return HAL_ERR_PARA;
 	}
 
 	/*Find format and closest resolution*/
 	ret = usbh_uvc_find_format_frame(stream, para, &format_index, &frame_index);
 	if (ret) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Find format or frame fail\n");
-		return -HAL_ERR_PARA;
+		return HAL_ERR_PARA;
 	}
 
 	/*Find closest frame rate*/
@@ -318,7 +371,18 @@ int usbh_uvc_set_param(uvc_config_t *para, u32 if_num)
 	ctrl->dwFrameInterval = frame_intv;
 	ctrl->dwMaxVideoFrameSize = stream->stream_ctrl.dwMaxVideoFrameSize;
 
-	ret = usbh_uvc_probe_video(stream);
+	usbh_uvc_probe_video(stream);
+
+	usbh_uvc_commit_video(stream);
+
+	/* find current alt setting */
+	usbh_uvc_find_alt(stream);
+
+	do {
+		/* set alt setting for current interface */
+		ret = usbh_ctrl_set_interface(uvc->host, cur_setting->bInterfaceNumber, \
+									  cur_setting->bAlternateSetting);
+	} while (ret == HAL_BUSY);
 
 	return HAL_OK;
 }
@@ -343,6 +407,10 @@ usbh_uvc_frame_t *usbh_uvc_get_frame(u32 if_num)
 		} else {
 			frame = list_first_entry(&stream->frame_chain, usbh_uvc_frame_t, list);
 			list_del_init(&frame->list);
+			frame->state = UVC_FRAME_INUSE;
+#if USBH_UVC_DEBUG
+			RTK_LOGS(TAG, RTK_LOG_INFO, "get %d-%d\n", frame->timestamp, usb_hal_get_timestamp_ms());
+#endif
 			return frame;
 		}
 	} else {
@@ -373,7 +441,11 @@ void usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u32 if_num)
 	usbh_uvc_stream_t *stream = &uvc->stream[if_num];
 
 	if (frame != NULL) {
+		list_del_init(&frame->list);
+		frame->err = 0;
 		frame->byteused = 0;
+		frame->timestamp = 0;
+		frame->state = UVC_FRAME_INIT;
 		list_add_tail(&frame->list, &stream->frame_empty);
 	}
 #else

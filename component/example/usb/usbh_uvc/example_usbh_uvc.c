@@ -108,7 +108,6 @@ u8 uvc_buf[USBH_UVC_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
-	.alt_max_cnt = 25,
 	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = 3U,
 	.sof_tick_enable = 1U,
@@ -659,14 +658,7 @@ static void example_usbh_uvc_task(void *param)
 	}
 #endif
 
-	if (!usbh_get_status()) {
-		rtos_sema_give(uvc_disconn_sema);
-	}
-
 	img_cnt = 0;
-	if (!usbh_get_status()) {
-		rtos_sema_give(uvc_disconn_sema);
-	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Stream on\n");
 	ret = usbh_uvc_stream_on(USBH_UVC_IF_NUM_0);
@@ -696,11 +688,6 @@ static void example_usbh_uvc_task(void *param)
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Put frame\n");
 		usbh_uvc_put_frame(buf, USBH_UVC_IF_NUM_0);
-
-		if (!usbh_get_status()) {
-			rtos_sema_give(uvc_disconn_sema);
-			break;
-		}
 
 		img_cnt ++;
 	}

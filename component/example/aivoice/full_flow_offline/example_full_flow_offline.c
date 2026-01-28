@@ -10,7 +10,6 @@
 /*****************************************************************************/
 //            aivoice flow and afe ssl configuration
 /*****************************************************************************/
-#define AIVOICE_TARGET_AMEBADPLUS   (0)
 #if AIVOICE_TARGET_AMEBADPLUS
 #define MIC_NUM                     (1)
 #define AIVOICE_ENABLE_AFE_SSL      (0)

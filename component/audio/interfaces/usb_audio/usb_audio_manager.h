@@ -40,6 +40,11 @@ typedef enum {
 } UsbAudioEventType;
 
 typedef enum {
+    USB_AUDIO_ERROR_NONE,
+    USB_AUDIO_ERROR_PROBE_FAIL,
+} UsbAudioErrorType;
+
+typedef enum {
     USB_AUDIO_KEY_NONE,
     USB_AUDIO_KEY_VOL_UP,
     USB_AUDIO_KEY_VOL_DOWN,

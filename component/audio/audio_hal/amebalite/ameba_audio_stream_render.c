@@ -229,6 +229,9 @@ static void ameba_audo_stream_tx_codec_configure(uint32_t i2s, uint32_t type, I2
 		AUDIO_CODEC_SetDACVolume(DAC_L, ameba_audio_get_ctl()->volume_for_dac);
 	}
 
+	AUDIO_CODEC_SetDACZDETTimeOut(DAC_L, 3);
+	AUDIO_CODEC_SetDACZDET(DAC_L, ZDET_STEP);
+
 	if (type == APP_LINE_OUT) {
 		if (!ameba_audio_is_audio_ip_in_use(LINEOUTANA)) {
 			AUDIO_CODEC_SetANAClk(ENABLE);

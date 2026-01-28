@@ -1830,14 +1830,12 @@ SD_RESULT SD_Init(void)
 	InterruptRegister((IRQ_FUN)SD_IRQHandler, SDIO_HOST_IRQ, NULL, INT_PRI_HIGH);
 	InterruptEn(SDIO_HOST_IRQ, INT_PRI_HIGH);
 
-#if defined(SDIO) &&(SDIO == EMMC)
-	card_info.sd_status = SD_INSERT;
-#else
-	if (GPIO_ReadDataBit(sdioh_config.sdioh_cd_pin) == 0) {
-		/* cd signal is low: card is inserted */
+	if ((sdioh_config.sdioh_cd_pin == _PNC) || (GPIO_ReadDataBit(sdioh_config.sdioh_cd_pin) == 0)) {
+		/* case1: card is connected by default */
+		/* case2: cd signal is low and card is inserted */
 		card_info.sd_status = SD_INSERT;
 	} else {
-		/* cd signal is low: card is inserted */
+		/* cd signal is high: card is not inserted */
 		RTK_LOGS(TAG, RTK_LOG_INFO, "No card! Please insert the card into the slot...\n");
 		if ((CPU_InInterrupt() == 0) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (sd_sema_take_fn != NULL)) {
 			if (sd_sema_take_fn(SD_SEMA_MAX_DELAY) != RTK_SUCCESS) {
@@ -1851,7 +1849,6 @@ SD_RESULT SD_Init(void)
 			DelayMs(SD_SEMA_MAX_DELAY);
 		}
 	}
-#endif
 
 	card_info.sd_status = SD_INSERT;
 	/* Initialize SD card */

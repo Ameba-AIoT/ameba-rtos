@@ -150,10 +150,12 @@ typedef struct {
 	u32 frame_buffer_size;
 	u32 frame_cnt;
 	u32 err_frame_cnt;
+	u32 drop_cnt;
 	u32 urb_buffer_size;
 	u32 cur_urb;
 	u32 cur_packet;
-	u8 *uvc_buffer;
+	usbh_uvc_frame_t *cur_frame_buf;
+	u8 *urb_buffer;
 	u8 *frame_buf;
 
 #if USBH_UVC_USE_HW

@@ -314,9 +314,6 @@ static void usbh_ecm_monitor_thread(void *param)
 
 			for (u8 i = 0; i < USBH_CDC_ECM_TYPE_MAX; i++) {
 				phandle = &usbh_cdc_ecm_time_array[i];
-				if (phandle == NULL) {
-					continue;
-				}
 
 				if (eth_state == 0) {
 					if ((phandle->type == USBH_CDC_ECM_TYPE_BULK_IN) || (phandle->type == USBH_CDC_ECM_TYPE_BULK_OUT)) { //skip ecm trx
