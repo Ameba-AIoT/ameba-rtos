@@ -9,7 +9,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 #------------------------------------------------------------------#
 # Component public part, user config begin(DO NOT remove this line)
 # You may use if-else condition to set or update predefined variable above
-
+#------#
 ameba_list_append(public_includes ${c_COMPONENT_DIR}/at_cmd)
 
 # Component public part, user config end(DO NOT remove this line)
