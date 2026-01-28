@@ -10,9 +10,11 @@ jobs:
     strategy:
       matrix:
         ic: [amebalite, amebasmart, amebadplus, amebagreen2]
+        soc: [RTL8726E, RTL8730E, RTL8721Dx, RTL8721F]
         build_stage_suffix: [B0, B1, B2, B3, B4, B5]
     with:
       ic_name: ${{ matrix.ic }}
+      soc_name: ${{ matrix.soc }}
       build_stage_name: ${{ matrix.build_stage_suffix }}
     secrets: inherit
 

@@ -6,6 +6,9 @@ on:
       ic_name:
         required: true
         type: string
+      soc_name:
+        required: true
+        type: string
       build_stage_name:
         required: true
         type: string
@@ -62,53 +65,50 @@ jobs:
           echo "::error file=ameba_build_config.json::配置文件不存在"
           exit 1
         fi
-        
+
         # 验证JSON格式
         if ! jq empty $JSON_FILE; then
           echo "::error file=$JSON_FILE::无效的JSON格式"
           exit 1
         fi
-        
+
         # 提取嵌套数据
+        echo "soc ${{ inputs.soc_name }} "
         echo "ic ${{ inputs.ic_name }} "
         echo "ic ${{ inputs.build_stage_name }} "
         echo "ic ${{ github.event.inputs.build_stage_name }} "
         BUILD_CONFIG=$(jq -r --arg ic "${{ inputs.ic_name }}" --arg stage "${{ inputs.build_stage_name }}" '.[$ic][$stage]' $JSON_FILE)
         echo "build_config=$BUILD_CONFIG" >> $GITHUB_OUTPUT
 
-    - name: Menuconfig   
-      run: |        
+    - name: Menuconfig
+      run: |
         echo "Menuconfig Current shell is ${{ matrix.shell }}"
         echo "${{ inputs.ic_name }} stage ${{ inputs.build_stage_name }} build config ${{ steps.build_config.outputs.build_config }}"
-        
-        cd ${{ inputs.ic_name }}_gcc_project
-        python menuconfig.py -f ${{ steps.build_config.outputs.build_config }}
+
+        python ameba.py menuconfig ${{ inputs.soc_name }} -f ${{ steps.build_config.outputs.build_config }}
       if: ${{ inputs.build_stage_name != 'B0' }}
-        
+
     - name: Build
       run: |
         echo "Build Current shell is ${{ matrix.shell }}"
-        cd ${{ inputs.ic_name }}_gcc_project
         if [ "${{ inputs.build_stage_name }}" == "B3" ] || [ "${{ inputs.build_stage_name }}" == "B5" ]; then 
-          python build.py -D USE_ALIYUN_URL=True
+          python ameba.py build ${{ inputs.soc_name }} -D USE_ALIYUN_URL=True
         else
-          python build.py
+          python ameba.py build ${{ inputs.soc_name }}
         fi
       if: ${{ matrix.os != 'windows-latest' }}
 
     - name: Build_windows
       run: |
           echo "Build Current shell is ${{ matrix.shell }}"
-          cd ${{ inputs.ic_name }}_gcc_project
           if ("${{ inputs.build_stage_name }}" -eq "B3" -or "${{ inputs.build_stage_name }}" -eq "B5") {
-            python build.py -D USE_ALIYUN_URL=True
+            python ameba.py build ${{ inputs.soc_name }} -D USE_ALIYUN_URL=True
           } else {
-            python build.py
+            python ameba.py build ${{ inputs.soc_name }}
           }
       if: ${{ inputs.ic_name != 'amebasmart' && matrix.os == 'windows-latest' }}
 
     - name: Post-Build Cleanup
       run: |
         echo "Post-Build Current shell is ${{ matrix.shell }}"
-        cd ${{ inputs.ic_name }}_gcc_project
-        python build.py -c
+        python ameba.py clean ${{ inputs.soc_name }}
