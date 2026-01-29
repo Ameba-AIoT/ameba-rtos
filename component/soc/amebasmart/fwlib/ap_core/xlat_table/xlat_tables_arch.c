@@ -78,6 +78,7 @@ bool is_dcache_enabled(void)
 	}
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 uint64_t xlat_arch_regime_get_xn_desc(int xlat_regime)
 {
 	if (xlat_regime == EL1_EL0_REGIME) {
@@ -88,6 +89,7 @@ uint64_t xlat_arch_regime_get_xn_desc(int xlat_regime)
 	}
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 void xlat_arch_tlbi_va(uintptr_t va, int xlat_regime)
 {
 	/*
@@ -104,6 +106,7 @@ void xlat_arch_tlbi_va(uintptr_t va, int xlat_regime)
 	}
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 void xlat_arch_tlbi_va_sync(void)
 {
 	/* Invalidate all entries from branch predictors. */

@@ -25,7 +25,7 @@ static const char *const TAG = "MSCD";
 /* Private types -------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
-static void msc_cb_status_changed(u8 status);
+static void msc_cb_status_changed(u8 old_status, u8 status);
 static u32 usbd_msc_cmd_test(u16 argc, u8 *argv[]);
 
 /* Private variables ---------------------------------------------------------*/
@@ -48,9 +48,9 @@ const COMMAND_TABLE usbd_msc_cmd_table[] = {
 };
 
 /* Private functions ---------------------------------------------------------*/
-static void msc_cb_status_changed(u8 status)
+static void msc_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD status: %d\n", status);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD status: %d->%d\n", old_status, status);
 }
 
 static u32 usbd_msc_cmd_test(u16 argc, u8 *argv[])

@@ -119,4 +119,24 @@ uint32_t rtos_timer_is_timer_active(rtos_timer_t p_handle);
  */
 uint32_t rtos_timer_get_id(rtos_timer_t p_handle);
 
+/**
+ * @brief  Pend a function call to the timer daemon task.
+ * @note   This function is used to defer the execution of a function to the RTOS
+ *         daemon task (the timer service task). It allows a function to be executed
+ *         in the context of the timer daemon task rather than in the caller's context.
+ * @param  p_func: Pointer to the function to be executed in the timer daemon task.
+ *                The function must have the signature: void func(void *pv_parameter1, uint32_t ul_parameter2)
+ * @param  pv_parameter1: The first parameter passed to p_func (void pointer)
+ * @param  ul_parameter2: The second parameter passed to p_func (uint32_t)
+ * @param  wait_ms: The maximum time to wait for the function to be successfully queued (in milliseconds).
+ *                 Use RTOS_TIMER_MAX_DELAY to wait indefinitely.
+ * @retval The status is RTK_SUCCESS or RTK_FAIL
+ * @note   This function can be called from both task and interrupt context.
+ *         When called from ISR context, the wait_ms parameter is ignored.
+ */
+int rtos_timer_pend_function_call(void (*p_func)(void *, uint32_t),
+								  void *pv_parameter1,
+								  uint32_t ul_parameter2,
+								  uint32_t wait_ms);
+
 #endif
